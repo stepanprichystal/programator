@@ -1,0 +1,157 @@
+#-------------------------------------------------------------------------------------------#
+# Description: Helper class, operation which are working with S&R
+# Author:SPR
+#-------------------------------------------------------------------------------------------#
+
+package CamHelpers::CamStepRepeat;
+
+#3th party library
+use strict;
+use warnings;
+
+#loading of locale modules
+#use aliased 'Helpers::JobHelper';
+#use aliased 'Enums::EnumsPaths';
+#use aliased 'Packages::InCAM::InCAM';
+#use aliased 'CamHelpers::CamJob';
+#use aliased 'CamHelpers::CamHelper';
+
+#-------------------------------------------------------------------------------------------#
+#   Package methods
+#-------------------------------------------------------------------------------------------#
+
+#Return information about steps in given step
+sub GetStepAndRepeat {
+	my $self     = shift;
+	my $inCAM    = shift;
+	my $jobId    = shift;
+	my $stepName = shift;
+
+	my @arr = ();
+
+	$inCAM->INFO( entity_type => 'step', entity_path => "$jobId/$stepName", data_type => 'SR' );
+
+	for ( my $i = 0 ; $i < scalar( @{ $inCAM->{doinfo}{gSRstep} } ) ; $i++ ) {
+		my %info = ();
+		$info{"gSRstep"} = ${ $inCAM->{doinfo}{gSRstep} }[$i];
+		$info{"gSRxa"}   = ${ $inCAM->{doinfo}{gSRxa} }[$i];
+		$info{"gSRya"}   = ${ $inCAM->{doinfo}{gSRya} }[$i];
+		$info{"gSRdx"}   = ${ $inCAM->{doinfo}{gSRdx} }[$i];
+		$info{"gSRdy"}   = ${ $inCAM->{doinfo}{gSRdy} }[$i];
+
+		push( @arr, \%info );
+
+	}
+	return @arr;
+}
+
+#Return if any step and repeat exist in given step
+sub ExistStepAndRepeats {
+	my $self = shift;
+
+	my @arr = $self->GetStepAndRepeat(@_);
+
+	if ( scalar(@arr) ) {
+		return 1;
+	}
+	else {
+
+		return 0;
+	}
+
+}
+
+#Return if specific step and repeat exist
+sub ExistStepAndRepeat {
+	my $self     = shift;
+	my $inCAM    = shift;
+	my $jobId    = shift;
+	my $stepName = shift;
+	my $srName   = shift;
+
+	my @arr = $self->GetStepAndRepeat( $inCAM, $jobId, $stepName );
+
+	if ( scalar( grep { $_->{"gSRstep"} eq $srName } @arr ) ) {
+		return 1;
+	}
+	else {
+		return 0;
+	}
+
+}
+
+#Delete specific step and repeat from given step
+sub DeleteStepAndRepeat {
+	my $self     = shift;
+	my $inCAM    = shift;
+	my $jobId    = shift;
+	my $stepName = shift;
+	my $srName   = shift;
+
+	my @arr = $self->GetStepAndRepeat( $inCAM, $jobId, $stepName );
+
+	for ( my $i = 0 ; $i < scalar(@arr) ; $i++ ) {
+
+		if ( $srName eq $arr[$i]->{"gSRstep"} ) {
+			$inCAM->COM( 'sr_tab_del', line => ( $i + 1 ) );
+		}
+	}
+}
+
+#-------------------------------------------------------------------------------------------#
+#  Place for testing..
+#-------------------------------------------------------------------------------------------#
+my ( $package, $filename, $line ) = caller;
+if ( $filename =~ /DEBUG_FILE.pl/ ) {
+
+	#my $self             = shift;
+	#	my $inCAM            = shift;
+	#	my $jobName          = shift;
+	#	my $stepName         = shift;
+	#	my $layerNameTop     = shift;
+	#	my $layerNameBot     = shift;
+	#
+	#	my $considerHole     = shift;
+	#	my $considerEdge     = shift;
+
+	my $cuThickness = JobHelper->GetBaseCuThick( "f13610", "c" );
+	my $pcbThick = JobHelper->GetFinalPcbThick("f13610");
+
+	my $inCAM = InCAM->new();
+
+	my %test = CamHelpers::CamCopperArea->GetCuArea( $cuThickness, $pcbThick, $inCAM, "f13610", "panel", "c", "s", 1, 1 );
+
+	#my %test1 = CamHelpers::CamCopperArea->GetCuArea( $cuThickness, $pcbThick, $inCAM, "F13608", "panel", "c" );
+
+	#my %lim = CamJob->GetLayerLimits( $inCAM, "F13608", "panel", "fr" );
+
+	#my %test1 = CamHelpers::CamCopperArea->GetCuAreaByBox($cuThickness, $pcbThick, $inCAM, "F13608", "panel", "c", "s", \%lim );
+	#$inCAM->COM("get_message_bar");
+	#print STDERR "TEXT BAR: " . $inCAM->GetReply();
+
+	#my %test2 = CamHelpers::CamCopperArea->GetCuAreaMask($cuThickness, $pcbThick, $inCAM, "F13608", "panel", "c", "s", "mc", "ms" );
+	#
+	#	print $test2{"area"};
+	#	print "\n";
+	#	print $test2{"percentage"};
+	#
+	#	my %test3 = CamHelpers::CopperArea->GetCuAreaMaskByBox( $inCAM, "F13608", "panel", "c", "s", "mc", "ms", \%lim );
+
+	#print $test3{"area"};
+	#print "\n";
+	#print $test3{"percentage"};
+	#my %test3 = CamHelpers::CopperArea->GetCuAreaMask( $inCAM, "F13608", "panel", "c", undef, "mc");
+
+	#	my %test2 = CamHelpers::CopperArea->GetGoldFingerArea($cuThickness, $pcbThick, $inCAM, "F13608", "panel");
+
+	#print $test2{"area"};
+	#print "\n";
+	#print $test2{"percentage"};
+
+	print 1;
+
+}
+
+1;
+
+1;

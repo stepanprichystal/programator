@@ -1,0 +1,18 @@
+
+# File defines existing NC machines and their properties
+
+#
+# MACHINE PROPERTIES TABLE
+# 
+
+# ----------------------------------------------------------------------------------------------------------------
+# GROUP ID	| MACHINES 		|  DRILL 		| DRILL DEPTH	| ROUT  	 | ROUT DEPTH 	| DRILL CROSSES | CAMERAS
+# ----------------------------------------------------------------------------------------------------------------
+	A 		| Lenz 		  	|  1 			| 0 			| 0 		 | 0 			| 0 			| 0
+	B 		| Schmoll 200	|  1 			| 1 			| 0 		 | 0 			| 1 			| 1
+	C 		| Schmoll 300 	|  1 			| 1 			| 1			 | 1 			| 0 			| 1
+	D 		| Schmoll 300 	|  1 			| 1 			| 1 		 | 1 			| 0 			| 1
+	E 		| Schmoll freza |  0 			| 0 			| 1 		 | 1 			| 0 			| 0
+	F 		| Lenz, Micronic|  0 			| 0 			| 1 		 | 0 			| 0 			| 0
+
+	

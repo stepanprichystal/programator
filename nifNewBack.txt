@@ -1,0 +1,319 @@
+[DPS]
+reference=F13608
+zpracoval=spr
+kons_trida=8
+pocet_vrstev=8
+c_mask_colour=Z
+s_mask_colour=B
+c_silk_screen_colour=B
+s_silk_screen_colour=Z
+tenting=A
+lak_typ=0
+uhlik_typ=0
+prokoveni=A
+datum_pripravy=2016-08-04
+
+[Rozmery]
+single_x=260.3
+single_y=85.1
+panel_x=
+panel_y=
+nasobnost_panelu=
+nasobnost=3
+fr_rozmer_x=291.0
+fr_rozmer_y=351.0
+rozmer_x=307.0
+rozmer_y=407.0
+
+[PlochaCu]
+g_plocha_c=763.99
+g_plocha_s=707.24
+gold_c=161.74
+gold_s=150.05
+pocet_ponoru=1
+zlacena_plocha=3.98
+imersni_plocha=311.79
+pattern=3
+flash=1
+prog_tenting=2
+
+[Drazkovani]
+delka_drazky=1
+
+
+[Ostatni]
+poznamka=UL-PC, Some notes
+datacode=MC
+*Maska 0,1*
+rel(22305,L)=2814075
+merit_presfitt=N
+
+
+[Frezovani]
+
+*** FREZOVANI SKRZ ***
+
+* FrezovaniPredLeptanim *
+freza_pred_leptanim=A
+
+* FrezovaniPredProkovem *
+freza_pred_delka=1212.72
+freza_pred = A
+min_freza_pred = 0
+ 
+* FrezovaniPoProkovu *
+freza_po_delka=1212.72
+freza_po = A
+min_freza_po = 0
+ 
+ 
+*** HLOUBKOVE FREZOVANI ***
+
+* HloubkoveFrezovaniPredProkovemC *
+freza_hloubkova_pred_c = 0
+freza_hloubkova_pred_delka_c = 0
+min_freza_hloubkova_pred_c = 0
+
+* HloubkoveFrezovaniPredProkovemS *
+freza_hloubkova_pred_s = 0
+freza_hloubkova_pred_delka_s = 0
+min_freza_hloubkova_pred_s = 0
+
+* HloubkoveFrezovaniPoProkovuC *
+freza_hloubkova_po_c = 0
+freza_hloubkova_po_delka_c = 0
+min_freza_hloubkova_po_c = 0
+
+* HloubkoveFrezovaniPoProkovuS *
+freza_hloubkova_po_s = 0
+freza_hloubkova_po_delka_s = 0
+min_freza_hloubkova_po_s = 0
+
+
+[FrezovaniVV]
+
+*** HLOUBKOVE FREZOVANI PO LISOVANI  ***
+
+* HloubkoveFrezovaniPredProkovemC *
+frezovani_vv_pred_c_1 = A
+frezovani_vv_pred_c_2 = A
+frezovani_vv_pred_c_3 = A
+frezovani_vv_pred_c_4 = A
+
+* HloubkoveFrezovaniPredProkovemS *
+frezovani_vv_pred_s_1 = A
+frezovani_vv_pred_s_2 = A
+frezovani_vv_pred_s_3 = A
+frezovani_vv_pred_s_4 = A
+
+* HloubkoveFrezovaniPoProkovuC *
+frezovani_vv_po_c_1 = A
+frezovani_vv_po_c_2 = A
+frezovani_vv_po_c_3 = A
+frezovani_vv_po_c_4 = A
+
+* HloubkoveFrezovaniPoProkovuS *
+frezovani_vv_po_s_1 = A
+frezovani_vv_po_s_2 = A
+frezovani_vv_po_s_3 = A
+frezovani_vv_po_s_4 = A
+
+
+*** HLOUBKOVE FREZOVANI JADRA ***
+
+* FrezovaniJadraPredProkovemC *
+frezovani_jadra_pred_c_1 = A
+frezovani_jadra_pred_c_2 = A
+frezovani_jadra_pred_c_3 = A
+frezovani_jadra_pred_c_4 = A
+frezovani_jadra_pred_c_5 = A
+
+* FrezovaniJadraPredProkovemS *
+frezovani_jadra_pred_s_1 = A
+frezovani_jadra_pred_s_2 = A
+frezovani_jadra_pred_s_3 = A
+frezovani_jadra_pred_s_4 = A
+frezovani_jadra_pred_s_5 = A
+
+* FrezovaniJadraPoProkovuC *
+frezovani_jadra_po_c_1 = A
+frezovani_jadra_po_c_2 = A
+frezovani_jadra_po_c_3 = A
+frezovani_jadra_po_c_4 = A
+frezovani_jadra_po_c_5 = A
+
+* FrezovaniJadraPoProkovuS *
+frezovani_jadra_po_s_1 = A
+frezovani_jadra_po_s_2 = A
+frezovani_jadra_po_s_3 = A
+frezovani_jadra_po_s_4 = A
+frezovani_jadra_po_s_5 = A
+
+
+ 
+[Vrtani]
+
+* VrtaniSkrzPredProkovem *
+vrtani_pred=A
+stages_vrtani_pred = 0
+min_vrtak = 0
+min_vrtak_pomer = 0
+g_plocha_c = 0
+g_plocha_s = 0
+
+
+[VrtaniVV]
+
+*** VRTANI SKRZ PO LISOVANI ***
+
+* VrtaniPredProkovemC1 *
+slepe_vrtani_1c = A
+stages_slepe_vrtani_c_1 = 0
+min_vrtak_c_1 = 0
+min_vrtak_pomer_c_1 = 0
+
+* VrtaniPredProkovemC2 *
+slepe_vrtani_2c = A
+stages_slepe_vrtani_c_2 = 0
+min_vrtak_c_2 = 0
+min_vrtak_pomer_c_2 = 0
+
+* VrtaniPredProkovemC3 *
+slepe_vrtani_3c = A
+stages_slepe_vrtani_c_3 = 0
+min_vrtak_c_3 = 0
+min_vrtak_pomer_c_3 = 0
+
+* VrtaniPredProkovemC4 *
+slepe_vrtani_4c = A
+stages_slepe_vrtani_c_4 = 0
+min_vrtak_c_4 = 0
+min_vrtak_pomer_c_4 = 0
+
+
+* VrtaniPredProkovemS1 *
+slepe_vrtani_1s = A
+stages_slepe_vrtani_s_1 = 0
+min_vrtak_s_1 = 0
+min_vrtak_pomer_s_1 = 0
+
+* VrtaniPredProkovemS2 *
+slepe_vrtani_2s = A
+stages_slepe_vrtani_s_2 = 0
+min_vrtak_s_2 = 0
+min_vrtak_pomer_s_2 = 0
+
+* VrtaniPredProkovemS3 *
+slepe_vrtani_3s = A
+stages_slepe_vrtani_s_3 = 0
+min_vrtak_s_3 = 0
+min_vrtak_pomer_s_3 = 0
+
+* VrtaniPredProkovemS4 *
+slepe_vrtani_4s = A
+stages_slepe_vrtani_s_4 = 0
+min_vrtak_s_4 = 0
+min_vrtak_pomer_s_4 = 0
+
+
+*** SLEPE VRTANI PO LISOVANI  ***
+
+* SlepeVrtaniC1 *
+slepe_otvory_c_1 = A
+min_vrtak_sl_c_1 = 0
+min_vrtak_pomer_sl_c_1 = 0
+g_plocha_c_vv_1 = 0
+
+* SlepeVrtaniC2 *
+slepe_otvory_c_2 = A
+min_vrtak_sl_c_2 = 0
+min_vrtak_pomer_sl_c_2 = 0
+g_plocha_c_vv_2 = 0
+
+* SlepeVrtaniC3 *
+slepe_otvory_c_3 = A
+min_vrtak_sl_c_3 = 0
+min_vrtak_pomer_sl_c_3 = 0
+g_plocha_c_vv_3 = 0
+
+* SlepeVrtaniC4 *
+slepe_otvory_c_4 = A
+min_vrtak_sl_c_4 = 0
+min_vrtak_pomer_sl_c_4 = 0
+g_plocha_c_vv_4 = 0
+
+* SlepeVrtaniS1 *
+slepe_otvory_s_1 = A
+min_vrtak_sl_s_1 = 0
+min_vrtak_pomer_sl_s_1 = 0
+g_plocha_s_vv_1 = 0
+
+* SlepeVrtaniS2 *
+slepe_otvory_s_2 = A
+min_vrtak_sl_s_2 = 0
+min_vrtak_pomer_sl_s_2 = 0
+g_plocha_s_vv_2 = 0
+
+* SlepeVrtaniS3 *
+slepe_otvory_s_3 = A
+min_vrtak_sl_s_3 = 0
+min_vrtak_pomer_sl_s_3 = 0
+g_plocha_s_vv_3 = 0
+
+* SlepeVrtaniS4 *
+slepe_otvory_s_4 = A
+min_vrtak_sl_s_4 = 0
+min_vrtak_pomer_sl_s_4 = 0
+g_plocha_s_vv_4 = 0D
+
+
+*** VRTANI JADRA POSLE CISLA JADRA  ***
+
+* VrtaniJadra1 *
+vrtani_1 = A
+stages_vrtani_1 = N
+min_vrtak_1 = 0
+min_vrtak_pomer_1 = 0
+poznamka_1 = 
+g_plocha_c_1 = 0
+g_plocha_s_1 = 0
+
+* VrtaniJadra2 *
+vrtani_2 = A
+stages_vrtani_2 = N
+min_vrtak_2 = 0
+min_vrtak_pomer_2 = 0
+poznamka_2 = 
+g_plocha_c_2 = 0
+g_plocha_s_2 = 0
+
+* VrtaniJadra3 *
+vrtani_3 = A
+stages_vrtani_3 = N
+min_vrtak_3 = 0
+min_vrtak_pomer_3 = 0
+poznamka_3 = 
+g_plocha_c_3 = 0
+g_plocha_s_3 = 0
+
+* VrtaniJadra4 *
+vrtani_4 = A
+stages_vrtani_4 = N
+min_vrtak_4 = 0
+min_vrtak_pomer_4 = 0
+poznamka_4 = 
+g_plocha_c_4 = 0
+g_plocha_s_4 = 0
+
+* VrtaniJadra5 *
+vrtani_5 = A
+stages_vrtani_5 = N
+min_vrtak_5 = 0
+min_vrtak_pomer_5 = 0
+poznamka_5 = 
+g_plocha_c_5 = 0
+g_plocha_s_5 = 0
+
+
+
+complete=1
