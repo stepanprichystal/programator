@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w
 #############################################################################
-## Name:        bin/wxperl_demo.pl
+## Name:        bin/wxperl_demo.pfl
 ## Purpose:     main wxPerl demo driver script
 ## Author:      Mattia Barbon
 ## Modified by:
