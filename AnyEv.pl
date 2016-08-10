@@ -1,4 +1,4 @@
-<<<<<<< HEAD
+<<<<<<< HEAD2
 Ahojddd1
 
 Zmena branch exporter3
