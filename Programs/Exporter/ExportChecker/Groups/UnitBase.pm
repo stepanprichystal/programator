@@ -47,7 +47,7 @@ sub InitDataMngr {
 	}
 	else {
 
-		$self->{"dataMngr"}->PrepareGroupData();
+		 $self->{"dataMngr"}->PrepareGroupData(); 
 	}
 }
 

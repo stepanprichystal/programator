@@ -26,6 +26,7 @@ use aliased 'Programs::Exporter::ExportChecker::Groups::GroupDataMngr';
 use aliased 'Programs::Exporter::ExportChecker::Groups::NifExport::Model::NifCheckData';
 use aliased 'Programs::Exporter::ExportChecker::Groups::NifExport::Model::NifPrepareData';
 use aliased 'Programs::Exporter::ExportChecker::Groups::NifExport::Model::NifExportData';
+use aliased 'Programs::Exporter::ExportChecker::Groups::NifExport::Model::NifGroupData';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -76,16 +77,16 @@ sub InitForm {
 sub RefreshGUI {
 	my $self = shift;
 
-	my $groupData->{"data"} = $self->{"dataMngr"}->GetGroupData();
+	my $groupData = $self->{"dataMngr"}->GetGroupData();
 
 	#refresh group form
-	$self->{"form"}->SetTenting( $groupData->{"tenting"} );
-	$self->{"form"}->SetMaska01( $groupData->{"maska01"} );
-	$self->{"form"}->SetPressfit( $groupData->{"pressfit"} );
-	$self->{"form"}->SetNotes( $groupData->{"notes"} );
-	$self->{"form"}->SetDatacode( $groupData->{"datacode"} );
-	$self->{"form"}->SetUlLogo( $groupData->{"ul_logo"} );
-	$self->{"form"}->SetJumpScoring( $groupData->{"prerusovana_drazka"} );
+	$self->{"form"}->SetTenting( $groupData->{"data"}->{"tenting"} );
+	$self->{"form"}->SetMaska01( $groupData->{"data"}->{"maska01"} );
+	$self->{"form"}->SetPressfit( $groupData->{"data"}->{"pressfit"} );
+	$self->{"form"}->SetNotes( $groupData->{"data"}->{"notes"} );
+	$self->{"form"}->SetDatacode( $groupData->{"data"}->{"datacode"} );
+	$self->{"form"}->SetUlLogo( $groupData->{"data"}->{"ul_logo"} );
+	$self->{"form"}->SetJumpScoring( $groupData->{"data"}->{"prerusovana_drazka"} );
 
 	#refresh wrapper
 	$self->_RefreshWrapper();

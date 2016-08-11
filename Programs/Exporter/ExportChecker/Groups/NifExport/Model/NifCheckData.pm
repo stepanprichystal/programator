@@ -37,7 +37,7 @@ sub OnCheckGroupData{
 	my $self = shift;
 	my $dataMngr = shift;	#instance of GroupDataMngr
 
-	my %groupData = $dataMngr->GetGroupData();
+	my $groupData = $dataMngr->GetGroupData();
 	my $inCAM    = $dataMngr->{"inCAM"};
 	my $jobId    = $dataMngr->{"jobId"};
 	my $stepName = "panel";
@@ -51,17 +51,17 @@ sub OnCheckGroupData{
 
 	
 	#datacode
-	my $datacodeLayer = $self->__GetDataCode($jobId, \%groupData);
+	my $datacodeLayer = $self->__GetDataCode($jobId, $groupData);
 
 	unless ( defined $datacodeLayer ) {
-		$dataMngr->_AddErrorResult("Data code", "Nesedi zadany datacode v heliosu s datacodem v exportu.");
+		$dataMngr->_AddErrorResult("Data code", "Nesedí zadaný datacode v heliosu s datacodem v exportu.");
 	}
 
 	#datacode
-	my $ulLogoLayer = $self->__GetUlLogo($jobId, \%groupData);
+	my $ulLogoLayer = $self->__GetUlLogo($jobId, $groupData);
 
 	unless ( defined $ulLogoLayer ) {
-		$dataMngr->_AddErrorResult("Ul logo", "Nesedi zadane Ul logo v heliosu s datacodem v exportu.");
+		$dataMngr->_AddErrorResult("Ul logo", "Nesedí zadané Ul logo v heliosu s datacodem v exportu.");
 	}
 	
 	#mask
@@ -72,11 +72,11 @@ sub OnCheckGroupData{
 
 	if ( $masks{"top"} != $topMaskExist ) {
 		
-		$dataMngr->_AddErrorResult("Maska TOP", "Nesedi maska top v datech a v heliosu");
+		$dataMngr->_AddErrorResult("Maska TOP", "Nesedí maska top v datech a v heliosu");
 	}
 	if ( $masks{"bot"} != $botMaskExist ) {
 		
-		$dataMngr->_AddErrorResult("Maska BOT", "Nesedi maska bot v datech a v heliosu");
+		$dataMngr->_AddErrorResult("Maska BOT", "Nesedí maska bot v datech a v heliosu");
 	}
 
 	#silk
@@ -87,12 +87,12 @@ sub OnCheckGroupData{
 
 	if ( $silk{"top"} != $topSilkExist ) {
 		
-		$dataMngr->_AddErrorResult("Potisk TOP","Nesedi potisk top v datech a v heliosu");
+		$dataMngr->_AddErrorResult("Potisk TOP","Nesedí potisk top v datech a v heliosu");
 		
 	}
 	if ( $silk{"bot"} != $botSilkExist ) {
 		
-		$dataMngr->_AddErrorResult("Potisk BOT","Nesedi potisk bot v datech a v heliosu");
+		$dataMngr->_AddErrorResult("Potisk BOT","Nesedí potisk bot v datech a v heliosu");
 
 	}
 }
@@ -106,7 +106,7 @@ sub __GetDataCode {
 	my $groupData = shift;
 
 	my $layerIS     = HegMethods->GetDatacodeLayer($jobId);
-	my $layerExport = $groupData->{"datacode"};
+	my $layerExport = $groupData->GetDatacode();
 	
 	return  $self->__CheckMarkingLayer($layerExport, $layerIS);
 }
@@ -118,7 +118,7 @@ sub __GetUlLogo {
 	my $groupData = shift;
 
 	my $layerIS     = HegMethods->GetUlLogoLayer($jobId);
-	my $layerExport = $groupData->{"ul_logo"};
+	my $layerExport = $groupData->GetUlLogo();
 	
 	return  $self->__CheckMarkingLayer($layerExport, $layerIS);
 } 

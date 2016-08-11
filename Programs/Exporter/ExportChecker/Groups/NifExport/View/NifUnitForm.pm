@@ -131,7 +131,7 @@ sub __SetLayout {
 	
 	
 	
-	my $richTxt = Wx::RichTextCtrl->new( $self, -1, 'Poznamka', &Wx::wxDefaultPosition, [100, 250], &Wx::wxRE_MULTILINE |  &Wx::wxWANTS_CHARS );
+	my $richTxt = Wx::RichTextCtrl->new( $self, -1, 'Poznamka', &Wx::wxDefaultPosition, [100, 120], &Wx::wxRE_MULTILINE |  &Wx::wxWANTS_CHARS );
 	$richTxt->SetEditable(1);
 	#$richTxt->SetSize( [ 100, 200 ] );
 	$richTxt->SetBackgroundColour($Widgets::Style::clrWhite);

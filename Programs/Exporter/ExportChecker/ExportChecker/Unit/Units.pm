@@ -29,15 +29,14 @@ sub new {
 	return $self;    # Return the reference to the hash.
 }
 
-
-sub Init{
+sub Init {
 	my $self = shift;
-	
+
 	#my $parent = shift;
 	my @units = @{ shift(@_) };
- 
-	$self->{"units"} = \@units;	
-	
+
+	$self->{"units"} = \@units;
+
 }
 
 sub InitDataMngr {
@@ -48,17 +47,22 @@ sub InitDataMngr {
 	#case when group data are taken from disc
 	if ($storedDataMngr) {
 		
+		unless ( $storedDataMngr->ExistGroupData() ) {
+			return 0;
+		}
+
 		foreach my $unit ( @{ $self->{"units"} } ) {
 
 			my $storedData = $storedDataMngr->GetDataByUnit($unit);
 			$unit->InitDataMngr( $inCAM, $storedData );
 		}
 	}
+
 	#case, when "default" data for group are loaded
 	else {
 
 		foreach my $unit ( @{ $self->{"units"} } ) {
-			
+
 			$unit->InitDataMngr($inCAM);
 		}
 
@@ -84,6 +88,7 @@ sub CheckBeforeExport {
 		$self->{"onCheckEvent"}->Do( "start", \%info );
 
 		my $succes = $unit->CheckBeforeExport( $inCAM, \$resultMngr );
+
 		#unless ($succes) {
 		#	$totalRes = 0;
 		#}
@@ -98,12 +103,13 @@ sub CheckBeforeExport {
 }
 
 sub RefreshGUI {
-	my $self  = shift;
-	my $inCAM = shift;
+	my $self = shift;
+
+	#my $inCAM = shift;
 
 	foreach my $unit ( @{ $self->{"units"} } ) {
 
-		$unit->RefreshGUI($inCAM);
+		$unit->RefreshGUI();
 	}
 
 }
@@ -124,8 +130,9 @@ sub GetGroupData {
 
 	foreach my $unit ( @{ $self->{"units"} } ) {
 
-		my %data = $unit->GetGroupData();
-		$groupData{ $unit->{"unitId"} } = \%data;
+		my $groupData = $unit->GetGroupData();
+		my %hashData  = %{ $groupData->{"data"} };
+		$groupData{ $unit->{"unitId"} } = \%hashData;
 	}
 
 	return %groupData;

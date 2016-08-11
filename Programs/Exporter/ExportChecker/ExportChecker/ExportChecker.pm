@@ -119,6 +119,8 @@ sub __Init {
 	$self->{"units"}->InitDataMngr( $self->{"inCAM"} );
 	
 	$self->{"units"}->RefreshGUI();
+	
+	$self->{"form"}->SetLoadLastBtn($self->{"storageMngr"}->ExistGroupData());
 
 }
 
@@ -235,16 +237,21 @@ sub __UncheckAllHandler {
 
 sub __LoadLastHandler {
 	my $self = shift;
-
+	
+	# Load/get saved group data
 	$self->{"units"}->InitDataMngr( $self->{"inCAM"} , $self->{"storageMngr"});
+	# Refresh loaded data in group form
+ 	$self->{"units"}->RefreshGUI();
 
 }
 
 sub __LoadDefaultHandler {
 	my $self = shift;
 	
-	 
- 
+
+ 	$self->{"units"}->InitDataMngr( $self->{"inCAM"});
+ 	# Refresh loaded data in group form
+ 	$self->{"units"}->RefreshGUI();
 }
 
 # ================================================================================
@@ -254,6 +261,8 @@ sub __LoadDefaultHandler {
 	my $self = shift;
 
 	$self->{"form"}->DisableForm(0);
+	$self->{"form"}->SetLoadLastBtn($self->{"storageMngr"}->ExistGroupData());
+	
 
 	$self->__CleanUpAndExitForm();
 
@@ -277,6 +286,7 @@ sub __OnResultPopupHandler {
 	}
 
 	$self->{"form"}->DisableForm(0);
+	$self->{"form"}->SetLoadLastBtn($self->{"storageMngr"}->ExistGroupData());
 
 }
 

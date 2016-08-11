@@ -22,7 +22,7 @@ use Class::Interface;
 
 # Methods
 
-sub GetData;
+#sub GetData;
 
 
 1;
