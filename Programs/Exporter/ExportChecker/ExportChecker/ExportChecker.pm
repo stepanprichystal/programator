@@ -102,7 +102,7 @@ sub __Init {
 	# Build phyisic table with groups, which has completely set GUI
 	#my $groupBuilder = $self->{"form"}->GetGroupBuilder();
 	#$groupBuilder->Build( $self->{"groupTables"}, $self->{"inCAM"} );
-	$self->{"form"}->BuildGroupTableForm( $self->{"groupTables"} );
+	$self->{"form"}->BuildGroupTableForm( $self->{"groupTables"}, $self->{"inCAM"});
 
 	# 2) Initialization of each single group
 
@@ -150,7 +150,7 @@ sub __ExportSyncFormHandler {
 
 	#use Win32::OLE;
 	my $typeOfPcb = HegMethods->GetTypeOfPcb( $self->{"jobId"} );
-	my $typeOfPcb = HegMethods->GetTypeOfPcb( $self->{"jobId"} );
+	#my $typeOfPcb = HegMethods->GetTypeOfPcb( $self->{"jobId"} );
 	$self->__CheckBeforeExport();
 }
 

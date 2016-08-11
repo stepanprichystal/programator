@@ -25,57 +25,57 @@ sub new {
 	bless $self;
 
 	my %exportData = ();
-	$self->{"data"} = \%exportData;
+	#$self = \%exportData;
 
 	return $self;    # Return the reference to the hash.
 }
 
 sub GetData {
 	my $self = shift;
-	#my %data = %{ $self->{"data"} };
-	return %{ $self->{"data"} };
+	#my %data = %{ $self };
+	return %{ $self };
 }
 
 sub SetTenting {
 	my $self  = shift;
 	my $value = shift;
-	$self->{"data"}->{"tenting"} = $value;
+	$self->{"tenting"} = $value;
 }
 
 sub SetMaska01 {
 	my $self  = shift;
 	my $value = shift;
-	$self->{"data"}->{"maska01"} = $value;
+	$self->{"maska01"} = $value;
 }
 
 sub SetPressfit {
 	my $self  = shift;
 	my $value = shift;
-	$self->{"data"}->{"pressfit"} = $value;
+	$self->{"pressfit"} = $value;
 }
 
 sub SetNotes {
 	my $self  = shift;
 	my $value = shift;
-	$self->{"data"}->{"notes"} = $value;
+	$self->{"notes"} = $value;
 }
 
 sub SetDatacode {
 	my $self  = shift;
 	my $value = shift;
-	$self->{"data"}->{"datacode"} = $value;
+	$self->{"datacode"} = $value;
 }
 
 sub SetUlLogo {
 	my $self  = shift;
 	my $value = shift;
-	$self->{"data"}->{"ul_logo"} = $value;
+	$self->{"ul_logo"} = $value;
 }
 
 sub SetJumpScoring {
 	my $self  = shift;
 	my $value = shift;
-	$self->{"data"}->{"prerusovana_drazka"} = $value;
+	$self->{"prerusovana_drazka"} = $value;
 }
 
 

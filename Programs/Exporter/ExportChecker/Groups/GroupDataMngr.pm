@@ -137,10 +137,7 @@ sub GetGroupData {
 	my $self    = shift;
 	my $groupData = $self->{"groupData"};
 
-	if ($groupData) {
-
-		return  $groupData->GetData() ;
-	}
+	return $groupData;
 }
 
 sub _AddErrorResult {

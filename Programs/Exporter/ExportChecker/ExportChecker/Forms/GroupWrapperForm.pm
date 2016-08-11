@@ -26,7 +26,7 @@ sub new {
 
 	bless($self);
 
-	$self->{"state"} = Enums->GroupState_DISABLE;
+	$self->{"state"} = Enums->GroupState_ACTIVEON;
 
 	$self->__SetLayout();
 

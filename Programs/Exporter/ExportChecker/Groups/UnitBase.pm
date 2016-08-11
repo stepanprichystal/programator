@@ -85,13 +85,8 @@ sub _RefreshWrapper {
 
 }
 
-sub GetGroupData {
 
-	my $self = shift;
 
-	return $self->{"dataMngr"}->GetGroupData();
-
-}
 
 sub GetExportData {
 	my $self = shift;

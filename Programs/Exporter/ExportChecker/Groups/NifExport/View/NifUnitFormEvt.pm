@@ -1,20 +1,17 @@
-
 #-------------------------------------------------------------------------------------------#
-# Description: This class is responsible for prepare:
-# - default "dataset" (groupData) for displaying them in GUI. Handler: OnPrepareGroupData
-# - decide, if group will be active in GUI. Handler: OnIsGroupAllowed
+# Description: This class is responsible for:
+# - Checking group data before final export. Handler: OnCheckGroupData
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Programs::Exporter::ExportChecker::Groups::NifExport::Model::NifPrepareData;
-
+package Programs::Exporter::ExportChecker::Groups::NifExport::View::NifUnitFormEvt;
 
 #3th party library
 use strict;
 use warnings;
 
-
 #local library
-use aliased 'Programs::Exporter::ExportChecker::Groups::NifExport::Model::NifGroupData';
+use aliased 'Programs::Exporter::ExportChecker::Groups::Enums';
+use aliased 'Packages::Events::Event';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -23,46 +20,26 @@ use aliased 'Programs::Exporter::ExportChecker::Groups::NifExport::Model::NifGro
 sub new {
 	my $class = shift;
 	my $self  = {};
+
+	$self = $class->SUPER::new(@_);
 	bless $self;
 
-	return $self;    # Return the reference to the hash.
+	my $frm = $self->{"form"};
+
+	
+
+
+
+	# Provided handlers
+
+
+	# Provided events
+	
+	$self->_AddEvent( $frm->{'onTentingChange'}, Enums->Event_nif_tenting );
+
+	return $self;
 }
 
-# This method decide, if group will be "active"
-# This if will be enabled in GUI
-sub OnIsGroupAllowed{
-	my $self = shift;
-	my $dataMngr = shift;	#instance of GroupDataMngr
- 
- 
- 
-	return 1;
-
-}
-
-# Default "group data" are prepared in this method
-sub OnPrepareGroupData{
-	my $self = shift;
-	my $dataMngr = shift;	#instance of GroupDataMngr
-	
-	
-	my $groupData = NifGroupData->new();
- 
-		$groupData->SetTenting( 1 );
-		$groupData->SetMaska01( 1 );
-		$groupData->SetPressfit( 1 );
-		$groupData->SetNotes( "dsdsdsd" );
-		$groupData->SetDatacode( "MC");
-		$groupData->SetUlLogo( "MS" );
-		$groupData->SetJumpScoring( 1);
-	
-	
-	return $groupData;
-	
- 
-}
-
- 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#
