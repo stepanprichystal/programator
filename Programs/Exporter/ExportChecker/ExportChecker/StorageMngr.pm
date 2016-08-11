@@ -25,7 +25,7 @@ sub new {
 
 	$self->{"jobId"}     = shift;
 	$self->{"units"}     = shift;
-	$self->{"groupData"} = undef;
+	$self->{"hashGroupData"} = undef; #serialized group data file
 
 	$self->{"groupDataFile"} = EnumsPaths->Client_INCAMTMPSCRIPTS . $self->{"jobId"} . "_groupData";
 
@@ -41,14 +41,14 @@ sub ExistGroupData {
 	my $dataExist = 0;
 
 	# test if exist in memory
-	if ( !defined $self->{"groupData"} ) {
+	if ( !defined $self->{"hashGroupData"} ) {
 
 		# test if exist on disc
 		if ( -e $self->{"groupDataFile"} ) {
 
 			my $serializeData = FileHelper->ReadAsString( $self->{"groupDataFile"} );
 			my $groupData     = decode_json($serializeData);
-			$self->{"groupData"} = $groupData;
+			$self->{"hashGroupData"} = $groupData;
 
 			$dataExist =  1;
 		}
@@ -67,14 +67,14 @@ sub GetDataByUnit {
 	my $self = shift;
 	my $unit = shift;
 
-	unless ( $self->{"groupData"} ) {
+	unless ( $self->{"hashGroupData"} ) {
 		return 0;
 	}
 
 	my $id        = $unit->{"unitId"};
-	my %allGroupData = %{ $self->{"groupData"} };
+	my %hashGroupData = %{ $self->{"hashGroupData"} };
 	 
-	my %data = %{ $allGroupData{$id} };
+	my %data = %{ $hashGroupData{$id} };
 	
 	# Get information about package name
 	my $packageName = $data{"__PACKAGE__"};
@@ -90,7 +90,7 @@ sub SaveGroupData {
 	my $self = shift;
 
 	# get actual group data from all units
-	my %allGroupData = ();
+	my %hashGroupData = ();
 	
 	my @units = @{$self->{"units"}->{"units"}};
 	
@@ -104,20 +104,14 @@ sub SaveGroupData {
 		my %hashData  = %{ $groupData->{"data"} };
 		$hashData{"__PACKAGE__"} = $packageName;
 		
-		$allGroupData{ $unit->{"unitId"} } = \%hashData;
+		$hashGroupData{ $unit->{"unitId"} } = \%hashData;
 	}
 	
-	$self->{"groupData"} = \%allGroupData;
-
-	#my %groupData = $self->{"units"}->GetGroupData();
-
-	#my $perl_scalar = \%groupData;
+	$self->{"hashGroupData"} = \%hashGroupData;
 
 	my $json = JSON->new();
 
-	my $serializedData = $json->pretty->encode( \%allGroupData );
-
-	#my $serializedData   =  $json->encode_json($self->{"groupData"} );
+	my $serializedData = $json->pretty->encode( \%hashGroupData );
 
 	#delete old file
 	unlink $self->{"groupDataFile"};
@@ -129,18 +123,9 @@ sub SaveGroupData {
 	open( my $f, '>', $self->{"groupDataFile"} );
 	print $f $serializedData;
 	close $f;
-
 }
 
-sub AddData {
-	my $self = shift;
-	my $unit = shift;
-	my $data = shift;
-
-	my $id = $unit->{"unitId"};
-	$self->{"groupData"}->{$id} = $data;
-
-}
+ 
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
