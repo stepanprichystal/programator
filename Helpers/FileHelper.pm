@@ -183,12 +183,12 @@ sub DeleteTempFiles {
 
 	#my $tempPath = File::Spec->rel2abs(  dirname(dirname( __FILE__ )))."/Temp";
 
-	opendir( DIR, GeneralHelper->Root() . '/Temp/' ) or die $!;
+	opendir( DIR, EnumsPaths->Client_INCAMTMPOTHER ) or die $!;
 	my $age = 10;    # 3600 seconds in a day
 
 	while ( my $file = readdir(DIR) ) {
 
-		$file = GeneralHelper->Root() . '/Temp/' . $file;
+		$file = EnumsPaths->Client_INCAMTMPOTHER  . $file;
 
 		#get file attributes
 		my @stats = stat($file);
@@ -228,7 +228,7 @@ sub DeleteTempFilesFrom {
 
 		while ( my $file = readdir(DIR) ) {
 
-			$file = GeneralHelper->Root() . '/Temp/' . $file;
+			$file = EnumsPaths->Client_INCAMTMPOTHER . $file;
 
 			#get file attributes
 			my @stats = stat($file);
@@ -263,7 +263,7 @@ sub RemoveNonPrintableChar {
 	my $fName = GeneralHelper->GetGUID();
 
 	open my $IN, "<$p" or die $!;
-	open my $OUT, '>' . GeneralHelper->Root() .. '/Temp/' . $fName or die $!;
+	open my $OUT, '>' . EnumsPaths->Client_INCAMTMPOTHER  . $fName or die $!;
 
 	while ( my $l = <$IN> ) {
 		$l =~ s/[^[:print:]]+//g;
@@ -314,7 +314,7 @@ sub ChangeEncoding {
 	my $fName = GeneralHelper->GetGUID();
 
 	open my $IN, "<:encoding($encFrom)", $p or die $!;
-	open my $OUT, ">:$encTo", GeneralHelper->Root() . '/Temp/' . $fName or die $!;
+	open my $OUT, ">:$encTo", EnumsPaths->Client_INCAMTMPOTHER . $fName or die $!;
 	print $OUT $_ while <$IN>;
 	close $OUT;
 
@@ -331,7 +331,7 @@ sub CreateBackup {
 	}
 
 	my $bckName = GeneralHelper->GetGUID();
-	my $newPath = GeneralHelper->Root() . '/Temp/' . $bckName;
+	my $newPath = EnumsPaths->Client_INCAMTMPOTHER . $bckName;
 	if ( FileHelper->Copy( $pSource, $newPath ) ) {
 		return $bckName;
 	}

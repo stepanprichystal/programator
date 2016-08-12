@@ -8,7 +8,11 @@ use constant {
     Client_ELTESTS => "c:\\Boards\\",
     Client_MULTICALDB => "c:\\Program Files (x86)\\Multical5-1\\ml.xml",
     Client_INCAMTMP => "c:\\tmp\\InCam\\",
+ 	
+ 	# Paths for log
     Client_INCAMTMPNC => "c:\\tmp\\InCam\\scripts\\nc_export\\",
+    Client_INCAMTMPCHECKER => "c:\\tmp\\InCam\\scripts\\export_checker\\",
+    Client_INCAMTMPOTHER => "c:\\tmp\\InCam\\scripts\\other\\",
     Client_INCAMTMPSCRIPTS => "c:\\tmp\\InCam\\scripts\\",
     
 

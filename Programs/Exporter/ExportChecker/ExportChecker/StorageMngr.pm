@@ -27,7 +27,7 @@ sub new {
 	$self->{"units"}     = shift;
 	$self->{"hashGroupData"} = undef; #serialized group data file
 
-	$self->{"groupDataFile"} = EnumsPaths->Client_INCAMTMPSCRIPTS . $self->{"jobId"} . "_groupData";
+	$self->{"groupDataFile"} = EnumsPaths->Client_INCAMTMPCHECKER . $self->{"jobId"} . "_groupData";
 
 	FileHelper->DeleteScriptTmpFiles();
 
@@ -116,8 +116,8 @@ sub SaveGroupData {
 	#delete old file
 	unlink $self->{"groupDataFile"};
 
-	unless ( -e EnumsPaths->Client_INCAMTMPSCRIPTS ) {
-		mkdir( EnumsPaths->Client_INCAMTMPSCRIPTS ) or die "Can't create dir: " . EnumsPaths->Client_INCAMTMPSCRIPTS . $_;
+	unless ( -e EnumsPaths->Client_INCAMTMPCHECKER ) {
+		mkdir( EnumsPaths->Client_INCAMTMPCHECKER ) or die "Can't create dir: " . EnumsPaths->Client_INCAMTMPCHECKER . $_;
 	}
 
 	open( my $f, '>', $self->{"groupDataFile"} );

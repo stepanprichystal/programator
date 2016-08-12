@@ -42,6 +42,7 @@ sub new {
 	#uique key within all units
 	$self->{"unitId"} = "nifUnit";
 
+	# init class for model
 	my $checkData   = NifCheckData->new();
 	my $prepareData = NifPrepareData->new();
 	my $exportData  = NifExportData->new();
@@ -71,8 +72,6 @@ sub InitForm {
 	my $parent = $groupWrapper->GetParentForGroup();
 	$self->{"form"} = NifUnitForm->new( $parent, $inCAM, $self->{"jobId"}, $self->{"title"} );
 }
-
-
 
 sub RefreshGUI {
 	my $self = shift;
