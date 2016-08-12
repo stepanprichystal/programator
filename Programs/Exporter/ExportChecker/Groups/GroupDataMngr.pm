@@ -76,16 +76,16 @@ sub PrepareGroupData {
 
 }
 
-sub IsGroupAllowed {
+sub GetGroupState {
 	my $self  = shift;
 
-	if ( $self->{"prepareData"}->can("OnIsGroupAllowed") ) {
+	if ( $self->{"prepareData"}->can("OnGetGroupState") ) {
 
-		return $self->{"prepareData"}->OnIsGroupAllowed($self);
+		return $self->{"prepareData"}->OnGetGroupState($self);
 
 	}
 	else {
-		die "PrepareData.pm has to implemetn OnIsGroupAllowed method.";
+		die "PrepareData.pm has to implemetn OnGetGroupState method.";
 	}
 
 }

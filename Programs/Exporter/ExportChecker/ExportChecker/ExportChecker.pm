@@ -65,7 +65,7 @@ sub new {
 	$self->{"form"} = ExportCheckerForm->new( -1, $self->{"jobId"}, $self->{"inCAM"} );
 
 	# Class whin manage popup form for checking
-	$self->{"exportPopup"} = ExportPopup->new($self->{"jobId"});
+	$self->{"exportPopup"} = ExportPopup->new( $self->{"jobId"} );
 
 	# Keep structure of groups on tabs
 	$self->{"groupTables"} = GroupTables->new();
@@ -74,7 +74,7 @@ sub new {
 	$self->{"units"} = Units->new();
 
 	# Manage group date (store/load group data from/to disc)
-	$self->{"storageMngr"} =  StorageMngr->new( $self->{"jobId"}, $self->{"units"} );
+	$self->{"storageMngr"} = StorageMngr->new( $self->{"jobId"}, $self->{"units"} );
 
 	$self->__Connect( $serverPort, $serverPid );
 	$self->__Init();
@@ -88,21 +88,17 @@ sub __Init {
 
 	# 1) Initialization of whole export app
 
-	#set handlers for main app form
-	$self->__SetHandlers();
-
 	# Keep structure of groups
 	$self->__DefineTableGroups();
 
 	# Save all references of groups
 	my @cells = $self->{"groupTables"}->GetAllUnits();
-	$self->{"units"}->Init(\@cells);   
- 
- 
+	$self->{"units"}->Init( \@cells );
+
 	# Build phyisic table with groups, which has completely set GUI
 	#my $groupBuilder = $self->{"form"}->GetGroupBuilder();
 	#$groupBuilder->Build( $self->{"groupTables"}, $self->{"inCAM"} );
-	$self->{"form"}->BuildGroupTableForm( $self->{"groupTables"}, $self->{"inCAM"});
+	$self->{"form"}->BuildGroupTableForm( $self->{"groupTables"}, $self->{"inCAM"} );
 
 	# 2) Initialization of each single group
 
@@ -117,10 +113,13 @@ sub __Init {
 	#7) GetGroupData()
 
 	$self->{"units"}->InitDataMngr( $self->{"inCAM"} );
-	
+
 	$self->{"units"}->RefreshGUI();
-	
-	$self->{"form"}->SetLoadLastBtn($self->{"storageMngr"}->ExistGroupData());
+
+	$self->__RefreshForm();
+
+	#set handlers for main app form
+	$self->__SetHandlers();
 
 }
 
@@ -152,6 +151,7 @@ sub __ExportSyncFormHandler {
 
 	#use Win32::OLE;
 	my $typeOfPcb = HegMethods->GetTypeOfPcb( $self->{"jobId"} );
+
 	#my $typeOfPcb = HegMethods->GetTypeOfPcb( $self->{"jobId"} );
 	$self->__CheckBeforeExport();
 }
@@ -172,19 +172,19 @@ sub __OnCloseFormHandler {
 
 }
 
- 
 sub __CheckBeforeExport {
 	my $self = shift;
 
 	#disable from during checking
-	$self->{"form"}->DisableForm(1);
+	$self->{"disableForm"} = 1;
+	$self->__RefreshForm();
 
 	my $client = $self->{"client"};
 	my $inCAM  = $self->{"inCAM"};
 
 	#get all gorup data and save them to disc
 	$self->{"storageMngr"}->SaveGroupData();
-	
+
 	#test if client is connected
 	#if so, disconnect, because child porcess has to connect to server itself
 	if ( $client->IsConnected() ) {
@@ -194,13 +194,11 @@ sub __CheckBeforeExport {
 	}
 	my $serverPort = $client->ServerPort();
 
- 	#init and run checking form
-	$self->{"exportPopup"}->Init($self->{"units"}, $self->{"form"});
+	#init and run checking form
+	$self->{"exportPopup"}->Init( $self->{"units"}, $self->{"form"} );
 	$self->{"exportPopup"}->CheckBeforeExport($serverPort);
- 
-}
 
- 
+}
 
 sub __CleanUpAndExitForm {
 	my ($self) = @_;
@@ -237,32 +235,43 @@ sub __UncheckAllHandler {
 
 sub __LoadLastHandler {
 	my $self = shift;
-	
+
 	# Load/get saved group data
-	$self->{"units"}->InitDataMngr( $self->{"inCAM"} , $self->{"storageMngr"});
+	$self->{"units"}->InitDataMngr( $self->{"inCAM"}, $self->{"storageMngr"} );
+
 	# Refresh loaded data in group form
- 	$self->{"units"}->RefreshGUI();
+	$self->{"units"}->RefreshGUI();
 
 }
 
 sub __LoadDefaultHandler {
 	my $self = shift;
-	
 
- 	$self->{"units"}->InitDataMngr( $self->{"inCAM"});
- 	# Refresh loaded data in group form
- 	$self->{"units"}->RefreshGUI();
+	$self->{"units"}->InitDataMngr( $self->{"inCAM"} );
+
+	# Refresh loaded data in group form
+	$self->{"units"}->RefreshGUI();
+}
+
+sub __OnGroupChangeState {
+	my $self = shift;
+	my $unit = shift;
+
+	print STDERR "Unif " . $unit->{"unitId"} . " change state: " . $unit->GetGroupActualState() . "\n";
+	print STDERR "All units state: " . $self->{"units"}->GetGroupActualState() . "\n";
+	
+	$self->__RefreshForm();
+
 }
 
 # ================================================================================
 # EXPORT POPUP HANDLERS
 # ================================================================================
- sub __OnClosePopupHandler {
+sub __OnClosePopupHandler {
 	my $self = shift;
 
-	$self->{"form"}->DisableForm(0);
-	$self->{"form"}->SetLoadLastBtn($self->{"storageMngr"}->ExistGroupData());
-	
+	$self->{"disableForm"} = 0;
+	$self->__RefreshForm();
 
 	$self->__CleanUpAndExitForm();
 
@@ -285,14 +294,34 @@ sub __OnResultPopupHandler {
 
 	}
 
-	$self->{"form"}->DisableForm(0);
-	$self->{"form"}->SetLoadLastBtn($self->{"storageMngr"}->ExistGroupData());
-
+	$self->{"disableForm"} = 0;
+	$self->__RefreshForm();
 }
 
 # ================================================================================
 # PRIVATE METHODS
 # ================================================================================
+
+sub __RefreshForm {
+	my $self = shift;
+
+	# Disable/enable whole form
+	$self->{"form"}->DisableForm( $self->{"disableForm"} );
+
+	# Disable/enable button Load last button
+	$self->{"form"}->SetLoadLastBtn( $self->{"storageMngr"}->ExistGroupData() );
+
+	# Set export buttons
+	my $groupsState = $self->{"units"}->GetGroupActualState();
+
+	if ( $groupsState eq Enums->GroupState_ACTIVEOFF || $groupsState eq Enums->GroupState_DISABLE ) {
+		$self->{"form"}->DisableExportBtn(1);
+	}
+	else {
+		$self->{"form"}->DisableExportBtn(0);
+	}
+
+}
 
 sub __Connect {
 	my $self = shift;
@@ -325,18 +354,16 @@ sub __SetHandlers {
 	$self->{"form"}->{"onExportSync"}->Add( sub  { $self->__ExportSyncFormHandler(@_) } );
 	$self->{"form"}->{"onExportASync"}->Add( sub { $self->__ExportASyncFormHandler(@_) } );
 	$self->{"form"}->{"onClose"}->Add( sub       { $self->__OnCloseFormHandler(@_) } );
-
 	$self->{"form"}->{"onUncheckAll"}->Add( sub  { $self->__UncheckAllHandler(@_) } );
 	$self->{"form"}->{"onLoadLast"}->Add( sub    { $self->__LoadLastHandler(@_) } );
 	$self->{"form"}->{"onLoadDefault"}->Add( sub { $self->__LoadDefaultHandler(@_) } );
-	
-	
-	
-	$self->{"exportPopup"}->{"onResultEvt"}->Add( sub    { $self->__OnResultPopupHandler(@_) } );
-	$self->{"exportPopup"}->{'onClose'}->Add( sub        { $self->__OnClosePopupHandler(@_) } );
+
+	$self->{"exportPopup"}->{"onResultEvt"}->Add( sub { $self->__OnResultPopupHandler(@_) } );
+	$self->{"exportPopup"}->{'onClose'}->Add( sub     { $self->__OnClosePopupHandler(@_) } );
+
+	$self->{"units"}->SetGroupChangeHandler( sub { $self->__OnGroupChangeState(@_) } );
 
 }
- 
 
 sub __DefineTableGroups {
 	my $self = shift;

@@ -162,7 +162,7 @@ sub __GetStackupLayerInfo {
 	#else {
 	#
 	my $fname = FileHelper->ChangeEncoding( $stcFile, "cp1252", "utf8" );
-	$fStackupXml = FileHelper->Open( GeneralHelper->Root() . '/Temp/' . $fname );
+	$fStackupXml = FileHelper->Open( EnumsPaths->Client_INCAMTMPOTHER . $fname );
 
 	#}
 

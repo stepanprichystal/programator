@@ -2,7 +2,7 @@
 #-------------------------------------------------------------------------------------------#
 # Description: This class is responsible for prepare:
 # - default "dataset" (groupData) for displaying them in GUI. Handler: OnPrepareGroupData
-# - decide, if group will be active in GUI. Handler: OnIsGroupAllowed
+# - decide, if group will be active in GUI. Handler: OnGetGroupState
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Programs::Exporter::ExportChecker::Groups::NifExport::Model::NifPrepareData;
@@ -15,6 +15,7 @@ use warnings;
 
 #local library
 use aliased 'Programs::Exporter::ExportChecker::Groups::NifExport::Model::NifGroupData';
+use aliased 'Programs::Exporter::ExportChecker::Enums';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -28,15 +29,15 @@ sub new {
 	return $self;    # Return the reference to the hash.
 }
 
-# This method decide, if group will be "active"
-# This if will be enabled in GUI
-sub OnIsGroupAllowed{
+# This method decide, if group will be "active" or "passive"
+# If active, decide if group will be switched ON/OFF
+# Return enum: Enums->GroupState_xxx
+sub OnGetGroupState{
 	my $self = shift;
 	my $dataMngr = shift;	#instance of GroupDataMngr
  
- 
- 
-	return 1;
+ 	#we want nif group allow always, so return ACTIVE ON
+	return Enums->GroupState_ACTIVEON;
 
 }
 

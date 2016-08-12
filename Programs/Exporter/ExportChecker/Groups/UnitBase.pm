@@ -14,6 +14,7 @@ use warnings;
 
 #local library
 use aliased 'Programs::Exporter::ExportChecker::Enums';
+use aliased 'Packages::Events::Event';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -29,8 +30,12 @@ sub new {
 
 	$self->{"groupWrapper"} = undef;    #wrapper, which form is placed in
 	$self->{"form"}         = undef;    #form which represent GUI of this group
-	$self->{"active"}       = undef;    # tell if group will be visibel/active
+	#$self->{"active"}       = undef;    # tell if group will be visibel/active
 	$self->{"dataMngr"}     = undef;    # manager, which is responsible for create, update group data
+
+	# Events
+
+	$self->{"onChangeState"} = Event->new();
 
 	return $self;
 }
@@ -39,7 +44,7 @@ sub InitDataMngr {
 	my $self       = shift;
 	my $inCAM      = shift;
 	my $storedData = shift;
-	
+
 	$self->{"dataMngr"}->{"inCAM"} = $inCAM;
 
 	if ($storedData) {
@@ -47,7 +52,7 @@ sub InitDataMngr {
 	}
 	else {
 
-		 $self->{"dataMngr"}->PrepareGroupData(); 
+		$self->{"dataMngr"}->PrepareGroupData();
 	}
 }
 
@@ -71,27 +76,37 @@ sub _RefreshWrapper {
 	my $self  = shift;
 	my $inCAM = shift;
 
-	my $isAllowed = $self->{"dataMngr"}->IsGroupAllowed();
-
-	if ($isAllowed) {
-		$self->{"groupWrapper"}->SetState( Enums->GroupState_ACTIVEOFF );
-	}
-	else {
-		$self->{"groupWrapper"}->SetState( Enums->GroupState_DISABLE );
-	}
+	my $groupState = $self->GetGroupActualState();
+	$self->{"groupWrapper"}->SetState($groupState);
 
 	#refresh wrapper of form based on "group state"
 	$self->{"groupWrapper"}->Refresh();
 
 }
 
+sub GetGroupDefaultState {
+	my $self  = shift;
+	my $inCAM = shift;
 
+	my $groupState = $self->{"dataMngr"}->GetGroupState();
 
+	return $groupState;
+
+}
+
+sub GetGroupActualState {
+	my $self  = shift;
+	my $inCAM = shift;
+
+	my $groupState = $self->{"groupWrapper"}->GetState();
+
+	return $groupState;
+}
 
 sub GetExportData {
-	my $self = shift;
+	my $self  = shift;
 	my $inCAM = shift;
-	
+
 	# Necessery set new incam library
 	$self->{"dataMngr"}->{"inCAM"} = $inCAM;
 

@@ -32,6 +32,10 @@ sub InitDataMngr;
 # When group form is buiild, refresh controls based on default/group data
 #sub RefreshGUI;
 
+
+#sub GetGroupDefaultState;
+#sub GetGroupActualState;
+
 # Return group data, either default data or changed by user
 #sub GetGroupData;
 

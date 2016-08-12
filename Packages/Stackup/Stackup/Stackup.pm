@@ -238,7 +238,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	#
 	#	print $cuLayer->GetCopperName();
 
-	my $stackup2 = Stackup->new("f13608");
+	 
 
 	print 1;
 }

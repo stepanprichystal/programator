@@ -18,6 +18,7 @@ use Wx;
 
 #use aliased 'Programs::Exporter::ExportChecker::ExportChecker::Forms::ExportCheckerForm';
 use aliased 'Programs::Exporter::ExportChecker::ExportChecker::Forms::ExportPopupForm';
+
 #use aliased 'Programs::Exporter::ExportChecker::ExportChecker::Unit::Units';
 #
 #use aliased 'Programs::Exporter::ExportChecker::ExportChecker::GroupBuilder::StandardBuilder';
@@ -28,15 +29,18 @@ use aliased 'Programs::Exporter::ExportChecker::ExportChecker::Forms::ExportPopu
 #use aliased 'Programs::Exporter::ExportChecker::Server::Client';
 use aliased 'Packages::InCAM::InCAM';
 use aliased 'Programs::Exporter::ExportChecker::Enums';
+
 #use aliased 'Connectors::HeliosConnector::HegMethods';
 #
 #use aliased 'Programs::Exporter::ExportChecker::ExportChecker::StorageMngr';
 use aliased 'Packages::Events::Event';
+
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
 my $CHECKER_START_EVT : shared;
 my $CHECKER_END_EVT : shared;
+
 #my $CHECKER_FINISH_EVT : shared;
 my $THREAD_FORCEEXIT_EVT : shared;
 
@@ -54,46 +58,39 @@ sub new {
 	$self->{"inCAM"} = undef;
 
 	$self->{"units"} = undef;
-	
+
 	$self->{"parentForm"} = undef;
-	
-	#Events 	
-	$self->{"onResultEvt"}    = Event->new();
-	$self->{'onClose'}        = Event->new();
- 
+
+	#Events
+	$self->{"onResultEvt"} = Event->new();
+	$self->{'onClose'}     = Event->new();
+
 	return $self;
 }
- 
- 
-sub Init{
+
+sub Init {
 	my $self = shift;
-	
+
 	$self->{"units"} = shift;
-	
+
 	$self->{"parentForm"} = shift;
-	
+
 	# Main application form
-	$self->{"popup"} = ExportPopupForm->new( $self->{"parentForm"}->{"mainFrm"} , $self->{"jobId"} );
-	
+	$self->{"popup"} = ExportPopupForm->new( $self->{"parentForm"}->{"mainFrm"}, $self->{"jobId"} );
+
 	#set group count for popup form
-	$self->{"popup"}->SetGroupCnt( scalar( @{ $self->{"units"}->{"units"} } ) );
-	
+	$self->{"popup"}->SetGroupCnt( $self->{"units"}->GetActiveUnitsCnt() );
+
 	$self->__SetHandlers();
-	
+
 }
 
-
 sub CheckBeforeExport {
-	my $self = shift;
+	my $self       = shift;
 	my $serverPort = shift;
- 
-	#set group count for popup form
-	$self->{"popup"}->SetGroupCnt( scalar( @{ $self->{"units"}->{"units"} } ) );
 
- 	 
-	my $inCAM  = $self->{"inCAM"};
+	my $inCAM = $self->{"inCAM"};
 	$self->{"popup"}->ShowPopup();
-
 
 	#start new process, where check job before export
 	my $worker = threads->create( sub { $self->__CheckAsyncWorker( $self->{"jobId"}, $serverPort, $self->{"units"} ) } );
@@ -102,11 +99,9 @@ sub CheckBeforeExport {
 
 }
 
-
 # ================================================================================
 # PUBLIC METHOD
 # ================================================================================
-
 
 sub __CheckAsyncWorker {
 	my $self = shift;
@@ -135,7 +130,7 @@ sub __CheckAsyncWorker {
 
 	$units->{"onCheckEvent"}->Add( sub { $self->__OnCheckHandler(@_) } );
 
-	  $units->CheckBeforeExport($inCAM);
+	$units->CheckBeforeExport($inCAM);
 
 	#my %res : shared = ();
 	#$res{"result"} = $result;
@@ -162,6 +157,7 @@ sub __CleanUpAndExitThread {
 	Wx::PostEvent( $self->{"popup"}->{"mainFrm"}, $threvent );
 
 }
+
 # ================================================================================
 #  HANDLERS
 # ================================================================================
@@ -183,7 +179,6 @@ sub __OnStopPopupHandler {
 sub __OnClosePopupHandler {
 	my $self = shift;
 
-	
 	$self->{'onClose'}->Do();
 
 }
@@ -205,8 +200,7 @@ sub __OnResultPopupHandler {
 
 	}
 
-
-	 $self->{"onResultEvt"}->Do($resultType);
+	$self->{"onResultEvt"}->Do($resultType);
 
 }
 
@@ -282,12 +276,12 @@ sub __CheckerEndMessageHandler {
 #sub __CheckerFinishHandler {
 #	my ( $self, $frame, $event ) = @_;
 #
-#	
+#
 #
 #	my %d = %{ $event->GetData };
 #
 #	my $succes = $d{"result"};
-#	
+#
 #	print "\n\n HEREEE FINISH Checker: $succes\n\n";
 #
 #	if ($succes) {
@@ -356,8 +350,7 @@ sub __OnCheckHandler {
 # ================================================================================
 # PRIVATE METHODS
 # ================================================================================
- 
- 
+
 sub __SetHandlers {
 	my $self = shift;
 
@@ -382,7 +375,6 @@ sub __SetHandlers {
 	#Wx::Event::EVT_COMMAND( $self->{"popup"}->{"mainFrm"}, -1, $CHECKER_FINISH_EVT, sub { $self->__CheckerFinishHandler(@_) } );
 
 }
- 
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

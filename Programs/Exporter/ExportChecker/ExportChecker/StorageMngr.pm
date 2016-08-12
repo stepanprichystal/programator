@@ -29,7 +29,7 @@ sub new {
 
 	$self->{"groupDataFile"} = EnumsPaths->Client_INCAMTMPCHECKER . $self->{"jobId"} . "_groupData";
 
-	FileHelper->DeleteScriptTmpFiles();
+	FileHelper->DeleteTempFilesFrom(EnumsPaths->Client_INCAMTMPCHECKER, 200); #delete 10000s old files
 
 	return $self;
 }

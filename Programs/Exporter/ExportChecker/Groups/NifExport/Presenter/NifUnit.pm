@@ -27,6 +27,7 @@ use aliased 'Programs::Exporter::ExportChecker::Groups::NifExport::Model::NifChe
 use aliased 'Programs::Exporter::ExportChecker::Groups::NifExport::Model::NifPrepareData';
 use aliased 'Programs::Exporter::ExportChecker::Groups::NifExport::Model::NifExportData';
 use aliased 'Programs::Exporter::ExportChecker::Groups::NifExport::Model::NifGroupData';
+use aliased 'Packages::Events::Event';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -48,6 +49,8 @@ sub new {
 	my $exportData  = NifExportData->new();
 
 	$self->{"dataMngr"} = GroupDataMngr->new( $self->{"jobId"}, $prepareData, $checkData, $exportData );
+	
+
 
 	return $self;    # Return the reference to the hash.
 }
@@ -68,9 +71,13 @@ sub InitForm {
 	my $inCAM        = shift;
 
 	$self->{"groupWrapper"} = $groupWrapper;
-
+	
 	my $parent = $groupWrapper->GetParentForGroup();
 	$self->{"form"} = NifUnitForm->new( $parent, $inCAM, $self->{"jobId"}, $self->{"title"} );
+	
+	# Set event handlers
+	$groupWrapper->{"onChangeState"}->Add( sub { $self->{"onChangeState"}->Do($self) } );
+	
 }
 
 sub RefreshGUI {

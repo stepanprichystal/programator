@@ -14,9 +14,10 @@ use warnings;
 
 #local library
 use aliased "Packages::Events::Event";
+use aliased 'Programs::Exporter::ExportChecker::Enums';
 
 #-------------------------------------------------------------------------------------------#
-#  Package methods
+#  Package methods, requested by IUnit interface
 #-------------------------------------------------------------------------------------------#
 
 sub new {
@@ -46,7 +47,7 @@ sub InitDataMngr {
 
 	#case when group data are taken from disc
 	if ($storedDataMngr) {
-		
+
 		unless ( $storedDataMngr->ExistGroupData() ) {
 			return 0;
 		}
@@ -76,7 +77,10 @@ sub CheckBeforeExport {
 
 	#my $totalRes = 1;
 
-	foreach my $unit ( @{ $self->{"units"} } ) {
+	# Check only units, which are in ACTIVEON state
+	my @activeOnUnits = grep { $_->GetGroupActualState() eq Enums->GroupState_ACTIVEON } @{ $self->{"units"} };
+
+	foreach my $unit (@activeOnUnits) {
 
 		#$totalRes = 0;
 		my %info = ();
@@ -114,6 +118,44 @@ sub RefreshGUI {
 
 }
 
+sub GetGroupDefaultState {
+	my $self = shift;
+	
+	die "GetGroupActualState is Not implemented";
+	
+}
+
+
+sub GetGroupActualState {
+	my $self = shift;
+
+	my $unitsCnt = scalar( @{ $self->{"units"} } );
+
+	my $result;
+
+	my @allDisable   = grep { $_->GetGroupActualState() eq Enums->GroupState_DISABLE } @{ $self->{"units"} };
+	my @allActiveOff = grep { $_->GetGroupActualState() eq Enums->GroupState_ACTIVEOFF } @{ $self->{"units"} };
+
+	if ( scalar(@allDisable) == $unitsCnt ) {
+
+		# if all are disabled return  disable
+
+		$result = Enums->GroupState_DISABLE;
+	}
+	elsif ( scalar(@allActiveOff) == $unitsCnt ) {
+
+		# if all are active off return  Active off
+
+		$result = Enums->GroupState_ACTIVEOFF;
+	}else {
+
+		# if exist some active ON, return Active on
+
+		$result = Enums->GroupState_ACTIVEON;
+	}
+
+}
+
 #sub BuildGUI {
 #	my $self = shift;
 #
@@ -137,6 +179,30 @@ sub GetGroupData {
 
 	return %groupData;
 }
+
+# ===================================================================
+# Helper method not requested by interface IUnit
+# ===================================================================
+
+#Set handler for catch changing state of each unit
+sub SetGroupChangeHandler {
+	my $self = shift;
+	my $handler = shift;
+	
+	foreach my $unit ( @{ $self->{"units"} } ) {
+
+		$unit->{"onChangeState"}->Add($handler);
+	}
+}
+
+# Return number of active units for export
+sub GetActiveUnitsCnt{
+	my $self = shift;
+	my @activeOnUnits = grep { $_->GetGroupActualState() eq Enums->GroupState_ACTIVEON } @{ $self->{"units"} };
+	
+	return scalar(@activeOnUnits);
+}
+
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

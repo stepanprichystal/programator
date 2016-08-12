@@ -95,6 +95,24 @@ sub DisableForm {
 
 }
 
+# Disable all controls on form
+sub DisableExportBtn {
+	my $self    = shift;
+	my $disable = shift;
+
+	if ($disable) {
+
+		$self->{"btnSync"}->Disable();
+		$self->{"btnASync"}->Disable();
+	}
+	else {
+		
+		$self->{"btnSync"}->Enable();
+		$self->{"btnASync"}->Enable();
+	}
+
+}
+
 # Set "Load last" button visibility
 sub SetLoadLastBtn {
 	my $self    = shift;
@@ -105,7 +123,6 @@ sub SetLoadLastBtn {
 	}else{
 		$self->{"btnLoadLast"}->Disable();
 	}
-	
 }
 
 
@@ -290,6 +307,9 @@ sub __SetLayout {
 	$self->{"szMain"}  = $szMain;
 
 	$self->{"nb"} = $nb;
+	
+	$self->{"btnSync"} = $btnSync;
+	$self->{"btnASync"} = $btnASync;
 
 	return $mainFrm;
 }

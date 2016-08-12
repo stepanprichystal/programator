@@ -228,7 +228,7 @@ sub DeleteTempFilesFrom {
 
 		while ( my $file = readdir(DIR) ) {
 
-			$file = EnumsPaths->Client_INCAMTMPOTHER . $file;
+			$file = $path . $file;
 
 			#get file attributes
 			my @stats = stat($file);
