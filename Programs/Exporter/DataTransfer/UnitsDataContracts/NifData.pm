@@ -3,10 +3,8 @@
 # Description: Cover merging, spliting and checking before exporting NC files
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Programs::Exporter::ExportChecker::Groups::NifExport::Model::NifGroupData;
-
-#use Class::Interface;
-#&implements('Programs::Exporter::ExportChecker::Groups::IGroupData');
+package Programs::Exporter::DataTransfer::UnitsDataContracts::NifData;
+ 
 
 #3th party library
 use strict;
@@ -24,21 +22,16 @@ sub new {
 	$self = {};
 	bless $self;
 
-	# state data for gui controls
+	 
 	my %exportData = ();
 	$self->{"data"} = \%exportData;
-	
-	# state of whole group. Value is enum GroupState_xx
-	$self->{"state"} = Enums->GroupState_DISABLE;
+ 
 
 	return $self;    # Return the reference to the hash.
 }
+ 
 
-#sub GetData {
-#	my $self = shift;
-#	#my %data = %{ $self };
-#	return %{ $self };
-#}
+
 # Dimension ========================================================
  
 # single_x
@@ -156,6 +149,18 @@ sub GetS_silk_screen_colour {
 	return $self->{"data"}->{"S_silk_screen_colour"};
 }
  
+  
+# Zpracoval
+sub SetZpracoval {
+	my $self  = shift;
+	$self->{"data"}->{"zpracoval"} = shift;
+}
+
+sub GetZpracoval {
+	my $self  = shift;
+	return $self->{"data"}->{"zpracoval"};
+}
+
 
 # Tenting
 sub SetTenting {

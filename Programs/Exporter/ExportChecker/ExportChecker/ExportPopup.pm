@@ -6,11 +6,12 @@
 package Programs::Exporter::ExportChecker::ExportChecker::ExportPopup;
 
 #3th party library
-use strict;
+#use strict;
 use warnings;
 use threads;
 use threads::shared;
 use Wx;
+use Try::Tiny;
 
 #use strict;
 
@@ -71,6 +72,9 @@ sub new {
 sub Init {
 	my $self = shift;
 
+	# Synchronous/Asznchronous mode
+	$self->{"mode"} = shift;
+
 	$self->{"units"} = shift;
 
 	$self->{"parentForm"} = shift;
@@ -110,6 +114,9 @@ sub __CheckAsyncWorker {
 	my $port  = shift;
 	my $units = shift;
 
+	$export_thread = 1;
+
+
 	require Win32::OLE;
 	import Win32::OLE qw(in);
 
@@ -118,44 +125,48 @@ sub __CheckAsyncWorker {
 
 	$SIG{'KILL'} = sub {
 
-		Win32::OLE->Uninitialize();
-		$self->__CleanUpAndExitThread($inCAM);
-		exit;    #exit onlz this thread
+		$self->__CleanUpAndExitThread( 1, $inCAM );
+		exit;    #exit only this thread, not whole app
 
 	};
 
-	#$inCAM->COM( "open_entity", "job" => "$jobId", "type" => "step", "name" => "o", "iconic" => "no" );
-	#sleep(1);
-	#$inCAM->COM( "open_entity", "job" => "$jobId", "type" => "step", "name" => "o+1", "iconic" => "no" );
-
 	$units->{"onCheckEvent"}->Add( sub { $self->__OnCheckHandler(@_) } );
 
-	$units->CheckBeforeExport($inCAM);
+	try {
 
-	#my %res : shared = ();
-	#$res{"result"} = $result;
+		$units->CheckBeforeExport($inCAM);
 
-	#my $threvent = new Wx::PlThreadEvent( -1, $CHECKER_FINISH_EVT, \%res );
-	#Wx::PostEvent( $self->{"popup"}->{"mainFrm"}, $threvent );
+	}
+	catch {
 
-	$inCAM->ClientFinish();
+		print STDERR "\n\nThread was unexpectaly exited!!!\n\n";
+		print $_;
+		$self->__CleanUpAndExitThread( 0, $inCAM );
+	};
 
-	Win32::OLE->Uninitialize();
+	$self->__CleanUpAndExitThread( 0, $inCAM );
 
 }
 
 sub __CleanUpAndExitThread {
-	my ( $self, $inCAM ) = @_;
+	my $self  = shift;
+	my $force = shift;
+	my $inCAM = shift;
+
+	#this is necessary do, when thread exit, because Win32::OLE is not thread safe
+	Win32::OLE->Uninitialize();
 
 	$inCAM->ClientFinish();
 
-	print "Thread killed \n";
+	# if process was exited force, let it know
+	if ($force) {
+		print "Thread killed force\n";
+		my %res : shared = ();
+		my $threvent = new Wx::PlThreadEvent( -1, $THREAD_FORCEEXIT_EVT, \%res );
 
-	my %res : shared = ();
+		Wx::PostEvent( $self->{"popup"}->{"mainFrm"}, $threvent );
 
-	my $threvent = new Wx::PlThreadEvent( -1, $THREAD_FORCEEXIT_EVT, \%res );
-	Wx::PostEvent( $self->{"popup"}->{"mainFrm"}, $threvent );
-
+	}
 }
 
 # ================================================================================
@@ -168,12 +179,15 @@ sub __OnStopPopupHandler {
 	#stop process
 	my $thrObj = threads->object( $self->{"threadId"} );
 
+	print "Print thread object: $thrObj is runing : " . $thrObj->is_running() . " \n";
+
 	if ( defined $thrObj ) {
 
 		if ( $thrObj->is_running() ) {
 			$thrObj->kill('KILL');
 		}
 	}
+
 }
 
 sub __OnClosePopupHandler {
@@ -200,7 +214,7 @@ sub __OnResultPopupHandler {
 
 	}
 
-	$self->{"onResultEvt"}->Do($resultType);
+	$self->{"onResultEvt"}->Do($resultType, $self->{"mode"});
 
 }
 

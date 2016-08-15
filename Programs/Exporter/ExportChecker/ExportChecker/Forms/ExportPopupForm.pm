@@ -157,7 +157,7 @@ sub __CheckingFinish {
 
 	my $succes = 0;
 
-	if ( scalar(@err) == 0 && scalar(@warn) == 0 ) {
+	if ( $self->__GetErrCnt() == 0 && $self->__GetWarnCnt() == 0 ) {
 		$succes = 1;
 	}
 

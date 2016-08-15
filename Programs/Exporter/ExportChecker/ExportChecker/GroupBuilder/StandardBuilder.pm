@@ -39,7 +39,7 @@ sub Build {
 
 	# nif unit
 	my $nifUnit1 = NifUnit->new( $self->{"jobId"}, "Nif 1" );
-	my $nifUnit2 = NifUnit->new( $self->{"jobId"}, "Nif 2" );
+	#my $nifUnit2 = NifUnit->new( $self->{"jobId"}, "Nif 2" );
 ##	my $nifUnit3 = NifUnit->new( $self->{"jobId"}, "Nif 3" );
 #	my $nifUnit4 = NifUnit->new( $self->{"jobId"}, "Nif 4" );
 	#my $nifUnit5 = NifUnit->new( $self->{"jobId"}, "Nif 5" );
@@ -49,7 +49,7 @@ sub Build {
 	my $row1Tab1 = $tableTab1->AddRow();
 	$row1Tab1->AddCell($nifUnit1);
 
-	$row1Tab1->AddCell($nifUnit2);
+	#$row1Tab1->AddCell($nifUnit2);
 
 
 #	my $row2Tab1 = $tableTab1->AddRow();

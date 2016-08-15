@@ -13,6 +13,10 @@ use aliased 'Enums::EnumsPaths';
 #  Client_INCAMTMPOTHER   => "c:\\tmp\\InCam\\scripts\\other\\",
 #  Client_INCAMTMPSCRIPTS => "c:\\tmp\\InCam\\scripts\\",
 
+unless ( -e EnumsPaths->Client_EXPORTFILES ) {
+	mkdir( EnumsPaths->Client_EXPORTFILES ) or die "Can't create dir: " . EnumsPaths->Client_EXPORTFILES . $_;
+}
+
 unless ( -e EnumsPaths->Client_INCAMTMPNC ) {
 	mkdir( EnumsPaths->Client_INCAMTMPNC ) or die "Can't create dir: " . EnumsPaths->Client_INCAMTMPNC . $_;
 }

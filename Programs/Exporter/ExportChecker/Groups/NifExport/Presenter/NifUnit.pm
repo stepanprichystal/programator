@@ -28,6 +28,7 @@ use aliased 'Programs::Exporter::ExportChecker::Groups::NifExport::Model::NifPre
 use aliased 'Programs::Exporter::ExportChecker::Groups::NifExport::Model::NifExportData';
 use aliased 'Programs::Exporter::ExportChecker::Groups::NifExport::Model::NifGroupData';
 use aliased 'Packages::Events::Event';
+use aliased 'Programs::Exporter::UnitEnums';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -41,7 +42,7 @@ sub new {
 	bless $self;
 
 	#uique key within all units
-	$self->{"unitId"} = "nifUnit";
+	$self->{"unitId"} = UnitEnums->UnitId_NIF;
 
 	# init class for model
 	my $checkData   = NifCheckData->new();
@@ -106,11 +107,11 @@ sub GetGroupData {
 
 	my $groupData;
 
-	#if form is init/showed to user, return group data created by form
+	#if form is init/showed to user, return group data edited by form
 	#else return default group data, not processed by form
 
 	if ($frm) {
-		$groupData = NifGroupData->new();
+		$groupData = $self->{"dataMngr"}->GetGroupData();
 		$groupData->SetTenting( $frm->GetTenting() );
 		$groupData->SetMaska01( $frm->GetMaska01() );
 		$groupData->SetPressfit( $frm->GetPressfit() );

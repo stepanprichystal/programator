@@ -76,12 +76,16 @@ sub GetDataByUnit {
 	 
 	my %data = %{ $hashGroupData{$id} };
 	
+	#get information about unit state
+	my  $unitState = $data{"__UNITSTATE__"};
+	
 	# Get information about package name
 	my $packageName = $data{"__PACKAGE__"};
 	
 	# Convert to object by package name
 	my $groupData = $packageName->new();
 	$groupData->{"data"} = \%data;
+	$groupData->{"state"} = $unitState;
  
 	return $groupData;
 }
@@ -100,9 +104,11 @@ sub SaveGroupData {
 
 		my $groupData = $unit->GetGroupData();
 		my $packageName = ref $groupData;
+		my $unitState = $groupData->{"state"};
 		
 		my %hashData  = %{ $groupData->{"data"} };
 		$hashData{"__PACKAGE__"} = $packageName;
+		$hashData{"__UNITSTATE__"} = $unitState;
 		
 		$hashGroupData{ $unit->{"unitId"} } = \%hashData;
 	}

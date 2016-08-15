@@ -1,56 +1,51 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Prostrednik mezi formularem jednotky a buildere,
+# Description: Cover merging, spliting and checking before exporting NC files
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Programs::Exporter::ExportChecker::ExportChecker::Unit::IUnit;
-
-
-use Class::Interface;
-&interface;    
+package Programs::Exporter::DataTransfer::ExportData;
 
 
 #3th party library
 use strict;
 use warnings;
+use File::Copy;
 
 #local library
-
+use aliased 'Programs::Exporter::ExportChecker::Enums';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
+sub new {
+	my $self = shift;
+	$self = {};
+	bless $self;
 
-# set default data fo controls, which are on exported forms
-# default data means, settings, which are ussualy exported for given group
-sub InitDataMngr;
+	my %units = ();
+	$self->{"units"} = \%units;
+	
+ 
+	return $self;    # Return the reference to the hash.
+}
+ 
 
-# Do checking before export, based on group group data.
-# Group data/ (= default data before user change them in GUI)
-#sub CheckBeforeExport;
-
-# When group form is buiild, refresh controls based on default/group data
-#sub RefreshGUI;
-
-
-
-#sub GetGroupState;
-#sub SetGroupState;
-
-# Return group data, either default data or changed by user
-#sub GetGroupData;
-
-# Return data intended for final export
-#sub GetExportData;
-
-
-
+# Tenting
+sub GetUnitData {
+	my $self  = shift;
+	my $unitId  = shift;
+	
+	my $exportData = $self->{"units"}->{$unitId};
+	return $exportData;
+}
+ 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
+ 
 }
 
 1;

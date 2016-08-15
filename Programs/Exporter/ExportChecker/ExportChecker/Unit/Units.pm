@@ -66,7 +66,17 @@ sub InitDataMngr {
 
 			$unit->InitDataMngr($inCAM);
 		}
+	}
+}
 
+sub RefreshGUI {
+	my $self = shift;
+
+	#my $inCAM = shift;
+
+	foreach my $unit ( @{ $self->{"units"} } ) {
+
+		$unit->RefreshGUI();
 	}
 
 }
@@ -78,7 +88,7 @@ sub CheckBeforeExport {
 	#my $totalRes = 1;
 
 	# Check only units, which are in ACTIVEON state
-	my @activeOnUnits = grep { $_->GetGroupActualState() eq Enums->GroupState_ACTIVEON } @{ $self->{"units"} };
+	my @activeOnUnits = grep { $_->GetGroupState() eq Enums->GroupState_ACTIVEON } @{ $self->{"units"} };
 
 	foreach my $unit (@activeOnUnits) {
 
@@ -106,35 +116,17 @@ sub CheckBeforeExport {
 	#return $totalRes;
 }
 
-sub RefreshGUI {
-	my $self = shift;
+ 
 
-	#my $inCAM = shift;
-
-	foreach my $unit ( @{ $self->{"units"} } ) {
-
-		$unit->RefreshGUI();
-	}
-
-}
-
-sub GetGroupDefaultState {
-	my $self = shift;
-	
-	die "GetGroupActualState is Not implemented";
-	
-}
-
-
-sub GetGroupActualState {
+sub GetGroupState {
 	my $self = shift;
 
 	my $unitsCnt = scalar( @{ $self->{"units"} } );
 
 	my $result;
 
-	my @allDisable   = grep { $_->GetGroupActualState() eq Enums->GroupState_DISABLE } @{ $self->{"units"} };
-	my @allActiveOff = grep { $_->GetGroupActualState() eq Enums->GroupState_ACTIVEOFF } @{ $self->{"units"} };
+	my @allDisable   = grep { $_->GetGroupState() eq Enums->GroupState_DISABLE } @{ $self->{"units"} };
+	my @allActiveOff = grep { $_->GetGroupState() eq Enums->GroupState_ACTIVEOFF } @{ $self->{"units"} };
 
 	if ( scalar(@allDisable) == $unitsCnt ) {
 
@@ -147,7 +139,8 @@ sub GetGroupActualState {
 		# if all are active off return  Active off
 
 		$result = Enums->GroupState_ACTIVEOFF;
-	}else {
+	}
+	else {
 
 		# if exist some active ON, return Active on
 
@@ -156,28 +149,49 @@ sub GetGroupActualState {
 
 }
 
-#sub BuildGUI {
-#	my $self = shift;
-#
-#	foreach my $unit ( @{ $self->{"units"} } ) {
-#
-#		$unit->BuildGUI();
-#	}
-#}
-
-sub GetGroupData {
-	my $self = shift;
-
-	my %groupData = ();
+sub SetGroupState {
+	my $self       = shift;
+	my $groupState = shift;
 
 	foreach my $unit ( @{ $self->{"units"} } ) {
 
-		my $groupData = $unit->GetGroupData();
-		my %hashData  = %{ $groupData->{"data"} };
-		$groupData{ $unit->{"unitId"} } = \%hashData;
+		$unit->SetGroupState($groupState);
 	}
 
-	return %groupData;
+}
+
+
+
+sub GetExportData {
+	my $self = shift;
+ 
+	my %allExportData = ();
+
+	foreach my $unit ( @{ $self->{"units"} } ) {
+
+		my $exportData = $unit->GetExportData();
+		$allExportData{ $unit->{"unitId"} } = $exportData;
+	}
+
+	return %allExportData;
+}
+
+
+sub GetGroupData {
+	my $self = shift;
+	
+	die "GetGroupData is not implemented ";
+
+#	my %groupData = ();
+#
+#	foreach my $unit ( @{ $self->{"units"} } ) {
+#
+#		my $groupData = $unit->GetGroupData();
+#		my %hashData  = %{ $groupData->{"data"} };
+#		$groupData{ $unit->{"unitId"} } = \%hashData;
+#	}
+#
+#	return %groupData;
 }
 
 # ===================================================================
@@ -186,9 +200,9 @@ sub GetGroupData {
 
 #Set handler for catch changing state of each unit
 sub SetGroupChangeHandler {
-	my $self = shift;
+	my $self    = shift;
 	my $handler = shift;
-	
+
 	foreach my $unit ( @{ $self->{"units"} } ) {
 
 		$unit->{"onChangeState"}->Add($handler);
@@ -196,13 +210,12 @@ sub SetGroupChangeHandler {
 }
 
 # Return number of active units for export
-sub GetActiveUnitsCnt{
+sub GetActiveUnitsCnt {
 	my $self = shift;
-	my @activeOnUnits = grep { $_->GetGroupActualState() eq Enums->GroupState_ACTIVEON } @{ $self->{"units"} };
-	
+	my @activeOnUnits = grep { $_->GetGroupState() eq Enums->GroupState_ACTIVEON } @{ $self->{"units"} };
+
 	return scalar(@activeOnUnits);
 }
-
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

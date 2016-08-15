@@ -30,7 +30,7 @@ sub new {
 
 	$self->{"groupWrapper"} = undef;    #wrapper, which form is placed in
 	$self->{"form"}         = undef;    #form which represent GUI of this group
-	#$self->{"active"}       = undef;    # tell if group will be visibel/active
+	                                    #$self->{"active"}       = undef;    # tell if group will be visibel/active
 	$self->{"dataMngr"}     = undef;    # manager, which is responsible for create, update group data
 
 	# Events
@@ -48,11 +48,15 @@ sub InitDataMngr {
 	$self->{"dataMngr"}->{"inCAM"} = $inCAM;
 
 	if ($storedData) {
+
+		# Load group data (stored on disc)
 		$self->{"dataMngr"}->SetStoredGroupData($storedData);
 	}
 	else {
 
+		# Load default group data and state
 		$self->{"dataMngr"}->PrepareGroupData();
+		$self->{"dataMngr"}->PrepareGroupState();
 	}
 }
 
@@ -72,35 +76,36 @@ sub CheckBeforeExport {
 	return $succes;
 }
 
-sub _RefreshWrapper {
-	my $self  = shift;
-	my $inCAM = shift;
 
-	my $groupState = $self->GetGroupActualState();
-	$self->{"groupWrapper"}->SetState($groupState);
+#sub GetGroupDefaultState {
+#	my $self  = shift;
+#	my $inCAM = shift;
+#
+#	my $groupState = $self->{"dataMngr"}->GetGroupState();
+#
+#	return $groupState;
+#
+#}
 
-	#refresh wrapper of form based on "group state"
-	$self->{"groupWrapper"}->Refresh();
-
-}
-
-sub GetGroupDefaultState {
+sub GetGroupState {
 	my $self  = shift;
 	my $inCAM = shift;
 
 	my $groupState = $self->{"dataMngr"}->GetGroupState();
 
 	return $groupState;
-
 }
 
-sub GetGroupActualState {
-	my $self  = shift;
-	my $inCAM = shift;
+sub SetGroupState {
+	my $self       = shift;
+	my $groupState = shift;
 
-	my $groupState = $self->{"groupWrapper"}->GetState();
+	$self->{"dataMngr"}->SetGroupState($groupState);
 
-	return $groupState;
+	#$self->{"groupWrapper"}->SetState($groupState);
+
+	#refresh wrapper of form based on "group state"
+	#$self->{"groupWrapper"}->Refresh();
 }
 
 sub GetExportData {
@@ -111,6 +116,19 @@ sub GetExportData {
 	$self->{"dataMngr"}->{"inCAM"} = $inCAM;
 
 	return $self->{"dataMngr"}->ExportGroupData();
+
+}
+
+
+sub _RefreshWrapper {
+	my $self  = shift;
+	my $inCAM = shift;
+
+	my $groupState = $self->{"dataMngr"}->GetGroupState();
+	$self->{"groupWrapper"}->SetState($groupState);
+
+	#refresh wrapper of form based on "group state"
+	$self->{"groupWrapper"}->Refresh();
 
 }
 

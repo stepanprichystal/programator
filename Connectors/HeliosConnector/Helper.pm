@@ -7,11 +7,35 @@ package Connectors::HeliosConnector::Helper;
 
 #3th party library
 use utf8;
-use strict;
+#use strict;
 use warnings;
 use Try::Tiny;
  
-use DBI;
+ 
+BEGIN {
+	
+	if($export_thread && $export_thread == 1)  {
+		
+		print STDERR "\n1111111111111111111\n";
+		
+	} else{
+		
+
+		
+		print STDERR "\n22222222222222222222\n";
+		
+		require DBI;
+    	DBI->import;
+	}
+
+    
+} 
+ 
+#use DBI;
+
+
+
+
 #Win32::OLE => not allowed use this module!
 # Module is used by perl ithreads and this Win32::OLE is not thread sa
  
@@ -46,6 +70,8 @@ sub __OpenConnection {
 		#ConnectionTimeout=$__conTimeout;
 		#CommandTimeout=$__commandTimeout
 
+ 		#require Win32::OLE;
+		#import Win32::OLE qw(in);
 		$con = DBI->connect(
 			"dbi:ADO:$__dbHost;",
 			$__dbUserName,

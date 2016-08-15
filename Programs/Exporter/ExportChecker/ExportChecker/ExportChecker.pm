@@ -28,25 +28,30 @@ use aliased 'Programs::Exporter::ExportChecker::ExportChecker::GroupBuilder::V0B
 use aliased 'Programs::Exporter::ExportChecker::ExportChecker::GroupTable::GroupTables';
 use aliased 'Programs::Exporter::ExportChecker::Server::Client';
 use aliased 'Packages::InCAM::InCAM';
-use aliased 'Programs::Exporter::ExportChecker::Enums';
+
 use aliased 'Connectors::HeliosConnector::HegMethods';
 
 use aliased 'Programs::Exporter::ExportChecker::ExportChecker::StorageMngr';
 use aliased 'Programs::Exporter::ExportChecker::ExportChecker::ExportPopup';
 
-#-------------------------------------------------------------------------------------------#
-#  Package methods
-#-------------------------------------------------------------------------------------------#
-#my $CHECKER_START_EVT : shared;
-#my $CHECKER_END_EVT : shared;
-#my $CHECKER_FINISH_EVT : shared;
-#my $THREAD_FORCEEXIT_EVT : shared;
+use aliased 'Programs::Exporter::DataTransfer::DataTransfer';
+use aliased 'Programs::Exporter::ExportChecker::Enums';
+use aliased 'Programs::Exporter::DataTransfer::Enums' => 'EnumsTransfer';
+ 
 
-# ================================================================================
-# PUBLIC METHOD
-# ================================================================================
+  #-------------------------------------------------------------------------------------------#
+  #  Package methods
+  #-------------------------------------------------------------------------------------------#
+  #my $CHECKER_START_EVT : shared;
+  #my $CHECKER_END_EVT : shared;
+  #my $CHECKER_FINISH_EVT : shared;
+  #my $THREAD_FORCEEXIT_EVT : shared;
 
-sub new {
+  # ================================================================================
+  # PUBLIC METHOD
+  # ================================================================================
+
+  sub new {
 	my $class = shift;
 	my $self  = {};
 	bless $self;
@@ -150,18 +155,30 @@ sub __ExportSyncFormHandler {
 	#	}\
 
 	#use Win32::OLE;
-	my $typeOfPcb = HegMethods->GetTypeOfPcb( $self->{"jobId"} );
+	#my $typeOfPcb = HegMethods->GetTypeOfPcb( $self->{"jobId"} );
 
 	#my $typeOfPcb = HegMethods->GetTypeOfPcb( $self->{"jobId"} );
-	$self->__CheckBeforeExport();
+	$self->__CheckBeforeExport( Enums->ExportMode_SYNC );
 }
 
 sub __ExportASyncFormHandler {
-	my $self = shift;
+	my $self   = shift;
+	my $client = $self->{"client"};
 
-	#$self->{"form"}->{"pnlChecker"}->Raise();
+	print STDERR "Export sync\n";
 
-	$self->{"popup"}->ShowPopup();
+	#if ( $client->ClientConnected() ) {
+	#
+	#		print STDERR "Close\n";
+	#		$self->{"inCAM"}->CloseServer();
+	#
+	#	}\
+
+	#use Win32::OLE;
+	#my $typeOfPcb = HegMethods->GetTypeOfPcb( $self->{"jobId"} );
+
+	#my $typeOfPcb = HegMethods->GetTypeOfPcb( $self->{"jobId"} );
+	$self->__CheckBeforeExport( Enums->ExportMode_ASYNC );
 
 }
 
@@ -174,6 +191,7 @@ sub __OnCloseFormHandler {
 
 sub __CheckBeforeExport {
 	my $self = shift;
+	my $mode = shift;
 
 	#disable from during checking
 	$self->{"disableForm"} = 1;
@@ -195,7 +213,7 @@ sub __CheckBeforeExport {
 	my $serverPort = $client->ServerPort();
 
 	#init and run checking form
-	$self->{"exportPopup"}->Init( $self->{"units"}, $self->{"form"} );
+	$self->{"exportPopup"}->Init( $mode, $self->{"units"}, $self->{"form"} );
 	$self->{"exportPopup"}->CheckBeforeExport($serverPort);
 
 }
@@ -231,6 +249,14 @@ sub __CleanUpAndExitForm {
 sub __UncheckAllHandler {
 	my $self = shift;
 
+	$self->{"units"}->SetGroupState( Enums->GroupState_ACTIVEOFF );
+
+	# Refresh loaded data in group form
+	$self->{"units"}->RefreshGUI();
+
+	# Refresh form
+	$self->__RefreshForm();
+
 }
 
 sub __LoadLastHandler {
@@ -242,6 +268,9 @@ sub __LoadLastHandler {
 	# Refresh loaded data in group form
 	$self->{"units"}->RefreshGUI();
 
+	# Refresh form
+	$self->__RefreshForm();
+
 }
 
 sub __LoadDefaultHandler {
@@ -251,15 +280,18 @@ sub __LoadDefaultHandler {
 
 	# Refresh loaded data in group form
 	$self->{"units"}->RefreshGUI();
+
+	# Refresh form
+	$self->__RefreshForm();
 }
 
 sub __OnGroupChangeState {
 	my $self = shift;
 	my $unit = shift;
 
-	print STDERR "Unif " . $unit->{"unitId"} . " change state: " . $unit->GetGroupActualState() . "\n";
-	print STDERR "All units state: " . $self->{"units"}->GetGroupActualState() . "\n";
-	
+	print STDERR "Unif " . $unit->{"unitId"} . " change state: " . $unit->GetGroupState() . "\n";
+	print STDERR "All units state: " . $self->{"units"}->GetGroupState() . "\n";
+
 	$self->__RefreshForm();
 
 }
@@ -280,10 +312,25 @@ sub __OnClosePopupHandler {
 sub __OnResultPopupHandler {
 	my $self       = shift;
 	my $resultType = shift;
+	my $exportMode = shift;
 
 	if (    $resultType eq Enums->PopupResult_EXPORTFORCE
 		 || $resultType eq Enums->PopupResult_SUCCES )
 	{
+
+		my %unitsExportData = $self->{"units"}->GetExportData();
+		my $dataTransfer = DataTransfer->new( $self->{"jobId"}, EnumsTransfer->Mode_WRITE, \%unitsExportData );
+
+		if ( $exportMode eq Enums->ExportMode_ASYNC ) {
+
+			$dataTransfer->SaveData();
+
+		}
+		elsif ( $exportMode eq Enums->ExportMode_SYNC ) {
+
+			my $exportData = $dataTransfer->GetExportData();
+
+		}
 
 		#start exporting
 
@@ -312,7 +359,7 @@ sub __RefreshForm {
 	$self->{"form"}->SetLoadLastBtn( $self->{"storageMngr"}->ExistGroupData() );
 
 	# Set export buttons
-	my $groupsState = $self->{"units"}->GetGroupActualState();
+	my $groupsState = $self->{"units"}->GetGroupState();
 
 	if ( $groupsState eq Enums->GroupState_ACTIVEOFF || $groupsState eq Enums->GroupState_DISABLE ) {
 		$self->{"form"}->DisableExportBtn(1);
