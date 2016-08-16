@@ -1,41 +1,20 @@
+
 #-------------------------------------------------------------------------------------------#
-# Description: This class define "outside" handlers and events, 
-# which is possible cooperate with.
+# Description: This is class, which represent "presenter"
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Programs::Exporter::ExportChecker::Groups::NifExport::View::NifUnitFormEvt;
+package Programs::Exporter::ExportChecker::Groups::NCExport::Presenter::NCHelper;
 
 #3th party library
 use strict;
 use warnings;
+use Wx;
 
 #local library
-use aliased 'Programs::Exporter::ExportChecker::Groups::Enums';
-use aliased 'Packages::Events::Event';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
-
-sub new {
-	my $class = shift;
-	my $self  = {};
-
-	$self = $class->SUPER::new(@_);
-	bless $self;
-
-	my $frm = $self->{"form"};
-
-	# Provided handlers
-
-
-	# Provided events
-	
-	$self->_AddEvent( $frm->{'onTentingChange'}, Enums->Event_nif_tenting );
-
-	return $self;
-}
-
 
 
 #-------------------------------------------------------------------------------------------#
@@ -43,7 +22,6 @@ sub new {
 #-------------------------------------------------------------------------------------------#
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
-
 
 }
 

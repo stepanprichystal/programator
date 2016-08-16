@@ -3,7 +3,7 @@
 # Description: This is class, which represent "presenter"
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Programs::Exporter::ExportChecker::Groups::NifExport::Presenter::Helper;
+package Programs::Exporter::ExportChecker::Groups::NifExport::Presenter::NifHelper;
 
 #3th party library
 use strict;
@@ -36,6 +36,10 @@ sub GetMaskColorToCode {
 	my $self  = shift;
 	my $color = shift;
 
+	if ( $color eq "" ) {
+		return "";
+	}
+
 	my %colorMap = ();
 	$colorMap{"Green"}       = "Z";
 	$colorMap{"Black"}       = "V";
@@ -50,6 +54,10 @@ sub GetMaskColorToCode {
 sub GetMaskCodeToColor {
 	my $self = shift;
 	my $code = shift;
+
+	if ( $code eq "" ) {
+		return "";
+	}
 
 	my %colorMap = ();
 	$colorMap{"Z"} = "Green";
@@ -66,6 +74,10 @@ sub GetSilkColorToCode {
 	my $self  = shift;
 	my $color = shift;
 
+	if ( $color eq "" ) {
+		return "";
+	}
+
 	my %colorMap = ();
 	$colorMap{"White"}  = "B";
 	$colorMap{"Yellow"} = "Z";
@@ -74,37 +86,37 @@ sub GetSilkColorToCode {
 	return $colorMap{$color};
 }
 
-sub GeSilkCodeToColor {
+sub GetSilkCodeToColor {
 	my $self = shift;
 	my $code = shift;
 
+	if ( $code eq "" ) {
+		return "";
+	}
+
 	my %colorMap = ();
-	$colorMap{"White"}  = "B";
-	$colorMap{"Yellow"} = "Z";
-	$colorMap{"Black"}  = "C";
+	$colorMap{"B"} = "White";
+	$colorMap{"Z"} = "Yellow";
+	$colorMap{"C"} = "Black";
 
 	return $colorMap{$code};
 }
-
-
 
 sub GetColorDef {
 	my $self  = shift;
 	my $color = shift;
 
 	my %colorMap = ();
-	$colorMap{"Green"}       = Wx::Colour->new( 0, 255, 0 );
-	$colorMap{"Black"}       = Wx::Colour->new( 0, 0, 0 );
+	$colorMap{"Green"}       = Wx::Colour->new( 85,  128, 0 );
+	$colorMap{"Black"}       = Wx::Colour->new( 0,   0,   0 );
 	$colorMap{"White"}       = Wx::Colour->new( 255, 255, 255 );
-	$colorMap{"Blue"}        = Wx::Colour->new( 0, 102, 255 );
-	$colorMap{"Transparent"} = Wx::Colour->new( 230, 230, 230 );
-	$colorMap{"Red"}         = Wx::Colour->new( 255, 220, 238 );
-	$colorMap{"Yellow"} 	 = Wx::Colour->new( 255, 255, 238 );
-	
+	$colorMap{"Blue"}        = Wx::Colour->new( 0,   0,   255 );
+	$colorMap{"Transparent"} = Wx::Colour->new( 245, 245, 245 );
+	$colorMap{"Red"}         = Wx::Colour->new( 230, 46,  0 );
+	$colorMap{"Yellow"}      = Wx::Colour->new( 255, 255, 0 );
+
 	return $colorMap{$color};
 }
-
-
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

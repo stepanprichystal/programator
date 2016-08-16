@@ -76,7 +76,6 @@ sub CheckBeforeExport {
 	return $succes;
 }
 
-
 #sub GetGroupDefaultState {
 #	my $self  = shift;
 #	my $inCAM = shift;
@@ -119,6 +118,25 @@ sub GetExportData {
 
 }
 
+sub _SetHandlers {
+	my $self = shift;
+
+	# Set event handlers
+	if ( $self->{"groupWrapper"} ) {
+		$self->{"groupWrapper"}->{"onChangeState"}->Add( sub { $self->__OnChangeState(@_) } );
+	}
+
+}
+
+sub __OnChangeState {
+	my $self     = shift;
+	my $newState = shift;    #new group state
+
+	$self->{"dataMngr"}->SetGroupState($newState);
+
+	$self->{"onChangeState"}->Do($self);
+
+}
 
 sub _RefreshWrapper {
 	my $self  = shift;

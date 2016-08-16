@@ -58,8 +58,9 @@ use aliased 'Programs::Exporter::DataTransfer::Enums' => 'EnumsTransfer';
 
 	$self->{"jobId"} = shift;
 
-	my $serverPort = shift;
-	my $serverPid  = shift;
+	$self->{"serverPort"} = shift;
+	$self->{"serverPid"} = shift;
+	 
 
 	$self->{"inCAM"} = undef;
 
@@ -81,7 +82,7 @@ use aliased 'Programs::Exporter::DataTransfer::Enums' => 'EnumsTransfer';
 	# Manage group date (store/load group data from/to disc)
 	$self->{"storageMngr"} = StorageMngr->new( $self->{"jobId"}, $self->{"units"} );
 
-	$self->__Connect( $serverPort, $serverPid );
+	$self->__Connect();
 	$self->__Init();
 	$self->__Run();
 
@@ -212,6 +213,8 @@ sub __CheckBeforeExport {
 	}
 	my $serverPort = $client->ServerPort();
 
+	Win32::OLE->Uninitialize();
+
 	#init and run checking form
 	$self->{"exportPopup"}->Init( $mode, $self->{"units"}, $self->{"form"} );
 	$self->{"exportPopup"}->CheckBeforeExport($serverPort);
@@ -341,6 +344,12 @@ sub __OnResultPopupHandler {
 
 	}
 
+	# After close popup window is necessery Re-connect to income server
+	# Because checking was processed in child thread and was connected
+	# to this income server
+	
+	$self->__Connect();
+
 	$self->{"disableForm"} = 0;
 	$self->__RefreshForm();
 }
@@ -373,10 +382,12 @@ sub __RefreshForm {
 sub __Connect {
 	my $self = shift;
 
-	my $port = shift;
-	my $pid  = shift;
-
-	print STDERR "\n\n EXPORTER CHECKER $port   $pid \n\n ";
+	my $port = $self->{"serverPort"};
+	my $pid  = $self->{"serverPid"};
+ 	if($port && $pid){
+ 		print STDERR "\n\n EXPORTER CHECKER $port   $pid \n\n ";
+ 	}
+	
 
 	# Manage conenctio between client and server
 	my $client = $self->{"client"};

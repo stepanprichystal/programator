@@ -12,26 +12,27 @@ use warnings;
 use Try::Tiny;
  
  
-BEGIN {
-	
-	if($export_thread && $export_thread == 1)  {
-		
-		print STDERR "\n1111111111111111111\n";
-		
-	} else{
-		
-
-		
-		print STDERR "\n22222222222222222222\n";
-		
-		require DBI;
-    	DBI->import;
-	}
-
-    
-} 
- 
-#use DBI;
+#BEGIN {
+#	
+#	if($export_thread && $export_thread == 1)  {
+#		
+#		print STDERR "\n1111111111111111111\n";
+#		
+#	} else{
+#		
+#
+#		
+#		print STDERR "\n22222222222222222222\n";
+#		
+#		require DBI;
+#    	DBI->import;
+#	}
+#
+#    
+#} 
+# require Win32::OLE;
+# import Win32::OLE qw(in);
+use DBI;
 
 
 
@@ -70,8 +71,9 @@ sub __OpenConnection {
 		#ConnectionTimeout=$__conTimeout;
 		#CommandTimeout=$__commandTimeout
 
- 		#require Win32::OLE;
-		#import Win32::OLE qw(in);
+ 		
+		
+		 
 		$con = DBI->connect(
 			"dbi:ADO:$__dbHost;",
 			$__dbUserName,

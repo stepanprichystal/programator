@@ -39,15 +39,15 @@ sub Build {
 
 	# nif unit
 	my $nifUnit1 = NifUnit->new( $self->{"jobId"}, "Nif 1");
-	my $nifUnit2 = NifUnit->new( $self->{"jobId"}, "Nif 2" );
+	#my $nifUnit2 = NifUnit->new( $self->{"jobId"}, "Nif 2" );
 	 
 	
 	my $row1Tab1 = $tableTab1->AddRow();
 	$row1Tab1->AddCell($nifUnit1);
 
 	 
-	my $row2Tab1 = $tableTab1->AddRow();
-	$row2Tab1->AddCell($nifUnit2);
+	#my $row2Tab1 = $tableTab1->AddRow();
+	#$row2Tab1->AddCell($nifUnit2);
  
 	$groupTables->AddTable($tableTab1);
 }

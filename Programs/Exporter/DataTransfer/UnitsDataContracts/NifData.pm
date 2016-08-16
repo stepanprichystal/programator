@@ -1,15 +1,15 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Cover merging, spliting and checking before exporting NC files
+# Description: Data definition for group. This data struct are used  as data transfer
+# between ExportChecker and ExportUtility
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Programs::Exporter::DataTransfer::UnitsDataContracts::NifData;
  
-
 #3th party library
 use strict;
 use warnings;
-use File::Copy;
+
 
 #local library
 use aliased 'Programs::Exporter::ExportChecker::Enums';
@@ -22,15 +22,12 @@ sub new {
 	$self = {};
 	bless $self;
 
-	 
 	my %exportData = ();
 	$self->{"data"} = \%exportData;
- 
 
-	return $self;    # Return the reference to the hash.
+	return $self; 
 }
  
-
 
 # Dimension ========================================================
  

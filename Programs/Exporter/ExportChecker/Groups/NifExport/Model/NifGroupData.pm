@@ -1,17 +1,13 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Cover merging, spliting and checking before exporting NC files
+# Description: Class contain state properties, used as model for group form
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Programs::Exporter::ExportChecker::Groups::NifExport::Model::NifGroupData;
 
-#use Class::Interface;
-#&implements('Programs::Exporter::ExportChecker::Groups::IGroupData');
-
 #3th party library
 use strict;
 use warnings;
-use File::Copy;
 
 #local library
 use aliased 'Programs::Exporter::ExportChecker::Enums';
@@ -31,14 +27,10 @@ sub new {
 	# state of whole group. Value is enum GroupState_xx
 	$self->{"state"} = Enums->GroupState_DISABLE;
 
-	return $self;    # Return the reference to the hash.
+	return $self;
 }
 
-#sub GetData {
-#	my $self = shift;
-#	#my %data = %{ $self };
-#	return %{ $self };
-#}
+
 # Dimension ========================================================
  
 # single_x

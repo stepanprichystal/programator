@@ -29,8 +29,9 @@ sub new {
 	# read mode or write mode
 	$self->{"mode"} = shift;
 
-	# Only in Write mode
+	# This parameter have to be passed only in Write mode
 	$self->{"unitsData"} = shift;
+	$self->{"location"} = shift;
 
 	$self->{"filePath"} = EnumsPaths->Client_EXPORTFILES . $self->{"jobId"};
 
@@ -39,7 +40,8 @@ sub new {
 
 	# structure
 	$self->{"hashData"}->{"units"} = ();
-	$self->{"hashData"}->{"time"}  = undef;
+	#$self->{"hashData"}->{"time"}  = undef;
+	#$self->{"hashData"}->{"location"}  = undef;
 
 	FileHelper->DeleteTempFilesFrom( EnumsPaths->Client_EXPORTFILES, 200 );    #delete 10000s old files
 
@@ -67,6 +69,7 @@ sub __BuildExportData {
 
 		# 2) prepare other
 		$self->{"data"}->{"time"} = "tttt";
+		#$self->{"hashData"}->{"location"}  =
 
 	}
 	elsif ( $self->{"mode"} eq Enums->Mode_READ ) {

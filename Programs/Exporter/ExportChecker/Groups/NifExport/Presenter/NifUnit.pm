@@ -50,8 +50,6 @@ sub new {
 	my $exportData  = NifExportData->new();
 
 	$self->{"dataMngr"} = GroupDataMngr->new( $self->{"jobId"}, $prepareData, $checkData, $exportData );
-	
-
 
 	return $self;    # Return the reference to the hash.
 }
@@ -72,13 +70,12 @@ sub InitForm {
 	my $inCAM        = shift;
 
 	$self->{"groupWrapper"} = $groupWrapper;
-	
+
 	my $parent = $groupWrapper->GetParentForGroup();
 	$self->{"form"} = NifUnitForm->new( $parent, $inCAM, $self->{"jobId"}, $self->{"title"} );
-	
-	# Set event handlers
-	$groupWrapper->{"onChangeState"}->Add( sub { $self->{"onChangeState"}->Do($self) } );
-	
+
+	$self->_SetHandlers();
+
 }
 
 sub RefreshGUI {
@@ -94,6 +91,22 @@ sub RefreshGUI {
 	$self->{"form"}->SetDatacode( $groupData->{"data"}->{"datacode"} );
 	$self->{"form"}->SetUlLogo( $groupData->{"data"}->{"ul_logo"} );
 	$self->{"form"}->SetJumpScoring( $groupData->{"data"}->{"prerusovana_drazka"} );
+
+	# Dimension
+
+	$self->{"form"}->SetSingle_x( $groupData->GetSingle_x() );
+	$self->{"form"}->SetSingle_y( $groupData->GetSingle_y() );
+	$self->{"form"}->SetPanel_x( $groupData->GetPanel_x() );
+	$self->{"form"}->SetPanel_y( $groupData->GetPanel_y() );
+	$self->{"form"}->SetNasobnost_panelu( $groupData->GetNasobnost_panelu() );
+	$self->{"form"}->SetNasobnost( $groupData->GetNasobnost() );
+
+	# Mask color
+
+	$self->{"form"}->SetC_mask_colour( $groupData->GetC_mask_colour() );
+	$self->{"form"}->SetS_mask_colour( $groupData->GetS_mask_colour() );
+	$self->{"form"}->SetC_silk_screen_colour( $groupData->GetC_silk_screen_colour() );
+	$self->{"form"}->SetS_silk_screen_colour( $groupData->GetS_silk_screen_colour() );
 
 	#refresh wrapper
 	$self->_RefreshWrapper();
@@ -119,6 +132,22 @@ sub GetGroupData {
 		$groupData->SetDatacode( $frm->GetDatacode() );
 		$groupData->SetUlLogo( $frm->GetUlLogo() );
 		$groupData->SetJumpScoring( $frm->GetJumpScoring() );
+
+		# Dimension
+
+		$groupData->SetSingle_x( $frm->GetSingle_x() );
+		$groupData->SetSingle_y( $frm->GetSingle_y() );
+		$groupData->SetPanel_x( $frm->GetPanel_x() );
+		$groupData->SetPanel_y( $frm->GetPanel_y() );
+		$groupData->SetNasobnost_panelu( $frm->GetNasobnost_panelu() );
+		$groupData->SetNasobnost( $frm->GetNasobnost() );
+
+		# Mask color
+
+		$groupData->SetC_mask_colour( $frm->GetC_mask_colour() );
+		$groupData->SetS_mask_colour( $frm->GetS_mask_colour() );
+		$groupData->SetC_silk_screen_colour( $frm->GetC_silk_screen_colour() );
+		$groupData->SetS_silk_screen_colour( $frm->GetS_silk_screen_colour() );
 
 	}
 	else {

@@ -3,7 +3,7 @@
 # which is possible cooperate with.
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Programs::Exporter::ExportChecker::Groups::NifExport::View::NifUnitFormEvt;
+package Programs::Exporter::ExportChecker::Groups::NCExport::View::NCUnitFormEvt;
 
 #3th party library
 use strict;
@@ -31,8 +31,7 @@ sub new {
 
 	# Provided events
 	
-	$self->_AddEvent( $frm->{'onTentingChange'}, Enums->Event_nif_tenting );
-
+	 
 	return $self;
 }
 

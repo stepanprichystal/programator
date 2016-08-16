@@ -16,7 +16,7 @@ use Wx qw(:richtextctrl :textctrl :font);
 use Widgets::Style;
 use aliased 'Packages::Events::Event';
 use aliased 'CamHelpers::CamLayer';
-use aliased 'Programs::Exporter::ExportChecker::Groups::NifExport::Presenter::Helper';
+use aliased 'Programs::Exporter::ExportChecker::Groups::NifExport::Presenter::NifHelper';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -56,33 +56,33 @@ sub __SetLayout {
 	# Load data, for filling form by values
 
 	# Add empty item
-	push( @colors, "" );
 
 	# DEFINE CONTROLS
 
-	my $colorCbTxt = Wx::StaticText->new( $self, -1, $title );
-	my $coloCb = Wx::ComboBox->new( $self, -1, $colors[0], &Wx::wxDefaultPosition, [ 70, 20 ], \@colors, &Wx::wxCB_READONLY );
+	my $colorCbTxt = Wx::StaticText->new( $self, -1, $title, &Wx::wxDefaultPosition, [ 70, 20 ] );
+	my $colorCb = Wx::ComboBox->new( $self, -1, $colors[0], &Wx::wxDefaultPosition, [ 70, 20 ], \@colors, &Wx::wxCB_READONLY );
 
-	my $colorPnl = Wx::Panel->new( $self, -1, &Wx::wxDefaultPosition, [ 20, 20 ]);
+	my $colorPnl = Wx::Panel->new( $self, -1, &Wx::wxDefaultPosition, [ 20, 20 ], &Wx::wxSIMPLE_BORDER );
 
 	# SET EVENTS
-	Wx::Event::EVT_COMBOBOX( $coloCb, -1, sub { $self->__OnColorChangeHandler(@_) } );
+	Wx::Event::EVT_COMBOBOX( $colorCb, -1, sub { $self->__OnColorChangeHandler(@_) } );
 
 	# BUILD STRUCTURE OF LAYOUT
-	$szMain->Add( $colorCbTxt,  30, &Wx::wxEXPAND | &Wx::wxALL,               1 );
-	$szMain->Add( $coloCb,  10, &Wx::wxEXPAND | &Wx::wxALL,               1 );
-	$szMain->Add( $colorPnl, 20, &Wx::wxEXPAND | &Wx::wxALL, 2 );
+	$szMain->Add( $colorCbTxt, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szMain->Add( $colorCb,    0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szMain->Add( $colorPnl,   0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 
 	$self->SetSizer($szMain);
-	
+
 	# SAVE REFERENCES
 	$self->{"colorPnl"} = $colorPnl;
+	$self->{"colorCb"}  = $colorCb;
 
 }
 
 sub GetValue {
-	my $self  = shift;
-	
+	my $self = shift;
+
 	my $color = $self->{"colorCb"}->GetValue();
 	return $color;
 }
@@ -91,17 +91,22 @@ sub SetValue {
 	my $self  = shift;
 	my $color = shift;
 	$self->{"colorCb"}->SetValue($color);
+	$self->__OnColorChangeHandler();
 }
 
 sub __OnColorChangeHandler {
-	my $self    = shift;
-	my $colorCb = shift;
+	my $self = shift;
 
-	my $color = $colorCb->GetValue();
+	#my $colorCb = shift;
 
-	my $wxColor = Helper->GetColorDef($color);
+	my $color   = $self->{"colorCb"}->GetValue();
+	my $wxColor = NifHelper->GetColorDef($color);
+	unless ($wxColor) {
+		$wxColor = NifHelper->GetColorDef("Transparent");
+
+	}
+
 	$self->{"colorPnl"}->SetBackgroundColour($wxColor);
-	
 	$self->{"colorPnl"}->Refresh();
 }
 

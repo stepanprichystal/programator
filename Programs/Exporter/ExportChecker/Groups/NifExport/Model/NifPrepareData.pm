@@ -75,12 +75,24 @@ sub OnPrepareGroupData {
 
 	#mask
 	my %masks2 = HegMethods->GetSolderMaskColor($jobId);
-
+	unless ( defined $masks2{"top"} ) {
+		$masks2{"top"} = "";
+	}
+	unless ( defined $masks2{"bot"} ) {
+		$masks2{"bot"} = "";
+	}
 	$groupData->SetC_mask_colour( $masks2{"top"} );
 	$groupData->SetS_mask_colour( $masks2{"bot"} );
 
 	#silk
 	my %silk2 = HegMethods->GetSilkScreenColor($jobId);
+
+	unless ( defined $silk2{"top"} ) {
+		$silk2{"top"} = "";
+	}
+	unless ( defined $silk2{"bot"} ) {
+		$silk2{"bot"} = "";
+	}
 
 	$groupData->SetC_silk_screen_colour( $silk2{"top"} );
 	$groupData->SetS_silk_screen_colour( $silk2{"bot"} );

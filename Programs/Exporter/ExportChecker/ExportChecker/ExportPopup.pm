@@ -100,6 +100,15 @@ sub CheckBeforeExport {
 	my $worker = threads->create( sub { $self->__CheckAsyncWorker( $self->{"jobId"}, $serverPort, $self->{"units"} ) } );
 	$worker->set_thread_exit_only(1);
 	$self->{"threadId"} = $worker->tid();
+	
+# 	for(my $i = 0; $i < 5; $i++){
+# 		sleep(1);
+# 			my $worker1 = threads->create( sub { $self->__CheckAsyncWorker( $self->{"jobId"}, $serverPort, $self->{"units"} ) } );
+#	$worker1->set_thread_exit_only(1);
+#	 
+# 	}
+ 
+	#$self->{"threadId"} = $worker->tid();
 
 }
 

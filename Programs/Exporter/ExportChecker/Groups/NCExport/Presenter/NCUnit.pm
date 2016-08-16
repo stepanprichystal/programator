@@ -19,13 +19,16 @@ use strict;
 use warnings;
 
 #local library
-#use aliased 'Programs::Exporter::ExportChecker::Groups::NifExport::View::NifUnitForm';
- 
+use aliased 'Programs::Exporter::ExportChecker::Groups::NCExport::View::NCUnitForm';
+
+#use aliased 'Programs::Exporter::ExportChecker::Groups::NifExport::Model::NifDataMngr';
 use aliased 'Programs::Exporter::ExportChecker::Groups::GroupDataMngr';
 use aliased 'Programs::Exporter::ExportChecker::Groups::NCExport::Model::NCCheckData';
 use aliased 'Programs::Exporter::ExportChecker::Groups::NCExport::Model::NCPrepareData';
 use aliased 'Programs::Exporter::ExportChecker::Groups::NCExport::Model::NCExportData';
-
+use aliased 'Programs::Exporter::ExportChecker::Groups::NCExport::Model::NCGroupData';
+use aliased 'Packages::Events::Event';
+use aliased 'Programs::Exporter::UnitEnums';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -33,20 +36,20 @@ use aliased 'Programs::Exporter::ExportChecker::Groups::NCExport::Model::NCExpor
 
 sub new {
 	my $class = shift;
-	my $self = {};
+	my $self  = {};
 
 	$self = $class->SUPER::new(@_);
 	bless $self;
 
 	#uique key within all units
-	$self->{"unitId"} = "nifUnit";
+	$self->{"unitId"} = UnitEnums->UnitId_NC;
 
-	my $checkData = NCCheckData->new();
+	# init class for model
+	my $checkData   = NCCheckData->new();
 	my $prepareData = NCPrepareData->new();
-	my $exportData = NCExportData->new();
-		
-	
-	$self->{"dataMngr"} = GroupDataMngr->new( $self->{"jobId"}, $prepareData, $checkData, $exportData);
+	my $exportData  = NCExportData->new();
+
+	$self->{"dataMngr"} = GroupDataMngr->new( $self->{"jobId"}, $prepareData, $checkData, $exportData );
 
 	return $self;    # Return the reference to the hash.
 }
@@ -67,21 +70,53 @@ sub InitForm {
 	my $inCAM        = shift;
 
 	$self->{"groupWrapper"} = $groupWrapper;
-	
+
 	my $parent = $groupWrapper->GetParentForGroup();
-	#$self->{"form"} = NifUnitForm->new( $parent, $inCAM, $self->{"title"} );
+	$self->{"form"} = NCUnitForm->new( $parent, $inCAM, $self->{"jobId"}, $self->{"title"} );
+
+	$self->_SetHandlers();
+
 }
 
-sub RefreshGUI{
-	 my $self         = shift;
+sub RefreshGUI {
+	my $self = shift;
+
+	my $groupData = $self->{"dataMngr"}->GetGroupData();
+
+	#refresh group form
+	$self->{"form"}->SetExportSingle( $groupData->GetExportSingle() );
+	$self->{"form"}->SetPltLayers( $groupData->GetPltLayers() );
+	$self->{"form"}->SetNPltLayers( $groupData->GetNPltLayers() );
 	
- 	my %groupData = $self->{"dataMngr"}->GetGroupData();
- 	
- 	#refresh group form
- 	
- 
- 	#refresh wrapper
+
+	#refresh wrapper
 	$self->_RefreshWrapper();
+}
+
+sub GetGroupData {
+
+	my $self = shift;
+
+	my $frm = $self->{"form"};
+
+	my $groupData;
+
+	#if form is init/showed to user, return group data edited by form
+	#else return default group data, not processed by form
+
+	if ($frm) {
+		$groupData = $self->{"dataMngr"}->GetGroupData();
+		$groupData->SetExportSingle( $frm->GetExportSingle() );
+		$groupData->SetPltLayers( $frm->GetPltLayers() );
+		$groupData->SetNPltLayers( $frm->GetNPltLayers() );
+		
+	}
+	else {
+
+		$groupData = $self->{"dataMngr"}->GetGroupData();
+	}
+
+	return $groupData;
 }
 
 #-------------------------------------------------------------------------------------------#

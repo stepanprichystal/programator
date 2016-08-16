@@ -17,7 +17,7 @@ use warnings;
 
 use aliased 'Programs::Exporter::ExportChecker::ExportChecker::GroupTable::GroupTable';
 use aliased 'Programs::Exporter::ExportChecker::Groups::NifExport::Presenter::NifUnit';
-
+use aliased 'Programs::Exporter::ExportChecker::Groups::NCExport::Presenter::NCUnit';
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
@@ -38,7 +38,12 @@ sub Build {
 	my $tableTab1 = GroupTable->new("Main groups");
 
 	# nif unit
-	my $nifUnit1 = NifUnit->new( $self->{"jobId"}, "Nif 1" );
+	my $nifUnit1 = NifUnit->new( $self->{"jobId"}, "NIF settings" );
+	
+	my $ncUnit1 = NCUnit->new( $self->{"jobId"}, "NC settings" );
+	my $ncUnit2 = NCUnit->new( $self->{"jobId"}, "NC 2" );
+	my $ncUnit3 = NCUnit->new( $self->{"jobId"}, "NC 3" );
+	#my $ncUnit4 = NCUnit->new( $self->{"jobId"}, "NC 4" );
 	#my $nifUnit2 = NifUnit->new( $self->{"jobId"}, "Nif 2" );
 ##	my $nifUnit3 = NifUnit->new( $self->{"jobId"}, "Nif 3" );
 #	my $nifUnit4 = NifUnit->new( $self->{"jobId"}, "Nif 4" );
@@ -48,15 +53,17 @@ sub Build {
 
 	my $row1Tab1 = $tableTab1->AddRow();
 	$row1Tab1->AddCell($nifUnit1);
+	$row1Tab1->AddCell($ncUnit1);
 
 	#$row1Tab1->AddCell($nifUnit2);
 
 
-#	my $row2Tab1 = $tableTab1->AddRow();
-#	$row2Tab1->AddCell($nifUnit3);
-#	$row2Tab1->AddCell($nifUnit4);
+	my $row2Tab1 = $tableTab1->AddRow();
+	$row2Tab1->AddCell($ncUnit2);
+	$row2Tab1->AddCell($ncUnit3);
 
-#	my $row3Tab1 = $tableTab1->AddRow();
+	#my $row3Tab1 = $tableTab1->AddRow();
+	#$row3Tab1->AddCell($ncUnit4);
 	#$row3Tab1->AddCell($nifUnit5);
 	#$row3Tab1->AddCell($nifUnit6);
 	#$row3Tab1->AddCell($nifUnit7);

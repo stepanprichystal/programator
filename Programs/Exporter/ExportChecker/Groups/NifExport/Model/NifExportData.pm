@@ -1,7 +1,7 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: This class is responsible for creation:
-# - Export data, (from prepared group data), which will consume exporter utility. Handler: OnExportGroupData
+# Description: Class is responsible for create final export data for group.
+# Structure for export data is defined by "data contracts" see ..DataTransfer::UnitsDataContracts..
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Programs::Exporter::ExportChecker::Groups::NifExport::Model::NifExportData;
@@ -9,10 +9,9 @@ package Programs::Exporter::ExportChecker::Groups::NifExport::Model::NifExportDa
 #3th party library
 use strict;
 use warnings;
-use File::Copy;
 
 #local library
- 
+
 use aliased 'Programs::Exporter::DataTransfer::UnitsDataContracts::NifData';
 
 #-------------------------------------------------------------------------------------------#
@@ -44,7 +43,7 @@ sub OnExportGroupData {
 
 	# Author
 	$exportData->SetZpracoval( $ENV{"LOGNAME"} );
-	
+
 	# Other
 	$exportData->SetTenting( $groupData->GetTenting() );
 	$exportData->SetMaska01( $groupData->GetMaska01() );
@@ -77,19 +76,6 @@ sub OnExportGroupData {
 #-------------------------------------------------------------------------------------------#
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
-
-	#	use aliased 'Packages::Export::NCExport::NCExportGroup';
-	#
-	#	my $jobId    = "F13608";
-	#	my $stepName = "panel";
-	#
-	#	my $inCAM = InCAM->new();
-	#
-	#	my $ncgroup = NCExportGroup->new( $inCAM, $jobId );
-	#
-	#	$ncgroup->Run();
-
-	#print $test;
 
 }
 
