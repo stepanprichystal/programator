@@ -8,7 +8,7 @@ use warnings;
 
 # ============ INPUT LINE =================
 my $inputLine =
-"add_pad_stack,name=3-15_IN,x=53.6475,y=298.087405,from=,to=,mirror=no,angle=0,direction=ccw,xscale=1,yscale=1";
+"COM chain_list_add,chain=2";
 # ============ INPUT LINE =================
 
 
