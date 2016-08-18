@@ -3,8 +3,7 @@
 # Description: Widget slouzici pro zobrazovani zprav ruznych typu uzivateli
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Programs::Exporter::ExporterUtility;
-use base 'Managers::AsyncJobMngr::AsyncJobMngr';
+package Programs::Exporter::ExportUtility::ExportUtility::ExportUtility;
 
 #3th party library
 
@@ -19,10 +18,11 @@ use aliased 'Helpers::FileHelper';
 use aliased 'Helpers::GeneralHelper';
 use aliased 'Enums::EnumsPaths';
 use aliased 'Enums::EnumsGeneral';
-use aliased 'Programs::Exporter::JobExport';
- 
+use aliased 'Programs::Exporter::ExportUtility::JobExport';
+
 use aliased 'Managers::MessageMngr::MessageMngr';
 
+use aliased 'Programs::Exporter::ExportUtility::ExportUtility::Forms::ExportUtilityForm';
 
 #my $THREAD_MESSAGE_EVT : shared;
 #-------------------------------------------------------------------------------------------#
@@ -35,53 +35,47 @@ use aliased 'Managers::MessageMngr::MessageMngr';
 #			   GROUP_EXPORT => "groupExport"
 #};
 
-
 sub new {
-	my $class  = shift;
-	my $parent = shift;
-
-	if ( defined $parent && $parent == -1 ) {
-		$parent = undef;
-	}
-
-	my $self = $class->SUPER::new( $parent, @_ );
-
+	my $self = shift;
+	$self = {};
 	bless($self);
 
-	#set handlers
+	$self->{"inCAM"} = undef;
 
-	$self->{'onJobStartRun'}->Add( sub    { $self->__OnJobStartRunHandler(@_) } );
-	$self->{'onJobDoneEvt'}->Add( sub     { $self->__OnJobDoneEvtHandler(@_) } );
-	$self->{'onJobProgressEvt'}->Add( sub { $self->__OnJobProgressEvtHandler(@_) } );
-	$self->{'onJobMessageEvt'}->Add( sub  { $self->__OnJobMessageEvtHandler(@_) } );
-	$self->{'onRunJobWorker'}->Add( sub { $self->__OnRunJobWorker(@_) } );
+	# Main application form
+	$self->{"form"} = ExportUtilityForm->new();
 
-	my $mainFrm = $self->__SetLayout();
-	$mainFrm->Show(1);
+	#set base class handlers
 
-	$self->__RunTimers();
+	$self->__Init();
+	$self->__Run();
 
 	#$self->{'onSetLayout'}->Add( sub { $self->__OnSetLayout(@_)});
 
 	return $self;
 }
 
-#-------------------------------------------------------------------------------------------#
-#  Handler methods
-#-------------------------------------------------------------------------------------------#
-
-sub __RunTimers {
+sub __Init {
 	my $self = shift;
 
-	my $timerFiles = Wx::Timer->new( $self->{"mainFrm"}, -1, );
-	Wx::Event::EVT_TIMER( $self->{"mainFrm"}, $timerFiles, sub { __CheckFilesHandler( $self, @_ ) } );
-	$self->{"timerFiles"} = $timerFiles;
+	#set handlers for main app form
+	$self->__SetHandlers();
 
-	my $timerRefresh = Wx::Timer->new( $self->{"mainFrm"}, -1, );
-	Wx::Event::EVT_TIMER( $self->{"mainFrm"}, $timerRefresh, sub { __Refresh( $self, @_ ) } );
-	$timerRefresh->Start(200);
+	#$self->__RunTimers();
 
 }
+
+sub __Run {
+	my $self = shift;
+	$self->{"form"}->{"mainFrm"}->Show(1);
+
+	$self->{"form"}->MainLoop();
+
+}
+
+# ========================================================================================== #
+#  BASE CLASS HANDLERS
+# ========================================================================================== #
 
 sub __OnJobStartRunHandler {
 	my $self    = shift;
@@ -90,7 +84,7 @@ sub __OnJobStartRunHandler {
 	print "Exporter utility: Start job id: $jobGUID\n";
 
 }
- 
+
 sub __OnJobDoneEvtHandler {
 	my $self     = shift;
 	my $jobGUID  = shift;
@@ -112,34 +106,31 @@ sub __OnJobProgressEvtHandler {
 }
 
 sub __OnJobMessageEvtHandler {
-	my  $self = shift; 
-	my $jobGUID = shift;
+	my $self     = shift;
+	my $jobGUID  = shift;
 	my $messType = shift;
-	my $data = shift;
-	
-	print "Exporter utility::  job id: " . $jobGUID . " - messType: " . $messType . " - data: " . $data. "\n";	
-}
+	my $data     = shift;
 
+	print "Exporter utility::  job id: " . $jobGUID . " - messType: " . $messType . " - data: " . $data . "\n";
+}
 
 #this handler run, when new job thread is created
 sub __OnRunJobWorker {
-	my $self = shift;
-	my $pcbId   = shift;
-	my $jobGUID = shift;
-	my $inCAM   = shift;
+	my $self                         = shift;
+	my $pcbId                        = shift;
+	my $jobGUID                      = shift;
+	my $inCAM                        = shift;
 	my $THREAD_PROGRESS_EVT : shared = ${ shift(@_) };
-	my $THREAD_MESSAGE_EVT : shared = ${ shift(@_) };
-	
+	my $THREAD_MESSAGE_EVT : shared  = ${ shift(@_) };
+
 	#vytvorit nejakou Base class ktera bude obsahovat odesilani zprav prostrednictvim messhandler
-	my $jobExport = JobExport->new($pcbId, $jobGUID, $inCAM, "data", \$THREAD_PROGRESS_EVT, \$THREAD_MESSAGE_EVT,  $self->{"mainFrm"} );
-	
+	my $jobExport = JobExport->new( $pcbId, $jobGUID, $inCAM, "data", \$THREAD_PROGRESS_EVT, \$THREAD_MESSAGE_EVT, $self->{"mainFrm"} );
+
 	$jobExport->RunExport();
-	
-	
+
 	#$jobExport->{'onItemResult'}->Add{  sub    { $self->__OnItemResultHandler(@_) }  };
 	#$jobExport->{'onItemError'}->Add{  sub    { $self->__OnItemErrorHandler(@_) }  }
 	#$jobExport->{'onGroupExport'}->Add{  sub    { $self->__OnGroupExportHandler(@_) }  }
-	
 
 	#use aliased 'Packages::Export::NCExport::NC_Group';
 
@@ -155,95 +146,52 @@ sub __OnRunJobWorker {
 	#$ncgroup->Run();
 
 	#doExport($pcbId,$inCAM)
-#
-#	my %res : shared = ();
-#	for ( my $i = 0 ; $i < 50 ; $i++ ) {
-#
-#		$res{"jobGUID"} = $jobGUID;
-#		$res{"port"}    = "port";
-#		$res{"value"}   = $i;
-#
-#		my $threvent2 = new Wx::PlThreadEvent( -1, $THREAD_PROGRESS_EVT, \%res );
-#		Wx::PostEvent( $self->{"mainFrm"}, $threvent2 );
-#
-#		sleep(1);
-#	}
+	#
+	#	my %res : shared = ();
+	#	for ( my $i = 0 ; $i < 50 ; $i++ ) {
+	#
+	#		$res{"jobGUID"} = $jobGUID;
+	#		$res{"port"}    = "port";
+	#		$res{"value"}   = $i;
+	#
+	#		my $threvent2 = new Wx::PlThreadEvent( -1, $THREAD_PROGRESS_EVT, \%res );
+	#		Wx::PostEvent( $self->{"mainFrm"}, $threvent2 );
+	#
+	#		sleep(1);
+	#	}
 	print "TESTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT KONEEEEC";
 
 }
 
+# ========================================================================================== #
+#  PRIVATE HELPER METHOD
+# ========================================================================================== #
 
-#sub __JobExportMessHandler{
-#	my ( $self, $frame, $event) =  @_;
-#	my $test = shift;
-#	#my %event = %{shift(@_)};
-#	
-#	#my $jobGUID = $event{"jobGUID"};
-#	#my $messType = $event{"messType"};
-#	#my $data = $event{"data"};
-#	
-#	 print $test;
-#	
-#	#print "JobExport:  job id: " . $jobGUID . " - messType: " . $messType . " - data: " . $data. "\n";
-#}
+sub __SetHandlers {
+	my $self = shift;
 
+	#Set base handler
 
-sub __SetLayout {
+	$self->{"form"}->{'onJobStartRun'}->Add( sub    { $self->__OnJobStartRunHandler(@_) } );
+	$self->{"form"}->{'onJobDoneEvt'}->Add( sub     { $self->__OnJobDoneEvtHandler(@_) } );
+	$self->{"form"}->{'onJobProgressEvt'}->Add( sub { $self->__OnJobProgressEvtHandler(@_) } );
+	$self->{"form"}->{'onJobMessageEvt'}->Add( sub  { $self->__OnJobMessageEvtHandler(@_) } );
+	$self->{"form"}->{'onRunJobWorker'}->Add( sub   { $self->__OnRunJobWorker(@_) } );
 
-	my $self    = shift;
-	my $mainFrm = $self->{"mainFrm"};
+}
 
-	#SIZERS
-	my $sz = Wx::BoxSizer->new(&Wx::wxVERTICAL);
+sub __RunTimers {
+	my $self = shift;
 
-	#CONTROLS
-	my $txt = Wx::StaticText->new( $mainFrm, -1, "ahoj", &Wx::wxDefaultPosition, [ 300, 200 ] );
-	$self->{"txt"} = $txt;
+	my $formMainFrm = $self->{"form"};
 
-	my $txt2 = Wx::StaticText->new( $mainFrm, -1, "ahoj2", &Wx::wxDefaultPosition, [ 300, 200 ] );
-	$self->{"txt2"} = $txt2;
+	my $timerFiles = Wx::Timer->new( $formMainFrm, -1, );
+	Wx::Event::EVT_TIMER( $formMainFrm, $timerFiles, sub { __CheckFilesHandler( $self, @_ ) } );
+	$self->{"timerFiles"} = $timerFiles;
 
-	my $button = Wx::Button->new( $mainFrm, -1, "test click" );
-
-	Wx::Event::EVT_BUTTON( $button, -1, sub { $self->__OnClick($button) } );
-
-	my $button2 = Wx::Button->new( $mainFrm, -1, "exit job" );
-
-	Wx::Event::EVT_BUTTON( $button2, -1, sub { $self->__OnClickExit($button2) } );
-
-	my $button3 = Wx::Button->new( $mainFrm, -1, "run new job" );
-
-	Wx::Event::EVT_BUTTON( $button3, -1, sub { $self->__OnClickNew($button3) } );
-
-	my $pcbidTxt   = Wx::TextCtrl->new( $mainFrm, -1, "", &Wx::wxDefaultPosition, [ 150, 25 ] );
-	my $pcbguidTxt = Wx::TextCtrl->new( $mainFrm, -1, "", &Wx::wxDefaultPosition, [ 150, 25 ] );
-
-	my $gauge = Wx::Gauge->new( $mainFrm, -1, 100, [ -1, -1 ], [ 300, 20 ], &Wx::wxGA_HORIZONTAL );
-
-	$gauge->SetValue(0);
-
-	$sz->Add( $txt,        1, &Wx::wxEXPAND );
-	$sz->Add( $txt2,       1, &Wx::wxEXPAND );
-	$sz->Add( $gauge,      0, &Wx::wxEXPAND );
-	$sz->Add( $button,     0, &Wx::wxEXPAND );
-	$sz->Add( $button2,    0, &Wx::wxEXPAND );
-	$sz->Add( $button3,    0, &Wx::wxEXPAND );
-	$sz->Add( $pcbidTxt,   0, &Wx::wxEXPAND );
-	$sz->Add( $pcbguidTxt, 0, &Wx::wxEXPAND );
-
-	$mainFrm->SetSizer($sz);
-
-	$self->{"gauge"}      = $gauge;
-	$self->{"pcbidTxt"}   = $pcbidTxt;
-	$self->{"pcbguidTxt"} = $pcbguidTxt;
-	
-	
-	
-	#$THREAD_MESSAGE_EVT = Wx::NewEventType;
-	#Wx::Event::EVT_COMMAND( $self->{"mainFrm"}, -1, $THREAD_MESSAGE_EVT, sub { $self->__JobExportMessHandler(@_) } );
-
-	return $mainFrm;
-
+	my $timerRefresh = Wx::Timer->new( $formMainFrm, -1, );
+	Wx::Event::EVT_TIMER( $formMainFrm, $timerRefresh, sub { __Refresh( $self, @_ ) } );
+	$timerRefresh->Start(200);
 }
 
 sub __CheckFilesHandler {
@@ -294,34 +242,6 @@ sub __CheckFilesHandler {
 
 	$self->{"txt"}->SetLabel($str);
 	print "Aktualiyace - " . localtime( time() ) . "\n";
-}
-
-sub __OnClick {
-
-	my ( $self, $button ) = @_;
-
-	print "\nClick\n";
-}
-
-sub __OnClickExit {
-
-	my ( $self, $button ) = @_;
-	$self->_AbortJob( $self->{"pcbidTxt"}->GetValue() );
-
-}
-
-sub __OnClickNew {
-
-	my ( $self, $button ) = @_;
-
-	#my @j = @{ $self->{"jobs"} };
-	#my $i = ( grep { $j[$_]->{"pcbId"} eq $self->{"pcbidTxt"}->GetValue() } 0 .. $#j )[0];
-
-	#if ( defined $i ) {
-
-	my $jobGUID = $self->_AddJobToQueue( $self->{"pcbidTxt"}->GetValue() );
-
-	#}
 }
 
 sub __Refresh {
@@ -411,9 +331,9 @@ sub doExport {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	use aliased 'Programs::Exporter::ExporterUtility';
+	use aliased 'Programs::Exporter::ExportUtility::ExportUtility::ExportUtility';
 
-	my $exporter = ExporterUtility->new();
+	my $exporter = ExportUtility->new();
 
 	#$app->Test();
 
@@ -422,25 +342,5 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 }
 
 1;
-
-#my $app = MyApp2->new();
-
-#my $worker = threads->create( \&work );
-#print $worker->tid();
-
-#
-#sub work {
-#	sleep(5);
-#	print "METODA==========\n";
-#
-#	#!!! I would like send array OR hash insted of scalar here: my %result = ("key1" => 1, "key2" => 2 );
-#	# !!! How to do that?
-#
-#}
-#
-#sub OnCreateThread {
-#	my ( $self, $event ) = @_;
-#	@_ = ();
-#}
 
 1;

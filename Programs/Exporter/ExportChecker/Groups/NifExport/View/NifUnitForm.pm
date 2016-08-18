@@ -6,6 +6,10 @@
 package Programs::Exporter::ExportChecker::Groups::NifExport::View::NifUnitForm;
 use base qw(Wx::Panel);
 
+use Class::Interface;
+&implements('Programs::Exporter::ExportChecker::Groups::IUnitForm');
+
+
 #3th party library
 use strict;
 use warnings;
@@ -305,6 +309,15 @@ sub __OnTentingChangeHandler {
 	my $chb  = shift;
 
 	$self->{"onTentingChange"}->Do( $chb->GetValue() );
+}
+
+# =====================================================================
+# DISABLING CONTROLS
+# =====================================================================
+
+sub DisableControls{
+	
+	
 }
 
 # =====================================================================

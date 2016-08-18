@@ -41,6 +41,9 @@ use constant {
 sub new {
 	my $self   = shift;
 	my $parent = shift;
+	my $title = shift;
+	my $dimension = shift;
+	
 	$self = {};
 
 	unless ($parent) {
@@ -71,7 +74,7 @@ sub new {
 	$self->{'onJobMessageEvt'}  = Event->new();
 	$self->{'onRunJobWorker'} = Event->new();
 
-	my $mainFrm = $self->__SetLayout($parent);
+	my $mainFrm = $self->__SetLayout($parent, $title, $dimension);
 
 	$self->__RunTimers();
 
@@ -373,6 +376,8 @@ sub __SetLayout {
 
 	my $self   = shift;
 	my $parent = shift;
+	my $title = shift;
+	my @dimension = @{shift(@_)};
 
 	#EVT_NOTEBOOK_PAGE_CHANGED( $self, $nb, $self->can( 'OnPageChanged' ) );
 
@@ -380,9 +385,9 @@ sub __SetLayout {
 	my $mainFrm = MyWxFrame->new(
 		$parent,                   # parent window
 		-1,                        # ID -1 means any
-		"Exporter",                # title
+		$title,                # title
 		&Wx::wxDefaultPosition,    # window position
-		[ 700, 900 ],              # size
+		\@dimension              # size
 		                           #&Wx::wxSYSTEM_MENU | &Wx::wxCAPTION | &Wx::wxCLIP_CHILDREN | &Wx::wxRESIZE_BORDER | &Wx::wxMINIMIZE_BOX
 	);
 

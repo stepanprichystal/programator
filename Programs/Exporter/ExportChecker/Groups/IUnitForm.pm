@@ -1,9 +1,9 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Interface, allow build "operations" for technical procedure
+# Description: Interface, which must implement each UnitForm
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Programs::Exporter::ExportChecker::Groups::IGroupData;
+package Programs::Exporter::ExportChecker::Groups::IUnitForm;
 
 #3th party library
 use strict;
@@ -22,7 +22,7 @@ use Class::Interface;
 
 # Methods
 
-#sub GetData;
+sub DisableControls;
 
 
 1;

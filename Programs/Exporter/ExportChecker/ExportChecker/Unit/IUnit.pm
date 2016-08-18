@@ -27,21 +27,22 @@ sub InitDataMngr;
 
 # Do checking before export, based on group group data.
 # Group data/ (= default data before user change them in GUI)
-#sub CheckBeforeExport;
+sub CheckBeforeExport;
 
 # When group form is buiild, refresh controls based on default/group data
-#sub RefreshGUI;
+sub RefreshGUI;
 
+# Get vale, if group is disable, active and on, active and off
+sub GetGroupState;
 
+# Set programatically ifgroup is disable, active and on, active and off
+sub SetGroupState;
 
-#sub GetGroupState;
-#sub SetGroupState;
-
-# Return group data, either default data or changed by user
-#sub GetGroupData;
+# Return group "state" data, either default data or changed by user
+sub GetGroupData;
 
 # Return data intended for final export
-#sub GetExportData;
+sub GetExportData;
 
 
 
