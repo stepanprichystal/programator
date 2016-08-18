@@ -293,17 +293,21 @@ sub __DefinePlatedOperations {
 	# 6) Operation name = j<core number> - can contain layers from
 	# - @plt_cDrill
 	# - @plt_fDrill
-	 for ( my $i = 0 ; $i < $coreCnt ; $i++ ) {
+	for ( my $i = 0 ; $i < $coreCnt ; $i++ ) {
 
 		my $coreNum = $i + 1;
 		my $core    = $stackupNC->GetCore($coreNum);
 
 		my @layers = $core->GetNCLayers( Enums->SignalLayer_TOP, EnumsGeneral->LAYERTYPE_plt_cDrill );
 
-		# Add frame
-		push( @layers, $plt_fDrill[0] );
+		# if exist core drilling
+		if ( scalar(@layers) ) {
 
-		$opManager->AddOperationDef( "j" . $core->GetCoreNumber(), \@layers, 0);
+			# Add frame
+			push( @layers, $plt_fDrill[0] );
+
+			$opManager->AddOperationDef( "j" . $core->GetCoreNumber(), \@layers, 0 );
+		}
 	}
 
 	# 7) Operation name = ds, can contain layer
