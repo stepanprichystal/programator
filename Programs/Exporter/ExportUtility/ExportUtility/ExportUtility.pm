@@ -45,6 +45,9 @@ sub new {
 	# Main application form
 	$self->{"form"} = ExportUtilityForm->new();
 
+	# Keep all references of used groups/units in form
+	#$self->{"units"} = Unit->new();
+
 	#set base class handlers
 
 	$self->__Init();
@@ -61,8 +64,21 @@ sub __Init {
 	#set handlers for main app form
 	$self->__SetHandlers();
 
-	#$self->__RunTimers();
+	my @units = ();
 
+	use aliased 'Programs::Exporter::ExportUtility::ExportUtility::Unit::Unit';
+
+	for ( my $i = 0 ; $i < 5 ; $i++ ) {
+
+		my $unit = Unit->new();
+		push( @units, $unit );
+	}
+	
+	$self->{"units"} = \@units;
+
+	$self->{"form"}->BuildGroupTableForm($self->{"units"} );
+
+	#$self->__RunTimers();
 }
 
 sub __Run {
@@ -177,6 +193,11 @@ sub __SetHandlers {
 	$self->{"form"}->{'onJobProgressEvt'}->Add( sub { $self->__OnJobProgressEvtHandler(@_) } );
 	$self->{"form"}->{'onJobMessageEvt'}->Add( sub  { $self->__OnJobMessageEvtHandler(@_) } );
 	$self->{"form"}->{'onRunJobWorker'}->Add( sub   { $self->__OnRunJobWorker(@_) } );
+	
+	
+	$self->{"form"}->{'onClick'}->Add( sub   { $self->__OnClick(@_) } );
+	
+	
 
 }
 
@@ -257,17 +278,35 @@ sub __Refresh {
 
 }
 
+sub __OnClick {
+	my $self = shift;
+
+	my $actualColId = 0;
+	my $total       = 0;
+
+	
+
+	foreach my $unit ( @{ $self->{"units"} } ) {
+
+		my ( $colWidth, $colHeight ) = $unit->{"form"}->GetSizeWH();
+
+		print " Unit $unit height is : " . $colHeight . " \n ";
+
+	}
+
+}
+
 sub doExport {
 	my ( $id, $inCAM ) = @_;
 
-	my $errCode = $inCAM->COM( "clipb_open_job", job => $id, update_clipboard => "view_job" );
+	my $errCode = $inCAM->COM( " clipb_open_job ", job => $id, update_clipboard => " view_job " );
 
 	#
 	#	$errCode = $inCAM->COM(
-	#		"open_entity",
-	#		job  => "F17116+2",
-	#		type => "step",
-	#		name => "test"
+	#		" open_entity ",
+	#		job  => " F17116 + 2 ",
+	#		type => " step ",
+	#		name => " test "
 	#	);
 
 	#return 0;
@@ -276,7 +315,7 @@ sub doExport {
 		sleep(3);
 		$inCAM->COM(
 					 'output_layer_set',
-					 layer        => "c",
+					 layer        => " c ",
 					 angle        => '0',
 					 x_scale      => '1',
 					 y_scale      => '1',
@@ -293,8 +332,8 @@ sub doExport {
 					 job                  => $id,
 					 step                 => 'input',
 					 format               => 'Gerber274x',
-					 dir_path             => "c:/Perl/site/lib/TpvScripts/Scripts/data",
-					 prefix               => "incam1_" . $id . "_$i",
+					 dir_path             => " c : /Perl/site / lib / TpvScripts / Scripts / data ",
+					 prefix               => " incam1_ " . $id . " _ $i",
 					 suffix               => "",
 					 break_sr             => 'no',
 					 break_symbols        => 'no',

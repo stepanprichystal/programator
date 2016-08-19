@@ -20,10 +20,11 @@ use aliased 'Helpers::GeneralHelper';
 use aliased 'Enums::EnumsPaths';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'Programs::Exporter::ExportUtility::JobExport';
- 
+use aliased 'Packages::Events::Event';
+
 use aliased 'Managers::MessageMngr::MessageMngr';
 use aliased 'Programs::Exporter::ExportUtility::ExportUtility::Forms::JobQueueForm';
-
+use aliased 'Programs::Exporter::ExportUtility::ExportUtility::Forms::GroupTableForm';
 
 #my $THREAD_MESSAGE_EVT : shared;
 #-------------------------------------------------------------------------------------------#
@@ -36,7 +37,6 @@ use aliased 'Programs::Exporter::ExportUtility::ExportUtility::Forms::JobQueueFo
 #			   GROUP_EXPORT => "groupExport"
 #};
 
-
 sub new {
 	my $class  = shift;
 	my $parent = shift;
@@ -44,26 +44,29 @@ sub new {
 	if ( defined $parent && $parent == -1 ) {
 		$parent = undef;
 	}
-	
+
 	my $title = "Exporter jobu";
-	my @dimension = (1100, 700);
-	
-	my $self = $class->SUPER::new( $parent, $title, \@dimension);
+	my @dimension = ( 1100, 700 );
+
+	my $self = $class->SUPER::new( $parent, $title, \@dimension );
 
 	bless($self);
 
 	#set base class handlers
- 
-	my $mainFrm = $self->__SetLayout();
-	$mainFrm->Show(1);
 
- 
+	my $mainFrm = $self->__SetLayout();
+	#$mainFrm->Show(1);
 
 	#$self->{'onSetLayout'}->Add( sub { $self->__OnSetLayout(@_)});
+	
+	$self->{"onClick"} = Event->new();
 
 	return $self;
 }
 
+
+
+ 
 
 sub __SetLayout {
 
@@ -77,40 +80,55 @@ sub __SetLayout {
 	my $szRow1 = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
 	my $szRow2 = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
 
-		# DEFINE CONTROLS
+	# DEFINE CONTROLS
 
 	my $jobsQueueStatBox = $self->__SetLayoutJobsQueue($mainFrm);
-	my $settingsStatBox = $self->__SetLayoutInCAMSettings($mainFrm);
-	my $groupsStatBox = $self->__SetLayoutGroups($mainFrm);
- 
-
-	  
+	my $settingsStatBox  = $self->__SetLayoutInCAMSettings($mainFrm);
+	my $groupsStatBox    = $self->__SetLayoutGroups($mainFrm);
 
 	# BUILD STRUCTURE OF LAYOUT
-	$szRow1->Add( $jobsQueueStatBox,    80, &Wx::wxEXPAND );
-	$szRow1->Add( $settingsStatBox, 20, &Wx::wxEXPAND );
+	$szRow1->Add( $jobsQueueStatBox, 80, &Wx::wxEXPAND );
+	$szRow1->Add( $settingsStatBox,  20, &Wx::wxEXPAND );
 
 	$szRow2->Add( $groupsStatBox, 1, &Wx::wxEXPAND );
 
-	 
- 
-	$szMain->Add( $szRow1, 0,  &Wx::wxEXPAND | &Wx::wxALL, 1 );
-	$szMain->Add( $szRow2, 0,  &Wx::wxEXPAND | &Wx::wxALL, 1 );
-	 
+	$szMain->Add( $szRow1, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szMain->Add( $szRow2, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+
 	# REGISTER EVENTS
 
 	#Wx::Event::EVT_BUTTON( $btnExport, -1, sub { $self->__OnExportForceClick(@_) } );
-	 
-	 
+
 	# SAVE NECESSARY CONTROLS
-	
+
+	$self->{"mainFrm"} = $mainFrm;
+	$self->{"szMain"} = $szMain;
+
 	$mainFrm->SetSizer($szMain);
-	
+
 	return $mainFrm;
 
 }
 
+sub BuildGroupTableForm {
+	my $self = shift;
 
+	# class keep rows structure and group instances
+	my $units = shift;
+
+	#use aliased 'Programs::Exporter::ExportUtility::ExportUtility::Forms::GroupWrapperForm';
+	#my $form = GroupWrapperForm->new($self->{"mainFrm"});
+	
+	#$self->{"szMain"}->Add( $form, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+
+	my $groupTableForm = GroupTableForm->new($self->{"groupStatBox"});
+
+	$groupTableForm->InitGroupTable($units);
+
+	$self->{"groupStatBoxSz"}->Add( $groupTableForm, 0, &Wx::wxEXPAND );
+ 	#$self->{"szMain"}->Add( $groupTableForm, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+
+}
 
 #sub __SetLayout {
 #
@@ -160,19 +178,16 @@ sub __SetLayout {
 #	$self->{"gauge"}      = $gauge;
 #	$self->{"pcbidTxt"}   = $pcbidTxt;
 #	$self->{"pcbguidTxt"} = $pcbguidTxt;
-#	
-#	
-#	
+#
+#
+#
 #	#$THREAD_MESSAGE_EVT = Wx::NewEventType;
 #	#Wx::Event::EVT_COMMAND( $self->{"mainFrm"}, -1, $THREAD_MESSAGE_EVT, sub { $self->__JobExportMessHandler(@_) } );
 #
 #	return $mainFrm;
 #
 #}
- 
 
-
- 
 # ========================================================================================== #
 #  BUILD GUI SECTION
 # ========================================================================================== #
@@ -185,12 +200,11 @@ sub __SetLayoutJobsQueue {
 	#define staticboxes
 	my $statBox = Wx::StaticBox->new( $parent, -1, 'Jobs queue' );
 	my $szStatBox = Wx::StaticBoxSizer->new( $statBox, &Wx::wxVERTICAL );
+
 	#my @dimension = [ 500, 500 ];
-	my $jobQueue = JobQueueForm->new($parent, [ 500, 500 ]);
-	 
-	 
+	my $jobQueue = JobQueueForm->new( $parent, [ 500, 200 ] );
+
 	#my $btnDefault    = Wx::Button->new( $statBox, -1, "Default settings",   &Wx::wxDefaultPosition, [ 110, 22 ] );
-	 
 
 	$szStatBox->Add( $jobQueue, 1, &Wx::wxEXPAND );
 
@@ -206,15 +220,23 @@ sub __SetLayoutInCAMSettings {
 	my $statBox = Wx::StaticBox->new( $parent, -1, 'InCAM settings' );
 	my $szStatBox = Wx::StaticBoxSizer->new( $statBox, &Wx::wxVERTICAL );
 
-	 
-	my $btnDefault    = Wx::Button->new( $statBox, -1, "Default settings",   &Wx::wxDefaultPosition, [ 110, 22 ] );
-	 
+	my $btnDefault = Wx::Button->new( $statBox, -1, "Default settings", &Wx::wxDefaultPosition, [ 110, 22 ] );
+	
+	
+	Wx::Event::EVT_BUTTON( $btnDefault,   -1, sub { $self->__OnClick(@_)} );
 
 	$szStatBox->Add( $btnDefault, 1, &Wx::wxEXPAND );
 
 	return $szStatBox;
 }
 
+
+sub __OnClick{
+	my $self   = shift;
+	
+	$self->{"onClick"}->Do() 
+	
+}
 
 # Set layout for Quick set box
 sub __SetLayoutGroups {
@@ -225,29 +247,21 @@ sub __SetLayoutGroups {
 	my $statBox = Wx::StaticBox->new( $parent, -1, 'Export groups' );
 	my $szStatBox = Wx::StaticBoxSizer->new( $statBox, &Wx::wxVERTICAL );
 
-	 
-	my $btnDefault    = Wx::Button->new( $statBox, -1, "Default settings",   &Wx::wxDefaultPosition, [ 110, 22 ] );
-	 
+	my $btnDefault = Wx::Button->new( $statBox, -1, "Default settings", &Wx::wxDefaultPosition, [ 110, 22 ] );
 
 	$szStatBox->Add( $btnDefault, 1, &Wx::wxEXPAND );
 
+	$self->{"groupStatBox"} = $statBox;
+	$self->{"groupStatBoxSz"} = $szStatBox;
+
 	return $szStatBox;
 }
-
 
 # ========================================================================================== #
 #  PRIVATE HELPER METHOD
 # ========================================================================================== #
 
  
-
-
-sub __OnClick {
-
-	my ( $self, $button ) = @_;
-
-	print "\nClick\n";
-}
 
 sub __OnClickExit {
 
@@ -368,6 +382,5 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 }
 
 1;
-
 
 1;

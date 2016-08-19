@@ -4,7 +4,7 @@
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Programs::Exporter::ExportUtility::ExportUtility::Forms::JobQueueItemForm;
-use base qw(Wx::Panel);
+use base qw(Widgets::Forms::CustomQueue::MyWxCustomQueueItem);
 
 #3th party library
 use Wx;
@@ -13,6 +13,10 @@ use strict;
 use warnings;
 
 #local library
+use aliased 'Packages::Events::Event';
+use aliased 'Enums::EnumsGeneral';
+use aliased 'Programs::Exporter::ExportUtility::ExportUtility::Forms::ErrorIndicator';
+
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
@@ -20,149 +24,135 @@ use warnings;
 sub new {
 	my $class  = shift;
 	my $parent = shift;
-	my $text   = shift;
-
+	my $jobId = shift;
+	
 	my $self = $class->SUPER::new( $parent, -1 );
 
 	bless($self);
 
-	$self->{"text"} = $text;
+	# PROPERTIES
 
-	#$self->{"state"} = Enums->GroupState_ACTIVEON;
+	$self->{"jobId"} = $jobId;
 
 	$self->__SetLayout();
 
-	#EVENTS
-
-	#$self->{"onChangeState"} = Event->new();
-
 	return $self;
 }
-
-#sub Init {
-#	my $self      = shift;
-#	my $groupName = shift;
-#	my $groupBody = shift;
-#
-#	$self->{"headerTxt"}->SetLabel($groupName);
-#
-#	$self->{"bodySizer"}->Add( $groupBody, 1, &Wx::wxEXPAND | &Wx::wxALL, 2 );
-#
-#	$self->{"groupHeight"} = $groupBody->{"groupHeight"};
-#
-#	# panel, which contain group content
-#	$self->{"groupBody"} = $groupBody;
-#
-#	#$self->{"groupBody"}->Disable();
-#	$self->Refresh();
-#
-#	#$self->{"bodySizer"}->Layout();
-#
-#	#my ($w, $h) = $self->{"bodySizer"}->GetSizeWH();
-#
-#	#$self->{"bodySizer"}->Fit($self->{"groupBody"});
-#	#$self->{"szHeaderBody"}->Fit($self);
-#	#	$self->Layout();
-#
-#	#my ( $w, $h ) = $groupBody->GetSizeWH();
-#
-#	print 1;
-#
-#}
-
-#sub GetGroupHeight {
-#
-#	my $self = shift;
-#	return $self->{"groupHeight"};
-#
-#}
 
 sub __SetLayout {
 	my $self = shift;
 
 	my $szMain = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
 
-	$self->SetBackgroundColour( Wx::Colour->new( 50, 245, 20 ) );
+	
 
-	my $txt  = Wx::StaticText->new( $self, -1, "Job " . $self->{"text"},  [ -1, -1 ], [ 200, 30 ] );
-	my $txt2 = Wx::StaticText->new( $self, -1, "Job2 " . $self->{"text"}, [ -1, -1 ], [ 200, 30 ] );
-	my $btnDefault = Wx::Button->new( $self, -1, "Default settings", &Wx::wxDefaultPosition, [ 110, 22 ] );
+	# DEFINE CONTROLS
 
-	Wx::Event::EVT_BUTTON( $btnDefault, -1, sub { $self->__OnClick() } );
+	my $orderTxt = Wx::StaticText->new( $self, -1, "0)",     [ -1, -1 ], [ 20, 20 ] );
+	my $jobIdTxt = Wx::StaticText->new( $self, -1, $self->{"jobId"}, [ -1, -1 ], [ 40, 20 ] );
 
-	$szMain->Add( $txt,        0 );
-	$szMain->Add( $txt2,       0 );
-	$szMain->Add( $btnDefault, 0 );
+	my $gauge = Wx::Gauge->new( $self, -1, 100, [ -1, -1 ], [ 250, 40 ], &Wx::wxGA_HORIZONTAL );
+	$gauge->SetValue(0);
+
+	my $percentageTxt = Wx::StaticText->new( $self, -1, "10%", [ -1, -1 ], [ 30, 20 ] );
+
+	my $errIndicator  = ErrorIndicator->new( $self, EnumsGeneral->MessageType_ERROR );
+	my $warnIndicator = ErrorIndicator->new( $self, EnumsGeneral->MessageType_WARNING );
+
+	my $statusTxt = Wx::StaticText->new( $self, -1, "Waiting for InCAM", [ -1, -1 ], [ 100, 20 ] );
+	my $stepTxt   = Wx::StaticText->new( $self, -1, "Exportovano",       [ -1, -1 ], [ 70, 20 ] );
+
+	my $resultTxt = Wx::StaticText->new( $self, -1, "Ok", [ -1, -1 ], [ 30, 20 ] );
+
+	my $btnAbort  = Wx::Button->new( $self, -1, "Abort", &Wx::wxDefaultPosition, [ 70, 20 ] );
+	my $btnRemove = Wx::Button->new( $self, -1, "Remove", &Wx::wxDefaultPosition, [ 70, 20 ] );
+
+	#
+	#	$gauge->SetValue(0);
+	#my $txt2 = Wx::StaticText->new( $self, -1, "Job2 " . $self->{"text"}, [ -1, -1 ], [ 200, 30 ] );
+	#my $btnDefault = Wx::Button->new( $self, -1, "Default settings", &Wx::wxDefaultPosition, [ 110, 22 ] );
+
+	# DEFINE EVENTS
+
+	Wx::Event::EVT_BUTTON( $btnAbort,  -1, sub { $self->__OnAbort(@_) } );
+	Wx::Event::EVT_BUTTON( $btnRemove, -1, sub { $self->__OnRemove(@_) } );
+
+	# DEFINE STRUCTURE
+
+	$szMain->Add( $orderTxt,      0, &Wx::wxEXPAND |  &Wx::wxLEFT, 20);
+	$szMain->Add( $jobIdTxt,      0, &Wx::wxEXPAND  |  &Wx::wxLEFT,20);
+	$szMain->Add( $gauge,         0,      &Wx::wxLEFT,10);
+	$szMain->Add( $percentageTxt, 0, &Wx::wxEXPAND  |  &Wx::wxLEFT,10);
+	$szMain->Add( $errIndicator,  0, &Wx::wxEXPAND  |  &Wx::wxLEFT,20);
+	$szMain->Add( $warnIndicator, 0, &Wx::wxEXPAND  |  &Wx::wxLEFT,10);
+
+	$szMain->Add( $statusTxt, 0, &Wx::wxEXPAND  |  &Wx::wxLEFT,10);
+	$szMain->Add( $stepTxt, 0, &Wx::wxEXPAND |  &Wx::wxLEFT,20);
+	
+	$szMain->Add( $resultTxt, 0, &Wx::wxEXPAND |  &Wx::wxLEFT,20);
+	$szMain->Add( $btnAbort,  0, &Wx::wxEXPAND |  &Wx::wxLEFT,20);
+	$szMain->Add( $btnRemove, 0, &Wx::wxEXPAND |  &Wx::wxLEFT,5);
+
 	$self->SetSizer($szMain);
+	
+	
+	# SAVE REFERENCES
+	$self->{"orderTxt"} = $orderTxt;
+	$self->{"gauge"} = $gauge;
+	$self->{"percentageTxt"} = $percentageTxt;
+	$self->{"errIndicator"} = $errIndicator;
+	$self->{"warnIndicator"} = $warnIndicator;
+	$self->{"statusTxt"} = $statusTxt;
+	$self->{"stepTxt"} = $stepTxt;
+	$self->{"resultTxt"} = $resultTxt;
 
 	$self->RecursiveHandler($self);
 
 }
-
-sub __OnClick {
+ 
+sub SetOrder {
 	my $self = shift;
+	my $value = shift;
 
-	print "button pressed";
+	$self->{"orderTxt"}->SetLabel($value);
 }
 
-sub RecursiveHandler {
-	my $self    = shift;
-	my $control = shift;
-
-	my @controls = ("Wx::Panel", "Wx::StaticSizer", "Wx::StaticText");
-
-	if ( scalar(grep{  $control->isa($_) } @controls)) {
-
-		Wx::Event::EVT_LEFT_DOWN( $control, sub { $self->__MouseDown( $control, @_ ) } );
-
-		print $control. "handler added \n";
-	}
-
-	my @childrens = $control->GetChildren();
-
-	if (@childrens) {
-
-		foreach my $childControl (@childrens) {
-
-			$self->RecursiveHandler($childControl);
-		}
-
-	}
-
-}
-
-sub __MouseDown {
-	my ( $self, $pnlSwitch, $c, $d ) = @_;
-
-	#print $c->{"visited"};
-	#print $d->{"visited"};
-
-	#$d->{"visited"} = 1;
-
-	#	$c->SafelyProcessEvent($d);
-
-	if ( $d->ButtonDown() ) {
-
-		print $pnlSwitch. " pressed\n";
-	}
-	else {
-
-		#$c->ProcessEvent($d);
-
-	}
-
-}
-
-sub GetItemHeight {
+sub SetProgress {
 	my $self = shift;
-
-	my ( $width, $height ) = $self->GetSizeWH();
-
-	print "Height of item is : " . $height . "\n";
-
-	return $height;
-
+	my $value = shift;
+	 
+	$self->{"gauge"}->SetValue($value);
+	$self->{"percentageTxt"}->SetLabel($value);
 }
+
+sub SetErrors {
+	my $self = shift;
+	my $count = shift;
+	 
+	$self->{"errIndicator"}->AddError($count);
+}
+
+sub SetWarnings {
+	my $self = shift;
+	my $count = shift;
+	 
+	$self->{"warnIndicator"}->AddError($count);
+}
+
+sub SetStatusText {
+	my $self = shift;
+	my $text = shift;
+	 
+	$self->{"statusTxt"}->SetLabel($text);
+}
+
+sub SetStepText {
+	my $self = shift;
+	my $stepText = shift;
+	 
+	$self->{"stepTxt"}->SetLabel($stepText);
+}
+
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
