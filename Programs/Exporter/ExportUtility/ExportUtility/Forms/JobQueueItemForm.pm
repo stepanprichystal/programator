@@ -25,7 +25,7 @@ sub new {
 	my $class  = shift;
 	my $parent = shift;
 	my $jobId = shift;
-	
+	 my $taskId = shift;
 	my $self = $class->SUPER::new( $parent, -1 );
 
 	bless($self);
@@ -33,7 +33,7 @@ sub new {
 	# PROPERTIES
 
 	$self->{"jobId"} = $jobId;
-
+	$self->{"taskId"} = $taskId;
 	$self->__SetLayout();
 
 	return $self;
@@ -109,6 +109,11 @@ sub __SetLayout {
 	$self->RecursiveHandler($self);
 
 }
+ 
+sub GetTaskId{
+	my $self = shift;
+	return $self->{"taskId"};
+} 
  
 sub SetOrder {
 	my $self = shift;

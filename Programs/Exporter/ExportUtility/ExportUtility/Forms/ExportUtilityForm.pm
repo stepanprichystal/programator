@@ -19,12 +19,13 @@ use aliased 'Helpers::FileHelper';
 use aliased 'Helpers::GeneralHelper';
 use aliased 'Enums::EnumsPaths';
 use aliased 'Enums::EnumsGeneral';
-use aliased 'Programs::Exporter::ExportUtility::JobExport';
+use aliased 'Programs::Exporter::ExportUtility::ExportUtility::JobExport';
 use aliased 'Packages::Events::Event';
 
 use aliased 'Managers::MessageMngr::MessageMngr';
 use aliased 'Programs::Exporter::ExportUtility::ExportUtility::Forms::JobQueueForm';
 use aliased 'Programs::Exporter::ExportUtility::ExportUtility::Forms::GroupTableForm';
+use aliased 'Widgets::Forms::CustomNotebook::CustomNotebook';
 
 #my $THREAD_MESSAGE_EVT : shared;
 #-------------------------------------------------------------------------------------------#
@@ -55,18 +56,52 @@ sub new {
 	#set base class handlers
 
 	my $mainFrm = $self->__SetLayout();
+
 	#$mainFrm->Show(1);
 
 	#$self->{'onSetLayout'}->Add( sub { $self->__OnSetLayout(@_)});
-	
+
 	$self->{"onClick"} = Event->new();
 
 	return $self;
 }
 
+sub AddNewTask {
+	my $self = shift;
+	my $task = shift;
+	
+ 	my $taskId = $task->GetTaskId();
+ 	
+ 	# Add new item to queue
+ 	
+ 	my $jobQueue = $self->{"jobQueue"};
+ 	$jobQueue->AddItem($task->GetJobId());
+ 	
+ 	
+ 	
+ 	# Add new item to notebook
+	my @units = $task->GetAllUnits();
+
+	my $notebook = $self->{"notebook"};
+	my $page = $notebook->AddPage($taskId);
+
+	my $groupTableForm = GroupTableForm->new( $page->GetParent() );
+	$groupTableForm->InitGroupTable( \@units );
+
+	$page->AddContent($groupTableForm);
+	
+	
+	 
+	
+	
+	
+	$self->{"mainFrm"}->Layout();
+	#$self->{"mainFrm"}->FitInside();
+	$self->{"mainFrm"}->Refresh();
 
 
- 
+	 
+}
 
 sub __SetLayout {
 
@@ -102,7 +137,7 @@ sub __SetLayout {
 	# SAVE NECESSARY CONTROLS
 
 	$self->{"mainFrm"} = $mainFrm;
-	$self->{"szMain"} = $szMain;
+	$self->{"szMain"}  = $szMain;
 
 	$mainFrm->SetSizer($szMain);
 
@@ -118,15 +153,16 @@ sub BuildGroupTableForm {
 
 	#use aliased 'Programs::Exporter::ExportUtility::ExportUtility::Forms::GroupWrapperForm';
 	#my $form = GroupWrapperForm->new($self->{"mainFrm"});
-	
+
 	#$self->{"szMain"}->Add( $form, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 
-	my $groupTableForm = GroupTableForm->new($self->{"groupStatBox"});
+	my $groupTableForm = GroupTableForm->new( $self->{"groupStatBox"} );
 
 	$groupTableForm->InitGroupTable($units);
 
 	$self->{"groupStatBoxSz"}->Add( $groupTableForm, 0, &Wx::wxEXPAND );
- 	#$self->{"szMain"}->Add( $groupTableForm, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+
+	#$self->{"szMain"}->Add( $groupTableForm, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 
 }
 
@@ -203,10 +239,16 @@ sub __SetLayoutJobsQueue {
 
 	#my @dimension = [ 500, 500 ];
 	my $jobQueue = JobQueueForm->new( $parent, [ 500, 200 ] );
+	
+	$self->{"jobQueue"}->{"onSelectItemChange"}->Add(sub { $self->__JobItemSeletedChange(@_) });
 
 	#my $btnDefault    = Wx::Button->new( $statBox, -1, "Default settings",   &Wx::wxDefaultPosition, [ 110, 22 ] );
 
 	$szStatBox->Add( $jobQueue, 1, &Wx::wxEXPAND );
+
+	$self->{"jobQueue"} = $jobQueue;
+	
+	
 
 	return $szStatBox;
 }
@@ -221,21 +263,19 @@ sub __SetLayoutInCAMSettings {
 	my $szStatBox = Wx::StaticBoxSizer->new( $statBox, &Wx::wxVERTICAL );
 
 	my $btnDefault = Wx::Button->new( $statBox, -1, "Default settings", &Wx::wxDefaultPosition, [ 110, 22 ] );
-	
-	
-	Wx::Event::EVT_BUTTON( $btnDefault,   -1, sub { $self->__OnClick(@_)} );
+
+	Wx::Event::EVT_BUTTON( $btnDefault, -1, sub { $self->__OnClick(@_) } );
 
 	$szStatBox->Add( $btnDefault, 1, &Wx::wxEXPAND );
 
 	return $szStatBox;
 }
 
+sub __OnClick {
+	my $self = shift;
 
-sub __OnClick{
-	my $self   = shift;
-	
-	$self->{"onClick"}->Do() 
-	
+	$self->{"onClick"}->Do()
+
 }
 
 # Set layout for Quick set box
@@ -248,11 +288,12 @@ sub __SetLayoutGroups {
 	my $szStatBox = Wx::StaticBoxSizer->new( $statBox, &Wx::wxVERTICAL );
 
 	my $btnDefault = Wx::Button->new( $statBox, -1, "Default settings", &Wx::wxDefaultPosition, [ 110, 22 ] );
-
-	$szStatBox->Add( $btnDefault, 1, &Wx::wxEXPAND );
-
-	$self->{"groupStatBox"} = $statBox;
+	my $notebook = CustomNotebook->new( $statBox, -1 );
+	$szStatBox->Add( $btnDefault, 0, &Wx::wxEXPAND );
+	$szStatBox->Add( $notebook,   1, &Wx::wxEXPAND );
+	$self->{"groupStatBox"}   = $statBox;
 	$self->{"groupStatBoxSz"} = $szStatBox;
+	$self->{"notebook"}       = $notebook;
 
 	return $szStatBox;
 }
@@ -261,7 +302,27 @@ sub __SetLayoutGroups {
 #  PRIVATE HELPER METHOD
 # ========================================================================================== #
 
- 
+
+
+sub __JobItemSeletedChange{
+		my $self = shift;
+		my $jobQueueItem = shift;
+	 
+	my $taskId = $jobQueueItem->GetTaskId(); 
+	 
+	$self->{"notebook"}->ShowPage($taskId);
+	
+}
+
+
+sub AddJob{
+	my $self = shift;
+	my $task = shift;
+	
+	#my $jobGUID = $self->_AddJobToQueue( $task->{"jobId"} );
+	
+	#$task->SetTaskId($jobGUID);
+}
 
 sub __OnClickExit {
 

@@ -6,23 +6,20 @@
 package Programs::Exporter::ExportUtility::ExportUtility::ExportUtility;
 
 #3th party library
-
-use Wx;
+ 
 use strict;
 use warnings;
 
 #local library
-use Widgets::Style;
-use aliased 'Widgets::Forms::MyWxFrame';
-use aliased 'Helpers::FileHelper';
+ 
 use aliased 'Helpers::GeneralHelper';
 use aliased 'Enums::EnumsPaths';
 use aliased 'Enums::EnumsGeneral';
-use aliased 'Programs::Exporter::ExportUtility::JobExport';
-
-use aliased 'Managers::MessageMngr::MessageMngr';
-
+ 
+use aliased 'Programs::Exporter::ExportUtility::Task::Task';
 use aliased 'Programs::Exporter::ExportUtility::ExportUtility::Forms::ExportUtilityForm';
+use aliased 'Programs::Exporter::DataTransfer::DataTransfer';
+use aliased 'Programs::Exporter::DataTransfer::Enums' => 'EnumsTransfer';
 
 #my $THREAD_MESSAGE_EVT : shared;
 #-------------------------------------------------------------------------------------------#
@@ -46,7 +43,8 @@ sub new {
 	$self->{"form"} = ExportUtilityForm->new();
 
 	# Keep all references of used groups/units in form
-	#$self->{"units"} = Unit->new();
+	my @tasks = ();
+	$self->{"tasks"} = \@tasks;
 
 	#set base class handlers
 
@@ -64,20 +62,8 @@ sub __Init {
 	#set handlers for main app form
 	$self->__SetHandlers();
 
-	my @units = ();
-
-	use aliased 'Programs::Exporter::ExportUtility::ExportUtility::Unit::Unit';
-
-	for ( my $i = 0 ; $i < 5 ; $i++ ) {
-
-		my $unit = Unit->new();
-		push( @units, $unit );
-	}
-	
-	$self->{"units"} = \@units;
-
-	$self->{"form"}->BuildGroupTableForm($self->{"units"} );
-
+	 
+	 
 	#$self->__RunTimers();
 }
 
@@ -87,6 +73,28 @@ sub __Run {
 
 	$self->{"form"}->MainLoop();
 
+}
+
+
+sub __AddNewJob{
+	my $self    = shift;
+	my $jobId    = shift;
+	my $exportData = shift;
+	
+	# unique id per each task
+	my $guid = GeneralHelper->GetGUID(); 
+	
+	
+	my $task = Task->new($guid, $jobId, $exportData);
+	
+	# prepare gui
+	$self->{"form"}->AddNewTask($task);
+	
+	# Add new task to queue
+	$self->{"form"}->AddJob($task);
+	
+	push(@{$self->{"tasks"}}, $task);
+	
 }
 
 # ========================================================================================== #
@@ -284,16 +292,13 @@ sub __OnClick {
 	my $actualColId = 0;
 	my $total       = 0;
 
+	my $jobId = "f13610";
+ 
+	my $dataTransfer = DataTransfer->new( $jobId, EnumsTransfer->Mode_READ);
+	my $exportData = $dataTransfer->GetExportData();
+		 
 	
-
-	foreach my $unit ( @{ $self->{"units"} } ) {
-
-		my ( $colWidth, $colHeight ) = $unit->{"form"}->GetSizeWH();
-
-		print " Unit $unit height is : " . $colHeight . " \n ";
-
-	}
-
+	$self->__AddNewJob($jobId, $exportData);
 }
 
 sub doExport {

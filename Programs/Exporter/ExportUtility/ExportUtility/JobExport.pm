@@ -3,7 +3,7 @@
 # Description: Widget slouzici pro zobrazovani zprav ruznych typu uzivateli
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Programs::Exporter::JobExport;
+package Programs::Exporter::ExportUtility::ExportUtility::JobExport;
 
 #3th party library
 use strict;

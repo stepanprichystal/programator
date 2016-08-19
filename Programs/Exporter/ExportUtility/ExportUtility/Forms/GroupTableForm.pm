@@ -45,6 +45,8 @@ sub InitGroupTable {
 
 }
 
+
+
 sub __SetLayout {
 
 	my $self = shift;
@@ -103,7 +105,7 @@ sub __FillColums {
 	# init unit form
 
 	foreach my $unit ( @{$units} ) {
-		$unit->Init($self);
+		$unit->InitForm($self);
 	}
 	
 	# get height of all groups

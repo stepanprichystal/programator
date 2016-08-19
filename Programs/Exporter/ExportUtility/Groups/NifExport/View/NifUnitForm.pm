@@ -2,7 +2,7 @@
 # Description:
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-use Wx;
+
 package Programs::Exporter::ExportChecker::Groups::NifExport::View::NifUnitForm;
 use base qw(Wx::Panel);
 
@@ -14,8 +14,11 @@ use Class::Interface;
 use strict;
 use warnings;
 use Wx;
- 
+use Wx qw(:richtextctrl :textctrl :font);
 
+BEGIN {
+	eval { require Wx::RichText; };
+}
 
 #local library
 use Widgets::Style;

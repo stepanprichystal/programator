@@ -8,12 +8,15 @@ package Programs::Exporter::DataTransfer::DataTransfer;
 #3th party library
 use strict;
 use warnings;
+use JSON;
+
 
 #local library
 use aliased "Programs::Exporter::DataTransfer::ExportData";
 use aliased "Enums::EnumsPaths";
 use aliased "Helpers::FileHelper";
 use aliased 'Programs::Exporter::DataTransfer::Enums';
+
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -43,7 +46,7 @@ sub new {
 	#$self->{"hashData"}->{"time"}  = undef;
 	#$self->{"hashData"}->{"location"}  = undef;
 
-	FileHelper->DeleteTempFilesFrom( EnumsPaths->Client_EXPORTFILES, 200 );    #delete 10000s old files
+	#FileHelper->DeleteTempFilesFrom( EnumsPaths->Client_EXPORTFILES, 200 );    #delete 10000s old files
 
 	$self->__BuildExportData();
 
@@ -77,7 +80,12 @@ sub __BuildExportData {
 		# read from disc
 		# Load data from file
 		my $serializeData = FileHelper->ReadAsString( $self->{"filePath"} );
-		my $hashData      = decode_json($serializeData);
+		
+		my $json = JSON->new();
+
+		my $hashData = $json->decode($serializeData);
+		
+		#my $hashData      = decode_json($serializeData);
 
 		# Create ExportData object
 
@@ -92,6 +100,7 @@ sub __BuildExportData {
 			my $packageName = $unitData{"__PACKAGE__"};
 
 			# Convert to object by package name
+			eval("use $packageName;");
 			my $exportData = $packageName->new();
 			$exportData->{"data"} = \%unitData;
 

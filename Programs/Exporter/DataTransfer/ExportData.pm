@@ -38,6 +38,13 @@ sub GetUnitData {
 	my $exportData = $self->{"units"}->{$unitId};
 	return $exportData;
 }
+
+
+sub GetAllUnitData {
+	my $self  = shift;
+	
+	return %{$self->{"units"}};
+}
  
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

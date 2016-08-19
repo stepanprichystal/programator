@@ -93,10 +93,11 @@ sub _AddJobToQueue {
 
 	my $self      = shift;
 	my $pcbId     = shift;
+	my $uniqueId    = shift; #unique task id
 	my %extraInfo = %{ shift(@_) } if ( $_[0] );
 
 	my %jobInfo = (
-					"jobGUID" => GeneralHelper->GetGUID(),
+					"jobGUID" => $uniqueId,
 					"pcbId"   => $pcbId,
 					"state"   => JOB_WAITINGQUEUE,
 					"port"    => -1,
