@@ -461,7 +461,8 @@ sub GetUserInfoHelios {
 }
 
 
-#Return if pcb is type Pool
+# Return if pcb is type Pool
+# Function take this information from last ordered pcb/order
 sub GetPcbIsPool {
 	my $self  = shift;
 	my $pcbId = shift;
@@ -472,7 +473,8 @@ sub GetPcbIsPool {
 				 z.pooling
 				 from lcs.desky_22 d with (nolock)
 				 left outer join lcs.zakazky_dps_22_hlavicka z with (nolock) on z.deska=d.cislo_subjektu
-				 where d.reference_subjektu=_PcbId and  z.cislo_poradace = 22050";
+				 where d.reference_subjektu=_PcbId and  z.cislo_poradace = 22050
+				 order by z.reference_subjektu desc";
 
 	my $res = Helper->ExecuteScalar( $cmd, \@params);
 	
@@ -563,7 +565,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	use Connectors::HeliosConnector::HegMethods;
 
-	my $test = Connectors::HeliosConnector::HegMethods->GetPcbOrderNumber("D92987");
+	my $test = Connectors::HeliosConnector::HegMethods->GetPcbIsPool("F44739");
 
 	print $test;
 
