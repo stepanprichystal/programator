@@ -554,7 +554,54 @@ sub GetPcbOrderNumber {
 	 
 	return $num;
 }
- 
+
+
+sub GetNumberOrder {
+	my $self  = shift;
+	my $pcbId = shift;
+
+	my @params = ( SqlParameter->new( "_PcbId", Enums->SqlDbType_VARCHAR, $pcbId ) );
+
+	my $cmd = "select top 1
+				 z.reference_subjektu reference_zakazky
+				 from lcs.desky_22 d with (nolock)
+				 left outer join lcs.subjekty c with (nolock) on c.cislo_subjektu=d.zakaznik
+				 left outer join lcs.subjekty m with (nolock) on m.cislo_subjektu=d.material
+				 left outer join lcs.zakazky_dps_22_hlavicka z with (nolock) on z.deska=d.cislo_subjektu
+				 left outer join lcs.vztahysubjektu vs with (nolock) on vs.cislo_subjektu=z.cislo_subjektu and vs.cislo_vztahu=22175
+				 left outer join lcs.zakazky_dps_22_hlavicka n with (nolock) on vs.cislo_vztaz_subjektu=n.cislo_subjektu
+				 left outer join lcs.subjekty prijal with (nolock) on prijal.cislo_subjektu=n.prijal
+				 left outer join lcs.desky_22 dn with (nolock) on n.deska=dn.cislo_subjektu
+				 left outer join lcs.subjekty mn with (nolock) on mn.cislo_subjektu=dn.material
+				 where d.reference_subjektu=_PcbId and  z.cislo_poradace = 22050
+				 order by z.reference_subjektu desc,n.cislo_subjektu desc,z.cislo_subjektu desc";
+
+			my $res = Helper->ExecuteScalar( $cmd, \@params);
+
+		return $res;
+
+}
+##Return ID of customer
+sub GetIdcustomer {
+	my $self  = shift;
+	my $pcbId = shift;
+
+	my @params = ( SqlParameter->new( "_PcbId", Enums->SqlDbType_VARCHAR, $pcbId ) );
+
+	my $numberOrder = GetNumberOrder('',$pcbId);
+
+
+	my $cmd = "select top 1			
+				org.reference_subjektu
+				FROM lcs.organizace org
+				JOIN lcs.zakazky_dps_22_hlavicka z ON z.zakaznik = org.cislo_subjektu
+				WHERE z.reference_subjektu = '$numberOrder'
+				";
+
+	my $res = Helper->ExecuteScalar( $cmd, \@params);
+	
+	return $res;
+}
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
