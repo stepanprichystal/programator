@@ -6,20 +6,21 @@
 package Programs::Exporter::ExportUtility::ExportUtility::ExportUtility;
 
 #3th party library
- 
+
 use strict;
 use warnings;
 
 #local library
- 
+
 use aliased 'Helpers::GeneralHelper';
 use aliased 'Enums::EnumsPaths';
 use aliased 'Enums::EnumsGeneral';
- 
+
 use aliased 'Programs::Exporter::ExportUtility::Task::Task';
 use aliased 'Programs::Exporter::ExportUtility::ExportUtility::Forms::ExportUtilityForm';
 use aliased 'Programs::Exporter::DataTransfer::DataTransfer';
 use aliased 'Programs::Exporter::DataTransfer::Enums' => 'EnumsTransfer';
+use aliased 'Programs::Exporter::ExportUtility::ExportUtility::JobWorkerClass';
 
 #my $THREAD_MESSAGE_EVT : shared;
 #-------------------------------------------------------------------------------------------#
@@ -62,8 +63,6 @@ sub __Init {
 	#set handlers for main app form
 	$self->__SetHandlers();
 
-	 
-	 
 	#$self->__RunTimers();
 }
 
@@ -75,26 +74,24 @@ sub __Run {
 
 }
 
-
-sub __AddNewJob{
-	my $self    = shift;
-	my $jobId    = shift;
+sub __AddNewJob {
+	my $self       = shift;
+	my $jobId      = shift;
 	my $exportData = shift;
-	
+
 	# unique id per each task
-	my $guid = GeneralHelper->GetGUID(); 
-	
-	
-	my $task = Task->new($guid, $jobId, $exportData);
-	
+	my $guid = GeneralHelper->GetGUID();
+
+	my $task = Task->new( $guid, $jobId, $exportData );
+
 	# prepare gui
-	$self->{"form"}->AddNewTask($task);
-	
+	$self->{"form"}->AddNewTaskGUI($task);
+
 	# Add new task to queue
-	$self->{"form"}->AddJob($task);
-	
-	push(@{$self->{"tasks"}}, $task);
-	
+	$self->{"form"}->AddNewTask($task);
+
+	push( @{ $self->{"tasks"} }, $task );
+
 }
 
 # ========================================================================================== #
@@ -138,17 +135,30 @@ sub __OnJobMessageEvtHandler {
 	print "Exporter utility::  job id: " . $jobGUID . " - messType: " . $messType . " - data: " . $data . "\n";
 }
 
+# ========================================================================================== #
+# WORER METHOD - THIS METHOD IS PROCESS ASYNCHRONOUSLY IN CHILD THREAD
+# ========================================================================================== #
+
 #this handler run, when new job thread is created
-sub __OnRunJobWorker {
+sub JobWorker {
 	my $self                         = shift;
 	my $pcbId                        = shift;
-	my $jobGUID                      = shift;
+	my $taskId                       = shift;
 	my $inCAM                        = shift;
 	my $THREAD_PROGRESS_EVT : shared = ${ shift(@_) };
 	my $THREAD_MESSAGE_EVT : shared  = ${ shift(@_) };
 
 	#vytvorit nejakou Base class ktera bude obsahovat odesilani zprav prostrednictvim messhandler
-	my $jobExport = JobExport->new( $pcbId, $jobGUID, $inCAM, "data", \$THREAD_PROGRESS_EVT, \$THREAD_MESSAGE_EVT, $self->{"mainFrm"} );
+
+	#GetExportClass
+	my $task        = $self->__GetTaskById($taskId);
+	my %exportClass = $task->{"units"}->GetExportClass();
+	my $exportData  = $task->GetExportData();
+	
+	# TODO udelat base class pro JobWorkerClass nebo to nejak vzresit
+	
+	my $jobExport =
+	  JobWorkerClass->new( $pcbId, $jobGUID, $inCAM, $exportData, %exportClass, \$THREAD_PROGRESS_EVT, \$THREAD_MESSAGE_EVT, $self->{"mainFrm"} );
 
 	$jobExport->RunExport();
 
@@ -191,6 +201,19 @@ sub __OnRunJobWorker {
 #  PRIVATE HELPER METHOD
 # ========================================================================================== #
 
+sub __GetTaskById {
+	my $self   = shift;
+	my $taskId = shift;
+
+	foreach my $task ( @{ $self->{"tasks"} } ) {
+
+		if ( $task eq $taskId ) {
+
+			return $task;
+		}
+	}
+}
+
 sub __SetHandlers {
 	my $self = shift;
 
@@ -200,12 +223,11 @@ sub __SetHandlers {
 	$self->{"form"}->{'onJobDoneEvt'}->Add( sub     { $self->__OnJobDoneEvtHandler(@_) } );
 	$self->{"form"}->{'onJobProgressEvt'}->Add( sub { $self->__OnJobProgressEvtHandler(@_) } );
 	$self->{"form"}->{'onJobMessageEvt'}->Add( sub  { $self->__OnJobMessageEvtHandler(@_) } );
-	$self->{"form"}->{'onRunJobWorker'}->Add( sub   { $self->__OnRunJobWorker(@_) } );
-	
-	
-	$self->{"form"}->{'onClick'}->Add( sub   { $self->__OnClick(@_) } );
-	
-	
+
+	$self->{"form"}->{'onClick'}->Add( sub { $self->__OnClick(@_) } );
+
+	# Set worker method
+	$self->_SetThreadWorker( sub { $self->JobWorker(@_) } );
 
 }
 
@@ -293,12 +315,11 @@ sub __OnClick {
 	my $total       = 0;
 
 	my $jobId = "f13610";
- 
-	my $dataTransfer = DataTransfer->new( $jobId, EnumsTransfer->Mode_READ);
+
+	my $dataTransfer = DataTransfer->new( $jobId, EnumsTransfer->Mode_READ );
 	my $exportData = $dataTransfer->GetExportData();
-		 
-	
-	$self->__AddNewJob($jobId, $exportData);
+
+	$self->__AddNewJob( $jobId, $exportData );
 }
 
 sub doExport {

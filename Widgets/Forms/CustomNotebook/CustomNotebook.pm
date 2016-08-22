@@ -80,7 +80,7 @@ sub AddPage {
 	$self->{"pages"}->{ $page->GetPageId() } = $page;
 	
 	$self->{"szMain"}->Add($page, 1, &Wx::wxEXPAND, 1);
-	$page->Show(0);
+	$page->Hide();
 
 	return $page;
 }
@@ -97,13 +97,19 @@ sub RemovePage {
 	$self->{"pages"}->{$pageId} = undef;
 }
 
-sub __ShowPage {
+sub ShowPage {
 	my $self   = shift;
 	my $pageId = shift;
 
 	$self->__HideAllPage();
 	my $page = $self->{"pages"}->{$pageId};
+	
+
 	$page->Show(1);
+	
+	$self->Layout();
+	
+	#$self->Refresh();
 
 }
 
@@ -116,7 +122,7 @@ sub __HideAllPage {
 	foreach my $id ( keys %pages ) {
 
 		my $page = $pages{$id};
-		$page->Show(0);
+		$page->Hide();
 	}
 	
 #	my $pageCnt = $self->__GetPageCount();

@@ -63,8 +63,7 @@ sub new {
 
 	#$self->{"threadBase"} = ThreadBase->new();
 
-	#add handler, when new thread start
-	$self->{"threadMngr"}->{"onThreadWorker"}->Add( sub    { $self->__OnThreadWorkerHandler(@_) } );
+	
 
 	#class events
 
@@ -153,6 +152,15 @@ sub _GetInfoServers {
 #-------------------------------------------------------------------------------------------#
 #  Private methods
 #-------------------------------------------------------------------------------------------#
+
+sub _SetThreadWorker{
+	my $self = shift;
+	my $workerMethod = shift;
+	
+	#add handler, when new thread start
+	$self->{"threadMngr"}->{"onThreadWorker"}->Add( $workerMethod);
+	
+}
 
 sub __OnThreadWorkerHandler {
 	my $self = shift;

@@ -25,13 +25,12 @@ sub new {
 	my $class  = shift;
 	my $parent = shift;
 	my $jobId = shift;
-	 my $taskId = shift;
+	my $taskId = shift;
 	my $self = $class->SUPER::new( $parent, -1 );
 
 	bless($self);
 
 	# PROPERTIES
-
 	$self->{"jobId"} = $jobId;
 	$self->{"taskId"} = $taskId;
 	$self->__SetLayout();

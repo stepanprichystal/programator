@@ -19,13 +19,13 @@ use strict;
 use warnings;
 
 #local library
-use aliased 'Programs::Exporter::ExportChecker::Groups::NifExport::View::NifUnitForm';
+ 
 
 #use aliased 'Programs::Exporter::ExportChecker::Groups::NifExport::Model::NifDataMngr';
  
 use aliased 'Programs::Exporter::UnitEnums';
 use aliased 'Programs::Exporter::ExportUtility::ExportUtility::Forms::GroupWrapperForm';
-
+use aliased 'Programs::Exporter::ExportUtility::Groups::NifExport::Presenter::NifExport';
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
@@ -39,12 +39,19 @@ sub new {
 
 	#uique key within all units
 	$self->{"unitId"} = UnitEnums->UnitId_NIF;
+	$self->{"unitExport"} = NifExport->new($self->{"unitId"});
 
 	# init class for model
-	 
-
 	return $self;    # Return the reference to the hash.
 }
+
+
+sub GetExportClass{
+	my $self = shift;
+	
+	return $self->{"unitExport"};
+}
+
 #
 ##posloupnost volani metod
 ##1) new()

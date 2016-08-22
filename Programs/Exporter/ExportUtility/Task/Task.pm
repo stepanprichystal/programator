@@ -76,6 +76,13 @@ sub GetAllUnits{
 }
 
 
+sub GetExportData{
+	my $self = shift;	
+	return $self->{"exportData"};
+}
+
+
+
 sub __GetUnit{
 	my $self = shift;
 	my $unitId = shift;

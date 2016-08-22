@@ -42,14 +42,14 @@ sub new {
 	#EVENTS
 	$self->{"onSelectItemChange"} = Event->new();
 
-	for ( my $i = 0 ; $i < 2 ; $i++ ) {
-
-		my $item = $self->AddItem( "F9999" . $i );
-		
-		$item->SetErrors($i);
-		$item->SetProgress(2*$i);
-		
-	}
+#	for ( my $i = 0 ; $i < 2 ; $i++ ) {
+#
+#		my $item = $self->AddItem( "F9999" . $i );
+#		
+#		$item->SetErrors($i);
+#		$item->SetProgress(2*$i);
+#		
+#	}
 
 	return $self;
 }
@@ -76,9 +76,10 @@ sub __OnSelectItem {
 
 sub AddItem {
 	my $self  = shift;
+	my $taskId  = shift;
 	my $jobId = shift;
 
-	my $item = JobQueueItemForm->new( $self->GetParentForItem(), $jobId );
+	my $item = JobQueueItemForm->new( $self->GetParentForItem(), $jobId, $taskId);
 
 	$self->AddItemToQueue($item);
 	

@@ -19,13 +19,14 @@ use aliased 'Helpers::FileHelper';
 use aliased 'Helpers::GeneralHelper';
 use aliased 'Enums::EnumsPaths';
 use aliased 'Enums::EnumsGeneral';
-use aliased 'Programs::Exporter::ExportUtility::ExportUtility::JobExport';
+
 use aliased 'Packages::Events::Event';
 
 use aliased 'Managers::MessageMngr::MessageMngr';
 use aliased 'Programs::Exporter::ExportUtility::ExportUtility::Forms::JobQueueForm';
 use aliased 'Programs::Exporter::ExportUtility::ExportUtility::Forms::GroupTableForm';
 use aliased 'Widgets::Forms::CustomNotebook::CustomNotebook';
+use aliased 'Widgets::Forms::MyWxBookCtrlPage';
 
 #my $THREAD_MESSAGE_EVT : shared;
 #-------------------------------------------------------------------------------------------#
@@ -66,41 +67,38 @@ sub new {
 	return $self;
 }
 
-sub AddNewTask {
+sub AddNewTaskGUI {
 	my $self = shift;
 	my $task = shift;
-	
- 	my $taskId = $task->GetTaskId();
- 	
- 	# Add new item to queue
- 	
- 	my $jobQueue = $self->{"jobQueue"};
- 	$jobQueue->AddItem($task->GetJobId());
- 	
- 	
- 	
- 	# Add new item to notebook
+
+	my $taskId = $task->GetTaskId();
+
+	# Add new item to queue
+
+	my $jobQueue = $self->{"jobQueue"};
+	$jobQueue->AddItem( $taskId, $task->GetJobId() );
+
+	# Add new item to notebook
 	my @units = $task->GetAllUnits();
 
 	my $notebook = $self->{"notebook"};
-	my $page = $notebook->AddPage($taskId);
+	my $page     = $notebook->AddPage($taskId);
 
 	my $groupTableForm = GroupTableForm->new( $page->GetParent() );
 	$groupTableForm->InitGroupTable( \@units );
 
 	$page->AddContent($groupTableForm);
 	
-	
-	 
-	
-	
-	
-	$self->{"mainFrm"}->Layout();
-	#$self->{"mainFrm"}->FitInside();
+	# Refresh form
 	$self->{"mainFrm"}->Refresh();
 
+}
 
-	 
+sub AddNewTask {
+	my $self = shift;
+	my $task = shift;
+
+	$self->_AddJobToQueue( $task->{"jobId"} );
 }
 
 sub __SetLayout {
@@ -110,27 +108,65 @@ sub __SetLayout {
 
 	# DEFINE SIZERS
 
-	my $szMain = Wx::BoxSizer->new(&Wx::wxVERTICAL);
+	my $szMain  = Wx::BoxSizer->new(&Wx::wxVERTICAL);
+	my $szPage1 = Wx::BoxSizer->new(&Wx::wxVERTICAL);
+	my $szPage2 = Wx::BoxSizer->new(&Wx::wxVERTICAL);
 
 	my $szRow1 = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
 	my $szRow2 = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
 
+	my $szBtns      = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
+	my $szBtnsChild = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
+
+	# DEFINE PANELS
+
+	my $pnlBtns = Wx::Panel->new( $mainFrm, -1 );
+	$pnlBtns->SetBackgroundColour($Widgets::Style::clrDefaultFrm);
+
 	# DEFINE CONTROLS
 
-	my $jobsQueueStatBox = $self->__SetLayoutJobsQueue($mainFrm);
-	my $settingsStatBox  = $self->__SetLayoutInCAMSettings($mainFrm);
-	my $groupsStatBox    = $self->__SetLayoutGroups($mainFrm);
+	my $btnHide = Wx::Button->new( $pnlBtns, -1, "Hide", &Wx::wxDefaultPosition, [ 160, 33 ] );
+	$btnHide->SetFont($Widgets::Style::fontBtn);
+
+	my $nb = Wx::Notebook->new( $mainFrm, -1, &Wx::wxDefaultPosition, &Wx::wxDefaultSize );
+	my $imagelist = Wx::ImageList->new( 10, 25 );
+	$nb->AssignImageList($imagelist);
+
+	my $page1 = MyWxBookCtrlPage->new( $nb, 0 );
+	$nb->AddPage( $page1, "Job queue", 0, 0 );
+	$nb->SetPageImage( 0, 0 );
+
+	my $page2 = MyWxBookCtrlPage->new( $nb, 1 );
+	$nb->AddPage( $page2, "Settings", 0, 1 );
+	$nb->SetPageImage( 0, 1 );
+
+	my $jobsQueueStatBox = $self->__SetLayoutJobsQueue($page1);
+	my $settingsStatBox  = $self->__SetLayoutInCAMSettings($page1);
+	my $groupsStatBox    = $self->__SetLayoutGroups($page1);
 
 	# BUILD STRUCTURE OF LAYOUT
+
+	$szBtnsChild->Add( $btnHide, 0, &Wx::wxALL, 2 );
+	$szBtns->Add( 10, 10, 1, &Wx::wxGROW );
+	$szBtns->Add( $szBtnsChild, 0, &Wx::wxALIGN_RIGHT | &Wx::wxALL );
+	$pnlBtns->SetSizer($szBtns);
+
+	$page1->SetSizer($szPage1);
+	$page2->SetSizer($szPage2);
+
 	$szRow1->Add( $jobsQueueStatBox, 80, &Wx::wxEXPAND );
 	$szRow1->Add( $settingsStatBox,  20, &Wx::wxEXPAND );
 
 	$szRow2->Add( $groupsStatBox, 1, &Wx::wxEXPAND );
 
-	$szMain->Add( $szRow1, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
-	$szMain->Add( $szRow2, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szPage1->Add( $szRow1, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szPage1->Add( $szRow2, 1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+
+	$szMain->Add( $nb,      1, &Wx::wxEXPAND );
+	$szMain->Add( $pnlBtns, 0, &Wx::wxEXPAND );
 
 	# REGISTER EVENTS
+	Wx::Event::EVT_BUTTON( $btnHide, -1, sub { $self->__OnHideExporter() } );
 
 	#Wx::Event::EVT_BUTTON( $btnExport, -1, sub { $self->__OnExportForceClick(@_) } );
 
@@ -239,16 +275,14 @@ sub __SetLayoutJobsQueue {
 
 	#my @dimension = [ 500, 500 ];
 	my $jobQueue = JobQueueForm->new( $parent, [ 500, 200 ] );
-	
-	$self->{"jobQueue"}->{"onSelectItemChange"}->Add(sub { $self->__JobItemSeletedChange(@_) });
+
+	$jobQueue->{"onSelectItemChange"}->Add( sub { $self->__JobItemSeletedChange(@_) } );
 
 	#my $btnDefault    = Wx::Button->new( $statBox, -1, "Default settings",   &Wx::wxDefaultPosition, [ 110, 22 ] );
 
 	$szStatBox->Add( $jobQueue, 1, &Wx::wxEXPAND );
 
 	$self->{"jobQueue"} = $jobQueue;
-	
-	
 
 	return $szStatBox;
 }
@@ -302,27 +336,20 @@ sub __SetLayoutGroups {
 #  PRIVATE HELPER METHOD
 # ========================================================================================== #
 
+sub __JobItemSeletedChange {
+	my $self         = shift;
+	my $jobQueueItem = shift;
 
+	my $taskId = $jobQueueItem->GetTaskId();
 
-sub __JobItemSeletedChange{
-		my $self = shift;
-		my $jobQueueItem = shift;
-	 
-	my $taskId = $jobQueueItem->GetTaskId(); 
-	 
 	$self->{"notebook"}->ShowPage($taskId);
 	
+	#	$self->Layout();
+	#$self->Refresh();
+
 }
 
 
-sub AddJob{
-	my $self = shift;
-	my $task = shift;
-	
-	#my $jobGUID = $self->_AddJobToQueue( $task->{"jobId"} );
-	
-	#$task->SetTaskId($jobGUID);
-}
 
 sub __OnClickExit {
 
