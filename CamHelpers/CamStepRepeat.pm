@@ -20,6 +20,30 @@ use warnings;
 #   Package methods
 #-------------------------------------------------------------------------------------------#
 
+
+#Return information about steps in given step
+sub GetUniqueStepAndRepeat {
+	my $self     = shift;
+	my $inCAM    = shift;
+	my $jobId    = shift;
+	my $stepName = shift;
+	
+	my @steps = ();
+	my @arr = $self->GetStepAndRepeat($inCAM, $jobId, $stepName);
+
+	foreach my $info (@arr){
+		
+		unless( scalar( grep { $_->{"stepName"} eq  $info->{"gSRstep"} } @steps)){
+			my %stepInf = ();
+			$stepInf{"stepName"} = $info->{"gSRstep"};
+			
+			push(@steps, \%stepInf);
+		}  
+	}
+ 
+	return @steps;
+}
+
 #Return information about steps in given step
 sub GetStepAndRepeat {
 	my $self     = shift;

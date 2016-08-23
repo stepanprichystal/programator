@@ -52,6 +52,17 @@ sub Create {
 
 }
 
+
+sub AddErrors {
+	my $self = shift;
+	my $messages = shift;
+	
+	foreach my $mess (@{$messages}){
+		
+		$self->AddError($mess);
+	}
+}
+
 sub AddError {
 	my $self = shift;
 	my $mess = shift;
