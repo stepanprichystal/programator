@@ -3,10 +3,10 @@
 # Description: Prostrednik mezi formularem jednotky a buildere,
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Programs::Exporter::ExportChecker::ExportChecker::Unit::Units;
+package Programs::Exporter::ExportUtility::Unit::Units;
 
-use Class::Interface;
-&implements('Programs::Exporter::ExportChecker::ExportChecker::Unit::IUnit');
+#use Class::Interface;
+#&implements('Programs::Exporter::ExportChecker::ExportChecker::Unit::IUnit');
 
 #3th party library
 use strict;
@@ -24,11 +24,15 @@ sub new {
 	my $self = shift;
 	$self = {};
 	bless $self;
+	
+	$self->{"units"} = undef;
 
 	#$self->{"onCheckEvent"} = Event->new();
 
 	return $self;    # Return the reference to the hash.
 }
+
+
 
 sub Init {
 	my $self = shift;
@@ -41,6 +45,18 @@ sub Init {
 }
  
  
+ sub GetUnitById {
+	my $self = shift;
+	my $unitId = shift;
+
+	foreach my $unit ( @{ $self->{"units"} } ) {
+
+		if( $unitId eq $unit->{"unitId"}){
+			return $unit;
+		} 
+	}
+}
+
  
 sub GetExportClass {
 	my $self = shift;
@@ -51,7 +67,7 @@ sub GetExportClass {
 	foreach my $unit ( @{ $self->{"units"} } ) {
 
 		my $class = $unit->GetExportClass();
-		exportClasses{ $unit->{"unitId"} } = $class;
+		$exportClasses{ $unit->{"unitId"} } = $class;
 	}
 
 	return %exportClasses;

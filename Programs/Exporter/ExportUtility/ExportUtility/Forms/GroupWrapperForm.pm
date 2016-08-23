@@ -2,6 +2,7 @@
 # Description: Wrapper wifget for group form
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
+
 package Programs::Exporter::ExportUtility::ExportUtility::Forms::GroupWrapperForm;
 use base qw(Wx::Panel);
 
@@ -16,6 +17,7 @@ use Widgets::Style;
 use aliased 'Programs::Exporter::ExportChecker::Enums';
 
 use aliased 'Packages::Events::Event';
+
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
@@ -30,9 +32,9 @@ sub new {
 	#$self->{"state"} = Enums->GroupState_ACTIVEON;
 
 	$self->__SetLayout();
-	
+
 	#EVENTS
-	
+
 	#$self->{"onChangeState"} = Event->new();
 
 	return $self;
@@ -52,31 +54,27 @@ sub Init {
 	# panel, which contain group content
 	$self->{"groupBody"} = $groupBody;
 
-
 }
-
- 
 
 sub __SetLayout {
 	my $self = shift;
 
 	# DEFINE SIZERS
-	
+
 	my $szHeaderBody = Wx::BoxSizer->new(&Wx::wxVERTICAL);
 
 	my $pnlHeader = Wx::Panel->new( $self, -1 );
-	my $szHeader = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
-	my $szBody = Wx::BoxSizer->new(&Wx::wxVERTICAL);
-
+	my $szHeader  = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
+	my $szBody    = Wx::BoxSizer->new(&Wx::wxVERTICAL);
 
 	# DEFINE PANELS
-	
+
 	$pnlHeader->SetBackgroundColour( Wx::Colour->new( 228, 232, 243 ) );
+
 	#$pnlHeader->SetBackgroundColour($Widgets::Style::clrLightGreen);
-	
+
 	my $pnlBody = Wx::Panel->new( $self, -1 );
 	$pnlBody->SetBackgroundColour( Wx::Colour->new( 245, 245, 245 ) );
-	
 
 	# use Wx qw( EVT_MOUSE_EVENTS);
 	# use Wx qw(:sizer wxDefaultPosition wxDefaultSize wxDEFAULT_DIALOG_STYLE wxRESIZE_BORDER);
@@ -84,19 +82,17 @@ sub __SetLayout {
 	# DEFINE CONTROLS
 
 	my $headerTxt = Wx::StaticText->new( $pnlHeader, -1, "Default title" );
-	
+
 	my $height = 20;
 	$height += rand(300);
-	
-	my $pnl = Wx::Panel->new( $pnlBody, -1, [-1, -1], [100, $height] );
-	
+
+	my $pnl = Wx::Panel->new( $pnlBody, -1, [ -1, -1 ], [ 100, $height ] );
+
 	$self->{"headerTxt"} = $headerTxt;
 
-	# BUILD STRUCTURE 
-	
-	 
-	$szHeader->Add( $headerTxt, 1, &Wx::wxEXPAND | &Wx::wxALL, 2 );
+	# BUILD STRUCTURE
 
+	$szHeader->Add( $headerTxt, 1, &Wx::wxEXPAND | &Wx::wxALL, 2 );
 
 	$szBody->Add( $pnl, 1, &Wx::wxEXPAND | &Wx::wxALL, 2 );
 
@@ -108,19 +104,27 @@ sub __SetLayout {
 	$szHeaderBody->Add( $pnlBody,   1, &Wx::wxEXPAND );
 
 	$self->SetSizer($szHeaderBody);
-	
+
 	$szHeaderBody->Layout();
 
-
 	# SAVE REFERENCES
-	
+
 	$self->{"bodySizer"}    = $szBody;
 	$self->{"szHeaderBody"} = $szHeaderBody;
-	$self->{"pnlHeader"} = $pnlHeader;
-	$self->{"pnlBody"}   = $pnlBody;
+	$self->{"pnlHeader"}    = $pnlHeader;
+	$self->{"pnlBody"}      = $pnlBody;
 
 }
 
+sub AddRow {
+	my $self = shift;
+	my $text = shift;
+
+	my $txt = Wx::StaticText->new( $self->{"pnlBody"}, -1, "Text" . $text );
+	$self->{"bodySizer"}->Add( $txt, 1, &Wx::wxEXPAND | &Wx::wxALL, 2 );
+	
+
+}
 
 sub GetParentForGroup {
 	my $self = shift;

@@ -26,6 +26,7 @@ use warnings;
 use aliased 'Programs::Exporter::UnitEnums';
 use aliased 'Programs::Exporter::ExportUtility::ExportUtility::Forms::GroupWrapperForm';
 use aliased 'Programs::Exporter::ExportUtility::Groups::NifExport::Presenter::NifExport';
+use aliased 'Programs::Exporter::ExportUtility::Groups::NifExport::Model::NifGroupData';
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
@@ -39,7 +40,12 @@ sub new {
 
 	#uique key within all units
 	$self->{"unitId"} = UnitEnums->UnitId_NIF;
+	
 	$self->{"unitExport"} = NifExport->new($self->{"unitId"});
+	
+	$self->{"groupData"} = NifGroupData->new();
+	
+	$self->{"form"} = undef;
 
 	# init class for model
 	return $self;    # Return the reference to the hash.
@@ -73,6 +79,35 @@ sub InitForm {
  
 
 }
+
+
+sub ItemResult {
+	my $self = shift;
+	my $id   = shift;
+	my $result   = shift;
+	my $errorsStr   = shift;
+	my $warningStr   = shift;
+	
+ 
+	 $self->{"groupData"}->{"itemsMngr"}->CreateExportItem($id, $result, $errorsStr, $warningStr);
+
+}
+
+
+sub RefreshGUI {
+	my $self = shift;
+	
+	
+
+	my @items = $self->{"groupData"}->GetAllItems();
+	
+	foreach my $item (@items){
+		
+		$self->{"form"}->AddRow($item->ItemId());
+	}
+}
+
+
 #
 #sub RefreshGUI {
 #	my $self = shift;

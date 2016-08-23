@@ -14,6 +14,7 @@ use warnings;
 use aliased 'Programs::Exporter::UnitEnums';
 use aliased 'Programs::Exporter::ExportUtility::Groups::NifExport::Presenter::NifUnit';
 #use aliased 'Programs::Exporter::ExportUtility::Groups::NCExport::Presenter::NCUnit';
+use aliased 'Programs::Exporter::ExportUtility::Unit::Units';
 #-------------------------------------------------------------------------------------------#
 #  Package methods, requested by IUnit interface
 #-------------------------------------------------------------------------------------------#
@@ -26,8 +27,8 @@ sub new {
 	$self->{"jobId"} = shift;
 	$self->{"exportData"} = shift;
 	
-	my @units = ();
-	$self->{"units"} = \@units;
+ 
+	$self->{"units"} = Units->new();
 
 	 
 
@@ -56,23 +57,50 @@ sub new {
 sub __InitUnit{
 	my $self = shift;
 	
+	my @allUnits = ();
+	
 	my $exportedData = $self->{"exportData"};
 	
 	my %unitsData = $exportedData->GetAllUnitData();
 	
+	
 	foreach my $key (keys %unitsData){
 		
-		my $unit = $self->__GetUnit($key);
+		my $unit = $self->__GetUnitClass($key);
 		
-		push(@{$self->{"units"}}, $unit);
+		
+		
+		push(@allUnits, $unit);
 
 	}
+	
+	$self->{"units"}->Init(\@allUnits);
+	
 }
 
 
+sub ItemMessageEvt{
+	my $self = shift;
+	my $data = shift;
+	
+	my $unitId = $data->{"unitId"};
+	
+	my $unit = $self->__GetUnit($unitId);
+ 
+	my $itemId = $data->{"itemId"};
+	my $itemResult = $data->{"result"};
+	my $itemErrors = $data->{"errors"};
+	my $itemWarnings = $data->{"warnings"};
+	
+	$unit->ItemResult($itemId, $itemResult, $itemErrors, $itemWarnings);
+	
+	$unit->RefreshGUI();
+	
+}
+
 sub GetAllUnits{
 	my $self = shift;	
-	return @{$self->{"units"}};
+	return @{$self->{"units"}->{"units"}};
 }
 
 
@@ -82,8 +110,15 @@ sub GetExportData{
 }
 
 
-
 sub __GetUnit{
+	my $self = shift;
+	my $unitId = shift;
+	
+	return $self->{"units"}->GetUnitById($unitId);
+
+}
+
+sub __GetUnitClass{
 	my $self = shift;
 	my $unitId = shift;
 	

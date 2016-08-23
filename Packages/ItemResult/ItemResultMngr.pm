@@ -35,12 +35,11 @@ sub new {
 sub GetNewItem {
 	my $self = shift;
 	my $id   = shift;
-
-	#my $result = shift;
+	my $result = shift;
 
 	#my $groupId = $self->{"groupId"};
 
-	my $item = ItemResult->new($id);
+	my $item = ItemResult->new($id, $result);
 
 	return $item;
 }

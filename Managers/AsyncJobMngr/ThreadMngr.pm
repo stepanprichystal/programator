@@ -160,8 +160,11 @@ sub __WorkerMethod {
 
 	use aliased 'Packages::InCAM::InCAM';
 	print 1;
-	my $inCAM = InCAM->new( "remote" => 'localhost', "port" => $port );
-	$inCAM->ServerReady();
+	
+	# TODO odkomentovat
+	#my $inCAM = InCAM->new( "remote" => 'localhost', "port" => $port );
+	my $inCAM = undef;
+	#$inCAM->ServerReady();
 
 	$SIG{'KILL'} = sub {
 

@@ -4,6 +4,7 @@
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Programs::Exporter::ExportUtility::ExportUtility::JobWorkerClass;
+use base("Managers::AsyncJobMngr::WorkerClass");
 
 #3th party library
 use strict;
@@ -19,31 +20,24 @@ use aliased 'Programs::Exporter::ExportUtility::Enums';
 #  Package methods
 #-------------------------------------------------------------------------------------------#
 
-my $THREAD_PROGRESS_EVT : shared;
-my $THREAD_MESSAGE_EVT : shared;
-
 sub new {
-	my $self = shift;
+	my $class = shift;
 
-	$self = {};
+	my $self = $class->SUPER::new(@_);
 	bless($self);
 
-	$self->{"pcbId"}  = shift;
-	$self->{"taskId"} = shift;
-	$self->{"inCAM"}  = shift;
-	$self->{"data"}   = shift;
-	$self->{"exportClass"} = shift;
-
-	$THREAD_PROGRESS_EVT = ${ shift(@_) };
-	$THREAD_MESSAGE_EVT  = ${ shift(@_) };
-
-	$self->{"exporterFrm"} = shift;
-
-	#$self->{'onItemResult'}  = Event->new();
-	#$self->{'onItemError'}   = Event->new();
-	#$self->{'onGroupExport'} = Event->new();
-
 	return $self;
+}
+
+sub Init {
+	my $self = shift;
+
+	$self->{"pcbId"}       = shift;
+	$self->{"taskId"}      = shift;
+	$self->{"inCAM"}       = shift;
+	$self->{"exportClass"} = shift;    # classes for export each group
+	$self->{"data"}        = shift;    # export data
+
 }
 
 sub RunExport {
@@ -72,33 +66,36 @@ sub RunExport {
 sub __ProcessGroup {
 	my $self       = shift;
 	my $unitId     = shift;
-	my $exportData = shift;                               # export data for specific group
+	my $exportData = shift;    # export data for specific group
 
+	for ( my $i = 0 ; $i < 4 ; $i++ ) {
+
+		my %data1 = ();
+		$data1{"unitId"}   = $unitId;
+		$data1{"itemId"}   = "Item id $i";
+		$data1{"result"}   = "Succes";
+		$data1{"errors"}   = "";
+		$data1{"warnings"} = "";
+
+		$self->_SendMessageEvt( Enums->EventType_ITEM_RESULT, \%data1 );
+
+		sleep(1);
+
+	}
+
+	return 1;
+
+	# Get right export class and init
 	my $exportClass = $self->{"exportClass"}->{$unitId};
-	
- 
-	
-	$exportClass->Init($self->{"inCAM"}, $self->{"pcbId"}, $exportData);
+	$exportClass->Init( $self->{"inCAM"}, $self->{"pcbId"}, $exportData );
 
 	# Set handlers
 	$exportClass->{"onItemResult"}->Add( sub { $self->__ItemResultEvent( $exportClass, $unitId, @_ ) } );
 
+	# Final export group
 	$exportClass->Run();
-	 
 
 }
-
-#sub __GetExportClass {
-#	my $self   = shift;
-#	my $unitId = shift;
-#
-#	my %id2class = ();
-#
-#	$id2class{ UnitEnums->UnitId_NIF } = NifExport->new();
-#	$id2class{ UnitEnums->UnitId_NC }  = NifExport->new();
-#
-#	return $id2class{$unitId};
-#}
 
 sub __ItemResultEvent {
 	my $self        = shift;
@@ -112,18 +109,18 @@ sub __ItemResultEvent {
 	$data1{"unitId"}   = $unitId;
 	$data1{"itemId"}   = $itemResult->ItemId();
 	$data1{"result"}   = $itemResult->Result();
-	$data1{"errors"}   = $itemResult->GetErrorStr();
-	$data1{"warnings"} = $itemResult->GetWarningStr();
+	$data1{"errors"}   = $itemResult->GetErrorStr( Enums->ItemResult_DELIMITER );
+	$data1{"warnings"} = $itemResult->GetWarningStr( Enums->ItemResult_DELIMITER );
 
-	$self->__OnMessageEvt( Enums->EventType_ITEM_RESULT, \%data1 );
- 
- 	# Progress value event
-	
+	$self->_SendMessageEvt( Enums->EventType_ITEM_RESULT, \%data1 );
+
+	# Progress value event
+
 	my %data2 = ();
 	$data2{"unitId"} = $unitId;
-	$data2{"value"} = $exportClass->GetProgressValue();
-	
-	$self->__OnProgressEvt( \%data2 );
+	$data2{"value"}  = $exportClass->GetProgressValue();
+
+	$self->_SendProgressEvt( \%data2 );
 
 }
 
@@ -138,68 +135,11 @@ sub __GroupExportEvent {
 	my $self   = shift;
 	my $unitId = shift;
 	my $type   = shift;    #GROUP_EXPORT_<START/END>
-	
+
 	my %data = ();
 	$data{"unitId"} = $unitId;
-	
-	$self->__OnMessageEvt($type,  \%data );
-}
 
-# General method for sending "message" event from this class
-sub __OnMessageEvt {
-	my $self     = shift;
-	my $messageType = shift;
-	my $data     = shift;
-
-	my %res : shared = ();
-	$res{"taskId"}   = $self->{"taskId"};
-	$res{"messType"}   = $messageType;
-	
-
-	#fill response with <$data> values, if exists
-	if ($data) {
-
-		my %dataShared : shared = ();
-		$res{"data"} = \%dataShared;
-
-		foreach my $k ( keys %{$data} ) {
-
-			$res{"data"}{$k} = $data->{$k};
-		}
-	}
-
-	my $threvent = new Wx::PlThreadEvent( -1, $THREAD_MESSAGE_EVT, \%res );
-	Wx::PostEvent( $self->{"exporterFrm"}, $threvent );
-
-}
-
-# General method for sending total progress value for units
-sub __OnProgressEvt {
-	my $self   = shift;
-	my $data = shift;
-	 
-	my %res : shared = ();
-	$res{"taskId"} = $self->{"taskId"};
-	 
-	 
-	#fill response with <$data> values, if exists
-	if ($data) {
-
-		my %dataShared : shared = ();
-		$res{"data"} = \%dataShared;
-
-		foreach my $k ( keys %{$data} ) {
-
-			$res{"data"}{$k} = $data->{$k};
-		}
-	}
-	
-	
-	#%res = ( %res, %{$data} );
-
-	my $threvent = new Wx::PlThreadEvent( -1, $THREAD_PROGRESS_EVT, \%res );
-	Wx::PostEvent( $self->{"exporterFrm"}, $threvent );
-
+	$self->_SendMessageEvt( $type, \%data );
 }
 
 #-------------------------------------------------------------------------------------------#

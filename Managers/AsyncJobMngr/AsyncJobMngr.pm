@@ -24,6 +24,7 @@ use aliased 'Managers::AsyncJobMngr::ServerMngr';
 use aliased 'Managers::AsyncJobMngr::ThreadMngr';
 use aliased 'Managers::AsyncJobMngr::Helper';
 use aliased 'Managers::MessageMngr::MessageMngr';
+
 #use aliased 'Programs::Exporter::ThreadBase';
 use aliased 'Packages::Events::Event';
 
@@ -39,11 +40,11 @@ use constant {
 };
 
 sub new {
-	my $self   = shift;
-	my $parent = shift;
-	my $title = shift;
+	my $self      = shift;
+	my $parent    = shift;
+	my $title     = shift;
 	my $dimension = shift;
-	
+
 	$self = {};
 
 	unless ($parent) {
@@ -51,10 +52,9 @@ sub new {
 	}
 
 	bless($self);
-	
+
 	#running mode
 	$self->{"runMode"} = shift;
-	
 
 	my @jobs = ();
 	$self->{"jobs"}       = \@jobs;
@@ -63,19 +63,17 @@ sub new {
 
 	#$self->{"threadBase"} = ThreadBase->new();
 
-	
-
 	#class events
 
-	$self->{'onJobStartRun'} = Event->new();
+	$self->{'onJobStartRun'}    = Event->new();
 	$self->{'onJobDoneEvt'}     = Event->new();
 	$self->{'onJobProgressEvt'} = Event->new();
 	$self->{'onJobMessageEvt'}  = Event->new();
-	$self->{'onRunJobWorker'} = Event->new();
+	$self->{'onRunJobWorker'}   = Event->new();
 
-	my $mainFrm = $self->__SetLayout($parent, $title, $dimension);
+	my $mainFrm = $self->__SetLayout( $parent, $title, $dimension );
 
-	$self->__RunTimers();
+	#$self->__RunTimers();
 
 	return $self;
 }
@@ -92,7 +90,7 @@ sub _AddJobToQueue {
 
 	my $self      = shift;
 	my $pcbId     = shift;
-	my $uniqueId    = shift; #unique task id
+	my $uniqueId  = shift;                         #unique task id
 	my %extraInfo = %{ shift(@_) } if ( $_[0] );
 
 	my %jobInfo = (
@@ -108,7 +106,20 @@ sub _AddJobToQueue {
 
 	push( @{ $self->{"jobs"} }, \%jobInfo );
 
-	return $jobInfo{"jobGUID"};
+	# SMAZAT
+	$jobInfo{"port"}  = undef;
+	$jobInfo{"state"} = JOB_RUNNING;
+
+	$self->{"threadMngr"}->RunNewExport( $uniqueId, $jobInfo{"port"}, $pcbId );
+
+	#raise onJobStarRun event
+	my $ononJobStartRun = $self->{'onJobStartRun'};
+	if ( $ononJobStartRun->Handlers() ) {
+		$ononJobStartRun->Do($uniqueId);
+	}
+ 
+
+return $jobInfo{"jobGUID"};
 
 }
 
@@ -153,13 +164,13 @@ sub _GetInfoServers {
 #  Private methods
 #-------------------------------------------------------------------------------------------#
 
-sub _SetThreadWorker{
-	my $self = shift;
+sub _SetThreadWorker {
+	my $self         = shift;
 	my $workerMethod = shift;
-	
+
 	#add handler, when new thread start
-	$self->{"threadMngr"}->{"onThreadWorker"}->Add( $workerMethod);
-	
+	$self->{"threadMngr"}->{"onThreadWorker"}->Add($workerMethod);
+
 }
 
 sub __OnThreadWorkerHandler {
@@ -178,6 +189,7 @@ sub __OnThreadWorkerHandler {
 	my $onRunJobWorker = $self->{'onRunJobWorker'};
 
 	if ( $onRunJobWorker->Handlers() ) {
+
 		#$onRunJobWorker->Do(@_, \$THREAD_DONE_EVT, \$THREAD_PROGRESS_EVT, \$THREAD_MESSAGE_EVT);
 		$onRunJobWorker->Do(@_);
 	}
@@ -383,10 +395,10 @@ sub Test {
 
 sub __SetLayout {
 
-	my $self   = shift;
-	my $parent = shift;
-	my $title = shift;
-	my @dimension = @{shift(@_)};
+	my $self      = shift;
+	my $parent    = shift;
+	my $title     = shift;
+	my @dimension = @{ shift(@_) };
 
 	#EVT_NOTEBOOK_PAGE_CHANGED( $self, $nb, $self->can( 'OnPageChanged' ) );
 
@@ -394,9 +406,9 @@ sub __SetLayout {
 	my $mainFrm = MyWxFrame->new(
 		$parent,                   # parent window
 		-1,                        # ID -1 means any
-		$title,                # title
+		$title,                    # title
 		&Wx::wxDefaultPosition,    # window position
-		\@dimension              # size
+		\@dimension                # size
 		                           #&Wx::wxSYSTEM_MENU | &Wx::wxCAPTION | &Wx::wxCLIP_CHILDREN | &Wx::wxRESIZE_BORDER | &Wx::wxMINIMIZE_BOX
 	);
 
@@ -408,7 +420,7 @@ sub __SetLayout {
 
 	my $THREAD_DONE_EVT : shared = Wx::NewEventType;
 	Wx::Event::EVT_COMMAND( $self->{"mainFrm"}, -1, $THREAD_DONE_EVT, sub { $self->__ThreadDoneHandler(@_) } );
-	
+
 	my $THREAD_PROGRESS_EVT : shared = Wx::NewEventType;
 	Wx::Event::EVT_COMMAND( $self->{"mainFrm"}, -1, $THREAD_PROGRESS_EVT, sub { $self->__ThreadProgressHandler(@_) } );
 
@@ -420,6 +432,7 @@ sub __SetLayout {
 
 	$self->{"serverMngr"}->Init( $self->{"mainFrm"}, \$PORT_READY_EVT );
 	$self->{"threadMngr"}->Init( $self->{"mainFrm"}, \$THREAD_PROGRESS_EVT, \$THREAD_MESSAGE_EVT, \$THREAD_DONE_EVT );
+
 	#$self->{"threadMngr"}->Init( $self->{"mainFrm"}, \$THREAD_DONE_EVT );
 
 	#	#reise event
@@ -516,14 +529,15 @@ sub __ThreadDoneHandler {
 sub __ThreadProgressHandler {
 	my ( $self, $frame, $event ) = @_;
 
-	my %d = %{ $event->GetData };
-	
+	my %d       = %{ $event->GetData };
+	my $jobGUID = $d{"taskId"};
+	my $data    = $d{"data"};
 
 	#reise event
 	my $onJobProgressEvt = $self->{'onJobProgressEvt'};
 
 	if ( $onJobProgressEvt->Handlers() ) {
-		$onJobProgressEvt->Do( $d{"jobGUID"}, $d{"value"} );
+		$onJobProgressEvt->Do( $d{"taskId"} );
 	}
 
 	#print $event->etData;
@@ -534,16 +548,15 @@ sub __ThreadMessageHandler {
 
 	my %d = %{ $event->GetData };
 
-	my $jobGUID = $d{"jobGUID"};
+	my $jobGUID  = $d{"taskId"};
 	my $messType = $d{"messType"};
-	my $data = $d{"data"};
-
+	my $data     = $d{"data"};
 
 	#reise event
 	my $onJobMessageEvt = $self->{'onJobMessageEvt'};
 
 	if ( $onJobMessageEvt->Handlers() ) {
-		$onJobMessageEvt->Do( $jobGUID, $messType, $data);
+		$onJobMessageEvt->Do( $jobGUID, $messType, $data );
 	}
 }
 
@@ -563,7 +576,9 @@ sub __TakeFromQueueHandler {
 				my $jobGUID = ${$jobsRef}[$i]{"jobGUID"};
 
 				$self->__SetJobState( $jobGUID, JOB_WAITINGPORT );
-				$self->{"serverMngr"}->PrepareServerPort($jobGUID);
+
+				# TODO odkomentovat
+				#$self->{"serverMngr"}->PrepareServerPort($jobGUID);
 
 			}
 		}

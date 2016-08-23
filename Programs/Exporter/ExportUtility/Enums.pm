@@ -9,7 +9,15 @@ use constant {
 			   EventType_GROUP_END => "groupExportEnd"
 };
  
- 
+use constant {
+			   ItemResult_DELIMITER  => "#<%<"			   
+};
+
+
+use constant {
+			   GroupState_WAITING  => "waiting",	   
+};
+
  
  
  

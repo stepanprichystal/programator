@@ -60,12 +60,32 @@ sub AddError {
 	push( @{ $self->{"errors"} }, $mess );
 }
 
+sub AddErrors {
+	my $self = shift;
+	my $messages = shift;
+	
+	foreach my $mess (@{$messages}){
+		
+		$self->AddError($mess);
+	}
+}
+
 sub AddWarning {
 	my $self = shift;
 	my $mess = shift;
 	$self->{"result"} = Enums->ItemResult_Fail;
 
 	push( @{ $self->{"warnings"} }, $mess );
+}
+
+sub AddWarnings {
+	my $self = shift;
+	my $messages = shift;
+	
+	foreach my $mess (@{$messages}){
+		
+		$self->AddWarning($mess);
+	}
 }
 
 sub ItemId {
@@ -89,11 +109,16 @@ sub SetItemId {
 
 sub GetErrorStr {
 	my $self = shift;
+	my $delimiter = shift;
+	
+	unless($delimiter){
+		$delimiter = "\n";
+	}
 
 	my $str = "";
 
 	foreach ( @{ $self->{"errors"} } ) {
-		$str .= " - " . $_ . "\n";
+		$str .= " - " . $_ . $delimiter;
 	}
 
 	return $str;
@@ -101,11 +126,16 @@ sub GetErrorStr {
 
 sub GetWarningStr {
 	my $self = shift;
+	my $delimiter = shift;
+	
+	unless($delimiter){
+		$delimiter = "\n";
+	}
 
 	my $str = "";
 
 	foreach ( @{ $self->{"warnings"} } ) {
-		$str .= " - " . $_ . "\n";
+		$str .= " - " . $_ . $delimiter;
 	}
 
 	return $str;

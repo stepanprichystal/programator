@@ -24,7 +24,7 @@ use aliased 'Packages::Events::Event';
 
 use aliased 'Managers::MessageMngr::MessageMngr';
 use aliased 'Programs::Exporter::ExportUtility::ExportUtility::Forms::JobQueueForm';
-use aliased 'Programs::Exporter::ExportUtility::ExportUtility::Forms::GroupTableForm';
+use aliased 'Programs::Exporter::ExportUtility::ExportUtility::Forms::GroupTable::GroupTableForm';
 use aliased 'Widgets::Forms::CustomNotebook::CustomNotebook';
 use aliased 'Widgets::Forms::MyWxBookCtrlPage';
 
@@ -98,7 +98,7 @@ sub AddNewTask {
 	my $self = shift;
 	my $task = shift;
 
-	$self->_AddJobToQueue( $task->{"jobId"} );
+	$self->_AddJobToQueue(  $task->GetJobId(), $task->GetTaskId() );
 }
 
 sub __SetLayout {
@@ -335,6 +335,18 @@ sub __SetLayoutGroups {
 # ========================================================================================== #
 #  PRIVATE HELPER METHOD
 # ========================================================================================== #
+
+
+sub __GroupContentRefresh{
+	my $self         = shift;
+	my $taskId = 	shift;
+	
+	my $page = $self->{"notebook"}->GetPage($taskId);
+	my $groupTable = $page->GetPageContent();
+	
+	$groupTable->RearrangeGroups();  
+	
+}
 
 sub __JobItemSeletedChange {
 	my $self         = shift;

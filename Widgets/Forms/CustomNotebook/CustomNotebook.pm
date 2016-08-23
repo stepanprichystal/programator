@@ -97,6 +97,13 @@ sub RemovePage {
 	$self->{"pages"}->{$pageId} = undef;
 }
 
+sub GetPage {
+	my $self   = shift;
+	my $pageId = shift;
+	
+	return $self->{"pages"}->{$pageId};
+}
+
 sub ShowPage {
 	my $self   = shift;
 	my $pageId = shift;

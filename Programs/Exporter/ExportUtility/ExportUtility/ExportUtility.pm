@@ -6,7 +6,9 @@
 package Programs::Exporter::ExportUtility::ExportUtility::ExportUtility;
 
 #3th party library
-
+use threads;
+use threads::shared;
+use Wx;
 use strict;
 use warnings;
 
@@ -21,6 +23,7 @@ use aliased 'Programs::Exporter::ExportUtility::ExportUtility::Forms::ExportUtil
 use aliased 'Programs::Exporter::DataTransfer::DataTransfer';
 use aliased 'Programs::Exporter::DataTransfer::Enums' => 'EnumsTransfer';
 use aliased 'Programs::Exporter::ExportUtility::ExportUtility::JobWorkerClass';
+use aliased 'Programs::Exporter::ExportUtility::Enums';
 
 #my $THREAD_MESSAGE_EVT : shared;
 #-------------------------------------------------------------------------------------------#
@@ -83,6 +86,8 @@ sub __AddNewJob {
 	my $guid = GeneralHelper->GetGUID();
 
 	my $task = Task->new( $guid, $jobId, $exportData );
+	
+	push( @{ $self->{"tasks"} }, $task );
 
 	# prepare gui
 	$self->{"form"}->AddNewTaskGUI($task);
@@ -90,7 +95,7 @@ sub __AddNewJob {
 	# Add new task to queue
 	$self->{"form"}->AddNewTask($task);
 
-	push( @{ $self->{"tasks"} }, $task );
+	
 
 }
 
@@ -118,21 +123,37 @@ sub __OnJobDoneEvtHandler {
 sub __OnJobProgressEvtHandler {
 	my $self    = shift;
 	my $jobGUID = shift;
-	my $value   = shift;
+	my $data   = shift;
 
-	$self->{"gauge"}->SetValue($value);
+	#$self->{"gauge"}->SetValue($value);
 
-	print "Exporter utility:  job progress, job id: " . $jobGUID . " - value: " . $value . "\n";
+	#print "Exporter utility:  job progress, job id: " . $jobGUID . " - value: " . $value . "\n";
 
 }
 
 sub __OnJobMessageEvtHandler {
 	my $self     = shift;
-	my $jobGUID  = shift;
+	my $taskId  = shift;
 	my $messType = shift;
 	my $data     = shift;
+	
 
-	print "Exporter utility::  job id: " . $jobGUID . " - messType: " . $messType . " - data: " . $data . "\n";
+	my $task = $self->__GetTaskById($taskId);
+	
+	print "Exporter utility::  task id: " . $taskId . " - messType: " . $messType. "\n";
+	
+	if($messType eq Enums->EventType_ITEM_RESULT){
+		
+		
+		$task->ItemMessageEvt($data);
+		$self->{"form"}->{"mainFrm"}->Layout();
+		$self->{"form"}->{"mainFrm"}->Refresh();
+	}
+	
+	
+
+
+	#print "Exporter utility::  job id: " . $jobGUID . " - messType: " . $messType . " - data: " . $data . "\n";
 }
 
 # ========================================================================================== #
@@ -147,7 +168,8 @@ sub JobWorker {
 	my $inCAM                        = shift;
 	my $THREAD_PROGRESS_EVT : shared = ${ shift(@_) };
 	my $THREAD_MESSAGE_EVT : shared  = ${ shift(@_) };
-
+	
+	 
 	#vytvorit nejakou Base class ktera bude obsahovat odesilani zprav prostrednictvim messhandler
 
 	#GetExportClass
@@ -157,8 +179,8 @@ sub JobWorker {
 	
 	# TODO udelat base class pro JobWorkerClass nebo to nejak vzresit
 	
-	my $jobExport =
-	  JobWorkerClass->new( $pcbId, $jobGUID, $inCAM, $exportData, %exportClass, \$THREAD_PROGRESS_EVT, \$THREAD_MESSAGE_EVT, $self->{"mainFrm"} );
+	my $jobExport = JobWorkerClass->new( \$THREAD_PROGRESS_EVT, \$THREAD_MESSAGE_EVT, $self->{"form"}->{"mainFrm"});
+	 $jobExport->Init($pcbId, $taskId, $inCAM, \%exportClass, $exportData);
 
 	$jobExport->RunExport();
 
@@ -207,7 +229,7 @@ sub __GetTaskById {
 
 	foreach my $task ( @{ $self->{"tasks"} } ) {
 
-		if ( $task eq $taskId ) {
+		if ( $task->GetTaskId() eq $taskId ) {
 
 			return $task;
 		}
@@ -227,7 +249,7 @@ sub __SetHandlers {
 	$self->{"form"}->{'onClick'}->Add( sub { $self->__OnClick(@_) } );
 
 	# Set worker method
-	$self->_SetThreadWorker( sub { $self->JobWorker(@_) } );
+	$self->{"form"}->_SetThreadWorker( sub { $self->JobWorker(@_) } );
 
 }
 

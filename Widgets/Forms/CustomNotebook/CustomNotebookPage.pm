@@ -35,6 +35,7 @@ sub new {
 	
 	# PROPERTIES
 	$self->{"pageId"} = $pageId;
+	$self->{"content"} = undef; #reference to page content
 
 	$self->__SetLayout();
 
@@ -110,14 +111,20 @@ sub GetPageId{
 sub GetParent{
 		my $self  = shift;
 		
-		return $self->{"containerPnl"};
+		return $self->{"containerPnl"};	
+}
+
+sub GetPageContent{
+	my $self  = shift;
 	
-	
+	return $self->{"content"};
 }
  
 sub AddContent {
 	my $self  = shift;
 	my $content = shift;
+
+	$self->{"content"} = $content;
 
 	#my $item = JobQueueItemForm->new( $self->{"containerPnl"});
 
