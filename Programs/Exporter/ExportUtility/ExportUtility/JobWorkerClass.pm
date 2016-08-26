@@ -68,7 +68,7 @@ sub __ProcessGroup {
 	my $unitId     = shift;
 	my $exportData = shift;    # export data for specific group
 
-	for ( my $i = 0 ; $i < 4 ; $i++ ) {
+	for ( my $i = 0 ; $i < 1 ; $i++ ) {
 
 		my %data1 = ();
 		$data1{"unitId"}   = $unitId;

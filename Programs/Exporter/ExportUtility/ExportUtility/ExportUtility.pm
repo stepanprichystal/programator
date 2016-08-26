@@ -146,6 +146,8 @@ sub __OnJobMessageEvtHandler {
 		
 		
 		$task->ItemMessageEvt($data);
+		
+		$self->{"form"}->__GroupContentRefresh($taskId);
 		$self->{"form"}->{"mainFrm"}->Layout();
 		$self->{"form"}->{"mainFrm"}->Refresh();
 	}

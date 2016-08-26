@@ -2,8 +2,11 @@
 # Description: Widget slouzici pro zobrazovani zprav ruznych typu uzivateli
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
+
 package Programs::Exporter::ExportUtility::ExportUtility::Forms::GroupTable::GroupColumnForm;
-use base('Wx::BoxSizer');
+
+#use base('Wx::BoxSizer');
+
 #3th party library
 use strict;
 use warnings;
@@ -22,14 +25,16 @@ sub new {
 
 	my ( $class, $parent ) = @_;
 
-	my $self = $class->SUPER::new(&Wx::wxVERTICAL)
+	#my $self = $class->SUPER::new( &Wx::wxVERTICAL );
 
+	my $self = {};
 	bless($self);
 
-	$self->{"parent"} = shift;
-	#$self->{"sizer"}  = shift;
+	my $box = Wx::BoxSizer->new(&Wx::wxVERTICAL);
 
-	$self->{"prevCol"} = undef;
+	$self->{"parent"} = $parent;
+	$self->{"sizer"}  = $box;
+
 	$self->{"nextCol"} = undef;
 
 	my @groups = ();
@@ -39,11 +44,10 @@ sub new {
 }
 
 sub Init {
-	my $self    = shift;
-	my $prevCol = shift;
+	my $self = shift;
+
 	my $nextCol = shift;
 
-	$self->{"prevCol"} = $prevCol;
 	$self->{"nextCol"} = $nextCol;
 
 }
@@ -51,48 +55,62 @@ sub Init {
 sub MoveLastGroup {
 	my $self = shift;
 
-	my @childs  = $self->GetChildren();
-	my $lastIdx = scalar(@childs) - 1;
-
-	my $lastChild = $childs[$lastIdx];
-
-	if ( $lastIdx >= 0 ) {
-		$self->Remove($lastIdx);
+	unless ( $self->{"nextCol"} ) {
+		return 0;
 	}
 
-	if ( $self->{"nextCol"} ) {
-		$self->{"nextCol"}->InsertNewGroup( $lastChild);
+	my @childs  = $self->{"sizer"}->GetChildren();
+	my $lastIdx = scalar(@childs) - 1;
+
+	if ( $lastIdx >= 0 ) {
+
+		my $lastChildItem = $childs[$lastIdx];
+		my $lastChild     = $lastChildItem->GetWindow();
+
+		$self->{"sizer"}->Remove($lastIdx);
+		$self->{"nextCol"}->InsertNewGroup($lastChild);
+		
+		# columns need to be layout
+		#$self->{"nextCol"}->{"sizer"}->Layout();
+		#$self->{"sizer"}->Layout();
 	}
 
 }
+
+ 
+
+
 
 sub InsertNewGroup {
 	my $self  = shift;
 	my $group = shift;
 
-	$self->Prepend( $group, 0, &Wx::wxEXPAND | &Wx::wxALL, 2 );
+	$self->{"sizer"}->Prepend( $group, 0, &Wx::wxEXPAND | &Wx::wxALL, 2 );
 
 }
 
 sub GetHeight {
 	my $self = shift;
+$self->{"sizer"}->Layout();
+	 $self->{"parent"}->Layout();
+	$self->{"parent"}->FitInside();
+	 $self->{"parent"}->Layout();
+	$self->{"sizer"}->Layout();
+	#my ( $w, $colHeight ) = $self->{"sizer"}->GetSize();
+	my $s         = $self->{"sizer"}->GetSize();
+	my $colHeight = $s->GetHeight();
 
-	# $self->FitInside();
-	# $self->Layout();
-	my ( $w, $colHeight ) = $self->GetSizeWH();
 	return $colHeight;
 }
 
 sub __GetChildCnt {
 	my $self = shift;
 
-	my @childs  = $self->GetChildren();
+	my @childs  = $self->{"sizer"}->GetChildren();
 	my $lastIdx = scalar(@childs);
 
 	return $lastIdx;
 }
- 
- 
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

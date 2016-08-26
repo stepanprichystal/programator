@@ -30,7 +30,7 @@ sub new {
 
 	$self->{"columnNumber"} = 3;
 
-	$self->__SetLayout();
+	#$self->__SetLayout();
 
 	#$self->SetBackgroundColour($Widgets::Style::clrBlack);
 
@@ -42,7 +42,7 @@ sub InitGroupTable {
 	my $units = shift;
 	my $inCAM = shift;
 
-	$self->__FillColums($units);
+	$self->__SetLayout($units);
 
 }
 
@@ -62,10 +62,18 @@ sub __SetLayout {
 	# init columns
 	for ( my $i = 0 ; $i < $self->{"columnNumber"} ; $i++ ) {
 
-		my $col = GroupColumnForm->new();
-
+		my $col = GroupColumnForm->new($self);
 		push( @{ $self->{"columns"} }, $col );
 	}
+	
+	for ( my $i = 0 ; $i < $self->{"columnNumber"} - 1; $i++ ) {
+
+		my $col = ${ $self->{"columns"} }[$i];
+		my $nextCol = ${ $self->{"columns"} }[$i+1];
+		$col->Init($nextCol);
+	}
+	
+	# Init, columns - tie them together
 
 	# BUILD LAYOUT STRUCTURE
 
@@ -75,7 +83,7 @@ sub __SetLayout {
 	foreach my $unit ( @{$units} ) {
 
 		$unit->InitForm($self);
-		$firstCol->InsertNewGroup->( $unit->{"form"} );
+		$firstCol->InsertNewGroup( $unit->{"form"} );
 	}
 
 	#set sizers
@@ -96,7 +104,7 @@ sub __SetLayout {
 
 		}
 
-		$szMain->Add( $clmSz, $percentWidth, &Wx::wxEXPAND );
+		$szMain->Add( $clmSz->{"sizer"}, $percentWidth );
 
 	}
 
@@ -119,6 +127,10 @@ sub RearrangeGroups {
 		
 		while( $colCnt != $i+1 && $colHeight > $height ){	
 			  $column->MoveLastGroup();
+			  
+			  $self->Layout();
+	 			$self->FitInside();
+			  
 			  $colHeight = $column->GetHeight();
 		}
 	}
