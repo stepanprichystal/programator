@@ -75,9 +75,11 @@ sub Run {
 
 	my $setName = "cdr";
 	
-	my $strLayers = join("\;", @signalLayers);
+	#my $strLayers = join("\;", @signalLayers);
 	
-	$inCAM->COM("cdr_delete_sets_by_name","layers" => $strLayers,"sets" => $setName);
+	#$inCAM->COM("cdr_delete_sets_by_name","layers" => $strLayers,"sets" => $setName);
+	
+	#$inCAM->COM("delete_entity","job" => $jobId,"name" => $setName, "type" => "cdrsr");
 	
 	
 
