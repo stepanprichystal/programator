@@ -30,10 +30,9 @@ sub new {
 	my $self = {};
 	bless($self);
 
-	my $box = Wx::BoxSizer->new(&Wx::wxVERTICAL);
-
 	$self->{"parent"} = $parent;
-	$self->{"sizer"}  = $box;
+
+	$self->__SetLayout();
 
 	$self->{"nextCol"} = undef;
 
@@ -41,6 +40,37 @@ sub new {
 	$self->{"groups"} = \@groups;
 
 	return $self;
+}
+
+sub __SetLayout {
+	my $self = shift;
+
+	# DEFINE SIZERS
+	my $szMain     = Wx::BoxSizer->new(&Wx::wxVERTICAL);
+	my $szExpander = Wx::BoxSizer->new(&Wx::wxVERTICAL);
+	my $szGroups   = Wx::BoxSizer->new(&Wx::wxVERTICAL);
+
+	# DEFINE CONTROLS
+
+	# BUILD LAYOUT STRUCTURE
+
+	# Add expander to column, which keep width
+	$szExpander->Add( 1, 1, 0, &Wx::wxEXPAND );
+
+	$szMain->Add( $szExpander, 0, &Wx::wxEXPAND );
+	$szMain->Add( $szGroups,   0, &Wx::wxEXPAND );
+
+	# SAVE REFERENCES
+
+	$self->{"sizerGroup"} = $szGroups;
+	$self->{"szMain"}     = $szMain;
+
+}
+
+sub GetSizer {
+	my $self = shift;
+
+	return $self->{"szMain"};
 }
 
 sub Init {
@@ -59,7 +89,12 @@ sub MoveLastGroup {
 		return 0;
 	}
 
-	my @childs  = $self->{"sizer"}->GetChildren();
+	my @childs = $self->{"sizerGroup"}->GetChildren();
+
+	if ( scalar(@childs) <= 1 ) {
+		return 0;
+	}
+
 	my $lastIdx = scalar(@childs) - 1;
 
 	if ( $lastIdx >= 0 ) {
@@ -67,37 +102,38 @@ sub MoveLastGroup {
 		my $lastChildItem = $childs[$lastIdx];
 		my $lastChild     = $lastChildItem->GetWindow();
 
-		$self->{"sizer"}->Remove($lastIdx);
+		$self->{"sizerGroup"}->Remove($lastIdx);
 		$self->{"nextCol"}->InsertNewGroup($lastChild);
-		
+
 		# columns need to be layout
-		#$self->{"nextCol"}->{"sizer"}->Layout();
-		#$self->{"sizer"}->Layout();
+		$self->{"nextCol"}->{"sizerGroup"}->Layout();
+		$self->{"sizerGroup"}->Layout();
 	}
 
+	return 1;
+
 }
-
- 
-
-
 
 sub InsertNewGroup {
 	my $self  = shift;
 	my $group = shift;
 
-	$self->{"sizer"}->Prepend( $group, 0, &Wx::wxEXPAND | &Wx::wxALL, 2 );
+	$self->{"sizerGroup"}->Prepend( $group, 0, &Wx::wxEXPAND | &Wx::wxALL, 2 );
+	
+	#$group->{"column"} = $self;
 
 }
 
 sub GetHeight {
 	my $self = shift;
-$self->{"sizer"}->Layout();
-	 $self->{"parent"}->Layout();
-	$self->{"parent"}->FitInside();
-	 $self->{"parent"}->Layout();
-	$self->{"sizer"}->Layout();
-	#my ( $w, $colHeight ) = $self->{"sizer"}->GetSize();
-	my $s         = $self->{"sizer"}->GetSize();
+	#$self->{"sizerGroup"}->Layout();
+	#$self->{"parent"}->Layout();
+	#$self->{"parent"}->FitInside();
+	#$self->{"parent"}->Layout();
+	#$self->{"sizerGroup"}->Layout();
+
+	#my ( $w, $colHeight ) = $self->{"sizerGroup"}->GetSize();
+	my $s         = $self->{"sizerGroup"}->GetSize();
 	my $colHeight = $s->GetHeight();
 
 	return $colHeight;
@@ -106,7 +142,7 @@ $self->{"sizer"}->Layout();
 sub __GetChildCnt {
 	my $self = shift;
 
-	my @childs  = $self->{"sizer"}->GetChildren();
+	my @childs  = $self->{"sizerGroup"}->GetChildren();
 	my $lastIdx = scalar(@childs);
 
 	return $lastIdx;

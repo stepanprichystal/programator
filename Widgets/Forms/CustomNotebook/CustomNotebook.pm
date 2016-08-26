@@ -79,6 +79,8 @@ sub AddPage {
 
 	$self->{"pages"}->{ $page->GetPageId() } = $page;
 	
+	#$self->{"szMain"}->Add( 1, 1, 1, &Wx::wxEXPAND );
+	
 	$self->{"szMain"}->Add($page, 1, &Wx::wxEXPAND, 1);
 	$page->Hide();
 

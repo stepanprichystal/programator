@@ -102,6 +102,28 @@ sub __OnScrollPaint {
 }
 
 
+sub RefreshContent{
+	my $self  = shift;
+	 
+	my $s         = $self->{"containerSz"}->GetSize();
+	my $height = $s->GetHeight();
+	
+	print "HEIGHT OF PAGE CONTENT IS: $height\n";
+	
+	
+	 
+	
+		$self->{"scrollPnl"}->FitInside();
+		#$self->{"mainFrm"}->Layout();
+		$self->{"scrollPnl"}->Layout();
+	
+ 	
+ 	$self->{"scrollPnl"}->SetRowCount( $height / 10 );
+	
+	$self->Layout();
+	
+}
+
 sub GetPageId{
 	my $self  = shift;
 	

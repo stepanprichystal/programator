@@ -32,6 +32,7 @@ sub new {
 	#$self->{"state"} = Enums->GroupState_ACTIVEON;
 
 	$self->__SetLayout();
+	#$self->{"column"} = undef;
 
 	#EVENTS
 
@@ -43,16 +44,17 @@ sub new {
 sub Init {
 	my $self      = shift;
 	my $groupName = shift;
-	my $groupBody = shift;
+	#my $groupBody = shift;
+ 
 
 	$self->{"headerTxt"}->SetLabel($groupName);
 
-	$self->{"bodySizer"}->Add( $groupBody, 1, &Wx::wxEXPAND | &Wx::wxALL, 2 );
+#	$self->{"bodySizer"}->Add( $groupBody, 1, &Wx::wxEXPAND | &Wx::wxALL, 2 );
 
-	$self->{"groupHeight"} = $groupBody->{"groupHeight"};
+	#$self->{"groupHeight"} = $groupBody->{"groupHeight"};
 
 	# panel, which contain group content
-	$self->{"groupBody"} = $groupBody;
+	#$self->{"groupBody"} = $groupBody;
 
 }
 
@@ -86,7 +88,7 @@ sub __SetLayout {
 	my $height = 20;
 	$height += rand(300);
 
-	my $pnl = Wx::Panel->new( $pnlBody, -1, [ -1, -1 ], [ 100, $height ] );
+	#my $pnl = Wx::Panel->new( $pnlBody, -1, [ -1, -1 ], [ 100, $height ] );
 
 	$self->{"headerTxt"} = $headerTxt;
 
@@ -94,7 +96,7 @@ sub __SetLayout {
 
 	$szHeader->Add( $headerTxt, 1, &Wx::wxEXPAND | &Wx::wxALL, 2 );
 
-	$szBody->Add( $pnl, 1, &Wx::wxEXPAND | &Wx::wxALL, 2 );
+	#$szBody->Add( $pnl, 1, &Wx::wxEXPAND | &Wx::wxALL, 2 );
 
 	$pnlHeader->SetSizer($szHeader);
 
@@ -123,7 +125,8 @@ sub AddRow {
 	my $txt = Wx::StaticText->new( $self->{"pnlBody"}, -1, "Text" . $text );
 	$self->{"bodySizer"}->Add( $txt, 1, &Wx::wxEXPAND | &Wx::wxALL, 2 );
 	
-
+	$self->{"bodySizer"}->Layout();
+	#$self->{"column"}->{"sizerGroup"}->Layout();
 }
 
 sub GetParentForGroup {

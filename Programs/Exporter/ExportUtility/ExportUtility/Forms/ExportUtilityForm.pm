@@ -343,8 +343,15 @@ sub __GroupContentRefresh{
 	
 	my $page = $self->{"notebook"}->GetPage($taskId);
 	my $groupTable = $page->GetPageContent();
+
+	my ($w, $pageHight)         = $self->{"notebook"}->GetSizeWH();
+
+	$groupTable->RearrangeGroups($pageHight);  
 	
-	$groupTable->RearrangeGroups();  
+	
+	$page->RefreshContent();
+	
+	 
 	
 }
 

@@ -8,7 +8,7 @@
 # 3) View - only display data, which are passed from model by presenter class
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Programs::Exporter::ExportUtility::Groups::NifExport::Presenter::NifUnit;
+package Programs::Exporter::ExportUtility::Groups::NC2Unit;
 #use base 'Programs::Exporter::ExportChecker::Groups::UnitBase';
 
 #use Class::Interface;
@@ -39,7 +39,7 @@ sub new {
 	bless $self;
 
 	#uique key within all units
-	$self->{"unitId"} = UnitEnums->UnitId_NIF;
+	$self->{"unitId"} = UnitEnums->UnitId_NC2;
 	
 	$self->{"unitExport"} = NifExport->new($self->{"unitId"});
 	
@@ -76,7 +76,7 @@ sub InitForm {
 
 	$self->{"form"} = GroupWrapperForm->new($parent, $self->{"unitId"});
 
- 	$self->{"form"}->Init($self->{"unitId"});
+  	$self->{"form"}->Init($self->{"unitId"});
 
 }
 

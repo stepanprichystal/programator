@@ -29,6 +29,7 @@ sub new {
 	bless($self);
 
 	$self->{"columnNumber"} = 3;
+	$self->{"parent"} = $parent;
 
 	#$self->__SetLayout();
 
@@ -77,7 +78,9 @@ sub __SetLayout {
 
 	# BUILD LAYOUT STRUCTURE
 
-	# add groups to first column
+	# add groups to first column, by order
+	
+	 
 
 	my $firstCol = @{ $self->{"columns"} }[0];
 	foreach my $unit ( @{$units} ) {
@@ -100,23 +103,36 @@ sub __SetLayout {
 			my $sepPnl = Wx::Panel->new( $self, -1 );
 			$sepPnl->SetBackgroundColour( Wx::Colour->new( 200, 200, 200 ) );
 			$sepPnl->SetSizer($sepSz);
-			$szMain->Add( $sepPnl, 1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+			$sepSz->Add(5, 5, 0, &Wx::wxEXPAND );
+ 
+			$szMain->Add( $sepPnl, 0, &Wx::wxEXPAND |  &Wx::wxALL, 1 );
 
 		}
 
-		$szMain->Add( $clmSz->{"sizer"}, $percentWidth );
+		print "pecent width: $percentWidth\n";
+		$szMain->Add( $clmSz->GetSizer(), $percentWidth );
 
 	}
 
 	$self->SetSizer($szMain);
+	
+	
+	$self->{"szMain"} = $szMain;
 
 }
 
 sub RearrangeGroups {
 	my $self  = shift;
+	my $tableHight = shift;
 	 
-
-	my $height = 400;
+	 
+	
+	#my ($w, $tableHight)         = $self->{"parent"}->GetSizeWH();
+	 
+	
+	print "Table height is :$tableHight \n"; 
+	
+	my $height = $tableHight;
 
 	my $colCnt = scalar( @{ $self->{"columns"} } );
 
@@ -126,16 +142,24 @@ sub RearrangeGroups {
 		my $colHeight = $column->GetHeight();
 		
 		while( $colCnt != $i+1 && $colHeight > $height ){	
-			  $column->MoveLastGroup();
+			  
+			  # If nothing to move, exit from loop
+			  unless( $column->MoveLastGroup()){
+			  	last;
+			  }
 			  
 			  $self->Layout();
-	 			$self->FitInside();
+	 		 $self->FitInside();
 			  
 			  $colHeight = $column->GetHeight();
 		}
 	}
+ 	
  
 }
+
+
+ 
 
 #sub __RearrangeGroups {
 #	my $self  = shift;

@@ -43,10 +43,13 @@ sub Init {
 sub RunExport {
 	my $self = shift;
 
+
 	my %unitsData = $self->{"data"}->GetAllUnitData();
+ 	my @keys = $self->{"data"}->GetOrderedUnitKeys();
+	# sort keys by nhash value "__UNITORDER__"
+	#my @keys = ;
 
-	foreach my $unitId ( keys %unitsData ) {
-
+	foreach my $unitId (@keys) {
 		#tell group export start
 
 		my $exportData = $unitsData{$unitId};
@@ -68,7 +71,9 @@ sub __ProcessGroup {
 	my $unitId     = shift;
 	my $exportData = shift;    # export data for specific group
 
-	for ( my $i = 0 ; $i < 1 ; $i++ ) {
+	my $num = rand(10);
+
+	for ( my $i = 0 ; $i < $num ; $i++ ) {
 
 		my %data1 = ();
 		$data1{"unitId"}   = $unitId;

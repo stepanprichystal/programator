@@ -131,12 +131,17 @@ sub SaveData {
 	# 1), prepare unit data
 	my %unitsData = %{ $self->{"data"}->{"units"} };
 
+
+	my $unitOrder = 0;
 	foreach my $unitId ( keys %unitsData ) {
 
 		my $unitData = $unitsData{$unitId};
 
-		my %hashUnit = $self->__PrepareUnitExportData($unitData);
+		my %hashUnit = $self->__PrepareUnitExportData($unitData, $unitOrder);
+
 		$self->{"hashData"}->{"units"}->{$unitId} = \%hashUnit;
+		
+		$unitOrder ++;
 
 	}
 
@@ -168,11 +173,12 @@ sub __SerializeExportData {
 sub __PrepareUnitExportData {
 	my $self     = shift;
 	my $unitData = shift;
+	my $unitOrder = shift;
 
 	my $packageName = ref $unitData;
 	my %hashData    = %{ $unitData->{"data"} };
 	$hashData{"__PACKAGE__"} = $packageName;
-
+	$hashData{"__UNITORDER__"} = $unitOrder;
 	return %hashData;
 }
 
