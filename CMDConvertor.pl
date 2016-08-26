@@ -5,7 +5,7 @@ use strict;
 use warnings;
 
 # ============ INPUT LINE =================
-my $line = "COM cdr_opfx_output,units=inch,anchor_mode=zero,target_machine=v300,output_layers=selected,break_surf=no,break_arc=no,break_sr=yes,break_fsyms=no,upkit=yes,contourize=no,units_factor=0.001,scale_x=1,scale_y=1,accuracy=0.2,anchor_x=0,anchor_y=0,min_brush=25.4,path=c:\Export,report_file=c:/tmp/InCam/incam18736.4292,multi_trg_machines=discovery";
+my $line = "cdr_delete_sets_by_name,layers=c\;v2\;v3,sets=ppp";
 
 # ============ INPUT LINE =================
 

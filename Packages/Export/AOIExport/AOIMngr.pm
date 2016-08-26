@@ -73,7 +73,13 @@ sub Run {
 	$inCAM->COM( 'open_entity', job => $jobId, type => 'step', name => $stepToTest, iconic => 'no' );
 	$inCAM->AUX( 'set_group', group => $inCAM->{COMANS} );
 
-	my $setName = GeneralHelper->GetGUID();
+	my $setName = "cdr";
+	
+	my $strLayers = join("\;", @signalLayers);
+	
+	$inCAM->COM("cdr_delete_sets_by_name","layers" => $strLayers,"sets" => $setName);
+	
+	
 
 	# Raise result item for optimization set
 	my $resultItemOpenSession = $self->_GetNewItem("Open AOI session");
