@@ -89,6 +89,9 @@ sub AddNewTaskGUI {
 
 	$page->AddContent($groupTableForm);
 	
+	# Select alreadz added job item
+	$self->{"jobQueue"}->SetSelectedItem($taskId);
+	
 	# Refresh form
 	$self->{"mainFrm"}->Refresh();
 
@@ -127,6 +130,7 @@ sub __SetLayout {
 
 	my $btnHide = Wx::Button->new( $pnlBtns, -1, "Hide", &Wx::wxDefaultPosition, [ 160, 33 ] );
 	$btnHide->SetFont($Widgets::Style::fontBtn);
+	Wx::Event::EVT_BUTTON( $btnHide, -1, sub { $self->__OnClick(@_) } );
 
 	my $nb = Wx::Notebook->new( $mainFrm, -1, &Wx::wxDefaultPosition, &Wx::wxDefaultSize );
 	my $imagelist = Wx::ImageList->new( 10, 25 );
@@ -141,7 +145,7 @@ sub __SetLayout {
 	$nb->SetPageImage( 0, 1 );
 
 	my $jobsQueueStatBox = $self->__SetLayoutJobsQueue($page1);
-	my $settingsStatBox  = $self->__SetLayoutInCAMSettings($page1);
+	#my $settingsStatBox  = $self->__SetLayoutInCAMSettings($page1);
 	my $groupsStatBox    = $self->__SetLayoutGroups($page1);
 
 	# BUILD STRUCTURE OF LAYOUT
@@ -155,7 +159,7 @@ sub __SetLayout {
 	$page2->SetSizer($szPage2);
 
 	$szRow1->Add( $jobsQueueStatBox, 80, &Wx::wxEXPAND );
-	$szRow1->Add( $settingsStatBox,  20, &Wx::wxEXPAND );
+	#$szRow1->Add( $settingsStatBox,  20, &Wx::wxEXPAND );
 
 	$szRow2->Add( $groupsStatBox, 1, &Wx::wxEXPAND );
 
@@ -166,7 +170,7 @@ sub __SetLayout {
 	$szMain->Add( $pnlBtns, 0, &Wx::wxEXPAND );
 
 	# REGISTER EVENTS
-	Wx::Event::EVT_BUTTON( $btnHide, -1, sub { $self->__OnHideExporter() } );
+	#Wx::Event::EVT_BUTTON( $btnHide, -1, sub { $self->__OnHideExporter() } );
 
 	#Wx::Event::EVT_BUTTON( $btnExport, -1, sub { $self->__OnExportForceClick(@_) } );
 
@@ -318,12 +322,12 @@ sub __SetLayoutGroups {
 	my $parent = shift;
 
 	#define staticboxes
-	my $statBox = Wx::StaticBox->new( $parent, -1, 'Export groups' );
+	my $statBox = Wx::StaticBox->new( $parent, -1, 'Job details' );
 	my $szStatBox = Wx::StaticBoxSizer->new( $statBox, &Wx::wxVERTICAL );
 
-	my $btnDefault = Wx::Button->new( $statBox, -1, "Default settings", &Wx::wxDefaultPosition, [ 110, 22 ] );
+	#my $btnDefault = Wx::Button->new( $statBox, -1, "Default settings", &Wx::wxDefaultPosition, [ 110, 22 ] );
 	my $notebook = CustomNotebook->new( $statBox, -1 );
-	$szStatBox->Add( $btnDefault, 0, &Wx::wxEXPAND );
+	#$szStatBox->Add( $btnDefault, 0, &Wx::wxEXPAND );
 	$szStatBox->Add( $notebook,   1, &Wx::wxEXPAND );
 	$self->{"groupStatBox"}   = $statBox;
 	$self->{"groupStatBoxSz"} = $szStatBox;

@@ -26,7 +26,7 @@ sub new {
 	my $parent = shift;
 	my $jobId = shift;
 	my $taskId = shift;
-	my $self = $class->SUPER::new( $parent, -1 );
+	my $self = $class->SUPER::new( $parent, $taskId);
 
 	bless($self);
 
@@ -42,15 +42,25 @@ sub __SetLayout {
 	my $self = shift;
 
 	my $szMain = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
-
+	my $orderSz = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
 	
 
 	# DEFINE CONTROLS
 
-	my $orderTxt = Wx::StaticText->new( $self, -1, "0)",     [ -1, -1 ], [ 20, 20 ] );
-	my $jobIdTxt = Wx::StaticText->new( $self, -1, $self->{"jobId"}, [ -1, -1 ], [ 40, 20 ] );
+	my $orderPnl = Wx::Panel->new($self, -1, [-1, -1], [40, 40]);
+	
+	
+	
+	$orderPnl->SetBackgroundColour( Wx::Colour->new( 255, 200, 10) );
 
-	my $gauge = Wx::Gauge->new( $self, -1, 100, [ -1, -1 ], [ 250, 40 ], &Wx::wxGA_HORIZONTAL );
+
+	my $orderTxt = Wx::StaticText->new( $orderPnl, -1, "0)",     [ -1, -1 ] );
+	
+	
+	
+	my $jobIdTxt = Wx::StaticText->new( $self, -1, $self->{"jobId"}, [ -1, -1 ] );
+
+	my $gauge = Wx::Gauge->new( $self, -1, 100, [ -1, -1 ], [ 250, 35 ], &Wx::wxGA_HORIZONTAL );
 	$gauge->SetValue(0);
 
 	my $percentageTxt = Wx::StaticText->new( $self, -1, "10%", [ -1, -1 ], [ 30, 20 ] );
@@ -77,13 +87,19 @@ sub __SetLayout {
 	Wx::Event::EVT_BUTTON( $btnRemove, -1, sub { $self->__OnRemove(@_) } );
 
 	# DEFINE STRUCTURE
+	
+	$szMain->Add( 0, 40,      0);
+	
+	$orderSz->Add( $orderTxt,      0,  &Wx::wxALL | &Wx::wxALIGN_CENTER_VERTICAL | &Wx::wxALIGN_CENTER, 1);
 
-	$szMain->Add( $orderTxt,      0, &Wx::wxEXPAND |  &Wx::wxLEFT, 20);
-	$szMain->Add( $jobIdTxt,      0, &Wx::wxEXPAND  |  &Wx::wxLEFT,20);
-	$szMain->Add( $gauge,         0,      &Wx::wxLEFT,10);
-	$szMain->Add( $percentageTxt, 0, &Wx::wxEXPAND  |  &Wx::wxLEFT,10);
-	$szMain->Add( $errIndicator,  0, &Wx::wxEXPAND  |  &Wx::wxLEFT,20);
-	$szMain->Add( $warnIndicator, 0, &Wx::wxEXPAND  |  &Wx::wxLEFT,10);
+	
+
+	$szMain->Add( $orderPnl,      0, &Wx::wxEXPAND );
+	$szMain->Add( $jobIdTxt,      0,    &Wx::wxALIGN_CENTER_VERTICAL |  &Wx::wxLEFT,20);
+	$szMain->Add( $gauge,         0,   &Wx::wxEXPAND |  &Wx::wxLEFT,10);
+	$szMain->Add( $percentageTxt, 0,  &Wx::wxALIGN_CENTER_VERTICAL  |  &Wx::wxLEFT,10);
+	$szMain->Add( $errIndicator,  0,  &Wx::wxALIGN_CENTER_VERTICAL  |  &Wx::wxLEFT,20);
+	$szMain->Add( $warnIndicator, 0,  &Wx::wxALIGN_CENTER_VERTICAL  |  &Wx::wxLEFT,10);
 
 	$szMain->Add( $statusTxt, 0, &Wx::wxEXPAND  |  &Wx::wxLEFT,10);
 	$szMain->Add( $stepTxt, 0, &Wx::wxEXPAND |  &Wx::wxLEFT,20);
@@ -91,6 +107,8 @@ sub __SetLayout {
 	$szMain->Add( $resultTxt, 0, &Wx::wxEXPAND |  &Wx::wxLEFT,20);
 	$szMain->Add( $btnAbort,  0, &Wx::wxEXPAND |  &Wx::wxLEFT,20);
 	$szMain->Add( $btnRemove, 0, &Wx::wxEXPAND |  &Wx::wxLEFT,5);
+
+	$orderPnl->SetSizer($orderSz);
 
 	$self->SetSizer($szMain);
 	

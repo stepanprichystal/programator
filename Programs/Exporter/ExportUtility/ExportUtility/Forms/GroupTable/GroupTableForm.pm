@@ -149,7 +149,7 @@ sub RearrangeGroups {
 			  }
 			  
 			  $self->Layout();
-	 		 $self->FitInside();
+	 		  $self->FitInside();
 			  
 			  $colHeight = $column->GetHeight();
 		}

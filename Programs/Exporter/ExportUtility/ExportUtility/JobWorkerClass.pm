@@ -73,13 +73,29 @@ sub __ProcessGroup {
 
 	my $num = rand(10);
 
-	for ( my $i = 0 ; $i < $num ; $i++ ) {
+	for ( my $i = 0 ; $i < 2 ; $i++ ) {
 
 		my %data1 = ();
 		$data1{"unitId"}   = $unitId;
 		$data1{"itemId"}   = "Item id $i";
-		$data1{"result"}   = "Succes";
+		$data1{"result"}   = "succes";
 		$data1{"errors"}   = "";
+		$data1{"warnings"} = "";
+
+		$self->_SendMessageEvt( Enums->EventType_ITEM_RESULT, \%data1 );
+
+		sleep(1);
+
+	}
+	
+	for ( my $i = 0 ; $i < 2 ; $i++ ) {
+
+		my %data1 = ();
+		$data1{"unitId"}   = $unitId;
+		$data1{"itemId"}   = "Item id $i";
+		$data1{"result"}   = "failure";
+		$data1{"errors"}   = "rrrrrrrrrrr";
+		$data1{"group"}   = "Layer";
 		$data1{"warnings"} = "";
 
 		$self->_SendMessageEvt( Enums->EventType_ITEM_RESULT, \%data1 );

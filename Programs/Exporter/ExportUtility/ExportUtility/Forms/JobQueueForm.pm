@@ -59,8 +59,8 @@ sub __SetLayout {
 
 	$self->SetItemGap(2);
 
-	$self->SetItemUnselectColor( Wx::Colour->new( 255, 255, 255 ) );
-	$self->SetItemSelectColor( Wx::Colour->new( 200, 240, 200 ));
+	$self->SetItemUnselectColor( Wx::Colour->new( 240, 240, 240 ) );
+	$self->SetItemSelectColor( Wx::Colour->new( 215, 230, 251 ));
 
 	# SET EVENTS
 

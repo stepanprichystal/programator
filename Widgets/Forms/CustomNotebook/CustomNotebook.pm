@@ -52,7 +52,7 @@ sub __SetLayout {
 	 
 	 my $szMain = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
 
-	$self->SetBackgroundColour( Wx::Colour->new( 255, 255, 255 ) );
+	$self->SetBackgroundColour( Wx::Colour->new( 50, 0, 0 ) );
 
 	# DEFINE SIZERS
 	 
@@ -81,7 +81,7 @@ sub AddPage {
 	
 	#$self->{"szMain"}->Add( 1, 1, 1, &Wx::wxEXPAND );
 	
-	$self->{"szMain"}->Add($page, 1, &Wx::wxEXPAND, 1);
+	$self->{"szMain"}->Add($page, 1, &Wx::wxEXPAND | &Wx::wxALL , 0);
 	$page->Hide();
 
 	return $page;

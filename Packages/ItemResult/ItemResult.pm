@@ -36,11 +36,18 @@ sub new {
 	else {
 		$self->{"result"} = Enums->ItemResult_Succ;
 	}
+	
+	# Some result items can be included in some group, eg. layers
+	$self->{"group"} = shift;
+	
 
 	my @errors = ();
 	$self->{"errors"} = \@errors;
 	my @warnings = ();
 	$self->{"warnings"} = \@warnings;
+
+
+
 
 	return $self;    # Return the reference to the hash.
 }
@@ -139,6 +146,25 @@ sub GetWarningStr {
 	}
 
 	return $str;
+}
+
+sub GetErrorCount {
+	my $self = shift;
+	 
+	return scalar( @{ $self->{"errors"} } );
+}
+
+sub GetWarningCount {
+	my $self = shift;
+	 
+	return scalar( @{ $self->{"warnings"} } );
+}
+
+
+sub GetGroup{
+	my $self = shift;
+	
+	return $self->{"group"};
 }
 
 #-------------------------------------------------------------------------------------------#

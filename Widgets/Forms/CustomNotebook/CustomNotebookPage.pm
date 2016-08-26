@@ -52,7 +52,7 @@ sub __SetLayout {
 
 	my $szMain = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
 
-	$self->SetBackgroundColour( Wx::Colour->new( 250, 245, 0 ) );
+	$self->SetBackgroundColour( Wx::Colour->new( 150, 0, 0 ) );
 
 	# DEFINE SIZERS
 
@@ -66,7 +66,7 @@ sub __SetLayout {
 
 	my $containerPnl = Wx::Panel->new( $scrollPnl, -1, );
 
-	$containerPnl->SetBackgroundColour( Wx::Colour->new( 0, 50, 0 ) );
+	$containerPnl->SetBackgroundColour( Wx::Colour->new( 0, 255, 0 ) );
 
 	#$scrollSizer->Layout();
 
@@ -77,7 +77,7 @@ sub __SetLayout {
 	$scrollPnl->SetSizer($scrollSizer);
 
 	# addpanel to siyers
-	$scrollSizer->Add( $containerPnl, 0, &Wx::wxEXPAND );
+	$scrollSizer->Add( $containerPnl, 1, &Wx::wxEXPAND );
 	$szMain->Add( $scrollPnl, 1, &Wx::wxEXPAND );
 	$self->SetSizer($szMain);
 
@@ -154,7 +154,7 @@ sub AddContent {
 
 	#push( @{ $self->{"jobItems"} }, $item );
 
-	$self->{"containerSz"}->Add( $content, 0, &Wx::wxEXPAND | &Wx::wxALL, 1);
+	$self->{"containerSz"}->Add( $content, 1, &Wx::wxEXPAND | &Wx::wxALL, 0);
 
 	# get height of group table, for init scrollbar panel
 	#$self->{"scrollPnl"}->Layout();

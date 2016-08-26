@@ -40,10 +40,11 @@ sub CreateExportItem{
 	my $self = shift;
 	my $id   = shift;
 	my $result   = shift;
+	my $group   = shift;
 	my $errorsStr   = shift;
 	my $warningStr   = shift;
 	
-	my $item = $self->GetNewItem($id, $result);
+	my $item = $self->GetNewItem($id, $result, $group);
 	my $sep = Enums->ItemResult_DELIMITER;
 	
 	# Try parse errors
@@ -61,6 +62,8 @@ sub CreateExportItem{
 	}
 	
 	$self->AddItem($item);
+	
+	return $item;
 }
 
 sub GetAllItems{

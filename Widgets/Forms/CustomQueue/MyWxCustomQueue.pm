@@ -18,7 +18,6 @@ use warnings;
 use aliased 'Widgets::Forms::MyWxScrollPanel';
 use aliased 'Packages::Events::Event';
 
-
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
@@ -26,8 +25,8 @@ use aliased 'Packages::Events::Event';
 sub new {
 	my $class     = shift;
 	my $parent    = shift;
-	my $id    = shift;
-	my $position    = shift;
+	my $id        = shift;
+	my $position  = shift;
 	my $dimension = shift;
 
 	my $self = $class->SUPER::new( $parent, $id, $position, $dimension );
@@ -42,7 +41,6 @@ sub new {
 
 	# gap between items in list
 	$self->{"itemGap"} = 1;
-
 
 	$self->__SetLayout();
 
@@ -60,50 +58,54 @@ sub SetItemGap {
 	$self->{"itemGap"} = $value;
 }
 
-sub SetItemUnselectColor{
+sub SetItemUnselectColor {
 	my $self  = shift;
-	my $color = shift;    
-	
-	$self->{"itemUnselectColor"} = $color;  
+	my $color = shift;
+
+	$self->{"itemUnselectColor"} = $color;
 }
 
-sub SetItemSelectColor{
+sub SetItemSelectColor {
 	my $self  = shift;
-	my $color = shift;    
-	
-	$self->{"itemSelectColor"} = $color;  
+	my $color = shift;
+
+	$self->{"itemSelectColor"} = $color;
 }
-
-
-
 
 sub GetSelectedItem {
 	my $self  = shift;
-	my $value = shift;  
+	my $value = shift;
 
 	$self->{"itemGap"} = $value;
 }
 
 sub SetSelectedItem {
-	my $self  = shift;
-	my $value = shift;  
+	my $self   = shift;
+	my $itemId = shift;
 
-	$self->{"itemGap"} = $value;
+	foreach my $item ( @{ $self->{"jobItems"} } ) {
+
+		if ( $item->{"itemId"} eq $itemId ) {
+
+			$self->__OnItemClick($item);
+			last;
+		}
+
+	}
 }
 
-sub GetParentForItem{
-		my $self  = shift;
-		
-	 return $self->{"containerPnl"}
-}
+sub GetParentForItem {
+	my $self = shift;
 
+	return $self->{"containerPnl"};
+}
 
 sub __SetLayout {
 	my $self = shift;
 
 	my $szMain = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
 
-	$self->SetBackgroundColour( Wx::Colour->new( 250, 245, 0 ) );
+	$self->SetBackgroundColour( Wx::Colour->new( 230, 230, 230 ) );
 
 	# DEFINE SIZERS
 
@@ -117,7 +119,7 @@ sub __SetLayout {
 
 	my $containerPnl = Wx::Panel->new( $scrollPnl, -1, );
 
-	$containerPnl->SetBackgroundColour( Wx::Colour->new( 0, 50, 0 ) );
+	$containerPnl->SetBackgroundColour( Wx::Colour->new( 230, 230, 230 ) );
 
 	#$scrollSizer->Layout();
 
@@ -158,7 +160,7 @@ sub __GetItemsHeight {
 }
 
 sub AddItemToQueue {
-	my $self  = shift;
+	my $self = shift;
 	my $item = shift;
 
 	#my $item = JobQueueItemForm->new( $self->{"containerPnl"});
@@ -167,7 +169,7 @@ sub AddItemToQueue {
 
 	push( @{ $self->{"jobItems"} }, $item );
 
-	$self->{"containerSz"}->Add( $item, 0, &Wx::wxEXPAND | &Wx::wxALL, $self->{"itemGap"} );
+	$self->{"containerSz"}->Add( $item, 0, &Wx::wxEXPAND | &Wx::wxALL , $self->{"itemGap"} );
 
 	# get height of group table, for init scrollbar panel
 	#$self->{"scrollPnl"}->Layout();
@@ -199,9 +201,9 @@ sub __OnItemClick {
 
 	$self->__UnselectAll();
 	$item->{"selected"} = 1;
-	
-	$item->SetBackgroundColour($self->{"itemSelectColor"} );
-			$item->Refresh();
+
+	$item->SetBackgroundColour( $self->{"itemSelectColor"} );
+	$item->Refresh();
 	$self->{"onSelectItemChange"}->Do($item);
 
 }

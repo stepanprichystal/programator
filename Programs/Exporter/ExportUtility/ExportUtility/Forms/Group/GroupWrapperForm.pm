@@ -3,7 +3,7 @@
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 
-package Programs::Exporter::ExportUtility::ExportUtility::Forms::GroupWrapperForm;
+package Programs::Exporter::ExportUtility::ExportUtility::Forms::Group::GroupWrapperForm;
 use base qw(Wx::Panel);
 
 #3th party library
@@ -17,7 +17,8 @@ use Widgets::Style;
 use aliased 'Programs::Exporter::ExportChecker::Enums';
 
 use aliased 'Packages::Events::Event';
-
+use aliased 'Programs::Exporter::ExportUtility::ExportUtility::Forms::Group::GroupItemForm';
+use aliased 'Programs::Exporter::ExportUtility::ExportUtility::Forms::Group::ItemForm';
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
@@ -29,9 +30,14 @@ sub new {
 
 	bless($self);
 
+	# contains names of all group item
+	my @groups = ();
+	$self->{"groups"} = \@groups;
+
 	#$self->{"state"} = Enums->GroupState_ACTIVEON;
 
 	$self->__SetLayout();
+
 	#$self->{"column"} = undef;
 
 	#EVENTS
@@ -41,15 +47,57 @@ sub new {
 	return $self;
 }
 
+sub __AddGroupItem {
+	my $self  = shift;
+	my $title = shift;
+
+	# if group still doesnt exist, add it
+	unless ( scalar( grep { $_ eq $title } @{ $self->{"groups"} } ) ) {
+
+		push(@{ $self->{"groups"} }, $title);
+
+		my $item = GroupItemForm->new( $self->{"pnlBody"}, $title );
+		$self->{"bodySizer"}->Add( $item, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
+
+		 
+	}
+
+}
+
+sub AddItem {
+	my $self       = shift;
+	my $resultItem = shift;
+	
+	my $groupName = $resultItem->GetGroup();
+	my $subItem = 0;
+	
+	if($groupName){
+		$self->__AddGroupItem($groupName);
+		$subItem = 1;
+	}
+	
+
+	my $item = ItemForm->new( $self->{"pnlBody"}, $resultItem->ItemId(), $subItem );
+	$self->{"bodySizer"}->Add( $item, 0, &Wx::wxEXPAND  );
+
+	$self->{"bodySizer"}->Layout();
+
+	
+	$item->SetErrors( $resultItem->GetErrorCount() );
+	$item->SetWarnings( $resultItem->GetWarningCount() );
+	
+
+}
+
 sub Init {
 	my $self      = shift;
 	my $groupName = shift;
+
 	#my $groupBody = shift;
- 
 
 	$self->{"headerTxt"}->SetLabel($groupName);
 
-#	$self->{"bodySizer"}->Add( $groupBody, 1, &Wx::wxEXPAND | &Wx::wxALL, 2 );
+	#	$self->{"bodySizer"}->Add( $groupBody, 1, &Wx::wxEXPAND | &Wx::wxALL, 2 );
 
 	#$self->{"groupHeight"} = $groupBody->{"groupHeight"};
 
@@ -118,16 +166,7 @@ sub __SetLayout {
 
 }
 
-sub AddRow {
-	my $self = shift;
-	my $text = shift;
-
-	my $txt = Wx::StaticText->new( $self->{"pnlBody"}, -1, "Text" . $text );
-	$self->{"bodySizer"}->Add( $txt, 1, &Wx::wxEXPAND | &Wx::wxALL, 2 );
-	
-	$self->{"bodySizer"}->Layout();
-	#$self->{"column"}->{"sizerGroup"}->Layout();
-}
+ 
 
 sub GetParentForGroup {
 	my $self = shift;

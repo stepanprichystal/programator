@@ -89,6 +89,8 @@ sub ItemMessageEvt {
 	my $itemResult   = $data->{"result"};
 	my $itemErrors   = $data->{"errors"};
 	my $itemWarnings = $data->{"warnings"};
+	my $itemGroup = 	$data->{"group"};
+	 
 
 	unless ($unit) {
 
@@ -96,9 +98,9 @@ sub ItemMessageEvt {
 
 	}
 
-	$unit->ItemResult( $itemId, $itemResult, $itemErrors, $itemWarnings );
+	$unit->ItemResult( $itemId,  $itemResult, $itemGroup, $itemErrors, $itemWarnings );
 
-	$unit->RefreshGUI();
+	#$unit->RefreshGUI();
 
 }
 

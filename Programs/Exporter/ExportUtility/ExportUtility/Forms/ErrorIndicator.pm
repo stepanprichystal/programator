@@ -27,6 +27,7 @@ sub new {
 	my $parent = shift;
  
 	my $mode    = shift;
+	my $size = shift;
 	my $showCnt = shift;
 	
 	unless($showCnt){
@@ -38,6 +39,7 @@ sub new {
 	bless($self);
 
 	$self->{"mode"}    = $mode;
+	$self->{"size"}    = $size;
 	$self->{"showCnt"} = $showCnt;
 	$self->{"errCnt"} = 0;
 
@@ -49,16 +51,20 @@ sub new {
 sub __SetLayout {
 	my $self = shift;
 
+	# size in px
+	 
+	my $size = $self->{"size"}."x".$self->{"size"};
+
 	# Decide which picture show
 	if ( $self->{"mode"} eq EnumsGeneral->MessageType_ERROR ) {
 
-		$self->{"pathDisable"} = GeneralHelper->Root() . "/Resources/Images/ErrorDisable20x20.bmp";
-		$self->{"pathEnable"}  = GeneralHelper->Root() . "/Resources/Images/Error20x20.bmp";
+		$self->{"pathDisable"} = GeneralHelper->Root() . "/Resources/Images/ErrorDisable".$size.".bmp";
+		$self->{"pathEnable"}  = GeneralHelper->Root() . "/Resources/Images/Error".$size.".bmp";
 
 	}
 	elsif ( $self->{"mode"} eq EnumsGeneral->MessageType_WARNING ) {
-		$self->{"pathDisable"} = GeneralHelper->Root() . "/Resources/Images/WarningDisable20x20.bmp";
-		$self->{"pathEnable"}  = GeneralHelper->Root() . "/Resources/Images/Warning20x20.bmp";
+		$self->{"pathDisable"} = GeneralHelper->Root() . "/Resources/Images/WarningDisable".$size.".bmp";
+		$self->{"pathEnable"}  = GeneralHelper->Root() . "/Resources/Images/Warning".$size.".bmp";
 
 	}
 
@@ -80,8 +86,8 @@ sub __SetLayout {
 	#Wx::Event::EVT_COMBOBOX( $colorCb, -1, sub { $self->__OnColorChangeHandler(@_) } );
 
 	# BUILD STRUCTURE OF LAYOUT
-	$szMain->Add( $cntValTxt, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
-	$szMain->Add( $statBtmError,    0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szMain->Add( $cntValTxt, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
+	$szMain->Add( $statBtmError,    0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
 	 
 	$self->SetSizer($szMain);
 
@@ -94,8 +100,9 @@ sub __SetLayout {
 
 sub AddError {
 	my $self  = shift;
+	my $cnt  = shift;
 	 
-	$self->{"errCnt"} += 1;
+	$self->{"errCnt"}  = $cnt;
 	$self->{"cntValTxt"}->SetLabel($self->{"errCnt"});
 	
 	if($self->{"errCnt"} == 1){

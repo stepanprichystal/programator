@@ -21,13 +21,15 @@ use aliased 'Packages::Events::Event';
 sub new {
 	my $class  = shift;
 	my $parent = shift;
-
-	my $self = $class->SUPER::new( $parent, -1 );
+	my $itemId = shift;
+	
+	my $self = $class->SUPER::new( $parent, -1, [-1,-1], [-1,-1],   &Wx::wxBORDER_SIMPLE );
 
 	bless($self);
 
  
 	$self->{"selected"} = 0;
+	$self->{"itemId"} = $itemId;
 
 	#$self->{"state"} = Enums->GroupState_ACTIVEON;
 
@@ -46,7 +48,7 @@ sub __SetLayout {
 
 	my $szMain = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
 
-	$self->SetBackgroundColour( Wx::Colour->new( 50, 245, 20 ) );
+	#$self->SetBackgroundColour( Wx::Colour->new( 50, 245, 20 ) );
 
 	#my $txt  = Wx::StaticText->new( $self, -1, "Job " . $self->{"text"},  [ -1, -1 ], [ 200, 30 ] );
 	#my $txt2 = Wx::StaticText->new( $self, -1, "Job2 " . $self->{"text"}, [ -1, -1 ], [ 200, 30 ] );
