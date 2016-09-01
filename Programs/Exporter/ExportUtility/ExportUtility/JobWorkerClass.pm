@@ -73,7 +73,8 @@ sub __ProcessGroup {
 
 	my $num = rand(10);
 
-	for ( my $i = 0 ; $i < 2 ; $i++ ) {
+use Time::HiRes qw (sleep);
+	for ( my $i = 0 ; $i < $num ; $i++ ) {
 
 		my %data1 = ();
 		$data1{"unitId"}   = $unitId;
@@ -84,7 +85,7 @@ sub __ProcessGroup {
 
 		$self->_SendMessageEvt( Enums->EventType_ITEM_RESULT, \%data1 );
 
-		sleep(1);
+		sleep(0.2);
 
 	}
 	
@@ -100,7 +101,7 @@ sub __ProcessGroup {
 
 		$self->_SendMessageEvt( Enums->EventType_ITEM_RESULT, \%data1 );
 
-		sleep(1);
+		sleep(0.2);
 
 	}
 

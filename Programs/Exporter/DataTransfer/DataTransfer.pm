@@ -109,7 +109,8 @@ sub __BuildExportData {
 
 		# Prepare other properties
 		$self->{"data"}->{"time"} = $hashData->{"time"};
-
+		$self->{"data"}->{"mode"} = $hashData->{"mode"};
+		$self->{"data"}->{"toProduce"} = $hashData->{"toProduce"};
 	}
 }
 
@@ -125,7 +126,9 @@ sub GetExportData {
 # Serialize class "ExportData"
 sub SaveData {
 	my $self = shift;
-
+	my $mode = shift;
+	my $toProduce = shift;
+	
 	#my %unitsData = %{shift(@_)};
 
 	# 1), prepare unit data
@@ -142,11 +145,16 @@ sub SaveData {
 		$self->{"hashData"}->{"units"}->{$unitId} = \%hashUnit;
 		
 		$unitOrder ++;
-
 	}
 
 	# 2) prepare other
-	$self->{"hashData"}->{"time"} = "tttt";
+	
+	my ($sec,$min,$hour) = localtime();
+
+	$self->{"hashData"}->{"time"} = printf("%02d:%02d", $hour, $min);;
+	$self->{"hashData"}->{"mode"} = $mode;
+	$self->{"hashData"}->{"toProduce"} = $toProduce;
+	
 
 	# serialize and save
 	$self->__SerializeExportData();

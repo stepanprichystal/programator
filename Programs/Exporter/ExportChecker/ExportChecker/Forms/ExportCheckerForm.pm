@@ -76,6 +76,13 @@ sub new {
 #	return $tab;
 #}
 
+sub GetToProduce{
+	my $self      = shift;
+	
+	return 1;
+}
+
+
 # Disable all controls on form
 sub DisableForm {
 	my $self    = shift;

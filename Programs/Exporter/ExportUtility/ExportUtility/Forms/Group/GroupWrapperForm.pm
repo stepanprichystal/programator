@@ -68,6 +68,8 @@ sub AddItem {
 	my $self       = shift;
 	my $resultItem = shift;
 	
+	
+	
 	my $groupName = $resultItem->GetGroup();
 	my $subItem = 0;
 	
@@ -78,13 +80,16 @@ sub AddItem {
 	
 
 	my $item = ItemForm->new( $self->{"pnlBody"}, $resultItem->ItemId(), $subItem );
-	$self->{"bodySizer"}->Add( $item, 0, &Wx::wxEXPAND  );
-
-	$self->{"bodySizer"}->Layout();
-
-	
 	$item->SetErrors( $resultItem->GetErrorCount() );
 	$item->SetWarnings( $resultItem->GetWarningCount() );
+ 
+	$self->{"bodySizer"}->Add( $item, 0, &Wx::wxEXPAND  );
+	return 0;
+
+	#$self->{"bodySizer"}->Layout();
+
+	
+	
 	
 
 }
@@ -155,7 +160,7 @@ sub __SetLayout {
 
 	$self->SetSizer($szHeaderBody);
 
-	$szHeaderBody->Layout();
+	#$szHeaderBody->Layout();
 
 	# SAVE REFERENCES
 

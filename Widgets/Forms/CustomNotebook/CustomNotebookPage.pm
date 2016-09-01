@@ -23,26 +23,24 @@ use aliased 'Packages::Events::Event';
 #-------------------------------------------------------------------------------------------#
 
 sub new {
-	my $class     = shift;
-	my $parent    = shift;
-	my $pageId    = shift;
+	my $class  = shift;
+	my $parent = shift;
+	my $pageId = shift;
 
 	my $self = $class->SUPER::new( $parent, -1, );
 
 	bless($self);
 
 	# Items references
-	
+
 	# PROPERTIES
-	$self->{"pageId"} = $pageId;
-	$self->{"content"} = undef; #reference to page content
+	$self->{"pageId"}  = $pageId;
+	$self->{"content"} = undef;     #reference to page content
 
 	$self->__SetLayout();
 
 	#EVENTS
 	$self->{"onSelectItemChange"} = Event->new();
-
-	 
 
 	return $self;
 }
@@ -88,8 +86,8 @@ sub __SetLayout {
 	$self->{"scrollSizer"}  = $scrollSizer;
 	$self->{"containerSz"}  = $containerSz;
 	$self->{"containerPnl"} = $containerPnl;
+	$self->{"szMain"} = $szMain;
 }
-
 
 sub __OnScrollPaint {
 	my $self      = shift;
@@ -97,53 +95,54 @@ sub __OnScrollPaint {
 	my $event     = shift;
 
 	$self->Layout();
+
 	#$scrollPnl->FitInside();
 	$scrollPnl->Refresh();
 }
 
-
-sub RefreshContent{
-	my $self  = shift;
-	 
-	my $s         = $self->{"containerSz"}->GetSize();
-	my $height = $s->GetHeight();
-	
-	print "HEIGHT OF PAGE CONTENT IS: $height\n";
-	
-	
-	 
-	
-		$self->{"scrollPnl"}->FitInside();
-		#$self->{"mainFrm"}->Layout();
-		$self->{"scrollPnl"}->Layout();
-	
- 	
- 	$self->{"scrollPnl"}->SetRowCount( $height / 10 );
+sub RefreshContent {
+	my $self = shift;
 	
 	$self->Layout();
 	
+	#$self->{"szMain"};
+	$self->{"scrollPnl"}->FitInside();
+
+ 
+	#$self->{"scrollPnl"}->Layout();
+	 
+
+	my $s      = $self->{"containerSz"}->GetSize();
+	my $height = $s->GetHeight();
+
+	print "HEIGHT OF PAGE CONTENT IS: $height\n";
+
+	$self->{"scrollPnl"}->SetRowCount( $height / 10 );
+
+	#$self->Layout();
+
 }
 
-sub GetPageId{
-	my $self  = shift;
-	
+sub GetPageId {
+	my $self = shift;
+
 	return $self->{"pageId"};
 }
 
-sub GetParent{
-		my $self  = shift;
-		
-		return $self->{"containerPnl"};	
+sub GetParent {
+	my $self = shift;
+
+	return $self->{"containerPnl"};
 }
 
-sub GetPageContent{
-	my $self  = shift;
-	
+sub GetPageContent {
+	my $self = shift;
+
 	return $self->{"content"};
 }
- 
+
 sub AddContent {
-	my $self  = shift;
+	my $self    = shift;
 	my $content = shift;
 
 	$self->{"content"} = $content;
@@ -154,7 +153,7 @@ sub AddContent {
 
 	#push( @{ $self->{"jobItems"} }, $item );
 
-	$self->{"containerSz"}->Add( $content, 1, &Wx::wxEXPAND | &Wx::wxALL, 0);
+	$self->{"containerSz"}->Add( $content, 1, &Wx::wxEXPAND | &Wx::wxALL, 0 );
 
 	# get height of group table, for init scrollbar panel
 	#$self->{"scrollPnl"}->Layout();
@@ -170,7 +169,6 @@ sub AddContent {
 	print "Total Height is : " . $height . "\n";
 
 	$self->{"scrollPnl"}->SetRowCount( $height / 10 );
-
 
 	#$self->Layout();
 	#$self->{"scrollPnl"}->FitInside();

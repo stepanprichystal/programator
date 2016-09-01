@@ -7,7 +7,10 @@ use constant {
 };
 
  
- 
+ use constant {
+			   ExportMode_SYNC  => "synchronousExport",
+			   ExportMode_ASYNC  => "asynchronousExport"
+};
  
  
  

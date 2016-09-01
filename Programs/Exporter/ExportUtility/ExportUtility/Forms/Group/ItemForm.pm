@@ -30,7 +30,7 @@ sub new {
  
 	my $title  = shift;
 	$self->{"subItem"}= shift;
-
+	
 	$self->__SetLayout( $title );
 
 	return $self;
@@ -77,14 +77,14 @@ sub SetErrors {
 	my $self = shift;
 	my $count = shift;
 	 
-	$self->{"errIndicator"}->AddError($count);
+	$self->{"errIndicator"}->SetErrorCnt($count);
 }
 
 sub SetWarnings {
 	my $self = shift;
 	my $count = shift;
 	 
-	$self->{"warnIndicator"}->AddError($count);
+	$self->{"warnIndicator"}->SetErrorCnt($count);
 }
 
 1;

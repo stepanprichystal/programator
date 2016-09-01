@@ -15,6 +15,8 @@ use aliased 'Programs::Exporter::ExportUtility::Groups::NifExport::Presenter::Ni
 use aliased 'Programs::Exporter::ExportUtility::Groups::NCExport::Presenter::NCUnit';
 use aliased 'Programs::Exporter::ExportUtility::Groups::NC2Unit';
 use aliased 'Programs::Exporter::ExportUtility::Groups::NC3Unit';
+use aliased 'Programs::Exporter::ExportUtility::Groups::NC4Unit';
+use aliased 'Programs::Exporter::ExportUtility::Groups::NC5Unit';
 use aliased 'Programs::Exporter::ExportUtility::Unit::Units';
 
 #-------------------------------------------------------------------------------------------#
@@ -149,6 +151,16 @@ sub __GetUnitClass {
 
 		#$unit = NifUnit->new();
 		$unit = NC3Unit->new();
+
+	}	elsif ( $unitId eq UnitEnums->UnitId_NC4 ) {
+
+		#$unit = NifUnit->new();
+		$unit = NC4Unit->new();
+
+	}	elsif ( $unitId eq UnitEnums->UnitId_NC5 ) {
+
+		#$unit = NifUnit->new();
+		$unit = NC5Unit->new();
 
 	}
 

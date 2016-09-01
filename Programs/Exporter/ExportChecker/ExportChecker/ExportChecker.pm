@@ -316,6 +316,8 @@ sub __OnResultPopupHandler {
 	my $self       = shift;
 	my $resultType = shift;
 	my $exportMode = shift;
+	
+	my $toProduce = $self->{"form"}->GetToProduce();
 
 	if (    $resultType eq Enums->PopupResult_EXPORTFORCE
 		 || $resultType eq Enums->PopupResult_SUCCES )
@@ -324,12 +326,14 @@ sub __OnResultPopupHandler {
 		my %unitsExportData = $self->{"units"}->GetExportData();
 		my $dataTransfer = DataTransfer->new( $self->{"jobId"}, EnumsTransfer->Mode_WRITE, \%unitsExportData );
 
-		if ( $exportMode eq Enums->ExportMode_ASYNC ) {
+		if ( $exportMode eq EnumsTransfer->ExportMode_ASYNC ) {
 
-			$dataTransfer->SaveData();
+			$dataTransfer->SaveData($exportMode, $toProduce);
 
 		}
-		elsif ( $exportMode eq Enums->ExportMode_SYNC ) {
+		elsif ( $exportMode eq EnumsTransfer->ExportMode_SYNC ) {
+			
+			$dataTransfer->SaveData($exportMode, $toProduce);
 
 			my $exportData = $dataTransfer->GetExportData();
 

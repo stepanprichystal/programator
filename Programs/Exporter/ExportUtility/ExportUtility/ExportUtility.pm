@@ -140,7 +140,7 @@ sub __OnJobMessageEvtHandler {
 
 	my $task = $self->__GetTaskById($taskId);
 	
-	print "Exporter utility::  task id: " . $taskId . " - messType: " . $messType. "\n";
+	#print "Exporter utility::  task id: " . $taskId . " - messType: " . $messType. "\n";
 	
 	if($messType eq Enums->EventType_ITEM_RESULT){
 		
@@ -157,7 +157,7 @@ sub __OnJobMessageEvtHandler {
 	
 	
 
-
+#TESTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT
 	#print "Exporter utility::  job id: " . $jobGUID . " - messType: " . $messType . " - data: " . $data . "\n";
 }
 
@@ -220,7 +220,7 @@ sub JobWorker {
 	#
 	#		sleep(1);
 	#	}
-	print "TESTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT KONEEEEC";
+	#print "TESTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT KONEEEEC HEIGHT OF PAGE CONTENT IS";
 
 }
 

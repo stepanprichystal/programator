@@ -72,11 +72,23 @@ sub AddNewTaskGUI {
 	my $task = shift;
 
 	my $taskId = $task->GetTaskId();
+	my $taskData = $task->GetExportData();
 
 	# Add new item to queue
 
 	my $jobQueue = $self->{"jobQueue"};
-	$jobQueue->AddItem( $taskId, $task->GetJobId() );
+	my $jobQueueItem = $jobQueue->AddItem( $taskId, $task->GetJobId() );
+	
+	
+	# SET HANDLERS
+	$jobQueueItem->{"onProduce"}->Add(sub{ $self->__OnProduceClick(@_) });
+	
+	
+	$jobQueueItem->SetExportTime($taskData->GetExportTime());
+	$jobQueueItem->SetExportMode($taskData->GetExportMode());
+	$jobQueueItem->SetToProduce($taskData->GetToProduce());
+	
+	
 
 	# Add new item to notebook
 	my @units = $task->GetAllUnits();
@@ -95,6 +107,15 @@ sub AddNewTaskGUI {
 	# Refresh form
 	$self->{"mainFrm"}->Refresh();
 
+}
+
+sub __OnProduceClick{
+	my $self = shift;
+	my $taskId = shift;
+	print "produce click\n";
+	$self->__Test($taskId);
+	
+	
 }
 
 sub AddNewTask {
@@ -350,7 +371,7 @@ sub __GroupContentRefresh{
 
 	my ($w, $pageHight)         = $self->{"notebook"}->GetSizeWH();
 
-	$groupTable->RearrangeGroups($pageHight);  
+	$groupTable->RearrangeGroups($page, $pageHight);  
 	
 	
 	$page->RefreshContent();
@@ -358,6 +379,23 @@ sub __GroupContentRefresh{
 	 
 	
 }
+
+sub __Test{
+	my $self         = shift;
+	my $taskId = 	shift;
+	
+	my $page = $self->{"notebook"}->GetPage($taskId);
+	my $groupTable = $page->GetPageContent();
+
+	my ($w, $pageHight)         = $self->{"notebook"}->GetSizeWH();
+
+	$groupTable->Construct($page,$pageHight);  
+	
+	
+	$page->RefreshContent();
+ 
+}
+
 
 sub __JobItemSeletedChange {
 	my $self         = shift;

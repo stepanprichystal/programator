@@ -34,6 +34,7 @@ sub new {
 
 	$self->__SetLayout();
 
+	$self->{"prevCol"} = undef;
 	$self->{"nextCol"} = undef;
 
 	my @groups = ();
@@ -74,15 +75,16 @@ sub GetSizer {
 }
 
 sub Init {
-	my $self = shift;
-
+	my $self    = shift;
+	my $prevCol = shift;
 	my $nextCol = shift;
 
+	$self->{"prevCol"} = $prevCol;
 	$self->{"nextCol"} = $nextCol;
 
 }
 
-sub MoveLastGroup {
+sub MoveNextGroup {
 	my $self = shift;
 
 	unless ( $self->{"nextCol"} ) {
@@ -108,7 +110,45 @@ sub MoveLastGroup {
 		# columns need to be layout
 		$self->{"nextCol"}->{"sizerGroup"}->Layout();
 		$self->{"sizerGroup"}->Layout();
+		
+		
+			$self->{"szMain"}->Layout();
+		$self->{"nextCol"}->{"szMain"}->Layout();
 	}
+
+	return 1;
+
+}
+
+sub MoveBackGroup {
+	my $self = shift;
+
+	unless ( $self->{"prevCol"} ) {
+		return 0;
+	}
+
+	my @childs = $self->{"sizerGroup"}->GetChildren();
+
+	if ( scalar(@childs) < 1 ) {
+		return 0;
+	}
+
+	my $firstIdx = 0;
+
+	my $firstChildItem = $childs[$firstIdx];
+	my $firstChild     = $firstChildItem->GetWindow();
+	$self->{"sizerGroup"}->Remove($firstIdx);
+	$self->{"prevCol"}->AppendNewGroup($firstChild);
+
+	# columns need to be layout
+	#$self->{"prevCol"}->{"sizerGroup"}->Layout();
+	#$self->{"prevCol"}->{"sizerGroup"}->Fit();
+	#$self->{"prevCol"}->{"sizerGroup"}->FitInside();
+	
+	#$self->{"sizerGroup"}->Layout();
+	#$self->{"sizerGroup"}->Layout();
+	#$self->{"szMain"}->Layout();
+	#$self->{"prevCol"}->{"szMain"}->Layout();
 
 	return 1;
 
@@ -119,22 +159,37 @@ sub InsertNewGroup {
 	my $group = shift;
 
 	$self->{"sizerGroup"}->Prepend( $group, 0, &Wx::wxEXPAND | &Wx::wxALL, 2 );
-	
+
 	#$group->{"column"} = $self;
 
 }
 
+sub AppendNewGroup {
+	my $self  = shift;
+	my $group = shift;
+
+	$self->{"sizerGroup"}->Add( $group, 0, &Wx::wxEXPAND | &Wx::wxALL, 2 );
+
+	#$group->{"column"} = $self;
+}
+ 
+
+
 sub GetHeight {
 	my $self = shift;
+
 	#$self->{"sizerGroup"}->Layout();
 	#$self->{"parent"}->Layout();
 	#$self->{"parent"}->FitInside();
 	#$self->{"parent"}->Layout();
-	#$self->{"sizerGroup"}->Layout();
+	$self->{"szMain"}->Layout();
+	$self->{"sizerGroup"}->Layout();
 
 	#my ( $w, $colHeight ) = $self->{"sizerGroup"}->GetSize();
 	my $s         = $self->{"sizerGroup"}->GetSize();
 	my $colHeight = $s->GetHeight();
+	
+	#my @childs = $self->{"sizerGroup"}->GetChildren();
 
 	return $colHeight;
 }

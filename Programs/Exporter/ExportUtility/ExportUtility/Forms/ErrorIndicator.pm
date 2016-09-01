@@ -52,18 +52,18 @@ sub __SetLayout {
 	my $self = shift;
 
 	# size in px
-	 
+	 Wx::InitAllImageHandlers();
 	my $size = $self->{"size"}."x".$self->{"size"};
 
 	# Decide which picture show
 	if ( $self->{"mode"} eq EnumsGeneral->MessageType_ERROR ) {
 
-		$self->{"pathDisable"} = GeneralHelper->Root() . "/Resources/Images/ErrorDisable".$size.".bmp";
+		$self->{"pathDisable"} = GeneralHelper->Root() . "/Resources/Images/ErrorDisable".$size.".png";
 		$self->{"pathEnable"}  = GeneralHelper->Root() . "/Resources/Images/Error".$size.".bmp";
 
 	}
 	elsif ( $self->{"mode"} eq EnumsGeneral->MessageType_WARNING ) {
-		$self->{"pathDisable"} = GeneralHelper->Root() . "/Resources/Images/WarningDisable".$size.".bmp";
+		$self->{"pathDisable"} = GeneralHelper->Root() . "/Resources/Images/WarningDisable".$size.".png";
 		$self->{"pathEnable"}  = GeneralHelper->Root() . "/Resources/Images/Warning".$size.".bmp";
 
 	}
@@ -78,7 +78,7 @@ sub __SetLayout {
  
 	my $cntValTxt = Wx::StaticText->new( $self, -1, "0" );
 	$cntValTxt->SetFont($Widgets::Style::fontLbl);
-	my $btmError = Wx::Bitmap->new( $self->{"pathDisable"}, &Wx::wxBITMAP_TYPE_BMP );
+	my $btmError = Wx::Bitmap->new( $self->{"pathDisable"}, &Wx::wxBITMAP_TYPE_PNG );
 	my $statBtmError = Wx::StaticBitmap->new( $self, -1, $btmError );
 	 
 
@@ -98,7 +98,7 @@ sub __SetLayout {
 }
 
 
-sub AddError {
+sub SetErrorCnt {
 	my $self  = shift;
 	my $cnt  = shift;
 	 
