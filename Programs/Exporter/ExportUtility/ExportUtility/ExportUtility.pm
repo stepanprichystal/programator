@@ -22,8 +22,10 @@ use aliased 'Programs::Exporter::ExportUtility::Task::Task';
 use aliased 'Programs::Exporter::ExportUtility::ExportUtility::Forms::ExportUtilityForm';
 use aliased 'Programs::Exporter::DataTransfer::DataTransfer';
 use aliased 'Programs::Exporter::DataTransfer::Enums' => 'EnumsTransfer';
+use aliased 'Managers::AsyncJobMngr::Enums'           => 'EnumsMngr';
 use aliased 'Programs::Exporter::ExportUtility::ExportUtility::JobWorkerClass';
 use aliased 'Programs::Exporter::ExportUtility::Enums';
+use aliased 'Packages::InCAM::InCAM';
 
 #my $THREAD_MESSAGE_EVT : shared;
 #-------------------------------------------------------------------------------------------#
@@ -49,6 +51,9 @@ sub new {
 	# Keep all references of used groups/units in form
 	my @tasks = ();
 	$self->{"tasks"} = \@tasks;
+	
+	my @exportFiles = ();
+	$self->{"exportFiles"} = \@exportFiles;
 
 	#set base class handlers
 
@@ -66,12 +71,14 @@ sub __Init {
 	#set handlers for main app form
 	$self->__SetHandlers();
 
-	#$self->__RunTimers();
+	
 }
 
 sub __Run {
 	my $self = shift;
 	$self->{"form"}->{"mainFrm"}->Show(1);
+	
+	$self->__RunTimers();
 
 	$self->{"form"}->MainLoop();
 
@@ -81,12 +88,12 @@ sub __AddNewJob {
 	my $self       = shift;
 	my $jobId      = shift;
 	my $exportData = shift;
-
+ 
 	# unique id per each task
 	my $guid = GeneralHelper->GetGUID();
 
 	my $task = Task->new( $guid, $jobId, $exportData );
-	
+
 	push( @{ $self->{"tasks"} }, $task );
 
 	# prepare gui
@@ -95,35 +102,65 @@ sub __AddNewJob {
 	# Add new task to queue
 	$self->{"form"}->AddNewTask($task);
 
-	
-
 }
 
 # ========================================================================================== #
 #  BASE CLASS HANDLERS
 # ========================================================================================== #
 
-sub __OnJobStartRunHandler {
-	my $self    = shift;
-	my $jobGUID = shift;
+sub __OnJobStateChanged {
+	my $self           = shift;
+	my $taskId        = shift;
+	my $taskState       = shift;
+	my $taskStateDetail = shift;
 
-	print "Exporter utility: Start job id: $jobGUID\n";
 
-}
+	my $status = "";
 
-sub __OnJobDoneEvtHandler {
-	my $self     = shift;
-	my $jobGUID  = shift;
-	my $exitType = shift;
+	if ( $taskState eq EnumsMngr->JobState_WAITINGQUEUE ) {
+		
+		$status = "Waiting in queue.";
 
-	print "Exporter utility: Job DONE job id: $jobGUID, exit type: $exitType\n";
+	}
+	elsif ( $taskState eq EnumsMngr->JobState_WAITINGPORT ) {
+		
+		$status = "Waiting on InCAM port.";
+
+	}
+	elsif ( $taskState eq EnumsMngr->JobState_RUNNING ) {
+		
+			$status = "Start runing";
+
+	}elsif ( $taskState eq EnumsMngr->JobState_ABORTING ) {
+		
+			$status = "Aborting job.";
+
+	}elsif ( $taskState eq EnumsMngr->JobState_DONE ) {
+		
+			$status = "Job export finished.";
+
+		#	 ExitType_SUCCES => 'Succes',
+		#	ExitType_FAILED => 'Failed',
+		#	ExitType_FORCE  => 'Force',
+
+	}
+	
+	$self->{"form"}->SetJobItemStatus( $taskId, $status);
 
 }
 
 sub __OnJobProgressEvtHandler {
-	my $self    = shift;
-	my $jobGUID = shift;
+	my $self   = shift;
+	my $taskId = shift;
 	my $data   = shift;
+
+	my $task = $self->__GetTaskById($taskId);
+
+	$task->ProcessProgress($data);
+
+	$self->{"form"}->SetJobItemProgress( $taskId, $task->GetProgress() );
+
+	#my $task = $self->__GetTaskById($taskId);
 
 	#$self->{"gauge"}->SetValue($value);
 
@@ -133,31 +170,35 @@ sub __OnJobProgressEvtHandler {
 
 sub __OnJobMessageEvtHandler {
 	my $self     = shift;
-	my $taskId  = shift;
+	my $taskId   = shift;
 	my $messType = shift;
 	my $data     = shift;
-	
 
 	my $task = $self->__GetTaskById($taskId);
-	
-	#print "Exporter utility::  task id: " . $taskId . " - messType: " . $messType. "\n";
-	
-	if($messType eq Enums->EventType_ITEM_RESULT){
-		
-		
-		$task->ItemMessageEvt($data);
-		
-		#$self->{"form"}->{"mainFrm"}->Layout();
-		#$self->{"form"}->{"mainFrm"}->Refresh();
-		
-		$self->{"form"}->__GroupContentRefresh($taskId);
-		#$self->{"form"}->{"mainFrm"}->Layout();
-		#$self->{"form"}->{"mainFrm"}->Refresh();
-	}
-	
-	
 
-#TESTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT
+	#print "Exporter utility::  task id: " . $taskId . " - messType: " . $messType. "\n";
+
+	if ( $messType eq Enums->EventType_ITEM_RESULT ) {
+
+		$task->ProcessItemResult($data);
+
+		#$self->{"form"}->{"mainFrm"}->Layout();
+		#$self->{"form"}->{"mainFrm"}->Refresh();
+
+		$self->{"form"}->__GroupTableRefresh($taskId);
+
+		#$self->{"form"}->{"mainFrm"}->Layout();
+		#$self->{"form"}->{"mainFrm"}->Refresh();
+
+	}
+	elsif ( $messType eq Enums->EventType_GROUP_END ) {
+
+		$task->ProcessGroupEnd($data);
+
+		$self->{"form"}->__JobQueueRefresh($taskId);
+	}
+
+	#TESTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT
 	#print "Exporter utility::  job id: " . $jobGUID . " - messType: " . $messType . " - data: " . $data . "\n";
 }
 
@@ -173,19 +214,18 @@ sub JobWorker {
 	my $inCAM                        = shift;
 	my $THREAD_PROGRESS_EVT : shared = ${ shift(@_) };
 	my $THREAD_MESSAGE_EVT : shared  = ${ shift(@_) };
-	
-	 
+
 	#vytvorit nejakou Base class ktera bude obsahovat odesilani zprav prostrednictvim messhandler
 
 	#GetExportClass
 	my $task        = $self->__GetTaskById($taskId);
 	my %exportClass = $task->{"units"}->GetExportClass();
 	my $exportData  = $task->GetExportData();
-	
+
 	# TODO udelat base class pro JobWorkerClass nebo to nejak vzresit
-	
-	my $jobExport = JobWorkerClass->new( \$THREAD_PROGRESS_EVT, \$THREAD_MESSAGE_EVT, $self->{"form"}->{"mainFrm"});
-	 $jobExport->Init($pcbId, $taskId, $inCAM, \%exportClass, $exportData);
+
+	my $jobExport = JobWorkerClass->new( \$THREAD_PROGRESS_EVT, \$THREAD_MESSAGE_EVT, $self->{"form"}->{"mainFrm"} );
+	$jobExport->Init( $pcbId, $taskId, $inCAM, \%exportClass, $exportData );
 
 	$jobExport->RunExport();
 
@@ -246,10 +286,9 @@ sub __SetHandlers {
 
 	#Set base handler
 
-	$self->{"form"}->{'onJobStartRun'}->Add( sub    { $self->__OnJobStartRunHandler(@_) } );
-	$self->{"form"}->{'onJobDoneEvt'}->Add( sub     { $self->__OnJobDoneEvtHandler(@_) } );
-	$self->{"form"}->{'onJobProgressEvt'}->Add( sub { $self->__OnJobProgressEvtHandler(@_) } );
-	$self->{"form"}->{'onJobMessageEvt'}->Add( sub  { $self->__OnJobMessageEvtHandler(@_) } );
+	$self->{"form"}->{'onJobStateChanged'}->Add( sub { $self->__OnJobStateChanged(@_) } );
+	$self->{"form"}->{'onJobProgressEvt'}->Add( sub  { $self->__OnJobProgressEvtHandler(@_) } );
+	$self->{"form"}->{'onJobMessageEvt'}->Add( sub   { $self->__OnJobMessageEvtHandler(@_) } );
 
 	$self->{"form"}->{'onClick'}->Add( sub { $self->__OnClick(@_) } );
 
@@ -261,15 +300,16 @@ sub __SetHandlers {
 sub __RunTimers {
 	my $self = shift;
 
-	my $formMainFrm = $self->{"form"};
+	my $formMainFrm = $self->{"form"}->{"mainFrm"};
 
 	my $timerFiles = Wx::Timer->new( $formMainFrm, -1, );
-	Wx::Event::EVT_TIMER( $formMainFrm, $timerFiles, sub { __CheckFilesHandler( $self, @_ ) } );
+	Wx::Event::EVT_TIMER( $formMainFrm, $timerFiles, sub { $self->__CheckFilesHandler( @_ ) } );
 	$self->{"timerFiles"} = $timerFiles;
+	$timerFiles->Start(200);
 
-	my $timerRefresh = Wx::Timer->new( $formMainFrm, -1, );
-	Wx::Event::EVT_TIMER( $formMainFrm, $timerRefresh, sub { __Refresh( $self, @_ ) } );
-	$timerRefresh->Start(200);
+	#my $timerRefresh = Wx::Timer->new( $formMainFrm, -1, );
+	#Wx::Event::EVT_TIMER( $formMainFrm, $timerRefresh, sub { __Refresh( $self, @_ ) } );
+	#$timerRefresh->Start(200);
 }
 
 sub __CheckFilesHandler {
@@ -287,7 +327,7 @@ sub __CheckFilesHandler {
 
 	while ( my $file = readdir(DIR) ) {
 
-		next unless $file =~ /^[a-z](\d+)\.xml$/i;
+		next unless $file =~ /^[a-z](\d+)$/i;
 
 		$filePath = EnumsPaths->Client_EXPORTFILES . $file;
 
@@ -301,7 +341,8 @@ sub __CheckFilesHandler {
 		my $cnt = scalar( grep { $_->{"name"} eq $fileName && $_->{"created"} == $fileCreated } @actFiles );
 
 		unless ($cnt) {
-			my %newFile = ( "name" => $fileName, "created" => $fileCreated );
+			my %newFile = ( "name" => $fileName, "path" => $filePath, "created" => $fileCreated );
+
 			push( @newFiles, \%newFile );
 
 		}
@@ -310,30 +351,43 @@ sub __CheckFilesHandler {
 	if ( scalar(@newFiles) ) {
 		@newFiles = sort { $a->{"created"} <=> $b->{"created"} } @newFiles;
 		push( @{ $self->{"exportFiles"} }, @newFiles );
+		
+		foreach my $jobFile (@newFiles){
+			
+			my $jobId = $jobFile->{"name"};
+ 
+			my $dataTransfer = DataTransfer->new( $jobId, EnumsTransfer->Mode_READ );
+			my $exportData = $dataTransfer->GetExportData();
+			
+			 $self->__AddNewJob( $jobId, $exportData);
+			 
+		}
 	}
+	
+	
 
-	my $str = "";
-	foreach my $f ( @{ $self->{"exportFiles"} } ) {
-		$str .= $f->{"name"} . " - " . localtime( $f->{"created"} ) . "\n";
+	#my $str = "";
+	#foreach my $f ( @{ $self->{"exportFiles"} } ) {
+	#	$str .= $f->{"name"} . " - " . localtime( $f->{"created"} ) . "\n";
 
-	}
+	#}
 
-	$self->{"txt"}->SetLabel($str);
-	print "Aktualiyace - " . localtime( time() ) . "\n";
+	 
+	 
 }
-
-sub __Refresh {
-	my ( $self, $frame, $event ) = @_;
-
-	#$self->_SetDestroyServerOnDemand(1);
-
-	my $txt2 = $self->_GetInfoServers();
-	my $txt  = $self->_GetInfoJobs();
-
-	$self->{"txt"}->SetLabel($txt);
-	$self->{"txt2"}->SetLabel($txt2);
-
-}
+#
+#sub __Refresh {
+#	my ( $self, $frame, $event ) = @_;
+#
+#	#$self->_SetDestroyServerOnDemand(1);
+#
+#	my $txt2 = $self->_GetInfoServers();
+#	my $txt  = $self->_GetInfoJobs();
+#
+#	$self->{"txt"}->SetLabel($txt);
+#	$self->{"txt2"}->SetLabel($txt2);
+#
+#}
 
 sub __OnClick {
 	my $self = shift;
@@ -342,7 +396,7 @@ sub __OnClick {
 	my $total       = 0;
 
 	my $jobId = "f13610";
-
+	
 	my $dataTransfer = DataTransfer->new( $jobId, EnumsTransfer->Mode_READ );
 	my $exportData = $dataTransfer->GetExportData();
 

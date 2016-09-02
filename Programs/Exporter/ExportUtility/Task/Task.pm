@@ -11,13 +11,15 @@ use warnings;
 
 #local library
 use aliased 'Programs::Exporter::UnitEnums';
-use aliased 'Programs::Exporter::ExportUtility::Groups::NifExport::Presenter::NifUnit';
-use aliased 'Programs::Exporter::ExportUtility::Groups::NCExport::Presenter::NCUnit';
+use aliased 'Programs::Exporter::ExportUtility::Groups::NifExport::NifUnit';
+#use aliased 'Programs::Exporter::ExportUtility::Groups::NCExport::NCUnit';
+use aliased 'Programs::Exporter::ExportUtility::Groups::NCUnit';
 use aliased 'Programs::Exporter::ExportUtility::Groups::NC2Unit';
 use aliased 'Programs::Exporter::ExportUtility::Groups::NC3Unit';
 use aliased 'Programs::Exporter::ExportUtility::Groups::NC4Unit';
 use aliased 'Programs::Exporter::ExportUtility::Groups::NC5Unit';
 use aliased 'Programs::Exporter::ExportUtility::Unit::Units';
+use aliased 'Programs::Exporter::ExportUtility::ExportUtility::ExportStatus::ExportStatus';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods, requested by IUnit interface
@@ -29,13 +31,16 @@ sub new {
 	bless $self;
 	$self->{"taskId"}     = shift;
 	$self->{"jobId"}      = shift;
+	 
 	$self->{"exportData"} = shift;
 
 	$self->{"units"} = Units->new();
+	$self->{"exportStatus"} = ExportStatus->new($self->{"jobId"} );
 
 	#$self->{"onCheckEvent"} = Event->new();
 
 	$self->__InitUnit();
+	$self->{"exportStatus"}->CreateStatusFile();
 
 	return $self;    # Return the reference to the hash.
 }
@@ -79,7 +84,7 @@ sub __InitUnit {
 
 }
 
-sub ItemMessageEvt {
+sub ProcessItemResult {
 	my $self = shift;
 	my $data = shift;
 
@@ -100,11 +105,50 @@ sub ItemMessageEvt {
 
 	}
 
-	$unit->ItemResult( $itemId,  $itemResult, $itemGroup, $itemErrors, $itemWarnings );
+	$unit->ProcessItemResult( $itemId,  $itemResult, $itemGroup, $itemErrors, $itemWarnings );
 
 	#$unit->RefreshGUI();
-
 }
+
+sub ProcessGroupEnd {
+	my $self = shift;
+	my $data = shift;
+
+	my $unitId = $data->{"unitId"};
+	
+	my $unit = $self->__GetUnit($unitId);
+	
+	my $result =  $self->{"exportData"}->GetGroupResult();
+	
+	$unit->ProcessGroupEnd($unitId, $result); 
+	
+	# call process group end	
+}
+
+
+sub ProcessProgress {
+	my $self = shift;
+	my $data = shift;
+
+	my $unitId = $data->{"unitId"};
+	my $progress = $data->{"value"};
+	
+	my $unit = $self->__GetUnit($unitId);
+ 	
+	$unit->ProcessProgress($progress); 
+	
+}
+
+sub GetProgress{
+	 my $self = shift;
+	
+	my $totalProgress = $self->{"units"}->GetProgress();
+	
+	print " =========================== Total progress per task: $totalProgress \n";
+	
+	return $totalProgress;
+}
+
 
 sub GetAllUnits {
 	my $self = shift;

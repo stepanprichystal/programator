@@ -77,16 +77,16 @@ sub AddNewTaskGUI {
 	# Add new item to queue
 
 	my $jobQueue = $self->{"jobQueue"};
-	my $jobQueueItem = $jobQueue->AddItem( $taskId, $task->GetJobId() );
+	my $jobQueueItem = $jobQueue->AddItem( $taskId, $task->GetJobId(), $taskData);
 	
 	
 	# SET HANDLERS
 	$jobQueueItem->{"onProduce"}->Add(sub{ $self->__OnProduceClick(@_) });
 	
 	
-	$jobQueueItem->SetExportTime($taskData->GetExportTime());
-	$jobQueueItem->SetExportMode($taskData->GetExportMode());
-	$jobQueueItem->SetToProduce($taskData->GetToProduce());
+	#$jobQueueItem->SetExportTime($taskData->GetExportTime());
+	#$jobQueueItem->SetExportMode($taskData->GetExportMode());
+	#$jobQueueItem->SetToProduce($taskData->GetToProduce());
 	
 	
 
@@ -362,7 +362,7 @@ sub __SetLayoutGroups {
 # ========================================================================================== #
 
 
-sub __GroupContentRefresh{
+sub __GroupTableRefresh{
 	my $self         = shift;
 	my $taskId = 	shift;
 	
@@ -379,6 +379,41 @@ sub __GroupContentRefresh{
 	 
 	
 }
+# ============================================
+# Mehtods for update job queue items
+# ============================================
+sub SetJobItemStatus{
+	my $self         = shift;
+	my $taskId = 	shift;
+	my $status = 	shift;
+	
+	my $jobItem = $self->{"jobQueue"}->GetItem($taskId);
+	
+	$jobItem->SetStatus($status);
+}
+
+sub SetJobItemProgress{
+	my $self         = shift;
+	my $taskId = 	shift;
+	my $value = 	shift;
+
+	my $jobItem = $self->{"jobQueue"}->GetItem($taskId);
+	
+	$jobItem->SetProgress($value);
+}
+
+sub SetJobItemResult{
+	my $self         = shift;
+	my $taskId = 	shift;
+	
+	my $jobItem = $self->{"jobQueue"}->GetItem($taskId);
+	
+	$jobItem->SetJobItemResult();
+}
+
+
+
+
 
 sub __Test{
 	my $self         = shift;

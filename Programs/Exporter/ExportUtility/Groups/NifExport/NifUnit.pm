@@ -8,7 +8,7 @@
 # 3) View - only display data, which are passed from model by presenter class
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Programs::Exporter::ExportUtility::Groups::NC2Unit;
+package Programs::Exporter::ExportUtility::Groups::NifExport::NifUnit;
 use base 'Programs::Exporter::ExportUtility::Groups::UnitBase';
 
 #use Class::Interface;
@@ -24,7 +24,7 @@ use warnings;
 #use aliased 'Programs::Exporter::ExportChecker::Groups::NifExport::Model::NifDataMngr';
  
 use aliased 'Programs::Exporter::UnitEnums';
-use aliased 'Programs::Exporter::ExportUtility::ExportUtility::Forms::Group::GroupWrapperForm';
+
 use aliased 'Programs::Exporter::ExportUtility::Groups::NifExport::NifExport';
 use aliased 'Programs::Exporter::ExportUtility::Groups::GroupData';
 #-------------------------------------------------------------------------------------------#
@@ -39,11 +39,12 @@ sub new {
 	bless $self;
 
 	#uique key within all units
-	$self->{"unitId"} = UnitEnums->UnitId_NC2;
+	$self->{"unitId"} = UnitEnums->UnitId_NIF;
  
 	$self->{"unitExport"} = NifExport->new($self->{"unitId"});
 	
 	$self->{"groupData"} = GroupData->new();
+ 
 
 	return $self;    # Return the reference to the hash.
 }

@@ -11,5 +11,21 @@ use constant {
 			   UnitId_NC6 => "nc6",
 };
 
+
+#sub GetDescriptions{
+#	my $self = shift;
+#	my $unit = shift;
+#	
+#	use aliased 'Programs::Exporter::UnitEnums';
+#	
+#	my $description;
+#	
+#	if($unit eq UnitEnums->UnitId_NIF ){
+#		
+#		$description =  "Nif";
+#	}
+# 	
+#}
+
 1;
 

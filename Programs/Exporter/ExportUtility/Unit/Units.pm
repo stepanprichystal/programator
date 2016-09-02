@@ -45,6 +45,24 @@ sub Init {
 }
  
  
+sub GetProgress{
+	my $self = shift;
+	
+	my $total = 0;
+	
+	foreach my $unit ( @{ $self->{"units"} } ) {
+
+		 $total += $unit->GetProgress();
+
+	}
+	
+	$total = int($total/scalar(@{ $self->{"units"} }));
+
+	return $total;
+
+}
+ 
+ 
  sub GetUnitById {
 	my $self = shift;
 	my $unitId = shift;

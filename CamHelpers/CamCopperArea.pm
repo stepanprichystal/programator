@@ -289,6 +289,13 @@ sub __GetCuArea {
 	}
 
 	my $outFile = EnumsPaths->Client_INCAMTMP . $jobName . "cuarea";
+	
+	if(-e $outFile){
+ 		print STDERR "MAYUUUUUUUUUUUUUUUU";
+		unlink($outFile);
+	}
+	
+	#my $outFile = "out_file";
 
 	if ($mask) {
 		$self->__GetCuAreaMask( $inCAM,        $topLayer,    $botLayer, $topMask, $botMask, $considerHole,
@@ -312,6 +319,10 @@ sub __GetCuArea {
 	#else {
 	#	%res = $self->__ResultFromFile($outFile);
 	#}
+	
+	
+	# copper_area,layer1=c,layer2=,drills=yes,y1=25,copper_thickness=18,consider_rout=yes,area=yes,out_layer=sum,x1=5,drills_list=,ignore_pth_no_pad=no,dist_map=no,y_boxes=3,drills_source=matrix,x2=302,out_file=c:\tmp\InCam\f13609cuarea,edges=yes,thickness=788.919,x_boxes=3,resolution=1,resolution_value=25.4,f_type=all,y2=382
+	# copper_area,layer1=c,layer2=,drills=yes,drills_source=matrix,consider_rout=no,ignore_pth_no_pad=no,edges=yes,copper_thickness=0,drills_list=m\;v1\;sc1,thickness=0,resolution_value=25.4,area=no,f_type=all,out_file=out_file,out_layer=first,x_boxes=3,y_boxes=3,dist_map=yes
 
 	return %res;
 }
@@ -345,7 +356,7 @@ sub __GetCuAreaNoMask {
 				 "resolution_value"  => 25.4,
 				 "f_type"            => "all",
 				 "out_file"          => $outFile,
-				 "out_layer"         => "sum",
+				 #"out_layer"         => "sum",
 				 "x_boxes"           => 3,
 				 "y_boxes"           => 3,
 				 "dist_map"          => "no",
@@ -389,7 +400,7 @@ sub __GetCuAreaMask {
 				 "resolution_value"  => 25.4,
 				 "f_type"            => "all",
 				 "out_file"          => $outFile,
-				 "out_layer"         => "sum",
+				# "out_layer"         => "sum",
 				 "x_boxes"           => 3,
 				 "y_boxes"           => 3,
 				 "dist_map"          => "no",

@@ -12,26 +12,42 @@ use lib qw( C:\Perl\site\lib\TpvScripts\Scripts );
 #use PackagesLib;
 
 use aliased 'Packages::InCAM::InCAM';
-use aliased 'Programs::Exporter::ExportUtility::Groups::NifExport::NifExportTmp';
 
-
-
+#use aliased 'Programs::Exporter::ExportUtility::Groups::NifExport::NifExportTmp';
+use aliased 'Programs::Exporter::ExportUtility::Groups::NifExport::NifExport';
+use aliased 'Programs::Exporter::UnitEnums';
+use aliased 'Programs::Exporter::DataTransfer::Enums' => 'EnumsTransfer';
+use aliased 'Programs::Exporter::DataTransfer::DataTransfer';
 #input parameters
-my $jobId    = "f13608";
- 
-my $poznamka = "Some notes";
-my $tenting  = 1;
-my $pressfit = 0;
-my $maska01  = 1;
-my $datacode  = "MC";
-my $ullogo  = "MC";
-my $jumpScoring  = 1;
+my $jobId = "f13610";
 
- 
+my $resultMess = "";
+
+my $inCAM  = InCAM->new();
+my $export = NifExport->new( UnitEnums->UnitId_NIF );
+
+my $dataTransfer = DataTransfer->new( $jobId, EnumsTransfer->Mode_READ );
+my $exportData = $dataTransfer->GetExportData();
+
+$export->Init( $inCAM, $jobId, $exportData );
+
+$export->{"onItemResult"}->Add( sub { _OnItemResultHandler(@_) } );
+
+$export->Run();
+
+print $resultMess;
 
 
-my $inCAM = InCAM->new();
-my $export = NifExportTmp->new();
 
-#return 1 if OK, else 0
-$export->Run( $inCAM, $jobId, $poznamka, $tenting, $pressfit, $maska01, $datacode, $ullogo, $jumpScoring);
+
+sub _OnItemResultHandler {
+	my $itemResult = shift;
+
+	$resultMess .= " \n=============== Export task result: ==============\n";
+	$resultMess .= "Task: " . $itemResult->ItemId() . "\n";
+	$resultMess .= "Task result: " . $itemResult->Result() . "\n";
+	$resultMess .= "Task errors: \n" . $itemResult->GetErrorStr() . "\n";
+	$resultMess .= "Task warnings: \n" . $itemResult->GetWarningStr() . "\n";
+
+}
+

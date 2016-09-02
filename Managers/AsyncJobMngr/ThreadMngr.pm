@@ -162,9 +162,9 @@ sub __WorkerMethod {
 	print 1;
 	
 	# TODO odkomentovat
-	#my $inCAM = InCAM->new( "remote" => 'localhost', "port" => $port );
-	my $inCAM = undef;
-	#$inCAM->ServerReady();
+	my $inCAM = InCAM->new( "remote" => 'localhost', "port" => $port );
+	#my $inCAM = undef;
+	$inCAM->ServerReady();
 
 	$SIG{'KILL'} = sub {
 

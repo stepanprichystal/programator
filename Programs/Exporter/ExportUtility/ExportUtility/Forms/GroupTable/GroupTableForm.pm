@@ -218,10 +218,13 @@ sub RearrangeGroups {
 
 		# Reset group layout and do rearrange,
 		# only if last reset was 3 secundes before
-		my $diff = time() - $self->{"lastRearrange"};
-		
+		my $diff = undef;
 		my $last = $self->{"lastRearrange"};
-
+		
+		if (defined $last){
+			$diff = time() - $last;
+		} 
+ 
 		if ( !defined $last || (defined $last && $diff > 3) ) {
 
 			my $maxHeight = $self->__GetMaxColumnHeight();

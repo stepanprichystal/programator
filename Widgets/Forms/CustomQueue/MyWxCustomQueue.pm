@@ -100,6 +100,20 @@ sub GetParentForItem {
 	return $self->{"containerPnl"};
 }
 
+
+sub GetItem {
+	my $self = shift;
+	my $itemId = shift;
+	
+	foreach my $item ( @{ $self->{"jobItems"} } ) {
+
+		if ( $item->{"itemId"} eq $itemId ) {
+
+			return $item;
+		}
+	}
+}
+
 sub __SetLayout {
 	my $self = shift;
 

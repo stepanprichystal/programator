@@ -165,7 +165,7 @@ sub PrepareServerPort {
 				#create server in separete ports
 				my $port = ${$serverRef}[$i]{"port"};
 
-				my $worker = threads->create( sub { $self->__CreateServer( $port, $jobGUID ) } );
+				my $worker = threads->create( sub { $self->__CreateServer( $port, $jobGUID ) } ); 
 				#$worker->detach();
 
 				last;
@@ -263,6 +263,7 @@ sub __CreateServer {
 
 	#start new server on $freePort
 	my $inCAMPath = $ENV{"InCAM_BIN"} . "\\InCAM.exe";
+	$inCAMPath = "c:\\opt\\InCAM\\3.00SP1\\bin\\InCAM.exe";
 
 	unless ( -f $inCAMPath )    # does it exist?
 	{
@@ -275,8 +276,8 @@ sub __CreateServer {
 
 	#run InCAM editor with serverscript
 	Win32::Process::Create( $processObj, $inCAMPath,
-							"InCAM.exe -x -s" . GeneralHelper->Root() . "\\Managers\\AsyncJobMngr\\Server\\ServerExporter.pl " . $freePort,
-							0, NORMAL_PRIORITY_CLASS, "." )
+							"InCAM.exe  -x -s" . GeneralHelper->Root() . "\\Managers\\AsyncJobMngr\\Server\\ServerExporter.pl " . $freePort,
+							0, CREATE_NO_WINDOW, "." )
 	  || die "$!\n";
 
 	$pidInCAM = $processObj->GetProcessID();
@@ -414,6 +415,10 @@ sub __PortReady {
 	my %res : shared = ();
 	$res{"port"}    = $port;
 	$res{"jobGUID"} = $pcbId;
+	
+	
+ 
+	
 
 	my $threvent = new Wx::PlThreadEvent( -1, $PORT_READY_EXPORTER_EVT, \%res );
 	Wx::PostEvent( $self->{"exporterFrm"}, $threvent );

@@ -4,7 +4,7 @@
 
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Programs::Exporter::ExportUtility::Groups::NifExport::Presenter::NifExport;
+package Programs::Exporter::ExportUtility::Groups::NifExport::NifExport;
 
 #3th party library
 use strict;
@@ -52,25 +52,32 @@ sub Init {
 	my $inCAM      = shift;
 	my $jobId      = shift;
 	my $exportData = shift;
+	 
 
 	$self->{"inCAM"}      = $inCAM;
 	$self->{"jobId"}      = $jobId;
 	$self->{"exportData"} = $exportData;
+	
+	
+	my $nifMngr = NifMngr->new( $inCAM, $jobId, $exportData );
+	$nifMngr->{"onItemResult"}->Add( sub { $self->_OnItemResultHandler(@_) } );
+	
+	$self->{"exportMngr"} = $nifMngr;
+	
+	$self->{"itemsCount"} = $nifMngr->ExportItemsCount();
+	
+ 
 }
 
 sub Run {
 	my $self = shift;
 
-	my $inCAM      = $self->{"inCAM"};
-	my $jobId      = $self->{"jobId"};
-	my $exportData = $self->{"exportData"};
+ 
+	
 
-	my $data = $exportData->GetUnitData( $self->{"unitId"} );
+	
 
-	my $nifMngr = NifMngr->new( $inCAM, $jobId, $data );
-	$nifMngr->{"onItemResult"}->Add( sub { $self->_OnItemResultHandler(@_) } );
-
-	$nifMngr->Run();
+	$self->{"exportMngr"}->Run();
 
 }
 
@@ -79,7 +86,7 @@ sub GetProgressValue {
 	my $self       = shift;
 	my $itemResult = shift;
 
-	my $val = $self->{"processedItemsCount"} / $self->{"itemsCount"} * 100;	
+	my $val = $self->{"processedItemsCount"} / $self->{"itemsCount"} *100;	
 }
 
 sub _OnItemResultHandler {

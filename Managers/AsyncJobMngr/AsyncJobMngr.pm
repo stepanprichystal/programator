@@ -24,6 +24,7 @@ use aliased 'Managers::AsyncJobMngr::ServerMngr';
 use aliased 'Managers::AsyncJobMngr::ThreadMngr';
 use aliased 'Managers::AsyncJobMngr::Helper';
 use aliased 'Managers::MessageMngr::MessageMngr';
+use aliased 'Managers::AsyncJobMngr::Enums';
 
 #use aliased 'Programs::Exporter::ThreadBase';
 use aliased 'Packages::Events::Event';
@@ -31,13 +32,7 @@ use aliased 'Packages::Events::Event';
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
-
-use constant {
-			   JOB_RUNNING      => "running",
-			   JOB_WAITINGQUEUE => "waitingQueue",
-			   JOB_WAITINGPORT  => "waitingPort",
-			   JOB_STOPPED      => "stopped"
-};
+ 
 
 sub new {
 	my $self      = shift;
@@ -65,15 +60,18 @@ sub new {
 
 	#class events
 
-	$self->{'onJobStartRun'}    = Event->new();
-	$self->{'onJobDoneEvt'}     = Event->new();
-	$self->{'onJobProgressEvt'} = Event->new();
-	$self->{'onJobMessageEvt'}  = Event->new();
-	$self->{'onRunJobWorker'}   = Event->new();
+	#$self->{'onJobStartRun'}    = Event->new();
+	#$self->{'onJobDoneEvt'}     = Event->new();
+
+	$self->{'onJobStateChanged'} = Event->new();
+	$self->{'onJobProgressEvt'}  = Event->new();
+	$self->{'onJobMessageEvt'}   = Event->new();
+	$self->{'onRunJobWorker'}    = Event->new();
 
 	my $mainFrm = $self->__SetLayout( $parent, $title, $dimension );
 
-	#$self->__RunTimers();
+	# TODO odkomentovat
+	$self->__RunTimers();
 
 	return $self;
 }
@@ -96,7 +94,7 @@ sub _AddJobToQueue {
 	my %jobInfo = (
 					"jobGUID" => $uniqueId,
 					"pcbId"   => $pcbId,
-					"state"   => JOB_WAITINGQUEUE,
+					"state"   => Enums->JobState_WAITINGQUEUE,
 					"port"    => -1,
 					"data"    => undef
 	);
@@ -106,20 +104,17 @@ sub _AddJobToQueue {
 
 	push( @{ $self->{"jobs"} }, \%jobInfo );
 
-	# SMAZAT
-	$jobInfo{"port"}  = undef;
-	$jobInfo{"state"} = JOB_RUNNING;
 
-	$self->{"threadMngr"}->RunNewExport( $uniqueId, $jobInfo{"port"}, $pcbId );
+	
+	# TODO SMAZAT
+	#$jobInfo{"port"}  = undef;
+	#$jobInfo{"state"} = Enums->JobState_RUNNING;
+	#$self->{"threadMngr"}->RunNewExport( $uniqueId, $jobInfo{"port"}, $pcbId );
 
-	#raise onJobStarRun event
-	my $ononJobStartRun = $self->{'onJobStartRun'};
-	if ( $ononJobStartRun->Handlers() ) {
-		$ononJobStartRun->Do($uniqueId);
-	}
- 
+	 
+	$self->{'onJobStateChanged'}->Do( $jobInfo{"jobGUID"}, $jobInfo{"state"} );
 
-return $jobInfo{"jobGUID"};
+	return $jobInfo{"jobGUID"};
 
 }
 
@@ -135,7 +130,7 @@ sub _RemoveJobFromQueue {
 		return 0;
 	}
 
-	if ( ${ $self->{"jobs"} }[$i]{"state"} eq JOB_RUNNING ) {
+	if ( ${ $self->{"jobs"} }[$i]{"state"} eq Enums->JobState_RUNNING ) {
 
 		$self->{"threadMngr"}->ExitThread( ${ $self->{"jobs"} }[$i]{"jobGUID"} );
 
@@ -207,7 +202,7 @@ sub __CloseActiveJobs {
 	#first, close all running jobs
 	for ( my $i = 0 ; $i < scalar( @{$jobsRef} ) ; $i++ ) {
 
-		if ( ${$jobsRef}[$i]{"state"} eq JOB_RUNNING ) {
+		if ( ${$jobsRef}[$i]{"state"} eq Enums->JobState_RUNNING ) {
 
 			$self->{"threadMngr"}->ExitThread( ${$jobsRef}[$i]{"jobGUID"} );
 		}
@@ -238,7 +233,7 @@ sub OnClose {
 	#search active jobs
 	for ( my $i = 0 ; $i < scalar( @{$jobsRef} ) ; $i++ ) {
 
-		if ( ${$jobsRef}[$i]{"state"} eq JOB_RUNNING || ${$jobsRef}[$i]{"state"} eq JOB_WAITINGPORT ) {
+		if ( ${$jobsRef}[$i]{"state"} eq Enums->JobState_RUNNING || ${$jobsRef}[$i]{"state"} eq Enums->JobState_WAITINGPORT ) {
 			$activeJobs = 1;
 
 			push( @jobsName, ${$jobsRef}[$i]{"pcbId"} );
@@ -293,18 +288,22 @@ sub _AbortJob {
 		return 0;
 	}
 
-	if ( ${ $self->{"jobs"} }[$i]{"state"} eq JOB_RUNNING ) {
+	if ( ${ $self->{"jobs"} }[$i]{"state"} eq Enums->JobState_RUNNING ) {
 
 		$self->{"threadMngr"}->ExitThread( ${ $self->{"jobs"} }[$i]{"jobGUID"} );
 
 		#$self->{"serverMngr"}->ReturnServerPort( ${ $self->{"jobs"} }[$i]{"port"} );
 
 		#$self->__RemoveJob( ${ $self->{"jobs"} }[$i]{"jobGUID"} );
+		
+		$self->{'onJobStateChanged'}->Do( $jobGUID, Enums->JobState_ABORTING );
 
 	}
 	else {
-
+		
 		Helper->Print( "THREAD with job id: " . ${ $self->{"jobs"} }[$i]{"pcbId"} . " is starting, try abort later.......\n" );
+		
+		
 	}
 
 }
@@ -320,7 +319,7 @@ sub OnExit {
 
 	for ( my $i = 0 ; $i < scalar( @{$jobsRef} ) ; $i++ ) {
 
-		if ( ${$jobsRef}[$i]{"state"} eq JOB_RUNNING || ${$jobsRef}[$i]{"state"} eq JOB_WAITINGPORT ) {
+		if ( ${$jobsRef}[$i]{"state"} eq Enums->JobState_RUNNING || ${$jobsRef}[$i]{"state"} eq Enums->JobState_WAITINGPORT ) {
 
 			$activeJobs = 1;
 
@@ -336,15 +335,15 @@ sub OnExit {
 
 		for ( my $i = 0 ; $i < scalar( @{$jobsRef} ) ; $i++ ) {
 
-			if ( ${$jobsRef}[$i]{"state"} eq JOB_RUNNING ) {
+			if ( ${$jobsRef}[$i]{"state"} eq Enums->JobState_RUNNING ) {
 
 				$self->{"serverMngr"}->DestroyServer( ${$jobsRef}[$i]{"port"} );
 
 			}
 
-			if ( ${$jobsRef}[$i]{"state"} eq JOB_WAITINGPORT ) {
+			if ( ${$jobsRef}[$i]{"state"} eq Enums->JobState_WAITINGPORT ) {
 
-				while ( ${$jobsRef}[$i]{"state"} ne JOB_RUNNING ) {
+				while ( ${$jobsRef}[$i]{"state"} ne Enums->JobState_RUNNING ) {
 
 					print "%% -  " . ${$jobsRef}[$i]{"state"} . "port: " . ${$jobsRef}[$i]{"state"} . "\n";
 					sleep(1);
@@ -386,7 +385,7 @@ sub Test {
 
 	if ( $self->{"serverMngr"}->IsPortAvailable() ) {
 
-		$self->__SetJobState( $jobGUID, JOB_WAITINGPORT );
+		$self->__SetJobState( $jobGUID, Enums->JobState_WAITINGPORT );
 		$self->{"serverMngr"}->PrepareServerPort($jobGUID);
 
 	}
@@ -492,18 +491,15 @@ sub __PortReadyHandler {
 	if ( defined $i ) {
 
 		${ $self->{"jobs"} }[$i]{"port"}  = $d{"port"};
-		${ $self->{"jobs"} }[$i]{"state"} = JOB_RUNNING;
+		${ $self->{"jobs"} }[$i]{"state"} = Enums->JobState_RUNNING;
 
 		my $pcbId   = ${ $self->{"jobs"} }[$i]{"pcbId"};
 		my $jobGUID = ${ $self->{"jobs"} }[$i]{"jobGUID"};
+		
+		$self->{'onJobStateChanged'}->Do( $jobGUID, Enums->JobState_RUNNING );
 
 		$self->{"threadMngr"}->RunNewExport( $jobGUID, $d{"port"}, $pcbId );
-
-		#raise onJobStarRun event
-		my $ononJobStartRun = $self->{'onJobStartRun'};
-		if ( $ononJobStartRun->Handlers() ) {
-			$ononJobStartRun->Do($jobGUID);
-		}
+ 
 	}
 
 }
@@ -512,18 +508,16 @@ sub __ThreadDoneHandler {
 	my ( $self, $frame, $event ) = @_;
 
 	my %d = %{ $event->GetData };
+	
+	my $jobGUID = $d{"jobGUID"};
+	my $exitType = $d{"exitType"};
 
 	my $jobInfo = $self->__GetJobInfo( $d{"jobGUID"} );
 	$self->{"serverMngr"}->ReturnServerPort( $jobInfo->{"port"} );
 	$self->__RemoveJob( $d{"jobGUID"} );
 
 	#reise event
-	my $onJobDoneEvt = $self->{'onJobDoneEvt'};
-
-	if ( $onJobDoneEvt->Handlers() ) {
-		$onJobDoneEvt->Do( $d{"jobGUID"}, $d{"exitType"} );
-	}
-
+	$self->{'onJobStateChanged'}->Do( $jobGUID, Enums->JobState_DONE, $exitType );
 }
 
 sub __ThreadProgressHandler {
@@ -537,7 +531,7 @@ sub __ThreadProgressHandler {
 	my $onJobProgressEvt = $self->{'onJobProgressEvt'};
 
 	if ( $onJobProgressEvt->Handlers() ) {
-		$onJobProgressEvt->Do( $d{"taskId"} );
+		$onJobProgressEvt->Do( $jobGUID, $data );
 	}
 
 	#print $event->etData;
@@ -569,16 +563,18 @@ sub __TakeFromQueueHandler {
 
 	for ( my $i = 0 ; $i < scalar( @{$jobsRef} ) ; $i++ ) {
 
-		if ( ${$jobsRef}[$i]{"state"} eq JOB_WAITINGQUEUE ) {
+		if ( ${$jobsRef}[$i]{"state"} eq Enums->JobState_WAITINGQUEUE ) {
 
 			if ( $self->{"serverMngr"}->IsPortAvailable() ) {
 
 				my $jobGUID = ${$jobsRef}[$i]{"jobGUID"};
 
-				$self->__SetJobState( $jobGUID, JOB_WAITINGPORT );
+				$self->__SetJobState( $jobGUID, Enums->JobState_WAITINGPORT );
+				
+				$self->{'onJobStateChanged'}->Do( $jobGUID, Enums->JobState_WAITINGPORT );
 
 				# TODO odkomentovat
-				#$self->{"serverMngr"}->PrepareServerPort($jobGUID);
+				$self->{"serverMngr"}->PrepareServerPort($jobGUID);
 
 			}
 		}

@@ -59,12 +59,12 @@ sub __SetLayout {
 	if ( $self->{"mode"} eq EnumsGeneral->MessageType_ERROR ) {
 
 		$self->{"pathDisable"} = GeneralHelper->Root() . "/Resources/Images/ErrorDisable".$size.".png";
-		$self->{"pathEnable"}  = GeneralHelper->Root() . "/Resources/Images/Error".$size.".bmp";
+		$self->{"pathEnable"}  = GeneralHelper->Root() . "/Resources/Images/Error".$size.".png";
 
 	}
 	elsif ( $self->{"mode"} eq EnumsGeneral->MessageType_WARNING ) {
 		$self->{"pathDisable"} = GeneralHelper->Root() . "/Resources/Images/WarningDisable".$size.".png";
-		$self->{"pathEnable"}  = GeneralHelper->Root() . "/Resources/Images/Warning".$size.".bmp";
+		$self->{"pathEnable"}  = GeneralHelper->Root() . "/Resources/Images/Warning".$size.".png";
 
 	}
 
@@ -108,7 +108,7 @@ sub SetErrorCnt {
 	if($self->{"errCnt"} == 1){
 		
 		 
-		my $err = Wx::Bitmap->new( $self->{"pathEnable"}, &Wx::wxBITMAP_TYPE_BMP );
+		my $err = Wx::Bitmap->new( $self->{"pathEnable"}, &Wx::wxBITMAP_TYPE_PNG );
 		$self->{"statBtmError"}->SetBitmap($err);
 	}
 }

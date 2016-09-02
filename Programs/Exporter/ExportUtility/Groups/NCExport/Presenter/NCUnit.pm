@@ -80,7 +80,7 @@ sub InitForm {
 
 }
 
-sub ItemResult {
+sub ProcessItemResult {
 	my $self = shift;
 	my $id   = shift;
 	my $result   = shift;

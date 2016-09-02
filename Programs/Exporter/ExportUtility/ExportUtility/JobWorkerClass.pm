@@ -15,6 +15,7 @@ use warnings;
 use aliased 'Helpers::GeneralHelper';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'Programs::Exporter::ExportUtility::Enums';
+use aliased 'CamHelpers::CamHelper';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -43,13 +44,14 @@ sub Init {
 sub RunExport {
 	my $self = shift;
 
-
 	my %unitsData = $self->{"data"}->GetAllUnitData();
- 	my @keys = $self->{"data"}->GetOrderedUnitKeys();
+	my @keys      = $self->{"data"}->GetOrderedUnitKeys();
+
 	# sort keys by nhash value "__UNITORDER__"
 	#my @keys = ;
 
 	foreach my $unitId (@keys) {
+
 		#tell group export start
 
 		my $exportData = $unitsData{$unitId};
@@ -57,8 +59,28 @@ sub RunExport {
 		# Event when group export start
 		$self->__GroupExportEvent( Enums->EventType_GROUP_START, $unitId );
 
+		# Open job
+		CamHelper->OpenJobAndStep($self->{"inCAM"}, $self->{"pcbId"}, "panel");
+
+		my $inCAM = $self->{"inCAM"};
+
+		
+
+#		$inCAM->COM( "open_job", "job" => $self->{"pcbId"}, "open_win" => "yes" );
+#		$inCAM->COM(
+#					 "open_entity",
+#					 "job"  => $self->{"pcbId"},
+#					 "type" => "step",
+#					 "name" => "panel"
+#		);
+#
+#		$inCAM->AUX( 'set_group', group => $inCAM->{COMANS} );
+
 		# Process group
 		$self->__ProcessGroup( $unitId, $exportData );
+
+		#close job
+		CamHelper->SaveAndCloseJob( $self->{"inCAM"}, $self->{"pcbId"} );
 
 		# Event when group export end
 		$self->__GroupExportEvent( Enums->EventType_GROUP_END, $unitId );
@@ -71,41 +93,42 @@ sub __ProcessGroup {
 	my $unitId     = shift;
 	my $exportData = shift;    # export data for specific group
 
-	my $num = rand(10);
-
-use Time::HiRes qw (sleep);
-	for ( my $i = 0 ; $i < $num ; $i++ ) {
-
-		my %data1 = ();
-		$data1{"unitId"}   = $unitId;
-		$data1{"itemId"}   = "Item id $i";
-		$data1{"result"}   = "succes";
-		$data1{"errors"}   = "";
-		$data1{"warnings"} = "";
-
-		$self->_SendMessageEvt( Enums->EventType_ITEM_RESULT, \%data1 );
-
-		sleep(0.2);
-
-	}
-	
-	for ( my $i = 0 ; $i < 2 ; $i++ ) {
-
-		my %data1 = ();
-		$data1{"unitId"}   = $unitId;
-		$data1{"itemId"}   = "Item id $i";
-		$data1{"result"}   = "failure";
-		$data1{"errors"}   = "rrrrrrrrrrr";
-		$data1{"group"}   = "Layer";
-		$data1{"warnings"} = "";
-
-		$self->_SendMessageEvt( Enums->EventType_ITEM_RESULT, \%data1 );
-
-		sleep(0.2);
-
-	}
-
-	return 1;
+	#
+	#	my $num = rand(10);
+	#
+	#	use Time::HiRes qw (sleep);
+	#	for ( my $i = 0 ; $i < $num ; $i++ ) {
+	#
+	#		my %data1 = ();
+	#		$data1{"unitId"}   = $unitId;
+	#		$data1{"itemId"}   = "Item id $i";
+	#		$data1{"result"}   = "succes";
+	#		$data1{"errors"}   = "";
+	#		$data1{"warnings"} = "";
+	#
+	#		$self->_SendMessageEvt( Enums->EventType_ITEM_RESULT, \%data1 );
+	#
+	#		sleep(0.6);
+	#
+	#	}
+	#
+	#	for ( my $i = 0 ; $i < 2 ; $i++ ) {
+	#
+	#		my %data1 = ();
+	#		$data1{"unitId"}   = $unitId;
+	#		$data1{"itemId"}   = "Item id $i";
+	#		$data1{"result"}   = "failure";
+	#		$data1{"errors"}   = "rrrrrrrrrrr";
+	#		$data1{"group"}   = "Layer";
+	#		$data1{"warnings"} = "";
+	#
+	#		$self->_SendMessageEvt( Enums->EventType_ITEM_RESULT, \%data1 );
+	#
+	#		sleep(1);
+	#
+	#	}
+	#
+	#	return 1;
 
 	# Get right export class and init
 	my $exportClass = $self->{"exportClass"}->{$unitId};
@@ -133,6 +156,7 @@ sub __ItemResultEvent {
 	$data1{"result"}   = $itemResult->Result();
 	$data1{"errors"}   = $itemResult->GetErrorStr( Enums->ItemResult_DELIMITER );
 	$data1{"warnings"} = $itemResult->GetWarningStr( Enums->ItemResult_DELIMITER );
+	$data1{"group"}    = $itemResult->GetGroup();
 
 	$self->_SendMessageEvt( Enums->EventType_ITEM_RESULT, \%data1 );
 
@@ -141,6 +165,8 @@ sub __ItemResultEvent {
 	my %data2 = ();
 	$data2{"unitId"} = $unitId;
 	$data2{"value"}  = $exportClass->GetProgressValue();
+
+	print " ==========Job WorkerClass Progress, UnitId:" . $unitId . " - " . $exportClass->GetProgressValue() . "\n";
 
 	$self->_SendProgressEvt( \%data2 );
 

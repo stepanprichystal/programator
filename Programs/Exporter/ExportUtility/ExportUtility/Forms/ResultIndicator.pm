@@ -53,11 +53,13 @@ sub __SetLayout {
 
 	# size in px
 	 
+	  Wx::InitAllImageHandlers();
+	 
 	my $size = $self->{"size"}."x".$self->{"size"};
  
-	 $self->{"pathOk"} = GeneralHelper->Root() . "/Resources/Images/Ok".$size.".bmp";
-	 $self->{"pathFail"}  = GeneralHelper->Root() . "/Resources/Images/Fail".$size.".bmp";
-	 $self->{"pathNA"}  = GeneralHelper->Root() . "/Resources/Images/NA".$size.".bmp";
+	 $self->{"pathOk"} = GeneralHelper->Root() . "/Resources/Images/Ok".$size.".png";
+	 $self->{"pathFail"}  = GeneralHelper->Root() . "/Resources/Images/Failure".$size.".png";
+	 $self->{"pathNA"}  = GeneralHelper->Root() . "/Resources/Images/OkDisable".$size.".png";
 	 
 
 	#define panels
@@ -68,7 +70,7 @@ sub __SetLayout {
 	my $szMain = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
  
  
-	my $btmError = Wx::Bitmap->new( $self->{"pathNA"}, &Wx::wxBITMAP_TYPE_BMP );
+	my $btmError = Wx::Bitmap->new( $self->{"pathNA"}, &Wx::wxBITMAP_TYPE_PNG );
 	my $statBtmError = Wx::StaticBitmap->new( $self, -1, $btmError );
 	 
 
@@ -92,16 +94,16 @@ sub SetStatus {
 	
 	if($status eq EnumsGeneral->ResultType_NA){
 		 
-		$path = Wx::Bitmap->new( $self->{"pathNA"}, &Wx::wxBITMAP_TYPE_BMP );
+		$path = Wx::Bitmap->new( $self->{"pathNA"}, &Wx::wxBITMAP_TYPE_PNG );
 		
 	
 	}elsif($status eq EnumsGeneral->ResultType_OK){
 		
-		$path = Wx::Bitmap->new( $self->{"pathOk"}, &Wx::wxBITMAP_TYPE_BMP );
+		$path = Wx::Bitmap->new( $self->{"pathOk"}, &Wx::wxBITMAP_TYPE_PNG );
 	
 	}elsif($status eq EnumsGeneral->ResultType_FAIL){
 		
-		$path = Wx::Bitmap->new( $self->{"pathFail"}, &Wx::wxBITMAP_TYPE_BMP );
+		$path = Wx::Bitmap->new( $self->{"pathFail"}, &Wx::wxBITMAP_TYPE_PNG );
 	}
 	
 	
