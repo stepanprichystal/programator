@@ -195,13 +195,13 @@ sub __OnJobMessageEvtHandler {
 
 	if ( $messType eq Enums->EventType_ITEM_RESULT ) {
 
-		# Update data model 
+		# Update data model and refresh group
 		
 		$task->ProcessItemResult($data);
  
 		# Refresh GUI - group table
 		
-		$self->{"form"}->RefreshGroupTable($taskId);
+		$self->{"form"}->RefreshGroupTable($task);
 		
 		# Refresh GUI - job queue
 		

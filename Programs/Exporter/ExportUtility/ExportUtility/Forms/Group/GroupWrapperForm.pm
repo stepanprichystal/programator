@@ -143,7 +143,7 @@ sub __SetLayout {
 	# BUILD STRUCTURE
 
 	$szHeader->Add( $headerTxt,   1, &Wx::wxEXPAND | &Wx::wxALL, 2 );
-	$szHeader->Add( $groupStatus, 0, &Wx::wxEXPAND | &Wx::wxALL, 2 );
+	$szHeader->Add( $groupStatus, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
 
 	#$szBody->Add( $pnl, 1, &Wx::wxEXPAND | &Wx::wxALL, 2 );
 
@@ -174,10 +174,11 @@ sub GetParentForGroup {
 	return $self->{"pnlBody"};
 }
 
-sub SetExporting {
+sub SetStatus {
 	my $self = shift;
+	my $value = shift;
 
-	$self->{"groupStatus"}->SetExporting();
+	$self->{"groupStatus"}->SetStatus($value);
 }
 
 sub SetErrorCnt {

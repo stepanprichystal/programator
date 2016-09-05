@@ -40,23 +40,25 @@ sub __SetLayout {
 
 	#define panels
 
-	$self->SetBackgroundColour( Wx::Colour->new( 204, 204, 204 ) );    #gray
+	$self->SetBackgroundColour(  Wx::Colour->new( 215, 230, 251 ) );    #gray
 
 	# DEFINE CONTROLS
 
 	my $szMain = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
 
-	my $statusTxt = Wx::StaticText->new( $self, -1, "Exporting", [ -1, -1 ], [ 100, 20 ] );
+	my $statusTxt = Wx::StaticText->new( $self, -1, "", [ -1, -1 ], [ 100, 20 ] );
+	$statusTxt->SetForegroundColour( Wx::Colour->new(100,100,100)); # light gray
 
 	my $groupErrInd  = ErrorIndicator->new( $self, EnumsGeneral->MessageType_ERROR,   15 );
 	my $groupWarnInd = ErrorIndicator->new( $self, EnumsGeneral->MessageType_WARNING, 15 );
-
+	$groupErrInd->Hide();
+		$groupWarnInd->Hide();
 	# SET EVENTS
 
 	# BUILD STRUCTURE OF LAYOUT
-	$szMain->Add( $statusTxt,   1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
-	$szMain->Add( $groupErrInd, 1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
-	$szMain->Add( $groupWarnInd, 1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szMain->Add( $statusTxt,   1, &Wx::wxEXPAND | &Wx::wxALL, 3 );
+	$szMain->Add( $groupErrInd, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szMain->Add( $groupWarnInd, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 
 	$self->SetSizer($szMain);
 
@@ -64,14 +66,17 @@ sub __SetLayout {
 	$self->{"groupErrInd"}  = $groupErrInd;
 	$self->{"groupWarnInd"} = $groupWarnInd;
 	$self->{"statusTxt"}    = $statusTxt;
+		$self->{"szMain"}    = $szMain;
 }
 
-sub SetExporting {
+sub SetStatus {
 	my $self  = shift;
 	my $value = shift;
 
-	$self->{"statusTxt"}->SetLabel("Exporting...");
+	$self->{"statusTxt"}->SetLabel($value);
 }
+
+ 
 
 sub SetErrorCnt {
 	my $self = shift;
@@ -81,7 +86,11 @@ sub SetErrorCnt {
 
 	if ( $cnt > 0 ) {
 		$self->{"groupErrInd"}->Show(1);
+		$self->__SetColor("red");
+		
 	}
+	
+	#$self->{"szMain"}->Layout();
 
 }
 
@@ -93,7 +102,11 @@ sub SetWarningCnt {
 
 	if ( $cnt > 0 ) {
 		$self->{"groupWarnInd"}->Show(1);
+		$self->__SetColor("red");
+		
 	}
+	
+	#$self->{"szMain"}->Layout();
 }
 
 sub SetResult {
@@ -102,17 +115,33 @@ sub SetResult {
 
 	if ( $result eq EnumsGeneral->ResultType_OK ) {
 
-		$self->SetBackgroundColour( Wx::Colour->new( 152, 230, 152 ) );    #green
+		$self->__SetColor("green");
 
 	}
 	elsif ( $result eq EnumsGeneral->ResultType_FAIL ) {
 
-		$self->SetBackgroundColour( Wx::Colour->new( 255, 102, 102 ) );    #green
+		$self->__SetColor("red");
 	}
 	
 	$self->{"statusTxt"}->SetLabel("");
-	$self->Refresh();
 
+}
+
+sub __SetColor{
+	my $self   = shift;
+	my $color = shift;
+	
+	if ( $color eq "green" ) {
+
+		$self->SetBackgroundColour( Wx::Colour->new( 193, 240, 193 ) );    #green
+
+	}
+	elsif (  $color eq "red" ) {
+
+		$self->SetBackgroundColour( Wx::Colour->new( 255, 204, 204 ) );    #red
+	}
+	
+	$self->Refresh();
 }
 
 1;

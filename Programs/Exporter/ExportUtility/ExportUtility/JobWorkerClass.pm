@@ -16,7 +16,7 @@ use aliased 'Helpers::GeneralHelper';
 use aliased 'Enums::EnumsGeneral';
 
 use aliased 'CamHelpers::CamHelper';
-use aliased 'Packages::ItemResult::Enums';
+use aliased 'Packages::ItemResult::Enums' => 'ResultEnums';
 use aliased 'Programs::Exporter::ExportUtility::Enums';
 
 #-------------------------------------------------------------------------------------------#
@@ -94,7 +94,7 @@ sub __OpenJob {
 
 	if ( $err ) {
 
-		$self->__TaskResultEvent(Enums->ItemResult_Fail, $err);
+		$self->__TaskResultEvent(ResultEnums->ItemResult_Fail, $err);
 		return 0;
 	}
 	else {
@@ -120,7 +120,7 @@ sub __CloseJob {
 
 	if ( $err ) {
 
-		$self->__TaskResultEvent(Enums->ItemResult_Fail, $err);
+		$self->__TaskResultEvent(ResultEnums->ItemResult_Fail, $err);
 		return 0;
 	}
 	else {
@@ -197,7 +197,7 @@ sub __ProcessGroup {
 
 	if ( $err ) {
 		
-		$self->__GroupResultEvent($unitId, Enums->ItemResult_Fail, $err);
+		$self->__GroupResultEvent($unitId, ResultEnums->ItemResult_Fail, $err);
 	}
 
 }
@@ -275,8 +275,9 @@ sub __TaskResultEvent {
 
 sub __GroupExportEvent {
 	my $self   = shift;
-	my $unitId = shift;
 	my $type   = shift;    #GROUP_EXPORT_<START/END>
+	my $unitId = shift;
+
 
 	my %data = ();
 	$data{"unitId"} = $unitId;

@@ -69,7 +69,15 @@ sub ProcessItemResult {
 	my $warningStr = shift;
 
 	my $item = $self->{"groupData"}->{"itemsMngr"}->CreateExportItem( $id, $result, $group, $errorsStr, $warningStr );
+	
 	$self->{"form"}->AddItem($item);
+	
+	# Update group status form GUI
+	
+	$self->{"form"}->SetErrorCnt($self->GetErrorsCnt());
+	$self->{"form"}->SetWarningCnt($self->GetWarningsCnt());
+	
+	
 }
 
 
@@ -86,11 +94,8 @@ sub ProcessGroupResult {
 	my $item = $self->{"groupData"}->{"groupMngr"}->CreateExportItem( $id, $result, undef, $errorsStr, $warningStr );
 	
 	# Update group status form GUI
-	my $groupErrorCnt = $self->{"groupData"}->{"groupMngr"}->GetErrorsCnt();
-	my $groupWarningCnt = $self->{"groupData"}->{"groupMngr"}->GetWarningsCnt();
-	
-	$self->{"form"}->SetErrorCnt($groupErrorCnt);
-	$self->{"form"}->SetWarningCnt($groupWarningCnt);
+	$self->{"form"}->SetErrorCnt($self->GetErrorsCnt());
+	$self->{"form"}->SetWarningCnt($self->GetWarningsCnt());
   
 }
 
@@ -100,7 +105,7 @@ sub ProcessGroupStart {
 	my $self       = shift;
 	
 	# Update group status form GUI	
- 	$self->{"form"}->StartExporting();
+ 	$self->{"form"}->SetStatus("Export...");
 }
 
 sub ProcessGroupEnd {

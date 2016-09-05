@@ -34,7 +34,7 @@ sub new {
 		$showCnt = 1;
 	}
 
-	my $self = $class->SUPER::new($parent);
+	my $self = $class->SUPER::new($parent, -1, [-1,-1], [30, 20]);
 
 	bless($self);
 
@@ -76,7 +76,7 @@ sub __SetLayout {
 
 	# DEFINE CONTROLS
  
-	my $cntValTxt = Wx::StaticText->new( $self, -1, "0" );
+	my $cntValTxt = Wx::StaticText->new( $self, -1, "0");
 	$cntValTxt->SetFont($Widgets::Style::fontLbl);
 	my $btmError = Wx::Bitmap->new( $self->{"pathDisable"}, &Wx::wxBITMAP_TYPE_PNG );
 	my $statBtmError = Wx::StaticBitmap->new( $self, -1, $btmError );
@@ -86,12 +86,14 @@ sub __SetLayout {
 	#Wx::Event::EVT_COMBOBOX( $colorCb, -1, sub { $self->__OnColorChangeHandler(@_) } );
 
 	# BUILD STRUCTURE OF LAYOUT
+	$szMain->Add( 1, 1, 1, &Wx::wxEXPAND | &Wx::wxALL, 0 );
 	$szMain->Add( $cntValTxt, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
 	$szMain->Add( $statBtmError,    0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
 	 
 	$self->SetSizer($szMain);
 
 	# SAVE REFERENCES
+	$self->{"szMain"} = $szMain;
 	$self->{"cntValTxt"} = $cntValTxt;
 	$self->{"statBtmError"}  = $statBtmError;
 
@@ -105,12 +107,15 @@ sub SetErrorCnt {
 	$self->{"errCnt"}  = $cnt;
 	$self->{"cntValTxt"}->SetLabel($self->{"errCnt"});
 	
-	if($self->{"errCnt"} == 1){
+	if($self->{"errCnt"} > 0){
 		
 		 
 		my $err = Wx::Bitmap->new( $self->{"pathEnable"}, &Wx::wxBITMAP_TYPE_PNG );
 		$self->{"statBtmError"}->SetBitmap($err);
+
 	}
+	
+	$self->{"szMain"}->Layout();
 }
 
 		

@@ -106,13 +106,22 @@ sub GetErrorsStr {
 	return $str;
 }
 
-
+# Return total error count
+# Each items has own array of error, thus we count all errors from this array
 sub GetErrorsCnt {
 	my $self   = shift;
 	
-	my @errors = $self->GetErrors();
-	return scalar(@errors);
+	my $total = 0;
+	
+	foreach my $item ( @{ $self->{"itemResults"} } ) {
+
+		$total +=  scalar( @{ $item->{"errors"} } );
+	}
+
+	return $total;
 }
+ 
+
 
 sub GetWarningsStr {
 	my $self = shift;
@@ -148,11 +157,19 @@ sub GetWarnings {
 	return @warnings;
 }
 
+# Return total warning count
+# Each items has own array of warning, thus we count all warnings from this array
 sub GetWarningsCnt {
 	my $self   = shift;
 	
-	my @warnings = $self->GetWarnings();
-	return scalar(@warnings);
+	my $total = 0;
+	
+	foreach my $item ( @{ $self->{"itemResults"} } ) {
+
+		$total +=  scalar( @{ $item->{"warnings"} } );
+	}
+
+	return $total;
 }
 
 sub GetFailResults {

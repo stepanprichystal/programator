@@ -392,9 +392,9 @@ sub SetJobQueueWarningCnt{
  
 sub RefreshGroupTable{
 	my $self         = shift;
-	my $taskId = 	shift;
+	my $task = 	shift;
 	
-	my $page = $self->{"notebook"}->GetPage($taskId);
+	my $page = $self->{"notebook"}->GetPage($task->GetTaskId());
 	my $groupTable = $page->GetPageContent();
 
 	my ($w, $pageHight)         = $self->{"notebook"}->GetSizeWH();

@@ -76,9 +76,9 @@ sub __SetLayout {
 
 	my $result = $self->__SetLayoutResult();
 
-	my $btnProduce = Wx::Button->new( $self, -1, "Produce", &Wx::wxDefaultPosition, [ 70, 20 ] );
-	my $btnAbort   = Wx::Button->new( $self, -1, "Abort",   &Wx::wxDefaultPosition, [ 70, 20 ] );
-	my $btnRemove  = Wx::Button->new( $self, -1, "Remove",  &Wx::wxDefaultPosition, [ 70, 20 ] );
+	my $btnProduce = Wx::Button->new( $self, -1, "Produce", &Wx::wxDefaultPosition, [ 60, 20 ] );
+	my $btnAbort   = Wx::Button->new( $self, -1, "Abort",   &Wx::wxDefaultPosition, [ 60, 20 ] );
+	my $btnRemove  = Wx::Button->new( $self, -1, "Remove",  &Wx::wxDefaultPosition, [ 60, 20 ] );
  
 	#
 	#	$gauge->SetValue(0);
@@ -112,7 +112,7 @@ sub __SetLayout {
 
 	$szMain->Add( $result, 0, &Wx::wxEXPAND | &Wx::wxLEFT, 5 );
 
-	$szMain->Add( $self->__GetDelimiter($self), 0, &Wx::wxEXPAND | &Wx::wxLEFT, 10 );    # add delimiter
+
 
 	$szMain->Add( $btnProduce, 0, &Wx::wxEXPAND | &Wx::wxLEFT, 5 );
 	$szMain->Add( $btnAbort,   0, &Wx::wxEXPAND | &Wx::wxLEFT, 2 );
@@ -205,8 +205,8 @@ sub __SetLayoutResult {
 
 	# DEFINE CONTROLS
 
-	my $exportTxt  = Wx::StaticText->new( $self, -1, "Export result",   [ -1, -1 ], [ 100, 20 ] );
-	my $produceTxt = Wx::StaticText->new( $self, -1, "Sent to produce", [ -1, -1 ], [ 100, 20 ] );
+	my $exportTxt  = Wx::StaticText->new( $self, -1, "Export result  :",   [ -1, -1 ], [ 90, 20 ] );
+	my $produceTxt = Wx::StaticText->new( $self, -1, "Sent to produce:", [ -1, -1 ], [ 90, 20 ] );
 
 	my $exportRI   = ResultIndicator->new( $self, 20 );
 	my $producetRI = ResultIndicator->new( $self, 20 );
@@ -221,11 +221,13 @@ sub __SetLayoutResult {
 
 	$szRow1->Add( $exportTxt,     0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
 	$szRow1->Add( $exportRI,      0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
+	$szRow1->Add( 20, 20,     0, &Wx::wxEXPAND );
 	$szRow1->Add( $exportErrInd,  0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
 	$szRow1->Add( $exportWarnInd, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
 
 	$szRow2->Add( $produceTxt,     0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
 	$szRow2->Add( $producetRI,     0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
+	$szRow2->Add( 20, 20,     0, &Wx::wxEXPAND );
 	$szRow2->Add( $produceErrInd,  0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
 	$szRow2->Add( $produceWarnInd, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
 
@@ -333,7 +335,7 @@ sub SetProgress {
 	my $value = shift;
 
 	$self->{"gauge"}->SetValue($value);
-	$self->{"percentageTxt"}->SetLabel($value);
+	$self->{"percentageTxt"}->SetLabel($value."%");
 }
 
 # Set export indicators
@@ -360,9 +362,7 @@ sub SetExportResult {
 	}
 
 	$self->{"sentToProduceChb"}->SetValue($value);
-
-	 
-
+ 
 	$self->{"exportRI"}->SetStatus($result);
 }
 

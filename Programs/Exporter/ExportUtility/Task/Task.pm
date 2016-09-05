@@ -154,10 +154,8 @@ sub ProcessGroupEnd {
 	my $unitId = $data->{"unitId"};
 
 	my $unit = $self->__GetUnit($unitId);
-
-	my $result = $self->{"exportData"}->GetGroupResult();
-
-	$unit->ProcessGroupEnd( $unitId, $result );
+ 
+	$unit->ProcessGroupEnd( );
 
 	# call process group end
 }
