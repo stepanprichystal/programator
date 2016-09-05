@@ -15,6 +15,7 @@ use warnings;
 #local library
 use aliased "Packages::Events::Event";
 use aliased 'Programs::Exporter::ExportChecker::Enums';
+use aliased 'Enums::EnumsGeneral';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods, requested by IUnit interface
@@ -90,6 +91,53 @@ sub GetExportClass {
 
 	return %exportClasses;
 }
+
+
+
+sub GetErrorsCnt{
+	my $self  = shift;
+
+	my $cnt = 0;
+	
+	foreach my $unit ( @{ $self->{"units"} } ) {
+		 $cnt += $unit->GetErrorsCnt()  	 
+	}
+	
+	return $cnt;
+}
+	
+
+
+sub GetWarningsCnt{
+	my $self  = shift;
+
+	my $cnt = 0;
+	
+	foreach my $unit ( @{ $self->{"units"} } ) {
+		 $cnt += $unit->GetWarningsCnt()  	 
+	}
+	
+	return $cnt;
+}
+
+
+sub Result{
+	my $self  = shift;
+	
+	my $result = EnumsGeneral->ResultType_OK;
+	
+	foreach my $unit ( @{ $self->{"units"} } ) {
+
+		if( $unit->Result() eq EnumsGeneral->ResultType_FAIL ){
+			
+			$result = EnumsGeneral->ResultType_FAIL;
+		}
+		 
+	}
+	
+	return $result;
+}
+
 
 # ===================================================================
 # Helper method not requested by interface IUnit

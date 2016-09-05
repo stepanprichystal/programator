@@ -48,6 +48,9 @@ sub new {
 	return $self;
 }
 
+# ========================================================================
+# SET LAYOUT
+# ========================================================================
 sub __SetLayout {
 	my $self = shift;
 
@@ -337,45 +340,40 @@ sub SetProgress {
 
 sub SetExportResult {
 	my $self   = shift;
-	my $stauts = shift;
+	my $result = shift;
 
  	my $value = $self->{"exportedData"}->GetToProduce();
 	my $toProduce = $self->{"exportedData"}->GetToProduce();
 	
-	if($toProduce && $stauts == 1){
+	if($toProduce && $result eq EnumsGeneral->ResultType_OK){
 		$self->{"btnProduce"}->Disable();
 		
-	}elsif($toProduce && $stauts == 0){
+	}elsif($toProduce && $result eq EnumsGeneral->ResultType_FAIL){
 		
 		$self->{"btnProduce"}->Enable();
-	}elsif(!$toProduce && $stauts == 1){
+	}elsif(!$toProduce && $result eq EnumsGeneral->ResultType_OK){
 		
 		$self->{"btnProduce"}->Enable();
-	}elsif(!$toProduce && $stauts == 0){
+	}elsif(!$toProduce && $result eq EnumsGeneral->ResultType_FAIL){
 		
 		$self->{"btnProduce"}->Enable();
 	}
 
 	$self->{"sentToProduceChb"}->SetValue($value);
 
-	if ($stauts) {
-		$stauts = EnumsGeneral->ResultType_OK;
-	}
-	else {
-		$stauts = EnumsGeneral->ResultType_FAIL;
-	}
+	 
 
-	$self->{"exportRI"}->SetStatus($stauts);
+	$self->{"exportRI"}->SetStatus($result);
 }
 
-sub SetExportErrors {
+sub SetExportErrorCnt {
 	my $self  = shift;
 	my $count = shift;
 
 	$self->{"exportErrInd"}->SetErrorCnt($count);
 }
 
-sub SetExportWarnings {
+sub SetExportWarningCnt {
 	my $self  = shift;
 	my $count = shift;
 

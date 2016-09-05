@@ -16,6 +16,7 @@ use warnings;
 use aliased 'Programs::Exporter::ExportChecker::Enums';
 use aliased 'Packages::Events::Event';
 use aliased 'Programs::Exporter::ExportUtility::ExportUtility::Forms::Group::GroupWrapperForm';
+use aliased 'Enums::EnumsGeneral';
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
@@ -71,10 +72,46 @@ sub ProcessItemResult {
 	$self->{"form"}->AddItem($item);
 }
 
-sub ProcessGroupEnd {
+
+
+sub ProcessGroupResult {
+	my $self       = shift;
+	my $result     = shift;
+	my $errorsStr  = shift;
+	my $warningStr = shift;
+	
+	my $id = $self->{"unitId"};
+
+	# Update model
+	my $item = $self->{"groupData"}->{"groupMngr"}->CreateExportItem( $id, $result, undef, $errorsStr, $warningStr );
+	
+	# Update group status form GUI
+	my $groupErrorCnt = $self->{"groupData"}->{"groupMngr"}->GetErrorsCnt();
+	my $groupWarningCnt = $self->{"groupData"}->{"groupMngr"}->GetWarningsCnt();
+	
+	$self->{"form"}->SetErrorCnt($groupErrorCnt);
+	$self->{"form"}->SetWarningCnt($groupWarningCnt);
+  
+}
+
+
+
+sub ProcessGroupStart {
 	my $self       = shift;
 	
+	# Update group status form GUI	
+ 	$self->{"form"}->StartExporting();
 }
+
+sub ProcessGroupEnd {
+	my $self       = shift;
+ 
+ 	# Update group status form GUI	
+	$self->{"form"}->SetResult($self->Result());
+ 
+}
+
+
 
 sub ProcessProgress {
 	my $self       = shift;
@@ -87,6 +124,54 @@ sub GetProgress {
 	my $self = shift;
 	return $self->{"groupData"}->GetProgress();
 }
+
+
+
+sub GetGroupItemResultMngr {
+	my $self  = shift;
+	
+	return $self->{"groupData"}->{"itemsMngr"};
+}
+
+sub GetGroupResultMngr {
+	my $self  = shift;
+	
+	return $self->{"groupData"}->{"groupMngr"};
+}
+
+
+sub GetErrorsCnt{
+	my $self  = shift;
+	
+	my $itemsErrorCnt = $self->{"groupData"}->{"itemsMngr"}->GetErrorsCnt();
+	my $groupErrorCnt = $self->{"groupData"}->{"groupMngr"}->GetErrorsCnt();
+ 	return $itemsErrorCnt + $groupErrorCnt;
+}
+
+sub GetWarningsCnt{
+	my $self  = shift;
+	
+	my $itemsWarningCnt = $self->{"groupData"}->{"itemsMngr"}->GetWarningsCnt();
+	my $groupWarningCnt = $self->{"groupData"}->{"groupMngr"}->GetWarningsCnt();
+ 	return $itemsWarningCnt + $groupWarningCnt;
+}
+
+sub Result{
+	my $self  = shift;
+	
+	my $itemMngr = $self->{"groupData"}->{"itemsMngr"};
+	my $groupMngr = $self->{"groupData"}->{"groupMngr"};
+	
+	# create result value
+	my $result = EnumsGeneral->ResultType_OK;
+	
+	if(!$itemMngr->Succes() || !$groupMngr->Succes()){
+		$result = EnumsGeneral->ResultType_FAIL;	
+	}
+	
+	return $result;
+}
+
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

@@ -12,6 +12,8 @@ use warnings;
 #local library
 use aliased 'Programs::Exporter::UnitEnums';
 use aliased 'Programs::Exporter::ExportUtility::Groups::NifExport::NifUnit';
+use aliased 'Enums::EnumsGeneral';
+
 #use aliased 'Programs::Exporter::ExportUtility::Groups::NCExport::NCUnit';
 use aliased 'Programs::Exporter::ExportUtility::Groups::NCUnit';
 use aliased 'Programs::Exporter::ExportUtility::Groups::NC2Unit';
@@ -20,6 +22,8 @@ use aliased 'Programs::Exporter::ExportUtility::Groups::NC4Unit';
 use aliased 'Programs::Exporter::ExportUtility::Groups::NC5Unit';
 use aliased 'Programs::Exporter::ExportUtility::Unit::Units';
 use aliased 'Programs::Exporter::ExportUtility::ExportUtility::ExportStatus::ExportStatus';
+use aliased 'Programs::Exporter::ExportUtility::ExportResultMngr';
+
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods, requested by IUnit interface
@@ -29,13 +33,17 @@ sub new {
 	my $self = shift;
 	$self = {};
 	bless $self;
-	$self->{"taskId"}     = shift;
-	$self->{"jobId"}      = shift;
-	 
+	$self->{"taskId"} = shift;
+	$self->{"jobId"}  = shift;
+
 	$self->{"exportData"} = shift;
 
-	$self->{"units"} = Units->new();
-	$self->{"exportStatus"} = ExportStatus->new($self->{"jobId"} );
+	$self->{"taskResultMngr"} = ExportResultMngr->new();
+
+	$self->{"units"}        = Units->new();
+	$self->{"exportStatus"} = ExportStatus->new( $self->{"jobId"} );
+	
+	$self->{"aborted"} = 0; # Tell if task was aborted bz user
 
 	#$self->{"onCheckEvent"} = Event->new();
 
@@ -65,14 +73,14 @@ sub __InitUnit {
 
 	my $exportedData = $self->{"exportData"};
 
-	my @keys  = $exportedData->GetOrderedUnitKeys(1);
+	my @keys = $exportedData->GetOrderedUnitKeys(1);
 
 	my %unitsData = $exportedData->GetAllUnitData();
- 
+
 	# sort keys by nhash value "__UNITORDER__"
 	#my @keys = sort { $unitsData{$b}->{"data"}->{"__UNITORDER__"} <=> $unitsData{$a}->{"data"}->{"__UNITORDER__"} } keys %unitsData;
 
-	foreach my $key ( @keys ) {
+	foreach my $key (@keys) {
 
 		my $unit = $self->__GetUnitClass($key);
 
@@ -96,8 +104,7 @@ sub ProcessItemResult {
 	my $itemResult   = $data->{"result"};
 	my $itemErrors   = $data->{"errors"};
 	my $itemWarnings = $data->{"warnings"};
-	my $itemGroup = 	$data->{"group"};
-	 
+	my $itemGroup    = $data->{"group"};
 
 	unless ($unit) {
 
@@ -105,9 +112,39 @@ sub ProcessItemResult {
 
 	}
 
-	$unit->ProcessItemResult( $itemId,  $itemResult, $itemGroup, $itemErrors, $itemWarnings );
+	$unit->ProcessItemResult( $itemId, $itemResult, $itemGroup, $itemErrors, $itemWarnings );
 
 	#$unit->RefreshGUI();
+}
+
+sub ProcessGroupResult {
+	my $self = shift;
+	my $data = shift;
+
+	my $unitId = $data->{"unitId"};
+
+	my $unit = $self->__GetUnit($unitId);
+
+	my $groupResult   = $data->{"result"};
+	my $groupErrors   = $data->{"errors"};
+	my $groupWarnings = $data->{"warnings"};
+
+	$unit->ProcessGroupResult( $groupResult, $groupErrors, $groupWarnings );
+
+	#$unit->RefreshGUI();
+}
+
+sub ProcessGroupStart {
+	my $self = shift;
+	my $data = shift;
+
+	my $unitId = $data->{"unitId"};
+
+	my $unit = $self->__GetUnit($unitId);
+
+	$unit->ProcessGroupStart();
+
+	# call process group end
 }
 
 sub ProcessGroupEnd {
@@ -115,40 +152,116 @@ sub ProcessGroupEnd {
 	my $data = shift;
 
 	my $unitId = $data->{"unitId"};
-	
+
 	my $unit = $self->__GetUnit($unitId);
-	
-	my $result =  $self->{"exportData"}->GetGroupResult();
-	
-	$unit->ProcessGroupEnd($unitId, $result); 
-	
-	# call process group end	
+
+	my $result = $self->{"exportData"}->GetGroupResult();
+
+	$unit->ProcessGroupEnd( $unitId, $result );
+
+	# call process group end
 }
 
+sub ProcessTaskResult {
+	my $self = shift;
+	my $data = shift;
+
+	my $result     = $data->{"result"};
+	my $errorsStr  = $data->{"errors"};
+	my $warningStr = $data->{"warnings"};
+	my $id         = $self->{"jobId"};
+
+	$self->{"taskResultMngr"}->CreateExportItem( $id, $result, undef, $errorsStr, $warningStr );
+
+}
+
+sub ProcessTaskDone {
+	my $self = shift;
+	my $aborted = shift;
+
+	 
+	$self->{"aborted"} = $aborted;
+
+}
 
 sub ProcessProgress {
 	my $self = shift;
 	my $data = shift;
 
-	my $unitId = $data->{"unitId"};
+	my $unitId   = $data->{"unitId"};
 	my $progress = $data->{"value"};
-	
+
 	my $unit = $self->__GetUnit($unitId);
- 	
-	$unit->ProcessProgress($progress); 
-	
+
+	$unit->ProcessProgress($progress);
+
 }
 
-sub GetProgress{
-	 my $self = shift;
-	
+sub GetProgress {
+	my $self = shift;
+
 	my $totalProgress = $self->{"units"}->GetProgress();
-	
+
 	print " =========================== Total progress per task: $totalProgress \n";
-	
+
 	return $totalProgress;
 }
 
+sub GetErrorsCnt {
+	my $self = shift;
+
+	my $taskErrCnt  = $self->{"taskResultMngr"}->GetErrorsCnt();
+	my $unitsErrCnt = $self->{"units"}->GetErrorsCnt();
+
+	return $taskErrCnt + $unitsErrCnt;
+}
+
+sub GetWarningsCnt {
+	my $self = shift;
+
+	my $taskWarnCnt  = $self->{"taskResultMngr"}->GetWarningsCnt();
+	my $unitsWarnCnt = $self->{"units"}->GetWarningsCnt();
+
+	return $taskWarnCnt + $unitsWarnCnt;
+}
+
+sub Result {
+	my $self = shift;
+
+	my $totalResult = EnumsGeneral->ResultType_OK;
+
+	# result from all units
+	my $unitsResult = $self->{"units"}->Result();
+
+	# result - test if user abort job
+	my $taskAbortedResult = EnumsGeneral->ResultType_OK;
+	
+	if ( $self->{"aborted"} ) {
+		$taskAbortedResult = EnumsGeneral->ResultType_FAIL;
+	}
+
+	# result for task
+	my $taskResult = $self->{"taskResultMngr"}->Succes();
+
+	if ($taskResult) {
+		$taskResult = EnumsGeneral->ResultType_OK;
+	}
+	else {
+		$taskResult = EnumsGeneral->ResultType_FAIL;
+	}
+
+	if (
+		 $unitsResult          eq EnumsGeneral->ResultType_FAIL
+		 || $taskResult        eq EnumsGeneral->ResultType_FAIL 
+		 || $taskAbortedResult eq EnumsGeneral->ResultType_FAIL
+	  )
+	{
+
+		$totalResult = EnumsGeneral->ResultType_FAIL;
+	}
+
+	return $totalResult;
+}
 
 sub GetAllUnits {
 	my $self = shift;
@@ -196,12 +309,14 @@ sub __GetUnitClass {
 		#$unit = NifUnit->new();
 		$unit = NC3Unit->new();
 
-	}	elsif ( $unitId eq UnitEnums->UnitId_NC4 ) {
+	}
+	elsif ( $unitId eq UnitEnums->UnitId_NC4 ) {
 
 		#$unit = NifUnit->new();
 		$unit = NC4Unit->new();
 
-	}	elsif ( $unitId eq UnitEnums->UnitId_NC5 ) {
+	}
+	elsif ( $unitId eq UnitEnums->UnitId_NC5 ) {
 
 		#$unit = NifUnit->new();
 		$unit = NC5Unit->new();

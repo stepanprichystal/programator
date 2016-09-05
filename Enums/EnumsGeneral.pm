@@ -18,9 +18,9 @@ use constant {
 
 
 use constant {
-			   ResultType_OK       => 'Succes',
-			   ResultType_FAIL => 'Failure',
-			   ResultType_NA     => 'Not available'
+			   ResultType_OK       => 'succes',
+			   ResultType_FAIL => 'failure',
+			   ResultType_NA     => 'na'
 			  
 };
 

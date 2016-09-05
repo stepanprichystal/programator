@@ -291,11 +291,12 @@ sub __GetCuArea {
 	my $outFile = EnumsPaths->Client_INCAMTMP . $jobName . "cuarea";
 	
 	if(-e $outFile){
- 		print STDERR "MAYUUUUUUUUUUUUUUUU";
 		unlink($outFile);
 	}
 	
 	#my $outFile = "out_file";
+	
+	CamHelper->OpenStep( $inCAM, $jobName, $stepName );
 
 	if ($mask) {
 		$self->__GetCuAreaMask( $inCAM,        $topLayer,    $botLayer, $topMask, $botMask, $considerHole,

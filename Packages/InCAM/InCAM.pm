@@ -142,6 +142,13 @@ sub new {
 		$self->{"port"} = $defaultPort;     #default port number
 	}
 
+	$self->{"exception"} = undef ; # if some error ocured, excepto=ion is saved here
+	
+	# array of exception
+	# Here are all exception, which start 
+	# after calling method HandleException(1) and befrore calling HandleException(0)
+	$self->{"exceptions"} = (); 
+
 	# The port has not been defined. To define it you need to
 	# become root and add the following line in /etc/services
 	# genesis     56753/tcp    # Genesis port for debugging perl scripts
@@ -507,8 +514,10 @@ sub COM {
 	if ( $self->{STATUS} > 1 ) {
 
 		#print STDERR "COMMANS\n\n$self->{COMANS}\n\n STOP COMMANS\n\n";
-
-		$self->{"exception"} = InCamException->new( $self->{STATUS}, $self->{"cmdHistory"} );
+		my $ex =  InCamException->new( $self->{STATUS}, $self->{"cmdHistory"} );
+		
+		$self->{"exception"} = $ex;
+		push(@{$self->{"exceptions"}}, $ex);  
 
 		if ( $self->{"HandleException"} == 0 ) {
 			die $self->{"exception"};
@@ -531,6 +540,17 @@ sub GetStatus {
 	return $self->{STATUS};
 }
 
+# Return last whole exception object
+sub GetException {
+	my ($self) = shift;
+
+	if ( $self->{"exception"} ) {
+
+		return $self->{"exception"};
+	}
+}
+
+# Return last exception error text
 sub GetExceptionError {
 	my ($self) = shift;
 
@@ -538,6 +558,21 @@ sub GetExceptionError {
 
 		return $self->{"exception"}->Error();
 	}
+}
+
+# Return last exceptions errors text after calling method HandleException(1) 
+# and befrore calling HandleException(0)
+sub GetExceptionsError {
+	my ($self) = shift;
+	
+	my @exceptions = ();
+
+	if ( $self->{"exceptions"} ) {
+
+		@exceptions = map {$_->Error()} @{$self->{"exceptions"}};
+	}
+	
+	return \@exceptions;	
 }
 
 sub COM_test {
@@ -619,6 +654,8 @@ sub HandleException {
 	if ($value) {
 		$self->VOF();
 		$self->{"HandleException"} = 1;
+		
+		$self->{"exceptions"} = (); # clear array of exceptions
 
 	}
 	else {

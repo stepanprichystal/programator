@@ -3,7 +3,7 @@ package Managers::AsyncJobMngr::Enums;
 
 use constant {
 	ExitType_SUCCES => 'Succes',
-	ExitType_FAILED => 'Failed',
+	#ExitType_FAILED => 'Failed',
 	ExitType_FORCE  => 'Force',
 
 };

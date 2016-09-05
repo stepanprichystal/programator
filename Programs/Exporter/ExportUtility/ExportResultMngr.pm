@@ -7,7 +7,7 @@
 # - Warnings, which happend during operation
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Programs::Exporter::ExportUtility::Groups::GroupResultMngr;
+package Programs::Exporter::ExportUtility::ExportResultMngr;
 use base('Packages::ItemResult::ItemResultMngr');
 
 #3th party library

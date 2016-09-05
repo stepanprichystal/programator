@@ -109,21 +109,16 @@ sub AddNewTaskGUI {
 
 }
 
-sub __OnProduceClick{
-	my $self = shift;
-	my $taskId = shift;
-	print "produce click\n";
-	$self->__Test($taskId);
-	
-	
-}
-
 sub AddNewTask {
 	my $self = shift;
 	my $task = shift;
 
 	$self->_AddJobToQueue(  $task->GetJobId(), $task->GetTaskId() );
 }
+
+
+
+
 
 sub __SetLayout {
 
@@ -206,26 +201,6 @@ sub __SetLayout {
 
 }
 
-sub BuildGroupTableForm {
-	my $self = shift;
-
-	# class keep rows structure and group instances
-	my $units = shift;
-
-	#use aliased 'Programs::Exporter::ExportUtility::ExportUtility::Forms::GroupWrapperForm';
-	#my $form = GroupWrapperForm->new($self->{"mainFrm"});
-
-	#$self->{"szMain"}->Add( $form, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
-
-	my $groupTableForm = GroupTableForm->new( $self->{"groupStatBox"} );
-
-	$groupTableForm->InitGroupTable($units);
-
-	$self->{"groupStatBoxSz"}->Add( $groupTableForm, 0, &Wx::wxEXPAND );
-
-	#$self->{"szMain"}->Add( $groupTableForm, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
-
-}
 
 #sub __SetLayout {
 #
@@ -357,31 +332,13 @@ sub __SetLayoutGroups {
 	return $szStatBox;
 }
 
-# ========================================================================================== #
-#  PRIVATE HELPER METHOD
-# ========================================================================================== #
+ 
 
-
-sub __GroupTableRefresh{
-	my $self         = shift;
-	my $taskId = 	shift;
-	
-	my $page = $self->{"notebook"}->GetPage($taskId);
-	my $groupTable = $page->GetPageContent();
-
-	my ($w, $pageHight)         = $self->{"notebook"}->GetSizeWH();
-
-	$groupTable->RearrangeGroups($page, $pageHight);  
-	
-	
-	$page->RefreshContent();
-	
-	 
-	
-}
 # ============================================
 # Mehtods for update job queue items
 # ============================================
+ 
+
 sub SetJobItemStatus{
 	my $self         = shift;
 	my $taskId = 	shift;
@@ -404,16 +361,100 @@ sub SetJobItemProgress{
 
 sub SetJobItemResult{
 	my $self         = shift;
-	my $taskId = 	shift;
+	my $task = 	shift;
 	
-	my $jobItem = $self->{"jobQueue"}->GetItem($taskId);
-	
-	$jobItem->SetJobItemResult();
+	my $jobItem = $self->{"jobQueue"}->GetItem($task->GetTaskId());
+ 
+	$jobItem->SetExportResult($task->Result());
 }
 
 
+sub SetJobQueueErrorCnt{
+	my $self         = shift;
+	my $task = 	shift;
+
+	my $jobItem = $self->{"jobQueue"}->GetItem($task->GetTaskId());
+	
+	$jobItem->SetExportErrorCnt($task->GetErrorsCnt());
+ 
+}
+ 
+sub SetJobQueueWarningCnt{
+	my $self         = shift;
+	my $task = 	shift;
+
+	my $jobItem = $self->{"jobQueue"}->GetItem($task->GetTaskId());
+	
+	$jobItem->SetExportWarningCnt($task->GetWarningsCnt());
+ 
+}
+
+ 
+sub RefreshGroupTable{
+	my $self         = shift;
+	my $taskId = 	shift;
+	
+	my $page = $self->{"notebook"}->GetPage($taskId);
+	my $groupTable = $page->GetPageContent();
+
+	my ($w, $pageHight)         = $self->{"notebook"}->GetSizeWH();
+
+	$groupTable->RearrangeGroups($page, $pageHight);  
+	
+	
+	$page->RefreshContent();
+ 
+}
+
+ 
+sub BuildGroupTableForm {
+	my $self = shift;
+
+	# class keep rows structure and group instances
+	my $units = shift;
+
+	#use aliased 'Programs::Exporter::ExportUtility::ExportUtility::Forms::GroupWrapperForm';
+	#my $form = GroupWrapperForm->new($self->{"mainFrm"});
+
+	#$self->{"szMain"}->Add( $form, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+
+	my $groupTableForm = GroupTableForm->new( $self->{"groupStatBox"} );
+
+	$groupTableForm->InitGroupTable($units);
+
+	$self->{"groupStatBoxSz"}->Add( $groupTableForm, 0, &Wx::wxEXPAND );
+
+	#$self->{"szMain"}->Add( $groupTableForm, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+
+}
+
+# ======================================================
+# HANDLERS
+# ======================================================
 
 
+sub __JobItemSeletedChange {
+	my $self         = shift;
+	my $jobQueueItem = shift;
+
+	my $taskId = $jobQueueItem->GetTaskId();
+
+	$self->{"notebook"}->ShowPage($taskId);
+	
+	#	$self->Layout();
+	#$self->Refresh();
+
+}
+
+
+sub __OnProduceClick{
+	my $self = shift;
+	my $taskId = shift;
+	print "produce click\n";
+	$self->__Test($taskId);
+	
+	
+}
 
 sub __Test{
 	my $self         = shift;
@@ -431,19 +472,6 @@ sub __Test{
  
 }
 
-
-sub __JobItemSeletedChange {
-	my $self         = shift;
-	my $jobQueueItem = shift;
-
-	my $taskId = $jobQueueItem->GetTaskId();
-
-	$self->{"notebook"}->ShowPage($taskId);
-	
-	#	$self->Layout();
-	#$self->Refresh();
-
-}
 
 
 
@@ -468,83 +496,83 @@ sub __OnClickNew {
 	#}
 }
 
-sub __Refresh {
-	my ( $self, $frame, $event ) = @_;
-
-	#$self->_SetDestroyServerOnDemand(1);
-
-	my $txt2 = $self->_GetInfoServers();
-	my $txt  = $self->_GetInfoJobs();
-
-	$self->{"txt"}->SetLabel($txt);
-	$self->{"txt2"}->SetLabel($txt2);
-
-}
-
-sub doExport {
-	my ( $id, $inCAM ) = @_;
-
-	my $errCode = $inCAM->COM( "clipb_open_job", job => $id, update_clipboard => "view_job" );
-
-	#
-	#	$errCode = $inCAM->COM(
-	#		"open_entity",
-	#		job  => "F17116+2",
-	#		type => "step",
-	#		name => "test"
-	#	);
-
-	#return 0;
-	for ( my $i = 0 ; $i < 5 ; $i++ ) {
-
-		sleep(3);
-		$inCAM->COM(
-					 'output_layer_set',
-					 layer        => "c",
-					 angle        => '0',
-					 x_scale      => '1',
-					 y_scale      => '1',
-					 comp         => '0',
-					 polarity     => 'positive',
-					 setupfile    => '',
-					 setupfiletmp => '',
-					 line_units   => 'mm',
-					 gscl_file    => ''
-		);
-
-		$inCAM->COM(
-					 'output',
-					 job                  => $id,
-					 step                 => 'input',
-					 format               => 'Gerber274x',
-					 dir_path             => "c:/Perl/site/lib/TpvScripts/Scripts/data",
-					 prefix               => "incam1_" . $id . "_$i",
-					 suffix               => "",
-					 break_sr             => 'no',
-					 break_symbols        => 'no',
-					 break_arc            => 'no',
-					 scale_mode           => 'all',
-					 surface_mode         => 'contour',
-					 min_brush            => '25.4',
-					 units                => 'inch',
-					 coordinates          => 'absolute',
-					 zeroes               => 'Leading',
-					 nf1                  => '6',
-					 nf2                  => '6',
-					 x_anchor             => '0',
-					 y_anchor             => '0',
-					 wheel                => '',
-					 x_offset             => '0',
-					 y_offset             => '0',
-					 line_units           => 'mm',
-					 override_online      => 'yes',
-					 film_size_cross_scan => '0',
-					 film_size_along_scan => '0',
-					 ds_model             => 'RG6500'
-		);
-
-	}
-}
+#sub __Refresh {
+#	my ( $self, $frame, $event ) = @_;
+#
+#	#$self->_SetDestroyServerOnDemand(1);
+#
+#	my $txt2 = $self->_GetInfoServers();
+#	my $txt  = $self->_GetInfoJobs();
+#
+#	$self->{"txt"}->SetLabel($txt);
+#	$self->{"txt2"}->SetLabel($txt2);
+#
+#}
+#
+#sub doExport {
+#	my ( $id, $inCAM ) = @_;
+#
+#	my $errCode = $inCAM->COM( "clipb_open_job", job => $id, update_clipboard => "view_job" );
+#
+#	#
+#	#	$errCode = $inCAM->COM(
+#	#		"open_entity",
+#	#		job  => "F17116+2",
+#	#		type => "step",
+#	#		name => "test"
+#	#	);
+#
+#	#return 0;
+#	for ( my $i = 0 ; $i < 5 ; $i++ ) {
+#
+#		sleep(3);
+#		$inCAM->COM(
+#					 'output_layer_set',
+#					 layer        => "c",
+#					 angle        => '0',
+#					 x_scale      => '1',
+#					 y_scale      => '1',
+#					 comp         => '0',
+#					 polarity     => 'positive',
+#					 setupfile    => '',
+#					 setupfiletmp => '',
+#					 line_units   => 'mm',
+#					 gscl_file    => ''
+#		);
+#
+#		$inCAM->COM(
+#					 'output',
+#					 job                  => $id,
+#					 step                 => 'input',
+#					 format               => 'Gerber274x',
+#					 dir_path             => "c:/Perl/site/lib/TpvScripts/Scripts/data",
+#					 prefix               => "incam1_" . $id . "_$i",
+#					 suffix               => "",
+#					 break_sr             => 'no',
+#					 break_symbols        => 'no',
+#					 break_arc            => 'no',
+#					 scale_mode           => 'all',
+#					 surface_mode         => 'contour',
+#					 min_brush            => '25.4',
+#					 units                => 'inch',
+#					 coordinates          => 'absolute',
+#					 zeroes               => 'Leading',
+#					 nf1                  => '6',
+#					 nf2                  => '6',
+#					 x_anchor             => '0',
+#					 y_anchor             => '0',
+#					 wheel                => '',
+#					 x_offset             => '0',
+#					 y_offset             => '0',
+#					 line_units           => 'mm',
+#					 override_online      => 'yes',
+#					 film_size_cross_scan => '0',
+#					 film_size_along_scan => '0',
+#					 ds_model             => 'RG6500'
+#		);
+#
+#	}
+#}
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

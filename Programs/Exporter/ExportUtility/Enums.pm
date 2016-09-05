@@ -3,10 +3,15 @@ package Programs::Exporter::ExportUtility::Enums;
 
 use constant {
 			   EventType_ITEM_RESULT  => "itemResult",
-			   EventType_ITEM_ERROR   => "itemError",
-			   
+			  #EventType_ITEM_ERROR   => "itemError",
+			  
 			   EventType_GROUP_START => "groupExportStart",
-			   EventType_GROUP_END => "groupExportEnd"
+			   EventType_GROUP_END => "groupExportEnd",
+			   EventType_GROUP_RESULT  => "itemResult",
+			   
+			   EventType_TASK_RESULT  => "itemResult",   
+			   
+			   
 };
  
 use constant {

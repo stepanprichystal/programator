@@ -19,6 +19,8 @@ use aliased 'Programs::Exporter::ExportChecker::Enums';
 use aliased 'Packages::Events::Event';
 use aliased 'Programs::Exporter::ExportUtility::ExportUtility::Forms::Group::GroupItemForm';
 use aliased 'Programs::Exporter::ExportUtility::ExportUtility::Forms::Group::ItemForm';
+use aliased 'Programs::Exporter::ExportUtility::ExportUtility::Forms::Group::GroupStatusForm';
+
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
@@ -54,12 +56,11 @@ sub __AddGroupItem {
 	# if group still doesnt exist, add it
 	unless ( scalar( grep { $_ eq $title } @{ $self->{"groups"} } ) ) {
 
-		push(@{ $self->{"groups"} }, $title);
+		push( @{ $self->{"groups"} }, $title );
 
 		my $item = GroupItemForm->new( $self->{"pnlBody"}, $title );
 		$self->{"bodySizer"}->Add( $item, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
 
-		 
 	}
 
 }
@@ -67,31 +68,24 @@ sub __AddGroupItem {
 sub AddItem {
 	my $self       = shift;
 	my $resultItem = shift;
-	
-	
-	
+
 	my $groupName = $resultItem->GetGroup();
-	my $subItem = 0;
-	
-	if($groupName){
+	my $subItem   = 0;
+
+	if ($groupName) {
 		$self->__AddGroupItem($groupName);
 		$subItem = 1;
 	}
-	
 
 	my $item = ItemForm->new( $self->{"pnlBody"}, $resultItem->ItemId(), $subItem );
 	$item->SetErrors( $resultItem->GetErrorCount() );
 	$item->SetWarnings( $resultItem->GetWarningCount() );
- 
-	$self->{"bodySizer"}->Add( $item, 0, &Wx::wxEXPAND  );
+
+	$self->{"bodySizer"}->Add( $item, 0, &Wx::wxEXPAND );
+
 	return 0;
 
 	#$self->{"bodySizer"}->Layout();
-
-	
-	
-	
-
 }
 
 sub Init {
@@ -137,6 +131,7 @@ sub __SetLayout {
 	# DEFINE CONTROLS
 
 	my $headerTxt = Wx::StaticText->new( $pnlHeader, -1, "Default title" );
+	my $groupStatus = GroupStatusForm->new($pnlHeader);
 
 	my $height = 20;
 	$height += rand(300);
@@ -147,7 +142,8 @@ sub __SetLayout {
 
 	# BUILD STRUCTURE
 
-	$szHeader->Add( $headerTxt, 1, &Wx::wxEXPAND | &Wx::wxALL, 2 );
+	$szHeader->Add( $headerTxt,   1, &Wx::wxEXPAND | &Wx::wxALL, 2 );
+	$szHeader->Add( $groupStatus, 0, &Wx::wxEXPAND | &Wx::wxALL, 2 );
 
 	#$szBody->Add( $pnl, 1, &Wx::wxEXPAND | &Wx::wxALL, 2 );
 
@@ -168,15 +164,41 @@ sub __SetLayout {
 	$self->{"szHeaderBody"} = $szHeaderBody;
 	$self->{"pnlHeader"}    = $pnlHeader;
 	$self->{"pnlBody"}      = $pnlBody;
+	$self->{"groupStatus"}  = $groupStatus;
 
 }
-
- 
 
 sub GetParentForGroup {
 	my $self = shift;
 
 	return $self->{"pnlBody"};
+}
+
+sub SetExporting {
+	my $self = shift;
+
+	$self->{"groupStatus"}->SetExporting();
+}
+
+sub SetErrorCnt {
+	my $self = shift;
+	my $cnt  = shift;
+
+	$self->{"groupStatus"}->SetErrorCnt($cnt);
+}
+
+sub SetWarningCnt {
+	my $self = shift;
+	my $cnt  = shift;
+
+	$self->{"groupStatus"}->SetWarningCnt($cnt);
+}
+
+sub SetResult {
+	my $self   = shift;
+	my $result = shift;
+
+	$self->{"groupStatus"}->SetResult($result);
 }
 
 1;

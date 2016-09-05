@@ -11,7 +11,7 @@ use warnings;
 
 #local library
 #use aliased 'Programs::Exporter::ExportChecker::Enums';
-use aliased 'Programs::Exporter::ExportUtility::Groups::GroupResultMngr';
+use aliased 'Programs::Exporter::ExportUtility::ExportResultMngr';
 use aliased 'Programs::Exporter::ExportUtility::Enums';
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -23,7 +23,9 @@ sub new {
 
 	# state data for gui controls
 	 
-	$self->{"itemsMngr"} = GroupResultMngr->new();
+	$self->{"itemsMngr"} = ExportResultMngr->new();
+	
+	$self->{"groupMngr"} = ExportResultMngr->new();
 	
 	# state of whole group. Value is enum GroupState_xx
 	$self->{"state"} = Enums->GroupState_WAITING;
@@ -55,11 +57,7 @@ sub GetGroupState {
 }
 
 
-sub GetAllItems {
-	my $self  = shift;
-	
-	return $self->{"itemsMngr"}->GetAllItems();
-}
+
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#

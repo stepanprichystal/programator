@@ -113,6 +113,8 @@ sub __OnJobStateChanged {
 	my $taskId        = shift;
 	my $taskState       = shift;
 	my $taskStateDetail = shift;
+	
+	my $task = $self->__GetTaskById($taskId);
 
 
 	my $status = "";
@@ -138,14 +140,25 @@ sub __OnJobStateChanged {
 	}elsif ( $taskState eq EnumsMngr->JobState_DONE ) {
 		
 			$status = "Job export finished.";
-
-		#	 ExitType_SUCCES => 'Succes',
+			
+			 
+			# Refresh GUI - job queue
+			
+			 #	 ExitType_SUCCES => 'Succes',
 		#	ExitType_FAILED => 'Failed',
 		#	ExitType_FORCE  => 'Force',
-
+		
+			my $aborted = 0;
+			if ($taskStateDetail eq EnumsMngr->ExitType_FORCE){
+				$aborted = 1;
+			}
+			
+			$task->ProcessTaskDone($aborted);
+			$self->{"form"}->SetJobItemResult( $task);
 	}
 	
 	$self->{"form"}->SetJobItemStatus( $taskId, $status);
+	
 
 }
 
@@ -178,25 +191,66 @@ sub __OnJobMessageEvtHandler {
 
 	#print "Exporter utility::  task id: " . $taskId . " - messType: " . $messType. "\n";
 
+	# CATCH GROUP ITEM MESSAGE
+
 	if ( $messType eq Enums->EventType_ITEM_RESULT ) {
 
+		# Update data model 
+		
 		$task->ProcessItemResult($data);
+ 
+		# Refresh GUI - group table
+		
+		$self->{"form"}->RefreshGroupTable($taskId);
+		
+		# Refresh GUI - job queue
+		
+		$self->{"form"}->SetJobQueueErrorCnt($task);
+		$self->{"form"}->SetJobQueueWarningCnt($task);
 
-		#$self->{"form"}->{"mainFrm"}->Layout();
-		#$self->{"form"}->{"mainFrm"}->Refresh();
+	}
+	
+	# CATCH GROUP MESSAGE
+	
+	if ( $messType eq Enums->EventType_GROUP_RESULT ) {
 
-		$self->{"form"}->__GroupTableRefresh($taskId);
+		# Update data model 
 
-		#$self->{"form"}->{"mainFrm"}->Layout();
-		#$self->{"form"}->{"mainFrm"}->Refresh();
+		$task->ProcessGroupResult($data);
+		
+		# Refresh GUI - job queue
+		$self->{"form"}->SetJobQueueErrorCnt($task);
+		$self->{"form"}->SetJobQueueWarningCnt($task);
+		
+	}elsif ( $messType eq Enums->EventType_GROUP_START ) {
+
+		# Update group form status
+
+		$task->ProcessGroupStart($data);
 
 	}
 	elsif ( $messType eq Enums->EventType_GROUP_END ) {
 
+		# Update group form status
 		$task->ProcessGroupEnd($data);
 
-		$self->{"form"}->__JobQueueRefresh($taskId);
+ 
 	}
+	
+	
+	# CATCH TASK MESSAGE
+	
+	if ( $messType eq Enums->EventType_TASK_RESULT ) {
+
+		# Update data model
+		$task->ProcessTaskResult($data);
+		
+		# Refresh GUI - job queue
+		$self->{"form"}->SetJobQueueErrorCnt($task);
+		$self->{"form"}->SetJobQueueWarningCnt($task);
+		 
+	}
+	
 
 	#TESTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT
 	#print "Exporter utility::  job id: " . $jobGUID . " - messType: " . $messType . " - data: " . $data . "\n";
@@ -402,71 +456,71 @@ sub __OnClick {
 
 	$self->__AddNewJob( $jobId, $exportData );
 }
-
-sub doExport {
-	my ( $id, $inCAM ) = @_;
-
-	my $errCode = $inCAM->COM( " clipb_open_job ", job => $id, update_clipboard => " view_job " );
-
-	#
-	#	$errCode = $inCAM->COM(
-	#		" open_entity ",
-	#		job  => " F17116 + 2 ",
-	#		type => " step ",
-	#		name => " test "
-	#	);
-
-	#return 0;
-	for ( my $i = 0 ; $i < 5 ; $i++ ) {
-
-		sleep(3);
-		$inCAM->COM(
-					 'output_layer_set',
-					 layer        => " c ",
-					 angle        => '0',
-					 x_scale      => '1',
-					 y_scale      => '1',
-					 comp         => '0',
-					 polarity     => 'positive',
-					 setupfile    => '',
-					 setupfiletmp => '',
-					 line_units   => 'mm',
-					 gscl_file    => ''
-		);
-
-		$inCAM->COM(
-					 'output',
-					 job                  => $id,
-					 step                 => 'input',
-					 format               => 'Gerber274x',
-					 dir_path             => " c : /Perl/site / lib / TpvScripts / Scripts / data ",
-					 prefix               => " incam1_ " . $id . " _ $i",
-					 suffix               => "",
-					 break_sr             => 'no',
-					 break_symbols        => 'no',
-					 break_arc            => 'no',
-					 scale_mode           => 'all',
-					 surface_mode         => 'contour',
-					 min_brush            => '25.4',
-					 units                => 'inch',
-					 coordinates          => 'absolute',
-					 zeroes               => 'Leading',
-					 nf1                  => '6',
-					 nf2                  => '6',
-					 x_anchor             => '0',
-					 y_anchor             => '0',
-					 wheel                => '',
-					 x_offset             => '0',
-					 y_offset             => '0',
-					 line_units           => 'mm',
-					 override_online      => 'yes',
-					 film_size_cross_scan => '0',
-					 film_size_along_scan => '0',
-					 ds_model             => 'RG6500'
-		);
-
-	}
-}
+#
+#sub doExport {
+#	my ( $id, $inCAM ) = @_;
+#
+#	my $errCode = $inCAM->COM( " clipb_open_job ", job => $id, update_clipboard => " view_job " );
+#
+#	#
+#	#	$errCode = $inCAM->COM(
+#	#		" open_entity ",
+#	#		job  => " F17116 + 2 ",
+#	#		type => " step ",
+#	#		name => " test "
+#	#	);
+#
+#	#return 0;
+#	for ( my $i = 0 ; $i < 5 ; $i++ ) {
+#
+#		sleep(3);
+#		$inCAM->COM(
+#					 'output_layer_set',
+#					 layer        => " c ",
+#					 angle        => '0',
+#					 x_scale      => '1',
+#					 y_scale      => '1',
+#					 comp         => '0',
+#					 polarity     => 'positive',
+#					 setupfile    => '',
+#					 setupfiletmp => '',
+#					 line_units   => 'mm',
+#					 gscl_file    => ''
+#		);
+#
+#		$inCAM->COM(
+#					 'output',
+#					 job                  => $id,
+#					 step                 => 'input',
+#					 format               => 'Gerber274x',
+#					 dir_path             => " c : /Perl/site / lib / TpvScripts / Scripts / data ",
+#					 prefix               => " incam1_ " . $id . " _ $i",
+#					 suffix               => "",
+#					 break_sr             => 'no',
+#					 break_symbols        => 'no',
+#					 break_arc            => 'no',
+#					 scale_mode           => 'all',
+#					 surface_mode         => 'contour',
+#					 min_brush            => '25.4',
+#					 units                => 'inch',
+#					 coordinates          => 'absolute',
+#					 zeroes               => 'Leading',
+#					 nf1                  => '6',
+#					 nf2                  => '6',
+#					 x_anchor             => '0',
+#					 y_anchor             => '0',
+#					 wheel                => '',
+#					 x_offset             => '0',
+#					 y_offset             => '0',
+#					 line_units           => 'mm',
+#					 override_online      => 'yes',
+#					 film_size_cross_scan => '0',
+#					 film_size_along_scan => '0',
+#					 ds_model             => 'RG6500'
+#		);
+#
+#	}
+#}
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

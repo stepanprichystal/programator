@@ -59,7 +59,9 @@ sub AddItem {
 sub Succes {
 	my $self = shift;
 
-	my @failed = grep { $_->{"result"} eq Enums->ItemResult_Fail } @{ $self->{"itemResults"} };
+	my @failed = grep { $_->{"result"} eq Enums->ItemResult_Fail  } @{ $self->{"itemResults"} };
+	
+	
 
 	unless ( scalar(@failed) ) {
 		return 1;
@@ -104,6 +106,14 @@ sub GetErrorsStr {
 	return $str;
 }
 
+
+sub GetErrorsCnt {
+	my $self   = shift;
+	
+	my @errors = $self->GetErrors();
+	return scalar(@errors);
+}
+
 sub GetWarningsStr {
 	my $self = shift;
 	my $str  = "";
@@ -136,6 +146,13 @@ sub GetWarnings {
 	}
 
 	return @warnings;
+}
+
+sub GetWarningsCnt {
+	my $self   = shift;
+	
+	my @warnings = $self->GetWarnings();
+	return scalar(@warnings);
 }
 
 sub GetFailResults {
