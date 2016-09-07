@@ -13,10 +13,15 @@ use File::Spec;
 use Devel::StackTrace;
 
 #local library
+use aliased 'Enums::EnumsPaths';
 
 #-------------------------------------------------------------------------------------------#
 #   Package methods
 #-------------------------------------------------------------------------------------------#
+
+
+
+
 
 #Add error message to special hash to array of error
 sub AddError{

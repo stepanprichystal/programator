@@ -40,6 +40,7 @@ sub SetStage {
 	# get plated drill layers, which goes from <$layerName>
 	@drillLayer = CamDrilling->GetPltNCLayers( $inCAM, $jobId );
 	CamDrilling->AddLayerStartStop( $inCAM, $jobId, \@drillLayer );
+	
 	@drillLayer = grep { $_->{"gROWdrl_start_name"} eq $layerName } @drillLayer;
 	
 	@drillLayer = map { $_->{"gROWname"} } @drillLayer;

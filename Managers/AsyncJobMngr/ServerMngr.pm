@@ -275,8 +275,8 @@ sub __CreateServer {
 
 	#run InCAM editor with serverscript
 	Win32::Process::Create( $processObj, $inCAMPath,
-							"InCAM.exe -x -s" . GeneralHelper->Root() . "\\Managers\\AsyncJobMngr\\Server\\ServerExporter.pl " . $freePort,
-							0, NORMAL_PRIORITY_CLASS, "." )
+							"InCAM.exe -s" . GeneralHelper->Root() . "\\Managers\\AsyncJobMngr\\Server\\ServerExporter.pl " . $freePort,
+							0, NORMAL_PRIORITY_CLASS | CREATE_NO_WINDOW, "." )
 	  || die "$!\n";
 
 	$pidInCAM = $processObj->GetProcessID();
