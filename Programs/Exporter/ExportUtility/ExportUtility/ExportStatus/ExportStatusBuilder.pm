@@ -49,8 +49,8 @@ sub GetStatusKeys{
 	
 	#information necessary for making decision which nif builder use
 	# TODO odkomentovat
-	my $typeCu   = JobHelper->GetPcbType( $jobId );
-	
+	#my $typeCu   = JobHelper->GetPcbType( $jobId );
+	my $typeCu   = EnumsGeneral->PcbTyp_MULTILAYER;
 	 
 	 
 

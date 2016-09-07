@@ -12,12 +12,12 @@ use aliased 'Packages::InCAM::InCAM';
 
 
 
-print "\nforeach output:\n";
+print "\nEnvironment vars:\n";
 foreach my $key (keys %ENV)
 {
   # do whatever you want with $key and $value here ...
   my $value = $ENV{$key};
-  print "  $key costs $value\n";
+  print "  $key = $value\n";
 }
 
 print 1;

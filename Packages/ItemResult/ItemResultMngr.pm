@@ -56,6 +56,32 @@ sub AddItem {
 	push( @{ $self->{"itemResults"} }, $item );
 }
 
+sub AddItems {
+	my $self = shift;
+	my @items = @{shift(@_)};
+
+	#my $result = shift;
+
+	#my $groupId = $self->{"groupId"};
+
+	push( @{ $self->{"itemResults"} }, @items );
+}
+
+sub GetAllItems{
+	my $self = shift;
+	
+	return @{ $self->{"itemResults"}};
+}
+
+
+sub Clear {
+	my $self = shift;
+
+	my @itemsResult = ();
+	$self->{"itemResults"} = \@itemsResult;
+
+}
+
 sub Succes {
 	my $self = shift;
 

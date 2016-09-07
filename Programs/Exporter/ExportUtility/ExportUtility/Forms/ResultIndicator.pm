@@ -75,6 +75,8 @@ sub __SetLayout {
 	 
 
 	# SET EVENTS
+	
+
 	 
 	# BUILD STRUCTURE OF LAYOUT
 	$szMain->Add( $statBtmError,    0, &Wx::wxEXPAND | &Wx::wxALL, 0 );

@@ -13,6 +13,7 @@ use JSON;
 
 #local library
 use aliased "Enums::EnumsPaths";
+use aliased "Enums::EnumsGeneral";
 use aliased "Helpers::FileHelper";
 use aliased 'Programs::Exporter::ExportUtility::ExportUtility::ExportStatus::ExportStatusBuilder';
 use aliased 'Helpers::JobHelper';
@@ -89,7 +90,7 @@ sub UpdateStatusFile{
 	my $exportResult = shift;
 	
 	
-	if($exportResult == 1){
+	if($exportResult eq EnumsGeneral->ResultType_OK){
 		
 		 my %hashKeys = $self->__ReadExportStatus();
 		 

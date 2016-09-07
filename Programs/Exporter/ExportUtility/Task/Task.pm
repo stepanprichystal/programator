@@ -11,11 +11,10 @@ use warnings;
 
 #local library
 use aliased 'Programs::Exporter::UnitEnums';
-use aliased 'Programs::Exporter::ExportUtility::Groups::NifExport::NifUnit';
-use aliased 'Enums::EnumsGeneral';
 
-#use aliased 'Programs::Exporter::ExportUtility::Groups::NCExport::NCUnit';
-use aliased 'Programs::Exporter::ExportUtility::Groups::NCUnit';
+use aliased 'Enums::EnumsGeneral';
+use aliased 'Programs::Exporter::ExportUtility::Groups::NifExport::NifUnit';
+use aliased 'Programs::Exporter::ExportUtility::Groups::NCExport::NCUnit';
 use aliased 'Programs::Exporter::ExportUtility::Groups::NC2Unit';
 use aliased 'Programs::Exporter::ExportUtility::Groups::NC3Unit';
 use aliased 'Programs::Exporter::ExportUtility::Groups::NC4Unit';
@@ -39,6 +38,10 @@ sub new {
 	$self->{"exportData"} = shift;
 
 	$self->{"taskResultMngr"} = ExportResultMngr->new();
+	
+	$self->{"groupResultMngr"} = ExportResultMngr->new();
+	 
+	$self->{"itemResultMngr"} = ExportResultMngr->new();
 
 	$self->{"units"}        = Units->new();
 	$self->{"exportStatus"} = ExportStatus->new( $self->{"jobId"} );
@@ -114,7 +117,11 @@ sub ProcessItemResult {
 
 	$unit->ProcessItemResult( $itemId, $itemResult, $itemGroup, $itemErrors, $itemWarnings );
 
-	#$unit->RefreshGUI();
+	# Fill/update items result manager
+	 my @allItems = $self->{"units"}->GetGroupItemResultMngr()->GetAllItems();
+	
+	$self->{"itemResultMngr"}->Clear();
+	$self->{"itemResultMngr"}->AddItems(\@allItems);
 }
 
 sub ProcessGroupResult {
@@ -130,8 +137,14 @@ sub ProcessGroupResult {
 	my $groupWarnings = $data->{"warnings"};
 
 	$unit->ProcessGroupResult( $groupResult, $groupErrors, $groupWarnings );
-
-	#$unit->RefreshGUI();
+	
+ 
+	
+	my @allItems = $self->{"units"}->GetGroupResultMngr()->GetAllItems();
+	
+	$self->{"groupResultMngr"}->Clear();
+	$self->{"groupResultMngr"}->AddItems(\@allItems);
+	 
 }
 
 sub ProcessGroupStart {
@@ -156,6 +169,9 @@ sub ProcessGroupEnd {
 	my $unit = $self->__GetUnit($unitId);
  
 	$unit->ProcessGroupEnd( );
+	
+	
+	$self->{"exportStatus"}->UpdateStatusFile($unitId, $unit->Result());
 
 	# call process group end
 }
@@ -177,7 +193,6 @@ sub ProcessTaskDone {
 	my $self = shift;
 	my $aborted = shift;
 
-	 
 	$self->{"aborted"} = $aborted;
 
 }
@@ -271,6 +286,32 @@ sub GetExportData {
 	return $self->{"exportData"};
 }
 
+
+sub GetJobAborted{
+	my $self   = shift;
+	
+	return $self->{"aborted"};
+}
+
+
+sub GetTaskResultMngr {
+	my $self  = shift;
+	
+	return $self->{"taskResultMngr"};
+}
+
+sub GetGroupResultMngr {
+	my $self  = shift;
+	return $self->{"groupResultMngr"};
+}
+
+sub GetGroupItemResultMngr {
+	my $self  = shift;
+	
+	return $self->{"itemResultMngr"};
+}
+
+
 sub __GetUnit {
 	my $self   = shift;
 	my $unitId = shift;
@@ -284,40 +325,41 @@ sub __GetUnitClass {
 	my $unitId = shift;
 
 	my $unit;
+	my $jobId = $self->{"jobId"};
 
 	if ( $unitId eq UnitEnums->UnitId_NIF ) {
 
-		$unit = NifUnit->new();
+		$unit = NifUnit->new($jobId);
 
 	}
 	elsif ( $unitId eq UnitEnums->UnitId_NC ) {
 
 		#$unit = NifUnit->new();
-		$unit = NCUnit->new();
+		$unit = NCUnit->new($jobId);
 
 	}
 	elsif ( $unitId eq UnitEnums->UnitId_NC2 ) {
 
 		#$unit = NifUnit->new();
-		$unit = NC2Unit->new();
+		$unit = NC2Unit->new($jobId);
 
 	}
 	elsif ( $unitId eq UnitEnums->UnitId_NC3 ) {
 
 		#$unit = NifUnit->new();
-		$unit = NC3Unit->new();
+		$unit = NC3Unit->new($jobId);
 
 	}
 	elsif ( $unitId eq UnitEnums->UnitId_NC4 ) {
 
 		#$unit = NifUnit->new();
-		$unit = NC4Unit->new();
+		$unit = NC4Unit->new($jobId);
 
 	}
 	elsif ( $unitId eq UnitEnums->UnitId_NC5 ) {
 
 		#$unit = NifUnit->new();
-		$unit = NC5Unit->new();
+		$unit = NC5Unit->new($jobId);
 
 	}
 

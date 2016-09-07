@@ -16,6 +16,7 @@ use warnings;
 use aliased "Packages::Events::Event";
 use aliased 'Programs::Exporter::ExportChecker::Enums';
 use aliased 'Enums::EnumsGeneral';
+use aliased 'Packages::ItemResult::ItemResultMngr';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods, requested by IUnit interface
@@ -25,15 +26,13 @@ sub new {
 	my $self = shift;
 	$self = {};
 	bless $self;
-	
+
 	$self->{"units"} = undef;
 
 	#$self->{"onCheckEvent"} = Event->new();
 
 	return $self;    # Return the reference to the hash.
 }
-
-
 
 sub Init {
 	my $self = shift;
@@ -44,42 +43,38 @@ sub Init {
 	$self->{"units"} = \@units;
 
 }
- 
- 
-sub GetProgress{
+
+sub GetProgress {
 	my $self = shift;
-	
+
 	my $total = 0;
-	
+
 	foreach my $unit ( @{ $self->{"units"} } ) {
 
-		 $total += $unit->GetProgress();
+		$total += $unit->GetProgress();
 
 	}
-	
-	$total = int($total/scalar(@{ $self->{"units"} }));
+
+	$total = int( $total / scalar( @{ $self->{"units"} } ) );
 
 	return $total;
 
 }
- 
- 
- sub GetUnitById {
-	my $self = shift;
+
+sub GetUnitById {
+	my $self   = shift;
 	my $unitId = shift;
 
 	foreach my $unit ( @{ $self->{"units"} } ) {
 
-		if( $unitId eq $unit->{"unitId"}){
+		if ( $unitId eq $unit->{"unitId"} ) {
 			return $unit;
-		} 
+		}
 	}
 }
 
- 
 sub GetExportClass {
 	my $self = shift;
-	
 
 	my %exportClasses = ();
 
@@ -92,52 +87,76 @@ sub GetExportClass {
 	return %exportClasses;
 }
 
-
-
-sub GetErrorsCnt{
-	my $self  = shift;
+sub GetErrorsCnt {
+	my $self = shift;
 
 	my $cnt = 0;
-	
+
 	foreach my $unit ( @{ $self->{"units"} } ) {
-		 $cnt += $unit->GetErrorsCnt()  	 
+		$cnt += $unit->GetErrorsCnt();
 	}
-	
-	return $cnt;
-}
-	
 
-
-sub GetWarningsCnt{
-	my $self  = shift;
-
-	my $cnt = 0;
-	
-	foreach my $unit ( @{ $self->{"units"} } ) {
-		 $cnt += $unit->GetWarningsCnt()  	 
-	}
-	
 	return $cnt;
 }
 
+sub GetWarningsCnt {
+	my $self = shift;
 
-sub Result{
-	my $self  = shift;
-	
+	my $cnt = 0;
+
+	foreach my $unit ( @{ $self->{"units"} } ) {
+		$cnt += $unit->GetWarningsCnt();
+	}
+
+	return $cnt;
+}
+
+sub Result {
+	my $self = shift;
+
 	my $result = EnumsGeneral->ResultType_OK;
-	
+
 	foreach my $unit ( @{ $self->{"units"} } ) {
 
-		if( $unit->Result() eq EnumsGeneral->ResultType_FAIL ){
-			
+		if ( $unit->Result() eq EnumsGeneral->ResultType_FAIL ) {
+
 			$result = EnumsGeneral->ResultType_FAIL;
 		}
-		 
+
 	}
-	
+
 	return $result;
 }
 
+sub GetGroupItemResultMngr {
+	my $self = shift;
+
+	my $resultMngr = ItemResultMngr->new();
+
+	foreach my $unit ( @{ $self->{"units"} } ) {
+
+		my @allItems = $unit->GetGroupItemResultMngr()->GetAllItems();
+		$resultMngr->AddItems( \@allItems );
+
+	}
+
+	return $resultMngr;
+}
+
+sub GetGroupResultMngr {
+	my $self = shift;
+
+	my $resultMngr = ItemResultMngr->new();
+
+	foreach my $unit ( @{ $self->{"units"} } ) {
+
+		my @allItems = $unit->GetGroupResultMngr()->GetAllItems();
+		$resultMngr->AddItems( \@allItems );
+
+	}
+
+	return $resultMngr;
+}
 
 # ===================================================================
 # Helper method not requested by interface IUnit

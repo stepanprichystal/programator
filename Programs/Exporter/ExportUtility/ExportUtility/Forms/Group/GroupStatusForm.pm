@@ -28,6 +28,10 @@ sub new {
 
 	my $self = $class->SUPER::new( $parent, -1, [ -1, -1 ], [ 100, 25 ] );
 
+	$self->{"jobId"}           = shift;
+	$self->{"resultItemMngr"}  = shift;
+	$self->{"resultGroupMngr"} = shift;
+
 	bless($self);
 
 	$self->__SetLayout();
@@ -40,24 +44,34 @@ sub __SetLayout {
 
 	#define panels
 
-	$self->SetBackgroundColour(  Wx::Colour->new( 215, 230, 251 ) );    #gray
+	$self->SetBackgroundColour( Wx::Colour->new( 215, 230, 251 ) );    #gray
 
 	# DEFINE CONTROLS
 
 	my $szMain = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
 
 	my $statusTxt = Wx::StaticText->new( $self, -1, "", [ -1, -1 ], [ 100, 20 ] );
-	$statusTxt->SetForegroundColour( Wx::Colour->new(100,100,100)); # light gray
+	$statusTxt->SetForegroundColour( Wx::Colour->new( 100, 100, 100 ) );    # light gray
 
-	my $groupErrInd  = ErrorIndicator->new( $self, EnumsGeneral->MessageType_ERROR,   15 );
-	my $groupWarnInd = ErrorIndicator->new( $self, EnumsGeneral->MessageType_WARNING, 15 );
+	my $groupErrInd  = ErrorIndicator->new( $self, EnumsGeneral->MessageType_ERROR,   15, undef, $self->{"jobId"} );
+	my $groupWarnInd = ErrorIndicator->new( $self, EnumsGeneral->MessageType_WARNING, 15, undef, $self->{"jobId"} );
 	$groupErrInd->Hide();
-		$groupWarnInd->Hide();
+	$groupWarnInd->Hide();
+
+	$groupErrInd->AddMenu();
+	$groupErrInd->AddMenuItem( "Group", $self->{"resultGroupMngr"} );
+	$groupErrInd->AddMenuItem( "Items", $self->{"resultItemMngr"} );
+
+	$groupWarnInd->AddMenu();
+	$groupWarnInd->AddMenuItem( "Group", $self->{"resultGroupMngr"} );
+	$groupWarnInd->AddMenuItem( "Items", $self->{"resultItemMngr"} );
+
+	 
 	# SET EVENTS
 
 	# BUILD STRUCTURE OF LAYOUT
-	$szMain->Add( $statusTxt,   1, &Wx::wxEXPAND | &Wx::wxALL, 3 );
-	$szMain->Add( $groupErrInd, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szMain->Add( $statusTxt,    1, &Wx::wxEXPAND | &Wx::wxALL, 3 );
+	$szMain->Add( $groupErrInd,  0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 	$szMain->Add( $groupWarnInd, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 
 	$self->SetSizer($szMain);
@@ -66,7 +80,7 @@ sub __SetLayout {
 	$self->{"groupErrInd"}  = $groupErrInd;
 	$self->{"groupWarnInd"} = $groupWarnInd;
 	$self->{"statusTxt"}    = $statusTxt;
-		$self->{"szMain"}    = $szMain;
+	$self->{"szMain"}       = $szMain;
 }
 
 sub SetStatus {
@@ -75,8 +89,6 @@ sub SetStatus {
 
 	$self->{"statusTxt"}->SetLabel($value);
 }
-
- 
 
 sub SetErrorCnt {
 	my $self = shift;
@@ -87,9 +99,9 @@ sub SetErrorCnt {
 	if ( $cnt > 0 ) {
 		$self->{"groupErrInd"}->Show(1);
 		$self->__SetColor("red");
-		
+
 	}
-	
+
 	#$self->{"szMain"}->Layout();
 
 }
@@ -103,9 +115,9 @@ sub SetWarningCnt {
 	if ( $cnt > 0 ) {
 		$self->{"groupWarnInd"}->Show(1);
 		$self->__SetColor("red");
-		
+
 	}
-	
+
 	#$self->{"szMain"}->Layout();
 }
 
@@ -122,25 +134,25 @@ sub SetResult {
 
 		$self->__SetColor("red");
 	}
-	
+
 	$self->{"statusTxt"}->SetLabel("");
 
 }
 
-sub __SetColor{
-	my $self   = shift;
+sub __SetColor {
+	my $self  = shift;
 	my $color = shift;
-	
+
 	if ( $color eq "green" ) {
 
 		$self->SetBackgroundColour( Wx::Colour->new( 193, 240, 193 ) );    #green
 
 	}
-	elsif (  $color eq "red" ) {
+	elsif ( $color eq "red" ) {
 
 		$self->SetBackgroundColour( Wx::Colour->new( 255, 204, 204 ) );    #red
 	}
-	
+
 	$self->Refresh();
 }
 

@@ -107,9 +107,9 @@ sub _AddJobToQueue {
 
 	
 	# TODO SMAZAT
-	#$jobInfo{"port"}  = undef;
-	#$jobInfo{"state"} = Enums->JobState_RUNNING;
-	#$self->{"threadMngr"}->RunNewExport( $uniqueId, $jobInfo{"port"}, $pcbId );
+#	$jobInfo{"port"}  = undef;
+#	$jobInfo{"state"} = Enums->JobState_RUNNING;
+#	$self->{"threadMngr"}->RunNewExport( $uniqueId, $jobInfo{"port"}, $pcbId );
 
 	 
 	$self->{'onJobStateChanged'}->Do( $jobInfo{"jobGUID"}, $jobInfo{"state"} );
@@ -281,7 +281,7 @@ sub _AbortJob {
 	my @j       = @{ $self->{"jobs"} };
 
 	#my $i = ( grep { $j[$_]->{"jobGUID"} eq $jobGUID } 0 .. $#j )[0];
-	my $i = ( grep { $j[$_]->{"pcbId"} eq $jobGUID } 0 .. $#j )[0];
+	my $i = ( grep { $j[$_]->{"jobGUID"} eq $jobGUID } 0 .. $#j )[0];
 
 	unless ( defined $i ) {
 
@@ -406,7 +406,8 @@ sub __SetLayout {
 		$parent,                   # parent window
 		-1,                        # ID -1 means any
 		$title,                    # title
-		&Wx::wxDefaultPosition,    # window position
+		
+		[-1, -1],    # window position
 		\@dimension                # size
 		                           #&Wx::wxSYSTEM_MENU | &Wx::wxCAPTION | &Wx::wxCLIP_CHILDREN | &Wx::wxRESIZE_BORDER | &Wx::wxMINIMIZE_BOX
 	);

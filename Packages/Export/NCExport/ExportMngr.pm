@@ -131,9 +131,9 @@ sub ExportItemsCount{
 		my $self = shift;
 		
 		my $totalCnt= 0;
-				$totalCnt += 8;
-		#$totalCnt += scalar(@{$self->{"pltLayers"}});
-		#$totalCnt += scalar(@{$self->{"npltLayers"}});
+				#$totalCnt += 8;
+		$totalCnt += scalar(@{$self->{"pltLayers"}});
+		$totalCnt += scalar(@{$self->{"npltLayers"}});
 		
  		$totalCnt ++; # nc merging
 		

@@ -8,7 +8,7 @@
 # 3) View - only display data, which are passed from model by presenter class
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Programs::Exporter::ExportUtility::Groups::NCUnit;
+package Programs::Exporter::ExportUtility::Groups::NCExport::NCUnit;
 use base 'Programs::Exporter::ExportUtility::Groups::UnitBase';
 
 #use Class::Interface;
@@ -25,7 +25,7 @@ use warnings;
  
 use aliased 'Programs::Exporter::UnitEnums';
 use aliased 'Programs::Exporter::ExportUtility::ExportUtility::Forms::Group::GroupWrapperForm';
-use aliased 'Programs::Exporter::ExportUtility::Groups::NifExport::NifExport';
+use aliased 'Programs::Exporter::ExportUtility::Groups::NCExport::NCExport';
 use aliased 'Programs::Exporter::ExportUtility::Groups::GroupData';
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -41,7 +41,7 @@ sub new {
 	#uique key within all units
 	$self->{"unitId"} = UnitEnums->UnitId_NC;
  
-	$self->{"unitExport"} = NifExport->new($self->{"unitId"});
+	$self->{"unitExport"} = NCExport->new($self->{"unitId"});
 	
 	$self->{"groupData"} = GroupData->new();
 

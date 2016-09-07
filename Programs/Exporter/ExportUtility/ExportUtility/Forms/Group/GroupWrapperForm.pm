@@ -20,24 +20,33 @@ use aliased 'Packages::Events::Event';
 use aliased 'Programs::Exporter::ExportUtility::ExportUtility::Forms::Group::GroupItemForm';
 use aliased 'Programs::Exporter::ExportUtility::ExportUtility::Forms::Group::ItemForm';
 use aliased 'Programs::Exporter::ExportUtility::ExportUtility::Forms::Group::GroupStatusForm';
+use aliased 'Packages::ItemResult::ItemResultMngr';
 
 #-------------------------------------------------------------------------------------------#
-#  Package methods
+#  Package methods 
 #-------------------------------------------------------------------------------------------#
 
 sub new {
-	my ( $class, $parent ) = @_;
-
+	my $class = shift;
+	my $parent = shift;
+ 
+	
 	my $self = $class->SUPER::new($parent);
 
 	bless($self);
 
-	# contains names of all group item
-	my @groups = ();
-	$self->{"groups"} = \@groups;
+
 
 	#$self->{"state"} = Enums->GroupState_ACTIVEON;
-
+	$self->{"jobId"}  = shift;
+	$self->{"resultItemMngr"}  = shift;
+	$self->{"resultGroupMngr"}  = shift;
+	
+		# contains names of all group item
+	my @groups = ();
+	$self->{"groups"} = \@groups;
+	
+	
 	$self->__SetLayout();
 
 	#$self->{"column"} = undef;
@@ -77,11 +86,11 @@ sub AddItem {
 		$subItem = 1;
 	}
 
-	my $item = ItemForm->new( $self->{"pnlBody"}, $resultItem->ItemId(), $subItem );
+	my $item = ItemForm->new( $self->{"pnlBody"}, $resultItem->ItemId(), $subItem, $self->{"jobId"}, $resultItem );
 	$item->SetErrors( $resultItem->GetErrorCount() );
 	$item->SetWarnings( $resultItem->GetWarningCount() );
 
-	$self->{"bodySizer"}->Add( $item, 0, &Wx::wxEXPAND );
+	$self->{"bodySizer"}->Add( $item, 0, &Wx::wxEXPAND | &Wx::wxLEFT, 2);
 
 	return 0;
 
@@ -131,7 +140,9 @@ sub __SetLayout {
 	# DEFINE CONTROLS
 
 	my $headerTxt = Wx::StaticText->new( $pnlHeader, -1, "Default title" );
-	my $groupStatus = GroupStatusForm->new($pnlHeader);
+  
+	
+	my $groupStatus = GroupStatusForm->new($pnlHeader, $self->{"jobId"}, $self->{"resultItemMngr"}, $self->{"resultGroupMngr"});
 
 	my $height = 20;
 	$height += rand(300);

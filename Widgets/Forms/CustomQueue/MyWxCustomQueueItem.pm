@@ -30,6 +30,8 @@ sub new {
  
 	$self->{"selected"} = 0;
 	$self->{"itemId"} = $itemId;
+	
+	$self->{"position"} = -1;
 
 	#$self->{"state"} = Enums->GroupState_ACTIVEON;
 
@@ -65,11 +67,25 @@ sub __SetLayout {
 
 }
 
+
 #sub __OnClick {
 #	my $self = shift;
 #
 #	print "button pressed";
 #}
+
+sub GetItemId{
+	 my $self    = shift;
+	
+	return $self->{"itemId"};
+}
+
+
+sub GetPosition{
+	 my $self    = shift;
+	return $self->{"position"};
+}
+
 
 sub RecursiveHandler {
 	my $self    = shift;
@@ -89,6 +105,8 @@ sub RecursiveHandler {
 	if (@childrens) {
 
 		foreach my $childControl (@childrens) {
+			
+			
 
 			$self->RecursiveHandler($childControl);
 		}

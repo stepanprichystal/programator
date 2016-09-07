@@ -26,7 +26,7 @@ sub new {
 	$self = {};
 	bless $self;
 
-	#$self->{"jobId"} = shift;
+	$self->{"jobId"} = shift;
 	#$self->{"title"} = shift;
 	
 	$self->{"unitId"} = undef;
@@ -47,7 +47,11 @@ sub InitForm {
 
 	#my $inCAM        = shift;
 
-	$self->{"form"} = GroupWrapperForm->new( $parent, $self->{"unitId"} );
+	my $itemResultMngr = $self->GetGroupItemResultMngr();
+	my $groupResultMngr = $self->GetGroupResultMngr();
+	  
+	#$self->{"form"} = GroupWrapperForm->new( $parent);
+	$self->{"form"} = GroupWrapperForm->new( $parent, $self->{"jobId"}, $itemResultMngr, $groupResultMngr);
 
 	$self->{"form"}->Init( $self->{"unitId"} );
 

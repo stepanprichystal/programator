@@ -14,6 +14,7 @@ use Wx;
 #local library
 use Widgets::Style;
 use aliased 'Programs::Exporter::ExportUtility::ExportUtility::Forms::ErrorIndicator';
+use aliased 'Packages::ItemResult::ItemResultMngr';
 use aliased 'Enums::EnumsGeneral';
 
 #-------------------------------------------------------------------------------------------#
@@ -29,6 +30,11 @@ sub new {
 
 	my $title = shift;
 	$self->{"subItem"} = shift;
+	$self->{"jobId"}  = shift;
+	my $resultItem  = shift;
+
+	$self->{"resultMngr"}  = ItemResultMngr->new();
+	$self->{"resultMngr"}->AddItem($resultItem);
 
 	$self->__SetLayout($title);
 
@@ -42,7 +48,7 @@ sub __SetLayout {
 	#define panels
 	my $szMain = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
 
-	my $bulletText = "-";
+	my $bulletText = "   - ";
 	unless ( $self->{"subItem"} ) {
 		$bulletText = "";
 	}
@@ -50,15 +56,19 @@ sub __SetLayout {
 	# DEFINE CONTROLS
 	my $bulletTxt = Wx::StaticText->new( $self, -1, $bulletText, &Wx::wxDefaultPosition );
 	my $titleTxt = Wx::StaticText->new( $self, -1, $title, &Wx::wxDefaultPosition, [ 70, 20 ] );
-
-	my $errIndicator  = ErrorIndicator->new( $self, EnumsGeneral->MessageType_ERROR,   15 );
-	my $warnIndicator = ErrorIndicator->new( $self, EnumsGeneral->MessageType_WARNING, 15 );
+ 
+	my $errIndicator  = ErrorIndicator->new( $self, EnumsGeneral->MessageType_ERROR,   15, undef, $self->{"jobId"}, $self->{"resultMngr"} );
+	my $warnIndicator = ErrorIndicator->new( $self, EnumsGeneral->MessageType_WARNING, 15, undef, $self->{"jobId"}, $self->{"resultMngr"} );
+	
+ 
 	$errIndicator->Hide();
 	$warnIndicator->Hide();
 
 	# SET EVENTS
 	#Wx::Event::EVT_COMBOBOX( $colorCb, -1, sub { $self->__OnColorChangeHandler(@_) } );
-
+	
+	 
+	
 	# BUILD STRUCTURE OF LAYOUT
 	$szMain->Add( $bulletTxt,     0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
 	$szMain->Add( $titleTxt,      1, &Wx::wxEXPAND | &Wx::wxALL, 0 );
@@ -71,7 +81,8 @@ sub __SetLayout {
 	$self->{"errIndicator"}  = $errIndicator;
 	$self->{"warnIndicator"} = $warnIndicator;
 	$self->{"szMain"}        = $szMain;
-}
+} 
+
 
 sub SetErrors {
 	my $self  = shift;

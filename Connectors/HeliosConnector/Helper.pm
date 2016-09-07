@@ -30,12 +30,13 @@ use Try::Tiny;
 #
 #    
 #} 
-# require Win32::OLE;
-# import Win32::OLE qw(in);
+ #require Win32::OLE;
+ #import Win32::OLE qw(in);
 use DBI;
 
 
-
+#my @drivers = DBI->available_drivers;
+#print join(", ", @drivers), "\n";
 
 #Win32::OLE => not allowed use this module!
 # Module is used by perl ithreads and this Win32::OLE is not thread sa
@@ -75,19 +76,22 @@ sub __OpenConnection {
 		
 		 
 		$con = DBI->connect(
-			"dbi:ADO:$__dbHost;",
+			"dbi:ODBC:DPS",
 			$__dbUserName,
 			$__dbPassword,
 			{
 
 				#'PrintError' => 0,
-				'PrintError'            => 0,
-				'RaiseError'            => 1,
-				'ado_ConnectionTimeout' => $__conTimeout,
-				'CommandTimeout'        => $__commandTimeout,
+				#'PrintError'            => 0,
+				#'RaiseError'            => 1,
+				#'ado_ConnectionTimeout' => $__conTimeout,
+				#'CommandTimeout'        => $__commandTimeout,
 				'on_connect_do'         => [ "SET NAMES 'utf8'", "SET CHARACTER SET 'utf8'" ]
 			}
 		);
+		
+		# Advice from stack overflow for safer multithread operation
+		$con->{AutoInactiveDestroy} = 1;
 
 		 
 

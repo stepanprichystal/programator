@@ -161,6 +161,9 @@ sub __WorkerMethod {
 	use aliased 'Packages::InCAM::InCAM';
 	print 1;
 	
+	#require Win32::OLE;
+	#import Win32::OLE qw(in);
+	
 	# TODO odkomentovat
 	my $inCAM = InCAM->new( "remote" => 'localhost', "port" => $port );
 	#my $inCAM = undef;
@@ -242,6 +245,8 @@ sub __WorkerMethod {
 
 sub __CleanUpAndExit {
 	my ( $selfMain, $inCAM, $jobGUID, $exitType ) = @_;
+
+	#Win32::OLE->Uninitialize();
 
 	$inCAM->ClientFinish();
 

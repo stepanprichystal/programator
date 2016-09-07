@@ -100,11 +100,10 @@ sub GetParentForItem {
 	return $self->{"containerPnl"};
 }
 
-
 sub GetItem {
-	my $self = shift;
+	my $self   = shift;
 	my $itemId = shift;
-	
+
 	foreach my $item ( @{ $self->{"jobItems"} } ) {
 
 		if ( $item->{"itemId"} eq $itemId ) {
@@ -112,6 +111,13 @@ sub GetItem {
 			return $item;
 		}
 	}
+}
+
+sub GetItemsCnt {
+	my $self = shift;
+
+	return @{ $self->{"jobItems"} };
+
 }
 
 sub __SetLayout {
@@ -183,30 +189,72 @@ sub AddItemToQueue {
 
 	push( @{ $self->{"jobItems"} }, $item );
 
-	$self->{"containerSz"}->Add( $item, 0, &Wx::wxEXPAND | &Wx::wxALL , $self->{"itemGap"} );
+	$self->{"containerSz"}->Add( $item, 0, &Wx::wxEXPAND | &Wx::wxALL, $self->{"itemGap"} );
 
-	# get height of group table, for init scrollbar panel
-	#$self->{"scrollPnl"}->Layout();
+	$self->__RenumberItems();
 
-	#$self->{"nb"}->InvalidateBestSize();
 	$self->{"scrollPnl"}->FitInside();
-
-	#$self->{"mainFrm"}->Layout();
 	$self->{"scrollPnl"}->Layout();
 
 	my $total = $self->__GetItemsHeight();
-
-	print "Total Height is : " . $total . "\n";
-
 	$self->{"scrollPnl"}->SetRowCount( $total / 10 );
 
 }
 
 sub RemoveItemFromQueue {
+	my $self   = shift;
+	my $itemId = shift;
+
+	my @queue    = @{ $self->{"jobItems"} };
+	my $position = -1;
+
+	#find index of item
+	for ( my $i = 0 ; $i < scalar(@queue) ; $i++ ) {
+
+		if ( $itemId eq $queue[$i]->GetItemId() ) {
+
+			$position = $i;
+			last;
+		}
+	}
+
+	if ( $position >= 0 ) {
+
+		splice @{ $self->{"jobItems"} }, $position, 1;
+		$self->{"containerSz"}->Remove($position);
+		$queue[$position]->Destroy();
+		$self->{"containerSz"}->Layout();
+
+		$self->__RenumberItems();
+
+		$self->{"scrollPnl"}->FitInside();
+		$self->{"scrollPnl"}->Layout();
+
+		my $total = $self->__GetItemsHeight();
+		$self->{"scrollPnl"}->SetRowCount( $total / 10 );
+
+		#select first item in queue if exist
+		if ( scalar( @{ $self->{"jobItems"} } ) > 0 ) {
+
+			my $firstItem = ${ $self->{"jobItems"} }[0];
+
+			$self->SetSelectedItem($firstItem->GetItemId());
+
+		}
+	}
+
+}
+
+sub __RenumberItems {
 	my $self = shift;
 
-	#$self->{"scrollSizer"}->Add( $groupTableForm, 1, &Wx::wxEXPAND );
+	my @queue = @{ $self->{"jobItems"} };
 
+	#find index of item
+	for ( my $i = 0 ; $i < scalar(@queue) ; $i++ ) {
+
+		$queue[$i]->{"position"} = $i;
+	}
 }
 
 sub __OnItemClick {

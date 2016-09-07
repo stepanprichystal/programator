@@ -131,7 +131,11 @@ sub __HideAllPage {
 	foreach my $id ( keys %pages ) {
 
 		my $page = $pages{$id};
-		$page->Hide();
+		
+		if($page){
+			 $page->Hide();
+		}
+
 	}
 	
 #	my $pageCnt = $self->__GetPageCount();

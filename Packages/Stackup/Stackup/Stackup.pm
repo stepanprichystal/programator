@@ -38,6 +38,10 @@ sub new {
 
 	#if doesnt exist in cache, do normal initialization
 	if ( !defined $stackup ) {
+		
+		
+		
+		
 		$self = $class->SUPER::new( $pcbId, @_ );
 		$cache->set( $key, $self, 200);
 	}

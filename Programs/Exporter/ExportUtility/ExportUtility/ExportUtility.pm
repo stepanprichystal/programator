@@ -17,6 +17,7 @@ use warnings;
 use aliased 'Helpers::GeneralHelper';
 use aliased 'Enums::EnumsPaths';
 use aliased 'Enums::EnumsGeneral';
+use aliased 'Connectors::HeliosConnector::HegMethods';
 
 use aliased 'Programs::Exporter::ExportUtility::Task::Task';
 use aliased 'Programs::Exporter::ExportUtility::ExportUtility::Forms::ExportUtilityForm';
@@ -77,6 +78,10 @@ sub __Init {
 sub __Run {
 	my $self = shift;
 	$self->{"form"}->{"mainFrm"}->Show(1);
+    
+    #HegMethods->GetPcbOrderNumber("D92987");
+	
+	#Win32::OLE->Uninitialize();
 	
 	$self->__RunTimers();
 
@@ -95,12 +100,18 @@ sub __AddNewJob {
 	my $task = Task->new( $guid, $jobId, $exportData );
 
 	push( @{ $self->{"tasks"} }, $task );
+	
+	print "zde 1\n";
 
 	# prepare gui
 	$self->{"form"}->AddNewTaskGUI($task);
+	
+	 
 
 	# Add new task to queue
 	$self->{"form"}->AddNewTask($task);
+	
+	 
 
 }
 
@@ -135,11 +146,11 @@ sub __OnJobStateChanged {
 
 	}elsif ( $taskState eq EnumsMngr->JobState_ABORTING ) {
 		
-			$status = "Aborting job.";
+			$status = "Aborting job...";
 
 	}elsif ( $taskState eq EnumsMngr->JobState_DONE ) {
 		
-			$status = "Job export finished.";
+			
 			
 			 
 			# Refresh GUI - job queue
@@ -151,6 +162,11 @@ sub __OnJobStateChanged {
 			my $aborted = 0;
 			if ($taskStateDetail eq EnumsMngr->ExitType_FORCE){
 				$aborted = 1;
+				
+				$status = "Job export aborted by user.";
+			}else{
+				
+				$status = "Job export finished.";
 			}
 			
 			$task->ProcessTaskDone($aborted);

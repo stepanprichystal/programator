@@ -48,7 +48,7 @@ sub new {
 	}
 
 	my $title = "Exporter jobu";
-	my @dimension = ( 1100, 700 );
+	my @dimension = ( 1140, 700 );
 
 	my $self = $class->SUPER::new( $parent, $title, \@dimension );
 
@@ -71,24 +71,27 @@ sub AddNewTaskGUI {
 	my $self = shift;
 	my $task = shift;
 
-	my $taskId = $task->GetTaskId();
+	my $taskId   = $task->GetTaskId();
 	my $taskData = $task->GetExportData();
 
 	# Add new item to queue
 
 	my $jobQueue = $self->{"jobQueue"};
-	my $jobQueueItem = $jobQueue->AddItem( $taskId, $task->GetJobId(), $taskData);
-	
-	
+
+	my $taskMngr = $task->GetTaskResultMngr();
+	my $groupMngr = $task->GetGroupResultMngr();
+	my $itemMngr = $task->GetGroupItemResultMngr();
+
+	my $jobQueueItem = $jobQueue->AddItem( $taskId, $task->GetJobId(), $taskData, $taskMngr, $groupMngr, $itemMngr );
+
 	# SET HANDLERS
-	$jobQueueItem->{"onProduce"}->Add(sub{ $self->__OnProduceClick(@_) });
-	
+	$jobQueueItem->{"onProduce"}->Add( sub { $self->__OnProduceJobClick(@_) } );
+	$jobQueueItem->{"onRemove"}->Add( sub { $self->__OnRemoveJobClick(@_) } );
+	$jobQueueItem->{"onAbort"}->Add( sub { $self->__OnAbortJobClick(@_) } );
 	
 	#$jobQueueItem->SetExportTime($taskData->GetExportTime());
 	#$jobQueueItem->SetExportMode($taskData->GetExportMode());
 	#$jobQueueItem->SetToProduce($taskData->GetToProduce());
-	
-	
 
 	# Add new item to notebook
 	my @units = $task->GetAllUnits();
@@ -100,10 +103,11 @@ sub AddNewTaskGUI {
 	$groupTableForm->InitGroupTable( \@units );
 
 	$page->AddContent($groupTableForm);
-	
+	print " ======= zde 4\n";
+
 	# Select alreadz added job item
 	$self->{"jobQueue"}->SetSelectedItem($taskId);
-	
+
 	# Refresh form
 	$self->{"mainFrm"}->Refresh();
 
@@ -113,12 +117,8 @@ sub AddNewTask {
 	my $self = shift;
 	my $task = shift;
 
-	$self->_AddJobToQueue(  $task->GetJobId(), $task->GetTaskId() );
+	$self->_AddJobToQueue( $task->GetJobId(), $task->GetTaskId() );
 }
-
-
-
-
 
 sub __SetLayout {
 
@@ -161,8 +161,9 @@ sub __SetLayout {
 	$nb->SetPageImage( 0, 1 );
 
 	my $jobsQueueStatBox = $self->__SetLayoutJobsQueue($page1);
+
 	#my $settingsStatBox  = $self->__SetLayoutInCAMSettings($page1);
-	my $groupsStatBox    = $self->__SetLayoutGroups($page1);
+	my $groupsStatBox = $self->__SetLayoutGroups($page1);
 
 	# BUILD STRUCTURE OF LAYOUT
 
@@ -175,6 +176,7 @@ sub __SetLayout {
 	$page2->SetSizer($szPage2);
 
 	$szRow1->Add( $jobsQueueStatBox, 80, &Wx::wxEXPAND );
+
 	#$szRow1->Add( $settingsStatBox,  20, &Wx::wxEXPAND );
 
 	$szRow2->Add( $groupsStatBox, 1, &Wx::wxEXPAND );
@@ -200,7 +202,6 @@ sub __SetLayout {
 	return $mainFrm;
 
 }
-
 
 #sub __SetLayout {
 #
@@ -323,8 +324,9 @@ sub __SetLayoutGroups {
 
 	#my $btnDefault = Wx::Button->new( $statBox, -1, "Default settings", &Wx::wxDefaultPosition, [ 110, 22 ] );
 	my $notebook = CustomNotebook->new( $statBox, -1 );
+
 	#$szStatBox->Add( $btnDefault, 0, &Wx::wxEXPAND );
-	$szStatBox->Add( $notebook,   1, &Wx::wxEXPAND );
+	$szStatBox->Add( $notebook, 1, &Wx::wxEXPAND );
 	$self->{"groupStatBox"}   = $statBox;
 	$self->{"groupStatBoxSz"} = $szStatBox;
 	$self->{"notebook"}       = $notebook;
@@ -332,81 +334,74 @@ sub __SetLayoutGroups {
 	return $szStatBox;
 }
 
- 
-
 # ============================================
 # Mehtods for update job queue items
 # ============================================
- 
 
-sub SetJobItemStatus{
-	my $self         = shift;
-	my $taskId = 	shift;
-	my $status = 	shift;
-	
+sub SetJobItemStatus {
+	my $self   = shift;
+	my $taskId = shift;
+	my $status = shift;
+
 	my $jobItem = $self->{"jobQueue"}->GetItem($taskId);
-	
+
 	$jobItem->SetStatus($status);
 }
 
-sub SetJobItemProgress{
-	my $self         = shift;
-	my $taskId = 	shift;
-	my $value = 	shift;
+sub SetJobItemProgress {
+	my $self   = shift;
+	my $taskId = shift;
+	my $value  = shift;
 
 	my $jobItem = $self->{"jobQueue"}->GetItem($taskId);
-	
+
 	$jobItem->SetProgress($value);
 }
 
-sub SetJobItemResult{
-	my $self         = shift;
-	my $task = 	shift;
-	
-	my $jobItem = $self->{"jobQueue"}->GetItem($task->GetTaskId());
- 
-	$jobItem->SetExportResult($task->Result());
+sub SetJobItemResult {
+	my $self = shift;
+	my $task = shift;
+
+	my $jobItem = $self->{"jobQueue"}->GetItem( $task->GetTaskId() );
+
+	$jobItem->SetExportResult( $task->Result(), $task->GetJobAborted() );
 }
 
+sub SetJobQueueErrorCnt {
+	my $self = shift;
+	my $task = shift;
 
-sub SetJobQueueErrorCnt{
-	my $self         = shift;
-	my $task = 	shift;
+	my $jobItem = $self->{"jobQueue"}->GetItem( $task->GetTaskId() );
 
-	my $jobItem = $self->{"jobQueue"}->GetItem($task->GetTaskId());
-	
-	$jobItem->SetExportErrorCnt($task->GetErrorsCnt());
- 
-}
- 
-sub SetJobQueueWarningCnt{
-	my $self         = shift;
-	my $task = 	shift;
+	$jobItem->SetExportErrorCnt( $task->GetErrorsCnt() );
 
-	my $jobItem = $self->{"jobQueue"}->GetItem($task->GetTaskId());
-	
-	$jobItem->SetExportWarningCnt($task->GetWarningsCnt());
- 
 }
 
- 
-sub RefreshGroupTable{
-	my $self         = shift;
-	my $task = 	shift;
-	
-	my $page = $self->{"notebook"}->GetPage($task->GetTaskId());
+sub SetJobQueueWarningCnt {
+	my $self = shift;
+	my $task = shift;
+
+	my $jobItem = $self->{"jobQueue"}->GetItem( $task->GetTaskId() );
+
+	$jobItem->SetExportWarningCnt( $task->GetWarningsCnt() );
+
+}
+
+sub RefreshGroupTable {
+	my $self = shift;
+	my $task = shift;
+
+	my $page       = $self->{"notebook"}->GetPage( $task->GetTaskId() );
 	my $groupTable = $page->GetPageContent();
 
-	my ($w, $pageHight)         = $self->{"notebook"}->GetSizeWH();
+	my ( $w, $pageHight ) = $self->{"notebook"}->GetSizeWH();
 
-	$groupTable->RearrangeGroups($page, $pageHight);  
-	
-	
+	$groupTable->RearrangeGroups( $page, $pageHight );
+
 	$page->RefreshContent();
- 
+
 }
 
- 
 sub BuildGroupTableForm {
 	my $self = shift;
 
@@ -432,7 +427,6 @@ sub BuildGroupTableForm {
 # HANDLERS
 # ======================================================
 
-
 sub __JobItemSeletedChange {
 	my $self         = shift;
 	my $jobQueueItem = shift;
@@ -440,40 +434,56 @@ sub __JobItemSeletedChange {
 	my $taskId = $jobQueueItem->GetTaskId();
 
 	$self->{"notebook"}->ShowPage($taskId);
-	
+
 	#	$self->Layout();
 	#$self->Refresh();
 
 }
 
-
-sub __OnProduceClick{
-	my $self = shift;
+sub __OnProduceJobClick {
+	my $self   = shift;
 	my $taskId = shift;
 	print "produce click\n";
 	$self->__Test($taskId);
-	
-	
+
 }
 
-sub __Test{
-	my $self         = shift;
-	my $taskId = 	shift;
+sub __OnRemoveJobClick {
+	my $self   = shift;
+	my $taskId = shift;
 	
-	my $page = $self->{"notebook"}->GetPage($taskId);
-	my $groupTable = $page->GetPageContent();
+ 
+	
+	my $jobItem = $self->{"jobQueue"}->GetItem($taskId);
+	
+	$self->{"jobQueue"}->RemoveJobFromQueue($taskId);
 
-	my ($w, $pageHight)         = $self->{"notebook"}->GetSizeWH();
-
-	$groupTable->Construct($page,$pageHight);  
-	
-	
-	$page->RefreshContent();
+	$self->{"notebook"}->RemovePage($taskId);
  
 }
 
+sub __OnAbortJobClick {
+	my $self   = shift;
+	my $taskId = shift;
+	
+ 	$self->_AbortJob($taskId);
+ 	
+}
 
+sub __Test {
+	my $self   = shift;
+	my $taskId = shift;
 
+	my $page       = $self->{"notebook"}->GetPage($taskId);
+	my $groupTable = $page->GetPageContent();
+
+	my ( $w, $pageHight ) = $self->{"notebook"}->GetSizeWH();
+
+	$groupTable->Construct( $page, $pageHight );
+
+	$page->RefreshContent();
+
+}
 
 sub __OnClickExit {
 

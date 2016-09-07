@@ -32,8 +32,8 @@ sub new {
 	bless($self);
 
 	# Items references
-	my @jobItems = ();
-	$self->{"jobItems"} = \@jobItems;
+	#my @jobItems = ();
+	#$self->{"jobItems"} = \@jobItems;
 
 	# PROPERTIES
 
@@ -79,19 +79,43 @@ sub AddItem {
 	my $taskId  = shift;
 	my $jobId = shift;
 	my $exportData = shift;
+	
+	my $taskMngr = shift;
+	my $groupMngr = shift;
+	my $itemMngr = shift;
+	
 
-	my $item = JobQueueItemForm->new( $self->GetParentForItem(), $jobId, $taskId, $exportData);
+	my $item = JobQueueItemForm->new( $self->GetParentForItem(), $jobId, $taskId, $exportData, $taskMngr, $groupMngr, $itemMngr);
+
 
 	$self->AddItemToQueue($item);
+	
+	$self->__SetJobOrder();
 	
 	return $item;
 
 }
 
-sub RemoveItemFromQueue {
+sub  __SetJobOrder {
 	my $self = shift;
 
-	#$self->AddItemToQueue($item);
+	my @queue = @{ $self->{"jobItems"} };
+
+	#find index of item
+	for ( my $i = 0 ; $i < scalar(@queue) ; $i++ ) {
+
+		$queue[$i]->SetItemOrder();
+	}
+}
+
+
+sub RemoveJobFromQueue {
+	my $self = shift;
+	my $itemId = shift;
+
+	$self->RemoveItemFromQueue($itemId);
+
+	$self->__SetJobOrder();
 
 }
 
