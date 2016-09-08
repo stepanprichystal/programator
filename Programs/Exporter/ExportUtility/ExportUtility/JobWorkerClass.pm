@@ -133,20 +133,20 @@ sub __ProcessGroup {
 	my $unitId     = shift;
 	my $exportData = shift;    # export data for specific group
 
-	use Time::HiRes qw (sleep);
-	for ( my $i = 0 ; $i < 50 ; $i++ ) {
-
-		my %data1 = ();
-		$data1{"unitId"}   = $unitId;
-		$data1{"itemId"}   = "Item id $i";
-		$data1{"result"}   = "failure";
-		$data1{"errors"}   = "rrrrrrrrrrr";
-		$data1{"warnings"} = "";
-
-		$self->_SendMessageEvt( Enums->EventType_ITEM_RESULT, \%data1 );
-
-		sleep(0.01);
-	}
+#	use Time::HiRes qw (sleep);
+#	for ( my $i = 0 ; $i < 50 ; $i++ ) {
+#
+#		my %data1 = ();
+#		$data1{"unitId"}   = $unitId;
+#		$data1{"itemId"}   = "Item id $i";
+#		$data1{"result"}   = "failure";
+#		$data1{"errors"}   = "rrrrrrrrrrr";
+#		$data1{"warnings"} = "";
+#
+#		$self->_SendMessageEvt( Enums->EventType_ITEM_RESULT, \%data1 );
+#
+#		sleep(0.01);
+#	}
 
 
 	#use Connectors::HeliosConnector::HegMethods;
