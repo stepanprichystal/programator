@@ -41,7 +41,7 @@ sub SetStage {
 	@drillLayer = CamDrilling->GetPltNCLayers( $inCAM, $jobId );
 	CamDrilling->AddLayerStartStop( $inCAM, $jobId, \@drillLayer );
 	
-	@drillLayer = grep { $_->{"gROWdrl_start_name"} eq $layerName } @drillLayer;
+	@drillLayer = grep { $_->{"gROWdrl_start_name"} eq $layerName || $_->{"gROWdrl_end_name"} eq $layerName} @drillLayer;
 	
 	@drillLayer = map { $_->{"gROWname"} } @drillLayer;
 
