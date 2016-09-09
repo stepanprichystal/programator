@@ -29,6 +29,7 @@ sub new {
 	my $jobId        = shift;
 	my $taskId       = shift;
 	my $exportedData = shift;
+	my $produceMngr = shift;
 	my $taskMngr     = shift;
 	my $groupMngr    = shift;
 	my $itemMngr     = shift;
@@ -42,6 +43,7 @@ sub new {
 	$self->{"taskId"}       = $taskId;
 	$self->{"exportedData"} = $exportedData;
 
+	$self->{"produceMngr"}  = $produceMngr;
 	$self->{"taskMngr"}  = $taskMngr;
 	$self->{"groupMngr"} = $groupMngr;
 	$self->{"itemMngr"}  = $itemMngr;
@@ -216,7 +218,7 @@ sub __SetLayoutResult {
 	my $produceTxt = Wx::StaticText->new( $self, -1, "Sent to produce:", [ -1, -1 ], [ 90, 20 ] );
 
 	my $exportRI   = ResultIndicator->new( $self, 20 );
-	my $producetRI = ResultIndicator->new( $self, 20 );
+	my $produceRI = ResultIndicator->new( $self, 20 );
 
 	my $exportErrInd  = ErrorIndicator->new( $self, EnumsGeneral->MessageType_ERROR,   15, undef, $self->{"jobId"} );
 	my $exportWarnInd = ErrorIndicator->new( $self, EnumsGeneral->MessageType_WARNING, 15, undef, $self->{"jobId"} );
@@ -231,11 +233,10 @@ sub __SetLayoutResult {
 	$exportWarnInd->AddMenuItem( "Groups", $self->{"groupMngr"} );
 	$exportWarnInd->AddMenuItem( "Items",  $self->{"itemMngr"} );
 
-	my $produceErrInd  = ErrorIndicator->new( $self, EnumsGeneral->MessageType_ERROR,   15 );
-	my $produceWarnInd = ErrorIndicator->new( $self, EnumsGeneral->MessageType_WARNING, 15 );
+	my $produceErrInd  = ErrorIndicator->new( $self, EnumsGeneral->MessageType_ERROR,   15, undef, $self->{"jobId"}, $self->{"produceMngr"} );
+	my $produceWarnInd = ErrorIndicator->new( $self, EnumsGeneral->MessageType_WARNING, 15, undef, $self->{"jobId"}, $self->{"produceMngr"} );
 	
-	 
-
+	
 	# DEFINE STRUCTURE
 
 	$szRow1->Add( $exportTxt,     0,  &Wx::wxEXPAND | &Wx::wxALL, 0 );
@@ -245,7 +246,7 @@ sub __SetLayoutResult {
 	$szRow1->Add( $exportWarnInd, 0,  &Wx::wxEXPAND | &Wx::wxALL, 0 );
 
 	$szRow2->Add( $produceTxt,     0,  &Wx::wxEXPAND | &Wx::wxALL, 0 );
-	$szRow2->Add( $producetRI,     0,  &Wx::wxEXPAND | &Wx::wxALL, 0 );
+	$szRow2->Add( $produceRI,     0,  &Wx::wxEXPAND | &Wx::wxALL, 0 );
 	$szRow2->Add( 20,              20, 0,                          &Wx::wxEXPAND );
 	$szRow2->Add( $produceErrInd,  0,  &Wx::wxEXPAND | &Wx::wxALL, 0 );
 	$szRow2->Add( $produceWarnInd, 0,  &Wx::wxEXPAND | &Wx::wxALL, 0 );
@@ -255,7 +256,7 @@ sub __SetLayoutResult {
 
 	# SAVE REFERENCES
 	$self->{"exportRI"}       = $exportRI;
-	$self->{"producetRI"}     = $producetRI;
+	$self->{"produceRI"}     = $produceRI;
 	$self->{"exportErrInd"}   = $exportErrInd;
 	$self->{"exportWarnInd"}  = $exportWarnInd;
 	$self->{"produceErrInd"}  = $produceErrInd;
@@ -408,14 +409,16 @@ sub SetExportWarningCnt {
 sub SetProduceResult {
 	my $self   = shift;
 	my $stauts = shift;
-
-	if ($stauts) {
+	my $jobSentToProduce = shift;
+	
+	if ($jobSentToProduce) {
+		
 		$stauts = EnumsGeneral->ResultType_OK;
+		$self->SetStatus("Job was sent to produce");
+		$self->{"btnProduce"}->Disable();
 	}
-	else {
-		$stauts = EnumsGeneral->ResultType_FAIL;
-	}
-
+	
+	 
 	$self->{"produceRI"}->SetStatus($stauts);
 }
 

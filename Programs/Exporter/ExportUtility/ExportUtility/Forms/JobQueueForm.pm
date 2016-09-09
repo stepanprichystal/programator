@@ -79,13 +79,13 @@ sub AddItem {
 	my $taskId  = shift;
 	my $jobId = shift;
 	my $exportData = shift;
-	
+	my $produceMngr = shift;
 	my $taskMngr = shift;
 	my $groupMngr = shift;
 	my $itemMngr = shift;
 	
 
-	my $item = JobQueueItemForm->new( $self->GetParentForItem(), $jobId, $taskId, $exportData, $taskMngr, $groupMngr, $itemMngr);
+	my $item = JobQueueItemForm->new( $self->GetParentForItem(), $jobId, $taskId, $exportData, $produceMngr, $taskMngr, $groupMngr, $itemMngr);
 
 
 	$self->AddItemToQueue($item);

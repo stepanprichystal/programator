@@ -107,9 +107,9 @@ sub _AddJobToQueue {
 
 	
 	# TODO SMAZAT
-#	$jobInfo{"port"}  = undef;
-#	$jobInfo{"state"} = Enums->JobState_RUNNING;
-#	$self->{"threadMngr"}->RunNewExport( $uniqueId, $jobInfo{"port"}, $pcbId );
+	#$jobInfo{"port"}  = undef;
+	#$jobInfo{"state"} = Enums->JobState_RUNNING;
+	#$self->{"threadMngr"}->RunNewExport( $uniqueId, $jobInfo{"port"}, $pcbId );
 
 	 
 	$self->{'onJobStateChanged'}->Do( $jobInfo{"jobGUID"}, $jobInfo{"state"} );
@@ -269,10 +269,15 @@ sub OnClose {
 	}
 	else {
 
-		$mainFrm->Destroy;
+		# ukoncime sechnz servery, ktere bezi a cekaji na vyuziti
+		$self->{"serverMngr"}->SetDestroyOnDemand(0);
+		$self->{"mainFrm"}->Destroy();
 	}
 
 }
+
+
+ 
 
 sub _AbortJob {
 
@@ -308,55 +313,55 @@ sub _AbortJob {
 
 }
 
-sub OnExit {
-	my $self = shift;
-
-	print "onExitTTTTTTTTTTTTTTTT";
-
-	my $jobsRef    = $self->{"jobs"};
-	my $str        = "";
-	my $activeJobs = 0;
-
-	for ( my $i = 0 ; $i < scalar( @{$jobsRef} ) ; $i++ ) {
-
-		if ( ${$jobsRef}[$i]{"state"} eq Enums->JobState_RUNNING || ${$jobsRef}[$i]{"state"} eq Enums->JobState_WAITINGPORT ) {
-
-			$activeJobs = 1;
-
-		}
-		last;
-	}
-
-	if ($activeJobs) {
-
-		# test na u6ivatele
-
-		$self->{"timerFiles"}->Stop();
-
-		for ( my $i = 0 ; $i < scalar( @{$jobsRef} ) ; $i++ ) {
-
-			if ( ${$jobsRef}[$i]{"state"} eq Enums->JobState_RUNNING ) {
-
-				$self->{"serverMngr"}->DestroyServer( ${$jobsRef}[$i]{"port"} );
-
-			}
-
-			if ( ${$jobsRef}[$i]{"state"} eq Enums->JobState_WAITINGPORT ) {
-
-				while ( ${$jobsRef}[$i]{"state"} ne Enums->JobState_RUNNING ) {
-
-					print "%% -  " . ${$jobsRef}[$i]{"state"} . "port: " . ${$jobsRef}[$i]{"state"} . "\n";
-					sleep(1);
-				}
-				print "tadzzzyyyyyyyyyyy%% -  " . ${$jobsRef}[$i]{"state"} . "port: " . ${$jobsRef}[$i]{"state"} . "\n";
-				$self->{"serverMngr"}->DestroyServer( ${$jobsRef}[$i]{"port"} );
-			}
-
-		}
-	}
-
-	#	exit();
-}
+#sub OnExit {
+#	my $self = shift;
+#
+#	print "onExitTTTTTTTTTTTTTTTT";
+#
+#	my $jobsRef    = $self->{"jobs"};
+#	my $str        = "";
+#	my $activeJobs = 0;
+#
+#	for ( my $i = 0 ; $i < scalar( @{$jobsRef} ) ; $i++ ) {
+#
+#		if ( ${$jobsRef}[$i]{"state"} eq Enums->JobState_RUNNING || ${$jobsRef}[$i]{"state"} eq Enums->JobState_WAITINGPORT ) {
+#
+#			$activeJobs = 1;
+#
+#		}
+#		last;
+#	}
+#
+#	if ($activeJobs) {
+#
+#		# test na u6ivatele
+#
+#		$self->{"timerFiles"}->Stop();
+#
+#		for ( my $i = 0 ; $i < scalar( @{$jobsRef} ) ; $i++ ) {
+#
+#			if ( ${$jobsRef}[$i]{"state"} eq Enums->JobState_RUNNING ) {
+#
+#				$self->{"serverMngr"}->DestroyServer( ${$jobsRef}[$i]{"port"} );
+#
+#			}
+#
+#			if ( ${$jobsRef}[$i]{"state"} eq Enums->JobState_WAITINGPORT ) {
+#
+#				while ( ${$jobsRef}[$i]{"state"} ne Enums->JobState_RUNNING ) {
+#
+#					print "%% -  " . ${$jobsRef}[$i]{"state"} . "port: " . ${$jobsRef}[$i]{"state"} . "\n";
+#					sleep(1);
+#				}
+#				print "tadzzzyyyyyyyyyyy%% -  " . ${$jobsRef}[$i]{"state"} . "port: " . ${$jobsRef}[$i]{"state"} . "\n";
+#				$self->{"serverMngr"}->DestroyServer( ${$jobsRef}[$i]{"port"} );
+#			}
+#
+#		}
+#	}
+#
+#	#	exit();
+#}
 
 sub _GetInfoJobs {
 	my $self = shift;

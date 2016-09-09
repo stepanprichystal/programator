@@ -28,6 +28,7 @@ use aliased 'Programs::Exporter::ExportUtility::ExportUtility::Forms::GroupTable
 use aliased 'Widgets::Forms::CustomNotebook::CustomNotebook';
 use aliased 'Widgets::Forms::MyWxBookCtrlPage';
 
+
 #my $THREAD_MESSAGE_EVT : shared;
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -56,6 +57,8 @@ sub new {
 
 	#set base class handlers
 
+	$self->{"messageMngr"} = MessageMngr->new("Exporter");
+ 
 	my $mainFrm = $self->__SetLayout();
 
 	#$mainFrm->Show(1);
@@ -63,7 +66,8 @@ sub new {
 	#$self->{'onSetLayout'}->Add( sub { $self->__OnSetLayout(@_)});
 
 	$self->{"onClick"} = Event->new();
-
+	$self->{"onToProduce"} = Event->new();
+	
 	return $self;
 }
 
@@ -78,17 +82,18 @@ sub AddNewTaskGUI {
 
 	my $jobQueue = $self->{"jobQueue"};
 
-	my $taskMngr = $task->GetTaskResultMngr();
-	my $groupMngr = $task->GetGroupResultMngr();
-	my $itemMngr = $task->GetGroupItemResultMngr();
+	my $produceMngr = $task->ProduceResultMngr();
+	my $taskMngr    = $task->GetTaskResultMngr();
+	my $groupMngr   = $task->GetGroupResultMngr();
+	my $itemMngr    = $task->GetGroupItemResultMngr();
 
-	my $jobQueueItem = $jobQueue->AddItem( $taskId, $task->GetJobId(), $taskData, $taskMngr, $groupMngr, $itemMngr );
+	my $jobQueueItem = $jobQueue->AddItem( $taskId, $task->GetJobId(), $taskData, $produceMngr, $taskMngr, $groupMngr, $itemMngr );
 
 	# SET HANDLERS
 	$jobQueueItem->{"onProduce"}->Add( sub { $self->__OnProduceJobClick(@_) } );
-	$jobQueueItem->{"onRemove"}->Add( sub { $self->__OnRemoveJobClick(@_) } );
-	$jobQueueItem->{"onAbort"}->Add( sub { $self->__OnAbortJobClick(@_) } );
-	
+	$jobQueueItem->{"onRemove"}->Add( sub  { $self->__OnRemoveJobClick(@_) } );
+	$jobQueueItem->{"onAbort"}->Add( sub   { $self->__OnAbortJobClick(@_) } );
+
 	#$jobQueueItem->SetExportTime($taskData->GetExportTime());
 	#$jobQueueItem->SetExportMode($taskData->GetExportMode());
 	#$jobQueueItem->SetToProduce($taskData->GetToProduce());
@@ -300,7 +305,7 @@ sub __SetLayoutInCAMSettings {
 	my $btnDefault = Wx::Button->new( $statBox, -1, "Default settings", &Wx::wxDefaultPosition, [ 110, 22 ] );
 
 	Wx::Event::EVT_BUTTON( $btnDefault, -1, sub { $self->__OnClick(@_) } );
-
+ 
 	$szStatBox->Add( $btnDefault, 1, &Wx::wxEXPAND );
 
 	return $szStatBox;
@@ -364,7 +369,20 @@ sub SetJobItemResult {
 
 	my $jobItem = $self->{"jobQueue"}->GetItem( $task->GetTaskId() );
 
-	$jobItem->SetExportResult( $task->Result(), $task->GetJobAborted() );
+	$jobItem->SetExportResult( $task->Result(), $task->GetJobAborted(), $task->GetJobSentToProduce() );
+  
+}
+
+sub SetJobItemToProduceResult {
+	my $self = shift;
+	my $task = shift;
+
+	my $jobItem = $self->{"jobQueue"}->GetItem( $task->GetTaskId() );
+ 
+ 
+	$jobItem->SetProduceErrors( $task->GetProduceErrorsCnt() );
+	$jobItem->SetProduceWarnings( $task->GetProduceWarningsCnt() );
+	$jobItem->SetProduceResult( $task->ResultToProduce(), $task->GetJobSentToProduce() );
 }
 
 sub SetJobQueueErrorCnt {
@@ -443,31 +461,30 @@ sub __JobItemSeletedChange {
 sub __OnProduceJobClick {
 	my $self   = shift;
 	my $taskId = shift;
-	print "produce click\n";
-	$self->__Test($taskId);
+	
+	$self->{"onToProduce"}->Do($taskId);
+ 
 
 }
 
 sub __OnRemoveJobClick {
 	my $self   = shift;
 	my $taskId = shift;
-	
- 
-	
+
 	my $jobItem = $self->{"jobQueue"}->GetItem($taskId);
-	
+
 	$self->{"jobQueue"}->RemoveJobFromQueue($taskId);
 
 	$self->{"notebook"}->RemovePage($taskId);
- 
+
 }
 
 sub __OnAbortJobClick {
 	my $self   = shift;
 	my $taskId = shift;
-	
- 	$self->_AbortJob($taskId);
- 	
+
+	$self->_AbortJob($taskId);
+
 }
 
 sub __Test {

@@ -62,15 +62,15 @@ sub RunExport {
 		$self->__GroupExportEvent( Enums->EventType_GROUP_START, $unitId );
 
 		# Open job
-		#if ( $self->__OpenJob() ) {
+		if ( $self->__OpenJob() ) {
 
 		# Process group
 		$self->__ProcessGroup( $unitId, $exportData );
 
-		#}
+		}
 
 		#close job
-		#$self->__CloseJob();
+		$self->__CloseJob();
 
 		# Event when group export end
 		$self->__GroupExportEvent( Enums->EventType_GROUP_END, $unitId );
@@ -134,20 +134,21 @@ sub __ProcessGroup {
 	my $exportData = shift;    # export data for specific group
 
 #	use Time::HiRes qw (sleep);
-#	for ( my $i = 0 ; $i < 50 ; $i++ ) {
+#	for ( my $i = 0 ; $i < 5 ; $i++ ) {
 #
 #		my %data1 = ();
 #		$data1{"unitId"}   = $unitId;
 #		$data1{"itemId"}   = "Item id $i";
-#		$data1{"result"}   = "failure";
-#		$data1{"errors"}   = "rrrrrrrrrrr";
+#		$data1{"result"}   = "succes";
+#		$data1{"errors"}   = "";
 #		$data1{"warnings"} = "";
 #
 #		$self->_SendMessageEvt( Enums->EventType_ITEM_RESULT, \%data1 );
 #
-#		sleep(0.01);
+#		sleep(0.5);
 #	}
-
+#
+#	return 0;
 
 	#use Connectors::HeliosConnector::HegMethods;
 

@@ -52,7 +52,7 @@ sub new {
 	# Keep all references of used groups/units in form
 	my @tasks = ();
 	$self->{"tasks"} = \@tasks;
-	
+
 	my @exportFiles = ();
 	$self->{"exportFiles"} = \@exportFiles;
 
@@ -72,17 +72,16 @@ sub __Init {
 	#set handlers for main app form
 	$self->__SetHandlers();
 
-	
 }
 
 sub __Run {
 	my $self = shift;
 	$self->{"form"}->{"mainFrm"}->Show(1);
-    
-    #HegMethods->GetPcbOrderNumber("D92987");
-	
+
+	#HegMethods->GetPcbOrderNumber("D92987");
+
 	#Win32::OLE->Uninitialize();
-	
+
 	$self->__RunTimers();
 
 	$self->{"form"}->MainLoop();
@@ -93,25 +92,21 @@ sub __AddNewJob {
 	my $self       = shift;
 	my $jobId      = shift;
 	my $exportData = shift;
- 
+
 	# unique id per each task
 	my $guid = GeneralHelper->GetGUID();
 
 	my $task = Task->new( $guid, $jobId, $exportData );
 
 	push( @{ $self->{"tasks"} }, $task );
-	
+
 	print "zde 1\n";
 
 	# prepare gui
 	$self->{"form"}->AddNewTaskGUI($task);
-	
-	 
 
 	# Add new task to queue
 	$self->{"form"}->AddNewTask($task);
-	
-	 
 
 }
 
@@ -120,61 +115,78 @@ sub __AddNewJob {
 # ========================================================================================== #
 
 sub __OnJobStateChanged {
-	my $self           = shift;
-	my $taskId        = shift;
+	my $self            = shift;
+	my $taskId          = shift;
 	my $taskState       = shift;
 	my $taskStateDetail = shift;
-	
-	my $task = $self->__GetTaskById($taskId);
 
+	my $task = $self->__GetTaskById($taskId);
 
 	my $status = "";
 
 	if ( $taskState eq EnumsMngr->JobState_WAITINGQUEUE ) {
-		
+
 		$status = "Waiting in queue.";
 
 	}
 	elsif ( $taskState eq EnumsMngr->JobState_WAITINGPORT ) {
-		
+
 		$status = "Waiting on InCAM port.";
 
 	}
 	elsif ( $taskState eq EnumsMngr->JobState_RUNNING ) {
-		
-			$status = "Start runing";
 
-	}elsif ( $taskState eq EnumsMngr->JobState_ABORTING ) {
-		
-			$status = "Aborting job...";
+		$status = "Start runing";
 
-	}elsif ( $taskState eq EnumsMngr->JobState_DONE ) {
-		
-			
-			
-			 
-			# Refresh GUI - job queue
-			
-			 #	 ExitType_SUCCES => 'Succes',
+	}
+	elsif ( $taskState eq EnumsMngr->JobState_ABORTING ) {
+
+		$status = "Aborting job...";
+
+	}
+	elsif ( $taskState eq EnumsMngr->JobState_DONE ) {
+
+		# Refresh GUI - job queue
+
+		#	 ExitType_SUCCES => 'Succes',
 		#	ExitType_FAILED => 'Failed',
 		#	ExitType_FORCE  => 'Force',
+
+		my $aborted = 0;
+
+		if ( $taskStateDetail eq EnumsMngr->ExitType_FORCE ) {
+			$aborted = 1;
+
+			$status = "Job export aborted by user.";
+		}
+		else {
+
+			$status = "Job export finished.";
+		}
+
+		$task->ProcessTaskDone($aborted);
+		$self->{"form"}->SetJobItemResult($task);
 		
-			my $aborted = 0;
-			if ($taskStateDetail eq EnumsMngr->ExitType_FORCE){
-				$aborted = 1;
-				
-				$status = "Job export aborted by user.";
-			}else{
-				
-				$status = "Job export finished.";
-			}
+		
+		# Setting to produce if is checked by export settings
+		if ( $task->GetJobShouldToProduce() ) {
 			
-			$task->ProcessTaskDone($aborted);
-			$self->{"form"}->SetJobItemResult( $task);
+			# Set values, if job can be sent to produce
+			$task->SetToProduceResult();
+			
+			# if can eb sent to produce without errror, send it
+			if ( $task->GetJobCanToProduce()) {
+
+				$task->SentToProduce();
+			}
+
+			# refresh GUI to produce
+			$self->{"form"}->SetJobItemToProduceResult($task);
+		}
+
 	}
-	
-	$self->{"form"}->SetJobItemStatus( $taskId, $status);
-	
+
+	$self->{"form"}->SetJobItemStatus( $taskId, $status );
 
 }
 
@@ -212,33 +224,34 @@ sub __OnJobMessageEvtHandler {
 	if ( $messType eq Enums->EventType_ITEM_RESULT ) {
 
 		# Update data model and refresh group
-		
+
 		$task->ProcessItemResult($data);
- 
+
 		# Refresh GUI - group table
-		
+
 		$self->{"form"}->RefreshGroupTable($task);
-		
+
 		# Refresh GUI - job queue
-		
+
 		$self->{"form"}->SetJobQueueErrorCnt($task);
 		$self->{"form"}->SetJobQueueWarningCnt($task);
 
 	}
-	
+
 	# CATCH GROUP MESSAGE
-	
+
 	if ( $messType eq Enums->EventType_GROUP_RESULT ) {
 
-		# Update data model 
+		# Update data model
 
 		$task->ProcessGroupResult($data);
-		
+
 		# Refresh GUI - job queue
 		$self->{"form"}->SetJobQueueErrorCnt($task);
 		$self->{"form"}->SetJobQueueWarningCnt($task);
-		
-	}elsif ( $messType eq Enums->EventType_GROUP_START ) {
+
+	}
+	elsif ( $messType eq Enums->EventType_GROUP_START ) {
 
 		# Update group form status
 
@@ -250,26 +263,69 @@ sub __OnJobMessageEvtHandler {
 		# Update group form status
 		$task->ProcessGroupEnd($data);
 
- 
 	}
-	
-	
+
 	# CATCH TASK MESSAGE
-	
+
 	if ( $messType eq Enums->EventType_TASK_RESULT ) {
 
 		# Update data model
 		$task->ProcessTaskResult($data);
-		
+
 		# Refresh GUI - job queue
 		$self->{"form"}->SetJobQueueErrorCnt($task);
 		$self->{"form"}->SetJobQueueWarningCnt($task);
-		 
+
 	}
-	
 
 	#TESTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT
 	#print "Exporter utility::  job id: " . $jobGUID . " - messType: " . $messType . " - data: " . $data . "\n";
+}
+
+sub __OnToProduceClick {
+	my $self   = shift;
+	my $taskId = shift;
+
+	my $task = $self->__GetTaskById($taskId);
+
+	my $messMngr = $self->{"form"}->{"messageMngr"};
+	my @mess     = ();
+
+	$task->SetToProduceResult();
+	$self->{"form"}->SetJobItemToProduceResult($task);
+
+	#update gui
+
+	# Can sent to produce but show errors
+	if ( $task->GetJobCanToProduce() && $task->ResultToProduce() eq EnumsGeneral->ResultType_FAIL ) {
+
+		push( @mess, "You can send job to product, but first check errors." );
+		my @btns = ( "Cancel", "Sent to produce" );
+		$messMngr->ShowModal( -1, EnumsGeneral->MessageType_WARNING, \@mess, \@btns );
+
+		if ( $messMngr->Result() == 1 ) {
+			$task->SentToProduce();
+			$self->{"form"}->SetJobItemToProduceResult($task);
+
+		}
+	}
+
+	# Can sent to produce, sent directly
+	elsif ( $task->GetJobCanToProduce() && $task->ResultToProduce() eq EnumsGeneral->ResultType_OK ) {
+
+		$task->SentToProduce();
+		$self->{"form"}->SetJobItemToProduceResult($task);
+
+	}
+	elsif ( !$task->GetJobCanToProduce() ) {
+
+		push( @mess, "You CAN'T send job to product, check \"to produce\" errors." );
+		my @btns = ("Ok");
+		$messMngr->ShowModal( -1, EnumsGeneral->MessageType_ERROR, \@mess, \@btns );
+	}
+
+	#update gui
+	# get results, set gui
 }
 
 # ========================================================================================== #
@@ -360,7 +416,8 @@ sub __SetHandlers {
 	$self->{"form"}->{'onJobProgressEvt'}->Add( sub  { $self->__OnJobProgressEvtHandler(@_) } );
 	$self->{"form"}->{'onJobMessageEvt'}->Add( sub   { $self->__OnJobMessageEvtHandler(@_) } );
 
-	$self->{"form"}->{'onClick'}->Add( sub { $self->__OnClick(@_) } );
+	$self->{"form"}->{'onClick'}->Add( sub     { $self->__OnClick(@_) } );
+	$self->{"form"}->{'onToProduce'}->Add( sub { $self->__OnToProduceClick(@_) } );
 
 	# Set worker method
 	$self->{"form"}->_SetThreadWorker( sub { $self->JobWorker(@_) } );
@@ -373,7 +430,7 @@ sub __RunTimers {
 	my $formMainFrm = $self->{"form"}->{"mainFrm"};
 
 	my $timerFiles = Wx::Timer->new( $formMainFrm, -1, );
-	Wx::Event::EVT_TIMER( $formMainFrm, $timerFiles, sub { $self->__CheckFilesHandler( @_ ) } );
+	Wx::Event::EVT_TIMER( $formMainFrm, $timerFiles, sub { $self->__CheckFilesHandler(@_) } );
 	$self->{"timerFiles"} = $timerFiles;
 	$timerFiles->Start(200);
 
@@ -421,20 +478,18 @@ sub __CheckFilesHandler {
 	if ( scalar(@newFiles) ) {
 		@newFiles = sort { $a->{"created"} <=> $b->{"created"} } @newFiles;
 		push( @{ $self->{"exportFiles"} }, @newFiles );
-		
-		foreach my $jobFile (@newFiles){
-			
+
+		foreach my $jobFile (@newFiles) {
+
 			my $jobId = $jobFile->{"name"};
- 
+
 			my $dataTransfer = DataTransfer->new( $jobId, EnumsTransfer->Mode_READ );
 			my $exportData = $dataTransfer->GetExportData();
-			
-			 $self->__AddNewJob( $jobId, $exportData);
-			 
+
+			$self->__AddNewJob( $jobId, $exportData );
+
 		}
 	}
-	
-	
 
 	#my $str = "";
 	#foreach my $f ( @{ $self->{"exportFiles"} } ) {
@@ -442,9 +497,8 @@ sub __CheckFilesHandler {
 
 	#}
 
-	 
-	 
 }
+
 #
 #sub __Refresh {
 #	my ( $self, $frame, $event ) = @_;
@@ -466,12 +520,13 @@ sub __OnClick {
 	my $total       = 0;
 
 	my $jobId = "f13610";
-	
+
 	my $dataTransfer = DataTransfer->new( $jobId, EnumsTransfer->Mode_READ );
 	my $exportData = $dataTransfer->GetExportData();
 
 	$self->__AddNewJob( $jobId, $exportData );
 }
+
 #
 #sub doExport {
 #	my ( $id, $inCAM ) = @_;

@@ -10,14 +10,12 @@ use strict;
 use warnings;
 use JSON;
 
-
 #local library
 use aliased "Enums::EnumsPaths";
 use aliased "Enums::EnumsGeneral";
 use aliased "Helpers::FileHelper";
 use aliased 'Programs::Exporter::ExportUtility::ExportUtility::ExportStatus::ExportStatusBuilder';
 use aliased 'Helpers::JobHelper';
-
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -30,86 +28,93 @@ sub new {
 
 	$self->{"jobId"} = shift;
 	$self->{"inCAM"} = shift;
- 
-	$self->{"filePath"} =  JobHelper->GetJobArchive($self->{"jobId"})."ExportStatus";
- 
+
+	$self->{"filePath"} = JobHelper->GetJobArchive( $self->{"jobId"} ) . "ExportStatus";
+
 	return $self;
 }
 
- 
-
-sub IsExportOk{
+sub IsExportOk {
 	my $self = shift;
-	
+
 	my %hashKeys = $self->__ReadExportStatus();
-	 
-	my $statusOk = 1; 
-	 
-  	foreach my $k (keys %hashKeys){
-  		
-  		if( $hashKeys{$k} == 0){
-  			$statusOk = 0;
-  			last;
-  		}
-  		
-  	}
-  	
-  	return $statusOk;
-  
-  
+
+	my $statusOk = 1;
+
+	foreach my $k ( keys %hashKeys ) {
+
+		if ( $hashKeys{$k} == 0 ) {
+			$statusOk = 0;
+			last;
+		}
+
+	}
+
+	return $statusOk;
+
 }
 
-sub CreateStatusFile{
+sub DeleteStatusFile {
+	my $self = shift;
+
+	
+	if(-e $self->{"filePath"}){
+		
+		unlink($self->{"filePath"});
+	}
+	
+}
+
+sub CreateStatusFile {
 	my $self = shift;
 
 	# test if file already exist
-	if(-e $self->{"filePath"}){
+	if ( -e $self->{"filePath"} ) {
 		return 1;
 	}
 
-
-	
 	my $builder = ExportStatusBuilder->new();
-	my @keys = $builder->GetStatusKeys($self);
-	
+	my @keys    = $builder->GetStatusKeys($self);
+
 	my %hashKeys = ();
-	
+
 	# create hash from keys
-	foreach my $k (@keys){
-		
+	foreach my $k (@keys) {
+
 		$hashKeys{$k} = 0;
 	}
-	
-	$self->__SaveExportStatus(\%hashKeys);
+
+	$self->__SaveExportStatus( \%hashKeys );
 }
 
-
-sub UpdateStatusFile{
-	my $self = shift;
-	my $unitKey = shift;
+sub UpdateStatusFile {
+	my $self         = shift;
+	my $unitKey      = shift;
 	my $exportResult = shift;
-	
-	
-	if($exportResult eq EnumsGeneral->ResultType_OK){
-		
-		 my %hashKeys = $self->__ReadExportStatus();
-		 
-		 $hashKeys{$unitKey} = 1;
-		 
-		 $self->__SaveExportStatus(\%hashKeys);
-	}
-  
-}
 
+	my $result = 0;
+
+	if ( $exportResult eq EnumsGeneral->ResultType_OK ) {
+		$result = 1;
+	}
+	elsif ( $exportResult eq EnumsGeneral->ResultType_FAIL ) {
+		$result = 0;
+	}
+
+	my %hashKeys = $self->__ReadExportStatus();
+
+	$hashKeys{$unitKey} = $result;
+
+	$self->__SaveExportStatus( \%hashKeys );
+}
 
 sub __SaveExportStatus {
-	my $self = shift;
-	my %hashData = %{shift(@_)};
-	
+	my $self     = shift;
+	my %hashData = %{ shift(@_) };
 
 	my $json = JSON->new();
 
-	my $serialized = $json->pretty->encode(\%hashData);
+	my $serialized = $json->pretty->encode( \%hashData );
 
 	#delete old file
 	unlink $self->{"filePath"};
@@ -119,20 +124,20 @@ sub __SaveExportStatus {
 	close $f;
 }
 
-sub __ReadExportStatus{
+sub __ReadExportStatus {
 	my $self = shift;
-	# read from disc
-		# Load data from file
-		my $serializeData = FileHelper->ReadAsString( $self->{"filePath"} );
-		
-		my $json = JSON->new();
 
-		my $hashData = $json->decode($serializeData);
-		
-		return %{$hashData};
+	# read from disc
+	# Load data from file
+	my $serializeData = FileHelper->ReadAsString( $self->{"filePath"} );
+
+	my $json = JSON->new();
+
+	my $hashData = $json->decode($serializeData);
+
+	return %{$hashData};
 }
 
- 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#

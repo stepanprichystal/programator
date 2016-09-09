@@ -11,6 +11,7 @@ use threads;
 use threads::shared;
 use Wx;
 use Config;
+use Win32::GuiTest qw(FindWindowLike SetWindowPos ShowWindow);
 
 #use Try::Tiny;
 
@@ -44,16 +45,16 @@ sub new {
 	$self->{"servers"} = \@servers;
 
 	$self->{"maxCntUser"}      = 5;
-	$self->{"maxCntTotal"}     = 9;      #max allowed number of server
+	$self->{"maxCntTotal"}     = 9;       #max allowed number of server
 	$self->{"actualCntRuning"} = 0;
-	$self->{"startPort"}       = 1000;  #Port for ExportUtility start from 1000, Port for ExportChecker start from 2000, 
+	$self->{"startPort"}       = 1000;    #Port for ExportUtility start from 1000, Port for ExportChecker start from 2000,
 
-	$self->{"destroyOnDemand"} = 1;      #close server only on demand, not immediately
-	$self->{"destroyDelay"}    = 10;     #destroy server after 12s of WAITING state
+	$self->{"destroyOnDemand"} = 1;       #close server only on demand, not immediately
+	$self->{"destroyDelay"}    = 10;      #destroy server after 12s of WAITING state
 
 	$self->__InitServers();
 
-	return $self;                        # Return the reference to the hash.
+	return $self;                         # Return the reference to the hash.
 }
 
 sub Init {
@@ -165,7 +166,8 @@ sub PrepareServerPort {
 				#create server in separete ports
 				my $port = ${$serverRef}[$i]{"port"};
 
-				my $worker = threads->create( sub { $self->__CreateServer( $port, $jobGUID ) } ); 
+				my $worker = threads->create( sub { $self->__CreateServer( $port, $jobGUID ) } );
+
 				#$worker->detach();
 
 				last;
@@ -276,15 +278,22 @@ sub __CreateServer {
 
 	#run InCAM editor with serverscript
 	Win32::Process::Create( $processObj, $inCAMPath,
-							"InCAM.exe    -x -s" . GeneralHelper->Root() . "\\Managers\\AsyncJobMngr\\Server\\ServerExporter.pl  " . $freePort,
+							"InCAM.exe    -s" . GeneralHelper->Root() . "\\Managers\\AsyncJobMngr\\Server\\ServerExporter.pl  " . $freePort,
 							0, THREAD_PRIORITY_NORMAL, "." )
 	  || die "$!\n";
 
 	$pidInCAM = $processObj->GetProcessID();
 
+	# Temoporary solution because -x is not working in inCAM
+	$self->__MoveWindowOut($pidInCAM);
+
 	Helper->Print( "CLIENT PID: " . $pidInCAM . " (InCAM)........................................is launching\n" );
 
-	#wait, until server script is not ready
+	# first test of connection 
+	$inCAM = InCAM->new( "remote" => 'localhost', "port" => $freePort  );
+
+
+	# next tests of connecton. Wait, until server script is not ready
 	while ( !defined $inCAM || !$inCAM->{"socketOpen"} || !$inCAM->{"connected"} ) {
 		if ($inCAM) {
 
@@ -294,8 +303,13 @@ sub __CreateServer {
 		}
 		sleep(2);
 
-		$inCAM = InCAM->new( "remote"=>'localhost', "port"=>$freePort );
+		$inCAM = InCAM->new( "remote" => 'localhost', "port" => $freePort );
 	}
+	
+	
+	# Temoporary solution because -x is not working in inCAM
+	$self->__MoveWindowOut($pidInCAM);
+	
 
 	#server seems ready, try send message and get server pid
 	$pidServer = $inCAM->ServerReady();
@@ -324,6 +338,21 @@ sub __CreateServer {
 
 	#no another free ports
 	return 0;
+}
+
+sub __MoveWindowOut {
+	my $self    = shift;
+	my $pid     = shift;
+	
+	my @windows = FindWindowLike( 0, "$pid" );
+	for (@windows) {
+
+		#print "$_>\t'", GetWindowText($_), "'\n";
+
+		ShowWindow( $_, 0);
+		SetWindowPos( $_, 0, -10000, -10000, 0, 0, 0 );
+
+	}
 }
 
 sub __InitServers {
@@ -415,10 +444,6 @@ sub __PortReady {
 	my %res : shared = ();
 	$res{"port"}    = $port;
 	$res{"jobGUID"} = $pcbId;
-	
-	
- 
-	
 
 	my $threvent = new Wx::PlThreadEvent( -1, $PORT_READY_EXPORTER_EVT, \%res );
 	Wx::PostEvent( $self->{"exporterFrm"}, $threvent );

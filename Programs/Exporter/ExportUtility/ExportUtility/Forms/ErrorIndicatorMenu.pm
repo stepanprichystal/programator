@@ -242,12 +242,12 @@ sub __OnClick {
 		if ( $self->{"mode"} eq EnumsGeneral->MessageType_ERROR ) {
 
 
-			$str = $resultMngr->GetErrorsStr();
+			$str = $resultMngr->GetErrorsStr(1);
 			$cnt = $resultMngr->GetErrorsCnt();
 		}
 		elsif ( $self->{"mode"} eq EnumsGeneral->MessageType_WARNING ) {
 
-			$str = $resultMngr->GetWarningsStr();
+			$str = $resultMngr->GetWarningsStr(1);
 			$cnt = $resultMngr->GetWarningsCnt();
 
 		}
