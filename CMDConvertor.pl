@@ -5,7 +5,7 @@ use strict;
 use warnings;
 
 # ============ INPUT LINE =================
-my $line = "cdr_delete_sets_by_name,layers=c\;v2\;v3,sets=ppp";
+my $line = "cdr_affected_layer,mode=off,layer=v2";
 
 # ============ INPUT LINE =================
 

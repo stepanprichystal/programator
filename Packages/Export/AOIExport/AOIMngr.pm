@@ -40,12 +40,10 @@ sub new {
 	$self->{"jobId"} = shift;
 
 	$self->{"stepToTest"} = shift;    # step, which will be tested
-	$self->{"attemptCnt"} = 20;  # max count of attempt
+	$self->{"attemptCnt"} = 20;       # max count of attempt
 
 	return $self;
 }
-
-
 
 sub Run {
 	my $self = shift;
@@ -54,19 +52,16 @@ sub Run {
 	my $jobId      = $self->{"jobId"};
 	my $stepToTest = $self->{"stepToTest"};
 	my $layerName  = $self->{"layer"};
-	
-	
+
 	my $layerCnt = CamJob->GetSignalLayerCnt( $inCAM, $jobId );
 	my @signalLayers = CamJob->GetSignalLayerNames( $inCAM, $jobId );
 
 	if ( $layerCnt > 2 ) {
 		$self->{"stackup"} = Stackup->new($jobId);
 	}
-	
+
 	# Delete old files
 	$self->__DeleteOutputFiles();
-
-
 
 	#open et step
 	$inCAM->COM( "set_step", "name" => $stepToTest );
@@ -74,14 +69,12 @@ sub Run {
 	$inCAM->AUX( 'set_group', group => $inCAM->{COMANS} );
 
 	my $setName = "cdr";
-	
+
 	#my $strLayers = join("\;", @signalLayers);
-	
-	#$inCAM->COM("cdr_delete_sets_by_name","layers" => $strLayers,"sets" => $setName);
-	
-	#$inCAM->COM("delete_entity","job" => $jobId,"name" => $setName, "type" => "cdrsr");
-	
-	
+
+	#$inCAM->COM("cdr_delete_sets_by_name","layers" => "","sets" => $setName);
+
+	#$inCAM->COM("delete_entity","job" => $jobId,"name" => $setName, "type" => "cdr");
 
 	# Raise result item for optimization set
 	my $resultItemOpenSession = $self->_GetNewItem("Open AOI session");
@@ -105,7 +98,6 @@ sub Run {
 	$resultItemOpenSession->AddErrors( $inCAM->GetExceptionsError() );
 	$self->_OnItemResult($resultItemOpenSession);
 
-
 	$inCAM->COM( "cdr_set_current_cdr_name", "job" => $jobId, "step" => $stepToTest, "set_name" => $setName );
 	$inCAM->COM( "cdr_clear_displayed_layers", );
 	$inCAM->COM(
@@ -118,10 +110,16 @@ sub Run {
 	$inCAM->COM( "cdr_set_machine", "machine" => "discovery", "cfg_name" => "discoveryDefaultConfiguration" );
 	$inCAM->COM( "cdr_set_table", "set_name" => "", "name" => "27x24", "x_dim" => "685.8", "y_dim" => "609.6" );
 
-
 	# For each layer export AOI
 	foreach my $layer (@signalLayers) {
 
+		# un affected all layer
+		foreach my $l (@signalLayers) {
+
+			$inCAM->COM( "cdr_affected_layer", "mode" => "off", "layer" => $l );
+		}
+		
+		# For each layer export AOI
 		$self->__ExportAOI( $layer, $setName );
 	}
 
@@ -154,7 +152,6 @@ sub __OpenAOISession {
 	$inCAM->HandleException(0);
 }
 
-
 sub __ExportAOI {
 
 	my $self = shift;
@@ -167,8 +164,6 @@ sub __ExportAOI {
 	my $stepToTest = $self->{"stepToTest"};
 
 	# ===== Set AOI parameters ======
-
-	# Choose layer
 
 	# START HANDLE EXCEPTION IN INCAM
 	$inCAM->HandleException(1);
@@ -192,7 +187,7 @@ sub __ExportAOI {
 	my $space = $inCAM->GetReply();
 
 	$inCAM->COM( "cdr_line_width", "nom_width" => $line,  "min_width" => "0" );
-	$inCAM->COM( "cdr_spacing",     "nom_space" => $space, "min_space" => "0" );
+	$inCAM->COM( "cdr_spacing",    "nom_space" => $space, "min_space" => "0" );
 
 	# Set steps and repeat
 
@@ -231,10 +226,10 @@ sub __ExportAOI {
 # Delete all files from ot dir
 sub __DeleteOutputFiles {
 	my $self = shift;
-	
-	my $path = JobHelper->GetJobArchive( $self->{"jobId"}) . "zdroje\\ot\\";
+
+	my $path = JobHelper->GetJobArchive( $self->{"jobId"} ) . "zdroje\\ot\\";
 	my $dir;
-	
+
 	if ( opendir( $dir, $path ) ) {
 		while ( my $file = readdir($dir) ) {
 			next if ( $file =~ /^\.$/ );
@@ -244,7 +239,6 @@ sub __DeleteOutputFiles {
 		closedir($dir);
 	}
 }
- 
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
