@@ -25,6 +25,7 @@ use aliased 'Managers::AsyncJobMngr::ThreadMngr::ThreadMngr';
 use aliased 'Managers::AsyncJobMngr::Helper';
 use aliased 'Managers::MessageMngr::MessageMngr';
 use aliased 'Managers::AsyncJobMngr::Enums';
+use aliased 'Widgets::Forms::MyTaskBarIcon';
 
 #use aliased 'Programs::Exporter::ThreadBase';
 use aliased 'Packages::Events::Event';
@@ -35,6 +36,7 @@ use aliased 'Packages::Events::Event';
 
 sub new {
 	my $self      = shift;
+	my $runMode =  shift;
 	my $parent    = shift;
 	my $title     = shift;
 	my $dimension = shift;
@@ -47,8 +49,9 @@ sub new {
 
 	bless($self);
 
-	#running mode
-	$self->{"runMode"} = shift;
+	#running mode: RUNMODE_WINDOW X RUNMODE_TRAY
+	$self->{"runMode"} = $runMode;
+	$self->{"trayIcon"} = undef;
 
 	my @jobs = ();
 	$self->{"jobs"}       = \@jobs;
@@ -418,15 +421,36 @@ sub __SetLayout {
 		$title,     # title
 
 		[ -1, -1 ], # window position
-		\@dimension # size
-		            #&Wx::wxSYSTEM_MENU | &Wx::wxCAPTION | &Wx::wxCLIP_CHILDREN | &Wx::wxRESIZE_BORDER | &Wx::wxMINIMIZE_BOX
+		\@dimension, # size   &Wx::wxSTAY_ON_TOP | 
+		&Wx::wxSYSTEM_MENU | &Wx::wxCAPTION | &Wx::wxRESIZE_BORDER | &Wx::wxMINIMIZE_BOX | &Wx::wxMAXIMIZE_BOX | &Wx::wxCLOSE_BOX
 	);
+
+
+	if($self->{"runMode"} eq Enums->RUNMODE_TRAY){
+ 
+		my $trayicon = MyTaskBarIcon->new( "Exporter", $mainFrm);
+ 		$trayicon->AddMenuItem("Exit Exporter", sub {  $self->OnClose() });
+ 		$mainFrm->{'onClose'}->Add( sub {$mainFrm->Hide();} );    #Set onClose handler
+ 		
+		
+	}elsif($self->{"runMode"} eq Enums->RUNMODE_WINDOW){
+		
+		$mainFrm->{'onClose'}->Add( sub { $self->OnClose(@_) } );    #Set onClose handler
+	}
+
+
+
+
+
+
+
+
 
 	$self->{"mainFrm"} = $mainFrm;
 
 	#EVENTS
 
-	$mainFrm->{'onClose'}->Add( sub { $self->OnClose(@_) } );    #Set onClose handler
+	
 
 	my $THREAD_DONE_EVT : shared = Wx::NewEventType;
 	Wx::Event::EVT_COMMAND( $self->{"mainFrm"}, -1, $THREAD_DONE_EVT, sub { $self->__ThreadDoneHandler(@_) } );
@@ -586,8 +610,6 @@ sub __TakeFromQueueHandler {
 					$self->__SetJobState( $jobGUID, Enums->JobState_WAITINGPORT );
 
 					$self->{'onJobStateChanged'}->Do( $jobGUID, Enums->JobState_WAITINGPORT );
-					
-
 					$self->{"serverMngr"}->PrepareExternalServerPort($jobGUID, ${$jobsRef}[$i]{"serverInfo"});
 
 				}
@@ -600,7 +622,6 @@ sub __TakeFromQueueHandler {
 					$self->__SetJobState( $jobGUID, Enums->JobState_WAITINGPORT );
 
 					$self->{'onJobStateChanged'}->Do( $jobGUID, Enums->JobState_WAITINGPORT );
-
 					$self->{"serverMngr"}->PrepareServerPort($jobGUID);
 
 				}

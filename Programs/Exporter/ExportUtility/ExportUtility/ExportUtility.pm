@@ -12,6 +12,7 @@ use Wx;
 use strict;
 use warnings;
 
+
 #local library
 
 use aliased 'Helpers::GeneralHelper';
@@ -28,6 +29,7 @@ use aliased 'Programs::Exporter::ExportUtility::ExportUtility::JobWorkerClass';
 use aliased 'Programs::Exporter::ExportUtility::Enums';
 use aliased 'Packages::InCAM::InCAM';
 
+
 #my $THREAD_MESSAGE_EVT : shared;
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -40,14 +42,17 @@ use aliased 'Packages::InCAM::InCAM';
 #};
 
 sub new {
+	
 	my $self = shift;
 	$self = {};
 	bless($self);
+	
+	my $runMode = shift;
 
 	$self->{"inCAM"} = undef;
 
 	# Main application form
-	$self->{"form"} = ExportUtilityForm->new();
+	$self->{"form"} = ExportUtilityForm->new($runMode);
 
 	# Keep all references of used groups/units in form
 	my @tasks = ();
@@ -83,8 +88,10 @@ sub __Run {
 	#Win32::OLE->Uninitialize();
 
 	$self->__RunTimers();
-
+	
 	$self->{"form"}->MainLoop();
+
+	
 
 }
 
@@ -166,16 +173,15 @@ sub __OnJobStateChanged {
 
 		$task->ProcessTaskDone($aborted);
 		$self->{"form"}->SetJobItemResult($task);
-		
-		
+
 		# Setting to produce if is checked by export settings
 		if ( $task->GetJobShouldToProduce() ) {
-			
+
 			# Set values, if job can be sent to produce
 			$task->SetToProduceResult();
-			
+
 			# if can eb sent to produce without errror, send it
-			if ( $task->GetJobCanToProduce()) {
+			if ( $task->GetJobCanToProduce() ) {
 
 				$task->SentToProduce();
 			}
@@ -282,36 +288,35 @@ sub __OnJobMessageEvtHandler {
 	#print "Exporter utility::  job id: " . $jobGUID . " - messType: " . $messType . " - data: " . $data . "\n";
 }
 
-sub __OnRemoveJobClick{
+sub __OnRemoveJobClick {
 	my $self   = shift;
 	my $taskId = shift;
-	
+
 	my $task = $self->__GetTaskById($taskId);
-	
+
 	#if mode was synchrounous, we have to quit server script
 
-	my $exportData =  $task->GetExportData();
+	my $exportData = $task->GetExportData();
 
 	if ( $exportData->GetExportMode() eq EnumsTransfer->ExportMode_SYNC ) {
-		
+
 		my $port = $exportData->GetPort();
- 
-		my $inCAM = InCAM->new("port" => $port);
+
+		my $inCAM = InCAM->new( "port" => $port );
+
 		#$inCAM->ServerReady();
-		
+
 		my $pidServer = $inCAM->ServerReady();
 
 		#if ok, make space for new client (child process)
 		if ($pidServer) {
 			$inCAM->CloseServer();
 		}
-		
-		
+
 		$self->{"form"}->_DestroyExternalServer($port);
 	}
-	
-}
 
+}
 
 sub __OnToProduceClick {
 	my $self   = shift;
@@ -559,71 +564,9 @@ sub __OnClick {
 	$self->__AddNewJob( $jobId, $exportData );
 }
 
-#
-#sub doExport {
-#	my ( $id, $inCAM ) = @_;
-#
-#	my $errCode = $inCAM->COM( " clipb_open_job ", job => $id, update_clipboard => " view_job " );
-#
-#	#
-#	#	$errCode = $inCAM->COM(
-#	#		" open_entity ",
-#	#		job  => " F17116 + 2 ",
-#	#		type => " step ",
-#	#		name => " test "
-#	#	);
-#
-#	#return 0;
-#	for ( my $i = 0 ; $i < 5 ; $i++ ) {
-#
-#		sleep(3);
-#		$inCAM->COM(
-#					 'output_layer_set',
-#					 layer        => " c ",
-#					 angle        => '0',
-#					 x_scale      => '1',
-#					 y_scale      => '1',
-#					 comp         => '0',
-#					 polarity     => 'positive',
-#					 setupfile    => '',
-#					 setupfiletmp => '',
-#					 line_units   => 'mm',
-#					 gscl_file    => ''
-#		);
-#
-#		$inCAM->COM(
-#					 'output',
-#					 job                  => $id,
-#					 step                 => 'input',
-#					 format               => 'Gerber274x',
-#					 dir_path             => " c : /Perl/site / lib / TpvScripts / Scripts / data ",
-#					 prefix               => " incam1_ " . $id . " _ $i",
-#					 suffix               => "",
-#					 break_sr             => 'no',
-#					 break_symbols        => 'no',
-#					 break_arc            => 'no',
-#					 scale_mode           => 'all',
-#					 surface_mode         => 'contour',
-#					 min_brush            => '25.4',
-#					 units                => 'inch',
-#					 coordinates          => 'absolute',
-#					 zeroes               => 'Leading',
-#					 nf1                  => '6',
-#					 nf2                  => '6',
-#					 x_anchor             => '0',
-#					 y_anchor             => '0',
-#					 wheel                => '',
-#					 x_offset             => '0',
-#					 y_offset             => '0',
-#					 line_units           => 'mm',
-#					 override_online      => 'yes',
-#					 film_size_cross_scan => '0',
-#					 film_size_along_scan => '0',
-#					 ds_model             => 'RG6500'
-#		);
-#
-#	}
-#}
+
+# necessery for running RunALone library
+ 
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
@@ -635,15 +578,42 @@ my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	use aliased 'Programs::Exporter::ExportUtility::ExportUtility::ExportUtility';
+	use aliased 'Widgets::Forms::MyTaskBarIcon';
 
-	my $exporter = ExportUtility->new();
+	
+
+	my $exporter = ExportUtility->new(EnumsMngr->RUNMODE_WINDOW);
+
+	#my $form = $exporter->{"form"}->{"mainFrm"};
+
+	#my $trayicon = MyTaskBarIcon->new( "Exporter", $form);
+	
+
+	#$trayicon->AddMenuItem("Exit Exporter", sub {  $exporter->{"form"}->OnClose() });
+	#$trayicon->AddMenuItem("Open", sub { print "Open"; });
+	
+#	sub __OnLeftClick {
+#	my $self = shift;
+#
+#	print "left click\n";
+#
+#	}
+
+	#$trayicon->IsOk() || die;
+
+
 
 	#$app->Test();
-
-	$exporter->MainLoop;
+	 
+ 
 
 }
 
-1;
+sub Test{
+	my $from = shift;
+	
+	print $from."TEST\n";
+}
+
 
 1;

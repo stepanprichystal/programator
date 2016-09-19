@@ -44,7 +44,9 @@ use aliased 'Managers::AsyncJobMngr::ServerMngr::ServerInfo';
 
 sub new {
 	my $class  = shift;
+	my $runMode = shift;
 	my $parent = shift;
+	
 
 	if ( defined $parent && $parent == -1 ) {
 		$parent = undef;
@@ -53,7 +55,7 @@ sub new {
 	my $title = "Exporter jobu";
 	my @dimension = ( 1140, 700 );
 
-	my $self = $class->SUPER::new( $parent, $title, \@dimension );
+	my $self = $class->SUPER::new( $runMode, $parent, $title, \@dimension );
 
 	bless($self);
 
@@ -80,6 +82,7 @@ sub AddNewTaskGUI {
 
 	my $taskId   = $task->GetTaskId();
 	my $taskData = $task->GetExportData();
+
 
 	# Add new item to queue
 

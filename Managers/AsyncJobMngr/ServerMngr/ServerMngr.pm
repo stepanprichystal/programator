@@ -218,29 +218,36 @@ sub PrepareExternalServerPort {
 
 		if ( ${$serverRef}[$i]->{"state"} eq Enums->State_FREE_SERVER ) {
 
+			# save default and set real port number of server 
+			${$serverRef}[$i]->{"port"} = $serverInfo->{"port"};
+
 			#test, if server is really ready. Try to connect
 
-			my $inCAM = InCAM->new("remote" => 'localhost', "port" => $serverInfo->{"port"} );
-
-			# next tests of connecton. Wait, until server script is not ready
-			if ( !$inCAM->{"socketOpen"} || !$inCAM->{"connected"} ) {
-				return 0;
-			}
-
-			my $pidServer = $inCAM->ServerReady();
-
-			#if ok, make space for new client (child process)
-			if ($pidServer) {
-				$inCAM->ClientFinish();
-			}
-
-			${$serverRef}[$i]->{"state"}     = Enums->State_RUNING_SERVER;
-			${$serverRef}[$i]->{"port"}      = $serverInfo->{"port"};
-			${$serverRef}[$i]->{"pidInCAM"}  = $serverInfo->{"pidInCAM"};
-			${$serverRef}[$i]->{"pidServer"} = $pidServer;
-			${$serverRef}[$i]->{"external"}  = 1;
-
-			$self->__PortReady( $serverInfo->{"port"}, $jobGUID );
+			my $worker = threads->create( sub { $self->__CreateServerExternal( $serverInfo->{"port"}, $jobGUID ) } );
+#			
+#			
+#
+#			my $inCAM = InCAM->new("remote" => 'localhost', "port" => $serverInfo->{"port"} );
+#
+#			# next tests of connecton. Wait, until server script is not ready
+#			if ( !$inCAM->{"socketOpen"} || !$inCAM->{"connected"} ) {
+#				return 0;
+#			}
+#
+#			my $pidServer = $inCAM->ServerReady();
+#
+#			#if ok, make space for new client (child process)
+#			if ($pidServer) {
+#				$inCAM->ClientFinish();
+#			}
+#
+#			${$serverRef}[$i]->{"state"}     = Enums->State_RUNING_SERVER;
+#			${$serverRef}[$i]->{"port"}      = $serverInfo->{"port"};
+#			${$serverRef}[$i]->{"pidInCAM"}  = $serverInfo->{"pidInCAM"};
+#			${$serverRef}[$i]->{"pidServer"} = $pidServer;
+#			${$serverRef}[$i]->{"external"}  = 1;
+#
+#			$self->__PortReady( $serverInfo->{"port"}, $jobGUID );
 			
 			last;
 
@@ -306,6 +313,8 @@ sub DestroyServersOnDemand {
 	}
 }
 
+
+
 sub __CreateServer {
 
 	my $self     = shift;
@@ -360,31 +369,18 @@ sub __CreateServer {
 
 	Helper->Print( "CLIENT PID: " . $pidInCAM . " (InCAM)........................................is launching\n" );
 
-	# first test of connection
-	$inCAM = InCAM->new( "remote" => 'localhost', "port" => $freePort );
-
-	# next tests of connecton. Wait, until server script is not ready
-	while ( !defined $inCAM || !$inCAM->{"socketOpen"} || !$inCAM->{"connected"} ) {
-		if ($inCAM) {
-
-			# print RED, "Stop!\n", RESET;
-
-			Helper->Print("CLIENT(parent): PID: $$  try connect to server port: $freePort....failed\n");
-		}
-		sleep(2);
-
-		$inCAM = InCAM->new( "remote" => 'localhost', "port" => $freePort );
-	}
+	# creaate and test server connection
+	$pidServer = $self->__CreateServerConn($freePort);
+ 
 
 	# Temoporary solution because -x is not working in inCAM
 	$self->__MoveWindowOut($pidInCAM);
 
-	#server seems ready, try send message and get server pid
-	$pidServer = $inCAM->ServerReady();
+
 
 	#if ok, make space for new client (child process)
 	if ($pidServer) {
-		$inCAM->ClientFinish();
+		#$inCAM->ClientFinish();
 
 		Helper->Print("PORT: $freePort ......................................................is ready\n");
 
@@ -406,6 +402,78 @@ sub __CreateServer {
 
 	#no another free ports
 	return 0;
+}
+
+
+sub __CreateServerExternal{
+	my $self     = shift;
+	my $freePort = shift;
+	my $jobGUID  = shift;
+
+ 
+	my $pidInCAM;
+	my $pidServer;
+ 
+	# creaate and test server connection
+	$pidServer = $self->__CreateServerConn($freePort);
+ 
+ 
+	#if ok, make space for new client (child process)
+	if ($pidServer) {
+		#$inCAM->ClientFinish();
+
+		Helper->Print("PORT: $freePort ......................................................is ready\n");
+
+		my %res : shared = ();
+
+		$res{"port"}      = $freePort;
+		$res{"jobGUID"}   = $jobGUID;
+		$res{"pidInCAM"}  = undef;
+		$res{"pidServer"} = $pidServer;
+
+		my $threvent = new Wx::PlThreadEvent( -1, $PORT_READY_EVT, \%res );
+		Wx::PostEvent( $self->{"exporterFrm"}, $threvent );
+
+	}
+	else {
+		print STDERR "Error when running serverscript for InCAM";
+		return 0;
+	}
+}
+
+sub __CreateServerConn{
+	my $self = shift;
+	my $port  = shift;
+	
+	my $inCAM;
+	
+		# first test of connection
+	$inCAM = InCAM->new( "remote" => 'localhost', "port" => $port );
+
+	# next tests of connecton. Wait, until server script is not ready
+	while ( !defined $inCAM || !$inCAM->{"socketOpen"} || !$inCAM->{"connected"} ) {
+		if ($inCAM) {
+
+			# print RED, "Stop!\n", RESET;
+
+			Helper->Print("CLIENT(parent): PID: $$  try connect to server port: $port....failed\n");
+		}
+		sleep(2);
+
+		$inCAM = InCAM->new( "remote" => 'localhost', "port" => $port );
+	}
+
+	#server seems ready, try send message and get server pid
+	my $pidServer = $inCAM->ServerReady();
+	
+	if ($pidServer) {
+		$inCAM->ClientFinish();
+		
+		return $pidServer;
+	}else{
+		
+		return 0;
+	}
 }
 
 sub __MoveWindowOut {
@@ -431,10 +499,14 @@ sub __InitServers {
 	for ( my $i = 0 ; $i < $self->{"maxCntUser"} ; $i++ ) {
 
 		my $sInfo = ServerInfo->new();
+		
+		# set default port number
+		$sInfo->{"portDefault"} = $self->{"startPort"} + $i + 1,    #server ports 1001, 1002....
+		
+		# set working port number
+		$sInfo->{"port"} = $sInfo->{"portDefault"};
 
-		$sInfo->{"port"} = $self->{"startPort"} + $i + 1,    #server ports 1001, 1002....
-
-		  push( @{$serverRef}, $sInfo );
+		 push( @{$serverRef}, $sInfo );
 	}
 
 }
@@ -472,6 +544,9 @@ sub DestroyExternalServer {
 	if ( defined $idx ) {
 
 		#Win32::Process::KillProcess( $s->{"pidServer"}, 0 );
+		# set default  port number
+		${$serverRef}[$idx]->{"port"} = ${$serverRef}[$idx]->{"portDefault"};
+		#${$serverRef}[$idx]->{"portDefault"} = -1;
 
 		${$serverRef}[$idx]->{"state"} = Enums->State_FREE_SERVER;
 		${$serverRef}[$idx]->{"pidInCAM"}  = -1;

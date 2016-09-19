@@ -22,7 +22,9 @@ sub new {
 
 	$self->{"state"} = Enums->State_FREE_SERVER;
 	
-	$self->{"port"} = -1;    #server ports 1001, 1002....
+	$self->{"port"} = -1;    #working server port. Is port value, which we working with...
+	
+	$self->{"portDefault"} = -1; # default server port. Is port, which is defaultly set (1001, 1002,...)    
 	
 	$self->{"pidInCAM"}  = -1;
 	
