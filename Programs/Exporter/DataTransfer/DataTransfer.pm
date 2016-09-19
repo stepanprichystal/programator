@@ -10,13 +10,11 @@ use strict;
 use warnings;
 use JSON;
 
-
 #local library
 use aliased "Programs::Exporter::DataTransfer::ExportData";
 use aliased "Enums::EnumsPaths";
 use aliased "Helpers::FileHelper";
 use aliased 'Programs::Exporter::DataTransfer::Enums';
-
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -34,7 +32,7 @@ sub new {
 
 	# This parameter have to be passed only in Write mode
 	$self->{"unitsData"} = shift;
-	$self->{"location"} = shift;
+	#$self->{"location"}  = shift;
 
 	$self->{"filePath"} = EnumsPaths->Client_EXPORTFILES . $self->{"jobId"};
 
@@ -43,6 +41,7 @@ sub new {
 
 	# structure
 	$self->{"hashData"}->{"units"} = ();
+
 	#$self->{"hashData"}->{"time"}  = undef;
 	#$self->{"hashData"}->{"location"}  = undef;
 
@@ -71,7 +70,8 @@ sub __BuildExportData {
 		}
 
 		# 2) prepare other
-		$self->{"data"}->{"time"} = "tttt";
+		#$self->{"data"}->{"time"} = "tttt";
+
 		#$self->{"hashData"}->{"location"}  =
 
 	}
@@ -80,11 +80,11 @@ sub __BuildExportData {
 		# read from disc
 		# Load data from file
 		my $serializeData = FileHelper->ReadAsString( $self->{"filePath"} );
-		
+
 		my $json = JSON->new();
 
 		my $hashData = $json->decode($serializeData);
-		
+
 		#my $hashData      = decode_json($serializeData);
 
 		# Create ExportData object
@@ -108,9 +108,12 @@ sub __BuildExportData {
 		}
 
 		# Prepare other properties
-		$self->{"data"}->{"time"} = $hashData->{"time"};
-		$self->{"data"}->{"mode"} = $hashData->{"mode"};
+		$self->{"data"}->{"time"}      = $hashData->{"time"};
+		$self->{"data"}->{"mode"}      = $hashData->{"mode"};
 		$self->{"data"}->{"toProduce"} = $hashData->{"toProduce"};
+		$self->{"data"}->{"port"}      = $hashData->{"port"};
+		$self->{"data"}->{"serverPID"} = $hashData->{"serverPID"};
+
 	}
 }
 
@@ -125,36 +128,39 @@ sub GetExportData {
 
 # Serialize class "ExportData"
 sub SaveData {
-	my $self = shift;
-	my $mode = shift;
+	my $self      = shift;
+	my $mode      = shift;
 	my $toProduce = shift;
-	
+	my $port      = shift;
+	my $serverPID = shift;
+
 	#my %unitsData = %{shift(@_)};
 
 	# 1), prepare unit data
 	my %unitsData = %{ $self->{"data"}->{"units"} };
-
 
 	my $unitOrder = 0;
 	foreach my $unitId ( keys %unitsData ) {
 
 		my $unitData = $unitsData{$unitId};
 
-		my %hashUnit = $self->__PrepareUnitExportData($unitData, $unitOrder);
+		my %hashUnit = $self->__PrepareUnitExportData( $unitData, $unitOrder );
 
 		$self->{"hashData"}->{"units"}->{$unitId} = \%hashUnit;
-		
-		$unitOrder ++;
+
+		$unitOrder++;
 	}
 
 	# 2) prepare other
-	
-	my ($sec,$min,$hour) = localtime();
 
-	$self->{"hashData"}->{"time"} = printf("%02d:%02d", $hour, $min);;
-	$self->{"hashData"}->{"mode"} = $mode;
+	my ( $sec, $min, $hour ) = localtime();
+	my $time = sprintf( "%02d:%02d", $hour, $min );
+
+	$self->{"hashData"}->{"time"}      = $time;
+	$self->{"hashData"}->{"mode"}      = $mode;
 	$self->{"hashData"}->{"toProduce"} = $toProduce;
-	
+	$self->{"hashData"}->{"port"}      = $port;
+	$self->{"hashData"}->{"serverPID"} = $serverPID;
 
 	# serialize and save
 	$self->__SerializeExportData();
@@ -179,13 +185,13 @@ sub __SerializeExportData {
 }
 
 sub __PrepareUnitExportData {
-	my $self     = shift;
-	my $unitData = shift;
+	my $self      = shift;
+	my $unitData  = shift;
 	my $unitOrder = shift;
 
 	my $packageName = ref $unitData;
 	my %hashData    = %{ $unitData->{"data"} };
-	$hashData{"__PACKAGE__"} = $packageName;
+	$hashData{"__PACKAGE__"}   = $packageName;
 	$hashData{"__UNITORDER__"} = $unitOrder;
 	return %hashData;
 }

@@ -4,8 +4,8 @@
 
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Programs::Exporter::ExportUtility::Groups::NifExport::Presenter::NifExport;
-
+package Programs::Exporter::ExportUtility::Groups::NCExport::Presenter::NCExport;
+use base('Programs::Exporter::ExportUtility::Groups::ExportBase');
 #3th party library
 use strict;
 use warnings;
@@ -16,8 +16,8 @@ use warnings;
 #use aliased 'Programs::Exporter::ExportChecker::Groups::NifExport::Presenter::NifUnit';
 #use aliased 'Managers::MessageMngr::MessageMngr';
 
-use aliased 'Packages::Events::Event';
-use aliased 'Packages::Export::NifExport::NifMngr';
+ 
+use aliased 'Packages::Export::NCExport::ExportMngr';
 
 #-------------------------------------------------------------------------------------------#
 #  NC export, all layers, all machines..
@@ -25,25 +25,18 @@ use aliased 'Packages::Export::NifExport::NifMngr';
 
 sub new {
 
-	my $self = shift;
-	$self = {};
+	my $class = shift;
+	my $unitId = shift;
+	
+	my $self  = {};
+ 
+	$self = $class->SUPER::new($unitId);
+	bless $self;
 
 	# PROPERTIES
 
-	$self->{"unitId"} = shift;
-
-	$self->{"itemsCount"}          = 0;
-	$self->{"processedItemsCount"} = 0;
-
-	$self->{"inCAM"}      = undef;
-	$self->{"jobId"}      = undef;
-	$self->{"exportData"} = undef;
-
 	# EVENTS
 
-	$self->{"onItemResult"} = Event->new();
-
-	bless $self;
 	return $self;
 }
 
@@ -56,41 +49,19 @@ sub Init {
 	$self->{"inCAM"}      = $inCAM;
 	$self->{"jobId"}      = $jobId;
 	$self->{"exportData"} = $exportData;
-}
-
-sub Run {
-	my $self = shift;
-
-	my $inCAM      = $self->{"inCAM"};
-	my $jobId      = $self->{"jobId"};
-	my $exportData = $self->{"exportData"};
+ 
 
 	my $data = $exportData->GetUnitData( $self->{"unitId"} );
 
-	my $nifMngr = NifMngr->new( $inCAM, $jobId, $data );
-	$nifMngr->{"onItemResult"}->Add( sub { $self->_OnItemResultHandler(@_) } );
-
-	$nifMngr->Run();
-
+	my $mngr = ExportMngr->new( $inCAM, $jobId, "panel", $data->SetExportSingle(), $data->GetPltLayers(), $data->GetNPltLayers() );
+	
+	$mngr->{"onItemResult"}->Add( sub { $self->_OnItemResultHandler(@_) } );
+	
+	$self->{"itemsCount"} = $mngr->ExportItemsCount();
+ 
 }
 
-# Return process group value in percent
-sub GetProgressValue {
-	my $self       = shift;
-	my $itemResult = shift;
-
-	my $val = $self->{"processedItemsCount"} / $self->{"itemsCount"} * 100;	
-}
-
-sub _OnItemResultHandler {
-	my $self       = shift;
-	my $itemResult = shift;
-
-	$self->{"processedItemsCount"}++;
-
-	$self->{"onItemResult"}->Do($itemResult);
-}
-
+ 
 1;
 
 #-------------------------------------------------------------------------------------------#

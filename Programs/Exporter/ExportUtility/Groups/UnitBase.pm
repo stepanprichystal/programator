@@ -17,6 +17,7 @@ use aliased 'Programs::Exporter::ExportChecker::Enums';
 use aliased 'Packages::Events::Event';
 use aliased 'Programs::Exporter::ExportUtility::ExportUtility::Forms::Group::GroupWrapperForm';
 use aliased 'Enums::EnumsGeneral';
+use aliased 'Programs::Exporter::ExportUtility::Groups::GroupData';
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
@@ -34,7 +35,7 @@ sub new {
 
 	$self->{"unitExport"} = undef;
 
-	$self->{"groupData"} = undef;
+	$self->{"groupData"} = GroupData->new();
 
 	return $self;
 }

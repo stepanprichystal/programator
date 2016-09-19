@@ -41,8 +41,8 @@ sub Build {
 	my $nifUnit1 = NifUnit->new( $self->{"jobId"}, "NIF settings" );
 	
 	my $ncUnit1 = NCUnit->new( $self->{"jobId"}, "NC settings" );
-	my $ncUnit2 = NCUnit->new( $self->{"jobId"}, "NC 2" );
-	my $ncUnit3 = NCUnit->new( $self->{"jobId"}, "NC 3" );
+	#my $ncUnit2 = NCUnit->new( $self->{"jobId"}, "NC 2" );
+	#my $ncUnit3 = NCUnit->new( $self->{"jobId"}, "NC 3" );
 	#my $ncUnit4 = NCUnit->new( $self->{"jobId"}, "NC 4" );
 	#my $nifUnit2 = NifUnit->new( $self->{"jobId"}, "Nif 2" );
 ##	my $nifUnit3 = NifUnit->new( $self->{"jobId"}, "Nif 3" );
@@ -58,9 +58,9 @@ sub Build {
 	#$row1Tab1->AddCell($nifUnit2);
 
 
-	my $row2Tab1 = $tableTab1->AddRow();
-	$row2Tab1->AddCell($ncUnit2);
-	$row2Tab1->AddCell($ncUnit3);
+	#my $row2Tab1 = $tableTab1->AddRow();
+	#$row2Tab1->AddCell($ncUnit2);
+	#$row2Tab1->AddCell($ncUnit3);
 
 	#my $row3Tab1 = $tableTab1->AddRow();
 	#$row3Tab1->AddCell($ncUnit4);

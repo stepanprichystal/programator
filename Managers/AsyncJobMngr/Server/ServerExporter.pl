@@ -35,6 +35,8 @@ else {
 	$serverPort = $defaultPort;    # 56753;
 }
 
+print STDERR $serverPort;
+
 #if ( $port =~ /\D/ ) {
 #	$port = getservbyname( $port, 'tcp' );
 

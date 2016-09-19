@@ -27,6 +27,8 @@ use aliased 'Programs::Exporter::ExportUtility::ExportUtility::Forms::JobQueueFo
 use aliased 'Programs::Exporter::ExportUtility::ExportUtility::Forms::GroupTable::GroupTableForm';
 use aliased 'Widgets::Forms::CustomNotebook::CustomNotebook';
 use aliased 'Widgets::Forms::MyWxBookCtrlPage';
+use aliased 'Programs::Exporter::DataTransfer::Enums' => 'EnumsTransfer';
+use aliased 'Managers::AsyncJobMngr::ServerMngr::ServerInfo';
 
 
 #my $THREAD_MESSAGE_EVT : shared;
@@ -67,6 +69,7 @@ sub new {
 
 	$self->{"onClick"} = Event->new();
 	$self->{"onToProduce"} = Event->new();
+	$self->{"onRemoveJob"} = Event->new();
 	
 	return $self;
 }
@@ -121,8 +124,29 @@ sub AddNewTaskGUI {
 sub AddNewTask {
 	my $self = shift;
 	my $task = shift;
+	
+	my $exportData = $task->GetExportData();
 
-	$self->_AddJobToQueue( $task->GetJobId(), $task->GetTaskId() );
+	my $mode = $exportData->GetExportMode();
+	
+	
+	if ( $mode eq EnumsTransfer->ExportMode_SYNC ) {
+		
+		my $port = $exportData->GetPort();
+		my $pid = $exportData->GetServerPID();
+		 
+		my $serverInfo = ServerInfo->new();
+		$serverInfo->{"port"} = $port;
+		$serverInfo->{"pidServer"} = $pid;
+		
+		$self->_AddJobToQueue( $task->GetJobId(), $task->GetTaskId(), $serverInfo);
+	}
+	elsif ( $mode eq EnumsTransfer->ExportMode_ASYNC ) {
+
+		$self->_AddJobToQueue( $task->GetJobId(), $task->GetTaskId() );
+	}
+
+	
 }
 
 sub __SetLayout {
@@ -476,6 +500,10 @@ sub __OnRemoveJobClick {
 	$self->{"jobQueue"}->RemoveJobFromQueue($taskId);
 
 	$self->{"notebook"}->RemovePage($taskId);
+	
+	$self->{"onRemoveJob"}->Do($taskId);
+	
+	
 
 }
 

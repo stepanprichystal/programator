@@ -79,7 +79,7 @@ sub new {
 sub GetToProduce{
 	my $self      = shift;
 	
-	return 1;
+	return $self->{"chbProduce"}->GetValue();
 }
 
 
@@ -382,6 +382,9 @@ sub __SetLayoutExportPath {
 	my $szRow1 = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
 	my $szRow2 = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
 
+	my $chbProduce = Wx::CheckBox->new( $statBox, -1, "Sent to produce", &Wx::wxDefaultPosition, [ 110, 22 ]);
+	$chbProduce->SetValue(1);
+
 	my $rbClient = Wx::RadioButton->new( $statBox, -1, "C:/Export", &Wx::wxDefaultPosition, [ 110, 22 ], &Wx::wxRB_GROUP );
 	$rbClient->SetBackgroundColour( Wx::Colour->new( 228, 232, 243 ) );
 	my $rbArchiv = Wx::RadioButton->new( $statBox, -1, "Job archive ", &Wx::wxDefaultPosition, [ 110, 22 ] );
@@ -397,6 +400,10 @@ sub __SetLayoutExportPath {
 	$szMain->Add( $szRow2, 1, &Wx::wxEXPAND );
 
 	$szStatBox->Add( $szMain, 1, &Wx::wxEXPAND );
+	
+	
+	# SAVE REFERENCES
+	$self->{"chbProduce"} = $chbProduce;
 
 	return $szStatBox;
 

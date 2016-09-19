@@ -282,6 +282,37 @@ sub __OnJobMessageEvtHandler {
 	#print "Exporter utility::  job id: " . $jobGUID . " - messType: " . $messType . " - data: " . $data . "\n";
 }
 
+sub __OnRemoveJobClick{
+	my $self   = shift;
+	my $taskId = shift;
+	
+	my $task = $self->__GetTaskById($taskId);
+	
+	#if mode was synchrounous, we have to quit server script
+
+	my $exportData =  $task->GetExportData();
+
+	if ( $exportData->GetExportMode() eq EnumsTransfer->ExportMode_SYNC ) {
+		
+		my $port = $exportData->GetPort();
+ 
+		my $inCAM = InCAM->new("port" => $port);
+		#$inCAM->ServerReady();
+		
+		my $pidServer = $inCAM->ServerReady();
+
+		#if ok, make space for new client (child process)
+		if ($pidServer) {
+			$inCAM->CloseServer();
+		}
+		
+		
+		$self->{"form"}->_DestroyExternalServer($port);
+	}
+	
+}
+
+
 sub __OnToProduceClick {
 	my $self   = shift;
 	my $taskId = shift;
@@ -418,6 +449,7 @@ sub __SetHandlers {
 
 	$self->{"form"}->{'onClick'}->Add( sub     { $self->__OnClick(@_) } );
 	$self->{"form"}->{'onToProduce'}->Add( sub { $self->__OnToProduceClick(@_) } );
+	$self->{"form"}->{'onRemoveJob'}->Add( sub { $self->__OnRemoveJobClick(@_) } );
 
 	# Set worker method
 	$self->{"form"}->_SetThreadWorker( sub { $self->JobWorker(@_) } );

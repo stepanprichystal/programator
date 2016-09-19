@@ -1,18 +1,17 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Class contain state properties, used as model for group form
+# Description: Data definition for group. This data struct are used  as data transfer
+# between ExportChecker and ExportUtility
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Programs::Exporter::ExportUtility::Groups::NifExport::Model::NifGroupData;
+package Managers::AsyncJobMngr::ServerMngr::ServerInfo;
 
 #3th party library
 use strict;
 use warnings;
 
 #local library
-#use aliased 'Programs::Exporter::ExportChecker::Enums';
-use aliased 'Programs::Exporter::ExportUtility::Groups::GroupResultMngr';
-use aliased 'Programs::Exporter::ExportUtility::Enums';
+use aliased 'Managers::AsyncJobMngr::Enums';
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
@@ -21,40 +20,28 @@ sub new {
 	$self = {};
 	bless $self;
 
-	# state data for gui controls
-	 
-	$self->{"itemsMngr"} = GroupResultMngr->new();
+	$self->{"state"} = Enums->State_FREE_SERVER;
 	
-	# state of whole group. Value is enum GroupState_xx
-	$self->{"state"} = Enums->GroupState_WAITING;
+	$self->{"port"} = -1;    #server ports 1001, 1002....
+	
+	$self->{"pidInCAM"}  = -1;
+	
+	$self->{"pidServer"} = -1; # PID of server script, running in InCAM
+
+	# External means, server was prepared and launched "outside"
+	# NOT by ServerMngr class
+	$self->{"external"} = 0; 
 
 	return $self;
 }
+ 
 
-# single_x
-sub SetGroupState {
-	my $self  = shift;
-	$self->{"state"} = shift;
-}
-
-sub GetGroupState {
-	my $self  = shift;
-	return $self->{"state"};
-}
-
-
-sub GetAllItems {
-	my $self  = shift;
-	
-	return $self->{"itemsMngr"}->GetAllItems();
-}
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
- 
 }
 
 1;

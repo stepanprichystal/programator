@@ -24,9 +24,8 @@ use warnings;
 #use aliased 'Programs::Exporter::ExportChecker::Groups::NifExport::Model::NifDataMngr';
  
 use aliased 'Programs::Exporter::UnitEnums';
-use aliased 'Programs::Exporter::ExportUtility::ExportUtility::Forms::Group::GroupWrapperForm';
-use aliased 'Programs::Exporter::ExportUtility::Groups::NifExport::Presenter::NifExport';
-use aliased 'Programs::Exporter::ExportUtility::Groups::NifExport::Model::NifGroupData';
+ 
+ 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
@@ -41,9 +40,8 @@ sub new {
 	#uique key within all units
 	$self->{"unitId"} = UnitEnums->UnitId_NC;
 	
-	$self->{"unitExport"} = NifExport->new($self->{"unitId"});
-	
-	$self->{"groupData"} = NifGroupData->new();
+	$self->{"unitExport"} = NCExport->new($self->{"unitId"});
+ 
 	
 	$self->{"form"} = undef;
 

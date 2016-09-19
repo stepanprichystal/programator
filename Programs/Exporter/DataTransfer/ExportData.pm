@@ -23,41 +23,54 @@ sub new {
 
 	my %units = ();
 	$self->{"units"} = \%units;
-	
+
 	# EXPORT PROPERTIES
-	$self->{"time"} = undef;
-	$self->{"mode"} = undef; # synchronousExport/ asynchronousExport
-	$self->{"toProduce"} = undef; # sent to produce 0/1
-	
-	return $self;    # Return the reference to the hash.
+	$self->{"time"}      = undef;
+	$self->{"mode"}      = undef;    # synchronousExport/ asynchronousExport
+	$self->{"toProduce"} = undef;    # sent to produce 0/1
+	$self->{"port"}      = undef;    # if export is synchronous, port of server script
+	$self->{"serverPID"} = undef;    # if export is synchronous, PID of server script
+
+	return $self;                    # Return the reference to the hash.
 }
 
+sub GetExportTime {
+	my $self = shift;
 
-sub GetExportTime{
-		my $self  = shift;
-		
-		return $self->{"time"};
+	return $self->{"time"};
 }
 
-sub GetExportMode{
-		my $self  = shift;
-		
-		return $self->{"mode"};
+sub GetExportMode {
+	my $self = shift;
+
+	return $self->{"mode"};
 }
 
-sub GetToProduce{
-		my $self  = shift;
-		
-		return $self->{"toProduce"};
+sub GetToProduce {
+	my $self = shift;
+
+	return $self->{"toProduce"};
+}
+
+sub GetPort {
+	my $self = shift;
+
+	return $self->{"port"};
+}
+
+sub GetServerPID {
+	my $self = shift;
+
+	return $self->{"serverPID"};
 }
 
 sub GetOrderedUnitKeys {
-	my $self  = shift;
+	my $self = shift;
 	my $desc = shift;
 
 	my %unitsData = %{ $self->{"units"} };
 	my @keys      = ();
-	if ( $desc ) {
+	if ($desc) {
 		@keys = sort { $unitsData{$b}->{"data"}->{"__UNITORDER__"} <=> $unitsData{$a}->{"data"}->{"__UNITORDER__"} } keys %unitsData;
 	}
 	else {

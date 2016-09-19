@@ -2,7 +2,7 @@
 # Description: Helper pro obecne operace se soubory
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Managers::AsyncJobMngr::ServerMngr;
+package Managers::AsyncJobMngr::ServerMngr::ServerMngr;
 
 #3th party library
 use strict;
@@ -18,18 +18,13 @@ use Win32::GuiTest qw(FindWindowLike SetWindowPos ShowWindow);
 use aliased 'Helpers::GeneralHelper';
 use aliased 'Packages::InCAM::InCAM';
 use aliased 'Managers::AsyncJobMngr::Helper';
+use aliased 'Managers::AsyncJobMngr::Enums';
+use aliased 'Managers::AsyncJobMngr::ServerMngr::ServerInfo';
 
 #use aliased 'Enums::EnumsGeneral';
 #-------------------------------------------------------------------------------------------#
 #   Package methods
 #-------------------------------------------------------------------------------------------#
-
-use constant {
-			   FREE_SERVER      => "free",
-			   PREPARING_SERVER => "prepare",
-			   RUNING_SERVER    => "runing",
-			   WAITING_SERVER   => "waiting"
-};
 
 my $PORT_READY_EXPORTER_EVT : shared;
 my $PORT_READY_EVT : shared;
@@ -93,9 +88,9 @@ sub SetDestroyOnDemand {
 
 		for ( my $i = 0 ; $i < scalar( @{$serverRef} ) ; $i++ ) {
 
-			if ( ${$serverRef}[$i]{"state"} eq WAITING_SERVER ) {
+			if ( ${$serverRef}[$i]->{"state"} eq Enums->State_WAITING_SERVER ) {
 
-				$self->DestroyServer( ${$serverRef}[$i]{"port"} );
+				$self->DestroyServer( ${$serverRef}[$i]->{"port"} );
 			}
 		}
 	}
@@ -103,6 +98,28 @@ sub SetDestroyOnDemand {
 	$self->{"destroyOnDemand"} = $onDemand;
 }
 
+# Check if free server are available
+sub IsFreePortAvailable {
+	my $self    = shift;
+	my $jobGUID = shift;
+
+	my $serverRef = $self->{"servers"};
+
+	my $freePort = 0;
+
+	#check if some server is ready == is WAITING
+	for ( my $i = 0 ; $i < scalar( @{$serverRef} ) ; $i++ ) {
+
+		if ( ${$serverRef}[$i]->{"state"} eq Enums->State_FREE_SERVER ) {
+
+			return 1;
+		}
+	}
+
+	return 0;
+}
+
+# Check if waiting/free server are available
 sub IsPortAvailable {
 	my $self    = shift;
 	my $jobGUID = shift;
@@ -114,7 +131,7 @@ sub IsPortAvailable {
 	#check if some server is ready == is WAITING
 	for ( my $i = 0 ; $i < scalar( @{$serverRef} ) ; $i++ ) {
 
-		if ( ${$serverRef}[$i]{"state"} eq WAITING_SERVER || ${$serverRef}[$i]{"state"} eq FREE_SERVER ) {
+		if ( ${$serverRef}[$i]->{"state"} eq Enums->State_WAITING_SERVER || ${$serverRef}[$i]->{"state"} eq Enums->State_FREE_SERVER ) {
 
 			return 1;
 		}
@@ -140,10 +157,10 @@ sub PrepareServerPort {
 	#check if some server is ready == is WAITING
 	for ( my $i = 0 ; $i < scalar( @{$serverRef} ) ; $i++ ) {
 
-		if ( ${$serverRef}[$i]{"state"} eq WAITING_SERVER ) {
+		if ( ${$serverRef}[$i]->{"state"} eq Enums->State_WAITING_SERVER ) {
 
-			${$serverRef}[$i]{"state"} = RUNING_SERVER;
-			$freePort = ${$serverRef}[$i]{"port"};
+			${$serverRef}[$i]->{"state"} = Enums->State_RUNING_SERVER;
+			$freePort = ${$serverRef}[$i]->{"port"};
 
 			#$prepare = 1;
 			$self->__PortReady( $freePort, $jobGUID );    #send event, port ready
@@ -159,12 +176,12 @@ sub PrepareServerPort {
 	unless ($freePort) {
 		for ( my $i = 0 ; $i < scalar( @{$serverRef} ) ; $i++ ) {
 
-			if ( ${$serverRef}[$i]{"state"} eq FREE_SERVER ) {
+			if ( ${$serverRef}[$i]->{"state"} eq Enums->State_FREE_SERVER ) {
 
-				${$serverRef}[$i]{"state"} = PREPARING_SERVER;
+				${$serverRef}[$i]->{"state"} = Enums->State_PREPARING_SERVER;
 
 				#create server in separete ports
-				my $port = ${$serverRef}[$i]{"port"};
+				my $port = ${$serverRef}[$i]->{"port"};
 
 				my $worker = threads->create( sub { $self->__CreateServer( $port, $jobGUID ) } );
 
@@ -185,6 +202,53 @@ sub PrepareServerPort {
 
 }
 
+# Method is used, when some external InCAM is already
+# init (launched and server script on some port is running inside)
+# Only assign this port to some "server number", if free numbers are available
+sub PrepareExternalServerPort {
+	my $self       = shift;
+	my $jobGUID    = shift;
+	my $serverInfo = shift;
+
+	my $serverRef = $self->{"servers"};
+
+	#test if some server is FREE
+
+	for ( my $i = 0 ; $i < scalar( @{$serverRef} ) ; $i++ ) {
+
+		if ( ${$serverRef}[$i]->{"state"} eq Enums->State_FREE_SERVER ) {
+
+			#test, if server is really ready. Try to connect
+
+			my $inCAM = InCAM->new("remote" => 'localhost', "port" => $serverInfo->{"port"} );
+
+			# next tests of connecton. Wait, until server script is not ready
+			if ( !$inCAM->{"socketOpen"} || !$inCAM->{"connected"} ) {
+				return 0;
+			}
+
+			my $pidServer = $inCAM->ServerReady();
+
+			#if ok, make space for new client (child process)
+			if ($pidServer) {
+				$inCAM->ClientFinish();
+			}
+
+			${$serverRef}[$i]->{"state"}     = Enums->State_RUNING_SERVER;
+			${$serverRef}[$i]->{"port"}      = $serverInfo->{"port"};
+			${$serverRef}[$i]->{"pidInCAM"}  = $serverInfo->{"pidInCAM"};
+			${$serverRef}[$i]->{"pidServer"} = $pidServer;
+			${$serverRef}[$i]->{"external"}  = 1;
+
+			$self->__PortReady( $serverInfo->{"port"}, $jobGUID );
+			
+			last;
+
+		}
+	}
+
+}
+
 sub ReturnServerPort {
 	my $self     = shift;
 	my $busyPort = shift;
@@ -192,12 +256,19 @@ sub ReturnServerPort {
 	my $serverRef = $self->{"servers"};
 
 	my @s = @{$serverRef};
-	my $idx = ( grep { $s[$_]->{"state"} eq RUNING_SERVER && $s[$_]->{"port"} == $busyPort } 0 .. $#s )[0];
+	my $idx = ( grep { $s[$_]->{"state"} eq Enums->State_RUNING_SERVER && $s[$_]->{"port"} == $busyPort } 0 .. $#s )[0];
 
 	if ( defined $idx ) {
 
+		# If server is external, not destroy
+		# Server will by destroyed "mannualy" by DestroyExternalServer method
+		if ( ${$serverRef}[$idx]->{"external"} ) {
+
+			return 0;
+		}
+
 		if ( $self->{"destroyOnDemand"} ) {
-			${$serverRef}[$idx]{"state"}       = WAITING_SERVER;
+			${$serverRef}[$idx]->{"state"} = Enums->State_WAITING_SERVER;
 			${$serverRef}[$idx]{"waitingFrom"} = time();
 
 			Helper->Print(   "SERVER: PID: "
@@ -223,13 +294,13 @@ sub DestroyServersOnDemand {
 
 	for ( my $i = 0 ; $i < scalar( @{$serverRef} ) ; $i++ ) {
 
-		if ( ${$serverRef}[$i]{"state"} eq WAITING_SERVER ) {
+		if ( ${$serverRef}[$i]->{"state"} eq Enums->State_WAITING_SERVER ) {
 
 			#test if wait more than 2 minutes
 			$waitFrom = ${$serverRef}[$i]{"waitingFrom"};
 
 			if ( time() - $waitFrom > $self->{"destroyDelay"} ) {
-				$self->DestroyServer( ${$serverRef}[$i]{"port"} );
+				$self->DestroyServer( ${$serverRef}[$i]->{"port"} );
 			}
 		}
 	}
@@ -289,9 +360,8 @@ sub __CreateServer {
 
 	Helper->Print( "CLIENT PID: " . $pidInCAM . " (InCAM)........................................is launching\n" );
 
-	# first test of connection 
-	$inCAM = InCAM->new( "remote" => 'localhost', "port" => $freePort  );
-
+	# first test of connection
+	$inCAM = InCAM->new( "remote" => 'localhost', "port" => $freePort );
 
 	# next tests of connecton. Wait, until server script is not ready
 	while ( !defined $inCAM || !$inCAM->{"socketOpen"} || !$inCAM->{"connected"} ) {
@@ -305,11 +375,9 @@ sub __CreateServer {
 
 		$inCAM = InCAM->new( "remote" => 'localhost', "port" => $freePort );
 	}
-	
-	
+
 	# Temoporary solution because -x is not working in inCAM
 	$self->__MoveWindowOut($pidInCAM);
-	
 
 	#server seems ready, try send message and get server pid
 	$pidServer = $inCAM->ServerReady();
@@ -341,15 +409,15 @@ sub __CreateServer {
 }
 
 sub __MoveWindowOut {
-	my $self    = shift;
-	my $pid     = shift;
-	
+	my $self = shift;
+	my $pid  = shift;
+
 	my @windows = FindWindowLike( 0, "$pid" );
 	for (@windows) {
 
 		#print "$_>\t'", GetWindowText($_), "'\n";
 
-		ShowWindow( $_, 0);
+		ShowWindow( $_, 0 );
 		SetWindowPos( $_, 0, -10000, -10000, 0, 0, 0 );
 
 	}
@@ -362,14 +430,11 @@ sub __InitServers {
 
 	for ( my $i = 0 ; $i < $self->{"maxCntUser"} ; $i++ ) {
 
-		my %sInfo = (
-					  "state"     => FREE_SERVER,
-					  "port"      => $self->{"startPort"} + $i + 1,    #server ports 1001, 1002....
-					  "pidInCAM"  => -1,
-					  "pidServer" => -1
-		);
+		my $sInfo = ServerInfo->new();
 
-		push( @{$serverRef}, \%sInfo );
+		$sInfo->{"port"} = $self->{"startPort"} + $i + 1,    #server ports 1001, 1002....
+
+		  push( @{$serverRef}, $sInfo );
 	}
 
 }
@@ -382,14 +447,36 @@ sub GetInfoServers {
 
 	for ( my $i = 0 ; $i < scalar( @{$serverRef} ) ; $i++ ) {
 
-		$str .= "port: " . ${$serverRef}[$i]{"port"} . "\n";
-		$str .= "- state: " . ${$serverRef}[$i]{"state"} . "\n";
-		$str .= "- pidInCAM: " . ${$serverRef}[$i]{"pidInCAM"} . "\n";
-		$str .= "- pidServer: " . ${$serverRef}[$i]{"pidServer"} . "\n\n";
+		$str .= "port: " . ${$serverRef}[$i]->{"port"} . "\n";
+		$str .= "- state: " . ${$serverRef}[$i]->{"state"} . "\n";
+		$str .= "- pidInCAM: " . ${$serverRef}[$i]->{"pidInCAM"} . "\n";
+		$str .= "- pidServer: " . ${$serverRef}[$i]->{"pidServer"} . "\n\n";
 
 	}
 
 	return $str;
+}
+
+# Method for destroying "external" server
+# ServerMngr is not responsible for destroying InCAM
+# So only exit server and set server as free
+sub DestroyExternalServer {
+	my $self = shift;
+	my $port = shift;
+
+	my $serverRef = $self->{"servers"};
+
+	my @s = @{$serverRef};
+	my $idx = ( grep { $s[$_]->{"port"} == $port } 0 .. $#s )[0];
+
+	if ( defined $idx ) {
+
+		#Win32::Process::KillProcess( $s->{"pidServer"}, 0 );
+
+		${$serverRef}[$idx]->{"state"} = Enums->State_FREE_SERVER;
+		${$serverRef}[$idx]->{"pidInCAM"}  = -1;
+		${$serverRef}[$idx]->{"pidServer"} = -1;
+	}
 }
 
 sub DestroyServer {
@@ -404,7 +491,7 @@ sub DestroyServer {
 
 		my $s = @{$serverRef}[$idx];
 
-		if ( ${$serverRef}[$idx]{"state"} eq PREPARING_SERVER ) {
+		if ( ${$serverRef}[$idx]->{"state"} eq Enums->State_PREPARING_SERVER ) {
 
 			print "\n\nPREPAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAR\n\n";
 		}
@@ -414,9 +501,9 @@ sub DestroyServer {
 
 		Helper->Print( "SERVER: PID: " . $s->{"pidServer"} . ", port:" . $s->{"port"} . "....................................was closed\n" );
 
-		${$serverRef}[$idx]{"state"}     = FREE_SERVER;
-		${$serverRef}[$idx]{"pidInCAM"}  = -1;
-		${$serverRef}[$idx]{"pidServer"} = -1;
+		${$serverRef}[$idx]->{"state"}     = Enums->State_FREE_SERVER;
+		${$serverRef}[$idx]->{"pidInCAM"}  = -1;
+		${$serverRef}[$idx]->{"pidServer"} = -1;
 
 	}
 
@@ -461,10 +548,10 @@ sub __PortReadyHandler {
 
 	if ( defined $idx ) {
 
-		${$serverRef}[$idx]{"state"}     = RUNING_SERVER;
-		${$serverRef}[$idx]{"port"}      = $d{"port"};
-		${$serverRef}[$idx]{"pidInCAM"}  = $d{"pidInCAM"};
-		${$serverRef}[$idx]{"pidServer"} = $d{"pidServer"};
+		${$serverRef}[$idx]->{"state"}     = Enums->State_RUNING_SERVER;
+		${$serverRef}[$idx]->{"port"}      = $d{"port"};
+		${$serverRef}[$idx]->{"pidInCAM"}  = $d{"pidInCAM"};
+		${$serverRef}[$idx]->{"pidServer"} = $d{"pidServer"};
 
 		$self->__PortReady( $d{"port"}, $d{"jobGUID"} );
 	}

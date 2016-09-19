@@ -26,7 +26,7 @@ use warnings;
 use aliased 'Programs::Exporter::UnitEnums';
 
 use aliased 'Programs::Exporter::ExportUtility::Groups::NifExport::NifExport';
-use aliased 'Programs::Exporter::ExportUtility::Groups::GroupData';
+
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
@@ -42,10 +42,7 @@ sub new {
 	$self->{"unitId"} = UnitEnums->UnitId_NIF;
  
 	$self->{"unitExport"} = NifExport->new($self->{"unitId"});
-	
-	$self->{"groupData"} = GroupData->new();
  
-
 	return $self;    # Return the reference to the hash.
 }
 

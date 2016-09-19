@@ -3,7 +3,7 @@
 # Description: Helper pro obecne operace se soubory
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Managers::AsyncJobMngr::ThreadMngr;
+package Managers::AsyncJobMngr::ThreadMngr::ThreadMngr;
 
 use threads;
 use threads::shared;
@@ -66,6 +66,7 @@ sub RunNewExport {
 	my $jobGUID = shift;
 	my $port    = shift;
 	my $pcbId   = shift;
+
 
 	my $thrId = $self->__CreateThread( $jobGUID, $port, $pcbId );
 

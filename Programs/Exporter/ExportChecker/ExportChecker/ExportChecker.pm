@@ -37,21 +37,21 @@ use aliased 'Programs::Exporter::ExportChecker::ExportChecker::ExportPopup';
 use aliased 'Programs::Exporter::DataTransfer::DataTransfer';
 use aliased 'Programs::Exporter::ExportChecker::Enums';
 use aliased 'Programs::Exporter::DataTransfer::Enums' => 'EnumsTransfer';
- 
+use aliased 'Helpers::GeneralHelper';
 
-  #-------------------------------------------------------------------------------------------#
-  #  Package methods
-  #-------------------------------------------------------------------------------------------#
-  #my $CHECKER_START_EVT : shared;
-  #my $CHECKER_END_EVT : shared;
-  #my $CHECKER_FINISH_EVT : shared;
-  #my $THREAD_FORCEEXIT_EVT : shared;
+#-------------------------------------------------------------------------------------------#
+#  Package methods
+#-------------------------------------------------------------------------------------------#
+#my $CHECKER_START_EVT : shared;
+#my $CHECKER_END_EVT : shared;
+#my $CHECKER_FINISH_EVT : shared;
+#my $THREAD_FORCEEXIT_EVT : shared;
 
-  # ================================================================================
-  # PUBLIC METHOD
-  # ================================================================================
+# ================================================================================
+# PUBLIC METHOD
+# ================================================================================
 
-  sub new {
+sub new {
 	my $class = shift;
 	my $self  = {};
 	bless $self;
@@ -59,8 +59,7 @@ use aliased 'Programs::Exporter::DataTransfer::Enums' => 'EnumsTransfer';
 	$self->{"jobId"} = shift;
 
 	$self->{"serverPort"} = shift;
-	$self->{"serverPid"} = shift;
-	 
+	$self->{"serverPid"}  = shift;
 
 	$self->{"inCAM"} = undef;
 
@@ -159,7 +158,7 @@ sub __ExportSyncFormHandler {
 	#my $typeOfPcb = HegMethods->GetTypeOfPcb( $self->{"jobId"} );
 
 	#my $typeOfPcb = HegMethods->GetTypeOfPcb( $self->{"jobId"} );
-	$self->__CheckBeforeExport( Enums->ExportMode_SYNC );
+	$self->__CheckBeforeExport( EnumsTransfer->ExportMode_SYNC );
 }
 
 sub __ExportASyncFormHandler {
@@ -179,7 +178,7 @@ sub __ExportASyncFormHandler {
 	#my $typeOfPcb = HegMethods->GetTypeOfPcb( $self->{"jobId"} );
 
 	#my $typeOfPcb = HegMethods->GetTypeOfPcb( $self->{"jobId"} );
-	$self->__CheckBeforeExport( Enums->ExportMode_ASYNC );
+	$self->__CheckBeforeExport( EnumsTransfer->ExportMode_ASYNC );
 
 }
 
@@ -213,7 +212,7 @@ sub __CheckBeforeExport {
 	}
 	my $serverPort = $client->ServerPort();
 
-	Win32::OLE->Uninitialize();
+	#Win32::OLE->Uninitialize();
 
 	#init and run checking form
 	$self->{"exportPopup"}->Init( $mode, $self->{"units"}, $self->{"form"} );
@@ -316,7 +315,7 @@ sub __OnResultPopupHandler {
 	my $self       = shift;
 	my $resultType = shift;
 	my $exportMode = shift;
-	
+
 	my $toProduce = $self->{"form"}->GetToProduce();
 
 	if (    $resultType eq Enums->PopupResult_EXPORTFORCE
@@ -328,18 +327,31 @@ sub __OnResultPopupHandler {
 
 		if ( $exportMode eq EnumsTransfer->ExportMode_ASYNC ) {
 
-			$dataTransfer->SaveData($exportMode, $toProduce);
+			# Save exported data
+			$dataTransfer->SaveData( $exportMode, $toProduce );
 
 		}
 		elsif ( $exportMode eq EnumsTransfer->ExportMode_SYNC ) {
-			
-			$dataTransfer->SaveData($exportMode, $toProduce);
 
-			my $exportData = $dataTransfer->GetExportData();
+			# Hide export window
+
+
+			my $portNumber = "2001";    #random number
+			my $serverPID  = $$;        # PID
+
+			# Save exported data
+			$dataTransfer->SaveData( $exportMode, $toProduce, $portNumber, $serverPID );
+
+			# Start server in this script
+
+			my $serverPath = GeneralHelper->Root() . "\\Managers\\AsyncJobMngr\\Server\\ServerExporter.pl";
+			@_ = ();
+			push( @_, $portNumber );    # port number, pass as argument
+			require $serverPath;
 
 		}
 
-		#start exporting
+
 
 	}
 	elsif ( $resultType eq Enums->PopupResult_CHANGE ) {
@@ -351,7 +363,7 @@ sub __OnResultPopupHandler {
 	# After close popup window is necessery Re-connect to income server
 	# Because checking was processed in child thread and was connected
 	# to this income server
-	
+
 	$self->__Connect();
 
 	$self->{"disableForm"} = 0;
@@ -388,10 +400,9 @@ sub __Connect {
 
 	my $port = $self->{"serverPort"};
 	my $pid  = $self->{"serverPid"};
- 	if($port && $pid){
- 		print STDERR "\n\n EXPORTER CHECKER $port   $pid \n\n ";
- 	}
-	
+	if ( $port && $pid ) {
+		print STDERR "\n\n EXPORTER CHECKER $port   $pid \n\n ";
+	}
 
 	# Manage conenctio between client and server
 	my $client = $self->{"client"};

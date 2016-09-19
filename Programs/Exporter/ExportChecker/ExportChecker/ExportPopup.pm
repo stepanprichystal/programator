@@ -126,8 +126,8 @@ sub __CheckAsyncWorker {
 	$export_thread = 1;
 
 
-	require Win32::OLE;
-	import Win32::OLE qw(in);
+	#require ::OLE;
+	#import Win32::OLE qw(in);
 
 	my $inCAM = InCAM->new( "remote" => 'localhost', "port" => $port );
 	$inCAM->ServerReady();
@@ -163,7 +163,7 @@ sub __CleanUpAndExitThread {
 	my $inCAM = shift;
 
 	#this is necessary do, when thread exit, because Win32::OLE is not thread safe
-	Win32::OLE->Uninitialize();
+	#Win32::OLE->Uninitialize();
 
 	$inCAM->ClientFinish();
 
