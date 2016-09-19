@@ -5,7 +5,7 @@ use strict;
 use warnings;
 
 # ============ INPUT LINE =================
-my $line = "cdr_affected_layer,mode=off,layer=v2";
+my $line = "nc_order,serial=1,sr_line=1,sr_nx=1,sr_ny=1,mode=btrl,snake=no,scope=full";
 
 # ============ INPUT LINE =================
 

@@ -74,8 +74,11 @@ sub __ExportNcSet {
 
 	$inCAM->COM( 'set_step', "name" => $stepName );
 	$inCAM->COM( 'nc_create', "ncset" => $setName, "device" => $machine, "lyrs" => $layerName );
-
+	
+	
 	$inCAM->COM( 'nc_set_current', "job" => $jobId, "step" => $stepName, "layer" => $layerName, "ncset" => $setName );
+	
+	$inCAM->COM("nc_order","serial" => "1","sr_line" => "1","sr_nx" => "1","sr_ny" => "1","mode" => "btrl","snake" => "no","scope" => "full");
 
 	#if ( $inCAM->GetStatus() > 1 ) {
 	#	$methodRes->AddError( $inCAM->GetExceptionError() );

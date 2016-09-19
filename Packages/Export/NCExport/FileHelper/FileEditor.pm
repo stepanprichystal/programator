@@ -46,6 +46,7 @@ sub EditAfterOpen {
 	my $parseFile = shift;    #parsed file in hash
 	my $opItem    = shift;    #operation item reference
 
+	# ================================================================
 	# 1) EDIT: edit all files, which are generated from V1
 	if ( $layer->{"type"} eq EnumsGeneral->LAYERTYPE_plt_fDrill ) {
 
@@ -57,7 +58,11 @@ sub EditAfterOpen {
 		}
 		elsif ( $opItem->{"name"} =~ /v1/ || $opItem->{"name"} =~ /j([0-9]+)/ ) {
 
+			# Add message to file
 			$m47Mess = "\nM47, Vrtani okoli jadra.";
+			
+			# Delete "focus header", because it is not needed. (first drilling to empty laminate)
+			@{ $parseFile->{"header"} } = ( '%%3000');
 		}
 
 		my %i = ();
@@ -65,6 +70,7 @@ sub EditAfterOpen {
 		splice @{ $parseFile->{"body"} }, 0, 0, \%i;
 	}
 
+	# ================================================================
 	# 2) EDIT:  edit z-axis millin top and bot (plated and nonplated)
 	# Reason: InCam can't add G82
 	# Put message M47, on the right place, before start new tool
@@ -79,6 +85,7 @@ sub EditAfterOpen {
 		NCHelper->PutMessRightPlace($parseFile);
 	}
 
+	# ================================================================
 	# 3) EDIT: Edit drilled number in v1 layer. Decide if v1 layer is added to blind drill/ core drill.
 	# Add:
 	# - thick of Cu

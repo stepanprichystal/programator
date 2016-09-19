@@ -482,34 +482,34 @@ sub MOUSE {
 }
 
 
-
-sub RunHook {
-	my $self  = shift;
-	my $type = shift;
-	my $cmd = shift;
-	my $file = shift;
-
-	my $name = $cmd.".".$type;
-
-	my $usrName = "stepan";
-	 
-	use aliased 'Enums::EnumsPaths'; 
-
-	#determine if take user or site file dtm_user_columns
-	my $path = EnumsPaths->InCAM_users . $usrName . "\\hooks\\line_hooks\\".$name;
-
-	unless ( -e $path ) {
-		$path = EnumsPaths->InCAM_hooks . "\\hooks\\line_hooks\\".$name;
-		
-		unless(-e $path){
-			return 0;
-		}
-	}
-	
-	system($^X, $path, $file);
-	
-	
-}
+#
+#sub RunHook {
+#	my $self  = shift;
+#	my $type = shift;
+#	my $cmd = shift;
+#	my $file = shift;
+#
+#	my $name = $cmd.".".$type;
+#
+#	my $usrName = "stepan";
+#	 
+#	use aliased 'Enums::EnumsPaths'; 
+#
+#	#determine if take user or site file dtm_user_columns
+#	my $path = EnumsPaths->InCAM_users . $usrName . "\\hooks\\line_hooks\\".$name;
+#
+#	unless ( -e $path ) {
+#		$path = EnumsPaths->InCAM_hooks . "\\hooks\\line_hooks\\".$name;
+#		
+#		unless(-e $path){
+#			return 0;
+#		}
+#	}
+#	
+#	system($^X, $path, $file);
+#	
+#	
+#}
 
 # Send a command
 sub COM {
@@ -535,27 +535,27 @@ sub COM {
 		}
  
 		#my $argsFile  = "$ENV{GENESIS_DIR}/tmp/info_csh.$$";
-		my $argsFile  = "c:/Export/rrrr".$$;
-		open(FILE, ">$argsFile");
+		#my $argsFile  = "c:/Export/rrrr".$$;
+		#open(FILE, ">$argsFile");
 		 
-		 my $keys = "";
-		  my $vals = "";
-		foreach my $k ( keys %args ) {
-			$keys .= " $k";
-			 $vals .= " ". $args{$k};
-			
-		}
-		
-		print FILE "set lnPARAM = ( ".$keys.")\n"; 
-		print FILE "set lnVAL = (".$vals.")\n";
-		 
+#		 my $keys = "";
+#		  my $vals = "";
+#		foreach my $k ( keys %args ) {
+#			$keys .= " $k";
+#			 $vals .= " ". $args{$k};
+#			
+#		}
+#		
+#		print FILE "set lnPARAM = ( ".$keys.")\n"; 
+#		print FILE "set lnVAL = (".$vals.")\n";
+#		 
 		 
 		
 		
 		
 		$self->sendCommand( "COM", $command );
 		
-		$self->RunHook("post", $onlyCmd, $argsFile);
+		#$self->RunHook("post", $onlyCmd, $argsFile);
 	}
 
 	push( @{ $self->{"cmdHistory"} }, $command );
