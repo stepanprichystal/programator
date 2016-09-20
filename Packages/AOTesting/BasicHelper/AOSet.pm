@@ -17,6 +17,7 @@ use aliased 'Helpers::JobHelper';
 use aliased 'CamHelpers::CamDrilling';
 use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'Packages::Stackup::Enums';
+use aliased 'Enums::EnumsGeneral';
 
 #-------------------------------------------------------------------------------------------#
 #   Package methods
@@ -41,7 +42,9 @@ sub SetStage {
 	@drillLayer = CamDrilling->GetPltNCLayers( $inCAM, $jobId );
 	CamDrilling->AddLayerStartStop( $inCAM, $jobId, \@drillLayer );
 	
-	@drillLayer = grep { $_->{"gROWdrl_start_name"} eq $layerName || $_->{"gROWdrl_end_name"} eq $layerName} @drillLayer;
+	@drillLayer = grep { $_->{"gROWdrl_start_name"} eq $layerName || 
+						($_->{"gROWdrl_end_name"} eq $layerName && $_->{"type"} ne EnumsGeneral->LAYERTYPE_plt_bDrillTop && $_->{"type"} ne EnumsGeneral->LAYERTYPE_plt_bDrillBot)
+						} @drillLayer;
 	
 	@drillLayer = map { $_->{"gROWname"} } @drillLayer;
 
