@@ -341,7 +341,15 @@ sub __SetLayoutInCAMSettings {
 sub __OnClick {
 	my $self = shift;
 
-	$self->{"onClick"}->Do()
+	my $x;
+	
+	my $y;
+	my $point = $self->{"mainFrm"}->GetPosition();
+	print $point->x();
+	print $point->y();
+	
+ 
+	#$self->{"onClick"}->Do()
 
 }
 
