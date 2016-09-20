@@ -26,6 +26,7 @@ use aliased 'Managers::AsyncJobMngr::Helper';
 use aliased 'Managers::MessageMngr::MessageMngr';
 use aliased 'Managers::AsyncJobMngr::Enums';
 use aliased 'Widgets::Forms::MyTaskBarIcon';
+use aliased 'Managers::AsyncJobMngr::SettingsHelper';
 
 #use aliased 'Programs::Exporter::ThreadBase';
 use aliased 'Packages::Events::Event';
@@ -36,10 +37,13 @@ use aliased 'Packages::Events::Event';
 
 sub new {
 	my $self      = shift;
-	my $runMode =  shift;
+	my $runMode   = shift;
 	my $parent    = shift;
 	my $title     = shift;
 	my $dimension = shift;
+
+	# Get name of caller package
+	my ( $packageFull, $filename, $line ) = caller;
 
 	$self = {};
 
@@ -50,7 +54,7 @@ sub new {
 	bless($self);
 
 	#running mode: RUNMODE_WINDOW X RUNMODE_TRAY
-	$self->{"runMode"} = $runMode;
+	$self->{"runMode"}  = $runMode;
 	$self->{"trayIcon"} = undef;
 
 	my @jobs = ();
@@ -58,9 +62,11 @@ sub new {
 	$self->{"serverMngr"} = ServerMngr->new();
 	$self->{"threadMngr"} = ThreadMngr->new();
 
+	$self->{"settingsHelper"} = SettingsHelper->new( $self->{"serverMngr"}, $packageFull );
+
 	#$self->{"threadBase"} = ThreadBase->new();
 
-	#class events
+	# EVENTS
 
 	#$self->{'onJobStartRun'}    = Event->new();
 	#$self->{'onJobDoneEvt'}     = Event->new();
@@ -146,7 +152,14 @@ sub _SetMaxServerCount {
 	my $self     = shift;
 	my $maxCount = shift;
 
-	return $self->{"serverMngr"}->SetMaxServerCount($maxCount);
+	$self->{"settingsHelper"}->SetMaxServerCount($maxCount);
+}
+
+sub _SetDestroyDelay {
+	my $self         = shift;
+	my $destroyDelay = shift;    # in second
+
+	$self->{"settingsHelper"}->SetDestroyDelay($destroyDelay);
 }
 
 sub _GetInfoServers {
@@ -155,14 +168,25 @@ sub _GetInfoServers {
 	return $self->{"serverMngr"}->GetInfoServers();
 }
 
+sub _GetServerSettings {
+	my $self = shift;
+
+	return $self->{"serverMngr"}->GetServerSettings();
+}
+
+sub _GetServerStat {
+	my $self = shift;
+
+	return $self->{"serverMngr"}->GetServerStat();
+}
+
 sub _DestroyExternalServer {
-	my $self    = shift;
+	my $self = shift;
 	my $port = shift;
 
-	 
 	if ( defined $port ) {
 
-		$self->{"serverMngr"}->DestroyExternalServer($port );
+		$self->{"serverMngr"}->DestroyExternalServer($port);
 	}
 
 }
@@ -421,36 +445,25 @@ sub __SetLayout {
 		$title,     # title
 
 		[ -1, -1 ], # window position
-		\@dimension, # size   &Wx::wxSTAY_ON_TOP | 
-		 &Wx::wxSYSTEM_MENU | &Wx::wxCAPTION | &Wx::wxRESIZE_BORDER | &Wx::wxMINIMIZE_BOX | &Wx::wxMAXIMIZE_BOX | &Wx::wxCLOSE_BOX
+		\@dimension,    # size   &Wx::wxSTAY_ON_TOP |
+		&Wx::wxSYSTEM_MENU | &Wx::wxCAPTION | &Wx::wxRESIZE_BORDER | &Wx::wxMINIMIZE_BOX | &Wx::wxMAXIMIZE_BOX | &Wx::wxCLOSE_BOX
 	);
 
+	if ( $self->{"runMode"} eq Enums->RUNMODE_TRAY ) {
 
-	if($self->{"runMode"} eq Enums->RUNMODE_TRAY){
- 
-		my $trayicon = MyTaskBarIcon->new( "Exporter", $mainFrm);
- 		$trayicon->AddMenuItem("Exit Exporter", sub {  $self->OnClose() });
- 		$mainFrm->{'onClose'}->Add( sub {$mainFrm->Hide();} );    #Set onClose handler
- 		
-		
-	}elsif($self->{"runMode"} eq Enums->RUNMODE_WINDOW){
-		
+		my $trayicon = MyTaskBarIcon->new( "Exporter", $mainFrm );
+		$trayicon->AddMenuItem( "Exit Exporter", sub { $self->OnClose() } );
+		$mainFrm->{'onClose'}->Add( sub { $mainFrm->Hide(); } );    #Set onClose handler
+
+	}
+	elsif ( $self->{"runMode"} eq Enums->RUNMODE_WINDOW ) {
+
 		$mainFrm->{'onClose'}->Add( sub { $self->OnClose(@_) } );    #Set onClose handler
 	}
-
-
-
-
-
-
-
-
 
 	$self->{"mainFrm"} = $mainFrm;
 
 	#EVENTS
-
-	
 
 	my $THREAD_DONE_EVT : shared = Wx::NewEventType;
 	Wx::Event::EVT_COMMAND( $self->{"mainFrm"}, -1, $THREAD_DONE_EVT, sub { $self->__ThreadDoneHandler(@_) } );
@@ -500,14 +513,18 @@ sub __RemoveJob {
 
 }
 
+# Times are in milisecond
 sub __RunTimers {
 	my $self = shift;
 
-	#$timerFiles->Start(1000);
 	my $timerExport = Wx::Timer->new( $self->{"mainFrm"}, -1, );
 	Wx::Event::EVT_TIMER( $self->{"mainFrm"}, $timerExport, sub { __TakeFromQueueHandler( $self, @_ ) } );
 	$timerExport->Start(1000);
 	$self->{"timerExport"} = $timerExport;
+
+	my $timerCloseOnDemand = Wx::Timer->new( $self->{"mainFrm"}, -1, );
+	Wx::Event::EVT_TIMER( $self->{"mainFrm"}, $timerCloseOnDemand, sub { $self->{"serverMngr"}->DestroyServersOnDemand(@_) } );
+	$timerCloseOnDemand->Start(2000);
 
 	my $timerCloseJobs = Wx::Timer->new( $self->{"mainFrm"}, -1, );
 	Wx::Event::EVT_TIMER( $self->{"mainFrm"}, $timerCloseJobs, sub { __CloseActiveJobs( $self, @_ ) } );
@@ -610,7 +627,7 @@ sub __TakeFromQueueHandler {
 					$self->__SetJobState( $jobGUID, Enums->JobState_WAITINGPORT );
 
 					$self->{'onJobStateChanged'}->Do( $jobGUID, Enums->JobState_WAITINGPORT );
-					$self->{"serverMngr"}->PrepareExternalServerPort($jobGUID, ${$jobsRef}[$i]{"serverInfo"});
+					$self->{"serverMngr"}->PrepareExternalServerPort( $jobGUID, ${$jobsRef}[$i]{"serverInfo"} );
 
 				}
 

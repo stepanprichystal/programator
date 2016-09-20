@@ -466,6 +466,7 @@ sub __SetHandlers {
 
 }
 
+# Times are in milisecond
 sub __RunTimers {
 	my $self = shift;
 
@@ -476,9 +477,9 @@ sub __RunTimers {
 	$self->{"timerFiles"} = $timerFiles;
 	$timerFiles->Start(200);
 
-	#my $timerRefresh = Wx::Timer->new( $formMainFrm, -1, );
-	#Wx::Event::EVT_TIMER( $formMainFrm, $timerRefresh, sub { __Refresh( $self, @_ ) } );
-	#$timerRefresh->Start(200);
+	my $timer5sec = Wx::Timer->new( $formMainFrm, -1, );
+	Wx::Event::EVT_TIMER( $formMainFrm, $timer5sec, sub { $self->__Timer5second(@_ ) } );
+	$timer5sec->Start(3000); 
 }
 
 sub __CheckFilesHandler {
@@ -539,6 +540,16 @@ sub __CheckFilesHandler {
 
 	#}
 
+}
+
+# Helper  function, which run every 5 second
+# Can be use e.g for refresh GUI etc..
+sub __Timer5second{
+	my $self = shift;
+	
+	$self->{"form"}->RefreshSettings();
+	
+	
 }
 
 #

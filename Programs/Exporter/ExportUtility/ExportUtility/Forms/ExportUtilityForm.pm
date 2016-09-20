@@ -192,7 +192,7 @@ sub __SetLayout {
 
 	my $jobsQueueStatBox = $self->__SetLayoutJobsQueue($page1);
 
-	#my $settingsStatBox  = $self->__SetLayoutInCAMSettings($page1);
+	my $settingsStatBox  = $self->__SetLayoutInCAMSettings($page2);
 	my $groupsStatBox = $self->__SetLayoutGroups($page1);
 
 	# BUILD STRUCTURE OF LAYOUT
@@ -213,6 +213,8 @@ sub __SetLayout {
 
 	$szPage1->Add( $szRow1, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 	$szPage1->Add( $szRow2, 1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+
+	$szPage2->Add( $settingsStatBox, 1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 
 	$szMain->Add( $nb,      1, &Wx::wxEXPAND );
 	$szMain->Add( $pnlBtns, 0, &Wx::wxEXPAND );
@@ -355,17 +357,66 @@ sub __SetLayoutJobsQueue {
 sub __SetLayoutInCAMSettings {
 	my $self   = shift;
 	my $parent = shift;
+	
+	# Load data
+	my %sett = $self->_GetServerSettings();
 
 	#define staticboxes
-	my $statBox = Wx::StaticBox->new( $parent, -1, 'InCAM settings' );
+	my $statBox = Wx::StaticBox->new( $parent, -1, 'InCAM servers - settings' );
 	my $szStatBox = Wx::StaticBoxSizer->new( $statBox, &Wx::wxVERTICAL );
 
-	my $btnDefault = Wx::Button->new( $statBox, -1, "Default settings", &Wx::wxDefaultPosition, [ 110, 22 ] );
+	my $szRow1 = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
+	my $szRow2 = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
+	my $szRow3 = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
+	my $szRow4 = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
+	
+	# DEFINE CONTROLS
+	my $maxCountSb = Wx::StaticText->new( $parent, -1, "Max count of parallel running servers", [ -1, -1 ], [ 250, 25 ] );
+	my $delaySb = Wx::StaticText->new( $parent, -1, "Time, before server close (minutes)", [ -1, -1 ], [ 250, 25 ] );
+	
+	my $runningCntSb = Wx::StaticText->new( $parent, -1, "Running", [ -1, -1 ] , [ 250, 25 ]);
+	my $waitingCntSb = Wx::StaticText->new( $parent, -1, "Waiting on close", [ -1, -1 ], [ 250, 25 ] );
 
-	Wx::Event::EVT_BUTTON( $btnDefault, -1, sub { $self->__OnClick(@_) } );
+	
+	my $runningCntValSb = Wx::StaticText->new( $parent, -1, "0", [ -1, -1 ] );
+	my $waitingCntValSb = Wx::StaticText->new( $parent, -1, "0", [ -1, -1 ] );
+	
+	my @inCamCount = (1, 2, 3, 4, 5, 6, 7, 8, 9);
+	my $maxCountCb = Wx::ComboBox->new( $parent, -1, $sett{"maxCntUser"}, [ -1, -1 ], [ 200, 22 ], \@inCamCount, &Wx::wxCB_READONLY );
 
-	$szStatBox->Add( $btnDefault, 1, &Wx::wxEXPAND );
+	my @inCamDelay = (0.2, 0.5, 1, 2, 5, 10, 20, 40);
+	my $delayCb = Wx::ComboBox->new( $parent, -1, $sett{"destroyDelay"}/60, [ -1, -1 ], [ 200, 22 ], \@inCamDelay, &Wx::wxCB_READONLY );
+ 
+ 
+	# DEFINE EVENTS
+	
+	Wx::Event::EVT_TEXT( $maxCountCb, -1, sub { $self->__OnMaxCountChanged( @_ ) } );
+	Wx::Event::EVT_TEXT( $delayCb, -1, sub { $self->__OnDelayChanged( @_ ) } );
+	
+	# BUILD LAYOUT STRUCTURE
+	
+	$szRow1->Add( $maxCountSb, 0, &Wx::wxEXPAND | &Wx::wxALL, 1);
+	$szRow1->Add( $maxCountCb, 0, &Wx::wxEXPAND | &Wx::wxALL, 1);
+	$szRow2->Add( $delaySb, 0, &Wx::wxEXPAND | &Wx::wxALL, 1);
+	$szRow2->Add( $delayCb, 0, &Wx::wxEXPAND | &Wx::wxALL, 1);
+		
+	$szRow3->Add( $runningCntSb, 0, &Wx::wxEXPAND | &Wx::wxALL, 1);
+	$szRow3->Add( $runningCntValSb, 0, &Wx::wxEXPAND | &Wx::wxALL, 1);
+	$szRow4->Add( $waitingCntSb, 0, &Wx::wxEXPAND | &Wx::wxALL, 1);
+	$szRow4->Add( $waitingCntValSb, 0, &Wx::wxEXPAND | &Wx::wxALL, 1);
+	
+	$szStatBox->Add( $szRow1, 0, &Wx::wxEXPAND | &Wx::wxALL, 1);
+	$szStatBox->Add( $szRow2, 0, &Wx::wxEXPAND | &Wx::wxALL, 1);
+	$szStatBox->Add( $szRow3, 0, &Wx::wxEXPAND | &Wx::wxALL, 1);
+	$szStatBox->Add( $szRow4, 0, &Wx::wxEXPAND | &Wx::wxALL, 1);
 
+	# SAVE REFERENCES
+	$self->{"maxCountCb"} = $maxCountCb;
+	$self->{"delayCb"} = $delayCb;
+	$self->{"runningCntValSb"} = $runningCntValSb;
+	$self->{"waitingCntValSb"} = $waitingCntValSb;	
+ 
+  
 	return $szStatBox;
 }
 
@@ -484,6 +535,17 @@ sub RefreshGroupTable {
 
 }
 
+# Refresh settings on page settings
+sub RefreshSettings{
+	my $self = shift;
+	
+	my %stat = $self->_GetServerStat();
+	
+	$self->{"runningCntValSb"}->SetLabel($stat{"running"});
+	$self->{"waitingCntValSb"}->SetLabel($stat{"waiting"});
+	
+}
+
 sub BuildGroupTableForm {
 	my $self = shift;
 
@@ -588,6 +650,24 @@ sub __OnClickNew {
 	#}
 }
 
+
+sub __OnMaxCountChanged {
+	my $self  = shift;
+	my $cb    = shift;
+	my $event = shift;
+
+	my $val = $cb->GetStringSelection();
+	$self->_SetMaxServerCount($val);
+}
+
+sub __OnDelayChanged {
+	my $self  = shift;
+	my $cb    = shift;
+	my $event = shift;
+
+	my $val = $cb->GetStringSelection();
+	$self->_SetDestroyDelay($val*60);
+}
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#

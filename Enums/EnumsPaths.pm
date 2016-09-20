@@ -15,9 +15,7 @@ use constant {
     Client_INCAMTMPCHECKER => "c:\\tmp\\InCam\\scripts\\export_checker\\",
     Client_INCAMTMPOTHER => "c:\\tmp\\InCam\\scripts\\other\\",
     Client_INCAMTMPSCRIPTS => "c:\\tmp\\InCam\\scripts\\",
-    
-
-    
+    Client_INCAMTMPJOBMNGR => "c:\\tmp\\InCam\\scripts\\job_mngr\\",
 };
 		
 

@@ -77,6 +77,20 @@ sub SetMaxServerCount {
 	}
 }
 
+# destroy delay in second
+sub SetDestroyDelay {
+	my $self    = shift;
+	my $seconds = shift;
+
+	if ( $seconds >= 0 ) {
+		$self->{"destroyDelay"} = $seconds;
+		return 1;
+	}
+	else {
+		return 0;
+	}
+}
+
 sub SetDestroyOnDemand {
 	my $self     = shift;
 	my $onDemand = shift;
@@ -218,37 +232,39 @@ sub PrepareExternalServerPort {
 
 		if ( ${$serverRef}[$i]->{"state"} eq Enums->State_FREE_SERVER ) {
 
-			# save default and set real port number of server 
-			${$serverRef}[$i]->{"port"} = $serverInfo->{"port"};
+			# save default and set real port number of server
+			${$serverRef}[$i]->{"port"}     = $serverInfo->{"port"};
+			${$serverRef}[$i]->{"external"} = 1;
 
 			#test, if server is really ready. Try to connect
 
 			my $worker = threads->create( sub { $self->__CreateServerExternal( $serverInfo->{"port"}, $jobGUID ) } );
-#			
-#			
-#
-#			my $inCAM = InCAM->new("remote" => 'localhost', "port" => $serverInfo->{"port"} );
-#
-#			# next tests of connecton. Wait, until server script is not ready
-#			if ( !$inCAM->{"socketOpen"} || !$inCAM->{"connected"} ) {
-#				return 0;
-#			}
-#
-#			my $pidServer = $inCAM->ServerReady();
-#
-#			#if ok, make space for new client (child process)
-#			if ($pidServer) {
-#				$inCAM->ClientFinish();
-#			}
-#
-#			${$serverRef}[$i]->{"state"}     = Enums->State_RUNING_SERVER;
-#			${$serverRef}[$i]->{"port"}      = $serverInfo->{"port"};
-#			${$serverRef}[$i]->{"pidInCAM"}  = $serverInfo->{"pidInCAM"};
-#			${$serverRef}[$i]->{"pidServer"} = $pidServer;
-#			${$serverRef}[$i]->{"external"}  = 1;
-#
-#			$self->__PortReady( $serverInfo->{"port"}, $jobGUID );
-			
+
+			#
+			#
+			#
+			#			my $inCAM = InCAM->new("remote" => 'localhost', "port" => $serverInfo->{"port"} );
+			#
+			#			# next tests of connecton. Wait, until server script is not ready
+			#			if ( !$inCAM->{"socketOpen"} || !$inCAM->{"connected"} ) {
+			#				return 0;
+			#			}
+			#
+			#			my $pidServer = $inCAM->ServerReady();
+			#
+			#			#if ok, make space for new client (child process)
+			#			if ($pidServer) {
+			#				$inCAM->ClientFinish();
+			#			}
+			#
+			#			${$serverRef}[$i]->{"state"}     = Enums->State_RUNING_SERVER;
+			#			${$serverRef}[$i]->{"port"}      = $serverInfo->{"port"};
+			#			${$serverRef}[$i]->{"pidInCAM"}  = $serverInfo->{"pidInCAM"};
+			#			${$serverRef}[$i]->{"pidServer"} = $pidServer;
+			#			${$serverRef}[$i]->{"external"}  = 1;
+			#
+			#			$self->__PortReady( $serverInfo->{"port"}, $jobGUID );
+
 			last;
 
 		}
@@ -267,13 +283,6 @@ sub ReturnServerPort {
 
 	if ( defined $idx ) {
 
-		# If server is external, not destroy
-		# Server will by destroyed "mannualy" by DestroyExternalServer method
-		if ( ${$serverRef}[$idx]->{"external"} ) {
-
-			return 0;
-		}
-
 		if ( $self->{"destroyOnDemand"} ) {
 			${$serverRef}[$idx]->{"state"} = Enums->State_WAITING_SERVER;
 			${$serverRef}[$idx]{"waitingFrom"} = time();
@@ -286,7 +295,18 @@ sub ReturnServerPort {
 
 		}
 		else {
-			$self->DestroyServer($busyPort);
+
+			# If server is external, not destroy
+			# Server will by destroyed "mannualy" by DestroyExternalServer method
+			if ( ${$serverRef}[$idx]->{"external"} ) {
+
+				return 0;
+			}
+			else {
+				
+				$self->DestroyServer($busyPort);
+			}
+
 		}
 	}
 
@@ -296,6 +316,10 @@ sub ReturnServerPort {
 sub DestroyServersOnDemand {
 	my $self      = shift;
 	my $serverRef = $self->{"servers"};
+
+	unless ( $self->{"destroyOnDemand"} ) {
+		return 0;
+	}
 
 	my $waitFrom;
 
@@ -312,8 +336,6 @@ sub DestroyServersOnDemand {
 		}
 	}
 }
-
-
 
 sub __CreateServer {
 
@@ -344,8 +366,8 @@ sub __CreateServer {
 	#	}
 
 	#start new server on $freePort
-	my $inCAMPath = $ENV{"InCAM_BIN"} . "\\InCAM.exe";
-	$inCAMPath = "c:\\opt\\InCAM\\3.00SP1\\bin\\InCAM.exe";
+
+	my $inCAMPath = GeneralHelper->GetLastInCAMVersion();
 
 	unless ( -f $inCAMPath )    # does it exist?
 	{
@@ -371,15 +393,13 @@ sub __CreateServer {
 
 	# creaate and test server connection
 	$pidServer = $self->__CreateServerConn($freePort);
- 
 
 	# Temoporary solution because -x is not working in inCAM
 	$self->__MoveWindowOut($pidInCAM);
 
-
-
 	#if ok, make space for new client (child process)
 	if ($pidServer) {
+
 		#$inCAM->ClientFinish();
 
 		Helper->Print("PORT: $freePort ......................................................is ready\n");
@@ -404,22 +424,20 @@ sub __CreateServer {
 	return 0;
 }
 
-
-sub __CreateServerExternal{
+sub __CreateServerExternal {
 	my $self     = shift;
 	my $freePort = shift;
 	my $jobGUID  = shift;
 
- 
 	my $pidInCAM;
 	my $pidServer;
- 
+
 	# creaate and test server connection
 	$pidServer = $self->__CreateServerConn($freePort);
- 
- 
+
 	#if ok, make space for new client (child process)
 	if ($pidServer) {
+
 		#$inCAM->ClientFinish();
 
 		Helper->Print("PORT: $freePort ......................................................is ready\n");
@@ -441,13 +459,13 @@ sub __CreateServerExternal{
 	}
 }
 
-sub __CreateServerConn{
+sub __CreateServerConn {
 	my $self = shift;
-	my $port  = shift;
-	
+	my $port = shift;
+
 	my $inCAM;
-	
-		# first test of connection
+
+	# first test of connection
 	$inCAM = InCAM->new( "remote" => 'localhost', "port" => $port );
 
 	# next tests of connecton. Wait, until server script is not ready
@@ -465,13 +483,14 @@ sub __CreateServerConn{
 
 	#server seems ready, try send message and get server pid
 	my $pidServer = $inCAM->ServerReady();
-	
+
 	if ($pidServer) {
 		$inCAM->ClientFinish();
-		
+
 		return $pidServer;
-	}else{
-		
+	}
+	else {
+
 		return 0;
 	}
 }
@@ -499,14 +518,14 @@ sub __InitServers {
 	for ( my $i = 0 ; $i < $self->{"maxCntUser"} ; $i++ ) {
 
 		my $sInfo = ServerInfo->new();
-		
+
 		# set default port number
 		$sInfo->{"portDefault"} = $self->{"startPort"} + $i + 1,    #server ports 1001, 1002....
-		
-		# set working port number
-		$sInfo->{"port"} = $sInfo->{"portDefault"};
 
-		 push( @{$serverRef}, $sInfo );
+		  # set working port number
+		  $sInfo->{"port"} = $sInfo->{"portDefault"};
+
+		push( @{$serverRef}, $sInfo );
 	}
 
 }
@@ -529,6 +548,36 @@ sub GetInfoServers {
 	return $str;
 }
 
+sub GetServerSettings {
+	my $self = shift;
+
+	my %sett = ();
+
+	$sett{"maxCntUser"}      = $self->{"maxCntUser"};
+	$sett{"destroyDelay"}    = $self->{"destroyDelay"};
+	$sett{"destroyOnDemand"} = $self->{"destroyOnDemand"};
+
+	return %sett;
+}
+
+# Return server statistic
+sub GetServerStat {
+	my $self = shift;
+
+	my %stat = ();
+
+	my @serverRef = @{ $self->{"servers"} };
+
+	my $point =
+
+	  $stat{"running"} = scalar( grep { $_->{"state"} eq Enums->State_RUNING_SERVER } @serverRef );
+	$stat{"waiting"}   = scalar( grep { $_->{"state"} eq Enums->State_WAITING_SERVER } @serverRef );
+	$stat{"preparing"} = scalar( grep { $_->{"state"} eq Enums->State_PREPARING_SERVER } @serverRef );
+	$stat{"free"}      = scalar( grep { $_->{"state"} eq Enums->State_FREE_SERVER } @serverRef );
+
+	return %stat;
+}
+
 # Method for destroying "external" server
 # ServerMngr is not responsible for destroying InCAM
 # So only exit server and set server as free
@@ -546,9 +595,10 @@ sub DestroyExternalServer {
 		#Win32::Process::KillProcess( $s->{"pidServer"}, 0 );
 		# set default  port number
 		${$serverRef}[$idx]->{"port"} = ${$serverRef}[$idx]->{"portDefault"};
+
 		#${$serverRef}[$idx]->{"portDefault"} = -1;
 
-		${$serverRef}[$idx]->{"state"} = Enums->State_FREE_SERVER;
+		${$serverRef}[$idx]->{"state"}     = Enums->State_FREE_SERVER;
 		${$serverRef}[$idx]->{"pidInCAM"}  = -1;
 		${$serverRef}[$idx]->{"pidServer"} = -1;
 	}
@@ -563,6 +613,12 @@ sub DestroyServer {
 	my $idx = ( grep { $s[$_]->{"port"} == $port } 0 .. $#s )[0];
 
 	if ( defined $idx ) {
+
+		# never kill "external" server
+		if ( ${$serverRef}[$idx]->{"external"} ) {
+
+			return 0;
+		}
 
 		my $s = @{$serverRef}[$idx];
 

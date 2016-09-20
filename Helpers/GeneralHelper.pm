@@ -236,12 +236,12 @@ sub CreateStackTrace {
 
 sub GetLastInCAMVersion {
 	my $self     = shift;
-	my $formated = shift;
+ 
 
-	my $inCAMVersion = EnumsPaths->Client_INCAMVERSION;  
-	
-	
-	opendir( DIR, $inCAMVersion ) or die $!;
+	my $inCAMPath = EnumsPaths->Client_INCAMVERSION;
+	my @version   = ();
+
+	opendir( DIR, $inCAMPath ) or die $!;
 
 	while ( my $file = readdir(DIR) ) {
 
@@ -253,31 +253,41 @@ sub GetLastInCAMVersion {
 
 		$file =~ s/\.pm//;
 
-		$module = 'Programs::CamGuide::Actions::' . $file;
-
-		push( @actionModules, $module );
-	}
-	
-
-	my $str = "";
-
-	my $trace = Devel::StackTrace->new();
-
-	$trace->next_frame();
-	while ( my $frame = $trace->next_frame() ) {
-		$str .= "Sub: "
-		  . ( $formated ? "<b>" : "" )
-		  . $frame->subroutine()
-		  . ( $formated ? "</b>" : "" )
-		  . ", File: "
-		  . $frame->filename()
-		  . ", Line: "
-		  . $frame->line() . "\n";
+		if ( $file =~ /^\d\.(\d)+SP/ ) {
+			push( @version, $file );
+		}
 	}
 
-	return $str;
+	my $maxNum = 0;
+	my $maxNumName;
+	foreach my $file (@version) {
+
+		my ($num) = $file =~ m/(^\d\.(\d)+)/;
+		if ( $num > $maxNum ) {
+			$maxNum     = $num;
+			$maxNumName = $file;
+		}
+	}
+
+	if ($maxNumName) {
+
+		return $inCAMPath . $maxNumName."\\bin\\InCAM.exe";
+	}
+	else {
+
+		print STDERR "Error when getting latest version of InCAM\n";
+		return 0;
+	}
 }
 
-
+#-------------------------------------------------------------------------------------------#
+#  Place for testing..
+#-------------------------------------------------------------------------------------------#
+my ( $package, $filename, $line ) = caller;
+if ( $filename =~ /DEBUG_FILE.pl/ ) {
+	
+	print Helpers::GeneralHelper->GetLastInCAMVersion();
+	
+}
 
 1;
