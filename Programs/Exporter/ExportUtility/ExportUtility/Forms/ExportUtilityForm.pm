@@ -11,6 +11,7 @@ use base 'Managers::AsyncJobMngr::AsyncJobMngr';
 use Wx;
 use strict;
 use warnings;
+use Win32::GuiTest qw(FindWindowLike SetFocus SetForegroundWindow);
 
 #local library
 use Widgets::Style;
@@ -30,7 +31,6 @@ use aliased 'Widgets::Forms::MyWxBookCtrlPage';
 use aliased 'Programs::Exporter::DataTransfer::Enums' => 'EnumsTransfer';
 use aliased 'Managers::AsyncJobMngr::ServerMngr::ServerInfo';
 
-
 #my $THREAD_MESSAGE_EVT : shared;
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -43,16 +43,15 @@ use aliased 'Managers::AsyncJobMngr::ServerMngr::ServerInfo';
 #};
 
 sub new {
-	my $class  = shift;
+	my $class   = shift;
 	my $runMode = shift;
-	my $parent = shift;
-	
+	my $parent  = shift;
 
 	if ( defined $parent && $parent == -1 ) {
 		$parent = undef;
 	}
 
-	my $title = "Exporter jobu";
+	my $title = "Exporter utility";
 	my @dimension = ( 1140, 700 );
 
 	my $self = $class->SUPER::new( $runMode, $parent, $title, \@dimension );
@@ -62,17 +61,17 @@ sub new {
 	#set base class handlers
 
 	$self->{"messageMngr"} = MessageMngr->new("Exporter");
- 
+
 	my $mainFrm = $self->__SetLayout();
 
 	#$mainFrm->Show(1);
 
 	#$self->{'onSetLayout'}->Add( sub { $self->__OnSetLayout(@_)});
 
-	$self->{"onClick"} = Event->new();
+	$self->{"onClick"}     = Event->new();
 	$self->{"onToProduce"} = Event->new();
 	$self->{"onRemoveJob"} = Event->new();
-	
+
 	return $self;
 }
 
@@ -82,7 +81,6 @@ sub AddNewTaskGUI {
 
 	my $taskId   = $task->GetTaskId();
 	my $taskData = $task->GetExportData();
-
 
 	# Add new item to queue
 
@@ -127,29 +125,29 @@ sub AddNewTaskGUI {
 sub AddNewTask {
 	my $self = shift;
 	my $task = shift;
-	
+
 	my $exportData = $task->GetExportData();
 
 	my $mode = $exportData->GetExportMode();
-	
-	
+
 	if ( $mode eq EnumsTransfer->ExportMode_SYNC ) {
-		
+
 		my $port = $exportData->GetPort();
-		my $pid = $exportData->GetServerPID();
-		 
+
+		#my $pid = $exportData->GetServerPID();
+
 		my $serverInfo = ServerInfo->new();
 		$serverInfo->{"port"} = $port;
-		$serverInfo->{"pidServer"} = $pid;
-		
-		$self->_AddJobToQueue( $task->GetJobId(), $task->GetTaskId(), $serverInfo);
+
+		#$serverInfo->{"pidServer"} = $pid;
+
+		$self->_AddJobToQueue( $task->GetJobId(), $task->GetTaskId(), $serverInfo );
 	}
 	elsif ( $mode eq EnumsTransfer->ExportMode_ASYNC ) {
 
 		$self->_AddJobToQueue( $task->GetJobId(), $task->GetTaskId() );
 	}
 
-	
 }
 
 sub __SetLayout {
@@ -233,6 +231,39 @@ sub __SetLayout {
 
 	return $mainFrm;
 
+}
+
+sub ActivateForm {
+	my $self     = shift;
+	my $activate = shift;
+	my $position = shift;
+
+	if ($activate) {
+
+		if ($position) {
+
+			$self->{"mainFrm"}->Move($position);
+		}
+
+		$self->{"mainFrm"}->Show(1);
+		$self->{"mainFrm"}->Iconize(0);
+
+		$self->{"mainFrm"}->SetFocus();
+		$self->{"mainFrm"}->Raise();
+
+#		my @windows = FindWindowLike( 0, "Exporter utility" );
+#		for (@windows) {
+#
+#			   SetForegroundWindow( $_);
+#			   SetFocus( $_);
+#		}
+#	 
+
+	}
+	else {
+
+		$self->{"mainFrm"}->Hide();
+	}
 }
 
 #sub __SetLayout {
@@ -332,7 +363,7 @@ sub __SetLayoutInCAMSettings {
 	my $btnDefault = Wx::Button->new( $statBox, -1, "Default settings", &Wx::wxDefaultPosition, [ 110, 22 ] );
 
 	Wx::Event::EVT_BUTTON( $btnDefault, -1, sub { $self->__OnClick(@_) } );
- 
+
 	$szStatBox->Add( $btnDefault, 1, &Wx::wxEXPAND );
 
 	return $szStatBox;
@@ -342,13 +373,12 @@ sub __OnClick {
 	my $self = shift;
 
 	my $x;
-	
+
 	my $y;
 	my $point = $self->{"mainFrm"}->GetPosition();
 	print $point->x();
 	print $point->y();
-	
- 
+
 	#$self->{"onClick"}->Do()
 
 }
@@ -405,7 +435,7 @@ sub SetJobItemResult {
 	my $jobItem = $self->{"jobQueue"}->GetItem( $task->GetTaskId() );
 
 	$jobItem->SetExportResult( $task->Result(), $task->GetJobAborted(), $task->GetJobSentToProduce() );
-  
+
 }
 
 sub SetJobItemToProduceResult {
@@ -413,8 +443,7 @@ sub SetJobItemToProduceResult {
 	my $task = shift;
 
 	my $jobItem = $self->{"jobQueue"}->GetItem( $task->GetTaskId() );
- 
- 
+
 	$jobItem->SetProduceErrors( $task->GetProduceErrorsCnt() );
 	$jobItem->SetProduceWarnings( $task->GetProduceWarningsCnt() );
 	$jobItem->SetProduceResult( $task->ResultToProduce(), $task->GetJobSentToProduce() );
@@ -496,9 +525,8 @@ sub __JobItemSeletedChange {
 sub __OnProduceJobClick {
 	my $self   = shift;
 	my $taskId = shift;
-	
+
 	$self->{"onToProduce"}->Do($taskId);
- 
 
 }
 
@@ -511,10 +539,8 @@ sub __OnRemoveJobClick {
 	$self->{"jobQueue"}->RemoveJobFromQueue($taskId);
 
 	$self->{"notebook"}->RemovePage($taskId);
-	
+
 	$self->{"onRemoveJob"}->Do($taskId);
-	
-	
 
 }
 
@@ -561,84 +587,6 @@ sub __OnClickNew {
 
 	#}
 }
-
-#sub __Refresh {
-#	my ( $self, $frame, $event ) = @_;
-#
-#	#$self->_SetDestroyServerOnDemand(1);
-#
-#	my $txt2 = $self->_GetInfoServers();
-#	my $txt  = $self->_GetInfoJobs();
-#
-#	$self->{"txt"}->SetLabel($txt);
-#	$self->{"txt2"}->SetLabel($txt2);
-#
-#}
-#
-#sub doExport {
-#	my ( $id, $inCAM ) = @_;
-#
-#	my $errCode = $inCAM->COM( "clipb_open_job", job => $id, update_clipboard => "view_job" );
-#
-#	#
-#	#	$errCode = $inCAM->COM(
-#	#		"open_entity",
-#	#		job  => "F17116+2",
-#	#		type => "step",
-#	#		name => "test"
-#	#	);
-#
-#	#return 0;
-#	for ( my $i = 0 ; $i < 5 ; $i++ ) {
-#
-#		sleep(3);
-#		$inCAM->COM(
-#					 'output_layer_set',
-#					 layer        => "c",
-#					 angle        => '0',
-#					 x_scale      => '1',
-#					 y_scale      => '1',
-#					 comp         => '0',
-#					 polarity     => 'positive',
-#					 setupfile    => '',
-#					 setupfiletmp => '',
-#					 line_units   => 'mm',
-#					 gscl_file    => ''
-#		);
-#
-#		$inCAM->COM(
-#					 'output',
-#					 job                  => $id,
-#					 step                 => 'input',
-#					 format               => 'Gerber274x',
-#					 dir_path             => "c:/Perl/site/lib/TpvScripts/Scripts/data",
-#					 prefix               => "incam1_" . $id . "_$i",
-#					 suffix               => "",
-#					 break_sr             => 'no',
-#					 break_symbols        => 'no',
-#					 break_arc            => 'no',
-#					 scale_mode           => 'all',
-#					 surface_mode         => 'contour',
-#					 min_brush            => '25.4',
-#					 units                => 'inch',
-#					 coordinates          => 'absolute',
-#					 zeroes               => 'Leading',
-#					 nf1                  => '6',
-#					 nf2                  => '6',
-#					 x_anchor             => '0',
-#					 y_anchor             => '0',
-#					 wheel                => '',
-#					 x_offset             => '0',
-#					 y_offset             => '0',
-#					 line_units           => 'mm',
-#					 override_online      => 'yes',
-#					 film_size_cross_scan => '0',
-#					 film_size_along_scan => '0',
-#					 ds_model             => 'RG6500'
-#		);
-#
-#	}
-#}
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

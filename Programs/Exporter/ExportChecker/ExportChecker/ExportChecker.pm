@@ -316,13 +316,14 @@ sub __OnResultPopupHandler {
 	my $resultType = shift;
 	my $exportMode = shift;
 
-	my $toProduce = $self->{"form"}->GetToProduce();
+	my $active = 1;
+	my $toProduce = $self->{"form"}->GetToProduce($active);
 
 	if (    $resultType eq Enums->PopupResult_EXPORTFORCE
 		 || $resultType eq Enums->PopupResult_SUCCES )
 	{
 
-		my %unitsExportData = $self->{"units"}->GetExportData();
+		my %unitsExportData = $self->{"units"}->GetExportData(1);
 		my $dataTransfer = DataTransfer->new( $self->{"jobId"}, EnumsTransfer->Mode_WRITE, \%unitsExportData );
 
 		if ( $exportMode eq EnumsTransfer->ExportMode_ASYNC ) {
@@ -334,13 +335,14 @@ sub __OnResultPopupHandler {
 		elsif ( $exportMode eq EnumsTransfer->ExportMode_SYNC ) {
 
 			# Hide export window
-
+			#$self->{"form"}->{"mainFrm"}->Hide();
 
 			my $portNumber = "2001";    #random number
-			my $serverPID  = $$;        # PID
-
+			#my $serverPID  = $$;        # PID
+			
+			my $formPos = $self->{"form"}->{"mainFrm"}->GetPosition();
 			# Save exported data
-			$dataTransfer->SaveData( $exportMode, $toProduce, $portNumber, $serverPID );
+			$dataTransfer->SaveData( $exportMode, $toProduce, $portNumber, $formPos );
 
 			# Start server in this script
 

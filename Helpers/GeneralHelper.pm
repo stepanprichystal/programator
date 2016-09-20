@@ -13,71 +13,72 @@ use File::Spec;
 use Devel::StackTrace;
 
 #local library
+use aliased 'Enums::EnumsPaths';
 
 #-------------------------------------------------------------------------------------------#
 #   Package methods
 #-------------------------------------------------------------------------------------------#
 
 #Add error message to special hash to array of error
-sub AddError{
-	my $self       = shift;
-	my $err = shift;
+sub AddError {
+	my $self = shift;
+	my $err  = shift;
 	my $mess = shift;
-	my $val = shift;
+	my $val  = shift;
 
 	${$err}{"errors"}{"mess"} = $mess;
-	${$err}{"errors"}{"val"} = $val;
-	
+	${$err}{"errors"}{"val"}  = $val;
+
 }
 
 #Add warning message to special hash to array of error
-sub AddWarning{
-	my $self       = shift;
-	my $err = shift;
+sub AddWarning {
+	my $self = shift;
+	my $err  = shift;
 	my $mess = shift;
-	my $val = shift;
+	my $val  = shift;
 
 	${$err}{"warnings"}{"mess"} = $mess;
-	${$err}{"warnings"}{"val"} = $val;
+	${$err}{"warnings"}{"val"}  = $val;
 }
-
 
 #Get absolute path of "root" directory, where are all modules and libraries are putted
 # ussually it means like z:\windows\<e99|e101>\all\perl\
-sub Root{
+sub Root {
 
-#get path off this file GeneralHelper.pm
-my $generalHelperPath =  File::Spec->rel2abs( __FILE__ );
-($name,$path2,$suffix) = fileparse($generalHelperPath,@suffixlist);
+	#get path off this file GeneralHelper.pm
+	my $generalHelperPath = File::Spec->rel2abs(__FILE__);
+	( $name, $path2, $suffix ) = fileparse( $generalHelperPath, @suffixlist );
 
-#get "root" directory, where are all scripts and modules
-return dirname($path2);
+	#get "root" directory, where are all scripts and modules
+	return dirname($path2);
 
 }
 
 #Get absolute path of "root" directory, where are all scripts are putted
 # ussually it means something like z:\sys\scripts\
-sub RootScripts{
-	
-my $path;
+sub RootScripts {
 
-my $ZLoaded = 0;
-foreach my $p (@INC) {
-	if ( $p =~ m/z:/ ) {
-		$ZLoaded = 1;
+	my $path;
+
+	my $ZLoaded = 0;
+	foreach my $p (@INC) {
+		if ( $p =~ m/z:/ ) {
+			$ZLoaded = 1;
+		}
 	}
-}
 
-#if z path was not find in @INC, it means, script run in development mode
-#otherwise in deploy mode
+	#if z path was not find in @INC, it means, script run in development mode
+	#otherwise in deploy mode
 
-if ($ZLoaded){
-	
-	$path = "$ENV{'GENESIS_DIR'}/sys/scripts/";
-}else{
-	
-	$path = GeneralHelper->Root()."\\";
-}
+	if ($ZLoaded) {
+
+		$path = "$ENV{'GENESIS_DIR'}/sys/scripts/";
+	}
+	else {
+
+		$path = GeneralHelper->Root() . "\\";
+	}
 
 	return $path;
 
@@ -86,14 +87,12 @@ if ($ZLoaded){
 #Return unique Id
 sub GetGUID {
 
-	my $guid =  Data::GUID->new;
-	
+	my $guid = Data::GUID->new;
+
 	my $guidStr = $guid->as_string;
 
-	
 	return $guidStr;
-	
-	
+
 	#return  int(rand(1000000000000000));
 
 }
@@ -167,27 +166,24 @@ sub GetCmdArgs {
 	return %options;
 }
 
-
 #Test if environment is deploy
-sub DeployEnvironment
-{
+sub DeployEnvironment {
 	if ( -e "../Develop" ) {
 		return 0;
 	}
-	
+
 	return 1;
 }
 
 #Test if environment is deploy
-sub IsUndef
-{
-	my $self = shift;
+sub IsUndef {
+	my $self  = shift;
 	my $value = shift;
-	
+
 	print $value;
-	
-	unless ( $value) {
-		
+
+	unless ($value) {
+
 		return 1;
 	}
 	return 0;
@@ -198,15 +194,15 @@ sub Print {
 	my $self = shift;
 	my $mess = shift;
 
-	print $mess."\n";
+	print $mess. "\n";
 }
 
-#Special method sets absolute paths to modules. 
+#Special method sets absolute paths to modules.
 #Necesserry for debugging in ECLIPSE
 sub SetPaths {
 
 	# detection deploy/develop environment
-	if ( GeneralHelper->DeployEnvironment()) {
+	if ( GeneralHelper->DeployEnvironment() ) {
 		print STDERR "Deploy environment!!!\n\n";
 
 		#paths on modules on my computer (SPR)
@@ -215,24 +211,73 @@ sub SetPaths {
 
 }
 
-
-sub CreateStackTrace{
-	my $self = shift;
+sub CreateStackTrace {
+	my $self     = shift;
 	my $formated = shift;
-	
+
 	my $str = "";
-	
-	
-	
+
 	my $trace = Devel::StackTrace->new();
-	
+
 	$trace->next_frame();
-		while ( my $frame = $trace->next_frame() ) {
-			$str .= "Sub: ". ($formated ? "<b>" : ""). $frame->subroutine(). ($formated ? "</b>" : "").", File: ". $frame->filename(). ", Line: ". $frame->line(). "\n";
+	while ( my $frame = $trace->next_frame() ) {
+		$str .= "Sub: "
+		  . ( $formated ? "<b>" : "" )
+		  . $frame->subroutine()
+		  . ( $formated ? "</b>" : "" )
+		  . ", File: "
+		  . $frame->filename()
+		  . ", Line: "
+		  . $frame->line() . "\n";
 	}
 
 	return $str;
 }
+
+sub GetLastInCAMVersion {
+	my $self     = shift;
+	my $formated = shift;
+
+	my $inCAMVersion = EnumsPaths->Client_INCAMVERSION;  
+	
+	
+	opendir( DIR, $inCAMVersion ) or die $!;
+
+	while ( my $file = readdir(DIR) ) {
+
+		my $module;
+
+		if ( $file =~ m/^\./ ) {
+			next;
+		}
+
+		$file =~ s/\.pm//;
+
+		$module = 'Programs::CamGuide::Actions::' . $file;
+
+		push( @actionModules, $module );
+	}
+	
+
+	my $str = "";
+
+	my $trace = Devel::StackTrace->new();
+
+	$trace->next_frame();
+	while ( my $frame = $trace->next_frame() ) {
+		$str .= "Sub: "
+		  . ( $formated ? "<b>" : "" )
+		  . $frame->subroutine()
+		  . ( $formated ? "</b>" : "" )
+		  . ", File: "
+		  . $frame->filename()
+		  . ", Line: "
+		  . $frame->line() . "\n";
+	}
+
+	return $str;
+}
+
 
 
 1;

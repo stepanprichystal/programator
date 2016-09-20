@@ -81,17 +81,16 @@ sub __OnLeftClick {
  	my $showed = $self->{"form"}->IsShown();
  
 	if(!$showed){
-			
 		$self->{"form"}->Show();
 		$self->{"form"}->Iconize(0);
-	
-		
+
 	}else{
-		$self->{"form"}->Iconize(1);
+		#$self->{"form"}->Iconize(1);
 		$self->{"form"}->Hide();
+		 
 		
 	}
-
+	 
 }
 
 sub __OnRightClick {

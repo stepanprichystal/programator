@@ -128,6 +128,7 @@ sub __OnJobStateChanged {
 	my $taskStateDetail = shift;
 
 	my $task = $self->__GetTaskById($taskId);
+	my $exportData = $task->GetExportData();
 
 	my $status = "";
 
@@ -143,8 +144,9 @@ sub __OnJobStateChanged {
 	}
 	elsif ( $taskState eq EnumsMngr->JobState_RUNNING ) {
 
-		$status = "Start runing";
-
+		$status = "Start runing";	
+		$self->{"form"}->ActivateForm(1, $exportData->GetFormPosition());
+		
 	}
 	elsif ( $taskState eq EnumsMngr->JobState_ABORTING ) {
 
@@ -314,6 +316,9 @@ sub __OnRemoveJobClick {
 		}
 
 		$self->{"form"}->_DestroyExternalServer($port);
+		
+		# hide exporter
+		$self->{"form"}->ActivateForm(0);
 	}
 
 }
@@ -609,11 +614,6 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 }
 
-sub Test{
-	my $from = shift;
-	
-	print $from."TEST\n";
-}
-
+ 
 
 1;

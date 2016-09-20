@@ -32,6 +32,7 @@ sub new {
 
 	# This parameter have to be passed only in Write mode
 	$self->{"unitsData"} = shift;
+
 	#$self->{"location"}  = shift;
 
 	$self->{"filePath"} = EnumsPaths->Client_EXPORTFILES . $self->{"jobId"};
@@ -40,7 +41,10 @@ sub new {
 	$self->{"hashData"} = ();                   # "flaterned" ExportData object to hash, prepared for JSON serialization
 
 	# structure
-	$self->{"hashData"}->{"units"} = ();
+	my %units = ();
+	$self->{"hashData"}->{"units"} = \%units;
+	my %settings = ();
+	$self->{"hashData"}->{"settings"} = \%settings;
 
 	#$self->{"hashData"}->{"time"}  = undef;
 	#$self->{"hashData"}->{"location"}  = undef;
@@ -107,12 +111,11 @@ sub __BuildExportData {
 			$self->{"data"}->{"units"}->{$unitId} = $exportData;
 		}
 
-		# Prepare other properties
-		$self->{"data"}->{"time"}      = $hashData->{"time"};
-		$self->{"data"}->{"mode"}      = $hashData->{"mode"};
-		$self->{"data"}->{"toProduce"} = $hashData->{"toProduce"};
-		$self->{"data"}->{"port"}      = $hashData->{"port"};
-		$self->{"data"}->{"serverPID"} = $hashData->{"serverPID"};
+		# Prepare settings
+
+		my %settings = %{ $hashData->{"settings"} };
+
+		%{ $self->{"data"}->{"settings"} } = %settings;
 
 	}
 }
@@ -132,9 +135,10 @@ sub SaveData {
 	my $mode      = shift;
 	my $toProduce = shift;
 	my $port      = shift;
-	my $serverPID = shift;
+	my $formPos   = shift;
 
-	#my %unitsData = %{shift(@_)};
+	# Prepare all data for serialiyation
+	# Save them to property "hashData"
 
 	# 1), prepare unit data
 	my %unitsData = %{ $self->{"data"}->{"units"} };
@@ -156,11 +160,17 @@ sub SaveData {
 	my ( $sec, $min, $hour ) = localtime();
 	my $time = sprintf( "%02d:%02d", $hour, $min );
 
-	$self->{"hashData"}->{"time"}      = $time;
-	$self->{"hashData"}->{"mode"}      = $mode;
-	$self->{"hashData"}->{"toProduce"} = $toProduce;
-	$self->{"hashData"}->{"port"}      = $port;
-	$self->{"hashData"}->{"serverPID"} = $serverPID;
+	$self->{"hashData"}->{"settings"}->{"time"}      = $time;
+	$self->{"hashData"}->{"settings"}->{"mode"}      = $mode;
+	$self->{"hashData"}->{"settings"}->{"toProduce"} = $toProduce;
+	$self->{"hashData"}->{"settings"}->{"port"}      = $port;
+
+	if ($formPos) {
+		$self->{"hashData"}->{"settings"}->{"formPosX"} = $formPos->x();
+		$self->{"hashData"}->{"settings"}->{"formPosY"} = $formPos->y();
+	}
+
+	#$self->{"hashData"}->{"settings"}->{"serverPID"} = $serverPID;
 
 	# serialize and save
 	$self->__SerializeExportData();

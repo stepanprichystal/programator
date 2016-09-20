@@ -9,6 +9,7 @@ package Programs::Exporter::DataTransfer::ExportData;
 use strict;
 use warnings;
 use File::Copy;
+use Wx;
 
 #local library
 use aliased 'Programs::Exporter::ExportChecker::Enums';
@@ -23,13 +24,17 @@ sub new {
 
 	my %units = ();
 	$self->{"units"} = \%units;
+	
+	my %settings = ();
+	$self->{"settings"} = \%settings;
 
 	# EXPORT PROPERTIES
-	$self->{"time"}      = undef;
-	$self->{"mode"}      = undef;    # synchronousExport/ asynchronousExport
-	$self->{"toProduce"} = undef;    # sent to produce 0/1
-	$self->{"port"}      = undef;    # if export is synchronous, port of server script
-	$self->{"serverPID"} = undef;    # if export is synchronous, PID of server script
+	$self->{"settings"}->{"time"}      = undef;
+	$self->{"settings"}->{"mode"}      = undef;    # synchronousExport/ asynchronousExport
+	$self->{"settings"}->{"toProduce"} = undef;    # sent to produce 0/1
+	$self->{"settings"}->{"port"}      = undef;    # if export is synchronous, port of server script
+	$self->{"settings"}->{"formPosX"} = undef;    # position of export cheker form
+	$self->{"settings"}->{"formPosY"} = undef;    # position of export cheker form
 
 	return $self;                    # Return the reference to the hash.
 }
@@ -37,31 +42,34 @@ sub new {
 sub GetExportTime {
 	my $self = shift;
 
-	return $self->{"time"};
+	return $self->{"settings"}->{"time"};
 }
 
 sub GetExportMode {
 	my $self = shift;
 
-	return $self->{"mode"};
+	return $self->{"settings"}->{"mode"};
 }
 
 sub GetToProduce {
 	my $self = shift;
 
-	return $self->{"toProduce"};
+	return $self->{"settings"}->{"toProduce"};
 }
 
 sub GetPort {
 	my $self = shift;
 
-	return $self->{"port"};
+	return $self->{"settings"}->{"port"};
 }
 
-sub GetServerPID {
+ 
+
+sub GetFormPosition {
 	my $self = shift;
 
-	return $self->{"serverPID"};
+	my $pos = Wx::Point->new($self->{"settings"}->{"formPosX"}, $self->{"settings"}->{"formPosY"});
+	return $pos;
 }
 
 sub GetOrderedUnitKeys {

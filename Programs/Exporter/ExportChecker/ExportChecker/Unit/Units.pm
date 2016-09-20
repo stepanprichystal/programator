@@ -116,8 +116,6 @@ sub CheckBeforeExport {
 	#return $totalRes;
 }
 
- 
-
 sub GetGroupState {
 	my $self = shift;
 
@@ -160,14 +158,19 @@ sub SetGroupState {
 
 }
 
-
-
 sub GetExportData {
-	my $self = shift;
- 
+	my $self         = shift;
+	my $activeGroups = shift;
+
 	my %allExportData = ();
 
-	foreach my $unit ( @{ $self->{"units"} } ) {
+	my @units = @{ $self->{"units"} };
+
+	if ($activeGroups) {
+		@units = grep { $_->GetGroupState() eq Enums->GroupState_ACTIVEON } @units;
+	}
+
+	foreach my $unit ( @units ) {
 
 		my $exportData = $unit->GetExportData();
 		$allExportData{ $unit->{"unitId"} } = $exportData;
@@ -176,22 +179,21 @@ sub GetExportData {
 	return %allExportData;
 }
 
-
 sub GetGroupData {
 	my $self = shift;
-	
+
 	die "GetGroupData is not implemented ";
 
-#	my %groupData = ();
-#
-#	foreach my $unit ( @{ $self->{"units"} } ) {
-#
-#		my $groupData = $unit->GetGroupData();
-#		my %hashData  = %{ $groupData->{"data"} };
-#		$groupData{ $unit->{"unitId"} } = \%hashData;
-#	}
-#
-#	return %groupData;
+	#	my %groupData = ();
+	#
+	#	foreach my $unit ( @{ $self->{"units"} } ) {
+	#
+	#		my $groupData = $unit->GetGroupData();
+	#		my %hashData  = %{ $groupData->{"data"} };
+	#		$groupData{ $unit->{"unitId"} } = \%hashData;
+	#	}
+	#
+	#	return %groupData;
 }
 
 # ===================================================================

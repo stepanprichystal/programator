@@ -11,7 +11,7 @@ use aliased 'Programs::Exporter::ExportChecker::RunExportChecker';
 
  
 #init CAM
-my $export = RunExportChecker->new();
+my $export = RunExportChecker->new("f13610");
 
 
  
