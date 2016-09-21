@@ -591,7 +591,7 @@ sub GetIdcustomer {
 	my $numberOrder = GetNumberOrder('',$pcbId);
 
 
-	my $cmd = "select top 1			
+	my $cmd = "select top 1		
 				org.reference_subjektu
 				FROM lcs.organizace org
 				JOIN lcs.zakazky_dps_22_hlavicka z ON z.zakaznik = org.cislo_subjektu
@@ -603,6 +603,33 @@ sub GetIdcustomer {
 	return $res;
 }
 
+
+##Return ID of customer
+sub GetCustomerInfo {
+	my $self  = shift;
+	my $pcbId = shift;
+
+	my @params = ( SqlParameter->new( "_PcbId", Enums->SqlDbType_VARCHAR, $pcbId ) );
+
+	my $numberOrder = GetNumberOrder('',$pcbId);
+
+
+	my $cmd = "select top 1
+				 c.nazev_subjektu customer
+				 from lcs.desky_22 d with (nolock)
+				 left outer join lcs.subjekty c with (nolock) on c.cislo_subjektu=d.zakaznik
+				 where d.reference_subjektu=_PcbId";
+				 
+
+	my @result = Helper->ExecuteDataSet( $cmd, \@params);
+	
+	if(scalar(@result)){
+		my $href =  $result[0];
+		return %{$href};
+	}
+
+}
+
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#
@@ -612,9 +639,9 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	use Connectors::HeliosConnector::HegMethods;
 
-	my $test = Connectors::HeliosConnector::HegMethods->GetPcbIsPool("F44739");
+	my %test = Connectors::HeliosConnector::HegMethods->GetCustomerInfo("F44739");
 
-	print $test;
+	print $test{"customer"};
 
 }
 

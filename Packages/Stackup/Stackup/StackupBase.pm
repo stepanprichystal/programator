@@ -10,7 +10,6 @@ use strict;
 use warnings;
 use XML::Simple;
 
-
 #local library
 use aliased 'Helpers::GeneralHelper';
 use aliased 'Helpers::FileHelper';
@@ -33,7 +32,7 @@ sub new {
 	my $self = shift;
 	$self = {};
 	bless $self;
- 
+
 	#id of pcb stackup
 	$self->{"pcbId"} = shift;
 
@@ -55,7 +54,6 @@ sub new {
 	$self->{"layerCnt"} = undef;
 
 	$self->__CreateStackup();
-	
 
 	return $self;
 }
@@ -74,14 +72,13 @@ sub GetPressCount {
 	return $self->{"pressCount"};
 }
 
- 
 # Return info about each pressing
 sub GetPressInfo {
 	my $self = shift;
 
 	return %{ $self->{"press"} };
 }
- 
+
 sub __CreateStackup {
 	my $self = shift;
 
@@ -108,35 +105,48 @@ sub __SetStackupLayers {
 	for ( my $i = 0 ; $i < scalar(@stackupList) ; $i++ ) {
 
 		my $layerInfo = $stackupList[$i];
+		my $layerPrevInfo;
 
-		if ( GeneralHelper->RegexEquals( Enums->MaterialType_PREPREG, $layerInfo->{"type"} ) ) {
+		if ( $i > 0 ) {
+			$layerPrevInfo = $stackupList[ $i - 1 ];
+		}
 
-			$layerInfo->{"text"}     = "";
-			$layerInfo->{"typetext"} = "";
+		if ( $layerInfo->GetType() eq Enums->MaterialType_PREPREG ) {
 
-			my $prevType = $thickList[ ( scalar @thickList ) - 1 ]->{"type"};
-			my $th;
+			# if first prepreg after cu, create parent prepreg
+			if ( $layerPrevInfo && $layerPrevInfo->GetType() eq Enums->MaterialType_COPPER ) {
 
-			#if previous layer was prereg, sum actual prepregs's
-			#thick with previous prepreg thicks
-			if ( GeneralHelper->RegexEquals( Enums->MaterialType_PREPREG, $prevType ) ) {
+				$layerInfo = PrepregLayer->new();
 
-				$th = $thickList[ ( scalar @thickList ) - 1 ]->{"thick"};
-				if ($th) {
-					$layerInfo->{"thick"} += $thickList[ ( scalar @thickList ) - 1 ]->{"thick"};
+				$layerInfo->{"type"}     = Enums->MaterialType_PREPREG;
+				$layerInfo->{"thick"}    = 0;
+				$layerInfo->{"text"}     = "";
+				$layerInfo->{"typetext"} = $layerInfo->GetTextType();
+				$layerInfo->{"parent"}   = 1;
+
+				# push all child prepregs to parent prepreg
+				 
+				my $layerInfo2 = $stackupList[$i];
+
+				while ( $layerInfo2->GetType() eq Enums->MaterialType_PREPREG ) {
+
+					$layerInfo->AddChildPrepreg($layerInfo2);
+
+					$i++;
+					$layerInfo2 = $stackupList[$i];
+
 				}
+				$i--;
 
-				$thickList[ ( scalar @thickList ) - 1 ] = $layerInfo;
-
-			}
-			else {
-				push( @thickList, $layerInfo );
+				#set thick by sum all child prepregs thick
+				my @all = $layerInfo->GetAllPrepregs();
+				foreach my $p (@all) {
+					$layerInfo->{"thick"} += $p->GetThick();
+				}
 			}
 		}
-		else {
-
-			push( @thickList, $layerInfo );
-		}
+		
+		push( @thickList, $layerInfo );
 	}
 
 	$self->__ComputePrepregsByCu( \@thickList );
@@ -162,7 +172,7 @@ sub __GetStackupLayerInfo {
 	#else {
 	#
 	my $fname = FileHelper->ChangeEncoding( $stcFile, "cp1252", "utf8" );
-	$fStackupXml = FileHelper->Open( GeneralHelper->Root() . '/Temp/' . $fname );
+	$fStackupXml = FileHelper->Open( EnumsPaths->Client_INCAMTMPOTHER . $fname );
 
 	#}
 
@@ -307,7 +317,6 @@ sub __GetStackupLayerInfo {
 			}
 		}
 	}
-
 
 	return @thickList;
 }

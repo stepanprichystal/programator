@@ -1,0 +1,14 @@
+Pro upravu standardniho slozeni je potreba:
+
+1) Podle poctu vrstev napr.: 4 - vrstva, vybrat patricne slozeni (napr.:4vv)
+2) Nacist ho do Multicallu, upravit a ulozit.
+
+Pozor, nektere typy dps (6vv, 8vv) maji dva typy slozeni:
+- 6vv: type2 se pouzije pokud soucet vyuziti vnitrnich vrstev je < 30
+- 6vv: type1 v ostatnich pripadech
+
+- 8vv: type2 se pouzije pokud soucet vyuziti v2 + v3 je < 60 nebo v4 + v5 je < 60 
+- 8vv: type1 v ostatnich pripadech
+
+
+Poznamka: Tloustky vnejsich Cu vrstev a procentualni vyuziti medi resi samotny script, tedy netreba jakkoliv upravovat.

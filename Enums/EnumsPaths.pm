@@ -7,10 +7,11 @@ use constant {
     Client_EXPORTLOCAL => "c:\\Export\\",
     Client_ELTESTS => "c:\\Boards\\",
     Client_MULTICALDB => "c:\\Program Files (x86)\\Multical5-1\\ml.xml",
+   
     Client_INCAMTMP => "c:\\tmp\\InCam\\",
     Client_INCAMTMPNC => "c:\\tmp\\InCam\\scripts\\nc_export\\",
     Client_INCAMTMPSCRIPTS => "c:\\tmp\\InCam\\scripts\\",
-    
+    Client_INCAMTMPOTHER => "c:\\tmp\\InCam\\scripts\\other\\",
 
     
 };

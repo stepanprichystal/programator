@@ -93,6 +93,9 @@ sub ShowModal {
 
 }
 
+
+# Results are number of pushed button. 
+# Count from left to right. Numbers start with number 1
 sub Result {
 
 	my $self = shift;

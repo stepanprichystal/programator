@@ -314,7 +314,7 @@ sub ChangeEncoding {
 	my $fName = GeneralHelper->GetGUID();
 
 	open my $IN, "<:encoding($encFrom)", $p or die $!;
-	open my $OUT, ">:$encTo", GeneralHelper->Root() . '/Temp/' . $fName or die $!;
+	open my $OUT, ">:$encTo", EnumsPaths->Client_INCAMTMPOTHER . $fName or die $!;
 	print $OUT $_ while <$IN>;
 	close $OUT;
 

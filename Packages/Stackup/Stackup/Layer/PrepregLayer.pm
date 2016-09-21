@@ -23,10 +23,28 @@ sub new {
 	my $self  = $class->SUPER::new(@_);
 	bless $self;
 
+	# child prepregs
+	my @prepregs = ();
+	$self->{"prepregs"} = \@prepregs;
+	
+	$self->{"parent"} = 0;
 	
 	return $self;  
 }
 
+sub AddChildPrepreg{
+	my $self= shift;
+	my $prepreg = shift;
+	
+	push (@{$self->{"prepregs"}}, $prepreg);
+}
+
+
+sub GetAllPrepregs{
+	my $self= shift;
+	
+	return @{$self->{"prepregs"}};
+}
 
  
 

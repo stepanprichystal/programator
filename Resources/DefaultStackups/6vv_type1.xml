@@ -1,0 +1,17 @@
+<ml name="1" ename="6-layer ML" dname="6-Lagen Multilayer" soll="1,550" pt="hyd" sicName="6-layer ML" path="undefined.xml">
+<element pos="1" type="Copper" id="4" p="100" />
+<element qId="1" id="6" type="Prepreg" />
+<element qId="1" id="6" type="Prepreg" />
+<element pos="4" type="Copper" id="5" p="54" />
+<element pos="5" type="Core" id="9" qId="1" />
+<element pos="6" type="Copper" id="5" p="53" />
+<element qId="1" id="6" type="Prepreg" />
+<element qId="1" id="6" type="Prepreg" />
+<element qId="1" id="6" type="Prepreg" />
+<element p="54" id="5" type="Copper" />
+<element qId="1" id="9" type="Core" />
+<element p="32" id="5" type="Copper" />
+<element qId="1" id="6" type="Prepreg" />
+<element qId="1" id="6" type="Prepreg" />
+<element pos="9" type="Copper" id="4" p="100" />
+</ml>

@@ -60,10 +60,10 @@ sub GetFinalThick {
 	my %info;
 	foreach my $lInfo ( @{ $self->{"layers"} } ) {
 
-		%info = %{$lInfo};
+		%info = %{$lInfo}; 
 		$thick += $info{thick};
 	}
-
+ 
 	return $thick;
 }
 
@@ -219,6 +219,17 @@ sub GetAllCores {
 
 }
 
+# Return type of material, which stackup is composed from
+# Assume, all layers are same type, so take type from first core
+sub GetStackupType {
+	my $self = shift;
+
+	my @cores =  $self->GetAllCores();
+	
+	return $cores[0]->GetTextType();
+
+}
+
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#
@@ -227,7 +238,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	use aliased 'Packages::Stackup::Stackup::Stackup';
 
-	my $stackup = Stackup->new("f13608");
+	my $stackup = Stackup->new("d99991");
 
 	#	print $stackup->GetFinalThick();
 	#	my @cores = $stackup->GetAllCores();
@@ -238,7 +249,6 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	#
 	#	print $cuLayer->GetCopperName();
 
-	my $stackup2 = Stackup->new("f13608");
 
 	print 1;
 }

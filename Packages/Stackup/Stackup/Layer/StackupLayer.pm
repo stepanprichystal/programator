@@ -28,9 +28,10 @@ sub new {
 	#If more prepregs together, thick of all prepregs
 	$self->{"thick"}    = undef;  
 	
-	#phzsic name of core, preprags..
+	#phzsic name of core, preprags.. e.g Prepreg 1080
 	$self->{"text"}     = undef; 
 	 
+	# type of material eg FR4, IS410 
 	$self->{"typetext"} = undef;
 	
 
@@ -50,6 +51,17 @@ sub GetType{
 sub GetThick{
 	my $self = shift;
 	return $self->{"thick"};
+}
+
+ 
+sub GetText{
+	my $self = shift;
+	return $self->{"text"};
+}
+
+sub GetTextType{
+	my $self = shift;
+	return $self->{"typetext"};
 }
 
 
