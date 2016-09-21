@@ -138,6 +138,11 @@ sub IsPortAvailable {
 	my $self    = shift;
 	my $jobGUID = shift;
 
+	# count of server in use
+	
+	$self->{"maxCntUser"} 
+
+
 	my $serverRef = $self->{"servers"};
 
 	my $freePort = 0;
@@ -707,6 +712,16 @@ sub __PortReadyHandler {
 
 sub __SetMaxServerCnt {
 	my $self = shift;
+	$self->{"maxContUser"} = shift;
+
+}
+
+
+sub __Get {
+	my $self = shift;
+	
+	if ()
+	
 	$self->{"maxContUser"} = shift;
 
 }
