@@ -162,6 +162,17 @@ sub _SetDestroyDelay {
 	$self->{"settingsHelper"}->SetDestroyDelay($destroyDelay);
 }
 
+sub _SetDestroyOnDemand {
+	my $self         = shift;
+	my $value = shift;    # in second
+
+	$self->{"settingsHelper"}->SetDestroyOnDemand($value);
+}
+
+
+
+
+
 sub _GetInfoServers {
 	my $self = shift;
 

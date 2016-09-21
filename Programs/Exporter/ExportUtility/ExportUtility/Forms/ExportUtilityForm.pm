@@ -192,8 +192,8 @@ sub __SetLayout {
 
 	my $jobsQueueStatBox = $self->__SetLayoutJobsQueue($page1);
 
-	my $settingsStatBox  = $self->__SetLayoutInCAMSettings($page2);
-	my $groupsStatBox = $self->__SetLayoutGroups($page1);
+	my $settingsStatBox = $self->__SetLayoutInCAMSettings($page2);
+	my $groupsStatBox   = $self->__SetLayoutGroups($page1);
 
 	# BUILD STRUCTURE OF LAYOUT
 
@@ -253,13 +253,13 @@ sub ActivateForm {
 		$self->{"mainFrm"}->SetFocus();
 		$self->{"mainFrm"}->Raise();
 
-#		my @windows = FindWindowLike( 0, "Exporter utility" );
-#		for (@windows) {
-#
-#			   SetForegroundWindow( $_);
-#			   SetFocus( $_);
-#		}
-#	 
+		#		my @windows = FindWindowLike( 0, "Exporter utility" );
+		#		for (@windows) {
+		#
+		#			   SetForegroundWindow( $_);
+		#			   SetFocus( $_);
+		#		}
+		#
 
 	}
 	else {
@@ -357,7 +357,7 @@ sub __SetLayoutJobsQueue {
 sub __SetLayoutInCAMSettings {
 	my $self   = shift;
 	my $parent = shift;
-	
+
 	# Load data
 	my %sett = $self->_GetServerSettings();
 
@@ -369,54 +369,68 @@ sub __SetLayoutInCAMSettings {
 	my $szRow2 = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
 	my $szRow3 = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
 	my $szRow4 = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
-	
-	# DEFINE CONTROLS
-	my $maxCountSb = Wx::StaticText->new( $parent, -1, "Max count of parallel running servers", [ -1, -1 ], [ 250, 25 ] );
-	my $delaySb = Wx::StaticText->new( $parent, -1, "Time, before server close (minutes)", [ -1, -1 ], [ 250, 25 ] );
-	
-	my $runningCntSb = Wx::StaticText->new( $parent, -1, "Running", [ -1, -1 ] , [ 250, 25 ]);
-	my $waitingCntSb = Wx::StaticText->new( $parent, -1, "Waiting on close", [ -1, -1 ], [ 250, 25 ] );
+	my $szRow5 = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
 
-	
+	# DEFINE CONTROLS
+	my $maxCountSb   = Wx::StaticText->new( $parent, -1, "Max count of parallel running servers", [ -1, -1 ], [ 250, 25 ] );
+	my $delayTimeSb  = Wx::StaticText->new( $parent, -1, "Time, before server close (minutes)",   [ -1, -1 ], [ 250, 25 ] );
+	my $delaySb      = Wx::StaticText->new( $parent, -1, "Delay server closing",                  [ -1, -1 ], [ 250, 25 ] );
+	my $runningCntSb = Wx::StaticText->new( $parent, -1, "Running servers",                               [ -1, -1 ], [ 250, 25 ] );
+	my $waitingCntSb = Wx::StaticText->new( $parent, -1, "Waiting on close servers",                      [ -1, -1 ], [ 250, 25 ] );
+
 	my $runningCntValSb = Wx::StaticText->new( $parent, -1, "0", [ -1, -1 ] );
 	my $waitingCntValSb = Wx::StaticText->new( $parent, -1, "0", [ -1, -1 ] );
-	
-	my @inCamCount = (1, 2, 3, 4, 5, 6, 7, 8, 9);
+
+	my @inCamCount = ( 1, 2, 3, 4, 5, 6, 7, 8, 9 );
 	my $maxCountCb = Wx::ComboBox->new( $parent, -1, $sett{"maxCntUser"}, [ -1, -1 ], [ 200, 22 ], \@inCamCount, &Wx::wxCB_READONLY );
 
-	my @inCamDelay = (0.2, 0.5, 1, 2, 5, 10, 20, 40);
-	my $delayCb = Wx::ComboBox->new( $parent, -1, $sett{"destroyDelay"}/60, [ -1, -1 ], [ 200, 22 ], \@inCamDelay, &Wx::wxCB_READONLY );
+	my @inCamDelay = ( 0.2, 0.5, 1, 2, 5, 10, 20, 40 );
+	my $delayCb = Wx::ComboBox->new( $parent, -1, $sett{"destroyDelay"} / 60, [ -1, -1 ], [ 200, 22 ], \@inCamDelay, &Wx::wxCB_READONLY );
  
- 
+	my $onDemandChb = Wx::CheckBox->new( $parent, -1, "", [ -1, -1 ], [ 130, 20 ] );
+	$onDemandChb->SetValue( $sett{"destroyOnDemand"} );
+
+	unless ($sett{"destroyOnDemand"} ) {
+		$delayCb->Disable();
+	}
+
 	# DEFINE EVENTS
-	
-	Wx::Event::EVT_TEXT( $maxCountCb, -1, sub { $self->__OnMaxCountChanged( @_ ) } );
-	Wx::Event::EVT_TEXT( $delayCb, -1, sub { $self->__OnDelayChanged( @_ ) } );
-	
+
+	Wx::Event::EVT_TEXT( $maxCountCb, -1, sub { $self->__OnMaxCountChanged(@_) } );
+	Wx::Event::EVT_TEXT( $delayCb,    -1, sub { $self->__OnDelayChanged(@_) } );
+	Wx::Event::EVT_CHECKBOX( $onDemandChb, -1, sub { $self->__OnOnDemandChecked(@_) } );
+
 	# BUILD LAYOUT STRUCTURE
-	
-	$szRow1->Add( $maxCountSb, 0, &Wx::wxEXPAND | &Wx::wxALL, 1);
-	$szRow1->Add( $maxCountCb, 0, &Wx::wxEXPAND | &Wx::wxALL, 1);
-	$szRow2->Add( $delaySb, 0, &Wx::wxEXPAND | &Wx::wxALL, 1);
-	$szRow2->Add( $delayCb, 0, &Wx::wxEXPAND | &Wx::wxALL, 1);
-		
-	$szRow3->Add( $runningCntSb, 0, &Wx::wxEXPAND | &Wx::wxALL, 1);
-	$szRow3->Add( $runningCntValSb, 0, &Wx::wxEXPAND | &Wx::wxALL, 1);
-	$szRow4->Add( $waitingCntSb, 0, &Wx::wxEXPAND | &Wx::wxALL, 1);
-	$szRow4->Add( $waitingCntValSb, 0, &Wx::wxEXPAND | &Wx::wxALL, 1);
-	
-	$szStatBox->Add( $szRow1, 0, &Wx::wxEXPAND | &Wx::wxALL, 1);
-	$szStatBox->Add( $szRow2, 0, &Wx::wxEXPAND | &Wx::wxALL, 1);
-	$szStatBox->Add( $szRow3, 0, &Wx::wxEXPAND | &Wx::wxALL, 1);
-	$szStatBox->Add( $szRow4, 0, &Wx::wxEXPAND | &Wx::wxALL, 1);
+
+	$szRow1->Add( $maxCountSb, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szRow1->Add( $maxCountCb, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+
+	$szRow2->Add( $delaySb,     0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szRow2->Add( $onDemandChb, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+
+	$szRow3->Add( $delayTimeSb, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szRow3->Add( $delayCb,     0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+
+	$szRow4->Add( $runningCntSb,    0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szRow4->Add( $runningCntValSb, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+
+	$szRow5->Add( $waitingCntSb,    0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szRow5->Add( $waitingCntValSb, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+
+	$szStatBox->Add( $szRow1, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szStatBox->Add( 10, 25,  0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szStatBox->Add( $szRow2, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szStatBox->Add( $szRow3, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szStatBox->Add( 10, 25,  0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szStatBox->Add( $szRow4, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szStatBox->Add( $szRow5, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 
 	# SAVE REFERENCES
-	$self->{"maxCountCb"} = $maxCountCb;
-	$self->{"delayCb"} = $delayCb;
+	$self->{"maxCountCb"}      = $maxCountCb;
+	$self->{"delayCb"}         = $delayCb;
 	$self->{"runningCntValSb"} = $runningCntValSb;
-	$self->{"waitingCntValSb"} = $waitingCntValSb;	
- 
-  
+	$self->{"waitingCntValSb"} = $waitingCntValSb;
+
 	return $szStatBox;
 }
 
@@ -536,14 +550,14 @@ sub RefreshGroupTable {
 }
 
 # Refresh settings on page settings
-sub RefreshSettings{
+sub RefreshSettings {
 	my $self = shift;
-	
+
 	my %stat = $self->_GetServerStat();
-	
-	$self->{"runningCntValSb"}->SetLabel($stat{"running"});
-	$self->{"waitingCntValSb"}->SetLabel($stat{"waiting"});
-	
+
+	$self->{"runningCntValSb"}->SetLabel( $stat{"running"} );
+	$self->{"waitingCntValSb"}->SetLabel( $stat{"waiting"} );
+
 }
 
 sub BuildGroupTableForm {
@@ -650,7 +664,6 @@ sub __OnClickNew {
 	#}
 }
 
-
 sub __OnMaxCountChanged {
 	my $self  = shift;
 	my $cb    = shift;
@@ -666,8 +679,30 @@ sub __OnDelayChanged {
 	my $event = shift;
 
 	my $val = $cb->GetStringSelection();
-	$self->_SetDestroyDelay($val*60);
+	$self->_SetDestroyDelay( $val * 60 );
 }
+
+sub __OnOnDemandChecked {
+	my $self  = shift;
+	my $chb   = shift;
+	my $event = shift;
+
+	my $val = $chb->GetValue();
+	
+	if($val ne "1"){
+		$val = 0;
+	}
+	
+	$self->_SetDestroyOnDemand($val);
+
+	if ($val) {
+		$self->{"delayCb"}->Enable();
+	}
+	else {
+		$self->{"delayCb"}->Disable();
+	}
+}
+
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#

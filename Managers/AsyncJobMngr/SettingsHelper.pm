@@ -36,17 +36,20 @@ sub __SetDefault {
 
 	my $maxCntUser;
 	my $destroyDelay;
-
+	my $destroyOnDemand;
 	my $f;
 
 	unless ( -e $self->{"logPath"} ) {
 
 		$maxCntUser   = 5;
 		$destroyDelay = 60;
+		$destroyOnDemand = 1;
 
 		open( $f, ">", $self->{"logPath"} );
 		print $f "maxCntUser = $maxCntUser\n";
 		print $f "destroyDelay = $destroyDelay\n";
+		print $f "destroyOnDemand = $destroyOnDemand\n";	
+		
 		close($f);
 
 	}
@@ -67,37 +70,24 @@ sub __SetDefault {
 				
 				($destroyDelay)  = $lines[$i] =~ /(\d+)/;
 				next;
+			}if ( $lines[$i] =~ /destroyOnDemand/ ) {
+				
+				($destroyOnDemand)  = $lines[$i] =~ /(\d+)/;
+				next;
 			}
 		}
 	}
 
 	$self->{"serverMngr"}->SetDestroyDelay($destroyDelay);
 	$self->{"serverMngr"}->SetMaxServerCount($maxCntUser);
+	$self->{"serverMngr"}->SetDestroyOnDemand($destroyOnDemand);
 }
 
 sub SetMaxServerCount {
 	my $self       = shift;
 	my $maxCntUser = shift;
 
-	my $f;
-
-	open( $f, "<", $self->{"logPath"} );
-	my @lines = <$f>;
-	close($f);
-	unlink( $self->{"logPath"} );
-
-	for ( my $i = 0 ; $i < scalar(@lines) ; $i++ ) {
-
-		if ( $lines[$i] =~ /maxCntUser/ ) {
-
-			$lines[$i] = "maxCntUser = $maxCntUser\n";
-			last;
-		}
-	}
-
-	open( $f, ">", $self->{"logPath"} );
-	print $f @lines;
-	close($f);
+	$self->__SetAttribute("maxCntUser", $maxCntUser);
 
 	$self->{"serverMngr"}->SetMaxServerCount($maxCntUser);
 }
@@ -105,7 +95,28 @@ sub SetMaxServerCount {
 sub SetDestroyDelay {
 	my $self         = shift;
 	my $destroyDelay = shift;    # in second
+	
+	$self->__SetAttribute("destroyDelay", $destroyDelay);
+	 
+	$self->{"serverMngr"}->SetDestroyDelay($destroyDelay);
+}
 
+
+sub SetDestroyOnDemand {
+	my $self         = shift;
+	my $destroyOnDemand = shift;    # in second
+
+	$self->__SetAttribute("destroyOnDemand", $destroyOnDemand);
+
+	$self->{"serverMngr"}->SetDestroyOnDemand($destroyOnDemand);
+}
+
+sub __SetAttribute{
+	my $self         = shift;
+	my $attribute = shift; 
+	my $value = shift; 	
+	
+	
 	my $f;
 
 	open( $f, "<", $self->{"logPath"} );
@@ -115,9 +126,9 @@ sub SetDestroyDelay {
 
 	for ( my $i = 0 ; $i < scalar(@lines) ; $i++ ) {
 
-		if ( $lines[$i] =~ /destroyDelay/ ) {
+		if ( $lines[$i] =~ /$attribute/ ) {
 
-			$lines[$i] = "destroyDelay = $destroyDelay\n";
+			$lines[$i] = "$attribute = $value\n";
 			last;
 		}
 	}
@@ -125,8 +136,10 @@ sub SetDestroyDelay {
 	open( $f, ">", $self->{"logPath"} );
 	print $f @lines;
 	close($f);
-
-	$self->{"serverMngr"}->SetDestroyDelay($destroyDelay);
+	
+	
 }
+
+
 
 1;

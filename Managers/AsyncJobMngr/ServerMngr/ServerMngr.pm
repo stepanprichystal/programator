@@ -141,11 +141,15 @@ sub IsPortAvailable {
 	my $serverRef = $self->{"servers"};
 
 	my $freePort = 0;
+	my $s;
 
 	#check if some server is ready == is WAITING
 	for ( my $i = 0 ; $i < scalar( @{$serverRef} ) ; $i++ ) {
+		
+		$s = ${$serverRef}[$i];
+		
 
-		if ( ${$serverRef}[$i]->{"state"} eq Enums->State_WAITING_SERVER || ${$serverRef}[$i]->{"state"} eq Enums->State_FREE_SERVER ) {
+		if ( ( $s->{"state"} eq Enums->State_WAITING_SERVER  || $s->{"state"} eq Enums->State_FREE_SERVER ) && !$s->{"external"} )  {
 
 			return 1;
 		}
@@ -165,16 +169,20 @@ sub PrepareServerPort {
 
 	#my $prepare  = 0;    #indicate, if prot will be prepared or there is no free port
 	my $freePort = 0;
+	my $s;
 
 	#check if some server is ready == is WAITING
 
 	#check if some server is ready == is WAITING
 	for ( my $i = 0 ; $i < scalar( @{$serverRef} ) ; $i++ ) {
+		
+		$s = ${$serverRef}[$i];
+		
 
-		if ( ${$serverRef}[$i]->{"state"} eq Enums->State_WAITING_SERVER ) {
+		if ( $s->{"state"} eq Enums->State_WAITING_SERVER && !$s->{"external"} ) {
 
-			${$serverRef}[$i]->{"state"} = Enums->State_RUNING_SERVER;
-			$freePort = ${$serverRef}[$i]->{"port"};
+			$s->{"state"} = Enums->State_RUNING_SERVER;
+			$freePort = $s->{"port"};
 
 			#$prepare = 1;
 			$self->__PortReady( $freePort, $jobGUID );    #send event, port ready
@@ -188,14 +196,18 @@ sub PrepareServerPort {
 
 	#test if some server is at least FREE
 	unless ($freePort) {
+		my $s;
+		
 		for ( my $i = 0 ; $i < scalar( @{$serverRef} ) ; $i++ ) {
+			
+			$s = ${$serverRef}[$i];
 
-			if ( ${$serverRef}[$i]->{"state"} eq Enums->State_FREE_SERVER ) {
+			if ( $s->{"state"} eq Enums->State_FREE_SERVER  && !$s->{"external"}) {
 
-				${$serverRef}[$i]->{"state"} = Enums->State_PREPARING_SERVER;
+				$s->{"state"} = Enums->State_PREPARING_SERVER;
 
 				#create server in separete ports
-				my $port = ${$serverRef}[$i]->{"port"};
+				my $port = $s->{"port"};
 
 				my $worker = threads->create( sub { $self->__CreateServer( $port, $jobGUID ) } );
 
@@ -611,7 +623,6 @@ sub DestroyServer {
 
 	my @s = @{$serverRef};
 	my $idx = ( grep { $s[$_]->{"port"} == $port } 0 .. $#s )[0];
-
 	if ( defined $idx ) {
 
 		# never kill "external" server
