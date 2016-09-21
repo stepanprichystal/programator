@@ -81,6 +81,8 @@ sub __SetDefault {
 	$self->{"serverMngr"}->SetDestroyDelay($destroyDelay);
 	$self->{"serverMngr"}->SetMaxServerCount($maxCntUser);
 	$self->{"serverMngr"}->SetDestroyOnDemand($destroyOnDemand);
+ 
+	
 }
 
 sub SetMaxServerCount {

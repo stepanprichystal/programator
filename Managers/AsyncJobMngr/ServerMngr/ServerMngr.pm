@@ -39,14 +39,14 @@ sub new {
 
 	$self->{"servers"} = \@servers;
 
-	$self->{"maxCntUser"}      = 5;
+	$self->{"maxCntUser"}      = -1;
 	$self->{"maxCntTotal"}     = 9;       #max allowed number of server
-	$self->{"actualCntRuning"} = 0;
+	$self->{"actualCntRuning"} = -1;
 	$self->{"startPort"}       = 1000;    #Port for ExportUtility start from 1000, Port for ExportChecker start from 2000,
 
 	$self->{"destroyOnDemand"} = 1;       #close server only on demand, not immediately
-	$self->{"destroyDelay"}    = 10;      #destroy server after 12s of WAITING state
-
+	$self->{"destroyDelay"}    = -1;      #destroy server after 12s of WAITING state
+	
 	$self->__InitServers();
 
 	return $self;                         # Return the reference to the hash.
@@ -138,23 +138,22 @@ sub IsPortAvailable {
 	my $self    = shift;
 	my $jobGUID = shift;
 
-	# count of server in use
-	
-	$self->{"maxCntUser"} 
-
+	# Test if next server exceed max server count set by user
+	if ( $self->__ExceedServersCnt() ) {
+		return 0;
+	}
 
 	my $serverRef = $self->{"servers"};
 
 	my $freePort = 0;
 	my $s;
 
-	#check if some server is ready == is WAITING
+	#check if some server is ready == is WAITING or FREE
 	for ( my $i = 0 ; $i < scalar( @{$serverRef} ) ; $i++ ) {
-		
-		$s = ${$serverRef}[$i];
-		
 
-		if ( ( $s->{"state"} eq Enums->State_WAITING_SERVER  || $s->{"state"} eq Enums->State_FREE_SERVER ) && !$s->{"external"} )  {
+		$s = ${$serverRef}[$i];
+
+		if ( ( $s->{"state"} eq Enums->State_WAITING_SERVER || $s->{"state"} eq Enums->State_FREE_SERVER ) && !$s->{"external"} ) {
 
 			return 1;
 		}
@@ -169,7 +168,6 @@ sub PrepareServerPort {
 
 	my $serverRef = $self->{"servers"};
 
-	#test on free server
 	#lock @servers
 
 	#my $prepare  = 0;    #indicate, if prot will be prepared or there is no free port
@@ -177,12 +175,9 @@ sub PrepareServerPort {
 	my $s;
 
 	#check if some server is ready == is WAITING
-
-	#check if some server is ready == is WAITING
 	for ( my $i = 0 ; $i < scalar( @{$serverRef} ) ; $i++ ) {
-		
+
 		$s = ${$serverRef}[$i];
-		
 
 		if ( $s->{"state"} eq Enums->State_WAITING_SERVER && !$s->{"external"} ) {
 
@@ -202,12 +197,12 @@ sub PrepareServerPort {
 	#test if some server is at least FREE
 	unless ($freePort) {
 		my $s;
-		
+
 		for ( my $i = 0 ; $i < scalar( @{$serverRef} ) ; $i++ ) {
-			
+
 			$s = ${$serverRef}[$i];
 
-			if ( $s->{"state"} eq Enums->State_FREE_SERVER  && !$s->{"external"}) {
+			if ( $s->{"state"} eq Enums->State_FREE_SERVER && !$s->{"external"} ) {
 
 				$s->{"state"} = Enums->State_PREPARING_SERVER;
 
@@ -320,7 +315,7 @@ sub ReturnServerPort {
 				return 0;
 			}
 			else {
-				
+
 				$self->DestroyServer($busyPort);
 			}
 
@@ -532,7 +527,7 @@ sub __InitServers {
 
 	my $serverRef = $self->{"servers"};
 
-	for ( my $i = 0 ; $i < $self->{"maxCntUser"} ; $i++ ) {
+	for ( my $i = 0 ; $i < $self->{"maxCntTotal"} ; $i++ ) {
 
 		my $sInfo = ServerInfo->new();
 
@@ -585,12 +580,18 @@ sub GetServerStat {
 
 	my @serverRef = @{ $self->{"servers"} };
 
-	my $point =
+	$stat{"running"} = scalar( grep { $_->{"state"} eq Enums->State_RUNING_SERVER } @serverRef );
+	$stat{"waiting"} = scalar( grep { $_->{"state"} eq Enums->State_WAITING_SERVER } @serverRef );
 
-	  $stat{"running"} = scalar( grep { $_->{"state"} eq Enums->State_RUNING_SERVER } @serverRef );
-	$stat{"waiting"}   = scalar( grep { $_->{"state"} eq Enums->State_WAITING_SERVER } @serverRef );
-	$stat{"preparing"} = scalar( grep { $_->{"state"} eq Enums->State_PREPARING_SERVER } @serverRef );
-	$stat{"free"}      = scalar( grep { $_->{"state"} eq Enums->State_FREE_SERVER } @serverRef );
+	# waiting, which are not external
+	$stat{"waitingNoExt"} = scalar( grep { $_->{"state"} eq Enums->State_WAITING_SERVER && !$_->{"external"} } @serverRef );
+	$stat{"preparing"}    = scalar( grep { $_->{"state"} eq Enums->State_PREPARING_SERVER } @serverRef );
+	$stat{"free"}         = scalar( grep { $_->{"state"} eq Enums->State_FREE_SERVER } @serverRef );
+	
+	# free server which are not used (user set server count which can be used by maxCntUser)      
+	my $notUsed = $self->{"maxCntTotal"} -  $self->{"maxCntUser"};
+	# thus, edit readl free server scount 
+	$stat{"free"}         = $stat{"free"} - $notUsed;
 
 	return %stat;
 }
@@ -716,14 +717,32 @@ sub __SetMaxServerCnt {
 
 }
 
-
-sub __Get {
+sub __ExceedServersCnt {
 	my $self = shift;
-	
-	if ()
-	
-	$self->{"maxContUser"} = shift;
 
+	my %stat = $self->GetServerStat();
+
+	my $serverRef = $self->{"servers"};
+
+	my $maxUser  = $self->{"maxCntUser"};
+	my $maxTotal = $self->{"maxCntTotal"};
+
+	# potencially cnt exceeded
+	if ( $stat{"free"} == 0 ) {
+
+		if ( $stat{"waitingNoExt"} ) {
+
+			# Ok
+			return 0;
+		}
+		else {
+
+			# another server would be exceed server count
+			return 1;
+		}
+	}
+
+	return 0;
 }
 
 #-------------------------------------------------------------------------------------------#

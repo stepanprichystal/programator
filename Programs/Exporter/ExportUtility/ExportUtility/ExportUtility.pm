@@ -479,7 +479,7 @@ sub __RunTimers {
 
 	my $timer5sec = Wx::Timer->new( $formMainFrm, -1, );
 	Wx::Event::EVT_TIMER( $formMainFrm, $timer5sec, sub { $self->__Timer5second(@_ ) } );
-	$timer5sec->Start(3000); 
+	$timer5sec->Start(1000); 
 }
 
 sub __CheckFilesHandler {

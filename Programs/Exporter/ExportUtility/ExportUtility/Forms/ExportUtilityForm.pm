@@ -381,7 +381,7 @@ sub __SetLayoutInCAMSettings {
 	my $runningCntValSb = Wx::StaticText->new( $parent, -1, "0", [ -1, -1 ] );
 	my $waitingCntValSb = Wx::StaticText->new( $parent, -1, "0", [ -1, -1 ] );
 
-	my @inCamCount = ( 1, 2, 3, 4, 5, 6, 7, 8, 9 );
+	my @inCamCount = ( 0, 1, 2, 3, 4, 5, 6, 7, 8 );
 	my $maxCountCb = Wx::ComboBox->new( $parent, -1, $sett{"maxCntUser"}, [ -1, -1 ], [ 200, 22 ], \@inCamCount, &Wx::wxCB_READONLY );
 
 	my @inCamDelay = ( 0.2, 0.5, 1, 2, 5, 10, 20, 40 );

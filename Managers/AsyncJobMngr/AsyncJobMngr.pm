@@ -336,21 +336,33 @@ sub _AbortJob {
 
 		return 0;
 	}
+	
+	my $job = ${ $self->{"jobs"} }[$i];
 
-	if ( ${ $self->{"jobs"} }[$i]{"state"} eq Enums->JobState_RUNNING ) {
-
-		$self->{"threadMngr"}->ExitThread( ${ $self->{"jobs"} }[$i]{"jobGUID"} );
-
-		#$self->{"serverMngr"}->ReturnServerPort( ${ $self->{"jobs"} }[$i]{"port"} );
-
-		#$self->__RemoveJob( ${ $self->{"jobs"} }[$i]{"jobGUID"} );
-
+	if ( $job->{"state"} eq Enums->JobState_RUNNING ) {
+		
+		# first exit running thread
+		$self->{"threadMngr"}->ExitThread( $job->{"jobGUID"} );
 		$self->{'onJobStateChanged'}->Do( $jobGUID, Enums->JobState_ABORTING );
 
 	}
-	else {
+	elsif( $job->{"state"} eq Enums->JobState_WAITINGQUEUE ){
+		
+		# remove job from queue
+		$self->__RemoveJob( $jobGUID );
+		$self->{'onJobStateChanged'}->Do( $jobGUID, Enums->JobState_DONE, Enums->ExitType_FORCE );
+		
+	}
+	elsif( $job->{"state"} eq Enums->JobState_WAITINGPORT ){
+		
+		# can't abort
+		Helper->Print( "THREAD with job id: " . $job->{"pcbId"} . " is starting, try abort later.......\n" );
+		
+	}
+	elsif( $job->{"state"} eq Enums->JobState_ABORTING ){
 
-		Helper->Print( "THREAD with job id: " . ${ $self->{"jobs"} }[$i]{"pcbId"} . " is starting, try abort later.......\n" );
+		# can't abort
+		Helper->Print( "THREAD with job id: " . $job->{"pcbId"} . " is already abortin, try abort later.......\n" );
 
 	}
 
