@@ -1,6 +1,6 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Custom control list. Enable create custom items from controls
+# Description: Container, which display JobQueueItems in queue
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Programs::Exporter::ExportUtility::ExportUtility::Forms::JobQueueForm;
@@ -15,7 +15,6 @@ use warnings;
 
 #local library
 use aliased 'Programs::Exporter::ExportUtility::ExportUtility::Forms::JobQueueItemForm';
-use aliased 'Widgets::Forms::MyWxScrollPanel';
 use aliased 'Packages::Events::Event';
 
 #-------------------------------------------------------------------------------------------#
@@ -32,9 +31,6 @@ sub new {
 	bless($self);
 
 	# Items references
-	#my @jobItems = ();
-	#$self->{"jobItems"} = \@jobItems;
-
 	# PROPERTIES
 
 	$self->__SetLayout();
@@ -42,16 +38,37 @@ sub new {
 	#EVENTS
 	$self->{"onSelectItemChange"} = Event->new();
 
-#	for ( my $i = 0 ; $i < 2 ; $i++ ) {
-#
-#		my $item = $self->AddItem( "F9999" . $i );
-#		
-#		$item->SetErrors($i);
-#		$item->SetProgress(2*$i);
-#		
-#	}
-
 	return $self;
+}
+
+sub AddItem {
+	my $self        = shift;
+	my $taskId      = shift;
+	my $jobId       = shift;
+	my $exportData  = shift;
+	my $produceMngr = shift;
+	my $taskMngr    = shift;
+	my $groupMngr   = shift;
+	my $itemMngr    = shift;
+
+	my $item = JobQueueItemForm->new( $self->GetParentForItem(), $jobId, $taskId, $exportData, $produceMngr, $taskMngr, $groupMngr, $itemMngr );
+
+	$self->AddItemToQueue($item);
+
+	$self->__SetJobOrder();
+
+	return $item;
+
+}
+
+sub RemoveJobFromQueue {
+	my $self   = shift;
+	my $itemId = shift;
+
+	$self->RemoveItemFromQueue($itemId);
+
+	$self->__SetJobOrder();
+
 }
 
 sub __SetLayout {
@@ -60,7 +77,7 @@ sub __SetLayout {
 	$self->SetItemGap(2);
 
 	$self->SetItemUnselectColor( Wx::Colour->new( 240, 240, 240 ) );
-	$self->SetItemSelectColor( Wx::Colour->new( 215, 230, 251 ));
+	$self->SetItemSelectColor( Wx::Colour->new( 215, 230, 251 ) );
 
 	# SET EVENTS
 
@@ -74,29 +91,8 @@ sub __OnSelectItem {
 
 }
 
-sub AddItem {
-	my $self  = shift;
-	my $taskId  = shift;
-	my $jobId = shift;
-	my $exportData = shift;
-	my $produceMngr = shift;
-	my $taskMngr = shift;
-	my $groupMngr = shift;
-	my $itemMngr = shift;
-	
 
-	my $item = JobQueueItemForm->new( $self->GetParentForItem(), $jobId, $taskId, $exportData, $produceMngr, $taskMngr, $groupMngr, $itemMngr);
-
-
-	$self->AddItemToQueue($item);
-	
-	$self->__SetJobOrder();
-	
-	return $item;
-
-}
-
-sub  __SetJobOrder {
+sub __SetJobOrder {
 	my $self = shift;
 
 	my @queue = @{ $self->{"jobItems"} };
@@ -108,16 +104,6 @@ sub  __SetJobOrder {
 	}
 }
 
-
-sub RemoveJobFromQueue {
-	my $self = shift;
-	my $itemId = shift;
-
-	$self->RemoveItemFromQueue($itemId);
-
-	$self->__SetJobOrder();
-
-}
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

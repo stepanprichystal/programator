@@ -1,6 +1,6 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Widget slouzici pro zobrazovani zprav ruznych typu uzivateli
+# Description: Core of Export utility program. Manage whole process of exporting.
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Programs::Exporter::ExportUtility::ExportUtility::ExportUtility;
@@ -11,7 +11,6 @@ use threads::shared;
 use Wx;
 use strict;
 use warnings;
-
 
 #local library
 
@@ -30,23 +29,17 @@ use aliased 'Programs::Exporter::ExportUtility::Enums';
 use aliased 'Packages::InCAM::InCAM';
 
 
-#my $THREAD_MESSAGE_EVT : shared;
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
 
-#use constant {
-#			   ITEM_RESULT  => "itemResult",
-#			   ITEM_ERROR   => "itemError",
-#			   GROUP_EXPORT => "groupExport"
-#};
 
 sub new {
-	
+
 	my $self = shift;
 	$self = {};
 	bless($self);
-	
+
 	my $runMode = shift;
 
 	$self->{"inCAM"} = undef;
@@ -63,57 +56,38 @@ sub new {
 
 	#set base class handlers
 
-	$self->__Init();
-	$self->__Run();
+	$self->__SetHandlers();
 
-	#$self->{'onSetLayout'}->Add( sub { $self->__OnSetLayout(@_)});
+	$self->__Run();
 
 	return $self;
 }
 
-sub __Init {
-	my $self = shift;
 
-	#set handlers for main app form
-	$self->__SetHandlers();
+# ========================================================================================== #
+# WORER METHOD - THIS METHOD IS PROCESS ASYNCHRONOUSLY IN CHILD THREAD
+# ========================================================================================== #
 
-}
+#this handler run, when new job thread is created
+sub JobWorker {
+	my $self                         = shift;
+	my $pcbId                        = shift;
+	my $taskId                       = shift;
+	my $inCAM                        = shift;
+	my $THREAD_PROGRESS_EVT : shared = ${ shift(@_) };
+	my $THREAD_MESSAGE_EVT : shared  = ${ shift(@_) };
 
-sub __Run {
-	my $self = shift;
-	$self->{"form"}->{"mainFrm"}->Show(1);
 
-	#HegMethods->GetPcbOrderNumber("D92987");
+	#GetExportClass
+	my $task        = $self->__GetTaskById($taskId);
+	my %exportClass = $task->{"units"}->GetExportClass();
+	my $exportData  = $task->GetExportData();
 
-	#Win32::OLE->Uninitialize();
 
-	$self->__RunTimers();
-	
-	$self->{"form"}->MainLoop();
+	my $jobExport = JobWorkerClass->new( \$THREAD_PROGRESS_EVT, \$THREAD_MESSAGE_EVT, $self->{"form"}->{"mainFrm"} );
+	$jobExport->Init( $pcbId, $taskId, $inCAM, \%exportClass, $exportData );
 
-	
-
-}
-
-sub __AddNewJob {
-	my $self       = shift;
-	my $jobId      = shift;
-	my $exportData = shift;
-
-	# unique id per each task
-	my $guid = GeneralHelper->GetGUID();
-
-	my $task = Task->new( $guid, $jobId, $exportData );
-
-	push( @{ $self->{"tasks"} }, $task );
-
-	print "zde 1\n";
-
-	# prepare gui
-	$self->{"form"}->AddNewTaskGUI($task);
-
-	# Add new task to queue
-	$self->{"form"}->AddNewTask($task);
+	$jobExport->RunExport();
 
 }
 
@@ -127,7 +101,7 @@ sub __OnJobStateChanged {
 	my $taskState       = shift;
 	my $taskStateDetail = shift;
 
-	my $task = $self->__GetTaskById($taskId);
+	my $task       = $self->__GetTaskById($taskId);
 	my $exportData = $task->GetExportData();
 
 	my $status = "";
@@ -144,9 +118,9 @@ sub __OnJobStateChanged {
 	}
 	elsif ( $taskState eq EnumsMngr->JobState_RUNNING ) {
 
-		$status = "Start runing";	
-		$self->{"form"}->ActivateForm(1, $exportData->GetFormPosition());
-		
+		$status = "Start runing";
+		$self->{"form"}->ActivateForm( 1, $exportData->GetFormPosition() );
+
 	}
 	elsif ( $taskState eq EnumsMngr->JobState_ABORTING ) {
 
@@ -198,6 +172,7 @@ sub __OnJobStateChanged {
 
 }
 
+# Start when some items wass processed and contain value of progress
 sub __OnJobProgressEvtHandler {
 	my $self   = shift;
 	my $taskId = shift;
@@ -285,9 +260,6 @@ sub __OnJobMessageEvtHandler {
 		$self->{"form"}->SetJobQueueWarningCnt($task);
 
 	}
-
-	#TESTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT
-	#print "Exporter utility::  job id: " . $jobGUID . " - messType: " . $messType . " - data: " . $data . "\n";
 }
 
 sub __OnRemoveJobClick {
@@ -316,7 +288,7 @@ sub __OnRemoveJobClick {
 		}
 
 		$self->{"form"}->_DestroyExternalServer($port);
-		
+
 		# hide exporter
 		$self->{"form"}->ActivateForm(0);
 	}
@@ -369,119 +341,8 @@ sub __OnToProduceClick {
 	# get results, set gui
 }
 
-# ========================================================================================== #
-# WORER METHOD - THIS METHOD IS PROCESS ASYNCHRONOUSLY IN CHILD THREAD
-# ========================================================================================== #
-
-#this handler run, when new job thread is created
-sub JobWorker {
-	my $self                         = shift;
-	my $pcbId                        = shift;
-	my $taskId                       = shift;
-	my $inCAM                        = shift;
-	my $THREAD_PROGRESS_EVT : shared = ${ shift(@_) };
-	my $THREAD_MESSAGE_EVT : shared  = ${ shift(@_) };
-
-	#vytvorit nejakou Base class ktera bude obsahovat odesilani zprav prostrednictvim messhandler
-
-	#GetExportClass
-	my $task        = $self->__GetTaskById($taskId);
-	my %exportClass = $task->{"units"}->GetExportClass();
-	my $exportData  = $task->GetExportData();
-
-	# TODO udelat base class pro JobWorkerClass nebo to nejak vzresit
-
-	my $jobExport = JobWorkerClass->new( \$THREAD_PROGRESS_EVT, \$THREAD_MESSAGE_EVT, $self->{"form"}->{"mainFrm"} );
-	$jobExport->Init( $pcbId, $taskId, $inCAM, \%exportClass, $exportData );
-
-	$jobExport->RunExport();
-
-	#$jobExport->{'onItemResult'}->Add{  sub    { $self->__OnItemResultHandler(@_) }  };
-	#$jobExport->{'onItemError'}->Add{  sub    { $self->__OnItemErrorHandler(@_) }  }
-	#$jobExport->{'onGroupExport'}->Add{  sub    { $self->__OnGroupExportHandler(@_) }  }
-
-	#use aliased 'Packages::Export::NCExport::NC_Group';
-
-	#my $jobId    = "F13608";
-	#my $stepName = "panel";
-
-	#use aliased 'CamHelpers::CamHelper';
-
-	#CamHelper->OpenJobAndStep( $inCAM, $pcbId, $stepName );
-
-	#my $ncgroup = NC_Group->new( $inCAM, $pcbId );
-
-	#$ncgroup->Run();
-
-	#doExport($pcbId,$inCAM)
-	#
-	#	my %res : shared = ();
-	#	for ( my $i = 0 ; $i < 50 ; $i++ ) {
-	#
-	#		$res{"jobGUID"} = $jobGUID;
-	#		$res{"port"}    = "port";
-	#		$res{"value"}   = $i;
-	#
-	#		my $threvent2 = new Wx::PlThreadEvent( -1, $THREAD_PROGRESS_EVT, \%res );
-	#		Wx::PostEvent( $self->{"mainFrm"}, $threvent2 );
-	#
-	#		sleep(1);
-	#	}
-	#print "TESTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT KONEEEEC HEIGHT OF PAGE CONTENT IS";
-
-}
-
-# ========================================================================================== #
-#  PRIVATE HELPER METHOD
-# ========================================================================================== #
-
-sub __GetTaskById {
-	my $self   = shift;
-	my $taskId = shift;
-
-	foreach my $task ( @{ $self->{"tasks"} } ) {
-
-		if ( $task->GetTaskId() eq $taskId ) {
-
-			return $task;
-		}
-	}
-}
-
-sub __SetHandlers {
-	my $self = shift;
-
-	#Set base handler
-
-	$self->{"form"}->{'onJobStateChanged'}->Add( sub { $self->__OnJobStateChanged(@_) } );
-	$self->{"form"}->{'onJobProgressEvt'}->Add( sub  { $self->__OnJobProgressEvtHandler(@_) } );
-	$self->{"form"}->{'onJobMessageEvt'}->Add( sub   { $self->__OnJobMessageEvtHandler(@_) } );
-
-	$self->{"form"}->{'onClick'}->Add( sub     { $self->__OnClick(@_) } );
-	$self->{"form"}->{'onToProduce'}->Add( sub { $self->__OnToProduceClick(@_) } );
-	$self->{"form"}->{'onRemoveJob'}->Add( sub { $self->__OnRemoveJobClick(@_) } );
-
-	# Set worker method
-	$self->{"form"}->_SetThreadWorker( sub { $self->JobWorker(@_) } );
-
-}
-
-# Times are in milisecond
-sub __RunTimers {
-	my $self = shift;
-
-	my $formMainFrm = $self->{"form"}->{"mainFrm"};
-
-	my $timerFiles = Wx::Timer->new( $formMainFrm, -1, );
-	Wx::Event::EVT_TIMER( $formMainFrm, $timerFiles, sub { $self->__CheckFilesHandler(@_) } );
-	$self->{"timerFiles"} = $timerFiles;
-	$timerFiles->Start(200);
-
-	my $timer5sec = Wx::Timer->new( $formMainFrm, -1, );
-	Wx::Event::EVT_TIMER( $formMainFrm, $timer5sec, sub { $self->__Timer5second(@_ ) } );
-	$timer5sec->Start(1000); 
-}
-
+# Handler responsible for reading DIR which contain files with export settings
+# Take every file only once, then delete it
 sub __CheckFilesHandler {
 	my ( $self, $mainFrm, $event ) = @_;
 
@@ -534,22 +395,98 @@ sub __CheckFilesHandler {
 		}
 	}
 
-	#my $str = "";
-	#foreach my $f ( @{ $self->{"exportFiles"} } ) {
-	#	$str .= $f->{"name"} . " - " . localtime( $f->{"created"} ) . "\n";
-
-	#}
-
 }
 
 # Helper  function, which run every 5 second
 # Can be use e.g for refresh GUI etc..
-sub __Timer5second{
+sub __Timer5second {
 	my $self = shift;
-	
+
 	$self->{"form"}->RefreshSettings();
-	
-	
+
+}
+
+# ========================================================================================== #
+#  PRIVATE HELPER METHOD
+# ========================================================================================== #
+
+sub __Run {
+	my $self = shift;
+	$self->{"form"}->{"mainFrm"}->Show(1);
+
+	$self->__RunTimers();
+
+	$self->{"form"}->MainLoop();
+
+}
+
+sub __AddNewJob {
+	my $self       = shift;
+	my $jobId      = shift;
+	my $exportData = shift;
+
+	# unique id per each task
+	my $guid = GeneralHelper->GetGUID();
+
+	my $task = Task->new( $guid, $jobId, $exportData );
+
+	push( @{ $self->{"tasks"} }, $task );
+
+	print "zde 1\n";
+
+	# prepare gui
+	$self->{"form"}->AddNewTaskGUI($task);
+
+	# Add new task to queue
+	$self->{"form"}->AddNewTask($task);
+
+}
+
+sub __GetTaskById {
+	my $self   = shift;
+	my $taskId = shift;
+
+	foreach my $task ( @{ $self->{"tasks"} } ) {
+
+		if ( $task->GetTaskId() eq $taskId ) {
+
+			return $task;
+		}
+	}
+}
+
+sub __SetHandlers {
+	my $self = shift;
+
+	#Set base handler
+
+	$self->{"form"}->{'onJobStateChanged'}->Add( sub { $self->__OnJobStateChanged(@_) } );
+	$self->{"form"}->{'onJobProgressEvt'}->Add( sub  { $self->__OnJobProgressEvtHandler(@_) } );
+	$self->{"form"}->{'onJobMessageEvt'}->Add( sub   { $self->__OnJobMessageEvtHandler(@_) } );
+
+	$self->{"form"}->{'onClick'}->Add( sub     { $self->__OnClick(@_) } );
+	$self->{"form"}->{'onToProduce'}->Add( sub { $self->__OnToProduceClick(@_) } );
+	$self->{"form"}->{'onRemoveJob'}->Add( sub { $self->__OnRemoveJobClick(@_) } );
+
+	# Set worker method
+	$self->{"form"}->_SetThreadWorker( sub { $self->JobWorker(@_) } );
+
+}
+
+# Times are in milisecond
+sub __RunTimers {
+	my $self = shift;
+
+	my $formMainFrm = $self->{"form"}->{"mainFrm"};
+
+	my $timerFiles = Wx::Timer->new( $formMainFrm, -1, );
+	Wx::Event::EVT_TIMER( $formMainFrm, $timerFiles, sub { $self->__CheckFilesHandler(@_) } );
+	$self->{"timerFiles"} = $timerFiles;
+	$timerFiles->Start(200);
+
+	my $timer5sec = Wx::Timer->new( $formMainFrm, -1, );
+	Wx::Event::EVT_TIMER( $formMainFrm, $timer5sec, sub { $self->__Timer5second(@_) } );
+	$timer5sec->Start(1000);
 }
 
 #
@@ -566,23 +503,7 @@ sub __Timer5second{
 #
 #}
 
-sub __OnClick {
-	my $self = shift;
-
-	my $actualColId = 0;
-	my $total       = 0;
-
-	my $jobId = "f13610";
-
-	my $dataTransfer = DataTransfer->new( $jobId, EnumsTransfer->Mode_READ );
-	my $exportData = $dataTransfer->GetExportData();
-
-	$self->__AddNewJob( $jobId, $exportData );
-}
-
-
 # necessery for running RunALone library
- 
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
@@ -596,35 +517,26 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	use aliased 'Programs::Exporter::ExportUtility::ExportUtility::ExportUtility';
 	use aliased 'Widgets::Forms::MyTaskBarIcon';
 
-	
-
-	my $exporter = ExportUtility->new(EnumsMngr->RUNMODE_WINDOW);
+	my $exporter = ExportUtility->new( EnumsMngr->RUNMODE_WINDOW );
 
 	#my $form = $exporter->{"form"}->{"mainFrm"};
 
 	#my $trayicon = MyTaskBarIcon->new( "Exporter", $form);
-	
 
 	#$trayicon->AddMenuItem("Exit Exporter", sub {  $exporter->{"form"}->OnClose() });
 	#$trayicon->AddMenuItem("Open", sub { print "Open"; });
-	
-#	sub __OnLeftClick {
-#	my $self = shift;
-#
-#	print "left click\n";
-#
-#	}
+
+	#	sub __OnLeftClick {
+	#	my $self = shift;
+	#
+	#	print "left click\n";
+	#
+	#	}
 
 	#$trayicon->IsOk() || die;
 
-
-
 	#$app->Test();
-	 
- 
 
 }
-
- 
 
 1;

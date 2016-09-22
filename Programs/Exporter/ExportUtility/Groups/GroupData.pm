@@ -1,6 +1,7 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Class contain state properties, used as model for group form
+# Description: Class is used as data store for Unit object
+# Keep also state of group and export error information
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Programs::Exporter::ExportUtility::Groups::GroupData;

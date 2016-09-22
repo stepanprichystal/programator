@@ -1,12 +1,21 @@
 
+#-------------------------------------------------------------------------------------------#
+# Description: NOT IN USE, only test file
+# Author:SPR
+#-------------------------------------------------------------------------------------------#
+
 use strict;
 use warnings;
 use Config;
 use Win32::Process;
+use aliased 'Helpers::GeneralHelper';
 
 my $processObj;
 
 my $perl = $Config{perlpath};
+ 
+ 
+ 
  
 
 Win32::Process::Create( $processObj,
@@ -21,18 +30,3 @@ Win32::Process::Create( $processObj,
          
          $processObj->Wait(INFINITE);
          
-       
-       #  while (1){
-       #  	 my $ex;
-       #  $processObj->GetExitCode($ex);
-         
-       #  print $ex;
-       #  sleep(1);
-       #  }
-        
-         
-         print "konec cekani";
-                #   $processObj->GetExitCode($ret);                
-                        
-                         
-                         

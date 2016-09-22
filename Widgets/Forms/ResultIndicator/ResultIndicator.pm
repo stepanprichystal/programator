@@ -3,7 +3,7 @@
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 
-package Programs::Exporter::ExportUtility::ExportUtility::Forms::ResultIndicator;
+package Widgets::Forms::ResultIndicator::ResultIndicator;
 use base qw(Wx::Panel);
 
 #3th party library

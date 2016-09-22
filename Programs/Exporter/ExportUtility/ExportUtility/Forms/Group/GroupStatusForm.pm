@@ -1,5 +1,6 @@
 #-------------------------------------------------------------------------------------------#
-# Description:
+# Description: Form which is placed in header of GroupWrapperForm
+# Display actual state of group, like "Exporting", ...And display errors during exporting
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 
@@ -16,7 +17,7 @@ use Widgets::Style;
 
 use aliased 'Enums::EnumsGeneral';
 use aliased 'Helpers::GeneralHelper';
-use aliased 'Programs::Exporter::ExportUtility::ExportUtility::Forms::ErrorIndicator';
+use aliased 'Widgets::Forms::ErrorIndicator::ErrorIndicator';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -70,9 +71,9 @@ sub __SetLayout {
 	# SET EVENTS
 
 	# BUILD STRUCTURE OF LAYOUT
-	$szMain->Add( $statusTxt,    1, &Wx::wxEXPAND | &Wx::wxALL, 3 );
-	$szMain->Add( $groupErrInd,  0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
-	$szMain->Add( $groupWarnInd, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szMain->Add( $statusTxt,    1, &Wx::wxEXPAND | &Wx::wxALL, 4 );
+	$szMain->Add( $groupErrInd,  0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
+	$szMain->Add( $groupWarnInd, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
 
 	$self->SetSizer($szMain);
 

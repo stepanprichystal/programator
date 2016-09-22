@@ -1,11 +1,12 @@
 #-------------------------------------------------------------------------------------------#
-# Description: Widget slouzici pro zobrazovani zprav ruznych typu uzivateli
+# Description: Represent columnLayout.
+# Class keep GroupWrapperForm in Column layout and can move
+# GroupWrapperForm to neighbour columns
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 
 package Programs::Exporter::ExportUtility::ExportUtility::Forms::GroupTable::GroupColumnForm;
 
-#use base('Wx::BoxSizer');
 
 #3th party library
 use strict;
@@ -43,30 +44,6 @@ sub new {
 	return $self;
 }
 
-sub __SetLayout {
-	my $self = shift;
-
-	# DEFINE SIZERS
-	my $szMain     = Wx::BoxSizer->new(&Wx::wxVERTICAL);
-	my $szExpander = Wx::BoxSizer->new(&Wx::wxVERTICAL);
-	my $szGroups   = Wx::BoxSizer->new(&Wx::wxVERTICAL);
-
-	# DEFINE CONTROLS
-
-	# BUILD LAYOUT STRUCTURE
-
-	# Add expander to column, which keep width
-	$szExpander->Add( 1, 1, 0, &Wx::wxEXPAND );
-
-	$szMain->Add( $szExpander, 0, &Wx::wxEXPAND );
-	$szMain->Add( $szGroups,   0, &Wx::wxEXPAND );
-
-	# SAVE REFERENCES
-
-	$self->{"sizerGroup"} = $szGroups;
-	$self->{"szMain"}     = $szMain;
-
-}
 
 sub GetSizer {
 	my $self = shift;
@@ -84,6 +61,7 @@ sub Init {
 
 }
 
+# Move last GroupWrapperForm in column to next column
 sub MoveNextGroup {
 	my $self = shift;
 
@@ -110,9 +88,8 @@ sub MoveNextGroup {
 		# columns need to be layout
 		$self->{"nextCol"}->{"sizerGroup"}->Layout();
 		$self->{"sizerGroup"}->Layout();
-		
-		
-			$self->{"szMain"}->Layout();
+
+		$self->{"szMain"}->Layout();
 		$self->{"nextCol"}->{"szMain"}->Layout();
 	}
 
@@ -120,6 +97,7 @@ sub MoveNextGroup {
 
 }
 
+# Move first GroupWrapperForm in column to preview column
 sub MoveBackGroup {
 	my $self = shift;
 
@@ -140,58 +118,66 @@ sub MoveBackGroup {
 	$self->{"sizerGroup"}->Remove($firstIdx);
 	$self->{"prevCol"}->AppendNewGroup($firstChild);
 
-	# columns need to be layout
-	#$self->{"prevCol"}->{"sizerGroup"}->Layout();
-	#$self->{"prevCol"}->{"sizerGroup"}->Fit();
-	#$self->{"prevCol"}->{"sizerGroup"}->FitInside();
-	
-	#$self->{"sizerGroup"}->Layout();
-	#$self->{"sizerGroup"}->Layout();
-	#$self->{"szMain"}->Layout();
-	#$self->{"prevCol"}->{"szMain"}->Layout();
-
 	return 1;
 
 }
 
+# Insert GroupWrapperForm from top
 sub InsertNewGroup {
 	my $self  = shift;
 	my $group = shift;
 
 	$self->{"sizerGroup"}->Prepend( $group, 0, &Wx::wxEXPAND | &Wx::wxALL, 2 );
 
-	#$group->{"column"} = $self;
-
 }
 
+# Append GroupWrapperForm from bot
 sub AppendNewGroup {
 	my $self  = shift;
 	my $group = shift;
 
 	$self->{"sizerGroup"}->Add( $group, 0, &Wx::wxEXPAND | &Wx::wxALL, 2 );
-
-	#$group->{"column"} = $self;
 }
- 
 
-
+# Return actual height of all GroupWrapperForms (thus whole column)
 sub GetHeight {
 	my $self = shift;
 
-	#$self->{"sizerGroup"}->Layout();
-	#$self->{"parent"}->Layout();
-	#$self->{"parent"}->FitInside();
-	#$self->{"parent"}->Layout();
 	$self->{"szMain"}->Layout();
 	$self->{"sizerGroup"}->Layout();
 
 	#my ( $w, $colHeight ) = $self->{"sizerGroup"}->GetSize();
 	my $s         = $self->{"sizerGroup"}->GetSize();
 	my $colHeight = $s->GetHeight();
-	
-	#my @childs = $self->{"sizerGroup"}->GetChildren();
+
 
 	return $colHeight;
+}
+
+
+sub __SetLayout {
+	my $self = shift;
+
+	# DEFINE SIZERS
+	my $szMain     = Wx::BoxSizer->new(&Wx::wxVERTICAL);
+	my $szExpander = Wx::BoxSizer->new(&Wx::wxVERTICAL);
+	my $szGroups   = Wx::BoxSizer->new(&Wx::wxVERTICAL);
+
+	# DEFINE CONTROLS
+
+	# BUILD LAYOUT STRUCTURE
+
+	# Add expander to column, which keep width
+	$szExpander->Add( 1, 1, 0, &Wx::wxEXPAND );
+
+	$szMain->Add( $szExpander, 0, &Wx::wxEXPAND );
+	$szMain->Add( $szGroups,   0, &Wx::wxEXPAND );
+
+	# SAVE REFERENCES
+
+	$self->{"sizerGroup"} = $szGroups;
+	$self->{"szMain"}     = $szMain;
+
 }
 
 sub __GetChildCnt {

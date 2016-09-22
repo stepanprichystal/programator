@@ -1,6 +1,5 @@
-
 #-------------------------------------------------------------------------------------------#
-# Description: Is responsible for saving/loading serialization group data to/from disc
+# Description: Every type of pcb has specific content of export status file
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Programs::Exporter::ExportUtility::ExportUtility::ExportStatus::ExportStatusBuilder;
@@ -12,11 +11,7 @@ use JSON;
 
 
 #local library
-#use aliased "Programs::Exporter::DataTransfer::ExportData";
-#use aliased "Enums::EnumsPaths";
 use aliased "Enums::EnumsGeneral";
-#use aliased 'Programs::Exporter::DataTransfer::Enums';
- 
 use aliased 'Helpers::JobHelper';
 use aliased 'Programs::Exporter::UnitEnums';
 
@@ -43,16 +38,10 @@ sub GetStatusKeys{
 	
 	
 	my $jobId = $exportStatus->{"jobId"};
-	 
 	
 	
-	
-	#information necessary for making decision which nif builder use
-	# TODO odkomentovat
-	#my $typeCu   = JobHelper->GetPcbType( $jobId );
-	my $typeCu   = EnumsGeneral->PcbTyp_MULTILAYER;
-	 
-	 
+	# Information necessary for making decision which nif builder use
+	my $typeCu   = JobHelper->GetPcbType( $jobId );
 
 	if ( $typeCu eq EnumsGeneral->PcbTyp_NOCOPPER ) {
 

@@ -1,6 +1,9 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Is responsible for saving/loading serialization group data to/from disc
+# Description: Is responsible for saving/loading information about ExportStatus
+# By ExportStatus file we can decide, if job is exported ok and if could be send to produce
+# ExportStatus is file which contain name of export groups, and values
+# if group has been exported succes or not
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Programs::Exporter::ExportUtility::ExportUtility::ExportStatus::ExportStatus;
@@ -57,12 +60,11 @@ sub IsExportOk {
 sub DeleteStatusFile {
 	my $self = shift;
 
-	
-	if(-e $self->{"filePath"}){
-		
-		unlink($self->{"filePath"});
+	if ( -e $self->{"filePath"} ) {
+
+		unlink( $self->{"filePath"} );
 	}
-	
+
 }
 
 sub CreateStatusFile {

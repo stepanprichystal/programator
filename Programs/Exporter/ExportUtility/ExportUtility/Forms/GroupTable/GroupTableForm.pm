@@ -1,5 +1,6 @@
 #-------------------------------------------------------------------------------------------#
-# Description: Widget slouzici pro zobrazovani zprav ruznych typu uzivateli
+# Description: Responsible for creating "table of column", where GroupWrapperForms are
+# placed in. Is responsible for recaltulating "column" layout.
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Programs::Exporter::ExportUtility::ExportUtility::Forms::GroupTable::GroupTableForm;
@@ -31,12 +32,9 @@ sub new {
 	$self->{"columnNumber"} = 3;
 	$self->{"parent"}       = $parent;
 
-	#$self->__SetLayout();
-
-	#$self->SetBackgroundColour($Widgets::Style::clrBlack);
-
 	return $self;
 }
+
 
 sub InitGroupTable {
 	my $self  = shift;
@@ -44,9 +42,99 @@ sub InitGroupTable {
 	my $inCAM = shift;
 
 	$self->__SetLayout($units);
-
 }
 
+
+# Recompute layout. Measure height of each GroupWrapperForm and
+# move them to next column if it is necessery
+sub RearrangeGroups {
+	my $self      = shift;
+	my $page      = shift;
+	my $pageHight = shift;
+	my $recursive = shift;
+
+	$self->{"pageHeight"} = $pageHight;
+
+	my $height;
+
+	# Define new height of table for groups
+	# Height is avaage height of column + 40%
+	my $avg = $self->__GetColumnAvgHeight();
+	$avg = $avg * 1.4;
+
+	if ( $avg < $pageHight ) {
+		$height = $pageHight;
+	}
+	else {
+		$height = $avg;
+	}
+
+	print "Height = $height, Page height is: $pageHight \n";
+
+	my $colCnt = scalar( @{ $self->{"columns"} } );
+
+	#move group back, untill column height < then table height
+
+	for ( my $i = 0 ; $i < $colCnt ; $i++ ) {
+
+		$self->Layout();
+		$self->FitInside();
+
+		my $column    = ${ $self->{"columns"} }[$i];
+		my $colHeight = $column->GetHeight();
+
+		my $colorder = $i + 1;
+
+		print " Column " . $colorder . " :\n";
+
+		while ( $colCnt != $i + 1 && $colHeight >= $height ) {
+
+			# If nothing to move, exit from loop
+			unless ( $column->MoveNextGroup() ) {
+				last;
+			}
+
+			$self->Layout();
+			$self->FitInside();
+
+			$colHeight = $column->GetHeight();
+
+			print "- Loop, Column height: $colHeight \n";
+		}
+	}
+
+	unless ($recursive) {
+
+		# Reset group layout and do rearrange,
+		# only if last reset was 3 secundes before
+		my $diff = undef;
+		my $last = $self->{"lastRearrange"};
+
+		if ( defined $last ) {
+			$diff = time() - $last;
+		}
+
+		if ( !defined $last || ( defined $last && $diff > 3 ) ) {
+
+			my $maxHeight = $self->__GetMaxColumnHeight();
+
+			# get height for last colum
+
+			my $lastCol       = ${ $self->{"columns"} }[ $colCnt - 1 ];
+			my $lastColHeight = $lastCol->GetHeight();
+
+			if ( $lastColHeight - $maxHeight > 200 ) {
+
+				#print "Resize and REARANGE\n";
+
+				$self->__ResetRearrange( $page, $pageHight );
+
+			}
+		}
+	}
+}
+
+# Create column, for placing GroupWrappersForm
 sub __SetLayout {
 
 	my $self  = shift;
@@ -128,15 +216,16 @@ sub __SetLayout {
 
 }
 
+
 sub __ResetRearrange {
 	my $self       = shift;
 	my $page       = shift;
 	my $pageHeight = shift;
-	
+
 	$self->{"lastRearrange"} = time();
 
 	#move alll group to first column and do new rearange
-	
+
 	my $colCnt = scalar( @{ $self->{"columns"} } );
 	for ( my $i = $colCnt - 2 ; $i >= 0 ; $i-- ) {
 
@@ -154,96 +243,6 @@ sub __ResetRearrange {
 
 }
 
-sub RearrangeGroups {
-	my $self      = shift;
-	my $page      = shift;
-	my $pageHight = shift;
-	my $recursive = shift;
-
-	$self->{"pageHeight"} = $pageHight;
-
-	my $height;
-
-
-	# Define new height of table for groups
-	# Height is avaage height of column + 40%
-	my $avg = $self->__GetColumnAvgHeight();
- 	$avg = $avg * 1.4;
-
-	if ( $avg < $pageHight ) {
-		$height = $pageHight;
-	}else{
-		$height = $avg;
-	}
-
-	 
-
-	print "Height = $height, Page height is: $pageHight \n";
-
-	my $colCnt = scalar( @{ $self->{"columns"} } );
-
-	#move group back, untill column height < then table height
-	
-	 
-
-	for ( my $i = 0 ; $i < $colCnt ; $i++ ) {
-
-		$self->Layout();
-		$self->FitInside();
-
-		my $column    = ${ $self->{"columns"} }[$i];
-		my $colHeight = $column->GetHeight();
-
-		my $colorder = $i + 1;
-
-		print " Column " . $colorder . " :\n";
-
-		while ( $colCnt != $i + 1 && $colHeight >= $height ) {
-
-			# If nothing to move, exit from loop
-			unless ( $column->MoveNextGroup() ) {
-				last;
-			}
-
-			$self->Layout();
-			$self->FitInside();
-
-			$colHeight = $column->GetHeight();
-
-			print "- Loop, Column height: $colHeight \n";
-		}
-	}
-
-	unless ($recursive) {
-
-		# Reset group layout and do rearrange,
-		# only if last reset was 3 secundes before
-		my $diff = undef;
-		my $last = $self->{"lastRearrange"};
-		
-		if (defined $last){
-			$diff = time() - $last;
-		} 
- 
-		if ( !defined $last || (defined $last && $diff > 3) ) {
-
-			my $maxHeight = $self->__GetMaxColumnHeight();
-
-			# get height for last colum
-
-			my $lastCol       = ${ $self->{"columns"} }[ $colCnt - 1 ];
-			my $lastColHeight = $lastCol->GetHeight();
-
-			if ( $lastColHeight - $maxHeight > 200 ) {
-
-				#print "Resize and REARANGE\n";
-
-				$self->__ResetRearrange( $page, $pageHight );
-
-			}
-		}
-	}
-}
 
 # Return max column height, last col is not count!
 sub __GetMaxColumnHeight {
@@ -288,79 +287,8 @@ sub __GetColumnAvgHeight {
 	return int( $total / $colCnt );
 
 }
-
-#sub __RearrangeGroups {
-#	my $self  = shift;
-#	my $units = shift;
-#
-#
-#
-#	# first column
-#	my $actualCol = ${ $self->{"columns"} }[0];
-#
-#	# init unit form
-#
-#	foreach my $unit ( @{$units} ) {
-#		$unit->InitForm($self);
-#	}
-#
-#	# get height of all groups
-#	my $totalHeight       = 0;
-#	foreach my $unit ( @{$units} ) {
-#
-#		my $form = $unit->{"form"};
-#		$actualCol->Add( $form, 0 );
-#		$self->FitInside();
-#		$self->Layout();
-#		my ( $w, $groupHeight ) = $form->GetSizeWH();
-#		$totalHeight += $groupHeight;
-#	}
-#	my @childs2  = $actualCol->GetChildren();
-#	for ( my $i = 0 ; $i < scalar( @{$units}) ; $i++ ) {
-#		$actualCol->Remove( 0);
-#		#@childs2  = $actualCol->GetChildren();
-#	}
-#
-#
-#	# Avarage height of column could be
-#	my $colHeight = int($totalHeight/3);
-#	$colHeight += int($colHeight*0.2);
-#
-#	my $actualColId = 0;
-#	my $total       = 0;
-#	$actualCol = ${ $self->{"columns"} }[$actualColId];
-#	my @childs1  = $actualCol->GetChildren();
-#	foreach my $unit ( @{$units} ) {
-#
-#		my $form = $unit->{"form"};
-#		$actualCol->Add( $form, 0,  &Wx::wxEXPAND | &Wx::wxALL, 2 );
-#
-#		#push group tu actual column
-#
-#		$self->FitInside();
-#		$self->Layout();
-#
-#		my ( $w, $groupHeight ) = $form->GetSizeWH();
-#
-#		print $groupHeight. "\n";
-#
-#		if ( $total + $groupHeight > $colHeight && $actualColId+1 <  $self->{"columnNumber"}) {
-#
-#			my @childs  = $actualCol->GetChildren();
-#			my $lastIdx = scalar(@childs);
-#
-#			$actualCol->Remove( $lastIdx - 1 );
-#			$actualColId++;
-#			$total     = 0;
-#			$actualCol = ${ $self->{"columns"} }[$actualColId];
-#			$actualCol->Add( $form, 0,  &Wx::wxEXPAND | &Wx::wxALL, 2 );
-#		}
-#
-#		$total += $groupHeight;
-#	}
-#}
-
-# ================= NEW ===========================
+ 
+ 
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

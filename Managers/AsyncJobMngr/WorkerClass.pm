@@ -1,4 +1,3 @@
-
 #-------------------------------------------------------------------------------------------#
 # Description: Abstract class, used for implementation code in worker thread
 # Implement function for asznynchrounous sending ProgressEvent, MessageEvent
@@ -56,11 +55,12 @@ sub _SendMessageEvt {
 		$res{"data"} = \%dataShared;
 
 		foreach my $k ( keys %{$data} ) {
-		#	my $val : shared = $data->{$k};
 
-			 $res{"data"}->{$k} = $data->{$k};
-			
-		#	${ $res{"data"} }{$k} = $val;
+			#	my $val : shared = $data->{$k};
+
+			$res{"data"}->{$k} = $data->{$k};
+
+			#	${ $res{"data"} }{$k} = $val;
 		}
 	}
 

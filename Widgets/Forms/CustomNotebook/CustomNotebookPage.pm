@@ -1,6 +1,6 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Custom control list. Enable create custom items from controls
+# Description: Represent notebook tab for CustomNotebook class
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Widgets::Forms::CustomNotebook::CustomNotebookPage;
@@ -44,6 +44,65 @@ sub new {
 
 	return $self;
 }
+
+
+
+sub RefreshContent {
+	my $self = shift;
+	
+	$self->Layout();
+
+	$self->{"scrollPnl"}->FitInside();
+
+	my $s      = $self->{"containerSz"}->GetSize();
+	my $height = $s->GetHeight();
+
+	print "HEIGHT OF PAGE CONTENT IS: $height\n";
+
+	$self->{"scrollPnl"}->SetRowCount( $height / 10 );
+
+
+}
+
+sub GetPageId {
+	my $self = shift;
+
+	return $self->{"pageId"};
+}
+
+sub GetParent {
+	my $self = shift;
+
+	return $self->{"containerPnl"};
+}
+
+sub GetPageContent {
+	my $self = shift;
+
+	return $self->{"content"};
+}
+
+sub AddContent {
+	my $self    = shift;
+	my $content = shift;
+
+	$self->{"content"} = $content;
+
+
+	$self->{"containerSz"}->Add( $content, 1, &Wx::wxEXPAND | &Wx::wxALL, 0 );
+
+	$self->{"scrollPnl"}->FitInside();
+
+	$self->{"scrollPnl"}->Layout();
+
+	my ( $width, $height ) = $self->{"containerPnl"}->GetSizeWH();
+
+	print "Total Height is : " . $height . "\n";
+
+	$self->{"scrollPnl"}->SetRowCount( $height / 10 );
+
+}
+
 
 sub __SetLayout {
 	my $self = shift;
@@ -98,81 +157,6 @@ sub __OnScrollPaint {
 
 	#$scrollPnl->FitInside();
 	$scrollPnl->Refresh();
-}
-
-sub RefreshContent {
-	my $self = shift;
-	
-	$self->Layout();
-	
-	#$self->{"szMain"};
-	$self->{"scrollPnl"}->FitInside();
-
- 
-	#$self->{"scrollPnl"}->Layout();
-	 
-
-	my $s      = $self->{"containerSz"}->GetSize();
-	my $height = $s->GetHeight();
-
-	print "HEIGHT OF PAGE CONTENT IS: $height\n";
-
-	$self->{"scrollPnl"}->SetRowCount( $height / 10 );
-
-	#$self->Layout();
-
-}
-
-sub GetPageId {
-	my $self = shift;
-
-	return $self->{"pageId"};
-}
-
-sub GetParent {
-	my $self = shift;
-
-	return $self->{"containerPnl"};
-}
-
-sub GetPageContent {
-	my $self = shift;
-
-	return $self->{"content"};
-}
-
-sub AddContent {
-	my $self    = shift;
-	my $content = shift;
-
-	$self->{"content"} = $content;
-
-	#my $item = JobQueueItemForm->new( $self->{"containerPnl"});
-
-	#$item->{"onItemClick"}->Add( sub { $self->__OnItemClick(@_) } );
-
-	#push( @{ $self->{"jobItems"} }, $item );
-
-	$self->{"containerSz"}->Add( $content, 1, &Wx::wxEXPAND | &Wx::wxALL, 0 );
-
-	# get height of group table, for init scrollbar panel
-	#$self->{"scrollPnl"}->Layout();
-
-	#$self->{"nb"}->InvalidateBestSize();
-	$self->{"scrollPnl"}->FitInside();
-
-	#$self->{"mainFrm"}->Layout();
-	$self->{"scrollPnl"}->Layout();
-
-	my ( $width, $height ) = $self->{"containerPnl"}->GetSizeWH();
-
-	print "Total Height is : " . $height . "\n";
-
-	$self->{"scrollPnl"}->SetRowCount( $height / 10 );
-
-	#$self->Layout();
-	#$self->{"scrollPnl"}->FitInside();
-	#$self->{"scrollPnl"}->Refresh();
 }
 
 #-------------------------------------------------------------------------------------------#

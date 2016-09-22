@@ -1,5 +1,5 @@
 #-------------------------------------------------------------------------------------------#
-# Description: Widget slouzici pro zobrazovani zprav ruznych typu uzivateli
+# Description: Helper 
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Managers::AsyncJobMngr::Helper;

@@ -1,10 +1,8 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Represent general strucure for passing information about result of some operation
-# Allow keep:
-# - Operation result
-# - Errors, which happend during operation
-# - Warnings, which happend during operation
+# Description: Extension of ItemResultMngr, allow created itemResult from
+# errors "flaterned" to string. Errors are flatterned, because are passed
+# from child thread to main thread.
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Programs::Exporter::ExportUtility::ExportResultMngr;
@@ -25,51 +23,47 @@ use aliased 'Programs::Exporter::ExportUtility::Enums';
 
 sub new {
 	my $class = shift;
-	my $self = $class->SUPER::new( @_);
+	my $self  = $class->SUPER::new(@_);
 	bless($self);
-	
-
-	 
 
 	return $self;    # Return the reference to the hash.
 }
 
+# Create Item result, from "flaterned" data which come from Export-job-worker thread
+sub CreateExportItem {
+	my $self       = shift;
+	my $id         = shift;
+	my $result     = shift;
+	my $group      = shift;
+	my $errorsStr  = shift;
+	my $warningStr = shift;
 
-# Create Item result, from data which come from Export-job-worker thread
-sub CreateExportItem{
-	my $self = shift;
-	my $id   = shift;
-	my $result   = shift;
-	my $group   = shift;
-	my $errorsStr   = shift;
-	my $warningStr   = shift;
-	
-	my $item = $self->GetNewItem($id, $result, $group);
+	my $item = $self->GetNewItem( $id, $result, $group );
 	my $sep = Enums->ItemResult_DELIMITER;
-	
+
 	# Try parse errors
-	if($errorsStr && $errorsStr ne ""){
-		my @err = split($sep, $errorsStr);
-		
-		$item->AddErrors(\@err);
+	if ( $errorsStr && $errorsStr ne "" ) {
+		my @err = split( $sep, $errorsStr );
+
+		$item->AddErrors( \@err );
 	}
-	
+
 	# Try parse warnings
-	if($warningStr && $warningStr ne ""){
-		my @err = split($sep, $warningStr);
-		
-		$item->AddWarnings(\@err);
+	if ( $warningStr && $warningStr ne "" ) {
+		my @err = split( $sep, $warningStr );
+
+		$item->AddWarnings( \@err );
 	}
-	
+
 	$self->AddItem($item);
-	
+
 	return $item;
 }
 
-sub GetAllItems{
+sub GetAllItems {
 	my $self = shift;
-	
-	return @{$self->{"itemResults"} };
+
+	return @{ $self->{"itemResults"} };
 }
 
 #-------------------------------------------------------------------------------------------#

@@ -1,8 +1,12 @@
 #! /sw/bin/perl
 
-use lib qw( C:\Perl\site\lib\TpvScripts\Scripts );
+#-------------------------------------------------------------------------------------------#
+# Description: Server is launched in InCAM, which are launched by AszncJobMngr
+# Contain some special behaviour like: Disconnect client, sloce server, etc
+# Author:SPR
+#-------------------------------------------------------------------------------------------#
 
- 
+use lib qw( C:\Perl\site\lib\TpvScripts\Scripts );
 
 =head
 Set up a socket so that a remote user can send commands
@@ -34,14 +38,7 @@ if ( defined $arg && $arg =~ /\d/ ) {
 else {
 	$serverPort = $defaultPort;    # 56753;
 }
-
-print STDERR $serverPort;
-
-#if ( $port =~ /\D/ ) {
-#	$port = getservbyname( $port, 'tcp' );
-
-#	print STDERR "\n PORT OF SERVER: 4  ".$arg;
-#}
+ 
 
 # The port has not been defined. To define it you need to
 # become root and add the following line in /etc/services
@@ -65,11 +62,7 @@ sub REAPER {
 
 	# On the first successful reap, close down
 	logmsg "reaped $waitedpid" . ( ($?) ? " with exit $?" : '' );
-
-	#if ( !defined $dontStop ) {
-	#	exit(0);              # this is important. It ensures that everything closes down nicely
-	# when the script finishes
-	#}
+ 
 }
 
 $SIG{CHLD} = \&REAPER;
@@ -93,7 +86,7 @@ for ( $waitedpid = 0 ; ( $paddr = accept( Client, Server ) ) || $waitedpid ; $wa
 
 		if ( ($command) = $line =~ /^\@%#%\@\s*(\S+)/ ) {
 
-			#print "===============$command\n";
+			# If server is ready, return PID of server script
 			if ( $command =~ /SERVERREADY/ ) {
 				$line =~ m/PID:(\d*)/;
 
@@ -104,6 +97,8 @@ for ( $waitedpid = 0 ; ( $paddr = accept( Client, Server ) ) || $waitedpid ; $wa
 				next;
 			}
 
+			# This cmd close connection with client
+			# Server is readz to next client again
 			if ( $command =~ /CLIENTFINISH/ ) {
 
 				$line =~ m/PID:(\d*)/;
@@ -115,6 +110,7 @@ for ( $waitedpid = 0 ; ( $paddr = accept( Client, Server ) ) || $waitedpid ; $wa
 				last;
 			}
 
+			# This exit server script
 			if ( $command eq 'CLOSESERVER' ) {
 
 				#Helper->PrintServer ("SERVER: PID: $$, port: $serverPort.......................................was closed\n");
@@ -154,14 +150,7 @@ for ( $waitedpid = 0 ; ( $paddr = accept( Client, Server ) ) || $waitedpid ; $wa
 
 			$| = $flush_status;                            # restore the original flush status
 			select($old_select);
-
-			#			my $old_select   = select(STDOUT);
-			#			my $flush_status = $|;               # save the flushing status
-			#			$| = 1;                              # force flushing of the io buffer
-			#			print $DIR_PREFIX, "$commandType $command\n";
-			#			$| = $flush_status;                  # restore the original flush status
-			#			select($old_select);
-
+ 
 		}
 
 		for $i ( 1 .. $noReplies ) {

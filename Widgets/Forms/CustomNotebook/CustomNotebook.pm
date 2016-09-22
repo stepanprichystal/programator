@@ -1,6 +1,9 @@
-
 #-------------------------------------------------------------------------------------------#
-# Description: Custom control list. Enable create custom items from controls
+# Description: Custom notebook. Keep notebook pages in list
+# Always show only one tab. There is no header.
+# For add new page:
+# 1) GetPage()
+# 2) $page->AddContent()
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Widgets::Forms::CustomNotebook::CustomNotebook;
@@ -27,7 +30,7 @@ sub new {
 	my $parent    = shift;
 	my $dimension = shift;
 
-	my $self = $class->SUPER::new( $parent, -1, [ -1, -1 ], [-1,-1] );
+	my $self = $class->SUPER::new( $parent, -1, [ -1, -1 ], [ -1, -1 ] );
 
 	bless($self);
 
@@ -46,30 +49,6 @@ sub new {
 	return $self;
 }
 
-sub __SetLayout {
-	my $self = shift;
-
-	 
-	 my $szMain = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
-
-	$self->SetBackgroundColour( Wx::Colour->new( 50, 0, 0 ) );
-
-	# DEFINE SIZERS
-	 
-	# BUILD LAYOUT STRUCTURE
- 
-	$self->SetSizer($szMain);
-
-	# SET EVENTS
-
-	#$self->{"onSelectItemChange"}->Add( sub { $self->__OnSelectItem(@_) } );
-	
-	# SET REFERENCES
-	
-	$self->{"szMain"} = $szMain;
-
-}
-
 sub AddPage {
 	my $self = shift;
 
@@ -78,10 +57,10 @@ sub AddPage {
 	my $page = CustomNotebookPage->new( $self, $id );
 
 	$self->{"pages"}->{ $page->GetPageId() } = $page;
-	
+
 	#$self->{"szMain"}->Add( 1, 1, 1, &Wx::wxEXPAND );
-	
-	$self->{"szMain"}->Add($page, 1, &Wx::wxEXPAND | &Wx::wxALL , 0);
+
+	$self->{"szMain"}->Add( $page, 1, &Wx::wxEXPAND | &Wx::wxALL, 0 );
 	$page->Hide();
 
 	return $page;
@@ -102,9 +81,34 @@ sub RemovePage {
 sub GetPage {
 	my $self   = shift;
 	my $pageId = shift;
-	
+
 	return $self->{"pages"}->{$pageId};
 }
+
+
+sub __SetLayout {
+	my $self = shift;
+
+	my $szMain = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
+
+	$self->SetBackgroundColour( Wx::Colour->new( 50, 0, 0 ) );
+
+	# DEFINE SIZERS
+
+	# BUILD LAYOUT STRUCTURE
+
+	$self->SetSizer($szMain);
+
+	# SET EVENTS
+
+	#$self->{"onSelectItemChange"}->Add( sub { $self->__OnSelectItem(@_) } );
+
+	# SET REFERENCES
+
+	$self->{"szMain"} = $szMain;
+
+}
+
 
 sub ShowPage {
 	my $self   = shift;
@@ -112,52 +116,39 @@ sub ShowPage {
 
 	$self->__HideAllPage();
 	my $page = $self->{"pages"}->{$pageId};
-	
 
 	$page->Show(1);
-	
-	$self->Layout();
-	
-	#$self->Refresh();
 
+	$self->Layout();
 }
 
 sub __HideAllPage {
 	my $self = shift;
 
-	
-	my %pages = %{$self->{"pages"}};
+	my %pages = %{ $self->{"pages"} };
 
 	foreach my $id ( keys %pages ) {
 
 		my $page = $pages{$id};
-		
-		if($page){
-			 $page->Hide();
+
+		if ($page) {
+			$page->Hide();
 		}
 
 	}
-	
-#	my $pageCnt = $self->__GetPageCount();
-	#for(my $i = 0; $i < $pageCnt; $i++){
-		
-	#	$self->{"mainSz"}->Remove(0);
-	#}
-	
-	
 }
 
-sub __GetPageCount{
+sub __GetPageCount {
 	my $self = shift;
-	
+
 	my $total = 0;
-	my %pages = %{$self->{"pages"}};
+	my %pages = %{ $self->{"pages"} };
 	foreach my $id ( keys %pages ) {
 
 		my $page = $pages{$id};
-		
-		if($page){
-			
+
+		if ($page) {
+
 			$total++;
 		}
 	}
@@ -169,10 +160,6 @@ sub __OnSelectItem {
 	my $item = shift;
 
 }
-
- 
-
- 
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

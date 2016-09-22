@@ -1,12 +1,12 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Prostrednik mezi formularem jednotky a buildere,
+# Description: Keep all units, and do same operation for all units
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Programs::Exporter::ExportUtility::Unit::Units;
 
-#use Class::Interface;
-#&implements('Programs::Exporter::ExportChecker::ExportChecker::Unit::IUnit');
+use Class::Interface;
+&implements('Programs::Exporter::ExportUtility::Unit::IUnit');
 
 #3th party library
 use strict;
@@ -44,47 +44,59 @@ sub Init {
 
 }
 
-sub GetProgress {
+# ===================================================================
+# Method requested by interface IUnit
+# ===================================================================
+
+sub ProcessItemResult {
 	my $self = shift;
+	my $data = shift;
 
-	my $total = 0;
+	my $unitId = $data->{"unitId"};
 
-	foreach my $unit ( @{ $self->{"units"} } ) {
+	my $unit = $self->GetUnitById($unitId);
 
-		$total += $unit->GetProgress();
+	my $itemId       = $data->{"itemId"};
+	my $itemResult   = $data->{"result"};
+	my $itemErrors   = $data->{"errors"};
+	my $itemWarnings = $data->{"warnings"};
+	my $itemGroup    = $data->{"group"};
 
-	}
-
-	$total = int( $total / scalar( @{ $self->{"units"} } ) );
-
-	return $total;
+	$unit->ProcessItemResult( $itemId, $itemResult, $itemGroup, $itemErrors, $itemWarnings );
 
 }
 
-sub GetUnitById {
-	my $self   = shift;
-	my $unitId = shift;
+sub ProcessGroupResult {
+	my $self = shift;
+	my $data = shift;
+
+	my $unitId = $data->{"unitId"};
+
+	my $unit = $self->__GetUnit($unitId);
+
+	my $groupResult   = $data->{"result"};
+	my $groupErrors   = $data->{"errors"};
+	my $groupWarnings = $data->{"warnings"};
+
+	$unit->ProcessGroupResult( $groupResult, $groupErrors, $groupWarnings );
+
+}
+
+sub Result {
+	my $self = shift;
+
+	my $result = EnumsGeneral->ResultType_OK;
 
 	foreach my $unit ( @{ $self->{"units"} } ) {
 
-		if ( $unitId eq $unit->{"unitId"} ) {
-			return $unit;
+		if ( $unit->Result() eq EnumsGeneral->ResultType_FAIL ) {
+
+			$result = EnumsGeneral->ResultType_FAIL;
 		}
-	}
-}
 
-sub GetExportClass {
-	my $self = shift;
-
-	my %exportClasses = ();
-
-	foreach my $unit ( @{ $self->{"units"} } ) {
-
-		my $class = $unit->GetExportClass();
-		$exportClasses{ $unit->{"unitId"} } = $class;
 	}
 
-	return %exportClasses;
+	return $result;
 }
 
 sub GetErrorsCnt {
@@ -111,21 +123,21 @@ sub GetWarningsCnt {
 	return $cnt;
 }
 
-sub Result {
+sub GetProgress {
 	my $self = shift;
 
-	my $result = EnumsGeneral->ResultType_OK;
+	my $total = 0;
 
 	foreach my $unit ( @{ $self->{"units"} } ) {
 
-		if ( $unit->Result() eq EnumsGeneral->ResultType_FAIL ) {
-
-			$result = EnumsGeneral->ResultType_FAIL;
-		}
+		$total += $unit->GetProgress();
 
 	}
 
-	return $result;
+	$total = int( $total / scalar( @{ $self->{"units"} } ) );
+
+	return $total;
+
 }
 
 sub GetGroupItemResultMngr {
@@ -158,18 +170,33 @@ sub GetGroupResultMngr {
 	return $resultMngr;
 }
 
-# ===================================================================
-# Helper method not requested by interface IUnit
-# ===================================================================
+sub GetExportClass {
+	my $self = shift;
 
-#Set handler for catch changing state of each unit
-sub SetGroupChangeHandler {
-	my $self    = shift;
-	my $handler = shift;
+	my %exportClasses = ();
 
 	foreach my $unit ( @{ $self->{"units"} } ) {
 
-		$unit->{"onChangeState"}->Add($handler);
+		my $class = $unit->GetExportClass();
+		$exportClasses{ $unit->{"unitId"} } = $class;
+	}
+
+	return %exportClasses;
+}
+
+# ===================================================================
+# Other methods
+# ===================================================================
+
+sub GetUnitById {
+	my $self   = shift;
+	my $unitId = shift;
+
+	foreach my $unit ( @{ $self->{"units"} } ) {
+
+		if ( $unitId eq $unit->{"unitId"} ) {
+			return $unit;
+		}
 	}
 }
 

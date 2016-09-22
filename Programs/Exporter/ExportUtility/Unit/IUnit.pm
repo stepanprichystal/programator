@@ -1,41 +1,47 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Data structure for information about server
+# Description: Interface defines method, which each Unit has to implement
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Managers::AsyncJobMngr::ServerMngr::ServerInfo;
+package Programs::Exporter::ExportUtility::Unit::IUnit;
+
+use Class::Interface;
+&interface;
 
 #3th party library
 use strict;
 use warnings;
 
 #local library
-use aliased 'Managers::AsyncJobMngr::Enums';
+
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
-sub new {
-	my $self = shift;
-	$self = {};
-	bless $self;
 
-	$self->{"state"} = Enums->State_FREE_SERVER;
-	
-	$self->{"port"} = -1;    #working server port. Is port value, which we working with...
-	
-	$self->{"portDefault"} = -1; # default server port. Is port, which is defaultly set (1001, 1002,...)    
-	
-	$self->{"pidInCAM"}  = -1;
-	
-	$self->{"pidServer"} = -1; # PID of server script, running in InCAM
+# Process data, emmited, when item export finis
+sub ProcessItemResult;
 
-	# External means, server was prepared and launched "outside"
-	# NOT by ServerMngr class
-	$self->{"external"} = 0; 
+# Process data, emmited, when group export finis
+sub ProcessGroupResult;
 
-	return $self;
-}
- 
+# Get actual total resul od export group
+sub Result;
+
+sub GetErrorsCnt;
+
+sub GetWarningsCnt;
+
+# Get total progress
+sub GetProgress;
+
+# Get manager, which keep information about item export errors
+sub GetGroupItemResultMngr;
+
+# Get manager, which keep information about group export errors
+sub GetGroupResultMngr;
+
+# Return class, which contain code responsible for export 
+sub GetExportClass;
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

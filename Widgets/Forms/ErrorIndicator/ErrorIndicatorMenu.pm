@@ -3,7 +3,7 @@
 # Allow terminate thread, which does checking
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Programs::Exporter::ExportUtility::ExportUtility::Forms::ErrorIndicatorMenu;
+package Widgets::Forms::ErrorIndicator::ErrorIndicatorMenu;
 use base ('Wx::Dialog');
 
 #3th party librarysss

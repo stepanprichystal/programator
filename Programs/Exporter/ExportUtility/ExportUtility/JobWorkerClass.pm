@@ -1,6 +1,7 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Widget slouzici pro zobrazovani zprav ruznych typu uzivateli
+# Description: Responsible for run export of all groups, which are passed to this class
+# Object of this class is created in asynchronous thread
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Programs::Exporter::ExportUtility::ExportUtility::JobWorkerClass;
@@ -9,6 +10,7 @@ use base("Managers::AsyncJobMngr::WorkerClass");
 #3th party library
 use strict;
 use warnings;
+use Try::Tiny;
 
 #local library
 
@@ -64,9 +66,16 @@ sub RunExport {
 		# Open job
 		if ( $self->__OpenJob() ) {
 
-		# Process group
-		$self->__ProcessGroup( $unitId, $exportData );
+			# catch all unexpected exception in thread
+			try {
 
+				# Process group 
+				$self->__ProcessGroup( $unitId, $exportData );
+			}
+			catch {
+
+				$self->__TaskResultEvent( ResultEnums->ItemResult_Fail, $_ );
+			}
 		}
 
 		#close job
@@ -133,22 +142,22 @@ sub __ProcessGroup {
 	my $unitId     = shift;
 	my $exportData = shift;    # export data for specific group
 
-#	use Time::HiRes qw (sleep);
-#	for ( my $i = 0 ; $i < 5 ; $i++ ) {
-#
-#		my %data1 = ();
-#		$data1{"unitId"}   = $unitId;
-#		$data1{"itemId"}   = "Item id $i";
-#		$data1{"result"}   = "succes";
-#		$data1{"errors"}   = "";
-#		$data1{"warnings"} = "";
-#
-#		$self->_SendMessageEvt( Enums->EventType_ITEM_RESULT, \%data1 );
-#
-#		sleep(0.5);
-#	}
-#
-#	return 0;
+	#	use Time::HiRes qw (sleep);
+	#	for ( my $i = 0 ; $i < 5 ; $i++ ) {
+	#
+	#		my %data1 = ();
+	#		$data1{"unitId"}   = $unitId;
+	#		$data1{"itemId"}   = "Item id $i";
+	#		$data1{"result"}   = "succes";
+	#		$data1{"errors"}   = "";
+	#		$data1{"warnings"} = "";
+	#
+	#		$self->_SendMessageEvt( Enums->EventType_ITEM_RESULT, \%data1 );
+	#
+	#		sleep(0.5);
+	#	}
+	#
+	#	return 0;
 
 	#use Connectors::HeliosConnector::HegMethods;
 
@@ -160,41 +169,41 @@ sub __ProcessGroup {
 
 	#sleep(2);
 
-#	my $num = rand(10);
-#
-#	use Time::HiRes qw (sleep);
-#	for ( my $i = 0 ; $i < $num ; $i++ ) {
-#
-#		my %data1 = ();
-#		$data1{"unitId"}   = $unitId;
-#		$data1{"itemId"}   = "Item id $i";
-#		$data1{"result"}   = "failure";
-#		$data1{"errors"}   = "rrrrrrrrrrr";
-#		$data1{"warnings"} = "";
-#
-#		$self->_SendMessageEvt( Enums->EventType_ITEM_RESULT, \%data1 );
-#
-#		sleep(0.6);
-#	}
-#
-#	for ( my $i = 0 ; $i < 2 ; $i++ ) {
-#
-#		my %data1 = ();
-#		$data1{"unitId"}   = $unitId;
-#		$data1{"itemId"}   = "Item id $i";
-#		$data1{"result"}   = "failure";
-#		$data1{"errors"}   = "rrrrrrrrrrr";
-#		$data1{"group"}    = "Layer";
-#		$data1{"warnings"} = "";
-#
-#		#
-#		$self->_SendMessageEvt( Enums->EventType_ITEM_RESULT, \%data1 );
-#
-#		#		sleep(1);
-#
-#	}
-#
-#	return 1;
+	#	my $num = rand(10);
+	#
+	#	use Time::HiRes qw (sleep);
+	#	for ( my $i = 0 ; $i < $num ; $i++ ) {
+	#
+	#		my %data1 = ();
+	#		$data1{"unitId"}   = $unitId;
+	#		$data1{"itemId"}   = "Item id $i";
+	#		$data1{"result"}   = "failure";
+	#		$data1{"errors"}   = "rrrrrrrrrrr";
+	#		$data1{"warnings"} = "";
+	#
+	#		$self->_SendMessageEvt( Enums->EventType_ITEM_RESULT, \%data1 );
+	#
+	#		sleep(0.6);
+	#	}
+	#
+	#	for ( my $i = 0 ; $i < 2 ; $i++ ) {
+	#
+	#		my %data1 = ();
+	#		$data1{"unitId"}   = $unitId;
+	#		$data1{"itemId"}   = "Item id $i";
+	#		$data1{"result"}   = "failure";
+	#		$data1{"errors"}   = "rrrrrrrrrrr";
+	#		$data1{"group"}    = "Layer";
+	#		$data1{"warnings"} = "";
+	#
+	#		#
+	#		$self->_SendMessageEvt( Enums->EventType_ITEM_RESULT, \%data1 );
+	#
+	#		#		sleep(1);
+	#
+	#	}
+	#
+	#	return 1;
 
 	my $inCAM = $self->{"inCAM"};
 
@@ -207,8 +216,6 @@ sub __ProcessGroup {
 
 	# START HANDLE EXCEPTION IN INCAM
 	$inCAM->HandleException(1);
-
-	# TODO Doplni try catch kdzy bude chzba v kodu +
 
 	# Final export group
 	$exportClass->Run();
@@ -224,6 +231,10 @@ sub __ProcessGroup {
 	}
 
 }
+
+# ====================================================================================
+# Function, which sent messages to main thread about state of exporting
+# ====================================================================================
 
 sub __ItemResultEvent {
 	my $self        = shift;
@@ -286,14 +297,7 @@ sub __TaskResultEvent {
 	$self->_SendMessageEvt( Enums->EventType_TASK_RESULT, \%data1 );
 
 }
-
-#sub __ItemErrorEvent {
-#	my $self = shift;
-#	my $data = shift;
-#
-#	$self->__OnMessageEvt( ITEM_ERROR, $data );
-#}
-
+ 
 sub __GroupExportEvent {
 	my $self   = shift;
 	my $type   = shift;    #GROUP_EXPORT_<START/END>

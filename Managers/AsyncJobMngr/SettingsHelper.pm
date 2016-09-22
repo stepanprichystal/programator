@@ -1,5 +1,6 @@
 #-------------------------------------------------------------------------------------------#
-# Description: Widget slouzici pro zobrazovani zprav ruznych typu uzivateli
+# Description: Helper, which is responsible for saving/reading AszynMngr settings
+# to/from file located in temporary dirs
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Managers::AsyncJobMngr::SettingsHelper;
@@ -31,6 +32,7 @@ sub new {
 	return $self;
 }
 
+# Set default Mngr settings, if no settings was set before
 sub __SetDefault {
 	my $self = shift;
 
@@ -41,15 +43,15 @@ sub __SetDefault {
 
 	unless ( -e $self->{"logPath"} ) {
 
-		$maxCntUser   = 5;
-		$destroyDelay = 60;
+		$maxCntUser      = 5;
+		$destroyDelay    = 60;
 		$destroyOnDemand = 1;
 
 		open( $f, ">", $self->{"logPath"} );
 		print $f "maxCntUser = $maxCntUser\n";
 		print $f "destroyDelay = $destroyDelay\n";
-		print $f "destroyOnDemand = $destroyOnDemand\n";	
-		
+		print $f "destroyOnDemand = $destroyOnDemand\n";
+
 		close($f);
 
 	}
@@ -62,17 +64,18 @@ sub __SetDefault {
 		for ( my $i = 0 ; $i < scalar(@lines) ; $i++ ) {
 
 			if ( $lines[$i] =~ /maxCntUser/ ) {
-				 
+
 				($maxCntUser) = $lines[$i] =~ /(\d+)/;
 				next;
 			}
 			if ( $lines[$i] =~ /destroyDelay/ ) {
-				
-				($destroyDelay)  = $lines[$i] =~ /(\d+)/;
+
+				($destroyDelay) = $lines[$i] =~ /(\d+)/;
 				next;
-			}if ( $lines[$i] =~ /destroyOnDemand/ ) {
-				
-				($destroyOnDemand)  = $lines[$i] =~ /(\d+)/;
+			}
+			if ( $lines[$i] =~ /destroyOnDemand/ ) {
+
+				($destroyOnDemand) = $lines[$i] =~ /(\d+)/;
 				next;
 			}
 		}
@@ -81,15 +84,14 @@ sub __SetDefault {
 	$self->{"serverMngr"}->SetDestroyDelay($destroyDelay);
 	$self->{"serverMngr"}->SetMaxServerCount($maxCntUser);
 	$self->{"serverMngr"}->SetDestroyOnDemand($destroyOnDemand);
- 
-	
+
 }
 
 sub SetMaxServerCount {
 	my $self       = shift;
 	my $maxCntUser = shift;
 
-	$self->__SetAttribute("maxCntUser", $maxCntUser);
+	$self->__SetAttribute( "maxCntUser", $maxCntUser );
 
 	$self->{"serverMngr"}->SetMaxServerCount($maxCntUser);
 }
@@ -97,28 +99,26 @@ sub SetMaxServerCount {
 sub SetDestroyDelay {
 	my $self         = shift;
 	my $destroyDelay = shift;    # in second
-	
-	$self->__SetAttribute("destroyDelay", $destroyDelay);
-	 
+
+	$self->__SetAttribute( "destroyDelay", $destroyDelay );
+
 	$self->{"serverMngr"}->SetDestroyDelay($destroyDelay);
 }
 
-
 sub SetDestroyOnDemand {
-	my $self         = shift;
+	my $self            = shift;
 	my $destroyOnDemand = shift;    # in second
 
-	$self->__SetAttribute("destroyOnDemand", $destroyOnDemand);
+	$self->__SetAttribute( "destroyOnDemand", $destroyOnDemand );
 
 	$self->{"serverMngr"}->SetDestroyOnDemand($destroyOnDemand);
 }
 
-sub __SetAttribute{
-	my $self         = shift;
-	my $attribute = shift; 
-	my $value = shift; 	
-	
-	
+sub __SetAttribute {
+	my $self      = shift;
+	my $attribute = shift;
+	my $value     = shift;
+
 	my $f;
 
 	open( $f, "<", $self->{"logPath"} );
@@ -129,7 +129,6 @@ sub __SetAttribute{
 	for ( my $i = 0 ; $i < scalar(@lines) ; $i++ ) {
 
 		if ( $lines[$i] =~ /$attribute/ ) {
-
 			$lines[$i] = "$attribute = $value\n";
 			last;
 		}
@@ -138,10 +137,7 @@ sub __SetAttribute{
 	open( $f, ">", $self->{"logPath"} );
 	print $f @lines;
 	close($f);
-	
-	
+
 }
-
-
 
 1;

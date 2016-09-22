@@ -1,18 +1,18 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: This is class, which represent "presenter"
+# Description: Represent Export class for NIF
 #
-# Every group in "export checker program" is composed from three layers:
-# 1) Model - responsible for actual group data, which are displyed in group form
-# 2) Presenter -  responsible for: edit/get goup data (model), build and refresh from for group
-# 3) View - only display data, which are passed from model by presenter class
+# Every group in "export utility program" is composed from three layers:
+# 1) Model - responsible for actual group data, which are displyed in group form (GroupData class)
+# 2) Presenter -  responsible for: build and refresh from group
+# 3) View - only display data, which are passed from model by presenter class (GroupWrapperForm])
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Programs::Exporter::ExportUtility::Groups::NifExport::NifUnit;
 use base 'Programs::Exporter::ExportUtility::Groups::UnitBase';
 
-#use Class::Interface;
-#&implements('Programs::Exporter::ExportChecker::ExportChecker::Unit::IUnit');
+use Class::Interface;
+&implements('Programs::Exporter::ExportUtility::Unit::IUnit');
 
 #3th party library
 use strict;
@@ -20,11 +20,7 @@ use warnings;
 
 #local library
  
-
-#use aliased 'Programs::Exporter::ExportChecker::Groups::NifExport::Model::NifDataMngr';
- 
 use aliased 'Programs::Exporter::UnitEnums';
-
 use aliased 'Programs::Exporter::ExportUtility::Groups::NifExport::NifExport';
 
 #-------------------------------------------------------------------------------------------#
@@ -38,12 +34,13 @@ sub new {
 	$self = $class->SUPER::new(@_);
 	bless $self;
 
-	#uique key within all units
+	# uique key within all units
 	$self->{"unitId"} = UnitEnums->UnitId_NIF;
  
+ 	# reference on class responsible for export
 	$self->{"unitExport"} = NifExport->new($self->{"unitId"});
  
-	return $self;    # Return the reference to the hash.
+	return $self; 
 }
 
  

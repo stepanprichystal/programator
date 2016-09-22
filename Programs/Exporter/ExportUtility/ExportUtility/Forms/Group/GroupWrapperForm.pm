@@ -1,5 +1,5 @@
 #-------------------------------------------------------------------------------------------#
-# Description: Wrapper wifget for group form
+# Description: Wrapper form, where GroupItemForm and ItemForm are placed in
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 
@@ -15,7 +15,7 @@ use Widgets::Style;
 #local library
 
 use aliased 'Programs::Exporter::ExportChecker::Enums';
-
+use aliased 'Programs::Exporter::UnitEnums';
 use aliased 'Packages::Events::Event';
 use aliased 'Programs::Exporter::ExportUtility::ExportUtility::Forms::Group::GroupItemForm';
 use aliased 'Programs::Exporter::ExportUtility::ExportUtility::Forms::Group::ItemForm';
@@ -23,37 +23,30 @@ use aliased 'Programs::Exporter::ExportUtility::ExportUtility::Forms::Group::Gro
 use aliased 'Packages::ItemResult::ItemResultMngr';
 
 #-------------------------------------------------------------------------------------------#
-#  Package methods 
+#  Package methods
 #-------------------------------------------------------------------------------------------#
 
 sub new {
-	my $class = shift;
+	my $class  = shift;
 	my $parent = shift;
- 
-	
+
 	my $self = $class->SUPER::new($parent);
 
 	bless($self);
 
-
-
 	#$self->{"state"} = Enums->GroupState_ACTIVEON;
-	$self->{"jobId"}  = shift;
+	$self->{"jobId"}           = shift;
 	$self->{"resultItemMngr"}  = shift;
-	$self->{"resultGroupMngr"}  = shift;
-	
-		# contains names of all group item
+	$self->{"resultGroupMngr"} = shift;
+
+	# contains names of all group item
 	my @groups = ();
 	$self->{"groups"} = \@groups;
-	
-	
-	$self->__SetLayout();
 
-	#$self->{"column"} = undef;
+	$self->__SetLayout();
 
 	#EVENTS
 
-	#$self->{"onChangeState"} = Event->new();
 
 	return $self;
 }
@@ -90,7 +83,7 @@ sub AddItem {
 	$item->SetErrors( $resultItem->GetErrorCount() );
 	$item->SetWarnings( $resultItem->GetWarningCount() );
 
-	$self->{"bodySizer"}->Add( $item, 0, &Wx::wxEXPAND | &Wx::wxLEFT, 2);
+	$self->{"bodySizer"}->Add( $item, 0, &Wx::wxEXPAND | &Wx::wxLEFT, 4 );
 
 	return 0;
 
@@ -103,14 +96,10 @@ sub Init {
 
 	#my $groupBody = shift;
 
-	$self->{"headerTxt"}->SetLabel($groupName);
+	my $title = UnitEnums->GetTitle($groupName);
 
-	#	$self->{"bodySizer"}->Add( $groupBody, 1, &Wx::wxEXPAND | &Wx::wxALL, 2 );
+	$self->{"headerTxt"}->SetLabel($title);
 
-	#$self->{"groupHeight"} = $groupBody->{"groupHeight"};
-
-	# panel, which contain group content
-	#$self->{"groupBody"} = $groupBody;
 
 }
 
@@ -140,9 +129,8 @@ sub __SetLayout {
 	# DEFINE CONTROLS
 
 	my $headerTxt = Wx::StaticText->new( $pnlHeader, -1, "Default title" );
-  
-	
-	my $groupStatus = GroupStatusForm->new($pnlHeader, $self->{"jobId"}, $self->{"resultItemMngr"}, $self->{"resultGroupMngr"});
+
+	my $groupStatus = GroupStatusForm->new( $pnlHeader, $self->{"jobId"}, $self->{"resultItemMngr"}, $self->{"resultGroupMngr"} );
 
 	my $height = 20;
 	$height += rand(300);
@@ -152,7 +140,7 @@ sub __SetLayout {
 	$self->{"headerTxt"} = $headerTxt;
 
 	# BUILD STRUCTURE
-
+	$szHeader->Add( 4, 0, 0, &Wx::wxALL, 0 );
 	$szHeader->Add( $headerTxt,   1, &Wx::wxEXPAND | &Wx::wxALL, 2 );
 	$szHeader->Add( $groupStatus, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
 
@@ -186,7 +174,7 @@ sub GetParentForGroup {
 }
 
 sub SetStatus {
-	my $self = shift;
+	my $self  = shift;
 	my $value = shift;
 
 	$self->{"groupStatus"}->SetStatus($value);

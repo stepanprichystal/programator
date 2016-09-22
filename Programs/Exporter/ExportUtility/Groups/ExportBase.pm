@@ -1,7 +1,5 @@
 #-------------------------------------------------------------------------------------------#
-# Description: This is class, which represent "presenter"
-#
-
+# Description: Base class for unit export classes.
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Programs::Exporter::ExportUtility::Groups::ExportBase;
@@ -10,15 +8,8 @@ package Programs::Exporter::ExportUtility::Groups::ExportBase;
 use strict;
 use warnings;
 
-#use aliased 'Programs::Exporter::ExportChecker::Groups::NifExport::Model::NifGroupData';
-#use aliased 'Programs::Exporter::ExportUtility::Groups::NifExport::NifGroup';
-
-#use aliased 'Programs::Exporter::ExportChecker::Groups::NifExport::Presenter::NifUnit';
-#use aliased 'Managers::MessageMngr::MessageMngr';
-
 use aliased 'Packages::Events::Event';
  
-
 #-------------------------------------------------------------------------------------------#
 #  NC export, all layers, all machines..
 #-------------------------------------------------------------------------------------------#
@@ -32,11 +23,17 @@ sub new {
 
 	$self->{"unitId"} = shift;
 
-	$self->{"itemsCount"}          = 0;
+	# Approximate count of exported items 
+	# (because computing progressbar value)
+	$self->{"itemsCount"}          = 0;  
+	
+	# Count of already exported items
 	$self->{"processedItemsCount"} = 0;
 
 	$self->{"inCAM"}      = undef;
 	$self->{"jobId"}      = undef;
+	
+	# Contains data (from ExportFiles/job file) necessary for export
 	$self->{"exportData"} = undef;
 
 	# EVENTS
@@ -47,8 +44,7 @@ sub new {
 	return $self;
 }
 
- 
-
+# Run export of group
 sub Run {
 	my $self = shift;
 

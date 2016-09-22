@@ -1,4 +1,4 @@
-
+#öß§²
 #-------------------------------------------------------------------------------------------#
 # Description: Cover merging, spliting and checking before exporting NC files
 # Author:SPR
@@ -24,7 +24,7 @@ sub new {
 
 	my %units = ();
 	$self->{"units"} = \%units;
-	
+
 	my %settings = ();
 	$self->{"settings"} = \%settings;
 
@@ -33,10 +33,10 @@ sub new {
 	$self->{"settings"}->{"mode"}      = undef;    # synchronousExport/ asynchronousExport
 	$self->{"settings"}->{"toProduce"} = undef;    # sent to produce 0/1
 	$self->{"settings"}->{"port"}      = undef;    # if export is synchronous, port of server script
-	$self->{"settings"}->{"formPosX"} = undef;    # position of export cheker form
-	$self->{"settings"}->{"formPosY"} = undef;    # position of export cheker form
+	$self->{"settings"}->{"formPosX"}  = undef;    # position of export cheker form
+	$self->{"settings"}->{"formPosY"}  = undef;    # position of export cheker form
 
-	return $self;                    # Return the reference to the hash.
+	return $self;                                  # Return the reference to the hash.
 }
 
 sub GetExportTime {
@@ -63,12 +63,10 @@ sub GetPort {
 	return $self->{"settings"}->{"port"};
 }
 
- 
-
 sub GetFormPosition {
 	my $self = shift;
 
-	my $pos = Wx::Point->new($self->{"settings"}->{"formPosX"}, $self->{"settings"}->{"formPosY"});
+	my $pos = Wx::Point->new( $self->{"settings"}->{"formPosX"}, $self->{"settings"}->{"formPosY"} );
 	return $pos;
 }
 
