@@ -19,7 +19,7 @@ my $inCAM  = InCAM->new();
 my $export = NCExportTmp->new();
 
 #input parameters
-my $jobId = "f48598";
+my $jobId = "f48781";
 
 # Exportovat jednotlive vrstvy nebo vsechno
 my $exportSingle = 0;

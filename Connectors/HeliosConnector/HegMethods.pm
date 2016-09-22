@@ -630,6 +630,20 @@ sub GetCustomerInfo {
 
 }
 
+
+sub UpdateNCInfo {
+	my $self  = shift;
+	my $pcbId = shift;
+	my $ncInfo = shift;
+
+	require Connectors::HeliosConnector::HelperWriter;
+ 
+	my $res = Connectors::HeliosConnector::HelperWriter->OnlineWrite_pcb( "$pcbId", $ncInfo, "nc_info" );
+
+	return $res;
+
+}
+
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#
@@ -637,11 +651,13 @@ sub GetCustomerInfo {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	use Connectors::HeliosConnector::HegMethods;
+	use aliased 'Connectors::HeliosConnector::HegMethods';
 
-	my %test = Connectors::HeliosConnector::HegMethods->GetCustomerInfo("F44739");
+	my $nc_info = "test";
 
-	print $test{"customer"};
+	my $test = HegMethods->UpdateNCInfo("F13609", $nc_info);
+
+	print $test;
 
 }
 

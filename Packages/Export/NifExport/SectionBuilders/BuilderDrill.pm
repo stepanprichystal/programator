@@ -45,7 +45,7 @@ sub Build {
 	my $stepName = "panel";
 
 	# comment
-	$section->AddComment( "Vrtani skrz Pred Prokovem" );
+	$section->AddComment("Vrtani skrz Pred Prokovem");
 
 	#vrtani_pred (vrtani pred prokovem)
 	if ( $self->_IsRequire("vrtani_pred") ) {
@@ -127,14 +127,40 @@ sub __GetHoleType {
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
 
-	my $holeType;
+	my $holeType = undef;
+	
+	my $mExist = CamHelper->LayerExists( $inCAM, $jobId, "m" );
+	if ($mExist) {
 
-	$inCAM->INFO( units => 'mm', entity_type => 'layer', entity_path => "$jobId/o+1/m", data_type => 'TOOL_USER' );
-	if ( $inCAM->{doinfo}{gTOOL_USER} eq "vysledne" ) {
-		$holeType = 'S';
+		$inCAM->INFO( units => 'mm', entity_type => 'layer', entity_path => "$jobId/o+1/m", data_type => 'TOOL_USER' );
+		if ( $inCAM->{doinfo}{gTOOL_USER} eq "vysledne" ) {
+			$holeType = 'S';
+		}
+		elsif ( $inCAM->{doinfo}{gTOOL_USER} eq "vrtane" ) {
+			$holeType = 'T';
+		}
+
+		# If exist "m" and has no holes => ok
+		unless ($holeType) {
+
+			#nuber of holes
+			$inCAM->INFO(
+						  units       => 'mm',
+						  entity_type => 'layer',
+						  entity_path => "$jobId/o+1/m",
+						  data_type   => 'FEAT_HIST',
+						  options     => "break_sr"
+			);
+			my $holeCnt = $inCAM->{doinfo}{gFEAT_HISTpad};
+
+			unless ($holeCnt) {
+				$holeType = "";
+			}
+		}
 	}
-	elsif ( $inCAM->{doinfo}{gTOOL_USER} eq "vrtane" ) {
-		$holeType = 'T';
+	else {
+
+		$holeType = "";
 	}
 
 	return $holeType;

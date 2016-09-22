@@ -269,6 +269,45 @@ sub ChangeDrilledNumber {
 	}
 }
 
+
+# Build string "nc info" based on information from nc manager
+sub BuildNcInfo {
+	my $self = shift;
+	my @info = @{ shift(@_) };
+
+	my $str = "";
+
+	 
+
+	for ( my $i = 0 ; $i < scalar(@info) ; $i++ ) {
+
+		my %item = %{ $info[$i] };
+
+		my @data = @{ $item{"data"} };
+
+		if ( $item{"group"} ) {
+			$str .= "\nSkupina operaci:\n";
+		}
+		else {
+			$str .= "\nSamostatna operace:\n";
+		}
+
+		foreach my $item (@data) {
+
+			my $row = "[ " . $item->{"name"} . " ] - ";
+
+			my $mach = join( ", ", @{ $item->{"machines"} } );
+
+			$row .= uc($mach) . "\n";
+
+			$str .= $row;
+		}
+
+	}
+
+	return $str;
+}
+
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#

@@ -19,6 +19,8 @@ use aliased 'Packages::Export::NCExport::OperationMngr';
 use aliased 'Packages::Export::NCExport::MergeFileMngr';
 use aliased 'Packages::Export::NCExport::ExportFileMngr';
 use aliased 'Packages::Export::NCExport::MachineMngr';
+use aliased 'Connectors::HeliosConnector::HegMethods';
+use aliased 'Packages::Export::NCExport::NCHelper';
 use aliased 'CamHelpers::CamDrilling';
 use aliased 'CamHelpers::CamJob';
 
@@ -98,17 +100,21 @@ sub new {
 sub Run {
 	my $self = shift;
 
-	#create sequence of dps operation
+	# create sequence of dps operation
 	$self->{"operationMngr"}->CreateOperations();
 
-	#for every operation filter suitable machines
+	# for every operation filter suitable machines
 	$self->{"machineMngr"}->AssignMachines( $self->{"operationMngr"} );
 
-	#Export physical nc files
+	# Export physical nc files
 	$self->{"exportFileMngr"}->ExportFiles( $self->{"operationMngr"} );
 
-	#Merge an move files to archive
+	# Merge an move files to archive
 	$self->{"mergeFileMngr"}->MergeFiles( $self->{"operationMngr"} );
+	
+	# Save nc info table to database
+	my @info = $self->GetNCInfo();
+	HegMethods->UpdateNCInfo($self->{"jobId"}, NCHelper->BuildNcInfo(\@info));
 
 }
 
