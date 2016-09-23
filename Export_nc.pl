@@ -6,32 +6,51 @@ use warnings;
 
 use lib qw( C:\Perl\site\lib\TpvScripts\Scripts );
 
-#necessary for load pall packages
+#necessary for load pall packagesff
 #use FindBin;
 #use lib "$FindBin::Bin/../";
 #use PackagesLib;
 
 use aliased 'Packages::InCAM::InCAM';
-use aliased 'CamHelpers::CamDrilling';
-use aliased 'Programs::Exporter::ExportUtility::Groups::NCExport::NCExportTmp';
+
+#use aliased 'Programs::Exporter::ExportUtility::Groups::NifExport::NifExportTmp';
+use aliased 'Programs::Exporter::ExportUtility::Groups::NCExport::NCExport';
+use aliased 'Programs::Exporter::UnitEnums';
+use aliased 'Programs::Exporter::DataTransfer::Enums' => 'EnumsTransfer';
+use aliased 'Programs::Exporter::DataTransfer::DataTransfer';
+#input parameters
+my $jobId = "f13610";
+
+my $resultMess = "";
 
 my $inCAM  = InCAM->new();
-my $export = NCExportTmp->new();
+my $export = NCExport->new( UnitEnums->UnitId_NC );
 
-#input parameters
-my $jobId = "f48781";
+my $dataTransfer = DataTransfer->new( $jobId, EnumsTransfer->Mode_READ );
+my $exportDataAll = $dataTransfer->GetExportData();
 
-# Exportovat jednotlive vrstvy nebo vsechno
-my $exportSingle = 0;
 
-# Vrstvy k exportovani, nema vliv pokud $exportSingle == 0
-my @pltLayers  = ();
-my @npltLayers = ();
+my $exportData = $exportDataAll->GetUnitData(UnitEnums->UnitId_NC);
 
-# Pokud se bude exportovat jednotlive po vrstvach, tak vrstvz dotahnout nejaktakhle:
-#@pltLayers = CamDrilling->GetPltNCLayers( $inCAM, $jobId );
-#@npltLayers = CamDrilling->GetNPltNCLayers( $inCAM, $jobId );
+$export->Init( $inCAM, $jobId, $exportData );
+#$export->Init( $inCAM, $jobId, $exportData );
 
-#return 1 if OK, else 0
-$export->Run( $inCAM, $jobId, $exportSingle, \@pltLayers, \@npltLayers );
+$export->{"onItemResult"}->Add( sub { _OnItemResultHandler(@_) } );
+
+$export->Run();
+
+print $resultMess;
+
+ 
+
+sub _OnItemResultHandler {
+	my $itemResult = shift;
+
+	$resultMess .= " \n=============== Export task result: ==============\n";
+	$resultMess .= "Task: " . $itemResult->ItemId() . "\n";
+	$resultMess .= "Task result: " . $itemResult->Result() . "\n";
+	$resultMess .= "Task errors: \n" . $itemResult->GetErrorStr() . "\n";
+	$resultMess .= "Task warnings: \n" . $itemResult->GetWarningStr() . "\n";
+
+}
 

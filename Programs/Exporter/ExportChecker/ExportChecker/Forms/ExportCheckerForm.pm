@@ -19,7 +19,7 @@ BEGIN {
 
 use aliased 'Programs::Exporter::ExportChecker::ExportChecker::Forms::ScrollPanel';
 use aliased 'Widgets::Forms::MyWxFrame';
- 
+
 use aliased 'Packages::Events::Event';
 use aliased 'Widgets::Forms::MyWxBookCtrlPage';
 use aliased 'Programs::Exporter::ExportChecker::ExportChecker::Forms::GroupTableForm';
@@ -47,22 +47,20 @@ sub new {
 
 	$self->{"jobId"} = shift;
 	$self->{"inCAM"} = shift;
+
 	#$self->{"groupBuilder"} = GroupBuilder->new($self);
-	
+
 	my $mainFrm = $self->__SetLayout($parent);
 
-
 	#EVENTS
-	
+
 	$self->{"onExportSync"}  = Event->new();
 	$self->{"onExportASync"} = Event->new();
 	$self->{"onClose"}       = Event->new();
-	
+
 	$self->{"onUncheckAll"}  = Event->new();
-	$self->{"onLoadLast"} = Event->new();
-	$self->{"onLoadDefault"}       = Event->new();
-	
- 
+	$self->{"onLoadLast"}    = Event->new();
+	$self->{"onLoadDefault"} = Event->new();
 
 	#$mainFrm->Show(1);
 
@@ -77,6 +75,13 @@ sub new {
 #	my $tab = $self->{"nb"}->GetPage($tabNumber);
 #	return $tab;
 #}
+
+sub GetToProduce{
+	my $self      = shift;
+	
+	return $self->{"chbProduce"}->GetValue();
+}
+
 
 # Disable all controls on form
 sub DisableForm {
@@ -96,6 +101,37 @@ sub DisableForm {
 	}
 
 }
+
+# Disable all controls on form
+sub DisableExportBtn {
+	my $self    = shift;
+	my $disable = shift;
+
+	if ($disable) {
+
+		$self->{"btnSync"}->Disable();
+		$self->{"btnASync"}->Disable();
+	}
+	else {
+		
+		$self->{"btnSync"}->Enable();
+		$self->{"btnASync"}->Enable();
+	}
+
+}
+
+# Set "Load last" button visibility
+sub SetLoadLastBtn {
+	my $self    = shift;
+	my $enable = shift;
+	
+	if($enable){
+		$self->{"btnLoadLast"}->Enable();
+	}else{
+		$self->{"btnLoadLast"}->Disable();
+	}
+}
+
 
 sub OnInit {
 	my $self = shift;
@@ -158,9 +194,6 @@ sub __OnLoadLastClick {
 
 }
 
- 
-
-
 # Add new page in nootebook
 sub AddPage {
 	my ( $self, $title ) = @_;
@@ -171,7 +204,7 @@ sub AddPage {
 	$self->{"nb"}->SetPageImage( $count, 0 );
 
 	#row height is 10px. When we get total height of panel in scrollwindow
-	# then we compute number of rows as: totalHeight/10px 
+	# then we compute number of rows as: totalHeight/10px
 	my $rowHeight = 10;
 	my $scrollPnl = ScrollPanel->new( $page, $rowHeight );
 
@@ -182,10 +215,10 @@ sub AddPage {
 	$page->SetSizer($szTab);
 
 	$page->{"scrollPnl"} = $scrollPnl;
+
 	#$self->{"scrollPnl"} = $scrollPnl;
 
 	Wx::Event::EVT_PAINT( $scrollPnl, sub { $self->__OnScrollPaint(@_) } );
-	
 
 	return $page;
 }
@@ -205,34 +238,34 @@ sub __SetLayout {
 	);
 
 	$mainFrm->Centre(&Wx::wxCENTRE_ON_SCREEN);
- Wx::Event::EVT_SIZE( $mainFrm, sub { $self->__OnResize(@_) } );
+	Wx::Event::EVT_SIZE( $mainFrm, sub { $self->__OnResize(@_) } );
 
 	#DEFINE PANELS
-	
+
 	my $mainPnl = Wx::Panel->new( $mainFrm, -1 );
 
 	#DEFINE SIZERS
 
 	my $szMainParent = Wx::BoxSizer->new(&Wx::wxVERTICAL);
-	
+
 	#main sizer for top frame
 	my $szMain = Wx::BoxSizer->new(&Wx::wxVERTICAL);
+
 	# Sizer inside first static box
 	my $szRow1 = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
 
 	#define staticboxes
 	my $frstStatBox = Wx::StaticBox->new( $mainPnl, -1, 'Export settings' );
 	my $szFrstStatBox = Wx::StaticBoxSizer->new( $frstStatBox, &Wx::wxHORIZONTAL );
-	
+
 	#my $secStatBox = Wx::StaticBox->new( $mainPnl, -1, '' );
 	#my $szSecStatBox = Wx::StaticBoxSizer->new( $secStatBox, &Wx::wxVERTICAL );
 	my $szSecStatBox = Wx::BoxSizer->new(&Wx::wxVERTICAL);
 
-	my $pnlBtns     = Wx::Panel->new( $mainPnl, -1 );
+	my $pnlBtns = Wx::Panel->new( $mainPnl, -1 );
 	$pnlBtns->SetBackgroundColour($Widgets::Style::clrDefaultFrm);
 	my $szBtns      = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
 	my $szBtnsChild = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
-
 
 	# DEFINE CONTROLS
 
@@ -240,16 +273,10 @@ sub __SetLayout {
 	my $imagelist = Wx::ImageList->new( 10, 25 );
 	$nb->AssignImageList($imagelist);
 
-
 	my $btnSync = Wx::Button->new( $pnlBtns, -1, "Export", &Wx::wxDefaultPosition, [ 160, 33 ] );
 	$btnSync->SetFont($Widgets::Style::fontBtn);
 	my $btnASync = Wx::Button->new( $pnlBtns, -1, "Export on background", &Wx::wxDefaultPosition, [ 160, 33 ] );
 	$btnASync->SetFont($Widgets::Style::fontBtn);
- 
-
-
-
-	
 
 	# REGISTER EVENTS
 
@@ -257,26 +284,22 @@ sub __SetLayout {
 	Wx::Event::EVT_BUTTON( $btnASync, -1, sub { $self->__OnExportASync() } );
 	$mainFrm->{"onClose"}->Add( sub { $self->__OnCloseHandler(@_) } );
 
-
-	
-
 	$szBtnsChild->Add( $btnSync,  0, &Wx::wxALL, 2 );
 	$szBtnsChild->Add( $btnASync, 0, &Wx::wxALL, 2 );
 	$szBtns->Add( 10, 10, 1, &Wx::wxGROW );
 	$szBtns->Add( $szBtnsChild, 0, &Wx::wxALIGN_RIGHT | &Wx::wxALL );
 	$pnlBtns->SetSizer($szBtns);
- 
 
-	$szRow1->Add( 10, 10, 1, &Wx::wxEXPAND );
-	$szRow1->Add( $self->__SetLayoutExportPath($mainPnl), 0, &Wx::wxEXPAND | &Wx::wxLEFT, 2 );
-	$szRow1->Add( $self->__SetLayoutQuickSet($mainPnl),   0, &Wx::wxEXPAND | &Wx::wxLEFT, 2 );
+	$szRow1->Add( 10,                                     10, 1,                           &Wx::wxEXPAND );
+	$szRow1->Add( $self->__SetLayoutExportPath($mainPnl), 0,  &Wx::wxEXPAND | &Wx::wxLEFT, 2 );
+	$szRow1->Add( $self->__SetLayoutQuickSet($mainPnl),   0,  &Wx::wxEXPAND | &Wx::wxLEFT, 2 );
 
 	$szFrstStatBox->Add( $szRow1, 1, &Wx::wxEXPAND );
 	$szSecStatBox->Add( $nb, 1, &Wx::wxEXPAND );
 
 	$szMain->Add( $szFrstStatBox, 0, &Wx::wxEXPAND | &Wx::wxALL, 4 );
-	$szMain->Add( $szSecStatBox, 1, &Wx::wxEXPAND | &Wx::wxALL, 4 );
-	$szMain->Add( $pnlBtns, 0, &Wx::wxEXPAND );
+	$szMain->Add( $szSecStatBox,  1, &Wx::wxEXPAND | &Wx::wxALL, 4 );
+	$szMain->Add( $pnlBtns,       0, &Wx::wxEXPAND );
 
 	$mainPnl->SetSizer($szMain);
 
@@ -285,12 +308,15 @@ sub __SetLayout {
 	$mainFrm->SetSizer($szMainParent);
 
 	# SAVE CONTROLS
-	
+
 	$self->{"mainFrm"} = $mainFrm;
 	$self->{"mainPnl"} = $mainPnl;
 	$self->{"szMain"}  = $szMain;
 
 	$self->{"nb"} = $nb;
+	
+	$self->{"btnSync"} = $btnSync;
+	$self->{"btnASync"} = $btnASync;
 
 	return $mainFrm;
 }
@@ -336,6 +362,8 @@ sub __SetLayoutQuickSet {
 	$szMain->Add( $szRow3, 1, &Wx::wxEXPAND );
 
 	$szStatBox->Add( $szMain, 1, &Wx::wxEXPAND );
+	
+	$self->{"btnLoadLast"} = $btnLoadLast;
 
 	return $szStatBox;
 
@@ -354,6 +382,9 @@ sub __SetLayoutExportPath {
 	my $szRow1 = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
 	my $szRow2 = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
 
+	my $chbProduce = Wx::CheckBox->new( $statBox, -1, "Sent to produce", &Wx::wxDefaultPosition, [ 110, 22 ]);
+	$chbProduce->SetValue(1);
+
 	my $rbClient = Wx::RadioButton->new( $statBox, -1, "C:/Export", &Wx::wxDefaultPosition, [ 110, 22 ], &Wx::wxRB_GROUP );
 	$rbClient->SetBackgroundColour( Wx::Colour->new( 228, 232, 243 ) );
 	my $rbArchiv = Wx::RadioButton->new( $statBox, -1, "Job archive ", &Wx::wxDefaultPosition, [ 110, 22 ] );
@@ -369,12 +400,14 @@ sub __SetLayoutExportPath {
 	$szMain->Add( $szRow2, 1, &Wx::wxEXPAND );
 
 	$szStatBox->Add( $szMain, 1, &Wx::wxEXPAND );
+	
+	
+	# SAVE REFERENCES
+	$self->{"chbProduce"} = $chbProduce;
 
 	return $szStatBox;
 
 }
-
-
 
 sub __OnScrollPaint {
 	my $self      = shift;
@@ -385,18 +418,15 @@ sub __OnScrollPaint {
 	$scrollPnl->FitInside();
 }
 
-
 # It is important do layout and refresh, when resize,
 # for correct "size changing" of sizers placed in inside VScrolledWindow
 sub __OnResize {
-	my $self      = shift;
-	
-	
+	my $self = shift;
+
 	$self->{"mainFrm"}->Layout();
 	$self->{"mainFrm"}->Refresh();
-	 
-}
 
+}
 
 sub BuildGroupTableForm {
 	my $self = shift;
@@ -404,13 +434,12 @@ sub BuildGroupTableForm {
 	# class keep rows structure and group instances
 	my $groupTables = shift;
 	$self->{"inCAM"} = shift;
- 
 
 	foreach my $table ( $groupTables->GetTables() ) {
 
 		my $pageTab   = $self->AddPage( $table->GetTitle() );
 		my $scrollPnl = $pageTab->{"scrollPnl"};
- 
+
 		# physics structure of groups, tab is parent
 		my $groupTableForm = GroupTableForm->new($scrollPnl);
 
@@ -433,7 +462,7 @@ sub BuildGroupTableForm {
 		#$self->{"mainFrm"}->Layout();
 		$scrollPnl->Layout();
 		my ( $width, $height ) = $groupTableForm->GetSizeWH();
-		
+
 		print "Height of scrollPnale is: $height\n\n";
 
 		#compute number of rows. One row has height 10 px

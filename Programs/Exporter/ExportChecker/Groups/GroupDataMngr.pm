@@ -20,50 +20,31 @@ use aliased 'Packages::ItemResult::ItemResultMngr';
 #  Package methods
 #-------------------------------------------------------------------------------------------#
 
-
- 
 sub new {
 	my $self = shift;
 	$self = {};
 	bless $self;
 
-	
-	$self->{"jobId"}   = shift;
-	
-	
-	$self->{"prepareData"} = shift; # prepare "model" group data, which are source for group GUI form
-	$self->{"checkData"} = shift; 	# check "model" group data, if is possible start export
-	$self->{"exportData"} = shift; 	# create export data (from prepared group data), which will consume exporter utility
+	$self->{"jobId"} = shift;
+
+	$self->{"prepareData"} = shift;    # prepare "model" group data, which are source for group GUI form
+	$self->{"checkData"}   = shift;    # check "model" group data, if is possible start export
+	$self->{"exportData"}  = shift;    # create export data (from prepared group data), which will consume exporter utility
 
 	$self->{"groupData"} = undef;
-	$self->{"inCAM"}   = undef; 	# inCam will be passed to each available method as new instance
-									# Because some of this method are processed in child thread and inCAM
-									# is connected to specific InCAM editor
- 
+	$self->{"inCAM"}     = undef;      # inCam will be passed to each available method as new instance
+	                                   # Because some of this method are processed in child thread and inCAM
+	                                   # is connected to specific InCAM editor
+
 	$self->{'resultMngr'} = ItemResultMngr->new();
 
-	return $self;    # Return the reference to the hash.
+	return $self;                      # Return the reference to the hash.
 }
 
 
-
-
-sub SetStoredGroupData{
-	my $self = shift;
-	#optional
-	# if data settings is stored in file
-	my $groupData = shift; 
-	
-	if($groupData){
-		$self->{"groupData"} = $groupData;
-	}else{
-		
-		die "Group dataa are not defined";
-	}
-}
 
 sub PrepareGroupData {
-	my $self  = shift;
+	my $self = shift;
 
 	if ( $self->{"prepareData"}->can("OnPrepareGroupData") ) {
 
@@ -73,51 +54,72 @@ sub PrepareGroupData {
 	else {
 		die "PrepareData.pm has to implemetn OnPrepareGroupData method.";
 	}
-
 }
 
-sub IsGroupAllowed {
-	my $self  = shift;
+# Set default group state
+sub PrepareGroupState {
+	my $self = shift;
 
-	if ( $self->{"prepareData"}->can("OnIsGroupAllowed") ) {
+	if ( $self->{"prepareData"}->can("OnGetGroupState") ) {
 
-		return $self->{"prepareData"}->OnIsGroupAllowed($self);
+		$self->{"groupData"}->{"state"} = $self->{"prepareData"}->OnGetGroupState($self);
 
 	}
 	else {
-		die "PrepareData.pm has to implemetn OnIsGroupAllowed method.";
+		die "PrepareData.pm has to implemetn OnGetGroupState method.";
+	}
+}
+
+sub SetStoredGroupData {
+	my $self = shift;
+
+	#optional
+	# if data settings is stored in file
+	my $groupData = shift;
+
+	if ($groupData) {
+		$self->{"groupData"} = $groupData;
+	}
+	else {
+
+		die "Group dataa are not defined";
+	}
+}
+
+
+sub GetGroupState {
+	my $self = shift;
+
+	if ( $self->{"groupData"} ) {
+		return $self->{"groupData"}->{"state"};
 	}
 
 }
 
-#sub SetDefaultGroupData{
-#	my $self = shift;
-#	 
-#	my $groupData = shift; 
-#	
-#	if($groupData){
-#		$self->{"groupData"} = $groupData;
-#	}
-#}
+sub SetGroupState {
+	my $self       = shift;
+	my $groupState = shift;
+
+	$self->{"groupData"}->{"state"} = $groupState;
+}
+ 
 
 sub CheckGroupData {
-	my $self  = shift;
+	my $self = shift;
 
 	if ( $self->{"checkData"}->can("OnCheckGroupData") ) {
 		$self->{"checkData"}->OnCheckGroupData($self);
-		
+
 		return $self->{'resultMngr'}->Succes();
 
 	}
 	else {
 		die "CheckData.pm has to implemetn OnCheckGroupData method.";
 	}
-
 }
 
-
 sub ExportGroupData {
-	my $self  = shift;
+	my $self = shift;
 
 	if ( $self->{"exportData"}->can("OnExportGroupData") ) {
 
@@ -130,66 +132,43 @@ sub ExportGroupData {
 
 }
 
-
-
-
 sub GetGroupData {
-	my $self    = shift;
+	my $self      = shift;
 	my $groupData = $self->{"groupData"};
 
-	if ($groupData) {
+	return $groupData;
+}
 
-		return  $groupData->GetData() ;
-	}
+sub GetFailResults {
+	my $self = shift;
+
+	return $self->{'resultMngr'}->GetFailResults();
 }
 
 sub _AddErrorResult {
-	my $self  = shift;
-	my $errItem  = shift; # error title (such as name of layer, name of drill etc..)
-	my $error = shift;
+	my $self    = shift;
+	my $errItem = shift;    # error title (such as name of layer, name of drill etc..)
+	my $error   = shift;
 
 	my $item = $self->{'resultMngr'}->GetNewItem($errItem);
 
-	 $item->AddError($error);
+	$item->AddError($error);
 
 	$self->{'resultMngr'}->AddItem($item);
 }
 
 sub _AddWarningResult {
-	my $self  = shift;
-	my $warnItem  = shift; # error title (such as name of layer, name of drill etc..)
-	my $warning = shift;
+	my $self     = shift;
+	my $warnItem = shift;    # error title (such as name of layer, name of drill etc..)
+	my $warning  = shift;
 
 	my $item = $self->{'resultMngr'}->GetNewItem($warnItem);
 
-	 $item->AddWarning($warning);
+	$item->AddWarning($warning);
 
 	$self->{'resultMngr'}->AddItem($item);
 }
-
-
-
-sub GetFailResults{
-	my $self  = shift;
-	
-	return $self->{'resultMngr'}->GetFailResults();
-}
-
-
-#sub GetResultBuilder {
-#	my $self = shift;
-#
-#	return $self->{"resBuilder"};
-#
-#}
-
-#sub _SetResultBuilder{
-#	my $self = shift;
-#	my $builder = shift;
-#
-#	$self->{"resBuilder"}  = $builder;
-#	$self->{"resBuilder"}->{"onItemResult"}->Add(sub { $self->__ItemResult(@_)});
-#}
+ 
 
 #
 sub _OnItemResultHandler {

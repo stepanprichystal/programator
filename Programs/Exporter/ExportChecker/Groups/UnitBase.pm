@@ -14,6 +14,7 @@ use warnings;
 
 #local library
 use aliased 'Programs::Exporter::ExportChecker::Enums';
+use aliased 'Packages::Events::Event';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -29,8 +30,12 @@ sub new {
 
 	$self->{"groupWrapper"} = undef;    #wrapper, which form is placed in
 	$self->{"form"}         = undef;    #form which represent GUI of this group
-	$self->{"active"}       = undef;    # tell if group will be visibel/active
+	                                    #$self->{"active"}       = undef;    # tell if group will be visibel/active
 	$self->{"dataMngr"}     = undef;    # manager, which is responsible for create, update group data
+
+	# Events
+
+	$self->{"onChangeState"} = Event->new();
 
 	return $self;
 }
@@ -39,15 +44,19 @@ sub InitDataMngr {
 	my $self       = shift;
 	my $inCAM      = shift;
 	my $storedData = shift;
-	
+
 	$self->{"dataMngr"}->{"inCAM"} = $inCAM;
 
 	if ($storedData) {
+
+		# Load group data (stored on disc)
 		$self->{"dataMngr"}->SetStoredGroupData($storedData);
 	}
 	else {
 
+		# Load default group data and state
 		$self->{"dataMngr"}->PrepareGroupData();
+		$self->{"dataMngr"}->PrepareGroupState();
 	}
 }
 
@@ -67,40 +76,77 @@ sub CheckBeforeExport {
 	return $succes;
 }
 
-sub _RefreshWrapper {
+#sub GetGroupDefaultState {
+#	my $self  = shift;
+#	my $inCAM = shift;
+#
+#	my $groupState = $self->{"dataMngr"}->GetGroupState();
+#
+#	return $groupState;
+#
+#}
+
+sub GetGroupState {
 	my $self  = shift;
 	my $inCAM = shift;
 
-	my $isAllowed = $self->{"dataMngr"}->IsGroupAllowed();
+	my $groupState = $self->{"dataMngr"}->GetGroupState();
 
-	if ($isAllowed) {
-		$self->{"groupWrapper"}->SetState( Enums->GroupState_ACTIVEOFF );
-	}
-	else {
-		$self->{"groupWrapper"}->SetState( Enums->GroupState_DISABLE );
-	}
-
-	#refresh wrapper of form based on "group state"
-	$self->{"groupWrapper"}->Refresh();
-
+	return $groupState;
 }
 
-sub GetGroupData {
+sub SetGroupState {
+	my $self       = shift;
+	my $groupState = shift;
 
-	my $self = shift;
+	$self->{"dataMngr"}->SetGroupState($groupState);
 
-	return $self->{"dataMngr"}->GetGroupData();
+	#$self->{"groupWrapper"}->SetState($groupState);
 
+	#refresh wrapper of form based on "group state"
+	#$self->{"groupWrapper"}->Refresh();
 }
 
 sub GetExportData {
-	my $self = shift;
+	my $self  = shift;
 	my $inCAM = shift;
-	
+
 	# Necessery set new incam library
 	$self->{"dataMngr"}->{"inCAM"} = $inCAM;
 
 	return $self->{"dataMngr"}->ExportGroupData();
+
+}
+
+sub _SetHandlers {
+	my $self = shift;
+
+	# Set event handlers
+	if ( $self->{"groupWrapper"} ) {
+		$self->{"groupWrapper"}->{"onChangeState"}->Add( sub { $self->__OnChangeState(@_) } );
+	}
+
+}
+
+sub __OnChangeState {
+	my $self     = shift;
+	my $newState = shift;    #new group state
+
+	$self->{"dataMngr"}->SetGroupState($newState);
+
+	$self->{"onChangeState"}->Do($self);
+
+}
+
+sub _RefreshWrapper {
+	my $self  = shift;
+	my $inCAM = shift;
+
+	my $groupState = $self->{"dataMngr"}->GetGroupState();
+	$self->{"groupWrapper"}->SetState($groupState);
+
+	#refresh wrapper of form based on "group state"
+	$self->{"groupWrapper"}->Refresh();
 
 }
 

@@ -45,7 +45,11 @@ sub __LoadInfoFiles {
 	#my $multicalPath    = shift;
 
 	my $fname2 = FileHelper->ChangeEncoding( EnumsPaths->Client_MULTICALDB, "cp1252", "utf8" );
+<<<<<<< HEAD
 	my $strfMultical = FileHelper->ReadAsString( EnumsPaths->Client_INCAMTMPOTHER. $fname2 );
+=======
+	my $strfMultical = FileHelper->ReadAsString( EnumsPaths->Client_INCAMTMPOTHER . $fname2 );
+>>>>>>> refs/heads/Exporter-vyvoj
 
 
 	my $xml = XMLin( $strfMultical, KeyAttr => { quality => 'id' }, );

@@ -63,6 +63,9 @@ sub OpenJob {
 
 }
 
+
+
+
 #Open job and step in genesis
 sub OpenJobAndStep {
 
@@ -102,6 +105,17 @@ sub OpenStep {
 				 type => "step",
 				 name => $stepName
 	);
+}
+
+
+# Open given job
+sub SaveAndCloseJob {
+	my $self    = shift;
+	my $inCam   = shift;
+	my $jobName = shift;
+
+	$inCam->COM( "save_job","job"              => "$jobName");
+	$inCam->COM( "close_job","job"              => "$jobName");
 }
 
 #Return if step exists

@@ -6,6 +6,10 @@
 package Packages::Export::NCExport::ExportMngr;
 use base('Packages::Export::MngrBase');
 
+use Class::Interface;
+&implements('Packages::Export::IMngr');
+
+
 #3th party library
 use strict;
 use warnings;
@@ -127,6 +131,20 @@ sub GetNCInfo {
 	return @infoTable;
 }
 
+
+
+sub ExportItemsCount{
+		my $self = shift;
+		
+		my $totalCnt= 0;
+				#$totalCnt += 8;
+		$totalCnt += scalar(@{$self->{"pltLayers"}});
+		$totalCnt += scalar(@{$self->{"npltLayers"}});
+		
+ 		$totalCnt ++; # nc merging
+		
+		return $totalCnt;
+}
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#

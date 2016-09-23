@@ -33,14 +33,14 @@ sub new {
 }
 
 sub GetNewItem {
-	my $self = shift;
-	my $id   = shift;
-
-	#my $result = shift;
+	my $self   = shift;
+	my $id     = shift;
+	my $result = shift;
+	my $group  = shift;
 
 	#my $groupId = $self->{"groupId"};
 
-	my $item = ItemResult->new($id);
+	my $item = ItemResult->new( $id, $result, $group );
 
 	return $item;
 }
@@ -54,6 +54,31 @@ sub AddItem {
 	#my $groupId = $self->{"groupId"};
 
 	push( @{ $self->{"itemResults"} }, $item );
+}
+
+sub AddItems {
+	my $self  = shift;
+	my @items = @{ shift(@_) };
+
+	#my $result = shift;
+
+	#my $groupId = $self->{"groupId"};
+
+	push( @{ $self->{"itemResults"} }, @items );
+}
+
+sub GetAllItems {
+	my $self = shift;
+
+	return @{ $self->{"itemResults"} };
+}
+
+sub Clear {
+	my $self = shift;
+
+	my @itemsResult = ();
+	$self->{"itemResults"} = \@itemsResult;
+
 }
 
 sub Succes {
@@ -81,8 +106,8 @@ sub GetErrors {
 
 			$info{"itemId"} = $item->ItemId();
 			$info{"value"} = join( ",\n", @{ $item->{"errors"} } );
-			
-			push(@errors, \%info);
+
+			push( @errors, \%info );
 		}
 	}
 
@@ -91,12 +116,16 @@ sub GetErrors {
 
 sub GetErrorsStr {
 	my $self = shift;
+	my $addItemId = shift;
 	my $str  = "";
 
 	foreach my $item ( @{ $self->{"itemResults"} } ) {
 
 		if ( scalar( @{ $item->{"errors"} } ) ) {
 
+			if ($addItemId) {
+				$str .= "\nItem -  " . $item->ItemId().":\n";
+			}
 			$str .= $item->GetErrorStr();
 		}
 	}
@@ -104,13 +133,34 @@ sub GetErrorsStr {
 	return $str;
 }
 
-sub GetWarningsStr {
+# Return total error count
+# Each items has own array of error, thus we count all errors from this array
+sub GetErrorsCnt {
 	my $self = shift;
-	my $str  = "";
+
+	my $total = 0;
+
+	foreach my $item ( @{ $self->{"itemResults"} } ) {
+
+		$total += scalar( @{ $item->{"errors"} } );
+	}
+
+	return $total;
+}
+
+sub GetWarningsStr {
+	my $self      = shift;
+	my $addItemId = shift;
+
+	my $str = "";
 
 	foreach my $item ( @{ $self->{"itemResults"} } ) {
 
 		if ( scalar( @{ $item->{"warnings"} } ) ) {
+
+			if ($addItemId) {
+				$str .= "Item: " . $item->ItemId();
+			}
 
 			$str .= $item->GetwarningStr();
 		}
@@ -120,7 +170,7 @@ sub GetWarningsStr {
 }
 
 sub GetWarnings {
-	my $self   = shift;
+	my $self     = shift;
 	my @warnings = ();
 
 	foreach my $item ( @{ $self->{"itemResults"} } ) {
@@ -130,12 +180,27 @@ sub GetWarnings {
 
 			$info{"itemId"} = $item->ItemId();
 			$info{"value"} = join( ",\n", @{ $item->{"warnings"} } );
-			
-			push(@warnings, \%info);
+
+			push( @warnings, \%info );
 		}
 	}
 
 	return @warnings;
+}
+
+# Return total warning count
+# Each items has own array of warning, thus we count all warnings from this array
+sub GetWarningsCnt {
+	my $self = shift;
+
+	my $total = 0;
+
+	foreach my $item ( @{ $self->{"itemResults"} } ) {
+
+		$total += scalar( @{ $item->{"warnings"} } );
+	}
+
+	return $total;
 }
 
 sub GetFailResults {

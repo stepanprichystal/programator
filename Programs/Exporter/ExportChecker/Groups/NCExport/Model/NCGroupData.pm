@@ -1,20 +1,16 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Cover merging, spliting and checking before exporting NC files
+# Description: Class contain state properties, used as model for group form
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Programs::Exporter::ExportChecker::Groups::NCExport::Model::NCGroupData;
 
-use Class::Interface;
-&implements('Programs::Exporter::ExportChecker::Groups::IGroupData');
-
-
 #3th party library
 use strict;
 use warnings;
-use File::Copy;
 
 #local library
+use aliased 'Programs::Exporter::ExportChecker::Enums';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -24,56 +20,56 @@ sub new {
 	$self = {};
 	bless $self;
 
+	# state data for gui controls
 	my %exportData = ();
 	$self->{"data"} = \%exportData;
+	
+	# state of whole group. Value is enum GroupState_xx
+	$self->{"state"} = Enums->GroupState_DISABLE;
 
-	return $self;    # Return the reference to the hash.
+	return $self;
 }
 
-sub GetData {
-	my $self = shift;
-	#my %data = %{ $self->{"data"} };
-	return %{ $self->{"data"} };
-}
 
-sub SetExportAll {
+# exportSingle
+sub SetExportSingle {
 	my $self  = shift;
-	my $value = shift;
-	$self->{"data"}->{"exportSingle"} = $value;
+	$self->{"data"}->{"exportSingle"} = shift;
 }
 
-sub SetPltLayers {
+sub GetExportSingle {
 	my $self  = shift;
-	my $value = shift;
-	$self->{"data"}->{"pltLayers"} = $value;
-}
-
-sub SetNPltLayers {
-	my $self  = shift;
-	my $value = shift;
-	$self->{"data"}->{"npltLayers"} = $value;
+	return $self->{"data"}->{"exportSingle"};
 }
  
+# Plt layers 
+sub SetPltLayers {
+	my $self  = shift;
+	$self->{"data"}->{"pltLayers"} = shift;
+}
 
+sub GetPltLayers {
+	my $self  = shift;
+	return $self->{"data"}->{"pltLayers"};
+} 
+
+# NPlt layers 
+sub SetNPltLayers {
+	my $self  = shift;
+	$self->{"data"}->{"npltLayers"} = shift;
+}
+
+sub GetNPltLayers {
+	my $self  = shift;
+	return $self->{"data"}->{"npltLayers"};
+} 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	#	use aliased 'Packages::Export::NCExport::NCExportGroup';
-	#
-	#	my $jobId    = "F13608";
-	#	my $stepName = "panel";
-	#
-	#	my $inCAM = InCAM->new();
-	#
-	#	my $ncgroup = NCExportGroup->new( $inCAM, $jobId );
-	#
-	#	$ncgroup->Run();
-
-	#print $test;
-
+ 
 }
 
 1;

@@ -6,8 +6,6 @@
 #-------------------------------------------------------------------------------------------#
 package Programs::Exporter::ExportChecker::Groups::NCExport::Model::NCCheckData;
 
-
-
 #3th party library
 use strict;
 use warnings;
@@ -17,7 +15,7 @@ use File::Copy;
 use aliased 'CamHelpers::CamLayer';
 use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'CamHelpers::CamHelper';
-
+use aliased 'Programs::Exporter::ExportChecker::Groups::NifExport::Presenter::NifHelper';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -31,20 +29,22 @@ sub new {
 	return $self;    # Return the reference to the hash.
 }
 
+# Checking group data before final export
+# Errors, warnings are passed to <$dataMngr>
+sub OnCheckGroupData {
+	my $self     = shift;
+	my $dataMngr = shift;    #instance of GroupDataMngr
 
-sub OnCheckGroupData{
-	my $self = shift;
-	my $dataMngr = shift;	
+	my $groupData = $dataMngr->GetGroupData();
+	my $inCAM     = $dataMngr->{"inCAM"};
+	my $jobId     = $dataMngr->{"jobId"};
+	my $stepName  = "panel";
 
-	
-	my $inCAM    = $dataMngr->{"inCAM"};
-	my $jobId    = $dataMngr->{"jobId"};
-	my $stepName = "panel";
-
-	
-}
 
  
+}
+ 
+
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#

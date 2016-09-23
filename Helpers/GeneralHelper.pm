@@ -216,7 +216,7 @@ sub CreateStackTrace {
 	my $formated = shift;
 
 	my $str = "";
-
+ 
 	my $trace = Devel::StackTrace->new();
 
 	$trace->next_frame();
@@ -234,4 +234,59 @@ sub CreateStackTrace {
 	return $str;
 }
 
+sub GetLastInCAMVersion {
+	my $self     = shift;
+ 
+
+	my $inCAMPath = EnumsPaths->Client_INCAMVERSION;
+	my @version   = ();
+
+	opendir( DIR, $inCAMPath ) or die $!;
+
+	while ( my $file = readdir(DIR) ) {
+
+		my $module;
+
+		if ( $file =~ m/^\./ ) {
+			next;
+		}
+
+		$file =~ s/\.pm//;
+
+		if ( $file =~ /^\d\.(\d)+SP/ ) {
+			push( @version, $file );
+		}
+	}
+
+	my $maxNum = 0;
+	my $maxNumName;
+	foreach my $file (@version) {
+
+		my ($num) = $file =~ m/(^\d\.(\d)+)/;
+		if ( $num > $maxNum ) {
+			$maxNum     = $num;
+			$maxNumName = $file;
+		}
+	}
+
+	if ($maxNumName) {
+
+		return $inCAMPath . $maxNumName."\\bin\\InCAM.exe";
+	}
+	else {
+
+		print STDERR "Error when getting latest version of InCAM\n";
+		return 0;
+	}
+}
+
+#-------------------------------------------------------------------------------------------#
+#  Place for testing..
+#-------------------------------------------------------------------------------------------#
+my ( $package, $filename, $line ) = caller;
+if ( $filename =~ /DEBUG_FILE.pl/ ) {
+	
+	print Helpers::GeneralHelper->GetLastInCAMVersion();
+	
+}
 1;

@@ -15,6 +15,7 @@ use Widgets::Style;
 
 use aliased 'Programs::Exporter::ExportChecker::Enums';
 
+use aliased 'Packages::Events::Event';
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
@@ -26,9 +27,13 @@ sub new {
 
 	bless($self);
 
-	$self->{"state"} = Enums->GroupState_DISABLE;
+	$self->{"state"} = Enums->GroupState_ACTIVEON;
 
 	$self->__SetLayout();
+	
+	#EVENTS
+	
+	$self->{"onChangeState"} = Event->new();
 
 	return $self;
 }
@@ -138,6 +143,7 @@ sub __SetLayout {
 
 	#$self->SetMinSize($self->GetSize())
 
+
 }
 
 sub SetState {
@@ -145,6 +151,13 @@ sub SetState {
 	my $state = shift;
 
 	$self->{"state"} = $state;
+
+}
+
+sub GetState {
+	my $self  = shift;
+
+	return $self->{"state"};
 
 }
 
@@ -186,7 +199,8 @@ sub __Switch {
 		}
 		
 		$self->Refresh();
-
+		
+		$self->{"onChangeState"}->Do($self->{"state"});	
 	}
 
 

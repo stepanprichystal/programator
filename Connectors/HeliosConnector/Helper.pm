@@ -7,11 +7,37 @@ package Connectors::HeliosConnector::Helper;
 
 #3th party library
 use utf8;
-use strict;
+#use strict;
 use warnings;
 use Try::Tiny;
  
+ 
+#BEGIN {
+#	
+#	if($export_thread && $export_thread == 1)  {
+#		
+#		print STDERR "\n1111111111111111111\n";
+#		
+#	} else{
+#		
+#
+#		
+#		print STDERR "\n22222222222222222222\n";
+#		
+#		require DBI;
+#    	DBI->import;
+#	}
+#
+#    
+#} 
+ #require Win32::OLE;
+ #import Win32::OLE qw(in);
 use DBI;
+
+
+#my @drivers = DBI->available_drivers;
+#print join(", ", @drivers), "\n";
+
 #Win32::OLE => not allowed use this module!
 # Module is used by perl ithreads and this Win32::OLE is not thread sa
  
@@ -46,20 +72,26 @@ sub __OpenConnection {
 		#ConnectionTimeout=$__conTimeout;
 		#CommandTimeout=$__commandTimeout
 
+ 		
+		
+		 
 		$con = DBI->connect(
-			"dbi:ADO:$__dbHost;",
+			"dbi:ODBC:DPS",
 			$__dbUserName,
 			$__dbPassword,
 			{
 
 				#'PrintError' => 0,
-				'PrintError'            => 0,
-				'RaiseError'            => 1,
-				'ado_ConnectionTimeout' => $__conTimeout,
-				'CommandTimeout'        => $__commandTimeout,
+				#'PrintError'            => 0,
+				#'RaiseError'            => 1,
+				#'ado_ConnectionTimeout' => $__conTimeout,
+				#'CommandTimeout'        => $__commandTimeout,
 				'on_connect_do'         => [ "SET NAMES 'utf8'", "SET CHARACTER SET 'utf8'" ]
 			}
 		);
+		
+		# Advice from stack overflow for safer multithread operation
+		$con->{AutoInactiveDestroy} = 1;
 
 		 
 

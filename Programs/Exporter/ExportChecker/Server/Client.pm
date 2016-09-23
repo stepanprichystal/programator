@@ -78,7 +78,10 @@ sub Connect {
 		$inCAM->ClientFinish();
 		$self->{"server"}->{"connected"} = 1;
 
-		print STDERR "PORT: $port ......................................................is ready\n";
+		if($port){
+			print STDERR "PORT: $port ......................................................is ready\n";
+		}
+		
 
 		return 1;
 

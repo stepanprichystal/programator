@@ -1,5 +1,5 @@
 #-------------------------------------------------------------------------------------------#
-# Description: Helper pro obecne operace se soubory
+# Description: Close zombified InCAM server running on specific port
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
  

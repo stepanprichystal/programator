@@ -16,6 +16,15 @@ use constant {
 			   MessageType_INFORMATION => 'Information'
 };
 
+
+use constant {
+			   ResultType_OK       => 'succes',
+			   ResultType_FAIL => 'failure',
+			   ResultType_NA     => 'na'
+			  
+};
+
+
 use constant {
 			   GuideAction_SHOW    => "show",
 			   GuideAction_RUN     => "run",

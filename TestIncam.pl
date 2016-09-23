@@ -1,71 +1,70 @@
-#!/usr/bin/perl -w
+use Wx;
+use Wx qw(:icon wxTheApp wxNullBitmap);
 
-use strict;
-use warnings;
+package Widgets::Forms::MyTaskBarIcon;
+use base 'Wx::TaskBarIcon';
 
-use lib qw( C:\Perl\site\lib\TpvScripts\Scripts );
+use aliased 'Helpers::GeneralHelper';
+use aliased 'Packages::Events::Event';
 
-use aliased 'Packages::InCAM::InCAM';
+sub new {
+	my ( $class, $title ) = @_;
+	my $self = $class->SUPER::new();
+	bless($self);
 
-my $inCAM = InCAM->new();
+	my $btmIco = Wx::Bitmap->new( GeneralHelper->Root() . "/Resources/Images/Icon.bmp", &Wx::wxBITMAP_TYPE_BMP );
+	my $icon = Wx::Icon->new();
+	$icon->CopyFromBitmap($btmIco);
 
-#my $test = 1/0;
-#$inCam->COM_test()
+	#$self->SetIcon($icon);
 
-#$inCAM->COM( "clipb_open_job", job => "d99991", update_clipboard => "view_job" );
+	Wx::Event::EVT_TASKBAR_LEFT_UP( $self, sub { $self->__OnLeftClick(@_) } );
 
-#sleep(4);
+	$self->SetIcon( $icon, $title );
 
-$inCAM->COM( "clipb_open_job", job => "F17116", update_clipboard => "view_job" );
-for ( my $i = 0 ; $i < 30 ; $i++ ) {
+	$self->{"formShowed"} = 1;
 
-	$inCAM->COM(
-				 'output_layer_set',
-				 layer        => "top",
-				 angle        => '0',
-				 x_scale      => '1',
-				 y_scale      => '1',
-				 comp         => '0',
-				 polarity     => 'positive',
-				 setupfile    => '',
-				 setupfiletmp => '',
-				 line_units   => 'mm',
-				 gscl_file    => ''
-	);
-	$inCAM->COM(
-				 'output',
-				 job                  => "F17116",
-				 step                 => 'input',
-				 format               => 'Gerber274x',
-				 dir_path             => "c:/Perl/site/lib/TpvScripts/Scripts/data",
-				 prefix               => "incam1_$i",
-				 suffix               => "",
-				 break_sr             => 'no',
-				 break_symbols        => 'no',
-				 break_arc            => 'no',
-				 scale_mode           => 'all',
-				 surface_mode         => 'contour',
-				 min_brush            => '25.4',
-				 units                => 'inch',
-				 coordinates          => 'absolute',
-				 zeroes               => 'Leading',
-				 nf1                  => '6',
-				 nf2                  => '6',
-				 x_anchor             => '0',
-				 y_anchor             => '0',
-				 wheel                => '',
-				 x_offset             => '0',
-				 y_offset             => '0',
-				 line_units           => 'mm',
-				 override_online      => 'yes',
-				 film_size_cross_scan => '0',
-				 film_size_along_scan => '0',
-				 ds_model             => 'RG6500'
-	);
+	# EVENTS
+	$self->{"onLeftClick"} = Event->new();
+
+	return $self;
 
 }
 
-#$inCAM->COM ('disp_on');
-#$inCAM->COM ('origin_on');
+sub __OnLeftClick {
+	my $self = shift;
 
-sleep(5);
+	print "left click\n";
+
+}
+
+#sub CreatePopupMenu {
+#    my ($this) = @_;
+#
+#   # say "xx"; # This never gets called
+#
+#
+#
+#    return $menu;
+#}
+
+1;
+
+# Creating MyTaskBarIcon
+
+my $form;
+
+my $trayicon = MyTaskBarIcon->new( "Exporter", $form );
+
+$trayicon->IsOk() || die;
+
+my $menu = Wx::Menu->new();
+$menu->Append( -1, "menu 1" );
+$menu->Append( -1, "menu 2" );
+
+$trayicon->PopupMenu($menu);
+
+#
+
+# $trayicon->IsOk() || die;
+

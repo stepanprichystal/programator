@@ -36,11 +36,18 @@ sub new {
 	else {
 		$self->{"result"} = Enums->ItemResult_Succ;
 	}
+	
+	# Some result items can be included in some group, eg. layers
+	$self->{"group"} = shift;
+	
 
 	my @errors = ();
 	$self->{"errors"} = \@errors;
 	my @warnings = ();
 	$self->{"warnings"} = \@warnings;
+
+
+
 
 	return $self;    # Return the reference to the hash.
 }
@@ -53,6 +60,16 @@ sub Create {
 }
 
 
+
+
+sub AddError {
+	my $self = shift;
+	my $mess = shift;
+	$self->{"result"} = Enums->ItemResult_Fail;
+
+	push( @{ $self->{"errors"} }, $mess );
+}
+
 sub AddErrors {
 	my $self = shift;
 	my $messages = shift;
@@ -63,20 +80,22 @@ sub AddErrors {
 	}
 }
 
-sub AddError {
-	my $self = shift;
-	my $mess = shift;
-	$self->{"result"} = Enums->ItemResult_Fail;
-
-	push( @{ $self->{"errors"} }, $mess );
-}
-
 sub AddWarning {
 	my $self = shift;
 	my $mess = shift;
 	$self->{"result"} = Enums->ItemResult_Fail;
 
 	push( @{ $self->{"warnings"} }, $mess );
+}
+
+sub AddWarnings {
+	my $self = shift;
+	my $messages = shift;
+	
+	foreach my $mess (@{$messages}){
+		
+		$self->AddWarning($mess);
+	}
 }
 
 sub ItemId {
@@ -100,11 +119,16 @@ sub SetItemId {
 
 sub GetErrorStr {
 	my $self = shift;
+	my $delimiter = shift;
+	
+	unless($delimiter){
+		$delimiter = "\n";
+	}
 
 	my $str = "";
 
 	foreach ( @{ $self->{"errors"} } ) {
-		$str .= " - " . $_ . "\n";
+		$str .= " - " . $_ . $delimiter;
 	}
 
 	return $str;
@@ -112,14 +136,38 @@ sub GetErrorStr {
 
 sub GetWarningStr {
 	my $self = shift;
+	my $delimiter = shift;
+	
+	unless($delimiter){
+		$delimiter = "\n";
+	}
 
 	my $str = "";
 
 	foreach ( @{ $self->{"warnings"} } ) {
-		$str .= " - " . $_ . "\n";
+		$str .= " - " . $_ . $delimiter;
 	}
 
 	return $str;
+}
+
+sub GetErrorCount {
+	my $self = shift;
+	 
+	return scalar( @{ $self->{"errors"} } );
+}
+
+sub GetWarningCount {
+	my $self = shift;
+	 
+	return scalar( @{ $self->{"warnings"} } );
+}
+
+
+sub GetGroup{
+	my $self = shift;
+	
+	return $self->{"group"};
 }
 
 #-------------------------------------------------------------------------------------------#

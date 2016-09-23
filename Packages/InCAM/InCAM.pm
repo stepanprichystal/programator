@@ -153,6 +153,10 @@ sub new {
 	# become root and add the following line in /etc/services
 	# genesis     56753/tcp    # Genesis port for debugging perl scripts
 
+	# this is appended to tmp info file
+	# provide unique  file name for different perl thread
+	$self->{"incamGUID"} =   GeneralHelper->GetGUID();
+
 	bless $self, $class;
 
 	#if (-t STDIN) {
@@ -529,7 +533,8 @@ sub COM {
 	else {
 		$command = shift;
 		my $onlyCmd = $command;
-		my %args = @_;
+		#my $onlyCmd = $command;
+		my %args    = @_;
 		foreach ( keys %args ) {
 			$command .= ",$_=$args{$_}";
 		}
@@ -710,6 +715,8 @@ sub HandleException {
 		
 		$self->{"exceptions"} = (); # clear array of exceptions
 
+		$self->{"exceptions"} = ();    # clear array of exceptions
+
 	}
 	else {
 
@@ -722,7 +729,11 @@ sub HandleException {
 sub parse {
 	my ($self)    = shift;
 	my ($request) = shift;
-	my $csh_file  = "$ENV{GENESIS_DIR}/tmp/info_csh.$$";
+
+	# TODO smazat GUID
+	my $csh_file = "$ENV{GENESIS_DIR}/tmp/info_csh.".$$ . $self->{"incamGUID"};
+
+	#my $csh_file  = "$ENV{GENESIS_DIR}/tmp/info_csh.$$abc";
 	$request =~ s/\$csh_file/$csh_file/;
 	$self->COM($request);
 
@@ -808,7 +819,11 @@ sub INFO {
 		$self->parse($info_com);
 	}
 	else {
-		my $csh_file = "$ENV{GENESIS_DIR}/tmp/info_csh.$$";
+
+		# TODO smazat GUID
+		my $csh_file = "$ENV{GENESIS_DIR}/tmp/info_csh.".$$ . $self->{"incamGUID"};
+
+		#my $csh_file = "$ENV{GENESIS_DIR}/tmp/info_csh.$$abc";
 		$info_com =~ s/\$csh_file/$csh_file/;
 		$self->COM($info_com);
 		return $csh_file;

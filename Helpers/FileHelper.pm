@@ -98,22 +98,48 @@ sub ExistsByPattern() {
 }
 
 #Return full path + file name by pattern contain in file name
+#sub GetFileNameByPattern() {
+#	my $self     = shift;
+#	my $path     = shift;
+#	my $partName = shift;    #for example partial name of file
+#
+#	#$path = GeneralHelper->AddSlash($path);
+#
+#	my $pattern = $path . $partName . "*";
+#
+#	my @files = glob($pattern);
+#	if (@files) {
+#		return $files[0];
+#	}
+#	else {
+#		return 0;
+#	}
+#}
+
+#Return full path + file name by pattern contain in file name
 sub GetFileNameByPattern() {
-	my $self     = shift;
-	my $path     = shift;
-	my $partName = shift;    #for example partial name of file
+	my $self = shift;
 
-	#$path = GeneralHelper->AddSlash($path);
+	my $dirPath  = shift;
+	my $partName = shift;
 
-	my $pattern = $path . $partName . "*";
+	my $filePath = 0;
 
-	my @files = glob($pattern);
-	if (@files) {
-		return $files[0];
+	#get all files from path
+	opendir( DIR, $dirPath ) or die $!;
+
+	while ( my $file = readdir(DIR) ) {
+
+		#next unless $file =~ /^[a-z](\d+)/i;
+
+		if ( $file =~ /$partName/ ) {
+
+			$filePath = $dirPath . $file;
+		}
 	}
-	else {
-		return 0;
-	}
+
+	close($dirPath);
+	return $filePath;
 }
 
 #Return file content as string
@@ -183,12 +209,12 @@ sub DeleteTempFiles {
 
 	#my $tempPath = File::Spec->rel2abs(  dirname(dirname( __FILE__ )))."/Temp";
 
-	opendir( DIR, GeneralHelper->Root() . '/Temp/' ) or die $!;
+	opendir( DIR, EnumsPaths->Client_INCAMTMPOTHER ) or die $!;
 	my $age = 10;    # 3600 seconds in a day
 
 	while ( my $file = readdir(DIR) ) {
 
-		$file = GeneralHelper->Root() . '/Temp/' . $file;
+		$file = EnumsPaths->Client_INCAMTMPOTHER . $file;
 
 		#get file attributes
 		my @stats = stat($file);
@@ -224,11 +250,11 @@ sub DeleteTempFilesFrom {
 
 	if ( opendir( DIR, $path ) ) {
 
-		my $age = $fileAge;           # 3600 seconds in a day
+		my $age = $fileAge;    # 3600 seconds in a day
 
 		while ( my $file = readdir(DIR) ) {
 
-			$file = GeneralHelper->Root() . '/Temp/' . $file;
+			$file = $path . $file;
 
 			#get file attributes
 			my @stats = stat($file);
@@ -263,7 +289,7 @@ sub RemoveNonPrintableChar {
 	my $fName = GeneralHelper->GetGUID();
 
 	open my $IN, "<$p" or die $!;
-	open my $OUT, '>' . GeneralHelper->Root() .. '/Temp/' . $fName or die $!;
+	open my $OUT, '>' . EnumsPaths->Client_INCAMTMPOTHER . $fName or die $!;
 
 	while ( my $l = <$IN> ) {
 		$l =~ s/[^[:print:]]+//g;
@@ -331,7 +357,7 @@ sub CreateBackup {
 	}
 
 	my $bckName = GeneralHelper->GetGUID();
-	my $newPath = GeneralHelper->Root() . '/Temp/' . $bckName;
+	my $newPath = EnumsPaths->Client_INCAMTMPOTHER . $bckName;
 	if ( FileHelper->Copy( $pSource, $newPath ) ) {
 		return $bckName;
 	}

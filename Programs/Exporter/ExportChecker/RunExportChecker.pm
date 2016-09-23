@@ -22,6 +22,11 @@ sub new {
 
 	#$self->{"client"} = Client->new();
 	$self->{"jobId"} = $ENV{"JOB"};
+	
+	unless($self->{"jobId"}){
+		
+		$self->{"jobId"} = shift;
+	}
 
 	# generate radom port between 2000-4000
 	$self->{"port"} = 2000 + int( rand(2000) );

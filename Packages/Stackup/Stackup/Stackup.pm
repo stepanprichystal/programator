@@ -38,6 +38,10 @@ sub new {
 
 	#if doesnt exist in cache, do normal initialization
 	if ( !defined $stackup ) {
+		
+		
+		
+		
 		$self = $class->SUPER::new( $pcbId, @_ );
 		$cache->set( $key, $self, 200);
 	}
@@ -249,6 +253,10 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	#
 	#	print $cuLayer->GetCopperName();
 
+<<<<<<< HEAD
+=======
+	 
+>>>>>>> refs/heads/Exporter-vyvoj
 
 	print 1;
 }

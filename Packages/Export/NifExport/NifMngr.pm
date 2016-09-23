@@ -6,6 +6,10 @@
 package Packages::Export::NifExport::NifMngr;
 use base('Packages::Export::MngrBase');
 
+use Class::Interface;
+&implements('Packages::Export::IMngr');
+
+
 #3th party library
 use strict;
 use warnings;
@@ -207,6 +211,23 @@ sub __ResultNifCreation {
 
 	$self->_OnItemResult($resultItem);
 
+}
+
+
+sub ExportItemsCount{
+
+		
+				my $self = shift;
+		
+		my $totalCnt= 0;
+		
+		$totalCnt ++; #  nc merging
+		
+		
+		
+		$totalCnt ++; # variable cnt - nc exporting
+		
+		return $totalCnt;
 }
 
 #-------------------------------------------------------------------------------------------#

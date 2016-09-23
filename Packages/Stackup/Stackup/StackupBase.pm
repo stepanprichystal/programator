@@ -161,8 +161,11 @@ sub __GetStackupLayerInfo {
 	my $self = shift;
 
 	my $pcbId = $self->{"pcbId"};
+	print STDERR " SLOZENIpcbid = $pcbId\n";
 
 	my $stcFile = FileHelper->GetFileNameByPattern( EnumsPaths->Jobs_STACKUPS, $pcbId );
+	print STDERR " SLOZENI Filter = $stcFile\n";
+	
 	my $fStackupXml = undef;
 
 	#check validation of pcb's stackup xml file
@@ -185,6 +188,8 @@ sub __GetStackupLayerInfo {
 					 ForceArray => undef,
 					 KeyAttr    => undef,
 	);
+
+	close($fStackupXml);
 
 	my @elements = @{ $xml->{element} };
 

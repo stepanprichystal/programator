@@ -6,11 +6,12 @@
 package Programs::Exporter::ExportChecker::ExportChecker::ExportPopup;
 
 #3th party library
-use strict;
+#use strict;
 use warnings;
 use threads;
 use threads::shared;
 use Wx;
+use Try::Tiny;
 
 #use strict;
 
@@ -18,6 +19,7 @@ use Wx;
 
 #use aliased 'Programs::Exporter::ExportChecker::ExportChecker::Forms::ExportCheckerForm';
 use aliased 'Programs::Exporter::ExportChecker::ExportChecker::Forms::ExportPopupForm';
+
 #use aliased 'Programs::Exporter::ExportChecker::ExportChecker::Unit::Units';
 #
 #use aliased 'Programs::Exporter::ExportChecker::ExportChecker::GroupBuilder::StandardBuilder';
@@ -28,15 +30,18 @@ use aliased 'Programs::Exporter::ExportChecker::ExportChecker::Forms::ExportPopu
 #use aliased 'Programs::Exporter::ExportChecker::Server::Client';
 use aliased 'Packages::InCAM::InCAM';
 use aliased 'Programs::Exporter::ExportChecker::Enums';
+
 #use aliased 'Connectors::HeliosConnector::HegMethods';
 #
 #use aliased 'Programs::Exporter::ExportChecker::ExportChecker::StorageMngr';
 use aliased 'Packages::Events::Event';
+
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
 my $CHECKER_START_EVT : shared;
 my $CHECKER_END_EVT : shared;
+
 #my $CHECKER_FINISH_EVT : shared;
 my $THREAD_FORCEEXIT_EVT : shared;
 
@@ -54,59 +59,62 @@ sub new {
 	$self->{"inCAM"} = undef;
 
 	$self->{"units"} = undef;
-	
+
 	$self->{"parentForm"} = undef;
-	
-	#Events 	
-	$self->{"onResultEvt"}    = Event->new();
-	$self->{'onClose'}        = Event->new();
- 
+
+	#Events
+	$self->{"onResultEvt"} = Event->new();
+	$self->{'onClose'}     = Event->new();
+
 	return $self;
 }
- 
- 
-sub Init{
+
+sub Init {
 	my $self = shift;
-	
+
+	# Synchronous/Asznchronous mode
+	$self->{"mode"} = shift;
+
 	$self->{"units"} = shift;
-	
+
 	$self->{"parentForm"} = shift;
-	
+
 	# Main application form
-	$self->{"popup"} = ExportPopupForm->new( $self->{"parentForm"}->{"mainFrm"} , $self->{"jobId"} );
-	
+	$self->{"popup"} = ExportPopupForm->new( $self->{"parentForm"}->{"mainFrm"}, $self->{"jobId"} );
+
 	#set group count for popup form
-	$self->{"popup"}->SetGroupCnt( scalar( @{ $self->{"units"}->{"units"} } ) );
-	
+	$self->{"popup"}->SetGroupCnt( $self->{"units"}->GetActiveUnitsCnt() );
+
 	$self->__SetHandlers();
-	
+
 }
 
-
 sub CheckBeforeExport {
-	my $self = shift;
+	my $self       = shift;
 	my $serverPort = shift;
- 
-	#set group count for popup form
-	$self->{"popup"}->SetGroupCnt( scalar( @{ $self->{"units"}->{"units"} } ) );
 
- 	 
-	my $inCAM  = $self->{"inCAM"};
+	my $inCAM = $self->{"inCAM"};
 	$self->{"popup"}->ShowPopup();
-
 
 	#start new process, where check job before export
 	my $worker = threads->create( sub { $self->__CheckAsyncWorker( $self->{"jobId"}, $serverPort, $self->{"units"} ) } );
 	$worker->set_thread_exit_only(1);
 	$self->{"threadId"} = $worker->tid();
+	
+# 	for(my $i = 0; $i < 5; $i++){
+# 		sleep(1);
+# 			my $worker1 = threads->create( sub { $self->__CheckAsyncWorker( $self->{"jobId"}, $serverPort, $self->{"units"} ) } );
+#	$worker1->set_thread_exit_only(1);
+#	 
+# 	}
+ 
+	#$self->{"threadId"} = $worker->tid();
 
 }
-
 
 # ================================================================================
 # PUBLIC METHOD
 # ================================================================================
-
 
 sub __CheckAsyncWorker {
 	my $self = shift;
@@ -115,53 +123,61 @@ sub __CheckAsyncWorker {
 	my $port  = shift;
 	my $units = shift;
 
-	require Win32::OLE;
-	import Win32::OLE qw(in);
+	$export_thread = 1;
+
+
+	#require ::OLE;
+	#import Win32::OLE qw(in);
 
 	my $inCAM = InCAM->new( "remote" => 'localhost', "port" => $port );
 	$inCAM->ServerReady();
 
 	$SIG{'KILL'} = sub {
 
-		Win32::OLE->Uninitialize();
-		$self->__CleanUpAndExitThread($inCAM);
-		exit;    #exit onlz this thread
+		$self->__CleanUpAndExitThread( 1, $inCAM );
+		exit;    #exit only this thread, not whole app
 
 	};
 
-	#$inCAM->COM( "open_entity", "job" => "$jobId", "type" => "step", "name" => "o", "iconic" => "no" );
-	#sleep(1);
-	#$inCAM->COM( "open_entity", "job" => "$jobId", "type" => "step", "name" => "o+1", "iconic" => "no" );
-
 	$units->{"onCheckEvent"}->Add( sub { $self->__OnCheckHandler(@_) } );
 
-	  $units->CheckBeforeExport($inCAM);
+	try {
 
-	#my %res : shared = ();
-	#$res{"result"} = $result;
+		$units->CheckBeforeExport($inCAM);
 
-	#my $threvent = new Wx::PlThreadEvent( -1, $CHECKER_FINISH_EVT, \%res );
-	#Wx::PostEvent( $self->{"popup"}->{"mainFrm"}, $threvent );
+	}
+	catch {
 
-	$inCAM->ClientFinish();
+		print STDERR "\n\nThread was unexpectaly exited!!!\n\n";
+		print $_;
+		$self->__CleanUpAndExitThread( 0, $inCAM );
+	};
 
-	Win32::OLE->Uninitialize();
+	$self->__CleanUpAndExitThread( 0, $inCAM );
 
 }
 
 sub __CleanUpAndExitThread {
-	my ( $self, $inCAM ) = @_;
+	my $self  = shift;
+	my $force = shift;
+	my $inCAM = shift;
+
+	#this is necessary do, when thread exit, because Win32::OLE is not thread safe
+	#Win32::OLE->Uninitialize();
 
 	$inCAM->ClientFinish();
 
-	print "Thread killed \n";
+	# if process was exited force, let it know
+	if ($force) {
+		print "Thread killed force\n";
+		my %res : shared = ();
+		my $threvent = new Wx::PlThreadEvent( -1, $THREAD_FORCEEXIT_EVT, \%res );
 
-	my %res : shared = ();
+		Wx::PostEvent( $self->{"popup"}->{"mainFrm"}, $threvent );
 
-	my $threvent = new Wx::PlThreadEvent( -1, $THREAD_FORCEEXIT_EVT, \%res );
-	Wx::PostEvent( $self->{"popup"}->{"mainFrm"}, $threvent );
-
+	}
 }
+
 # ================================================================================
 #  HANDLERS
 # ================================================================================
@@ -172,18 +188,20 @@ sub __OnStopPopupHandler {
 	#stop process
 	my $thrObj = threads->object( $self->{"threadId"} );
 
+	print "Print thread object: $thrObj is runing : " . $thrObj->is_running() . " \n";
+
 	if ( defined $thrObj ) {
 
 		if ( $thrObj->is_running() ) {
 			$thrObj->kill('KILL');
 		}
 	}
+
 }
 
 sub __OnClosePopupHandler {
 	my $self = shift;
 
-	
 	$self->{'onClose'}->Do();
 
 }
@@ -205,8 +223,7 @@ sub __OnResultPopupHandler {
 
 	}
 
-
-	 $self->{"onResultEvt"}->Do($resultType);
+	$self->{"onResultEvt"}->Do($resultType, $self->{"mode"});
 
 }
 
@@ -282,12 +299,12 @@ sub __CheckerEndMessageHandler {
 #sub __CheckerFinishHandler {
 #	my ( $self, $frame, $event ) = @_;
 #
-#	
+#
 #
 #	my %d = %{ $event->GetData };
 #
 #	my $succes = $d{"result"};
-#	
+#
 #	print "\n\n HEREEE FINISH Checker: $succes\n\n";
 #
 #	if ($succes) {
@@ -356,8 +373,7 @@ sub __OnCheckHandler {
 # ================================================================================
 # PRIVATE METHODS
 # ================================================================================
- 
- 
+
 sub __SetHandlers {
 	my $self = shift;
 
@@ -382,7 +398,6 @@ sub __SetHandlers {
 	#Wx::Event::EVT_COMMAND( $self->{"popup"}->{"mainFrm"}, -1, $CHECKER_FINISH_EVT, sub { $self->__CheckerFinishHandler(@_) } );
 
 }
- 
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

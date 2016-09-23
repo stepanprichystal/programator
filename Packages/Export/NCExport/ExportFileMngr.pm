@@ -49,7 +49,7 @@ sub ExportFiles {
 
 	foreach my $c (@exportFiles) {
 
-		my $result = ItemResult->new($c->{"layer"});
+		my $result = ItemResult->new($c->{"layer"}, undef, "Layers");
 
 		foreach ( @{ $c->{"machines"} } ) {
 
@@ -73,7 +73,14 @@ sub __ExportNcSet {
 	my $setName = GeneralHelper->GetGUID();
 
 	$inCAM->COM( 'set_step', "name" => $stepName );
-	$inCAM->COM( 'nc_create', "ncset" => $setName, "device" => $machine, "lyrs" => $layerName );
+	
+	$inCAM->COM("open_sets_manager","test_current" => "no");
+	
+	$inCAM->COM( 'nc_create', "ncset" => $setName, "device" => $machine, "lyrs" => $layerName, "thickness"=> 0 );
+	
+	$inCAM->COM("nc_set_advanced_params","layer" => $layerName,"ncset" => $setName,"parameters" => "(iol_sm_g84_radius=no)");
+	$inCAM->COM(" nc_set_current","job" => $jobId,"step" => $stepName,"layer" => $layerName,"ncset" => $setName);
+ 
 	
 	
 	$inCAM->COM( 'nc_set_current', "job" => $jobId, "step" => $stepName, "layer" => $layerName, "ncset" => $setName );
@@ -85,6 +92,8 @@ sub __ExportNcSet {
 	#}
 
 	$inCAM->COM( "nc_cre_output", "layer" => $layerName, "ncset" => $setName );
+	
+	my $reply = $inCAM->GetReply();
 
 	#if ( $inCAM->GetStatus() > 1 ) {
 	#	$methodRes->AddError( $inCAM->GetExceptionError() );

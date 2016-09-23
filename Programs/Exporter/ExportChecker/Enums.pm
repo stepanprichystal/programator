@@ -5,7 +5,7 @@ use constant {
 			   PopupResult_CHANGE      => "changeSettings",
 			   PopupResult_STOP        => "stopChecking",
 			   PopupResult_EXPORTFORCE => "exportForce",
-			   PopupResult_SUCCES      => "checkingSucces",
+			   PopupResult_SUCCES      => "checkingSucces"
 };
 
 
@@ -15,6 +15,10 @@ use constant {
 			   GroupState_ACTIVEOFF => "groupActiveOff",
 			   GroupState_DISABLE   => "groupDisable"
 };
+
+
+
+
 
 #
 #package EnumsGeneral::UserName;

@@ -28,11 +28,16 @@ use aliased 'Programs::Exporter::ExportChecker::ExportChecker::GroupBuilder::V0B
 use aliased 'Programs::Exporter::ExportChecker::ExportChecker::GroupTable::GroupTables';
 use aliased 'Programs::Exporter::ExportChecker::Server::Client';
 use aliased 'Packages::InCAM::InCAM';
-use aliased 'Programs::Exporter::ExportChecker::Enums';
+
 use aliased 'Connectors::HeliosConnector::HegMethods';
 
 use aliased 'Programs::Exporter::ExportChecker::ExportChecker::StorageMngr';
 use aliased 'Programs::Exporter::ExportChecker::ExportChecker::ExportPopup';
+
+use aliased 'Programs::Exporter::DataTransfer::DataTransfer';
+use aliased 'Programs::Exporter::ExportChecker::Enums';
+use aliased 'Programs::Exporter::DataTransfer::Enums' => 'EnumsTransfer';
+use aliased 'Helpers::GeneralHelper';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -53,8 +58,8 @@ sub new {
 
 	$self->{"jobId"} = shift;
 
-	my $serverPort = shift;
-	my $serverPid  = shift;
+	$self->{"serverPort"} = shift;
+	$self->{"serverPid"}  = shift;
 
 	$self->{"inCAM"} = undef;
 
@@ -65,7 +70,7 @@ sub new {
 	$self->{"form"} = ExportCheckerForm->new( -1, $self->{"jobId"}, $self->{"inCAM"} );
 
 	# Class whin manage popup form for checking
-	$self->{"exportPopup"} = ExportPopup->new($self->{"jobId"});
+	$self->{"exportPopup"} = ExportPopup->new( $self->{"jobId"} );
 
 	# Keep structure of groups on tabs
 	$self->{"groupTables"} = GroupTables->new();
@@ -74,9 +79,9 @@ sub new {
 	$self->{"units"} = Units->new();
 
 	# Manage group date (store/load group data from/to disc)
-	$self->{"storageMngr"} =  StorageMngr->new( $self->{"jobId"}, $self->{"units"} );
+	$self->{"storageMngr"} = StorageMngr->new( $self->{"jobId"}, $self->{"units"} );
 
-	$self->__Connect( $serverPort, $serverPid );
+	$self->__Connect();
 	$self->__Init();
 	$self->__Run();
 
@@ -88,21 +93,17 @@ sub __Init {
 
 	# 1) Initialization of whole export app
 
-	#set handlers for main app form
-	$self->__SetHandlers();
-
 	# Keep structure of groups
 	$self->__DefineTableGroups();
 
 	# Save all references of groups
 	my @cells = $self->{"groupTables"}->GetAllUnits();
-	$self->{"units"}->Init(\@cells);   
- 
- 
+	$self->{"units"}->Init( \@cells );
+
 	# Build phyisic table with groups, which has completely set GUI
 	#my $groupBuilder = $self->{"form"}->GetGroupBuilder();
 	#$groupBuilder->Build( $self->{"groupTables"}, $self->{"inCAM"} );
-	$self->{"form"}->BuildGroupTableForm( $self->{"groupTables"} );
+	$self->{"form"}->BuildGroupTableForm( $self->{"groupTables"}, $self->{"inCAM"} );
 
 	# 2) Initialization of each single group
 
@@ -117,8 +118,13 @@ sub __Init {
 	#7) GetGroupData()
 
 	$self->{"units"}->InitDataMngr( $self->{"inCAM"} );
-	
+
 	$self->{"units"}->RefreshGUI();
+
+	$self->__RefreshForm();
+
+	#set handlers for main app form
+	$self->__SetHandlers();
 
 }
 
@@ -149,17 +155,30 @@ sub __ExportSyncFormHandler {
 	#	}\
 
 	#use Win32::OLE;
-	my $typeOfPcb = HegMethods->GetTypeOfPcb( $self->{"jobId"} );
-	my $typeOfPcb = HegMethods->GetTypeOfPcb( $self->{"jobId"} );
-	$self->__CheckBeforeExport();
+	#my $typeOfPcb = HegMethods->GetTypeOfPcb( $self->{"jobId"} );
+
+	#my $typeOfPcb = HegMethods->GetTypeOfPcb( $self->{"jobId"} );
+	$self->__CheckBeforeExport( EnumsTransfer->ExportMode_SYNC );
 }
 
 sub __ExportASyncFormHandler {
-	my $self = shift;
+	my $self   = shift;
+	my $client = $self->{"client"};
 
-	#$self->{"form"}->{"pnlChecker"}->Raise();
+	print STDERR "Export sync\n";
 
-	$self->{"popup"}->ShowPopup();
+	#if ( $client->ClientConnected() ) {
+	#
+	#		print STDERR "Close\n";
+	#		$self->{"inCAM"}->CloseServer();
+	#
+	#	}\
+
+	#use Win32::OLE;
+	#my $typeOfPcb = HegMethods->GetTypeOfPcb( $self->{"jobId"} );
+
+	#my $typeOfPcb = HegMethods->GetTypeOfPcb( $self->{"jobId"} );
+	$self->__CheckBeforeExport( EnumsTransfer->ExportMode_ASYNC );
 
 }
 
@@ -170,19 +189,20 @@ sub __OnCloseFormHandler {
 
 }
 
- 
 sub __CheckBeforeExport {
 	my $self = shift;
+	my $mode = shift;
 
 	#disable from during checking
-	$self->{"form"}->DisableForm(1);
+	$self->{"disableForm"} = 1;
+	$self->__RefreshForm();
 
 	my $client = $self->{"client"};
 	my $inCAM  = $self->{"inCAM"};
 
 	#get all gorup data and save them to disc
 	$self->{"storageMngr"}->SaveGroupData();
-	
+
 	#test if client is connected
 	#if so, disconnect, because child porcess has to connect to server itself
 	if ( $client->IsConnected() ) {
@@ -192,13 +212,13 @@ sub __CheckBeforeExport {
 	}
 	my $serverPort = $client->ServerPort();
 
- 	#init and run checking form
-	$self->{"exportPopup"}->Init($self->{"units"}, $self->{"form"});
-	$self->{"exportPopup"}->CheckBeforeExport($serverPort);
- 
-}
+	#Win32::OLE->Uninitialize();
 
- 
+	#init and run checking form
+	$self->{"exportPopup"}->Init( $mode, $self->{"units"}, $self->{"form"} );
+	$self->{"exportPopup"}->CheckBeforeExport($serverPort);
+
+}
 
 sub __CleanUpAndExitForm {
 	my ($self) = @_;
@@ -231,29 +251,61 @@ sub __CleanUpAndExitForm {
 sub __UncheckAllHandler {
 	my $self = shift;
 
+	$self->{"units"}->SetGroupState( Enums->GroupState_ACTIVEOFF );
+
+	# Refresh loaded data in group form
+	$self->{"units"}->RefreshGUI();
+
+	# Refresh form
+	$self->__RefreshForm();
+
 }
 
 sub __LoadLastHandler {
 	my $self = shift;
 
-	$self->{"units"}->InitDataMngr( $self->{"inCAM"} , $self->{"storageMngr"});
+	# Load/get saved group data
+	$self->{"units"}->InitDataMngr( $self->{"inCAM"}, $self->{"storageMngr"} );
+
+	# Refresh loaded data in group form
+	$self->{"units"}->RefreshGUI();
+
+	# Refresh form
+	$self->__RefreshForm();
 
 }
 
 sub __LoadDefaultHandler {
 	my $self = shift;
-	
-	 
- 
+
+	$self->{"units"}->InitDataMngr( $self->{"inCAM"} );
+
+	# Refresh loaded data in group form
+	$self->{"units"}->RefreshGUI();
+
+	# Refresh form
+	$self->__RefreshForm();
+}
+
+sub __OnGroupChangeState {
+	my $self = shift;
+	my $unit = shift;
+
+	print STDERR "Unif " . $unit->{"unitId"} . " change state: " . $unit->GetGroupState() . "\n";
+	print STDERR "All units state: " . $self->{"units"}->GetGroupState() . "\n";
+
+	$self->__RefreshForm();
+
 }
 
 # ================================================================================
 # EXPORT POPUP HANDLERS
 # ================================================================================
- sub __OnClosePopupHandler {
+sub __OnClosePopupHandler {
 	my $self = shift;
 
-	$self->{"form"}->DisableForm(0);
+	$self->{"disableForm"} = 0;
+	$self->__RefreshForm();
 
 	$self->__CleanUpAndExitForm();
 
@@ -262,12 +314,46 @@ sub __LoadDefaultHandler {
 sub __OnResultPopupHandler {
 	my $self       = shift;
 	my $resultType = shift;
+	my $exportMode = shift;
+
+	my $active = 1;
+	my $toProduce = $self->{"form"}->GetToProduce($active);
 
 	if (    $resultType eq Enums->PopupResult_EXPORTFORCE
 		 || $resultType eq Enums->PopupResult_SUCCES )
 	{
 
-		#start exporting
+		my %unitsExportData = $self->{"units"}->GetExportData(1);
+		my $dataTransfer = DataTransfer->new( $self->{"jobId"}, EnumsTransfer->Mode_WRITE, \%unitsExportData );
+
+		if ( $exportMode eq EnumsTransfer->ExportMode_ASYNC ) {
+
+			# Save exported data
+			$dataTransfer->SaveData( $exportMode, $toProduce );
+
+		}
+		elsif ( $exportMode eq EnumsTransfer->ExportMode_SYNC ) {
+
+			# Hide export window
+			#$self->{"form"}->{"mainFrm"}->Hide();
+
+			my $portNumber = "2001";    #random number
+			#my $serverPID  = $$;        # PID
+			
+			my $formPos = $self->{"form"}->{"mainFrm"}->GetPosition();
+			# Save exported data
+			$dataTransfer->SaveData( $exportMode, $toProduce, $portNumber, $formPos );
+
+			# Start server in this script
+
+			my $serverPath = GeneralHelper->Root() . "\\Managers\\AsyncJobMngr\\Server\\ServerExporter.pl";
+			@_ = ();
+			push( @_, $portNumber );    # port number, pass as argument
+			require $serverPath;
+
+		}
+
+
 
 	}
 	elsif ( $resultType eq Enums->PopupResult_CHANGE ) {
@@ -276,21 +362,49 @@ sub __OnResultPopupHandler {
 
 	}
 
-	$self->{"form"}->DisableForm(0);
+	# After close popup window is necessery Re-connect to income server
+	# Because checking was processed in child thread and was connected
+	# to this income server
 
+	$self->__Connect();
+
+	$self->{"disableForm"} = 0;
+	$self->__RefreshForm();
 }
 
 # ================================================================================
 # PRIVATE METHODS
 # ================================================================================
 
+sub __RefreshForm {
+	my $self = shift;
+
+	# Disable/enable whole form
+	$self->{"form"}->DisableForm( $self->{"disableForm"} );
+
+	# Disable/enable button Load last button
+	$self->{"form"}->SetLoadLastBtn( $self->{"storageMngr"}->ExistGroupData() );
+
+	# Set export buttons
+	my $groupsState = $self->{"units"}->GetGroupState();
+
+	if ( $groupsState eq Enums->GroupState_ACTIVEOFF || $groupsState eq Enums->GroupState_DISABLE ) {
+		$self->{"form"}->DisableExportBtn(1);
+	}
+	else {
+		$self->{"form"}->DisableExportBtn(0);
+	}
+
+}
+
 sub __Connect {
 	my $self = shift;
 
-	my $port = shift;
-	my $pid  = shift;
-
-	print STDERR "\n\n EXPORTER CHECKER $port   $pid \n\n ";
+	my $port = $self->{"serverPort"};
+	my $pid  = $self->{"serverPid"};
+	if ( $port && $pid ) {
+		print STDERR "\n\n EXPORTER CHECKER $port   $pid \n\n ";
+	}
 
 	# Manage conenctio between client and server
 	my $client = $self->{"client"};
@@ -315,18 +429,16 @@ sub __SetHandlers {
 	$self->{"form"}->{"onExportSync"}->Add( sub  { $self->__ExportSyncFormHandler(@_) } );
 	$self->{"form"}->{"onExportASync"}->Add( sub { $self->__ExportASyncFormHandler(@_) } );
 	$self->{"form"}->{"onClose"}->Add( sub       { $self->__OnCloseFormHandler(@_) } );
-
 	$self->{"form"}->{"onUncheckAll"}->Add( sub  { $self->__UncheckAllHandler(@_) } );
 	$self->{"form"}->{"onLoadLast"}->Add( sub    { $self->__LoadLastHandler(@_) } );
 	$self->{"form"}->{"onLoadDefault"}->Add( sub { $self->__LoadDefaultHandler(@_) } );
-	
-	
-	
-	$self->{"exportPopup"}->{"onResultEvt"}->Add( sub    { $self->__OnResultPopupHandler(@_) } );
-	$self->{"exportPopup"}->{'onClose'}->Add( sub        { $self->__OnClosePopupHandler(@_) } );
+
+	$self->{"exportPopup"}->{"onResultEvt"}->Add( sub { $self->__OnResultPopupHandler(@_) } );
+	$self->{"exportPopup"}->{'onClose'}->Add( sub     { $self->__OnClosePopupHandler(@_) } );
+
+	$self->{"units"}->SetGroupChangeHandler( sub { $self->__OnGroupChangeState(@_) } );
 
 }
- 
 
 sub __DefineTableGroups {
 	my $self = shift;
