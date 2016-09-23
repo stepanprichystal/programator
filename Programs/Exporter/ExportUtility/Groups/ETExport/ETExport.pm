@@ -2,7 +2,7 @@
 # Description: This class contains code, which provides export of specific group
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Programs::Exporter::ExportUtility::Groups::NifExport::NifExport;
+package Programs::Exporter::ExportUtility::Groups::ETExport::ETExport;
 use base('Programs::Exporter::ExportUtility::Groups::ExportBase');
 #3th party library
 use strict;
@@ -14,11 +14,8 @@ use warnings;
 #use aliased 'Programs::Exporter::ExportChecker::Groups::NifExport::Presenter::NifUnit';
 #use aliased 'Managers::MessageMngr::MessageMngr';
 
- 
-use aliased 'Packages::Export::NifExport::NifMngr';
-
-
- 
+use aliased 'Packages::Events::Event';
+use aliased 'Packages::Export::ETExport::ETMngr';
 
 #-------------------------------------------------------------------------------------------#
 #  NC export, all layers, all machines..
@@ -40,6 +37,9 @@ sub new {
 
 	return $self;
 }
+ 
+
+
 
 sub Init {
 	my $self       = shift;
@@ -52,24 +52,17 @@ sub Init {
 	$self->{"jobId"}      = $jobId;
 	$self->{"exportData"} = $exportData;
 	
- 
- 
 	
-	 
+	my $step = $exportData->GetStepToTest();
 	
-	my %exportNifData = %{$exportData->{"data"}};
+	my $mngr = ETMngr->new($inCAM, $jobId, $step);
 	
+	$mngr->{"onItemResult"}->Add( sub { $self->_OnItemResultHandler(@_) } );
 	
+	$self->{"exportMngr"} = $mngr;
 	
-	my $nifMngr = NifMngr->new( $inCAM, $jobId, \%exportNifData );
+	$self->{"itemsCount"} = $mngr->ExportItemsCount();
 	
-	$nifMngr->{"onItemResult"}->Add( sub { $self->_OnItemResultHandler(@_) } );
-	
-	$self->{"exportMngr"} = $nifMngr;
-	
-	$self->{"itemsCount"} = $nifMngr->ExportItemsCount();
-	
- 
 }
 
 

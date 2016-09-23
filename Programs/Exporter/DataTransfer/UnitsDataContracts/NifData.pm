@@ -198,12 +198,12 @@ sub GetPressfit {
 sub SetNotes {
 	my $self  = shift;
 	my $value = shift;
-	$self->{"data"}->{"notes"} = $value;
+	$self->{"data"}->{"poznamka"} = $value;
 }
 
 sub GetNotes {
 	my $self  = shift;
-	return $self->{"data"}->{"notes"};
+	return $self->{"data"}->{"poznamka"};
 }
 
 #datacode

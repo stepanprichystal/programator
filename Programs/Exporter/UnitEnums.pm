@@ -5,11 +5,9 @@ package Programs::Exporter::UnitEnums;
 use constant {
 			   UnitId_NIF => "nif",
 			   UnitId_NC  => "nc",
-			   UnitId_NC2 => "nc2",
-			   UnitId_NC3 => "nc3",
-			   UnitId_NC4 => "nc4",
-			   UnitId_NC5 => "nc5",
-			   UnitId_NC6 => "nc6",
+			   UnitId_ET => "et",
+			   UnitId_AOI => "aoi"
+	 
 };
 
 sub GetTitle{
@@ -20,11 +18,19 @@ sub GetTitle{
 	
 	if($code eq UnitId_NIF){
 		
-		$title = "Nif soubor";
+		$title = "Nif file";
 		
 	}elsif($code eq UnitId_NC){
 		
-		$title = "NC programy";
+		$title = "NC programs";
+		
+	}elsif($code eq UnitId_ET){
+		
+		$title = "Electric testing";
+		
+	}elsif($code eq UnitId_AOI){
+		
+		$title = "Optic testing";
 		
 	}
 	

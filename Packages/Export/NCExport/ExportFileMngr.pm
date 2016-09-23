@@ -79,11 +79,8 @@ sub __ExportNcSet {
 	$inCAM->COM( 'nc_create', "ncset" => $setName, "device" => $machine, "lyrs" => $layerName, "thickness"=> 0 );
 	
 	$inCAM->COM("nc_set_advanced_params","layer" => $layerName,"ncset" => $setName,"parameters" => "(iol_sm_g84_radius=no)");
+	
 	$inCAM->COM(" nc_set_current","job" => $jobId,"step" => $stepName,"layer" => $layerName,"ncset" => $setName);
- 
-	
-	
-	$inCAM->COM( 'nc_set_current', "job" => $jobId, "step" => $stepName, "layer" => $layerName, "ncset" => $setName );
 	
 	$inCAM->COM("nc_order","serial" => "1","sr_line" => "1","sr_nx" => "1","sr_ny" => "1","mode" => "btrl","snake" => "no","scope" => "full");
 

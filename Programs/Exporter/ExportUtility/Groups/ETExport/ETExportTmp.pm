@@ -5,12 +5,15 @@ use strict;
 use warnings;
 
 use aliased 'Enums::EnumsGeneral';
-use aliased 'Programs::Exporter::ExportUtility::Groups::ETExport::ETGroup';
+
 #use aliased 'Programs::Exporter::ExportChecker::Groups::ETExport::Model::ETDataMngr';
-use aliased 'Programs::Exporter::ExportChecker::Groups::ETExport::Model::ETGroupData';
 use aliased 'Programs::Exporter::ExportChecker::Groups::NCExport::Model::NCGroupData';
 use aliased 'Programs::Exporter::ExportChecker::Groups::ETExport::Presenter::ETUnit';
 use aliased 'Managers::MessageMngr::MessageMngr';
+
+use aliased 'Programs::Exporter::ExportUtility::Groups::ETExport::ETExport';
+use aliased 'Programs::Exporter::DataTransfer::UnitsDataContracts::ETData';
+use aliased 'Programs::Exporter::UnitEnums';
 
 #-------------------------------------------------------------------------------------------#
 #  NC export, all layers, all machines..
@@ -36,50 +39,20 @@ sub Run {
 
 	#GET INPUT NIF INFORMATION
 
-	my $groupData = ETGroupData->new();
-	$groupData->SetStepToTest($stepToTest);
+	my $exportData = ETData->new();
 
-	my $unit = ETUnit->new($jobId);
-	
-	$unit->InitDataMngr($inCAM, $groupData);
-	
-	my $resultMngr = -1;
-	my $succ = $unit->CheckBeforeExport( $inCAM, \$resultMngr );
+$exportData->SetStepToTest($stepToTest);
+ my $export = ETExport->new( UnitEnums->UnitId_ET );
+$export->Init( $inCAM, $jobId, $exportData );
 
-	# Check export data for errors
-	unless ( $succ) {
+$export->{"onItemResult"}->Add( sub { Test(@_) } );
 
-		my @errors   = $resultMngr->GetErrors();
-		my @warnings = $resultMngr->GetWarnings();
+$export->Run();
 
-		#my @fail = $nifPreGroup->GetFailResults();
-		my @fail = (@errors, @warnings);
-		my $messMngr = MessageMngr->new($jobId);
-
-		foreach my $resItem (@fail) {
-
-			my @mess1 = ( $resItem->GetErrorStr() );
-			$messMngr->ShowModal( -1, EnumsGeneral->MessageType_ERROR, \@mess1 );
-		}
-
-		return 0;
-	}
-
-	my %exportData = $unit->GetExportData($inCAM);
-
-	my $group = ETGroup->new( $inCAM, $jobId );
-	$group->SetData( \%exportData );
-	my $itemsCnt = $group->GetItemsCount();
-
-	#my $builder = $group->GetResultBuilder();
-	$group->{"onItemResult"}->Add( sub { Test(@_) } );
-
-	$group->Run();
-
-	print "\n========================== E X P O R T: " . $group->GetGroupId() . " ===============================\n";
+	print "\n========================== E X P O R T: " . UnitEnums->UnitId_ET . " ===============================\n";
 	print $resultMess;
 	print "\n========================== E X P O R T: "
-	  . $group->GetGroupId()
+	  . UnitEnums->UnitId_ET
 	  . " - F I N I S H: "
 	  . ( $succes ? "SUCCES" : "FAILURE" )
 	  . " ===============================\n";
@@ -100,7 +73,7 @@ sub Run {
 
 	unless ($succes) {
 		my $messMngr = MessageMngr->new($jobId);
-		my @mess1 = ( "== EXPORT FAILURE === GROUP:  ".$group->GetGroupId()."\n".$resultMess);
+		my @mess1 = ( "== EXPORT FAILURE === GROUP:  ".UnitEnums->UnitId_ET."\n".$resultMess);
 		$messMngr->ShowModal( -1, EnumsGeneral->MessageType_ERROR, \@mess1 );
 	}
 

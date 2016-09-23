@@ -252,11 +252,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	#	print $cuLayer->GetThick();
 	#
 	#	print $cuLayer->GetCopperName();
-
-<<<<<<< HEAD
-=======
-	 
->>>>>>> refs/heads/Exporter-vyvoj
+ 
 
 	print 1;
 }

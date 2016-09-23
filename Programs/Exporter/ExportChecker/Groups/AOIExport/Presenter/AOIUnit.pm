@@ -11,8 +11,8 @@
 package Programs::Exporter::ExportChecker::Groups::AOIExport::Presenter::AOIUnit;
 use base 'Programs::Exporter::ExportChecker::Groups::UnitBase';
 
-use Class::Interface;
-&implements('Programs::Exporter::ExportChecker::ExportChecker::Unit::IUnit');
+#use Class::Interface;
+#&implements('Programs::Exporter::ExportChecker::ExportChecker::Unit::IUnit');
 
 #3th party library
 use strict;

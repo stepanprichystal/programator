@@ -6,6 +6,10 @@
 package Packages::Export::AOIExport::AOIMngr;
 use base('Packages::Export::MngrBase');
 
+use Class::Interface;
+&implements('Packages::Export::IMngr');
+
+
 #3th party library
 use strict;
 use warnings;
@@ -41,6 +45,8 @@ sub new {
 
 	$self->{"stepToTest"} = shift;    # step, which will be tested
 	$self->{"attemptCnt"} = 20;       # max count of attempt
+	
+	$self->{"layerCnt"} = CamJob->GetSignalLayerCnt( $self->{"inCAM"}, $self->{"jobId"} );
 
 	return $self;
 }
@@ -53,10 +59,10 @@ sub Run {
 	my $stepToTest = $self->{"stepToTest"};
 	my $layerName  = $self->{"layer"};
 
-	my $layerCnt = CamJob->GetSignalLayerCnt( $inCAM, $jobId );
+	 
 	my @signalLayers = CamJob->GetSignalLayerNames( $inCAM, $jobId );
 
-	if ( $layerCnt > 2 ) {
+	if ( $self->{"layerCnt"} > 2 ) {
 		$self->{"stackup"} = Stackup->new($jobId);
 	}
 
@@ -239,6 +245,20 @@ sub __DeleteOutputFiles {
 		closedir($dir);
 	}
 }
+
+sub ExportItemsCount{
+	my $self = shift;
+	
+	my $totalCnt = 0;
+	
+	
+	$totalCnt += 1; # getting sucesfully AOI manager
+	$totalCnt += $self->{"layerCnt"}; #export each layer
+	
+	return $totalCnt;
+	
+}
+
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

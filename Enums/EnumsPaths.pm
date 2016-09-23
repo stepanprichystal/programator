@@ -7,6 +7,7 @@ use constant {
     Client_EXPORTLOCAL => "c:\\Export\\",
     Client_ELTESTS => "c:\\Boards\\",
     Client_MULTICALDB => "c:\\Program Files (x86)\\Multical5-1\\ml.xml",
+    Client_INCAMVERSION => "c:\\opt\\InCAM\\",
    
 
  	# Paths for log

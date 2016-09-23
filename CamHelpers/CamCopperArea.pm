@@ -288,11 +288,13 @@ sub __GetCuArea {
 		}
 	}
 
-	my $outFile = EnumsPaths->Client_INCAMTMP . $jobName . "cuarea";
+	#my $outFile = EnumsPaths->Client_INCAMTMP . $jobName . "cuarea";
 	
-	if(-e $outFile){
-		unlink($outFile);
-	}
+	my $outFile = undef;
+	
+	#if(-e $outFile){
+	#	unlink($outFile);
+	#}
 	
 	#my $outFile = "out_file";
 	
@@ -356,8 +358,8 @@ sub __GetCuAreaNoMask {
 				 "resolution"        => 1,
 				 "resolution_value"  => 25.4,
 				 "f_type"            => "all",
-				 "out_file"          => $outFile,
-				 #"out_layer"         => "sum",
+				 #"out_file"          => $outFile,
+				 "out_layer"         => "sum",
 				 "x_boxes"           => 3,
 				 "y_boxes"           => 3,
 				 "dist_map"          => "no",
@@ -400,8 +402,8 @@ sub __GetCuAreaMask {
 				 "resolution"        => 1,
 				 "resolution_value"  => 25.4,
 				 "f_type"            => "all",
-				 "out_file"          => $outFile,
-				# "out_layer"         => "sum",
+				 #"out_file"          => $outFile,
+				 "out_layer"         => "sum",
 				 "x_boxes"           => 3,
 				 "y_boxes"           => 3,
 				 "dist_map"          => "no",

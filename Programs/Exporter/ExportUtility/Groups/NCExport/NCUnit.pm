@@ -1,6 +1,6 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Represent Export class for NC
+# Description: Represent "Unit" class for NC
 #
 # Every group in "export utility program" is composed from three layers:
 # 1) Model - responsible for actual group data, which are displyed in group form (GroupData class)

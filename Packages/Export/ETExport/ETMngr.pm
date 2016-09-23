@@ -6,6 +6,9 @@
 package Packages::Export::ETExport::ETMngr;
 use base('Packages::Export::MngrBase');
 
+use Class::Interface;
+&implements('Packages::Export::IMngr');
+
 #3th party library
 use strict;
 use warnings;
@@ -282,6 +285,22 @@ sub __ResulETOptimize {
 	my $resultItem = shift;
 
 	$self->_OnItemResult($resultItem);
+}
+
+
+sub ExportItemsCount{
+	my $self = shift;
+	
+	my $totalCnt = 0;
+	
+	
+	$totalCnt += 1; # EtStep Created
+	$totalCnt += 1; # Et set createed
+	$totalCnt += 1; # Et optimize
+	 
+	
+	return $totalCnt;
+	
 }
 
 #-------------------------------------------------------------------------------------------#

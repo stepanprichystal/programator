@@ -41,7 +41,8 @@ sub new {
 	$self->{"inCAM"}   = shift;
 	$self->{"jobId"}   = shift;
 	$self->{"nifData"} = shift;
-
+	
+	 
 	my @sections = ();
 	$self->{"sections"} = \@sections;
 

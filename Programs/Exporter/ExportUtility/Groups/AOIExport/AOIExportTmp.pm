@@ -5,8 +5,11 @@ use strict;
 use warnings;
 
 use aliased 'Enums::EnumsGeneral';
-use aliased 'Programs::Exporter::ExportUtility::Groups::AOIExport::AOIGroup';
-use aliased 'Programs::Exporter::ExportChecker::Groups::AOIExport::Model::AOIGroupData';
+
+use aliased 'Programs::Exporter::ExportUtility::Groups::AOIExport::AOIExport';
+use aliased 'Programs::Exporter::DataTransfer::UnitsDataContracts::AOIData';
+use aliased 'Programs::Exporter::UnitEnums';
+
 use aliased 'Programs::Exporter::ExportChecker::Groups::AOIExport::Presenter::AOIUnit';
 use aliased 'Managers::MessageMngr::MessageMngr';
 
@@ -34,50 +37,21 @@ sub Run {
 
 	#GET INPUT NIF INFORMATION
 
-	my $groupData = AOIGroupData->new();
-	$groupData->SetStepToTest($stepToTest);
+	my $exportData = AOIData->new();
 
-	my $unit = AOIUnit->new($jobId);
-	
-	$unit->InitDataMngr($inCAM, $groupData);
-	
-	my $resultMngr = -1;
-	my $succ = $unit->CheckBeforeExport( $inCAM, \$resultMngr );
+$exportData->SetStepToTest("panel");
 
-	# Check export data for errors
-	unless ( $succ) {
+my $export = AOIExport->new( UnitEnums->UnitId_AOI );
+$export->Init( $inCAM, $jobId, $exportData );
 
-		my @errors   = $resultMngr->GetErrors();
-		my @warnings = $resultMngr->GetWarnings();
+$export->{"onItemResult"}->Add( sub { Test(@_) } );
 
-		#my @fail = $nifPreGroup->GetFailResults();
-		my @fail = (@errors, @warnings);
-		my $messMngr = MessageMngr->new($jobId);
+$export->Run();
 
-		foreach my $resItem (@fail) {
-
-			my @mess1 = ( $resItem->GetErrorStr() );
-			$messMngr->ShowModal( -1, EnumsGeneral->MessageType_ERROR, \@mess1 );
-		}
-
-		return 0;
-	}
-
-	my %exportData = $unit->GetExportData($inCAM);
-
-	my $group = AOIGroup->new( $inCAM, $jobId );
-	$group->SetData( \%exportData );
-	my $itemsCnt = $group->GetItemsCount();
-
-	#my $builder = $group->GetResultBuilder();
-	$group->{"onItemResult"}->Add( sub { Test(@_) } );
-
-	$group->Run();
-
-	print "\n========================== E X P O R T: " . $group->GetGroupId() . " ===============================\n";
+	print "\n========================== E X P O R T: " . UnitEnums->UnitId_AOI . " ===============================\n";
 	print $resultMess;
 	print "\n========================== E X P O R T: "
-	  . $group->GetGroupId()
+	  . UnitEnums->UnitId_AOI
 	  . " - F I N I S H: "
 	  . ( $succes ? "SUCCES" : "FAILURE" )
 	  . " ===============================\n";
@@ -98,7 +72,7 @@ sub Run {
 
 	unless ($succes) {
 		my $messMngr = MessageMngr->new($jobId);
-		my @mess1 = ( "== EXPORT FAILURE === GROUP:  ".$group->GetGroupId()."\n".$resultMess);
+		my @mess1 = ( "== EXPORT FAILURE === GROUP:  ".UnitEnums->UnitId_AOI."\n".$resultMess);
 		$messMngr->ShowModal( -1, EnumsGeneral->MessageType_ERROR, \@mess1 );
 	}
 

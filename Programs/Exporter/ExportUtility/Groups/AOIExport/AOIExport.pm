@@ -1,10 +1,8 @@
 #-------------------------------------------------------------------------------------------#
-# Description: This is class, which represent "presenter"
-#
-
+# Description: This class contains code, which provides export of specific group
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Programs::Exporter::ExportUtility::Groups::NCExport::Presenter::NCExport;
+package Programs::Exporter::ExportUtility::Groups::AOIExport::AOIExport;
 use base('Programs::Exporter::ExportUtility::Groups::ExportBase');
 #3th party library
 use strict;
@@ -16,12 +14,13 @@ use warnings;
 #use aliased 'Programs::Exporter::ExportChecker::Groups::NifExport::Presenter::NifUnit';
 #use aliased 'Managers::MessageMngr::MessageMngr';
 
- 
-use aliased 'Packages::Export::NCExport::ExportMngr';
+use aliased 'Packages::Events::Event';
+use aliased 'Packages::Export::AOIExport::AOIMngr';
 
 #-------------------------------------------------------------------------------------------#
 #  NC export, all layers, all machines..
 #-------------------------------------------------------------------------------------------#
+
 
 sub new {
 
@@ -39,29 +38,40 @@ sub new {
 
 	return $self;
 }
+ 
+
+
 
 sub Init {
 	my $self       = shift;
 	my $inCAM      = shift;
 	my $jobId      = shift;
 	my $exportData = shift;
+	 
 
 	$self->{"inCAM"}      = $inCAM;
 	$self->{"jobId"}      = $jobId;
 	$self->{"exportData"} = $exportData;
- 
-
-	my $data = $exportData->GetUnitData( $self->{"unitId"} );
-
-	my $mngr = ExportMngr->new( $inCAM, $jobId, "panel", $data->SetExportSingle(), $data->GetPltLayers(), $data->GetNPltLayers() );
+	
+	
+	my $step = $exportData->GetStepToTest();
+	my $mngr = AOIMngr->new($inCAM, $jobId, $step);
 	
 	$mngr->{"onItemResult"}->Add( sub { $self->_OnItemResultHandler(@_) } );
 	
+	$self->{"exportMngr"} = $mngr;
+	
 	$self->{"itemsCount"} = $mngr->ExportItemsCount();
+	
  
 }
 
+
+
+
+
  
+
 1;
 
 #-------------------------------------------------------------------------------------------#

@@ -5,8 +5,6 @@
 #-------------------------------------------------------------------------------------------#
 package Programs::Exporter::ExportChecker::Groups::ETExport::Model::ETGroupData;
 
-use Class::Interface;
-&implements('Programs::Exporter::ExportChecker::Groups::IGroupData');
 
 
 #3th party library
