@@ -152,7 +152,7 @@ sub ActivateForm {
 
 		if ($position) {
 
-			$self->{"mainFrm"}->Move($position);
+			#$self->{"mainFrm"}->Move($position);
 		}
 
 		$self->{"mainFrm"}->Show(1);

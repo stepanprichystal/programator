@@ -1,11 +1,14 @@
 #-------------------------------------------------------------------------------------------#
-# Description: Widget can show 
+# Description: Widget can show task item result.
+# Three ways how to set behaviour, when click on widget:
+# 1) Set handler OnClick
+# 2) Create menu Errro|IndicatorMenu
+# 3) Set ResultManager - then widget shows items from manager
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 
 package Widgets::Forms::ErrorIndicator::ErrorIndicator;
 use base qw(Wx::Panel);
-
 #3th party library
 use strict;
 use warnings;
@@ -57,7 +60,6 @@ sub new {
 	return $self;
 }
 
-
 sub AddMenu {
 	my $self = shift;
 
@@ -93,7 +95,6 @@ sub SetErrorCnt {
 
 	$self->{"szMain"}->Layout();
 }
-
 
 sub __SetLayout {
 	my $self = shift;

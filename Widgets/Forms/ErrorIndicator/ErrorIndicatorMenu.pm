@@ -1,6 +1,5 @@
 #-------------------------------------------------------------------------------------------#
-# Description: Popup, which shows result from export checking
-# Allow terminate thread, which does checking
+# Description: Menu widget, which can appear in ErrorIndicator widget
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Widgets::Forms::ErrorIndicator::ErrorIndicatorMenu;
@@ -37,20 +36,6 @@ sub new {
 
 	my $self = $class->SUPER::new( $parent, -1, "", [ -1, -1 ], [ -1, -1 ], &Wx::wxSTAY_ON_TOP );
 
-	#	#main formDefain forms
-	#	my $mainFrm = Wx::Frame->new(
-	#		$parent,                       # parent window
-	#		-1,                            # ID -1 means any
-	#		"Checking export settings",    # title
-	#		$point,                        # window position
-	#		[ -1, -1 ],                    # size
-	#		                               #&Wx::wxCAPTION |
-	#		                               #&Wx::wxCLOSE_BOX |
-	#		&Wx::wxSTAY_ON_TOP
-	#
-	#		  # &Wx::wxMINIMIZE_BOX    #  &Wx::wxSYSTEM_MENU |  | &Wx::wxCLIP_CHILDREN | &Wx::wxRESIZE_BORDER | &Wx::wxMINIMIZE_BOX
-	#	);
-
 	bless($self);
 
 	$self->{"mode"} = $mode;
@@ -69,15 +54,63 @@ sub ShowMenu {
 	my $self  = shift;
 	my $point = Wx::GetMousePosition();
 
-	#my $app = Wx::App->GetTopWindow();
-
-	#$app->SetTopWindow($self);
 
 	$self->Move($point);
 
 	$self->__RefreshMenu();
 	$self->ShowModal();
 
+}
+
+
+sub AddItem {
+	my $self = shift;
+
+	my $title      = shift;
+	my $resultMngr = shift;    # ref on function, which return itemresults
+
+	my $parent = $self->{"itemPnl"};
+
+	my $cnt = 0;
+
+ 
+
+	# DEFINE SIZERS
+
+	my $szMain = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
+
+	# DEFINE CONTROLS
+
+	my $btnError = Wx::Button->new( $parent, -1, $title, &Wx::wxDefaultPosition, [ 140, 25 ] );
+
+	#my $errorCntTxt = Wx::StaticText->new( $parent, -1, $cnt, &Wx::wxDefaultPosition, [ 25, 20 ] );
+
+	# BUILD STRUCTURE OF LAYOUT
+
+	$szMain->Add( $btnError, 1, &Wx::wxALL, 0 );
+
+	 
+
+	# REGISTER EVENTS
+
+	Wx::Event::EVT_BUTTON( $btnError, -1, sub { $self->__OnClick($resultMngr) } );
+
+	$self->{"szRow2"}->Add( $szMain, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
+
+	$self->{"szMain"}->Layout();
+
+	$self->SetSize( $self->GetBestSize() );
+
+	# save item
+	my %itemInfo = ();
+
+	#$itemInfo{"text"}          = $errorCntTxt;
+	$itemInfo{"title"}         = $title;
+	$itemInfo{"resultMngr"}    = $resultMngr;
+	$itemInfo{"button"}        = $btnError;
+	$self->{"items"}->{$title} = \%itemInfo;
+
+	return $szMain;
 }
 
 sub __SetLayout {
@@ -139,64 +172,7 @@ sub __SetLayout {
 
 }
 
-sub AddItem {
-	my $self = shift;
 
-	my $title      = shift;
-	my $resultMngr = shift;    # ref on function, which return itemresults
-
-	my $parent = $self->{"itemPnl"};
-
-	my $cnt = 0;
-
-	#	if ( $self->{"mode"} eq EnumsGeneral->MessageType_ERROR ) {
-	#
-	#		$cnt = $resultMngr->GetErrorsCnt();
-	#	}
-	#	elsif ( $self->{"mode"} eq EnumsGeneral->MessageType_WARNING ) {
-	#		$cnt = $resultMngr->GetWarningsCnt();
-	#
-	#	}
-	#
-
-	# DEFINE SIZERS
-
-	my $szMain = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
-
-	# DEFINE CONTROLS
-
-	my $btnError = Wx::Button->new( $parent, -1, $title, &Wx::wxDefaultPosition, [ 140, 25 ] );
-
-	#my $errorCntTxt = Wx::StaticText->new( $parent, -1, $cnt, &Wx::wxDefaultPosition, [ 25, 20 ] );
-
-	# BUILD STRUCTURE OF LAYOUT
-
-	$szMain->Add( $btnError, 1, &Wx::wxALL, 0 );
-
-	#$szMain->Add( 10,           5, 0 );
-	#$szMain->Add( $errorCntTxt, 0, &Wx::wxALIGN_CENTER_VERTICAL | &Wx::wxALL, 0 );
-
-	# REGISTER EVENTS
-
-	Wx::Event::EVT_BUTTON( $btnError, -1, sub { $self->__OnClick($resultMngr) } );
-
-	$self->{"szRow2"}->Add( $szMain, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
-
-	$self->{"szMain"}->Layout();
-
-	$self->SetSize( $self->GetBestSize() );
-
-	# save item
-	my %itemInfo = ();
-
-	#$itemInfo{"text"}          = $errorCntTxt;
-	$itemInfo{"title"}         = $title;
-	$itemInfo{"resultMngr"}    = $resultMngr;
-	$itemInfo{"button"}        = $btnError;
-	$self->{"items"}->{$title} = \%itemInfo;
-
-	return $szMain;
-}
 
 sub __RefreshMenu {
 	my $self = shift;

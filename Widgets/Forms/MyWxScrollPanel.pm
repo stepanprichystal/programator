@@ -13,15 +13,14 @@ use aliased 'Helpers::GeneralHelper';
 sub new {
 	my ( $class, $parent, $rowHeight ) = @_;
 	my $self = $class->SUPER::new( $parent, -1 );
-
 	$self->{"rowHeight"} = $rowHeight;
+
 
 	return $self;
 }
 
 
 sub OnGetRowHeight {
-
 	my ( $self, $item ) = @_;
  
 	return $self->{"rowHeight"};

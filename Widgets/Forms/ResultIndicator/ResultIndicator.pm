@@ -1,5 +1,5 @@
 #-------------------------------------------------------------------------------------------#
-# Description:
+# Description: Widget can show result Fail/Succes that is all.
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 
@@ -25,20 +25,12 @@ use aliased 'Helpers::GeneralHelper';
 sub new {
 	my $class  = shift;
 	my $parent = shift;
- 
-	 
 	my $size = shift;
-	#my $showCnt = shift;
-	
-	#unless($showCnt){
-	#	$showCnt = 1;
-	#}
 
 	my $self = $class->SUPER::new($parent);
 
 	bless($self);
 
-	#$self->{"mode"}    = $mode;
 	$self->{"size"}    = $size;
 	$self->{"state"}    = EnumsGeneral->ResultType_NA;
 	 
@@ -46,6 +38,33 @@ sub new {
 	$self->__SetLayout();
 
 	return $self;
+}
+
+
+
+
+sub SetStatus {
+	my $self  = shift;
+	my $status  = shift;
+ 
+	my $path = undef;
+	
+	if($status eq EnumsGeneral->ResultType_NA){
+		 
+		$path = Wx::Bitmap->new( $self->{"pathNA"}, &Wx::wxBITMAP_TYPE_PNG );
+		
+	
+	}elsif($status eq EnumsGeneral->ResultType_OK){
+		
+		$path = Wx::Bitmap->new( $self->{"pathOk"}, &Wx::wxBITMAP_TYPE_PNG );
+	
+	}elsif($status eq EnumsGeneral->ResultType_FAIL){
+		
+		$path = Wx::Bitmap->new( $self->{"pathFail"}, &Wx::wxBITMAP_TYPE_PNG );
+	}
+	
+	
+	$self->{"statBtmError"}->SetBitmap($path);
 }
 
 sub __SetLayout {
@@ -86,34 +105,5 @@ sub __SetLayout {
 	# SAVE REFERENCES
 	$self->{"statBtmError"}  = $statBtmError;
 }
-
-
-sub SetStatus {
-	my $self  = shift;
-	my $status  = shift;
- 
-	my $path = undef;
-	
-	if($status eq EnumsGeneral->ResultType_NA){
-		 
-		$path = Wx::Bitmap->new( $self->{"pathNA"}, &Wx::wxBITMAP_TYPE_PNG );
-		
-	
-	}elsif($status eq EnumsGeneral->ResultType_OK){
-		
-		$path = Wx::Bitmap->new( $self->{"pathOk"}, &Wx::wxBITMAP_TYPE_PNG );
-	
-	}elsif($status eq EnumsGeneral->ResultType_FAIL){
-		
-		$path = Wx::Bitmap->new( $self->{"pathFail"}, &Wx::wxBITMAP_TYPE_PNG );
-	}
-	
-	
-	$self->{"statBtmError"}->SetBitmap($path);
-}
-
-		
-
- 
 
 1;
