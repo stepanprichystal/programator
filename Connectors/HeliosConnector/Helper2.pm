@@ -3,7 +3,7 @@
 # Description: Widget slouzici pro zobrazovani zprav ruznych typu uzivateli
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Connectors::HeliosConnector::Helper;
+package Connectors::HeliosConnector::Helper2;
 
 #3th party library
 use utf8;
@@ -197,15 +197,15 @@ sub ExecuteDataSet {
 	if ( $commandText eq "" ) { die "$commandText is empty" }
 
 	my $con = undef;
-	my $cmd = Connectors::HeliosConnector::Helper->__PrepareCommand( $commandText, $commandParameters );
+	my $cmd = $self->__PrepareCommand( $commandText, $commandParameters );
 
 	my @dataset = ();
 
-	$con = Connectors::HeliosConnector::Helper->__OpenConnection();
+	$con = $self->__OpenConnection();
 	if ($con) {
 
 		try {
-			@dataset = Connectors::HeliosConnector::Helper->__Execute( $con, $cmd, 1, $noDiacritic );
+			@dataset = $self->__Execute( $con, $cmd, 1, $noDiacritic );
 		}
 		catch {
 
@@ -233,15 +233,15 @@ sub ExecuteScalar {
 	if ( $commandText eq "" ) { die "$commandText is empty" }
 
 	my $con = undef;
-	my $cmd = Connectors::HeliosConnector::Helper->__PrepareCommand( $commandText, $commandParameters );
+	my $cmd = $self->__PrepareCommand( $commandText, $commandParameters );
 
 	my @dataset = ();
 
-	$con = Connectors::HeliosConnector::Helper->__OpenConnection();
+	$con = $self->__OpenConnection();
 	if ($con) {
 
 		try {
-			@dataset = Connectors::HeliosConnector::Helper->__Execute( $con, $cmd, 1, $noDiacritic );
+			@dataset = $self->__Execute( $con, $cmd, 1, $noDiacritic );
 		}
 		catch {
 

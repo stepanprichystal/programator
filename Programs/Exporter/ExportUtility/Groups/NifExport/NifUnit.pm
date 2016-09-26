@@ -34,9 +34,6 @@ sub new {
 	$self = $class->SUPER::new(@_);
 	bless $self;
 
-	# uique key within all units
-	$self->{"unitId"} = UnitEnums->UnitId_NIF;
- 
  	# reference on class responsible for export
 	$self->{"unitExport"} = NifExport->new($self->{"unitId"});
  

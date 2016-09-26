@@ -10,7 +10,7 @@ use aliased 'Programs::Exporter::ExportUtility::Groups::AOIExport::AOIExport';
 use aliased 'Programs::Exporter::DataTransfer::UnitsDataContracts::AOIData';
 use aliased 'Programs::Exporter::UnitEnums';
 
-use aliased 'Programs::Exporter::ExportChecker::Groups::AOIExport::Presenter::AOIUnit';
+#use aliased 'Programs::Exporter::ExportChecker::Groups::AOIExport::Presenter::AOIUnit';
 use aliased 'Managers::MessageMngr::MessageMngr';
 
 #-------------------------------------------------------------------------------------------#
@@ -29,24 +29,23 @@ sub new {
 }
 
 sub Run {
-	my $self  = shift;
-	my $inCAM = shift;
-	my $jobId = shift;
+	my $self       = shift;
+	my $inCAM      = shift;
+	my $jobId      = shift;
 	my $stepToTest = shift;
-
 
 	#GET INPUT NIF INFORMATION
 
 	my $exportData = AOIData->new();
 
-$exportData->SetStepToTest("panel");
+	$exportData->SetStepToTest("panel");
 
-my $export = AOIExport->new( UnitEnums->UnitId_AOI );
-$export->Init( $inCAM, $jobId, $exportData );
+	my $export = AOIExport->new( UnitEnums->UnitId_AOI );
+	$export->Init( $inCAM, $jobId, $exportData );
 
-$export->{"onItemResult"}->Add( sub { Test(@_) } );
+	$export->{"onItemResult"}->Add( sub { Test(@_) } );
 
-$export->Run();
+	$export->Run();
 
 	print "\n========================== E X P O R T: " . UnitEnums->UnitId_AOI . " ===============================\n";
 	print $resultMess;
@@ -72,10 +71,9 @@ $export->Run();
 
 	unless ($succes) {
 		my $messMngr = MessageMngr->new($jobId);
-		my @mess1 = ( "== EXPORT FAILURE === GROUP:  ".UnitEnums->UnitId_AOI."\n".$resultMess);
+		my @mess1    = ( "== EXPORT FAILURE === GROUP:  " . UnitEnums->UnitId_AOI . "\n" . $resultMess );
 		$messMngr->ShowModal( -1, EnumsGeneral->MessageType_ERROR, \@mess1 );
 	}
-
 
 	return $succes;
 }

@@ -224,7 +224,7 @@ sub __CreateIpc {
 	$inCAM->HandleException(1);
 
 	# Raise result item for optimization set
-	my $resultItemOpSet = $self->_GetNewItem("optSetCreation");
+	my $resultItemOpSet = $self->_GetNewItem("Optimization");
 
 	my $optName;
 	my $resultOpSet = OptSet->OptSetCreate( $inCAM, $jobId, $etStep, $setupOptName, \@steps, \$optName );
@@ -236,7 +236,7 @@ sub __CreateIpc {
 	$self->__ResulETOptimize($resultItemOpSet);
 
 	# Raise result item for et set creation
-	my $resultItemEtSet = $self->_GetNewItem("etSetCreation");
+	my $resultItemEtSet = $self->_GetNewItem("Set creation");
 
 	my $etsetName;
 	my $resultEtSet = ETSet->ETSetCreate( $inCAM, $jobId, $etStep, $optName, \$etsetName );
@@ -269,7 +269,7 @@ sub __CreateIpc {
 sub __ResulETStepCreated {
 	my $self = shift;
 
-	my $resultItem = $self->_GetNewItem("etStepCreation");
+	my $resultItem = $self->_GetNewItem("Create ET step");
 	$self->_OnItemResult($resultItem);
 }
 

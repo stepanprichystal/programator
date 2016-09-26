@@ -32,13 +32,27 @@ sub new {
 # stepToTest
 sub SetStepToTest {
 	my $self  = shift;
-	$self->{"data"}->{"stepToTest"} = shift;
+	my $value = shift;
+	$self->{"data"}->{"stepToTest"} = $value;
 }
 
 sub GetStepToTest {
 	my $self  = shift;
+	my $value = shift;
 	return $self->{"data"}->{"stepToTest"};
 }
+ 
+ 
+# layers to test 
+sub SetLayers {
+	my $self  = shift;
+	$self->{"data"}->{"layers"} = shift;
+}
+
+sub GetLayers {
+	my $self  = shift;
+	return $self->{"data"}->{"layers"};
+} 
 
  
 #-------------------------------------------------------------------------------------------#

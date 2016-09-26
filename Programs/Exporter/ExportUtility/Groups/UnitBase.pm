@@ -25,10 +25,13 @@ sub new {
 	my $self = shift;
 	$self = {};
 	bless $self;
+	
+	# uique key within all units
+	$self->{"unitId"} = shift;
 
 	$self->{"jobId"} = shift;
 
-	$self->{"unitId"} = undef;
+	 
 	
 	$self->{"form"}   = undef;    # reference on GroupWrapperForm object
 

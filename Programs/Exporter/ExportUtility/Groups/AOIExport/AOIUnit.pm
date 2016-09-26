@@ -37,9 +37,6 @@ sub new {
 
 	$self = $class->SUPER::new(@_);
 	bless $self;
-
-	#uique key within all units
-	$self->{"unitId"} = UnitEnums->UnitId_AOI;
  
   	# reference on class responsible for export
 	$self->{"unitExport"} = AOIExport->new($self->{"unitId"});

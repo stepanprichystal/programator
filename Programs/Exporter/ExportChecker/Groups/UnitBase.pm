@@ -26,14 +26,15 @@ sub new {
 	bless $self;
 
 	$self->{"jobId"} = shift;
-	$self->{"title"} = shift;
 
 	$self->{"groupWrapper"} = undef;    #wrapper, which form is placed in
 	$self->{"form"}         = undef;    #form which represent GUI of this group
 	                                    #$self->{"active"}       = undef;    # tell if group will be visibel/active
 	$self->{"dataMngr"}     = undef;    # manager, which is responsible for create, update group data
-
-	# Events
+	$self->{"cellWidth"}    = 0;        #width of cell/unit form (%), placed in exporter table row
+	$self->{"exportOrder"}  = 0;        #Order, which unit will be ecported
+	
+	 # Events
 
 	$self->{"onChangeState"} = Event->new();
 
@@ -117,6 +118,39 @@ sub GetExportData {
 	return $self->{"dataMngr"}->ExportGroupData();
 
 }
+
+sub GetUnitId {
+	my $self = shift;
+
+	return $self->{"unitId"};
+}
+
+sub SetCellWidth {
+	my $self = shift;
+	my $w    = shift;
+
+	$self->{"cellWidth"} = $w;
+}
+
+sub GetCellWidth {
+	my $self = shift;
+
+	return $self->{"cellWidth"};
+}
+
+sub SetExportOrder {
+	my $self = shift;
+	my $order    = shift;
+
+	$self->{"exportOrder"} = $order;
+}
+
+sub GetExportOrder {
+	my $self = shift;
+
+	return $self->{"exportOrder"};
+}
+
 
 sub _SetHandlers {
 	my $self = shift;

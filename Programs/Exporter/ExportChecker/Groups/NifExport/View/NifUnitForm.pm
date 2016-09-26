@@ -34,7 +34,6 @@ sub new {
 
 	my $inCAM = shift;
 	my $jobId = shift;
-	my $title = shift;
 
 	my $self = $class->SUPER::new($parent);
 
@@ -43,11 +42,10 @@ sub new {
 	$self->{"inCAM"} = $inCAM;
 	$self->{"jobId"} = $jobId;
 
-	$self->{"title"} = $title;
 
 	$self->__SetLayout();
 
-	$self->__SetName();
+	 
 
 	#$self->Disable();
 
@@ -70,12 +68,7 @@ sub new {
 #	$self->__SetName();
 #}
 
-sub __SetName {
-	my $self = shift;
-
-	$self->{"title"} = "Nif group";
-
-}
+ 
 
 #sub __SetHeight {
 #	my $self = shift;
@@ -107,7 +100,7 @@ sub __SetLayout {
 	my $richTxt = Wx::RichTextCtrl->new( $self, -1, 'Notes', &Wx::wxDefaultPosition, [ 100, 120 ], &Wx::wxRE_MULTILINE | &Wx::wxWANTS_CHARS );
 	$richTxt->SetEditable(1);
 	$richTxt->SetBackgroundColour($Widgets::Style::clrWhite);
-	$richTxt->Layout();
+	#$richTxt->Layout();
 
 	# SET EVENTS
 

@@ -273,6 +273,14 @@ sub GetSilkScreenColor {
 		$silk{"top"} = $rows[0]->{"c_silk_screen_colour"};
 		$silk{"bot"} = $rows[0]->{"s_silk_screen_colour"};
 		
+		unless($silk{"top"}){
+			$silk{"top"} = "";
+		}
+		
+		unless($silk{"bot"}){
+			$silk{"bot"} = "";
+		}
+		
 		return %silk;
 		
 	}else{
@@ -657,7 +665,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $nc_info = "test";
 
-	my $test = HegMethods->UpdateNCInfo("F13609", $nc_info);
+	my $test = HegMethods->GetPcbIsPool("F13609");
 
 	print $test;
 

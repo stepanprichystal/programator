@@ -25,6 +25,8 @@ use aliased 'Programs::Exporter::ExportChecker::Groups::GroupDataMngr';
 use aliased 'Programs::Exporter::ExportChecker::Groups::ETExport::Model::ETCheckData';
 use aliased 'Programs::Exporter::ExportChecker::Groups::ETExport::Model::ETPrepareData';
 use aliased 'Programs::Exporter::ExportChecker::Groups::ETExport::Model::ETExportData';
+use aliased 'Programs::Exporter::UnitEnums';
+use aliased 'Programs::Exporter::ExportChecker::Groups::ETExport::View::ETUnitForm';
 
 
 #-------------------------------------------------------------------------------------------#
@@ -39,7 +41,7 @@ sub new {
 	bless $self;
 
 	#uique key within all units
-	$self->{"unitId"} = "nifUnit";
+	$self->{"unitId"} = UnitEnums->UnitId_ET;
 
 	my $checkData = ETCheckData->new();
 	my $prepareData = ETPrepareData->new();
@@ -67,23 +69,51 @@ sub InitForm {
 	my $inCAM        = shift;
 
 	$self->{"groupWrapper"} = $groupWrapper;
-	
+
 	my $parent = $groupWrapper->GetParentForGroup();
-	#$self->{"form"} = NifUnitForm->new( $parent, $inCAM, $self->{"title"} );
+	$self->{"form"} = ETUnitForm->new( $parent, $inCAM, $self->{"jobId"} );
+
+	$self->_SetHandlers();
+
 }
 
-sub RefreshGUI{
-	 my $self         = shift;
-	
- 	my %groupData = $self->{"dataMngr"}->GetGroupData();
- 	
- 	#refresh group form
- 	
- 
- 	#refresh wrapper
+sub RefreshGUI {
+	my $self = shift;
+
+	my $groupData = $self->{"dataMngr"}->GetGroupData();
+
+	#refresh group form
+	$self->{"form"}->SetStepToTest( $groupData->GetStepToTest() );
+
+
+	#refresh wrapper
 	$self->_RefreshWrapper();
 }
 
+sub GetGroupData {
+
+	my $self = shift;
+
+	my $frm = $self->{"form"};
+
+	my $groupData;
+
+	#if form is init/showed to user, return group data edited by form
+	#else return default group data, not processed by form
+
+	if ($frm) {
+		$groupData = $self->{"dataMngr"}->GetGroupData();
+		
+		$groupData->SetStepToTest( $frm->GetStepToTest() );
+			
+	}
+	else {
+
+		$groupData = $self->{"dataMngr"}->GetGroupData();
+	}
+
+	return $groupData;
+}
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#

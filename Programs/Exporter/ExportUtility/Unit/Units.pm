@@ -18,6 +18,14 @@ use aliased 'Programs::Exporter::ExportChecker::Enums';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'Packages::ItemResult::ItemResultMngr';
 
+use aliased 'Programs::Exporter::UnitEnums';
+
+use aliased 'Programs::Exporter::ExportUtility::Groups::NifExport::NifUnit';
+use aliased 'Programs::Exporter::ExportUtility::Groups::NCExport::NCUnit';
+use aliased 'Programs::Exporter::ExportUtility::Groups::ETExport::ETUnit';
+use aliased 'Programs::Exporter::ExportUtility::Groups::AOIExport::AOIUnit';
+
+
 #-------------------------------------------------------------------------------------------#
 #  Package methods, requested by IUnit interface
 #-------------------------------------------------------------------------------------------#
@@ -36,12 +44,76 @@ sub new {
 
 sub Init {
 	my $self = shift;
+	my @keys = @{ shift(@_) };
 
-	#my $parent = shift;
-	my @units = @{ shift(@_) };
+	my @allUnits = ();
 
-	$self->{"units"} = \@units;
+	foreach my $key (@keys) {
 
+		my $unit = $self->__GetUnitClass($key);
+		push( @allUnits, $unit );
+	}
+
+	$self->{"units"} = \@allUnits;
+
+}
+# Return initialized "unit" object by unitId
+sub __GetUnitClass {
+	my $self   = shift;
+	my $unitId = shift;
+
+	my $unit;
+	my $jobId = $self->{"jobId"};
+	
+	
+
+	if ( $unitId eq UnitEnums->UnitId_NIF ) {
+
+		$unit = NifUnit->new($unitId, $jobId);
+
+	}
+	elsif ( $unitId eq UnitEnums->UnitId_NC ) {
+
+		$unit = NCUnit->new($unitId, $jobId);
+
+	}
+	elsif ( $unitId eq UnitEnums->UnitId_AOI ) {
+
+		$unit = AOIUnit->new($unitId, $jobId);
+
+	}
+	elsif ( $unitId eq UnitEnums->UnitId_ET ) {
+
+		$unit = ETUnit->new($unitId, $jobId);
+
+	}
+
+	#	elsif ( $unitId eq UnitEnums->UnitId_NC2 ) {
+	#
+	#		#$unit = NifUnit->new();
+	#		$unit = NC2Unit->new($jobId);
+	#
+	#	}
+	#	elsif ( $unitId eq UnitEnums->UnitId_NC3 ) {
+	#
+	#		#$unit = NifUnit->new();
+	#		$unit = NC3Unit->new($jobId);
+	#
+	#	}
+	#	elsif ( $unitId eq UnitEnums->UnitId_NC4 ) {
+	#
+	#		#$unit = NifUnit->new();
+	#		$unit = NC4Unit->new($jobId);
+	#
+	#	}
+	#	elsif ( $unitId eq UnitEnums->UnitId_NC5 ) {
+	#
+	#		#$unit = NifUnit->new();
+	#		$unit = NC5Unit->new($jobId);
+	#
+	#	}
+
+	return $unit;
 }
 
 # ===================================================================

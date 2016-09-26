@@ -21,11 +21,13 @@ use aliased 'Packages::Events::Event';
 #-------------------------------------------------------------------------------------------#
 
 sub new {
-	my ( $class, $parent ) = @_;
+	my ( $class, $parent, $title ) = @_;
 
 	my $self = $class->SUPER::new($parent);
 
 	bless($self);
+
+	$self->{"title"} = $title;
 
 	$self->{"state"} = Enums->GroupState_ACTIVEON;
 
@@ -40,10 +42,7 @@ sub new {
 
 sub Init {
 	my $self      = shift;
-	my $groupName = shift;
 	my $groupBody = shift;
-
-	$self->{"headerTxt"}->SetLabel($groupName);
 
 	$self->{"bodySizer"}->Add( $groupBody, 1, &Wx::wxEXPAND | &Wx::wxALL, 2 );
 
@@ -92,23 +91,22 @@ sub __SetLayout {
 
 	my $szHeader = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
 
-	my $headerTxt = Wx::StaticText->new( $pnlHeader, -1, "Default title" );
+	my $headerTxt = Wx::StaticText->new( $pnlHeader, -1, $self->{"title"});
 
 	my $pnlSwitch = Wx::Panel->new( $pnlHeader, -1, &Wx::wxDefaultPosition, [ 40, 10 ] );
 
 	$pnlSwitch->SetBackgroundColour( Wx::Colour->new( 237, 28, 36 ) );    # dark red
 
-	Wx::Event::EVT_MOUSE_EVENTS( $pnlSwitch, sub { $self->__Switch( $pnlSwitch, @_ ) } );
-	Wx::Event::EVT_MOUSE_EVENTS( $headerTxt, sub { $self->__Switch( $pnlSwitch, @_ ) } );
-	Wx::Event::EVT_MOUSE_EVENTS( $pnlHeader, sub { $self->__Switch( $pnlSwitch, @_ ) } );
+	#Wx::Event::EVT_MOUSE_EVENTS( $pnlSwitch, sub { $self->__Switch( $pnlSwitch, @_ ) } );
+	#Wx::Event::EVT_MOUSE_EVENTS( $headerTxt, sub { $self->__Switch( $pnlSwitch, @_ ) } );
+	#Wx::Event::EVT_MOUSE_EVENTS( $pnlHeader, sub { $self->__Switch( $pnlSwitch, @_ ) } );
 
 	$self->{"headerTxt"} = $headerTxt;
 
 	my $pnlBody = Wx::Panel->new( $self, -1 );
 
 	$pnlBody->SetBackgroundColour( Wx::Colour->new( 245, 245, 245 ) );
-
-	print "\n\n -------------- CAN BE TRANSPARENT :" . $pnlBody->SetTransparent(100) . "\n\n";
+ 
 
 	my $szBody = Wx::BoxSizer->new(&Wx::wxVERTICAL);
 
@@ -131,18 +129,10 @@ sub __SetLayout {
 	$self->{"pnlBody"}   = $pnlBody;
 	$self->{"pnlSwitch"} = $pnlSwitch;
 
-	#$self->{"pnlBody"}->Refresh();
-
-	#$scrollPnl->SetMaxClientSize([ 300, 150]);
-
-	#$self->SetMinSize([ 300, 300]);
-
-	#$scrollPnl->SetSize(300, 200);
-
-	#$szHeaderBody->Layout();
-
-	#$self->SetMinSize($self->GetSize())
-
+ 
+	
+	
+	$self->__RecursiveHandler($pnlHeader);
 
 }
 
@@ -185,7 +175,7 @@ sub Refresh {
 }
 
 sub __Switch {
-	my ( $self, $pnlSwitch, $c, $d ) = @_;
+	my ( $self, $control, $c, $d ) = @_;
 
 	if (  $d->ButtonDown()  && $self->{"state"} ne Enums->GroupState_DISABLE ) {
  
@@ -203,6 +193,35 @@ sub __Switch {
 		$self->{"onChangeState"}->Do($self->{"state"});	
 	}
 
+
+}
+
+# This method register handler LEFT_DOWN on every ("Wx::Panel", "Wx::StaticSizer", "Wx::StaticText")
+# child controls of this control
+# Thus, every child control will react on left button click 
+sub __RecursiveHandler {
+	my $self    = shift;
+	my $control = shift;
+
+	my @controls = ( "Wx::Panel", "Wx::StaticSizer", "Wx::StaticText" );
+
+	if ( scalar( grep { $control->isa($_) } @controls ) ) {
+
+		Wx::Event::EVT_LEFT_DOWN( $control, sub { $self->__Switch( $control, @_ ) } );
+
+		print $control. "handler added \n";
+	} 
+
+	my @childrens = $control->GetChildren();
+
+	if (@childrens) {
+
+		foreach my $childControl (@childrens) {
+
+			$self->__RecursiveHandler($childControl);
+		}
+
+	}
 
 }
 

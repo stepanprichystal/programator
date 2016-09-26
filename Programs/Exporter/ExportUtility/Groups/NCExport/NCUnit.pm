@@ -38,8 +38,6 @@ sub new {
 	$self = $class->SUPER::new(@_);
 	bless $self;
 
-	#uique key within all units
-	$self->{"unitId"} = UnitEnums->UnitId_NC;
  
   	# reference on class responsible for export
 	$self->{"unitExport"} = NCExport->new($self->{"unitId"});

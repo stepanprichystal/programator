@@ -25,6 +25,8 @@ use aliased 'Programs::Exporter::ExportChecker::Groups::GroupDataMngr';
 use aliased 'Programs::Exporter::ExportChecker::Groups::AOIExport::Model::AOICheckData';
 use aliased 'Programs::Exporter::ExportChecker::Groups::AOIExport::Model::AOIPrepareData';
 use aliased 'Programs::Exporter::ExportChecker::Groups::AOIExport::Model::AOIExportData';
+use aliased 'Programs::Exporter::UnitEnums';
+use aliased 'Programs::Exporter::ExportChecker::Groups::AOIExport::View::AOIUnitForm';
 
 
 #-------------------------------------------------------------------------------------------#
@@ -39,7 +41,7 @@ sub new {
 	bless $self;
 
 	#uique key within all units
-	$self->{"unitId"} = "aoiUnit";
+	$self->{"unitId"} = UnitEnums->UnitId_AOI;
 
 	my $checkData = AOICheckData->new();
 	my $prepareData = AOIPrepareData->new();
@@ -67,23 +69,53 @@ sub InitForm {
 	my $inCAM        = shift;
 
 	$self->{"groupWrapper"} = $groupWrapper;
-	
+
 	my $parent = $groupWrapper->GetParentForGroup();
-	#$self->{"form"} = NifUnitForm->new( $parent, $inCAM, $self->{"title"} );
+	$self->{"form"} = AOIUnitForm->new( $parent, $inCAM, $self->{"jobId"} );
+
+	$self->_SetHandlers();
+
 }
 
-sub RefreshGUI{
-	 my $self         = shift;
+sub RefreshGUI {
+	my $self = shift;
+
+	my $groupData = $self->{"dataMngr"}->GetGroupData();
+
+	#refresh group form
+	$self->{"form"}->SetStepToTest( $groupData->GetStepToTest() );
+	$self->{"form"}->SetLayers( $groupData->GetLayers() );
 	
- 	my %groupData = $self->{"dataMngr"}->GetGroupData();
- 	
- 	#refresh group form
- 	
- 
- 	#refresh wrapper
+
+	#refresh wrapper
 	$self->_RefreshWrapper();
 }
 
+sub GetGroupData {
+
+	my $self = shift;
+
+	my $frm = $self->{"form"};
+
+	my $groupData;
+
+	#if form is init/showed to user, return group data edited by form
+	#else return default group data, not processed by form
+
+	if ($frm) {
+		$groupData = $self->{"dataMngr"}->GetGroupData();
+		
+		$groupData->SetStepToTest( $frm->GetStepToTest() );
+		$groupData->SetLayers( $frm->GetLayers() );
+	
+	}
+	else {
+
+		$groupData = $self->{"dataMngr"}->GetGroupData();
+	}
+
+	return $groupData;
+}
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#

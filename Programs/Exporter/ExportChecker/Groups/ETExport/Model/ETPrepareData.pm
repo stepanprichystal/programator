@@ -14,8 +14,8 @@ use warnings;
 
 
 #local library
-use aliased ' Programs::Exporter::ExportChecker::Groups::ETExport::Model::ETGroupData';
-
+use aliased 'Programs::Exporter::ExportChecker::Groups::ETExport::Model::ETGroupData';
+use aliased 'Programs::Exporter::ExportChecker::Enums';
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
@@ -28,27 +28,32 @@ sub new {
 	return $self;    # Return the reference to the hash.
 }
 
+# This method decide, if group will be "active" or "passive"
+# If active, decide if group will be switched ON/OFF
+# Return enum: Enums->GroupState_xxx
+sub OnGetGroupState {
+	my $self     = shift;
+	my $dataMngr = shift;    #instance of GroupDataMngr
 
-# This method decide, if group will be "active"
-# This if will be enabled in GUI
-sub OnIsGroupAllowed{
-	my $self = shift;
-	my $dataMngr = shift;	#instance of GroupDataMngr
-	
-	return 1;	
-}	
-	
+	#we want nif group allow always, so return ACTIVE ON
+	return Enums->GroupState_ACTIVEON;
+
+}
 
 # Default "group data" are prepared in this method
-sub OnPrepareGroupData{
-	my $self = shift;
-	my $dataMngr = shift;	#instance of GroupDataMngr
-	
-	
+sub OnPrepareGroupData {
+	my $self     = shift;
+	my $dataMngr = shift;    #instance of GroupDataMngr
+
 	my $groupData = ETGroupData->new();
+
+	my $inCAM = $dataMngr->{"inCAM"};
+	my $jobId = $dataMngr->{"jobId"};
+ 
+
+	$groupData->SetStepToTest("panel");
 	 
-	return $groupData;
-	
+ 	return $groupData;
 }
 
  

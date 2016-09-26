@@ -30,6 +30,7 @@ use aliased 'Programs::Exporter::ExportChecker::ExportChecker::Forms::ExportPopu
 #use aliased 'Programs::Exporter::ExportChecker::Server::Client';
 use aliased 'Packages::InCAM::InCAM';
 use aliased 'Programs::Exporter::ExportChecker::Enums';
+use aliased  'Programs::Exporter::UnitEnums';
 
 #use aliased 'Connectors::HeliosConnector::HegMethods';
 #
@@ -322,7 +323,7 @@ sub __OnCheckHandler {
 
 	my %res : shared = ();
 
-	$res{"group"} = $unit->{"title"};
+	$res{"group"} = UnitEnums->GetTitle($unit->GetUnitId());
 
 	if ( $type eq "start" ) {
 

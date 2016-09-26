@@ -14,7 +14,9 @@ use warnings;
 
 
 #local library
-use aliased ' Programs::Exporter::ExportChecker::Groups::AOIExport::Model::AOIGroupData';
+use aliased 'Programs::Exporter::ExportChecker::Groups::AOIExport::Model::AOIGroupData';
+use aliased 'Programs::Exporter::ExportChecker::Enums';
+use aliased 'CamHelpers::CamJob';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -29,28 +31,34 @@ sub new {
 }
 
 
-# This method decide, if group will be "active"
-# This if will be enabled in GUI
-sub OnIsGroupAllowed{
-	my $self = shift;
-	my $dataMngr = shift;	#instance of GroupDataMngr
-	
-	return 1;	
-}	
-	
+# This method decide, if group will be "active" or "passive"
+# If active, decide if group will be switched ON/OFF
+# Return enum: Enums->GroupState_xxx
+sub OnGetGroupState {
+	my $self     = shift;
+	my $dataMngr = shift;    #instance of GroupDataMngr
 
-# Default "group data" are prepared in this method
-sub OnPrepareGroupData{
-	my $self = shift;
-	my $dataMngr = shift;	#instance of GroupDataMngr
-	
-	
-	my $groupData = AOIGroupData->new();
-	 
-	return $groupData;
-	
+	#we want nif group allow always, so return ACTIVE ON
+	return Enums->GroupState_ACTIVEON;
+
 }
 
+# Default "group data" are prepared in this method
+sub OnPrepareGroupData {
+	my $self     = shift;
+	my $dataMngr = shift;    #instance of GroupDataMngr
+
+	my $groupData = AOIGroupData->new();
+
+	my $inCAM = $dataMngr->{"inCAM"};
+	my $jobId = $dataMngr->{"jobId"};
+	
+	my @layers = CamJob->GetSignalLayerNames( $inCAM, $jobId );
+
+	$groupData->SetStepToTest("panel");
+	$groupData->SetLayers(\@layers);
+ 	return $groupData;
+}
  
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

@@ -72,7 +72,7 @@ sub InitForm {
 	$self->{"groupWrapper"} = $groupWrapper;
 
 	my $parent = $groupWrapper->GetParentForGroup();
-	$self->{"form"} = NifUnitForm->new( $parent, $inCAM, $self->{"jobId"}, $self->{"title"} );
+	$self->{"form"} = NifUnitForm->new( $parent, $inCAM, $self->{"jobId"});
 
 	$self->_SetHandlers();
 

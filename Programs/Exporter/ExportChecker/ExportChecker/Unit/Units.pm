@@ -40,6 +40,7 @@ sub Init {
 
 }
 
+ 
 sub InitDataMngr {
 	my $self           = shift;
 	my $inCAM          = shift;
@@ -217,6 +218,22 @@ sub GetActiveUnitsCnt {
 	my @activeOnUnits = grep { $_->GetGroupState() eq Enums->GroupState_ACTIVEON } @{ $self->{"units"} };
 
 	return scalar(@activeOnUnits);
+}
+
+# ===================================================================
+# Other methods
+# ===================================================================
+
+sub GetUnitById {
+	my $self   = shift;
+	my $unitId = shift;
+
+	foreach my $unit ( @{ $self->{"units"} } ) {
+
+		if ( $unitId eq $unit->{"unitId"} ) {
+			return $unit;
+		}
+	}
 }
 
 #-------------------------------------------------------------------------------------------#

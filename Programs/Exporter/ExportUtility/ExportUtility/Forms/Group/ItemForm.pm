@@ -1,5 +1,5 @@
 #-------------------------------------------------------------------------------------------#
-# Description: Form display item title and item result error
+# Description: Form display item title and item result
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 

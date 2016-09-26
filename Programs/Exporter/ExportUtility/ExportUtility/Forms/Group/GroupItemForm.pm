@@ -43,7 +43,7 @@ sub __SetLayout {
 
 	# DEFINE CONTROLS
 
-	my $titleTxt = Wx::StaticText->new( $self, -1, $title, &Wx::wxDefaultPosition, [ 70, 20 ] );
+	my $titleTxt = Wx::StaticText->new( $self, -1, $title.":", &Wx::wxDefaultPosition, [ 70, 20 ] );
 
 	# SET EVENTS
 	#Wx::Event::EVT_COMBOBOX( $colorCb, -1, sub { $self->__OnColorChangeHandler(@_) } );

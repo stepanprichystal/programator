@@ -56,6 +56,10 @@ sub GetPosition {
 	return $self->{"position"};
 }
 
+
+# This method register handler LEFT_DOWN on every ("Wx::Panel", "Wx::StaticSizer", "Wx::StaticText")
+# child controls of this control
+# Thus, every child control will react on left button click 
 sub RecursiveHandler {
 	my $self    = shift;
 	my $control = shift;
@@ -122,8 +126,7 @@ sub __MouseDown {
  
 	if ( $d->ButtonDown() ) {
 
-		print $item. " pressed\n";
-
+ 
 		$self->{"onItemClick"}->Do($self);
 
 	}

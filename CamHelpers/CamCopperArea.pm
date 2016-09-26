@@ -15,6 +15,7 @@ use aliased 'Enums::EnumsPaths';
 use aliased 'Packages::InCAM::InCAM';
 use aliased 'CamHelpers::CamJob';
 use aliased 'CamHelpers::CamHelper';
+use aliased 'Helpers::GeneralHelper';
 
 #-------------------------------------------------------------------------------------------#
 #   Package methods
@@ -282,22 +283,22 @@ sub __GetCuArea {
 	# If consider edge is "yes" AND only one layer is mesured => devide pcb thickness/2
 	# That is because, we want compute area/measure only for half oh pcb height
 
-	if ($considerEdge eq "yes") {
+	if ( $considerEdge eq "yes" ) {
 		if ( $topLayer eq "" || $botLayer eq "" ) {
 			$pcbThick = $pcbThick / 2;
 		}
 	}
 
 	#my $outFile = EnumsPaths->Client_INCAMTMP . $jobName . "cuarea";
-	
+
 	my $outFile = undef;
-	
+
 	#if(-e $outFile){
 	#	unlink($outFile);
 	#}
-	
+
 	#my $outFile = "out_file";
-	
+
 	CamHelper->OpenStep( $inCAM, $jobName, $stepName );
 
 	if ($mask) {
@@ -322,10 +323,9 @@ sub __GetCuArea {
 	#else {
 	#	%res = $self->__ResultFromFile($outFile);
 	#}
-	
-	
-	# copper_area,layer1=c,layer2=,drills=yes,y1=25,copper_thickness=18,consider_rout=yes,area=yes,out_layer=sum,x1=5,drills_list=,ignore_pth_no_pad=no,dist_map=no,y_boxes=3,drills_source=matrix,x2=302,out_file=c:\tmp\InCam\f13609cuarea,edges=yes,thickness=788.919,x_boxes=3,resolution=1,resolution_value=25.4,f_type=all,y2=382
-	# copper_area,layer1=c,layer2=,drills=yes,drills_source=matrix,consider_rout=no,ignore_pth_no_pad=no,edges=yes,copper_thickness=0,drills_list=m\;v1\;sc1,thickness=0,resolution_value=25.4,area=no,f_type=all,out_file=out_file,out_layer=first,x_boxes=3,y_boxes=3,dist_map=yes
+
+# copper_area,layer1=c,layer2=,drills=yes,y1=25,copper_thickness=18,consider_rout=yes,area=yes,out_layer=sum,x1=5,drills_list=,ignore_pth_no_pad=no,dist_map=no,y_boxes=3,drills_source=matrix,x2=302,out_file=c:\tmp\InCam\f13609cuarea,edges=yes,thickness=788.919,x_boxes=3,resolution=1,resolution_value=25.4,f_type=all,y2=382
+# copper_area,layer1=c,layer2=,drills=yes,drills_source=matrix,consider_rout=no,ignore_pth_no_pad=no,edges=yes,copper_thickness=0,drills_list=m\;v1\;sc1,thickness=0,resolution_value=25.4,area=no,f_type=all,out_file=out_file,out_layer=first,x_boxes=3,y_boxes=3,dist_map=yes
 
 	return %res;
 }
@@ -343,30 +343,31 @@ sub __GetCuAreaNoMask {
 	my $outFile      = shift;
 
 	$inCAM->COM(
-				 "copper_area",
-				 "area"              => "yes",
-				 "layer1"            => $topLayer,
-				 "layer2"            => $botLayer,
-				 "drills"            => $considerHole,
-				 "drills_source"     => "matrix",
-				 "drills_list"       => "",
-				 "consider_rout"     => "yes",
-				 "ignore_pth_no_pad" => "no",
-				 "edges"             => $considerEdge,
-				 "copper_thickness"  => $cuThickness,
-				 "thickness"         => $pcbThick,
-				 "resolution"        => 1,
-				 "resolution_value"  => 25.4,
-				 "f_type"            => "all",
-				 #"out_file"          => $outFile,
-				 "out_layer"         => "sum",
-				 "x_boxes"           => 3,
-				 "y_boxes"           => 3,
-				 "dist_map"          => "no",
-				 "x1"                => $area{"xmin"},
-				 "x2"                => $area{"xmax"},
-				 "y1"                => $area{"ymin"},
-				 "y2"                => $area{"ymax"},
+		"copper_area",
+		"area"              => "yes",
+		"layer1"            => $topLayer,
+		"layer2"            => $botLayer,
+		"drills"            => $considerHole,
+		"drills_source"     => "matrix",
+		"drills_list"       => "",
+		"consider_rout"     => "yes",
+		"ignore_pth_no_pad" => "no",
+		"edges"             => $considerEdge,
+		"copper_thickness"  => $cuThickness,
+		"thickness"         => $pcbThick,
+		"resolution"        => 1,
+		"resolution_value"  => 25.4,
+		"f_type"            => "all",
+
+		#"out_file"          => $outFile,
+		"out_layer" => "sum",
+		"x_boxes"   => 3,
+		"y_boxes"   => 3,
+		"dist_map"  => "no",
+		"x1"        => $area{"xmin"},
+		"x2"        => $area{"xmax"},
+		"y1"        => $area{"ymin"},
+		"y2"        => $area{"ymax"},
 	);
 }
 
@@ -385,63 +386,71 @@ sub __GetCuAreaMask {
 	my $outFile      = shift;
 
 	$inCAM->COM(
-				 "exposed_area",
-				 "area"              => "yes",
-				 "layer1"            => $topLayer,
-				 "layer2"            => $botLayer,
-				 "mask1"             => $topMask,
-				 "mask2"             => $botMask,
-				 "drills"            => $considerHole,
-				 "drills_source"     => "matrix",
-				 "drills_list"       => "",
-				 "consider_rout"     => "yes",
-				 "ignore_pth_no_pad" => "no",
-				 "edges"             => $considerEdge,
-				 "copper_thickness"  => $cuThickness,
-				 "thickness"         => $pcbThick,
-				 "resolution"        => 1,
-				 "resolution_value"  => 25.4,
-				 "f_type"            => "all",
-				 #"out_file"          => $outFile,
-				 "out_layer"         => "sum",
-				 "x_boxes"           => 3,
-				 "y_boxes"           => 3,
-				 "dist_map"          => "no",
-				 "x1"                => $area{"xmin"},
-				 "x2"                => $area{"xmax"},
-				 "y1"                => $area{"ymin"},
-				 "y2"                => $area{"ymax"},
+		"exposed_area",
+		"area"              => "yes",
+		"layer1"            => $topLayer,
+		"layer2"            => $botLayer,
+		"mask1"             => $topMask,
+		"mask2"             => $botMask,
+		"drills"            => $considerHole,
+		"drills_source"     => "matrix",
+		"drills_list"       => "",
+		"consider_rout"     => "yes",
+		"ignore_pth_no_pad" => "no",
+		"edges"             => $considerEdge,
+		"copper_thickness"  => $cuThickness,
+		"thickness"         => $pcbThick,
+		"resolution"        => 1,
+		"resolution_value"  => 25.4,
+		"f_type"            => "all",
+
+		#"out_file"          => $outFile,
+		"out_layer" => "sum",
+		"x_boxes"   => 3,
+		"y_boxes"   => 3,
+		"dist_map"  => "no",
+		"x1"        => $area{"xmin"},
+		"x2"        => $area{"xmax"},
+		"y1"        => $area{"ymin"},
+		"y2"        => $area{"ymax"},
 	);
 }
 
-#sub __ResultFromFile {
-#	my $self       = shift;
-#	my $resultFile = shift;
-#
-#	my %res = ();
-#
-#	if ( -e $resultFile ) {
-#
-#		open( AREAFILE, $resultFile );
-#		while (<AREAFILE>) {
-#			if ( $_ =~ /Total copper/i || $_ =~ /Total exposed/i ) {
-#				my @fields = split /\s+/;
-#
-#				$res{"area"} = sprintf "%.2f", ( $fields[3] / 100 );
-#			}
-#
-#			if ( $_ =~ /Percentage/i ) {
-#				my @fields = split /\s+/;
-#
-#				$res{"percentage"} = sprintf "%.2f", ( $fields[2] );
-#			}
-#		}
-#		close AREAFILE;
-#		unlink $resultFile;
-#
-#		return %res;
-#	}
-#}
+# Return area of profile in square mm
+sub GetProfileArea {
+	my $self     = shift;
+	my $inCAM    = shift;
+	my $jobId    = shift;
+	my $stepName = shift;
+
+	my $lName = GeneralHelper->GetGUID();
+
+	CamHelper->OpenStep( $inCAM, $jobId, $stepName );
+
+	$inCAM->COM( 'create_layer', layer => $lName, context => 'misc', type => 'document', polarity => 'positive', ins_layer => '' );
+
+	$inCAM->COM(
+				 "sr_fill",
+				 "type"          => "solid",
+				 "solid_type"    => "surface",
+				 "min_brush"     => "25.4",
+				 "cut_prims"     => "no",
+				 "polarity"      => "positive",
+				 "consider_rout" => "no",
+				 "dest"          => "layer_name",
+				 "layer"         => $lName,
+				 "stop_at_steps" => ""
+	);
+
+	my %area = $self->GetCuArea( 0, 1, $inCAM, $jobId, $stepName, $lName, "" );
+
+	
+
+	$inCAM->COM( 'delete_layer', layer => $lName );
+
+	return $area{"area"}*100;
+
+}
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
@@ -459,12 +468,19 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	#	my $considerHole     = shift;
 	#	my $considerEdge     = shift;
 
-	my $cuThickness = JobHelper->GetBaseCuThick( "f13610", "c" );
-	my $pcbThick = JobHelper->GetFinalPcbThick("f13610");
+	#my $cuThickness = JobHelper->GetBaseCuThick( "f13610", "c" );
+	#my $pcbThick = JobHelper->GetFinalPcbThick("f13610");
+
+	use aliased 'CamHelpers::CamCopperArea';
 
 	my $inCAM = InCAM->new();
 
-	my %test = CamHelpers::CamCopperArea->GetCuArea( $cuThickness, $pcbThick, $inCAM, "f13610", "panel", "c", "s", 1, 1 );
+
+	my $test = CamCopperArea->GetProfileArea($inCAM, "f13610", "o+1");
+	
+	print $test."\n";
+
+	#my %test = CamHelpers::CamCopperArea->GetCuArea( $cuThickness, $pcbThick, $inCAM, "f13610", "panel", "c", "s", 1, 1 );
 
 	#my %test1 = CamHelpers::CamCopperArea->GetCuArea( $cuThickness, $pcbThick, $inCAM, "F13608", "panel", "c" );
 

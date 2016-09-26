@@ -18,6 +18,10 @@ use warnings;
 use aliased 'Programs::Exporter::ExportChecker::ExportChecker::GroupTable::GroupTable';
 use aliased 'Programs::Exporter::ExportChecker::Groups::NifExport::Presenter::NifUnit';
 use aliased 'Programs::Exporter::ExportChecker::Groups::NCExport::Presenter::NCUnit';
+use aliased 'Programs::Exporter::ExportChecker::Groups::AOIExport::Presenter::AOIUnit';
+use aliased 'Programs::Exporter::ExportChecker::Groups::ETExport::Presenter::ETUnit';
+
+use aliased 'Programs::Exporter::ExportChecker::ExportChecker::GroupBuilder::Enums';
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
@@ -38,9 +42,12 @@ sub Build {
 	my $tableTab1 = GroupTable->new("Main groups");
 
 	# nif unit
-	my $nifUnit1 = NifUnit->new( $self->{"jobId"}, "NIF settings" );
+	my $nifUnit1 = NifUnit->new( $self->{"jobId"});
+	my $ncUnit1 = NCUnit->new( $self->{"jobId"});
+	my $aoiUnit1 = AOIUnit->new( $self->{"jobId"} );
 	
-	my $ncUnit1 = NCUnit->new( $self->{"jobId"}, "NC settings" );
+	my $etUnit1 = ETUnit->new( $self->{"jobId"} );
+
 	#my $ncUnit2 = NCUnit->new( $self->{"jobId"}, "NC 2" );
 	#my $ncUnit3 = NCUnit->new( $self->{"jobId"}, "NC 3" );
 	#my $ncUnit4 = NCUnit->new( $self->{"jobId"}, "NC 4" );
@@ -52,14 +59,15 @@ sub Build {
 	#my $nifUnit7 = NifUnit->new( $self->{"jobId"}, "Nif 7" );
 
 	my $row1Tab1 = $tableTab1->AddRow();
-	$row1Tab1->AddCell($nifUnit1);
-	$row1Tab1->AddCell($ncUnit1);
+	$row1Tab1->AddCell($nifUnit1, Enums->Width_50);
+	$row1Tab1->AddCell($ncUnit1, Enums->Width_25);
+	$row1Tab1->AddCell($aoiUnit1, Enums->Width_25);
 
 	#$row1Tab1->AddCell($nifUnit2);
 
 
-	#my $row2Tab1 = $tableTab1->AddRow();
-	#$row2Tab1->AddCell($ncUnit2);
+	my $row2Tab1 = $tableTab1->AddRow();
+	$row2Tab1->AddCell($etUnit1, Enums->Width_25);
 	#$row2Tab1->AddCell($ncUnit3);
 
 	#my $row3Tab1 = $tableTab1->AddRow();

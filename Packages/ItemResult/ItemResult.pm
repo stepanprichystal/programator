@@ -164,11 +164,19 @@ sub GetWarningCount {
 }
 
 
+sub SetGroup{
+	my $self = shift;
+	my $value = shift;
+	return $self->{"group"} = $value;
+}
+
 sub GetGroup{
 	my $self = shift;
 	
 	return $self->{"group"};
 }
+
+
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

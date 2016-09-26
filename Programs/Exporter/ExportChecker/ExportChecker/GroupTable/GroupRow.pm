@@ -21,6 +21,8 @@ sub new {
 	my $self  = {};
 	bless $self;
 
+	$self->{"tableRef"} = shift;
+
 	#require rows in nif section
 	my @cells = ();
 	$self->{"cells"} = \@cells;
@@ -30,11 +32,17 @@ sub new {
 
 sub AddCell {
 	my $self      = shift;
-	my $groupForm = shift;
+	my $unit = shift;
+	my $width = shift;
+	
+	my @allUnits = $self->{"tableRef"}->GetAllUnits();
+	
+	$unit->SetCellWidth($width);
+ 	$unit->SetExportOrder(scalar(@allUnits));
+ 	
+	push( @{$self->{"cells"}}, $unit );
 
-	push( @{$self->{"cells"}}, $groupForm );
-
-	return $groupForm;
+	return $unit;
 
 }
 

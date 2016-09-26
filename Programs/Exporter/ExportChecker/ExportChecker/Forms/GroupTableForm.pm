@@ -14,6 +14,7 @@ use Wx qw(:sizer wxDefaultPosition wxDefaultSize wxDEFAULT_DIALOG_STYLE wxRESIZE
 #local library
 
 use aliased 'Programs::Exporter::ExportChecker::ExportChecker::Forms::GroupWrapperForm';
+use aliased 'Programs::Exporter::UnitEnums';
 
 use Widgets::Style;
 
@@ -67,6 +68,8 @@ sub __SetLayout {
 		my $szRow = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
 
 		my @cells = $row->GetCells();
+		
+		my $totalWidth = 0; # width of all cells in row
 
 		for ( my $i = 0 ; $i < scalar(@cells) ; $i++ ) {
 
@@ -75,15 +78,18 @@ sub __SetLayout {
 			#foreach my $cell (@cells) {
 
 			#	my $cell = NifUnit->new("f121212");
+			
+			# Get cell title
+			my $title = UnitEnums->GetTitle($cell->GetUnitId());
 
 			# Create new group wrapper, parent is this panel
-			my $groupWrapperPnl = GroupWrapperForm->new($self);
+			my $groupWrapperPnl = GroupWrapperForm->new($self, $title);
 
 			# Init unit form, where parent will by group wrapper
 			$cell->InitForm( $groupWrapperPnl, $inCAM );
 
 			# Insert initialized group to group wrapper
-			$groupWrapperPnl->Init( $cell->{"title"}, $cell->{"form"} );
+			$groupWrapperPnl->Init( $cell->{"form"} );
 
 			#$groupWrapperPnl->{"pnlBody"}->Disable();
 			#$cell->{"form"}->Disable();
@@ -91,10 +97,19 @@ sub __SetLayout {
 			#$groupWrapperPnl->Disable();
 
 			# Add this rappet to group table
-			$szRow->Add( $groupWrapperPnl, 1, &Wx::wxEXPAND | &Wx::wxALL, 4 );
-
+			my $w = $cell->GetCellWidth();
+			$totalWidth +=$w;
+			
+			$szRow->Add( $groupWrapperPnl, $w, &Wx::wxEXPAND | &Wx::wxALL, 4 );
+	
 		}
 
+		# Add expander, which do space, if there are missing cells in row
+		if($totalWidth < 100){
+			$szRow->Add( 1,1 , 100-$totalWidth, &Wx::wxEXPAND | &Wx::wxALL, 0 );
+		}
+
+		
 		$szMain->Add( $szRow, 0, &Wx::wxEXPAND | &Wx::wxALL );
 	}
  

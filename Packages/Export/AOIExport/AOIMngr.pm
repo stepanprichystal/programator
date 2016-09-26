@@ -171,11 +171,11 @@ sub __ExportAOI {
 
 	# ===== Set AOI parameters ======
 
-	# START HANDLE EXCEPTION IN INCAM
-	$inCAM->HandleException(1);
+	## START HANDLE EXCEPTION IN INCAM
+	#$inCAM->HandleException(1);
 
 	# Raise result item for optimization set
-	my $resultItemAOIparams = $self->_GetNewItem("AOI Set parameters - $layerName");
+	#my $resultItemAOIparams = $self->_GetNewItem("Set params - $layerName");
 
 	$inCAM->COM( "cdr_display_layer", "name" => $layerName, "display" => "yes", "type" => "physical" );
 	$inCAM->COM( "work_layer", "name" => $layerName );
@@ -194,6 +194,12 @@ sub __ExportAOI {
 
 	$inCAM->COM( "cdr_line_width", "nom_width" => $line,  "min_width" => "0" );
 	$inCAM->COM( "cdr_spacing",    "nom_space" => $space, "min_space" => "0" );
+	
+	if($line == 0){
+		
+		$line = 300;
+		$space = 300;
+	}
 
 	# Set steps and repeat
 
@@ -206,10 +212,10 @@ sub __ExportAOI {
 	$inCAM->COM( "cdr_auto_zone_text", "margin" => "0", "pcb" => "yes", "panel" => "no" );
 
 	# STOP HANDLE EXCEPTION IN INCAM
-	$inCAM->HandleException(0);
+	#$inCAM->HandleException(0);
 
-	$resultItemAOIparams->AddErrors( $inCAM->GetExceptionsError() );
-	$self->_OnItemResult($resultItemAOIparams);
+	#$resultItemAOIparams->AddErrors( $inCAM->GetExceptionsError() );
+	#$self->_OnItemResult($resultItemAOIparams);
 
 	# ===== Do AOI output ======
 
@@ -217,7 +223,8 @@ sub __ExportAOI {
 	$inCAM->HandleException(1);
 
 	# Raise result item for optimization set
-	my $resultItemAOIOutput = $self->_GetNewItem("AOI Output file - $layerName");
+	my $resultItemAOIOutput = $self->_GetNewItem($layerName);
+	$resultItemAOIOutput->SetGroup("Layers");
 
 	AOSet->OutputOpfx( $inCAM, $jobId, $layerName );
 

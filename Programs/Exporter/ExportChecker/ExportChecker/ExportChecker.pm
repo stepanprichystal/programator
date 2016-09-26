@@ -323,8 +323,8 @@ sub __OnResultPopupHandler {
 		 || $resultType eq Enums->PopupResult_SUCCES )
 	{
 
-		my %unitsExportData = $self->{"units"}->GetExportData(1);
-		my $dataTransfer = DataTransfer->new( $self->{"jobId"}, EnumsTransfer->Mode_WRITE, \%unitsExportData );
+		#my %unitsExportData = $self->{"units"}->GetExportData(1);
+		my $dataTransfer = DataTransfer->new( $self->{"jobId"}, EnumsTransfer->Mode_WRITE, $self->{"units"} );
 
 		if ( $exportMode eq EnumsTransfer->ExportMode_ASYNC ) {
 

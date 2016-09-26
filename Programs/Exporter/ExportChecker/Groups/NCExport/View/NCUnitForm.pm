@@ -33,7 +33,7 @@ sub new {
 
 	my $inCAM = shift;
 	my $jobId = shift;
-	my $title = shift;
+
 
 	my $self = $class->SUPER::new($parent);
 
@@ -42,7 +42,6 @@ sub new {
 	$self->{"inCAM"} = $inCAM;
 	$self->{"jobId"} = $jobId;
 
-	$self->{"title"} = $title;
 
 	# Load data
 
@@ -54,14 +53,14 @@ sub new {
 
 	$self->__SetLayout();
 
-	$self->__SetName();
+	 
 
 	#$self->Disable();
 
 	#$self->SetBackgroundColour($Widgets::Style::clrLightBlue);
 
 	# EVENTS
-	$self->{'onTentingChange'} = Event->new();
+	#$self->{'onTentingChange'} = Event->new();
 
 	return $self;
 }
@@ -76,13 +75,7 @@ sub new {
 #
 #	$self->__SetName();
 #}
-
-sub __SetName {
-	my $self = shift;
-
-	$self->{"title"} = "NC group";
-
-}
+ 
 
 #sub __SetHeight {
 #	my $self = shift;
@@ -112,8 +105,8 @@ sub __SetLayout {
 
 	# BUILD STRUCTURE OF LAYOUT
 
-	$szMain->Add( $modeStatBox,     3, &Wx::wxEXPAND );
-	$szMain->Add( $settingsStatBox, 7, &Wx::wxEXPAND );
+	$szMain->Add( $modeStatBox,     40, &Wx::wxEXPAND );
+	$szMain->Add( $settingsStatBox, 60, &Wx::wxEXPAND );
 
 	$self->SetSizer($szMain);
 
@@ -132,18 +125,18 @@ sub __SetLayoutModeBox {
 	my $szCol1 = Wx::BoxSizer->new(&Wx::wxVERTICAL);
 
 	# DEFINE CONTROLS
-	my $rbAll = Wx::RadioButton->new( $statBox, -1, "Export All", &Wx::wxDefaultPosition, [ 110, 20 ], &Wx::wxRB_GROUP );
-	my $rbSingle = Wx::RadioButton->new( $statBox, -1, "Export Single", &Wx::wxDefaultPosition, [ 110, 20 ] );
+	my $rbAll = Wx::RadioButton->new( $statBox, -1, "Export All", &Wx::wxDefaultPosition, &Wx::wxDefaultSize, &Wx::wxRB_GROUP );
+	my $rbSingle = Wx::RadioButton->new( $statBox, -1, "Export Single", &Wx::wxDefaultPosition, &Wx::wxDefaultSize );
 
 	# SET EVENTS
-	Wx::Event::EVT_CHECKBOX( $rbAll,    -1, sub { $self->__OnModeChangeHandler(@_) } );
-	Wx::Event::EVT_CHECKBOX( $rbSingle, -1, sub { $self->__OnModeChangeHandler(@_) } );
+	Wx::Event::EVT_RADIOBUTTON( $rbAll,    -1, sub { $self->__OnModeChangeHandler(@_) } );
+	Wx::Event::EVT_RADIOBUTTON( $rbSingle, -1, sub { $self->__OnModeChangeHandler(@_) } );
 
 	# BUILD STRUCTURE OF LAYOUT
 	$szCol1->Add( $rbAll,    50, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 	$szCol1->Add( $rbSingle, 50, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 
-	$szStatBox->Add( $szCol1, 0, &Wx::wxEXPAND | &Wx::wxLEFT, 0 );
+	$szStatBox->Add( $szCol1, 1, &Wx::wxEXPAND | &Wx::wxLEFT, 0 );
 
 	# Set References
 	$self->{"rbAll"}    = $rbAll;
@@ -165,16 +158,16 @@ sub __SetLayoutSettings {
 	my $szCol2 = Wx::BoxSizer->new(&Wx::wxVERTICAL);
 
 	# DEFINE CONTROLS
-	my $platedTxt  = Wx::StaticText->new( $statBox, -1, "Plated",     &Wx::wxDefaultPosition, [ 60, 20 ] );
-	my $nplatedTxt = Wx::StaticText->new( $statBox, -1, "Non plated", &Wx::wxDefaultPosition, [ 60, 20 ] );
+	my $platedTxt  = Wx::StaticText->new( $statBox, -1, "Plated",     &Wx::wxDefaultPosition, [ 40, 20 ] );
+	my $nplatedTxt = Wx::StaticText->new( $statBox, -1, "Non plated", &Wx::wxDefaultPosition, [ 40, 20 ] );
 
 	my @plt  = @{ $self->{"plt"} };
 	my @nplt = @{ $self->{"nplt"} };
 
 	@plt  = map { $_->{"gROWname"} } @plt;
 	@nplt = map { $_->{"gROWname"} } @nplt;
-	my $pltChlb  = Wx::CheckListBox->new( $statBox, -1, &Wx::wxDefaultPosition, &Wx::wxDefaultSize, \@plt );
-	my $npltChlb = Wx::CheckListBox->new( $statBox, -1, &Wx::wxDefaultPosition, &Wx::wxDefaultSize, \@nplt );
+	my $pltChlb  = Wx::CheckListBox->new( $statBox, -1, &Wx::wxDefaultPosition, [40,40], \@plt );
+	my $npltChlb = Wx::CheckListBox->new( $statBox, -1, &Wx::wxDefaultPosition, [40,40], \@nplt );
 
 	# SET EVENTS
 
@@ -191,7 +184,8 @@ sub __SetLayoutSettings {
 	# Set References
 	$self->{"pltChlb"}  = $pltChlb;
 	$self->{"npltChlb"} = $npltChlb;
-
+	$self->{"szStatBox"} = $szStatBox;
+	$self->{"statBox"} = $statBox;
 	return $szStatBox;
 }
 
@@ -232,9 +226,22 @@ sub __GetCheckedLayers {
 # Control handlers
 sub __OnModeChangeHandler {
 	my $self = shift;
-	my $chb  = shift;
+ 
+	
+	my $val = $self->{"rbSingle"}->GetValue();
+	
+	if(! defined $val || $val eq ""){
+		
+		$self->{"statBox"}->Disable();	
+	}else{
+	
+		$self->{"statBox"}->Enable(); 	
+		
+	}
 
-	$self->{"onTentingChange"}->Do( $chb->GetValue() );
+
+
+	#$self->{"onTentingChange"}->Do( $chb->GetValue() );
 }
 
 # =====================================================================
@@ -247,12 +254,17 @@ sub __OnModeChangeHandler {
 sub SetExportSingle {
 	my $self  = shift;
 	my $value = shift;
+	
+	
 	$self->{"rbSingle"}->SetValue($value);
+	$self->{"rbAll"}->SetValue(!$value);
+	$self->__OnModeChangeHandler();
+	
 }
 
 sub GetExportSingle {
 	my $self = shift;
-	return $self->{"rbAll"}->GetValue();
+	return $self->{"rbSingle"}->GetValue();
 }
 
 # single_y

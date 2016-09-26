@@ -25,6 +25,8 @@ sub new {
 	bless $self;
 
 	$self->{"form"} = shift;
+	
+
 
 	my @handlers = ();
 	$self->{"handlers"} = \@handlers;
@@ -44,6 +46,11 @@ sub GetEvent {
 	my $self     = shift;
 	my $evenType = shift;
 }
+
+
+
+
+
 
 sub _AddHandler {
 	my $self      = shift;

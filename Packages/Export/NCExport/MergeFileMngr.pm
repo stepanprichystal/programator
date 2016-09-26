@@ -273,7 +273,7 @@ sub __SetArchiveDirs {
 sub __ResultMerging {
 	my $self = shift;
 
-	my $resultItem = $self->_GetNewItem("merging");
+	my $resultItem = $self->_GetNewItem("Merging");
  
 	$self->_OnItemResult($resultItem);
 

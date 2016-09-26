@@ -26,11 +26,11 @@ sub GetTitle{
 		
 	}elsif($code eq UnitId_ET){
 		
-		$title = "Electric testing";
+		$title = "ET testing";
 		
 	}elsif($code eq UnitId_AOI){
 		
-		$title = "Optic testing";
+		$title = "AOI testing";
 		
 	}
 	

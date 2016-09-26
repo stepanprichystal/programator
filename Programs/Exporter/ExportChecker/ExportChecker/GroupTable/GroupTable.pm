@@ -39,9 +39,11 @@ sub GetTitle{
 
 sub AddRow {
 	my $self = shift;
-	my $row  = GroupRow->new();
-
+	
+	my $row  = GroupRow->new($self);
+	
 	push( @{ $self->{"rows"} }, $row );
+	
 	return $row;
 }
 
@@ -75,6 +77,9 @@ sub GetAllUnits {
 
 	return @allCells;
 }
+
+
+ 
 
 #sub GetTableForm {
 #	my $self = shift;

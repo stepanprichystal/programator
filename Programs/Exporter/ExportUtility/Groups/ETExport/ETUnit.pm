@@ -25,7 +25,7 @@ use warnings;
  
 use aliased 'Programs::Exporter::UnitEnums';
 use aliased 'Programs::Exporter::ExportUtility::ExportUtility::Forms::Group::GroupWrapperForm';
-use aliased 'Programs::Exporter::ExportUtility::Groups::NCExport::ETExport';
+use aliased 'Programs::Exporter::ExportUtility::Groups::ETExport::ETExport';
 use aliased 'Programs::Exporter::ExportUtility::Groups::GroupData';
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -37,9 +37,6 @@ sub new {
 
 	$self = $class->SUPER::new(@_);
 	bless $self;
-
-	#uique key within all units
-	$self->{"unitId"} = UnitEnums->UnitId_ET;
  
   	# reference on class responsible for export
 	$self->{"unitExport"} = ETExport->new($self->{"unitId"});

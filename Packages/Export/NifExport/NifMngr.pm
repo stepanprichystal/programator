@@ -183,7 +183,7 @@ sub __ResultSaving {
 	my $self     = shift;
 	my $saveSucc = shift;
 
-	my $resultItem = $self->_GetNewItem("nifsaving");
+	my $resultItem = $self->_GetNewItem("File save");
 
 	unless ($saveSucc) {
 		$resultItem->AddError( "Unable to save nif file. " . $saveSucc );
@@ -203,7 +203,7 @@ sub __ResultAddRowError {
 sub __ResultNifCreation {
 	my $self = shift;
 
-	my $resultItem = $self->_GetNewItem("nifcreation");
+	my $resultItem = $self->_GetNewItem("File build");
 
 	foreach my $err ( @{ $self->{"rowResults"} } ) {
 

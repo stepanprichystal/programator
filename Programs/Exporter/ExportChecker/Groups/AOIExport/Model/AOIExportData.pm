@@ -30,6 +30,8 @@ use File::Copy;
 #use aliased 'Connectors::HeliosConnector::HegMethods';
 #use aliased 'Managers::MessageMngr::MessageMngr';
 
+use aliased 'Programs::Exporter::DataTransfer::UnitsDataContracts::AOIData';
+
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
@@ -46,19 +48,23 @@ sub new {
 # Export data, (from prepared group data), which will consume exporter utility
 # are prepared in this method
 sub OnExportGroupData {
-	my $self    = shift;
-	my $dataMngr = shift;	#instance of GroupDataMngr	
- 
-	my %groupData = $dataMngr->GetGroupData();
+	my $self     = shift;
+	my $dataMngr = shift;    #instance of GroupDataMngr
+
+	my $groupData = $dataMngr->GetGroupData();
 
 	my $inCAM = $dataMngr->{"inCAM"};
 	my $jobId = $dataMngr->{"jobId"};
+
+	my $stepName = "panel";
+
+	my $exportData = AOIData->new();
  
-	my %exportData = ();
+	$exportData->SetStepToTest( $groupData->GetStepToTest() );
+	$exportData->SetLayers( $groupData->GetLayers() );
+  
+	return $exportData;
 
-	$exportData{"stepToTest"} = $groupData{"stepToTest"}; ;
-
-	return %exportData;
 }
  
 

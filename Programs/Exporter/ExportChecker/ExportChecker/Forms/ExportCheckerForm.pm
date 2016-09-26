@@ -146,6 +146,36 @@ sub GetGroupBuilder {
 	return $self->{"groupBuilder"};
 }
 
+# Add new page in nootebook
+sub AddPage {
+	my ( $self, $title ) = @_;
+	my $count = $self->{"nb"}->GetPageCount();
+	my $page = MyWxBookCtrlPage->new( $self->{"nb"}, $count );
+
+	$self->{"nb"}->AddPage( $page, $title . "    ", 0, $count );
+	$self->{"nb"}->SetPageImage( $count, 0 );
+
+	#row height is 10px. When we get total height of panel in scrollwindow
+	# then we compute number of rows as: totalHeight/10px
+	my $rowHeight = 10;
+	my $scrollPnl = ScrollPanel->new( $page, $rowHeight );
+
+	my $szTab = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
+
+	$szTab->Add( $scrollPnl, 1, &Wx::wxEXPAND );
+
+	$page->SetSizer($szTab);
+
+	$page->{"scrollPnl"} = $scrollPnl;
+
+	#$self->{"scrollPnl"} = $scrollPnl;
+
+	Wx::Event::EVT_PAINT( $scrollPnl, sub { $self->__OnScrollPaint(@_) } );
+
+	return $page;
+}
+
+
 sub __OnExportSync {
 	my $self = shift;
 
@@ -194,34 +224,7 @@ sub __OnLoadLastClick {
 
 }
 
-# Add new page in nootebook
-sub AddPage {
-	my ( $self, $title ) = @_;
-	my $count = $self->{"nb"}->GetPageCount();
-	my $page = MyWxBookCtrlPage->new( $self->{"nb"}, $count );
 
-	$self->{"nb"}->AddPage( $page, $title . "    ", 0, $count );
-	$self->{"nb"}->SetPageImage( $count, 0 );
-
-	#row height is 10px. When we get total height of panel in scrollwindow
-	# then we compute number of rows as: totalHeight/10px
-	my $rowHeight = 10;
-	my $scrollPnl = ScrollPanel->new( $page, $rowHeight );
-
-	my $szTab = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
-
-	$szTab->Add( $scrollPnl, 1, &Wx::wxEXPAND );
-
-	$page->SetSizer($szTab);
-
-	$page->{"scrollPnl"} = $scrollPnl;
-
-	#$self->{"scrollPnl"} = $scrollPnl;
-
-	Wx::Event::EVT_PAINT( $scrollPnl, sub { $self->__OnScrollPaint(@_) } );
-
-	return $page;
-}
 
 sub __SetLayout {
 	my $self   = shift;
@@ -290,9 +293,12 @@ sub __SetLayout {
 	$szBtns->Add( $szBtnsChild, 0, &Wx::wxALIGN_RIGHT | &Wx::wxALL );
 	$pnlBtns->SetSizer($szBtns);
 
-	$szRow1->Add( 10,                                     10, 1,                           &Wx::wxEXPAND );
+	
+	$szRow1->Add( $self->__SetLayoutOther($mainPnl), 0,  &Wx::wxEXPAND | &Wx::wxLEFT, 2 );
 	$szRow1->Add( $self->__SetLayoutExportPath($mainPnl), 0,  &Wx::wxEXPAND | &Wx::wxLEFT, 2 );
+	$szRow1->Add( 10,                                     10, 1,                           &Wx::wxEXPAND );
 	$szRow1->Add( $self->__SetLayoutQuickSet($mainPnl),   0,  &Wx::wxEXPAND | &Wx::wxLEFT, 2 );
+	
 
 	$szFrstStatBox->Add( $szRow1, 1, &Wx::wxEXPAND );
 	$szSecStatBox->Add( $nb, 1, &Wx::wxEXPAND );
@@ -381,9 +387,7 @@ sub __SetLayoutExportPath {
 	my $szMain = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
 	my $szRow1 = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
 	my $szRow2 = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
-
-	my $chbProduce = Wx::CheckBox->new( $statBox, -1, "Sent to produce", &Wx::wxDefaultPosition, [ 110, 22 ]);
-	$chbProduce->SetValue(1);
+ 
 
 	my $rbClient = Wx::RadioButton->new( $statBox, -1, "C:/Export", &Wx::wxDefaultPosition, [ 110, 22 ], &Wx::wxRB_GROUP );
 	$rbClient->SetBackgroundColour( Wx::Colour->new( 228, 232, 243 ) );
@@ -402,12 +406,43 @@ sub __SetLayoutExportPath {
 	$szStatBox->Add( $szMain, 1, &Wx::wxEXPAND );
 	
 	
+
+
+	return $szStatBox;
+
+}
+
+# Set layout for Export path box
+sub __SetLayoutOther {
+	my $self   = shift;
+	my $parent = shift;
+
+	#define staticboxes
+	my $statBox = Wx::StaticBox->new( $parent, -1, 'Other options' );
+	my $szStatBox = Wx::StaticBoxSizer->new( $statBox, &Wx::wxVERTICAL );
+	my $szMain = Wx::BoxSizer->new(&Wx::wxVERTICAL);
+	 
+
+	my $chbProduce = Wx::CheckBox->new( $statBox, -1, "Sent to produce", &Wx::wxDefaultPosition, [ 110, 22 ]);
+	$chbProduce->SetValue(1);
+	$chbProduce->SetTransparent(0);
+	$chbProduce->Refresh();
+	#$chbProduce->SetBackgroundStyle(&Wx::wxBG_STYLE_TRANSPARENT);
+	 
+	  
+	 
+ 	#$chbProduce->SetBackgroundColour( Wx::Colour->new( 255, 255, 255 ) );
+	$szMain->Add( $chbProduce, 1, &Wx::wxEXPAND );
+	$szStatBox->Add( $szMain, 1, &Wx::wxEXPAND );
+	
+	
 	# SAVE REFERENCES
 	$self->{"chbProduce"} = $chbProduce;
 
 	return $szStatBox;
 
 }
+
 
 sub __OnScrollPaint {
 	my $self      = shift;

@@ -406,27 +406,10 @@ sub ProcessProgress {
 # Init groups by exported data
 sub __InitUnit {
 	my $self = shift;
-
-	my @allUnits = ();
-
-	my $exportedData = $self->{"exportData"};
-
-	my @keys = $exportedData->GetOrderedUnitKeys(1);
-
-	my %unitsData = $exportedData->GetAllUnitData();
-
-	# sort keys by nhash value "__UNITORDER__"
-	#my @keys = sort { $unitsData{$b}->{"data"}->{"__UNITORDER__"} <=> $unitsData{$a}->{"data"}->{"__UNITORDER__"} } keys %unitsData;
-
-	foreach my $key (@keys) {
-
-		my $unit = $self->__GetUnitClass($key);
-
-		push( @allUnits, $unit );
-
-	}
-
-	$self->{"units"}->Init( \@allUnits );
+ 
+	my @keys = $self->{"exportData"}->GetOrderedUnitKeys(1);
+ 
+	$self->{"units"}->Init(\@keys);
 
 }
 
@@ -438,53 +421,7 @@ sub __GetUnit {
 
 }
 
-# Return initialized "unit" object by unitId
-sub __GetUnitClass {
-	my $self   = shift;
-	my $unitId = shift;
 
-	my $unit;
-	my $jobId = $self->{"jobId"};
-
-	if ( $unitId eq UnitEnums->UnitId_NIF ) {
-
-		$unit = NifUnit->new($jobId);
-
-	}
-	elsif ( $unitId eq UnitEnums->UnitId_NC ) {
-
-		#$unit = NifUnit->new();
-		$unit = NCUnit->new($jobId);
-
-	}
-
-	#	elsif ( $unitId eq UnitEnums->UnitId_NC2 ) {
-	#
-	#		#$unit = NifUnit->new();
-	#		$unit = NC2Unit->new($jobId);
-	#
-	#	}
-	#	elsif ( $unitId eq UnitEnums->UnitId_NC3 ) {
-	#
-	#		#$unit = NifUnit->new();
-	#		$unit = NC3Unit->new($jobId);
-	#
-	#	}
-	#	elsif ( $unitId eq UnitEnums->UnitId_NC4 ) {
-	#
-	#		#$unit = NifUnit->new();
-	#		$unit = NC4Unit->new($jobId);
-	#
-	#	}
-	#	elsif ( $unitId eq UnitEnums->UnitId_NC5 ) {
-	#
-	#		#$unit = NifUnit->new();
-	#		$unit = NC5Unit->new($jobId);
-	#
-	#	}
-
-	return $unit;
-}
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

@@ -31,7 +31,9 @@ sub new {
 	$self->{"mode"} = shift;
 
 	# This parameter have to be passed only in Write mode
-	$self->{"unitsData"} = shift;
+	$self->{"units"} = shift;
+	
+	 
 
 	#$self->{"location"}  = shift;
 
@@ -63,8 +65,9 @@ sub __BuildExportData {
 	if ( $self->{"mode"} eq Enums->Mode_WRITE ) {
 
 		# 1), prepare unit data
-		my %unitsData = %{ $self->{"unitsData"} };
-
+ 
+ 		my %unitsData = $self->{"units"}->GetExportData();
+ 
 		foreach my $unitId ( keys %unitsData ) {
 
 			# unit export data
@@ -72,6 +75,17 @@ sub __BuildExportData {
 
 			$self->{"data"}->{"units"}->{$unitId} = $unitData;
 		}
+		 
+		 
+#		my %unitsData = %{ $self->{"unitsData"} };
+#
+#		foreach my $unitId ( keys %unitsData ) {
+#
+#			# unit export data
+#			my $unitData = $unitsData{$unitId};
+#
+#			$self->{"data"}->{"units"}->{$unitId} = $unitData;
+#		}
 
 		# 2) prepare other
 		#$self->{"data"}->{"time"} = "tttt";
@@ -142,9 +156,14 @@ sub SaveData {
 
 	# 1), prepare unit data
 	my %unitsData = %{ $self->{"data"}->{"units"} };
+	
 
 	my $unitOrder = 0;
 	foreach my $unitId ( keys %unitsData ) {
+		
+		
+		my $unit = $self->{"units"}->GetUnitById($unitId);
+		$unitOrder = $unit->GetExportOrder();
 
 		my $unitData = $unitsData{$unitId};
 
@@ -152,7 +171,7 @@ sub SaveData {
 
 		$self->{"hashData"}->{"units"}->{$unitId} = \%hashUnit;
 
-		$unitOrder++;
+		 
 	}
 
 	# 2) prepare other

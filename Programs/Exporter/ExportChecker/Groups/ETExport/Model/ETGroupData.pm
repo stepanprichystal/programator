@@ -39,6 +39,12 @@ sub SetStepToTest {
 	$self->{"data"}->{"stepToTest"} = $value;
 }
  
+sub GetStepToTest {
+	my $self  = shift;
+	my $value = shift;
+	
+	return $self->{"data"}->{"stepToTest"};
+}
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
