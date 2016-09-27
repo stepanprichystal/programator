@@ -127,6 +127,42 @@ sub GetPcbType {
 	return $type;
 }
 
+
+sub GetIsolationByClass {
+	my $self  = shift;
+	my $class = shift;
+
+	my $isolation;
+
+	if($class <= 3){
+		
+		$isolation = 400;
+		
+	}elsif($class <= 4){
+		
+		$isolation = 300;
+		
+	}elsif($class <= 5){
+		
+		$isolation = 200;
+	
+	}elsif($class <= 6){
+		
+		$isolation = 150;
+		
+	}elsif($class <= 7){
+		
+		$isolation = 125;
+		
+	}elsif($class <= 8){
+		
+		$isolation = 100;
+	}
+	
+	return $isolation;
+
+}
+
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#

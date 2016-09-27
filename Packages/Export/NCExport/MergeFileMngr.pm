@@ -125,15 +125,19 @@ sub __SaveOperation {
 	my $stagingExist = $opItem->StagingExist();
 	my $fileName     = $opItem->{"name"};
 
+	my $jobName = $self->{"jobId"}."_";
+
 	# 1) save standard merged file, then save staging files
 
 	if ($stagingExist) {
 		$fileName .= "_1";
 	}
 
-	my $path = $self->{'archive'} . $fileName . "." . $suffix;
+
+	my $path = $self->{'archive'} . $jobName.$fileName . "." . $suffix;
 
 	$fileEditor->EditBeforeSave( $parseFile, $opItem );
+
 
 	$self->__SaveFile( $parseFile, $path );
 
@@ -168,7 +172,7 @@ sub __SaveOperation {
 					$fileEditor->EditBeforeSave( \%parseFile, $opItem );
 
 					#build path
-					$fileName = $self->{'archive'} . $opItem->{"name"} . "_" . $fileNumber . "." . $suffix;
+					$fileName = $self->{'archive'} . $jobName .$opItem->{"name"} . "_" . $fileNumber . "." . $suffix;
 
 					$self->__SaveFile( \%parseFile, $fileName );
 

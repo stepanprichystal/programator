@@ -79,6 +79,8 @@ sub OutputOpfx {
 	my $inCAM     = shift;
 	my $jobId     = shift;
 	my $layerName = shift;
+	my $incamResult = shift;
+	my $reportResult = shift;
 
 	my $exportPath = JobHelper->GetJobArchive($jobId) . "zdroje\\ot";
 
@@ -86,7 +88,17 @@ sub OutputOpfx {
 		mkdir($exportPath) or die "Can't create dir: " . $exportPath . $_;
 	}
 
-	my $result = $inCAM->COM(
+
+	my $report = EnumsPaths->Client_INCAMTMPAOI.$jobId;
+
+	if ( -e $report ) {
+		unlink($report);
+	}
+	
+	
+	
+
+	$$incamResult = $inCAM->COM(
 				 "cdr_opfx_output",
 				 "units"              => "inch",
 				 "anchor_mode"        => "zero",
@@ -106,16 +118,31 @@ sub OutputOpfx {
 				 "anchor_y"           => "0",
 				 "min_brush"          => "25.4",
 				 "path"               => $exportPath,
-				 "multi_trg_machines" => "discovery"
+				 "multi_trg_machines" => "discovery",
+				 "report_file" => $report
 	);
+	
+	if(-e $report){
+		
+		$$reportResult = "";
+		open(FILE, $report);
+		while (<FILE>) { $$reportResult .= $_ }
+		close(FILE);
+		
+		if($$reportResult !~ /no output/i){
+			$$reportResult = "";
+		}
+		
+	}
+	
 	
 	
 	#if ok, InCAm return 0
-	if ( $result == 0 ) {
-		return 1;
+	if ( $$reportResult ne "" ||  $$incamResult > 0 ) {
+		return 0;
 	}
 	else {
-		return 0;
+		return 1;
 	}
 
 }

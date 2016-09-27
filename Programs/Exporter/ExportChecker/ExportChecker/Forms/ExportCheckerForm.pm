@@ -425,13 +425,17 @@ sub __SetLayoutOther {
 
 	my $chbProduce = Wx::CheckBox->new( $statBox, -1, "Sent to produce", &Wx::wxDefaultPosition, [ 110, 22 ]);
 	$chbProduce->SetValue(1);
-	$chbProduce->SetTransparent(0);
-	$chbProduce->Refresh();
+	#$chbProduce->SetTransparent(0);
+	#$chbProduce->Refresh();
 	#$chbProduce->SetBackgroundStyle(&Wx::wxBG_STYLE_TRANSPARENT);
+	   $chbProduce->SetBackgroundColour( Wx::Colour->new( 255, 255, 255 ) );
+	 Wx::Event::EVT_ERASE_BACKGROUND( $chbProduce,  sub { $self->Test(@_) } );
 	 
+	 $chbProduce->SetBackgroundColour( Wx::Colour->new( 255, 255, 255 ) );
+	 $chbProduce->Refresh();
 	  
 	 
- 	#$chbProduce->SetBackgroundColour( Wx::Colour->new( 255, 255, 255 ) );
+ 	
 	$szMain->Add( $chbProduce, 1, &Wx::wxEXPAND );
 	$szStatBox->Add( $szMain, 1, &Wx::wxEXPAND );
 	
@@ -441,6 +445,19 @@ sub __SetLayoutOther {
 
 	return $szStatBox;
 
+}
+
+sub Test{
+		my $self   = shift;
+	my $parent = shift;
+	 my $evt = shift;
+	 
+	  my $dc = $evt->GetDC();
+	
+	
+	 $dc->Clear();
+	 
+	# $self->{"chbProduce"}->Refresh();
 }
 
 

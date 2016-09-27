@@ -11,6 +11,7 @@ use constant {
    
 
  	# Paths for log
+    Client_INCAMTMPAOI => "c:\\tmp\\InCam\\scripts\\aoi_export\\",
     Client_INCAMTMPNC => "c:\\tmp\\InCam\\scripts\\nc_export\\",
     Client_INCAMTMPCHECKER => "c:\\tmp\\InCam\\scripts\\export_checker\\",
     Client_INCAMTMPOTHER => "c:\\tmp\\InCam\\scripts\\other\\",
@@ -38,6 +39,8 @@ use constant {
     
 
 };
+
+
 
 use constant {
     Config_NCMACHINES => "\\Config\\NCMachines.txt", 

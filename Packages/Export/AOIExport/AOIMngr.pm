@@ -70,12 +70,18 @@ sub Run {
 	$self->__DeleteOutputFiles();
 
 	#open et step
-	$inCAM->COM( "set_step", "name" => $stepToTest );
+	#$inCAM->COM( "set_step", "name" => $stepToTest );
 	$inCAM->COM( 'open_entity', job => $jobId, type => 'step', name => $stepToTest, iconic => 'no' );
 	$inCAM->AUX( 'set_group', group => $inCAM->{COMANS} );
 
 	my $setName = "cdr";
+	
+	
+	
+	#my $setName = GeneralHelper->GetGUID();
 
+
+print STDERR "\n\n=====================SET NAME======================== $setName\n\n";
 	#my $strLayers = join("\;", @signalLayers);
 
 	#$inCAM->COM("cdr_delete_sets_by_name","layers" => "","sets" => $setName);
@@ -93,7 +99,7 @@ sub Run {
 
 		# test if max session seats exceeded
 		if ( $ex && $ex->{"errorId"} == 282002 ) {
-			print STDERR "Waiting n AOI seats..\n";
+			#print STDERR "Waiting n AOI seats..\n";
 			sleep(2);
 		}
 		else {
@@ -105,7 +111,7 @@ sub Run {
 	$self->_OnItemResult($resultItemOpenSession);
 
 	$inCAM->COM( "cdr_set_current_cdr_name", "job" => $jobId, "step" => $stepToTest, "set_name" => $setName );
-	$inCAM->COM( "cdr_clear_displayed_layers", );
+	#$inCAM->COM( "cdr_clear_displayed_layers", );
 	$inCAM->COM(
 				 "cdr_create_configuration",
 				 "set_name" => "",
@@ -116,18 +122,26 @@ sub Run {
 	$inCAM->COM( "cdr_set_machine", "machine" => "discovery", "cfg_name" => "discoveryDefaultConfiguration" );
 	$inCAM->COM( "cdr_set_table", "set_name" => "", "name" => "27x24", "x_dim" => "685.8", "y_dim" => "609.6" );
 
+
+	# un affected all layer
+	foreach my $l (@signalLayers) {
+
+		$inCAM->COM( "cdr_affected_layer", "mode" => "off", "layer" => $l );
+		$inCAM->COM("cdr_display_layer","name" => "$l","display" => "no","type" => "physical");
+
+	}
+	
+
 	# For each layer export AOI
 	foreach my $layer (@signalLayers) {
 
-		# un affected all layer
-		foreach my $l (@signalLayers) {
-
-			$inCAM->COM( "cdr_affected_layer", "mode" => "off", "layer" => $l );
-		}
-		
 		# For each layer export AOI
 		$self->__ExportAOI( $layer, $setName );
 	}
+	
+	
+	# After export, release licence/ close seeeion
+	$inCAM->COM("cdr_close");
 
 }
 
@@ -153,6 +167,9 @@ sub __OpenAOISession {
 				 "cfg_path"  => "//incam/incam_server/site_data/hooks/cdr",
 				 "sub_dir"   => "discovery"
 	);
+	
+	
+	print STDERR "\n\n=====================SET NAME======================== $setName\n\n";
 
 	# STOP HANDLE EXCEPTION IN INCAM
 	$inCAM->HandleException(0);
@@ -178,7 +195,7 @@ sub __ExportAOI {
 	#my $resultItemAOIparams = $self->_GetNewItem("Set params - $layerName");
 
 	$inCAM->COM( "cdr_display_layer", "name" => $layerName, "display" => "yes", "type" => "physical" );
-	$inCAM->COM( "work_layer", "name" => $layerName );
+	#$inCAM->COM( "work_layer", "name" => $layerName );
 	$inCAM->COM( "cdr_work_layer", "layer" => $layerName );
 
 	# Param set driils
@@ -192,24 +209,33 @@ sub __ExportAOI {
 	$inCAM->COM( "cdr_get_nom_space", "layer" => "c", "space_type" => "nom_space" );
 	my $space = $inCAM->GetReply();
 
+	# If Incam didn't compute values, set it by construction class
+	if($line == 0 || $space == 0){
+	
+		my $class = CamJob->GetJobPcbClass($inCAM, $jobId);
+		my $isolation = JobHelper->GetIsolationByClass($class);
+	
+		
+		$line = $isolation;
+		$space = $isolation;
+	}
+	
 	$inCAM->COM( "cdr_line_width", "nom_width" => $line,  "min_width" => "0" );
 	$inCAM->COM( "cdr_spacing",    "nom_space" => $space, "min_space" => "0" );
-	
-	if($line == 0){
-		
-		$line = 300;
-		$space = 300;
-	}
 
 	# Set steps and repeat
 
 	my @steps = CamStepRepeat->GetUniqueStepAndRepeat( $inCAM, $jobId, $stepToTest );
+	
 	@steps = map { $_->{"stepName"} } @steps;
+ 
 	my $stepsStr = join( "\;", @steps );
-	$inCAM->COM( "cdr_set_area_auto", "steps" => $stepsStr, "margin_x" => "0", "margin_y" => "0", "inspected_steps" => " " );
+	$inCAM->COM( "cdr_set_area_auto", "steps" => $stepsStr, "margin_x" => "0", "margin_y" => "0", "inspected_steps" => "" );
 
 	# Exclude texts from test
 	$inCAM->COM( "cdr_auto_zone_text", "margin" => "0", "pcb" => "yes", "panel" => "no" );
+	
+	
 
 	# STOP HANDLE EXCEPTION IN INCAM
 	#$inCAM->HandleException(0);
@@ -219,6 +245,10 @@ sub __ExportAOI {
 
 	# ===== Do AOI output ======
 
+	my $incamResult;
+	my $reportResult;
+	
+
 	# START HANDLE EXCEPTION IN INCAM
 	$inCAM->HandleException(1);
 
@@ -226,12 +256,23 @@ sub __ExportAOI {
 	my $resultItemAOIOutput = $self->_GetNewItem($layerName);
 	$resultItemAOIOutput->SetGroup("Layers");
 
-	AOSet->OutputOpfx( $inCAM, $jobId, $layerName );
-
+	my $result = AOSet->OutputOpfx( $inCAM, $jobId, $layerName, \$incamResult, \$reportResult );
+	
+	
 	# STOP HANDLE EXCEPTION IN INCAM
 	$inCAM->HandleException(0);
 
-	$resultItemAOIOutput->AddErrors( $inCAM->GetExceptionsError() );
+	if($result == 0){
+		
+		if($incamResult > 0){
+			$resultItemAOIOutput->AddErrors( $inCAM->GetExceptionsError() );
+		}
+		
+		if($reportResult ne ""){
+			$resultItemAOIOutput->AddError( $reportResult );
+		}
+	}
+ 
 	$self->_OnItemResult($resultItemAOIOutput);
 
 }
