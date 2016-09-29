@@ -441,11 +441,10 @@ sub GetProfileArea {
 				 "layer"         => $lName,
 				 "stop_at_steps" => ""
 	);
+ 
+	my %area = $self->__GetCuArea( 1, 1, 0,$inCAM, $jobId, $stepName, $lName, "" );
 
-	my %area = $self->GetCuArea( 0, 1, $inCAM, $jobId, $stepName, $lName, "" );
-
-	
-
+	 
 	$inCAM->COM( 'delete_layer', layer => $lName );
 
 	return $area{"area"}*100;

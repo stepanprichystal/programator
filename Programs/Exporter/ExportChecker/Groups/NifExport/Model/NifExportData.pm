@@ -57,7 +57,7 @@ sub OnExportGroupData {
 	$exportData->SetC_mask_colour( $groupData->GetC_mask_colour() );
 	$exportData->SetS_mask_colour( $groupData->GetS_mask_colour() );
 	$exportData->SetC_silk_screen_colour( $groupData->GetC_silk_screen_colour() );
-	$exportData->SetS_silk_screen_colour( $groupData->SetS_silk_screen_colour() );
+	$exportData->SetS_silk_screen_colour( $groupData->GetS_silk_screen_colour() );
 
 	# Dimension
 	$exportData->SetSingle_x( $groupData->GetSingle_x() );

@@ -25,7 +25,7 @@ my $pressfit = 0;
 my $maska01  = 0;
 my $datacode  = "";
 my $ullogo  = "";
-my $jumpScoring  = 1;
+my $jumpScoring  = 0;
 
  
 

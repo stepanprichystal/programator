@@ -16,21 +16,18 @@ use aliased 'Packages::InCAM::InCAM';
 use aliased 'Enums::EnumsMachines';
 use aliased 'Helpers::GeneralHelper';
 use aliased 'Packages::Events::Event';
- 
 
 use aliased 'Programs::Exporter::UnitEnums';
 
 use aliased 'Programs::Exporter::ExportUtility::Groups::NifExport::NifExport';
 use aliased 'Programs::Exporter::DataTransfer::UnitsDataContracts::NifData';
- 
- 
+use aliased 'Programs::Exporter::ExportChecker::Groups::NifExport::Model::NifGroupData';
+
 use aliased 'CamHelpers::CamAttributes';
 use aliased 'Connectors::HeliosConnector::HegMethods';
 
-
 use aliased 'Programs::Exporter::ExportChecker::Groups::NifExport::Presenter::NifUnit';
 use aliased 'Managers::MessageMngr::MessageMngr';
- 
 
 #-------------------------------------------------------------------------------------------#
 #  NC export, all layers, all machines..
@@ -64,32 +61,30 @@ sub Run {
 
 	#GET INPUT NIF INFORMATION
 
-	my $exportData = NifData->new();
+	my $groupData = NifGroupData->new();
 
-	$exportData->SetNotes($poznamka);
-	$exportData->SetTenting($tenting);
-	$exportData->SetPressfit($pressfit);
-	$exportData->SetMaska01($maska01);
-	$exportData->SetDatacode($datacode);
-	$exportData->SetUlLogo($ulLogo);
-	$exportData->SetJumpScoring($jumpScore);
-	
-	
-		 # TODO - vypocet rozmeru pak smazat
- 	 
- 	 # Dimension
+	$groupData->SetNotes($poznamka);
+	$groupData->SetTenting($tenting);
+	$groupData->SetPressfit($pressfit);
+	$groupData->SetMaska01($maska01);
+	$groupData->SetDatacode($datacode);
+	$groupData->SetUlLogo($ulLogo);
+	$groupData->SetJumpScoring($jumpScore);
+
+	# TODO - vypocet rozmeru pak smazat
+
+	# Dimension
 	my %dim = $self->__GetDimension( $inCAM, $jobId );
 
-	$exportData->SetSingle_x( $dim{"single_x"} );
-	$exportData->SetSingle_y( $dim{"single_y"} );
-	$exportData->SetPanel_x( $dim{"panel_x"} );
-	$exportData->SetPanel_y( $dim{"panel_y"} );
-	$exportData->SetNasobnost_panelu( $dim{"nasobnost_panelu"} );
-	$exportData->SetNasobnost( $dim{"nasobnost"} );
+	$groupData->SetSingle_x( $dim{"single_x"} );
+	$groupData->SetSingle_y( $dim{"single_y"} );
+	$groupData->SetPanel_x( $dim{"panel_x"} );
+	$groupData->SetPanel_y( $dim{"panel_y"} );
+	$groupData->SetNasobnost_panelu( $dim{"nasobnost_panelu"} );
+	$groupData->SetNasobnost( $dim{"nasobnost"} );
+
 	
-	$exportData->SetZpracoval( $ENV{"LOGNAME"} );
-	
-	
+
 	# Mask color
 
 	#mask
@@ -100,8 +95,8 @@ sub Run {
 	unless ( defined $masks2{"bot"} ) {
 		$masks2{"bot"} = "";
 	}
-	$exportData->SetC_mask_colour( $masks2{"top"} );
-	$exportData->SetS_mask_colour( $masks2{"bot"} );
+	$groupData->SetC_mask_colour( $masks2{"top"} );
+	$groupData->SetS_mask_colour( $masks2{"bot"} );
 
 	#silk
 	my %silk2 = HegMethods->GetSilkScreenColor($jobId);
@@ -113,13 +108,36 @@ sub Run {
 		$silk2{"bot"} = "";
 	}
 
-	$exportData->SetC_silk_screen_colour( $silk2{"top"} );
-	$exportData->SetS_silk_screen_colour( $silk2{"bot"} );
+	$groupData->SetC_silk_screen_colour( $silk2{"top"} );
+	$groupData->SetS_silk_screen_colour( $silk2{"bot"} );
+
+	# SMAYAT konece
+
+	# Check data
+	use aliased 'Packages::ItemResult::ItemResultMngr';
+	my $resultMngr = ItemResultMngr->new();
+
+	my $unit = NifUnit->new( $jobId );
+	$unit->InitDataMngr($inCAM, $groupData);
+	$unit->CheckBeforeExport( $inCAM, \$resultMngr );
+
+	unless ( $resultMngr->Succes() ) {
+
+		my $str = "";
+		$str .= $resultMngr->GetErrorsStr();
+		$str .= $resultMngr->GetWarningsStr();
+
+		my $messMngr = MessageMngr->new( $self->{"jobId"} );
+
+		my @mess1 = ( "Kontrola pred exportem", $str );
+		$messMngr->ShowModal( -1, EnumsGeneral->MessageType_ERROR, \@mess1 );
+
+		return 0;
+	}
+
+	my $exportData = $unit->GetExportData();
 	
- 	 
- 	 # SMAYAT konece
-	
-	
+	$exportData->SetZpracoval( $ENV{"LOGNAME"} );
 
 	my $export = NifExport->new( UnitEnums->UnitId_NIF );
 	$export->Init( $inCAM, $jobId, $exportData );
@@ -159,7 +177,6 @@ sub Run {
 	return $succes;
 
 }
-
 
 # TODO metodu pak smazat
 
@@ -261,9 +278,8 @@ sub __GetDimension {
 
 	return %dim;
 }
- 
- 
- sub __GetMultiplOfStep {
+
+sub __GetMultiplOfStep {
 
 	my $self         = shift;
 	my $inCAM        = shift;
@@ -310,7 +326,6 @@ sub __GetDimension {
 	return $stepCnt;
 
 }
-
 
 1;
 
