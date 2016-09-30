@@ -30,6 +30,7 @@ use aliased 'Connectors::HeliosConnector::HegMethods';
 
 use aliased 'Programs::Exporter::ExportChecker::Groups::NifExport::Presenter::NifUnit';
 use aliased 'Managers::MessageMngr::MessageMngr';
+use aliased 'CamHelpers::CamAttributes';
  
 
 #-------------------------------------------------------------------------------------------#
@@ -87,8 +88,9 @@ sub Run {
 	$exportData->SetNasobnost_panelu( $dim{"nasobnost_panelu"} );
 	$exportData->SetNasobnost( $dim{"nasobnost"} );
 	
-	$exportData->SetZpracoval( $ENV{"LOGNAME"} );
-	
+	#$exportData->SetZpracoval( $ENV{"LOGNAME"} );
+	my $name = CamAttributes->GetJobAttrByName($inCAM, $jobId, "user_name");
+	$exportData->SetZpracoval($name );
 	
 	# Mask color
 

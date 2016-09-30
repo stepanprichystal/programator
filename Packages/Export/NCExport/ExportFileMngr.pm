@@ -16,6 +16,7 @@ use aliased 'Packages::ItemResult::ItemResult';
 use aliased 'Enums::EnumsPaths';
 use aliased 'Helpers::JobHelper';
 use aliased 'CamHelpers::CamHelper';
+use aliased 'CamHelpers::CamStepRepeat';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -24,7 +25,7 @@ use aliased 'CamHelpers::CamHelper';
 sub new {
 
 	my $class = shift;
-	
+
 	my $self = $class->SUPER::new(@_);
 	bless $self;
 
@@ -49,7 +50,7 @@ sub ExportFiles {
 
 	foreach my $c (@exportFiles) {
 
-		my $result = ItemResult->new($c->{"layer"}, undef, "Layers");
+		my $result = ItemResult->new( $c->{"layer"}, undef, "Layers" );
 
 		foreach ( @{ $c->{"machines"} } ) {
 
@@ -73,41 +74,87 @@ sub __ExportNcSet {
 	my $setName = GeneralHelper->GetGUID();
 
 	$inCAM->COM( 'set_step', "name" => $stepName );
-	
-	$inCAM->COM("open_sets_manager","test_current" => "no");
-	
-	$inCAM->COM( 'nc_create', "ncset" => $setName, "device" => $machine, "lyrs" => $layerName, "thickness"=> 0 );
-	
-	$inCAM->COM("nc_set_advanced_params","layer" => $layerName,"ncset" => $setName,"parameters" => "(iol_sm_g84_radius=no)");
-	
-	$inCAM->COM(" nc_set_current","job" => $jobId,"step" => $stepName,"layer" => $layerName,"ncset" => $setName);
-	
-	$inCAM->COM("nc_order","serial" => "1","sr_line" => "1","sr_nx" => "1","sr_ny" => "1","mode" => "btrl","snake" => "no","scope" => "full");
+
+	$inCAM->COM( "open_sets_manager", "test_current" => "no" );
+
+	$inCAM->COM( 'nc_create', "ncset" => $setName, "device" => $machine, "lyrs" => $layerName, "thickness" => 0 );
+
+	$inCAM->COM( "nc_set_advanced_params", "layer" => $layerName, "ncset" => $setName, "parameters" => "(iol_sm_g84_radius=no)" );
+
+	$inCAM->COM( " nc_set_current", "job" => $jobId, "step" => $stepName, "layer" => $layerName, "ncset" => $setName );
+
+	my $lType = CamHelper->LayerType( $inCAM, $jobId, $layerName );
+
+	# Set order of routing
+
+	if ( $lType eq "rout" ) {
+
+		if ( $layerName ne "fsch" ) {
+
+			#check if panel contain name "mapanel" step
+			my $mpanelExist = CamStepRepeat->ExistStepAndRepeat( $inCAM, $jobId, $stepName, "mpanel" );
+
+			if ($mpanelExist) {
+				$inCAM->COM( "sredit_set_step_nest", "lines" => "1\;1", "nx" => "1\;1", "ny" => "1\;1", "clear_selection" => "yes" );
+				$inCAM->COM(
+							 "nc_order",
+							 "serial"  => "1",
+							 "sr_line" => "1\;1",
+							 "sr_nx"   => "1\;1",
+							 "sr_ny"   => "1\;1",
+							 "mode"    => "btrl",
+							 "snake"   => "no",
+							 "scope"   => "full"
+				);
+
+			}
+			else {
+
+				$inCAM->COM( "sredit_set_step_nest", "lines" => "1", "nx" => "1", "ny" => "1", "clear_selection" => "yes" );
+				$inCAM->COM(
+							 "nc_order",
+							 "serial"  => "1",
+							 "sr_line" => "1",
+							 "sr_nx"   => "1",
+							 "sr_ny"   => "1",
+							 "mode"    => "btrl",
+							 "snake"   => "no",
+							 "scope"   => "full"
+				);
+			}
+
+		}
+
+  #$inCAM->COM("nc_order_def","split"=>"1");
+  #$inCAM->COM("sredit_set_step_nest","lines" => "1\;1","nx" => "1\;1","ny" => "1\;1","clear_selection" => "yes");
+  #$inCAM->COM("nc_order","serial" => "1","sr_line" => "1\;1","sr_nx" => "1\;1","sr_ny" => "1\;1","mode" => "btrl","snake" => "no","scope" => "full");
+
+	}
+
+#$inCAM->COM("nc_order","full" =>"0", "serial" => "1","sr_line" => "1","sr_nx" => "1","sr_ny" => "1","mode" => "btrl","snake" => "no","scope" => "full");
 
 	#if ( $inCAM->GetStatus() > 1 ) {
 	#	$methodRes->AddError( $inCAM->GetExceptionError() );
 	#}
 
 	$inCAM->COM( "nc_cre_output", "layer" => $layerName, "ncset" => $setName );
-	
+
 	my $reply = $inCAM->GetReply();
 
 	#if ( $inCAM->GetStatus() > 1 ) {
 	#	$methodRes->AddError( $inCAM->GetExceptionError() );
 	#}
-	
+
 	#delete nc set
 	$inCAM->COM( "nc_delete", "layer" => $layerName, "ncset" => $setName );
-	
+
 	#delete temporary files, which was created
-	my $tmpName = "_".$setName."_out_";
+	my $tmpName = "_" . $setName . "_out_";
 	my $tmpExist = CamHelper->LayerExists( $inCAM, $jobId, $tmpName );
 
 	if ($tmpExist) {
-			$inCAM->COM( 'delete_layer', "layer" => $tmpName );
+		$inCAM->COM( 'delete_layer', "layer" => $tmpName );
 	}
-	
-
 
 }
 
