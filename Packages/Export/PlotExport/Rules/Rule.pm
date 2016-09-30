@@ -82,6 +82,14 @@ sub AddTypes{
  
 	push($self->{"layerTypes"},\@types)
 }
+
+sub GetLayerTypes{
+	my $self = shift;
+	
+	
+	return @{$self->{"layerTypes"}};
+	
+}
  
 1;
 

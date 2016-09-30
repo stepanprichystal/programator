@@ -3,7 +3,7 @@
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 
-package Packages::Export::PlotExport::FilmCreator::FilmCreator;
+package Packages::Export::PlotExport::Rules::RuleResult;
 
 #3th party library
 use strict;
@@ -17,25 +17,25 @@ use warnings;
 #-------------------------------------------------------------------------------------------#
 
  
-sub GetPlotterSets{
+ sub new {
+	my $class     = shift;
+	my $self ={};
+	 
+	bless $self;
+	
+	
+	my @layers = ();
+	$self->{"layers"} = \@layers;
+ 
+	return $self;
+}
+
+sub AddLayer{
 	my $self = shift;
-	
-	
-	__BuildRules()
-	__CreateSets()
-} 
-
-
-sub __BuildRules{
-	my $self = shift;
-	
-} 
-
-
-sub __CreateSets{
-	my $self = shift;
-	
-} 
+	my $layer = shift;	
+		
+	push(@{$self->{"layers"}}, $layer);
+}
 
 
  
