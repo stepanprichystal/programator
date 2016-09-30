@@ -66,7 +66,7 @@ sub Build {
 
 		my $maska = "2814075";
 
-		unless ( $nifData{"rel(22305,L)"} ) {
+		unless ( $nifData{"maska01"} ) {
 			$maska = "-" . $maska;
 		}
 

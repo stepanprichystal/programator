@@ -141,4 +141,67 @@ sub GetMarkingLayers {
 	return @res;
 }
 
+# Return if, lyer is board type
+sub LayerIsBoard {
+
+	my $self    = shift;
+	my $inCAM   = shift;
+	my $jobName = shift;
+	my $layerName = shift;
+
+	$inCAM->INFO(
+				  units           => 'mm',
+				  angle_direction => 'ccw',
+				  entity_type     => 'matrix',
+				  entity_path     => "$jobName/matrix",
+				  data_type       => 'ROW',
+				  parameters      => 'context+layer_type+name'
+	);
+
+	my @layers = @{ $inCAM->{doinfo}{gROWname} };
+	my @types  = @{ $inCAM->{doinfo}{gROWlayer_type} };
+	my @context  = @{ $inCAM->{doinfo}{gROWcontext} };
+
+	my $idx = ( grep { $layerName eq $layers[$_] } 0 .. $#layers )[0];
+
+	if ( defined $idx ) {
+
+		my $con = $context[$idx];
+		
+		if ($con eq "board"){
+			return 1;
+		}
+	}
+	
+	return 0;
+}
+
+
+#-------------------------------------------------------------------------------------------#
+#  Place for testing..
+#-------------------------------------------------------------------------------------------#
+my ( $package, $filename, $line ) = caller;
+if ( $filename =~ /DEBUG_FILE.pl/ ) {
+
+	
+	 
+	my $jobName          = "f13610";
+	my $layerName          = "fsch";
+
+
+	use aliased 'CamHelpers::CamLayer';
+	use aliased 'Packages::InCAM::InCAM';
+
+
+	my $inCAM = InCAM->new();
+
+	my $res = CamLayer->LayerIsBoard($inCAM, $jobName, $layerName);
+	
+	print $res;
+
+}
+
+1;
+
+ 
 1;
