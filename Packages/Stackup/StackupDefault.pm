@@ -124,7 +124,7 @@ sub CreateStackup {
 
 	my $defaultName = $lCount . "vv_" . $stackType . ".xml";
 
-	my @mess = ("Který typ standardního stackupu chceš vygenerovat? (IS400 pouze malý pøíøez)");
+	my @mess = ("Který typ standardního stackupu chceš vygenerovat? (IS400 pouze velký pøíøez)");
 	my @btn = ( "IS400", "FR4" );
 
 	$messMngr->ShowModal( -1, EnumsGeneral->MessageType_INFORMATION, \@mess, \@btn );
