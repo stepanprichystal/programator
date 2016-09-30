@@ -3,7 +3,7 @@
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 
-package Packages::Export::PlotExport::FilmCreator::FilmCreator;
+package Packages::Export::PlotExport::Rules::Rule;
 
 #3th party library
 use strict;
@@ -16,28 +16,72 @@ use warnings;
 #   Package methods
 #-------------------------------------------------------------------------------------------#
 
+ sub new {
+	my $class     = shift;
+	my $self ={};
+	 
+	bless $self;
+	
+
+
+	my @layerTypes = ();
+	$self->{"layerTypes"} = \@layerTypes;
+	 
+
+	return $self;
+}
+
+sub AddType1{
+	
+	my $self = shift;
+	my @types = @{shift(@_)};
+	
+	unless(scalar(@types)){
+		
+		return 0;
+	}
  
-sub GetPlotterSets{
+	push($self->{"layerTypes"},\@types)
+}
+
+sub AddType2{
+	
 	my $self = shift;
+	my @types = @{shift(@_)};
 	
+	unless(scalar(@types)){
+		
+		return 0;
+	}
+ 
+	push($self->{"layerTypes"},\@types)
+}
+
+sub AddType1{
 	
-	__BuildRules()
-	__CreateSets()
-} 
-
-
-sub __BuildRules{
 	my $self = shift;
+	my @types = @{shift(@_)};
 	
-} 
+	unless(scalar(@types)){
+		
+		return 0;
+	}
+ 
+	push($self->{"layerTypes"},\@types)
+}
 
-
-sub __CreateSets{
+sub AddTypes{
+	
 	my $self = shift;
+	my @types = @{shift(@_)};
 	
-} 
-
-
+	unless(scalar(@types)){
+		
+		return 0;
+	}
+ 
+	push($self->{"layerTypes"},\@types)
+}
  
 1;
 

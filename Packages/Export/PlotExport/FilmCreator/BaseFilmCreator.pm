@@ -3,7 +3,7 @@
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 
-package Packages::Export::PlotExport::FilmCreator::FilmCreator;
+package Packages::Export::PlotExport::FilmCreator::BaseFilmCreator;
 
 #3th party library
 use strict;
@@ -19,23 +19,21 @@ use warnings;
  
 sub GetPlotterSets{
 	my $self = shift;
-	
-	
+		
 	__BuildRules()
 	__CreateSets()
 } 
 
 
-sub __BuildRules{
+sub _AddRule {
 	my $self = shift;
-	
-} 
 
+	my $rule = Rule->new();
 
-sub __CreateSets{
-	my $self = shift;
-	
-} 
+	push( @{ $self->{"rules"} }, $rule );
+
+	return $rule;
+}
 
 
  

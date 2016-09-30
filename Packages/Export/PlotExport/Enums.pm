@@ -1,20 +1,20 @@
 
-package Packages::Export::NCExport::Enums;
+package Packages::Export::PlotExport::Enums;
 
 use constant {
 	
 	# use binary operators
 	
-			   LayerType_MASKTOP  => "maskTop",
-			   LayerType_MASKBOT  => "maskBot",
+			   LType_MASKTOP  => "maskTop",
+			   LType_MASKBOT  => "maskBot",
 			   
-			   LayerType_SILKTOP  => "silkTop",
-			   LayerType_SILKBOT  => "silkBot",
+			   LType_SILKTOP  => "silkTop",
+			   LType_SILKBOT  => "silkBot",
 			  
-			   LayerType_SIGOUTER  => "signalOuter",
-			   LayerType_SIGINNER  => "signalInner",
+			   LType_SIGOUTER  => "signalOuter",
+			   LType_SIGINNER  => "signalInner",
 			   
-			   LayerType_GOLDFINGER  => "goldfinger"
+			   LType_GOLDFINGER  => "goldfinger"
 };
 
 
