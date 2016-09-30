@@ -28,6 +28,7 @@ use aliased 'Connectors::HeliosConnector::HegMethods';
 
 use aliased 'Programs::Exporter::ExportChecker::Groups::NifExport::Presenter::NifUnit';
 use aliased 'Managers::MessageMngr::MessageMngr';
+use aliased 'CamHelpers::CamAttributes';
 
 #-------------------------------------------------------------------------------------------#
 #  NC export, all layers, all machines..
@@ -138,6 +139,12 @@ sub Run {
 	my $exportData = $unit->GetExportData();
 	
 	$exportData->SetZpracoval( $ENV{"LOGNAME"} );
+
+
+	#$exportData->SetZpracoval( $ENV{"LOGNAME"} );
+	my $name = CamAttributes->GetJobAttrByName($inCAM, $jobId, "user_name");
+	$exportData->SetZpracoval($name );
+
 
 	my $export = NifExport->new( UnitEnums->UnitId_NIF );
 	$export->Init( $inCAM, $jobId, $exportData );

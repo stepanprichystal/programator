@@ -30,8 +30,9 @@ sub PrepareToolDepth {
 	if ( defined $toolIdx ) {
 
 		unless ( $toolDepths[$toolIdx]->{"depth"} ) {
-			return 1;
+			return 0;
 		}
+
 		my $tmp = $toolDepths[$toolIdx]->{"depth"};
 		$tmp =~ s/,/\./;
 		$tmp = sprintf( "%.2f", $tmp );
@@ -140,7 +141,7 @@ sub GetMaxAspectRatioByLayer {
 			next;
 		}
 
-		my $tmp =  ($tDepth*1000) / $tSize;
+		my $tmp = ( $tDepth * 1000 ) / $tSize;
 
 		if ( !defined $aspectRatio || $tmp > $aspectRatio ) {
 
@@ -151,4 +152,22 @@ sub GetMaxAspectRatioByLayer {
 	return $aspectRatio;
 }
 
+#-------------------------------------------------------------------------------------------#
+#  Place for testing..
+#-------------------------------------------------------------------------------------------#
+my ( $package, $filename, $line ) = caller;
+if ( $filename =~ /DEBUG_FILE.pl/ ) {
+
+	use aliased 'CamHelpers::CamToolDepth';
+	use aliased 'Packages::InCAM::InCAM';
+
+	my $inCAM = InCAM->new();
+
+	my $jobId     = "f49756";
+	my $stepName  = "o+1";
+	my $layerName = "fzs";
+
+	my @depth = CamToolDepth->GetToolDepths( $inCAM, $jobId, $stepName, $layerName );
+
+}
 1;

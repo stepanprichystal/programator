@@ -68,7 +68,7 @@ sub OnlineWrite_pcb {
 
 	if ( $result =~ /FAIL/ )
 	{
-		die HeliosException->new( EnumsErrors->HELIOSDBWRITEERROR, "No details" );
+		die HeliosException->new( EnumsErrors->HELIOSDBWRITEERROR, $result );
 	}
 
 	return $result;

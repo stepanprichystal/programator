@@ -9,7 +9,8 @@ use warnings;
 # ============ INPUT LINE =================
 my $inputLine =
 "
-cdr_display_layer,name=v2,display=yes,type=physical (1)
+	COM sredit_set_step_nest,lines=1\;1,nx=1\;1,ny=1\;1,clear_selection=yes
+COM nc_order,serial=1,sr_line=1\;1,sr_nx=1\;1,sr_ny=1\;1,mode=btrl,snake=no,scope=full
 ";
 # ============ INPUT LINE =================
 

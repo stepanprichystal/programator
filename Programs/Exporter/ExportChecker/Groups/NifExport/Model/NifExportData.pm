@@ -13,7 +13,7 @@ use warnings;
 #local library
 
 use aliased 'Programs::Exporter::DataTransfer::UnitsDataContracts::NifData';
-
+use aliased 'CamHelpers::CamAttributes';
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
@@ -42,7 +42,9 @@ sub OnExportGroupData {
 	my $exportData = NifData->new();
 
 	# Author
-	$exportData->SetZpracoval( $ENV{"LOGNAME"} );
+	my $name = CamAttributes->GetJobAttrByName($inCAM, $jobId,"user_name");
+	$exportData->SetZpracoval($name );
+	#$exportData->SetZpracoval( $ENV{"LOGNAME"} );
 
 	# Other
 	$exportData->SetTenting( $groupData->GetTenting() );
