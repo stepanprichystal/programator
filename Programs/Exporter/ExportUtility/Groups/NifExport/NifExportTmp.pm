@@ -136,15 +136,8 @@ sub Run {
 		return 0;
 	}
 
-	my $exportData = $unit->GetExportData();
+	my $exportData = $unit->GetExportData($inCAM);
 	
-	$exportData->SetZpracoval( $ENV{"LOGNAME"} );
-
-
-	#$exportData->SetZpracoval( $ENV{"LOGNAME"} );
-	my $name = CamAttributes->GetJobAttrByName($inCAM, $jobId, "user_name");
-	$exportData->SetZpracoval($name );
-
 
 	my $export = NifExport->new( UnitEnums->UnitId_NIF );
 	$export->Init( $inCAM, $jobId, $exportData );

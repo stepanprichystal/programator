@@ -117,8 +117,8 @@ sub Run {
 	$self->{"mergeFileMngr"}->MergeFiles( $self->{"operationMngr"} );
 	
 	# Save nc info table to database
-	my @info = $self->GetNCInfo();
-	HegMethods->UpdateNCInfo($self->{"jobId"}, NCHelper->BuildNcInfo(\@info));
+	$self->__UpdateNCInfo();
+ 
 
 }
 
@@ -133,6 +133,8 @@ sub GetNCInfo {
 
 
 
+
+
 sub ExportItemsCount{
 		my $self = shift;
 		
@@ -142,9 +144,30 @@ sub ExportItemsCount{
 		$totalCnt += scalar(@{$self->{"npltLayers"}});
 		
  		$totalCnt ++; # nc merging
+  		$totalCnt ++; # nc info save
 		
 		return $totalCnt;
 }
+
+
+#Get information about nc files for  technical procedure
+sub __UpdateNCInfo {
+	my $self = shift;
+	
+	# Save nc info table to database
+	my $resultItem = $self->_GetNewItem("Save NC info");
+	
+	my @info = $self->GetNCInfo();
+	my $resultMess = "";
+	my $result = NCHelper->UpdateNCInfo($self->{"jobId"}, \@info, \$resultMess);
+	
+	unless($result){
+		$resultItem->AddError($resultMess);
+	}
+ 
+	$self->_OnItemResult($resultItem);
+}
+
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#

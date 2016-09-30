@@ -66,15 +66,16 @@ sub RunExport {
 		# Open job
 		if ( $self->__OpenJob() ) {
 
+			# DON'T USE TRY/CATCH (TINY LIBRARY), IF SO, NORRIS WRITTER DOESN'T WORK
 			# catch all unexpected exception in thread
-			try {
+			eval {
 
 				# Process group 
 				$self->__ProcessGroup( $unitId, $exportData );
-			}
-			catch {
+			};
+			if ( my $e = $@ ) {
 
-				$self->__TaskResultEvent( ResultEnums->ItemResult_Fail, $_ );
+				$self->__TaskResultEvent( ResultEnums->ItemResult_Fail, $e );
 			}
 		}
 

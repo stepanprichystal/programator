@@ -9,9 +9,11 @@ package Packages::Export::NCExport::NCHelper;
 use strict;
 use warnings;
 use File::Copy;
+use Try::Tiny;
 
 #local library
 use aliased 'Enums::EnumsGeneral';
+use aliased 'Connectors::HeliosConnector::HegMethods';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -257,11 +259,11 @@ sub ChangeDrilledNumber {
 			my $machine = $3;
 
 			my $newDrillNum = $pcbid . $cuThickMark . $machine . " " . $coreMark;
-			
+
 			$newDrillNum =~ s/[\n\t\r]//;
 			$newDrillNum .= "\n";
-			
-			#$l 
+
+			#$l
 			@{ $file->{"body"} }[$i]->{"line"} =~ s/(m97,[a-f][\d]+)([\/\-\:\+]{0,2})(\D*)/$newDrillNum/i;
 
 			last;
@@ -269,15 +271,38 @@ sub ChangeDrilledNumber {
 	}
 }
 
+sub UpdateNCInfo {
+	my $self      = shift;
+	my $jobId     = shift;
+	my @info      = @{ shift(@_) };
+	my $errorMess = shift;
+
+	my $result = 1;
+
+	my $infoStr = $self->__BuildNcInfo( \@info );
+
+	eval { 
+		HegMethods->UpdateNCInfo( $jobId, $infoStr );
+	};
+	if ( my $e = $@ ) {
+		 
+		if ( ref($e) && $e->isa("Packages::Exceptions::HeliosException") ) {
+
+			$$errorMess = $e->{"mess"};
+		}
+
+		$result = 0;
+	}
+
+	return $result;
+}
 
 # Build string "nc info" based on information from nc manager
-sub BuildNcInfo {
+sub __BuildNcInfo {
 	my $self = shift;
 	my @info = @{ shift(@_) };
 
 	my $str = "";
-
-	 
 
 	for ( my $i = 0 ; $i < scalar(@info) ; $i++ ) {
 

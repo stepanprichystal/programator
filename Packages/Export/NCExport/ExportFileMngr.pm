@@ -124,14 +124,9 @@ sub __ExportNcSet {
 			}
 
 		}
-
-  #$inCAM->COM("nc_order_def","split"=>"1");
-  #$inCAM->COM("sredit_set_step_nest","lines" => "1\;1","nx" => "1\;1","ny" => "1\;1","clear_selection" => "yes");
-  #$inCAM->COM("nc_order","serial" => "1","sr_line" => "1\;1","sr_nx" => "1\;1","sr_ny" => "1\;1","mode" => "btrl","snake" => "no","scope" => "full");
-
 	}
 
-#$inCAM->COM("nc_order","full" =>"0", "serial" => "1","sr_line" => "1","sr_nx" => "1","sr_ny" => "1","mode" => "btrl","snake" => "no","scope" => "full");
+	#$inCAM->COM("nc_order","full" =>"0", "serial" => "1","sr_line" => "1","sr_nx" => "1","sr_ny" => "1","mode" => "btrl","snake" => "no","scope" => "full");
 
 	#if ( $inCAM->GetStatus() > 1 ) {
 	#	$methodRes->AddError( $inCAM->GetExceptionError() );

@@ -33,6 +33,7 @@ $heliosDb{"dbUserName"}     = "genesis";
 $heliosDb{"dbPassword"}     = "genesis";
 $heliosDb{"dbHost"}         = "dps";
 
+#define connection parameters for Helios DB write operation
 %heliosWriteDb = ();
 
 $heliosWriteDb{"dbProfile"} = "Gatema";
