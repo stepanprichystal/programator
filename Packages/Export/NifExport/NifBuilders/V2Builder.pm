@@ -76,6 +76,8 @@ sub Build {
 	push(@req, "panel_y");
 	push(@req, "nasobnost_panelu");
 	push(@req, "nasobnost");
+	push(@req, "fr_rozmer_x");
+	push(@req, "fr_rozmer_y");
 	push(@req, "rozmer_x");
 	push(@req, "rozmer_y");
 

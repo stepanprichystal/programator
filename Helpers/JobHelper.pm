@@ -15,7 +15,7 @@ use aliased 'Enums::EnumsGeneral';
 
 use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'Packages::Stackup::Stackup::Stackup';
-
+ 
 #-------------------------------------------------------------------------------------------#
 #   Package methods
 #-------------------------------------------------------------------------------------------#
@@ -171,7 +171,9 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	use aliased 'Helpers::JobHelper';
 
-	print JobHelper->GetFinalPcbThick("F13608");
+	my $cuThick = JobHelper->GetBaseCuThick("f13609", "c");
+	
+	print $cuThick;
 
 	#print JobHelper->GetBaseCuThick("F13608", "v3");
 

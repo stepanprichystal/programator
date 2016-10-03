@@ -194,6 +194,12 @@ sub __OpenFile {
 
 	my $fileName = $file->{"gROWname"};
 
+	# TODO smazat
+	unless($file->{"stagesCnt"}){
+		
+		print STDERR "1";
+	}
+
 	if ( $file->{"stagesCnt"} > 1 ) {
 
 		$fileName .= "_stage_" . $stage;

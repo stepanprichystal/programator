@@ -135,9 +135,15 @@ sub GetScanMark {
 	my $attName   = shift;
 
 	my %point = CamHooks->GetScanMarkPoint( \@scanMarks, $attName );
+	
+	print STDERR "point x:". $point{"x"}."\n\n";
+	print STDERR "point y:". $point{"y"}."\n\n";
 
 	$point{"x"} -= $nullPoint{"x"};
 	$point{"y"} -= $nullPoint{"y"};
+	
+		print STDERR "null x:". $nullPoint{"x"}."\n\n";
+	print STDERR "null y:". $nullPoint{"y"}."\n\n";
 
 	return sprintf( "X%.3f", $point{"x"} ) . sprintf( "Y%.3f", $point{"y"} );
 
@@ -394,8 +400,11 @@ sub GetMaterialParams {
 
 			$materialFile = "IS410";
 
-		}
-		elsif ( $materialName =~ /Al/i ) {
+		}elsif ( $materialName =~ /IS400/i ) {
+
+			$materialFile = "IS400";
+
+		}elsif ( $materialName =~ /Al/i ) {
 
 			$materialFile = "AL";
 

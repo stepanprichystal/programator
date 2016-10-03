@@ -298,10 +298,23 @@ sub __DefinePlatedOperations {
 		my $coreNum = $i + 1;
 		my $core    = $stackupNC->GetCore($coreNum);
 
-		my @layers = $core->GetNCLayers( Enums->SignalLayer_TOP, EnumsGeneral->LAYERTYPE_plt_cDrill );
+		my @layers  = ();
+		my @layersCore = $core->GetNCLayers( Enums->SignalLayer_TOP, EnumsGeneral->LAYERTYPE_plt_cDrill );
 
 		# if exist core drilling
-		if ( scalar(@layers) ) {
+		if ( scalar(@layersCore) ) {
+
+			my @layersFiltr = ();
+
+			foreach my $l (@plt_cDrill) {
+
+				my $exist = scalar( grep { $_->{"gROWname"} eq $l->{"gROWname"} } @layersCore );
+
+				if ($exist) {
+					push( @layers, $l );
+				}
+
+			}
 
 			# Add frame
 			push( @layers, $plt_fDrill[0] );

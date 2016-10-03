@@ -60,9 +60,9 @@ sub EditAfterOpen {
 
 			# Add message to file
 			$m47Mess = "\nM47, Vrtani okoli jadra.";
-			
+
 			# Delete "focus header", because it is not needed. (first drilling to empty laminate)
-			@{ $parseFile->{"header"} } = ( '%%3000');
+			@{ $parseFile->{"header"} } = ('%%3000');
 		}
 
 		my %i = ();
@@ -93,28 +93,59 @@ sub EditAfterOpen {
 	if ( $layer->{"type"} eq EnumsGeneral->LAYERTYPE_plt_fDrill && $self->{"layerCnt"} > 2 ) {
 
 		my $stackup = Stackup->new( $self->{"pcbId"} );
-		 
-		# case of blind drill (not last pressing) or burried (core drilling)
-		if ( $opItem->{"name"} =~ /c[0-9]+/ || $opItem->{"name"} =~ /j[0-9]+/ ) {
+
+		# case of blind drill (not last pressing) or burried (core drilling) or only frame drill (v1)
+		if ( $opItem->{"name"} =~ /c[0-9]+/ || $opItem->{"name"} =~ /v1/ || $opItem->{"name"} =~ /j[0-9]+/ ) {
 
 			my $cuThickMark = "";
 			my $coreMark    = "";
+			my $cuThick;
 
 			my %pressInfo = $stackup->GetPressInfo();
-			my $press      = $pressInfo{$opItem->GetPressOrder()};
 
-			if ( $opItem->GetPressOrder() != $stackup->GetPressCount() ) {
+			# case of blind drill (not last pressing) or burried (core drilling)
+			if ( $opItem->{"name"} =~ /c[0-9]+/ ) {
 
-				my $topCuName = $press->{"top"};
-				my $cuThick   = $stackup->GetCuLayer($topCuName)->GetThick();
-				$cuThickMark = Helper->__GetCuThickPanelMark($cuThick);
+				if ( $opItem->GetPressOrder() != $stackup->GetPressCount() ) {
+
+					my $press     = $pressInfo{ $opItem->GetPressOrder() };
+					my $topCuName = $press->{"top"};
+					$cuThick   = $stackup->GetCuLayer($topCuName)->GetThick();
+				}
+
 			}
 
-			# add J<number of core> if opItem is core behind pcb
-			if ( $opItem->{"name"} =~ m/j([0-9]+)/ ) {
+			# case of  frame drill (v1)
+			if ( $opItem->{"name"} =~ /v1/ ) {
 
-				$coreMark = "J" . $1;
+				#take first cu on first core
+
+				my @cores   = $stackup->GetAllCores();
+				$cuThick = $cores[0]->GetTopCopperLayer()->GetThick();
+
 			}
+
+			# case  burried (core drilling)
+			if ( $opItem->{"name"} =~ /j[0-9]+/ ) {
+
+
+				# add J<number of core> if opItem is core behind pcb
+				if ( $opItem->{"name"} =~ m/j([0-9]+)/ ) {
+					
+					my $coreNum = $1;
+					
+					if($coreNum > 0){
+						
+						my @cores   = $stackup->GetAllCores();
+						$cuThick = $cores[$coreNum-1]->GetTopCopperLayer()->GetThick();
+						
+						$coreMark = "J" . $coreNum;
+						
+					}
+				}
+			}
+
+			$cuThickMark = Helper->__GetCuThickPanelMark($cuThick);
 
 			NCHelper->ChangeDrilledNumber( $parseFile, $cuThickMark, $coreMark );
 		}
@@ -129,8 +160,6 @@ sub EditBeforeSave {
 	my $opItem    = shift;    #operation item reference
 
 }    #first argument OperationMangr
-
-
 
 1;
 

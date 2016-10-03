@@ -131,17 +131,31 @@ sub __GetFrDimemsion {
 
 	my %dim = ();
 
-	my $frExist = CamHelper->LayerExists( $inCAM, $jobId, "fr" );
+	# multilayer case, take real fr dimension
+	if ( $layerCnt > 2 ) {
 
-	unless ($frExist) {
-		$dim{"xSize"} = undef;
-		$dim{"ySize"} = undef;
+		my $frExist = CamHelper->LayerExists( $inCAM, $jobId, "fr" );
+
+		unless ($frExist) {
+			$dim{"xSize"} = undef;
+			$dim{"ySize"} = undef;
+		}
+		else {
+			my %lim = CamJob->GetProfileLimits( $inCAM, $jobId, $stepName );
+
+			$dim{"xSize"} = sprintf "%.1f", ( $lim{"xmax"} - $lim{"xmin"} ) - ( 3 * $routThick );
+			$dim{"ySize"} = sprintf "%.1f", ( $lim{"ymax"} - $lim{"ymin"} ) - ( 3 * $routThick );
+		}
 	}
-	else {
-		my %lim = CamJob->GetLayerLimits( $inCAM, $jobId, $stepName, "fr" );
 
-		$dim{"xSize"} = sprintf "%.1f", ( $lim{"xmax"} - $lim{"xmin"} ) - ( 3 * $routThick );
-		$dim{"ySize"} = sprintf "%.1f", ( $lim{"ymax"} - $lim{"ymin"} ) - ( 3 * $routThick );
+	# if 2vv save dimension of pcb to "fr" dimension
+	else {
+
+		my %lim = CamJob->GetProfileLimits( $inCAM, $jobId, $stepName );
+
+		$dim{"xSize"} = sprintf "%.1f", ( $lim{"xmax"} - $lim{"xmin"} );
+		$dim{"ySize"} = sprintf "%.1f", ( $lim{"ymax"} - $lim{"ymin"} );
+
 	}
 
 	return %dim;
