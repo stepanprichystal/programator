@@ -5,7 +5,6 @@
 
 package CamHelpers::CamDrilling;
 
-
 #3th party library
 use strict;
 use warnings;
@@ -18,13 +17,9 @@ use aliased 'CamHelpers::CamJob';
 use aliased 'CamHelpers::CamDrilling';
 use aliased 'Enums::EnumsGeneral';
 
-
 #-------------------------------------------------------------------------------------------#
 #   Package methods
 #-------------------------------------------------------------------------------------------#
-
-
-
 
 #Return minimal hole tool for given layer and layer type
 # Type EnumsGeneral->LAYERTYPE
@@ -35,16 +30,16 @@ sub GetMinHoleTool {
 	my $jobId     = shift;
 	my $stepName  = shift;
 	my $layertype = shift;
-	my $fromLayer = shift; #tell, only drill layers starts from <$fromLayer> will be considered
+	my $fromLayer = shift;    #tell, only drill layers starts from <$fromLayer> will be considered
 
 	my @layers = CamDrilling->GetNCLayersByType( $inCAM, $jobId, $layertype );
 	CamDrilling->AddLayerStartStop( $inCAM, $jobId, \@layers );
 
 	my $minTool;
-	
+
 	#filter layer, which go from <$fromLayer>
-	if($fromLayer){
-		@layers = grep{ $_->{"gROWdrl_start_name"} eq $fromLayer} @layers;
+	if ($fromLayer) {
+		@layers = grep { $_->{"gROWdrl_start_name"} eq $fromLayer } @layers;
 	}
 
 	foreach my $layer (@layers) {
@@ -81,14 +76,14 @@ sub GetMinHoleTool {
 #Return minimal hole tool for given layers
 sub GetMinHoleToolByLayers {
 
-	my $self      = shift;
-	my $inCAM     = shift;
-	my $jobId     = shift;
-	my $stepName  = shift;
-	my @layers = @{shift(@_)};
+	my $self     = shift;
+	my $inCAM    = shift;
+	my $jobId    = shift;
+	my $stepName = shift;
+	my @layers   = @{ shift(@_) };
 
 	my $minTool;
- 
+
 	foreach my $layer (@layers) {
 
 		$inCAM->INFO(
@@ -156,21 +151,19 @@ sub GetNCLayersByType {
 
 	my @res = ();
 
-	foreach my $t (@layers){
-		
-		unless($t->{"type"}){
-			
+	foreach my $t (@layers) {
+
+		unless ( $t->{"type"} ) {
+
 			print 1;
 		}
-		
+
 	}
- 
 
 	@layers = grep { $_->{"type"} eq $type } @layers;
 
 	return @layers;
 }
- 
 
 # Add  to every hash in array new value: type
 # Type is assign by our rules, which ve use wehen proscess pcb
@@ -244,7 +237,7 @@ sub AddNCLayerType {
 		}
 
 		# Non plated NC layers
-		elsif ( $l->{"gROWname"} =~ /^f[0-9]*$/ ||  $l->{"gROWname"} =~ /^f(sch)?(lm)?$/) {
+		elsif ( $l->{"gROWname"} =~ /^f[0-9]*$/ || $l->{"gROWname"} =~ /^f(sch)?(lm)?$/ ) {
 
 			$l->{"type"}   = EnumsGeneral->LAYERTYPE_nplt_nMill;
 			$l->{"plated"} = 0;
@@ -273,17 +266,20 @@ sub AddNCLayerType {
 			$l->{"type"}   = EnumsGeneral->LAYERTYPE_nplt_frMill;
 			$l->{"plated"} = 0;
 
-		}elsif ( $l->{"gROWname"} =~ /^score$/ ) {
+		}
+		elsif ( $l->{"gROWname"} =~ /^score$/ ) {
 
 			$l->{"type"}   = EnumsGeneral->LAYERTYPE_nplt_score;
 			$l->{"plated"} = 0;
 
-		}elsif ( $l->{"gROWname"} =~ /^jfzc[0-9]*$/ ) {
+		}
+		elsif ( $l->{"gROWname"} =~ /^jfzc[0-9]*$/ ) {
 
 			$l->{"type"}   = EnumsGeneral->LAYERTYPE_nplt_jbMillTop;
 			$l->{"plated"} = 0;
-			
-		}elsif ( $l->{"gROWname"} =~ /^jfzs[0-9]*$/ ) {
+
+		}
+		elsif ( $l->{"gROWname"} =~ /^jfzs[0-9]*$/ ) {
 
 			$l->{"type"}   = EnumsGeneral->LAYERTYPE_nplt_jbMillBot;
 			$l->{"plated"} = 0;
@@ -396,20 +392,20 @@ sub AddLayerStartStop {
 		$layer->{"gROWdrl_start"}      = $order{$start};
 		$layer->{"gROWdrl_end"}        = $order{$end};
 
-		$layer->{"gROWname"} = ${ $inCAM->{doinfo}{gROWname} }[$idx];
-		$layer->{"gROWdrl_dir"} = ${ $inCAM->{doinfo}{gROWdrl_dir} }[$idx]; #drill direction top2bot/bot2top
+		$layer->{"gROWname"}    = ${ $inCAM->{doinfo}{gROWname} }[$idx];
+		$layer->{"gROWdrl_dir"} = ${ $inCAM->{doinfo}{gROWdrl_dir} }[$idx];    #drill direction top2bot/bot2top
 
 		#Necessary, for old genesis bot drilling. Because all drilling direction
 		#were from TOP to BOT. But InCAM allows make Bot blind with direction
 		#from Bot to TOP
-		if ( ${ $inCAM->{doinfo}{gROWname} }[$idx] =~ /s[0-9]+s/ ) {    #if blind BOT drilling, check
+		if ( ${ $inCAM->{doinfo}{gROWname} }[$idx] =~ /s[0-9]+s/ ) {           #if blind BOT drilling, check
 
 			if ( $order{$start} < $order{$end} ) {
 				$layer->{"gROWdrl_start_name"} = $alias{$end};
 				$layer->{"gROWdrl_end_name"}   = $alias{$start};
 				$layer->{"gROWdrl_start"}      = $order{$end};
 				$layer->{"gROWdrl_end"}        = $order{$start};
-				$layer->{"gROWdrl_dir"} = "bot2top";
+				$layer->{"gROWdrl_dir"}        = "bot2top";
 			}
 		}
 
@@ -465,6 +461,72 @@ sub GetStagesCnt {
 	}
 
 	return $maxStage;
+}
+
+# For given layer (if is NC layer) return number of stages
+# Search in given layer and look for drill_stage attribute
+sub AddHistogramValues {
+	my $self   = shift;
+	my $inCAM  = shift;
+	my $jobId  = shift;
+	my $layers = shift;    #specify layers
+
+	for ( my $i = 0 ; $i < scalar( @{$layers} ) ; $i++ ) {
+
+		my $layer = ${$layers}[$i];
+		my $lName = $layer->{"gROWname"};
+
+		$inCAM->INFO(
+					  "units"           => 'mm',
+					  "angle_direction" => 'ccw',
+					  "entity_type"     => 'layer',
+					  "entity_path"     => "$jobId/panel/$lName",
+					  "data_type"       => 'SYMS_HIST',
+					  "options"         => "break_sr"
+		);
+
+		my @symbols = @{ $inCAM->{"doinfo"}{"gSYMS_HISTsymbol"} };
+
+		my $min = undef;
+		my $max = undef;
+		foreach my $s (@symbols) {
+
+			my ($val) = $s =~ m/(\d)*/;
+
+			# set min value
+			if ( !defined $min || $val < $min ) {
+				$min = $val;
+			}
+
+			# set max value
+			if ( !defined $max || $val > $max ) {
+				$max = $val;
+			}
+		}
+
+		$layer->{"minTool"} = $min;
+		$layer->{"maxTool"} = $max;
+	}
+}
+
+
+#-------------------------------------------------------------------------------------------#
+#  Place for testing..
+#-------------------------------------------------------------------------------------------#
+my ( $package, $filename, $line ) = caller;
+if ( $filename =~ /DEBUG_FILE.pl/ ) {
+
+	use aliased 'CamHelpers::CamDrilling';
+	use aliased 'Packages::InCAM::InCAM';
+
+	my $inCAM = InCAM->new();
+
+	my $jobId     = "f49756";
+	my $stepName  = "o+1";
+	my $layerName = "fzs";
+
+	my @depth = CamDrilling->AddHistogramValues( $inCAM, $jobId, $stepName, $layerName );
+
 }
 
 1;

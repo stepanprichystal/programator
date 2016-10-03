@@ -9,7 +9,6 @@ use base('Packages::Export::MngrBase');
 use Class::Interface;
 &implements('Packages::Export::IMngr');
 
-
 #3th party library
 use strict;
 use warnings;
@@ -33,31 +32,33 @@ use aliased 'CamHelpers::CamJob';
 #-------------------------------------------------------------------------------------------#
 
 sub new {
-	my $class     = shift;
-	my $self      = $class->SUPER::new( @_ );
+	my $class = shift;
+	my $self  = $class->SUPER::new(@_);
 	bless $self;
 
 	$self->{"inCAM"}        = shift;
 	$self->{"jobId"}        = shift;
 	$self->{"stepName"}     = shift;
 	$self->{"exportSingle"} = shift;
-	$self->{"pltLayers"}    = shift;
-	$self->{"npltLayers"}   = shift;
 
-	#if export all, load all NC layers
-	unless ( $self->{"exportSingle"} ) {
+	my $requiredPlt  = shift;
+	my $requiredNPlt = shift;
 
-		my @plt = CamDrilling->GetPltNCLayers( $self->{"inCAM"}, $self->{"jobId"} );
-		$self->{"pltLayers"} = \@plt;
+	# Load all NC layers
 
-		my @nplt = CamDrilling->GetNPltNCLayers( $self->{"inCAM"}, $self->{"jobId"} );
-		$self->{"npltLayers"} = \@nplt;
+	my @plt = CamDrilling->GetPltNCLayers( $self->{"inCAM"}, $self->{"jobId"} );
+	$self->{"pltLayers"} = \@plt;
 
-	}
-	else {
+	my @nplt = CamDrilling->GetNPltNCLayers( $self->{"inCAM"}, $self->{"jobId"} );
+	$self->{"npltLayers"} = \@nplt;
 
-		CamDrilling->AddNCLayerType( $self->{"pltLayers"} );
-		CamDrilling->AddNCLayerType( $self->{"npltLayers"} );
+	CamDrilling->AddHistogramValues( $self->{"inCAM"}, $self->{"jobId"}, $self->{"pltLayers"} );
+	CamDrilling->AddHistogramValues( $self->{"inCAM"}, $self->{"jobId"}, $self->{"npltLayers"} );
+
+	# Filter layers, if export single
+	if ( $self->{"exportSingle"} ) {
+
+		$self->__FilterLayers( $requiredPlt, $requiredNPlt );
 
 	}
 
@@ -72,7 +73,7 @@ sub new {
 
 	#create manager for merging and moving files to archiv
 	$self->{"mergeFileMngr"} = MergeFileMngr->new( $self->{'inCAM'}, $self->{'jobId'}, $self->{"stepName"}, $self->{"exportSingle"} );
-	$self->{"mergeFileMngr"}->{"fileEditor"} = FileEditor->new( $self->{'jobId'}, $self->{"layerCnt"});
+	$self->{"mergeFileMngr"}->{"fileEditor"} = FileEditor->new( $self->{'jobId'}, $self->{"layerCnt"} );
 	$self->{"mergeFileMngr"}->{"onItemResult"}->Add( sub { $self->_OnItemResult(@_) } );
 
 	#create manager, which decide what will be exported
@@ -115,10 +116,9 @@ sub Run {
 
 	# Merge an move files to archive
 	$self->{"mergeFileMngr"}->MergeFiles( $self->{"operationMngr"} );
-	
+
 	# Save nc info table to database
 	$self->__UpdateNCInfo();
- 
 
 }
 
@@ -131,41 +131,67 @@ sub GetNCInfo {
 	return @infoTable;
 }
 
+sub ExportItemsCount {
+	my $self = shift;
 
+	my $totalCnt = 0;
 
+	#$totalCnt += 8;
+	$totalCnt += scalar( @{ $self->{"pltLayers"} } );
+	$totalCnt += scalar( @{ $self->{"npltLayers"} } );
 
+	$totalCnt++;    # nc merging
+	$totalCnt++;    # nc info save
 
-sub ExportItemsCount{
-		my $self = shift;
-		
-		my $totalCnt= 0;
-				#$totalCnt += 8;
-		$totalCnt += scalar(@{$self->{"pltLayers"}});
-		$totalCnt += scalar(@{$self->{"npltLayers"}});
-		
- 		$totalCnt ++; # nc merging
-  		$totalCnt ++; # nc info save
-		
-		return $totalCnt;
+	return $totalCnt;
 }
-
 
 #Get information about nc files for  technical procedure
 sub __UpdateNCInfo {
 	my $self = shift;
-	
+
 	# Save nc info table to database
 	my $resultItem = $self->_GetNewItem("Save NC info");
-	
-	my @info = $self->GetNCInfo();
+
+	my @info       = $self->GetNCInfo();
 	my $resultMess = "";
-	my $result = NCHelper->UpdateNCInfo($self->{"jobId"}, \@info, \$resultMess);
-	
-	unless($result){
+	my $result     = NCHelper->UpdateNCInfo( $self->{"jobId"}, \@info, \$resultMess );
+
+	unless ($result) {
 		$resultItem->AddError($resultMess);
 	}
- 
+
 	$self->_OnItemResult($resultItem);
+}
+
+sub __FilterLayers {
+	my $self         = shift;
+	my $requiredPlt  = shift;
+	my $requiredNPlt = shift;
+
+	my $plt = $self->{"pltLayers"};
+	my $nplt = $self->{"npltLayers"};
+
+	for ( my $i = scalar( @{$plt} ) - 1 ; $i >= 0 ; $i-- ) {
+
+		my $checkedLayer = ${$plt}[$i]->{"gROWname"};
+		my $exist = scalar( grep { $_ eq $checkedLayer } @{$requiredPlt} );
+
+		unless ($exist) {
+			splice @{$plt}, $i, 1; # delete layer
+		}
+	}
+	
+	for ( my $i = scalar( @{$nplt} ) - 1 ; $i >= 0 ; $i-- ) {
+
+		my $checkedLayer = ${$nplt}[$i]->{"gROWname"};
+		my $exist = scalar( grep { $_ eq $checkedLayer } @{$requiredNPlt} );
+
+		unless ($exist) {
+			splice @{$nplt}, $i, 1; # delete layer
+		}
+	}
+
 }
 
 #-------------------------------------------------------------------------------------------#
