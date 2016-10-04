@@ -97,16 +97,19 @@ sub __GetPropertyVector {
 
 		if ( scalar( @{$layers} ) ) {
 
+			# get  complete vector
 			# combine property vectors of all layers in "operation definition"
 			foreach my $l ( @{$layers} ) {
 
-				# get vector of parameter for this layer <$l>
+				# get  vector of property for this layer <$l>
 				my %lVec          = ();
 				my %staticVector  = $self->__GetStaticProperty( $l->{"type"} );
 				my %dynamicVector = $self->__GetDynamicProperty( $l->{"type"} );
 
+				# vector for this layer
 				%lVec = ( %staticVector, %dynamicVector );
 
+				# combine vector with preview "result" vector
 				foreach my $propName ( keys %comb ) {
 
 					# get new signle property value, from two property values
@@ -188,20 +191,20 @@ sub __GetMachinesByVector {
 	$comb{ Enums->Property_ROUTDEPTH }    = sub { my ( $m, $o ) = @_; return ( !$m && $o ? 0 : 1 ) };
 	$comb{ Enums->Property_DRILLCROSSES } = sub { my ( $m, $o ) = @_; return ( !$m && $o ? 0 : 1 ) };
 	$comb{ Enums->Property_CAMERAS }      = sub { my ( $m, $o ) = @_; return ( !$m && $o ? 0 : 1 ) };
-	$comb{ Enums->Property_MAXTOOL } 	  = sub { my ( $m, $o ) = @_; return ( $m >= $o ? 1 : 0 ) };
+	$comb{ Enums->Property_MAXTOOL } 	  = sub { my ( $m, $o ) = @_; return (  $m >= $o ? 1 : 0 ) };
 	
  
-	my $sumPropVec = 0;
-	map { $sumPropVec += $_ } @propVec;
+	#my $sumPropVec = 0;
+	#map { $sumPropVec += $_ } @propVec;
 
 	my @machines = @{ $self->{"machines"} };
-	my @suitable = ();
+	my @suitable = ();  #suitable machines
 
 	foreach my $m (@machines) {
 		my @result = ();
 
-		# create vector of machine's properties
-		my @machVec = @{ $m->{"properties"} };
+		# Get machine vector of property
+		my %machProp = %{ $m->{"properties"} };
 
 		#do AND between Machine vector and Vector given by operation
 		for ( my $i = 0 ; $i < scalar(@machVec) ; $i++ ) {
@@ -249,7 +252,18 @@ sub __SetMachines {
 		$m{"suffix"}     = lc( shift @vals );
 		$m{"id"}         = "machine_" . $m{"suffix"};
 		$m{"names"}      = shift @vals;
-		$m{"properties"} = \@vals;
+		
+		my %prop = ();
+		$prop{ Enums->Property_DRILL }        = $vals[0];
+		$prop{ Enums->Property_DRILLDEPTH }   = $vals[1];
+		$prop{ Enums->Property_ROUT }         = $vals[2];
+		$prop{ Enums->Property_ROUTDEPTH }    = $vals[3];
+		$prop{ Enums->Property_DRILLCROSSES } = $vals[4];
+		$prop{ Enums->Property_CAMERAS }      = $vals[5];
+		$prop{ Enums->Property_MAXTOOL } 	  = $vals[6];
+		
+		
+		$m{"properties"} = \%prop;
 
 		push( @machines, \%m );
 	}
