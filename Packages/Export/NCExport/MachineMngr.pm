@@ -50,9 +50,9 @@ sub AssignMachines {
 
 	foreach my $op ( @{ $opManager->{"operItems"} } ) {
 
-		my @propVec = $self->__GetPropertyVector($op);
+		my %propVec = $self->__GetPropertyVector($op);
 
-		my @machines = $self->__GetMachinesByVector( \@propVec );
+		my @machines = $self->__GetMachinesByVector( \%propVec );
 
 		$op->SetMachines( \@machines );
 
@@ -90,6 +90,7 @@ sub __GetPropertyVector {
 
 	# Result vector - final combination of all layers "property vectors"
 	my %resVector = ();
+ 	my $resVectorInit = 0;
 
 	# combine property vectors of all layers in "operation item"
 	foreach my $oDef ( @{ $operationItem->{"operations"} } ) {
@@ -104,10 +105,18 @@ sub __GetPropertyVector {
 				# get  vector of property for this layer <$l>
 				my %lVec          = ();
 				my %staticVector  = $self->__GetStaticProperty( $l->{"type"} );
-				my %dynamicVector = $self->__GetDynamicProperty( $l->{"type"} );
+				my %dynamicVector = $self->__GetDynamicProperty( $l );
 
 				# vector for this layer
 				%lVec = ( %staticVector, %dynamicVector );
+
+				# init vector
+				unless( $resVectorInit){
+					
+					%resVector = %lVec;
+					$resVectorInit = 1;
+					next;
+				}		 
 
 				# combine vector with preview "result" vector
 				foreach my $propName ( keys %comb ) {
@@ -121,6 +130,116 @@ sub __GetPropertyVector {
 	}
 
 	return %resVector;
+}
+
+# Return machines, suitable for process given operation
+sub __GetMachinesByVector {
+	my $self     = shift;
+	my %operProp = %{ shift(@_) };    # vector of operation property
+
+	# Define "functions" which tell, if machine has requested property
+	# Functions return 1, if so, else 0
+
+	# Example: - operation vector has property DRILLDEPTH = 1
+	#		   - specific machine has property DRILLDEPTH = 0
+	# Function: sub { my ( $m, $o ) = @_; return (!$m && $o ? 0 : 1)};
+	# => Return 0, thus this machine is not able to "drill depth"
+
+	my %comb = ();
+
+	# $m - "machine"
+	# $o - "operation"
+
+	$comb{ Enums->Property_DRILL }        = sub { my ( $m, $o ) = @_; return ( !$m && $o ? 0 : 1 ) };
+	$comb{ Enums->Property_DRILLDEPTH }   = sub { my ( $m, $o ) = @_; return ( !$m && $o ? 0 : 1 ) };
+	$comb{ Enums->Property_ROUT }         = sub { my ( $m, $o ) = @_; return ( !$m && $o ? 0 : 1 ) };
+	$comb{ Enums->Property_ROUTDEPTH }    = sub { my ( $m, $o ) = @_; return ( !$m && $o ? 0 : 1 ) };
+	$comb{ Enums->Property_DRILLCROSSES } = sub { my ( $m, $o ) = @_; return ( !$m && $o ? 0 : 1 ) };
+	$comb{ Enums->Property_CAMERAS }      = sub { my ( $m, $o ) = @_; return ( !$m && $o ? 0 : 1 ) };
+	$comb{ Enums->Property_MAXTOOL } = sub { my ( $m, $o ) = @_; return ( $m < $o ? 0 : 1 ) };
+
+	#my $sumPropVec = 0;
+	#map { $sumPropVec += $_ } @propVec;
+
+	my @machines = @{ $self->{"machines"} };
+	my @suitable = ();                         #suitable machines
+
+	foreach my $m (@machines) {
+		my @result = ();
+
+		# Get machine vector of property
+		my %machProp = %{ $m->{"properties"} };
+
+		my $machineSuit = 1;
+
+		# check if machine suits to all requested property
+		foreach my $propName ( keys %comb ) {
+
+			# get result, if machine meets requirment
+			my $res = $comb{$propName}->( $machProp{$propName}, $operProp{$propName} );
+
+			unless ($res) {
+				$machineSuit = 0;
+				last;
+			}
+		}
+		if ($machineSuit) {
+
+			push( @suitable, $m );
+		}
+	}
+
+	return @suitable;
+}
+
+# Load existing machines and their parameters from config file
+sub __SetMachines {
+	my $self = shift;
+
+	my @machines = ();
+
+	my $f;
+	open( $f, "<" . GeneralHelper->Root() . EnumsPaths->Config_NCMACHINES );
+
+	# Header of table is:
+	# Group ID | Machines | rest are properties => 1) DRILL 2)  DRILL DEPTH 3) ROUT 4) ROUT DEPTH 5) DRILL CROSSES 6) CAMERAS
+
+	while ( my $l = <$f> ) {
+
+		chomp($l);
+
+		if ( $l =~ /#/ || $l =~ /^[\r\n\t]$/ || $l eq "" ) {
+			next;
+		}
+
+		my %m = ();
+		my @vals = split( /\|/, $l );
+
+		chomp @vals;
+		map { $_ =~ s/[\t\s]//g } @vals;
+
+		$m{"suffix"} = lc( shift @vals );
+		$m{"id"}     = "machine_" . $m{"suffix"};
+		$m{"names"}  = shift @vals;
+
+		my %prop = ();
+		$prop{ Enums->Property_DRILL }        = $vals[0];
+		$prop{ Enums->Property_DRILLDEPTH }   = $vals[1];
+		$prop{ Enums->Property_ROUT }         = $vals[2];
+		$prop{ Enums->Property_ROUTDEPTH }    = $vals[3];
+		$prop{ Enums->Property_DRILLCROSSES } = $vals[4];
+		$prop{ Enums->Property_CAMERAS }      = $vals[5];
+		$prop{ Enums->Property_MAXTOOL }      = $vals[6];
+
+		$m{"properties"} = \%prop;
+
+		push( @machines, \%m );
+	}
+
+	close($f);
+
+	$self->{"machines"} = \@machines;
+
 }
 
 sub __GetStaticProperty {
@@ -161,116 +280,9 @@ sub __GetDynamicProperty {
 	my %h = ();
 
 	# get max tool
-	$h{ Enums->Property_MAXTOOL } = $layer->{"maxTool"};
+	$h{ Enums->Property_MAXTOOL } = $layer->{"maxTool"}/1000;
 
 	return %h;
-
-}
-
-# Return machines, suitable for process given operation
-sub __GetMachinesByVector {
-	my $self    = shift;
-	my %propVec = %{ shift(@_) };
-
-	# Define "functions" which tell, if machine has requested property
-	# Functions return 1, if so, else 0
-
-	# Example: - operation vector has property DRILLDEPTH = 1
-	#		   - specific machine has property DRILLDEPTH = 0
-	# Function: sub { my ( $m, $o ) = @_; return (!$m && $o ? 0 : 1)};
-	# => Return 0, thus this machine is not able to "drill depth"
-
-	my %comb = ();
-
-	# $m - "machine"
-	# $o - "operation"
-
-	$comb{ Enums->Property_DRILL }        = sub { my ( $m, $o ) = @_; return ( !$m && $o ? 0 : 1 ) };
-	$comb{ Enums->Property_DRILLDEPTH }   = sub { my ( $m, $o ) = @_; return ( !$m && $o ? 0 : 1 ) };
-	$comb{ Enums->Property_ROUT }         = sub { my ( $m, $o ) = @_; return ( !$m && $o ? 0 : 1 ) };
-	$comb{ Enums->Property_ROUTDEPTH }    = sub { my ( $m, $o ) = @_; return ( !$m && $o ? 0 : 1 ) };
-	$comb{ Enums->Property_DRILLCROSSES } = sub { my ( $m, $o ) = @_; return ( !$m && $o ? 0 : 1 ) };
-	$comb{ Enums->Property_CAMERAS }      = sub { my ( $m, $o ) = @_; return ( !$m && $o ? 0 : 1 ) };
-	$comb{ Enums->Property_MAXTOOL } 	  = sub { my ( $m, $o ) = @_; return (  $m >= $o ? 1 : 0 ) };
-	
- 
-	#my $sumPropVec = 0;
-	#map { $sumPropVec += $_ } @propVec;
-
-	my @machines = @{ $self->{"machines"} };
-	my @suitable = ();  #suitable machines
-
-	foreach my $m (@machines) {
-		my @result = ();
-
-		# Get machine vector of property
-		my %machProp = %{ $m->{"properties"} };
-
-		#do AND between Machine vector and Vector given by operation
-		for ( my $i = 0 ; $i < scalar(@machVec) ; $i++ ) {
-			$result[$i] = $machVec[$i] && $propVec[$i];
-		}
-
-		my $sumResVec = 0;
-		map { $sumResVec += $_ } @result;
-
-		if ( $sumPropVec == $sumResVec ) {
-
-			push( @suitable, $m );
-		}
-	}
-
-	return @suitable;
-}
-
-# Load existing machines and their parameters from config file
-sub __SetMachines {
-	my $self = shift;
-
-	my @machines = ();
-
-	my $f;
-	open( $f, "<" . GeneralHelper->Root() . EnumsPaths->Config_NCMACHINES );
-
-	# Header of table is:
-	# Group ID | Machines | rest are properties => 1) DRILL 2)  DRILL DEPTH 3) ROUT 4) ROUT DEPTH 5) DRILL CROSSES 6) CAMERAS
-
-	while ( my $l = <$f> ) {
-
-		chomp($l);
-
-		if ( $l =~ /#/ || $l =~ /^[\r\n\t]$/ || $l eq "" ) {
-			next;
-		}
-
-		my %m = ();
-		my @vals = split( /\|/, $l );
-
-		chomp @vals;
-		map { $_ =~ s/[\t\s]//g } @vals;
-
-		$m{"suffix"}     = lc( shift @vals );
-		$m{"id"}         = "machine_" . $m{"suffix"};
-		$m{"names"}      = shift @vals;
-		
-		my %prop = ();
-		$prop{ Enums->Property_DRILL }        = $vals[0];
-		$prop{ Enums->Property_DRILLDEPTH }   = $vals[1];
-		$prop{ Enums->Property_ROUT }         = $vals[2];
-		$prop{ Enums->Property_ROUTDEPTH }    = $vals[3];
-		$prop{ Enums->Property_DRILLCROSSES } = $vals[4];
-		$prop{ Enums->Property_CAMERAS }      = $vals[5];
-		$prop{ Enums->Property_MAXTOOL } 	  = $vals[6];
-		
-		
-		$m{"properties"} = \%prop;
-
-		push( @machines, \%m );
-	}
-
-	close($f);
-
-	$self->{"machines"} = \@machines;
 
 }
 
