@@ -104,7 +104,7 @@ sub __ExportNcSet {
 							 "sr_ny"   => "1\;1",
 							 "mode"    => "btrl",
 							 "snake"   => "no",
-							 "scope"   => "full"
+							 "scope"   => "parent"
 				);
 
 			}
@@ -119,7 +119,7 @@ sub __ExportNcSet {
 							 "sr_ny"   => "1",
 							 "mode"    => "btrl",
 							 "snake"   => "no",
-							 "scope"   => "full"
+							 "scope"   => "parent"
 				);
 			}
 

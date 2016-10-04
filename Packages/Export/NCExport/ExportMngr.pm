@@ -112,7 +112,7 @@ sub Run {
 	$self->{"machineMngr"}->AssignMachines( $self->{"operationMngr"} );
 
 	# Export physical nc files
-	#$self->{"exportFileMngr"}->ExportFiles( $self->{"operationMngr"} );
+	$self->{"exportFileMngr"}->ExportFiles( $self->{"operationMngr"} );
 
 	# Merge an move files to archive
 	$self->{"mergeFileMngr"}->MergeFiles( $self->{"operationMngr"} );
