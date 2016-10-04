@@ -80,7 +80,7 @@ sub Build {
 	if ( $self->_IsRequire("g_plocha_c") && $self->_IsRequire("g_plocha_s") ) {
 
 		# comment
-		$section->AddComment("Plocha Cu tenting, pouze s vrtanim");
+		$section->AddComment("Plocha Cu pattern, pouze s vrtanim");
 	}
 
 	#g_plocha_c

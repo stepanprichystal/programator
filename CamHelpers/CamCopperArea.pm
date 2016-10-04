@@ -42,7 +42,7 @@ sub GetGoldFingerArea {
 
 	foreach my $l (@layers) {
 
-		CamHelper->ClearEditor( $inCAM, $jobId, );
+		CamHelper->ClearEditor( $inCAM, $jobId);
 
 		$inCAM->COM( 'flatten_layer', source_layer => $l, target_layer => $l . "__gold__" );
 		$inCAM->COM( 'affected_layer', name => $l . "__gold__", mode => "single", affected => "yes" );
@@ -74,10 +74,10 @@ sub GetGoldFingerArea {
 			my %areaTmp;
 
 			if ( $l eq "c" ) {
-				%areaTmp = $self->GetCuAreaMask( $cuThickness, $pcbThick, $inCAM, $jobId, $stepName, $l . "__gold__", undef, "m" . $l );
+				%areaTmp = $self->GetCuAreaMask( $cuThickness, $pcbThick, $inCAM, $jobId, $stepName, $l . "__gold__", undef, "m" . $l, undef);
 			}
 			elsif ( $l eq "s" ) {
-				%areaTmp = $self->GetCuAreaMask( $cuThickness, $pcbThick, $inCAM, $jobId, $stepName, undef, $l . "__gold__", "m" . $l );
+				%areaTmp = $self->GetCuAreaMask( $cuThickness, $pcbThick, $inCAM, $jobId, $stepName, undef, $l . "__gold__", undef, "m" . $l );
 			}
 
 			$area{"area"}       += $areaTmp{"area"};
