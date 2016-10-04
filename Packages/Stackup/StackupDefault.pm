@@ -575,9 +575,9 @@ sub _DrawStackupType {
 my ( $package, $filename, $line ) = caller;
 
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
-	my $pcbId        = "f49954";
+	my $pcbId        = "f50193";
 	my $layerCnt     = 4;
-	my @innerCuUsage = ( 46, 55);
+	my @innerCuUsage = ( 60, 60);
 	my $outerCuThick = 18;
 	my $pcbClass     = 8;
 
