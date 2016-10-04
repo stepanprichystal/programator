@@ -224,11 +224,16 @@ sub _SetOuterCu {
 	my $idOfCu   = $self->_GetCuIdByThick($outerCuThick);
 	my @elements = @{ $xml->{ml}->{element} };
 
-	if (    $elements[0]->{type} =~ /Enums->MaterialType_COPPER/i
-		 && $elements[ scalar(@elements) - 1 ]->{type} =~ /Enums->MaterialType_COPPER/i )
+	my $copper = Enums->MaterialType_COPPER;
+ 
+
+	if (    $elements[0]->{type} =~ /\Q$copper/i
+		 && $elements[ scalar(@elements) - 1 ]->{type} =~ /\Q$copper/i )
 	{
 		@{ $xml->{ml}->{element} }[0]->{id} = $idOfCu;
 		@{ $xml->{ml}->{element} }[ scalar(@elements) - 1 ]->{id} = $idOfCu;
+		
+		print STDERR "======================"
 	}
 
 }
@@ -570,11 +575,11 @@ sub _DrawStackupType {
 my ( $package, $filename, $line ) = caller;
 
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
-	my $pcbId        = "d99991";
-	my $layerCnt     = 8;
-	my @innerCuUsage = ( 50, 3, 15, 50, 15, 44 );
+	my $pcbId        = "f49954";
+	my $layerCnt     = 4;
+	my @innerCuUsage = ( 46, 55);
 	my $outerCuThick = 18;
-	my $pcbClass     = 9;
+	my $pcbClass     = 8;
 
 	use aliased 'Packages::Stackup::StackupDefault';
 
