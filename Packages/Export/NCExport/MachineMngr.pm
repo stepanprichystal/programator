@@ -9,6 +9,7 @@ package Packages::Export::NCExport::MachineMngr;
 #3th party library
 use strict;
 use warnings;
+use List::Util qw[max];
 
 #use File::Copy;
 
@@ -19,6 +20,7 @@ use aliased 'Enums::EnumsPaths';
 use aliased 'Helpers::GeneralHelper';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'CamHelpers::CamJob';
+
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods

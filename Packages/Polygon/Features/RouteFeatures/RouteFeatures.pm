@@ -117,18 +117,42 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $route = RouteFeatures->new();
 
-	my $jobId = "f13610";
+	my $jobId = "f49180";
 	my $inCAM = InCAM->new();
 
-	my $step  = "o+1";
-	my $layer = "f";
+	my $step  = "panel";
+	my $layer = "fr";
 
 	$route->Parse( $inCAM, $jobId, $step, $layer );
 
 	my @features = $route->GetFeatures();
 	my @chains = $route->GetChains();
+	
+	my $maxXlen;
+	my $maxYlen;
+	
+	foreach my $f (@features){
+		
+		my $lenX = abs($f->{"x1"} -  $f->{"x2"});
+		my $lenY = abs($f->{"y1"} -  $f->{"y2"});
+		
+		if(!defined $maxXlen || $lenX >  $maxXlen){
+			
+			$maxXlen = $lenX;
+		}
+		
+		 if(!defined $maxYlen || $lenY >  $maxYlen){
+			
+			$maxYlen = $lenY;
+		}
+		
+	}
+	
+	print $maxXlen."\n";
+	print $maxYlen."\n";
+	
 
-	print 1;
+	 
 }
 
 1;

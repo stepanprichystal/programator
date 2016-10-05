@@ -20,6 +20,7 @@ use aliased 'CamHelpers::CamJob';
 use aliased 'CamHelpers::CamDrilling';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'CamHelpers::CamCopperArea';
+use aliased 'Packages::Polygon::Features::RouteFeatures::RouteFeatures';
 
 #my $genesis = new Genesis;
 
@@ -117,5 +118,53 @@ sub GetMinSlotToolByLayers {
 	return $minTool;
 }
 
+
+
+# Return hash, where are dimension of panel
+sub GetFrDimension {
+	my $self      = shift;
+	my $inCAM     = shift;
+	my $jobId     = shift;
+	my $stepName  = shift;
+ 
+
+	my %dim = ( "xSize" => -1, "ySize" => -1 );
+
+	my $route = RouteFeatures->new();
+
+	$route->Parse( $inCAM, $jobId, $stepName, "fr" );
+
+	my @features = $route->GetFeatures();
+
+	if ( scalar(@features) == 4 ) {
+
+		my $maxXlen;
+		my $maxYlen;
+
+		foreach my $f (@features) {
+
+			my $lenX = abs( $f->{"x1"} - $f->{"x2"} );
+			my $lenY = abs( $f->{"y1"} - $f->{"y2"} );
+
+			if ( !defined $maxXlen || $lenX > $maxXlen ) {
+
+				$maxXlen = $lenX;
+			}
+
+			if ( !defined $maxYlen || $lenY > $maxYlen ) {
+
+				$maxYlen = $lenY;
+			}
+
+		}
+
+		$dim{"xSize"} = $maxXlen;
+		$dim{"ySize"} = $maxYlen;
+
+	}
+
+	return %dim;
+
+}
 
 1;

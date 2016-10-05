@@ -115,6 +115,16 @@ sub OnCheckGroupData {
 	my %silkColorIS        = HegMethods->GetSilkScreenColor($jobId);
 	my $silkColorTopExport = $groupData->GetC_silk_screen_colour();
 	my $silkColorBotExport = $groupData->GetS_silk_screen_colour();
+	
+	
+	if(!defined $silkColorIS{"top"}){
+		$silkColorIS{"top"} = "";
+	}
+	
+	 if(!defined $silkColorIS{"bot"}){
+		$silkColorIS{"bot"} = "";
+	}
+	
 
 	if ( $silkColorIS{"top"} ne $silkColorTopExport ) {
 

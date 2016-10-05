@@ -17,6 +17,7 @@ use warnings;
 #local library
 use aliased 'CamHelpers::CamJob';
 use aliased 'CamHelpers::CamHelper';
+use aliased 'CamHelpers::CamRouting';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -141,10 +142,12 @@ sub __GetFrDimemsion {
 			$dim{"ySize"} = undef;
 		}
 		else {
-			my %lim = CamJob->GetProfileLimits( $inCAM, $jobId, $stepName );
 
-			$dim{"xSize"} = sprintf "%.1f", ( $lim{"xmax"} - $lim{"xmin"} ) - ( 3 * $routThick );
-			$dim{"ySize"} = sprintf "%.1f", ( $lim{"ymax"} - $lim{"ymin"} ) - ( 3 * $routThick );
+			my %dimFr = CamRouting->GetFrDimension( $inCAM, $jobId, "panel" );
+
+			$dim{"xSize"} = $dimFr{"xSize"};
+			$dim{"ySize"} = $dimFr{"ySize"};
+
 		}
 	}
 
