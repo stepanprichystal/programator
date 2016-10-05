@@ -95,6 +95,21 @@ sub __ExportNcSet {
 			my $mpanelExist = CamStepRepeat->ExistStepAndRepeat( $inCAM, $jobId, $stepName, "mpanel" );
 
 			if ($mpanelExist) {
+				
+				# first, order each mpanel steps
+				$inCAM->COM( "sredit_set_step_nest", "lines" => "1", "nx" => "1", "ny" => "1", "clear_selection" => "yes" );
+				$inCAM->COM(
+							 "nc_order",
+							 "serial"  => "1",
+							 "sr_line" => "1",
+							 "sr_nx"   => "1",
+							 "sr_ny"   => "1",
+							 "mode"    => "btrl",
+							 "snake"   => "no",
+							 "scope"   => "parent"
+				);
+				
+				# then, order all o+1 steps in mpanel scope
 				$inCAM->COM( "sredit_set_step_nest", "lines" => "1\;1", "nx" => "1\;1", "ny" => "1\;1", "clear_selection" => "yes" );
 				$inCAM->COM(
 							 "nc_order",
@@ -106,6 +121,9 @@ sub __ExportNcSet {
 							 "snake"   => "no",
 							 "scope"   => "parent"
 				);
+				
+				# result is -> first are drilled all o+1 mpanel by mapanel
+				# second are drilled mpanels
 
 			}
 			else {
@@ -119,7 +137,7 @@ sub __ExportNcSet {
 							 "sr_ny"   => "1",
 							 "mode"    => "btrl",
 							 "snake"   => "no",
-							 "scope"   => "parent"
+							 "scope"   => "full"
 				);
 			}
 

@@ -61,14 +61,15 @@ sub AssignMachines {
 
 }
 
-# create vector of properties, which machine should have for process nc operation
+# create "vector of properties" for given NC operation, 
+# which machine should have for process nc operation
 sub __GetPropertyVector {
 	my $self          = shift;
 	my $operationItem = shift;
 
 	# Define "combine property functions" for each property
 	# Function create new single property from two properties
-	# These result property tells, which property machine has to have
+	# These result property tells, which property machine has to have to process this NC operation
 
 	# Example: - 1st layer has property DRILLDEPTH = 0
 	#		   - 2nd layer has property DRILLDEPTH = 1
@@ -89,8 +90,8 @@ sub __GetPropertyVector {
 	$comb{ Enums->Property_MAXTOOL }      = sub { my ( $a, $b ) = @_; return max( $a, $b ) };
 
 	# Result vector - final combination of all layers "property vectors"
-	my %resVector = ();
- 	my $resVectorInit = 0;
+	my %resVector     = ();
+	my $resVectorInit = 0;
 
 	# combine property vectors of all layers in "operation item"
 	foreach my $oDef ( @{ $operationItem->{"operations"} } ) {
@@ -105,18 +106,18 @@ sub __GetPropertyVector {
 				# get  vector of property for this layer <$l>
 				my %lVec          = ();
 				my %staticVector  = $self->__GetStaticProperty( $l->{"type"} );
-				my %dynamicVector = $self->__GetDynamicProperty( $l );
+				my %dynamicVector = $self->__GetDynamicProperty($l);
 
 				# vector for this layer
 				%lVec = ( %staticVector, %dynamicVector );
 
 				# init vector
-				unless( $resVectorInit){
-					
-					%resVector = %lVec;
+				unless ($resVectorInit) {
+
+					%resVector     = %lVec;
 					$resVectorInit = 1;
 					next;
-				}		 
+				}
 
 				# combine vector with preview "result" vector
 				foreach my $propName ( keys %comb ) {
@@ -242,6 +243,7 @@ sub __SetMachines {
 
 }
 
+# Return property, which are based on layer type
 sub __GetStaticProperty {
 	my $self      = shift;
 	my $layerType = shift;
@@ -272,6 +274,7 @@ sub __GetStaticProperty {
 
 }
 
+# Return property, which are based on layer content
 sub __GetDynamicProperty {
 	my $self  = shift;
 	my $layer = shift;
@@ -280,7 +283,7 @@ sub __GetDynamicProperty {
 	my %h = ();
 
 	# get max tool
-	$h{ Enums->Property_MAXTOOL } = $layer->{"maxTool"}/1000;
+	$h{ Enums->Property_MAXTOOL } = $layer->{"maxTool"} / 1000;
 
 	return %h;
 
