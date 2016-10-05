@@ -8,9 +8,9 @@ use warnings;
 
 # ============ INPUT LINE =================
 my $inputLine =
-"
-	COM sredit_set_step_nest,lines=1\;1,nx=1\;1,ny=1\;1,clear_selection=yes
-COM nc_order,serial=1,sr_line=1\;1,sr_nx=1\;1,sr_ny=1\;1,mode=btrl,snake=no,scope=full
+"COM set_step,name=panel_11
+COM open_group,job=f13610,step=panel_11,is_sym=no
+AUX set_group,group=3
 ";
 # ============ INPUT LINE =================
 
