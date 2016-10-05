@@ -306,12 +306,12 @@ sub GetToolParam {
 			}
 			else {
 
-				#if layer is not plated, add "I1", else "D"
+				#if layer is not plated, add "E1", else "D"
 				if ($plated) {
 					$line .= "(D)";
 				}
 				else {
-					$line .= "(I1)";
+					$line .= "(E1)";
 				}
 
 			}

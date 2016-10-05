@@ -35,12 +35,12 @@ sub new {
 	$self->{"stepName"} = shift;
 	$self->{"layerCnt"} = CamJob->GetSignalLayerCnt( $self->{'inCAM'}, $self->{'jobId'} );
 
-	$self->{"machines"} = ();
+	$self->{"machines"}  = ();
 	$self->{"propTable"} = ();
 
 	$self->__SetMachines();
-	$self->__SetPropertyTable();
-	
+	$self->__SetStaticPropertyTable();
+
 	return $self;
 }
 
@@ -50,84 +50,141 @@ sub AssignMachines {
 
 	foreach my $op ( @{ $opManager->{"operItems"} } ) {
 
-		my @propVec = $self->__GetParamsByOperation($op);
+		my %propVec = $self->__GetPropertyVector($op);
 
-		my @machines = $self->__GetMachinesByProp( \@propVec );
- 
+		my @machines = $self->__GetMachinesByVector( \%propVec );
+
 		$op->SetMachines( \@machines );
-		
+
 		$opManager->ReduceMachines($op);
 	}
 
 }
 
-# create vector of properties, which machine should have for process nc operation
-sub __GetParamsByOperation {
-	my $self      = shift;
+# create "vector of properties" for given NC operation, 
+# which machine should have for process nc operation
+sub __GetPropertyVector {
+	my $self          = shift;
 	my $operationItem = shift;
 
-	my $t = $self->{"propTable"};
+	# Define "combine property functions" for each property
+	# Function create new single property from two properties
+	# These result property tells, which property machine has to have to process this NC operation
 
-	my $pcbType;
+	# Example: - 1st layer has property DRILLDEPTH = 0
+	#		   - 2nd layer has property DRILLDEPTH = 1
+	# Function: sub { my ( $a, $b ) = @_; return $a | $b };
+	# => Return 1, thus we need machine, which can "drill depth"
 
-	if ( $self->{"layerCnt"} <= 2 ) {
-		$pcbType = "sl";
-	}
-	else {
-		$pcbType = "ml";
-	}
+	my %comb = ();
 
-	# vector of values: 1) DRILL 2)  DRILL DEPTH 3) ROUT 4) ROUT DEPTH 5) DRILL CROSSES 6) CAMERAS
-	my @resVector = ( 0, 0, 0, 0, 0, 0 );
+	# $a - 1st layer property value
+	# $b - 2nd layer property value
 
-	foreach my $oDef ( @{$operationItem->{"operations"}} ) {
+	$comb{ Enums->Property_DRILL }        = sub { my ( $a, $b ) = @_; return $a | $b };
+	$comb{ Enums->Property_DRILLDEPTH }   = sub { my ( $a, $b ) = @_; return $a | $b };
+	$comb{ Enums->Property_ROUT }         = sub { my ( $a, $b ) = @_; return $a | $b };
+	$comb{ Enums->Property_ROUTDEPTH }    = sub { my ( $a, $b ) = @_; return $a | $b };
+	$comb{ Enums->Property_DRILLCROSSES } = sub { my ( $a, $b ) = @_; return $a | $b };
+	$comb{ Enums->Property_CAMERAS }      = sub { my ( $a, $b ) = @_; return $a | $b };
+	$comb{ Enums->Property_MAXTOOL }      = sub { my ( $a, $b ) = @_; return max( $a, $b ) };
+
+	# Result vector - final combination of all layers "property vectors"
+	my %resVector     = ();
+	my $resVectorInit = 0;
+
+	# combine property vectors of all layers in "operation item"
+	foreach my $oDef ( @{ $operationItem->{"operations"} } ) {
 		my $layers = $oDef->GetLayers();
 
 		if ( scalar( @{$layers} ) ) {
 
+			# get  complete vector
+			# combine property vectors of all layers in "operation definition"
 			foreach my $l ( @{$layers} ) {
 
-				my $lVec = $t->{ $l->{"type"} }{$pcbType};
+				# get  vector of property for this layer <$l>
+				my %lVec          = ();
+				my %staticVector  = $self->__GetStaticProperty( $l->{"type"} );
+				my %dynamicVector = $self->__GetDynamicProperty($l);
 
-				for ( my $i = 0 ; $i < scalar( @{$lVec} ) ; $i++ ) {
+				# vector for this layer
+				%lVec = ( %staticVector, %dynamicVector );
 
-					$resVector[$i] = $resVector[$i] || ${$lVec}[$i];
+				# init vector
+				unless ($resVectorInit) {
 
+					%resVector     = %lVec;
+					$resVectorInit = 1;
+					next;
 				}
+
+				# combine vector with preview "result" vector
+				foreach my $propName ( keys %comb ) {
+
+					# get new signle property value, from two property values
+					$resVector{$propName} = $comb{$propName}->( $resVector{$propName}, $lVec{$propName} );
+				}
+
 			}
 		}
 	}
 
-	return @resVector;
+	return %resVector;
 }
 
-
 # Return machines, suitable for process given operation
-sub __GetMachinesByProp {
-	my $self    = shift;
-	my @propVec = @{ shift(@_) };
+sub __GetMachinesByVector {
+	my $self     = shift;
+	my %operProp = %{ shift(@_) };    # vector of operation property
 
-	my $sumPropVec = 0;
-	map { $sumPropVec += $_ } @propVec;
+	# Define "functions" which tell, if machine has requested property
+	# Functions return 1, if so, else 0
+
+	# Example: - operation vector has property DRILLDEPTH = 1
+	#		   - specific machine has property DRILLDEPTH = 0
+	# Function: sub { my ( $m, $o ) = @_; return (!$m && $o ? 0 : 1)};
+	# => Return 0, thus this machine is not able to "drill depth"
+
+	my %comb = ();
+
+	# $m - "machine"
+	# $o - "operation"
+
+	$comb{ Enums->Property_DRILL }        = sub { my ( $m, $o ) = @_; return ( !$m && $o ? 0 : 1 ) };
+	$comb{ Enums->Property_DRILLDEPTH }   = sub { my ( $m, $o ) = @_; return ( !$m && $o ? 0 : 1 ) };
+	$comb{ Enums->Property_ROUT }         = sub { my ( $m, $o ) = @_; return ( !$m && $o ? 0 : 1 ) };
+	$comb{ Enums->Property_ROUTDEPTH }    = sub { my ( $m, $o ) = @_; return ( !$m && $o ? 0 : 1 ) };
+	$comb{ Enums->Property_DRILLCROSSES } = sub { my ( $m, $o ) = @_; return ( !$m && $o ? 0 : 1 ) };
+	$comb{ Enums->Property_CAMERAS }      = sub { my ( $m, $o ) = @_; return ( !$m && $o ? 0 : 1 ) };
+	$comb{ Enums->Property_MAXTOOL } = sub { my ( $m, $o ) = @_; return ( $m < $o ? 0 : 1 ) };
+
+	#my $sumPropVec = 0;
+	#map { $sumPropVec += $_ } @propVec;
 
 	my @machines = @{ $self->{"machines"} };
-	my @suitable = ();
+	my @suitable = ();                         #suitable machines
 
 	foreach my $m (@machines) {
-		my @result  = ();
-		
-		# create vector of machine's properties
-		my @machVec = @{$m->{"properties"}};
+		my @result = ();
 
-		#do AND between Machine vector and Vector given by operation
-		for ( my $i = 0 ; $i < scalar(@machVec) ; $i++ ) {
-			$result[$i] = $machVec[$i] && $propVec[$i];
+		# Get machine vector of property
+		my %machProp = %{ $m->{"properties"} };
+
+		my $machineSuit = 1;
+
+		# check if machine suits to all requested property
+		foreach my $propName ( keys %comb ) {
+
+			# get result, if machine meets requirment
+			my $res = $comb{$propName}->( $machProp{$propName}, $operProp{$propName} );
+
+			unless ($res) {
+				$machineSuit = 0;
+				last;
+			}
 		}
-
-		my $sumResVec = 0;
-		map { $sumResVec += $_ } @result;
-
-		if ( $sumPropVec == $sumResVec ) {
+		if ($machineSuit) {
 
 			push( @suitable, $m );
 		}
@@ -162,10 +219,20 @@ sub __SetMachines {
 		chomp @vals;
 		map { $_ =~ s/[\t\s]//g } @vals;
 
-		$m{"suffix"}     = lc( shift @vals );
-		$m{"id"}         = "machine_" . $m{"suffix"};
-		$m{"names"}      = shift @vals;
-		$m{"properties"} = \@vals;
+		$m{"suffix"} = lc( shift @vals );
+		$m{"id"}     = "machine_" . $m{"suffix"};
+		$m{"names"}  = shift @vals;
+
+		my %prop = ();
+		$prop{ Enums->Property_DRILL }        = $vals[0];
+		$prop{ Enums->Property_DRILLDEPTH }   = $vals[1];
+		$prop{ Enums->Property_ROUT }         = $vals[2];
+		$prop{ Enums->Property_ROUTDEPTH }    = $vals[3];
+		$prop{ Enums->Property_DRILLCROSSES } = $vals[4];
+		$prop{ Enums->Property_CAMERAS }      = $vals[5];
+		$prop{ Enums->Property_MAXTOOL }      = $vals[6];
+
+		$m{"properties"} = \%prop;
 
 		push( @machines, \%m );
 	}
@@ -176,20 +243,66 @@ sub __SetMachines {
 
 }
 
+# Return property, which are based on layer type
+sub __GetStaticProperty {
+	my $self      = shift;
+	my $layerType = shift;
+
+	my $pcbType;    # multi layer / 1,2 layer
+
+	if ( $self->{"layerCnt"} <= 2 ) {
+		$pcbType = "sl";
+	}
+	else {
+		$pcbType = "ml";
+	}
+
+	# vector of static property
+	my $vec = $self->{"propTable"}->{$layerType}{$pcbType};
+
+	# create hash of property from this vector
+	my %h = ();
+
+	$h{ Enums->Property_DRILL }        = ${$vec}[0];
+	$h{ Enums->Property_DRILLDEPTH }   = ${$vec}[1];
+	$h{ Enums->Property_ROUT }         = ${$vec}[2];
+	$h{ Enums->Property_ROUTDEPTH }    = ${$vec}[3];
+	$h{ Enums->Property_DRILLCROSSES } = ${$vec}[4];
+	$h{ Enums->Property_CAMERAS }      = ${$vec}[5];
+
+	return %h;
+
+}
+
+# Return property, which are based on layer content
+sub __GetDynamicProperty {
+	my $self  = shift;
+	my $layer = shift;
+
+	# create hash of property from this vector
+	my %h = ();
+
+	# get max tool
+	$h{ Enums->Property_MAXTOOL } = $layer->{"maxTool"} / 1000;
+
+	return %h;
+
+}
+
 # Table tells, what properties machines has to has, for manage process given layer
 # Properties depand on pcb type Multilayer / single layer
-sub __SetPropertyTable {
+sub __SetStaticPropertyTable {
 	my $self = shift;
 
 	my %t = ();
 	$self->{"propTable"} = \%t;
 
 	# Header is:
-	# 1) DRILL 
-	# 2) DRILL DEPTH 
-	# 3) ROUT 
-	# 4) ROUT DEPTH 
-	# 5) DRILL CROSSES 
+	# 1) DRILL
+	# 2) DRILL DEPTH
+	# 3) ROUT
+	# 4) ROUT DEPTH
+	# 5) DRILL CROSSES
 	# 6) CAMERAS
 
 	$t{ EnumsGeneral->LAYERTYPE_plt_nDrill }{"ml"} = [ 1, 0, 0, 0, 0, 1 ];
@@ -217,7 +330,7 @@ sub __SetPropertyTable {
 	$t{ EnumsGeneral->LAYERTYPE_plt_fDrill }{"ml"} = [ 1, 0, 0, 0, 0, 0 ];
 	$t{ EnumsGeneral->LAYERTYPE_plt_fDrill }{"sl"} = [ 1, 0, 0, 0, 0, 0 ];
 
-	$t{ EnumsGeneral->LAYERTYPE_nplt_nMill }{"ml"} = [ 0, 0, 1, 0, 0, 1 ];
+	$t{ EnumsGeneral->LAYERTYPE_nplt_nMill }{"ml"} = [ 0, 0, 1, 0, 0, 0 ];
 	$t{ EnumsGeneral->LAYERTYPE_nplt_nMill }{"sl"} = [ 0, 0, 1, 0, 0, 0 ];
 
 	$t{ EnumsGeneral->LAYERTYPE_nplt_bMillTop }{"ml"} = [ 0, 0, 0, 1, 0, 1 ];
@@ -230,12 +343,12 @@ sub __SetPropertyTable {
 
 	$t{ EnumsGeneral->LAYERTYPE_nplt_frMill }{"ml"} = [ 0, 0, 1, 0, 0, 0 ];
 	$t{ EnumsGeneral->LAYERTYPE_nplt_frMill }{"sl"} = [ 0, 0, 0, 0, 0, 0 ];
-	
+
 	$t{ EnumsGeneral->LAYERTYPE_nplt_jbMillTop }{"ml"} = [ 0, 0, 0, 1, 0, 1 ];
 	$t{ EnumsGeneral->LAYERTYPE_nplt_jbMillTop }{"sl"} = [ 0, 0, 0, 1, 0, 1 ];
 	$t{ EnumsGeneral->LAYERTYPE_nplt_jbMillBot }{"ml"} = [ 0, 0, 0, 1, 0, 1 ];
-	$t{ EnumsGeneral->LAYERTYPE_nplt_jbMillBot }{"sl"} = [ 0, 0, 0, 1, 0, 1 ];	
-	
+	$t{ EnumsGeneral->LAYERTYPE_nplt_jbMillBot }{"sl"} = [ 0, 0, 0, 1, 0, 1 ];
+
 }
 
 #-------------------------------------------------------------------------------------------#

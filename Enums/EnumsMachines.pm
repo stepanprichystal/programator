@@ -10,7 +10,8 @@ use constant {
 			   MACHINE_C => "machine_c",    # C ... - Schmoll 300
 			   MACHINE_D => "machine_d",    # D ....- Schmoll 300
 			   MACHINE_E => "machine_e",    # D ....- Freza schmoll
-			   MACHINE_F => "machine_f"     # D ....- Freza Lenz 
+			   MACHINE_F => "machine_f",     # D ....- Freza Lenz 
+			   MACHINE_G => "machine_g"     # G ....- Schmoll 
 };
 
 1;
