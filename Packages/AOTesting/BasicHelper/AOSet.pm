@@ -31,6 +31,41 @@ sub SetStage {
 	my $layerName = shift;
 	my $stackup   = shift;
 
+
+
+	my $stackup   = shift;
+
+	# variables to fill
+	my @pltLayer = ();
+	my $cuThick    = 0;
+	my $pcbThick   = 0;
+
+	my $layerCnt = CamJob->GetSignalLayerCnt( $inCAM, $jobId );
+	
+	my @pltLayer = CamDrilling->GetPltNCLayers( $inCAM, $jobId );
+	CamDrilling->AddLayerStartStop( $inCAM, $jobId, \@pltLayer );
+
+	# get plated drill layers, which goes from <$layerName>
+	
+	
+	@drillLayer = grep { $_->{"gROWdrl_start_name"} eq $layerName || 
+						($_->{"gROWdrl_end_name"} eq $layerName && $_->{"type"} ne EnumsGeneral->LAYERTYPE_plt_bDrillTop && $_->{"type"} ne EnumsGeneral->LAYERTYPE_plt_bDrillBot)
+						} @drillLayer;
+	
+	@drillLayer = map { $_->{"gROWname"} } @drillLayer;
+
+	# get plated rout, which goes from <$layerName>
+	my @routLayer = ();
+	
+	@routLayer = CamDrilling->GetPltNCLayers( $inCAM, $jobId );
+
+
+
+
+
+
+
+
 	# variables to fill
 	my @drillLayer = ();
 	my $cuThick    = 0;
