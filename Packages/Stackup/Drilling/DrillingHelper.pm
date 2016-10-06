@@ -169,7 +169,7 @@ sub GetNPltNCLayerInfo {
 		#unless ($l) { next; }
 
 		unless ( $l->{"type"} ) {
-			print 1;
+			next;
 		}
 
 		if ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_nMill ) {
