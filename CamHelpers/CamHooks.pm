@@ -311,7 +311,7 @@ sub GetToolParam {
 					$line .= "(D)";
 				}
 				else {
-					$line .= "(E1)";
+					$line .= "(E)";
 				}
 
 			}
