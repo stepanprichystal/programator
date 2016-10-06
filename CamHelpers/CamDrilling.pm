@@ -137,7 +137,6 @@ sub NCLayerExists {
 #Return all layer by given type
 # Type EnumsGeneral->LAYERTYPE
 sub GetNCLayersByType {
-
 	my $self    = shift;
 	my $inCAM   = shift;
 	my $jobName = shift;
@@ -149,20 +148,9 @@ sub GetNCLayersByType {
 
 	CamDrilling->AddNCLayerType( \@layers );
 
-	my @res = ();
+	my @res = grep { $_->{"type"} eq $type } @layers;
 
-	foreach my $t (@layers) {
-
-		unless ( $t->{"type"} ) {
-
-			print 1;
-		}
-
-	}
-
-	@layers = grep { $_->{"type"} eq $type } @layers;
-
-	return @layers;
+	return @res;
 }
 
 # Add  to every hash in array new value: type
@@ -282,6 +270,11 @@ sub AddNCLayerType {
 		elsif ( $l->{"gROWname"} =~ /^jfzs[0-9]*$/ ) {
 
 			$l->{"type"}   = EnumsGeneral->LAYERTYPE_nplt_jbMillBot;
+			$l->{"plated"} = 0;
+			
+		}elsif ( $l->{"gROWname"} =~ /^fk$/ ) {
+
+			$l->{"type"}   = EnumsGeneral->LAYERTYPE_nplt_kMill;
 			$l->{"plated"} = 0;
 		}
 	}
@@ -508,7 +501,6 @@ sub AddHistogramValues {
 		$layer->{"maxTool"} = $max;
 	}
 }
-
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

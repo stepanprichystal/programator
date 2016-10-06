@@ -74,17 +74,13 @@ sub SetStage {
 
 		$inCAM->COM( 'create_layer', "layer" => $lTmpName, "context" => 'board', "type" => 'drill', "polarity" => 'positive', "ins_layer" => '' );
 
-		my @steps = CamStepRepeat->GetUniqueStepAndRepeat( $inCAM, $jobId, $stepName );
+		# get all nested steps
+		my @steps = CamStepRepeat->GetUniqueNestedStepAndRepeat( $inCAM, $jobId, $stepName );
 
 		foreach my $nestStep (@steps) {
-
-			#CamHelper->OpenStep( $inCAM, $jobId, $nestStep->{"stepName"} );
-
+ 
 			$inCAM->COM( "set_step", "name" => $nestStep->{"stepName"} );
-
-			#$inCAM->COM("open_group","job" => "f13610","step" => "panel_11","is_sym" => "no");
-			#$inCAM->COM("set_group","group" => "3");
-
+ 
 			foreach my $l (@routLayer) {
 
 				my $lName = GeneralHelper->GetGUID();
@@ -143,13 +139,9 @@ sub SetStage {
 
 	}
 
+	
 	$inCAM->COM( "set_step", "name" => $stepName );
-
-	#$inCAM->COM( "cdr_display_layer", "name" => $layerName, "display" => "yes", "type" => "physical" );
-
-	#$inCAM->COM( "work_layer", "name" => $layerName );
-	#$inCAM->COM( "cdr_work_layer", "layer" => $layerName );
-
+ 
 	my $drill = join( "\;", @drillLayer );
 	$inCAM->COM(
 		"cdr_set_stage",

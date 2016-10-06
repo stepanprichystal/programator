@@ -16,14 +16,12 @@ use constant {
 			   MessageType_INFORMATION => 'Information'
 };
 
-
 use constant {
-			   ResultType_OK       => 'succes',
-			   ResultType_FAIL => 'failure',
-			   ResultType_NA     => 'na'
-			  
-};
+	ResultType_OK   => 'succes',
+	ResultType_FAIL => 'failure',
+	ResultType_NA   => 'na'
 
+};
 
 use constant {
 			   GuideAction_SHOW    => "show",
@@ -78,6 +76,7 @@ use constant {
 	LAYERTYPE_nplt_score     => "nplt_score",        # scoring
 	LAYERTYPE_nplt_jbMillTop => "nplt_jbMillTop",    #z-axis mill top of core
 	LAYERTYPE_nplt_jbMillBot => "nplt_jbMillBot",    #z-axis mill bot of core
+	LAYERTYPE_nplt_kMill     => "nplt_kmill",        #milling of gold connector
 
 };
 

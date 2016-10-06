@@ -109,10 +109,10 @@ sub Build {
 	#Rout section
 	@req = ();
 	push(@req, "freza_pred_leptanim");
-	push(@req, "freza_pred");
+	push(@req, "frezovani_pred");
 	push(@req, "freza_pred_delka");
 	push(@req, "min_freza_pred");
-	push(@req, "freza_po");
+	push(@req, "frezovani_po");
 	push(@req, "min_freza_po");
 	push(@req, "freza_po_delka");
 	push(@req, "min_freza_po");

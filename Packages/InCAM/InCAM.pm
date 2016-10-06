@@ -524,6 +524,10 @@ sub COM {
 	}
 
 	$self->{"exception"} = undef;
+	
+	#clear doinfo first 
+	$self->{doinfo} = undef;
+	
 
 	my $command;
 	if ( @_ == 1 ) {
@@ -581,6 +585,7 @@ sub COM {
 			die $self->{"exception"};
 
 		}
+ 
 	}
 
 	return $self->{STATUS};
@@ -756,14 +761,18 @@ sub parse {
 			@words = shellwords($value);                   # This is a standard part of the Perl library
 			grep { s/\Q<^M>/\cM/g } @words;
 			$self->{doinfo}{$var} = [@words];
-			$self->{$var} = [@words];
+			
+			# TODO odkomentovat
+			#$self->{$var} = [@words];
 		}
 		else {
 			$value =~ s/\Q<^M>/\cM/g;
 			$value =~ s/^'|'$//g;
 
 			$self->{doinfo}{$var} = $value;
-			$self->{$var} = $value;
+			
+			# TODO odkomentovat
+			#$self->{$var} = $value;
 		}
 	}
 	close(CSH_FILE);

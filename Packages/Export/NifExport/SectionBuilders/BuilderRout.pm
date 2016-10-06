@@ -63,10 +63,10 @@ sub Build {
 	$section->AddComment( " Frezovani Pred Prokovem " );
 
 	#freza_pred (freza pred prokovem)
-	if ( $self->_IsRequire("freza_pred") ) {
+	if ( $self->_IsRequire("frezovani_pred") ) {
 
 		my $existPltMill = $self->__RoutExists( EnumsGeneral->LAYERTYPE_plt_nMill );
-		$section->AddRow( "freza_pred", $existPltMill );
+		$section->AddRow( "frezovani_pred", $existPltMill );
 	}
 
 	#freza_pred_delka
@@ -88,11 +88,11 @@ sub Build {
 	$section->AddComment( "Frezovani Po Prokovu " );
 
 	#freza_po (freza po prokovu)
-	if ( $self->_IsRequire("freza_po") ) {
+	if ( $self->_IsRequire("frezovani_po") ) {
 
 		my $existNPltMill = $self->__RoutExists( EnumsGeneral->LAYERTYPE_nplt_nMill );
 
-		$section->AddRow( "freza_po", $existNPltMill );
+		$section->AddRow( "frezovani_po", $existNPltMill );
 	}
 
 	#freza_po_delka

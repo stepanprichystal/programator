@@ -20,6 +20,53 @@ use warnings;
 #   Package methods
 #-------------------------------------------------------------------------------------------#
 
+#Return information about steps in given step
+sub GetUniqueNestedStepAndRepeat {
+	my $self     = shift;
+	my $inCAM    = shift;
+	my $jobId    = shift;
+	my $stepName = shift;
+
+	my @uniqueSteps = ();
+
+	my %step = ( "stepName" => $stepName );
+
+	$self->__ExploreStep( $inCAM, $jobId, \%step, \@uniqueSteps );
+	
+	# remove inspected step, we want only nested
+	@uniqueSteps = grep {$_->{"stepName"} ne $stepName} @uniqueSteps;
+
+	return @uniqueSteps;
+}
+
+sub __ExploreStep {
+	my $self        = shift;
+	my $inCAM       = shift;
+	my $jobId       = shift;
+	my $exploreStep = shift;
+	my $uniqueSteps = shift;
+
+	my @childs = $self->GetUniqueStepAndRepeat( $inCAM, $jobId, $exploreStep->{"stepName"} );
+
+	if ( scalar(@childs) ) {
+
+		# recusive search another nested steps
+		foreach my $ch (@childs) {
+
+			$self->__ExploreStep( $inCAM, $jobId, $ch, $uniqueSteps );
+
+		}
+
+	}
+
+	# this step has no childern, test, if is not already in array
+	my $exist = scalar( grep { $_->{"stepName"} eq $exploreStep->{"stepName"} } @{$uniqueSteps} );
+
+	unless ($exist) {
+		push( @{$uniqueSteps}, $exploreStep );
+	}
+
+}
 
 #Return information about steps in given step
 sub GetUniqueStepAndRepeat {
@@ -27,20 +74,20 @@ sub GetUniqueStepAndRepeat {
 	my $inCAM    = shift;
 	my $jobId    = shift;
 	my $stepName = shift;
-	
-	my @steps = ();
-	my @arr = $self->GetStepAndRepeat($inCAM, $jobId, $stepName);
 
-	foreach my $info (@arr){
-		
-		unless( scalar( grep { $_->{"stepName"} eq  $info->{"gSRstep"} } @steps)){
+	my @steps = ();
+	my @arr = $self->GetStepAndRepeat( $inCAM, $jobId, $stepName );
+
+	foreach my $info (@arr) {
+
+		unless ( scalar( grep { $_->{"stepName"} eq $info->{"gSRstep"} } @steps ) ) {
 			my %stepInf = ();
 			$stepInf{"stepName"} = $info->{"gSRstep"};
-			
-			push(@steps, \%stepInf);
-		}  
+
+			push( @steps, \%stepInf );
+		}
 	}
- 
+
 	return @steps;
 }
 
@@ -128,49 +175,14 @@ sub DeleteStepAndRepeat {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	#my $self             = shift;
-	#	my $inCAM            = shift;
-	#	my $jobName          = shift;
-	#	my $stepName         = shift;
-	#	my $layerNameTop     = shift;
-	#	my $layerNameBot     = shift;
-	#
-	#	my $considerHole     = shift;
-	#	my $considerEdge     = shift;
-
-	my $cuThickness = JobHelper->GetBaseCuThick( "f13610", "c" );
-	my $pcbThick = JobHelper->GetFinalPcbThick("f13610");
+	use aliased 'CamHelpers::CamStepRepeat';
+	use aliased 'Packages::InCAM::InCAM';
 
 	my $inCAM = InCAM->new();
+	my $jobId = "f13610";
+	my $step  = "mpanel_10up";
 
-	my %test = CamHelpers::CamCopperArea->GetCuArea( $cuThickness, $pcbThick, $inCAM, "f13610", "panel", "c", "s", 1, 1 );
-
-	#my %test1 = CamHelpers::CamCopperArea->GetCuArea( $cuThickness, $pcbThick, $inCAM, "F13608", "panel", "c" );
-
-	#my %lim = CamJob->GetLayerLimits( $inCAM, "F13608", "panel", "fr" );
-
-	#my %test1 = CamHelpers::CamCopperArea->GetCuAreaByBox($cuThickness, $pcbThick, $inCAM, "F13608", "panel", "c", "s", \%lim );
-	#$inCAM->COM("get_message_bar");
-	#print STDERR "TEXT BAR: " . $inCAM->GetReply();
-
-	#my %test2 = CamHelpers::CamCopperArea->GetCuAreaMask($cuThickness, $pcbThick, $inCAM, "F13608", "panel", "c", "s", "mc", "ms" );
-	#
-	#	print $test2{"area"};
-	#	print "\n";
-	#	print $test2{"percentage"};
-	#
-	#	my %test3 = CamHelpers::CopperArea->GetCuAreaMaskByBox( $inCAM, "F13608", "panel", "c", "s", "mc", "ms", \%lim );
-
-	#print $test3{"area"};
-	#print "\n";
-	#print $test3{"percentage"};
-	#my %test3 = CamHelpers::CopperArea->GetCuAreaMask( $inCAM, "F13608", "panel", "c", undef, "mc");
-
-	#	my %test2 = CamHelpers::CopperArea->GetGoldFingerArea($cuThickness, $pcbThick, $inCAM, "F13608", "panel");
-
-	#print $test2{"area"};
-	#print "\n";
-	#print $test2{"percentage"};
+	my @steps = CamStepRepeat->GetUniqueNestedStepAndRepeat( $inCAM, $jobId, $step );
 
 	print 1;
 
