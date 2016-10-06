@@ -152,7 +152,8 @@ sub __DefineNPlatedOperations {
 	my @nplt_bMillBot = @{ $npltDrillInfo{EnumsGeneral->LAYERTYPE_nplt_bMillBot} };    #z-axis bot mill
 	my @nplt_rsMill   = @{ $npltDrillInfo{EnumsGeneral->LAYERTYPE_nplt_rsMill} };      #rs mill before plating
 	my @nplt_frMill   = @{ $npltDrillInfo{EnumsGeneral->LAYERTYPE_nplt_frMill} };      #milling frame
-
+	my @nplt_kMill   = @{ $npltDrillInfo{EnumsGeneral->LAYERTYPE_nplt_kMill} };      #milling conneector 
+	
 	#Define operation:
 
 	# 1) Operation name = f - can contain layer
@@ -179,6 +180,10 @@ sub __DefineNPlatedOperations {
 	# 4) Operation name = rs - can contain layer
 	# - @nplt_rsMill
 	$opManager->AddOperationDef( "rs", \@nplt_rsMill, -1 );
+
+	# 5) Operation name = k - can contain layer
+	# - @nplt_kMill
+	$opManager->AddOperationDef( "fk", \@nplt_kMill, -1 );
 
 }
 

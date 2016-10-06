@@ -352,6 +352,7 @@ sub __DefineNPlatedOperations {
 	my @nplt_frMill    = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_frMill } };       #milling frame
 	my @nplt_jbMillTop = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_jbMillTop } };    #z-axis Top mill of core
 	my @nplt_jbMillBot = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_jbMillBot } };    #z-axis bot mill of core
+	my @nplt_kMill     = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_kMill} };      	   #milling conneector 
 
 	#Define operation:
 
@@ -452,6 +453,10 @@ sub __DefineNPlatedOperations {
 	# 8) Operation name = fr - can contain layer
 	# - @nplt_frMill
 	$opManager->AddOperationDef( "fr", \@nplt_frMill, $stackup->GetPressCount() );
+	
+	# 9) Operation name = k - can contain layer
+	# - @nplt_kMill
+	$opManager->AddOperationDef( "fk", \@nplt_kMill, , $stackup->GetPressCount() );
 
 }
 
