@@ -201,7 +201,7 @@ sub OutputOpfx {
 	# delete rout temporary layer
 	if ( CamHelper->LayerExists( $inCAM, $jobId, "aoi_rout_tmp" ) ) {
 
-		$inCAM->COM( 'delete_layer', "layer" => "aoi_rout_tmp" );
+	 	#$inCAM->COM( 'delete_layer', "layer" => "aoi_rout_tmp" );
 	}
 
 	if ( -e $report ) {

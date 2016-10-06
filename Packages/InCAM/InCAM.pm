@@ -525,8 +525,8 @@ sub COM {
 
 	$self->{"exception"} = undef;
 	
-	#clear doinfo first 
-	$self->{doinfo} = undef;
+	# TODO clear doinfo first 
+	#$self->{doinfo} = undef;
 	
 
 	my $command;
@@ -763,7 +763,7 @@ sub parse {
 			$self->{doinfo}{$var} = [@words];
 			
 			# TODO odkomentovat
-			#$self->{$var} = [@words];
+			$self->{$var} = [@words];
 		}
 		else {
 			$value =~ s/\Q<^M>/\cM/g;
@@ -772,7 +772,7 @@ sub parse {
 			$self->{doinfo}{$var} = $value;
 			
 			# TODO odkomentovat
-			#$self->{$var} = $value;
+			$self->{$var} = $value;
 		}
 	}
 	close(CSH_FILE);

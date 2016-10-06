@@ -44,7 +44,7 @@ sub new {
 	$self->{"jobId"} = shift;
 
 	$self->{"stepToTest"} = shift;    # step, which will be tested
-	$self->{"attemptCnt"} = 20;       # max count of attempt
+	$self->{"attemptCnt"} = 4;       # max count of attempt
 
 	$self->{"layerCnt"} = CamJob->GetSignalLayerCnt( $self->{"inCAM"}, $self->{"jobId"} );
 
@@ -76,9 +76,7 @@ sub Run {
 	my $setName = "cdr";
 
 	#my $setName = GeneralHelper->GetGUID();
-
-	print STDERR "\n\n=====================SET NAME======================== $setName\n\n";
-
+ 
 	#my $strLayers = join("\;", @signalLayers);
 
 	#$inCAM->COM("cdr_delete_sets_by_name","layers" => "","sets" => $setName);
@@ -97,8 +95,8 @@ sub Run {
 		# test if max session seats exceeded
 		if ( $ex && $ex->{"errorId"} == 282002 ) {
 
-			#print STDERR "Waiting n AOI seats..\n";
-			sleep(2);
+			print STDERR "\n\nWaiting $i AOI seats..\n\n";
+			sleep(15);
 		}
 		else {
 			last;
@@ -163,9 +161,7 @@ sub __OpenAOISession {
 				 "cfg_path"  => "//incam/incam_server/site_data/hooks/cdr",
 				 "sub_dir"   => "discovery"
 	);
-
-	print STDERR "\n\n=====================SET NAME======================== $setName\n\n";
-
+ 
 	# STOP HANDLE EXCEPTION IN INCAM
 	$inCAM->HandleException(0);
 }

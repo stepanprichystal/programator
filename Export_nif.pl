@@ -17,11 +17,9 @@ use aliased 'Programs::Exporter::ExportUtility::Groups::NifExport::NifExportTmp'
 
 
 #input parameters
-<<<<<<< HEAD
+ 
 my $jobId    = "f50293";
-=======
-my $jobId    = "f50078";
->>>>>>> refs/heads/FK
+ 
  
 my $poznamka = "Zpracovano v InCAMu";
 my $tenting  = 1;

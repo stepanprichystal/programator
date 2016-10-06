@@ -22,18 +22,18 @@ sub GetDimensionPanel {
 		    if ($panelSizeName eq EnumsProducPanel->SIZE_MULTILAYER_SMALL) {
 				$dimsPanel{'PanelSizeX'} = 307;
 				$dimsPanel{'PanelSizeY'} = 407;
-				$dimsPanel{'BorderLeft'} = 20.5;
-				$dimsPanel{'BorderRight'} = 20.5;
-				$dimsPanel{'BorderTop'} = 30;
-				$dimsPanel{'BorderBot'} = 30;
+				$dimsPanel{'BorderLeft'} = 21;
+				$dimsPanel{'BorderRight'} = 21;
+				$dimsPanel{'BorderTop'} = 41.6;
+				$dimsPanel{'BorderBot'} = 41.6;
 							
 		}elsif ($panelSizeName eq EnumsProducPanel->SIZE_MULTILAYER_BIG) {
 				$dimsPanel{'PanelSizeX'} = 307;
 				$dimsPanel{'PanelSizeY'} = 486.2;
-				$dimsPanel{'BorderLeft'} = 20.5;
-				$dimsPanel{'BorderRight'} = 20.5;
-				$dimsPanel{'BorderTop'} = 30;
-				$dimsPanel{'BorderBot'} = 30;
+				$dimsPanel{'BorderLeft'} = 21;
+				$dimsPanel{'BorderRight'} = 21;
+				$dimsPanel{'BorderTop'} = 41.6;
+				$dimsPanel{'BorderBot'} = 41.6;
 
 		}elsif ($panelSizeName eq EnumsProducPanel->SIZE_STANDARD_SMALL) {
 				$dimsPanel{'PanelSizeX'} = 295;
