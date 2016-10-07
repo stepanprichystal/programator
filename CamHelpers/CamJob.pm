@@ -237,12 +237,30 @@ sub GetAllLayers {
 # - gROWcontext
 sub GetBoardLayers {
 	my $self  = shift;
+	
 	my @layers = $self->GetAllLayers(@_);
 
 	@layers = grep { $_->{"gROWcontext"} eq "board" } @layers;
 
 	return @layers;
 }
+
+# Return all layers from matrix as array of hash, which are layer_type == board
+# And which are not NC layers
+# which contain info:
+# - gROWname
+# - gROWlayer_type
+# - gROWcontext
+sub GetBoardBaseLayers {
+	my $self  = shift;
+	
+	my @layers = $self->GetAllLayers(@_);
+
+	@layers = grep { $_->{"gROWcontext"} eq "board" && $_->{"gROWlayer_type"} ne "rout" && $_->{"gROWlayer_type"} ne "drill"} @layers;
+
+	return @layers;
+}
+
 
 #Return layer names by layer type
 sub GetLayerByType {
@@ -288,5 +306,7 @@ sub SetJobAttribute {
 				 "units"     => "mm"
 	);
 }
+
+
 
 1;

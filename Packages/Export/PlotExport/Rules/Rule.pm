@@ -22,7 +22,7 @@ use warnings;
 	 
 	bless $self;
 	
-
+	$self->{"position"} = shift;
 
 	my @layerTypes = ();
 	$self->{"layerTypes"} = \@layerTypes;
@@ -31,17 +31,14 @@ use warnings;
 	return $self;
 }
 
-sub AddType1{
+ 
+
+
+sub AddSingleTypes{
 	
 	my $self = shift;
-	my @types = @{shift(@_)};
-	
-	unless(scalar(@types)){
-		
-		return 0;
-	}
+	@{$self->{"layerTypes"}} = @_;
  
-	push($self->{"layerTypes"},\@types)
 }
 
 sub AddType2{

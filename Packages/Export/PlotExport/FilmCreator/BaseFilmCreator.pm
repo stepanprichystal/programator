@@ -11,6 +11,10 @@ use warnings;
 
 #local library
 use aliased 'Packages::Export::PlotExport::Rules::RuleResult';
+use aliased 'Packages::Export::PlotExport::Rules::Rule';
+use aliased 'CamHelpers::CamMatrix';
+use aliased 'Packages::Export::PlotExport::Enums';
+
 
 #-------------------------------------------------------------------------------------------#
 #   Package methods
@@ -18,8 +22,10 @@ use aliased 'Packages::Export::PlotExport::Rules::RuleResult';
 
 sub new {
 	my $class = shift;
-	my $self  = $class->SUPER::new(@_);
+	my $self  = {};
 	bless $self;
+
+	$self->{"layers"} = shift;
 
 	my @rules = ();
 	$self->{"rules"} = \@rules;
@@ -27,13 +33,10 @@ sub new {
 	my @resultRules = ();
 	$self->{"resultRules"} = \@resultRules;
 
-	my @layers = ();
-	$self->{"layers"} = \@layers;
+	$self->__AddLayerTypes();
 
 	return $self;
 }
-
- 
 
 sub _AddRule {
 	my $self = shift;
@@ -63,6 +66,11 @@ sub _RunRules {
 
 		$ruleIdx++;
 
+		# for sure, test if all layertypes are used
+		if ( $ruleIdx == scalar(@layers) ) {
+			last;
+		}
+
 	}
 
 }
@@ -72,32 +80,114 @@ sub __RunRule {
 	my $rule   = shift;
 	my $layers = shift;    # not processed layers
 
-	my $resultSet = RuleResult->new();
+	my $createResultSet = 1;
 
-	my @layerTypes = $rule->GetLayerTypes();
+	#create "Result set" based on this rule
+	while ($createResultSet) {
 
-	foreach my $lType (@layerTypes) {
+		# try create new result set
+		my $resultSet = RuleResult->new($rule);
 
-		# go through layer type and check if some layer match this "type"
-		for ( my $i = 0 ; $i < scalar( ${$layers}[$i] ) ; $i++ ) {
+		# go through all rule types
+		my @ruleTypes = $rule->GetLayerTypes();
+		foreach my $ruleLType ( @ruleTypes ) {
 
-			my $layer = ${$layers}[$i];
+			# go through layer type and check if some layer match this "type"
 
-			if ( $layer->{"plotType"} eq $lType ) {
+			foreach my $layer ( @{$layers} ) {
 
-				# add this type to result set
-				$resultSet->AddLayer($layer);
+				if ( $layer->{"used"} ) {
+					next;
+				}
 
-				# remove layer, bacause is already used in this Result set
-				splice @{$layers}, $i, 1;
+				if ( $layer->{"plotType"} eq $ruleLType ) {
 
-				last;
-
+					# add this type to result set
+					$resultSet->AddLayer($layer);
+					$layer->{"used"} = 0;
+					last;
+				}
 			}
 		}
+
+		unless ( $resultSet->Complete() ) {
+
+			# stop creating another resultsets
+			$createResultSet = 0;
+
+			# free used layers in resultset
+			my @used = $resultSet->GetLayers();
+
+			foreach $_ (@used) {
+				$_->{"used"} = 0;
+			}
+
+		}
+		else {
+
+			# add result set
+			push( @{ $self->{"resultRules"} }, $resultSet );
+		}
+
 	}
 
-	push( @{ $self->{"resultRules"} }, $resultSet );
+}
+
+sub __AddLayerTypes {
+	my $self = shift;
+
+	# add information about top/bot
+	CamMatrix->AddSideType( $self->{"layers"} );
+
+	foreach my $l ( @{ $self->{"layers"} } ) {
+
+		 
+
+		if ( $l->{"gROWname"} eq "silk_screen" ) {
+
+			if ( $l->{"gROWtype"} eq "top" ) {
+
+				$l->{"plotType"} = Enums->LType_SILKTOP;
+
+			}
+			else {
+
+				$l->{"plotType"} = Enums->LType_SILKBOT;
+			}
+
+		}
+		elsif ( $l->{"gROWname"} eq "solder_mask" ) {
+
+			if ( $l->{"gROWtype"} eq "top" ) {
+
+				$l->{"plotType"} = Enums->LType_SILKTOP;
+
+			}
+			else {
+
+				$l->{"plotType"} = Enums->LType_SILKBOT;
+			}
+
+		}
+		elsif ( $l->{"gROWname"} =~ /^[cs]$/ ) {
+
+			$l->{"plotType"} = Enums->LType_SIGOUTER;
+
+		}
+		elsif ( $l->{"gROWname"} =~ /^v\d$/ ) {
+
+			$l->{"plotType"} = Enums->LType_SIGINNER;
+
+			#		}elsif($lt->{"gROWname"} =~ /^v\d$/ ){
+			#
+			#
+			#				$lt->{"plotType"} = Enums->LType_SIGINNER;
+			#
+			#		}
+
+		}
+
+	}
 }
 
 1;

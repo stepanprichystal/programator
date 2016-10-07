@@ -14,7 +14,17 @@ use constant {
 			   LType_SIGOUTER  => "signalOuter",
 			   LType_SIGINNER  => "signalInner",
 			   
-			   LType_GOLDFINGER  => "goldfinger"
+			   LType_GOLDFINGER  => "goldfinger",
+			   
+			   LType_ALL  => "allTypes"
+};
+
+use constant {
+	
+	# use binary operators
+	
+			   Position_VERTICAL  => "vertical",
+			   Position_HORIZONTAL  => "horizontal"
 };
 
 

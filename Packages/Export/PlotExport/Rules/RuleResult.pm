@@ -23,11 +23,31 @@ use warnings;
 	 
 	bless $self;
 	
+	$self->{"rule"} = shift;
+	
 	
 	my @layers = ();
 	$self->{"layers"} = \@layers;
  
 	return $self;
+}
+
+
+sub Complete{
+	my $self = shift;
+	
+	my @types = $self->{"rule"}->GetLayerTypes();
+	my @layers = @{$self->{"layers"}};
+	
+	if(scalar(@types) == scalar(@layers)){
+		
+		return 1;
+	}else{
+		
+		return 1;	
+	}
+	
+	
 }
 
 sub AddLayer{
@@ -37,6 +57,13 @@ sub AddLayer{
 	push(@{$self->{"layers"}}, $layer);
 }
 
+
+sub GetLayers{
+	my $self = shift;
+ 
+		
+	return @{$self->{"layers"}};
+}
 
  
 1;

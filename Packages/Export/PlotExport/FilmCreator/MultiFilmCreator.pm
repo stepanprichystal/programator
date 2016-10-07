@@ -19,9 +19,12 @@ use aliased 'Packages::Export::PlotExport::Enums';
 #-------------------------------------------------------------------------------------------#
 sub new {
 	my $class = shift;
-	my $self  = $class->SUPER::new(@_);
+	
+	my $layers = shift; #board layers
+	
+	
+	my $self  = $class->SUPER::new($layers, @_);
 	bless $self;
- 
 
 	return $self;
 }
@@ -30,34 +33,62 @@ sub GetPlotterSets {
 	my $self = shift;
 
 	$self->__BuildRules();
-	$self->_RunRules();
- 
+	
+	
+	my @resultSet =  $self->_RunRules();
+
 }
 
 sub __BuildRules {
 	my $self = shift;
 	my $rule;
 
-	# 1
-	$rule = $self->_AddRule ();
-	$rule->AddSingleTypes( Enums->LType_SILKTOP, Enums->LType_SILKBOT);
- 	# 2
- 	$rule = $self->_AddRule ();
-	$rule->AddSingleTypes( Enums->LType_MASKTOP, Enums->LType_MASKBOT);
-	# 3
-	$rule = $self->_AddRule ();
-	$rule->AddSingleTypes( Enums->LType_SIGOUTER, Enums->LType_SIGOUTER);
-	# 4
-	$rule = $self->_AddRule ();
-	$rule->AddSingleTypes( Enums->LType_SIGINNER, Enums->LType_SIGINNER);
+	if ( $self->{"layerCnt"} > 2 ) {
+
+		# 1
+		$rule = $self->_AddRule( Enums->Position_VERTICAL );
+		$rule->AddSingleTypes( Enums->LType_SILKTOP, Enums->LType_SILKBOT );
+
+		# 2
+		$rule = $self->_AddRule( Enums->Position_VERTICAL );
+		$rule->AddSingleTypes( Enums->LType_MASKTOP, Enums->LType_MASKBOT );
+
+		# 3
+		$rule = $self->_AddRule( Enums->Position_VERTICAL );
+		$rule->AddSingleTypes( Enums->LType_SIGOUTER, Enums->LType_SIGOUTER );
+
+		# 4
+		$rule = $self->_AddRule( Enums->Position_VERTICAL );
+		$rule->AddSingleTypes( Enums->LType_SIGINNER, Enums->LType_SIGINNER );
+
+	}
+	else {
+		
+		
+		# 1
+		$rule = $self->_AddRule( Enums->Position_VERTICAL );
+		$rule->AddSingleTypes( Enums->LType_SILKTOP, Enums->LType_SILKBOT );
+
+		# 2
+		$rule = $self->_AddRule( Enums->Position_VERTICAL );
+		$rule->AddSingleTypes( Enums->LType_MASKTOP, Enums->LType_MASKBOT );
+
+		# 3
+		$rule = $self->_AddRule( Enums->Position_VERTICAL );
+		$rule->AddSingleTypes( Enums->LType_SIGOUTER, Enums->LType_SIGOUTER );
+
+		# 4
+		$rule = $self->_AddRule( Enums->Position_VERTICAL );
+		$rule->AddSingleTypes( Enums->LType_SIGINNER, Enums->LType_SIGINNER );
+
+	}
+
 }
- 
+
 sub __CreateSets {
 	my $self = shift;
 
 }
-
-
 
 1;
 
@@ -69,10 +100,22 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	#my $self             = shift;
 	#	my $inCAM            = shift;
+	use aliased 'Packages::InCAM::InCAM';
+	use aliased 'Packages::Export::PlotExport::FilmCreator::MultiFilmCreator';
 
-	use aliased 'HelperScripts::DirStructure';
+	use aliased 'CamHelpers::CamJob';
+	my $inCAM = InCAM->new();
 
-	DirStructure->Create();
+	 
+	my $jobId = "f13609";
+
+	my @layers = CamJob->GetBoardBaseLayers($inCAM, $jobId);
+
+	my $creator = MultiFilmCreator->new(\@layers);
+	
+	$creator->GetPlotterSets();
+
+	 
 
 }
 
