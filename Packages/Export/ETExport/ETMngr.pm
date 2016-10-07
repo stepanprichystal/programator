@@ -111,6 +111,8 @@ sub __CreateEtStep {
 	);
 	
 
+	
+ 
  
 
 	return $stepEt;
@@ -155,7 +157,12 @@ sub __FlatternETStep {
 		CamLayer->FlatternLayer( $inCAM, $jobId, $etStep, $l->{"gROWname"} );
 	}
 
-	$inCAM->COM( 'sr_active', top => '0', bottom => '0', left => '0', right => '0' );
+	#$inCAM->COM( 'sr_active', top => '0', bottom => '0', left => '0', right => '0' );
+ 
+	$inCAM->COM( "set_step", "name" => $etStep );
+	
+	$inCAM->COM( 'sredit_sel_all');
+	$inCAM->COM( 'sredit_del_steps');
 }
 
 # If pcb is multilayer, create profile by fr

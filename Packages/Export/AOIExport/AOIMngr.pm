@@ -44,7 +44,7 @@ sub new {
 	$self->{"jobId"} = shift;
 
 	$self->{"stepToTest"} = shift;    # step, which will be tested
-	$self->{"attemptCnt"} = 4;       # max count of attempt
+	$self->{"attemptCnt"} = 20;       # max count of attempt
 
 	$self->{"layerCnt"} = CamJob->GetSignalLayerCnt( $self->{"inCAM"}, $self->{"jobId"} );
 
@@ -86,6 +86,9 @@ sub Run {
 	# Raise result item for optimization set
 	my $resultItemOpenSession = $self->_GetNewItem("Open AOI session");
 
+	# START HANDLE EXCEPTION IN INCAM
+	$inCAM->HandleException(1);
+
 	# try take AOI interface. If seats occupied, try again in two sec
 	foreach ( my $i = 0 ; $i < $self->{"attemptCnt"} ; $i++ ) {
 
@@ -95,15 +98,18 @@ sub Run {
 		# test if max session seats exceeded
 		if ( $ex && $ex->{"errorId"} == 282002 ) {
 
-			print STDERR "\n\nWaiting $i AOI seats..\n\n";
-			sleep(15);
+			print STDERR "\n\nTrying to attempt AOI seat (try $i)...\n\n";
+			sleep(5);
 		}
 		else {
 			last;
 		}
 	}
 
-	$resultItemOpenSession->AddErrors( $inCAM->GetExceptionsError() );
+	# STOP HANDLE EXCEPTION IN INCAM
+	$inCAM->HandleException(0);
+
+	$resultItemOpenSession->AddErrors( $inCAM->GetExceptionError() );
 	$self->_OnItemResult($resultItemOpenSession);
 
 	$inCAM->COM( "cdr_set_current_cdr_name", "job" => $jobId, "step" => $stepToTest, "set_name" => $setName );
@@ -148,7 +154,7 @@ sub __OpenAOISession {
 	my $stepToTest = $self->{"stepToTest"};
 
 	# START HANDLE EXCEPTION IN INCAM
-	$inCAM->HandleException(1);
+	#$inCAM->HandleException(1);
 
 	$inCAM->COM(
 				 "cdr_open_session",
@@ -163,7 +169,7 @@ sub __OpenAOISession {
 	);
  
 	# STOP HANDLE EXCEPTION IN INCAM
-	$inCAM->HandleException(0);
+	#$inCAM->HandleException(0);
 }
 
 sub __ExportAOI {

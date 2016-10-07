@@ -59,6 +59,8 @@ sub ExportFiles {
 
 		$self->__ResultExportLayer( $c->{"layer"}, $result );
 	}
+	
+
 }
 
 sub __ExportNcSet {
@@ -168,6 +170,9 @@ sub __ExportNcSet {
 	if ($tmpExist) {
 		$inCAM->COM( 'delete_layer', "layer" => $tmpName );
 	}
+	
+	# Clear step selection (some steps can)
+	$self->{"inCAM"}->COM("sredit_sel_clear");
 
 }
 

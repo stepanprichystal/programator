@@ -485,6 +485,10 @@ sub AddHistogramValues {
 		foreach my $s (@symbols) {
 
 			my ($val) = $s =~ m/(\d+)/;
+			
+			unless($val){
+				next;
+			}
 
 			# set min value
 			if ( !defined $min || $val < $min ) {
