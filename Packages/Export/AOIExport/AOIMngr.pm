@@ -44,7 +44,7 @@ sub new {
 	$self->{"jobId"} = shift;
 
 	$self->{"stepToTest"} = shift;    # step, which will be tested
-	$self->{"attemptCnt"} = 20;       # max count of attempt
+	$self->{"attemptCnt"} = 30;       # max count of attempt
 
 	$self->{"layerCnt"} = CamJob->GetSignalLayerCnt( $self->{"inCAM"}, $self->{"jobId"} );
 
