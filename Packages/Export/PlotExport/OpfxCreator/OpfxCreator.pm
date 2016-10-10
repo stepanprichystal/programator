@@ -3,7 +3,7 @@
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 
-package Packages::Export::PlotExport::PlotSet::PlotLayer;
+package Packages::Export::PlotExport::OpfxCreator::OpfxCreator;
 
 #3th party library
 use strict;
@@ -16,22 +16,27 @@ use warnings;
 #   Package methods
 #-------------------------------------------------------------------------------------------#
 
- 
- sub new {
-	my $class     = shift;
-	my $self ={};
-	 
+sub new {
+	my $class = shift;
+	my $self  = {};
 	bless $self;
-	
- 	$self->{"name"} = shift;
- 	$self->{"polarity"} = shift;
-  	$self->{"mirror"} = shift;
- 	$self->{"compensation"} = shift;
- 
+
+	my @plotSets = ();
+	$self->{"plotSets"} = \@plotSets; 
+	 
 	return $self;
 }
 
+sub AddPlotSet{
+	my $self = shift;
+	my $plotSet = shift;
+	
+	push(@{$self->{"plotSets"}}, $plotSet);
+	
+}
  
+
+
 1;
 
 #-------------------------------------------------------------------------------------------#

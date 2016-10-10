@@ -3,7 +3,7 @@
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 
-package Packages::Export::PlotExport::FilmCreator::FilmCreator;
+package Packages::Export::PlotExport::FilmCreator::IFilmCreator;
 
 #3th party library
 use strict;
@@ -17,7 +17,7 @@ use warnings;
 #-------------------------------------------------------------------------------------------#
 
  
-sub Get;
+sub GetRuleSets;
  
 
  

@@ -1,38 +1,56 @@
+
 #-------------------------------------------------------------------------------------------#
-# Description: Wrapper for operations connected with inCam attributes
+# Description: Contain helper function
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-
-package Packages::Export::PlotExport::PlotSet::PlotLayer;
+package Packages::Polygon::PolygonHelper;
 
 #3th party library
 use strict;
 use warnings;
 
 #local library
- 
+
 
 #-------------------------------------------------------------------------------------------#
-#   Package methods
+#  Package methods
 #-------------------------------------------------------------------------------------------#
-
- 
- sub new {
-	my $class     = shift;
-	my $self ={};
-	 
-	bless $self;
+ sub GetDimByRectangle{
+	my $self   = shift;
+	my @features  = @{shift(@_)};
 	
- 	$self->{"name"} = shift;
- 	$self->{"polarity"} = shift;
-  	$self->{"mirror"} = shift;
- 	$self->{"compensation"} = shift;
- 
-	return $self;
-}
+	my %dim = ();
+	
+		if ( scalar(@features) == 4 ) {
 
+		my $maxXlen;
+		my $maxYlen;
+
+		foreach my $f (@features) {
+
+			my $lenX = abs( $f->{"x1"} - $f->{"x2"} );
+			my $lenY = abs( $f->{"y1"} - $f->{"y2"} );
+
+			if ( !defined $maxXlen || $lenX > $maxXlen ) {
+
+				$maxXlen = $lenX;
+			}
+
+			if ( !defined $maxYlen || $lenY > $maxYlen ) {
+
+				$maxYlen = $lenY;
+			}
+		}
+
+		$dim{"xSize"} = $maxXlen;
+		$dim{"ySize"} = $maxYlen;
+
+	}
+	
+	return %dim;
+	
+}
  
-1;
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
@@ -40,13 +58,9 @@ use warnings;
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	#my $self             = shift;
-	#	my $inCAM            = shift;
-
-	use aliased 'HelperScripts::DirStructure';
-
-	DirStructure->Create();
+	#print $test;
 
 }
 
 1;
+

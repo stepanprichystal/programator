@@ -15,7 +15,6 @@ use aliased 'Packages::Export::PlotExport::Rules::Rule';
 use aliased 'CamHelpers::CamMatrix';
 use aliased 'Packages::Export::PlotExport::Enums';
 
-
 #-------------------------------------------------------------------------------------------#
 #   Package methods
 #-------------------------------------------------------------------------------------------#
@@ -25,6 +24,10 @@ sub new {
 	my $self  = {};
 	bless $self;
 
+	#$self->{"pcbSize"} = shift;
+
+	#$self->{"sizeFrame"} = shift;
+	#$self->{"sizeType"} = shift;
 	$self->{"layers"} = shift;
 
 	my @rules = ();
@@ -34,14 +37,15 @@ sub new {
 	$self->{"resultRules"} = \@resultRules;
 
 	$self->__AddLayerTypes();
+	#$self->__AddLayerSize();
 
 	return $self;
 }
 
 sub _AddRule {
 	my $self = shift;
-
-	my $rule = Rule->new();
+	my $orientation = shift;
+	my $rule = Rule->new($orientation);
 
 	push( @{ $self->{"rules"} }, $rule );
 
@@ -67,7 +71,7 @@ sub _RunRules {
 		$ruleIdx++;
 
 		# for sure, test if all layertypes are used
-		if ( $ruleIdx == scalar(@layers) ) {
+		if ( $ruleIdx == scalar(@rules) ) {
 			last;
 		}
 
@@ -90,7 +94,7 @@ sub __RunRule {
 
 		# go through all rule types
 		my @ruleTypes = $rule->GetLayerTypes();
-		foreach my $ruleLType ( @ruleTypes ) {
+		foreach my $ruleLType (@ruleTypes) {
 
 			# go through layer type and check if some layer match this "type"
 
@@ -100,11 +104,51 @@ sub __RunRule {
 					next;
 				}
 
+				# set of conditions, if layer suits to rule
 				if ( $layer->{"plotType"} eq $ruleLType ) {
+
+					# check dimension
+
+					my $y = $layer->{"pcbSize"}->{"ySize"};
+					my $x = $layer->{"pcbSize"}->{"xSize"};
+
+					#check if is possible to plot
+
+					if ( $rule->GetOrientation() eq Enums->Ori_VERTICAL ) {
+
+						my $xSum = $x + $resultSet->GetTotalX();
+
+						# text if pcb size exceeds fil dimension
+						if ( $xSum > Enums->FilmSize_BigX || $y > Enums->FilmSize_BigY ) {
+							next;
+						}
+
+						if ( $y > Enums->FilmSize_SmallY ) {
+							$resultSet->SetDimenison( Enums->FilmSize_Big );
+						}
+						else {
+							$resultSet->SetDimenison( Enums->FilmSize_Small );
+						}
+
+					}
+					elsif ( $rule->{"position"} eq Enums->Ori_HORIZONTAL ) {
+
+						# text if pcb size exceeds fil dimension
+						if ( $y > Enums->FilmSize_BigX || $x > Enums->FilmSize_BigY ) {
+							next;
+						}
+						if ( $x > Enums->FilmSize_SmallY ) {
+							$resultSet->SetDimenison( Enums->FilmSize_Big );
+						}
+						else {
+							$resultSet->SetDimenison( Enums->FilmSize_Small );
+						}
+
+					}
 
 					# add this type to result set
 					$resultSet->AddLayer($layer);
-					$layer->{"used"} = 0;
+					$layer->{"used"} = 1;
 					last;
 				}
 			}
@@ -137,36 +181,26 @@ sub __AddLayerTypes {
 	my $self = shift;
 
 	# add information about top/bot
-	CamMatrix->AddSideType( $self->{"layers"} );
+	#CamMatrix->AddSideType( $self->{"layers"} );
 
 	foreach my $l ( @{ $self->{"layers"} } ) {
 
-		 
+		if ( $l->{"gROWname"} eq "pc" ) {
 
-		if ( $l->{"gROWname"} eq "silk_screen" ) {
-
-			if ( $l->{"gROWtype"} eq "top" ) {
-
-				$l->{"plotType"} = Enums->LType_SILKTOP;
-
-			}
-			else {
-
-				$l->{"plotType"} = Enums->LType_SILKBOT;
-			}
+			$l->{"plotType"} = Enums->LType_SILKTOP;
 
 		}
-		elsif ( $l->{"gROWname"} eq "solder_mask" ) {
+		elsif ( $l->{"gROWname"} eq "ps" ) {
+			$l->{"plotType"} = Enums->LType_SILKBOT;
 
-			if ( $l->{"gROWtype"} eq "top" ) {
+		}
+		elsif ( $l->{"gROWname"} eq "mc" ) {
 
-				$l->{"plotType"} = Enums->LType_SILKTOP;
+			$l->{"plotType"} = Enums->LType_MASKTOP;
 
-			}
-			else {
-
-				$l->{"plotType"} = Enums->LType_SILKBOT;
-			}
+		}
+		elsif ( $l->{"gROWname"} eq "ms" ) {
+			$l->{"plotType"} = Enums->LType_MASKBOT;
 
 		}
 		elsif ( $l->{"gROWname"} =~ /^[cs]$/ ) {
@@ -177,18 +211,17 @@ sub __AddLayerTypes {
 		elsif ( $l->{"gROWname"} =~ /^v\d$/ ) {
 
 			$l->{"plotType"} = Enums->LType_SIGINNER;
+ 
+		}elsif ( $l->{"gROWname"} =~ /^gold[CS]$/i ) {
 
-			#		}elsif($lt->{"gROWname"} =~ /^v\d$/ ){
-			#
-			#
-			#				$lt->{"plotType"} = Enums->LType_SIGINNER;
-			#
-			#		}
-
-		}
+			$l->{"plotType"} = Enums->LType_GOLDFINGER;
+ 
+		} 
 
 	}
 }
+
+
 
 1;
 

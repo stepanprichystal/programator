@@ -3,7 +3,7 @@
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 
-package Packages::Export::PlotExport::FilmCreator::FilmCreator;
+package Packages::Export::PlotExport::PlotSet::PlotSet;
 
 #3th party library
 use strict;
@@ -15,30 +15,19 @@ use warnings;
 #-------------------------------------------------------------------------------------------#
 #   Package methods
 #-------------------------------------------------------------------------------------------#
-
+ sub new {
+	my $class     = shift;
+	my $self ={};
+	 
+	bless $self;
+	
+ 	$self->{"orientation"} = shift;
+ 	$self->{"filmSize"} = shift;
+ 	$self->{"layers"} = shift;
  
-sub GetPlotterSets{
-	my $self = shift;
-	
-	
-	__BuildRules()
-	__CreateSets()
-} 
-
-
-sub __BuildRules{
-	my $self = shift;
-	
-} 
-
-
-sub __CreateSets{
-	my $self = shift;
-	
-} 
-
-
- 
+	return $self;
+}
+  
 1;
 
 #-------------------------------------------------------------------------------------------#
@@ -47,12 +36,7 @@ sub __CreateSets{
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	#my $self             = shift;
-	#	my $inCAM            = shift;
-
-	use aliased 'HelperScripts::DirStructure';
-
-	DirStructure->Create();
+ 
 
 }
 

@@ -6,6 +6,9 @@
 package Packages::Export::PlotExport::FilmCreator::MultiFilmCreator;
 use base('Packages::Export::PlotExport::FilmCreator::BaseFilmCreator');
 
+use Class::Interface;
+&implements('Packages::Export::PlotExport::FilmCreator::IFilmCreator');
+
 #3th party library
 use strict;
 use warnings;
@@ -13,6 +16,7 @@ use warnings;
 #local library
 use aliased 'Packages::Export::PlotExport::Rules::Rule';
 use aliased 'Packages::Export::PlotExport::Enums';
+use aliased 'Packages::Export::PlotExport::FilmCreator::Helper';
 
 #-------------------------------------------------------------------------------------------#
 #   Package methods
@@ -20,22 +24,27 @@ use aliased 'Packages::Export::PlotExport::Enums';
 sub new {
 	my $class = shift;
 	
+	my $inCAM = shift; #board layers
+	my $jobId = shift; #board layers
 	my $layers = shift; #board layers
-	
-	
+ 
+	#my $pcbsizeProfile = shift; #board layers
+	#my $pcbsizeFrame = shift; #board layers
+ 
 	my $self  = $class->SUPER::new($layers, @_);
 	bless $self;
+
+	Helper->AddLayerPlotSize(Enums->Size_PROFILE, $inCAM, $jobId, $layers);
 
 	return $self;
 }
 
-sub GetPlotterSets {
+sub GetRuleSets {
 	my $self = shift;
 
 	$self->__BuildRules();
 	
-	
-	my @resultSet =  $self->_RunRules();
+	return $self->_RunRules();
 
 }
 
@@ -46,19 +55,19 @@ sub __BuildRules {
 	if ( $self->{"layerCnt"} > 2 ) {
 
 		# 1
-		$rule = $self->_AddRule( Enums->Position_VERTICAL );
+		$rule = $self->_AddRule( Enums->Ori_VERTICAL );
 		$rule->AddSingleTypes( Enums->LType_SILKTOP, Enums->LType_SILKBOT );
 
 		# 2
-		$rule = $self->_AddRule( Enums->Position_VERTICAL );
+		$rule = $self->_AddRule( Enums->Ori_VERTICAL );
 		$rule->AddSingleTypes( Enums->LType_MASKTOP, Enums->LType_MASKBOT );
 
 		# 3
-		$rule = $self->_AddRule( Enums->Position_VERTICAL );
+		$rule = $self->_AddRule( Enums->Ori_VERTICAL );
 		$rule->AddSingleTypes( Enums->LType_SIGOUTER, Enums->LType_SIGOUTER );
 
 		# 4
-		$rule = $self->_AddRule( Enums->Position_VERTICAL );
+		$rule = $self->_AddRule( Enums->Ori_VERTICAL );
 		$rule->AddSingleTypes( Enums->LType_SIGINNER, Enums->LType_SIGINNER );
 
 	}
@@ -66,29 +75,31 @@ sub __BuildRules {
 		
 		
 		# 1
-		$rule = $self->_AddRule( Enums->Position_VERTICAL );
+		$rule = $self->_AddRule( Enums->Ori_VERTICAL );
 		$rule->AddSingleTypes( Enums->LType_SILKTOP, Enums->LType_SILKBOT );
 
 		# 2
-		$rule = $self->_AddRule( Enums->Position_VERTICAL );
+		$rule = $self->_AddRule( Enums->Ori_VERTICAL );
 		$rule->AddSingleTypes( Enums->LType_MASKTOP, Enums->LType_MASKBOT );
 
 		# 3
-		$rule = $self->_AddRule( Enums->Position_VERTICAL );
+		$rule = $self->_AddRule( Enums->Ori_VERTICAL );
 		$rule->AddSingleTypes( Enums->LType_SIGOUTER, Enums->LType_SIGOUTER );
 
 		# 4
-		$rule = $self->_AddRule( Enums->Position_VERTICAL );
+		$rule = $self->_AddRule( Enums->Ori_VERTICAL );
 		$rule->AddSingleTypes( Enums->LType_SIGINNER, Enums->LType_SIGINNER );
 
 	}
+	
+	
+	 
+		$rule = $self->_AddRule( Enums->Ori_VERTICAL );
+		$rule->AddSingleTypes( Enums->LType_GOLDFINGER, Enums->LType_GOLDFINGER );
 
 }
 
-sub __CreateSets {
-	my $self = shift;
-
-}
+ 
 
 1;
 
@@ -111,7 +122,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my @layers = CamJob->GetBoardBaseLayers($inCAM, $jobId);
 
-	my $creator = MultiFilmCreator->new(\@layers);
+	my $creator = MultiFilmCreator->new($inCAM, $jobId, \@layers);
 	
 	$creator->GetPlotterSets();
 

@@ -22,7 +22,7 @@ use warnings;
 	 
 	bless $self;
 	
-	$self->{"position"} = shift;
+	$self->{"orientation"} = shift;
 
 	my @layerTypes = ();
 	$self->{"layerTypes"} = \@layerTypes;
@@ -85,6 +85,15 @@ sub GetLayerTypes{
 	
 	
 	return @{$self->{"layerTypes"}};
+	
+}
+
+ 
+sub GetOrientation{
+	my $self = shift;
+
+	return $self->{"orientation"};
+	
 	
 }
  
