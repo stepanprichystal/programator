@@ -5,8 +5,8 @@
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 
-package Widgets::Forms::CustomControlList::ControlListRow;
-
+package Programs::Exporter::ExportChecker::Groups::PlotExport::View::PlotList::PlotListRow;
+use base qw(Widgets::Forms::CustomControlList::ControlListRow);
 #3th party library
 use strict;
 use warnings;
@@ -17,96 +17,62 @@ use Wx qw(:sizer wxDefaultPosition wxDefaultSize wxDEFAULT_DIALOG_STYLE wxRESIZE
 
 use Widgets::Style;
 use aliased 'Packages::Events::Event';
-
+use aliased 'Programs::Exporter::ExportChecker::Groups::PlotExport::Presenter::LayerColorPnl';
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
 
 sub new {
 
-	my ( $class, $parent, $text ) = @_;
+	my $class = shift;
+	my $parent = shift;
+	my $layer = shift;
 
-	#my $self = $class->SUPER::new( &Wx::wxVERTICAL );
-
-	my $self = {};
+	my $self = $class->SUPER::new( $parent, $layer->{"gROWname"});
+ 
 	bless($self);
-
-	$self->{"parent"} = $parent;
-	$self->{"text"} = $text;
-
-	#cells
-	my @cells = ();
-	$self->{"cells"} = \@cells;
-
-	$self->__SetLayout();
-
-	my @groups = ();
-	$self->{"groups"} = \@groups;
-
+ 
+ 	$self->{"layer"} = $layer;
+ 
+ 
+ 	$self->__SetLayout();
+ 
 	# EVENTS
-	$self->{"onSelectedChanged"} = Event->new();
+	#$self->{"onSelectedChanged"} = Event->new();
 
 	return $self;
 }
-
-sub _AddCell {
-	my $self = shift;
-	my $cell = shift;
-
-	push( @{ $self->{"cells"} }, $cell );
-}
-
-sub GetCells {
-	my $self = shift;
-
-	return @{ $self->{"cells"} };
-}
-
-sub GetCellsByPos {
-	my $self = shift;
-	my $pos  = shift;
-	my @call = @{ $self->{"cells"} };
-
-	return $call[$pos];
-}
-
-sub IsSelected {
-	my $self = shift;
-
-	return $self->{"mainChb"}->GetValue();
-}
-
-sub SetSelected {
-	my $self = shift;
-	my $selected = shift;
-	return $self->{"mainChb"}->SetValue();
-}
+ 
 
 sub __SetLayout {
 	my $self = shift;
 
+	# DEFINE CELLS
+	
 	my $mainChb = Wx::CheckBox->new( $self->{"parent"}, -1, $self->{"text"}, [ -1, -1 ] );
 
-	#my $jobIdTxt = Wx::StaticText->new( $self->{"parent"}, -1, "test", [ -1, -1 ] );
-	#my $btnProduce = Wx::Button->new( $self->{"parent"}, -1, "Produce", &Wx::wxDefaultPosition, [ 60, 20 ] );
+	my $layerColor = LayerColorPnl->new( $self->{"parent"}, $self->{"layer"}->{"gROWname"} );
+
+	my @polar = ( "positive", "negative" );
+	my $polarityCb = Wx::ComboBox->new( $self, -1, $polar[0], &Wx::wxDefaultPosition, [ 70, 20 ], \@polar, &Wx::wxCB_READONLY );
+
+	my $mirrorChb = Wx::CheckBox->new( $self->{"parent"}, -1, "Mirror", [ -1, -1 ] );
 
 	# SET EVENTS
 	Wx::Event::EVT_CHECKBOX( $mainChb, -1, sub { $self->__OnSelectedChange(@_) } );
 
 	$self->_AddCell($mainChb);
+	$self->_AddCell($layerColor);
+	$self->_AddCell($polarityCb);
+	$self->_AddCell($mirrorChb);
 
-	#$self->__AddCell($jobIdTxt);
-	#$self->__AddCell($btnProduce);
+	 
 
 	$self->{"mainChb"} = $mainChb;
 
 }
 
-sub __OnSelectedChange {
-	my $self = shift;
-
-	$self->{"onSelectedChanged"}->Do($self);
-}
+ 
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

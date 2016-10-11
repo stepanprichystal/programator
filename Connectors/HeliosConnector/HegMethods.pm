@@ -657,7 +657,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $nc_info = "test";
 
-	my $test = HegMethods->GetPcbIsPool("F13609");
+	my $test =  HegMethods->GetTpvCustomerNote("d06224");
 
 	print $test;
 

@@ -85,7 +85,7 @@ sub __SetLayout {
 	
 	
 	my $row = ControlListRow->new($widget, "Test");
-		$widget->AddRow($row);
+	$widget->AddRow($row);
 	
 	my $row2 = ControlListRow->new($widget, "test 2");
 	$widget->AddRow($row2);
