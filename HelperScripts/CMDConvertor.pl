@@ -8,10 +8,7 @@ use warnings;
 
 # ============ INPUT LINE =================
 my $inputLine =
-"COM set_step,name=panel_11
-COM open_group,job=f13610,step=panel_11,is_sym=no
-AUX set_group,group=3
-";
+"COM sel_delete_atr","mode" => "list","attributes" => ".smd";
 # ============ INPUT LINE =================
 
 

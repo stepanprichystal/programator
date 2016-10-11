@@ -130,12 +130,31 @@ sub Build {
 
 		if ( $surface =~ /^i$/i ) {
 
-			if ( $self->{"layerCnt"} > 2 ) {
+			my $mcExist = CamHelper->LayerExists( $inCAM, $jobId, "mc" );
 
-				%result = CamCopperArea->GetCuAreaMaskByBox( $cuThickness, $pcbThick, $inCAM, $jobId, "panel", "c", undef, "mc", undef, \%frLim );
+			# if mask exist return area not covered by mask
+			if ($mcExist) {
+				if ( $self->{"layerCnt"} > 2 ) {
+
+					%result = CamCopperArea->GetCuAreaMaskByBox( $cuThickness, $pcbThick, $inCAM, $jobId, "panel", "c", undef, "mc", undef, \%frLim );
+
+				}
+				else {
+
+					%result = CamCopperArea->GetCuAreaMask( $cuThickness, $pcbThick, $inCAM, $jobId, "panel", "c", undef, "mc" );
+				}
 			}
+
+			# if mask not exist return are of whole surface
 			else {
-				%result = CamCopperArea->GetCuAreaMask( $cuThickness, $pcbThick, $inCAM, $jobId, "panel", "c", undef, "mc" );
+
+				if ( $self->{"layerCnt"} > 2 ) {
+
+					%result = CamCopperArea->GetCuAreaByBox( $cuThickness, $pcbThick, $inCAM, $jobId, "panel", "c", undef, \%frLim, undef, 1 );
+				}
+				else {
+					%result = CamCopperArea->GetCuArea( $cuThickness, $pcbThick, $inCAM, $jobId, "panel", "c", undef, undef, 1 );
+				}
 			}
 
 			$val = $result{"area"};
@@ -151,19 +170,51 @@ sub Build {
 		my $val    = 0;
 
 		if ( $surface =~ /^i$/i ) {
-			if ( $self->{"layerCnt"} > 2 ) {
 
-				%result = CamCopperArea->GetCuAreaMaskByBox( $cuThickness, $pcbThick, $inCAM, $jobId, "panel", undef, "s", undef, "ms", \%frLim );
+			my $msExist = CamHelper->LayerExists( $inCAM, $jobId, "ms" );
+
+			# if mask exist return area not covered by mask
+			if ($msExist) {
+				if ( $self->{"layerCnt"} > 2 ) {
+
+					%result = CamCopperArea->GetCuAreaMaskByBox( $cuThickness, $pcbThick, $inCAM, $jobId, "panel", undef, "s", undef, "ms", \%frLim );
+
+				}
+				else {
+
+					%result = CamCopperArea->GetCuAreaMask( $cuThickness, $pcbThick, $inCAM, $jobId, "panel", undef, "s", undef, "ms" );
+				}
 			}
+
+			# if mask not exist return are of whole surface
 			else {
-				%result = CamCopperArea->GetCuAreaMask( $cuThickness, $pcbThick, $inCAM, $jobId, "panel", undef, "s", undef, "ms" );
+
+				if ( $self->{"layerCnt"} > 2 ) {
+
+					%result = CamCopperArea->GetCuAreaByBox( $cuThickness, $pcbThick, $inCAM, $jobId, "panel", undef, "s", \%frLim, undef, 1 );
+				}
+				else {
+					%result = CamCopperArea->GetCuArea( $cuThickness, $pcbThick, $inCAM, $jobId, "panel", undef, "s", undef, 1 );
+				}
 			}
+
 			$val = $result{"area"};
 		}
 
 		$imerseSurf += $val;
 		$section->AddRow( "gold_s", $val );
 	}
+	
+	
+	#imersni_plocha
+	if ( $self->_IsRequire("imersni_plocha") ) {
+
+		# comment
+		$section->AddComment("Plocha Cu odmaskovane dps (top+bot)");
+
+		$section->AddRow( "imersni_plocha", $imerseSurf );
+	}
+	
 
 	#zlacena_plocha
 	if ( $self->_IsRequire("zlacena_plocha") ) {
@@ -182,14 +233,7 @@ sub Build {
 		$section->AddRow( "zlacena_plocha", $area );
 	}
 
-	#imersni_plocha
-	if ( $self->_IsRequire("imersni_plocha") ) {
 
-		# comment
-		$section->AddComment("Plocha Cu odmaskovane dps (top+bot)");
-
-		$section->AddRow( "imersni_plocha", $imerseSurf );
-	}
 
 	# Cu area (if blind holes) during pressing
 	if ( $self->{"layerCnt"} > 2 && $pressCnt > 0 ) {
@@ -213,7 +257,7 @@ sub Build {
 
 			if ( $existTopPlt_nDrill || $existPlt_bDrillTop || $existBotPlt_nDrill || $existPlt_bDrillBot ) {
 
-				my $actualThick = $stackup->GetThickByLayerName( $stackupNCTopL->GetName() )*1000; #in µm
+				my $actualThick = $stackup->GetThickByLayerName( $stackupNCTopL->GetName() ) * 1000;    #in µm
 				my $baseCuThick = $stackup->GetCuLayer( $stackupNCTopL->GetName() )->GetThick();
 
 				my %resultTop;
@@ -221,9 +265,9 @@ sub Build {
 
 				if ( $pressOrder == $stackupNC->GetPressCnt() ) {
 					%resultTop = CamCopperArea->GetCuAreaByBox( $baseCuThick, $actualThick, $inCAM, $jobId, "panel", $stackupNCTopL->GetName(),
-														   , undef, \%frLim, undef, 1 );
+																, undef, \%frLim, undef, 1 );
 					%resultBot = CamCopperArea->GetCuAreaByBox( $baseCuThick, $actualThick, $inCAM, $jobId, "panel", undef, $stackupNCBotL->GetName(),
-														   , \%frLim, undef, 1 );
+																, \%frLim, undef, 1 );
 				}
 				else {
 					%resultTop =
@@ -259,13 +303,13 @@ sub Build {
 				my $stackupNCTopL = $core->GetTopSigLayer();
 				my $stackupNCBotL = $core->GetBotSigLayer();
 
-				my $actualThick = $stackup->GetThickByLayerName( $stackupNCTopL->GetName() ) *1000; #in µm
+				my $actualThick = $stackup->GetThickByLayerName( $stackupNCTopL->GetName() ) * 1000;    #in µm
 				my $baseCuThick = $stackup->GetCuLayer( $stackupNCTopL->GetName() )->GetThick();
 
 				my %resultTop =
 				  CamCopperArea->GetCuArea( $baseCuThick, $actualThick, $inCAM, $jobId, "panel", $stackupNCTopL->GetName(), undef, undef, 1 );
 				my %resultBot =
-				  CamCopperArea->GetCuArea( $baseCuThick, $actualThick, $inCAM, $jobId, "panel", undef,  $stackupNCBotL->GetName(), undef, 1 );
+				  CamCopperArea->GetCuArea( $baseCuThick, $actualThick, $inCAM, $jobId, "panel", undef, $stackupNCBotL->GetName(), undef, 1 );
 
 				$section->AddRow( "g_plocha_c_" . $coreNum, $resultTop{"area"} );
 				$section->AddRow( "g_plocha_s_" . $coreNum, $resultBot{"area"} );

@@ -163,6 +163,19 @@ sub __FlatternETStep {
 	
 	$inCAM->COM( 'sredit_sel_all');
 	$inCAM->COM( 'sredit_del_steps');
+	
+ 
+	
+ 
+	#delete SMD attributes
+	
+	$inCAM->COM( 'affected_layer', name => "", mode => "all", affected => "yes" );
+	$inCAM->COM("sel_all_feat");
+	$inCAM->COM("sel_delete_atr","mode" => "list","attributes" => ".smd");
+	$inCAM->COM( 'affected_layer', name => "", mode => "all", affected => "no" );
+	$inCAM->COM("clear_highlight");
+
+
 }
 
 # If pcb is multilayer, create profile by fr
