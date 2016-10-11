@@ -85,7 +85,8 @@ sub __OpenConnection {
 				#'RaiseError'            => 1,
 				#'ado_ConnectionTimeout' => $__conTimeout,
 				#'CommandTimeout'        => $__commandTimeout,
-				'on_connect_do'         => [ "SET NAMES 'utf8'", "SET CHARACTER SET 'utf8'" ]
+				'on_connect_do'         => [ "SET NAMES 'utf8'", "SET CHARACTER SET 'utf8'" ],
+				'LongReadLen' => 20000 # max size of column value 
 			}
 		);
 		
