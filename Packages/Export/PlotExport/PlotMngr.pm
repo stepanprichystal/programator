@@ -3,7 +3,7 @@
 # Description: Manager responsible for AOI files creation
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::Export::AOIExport::AOIMngr;
+package Packages::Export::PlotExport::PlotMngr;
 use base('Packages::Export::MngrBase');
 
 use Class::Interface;
@@ -18,6 +18,8 @@ use aliased 'Packages::Export::PlotExport::FilmCreator::MultiFilmCreator';
 use aliased 'Packages::Export::PlotExport::PlotSet::PlotSet';
 use aliased 'Packages::Export::PlotExport::PlotSet::PlotLayer';
 use aliased 'Packages::Export::PlotExport::OpfxCreator::OpfxCreator';
+use aliased 'CamHelpers::CamJob';
+
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
@@ -34,8 +36,8 @@ sub new {
 
 	my @creators = ();
 	$self->{"filmCreators"} = \@creators;
-	
-	$self->{"opfxCreator"} = OpfxCreator->new();
+
+	$self->{"opfxCreator"} = OpfxCreator->new($self->{"inCAM"}, $self->{"jobId"});
 
 	$self->__InitCreators();
 
@@ -64,11 +66,11 @@ sub Run {
 		my $plot       = 1;
 		my @ruleLayers = $resultSet->GetLayers();
 
-		foreach $rl (@ruleLayers) {
+		foreach my $rl (@ruleLayers) {
 
 			my @exist = grep { $_->{"name"} eq $rl->{"gROWname"} } @requested;
 
-			unless ( scalar(@$exist) ) {
+			unless ( scalar(@exist) ) {
 				$plot = 0;
 				last;
 
@@ -81,9 +83,10 @@ sub Run {
 	}
 
 	# Create plotter sets
-	my @plotSets = $self->__CreatePlotSets(@filterResultSets);
-	
-	
+	$self->__InitOpfxCreator(\@filterResultSets);
+
+	# Export
+	$self->{"opfxCreator"}->Export();
 
 }
 
@@ -100,10 +103,9 @@ sub __InitCreators {
 
 }
 
-sub __CreatePlotSets {
+sub __InitOpfxCreator {
 	my $self       = shift;
 	my @resultSets = @{ shift(@_) };
- 
 
 	foreach my $resultSet (@resultSets) {
 
@@ -113,20 +115,20 @@ sub __CreatePlotSets {
 
 		foreach my $l ( $resultSet->GetLayers() ) {
 
-			my $lInfo = $( grep { $_->{"name"} eq $l->{"gROWname"} } @{ $self->{"layers"} } )[0];
+			my $lInfo = (grep { $_->{"name"} eq $l->{"gROWname"} } @{ $self->{"layers"} })[0] ;
 
-			my $plotL = PlotLayer->new( $l->{"gROWname"}, $lInfo->{"polarity"}, $lInfo->{"mirror"}, $lInfo->{"compensation"} );
-			
-			push(@plotLayers,$plotL);
+			my $plotL = PlotLayer->new( $lInfo->{"gROWname"}, $lInfo->{"polarity"}, $lInfo->{"mirror"}, $lInfo->{"compensation"} );
+
+			push( @plotLayers, $plotL );
 
 		}
 
 		# create new plot set
 		my $plotSet = PlotSet->new( $ori, $size, \@plotLayers );
-		
+
 		$self->{"opfxCreator"}->AddPlotSet($plotSet);
 	}
- 
+
 }
 
 sub ExportItemsCount {
@@ -147,16 +149,25 @@ sub ExportItemsCount {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	  use aliased 'Packages::Export::AOIExport::AOIMngr';
+	  use aliased 'Packages::Export::PlotExport::PlotMngr';
+
 	  use aliased 'Packages::InCAM::InCAM';
 
 	  my $inCAM = InCAM->new();
 
-	  my $jobName   = "f13610";
-	  my $stepName  = "panel";
-	  my $layerName = "c";
+	  my $jobId = "f13609";
 
-	  my $mngr = AOIMngr->new( $inCAM, $jobName, $stepName, $layerName );
+	  my @layers = CamJob->GetBoardBaseLayers( $inCAM, $jobId );
+
+	  foreach my $l (@layers) {
+
+		  $l->{"polarity"}     = "positive";
+		  $l->{"mirror"}       = 0;
+		  $l->{"compensation"} = 0;
+		  $l->{"name"}         = $l->{"gROWname"};
+	  }
+
+	  my $mngr = PlotMngr->new( $inCAM, $jobId, \@layers );
 	  $mngr->Run();
 }
 

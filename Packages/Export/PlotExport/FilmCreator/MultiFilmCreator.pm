@@ -44,8 +44,9 @@ sub GetRuleSets {
 
 	$self->__BuildRules();
 	
-	return $self->_RunRules();
-
+	$self->_RunRules();
+	
+	return @{$self->{"resultRules"}};
 }
 
 sub __BuildRules {
@@ -124,7 +125,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $creator = MultiFilmCreator->new($inCAM, $jobId, \@layers);
 	
-	$creator->GetPlotterSets();
+	#$creator->GetPlotterSets();
 
 	 
 

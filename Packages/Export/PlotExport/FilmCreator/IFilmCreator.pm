@@ -5,6 +5,10 @@
 
 package Packages::Export::PlotExport::FilmCreator::IFilmCreator;
 
+
+use Class::Interface;
+&interface;    
+
 #3th party library
 use strict;
 use warnings;

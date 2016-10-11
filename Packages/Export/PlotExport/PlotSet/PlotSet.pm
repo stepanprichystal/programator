@@ -27,6 +27,28 @@ use warnings;
  
 	return $self;
 }
+
+sub GetLayers{
+	my $self = shift;
+	
+	return @{$self->{"layers"}};
+	
+}
+
+sub GetOrientation{
+	my $self = shift;
+	
+	return $self->{"orientation"};
+	
+}
+
+sub GetFilmSize{
+	my $self = shift;
+	
+	return $self->{"filmSize"};
+	
+}
+
   
 1;
 

@@ -31,6 +31,34 @@ use warnings;
 	return $self;
 }
 
+sub GetName{
+	my $self = shift;
+	
+	return $self->{"name"};
+	
+	
+}
+
+sub GetComp{
+	my $self = shift;
+	
+	return $self->{"compensation"};
+	
+}
+
+sub Mirror{
+	my $self = shift;
+	
+	return $self->{"mirror"};
+	
+}
+
+sub GetPolarity{
+	my $self = shift;
+	
+	return $self->{"polarity"};
+	
+}
  
 1;
 
