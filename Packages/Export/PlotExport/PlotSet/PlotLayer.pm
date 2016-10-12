@@ -27,6 +27,11 @@ use warnings;
  	$self->{"polarity"} = shift;
   	$self->{"mirror"} = shift;
  	$self->{"compensation"} = shift;
+ 	$self->{"pcbSize"} = shift;
+  	$self->{"pcbLimits"} = shift;
+ 	# Helper propery, when create opfx
+ 	
+ 	$self->{"outputLayer"} = undef;  #name of final output layer, contain rotated, mirrored, comp data
  
 	return $self;
 }
@@ -59,6 +64,26 @@ sub GetPolarity{
 	return $self->{"polarity"};
 	
 }
+
+sub GetWidth{
+	my $self = shift;
+	
+	return $self->{"pcbSize"}->{"xSize"};	
+}
+
+sub GetHeight{
+	my $self = shift;
+	
+	return $self->{"pcbSize"}->{"ySize"};	
+}
+ 
+ 
+sub GetLimits{
+	my $self = shift;
+	
+	return $self->{"pcbLimits"};	
+} 
+ 
  
 1;
 

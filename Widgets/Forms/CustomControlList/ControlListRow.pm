@@ -24,7 +24,7 @@ use aliased 'Packages::Events::Event';
 
 sub new {
 
-	my ( $class, $parent, $text ) = @_;
+	my ( $class, $parent, $text, $rowHeight ) = @_;
 
 	#my $self = $class->SUPER::new( &Wx::wxVERTICAL );
 
@@ -33,6 +33,12 @@ sub new {
 
 	$self->{"parent"} = $parent;
 	$self->{"text"} = $text;
+	
+	unless($rowHeight){
+		$rowHeight = -1;
+	}
+	
+	$self->{"rowHeight"} = $rowHeight;
 
 	#cells
 	my @cells = ();
@@ -85,7 +91,7 @@ sub SetSelected {
 sub __SetLayout {
 	my $self = shift;
 
-	my $mainChb = Wx::CheckBox->new( $self->{"parent"}, -1, $self->{"text"}, [ -1, -1 ] );
+	my $mainChb = Wx::CheckBox->new( $self->{"parent"}, -1, $self->{"text"}, [-1,-1], [-1, $self->{"rowHeight"} ] );
 
 	#my $jobIdTxt = Wx::StaticText->new( $self->{"parent"}, -1, "test", [ -1, -1 ] );
 	#my $btnProduce = Wx::Button->new( $self->{"parent"}, -1, "Produce", &Wx::wxDefaultPosition, [ 60, 20 ] );

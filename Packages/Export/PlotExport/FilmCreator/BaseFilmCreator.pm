@@ -116,7 +116,7 @@ sub __RunRule {
 
 					if ( $rule->GetOrientation() eq Enums->Ori_VERTICAL ) {
 
-						my $xSum = $x + $resultSet->GetTotalX();
+						my $xSum = $x + $resultSet->GetWidth();
 
 						# text if pcb size exceeds fil dimension
 						if ( $xSum > Enums->FilmSize_BigX || $y > Enums->FilmSize_BigY ) {

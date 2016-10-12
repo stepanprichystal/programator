@@ -11,17 +11,16 @@ use warnings;
 
 #local library
 
-
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
- sub GetDimByRectangle{
-	my $self   = shift;
-	my @features  = @{shift(@_)};
-	
+sub GetDimByRectangle {
+	my $self     = shift;
+	my @features = @{ shift(@_) };
+
 	my %dim = ();
-	
-		if ( scalar(@features) == 4 ) {
+
+	if ( scalar(@features) == 4 ) {
 
 		my $maxXlen;
 		my $maxYlen;
@@ -44,13 +43,62 @@ use warnings;
 
 		$dim{"xSize"} = $maxXlen;
 		$dim{"ySize"} = $maxYlen;
-
 	}
-	
+
 	return %dim;
-	
 }
- 
+
+# Return limits xmin, xmax, ymin, ymax
+# by four lines, which create rectangle
+sub GetLimByRectangle {
+	my $self     = shift;
+	my @features = @{ shift(@_) };
+
+	my %dim = ();
+
+	if ( scalar(@features) == 4 ) {
+
+		my $minX;
+		my $minY;
+		my $maxX;
+		my $maxY;
+
+		foreach my $f (@features) {
+
+			my $lenX = abs( $f->{"x1"} - $f->{"x2"} );
+			my $lenY = abs( $f->{"y1"} - $f->{"y2"} );
+
+			# find minimum
+			if ( !defined $minX || $f->{"x1"} < $minX ) {
+
+				$minX = $f->{"x1"};
+			}
+
+			if ( !defined $minY || $f->{"y1"} < $minY ) {
+
+				$minY = $f->{"y1"};
+			}
+
+			#find maximum
+			if ( !defined $maxX || $f->{"x1"} > $maxX ) {
+
+				$maxX = $f->{"x1"};
+			}
+
+			if ( !defined $maxY || $f->{"y1"} > $maxY ) {
+
+				$maxY = $f->{"y1"};
+			}
+		}
+
+		$dim{"xMin"} = $minX;
+		$dim{"xMax"} = $maxX;
+		$dim{"yMin"} = $minY;
+		$dim{"yMax"} = $maxY;
+	}
+
+	return %dim;
+}
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

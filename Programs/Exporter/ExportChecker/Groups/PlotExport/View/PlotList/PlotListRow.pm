@@ -17,7 +17,7 @@ use Wx qw(:sizer wxDefaultPosition wxDefaultSize wxDEFAULT_DIALOG_STYLE wxRESIZE
 
 use Widgets::Style;
 use aliased 'Packages::Events::Event';
-use aliased 'Programs::Exporter::ExportChecker::Groups::PlotExport::Presenter::LayerColorPnl';
+use aliased 'Programs::Exporter::ExportChecker::Groups::PlotExport::View::PlotList::LayerColorPnl';
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
@@ -27,12 +27,16 @@ sub new {
 	my $class = shift;
 	my $parent = shift;
 	my $layer = shift;
+	
+	my $rowHeight = 20;
+	
 
-	my $self = $class->SUPER::new( $parent, $layer->{"gROWname"});
+	my $self = $class->SUPER::new( $parent, $layer->{"gROWname"}, $rowHeight);
  
 	bless($self);
  
  	$self->{"layer"} = $layer;
+ 	$self->{"rowHeight"} = $rowHeight;
  
  
  	$self->__SetLayout();
@@ -49,27 +53,39 @@ sub __SetLayout {
 
 	# DEFINE CELLS
 	
-	my $mainChb = Wx::CheckBox->new( $self->{"parent"}, -1, $self->{"text"}, [ -1, -1 ] );
+	
+	 
 
 	my $layerColor = LayerColorPnl->new( $self->{"parent"}, $self->{"layer"}->{"gROWname"} );
 
 	my @polar = ( "positive", "negative" );
-	my $polarityCb = Wx::ComboBox->new( $self, -1, $polar[0], &Wx::wxDefaultPosition, [ 70, 20 ], \@polar, &Wx::wxCB_READONLY );
+	my $polarityCb = Wx::ComboBox->new( $self->{"parent"}, -1, $polar[0], &Wx::wxDefaultPosition, [ -1, $self->{"rowHeight"} ], \@polar, &Wx::wxCB_READONLY );
 
-	my $mirrorChb = Wx::CheckBox->new( $self->{"parent"}, -1, "Mirror", [ -1, -1 ] );
+	my $mirrorChb = Wx::CheckBox->new( $self->{"parent"}, -1, "", [ -1, -1 ] , [ -1, $self->{"rowHeight"} ]);
 
+	my $compTxt = Wx::TextCtrl->new(  $self->{"parent"}, -1, "", &Wx::wxDefaultPosition, [ 20, $self->{"rowHeight"} ] );
 	# SET EVENTS
-	Wx::Event::EVT_CHECKBOX( $mainChb, -1, sub { $self->__OnSelectedChange(@_) } );
+	#Wx::Event::EVT_CHECKBOX( $mainChb, -1, sub { $self->__OnSelectedChange(@_) } );
 
-	$self->_AddCell($mainChb);
+ 
 	$self->_AddCell($layerColor);
 	$self->_AddCell($polarityCb);
 	$self->_AddCell($mirrorChb);
+	$self->_AddCell($compTxt);
+	 
 
 	 
 
-	$self->{"mainChb"} = $mainChb;
+}
 
+sub PlotSelectionChanged{
+	my $self = shift;
+	my $plotList = shift;
+	my $row = shift;
+	
+	
+	
+	
 }
 
  

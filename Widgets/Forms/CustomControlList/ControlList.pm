@@ -30,7 +30,7 @@ sub new {
 	my $columnWidths = shift;
 	my $verticalLine = shift;
 
-	my $self = $class->SUPER::new($parent);
+	my $self = $class->SUPER::new($parent, -1, &Wx::wxDefaultPosition, &Wx::wxDefaultSize, &Wx::wxSIMPLE_BORDER);
 
 	bless($self);
 
@@ -45,6 +45,13 @@ sub new {
 
 	my @rows = ();
 	$self->{"rows"} = \@rows;
+
+	$self->{"vLineColor"} = undef;    # color of vertical line
+	$self->{"vLineWidth"} = undef;    # width of vertical line
+	$self->{"bodyColor"}  = undef;
+
+	my @vSep = ();
+	$self->{"vSep"} = \@vSep;
 
 	$self->__SetLayout();
 
@@ -100,22 +107,47 @@ sub GetSelectedRows {
 	return @selected;
 }
 
- 
-
 sub GetSelectedId {
 
 }
 
 sub SelectAll {
 	my $self = shift;
-	
+
 	$self->{"rows"}->SetSelected(1);
 }
 
 sub UnselectAll {
 	my $self = shift;
-	
+
 	$self->{"rows"}->SetSelected(0);
+}
+
+# Set color of select item
+sub SetBodyBackgroundColor {
+	my $self  = shift;
+	my $color = shift;
+
+	$self->{"bodyColor"} = $color;
+}
+
+# Set color of select item
+sub SetVerticalLine {
+	my $self  = shift;
+	my $color = shift;
+
+	#my $width = shift;
+
+	$self->{"vLineColor"} = $color;
+
+	#$self->{"vLineWidth"} = $width;
+
+	foreach my $sep ( @{ $self->{"vSep"} } ) {
+
+		$sep->SetBackgroundColour($color);
+		$sep->Refresh();
+	}
+
 }
 
 # Create column, for placing GroupWrappersForm
@@ -129,19 +161,21 @@ sub __SetLayout {
 	my $szHeader  = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
 	my $szColumns = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
 
-	$self->SetBackgroundColour( Wx::Colour->new( 200, 200, 200 ) );
+	if ( $self->{"bodyColor"} ) {
+		$self->SetBackgroundColour( $self->{"bodyColor"} );
+	}
 
 	# DEFINE SIZERS
 
 	my @widths = @{ $self->{"columnWidth"} };
 
 	# init columns
-	for ( my $i = 0 ; $i < $self->{"columnCnt"} ; $i++ ) {
-
-		my $w = $widths[$i];
-		my $col = ControlListColumn->new( $self, $w );
-
-	}
+	#	for ( my $i = 0 ; $i < $self->{"columnCnt"} ; $i++ ) {
+	#
+	#		my $w = $widths[$i];
+	#		my $col = ControlListColumn->new( $self, $w );
+	#
+	#	}
 
 	# BUILD LAYOUT STRUCTURE
 
@@ -173,8 +207,9 @@ sub __SetLayout {
 
 	}
 
-	$szMain->Add( $szHeader,  0, &Wx::wxEXPAND );
-	$szMain->Add( $szColumns, 0, &Wx::wxEXPAND );
+	$szMain->Add( $szHeader,                0, &Wx::wxEXPAND );
+	$szMain->Add( $self->__GetHeaderLine(), 0, &Wx::wxEXPAND );
+	$szMain->Add( $szColumns,               0, &Wx::wxEXPAND );
 
 	$self->SetSizer($szMain);
 	$self->{"szMain"} = $szMain;
@@ -188,7 +223,21 @@ sub __GetVSeparator {
 	my $sepPnl = Wx::Panel->new( $self, -1 );
 	$sepPnl->SetBackgroundColour( Wx::Colour->new( 200, 0, 0 ) );
 	$sepPnl->SetSizer($sepSz);
-	$sepSz->Add( 5, 5, 0, &Wx::wxEXPAND );
+	$sepSz->Add( 1, 5, 0, &Wx::wxEXPAND );
+
+	push( @{ $self->{"vSep"} }, $sepPnl );
+
+	return $sepPnl;
+}
+
+sub __GetHeaderLine {
+	my $self = shift;
+
+	my $sepSz = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
+	my $sepPnl = Wx::Panel->new( $self, -1 );
+	$sepPnl->SetBackgroundColour( Wx::Colour->new( 163, 163, 163 ) );
+	$sepPnl->SetSizer($sepSz);
+	$sepSz->Add( 1, 1, 0, &Wx::wxEXPAND );
 
 	return $sepPnl;
 }

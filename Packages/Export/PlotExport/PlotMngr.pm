@@ -117,14 +117,14 @@ sub __InitOpfxCreator {
 
 			my $lInfo = (grep { $_->{"name"} eq $l->{"gROWname"} } @{ $self->{"layers"} })[0] ;
 
-			my $plotL = PlotLayer->new( $lInfo->{"gROWname"}, $lInfo->{"polarity"}, $lInfo->{"mirror"}, $lInfo->{"compensation"} );
+			my $plotL = PlotLayer->new( $lInfo->{"gROWname"}, $lInfo->{"polarity"}, $lInfo->{"mirror"}, $lInfo->{"compensation"}, $l->{"pcbSize"}, $l->{"pcbLimits"} );
 
 			push( @plotLayers, $plotL );
 
 		}
 
 		# create new plot set
-		my $plotSet = PlotSet->new( $ori, $size, \@plotLayers );
+		my $plotSet = PlotSet->new( $resultSet, \@plotLayers, $self->{"jobId"});
 
 		$self->{"opfxCreator"}->AddPlotSet($plotSet);
 	}

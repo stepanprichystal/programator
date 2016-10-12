@@ -27,7 +27,8 @@ sub new {
 	my $class  = shift;
 	my $parent = shift;
 
-	my @widths = (100, 100,100,100,100,100,);
+	# Name, Color, Polarity, Mirror, Comp
+	my @widths = (50, 20,100,50,50,100,);
 
 	my $columnCnt    = scalar(@widths);
 	my $columnWidths = \@widths;
@@ -68,12 +69,22 @@ sub __SetLayout {
 
 	# DEFINE SIZERS
 
+	my @titles = ("Name", "", "Polarity", "Mirror", "Comp");
+	$self->SetHeader(\@titles);
+
+
+	$self->SetVerticalLine(Wx::Colour->new( 163, 163, 163 ));
+
 	#create rows for each laters
 
 	my @layers = @{ $self->{"layers"} };
 	foreach my $l (@layers){
 
 		my $row = PlotListRow->new( $self, $l );
+		
+		# zaregistrovat udalost
+		#$row->
+		
 		  $self->AddRow($row);
 
 	  }

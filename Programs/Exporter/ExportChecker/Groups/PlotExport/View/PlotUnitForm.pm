@@ -70,7 +70,8 @@ sub __SetLayout {
 	#my $settingsStatBox2  = $self->__SetGroup2($self);
 
 	my $settingsStatBox  = $self->__SetLayoutSettings($self);
-	my $layersStatBox = $self->__SetLayoutControlList($self);
+	my $layersStatBox  = $self->__SetLayoutControlList($self);
+	#my $layersStatBox = $self->__SetLayoutControlList($self);
  
 
 	# SET EVENTS
@@ -81,11 +82,11 @@ sub __SetLayout {
 
 	# BUILD STRUCTURE OF LAYOUT
 
-	$szRow1->Add( $settingsStatBox,  0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
-	$szRow2->Add( $layersStatBox,  0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szRow1->Add( $settingsStatBox,  1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szRow2->Add( $layersStatBox,  1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 
 	$szMain->Add( $szRow1, 0, &Wx::wxEXPAND );
-	$szMain->Add( $szRow2, 0, &Wx::wxEXPAND );
+	$szMain->Add( $szRow2, 1, &Wx::wxEXPAND );
 
 	$self->SetSizer($szMain);
 
@@ -121,7 +122,6 @@ sub __SetLayoutSettings {
 }
 
 
-# Set layout for Quick set box
 sub __SetLayoutControlList {
 	my $self   = shift;
 	my $parent = shift;
@@ -132,30 +132,14 @@ sub __SetLayoutControlList {
 
 
 	# DEFINE CONTROLS
-	#my $allChb     = Wx::CheckBox->new( $statBox, -1, "Select all",      &Wx::wxDefaultPosition);
+	my $widget = PlotList->new($statBox  );
  
-	my @widths = (150, 150, 150, 150, 150, 150, 150);
-	my $widget = PlotList->new($statBox, 7, \@widths);
-	
-	my @titles = ("test1", "test2", "test3", "test4");
-	#$widget->SetHeader(\@titles);
-	
-	
-	my $row = PlotListRow->new($widget, "Test");
-	$widget->AddRow($row);
-	
-	my $row2 = PlotListRow->new($widget, "test 2");
-	$widget->AddRow($row2);
-	
-	my $row3 = PlotListRow->new($widget, "test 2");
-	$widget->AddRow($row3);
-
 
 	# SET EVENTS
 	#Wx::Event::EVT_CHECKBOX( $allChb, -1, sub { $self->__OnSelectAllChangeHandler(@_) } );
 
 	# BUILD STRUCTURE OF LAYOUT
-	#$szStatBox->Add( $allChb,     0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szStatBox->Add( $widget,     0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 	 
  
 	# Set References
@@ -163,6 +147,36 @@ sub __SetLayoutControlList {
 	 
 	return $szStatBox;
 }
+#
+## Set layout for Quick set box
+#sub __SetLayoutControlList {
+#	my $self   = shift;
+#	my $parent = shift;
+#
+#	#define staticboxes
+#	my $statBox = Wx::StaticBox->new( $parent, -1, 'Layers' );
+#	my $szStatBox = Wx::StaticBoxSizer->new( $statBox, &Wx::wxHORIZONTAL );
+#
+#
+#	# DEFINE CONTROLS
+#	#my $allChb     = Wx::CheckBox->new( $statBox, -1, "Select all",      &Wx::wxDefaultPosition);
+# 
+#	 
+#	my $widget = PlotList->new($statBox  );
+#	
+#	
+#	# SET EVENTS
+#	#Wx::Event::EVT_CHECKBOX( $allChb, -1, sub { $self->__OnSelectAllChangeHandler(@_) } );
+#
+#	# BUILD STRUCTURE OF LAYOUT
+#	#$szStatBox->Add( $allChb,     0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+#	 
+# 
+#	# Set References
+#	#$self->{"allChb"} = $allChb;
+#	 
+#	return $szStatBox;
+#}
 
 # Control handlers
 sub __OnTentingChangeHandler {

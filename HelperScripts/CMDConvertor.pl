@@ -8,7 +8,7 @@ use warnings;
 
 # ============ INPUT LINE =================
 my $inputLine =
-"COM output_device_show,type=format,name=OPFX";
+"output_device,type=format,name=LP7008,overwrite=yes,overwrite_ext=,on_checkout_by_other=output_anyway";
 # ============ INPUT LINE =================
 
 

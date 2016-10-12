@@ -95,27 +95,26 @@ sub FlatternLayer {
 	$inCAM->COM( 'delete_layer', "layer" => $tmpLayer );
 }
 
-
 # Remove temporary layers with mark plus
 # RV
 # Example c+++, s+++....
 sub RemoveTempLayerPlus {
-		my $self      = shift;
-		my $inCAM     = shift;
-		my $jobId     = shift;
-		
-		$inCAM->INFO('entity_type'=>'matrix','entity_path'=>"$jobId/matrix",'data_type'=>'ROW');
-    			my $totalRows = ${$inCAM->{doinfo}{gROWrow}}[-1];
-	    				for (my $count=0;$count<=$totalRows;$count++) {
-									my $rowName = ${$inCAM->{doinfo}{gROWname}}[$count];
-									my $rowContext = ${$inCAM->{doinfo}{gROWcontext}}[$count];
-									
-									if ($rowContext eq "misc") {
-											if($rowName =~ /\+\+\+/g) {
-													$inCAM->COM('delete_layer',layer=>"$rowName");
-											}
-									}
-    					}
+	my $self  = shift;
+	my $inCAM = shift;
+	my $jobId = shift;
+
+	$inCAM->INFO( 'entity_type' => 'matrix', 'entity_path' => "$jobId/matrix", 'data_type' => 'ROW' );
+	my $totalRows = ${ $inCAM->{doinfo}{gROWrow} }[-1];
+	for ( my $count = 0 ; $count <= $totalRows ; $count++ ) {
+		my $rowName    = ${ $inCAM->{doinfo}{gROWname} }[$count];
+		my $rowContext = ${ $inCAM->{doinfo}{gROWcontext} }[$count];
+
+		if ( $rowContext eq "misc" ) {
+			if ( $rowName =~ /\+\+\+/g ) {
+				$inCAM->COM( 'delete_layer', layer => "$rowName" );
+			}
+		}
+	}
 }
 
 #Return layers, where marking can be placed
@@ -137,10 +136,139 @@ sub GetMarkingLayers {
 			push( @res, $l );
 		}
 	}
-	
+
 	return @res;
+}
+
+# Display single layer and set as work layer
+sub WorkLayer{
+	my $self   = shift;
+	my $inCAM  = shift;
+	my $layer  = shift;
+	
+	$inCAM->COM( 'affected_layer', name => $layer, mode => "all", affected => "no" );
+	$inCAM->COM("display_layer","name" => $layer,"display" => "yes");
+	$inCAM->COM( 'work_layer',     name => $layer );
+
+}
+
+
+# Rotate layer by degree
+# Right step must be open and set
+# Requested data must be selected
+sub ClipLayerData {
+	my $self   = shift;
+	my $inCAM  = shift;
+	my $layer  = shift;
+	my %rect = %{shift(@_)};
+	my $inside = shift;
+	 
+	my $type = "outside";
+	
+	if($inside){
+		$type = "inside";
+	} 
+	 
+	$self->WorkLayer($inCAM, $layer);
+	
+	$inCAM->COM("clip_area_strt",);
+	$inCAM->COM("clip_area_xy","x" => $rect{"xMin"},"y" => $rect{"yMin"});
+	$inCAM->COM("clip_area_xy","x" => $rect{"xMax"},"y" => $rect{"yMax"});
+	$inCAM->COM("clip_area_end","layers_mode" => "layer_name","layer" => $layer,"area" => "manual","area_type" => "rectangle","inout" => $type,"contour_cut" => "no","margin" => "0","feat_types" => "line\;pad;surface;arc;text","pol_types" => "positive\;negative");
+	
+	$inCAM->COM( 'affected_layer', name => $layer, mode => "single", affected => "no" );
 }
 
 
 
+
+# Rotate layer by degree
+# Right step must be open and set
+# Requested data must be selected
+sub RotateLayerData {
+	my $self   = shift;
+	my $inCAM  = shift;
+	my $layer  = shift;
+	my $degree = shift;
+
+	$self->WorkLayer($inCAM, $layer);
+	
+	$inCAM->COM( "sel_transform", "oper" => "rotate", "angle" => $degree );
+	
+	$inCAM->COM( 'affected_layer', name => $layer, mode => "single", affected => "no" );
+}
+
+# Mirror layer by x OR y
+# Right step must be open and set
+# Requested data must be selected
+sub MirrorLayerData {
+	my $self  = shift;
+	my $inCAM = shift;
+	my $layer = shift;
+	my $axis  = shift;
+
+
+	$self->WorkLayer($inCAM, $layer);
+
+	if ( $axis eq "x" ) {
+
+		$inCAM->COM( "sel_transform", "oper" => "mirror\;rotate", "angle" => 180 );
+
+	}
+	elsif ( $axis eq "y" ) {
+
+		$inCAM->COM( "sel_transform", "oper" => "mirror" );
+
+	}
+	$inCAM->COM( 'affected_layer', name => $layer, mode => "single", affected => "no" );
+}
+
+# Move layer data. Snapp point is left down
+# Right step must be open and set
+sub MoveLayerData {
+	my $self        = shift;
+	my $inCAM       = shift;
+	my $layer       = shift;
+	my $sourcePoint = shift;
+	my $targetPoint = shift;
+
+	my $x = -1 * $sourcePoint->{"x"} + $targetPoint->{"x"};
+	my $y = -1 * $sourcePoint->{"y"} + $targetPoint->{"y"};
+
+ 
+	$self->WorkLayer($inCAM, $layer);
+	
+	$inCAM->COM( "sel_move",       "dx" => $x,     "dy" => $y );
+	
+	$inCAM->COM( 'affected_layer', name => $layer, mode => "single", affected => "no" );
+}
+
+
+# Mirror layer by x OR y
+# Right step must be open and set
+# Requested data must be selected
+sub CompensateLayerData {
+	my $self  = shift;
+	my $inCAM = shift;
+	my $layer = shift;
+	my $compVal  = shift; # µm
+
+
+	$self->WorkLayer($inCAM, $layer);
+
+	# resize all positive
+	$inCAM->COM("reset_filter_criteria","filter_name" => "","criteria" => "all");
+	$inCAM->COM("set_filter_polarity","filter_name" => "","positive" => "yes","negative" => "no");
+	$inCAM->COM("sel_resize","size" => $compVal,"corner_ctl" => "no");
+
+	# resize all negative by oposite value of comp
+	$inCAM->COM("reset_filter_criteria","filter_name" => "","criteria" => "all");
+	$inCAM->COM("set_filter_polarity","filter_name" => "","positive" => "no","negative" => "yes");
+	$inCAM->COM("sel_resize","size" => (-1*$compVal),"corner_ctl" => "no");
+	 
+	$inCAM->COM( 'affected_layer', name => $layer, mode => "single", affected => "no" ); 
+	 
+}
+	
+ 
 1;
