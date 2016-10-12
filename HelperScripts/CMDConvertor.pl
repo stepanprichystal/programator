@@ -8,7 +8,7 @@ use warnings;
 
 # ============ INPUT LINE =================
 my $inputLine =
-"output_device,type=format,name=LP7008,overwrite=yes,overwrite_ext=,on_checkout_by_other=output_anyway";
+"filter_area_end,filter_name=popup,operation=select";
 # ============ INPUT LINE =================
 
 

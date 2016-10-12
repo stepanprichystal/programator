@@ -18,6 +18,7 @@ use Wx qw(:sizer wxDefaultPosition wxDefaultSize wxDEFAULT_DIALOG_STYLE wxRESIZE
 use Widgets::Style;
 use aliased 'Packages::Events::Event';
 use aliased 'Programs::Exporter::ExportChecker::Groups::PlotExport::View::PlotList::LayerColorPnl';
+use aliased 'Programs::Exporter::ExportChecker::Groups::PlotExport::View::PlotList::FilmForm';
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
@@ -27,7 +28,7 @@ sub new {
 	my $class = shift;
 	my $parent = shift;
 	my $layer = shift;
-	
+	my $filmResultSet = shift;
 	my $rowHeight = 20;
 	
 
@@ -37,12 +38,14 @@ sub new {
  
  	$self->{"layer"} = $layer;
  	$self->{"rowHeight"} = $rowHeight;
+ 	
+ 	$self->{"filmResultSet"} = $filmResultSet;
  
  
  	$self->__SetLayout();
  
 	# EVENTS
-	#$self->{"onSelectedChanged"} = Event->new();
+	$self->{"onSelectedChanged"}->Add(sub {$self->__PlotSelectionChanged(@_)});
 
 	return $self;
 }
@@ -53,8 +56,6 @@ sub __SetLayout {
 
 	# DEFINE CELLS
 	
-	
-	 
 
 	my $layerColor = LayerColorPnl->new( $self->{"parent"}, $self->{"layer"}->{"gROWname"} );
 
@@ -64,6 +65,12 @@ sub __SetLayout {
 	my $mirrorChb = Wx::CheckBox->new( $self->{"parent"}, -1, "", [ -1, -1 ] , [ -1, $self->{"rowHeight"} ]);
 
 	my $compTxt = Wx::TextCtrl->new(  $self->{"parent"}, -1, "", &Wx::wxDefaultPosition, [ 20, $self->{"rowHeight"} ] );
+	
+	my $arrowTxt = Wx::StaticText->new($self->{"parent"}, -1, " ==> ", &Wx::wxDefaultPosition, [ 60, 20 ] );
+	
+	my $film1Frm =  FilmForm->new(  $self->{"parent"}, $self->{"filmResultSet"} );
+	
+	
 	# SET EVENTS
 	#Wx::Event::EVT_CHECKBOX( $mainChb, -1, sub { $self->__OnSelectedChange(@_) } );
 
@@ -72,19 +79,32 @@ sub __SetLayout {
 	$self->_AddCell($polarityCb);
 	$self->_AddCell($mirrorChb);
 	$self->_AddCell($compTxt);
-	 
-
+	$self->_AddCell($arrowTxt);
+	$self->_AddCell($film1Frm);
+	
+	
+	# SET REFERENCES
+	
+	$self->{"film1Frm"} = $film1Frm;
 	 
 
 }
 
-sub PlotSelectionChanged{
+sub __PlotSelectionChanged{
 	my $self = shift;
-	my $plotList = shift;
-	my $row = shift;
+	#my $plotList = shift;
+	#my $row = shift;
+ 
 	
+	my @selectedLayers = ();
 	
+	foreach my $row ($self->{"parent"}->GetSelectedRows()){
+		
+		push(@selectedLayers, $row->GetText());
+		
+	}
 	
+	$self->{"film1Frm"}->PlotSelectChanged(\@selectedLayers);
 	
 }
 

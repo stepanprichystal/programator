@@ -131,8 +131,9 @@ sub __SetLayoutControlList {
 	my $szStatBox = Wx::StaticBoxSizer->new( $statBox, &Wx::wxHORIZONTAL );
 
 
-	# DEFINE CONTROLS
-	my $widget = PlotList->new($statBox  );
+	# DEFINE CONTROLS 
+	 
+	my $widget = PlotList->new($statBox, $self->{"inCAM"} , $self->{"jobId"});
  
 
 	# SET EVENTS

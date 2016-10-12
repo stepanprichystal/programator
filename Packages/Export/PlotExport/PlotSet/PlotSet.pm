@@ -110,7 +110,7 @@ sub GetOutputLayerName {
 	$lName =~ s/^[a-z]\d*//;
 	$lName =~ s/@//;
 
-	return "output_".$lName;
+	return $lName;
 }
 
 1;

@@ -62,6 +62,12 @@ sub _AddCell {
 	push( @{ $self->{"cells"} }, $cell );
 }
 
+sub GetText {
+	my $self = shift;
+
+	return $self->{"text"};
+}
+
 sub GetCells {
 	my $self = shift;
 

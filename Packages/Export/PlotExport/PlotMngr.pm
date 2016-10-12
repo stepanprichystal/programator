@@ -162,8 +162,14 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	  foreach my $l (@layers) {
 
 		  $l->{"polarity"}     = "positive";
-		  $l->{"mirror"}       = 0;
-		  $l->{"compensation"} = 0;
+		  
+		   $l->{"mirror"}       = 0;
+		  if($l->{"gROWname"} =~ /c/){
+		  	 $l->{"mirror"}       = 1;
+		  }
+		  
+		 
+		  $l->{"compensation"} = 30;
 		  $l->{"name"}         = $l->{"gROWname"};
 	  }
 

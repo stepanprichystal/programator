@@ -8,6 +8,7 @@ package Packages::Export::PlotExport::OpfxCreator::OpfxCreator;
 #3th party library
 use strict;
 use warnings;
+use File::Copy;
 
 #local library
 use aliased 'Helpers::JobHelper';
@@ -16,7 +17,8 @@ use aliased 'CamHelpers::CamLayer';
 use aliased 'CamHelpers::CamHelper';
 use aliased 'Helpers::GeneralHelper';
 use aliased 'CamHelpers::CamJob';
-use File::Copy;
+
+use aliased 'Helpers::FileHelper';
 
 #-------------------------------------------------------------------------------------------#
 #   Package methods
@@ -184,66 +186,59 @@ sub __OutputPlotSets {
 
 	my $plotPanel = $self->{"plotStep"};
 
-	my $archive    = JobHelper->GetJobArchive($jobId);
-	my $output     = JobHelper->GetJobOutput($jobId);
-	my $archivePath = $archive."zdroje";
-	#$archivePath =~ s/\\$//; # remove last slash
+	my $archive     = JobHelper->GetJobArchive($jobId);
+	my $output      = JobHelper->GetJobOutput($jobId);
+	my $archivePath = $archive . "zdroje";
 	
-	$inCAM->COM( "set_subsystem", "name" => "Output" );
+	
+	#delete old opfx form archive
+	my @filesToDel = FileHelper->GetFilesNameByPattern($archivePath, $jobId."@");
+	
+	foreach my $f (@filesToDel){
+		unlink $f;
+	}
+	
+ 
+ 
+	#$inCAM->COM( "set_subsystem", "name" => "Output" );
 
 	# Add output device
 	$inCAM->COM( "output_add_device", "type" => "format", "name" => "LP7008" );
 
+	# Plot each set
 	foreach my $plotSet ( @{ $self->{"plotSets"} } ) {
 
 		my $filmSize = $plotSet->GetFilmSizeInch();
 		my $outputL  = $plotSet->GetOutputLayerName();
+		
+		print STDERR $outputL."\n";
 
-		# Set properly output device
+		# Reset settings of device
 		$inCAM->COM( "output_reload_device", "type" => "format", "name" => "LP7008" );
 
-
-		my $name = $plotSet->GetOutputFileName();
+		
+ 		# Udate settings o device
 		$inCAM->COM(
 			"output_update_device",
-			"type"   => "format",
-			"name"   => "LP7008",
-			"suffix" => "qqqq",
-			"prefix" => "aaaaa",
+			"type"     => "format",
+			"name"     => "LP7008",
 			"dir_path" => $archivePath,
 			"format_params" =>
 			  "(break_sr=yes)(break_symbols=yes)(send_to_plotter=no)(local_copy=yes)(iol_opfx_allow_out_limits=yes)(iol_opfx_use_profile_limits=no)"
 
 		);
 
-			$inCAM->COM( "output_device_set_lyrs_filter", "type" => "format", "name" => "LP7008", "layers_filter" => $outputL );
+		# Filter only layer, which we want to output
+		$inCAM->COM( "output_device_set_lyrs_filter", "type" => "format", "name" => "LP7008", "layers_filter" => $outputL );
 
-			$inCAM->COM("output_device","type" => "format","name" => "LP7008","overwrite" => "yes","overwrite_ext" => "","on_checkout_by_other" => "output_anyway");
-
+		$inCAM->COM("image_set_elpd2","job" => $jobId,"step" => $plotPanel,"layer" => $outputL,"device_type" => "LP7008"); #toto zde musi byt, nevim proc
+		 
+		
+		$inCAM->COM("output_device_select_reset","type"=>"format","name"=>"LP7008"); #toto tady musi byt, nevim proc
+		$inCAM->COM( "output_device_select", "type" => "format", "name" => "LP7008");
+		
+		# Output final layer
 		$inCAM->COM(
-					 "output_update_device_layer",
-					 "type"       => "format",
-					 "name"       => "LP7008",
-					 "layer"      => $outputL,
-					 "angle"      => "0",
-					 "x_mirror"   => "no",
-					 "y_mirror"   => "no",
-					 "x_scale"    => "1",
-					 "y_scale"    => "1",
-					 "comp"       => "0",
-					 "polarity"   => "positive",
-					 "line_units" => "inch"
-		);
-
-		#		$inCAM->COM("output_update_device", "type"  => "format", "name"=> "LP7008", "suffix" => "_opfx",
-		#			"format_params" => "(break_sr=yes)(break_symbols=yes)(send_to_plotter=no)
-		#			(local_copy=yes)(film_size=$filmSize)(iol_surface_check=yes)
-		#			(iol_opfx_use_profile_limits=no)"
-		#		);
-
-
-
-		print $inCAM->COM(
 						   "output_device",
 						   "type"                 => "format",
 						   "name"                 => "LP7008",
@@ -252,14 +247,12 @@ sub __OutputPlotSets {
 						   "on_checkout_by_other" => "output_anyway"
 		);
 
-		# after export, move to archive
-		#copy( $output . $plotSet->GetOutputLayerName(), $archive . $plotSet->GetOutputFileName() ) or die "Copy failed: $!";
-		rename( $archivePath . $plotSet->GetOutputLayerName(), $archivePath . $plotSet->GetOutputFileName() ) or die "Copy failed: $!";
-
 	}
+ 
+
 
 	# return to default subsystem
-	$inCAM->COM( "set_subsystem", "name" => "1-Up-Edit" );
+	#$inCAM->COM( "set_subsystem", "name" => "1-Up-Edit" );
 
 }
 
