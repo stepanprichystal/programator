@@ -45,7 +45,7 @@ sub new {
  	$self->__SetLayout();
  
 	# EVENTS
-	$self->{"onSelectedChanged"}->Add(sub {$self->__PlotSelectionChanged(@_)});
+	#$self->{"onSelectedChanged"}->Add(sub {$self->__PlotSelectionChanged(@_)});
 
 	return $self;
 }
@@ -90,7 +90,7 @@ sub __SetLayout {
 
 }
 
-sub __PlotSelectionChanged{
+sub PlotSelectionChanged{
 	my $self = shift;
 	#my $plotList = shift;
 	#my $row = shift;

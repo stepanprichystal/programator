@@ -134,7 +134,7 @@ sub __Active {
 
 		# find if this layer is selected
 
-		my @exist = grep { $_ eq $plotL->GetName() } @selected;
+		my @exist = grep { $_ eq $plotL->{"gROWname"} } @selected;
 
 		unless ( scalar(@exist) ) {
 			$selected = 0;

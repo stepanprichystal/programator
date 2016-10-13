@@ -83,6 +83,11 @@ sub AddRow {
 	my $self = shift;
 	my $row  = shift;
 	push( @{ $self->{"rows"} }, $row );
+	
+	# Register on select changed
+	
+	$row->{"onSelectedChanged"}->Add( sub { $self->__OnSelectedChange(@_)});
+	
 
 	my @columns = @{ $self->{"columns"} };
 
@@ -316,7 +321,7 @@ sub __OnSelectedChange {
 	my $self = shift;
 	my $row  = shift;
 
-	$self->{"onSelectedChanged"}->Do($row);
+	$self->{"onSelectedChanged"}->Do($self, $row);
 }
 
 #-------------------------------------------------------------------------------------------#
