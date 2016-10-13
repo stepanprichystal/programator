@@ -141,8 +141,8 @@ sub AddCell {
 	my $self  = shift;
 	my $cell = shift;
  
-
-	$self->{"sizerCells"}->Add( $cell, 0, &Wx::wxEXPAND | &Wx::wxALL, 2 );
+# 
+	$self->{"sizerCells"}->Add( $cell, 0, &Wx::wxEXPAND |&Wx::wxALL, 2);
 	$self->{"sizerCells"}->Layout();
 }
 

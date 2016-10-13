@@ -30,7 +30,7 @@ sub new {
 	my $columnWidths = shift;
 	my $verticalLine = shift;
 
-	my $self = $class->SUPER::new($parent, -1, &Wx::wxDefaultPosition, &Wx::wxDefaultSize, &Wx::wxSIMPLE_BORDER);
+	my $self = $class->SUPER::new( $parent, -1, &Wx::wxDefaultPosition, &Wx::wxDefaultSize, &Wx::wxSIMPLE_BORDER );
 
 	bless($self);
 
@@ -83,11 +83,10 @@ sub AddRow {
 	my $self = shift;
 	my $row  = shift;
 	push( @{ $self->{"rows"} }, $row );
-	
+
 	# Register on select changed
-	
-	$row->{"onSelectedChanged"}->Add( sub { $self->__OnSelectedChange(@_)});
-	
+
+	$row->{"onSelectedChanged"}->Add( sub { $self->__OnSelectedChange(@_) } );
 
 	my @columns = @{ $self->{"columns"} };
 
@@ -110,6 +109,13 @@ sub GetSelectedRows {
 	my @selected = grep { $_->IsSelected() } @rows;
 
 	return @selected;
+}
+
+
+sub GetAllRows {
+	my $self = shift;
+ 
+	return @{ $self->{"rows"} };
 }
 
 sub GetSelectedId {
@@ -137,6 +143,18 @@ sub SetBodyBackgroundColor {
 }
 
 # Set color of select item
+sub SetHeaderBackgroundColor {
+	my $self  = shift;
+	my $color = shift;
+
+	if ($color) {
+		$self->{"headerPnl"}->SetBackgroundColour($color);
+		$self->{"headerPnl"}->Refresh();
+	}
+
+}
+
+# Set color of select item
 sub SetVerticalLine {
 	my $self  = shift;
 	my $color = shift;
@@ -161,16 +179,20 @@ sub __SetLayout {
 	my $self  = shift;
 	my $units = shift;
 
+	# DEFINE SIZERS
+
 	my $szMain = Wx::BoxSizer->new(&Wx::wxVERTICAL);
 
 	my $szHeader  = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
 	my $szColumns = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
 
+	# DEFINE PANELS
+
+	my $headerPnl = Wx::Panel->new( $self, -1 );
+
 	if ( $self->{"bodyColor"} ) {
 		$self->SetBackgroundColour( $self->{"bodyColor"} );
 	}
-
-	# DEFINE SIZERS
 
 	my @widths = @{ $self->{"columnWidth"} };
 
@@ -212,12 +234,16 @@ sub __SetLayout {
 
 	}
 
-	$szMain->Add( $szHeader,                0, &Wx::wxEXPAND );
+	$headerPnl->SetSizer($szHeader);
+
+	$szMain->Add( $headerPnl,                0, &Wx::wxEXPAND );
 	$szMain->Add( $self->__GetHeaderLine(), 0, &Wx::wxEXPAND );
 	$szMain->Add( $szColumns,               0, &Wx::wxEXPAND );
 
 	$self->SetSizer($szMain);
-	$self->{"szMain"} = $szMain;
+
+	$self->{"headerPnl"} = $headerPnl;
+	$self->{"szMain"}    = $szMain;
 
 }
 
@@ -321,7 +347,7 @@ sub __OnSelectedChange {
 	my $self = shift;
 	my $row  = shift;
 
-	$self->{"onSelectedChanged"}->Do($self, $row);
+	$self->{"onSelectedChanged"}->Do( $self, $row );
 }
 
 #-------------------------------------------------------------------------------------------#

@@ -14,7 +14,7 @@ use strict;
 use warnings;
 
 #local library
-use aliased 'Packages::Export::PlotExport::FilmCreator::MultiFilmCreator';
+use aliased 'Packages::Export::PlotExport::FilmCreator::FilmCreators';
 use aliased 'Packages::Export::PlotExport::PlotSet::PlotSet';
 use aliased 'Packages::Export::PlotExport::PlotSet::PlotLayer';
 use aliased 'Packages::Export::PlotExport::OpfxCreator::OpfxCreator';
@@ -34,12 +34,12 @@ sub new {
 	$self->{"jobId"}  = shift;
 	$self->{"layers"} = shift;
 
-	my @creators = ();
-	$self->{"filmCreators"} = \@creators;
+	my @layers = CamJob->GetBoardBaseLayers( $self->{"inCAM"}, $self->{"jobId"} );
 
-	$self->{"opfxCreator"} = OpfxCreator->new($self->{"inCAM"}, $self->{"jobId"});
+	$self->{"filmCreators"} = FilmCreators->new( $self->{"inCAM"}, $self->{"jobId"} );
+	$self->{"filmCreators"}->Init( \@layers );
 
-	$self->__InitCreators();
+	$self->{"opfxCreator"} = OpfxCreator->new( $self->{"inCAM"}, $self->{"jobId"} );
 
 	return $self;
 }
@@ -47,59 +47,17 @@ sub new {
 sub Run {
 	my $self = shift;
 
-	my @requested = @{ $self->{"layers"} };
-
-	my @resultSets = ();
-
-	foreach my $creator ( @{ $self->{"filmCreators"} } ) {
-
-		my @sets = $creator->GetRuleSets();
-		push( @resultSets, @sets );
-	}
+	my @resultSets = $self->{"filmCreators"}->GetRuleSets();
 
 	# Filter possible resultsets
 	# Take only theses, which contain layerfrom <layers>
-	my @filterResultSets = ();
-
-	foreach my $resultSet (@resultSets) {
-
-		my $plot       = 1;
-		my @ruleLayers = $resultSet->GetLayers();
-
-		foreach my $rl (@ruleLayers) {
-
-			my @exist = grep { $_->{"name"} eq $rl->{"gROWname"} } @requested;
-
-			unless ( scalar(@exist) ) {
-				$plot = 0;
-				last;
-
-			}
-		}
-
-		if ($plot) {
-			push( @filterResultSets, $resultSet );
-		}
-	}
+	my @filterRuleSets = $self->__FilterRuleSets( \@resultSets );
 
 	# Create plotter sets
-	$self->__InitOpfxCreator(\@filterResultSets);
+	$self->__InitOpfxCreator( \@filterRuleSets );
 
 	# Export
 	$self->{"opfxCreator"}->Export();
-
-}
-
-sub __InitCreators {
-	my $self = shift;
-
-	my @layers = CamJob->GetBoardBaseLayers( $self->{"inCAM"}, $self->{"jobId"} );
-
-	# Set rout mirror, compenyation
-
-	my $multi = MultiFilmCreator->new( $self->{"inCAM"}, $self->{"jobId"}, \@layers );
-
-	push( @{ $self->{"filmCreators"} }, $multi );
 
 }
 
@@ -115,31 +73,65 @@ sub __InitOpfxCreator {
 
 		foreach my $l ( $resultSet->GetLayers() ) {
 
-			my $lInfo = (grep { $_->{"name"} eq $l->{"gROWname"} } @{ $self->{"layers"} })[0] ;
+			my $lInfo = ( grep { $_->{"name"} eq $l->{"gROWname"} } @{ $self->{"layers"} } )[0];
 
-			my $plotL = PlotLayer->new( $lInfo->{"gROWname"}, $lInfo->{"polarity"}, $lInfo->{"mirror"}, $lInfo->{"compensation"}, $l->{"pcbSize"}, $l->{"pcbLimits"} );
+			my $plotL = PlotLayer->new( $lInfo->{"gROWname"},     $lInfo->{"polarity"}, $lInfo->{"mirror"},
+										$lInfo->{"compensation"}, $l->{"pcbSize"},      $l->{"pcbLimits"} );
 
 			push( @plotLayers, $plotL );
 
 		}
 
 		# create new plot set
-		my $plotSet = PlotSet->new( $resultSet, \@plotLayers, $self->{"jobId"});
+		my $plotSet = PlotSet->new( $resultSet, \@plotLayers, $self->{"jobId"} );
 
 		$self->{"opfxCreator"}->AddPlotSet($plotSet);
 	}
 
 }
 
+sub __FilterRuleSets {
+	my $self     = shift;
+	my @ruleSets = @{ shift(@_) };
+
+	my @filterRuleSets = ();
+
+	my @layers = @{ $self->{"layers"} };
+
+	foreach my $ruleSet (@ruleSets) {
+
+		my $plot       = 1;
+		my @ruleLayers = $ruleSet->GetLayers();
+
+		foreach my $rl (@ruleLayers) {
+
+			my @exist = grep { $_->{"name"} eq $rl->{"gROWname"} } @layers;
+
+			unless ( scalar(@exist) ) {
+				$plot = 0;
+				last;
+
+			}
+		}
+
+		if ($plot) {
+			push( @filterRuleSets, $ruleSet );
+		}
+	}
+	
+	return @filterRuleSets;
+
+}
+
 sub ExportItemsCount {
-	  my $self = shift;
+	my $self = shift;
 
-	  my $totalCnt = 0;
+	my $totalCnt = 0;
 
-	  $totalCnt += 1;                      # getting sucesfully AOI manager
-	  $totalCnt += $self->{"layerCnt"};    #export each layer
+	$totalCnt += 1;                               # getting sucesfully AOI manager
+	$totalCnt += $self->{"layerCnt"};             #export each layer
 
-	  return $totalCnt;
+	return $totalCnt;
 
 }
 
@@ -149,32 +141,31 @@ sub ExportItemsCount {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	  use aliased 'Packages::Export::PlotExport::PlotMngr';
+	use aliased 'Packages::Export::PlotExport::PlotMngr';
 
-	  use aliased 'Packages::InCAM::InCAM';
+	use aliased 'Packages::InCAM::InCAM';
 
-	  my $inCAM = InCAM->new();
+	my $inCAM = InCAM->new();
 
-	  my $jobId = "f13609";
+	my $jobId = "f13609";
 
-	  my @layers = CamJob->GetBoardBaseLayers( $inCAM, $jobId );
+	my @layers = CamJob->GetBoardBaseLayers( $inCAM, $jobId );
 
-	  foreach my $l (@layers) {
+	foreach my $l (@layers) {
 
-		  $l->{"polarity"}     = "positive";
-		  
-		   $l->{"mirror"}       = 0;
-		  if($l->{"gROWname"} =~ /c/){
-		  	 $l->{"mirror"}       = 1;
-		  }
-		  
-		 
-		  $l->{"compensation"} = 30;
-		  $l->{"name"}         = $l->{"gROWname"};
-	  }
+		$l->{"polarity"} = "positive";
 
-	  my $mngr = PlotMngr->new( $inCAM, $jobId, \@layers );
-	  $mngr->Run();
+		$l->{"mirror"} = 0;
+		if ( $l->{"gROWname"} =~ /c/ ) {
+			$l->{"mirror"} = 1;
+		}
+
+		$l->{"compensation"} = 30;
+		$l->{"name"}         = $l->{"gROWname"};
+	}
+
+	my $mngr = PlotMngr->new( $inCAM, $jobId, \@layers );
+	$mngr->Run();
 }
 
 1;

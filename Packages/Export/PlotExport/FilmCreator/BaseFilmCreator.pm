@@ -10,9 +10,10 @@ use strict;
 use warnings;
 
 #local library
-use aliased 'Packages::Export::PlotExport::Rules::RuleResult';
+use aliased 'Packages::Export::PlotExport::Rules::RuleSet';
 use aliased 'Packages::Export::PlotExport::Rules::Rule';
 use aliased 'CamHelpers::CamMatrix';
+use aliased 'CamHelpers::CamJob';
 use aliased 'Packages::Export::PlotExport::Enums';
 
 #-------------------------------------------------------------------------------------------#
@@ -24,10 +25,8 @@ sub new {
 	my $self  = {};
 	bless $self;
 
-	#$self->{"pcbSize"} = shift;
-
-	#$self->{"sizeFrame"} = shift;
-	#$self->{"sizeType"} = shift;
+	$self->{"inCAM"} = shift; #board layers
+	$self->{"jobId"} =  shift; #board layers
 	$self->{"layers"} = shift;
 
 	my @rules = ();
@@ -35,6 +34,8 @@ sub new {
 
 	my @resultRules = ();
 	$self->{"resultRules"} = \@resultRules;
+	
+	$self->{"layerCnt"} = CamJob->GetSignalLayerCnt( $self->{"inCAM"}, $self->{"jobId"} );
 
 	$self->__AddLayerTypes();
 	#$self->__AddLayerSize();
@@ -84,13 +85,13 @@ sub __RunRule {
 	my $rule   = shift;
 	my $layers = shift;    # not processed layers
 
-	my $createResultSet = 1;
+	my $createRuleSet = 1;
 
 	#create "Result set" based on this rule
-	while ($createResultSet) {
+	while ($createRuleSet) {
 
 		# try create new result set
-		my $resultSet = RuleResult->new($rule);
+		my $ruleSet = RuleSet->new($rule);
 
 		# go through all rule types
 		my @ruleTypes = $rule->GetLayerTypes();
@@ -116,7 +117,7 @@ sub __RunRule {
 
 					if ( $rule->GetOrientation() eq Enums->Ori_VERTICAL ) {
 
-						my $xSum = $x + $resultSet->GetWidth();
+						my $xSum = $x + $ruleSet->GetWidth();
 
 						# text if pcb size exceeds fil dimension
 						if ( $xSum > Enums->FilmSize_BigX || $y > Enums->FilmSize_BigY ) {
@@ -124,43 +125,43 @@ sub __RunRule {
 						}
 
 						if ( $y > Enums->FilmSize_SmallY ) {
-							$resultSet->SetDimenison( Enums->FilmSize_Big );
+							$ruleSet->SetDimenison( Enums->FilmSize_Big );
 						}
 						else {
-							$resultSet->SetDimenison( Enums->FilmSize_Small );
+							$ruleSet->SetDimenison( Enums->FilmSize_Small );
 						}
 
 					}
-					elsif ( $rule->{"position"} eq Enums->Ori_HORIZONTAL ) {
+					elsif ( $rule->GetOrientation() eq Enums->Ori_HORIZONTAL ) {
 
 						# text if pcb size exceeds fil dimension
 						if ( $y > Enums->FilmSize_BigX || $x > Enums->FilmSize_BigY ) {
 							next;
 						}
 						if ( $x > Enums->FilmSize_SmallY ) {
-							$resultSet->SetDimenison( Enums->FilmSize_Big );
+							$ruleSet->SetDimenison( Enums->FilmSize_Big );
 						}
 						else {
-							$resultSet->SetDimenison( Enums->FilmSize_Small );
+							$ruleSet->SetDimenison( Enums->FilmSize_Small );
 						}
 
 					}
 
 					# add this type to result set
-					$resultSet->AddLayer($layer);
+					$ruleSet->AddLayer($layer);
 					$layer->{"used"} = 1;
 					last;
 				}
 			}
 		}
 
-		unless ( $resultSet->Complete() ) {
+		unless ( $ruleSet->Complete() ) {
 
-			# stop creating another resultsets
-			$createResultSet = 0;
+			# stop creating another ruleSets
+			$createRuleSet = 0;
 
 			# free used layers in resultset
-			my @used = $resultSet->GetLayers();
+			my @used = $ruleSet->GetLayers();
 
 			foreach $_ (@used) {
 				$_->{"used"} = 0;
@@ -170,7 +171,7 @@ sub __RunRule {
 		else {
 
 			# add result set
-			push( @{ $self->{"resultRules"} }, $resultSet );
+			push( @{ $self->{"resultRules"} }, $ruleSet );
 		}
 
 	}

@@ -11,21 +11,19 @@ use strict;
 use warnings;
 use Wx;
 
-
 #local library
 use Widgets::Style;
 use aliased 'Packages::Events::Event';
 use aliased 'CamHelpers::CamLayer';
 use aliased 'Packages::Export::PlotExport::Enums';
- 
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
 
 sub new {
-	my $class   = shift;
-	my $parent  = shift;
+	my $class      = shift;
+	my $parent     = shift;
 	my $ruleResult = shift;
 
 	my $self = $class->SUPER::new( $parent, -1, &Wx::wxDefaultPosition );
@@ -65,58 +63,61 @@ sub __SetLayout {
 	$framePnl->SetBackgroundColour( Wx::Colour->new( 150, 150, 150 ) );
 
 	my $colorPnl = Wx::Panel->new( $framePnl, -1, &Wx::wxDefaultPosition );
-	my $filmColor = $self->{"ruleResult"}->{"color"};
-	$colorPnl->SetBackgroundColour($filmColor);
+	$colorPnl->SetBackgroundColour( $self->{"notActiveClr"} );
 
 	my $infoPnl = Wx::Panel->new( $colorPnl, -1, &Wx::wxDefaultPosition );
 	$infoPnl->SetBackgroundColour( Wx::Colour->new( 223, 223, 223 ) );
 
 	# DEFINE CONTROLS
-	
-	my @layers = $self->{"ruleResult"}->GetLayers();
-	my $fileName;
-	
-	
-	foreach my $l (@layers){
-		
-		if($fileName){
-			$fileName .= " + ";
+
+	my $fileName     = "";
+	my $filmSize     = "";
+	my $filmPolarity = "";
+
+	if ( $self->{"ruleResult"} ) {
+
+		my @layers = $self->{"ruleResult"}->GetLayers();
+
+		foreach my $l (@layers) {
+
+			if ($fileName) {
+				$fileName .= " + ";
+			}
+
+			$fileName .= $l->{"gROWname"};
 		}
+
+		$filmSize = $self->{"ruleResult"}->GetFilmSize();
+
+
+		if ( $filmSize eq Enums->FilmSize_Small ) {
+
+			$filmSize = "B";
+		}
+		elsif ( $filmSize eq Enums->FilmSize_Big ) {
+
+			$filmSize = "S";
+		}
+	 
 		
-		$fileName .= $l->{"gROWname"};
 	}
-	
-	my $filmSize = $self->{"ruleResult"}->GetFilmSize();
- 
-	if ( $filmSize eq Enums->FilmSize_Small ) {
 
-		 $filmSize = "B";
-	}
-	elsif ( $filmSize eq Enums->FilmSize_Big ) {
-
-		  $filmSize = "S";
-	}
-	
 	my $lNameTxt    = Wx::StaticText->new( $colorPnl, -1, $fileName, &Wx::wxDefaultPosition );
-	my $sizeTxt     = Wx::StaticText->new( $infoPnl,   -1, $filmSize, &Wx::wxDefaultPosition );
-	my $polarityTxt = Wx::StaticText->new( $infoPnl,   -1, "+", &Wx::wxDefaultPosition );
-	
-	
+	my $sizeTxt     = Wx::StaticText->new( $infoPnl,  -1, $filmSize, &Wx::wxDefaultPosition );
+	 
 
 	# BUILD LAYOUT STRUCTURE
 	$infoSz->Add( $sizeTxt,     1, &Wx::wxEXPAND | &Wx::wxLEFT, 2 );
-	$infoSz->Add( $polarityTxt, 1, &Wx::wxEXPAND | &Wx::wxALL, 0 );
-
-
+	 
 
 	$infoPnl->SetSizer($infoSz);
 	$colorPnl->SetSizer($colorSz);
 	$framePnl->SetSizer($frameSz);
 	$self->SetSizer($szMain);
-	
-	$colorSz->Add( $lNameTxt, 70, &Wx::wxEXPAND | &Wx::wxLEFT, 2 );
-	$colorSz->Add( $infoPnl,   30, &Wx::wxEXPAND | &Wx::wxALL, 0 );
-	$frameSz->Add( $colorPnl, 1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+
+	$colorSz->Add( $lNameTxt, 80, &Wx::wxEXPAND | &Wx::wxLEFT, 4 );
+	$colorSz->Add( $infoPnl,  20, &Wx::wxEXPAND | &Wx::wxALL,  0 );
+	$frameSz->Add( $colorPnl, 1,  &Wx::wxEXPAND | &Wx::wxALL,  1 );
 	$szMain->Add( $framePnl, 1, &Wx::wxEXPAND | &Wx::wxALL, 0 );
 
 	# SAVE REFERENCES
@@ -127,6 +128,10 @@ sub __SetLayout {
 sub __Active {
 	my $self     = shift;
 	my @selected = @{ shift(@_) };
+
+	unless ( $self->{"ruleResult"}){
+		return 1;
+	}
 
 	my $selected = 1;
 
@@ -141,7 +146,7 @@ sub __Active {
 			last;
 		}
 	}
-	
+
 	my $filmColor;
 
 	if ($selected) {
@@ -158,6 +163,8 @@ sub __Active {
 	}
 
 	$self->{"colorPnl"}->Refresh();
+	
+	return 1;
 
 }
 

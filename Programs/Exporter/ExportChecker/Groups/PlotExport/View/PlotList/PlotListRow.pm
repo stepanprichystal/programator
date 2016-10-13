@@ -28,7 +28,8 @@ sub new {
 	my $class = shift;
 	my $parent = shift;
 	my $layer = shift;
-	my $filmResultSet = shift;
+	my $filmRuleSet1 = shift;
+	my $filmRuleSet2 = shift;
 	my $rowHeight = 20;
 	
 
@@ -39,8 +40,8 @@ sub new {
  	$self->{"layer"} = $layer;
  	$self->{"rowHeight"} = $rowHeight;
  	
- 	$self->{"filmResultSet"} = $filmResultSet;
- 
+ 	$self->{"filmRuleSet1"} = $filmRuleSet1;
+  	$self->{"filmRuleSet2"} = $filmRuleSet2;
  
  	$self->__SetLayout();
  
@@ -50,6 +51,28 @@ sub new {
 	return $self;
 }
  
+sub SetPolarity {
+	my $self = shift;
+	my $val = shift;
+	
+	$self->{"polarityCb"}->SetValue($val);
+	
+}
+
+sub SetMirror {
+	my $self = shift;
+	my $val = shift;
+	
+	$self->{"mirrorChb"}->SetValue($val);
+	
+}
+
+sub SetComp {
+	my $self = shift;
+	my $val = shift;
+	
+ 	$self->{"compTxt"}->SetLabel($val);
+}
 
 sub __SetLayout {
 	my $self = shift;
@@ -66,10 +89,12 @@ sub __SetLayout {
 
 	my $compTxt = Wx::TextCtrl->new(  $self->{"parent"}, -1, "", &Wx::wxDefaultPosition, [ 20, $self->{"rowHeight"} ] );
 	
-	my $arrowTxt = Wx::StaticText->new($self->{"parent"}, -1, " ==> ", &Wx::wxDefaultPosition, [ 60, 20 ] );
+	my $arrowTxt = Wx::StaticText->new($self->{"parent"}, -1, "  ==> ", &Wx::wxDefaultPosition);
+	$arrowTxt->SetFont($Widgets::Style::fontLblBold);
 	
-	my $film1Frm =  FilmForm->new(  $self->{"parent"}, $self->{"filmResultSet"} );
-	
+	 
+	my $film1Frm =  FilmForm->new(  $self->{"parent"}, $self->{"filmRuleSet1"} );
+	my $film2Frm =  FilmForm->new(  $self->{"parent"}, $self->{"filmRuleSet2"} );	
 	
 	# SET EVENTS
 	#Wx::Event::EVT_CHECKBOX( $mainChb, -1, sub { $self->__OnSelectedChange(@_) } );
@@ -81,12 +106,16 @@ sub __SetLayout {
 	$self->_AddCell($compTxt);
 	$self->_AddCell($arrowTxt);
 	$self->_AddCell($film1Frm);
-	
+	$self->_AddCell($film2Frm);
 	
 	# SET REFERENCES
 	
 	$self->{"film1Frm"} = $film1Frm;
-	 
+	$self->{"film2Frm"} = $film2Frm;
+	$self->{"polarityCb"} = $polarityCb;
+	$self->{"mirrorChb"} = $mirrorChb;
+	$self->{"compTxt"} = $compTxt;
+
 
 }
 
@@ -105,7 +134,7 @@ sub PlotSelectionChanged{
 	}
 	
 	$self->{"film1Frm"}->PlotSelectChanged(\@selectedLayers);
-	
+	$self->{"film2Frm"}->PlotSelectChanged(\@selectedLayers);
 }
 
  

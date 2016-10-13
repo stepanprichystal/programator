@@ -3,7 +3,7 @@
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 
-package Packages::Export::PlotExport::Rules::RuleResult;
+package Packages::Export::PlotExport::Rules::RuleSet;
 
 #3th party library
 use strict;
@@ -13,7 +13,7 @@ use warnings;
 use aliased 'Packages::Export::PlotExport::Enums';
 
 #-------------------------------------------------------------------------------------------#
-#   Package methods
+#   Package methods ResultSet
 #-------------------------------------------------------------------------------------------#
 
 sub new {

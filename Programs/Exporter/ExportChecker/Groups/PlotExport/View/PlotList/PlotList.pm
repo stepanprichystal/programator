@@ -17,7 +17,7 @@ use Wx qw(:sizer wxDefaultPosition wxDefaultSize wxDEFAULT_DIALOG_STYLE wxRESIZE
 use Widgets::Style;
 use aliased 'Programs::Exporter::ExportChecker::Groups::PlotExport::View::PlotList::PlotListRow';
 use aliased 'Packages::Events::Event';
-use aliased 'Packages::Export::PlotExport::FilmCreator::MultiFilmCreator';
+use aliased 'Packages::Export::PlotExport::FilmCreator::FilmCreators';
 use aliased 'Helpers::GeneralHelper';
 
 #-------------------------------------------------------------------------------------------#
@@ -31,9 +31,11 @@ sub new {
 
 	my $inCAM = shift;
 	my $jobId = shift;
+	
+	my $layers = shift;
 
 	# Name, Color, Polarity, Mirror, Comp
-	my @widths = ( 50, 20, 100, 50, 50, 100, 100, 100, );
+	my @widths = ( 50, 40, 100, 40, 50, 100, 80, 80, );
 
 	my $columnCnt    = scalar(@widths);
 	my $columnWidths = \@widths;
@@ -45,29 +47,13 @@ sub new {
 
 	$self->{"inCAM"} = $inCAM;
 	$self->{"jobId"} = $jobId;
+ 	$self->{"layers"} = $layers;
 
-	my @layers = ();
+	$self->{"filmCreators"} = FilmCreators->new( $self->{"inCAM"}, $self->{"jobId"} );
+	$self->{"filmCreators"}->Init( $layers );
+ 
 
-	my %info1 = ( "gROWname" => "pc" );
-	my %info2 = ( "gROWname" => "mc" );
-	my %info3 = ( "gROWname" => "c" );
-	my %info4 = ( "gROWname" => "s" );
-	my %info5 = ( "gROWname" => "ms" );
-	my %info6 = ( "gROWname" => "ps" );
-
-	push( @layers, \%info1 );
-	push( @layers, \%info2 );
-	push( @layers, \%info3 );
-	push( @layers, \%info4 );
-	push( @layers, \%info5 );
-	push( @layers, \%info6 );
-
-	$self->{"layers"} = \@layers;
-
-	my $creator = MultiFilmCreator->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"layers"} );
-	my @sets = $creator->GetRuleSets();
-
-	$self->{"ruleSets"} = \@sets;
+	 
 
 	$self->__DefineFilmColors();
 
@@ -76,24 +62,64 @@ sub new {
 	return $self;
 }
 
-# Create column, for placing GroupWrappersForm
+
+
+sub SetPolarity {
+	my $self = shift;
+	my $val = shift;
+	
+	my @rows = $self->GetAllRows();
+	
+	foreach my $r (@rows){
+		
+		$r->SetPolarity($val);
+	}
+}
+
+sub SetMirror {
+	my $self = shift;
+	my $val = shift;
+	
+	my @rows = $self->GetAllRows();
+	
+	foreach my $r (@rows){
+		
+		$r->SetMirror($val);
+	}
+}
+
+sub SetComp {
+	my $self = shift;
+	my $val = shift;
+	
+	my @rows = $self->GetAllRows();
+	
+	foreach my $r (@rows){
+		
+		$r->SetComp($val);
+	}
+}
+
+
 sub __SetLayout {
 
 	my $self = shift;
 
 	# DEFINE SIZERS
 
-	my @titles = ( "Name", "", "Polarity", "Mirror", "Comp" );
+	my @titles = ( "Name", "", "Polarity", "Mirror", "Comp", "", "Merged", "Single" );
 	$self->SetHeader( \@titles );
 
 	$self->SetVerticalLine( Wx::Colour->new( 163, 163, 163 ) );
+	
+	$self->SetHeaderBackgroundColor(Wx::Colour->new( 232, 232, 232 ) );
 
 	#create rows for each laters
 
 	my @layers = @{ $self->{"layers"} };
 	foreach my $l (@layers) {
 
-		my $row = PlotListRow->new( $self, $l, $self->__GetRuleSet($l) );
+		my $row = PlotListRow->new( $self, $l, $self->__GetRuleSet($l, 1), $self->__GetRuleSet($l, 2) );
 
 		# zaregistrovat udalost
 		
@@ -112,10 +138,13 @@ sub __SetLayout {
 sub __GetRuleSet {
 	my $self  = shift;
 	my $layer = shift;
+	my $creatorNum = shift;
+
+	my @ruleSets = $self->{"filmCreators"}->GetRuleSets($creatorNum);
 
 	my $set;
 
-	foreach my $rulSet ( @{ $self->{"ruleSets"} } ) {
+	foreach my $rulSet (@ruleSets ) {
 
 		my @ruleLayers = $rulSet->GetLayers();
 
@@ -140,6 +169,8 @@ sub __GetRuleSet {
 		}
 	}
 
+	# If no set exist, create empty result set
+ 
 	return $set;
 
 }
