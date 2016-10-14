@@ -132,19 +132,19 @@ sub __OnMenuItemClick {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	use aliased 'Widgets::Forms::MyTaskBarIcon';
-
-	my $form;
-
-	my $trayicon = MyTaskBarIcon->new( "Exporter", $form );
-
-	$trayicon->IsOk() || die;
-
-	my $menu = Wx::Menu->new();
-	$menu->Append( -1, "menu 1" );
-	$menu->Append( -1, "menu 2" );
-
-	$trayicon->PopupMenu($menu);
+#	use aliased 'Widgets::Forms::MyTaskBarIcon';
+#
+#	my $form;
+#
+#	my $trayicon = MyTaskBarIcon->new( "Exporter", $form );
+#
+#	$trayicon->IsOk() || die;
+#
+#	my $menu = Wx::Menu->new();
+#	$menu->Append( -1, "menu 1" );
+#	$menu->Append( -1, "menu 2" );
+#
+#	$trayicon->PopupMenu($menu);
 
 }
 

@@ -81,10 +81,14 @@ sub __SetLayout {
 			
 			# Get cell title
 			my $title = UnitEnums->GetTitle($cell->GetUnitId());
+	
+			if("plot" eq $cell->GetUnitId()){
+				print STDERR "1";
+			}
 
 			# Create new group wrapper, parent is this panel
 			my $groupWrapperPnl = GroupWrapperForm->new($self, $title);
-
+			
 			# Init unit form, where parent will by group wrapper
 			$cell->InitForm( $groupWrapperPnl, $inCAM );
 
@@ -180,12 +184,11 @@ my $self = shift;
 #-------------------------------------------------------------------------------------------#
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
-	my $test = Programs::Exporter::ExportChecker::Forms::GroupTableForm->new();
+	#my $test = Programs::Exporter::ExportChecker::Forms::GroupTableForm->new();
 
-	$test->MainLoop();
+	#$test->MainLoop();
 }
 
-1;
 
 1;
 

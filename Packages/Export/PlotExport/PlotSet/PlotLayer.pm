@@ -3,7 +3,7 @@
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 
-package Packages::Export::PlotExport::FilmCreator::FilmCreator;
+package Packages::Export::PlotExport::PlotSet::PlotLayer;
 
 #3th party library
 use strict;
@@ -17,29 +17,75 @@ use warnings;
 #-------------------------------------------------------------------------------------------#
 
  
-sub GetPlotterSets{
-	my $self = shift;
+ sub new {
+	my $class     = shift;
+	my $self ={};
+	 
+	bless $self;
 	
-	
-	__BuildRules()
-	__CreateSets()
-} 
-
-
-sub __BuildRules{
-	my $self = shift;
-	
-} 
-
-
-sub __CreateSets{
-	my $self = shift;
-	
-} 
-
-
+ 	$self->{"name"} = shift;
+ 	$self->{"polarity"} = shift;
+  	$self->{"mirror"} = shift;
+ 	$self->{"compensation"} = shift;
+ 	$self->{"pcbSize"} = shift;
+  	$self->{"pcbLimits"} = shift;
+ 	# Helper propery, when create opfx
+ 	
+ 	$self->{"outputLayer"} = undef;  #name of final output layer, contain rotated, mirrored, comp data
  
-1;
+	return $self;
+}
+
+sub GetName{
+	my $self = shift;
+	
+	return $self->{"name"};
+	
+	
+}
+
+sub GetComp{
+	my $self = shift;
+	
+	return $self->{"compensation"};
+	
+}
+
+sub Mirror{
+	my $self = shift;
+	
+	return $self->{"mirror"};
+	
+}
+
+sub GetPolarity{
+	my $self = shift;
+	
+	return $self->{"polarity"};
+	
+}
+
+sub GetWidth{
+	my $self = shift;
+	
+	return $self->{"pcbSize"}->{"xSize"};	
+}
+
+sub GetHeight{
+	my $self = shift;
+	
+	return $self->{"pcbSize"}->{"ySize"};	
+}
+ 
+ 
+sub GetLimits{
+	my $self = shift;
+	
+	return $self->{"pcbLimits"};	
+} 
+ 
+ 
+ 
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
@@ -50,9 +96,9 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	#my $self             = shift;
 	#	my $inCAM            = shift;
 
-	use aliased 'HelperScripts::DirStructure';
+	#use aliased 'HelperScripts::DirStructure';
 
-	DirStructure->Create();
+	#DirStructure->Create();
 
 }
 

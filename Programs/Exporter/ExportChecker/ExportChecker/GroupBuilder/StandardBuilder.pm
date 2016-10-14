@@ -20,6 +20,7 @@ use aliased 'Programs::Exporter::ExportChecker::Groups::NifExport::Presenter::Ni
 use aliased 'Programs::Exporter::ExportChecker::Groups::NCExport::Presenter::NCUnit';
 use aliased 'Programs::Exporter::ExportChecker::Groups::AOIExport::Presenter::AOIUnit';
 use aliased 'Programs::Exporter::ExportChecker::Groups::ETExport::Presenter::ETUnit';
+use aliased 'Programs::Exporter::ExportChecker::Groups::PlotExport::Presenter::PlotUnit';
 
 use aliased 'Programs::Exporter::ExportChecker::ExportChecker::GroupBuilder::Enums';
 #-------------------------------------------------------------------------------------------#
@@ -45,7 +46,7 @@ sub Build {
 	my $nifUnit1 = NifUnit->new( $self->{"jobId"});
 	my $ncUnit1 = NCUnit->new( $self->{"jobId"});
 	my $aoiUnit1 = AOIUnit->new( $self->{"jobId"} );
-	
+	my $plotUnit1 = PlotUnit->new( $self->{"jobId"} );
 	my $etUnit1 = ETUnit->new( $self->{"jobId"} );
 
 	#my $ncUnit2 = NCUnit->new( $self->{"jobId"}, "NC 2" );
@@ -67,6 +68,8 @@ sub Build {
 
 
 	my $row2Tab1 = $tableTab1->AddRow();
+	
+	$row2Tab1->AddCell($plotUnit1, Enums->Width_50);
 	$row2Tab1->AddCell($etUnit1, Enums->Width_25);
 	#$row2Tab1->AddCell($ncUnit3);
 

@@ -85,11 +85,11 @@ sub ChangePcbOrderNumber {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	use aliased 'Packages::TriggerFunction::NCFiles';
+	#use aliased 'Packages::TriggerFunction::NCFiles';
 
-	NCFiles->ChangePcbOrderNumber("f13610");
+	#NCFiles->ChangePcbOrderNumber("f13610");
 
-	print 1;
+	#print 1;
 
 }
 

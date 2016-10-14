@@ -340,7 +340,7 @@ if (0) {
 
 if (0) {
 
-	use Connectors::LogConnector::LogMethods;
+	#use Connectors::LogConnector::LogMethods;
 	# my $test = Methods->GetAllLogs();
 
 	 #Connectors::LogConnector::Methods->InsertActionLog("f00555", "mku", "dorout");
@@ -348,8 +348,8 @@ if (0) {
 	 #Connectors::LogConnector::Methods->InsertMessageLog("f00555", "mku", "checksomethning", "Did", "Information");
 	 
 	 
-	 my @messType = ("Did", "Test");
-	 my $pom = Connectors::LogConnector::Methods->GetActionAndMessages("f00555", undef, 0, 1, \@messType);
+	# my @messType = ("Did", "Test");
+	# my $pom = Connectors::LogConnector::Methods->GetActionAndMessages("f00555", undef, 0, 1, \@messType);
 	 
 #	my $pcbId = shift;
 #	my $userName = shift;

@@ -653,6 +653,7 @@ sub UpdateNCInfo {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
+ 
 	use aliased 'Connectors::HeliosConnector::HegMethods';
 
 	my $nc_info = "test";
@@ -660,6 +661,15 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	my $test = HegMethods->UpdateNCInfo("f50014", $nc_info);
 
 	print $test;
+ 
+#	use aliased 'Connectors::HeliosConnector::HegMethods';
+#
+#	my $nc_info = "test";
+#
+#	my $test =  HegMethods->GetTpvCustomerNote("d06224");
+#
+#	print $test;
+ 
 
 }
 

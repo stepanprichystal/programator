@@ -61,6 +61,13 @@ sub InitDataMngr {
 	}
 }
 
+sub SetDefaultInfo {
+	my $self       = shift;
+	my $defaultInfo      = shift;
+
+	$self->{"dataMngr"}->SetDefaultInfo($defaultInfo);
+}
+
 # tohle presunout do base class
 sub CheckBeforeExport {
 	my $self       = shift;

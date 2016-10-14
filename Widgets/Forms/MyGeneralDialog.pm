@@ -125,8 +125,8 @@ sub AddButton {
 
 if (0) {
 
-	my $frm = Programs::CamGuide::Forms::LoadChildFrm->new( -1, "D3333", 2, "Guid vv" );
-	$frm->ShowModal();
+	#my $frm = Programs::CamGuide::Forms::LoadChildFrm->new( -1, "D3333", 2, "Guid vv" );
+	#$frm->ShowModal();
 
 }
 

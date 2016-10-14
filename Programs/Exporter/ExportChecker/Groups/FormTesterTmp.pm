@@ -18,6 +18,7 @@ use Widgets::Style;
 use aliased 'Programs::Exporter::ExportChecker::ExportChecker::Forms::GroupWrapperForm';
 use aliased 'Programs::Exporter::ExportChecker::Groups::NifExport::View::NifUnitForm';
 use aliased 'Programs::Exporter::ExportChecker::Groups::NCExport::View::NCUnitForm';
+use aliased 'Programs::Exporter::ExportChecker::Groups::PlotExport::View::PlotUnitForm';
 use aliased 'Packages::InCAM::InCAM';
 
 #-------------------------------------------------------------------------------------------#
@@ -71,12 +72,12 @@ sub __SetLayout {
 
 	my $szMain = Wx::BoxSizer->new(&Wx::wxVERTICAL);
 
-	my $groupWrapperPnl = GroupWrapperForm->new($mainFrm);
+	my $groupWrapperPnl = GroupWrapperForm->new($mainFrm, "Test");
 
 	my $form = $self->_TestedForm($groupWrapperPnl);
 
 	# Insert initialized group to group wrapper
-	$groupWrapperPnl->Init( "test", $form );
+	$groupWrapperPnl->Init($form );
 
 	#$groupWrapperPnl->{"pnlBody"}->Disable();
 	#$cell->{"form"}->Disable();
@@ -97,7 +98,7 @@ sub _TestedForm {
 	my $groupWrapper = shift;
 
 	my $parent = $groupWrapper->GetParentForGroup();
-	my $nif = NCUnitForm->new( $parent, $self->{"inCAM"}, $self->{"jobId"}, "nif" );
+	my $nif = PlotUnitForm->new( $parent, $self->{"inCAM"}, $self->{"jobId"}, "PLot" );
 
 	return $nif;
 
@@ -109,12 +110,12 @@ sub _TestedForm {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	my $test = Programs::Exporter::ExportChecker::Groups::FormTesterTmp->new(-1, "f13610" );
+	#my $test = Programs::Exporter::ExportChecker::Groups::FormTesterTmp->new(-1, "f13609" );
 	 
-	$test->MainLoop();
+	#$test->MainLoop();
 }
 
-1;
+ 
 
 1;
 

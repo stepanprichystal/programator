@@ -1,45 +1,42 @@
 #-------------------------------------------------------------------------------------------#
-# Description: Wrapper for operations connected with inCam attributes
+# Description: This class define "outside" handlers and events, 
+# which is possible cooperate with.
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-
-package Packages::Export::PlotExport::FilmCreator::FilmCreator;
+package Programs::Exporter::ExportChecker::Groups::NifExport::View::NifUnitFormEvt;
 
 #3th party library
 use strict;
 use warnings;
 
 #local library
- 
+use aliased 'Programs::Exporter::ExportChecker::Groups::Enums';
+use aliased 'Packages::Events::Event';
 
 #-------------------------------------------------------------------------------------------#
-#   Package methods
+#  Package methods
 #-------------------------------------------------------------------------------------------#
 
- 
-sub GetPlotterSets{
-	my $self = shift;
+sub new {
+	my $class = shift;
+	my $self  = {};
+
+	$self = $class->SUPER::new(@_);
+	bless $self;
+
+	my $frm = $self->{"form"};
+
+	# Provided handlers
+
+
+	# Provided events
 	
-	
-	__BuildRules()
-	__CreateSets()
-} 
+	$self->_AddEvent( $frm->{'onTentingChange'}, Enums->Event_nif_tenting );
+
+	return $self;
+}
 
 
-sub __BuildRules{
-	my $self = shift;
-	
-} 
-
-
-sub __CreateSets{
-	my $self = shift;
-	
-} 
-
-
- 
-1;
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
@@ -47,13 +44,8 @@ sub __CreateSets{
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	#my $self             = shift;
-	#	my $inCAM            = shift;
-
-	use aliased 'HelperScripts::DirStructure';
-
-	DirStructure->Create();
 
 }
 
 1;
+

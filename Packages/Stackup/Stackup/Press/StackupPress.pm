@@ -40,7 +40,23 @@ sub new {
 	return $self;  
 }
 
+sub GetPressOrder{
+	my $self = shift;
+	
+	return $self->{"order"};
+}
  
+sub GetTopCopperLayer{
+	my $self = shift;
+	
+	return $self->{"top"};
+}
+
+sub GetBotCopperLayer{
+	my $self = shift;
+	
+	return $self->{"bot"};
+}
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

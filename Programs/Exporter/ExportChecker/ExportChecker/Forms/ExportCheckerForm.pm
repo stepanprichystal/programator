@@ -236,7 +236,7 @@ sub __SetLayout {
 		-1,                        # ID -1 means any
 		"Exporter checker",        # title
 		&Wx::wxDefaultPosition,    # window position
-		[ 1100, 700 ],             # size
+		[ 1100, 750 ],             # size
 		                           #&Wx::wxSYSTEM_MENU | &Wx::wxCAPTION | &Wx::wxCLIP_CHILDREN | &Wx::wxRESIZE_BORDER | &Wx::wxMINIMIZE_BOX
 	);
 
@@ -536,7 +536,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	#$test->MainLoop();
 }
 
-1;
+
 
 1;
 

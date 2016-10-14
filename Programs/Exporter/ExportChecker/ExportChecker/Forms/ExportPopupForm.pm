@@ -494,12 +494,12 @@ sub __OnCloseHandler {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	my $test = Programs::Exporter::ExportChecker::ExportChecker::Forms::ExportPopupForm->new( undef, "f13608" );
-	$test->ShowPopup();
-	$test->MainLoop();
+	#my $test = Programs::Exporter::ExportChecker::ExportChecker::Forms::ExportPopupForm->new( undef, "f13608" );
+	#$test->ShowPopup();
+	#$test->MainLoop();
 }
 
-1;
+
 
 1;
 

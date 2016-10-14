@@ -157,7 +157,7 @@ sub GetPrepregInfo {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	print 1;
+	#print 1;
 
 	#my $test = Connectors::HeliosConnector::HegMethods->GetMaterialType("F34140");
 

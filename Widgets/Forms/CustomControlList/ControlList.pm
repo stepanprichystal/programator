@@ -30,7 +30,7 @@ sub new {
 	my $columnWidths = shift;
 	my $verticalLine = shift;
 
-	my $self = $class->SUPER::new($parent);
+	my $self = $class->SUPER::new( $parent, -1, &Wx::wxDefaultPosition, &Wx::wxDefaultSize);
 
 	bless($self);
 
@@ -45,6 +45,13 @@ sub new {
 
 	my @rows = ();
 	$self->{"rows"} = \@rows;
+
+	$self->{"vLineColor"} = undef;    # color of vertical line
+	$self->{"vLineWidth"} = undef;    # width of vertical line
+	$self->{"bodyColor"}  = undef;
+
+	my @vSep = ();
+	$self->{"vSep"} = \@vSep;
 
 	$self->__SetLayout();
 
@@ -77,6 +84,10 @@ sub AddRow {
 	my $row  = shift;
 	push( @{ $self->{"rows"} }, $row );
 
+	# Register on select changed
+
+	$row->{"onSelectedChanged"}->Add( sub { $self->__OnSelectedChange(@_) } );
+
 	my @columns = @{ $self->{"columns"} };
 
 	for ( my $i = 0 ; $i < $self->{"columnCnt"} ; $i++ ) {
@@ -100,7 +111,27 @@ sub GetSelectedRows {
 	return @selected;
 }
 
+
+sub GetAllRows {
+	my $self = shift;
  
+	return @{ $self->{"rows"} };
+}
+
+
+sub GetRowByText {
+	my $self = shift;
+	my $text = shift;	
+	
+	foreach my $r (@{$self->{"rows"}}){
+		
+		if( $r->GetRowText() eq $text ){
+			
+			return $r;
+		}
+	}
+
+}
 
 sub GetSelectedId {
 
@@ -109,13 +140,59 @@ sub GetSelectedId {
 sub SelectAll {
 	my $self = shift;
 	
-	$self->{"rows"}->SetSelected(1);
+	foreach my $r (@{$self->{"rows"}}){
+		
+		$r->SetSelected(1);
+	}
+
 }
 
 sub UnselectAll {
 	my $self = shift;
-	
-	$self->{"rows"}->SetSelected(0);
+
+	foreach my $r (@{$self->{"rows"}}){
+		
+		$r->SetSelected(0);
+	}
+}
+
+# Set color of select item
+sub SetBodyBackgroundColor {
+	my $self  = shift;
+	my $color = shift;
+
+	$self->{"bodyColor"} = $color;
+}
+
+# Set color of select item
+sub SetHeaderBackgroundColor {
+	my $self  = shift;
+	my $color = shift;
+
+	if ($color) {
+		$self->{"headerPnl"}->SetBackgroundColour($color);
+		$self->{"headerPnl"}->Refresh();
+	}
+
+}
+
+# Set color of select item
+sub SetVerticalLine {
+	my $self  = shift;
+	my $color = shift;
+
+	#my $width = shift;
+
+	$self->{"vLineColor"} = $color;
+
+	#$self->{"vLineWidth"} = $width;
+
+	foreach my $sep ( @{ $self->{"vSep"} } ) {
+
+		$sep->SetBackgroundColour($color);
+		$sep->Refresh();
+	}
+
 }
 
 # Create column, for placing GroupWrappersForm
@@ -124,24 +201,30 @@ sub __SetLayout {
 	my $self  = shift;
 	my $units = shift;
 
+	# DEFINE SIZERS
+
 	my $szMain = Wx::BoxSizer->new(&Wx::wxVERTICAL);
 
 	my $szHeader  = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
 	my $szColumns = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
 
-	$self->SetBackgroundColour( Wx::Colour->new( 200, 200, 200 ) );
+	# DEFINE PANELS
 
-	# DEFINE SIZERS
+	my $headerPnl = Wx::Panel->new( $self, -1 );
+
+	if ( $self->{"bodyColor"} ) {
+		$self->SetBackgroundColour( $self->{"bodyColor"} );
+	}
 
 	my @widths = @{ $self->{"columnWidth"} };
 
 	# init columns
-	for ( my $i = 0 ; $i < $self->{"columnCnt"} ; $i++ ) {
-
-		my $w = $widths[$i];
-		my $col = ControlListColumn->new( $self, $w );
-
-	}
+	#	for ( my $i = 0 ; $i < $self->{"columnCnt"} ; $i++ ) {
+	#
+	#		my $w = $widths[$i];
+	#		my $col = ControlListColumn->new( $self, $w );
+	#
+	#	}
 
 	# BUILD LAYOUT STRUCTURE
 
@@ -154,13 +237,13 @@ sub __SetLayout {
 		my $colRows   = ControlListColumn->new( $self, $w );
 		my $colHeader = ControlListColumn->new( $self, $w );
 
-		$szColumns->Add( $colRows->GetSizer(), 0, &Wx::wxEXPAND );
-		$szHeader->Add( $colHeader->GetSizer(), 0, &Wx::wxEXPAND );
+		$szColumns->Add( $colRows->GetSizer(), 0, &Wx::wxEXPAND |  &Wx::wxALL, 1);
+		$szHeader->Add( $colHeader->GetSizer(), 0, &Wx::wxEXPAND  |  &Wx::wxALL, 1 );
 
 		# add column separator
 		#if ( $i > 0 ) {
 
-		if ( $self->{"verticalLine"} ) {
+		if ( $self->{"verticalLine"} &&  $i < $self->{"columnCnt"} - 1 ) {
 
 			$szColumns->Add( $self->__GetVSeparator(), 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );    #
 			$szHeader->Add( $self->__GetVSeparator(), 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
@@ -173,11 +256,16 @@ sub __SetLayout {
 
 	}
 
-	$szMain->Add( $szHeader,  0, &Wx::wxEXPAND );
-	$szMain->Add( $szColumns, 0, &Wx::wxEXPAND );
+	$headerPnl->SetSizer($szHeader);
+
+	$szMain->Add( $headerPnl,                0, &Wx::wxEXPAND );
+	$szMain->Add( $self->__GetHeaderLine(), 0, &Wx::wxEXPAND );
+	$szMain->Add( $szColumns,               0, &Wx::wxEXPAND );
 
 	$self->SetSizer($szMain);
-	$self->{"szMain"} = $szMain;
+
+	$self->{"headerPnl"} = $headerPnl;
+	$self->{"szMain"}    = $szMain;
 
 }
 
@@ -188,7 +276,21 @@ sub __GetVSeparator {
 	my $sepPnl = Wx::Panel->new( $self, -1 );
 	$sepPnl->SetBackgroundColour( Wx::Colour->new( 200, 0, 0 ) );
 	$sepPnl->SetSizer($sepSz);
-	$sepSz->Add( 5, 5, 0, &Wx::wxEXPAND );
+	$sepSz->Add( 1, 5, 0, &Wx::wxEXPAND );
+
+	push( @{ $self->{"vSep"} }, $sepPnl );
+
+	return $sepPnl;
+}
+
+sub __GetHeaderLine {
+	my $self = shift;
+
+	my $sepSz = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
+	my $sepPnl = Wx::Panel->new( $self, -1 );
+	$sepPnl->SetBackgroundColour( Wx::Colour->new( 163, 163, 163 ) );
+	$sepPnl->SetSizer($sepSz);
+	$sepSz->Add( 1, 1, 0, &Wx::wxEXPAND );
 
 	return $sepPnl;
 }
@@ -267,7 +369,7 @@ sub __OnSelectedChange {
 	my $self = shift;
 	my $row  = shift;
 
-	$self->{"onSelectedChanged"}->Do($row);
+	$self->{"onSelectedChanged"}->Do( $self, $row );
 }
 
 #-------------------------------------------------------------------------------------------#
@@ -275,12 +377,11 @@ sub __OnSelectedChange {
 #-------------------------------------------------------------------------------------------#
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
-	my $test = Programs::Exporter::ExportChecker::Forms::GroupTableForm->new();
+	#my $test = Programs::Exporter::ExportChecker::Forms::GroupTableForm->new();
 
-	$test->MainLoop();
+	#$test->MainLoop();
 }
-
-1;
+ 
 
 1;
 

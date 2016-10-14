@@ -184,7 +184,7 @@ sub SplitByChainNum {
 }
  
 
-1;
+ 
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
@@ -192,16 +192,16 @@ sub SplitByChainNum {
 
 if (0) {
 
-	print "start";
-	my %errors    = ( "errors" => undef, "warrings" => undef );
-	my $fFeatures = "o2.txt";
-	my @features  = RouteListHelper->GetFeatures($fFeatures);
+	#print "start";
+	#my %errors    = ( "errors" => undef, "warrings" => undef );
+	#my $fFeatures = "o2.txt";
+	#my @features  = RouteListHelper->GetFeatures($fFeatures);
 
 	#my $cnt = RouteListHelper->GetNumberOfLeftComp( \@features );
 	#my $cnt = RouteListHelper->GetLeftChainNotLast( \@features );
-	my $cnt = RouteListHelper->GetNONLeftChainWithFoot( \@features );
+	#my $cnt = RouteListHelper->GetNONLeftChainWithFoot( \@features );
 
-	print 1;
+	#print 1;
 
 }
 

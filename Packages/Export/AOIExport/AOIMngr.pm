@@ -363,17 +363,17 @@ sub ExportItemsCount {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	use aliased 'Packages::Export::AOIExport::AOIMngr';
-	use aliased 'Packages::InCAM::InCAM';
-
-	my $inCAM = InCAM->new();
-
-	my $jobName   = "f13610";
-	my $stepName  = "panel";
-	my $layerName = "c";
-
-	my $mngr = AOIMngr->new( $inCAM, $jobName, $stepName, $layerName );
-	$mngr->Run();
+#	use aliased 'Packages::Export::AOIExport::AOIMngr';
+#	use aliased 'Packages::InCAM::InCAM';
+#
+#	my $inCAM = InCAM->new();
+#
+#	my $jobName   = "f13610";
+#	my $stepName  = "panel";
+#	my $layerName = "c";
+#
+#	my $mngr = AOIMngr->new( $inCAM, $jobName, $stepName, $layerName );
+#	$mngr->Run();
 }
 
 1;

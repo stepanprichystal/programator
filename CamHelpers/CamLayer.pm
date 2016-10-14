@@ -137,8 +137,146 @@ sub GetMarkingLayers {
 			push( @res, $l );
 		}
 	}
-	
+
 	return @res;
+}
+
+
+# Display single layer and set as work layer
+sub WorkLayer{
+	my $self   = shift;
+	my $inCAM  = shift;
+	my $layer  = shift;
+	
+	$inCAM->COM( 'affected_layer', name => $layer, mode => "all", affected => "no" );
+	$inCAM->COM("display_layer","name" => $layer,"display" => "yes");
+	$inCAM->COM( 'work_layer',     name => $layer );
+
+}
+
+# InvertPolarity of layer
+sub NegativeLayerData {
+	my $self   = shift;
+	my $inCAM  = shift;
+	my $layer  = shift;
+	my %dim  = %{shift(@_)};
+	
+	my $lName = GeneralHelper->GetGUID();
+	$inCAM->COM( 'create_layer', "layer" => $lName, "context" => 'misc', "type" => 'document', "polarity" => 'positive', "ins_layer" => '' );
+	$self->WorkLayer($inCAM, $lName);
+	
+	
+	$inCAM->COM("add_surf_fill");
+	$inCAM->COM("add_surf_strt", "surf_type"=> "feature");
+	$inCAM->COM("add_surf_poly_strt", "x"=> $dim{"xMin"}, "y"=> $dim{"yMin"});
+	$inCAM->COM("add_surf_poly_seg", "x"=> $dim{"xMin"}, "y"=> $dim{"yMax"});
+	$inCAM->COM("add_surf_poly_seg", "x"=> $dim{"xMax"}, "y"=> $dim{"yMax"});
+	$inCAM->COM("add_surf_poly_seg", "x"=> $dim{"xMax"}, "y"=> $dim{"yMin"});
+	$inCAM->COM("add_surf_poly_seg", "x"=> $dim{"xMin"}, "y"=> $dim{"yMin"});
+	$inCAM->COM("add_surf_poly_end");
+ 	$inCAM->COM("add_surf_end","polarity" => "positive","attributes" => "no");
+ 
+	$self->WorkLayer($inCAM, $layer);
+	$inCAM->COM("sel_move_other","target_layer" => $lName,"invert" => "yes","dx" => "0","dy" => "0","size" => "0","x_anchor" => "0","y_anchor" => "0");
+	
+	$self->WorkLayer($inCAM, $lName);
+	$inCAM->COM("sel_move_other","target_layer" => $layer,"invert" => "no","dx" => "0","dy" => "0","size" => "0","x_anchor" => "0","y_anchor" => "0");
+	
+	$inCAM->COM("delete_layer", "layer"=> $lName);
+	
+	$inCAM->COM( 'affected_layer', name => $layer, mode => "single", affected => "no" );
+}
+
+
+
+# Rotate layer by degree
+# Right step must be open and set
+# Requested data must be selected
+sub ClipLayerData {
+	my $self   = shift;
+	my $inCAM  = shift;
+	my $layer  = shift;
+	my %rect = %{shift(@_)};
+	my $inside = shift;
+	 
+	my $type = "outside";
+	
+	if($inside){
+		$type = "inside";
+	} 
+	 
+	$self->WorkLayer($inCAM, $layer);
+	
+	$inCAM->COM("clip_area_strt",);
+	$inCAM->COM("clip_area_xy","x" => $rect{"xMin"},"y" => $rect{"yMin"});
+	$inCAM->COM("clip_area_xy","x" => $rect{"xMax"},"y" => $rect{"yMax"});
+	$inCAM->COM("clip_area_end","layers_mode" => "layer_name","layer" => $layer,"area" => "manual","area_type" => "rectangle","inout" => $type,"contour_cut" => "no","margin" => "0","feat_types" => "line\;pad;surface;arc;text","pol_types" => "positive\;negative");
+	
+	$inCAM->COM( 'affected_layer', name => $layer, mode => "single", affected => "no" );
+}
+
+
+
+
+# Rotate layer by degree
+# Right step must be open and set
+# Requested data must be selected
+sub RotateLayerData {
+	my $self   = shift;
+	my $inCAM  = shift;
+	my $layer  = shift;
+	my $degree = shift;
+
+	$self->WorkLayer($inCAM, $layer);
+	
+	$inCAM->COM( "sel_transform", "oper" => "rotate", "angle" => $degree );
+	
+	$inCAM->COM( 'affected_layer', name => $layer, mode => "single", affected => "no" );
+}
+
+# Mirror layer by x OR y
+# Right step must be open and set
+# Requested data must be selected
+sub MirrorLayerData {
+	my $self  = shift;
+	my $inCAM = shift;
+	my $layer = shift;
+	my $axis  = shift;
+
+
+	$self->WorkLayer($inCAM, $layer);
+
+	if ( $axis eq "x" ) {
+
+		$inCAM->COM( "sel_transform", "oper" => "mirror\;rotate", "angle" => 180 );
+
+	}
+	elsif ( $axis eq "y" ) {
+
+		$inCAM->COM( "sel_transform", "oper" => "mirror" );
+
+	}
+	$inCAM->COM( 'affected_layer', name => $layer, mode => "single", affected => "no" );
+}
+
+# Move layer data. Snapp point is left down
+# Right step must be open and set
+sub MoveLayerData {
+	my $self        = shift;
+	my $inCAM       = shift;
+	my $layer       = shift;
+	my $sourcePoint = shift;
+	my $targetPoint = shift;
+
+	my $x = -1 * $sourcePoint->{"x"} + $targetPoint->{"x"};
+	my $y = -1 * $sourcePoint->{"y"} + $targetPoint->{"y"};
+
+ 
+	$self->WorkLayer($inCAM, $layer);
+	
+	$inCAM->COM( "sel_move",       "dx" => $x,     "dy" => $y );
+	
+	$inCAM->COM( 'affected_layer', name => $layer, mode => "single", affected => "no" );
 }
 
 # Return if, lyer is board type
@@ -176,6 +314,37 @@ sub LayerIsBoard {
 	return 0;
 }
 
+# Mirror layer by x OR y
+# Right step must be open and set
+# Requested data must be selected
+sub CompensateLayerData {
+	my $self  = shift;
+	my $inCAM = shift;
+	my $layer = shift;
+	my $compVal  = shift; # µm
+
+
+	$self->WorkLayer($inCAM, $layer);
+
+	# resize all positive
+	$inCAM->COM("reset_filter_criteria","filter_name" => "","criteria" => "all");
+	$inCAM->COM("set_filter_polarity","filter_name" => "","positive" => "yes","negative" => "no");
+	$inCAM->COM("filter_area_strt");
+	$inCAM->COM("filter_area_end","filter_name" => "popup","operation" => "select");
+	$inCAM->COM("sel_resize","size" => $compVal,"corner_ctl" => "no");
+	$inCAM->COM("sel_clear_feat");
+	
+	# resize all negative by oposite value of comp
+	$inCAM->COM("reset_filter_criteria","filter_name" => "","criteria" => "all");
+	$inCAM->COM("set_filter_polarity","filter_name" => "","positive" => "no","negative" => "yes");
+	$inCAM->COM("filter_area_strt");
+	$inCAM->COM("filter_area_end","filter_name" => "popup","operation" => "select");
+	$inCAM->COM("sel_resize","size" => (-1*$compVal),"corner_ctl" => "no");
+	$inCAM->COM("sel_clear_feat");
+	 
+	$inCAM->COM( 'affected_layer', name => $layer, mode => "single", affected => "no" ); 
+	 
+}
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
@@ -203,5 +372,8 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 1;
 
+ 
+
+	
  
 1;

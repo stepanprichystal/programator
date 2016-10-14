@@ -36,6 +36,8 @@ sub new {
 	                                   # Because some of this method are processed in child thread and inCAM
 	                                   # is connected to specific InCAM editor
 
+	$self->{'defaultInfo'} = undef;    # Contain default info about pcb, which is computed (only once) when export start
+
 	$self->{'resultMngr'} = ItemResultMngr->new();
 
 	return $self;                      # Return the reference to the hash.
@@ -144,6 +146,21 @@ sub GetFailResults {
 
 	return $self->{'resultMngr'}->GetFailResults();
 }
+
+
+sub SetDefaultInfo {
+	my $self       = shift;
+	my $defaultInfo      = shift;
+
+	$self->{'defaultInfo'} = $defaultInfo;
+}
+
+sub GetDefaultInfo {
+	my $self       = shift;
+
+	return $self->{'defaultInfo'};
+}
+
 
 sub _AddErrorResult {
 	my $self    = shift;

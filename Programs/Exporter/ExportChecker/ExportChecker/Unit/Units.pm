@@ -15,6 +15,7 @@ use warnings;
 #local library
 use aliased "Packages::Events::Event";
 use aliased 'Programs::Exporter::ExportChecker::Enums';
+use aliased 'Programs::Exporter::ExportChecker::ExportChecker::DefaultInfo::DefaultInfo';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods, requested by IUnit interface
@@ -24,23 +25,33 @@ sub new {
 	my $self = shift;
 	$self = {};
 	bless $self;
-
+ 
+  
 	$self->{"onCheckEvent"} = Event->new();
+
+	$self->{"defaultInfo"} = undef;
 
 	return $self;    # Return the reference to the hash.
 }
 
 sub Init {
-	my $self = shift;
-
-	#my $parent = shift;
+	my $self  = shift;
+	my $inCAM = shift;
+	my $jobId = shift;
 	my @units = @{ shift(@_) };
+
+	$self->{"defaultInfo"} = DefaultInfo->new( $inCAM, $jobId );
+
+	# Save to each unit->dataMngr default info
+	foreach my $unit (@units) {
+		
+		$unit->SetDefaultInfo( $self->{"defaultInfo"} );
+	}
 
 	$self->{"units"} = \@units;
 
 }
 
- 
 sub InitDataMngr {
 	my $self           = shift;
 	my $inCAM          = shift;
@@ -171,7 +182,7 @@ sub GetExportData {
 		@units = grep { $_->GetGroupState() eq Enums->GroupState_ACTIVEON } @units;
 	}
 
-	foreach my $unit ( @units ) {
+	foreach my $unit (@units) {
 
 		my $exportData = $unit->GetExportData();
 		$allExportData{ $unit->{"unitId"} } = $exportData;

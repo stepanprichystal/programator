@@ -72,7 +72,7 @@ sub __OpenConnection {
 		#CommandTimeout=$__commandTimeout
 
  		
-		
+		#$statement_handle->{'LongTruncOk'} = 1;
 		 
 		$con = DBI->connect(
 			"dbi:ODBC:DPS",

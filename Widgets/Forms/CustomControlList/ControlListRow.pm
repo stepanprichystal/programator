@@ -24,7 +24,7 @@ use aliased 'Packages::Events::Event';
 
 sub new {
 
-	my ( $class, $parent, $text ) = @_;
+	my ( $class, $parent, $text, $rowHeight ) = @_;
 
 	#my $self = $class->SUPER::new( &Wx::wxVERTICAL );
 
@@ -33,6 +33,12 @@ sub new {
 
 	$self->{"parent"} = $parent;
 	$self->{"text"} = $text;
+	
+	unless($rowHeight){
+		$rowHeight = -1;
+	}
+	
+	$self->{"rowHeight"} = $rowHeight;
 
 	#cells
 	my @cells = ();
@@ -49,11 +55,17 @@ sub new {
 	return $self;
 }
 
-sub __AddCell {
+sub _AddCell {
 	my $self = shift;
 	my $cell = shift;
 
 	push( @{ $self->{"cells"} }, $cell );
+}
+
+sub GetRowText {
+	my $self = shift;
+
+	return $self->{"text"};
 }
 
 sub GetCells {
@@ -79,13 +91,18 @@ sub IsSelected {
 sub SetSelected {
 	my $self = shift;
 	my $selected = shift;
-	return $self->{"mainChb"}->SetValue();
+	
+
+	$self->{"mainChb"}->SetValue($selected);
+	$self->__OnSelectedChange();
+	
+	
 }
 
 sub __SetLayout {
 	my $self = shift;
 
-	my $mainChb = Wx::CheckBox->new( $self->{"parent"}, -1, $self->{"text"}, [ -1, -1 ] );
+	my $mainChb = Wx::CheckBox->new( $self->{"parent"}, -1, $self->{"text"}, [-1,-1], [-1, $self->{"rowHeight"} ] );
 
 	#my $jobIdTxt = Wx::StaticText->new( $self->{"parent"}, -1, "test", [ -1, -1 ] );
 	#my $btnProduce = Wx::Button->new( $self->{"parent"}, -1, "Produce", &Wx::wxDefaultPosition, [ 60, 20 ] );
@@ -93,7 +110,7 @@ sub __SetLayout {
 	# SET EVENTS
 	Wx::Event::EVT_CHECKBOX( $mainChb, -1, sub { $self->__OnSelectedChange(@_) } );
 
-	$self->__AddCell($mainChb);
+	$self->_AddCell($mainChb);
 
 	#$self->__AddCell($jobIdTxt);
 	#$self->__AddCell($btnProduce);
@@ -113,12 +130,11 @@ sub __OnSelectedChange {
 #-------------------------------------------------------------------------------------------#
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
-	my $test = Programs::Exporter::ExportChecker::Forms::GroupTableForm->new();
+	#my $test = Programs::Exporter::ExportChecker::Forms::GroupTableForm->new();
 
-	$test->MainLoop();
+	#$test->MainLoop();
 }
 
-1;
-
+ 
 1;
 

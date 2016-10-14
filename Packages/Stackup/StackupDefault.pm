@@ -575,15 +575,16 @@ sub _DrawStackupType {
 my ( $package, $filename, $line ) = caller;
 
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
-	my $pcbId        = "f50193";
-	my $layerCnt     = 4;
-	my @innerCuUsage = ( 60, 60);
-	my $outerCuThick = 18;
-	my $pcbClass     = 8;
+ 
+#	my $pcbId        = "d99991";
+#	my $layerCnt     = 8;
+#	my @innerCuUsage = ( 50, 3, 15, 50, 15, 44 );
+#	my $outerCuThick = 18;
+#	my $pcbClass     = 9;
 
-	use aliased 'Packages::Stackup::StackupDefault';
+#	use aliased 'Packages::Stackup::StackupDefault';
 
-	StackupDefault->CreateStackup( $pcbId, $layerCnt, \@innerCuUsage, $outerCuThick, $pcbClass );
+#	StackupDefault->CreateStackup( $pcbId, $layerCnt, \@innerCuUsage, $outerCuThick, $pcbClass );
 }
 
 1;

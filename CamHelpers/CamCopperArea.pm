@@ -469,15 +469,15 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	#my $cuThickness = JobHelper->GetBaseCuThick( "f13610", "c" );
 	#my $pcbThick = JobHelper->GetFinalPcbThick("f13610");
-
-	use aliased 'CamHelpers::CamCopperArea';
-
-	my $inCAM = InCAM->new();
-
-
-	my $test = CamCopperArea->GetProfileArea($inCAM, "f13610", "o+1");
-	
-	print $test."\n";
+#
+#	use aliased 'CamHelpers::CamCopperArea';
+#
+#	my $inCAM = InCAM->new();
+#
+#
+#	my $test = CamCopperArea->GetProfileArea($inCAM, "f13610", "o+1");
+#	
+#	print $test."\n";
 
 	#my %test = CamHelpers::CamCopperArea->GetCuArea( $cuThickness, $pcbThick, $inCAM, "f13610", "panel", "c", "s", 1, 1 );
 

@@ -158,16 +158,16 @@ sub GetMaxAspectRatioByLayer {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	use aliased 'CamHelpers::CamToolDepth';
-	use aliased 'Packages::InCAM::InCAM';
-
-	my $inCAM = InCAM->new();
-
-	my $jobId     = "f49756";
-	my $stepName  = "o+1";
-	my $layerName = "fzs";
-
-	my @depth = CamToolDepth->GetToolDepths( $inCAM, $jobId, $stepName, $layerName );
+#	use aliased 'CamHelpers::CamToolDepth';
+#	use aliased 'Packages::InCAM::InCAM';
+#
+#	my $inCAM = InCAM->new();
+#
+#	my $jobId     = "f49756";
+#	my $stepName  = "o+1";
+#	my $layerName = "fzs";
+#
+#	my @depth = CamToolDepth->GetToolDepths( $inCAM, $jobId, $stepName, $layerName );
 
 }
 1;

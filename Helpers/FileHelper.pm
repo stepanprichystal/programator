@@ -116,6 +116,41 @@ sub ExistsByPattern() {
 #	}
 #}
 
+
+#Return full path + file name by pattern contain in file name
+sub GetFilesNameByPattern {
+	my $self = shift;
+
+	my $dirPath  = shift;
+	my $partName = shift;
+	my @files = ();
+
+	my $filePath = 0;
+	
+	unless($dirPath =~ /\\$/){
+		$dirPath .= "\\";
+	}
+
+	#get all files from path
+	opendir( DIR, $dirPath ) or die $!;
+
+	while ( my $file = readdir(DIR) ) {
+
+		#next unless $file =~ /^[a-z](\d+)/i;
+
+		if ( $file =~ /$partName/ ) {
+
+			$filePath = $dirPath . $file;
+			
+			
+			push(@files, $filePath);
+		}
+	}
+
+	close($dirPath);
+	return @files;
+}
+
 #Return full path + file name by pattern contain in file name
 sub GetFileNameByPattern() {
 	my $self = shift;

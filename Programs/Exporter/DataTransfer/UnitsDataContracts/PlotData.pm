@@ -1,59 +1,63 @@
+
 #-------------------------------------------------------------------------------------------#
-# Description: Wrapper for operations connected with inCam attributes
+# Description: Data definition for group. This data struct are used  as data transfer
+# between ExportChecker and ExportUtility
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-
-package Packages::Export::PlotExport::FilmCreator::FilmCreator;
-
+package Programs::Exporter::DataTransfer::UnitsDataContracts::PlotData;
+ 
 #3th party library
 use strict;
 use warnings;
 
+
 #local library
- 
+use aliased 'Programs::Exporter::ExportChecker::Enums';
 
 #-------------------------------------------------------------------------------------------#
-#   Package methods
+#  Package methods
 #-------------------------------------------------------------------------------------------#
+sub new {
+	my $self = shift;
+	$self = {};
+	bless $self;
 
+	my %exportData = ();
+	$self->{"data"} = \%exportData;
+
+	return $self; 
+}
  
-sub GetPlotterSets{
-	my $self = shift;
-	
-	
-	__BuildRules()
-	__CreateSets()
-} 
+# sendtToPlotter
+sub SetSendToPlotter {
+	my $self  = shift;
+	$self->{"data"}->{"sendtToPlotter"} = shift;
+}
 
+sub GetSendToPlotter {
+	my $self  = shift;
+	return $self->{"data"}->{"sendtToPlotter"};
+}
 
-sub __BuildRules{
-	my $self = shift;
-	
-} 
+# layers
+sub SetLayers {
+	my $self  = shift;
+	$self->{"data"}->{"layers"} = shift;
+}
 
-
-sub __CreateSets{
-	my $self = shift;
-	
-} 
-
-
+sub GetLayers {
+	my $self  = shift;
+	return $self->{"data"}->{"layers"};
+}
  
-1;
-
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	#my $self             = shift;
-	#	my $inCAM            = shift;
-
-	use aliased 'HelperScripts::DirStructure';
-
-	DirStructure->Create();
-
+ 
 }
 
 1;
+

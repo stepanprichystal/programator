@@ -1,0 +1,15 @@
+# This files contain definition of colors
+# Colors are used in ExportChecker program in group Plotters
+# Each film is colored by one of theses colors
+
+254, 178, 216 
+248, 219, 215 
+254, 243, 137
+250, 167, 122 
+253, 111, 49 
+190, 140, 77 
+215, 177, 115
+205, 214, 157 
+172, 217, 148 
+163, 163, 163 
+163, 163, 163

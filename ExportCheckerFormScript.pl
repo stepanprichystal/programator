@@ -20,15 +20,16 @@ my $pid = shift;
 
 unless($jobId){
 	
-	$jobId = "f51113";
-	
+ 
+	$jobId = "f13609";
+ 
 }
-
+ 
 
 
 my $form = ExportChecker->new($jobId, $port, $pid);
  
-#Win32::OLE->new
+ 
  
  
 
