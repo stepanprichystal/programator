@@ -334,7 +334,7 @@ sub Build {
 		$pltMillExist = CamDrilling->NCLayerExists( $inCAM, $jobId, EnumsGeneral->LAYERTYPE_plt_nMill );
 		$rsMillExist  = CamDrilling->NCLayerExists( $inCAM, $jobId, EnumsGeneral->LAYERTYPE_nplt_rsMill );
 		my $blindTopExist = CamDrilling->NCLayerExists( $inCAM, $jobId, EnumsGeneral->LAYERTYPE_plt_bDrillTop );
-		my $blindBotExist = CamDrilling->NCLayerExists( $inCAM, $jobId, EnumsGeneral->LAYERTYPE_plt_bDrillTop );
+		my $blindBotExist = CamDrilling->NCLayerExists( $inCAM, $jobId, EnumsGeneral->LAYERTYPE_plt_bDrillBot );
 		$blindDrillExist = ( $blindTopExist || $blindBotExist ) ? 1 : 0;
 	}
 
