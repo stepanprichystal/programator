@@ -81,10 +81,14 @@ sub __SetLayout {
 			
 			# Get cell title
 			my $title = UnitEnums->GetTitle($cell->GetUnitId());
+	
+			if("plot" eq $cell->GetUnitId()){
+				print STDERR "1";
+			}
 
 			# Create new group wrapper, parent is this panel
 			my $groupWrapperPnl = GroupWrapperForm->new($self, $title);
-
+			
 			# Init unit form, where parent will by group wrapper
 			$cell->InitForm( $groupWrapperPnl, $inCAM );
 

@@ -80,7 +80,7 @@ sub __SetLayout {
 
 	$szRow1->Add( $settingsStatBox, 70, &Wx::wxEXPAND | &Wx::wxALL, 0 );
 	$szRow1->Add( $optionsStatBox,  30, &Wx::wxEXPAND | &Wx::wxALL, 0 );
-	$szRow2->Add( $layersStatBox,   1, &Wx::wxEXPAND | &Wx::wxALL, 0 );
+	$szRow2->Add( $layersStatBox,   1,  &Wx::wxEXPAND | &Wx::wxALL, 0 );
 
 	$szMain->Add( $szRow1, 0, &Wx::wxEXPAND );
 	$szMain->Add( $szRow2, 1, &Wx::wxEXPAND );
@@ -100,11 +100,11 @@ sub __SetLayoutQuickSettings {
 	my $szStatBox = Wx::StaticBoxSizer->new( $statBox, &Wx::wxHORIZONTAL );
 
 	# DEFINE CONTROLS
-	my $allChb = Wx::CheckBox->new( $statBox, -1, "Select all", &Wx::wxDefaultPosition );
+	my $allChb = Wx::CheckBox->new( $statBox, -1, "All", &Wx::wxDefaultPosition, [ 100, 22 ] );
 	my @polar = ( "-", "positive", "negative" );
-	my $polarityCb = Wx::ComboBox->new( $statBox, -1, $polar[0], &Wx::wxDefaultPosition, [70, 25 ], \@polar, &Wx::wxCB_READONLY );
-	my $mirrorChb = Wx::CheckBox->new( $statBox, -1, "", [ -1, -1 ], [70, 25 ] );
-	my $compTxt = Wx::TextCtrl->new( $statBox, -1, "0", &Wx::wxDefaultPosition, [70, 25 ] );
+	my $polarityCb = Wx::ComboBox->new( $statBox, -1, $polar[0], &Wx::wxDefaultPosition, [ 100, 22 ], \@polar, &Wx::wxCB_READONLY );
+	my $mirrorChb = Wx::CheckBox->new( $statBox, -1, "", [ -1, -1 ], [ 70, 22 ] );
+	my $compTxt = Wx::TextCtrl->new( $statBox, -1, "0", &Wx::wxDefaultPosition, [ 50, 22 ] );
 
 	# SET EVENTS
 	Wx::Event::EVT_CHECKBOX( $allChb, -1, sub { $self->__OnSelectAllChangeHandler(@_) } );
@@ -113,10 +113,10 @@ sub __SetLayoutQuickSettings {
 	Wx::Event::EVT_TEXT( $compTxt, -1, sub { $self->__OnCompChangeHandler(@_) } );
 
 	# BUILD STRUCTURE OF LAYOUT
-	$szStatBox->Add( $allChb, 0, &Wx::wxEXPAND | &Wx::wxALL,0 );
-	$szStatBox->Add( $polarityCb, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
-	$szStatBox->Add( $mirrorChb, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
-	$szStatBox->Add( $compTxt, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
+	$szStatBox->Add( $allChb,     0, &Wx::wxEXPAND | &Wx::wxALL,  0 );
+	$szStatBox->Add( $polarityCb, 0, &Wx::wxEXPAND | &Wx::wxLEFT, 10 );
+	$szStatBox->Add( $mirrorChb,  0, &Wx::wxEXPAND | &Wx::wxLEFT, 10 );
+	$szStatBox->Add( $compTxt,    0, &Wx::wxEXPAND | &Wx::wxLEFT, 10 );
 
 	# Set References
 	$self->{"allChb"}     = $allChb;
@@ -145,6 +145,7 @@ sub __SetLayoutOptions {
 	$szStatBox->Add( $plotterChb, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 
 	# Set References
+	$self->{"plotterChb"} = $plotterChb;
 
 	return $szStatBox;
 }
@@ -173,36 +174,7 @@ sub __SetLayoutControlList {
 	return $szStatBox;
 }
 
-#
-## Set layout for Quick set box
-#sub __SetLayoutControlList {
-#	my $self   = shift;
-#	my $parent = shift;
-#
-#	#define staticboxes
-#	my $statBox = Wx::StaticBox->new( $parent, -1, 'Layers' );
-#	my $szStatBox = Wx::StaticBoxSizer->new( $statBox, &Wx::wxHORIZONTAL );
-#
-#
-#	# DEFINE CONTROLS
-#	#my $allChb     = Wx::CheckBox->new( $statBox, -1, "Select all",      &Wx::wxDefaultPosition);
-#
-#
-#	my $widget = PlotList->new($statBox  );
-#
-#
-#	# SET EVENTS
-#	#Wx::Event::EVT_CHECKBOX( $allChb, -1, sub { $self->__OnSelectAllChangeHandler(@_) } );
-#
-#	# BUILD STRUCTURE OF LAYOUT
-#	#$szStatBox->Add( $allChb,     0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
-#
-#
-#	# Set References
-#	#$self->{"allChb"} = $allChb;
-#
-#	return $szStatBox;
-#}
+ 
 
 # Select/unselect all in plot list
 sub __OnSelectAllChangeHandler {
@@ -227,8 +199,7 @@ sub __OnPolarityChangeHandler {
 
 	my $val = $self->{"polarityCb"}->GetValue();
 
-
-	 $self->{"plotList"}->SetPolarity($val);
+	$self->{"plotList"}->SetPolarity($val);
 }
 
 # Control handlers
@@ -237,7 +208,7 @@ sub __OnMirrorChangeHandler {
 	my $chb  = shift;
 
 	my $isMirror = $self->{"mirrorChb"}->IsChecked();
-	
+
 	$self->{"plotList"}->SetMirror($isMirror);
 
 }
@@ -247,8 +218,8 @@ sub __OnCompChangeHandler {
 	my $self = shift;
 	my $chb  = shift;
 
-	my $val = $self->{"compTxt"}->GetLabel();
-	
+	my $val = $self->{"compTxt"}->GetValue();
+
 	$self->{"plotList"}->SetComp($val);
 }
 
@@ -264,18 +235,53 @@ sub DisableControls {
 # SET/GET CONTROLS VALUES
 # =====================================================================
 
-# Dimension ========================================================
-
-# single_x
-sub SetSingle_x {
+ 
+ 
+# sendtToPlotter
+sub SetSendToPlotter {
 	my $self  = shift;
-	my $value = shift;
-	$self->{"singlexValTxt"}->SetLabel($value);
+	my $val = shift;
+	$self->{"plotterChb"}->SetValue($val);
 }
 
-sub GetSingle_x {
-	my $self = shift;
-	return $self->{"singlexValTxt"}->GetLabel();
+sub GetSendToPlotter {
+	my $self  = shift;
+	return $self->{"plotterChb"}->GetValue();
+}
+
+# layers
+sub SetLayers {
+	my $self  = shift;
+	my @layers = @{shift(@_)};
+
+	foreach my $l (@layers){
+		
+		my $row = $self->{"plotList"}->GetRowByText($l->{"name"});
+		if($row){
+			
+			$row->SetLayerValues($l);
+		}
+		
+	}
+	
+	$self->{"data"}->{"layers"} = shift;
+}
+
+sub GetLayers {
+	my $self  = shift;
+	
+	my @layers = shift;
+	my @rows = @{$self->{"plotList"}->GetSelectedRows()};
+
+	foreach my $r (@rows){
+		
+ 		my %linfo = %{$r->GetLayerValues()};
+		
+		 push(@layers, \%linfo);
+		
+	}
+
+	return @layers;
 }
 
 1;

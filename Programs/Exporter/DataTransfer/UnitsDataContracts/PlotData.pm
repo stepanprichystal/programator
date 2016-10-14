@@ -1,13 +1,15 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Class contain state properties, used as model for group form
+# Description: Data definition for group. This data struct are used  as data transfer
+# between ExportChecker and ExportUtility
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Programs::Exporter::ExportChecker::Groups::PlotExport::Model::PlotGroupData;
-
+package Programs::Exporter::DataTransfer::UnitsDataContracts::PlotData;
+ 
 #3th party library
 use strict;
 use warnings;
+
 
 #local library
 use aliased 'Programs::Exporter::ExportChecker::Enums';
@@ -20,16 +22,11 @@ sub new {
 	$self = {};
 	bless $self;
 
-	# state data for gui controls
 	my %exportData = ();
 	$self->{"data"} = \%exportData;
-	
-	# state of whole group. Value is enum GroupState_xx
-	$self->{"state"} = Enums->GroupState_DISABLE;
 
-	return $self;
+	return $self; 
 }
-
  
 # sendtToPlotter
 sub SetSendToPlotter {
@@ -53,7 +50,6 @@ sub GetLayers {
 	return $self->{"data"}->{"layers"};
 }
  
-
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#

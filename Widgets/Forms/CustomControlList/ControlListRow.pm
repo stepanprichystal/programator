@@ -91,7 +91,12 @@ sub IsSelected {
 sub SetSelected {
 	my $self = shift;
 	my $selected = shift;
-	return $self->{"mainChb"}->SetValue();
+	
+
+	$self->{"mainChb"}->SetValue($selected);
+	$self->__OnSelectedChange();
+	
+	
 }
 
 sub __SetLayout {

@@ -40,169 +40,29 @@ sub OnCheckGroupData {
 	my $jobId     = $dataMngr->{"jobId"};
 	my $stepName  = "panel";
 
+	my @layers = @{ $groupData->GetLayers() };
 
-	#datacode
-	my $datacodeLayer = $self->__GetDataCode( $jobId, $groupData );
+	foreach my $lInfo (@layers) {
 
-	unless ( defined $datacodeLayer ) {
-		$dataMngr->_AddErrorResult( "Data code", "Nesedí zadaný datacode v heliosu s datacodem v exportu." );
-	}
+		# Check if layers has set polarity
+		unless ( defined $lInfo->{"polarity"} ) {
+			$dataMngr->_AddErrorResult( "Layer " . $lInfo->{"polarity"} . " doesn't have set polarity." );
+		}
 
-	#datacode
-	my $ulLogoLayer = $self->__GetUlLogo( $jobId, $groupData );
+		# Check if layers has set mirror
+		unless ( defined $lInfo->{"mirror"} ) {
+			$dataMngr->_AddErrorResult( "Layer " . $lInfo->{"mirror"} . " doesn't have set mirror." );
+		}
 
-	unless ( defined $ulLogoLayer ) {
-		$dataMngr->_AddErrorResult( "Ul logo", "Nesedí zadané Ul logo v heliosu s datacodem v exportu." );
-	}
-
-	#mask
-	my %masks = CamLayer->ExistSolderMasks( $inCAM, $jobId );
-	my $topMaskExist = CamHelper->LayerExists( $inCAM, $jobId, "mc" );
-	my $botMaskExist = CamHelper->LayerExists( $inCAM, $jobId, "ms" );
-
-	# Control mask existence
-	if ( $masks{"top"} != $topMaskExist ) {
-
-		$dataMngr->_AddErrorResult( "Maska TOP", "Nesedí maska top v metrixu jobu a ve formuláøi Heliosu" );
-	}
-	if ( $masks{"bot"} != $botMaskExist ) {
-
-		$dataMngr->_AddErrorResult( "Maska BOT", "Nesedí maska bot v metrixu jobu a ve formuláøi Heliosu" );
-	}
-
-	# Control mask colour
-	my %masksColorIS        = HegMethods->GetSolderMaskColor($jobId);
-	my $masksColorTopExport = $groupData->GetC_mask_colour();
-	my $masksColorBotExport = $groupData->GetS_mask_colour();
-
-	if ( $masksColorIS{"top"} ne $masksColorTopExport ) {
-
-		$dataMngr->_AddErrorResult(
-									"Maska TOP",
-									"Nesedí barva masky top. Export =>"
-									  . NifHelper->GetMaskCodeToColor($masksColorTopExport)
-									  . ", Helios => "
-									  . NifHelper->GetMaskCodeToColor( $masksColorIS{"top"} ) . "."
-		);
-	}
-	if ( $masksColorIS{"bot"} ne $masksColorBotExport ) {
-
-		$dataMngr->_AddErrorResult(
-									"Maska BOT",
-									"Nesedí barva masky bot. Export =>"
-									  . NifHelper->GetMaskCodeToColor($masksColorBotExport)
-									  . ", Helios => "
-									  . NifHelper->GetMaskCodeToColor( $masksColorIS{"bot"} ) . "."
-		);
-	}
-
-	#silk
-	my %silk = CamLayer->ExistSilkScreens( $inCAM, $jobId );
-	my $topSilkExist = CamHelper->LayerExists( $inCAM, $jobId, "pc" );
-	my $botSilkExist = CamHelper->LayerExists( $inCAM, $jobId, "ps" );
-
-	# Control silk existence
-	if ( $silk{"top"} != $topSilkExist ) {
-
-		$dataMngr->_AddErrorResult( "Potisk TOP", "Nesedí potisk top v metrixu jobu a ve formuláøi Heliosu" );
-	}
-	if ( $silk{"bot"} != $botSilkExist ) {
-
-		$dataMngr->_AddErrorResult( "Potisk BOT", "Nesedí potisk bot v metrixu jobu a ve formuláøi Heliosu" );
-	}
-
-	# Control silk colour
-	my %silkColorIS        = HegMethods->GetSilkScreenColor($jobId);
-	my $silkColorTopExport = $groupData->GetC_silk_screen_colour();
-	my $silkColorBotExport = $groupData->GetS_silk_screen_colour();
-
-	if ( $silkColorIS{"top"} ne $silkColorTopExport ) {
-
-		$dataMngr->_AddErrorResult(
-									"Potisk TOP",
-									"Nesedí barva potisku top. Export =>"
-									  . NifHelper->GetSilkCodeToColor($silkColorTopExport)
-									  . ", Helios => "
-									  . NifHelper->GetSilkCodeToColor( $silkColorIS{"top"} ) . "."
-		);
-	}
-	if ( $silkColorIS{"bot"} ne $silkColorBotExport ) {
-
-		$dataMngr->_AddErrorResult(
-									"Potisk BOT",
-									"Nesedí barva potisku bot. Export =>"
-									  . NifHelper->GetSilkCodeToColor($silkColorBotExport)
-									  . ", Helios => "
-									  . NifHelper->GetSilkCodeToColor( $silkColorIS{"bot"} ) . "."
-		);
-	}
-}
-
-# check if datacode exist
-sub __GetDataCode {
-	my $self      = shift;
-	my $jobId     = shift;
-	my $groupData = shift;
-
-	my $layerIS     = HegMethods->GetDatacodeLayer($jobId);
-	my $layerExport = $groupData->GetDatacode();
-
-	return $self->__CheckMarkingLayer( $layerExport, $layerIS );
-}
-
-# check if ul logo exist
-sub __GetUlLogo {
-	my $self      = shift;
-	my $jobId     = shift;
-	my $groupData = shift;
-
-	my $layerIS     = HegMethods->GetUlLogoLayer($jobId);
-	my $layerExport = $groupData->GetUlLogo();
-
-	return $self->__CheckMarkingLayer( $layerExport, $layerIS );
-}
-
-sub __CheckMarkingLayer {
-	my $self        = shift;
-	my $layerExport = shift;
-	my $layerIS     = shift;
-
-	my $res = "";
-
-	if ( $layerExport && $layerExport ne "" ) {
-
-		$res = $layerExport;
-	}
-	elsif ( $layerIS && $layerIS ne "" ) {
-
-		$res = $layerIS;
-	}
-
-	# case, when marking is in IS and set in export too
-	if ( ( $layerExport && $layerExport ne "" ) && ( $layerIS && $layerIS ne "" ) ) {
-
-		$res = $layerIS;
-
-		#test if marking are both same, as $layerExport as $layerIS
-		$layerExport = uc($layerExport);
-		$layerIS     = uc($layerIS);
-
-		if ( $layerIS && $layerExport ) {
-			if ( $layerExport ne $layerIS ) {
-
-				$res = undef;    #error
-			}
+		# Check if layers has set compensation
+		unless ( defined $lInfo->{"comp"} ) {
+			$dataMngr->_AddErrorResult( "Layer " . $lInfo->{"comp"} . " doesn't have set comp." );
 		}
 
 	}
-
-	if ($res) {
-		$res = uc($res);
-	}
-
-	return $res;
+ 
 }
-
+ 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#

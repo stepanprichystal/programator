@@ -82,6 +82,13 @@ use constant {
 };
 
 use constant {
+			   Etching_PATTERN => 'pattern',
+			   Etching_TENTING	 => 'tenting',
+			   Etching_NO	 => 'noEtching',
+};
+
+
+use constant {
 			   DB_PRODUCTION => 'incam',
 			   DB_TEST       => 'db1'
 };

@@ -12,7 +12,7 @@ use warnings;
 
 #local library
 
-use aliased 'Programs::Exporter::DataTransfer::UnitsDataContracts::NifData';
+use aliased 'Programs::Exporter::DataTransfer::UnitsDataContracts::PlotData';
 use aliased 'CamHelpers::CamAttributes';
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -37,37 +37,12 @@ sub OnExportGroupData {
 	my $inCAM = $dataMngr->{"inCAM"};
 	my $jobId = $dataMngr->{"jobId"};
 
-	my $stepName = "panel";
-
-	my $exportData = NifData->new();
-
-	# Author
-	my $name = CamAttributes->GetJobAttrByName($inCAM, $jobId,"user_name");
-	$exportData->SetZpracoval($name );
-	#$exportData->SetZpracoval( $ENV{"LOGNAME"} );
+	my $exportData = PlotData->new();
 
 	# Other
-	$exportData->SetTenting( $groupData->GetTenting() );
-	$exportData->SetMaska01( $groupData->GetMaska01() );
-	$exportData->SetPressfit( $groupData->GetPressfit() );
-	$exportData->SetNotes( $groupData->GetNotes() );
-	$exportData->SetDatacode( $groupData->GetDatacode() );
-	$exportData->SetUlLogo( $groupData->GetUlLogo() );
-	$exportData->SetJumpScoring( $groupData->GetJumpScoring() );
-
-	# Mask, Silk color
-	$exportData->SetC_mask_colour( $groupData->GetC_mask_colour() );
-	$exportData->SetS_mask_colour( $groupData->GetS_mask_colour() );
-	$exportData->SetC_silk_screen_colour( $groupData->GetC_silk_screen_colour() );
-	$exportData->SetS_silk_screen_colour( $groupData->GetS_silk_screen_colour() );
-
-	# Dimension
-	$exportData->SetSingle_x( $groupData->GetSingle_x() );
-	$exportData->SetSingle_y( $groupData->GetSingle_y() );
-	$exportData->SetPanel_x( $groupData->GetPanel_x() );
-	$exportData->SetPanel_y( $groupData->GetPanel_y() );
-	$exportData->SetNasobnost_panelu( $groupData->GetNasobnost_panelu() );
-	$exportData->SetNasobnost( $groupData->GetNasobnost() );
+	$exportData->SetSendToPlotter( $groupData->GetSendToPlotter() );
+	$exportData->SetLayers( $groupData->GetLayers() );
+	 
 
 	return $exportData;
 

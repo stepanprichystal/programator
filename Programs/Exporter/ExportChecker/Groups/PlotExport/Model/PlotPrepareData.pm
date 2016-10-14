@@ -12,12 +12,12 @@ use strict;
 use warnings;
 
 #local library
-use aliased 'Programs::Exporter::ExportChecker::Groups::NifExport::Model::NifGroupData';
+use aliased 'Programs::Exporter::ExportChecker::Groups::PlotExport::Model::PlotGroupData';
+
 use aliased 'Programs::Exporter::ExportChecker::Enums';
 use aliased 'CamHelpers::CamJob';
-use aliased 'CamHelpers::CamHelper';
-use aliased 'CamHelpers::CamAttributes';
-use aliased 'Connectors::HeliosConnector::HegMethods';
+use aliased 'Enums::EnumsGeneral';
+ 
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -48,202 +48,138 @@ sub OnPrepareGroupData {
 	my $self     = shift;
 	my $dataMngr = shift;    #instance of GroupDataMngr
 
-	my $groupData = NifGroupData->new();
+	my $groupData = PlotGroupData->new();
 
 	my $inCAM = $dataMngr->{"inCAM"};
 	my $jobId = $dataMngr->{"jobId"};
 
-	$groupData->SetTenting(1);
-	$groupData->SetMaska01(0);
-	$groupData->SetPressfit(0);
-	$groupData->SetNotes("dsdsdsd");
-	$groupData->SetDatacode("");
-	$groupData->SetUlLogo("");
-	$groupData->SetJumpScoring(0);
+	my $defaultInfo = $dataMngr->GetDefaultInfo();
 
-	# Dimension
-	my %dim = $self->__GetDimension( $inCAM, $jobId );
+	
+	# Prepare default layer settings
+	my @baseLayers = CamJob->GetBoardBaseLayers( $inCAM, $jobId );
+	$self->__SetDefaultLayers(\@baseLayers, $defaultInfo);
 
-	$groupData->SetSingle_x( $dim{"single_x"} );
-	$groupData->SetSingle_y( $dim{"single_y"} );
-	$groupData->SetPanel_x( $dim{"panel_x"} );
-	$groupData->SetPanel_y( $dim{"panel_y"} );
-	$groupData->SetNasobnost_panelu( $dim{"nasobnost_panelu"} );
-	$groupData->SetNasobnost( $dim{"nasobnost"} );
+	my @layers = $self->__GetFinalLayers( \@baseLayers );
 
-	# Mask color
+ 
 
-	#mask
-	my %masks2 = HegMethods->GetSolderMaskColor($jobId);
-	unless ( defined $masks2{"top"} ) {
-		$masks2{"top"} = "";
-	}
-	unless ( defined $masks2{"bot"} ) {
-		$masks2{"bot"} = "";
-	}
-	$groupData->SetC_mask_colour( $masks2{"top"} );
-	$groupData->SetS_mask_colour( $masks2{"bot"} );
-
-	#silk
-	my %silk2 = HegMethods->GetSilkScreenColor($jobId);
-
-	unless ( defined $silk2{"top"} ) {
-		$silk2{"top"} = "";
-	}
-	unless ( defined $silk2{"bot"} ) {
-		$silk2{"bot"} = "";
-	}
-
-	$groupData->SetC_silk_screen_colour( $silk2{"top"} );
-	$groupData->SetS_silk_screen_colour( $silk2{"bot"} );
+	$groupData->SetSendToPlotter(0);
+	$groupData->SetLayers(\@layers);
+	 
+ 
 
 	return $groupData;
 }
 
-sub __GetDimension {
 
-	my $self  = shift;
-	my $inCAM = shift;
-	my $jobId = shift;
 
-	my %dim = ();
-	$dim{"single_x"}         = "";
-	$dim{"single_y"}         = "";
-	$dim{"panel_x"}          = "";
-	$dim{"panel_y"}          = "";
-	$dim{"nasobnost_panelu"} = "";
-	$dim{"nasobnost"}        = "";
+sub __SetDefaultLayers{
+	my $self   = shift;
+	my $layers = shift;	
+	my $defaultInfo = shift;
+ 
 
-	#get information about dimension, Ssteps: 0+1, mpanel
+	# Set polarity of layers
+	foreach my $l (@{$layers}) {
 
-	my %profilO1 = CamJob->GetProfileLimits( $inCAM, $jobId, "o+1" );
-	my %profilM = ();
+		if ( $l->{"gROWlayer_type"} eq "silk_screen" ) {
 
-	my $mExist = CamHelper->StepExists( $inCAM, $jobId, "mpanel" );
+			$l->{"polarity"} = "negative";
 
-	if ($mExist) {
-		%profilM = CamJob->GetProfileLimits( $inCAM, $jobId, "mpanel" );
-	}
-
-	#get information about customer panel if wxist
-
-	my $custPnlExist = CamAttributes->GetJobAttrByName( $inCAM, $jobId, "customer_panel" );
-	my $custSingleX;
-	my $custSingleY;
-	my $custPnlMultipl;
-
-	if ( $custPnlExist eq "yes" ) {
-		$custSingleX    = CamAttributes->GetJobAttrByName( $inCAM, $jobId, "cust_pnl_singlex" );
-		$custSingleY    = CamAttributes->GetJobAttrByName( $inCAM, $jobId, "cust_pnl_singley" );
-		$custPnlMultipl = CamAttributes->GetJobAttrByName( $inCAM, $jobId, "cust_pnl_multipl" );
-	}
-
-	#get inforamtion about multiplicity steps
-	my $mpanelMulipl;
-	if ($mExist) {
-		$mpanelMulipl = $self->__GetMultiplOfStep( $inCAM, $jobId, "mpanel" );
-	}
-
-	my $panelMultipl;
-
-	my $isPool = HegMethods->GetPcbIsPool($jobId);
-
-	if ($isPool) {
-		$panelMultipl = $self->__GetMultiplOfStep( $inCAM, $jobId, "panel", "o+1" );
-	}
-	else {
-		$panelMultipl = $self->__GetMultiplOfStep( $inCAM, $jobId, "panel" );
-	}
-
-	#set dimension by "customer panel"
-	if ( $custPnlExist eq "yes" ) {
-
-		$dim{"single_x"}         = $custSingleX;
-		$dim{"single_y"}         = $custSingleY;
-		$dim{"panel_x"}          = abs( $profilO1{"xmax"} - $profilO1{"xmin"} );
-		$dim{"panel_y"}          = abs( $profilO1{"ymax"} - $profilO1{"ymin"} );
-		$dim{"nasobnost_panelu"} = $custPnlMultipl;
-		$dim{"nasobnost"}        = $custPnlMultipl * $panelMultipl;
-
-	}
-	else {
-
-		$dim{"single_x"} = abs( $profilO1{"xmax"} - $profilO1{"xmin"} );
-		$dim{"single_y"} = abs( $profilO1{"ymax"} - $profilO1{"ymin"} );
-
-		my $panelXtmp     = "";
-		my $panelYtmp     = "";
-		my $mMultiplTmp   = "";
-		my $pnlMultiplTmp = $panelMultipl;
-
-		if ($mExist) {
-			$panelXtmp     = abs( $profilM{"xmax"} - $profilM{"xmin"} );
-			$panelYtmp     = abs( $profilM{"ymax"} - $profilM{"ymin"} );
-			$mMultiplTmp   = $mpanelMulipl;
-			$pnlMultiplTmp = $pnlMultiplTmp * $mpanelMulipl;
 		}
+		elsif ( $l->{"gROWlayer_type"} eq "solder_mask" ) {
 
-		$dim{"panel_x"}          = $panelXtmp;
-		$dim{"panel_y"}          = $panelYtmp;
-		$dim{"nasobnost_panelu"} = $mMultiplTmp;
-		$dim{"nasobnost"}        = $pnlMultiplTmp;
+			$l->{"polarity"} = "positive";
 
-	}
-
-	#format numbers
-	$dim{"single_x"} = sprintf( "%.1f", $dim{"single_x"} ) if ( $dim{"single_x"} );
-	$dim{"single_y"} = sprintf( "%.1f", $dim{"single_y"} ) if ( $dim{"single_y"} );
-	$dim{"panel_x"}  = sprintf( "%.1f", $dim{"panel_x"} )  if ( $dim{"panel_x"} );
-	$dim{"panel_y"}  = sprintf( "%.1f", $dim{"panel_y"} )  if ( $dim{"panel_y"} );
-
-	return %dim;
-}
-
-sub __GetMultiplOfStep {
-
-	my $self         = shift;
-	my $inCAM        = shift;
-	my $jobId        = shift;
-	my $stepName     = shift;
-	my $onlyStepName = shift;    # tell which "child" step is only counting
-
-	my $stepExist = CamHelper->StepExists( $inCAM, $jobId, $stepName );
-
-	unless ($stepExist) {
-		return 0;
-	}
-
-	$inCAM->INFO( units => 'mm', entity_type => 'step', entity_path => "$jobId/$stepName", data_type => 'NUM_REPEATS' );
-	my $stepCnt = $inCAM->{doinfo}{gNUM_REPEATS};
-
-	$inCAM->INFO( units => 'mm', entity_type => 'step', entity_path => "$jobId/$stepName", data_type => 'SR' );
-	my @stepNames = @{ $inCAM->{doinfo}{gSRstep} };
-	my @stepNx    = @{ $inCAM->{doinfo}{gSRnx} };
-	my @stepNy    = @{ $inCAM->{doinfo}{gSRny} };
-
-	foreach my $stepName (@stepNames) {
-		if ( $stepName =~ /coupon_\d/ ) {
-			$stepCnt -= 1;
 		}
-	}
+		elsif ( $l->{"gROWlayer_type"} eq "signal" || $l->{"gROWlayer_type"} eq "power_ground" || $l->{"gROWlayer_type"} eq "mixed" ) {
 
-	# if defined, count only steps with name <$onlyStepName>
-	if ($onlyStepName) {
-		$stepCnt = 0;
+			my $etching = $defaultInfo->GetEtchType( $l->{"gROWname"} );
 
-		for ( my $i = 0 ; $i < scalar(@stepNames) ; $i++ ) {
-
-			my $name = $stepNames[$i];
-			if ( $name =~ /\Q$onlyStepName/i ) {
-				my $x = $stepNx[$i];
-				my $y = $stepNy[$i];
-				$stepCnt += ( $x * $y );
+			if ( $etching eq EnumsGeneral->Etching_PATTERN ) {
+				$l->{"polarity"} = "positive";
+			}
+			elsif ( $etching eq EnumsGeneral->Etching_TENTING ) {
+				$l->{"polarity"} = "negative";
 			}
 		}
+		else {
 
+			$l->{"polarity"} = "positive";
+
+		}
 	}
 
-	return $stepCnt;
+	# Set mirror of layers
+	foreach my $l (@{$layers}) {
+
+		# whatever with "c" is mirrored
+		if ( $l->{"gROWname"} =~ /^[pm]*c$/i ) {
+
+			$l->{"mirror"} = "yes";
+
+		}
+
+		# whatever with "s" is not mirrored
+		elsif ( $l->{"gROWname"} =~ /^[pm]*s$/i ) {
+
+			$l->{"mirror"} = "no";
+
+		}
+
+		# inner layers decide by stackup
+		elsif ( $l->{"gROWname"} =~ /^v\d+$/i ) {
+
+			my $side = $defaultInfo->GetSideByLayer( $l->{"gROWname"} );
+
+			if ( $side eq "top" ) {
+
+				$l->{"mirror"} = "yes";
+
+			}
+			else {
+
+				$l->{"mirror"} = "no";
+			}
+		}
+	}
+
+	# Set compensation of signal layer
+	foreach my $l (@{$layers}) {
+
+		if ( $l->{"gROWlayer_type"} eq "signal" || $l->{"gROWlayer_type"} eq "power_ground" || $l->{"gROWlayer_type"} eq "mixed" ) {
+
+			$l->{"comp"} = 10;
+		}
+		else {
+
+			$l->{"comp"} = 0;
+
+		}
+	}
+	
+}
+
+sub __GetFinalLayers {
+	my $self   = shift;
+	my @layers = @{ shift(@_) };
+
+	my @prepared = ();
+
+	foreach my $l (@layers) {
+
+		my %lInfo = ();
+
+		$lInfo{"name"}     = $l->{"gROWname"};
+		$lInfo{"polarity"} = $l->{"polarity"};
+		$lInfo{"mirror"}   = $l->{"mirror"};
+		$lInfo{"comp"}     = $l->{"comp"};
+		
+		push(@prepared, \%lInfo);
+	}
+	
+	return @prepared;
 
 }
 

@@ -98,7 +98,7 @@ sub __Init {
 
 	# Save all references of groups
 	my @cells = $self->{"groupTables"}->GetAllUnits();
-	$self->{"units"}->Init( \@cells );
+	$self->{"units"}->Init( $self->{"inCAM"}, $self->{"jobId"}, \@cells );
 
 	# Build phyisic table with groups, which has completely set GUI
 	#my $groupBuilder = $self->{"form"}->GetGroupBuilder();

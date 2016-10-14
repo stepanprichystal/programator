@@ -118,20 +118,42 @@ sub GetAllRows {
 	return @{ $self->{"rows"} };
 }
 
+
+sub GetRowByText {
+	my $self = shift;
+	my $text = shift;	
+	
+	foreach my $r (@{$self->{"rows"}}){
+		
+		if( $r->GetText() eq $text ){
+			
+			return $r;
+		}
+	}
+
+}
+
 sub GetSelectedId {
 
 }
 
 sub SelectAll {
 	my $self = shift;
+	
+	foreach my $r (@{$self->{"rows"}}){
+		
+		$r->SetSelected(1);
+	}
 
-	$self->{"rows"}->SetSelected(1);
 }
 
 sub UnselectAll {
 	my $self = shift;
 
-	$self->{"rows"}->SetSelected(0);
+	foreach my $r (@{$self->{"rows"}}){
+		
+		$r->SetSelected(0);
+	}
 }
 
 # Set color of select item

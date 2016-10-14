@@ -79,6 +79,12 @@ sub GetPressInfo {
 	return %{ $self->{"press"} };
 }
 
+sub ProgressLamination {
+	my $self = shift;
+
+	return $self->{"lamination"};
+}
+
 sub __CreateStackup {
 	my $self = shift;
 
