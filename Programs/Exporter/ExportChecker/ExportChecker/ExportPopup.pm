@@ -406,9 +406,9 @@ sub __SetHandlers {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	use aliased 'Programs::Exporter::ExportChecker::ExportChecker::ExportChecker';
+	#use aliased 'Programs::Exporter::ExportChecker::ExportChecker::ExportChecker';
 
-	my $form = ExportChecker->new();
+	#my $form = ExportChecker->new();
 
 }
 

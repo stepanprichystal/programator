@@ -118,7 +118,7 @@ sub __FilterRuleSets {
 			push( @filterRuleSets, $ruleSet );
 		}
 	}
-	
+
 	return @filterRuleSets;
 
 }
@@ -128,8 +128,8 @@ sub ExportItemsCount {
 
 	my $totalCnt = 0;
 
-	$totalCnt += 1;                               # getting sucesfully AOI manager
-	$totalCnt += $self->{"layerCnt"};             #export each layer
+	$totalCnt += 1;                      # getting sucesfully AOI manager
+	$totalCnt += $self->{"layerCnt"};    #export each layer
 
 	return $totalCnt;
 
@@ -141,31 +141,37 @@ sub ExportItemsCount {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	use aliased 'Packages::Export::PlotExport::PlotMngr';
-
-	use aliased 'Packages::InCAM::InCAM';
-
-	my $inCAM = InCAM->new();
-
-	my $jobId = "f13609";
-
-	my @layers = CamJob->GetBoardBaseLayers( $inCAM, $jobId );
-
-	foreach my $l (@layers) {
-
-		$l->{"polarity"} = "positive";
-
-		$l->{"mirror"} = 0;
-		if ( $l->{"gROWname"} =~ /c/ ) {
-			$l->{"mirror"} = 1;
-		}
-
-		$l->{"compensation"} = 30;
-		$l->{"name"}         = $l->{"gROWname"};
-	}
-
-	my $mngr = PlotMngr->new( $inCAM, $jobId, \@layers );
-	$mngr->Run();
+#	use aliased 'Packages::Export::PlotExport::PlotMngr';
+#
+#	use aliased 'Packages::InCAM::InCAM';
+#
+#	my $inCAM = InCAM->new();
+#
+#	my $jobId = "f13609";
+#
+#	my @layers = CamJob->GetBoardBaseLayers( $inCAM, $jobId );
+#
+#	foreach my $l (@layers) {
+#
+#		$l->{"polarity"} = "positive";
+#
+#		if ( $l->{"gROWname"} =~ /pc/ ) {
+#			$l->{"polarity"} = "negative";
+#		}
+#
+#		$l->{"mirror"} = 0;
+#		if ( $l->{"gROWname"} =~ /c/ ) {
+#			$l->{"mirror"} = 1;
+#		}
+#
+#		$l->{"compensation"} = 30;
+#		$l->{"name"}         = $l->{"gROWname"};
+#	}
+#
+#	@layers = grep { $_->{"name"} =~ /p[cs]/ } @layers;
+#
+#	my $mngr = PlotMngr->new( $inCAM, $jobId, \@layers );
+#	$mngr->Run();
 }
 
 1;

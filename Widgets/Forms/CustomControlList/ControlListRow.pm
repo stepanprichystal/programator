@@ -62,7 +62,7 @@ sub _AddCell {
 	push( @{ $self->{"cells"} }, $cell );
 }
 
-sub GetText {
+sub GetRowText {
 	my $self = shift;
 
 	return $self->{"text"};
@@ -130,12 +130,11 @@ sub __OnSelectedChange {
 #-------------------------------------------------------------------------------------------#
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
-	my $test = Programs::Exporter::ExportChecker::Forms::GroupTableForm->new();
+	#my $test = Programs::Exporter::ExportChecker::Forms::GroupTableForm->new();
 
-	$test->MainLoop();
+	#$test->MainLoop();
 }
 
-1;
-
+ 
 1;
 

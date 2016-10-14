@@ -2,8 +2,8 @@
 # Description: Wrapper for operations connected with inCam attributes
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-
 package Packages::Export::PlotExport::OpfxCreator::OpfxCreator;
+use base('Packages::Export::MngrBase');
 
 #3th party library
 use strict;
@@ -100,6 +100,18 @@ sub __PrepareLayer {
 
 	CamLayer->ClipLayerData( $inCAM, $lName, $plotLayer->GetLimits() );
 
+	# change polarity
+	
+	my $plotPolar = $plotSet->GetPolarity();
+	if($plotPolar eq "mixed" && $plotLayer->GetPolarity() eq "negative"){
+		
+		
+		
+		CamLayer->NegativeLayerData( $inCAM, $lName, $plotLayer->{"pcbLimits"});
+		
+	}
+
+
 	# Compensate layer
 	if ( $plotLayer->GetComp() > 0 ) {
 
@@ -189,17 +201,14 @@ sub __OutputPlotSets {
 	my $archive     = JobHelper->GetJobArchive($jobId);
 	my $output      = JobHelper->GetJobOutput($jobId);
 	my $archivePath = $archive . "zdroje";
-	
-	
+
 	#delete old opfx form archive
-	my @filesToDel = FileHelper->GetFilesNameByPattern($archivePath, $jobId."@");
-	
-	foreach my $f (@filesToDel){
+	my @filesToDel = FileHelper->GetFilesNameByPattern( $archivePath, $jobId . "@" );
+
+	foreach my $f (@filesToDel) {
 		unlink $f;
 	}
-	
- 
- 
+
 	#$inCAM->COM( "set_subsystem", "name" => "Output" );
 
 	# Add output device
@@ -210,48 +219,65 @@ sub __OutputPlotSets {
 
 		my $filmSize = $plotSet->GetFilmSizeInch();
 		my $outputL  = $plotSet->GetOutputLayerName();
-		
-		print STDERR $outputL."\n";
+
+		my $resultItemPlot = $self->_GetNewItem($outputL);
+		$resultItemPlot->SetGroup("Films");
 
 		# Reset settings of device
 		$inCAM->COM( "output_reload_device", "type" => "format", "name" => "LP7008" );
 
-		
- 		# Udate settings o device
+		# Udate settings o device
 		$inCAM->COM(
 			"output_update_device",
 			"type"     => "format",
 			"name"     => "LP7008",
 			"dir_path" => $archivePath,
 			"format_params" =>
-			  "(break_sr=yes)(break_symbols=yes)(send_to_plotter=no)(local_copy=yes)(iol_opfx_allow_out_limits=yes)(iol_opfx_use_profile_limits=no)"
+		"(break_sr=yes)(break_symbols=yes)(send_to_plotter=no)(local_copy=yes)(iol_opfx_allow_out_limits=yes)(iol_opfx_use_profile_limits=no)(iol_surface_check=yes)"
 
 		);
 
 		# Filter only layer, which we want to output
 		$inCAM->COM( "output_device_set_lyrs_filter", "type" => "format", "name" => "LP7008", "layers_filter" => $outputL );
 
-		$inCAM->COM("image_set_elpd2","job" => $jobId,"step" => $plotPanel,"layer" => $outputL,"device_type" => "LP7008"); #toto zde musi byt, nevim proc
-		 
+		my $polarity = $plotSet->GetPolarity();
 		
-		$inCAM->COM("output_device_select_reset","type"=>"format","name"=>"LP7008"); #toto tady musi byt, nevim proc
-		$inCAM->COM( "output_device_select", "type" => "format", "name" => "LP7008");
-		
-		# Output final layer
-		$inCAM->COM(
-						   "output_device",
-						   "type"                 => "format",
-						   "name"                 => "LP7008",
-						   "overwrite"            => "yes",
-						   "overwrite_ext"        => "",
-						   "on_checkout_by_other" => "output_anyway"
+		if($polarity eq "mixed"){
+			$polarity = "positive";
+		}
+
+		# Necessery set layer, otherwise
+		$inCAM->COM( "image_set_elpd2", "job" => $jobId, "step" => $plotPanel, "layer" => $outputL, "device_type" => "LP7008", "polarity" =>$polarity ); 
+
+		$inCAM->COM( "output_device_select_reset", "type" => "format", "name" => "LP7008" );    #toto tady musi byt, nevim proc
+ 		
+		$inCAM->COM( "output_device_select",       "type" => "format", "name" => "LP7008" );
+
+		$inCAM->HandleException(1);
+
+		# START HANDLE EXCEPTION IN INCAM
+		$inCAM->HandleException(1);
+
+		my $plotResult = $inCAM->COM(
+									  "output_device",
+									  "type"                 => "format",
+									  "name"                 => "LP7008",
+									  "overwrite"            => "yes",
+									  "overwrite_ext"        => "",
+									  "on_checkout_by_other" => "output_anyway"
 		);
 
+		# STOP HANDLE EXCEPTION IN INCAM
+		$inCAM->HandleException(0);
+
+		if ( $plotResult > 0 ) {
+			$resultItemPlot->AddError( $inCAM->GetExceptionError() );
+		}
+
+		$self->_OnItemResult($resultItemPlot);
 	}
- 
 
-
-	# return to default subsystem
+	# return to default subsystem 
 	#$inCAM->COM( "set_subsystem", "name" => "1-Up-Edit" );
 
 }
@@ -290,7 +316,7 @@ sub __CreatePlotStep {
 
 }
 
-1;
+ 
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
@@ -301,9 +327,9 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	#my $self             = shift;
 	#	my $inCAM            = shift;
 
-	use aliased 'HelperScripts::DirStructure';
+	#use aliased 'HelperScripts::DirStructure';
 
-	DirStructure->Create();
+	#DirStructure->Create();
 
 }
 

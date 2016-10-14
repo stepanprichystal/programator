@@ -26,8 +26,13 @@ sub new {
 	my $class     = shift;
 	my $parent    = shift;
 	my $layerName = shift;
+	my $controlHeight = shift;
+	
+	unless($controlHeight){
+		$controlHeight = -1;
+	}
 
-	my $self = $class->SUPER::new( $parent, -1, &Wx::wxDefaultPosition, [ 10, 20 ] );
+	my $self = $class->SUPER::new( $parent, -1, &Wx::wxDefaultPosition,  [-1, $controlHeight]);
 
 	bless($self);
 

@@ -8,8 +8,8 @@ package Packages::Export::PlotExport::FilmCreator::Helper;
 #3th party library
 use strict;
 use warnings;
-use File::Copy;
-use Try::Tiny;
+
+
 
 #local library
 use aliased 'Packages::Polygon::PolygonHelper';

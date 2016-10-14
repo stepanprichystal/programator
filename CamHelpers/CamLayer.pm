@@ -116,6 +116,7 @@ sub RemoveTempLayerPlus {
 		}
 	}
 }
+	
 
 #Return layers, where marking can be placed
 sub GetMarkingLayers {
@@ -140,6 +141,7 @@ sub GetMarkingLayers {
 	return @res;
 }
 
+
 # Display single layer and set as work layer
 sub WorkLayer{
 	my $self   = shift;
@@ -151,6 +153,40 @@ sub WorkLayer{
 	$inCAM->COM( 'work_layer',     name => $layer );
 
 }
+
+# InvertPolarity of layer
+sub NegativeLayerData {
+	my $self   = shift;
+	my $inCAM  = shift;
+	my $layer  = shift;
+	my %dim  = %{shift(@_)};
+	
+	my $lName = GeneralHelper->GetGUID();
+	$inCAM->COM( 'create_layer', "layer" => $lName, "context" => 'misc', "type" => 'document', "polarity" => 'positive', "ins_layer" => '' );
+	$self->WorkLayer($inCAM, $lName);
+	
+	
+	$inCAM->COM("add_surf_fill");
+	$inCAM->COM("add_surf_strt", "surf_type"=> "feature");
+	$inCAM->COM("add_surf_poly_strt", "x"=> $dim{"xMin"}, "y"=> $dim{"yMin"});
+	$inCAM->COM("add_surf_poly_seg", "x"=> $dim{"xMin"}, "y"=> $dim{"yMax"});
+	$inCAM->COM("add_surf_poly_seg", "x"=> $dim{"xMax"}, "y"=> $dim{"yMax"});
+	$inCAM->COM("add_surf_poly_seg", "x"=> $dim{"xMax"}, "y"=> $dim{"yMin"});
+	$inCAM->COM("add_surf_poly_seg", "x"=> $dim{"xMin"}, "y"=> $dim{"yMin"});
+	$inCAM->COM("add_surf_poly_end");
+ 	$inCAM->COM("add_surf_end","polarity" => "positive","attributes" => "no");
+ 
+	$self->WorkLayer($inCAM, $layer);
+	$inCAM->COM("sel_move_other","target_layer" => $lName,"invert" => "yes","dx" => "0","dy" => "0","size" => "0","x_anchor" => "0","y_anchor" => "0");
+	
+	$self->WorkLayer($inCAM, $lName);
+	$inCAM->COM("sel_move_other","target_layer" => $layer,"invert" => "no","dx" => "0","dy" => "0","size" => "0","x_anchor" => "0","y_anchor" => "0");
+	
+	$inCAM->COM("delete_layer", "layer"=> $lName);
+	
+	$inCAM->COM( 'affected_layer', name => $layer, mode => "single", affected => "no" );
+}
+
 
 
 # Rotate layer by degree

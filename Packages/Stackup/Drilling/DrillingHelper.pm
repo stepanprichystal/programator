@@ -212,7 +212,7 @@ sub GetNPltNCLayerInfo {
 	return %info;
 }
 
-1;
+#1;
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
@@ -221,9 +221,9 @@ sub GetNPltNCLayerInfo {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	use Packages::InCAM::InCAM;
-	my $inCAM = Packages::InCAM::InCAM->new();
-	DrillingHelper->GetStackupDrillingInfo( "f14742", $inCAM );
+	#use Packages::InCAM::InCAM;
+	#my $inCAM = Packages::InCAM::InCAM->new();
+	#DrillingHelper->GetStackupDrillingInfo( "f14742", $inCAM );
 
 	#my $test = Connectors::HeliosConnector::HegMethods->GetMaterialType("F34140");
 

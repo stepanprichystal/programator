@@ -13,6 +13,7 @@ use warnings;
 
 #local library
 use aliased 'Enums::EnumsGeneral';
+use aliased 'Packages::Stackup::Enums' => 'StackupEnums';
 use aliased 'CamHelpers::CamJob';
 use aliased 'Packages::Stackup::Stackup::Stackup';
 use aliased 'Packages::Stackup::StackupNC::StackupNC';
@@ -84,7 +85,7 @@ sub GetEtchType {
 			#$topCopperName = $core->GetTopCopperLayer()->GetCopperName();
 			#$botCopperName = $core->GetBotCopperLayer()->GetCopperName();
 
-			my $order = $core->GetCoreOrder();
+			my $order = $core->GetCoreNumber();
 
 			$stackupNCitem = $self->{"stackupNC"}->GetCore($order);
 
@@ -112,8 +113,8 @@ sub GetEtchType {
 
 		# 2) Now decide, if there is blind drilling in stackupItem ( = pressInfo/coreInfo)
 
-		if (    $stackupNCitem->ExistNCLayers( Enums->LAYERTYPE_plt_bDrillTop )
-			 || $stackupNCitem->ExistNCLayers( Enums->LAYERTYPE_plt_bDrillBot ) )
+		if (    $stackupNCitem->ExistNCLayers( StackupEnums->SignalLayer_TOP, EnumsGeneral->LAYERTYPE_plt_bDrillTop )
+			 || $stackupNCitem->ExistNCLayers( StackupEnums->SignalLayer_BOT, EnumsGeneral->LAYERTYPE_plt_bDrillBot ) )
 		{
 
 			$etchType = EnumsGeneral->Etching_PATTERN;
@@ -195,7 +196,7 @@ sub __InitDefault {
 
 	$self->{"maxPlatedRout"} = 0;
 
-	if ( $self->{"layerCnt"} == 2 ) {
+	if ( $self->{"layerCnt"} > 2 ) {
 
 		$self->{"stackup"} = Stackup->new( $self->{'jobId'} );
 		$self->{"stackupNC"} = StackupNC->new( $self->{"inCAM"}, $self->{"stackup"} );

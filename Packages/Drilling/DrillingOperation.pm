@@ -31,7 +31,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	#my $test = StackupLayerHelper->GetStackupPress("F14742");
 
  
-	print $test;
+	#print $test;
 
 }
 

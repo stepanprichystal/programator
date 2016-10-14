@@ -100,10 +100,16 @@ sub __SetLayoutQuickSettings {
 	my $szStatBox = Wx::StaticBoxSizer->new( $statBox, &Wx::wxHORIZONTAL );
 
 	# DEFINE CONTROLS
-	my $allChb = Wx::CheckBox->new( $statBox, -1, "All", &Wx::wxDefaultPosition, [ 100, 22 ] );
-	my @polar = ( "-", "positive", "negative" );
-	my $polarityCb = Wx::ComboBox->new( $statBox, -1, $polar[0], &Wx::wxDefaultPosition, [ 100, 22 ], \@polar, &Wx::wxCB_READONLY );
-	my $mirrorChb = Wx::CheckBox->new( $statBox, -1, "", [ -1, -1 ], [ 70, 22 ] );
+	my $allChb = Wx::CheckBox->new( $statBox, -1, "All", &Wx::wxDefaultPosition, [ 70, 22 ] );
+	my @polar = ( "/", "+", "-" );
+	my $polarityCb = Wx::ComboBox->new( $statBox, -1, $polar[0], &Wx::wxDefaultPosition, [ 50, 22 ], \@polar, &Wx::wxCB_READONLY );
+	
+	my $fontPolar =
+	  Wx::Font->new( 12, &Wx::wxFONTFAMILY_DEFAULT  , &Wx::wxFONTSTYLE_NORMAL, &Wx::wxFONTWEIGHT_BOLD );
+	
+	#$polarityCb->SetFont($fontPolar);
+	
+	my $mirrorChb = Wx::CheckBox->new( $statBox, -1, "", [ -1, -1 ], [ 30, 22 ] );
 	my $compTxt = Wx::TextCtrl->new( $statBox, -1, "0", &Wx::wxDefaultPosition, [ 50, 22 ] );
 
 	# SET EVENTS
@@ -113,10 +119,10 @@ sub __SetLayoutQuickSettings {
 	Wx::Event::EVT_TEXT( $compTxt, -1, sub { $self->__OnCompChangeHandler(@_) } );
 
 	# BUILD STRUCTURE OF LAYOUT
-	$szStatBox->Add( $allChb,     0, &Wx::wxEXPAND | &Wx::wxALL,  0 );
-	$szStatBox->Add( $polarityCb, 0, &Wx::wxEXPAND | &Wx::wxLEFT, 10 );
-	$szStatBox->Add( $mirrorChb,  0, &Wx::wxEXPAND | &Wx::wxLEFT, 10 );
-	$szStatBox->Add( $compTxt,    0, &Wx::wxEXPAND | &Wx::wxLEFT, 10 );
+	$szStatBox->Add( $allChb,     0, &Wx::wxEXPAND | &Wx::wxLEFT, 2 );
+	$szStatBox->Add( $polarityCb, 0, &Wx::wxEXPAND | &Wx::wxLEFT, 8 );
+	$szStatBox->Add( $mirrorChb,  0, &Wx::wxEXPAND | &Wx::wxLEFT, 8 );
+	$szStatBox->Add( $compTxt,    0, &Wx::wxEXPAND | &Wx::wxLEFT, 8 );
 
 	# Set References
 	$self->{"allChb"}     = $allChb;
@@ -254,6 +260,8 @@ sub SetLayers {
 	my $self  = shift;
 	my @layers = @{shift(@_)};
 
+	my $allChecked = 1;
+
 	foreach my $l (@layers){
 		
 		my $row = $self->{"plotList"}->GetRowByText($l->{"name"});
@@ -262,7 +270,12 @@ sub SetLayers {
 			$row->SetLayerValues($l);
 		}
 		
+		unless($l->{"plot"}){
+			$allChecked = 0;
+		}
 	}
+	
+	$self->{"allChb"}->SetValue($allChecked);
 	
 	$self->{"data"}->{"layers"} = shift;
 }
@@ -271,11 +284,11 @@ sub GetLayers {
 	my $self  = shift;
 	
 	my @layers = shift;
-	my @rows = @{$self->{"plotList"}->GetSelectedRows()};
+	my @rows = $self->{"plotList"}->GetSelectedRows();
 
 	foreach my $r (@rows){
 		
- 		my %linfo = %{$r->GetLayerValues()};
+ 		my %linfo = $r->GetLayerValues();
 		
 		 push(@layers, \%linfo);
 		

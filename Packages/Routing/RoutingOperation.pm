@@ -107,17 +107,17 @@ sub GetPilotHole {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	use aliased 'Packages::Routing::RoutingOperation';
- 	use aliased 'Packages::InCAM::InCAM';
+	#use aliased 'Packages::Routing::RoutingOperation';
+ 	#use aliased 'Packages::InCAM::InCAM';
 
-	my $jobId = "f13610";
-	my $inCAM = InCAM->new();
+	#my $jobId = "f13610";
+	#my $inCAM = InCAM->new();
 
-	my $step  = "o+1";
-	my $layer = "f";
-	my $test = RoutingOperation->AddPilotHole( $inCAM, $jobId, $step, $layer);
+	#my $step  = "o+1";
+	#my $layer = "f";
+	#my $test = RoutingOperation->AddPilotHole( $inCAM, $jobId, $step, $layer);
 
-	print $test;
+	#print $test;
 
 }
 

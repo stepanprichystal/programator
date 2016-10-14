@@ -43,7 +43,7 @@ sub Connect {
 
 	my $inCAM;
 
-	my $maxTry = 3;
+	my $maxTry = 4;
 	my $tryCnt = 0;
 
 	#wait, until server script is not ready

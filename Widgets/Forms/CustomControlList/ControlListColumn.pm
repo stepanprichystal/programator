@@ -142,7 +142,7 @@ sub AddCell {
 	my $cell = shift;
  
 # 
-	$self->{"sizerCells"}->Add( $cell, 0, &Wx::wxEXPAND |&Wx::wxALL, 2);
+	$self->{"sizerCells"}->Add( $cell, 0, &Wx::wxEXPAND |&Wx::wxALL, 1);
 	$self->{"sizerCells"}->Layout();
 }
 
@@ -202,12 +202,12 @@ sub __GetChildCnt {
 #-------------------------------------------------------------------------------------------#
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
-	my $test = Programs::Exporter::ExportChecker::Forms::GroupTableForm->new();
+	#my $test = Programs::Exporter::ExportChecker::Forms::GroupTableForm->new();
 
-	$test->MainLoop();
+	#$test->MainLoop();
 }
 
-1;
+ 
 
 1;
 

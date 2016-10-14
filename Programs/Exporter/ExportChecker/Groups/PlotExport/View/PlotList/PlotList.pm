@@ -35,7 +35,10 @@ sub new {
 	my $layers = shift;
 
 	# Name, Color, Polarity, Mirror, Comp
-	my @widths = ( 50, 40, 100, 40, 50, 100, 80, 80, );
+	my @widths = ( 50, 20, 50, 40, 50, 80, 80, 80, );
+	my @titles = ( "Name", "", "Polarity", "Mirror", "Comp", "Films", "Merged", "Single" );
+	
+	
 
 	my $columnCnt    = scalar(@widths);
 	my $columnWidths = \@widths;
@@ -45,6 +48,7 @@ sub new {
 
 	bless($self);
 
+	$self->{"titles"} = \@titles;
 	$self->{"inCAM"} = $inCAM;
 	$self->{"jobId"} = $jobId;
  	$self->{"layers"} = $layers;
@@ -107,12 +111,12 @@ sub __SetLayout {
 
 	# DEFINE SIZERS
 
-	my @titles = ( "Name", "", "Polarity", "Mirror", "Comp", "", "Merged", "Single" );
-	$self->SetHeader( \@titles );
+	
+	$self->SetHeader( $self->{"titles"} );
 
 	$self->SetVerticalLine( Wx::Colour->new( 163, 163, 163 ) );
 	
-	$self->SetHeaderBackgroundColor(Wx::Colour->new( 232, 232, 232 ) );
+	$self->SetHeaderBackgroundColor(Wx::Colour->new( 240, 240, 240 ) );
 
 	#create rows for each laters
 
@@ -216,12 +220,12 @@ sub __DefineFilmColors {
 #-------------------------------------------------------------------------------------------#
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
-	my $test = Programs::Exporter::ExportChecker::Forms::GroupTableForm->new();
+	#my $test = Programs::Exporter::ExportChecker::Forms::GroupTableForm->new();
 
-	$test->MainLoop();
+	#$test->MainLoop();
 }
 
-1;
+ 
 
 1;
 

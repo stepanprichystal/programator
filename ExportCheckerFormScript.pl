@@ -23,12 +23,12 @@ unless($jobId){
 	$jobId = "f13609";
 	
 }
-
+ 
 
 
 my $form = ExportChecker->new($jobId, $port, $pid);
  
-#Win32::OLE->new
+ 
  
  
 

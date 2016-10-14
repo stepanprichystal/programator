@@ -97,7 +97,7 @@ sub __BuildRules {
 
 }
 
-1;
+ 
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
@@ -107,17 +107,17 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	#my $self             = shift;
 	#	my $inCAM            = shift;
-	use aliased 'Packages::InCAM::InCAM';
-	use aliased 'Packages::Export::PlotExport::FilmCreator::MultiFilmCreator';
-
-	use aliased 'CamHelpers::CamJob';
-	my $inCAM = InCAM->new();
-
-	my $jobId = "f13609";
-
-	my @layers = CamJob->GetBoardBaseLayers( $inCAM, $jobId );
-
-	my $creator = MultiFilmCreator->new( $inCAM, $jobId, \@layers );
+#	use aliased 'Packages::InCAM::InCAM';
+#	use aliased 'Packages::Export::PlotExport::FilmCreator::MultiFilmCreator';
+#
+#	use aliased 'CamHelpers::CamJob';
+#	my $inCAM = InCAM->new();
+#
+#	my $jobId = "f13609";
+#
+#	my @layers = CamJob->GetBoardBaseLayers( $inCAM, $jobId );
+#
+#	my $creator = MultiFilmCreator->new( $inCAM, $jobId, \@layers );
 
 	#$creator->GetPlotterSets();
 

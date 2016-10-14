@@ -25,7 +25,6 @@ use Class::Interface;
 sub ExportItemsCount;
 
 
-1;
  
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

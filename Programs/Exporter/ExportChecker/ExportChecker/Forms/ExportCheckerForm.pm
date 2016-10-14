@@ -536,7 +536,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	#$test->MainLoop();
 }
 
-1;
+
 
 1;
 

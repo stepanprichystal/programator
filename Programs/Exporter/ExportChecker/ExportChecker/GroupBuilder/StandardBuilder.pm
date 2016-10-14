@@ -69,7 +69,7 @@ sub Build {
 
 	my $row2Tab1 = $tableTab1->AddRow();
 	
-	$row2Tab1->AddCell($plotUnit1, Enums->Width_75);
+	$row2Tab1->AddCell($plotUnit1, Enums->Width_50);
 	$row2Tab1->AddCell($etUnit1, Enums->Width_25);
 	#$row2Tab1->AddCell($ncUnit3);
 

@@ -32,7 +32,7 @@ sub new {
 	my $layer        = shift;
 	my $filmRuleSet1 = shift;
 	my $filmRuleSet2 = shift;
-	my $rowHeight    = 20;
+	my $rowHeight    = 21;
 
 	my $self = $class->SUPER::new( $parent, $layer->{"gROWname"}, $rowHeight );
 
@@ -80,21 +80,25 @@ sub __SetLayout {
 
 	# DEFINE CELLS
 
-	my $layerColor = LayerColorPnl->new( $self->{"parent"}, $self->{"layer"}->{"gROWname"} );
+	my $layerColor = LayerColorPnl->new( $self->{"parent"}, $self->{"layer"}->{"gROWname"}, $self->{"rowHeight"} );
 
-	my @polar = ( "positive", "negative" );
+	my @polar = ( "+", "-" );
 	my $polarityCb =
-	  Wx::ComboBox->new( $self->{"parent"}, -1, $polar[0], &Wx::wxDefaultPosition, [ -1, $self->{"rowHeight"} ], \@polar, &Wx::wxCB_READONLY );
-
-	my $mirrorChb = Wx::CheckBox->new( $self->{"parent"}, -1, "", [ -1, -1 ], [ -1, $self->{"rowHeight"} ] );
+	  Wx::ComboBox->new( $self->{"parent"}, -1, $polar[0], &Wx::wxDefaultPosition, [ 10, $self->{"rowHeight"} ], \@polar, &Wx::wxCB_READONLY );
+	
+	my $fontPolar =
+	  Wx::Font->new( 10, &Wx::wxFONTFAMILY_DEFAULT  , &Wx::wxFONTSTYLE_NORMAL, &Wx::wxFONTWEIGHT_MAX   );
+	
+	#$polarityCb->SetFont($fontPolar);
+	my $mirrorChb = Wx::CheckBox->new( $self->{"parent"}, -1, "", [ -1, -1 ], [ 10, $self->{"rowHeight"} ] );
 
 	my $compTxt = Wx::TextCtrl->new( $self->{"parent"}, -1, "", &Wx::wxDefaultPosition, [ 20, $self->{"rowHeight"} ] );
 
-	my $arrowTxt = Wx::StaticText->new( $self->{"parent"}, -1, "  ==> ", &Wx::wxDefaultPosition );
+	my $arrowTxt = Wx::StaticText->new( $self->{"parent"}, -1, "       ==>", &Wx::wxDefaultPosition, [ 20, $self->{"rowHeight"} ] );
 	$arrowTxt->SetFont($Widgets::Style::fontLblBold);
 
-	my $film1Frm = FilmForm->new( $self->{"parent"}, $self->{"filmRuleSet1"} );
-	my $film2Frm = FilmForm->new( $self->{"parent"}, $self->{"filmRuleSet2"} );
+	my $film1Frm = FilmForm->new( $self->{"parent"}, $self->{"filmRuleSet1"}, $self->{"rowHeight"});
+	my $film2Frm = FilmForm->new( $self->{"parent"}, $self->{"filmRuleSet2"}, $self->{"rowHeight"} );
 
 	# SET EVENTS
 	#Wx::Event::EVT_CHECKBOX( $mainChb, -1, sub { $self->__OnSelectedChange(@_) } );
@@ -127,7 +131,7 @@ sub PlotSelectionChanged {
 
 	foreach my $row ( $self->{"parent"}->GetSelectedRows() ) {
 
-		push( @selectedLayers, $row->GetText() );
+		push( @selectedLayers, $row->GetRowText() );
 
 	}
 
@@ -144,7 +148,15 @@ sub SetLayerValues {
 	my $self  = shift;
 	my %lInfo = %{ shift(@_) };
 
-	$self->{"polarityCb"}->SetValue( $lInfo{"polarity"} );
+	$self->SetSelected( $lInfo{"plot"} );
+	
+	if($lInfo{"polarity"} eq "positive"){
+		$self->{"polarityCb"}->SetValue("+" );
+	}elsif($lInfo{"polarity"} eq "negative"){
+		$self->{"polarityCb"}->SetValue( "-" );
+	}
+	
+	
 	$self->{"mirrorChb"}->SetValue( $lInfo{"mirror"} );
 	$self->{"compTxt"}->SetValue( $lInfo{"comp"} );
 
@@ -154,6 +166,11 @@ sub GetLayerValues {
 	my $self = shift;
 
 	my %lInfo = ();
+	
+	#$lInfo{"name"} = $self->GetRowText();
+	
+	$lInfo{"polarity"} = $self->IsSelected();
+	
 	$lInfo{"polarity"} = $self->{"polarityCb"}->GetValue();
 
 	if ( $self->{"mirrorChb"}->IsChecked() ) {
@@ -165,6 +182,8 @@ sub GetLayerValues {
 	}
 	$lInfo{"comp"} = $self->{"compTxt"}->GetValue();
 
+	
+
 	return %lInfo;
 }
 
@@ -173,12 +192,11 @@ sub GetLayerValues {
 #-------------------------------------------------------------------------------------------#
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
-	my $test = Programs::Exporter::ExportChecker::Forms::GroupTableForm->new();
+	#my $test = Programs::Exporter::ExportChecker::Forms::GroupTableForm->new();
 
-	$test->MainLoop();
+	#$test->MainLoop();
 }
 
-1;
 
 1;
 

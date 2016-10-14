@@ -59,13 +59,13 @@ sub GetPcbIsPool {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	use aliased 'Connectors::HeliosConnector::HegMethods2';
-
-	my $nc_info = "test";
-
-	my $test = HegMethods2->GetPcbIsPool("F13609");
-
-	print $test;
+#	use aliased 'Connectors::HeliosConnector::HegMethods2';
+#
+#	my $nc_info = "test";
+#
+#	my $test = HegMethods2->GetPcbIsPool("F13609");
+#
+#	print $test;
 
 }
 

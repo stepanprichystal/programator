@@ -113,7 +113,31 @@ sub GetOutputLayerName {
 	return $lName;
 }
 
-1;
+sub GetPolarity {
+	my $self = shift;
+
+	my $polarity;
+
+	# Select layer by layer
+	foreach my $plotL ( $self->GetLayers() ) {
+		
+		
+		
+		if( defined $polarity && $plotL->GetPolarity() ne $polarity){
+			
+			$polarity = "mixed";
+			last;
+		} 
+		
+		$polarity = $plotL->GetPolarity();
+	}
+	
+	return $polarity;
+
+}
+
+
+ 
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

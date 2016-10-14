@@ -176,31 +176,31 @@ sub ETSetOutput {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	use aliased 'Packages::InCAM::InCAM';
-	use aliased 'Packages::ETesting::BasicHelper::OptSet';
-	use aliased 'Packages::ETesting::BasicHelper::ETSet';
-	my $inCAM = InCAM->new();
-
-	my $jobName      = "f13610";
-	my $stepName     = "panel";
-	my $setupOptName = "atg_flying";
-	my @steps        = ( "o+1", "mpanel" );
-
-	my $optName = OptSet->OptSetCreate( $inCAM, $jobName, $stepName, $setupOptName, \@steps );
-
-	my $etsetName = ETSet->ETSetCreate( $inCAM, $jobName, $stepName, $optName );
-
-	ETSet->ETSetOutput( $inCAM, $jobName, $stepName, $optName, $etsetName );
-
-	if ( ETSet->ETSetExist( $inCAM, $jobName, $stepName, $optName, $etsetName ) ) {
-
-		ETSet->ETSetDelete( $inCAM, $jobName, $stepName, $optName, $etsetName );
-	}
-
-	if ( OptSet->OptSetExist( $inCAM, $jobName, $stepName, $optName ) ) {
-
-		OptSet->OptSetDelete( $inCAM, $jobName, $stepName, $optName );
-	}
+#	use aliased 'Packages::InCAM::InCAM';
+#	use aliased 'Packages::ETesting::BasicHelper::OptSet';
+#	use aliased 'Packages::ETesting::BasicHelper::ETSet';
+#	my $inCAM = InCAM->new();
+#
+#	my $jobName      = "f13610";
+#	my $stepName     = "panel";
+#	my $setupOptName = "atg_flying";
+#	my @steps        = ( "o+1", "mpanel" );
+#
+#	my $optName = OptSet->OptSetCreate( $inCAM, $jobName, $stepName, $setupOptName, \@steps );
+#
+#	my $etsetName = ETSet->ETSetCreate( $inCAM, $jobName, $stepName, $optName );
+#
+#	ETSet->ETSetOutput( $inCAM, $jobName, $stepName, $optName, $etsetName );
+#
+#	if ( ETSet->ETSetExist( $inCAM, $jobName, $stepName, $optName, $etsetName ) ) {
+#
+#		ETSet->ETSetDelete( $inCAM, $jobName, $stepName, $optName, $etsetName );
+#	}
+#
+#	if ( OptSet->OptSetExist( $inCAM, $jobName, $stepName, $optName ) ) {
+#
+#		OptSet->OptSetDelete( $inCAM, $jobName, $stepName, $optName );
+#	}
 
 }
 

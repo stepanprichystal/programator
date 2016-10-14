@@ -137,13 +137,13 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	#
 	#	my $considerHole     = shift;
 	#	my $considerEdge     = shift;
-
-	my $cuThickness = JobHelper->GetBaseCuThick( "f13610", "c" );
-	my $pcbThick = JobHelper->GetFinalPcbThick("f13610");
-
-	my $inCAM = InCAM->new();
-
-	my %test = CamHelpers::CamCopperArea->GetCuArea( $cuThickness, $pcbThick, $inCAM, "f13610", "panel", "c", "s", 1, 1 );
+#
+#	my $cuThickness = JobHelper->GetBaseCuThick( "f13610", "c" );
+#	my $pcbThick = JobHelper->GetFinalPcbThick("f13610");
+#
+#	my $inCAM = InCAM->new();
+#
+#	my %test = CamHelpers::CamCopperArea->GetCuArea( $cuThickness, $pcbThick, $inCAM, "f13610", "panel", "c", "s", 1, 1 );
 
 	#my %test1 = CamHelpers::CamCopperArea->GetCuArea( $cuThickness, $pcbThick, $inCAM, "F13608", "panel", "c" );
 
@@ -172,10 +172,8 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	#print "\n";
 	#print $test2{"percentage"};
 
-	print 1;
+	#print 1;
 
 }
 
-1;
-
-1;
+ 1;

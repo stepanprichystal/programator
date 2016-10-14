@@ -240,9 +240,9 @@ sub GetStackupType {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	use aliased 'Packages::Stackup::Stackup::Stackup';
+	#use aliased 'Packages::Stackup::Stackup::Stackup';
 
-	my $stackup = Stackup->new("d99991");
+	#my $stackup = Stackup->new("d99991");
 
 	#	print $stackup->GetFinalThick();
 	#	my @cores = $stackup->GetAllCores();
@@ -254,7 +254,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	#	print $cuLayer->GetCopperName();
  
 
-	print 1;
+#	print 1;
 }
 
 1;

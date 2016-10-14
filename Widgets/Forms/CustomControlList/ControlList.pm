@@ -30,7 +30,7 @@ sub new {
 	my $columnWidths = shift;
 	my $verticalLine = shift;
 
-	my $self = $class->SUPER::new( $parent, -1, &Wx::wxDefaultPosition, &Wx::wxDefaultSize, &Wx::wxSIMPLE_BORDER );
+	my $self = $class->SUPER::new( $parent, -1, &Wx::wxDefaultPosition, &Wx::wxDefaultSize);
 
 	bless($self);
 
@@ -125,7 +125,7 @@ sub GetRowByText {
 	
 	foreach my $r (@{$self->{"rows"}}){
 		
-		if( $r->GetText() eq $text ){
+		if( $r->GetRowText() eq $text ){
 			
 			return $r;
 		}
@@ -237,13 +237,13 @@ sub __SetLayout {
 		my $colRows   = ControlListColumn->new( $self, $w );
 		my $colHeader = ControlListColumn->new( $self, $w );
 
-		$szColumns->Add( $colRows->GetSizer(), 0, &Wx::wxEXPAND );
-		$szHeader->Add( $colHeader->GetSizer(), 0, &Wx::wxEXPAND );
+		$szColumns->Add( $colRows->GetSizer(), 0, &Wx::wxEXPAND |  &Wx::wxALL, 1);
+		$szHeader->Add( $colHeader->GetSizer(), 0, &Wx::wxEXPAND  |  &Wx::wxALL, 1 );
 
 		# add column separator
 		#if ( $i > 0 ) {
 
-		if ( $self->{"verticalLine"} ) {
+		if ( $self->{"verticalLine"} &&  $i < $self->{"columnCnt"} - 1 ) {
 
 			$szColumns->Add( $self->__GetVSeparator(), 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );    #
 			$szHeader->Add( $self->__GetVSeparator(), 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
@@ -377,12 +377,11 @@ sub __OnSelectedChange {
 #-------------------------------------------------------------------------------------------#
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
-	my $test = Programs::Exporter::ExportChecker::Forms::GroupTableForm->new();
+	#my $test = Programs::Exporter::ExportChecker::Forms::GroupTableForm->new();
 
-	$test->MainLoop();
+	#$test->MainLoop();
 }
-
-1;
+ 
 
 1;
 

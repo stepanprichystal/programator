@@ -78,9 +78,9 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	#my $test = StackupLayerHelper->GetStackupPress("F14742");
 
-	my $test = StackupOperation->GetThickByLayer( "F13608", "v5");
+	#my $test = StackupOperation->GetThickByLayer( "F13608", "v5");
 
-	print $test;
+	#print $test;
 
 }
 

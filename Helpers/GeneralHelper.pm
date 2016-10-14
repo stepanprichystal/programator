@@ -286,7 +286,7 @@ sub GetLastInCAMVersion {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	
-	print Helpers::GeneralHelper->GetLastInCAMVersion();
+	#print Helpers::GeneralHelper->GetLastInCAMVersion();
 	
 }
 1;

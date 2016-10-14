@@ -8,7 +8,7 @@ use warnings;
 
 # ============ INPUT LINE =================
 my $inputLine =
-"filter_area_end,filter_name=popup,operation=select";
+"sel_move_other,target_layer=ms_30,invert=yes,dx=0,dy=0,size=0,x_anchor=0,y_anchor=0";
 # ============ INPUT LINE =================
 
 

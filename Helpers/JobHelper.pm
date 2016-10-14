@@ -169,15 +169,15 @@ sub GetIsolationByClass {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	use aliased 'Helpers::JobHelper';
+	#use aliased 'Helpers::JobHelper';
 
-	print JobHelper->GetFinalPcbThick("F13608");
+	#print JobHelper->GetFinalPcbThick("F13608");
 
 	#print JobHelper->GetBaseCuThick("F13608", "v3");
 
-	print "\n1";
+	#print "\n1";
 }
 
 1;
 
-1;
+ 

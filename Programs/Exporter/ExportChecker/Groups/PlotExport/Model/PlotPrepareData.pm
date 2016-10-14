@@ -117,14 +117,14 @@ sub __SetDefaultLayers{
 		# whatever with "c" is mirrored
 		if ( $l->{"gROWname"} =~ /^[pm]*c$/i ) {
 
-			$l->{"mirror"} = "yes";
+			$l->{"mirror"} = 1;
 
 		}
 
 		# whatever with "s" is not mirrored
 		elsif ( $l->{"gROWname"} =~ /^[pm]*s$/i ) {
 
-			$l->{"mirror"} = "no";
+			$l->{"mirror"} = 0;
 
 		}
 
@@ -135,12 +135,12 @@ sub __SetDefaultLayers{
 
 			if ( $side eq "top" ) {
 
-				$l->{"mirror"} = "yes";
+				$l->{"mirror"} = 1;
 
 			}
 			else {
 
-				$l->{"mirror"} = "no";
+				$l->{"mirror"} = 0;
 			}
 		}
 	}
@@ -171,6 +171,7 @@ sub __GetFinalLayers {
 
 		my %lInfo = ();
 
+		$lInfo{"plot"}     = 1;
 		$lInfo{"name"}     = $l->{"gROWname"};
 		$lInfo{"polarity"} = $l->{"polarity"};
 		$lInfo{"mirror"}   = $l->{"mirror"};

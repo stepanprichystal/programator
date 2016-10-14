@@ -248,19 +248,19 @@ sub __OnClick {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	my $test = Programs::Exporter::ExportUtility::ExportUtility::Forms::ErrorIndicatorMenu->new( undef, "f13608", EnumsGeneral->MessageType_WARNING );
-	use aliased 'Packages::ItemResult::ItemResultMngr';
+	#my $test = Programs::Exporter::ExportUtility::ExportUtility::Forms::ErrorIndicatorMenu->new( undef, "f13608", EnumsGeneral->MessageType_WARNING );
+	#use aliased 'Packages::ItemResult::ItemResultMngr';
 
-	my $mngr  = ItemResultMngr->new();
-	my $mngr1 = ItemResultMngr->new();
+	#my $mngr  = ItemResultMngr->new();
+	#my $mngr1 = ItemResultMngr->new();
 
-	$test->AddItem( "test",  $mngr );
-	$test->AddItem( "test2", $mngr1 );
+	#$test->AddItem( "test",  $mngr );
+	#$test->AddItem( "test2", $mngr1 );
 
-	$test->MainLoop();
+	#$test->MainLoop();
 }
 
-1;
+ 
 
 1;
 

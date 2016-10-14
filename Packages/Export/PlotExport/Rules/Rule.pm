@@ -97,7 +97,7 @@ sub GetOrientation{
 	
 }
  
-1;
+#1;
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
@@ -108,9 +108,9 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	#my $self             = shift;
 	#	my $inCAM            = shift;
 
-	use aliased 'HelperScripts::DirStructure';
+	#use aliased 'HelperScripts::DirStructure';
 
-	DirStructure->Create();
+	#DirStructure->Create();
 
 }
 

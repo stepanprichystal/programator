@@ -321,7 +321,7 @@ sub GetStraightScore {
 	  return @lines;
 }
 
-1;
+#1;
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
@@ -331,9 +331,9 @@ if (0) {
 
 	  #hybna oprava SCORE f14622, Nezkrati liny v o+1, pokud existuje o+1single f15590 . F16532, F16717 spatna oprava score u mpanelu
 
-	  my $changes   = 0;
-	  my %errors    = ( "errors" => undef, "warrings" => undef );
-	  my $fFeatures = "o2.txt";
+	 # my $changes   = 0;
+	 # my %errors    = ( "errors" => undef, "warrings" => undef );
+	 # my $fFeatures = "o2.txt";
 
 	  #my @scoreFeatures = ScoreOptimalizationHelper->GetFeatures($fFeatures);
 
@@ -355,7 +355,7 @@ if (0) {
 	  #	@scoreFeatures =
 	  #	  ScoreOptimalization->AdaptScoreToProfile( \@scoreFeatures, \%profileLimts, 4, \%errors );
 
-	  print 1;
+	 # print 1;
 
 }
 
