@@ -105,9 +105,9 @@ sub __SetLayoutQuickSettings {
 	my $polarityCb = Wx::ComboBox->new( $statBox, -1, $polar[0], &Wx::wxDefaultPosition, [ 50, 22 ], \@polar, &Wx::wxCB_READONLY );
 	
 	my $fontPolar =
-	  Wx::Font->new( 12, &Wx::wxFONTFAMILY_DEFAULT  , &Wx::wxFONTSTYLE_NORMAL, &Wx::wxFONTWEIGHT_BOLD );
+	  Wx::Font->new( 11, &Wx::wxFONTFAMILY_DEFAULT  , &Wx::wxFONTSTYLE_NORMAL, &Wx::wxFONTWEIGHT_MAX );
 	
-	#$polarityCb->SetFont($fontPolar);
+	$polarityCb->SetFont($fontPolar);
 	
 	my $mirrorChb = Wx::CheckBox->new( $statBox, -1, "", [ -1, -1 ], [ 30, 22 ] );
 	my $compTxt = Wx::TextCtrl->new( $statBox, -1, "0", &Wx::wxDefaultPosition, [ 50, 22 ] );
@@ -283,8 +283,8 @@ sub SetLayers {
 sub GetLayers {
 	my $self  = shift;
 	
-	my @layers = shift;
-	my @rows = $self->{"plotList"}->GetSelectedRows();
+	my @layers = ();
+	my @rows = $self->{"plotList"}->GetAllRows();
 
 	foreach my $r (@rows){
 		
@@ -294,7 +294,7 @@ sub GetLayers {
 		
 	}
 
-	return @layers;
+	return \@layers;
 }
 
 1;

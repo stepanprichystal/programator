@@ -61,15 +61,15 @@ sub Build {
 
 	my $row1Tab1 = $tableTab1->AddRow();
 	$row1Tab1->AddCell($nifUnit1, Enums->Width_50);
-	$row1Tab1->AddCell($ncUnit1, Enums->Width_25);
-	$row1Tab1->AddCell($aoiUnit1, Enums->Width_25);
+	$row1Tab1->AddCell($plotUnit1, Enums->Width_50);
+	
 
 	#$row1Tab1->AddCell($nifUnit2);
 
 
 	my $row2Tab1 = $tableTab1->AddRow();
-	
-	$row2Tab1->AddCell($plotUnit1, Enums->Width_50);
+	$row2Tab1->AddCell($ncUnit1, Enums->Width_25);
+	$row2Tab1->AddCell($aoiUnit1, Enums->Width_25);
 	$row2Tab1->AddCell($etUnit1, Enums->Width_25);
 	#$row2Tab1->AddCell($ncUnit3);
 

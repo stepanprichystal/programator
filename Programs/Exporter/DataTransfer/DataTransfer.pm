@@ -66,7 +66,7 @@ sub __BuildExportData {
 
 		# 1), prepare unit data
  
- 		my %unitsData = $self->{"units"}->GetExportData();
+ 		my %unitsData = $self->{"units"}->GetExportData(1);
  
 		foreach my $unitId ( keys %unitsData ) {
 

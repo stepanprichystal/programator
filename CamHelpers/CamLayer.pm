@@ -141,6 +141,20 @@ sub GetMarkingLayers {
 	return @res;
 }
 
+# Display single layer and set as work layer
+sub SetLayerTypeLayer{
+	my $self   = shift;
+	my $inCAM  = shift;
+	my $jobId  = shift;
+	my $layer  = shift;
+	my $type  = shift;
+	
+	$inCAM->COM("matrix_layer_type","job" => $jobId,"matrix" => "matrix","layer" => $layer,"type" => $type);
+
+}
+
+
+
 
 # Display single layer and set as work layer
 sub WorkLayer{

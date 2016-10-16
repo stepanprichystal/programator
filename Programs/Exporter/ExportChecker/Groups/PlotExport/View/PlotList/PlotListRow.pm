@@ -87,7 +87,7 @@ sub __SetLayout {
 	  Wx::ComboBox->new( $self->{"parent"}, -1, $polar[0], &Wx::wxDefaultPosition, [ 10, $self->{"rowHeight"} ], \@polar, &Wx::wxCB_READONLY );
 	
 	my $fontPolar =
-	  Wx::Font->new( 10, &Wx::wxFONTFAMILY_DEFAULT  , &Wx::wxFONTSTYLE_NORMAL, &Wx::wxFONTWEIGHT_MAX   );
+	  Wx::Font->new( 11, &Wx::wxFONTFAMILY_DEFAULT  , &Wx::wxFONTSTYLE_NORMAL, &Wx::wxFONTWEIGHT_MAX   );
 	
 	#$polarityCb->SetFont($fontPolar);
 	my $mirrorChb = Wx::CheckBox->new( $self->{"parent"}, -1, "", [ -1, -1 ], [ 10, $self->{"rowHeight"} ] );
@@ -95,7 +95,7 @@ sub __SetLayout {
 	my $compTxt = Wx::TextCtrl->new( $self->{"parent"}, -1, "", &Wx::wxDefaultPosition, [ 20, $self->{"rowHeight"} ] );
 
 	my $arrowTxt = Wx::StaticText->new( $self->{"parent"}, -1, "       ==>", &Wx::wxDefaultPosition, [ 20, $self->{"rowHeight"} ] );
-	$arrowTxt->SetFont($Widgets::Style::fontLblBold);
+	#$arrowTxt->SetFont($Widgets::Style::fontLblBold);
 
 	my $film1Frm = FilmForm->new( $self->{"parent"}, $self->{"filmRuleSet1"}, $self->{"rowHeight"});
 	my $film2Frm = FilmForm->new( $self->{"parent"}, $self->{"filmRuleSet2"}, $self->{"rowHeight"} );
@@ -167,9 +167,9 @@ sub GetLayerValues {
 
 	my %lInfo = ();
 	
-	#$lInfo{"name"} = $self->GetRowText();
+	$lInfo{"name"} = $self->GetRowText();
 	
-	$lInfo{"polarity"} = $self->IsSelected();
+	$lInfo{"plot"} = $self->IsSelected();
 	
 	$lInfo{"polarity"} = $self->{"polarityCb"}->GetValue();
 

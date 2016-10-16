@@ -37,7 +37,7 @@ sub new {
 
 	$self->{"ruleResult"} = $ruleResult;
 
-	$self->{"notActiveClr"} = Wx::Colour->new( 200, 200, 200 );
+	$self->{"notActiveClr"} = Wx::Colour->new( 230, 230, 230 );
 
 	$self->__SetLayout();
 
@@ -65,13 +65,13 @@ sub __SetLayout {
 	# DEFINE PANELS
 
 	my $framePnl = Wx::Panel->new( $self, -1, &Wx::wxDefaultPosition );
-	$framePnl->SetBackgroundColour( Wx::Colour->new( 150, 150, 150 ) );
+	$framePnl->SetBackgroundColour( Wx::Colour->new( 200, 200, 200 ) );
 
 	my $colorPnl = Wx::Panel->new( $framePnl, -1, &Wx::wxDefaultPosition );
 	$colorPnl->SetBackgroundColour( $self->{"notActiveClr"} );
 
 	my $infoPnl = Wx::Panel->new( $colorPnl, -1, &Wx::wxDefaultPosition );
-	$infoPnl->SetBackgroundColour( Wx::Colour->new( 223, 223, 223 ) );
+	$infoPnl->SetBackgroundColour( Wx::Colour->new( 200, 200, 200 ) );
 
 	# DEFINE CONTROLS
 

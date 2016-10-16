@@ -316,6 +316,15 @@ sub __OnResultPopupHandler {
 	my $resultType = shift;
 	my $exportMode = shift;
 
+	
+	# After close popup window is necessery Re-connect to income server
+	# Because checking was processed in child thread and was connected
+	# to this income server
+
+	$self->__Connect();
+	
+	 
+
 	my $active = 1;
 	my $toProduce = $self->{"form"}->GetToProduce($active);
 
@@ -362,11 +371,7 @@ sub __OnResultPopupHandler {
 
 	}
 
-	# After close popup window is necessery Re-connect to income server
-	# Because checking was processed in child thread and was connected
-	# to this income server
 
-	$self->__Connect();
 
 	$self->{"disableForm"} = 0;
 	$self->__RefreshForm();
@@ -418,7 +423,17 @@ sub __Connect {
 	print STDERR "RESULT is $result";
 
 	# if test ok, connect inCAM library to server
-	$self->{"inCAM"} = InCAM->new( "port" => $port );
+	if($self->{"inCAM"}){
+		
+		$self->{"inCAM"}->Reconnect();
+	}else{
+		
+		$self->{"inCAM"} = InCAM->new( "port" => $port );
+	}
+	
+
+
+
 
 	return $result;
 }

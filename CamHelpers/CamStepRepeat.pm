@@ -175,16 +175,16 @@ sub DeleteStepAndRepeat {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-<<<<<<< HEAD
-	use aliased 'CamHelpers::CamStepRepeat';
-	use aliased 'Packages::InCAM::InCAM';
 
-	my $inCAM = InCAM->new();
-	my $jobId = "f13610";
-	my $step  = "mpanel_10up";
+#	use aliased 'CamHelpers::CamStepRepeat';
+	#use aliased 'Packages::InCAM::InCAM';
 
-	my @steps = CamStepRepeat->GetUniqueNestedStepAndRepeat( $inCAM, $jobId, $step );
-=======
+#	my $inCAM = InCAM->new();
+#	my $jobId = "f13610";
+#my $step  = "mpanel_10up";
+
+	#my @steps = CamStepRepeat->GetUniqueNestedStepAndRepeat( $inCAM, $jobId, $step );
+
 	#my $self             = shift;
 	#	my $inCAM            = shift;
 	#	my $jobName          = shift;
@@ -228,7 +228,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	#print $test2{"area"};
 	#print "\n";
 	#print $test2{"percentage"};
->>>>>>> refs/heads/OPFX
+
 
 	#print 1;
 

@@ -96,7 +96,7 @@ sub CheckBeforeExport {
 
 sub GetGroupState {
 	my $self  = shift;
-	my $inCAM = shift;
+
 
 	my $groupState = $self->{"dataMngr"}->GetGroupState();
 
@@ -117,10 +117,8 @@ sub SetGroupState {
 
 sub GetExportData {
 	my $self  = shift;
-	my $inCAM = shift;
+	
 
-	# Necessery set new incam library
-	$self->{"dataMngr"}->{"inCAM"} = $inCAM;
 
 	return $self->{"dataMngr"}->ExportGroupData();
 

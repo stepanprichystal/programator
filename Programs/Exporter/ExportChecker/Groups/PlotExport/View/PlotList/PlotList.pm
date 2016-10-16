@@ -114,7 +114,7 @@ sub __SetLayout {
 	
 	$self->SetHeader( $self->{"titles"} );
 
-	$self->SetVerticalLine( Wx::Colour->new( 163, 163, 163 ) );
+	$self->SetVerticalLine( Wx::Colour->new( 206, 206, 206 ) );
 	
 	$self->SetHeaderBackgroundColor(Wx::Colour->new( 240, 240, 240 ) );
 

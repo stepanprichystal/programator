@@ -7,19 +7,138 @@ package Packages::Routing::RoutingOperation;
 #3th party library
 use strict;
 use warnings;
+use Math::Polygon;
+use List::Util qw[max];
 
 #local library
 
 use aliased 'Helpers::GeneralHelper';
- 
+
 use aliased 'CamHelpers::CamHelper';
 use aliased 'Helpers::FileHelper';
 use aliased 'Packages::Polygon::Features::RouteFeatures::RouteFeatures';
 use aliased 'Enums::EnumsPaths';
+use aliased 'CamHelpers::CamLayer';
+use aliased 'CamHelpers::CamJob';
+use aliased 'Packages::Polygon::Features::PolyLineFeatures::PolyLineFeatures';
 
 #-------------------------------------------------------------------------------------------#
 #  Script methods
 #-------------------------------------------------------------------------------------------#
+
+sub GetMaxAreaOfRout {
+	my $self     = shift;
+	my $inCAM    = shift;
+	my $jobId    = shift;
+	my $stepName = shift;
+	my $layer    = shift;
+
+	my @areas = $self->GetAreasOfRout( $inCAM, $jobId, $stepName, $layer );
+
+	my $max = max(@areas);
+
+	return $max;
+
+}
+
+# List of computed areas for each plated rout in flatterned step in layer "r"
+sub GetAreasOfRout {
+	my $self     = shift;
+	my $inCAM    = shift;
+	my $jobId    = shift;
+	my $stepName = shift;
+	my $layer    = shift;
+
+	CamLayer->WorkLayer( $inCAM, $layer );
+
+	my $flatL = GeneralHelper->GetGUID();
+	my $compL = GeneralHelper->GetGUID();
+
+	$inCAM->COM( 'flatten_layer', "source_layer" => $layer, "target_layer" => $flatL );
+	CamLayer->SetLayerTypeLayer( $inCAM, $jobId, $flatL, "rout" );
+	$inCAM->COM( "compensate_layer", "source_layer" => $flatL, "dest_layer" => $compL, "dest_layer_type" => "document" );
+
+	CamLayer->WorkLayer( $inCAM, $compL );
+
+	my %limits      = CamJob->GetProfileLimits($inCAM, $jobId,$stepName);
+	my $profileArea = abs( $limits{"xmin"} - $limits{"xmax"} ) * abs( $limits{"ymin"} - $limits{"ymax"} );
+
+	$limits{"xMin"} = $limits{"xmin"};
+	$limits{"xMax"} = $limits{"xmax"};
+	$limits{"yMin"} = $limits{"ymin"};
+	$limits{"yMax"} = $limits{"ymax"};
+
+	CamLayer->NegativeLayerData( $inCAM, $compL, \%limits );
+	
+	CamLayer->WorkLayer( $inCAM, $compL );
+
+	$inCAM->COM( "sel_contourize", "accuracy" => "6.35", "break_to_islands" => "yes", "clean_hole_size" => "76.2", "clean_hole_mode" => "x_or_y" );
+
+	$inCAM->COM('adv_filter_reset');
+	$inCAM->COM('filter_area_strt');
+
+	$inCAM->COM(
+				 "adv_filter_set",
+				 "filter_name"   => "popup",
+				 "active"        => "yes",
+				 "limit_box"     => "no",
+				 "bound_box"     => "no",
+				 "srf_values"    => "yes",
+				 "min_islands"   => "0",
+				 "max_islands"   => "0",
+				 "min_holes"     => "0",
+				 "max_holes"     => "0",
+				 "min_edges"     => "0",
+				 "max_edges"     => "0",
+				 "srf_area"      => "yes",
+				 "min_area"      => "0",
+				 "max_area"      => $profileArea/2,
+				 "mirror"        => "any",
+				 "ccw_rotations" => ""
+	);
+
+	$inCAM->COM( "filter_area_end", "filter_name" => "popup", "operation" => "select" );
+	$inCAM->COM("sel_delete");
+	
+	CamLayer->NegativeLayerData( $inCAM,$compL, \%limits );
+	
+	CamLayer->WorkLayer( $inCAM, $compL );
+	
+	$inCAM->COM( "sel_contourize", "accuracy" => "6.35", "break_to_islands" => "yes", "clean_hole_size" => "76.2", "clean_hole_mode" => "x_or_y" );
+	
+
+	$inCAM->COM(
+				 "sel_feat2outline",
+				 "width"         => "100",
+				 "location"      => "on_edge",
+				 "offset"        => "0",
+				 "polarity"      => "positive",
+				 "keep_original" => "no",
+				 "text2limit"    => "no"
+	);
+	$inCAM->COM( "arc2lines", "arc_line_tol" => 25 );
+
+	my $polyLine = PolyLineFeatures->new();
+	$polyLine->Parse( $inCAM, $jobId, $stepName, $compL );
+
+	my @points = $polyLine->GetPolygonsPoints();
+	my @areas  = ();
+
+	foreach my $p (@points) {
+
+		my $p    = Math::Polygon->new( @{$p} );
+		my $area = $p->area;
+
+		push( @areas, $area );
+
+	}
+
+	$inCAM->COM( "delete_layer", "layer" => $flatL );
+	$inCAM->COM( "delete_layer", "layer" => $compL );
+
+	return @areas;
+
+}
 
 #Return final thickness of pcb base on Cu layer number
 sub AddPilotHole {
@@ -43,7 +162,7 @@ sub AddPilotHole {
 		$toolTable = EnumsPaths->InCAM_hooks . "rout_size.tab";
 	}
 
-	@tools = @{FileHelper->ReadAsLines($toolTable)};
+	@tools = @{ FileHelper->ReadAsLines($toolTable) };
 	@tools = sort { $a <=> $b } @tools;
 
 	# Get information about all chains
@@ -55,12 +174,12 @@ sub AddPilotHole {
 	foreach my $chain (@chains) {
 
 		my $chainNum  = $chain->{".rout_chain"};
-		my $chainSize = $chain->{".tool_size"} / 1000; # in mm
+		my $chainSize = $chain->{".tool_size"} / 1000;                # in mm
 		my $pilotSize = $self->GetPilotHole( \@tools, $chainSize );
 		$inCAM->COM("chain_list_reset");
-		$inCAM->COM( "chain_list_add", "chain" => $chainNum );
-		$inCAM->COM( "chain_del_pilot", "layer" => $layer ); # delete pilot if exist
-		 
+		$inCAM->COM( "chain_list_add",  "chain" => $chainNum );
+		$inCAM->COM( "chain_del_pilot", "layer" => $layer );          # delete pilot if exist
+
 		$inCAM->COM(
 					 "chain_add_pilot",
 					 "layer"          => $layer,
@@ -107,17 +226,17 @@ sub GetPilotHole {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	#use aliased 'Packages::Routing::RoutingOperation';
- 	#use aliased 'Packages::InCAM::InCAM';
+	use aliased 'Packages::Routing::RoutingOperation';
+	use aliased 'Packages::InCAM::InCAM';
 
-	#my $jobId = "f13610";
-	#my $inCAM = InCAM->new();
+	my $jobId = "f13609";
+	my $inCAM = InCAM->new();
 
-	#my $step  = "o+1";
-	#my $layer = "f";
-	#my $test = RoutingOperation->AddPilotHole( $inCAM, $jobId, $step, $layer);
+	my $step  = "panel";
+	my $layer = "r";
+	my $max   = RoutingOperation->GetMaxAreaOfRout( $inCAM, $jobId, $step, $layer );
 
-	#print $test;
+	print $max;
 
 }
 

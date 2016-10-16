@@ -125,12 +125,12 @@ sub new {
 	# presumably running under Genesis. In this case use stdin and stdout as is.
 	# If, on the other hand, stdin is a tty, then we are running remotely, in which case
 	# set up the communications, namely the socket, so that we communicate.
-
+	$self->{"forcePipe"}       = $forcePipe;
 	$self->{"remote"}          = $remote;
 	$self->{"HandleException"} = 1;
-	$self->{"socket"}          = undef;     #socket for debuging
+	$self->{"socket"}          = undef;        #socket for debuging
 	$self->{"socketOpen"}      = 0;
-	$self->{"connected"}       = 0;         #say if is library connected to InCAM/Genesis editor
+	$self->{"connected"}       = 0;            #say if is library connected to InCAM/Genesis editor
 	$self->{"comms"}           = "pipe";
 	my @cmds = ();
 	$self->{"cmdHistory"} = \@cmds;
@@ -139,15 +139,15 @@ sub new {
 		$self->{"port"} = $port;
 	}
 	else {
-		$self->{"port"} = $defaultPort;     #default port number
+		$self->{"port"} = $defaultPort;        #default port number
 	}
 
-	$self->{"exception"} = undef ; # if some error ocured, excepto=ion is saved here
-	
+	$self->{"exception"} = undef;              # if some error ocured, excepto=ion is saved here
+
 	# array of exception
-	# Here are all exception, which start 
+	# Here are all exception, which start
 	# after calling method HandleException(1) and befrore calling HandleException(0)
-	$self->{"exceptions"} = (); 
+	$self->{"exceptions"} = ();
 
 	# The port has not been defined. To define it you need to
 	# become root and add the following line in /etc/services
@@ -155,17 +155,33 @@ sub new {
 
 	# this is appended to tmp info file
 	# provide unique  file name for different perl thread
-	$self->{"incamGUID"} =   GeneralHelper->GetGUID();
+	$self->{"incamGUID"} = GeneralHelper->GetGUID();
 
 	bless $self, $class;
 
+	$self->__Connect();
+
 	#if (-t STDIN) {
 
-	my $start = Time::HiRes::gettimeofday();
+	#my $start = Time::HiRes::gettimeofday();
+
+	#print STDERR "\n\n%%%%%%%%%%%%%%%%%% connected ".$self->{"socket"}. " - ".$self->{socketOpen}." %%%%%%%%%%%%%%%%\n\n";
+
+	return $self;
+}
+
+sub Reconnect {
+	my $self = shift;
+	
+	$self->__Connect();
+}
+
+sub __Connect {
+	my $self = shift;
 
 	my $sOpen = 0;
 
-	unless ($forcePipe) {
+	unless ( $self->{"forcePipe"} ) {
 		$sOpen = $self->openSocket();    #try to connect ro server (debug mode)
 	}
 
@@ -191,7 +207,7 @@ sub new {
 	# Test if script run from InCAM (LOGNAME is present)
 	elsif ( !( -t STDIN ) && $ENV{"LOGNAME"} ) {
 
-		my $end = Time::HiRes::gettimeofday();
+		#my $end = Time::HiRes::gettimeofday();
 
 		#printf( "%.2f\n", $end - $start );
 		$self->{comms} = 'pipe';
@@ -205,9 +221,6 @@ sub new {
 
 	binmode(STDOUT);
 
-	#print STDERR "\n\n%%%%%%%%%%%%%%%%%% connected ".$self->{"socket"}. " - ".$self->{socketOpen}." %%%%%%%%%%%%%%%%\n\n";
-
-	return $self;
 }
 
 sub DESTROY {
@@ -485,7 +498,6 @@ sub MOUSE {
 	$self->{MOUSEANS} = $self->__GetReply();
 }
 
-
 #
 #sub RunHook {
 #	my $self  = shift;
@@ -496,23 +508,23 @@ sub MOUSE {
 #	my $name = $cmd.".".$type;
 #
 #	my $usrName = "stepan";
-#	 
-#	use aliased 'Enums::EnumsPaths'; 
+#
+#	use aliased 'Enums::EnumsPaths';
 #
 #	#determine if take user or site file dtm_user_columns
 #	my $path = EnumsPaths->InCAM_users . $usrName . "\\hooks\\line_hooks\\".$name;
 #
 #	unless ( -e $path ) {
 #		$path = EnumsPaths->InCAM_hooks . "\\hooks\\line_hooks\\".$name;
-#		
+#
 #		unless(-e $path){
 #			return 0;
 #		}
 #	}
-#	
+#
 #	system($^X, $path, $file);
-#	
-#	
+#
+#
 #}
 
 # Send a command
@@ -524,10 +536,9 @@ sub COM {
 	}
 
 	$self->{"exception"} = undef;
-	
-	# TODO clear doinfo first 
+
+	# TODO clear doinfo first
 	#$self->{doinfo} = undef;
-	
 
 	my $command;
 	if ( @_ == 1 ) {
@@ -537,33 +548,31 @@ sub COM {
 	else {
 		$command = shift;
 		my $onlyCmd = $command;
+
 		#my $onlyCmd = $command;
-		my %args    = @_;
+		my %args = @_;
 		foreach ( keys %args ) {
 			$command .= ",$_=$args{$_}";
 		}
- 
+
 		#my $argsFile  = "$ENV{GENESIS_DIR}/tmp/info_csh.$$";
 		#my $argsFile  = "c:/Export/rrrr".$$;
 		#open(FILE, ">$argsFile");
-		 
-#		 my $keys = "";
-#		  my $vals = "";
-#		foreach my $k ( keys %args ) {
-#			$keys .= " $k";
-#			 $vals .= " ". $args{$k};
-#			
-#		}
-#		
-#		print FILE "set lnPARAM = ( ".$keys.")\n"; 
-#		print FILE "set lnVAL = (".$vals.")\n";
-#		 
-		 
-		
-		
-		
+
+		#		 my $keys = "";
+		#		  my $vals = "";
+		#		foreach my $k ( keys %args ) {
+		#			$keys .= " $k";
+		#			 $vals .= " ". $args{$k};
+		#
+		#		}
+		#
+		#		print FILE "set lnPARAM = ( ".$keys.")\n";
+		#		print FILE "set lnVAL = (".$vals.")\n";
+		#
+
 		$self->sendCommand( "COM", $command );
-		
+
 		#$self->RunHook("post", $onlyCmd, $argsFile);
 	}
 
@@ -576,16 +585,16 @@ sub COM {
 	if ( $self->{STATUS} > 1 ) {
 
 		#print STDERR "COMMANS\n\n$self->{COMANS}\n\n STOP COMMANS\n\n";
-		my $ex =  InCamException->new( $self->{STATUS}, $self->{"cmdHistory"} );
-		
+		my $ex = InCamException->new( $self->{STATUS}, $self->{"cmdHistory"} );
+
 		$self->{"exception"} = $ex;
-		push(@{$self->{"exceptions"}}, $ex);  
+		push( @{ $self->{"exceptions"} }, $ex );
 
 		if ( $self->{"HandleException"} == 0 ) {
 			die $self->{"exception"};
 
 		}
- 
+
 	}
 
 	return $self->{STATUS};
@@ -623,19 +632,19 @@ sub GetExceptionError {
 	}
 }
 
-# Return last exceptions errors text after calling method HandleException(1) 
+# Return last exceptions errors text after calling method HandleException(1)
 # and befrore calling HandleException(0)
 sub GetExceptionsError {
 	my ($self) = shift;
-	
+
 	my @exceptions = ();
 
 	if ( $self->{"exceptions"} ) {
 
-		@exceptions = map {$_->Error()} @{$self->{"exceptions"}};
+		@exceptions = map { $_->Error() } @{ $self->{"exceptions"} };
 	}
-	
-	return \@exceptions;	
+
+	return \@exceptions;
 }
 
 sub COM_test {
@@ -717,8 +726,8 @@ sub HandleException {
 	if ($value) {
 		$self->VOF();
 		$self->{"HandleException"} = 1;
-		
-		$self->{"exceptions"} = (); # clear array of exceptions
+
+		$self->{"exceptions"} = ();    # clear array of exceptions
 
 		$self->{"exceptions"} = ();    # clear array of exceptions
 
@@ -736,7 +745,7 @@ sub parse {
 	my ($request) = shift;
 
 	# TODO smazat GUID
-	my $csh_file = "$ENV{GENESIS_DIR}/tmp/info_csh.".$$ . $self->{"incamGUID"};
+	my $csh_file = "$ENV{GENESIS_DIR}/tmp/info_csh." . $$ . $self->{"incamGUID"};
 
 	#my $csh_file  = "$ENV{GENESIS_DIR}/tmp/info_csh.$$abc";
 	$request =~ s/\$csh_file/$csh_file/;
@@ -761,7 +770,7 @@ sub parse {
 			@words = shellwords($value);                   # This is a standard part of the Perl library
 			grep { s/\Q<^M>/\cM/g } @words;
 			$self->{doinfo}{$var} = [@words];
-			
+
 			# TODO odkomentovat
 			$self->{$var} = [@words];
 		}
@@ -770,7 +779,7 @@ sub parse {
 			$value =~ s/^'|'$//g;
 
 			$self->{doinfo}{$var} = $value;
-			
+
 			# TODO odkomentovat
 			$self->{$var} = $value;
 		}
@@ -830,7 +839,7 @@ sub INFO {
 	else {
 
 		# TODO smazat GUID
-		my $csh_file = "$ENV{GENESIS_DIR}/tmp/info_csh.".$$ . $self->{"incamGUID"};
+		my $csh_file = "$ENV{GENESIS_DIR}/tmp/info_csh." . $$ . $self->{"incamGUID"};
 
 		#my $csh_file = "$ENV{GENESIS_DIR}/tmp/info_csh.$$abc";
 		$info_com =~ s/\$csh_file/$csh_file/;
