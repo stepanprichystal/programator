@@ -21,10 +21,59 @@ use aliased 'Enums::EnumsPaths';
 use aliased 'CamHelpers::CamLayer';
 use aliased 'CamHelpers::CamJob';
 use aliased 'Packages::Polygon::Features::PolyLineFeatures::PolyLineFeatures';
+use aliased 'Enums::EnumsGeneral';
+use aliased 'CamHelpers::CamDrilling';
 
 #-------------------------------------------------------------------------------------------#
 #  Script methods
 #-------------------------------------------------------------------------------------------#
+
+sub PlatedAreaExceed {
+	my $self     = shift;
+	my $inCAM    = shift;
+	my $jobId    = shift;
+	my $stepName = shift;
+
+	my $maxArea = 19.5;    # approx area of hole 5mm
+
+	my $areaExceed = 0;
+
+	# Test layer "m"
+
+	if ( CamHelper->LayerExists( $inCAM, $jobId, "m" ) ) {
+		my %layer = ( "gROWname" => "m" );
+		my @layers = ( \%layer );
+
+		CamDrilling->AddHistogramValues( $inCAM, $jobId, \@layers );
+
+		if ( $layer{"minTool"} && $layer{"minTool"} > 5000 ) {
+
+			$areaExceed = 1;
+		}
+	}
+
+	# Test plated rout layers
+
+	unless ($areaExceed) {
+
+		my @rLayers = CamDrilling->GetNCLayersByType( $inCAM, $jobId, EnumsGeneral->LAYERTYPE_plt_nMill );
+
+		foreach my $r (@rLayers) {
+
+			my $lName = $r->{"gROWname"};
+
+			my $area = $self->GetMaxAreaOfRout( $inCAM, $jobId, $stepName, $lName );
+
+			if ( $area > $maxArea ) {
+				$areaExceed = 1;
+				last;
+			}
+		}
+	}
+
+	return $areaExceed;
+
+}
 
 sub GetMaxAreaOfRout {
 	my $self     = shift;
@@ -60,7 +109,7 @@ sub GetAreasOfRout {
 
 	CamLayer->WorkLayer( $inCAM, $compL );
 
-	my %limits      = CamJob->GetProfileLimits($inCAM, $jobId,$stepName);
+	my %limits = CamJob->GetProfileLimits( $inCAM, $jobId, $stepName );
 	my $profileArea = abs( $limits{"xmin"} - $limits{"xmax"} ) * abs( $limits{"ymin"} - $limits{"ymax"} );
 
 	$limits{"xMin"} = $limits{"xmin"};
@@ -69,13 +118,19 @@ sub GetAreasOfRout {
 	$limits{"yMax"} = $limits{"ymax"};
 
 	CamLayer->NegativeLayerData( $inCAM, $compL, \%limits );
-	
+
 	CamLayer->WorkLayer( $inCAM, $compL );
 
 	$inCAM->COM( "sel_contourize", "accuracy" => "6.35", "break_to_islands" => "yes", "clean_hole_size" => "76.2", "clean_hole_mode" => "x_or_y" );
 
+
+	$inCAM->COM("set_filter_type","filter_name" => "","lines" => "yes","pads" => "yes","surfaces" => "yes","arcs" => "yes","text" => "yes");
+	$inCAM->COM("set_filter_polarity","filter_name" => "","positive" => "yes","negative" => "yes");
+
 	$inCAM->COM('adv_filter_reset');
 	$inCAM->COM('filter_area_strt');
+
+	my $maxArea = $profileArea / 2;
 
 	$inCAM->COM(
 				 "adv_filter_set",
@@ -92,20 +147,19 @@ sub GetAreasOfRout {
 				 "max_edges"     => "0",
 				 "srf_area"      => "yes",
 				 "min_area"      => "0",
-				 "max_area"      => $profileArea/2,
+				 "max_area"      => $maxArea,
 				 "mirror"        => "any",
 				 "ccw_rotations" => ""
 	);
-
+ 
 	$inCAM->COM( "filter_area_end", "filter_name" => "popup", "operation" => "select" );
 	$inCAM->COM("sel_delete");
-	
-	CamLayer->NegativeLayerData( $inCAM,$compL, \%limits );
-	
+
+	CamLayer->NegativeLayerData( $inCAM, $compL, \%limits );
+
 	CamLayer->WorkLayer( $inCAM, $compL );
-	
+
 	$inCAM->COM( "sel_contourize", "accuracy" => "6.35", "break_to_islands" => "yes", "clean_hole_size" => "76.2", "clean_hole_mode" => "x_or_y" );
-	
 
 	$inCAM->COM(
 				 "sel_feat2outline",
@@ -233,8 +287,8 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	my $inCAM = InCAM->new();
 
 	my $step  = "panel";
-	my $layer = "r";
-	my $max   = RoutingOperation->GetMaxAreaOfRout( $inCAM, $jobId, $step, $layer );
+	 
+	my $max   = RoutingOperation->PlatedAreaExceed( $inCAM, $jobId, $step );
 
 	print $max;
 

@@ -20,7 +20,7 @@ my $export = NCExportTmp->new();
 
 #input parameters
  
-my $jobId = "f50225";
+my $jobId = "d16072";
  
 
 # Exportovat jednotlive vrstvy nebo vsechno
