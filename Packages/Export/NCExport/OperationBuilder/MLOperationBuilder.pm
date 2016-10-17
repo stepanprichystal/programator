@@ -225,7 +225,8 @@ sub __DefinePlatedOperations {
 		my $topSignal    = $press->GetTopSigLayer();
 		my $startTop     = $topSignal->GetNumber();
 		my $startTopName = $topSignal->GetName();
-
+		
+ 
 		#plated normal drilling "m" start from top in layer <$drillStartTop>
 		my @normalTop = grep { $_->{"gROWdrl_start"} == $startTop } @plt_nDrill;
 		push( @layers, @normalTop );

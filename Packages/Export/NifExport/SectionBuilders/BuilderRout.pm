@@ -22,7 +22,6 @@ use aliased 'CamHelpers::CamHelper';
 use aliased 'CamHelpers::CamDrilling';
 use aliased 'CamHelpers::CamRouting';
 
-
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
@@ -46,10 +45,10 @@ sub Build {
 	my %nifData  = %{ $self->{"nifData"} };
 
 	# comment
-	$section->AddComment( " Frezovani skrz ");
+	$section->AddComment(" Frezovani skrz ");
 
 	# comment
-	$section->AddComment( " Frezovani Pred Leptanim " );
+	$section->AddComment(" Frezovani Pred Leptanim ");
 
 	#freza_pred_leptanim
 	if ( $self->_IsRequire("freza_pred_leptanim") ) {
@@ -59,8 +58,8 @@ sub Build {
 		$section->AddRow( "freza_pred_leptanim", $rsExist );
 	}
 
-	# comment 
-	$section->AddComment( " Frezovani Pred Prokovem " );
+	# comment
+	$section->AddComment(" Frezovani Pred Prokovem ");
 
 	#freza_pred (freza pred prokovem)
 	if ( $self->_IsRequire("frezovani_pred") ) {
@@ -85,7 +84,7 @@ sub Build {
 	}
 
 	#comment*
-	$section->AddComment( "Frezovani Po Prokovu " );
+	$section->AddComment("Frezovani Po Prokovu ");
 
 	#freza_po (freza po prokovu)
 	if ( $self->_IsRequire("frezovani_po") ) {
@@ -138,7 +137,7 @@ sub Build {
 	}
 
 	# comment
-	$section->AddComment( " Hloubkove Frezovani Pred Prokovem S " );
+	$section->AddComment(" Hloubkove Frezovani Pred Prokovem S ");
 
 	#freza_hloubkova_pred_s
 	if ( $self->_IsRequire("frezovani_hloubkove_pred_s") ) {
@@ -162,7 +161,7 @@ sub Build {
 	}
 
 	# comment
-	$section->AddComment( " Hloubkove Frezovani Po Prokovu C ");
+	$section->AddComment(" Hloubkove Frezovani Po Prokovu C ");
 
 	#freza_hloubkova_po_c
 	if ( $self->_IsRequire("frezovani_hloubkove_po_c") ) {
@@ -186,7 +185,7 @@ sub Build {
 	}
 
 	# comment
-	$section->AddComment( " Hloubkove Frezovani Po Prokovu S " );
+	$section->AddComment(" Hloubkove Frezovani Po Prokovu S ");
 
 	#freza_hloubkova_po_s
 	if ( $self->_IsRequire("frezovani_hloubkove_po_s") ) {
@@ -254,16 +253,28 @@ sub __GetRoutDistance {
 	my $inCAM     = $self->{"inCAM"};
 	my $jobId     = $self->{"jobId"};
 
-	my $total = 0;
+	my $total = undef;
 
 	my @res = CamDrilling->GetNCLayersByType( $inCAM, $jobId, $layerType );
+	
+	
+	# If Exist fsch, then compute only f length, not f + fsch
+	@res = grep { $_->{"gROWname"} ne "fsch"} @res;
+	
+
+	# if there is no rout return
+	unless ( scalar(@res) ) {
+
+		$total = "";
+		return $total;
+	}
 
 	foreach my $layer (@res) {
 
 		my $tmpL = GeneralHelper->GetGUID();
 
-		CamHelper->OpenStep( $inCAM, $jobId, $stepName );
- 
+		CamHelper->SetStep( $inCAM, $stepName );
+
 		#$inCAM->COM( 'tools_reload');
 		#$inCAM->COM( 'tools_tab_reset');
 		$inCAM->COM( 'compensate_layer', source_layer => $layer->{"gROWname"}, dest_layer => $tmpL, dest_layer_type => 'rout' );
@@ -272,17 +283,23 @@ sub __GetRoutDistance {
 		my @length = @{ $inCAM->{doinfo}{gTOOLslot_len} };
 		my @count  = @{ $inCAM->{doinfo}{gTOOLcount} };
 
+		if ( scalar(@length) && !defined $total ) {
+			$total = 0;
+		}
+
 		for ( my $i = 0 ; $i < scalar(@length) ; $i++ ) {
 			$total += ( $count[$i] * $length[$i] );
 		}
-		
+
 		$inCAM->COM( 'delete_layer', layer => $tmpL );
 	}
 
-	$total = sprintf "%.2f", ( $total / 1000 );
+	if ($total) {
+		$total = sprintf "%.2f", ( $total / 1000 );
 
-	if ( $total == 0 ) {
-		$total = "";
+		if ( $total == 0 ) {
+			$total = "";
+		}
 	}
 
 	return $total;

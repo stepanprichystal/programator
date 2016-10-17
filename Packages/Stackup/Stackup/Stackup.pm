@@ -98,7 +98,7 @@ sub GetThickByLayerName {
 	my $lCuIsOuter = $lCuNumber == 1 || $lCuNumber == $lCuCount ? 1 : 0;
 
 	#when given Cu layer <$lCuNumber> is surounded by prepregs, thus it means progressive lamination
-	my $isProgLamin = $nearestCoreIdx == -1 ? 1 : 0;
+	my $isProgLamin = $self->ProgressLamination();
 
 	#Calculation thickness base on stackup properties
 	if ($lCuIsOuter) {    #we want total thick of pcb
@@ -240,22 +240,22 @@ sub GetStackupType {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	#use aliased 'Packages::Stackup::Stackup::Stackup';
+	use aliased 'Packages::Stackup::Stackup::Stackup';
 
-	#my $stackup = Stackup->new("f13609");
+	my $stackup = Stackup->new("F11680");
 	#my $stackup = Stackup->new("d99991");
 
-	#	print $stackup->GetFinalThick();
-	#	my @cores = $stackup->GetAllCores();
+		print $stackup->GetFinalThick();
+		my @cores = $stackup->GetAllCores();
 #
-	#	my $cuLayer = $stackup->GetCuLayer("v2");
+		my $cuLayer = $stackup->GetCuLayer("v2");
 	#
-	#	print $cuLayer->GetThick();
+		print $cuLayer->GetThick();
 	#
-	#	print $cuLayer->GetCopperName();
+		print $cuLayer->GetCopperName();
  
 
-#	print 1;
+	print 1;
 }
 
 1;

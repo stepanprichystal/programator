@@ -108,6 +108,17 @@ sub OpenStep {
 }
 
 
+# Set step in InCAM
+sub SetStep {
+	my $self     = shift;
+	my $inCAM    = shift;
+	my $stepName = shift;
+ 
+	$inCAM->COM( "set_step", "name" => $stepName );
+}
+ 
+
+
 # Open given job
 sub SaveAndCloseJob {
 	my $self    = shift;

@@ -186,12 +186,12 @@ sub GetMaska01 {
 sub SetPressfit {
 	my $self  = shift;
 	my $value = shift;
-	$self->{"data"}->{"pressfit"} = $value;
+	$self->{"data"}->{"merit_presfitt"} = $value;
 }
 
 sub GetPressfit {
 	my $self  = shift;
-	return $self->{"data"}->{"pressfit"};
+	return $self->{"data"}->{"merit_presfitt"};
 }
 
 #notes

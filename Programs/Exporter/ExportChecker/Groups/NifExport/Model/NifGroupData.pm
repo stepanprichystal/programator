@@ -176,24 +176,24 @@ sub GetMaska01 {
 sub SetPressfit {
 	my $self  = shift;
 	my $value = shift;
-	$self->{"data"}->{"pressfit"} = $value;
+	$self->{"data"}->{"merit_presfitt"} = $value;
 }
 
 sub GetPressfit {
 	my $self  = shift;
-	return $self->{"data"}->{"pressfit"};
+	return $self->{"data"}->{"merit_presfitt"};
 }
 
 #notes
 sub SetNotes {
 	my $self  = shift;
 	my $value = shift;
-	$self->{"data"}->{"notes"} = $value;
+	$self->{"data"}->{"poznamka"} = $value;
 }
 
 sub GetNotes {
 	my $self  = shift;
-	return $self->{"data"}->{"notes"};
+	return $self->{"data"}->{"poznamka"};
 }
 
 #datacode

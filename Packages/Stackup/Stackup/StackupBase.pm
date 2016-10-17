@@ -131,7 +131,7 @@ sub __SetStackupLayers {
 				$layerInfo->{"parent"}   = 1;
 
 				# push all child prepregs to parent prepreg
-				 
+
 				my $layerInfo2 = $stackupList[$i];
 
 				while ( $layerInfo2->GetType() eq Enums->MaterialType_PREPREG ) {
@@ -151,7 +151,7 @@ sub __SetStackupLayers {
 				}
 			}
 		}
-		
+
 		push( @thickList, $layerInfo );
 	}
 
@@ -171,7 +171,7 @@ sub __GetStackupLayerInfo {
 
 	my $stcFile = FileHelper->GetFileNameByPattern( EnumsPaths->Jobs_STACKUPS, $pcbId );
 	print STDERR " SLOZENI Filter = $stcFile\n";
-	
+
 	my $fStackupXml = undef;
 
 	#check validation of pcb's stackup xml file
@@ -296,7 +296,7 @@ sub __GetStackupLayerInfo {
 				$l->{"copperName"} = "c";
 
 			}
-			elsif ( $l->{"copperNumber"} == scalar(@thickList) ) {
+			elsif ( $l->{"copperNumber"} == $copperCnt ) {
 				$l->{"copperName"} = "s";
 			}
 			else {
@@ -360,33 +360,51 @@ sub __SetStackupPressInfo {
 
 	my %pressInfo = ();
 
-	for ( my $i = scalar( $lCuCount / 2 ) ; $i >= 0 ; $i-- ) {
+	for ( my $i = int( $lCuCount / 2 ) ; $i >= 0 ; $i-- ) {
 
 		#for inner layers only
 		my $nearestCoreIdx = $self->_GetIndexOfNearestCore( $i + 1 );
 
 		#if TOP
-		if ( $nearestCoreIdx == -1 || $i + 1 == 1 ) {
 
-			$self->{"pressCount"}++;
+		#if core was found OR if wasn't but there is no pressing already ( two pressed cores together)
+		if ( $nearestCoreIdx == -1 || $i == 0 && $nearestCoreIdx && $self->{"pressCount"} == 0 ) {
 
 			my $order = $self->{"pressCount"};
+			$order++;
 
 			my $stackupPress = StackupPress->new();
 
-			$stackupPress->{"order"}     = $order;
-			$stackupPress->{"top"}       = $lNames[$i];
-			$stackupPress->{"topNumber"} = $i + 1;
-			$stackupPress->{"bot"}       = $lNames[ $lCuCount - $i - 1 ];
-			$stackupPress->{"botNumber"} = $lCuCount - $i;
+			# Cores was not found, it is mean, first/last copper without core
+			# Or inner copper without core => lamination
+			if ( $nearestCoreIdx == -1 ) {
 
+				$stackupPress->{"top"}       = $lNames[$i];
+				$stackupPress->{"topNumber"} = $i + 1;
+				$stackupPress->{"bot"}       = $lNames[ $lCuCount - $i - 1 ];
+				$stackupPress->{"botNumber"} = $lCuCount - $i;
+
+				#if it is not TOP layer, its mean progressive lamination
+				if ( $i + 1 != 1 ) {
+
+					$self->{"lamination"} = 1;
+				}
+
+			}
+
+			# Two pressed cores together, cores are entirely on top + bot
+			elsif ( $i == 0 && $nearestCoreIdx > -1 && $self->{"pressCount"} == 0 ) {
+
+				$stackupPress->{"top"}       = $lNames[$i];
+				$stackupPress->{"topNumber"} = 1;
+				$stackupPress->{"bot"}       = $lNames[ $lCuCount - 1 ];
+				$stackupPress->{"botNumber"} = $lCuCount;
+			}
+
+			$stackupPress->{"order"} = $order;
 			$self->{"press"}{$order} = $stackupPress;
 
-			#if it is not TOP layer, its mean progressive lamination
-			if ( $i + 1 != 1 ) {
-
-				$self->{"lamination"} = 1;
-			}
+			$self->{"pressCount"} = $order;
 		}
 	}
 
@@ -440,25 +458,31 @@ sub _GetIndexOfNearestCore {
 	my $coreIdx = -1;
 
 	#if layer is TOP or BOT
-	if ( $lCuNumber == 1 || $lCuNumber == $lCuCount ) {
-		return $coreIdx;
-	}
+	#if ( $lCuNumber == 1 || $lCuNumber == $lCuCount ) {
+	#	return $coreIdx;
+	#}
 
 	#find connected core and return thick of that + cu layer
 	my $lCuIndex = $self->_GetIndexOfCuLayer($lCuNumber);
 
 	#try find CORE above Cu..
-	%info = %{ $thickList[ $lCuIndex - 1 ] };
-	if ( GeneralHelper->RegexEquals( $info{type}, Enums->MaterialType_CORE ) ) {
+	if ( $thickList[ $lCuIndex - 1 ] ) {
 
-		$coreIdx = $lCuIndex - 1;
+		%info = %{ $thickList[ $lCuIndex - 1 ] };
+		if ( GeneralHelper->RegexEquals( $info{type}, Enums->MaterialType_CORE ) ) {
+
+			$coreIdx = $lCuIndex - 1;
+		}
 	}
 
 	#try find CORE under Cu..
-	%info = %{ $thickList[ $lCuIndex + 1 ] };
-	if ( GeneralHelper->RegexEquals( $info{type}, Enums->MaterialType_CORE ) ) {
+	if ( $thickList[ $lCuIndex + 1 ] ) {
 
-		$coreIdx = $lCuIndex + 1;
+		%info = %{ $thickList[ $lCuIndex + 1 ] };
+		if ( GeneralHelper->RegexEquals( $info{type}, Enums->MaterialType_CORE ) ) {
+
+			$coreIdx = $lCuIndex + 1;
+		}
 	}
 
 	return $coreIdx;
