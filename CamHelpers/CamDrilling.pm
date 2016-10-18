@@ -31,8 +31,8 @@ sub GetMinHoleTool {
 	my $layertype = shift;
 	my $fromLayer = shift;    #tell, only drill layers starts from <$fromLayer> will be considered
 
-	my @layers = CamDrilling->GetNCLayersByType( $inCAM, $jobId, $layertype );
-	CamDrilling->AddLayerStartStop( $inCAM, $jobId, \@layers );
+	my @layers = $self->GetNCLayersByType( $inCAM, $jobId, $layertype );
+	$self->AddLayerStartStop( $inCAM, $jobId, \@layers );
 
 	my $minTool;
 
@@ -124,7 +124,7 @@ sub NCLayerExists {
 	my $type    = shift;
 
 	my $exist = 0;
-	my @layers = CamDrilling->GetNCLayersByType( $inCAM, $jobName, $type );
+	my @layers = $self->GetNCLayersByType( $inCAM, $jobName, $type );
 
 	if ( scalar(@layers) ) {
 		$exist = 1;
@@ -145,7 +145,7 @@ sub GetNCLayersByType {
 
 	@layers = grep { $_->{"gROWlayer_type"} eq "rout" || $_->{"gROWlayer_type"} eq "drill" } @layers;
 
-	CamDrilling->AddNCLayerType( \@layers );
+	$self->AddNCLayerType( \@layers );
 
 	my @res = grep { $_->{"type"} eq $type } @layers;
 
@@ -289,7 +289,7 @@ sub GetPltNCLayers {
 	my $jobId = shift;
 
 	my @layers = ( CamJob->GetLayerByType( $inCAM, $jobId, "drill" ), CamJob->GetLayerByType( $inCAM, $jobId, "rout" ) );
-	CamDrilling->AddNCLayerType( \@layers );
+	$self->AddNCLayerType( \@layers );
 
 	my @pltLayers = grep { $_->{"plated"} } @layers;
 
@@ -305,7 +305,7 @@ sub GetNPltNCLayers {
 	my $jobId = shift;
 
 	my @layers = ( CamJob->GetLayerByType( $inCAM, $jobId, "drill" ), CamJob->GetLayerByType( $inCAM, $jobId, "rout" ) );
-	CamDrilling->AddNCLayerType( \@layers );
+	$self->AddNCLayerType( \@layers );
 
 	my @npltLayers = grep { !$_->{"plated"} } @layers;
 
@@ -511,16 +511,16 @@ sub AddHistogramValues {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	use aliased 'CamHelpers::CamDrilling';
-	use aliased 'Packages::InCAM::InCAM';
+	#use aliased 'CamHelpers::$self';
+	#use aliased 'Packages::InCAM::InCAM';
 
-	my $inCAM = InCAM->new();
+	#my $inCAM = InCAM->new();
 
-	my $jobId     = "f49756";
-	my $stepName  = "o+1";
-	my $layerName = "fzs";
+	#my $jobId     = "f49756";
+	#my $stepName  = "o+1";
+	#my $layerName = "fzs";
 
-	my @depth = CamDrilling->AddHistogramValues( $inCAM, $jobId, $stepName, $layerName );
+	#my @depth = $self->AddHistogramValues( $inCAM, $jobId, $stepName, $layerName );
 
 }
 
