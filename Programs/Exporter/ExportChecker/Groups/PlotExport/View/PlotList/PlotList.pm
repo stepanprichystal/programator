@@ -35,7 +35,7 @@ sub new {
 	my $layers = shift;
 
 	# Name, Color, Polarity, Mirror, Comp
-	my @widths = ( 50, 20, 50, 40, 50, 80, 80, 80, );
+	my @widths = ( 60, 20, 50, 40, 50, 80, 80, 80, );
 	my @titles = ( "Name", "", "Polarity", "Mirror", "Comp", "Films", "Merged", "Single" );
 	
 	
@@ -54,10 +54,7 @@ sub new {
  	$self->{"layers"} = $layers;
 
 	$self->{"filmCreators"} = FilmCreators->new( $self->{"inCAM"}, $self->{"jobId"} );
-	$self->{"filmCreators"}->Init( $layers );
- 
-
-	 
+  
 
 	$self->__DefineFilmColors();
 
@@ -104,6 +101,26 @@ sub SetComp {
 	}
 }
 
+sub SetLayers{
+	my $self = shift;
+	my $layers = shift;
+	
+	$self->{"filmCreators"}->Init( $layers );	
+	
+	# Set rule sets for each rows
+	foreach my $l (@{$layers}){
+		
+		
+		my $row = $self->GetRowByText($l->{"name"});
+		
+		$row->SetRuleSets($self->__GetRuleSet($l->{"name"}, 1), $self->__GetRuleSet($l->{"name"}, 2) );
+		$row->SetLayerValues($l);
+ 
+	}
+	
+	$self->{"szMain"}->Layout();
+}
+
 
 sub __SetLayout {
 
@@ -123,11 +140,9 @@ sub __SetLayout {
 	my @layers = @{ $self->{"layers"} };
 	foreach my $l (@layers) {
 
-		my $row = PlotListRow->new( $self, $l, $self->__GetRuleSet($l, 1), $self->__GetRuleSet($l, 2) );
+		my $row = PlotListRow->new( $self, $l);
 
 		# zaregistrovat udalost
-		
-		 
 		$self->{"onSelectedChanged"}->Add(sub{ $row->PlotSelectionChanged($self, @_) });
 		
 
@@ -141,7 +156,7 @@ sub __SetLayout {
 
 sub __GetRuleSet {
 	my $self  = shift;
-	my $layer = shift;
+	my $layerName = shift;
 	my $creatorNum = shift;
 
 	my @ruleSets = $self->{"filmCreators"}->GetRuleSets($creatorNum);
@@ -152,7 +167,7 @@ sub __GetRuleSet {
 
 		my @ruleLayers = $rulSet->GetLayers();
 
-		my @exist = grep { $_->{"gROWname"} eq $layer->{"gROWname"} } @ruleLayers;
+		my @exist = grep { $_->{"name"} eq $layerName } @ruleLayers;
 
 		if ( scalar(@exist) ) {
 

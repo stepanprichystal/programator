@@ -30,9 +30,9 @@ sub new {
 	my $class        = shift;
 	my $parent       = shift;
 	my $layer        = shift;
-	my $filmRuleSet1 = shift;
-	my $filmRuleSet2 = shift;
-	my $rowHeight    = 21;
+	#my $filmRuleSet1 = shift;
+	#my $filmRuleSet2 = shift;
+	my $rowHeight    = 20;
 
 	my $self = $class->SUPER::new( $parent, $layer->{"gROWname"}, $rowHeight );
 
@@ -41,8 +41,10 @@ sub new {
 	$self->{"layer"}     = $layer;
 	$self->{"rowHeight"} = $rowHeight;
 
-	$self->{"filmRuleSet1"} = $filmRuleSet1;
-	$self->{"filmRuleSet2"} = $filmRuleSet2;
+	#$self->{"filmRuleSet1"} = $filmRuleSet1;
+	#$self->{"filmRuleSet2"} = $filmRuleSet2;
+	$self->{"filmRuleSet1"} = undef;
+	$self->{"filmRuleSet2"} = undef;
 
 	$self->__SetLayout();
 
@@ -51,6 +53,17 @@ sub new {
 
 	return $self;
 }
+
+sub SetRuleSets{
+	my $self = shift;
+	
+	$self->{"filmRuleSet1"} = shift;
+	$self->{"filmRuleSet2"} = shift;
+	
+	$self->{"film1Frm"}->SetRuleSet( $self->{"filmRuleSet1"} );
+	$self->{"film2Frm"}->SetRuleSet( $self->{"filmRuleSet2"} );
+}
+
 
 sub SetPolarity {
 	my $self = shift;

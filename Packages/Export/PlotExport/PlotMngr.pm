@@ -33,14 +33,15 @@ sub new {
 	$self->{"inCAM"}  = shift;
 	$self->{"jobId"}  = shift;
 	$self->{"layers"} = shift;
+	$self->{"sendToPlotter"} = shift;
 
-	my @layers = CamJob->GetBoardBaseLayers( $self->{"inCAM"}, $self->{"jobId"} );
+	#my @layers = CamJob->GetBoardBaseLayers( $self->{"inCAM"}, $self->{"jobId"} );
 
 	$self->{"filmCreators"} = FilmCreators->new( $self->{"inCAM"}, $self->{"jobId"} );
-	$self->{"filmCreators"}->Init( \@layers );
+	$self->{"filmCreators"}->Init( $self->{"layers"} );
 
-	$self->{"opfxCreator"} = OpfxCreator->new( $self->{"inCAM"}, $self->{"jobId"} );
-
+	$self->{"opfxCreator"} = OpfxCreator->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"sendToPlotter"});
+	$self->{"opfxCreator"}->{"onItemResult"}->Add( sub { $self->_OnItemResult(@_) } );
 	return $self;
 }
 
@@ -73,10 +74,10 @@ sub __InitOpfxCreator {
 
 		foreach my $l ( $resultSet->GetLayers() ) {
 
-			my $lInfo = ( grep { $_->{"name"} eq $l->{"gROWname"} } @{ $self->{"layers"} } )[0];
+		#	my $lInfo = ( grep { $_->{"name"} eq $l->{"gROWname"} } @{ $self->{"layers"} } )[0];
 
-			my $plotL = PlotLayer->new( $lInfo->{"gROWname"},     $lInfo->{"polarity"}, $lInfo->{"mirror"},
-										$lInfo->{"compensation"}, $l->{"pcbSize"},      $l->{"pcbLimits"} );
+			my $plotL = PlotLayer->new( $l->{"name"},     $l->{"polarity"}, $l->{"mirror"},
+										$l->{"comp"}, $l->{"pcbSize"},      $l->{"pcbLimits"} );
 
 			push( @plotLayers, $plotL );
 
@@ -104,10 +105,8 @@ sub __FilterRuleSets {
 		my @ruleLayers = $ruleSet->GetLayers();
 
 		foreach my $rl (@ruleLayers) {
-
-			my @exist = grep { $_->{"name"} eq $rl->{"gROWname"} } @layers;
-
-			unless ( scalar(@exist) ) {
+ 
+			unless ( $rl->{"plot"}) {
 				$plot = 0;
 				last;
 
@@ -128,8 +127,8 @@ sub ExportItemsCount {
 
 	my $totalCnt = 0;
 
-	$totalCnt += 1;                      # getting sucesfully AOI manager
-	$totalCnt += $self->{"layerCnt"};    #export each layer
+	 
+	$totalCnt += scalar(@{$self->{"layers"}});    #export each layer
 
 	return $totalCnt;
 

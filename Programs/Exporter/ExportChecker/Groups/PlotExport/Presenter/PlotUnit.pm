@@ -20,6 +20,8 @@ use warnings;
 
 #local library
 use aliased 'Programs::Exporter::ExportChecker::Groups::PlotExport::View::PlotUnitForm';
+use aliased 'Programs::Exporter::ExportChecker::Groups::PlotExport::View::PlotUnitFormEvt';
+
 use aliased 'Programs::Exporter::ExportChecker::Groups::GroupDataMngr';
 use aliased 'Programs::Exporter::ExportChecker::Groups::PlotExport::Model::PlotCheckData';
 use aliased 'Programs::Exporter::ExportChecker::Groups::PlotExport::Model::PlotPrepareData';
@@ -71,6 +73,8 @@ sub InitForm {
 
 	my $parent = $groupWrapper->GetParentForGroup();
 	$self->{"form"} = PlotUnitForm->new( $parent, $inCAM, $self->{"jobId"});
+	
+	$self->{"eventClass"} = PlotUnitFormEvt->new($self->{"form"});
 
 	$self->_SetHandlers();
 

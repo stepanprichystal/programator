@@ -20,6 +20,7 @@ use warnings;
 
 #local library
 use aliased 'Programs::Exporter::ExportChecker::Groups::NifExport::View::NifUnitForm';
+use aliased 'Programs::Exporter::ExportChecker::Groups::NifExport::View::NifUnitFormEvt';
 
 #use aliased 'Programs::Exporter::ExportChecker::Groups::NifExport::Model::NifDataMngr';
 use aliased 'Programs::Exporter::ExportChecker::Groups::GroupDataMngr';
@@ -74,7 +75,11 @@ sub InitForm {
 	my $parent = $groupWrapper->GetParentForGroup();
 	$self->{"form"} = NifUnitForm->new( $parent, $inCAM, $self->{"jobId"});
 
+	$self->{"eventClass"} = NifUnitFormEvt->new($self->{"form"});
+
 	$self->_SetHandlers();
+	
+	
 
 }
 

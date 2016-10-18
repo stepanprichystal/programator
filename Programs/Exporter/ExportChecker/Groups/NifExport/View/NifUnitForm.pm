@@ -157,7 +157,7 @@ sub __SetLayoutSettings {
 	my $textWidth = 90;
 	my $cbWidth   = 55;
 
-	my $tentingChb     = Wx::CheckBox->new( $statBox, -1, "Tenting",      &Wx::wxDefaultPosition, [ $textWidth, 20 ] );
+	my $tentingChb     = Wx::CheckBox->new( $statBox, -1, "Tenting (c,s)",      &Wx::wxDefaultPosition, [ $textWidth, 20 ] );
 	my $maskaChb       = Wx::CheckBox->new( $statBox, -1, "Mask 100µm",  &Wx::wxDefaultPosition, [ $textWidth, 20 ] );
 	my $pressfitChb    = Wx::CheckBox->new( $statBox, -1, "Pressfit",     &Wx::wxDefaultPosition, [ $textWidth, 20 ] );
 	my $jumpscoringChb = Wx::CheckBox->new( $statBox, -1, "Jump scoring", &Wx::wxDefaultPosition, [ $textWidth, 20 ] );
@@ -297,8 +297,10 @@ sub __SetLayoutDimension {
 sub __OnTentingChangeHandler {
 	my $self = shift;
 	my $chb  = shift;
+	
+	my $val = $chb->GetValue() ? 1 : 0;
 
-	$self->{"onTentingChange"}->Do( $chb->GetValue() );
+	$self->{"onTentingChange"}->Do( $val );
 }
 
 # =====================================================================

@@ -113,6 +113,25 @@ sub GetOutputLayerName {
 	return $lName;
 }
 
+sub GetOutputItemName {
+	my $self  = shift;
+	
+	my $str = "";
+
+	# Select layer by layer
+	foreach my $plotL ( $self->GetLayers() ) {
+		
+		if($str ne ""){
+			$str .= "+";
+		}
+		
+		$str .= $plotL->GetName();
+	}
+
+	return $str;
+}
+
+
 sub GetPolarity {
 	my $self = shift;
 

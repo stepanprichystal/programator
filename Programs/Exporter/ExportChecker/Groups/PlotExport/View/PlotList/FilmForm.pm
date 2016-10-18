@@ -22,26 +22,66 @@ use aliased 'Packages::Export::PlotExport::Enums';
 #-------------------------------------------------------------------------------------------#
 
 sub new {
-	my $class      = shift;
-	my $parent     = shift;
-	my $ruleResult = shift;
+	my $class         = shift;
+	my $parent        = shift;
+	my $ruleResult    = shift;
 	my $controlHeight = shift;
-	
-	unless($controlHeight){
+
+	unless ($controlHeight) {
 		$controlHeight = -1;
 	}
 
-	my $self = $class->SUPER::new( $parent, -1, &Wx::wxDefaultPosition, [-1, $controlHeight] );
+	my $self = $class->SUPER::new( $parent, -1, &Wx::wxDefaultPosition, [ -1, $controlHeight ] );
 
 	bless($self);
 
-	$self->{"ruleResult"} = $ruleResult;
+	$self->{"ruleResult"} = undef;
 
 	$self->{"notActiveClr"} = Wx::Colour->new( 230, 230, 230 );
 
 	$self->__SetLayout();
 
 	return $self;
+}
+
+sub SetRuleSet {
+	my $self = shift;
+
+	$self->{"ruleResult"} = shift;
+
+	my $fileName = "";
+	my $filmSize = "";
+
+	if ( $self->{"ruleResult"} ) {
+
+		my @layers = $self->{"ruleResult"}->GetLayers();
+
+		foreach my $l (@layers) {
+
+			if ($fileName) {
+				$fileName .= " + ";
+			}
+
+			$fileName .= $l->{"name"};
+		}
+
+		$filmSize = $self->{"ruleResult"}->GetFilmSize();
+
+		if ( $filmSize eq Enums->FilmSize_Small ) {
+
+			$filmSize = "B";
+		}
+		elsif ( $filmSize eq Enums->FilmSize_Big ) {
+
+			$filmSize = "S";
+		}
+	}
+
+	$self->{"lNameTxt"}->SetLabel($fileName);
+	$self->{"sizeTxt"}->SetLabel($filmSize);
+	
+	
+
 }
 
 sub PlotSelectChanged {
@@ -75,45 +115,14 @@ sub __SetLayout {
 
 	# DEFINE CONTROLS
 
-	my $fileName     = "";
-	my $filmSize     = "";
-	my $filmPolarity = "";
+	my $fileName = "";
+	my $filmSize = "";
 
-	if ( $self->{"ruleResult"} ) {
-
-		my @layers = $self->{"ruleResult"}->GetLayers();
-
-		foreach my $l (@layers) {
-
-			if ($fileName) {
-				$fileName .= " + ";
-			}
-
-			$fileName .= $l->{"gROWname"};
-		}
-
-		$filmSize = $self->{"ruleResult"}->GetFilmSize();
-
-
-		if ( $filmSize eq Enums->FilmSize_Small ) {
-
-			$filmSize = "B";
-		}
-		elsif ( $filmSize eq Enums->FilmSize_Big ) {
-
-			$filmSize = "S";
-		}
-	 
-		
-	}
-
-	my $lNameTxt    = Wx::StaticText->new( $colorPnl, -1, $fileName, &Wx::wxDefaultPosition );
-	my $sizeTxt     = Wx::StaticText->new( $infoPnl,  -1, $filmSize, &Wx::wxDefaultPosition );
-	 
+	my $lNameTxt = Wx::StaticText->new( $colorPnl, -1, $fileName, &Wx::wxDefaultPosition );
+	my $sizeTxt  = Wx::StaticText->new( $infoPnl,  -1, $filmSize, &Wx::wxDefaultPosition );
 
 	# BUILD LAYOUT STRUCTURE
-	$infoSz->Add( $sizeTxt,     1, &Wx::wxEXPAND | &Wx::wxLEFT, 2 );
-	 
+	$infoSz->Add( $sizeTxt, 1, &Wx::wxEXPAND | &Wx::wxLEFT, 2 );
 
 	$infoPnl->SetSizer($infoSz);
 	$colorPnl->SetSizer($colorSz);
@@ -127,6 +136,10 @@ sub __SetLayout {
 
 	# SAVE REFERENCES
 	$self->{"colorPnl"} = $colorPnl;
+	$self->{"lNameTxt"} = $lNameTxt;
+	$self->{"sizeTxt"}  = $sizeTxt;
+	$self->{"szMain"}  = $szMain;
+	
 
 }
 
@@ -134,7 +147,7 @@ sub __Active {
 	my $self     = shift;
 	my @selected = @{ shift(@_) };
 
-	unless ( $self->{"ruleResult"}){
+	unless ( $self->{"ruleResult"} ) {
 		return 1;
 	}
 
@@ -144,7 +157,7 @@ sub __Active {
 
 		# find if this layer is selected
 
-		my @exist = grep { $_ eq $plotL->{"gROWname"} } @selected;
+		my @exist = grep { $_ eq $plotL->{"name"} } @selected;
 
 		unless ( scalar(@exist) ) {
 			$selected = 0;
@@ -168,7 +181,7 @@ sub __Active {
 	}
 
 	$self->{"colorPnl"}->Refresh();
-	
+
 	return 1;
 
 }

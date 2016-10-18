@@ -25,8 +25,6 @@ sub new {
 	bless $self;
 
 	$self->{"form"} = shift;
-	
-
 
 	my @handlers = ();
 	$self->{"handlers"} = \@handlers;
@@ -37,24 +35,46 @@ sub new {
 	return $self;
 }
 
-sub GetHandler {
-	my $self     = shift;
-	my $evenType = shift;
+sub GetEvents {
+	my $self = shift;
+	return @{ $self->{"events"} };
 }
 
-sub GetEvent {
+sub __GetHandler {
 	my $self     = shift;
 	my $evenType = shift;
+
+	foreach my $hndl ( @{ $self->{"handlers"} } ) {
+
+		if ( $hndl->{"eventType"} eq $evenType ) {
+			return $hndl;
+		}
+	}
+
 }
 
+#sub __GetEvent {
+#	my $self     = shift;
+#	my $evenType = shift;
+#}
 
+# Connect events to handlers
+sub ConnectEvents {
+	my $self   = shift;
+	my @events = @{ shift(@_) };
 
+	foreach my $evt (@events) {
 
-
+		my $h = $self->__GetHandler( $evt->{"eventType"} );
+		if ($h) {
+			$evt->{"event"}->Add( sub { $h->(@_) } );
+		}
+	}
+}
 
 sub _AddHandler {
 	my $self      = shift;
-	my $handler   = shift;
+	my $event   = shift;
 	my $eventType = shift;
 
 	my %info = ();

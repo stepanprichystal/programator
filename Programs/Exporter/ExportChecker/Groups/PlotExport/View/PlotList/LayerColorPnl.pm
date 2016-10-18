@@ -62,6 +62,10 @@ sub __SetLayout {
 
 		$color = Wx::Colour->new( 251, 197, 77 );
 
+	}elsif ($layer =~ /^gold[cs]$/) {
+
+		$color = Wx::Colour->new( 255, 225, 74 );
+
 	}
 	else {
 		$color = Wx::Colour->new( 154, 218, 218 );

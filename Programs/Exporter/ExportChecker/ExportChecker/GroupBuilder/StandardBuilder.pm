@@ -1,4 +1,4 @@
-
+#
 #-------------------------------------------------------------------------------------------#
 # Description: Base class for BIF builders. Nif Builder is responsible for
 # creation nif file depend on pcb type
@@ -44,10 +44,10 @@ sub Build {
 
 	# nif unit
 	my $nifUnit1 = NifUnit->new( $self->{"jobId"});
-	my $ncUnit1 = NCUnit->new( $self->{"jobId"});
-	my $aoiUnit1 = AOIUnit->new( $self->{"jobId"} );
+	#my $ncUnit1 = NCUnit->new( $self->{"jobId"});
+	#my $aoiUnit1 = AOIUnit->new( $self->{"jobId"} );
 	my $plotUnit1 = PlotUnit->new( $self->{"jobId"} );
-	my $etUnit1 = ETUnit->new( $self->{"jobId"} );
+	#my $etUnit1 = ETUnit->new( $self->{"jobId"} );
 
 	#my $ncUnit2 = NCUnit->new( $self->{"jobId"}, "NC 2" );
 	#my $ncUnit3 = NCUnit->new( $self->{"jobId"}, "NC 3" );
@@ -68,9 +68,9 @@ sub Build {
 
 
 	my $row2Tab1 = $tableTab1->AddRow();
-	$row2Tab1->AddCell($ncUnit1, Enums->Width_25);
-	$row2Tab1->AddCell($aoiUnit1, Enums->Width_25);
-	$row2Tab1->AddCell($etUnit1, Enums->Width_25);
+	#$row2Tab1->AddCell($ncUnit1, Enums->Width_25);
+	#$row2Tab1->AddCell($aoiUnit1, Enums->Width_25);
+	#$row2Tab1->AddCell($etUnit1, Enums->Width_25);
 	#$row2Tab1->AddCell($ncUnit3);
 
 	#my $row3Tab1 = $tableTab1->AddRow();

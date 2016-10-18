@@ -26,11 +26,13 @@ use aliased 'Helpers::FileHelper';
 
 sub new {
 	my $class = shift;
-	my $self  = {};
+
+	my $self = $class->SUPER::new(@_);
 	bless $self;
 
-	$self->{"inCAM"} = shift;
-	$self->{"jobId"} = shift;    #board layers
+	$self->{"inCAM"}         = shift;
+	$self->{"jobId"}         = shift;    #board layers
+	$self->{"sendToPlotter"} = shift;
 
 	$self->{"plotStep"} = "plot_export";
 
@@ -101,16 +103,13 @@ sub __PrepareLayer {
 	CamLayer->ClipLayerData( $inCAM, $lName, $plotLayer->GetLimits() );
 
 	# change polarity
-	
-	my $plotPolar = $plotSet->GetPolarity();
-	if($plotPolar eq "mixed" && $plotLayer->GetPolarity() eq "negative"){
-		
-		
-		
-		CamLayer->NegativeLayerData( $inCAM, $lName, $plotLayer->{"pcbLimits"});
-		
-	}
 
+	my $plotPolar = $plotSet->GetPolarity();
+	if ( $plotPolar eq "mixed" && $plotLayer->GetPolarity() eq "negative" ) {
+
+		CamLayer->NegativeLayerData( $inCAM, $lName, $plotLayer->{"pcbLimits"} );
+
+	}
 
 	# Compensate layer
 	if ( $plotLayer->GetComp() > 0 ) {
@@ -121,7 +120,7 @@ sub __PrepareLayer {
 	# Rotate layer
 	if ( $plotSet->GetOrientation() eq Enums->Ori_HORIZONTAL ) {
 
-		CamLayer->RotateLayerData( $inCAM, $lName, 90 );
+		CamLayer->RotateLayerData( $inCAM, $lName, 270 );
 	}
 
 	# Mirror layer
@@ -140,6 +139,14 @@ sub __PrepareOutputLayer {
 
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
+
+	my $outputLName = $plotSet->GetOutputLayerName();
+
+	# Delete if exist
+	if ( CamHelper->LayerExists( $inCAM, $jobId, $outputLName ) ) {
+
+		$inCAM->COM( "delete_layer", "layer" => $outputLName );
+	}
 
 	my $filmSize = $plotSet->GetFilmSize();
 	my $filmWidth;
@@ -172,7 +179,7 @@ sub __PrepareOutputLayer {
 		CamLayer->MoveLayerData( $inCAM, $plotL->{"outputLayer"}, \%source, \%target );
 
 		# merge layer to final output layer
-		$inCAM->COM( "merge_layers", "source_layer" => $plotL->{"outputLayer"}, "dest_layer" => $plotSet->GetOutputLayerName() );
+		$inCAM->COM( "merge_layers", "source_layer" => $plotL->{"outputLayer"}, "dest_layer" => $outputLName );
 
 		$inCAM->COM( "delete_layer", "layer" => $plotL->{"outputLayer"} );
 
@@ -219,9 +226,7 @@ sub __OutputPlotSets {
 
 		my $filmSize = $plotSet->GetFilmSizeInch();
 		my $outputL  = $plotSet->GetOutputLayerName();
-
-		my $resultItemPlot = $self->_GetNewItem($outputL);
-		$resultItemPlot->SetGroup("Films");
+		my $sendToPlotter = $self->{"sendToPlotter"} ? "yes" : "no";
 
 		# Reset settings of device
 		$inCAM->COM( "output_reload_device", "type" => "format", "name" => "LP7008" );
@@ -232,8 +237,7 @@ sub __OutputPlotSets {
 			"type"     => "format",
 			"name"     => "LP7008",
 			"dir_path" => $archivePath,
-			"format_params" =>
-		"(break_sr=yes)(break_symbols=yes)(send_to_plotter=no)(local_copy=yes)(iol_opfx_allow_out_limits=yes)(iol_opfx_use_profile_limits=no)(iol_surface_check=yes)"
+			"format_params" =>"(break_sr=yes)(break_symbols=yes)(send_to_plotter=".$sendToPlotter.")(local_copy=yes)(iol_opfx_allow_out_limits=yes)(iol_opfx_use_profile_limits=no)(iol_surface_check=yes)"
 
 		);
 
@@ -241,19 +245,27 @@ sub __OutputPlotSets {
 		$inCAM->COM( "output_device_set_lyrs_filter", "type" => "format", "name" => "LP7008", "layers_filter" => $outputL );
 
 		my $polarity = $plotSet->GetPolarity();
-		
-		if($polarity eq "mixed"){
+
+		if ( $polarity eq "mixed" ) {
 			$polarity = "positive";
 		}
 
 		# Necessery set layer, otherwise
-		$inCAM->COM( "image_set_elpd2", "job" => $jobId, "step" => $plotPanel, "layer" => $outputL, "device_type" => "LP7008", "polarity" =>$polarity ); 
+		$inCAM->COM(
+					 "image_set_elpd2",
+					 "job"         => $jobId,
+					 "step"        => $plotPanel,
+					 "layer"       => $outputL,
+					 "device_type" => "LP7008",
+					 "polarity"    => $polarity
+		);
 
 		$inCAM->COM( "output_device_select_reset", "type" => "format", "name" => "LP7008" );    #toto tady musi byt, nevim proc
- 		
-		$inCAM->COM( "output_device_select",       "type" => "format", "name" => "LP7008" );
 
-		$inCAM->HandleException(1);
+		$inCAM->COM( "output_device_select", "type" => "format", "name" => "LP7008" );
+
+		my $resultItemPlot = $self->_GetNewItem( $plotSet->GetOutputItemName() );
+		$resultItemPlot->SetGroup("Films");
 
 		# START HANDLE EXCEPTION IN INCAM
 		$inCAM->HandleException(1);
@@ -273,11 +285,20 @@ sub __OutputPlotSets {
 		if ( $plotResult > 0 ) {
 			$resultItemPlot->AddError( $inCAM->GetExceptionError() );
 		}
+		
+		# test if file was outputed
+		
+		my $fileExist  = FileHelper->GetFileNameByPattern( $archivePath."\\",  $plotSet->GetOutputFileName() );
+		unless($fileExist){
+			
+			$resultItemPlot->AddError("Failed to create OPFX file: ".$archivePath."\\".$plotSet->GetOutputFileName()."." );
+		}
+		
 
 		$self->_OnItemResult($resultItemPlot);
 	}
 
-	# return to default subsystem 
+	# return to default subsystem
 	#$inCAM->COM( "set_subsystem", "name" => "1-Up-Edit" );
 
 }
@@ -315,8 +336,6 @@ sub __CreatePlotStep {
 	$inCAM->COM( "set_step", "name" => $plotPanel );
 
 }
-
- 
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

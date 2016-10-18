@@ -4,6 +4,7 @@
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Programs::Exporter::ExportChecker::Groups::NifExport::View::NifUnitFormEvt;
+use base ("Programs::Exporter::ExportChecker::Groups::UnitFormEvtBase");
 
 #3th party library
 use strict;

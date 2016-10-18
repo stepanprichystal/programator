@@ -29,7 +29,8 @@ sub new {
 
 	$self->{"groupWrapper"} = undef;    #wrapper, which form is placed in
 	$self->{"form"}         = undef;    #form which represent GUI of this group
-	                                    #$self->{"active"}       = undef;    # tell if group will be visibel/active
+	$self->{"eventClass"} = undef;		# define connection between all groups by group and envents handler
+	                                 
 	$self->{"dataMngr"}     = undef;    # manager, which is responsible for create, update group data
 	$self->{"cellWidth"}    = 0;        #width of cell/unit form (%), placed in exporter table row
 	$self->{"exportOrder"}  = 0;        #Order, which unit will be ecported
@@ -154,6 +155,12 @@ sub GetExportOrder {
 	my $self = shift;
 
 	return $self->{"exportOrder"};
+}
+
+sub GetEventClass {
+	my $self = shift;
+
+	return $self->{"eventClass"};
 }
 
 

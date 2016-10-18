@@ -1,18 +1,27 @@
+
 #-------------------------------------------------------------------------------------------#
-# Description: This class define "outside" handlers and events,
-# which is possible cooperate with.
+# Description: Represent "Unit" class for PLOT
+#
+# Every group in "export utility program" is composed from three layers:
+# 1) Model - responsible for actual group data, which are displyed in group form (GroupData class)
+# 2) Presenter -  responsible for: build and refresh from group
+# 3) View - only display data, which are passed from model by presenter class (GroupWrapperForm])
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Programs::Exporter::ExportChecker::Groups::PlotExport::View::PlotUnitFormEvt;
-use base ("Programs::Exporter::ExportChecker::Groups::UnitFormEvtBase");
+package Programs::Exporter::ExportUtility::Groups::PlotExport::PlotUnit;
+use base 'Programs::Exporter::ExportUtility::Groups::UnitBase';
+
+use Class::Interface;
+&implements('Programs::Exporter::ExportUtility::Unit::IUnit');
 
 #3th party library
 use strict;
 use warnings;
 
 #local library
-use aliased 'Programs::Exporter::ExportChecker::Groups::Enums';
-use aliased 'Packages::Events::Event';
+ 
+use aliased 'Programs::Exporter::UnitEnums';
+use aliased 'Programs::Exporter::ExportUtility::Groups::PlotExport::PlotExport';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -25,15 +34,13 @@ sub new {
 	$self = $class->SUPER::new(@_);
 	bless $self;
 
-	my $frm = $self->{"form"};
-
-	# Provided handlers
-	$self->_AddHandler( \&frm->ChangeTentingHandler , Enums->Event_nif_tenting );
-
-	# Provided events
-
-	return $self;
+ 	# reference on class responsible for export
+	$self->{"unitExport"} = PlotExport->new($self->{"unitId"});
+ 
+	return $self; 
 }
+
+ 
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
