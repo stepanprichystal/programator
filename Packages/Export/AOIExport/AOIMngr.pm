@@ -203,24 +203,25 @@ sub __ExportAOI {
 
 	# Set nominal space, line
 
-	$inCAM->COM( "cdr_get_nom_line", "layer" => "c" );
-	my $line = $inCAM->GetReply();
+	# NOT work properly
+	#$inCAM->COM( "cdr_get_nom_line", "layer" => "c" );
+	#my $line = $inCAM->GetReply();
 
-	$inCAM->COM( "cdr_get_nom_space", "layer" => "c", "space_type" => "nom_space" );
-	my $space = $inCAM->GetReply();
+	#$inCAM->COM( "cdr_get_nom_space", "layer" => "c", "space_type" => "nom_space" );
+	#my $space = $inCAM->GetReply();
 
 	# If Incam didn't compute values, set it by construction class
-	if ( $line == 0 || $space == 0 ) {
+	#if ( $line == 0 || $space == 0 ) {
 
 		my $class = CamJob->GetJobPcbClass( $inCAM, $jobId );
 		my $isolation = JobHelper->GetIsolationByClass($class);
 
-		$line  = $isolation;
-		$space = $isolation;
-	}
+		#$line  = $isolation;
+		#$space = $isolation;
+	#}
 
-	$inCAM->COM( "cdr_line_width", "nom_width" => $line,  "min_width" => "0" );
-	$inCAM->COM( "cdr_spacing",    "nom_space" => $space, "min_space" => "0" );
+	$inCAM->COM( "cdr_line_width", "nom_width" => $isolation,  "min_width" => "0" );
+	$inCAM->COM( "cdr_spacing",    "nom_space" => $isolation, "min_space" => "0" );
 
 	# Set steps and repeat
 
