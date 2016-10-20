@@ -278,7 +278,7 @@ sub __PortReadyHandler {
 
 		$self->{'onJobStateChanged'}->Do( $jobGUID, Enums->JobState_RUNNING );
 
-		$self->{"threadMngr"}->RunNewExport( $jobGUID, $d{"port"}, $pcbId );
+		$self->{"threadMngr"}->RunNewExport( $jobGUID, $d{"port"}, $pcbId, $d{"pidInCAM"} );
 
 	}
 

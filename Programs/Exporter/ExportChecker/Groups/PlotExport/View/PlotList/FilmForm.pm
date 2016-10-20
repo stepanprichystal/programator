@@ -118,7 +118,7 @@ sub __SetLayout {
 	my $fileName = "";
 	my $filmSize = "";
 
-	my $lNameTxt = Wx::StaticText->new( $colorPnl, -1, $fileName, &Wx::wxDefaultPosition );
+	my $lNameTxt = Wx::StaticText->new( $colorPnl, -1, $fileName, &Wx::wxDefaultPosition, [60, 20] );
 	my $sizeTxt  = Wx::StaticText->new( $infoPnl,  -1, $filmSize, &Wx::wxDefaultPosition );
 
 	# BUILD LAYOUT STRUCTURE

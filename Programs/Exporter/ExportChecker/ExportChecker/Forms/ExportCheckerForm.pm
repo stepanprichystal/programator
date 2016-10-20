@@ -511,15 +511,26 @@ sub BuildGroupTableForm {
 
 	foreach my $unitA (@units) {
 
+		my $evtClassA = $unitA->GetEventClass();
+
+		unless ($evtClassA) {
+			next;
+		}
+
 		my @unitEvents = $unitA->GetEventClass()->GetEvents();
 
 		# search handler for this event type in all units
 		foreach my $unitB (@units) {
 
-			$unitB->GetEventClass()->ConnectEvents( \@unitEvents );
+			my $evtClassB = $unitB->GetEventClass();
+
+			if ($evtClassB) {
+				$unitB->GetEventClass()->ConnectEvents( \@unitEvents );
+			}
 
 		}
 	}
+
 }
 
 sub _AddEvent {

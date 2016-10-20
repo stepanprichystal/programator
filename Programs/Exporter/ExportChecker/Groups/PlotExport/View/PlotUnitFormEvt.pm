@@ -25,10 +25,11 @@ sub new {
 	$self = $class->SUPER::new(@_);
 	bless $self;
 
-	my $frm = $self->{"form"};
+	my $wrapper = $self->{"wrapper"};
 
 	# Provided handlers
-	$self->_AddHandler( \&frm->ChangeTentingHandler , Enums->Event_nif_tenting );
+	my $ref = $wrapper->can('ChangeTentingHandler');
+	$self->_AddHandler( $ref , Enums->Event_nif_tenting );
 
 	# Provided events
 

@@ -163,6 +163,17 @@ sub GetEventClass {
 	return $self->{"eventClass"};
 }
 
+sub IsFormLess {
+	my $self = shift;
+	
+	if( defined $self->{"formLess"} && $self->{"formLess"} == 1){
+		return 1;
+	}else{
+		return 0;
+	}
+ 
+}
+
 
 sub _SetHandlers {
 	my $self = shift;

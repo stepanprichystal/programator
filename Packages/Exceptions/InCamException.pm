@@ -5,6 +5,9 @@
 package Packages::Exceptions::InCamException;
 use base ("Packages::Exceptions::BaseException");
 
+use Class::Interface;
+&implements('Packages::Exceptions::IException');
+
 #3th party library
 use strict;
 use warnings;
@@ -13,6 +16,7 @@ use Win32;
 #local library
 use aliased 'Packages::Exceptions::BaseException';
 use aliased 'Packages::InCAM::Helper';
+ 
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -35,6 +39,9 @@ sub new {
 	$self->{"cmdHistory"} = $self->__FormatHistory($cmdHist);
 	$self->{"errorId"}   = $id;
 	$self->{"errorMess"} = Helper->GetErrorTextById($id);
+	
+	
+	
 
 	my $mess =
 	    "====InCAM error id====\n\n" 
@@ -59,12 +66,7 @@ sub __PrintError {
 
 }
 
-sub Error{
-	my $self = shift;
-	
-	return $self->{"mess"} . "\nStack trace:\n" . $self->{"stackTrace"};
-}
-
+ 
 sub __FormatHistory {
 		my $self = shift;
 	my $refHist = shift;

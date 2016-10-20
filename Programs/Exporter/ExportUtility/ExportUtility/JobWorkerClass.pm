@@ -42,6 +42,8 @@ sub Init {
 	$self->{"inCAM"}       = shift;
 	$self->{"exportClass"} = shift;    # classes for export each group
 	$self->{"data"}        = shift;    # export data
+	
+	 
 
 }
 
@@ -75,7 +77,20 @@ sub RunExport {
 			};
 			if ( my $e = $@ ) {
 
-				$self->__TaskResultEvent( ResultEnums->ItemResult_Fail, $e );
+				my $errStr = "";
+				
+				# get string error from exception
+				if ( $e->can("Error") ) {
+				
+					$errStr .= $e->Error(); 
+					
+				}else{
+					
+					$errStr .= $e;
+				}
+				 
+				$self->__TaskResultEvent( ResultEnums->ItemResult_Fail, $errStr );
+				last;
 			}
 		}
 
@@ -216,13 +231,13 @@ sub __ProcessGroup {
 	$exportClass->{"onItemResult"}->Add( sub { $self->__ItemResultEvent( $exportClass, $unitId, @_ ) } );
 
 	# START HANDLE EXCEPTION IN INCAM
-	$inCAM->HandleException(1);
+	#$inCAM->HandleException(1);
 
 	# Final export group
 	$exportClass->Run();
 
 	# STOP HANDLE EXCEPTION IN INCAM
-	$inCAM->HandleException(0);
+	#$inCAM->HandleException(0);
 
 	my $err = $inCAM->GetExceptionError();
 

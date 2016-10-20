@@ -39,8 +39,6 @@ sub new {
 	my $parent = shift;
 
 	my $self = {};
-	
-
 
 	if ( defined $parent && $parent == -1 ) {
 		$parent = undef;
@@ -52,7 +50,7 @@ sub new {
 		"",                        # title
 		&Wx::wxDefaultPosition,    # window position
 		[ 800, 150 ],
-		&Wx::wxSYSTEM_MENU | &Wx::wxCAPTION | &Wx::wxCLIP_CHILDREN | &Wx::wxRESIZE_BORDER | &Wx::wxMINIMIZE_BOX #| &Wx::wxCLOSE_BOX
+		&Wx::wxSYSTEM_MENU | &Wx::wxCAPTION | &Wx::wxCLIP_CHILDREN | &Wx::wxRESIZE_BORDER | &Wx::wxMINIMIZE_BOX    #| &Wx::wxCLOSE_BOX
 	);
 
 	bless($self);
@@ -61,12 +59,11 @@ sub new {
 	$self->{"type"}     = shift;
 	$self->{"messages"} = shift;
 	$self->{"buttons"}  = shift;
-	#$self->{"resultMngr"} = shift;
-	$self->{"caller"}   = shift;
-	$self->{"onExit"}   = shift;
-	$self->{"result"}   = -1;
 
-	
+	#$self->{"resultMngr"} = shift;
+	$self->{"caller"} = shift;
+	$self->{"onExit"} = shift;
+	$self->{"result"} = -1;
 
 	$self->__SetLayout();
 
@@ -78,8 +75,6 @@ sub new {
 	# now to stop execution start a event loop
 	#$self->{"eventLoop"} = Wx::EventLoopBase->new();
 	# $self->{"eventLoop"}->Run();
-
-
 
 	return $self;
 
@@ -144,6 +139,7 @@ sub __SetLayout {
 
 	my $richTxt = Wx::RichTextCtrl->new( $self, -1, '', [ -1, -1 ], [ 800, $self->__GetHeightOfText() ] );
 	$richTxt->SetEditable(0);
+
 	#$richTxt->SetSize( [ 800, 200 ] );
 	$richTxt->SetBackgroundColour($Widgets::Style::clrWhite);
 	$self->__WriteMessages($richTxt);
@@ -227,9 +223,6 @@ sub __OnClose {
 
 	#$self->Destroy();
 	my $onExit = $self->{"onExit"};
-	
-	
-
 
 	if ( defined $onExit ) {
 		$onExit->( $self, 0 );
@@ -250,46 +243,57 @@ sub __WriteMessages() {
 	for ( my $i = 0 ; $i < scalar(@messages) ; $i++ ) {
 
 		$richTxt->BeginItalic;
-		#$richTxt->WriteText(" - ");
 		$richTxt->EndBold;
 
 		$mess = $messages[$i];
 
 		$mess =~ s/@/###/;
-
-		$mess =~ s/<b>/@/g;
-		$mess =~ s/<\/b>/@/g;
-
-		my @messSplit = split /@/, $mess;
+ 
+		#my @messSplit = split /@/, $mess;
 
 		my $bold = 0;
 
 		#foreach my $l (split //,$mess) {
-		my $block = "";
+		my $block   = "";
+		my $messPom = "";    # here is stored char bz char message and tested on <r> atd
+		my $messRealLen = 0;
 		foreach my $ch ( split //, $mess ) {
 
-			if ( $ch ne "@" ) {
-				$block .= $ch;
-			}
-			else {
+			$messPom .= $ch;
+			$messRealLen++;
+			my $openTag  = substr $messPom, -3;
+			my $closeTag = substr $messPom, -4;
 
-				if ( $block ne "" ) {
-					$block =~ s/###/@/;
-					$richTxt->WriteText($block);
+			if ( $openTag =~ /<(\w)>/ ) {
+
+				if ( $1 eq "r" ) {
+					$richTxt->BeginTextColour( Wx::Colour->new( 255, 0, 0 ) );
 				}
+				elsif ( $1 eq "b" ) {
+					$richTxt->BeginBold();
+				}
+				
+				$richTxt->Remove($messRealLen -3, $messRealLen);
+				$messRealLen -=3;
 
-				if ( $bold == 0 ) {
-
-					$richTxt->BeginBold;
-					$bold  = 1;
-					$block = "";
+			}elsif ( $closeTag =~ /<\/(\w)>/ ) {
+				
+				if ( $1 eq "b" ) {
+					$richTxt->EndBold();
 				}
 				else {
-					$richTxt->EndBold;
-					$bold  = 0;
-					$block = "";
+					$richTxt->EndTextColour();
 				}
+				
+				$richTxt->Remove($messRealLen -4, $messRealLen);
+				$messRealLen -=4;
+
+			}else{
+				
+				$richTxt->WriteText($ch);
 			}
+			
+ 
 		}
 
 		if ( $block ne "" ) {
@@ -318,24 +322,25 @@ sub __GetHeightOfText {
 	my $rowCount = 0;
 
 	for ( my $i = 0 ; $i < scalar(@messages) ; $i++ ) {
-		
+
 		my $linenum = $messages[$i] =~ tr/\n//;
-		
-		my @lines = split ("\n", $messages[$i]);
-		
-		foreach my $l (@lines){
-			
-			my $cntPerLine = int( length($l) / 100);
-			$cntPerLine =  $cntPerLine < 1 ? 1 :$cntPerLine;
-			
-			 $rowCount += $cntPerLine;
-			
+
+		my @lines = split( "\n", $messages[$i] );
+
+		foreach my $l (@lines) {
+
+			my $cntPerLine = int( length($l) / 100 );
+			$cntPerLine = $cntPerLine < 1 ? 1 : $cntPerLine;
+
+			$rowCount += $cntPerLine;
+
 		}
-		 $rowCount += 1;
-#		foreach
-#
-#		print "\n\n".length( $messages[$i] )."\n line num : $linenum\n";
-#		$rowCount += ( int( length( $messages[$i] ) / 100 ) + 1 );
+		$rowCount += 1;
+
+		#		foreach
+		#
+		#		print "\n\n".length( $messages[$i] )."\n line num : $linenum\n";
+		#		$rowCount += ( int( length( $messages[$i] ) / 100 ) + 1 );
 	}
 
 	$rowCount += scalar(@messages);
@@ -343,12 +348,12 @@ sub __GetHeightOfText {
 	#22 is size for one line. If line is only one add some free space 15px
 	my $space = ( scalar(@messages) == 1 ) ? 15 : 0;
 	my $heiht = $rowCount * 18 + $space;
-	
+
 	# restrict max height
-	if($heiht > 800){
+	if ( $heiht > 800 ) {
 		$heiht = 800;
 	}
-	
+
 	return $heiht;
 }
 
@@ -383,23 +388,19 @@ sub __OnClick {
 
 	my ( $self, $button ) = @_;
 
-
-
-
 	#$parent->{"result"} = $button->{"order"};
 	#$self->Destroy();
-	
+
 	print STDERR "\nClick\n";
 
 	my $onExit = $self->{"onExit"};
 
 	if ( defined $onExit ) {
-		$onExit->( $self, $button->{"order"});
+		$onExit->( $self, $button->{"order"} );
 	}
-	
-	
+
 	#${$self->{"resultMngr"}} = $button->{"order"};
-	
+
 	#$self->Destroy();
 }
 
@@ -468,22 +469,22 @@ sub __GetIcoColor {
 
 if (0) {
 
-#	my @btns = ( "Nechcu", "Chcu" );                              # "Nechcu" = tl. cislo 1, "Chcu" = tl.cislo 2
-#	my @mess1 = ("Chtel bys jit dom?t dom?Chtel bys jit dom?");
-#	my $app = Managers::MessageMngr::MessageForm->new( EnumsGeneral->MessageType_WARNING, \@mess1, \@btns, \&test );
-#
-#	$app->MainLoop;
-#
-#	print "Finish";
-#
-#	sub test {
-#		print "Test";
-#		print $app->{"result"};
-#		my $self = $app->{"mainFrm"};
-#		$self->Close();
-#
-#		print "Finish";
-#	}
+	#	my @btns = ( "Nechcu", "Chcu" );                              # "Nechcu" = tl. cislo 1, "Chcu" = tl.cislo 2
+	#	my @mess1 = ("Chtel bys jit dom?t dom?Chtel bys jit dom?");
+	#	my $app = Managers::MessageMngr::MessageForm->new( EnumsGeneral->MessageType_WARNING, \@mess1, \@btns, \&test );
+	#
+	#	$app->MainLoop;
+	#
+	#	print "Finish";
+	#
+	#	sub test {
+	#		print "Test";
+	#		print $app->{"result"};
+	#		my $self = $app->{"mainFrm"};
+	#		$self->Close();
+	#
+	#		print "Finish";
+	#	}
 
 }
 

@@ -4,7 +4,7 @@
 # - Checking group data before final export. Handler: OnCheckGroupData
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Programs::Exporter::ExportChecker::Groups::PlotExport::Model::PlotCheckData;
+package Programs::Exporter::ExportChecker::Groups::PreExport::Model::PreCheckData;
 
 #3th party library
 use strict;
@@ -15,7 +15,7 @@ use File::Copy;
 use aliased 'CamHelpers::CamLayer';
 use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'CamHelpers::CamHelper';
-use aliased 'Programs::Exporter::ExportChecker::Groups::NifExport::Presenter::NifHelper';
+
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -40,25 +40,14 @@ sub OnCheckGroupData {
 	my $jobId     = $dataMngr->{"jobId"};
 	my $stepName  = "panel";
 
-	my @layers = @{ $groupData->GetLayers() };
+	my @layers = @{ $groupData->GetSignalLayers() };
 
 	foreach my $lInfo (@layers) {
 
 		# Check if layers has set polarity
-		unless ( defined $lInfo->{"polarity"} ) {
-			$dataMngr->_AddErrorResult( "Layer " . $lInfo->{"name"} . " doesn't have set polarity." );
+		unless ( defined $lInfo->{"etchingType"} ) {
+			$dataMngr->_AddErrorResult( "Layer " . $lInfo->{"name"} . " doesn't have set etchingType." );
 		}
-
-		# Check if layers has set mirror
-		unless ( defined $lInfo->{"mirror"} ) {
-			$dataMngr->_AddErrorResult( "Layer " . $lInfo->{"name"} . " doesn't have set mirror." );
-		}
-
-		# Check if layers has set compensation
-		unless ( defined $lInfo->{"comp"} ) {
-			$dataMngr->_AddErrorResult( "Layer " . $lInfo->{"name"} . " doesn't have set comp." );
-		}
-
 	}
  
 }

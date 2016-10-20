@@ -138,7 +138,7 @@ sub GetFilesNameByPattern {
 
 		#next unless $file =~ /^[a-z](\d+)/i;
 
-		if ( $file =~ /$partName/ ) {
+		if ( $file =~ /$partName/i ) {
 
 			$filePath = $dirPath . $file;
 			
@@ -167,7 +167,7 @@ sub GetFileNameByPattern() {
 
 		#next unless $file =~ /^[a-z](\d+)/i;
 
-		if ( $file =~ /$partName/ ) {
+		if ( $file =~ /$partName/i ) {
 
 			$filePath = $dirPath . $file;
 		}

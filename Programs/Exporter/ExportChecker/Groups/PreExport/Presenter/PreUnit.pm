@@ -8,7 +8,7 @@
 # 3) View - only display data, which are passed from model by presenter class
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Programs::Exporter::ExportChecker::Groups::PlotExport::Presenter::PlotUnit;
+package Programs::Exporter::ExportChecker::Groups::PreExport::Presenter::PreUnit;
 use base 'Programs::Exporter::ExportChecker::Groups::UnitBase';
 
 use Class::Interface;
@@ -19,16 +19,17 @@ use strict;
 use warnings;
 
 #local library
-use aliased 'Programs::Exporter::ExportChecker::Groups::PlotExport::View::PlotUnitForm';
-use aliased 'Programs::Exporter::ExportChecker::Groups::PlotExport::View::PlotUnitFormEvt';
+
+use aliased 'Programs::Exporter::ExportChecker::Groups::PreExport::View::PreUnitFormEvt';
 
 use aliased 'Programs::Exporter::ExportChecker::Groups::GroupDataMngr';
-use aliased 'Programs::Exporter::ExportChecker::Groups::PlotExport::Model::PlotCheckData';
-use aliased 'Programs::Exporter::ExportChecker::Groups::PlotExport::Model::PlotPrepareData';
-use aliased 'Programs::Exporter::ExportChecker::Groups::PlotExport::Model::PlotExportData';
-use aliased 'Programs::Exporter::ExportChecker::Groups::PlotExport::Model::PlotGroupData';
+use aliased 'Programs::Exporter::ExportChecker::Groups::PreExport::Model::PreCheckData';
+use aliased 'Programs::Exporter::ExportChecker::Groups::PreExport::Model::PrePrepareData';
+use aliased 'Programs::Exporter::ExportChecker::Groups::PreExport::Model::PreExportData';
+use aliased 'Programs::Exporter::ExportChecker::Groups::PreExport::Model::PreGroupData';
 use aliased 'Packages::Events::Event';
 use aliased 'Programs::Exporter::UnitEnums';
+use aliased 'Enums::EnumsGeneral';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -42,14 +43,19 @@ sub new {
 	bless $self;
 
 	#uique key within all units
-	$self->{"unitId"} = UnitEnums->UnitId_PLOT;
+	$self->{"unitId"} = UnitEnums->UnitId_PRE;
+	
+	# GUI exist
+	$self->{"formLess"} = 1;
 
 	# init class for model
-	my $checkData   = PlotCheckData->new();
-	my $prepareData = PlotPrepareData->new();
-	my $exportData  = PlotExportData->new();
+	my $checkData   = PreCheckData->new();
+	my $prepareData = PrePrepareData->new();
+	my $exportData  = PreExportData->new();
 
 	$self->{"dataMngr"} = GroupDataMngr->new( $self->{"jobId"}, $prepareData, $checkData, $exportData );
+	
+
 
 	return $self;    # Return the reference to the hash.
 }
@@ -71,11 +77,15 @@ sub InitForm {
 
 	$self->{"groupWrapper"} = $groupWrapper;
 
-	my $parent = $groupWrapper->GetParentForGroup();
-	$self->{"form"} = PlotUnitForm->new( $parent, $inCAM, $self->{"jobId"});
+	unless($self->IsFormLess()){
+			
+			my $parent = $groupWrapper->GetParentForGroup();
+			$self->{"form"} = undef;
+	}
+
 	
 	# init base class with event class
-	$self->{"eventClass"} = PlotUnitFormEvt->new($self->{"form"});
+	$self->{"eventClass"}  = PreUnitFormEvt->new($self);
 
 	$self->_SetHandlers();
 
@@ -84,44 +94,62 @@ sub InitForm {
 sub RefreshGUI {
 	my $self = shift;
 
-	my $groupData = $self->{"dataMngr"}->GetGroupData();
+	#my $groupData = $self->{"dataMngr"}->GetGroupData();
 
 	#refresh group form
-	$self->{"form"}->SetSendToPlotter( $groupData->GetSendToPlotter() );
-	$self->{"form"}->SetLayers( $groupData->GetLayers() );
- 
+	#$self->{"form"}->SetSendToPlotter( $groupData->GetSendToPlotter() );
+	#$self->{"form"}->SetLayers( $groupData->GetLayers() );
+
 	#refresh wrapper
-	$self->_RefreshWrapper();
+	#$self->_RefreshWrapper();
 }
 
 sub GetGroupData {
 
 	my $self = shift;
 
-	my $frm = $self->{"form"};
+	#my $frm = $self->{"form"};
+	my $groupData = $self->{"dataMngr"}->GetGroupData();
 
-	my $groupData;
+	# Check changes during setting of export
 
-	#if form is init/showed to user, return group data edited by form
-	#else return default group data, not processed by form
+	if ( defined $self->{"tentingCS"} ) {
 
-	if ($frm) {
-		$groupData = $self->{"dataMngr"}->GetGroupData();
-		
-		$groupData->SetSendToPlotter( $frm->GetSendToPlotter() );
-		$groupData->SetLayers( $frm->GetLayers() );
-		 
+		my $etchType;
+		if ( $self->{"tentingCS"} == 1 ) {
+			$etchType = EnumsGeneral->Etching_TENTING;
+		}
+		else {
+			$etchType = EnumsGeneral->Etching_PATTERN;
+		}
 
-	}
-	else {
+		my @layers = $groupData->GetSignalLayers();
+		foreach my $l (@layers) {
 
-		$groupData = $self->{"dataMngr"}->GetGroupData();
+			if ( $l->{"name"} =~ /^[cs]$/ ) {
+				$l->{"etchingType"} = $etchType;
+			}
+		}
+
+		$groupData->SetSignalLayers(\@layers );
 	}
 
 	return $groupData;
 }
 
- 
+# --------------------------------------------------------------
+# Handlers, which handle events from another units/groups
+# --------------------------------------------------------------
+
+sub ChangeTentingHandler {
+	my $self      = shift;
+	my $tentingCS = shift;
+
+	# save new settings to object
+
+	$self->{"tentingCS"} = $tentingCS;
+
+}
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

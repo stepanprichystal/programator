@@ -65,8 +65,9 @@ sub RunNewExport {
 	my $jobGUID = shift;
 	my $port    = shift;
 	my $pcbId   = shift;
-
-	my $thrId = $self->__CreateThread( $jobGUID, $port, $pcbId );
+	my $pidInCAM   = shift;
+	
+	my $thrId = $self->__CreateThread( $jobGUID, $port, $pcbId, $pidInCAM);
 
 	my %thrInfo = (
 					"jobGUID" => $jobGUID,
@@ -134,8 +135,9 @@ sub __CreateThread {
 	my $jobGUID = shift;
 	my $port    = shift;
 	my $pcbId   = shift;
+	my $pidInCAM   = shift;
 
-	my $worker = threads->create( sub { $self->__WorkerMethod( $jobGUID, $port, $pcbId ) } );
+	my $worker = threads->create( sub { $self->__WorkerMethod( $jobGUID, $port, $pcbId, $pidInCAM ) } );
 	$worker->set_thread_exit_only(1); # tell only this child thread will be exited
 
 	return $worker->tid();
@@ -149,9 +151,11 @@ sub __WorkerMethod {
 	my $jobGUID = shift;
 	my $port    = shift;
 	my $pcbId   = shift;
+	my $pidInCAM   = shift;
 
 	# TODO odkomentovat
 	my $inCAM = InCAM->new( "remote" => 'localhost', "port" => $port );
+	$inCAM->StarLog($pidInCAM, $pcbId);
 
 	#my $inCAM = undef;
 	$inCAM->ServerReady();

@@ -39,28 +39,26 @@ sub InitGroupTable {
 	my $self       = shift;
 	my $groupTable = shift;
 	my $inCAM      = shift;
- 
+
 	$self->__SetLayout( $groupTable, $inCAM );
 
 }
 
 sub __SetLayout {
-	
-	my $self  = shift;
-	my $groupTable  = shift;
-	
-	 #$groupTable = $self->__DefineTableGroups();
-	
+
+	my $self       = shift;
+	my $groupTable = shift;
+
+	#$groupTable = $self->__DefineTableGroups();
+
 	#my @rows = $groupTable->GetRows();
-	
-	 
+
 	my $inCAM = shift;
 
- 
 	# ================= NEW ===========================
- 
-	my @rows  = $groupTable->GetRows();
-	
+
+	my @rows = $groupTable->GetRows();
+
 	my $szMain = Wx::BoxSizer->new(&Wx::wxVERTICAL);
 
 	foreach my $row (@rows) {
@@ -68,8 +66,8 @@ sub __SetLayout {
 		my $szRow = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
 
 		my @cells = $row->GetCells();
-		
-		my $totalWidth = 0; # width of all cells in row
+
+		my $totalWidth = 0;    # width of all cells in row
 
 		for ( my $i = 0 ; $i < scalar(@cells) ; $i++ ) {
 
@@ -78,51 +76,59 @@ sub __SetLayout {
 			#foreach my $cell (@cells) {
 
 			#	my $cell = NifUnit->new("f121212");
-			
+
 			# Get cell title
-			my $title = UnitEnums->GetTitle($cell->GetUnitId());
-	
-			if("plot" eq $cell->GetUnitId()){
-				print STDERR "1";
-			}
+			my $title = UnitEnums->GetTitle( $cell->GetUnitId() );
 
 			# Create new group wrapper, parent is this panel
-			my $groupWrapperPnl = GroupWrapperForm->new($self, $title);
-			
-			# Init unit form, where parent will by group wrapper
-			$cell->InitForm( $groupWrapperPnl, $inCAM );
+			my $groupWrapperPnl;
 
-			# Insert initialized group to group wrapper
-			$groupWrapperPnl->Init( $cell->{"form"} );
+			unless ( $cell->IsFormLess() ) {
+				
+				$groupWrapperPnl = GroupWrapperForm->new( $self, $title );
 
-			#$groupWrapperPnl->{"pnlBody"}->Disable();
-			#$cell->{"form"}->Disable();
-			#$groupWrapperPnl->{"pnlBody"}->Disable();
-			#$groupWrapperPnl->Disable();
+				# Init unit form, where parent will by group wrapper
+				$cell->InitForm( $groupWrapperPnl, $inCAM );
+			}
+			else{
+				
+				# Init unit form, where parent will by group wrapper
+				$cell->InitForm( undef, $inCAM );
+			}
 
-			# Add this rappet to group table
-			my $w = $cell->GetCellWidth();
-			$totalWidth +=$w;
-			
-			$szRow->Add( $groupWrapperPnl, $w, &Wx::wxEXPAND | &Wx::wxALL, 4 );
-	
+			unless ( $cell->IsFormLess() ) {
+
+				# Insert initialized group to group wrapper
+				$groupWrapperPnl->Init( $cell->{"form"} );
+
+				#$groupWrapperPnl->{"pnlBody"}->Disable();
+				#$cell->{"form"}->Disable();
+				#$groupWrapperPnl->{"pnlBody"}->Disable();
+				#$groupWrapperPnl->Disable();
+
+				# Add this rappet to group table
+				my $w = $cell->GetCellWidth();
+				$totalWidth += $w;
+
+				$szRow->Add( $groupWrapperPnl, $w, &Wx::wxEXPAND | &Wx::wxALL, 4 );
+			}
+
 		}
 
 		# Add expander, which do space, if there are missing cells in row
-		if($totalWidth < 100){
-			$szRow->Add( 1,1 , 100-$totalWidth, &Wx::wxEXPAND | &Wx::wxALL, 0 );
+		if ( $totalWidth < 100 ) {
+			$szRow->Add( 1, 1, 100 - $totalWidth, &Wx::wxEXPAND | &Wx::wxALL, 0 );
 		}
 
-		
 		$szMain->Add( $szRow, 0, &Wx::wxEXPAND | &Wx::wxALL );
 	}
- 
+
 	$self->SetSizer($szMain);
 
 }
 
 sub __DefineTableGroups {
-my $self = shift;
+	my $self = shift;
 
 	use aliased 'Programs::Exporter::ExportChecker::ExportChecker::GroupTable::GroupTable';
 	use aliased 'Programs::Exporter::ExportChecker::ExportChecker::GroupTable::GroupTables';
@@ -133,9 +139,8 @@ my $self = shift;
 
 	#my $tab1 = $self->{"form"}->GetTab(0);
 	#my $tab2 = $self->{"form"}->GetTab(1);
-	
+
 	$self->{"groupTables"} = GroupTables->new();
-	
 
 	my $tableTab1 = GroupTable->new();
 
@@ -170,12 +175,10 @@ my $self = shift;
 	#	$row21Tab2->AddCell($nifUnit21);
 	#	$row21Tab2->AddCell($nifUnit22);
 
-	
-
 	#$self->{"groupTables"}->AddTable($tableTab1);
-	
+
 	#return $self->{"groupTables"};
-	
+
 	return $tableTab1;
 }
 
@@ -184,11 +187,11 @@ my $self = shift;
 #-------------------------------------------------------------------------------------------#
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
+
 	#my $test = Programs::Exporter::ExportChecker::Forms::GroupTableForm->new();
 
 	#$test->MainLoop();
 }
-
 
 1;
 

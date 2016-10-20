@@ -248,9 +248,9 @@ sub ChangeTentingHandler{
 	
 	my $polar = "";
 	if($tentingCS){
-		$polar = "+";
+		$polar = "-";
 	}else{
-			$polar = "-";	
+			$polar = "+";	
 	}
 	 
 	my @rows = $self->{"plotList"}->GetAllRows();

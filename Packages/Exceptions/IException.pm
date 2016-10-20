@@ -1,51 +1,40 @@
+
 #-------------------------------------------------------------------------------------------#
-# Description: This class define "outside" handlers and events, 
-# which is possible cooperate with.
+# Description: Interface, which must implement each UnitForm
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Programs::Exporter::ExportChecker::Groups::NifExport::View::NifUnitFormEvt;
-use base ("Programs::Exporter::ExportChecker::Groups::UnitFormEvtBase");
+package Packages::Exceptions::IException;
 
 #3th party library
 use strict;
 use warnings;
+#use File::Copy;
 
 #local library
-use aliased 'Programs::Exporter::ExportChecker::Groups::Enums';
-use aliased 'Packages::Events::Event';
+
 
 #-------------------------------------------------------------------------------------------#
-#  Package methods
+#  Interface
 #-------------------------------------------------------------------------------------------#
 
-sub new {
-	my $class = shift;
-	my $self  = {};
+use Class::Interface;
+&interface;   
 
-	$self = $class->SUPER::new(@_);
-	bless $self;
+# Return error message in string
 
-	my $wrapper = $self->{"wrapper"};
+sub Error;
 
-	# Provided handlers
+sub GetExceptionId;
 
 
-	# Provided events
-	
-	$self->_AddEvent( $wrapper->{'onTentingChange'}, Enums->Event_nif_tenting );
-
-	return $self;
-}
-
-
-
+ 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-
+	 
 }
 
 1;

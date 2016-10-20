@@ -266,11 +266,11 @@ sub __GetMessagesTxt {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-#my @mess1 = ();
+	my @mess1 = ("jerrr#eee<b>e </b> ahoj<r>dvojka </r> ahoj3.");
 
-	#my $messMngr = Managers::MessageMngr::MessageMngr->new("D3333");
+	my $messMngr = Managers::MessageMngr::MessageMngr->new("D3333");
 
-	#$messMngr->ShowModal( -1, EnumsGeneral->MessageType_WARNING, \@mess1 );
+	$messMngr->ShowModal( -1, EnumsGeneral->MessageType_WARNING, \@mess1 );
 
 }
 

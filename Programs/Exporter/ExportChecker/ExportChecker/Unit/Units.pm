@@ -16,7 +16,7 @@ use warnings;
 use aliased "Packages::Events::Event";
 use aliased 'Programs::Exporter::ExportChecker::Enums';
 use aliased 'Programs::Exporter::ExportChecker::ExportChecker::DefaultInfo::DefaultInfo';
-
+use aliased 'Programs::Exporter::ExportChecker::Groups::PreExport::Presenter::PreUnit';
 #-------------------------------------------------------------------------------------------#
 #  Package methods, requested by IUnit interface
 #-------------------------------------------------------------------------------------------#
@@ -39,6 +39,11 @@ sub Init {
 	my $inCAM = shift;
 	my $jobId = shift;
 	my @units = @{ shift(@_) };
+	
+	
+	## each export has to contai special group "PreGroup"
+	#my $preUnit1 = PreUnit->new( $jobId);	
+	#push(@units, $preUnit1);
 
 	$self->{"defaultInfo"} = DefaultInfo->new( $inCAM, $jobId );
 
@@ -47,6 +52,21 @@ sub Init {
 		
 		$unit->SetDefaultInfo( $self->{"defaultInfo"} );
 	}
+
+
+#	# Do conenction between units events/handlers
+#	 
+#
+#	foreach my $unitA (@units) {
+#
+#		my @unitEvents = $unitA->GetEventClass()->GetEvents();
+#
+#		# search handler for this event type in all units
+#		foreach my $unitB (@units) {
+#
+#			$unitB->GetEventClass()->ConnectEvents( \@unitEvents );
+#		}
+#	}
 
 	$self->{"units"} = \@units;
 

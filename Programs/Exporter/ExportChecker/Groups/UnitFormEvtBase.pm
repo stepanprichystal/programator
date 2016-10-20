@@ -24,7 +24,7 @@ sub new {
 	$self = {};
 	bless $self;
 
-	$self->{"form"} = shift;
+	$self->{"wrapper"} = shift;
 
 	my @handlers = ();
 	$self->{"handlers"} = \@handlers;
@@ -67,7 +67,9 @@ sub ConnectEvents {
 
 		my $h = $self->__GetHandler( $evt->{"eventType"} );
 		if ($h) {
-			$evt->{"event"}->Add( sub { $h->(@_) } );
+			
+			$evt->{"event"}->Add( sub { $h->{"handler"}->($h->{"wrapper"}, @_) } );
+			
 		}
 	}
 }
@@ -78,6 +80,7 @@ sub _AddHandler {
 	my $eventType = shift;
 
 	my %info = ();
+	$info{"wrapper"}   = $self->{"wrapper"};
 	$info{"handler"}   = $event;
 	$info{"eventType"} = $eventType;
 

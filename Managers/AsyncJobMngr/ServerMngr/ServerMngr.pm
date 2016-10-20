@@ -643,11 +643,12 @@ sub __CloseZombie {
 }
 
 sub __PortReady {
-	my ( $self, $port, $pcbId ) = @_;
+	my ( $self, $port, $pcbId, $pidInCAM ) = @_;
 
 	my %res : shared = ();
 	$res{"port"}    = $port;
 	$res{"jobGUID"} = $pcbId;
+	$res{"pidInCAM"} = $pidInCAM;
 
 	my $threvent = new Wx::PlThreadEvent( -1, $PORT_READY_EXPORTER_EVT, \%res );
 	Wx::PostEvent( $self->{"exporterFrm"}, $threvent );
@@ -670,7 +671,7 @@ sub __PortReadyHandler {
 		${$serverRef}[$idx]->{"pidInCAM"}  = $d{"pidInCAM"};
 		${$serverRef}[$idx]->{"pidServer"} = $d{"pidServer"};
 
-		$self->__PortReady( $d{"port"}, $d{"jobGUID"} );
+		$self->__PortReady( $d{"port"}, $d{"jobGUID"}, $d{"pidInCAM"});
 	}
 }
 

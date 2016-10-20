@@ -87,6 +87,8 @@ use Time::HiRes;
 use aliased 'Packages::InCAM::Helper';
 use aliased 'Packages::Exceptions::InCamException';
 use aliased 'Helpers::GeneralHelper';
+use aliased 'Helpers::FileHelper';
+use aliased 'Enums::EnumsPaths';
 
 #-------------------------------------------------------------------------------------------#
 #  Global vars
@@ -172,7 +174,7 @@ sub new {
 
 sub Reconnect {
 	my $self = shift;
-	
+
 	$self->__Connect();
 }
 
@@ -227,6 +229,12 @@ sub DESTROY {
 
 	my $self = shift;
 	my $s    = $self->{"socket"};
+
+	# close opened InCam log
+	if ( $self->{"fhLog"}){
+		close($self->{"fhLog"});
+	} 
+ 
 
 	if ( $self->{socketOpen} == 0 ) {
 		return;
@@ -590,7 +598,14 @@ sub COM {
 		$self->{"exception"} = $ex;
 		push( @{ $self->{"exceptions"} }, $ex );
 
+		# save exeption stam to log
+		if ( $self->__LogExist() ) {
+
+			$self->PutStampToLog( $ex->GetExceptionId() );
+		}
+
 		if ( $self->{"HandleException"} == 0 ) {
+			print STDERR "die when inCAM\n";
 			die $self->{"exception"};
 
 		}
@@ -698,6 +713,92 @@ sub AUX {
 	$self->{STATUS}  = $self->__GetReply();
 	$self->{READANS} = $self->__GetReply();
 	$self->{COMANS}  = $self->{READANS};
+}
+
+sub StarLog {
+	my $self     = shift;
+	my $pidInCAM = shift;
+	my $logId = shift; # this id will be contained in logfile name
+	
+	unless($logId){
+		$logId = $pidInCAM;
+	}
+
+	unless ($pidInCAM) {
+		return;
+	}
+
+	my $logFile = FileHelper->GetFileNameByPattern( EnumsPaths->Client_INCAMTMP, "." . $pidInCAM );
+
+	if ($logFile) {
+
+		my $customLog = EnumsPaths->Client_INCAMTMPOTHER . "incamLog." . $logId;
+		$self->{"customLogPath"} = $customLog;
+		if ( -e $customLog ) {
+			unlink($customLog);
+		}
+
+		my $fLog;
+		my $fLogCustom;
+
+		if ( open( $fLog, '<', $logFile ) ) {
+
+			my @input = <$fLog>;
+
+			# Let fLog open ...
+
+			if ( open( $fLogCustom, '>', $customLog ) ) {
+
+				print $fLogCustom @input;
+
+				close($fLogCustom);
+
+				# Let $fLogCustom open ..
+
+				$self->{"fhLog"}       = $fLog;
+				$self->{"fhLogCustom"} = $fLogCustom;
+
+			}
+
+		}
+
+	}
+}
+
+sub __LogExist {
+	my $self = shift;
+
+	if ( $self->{"fhLog"} && $self->{"fhLogCustom"} ) {
+		return 1;
+	}
+	else {
+		return 0;
+	}
+
+}
+
+sub PutStampToLog {
+	my $self  = shift;
+	my $stamp = shift;
+
+	if ( $self->{"fhLog"} && $self->{"fhLogCustom"} ) {
+
+		my $stampText = "ExceptionId:$stamp";
+
+		my $fLog       = $self->{"fhLog"};
+		my $fLogCustom = $self->{"fhLogCustom"};
+
+		seek $fLog, 0, 0;
+		my @new_input = <$fLog>;
+
+		if ( open( $fLogCustom, '>>', $self->{"customLogPath"} ) ) {
+
+			print $fLogCustom @new_input;
+
+			print $fLogCustom $stampText;
+			close($fLogCustom);
+		}
+	}
 }
 
 # Get some basic info

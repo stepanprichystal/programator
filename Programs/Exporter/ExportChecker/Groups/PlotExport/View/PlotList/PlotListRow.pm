@@ -184,7 +184,8 @@ sub GetLayerValues {
 	
 	$lInfo{"plot"} = $self->IsSelected();
 	
-	$lInfo{"polarity"} = $self->{"polarityCb"}->GetValue();
+
+	$lInfo{"polarity"} = $self->{"polarityCb"}->GetValue() eq "+" ? "positive" : "negative";
 
 	if ( $self->{"mirrorChb"}->IsChecked() ) {
 		$lInfo{"mirror"} = 1;
@@ -194,9 +195,7 @@ sub GetLayerValues {
 
 	}
 	$lInfo{"comp"} = $self->{"compTxt"}->GetValue();
-
-	
-
+ 
 	return %lInfo;
 }
 
