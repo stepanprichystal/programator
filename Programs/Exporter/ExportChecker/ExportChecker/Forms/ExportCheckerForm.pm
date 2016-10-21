@@ -472,6 +472,8 @@ sub BuildGroupTableForm {
 	my $groupTables = shift;
 	$self->{"inCAM"} = shift;
 
+	$self->{"mainFrm"}->Freeze();
+
 	foreach my $table ( $groupTables->GetTables() ) {
 
 		my $pageTab   = $self->AddPage( $table->GetTitle() );
@@ -505,6 +507,8 @@ sub BuildGroupTableForm {
 		#compute number of rows. One row has height 10 px
 		$scrollPnl->SetRowCount( $height / 10 );
 	}
+	
+	$self->{"mainFrm"}->Thaw();
 
 	# Do conenction between units events/handlers
 	my @units = $groupTables->GetAllUnits();

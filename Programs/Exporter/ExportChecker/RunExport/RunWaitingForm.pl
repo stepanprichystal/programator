@@ -16,15 +16,16 @@ use lib qw( C:\Perl\site\lib\TpvScripts\Scripts );
 use aliased 'Programs::Exporter::ExportUtility::ExportUtility::ExportUtility';
 use aliased 'Managers::AsyncJobMngr::Enums'           => 'EnumsMngr';
 use aliased 'Programs::Exporter::ExportUtility::Helper';
-
+use aliased 'Widgets::Forms::LoadingForm';
  
  
 my $CONSOLE=Win32::Console->new;
-$CONSOLE->Title('Cmd of ExporterUtility PID:'.$$); 
+$CONSOLE->Title("Loading Exporter Checker"); 
 
-Helper->ShowExportWindow(1,"Cmd of ExporterUtility PID:".$$);
  
-my $exporter = ExportUtility->new(EnumsMngr->RUNMODE_TRAY);
+my $frm = LoadingForm->new(-1, "Loading Exporter Checker...");
+
+$frm->MainLoop();
 
  
 

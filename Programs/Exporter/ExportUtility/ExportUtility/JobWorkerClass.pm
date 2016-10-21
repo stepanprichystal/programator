@@ -42,8 +42,6 @@ sub Init {
 	$self->{"inCAM"}       = shift;
 	$self->{"exportClass"} = shift;    # classes for export each group
 	$self->{"data"}        = shift;    # export data
-	
-	 
 
 }
 
@@ -56,49 +54,50 @@ sub RunExport {
 	# sort keys by nhash value "__UNITORDER__"
 	#my @keys = ;
 
-	foreach my $unitId (@keys) {
+	# Open job
+	if ( $self->__OpenJob() ) {
 
-		#tell group export start
+		foreach my $unitId (@keys) {
 
-		my $exportData = $unitsData{$unitId};
+			#tell group export start
 
-		# Event when group export start
-		$self->__GroupExportEvent( Enums->EventType_GROUP_START, $unitId );
+			my $exportData = $unitsData{$unitId};
 
-		# Open job
-		if ( $self->__OpenJob() ) {
+			# Event when group export start
+			$self->__GroupExportEvent( Enums->EventType_GROUP_START, $unitId );
 
 			# DON'T USE TRY/CATCH (TINY LIBRARY), IF SO, NORRIS WRITTER DOESN'T WORK
 			# catch all unexpected exception in thread
 			eval {
 
-				# Process group 
+				# Process group
 				$self->__ProcessGroup( $unitId, $exportData );
 			};
 			if ( my $e = $@ ) {
 
 				my $errStr = "";
-				
+
 				# get string error from exception
 				if ( $e->can("Error") ) {
-				
-					$errStr .= $e->Error(); 
-					
-				}else{
-					
+
+					$errStr .= $e->Error();
+
+				}
+				else {
+
 					$errStr .= $e;
 				}
-				 
+
 				$self->__TaskResultEvent( ResultEnums->ItemResult_Fail, $errStr );
 				last;
 			}
+
+			# Event when group export end
+			$self->__GroupExportEvent( Enums->EventType_GROUP_END, $unitId );
 		}
 
 		#close job
 		$self->__CloseJob();
-
-		# Event when group export end
-		$self->__GroupExportEvent( Enums->EventType_GROUP_END, $unitId );
 
 	}
 }
@@ -109,11 +108,19 @@ sub __OpenJob {
 	my $inCAM = $self->{"inCAM"};
 
 	# START HANDLE EXCEPTION IN INCAM
+	
+	print STDERR "\n\n\n\n ================ handle exception ======================\n\n\n\n";
 	$inCAM->HandleException(1);
+
+	$self->{"inCAM"}->COM("Ydarec");
+
+	# TODO smayat
 
 	CamHelper->OpenJob( $self->{"inCAM"}, $self->{"pcbId"} );
 
 	# STOP HANDLE EXCEPTION IN INCAM
+	
+	print STDERR "\n\n\n\n ================ handle exception END ======================\n\n\n\n";
 	$inCAM->HandleException(0);
 
 	my $err = $inCAM->GetExceptionError();
@@ -231,13 +238,13 @@ sub __ProcessGroup {
 	$exportClass->{"onItemResult"}->Add( sub { $self->__ItemResultEvent( $exportClass, $unitId, @_ ) } );
 
 	# START HANDLE EXCEPTION IN INCAM
-	#$inCAM->HandleException(1);
+	$inCAM->HandleException(1);
 
 	# Final export group
 	$exportClass->Run();
 
 	# STOP HANDLE EXCEPTION IN INCAM
-	#$inCAM->HandleException(0);
+	$inCAM->HandleException(0);
 
 	my $err = $inCAM->GetExceptionError();
 
@@ -313,7 +320,7 @@ sub __TaskResultEvent {
 	$self->_SendMessageEvt( Enums->EventType_TASK_RESULT, \%data1 );
 
 }
- 
+
 sub __GroupExportEvent {
 	my $self   = shift;
 	my $type   = shift;    #GROUP_EXPORT_<START/END>

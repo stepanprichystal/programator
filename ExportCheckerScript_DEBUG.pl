@@ -18,6 +18,9 @@ my $port = shift;
 # third should be pid of server
 my $pid = shift;
 
+# pid of loading form
+my $pidLoadFrm = shift;
+
 unless($jobId){
 	
  
@@ -27,7 +30,7 @@ unless($jobId){
  
 
 
-my $form = ExportChecker->new($jobId, $port, $pid);
+my $form = ExportChecker->new($jobId, $port, $pid, $pidLoadFrm);
  
  
  

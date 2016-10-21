@@ -48,9 +48,10 @@ sub Build {
 	
 	my $preUnit1 = PreUnit->new( $self->{"jobId"});	
 	my $nifUnit1 = NifUnit->new( $self->{"jobId"});
+	my $plotUnit1 = PlotUnit->new( $self->{"jobId"} );
 	my $ncUnit1 = NCUnit->new( $self->{"jobId"});
 	my $aoiUnit1 = AOIUnit->new( $self->{"jobId"} );
-	my $plotUnit1 = PlotUnit->new( $self->{"jobId"} );
+	
 	my $etUnit1 = ETUnit->new( $self->{"jobId"} );
 
 	#my $ncUnit2 = NCUnit->new( $self->{"jobId"}, "NC 2" );

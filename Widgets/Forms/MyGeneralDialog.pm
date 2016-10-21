@@ -2,6 +2,8 @@
 # Description: Widget slouzici pro zobrazovani zprav ruznych typu uzivateli
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
+
+
 package Widgets::Forms::MyGeneralDialog;
 
 #use Wx ':everything';

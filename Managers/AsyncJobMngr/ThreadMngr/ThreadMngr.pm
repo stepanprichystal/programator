@@ -137,7 +137,15 @@ sub __CreateThread {
 	my $pcbId   = shift;
 	my $pidInCAM   = shift;
 
+
+	# TODO smazat
+
+	# $self->__WorkerMethod( $jobGUID, $port, $pcbId, $pidInCAM ) ;
+	 
+	# return $$;
+
 	my $worker = threads->create( sub { $self->__WorkerMethod( $jobGUID, $port, $pcbId, $pidInCAM ) } );
+	
 	$worker->set_thread_exit_only(1); # tell only this child thread will be exited
 
 	return $worker->tid();

@@ -5,15 +5,16 @@ use warnings;
 
 use lib qw( C:\Perl\site\lib\TpvScripts\Scripts );
 
-use aliased 'Programs::Exporter::ExportChecker::RunExportChecker';
+use aliased 'Programs::Exporter::ExportChecker::RunExport::RunExportChecker';
  
 
-
+my $jobId = $ENV{"JOB"};
  
-#init CAM
-my $export = RunExportChecker->new("f13610");
 
-
+my $form = RunExportChecker->new($jobId);
+ 
+ 
+ 
  
 
 

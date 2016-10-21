@@ -12,8 +12,8 @@ use aliased 'Packages::Events::Event';
 use aliased 'Programs::Exporter::UnitEnums';
 use aliased 'Managers::MessageMngr::MessageMngr';
 
-use aliased "Programs::Exporter::ExportUtility::Groups::PlotExport::PlotUnit"  => "PlotUnitExport";
-use aliased "Programs::Exporter::ExportChecker::Groups::PlotExport::Presenter::PlotUnit";
+use aliased "Programs::Exporter::ExportUtility::Groups::PlotExport::PlotUnit"  => "UnitExport";
+use aliased "Programs::Exporter::ExportChecker::Groups::PlotExport::Presenter::PlotUnit" => "Unit";
 
 use aliased 'Programs::Exporter::ExportChecker::ExportChecker::DefaultInfo::DefaultInfo';
 use aliased 'Packages::ItemResult::ItemResultMngr';
@@ -21,7 +21,6 @@ use aliased 'Packages::ItemResult::ItemResultMngr';
 #-------------------------------------------------------------------------------------------#
 #  NC export, all layers, all machines..
 #-------------------------------------------------------------------------------------------#
-
 my $resultMess = "";
 my $succes     = 1;
 sub new {
@@ -29,6 +28,9 @@ sub new {
 	my $self = shift;
 	$self = {};
 	bless $self;
+	
+	$self->{"id"} =  UnitEnums->UnitId_PLOT;
+	
 	return $self;
 }
 
@@ -43,7 +45,7 @@ sub Run {
 
 	my $resultMngr = ItemResultMngr->new();
 
-	my $unit = PlotUnit->new($jobId);
+	my $unit = Unit->new($jobId);
 	$unit->SetDefaultInfo( $self->{"defaultInfo"} );
 	$unit->InitDataMngr($inCAM);
 	$unit->CheckBeforeExport( $inCAM, \$resultMngr );
@@ -64,7 +66,7 @@ sub Run {
 
 	my $exportData = $unit->GetExportData($inCAM);
 
-	my $exportUnit = PlotUnitExport->new( UnitEnums->UnitId_PLOT );
+	my $exportUnit = UnitExport->new( $self->{"id"} );
 
 	my $exportClass = $exportUnit->GetExportClass();
 
@@ -72,10 +74,10 @@ sub Run {
 	$exportClass->{"onItemResult"}->Add( sub { Test(@_) } );
 	$exportClass->Run();
 
-	print "\n========================== E X P O R T: " . UnitEnums->UnitId_PLOT . " ===============================\n";
+	print "\n========================== E X P O R T: " . $self->{"id"} . " ===============================\n";
 	print $resultMess;
 	print "\n========================== E X P O R T: "
-	  . UnitEnums->UnitId_PLOT
+	  . $self->{"id"}
 	  . " - F I N I S H: "
 	  . ( $succes ? "SUCCES" : "FAILURE" )
 	  . " ===============================\n";
@@ -98,7 +100,7 @@ sub Run {
 	unless ($succes) {
 		my $messMngr = MessageMngr->new($jobId);
 
-		my @mess1 = ( "== EXPORT FAILURE === GROUP:  " . UnitEnums->UnitId_NIF . "\n" . $resultMess );
+		my @mess1 = ( "== EXPORT FAILURE === GROUP:  " . $self->{"id"} . "\n" . $resultMess );
 		$messMngr->ShowModal( -1, EnumsGeneral->MessageType_ERROR, \@mess1 );
 	}
 

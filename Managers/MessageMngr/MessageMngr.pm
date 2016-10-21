@@ -266,7 +266,7 @@ sub __GetMessagesTxt {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	my @mess1 = ("jerrr#eee<b>e </b> ahoj<r>dvojka </r> ahoj3.");
+	my @mess1 = ("jerrr#eee<b>e  ahoj<r>dvojka </r> a </b>ahoj3.");
 
 	my $messMngr = Managers::MessageMngr::MessageMngr->new("D3333");
 

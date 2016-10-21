@@ -23,6 +23,7 @@ use aliased 'CamHelpers::CamJob';
 use aliased 'Packages::Polygon::Features::PolyLineFeatures::PolyLineFeatures';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'CamHelpers::CamDrilling';
+use aliased 'CamHelpers::CamStepRepeat';
 
 #-------------------------------------------------------------------------------------------#
 #  Script methods
@@ -46,7 +47,7 @@ sub PlatedAreaExceed {
 
 		CamDrilling->AddHistogramValues( $inCAM, $jobId, \@layers );
 
-		if ( $layer{"minTool"} && $layer{"minTool"} > 5000 ) {
+		if ( $layer{"minTool"} && $layer{"maxTool"} > 5000 ) {
 
 			$areaExceed = 1;
 		}
@@ -61,6 +62,18 @@ sub PlatedAreaExceed {
 		foreach my $r (@rLayers) {
 
 			my $lName = $r->{"gROWname"};
+
+			# test if step has nested..
+			# if so, test if has only one type
+			if ( CamStepRepeat->ExistStepAndRepeats( $inCAM, $jobId, $stepName ) ) {
+
+				my @uniqueStps = CamStepRepeat->GetUniqueStepAndRepeat( $inCAM, $jobId, $stepName );
+
+				if ( scalar(@uniqueStps) == 1 ) {
+
+					$stepName = $uniqueStps[0]->{"stepName"};
+				}
+			}
 
 			my $area = $self->GetMaxAreaOfRout( $inCAM, $jobId, $stepName, $lName );
 
@@ -98,6 +111,8 @@ sub GetAreasOfRout {
 	my $stepName = shift;
 	my $layer    = shift;
 
+	CamHelper->SetStep( $inCAM, $stepName );
+
 	CamLayer->WorkLayer( $inCAM, $layer );
 
 	my $flatL = GeneralHelper->GetGUID();
@@ -123,9 +138,8 @@ sub GetAreasOfRout {
 
 	$inCAM->COM( "sel_contourize", "accuracy" => "6.35", "break_to_islands" => "yes", "clean_hole_size" => "76.2", "clean_hole_mode" => "x_or_y" );
 
-
-	$inCAM->COM("set_filter_type","filter_name" => "","lines" => "yes","pads" => "yes","surfaces" => "yes","arcs" => "yes","text" => "yes");
-	$inCAM->COM("set_filter_polarity","filter_name" => "","positive" => "yes","negative" => "yes");
+	$inCAM->COM( "set_filter_type", "filter_name" => "", "lines" => "yes", "pads" => "yes", "surfaces" => "yes", "arcs" => "yes", "text" => "yes" );
+	$inCAM->COM( "set_filter_polarity", "filter_name" => "", "positive" => "yes", "negative" => "yes" );
 
 	$inCAM->COM('adv_filter_reset');
 	$inCAM->COM('filter_area_strt');
@@ -151,9 +165,11 @@ sub GetAreasOfRout {
 				 "mirror"        => "any",
 				 "ccw_rotations" => ""
 	);
- 
+
 	$inCAM->COM( "filter_area_end", "filter_name" => "popup", "operation" => "select" );
-	$inCAM->COM("sel_delete");
+	if ( $inCAM->GetReply() > 0 ) {
+		$inCAM->COM("sel_delete");
+	}
 
 	CamLayer->NegativeLayerData( $inCAM, $compL, \%limits );
 
@@ -283,14 +299,14 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	use aliased 'Packages::Routing::RoutingOperation';
 	use aliased 'Packages::InCAM::InCAM';
 
-	my $jobId = "f13609";
+	my $jobId = "f51788";
 	my $inCAM = InCAM->new();
 
-	my $step  = "panel";
-	 
-	my $max   = RoutingOperation->PlatedAreaExceed( $inCAM, $jobId, $step );
+	my $step = "panel";
 
-	print $max;
+	my $max = RoutingOperation->PlatedAreaExceed( $inCAM, $jobId, $step );
+
+	print "area exceeded=" . $max . "---\n";
 
 }
 

@@ -46,7 +46,7 @@ sub Init {
 	
  
 	
-	my $layers =  $exportData->GetLayers();
+	my $layers =  $exportData->GetSignalLayers();
 
 	
 	my $mngr  = PreMngr->new( $inCAM, $jobId, $layers);

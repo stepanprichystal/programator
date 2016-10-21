@@ -13,6 +13,7 @@ use Win32::Process;
 use Wx;
 use Config;
 use Win32::GuiTest qw(FindWindowLike SetWindowPos ShowWindow);
+use Time::HiRes qw (sleep);
 
 #use Try::Tiny;
 
@@ -249,7 +250,7 @@ sub ReturnServerPort {
 }
 
 # Periodically called method.
-# Check all waiting servers and delete that one, 
+# Check all waiting servers and delete that one,
 # which wait longer time than time given by "delayTime"
 sub DestroyServersOnDemand {
 	my $self      = shift;
@@ -370,7 +371,7 @@ sub DestroyServer {
 		}
 
 		my $s = @{$serverRef}[$idx];
- 
+
 		Win32::Process::KillProcess( $s->{"pidServer"}, 0 );
 		Win32::Process::KillProcess( $s->{"pidInCAM"},  0 );
 
@@ -450,7 +451,7 @@ sub __CreateServer {
 	my $self     = shift;
 	my $freePort = shift;
 	my $jobGUID  = shift;
- 
+
 	my $pidInCAM;
 	my $pidServer;
 
@@ -473,7 +474,7 @@ sub __CreateServer {
 	#run InCAM editor with serverscript
 	Win32::Process::Create( $processObj, $inCAMPath,
 							"InCAM.exe    -s" . GeneralHelper->Root() . "\\Managers\\AsyncJobMngr\\Server\\ServerExporter.pl  " . $freePort,
-							0, THREAD_PRIORITY_NORMAL, "." )
+							1, THREAD_PRIORITY_NORMAL, "." )
 	  || die "$!\n";
 
 	$pidInCAM = $processObj->GetProcessID();
@@ -481,13 +482,15 @@ sub __CreateServer {
 	# Temoporary solution because -x is not working in inCAM
 	$self->__MoveWindowOut($pidInCAM);
 
+	my $worker = threads->create( sub { $self->__MoveWindowOut($pidInCAM) } );
+
 	Helper->Print( "CLIENT PID: " . $pidInCAM . " (InCAM)........................................is launching\n" );
 
 	# creaate and test server connection
 	$pidServer = $self->__CreateServerConn($freePort);
 
 	# Temoporary solution because -x is not working in inCAM
-	$self->__MoveWindowOut($pidInCAM);
+	#$self->__MoveWindowOut($pidInCAM);
 
 	#if ok, reise event port ready
 	if ($pidServer) {
@@ -529,7 +532,6 @@ sub __CreateServerExternal {
 
 	#if ok, reise event port ready
 	if ($pidServer) {
-
 
 		Helper->Print("PORT: $freePort ......................................................is ready\n");
 
@@ -595,14 +597,23 @@ sub __MoveWindowOut {
 	my $self = shift;
 	my $pid  = shift;
 
-	my @windows = FindWindowLike( 0, "$pid" );
-	for (@windows) {
+	while (1) {
 
-		ShowWindow( $_, 0 );
-		SetWindowPos( $_, 0, -10000, -10000, 0, 0, 0 );
+		my @windows = FindWindowLike( 0, "$pid" );
+		for (@windows) {
+
+			ShowWindow( $_, 0 );
+			SetWindowPos( $_, 0, -10000, -10000, 0, 0, 0 );
+
+			return 1;
+		}
+		
+		sleep(0.1);
+
+		print STDERR "hledam okno\n";
 	}
-}
 
+}
 
 sub __InitServers {
 	my $self = shift;
@@ -616,8 +627,8 @@ sub __InitServers {
 		# set default port number
 		$sInfo->{"portDefault"} = $self->{"startPort"} + $i + 1;    #server ports 1001, 1002....
 
-		  # set working port number
-		  $sInfo->{"port"} = $sInfo->{"portDefault"};
+		# set working port number
+		$sInfo->{"port"} = $sInfo->{"portDefault"};
 
 		push( @{$serverRef}, $sInfo );
 	}
@@ -646,8 +657,8 @@ sub __PortReady {
 	my ( $self, $port, $pcbId, $pidInCAM ) = @_;
 
 	my %res : shared = ();
-	$res{"port"}    = $port;
-	$res{"jobGUID"} = $pcbId;
+	$res{"port"}     = $port;
+	$res{"jobGUID"}  = $pcbId;
 	$res{"pidInCAM"} = $pidInCAM;
 
 	my $threvent = new Wx::PlThreadEvent( -1, $PORT_READY_EXPORTER_EVT, \%res );
@@ -671,7 +682,7 @@ sub __PortReadyHandler {
 		${$serverRef}[$idx]->{"pidInCAM"}  = $d{"pidInCAM"};
 		${$serverRef}[$idx]->{"pidServer"} = $d{"pidServer"};
 
-		$self->__PortReady( $d{"port"}, $d{"jobGUID"}, $d{"pidInCAM"});
+		$self->__PortReady( $d{"port"}, $d{"jobGUID"}, $d{"pidInCAM"} );
 	}
 }
 
@@ -714,7 +725,6 @@ sub __ExceedServersCnt {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	 
 }
 
 1;

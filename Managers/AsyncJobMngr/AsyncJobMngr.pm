@@ -476,7 +476,10 @@ sub __CloseActiveJobs {
 	# jinak cekame ay se spusti pripadne joby, co jsou ve stavu WAITINGPORT
 	if ( scalar( @{$jobsRef} ) == 0 ) {
 		$self->{"timerCloseJobs"}->Stop();
+		
+		print STDERR "Destroying main frame 1\n\n";
 		$frame->Destroy();
+		$self->ExitMainLoop(); # this line is necessery to console window was exited too
 	}
 }
 
@@ -534,7 +537,10 @@ sub __OnClose {
 
 		# Close or servers, which are waiting or running
 		$self->{"serverMngr"}->SetDestroyOnDemand(0);
+ 
 		$self->{"mainFrm"}->Destroy();
+		$self->ExitMainLoop(); # this line is necessery to console window was exited too
+		
 	}
 
 }

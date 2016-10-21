@@ -35,17 +35,57 @@ sub GetFormatedLogByStamp {
 	my $logId   = shift;
 	my $stampId = shift;
 
-  	my @lines = $self->GetLogLineByStamp($logId, $stampId);
+	my @lines = $self->GetLogLineByStamp( $logId, $stampId );
+
+	# select lines with text "internal"
+	$self->__SelectInternal(\@lines);
 
 	my $str = "";
-	
-	foreach my $l (@lines){
-		
+
+	foreach my $l (@lines) {
+
 		$str .= $l;
 	}
-	
 
 	return $str;
+}
+
+sub __SelectInternal {
+	my $self  = shift;
+	my $lines = shift;
+
+	my $maxLen         = 20;
+	my $internalFound  = 0;
+	my $commandFound   = 0;
+	my $formatedLCount = 0;
+
+	my $l;
+	for ( my $i = scalar( @{$lines} ) - 1 ; $i >= 0 ; $i-- ) {
+
+		$l = ${$lines}[$i];
+
+		if ( $l =~ /(\*)+\s*internal/i ) {
+
+			$internalFound = 1;
+		}
+
+		if ($internalFound) {
+
+		 
+				$formatedLCount++;
+				${$lines}[$i] = "<r>" . $l . "</r>";
+			 
+			
+			if ( $l =~ /(\*)+\s*command/i || $formatedLCount >= $maxLen ) {
+				$internalFound  = 0;
+				$commandFound   = 0;
+				$formatedLCount = 0;
+
+			}
+		}
+
+	}
+
 }
 
 sub GetLogLineByStamp {
@@ -97,11 +137,9 @@ sub GetLogLineByStamp {
 			}
 		}
 	}
-	
+
 	return @errLines;
-	
-	
-	
+
 }
 
 #-------------------------------------------------------------------------------------------#

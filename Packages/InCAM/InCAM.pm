@@ -129,7 +129,7 @@ sub new {
 	# set up the communications, namely the socket, so that we communicate.
 	$self->{"forcePipe"}       = $forcePipe;
 	$self->{"remote"}          = $remote;
-	$self->{"HandleException"} = 1;
+	$self->{"HandleException"} = 0;
 	$self->{"socket"}          = undef;        #socket for debuging
 	$self->{"socketOpen"}      = 0;
 	$self->{"connected"}       = 0;            #say if is library connected to InCAM/Genesis editor
@@ -389,6 +389,8 @@ sub sendCommand {
 		$self->sendCommandToPipe( $commandType, $command );
 	}
 	elsif ( $self->{comms} eq 'socket' ) {
+		
+				print STDERR "zdarec 3\n";
 		$self->sendCommandToSocket( $commandType, $command );
 	}
 }
@@ -462,6 +464,9 @@ sub VON {
 # Checking is off. If a command fails, the script continues
 sub VOF {
 	my ($self) = shift;
+	
+			print STDERR "zdarec 2\n";
+	
 	$self->sendCommand( "VOF", "" );
 }
 
@@ -825,18 +830,22 @@ sub HandleException {
 	my $value = shift;
 
 	if ($value) {
+		
+		print STDERR "zdarec 1\n";
+		
 		$self->VOF();
 		$self->{"HandleException"} = 1;
-
-		$self->{"exceptions"} = ();    # clear array of exceptions
-
-		$self->{"exceptions"} = ();    # clear array of exceptions
-
 	}
 	else {
 
-		$self->VON();
-		$self->{"HandleException"} = 0;
+		#$self->VON();
+		#$self->{"HandleException"} = 0;
+
+		#$self->{"exceptions"} = ();    # clear array of exceptions
+
+		#$self->{"exceptions"} = ();    # clear array of exceptions
+
+		
 	}
 
 }

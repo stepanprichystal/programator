@@ -236,7 +236,9 @@ sub __WriteMessages() {
 	my $richTxt = shift;
 	my $mess;
 
-	$richTxt->BeginFontSize(11);
+	$richTxt->Freeze(); 
+
+	$richTxt->BeginFontSize(10);
 
 	my @messages = @{ $self->{messages} };
 
@@ -247,22 +249,27 @@ sub __WriteMessages() {
 
 		$mess = $messages[$i];
 
-		$mess =~ s/@/###/;
+		#$mess =~ s/@/###/;
  
 		#my @messSplit = split /@/, $mess;
 
 		my $bold = 0;
 
 		#foreach my $l (split //,$mess) {
-		my $block   = "";
+		
 		my $messPom = "";    # here is stored char bz char message and tested on <r> atd
 		my $messRealLen = 0;
+		
+		
+		my $openTag = "";
+		my $closeTag = "";
+		
 		foreach my $ch ( split //, $mess ) {
 
 			$messPom .= $ch;
-			$messRealLen++;
-			my $openTag  = substr $messPom, -3;
-			my $closeTag = substr $messPom, -4;
+			
+			$openTag  = substr $messPom, -3;
+			$closeTag = substr $messPom, -4;
 
 			if ( $openTag =~ /<(\w)>/ ) {
 
@@ -273,8 +280,8 @@ sub __WriteMessages() {
 					$richTxt->BeginBold();
 				}
 				
-				$richTxt->Remove($messRealLen -3, $messRealLen);
-				$messRealLen -=3;
+				$richTxt->Remove($messRealLen -2, $messRealLen);
+				$messRealLen -=2;
 
 			}elsif ( $closeTag =~ /<\/(\w)>/ ) {
 				
@@ -285,21 +292,20 @@ sub __WriteMessages() {
 					$richTxt->EndTextColour();
 				}
 				
-				$richTxt->Remove($messRealLen -4, $messRealLen);
-				$messRealLen -=4;
+				$richTxt->Remove($messRealLen - 3, $messRealLen);
+				$messRealLen -=3;
 
 			}else{
 				
 				$richTxt->WriteText($ch);
+				$messRealLen++;
+				
+				
 			}
-			
  
 		}
 
-		if ( $block ne "" ) {
-			$block =~ s/###/@/;
-			$richTxt->WriteText($block);
-		}
+		
 
 		#$richTxt->WriteText( $messages[$i] );
 
@@ -307,11 +313,13 @@ sub __WriteMessages() {
 			$richTxt->BeginFontSize(1);
 			$richTxt->Newline;
 			$richTxt->Newline;
-			$richTxt->BeginFontSize(11);
+			$richTxt->BeginFontSize(10);
 		}
 
 		#}
 	}
+	
+	$richTxt->Thaw();
 
 }
 

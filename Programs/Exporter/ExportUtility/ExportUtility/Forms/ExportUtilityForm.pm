@@ -30,6 +30,7 @@ use aliased 'Widgets::Forms::CustomNotebook::CustomNotebook';
 use aliased 'Widgets::Forms::MyWxBookCtrlPage';
 use aliased 'Programs::Exporter::DataTransfer::Enums' => 'EnumsTransfer';
 use aliased 'Managers::AsyncJobMngr::ServerMngr::ServerInfo';
+use aliased 'Programs::Exporter::ExportUtility::Helper';
 
  
 #-------------------------------------------------------------------------------------------#
@@ -47,7 +48,7 @@ sub new {
 	}
 
 	my $title = "Exporter utility";
-	my @dimension = ( 1120, 700 );
+	my @dimension = ( 1120, 760 );
 
 	my $self = $class->SUPER::new( $runMode, $parent, $title, \@dimension );
 
@@ -370,6 +371,21 @@ sub __OnOnDemandChecked {
 	}
 }
 
+sub __OnShowConsoleChecked {
+	my $self  = shift;
+	my $chb   = shift;
+	
+	my $val = $chb->GetValue();
+	
+	if ( $val ne "1" ) {
+		$val = 0;
+	}
+	
+	Helper->ShowExportWindow($val,"Cmd of ExporterUtility PID:".$$);
+ 
+}
+
+
 # ========================================================================================== #
 #  BUILD GUI SECTION
 # ========================================================================================== #
@@ -417,6 +433,8 @@ sub __SetLayout {
 	my $jobsQueueStatBox = $self->__SetLayoutJobsQueue($page1);
 
 	my $settingsStatBox = $self->__SetLayoutInCAMSettings($page2);
+	my $exportSettingsStatBox = $self->__SetLayoutExporterSettings($page2);
+	
 	my $groupsStatBox   = $self->__SetLayoutGroups($page1);
 
 	# BUILD STRUCTURE OF LAYOUT
@@ -439,6 +457,8 @@ sub __SetLayout {
 	$szPage1->Add( $szRow2, 1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 
 	$szPage2->Add( $settingsStatBox, 1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szPage2->Add( $exportSettingsStatBox, 1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	
 
 	$szMain->Add( $nb,      1, &Wx::wxEXPAND );
 	$szMain->Add( $pnlBtns, 0, &Wx::wxEXPAND );
@@ -559,6 +579,43 @@ sub __SetLayoutInCAMSettings {
 	$self->{"delayCb"}         = $delayCb;
 	$self->{"runningCntValSb"} = $runningCntValSb;
 	$self->{"waitingCntValSb"} = $waitingCntValSb;
+
+	return $szStatBox;
+}
+
+
+
+
+# Set layout for Quick set box
+sub __SetLayoutExporterSettings {
+	my $self   = shift;
+	my $parent = shift;
+
+	# Load data
+	my %sett = $self->_GetServerSettings();
+
+	#define staticboxes
+	my $statBox = Wx::StaticBox->new( $parent, -1, 'Exporter - settings' );
+	my $szStatBox = Wx::StaticBoxSizer->new( $statBox, &Wx::wxVERTICAL );
+
+	my $szRow1 = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
+	 
+
+	# DEFINE CONTROLS
+	 
+	my $showConsoleChb = Wx::CheckBox->new( $parent, -1, "Show console", [ -1, -1 ], [ 130, 20 ] );
+	 
+	# DEFINE EVENTS
+ 
+	Wx::Event::EVT_CHECKBOX( $showConsoleChb, -1, sub { $self->__OnShowConsoleChecked(@_) } );
+
+	# BUILD LAYOUT STRUCTURE
+
+	$szRow1->Add( $showConsoleChb, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szStatBox->Add( $szRow1, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	 
+	# SAVE REFERENCES
+ 
 
 	return $szStatBox;
 }

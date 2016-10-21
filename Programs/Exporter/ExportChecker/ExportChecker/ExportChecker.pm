@@ -11,6 +11,7 @@ use strict;
 use warnings;
 use threads;
 use threads::shared;
+use Win32::Process;
 use Wx;
 
 #use strict;
@@ -38,6 +39,8 @@ use aliased 'Programs::Exporter::DataTransfer::DataTransfer';
 use aliased 'Programs::Exporter::ExportChecker::Enums';
 use aliased 'Programs::Exporter::DataTransfer::Enums' => 'EnumsTransfer';
 use aliased 'Helpers::GeneralHelper';
+use aliased 'Widgets::Forms::LoadingForm';
+use aliased 'Programs::Exporter::ExportUtility::Helper';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -55,11 +58,13 @@ sub new {
 	my $class = shift;
 	my $self  = {};
 	bless $self;
-
+ 
 	$self->{"jobId"} = shift;
 
 	$self->{"serverPort"} = shift;
 	$self->{"serverPid"}  = shift;
+	$self->{"loadingFrmPid"}  = shift;	
+
 
 	$self->{"inCAM"} = undef;
 
@@ -84,6 +89,9 @@ sub new {
 	$self->__Connect();
 	$self->__Init();
 	$self->__Run();
+	
+	
+	
 
 	return $self;
 }
@@ -133,6 +141,16 @@ sub __Run {
 	$self->{"form"}->{"mainFrm"}->Show(1);
 
 	#$self->{"units"}->RefreshGUI($self->{"inCAM"});
+
+
+	print STDERR "\n\n\n\n\n\n\n\n\n\n\n\nllllllllllloooooo".$self->{"loadingFrmPid"}."\n\n\n\n\n\n\n";
+
+	
+	if($self->{"loadingFrmPid"}){
+		Win32::Process::KillProcess($self->{"loadingFrmPid"}, 0 );
+	}
+	
+	#Helper->ShowExportWindow(0,"Loading Exporter Checker");
 
 	$self->{"form"}->MainLoop();
 
