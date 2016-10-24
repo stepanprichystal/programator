@@ -143,6 +143,17 @@ sub __SetDefaultLayers{
 				$l->{"mirror"} = 0;
 			}
 		}
+		# if layer end with c, mirror
+		elsif ( $l->{"gROWname"} =~ /c$/i ) {
+
+			$l->{"mirror"} = 1;
+
+		}# if layer end with s, mirror
+		elsif ( $l->{"gROWname"} =~ /s$/i ) {
+
+			$l->{"mirror"} = 0;
+
+		}
 	}
 
 	# Set compensation of signal layer

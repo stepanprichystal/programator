@@ -74,6 +74,7 @@ sub __BuildRules {
 	if ( $self->{"layerCnt"} == 1 ) {
 
 		# 4
+
 		$rule = $self->_AddRule( Enums->Ori_VERTICAL );
 		$rule->AddSingleTypes( Enums->LType_MASKTOP, Enums->LType_SIGOUTER );
 

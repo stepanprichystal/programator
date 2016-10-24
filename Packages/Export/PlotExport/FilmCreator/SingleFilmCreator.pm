@@ -37,7 +37,7 @@ sub new {
 
 	$self->{"multiCreator"} = $multiCreator;
 
-	Helper->AddLayerPlotSize( Enums->Size_PROFILE, $inCAM, $jobId, $layers );
+	Helper->AddLayerPlotSize( Enums->Size_FRAME, $inCAM, $jobId, $layers );
 
 	return $self;
 }

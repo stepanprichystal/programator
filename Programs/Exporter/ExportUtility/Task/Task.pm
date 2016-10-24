@@ -55,7 +55,7 @@ sub new {
 	$self->{"itemResultMngr"} = ExportResultMngr->new();
 
 	# Object, which keep all units objects
-	$self->{"units"} = Units->new();
+	$self->{"units"} = Units->new($self->{"jobId"});
 
 	# Class responsible for updating StatusFile in job archive
 	$self->{"exportStatus"} = ExportStatus->new( $self->{"jobId"} );

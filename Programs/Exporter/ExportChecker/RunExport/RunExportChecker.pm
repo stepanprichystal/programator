@@ -1,9 +1,12 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Widget slouzici pro zobrazovani zprav ruznych typu uzivateli
+# Description: This package run exporter checker
+# 1) run single window app as single perl program
+# 2) run server.pl from this script
+# 3) Export checker will be communicate with this server, after export, this server is killed
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Programs::Exporter::ExportChecker::RunExportChecker;
+package Programs::Exporter::ExportChecker::RunExport::RunExportChecker;
 
 #3th party library
 #use strict;
@@ -22,23 +25,22 @@ sub new {
 
 	#$self->{"client"} = Client->new();
 	$self->{"jobId"} = $ENV{"JOB"};
-	
-	unless($self->{"jobId"}){
-		
+
+	unless ( $self->{"jobId"} ) {
+
 		$self->{"jobId"} = shift;
 	}
 
 	# generate radom port between 2000-4000
 	$self->{"port"} = 2000 + int( rand(2000) );
 	print "\n\n == A H O J ====== =========\n\n";
-	print "\n\n == A H O J ==================". $self->{"port"} ."=======================\n\n";
-	
+	print "\n\n == A H O J ==================" . $self->{"port"} . "=======================\n\n";
 
 	#run exporter
 	$self->__RunExportChecker( $self->{"jobId"}, $self->{"port"} );
 
 	#run server
-	$self->__RunServer($self->{"port"} );
+	$self->__RunServer( $self->{"port"} );
 
 	return $self;
 }
@@ -46,33 +48,42 @@ sub new {
 sub __RunExportChecker {
 	my $self  = shift;
 	my $jobId = shift;
-	
-	#server port
-	my $port  = shift;
-	#server pid
-	my $pid  = $$;
 
-	my $processObj;
+	#server port
+	my $port = shift;
+
+	#server pid
+	my $pid = $$;
+
+	#my $processObj;
 	my $perl = $Config{perlpath};
-	Win32::Process::Create( $processObj, $perl, "perl " . GeneralHelper->Root() . "\\ExportCheckerFormScript.pl $jobId $port $pid",
+	my $processObj2;
+	Win32::Process::Create( $processObj2, $perl, "perl " . GeneralHelper->Root() . "\\Programs\\Exporter\\ExportChecker\\RunExport\\RunWaitingForm.pl ",
 							1, NORMAL_PRIORITY_CLASS, "." )
 	  || die "Failed to create CloseZombie process.\n";
-	 
+
+	my $loadingFrmId = $processObj2->GetProcessID();
+	my $processObj;
+	Win32::Process::Create( $processObj, $perl, "perl " . GeneralHelper->Root() . "\\Programs\\Exporter\\ExportChecker\\RunExport\\ExportCheckerFormScript.pl $jobId $port $pid $loadingFrmId",
+							1, NORMAL_PRIORITY_CLASS, "." )
+	  || die "Failed to create CloseZombie process.\n";
+
 }
 
 sub __RunServer {
-	my $self  = shift;
-	my $port  = shift;
+	my $self = shift;
+	my $port = shift;
 
 	#$self->__CloseZombie($port);
 
 	#run server on specific port
 	{
+
 		#@_ = ($port);
 		local @ARGV = ($port);
- 
+
 		require "Programs\\Exporter\\ExportChecker\\Server\\Server.pl";
-	 
+
 	};
 }
 

@@ -307,6 +307,64 @@ sub SetJobAttribute {
 	);
 }
 
+# Open given job
+sub CloseJob {
+	my $self    = shift;
+	my $inCam   = shift;
+	my $jobName = shift;
+
+	 
+	$inCam->COM( "close_job","job"              => "$jobName");
+}
+
+
+# Open given job
+sub SaveJob {
+	my $self    = shift;
+	my $inCam   = shift;
+	my $jobName = shift;
+
+	$inCam->COM( "save_job","job"              => "$jobName");
+	 
+}
+
+
+# Tell if job is open
+sub IsJobOpen {
+	my $self    = shift;
+	my $inCam   = shift;
+	my $jobName = shift;
+
+	 
+	$inCam->COM( "is_job_open","job"              => "$jobName");
+	my $reply = $inCam->GetReply();
+	
+	if($reply eq "yes"){
+		return 1;
+	}else{
+		return 0;
+	}
+}
+ 
+ 
+# CheckIn job
+sub CheckInJob {
+	my $self    = shift;
+	my $inCam   = shift;
+	my $jobName = shift;
+
+	$inCam->COM( "check_inout","job"  => "$jobName", "mode"  => "in", "ent_type"  => "job");
+} 
+ 
+# CheckIn job
+sub CheckOutJob {
+	my $self    = shift;
+	my $inCam   = shift;
+	my $jobName = shift;
+
+	$inCam->COM( "check_inout","job"  => "$jobName", "mode"  => "out", "ent_type"  => "job");
+}
+
 
 
 1;

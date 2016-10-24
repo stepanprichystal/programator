@@ -24,8 +24,8 @@ use aliased 'Programs::Exporter::ExportUtility::Groups::NifExport::NifUnit';
 use aliased 'Programs::Exporter::ExportUtility::Groups::NCExport::NCUnit';
 use aliased 'Programs::Exporter::ExportUtility::Groups::ETExport::ETUnit';
 use aliased 'Programs::Exporter::ExportUtility::Groups::AOIExport::AOIUnit';
-
-
+use aliased 'Programs::Exporter::ExportUtility::Groups::PlotExport::PlotUnit';
+use aliased 'Programs::Exporter::ExportUtility::Groups::PreExport::PreUnit';
 #-------------------------------------------------------------------------------------------#
 #  Package methods, requested by IUnit interface
 #-------------------------------------------------------------------------------------------#
@@ -35,7 +35,11 @@ sub new {
 	$self = {};
 	bless $self;
 
+	$self->{"jobId"} = shift;
+
 	$self->{"units"} = undef;
+	
+	
 
 	#$self->{"onCheckEvent"} = Event->new();
 
@@ -85,6 +89,16 @@ sub __GetUnitClass {
 	elsif ( $unitId eq UnitEnums->UnitId_ET ) {
 
 		$unit = ETUnit->new($unitId, $jobId);
+
+	}
+	elsif ( $unitId eq UnitEnums->UnitId_PLOT ) {
+
+		$unit = PlotUnit->new($unitId, $jobId);
+
+	}
+	elsif ( $unitId eq UnitEnums->UnitId_PRE ) {
+
+		$unit = PreUnit->new($unitId, $jobId);
 
 	}
 

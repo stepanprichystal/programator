@@ -27,6 +27,8 @@ sub new {
 	
 	$self->{"mess"} = shift;
 	$self->{"stackTrace"} = GeneralHelper->CreateStackTrace();
+	
+	$self->{"exceptionId"} =   GeneralHelper->GetGUID();
 
 	return $self;
 }
@@ -37,6 +39,19 @@ sub GetTrace{
 	my $self = shift;
 	
 	return $self->{"stackTrace"};
+}
+
+sub GetExceptionId{
+	my $self = shift;
+	
+	return $self->{"exceptionId"};
+}
+
+
+sub Error{
+	my $self = shift;
+	
+	return $self->{"mess"} . "\nStack trace:\n" . $self->{"stackTrace"}. "\n ExceptionId:".$self->{"exceptionId"}."\n";
 }
 
 #-------------------------------------------------------------------------------------------#

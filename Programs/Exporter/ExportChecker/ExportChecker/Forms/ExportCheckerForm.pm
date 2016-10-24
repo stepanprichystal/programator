@@ -76,12 +76,11 @@ sub new {
 #	return $tab;
 #}
 
-sub GetToProduce{
-	my $self      = shift;
-	
+sub GetToProduce {
+	my $self = shift;
+
 	return $self->{"chbProduce"}->GetValue();
 }
-
 
 # Disable all controls on form
 sub DisableForm {
@@ -113,7 +112,7 @@ sub DisableExportBtn {
 		$self->{"btnASync"}->Disable();
 	}
 	else {
-		
+
 		$self->{"btnSync"}->Enable();
 		$self->{"btnASync"}->Enable();
 	}
@@ -122,16 +121,16 @@ sub DisableExportBtn {
 
 # Set "Load last" button visibility
 sub SetLoadLastBtn {
-	my $self    = shift;
+	my $self   = shift;
 	my $enable = shift;
-	
-	if($enable){
+
+	if ($enable) {
 		$self->{"btnLoadLast"}->Enable();
-	}else{
+	}
+	else {
 		$self->{"btnLoadLast"}->Disable();
 	}
 }
-
 
 sub OnInit {
 	my $self = shift;
@@ -174,7 +173,6 @@ sub AddPage {
 
 	return $page;
 }
-
 
 sub __OnExportSync {
 	my $self = shift;
@@ -223,8 +221,6 @@ sub __OnLoadLastClick {
 	$self->{"onLoadLast"}->Do();
 
 }
-
-
 
 sub __SetLayout {
 	my $self   = shift;
@@ -293,12 +289,10 @@ sub __SetLayout {
 	$szBtns->Add( $szBtnsChild, 0, &Wx::wxALIGN_RIGHT | &Wx::wxALL );
 	$pnlBtns->SetSizer($szBtns);
 
-	
-	$szRow1->Add( $self->__SetLayoutOther($mainPnl), 0,  &Wx::wxEXPAND | &Wx::wxLEFT, 2 );
+	$szRow1->Add( $self->__SetLayoutOther($mainPnl),      0,  &Wx::wxEXPAND | &Wx::wxLEFT, 2 );
 	$szRow1->Add( $self->__SetLayoutExportPath($mainPnl), 0,  &Wx::wxEXPAND | &Wx::wxLEFT, 2 );
 	$szRow1->Add( 10,                                     10, 1,                           &Wx::wxEXPAND );
 	$szRow1->Add( $self->__SetLayoutQuickSet($mainPnl),   0,  &Wx::wxEXPAND | &Wx::wxLEFT, 2 );
-	
 
 	$szFrstStatBox->Add( $szRow1, 1, &Wx::wxEXPAND );
 	$szSecStatBox->Add( $nb, 1, &Wx::wxEXPAND );
@@ -320,8 +314,8 @@ sub __SetLayout {
 	$self->{"szMain"}  = $szMain;
 
 	$self->{"nb"} = $nb;
-	
-	$self->{"btnSync"} = $btnSync;
+
+	$self->{"btnSync"}  = $btnSync;
 	$self->{"btnASync"} = $btnASync;
 
 	return $mainFrm;
@@ -368,7 +362,7 @@ sub __SetLayoutQuickSet {
 	$szMain->Add( $szRow3, 1, &Wx::wxEXPAND );
 
 	$szStatBox->Add( $szMain, 1, &Wx::wxEXPAND );
-	
+
 	$self->{"btnLoadLast"} = $btnLoadLast;
 
 	return $szStatBox;
@@ -387,7 +381,6 @@ sub __SetLayoutExportPath {
 	my $szMain = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
 	my $szRow1 = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
 	my $szRow2 = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
- 
 
 	my $rbClient = Wx::RadioButton->new( $statBox, -1, "C:/Export", &Wx::wxDefaultPosition, [ 110, 22 ], &Wx::wxRB_GROUP );
 	$rbClient->SetBackgroundColour( Wx::Colour->new( 228, 232, 243 ) );
@@ -404,9 +397,6 @@ sub __SetLayoutExportPath {
 	$szMain->Add( $szRow2, 1, &Wx::wxEXPAND );
 
 	$szStatBox->Add( $szMain, 1, &Wx::wxEXPAND );
-	
-	
-
 
 	return $szStatBox;
 
@@ -421,25 +411,22 @@ sub __SetLayoutOther {
 	my $statBox = Wx::StaticBox->new( $parent, -1, 'Other options' );
 	my $szStatBox = Wx::StaticBoxSizer->new( $statBox, &Wx::wxVERTICAL );
 	my $szMain = Wx::BoxSizer->new(&Wx::wxVERTICAL);
-	 
 
-	my $chbProduce = Wx::CheckBox->new( $statBox, -1, "Sent to produce", &Wx::wxDefaultPosition, [ 110, 22 ]);
+	my $chbProduce = Wx::CheckBox->new( $statBox, -1, "Sent to produce", &Wx::wxDefaultPosition, [ 110, 22 ] );
 	$chbProduce->SetValue(1);
+
 	#$chbProduce->SetTransparent(0);
 	#$chbProduce->Refresh();
 	#$chbProduce->SetBackgroundStyle(&Wx::wxBG_STYLE_TRANSPARENT);
-	   $chbProduce->SetBackgroundColour( Wx::Colour->new( 255, 255, 255 ) );
-	 Wx::Event::EVT_ERASE_BACKGROUND( $chbProduce,  sub { $self->Test(@_) } );
-	 
-	 $chbProduce->SetBackgroundColour( Wx::Colour->new( 255, 255, 255 ) );
-	 $chbProduce->Refresh();
-	  
-	 
- 	
+	$chbProduce->SetBackgroundColour( Wx::Colour->new( 255, 255, 255 ) );
+	Wx::Event::EVT_ERASE_BACKGROUND( $chbProduce, sub { $self->Test(@_) } );
+
+	$chbProduce->SetBackgroundColour( Wx::Colour->new( 255, 255, 255 ) );
+	$chbProduce->Refresh();
+
 	$szMain->Add( $chbProduce, 1, &Wx::wxEXPAND );
 	$szStatBox->Add( $szMain, 1, &Wx::wxEXPAND );
-	
-	
+
 	# SAVE REFERENCES
 	$self->{"chbProduce"} = $chbProduce;
 
@@ -447,19 +434,17 @@ sub __SetLayoutOther {
 
 }
 
-sub Test{
-		my $self   = shift;
+sub Test {
+	my $self   = shift;
 	my $parent = shift;
-	 my $evt = shift;
-	 
-	  my $dc = $evt->GetDC();
-	
-	
-	 $dc->Clear();
-	 
+	my $evt    = shift;
+
+	my $dc = $evt->GetDC();
+
+	$dc->Clear();
+
 	# $self->{"chbProduce"}->Refresh();
 }
-
 
 sub __OnScrollPaint {
 	my $self      = shift;
@@ -486,6 +471,8 @@ sub BuildGroupTableForm {
 	# class keep rows structure and group instances
 	my $groupTables = shift;
 	$self->{"inCAM"} = shift;
+
+	$self->{"mainFrm"}->Freeze();
 
 	foreach my $table ( $groupTables->GetTables() ) {
 
@@ -520,6 +507,40 @@ sub BuildGroupTableForm {
 		#compute number of rows. One row has height 10 px
 		$scrollPnl->SetRowCount( $height / 10 );
 	}
+	
+	$self->{"mainFrm"}->Thaw();
+
+	# Do conenction between units events/handlers
+	my @units = $groupTables->GetAllUnits();
+
+	foreach my $unitA (@units) {
+
+		my $evtClassA = $unitA->GetEventClass();
+
+		unless ($evtClassA) {
+			next;
+		}
+
+		my @unitEvents = $unitA->GetEventClass()->GetEvents();
+
+		# search handler for this event type in all units
+		foreach my $unitB (@units) {
+
+			my $evtClassB = $unitB->GetEventClass();
+
+			if ($evtClassB) {
+				$unitB->GetEventClass()->ConnectEvents( \@unitEvents );
+			}
+
+		}
+	}
+
+}
+
+sub _AddEvent {
+	my $self      = shift;
+	my $event     = shift;
+	my $eventType = shift;
 
 	$self->{"mainFrm"}->Layout();
 
@@ -535,8 +556,6 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	#$test->MainLoop();
 }
-
-
 
 1;
 

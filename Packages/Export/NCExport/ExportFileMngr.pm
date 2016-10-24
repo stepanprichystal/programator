@@ -152,10 +152,17 @@ sub __ExportNcSet {
 	#	$methodRes->AddError( $inCAM->GetExceptionError() );
 	#}
 
+	# START HANDLE EXCEPTION IN INCAM
+	$inCAM->HandleException(1);
+
 	$inCAM->COM( "nc_cre_output", "layer" => $layerName, "ncset" => $setName );
 
-	my $reply = $inCAM->GetReply();
+	# STOP HANDLE EXCEPTION IN INCAM
+	$inCAM->HandleException(0);
 
+	$methodRes->AddErrors( $inCAM->GetExceptionError() );
+	 
+ 
 	#if ( $inCAM->GetStatus() > 1 ) {
 	#	$methodRes->AddError( $inCAM->GetExceptionError() );
 	#}

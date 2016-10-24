@@ -152,7 +152,7 @@ sub __Click {
 
 	# if handler is defined, raise event
 	if ( $self->{"onClick"}->Handlers() ) {
-		$self->{"onClick"}->Do();
+		$self->{"onClick"}->Do($self);
 
 	}
 

@@ -26,8 +26,8 @@ sub new {
 
 	# Tell if scrpt was launched manually by user
 	my $userLaunch = shift;
-	
-	unless($userLaunch){
+
+	unless ($userLaunch) {
 		$userLaunch = 1;
 	}
 
@@ -93,10 +93,16 @@ sub __RunExportUtility {
 
 	my $processObj;
 	my $perl = $Config{perlpath};
-	Win32::Process::Create( $processObj, $perl, "perl " . GeneralHelper->Root() . "\\Programs\\Exporter\\ExportUtility\\RunExport\\RunExportUtilityScript.pl", 1, NORMAL_PRIORITY_CLASS, "." )
+
+	# CREATE_NEW_CONSOLE - script will run in completely new console - no interaction with old console
+
+	Win32::Process::Create( $processObj, $perl,
+							"perl " . GeneralHelper->Root() . "\\Programs\\Exporter\\ExportUtility\\RunExport\\RunExportUtilityScript.pl ",
+							1, NORMAL_PRIORITY_CLASS | CREATE_NEW_CONSOLE, "." )
 	  || die "Failed to create ExportUtility process.\n";
-	  
-	return 1; #$processObj->Wait(INFINITE);
+
+	
+
 
 }
 
@@ -113,9 +119,6 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $run = RunExportUtility->new(0);
 
-	 
-
 }
- 
 
 1;

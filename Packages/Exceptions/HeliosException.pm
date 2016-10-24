@@ -5,6 +5,8 @@
 package Packages::Exceptions::HeliosException;
 use base ("Packages::Exceptions::BaseException");
 
+use Class::Interface;
+&implements('Packages::Exceptions::IException');
 
 #3th party library
 use strict;
@@ -47,6 +49,8 @@ sub __PrintError{
 	
 	
 }
+
+ 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#

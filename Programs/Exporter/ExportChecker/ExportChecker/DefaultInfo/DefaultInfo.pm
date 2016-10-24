@@ -17,6 +17,8 @@ use aliased 'Packages::Stackup::Enums' => 'StackupEnums';
 use aliased 'CamHelpers::CamJob';
 use aliased 'Packages::Stackup::Stackup::Stackup';
 use aliased 'Packages::Stackup::StackupNC::StackupNC';
+use aliased 'Packages::Routing::RoutingOperation';
+use aliased 'CamHelpers::CamDrilling';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -58,7 +60,7 @@ sub GetEtchType {
 	}
 	elsif ( $self->{"layerCnt"} == 2 ) {
 
-		if ( $self->{"maxPlatedRout"} > 1 ) {
+		if ( $self->{"platedRoutExceed"} || $self->{"rsExist"}) {
 			$etchType = EnumsGeneral->Etching_PATTERN;
 		}
 		else {
@@ -129,7 +131,7 @@ sub GetEtchType {
 
 		if ( $layerName eq "c" || $layerName eq "s" ) {
 
-			if ( $self->{"maxPlatedRout"} > 1 ) {
+			if ( $self->{"platedRoutExceed"} || $self->{"rsExist"} ) {
 				$etchType = EnumsGeneral->Etching_PATTERN;
 			}
 		}
@@ -194,7 +196,8 @@ sub __InitDefault {
 
 	$self->{"layerCnt"} = CamJob->GetSignalLayerCnt( $self->{"inCAM"}, $self->{"jobId"} );
 
-	$self->{"maxPlatedRout"} = 0;
+	$self->{"platedRoutExceed"} =  RoutingOperation->PlatedAreaExceed( $self->{"inCAM"}, $self->{'jobId'}, "panel" );
+	$self->{"rsExist"} =  CamDrilling->NCLayerExists( $self->{"inCAM"}, $self->{'jobId'}, "rs" );
 
 	if ( $self->{"layerCnt"} > 2 ) {
 

@@ -228,6 +228,7 @@ sub __OnCompChangeHandler {
 
 	$self->{"plotList"}->SetComp($val);
 }
+ 
 
 # =====================================================================
 # DISABLING CONTROLS
@@ -241,7 +242,30 @@ sub DisableControls {
 # SET/GET CONTROLS VALUES
 # =====================================================================
 
+sub ChangeTentingHandler{
+	my $self  = shift;
+	my $tentingCS = shift;	
+	
+	my $polar = "";
+	if($tentingCS){
+		$polar = "-";
+	}else{
+			$polar = "+";	
+	}
+	 
+	my @rows = $self->{"plotList"}->GetAllRows();
+
+	foreach my $r (@rows){
+
+		my $lName = $r->GetRowText();
+		
+		if($lName =~ /^[cs]$/){
+
+			$r->SetPolarity($polar);	
+		}
+	} 
  
+}
  
 # sendtToPlotter
 sub SetSendToPlotter {
@@ -260,16 +284,14 @@ sub SetLayers {
 	my $self  = shift;
 	my @layers = @{shift(@_)};
 
-	my $allChecked = 1;
 
+
+	$self->{"plotList"}->SetLayers(\@layers);
+
+
+	my $allChecked = 1;
 	foreach my $l (@layers){
-		
-		my $row = $self->{"plotList"}->GetRowByText($l->{"name"});
-		if($row){
-			
-			$row->SetLayerValues($l);
-		}
-		
+ 
 		unless($l->{"plot"}){
 			$allChecked = 0;
 		}

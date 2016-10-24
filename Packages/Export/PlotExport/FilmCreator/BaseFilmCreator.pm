@@ -186,34 +186,34 @@ sub __AddLayerTypes {
 
 	foreach my $l ( @{ $self->{"layers"} } ) {
 
-		if ( $l->{"gROWname"} eq "pc" ) {
+		if ( $l->{"name"} eq "pc" ) {
 
 			$l->{"plotType"} = Enums->LType_SILKTOP;
 
 		}
-		elsif ( $l->{"gROWname"} eq "ps" ) {
+		elsif ( $l->{"name"} eq "ps" ) {
 			$l->{"plotType"} = Enums->LType_SILKBOT;
 
 		}
-		elsif ( $l->{"gROWname"} eq "mc" ) {
+		elsif ( $l->{"name"} eq "mc" ) {
 
 			$l->{"plotType"} = Enums->LType_MASKTOP;
 
 		}
-		elsif ( $l->{"gROWname"} eq "ms" ) {
+		elsif ( $l->{"name"} eq "ms" ) {
 			$l->{"plotType"} = Enums->LType_MASKBOT;
 
 		}
-		elsif ( $l->{"gROWname"} =~ /^[cs]$/ ) {
+		elsif ( $l->{"name"} =~ /^[cs]$/ ) {
 
 			$l->{"plotType"} = Enums->LType_SIGOUTER;
 
 		}
-		elsif ( $l->{"gROWname"} =~ /^v\d$/ ) {
+		elsif ( $l->{"name"} =~ /^v\d$/ ) {
 
 			$l->{"plotType"} = Enums->LType_SIGINNER;
  
-		}elsif ( $l->{"gROWname"} =~ /^gold[CS]$/i ) {
+		}elsif ( $l->{"name"} =~ /^gold[cs]$/i ) {
 
 			$l->{"plotType"} = Enums->LType_GOLDFINGER;
  

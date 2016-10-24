@@ -5,14 +5,10 @@ use warnings;
 
 use lib qw( C:\Perl\site\lib\TpvScripts\Scripts );
 
-use aliased 'Programs::Exporter::ExportUtility::ExportUtility::ExportUtility';
-use aliased 'Managers::AsyncJobMngr::Enums'           => 'EnumsMngr';
-use aliased 'Packages::InCAM::InCAM';
-#use aliased 'Programs::Exporter::ExportChecker::Server::Client';
+use aliased 'Programs::Exporter::ExportUtility::RunExport::RunExportUtility';
 
 
-
-my $exporter = ExportUtility->new(EnumsMngr->RUNMODE_TRAY);
+my $exporter = RunExportUtility->new(1);
 
  
 #Win32::OLE->new

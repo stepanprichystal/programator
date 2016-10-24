@@ -1,9 +1,10 @@
 #-------------------------------------------------------------------------------------------#
-# Description: This class define "outside" handlers and events, 
+# Description: This class define "outside" handlers and events,
 # which is possible cooperate with.
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Programs::Exporter::ExportChecker::Groups::NifExport::View::NifUnitFormEvt;
+package Programs::Exporter::ExportChecker::Groups::PlotExport::View::PlotUnitFormEvt;
+use base ("Programs::Exporter::ExportChecker::Groups::UnitFormEvtBase");
 
 #3th party library
 use strict;
@@ -24,26 +25,22 @@ sub new {
 	$self = $class->SUPER::new(@_);
 	bless $self;
 
-	my $frm = $self->{"form"};
+	my $wrapper = $self->{"wrapper"};
 
 	# Provided handlers
-
+	my $ref = $wrapper->can('ChangeTentingHandler');
+	$self->_AddHandler( $ref , Enums->Event_nif_tenting );
 
 	# Provided events
-	
-	$self->_AddEvent( $frm->{'onTentingChange'}, Enums->Event_nif_tenting );
 
 	return $self;
 }
-
-
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
-
 
 }
 

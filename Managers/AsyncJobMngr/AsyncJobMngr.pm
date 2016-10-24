@@ -272,13 +272,18 @@ sub __PortReadyHandler {
 
 		${ $self->{"jobs"} }[$i]{"port"}  = $d{"port"};
 		${ $self->{"jobs"} }[$i]{"state"} = Enums->JobState_RUNNING;
+		 
+		
+		
+		#${ $self->{"jobs"} }[$i]{"port"}  = $d{"port"};#
 
 		my $pcbId   = ${ $self->{"jobs"} }[$i]{"pcbId"};
 		my $jobGUID = ${ $self->{"jobs"} }[$i]{"jobGUID"};
+		my $externalServer = ${ $self->{"jobs"} }[$i]{"serverInfo"} ? 1 : 0;
 
 		$self->{'onJobStateChanged'}->Do( $jobGUID, Enums->JobState_RUNNING );
 
-		$self->{"threadMngr"}->RunNewExport( $jobGUID, $d{"port"}, $pcbId );
+		$self->{"threadMngr"}->RunNewExport( $jobGUID, $d{"port"}, $pcbId, $d{"pidInCAM"}, $externalServer);
 
 	}
 
@@ -476,7 +481,10 @@ sub __CloseActiveJobs {
 	# jinak cekame ay se spusti pripadne joby, co jsou ve stavu WAITINGPORT
 	if ( scalar( @{$jobsRef} ) == 0 ) {
 		$self->{"timerCloseJobs"}->Stop();
+		
+		print STDERR "Destroying main frame 1\n\n";
 		$frame->Destroy();
+		$self->ExitMainLoop(); # this line is necessery to console window was exited too
 	}
 }
 
@@ -534,7 +542,10 @@ sub __OnClose {
 
 		# Close or servers, which are waiting or running
 		$self->{"serverMngr"}->SetDestroyOnDemand(0);
+ 
 		$self->{"mainFrm"}->Destroy();
+		$self->ExitMainLoop(); # this line is necessery to console window was exited too
+		
 	}
 
 }

@@ -60,6 +60,8 @@ sub new {
 sub Run {
 	my $self = shift;
 
+	 
+
 	#information necessary for making decision which nif builder use
 	my $typeCu   = CamHelper->GetPcbType( $self->{"inCAM"}, $self->{"jobId"} );
 	my $isPool   = HegMethods->GetPcbIsPool( $self->{"jobId"} );

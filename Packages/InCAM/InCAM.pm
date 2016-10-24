@@ -87,6 +87,8 @@ use Time::HiRes;
 use aliased 'Packages::InCAM::Helper';
 use aliased 'Packages::Exceptions::InCamException';
 use aliased 'Helpers::GeneralHelper';
+use aliased 'Helpers::FileHelper';
+use aliased 'Enums::EnumsPaths';
 
 #-------------------------------------------------------------------------------------------#
 #  Global vars
@@ -127,7 +129,9 @@ sub new {
 	# set up the communications, namely the socket, so that we communicate.
 	$self->{"forcePipe"}       = $forcePipe;
 	$self->{"remote"}          = $remote;
-	$self->{"HandleException"} = 1;
+	$self->{"HandleException"} = 0;	# tell if package exception shoul be raised, or not
+	$self->{"SupressToolkitEx"} = 0; # supress InCAM toolkit exception 
+									# (exception end script runnin in InCAM and show error window)
 	$self->{"socket"}          = undef;        #socket for debuging
 	$self->{"socketOpen"}      = 0;
 	$self->{"connected"}       = 0;            #say if is library connected to InCAM/Genesis editor
@@ -170,63 +174,25 @@ sub new {
 	return $self;
 }
 
+# Keep InCam instance and connect again to server
+
 sub Reconnect {
 	my $self = shift;
-	
+
 	$self->__Connect();
 }
 
-sub __Connect {
-	my $self = shift;
-
-	my $sOpen = 0;
-
-	unless ( $self->{"forcePipe"} ) {
-		$sOpen = $self->openSocket();    #try to connect ro server (debug mode)
-	}
-
-	#	if ( -t STDIN ){
-	#		print "\n\n\nSOKET OPEN:$sOpen STDIN yes\n\n\n";
-	#
-	#	}else{
-	#		print "\n\n\nSOKET OPEN:$sOpen STDIN no\n\n\n";
-	#	}
-
-	if ($sOpen) {
-		my $end = Time::HiRes::gettimeofday();
-
-		#printf( "%.2f\n", $end - $start );
-		#print "YES";
-
-		$self->{comms}      = 'socket';
-		$self->{socketOpen} = 1;
-		$self->inheritEnvironment();
-		$self->{"connected"} = 1;
-	}
-
-	# Test if script run from InCAM (LOGNAME is present)
-	elsif ( !( -t STDIN ) && $ENV{"LOGNAME"} ) {
-
-		#my $end = Time::HiRes::gettimeofday();
-
-		#printf( "%.2f\n", $end - $start );
-		$self->{comms} = 'pipe';
-		$self->{"connected"} = 1;
-
-	}
-	else {
-
-		$self->runScriptFail();
-	}
-
-	binmode(STDOUT);
-
-}
 
 sub DESTROY {
 
 	my $self = shift;
 	my $s    = $self->{"socket"};
+
+	# close opened InCam log
+	if ( $self->{"fhLog"}){
+		close($self->{"fhLog"});
+	} 
+ 
 
 	if ( $self->{socketOpen} == 0 ) {
 		return;
@@ -258,26 +224,7 @@ sub CloseServer {
 	return $self->__SpecialServerCmd("CLOSESERVER");
 }
 
-sub __SpecialServerCmd {
-	my $self = shift;
-	my $cmd  = shift;
 
-	my $s = $self->{"socket"};
-
-	if ( $self->{socketOpen} == 0 ) {
-		return;
-	}
-	if ($s) {
-
-		print $s "${DIR_PREFIX}$cmd \n";
-		my $reply;
-
-		$reply = $self->__GetReply();
-
-		return $reply;
-	}
-
-}
 
 sub closeDown {
 	my ($self) = shift;
@@ -381,6 +328,8 @@ sub sendCommand {
 		$self->sendCommandToPipe( $commandType, $command );
 	}
 	elsif ( $self->{comms} eq 'socket' ) {
+		
+			 
 		$self->sendCommandToSocket( $commandType, $command );
 	}
 }
@@ -414,6 +363,230 @@ sub sendCommandToSocket {
 	# should check for errors here !!!
 }
 
+# Return reply when COM function was called before
+sub GetReply {
+	my ($self) = shift;
+
+	return $self->{READANS};
+}
+
+sub GetStatus {
+	my ($self) = shift;
+	return $self->{STATUS};
+}
+
+# Return last whole exception object
+sub GetException {
+	my ($self) = shift;
+
+	if ( $self->{"exception"} ) {
+
+		return $self->{"exception"};
+	}
+}
+
+# Return last exception error text
+sub GetExceptionError {
+	my ($self) = shift;
+
+	if ( $self->{"exception"} ) {
+
+		return $self->{"exception"}->Error();
+	}
+}
+
+# Return last exceptions errors text after calling method HandleException(1)
+# and befrore calling HandleException(0)
+sub GetExceptionsError {
+	my ($self) = shift;
+
+	my @exceptions = ();
+
+	if ( $self->{"exceptions"} ) {
+
+		@exceptions = map { $_->Error() } @{ $self->{"exceptions"} };
+	}
+
+	return \@exceptions;
+}
+
+
+# This function start to read log, which is created when InCAM editor is launched
+# Function open tihis log, read and pass it to another "custom" log
+# this custom log contain special "stamps", which tell where InCAM exception start (see PutStampToLog)
+sub StarLog {
+	my $self     = shift;
+	my $pidInCAM = shift;
+	my $logId = shift; # this id will be contained in logfile name
+	
+	unless($logId){
+		$logId = $pidInCAM;
+	}
+
+	unless ($pidInCAM) {
+		return;
+	}
+
+	my $logFile = FileHelper->GetFileNameByPattern( EnumsPaths->Client_INCAMTMP, "." . $pidInCAM );
+
+	if ($logFile) {
+
+		my $customLog = EnumsPaths->Client_INCAMTMPOTHER . "incamLog." . $logId;
+		$self->{"customLogPath"} = $customLog;
+		if ( -e $customLog ) {
+			unlink($customLog);
+		}
+
+		my $fLog;
+		my $fLogCustom;
+
+		if ( open( $fLog, '<', $logFile ) ) {
+
+			my @input = <$fLog>;
+
+			# Let fLog open ...
+
+			if ( open( $fLogCustom, '>', $customLog ) ) {
+
+				print $fLogCustom @input;
+
+				close($fLogCustom);
+
+				# Let $fLogCustom open ..
+
+				$self->{"fhLog"}       = $fLog;
+				$self->{"fhLogCustom"} = $fLogCustom;
+
+			}
+
+		}
+
+	}
+}
+
+
+# Method puts "stamp", which is some unique ID to custom log
+# Later, we can explorer this and find stams and tell, which logs line
+# belongs to exception error
+sub PutStampToLog {
+	my $self  = shift;
+	my $stamp = shift;
+
+	if ( $self->{"fhLog"} && $self->{"fhLogCustom"} ) {
+
+		my $stampText = "ExceptionId:$stamp";
+
+		my $fLog       = $self->{"fhLog"};
+		my $fLogCustom = $self->{"fhLogCustom"};
+
+		seek $fLog, 0, 0;
+		my @new_input = <$fLog>;
+
+		if ( open( $fLogCustom, '>>', $self->{"customLogPath"} ) ) {
+
+			print $fLogCustom @new_input;
+
+			print $fLogCustom $stampText;
+			close($fLogCustom);
+		}
+	}
+}
+
+
+
+# When InCAM error happens during COM function:
+# - if  HandleException = 0, InCAM package raise exception and die
+# - if  HandleException = 1, Script didn't die, Exception is stored in "exception" property
+# This work only if property "SupressToooliktException" = 1
+sub HandleException {
+	my $self  = shift;
+	my $value = shift;
+
+	if ($value) {
+		
+		$self->{"HandleException"} = 1;
+	}
+	else {
+ 
+		$self->{"HandleException"} = 0;
+		
+	}
+
+}
+
+#When InCAM error happens in toolkit, during COM function:
+#- if  SupressException = 1, InCAMException dosen't end sript running in toolikt and doesn't show error window
+#- if  SupressException = 0, InCAMException ends sript running in toolikt and shows error window
+sub SupressToolkitException {
+	my $self  = shift;
+	my $value = shift;
+
+	if ($value) {
+
+		$self->VOF();
+		$self->{"SupressToolkitEx"} = 1;
+	}
+	else {
+
+		$self->VON();
+		$self->{"SupressException"} = 0;
+
+		
+	}
+
+}
+
+# -----------------------------------------------------------------------------
+# Private methods
+# -----------------------------------------------------------------------------
+
+sub __Connect {
+	my $self = shift;
+
+	my $sOpen = 0;
+
+	unless ( $self->{"forcePipe"} ) {
+		$sOpen = $self->openSocket();    #try to connect ro server (debug mode)
+	}
+
+	#	if ( -t STDIN ){
+	#		print "\n\n\nSOKET OPEN:$sOpen STDIN yes\n\n\n";
+	#
+	#	}else{
+	#		print "\n\n\nSOKET OPEN:$sOpen STDIN no\n\n\n";
+	#	}
+
+	if ($sOpen) {
+		my $end = Time::HiRes::gettimeofday();
+
+		#printf( "%.2f\n", $end - $start );
+		#print "YES";
+
+		$self->{comms}      = 'socket';
+		$self->{socketOpen} = 1;
+		$self->inheritEnvironment();
+		$self->{"connected"} = 1;
+	}
+
+	# Test if script run from InCAM (LOGNAME is present)
+	elsif ( !( -t STDIN ) && $ENV{"LOGNAME"} ) {
+
+		#my $end = Time::HiRes::gettimeofday();
+
+		#printf( "%.2f\n", $end - $start );
+		$self->{comms} = 'pipe';
+		$self->{"connected"} = 1;
+
+	}
+	else {
+
+		$self->__RunScriptFail();
+	}
+
+	binmode(STDOUT);
+
+}
+
 # wait for the reply
 sub __GetReply {
 	my $self = shift;
@@ -431,7 +604,40 @@ sub __GetReply {
 	return $reply;
 }
 
-sub runScriptFail {
+sub __LogExist {
+	my $self = shift;
+
+	if ( $self->{"fhLog"} && $self->{"fhLogCustom"} ) {
+		return 1;
+	}
+	else {
+		return 0;
+	}
+
+}
+
+sub __SpecialServerCmd {
+	my $self = shift;
+	my $cmd  = shift;
+
+	my $s = $self->{"socket"};
+
+	if ( $self->{socketOpen} == 0 ) {
+		return;
+	}
+	if ($s) {
+
+		print $s "${DIR_PREFIX}$cmd \n";
+		my $reply;
+
+		$reply = $self->__GetReply();
+
+		return $reply;
+	}
+
+}
+
+sub __RunScriptFail {
 
 	my $self = shift;
 
@@ -445,6 +651,12 @@ sub runScriptFail {
 	#exit(0);
 }
 
+
+# -----------------------------------------------------------------------------
+# Old methods used in old script (scripts from genesis ages)
+# -----------------------------------------------------------------------------
+
+
 # Checking is on. If a command fails, the script fail
 sub VON {
 	my ($self) = shift;
@@ -454,6 +666,9 @@ sub VON {
 # Checking is off. If a command fails, the script continues
 sub VOF {
 	my ($self) = shift;
+	
+			print STDERR "zdarec 2\n";
+	
 	$self->sendCommand( "VOF", "" );
 }
 
@@ -590,7 +805,14 @@ sub COM {
 		$self->{"exception"} = $ex;
 		push( @{ $self->{"exceptions"} }, $ex );
 
+		# save exeption stam to log
+		if ( $self->__LogExist() ) {
+
+			$self->PutStampToLog( $ex->GetExceptionId() );
+		}
+
 		if ( $self->{"HandleException"} == 0 ) {
+			print STDERR "die when inCAM\n";
 			die $self->{"exception"};
 
 		}
@@ -601,78 +823,8 @@ sub COM {
 
 }
 
-sub GetReply {
-	my ($self) = shift;
 
-	return $self->{READANS};
-}
-
-sub GetStatus {
-	my ($self) = shift;
-	return $self->{STATUS};
-}
-
-# Return last whole exception object
-sub GetException {
-	my ($self) = shift;
-
-	if ( $self->{"exception"} ) {
-
-		return $self->{"exception"};
-	}
-}
-
-# Return last exception error text
-sub GetExceptionError {
-	my ($self) = shift;
-
-	if ( $self->{"exception"} ) {
-
-		return $self->{"exception"}->Error();
-	}
-}
-
-# Return last exceptions errors text after calling method HandleException(1)
-# and befrore calling HandleException(0)
-sub GetExceptionsError {
-	my ($self) = shift;
-
-	my @exceptions = ();
-
-	if ( $self->{"exceptions"} ) {
-
-		@exceptions = map { $_->Error() } @{ $self->{"exceptions"} };
-	}
-
-	return \@exceptions;
-}
-
-sub COM_test {
-	my ($self) = shift;
-
-	unless ( $self->{"connected"} ) {
-		return;
-	}
-
-	my ( $package, $filename, $line ) = caller;
-
-	if ( $self->{"HandleException"} == 0 ) {
-
-		#print $trace->as_string();    # like carp
-
-		# from top (most recent) of stack to bottom.
-		#while ( my $frame = $trace->next_frame() ) {
-		#	print "Has args\n" if $frame->hasargs();
-		#}
-
-		# from bottom (least recent) of stack to top.
-
-		die InCamException->new(1009013);
-	}
-
-	return $self->{STATUS};
-
-}
+ 
 
 # Send an auxiliary command
 sub AUX {
@@ -716,29 +868,6 @@ sub DO_INFO {
 	$self->parse($info_com);
 }
 
-#hen InCAM error happens during COM function:
-#- if  HandleException = 0, InCAMException raise
-#- if  HandleException = 1, COM function return error code and script continue
-sub HandleException {
-	my $self  = shift;
-	my $value = shift;
-
-	if ($value) {
-		$self->VOF();
-		$self->{"HandleException"} = 1;
-
-		$self->{"exceptions"} = ();    # clear array of exceptions
-
-		$self->{"exceptions"} = ();    # clear array of exceptions
-
-	}
-	else {
-
-		$self->VON();
-		$self->{"HandleException"} = 0;
-	}
-
-}
 
 sub parse {
 	my ($self)    = shift;

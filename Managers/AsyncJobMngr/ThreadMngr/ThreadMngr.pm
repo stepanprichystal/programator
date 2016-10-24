@@ -61,12 +61,14 @@ sub Init {
 
 # Processrequest for starting new thread
 sub RunNewExport {
-	my $self    = shift;
-	my $jobGUID = shift;
-	my $port    = shift;
-	my $pcbId   = shift;
+	my $self           = shift;
+	my $jobGUID        = shift;
+	my $port           = shift;
+	my $pcbId          = shift;
+	my $pidInCAM       = shift;
+	my $externalServer = shift;
 
-	my $thrId = $self->__CreateThread( $jobGUID, $port, $pcbId );
+	my $thrId = $self->__CreateThread( $jobGUID, $port, $pcbId, $pidInCAM, $externalServer );
 
 	my %thrInfo = (
 					"jobGUID" => $jobGUID,
@@ -130,13 +132,22 @@ sub ExitThread {
 }
 
 sub __CreateThread {
-	my $self    = shift;
-	my $jobGUID = shift;
-	my $port    = shift;
-	my $pcbId   = shift;
+	my $self           = shift;
+	my $jobGUID        = shift;
+	my $port           = shift;
+	my $pcbId          = shift;
+	my $pidInCAM       = shift;
+	my $externalServer = shift;
 
-	my $worker = threads->create( sub { $self->__WorkerMethod( $jobGUID, $port, $pcbId ) } );
-	$worker->set_thread_exit_only(1); # tell only this child thread will be exited
+	# TODO smazat
+
+	# $self->__WorkerMethod( $jobGUID, $port, $pcbId, $pidInCAM ) ;
+
+	# return $$;
+
+	my $worker = threads->create( sub { $self->__WorkerMethod( $jobGUID, $port, $pcbId, $pidInCAM, $externalServer ) } );
+
+	$worker->set_thread_exit_only(1);    # tell only this child thread will be exited
 
 	return $worker->tid();
 }
@@ -146,19 +157,22 @@ sub __CreateThread {
 sub __WorkerMethod {
 	my $self = shift;
 
-	my $jobGUID = shift;
-	my $port    = shift;
-	my $pcbId   = shift;
+	my $jobGUID        = shift;
+	my $port           = shift;
+	my $pcbId          = shift;
+	my $pidInCAM       = shift;
+	my $externalServer = shift;
 
 	# TODO odkomentovat
 	my $inCAM = InCAM->new( "remote" => 'localhost', "port" => $port );
+	$inCAM->StarLog( $pidInCAM, $pcbId );
 
 	#my $inCAM = undef;
 	$inCAM->ServerReady();
 
 	$SIG{'KILL'} = sub {
 
-		$self->__CleanUpAndExit( $inCAM, $jobGUID, Enums->ExitType_FORCE );
+		$self->__CleanUpAndExit( $inCAM, $jobGUID, $pcbId, Enums->ExitType_FORCE, $externalServer );
 
 		exit;    #exit only this child thread
 
@@ -169,12 +183,26 @@ sub __WorkerMethod {
 		$onThreadWorker->Do( $pcbId, $jobGUID, $inCAM, \$THREAD_PROGRESS_EVT, \$THREAD_MESSAGE_EVT );
 	}
 
-	$self->__CleanUpAndExit( $inCAM, $jobGUID, Enums->ExitType_SUCCES );
+	$self->__CleanUpAndExit( $inCAM, $jobGUID, $pcbId, Enums->ExitType_SUCCES );
 
 }
 
 sub __CleanUpAndExit {
-	my ( $selfMain, $inCAM, $jobGUID, $exitType ) = @_;
+	my ( $selfMain, $inCAM, $jobGUID, $pcbId, $exitType, $externalServer ) = @_;
+
+	# If user aborted job and it is "asynchronous" export (not external server prepared)
+	# Close job
+	if ( $exitType eq Enums->ExitType_FORCE && !$externalServer ) {
+
+		# Test if specific job is still open, is so, close
+		$inCAM->COM( "is_job_open", "job" => $pcbId );
+ 
+		if ( $inCAM->GetReply() eq "yes" ) {
+
+			$inCAM->COM( "close_job", "job" => $pcbId );
+			print STDERR "\n\n\nJOBCLOSED when aborting SUER\n\n\n\n";
+		}
+	}
 
 	$inCAM->ClientFinish();
 

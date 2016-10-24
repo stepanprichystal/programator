@@ -4,6 +4,7 @@
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Programs::Exporter::ExportChecker::Groups::NifExport::View::NifUnitFormEvt;
+use base ("Programs::Exporter::ExportChecker::Groups::UnitFormEvtBase");
 
 #3th party library
 use strict;
@@ -24,14 +25,14 @@ sub new {
 	$self = $class->SUPER::new(@_);
 	bless $self;
 
-	my $frm = $self->{"form"};
+	my $wrapper = $self->{"wrapper"};
 
 	# Provided handlers
 
 
 	# Provided events
 	
-	$self->_AddEvent( $frm->{'onTentingChange'}, Enums->Event_nif_tenting );
+	$self->_AddEvent( $wrapper->{'onTentingChange'}, Enums->Event_nif_tenting );
 
 	return $self;
 }

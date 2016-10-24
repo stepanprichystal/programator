@@ -20,6 +20,7 @@ use warnings;
 
 #local library
 use aliased 'Programs::Exporter::ExportChecker::Groups::NifExport::View::NifUnitForm';
+use aliased 'Programs::Exporter::ExportChecker::Groups::NifExport::View::NifUnitFormEvt';
 
 #use aliased 'Programs::Exporter::ExportChecker::Groups::NifExport::Model::NifDataMngr';
 use aliased 'Programs::Exporter::ExportChecker::Groups::GroupDataMngr';
@@ -51,6 +52,10 @@ sub new {
 
 	$self->{"dataMngr"} = GroupDataMngr->new( $self->{"jobId"}, $prepareData, $checkData, $exportData );
 
+
+	
+ 
+	
 	return $self;    # Return the reference to the hash.
 }
 
@@ -73,8 +78,13 @@ sub InitForm {
 
 	my $parent = $groupWrapper->GetParentForGroup();
 	$self->{"form"} = NifUnitForm->new( $parent, $inCAM, $self->{"jobId"});
-
+	
+	# init base class with event class
+	$self->{"eventClass"}  = NifUnitFormEvt->new($self->{"form"});
+ 
 	$self->_SetHandlers();
+	
+	
 
 }
 

@@ -18,7 +18,11 @@ use aliased 'Programs::Exporter::ExportUtility::Groups::NifExport::NifExportTmp'
 
 #input parameters
  
+<<<<<<< HEAD
 my $jobId    = "f51696";
+=======
+my $jobId    = "f51614";
+>>>>>>> refs/heads/OPFX_2
  
  
 my $poznamka = "Zpracovano v InCAMupp";

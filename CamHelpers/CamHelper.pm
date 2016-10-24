@@ -52,11 +52,11 @@ sub OpenJob {
 	my $inCam   = shift;
 	my $jobName = shift;
 
-	$inCam->COM(
-				 "clipb_open_job",
-				 job              => "$jobName",
-				 update_clipboard => "view_job"
-	);
+#	$inCam->COM(
+#				 "clipb_open_job",
+#				 job              => "$jobName",
+#				 update_clipboard => "view_job"
+#	);
 	$inCam->COM( "open_job", job => "$jobName", "open_win" => "yes" );
 
 	$inCam->AUX( 'set_group', group => $inCam->{COMANS} );
@@ -128,6 +128,11 @@ sub SaveAndCloseJob {
 	$inCam->COM( "save_job","job"              => "$jobName");
 	$inCam->COM( "close_job","job"              => "$jobName");
 }
+
+
+ 
+ 
+ 
 
 #Return if step exists
 sub StepExists {

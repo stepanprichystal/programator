@@ -16,10 +16,11 @@ use Try::Tiny;
 
 use aliased 'Helpers::GeneralHelper';
 use aliased 'Enums::EnumsGeneral';
-
+use aliased 'CamHelpers::CamJob';
 use aliased 'CamHelpers::CamHelper';
 use aliased 'Packages::ItemResult::Enums' => 'ResultEnums';
 use aliased 'Programs::Exporter::ExportUtility::Enums';
+use aliased 'Programs::Exporter::DataTransfer::Enums' => "DataEnums";
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -42,6 +43,9 @@ sub Init {
 	$self->{"inCAM"}       = shift;
 	$self->{"exportClass"} = shift;    # classes for export each group
 	$self->{"data"}        = shift;    # export data
+	
+	# Supress all toolkit exception/error windows
+	$self->{"inCAM"} ->SupressToolkitException(1);
 
 }
 
@@ -50,41 +54,65 @@ sub RunExport {
 
 	my %unitsData = $self->{"data"}->GetAllUnitData();
 	my @keys      = $self->{"data"}->GetOrderedUnitKeys();
+	my $mode = 		$self->{"data"}->GetExportMode();
 
 	# sort keys by nhash value "__UNITORDER__"
 	#my @keys = ;
 
-	foreach my $unitId (@keys) {
+	# Open job, only if asynchronous mode
+	if($mode eq DataEnums->ExportMode_ASYNC ){
+		$self->__OpenJob();
+	}
 
-		#tell group export start
 
-		my $exportData = $unitsData{$unitId};
+	# Open job
+	if ( CamJob->IsJobOpen($self->{"inCAM"}, $self->{"pcbId"})) {
 
-		# Event when group export start
-		$self->__GroupExportEvent( Enums->EventType_GROUP_START, $unitId );
+		foreach my $unitId (@keys) {
 
-		# Open job
-		if ( $self->__OpenJob() ) {
+			#tell group export start
+
+			my $exportData = $unitsData{$unitId};
+
+			# Event when group export start
+			$self->__GroupExportEvent( Enums->EventType_GROUP_START, $unitId );
 
 			# DON'T USE TRY/CATCH (TINY LIBRARY), IF SO, NORRIS WRITTER DOESN'T WORK
 			# catch all unexpected exception in thread
 			eval {
-
-				# Process group 
+			
+				# Process group
 				$self->__ProcessGroup( $unitId, $exportData );
 			};
 			if ( my $e = $@ ) {
 
-				$self->__TaskResultEvent( ResultEnums->ItemResult_Fail, $e );
+				my $errStr = "";
+
+				# get string error from exception
+				if ( $e->can("Error") ) {
+
+					$errStr .= $e->Error();
+
+				}
+				else {
+
+					$errStr .= $e;
+				}
+
+				$self->__TaskResultEvent( ResultEnums->ItemResult_Fail, $errStr );
+				last;
 			}
+
+			# Event when group export end
+			$self->__GroupExportEvent( Enums->EventType_GROUP_END, $unitId );
 		}
 
 		#close job
-		$self->__CloseJob();
-
-		# Event when group export end
-		$self->__GroupExportEvent( Enums->EventType_GROUP_END, $unitId );
-
+		
+		if($mode eq DataEnums->ExportMode_ASYNC ){
+			
+			$self->__CloseJob();
+		}
 	}
 }
 
@@ -94,14 +122,23 @@ sub __OpenJob {
 	my $inCAM = $self->{"inCAM"};
 
 	# START HANDLE EXCEPTION IN INCAM
+
+	print STDERR "\n\n\n\n ================ handle exception ======================\n\n\n\n";
 	$inCAM->HandleException(1);
 
+	
+
+	# TODO smayat
+
 	CamHelper->OpenJob( $self->{"inCAM"}, $self->{"pcbId"} );
+	CamJob->CheckOutJob( $self->{"inCAM"}, $self->{"pcbId"} );
 
 	# STOP HANDLE EXCEPTION IN INCAM
+	
+	print STDERR "\n\n\n\n ================ handle exception END ======================\n\n\n\n";
 	$inCAM->HandleException(0);
 
-	my $err = $inCAM->GetExceptionError();
+	my $err = $inCAM->GetExceptionsError();
 
 	if ($err) {
 
@@ -121,7 +158,8 @@ sub __CloseJob {
 	# START HANDLE EXCEPTION IN INCAM
 	$inCAM->HandleException(1);
 
-	CamHelper->SaveAndCloseJob( $self->{"inCAM"}, $self->{"pcbId"} );
+	CamJob->CloseJob( $self->{"inCAM"}, $self->{"pcbId"} );
+	CamJob->CheckInJob( $self->{"inCAM"}, $self->{"pcbId"} );
 
 	# STOP HANDLE EXCEPTION IN INCAM
 	$inCAM->HandleException(0);
@@ -215,21 +253,19 @@ sub __ProcessGroup {
 	# Set handlers
 	$exportClass->{"onItemResult"}->Add( sub { $self->__ItemResultEvent( $exportClass, $unitId, @_ ) } );
 
-	# START HANDLE EXCEPTION IN INCAM
-	$inCAM->HandleException(1);
+	
 
 	# Final export group
 	$exportClass->Run();
 
-	# STOP HANDLE EXCEPTION IN INCAM
-	$inCAM->HandleException(0);
+	 
 
-	my $err = $inCAM->GetExceptionError();
-
-	if ($err) {
-
-		$self->__GroupResultEvent( $unitId, ResultEnums->ItemResult_Fail, $err );
-	}
+#	my $err = $inCAM->GetExceptionError();
+#
+#	if ($err) {
+#
+#		$self->__GroupResultEvent( $unitId, ResultEnums->ItemResult_Fail, $err );
+#	}
 
 }
 
@@ -298,7 +334,7 @@ sub __TaskResultEvent {
 	$self->_SendMessageEvt( Enums->EventType_TASK_RESULT, \%data1 );
 
 }
- 
+
 sub __GroupExportEvent {
 	my $self   = shift;
 	my $type   = shift;    #GROUP_EXPORT_<START/END>

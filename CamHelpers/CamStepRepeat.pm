@@ -20,7 +20,7 @@ use warnings;
 #   Package methods
 #-------------------------------------------------------------------------------------------#
 
-#Return information about steps in given step
+#Return information about all nested steps (in all deepness) steps in given step
 sub GetUniqueNestedStepAndRepeat {
 	my $self     = shift;
 	my $inCAM    = shift;
