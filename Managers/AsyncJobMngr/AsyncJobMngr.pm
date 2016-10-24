@@ -272,13 +272,18 @@ sub __PortReadyHandler {
 
 		${ $self->{"jobs"} }[$i]{"port"}  = $d{"port"};
 		${ $self->{"jobs"} }[$i]{"state"} = Enums->JobState_RUNNING;
+		 
+		
+		
+		#${ $self->{"jobs"} }[$i]{"port"}  = $d{"port"};#
 
 		my $pcbId   = ${ $self->{"jobs"} }[$i]{"pcbId"};
 		my $jobGUID = ${ $self->{"jobs"} }[$i]{"jobGUID"};
+		my $externalServer = ${ $self->{"jobs"} }[$i]{"serverInfo"} ? 1 : 0;
 
 		$self->{'onJobStateChanged'}->Do( $jobGUID, Enums->JobState_RUNNING );
 
-		$self->{"threadMngr"}->RunNewExport( $jobGUID, $d{"port"}, $pcbId, $d{"pidInCAM"} );
+		$self->{"threadMngr"}->RunNewExport( $jobGUID, $d{"port"}, $pcbId, $d{"pidInCAM"}, $externalServer);
 
 	}
 

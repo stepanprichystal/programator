@@ -474,7 +474,7 @@ sub __CreateServer {
 	#run InCAM editor with serverscript
 	Win32::Process::Create( $processObj, $inCAMPath,
 							"InCAM.exe    -s" . GeneralHelper->Root() . "\\Managers\\AsyncJobMngr\\Server\\ServerExporter.pl  " . $freePort,
-							1, THREAD_PRIORITY_NORMAL, "." )
+							0, THREAD_PRIORITY_NORMAL, "." )
 	  || die "$!\n";
 
 	$pidInCAM = $processObj->GetProcessID();
@@ -597,6 +597,8 @@ sub __MoveWindowOut {
 	my $self = shift;
 	my $pid  = shift;
 
+		print STDERR "Searchin InCAM window PID $pid.\n";
+
 	while (1) {
 
 		my @windows = FindWindowLike( 0, "$pid" );
@@ -610,7 +612,7 @@ sub __MoveWindowOut {
 		
 		sleep(0.1);
 
-		print STDERR "hledam okno\n";
+		print STDERR ".";
 	}
 
 }

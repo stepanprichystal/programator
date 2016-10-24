@@ -30,7 +30,10 @@ my $defaultPort = 56753;
 
 #get information about port
 my $serverPort;
+# try to get information from arguments
 my $arg = $ARGV[0];
+
+
 
 if ( defined $arg && $arg =~ /\d/ ) {
 	$serverPort = $arg;
@@ -39,18 +42,27 @@ else {
 	$serverPort = $defaultPort;    # 56753;
 }
  
+ 
+
 
 # The port has not been defined. To define it you need to
 # become root and add the following line in /etc/services
 # genesis     56753/tcp    # Genesis port for debugging perl scripts
 
 #print STDERR "\n";
+print STDERR "\n\n\n11111111111 $serverPort 111111111111111111\n\n";
 
 die "No port" unless $serverPort;
 my $proto = getprotobyname('tcp');
 socket( Server, PF_INET, SOCK_STREAM, $proto ) || die "socket: $!";
 setsockopt( Server, SOL_SOCKET, SO_REUSEADDR, pack( "l", 1 ) ) || die "setsockopt: $!";
+
+
+print STDERR "\n\n\n222222222222222221111111\n\n";
 bind( Server, sockaddr_in( $serverPort, INADDR_ANY ) ) || die "bind: $!";
+
+
+print STDERR "\n\n\n1133333333333333333111\n\n";
 listen( Server, SOMAXCONN ) || die "listen: $!";
 
 my $waitedpid = 0;

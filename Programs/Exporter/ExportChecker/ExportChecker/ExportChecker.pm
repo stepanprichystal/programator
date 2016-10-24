@@ -41,6 +41,9 @@ use aliased 'Programs::Exporter::DataTransfer::Enums' => 'EnumsTransfer';
 use aliased 'Helpers::GeneralHelper';
 use aliased 'Widgets::Forms::LoadingForm';
 use aliased 'Programs::Exporter::ExportUtility::Helper';
+use aliased 'CamHelpers::CamHelper';
+use aliased 'CamHelpers::CamJob';
+use aliased 'Widgets::Forms::LoadingForm';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -58,13 +61,12 @@ sub new {
 	my $class = shift;
 	my $self  = {};
 	bless $self;
- 
+
 	$self->{"jobId"} = shift;
 
-	$self->{"serverPort"} = shift;
-	$self->{"serverPid"}  = shift;
-	$self->{"loadingFrmPid"}  = shift;	
-
+	$self->{"serverPort"}    = shift;
+	$self->{"serverPid"}     = shift;
+	$self->{"loadingFrmPid"} = shift;
 
 	$self->{"inCAM"} = undef;
 
@@ -89,9 +91,6 @@ sub new {
 	$self->__Connect();
 	$self->__Init();
 	$self->__Run();
-	
-	
-	
 
 	return $self;
 }
@@ -142,14 +141,12 @@ sub __Run {
 
 	#$self->{"units"}->RefreshGUI($self->{"inCAM"});
 
+	print STDERR "\n\n\n\n\n\n\n\n\n\n\n\nllllllllllloooooo" . $self->{"loadingFrmPid"} . "\n\n\n\n\n\n\n";
 
-	print STDERR "\n\n\n\n\n\n\n\n\n\n\n\nllllllllllloooooo".$self->{"loadingFrmPid"}."\n\n\n\n\n\n\n";
-
-	
-	if($self->{"loadingFrmPid"}){
-		Win32::Process::KillProcess($self->{"loadingFrmPid"}, 0 );
+	if ( $self->{"loadingFrmPid"} ) {
+		Win32::Process::KillProcess( $self->{"loadingFrmPid"}, 0 );
 	}
-	
+
 	#Helper->ShowExportWindow(0,"Loading Exporter Checker");
 
 	$self->{"form"}->MainLoop();
@@ -334,16 +331,13 @@ sub __OnResultPopupHandler {
 	my $resultType = shift;
 	my $exportMode = shift;
 
-	
 	# After close popup window is necessery Re-connect to income server
 	# Because checking was processed in child thread and was connected
 	# to this income server
 
 	$self->__Connect();
-	
-	 
 
-	my $active = 1;
+	my $active    = 1;
 	my $toProduce = $self->{"form"}->GetToProduce($active);
 
 	if (    $resultType eq Enums->PopupResult_EXPORTFORCE
@@ -353,34 +347,60 @@ sub __OnResultPopupHandler {
 		#my %unitsExportData = $self->{"units"}->GetExportData(1);
 		my $dataTransfer = DataTransfer->new( $self->{"jobId"}, EnumsTransfer->Mode_WRITE, $self->{"units"} );
 
+		my $inCAM  = $self->{"inCAM"};
+		my $client = $self->{"client"};
+
 		if ( $exportMode eq EnumsTransfer->ExportMode_ASYNC ) {
 
 			# Save exported data
 			$dataTransfer->SaveData( $exportMode, $toProduce );
 
+			# Save and close job
+
+			my $frm = LoadingForm->new( $self->{"form"}->{"mainFrm"}, "Saving job..." );
+
+			if ( $client->IsConnected() ) {
+				$inCAM->ClientFinish();
+			}
+
+			my $worker = threads->create( sub { $self->__SaveJobAsync() } );
+			#$worker->join();
+
+			#$frm->{"mainFrm"}->Close();
+
 		}
 		elsif ( $exportMode eq EnumsTransfer->ExportMode_SYNC ) {
 
-			# Hide export window
-			#$self->{"form"}->{"mainFrm"}->Hide();
+			# Generate random port number
 
-			my $portNumber = "2001";    #random number
+			#my $portNumber = "200". int(rand(9));    #random number
+			#my $portNumber = "2001";    #random number
 			#my $serverPID  = $$;        # PID
-			
+
 			my $formPos = $self->{"form"}->{"mainFrm"}->GetPosition();
+
 			# Save exported data
-			$dataTransfer->SaveData( $exportMode, $toProduce, $portNumber, $formPos );
+			$dataTransfer->SaveData( $exportMode, $toProduce, $self->{"serverPort"}, $formPos );
+
+			#test if client is connected
+			#if so, disconnect, because exportUtility connect to this server (launched in InCAM toolkit)
+			if ( $client->IsConnected() ) {
+				$inCAM->ClientFinish();
+
+				#$client->SetConnected(0);
+			}
 
 			# Start server in this script
 
-			my $serverPath = GeneralHelper->Root() . "\\Managers\\AsyncJobMngr\\Server\\ServerExporter.pl";
-			@_ = ();
-			push( @_, $portNumber );    # port number, pass as argument
-			require $serverPath;
+			#my $serverPath = GeneralHelper->Root() . "\\Managers\\AsyncJobMngr\\Server\\ServerExporter.pl";
+
+			#$ARGV[0] = $self->{"serverPort"};    # port number of server running in Toolkit, pass as argument
+			#require $serverPath;
 
 		}
 
-
+		# Exit export window
+		$self->{"form"}->{"mainFrm"}->Destroy();
 
 	}
 	elsif ( $resultType eq Enums->PopupResult_CHANGE ) {
@@ -389,8 +409,6 @@ sub __OnResultPopupHandler {
 
 	}
 
-
-
 	$self->{"disableForm"} = 0;
 	$self->__RefreshForm();
 }
@@ -398,6 +416,30 @@ sub __OnResultPopupHandler {
 # ================================================================================
 # PRIVATE METHODS
 # ================================================================================
+
+# Save and checkin job, and close
+sub __SaveJobAsync {
+	my $self = shift;
+
+	my $inCAM = InCAM->new( "port" => $self->{"serverPort"} );
+
+	my $pidServer = $inCAM->ServerReady();
+
+	#if ok 
+	if ($pidServer) {
+
+		#CamJob->SaveJob( $inCAM, $self->{"jobId"} );
+		#CamJob->CheckInJob( $inCAM, $self->{"jobId"} );
+		#CamJob->CloseJob( $inCAM, $self->{"jobId"} );
+		sleep(10);
+		#CamHelper->SaveAndCloseJob($inCAM, $self->{"jobId"});
+
+	 
+		
+		#$frm->{"mainFrm"}->Close();
+	}
+
+}
 
 sub __RefreshForm {
 	my $self = shift;
@@ -441,17 +483,14 @@ sub __Connect {
 	print STDERR "RESULT is $result";
 
 	# if test ok, connect inCAM library to server
-	if($self->{"inCAM"}){
-		
+	if ( $self->{"inCAM"} ) {
+
 		$self->{"inCAM"}->Reconnect();
-	}else{
-		
+	}
+	else {
+
 		$self->{"inCAM"} = InCAM->new( "port" => $port );
 	}
-	
-
-
-
 
 	return $result;
 }

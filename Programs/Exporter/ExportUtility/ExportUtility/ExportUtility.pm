@@ -118,7 +118,7 @@ sub __OnJobStateChanged {
 	}
 	elsif ( $taskState eq EnumsMngr->JobState_RUNNING ) {
 
-		$status = "Start runing";
+		$status = "Running...";
 		$self->{"form"}->ActivateForm( 1, $exportData->GetFormPosition() );
 
 	}
@@ -141,6 +141,8 @@ sub __OnJobStateChanged {
 			$aborted = 1;
 
 			$status = "Job export aborted by user.";
+			
+			 
 		}
 		else {
 
@@ -284,8 +286,11 @@ sub __OnRemoveJobClick {
 
 		#if ok, make space for new client (child process)
 		if ($pidServer) {
+			
 			$inCAM->CloseServer();
 		}
+
+		print STDERR "Close server, $port\n\n";
 
 		$self->{"form"}->_DestroyExternalServer($port);
 

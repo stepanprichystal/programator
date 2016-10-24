@@ -60,8 +60,7 @@ sub new {
 sub Run {
 	my $self = shift;
 
-	# TODO smayat
-	my $test = $self->{"inCAM"}->COM("set_step", "name"=> "1");
+	 
 
 	#information necessary for making decision which nif builder use
 	my $typeCu   = CamHelper->GetPcbType( $self->{"inCAM"}, $self->{"jobId"} );

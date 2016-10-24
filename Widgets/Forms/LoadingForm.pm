@@ -101,6 +101,7 @@ sub __SetLayout {
 	# SAVE CONTROLS
 
 	$mainFrm->SetSizer($szMain);
+	$self->{"mainFrm"} = $mainFrm;
 
 	return $mainFrm;
 }

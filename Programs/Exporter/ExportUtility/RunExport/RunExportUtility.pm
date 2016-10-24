@@ -97,7 +97,7 @@ sub __RunExportUtility {
 	# CREATE_NEW_CONSOLE - script will run in completely new console - no interaction with old console
 
 	Win32::Process::Create( $processObj, $perl,
-							"perl -w " . GeneralHelper->Root() . "\\Programs\\Exporter\\ExportUtility\\RunExport\\RunExportUtilityScript.pl ",
+							"perl " . GeneralHelper->Root() . "\\Programs\\Exporter\\ExportUtility\\RunExport\\RunExportUtilityScript.pl ",
 							1, NORMAL_PRIORITY_CLASS | CREATE_NEW_CONSOLE, "." )
 	  || die "Failed to create ExportUtility process.\n";
 

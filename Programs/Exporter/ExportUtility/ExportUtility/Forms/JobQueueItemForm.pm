@@ -164,7 +164,7 @@ sub SetStatus {
 sub SetItemOrder {
 	my $self = shift;
 
-	my $pos = $self->GetPosition() . ")";
+	my $pos = ($self->GetPosition() +1 ). ")";
 
 	$self->{"orderTxt"}->SetLabel($pos);
 }
