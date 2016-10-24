@@ -93,7 +93,25 @@ sub GetChains {
 				my %chainInfo = ();
 				
 				%chainInfo = %attr; # add all attributes from feature
-				$chainInfo{".tool_size"} = $f->{"thick"}; # add ifnp about rout tool size
+			
+				# if it is no surfaces
+				if($f->{"type"} !~ /s/i){
+					
+					$chainInfo{".tool_size"} = $f->{"thick"}; # add ifnp about rout tool size
+				
+				}else{
+					
+					#value is returned in inch so treanslate to mm
+					if($attr{".rout_tool"})
+					{
+						$attr{".rout_tool"} = sprintf( "%.1f", $attr{".rout_tool"} * 25.4 ) *1000;
+						
+						$chainInfo{".tool_size"} = $attr{".rout_tool"}; # add ifnp about rout tool size
+					}
+					
+					
+				}
+
 
 				push( @chains, \%chainInfo );
 			}

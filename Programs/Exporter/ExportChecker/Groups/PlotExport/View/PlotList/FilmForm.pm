@@ -69,11 +69,11 @@ sub SetRuleSet {
 
 		if ( $filmSize eq Enums->FilmSize_Small ) {
 
-			$filmSize = "B";
+			$filmSize = "S";
 		}
 		elsif ( $filmSize eq Enums->FilmSize_Big ) {
 
-			$filmSize = "S";
+			$filmSize = "B";
 		}
 	}
 

@@ -140,6 +140,13 @@ sub Run {
 		$self->__ExportAOI( $layer, $setName );
 	}
 
+	# For each layer export AOI
+	foreach my $layer (@signalLayers) {
+		$inCAM->COM( "cdr_display_layer", "name" => $layer, "display" => "no", "type" => "physical" );
+	}
+	
+	
+
 	# After export, release licence/ close seeeion
 	$inCAM->COM("cdr_close");
 

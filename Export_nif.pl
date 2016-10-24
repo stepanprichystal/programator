@@ -18,16 +18,14 @@ use aliased 'Programs::Exporter::ExportUtility::Groups::NifExport::NifExportTmp'
 
 #input parameters
  
-<<<<<<< HEAD
-my $jobId    = "f51696";
-=======
-my $jobId    = "f51614";
->>>>>>> refs/heads/OPFX_2
+
+my $jobId    = "f13610";
+
  
  
-my $poznamka = "Zpracovano v InCAMupp";
+my $poznamka = "Zpracovano v InCAM222";
 my $tenting  = 0;
-my $pressfit = 0;
+my $pressfit = 1;
 my $maska01  = 0;
 my $datacode  = "c";
 my $ullogo  = "s";

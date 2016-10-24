@@ -12,7 +12,6 @@ use aliased 'Helpers::GeneralHelper';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'Packages::Stackup::Enums';
 use aliased 'Connectors::HeliosConnector::HegMethods';
-use aliased 'Packages::Stackup::StackupOperation';
 use aliased 'Packages::Stackup::Stackup::Stackup';
 
 #-------------------------------------------------------------------------------------------#
@@ -65,6 +64,35 @@ sub GetThickByLayer {
 }
 
 
+# If stackup contains core topmost or very bottom (Cu-core-cu-prepreg-Cu-core-cu)
+# Return 1, else 0
+sub OuterCore {
+	my $self     = shift;
+	my $pcbId    = shift;    #pcb id
+	 
+ 	my $result = 0;
+ 
+	if ( HegMethods->GetTypeOfPcb($pcbId) eq 'Vicevrstvy' ) {
+
+		my $stackup = Stackup->new($pcbId);
+		my @cores = $stackup->GetAllCores();
+		
+		my $firstC = $cores[0];
+		my $lastC = $cores[scalar(@cores) -1];
+		
+		my $topCopper = $firstC->GetTopCopperLayer()->GetCopperName() ;
+		
+		my $botCopper = $lastC->GetBotCopperLayer()->GetCopperName();
+		
+		if($topCopper  eq "c" ||  $botCopper  eq "s"){
+			
+			$result = 1;
+		}
+		
+	}
+	
+	return $result;
+}
 
 
 
@@ -76,9 +104,12 @@ sub GetThickByLayer {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	#my $test = StackupLayerHelper->GetStackupPress("F14742");
 
-	#my $test = StackupOperation->GetThickByLayer( "F13608", "v5");
+	#use aliased 'Packages::Stackup::StackupOperation';
+
+	#my $test = StackupOperation->OuterCore("f13610");
+
+	 
 
 	#print $test;
 

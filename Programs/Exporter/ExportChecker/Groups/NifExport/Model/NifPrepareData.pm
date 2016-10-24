@@ -18,6 +18,7 @@ use aliased 'CamHelpers::CamJob';
 use aliased 'CamHelpers::CamHelper';
 use aliased 'CamHelpers::CamAttributes';
 use aliased 'Connectors::HeliosConnector::HegMethods';
+use aliased 'Enums::EnumsGeneral';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -53,10 +54,15 @@ sub OnPrepareGroupData {
 	my $inCAM = $dataMngr->{"inCAM"};
 	my $jobId = $dataMngr->{"jobId"};
 
-	$groupData->SetTenting(1);
+	my $defaultInfo = $dataMngr->GetDefaultInfo();
+
+
+	my $tenting = $self->__IsTenting($inCAM, $jobId, $defaultInfo);
+
+	$groupData->SetTenting($tenting);
 	$groupData->SetMaska01(0);
 	$groupData->SetPressfit(0);
-	$groupData->SetNotes("dsdsdsd");
+	$groupData->SetNotes("");
 	$groupData->SetDatacode("");
 	$groupData->SetUlLogo("");
 	$groupData->SetJumpScoring(0);
@@ -98,6 +104,30 @@ sub OnPrepareGroupData {
 	$groupData->SetS_silk_screen_colour( $silk2{"bot"} );
 
 	return $groupData;
+}
+
+
+sub __IsTenting {
+	my $self  = shift;
+	my $inCAM = shift;
+	my $jobId = shift;
+	my $defaultInfo = shift;
+	
+	
+	my $tenting = 0;
+	
+	if( CamHelper->LayerExists($inCAM, $jobId, "c")){
+		
+		my $etch = $defaultInfo->GetEtchType( "c" );
+		
+		if($etch eq EnumsGeneral->Etching_TENTING){
+			
+			$tenting = 1;
+		}
+		
+	}
+	
+	return $tenting;	
 }
 
 sub __GetDimension {

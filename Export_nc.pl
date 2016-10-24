@@ -20,11 +20,10 @@ my $export = NCExportTmp->new();
 
 #input parameters
  
-<<<<<<< HEAD
-my $jobId = "f51696";
-=======
-my $jobId = "f51614";
->>>>>>> refs/heads/OPFX_2
+ 
+my $jobId = "f13610";
+ 
+ 
  
 
 # Exportovat jednotlive vrstvy nebo vsechno

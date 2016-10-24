@@ -158,7 +158,7 @@ sub ProcessGroupResult {
 
 	my $unitId = $data->{"unitId"};
 
-	my $unit = $self->__GetUnit($unitId);
+	my $unit = $self->GetUnitById($unitId);
 
 	my $groupResult   = $data->{"result"};
 	my $groupErrors   = $data->{"errors"};

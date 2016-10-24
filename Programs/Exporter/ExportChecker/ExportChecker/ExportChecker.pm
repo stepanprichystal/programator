@@ -38,12 +38,11 @@ use aliased 'Programs::Exporter::ExportChecker::ExportChecker::ExportPopup';
 use aliased 'Programs::Exporter::DataTransfer::DataTransfer';
 use aliased 'Programs::Exporter::ExportChecker::Enums';
 use aliased 'Programs::Exporter::DataTransfer::Enums' => 'EnumsTransfer';
+use aliased 'Programs::Exporter::ExportUtility::Helper';
 use aliased 'Helpers::GeneralHelper';
 use aliased 'Widgets::Forms::LoadingForm';
-use aliased 'Programs::Exporter::ExportUtility::Helper';
 use aliased 'CamHelpers::CamHelper';
 use aliased 'CamHelpers::CamJob';
-use aliased 'Widgets::Forms::LoadingForm';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -67,6 +66,9 @@ sub new {
 	$self->{"serverPort"}    = shift;
 	$self->{"serverPid"}     = shift;
 	$self->{"loadingFrmPid"} = shift;
+	
+	
+	print STDERR "\n\n\n\nffffffffffrm".$self->{"loadingFrmPid"}."\n\n\n";
 
 	$self->{"inCAM"} = undef;
 
@@ -91,12 +93,14 @@ sub new {
 	$self->__Connect();
 	$self->__Init();
 	$self->__Run();
-
+	
 	return $self;
 }
 
 sub __Init {
 	my $self = shift;
+
+
 
 	# 1) Initialization of whole export app
 
@@ -139,10 +143,7 @@ sub __Run {
 	my $self = shift;
 	$self->{"form"}->{"mainFrm"}->Show(1);
 
-	#$self->{"units"}->RefreshGUI($self->{"inCAM"});
-
-	print STDERR "\n\n\n\n\n\n\n\n\n\n\n\nllllllllllloooooo" . $self->{"loadingFrmPid"} . "\n\n\n\n\n\n\n";
-
+	# When all succesinit, close waiting form
 	if ( $self->{"loadingFrmPid"} ) {
 		Win32::Process::KillProcess( $self->{"loadingFrmPid"}, 0 );
 	}
@@ -356,17 +357,15 @@ sub __OnResultPopupHandler {
 			$dataTransfer->SaveData( $exportMode, $toProduce );
 
 			# Save and close job
+			$self->{"form"}->{"mainFrm"}->Hide();
 
-			my $frm = LoadingForm->new( $self->{"form"}->{"mainFrm"}, "Saving job..." );
+			CamJob->SaveJob( $inCAM, $self->{"jobId"} );
+			CamJob->CheckInJob( $inCAM, $self->{"jobId"} );
+			CamJob->CloseJob( $inCAM, $self->{"jobId"} );
 
 			if ( $client->IsConnected() ) {
-				$inCAM->ClientFinish();
+				$inCAM->CloseServer();
 			}
-
-			my $worker = threads->create( sub { $self->__SaveJobAsync() } );
-			#$worker->join();
-
-			#$frm->{"mainFrm"}->Close();
 
 		}
 		elsif ( $exportMode eq EnumsTransfer->ExportMode_SYNC ) {
@@ -402,6 +401,8 @@ sub __OnResultPopupHandler {
 		# Exit export window
 		$self->{"form"}->{"mainFrm"}->Destroy();
 
+		return 1;
+
 	}
 	elsif ( $resultType eq Enums->PopupResult_CHANGE ) {
 
@@ -416,30 +417,6 @@ sub __OnResultPopupHandler {
 # ================================================================================
 # PRIVATE METHODS
 # ================================================================================
-
-# Save and checkin job, and close
-sub __SaveJobAsync {
-	my $self = shift;
-
-	my $inCAM = InCAM->new( "port" => $self->{"serverPort"} );
-
-	my $pidServer = $inCAM->ServerReady();
-
-	#if ok 
-	if ($pidServer) {
-
-		#CamJob->SaveJob( $inCAM, $self->{"jobId"} );
-		#CamJob->CheckInJob( $inCAM, $self->{"jobId"} );
-		#CamJob->CloseJob( $inCAM, $self->{"jobId"} );
-		sleep(10);
-		#CamHelper->SaveAndCloseJob($inCAM, $self->{"jobId"});
-
-	 
-		
-		#$frm->{"mainFrm"}->Close();
-	}
-
-}
 
 sub __RefreshForm {
 	my $self = shift;

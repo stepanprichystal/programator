@@ -43,6 +43,8 @@ sub Parse {
 	my $step  = shift;
 	my $layer = shift;
 
+	$inCAM->COM("units", "type"=> "mm");
+
 	my $infoFile = $inCAM->INFO(
 								 units           => 'mm',
 								 angle_direction => 'ccw',
@@ -82,30 +84,31 @@ sub __ParseLines {
 
 		if ( $l =~ /###/ ) { next; }
 
-		$l =~ m/^#(\d*)\s*#(\w)\s*((-?[0-9]*\.?[0-9]*\s)*)\s*r([0-9]*\.?[0-9]*)\s*([\w\d\s]*);?(.*)/;
-
 		my $featInfo = Item->new();
+		
+		my @attr = ();
 
-		$featInfo->{"id"}   = $1;
-		$featInfo->{"type"} = $2;
 
-		my @points = split( /\s/, $3 );
+		# line, arcs, pads
+		if($l =~ m/^#(\d*)\s*#(\w)\s*((-?[0-9]*\.?[0-9]*\s)*)\s*r([0-9]*\.?[0-9]*)\s*([\w\d\s]*);?(.*)/i)
+		{
+			$featInfo->{"id"}   = $1;
+			$featInfo->{"type"} = $2;
+			
+			my @points = split( /\s/, $3 );
+			
+			#remove sign from zero value, when after rounding there minus left
+ 
 
-		#remove sign from zero value, when after rounding there minus left
+			$featInfo->{"x1"} = $points[0];
+			$featInfo->{"y1"} = $points[1];
+			$featInfo->{"x2"} = $points[2];
+			$featInfo->{"y2"} = $points[3];
 
-		#$featInfo->{"x1"} = sprintf( "%.3f", $points[0] );
-		#$featInfo->{"y1"} = sprintf( "%.3f", $points[1] );
-		#$featInfo->{"x2"} = sprintf( "%.3f", $points[2] );
-		#$featInfo->{"y2"} = sprintf( "%.3f", $points[3] );
-
-		$featInfo->{"x1"} = $points[0];
-		$featInfo->{"y1"} = $points[1];
-		$featInfo->{"x2"} = $points[2];
-		$featInfo->{"y2"} = $points[3];
-
-		$featInfo->{"thick"} = $5;
-		 
-		if ( $featInfo->{"type"} eq "A" ) {
+			$featInfo->{"thick"} = $5;
+			
+			
+			if ( $featInfo->{"type"} eq "A" ) {
 
 			#$featInfo->{"xmid"} = sprintf( "%.3f", $points[4] );
 			#$featInfo->{"ymid"} = sprintf( "%.3f", $points[5] );
@@ -115,9 +118,27 @@ sub __ParseLines {
 			my $dir = $6;
 			$dir =~ m/([YN])/;
 			$featInfo->{"oriDir"} = $1 eq "Y" ? "CW" : "CCW";
+			}
+			
+			
+			@attr = split( ",", $7 );
+		 
+			
+		}
+		# surfaces
+		elsif($l =~ m/^#(\d*)\s*#(s)\s*([\w\d\s]*);?(.*)/i){
+		
+			$featInfo->{"id"}   = $1;
+			$featInfo->{"type"} = $2;
+			@attr = split( ",", $4 );	
+		
+		}else{
+			
+			next;
 		}
 
-		my @attr = split( ",", $7 );
+	 
+	 	# parse attributes
 		foreach my $at (@attr) {
 
 			my @attValue = split( "=", $at );

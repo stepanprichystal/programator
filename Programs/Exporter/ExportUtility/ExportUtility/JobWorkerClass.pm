@@ -99,8 +99,8 @@ sub RunExport {
 					$errStr .= $e;
 				}
 
-				$self->__TaskResultEvent( ResultEnums->ItemResult_Fail, $errStr );
-				last;
+				$self->__GroupResultEvent( $unitId, ResultEnums->ItemResult_Fail, $errStr );
+				next;
 			}
 
 			# Event when group export end
@@ -138,7 +138,7 @@ sub __OpenJob {
 	print STDERR "\n\n\n\n ================ handle exception END ======================\n\n\n\n";
 	$inCAM->HandleException(0);
 
-	my $err = $inCAM->GetExceptionsError();
+	my $err = $inCAM->GetExceptionError();
 
 	if ($err) {
 

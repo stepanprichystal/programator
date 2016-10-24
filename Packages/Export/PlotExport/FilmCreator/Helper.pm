@@ -33,13 +33,18 @@ sub GetPcbLimits {
 
 	my @features = $route->GetFeatures();
 
+	# filter line, which create "big" and "small" frame around pcb
 	@features = grep { $_->{"att"}->{".pnl_place"} =~ /pcbf_/i } @features;
-
+	@features = grep { $_->{"att"}->{".pnl_place"} !~ /small/i } @features;
+	
 	my @smallFeatures = grep { $_->{"att"}->{".pnl_place"} !~ /big/ } @features;
 	my @bigFeatures = grep { $_->{"att"}->{".pnl_place"} =~ /big/ } @features;
 
 	# temporary solution - some not anted lines has atribut pcbf_... and rout flag, filter..
 	@bigFeatures = grep { !defined $_->{"att"}->{".rout_flag"} } @bigFeatures;
+	@smallFeatures = grep { !defined $_->{"att"}->{".rout_flag"} } @smallFeatures;
+	
+	
 
 	my %lim = PolygonHelper->GetLimByRectangle( \@smallFeatures );
 

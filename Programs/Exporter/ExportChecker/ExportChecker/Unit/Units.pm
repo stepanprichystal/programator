@@ -184,6 +184,10 @@ sub SetGroupState {
 	my $groupState = shift;
 
 	foreach my $unit ( @{ $self->{"units"} } ) {
+		
+		if($unit->GetGroupState() eq Enums->GroupState_DISABLE){
+			next;
+		}
 
 		$unit->SetGroupState($groupState);
 	}

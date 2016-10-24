@@ -69,13 +69,7 @@ sub Build {
 	push(@req, "single_y");
 
 	$nifMngr->AddSection("Rozmery", BuilderDim->new(\@req));
-	
-	 
-	#Drill section
-	@req = ();
-	push(@req, "otvory");
-	
-	$nifMngr->AddSection("Vrtani", BuilderDrill->new(\@req));
+
 
 	#Other section
 	
@@ -87,6 +81,16 @@ sub Build {
 	push(@req, "prerusovana_drazka");
 		
 	$nifMngr->AddSection("Ostatni", BuilderOther->new(\@req));
+
+	
+	 
+	#Drill section
+	@req = ();
+	push(@req, "otvory");
+	
+	$nifMngr->AddSection("Vrtani", BuilderDrill->new(\@req));
+
+
 
 }
 

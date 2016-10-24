@@ -230,6 +230,10 @@ sub __OnJobMessageEvtHandler {
 		# Update data model
 
 		$task->ProcessGroupResult($data);
+		
+		# Refresh GUI - group table
+
+		$self->{"form"}->RefreshGroupTable($task);
 
 		# Refresh GUI - job queue
 		$self->{"form"}->SetJobQueueErrorCnt($task);

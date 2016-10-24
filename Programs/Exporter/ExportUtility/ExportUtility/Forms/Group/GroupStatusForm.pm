@@ -96,6 +96,8 @@ sub SetErrorCnt {
 	my $cnt  = shift;
 
 	$self->{"groupErrInd"}->SetErrorCnt($cnt);
+	
+	
 
 	if ( $cnt > 0 ) {
 		$self->{"groupErrInd"}->Show(1);

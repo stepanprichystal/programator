@@ -29,7 +29,7 @@ use aliased 'Helpers::GeneralHelper';
 	my $jobId     = shift;
  
  
-	$inCAM->INFO(units => 'mm', angle_direction => 'ccw', entity_type => 'job', entity_path => "f13609",data_type => 'STEPS_LIST');
+	$inCAM->INFO(units => 'mm', angle_direction => 'ccw', entity_type => 'job', entity_path => $jobId,data_type => 'STEPS_LIST');
 	
 	return @{$inCAM->{doinfo}{gSTEPS_LIST}};
 }

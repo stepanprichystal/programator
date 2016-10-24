@@ -59,6 +59,13 @@ sub Export {
 	# Create plot step
 	$self->__CreatePlotStep();
 
+#	# Result if film preparing
+#	my $resultFilmPreparing = $self->_GetNewItem("Preparing");
+#	my $missingDim          = 0;
+#
+# 	$plotSet
+
+
 	# Export single plot sets
 
 	foreach my $plotSet ( @{ $self->{"plotSets"} } ) {
@@ -66,14 +73,30 @@ sub Export {
 		# Select layer by layer
 		foreach my $plotL ( $plotSet->GetLayers() ) {
 
+#			if ( $plotL->GetWidth() == 0 || $plotL->GetHeight() == 0 ) {
+#				$missingDim = 1;
+#
+#				$resultFilmPreparing->AddError( "U desky ve stepu panel chybí ve vrstvì " . $plotL->GetName() . " malý nebo velký rámeèek." );
+#
+#				last;
+#			}
+
 			# Prepare final layer for output on film
 			$self->__PrepareLayer( $plotSet, $plotL );
 		}
+
+#		if ($missingDim) {
+#
+#			last;
+#		}
 
 		# Prepare (merge if more layers) final layer for plotter set
 		$self->__PrepareOutputLayer($plotSet);
 
 	}
+
+ 
+	#$self->_OnItemResult($resultFilmPreparing);
 
 	# Final output of prepared plot sets
 	$self->__OutputPlotSets();
@@ -170,6 +193,8 @@ sub __PrepareOutputLayer {
 
 	foreach my $plotL ( $plotSet->GetLayers() ) {
 
+		#if($plotL)
+
 		# Layer limits
 		my %lLim = CamJob->GetLayerLimits( $inCAM, $jobId, $self->{"plotStep"}, $plotL->{"outputLayer"} );
 		my %source = ( "x" => $lLim{"xmin"}, "y" => $lLim{"ymin"} );
@@ -224,8 +249,8 @@ sub __OutputPlotSets {
 	# Plot each set
 	foreach my $plotSet ( @{ $self->{"plotSets"} } ) {
 
-		my $filmSize = $plotSet->GetFilmSizeInch();
-		my $outputL  = $plotSet->GetOutputLayerName();
+		my $filmSize      = $plotSet->GetFilmSizeInch();
+		my $outputL       = $plotSet->GetOutputLayerName();
 		my $sendToPlotter = $self->{"sendToPlotter"} ? "yes" : "no";
 
 		# Reset settings of device
@@ -234,10 +259,12 @@ sub __OutputPlotSets {
 		# Udate settings o device
 		$inCAM->COM(
 			"output_update_device",
-			"type"     => "format",
-			"name"     => "LP7008",
-			"dir_path" => $archivePath,
-			"format_params" =>"(break_sr=yes)(break_symbols=yes)(send_to_plotter=".$sendToPlotter.")(local_copy=yes)(iol_opfx_allow_out_limits=yes)(iol_opfx_use_profile_limits=no)(iol_surface_check=yes)"
+			"type"          => "format",
+			"name"          => "LP7008",
+			"dir_path"      => $archivePath,
+			"format_params" => "(break_sr=yes)(break_symbols=yes)(send_to_plotter="
+			  . $sendToPlotter
+			  . ")(local_copy=yes)(iol_opfx_allow_out_limits=yes)(iol_opfx_use_profile_limits=no)(iol_surface_check=yes)"
 
 		);
 
@@ -285,15 +312,14 @@ sub __OutputPlotSets {
 		if ( $plotResult > 0 ) {
 			$resultItemPlot->AddError( $inCAM->GetExceptionError() );
 		}
-		
+
 		# test if file was outputed
-		
-		my $fileExist  = FileHelper->GetFileNameByPattern( $archivePath."\\",  $plotSet->GetOutputFileName() );
-		unless($fileExist){
-			
-			$resultItemPlot->AddError("Failed to create OPFX file: ".$archivePath."\\".$plotSet->GetOutputFileName()."." );
+
+		my $fileExist = FileHelper->GetFileNameByPattern( $archivePath . "\\", $plotSet->GetOutputFileName() );
+		unless ($fileExist) {
+
+			$resultItemPlot->AddError( "Failed to create OPFX file: " . $archivePath . "\\" . $plotSet->GetOutputFileName() . "." );
 		}
-		
 
 		$self->_OnItemResult($resultItemPlot);
 	}

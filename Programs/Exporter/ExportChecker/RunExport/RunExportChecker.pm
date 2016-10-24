@@ -14,6 +14,9 @@ use warnings;
 
 #local library
 use aliased 'Helpers::GeneralHelper';
+use aliased 'Managers::MessageMngr::MessageMngr';
+use aliased 'Enums::EnumsGeneral';
+
 
 use Config;
 use Win32::Process;
@@ -31,6 +34,13 @@ sub new {
 		$self->{"jobId"} = shift;
 	}
 
+
+	unless($self->__IsJobOpen($self->{"jobId"})){
+		
+		return 0;
+	}
+
+
 	# generate radom port between 2000-4000
 	$self->{"port"} = 2000 + int( rand(2000) );
 	print "\n\n == A H O J ====== =========\n\n";
@@ -42,8 +52,31 @@ sub new {
 	#run server
 	$self->__RunServer( $self->{"port"} );
 
+
 	return $self;
 }
+
+
+sub __IsJobOpen {
+	my $self = shift;
+	my $jobId = shift;
+	 
+
+	unless ($jobId) {
+
+		my $messMngr = MessageMngr->new("Exporter utility");
+		my @mess1    = ("You have to run sript in open job.");
+		$messMngr->ShowModal( -1, EnumsGeneral->MessageType_ERROR, \@mess1 );
+
+		return 0;
+ 
+	}
+	
+	return 1;
+
+}
+
+
 
 sub __RunExportChecker {
 	my $self  = shift;

@@ -82,6 +82,20 @@ sub Build {
 	push(@req, "rozmer_y");
 
 	$nifMngr->AddSection("Rozmery", BuilderDim->new(\@req));
+	
+	
+	#Other section
+	
+	@req = ();
+	push(@req, "poznamka");
+	push(@req, "datacode");
+	push(@req, "ul_logo");
+	push(@req, "rel(22305,L)");
+	push(@req, "merit_presfitt");
+	push(@req, "prerusovana_drazka");
+	
+	$nifMngr->AddSection("Ostatni", BuilderOther->new(\@req));
+	 
 	 
 	#Cu Area section
 	@req = ();
@@ -140,17 +154,7 @@ sub Build {
 	
 	$nifMngr->AddSection("Vrtani", BuilderDrill->new(\@req));
 
-	#Other section
-	
-	@req = ();
-	push(@req, "poznamka");
-	push(@req, "datacode");
-	push(@req, "ul_logo");
-	push(@req, "rel(22305,L)");
-	push(@req, "merit_presfitt");
-	push(@req, "prerusovana_drazka");
-	
-	$nifMngr->AddSection("Ostatni", BuilderOther->new(\@req));
+
 
 
 

@@ -17,7 +17,7 @@ use aliased 'Packages::Stackup::Enums' => 'StackupEnums';
 use aliased 'CamHelpers::CamJob';
 use aliased 'Packages::Stackup::Stackup::Stackup';
 use aliased 'Packages::Stackup::StackupNC::StackupNC';
-use aliased 'Packages::Routing::RoutingOperation';
+use aliased 'Packages::Routing::PlatedRoutArea';
 use aliased 'CamHelpers::CamDrilling';
 
 #-------------------------------------------------------------------------------------------#
@@ -46,6 +46,20 @@ sub new {
 
 	return $self;
 }
+
+
+sub GetPcbClass {
+	my $self      = shift;
+	
+	return $self->{"pcbClass"};	
+}
+
+sub GetLayerCnt {
+	my $self      = shift;	
+	
+	return $self->{"layerCnt"};
+}
+
 
 sub GetEtchType {
 	my $self      = shift;
@@ -194,9 +208,11 @@ sub GetSideByLayer {
 sub __InitDefault {
 	my $self = shift;
 
+	$self->{"pcbClass"} = CamJob->GetJobPcbClass($self->{"inCAM"}, $self->{"jobId"} );   
+
 	$self->{"layerCnt"} = CamJob->GetSignalLayerCnt( $self->{"inCAM"}, $self->{"jobId"} );
 
-	$self->{"platedRoutExceed"} =  RoutingOperation->PlatedAreaExceed( $self->{"inCAM"}, $self->{'jobId'}, "panel" );
+	$self->{"platedRoutExceed"} =  PlatedRoutArea->PlatedAreaExceed( $self->{"inCAM"}, $self->{'jobId'}, "panel" );
 	$self->{"rsExist"} =  CamDrilling->NCLayerExists( $self->{"inCAM"}, $self->{'jobId'}, "rs" );
 
 	if ( $self->{"layerCnt"} > 2 ) {

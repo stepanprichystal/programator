@@ -34,9 +34,20 @@ sub new {
 sub OnGetGroupState {
 	my $self     = shift;
 	my $dataMngr = shift;    #instance of GroupDataMngr
-
+	
+	my $defaultInfo = $dataMngr->GetDefaultInfo();	
+	
+	
+	my $state =  Enums->GroupState_ACTIVEON;
+	
+	if($defaultInfo->GetLayerCnt() == 1 && $defaultInfo->GetPcbClass() == 3){
+		
+		$state = Enums->GroupState_DISABLE;
+		
+	}
+	
 	#we want nif group allow always, so return ACTIVE ON
-	return Enums->GroupState_ACTIVEON;
+	return $state;
 
 }
 
@@ -49,6 +60,8 @@ sub OnPrepareGroupData {
 
 	my $inCAM = $dataMngr->{"inCAM"};
 	my $jobId = $dataMngr->{"jobId"};
+	
+	my $defaultInfo = $dataMngr->GetDefaultInfo();
  
 
 	$groupData->SetStepToTest("panel");
