@@ -14,7 +14,7 @@ use warnings;
 #local library
 use aliased 'Packages::Polygon::PolygonHelper';
 use aliased 'Packages::Export::PlotExport::Enums';
-use aliased 'Packages::Polygon::Features::RouteFeatures::RouteFeatures';
+use aliased 'Packages::Polygon::Features::Features::Features';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -27,11 +27,11 @@ sub GetPcbLimits {
 	my $smallLim = shift;
 	my $bigLim   = shift;
 
-	my $route = RouteFeatures->new();
+	my $feat = Features->new();
 
-	$route->Parse( $inCAM, $jobId, "panel", "c" );
+	$feat->Parse( $inCAM, $jobId, "panel", "c" );
 
-	my @features = $route->GetFeatures();
+	my @features = $feat->GetFeatures();
 
 	# filter line, which create "big" and "small" frame around pcb
 	@features = grep { $_->{"att"}->{".pnl_place"} =~ /pcbf_/i } @features;

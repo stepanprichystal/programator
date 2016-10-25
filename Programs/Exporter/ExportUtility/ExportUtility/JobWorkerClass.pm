@@ -100,7 +100,7 @@ sub RunExport {
 				}
 
 				$self->__GroupResultEvent( $unitId, ResultEnums->ItemResult_Fail, $errStr );
-				next;
+				 
 			}
 
 			# Event when group export end
@@ -158,8 +158,9 @@ sub __CloseJob {
 	# START HANDLE EXCEPTION IN INCAM
 	$inCAM->HandleException(1);
 
-	CamJob->CloseJob( $self->{"inCAM"}, $self->{"pcbId"} );
+	
 	CamJob->CheckInJob( $self->{"inCAM"}, $self->{"pcbId"} );
+	CamJob->CloseJob( $self->{"inCAM"}, $self->{"pcbId"} );
 
 	# STOP HANDLE EXCEPTION IN INCAM
 	$inCAM->HandleException(0);

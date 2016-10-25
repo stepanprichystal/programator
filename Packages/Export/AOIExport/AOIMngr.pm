@@ -22,7 +22,6 @@ use aliased 'CamHelpers::CamLayer';
 use aliased 'CamHelpers::CamStepRepeat';
 use aliased 'Packages::ETesting::BasicHelper::OptSet';
 use aliased 'Packages::ETesting::BasicHelper::ETSet';
-use aliased 'Packages::Polygon::Features::Features::Features';
 use aliased 'Helpers::GeneralHelper';
 use aliased 'Packages::AOTesting::BasicHelper::AOSet';
 use aliased 'CamHelpers::CamStepRepeat';
