@@ -53,6 +53,20 @@ sub GetPcbLimits {
 	my %lim2 = PolygonHelper->GetLimByRectangle( \@bigFeatures );
 
 	%{$bigLim} = %lim2;
+	
+	# Test on missing frame
+	
+	my $smallX  = abs( $smallLim->{"xMax"} - $smallLim->{"xMin"} );
+	my $smallY  = abs( $smallLim->{"yMax"} - $smallLim->{"yMin"} );
+
+	my $bigX  = abs( $smallLim->{"xMax"} - $smallLim->{"xMin"} );
+	my $bigY  = abs( $smallLim->{"yMax"} - $smallLim->{"yMin"} );
+	
+	if($smallX == 0 || $smallY == 0 || $bigX == 0 || $bigY == 0  ){
+		
+		return 0
+	}
+	
 
 	return 1;
 }
@@ -60,18 +74,12 @@ sub GetPcbLimits {
 sub AddLayerPlotSize {
 	my $self     = shift;
 	my $plotSize = shift;
-	my $inCAM    = shift;
-	my $jobId    = shift;
 	my $layers   = shift;
-
-	my %smallDim = ();
-	my %bigDim   = ();
-
-	my %smallLim = ();
-	my %bigLim   = ();
+	my %smallLim = %{shift(@_)};
+	my %bigLim   = %{shift(@_)};
 
 	# Get limits of pcb
-	$self->GetPcbLimits( $inCAM, $jobId, \%smallLim, \%bigLim );
+	#$self->GetPcbLimits( $inCAM, $jobId, \%smallLim, \%bigLim );
 
 	#$self->GetPcbDimensions($inCAM, $jobId, \%smallLim, \%bigLim, \%smallDim, \%bigDim);
 

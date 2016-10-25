@@ -27,6 +27,8 @@ sub new {
 	my $inCAM        = shift;    #board layers
 	my $jobId        = shift;    #board layers
 	my $layers       = shift;    #board layers
+	my $smallLim = shift;
+	my $bigLim  = shift;
 	my $multiCreator = shift;    #board layers
 
 	#my $pcbsizeProfile = shift; #board layers
@@ -37,7 +39,7 @@ sub new {
 
 	$self->{"multiCreator"} = $multiCreator;
 
-	Helper->AddLayerPlotSize( Enums->Size_FRAME, $inCAM, $jobId, $layers );
+	Helper->AddLayerPlotSize( Enums->Size_FRAME, $layers, $smallLim, $bigLim );
 
 	return $self;
 }

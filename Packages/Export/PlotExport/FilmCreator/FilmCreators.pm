@@ -38,6 +38,8 @@ sub new {
 sub Init {
 	my $self = shift;
 	my $layers = shift;
+	my $smallLim = shift;
+	my $bigLim  = shift;
 
 
 	# We have to create deep copy of layer list for each "creator"
@@ -46,9 +48,9 @@ sub Init {
 	my $layersMulti = dclone($layers);
 	my $layersSingle =  dclone($layers);
 
-	my $multi = MultiFilmCreator->new( $self->{"inCAM"}, $self->{"jobId"}, $layersMulti );
+	my $multi = MultiFilmCreator->new( $self->{"inCAM"}, $self->{"jobId"}, $layersMulti, $smallLim, $bigLim);
 	# Single cerator create rules, based on results from multi creator
-	my $single = SingleFilmCreator->new( $self->{"inCAM"}, $self->{"jobId"}, $layersSingle, $multi);
+	my $single = SingleFilmCreator->new( $self->{"inCAM"}, $self->{"jobId"}, $layersSingle, $smallLim, $bigLim, $multi);
 	
 	push( @{ $self->{"filmCreators"} }, $multi );
 	push( @{ $self->{"filmCreators"} }, $single );

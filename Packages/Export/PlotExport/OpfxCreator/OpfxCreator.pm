@@ -59,44 +59,23 @@ sub Export {
 	# Create plot step
 	$self->__CreatePlotStep();
 
-#	# Result if film preparing
-#	my $resultFilmPreparing = $self->_GetNewItem("Preparing");
-#	my $missingDim          = 0;
-#
-# 	$plotSet
-
-
+ 
 	# Export single plot sets
 
 	foreach my $plotSet ( @{ $self->{"plotSets"} } ) {
 
 		# Select layer by layer
 		foreach my $plotL ( $plotSet->GetLayers() ) {
-
-#			if ( $plotL->GetWidth() == 0 || $plotL->GetHeight() == 0 ) {
-#				$missingDim = 1;
-#
-#				$resultFilmPreparing->AddError( "U desky ve stepu panel chybí ve vrstvì " . $plotL->GetName() . " malý nebo velký rámeèek." );
-#
-#				last;
-#			}
-
+ 
 			# Prepare final layer for output on film
 			$self->__PrepareLayer( $plotSet, $plotL );
 		}
-
-#		if ($missingDim) {
-#
-#			last;
-#		}
-
+ 
 		# Prepare (merge if more layers) final layer for plotter set
 		$self->__PrepareOutputLayer($plotSet);
 
 	}
-
  
-	#$self->_OnItemResult($resultFilmPreparing);
 
 	# Final output of prepared plot sets
 	$self->__OutputPlotSets();

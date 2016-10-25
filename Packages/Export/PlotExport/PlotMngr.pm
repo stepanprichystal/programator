@@ -19,6 +19,7 @@ use aliased 'Packages::Export::PlotExport::PlotSet::PlotSet';
 use aliased 'Packages::Export::PlotExport::PlotSet::PlotLayer';
 use aliased 'Packages::Export::PlotExport::OpfxCreator::OpfxCreator';
 use aliased 'CamHelpers::CamJob';
+use aliased 'Packages::Export::PlotExport::FilmCreator::Helper';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -38,15 +39,43 @@ sub new {
 	#my @layers = CamJob->GetBoardBaseLayers( $self->{"inCAM"}, $self->{"jobId"} );
 
 	$self->{"filmCreators"} = FilmCreators->new( $self->{"inCAM"}, $self->{"jobId"} );
-	$self->{"filmCreators"}->Init( $self->{"layers"} );
+	
 
 	$self->{"opfxCreator"} = OpfxCreator->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"sendToPlotter"});
 	$self->{"opfxCreator"}->{"onItemResult"}->Add( sub { $self->_OnItemResult(@_) } );
+	
 	return $self;
 }
 
 sub Run {
 	my $self = shift;
+
+	my $inCAM = $self->{"inCAM"};
+	my $jobId = $self->{"jobId"};
+
+	#  ------ Get information "frames" dimension ------
+
+	my %smallLim = ();
+	my %bigLim   = ();
+
+	# Get limits of pcb
+	my $result = Helper->GetPcbLimits( $inCAM, $jobId, \%smallLim, \%bigLim );
+	# Result of Frame checking
+	my $resultFrameChecking = $self->_GetNewItem("Frame checking");
+	 
+	unless($result){
+		$resultFrameChecking->AddError("Velký nebo malý rámeèek v panelu chybí nebo je špatný. Vlož okolí znovu.");
+		
+		 
+	}
+
+	$self->_OnItemResult($resultFrameChecking);
+	 
+	 
+	#  ------ Init film creators ------
+	
+	$self->{"filmCreators"}->Init( $self->{"layers"}, \%smallLim, \%bigLim );
+
 
 	my @resultSets = $self->{"filmCreators"}->GetRuleSets();
 

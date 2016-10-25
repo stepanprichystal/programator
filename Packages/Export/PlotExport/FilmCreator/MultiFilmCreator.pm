@@ -27,14 +27,16 @@ sub new {
 	my $inCAM  = shift;    #board layers
 	my $jobId  = shift;    #board layers
 	my $layers = shift;    #board layers
+	my $smallLim = shift;
+	my $bigLim  = shift;
 
 	#my $pcbsizeProfile = shift; #board layers
 	#my $pcbsizeFrame = shift; #board layers
-
+	
 	my $self = $class->SUPER::new($inCAM, $jobId, $layers, @_ );
 	bless $self;
 
-	Helper->AddLayerPlotSize( Enums->Size_PROFILE, $inCAM, $jobId, $layers );
+	Helper->AddLayerPlotSize( Enums->Size_PROFILE, $layers, $smallLim, $bigLim );
 
 	return $self;
 }
