@@ -116,33 +116,47 @@ sub RunExport {
 	}
 }
 
+# Method open and checkou job
 sub __OpenJob {
 	my $self = shift;
 
 	my $inCAM = $self->{"inCAM"};
 
-	# START HANDLE EXCEPTION IN INCAM
-
-	print STDERR "\n\n\n\n ================ handle exception ======================\n\n\n\n";
+ 	my $result = 1;
+ 
+	# open job
+		 
 	$inCAM->HandleException(1);
-
-	
-
-	# TODO smayat
-
+  
 	CamHelper->OpenJob( $self->{"inCAM"}, $self->{"pcbId"} );
-	CamJob->CheckOutJob( $self->{"inCAM"}, $self->{"pcbId"} );
-
-	# STOP HANDLE EXCEPTION IN INCAM
 	
-	print STDERR "\n\n\n\n ================ handle exception END ======================\n\n\n\n";
 	$inCAM->HandleException(0);
-
+	
 	my $err = $inCAM->GetExceptionError();
 
 	if ($err) {
-
+		$result = 0;
 		$self->__TaskResultEvent( ResultEnums->ItemResult_Fail, $err );
+	}
+	
+	# check out job
+	
+	$inCAM->HandleException(1);
+  
+	CamJob->CheckOutJob( $self->{"inCAM"}, $self->{"pcbId"} );
+	
+	$inCAM->HandleException(0);
+	
+	my $err2 = $inCAM->GetExceptionError();
+
+	if ($err2) {
+		$result = 0;
+		$self->__TaskResultEvent( ResultEnums->ItemResult_Fail, $err );
+	}
+	
+
+	unless ($result) {
+
 		return 0;
 	}
 	else {

@@ -8,7 +8,7 @@ use warnings;
 
 # ============ INPUT LINE =================
 my $inputLine =
-"COM set_filter_polarity,filter_name=,positive=yes,negative=yes";
+"COM sel_delete_atr,mode=list,attributes=.pnl_place,attr_vals=I";
 # ============ INPUT LINE =================
 
 

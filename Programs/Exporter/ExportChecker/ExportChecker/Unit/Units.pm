@@ -15,6 +15,7 @@ use warnings;
 #local library
 use aliased "Packages::Events::Event";
 use aliased 'Programs::Exporter::ExportChecker::Enums';
+use aliased 'Programs::Exporter::UnitEnums';
 use aliased 'Programs::Exporter::ExportChecker::ExportChecker::DefaultInfo::DefaultInfo';
 use aliased 'Programs::Exporter::ExportChecker::Groups::PreExport::Presenter::PreUnit';
 #-------------------------------------------------------------------------------------------#
@@ -185,9 +186,18 @@ sub SetGroupState {
 
 	foreach my $unit ( @{ $self->{"units"} } ) {
 		
+		# dnot set state, if group is disabled
+		
 		if($unit->GetGroupState() eq Enums->GroupState_DISABLE){
 			next;
 		}
+		
+		# do exception for group PRE, because we want to group was always ACTIVEON
+		
+		if($unit->GetUnitId() eq UnitEnums->UnitId_PRE){
+			next;
+		}
+		
 
 		$unit->SetGroupState($groupState);
 	}

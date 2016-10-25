@@ -13,6 +13,9 @@ use warnings;
 use aliased 'CamHelpers::CamLayer';
 use aliased 'CamHelpers::CamHelper';
 use aliased 'Enums::EnumsProducPanel';
+use aliased 'Helpers::GeneralHelper';
+use aliased 'CamHelpers::CamFilter';
+use aliased 'CamHelpers::CamAttributes';
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
@@ -29,11 +32,45 @@ sub new {
 }
 
 
+
+# Add pattern frame
+sub ExistPatternFrame {
+	my $self  = shift;
+	my $lName = shift;
+	
+	my $inCAM = $self->{"inCAM"};
+	my $jobId = $self->{"jobId"};
+	
+	
+
+	CamLayer->WorkLayer($inCAM, $lName);  # select tmp
+ 
+	# select old frame and delete
+	my $count = CamFilter->SelectBySingleAtt($inCAM, ".string", "pattern_frame");
+	
+	if($count){
+		return 1;
+	}else{
+		return 0;
+	}	
+}
+
 # Add pattern frame
 sub DelPatternFrame {
 	my $self  = shift;
 	my $lName = shift;
-	my $schema = shift;
+	
+	my $inCAM = $self->{"inCAM"};
+	my $jobId = $self->{"jobId"};
+	
+	
+	CamLayer->WorkLayer($inCAM, $lName);  # select tmp
+ 
+	# select old frame and delete
+	my $count = CamFilter->SelectBySingleAtt($inCAM, ".string", "pattern_frame");
+	if($count){
+		$inCAM->COM("sel_delete");	
+	}
 	
 }
 
@@ -52,8 +89,44 @@ sub AddPatternFrame {
 	unless ($lExist) {
 		return 0;
 	}
+	
  
-	 $inCAM->COM ('autopan_run_scheme',job=>$jobId, panel=>EnumsProducPanel->PANEL_NAME,pcb=>'o+1',scheme=>$schema);
+	CamLayer->WorkLayer($inCAM, $lName);  # select layer and copy to help layer
+	
+	#my $lTmp = GeneralHelper->GetGUID();
+	#$inCAM->COM( "merge_layers", "source_layer" => $lName, "dest_layer" => $lTmp );
+	
+	#CamLayer->WorkLayer($inCAM, $lTmp);  # select tmp
+	
+	# Set indicator for later delete
+	CamAttributes->SetFeatuesAttribute($inCAM, ".string", "signed");
+	
+	
+	# put pattern frame
+	$inCAM->COM ('autopan_run_scheme',job=>$jobId, panel=>EnumsProducPanel->PANEL_NAME,pcb=>'o+1',scheme=>$schema);
+	
+ 
+	CamFilter->SelectBySingleAtt($inCAM, ".string", "signed");
+	$inCAM->COM("sel_reverse");
+	
+	CamAttributes->SetFeatuesAttribute($inCAM, ".string", "pattern_frame");
+	
+	CamAttributes->DelFeatuesAttribute($inCAM, ".string", "signed");
+	
+	 
+#	
+#	$inCAM->COM("sel_delete");
+#	
+#	# Set indicator, this is pattern frame
+#	CamAttributes->SetFeatuesAttribute($inCAM, ".string", "pattern_frame");
+#	
+#	$inCAM->COM( "merge_layers", "source_layer" => $lTmp, "dest_layer" => $lName );
+#	
+#	# clear affected layers
+#	$inCAM->COM( 'affected_layer', name => "", mode => "all", affected => "no" );
+#	$inCAM->COM('clear_layers');
+#	
+# 
  
 }
 

@@ -43,8 +43,9 @@ sub new {
 sub Run {
 	my $self = shift;
 
+	my $helper = $self->{"helper"};
 
-	CamHelper->SetStep($self->{"inCAM"}, "panel" );
+	CamHelper->SetStep( $self->{"inCAM"}, "panel" );
 
 	my $patternSch;
 
@@ -58,20 +59,27 @@ sub Run {
 	foreach my $l ( @{ $self->{"layers"} } ) {
 
 		if ( $l->{"etchingType"} eq EnumsGeneral->Etching_TENTING ) {
-		
-			$self->{"helper"}->DelPatternFrame( $l->{"name"}, $patternSch );
+
+			if ( $helper->ExistPatternFrame($l->{"name"}) ) {
+
+				$helper->ChangeMarkPolarity( $l->{"name"} );
+
+				$helper->DelPatternFrame( $l->{"name"}, $patternSch );
+			}
+
 		}
 		elsif ( $l->{"etchingType"} eq EnumsGeneral->Etching_PATTERN ) {
 
-			$self->{"helper"}->ChangeMarkPolarity($l->{"name"});
+			unless ( $helper->ExistPatternFrame($l->{"name"}) ) {
+				$helper->ChangeMarkPolarity( $l->{"name"} );
 
-			$self->{"helper"}->AddPatternFrame( $l->{"name"}, $patternSch );
+				$helper->AddPatternFrame( $l->{"name"}, $patternSch );
+			}
 
 		}
 	}
-	
-	
-	my $resultItem = $self->_GetNewItem("Set frames");
+
+	my $resultItem = $self->_GetNewItem("Add/del frames");
 	$self->_OnItemResult($resultItem);
 }
 

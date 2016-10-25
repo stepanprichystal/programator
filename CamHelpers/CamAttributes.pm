@@ -127,6 +127,7 @@ sub SetLayerAttribute {
 	my $stepName  = shift;
 	my $layerName = shift;
 
+
 	$inCAM->COM(
 				 "set_attribute",
 				 "type"      => "layer",
@@ -141,5 +142,37 @@ sub SetLayerAttribute {
 	);
 
 }
+
+
+# Set atribute on selected features on affected layers
+sub SetFeatuesAttribute {
+
+	my $self      = shift;
+	my $inCAM     = shift;
+	my $attribute = shift;
+	my $value     = shift;
+
+	$inCAM->COM("cur_atr_reset",);
+	$inCAM->COM("cur_atr_set","attribute" => $attribute,"text" => $value);
+	$inCAM->COM("sel_change_atr","mode" => "add");
+ 
+	 
+}
+
+# Delete atribute from selected features on affected layers
+sub DelFeatuesAttribute {
+
+	my $self      = shift;
+	my $inCAM     = shift;
+	my $attribute = shift;
+	my $value     = shift;
+
+	$inCAM->COM("sel_delete_atr","mode" => "list","attributes" => $attribute,"attr_vals" => $value);
+ 
+	 
+}
+ 
+
+ 
 
 1;

@@ -35,9 +35,9 @@ sub GetPcbLimits {
 
 	# filter line, which create "big" and "small" frame around pcb
 	@features = grep { $_->{"att"}->{".pnl_place"} =~ /pcbf_/i } @features;
-	@features = grep { $_->{"att"}->{".pnl_place"} !~ /small/i } @features;
 	
-	my @smallFeatures = grep { $_->{"att"}->{".pnl_place"} !~ /big/ } @features;
+	
+	my @smallFeatures = grep { $_->{"att"}->{".pnl_place"} =~ /small/ } @features;
 	my @bigFeatures = grep { $_->{"att"}->{".pnl_place"} =~ /big/ } @features;
 
 	# temporary solution - some not anted lines has atribut pcbf_... and rout flag, filter..

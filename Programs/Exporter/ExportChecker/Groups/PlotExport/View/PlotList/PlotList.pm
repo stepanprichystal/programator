@@ -18,6 +18,7 @@ use Widgets::Style;
 use aliased 'Programs::Exporter::ExportChecker::Groups::PlotExport::View::PlotList::PlotListRow';
 use aliased 'Packages::Events::Event';
 use aliased 'Packages::Export::PlotExport::FilmCreator::FilmCreators';
+use aliased 'Packages::Export::PlotExport::FilmCreator::Helper';
 use aliased 'Helpers::GeneralHelper';
 
 #-------------------------------------------------------------------------------------------#
@@ -105,7 +106,14 @@ sub SetLayers{
 	my $self = shift;
 	my $layers = shift;
 	
-	$self->{"filmCreators"}->Init( $layers );	
+ 
+	my %smallLim = ();
+	my %bigLim   = ();
+
+	# Get limits of pcb
+	my $result = Helper->GetPcbLimits( $self->{"inCAM"}, $self->{"jobId"}, \%smallLim, \%bigLim );
+	$self->{"filmCreators"}->Init( $layers, \%smallLim, \%bigLim );
+ 
 	
 	# Set rule sets for each rows
 	foreach my $l (@{$layers}){

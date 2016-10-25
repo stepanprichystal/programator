@@ -79,6 +79,11 @@ sub Export {
 
 	# Final output of prepared plot sets
 	$self->__OutputPlotSets();
+	
+	# Delete plot step
+	if(CamHelper->StepExists($inCAM, $jobId, $self->{"plotStep"})){
+		$inCAM->COM("delete_entity", "type" => "step", "name" => $self->{"plotStep"}); 
+	}
 
 }
 

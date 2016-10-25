@@ -70,6 +70,22 @@ sub Run {
 	my $exportUnit = UnitExport->new( $self->{"id"} );
 
 	my $exportClass = $exportUnit->GetExportClass();
+	
+	
+	# misto pro upravu exportovanych dat
+	
+	my @layers = ();
+	
+	my %lInfo = ();
+	$lInfo{"name"}     = "c";
+	$lInfo{"etchingType"}  = "pattern";
+	
+	push(@layers, \%lInfo);
+	
+	$exportData->SetSignalLayers(\@layers);
+	
+	 
+	
 
 	$exportClass->Init( $inCAM, $jobId, $exportData );
 	$exportClass->{"onItemResult"}->Add( sub { Test(@_) } );
