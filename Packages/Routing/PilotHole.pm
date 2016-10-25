@@ -37,7 +37,7 @@ sub AddPilotHole {
 	my $stepName = shift;
 	my $layer    = shift;
 
-	CamHelper->OpenJobAndStep( $inCAM, $jobId, $stepName );
+	CamHelper->SetStep( $inCAM, $stepName );
 
 	my $usrName = CamHelper->GetUserName($inCAM);
 
@@ -118,7 +118,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	use aliased 'Packages::Routing::PilotHole';
 	use aliased 'Packages::InCAM::InCAM';
 
-	my $jobId = "f51370";
+	my $jobId = "f13610";
 	my $inCAM = InCAM->new();
 
 	my $step = "o+1";

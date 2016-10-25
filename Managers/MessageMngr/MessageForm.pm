@@ -238,7 +238,7 @@ sub __WriteMessages() {
 
 	$richTxt->Freeze(); 
 
-	$richTxt->BeginFontSize(10);
+	$richTxt->BeginFontSize(10.5);
 
 	my @messages = @{ $self->{messages} };
 
@@ -313,7 +313,7 @@ sub __WriteMessages() {
 			$richTxt->BeginFontSize(1);
 			$richTxt->Newline;
 			$richTxt->Newline;
-			$richTxt->BeginFontSize(10);
+			$richTxt->BeginFontSize(10.5);
 		}
 
 		#}

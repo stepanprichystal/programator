@@ -48,6 +48,10 @@ sub ExistPatternFrame {
 	# select old frame and delete
 	my $count = CamFilter->SelectBySingleAtt($inCAM, ".string", "pattern_frame");
 	
+	# clear layers
+	$inCAM->COM( 'affected_layer', mode => 'all', affected => 'no' );
+	$inCAM->COM('clear_layers');
+	
 	if($count){
 		return 1;
 	}else{
@@ -71,6 +75,11 @@ sub DelPatternFrame {
 	if($count){
 		$inCAM->COM("sel_delete");	
 	}
+	
+	
+	# clear layers
+	$inCAM->COM( 'affected_layer', mode => 'all', affected => 'no' );
+	$inCAM->COM('clear_layers');
 	
 }
 
@@ -113,20 +122,11 @@ sub AddPatternFrame {
 	
 	CamAttributes->DelFeatuesAttribute($inCAM, ".string", "signed");
 	
-	 
-#	
-#	$inCAM->COM("sel_delete");
-#	
-#	# Set indicator, this is pattern frame
-#	CamAttributes->SetFeatuesAttribute($inCAM, ".string", "pattern_frame");
-#	
-#	$inCAM->COM( "merge_layers", "source_layer" => $lTmp, "dest_layer" => $lName );
-#	
-#	# clear affected layers
-#	$inCAM->COM( 'affected_layer', name => "", mode => "all", affected => "no" );
-#	$inCAM->COM('clear_layers');
-#	
-# 
+	# clear layers
+	$inCAM->COM( 'affected_layer', mode => 'all', affected => 'no' );
+	$inCAM->COM('clear_layers');
+	
+ 	
  
 }
 

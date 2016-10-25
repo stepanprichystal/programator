@@ -610,9 +610,9 @@ sub __MoveWindowOut {
 			return 1;
 		}
 		
-		sleep(0.1);
+		sleep(0.02);
 
-		print STDERR ".";
+		#print STDERR ".";
 	}
 
 }

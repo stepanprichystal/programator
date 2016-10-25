@@ -123,15 +123,15 @@ sub GetGroupData {
 			$etchType = EnumsGeneral->Etching_PATTERN;
 		}
 
-		my @layers = $groupData->GetSignalLayers();
-		foreach my $l (@layers) {
+		my $layers = $groupData->GetSignalLayers();
+		foreach my $l (@{$layers}) {
 
 			if ( $l->{"name"} =~ /^[cs]$/ ) {
 				$l->{"etchingType"} = $etchType;
 			}
 		}
 
-		$groupData->SetSignalLayers(\@layers );
+		$groupData->SetSignalLayers($layers );
 	}
 
 	return $groupData;

@@ -419,6 +419,9 @@ sub StarLog {
 	my $pidInCAM = shift;
 	my $logId = shift; # this id will be contained in logfile name
 	
+	
+		print STDERR "\n\n\n PUT STAMP START 1 \n\n\n\n";
+	
 	unless($logId){
 		$logId = $pidInCAM;
 	}
@@ -426,6 +429,8 @@ sub StarLog {
 	unless ($pidInCAM) {
 		return;
 	}
+
+	print STDERR "\n\n\n PUT STAMP START 2 \n\n\n\n";
 
 	my $logFile = FileHelper->GetFileNameByPattern( EnumsPaths->Client_INCAMTMP, "." . $pidInCAM );
 
@@ -471,6 +476,8 @@ sub StarLog {
 sub PutStampToLog {
 	my $self  = shift;
 	my $stamp = shift;
+
+	print STDERR "\n\n\n PUT STAMP  \n\n\n\n";
 
 	if ( $self->{"fhLog"} && $self->{"fhLogCustom"} ) {
 

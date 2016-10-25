@@ -97,7 +97,7 @@ sub RefreshGUI {
 	$self->{"form"}->SetTenting( $groupData->{"data"}->{"tenting"} );
 	$self->{"form"}->SetMaska01( $groupData->{"data"}->{"maska01"} );
 	$self->{"form"}->SetPressfit( $groupData->{"data"}->{"pressfit"} );
-	$self->{"form"}->SetNotes( $groupData->{"data"}->{"notes"} );
+	$self->{"form"}->SetNotes( $groupData->{"data"}->{"poznamka"} );
 	$self->{"form"}->SetDatacode( $groupData->{"data"}->{"datacode"} );
 	$self->{"form"}->SetUlLogo( $groupData->{"data"}->{"ul_logo"} );
 	$self->{"form"}->SetJumpScoring( $groupData->{"data"}->{"prerusovana_drazka"} );

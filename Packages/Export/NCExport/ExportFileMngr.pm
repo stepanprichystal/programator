@@ -162,7 +162,6 @@ sub __ExportNcSet {
 
 	$methodRes->AddErrors( $inCAM->GetExceptionError() );
 	 
- 
 	#if ( $inCAM->GetStatus() > 1 ) {
 	#	$methodRes->AddError( $inCAM->GetExceptionError() );
 	#}

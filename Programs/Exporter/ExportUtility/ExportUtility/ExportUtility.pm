@@ -114,12 +114,13 @@ sub __OnJobStateChanged {
 	elsif ( $taskState eq EnumsMngr->JobState_WAITINGPORT ) {
 
 		$status = "Waiting on InCAM port.";
+		$self->{"form"}->ActivateForm( 1, $exportData->GetFormPosition() );
 
 	}
 	elsif ( $taskState eq EnumsMngr->JobState_RUNNING ) {
 
 		$status = "Running...";
-		$self->{"form"}->ActivateForm( 1, $exportData->GetFormPosition() );
+		
 
 	}
 	elsif ( $taskState eq EnumsMngr->JobState_ABORTING ) {

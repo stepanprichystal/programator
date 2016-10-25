@@ -420,7 +420,7 @@ sub __SetLayout {
 
 		[ -1, -1 ], # window position
 		\@dimension,    # size   &Wx::wxSTAY_ON_TOP |
-		&Wx::wxSYSTEM_MENU | &Wx::wxCAPTION | &Wx::wxRESIZE_BORDER | &Wx::wxMINIMIZE_BOX | &Wx::wxMAXIMIZE_BOX | &Wx::wxCLOSE_BOX
+		&Wx::wxSTAY_ON_TOP | &Wx::wxSYSTEM_MENU | &Wx::wxCAPTION | &Wx::wxRESIZE_BORDER | &Wx::wxMINIMIZE_BOX | &Wx::wxMAXIMIZE_BOX | &Wx::wxCLOSE_BOX
 	);
 
 	if ( $self->{"runMode"} eq Enums->RUNMODE_TRAY ) {
