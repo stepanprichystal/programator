@@ -611,6 +611,27 @@ sub __GetReply {
 	return $reply;
 }
 
+
+#
+## get all answer. 
+#sub Flush{
+#	my $self = shift;
+#	my $s    = $self->{"socket"};
+#	
+#	
+#	if ( $self->{comms} eq 'pipe' ) {
+#
+#		while($reply = <STDIN>){};
+# 
+#	}
+#	elsif ( $self->{comms} eq 'socket' ) {
+#
+#		while($reply = <$s>){};
+#	}
+#	
+#	
+#}
+
 sub __LogExist {
 	my $self = shift;
 

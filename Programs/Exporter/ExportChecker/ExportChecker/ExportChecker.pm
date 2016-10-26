@@ -353,8 +353,7 @@ sub __OnResultPopupHandler {
 
 		if ( $exportMode eq EnumsTransfer->ExportMode_ASYNC ) {
 
-			# Save exported data
-			$dataTransfer->SaveData( $exportMode, $toProduce );
+			
 
 			# Save and close job
 			$self->{"form"}->{"mainFrm"}->Hide();
@@ -366,6 +365,9 @@ sub __OnResultPopupHandler {
 			if ( $client->IsConnected() ) {
 				$inCAM->CloseServer();
 			}
+			
+			# Save exported data
+			$dataTransfer->SaveData( $exportMode, $toProduce );
 
 		}
 		elsif ( $exportMode eq EnumsTransfer->ExportMode_SYNC ) {

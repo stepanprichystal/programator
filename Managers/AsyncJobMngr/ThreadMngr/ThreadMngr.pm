@@ -193,12 +193,22 @@ sub __CleanUpAndExit {
 	# If user aborted job and it is "asynchronous" export (not external server prepared)
 	# Close job
 	if ( $exitType eq Enums->ExitType_FORCE && !$externalServer ) {
+	
+	$inCAM->ClientFinish();
+	$inCAM->Reconnect();
+	$inCAM->COM( "is_job_open", "job" => $pcbId );
+	 print STDERR $inCAM->GetReply()."\n";
+	$inCAM->COM( "is_job_open", "job" => $pcbId );
+	 print STDERR $inCAM->GetReply()."\n";
+	$inCAM->COM( "is_job_open", "job" => $pcbId );
+ 	print STDERR $inCAM->GetReply()."\n";
 
 		# Test if specific job is still open, is so, close
 		$inCAM->COM( "is_job_open", "job" => $pcbId );
  
 		if ( $inCAM->GetReply() eq "yes" ) {
 
+			$inCAM->COM( "check_inout","job"  => "$pcbId", "mode"  => "in", "ent_type"  => "job");
 			$inCAM->COM( "close_job", "job" => $pcbId );
 			print STDERR "\n\n\nJOBCLOSED when aborting SUER\n\n\n\n";
 		}
