@@ -20,6 +20,7 @@ use aliased 'Packages::Stackup::Enums';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'CamHelpers::CamStepRepeat';
 use aliased 'CamHelpers::CamHelper';
+use aliased 'CamHelpers::CamLayer';
 
 #-------------------------------------------------------------------------------------------#
 #   Package methods
@@ -86,6 +87,11 @@ sub SetStage {
 				my $lName = GeneralHelper->GetGUID();
 
 				$inCAM->COM( "compensate_layer", "source_layer" => $l->{"gROWname"}, "dest_layer" => $lName, "dest_layer_type" => "document" );
+				
+				CamLayer->WorkLayer($inCAM, $lName);
+				$inCAM->COM( "sel_contourize", "accuracy" => "6.35", "break_to_islands" => "yes", "clean_hole_size" => "76.2", "clean_hole_mode" => "x_or_y" );
+
+				 
 				$inCAM->COM(
 					"copy_layer",
 					"dest"         => "layer_name",
@@ -201,7 +207,8 @@ sub OutputOpfx {
 	# delete rout temporary layer
 	if ( CamHelper->LayerExists( $inCAM, $jobId, "aoi_rout_tmp" ) ) {
 
-	 	$inCAM->COM( 'delete_layer', "layer" => "aoi_rout_tmp" );
+		 
+	 	#$inCAM->COM( 'delete_layer', "layer" => "aoi_rout_tmp" );
 	}
 
 	if ( -e $report ) {

@@ -34,6 +34,7 @@ use aliased 'Connectors::HeliosConnector::HegMethods';
 
 use aliased 'Programs::Exporter::ExportChecker::ExportChecker::StorageMngr';
 use aliased 'Programs::Exporter::ExportChecker::ExportChecker::ExportPopup';
+use aliased 'Programs::Exporter::ExportUtility::RunExport::RunExportUtility';
 
 use aliased 'Programs::Exporter::DataTransfer::DataTransfer';
 use aliased 'Programs::Exporter::ExportChecker::Enums';
@@ -399,6 +400,11 @@ sub __OnResultPopupHandler {
 			#require $serverPath;
 
 		}
+
+		# Launch export utility if hasn't launched before
+		my $utility = RunExportUtility->new(0);
+		
+
 
 		# Exit export window
 		$self->{"form"}->{"mainFrm"}->Destroy();

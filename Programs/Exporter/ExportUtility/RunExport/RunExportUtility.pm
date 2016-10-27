@@ -27,7 +27,7 @@ sub new {
 	# Tell if scrpt was launched manually by user
 	my $userLaunch = shift;
 
-	unless ($userLaunch) {
+	if(!defined $userLaunch) {
 		$userLaunch = 1;
 	}
 
@@ -51,6 +51,9 @@ sub new {
 		$self->__RunExportUtility();
 
 	}
+	
+	print STDERR "\n\nKONec &&&&&&&&&&&&&&&&&&&&&&&&&& \n\n";
+	
 	return $self;
 }
 
@@ -98,7 +101,7 @@ sub __RunExportUtility {
 
 	Win32::Process::Create( $processObj, $perl,
 							"perl " . GeneralHelper->Root() . "\\Programs\\Exporter\\ExportUtility\\RunExport\\RunExportUtilityScript.pl ",
-							1, NORMAL_PRIORITY_CLASS | CREATE_NEW_CONSOLE, "." )
+							0, NORMAL_PRIORITY_CLASS | CREATE_NEW_CONSOLE, "." )
 	  || die "Failed to create ExportUtility process.\n";
 
 	
@@ -115,9 +118,9 @@ sub __RunExportUtility {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	use aliased 'Programs::Exporter::ExportUtility::RunExport::RunExportUtility';
+	#use aliased 'Programs::Exporter::ExportUtility::RunExport::RunExportUtility';
 
-	my $run = RunExportUtility->new(0);
+	#my $run = RunExportUtility->new(0);
 
 }
 

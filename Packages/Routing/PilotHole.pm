@@ -44,11 +44,11 @@ sub AddPilotHole {
 	# roout tools
 	my @tools = ();
 
-	#determine if take user or site file rout_size.tab
-	my $toolTable = EnumsPaths->InCAM_users . $usrName . "\\hooks\\rout_size.tab";
+	#determine if take user or site file drill_size.tab
+	my $toolTable = EnumsPaths->InCAM_users . $usrName . "\\hooks\\drill_size.tab";
 
 	unless ( -e $toolTable ) {
-		$toolTable = EnumsPaths->InCAM_hooks . "rout_size.tab";
+		$toolTable = EnumsPaths->InCAM_hooks . "drill_size.tab";
 	}
 
 	@tools = @{ FileHelper->ReadAsLines($toolTable) };

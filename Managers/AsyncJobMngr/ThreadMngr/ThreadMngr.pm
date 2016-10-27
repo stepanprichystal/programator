@@ -194,14 +194,11 @@ sub __CleanUpAndExit {
 	# Close job
 	if ( $exitType eq Enums->ExitType_FORCE && !$externalServer ) {
 	
-	$inCAM->ClientFinish();
-	$inCAM->Reconnect();
-	$inCAM->COM( "is_job_open", "job" => $pcbId );
-	 print STDERR $inCAM->GetReply()."\n";
-	$inCAM->COM( "is_job_open", "job" => $pcbId );
-	 print STDERR $inCAM->GetReply()."\n";
-	$inCAM->COM( "is_job_open", "job" => $pcbId );
- 	print STDERR $inCAM->GetReply()."\n";
+		# Reconnection is necessary because, when is child therad aborted force
+		# inCam library is confused and return odd replies
+		$inCAM->ClientFinish();
+		$inCAM->Reconnect();
+	 
 
 		# Test if specific job is still open, is so, close
 		$inCAM->COM( "is_job_open", "job" => $pcbId );

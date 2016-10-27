@@ -91,7 +91,7 @@ sub __SetLayout {
 
 	my $szMain = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
 
-	$self->SetBackgroundColour( Wx::Colour->new( 50, 0, 0 ) );
+	#$self->SetBackgroundColour( Wx::Colour->new( 50, 0, 0 ) );
 
 	# DEFINE SIZERS
 

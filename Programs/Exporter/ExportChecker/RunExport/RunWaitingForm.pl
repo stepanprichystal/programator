@@ -19,8 +19,8 @@ use aliased 'Programs::Exporter::ExportUtility::Helper';
 use aliased 'Widgets::Forms::LoadingForm';
  
  
-my $CONSOLE=Win32::Console->new;
-$CONSOLE->Title("Loading Exporter Checker"); 
+#my $CONSOLE=Win32::Console->new;
+#$CONSOLE->Title("Loading Exporter Checker"); 
 
  
 my $frm = LoadingForm->new(-1, "Loading Exporter Checker...");
