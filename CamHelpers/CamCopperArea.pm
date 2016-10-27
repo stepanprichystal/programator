@@ -299,7 +299,7 @@ sub __GetCuArea {
 
 	#my $outFile = "out_file";
 
-	CamHelper->OpenStep( $inCAM, $jobName, $stepName );
+	CamHelper->SetStep( $inCAM, $stepName );
 
 	if ($mask) {
 		$self->__GetCuAreaMask( $inCAM,        $topLayer,    $botLayer, $topMask, $botMask, $considerHole,

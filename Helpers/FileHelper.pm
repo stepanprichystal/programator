@@ -412,14 +412,17 @@ sub Copy {
 		return 0;
 	}
 
-	open( DATA1, "<$pSource" );
-	open( DATA2, ">$pDest" );
+	my $fData1;
+	my $fData2;
+	
+	open( $fData1, "<$pSource" );
+	open( $fData2, ">$pDest" );
 
-	while (<DATA1>) {
-		print DATA2 $_;
+	while (<$fData1>) {
+		print $fData2 $_;
 	}
-	close(DATA1);
-	close(DATA2);
+	close($fData1);
+	close($fData2);
 
 	return 1;
 }

@@ -26,8 +26,8 @@ sub new {
  
 	$self->{"layers"}      = shift;
 	
-		$self->{"jobId"} = shift;
-
+	$self->{"jobId"} = shift;
+ 
 	# Helper propery, when create opfx
 	$self->{"outputLayer"} = undef;    #name of final output layer, contain merged layers
 
@@ -92,11 +92,13 @@ sub GetOutputFileName {
 	my $jobId = $self->{"jobId"};
 
 	my $fName = "$jobId@";
-	my $bigIndicator = $self->GetFilmSize() eq Enums->FilmSize_Big ? "v" : "";
+	
+	# whem film contain only one pcb, add "v" to name
+	my $indicator = scalar($self->GetLayers()) == 1 ? "v" : "";
 
 	# Select layer by layer
 	foreach my $plotL ( $self->GetLayers() ) {
-		$fName .= $plotL->GetName() . $bigIndicator . "_" . $plotL->GetComp();
+		$fName .= $plotL->GetName() . $indicator . "_" . $plotL->GetComp();
 	}
 
 	return $fName;

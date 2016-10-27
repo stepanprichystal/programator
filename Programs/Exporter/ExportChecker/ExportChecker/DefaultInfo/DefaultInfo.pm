@@ -41,12 +41,20 @@ sub new {
 
 	$self->{"pattern"} = undef;
 	$self->{"tenting"} = undef;
+	
+	$self->{"baseLayers"} = undef;
 
 	$self->__InitDefault();
 
 	return $self;
 }
 
+
+sub GetBoardBaseLayers {
+	my $self      = shift;
+	
+	return  @{$self->{"baseLayers"}};	
+}
 
 sub GetPcbClass {
 	my $self      = shift;
@@ -205,8 +213,19 @@ sub GetSideByLayer {
 	return $side;
 }
 
+sub GetCompByLayer{
+	my $self      = shift;
+	my $layerName = shift;
+
+	return 0;
+	
+}
+
 sub __InitDefault {
 	my $self = shift;
+
+	my @baseLayers = CamJob->GetBoardBaseLayers($self->{"inCAM"}, $self->{"jobId"} );
+	$self->{"baseLayers"} =  \@baseLayers;
 
 	$self->{"pcbClass"} = CamJob->GetJobPcbClass($self->{"inCAM"}, $self->{"jobId"} );   
 

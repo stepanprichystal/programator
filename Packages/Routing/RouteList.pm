@@ -25,11 +25,12 @@ sub GetFeatures {
 	my $self      = shift;
 	my $fFeatures = shift;
 
-	open( INFOFILE, $fFeatures );
+	my $INFOFILE;
+	open( $INFOFILE, $fFeatures );
 
 	my @chains = ();
 
-	while ( my $l = <INFOFILE> ) {
+	while ( my $l = <$INFOFILE> ) {
 
 		my %routInfo;
 

@@ -3,7 +3,7 @@
 # Description: Manager responsible for AOI files creation
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::Export::PreExport::PreMngr;
+package Packages::Export::GerExport::GerMngr;
 use base('Packages::Export::MngrBase');
 
 use Class::Interface;
@@ -18,6 +18,8 @@ use aliased 'CamHelpers::CamJob';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'Packages::Export::PreExport::LayerInvert';
 use aliased 'CamHelpers::CamHelper';
+use aliased 'Packages::Export::GerExport::ExportGerMngr';
+use aliased 'Packages::Export::GerExport::ExportPasteMngr';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -32,79 +34,24 @@ sub new {
 	$self->{"inCAM"}  = shift;
 	$self->{"jobId"}  = shift;
 	$self->{"layers"} = shift;
-
-	$self->{"helper"} = LayerInvert->new( $self->{"inCAM"}, $self->{"jobId"} );
-
-	$self->{"layerCnt"} = CamJob->GetSignalLayerCnt( $self->{"inCAM"}, $self->{"jobId"} );
-
+	$self->{"paste"} = shift;
+	 
+	$self->{"gerberMngr"} =  ExportGerMngr->new($self->{"inCAM"}, $self->{"jobId"}, $self->{"layers"});
+	$self->{"gerberMngr"}->{"onItemResult"}->Add( sub { $self->_OnItemResult(@_) } );
+	
+	$self->{"pasteMngr"} = 	 ExportPasteMngr->new($self->{"inCAM"}, $self->{"jobId"}, $self->{"paste"});
+	$self->{"pasteMngr"}->{"onItemResult"}->Add( sub { $self->_OnItemResult(@_) } );
+	
 	return $self;
 }
 
 sub Run {
 	my $self = shift;
 
-	my $helper = $self->{"helper"};
-	my $inCAM = $self->{"inCAM"};
+	 
+	 $self->{"gerberMngr"}->Run();
+	 $self->{"pasteMngr"}->Run();
 
-	my $isChanged = 0; # tell if something was changed in pcb
-
-	CamHelper->SetStep( $inCAM, "panel" );
-
-	my $patternSch;
-
-	if ( $self->{"layerCnt"} > 2 ) {
-		$patternSch = 'pattern-vv';
-	}
-	elsif ( $self->{"layerCnt"} == 2 ) {
-		$patternSch = 'pattern-2v';
-	}
-
-	foreach my $l ( @{ $self->{"layers"} } ) {
-
-		if ( $l->{"etchingType"} eq EnumsGeneral->Etching_TENTING ) {
-
-			if ( $helper->ExistPatternFrame($l->{"name"}) ) {
-				
-				$isChanged = 1;
-
-				$helper->ChangeMarkPolarity( $l->{"name"} );
-
-				$helper->DelPatternFrame( $l->{"name"}, $patternSch );
-			}
-
-		}
-		elsif ( $l->{"etchingType"} eq EnumsGeneral->Etching_PATTERN ) {
-
-			unless ( $helper->ExistPatternFrame($l->{"name"}) ) {
-				
-				$isChanged = 1;
-				
-				$helper->ChangeMarkPolarity( $l->{"name"} );
-
-				$helper->AddPatternFrame( $l->{"name"}, $patternSch );
-			}
-
-		}
-	}
-
-	my $resultItem = $self->_GetNewItem("Add/del frames");
-	$self->_OnItemResult($resultItem);
-	
-	# if job is changed, save it
-	if(	$isChanged){
-		
-		my $resultItemSave = $self->_GetNewItem("Saving job");
-		
-		$inCAM->HandleException(1);
-
-		CamJob->SaveJob($inCAM, $self->{"jobId"});
-		
-		$resultItemSave->AddError( $inCAM->GetExceptionError() );
-		$inCAM->HandleException(0);
-		
-		$self->_OnItemResult($resultItemSave);
-	}
-	
 }
 
 sub ExportItemsCount {
@@ -112,7 +59,8 @@ sub ExportItemsCount {
 
 	my $totalCnt = 0;
 
-	$totalCnt += scalar( @{ $self->{"layers"} } );    #export each layer
+	$totalCnt += 1;    #gerbers
+	$totalCnt += $self->{"paste"}->{"export"} ? 1: 0; # paste
 
 	return $totalCnt;
 

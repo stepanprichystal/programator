@@ -92,10 +92,10 @@ sub GetLayerCamMarks {
 	);
 
 	#print "Su zde $fFeatures 2 \n";
+	my $INFOFILE;
+	open( $INFOFILE, $fFeatures );
 
-	open( INFOFILE, $fFeatures );
-
-	while ( my $l = <INFOFILE> ) {
+	while ( my $l = <$INFOFILE> ) {
 
 		my %featInfo;
 
@@ -434,10 +434,10 @@ sub GetMaterialParams {
 
 			#print "Material file path: $materialFile\n";
 
-			if ( open( MATERIAL, "$materialFile" ) ) {
+			if ( open( my $fMat, "$materialFile" ) ) {
 
-				@params = <MATERIAL>;
-				close(MATERIAL);
+				@params = <$fMat>;
+				close($fMat);
 
 			}
 			else {

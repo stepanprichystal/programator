@@ -23,6 +23,7 @@ sub new {
 	bless $self;
 
 	$self->{"rule"} = shift;
+  
 
 	$self->{"filmSize"} = undef;
 

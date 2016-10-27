@@ -127,15 +127,15 @@ sub new {
 	# presumably running under Genesis. In this case use stdin and stdout as is.
 	# If, on the other hand, stdin is a tty, then we are running remotely, in which case
 	# set up the communications, namely the socket, so that we communicate.
-	$self->{"forcePipe"}       = $forcePipe;
-	$self->{"remote"}          = $remote;
-	$self->{"HandleException"} = 0;	# tell if package exception shoul be raised, or not
-	$self->{"SupressToolkitEx"} = 0; # supress InCAM toolkit exception 
-									# (exception end script runnin in InCAM and show error window)
-	$self->{"socket"}          = undef;        #socket for debuging
-	$self->{"socketOpen"}      = 0;
-	$self->{"connected"}       = 0;            #say if is library connected to InCAM/Genesis editor
-	$self->{"comms"}           = "pipe";
+	$self->{"forcePipe"}        = $forcePipe;
+	$self->{"remote"}           = $remote;
+	$self->{"HandleException"}  = 0;            # tell if package exception shoul be raised, or not
+	$self->{"SupressToolkitEx"} = 0;            # supress InCAM toolkit exception
+	                                            # (exception end script runnin in InCAM and show error window)
+	$self->{"socket"}           = undef;        #socket for debuging
+	$self->{"socketOpen"}       = 0;
+	$self->{"connected"}        = 0;            #say if is library connected to InCAM/Genesis editor
+	$self->{"comms"}            = "pipe";
 	my @cmds = ();
 	$self->{"cmdHistory"} = \@cmds;
 
@@ -143,10 +143,10 @@ sub new {
 		$self->{"port"} = $port;
 	}
 	else {
-		$self->{"port"} = $defaultPort;        #default port number
+		$self->{"port"} = $defaultPort;         #default port number
 	}
 
-	$self->{"exception"} = undef;              # if some error ocured, excepto=ion is saved here
+	$self->{"exception"} = undef;               # if some error ocured, excepto=ion is saved here
 
 	# array of exception
 	# Here are all exception, which start
@@ -179,9 +179,12 @@ sub new {
 sub Reconnect {
 	my $self = shift;
 
+	if ( $self->{"connected"} ) {
+		$self->ClientFinish();
+	}
+
 	$self->__Connect();
 }
-
 
 sub DESTROY {
 
@@ -189,10 +192,9 @@ sub DESTROY {
 	my $s    = $self->{"socket"};
 
 	# close opened InCam log
-	if ( $self->{"fhLog"}){
-		close($self->{"fhLog"});
-	} 
- 
+	if ( $self->{"fhLog"} ) {
+		close( $self->{"fhLog"} );
+	}
 
 	if ( $self->{socketOpen} == 0 ) {
 		return;
@@ -216,15 +218,19 @@ sub ServerReady {
 sub ClientFinish {
 	my $self = shift;
 
-	return $self->__SpecialServerCmd("CLIENTFINISH PID:$$");
+	my $result = $self->__SpecialServerCmd("CLIENTFINISH PID:$$");
+	
+	if($result){
+		
+	}
+	
+	return $result;
 }
 
 sub CloseServer {
 	my $self = shift;
 	return $self->__SpecialServerCmd("CLOSESERVER");
 }
-
-
 
 sub closeDown {
 	my ($self) = shift;
@@ -328,8 +334,7 @@ sub sendCommand {
 		$self->sendCommandToPipe( $commandType, $command );
 	}
 	elsif ( $self->{comms} eq 'socket' ) {
-		
-			 
+
 		$self->sendCommandToSocket( $commandType, $command );
 	}
 }
@@ -410,19 +415,17 @@ sub GetExceptionsError {
 	return \@exceptions;
 }
 
-
 # This function start to read log, which is created when InCAM editor is launched
 # Function open tihis log, read and pass it to another "custom" log
 # this custom log contain special "stamps", which tell where InCAM exception start (see PutStampToLog)
 sub StarLog {
 	my $self     = shift;
 	my $pidInCAM = shift;
-	my $logId = shift; # this id will be contained in logfile name
-	
-	
-		print STDERR "\n\n\n PUT STAMP START 1 \n\n\n\n";
-	
-	unless($logId){
+	my $logId    = shift;    # this id will be contained in logfile name
+
+	print STDERR "\n\n\n PUT STAMP START 1 \n\n\n\n";
+
+	unless ($logId) {
 		$logId = $pidInCAM;
 	}
 
@@ -469,7 +472,6 @@ sub StarLog {
 	}
 }
 
-
 # Method puts "stamp", which is some unique ID to custom log
 # Later, we can explorer this and find stams and tell, which logs line
 # belongs to exception error
@@ -499,8 +501,6 @@ sub PutStampToLog {
 	}
 }
 
-
-
 # When InCAM error happens during COM function:
 # - if  HandleException = 0, InCAM package raise exception and die
 # - if  HandleException = 1, Script didn't die, Exception is stored in "exception" property
@@ -510,13 +510,13 @@ sub HandleException {
 	my $value = shift;
 
 	if ($value) {
-		
+
 		$self->{"HandleException"} = 1;
 	}
 	else {
- 
+
 		$self->{"HandleException"} = 0;
-		
+
 	}
 
 }
@@ -538,7 +538,6 @@ sub SupressToolkitException {
 		$self->VON();
 		$self->{"SupressException"} = 0;
 
-		
 	}
 
 }
@@ -611,25 +610,24 @@ sub __GetReply {
 	return $reply;
 }
 
-
 #
-## get all answer. 
+## get all answer.
 #sub Flush{
 #	my $self = shift;
 #	my $s    = $self->{"socket"};
-#	
-#	
+#
+#
 #	if ( $self->{comms} eq 'pipe' ) {
 #
 #		while($reply = <STDIN>){};
-# 
+#
 #	}
 #	elsif ( $self->{comms} eq 'socket' ) {
 #
 #		while($reply = <$s>){};
 #	}
-#	
-#	
+#
+#
 #}
 
 sub __LogExist {
@@ -679,11 +677,9 @@ sub __RunScriptFail {
 	#exit(0);
 }
 
-
 # -----------------------------------------------------------------------------
 # Old methods used in old script (scripts from genesis ages)
 # -----------------------------------------------------------------------------
-
 
 # Checking is on. If a command fails, the script fail
 sub VON {
@@ -694,9 +690,9 @@ sub VON {
 # Checking is off. If a command fails, the script continues
 sub VOF {
 	my ($self) = shift;
-	
-			print STDERR "zdarec 2\n";
-	
+
+	print STDERR "zdarec 2\n";
+
 	$self->sendCommand( "VOF", "" );
 }
 
@@ -851,9 +847,6 @@ sub COM {
 
 }
 
-
- 
-
 # Send an auxiliary command
 sub AUX {
 	my ($self) = shift;
@@ -896,7 +889,6 @@ sub DO_INFO {
 	$self->parse($info_com);
 }
 
-
 sub parse {
 	my ($self)    = shift;
 	my ($request) = shift;
@@ -908,9 +900,10 @@ sub parse {
 	$request =~ s/\$csh_file/$csh_file/;
 	$self->COM($request);
 
-	open( CSH_FILE, "$csh_file" )
+	my $fCSH_FILE;
+	open( $fCSH_FILE, "$csh_file" )
 	  or warn "Cannot open info file - $csh_file: $!\n";
-	while (<CSH_FILE>) {
+	while (<$fCSH_FILE>) {
 		chomp;
 		next if /^\s*$/;    # ignore blank lines
 		( $var, $value ) = /set\s+(\S+)\s*=\s*(.*)\s*/;    # extract the name and value
@@ -941,7 +934,7 @@ sub parse {
 			$self->{$var} = $value;
 		}
 	}
-	close(CSH_FILE);
+	close($fCSH_FILE);
 	unlink($csh_file);
 }
 
@@ -1013,11 +1006,13 @@ sub printFile {
 	my ($self)     = shift;
 	my ($filename) = shift;
 
-	open( FILE, "$filename" ) or warn "can not open file $filename";
-	while (<FILE>) {
+
+	my $FILE;
+	open( $FILE, "$filename" ) or warn "can not open file $filename";
+	while (<$FILE>) {
 		print;
 	}
-	close(FILE);
+	close($FILE);
 }
 
 =item $float = round($value,$precision)

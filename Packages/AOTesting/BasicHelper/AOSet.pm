@@ -208,15 +208,16 @@ sub OutputOpfx {
 	if ( CamHelper->LayerExists( $inCAM, $jobId, "aoi_rout_tmp" ) ) {
 
 		 
-	 	#$inCAM->COM( 'delete_layer', "layer" => "aoi_rout_tmp" );
+	 	$inCAM->COM( 'delete_layer', "layer" => "aoi_rout_tmp" );
 	}
 
 	if ( -e $report ) {
 
 		$$reportResult = "";
-		open( FILE, $report );
-		while (<FILE>) { $$reportResult .= $_ }
-		close(FILE);
+		my $f;
+		open( $f, $report );
+		while (<$f>) { $$reportResult .= $_ }
+		close($f);
 
 		if ( $$reportResult !~ /no output/i ) {
 			$$reportResult = "";

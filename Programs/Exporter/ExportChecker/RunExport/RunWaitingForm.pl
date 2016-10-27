@@ -13,6 +13,12 @@ use Win32::Console;
 
 use lib qw( C:\Perl\site\lib\TpvScripts\Scripts );
 
+#necessary for load pall packages
+#use FindBin;
+#use lib "$FindBin::Bin/../";
+#use PackagesLib;
+
+
 use aliased 'Programs::Exporter::ExportUtility::ExportUtility::ExportUtility';
 use aliased 'Managers::AsyncJobMngr::Enums'           => 'EnumsMngr';
 use aliased 'Programs::Exporter::ExportUtility::Helper';

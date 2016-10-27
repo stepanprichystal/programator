@@ -54,10 +54,10 @@ sub Parse {
 								 options         => "feat_index+f0",
 								 parse           => 'no'
 	);
-
-	open( FILE, "<" . $infoFile );
-	my @feat = <FILE>;
-	close($infoFile);
+	my $f;
+	open( $f, "<" . $infoFile );
+	my @feat = <$f>;
+	close($f);
 	unlink($infoFile);
 
 	my @features = $self->__ParseLines( \@feat );

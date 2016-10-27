@@ -371,9 +371,32 @@ sub DestroyServer {
 		}
 
 		my $s = @{$serverRef}[$idx];
+		
+		my $closedSucc = 0;
+		
+		#try to connect to server and close it nice
+		
+		my $inCAM = InCAM->new( "remote" => 'localhost', "port" => $port );
+		if( $inCAM->ServerReady()){
+			
+			my $closed = $inCAM->COM("close_toolkit");
+			
+			if($closed == 0){
+				$closedSucc = 1;
+				
+				# we has to close server perl scritp, unless inCAM will be still running
+				Win32::Process::KillProcess( $s->{"pidServer"}, 0 );
+				print STDERR "\n\n close toolikt ################ \n\n";
+			}
+		}
+		
+		unless($closedSucc){	 
 
-		Win32::Process::KillProcess( $s->{"pidServer"}, 0 );
-		Win32::Process::KillProcess( $s->{"pidInCAM"},  0 );
+			Win32::Process::KillProcess( $s->{"pidServer"}, 0 );
+			Win32::Process::KillProcess( $s->{"pidInCAM"},  0 );
+		}
+		
+
 
 		Helper->Print( "SERVER: PID: " . $s->{"pidServer"} . ", port:" . $s->{"port"} . "....................................was closed\n" );
 
