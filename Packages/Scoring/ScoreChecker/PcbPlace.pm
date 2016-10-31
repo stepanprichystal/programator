@@ -35,6 +35,7 @@ sub new {
 	$self->{"inCAM"} = shift;
 	$self->{"jobId"} = shift;
 	$self->{"step"}  = shift;
+	$self->{"dec"}   = shift;    # tell precision of compering score position
 
 	my @pcbs = ();
 	$self->{"pcbs"} = \@pcbs;
@@ -42,6 +43,12 @@ sub new {
 	$self->__LoadStepsInfo();
 
 	return $self;
+}
+
+sub GetPcbs {
+	my $self = shift;
+
+	return @{ $self->{"pcbs"} };
 }
 
 sub GetScorePos {
@@ -53,27 +60,10 @@ sub GetScorePos {
 
 	foreach my $pcb ( @{ $self->{"pcbs"} } ) {
 
-		my @sco = $pcb->GetScore($dir);
+		my @scoPos = $pcb->GetScorePos($dir);
 
-		foreach my $sInfo (@sco) {
-
-			my $pVal = $sInfo->GetScorePoint();
-
-			# consider origin of "panel" and location of pcb
-			if ( $sInfo->GetDirection() eq Enums->Dir_HSCORE ) {
-
-				$pVal += $pcb->GetOrigin()->{"y"};
-
-			}
-			elsif ( $sInfo->GetDirection() eq Enums->Dir_VSCORE ) {
-
-				$pVal += $pcb->GetOrigin()->{"x"};
-			}
-
-			my $pInfo = ScorePosInfo->new( $pVal, $sInfo->GetDirection() );
-
-			push( @points, $pInfo );
-
+		foreach my $pInfo (@scoPos) {
+			push( @points, $self->__ConsiderOrigin( $pInfo, $pcb ) );
 		}
 
 	}
@@ -81,6 +71,39 @@ sub GetScorePos {
 	# Reduce points, which has same location
 	my %seen;
 	@points = grep { !$seen{ $_->GetPosition() }++ } @points;
+
+	return @points;
+
+}
+
+sub ScoreIsOk {
+	my $self = shift;
+
+	my $isOk = 1;
+
+	foreach my $pcb ( @{ $self->{"pcbs"} } ) {
+
+		my @wrongSco = grep { $_->GetDirection() ne Enums->Dir_VSCORE && $_->GetDirection() ne Enums->Dir_HSCORE } $pcb->GetScore();
+
+		if ( scalar(@wrongSco) ) {
+			$isOk = 0;
+			last;
+		}
+
+	}
+
+	return $isOk;
+
+}
+
+sub IsScoreOnPos {
+	my $self    = shift;
+	my $posInfo = shift;
+	my $pcb     = shift;
+
+	my $relPos = $self->__ConsiderOrigin( $posInfo, $pcb, 1 );
+
+	return $pcb->IsScoreOnPos($relPos);
 
 }
 
@@ -91,7 +114,7 @@ sub GetPcbOnScorePos {
 	my $dir = $posInfo->GetDirection();
 	my $pos = $posInfo->GetPosition();
 
-	my @pcb = ();
+	my @pcbOnPos = ();
 
 	foreach my $pcb ( @{ $self->{"pcbs"} } ) {
 
@@ -99,13 +122,13 @@ sub GetPcbOnScorePos {
 		my $oriY = $pcb->GetOrigin()->{"y"};
 
 		my $h = $pcb->GetHeight();
-		my $w = $pcb->GetHeight();
+		my $w = $pcb->GetWidth();
 
 		if ( $dir eq Enums->Dir_HSCORE ) {
 
 			if ( $pos >= $oriY && $pos <= $oriY + $h ) {
 
-				push( @pcb, $pos );
+				push( @pcbOnPos, $pcb );
 			}
 
 		}
@@ -113,12 +136,12 @@ sub GetPcbOnScorePos {
 
 			if ( $pos >= $oriX && $pos <= $oriX + $w ) {
 
-				push( @pcb, $pos );
+				push( @pcbOnPos, $pcb );
 			}
 		}
 	}
 
-	return @pcb;
+	return @pcbOnPos;
 
 }
 
@@ -190,7 +213,7 @@ sub __LoadStepsInfo {
 			$repH = $step->{"width"};
 		}
 
-		my $pcbInfo = PcbInfo->new( \%origin, $repW, $repH );
+		my $pcbInfo = PcbInfo->new( \%origin, $repW, $repH, $self->{"dec"} );
 
 		# add score lines, according original score lines in step
 
@@ -213,12 +236,12 @@ sub __LoadStepsInfo {
 				if ( $dir eq Enums->Dir_HSCORE ) {
 					$dir = Enums->Dir_VSCORE;
 				}
-				else {
+				elsif ( $dir eq Enums->Dir_VSCORE ) {
 					$dir = Enums->Dir_HSCORE;
 				}
 			}
 
-			my $scoLine = ScoreInfo->new( \%startP, \%endP, $dir );
+			my $scoLine = ScoreInfo->new( \%startP, \%endP, $dir, $self->{"dec"} );
 
 			$pcbInfo->AddScoreLine($scoLine);
 		}
@@ -228,12 +251,44 @@ sub __LoadStepsInfo {
 	}
 }
 
+# Do conversion of position value (inside a step), between "panel" origin and step origin
+sub __ConsiderOrigin {
+	my $self     = shift;
+	my $pos      = shift;
+	my $pcb      = shift;
+	my $relToPcb = shift;
+
+	my $sign = 1;
+
+	if ($relToPcb) {
+		$sign = -1;
+	}
+
+	my $pVal = $pos->GetPosition();
+
+	# consider origin of "panel" and location of pcb
+	if ( $pos->GetDirection() eq Enums->Dir_HSCORE ) {
+
+		$pVal += $sign * $pcb->GetOrigin()->{"y"};
+
+	}
+	elsif ( $pos->GetDirection() eq Enums->Dir_VSCORE ) {
+
+		$pVal += $sign * $pcb->GetOrigin()->{"x"};
+	}
+
+	my $newPos = ScorePosInfo->new( $pVal, $pos->GetDirection(), $self->{"dec"} );
+	return $newPos;
+}
+
 sub __RotateAndMovePoint {
 	my $self   = shift;
 	my $point  = shift;
 	my $angle  = shift;
 	my $width  = shift;
 	my $height = shift;
+
+	my $dec = $self->{"dec"};
 
 	my $num = $angle / 90;
 
@@ -246,8 +301,8 @@ sub __RotateAndMovePoint {
 		$new{"x"} = $point->{"x"} * cos($angle90) - $point->{"y"} * sin($angle90);
 		$new{"y"} = $point->{"y"} * cos($angle90) + $point->{"x"} * sin($angle90);
 
-		$point->{"x"} = sprintf( "%.2f", $new{"x"} );
-		$point->{"y"} = sprintf( "%.2f", $new{"y"} );
+		$point->{"x"} = sprintf( "%." . $dec . "f", $new{"x"} );
+		$point->{"y"} = sprintf( "%." . $dec . "f", $new{"y"} );
 
 		if ( $i % 2 == 0 ) {
 

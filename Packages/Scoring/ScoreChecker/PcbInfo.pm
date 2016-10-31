@@ -12,6 +12,7 @@ use warnings;
 #local library
 
 use aliased 'Packages::Scoring::ScoreChecker::Enums';
+use aliased 'Packages::Scoring::ScoreChecker::ScorePosInfo';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -29,6 +30,7 @@ sub new {
 	#$self->{"originY"}     = shift;
 	$self->{"width"}  = shift;
 	$self->{"height"} = shift;
+	 $self->{"dec"}    = shift;
 
 	my @sco = ();
 	$self->{"score"} = \@sco;
@@ -44,14 +46,22 @@ sub AddScoreLine {
 
 }
 
+sub GetWidth {
+	my $self = shift;
 
+	return $self->{"width"};
+}
+
+sub GetHeight {
+	my $self = shift;
+
+	return $self->{"height"};
+}
 
 sub GetOrigin {
 	my $self = shift;
- 
 
 	return $self->{"origin"};
-
 }
 
 sub GetScore {
@@ -68,15 +78,39 @@ sub GetScore {
 
 }
 
+sub GetScorePos {
+	my $self = shift;
+	my $dir  = shift;
+
+	my @pos = ();
+
+	my @sco = $self->GetScore($dir);
+
+	foreach my $sInfo (@sco) {
+
+		my $pInfo = ScorePosInfo->new( $sInfo->GetScorePoint(), $sInfo->GetDirection(), $self->{"dec"} );
+
+		push( @pos, $pInfo );
+	}
+	
+	return @pos;
+}
+
 sub ScoreExist {
 
 }
 
-sub IsScoreOnPos {
-	my $self = shift;
-	my $dir  = shift;
-	my $pos  = shift;
+sub __GetScoresOnPos {
+	my $self    = shift;
+	my $posInfo = shift;
 
+	my @scores = ();
+
+	my $dir = $posInfo->GetDirection();
+	my $pos = $posInfo->GetPosition();
+
+	#consider origin o this position
+	# convert to relative to pcbInfo origin
 	my $exist = 0;
 
 	foreach my $sco ( @{ $self->{"score"} } ) {
@@ -84,11 +118,48 @@ sub IsScoreOnPos {
 		if ( $sco->ExistOnPosition( $dir, $pos ) ) {
 
 			$exist = 1;
-			last;
+			push( @scores, $sco );
 		}
 	}
 
+	return @scores;
+
+}
+
+sub IsScoreOnPos {
+	my $self    = shift;
+	my $posInfo = shift;
+
+	my @scores = $self->__GetScoresOnPos($posInfo);
+
+	if ( scalar(@scores) ) {
+		return 1;
+	}
+	else {
+		return 0;
+	}
+}
+
+sub ScoreOnSamePos {
+	my $self = shift;
+	
+	my @positions = $self->GetScorePos();
+	
+	my $exist = 0;
+	
+	foreach my $pos (@positions){
+		
+		my @scores = $self->__GetScoresOnPos($pos);
+		if(scalar(@scores) > 1){
+			
+			$exist = 1;
+			last;
+		}
+
+	}
+	
 	return $exist;
+
 }
 
 #-------------------------------------------------------------------------------------------#

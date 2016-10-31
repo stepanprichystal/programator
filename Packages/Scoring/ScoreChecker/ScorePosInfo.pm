@@ -24,7 +24,14 @@ sub new {
 	bless $self;
 
 	$self->{"position"} = shift;
-	$self->{"dir"}    = shift;
+		$self->{"dir"} = shift;
+	my $dec = shift ; # tell precision of compering score position	
+	
+	
+	
+	$self->{"position"} = sprintf( "%.".$dec."f", $self->{"position"} );
+	
+	
 	return $self;
 }
 

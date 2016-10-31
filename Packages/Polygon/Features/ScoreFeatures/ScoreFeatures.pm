@@ -82,15 +82,19 @@ sub __AddGeometricAtt {
 	#direction of score
 	$f->{"direction"} = "";
 
-	if ( abs( $f->{"x1"} - $f->{"x2"} ) < abs( $f->{"y1"} - $f->{"y2"} ) ) {
+	if ( abs( $f->{"x1"} - $f->{"x2"} ) < abs( $f->{"y1"} - $f->{"y2"} ) && $f->{"x1"} == $f->{"x2"} ) {
 		$f->{"direction"} = "vertical";
 	}
-	elsif ( abs( $f->{"x1"} - $f->{"x2"} ) > abs( $f->{"y1"} - $f->{"y2"} ) ) {
+	elsif ( abs( $f->{"x1"} - $f->{"x2"} ) > abs( $f->{"y1"} - $f->{"y2"} ) && $f->{"y1"} == $f->{"y2"} ) {
 		$f->{"direction"} = "horizontal";
 	}
 	elsif ( abs( $f->{"x1"} - $f->{"x2"} ) == abs( $f->{"y1"} - $f->{"y2"} ) ) {
 
 		$f->{"direction"} = "diagonal";
+		
+	}else {
+		
+		$f->{"direction"} = undef;
 	}
 }
 

@@ -26,6 +26,11 @@ sub new {
 	$self->{"startP"} = shift;
 	$self->{"endP"}   = shift;
 	$self->{"dir"}    = shift;
+	
+	$self->{"dec"}    = shift;  # tell precision of compering score position
+	
+	
+	
 
 	$self->__RoundPoints();
 	$self->__SetCourse();
@@ -54,7 +59,7 @@ sub ExistOnPosition {
 	my $dir  = shift;
 	my $pos  = shift;
 
-	$pos = printf( "%.2f", $pos );
+	$pos = sprintf( "%.".$self->{"dec"}."f", $pos );
 
 	my $exist = 0;
 
@@ -85,12 +90,14 @@ sub GetDirection {
 
 sub __RoundPoints {
 	my $self = shift;
+	
+	my $dec= $self->{"dec"};
 
-	$self->{"startP"}->{"x"} = sprintf( "%.2f", $self->{"startP"}->{"x"} );
-	$self->{"startP"}->{"y"} = sprintf( "%.2f", $self->{"startP"}->{"y"} );
+	$self->{"startP"}->{"x"} = sprintf( "%.".$dec."f", $self->{"startP"}->{"x"} );
+	$self->{"startP"}->{"y"} = sprintf( "%.".$dec."f", $self->{"startP"}->{"y"} );
 
-	$self->{"endP"}->{"x"} = sprintf( "%.2f", $self->{"endP"}->{"x"} );
-	$self->{"endP"}->{"y"} = sprintf( "%.2f", $self->{"endP"}->{"y"} );
+	$self->{"endP"}->{"x"} = sprintf( "%.".$dec."f", $self->{"endP"}->{"x"} );
+	$self->{"endP"}->{"y"} = sprintf( "%.".$dec."f", $self->{"endP"}->{"y"} );
 
 }
 

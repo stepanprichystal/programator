@@ -22,16 +22,16 @@ use Math::Trig;
 #use aliased 'CamHelpers::CamJob';
 #use aliased 'CamHelpers::CamStepRepeat';
 #use aliased 'Packages::Polygon::Features::ScoreFeatures::ScoreFeatures';
-use aliased 'Packages::Scoring::ScoreChecker::PcbInfo';
+
 use aliased 'Packages::Scoring::ScoreChecker::Enums';
 use aliased 'Packages::Scoring::ScoreChecker::ScoreInfo';
 use aliased 'Packages::Scoring::ScoreChecker::PcbPlace';
 
-  #-------------------------------------------------------------------------------------------#
-  #  Package methods
-  #-------------------------------------------------------------------------------------------#
+#-------------------------------------------------------------------------------------------#
+#  Package methods
+#-------------------------------------------------------------------------------------------#
 
-  sub new {
+sub new {
 
 	my $class = shift;
 
@@ -42,15 +42,42 @@ use aliased 'Packages::Scoring::ScoreChecker::PcbPlace';
 	$self->{"jobId"} = shift;
 	$self->{"step"}  = shift;
 
-	 
-	$self->{"pcbPlace"} =  PcbPlace->new($self->{"inCAM"}, $self->{"jobId"}, $self->{"step"});
- 
-	my @hscore = $self->{"pcbPlace"}->GetScorePos(Enums->Dir_HSCORE);
-	my @vscore = $self->{"pcbPlace"}->GetScorePos(Enums->Dir_VSCORE);
-	
-	#GetPcbOnScorePos
+	$self->{"dec "} = 1;    # tell precision of compering score position. 1 decimal place
+
+	$self->{"pcbPlace"} = PcbPlace->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"step"}, $self->{"dec "} );
+
+	$self->__Init();
+
+	#my @hscore = $self->{"pcbPlace"}->GetScorePos(Enums->Dir_HSCORE);
+	my @vscore = $self->{"pcbPlace"}->GetScorePos( Enums->Dir_VSCORE );
+
+	my @pcb1 = $self->{"pcbPlace"}->GetPcbOnScorePos( $vscore[0] );
+	#my @pcb2 = $self->{"pcbPlace"}->GetPcbOnScorePos( $vscore[1] );
+
+	print "jump = " . $self->IsJumScoring() . " \n\n";
 
 	return $self;
+}
+
+# check if all line strictly horizontal or verticall
+sub ScoreIsOk{
+	my $self = shift;
+	
+	
+	return $self->{"pcbPlace"}->ScoreIsOk();
+}
+
+
+sub __Init {
+	my $self = shift;
+
+	# check if all line strictly horizontal or verticall
+	unless ( $self->{"pcbPlace"}->ScoreIsOk() ) {
+
+		die "Some score lines are not strictly horrizontal or verticall. Repair it first. \n";
+
+	}
+
 }
 
 sub __LoadPcb {
@@ -65,10 +92,48 @@ sub __LoadPcb {
 	# save score line to new pcb object
 
 }
- 
-sub IsJumScoring {
-	my $self = shift;
 
+sub IsJumScoring {
+	my $self        = shift;
+	my $jumpScoring = 0;
+
+	# 1) Test if some pcb has more then on score on same postition
+	# This is case, when pcb is "multipanel" and customer wants jumpscoring on them
+
+	my @allPcb = $self->{"pcbPlace"}->GetPcbs();
+	foreach my $pcb (@allPcb) {
+
+		if ( $pcb->ScoreOnSamePos() ) {
+
+			# jumpscoring is necessary
+			$jumpScoring = 1;
+			last;
+		}
+	}
+
+	# 2) all pcb which are intersect by specific "position" has to has score on this position
+	# for each position, test if all pcb contains score on same postition
+	unless ($jumpScoring) {
+
+		# all verticall and horiyontall score positions
+		my @posInfos = $self->{"pcbPlace"}->GetScorePos();
+
+		foreach my $pos (@posInfos) {
+
+			my @pcbOnPos = $self->{"pcbPlace"}->GetPcbOnScorePos($pos);
+
+			foreach my $pcb (@pcbOnPos) {
+
+				unless ( $self->{"pcbPlace"}->IsScoreOnPos( $pos, $pcb ) ) {
+
+					$jumpScoring = 1;
+					last;
+				}
+			}
+		}
+	}
+
+	return $jumpScoring;
 }
 
 #-------------------------------------------------------------------------------------------#
@@ -85,8 +150,6 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	my $inCAM = InCAM->new();
 
 	my $checker = ScoreChecker->new( $inCAM, $jobId, "panel" );
-
-	 
 
 	print 1;
 
