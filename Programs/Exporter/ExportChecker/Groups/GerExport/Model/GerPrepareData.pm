@@ -15,6 +15,7 @@ use warnings;
 use aliased 'Programs::Exporter::ExportChecker::Groups::GerExport::Model::GerGroupData';
 use aliased 'Programs::Exporter::ExportChecker::Enums';
 use aliased 'CamHelpers::CamHelper';
+use aliased 'Enums::EnumsGeneral';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -49,41 +50,105 @@ sub OnPrepareGroupData {
 
 	my $inCAM = $dataMngr->{"inCAM"};
 	my $jobId = $dataMngr->{"jobId"};
-	
+
 	my $defaultInfo = $dataMngr->GetDefaultInfo();
 
-	my @layers =  $self->__GetLayers($defaultInfo);
-	my %pasteInfo = $self->__GetPasteInfo($inCAM, $jobId);
+	my @layers = $self->__GetLayers($defaultInfo);
+	my %pasteInfo = $self->__GetPasteInfo( $inCAM, $jobId );
 
-	$groupData->SetLayers(\@layers);
-	$groupData->SetPasteInfo(\%pasteInfo);
-	
-	
+	if ( scalar(@layers) ) {
+		$groupData->SetExportLayers(1);
+	}
+	else {
+		$groupData->SetExportLayers(0);
+	}
+
+	$groupData->SetLayers( \@layers );
+	$groupData->SetPasteInfo( \%pasteInfo );
+
 	return $groupData;
 }
 
-
 sub __GetLayers {
-	my $self      = shift;
+	my $self        = shift;
 	my $defaultInfo = shift;
-	
+
 	my @baseLayers = $defaultInfo->GetBoardBaseLayers();
 
 	my @layers = ();
-	
-	foreach my $baseL (@baseLayers){
-		
+
+	foreach my $l (@baseLayers) {
+
 		my %info = ();
-		
-		$info{"name"} =  $baseL->{"gROWname"};
-		$info{"comp"} =  $defaultInfo->GetCompByLayer($baseL->{"gROWname"});
-		
-		push(@layers, \%info);
+
+		$info{"name"} = $l->{"gROWname"};
+		$info{"comp"} = $defaultInfo->GetCompByLayer( $l->{"gROWname"} );
+
+		# set polarity
+
+		if ( $l->{"gROWlayer_type"} eq "silk_screen" ) {
+
+			$info{"polarity"} = "negative";
+
+		}
+		elsif ( $l->{"gROWlayer_type"} eq "solder_mask" ) {
+
+			$info{"polarity"} = "positive";
+
+		}
+		elsif ( $l->{"gROWlayer_type"} eq "signal" || $l->{"gROWlayer_type"} eq "power_ground" || $l->{"gROWlayer_type"} eq "mixed" ) {
+
+			my $etching = $defaultInfo->GetEtchType( $l->{"gROWname"} );
+
+			if ( $etching eq EnumsGeneral->Etching_PATTERN ) {
+				$info{"polarity"} = "positive";
+			}
+			elsif ( $etching eq EnumsGeneral->Etching_TENTING ) {
+				$info{"polarity"} = "negative";
+			}
+		}
+		else {
+
+			$info{"polarity"} = "positive";
+		}
+
+		# Set mirror
+
+		# whatever with "c" is mirrored
+		if ( $l->{"gROWname"} =~ /^[pm]*c$/i ) {
+
+			$info{"mirror"} = 1;
+
+		}
+
+		# whatever with "s" is not mirrored
+		elsif ( $l->{"gROWname"} =~ /^[pm]*s$/i ) {
+
+			$info{"mirror"} = 0;
+
+		}
+
+		# inner layers decide by stackup
+		elsif ( $l->{"gROWname"} =~ /^v\d+$/i ) {
+
+			my $side = $defaultInfo->GetSideByLayer( $l->{"gROWname"} );
+
+			if ( $side eq "top" ) {
+
+				$info{"mirror"} = 1;
+			}
+			else {
+
+				$info{"mirror"} = 0;
+			}
+		}
+
+
+		push( @layers, \%info );
 	}
-	
+
 	return @layers;
 }
-
 
 sub __GetPasteInfo {
 	my $self      = shift;
@@ -96,37 +161,51 @@ sub __GetPasteInfo {
 	my $sa_ori  = CamHelper->LayerExists( $inCAM, $jobId, "sa_ori" );
 	my $sb_ori  = CamHelper->LayerExists( $inCAM, $jobId, "sa_ori" );
 	my $sa_made = CamHelper->LayerExists( $inCAM, $jobId, "sa_made" );
-	my $sb_made = CamHelper->LayerExists( $inCAM, $jobId, "sa_made" );
-	my $mpanelExist = CamHelper->StepExists( $inCAM, $jobId, "mapnel" );
+	my $sb_made = CamHelper->LayerExists( $inCAM, $jobId, "sb_made" );
+	my $mpanelExist = CamHelper->StepExists( $inCAM, $jobId, "mpanel" );
 
+	my @layers = ();
 	my $pasteExist = 1;
 
 	if ( $sa_ori || $sb_ori ) {
 
 		$pasteInfo{"notOriginal"} = 0;
 		$pasteInfo{"export"}      = 1;
+		
+		
+		push(@layers, "sa_ori") if $sa_ori;
+		push(@layers, "sb_ori") if $sb_ori;
 
 	}
 	elsif ( $sa_made || $sb_made ) {
 
 		$pasteInfo{"notOriginal"} = 1;
 		$pasteInfo{"export"}      = 1;
+		
+		push(@layers, "sa_made") if $sa_made;
+		push(@layers, "sb_made") if $sb_made;
+
 	}
 	else {
 
 		$pasteInfo{"notOriginal"} = 0;
 		$pasteInfo{"export"}      = 0;
 	}
+	
+	 
 
 	if ($mpanelExist) {
 		$pasteInfo{"step"} = "mpanel";
 	}
 	else {
 		$pasteInfo{"step"} = "o+1";
+		$pasteInfo{"export"}      = 0;
 	}
 
-	$pasteInfo{"addProfile"} = 0;
+	$pasteInfo{"addProfile"} = 1;
 	$pasteInfo{"zipFile"}    = 1;
+	$pasteInfo{"layers"}    =  \@layers;#join(";", @layers);
+	
 
 	return %pasteInfo;
 

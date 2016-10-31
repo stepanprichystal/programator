@@ -2,14 +2,14 @@
 # Description: This class contains code, which provides export of specific group
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Programs::Exporter::ExportUtility::Groups::PreExport::PreExport;
+package Programs::Exporter::ExportUtility::Groups::GerExport::GerExport;
 use base('Programs::Exporter::ExportUtility::Groups::ExportBase');
 #3th party library
 use strict;
 use warnings;
 
 # local library
-use aliased "Packages::Export::PreExport::PreMngr";
+use aliased "Packages::Export::GerExport::GerMngr";
 
 
 #-------------------------------------------------------------------------------------------#
@@ -45,11 +45,12 @@ sub Init {
 	$self->{"exportData"} = $exportData;
 	
  
-	
-	my $layers =  $exportData->GetSignalLayers();
+	my $exportLayers =  $exportData->GetExportLayers();
+	my $layers =  $exportData->GetLayers();
+	my $pasteInfo =  $exportData->GetPasteInfo();
 
 	
-	my $mngr  = PreMngr->new( $inCAM, $jobId, $layers);
+	my $mngr  = GerMngr->new( $inCAM, $jobId, $exportLayers, $layers, $pasteInfo);
 	
 	$mngr->{"onItemResult"}->Add( sub { $self->_OnItemResultHandler(@_) } );
 	

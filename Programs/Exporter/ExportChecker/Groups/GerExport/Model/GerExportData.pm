@@ -60,6 +60,7 @@ sub OnExportGroupData {
 
 	my $exportData = GerData->new();
  
+ 	$exportData->SetExportLayers( $groupData->GetExportLayers() );
 	$exportData->SetLayers( $groupData->GetLayers() );
 	$exportData->SetPasteInfo( $groupData->GetPasteInfo() );
   

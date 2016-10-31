@@ -88,6 +88,7 @@ sub RefreshGUI {
 
 	#refresh group form
 	$self->{"form"}->SetPasteInfo( $groupData->GetPasteInfo() );
+	$self->{"form"}->SetExportLayers( $groupData->GetExportLayers() );
 	$self->{"form"}->SetLayers( $groupData->GetLayers() );
 	
 
@@ -108,8 +109,10 @@ sub GetGroupData {
 
 	if ($frm) {
 		$groupData = $self->{"dataMngr"}->GetGroupData();
-		
+
+
 		$groupData->SetPasteInfo( $frm->GetPasteInfo() );
+		$groupData->SetExportLayers( $frm->GetExportLayers() );	
 		$groupData->SetLayers( $frm->GetLayers() );
 	
 	}

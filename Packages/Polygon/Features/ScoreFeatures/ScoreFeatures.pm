@@ -45,8 +45,9 @@ sub Parse {
 	my $jobId = shift;
 	my $step  = shift;
 	my $layer = shift;
+	my $breakSR = shift;
 
-	$self->{"base"}->Parse( $inCAM, $jobId, $step, $layer );
+	$self->{"base"}->Parse( $inCAM, $jobId, $step, $layer,  $breakSR);
 
 	my @baseFeats = $self->{"base"}->GetFeatures();
 	my @features = ();

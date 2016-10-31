@@ -1,6 +1,6 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Represent "Unit" class for PLOT
+# Description: Represent "Unit" class for GERber
 #
 # Every group in "export utility program" is composed from three layers:
 # 1) Model - responsible for actual group data, which are displyed in group form (GroupData class)
@@ -8,7 +8,7 @@
 # 3) View - only display data, which are passed from model by presenter class (GroupWrapperForm])
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Programs::Exporter::ExportUtility::Groups::PreExport::PreUnit;
+package Programs::Exporter::ExportUtility::Groups::GerExport::GerUnit;
 use base 'Programs::Exporter::ExportUtility::Groups::UnitBase';
 
 use Class::Interface;
@@ -21,7 +21,7 @@ use warnings;
 #local library
  
 use aliased 'Programs::Exporter::UnitEnums';
-use aliased 'Programs::Exporter::ExportUtility::Groups::PreExport::PreExport';
+use aliased 'Programs::Exporter::ExportUtility::Groups::GerExport::GerExport';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -35,7 +35,7 @@ sub new {
 	bless $self;
 
  	# reference on class responsible for export
-	$self->{"unitExport"} = PreExport->new($self->{"unitId"});
+	$self->{"unitExport"} = GerExport->new($self->{"unitId"});
  
 	return $self; 
 }

@@ -1,4 +1,4 @@
-package Programs::Exporter::ExportUtility::Groups::PreExport::PreExportTmp;
+package Programs::Exporter::ExportUtility::Groups::GerExport::GerExportTmp;
 
 #3th party library
 use strict;
@@ -12,8 +12,8 @@ use aliased 'Packages::Events::Event';
 use aliased 'Programs::Exporter::UnitEnums';
 use aliased 'Managers::MessageMngr::MessageMngr';
 
-use aliased "Programs::Exporter::ExportUtility::Groups::PreExport::PreUnit"  => "UnitExport";
-use aliased "Programs::Exporter::ExportChecker::Groups::PreExport::Presenter::PreUnit" => "Unit";
+use aliased "Programs::Exporter::ExportUtility::Groups::GerExport::GerUnit"  => "UnitExport";
+use aliased "Programs::Exporter::ExportChecker::Groups::GerExport::Presenter::GerUnit" => "Unit";
 
 use aliased 'Programs::Exporter::ExportChecker::ExportChecker::DefaultInfo::DefaultInfo';
 use aliased 'Packages::ItemResult::ItemResultMngr';
@@ -30,7 +30,7 @@ sub new {
 	$self = {};
 	bless $self;
 	
-	$self->{"id"} =  UnitEnums->UnitId_PRE;
+	$self->{"id"} =  UnitEnums->UnitId_GER;
 	
 	return $self;
 }
@@ -72,17 +72,7 @@ sub Run {
 	my $exportClass = $exportUnit->GetExportClass();
 	
 	
-	# misto pro upravu exportovanych dat
-	
-	my @layers = ();
-	
-	my %lInfo = ();
-	$lInfo{"name"}     = "c";
-	$lInfo{"etchingType"}  = "tenting";
-	
-	push(@layers, \%lInfo);
-	
-	$exportData->SetSignalLayers(\@layers);
+	 
 	
 	 
 	

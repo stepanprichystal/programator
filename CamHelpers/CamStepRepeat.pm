@@ -32,9 +32,9 @@ sub GetUniqueNestedStepAndRepeat {
 	my %step = ( "stepName" => $stepName );
 
 	$self->__ExploreStep( $inCAM, $jobId, \%step, \@uniqueSteps );
-	
+
 	# remove inspected step, we want only nested
-	@uniqueSteps = grep {$_->{"stepName"} ne $stepName} @uniqueSteps;
+	@uniqueSteps = grep { $_->{"stepName"} ne $stepName } @uniqueSteps;
 
 	return @uniqueSteps;
 }
@@ -100,7 +100,7 @@ sub GetStepAndRepeat {
 
 	my @arr = ();
 
-	$inCAM->INFO( entity_type => 'step', entity_path => "$jobId/$stepName", data_type => 'SR' );
+	$inCAM->INFO( entity_type => 'step', angle_direction => 'ccw', entity_path => "$jobId/$stepName", data_type => 'SR' );
 
 	for ( my $i = 0 ; $i < scalar( @{ $inCAM->{doinfo}{gSRstep} } ) ; $i++ ) {
 		my %info = ();
@@ -109,6 +109,45 @@ sub GetStepAndRepeat {
 		$info{"gSRya"}   = ${ $inCAM->{doinfo}{gSRya} }[$i];
 		$info{"gSRdx"}   = ${ $inCAM->{doinfo}{gSRdx} }[$i];
 		$info{"gSRdy"}   = ${ $inCAM->{doinfo}{gSRdy} }[$i];
+
+		push( @arr, \%info );
+
+	}
+	return @arr;
+}
+
+# Return information about each step step in specific step
+sub GetRepeatStep {
+	my $self     = shift;
+	my $inCAM    = shift;
+	my $jobId    = shift;
+	my $stepName = shift;
+
+	my @arr = ();
+
+	$inCAM->INFO( entity_type => 'step', angle_direction => 'ccw', units => "mm", entity_path => "$jobId/$stepName", data_type => 'REPEAT' );
+
+	for ( my $i = 0 ; $i < scalar( @{ $inCAM->{doinfo}{gREPEATstep} } ) ; $i++ ) {
+		my %info = ();
+		$info{"stepName"} = ${ $inCAM->{doinfo}{gREPEATstep} }[$i];
+		$info{"originX"}  = ${ $inCAM->{doinfo}{gREPEATxa} }[$i];
+		$info{"originY"}  = ${ $inCAM->{doinfo}{gREPEATxa} }[$i];
+		$info{"angle"}    = ${ $inCAM->{doinfo}{gREPEATangle} }[$i];
+
+		# mistake in Incam angle_direction => 'ccw' not work, thus:
+		
+		$info{"angle"} = 360 - $info{"angle"};
+
+		$info{"originXNew"} = ${ $inCAM->{doinfo}{gREPEATxmin} }[$i];
+		$info{"originYNew"} = ${ $inCAM->{doinfo}{gREPEATymin} }[$i];
+
+		$info{"gREPEATxmin"} = ${ $inCAM->{doinfo}{gREPEATxmin} }[$i];
+		$info{"gREPEATxmin"} = ${ $inCAM->{doinfo}{gREPEATxmin} }[$i];
+		$info{"gREPEATymin"} = ${ $inCAM->{doinfo}{gREPEATymin} }[$i];
+		$info{"gREPEATxmax"} = ${ $inCAM->{doinfo}{gREPEATxmax} }[$i];
+		$info{"gREPEATymax"} = ${ $inCAM->{doinfo}{gREPEATymax} }[$i];
+
+
 
 		push( @arr, \%info );
 
@@ -175,13 +214,12 @@ sub DeleteStepAndRepeat {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-
-#	use aliased 'CamHelpers::CamStepRepeat';
+	#	use aliased 'CamHelpers::CamStepRepeat';
 	#use aliased 'Packages::InCAM::InCAM';
 
-#	my $inCAM = InCAM->new();
-#	my $jobId = "f13610";
-#my $step  = "mpanel_10up";
+	#	my $inCAM = InCAM->new();
+	#	my $jobId = "f13610";
+	#my $step  = "mpanel_10up";
 
 	#my @steps = CamStepRepeat->GetUniqueNestedStepAndRepeat( $inCAM, $jobId, $step );
 
@@ -194,13 +232,13 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	#
 	#	my $considerHole     = shift;
 	#	my $considerEdge     = shift;
-#
-#	my $cuThickness = JobHelper->GetBaseCuThick( "f13610", "c" );
-#	my $pcbThick = JobHelper->GetFinalPcbThick("f13610");
-#
-#	my $inCAM = InCAM->new();
-#
-#	my %test = CamHelpers::CamCopperArea->GetCuArea( $cuThickness, $pcbThick, $inCAM, "f13610", "panel", "c", "s", 1, 1 );
+	#
+	#	my $cuThickness = JobHelper->GetBaseCuThick( "f13610", "c" );
+	#	my $pcbThick = JobHelper->GetFinalPcbThick("f13610");
+	#
+	#	my $inCAM = InCAM->new();
+	#
+	#	my %test = CamHelpers::CamCopperArea->GetCuArea( $cuThickness, $pcbThick, $inCAM, "f13610", "panel", "c", "s", 1, 1 );
 
 	#my %test1 = CamHelpers::CamCopperArea->GetCuArea( $cuThickness, $pcbThick, $inCAM, "F13608", "panel", "c" );
 
@@ -229,9 +267,8 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	#print "\n";
 	#print $test2{"percentage"};
 
-
 	#print 1;
 
 }
 
- 1;
+1;

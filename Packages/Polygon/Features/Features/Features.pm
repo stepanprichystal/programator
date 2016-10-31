@@ -42,6 +42,19 @@ sub Parse {
 	my $jobId = shift;
 	my $step  = shift;
 	my $layer = shift;
+	my $breakSR = shift;
+	
+	
+	my $breakSRVal;
+	if($breakSR){
+		$breakSRVal = "break_sr+";
+	}else{
+		
+		$breakSRVal = "";
+	}
+	
+	
+	
 
 	$inCAM->COM("units", "type"=> "mm");
 
@@ -51,7 +64,7 @@ sub Parse {
 								 entity_type     => 'layer',
 								 entity_path     => "$jobId/$step/$layer",
 								 data_type       => 'FEATURES',
-								 options         => "feat_index+f0",
+								 options         => $breakSRVal."feat_index+f0",
 								 parse           => 'no'
 	);
 	my $f;

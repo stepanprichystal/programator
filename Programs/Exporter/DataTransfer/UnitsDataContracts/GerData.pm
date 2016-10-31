@@ -42,6 +42,20 @@ sub GetPasteInfo {
 	return $self->{"data"}->{"pasteInfo"};
 }
  
+ 
+# export layers
+sub SetExportLayers {
+	my $self  = shift;
+	$self->{"data"}->{"exportLayers"} = shift;
+} 
+
+
+sub GetExportLayers {
+	my $self  = shift;
+	my $value = shift;
+	return $self->{"data"}->{"exportLayers"};
+} 
+ 
 # layers to test 
 sub SetLayers {
 	my $self  = shift;
