@@ -38,6 +38,18 @@ sub new {
 	return $self;
 }
 
+
+sub GetStartP {
+	my $self = shift;
+	return $self->{"startP"};
+}
+
+sub GetEndP {
+	my $self = shift;
+	return $self->{"endP"};
+}
+
+
 # Return position of x/y, depand on direction
 # this position value uniquely determine placement of score line
 sub GetScorePoint {

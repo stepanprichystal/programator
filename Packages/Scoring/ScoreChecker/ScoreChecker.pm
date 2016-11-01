@@ -52,6 +52,7 @@ sub new {
 	my @vscore = $self->{"pcbPlace"}->GetScorePos( Enums->Dir_VSCORE );
 
 	my @pcb1 = $self->{"pcbPlace"}->GetPcbOnScorePos( $vscore[0] );
+
 	#my @pcb2 = $self->{"pcbPlace"}->GetPcbOnScorePos( $vscore[1] );
 
 	print "jump = " . $self->IsJumScoring() . " \n\n";
@@ -59,39 +60,47 @@ sub new {
 	return $self;
 }
 
-# check if all line strictly horizontal or verticall
-sub ScoreIsOk{
+
+sub GetPcbPlace{
 	my $self = shift;
+	my $mess = "";
 	
-	
-	return $self->{"pcbPlace"}->ScoreIsOk();
+	if($self->{"pcbPlace"}->ScoreIsOk( \$mess )){
+			
+		return $self->{"pcbPlace"};
+	}else{
+		
+		return 0;
+	}
 }
 
+# check if all line strictly horizontal or verticall
+sub ScoreIsOk {
+	my $self = shift;
+
+	my $mess = "";
+	my $res  = $self->{"pcbPlace"}->ScoreIsOk( \$mess );
+
+	unless ($res) {
+		print STDERR $mess;
+	}
+
+	return $res;
+}
 
 sub __Init {
 	my $self = shift;
+	my $mess = "";
 
 	# check if all line strictly horizontal or verticall
-	unless ( $self->{"pcbPlace"}->ScoreIsOk() ) {
+	unless ( $self->{"pcbPlace"}->ScoreIsOk( \$mess ) ) {
 
-		die "Some score lines are not strictly horrizontal or verticall. Repair it first. \n";
+		die $mess . " Repair it first. \n";
 
 	}
 
 }
-
-sub __LoadPcb {
-	my $self = shift;
-
-	# get step and repeat, break!
-
-	# if rotated, switch dimension etc
-
-	# for each, parse score if is present
-
-	# save score line to new pcb object
-
-}
+ 
 
 sub IsJumScoring {
 	my $self        = shift;

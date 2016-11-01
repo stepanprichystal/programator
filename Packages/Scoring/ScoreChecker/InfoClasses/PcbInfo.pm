@@ -12,7 +12,7 @@ use warnings;
 #local library
 
 use aliased 'Packages::Scoring::ScoreChecker::Enums';
-use aliased 'Packages::Scoring::ScoreChecker::ScorePosInfo';
+use aliased 'Packages::Scoring::ScoreChecker::InfoClasses::ScorePosInfo';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -25,12 +25,13 @@ sub new {
 	my $self = {};
 	bless $self;
 
+	$self->{"pcbId"}  = shift;
 	$self->{"origin"} = shift;
 
 	#$self->{"originY"}     = shift;
 	$self->{"width"}  = shift;
 	$self->{"height"} = shift;
-	 $self->{"dec"}    = shift;
+	$self->{"dec"}    = shift;
 
 	my @sco = ();
 	$self->{"score"} = \@sco;
@@ -74,6 +75,19 @@ sub GetScore {
 		@score = grep { $_->GetDirection() eq $dir } @score;
 	}
 
+	# sort by start points of score lines, if dir is passed
+	if ($dir) {
+
+		if ( $dir eq Enums->Dir_HSCORE ) {
+
+			@score = sort { $a->{"startP"}->{"y"} <=> $b->{"startP"}->{"y"} } @score;
+		}
+		elsif ( $dir eq Enums->Dir_VSCORE ) {
+
+			@score = sort { $a->{"startP"}->{"x"} <=> $b->{"startP"}->{"x"} } @score;
+		}
+	}
+
 	return @score;
 
 }
@@ -92,15 +106,41 @@ sub GetScorePos {
 
 		push( @pos, $pInfo );
 	}
-	
+
 	return @pos;
+}
+
+# Return  all points, from score lines
+# points are sorted from TOP/LEFT start L1, end L1, start L2, end L2 etc..
+sub GetScorePointsOnPos {
+	my $self    = shift;
+	my $posInfo = shift;
+
+	my @sco = $self->GetScoresOnPos();
+
+	my @s = map { $_->GetStartP() } @sco;
+	my @e = map { $_->GetEndP() } @sco;
+
+	my @points = ( @s, @e );
+
+	if ( $posInfo->GetDirection() eq Enums->Dir_HSCORE ) {
+
+		@points = sort { $a->{"x"} <=> $b->{"x"} } @points;
+	}
+	elsif ( $posInfo->GetDirection() eq Enums->Dir_VSCORE ) {
+
+		@points = sort { $b->{"x"} <=> $a->{"x"} } @points;
+	}
+	
+	return @points;
+
 }
 
 sub ScoreExist {
 
 }
 
-sub __GetScoresOnPos {
+sub GetScoresOnPos {
 	my $self    = shift;
 	my $posInfo = shift;
 
@@ -130,7 +170,7 @@ sub IsScoreOnPos {
 	my $self    = shift;
 	my $posInfo = shift;
 
-	my @scores = $self->__GetScoresOnPos($posInfo);
+	my @scores = $self->GetScoresOnPos($posInfo);
 
 	if ( scalar(@scores) ) {
 		return 1;
@@ -142,24 +182,23 @@ sub IsScoreOnPos {
 
 sub ScoreOnSamePos {
 	my $self = shift;
-	
+
 	my @positions = $self->GetScorePos();
-	
+
 	my $exist = 0;
-	
-	foreach my $pos (@positions){
-		
-		my @scores = $self->__GetScoresOnPos($pos);
-		if(scalar(@scores) > 1){
-			
+
+	foreach my $pos (@positions) {
+
+		my @scores = $self->GetScoresOnPos($pos);
+		if ( scalar(@scores) > 1 ) {
+
 			$exist = 1;
 			last;
 		}
 
 	}
-	
-	return $exist;
 
+	return $exist;
 }
 
 #-------------------------------------------------------------------------------------------#

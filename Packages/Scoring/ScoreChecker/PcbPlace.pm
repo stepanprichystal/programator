@@ -17,9 +17,9 @@ use aliased 'CamHelpers::CamStepRepeat';
 use aliased 'Packages::Polygon::Features::ScoreFeatures::ScoreFeatures';
 
 use aliased 'Packages::Scoring::ScoreChecker::Enums';
-use aliased 'Packages::Scoring::ScoreChecker::ScorePosInfo';
-use aliased 'Packages::Scoring::ScoreChecker::PcbInfo';
-use aliased 'Packages::Scoring::ScoreChecker::ScoreInfo';
+use aliased 'Packages::Scoring::ScoreChecker::InfoClasses::ScorePosInfo';
+use aliased 'Packages::Scoring::ScoreChecker::InfoClasses::PcbInfo';
+use aliased 'Packages::Scoring::ScoreChecker::InfoClasses::ScoreInfo';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -39,10 +39,28 @@ sub new {
 
 	my @pcbs = ();
 	$self->{"pcbs"} = \@pcbs;
-
-	$self->__LoadStepsInfo();
+ 
+	$self->{"initSucc"}  = undef;
+	$self->{"errorMess"} = undef;
+	
+	
+	$self->__LoadPcbInfo();
 
 	return $self;
+}
+
+sub ScoreIsOk {
+	my $self = shift;
+	my $mess = shift;
+
+	unless ( $self->{"initSucc"} ) {
+		$$mess = $self->{"errorMess"};
+		return 0;
+	}
+	else {
+
+		return 1;
+	}
 }
 
 sub GetPcbs {
@@ -73,26 +91,6 @@ sub GetScorePos {
 	@points = grep { !$seen{ $_->GetPosition() }++ } @points;
 
 	return @points;
-
-}
-
-sub ScoreIsOk {
-	my $self = shift;
-
-	my $isOk = 1;
-
-	foreach my $pcb ( @{ $self->{"pcbs"} } ) {
-
-		my @wrongSco = grep { $_->GetDirection() ne Enums->Dir_VSCORE && $_->GetDirection() ne Enums->Dir_HSCORE } $pcb->GetScore();
-
-		if ( scalar(@wrongSco) ) {
-			$isOk = 0;
-			last;
-		}
-
-	}
-
-	return $isOk;
 
 }
 
@@ -145,11 +143,15 @@ sub GetPcbOnScorePos {
 
 }
 
-sub __LoadStepsInfo {
-	my $self  = shift;
+sub __LoadPcbInfo {
+	my $self = shift;
+
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
 	my $step  = $self->{"step"};
+
+	 $self->{"initSucc"} = 1;
+	 $self->{"errorMess"} = "";
 
 	my @repeats = CamStepRepeat->GetRepeatStep( $inCAM, $jobId, $step );
 
@@ -172,6 +174,16 @@ sub __LoadStepsInfo {
 		my $score = ScoreFeatures->new();
 
 		$score->Parse( $inCAM, $jobId, $uStep->{"stepName"}, "score", 1 );
+
+		unless ( $score->IsStraight() ) {
+			$self->{"errorMess"} .= "Score in step: " . $uStep->{"stepName"} . " is not strictly horizontal or vertical.";
+			$self->{"initSucc"} = 0;
+		}
+
+		if ( $score->ExistOverlap() ) {
+			$self->{"errorMess"} .= "Some scorelines in step: " . $uStep->{"stepName"} . " are overlapping.";
+			$self->{"initSucc"} = 0;
+		}
 
 		my @lines = $score->GetFeatures();
 
@@ -213,7 +225,7 @@ sub __LoadStepsInfo {
 			$repH = $step->{"width"};
 		}
 
-		my $pcbInfo = PcbInfo->new( \%origin, $repW, $repH, $self->{"dec"} );
+		my $pcbInfo = PcbInfo->new( $rep->{"stepName"}, \%origin, $repW, $repH, $self->{"dec"} );
 
 		# add score lines, according original score lines in step
 
