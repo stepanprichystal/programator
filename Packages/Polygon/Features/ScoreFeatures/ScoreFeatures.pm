@@ -50,6 +50,11 @@ sub Parse {
 	$self->{"base"}->Parse( $inCAM, $jobId, $step, $layer, $breakSR );
 
 	my @baseFeats = $self->{"base"}->GetFeatures();
+	
+	# filter only lines
+	@baseFeats = grep { $_->{"type"} =~ /^L$/i } @baseFeats;
+	
+	
 	my @features  = ();
 
 	# add extra score information
@@ -98,6 +103,18 @@ sub __AddGeometricAtt {
 
 		$f->{"direction"} = undef;
 	}
+
+	# Add length of score
+	if ( $f->{"direction"} eq "vertical" ) {
+
+		$f->{"length"} = abs( $f->{"y1"} - $f->{"y2"} );
+
+	}
+	elsif ( $f->{"direction"} eq "horizontal" ) {
+
+		$f->{"length"} = abs( $f->{"x1"} - $f->{"x2"} );
+	}
+
 }
 
 sub IsStraight {
@@ -135,6 +152,9 @@ sub ExistOverlap {
 			my %infS;
 			my %infE;
 
+
+		 
+
 			if ( $feat->{"direction"} eq "horizontal" && $sco->{"y1"} == $feat->{"y1"} ) {
 
 				%infS = ( "val" => $sco->{"x1"}, "type" => 1 );
@@ -169,7 +189,7 @@ sub ExistOverlap {
 					$exist = 1;
 					last;
 				}
-				
+
 				$last = $scoOnPos[$i];
 
 			}

@@ -1,6 +1,6 @@
 
-package Packages::Scoring::ScoreChecker::Enums;
 
+package Packages::Scoring::ScoreChecker::Enums;
 use constant {
 			   Dir_HSCORE        => "horizontal",
 			   Dir_VSCORE        => "vertical"

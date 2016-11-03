@@ -3,11 +3,12 @@
 # Description: Cover exporting layers for particular machine, which can procces given nc file
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::Scoring::ScoreChecker::ScorePosInfo;
+package Packages::Scoring::ScoreChecker::InfoClasses::ScorePosInfo;
 
 #3th party library
 use strict;
 use warnings;
+ 
 
 #local library
 use aliased 'Packages::Scoring::ScoreChecker::Enums';
@@ -24,15 +25,26 @@ sub new {
 	bless $self;
 
 	$self->{"position"} = shift;
-		$self->{"dir"} = shift;
-	my $dec = shift ; # tell precision of compering score position	
+	 $self->{"dir"} = shift;
+	$self->{"dec"}  = shift ; # tell precision of compering score position	
 	
 	
+ 
 	
-	$self->{"position"} = sprintf( "%.".$dec."f", $self->{"position"} );
+	
+	$self->{"position"} = sprintf( "%.".$self->{"dec"}."f", $self->{"position"} );
 	
 	
 	return $self;
+}
+
+
+
+ sub SetPosition {
+	my $self = shift;
+	
+	$self->{"position"} = sprintf( "%.".$self->{"dec"}."f", shift );
+	 
 }
 
  sub GetPosition {

@@ -3,7 +3,7 @@
 # Description: Cover exporting layers for particular machine, which can procces given nc file
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::Export::ScoreExport::ScoreLayer::ScoreSet;
+package Packages::Scoring::ScoreOptimize::ScoreLayer::ScoreSet;
 
 #3th party library
 use strict;
@@ -22,23 +22,32 @@ sub new {
 
 	my $self = {};
 	bless $self;
-
-	 
+	
+	$self->{"point"} = shift;
+	$self->{"dir"} = shift;
 	
 	my @sco = ();
-	$self->{"scores"} = \@sco;
+	$self->{"lines"} = \@sco;
  
  
 	return $self;
 }
 
+
+sub GetLines{
+	my $self = shift;
+	
+
+return @{$self->{"lines"}};
+	 
+}
+
 sub AddScoreLine{
 	my $self = shift;
-	my $sco = shift;
-	
-	
-	push(@{$self->{"scores"}}, $sco);
-	
+	my $line = shift;
+
+	push(@{$self->{"lines"}}, $line);
+
 }
 
 sub GetDirection {

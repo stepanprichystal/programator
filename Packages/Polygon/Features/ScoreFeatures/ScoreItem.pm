@@ -30,6 +30,8 @@ sub new {
 	#direction of score
 	$self->{"direction"} = undef;
  
+ 	$self->{"length"} = undef;
+ 
 	return $self;
 }
 

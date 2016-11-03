@@ -3,7 +3,7 @@
 # Description: Cover exporting layers for particular machine, which can procces given nc file
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::Scoring::ScoreChecker::ScoreInfo;
+package Packages::Scoring::ScoreChecker::InfoClasses::ScoreInfo;
 
 #3th party library
 use strict;
@@ -26,6 +26,8 @@ sub new {
 	$self->{"startP"} = shift;
 	$self->{"endP"}   = shift;
 	$self->{"dir"}    = shift;
+	$self->{"length"}    = shift;
+	
 	
 	$self->{"dec"}    = shift;  # tell precision of compering score position
 	
@@ -49,6 +51,11 @@ sub GetEndP {
 	return $self->{"endP"};
 }
 
+
+sub GetLength{
+	my $self = shift;
+	return $self->{"length"};
+}
 
 # Return position of x/y, depand on direction
 # this position value uniquely determine placement of score line

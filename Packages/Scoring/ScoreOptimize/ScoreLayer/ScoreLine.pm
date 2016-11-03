@@ -3,7 +3,7 @@
 # Description: Cover exporting layers for particular machine, which can procces given nc file
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::Export::ScoreExport::ScoreLayer::ScoreLayer;
+package Packages::Scoring::ScoreOptimize::ScoreLayer::ScoreLine;
 
 #3th party library
 use strict;
@@ -11,6 +11,7 @@ use warnings;
 
 #local library
 use aliased 'Packages::Scoring::ScoreChecker::Enums';
+
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -22,25 +23,82 @@ sub new {
 
 	my $self = {};
 	bless $self;
-
-	 
-	my @sets = ();
-	$self->{"scoreSets"}    = \@sets;   
  
+ 	$self->{"dir"}    = shift;
+ 
+	$self->{"startP"} = undef;
+	$self->{"endP"}   = undef;
 
+ 
+ 
 	return $self;
 }
 
-sub AddScoreSet{
+
+
+sub GetStartP{
 	my $self = shift;
-	my $set = shift;
+	return $self->{"startP"};
+	 
+}
+
+sub GetEndP{
+	my $self = shift;
+	return $self->{"endP"};
+	 
+}
+
+
+sub SetStartP{
+	my $self = shift;
+	$self->{"startP"} = shift;
+	 
+}
+
+sub SetEndP{
+	my $self = shift;
+	 $self->{"endP"} = shift;
+	 
+}
+
+ 
+sub Complete{
+	my $self = shift;
+	
+	if($self->StartPExist() && $self->EndPExist()){
+		return 1;
+	}else{
+		return 0;
+	}
 	
 	
-	push(@{$self->{"scoreSets"}}, $set);
+} 
+ 
+sub StartPExist{
+	my $self = shift;
 	
+	if($self->{"startP"}){
+		return 1;
+	}else{
+		return 0;
+	}
+}
+
+sub EndPExist{
+	my $self = shift;
+	
+	if($self->{"endP"}){
+		return 1;
+	}else{
+		return 0;
+	}
+}
+
+sub GetDirection {
+	my $self = shift;
+	return $self->{"dir"};
 }
  
-
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#

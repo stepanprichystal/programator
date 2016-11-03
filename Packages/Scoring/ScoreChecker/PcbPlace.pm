@@ -15,7 +15,6 @@ use Math::Trig;
 use aliased 'CamHelpers::CamJob';
 use aliased 'CamHelpers::CamStepRepeat';
 use aliased 'Packages::Polygon::Features::ScoreFeatures::ScoreFeatures';
-
 use aliased 'Packages::Scoring::ScoreChecker::Enums';
 use aliased 'Packages::Scoring::ScoreChecker::InfoClasses::ScorePosInfo';
 use aliased 'Packages::Scoring::ScoreChecker::InfoClasses::PcbInfo';
@@ -32,21 +31,34 @@ sub new {
 	my $self = {};
 	bless $self;
 
-	$self->{"inCAM"} = shift;
-	$self->{"jobId"} = shift;
-	$self->{"step"}  = shift;
-	$self->{"dec"}   = shift;    # tell precision of compering score position
+	$self->{"inCAM"}     = shift;
+	$self->{"jobId"}     = shift;
+	$self->{"step"}      = shift;
+	$self->{"layer"}     = shift;    # score layer, whic will be parsed
+	$self->{"SR"}        = shift;    # if yes, only child steps are consider
+	                                 # if no, only data in given step are consider
+	$self->{"convertor"} = shift;
+	$self->{"dec"}       = shift;    # tell precision of compering score position
 
 	my @pcbs = ();
 	$self->{"pcbs"} = \@pcbs;
- 
+
 	$self->{"initSucc"}  = undef;
 	$self->{"errorMess"} = undef;
-	
-	
-	$self->__LoadPcbInfo();
 
 	return $self;
+}
+
+sub Init {
+	my $self = shift;
+
+	if ( $self->{"SR"} ) {
+		$self->__LoadNestedSteps();
+	}
+	else {
+		$self->__LoadStep();
+	}
+
 }
 
 sub ScoreIsOk {
@@ -81,7 +93,8 @@ sub GetScorePos {
 		my @scoPos = $pcb->GetScorePos($dir);
 
 		foreach my $pInfo (@scoPos) {
-			push( @points, $self->__ConsiderOrigin( $pInfo, $pcb ) );
+
+			push( @points, $self->{"convertor"}->DoPosInfo( $pInfo, $pcb ) );
 		}
 
 	}
@@ -99,7 +112,7 @@ sub IsScoreOnPos {
 	my $posInfo = shift;
 	my $pcb     = shift;
 
-	my $relPos = $self->__ConsiderOrigin( $posInfo, $pcb, 1 );
+	my $relPos = $self->{"convertor"}->DoPosInfo( $posInfo, $pcb, 1 );
 
 	return $pcb->IsScoreOnPos($relPos);
 
@@ -139,19 +152,31 @@ sub GetPcbOnScorePos {
 		}
 	}
 
+	# sort by pcb by origin depand on direction. Sort FROM LEFT, TOP
+	if ( $dir eq Enums->Dir_HSCORE ) {
+
+		@pcbOnPos = sort { $a->GetOrigin()->{"x"} <=> $b->GetOrigin()->{"x"} } @pcbOnPos;
+
+	}
+	elsif ( $dir eq Enums->Dir_VSCORE ) {
+
+		@pcbOnPos = sort { $b->GetOrigin()->{"y"} <=> $a->GetOrigin()->{"y"} } @pcbOnPos;
+
+	}
+
 	return @pcbOnPos;
 
 }
 
-sub __LoadPcbInfo {
+sub __LoadNestedSteps {
 	my $self = shift;
 
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
 	my $step  = $self->{"step"};
 
-	 $self->{"initSucc"} = 1;
-	 $self->{"errorMess"} = "";
+	$self->{"initSucc"}  = 1;
+	$self->{"errorMess"} = "";
 
 	my @repeats = CamStepRepeat->GetRepeatStep( $inCAM, $jobId, $step );
 
@@ -170,10 +195,11 @@ sub __LoadPcbInfo {
 	}
 
 	foreach my $uStep (@uniqueSR) {
+ 
 
 		my $score = ScoreFeatures->new();
 
-		$score->Parse( $inCAM, $jobId, $uStep->{"stepName"}, "score", 1 );
+		$score->Parse( $inCAM, $jobId, $uStep->{"stepName"}, $self->{"layer"}, 1 );
 
 		unless ( $score->IsStraight() ) {
 			$self->{"errorMess"} .= "Score in step: " . $uStep->{"stepName"} . " is not strictly horizontal or vertical.";
@@ -212,13 +238,13 @@ sub __LoadPcbInfo {
 
 		my $step = $steps[0];
 
-		my %origin = ( "x" => $rep->{"originXNew"}, "y" => $rep->{"originYNew"} );
+		my %origin = ( "x" => $self->__Round( $rep->{"originXNew"} ), "y" => $self->__Round( $rep->{"originYNew"} ) );
 
 		# switch height/width, by rotation
 		my $rotCnt = $rep->{"angle"} / 90;
 
-		my $repW = $step->{"width"};
-		my $repH = $step->{"height"};
+		my $repW = $self->__Round( $step->{"width"} );
+		my $repH = $self->__Round( $step->{"height"} );
 
 		if ( $rotCnt % 2 != 0 ) {
 			$repW = $step->{"height"};
@@ -233,8 +259,11 @@ sub __LoadPcbInfo {
 
 		foreach my $l (@score) {
 
-			my %startP = ( "x" => $l->{"x1"}, "y" => $l->{"y1"} );
-			my %endP   = ( "x" => $l->{"x2"}, "y" => $l->{"y2"} );
+			my %startP = ( "x" => $self->__Round( $l->{"x1"} ), "y" => $self->__Round( $l->{"y1"} ) );
+			my %endP   = ( "x" => $self->__Round( $l->{"x2"} ), "y" => $self->__Round( $l->{"y2"} ) );
+
+ 
+
 
 			$self->__RotateAndMovePoint( \%startP, $rep->{"angle"}, $step->{"width"}, $step->{"height"} );
 			$self->__RotateAndMovePoint( \%endP,   $rep->{"angle"}, $step->{"width"}, $step->{"height"} );
@@ -253,44 +282,67 @@ sub __LoadPcbInfo {
 				}
 			}
 
-			my $scoLine = ScoreInfo->new( \%startP, \%endP, $dir, $self->{"dec"} );
+			my $scoLine = ScoreInfo->new( \%startP, \%endP, $dir, $l->{"length"}, $self->{"dec"} );
 
 			$pcbInfo->AddScoreLine($scoLine);
 		}
+
+
+
 
 		push( @{ $self->{"pcbs"} }, $pcbInfo );
 
 	}
 }
 
-# Do conversion of position value (inside a step), between "panel" origin and step origin
-sub __ConsiderOrigin {
-	my $self     = shift;
-	my $pos      = shift;
-	my $pcb      = shift;
-	my $relToPcb = shift;
+sub __LoadStep {
+	my $self = shift;
 
-	my $sign = 1;
+	my $inCAM = $self->{"inCAM"};
+	my $jobId = $self->{"jobId"};
+	my $step  = $self->{"step"};
 
-	if ($relToPcb) {
-		$sign = -1;
+	$self->{"initSucc"}  = 1;
+	$self->{"errorMess"} = "";
+
+	my $score = ScoreFeatures->new();
+
+	$score->Parse( $inCAM, $jobId, $self->{"step"}, $self->{"layer"} );
+
+	unless ( $score->IsStraight() ) {
+		$self->{"errorMess"} .= "Score in step: " . $self->{"step"} . " is not strictly horizontal or vertical.";
+		$self->{"initSucc"} = 0;
 	}
 
-	my $pVal = $pos->GetPosition();
-
-	# consider origin of "panel" and location of pcb
-	if ( $pos->GetDirection() eq Enums->Dir_HSCORE ) {
-
-		$pVal += $sign * $pcb->GetOrigin()->{"y"};
-
-	}
-	elsif ( $pos->GetDirection() eq Enums->Dir_VSCORE ) {
-
-		$pVal += $sign * $pcb->GetOrigin()->{"x"};
+	if ( $score->ExistOverlap() ) {
+		$self->{"errorMess"} .= "Some scorelines in step: " . $self->{"step"} . " are overlapping.";
+		$self->{"initSucc"} = 0;
 	}
 
-	my $newPos = ScorePosInfo->new( $pVal, $pos->GetDirection(), $self->{"dec"} );
-	return $newPos;
+	my @lines = $score->GetFeatures();
+
+	# register lines to zero, if origin is not in left lower corner
+
+	my %lim = CamJob->GetProfileLimits( $inCAM, $jobId, $self->{"step"} );
+
+	my %origin = ( "x" => 0, "y" => 0 );
+	my $w      = abs( $lim{"xmin"} - $lim{"xmax"} );
+	my $h      = abs( $lim{"ymin"} - $lim{"ymax"} );
+
+	my $pcbInfo = PcbInfo->new( $self->{"step"}, \%origin, $w, $h, $self->{"dec"} );
+
+	# add score lines, according original score lines in step
+	foreach my $l (@lines) {
+
+		my %startP = ( "x" => $l->{"x1"}, "y" => $l->{"y1"} );
+		my %endP   = ( "x" => $l->{"x2"}, "y" => $l->{"y2"} );
+		my $dir    = $l->{"direction"};
+
+		my $scoLine = ScoreInfo->new( \%startP, \%endP, $dir, $l->{"length"}, $self->{"dec"} );
+		$pcbInfo->AddScoreLine($scoLine);
+	}
+
+	push( @{ $self->{"pcbs"} }, $pcbInfo );
 }
 
 sub __RotateAndMovePoint {
@@ -306,26 +358,41 @@ sub __RotateAndMovePoint {
 
 	my $angle90 = pi / 2;
 
-	for ( my $i = 0 ; $i < $num ; $i++ ) {
+	# only if angel is not 360
+	if ( $num < 4 ) {
+		for ( my $i = 0 ; $i < $num ; $i++ ) {
 
-		my %new = ();
+			my %new = ();
 
-		$new{"x"} = $point->{"x"} * cos($angle90) - $point->{"y"} * sin($angle90);
-		$new{"y"} = $point->{"y"} * cos($angle90) + $point->{"x"} * sin($angle90);
+			$new{"x"} = $point->{"x"} * cos($angle90) - $point->{"y"} * sin($angle90);
+			$new{"y"} = $point->{"y"} * cos($angle90) + $point->{"x"} * sin($angle90);
 
-		$point->{"x"} = sprintf( "%." . $dec . "f", $new{"x"} );
-		$point->{"y"} = sprintf( "%." . $dec . "f", $new{"y"} );
 
-		if ( $i % 2 == 0 ) {
+			$point->{"x"} = $new{"x"};
+			$point->{"y"} = $new{"y"};
 
-			$point->{"x"} += $height;
-		}
-		else {
+			if ( $i % 2 == 0 ) {
 
-			$point->{"x"} += $width;
+				$point->{"x"} += $height;
+			}
+			else {
+
+				$point->{"x"} += $width;
+			}
+
 		}
 
 	}
+
+	$point->{"x"} = sprintf( "%." . $dec . "f", $point->{"x"} );
+	$point->{"y"} = sprintf( "%." . $dec . "f", $point->{"y"} );
+
+}
+
+sub __Round {
+	my $self = shift;
+	my $num  = shift;
+	return sprintf( "%." . $self->{"dec"} . "f", $num );
 }
 
 #-------------------------------------------------------------------------------------------#

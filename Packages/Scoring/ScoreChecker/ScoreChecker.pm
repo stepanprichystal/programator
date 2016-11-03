@@ -24,8 +24,9 @@ use Math::Trig;
 #use aliased 'Packages::Polygon::Features::ScoreFeatures::ScoreFeatures';
 
 use aliased 'Packages::Scoring::ScoreChecker::Enums';
-use aliased 'Packages::Scoring::ScoreChecker::ScoreInfo';
+use aliased 'Packages::Scoring::ScoreChecker::InfoClasses::ScoreInfo';
 use aliased 'Packages::Scoring::ScoreChecker::PcbPlace';
+use aliased 'Packages::Scoring::ScoreChecker::OriginConvert';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -41,70 +42,111 @@ sub new {
 	$self->{"inCAM"} = shift;
 	$self->{"jobId"} = shift;
 	$self->{"step"}  = shift;
+	$self->{"layer"} = shift;
+	$self->{"SR"}    = shift;
 
-	$self->{"dec "} = 1;    # tell precision of compering score position. 1 decimal place
+	$self->{"dec"} = 2;    # tell precision of compering score position. 1 decimal place
 
-	$self->{"pcbPlace"} = PcbPlace->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"step"}, $self->{"dec "} );
+	$self->{"convertor"} = OriginConvert->new( $self->{"dec"} );
 
-	$self->__Init();
+	$self->{"pcbPlace"} =
+	  PcbPlace->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"step"}, $self->{"layer"}, $self->{"SR"}, $self->{"convertor"}, $self->{"dec"} );
+
+	#$self->__Init();
 
 	#my @hscore = $self->{"pcbPlace"}->GetScorePos(Enums->Dir_HSCORE);
-	my @vscore = $self->{"pcbPlace"}->GetScorePos( Enums->Dir_VSCORE );
+	#my @vscore = $self->{"pcbPlace"}->GetScorePos( Enums->Dir_VSCORE );
 
-	my @pcb1 = $self->{"pcbPlace"}->GetPcbOnScorePos( $vscore[0] );
+	#my @pcb1 = $self->{"pcbPlace"}->GetPcbOnScorePos( $vscore[0] );
 
 	#my @pcb2 = $self->{"pcbPlace"}->GetPcbOnScorePos( $vscore[1] );
 
-	print "jump = " . $self->IsJumScoring() . " \n\n";
+	#print "jump = " . $self->IsJumScoring() . " \n\n";
 
 	return $self;
 }
 
+sub Init {
+	my $self = shift;
+	
+	$self->{"pcbPlace"}->Init();
 
-sub GetPcbPlace{
+}
+
+sub GetPcbPlace {
 	my $self = shift;
 	my $mess = "";
-	
-	if($self->{"pcbPlace"}->ScoreIsOk( \$mess )){
-			
+
+	if ( $self->{"pcbPlace"}->ScoreIsOk( \$mess ) ) {
+
 		return $self->{"pcbPlace"};
-	}else{
-		
+	}
+	else {
+
 		return 0;
 	}
 }
 
-# check if all line strictly horizontal or verticall
-sub ScoreIsOk {
+sub GetConvertor {
 	my $self = shift;
 
-	my $mess = "";
-	my $res  = $self->{"pcbPlace"}->ScoreIsOk( \$mess );
+	return $self->{"convertor"};
+}
 
-	unless ($res) {
-		print STDERR $mess;
-	}
+# 
+sub ScoreIsOk {
+	my $self = shift;
+	my $mess = shift;
+	
+	my $res  = $self->{"pcbPlace"}->ScoreIsOk( \$mess );
+ 
 
 	return $res;
 }
 
-sub __Init {
-	my $self = shift;
-	my $mess = "";
+#sub __Init {
+#	my $self = shift;
+#	my $mess = "";
+#
+#	# check if all line strictly horizontal or verticall
+#	unless ( $self->{"pcbPlace"}->ScoreIsOk( \$mess ) ) {
+#
+#		die $mess . " Repair it first. \n";
+#
+#	}
+#
+#}
 
-	# check if all line strictly horizontal or verticall
-	unless ( $self->{"pcbPlace"}->ScoreIsOk( \$mess ) ) {
+ 
+sub CustomerJumpScoring{
+	my $self   = shift;
+	
+	my $customerJump = 0;
+	
+	my @allPcb = $self->{"pcbPlace"}->GetPcbs();
+	foreach my $pcb (@allPcb) {
 
-		die $mess . " Repair it first. \n";
+		my @scoPos = $pcb->GetScorePos();
+
+		foreach my $pos (@scoPos) {
+			if ( $pcb->NoOptimize($pos) ) {
+
+				# jumpscoring is necessary
+				$customerJump = 1;
+				last;
+			}
+		}
 
 	}
-
+	
+	return $customerJump;
+	
 }
- 
 
-sub IsJumScoring {
-	my $self        = shift;
-	my $jumpScoring = 0;
+
+sub IsStraight {
+	my $self       = shift;
+	my $isStraight = 1;
 
 	# 1) Test if some pcb has more then on score on same postition
 	# This is case, when pcb is "multipanel" and customer wants jumpscoring on them
@@ -112,17 +154,22 @@ sub IsJumScoring {
 	my @allPcb = $self->{"pcbPlace"}->GetPcbs();
 	foreach my $pcb (@allPcb) {
 
-		if ( $pcb->ScoreOnSamePos() ) {
+		my @scoPos = $pcb->GetScorePos();
 
-			# jumpscoring is necessary
-			$jumpScoring = 1;
-			last;
+		foreach my $pos (@scoPos) {
+			if ( $pcb->NoOptimize($pos) ) {
+
+				# jumpscoring is necessary
+				$isStraight = 0;
+				last;
+			}
 		}
+
 	}
 
 	# 2) all pcb which are intersect by specific "position" has to has score on this position
 	# for each position, test if all pcb contains score on same postition
-	unless ($jumpScoring) {
+	if ($isStraight) {
 
 		# all verticall and horiyontall score positions
 		my @posInfos = $self->{"pcbPlace"}->GetScorePos();
@@ -135,14 +182,14 @@ sub IsJumScoring {
 
 				unless ( $self->{"pcbPlace"}->IsScoreOnPos( $pos, $pcb ) ) {
 
-					$jumpScoring = 1;
+					$isStraight = 0;
 					last;
 				}
 			}
 		}
 	}
 
-	return $jumpScoring;
+	return $isStraight;
 }
 
 #-------------------------------------------------------------------------------------------#
