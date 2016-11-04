@@ -62,10 +62,9 @@ sub Run {
 		$self->{"reduce"} = 0;
 	}
 	else {
-
-		$self->{"reduce"} = 4;
-
-		#$self->{"scoreLayer"} = $self->__OptimizeStandard();
+		
+	 	$self->{"reduce"} = $checker->GetReduceDist();
+ 
 	}
 
 	print STDERR "Score is Straight = " . $isStraight . "\n.";

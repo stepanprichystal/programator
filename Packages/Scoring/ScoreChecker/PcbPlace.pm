@@ -238,19 +238,24 @@ sub __LoadNestedSteps {
 
 		my $step = $steps[0];
 
-		my %origin = ( "x" => $self->__Round( $rep->{"originXNew"} ), "y" => $self->__Round( $rep->{"originYNew"} ) );
+		#my %origin = ( "x" => $self->__Round( $rep->{"originXNew"} ), "y" => $self->__Round( $rep->{"originYNew"} ) );
+		
+		my %origin = ( "x" => $rep->{"originXNew"} , "y" => $rep->{"originYNew"} );
+		
+		
 
 		# switch height/width, by rotation
 		my $rotCnt = $rep->{"angle"} / 90;
-
-		my $repW = $self->__Round( $step->{"width"} );
-		my $repH = $self->__Round( $step->{"height"} );
+ 
+		my $repW =  $step->{"width"} ;
+		my $repH =  $step->{"height"} ;
 
 		if ( $rotCnt % 2 != 0 ) {
 			$repW = $step->{"height"};
 			$repH = $step->{"width"};
 		}
 
+		# Create new pcb info
 		my $pcbInfo = PcbInfo->new( $rep->{"stepName"}, \%origin, $repW, $repH, $self->{"dec"} );
 
 		# add score lines, according original score lines in step
@@ -259,8 +264,11 @@ sub __LoadNestedSteps {
 
 		foreach my $l (@score) {
 
-			my %startP = ( "x" => $self->__Round( $l->{"x1"} ), "y" => $self->__Round( $l->{"y1"} ) );
-			my %endP   = ( "x" => $self->__Round( $l->{"x2"} ), "y" => $self->__Round( $l->{"y2"} ) );
+			#my %startP = ( "x" => $self->__Round( $l->{"x1"} ), "y" => $self->__Round( $l->{"y1"} ) );
+			#my %endP   = ( "x" => $self->__Round( $l->{"x2"} ), "y" => $self->__Round( $l->{"y2"} ) );
+			
+			my %startP = ( "x" =>  $l->{"x1"} , "y" =>  $l->{"y1"}  );
+			my %endP   = ( "x" =>  $l->{"x2"} , "y" =>  $l->{"y2"}  );
 
  
 
@@ -387,6 +395,15 @@ sub __RotateAndMovePoint {
 	$point->{"x"} = sprintf( "%." . $dec . "f", $point->{"x"} );
 	$point->{"y"} = sprintf( "%." . $dec . "f", $point->{"y"} );
 
+}
+
+sub __GetMinPcbGap{
+	my $self = shift;
+	
+	my $minGap = 0;
+	
+	
+	
 }
 
 sub __Round {

@@ -68,7 +68,7 @@ sub new {
 
 sub Init {
 	my $self = shift;
-	
+
 	$self->{"pcbPlace"}->Init();
 
 }
@@ -93,13 +93,12 @@ sub GetConvertor {
 	return $self->{"convertor"};
 }
 
-# 
+#
 sub ScoreIsOk {
 	my $self = shift;
 	my $mess = shift;
-	
-	my $res  = $self->{"pcbPlace"}->ScoreIsOk( \$mess );
- 
+
+	my $res = $self->{"pcbPlace"}->ScoreIsOk( \$mess );
 
 	return $res;
 }
@@ -117,12 +116,11 @@ sub ScoreIsOk {
 #
 #}
 
- 
-sub CustomerJumpScoring{
-	my $self   = shift;
-	
+sub CustomerJumpScoring {
+	my $self = shift;
+
 	my $customerJump = 0;
-	
+
 	my @allPcb = $self->{"pcbPlace"}->GetPcbs();
 	foreach my $pcb (@allPcb) {
 
@@ -138,11 +136,10 @@ sub CustomerJumpScoring{
 		}
 
 	}
-	
-	return $customerJump;
-	
-}
 
+	return $customerJump;
+
+}
 
 sub IsStraight {
 	my $self       = shift;
@@ -190,6 +187,48 @@ sub IsStraight {
 	}
 
 	return $isStraight;
+}
+
+sub PcbDistanceOk {
+	my $self = shift;
+
+	my $distOk = 1;
+	
+	if($self->GetReduceDist() == -1){
+		
+		$distOk = 0ù
+	}
+
+	return $distOk;
+}
+
+sub GetReduceDist {
+	my $self = shift;
+
+	my $dist = undef;
+
+	my $gap = $self->__GetMinPcbGap();
+
+	# test if pcb are not too close each other
+	if ( $gap && $gap > 2 && $gap < 6 ) {
+
+		my $passDist    = 10;    # distance, which score machine pass end of line
+		my $maxProfDist = 8;     # max dist, where score can start/end from profile
+
+		if ( $passDist - $gap < $maxProfDist ) {
+			$dist = $passDist - $gap; 
+	
+		}else{
+			
+			$dist = -1;
+		}
+		
+	}else{
+		
+		$dist = 4; # standard reduce of scorin 4mm
+	}
+
+	return $dist;
 }
 
 #-------------------------------------------------------------------------------------------#

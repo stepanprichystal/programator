@@ -20,28 +20,24 @@ use aliased 'Packages::Scoring::ScoreChecker::Enums' => "ScoEnums";
 #  Package methods
 #-------------------------------------------------------------------------------------------#
 
-
 sub new {
 
 	my $class = shift;
 
-	my $self ={};
+	my $self = {};
 	bless $self;
 
-	$self->{"inCAM"}        = shift;
-	$self->{"jobId"}        = shift;
-	 
+	$self->{"inCAM"} = shift;
+	$self->{"jobId"} = shift;
 
 	return $self;
 }
-
-
 
 sub ReCheck {
 	my $self          = shift;
 	my $optimizeLName = shift;
 	my $errMess       = shift;
-	
+
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
 
@@ -60,12 +56,12 @@ sub ReCheck {
 	my $hCountOri  = 0;
 	my $vCountOri  = 0;
 	my $errMessOri = "";
-	$self->__GetScore(  $step, $layerOri, \$hCountOri, \$vCountOri, \$errMessOri );
+	$self->__GetScore( $step, $layerOri, \$hCountOri, \$vCountOri, \$errMessOri );
 
 	my $hCountOpt  = 0;
 	my $vCountOpt  = 0;
 	my $errMessOpt = "";
-	my $res        = $self->__GetScore(  $step, $optimizeLName, \$hCountOpt, \$vCountOpt, \$errMessOpt );
+	my $res        = $self->__GetScore( $step, $optimizeLName, \$hCountOpt, \$vCountOpt, \$errMessOpt );
 
 	# result
 	unless ($res) {
@@ -126,41 +122,56 @@ sub __GetScore {
 
 	my @feats = $score->GetFeatures();
 
-	# round line coordination
-	foreach my $line (@feats) {
+ 
 
-		$line->{"x1"} = sprintf( "%.2f", $line->{"x1"} );
-		$line->{"y1"} = sprintf( "%.2f", $line->{"y1"} );
-		$line->{"x2"} = sprintf( "%.2f", $line->{"x2"} );
-		$line->{"y2"} = sprintf( "%.2f", $line->{"y2"} );
+	# H
+	my @h       = grep { $_->{"direction"} eq "horizontal" } @feats;
+	my @hMerged = ();
+	my $hCnt    = 0;
+	foreach my $f (@h) {
+
+		# merge lines, which has spacinf less than 100µm
+		my $exist = scalar( grep { abs( $_->{"y1"} - $f->{"y1"} ) < 0.1 } @hMerged );
+
+		unless ($exist) {
+			push(@hMerged, $f);
+			 
+		}
 	}
 
-	# count of horizontal layer in original data
-	my @h = grep { $_->{"direction"} eq "horizontal" } @feats;
-	my %seen;
-	@h = grep { !$seen{ $_->{"y1"} }++ } @h;
+	#V
+	my @v       = grep { $_->{"direction"} eq "vertical" } @feats;
+	my @vMerged = ();
+	my $vCnt    = 0;
 
-	# count of vertical layer in original data
-	my @v = grep { $_->{"direction"} eq "vertical" } @feats;
-	my %seen2;
-	@v = grep { !$seen2{ $_->{"x1"} }++ } @v;
+	foreach my $f (@v) {
 
-	$$hCount = scalar(@h);
-	$$vCount = scalar(@v);
+		# merge lines, which has spacinf less than 100µm
+		my $exist = scalar( grep { abs( $_->{"x1"} - $f->{"x1"} ) < 0.1 } @vMerged );
+
+		unless ($exist) {
+				push(@vMerged, $f);
+		}
+	}
+	$$hCount = scalar(@hMerged);
+	$$vCount = scalar(@vMerged);
+
+ 
 
 	return $checkSucc;
 
 }
 
 sub CreateLayer {
-	my $self       = shift;
+	my $self      = shift;
 	my $scoreData = shift;
-	my $lName      = shift;    # name of layer, which contain final score data
+	my $lName     = shift;    # name of layer, which contain final score data
 
 	my $step = "panel";
 
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
+
 	#my %lim   = CamJob->GetProfileLimits( $inCAM, $jobId, $step );
 	#my $stepW = abs( $lim{"xmax"} - $lim{"xmin"} );
 	#my $stepH = abs( $lim{"ymax"} - $lim{"ymin"} );
@@ -211,11 +222,11 @@ sub CreateLayer {
 			}
 
 			$inCAM->COM(
-				"add_pad",
-				"attributes" => 'no',
-				"x"          => $x,
-				"y"          => $y,
-				"symbol"     => "r" . $sym
+						 "add_pad",
+						 "attributes" => 'no',
+						 "x"          => $x,
+						 "y"          => $y,
+						 "symbol"     => "r" . $sym
 			);
 		}
 

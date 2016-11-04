@@ -34,11 +34,30 @@ sub new {
 	$self->{"width"}  = shift;
 	$self->{"height"} = shift;
 	$self->{"dec"}    = shift;
+	
+	
+	
 
 	my @sco = ();
 	$self->{"score"} = \@sco;
+	
+	
+	$self->__RoundPoints();
 
 	return $self;
+}
+
+sub __RoundPoints {
+	my $self = shift;
+	
+	my $dec= $self->{"dec"};
+
+	$self->{"origin"}->{"x"} = sprintf( "%.".$dec."f", $self->{"origin"}->{"x"} );
+	$self->{"origin"}->{"y"} = sprintf( "%.".$dec."f", $self->{"origin"}->{"y"} );
+
+	$self->{"width"} = sprintf( "%.".$dec."f", $self->{"width"} );
+	$self->{"height"} = sprintf( "%.".$dec."f", $self->{"height"} );
+
 }
 
 sub AddScoreLine {
