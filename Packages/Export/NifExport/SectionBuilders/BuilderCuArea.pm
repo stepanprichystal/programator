@@ -358,8 +358,10 @@ sub Build {
 	if ( $self->_IsRequire("flash") ) {
 
 		my $prog;
+		
+		my $condMill_hal = $pltMillExist && $surface =~ /^b$/i;
 
-		if ( !$pltMillExist && $surface !~ /^b$/i && !$rsMillExist && !$blindDrillExist ) {
+		if ( !$condMill_hal && !$rsMillExist && !$blindDrillExist ) {
 
 			$prog = 0;
 		}
