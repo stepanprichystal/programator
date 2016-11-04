@@ -14,6 +14,7 @@ use List::Util qw[max min];
 
 use aliased 'Packages::Scoring::ScoreChecker::Enums';
 use aliased 'Packages::Scoring::ScoreChecker::InfoClasses::ScorePosInfo';
+use aliased 'Packages::Scoring::ScoreChecker::InfoClasses::PointInfo';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -117,22 +118,75 @@ sub GetScorePointsOnPos {
 	my $self    = shift;
 	my $posInfo = shift;
 
-	my @sco = $self->GetScoresOnPos($posInfo);
+	my @points = ();
 
-	my @s = map { $_->GetStartP() } @sco;
-	my @e = map { $_->GetEndP() } @sco;
+	my @scores = $self->GetScoresOnPos($posInfo);
 
-	my @points = ( @s, @e );
+	for ( my $i = 0 ; $i < scalar(@scores) ; $i++ ) {
 
+		my $scoInf = $scores[$i];
+		my $dir    = $scoInf->GetDirection();
+ 
+		my %sp = ( "type" => "start", "point" => $scoInf->GetStartP() );
+		my %ep = ( "type" => "end",   "point" => $scoInf->GetEndP() );
+
+		my @scoPoints = ( \%sp, \%ep );
+
+		# Create point onfo for start and end point of each score line
+		foreach my $p (@scoPoints) {
+
+			my $point  = $p->{"point"};
+	 
+
+			my $type = undef;
+			my $dist = undef;
+
+			if ($p->{"type"} eq "start" && $i == 0  ) {
+				# set type
+				$type = "first"; 
+				
+				# set direction
+				if ( $dir eq Enums->Dir_HSCORE ) {
+
+					$dist = $point->{"x"};
+				}
+				elsif ( $dir eq Enums->Dir_VSCORE ) {
+
+					$dist = $self->{"height"} - $point->{"y"};
+				}
+
+			}
+			elsif ( $p->{"type"} eq "end" && $i == scalar(@scores) - 1 ) {
+				# set type
+				$type = "last";
+				
+				# set direction
+				if ( $dir eq Enums->Dir_HSCORE ) {
+
+					$dist =  $self->{"width"} - $point->{"x"}  ;
+				}
+				elsif ( $dir eq Enums->Dir_VSCORE ) {
+
+					$dist =   $point->{"y"}  ;
+				}
+			}
+
+			my $p = PointInfo->new($point, $scoInf, $type, $dist);
+
+			push(@points, $p);
+		}
+
+	}
+ 
 	if ( $posInfo->GetDirection() eq Enums->Dir_HSCORE ) {
 
-		@points = sort { $a->{"x"} <=> $b->{"x"} } @points;
+		@points = sort { $a->GetPoint()->{"x"} <=> $b->GetPoint()->{"x"} } @points;
 	}
 	elsif ( $posInfo->GetDirection() eq Enums->Dir_VSCORE ) {
 
-		@points = sort { $b->{"y"} <=> $a->{"y"} } @points;
+		@points = sort { $b->GetPoint()->{"y"} <=> $a->GetPoint()->{"y"} } @points;
 	}
-	
+
 	return @points;
 
 }
@@ -181,25 +235,25 @@ sub IsScoreOnPos {
 	}
 }
 
-
 sub GetProfileDist {
-	my $self    = shift;
-	my $point = shift;
+	my $self     = shift;
+	my $point    = shift;
 	my $scoreDir = shift;
 
 	my $minDist = undef;
 	if ( $scoreDir eq Enums->Dir_HSCORE ) {
 
-		$minDist = min($point->{"x"},  $self->{"width"} - $point->{"x"});
- 
+		$minDist = min( $point->{"x"}, $self->{"width"} - $point->{"x"} );
+
 	}
 	elsif ( $scoreDir eq Enums->Dir_VSCORE ) {
-		
-		 $minDist = min( $self->{"height"} - $point->{"y"},  $point->{"y"});
+
+		$minDist = min( $self->{"height"} - $point->{"y"}, $point->{"y"} );
 	}
-	 
-	 return $minDist;
+
+	return $minDist;
 }
+
 #
 #sub ScoreOnSamePos {
 #	my $self = shift;
@@ -232,7 +286,7 @@ sub NoOptimize {
 
 	my $noOptimize = 0;
 
-	my @scores= $self->GetScoresOnPos( $pos );  
+	my @scores = $self->GetScoresOnPos($pos);
 
 	# Case 1)
 	if ( scalar(@scores) > 1 ) {
@@ -241,7 +295,7 @@ sub NoOptimize {
 
 	# Case 2) Check ration of gaps, which are between strt/end point of score and profile
 	# When there is atio less 70% not optimize
-	if ( scalar(@scores) == 1){
+	if ( scalar(@scores) == 1 ) {
 
 		my $sco = $scores[0];
 
@@ -275,10 +329,10 @@ sub NoOptimize {
 
 		# ratioL = 80% if score line is bigger then 80% of pcb size,
 		# we don't consider this as "customer" jump scoring
-		
-		# ratio = 90% this measn, if one gap is smaller more than 10% then second gap
-		# consider it as customer jumpscoring
-		if ( $ratioL < 0.8 && $ratio < 0.9 ) {
+
+		# ratio = 95% this measn, if one gap is smaller more than 10% then second gap
+		# consider it as customer jumpscoring. (standar is gap are same size)
+		if ( $ratioL < 0.8 && $ratio < 0.95 ) {
 			$noOptimize = 1;
 		}
 
@@ -286,7 +340,6 @@ sub NoOptimize {
 
 	return $noOptimize;
 }
-
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

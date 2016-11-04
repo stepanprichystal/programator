@@ -72,11 +72,11 @@ sub Run {
 
 	if ($optimize) {
 
-		$self->{"scoreLayer"} = $self->__PrepareOptimizeData();
+		$self->{"scoreLayer"} = $self->__PrepareOptimizeScoreData();
 	}
 	else {
 
-		$self->{"scoreLayer"} = $self->__PrepareData();
+		$self->{"scoreLayer"} = $self->__PrepareScoreData();
 	}
 
 }
@@ -90,7 +90,7 @@ sub Run {
 # Methods, create final score layer
 # -------------------------------------------------------
 
-sub __PrepareData {
+sub __PrepareScoreData {
 	my $self = shift;
 
 	my $checker  = $self->{"scoreChecker"};
@@ -152,7 +152,7 @@ sub __CreateSet {
 
 }
 
-sub __PrepareOptimizeData {
+sub __PrepareOptimizeScoreData {
 	my $self = shift;
 
 	my $checker  = $self->{"scoreChecker"};
@@ -209,32 +209,40 @@ sub __CreateOptimizeSet {
 		if ($noOptimize) {
 
 			# Go through points
-			foreach my $point (@allPoints) {
+			foreach my $pointInf (@allPoints) {
 
 				# get gap between profile and start of score line
-				my $dist = $pcb->GetProfileDist($point, $dir);
-					
+
 				my $reduce = 0;
-				
-				# reduce line, if poin is first point OR last poin of score on this pcb
-				# AND from profile is less than 4 mm
-				if ( ($point == $allPoints[0] || $point == $allPoints[scalar(@allPoints)-1]) &&  $dist < 4) {
+
+				#
+				#				# reduce line, if poin is first point OR last poin of score on this pcb
+				#				# AND from profile is less than 4 mm
+				#				if ( ( $point == $allPoints[0] || $point == $allPoints[ scalar(@allPoints) - 1 ] ) ) {
+				#
+				#						my $dist = $pcb->GetProfileDist( $point, $dir );
+				#
+				#						if($dist < 4 ){
+				#							  $reduce = 1;
+				#						}
+				#
+				#				}
+
+				if ( $pointInf->GetDist() < 4 ) {
 					$reduce = 1;
 				}
-				
-				print STDERR "Doistance = $dist\n";
-				 
+
 				unless ( $line->StartPExist() ) {
- 
+
 					# zacni novou
 					#$line->SetStartP($point);
-					$self->__StartLine( $line, $point, $pcb, $reduce);
+					$self->__StartLine( $line, $pointInf, $pcb, $reduce );
 
 				}
 				else {
 
 					#$line->SetEndP($point);
-					$self->__EndLine( $line, $point, $pcb, $reduce);
+					$self->__EndLine( $line, $pointInf, $pcb, $reduce );
 
 				}
 
@@ -278,16 +286,17 @@ sub __CreateOptimizeSet {
 				@allPoints = $self->__GetPoints( $posPnl, $lstPcb );
 				$noOptimize = $self->__NoOptimize( $posPnl, $lstPcb );
 
+				my $point = $allPoints[ scalar(@allPoints) - 1 ];
+
 				# ukonci lajnu
 				#$line->SetEndP( $allPoints[ scalar(@allPoints) - 1 ] );
 
 				# Dont recuce lines, when pcb should not be optimized
 				my $reduce = 1;
-				if ($noOptimize) {
+				if ( $noOptimize && $point->GetDist() > 4 ) {
 					$reduce = 0;
 				}
-
-				$self->__EndLine( $line, $allPoints[ scalar(@allPoints) - 1 ], $lstPcb, $reduce );
+				$self->__EndLine( $line, $point, $lstPcb, $reduce );
 
 			}
 		}
@@ -310,14 +319,16 @@ sub __CreateOptimizeSet {
 		my @allPoints = $self->__GetPoints( $posPnl, $lstPcb );
 		my $noOptimize = $self->__NoOptimize( $posPnl, $lstPcb );
 
+		my $point = $allPoints[ scalar(@allPoints) - 1 ];
+
 		# ukonci lajnu
 		#$line->SetEndP( $allPoints[ scalar(@allPoints) - 1 ] );
 		my $reduce = 1;
-		if ($noOptimize) {
+		if ( $noOptimize && $point->GetDist() > 4 ) {
 			$reduce = 0;
 		}
 
-		$self->__EndLine( $line, $allPoints[ scalar(@allPoints) - 1 ], $lstPcb, $reduce );
+		$self->__EndLine( $line, $point, $lstPcb, $reduce );
 
 		$scoreSet->AddScoreLine($line);
 	}
@@ -329,17 +340,17 @@ sub __CreateOptimizeSet {
 # -------------------------------------------------------
 # Helper private methods
 # -------------------------------------------------------
-
 sub __StartLine {
-	my $self   = shift;
-	my $line   = shift;
-	my $point  = shift;
-	my $pcb    = shift;
-	my $reduce = shift;
+	my $self     = shift;
+	my $line     = shift;
+	my $pointInf = shift;
+	my $pcb      = shift;
+	my $reduce   = shift;
 
+	my $point = $pointInf->GetPoint();
 	my %newPoint = ( "x" => 0, "y" => 0 );
 
-	if ($reduce) {
+	if ( $reduce && $pointInf->GetType() eq "first" ) {
 		my $dir = $line->GetDirection();
 
 		if ( $dir eq ScoEnums->Dir_HSCORE ) {
@@ -365,15 +376,16 @@ sub __StartLine {
 }
 
 sub __EndLine {
-	my $self   = shift;
-	my $line   = shift;
-	my $point  = shift;
-	my $pcb    = shift;
-	my $reduce = shift;
+	my $self     = shift;
+	my $line     = shift;
+	my $pointInf = shift;
+	my $pcb      = shift;
+	my $reduce   = shift;
 
+	my $point = $pointInf->GetPoint();
 	my %newPoint = ( "x" => 0, "y" => 0 );
 
-	if ($reduce) {
+	if ( $reduce && $pointInf->GetType() eq "last" ) {
 		my $dir = $line->GetDirection();
 
 		if ( $dir eq ScoEnums->Dir_HSCORE ) {
