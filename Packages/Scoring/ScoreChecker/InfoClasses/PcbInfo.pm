@@ -33,30 +33,31 @@ sub new {
 	#$self->{"originY"}     = shift;
 	$self->{"width"}  = shift;
 	$self->{"height"} = shift;
-	$self->{"dec"}    = shift;
-	
-	
-	
+
+	$self->{"accuracy"}    = shift;
+
+	my %center = ( "x" => $self->{"width"} / 2, "y" => $self->{"height"} / 2 );
+
+	$self->{"center"} = \%center;
 
 	my @sco = ();
 	$self->{"score"} = \@sco;
-	
-	
-	$self->__RoundPoints();
+
+	#$self->__RoundPoints();
 
 	return $self;
 }
 
 sub __RoundPoints {
 	my $self = shift;
-	
-	my $dec= $self->{"dec"};
 
-	$self->{"origin"}->{"x"} = sprintf( "%.".$dec."f", $self->{"origin"}->{"x"} );
-	$self->{"origin"}->{"y"} = sprintf( "%.".$dec."f", $self->{"origin"}->{"y"} );
+	my $dec = $self->{"dec"};
 
-	$self->{"width"} = sprintf( "%.".$dec."f", $self->{"width"} );
-	$self->{"height"} = sprintf( "%.".$dec."f", $self->{"height"} );
+	$self->{"origin"}->{"x"} = sprintf( "%." . $dec . "f", $self->{"origin"}->{"x"} );
+	$self->{"origin"}->{"y"} = sprintf( "%." . $dec . "f", $self->{"origin"}->{"y"} );
+
+	$self->{"width"}  = sprintf( "%." . $dec . "f", $self->{"width"} );
+	$self->{"height"} = sprintf( "%." . $dec . "f", $self->{"height"} );
 
 }
 
@@ -84,6 +85,12 @@ sub GetOrigin {
 	my $self = shift;
 
 	return $self->{"origin"};
+}
+
+sub GetCenter {
+	my $self = shift;
+
+	return $self->{"center"};
 }
 
 sub GetScore {
@@ -123,7 +130,7 @@ sub GetScorePos {
 
 	foreach my $sInfo (@sco) {
 
-		my $pInfo = ScorePosInfo->new( $sInfo->GetScorePoint(), $sInfo->GetDirection(), $self->{"dec"} );
+		my $pInfo = ScorePosInfo->new( $sInfo->GetScorePoint(), $sInfo->GetDirection() );
 
 		push( @pos, $pInfo );
 	}
@@ -145,7 +152,7 @@ sub GetScorePointsOnPos {
 
 		my $scoInf = $scores[$i];
 		my $dir    = $scoInf->GetDirection();
- 
+
 		my %sp = ( "type" => "start", "point" => $scoInf->GetStartP() );
 		my %ep = ( "type" => "end",   "point" => $scoInf->GetEndP() );
 
@@ -154,16 +161,16 @@ sub GetScorePointsOnPos {
 		# Create point onfo for start and end point of each score line
 		foreach my $p (@scoPoints) {
 
-			my $point  = $p->{"point"};
-	 
+			my $point = $p->{"point"};
 
 			my $type = undef;
 			my $dist = undef;
 
-			if ($p->{"type"} eq "start" && $i == 0  ) {
+			if ( $p->{"type"} eq "start" && $i == 0 ) {
+
 				# set type
-				$type = "first"; 
-				
+				$type = "first";
+
 				# set direction
 				if ( $dir eq Enums->Dir_HSCORE ) {
 
@@ -176,27 +183,31 @@ sub GetScorePointsOnPos {
 
 			}
 			elsif ( $p->{"type"} eq "end" && $i == scalar(@scores) - 1 ) {
+
 				# set type
 				$type = "last";
-				
+
 				# set direction
 				if ( $dir eq Enums->Dir_HSCORE ) {
 
-					$dist =  $self->{"width"} - $point->{"x"}  ;
+					$dist = $self->{"width"} - $point->{"x"};
 				}
 				elsif ( $dir eq Enums->Dir_VSCORE ) {
 
-					$dist =   $point->{"y"}  ;
+					$dist = $point->{"y"};
 				}
+			}else{
+				
+				$type = "middle";
 			}
 
-			my $p = PointInfo->new($point, $scoInf, $type, $dist);
+			my $p = PointInfo->new( $point, $scoInf, $type, $dist );
 
-			push(@points, $p);
+			push( @points, $p );
 		}
 
 	}
- 
+
 	if ( $posInfo->GetDirection() eq Enums->Dir_HSCORE ) {
 
 		@points = sort { $a->GetPoint()->{"x"} <=> $b->GetPoint()->{"x"} } @points;
@@ -225,20 +236,31 @@ sub GetScoresOnPos {
 
 	#consider origin o this position
 	# convert to relative to pcbInfo origin
-	my $exist = 0;
+	
+	my @allScp = grep { $_->GetDirection() eq $dir } @{ $self->{"score"} };
 
-	foreach my $sco ( @{ $self->{"score"} } ) {
+	foreach my $sco ( @allScp ) {
 
-		if ( $sco->ExistOnPosition( $dir, $pos ) ) {
+		my $exist = 0;
+		if ( $dir eq Enums->Dir_HSCORE ) {
 
-			$exist = 1;
-			push( @scores, $sco );
+			if ( abs( $pos - $sco->{"startP"}->{"y"} ) < $self->{"accuracy"} ) {
+				push( @scores, $sco );
+			}
+
 		}
+		elsif ( $dir eq Enums->Dir_VSCORE ) {
+			if ( abs( $pos - $sco->{"startP"}->{"x"} ) < $self->{"accuracy"} ) {
+				push( @scores, $sco );
+			}
+		}
+ 
 	}
 
 	return @scores;
 
 }
+ 
 
 sub IsScoreOnPos {
 	my $self    = shift;
@@ -344,15 +366,17 @@ sub NoOptimize {
 			$ratioL = $sco->GetLength() / $h;
 		}
 
-		my $ratio = min( $gap1, $gap2 ) / max( $gap1, $gap2 );
+		if ( max( $gap1, $gap2 ) > 0 ) {
+			my $ratio = min( $gap1, $gap2 ) / max( $gap1, $gap2 );
 
-		# ratioL = 80% if score line is bigger then 80% of pcb size,
-		# we don't consider this as "customer" jump scoring
+			# ratioL = 80% if score line is bigger then 80% of pcb size,
+			# we don't consider this as "customer" jump scoring
 
-		# ratio = 95% this measn, if one gap is smaller more than 10% then second gap
-		# consider it as customer jumpscoring. (standar is gap are same size)
-		if ( $ratioL < 0.8 && $ratio < 0.95 ) {
-			$noOptimize = 1;
+			# ratio = 95% this measn, if one gap is smaller more than 10% then second gap
+			# consider it as customer jumpscoring. (standar is gap are same size)
+			if ( $ratioL < 0.8 && $ratio < 0.95 ) {
+				$noOptimize = 1;
+			}
 		}
 
 	}

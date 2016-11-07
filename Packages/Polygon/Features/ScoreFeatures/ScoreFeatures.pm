@@ -28,6 +28,9 @@ sub new {
 	my $self = shift;
 	$self = {};
 	bless $self;
+	
+	$self->{"microns"} = shift;
+	$self->{"accuracy"} = $self->{"microns"} ? 20 : 0.02; # 20µm is value, which score line could be not strictly ("vertical/horiyontal")
 
 	#instance of  "base" class Features.pm
 	$self->{"base"} = Features->new();
@@ -46,6 +49,7 @@ sub Parse {
 	my $step    = shift;
 	my $layer   = shift;
 	my $breakSR = shift;
+	
 
 	$self->{"base"}->Parse( $inCAM, $jobId, $step, $layer, $breakSR );
 
@@ -63,6 +67,10 @@ sub Parse {
 
 		my $newF = ScoreItem->new($f);
 
+		if($self->{"microns"}){
+			$self->__ToMicron($newF);
+		}
+		 
 		$self->__AddGeometricAtt($newF);
 		$self->__SetCourse($newF);
 
@@ -88,11 +96,19 @@ sub __AddGeometricAtt {
 	#direction of score
 	$f->{"direction"} = "";
 
-	if ( abs( $f->{"x1"} - $f->{"x2"} ) < abs( $f->{"y1"} - $f->{"y2"} ) && $f->{"x1"} == $f->{"x2"} ) {
+	if ( abs( $f->{"x1"} - $f->{"x2"} ) < abs( $f->{"y1"} - $f->{"y2"} ) && abs($f->{"x1"} - $f->{"x2"}) < $self->{"accuracy"} ) {
 		$f->{"direction"} = "vertical";
+		
+		
+		$f->{"x2"} = $f->{"x1"}; # if score is according accuracy, do it strictly straight
+		
+		
 	}
-	elsif ( abs( $f->{"x1"} - $f->{"x2"} ) > abs( $f->{"y1"} - $f->{"y2"} ) && $f->{"y1"} == $f->{"y2"} ) {
+	elsif ( abs( $f->{"x1"} - $f->{"x2"} ) > abs( $f->{"y1"} - $f->{"y2"} ) && abs($f->{"y1"} - $f->{"y2"} ) < $self->{"accuracy"}) {
 		$f->{"direction"} = "horizontal";
+		
+		$f->{"y2"} = $f->{"y1"}; # if score is according accuracy, do it strictly straight
+		
 	}
 	elsif ( abs( $f->{"x1"} - $f->{"x2"} ) == abs( $f->{"y1"} - $f->{"y2"} ) ) {
 
@@ -151,10 +167,7 @@ sub ExistOverlap {
 
 			my %infS;
 			my %infE;
-
-
-		 
-
+ 
 			if ( $feat->{"direction"} eq "horizontal" && $sco->{"y1"} == $feat->{"y1"} ) {
 
 				%infS = ( "val" => $sco->{"x1"}, "type" => 1 );
@@ -233,6 +246,18 @@ sub __SetCourse {
 		}
 	}
 }
+
+sub __ToMicron {
+	my $self = shift;
+	my $f    = shift;
+
+	$f->{"x1"} =  int($f->{"x1"} *1000 +0.5);
+	$f->{"x2"} =  int($f->{"x2"} *1000 +0.5);
+	$f->{"y1"} =  int($f->{"y1"} *1000 +0.5);
+	$f->{"y2"} =  int($f->{"y2"} *1000 +0.5);
+	
+}
+
 
 1;
 

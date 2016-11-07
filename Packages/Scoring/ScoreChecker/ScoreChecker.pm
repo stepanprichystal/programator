@@ -26,7 +26,7 @@ use Math::Trig;
 use aliased 'Packages::Scoring::ScoreChecker::Enums';
 use aliased 'Packages::Scoring::ScoreChecker::InfoClasses::ScoreInfo';
 use aliased 'Packages::Scoring::ScoreChecker::PcbPlace';
-use aliased 'Packages::Scoring::ScoreChecker::OriginConvert';
+use aliased 'Packages::Scoring::ScoreChecker::OriginConvert' => "Convertor";
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -45,12 +45,9 @@ sub new {
 	$self->{"layer"} = shift;
 	$self->{"SR"}    = shift;
 
-	$self->{"dec"} = 2;    # tell precision of compering score position. 1 decimal place
+	$self->{"accuracy"} = 50;    # tell precision of compering score position. 1 decimal place
 
-	$self->{"convertor"} = OriginConvert->new( $self->{"dec"} );
-
-	$self->{"pcbPlace"} =
-	  PcbPlace->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"step"}, $self->{"layer"}, $self->{"SR"}, $self->{"convertor"}, $self->{"dec"} );
+	$self->{"pcbPlace"} = PcbPlace->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"step"}, $self->{"layer"}, $self->{"SR"}, $self->{"accuracy"} );
 
 	#$self->__Init();
 
@@ -87,10 +84,11 @@ sub GetPcbPlace {
 	}
 }
 
-sub GetConvertor {
+sub GetAccuracy {
 	my $self = shift;
 
-	return $self->{"convertor"};
+	return $self->{"accuracy"};
+
 }
 
 #
@@ -193,10 +191,10 @@ sub PcbDistanceOk {
 	my $self = shift;
 
 	my $distOk = 1;
-	
-	if($self->GetReduceDist() == -1){
-		
-		$distOk = 0ù
+
+	if ( $self->GetReduceDist() == -1 ) {
+
+		$distOk = 0;
 	}
 
 	return $distOk;
@@ -205,30 +203,31 @@ sub PcbDistanceOk {
 sub GetReduceDist {
 	my $self = shift;
 
-	my $dist = undef;
+	my $dist         = undef;
+	my $standardDist = 4000;
+	my $minPcbDist = 4500;
 
-	my $gap = $self->__GetMinPcbGap();
-
-	# test if pcb are not too close each other
-	if ( $gap && $gap > 2 && $gap < 6 ) {
-
-		my $passDist    = 10;    # distance, which score machine pass end of line
-		my $maxProfDist = 8;     # max dist, where score can start/end from profile
-
-		if ( $passDist - $gap < $maxProfDist ) {
-			$dist = $passDist - $gap; 
-	
-		}else{
-			
-			$dist = -1;
-		}
-		
-	}else{
-		
-		$dist = 4; # standard reduce of scorin 4mm
+	my $gap = $self->{"pcbPlace"}->__GetMinPcbGap();
+	print STDERR "Mezera min bude  o = ".$gap."\n";
+	unless ( defined $gap ) {
+		return $standardDist;
 	}
 
-	return $dist;
+	# test if pcb are not too close each other
+	if ( $gap < $minPcbDist ) {
+
+		return -1;
+	}
+
+	my $passDist = 10000;    # distance, which score machine pass end of line
+
+	# minus 1000, is for insurence. Machine pass 10mm, but ofr insurence, count with 11mm
+	my $tmp = ($passDist - $gap  + 1000);
+	print STDERR "Drayka bude ykracena o = ".$tmp."\n";
+	
+	
+	return $passDist - $gap  + 1000;
+
 }
 
 #-------------------------------------------------------------------------------------------#

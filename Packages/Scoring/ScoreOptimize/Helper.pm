@@ -29,6 +29,7 @@ sub new {
 
 	$self->{"inCAM"} = shift;
 	$self->{"jobId"} = shift;
+	$self->{"accuracy"} = shift;
 
 	return $self;
 }
@@ -107,7 +108,7 @@ sub __GetScore {
 
 	CamLayer->WorkLayer( $inCAM, $layer );
 
-	my $score = ScoreFeatures->new();
+	my $score = ScoreFeatures->new(1);
 	$score->Parse( $inCAM, $jobId, $step, $layer );
 
 	unless ( $score->IsStraight() ) {
@@ -131,7 +132,7 @@ sub __GetScore {
 	foreach my $f (@h) {
 
 		# merge lines, which has spacinf less than 100µm
-		my $exist = scalar( grep { abs( $_->{"y1"} - $f->{"y1"} ) < 0.1 } @hMerged );
+		my $exist = scalar( grep { abs( $_->{"y1"} - $f->{"y1"} ) < $self->{"accuracy"} } @hMerged );
 
 		unless ($exist) {
 			push(@hMerged, $f);
@@ -147,7 +148,7 @@ sub __GetScore {
 	foreach my $f (@v) {
 
 		# merge lines, which has spacinf less than 100µm
-		my $exist = scalar( grep { abs( $_->{"x1"} - $f->{"x1"} ) < 0.1 } @vMerged );
+		my $exist = scalar( grep { abs( $_->{"x1"} - $f->{"x1"} ) < $self->{"accuracy"} } @vMerged );
 
 		unless ($exist) {
 				push(@vMerged, $f);
@@ -198,10 +199,10 @@ sub CreateLayer {
 			$inCAM->COM(
 						 'add_line',
 						 attributes => 'no',
-						 xs         => $line->GetStartP()->{"x"},
-						 ys         => $line->GetStartP()->{"y"},
-						 xe         => $line->GetEndP()->{"x"},
-						 ye         => $line->GetEndP()->{"y"},
+						 xs         => $line->GetStartP()->{"x"} /1000,
+						 ys         => $line->GetStartP()->{"y"}/1000,
+						 xe         => $line->GetEndP()->{"x"}/1000,
+						 ye         => $line->GetEndP()->{"y"}/1000,
 						 "symbol"   => "r400"
 			);
 
@@ -210,22 +211,22 @@ sub CreateLayer {
 			my $sym = 0;
 			if ( $set->GetDirection() eq ScoEnums->Dir_HSCORE ) {
 
-				$x   = 10;
+				$x   = 10000;
 				$y   = $line->GetStartP()->{"y"};
 				$sym = 1000;
 			}
 			elsif ( $set->GetDirection() eq ScoEnums->Dir_VSCORE ) {
 
 				$x   = $line->GetStartP()->{"x"};
-				$y   = 10;
+				$y   = 10000;
 				$sym = 2000;
 			}
 
 			$inCAM->COM(
 						 "add_pad",
 						 "attributes" => 'no',
-						 "x"          => $x,
-						 "y"          => $y,
+						 "x"          => $x/1000,
+						 "y"          => $y/1000,
 						 "symbol"     => "r" . $sym
 			);
 		}

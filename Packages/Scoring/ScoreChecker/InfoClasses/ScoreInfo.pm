@@ -8,6 +8,7 @@ package Packages::Scoring::ScoreChecker::InfoClasses::ScoreInfo;
 #3th party library
 use strict;
 use warnings;
+use Math::Round;
 
 #local library
 use aliased 'Packages::Scoring::ScoreChecker::Enums';
@@ -29,12 +30,12 @@ sub new {
 	$self->{"length"}    = shift;
 	
 	
-	$self->{"dec"}    = shift;  # tell precision of compering score position
+	#$self->{"dec"}    = shift;  # tell precision of compering score position
 	
 	
 	
 
-	$self->__RoundPoints();
+	#$self->__RoundPoints();
 	$self->__SetCourse();
 
 	return $self;
@@ -73,34 +74,7 @@ sub GetScorePoint {
 	}
 }
 
-sub ExistOnPosition {
-	my $self = shift;
-	my $dir  = shift;
-	my $pos  = shift;
 
-	$pos = sprintf( "%.".$self->{"dec"}."f", $pos );
-
-	my $exist = 0;
-
-	if ( $self->{"dir"} ne $dir ) {
-		return 0;
-	}
-
-	if ( $dir eq Enums->Dir_HSCORE ) {
-
-		if ( $pos == $self->{"startP"}->{"y"} ) {
-			$exist = 1;
-		}
-
-	}
-	elsif ( $dir eq Enums->Dir_VSCORE ) {
-
-		if ( $pos == $self->{"startP"}->{"x"} ) {
-			$exist = 1;
-		}
-	}
-
-}
 
 sub GetDirection {
 	my $self = shift;
@@ -112,11 +86,34 @@ sub __RoundPoints {
 	
 	my $dec= $self->{"dec"};
 
-	$self->{"startP"}->{"x"} = sprintf( "%.".$dec."f", $self->{"startP"}->{"x"} );
-	$self->{"startP"}->{"y"} = sprintf( "%.".$dec."f", $self->{"startP"}->{"y"} );
+#	$self->{"startP"}->{"x"} = sprintf( "%.".$dec."f", $self->{"startP"}->{"x"} );
+#	$self->{"startP"}->{"y"} = sprintf( "%.".$dec."f", $self->{"startP"}->{"y"} );
+#
+#	$self->{"endP"}->{"x"} = sprintf( "%.".$dec."f", $self->{"endP"}->{"x"} );
+#	$self->{"endP"}->{"y"} = sprintf( "%.".$dec."f", $self->{"endP"}->{"y"} );
 
-	$self->{"endP"}->{"x"} = sprintf( "%.".$dec."f", $self->{"endP"}->{"x"} );
-	$self->{"endP"}->{"y"} = sprintf( "%.".$dec."f", $self->{"endP"}->{"y"} );
+	$self->{"startP"}->{"x"} = int($self->{"startP"}->{"x"} + 0.5);
+	$self->{"startP"}->{"y"} = int( $self->{"startP"}->{"y"} + 0.5);
+
+	$self->{"endP"}->{"x"} = int($self->{"endP"}->{"x"} + 0.5);
+	$self->{"endP"}->{"y"} = int( $self->{"endP"}->{"y"} + 0.5);
+	
+	
+	if($self->GetDirection() eq Enums->Dir_HSCORE ){
+				
+				if($self->GetStartP()->{"y"} != $self->GetEndP()->{"y"}){
+					
+					print STDERR sprintf("%10.20f", $self->GetEndP()->{"y"})."\n";
+					print STDERR sprintf("%10.20f",$self->GetEndP()->{"y"})."\n";
+					
+					print STDERR sprintf("%10.20f", int($self->GetStartP()->{"y"}*100)/100)."\n";
+					print STDERR sprintf("%10.20f",int($self->GetEndP()->{"y"}*100)/100)."\n";
+					
+					print STDERR "22222\n";
+				}
+				
+			}
+
 
 }
 

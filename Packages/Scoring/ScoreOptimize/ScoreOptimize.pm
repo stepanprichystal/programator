@@ -46,7 +46,7 @@ sub new {
 	$self->{"jobId"}        = shift;
 	$self->{"scoreChecker"} = shift;
 
-	$self->{"helper"} = Helper->new( $self->{"inCAM"}, $self->{"jobId"} );
+	$self->{"helper"} = Helper->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"scoreChecker"}->GetAccuracy() );
 	$self->{"optimizator"} = Optimizator->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"scoreChecker"} );
 
 

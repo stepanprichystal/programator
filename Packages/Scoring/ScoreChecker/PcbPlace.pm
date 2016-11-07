@@ -9,7 +9,8 @@ package Packages::Scoring::ScoreChecker::PcbPlace;
 use strict;
 use warnings;
 use List::MoreUtils qw(uniq);
-use Math::Trig;
+use Math::Trig ':pi';
+use Math::Geometry::Planar;
 
 #local library
 use aliased 'CamHelpers::CamJob';
@@ -19,6 +20,7 @@ use aliased 'Packages::Scoring::ScoreChecker::Enums';
 use aliased 'Packages::Scoring::ScoreChecker::InfoClasses::ScorePosInfo';
 use aliased 'Packages::Scoring::ScoreChecker::InfoClasses::PcbInfo';
 use aliased 'Packages::Scoring::ScoreChecker::InfoClasses::ScoreInfo';
+use aliased 'Packages::Scoring::ScoreChecker::OriginConvert' => "Convertor";
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -31,14 +33,14 @@ sub new {
 	my $self = {};
 	bless $self;
 
-	$self->{"inCAM"}     = shift;
-	$self->{"jobId"}     = shift;
-	$self->{"step"}      = shift;
-	$self->{"layer"}     = shift;    # score layer, whic will be parsed
-	$self->{"SR"}        = shift;    # if yes, only child steps are consider
-	                                 # if no, only data in given step are consider
-	$self->{"convertor"} = shift;
-	$self->{"dec"}       = shift;    # tell precision of compering score position
+	$self->{"inCAM"} = shift;
+	$self->{"jobId"} = shift;
+	$self->{"step"}  = shift;
+	$self->{"layer"} = shift;    # score layer, whic will be parsed
+	$self->{"SR"}    = shift;    # if yes, only child steps are consider
+	                             # if no, only data in given step are consider
+
+	$self->{"accuracy"} = shift; # tell precision of compering score position
 
 	my @pcbs = ();
 	$self->{"pcbs"} = \@pcbs;
@@ -94,16 +96,28 @@ sub GetScorePos {
 
 		foreach my $pInfo (@scoPos) {
 
-			push( @points, $self->{"convertor"}->DoPosInfo( $pInfo, $pcb ) );
+			push( @points, Convertor->DoPosInfo( $pInfo, $pcb ) );
 		}
 
 	}
 
-	# Reduce points, which has same location
-	my %seen;
-	@points = grep { !$seen{ $_->GetPosition() }++ } @points;
+	# Reduce (merge) points, which has same location +- accuracz
 
-	return @points;
+	my @merged = ();
+	foreach my $posInf (@points) {
+
+		my $pos = $posInf->GetPosition();
+
+		# merge lines, which has spacinf less than 100µm
+		my $exist = scalar( grep { abs( $_->GetPosition() - $posInf->GetPosition() ) < $self->{"accuracy"} } @merged );
+
+		unless ($exist) {
+			push( @merged, $posInf );
+
+		}
+	}
+
+	return @merged;
 
 }
 
@@ -112,7 +126,7 @@ sub IsScoreOnPos {
 	my $posInfo = shift;
 	my $pcb     = shift;
 
-	my $relPos = $self->{"convertor"}->DoPosInfo( $posInfo, $pcb, 1 );
+	my $relPos = Convertor->DoPosInfo( $posInfo, $pcb, 1 );
 
 	return $pcb->IsScoreOnPos($relPos);
 
@@ -189,17 +203,16 @@ sub __LoadNestedSteps {
 
 		$uStep->{"lim"} = \%lim;
 
-		$uStep->{"width"}  = abs( $lim{"xmax"} - $lim{"xmin"} );
-		$uStep->{"height"} = abs( $lim{"ymax"} - $lim{"ymin"} );
+		$uStep->{"width"}  = $self->__ToMicron( abs( $lim{"xmax"} - $lim{"xmin"} ) );
+		$uStep->{"height"} = $self->__ToMicron( abs( $lim{"ymax"} - $lim{"ymin"} ) );
 
 	}
 
 	foreach my $uStep (@uniqueSR) {
- 
 
-		my $score = ScoreFeatures->new();
+		my $score = ScoreFeatures->new(1);
 
-		$score->Parse( $inCAM, $jobId, $uStep->{"stepName"}, $self->{"layer"}, 1 );
+		$score->Parse( $inCAM, $jobId, $uStep->{"stepName"}, $self->{"layer"}, 1, 1 );
 
 		unless ( $score->IsStraight() ) {
 			$self->{"errorMess"} .= "Score in step: " . $uStep->{"stepName"} . " is not strictly horizontal or vertical.";
@@ -239,16 +252,14 @@ sub __LoadNestedSteps {
 		my $step = $steps[0];
 
 		#my %origin = ( "x" => $self->__Round( $rep->{"originXNew"} ), "y" => $self->__Round( $rep->{"originYNew"} ) );
-		
-		my %origin = ( "x" => $rep->{"originXNew"} , "y" => $rep->{"originYNew"} );
-		
-		
+
+		my %origin = ( "x" => $self->__ToMicron( $rep->{"originXNew"} ), "y" => $self->__ToMicron( $rep->{"originYNew"} ) );
 
 		# switch height/width, by rotation
 		my $rotCnt = $rep->{"angle"} / 90;
- 
-		my $repW =  $step->{"width"} ;
-		my $repH =  $step->{"height"} ;
+
+		my $repW = $step->{"width"};
+		my $repH = $step->{"height"};
 
 		if ( $rotCnt % 2 != 0 ) {
 			$repW = $step->{"height"};
@@ -256,7 +267,7 @@ sub __LoadNestedSteps {
 		}
 
 		# Create new pcb info
-		my $pcbInfo = PcbInfo->new( $rep->{"stepName"}, \%origin, $repW, $repH, $self->{"dec"} );
+		my $pcbInfo = PcbInfo->new( $rep->{"stepName"}, \%origin, $repW, $repH, $self->{"accuracy"} );
 
 		# add score lines, according original score lines in step
 
@@ -266,12 +277,9 @@ sub __LoadNestedSteps {
 
 			#my %startP = ( "x" => $self->__Round( $l->{"x1"} ), "y" => $self->__Round( $l->{"y1"} ) );
 			#my %endP   = ( "x" => $self->__Round( $l->{"x2"} ), "y" => $self->__Round( $l->{"y2"} ) );
-			
-			my %startP = ( "x" =>  $l->{"x1"} , "y" =>  $l->{"y1"}  );
-			my %endP   = ( "x" =>  $l->{"x2"} , "y" =>  $l->{"y2"}  );
 
- 
-
+			my %startP = ( "x" => $l->{"x1"}, "y" => $l->{"y1"} );
+			my %endP   = ( "x" => $l->{"x2"}, "y" => $l->{"y2"} );
 
 			$self->__RotateAndMovePoint( \%startP, $rep->{"angle"}, $step->{"width"}, $step->{"height"} );
 			$self->__RotateAndMovePoint( \%endP,   $rep->{"angle"}, $step->{"width"}, $step->{"height"} );
@@ -290,13 +298,34 @@ sub __LoadNestedSteps {
 				}
 			}
 
+			if ( $dir eq Enums->Dir_HSCORE ) {
+
+				if ( $startP{"y"} != $endP{"y"} ) {
+
+					print STDERR sprintf( "%10.20f", $startP{"y"} ) . "\n";
+					print STDERR sprintf( "%10.20f", $endP{"y"} ) . "\n";
+
+					print STDERR "uuuu\n";
+				}
+
+			}
+
+			if ( $dir eq Enums->Dir_VSCORE ) {
+
+				if ( $startP{"x"} != $endP{"x"} ) {
+
+					print STDERR sprintf( "%10.20f", $startP{"x"} ) . "\n";
+					print STDERR sprintf( "%10.20f", $endP{"x"} ) . "\n";
+
+					print STDERR "uuuuxxxxx\n";
+				}
+
+			}
+
 			my $scoLine = ScoreInfo->new( \%startP, \%endP, $dir, $l->{"length"}, $self->{"dec"} );
 
 			$pcbInfo->AddScoreLine($scoLine);
 		}
-
-
-
 
 		push( @{ $self->{"pcbs"} }, $pcbInfo );
 
@@ -313,7 +342,7 @@ sub __LoadStep {
 	$self->{"initSucc"}  = 1;
 	$self->{"errorMess"} = "";
 
-	my $score = ScoreFeatures->new();
+	my $score = ScoreFeatures->new(1);
 
 	$score->Parse( $inCAM, $jobId, $self->{"step"}, $self->{"layer"} );
 
@@ -337,7 +366,7 @@ sub __LoadStep {
 	my $w      = abs( $lim{"xmin"} - $lim{"xmax"} );
 	my $h      = abs( $lim{"ymin"} - $lim{"ymax"} );
 
-	my $pcbInfo = PcbInfo->new( $self->{"step"}, \%origin, $w, $h, $self->{"dec"} );
+	my $pcbInfo = PcbInfo->new( $self->{"step"}, \%origin, $w, $h, $self->{"accuracy"} );
 
 	# add score lines, according original score lines in step
 	foreach my $l (@lines) {
@@ -346,7 +375,7 @@ sub __LoadStep {
 		my %endP   = ( "x" => $l->{"x2"}, "y" => $l->{"y2"} );
 		my $dir    = $l->{"direction"};
 
-		my $scoLine = ScoreInfo->new( \%startP, \%endP, $dir, $l->{"length"}, $self->{"dec"} );
+		my $scoLine = ScoreInfo->new( \%startP, \%endP, $dir, $l->{"length"} );
 		$pcbInfo->AddScoreLine($scoLine);
 	}
 
@@ -372,9 +401,8 @@ sub __RotateAndMovePoint {
 
 			my %new = ();
 
-			$new{"x"} = $point->{"x"} * cos($angle90) - $point->{"y"} * sin($angle90);
-			$new{"y"} = $point->{"y"} * cos($angle90) + $point->{"x"} * sin($angle90);
-
+			$new{"x"} = $point->{"x"} * cos(pip2) - $point->{"y"} * sin(pip2);
+			$new{"y"} = $point->{"y"} * cos(pip2) + $point->{"x"} * sin(pip2);
 
 			$point->{"x"} = $new{"x"};
 			$point->{"y"} = $new{"y"};
@@ -392,24 +420,108 @@ sub __RotateAndMovePoint {
 
 	}
 
-	$point->{"x"} = sprintf( "%." . $dec . "f", $point->{"x"} );
-	$point->{"y"} = sprintf( "%." . $dec . "f", $point->{"y"} );
+	$point->{"x"} = int( $point->{"x"} + 0.5 );
+	$point->{"y"} = int( $point->{"y"} + 0.5 );
+
+	#$point->{"x"} = sprintf( "%." . $dec . "f", $point->{"x"} );
+	#$point->{"y"} = sprintf( "%." . $dec . "f", $point->{"y"} );
 
 }
 
-sub __GetMinPcbGap{
+sub __GetMinPcbGap {
 	my $self = shift;
+
+	my @pcbs = @{ $self->{"pcbs"} };
+
+	my @rectangles = ();
+
+	for ( my $i = 0 ; $i < scalar(@pcbs) ; $i++ ) {
+
+		my $pcb = $pcbs[$i];
+
+		my @pcbPoints = ();
+		my %p1        = ( "x" => 0, "y" => 0 );
+		my %p2        = ( "x" => 0, "y" => $pcb->GetHeight() );
+		my %p3        = ( "x" => $pcb->GetWidth(), "y" => $pcb->GetHeight() );
+		my %p4        = ( "x" => $pcb->GetWidth(), "y" => 0 );
+
+		push( @pcbPoints, Convertor->DoPoint( \%p1, $pcb ) );
+		push( @pcbPoints, Convertor->DoPoint( \%p2, $pcb ) );
+		push( @pcbPoints, Convertor->DoPoint( \%p3, $pcb ) );
+		push( @pcbPoints, Convertor->DoPoint( \%p4, $pcb ) );
+
+		push( @rectangles, \@pcbPoints );
+
+	}
+
+	# find min gap
+	my $minGap = undef;
+
+	for ( my $i = 0 ; $i < scalar(@rectangles) ; $i++ ) {
+
+		my $recti   = $rectangles[$i];
+		my @pointsI = @{$recti};
+
+		# for each point of rectangle, test distance between all edges of all rect
+		foreach my $pointI (@pointsI) {
+
+			for ( my $j = 0 ; $j < scalar(@rectangles) ; $j++ ) {
+
+				my $rectj   = $rectangles[$j];
+				my @pointsJ = @{$rectj};
+
+				if ( $i == $j ) {
+					next;
+				}
+
+				my %e1 = ( "start" => $pointsJ[0], "end" => $pointsJ[1] );
+				my %e2 = ( "start" => $pointsJ[1], "end" => $pointsJ[2] );
+				my %e3 = ( "start" => $pointsJ[2], "end" => $pointsJ[3] );
+				my %e4 = ( "start" => $pointsJ[3], "end" => $pointsJ[0] );
+				
+				my @e = (\%e1, \%e2, \%e3, \%e4);
+				
+				my $minGapTmp = $self->__Pont2LineDist($pointI, \@e);
+				
+				if(!defined $minGap || $minGapTmp < $minGap){
+					$minGap = $minGapTmp;
+				}
+
+			}
+		}
+
+	}
 	
-	my $minGap = 0;
-	
-	
-	
+	return $minGap;
 }
 
-sub __Round {
+sub __Pont2LineDist{
+	my $self = shift;
+	my $point = shift;
+	my @lines = @{shift(@_)};
+	
+	my $min = undef;
+	foreach my $l (@lines){
+		
+		my @p = ($point->{"x"}, $point->{"y"});
+		my @lStart = ($l->{"start"}->{"x"}, $l->{"start"}->{"y"});
+		my @lEnd = ($l->{"end"}->{"x"}, $l->{"end"}->{"y"});
+		my @pointsRef = (\@lStart, \@lEnd, \@p);
+		my $dist = abs(DistanceToSegment( \@pointsRef));
+		
+		if(!defined $min || $dist <  $min){
+			$min = $dist;
+			 
+		}
+	}
+	
+	return $min;
+}
+
+sub __ToMicron {
 	my $self = shift;
 	my $num  = shift;
-	return sprintf( "%." . $self->{"dec"} . "f", $num );
+	return int( $num * 1000 + 0.5 );
 }
 
 #-------------------------------------------------------------------------------------------#

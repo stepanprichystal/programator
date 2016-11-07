@@ -20,18 +20,7 @@ use aliased 'Packages::Scoring::ScoreChecker::InfoClasses::ScorePosInfo';
 #  Package methods
 #-------------------------------------------------------------------------------------------#
 
-sub new {
-
-	my $class = shift;
-
-	my $self = {};
-	bless $self;
-                           
-	$self->{"dec"}   = shift;    # tell precision of compering score position
-
-	return $self;
-}
-
+ 
 
 # Conversion of has with keys x, y
 sub DoPoint {
@@ -44,7 +33,7 @@ sub DoPoint {
 	my $x = $point->{"x"};
 	my $y = $point->{"y"};
 
-	$self->__ConsiderOrigin( $dir, \$x, \$y, $pcb, $relToPcb );
+	$self->__ConsiderOrigin( \$x, \$y, $pcb, $relToPcb );
 
 	my %newPoint = ( "x" => $x, "y" => $y );
 
@@ -80,7 +69,7 @@ sub DoPosInfo {
 		$pVal += $sign * $pcb->GetOrigin()->{"x"};
 	}
 
-	my $newPos = ScorePosInfo->new($pVal, $dir, $self->{"dec"});
+	my $newPos = ScorePosInfo->new($pVal, $dir);
 	
 	return $newPos;
 }
@@ -88,7 +77,7 @@ sub DoPosInfo {
 # Do conversion of position value (inside a step), between "panel" origin and step origin
 sub __ConsiderOrigin {
 	my $self     = shift;
-	my $dir      = shift;
+	 
 	my $x        = shift;
 	my $y        = shift;
 	my $pcb      = shift;

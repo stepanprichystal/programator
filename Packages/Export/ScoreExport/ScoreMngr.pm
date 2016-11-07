@@ -89,6 +89,12 @@ sub Run {
 
 		$checkScoreRes->AddError($errMess);
 	}
+	
+	if (!$self->{"scoreCheck"}->IsStraight() &&  !$self->{"scoreCheck"}->PcbDistanceOk() ) {
+
+		$checkScoreRes->AddError("Small gap between pcb steps. Minimal gap is 4.5mm");
+	}
+ 
 
 	$self->_OnItemResult($errMess);
 
@@ -121,6 +127,7 @@ sub Run {
 		print STDERR $errMess2;
 	}
 
+ 
 
 	# 5) Export program for machine
 
@@ -154,7 +161,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId = "f53449";
+	my $jobId = "f53741";
 
 	my $mngr = ScoreMngr->new( $inCAM, $jobId, 0.3, Enums->Optimize_YES );
 	$mngr->Run();

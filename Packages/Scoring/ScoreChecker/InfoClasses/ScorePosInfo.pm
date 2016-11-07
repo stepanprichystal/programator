@@ -32,7 +32,7 @@ sub new {
  
 	
 	
-	$self->{"position"} = sprintf( "%.".$self->{"dec"}."f", $self->{"position"} );
+	#$self->{"position"} = sprintf( "%.".$self->{"dec"}."f", $self->{"position"} );
 	
 	
 	return $self;

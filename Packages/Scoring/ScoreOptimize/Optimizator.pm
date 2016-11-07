@@ -22,7 +22,7 @@ use warnings;
 use aliased 'Packages::Scoring::ScoreOptimize::ScoreLayer::ScoreSet';
 use aliased 'Packages::Scoring::ScoreOptimize::ScoreLayer::ScoreLine';
 use aliased 'Packages::Scoring::ScoreOptimize::ScoreLayer::ScoreLayer';
-
+use aliased 'Packages::Scoring::ScoreChecker::OriginConvert' => "Convertor";
 use aliased 'Packages::Scoring::ScoreChecker::Enums' => "ScoEnums";
 
 #-------------------------------------------------------------------------------------------#
@@ -40,10 +40,10 @@ sub new {
 	$self->{"jobId"}        = shift;
 	$self->{"scoreChecker"} = shift;
 
-	$self->{"convertor"}  = $self->{"scoreChecker"}->GetConvertor();
+	 
 	$self->{"scoreLayer"} = undef;
 
-	$self->{"reduce"} = 4;    # reduce score from profile by 4mm
+	$self->{"reduce"} = undef;    # reduce score from profile by 4mm
 
 	return $self;
 }
@@ -98,7 +98,11 @@ sub __PrepareScoreData {
 	my $scoreLayer = ScoreLayer->new();
 
 	# all verticall and horiyontall score positions
-	my @scorePos = $pcbPlace->GetScorePos();
+	
+	my @h = $pcbPlace->GetScorePos(ScoEnums->Dir_HSCORE);
+	my @v = $pcbPlace->GetScorePos(ScoEnums->Dir_VSCORE);
+	
+	my @scorePos =(@h, @v);
 
 	foreach my $posInfo (@scorePos) {
 
@@ -132,16 +136,18 @@ sub __CreateSet {
 	foreach my $pcb (@pcbs) {
 
 		my @score = $self->__GetScore( $posPnl, $pcb );
+		my @allPoints = $self->__GetPoints( $posPnl, $pcb );     # get all points, where score start or end. Sorted
 
 		foreach my $sco (@score) {
 
 			my $line = ScoreLine->new($dir);        # Init new lajn
 
-			my $start = $sco->GetStartP();
-			my $end   = $sco->GetEndP();
+			
+			my $sPoint = Convertor->DoPoint($sco->GetStartP(), $pcb);
+			$line->SetStartP($sPoint);
 
-			$self->__StartLine( $line, $start, $pcb );
-			$self->__EndLine( $line, $end, $pcb );
+			my $ePoint = Convertor->DoPoint($sco->GetEndP(), $pcb );
+			$line->SetEndP($ePoint);
 
 			$scoreSet->AddScoreLine($line);
 		}
@@ -160,7 +166,10 @@ sub __PrepareOptimizeScoreData {
 	my $scoreLayer = ScoreLayer->new();
 
 	# all verticall and horiyontall score positions
-	my @scorePos = $pcbPlace->GetScorePos();
+	my @h = $pcbPlace->GetScorePos(ScoEnums->Dir_HSCORE);
+	my @v = $pcbPlace->GetScorePos(ScoEnums->Dir_VSCORE);
+	
+	my @scorePos =(@h, @v);
 
 	foreach my $posInfo (@scorePos) {
 
@@ -227,7 +236,11 @@ sub __CreateOptimizeSet {
 				#
 				#				}
 
-				if ( $pointInf->GetDist() < 4 ) {
+#				unless($pointInf->GetDist()){
+#					
+#					print STDERR 1;
+#				}
+				if (defined $pointInf->GetDist() && $pointInf->GetDist() < $self->{"reduce"} ) {
 					$reduce = 1;
 				}
 
@@ -292,7 +305,7 @@ sub __CreateOptimizeSet {
 
 				# Dont recuce lines, when pcb should not be optimized
 				my $reduce = 1;
-				if ( $noOptimize && $point->GetDist() > 4 ) {
+				if ( $noOptimize && $point->GetDist() > $self->{"reduce"} ) {
 					$reduce = 0;
 				}
 				$self->__EndLine( $line, $point, $lstPcb, $reduce );
@@ -323,7 +336,7 @@ sub __CreateOptimizeSet {
 		# ukonci lajnu
 		#$line->SetEndP( $allPoints[ scalar(@allPoints) - 1 ] );
 		my $reduce = 1;
-		if ( $noOptimize && $point->GetDist() > 4 ) {
+		if ( $noOptimize && $point->GetDist() > $self->{"reduce"} ) {
 			$reduce = 0;
 		}
 
@@ -369,7 +382,7 @@ sub __StartLine {
 		$newPoint{"y"} = $point->{"y"};
 	}
 
-	my $finalPoint = $self->{"convertor"}->DoPoint( \%newPoint, $pcb, $line->GetDirection() );
+	my $finalPoint = Convertor->DoPoint( \%newPoint, $pcb );
 
 	$line->SetStartP($finalPoint);
 }
@@ -404,7 +417,7 @@ sub __EndLine {
 
 	}
 
-	my $finalPoint = $self->{"convertor"}->DoPoint( \%newPoint, $pcb, $line->GetDirection() );
+	my $finalPoint = Convertor->DoPoint( \%newPoint, $pcb );
 
 	$line->SetEndP($finalPoint);
 }
@@ -419,7 +432,7 @@ sub __GetPoints {
 
 	my $dir = $pos->GetDirection();
 
-	my $posPcb = $self->{"convertor"}->DoPosInfo( $pos, $pcb, 1 );    # origin relative to pcb
+	my $posPcb = Convertor->DoPosInfo( $pos, $pcb, 1 );    # origin relative to pcb
 
 	my @allPoints = $pcb->GetScorePointsOnPos($posPcb);
 
@@ -447,7 +460,7 @@ sub __NoOptimize {
 	my $pos  = shift;
 	my $pcb  = shift;
 
-	my $posPcb = $self->{"convertor"}->DoPosInfo( $pos, $pcb, 1 );
+	my $posPcb = Convertor->DoPosInfo( $pos, $pcb, 1 );
 
 	my $noOptimize = $pcb->NoOptimize($posPcb);
 
@@ -464,7 +477,7 @@ sub __GetScore {
 
 	my $dir = $pos->GetDirection();
 
-	my $posPcb = $self->{"convertor"}->DoPosInfo( $pos, $pcb, 1 );    # consider origin of pcb
+	my $posPcb = Convertor->DoPosInfo( $pos, $pcb, 1 );    # consider origin of pcb
 
 	my @allSco = $pcb->GetScoresOnPos($posPcb);                       # get all score lines, on this pcb
 
