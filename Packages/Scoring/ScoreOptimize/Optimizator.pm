@@ -68,15 +68,20 @@ sub Run {
 	}
 
 	print STDERR "Score is Straight = " . $isStraight . "\n.";
+ 
+ 
+	my $scoreLayer = ScoreLayer->new();
 
 	if ($optimize) {
 
-		$self->{"scoreLayer"} = $self->__PrepareOptimizeScoreData();
+		 $self->__PrepareOptimizeScoreData($scoreLayer);
 	}
 	else {
 
-		$self->{"scoreLayer"} = $self->__PrepareScoreData();
+		 $self->__PrepareScoreData($scoreLayer);
 	}
+
+	$self->{"scoreLayer"} = $scoreLayer;
 
 }
 
@@ -91,11 +96,11 @@ sub Run {
 
 sub __PrepareScoreData {
 	my $self = shift;
+	my $scoreLayer = shift;
 
 	my $checker  = $self->{"scoreChecker"};
 	my $pcbPlace = $checker->GetPcbPlace();
-
-	my $scoreLayer = ScoreLayer->new();
+ 
 
 	# all verticall and horiyontall score positions
 	
@@ -117,7 +122,6 @@ sub __PrepareScoreData {
 		$scoreLayer->AddScoreSet($scoreSet);
 	}
 
-	return $scoreLayer;
 }
 
 sub __CreateSet {
@@ -159,11 +163,11 @@ sub __CreateSet {
 
 sub __PrepareOptimizeScoreData {
 	my $self = shift;
+	my $scoreLayer = shift;
 
 	my $checker  = $self->{"scoreChecker"};
 	my $pcbPlace = $checker->GetPcbPlace();
-
-	my $scoreLayer = ScoreLayer->new();
+ 
 
 	# all verticall and horiyontall score positions
 	my @h = $pcbPlace->GetScorePos(ScoEnums->Dir_HSCORE);
@@ -183,7 +187,7 @@ sub __PrepareOptimizeScoreData {
 
 		$scoreLayer->AddScoreSet($scoreSet);
 	}
-	return $scoreLayer;
+
 }
 
 sub __CreateOptimizeSet {

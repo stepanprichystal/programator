@@ -84,6 +84,12 @@ sub GetPcbPlace {
 	}
 }
 
+sub GetStep {
+	my $self = shift;
+	 
+ 	return $self->{"step"};
+}
+
 sub GetAccuracy {
 	my $self = shift;
 
@@ -209,6 +215,8 @@ sub GetReduceDist {
 
 	my $gap = $self->{"pcbPlace"}->__GetMinPcbGap();
 	print STDERR "Mezera min bude  o = ".$gap."\n";
+	
+	
 	unless ( defined $gap ) {
 		return $standardDist;
 	}

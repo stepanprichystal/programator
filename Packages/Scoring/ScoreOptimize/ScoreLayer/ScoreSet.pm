@@ -22,31 +22,52 @@ sub new {
 
 	my $self = {};
 	bless $self;
-	
+
 	$self->{"point"} = shift;
-	$self->{"dir"} = shift;
-	
+	$self->{"dir"}   = shift;
+
 	my @sco = ();
 	$self->{"lines"} = \@sco;
- 
- 
+
 	return $self;
 }
 
-
-sub GetLines{
-	my $self = shift;
+# if reverse, switch order of score in array, switch start and end points
+sub GetLines {
+	my $self    = shift;
+	my $reverse = shift;
 	
+	my @lines   = @{ $self->{"lines"} };
+	if ($reverse) {
 
-return @{$self->{"lines"}};
-	 
+		my @lines = reverse(@lines);
+
+		foreach my $line (@lines) {
+
+			my $v = $line->{"startP"};
+			$line->{"startP"} = $line->{"endP"};
+			$line->{"endP"}   = $v;
+
+		}
+
+	}
+
+	return @lines;
+
 }
 
-sub AddScoreLine{
+sub GetPoint {
+	my $self = shift;
+
+	return $self->{"point"};
+
+}
+
+sub AddScoreLine {
 	my $self = shift;
 	my $line = shift;
 
-	push(@{$self->{"lines"}}, $line);
+	push( @{ $self->{"lines"} }, $line );
 
 }
 
@@ -54,7 +75,7 @@ sub GetDirection {
 	my $self = shift;
 	return $self->{"dir"};
 }
- 
+
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#

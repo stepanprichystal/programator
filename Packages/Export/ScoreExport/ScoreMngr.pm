@@ -18,9 +18,10 @@ use aliased 'Enums::EnumsGeneral';
 
 use aliased 'Packages::Scoring::ScoreChecker::ScoreChecker';
 use aliased 'Packages::Scoring::ScoreOptimize::ScoreOptimize';
- 
+use aliased 'Packages::Export::ScoreExport::ProgCreator::ProgCreator';
 use aliased 'Packages::Export::ScoreExport::Enums';
 use aliased 'CamHelpers::CamHelper';
+use aliased 'Packages::Scoring::ScoreChecker::Enums' => "ScoEnums";
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -61,6 +62,7 @@ sub new {
 
 	$self->{"scoreCheck"} = ScoreChecker->new( $self->{"inCAM"}, $self->{"jobId"}, $step, $self->{"exportLayer"}, $SR );
 	$self->{"scoreOptimize"} = ScoreOptimize->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"scoreCheck"} );
+	$self->{"creator"} = ProgCreator->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"coreThick"} );
 
 	return $self;
 }
@@ -89,12 +91,11 @@ sub Run {
 
 		$checkScoreRes->AddError($errMess);
 	}
-	
-	if (!$self->{"scoreCheck"}->IsStraight() &&  !$self->{"scoreCheck"}->PcbDistanceOk() ) {
+
+	if ( !$self->{"scoreCheck"}->IsStraight() && !$self->{"scoreCheck"}->PcbDistanceOk() ) {
 
 		$checkScoreRes->AddError("Small gap between pcb steps. Minimal gap is 4.5mm");
 	}
- 
 
 	$self->_OnItemResult($errMess);
 
@@ -114,7 +115,6 @@ sub Run {
 
 		$self->{"scoreOptimize"}->CreateScoreLayer();
 
-		 
 		my $optScoreRes = $self->_GetNewItem("Optimization");
 
 		my $errMess2 = "";
@@ -123,16 +123,37 @@ sub Run {
 			$optScoreRes->AddError($errMess2);
 		}
 		$self->_OnItemResult($optScoreRes);
-		
+
 		print STDERR $errMess2;
 	}
 
- 
-
 	# 5) Export program for machine
+	$self->{"creator"}->Build( Enums->Type_CLASSIC, $self->{"optimizeData"} );
+
+	if ( $self->{"optimizeData"}->ExistHScore() ) {
+
+		my $fileSave = $self->_GetNewItem("Save x-score file");
+
+		unless ( $self->{"creator"}->SaveFile( ScoEnums->Dir_VSCORE ) ) {
+
+			$fileSave->AddError("Failed when saving verticall score file.");
+		}
+
+		$self->_OnItemResult($fileSave);
+
+	}
+	elsif ( $self->{"optimizeData"}->ExistHScore() ) {
+
+		my $fileSave = $self->_GetNewItem("Save y-score file");
+
+		unless ( $self->{"creator"}->SaveFile( ScoEnums->Dir_HSCORE ) ) {
+			$fileSave->AddError("Failed when saving horizontall score file.");
+		}
+
+		$self->_OnItemResult($fileSave);
+	}
 
 	print STDERR $errMess;
-	
 
 }
 
@@ -143,7 +164,7 @@ sub ExportItemsCount {
 
 	$totalCnt += 1;    # score parse
 	$totalCnt += 1;    # score optimization
-	$totalCnt += 1;    # score export files
+	$totalCnt += 2;    # score export files
 
 	return $totalCnt;
 
@@ -161,7 +182,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId = "f53741";
+	my $jobId = "f13609";
 
 	my $mngr = ScoreMngr->new( $inCAM, $jobId, 0.3, Enums->Optimize_YES );
 	$mngr->Run();
