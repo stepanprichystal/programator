@@ -343,7 +343,9 @@ sub Build {
 
 		my $prog;
 
-		if ( !$pltMillExist && $surface !~ /^b$/i && !$rsMillExist && !$blindDrillExist ) {
+		my $condMill_hal = $pltMillExist && $surface =~ /^b$/i;
+
+		if ( !$condMill_hal && !$rsMillExist && !$blindDrillExist ) {
 
 			$prog = 1;
 		}
