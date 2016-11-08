@@ -19,16 +19,16 @@ use aliased 'Programs::Exporter::ExportUtility::Groups::NifExport::NifExportTmp'
 #input parameters
  
 
-my $jobId    = "f53979";
+my $jobId    = "f53904";
 
  
  
 my $poznamka = "Zpracovano v InCAM222";
 my $tenting  = 0;
-my $pressfit = 1;
+my $pressfit = 0;
 my $maska01  = 0;
-my $datacode  = "c";
-my $ullogo  = "s";
+my $datacode  = "";
+my $ullogo  = "";
 my $jumpScoring  = 0;
 
  
