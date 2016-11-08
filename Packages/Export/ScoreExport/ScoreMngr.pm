@@ -22,6 +22,7 @@ use aliased 'Packages::Export::ScoreExport::ProgCreator::ProgCreator';
 use aliased 'Packages::Export::ScoreExport::Enums';
 use aliased 'CamHelpers::CamHelper';
 use aliased 'Packages::Scoring::ScoreChecker::Enums' => "ScoEnums";
+use aliased 'Packages::ItemResult::Enums' => "ResEnums";
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -37,7 +38,8 @@ sub new {
 	$self->{"jobId"}     = shift;
 	$self->{"coreThick"} = shift;
 	$self->{"optimize"}  = shift;
-
+	$self->{"type"}  = shift;
+	
 	$self->{"finalLayer"}   = "score_layer";    # name of layer , which contains final score data
 	$self->{"exportLayer"}  = undef;            # layer which score data are taken from
 	$self->{"optimizeData"} = undef;            # Final data structure, which provide data for export
@@ -72,6 +74,8 @@ sub Run {
 
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
+	
+	 
 
 	my $checkScoreRes = $self->_GetNewItem("Score check");
 
@@ -97,7 +101,15 @@ sub Run {
 		$checkScoreRes->AddError("Small gap between pcb steps. Minimal gap is 4.5mm");
 	}
 
-	$self->_OnItemResult($errMess);
+	$self->_OnItemResult($checkScoreRes);
+	
+	if($checkScoreRes->Result() eq ResEnums->ItemResult_Fail){
+		
+		print STDERR $errMess;
+		return 0;
+	}
+	
+	
 
 	# 3) Optimize  and get score data
 	if ( $self->{"optimize"} eq Enums->Optimize_YES ) {
@@ -128,9 +140,9 @@ sub Run {
 	}
 
 	# 5) Export program for machine
-	$self->{"creator"}->Build( Enums->Type_CLASSIC, $self->{"optimizeData"} );
+	$self->{"creator"}->Build( $self->{"type"}, $self->{"optimizeData"} );
 
-	if ( $self->{"optimizeData"}->ExistHScore() ) {
+	if ( $self->{"optimizeData"}->ExistVScore() ) {
 
 		my $fileSave = $self->_GetNewItem("Save x-score file");
 
@@ -142,7 +154,8 @@ sub Run {
 		$self->_OnItemResult($fileSave);
 
 	}
-	elsif ( $self->{"optimizeData"}->ExistHScore() ) {
+	
+	if ( $self->{"optimizeData"}->ExistHScore() ) {
 
 		my $fileSave = $self->_GetNewItem("Save y-score file");
 
@@ -182,9 +195,9 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId = "f13609";
+	my $jobId = "f52456";
 
-	my $mngr = ScoreMngr->new( $inCAM, $jobId, 0.3, Enums->Optimize_YES );
+	my $mngr = ScoreMngr->new( $inCAM, $jobId, 0.3, Enums->Optimize_YES, Enums->Type_ONEDIR );
 	$mngr->Run();
 }
 

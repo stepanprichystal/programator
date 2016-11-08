@@ -134,9 +134,9 @@ sub GetRepeatStep {
 		$info{"originY"}  = ${ $inCAM->{doinfo}{gREPEATxa} }[$i];
 		$info{"angle"}    = ${ $inCAM->{doinfo}{gREPEATangle} }[$i];
 
-		# mistake in Incam angle_direction => 'ccw' not work, thus:
-		
-		$info{"angle"} = 360 - $info{"angle"};
+#		# mistake in Incam angle_direction => 'ccw' not work, thus:
+#		
+#		$info{"angle"} = 360 - $info{"angle"};
 
 		$info{"originXNew"} = ${ $inCAM->{doinfo}{gREPEATxmin} }[$i];
 		$info{"originYNew"} = ${ $inCAM->{doinfo}{gREPEATymin} }[$i];

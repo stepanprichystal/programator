@@ -1,9 +1,9 @@
 #-------------------------------------------------------------------------------------------#
-# Description: This class define "outside" handlers and events, 
+# Description: This class define "outside" handlers and events,
 # which is possible cooperate with.
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Programs::Exporter::ExportChecker::Groups::NifExport::View::NifUnitFormEvt;
+package Programs::Exporter::ExportChecker::Groups::ScoExport::View::ScoUnitFormEvt;
 use base ("Programs::Exporter::ExportChecker::Groups::UnitFormEvtBase");
 
 #3th party library
@@ -28,24 +28,19 @@ sub new {
 	my $wrapper = $self->{"wrapper"};
 
 	# Provided handlers
-	my $ref = $wrapper->can('ChangeCustomerJump');
-	$self->_AddHandler( $ref , Enums->Event_sco_customerJump );
- 
-	# Provided events
-	
-	$self->_AddEvent( $wrapper->{'onTentingChange'}, Enums->Event_nif_tenting );
 
+
+	# Provided events
+	$self->_AddEvent( $wrapper->{'onCustomerJumpChange'}, Enums->Event_sco_customerJump );
+	
 	return $self;
 }
-
-
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
-
 
 }
 

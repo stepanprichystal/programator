@@ -1,18 +1,27 @@
+
 #-------------------------------------------------------------------------------------------#
-# Description: This class define "outside" handlers and events, 
-# which is possible cooperate with.
+# Description: Represent "Unit" class for Score
+#
+# Every group in "export utility program" is composed from three layers:
+# 1) Model - responsible for actual group data, which are displyed in group form (GroupData class)
+# 2) Presenter -  responsible for: build and refresh from group
+# 3) View - only display data, which are passed from model by presenter class (GroupWrapperForm])
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Programs::Exporter::ExportChecker::Groups::NifExport::View::NifUnitFormEvt;
-use base ("Programs::Exporter::ExportChecker::Groups::UnitFormEvtBase");
+package Programs::Exporter::ExportUtility::Groups::ScoExport::ScoUnit;
+use base 'Programs::Exporter::ExportUtility::Groups::UnitBase';
+
+use Class::Interface;
+&implements('Programs::Exporter::ExportUtility::Unit::IUnit');
 
 #3th party library
 use strict;
 use warnings;
 
 #local library
-use aliased 'Programs::Exporter::ExportChecker::Groups::Enums';
-use aliased 'Packages::Events::Event';
+ 
+use aliased 'Programs::Exporter::UnitEnums';
+use aliased 'Programs::Exporter::ExportUtility::Groups::ScoExport::ScoExport';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -25,27 +34,19 @@ sub new {
 	$self = $class->SUPER::new(@_);
 	bless $self;
 
-	my $wrapper = $self->{"wrapper"};
-
-	# Provided handlers
-	my $ref = $wrapper->can('ChangeCustomerJump');
-	$self->_AddHandler( $ref , Enums->Event_sco_customerJump );
+ 	# reference on class responsible for export
+	$self->{"unitExport"} = ScoExport->new($self->{"unitId"});
  
-	# Provided events
-	
-	$self->_AddEvent( $wrapper->{'onTentingChange'}, Enums->Event_nif_tenting );
-
-	return $self;
+	return $self; 
 }
 
-
+ 
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
-
 
 }
 

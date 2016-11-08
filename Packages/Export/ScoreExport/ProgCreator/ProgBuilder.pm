@@ -65,19 +65,14 @@ sub BuildHeader {
 	$str .= "( Machine        : SCM411-1        )\n";
 	$str .= "( Program name   : $jobId          )\n";
 	$str .= "( Panel thickness: $pcbThickStr mm        )\n";
-	$str .= "( Core 		  : $coreThickStr mm         )\n";
+	$str .= "( Core           : $coreThickStr mm        )\n";
 	$str .= "( X-Factor       : 100.0000 %      )\n";
-	$str .= "( Fiducial       : -         		)\n";
+	$str .= "( Fiducial       : -               )\n";
 	$str .= "( Working        : Part $id          )\n";
 	$str .= "(----------------------------------)\n";
 	$str .= "M49,SEQP100P" . $w . "\n";
 	$str .= "M49,SEQP101P" . $h . "\n";
 	$str .= "M49,SEQP102P$pcbThickStr\n";
-
-	#	$str .= "G35,7\n";
-	#	$str .= "X${coordYfiduc[1]}Y${coordXfiduc[1]}G32\n";
-	#	$str .= "X${coordYfiduc[2]}Y${coordXfiduc[2]}G32\n";
-	#	$str .= "G31\n";
 	
 	return $str;
 
@@ -128,7 +123,8 @@ sub BuildBody {
 		#my $crossOverPos = $ySize + $crossOver;
 		# put only once, position. No idea what is mean..
 		unless ($initLine) {
-
+			
+			chop($str); #remove last new line
 			$str .= "Y" . sprintf( "%3.3f", $ySize + $crossOver );    # go behind pnl TOP
 			$str .= "T01H10.0B1.5Z" . $osaZ . "A-" . $osaA . "\n";
 			$str .= "T00M38\n";
@@ -141,20 +137,10 @@ sub BuildBody {
 		foreach my $line ( $set->GetLines($reverse) ) {
 
 			# get start, end point of score line
-			my $start = undef;
-			my $end   = undef;
-
-			if ( $dir eq ScoEnums->Dir_HSCORE ) {
-
-				$start = $line->GetStartP()->{"x"};
-				$end   = $line->GetEndP()->{"x"};
-
-			}
-			elsif ( $dir eq ScoEnums->Dir_VSCORE ) {
-				$start = $line->GetStartP()->{"y"};
-				$end   = $line->GetEndP()->{"y"};
-			}
-
+		 
+			my $start = $line->GetStartP()->{"y"};
+			my $end   = $line->GetEndP()->{"y"};
+			
 			$start = sprintf( "%3.3f", $start / 1000);
 			$end   = sprintf( "%3.3f", $end / 1000 );
 
@@ -172,12 +158,12 @@ sub BuildBody {
 
 		}
 		elsif ( ( $top2Bot && $type eq Enums->Type_CLASSIC ) || !$top2Bot ) {
-			$str .= "T00Y" . sprintf( "%3.3f", $ySize + $crossOver );    # go to TOP
+			$str .= "T00Y" . sprintf( "%3.3f", $ySize + $crossOver ). "\n";    # go to TOP
 		}
 
 		# next set of lines if classic mode
 		# - switch order of score lines, because machine goes from bottom of panel
-		if ( $type eq Enums->Type_CLASSIC ) {
+		if ( $type ne Enums->Type_ONEDIR ) {
 
 			if ($top2Bot) {
 				$top2Bot = 0;

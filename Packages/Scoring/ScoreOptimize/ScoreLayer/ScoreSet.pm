@@ -63,6 +63,13 @@ sub GetPoint {
 
 }
 
+sub SetPoint {
+	my $self = shift;
+
+	$self->{"point"} = shift;
+
+}
+
 sub AddScoreLine {
 	my $self = shift;
 	my $line = shift;

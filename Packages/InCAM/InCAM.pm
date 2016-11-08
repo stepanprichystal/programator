@@ -219,11 +219,11 @@ sub ClientFinish {
 	my $self = shift;
 
 	my $result = $self->__SpecialServerCmd("CLIENTFINISH PID:$$");
-	
-	if($result){
-		
+
+	if ($result) {
+
 	}
-	
+
 	return $result;
 }
 
@@ -946,7 +946,7 @@ sub INFO {
 	}
 
 	my %args = @_;
-	my ( $entity_path, $data_type, $parameters, $serial_number, $options, $help, $entity_type ) = ( "", "", "", "", "", "", "" );
+	my ( $entity_path, $data_type, $parameters, $serial_number, $options, $help, $entity_type, $angle_direction ) = ( "", "", "", "", "", "", "", "" );
 	my $i;
 	my $units = 'units = inch';
 	my $parse = 'yes';
@@ -977,11 +977,17 @@ sub INFO {
 		elsif ( $_ eq "units" ) {
 			$units = "units= $i";
 		}
+		elsif ( $_ eq "angle_direction" ) {
+			$angle_direction = "angle_direction=$i,";
+		}
 		elsif ( $_ eq "parse" ) {
 			$parse = $i;
 		}
 	}
-	my $info_pre = "info,out_file=\$csh_file,write_mode=replace,$units,args=";
+	
+ 
+	#my $info_pre = "info,out_file=\$csh_file,write_mode=replace, $units,args=";
+	my $info_pre = "info,out_file=\$csh_file,write_mode=replace,$angle_direction $units,args=";
 	my $info_com = "$info_pre $entity_type $entity_path $data_type " . "$parameters $serial_number $options $help";
 	if ( $parse eq 'yes' ) {
 		$self->parse($info_com);
@@ -1005,7 +1011,6 @@ sub INFO {
 sub printFile {
 	my ($self)     = shift;
 	my ($filename) = shift;
-
 
 	my $FILE;
 	open( $FILE, "$filename" ) or warn "can not open file $filename";

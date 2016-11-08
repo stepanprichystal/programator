@@ -102,7 +102,7 @@ sub ScoreIsOk {
 	my $self = shift;
 	my $mess = shift;
 
-	my $res = $self->{"pcbPlace"}->ScoreIsOk( \$mess );
+	my $res = $self->{"pcbPlace"}->ScoreIsOk( $mess );
 
 	return $res;
 }
@@ -212,6 +212,7 @@ sub GetReduceDist {
 	my $dist         = undef;
 	my $standardDist = 4000;
 	my $minPcbDist = 4500;
+	my $passDist = 11000;    # distance, which score machine pass end of line
 
 	my $gap = $self->{"pcbPlace"}->__GetMinPcbGap();
 	print STDERR "Mezera min bude  o = ".$gap."\n";
@@ -227,14 +228,20 @@ sub GetReduceDist {
 		return -1;
 	}
 
-	my $passDist = 10000;    # distance, which score machine pass end of line
+	#  Machine pass 11mm, but ofr insurence, count with 11mm
+	
+	if( $gap > $passDist){
+		
+		return 0; # don't reduce
+	}
+	
 
-	# minus 1000, is for insurence. Machine pass 10mm, but ofr insurence, count with 11mm
-	my $tmp = ($passDist - $gap  + 1000);
-	print STDERR "Drayka bude ykracena o = ".$tmp."\n";
+	my $reduceScore = ($passDist - $gap );	
+	
+	print STDERR "Drayka bude ykracena o = ".$reduceScore."\n";
 	
 	
-	return $passDist - $gap  + 1000;
+	return $reduceScore;
 
 }
 

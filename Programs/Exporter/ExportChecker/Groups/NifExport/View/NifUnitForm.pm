@@ -51,6 +51,11 @@ sub new {
 
 	#$self->SetBackgroundColour($Widgets::Style::clrLightBlue);
 
+	# PROPERTIES
+	
+	$self->{'jumpScoringProp'} = undef; # store information about cust jumpscoring
+	
+	
 	# EVENTS
 	$self->{'onTentingChange'} = Event->new();
 
@@ -160,7 +165,7 @@ sub __SetLayoutSettings {
 	my $tentingChb     = Wx::CheckBox->new( $statBox, -1, "Tenting (c,s)",      &Wx::wxDefaultPosition, [ $textWidth, 20 ] );
 	my $maskaChb       = Wx::CheckBox->new( $statBox, -1, "Mask 100µm",  &Wx::wxDefaultPosition, [ $textWidth, 20 ] );
 	my $pressfitChb    = Wx::CheckBox->new( $statBox, -1, "Pressfit",     &Wx::wxDefaultPosition, [ $textWidth, 20 ] );
-	my $jumpscoringChb = Wx::CheckBox->new( $statBox, -1, "Jump scoring", &Wx::wxDefaultPosition, [ $textWidth, 20 ] );
+	#my $jumpscoringChb = Wx::CheckBox->new( $statBox, -1, "Jump scoring", &Wx::wxDefaultPosition, [ $textWidth, 20 ] );
 
 	my $datacodeCb =
 	  Wx::ComboBox->new( $statBox, -1, $markingLNames[0], &Wx::wxDefaultPosition, [ $cbWidth, 20 ], \@markingLNames, &Wx::wxCB_READONLY );
@@ -182,7 +187,7 @@ sub __SetLayoutSettings {
 	$szCol1->Add( $tentingChb,     0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 	$szCol1->Add( $maskaChb,       0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 	$szCol1->Add( $pressfitChb,    0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
-	$szCol1->Add( $jumpscoringChb, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	#$szCol1->Add( $jumpscoringChb, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 
 	$szCol2->Add( $datacodeTxt, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 	$szCol2->Add( $ulLogoTxt,   0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
@@ -207,7 +212,7 @@ sub __SetLayoutSettings {
 	$self->{"tentingChb"} = $tentingChb;
 	$self->{"maskaChb"} = $maskaChb;
 	$self->{"pressfitChb"} = $pressfitChb;
-	$self->{"jumpscoringChb"} = $jumpscoringChb;
+	#$self->{"jumpscoringChb"} = $jumpscoringChb;
 	$self->{"datacodeCb"} = $datacodeCb;
 	$self->{"ulLogoCb"} = $ulLogoCb;
 	
@@ -311,6 +316,19 @@ sub DisableControls{
 	
 	
 }
+
+
+# =====================================================================
+# HANDLERS - HANDLE EVENTS ANOTHER GROUPS
+# =====================================================================
+
+sub ChangeCustomerJump{
+	my $self  = shift;
+	my $isJumpscoring = shift;
+	
+	$self->{"jumpScoringProp"} = $isJumpscoring;
+}
+
 
 # =====================================================================
 # SET/GET CONTROLS VALUES
@@ -521,12 +539,18 @@ sub GetUlLogo {
 sub SetJumpScoring {
 	my $self  = shift;
 	my $value = shift;
-	$self->{"jumpscoringChb"}->SetValue($value);
+	
+	$self->{"jumpScoringProp"} = $value;
+	
+	#$self->{"jumpscoringChb"}->SetValue($value);
 }
 
 sub GetJumpScoring {
 	my $self = shift;
-	$self->{"jumpscoringChb"}->GetValue();
+	
+	return $self->{"jumpScoringProp"};
+	
+	#$self->{"jumpscoringChb"}->GetValue();
 }
 
 1;

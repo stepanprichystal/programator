@@ -26,6 +26,8 @@ sub new {
 	my @sets = ();
 	$self->{"scoreSets"} = \@sets;
 	
+	$self->{"setOrigin"} = undef; # save new origin, for later reset origin to 0,0
+	
 
 
 	return $self;
@@ -41,6 +43,9 @@ sub GetSets {
 
 		@sets = grep { $_->GetDirection() eq $dir } @sets;
 	}
+	
+	# sort sets by points Desc
+	@sets = sort {$b->GetPoint() <=> $a->GetPoint()} @sets;
 
 	return @sets;
 }
@@ -66,9 +71,9 @@ sub ExistHScore{
 	
 	if(scalar(@sets)){
 		
-		return 0;
-	}else{
 		return 1;
+	}else{
+		return 0;
 	}
 }
 
@@ -86,7 +91,7 @@ sub AddScoreSet {
 sub ResetOrigin {
 	my $self      = shift;
 	
-	my %newOrigin = ("x" => 0, "y" => 0);
+	my %newOrigin = ("x" => -$self->{"setOrigin"}->{"x"}, "y" => -$self->{"setOrigin"}->{"y"});
 	
 	$self->SetNewOrigin(\%newOrigin);
 	
@@ -96,6 +101,8 @@ sub ResetOrigin {
 sub SetNewOrigin {
 	my $self      = shift;
 	my $origin = shift;	
+	
+	$self->{"setOrigin"} = $origin;
 	
 	my %newOrigin = ("x" => $origin->{"x"} *1000, "y" => $origin->{"y"} *1000 );
 	
@@ -116,6 +123,8 @@ sub SetNewOrigin {
 		elsif ( $dir eq ScoEnums->Dir_VSCORE ) {
 			$point -= $newOrigin{"x"};
 		}
+		
+		$set->SetPoint($point);
 
 		# set set score lines
 		foreach my $line ( $set->GetLines() ) {
@@ -132,42 +141,12 @@ sub SetNewOrigin {
 	}
 }
 
-sub Rotate90 {
+
+sub AddControlLines{
 	my $self      = shift;
-	my $origin = shift;
-	my $pnlWidth = shift;
 	
-	my %newOrigin = ("x" => $origin->{"x"} *1000, "y" => $origin->{"y"} *1000 );
 	
-	$pnlWidth *= 1000;
-
-	foreach my $set ( @{ $self->{"scoreSets"} } ) {
-
-		my $dir = $set->GetDirection();
-
-		# set set point
-		my $point = $set->GetPoint();
-
-		if ( $dir eq ScoEnums->Dir_HSCORE ) {
-
-			$point = $newOrigin{"y"};
-		}
-		 
-
-		# set set score lines
-		foreach my $line (   $set->GetLines()  ) {
-
-			my $s = $line->GetStartP();
-			my $e = $line->GetEndP();
-
-			$s->{"x"} = $s->{"y"};
-			$s->{"y"} = $pnlWidth - $s->{"x"};
-			
-			$e->{"x"} = $s->{"y"};
-			$e->{"y"} = $pnlWidth - $s->{"x"};
- 
-		}
-	}
+	
 }
 
 #-------------------------------------------------------------------------------------------#

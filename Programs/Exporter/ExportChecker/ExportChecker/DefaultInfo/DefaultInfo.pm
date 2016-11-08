@@ -19,6 +19,8 @@ use aliased 'Packages::Stackup::Stackup::Stackup';
 use aliased 'Packages::Stackup::StackupNC::StackupNC';
 use aliased 'Packages::Routing::PlatedRoutArea';
 use aliased 'CamHelpers::CamDrilling';
+use aliased 'Packages::Scoring::ScoreChecker::ScoreChecker';
+use aliased 'Connectors::HeliosConnector::HegMethods';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -31,18 +33,18 @@ sub new {
 
 	$self->{"inCAM"} = shift;
 	$self->{"jobId"} = shift;
+	$self->{"step"} = "panel";
 
 	# Defaul values
 	$self->{"layerCnt"} = undef;
-
 	$self->{"stackup"} = undef;
-
 	$self->{"stackupNC"} = undef;
-
 	$self->{"pattern"} = undef;
 	$self->{"tenting"} = undef;
-	
 	$self->{"baseLayers"} = undef;
+	$self->{"scoreChecker"} = undef;
+	$self->{"materialKind"} = undef;
+	
 
 	$self->__InitDefault();
 
@@ -221,6 +223,25 @@ sub GetCompByLayer{
 	
 }
 
+sub GetCustomerJump{
+	my $self      = shift;
+	
+	my $res = 0;
+	
+	if($self->{"scoreChecker"}){
+
+		$res = $self->{"scoreChecker"}->CustomerJumpScoring();
+	}
+	
+	return $res;
+}
+
+sub GetMaterialKind{
+	my $self      = shift;
+	
+	return $self->{"materialKind"};
+}
+
 sub __InitDefault {
 	my $self = shift;
 
@@ -239,6 +260,15 @@ sub __InitDefault {
 		$self->{"stackup"} = Stackup->new( $self->{'jobId'} );
 		$self->{"stackupNC"} = StackupNC->new( $self->{"inCAM"}, $self->{"stackup"} );
 	}
+	
+	if(CamHelper->LayerExists(  $self->{"inCAM"}, $self->{"jobId"}, "score" )){
+		
+		$self->{"scoreChecker"} = ScoreChecker->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"step"}, "score", 1 );
+	}
+	
+	
+	$self->{"materialKind"} = HegMethods->GetMaterialKind($self->{"jobId"});
+	
 
 }
 

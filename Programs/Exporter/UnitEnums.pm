@@ -11,7 +11,7 @@ use constant {
 			   UnitId_PRE => "pre",
 			   UnitId_GER => "ger", 
 			   UnitId_PDF => "pdf",
-			   UnitId_SCORE => "score", 
+			   UnitId_SCO => "score", 
 };
 
 sub GetTitle{
@@ -52,7 +52,7 @@ sub GetTitle{
 		
 		$title = "Gerbers";
 		
-	}elsif($code eq UnitId_SCORE){
+	}elsif($code eq UnitId_SCO){
 		
 		$title = "Score programs";
 		

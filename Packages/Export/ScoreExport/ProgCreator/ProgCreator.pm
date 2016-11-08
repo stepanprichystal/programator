@@ -53,6 +53,7 @@ sub Build {
 	my $self = shift;
 	my $type = shift;
 	my $scoreData = shift;
+	 
 
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
@@ -65,6 +66,10 @@ sub Build {
 
 	my %originV = ( "x" => $originVsco->{"x1"}, "y" => $originVsco->{"y1"} );
 	my %originH = ( "x" => $originHsco->{"x1"}, "y" => $originHsco->{"y1"} );
+	
+	# add control lines to sets
+	$scoreData->AddControlLines();
+	
 
 	$self->{"scoreFileV"} = $self->__BuildVScore( $type, $scoreData, \%originV );
 	$self->{"scoreFileH"} = $self->__BuildHScore( $type, $scoreData, \%originH );
@@ -76,6 +81,7 @@ sub __BuildVScore {
 	my $type   = shift;
 	my $scoreData = shift;
 	my $origin = shift;
+
 
 	my $dir = ScoEnums->Dir_VSCORE;
 
@@ -117,9 +123,12 @@ sub __BuildHScore {
 
 	# change origin in score data
 	$scoreData->SetNewOrigin($origin);
-	$scoreData->Rotate90( $self->{"width"} );
 
 	my @sets = $scoreData->GetSets($dir);
+	
+	# we have to "rotate" hotizontal score lines, because panel is rotated by 90 deg on machine
+	# then is scored from top to bot like vertical score
+	$self->__RotateHSets(\@sets);
 
 	$str .= $hBuilder->BuildHeader();
 	$str .= $hBuilder->BuildBody($type, \@sets );
@@ -152,7 +161,7 @@ sub SaveFile {
 		}
 
 	}
-	elsif ( $dir eq ScoEnums->Dir_VSCORE ) {
+	elsif ( $dir eq ScoEnums->Dir_HSCORE ) {
 
 		$fPath .= $self->{"jobId"} . "-Y.jum";
 
@@ -176,6 +185,33 @@ sub SaveFile {
 
 }
 
+
+
+sub __RotateHSets {
+	my $self      = shift;
+ 	my $sets = shift;
+ 
+	foreach my $set ( @{ $sets } ) {
+ 
+ 
+		# set set score lines
+		foreach my $line (   $set->GetLines()  ) {
+
+			my $s = $line->GetStartP();
+			my $e = $line->GetEndP();
+
+			
+			my $val = $s->{"x"};
+			$s->{"x"} = $s->{"y"};
+			$s->{"y"} = - $val;
+			
+			my $val2 = $e->{"x"};
+			$e->{"x"} = $e->{"y"};
+			$e->{"y"} = - $val2;
+ 
+		}
+	}
+}
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#
