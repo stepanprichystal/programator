@@ -12,6 +12,8 @@ use warnings;
 #local library
 use aliased 'Packages::Scoring::ScoreChecker::Enums';
 use aliased 'Packages::Scoring::ScoreChecker::Enums' => "ScoEnums";
+
+
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
@@ -22,13 +24,11 @@ sub new {
 
 	my $self = {};
 	bless $self;
- 
+
 	my @sets = ();
 	$self->{"scoreSets"} = \@sets;
-	
-	$self->{"setOrigin"} = undef; # save new origin, for later reset origin to 0,0
-	
 
+	$self->{"setOrigin"} = undef;    # save new origin, for later reset origin to 0,0
 
 	return $self;
 }
@@ -43,36 +43,37 @@ sub GetSets {
 
 		@sets = grep { $_->GetDirection() eq $dir } @sets;
 	}
-	
+
 	# sort sets by points Desc
-	@sets = sort {$b->GetPoint() <=> $a->GetPoint()} @sets;
+	@sets = sort { $b->GetPoint() <=> $a->GetPoint() } @sets;
 
 	return @sets;
 }
 
-
-sub ExistVScore{
+sub ExistVScore {
 	my $self = shift;
-	
-	my @sets = $self->GetSets(ScoEnums->Dir_VSCORE);
-	
-	if(scalar(@sets)){
-		
+
+	my @sets = $self->GetSets( ScoEnums->Dir_VSCORE );
+
+	if ( scalar(@sets) ) {
+
 		return 1;
-	}else{
+	}
+	else {
 		return 0;
 	}
 }
 
-sub ExistHScore{
+sub ExistHScore {
 	my $self = shift;
-	
-	my @sets = $self->GetSets(ScoEnums->Dir_HSCORE);
-	
-	if(scalar(@sets)){
-		
+
+	my @sets = $self->GetSets( ScoEnums->Dir_HSCORE );
+
+	if ( scalar(@sets) ) {
+
 		return 1;
-	}else{
+	}
+	else {
 		return 0;
 	}
 }
@@ -85,28 +86,22 @@ sub AddScoreSet {
 
 }
 
-
-
-
 sub ResetOrigin {
-	my $self      = shift;
-	
-	my %newOrigin = ("x" => -$self->{"setOrigin"}->{"x"}, "y" => -$self->{"setOrigin"}->{"y"});
-	
-	$self->SetNewOrigin(\%newOrigin);
-	
-	
+	my $self = shift;
+
+	my %newOrigin = ( "x" => -$self->{"setOrigin"}->{"x"}, "y" => -$self->{"setOrigin"}->{"y"} );
+
+	$self->SetNewOrigin( \%newOrigin );
+
 }
 
 sub SetNewOrigin {
-	my $self      = shift;
-	my $origin = shift;	
-	
+	my $self   = shift;
+	my $origin = shift;
+
 	$self->{"setOrigin"} = $origin;
-	
-	my %newOrigin = ("x" => $origin->{"x"} *1000, "y" => $origin->{"y"} *1000 );
-	
-	 
+
+	my %newOrigin = ( "x" => $origin->{"x"} * 1000, "y" => $origin->{"y"} * 1000 );
 
 	foreach my $set ( @{ $self->{"scoreSets"} } ) {
 
@@ -123,7 +118,7 @@ sub SetNewOrigin {
 		elsif ( $dir eq ScoEnums->Dir_VSCORE ) {
 			$point -= $newOrigin{"x"};
 		}
-		
+
 		$set->SetPoint($point);
 
 		# set set score lines
@@ -141,13 +136,6 @@ sub SetNewOrigin {
 	}
 }
 
-
-sub AddControlLines{
-	my $self      = shift;
-	
-	
-	
-}
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

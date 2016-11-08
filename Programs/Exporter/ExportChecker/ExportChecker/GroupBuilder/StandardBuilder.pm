@@ -23,7 +23,7 @@ use aliased 'Programs::Exporter::ExportChecker::Groups::AOIExport::Presenter::AO
 use aliased 'Programs::Exporter::ExportChecker::Groups::ETExport::Presenter::ETUnit';
 use aliased 'Programs::Exporter::ExportChecker::Groups::PlotExport::Presenter::PlotUnit';
 use aliased 'Programs::Exporter::ExportChecker::Groups::GerExport::Presenter::GerUnit';
-
+use aliased 'Programs::Exporter::ExportChecker::Groups::ScoExport::Presenter::ScoUnit';
 use aliased 'Programs::Exporter::ExportChecker::ExportChecker::GroupBuilder::Enums';
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -49,13 +49,13 @@ sub Build {
 	
 	my $preUnit1 = PreUnit->new( $self->{"jobId"});	
 	#my $nifUnit1 = NifUnit->new( $self->{"jobId"});
-	my $plotUnit1 = PlotUnit->new( $self->{"jobId"} );
+	#my $plotUnit1 = PlotUnit->new( $self->{"jobId"} );
 	#my $ncUnit1 = NCUnit->new( $self->{"jobId"});
 	#my $aoiUnit1 = AOIUnit->new( $self->{"jobId"} );
 	
 	#my $etUnit1 = ETUnit->new( $self->{"jobId"} );
 	my $gerUnit1 = GerUnit->new( $self->{"jobId"} );
-
+	my $scoUnit1 = ScoUnit->new( $self->{"jobId"} );
  
 
 	#my $ncUnit2 = NCUnit->new( $self->{"jobId"}, "NC 2" );
@@ -71,7 +71,7 @@ sub Build {
 	my $row1Tab1 = $tableTab1->AddRow();
 	$row1Tab1->AddCell($preUnit1, Enums->Width_50);
 	#$row1Tab1->AddCell($nifUnit1, Enums->Width_50);
-	$row1Tab1->AddCell($plotUnit1, Enums->Width_50);
+	#$row1Tab1->AddCell($plotUnit1, Enums->Width_50);
 	
 
 	#$row1Tab1->AddCell($nifUnit2);
@@ -82,6 +82,7 @@ sub Build {
 	#$row2Tab1->AddCell($aoiUnit1, Enums->Width_25);
 	#$row2Tab1->AddCell($etUnit1, Enums->Width_25);
 	$row2Tab1->AddCell($gerUnit1, Enums->Width_25);
+	$row2Tab1->AddCell($scoUnit1, Enums->Width_25);
 	#$row2Tab1->AddCell($ncUnit3);
 
 	#my $row3Tab1 = $tableTab1->AddRow();

@@ -18,9 +18,13 @@ use warnings;
 #use aliased 'Packages::Export::ScoreExport::Enums';
 use aliased 'Helpers::JobHelper';
 use aliased 'CamHelpers::CamHooks';
+use aliased 'CamHelpers::CamHelper';
 use aliased 'CamHelpers::CamJob';
 use aliased 'Packages::Export::ScoreExport::ProgCreator::ProgBuilder';
 use aliased 'Packages::Scoring::ScoreChecker::Enums' => "ScoEnums";
+
+use aliased 'Packages::Scoring::ScoreOptimize::ScoreLayer::ScoreLine';
+use aliased 'Packages::Scoring::ScoreOptimize::ScoreLayer::ScoreSet';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -35,25 +39,26 @@ sub new {
 	$self->{"inCAM"}     = shift;
 	$self->{"jobId"}     = shift;
 	$self->{"coreThick"} = shift;
-
-
+	$self->{"frLim"} = shift;
 	$self->{"step"} = "panel";
 
-	$self->{"pcbThick"} = JobHelper->GetFinalPcbThick( $self->{"jobId"} )/1000;
+	$self->{"pcbThick"} = JobHelper->GetFinalPcbThick( $self->{"jobId"} ) / 1000;
 
+	# get information about panel dimension
 	my %lim = CamJob->GetProfileLimits( $self->{"inCAM"}, $self->{"jobId"}, $self->{"step"} );
 
-	$self->{"width"}  = abs( $lim{"xmax"} - $lim{"xmin"} ) ;
-	$self->{"height"} = abs( $lim{"ymax"} - $lim{"ymin"} ) ;
+	$self->{"width"}  = abs( $lim{"xmax"} - $lim{"xmin"} );
+	$self->{"height"} = abs( $lim{"ymax"} - $lim{"ymin"} );
+
+
 
 	return $self;
 }
 
 sub Build {
-	my $self = shift;
-	my $type = shift;
+	my $self      = shift;
+	my $type      = shift;
 	my $scoreData = shift;
-	 
 
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
@@ -61,15 +66,16 @@ sub Build {
 
 	# get coordinate of left bottom olec hole
 	my @marks = CamHooks->GetLayerCamMarks( $inCAM, $jobId, $step, "c" );
-	my $originVsco = ( grep { $_->{"att"}->{".geometry"} && $_->{"att"}->{".geometry"} =~ /olec/i && $_->{"att"}->{".pnl_place"} =~ /left-bot/i } @marks )[0];
-	my $originHsco = ( grep { $_->{"att"}->{".geometry"} && $_->{"att"}->{".geometry"} =~ /olec/i && $_->{"att"}->{".pnl_place"} =~ /right-bot/i } @marks )[0];
+	my $originVsco =
+	  ( grep { $_->{"att"}->{".geometry"} && $_->{"att"}->{".geometry"} =~ /olec/i && $_->{"att"}->{".pnl_place"} =~ /left-bot/i } @marks )[0];
+	my $originHsco =
+	  ( grep { $_->{"att"}->{".geometry"} && $_->{"att"}->{".geometry"} =~ /olec/i && $_->{"att"}->{".pnl_place"} =~ /right-bot/i } @marks )[0];
 
 	my %originV = ( "x" => $originVsco->{"x1"}, "y" => $originVsco->{"y1"} );
 	my %originH = ( "x" => $originHsco->{"x1"}, "y" => $originHsco->{"y1"} );
-	
+
 	# add control lines to sets
-	$scoreData->AddControlLines();
-	
+	$self->__AddControlLines($scoreData);
 
 	$self->{"scoreFileV"} = $self->__BuildVScore( $type, $scoreData, \%originV );
 	$self->{"scoreFileH"} = $self->__BuildHScore( $type, $scoreData, \%originH );
@@ -77,11 +83,10 @@ sub Build {
 }
 
 sub __BuildVScore {
-	my $self   = shift;
-	my $type   = shift;
+	my $self      = shift;
+	my $type      = shift;
 	my $scoreData = shift;
-	my $origin = shift;
-
+	my $origin    = shift;
 
 	my $dir = ScoEnums->Dir_VSCORE;
 
@@ -106,10 +111,10 @@ sub __BuildVScore {
 }
 
 sub __BuildHScore {
-	my $self   = shift;
-	my $type   = shift;
+	my $self      = shift;
+	my $type      = shift;
 	my $scoreData = shift;
-	my $origin = shift;
+	my $origin    = shift;
 
 	my $dir = ScoEnums->Dir_HSCORE;
 
@@ -125,13 +130,13 @@ sub __BuildHScore {
 	$scoreData->SetNewOrigin($origin);
 
 	my @sets = $scoreData->GetSets($dir);
-	
+
 	# we have to "rotate" hotizontal score lines, because panel is rotated by 90 deg on machine
 	# then is scored from top to bot like vertical score
-	$self->__RotateHSets(\@sets);
+	$self->__RotateHSets( \@sets );
 
 	$str .= $hBuilder->BuildHeader();
-	$str .= $hBuilder->BuildBody($type, \@sets );
+	$str .= $hBuilder->BuildBody( $type, \@sets );
 	$scoreData->ResetOrigin();
 
 	return $str;
@@ -185,33 +190,120 @@ sub SaveFile {
 
 }
 
-
-
 sub __RotateHSets {
-	my $self      = shift;
- 	my $sets = shift;
- 
-	foreach my $set ( @{ $sets } ) {
- 
- 
+	my $self = shift;
+	my $sets = shift;
+
+	foreach my $set ( @{$sets} ) {
+
 		# set set score lines
-		foreach my $line (   $set->GetLines()  ) {
+		foreach my $line ( $set->GetLines() ) {
 
 			my $s = $line->GetStartP();
 			my $e = $line->GetEndP();
 
-			
 			my $val = $s->{"x"};
 			$s->{"x"} = $s->{"y"};
-			$s->{"y"} = - $val;
-			
+			$s->{"y"} = -$val;
+
 			my $val2 = $e->{"x"};
 			$e->{"x"} = $e->{"y"};
-			$e->{"y"} = - $val2;
- 
+			$e->{"y"} = -$val2;
+
 		}
 	}
 }
+
+# Add test score lines. One for every direction in technical frame
+sub __AddControlLines {
+	my $self      = shift;
+	my $scoreData = shift;
+
+	my $frLim = $self->{"frLim"};
+
+	if ( $self->{"frLim"} ) {
+
+		foreach my $k ( keys %{$frLim} ) {
+
+			$frLim->{$k} *= 1000;
+		}
+	}
+
+	my $width  = $self->{"width"} * 1000;
+	my $height = $self->{"height"} * 1000;
+
+	# ==================================
+	# horizontal score
+	# ==================================
+	my $hPoint;
+	my %hLineS;
+	my %hLineE;
+
+	$hPoint = $height - 5000;
+
+	$hLineS{"x"} = - 2000; # start out of pcb 2mm
+	$hLineS{"y"} = $height - 5000;
+	$hLineE{"x"} = 5000 + 40000;
+	$hLineE{"y"} = $height - 5000;
+
+	# multi VV
+	if ($frLim) {
+
+		$hPoint -= $height - $frLim->{"yMax"};
+
+		$hLineS{"x"} += $frLim->{"xMin"};
+		$hLineS{"y"} -= $height - $frLim->{"yMax"};
+		$hLineE{"x"} += $frLim->{"xMin"};
+		$hLineE{"y"} -= $height - $frLim->{"yMax"};
+	}
+
+	# horizontal line
+
+	my $hScoreSet = ScoreSet->new( $hPoint, ScoEnums->Dir_HSCORE );
+	my $hline = ScoreLine->new( ScoEnums->Dir_HSCORE );
+	$hline->SetStartP( \%hLineS );
+	$hline->SetEndP( \%hLineE );
+	$hScoreSet->AddScoreLine($hline);
+
+	$scoreData->AddScoreSet($hScoreSet);
+
+	# ==================================
+	# vertical score
+	# ==================================
+	my $vPoint;
+	my %vLineS;
+	my %vLineE;
+
+	$vPoint = $width - 5000;
+
+	$vLineS{"x"} = $width - 5000;
+	$vLineS{"y"} = $height + 2000; # start out of pcb 2mm;
+	$vLineE{"x"} = $width - 5000;
+	$vLineE{"y"} = $height - 5000 - 40000;
+
+	# multi VV
+	if ($frLim) {
+
+		$vPoint -= $width - $frLim->{"xMax"};
+
+		$vLineS{"x"} -= $width - $frLim->{"xMax"};
+		$vLineS{"y"} -= $height - $frLim->{"yMax"};
+		$vLineE{"x"} -= $width - $frLim->{"xMax"};
+		$vLineE{"y"} -= $height - $frLim->{"yMax"};
+	}
+
+	# horizontal line
+
+	my $vScoreSet = ScoreSet->new( $vPoint, ScoEnums->Dir_VSCORE );
+	my $vline = ScoreLine->new( ScoEnums->Dir_VSCORE );
+	$vline->SetStartP( \%vLineS );
+	$vline->SetEndP( \%vLineE );
+	$vScoreSet->AddScoreLine($vline);
+
+	$scoreData->AddScoreSet($vScoreSet);
+
+}
+
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#

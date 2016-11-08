@@ -3,7 +3,7 @@
 # Description: Manager responsible for AOI files creation
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::Scoring::ScoreOptimize::Helper;
+package Packages::Export::ScoreExport::ScoreMarker;
 
 #3th party library
 use strict;
@@ -12,7 +12,9 @@ use warnings;
 #local library
 use aliased 'CamHelpers::CamLayer';
 use aliased 'CamHelpers::CamHelper';
+use aliased 'CamHelpers::CamAttributes';
 use aliased 'Helpers::GeneralHelper';
+use aliased 'CamHelpers::CamJob';
 use aliased 'Packages::Polygon::Features::ScoreFeatures::ScoreFeatures';
 use aliased 'Packages::Scoring::ScoreChecker::Enums' => "ScoEnums";
 
@@ -27,14 +29,164 @@ sub new {
 	my $self = {};
 	bless $self;
 
-	$self->{"inCAM"} = shift;
-	$self->{"jobId"} = shift;
-	$self->{"accuracy"} = shift;
+	$self->{"inCAM"}        = shift;
+	$self->{"jobId"}        = shift;
+	$self->{"scoreChecker"} = shift;
+	$self->{"frLim"}        = shift;
+	
+	$self->{"step"}        = "panel";
+
+	#define length of control line
+
+	if ( $self->{"frLim"} ) {
+
+		$self->{"lenV"} = 15;
+		$self->{"lenH"} = 20;
+	}
+	else {
+
+		$self->{"lenV"} = 14;
+		$self->{"lenH"} = 14;
+	}
+
+	# define limits of panel
+
+	# get information about panel dimension
+	my %lim = CamJob->GetProfileLimits( $self->{"inCAM"}, $self->{"jobId"}, $self->{"step"} );
+
+	$self->{"xMin"} = 0;
+	$self->{"xMax"} = abs( $lim{"xmax"} - $lim{"xmin"} );
+	$self->{"yMin"} = 0;
+	$self->{"yMax"} = abs( $lim{"ymax"} - $lim{"ymin"} );
+
+	if ( $self->{"frLim"} ) {
+
+		$self->{"width"}  = abs( $self->{"frLim"}->{"xMax"} - $self->{"frLim"}->{"xMin"} );
+		$self->{"height"} = abs( $self->{"frLim"}->{"yMax"} - $self->{"frLim"}->{"yMin"} );
+
+		$self->{"xMin"} = $self->{"frLim"}->{"xMin"};
+		$self->{"xMax"} = $self->{"frLim"}->{"xMax"};
+		$self->{"yMin"} = $self->{"frLim"}->{"yMin"};
+		$self->{"yMax"} = $self->{"frLim"}->{"yMax"};
+	}
 
 	return $self;
 }
 
-sub ReCheck {
+sub Run {
+	my $self = shift;
+
+	my @points = $self->__GetPoints();
+	$self->__DrawPoints( \@points );
+
+}
+
+sub __DrawPoints {
+	my $self   = shift;
+	my @points = @{ shift(@_) };
+	my $inCAM  = $self->{"inCAM"};
+	my $jobId  = $self->{"jobId"};
+
+	# Create layer for liones, set attribute
+	my $lName = GeneralHelper->GetGUID();
+
+	$inCAM->COM( 'create_layer', "layer" => $lName, "context" => 'misc', "type" => 'document', "polarity" => 'positive', "ins_layer" => '' );
+	CamLayer->WorkLayer( $inCAM, $lName );
+
+	foreach my $point (@points) {
+
+		my %startP = %{ $point->{"point"} };
+		my %endP;
+
+		if ( $point->{"dir"} eq ScoEnums->Dir_HSCORE ) {
+
+			$endP{"x"} = $startP{"x"} + $self->{"lenH"};
+			$endP{"y"} = $startP{"y"};
+
+		}
+		elsif ( $point->{"dir"} eq ScoEnums->Dir_VSCORE ) {
+
+			$endP{"x"} = $startP{"x"};
+			$endP{"y"} = $startP{"y"} - $self->{"lenV"};
+		}
+
+		$inCAM->COM(
+					 'add_line',
+					 attributes => 'no',
+					 xs         => $startP{"x"},
+					 ys         => $startP{"y"},
+					 xe         => $endP{"x"},
+					 ye         => $endP{"y"},
+					 "symbol"   => "r300"
+		);
+
+	}
+
+	CamAttributes->SetFeatuesAttribute( $inCAM, ".string", "score_control_line" );
+
+	#copy to other layer
+	# merge layer to final output layer
+	my @layers = ( "mc", "c", "s", "ms" );
+
+	foreach my $l (@layers) {
+
+		if ( CamHelper->LayerExists( $inCAM, $jobId, $l ) ) {
+
+			$inCAM->COM( "merge_layers", "source_layer" => $lName, "dest_layer" => $l );
+		}
+	}
+
+	# Delete
+
+	# delete rout temporary layer
+	if ( CamHelper->LayerExists( $inCAM, $jobId, $lName ) ) {
+
+		$inCAM->COM( 'delete_layer', "layer" => $lName );
+	}
+}
+
+sub __GetPoints {
+	my $self = shift;
+
+	my $pcbPlace = $self->{"scoreChecker"}->GetPcbPlace();
+
+	my @points = ();
+
+	# horizontal mark lines
+	my @hPos = $pcbPlace->GetScorePos( ScoEnums->Dir_HSCORE );
+
+	foreach my $posInf (@hPos) {
+
+		my %pointVL = { "x" => $self->{"xMin"}, "y" => $posInf->GetPosition() };
+		my %pointVR = { "x" => $self->{"xMax"} - $self->{"lenH"}, "y" => $posInf->GetPosition() };
+
+		my %pointL = ( "dir" => ScoEnums->Dir_HSCORE, "point" => \%pointVL );
+		my %pointR = ( "dir" => ScoEnums->Dir_HSCORE, "point" => \%pointVR );
+
+		push( @points, \%pointL );
+		push( @points, \%pointR );
+	}
+
+	# vertical mark lines
+	my @VPos = $pcbPlace->GetScorePos( ScoEnums->Dir_VSCORE );
+
+	foreach my $posInf (@VPos) {
+
+		my %pointVT = { "x" => $posInf->GetPosition(), "y" => $self->{"yMax"} };
+		my %pointVB = { "x" => $posInf->GetPosition(), "y" => $self->{"yMin"} + $self->{"lenV"} };
+
+		my %pointT = ( "dir" => ScoEnums->Dir_VSCORE, "point" => \%pointVT );
+		my %pointB = ( "dir" => ScoEnums->Dir_VSCORE, "point" => \%pointVB );
+
+		push( @points, \%pointT);
+		push( @points, \%pointB);
+	}
+
+	return @points;
+
+}
+
+sub Cre {
 	my $self          = shift;
 	my $optimizeLName = shift;
 	my $errMess       = shift;
@@ -123,8 +275,6 @@ sub __GetScore {
 
 	my @feats = $score->GetFeatures();
 
- 
-
 	# H
 	my @h       = grep { $_->{"direction"} eq "horizontal" } @feats;
 	my @hMerged = ();
@@ -135,8 +285,8 @@ sub __GetScore {
 		my $exist = scalar( grep { abs( $_->{"y1"} - $f->{"y1"} ) < $self->{"accuracy"} } @hMerged );
 
 		unless ($exist) {
-			push(@hMerged, $f);
-			 
+			push( @hMerged, $f );
+
 		}
 	}
 
@@ -151,13 +301,11 @@ sub __GetScore {
 		my $exist = scalar( grep { abs( $_->{"x1"} - $f->{"x1"} ) < $self->{"accuracy"} } @vMerged );
 
 		unless ($exist) {
-				push(@vMerged, $f);
+			push( @vMerged, $f );
 		}
 	}
 	$$hCount = scalar(@hMerged);
 	$$vCount = scalar(@vMerged);
-
- 
 
 	return $checkSucc;
 
@@ -199,10 +347,10 @@ sub CreateLayer {
 			$inCAM->COM(
 						 'add_line',
 						 attributes => 'no',
-						 xs         => $line->GetStartP()->{"x"} /1000,
-						 ys         => $line->GetStartP()->{"y"}/1000,
-						 xe         => $line->GetEndP()->{"x"}/1000,
-						 ye         => $line->GetEndP()->{"y"}/1000,
+						 xs         => $line->GetStartP()->{"x"} / 1000,
+						 ys         => $line->GetStartP()->{"y"} / 1000,
+						 xe         => $line->GetEndP()->{"x"} / 1000,
+						 ye         => $line->GetEndP()->{"y"} / 1000,
 						 "symbol"   => "r400"
 			);
 
@@ -225,8 +373,8 @@ sub CreateLayer {
 			$inCAM->COM(
 						 "add_pad",
 						 "attributes" => 'no',
-						 "x"          => $x/1000,
-						 "y"          => $y/1000,
+						 "x"          => $x / 1000,
+						 "y"          => $y / 1000,
 						 "symbol"     => "r" . $sym
 			);
 		}

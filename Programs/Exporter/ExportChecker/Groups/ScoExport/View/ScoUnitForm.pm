@@ -72,7 +72,8 @@ sub __SetLayout {
 	# BUILD STRUCTURE OF LAYOUT
 
 	$szMain->Add( $settings, 0, &Wx::wxEXPAND );
-	$szMain->Add( $settings, 0, &Wx::wxEXPAND );
+	$szMain->Add( 20,20, 0 );
+	$szMain->Add( $optimize, 0, &Wx::wxEXPAND );
 
 	$self->SetSizer($szMain);
 
@@ -96,13 +97,15 @@ sub __SetLayoutSettings {
 	# DEFINE CONTROLS
 
 	my $coreThickTxt = Wx::StaticText->new( $statBox, -1, "Core thick", &Wx::wxDefaultPosition, [ 120, 20 ] );
-	my $coreThickValTxt = Wx::TextCtrl->new( $statBox, -1, "", &Wx::wxDefaultPosition, [ 20, $self->{"rowHeight"} ] );
+	my $coreThickValTxt = Wx::TextCtrl->new( $statBox, -1, "", &Wx::wxDefaultPosition, [ 90, 20 ]  );
+	my $unitTxt = Wx::StaticText->new( $statBox, -1, "mm", &Wx::wxDefaultPosition, [ 20, 20 ] );
 
 	# SET EVENTS
 
 	# BUILD STRUCTURE OF LAYOUT
 	$szRowDetail1->Add( $coreThickTxt,    0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 	$szRowDetail1->Add( $coreThickValTxt, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szRowDetail1->Add( $unitTxt, 1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 
 	$szStatBox->Add( $szRowDetail1, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
 
@@ -121,24 +124,24 @@ sub __SetLayoutOptimize {
 	my $statBox = Wx::StaticBox->new( $parent, -1, 'Paste' );
 	my $szStatBox = Wx::StaticBoxSizer->new( $statBox, &Wx::wxVERTICAL );
 
-	my $szRowMain1 = Wx::BoxSizer->new(&Wx::wxVERTICAL);
-	my $szRowMain2 = Wx::BoxSizer->new(&Wx::wxVERTICAL);
-	my $szRowMain3 = Wx::BoxSizer->new(&Wx::wxVERTICAL);
+	my $szRowMain1 = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
+	my $szRowMain2 = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
+	my $szRowMain3 = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
 
 	# DEFINE CONTROLS
 
-	my $optimizeTxt = Wx::StaticText->new( $statBox, -1, "Optimize",      &Wx::wxDefaultPosition, [ 120, 20 ] );
-	my $typeTxt     = Wx::StaticText->new( $statBox, -1, "Type",          &Wx::wxDefaultPosition, [ 120, 20 ] );
-	my $jumpTxt     = Wx::StaticText->new( $statBox, -1, "Customer jump", &Wx::wxDefaultPosition, [ 120, 20 ] );
+	my $optimizeTxt = Wx::StaticText->new( $statBox, -1, "Optimize",      &Wx::wxDefaultPosition, [ 120, 22 ] );
+	my $typeTxt     = Wx::StaticText->new( $statBox, -1, "Type",          &Wx::wxDefaultPosition, [ 120, 22 ] );
+	my $jumpTxt     = Wx::StaticText->new( $statBox, -1, "Customer jump", &Wx::wxDefaultPosition, [ 120, 22 ] );
 
 	my @optType = ( "yes", "no", "manual" );
 	my @scoreType = ( "classic", "one direction" );
 
 	my $optimizeCb =
-	  Wx::ComboBox->new( $statBox, -1, $optType[ scalar(@optType) - 1 ], &Wx::wxDefaultPosition, [ 70, 20 ], \@optType, &Wx::wxCB_READONLY );
+	  Wx::ComboBox->new( $statBox, -1, $optType[ scalar(@optType) - 1 ], &Wx::wxDefaultPosition, [ 90, 22 ], \@optType, &Wx::wxCB_READONLY );
 	my $scoreTypeCb =
-	  Wx::ComboBox->new( $statBox, -1, $scoreType[ scalar(@scoreType) - 1 ], &Wx::wxDefaultPosition, [ 70, 20 ], \@scoreType, &Wx::wxCB_READONLY );
-	my $jumpTxtChb = Wx::CheckBox->new( $statBox, -1, "", &Wx::wxDefaultPosition, [ 70, 20 ] );
+	  Wx::ComboBox->new( $statBox, -1, $scoreType[ scalar(@scoreType) - 1 ], &Wx::wxDefaultPosition, [ 90, 22 ], \@scoreType, &Wx::wxCB_READONLY );
+	my $jumpTxtChb = Wx::CheckBox->new( $statBox, -1, "", &Wx::wxDefaultPosition, [ 90, 22 ] );
 
 	# SET EVENTS
 
@@ -146,18 +149,18 @@ sub __SetLayoutOptimize {
 
 	# BUILD STRUCTURE OF LAYOUT
 
-	$szRowMain1->Add( $stepTxt, 0, &Wx::wxALL, 0 );
-	$szRowMain1->Add( $stepCb,  0, &Wx::wxALL, 0 );
+	$szRowMain1->Add( $optimizeTxt, 0, &Wx::wxALL, 0 );
+	$szRowMain1->Add( $optimizeCb,  0, &Wx::wxALL, 0 );
 
-	$szRowMain2->Add( $notOriTxt, 0, &Wx::wxALL, 0 );
-	$szRowMain2->Add( $notOriChb, 0, &Wx::wxALL, 0 );
+	$szRowMain2->Add( $typeTxt, 0, &Wx::wxALL, 0 );
+	$szRowMain2->Add( $scoreTypeCb, 0, &Wx::wxALL, 0 );
 
-	$szRowMain3->Add( $profileTxt, 0, &Wx::wxALL, 0 );
-	$szRowMain3->Add( $profileChb, 0, &Wx::wxALL, 0 );
+	$szRowMain3->Add( $jumpTxt, 0, &Wx::wxALL, 0 );
+	$szRowMain3->Add( $jumpTxtChb, 0, &Wx::wxALL, 0 );
 
-	$szStatBox->Add( $szRowMain1, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
-	$szStatBox->Add( $szRowMain2, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
-	$szStatBox->Add( $szRowMain3, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
+	$szStatBox->Add( $szRowMain1, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szStatBox->Add( $szRowMain2, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szStatBox->Add( $szRowMain3, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 
 	# Set References
 
@@ -252,18 +255,18 @@ sub GetOptimize {
 # Scoring type classic/one direction
 sub SetScoringType {
 	my $self = shift;
-	my $self = shift;
+ 
 	my $val  = shift;
 
 	my $valControl;
 
 	if ( $val eq ScoExport->Type_ONEDIR ) {
 
-		$valControl = "One direction";
+		$valControl = "one direction";
 	}
 	elsif ( $val eq ScoExport->Type_CLASSIC ) {
 
-		$valControl = "Classic";
+		$valControl = "classic";
 	}
 
 	$self->{"scoreTypeCb"}->SetValue($valControl);
@@ -275,11 +278,11 @@ sub GetScoringType {
 	my $valControl = $self->{"scoreTypeCb"}->GetValue();
 	my $val;
 
-	if ( $valControl eq "One direction" ) {
+	if ( $valControl eq "one direction" ) {
 
 		$val = ScoExport->Type_ONEDIR;
 	}
-	elsif ( $valControl eq "no" ) {
+	elsif ( $valControl eq "classic" ) {
 
 		$val = ScoExport->Type_CLASSIC;
 	}

@@ -19,6 +19,7 @@ use aliased 'Packages::Stackup::Stackup::Stackup';
 use aliased 'Packages::Stackup::StackupNC::StackupNC';
 use aliased 'Packages::Routing::PlatedRoutArea';
 use aliased 'CamHelpers::CamDrilling';
+use aliased 'CamHelpers::CamHelper';
 use aliased 'Packages::Scoring::ScoreChecker::ScoreChecker';
 use aliased 'Connectors::HeliosConnector::HegMethods';
 

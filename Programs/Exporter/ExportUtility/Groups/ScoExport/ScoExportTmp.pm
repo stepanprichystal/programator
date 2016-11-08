@@ -12,8 +12,8 @@ use aliased 'Packages::Events::Event';
 use aliased 'Programs::Exporter::UnitEnums';
 use aliased 'Managers::MessageMngr::MessageMngr';
 
-use aliased "Programs::Exporter::ExportUtility::Groups::PreExport::PreUnit"  => "UnitExport";
-use aliased "Programs::Exporter::ExportChecker::Groups::PreExport::Presenter::PreUnit" => "Unit";
+use aliased "Programs::Exporter::ExportUtility::Groups::ScoExport::ScoUnit"  => "UnitExport";
+use aliased "Programs::Exporter::ExportChecker::Groups::ScoExport::Presenter::ScoUnit" => "Unit";
 
 use aliased 'Programs::Exporter::ExportChecker::ExportChecker::DefaultInfo::DefaultInfo';
 use aliased 'Packages::ItemResult::ItemResultMngr';
@@ -30,7 +30,7 @@ sub new {
 	$self = {};
 	bless $self;
 	
-	$self->{"id"} =  UnitEnums->UnitId_PRE;
+	$self->{"id"} =  UnitEnums->UnitId_SCO;
 	
 	return $self;
 }

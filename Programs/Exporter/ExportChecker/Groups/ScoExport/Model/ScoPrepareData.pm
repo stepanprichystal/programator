@@ -12,7 +12,7 @@ use strict;
 use warnings;
 
 #local library
-use aliased 'Programs::Exporter::ExportChecker::Groups::GerExport::Model::ScoGroupData';
+use aliased 'Programs::Exporter::ExportChecker::Groups::ScoExport::Model::ScoGroupData';
 use aliased 'Programs::Exporter::ExportChecker::Enums';
 use aliased 'Packages::Export::ScoreExport::Enums' => "ScoEnums";
 use aliased 'CamHelpers::CamHelper';
@@ -36,6 +36,9 @@ sub new {
 sub OnGetGroupState {
 	my $self     = shift;
 	my $dataMngr = shift;    #instance of GroupDataMngr
+	
+	my $inCAM = $dataMngr->{"inCAM"};
+	my $jobId = $dataMngr->{"jobId"};
 
 	my $scoExist = CamHelper->LayerExists( $inCAM, $jobId, "score" );
 

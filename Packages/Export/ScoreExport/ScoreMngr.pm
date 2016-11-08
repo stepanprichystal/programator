@@ -22,7 +22,10 @@ use aliased 'Packages::Export::ScoreExport::ProgCreator::ProgCreator';
 use aliased 'Packages::Export::ScoreExport::Enums';
 use aliased 'CamHelpers::CamHelper';
 use aliased 'Packages::Scoring::ScoreChecker::Enums' => "ScoEnums";
-use aliased 'Packages::ItemResult::Enums' => "ResEnums";
+use aliased 'Packages::ItemResult::Enums'            => "ResEnums";
+use aliased 'Packages::Polygon::Features::RouteFeatures::RouteFeatures';
+use aliased 'Packages::Polygon::PolygonHelper';
+use aliased 'Packages::Export::ScoreExport::ScoreMarker';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -38,11 +41,13 @@ sub new {
 	$self->{"jobId"}     = shift;
 	$self->{"coreThick"} = shift;
 	$self->{"optimize"}  = shift;
-	$self->{"type"}  = shift;
-	
+	$self->{"type"}      = shift;
+
 	$self->{"finalLayer"}   = "score_layer";    # name of layer , which contains final score data
 	$self->{"exportLayer"}  = undef;            # layer which score data are taken from
 	$self->{"optimizeData"} = undef;            # Final data structure, which provide data for export
+	
+	$self->{"frLim"}        = $self->__GetFrLim();
 
 	my $step = "panel";
 
@@ -64,7 +69,8 @@ sub new {
 
 	$self->{"scoreCheck"} = ScoreChecker->new( $self->{"inCAM"}, $self->{"jobId"}, $step, $self->{"exportLayer"}, $SR );
 	$self->{"scoreOptimize"} = ScoreOptimize->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"scoreCheck"} );
-	$self->{"creator"} = ProgCreator->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"coreThick"} );
+	$self->{"marker"} = ScoreMarker->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"scoreCheck"}, $self->{"frLim"} );
+	$self->{"creator"} = ProgCreator->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"coreThick"}, $self->{"frLim"} );
 
 	return $self;
 }
@@ -74,8 +80,6 @@ sub Run {
 
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
-	
-	 
 
 	my $checkScoreRes = $self->_GetNewItem("Score check");
 
@@ -102,14 +106,12 @@ sub Run {
 	}
 
 	$self->_OnItemResult($checkScoreRes);
-	
-	if($checkScoreRes->Result() eq ResEnums->ItemResult_Fail){
-		
+
+	if ( $checkScoreRes->Result() eq ResEnums->ItemResult_Fail ) {
+
 		print STDERR $errMess;
 		return 0;
 	}
-	
-	
 
 	# 3) Optimize  and get score data
 	if ( $self->{"optimize"} eq Enums->Optimize_YES ) {
@@ -139,7 +141,12 @@ sub Run {
 		print STDERR $errMess2;
 	}
 
-	# 5) Export program for machine
+
+	# 5) Put control lines to solder and signal layers
+	$self->{"marker"}->Run();
+
+
+	# 6) Export program for machine
 	$self->{"creator"}->Build( $self->{"type"}, $self->{"optimizeData"} );
 
 	if ( $self->{"optimizeData"}->ExistVScore() ) {
@@ -154,7 +161,7 @@ sub Run {
 		$self->_OnItemResult($fileSave);
 
 	}
-	
+
 	if ( $self->{"optimizeData"}->ExistHScore() ) {
 
 		my $fileSave = $self->_GetNewItem("Save y-score file");
@@ -168,6 +175,27 @@ sub Run {
 
 	print STDERR $errMess;
 
+}
+
+# get information about	fr dimension
+sub __GetFrLim {
+	my $self = shift;
+	
+	my %lim = ();
+	
+	if ( CamHelper->LayerExists( $self->{"inCAM"}, $self->{"jobId"}, "fr" ) ) {
+		
+		my $fr = RouteFeatures->new();
+		$fr->Parse( $self->{"inCAM"}, $self->{"jobId"}, $self->{"step"}, "fr" );
+		my @features = $fr->GetFeatures();
+		
+		%lim      = PolygonHelper->GetLimByRectangle( \@features );
+		
+		return \%lim;
+ 
+	}
+	
+	return undef;
 }
 
 sub ExportItemsCount {
@@ -195,9 +223,9 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId = "f52456";
+	my $jobId = "f13610";
 
-	my $mngr = ScoreMngr->new( $inCAM, $jobId, 0.3, Enums->Optimize_YES, Enums->Type_ONEDIR );
+	my $mngr = ScoreMngr->new( $inCAM, $jobId, 0.3, Enums->Optimize_YES, Enums->Type_CLASSIC );
 	$mngr->Run();
 }
 

@@ -16,8 +16,8 @@ use File::Copy;
 #local library
 #use aliased 'CamHelpers::CamLayer';
 #use aliased 'Connectors::HeliosConnector::HegMethods';
-#use aliased 'CamHelpers::CamHelper';
-
+use aliased 'CamHelpers::CamHelper';
+use aliased 'Packages::Export::ScoreExport::Enums' => "ScoEnums";
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -44,11 +44,30 @@ sub OnCheckGroupData{
 	
 	my $thick = $groupData->GetCoreThick();
 	
-	if(!defined || $thick <= 0){
+	$thick = sprintf("%2.2f", $thick);
+	
+	if(!defined $thick || $thick <= 0 || $thick > 3){
 		
-		$dataMngr->_AddErrorResult( "Tlouška zùstatku dps po drážkování je nulová nebo není definovaná.");
+		$dataMngr->_AddErrorResult( "Tlouška zùstatku", "Tlouška zùstatku dps po drážkování je nulová nebo není definovaná.");
 	}
 	 
+	 
+	my $opt = $groupData->GetOptimize(); 
+	 
+	# if manual, check if layer score_layer exist 
+	if( $opt eq ScoEnums->Optimize_MANUAL){
+		
+		my $scoExist = CamHelper->LayerExists( $inCAM, $jobId, "score_layer" );
+		
+		unless($scoExist){
+			
+			my $m = "Pokud je zvolena oprimalizace manual, musí existovat vrstva 'score_layer', podle které se drážka vyexportuje.";
+			
+			$dataMngr->_AddErrorResult( "Optimalizace manual", $m);
+		}
+		
+		
+	} 
 
 	 
 }

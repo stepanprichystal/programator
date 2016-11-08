@@ -4,10 +4,11 @@
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Packages::Export::ScoreExport::ProgCreator::ProgBuilder;
- 
+
 #3th party library
 use strict;
 use warnings;
+
 #local library
 #use aliased 'Enums::EnumsGeneral';
 #
@@ -37,7 +38,7 @@ sub new {
 	$self->{"width"}     = shift;
 	$self->{"height"}    = shift;
 	$self->{"direction"} = shift;
-	
+
 	return $self;
 }
 
@@ -73,7 +74,7 @@ sub BuildHeader {
 	$str .= "M49,SEQP100P" . $w . "\n";
 	$str .= "M49,SEQP101P" . $h . "\n";
 	$str .= "M49,SEQP102P$pcbThickStr\n";
-	
+
 	return $str;
 
 }
@@ -82,7 +83,7 @@ sub BuildBody {
 	my $self = shift;
 	my $type = shift;
 	my @sets = @{ shift(@_) };
-	
+
 	#my $inCAM = $self->{"inCAM"};
 	#my $jobId = $self->{"jobId"};
 
@@ -90,7 +91,7 @@ sub BuildBody {
 
 	#my $origin = shift;
 
-	my $crossOver = 130;    # this value mean, cut machine goes behind pcb, by 130 mm after each score line
+	my $crossOver = 130;    # this value mean, cut machine goes behind pcb, by 130 mm after each score line ( "park area")
 
 	my $xSize = $self->__GetSizeX();
 	my $ySize = $self->__GetSizeY();
@@ -106,8 +107,6 @@ sub BuildBody {
 	my $speed = $self->__GetSpeed();
 	my $str   = "";
 
-
-
 	# vertical score, get x
 
 	my $initLine = 0;
@@ -117,15 +116,15 @@ sub BuildBody {
 	foreach my $set (@sets) {
 
 		# 1) set x position of scoring
-		$str .= "T00X" .  sprintf( "%3.3f", $set->GetPoint()/1000 )."\n";    # position of score lines
+		$str .= "T00X" . sprintf( "%3.3f", $set->GetPoint() / 1000 ) . "\n";    # position of score lines
 
-		# 2) go behind pannel TOP/BOTTOM
+		# 2) go behind pannel TOP/BOTTOM to park area
 		#my $crossOverPos = $ySize + $crossOver;
 		# put only once, position. No idea what is mean..
 		unless ($initLine) {
-			
-			chop($str); #remove last new line
-			$str .= "Y" . sprintf( "%3.3f", $ySize + $crossOver );    # go behind pnl TOP
+
+			chop($str);                                                         #remove last new line
+			$str .= "Y" . sprintf( "%3.3f", $ySize + $crossOver );              # go to TOP park area
 			$str .= "T01H10.0B1.5Z" . $osaZ . "A-" . $osaA . "\n";
 			$str .= "T00M38\n";
 			$initLine = 1;
@@ -137,11 +136,11 @@ sub BuildBody {
 		foreach my $line ( $set->GetLines($reverse) ) {
 
 			# get start, end point of score line
-		 
+
 			my $start = $line->GetStartP()->{"y"};
 			my $end   = $line->GetEndP()->{"y"};
-			
-			$start = sprintf( "%3.3f", $start / 1000);
+
+			$start = sprintf( "%3.3f", $start / 1000 );
 			$end   = sprintf( "%3.3f", $end / 1000 );
 
 			# print line
@@ -150,20 +149,20 @@ sub BuildBody {
 
 		}
 
-		# go behind panel BOTTOM
+		# a) Mach. behaviour when type is CLASSIC
+		if ( $type eq Enums->Type_CLASSIC ) {
+			
+			if ($top2Bot) {
 
-		if ( $top2Bot && $type eq Enums->Type_CLASSIC ) {
+				$str .= "T00Y" . sprintf( "%3.3f", -$crossOver ) . "\n";    # go to BOT park area
+			}
+			# machine goes from bot to top
+			elsif ( !$top2Bot ) {
 
-			$str .= "T00Y" . sprintf( "%3.3f", -$crossOver ) . "\n";    # go to BOT
+				$str .= "T00Y" . sprintf( "%3.3f", $ySize + $crossOver ) . "\n";    # go to TOP park area
+			}
 
-		}
-		elsif ( ( $top2Bot && $type eq Enums->Type_CLASSIC ) || !$top2Bot ) {
-			$str .= "T00Y" . sprintf( "%3.3f", $ySize + $crossOver ). "\n";    # go to TOP
-		}
-
-		# next set of lines if classic mode
-		# - switch order of score lines, because machine goes from bottom of panel
-		if ( $type ne Enums->Type_ONEDIR ) {
+			# Next switch order of score lines, because machine goes from bottom of panel
 
 			if ($top2Bot) {
 				$top2Bot = 0;
@@ -171,6 +170,12 @@ sub BuildBody {
 			else {
 				$top2Bot = 1;
 			}
+		}
+
+		# b) Mach. behaviour  when type is ONE DIRECTION
+		if ( $type eq Enums->Type_ONEDIR ) {
+
+			$str .= "T00Y" . sprintf( "%3.3f", $ySize + $crossOver ) . "\n";    # go back to TOP park area
 		}
 
 	}
@@ -183,13 +188,12 @@ sub BuildBody {
 # return size of panel
 sub __GetSizeX {
 	my $self = shift;
-	 
+
 	if ( $self->{"direction"} eq ScoEnums->Dir_HSCORE ) {
 
-		return $self->{"height"};	
+		return $self->{"height"};
 	}
 	elsif ( $self->{"direction"} eq ScoEnums->Dir_VSCORE ) {
-
 
 		return $self->{"width"};
 	}
@@ -198,7 +202,7 @@ sub __GetSizeX {
 # return size of panel
 sub __GetSizeY {
 	my $self = shift;
- 
+
 	if ( $self->{"direction"} eq ScoEnums->Dir_HSCORE ) {
 
 		return $self->{"width"};

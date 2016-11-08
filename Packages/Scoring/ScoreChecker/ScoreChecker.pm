@@ -45,7 +45,7 @@ sub new {
 	$self->{"layer"} = shift;
 	$self->{"SR"}    = shift;
 
-	$self->{"accuracy"} = 50;    # tell precision of compering score position. 1 decimal place
+	$self->{"accuracy"} = 100;    # tell precision of compering score position. 1 decimal place
 
 	$self->{"pcbPlace"} = PcbPlace->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"step"}, $self->{"layer"}, $self->{"SR"}, $self->{"accuracy"} );
 
