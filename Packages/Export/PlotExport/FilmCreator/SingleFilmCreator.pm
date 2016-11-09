@@ -1,5 +1,5 @@
 #-------------------------------------------------------------------------------------------#
-# Description: Wrapper for operations connected with inCam attributes
+# Description: Creator, which create sets, contain 1 layers - horizontal
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 

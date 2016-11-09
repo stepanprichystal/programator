@@ -1,6 +1,7 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Cover exporting layers for particular machine, which can procces given nc file
+# Description: Optimiye score data for scorin machines
+# - shortens lines, links lines, etc..
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Packages::Scoring::ScoreOptimize::Optimizator;
@@ -11,19 +12,12 @@ use strict;
 use warnings;
 
 #local library
-#use aliased 'Helpers::GeneralHelper';
-#use aliased 'Packages::ItemResult::ItemResult';
-#use aliased 'Enums::EnumsPaths';
-#use aliased 'Helpers::JobHelper';
-#use aliased 'CamHelpers::CamHelper';
-#use aliased 'CamHelpers::CamStepRepeat';
-#use aliased 'Helpers::FileHelper';
-#use aliased 'Packages::Export::GerExport::Helper';
+
 use aliased 'Packages::Scoring::ScoreOptimize::ScoreLayer::ScoreSet';
 use aliased 'Packages::Scoring::ScoreOptimize::ScoreLayer::ScoreLine';
 use aliased 'Packages::Scoring::ScoreOptimize::ScoreLayer::ScoreLayer';
 use aliased 'Packages::Scoring::ScoreChecker::OriginConvert' => "Convertor";
-use aliased 'Packages::Scoring::ScoreChecker::Enums' => "ScoEnums";
+use aliased 'Packages::Scoring::ScoreChecker::Enums'         => "ScoEnums";
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -40,7 +34,6 @@ sub new {
 	$self->{"jobId"}        = shift;
 	$self->{"scoreChecker"} = shift;
 
-	 
 	$self->{"scoreLayer"} = undef;
 
 	$self->{"reduce"} = undef;    # reduce score from profile by 4mm
@@ -55,59 +48,59 @@ sub Run {
 	my $checker    = $self->{"scoreChecker"};
 	my $isStraight = $checker->IsStraight();
 
+	# if jumpscoring "is not needed", dont shortens lines
 	if ($isStraight) {
-
-		#$self->{"scoreLayer"} = $self->__OptimizeJumpScoring();
 
 		$self->{"reduce"} = 0;
 	}
 	else {
 		
-	 	$self->{"reduce"} = $checker->GetReduceDist();
- 
+		# get distance which is necessary in order score doesn't cut next pcb
+		$self->{"reduce"} = $checker->GetReduceDist();
+
 	}
 
-	print STDERR "Score is Straight = " . $isStraight . "\n.";
- 
- 
 	my $scoreLayer = ScoreLayer->new();
 
 	if ($optimize) {
 
-		 $self->__PrepareOptimizeScoreData($scoreLayer);
+		$self->__PrepareOptimizeScoreData($scoreLayer);
 	}
 	else {
 
-		 $self->__PrepareScoreData($scoreLayer);
+		$self->__PrepareScoreData($scoreLayer);
 	}
 
 	$self->{"scoreLayer"} = $scoreLayer;
 
 }
 
-#sub __OptimizeStandard {
-#	my $self = shift;
-#
-#}
+sub GetScoreData {
+	my $self = shift;
+
+	return $self->{"scoreLayer"};
+
+}
+ 
 
 # -------------------------------------------------------
 # Methods, create final score layer
 # -------------------------------------------------------
 
+# prepare score data , do NOT optimize
 sub __PrepareScoreData {
-	my $self = shift;
+	my $self       = shift;
 	my $scoreLayer = shift;
 
 	my $checker  = $self->{"scoreChecker"};
 	my $pcbPlace = $checker->GetPcbPlace();
- 
 
 	# all verticall and horiyontall score positions
-	
-	my @h = $pcbPlace->GetScorePos(ScoEnums->Dir_HSCORE);
-	my @v = $pcbPlace->GetScorePos(ScoEnums->Dir_VSCORE);
-	
-	my @scorePos =(@h, @v);
+
+	my @h = $pcbPlace->GetScorePos( ScoEnums->Dir_HSCORE );
+	my @v = $pcbPlace->GetScorePos( ScoEnums->Dir_VSCORE );
+
+	my @scorePos = ( @h, @v );
 
 	foreach my $posInfo (@scorePos) {
 
@@ -134,23 +127,22 @@ sub __CreateSet {
 
 	# new info struct about score position and all score lines
 	my $scoreSet = ScoreSet->new( $point, $dir );
-	my $line     = ScoreLine->new($dir);            # Init new lajn
-	                                                #my $lstPoint = undef;
-	                                                # Go through all pcb which are potential intersect  by score
+	my $line     = ScoreLine->new($dir);             # Init new lajn
+	                                                 #my $lstPoint = undef;
+	                                                 # Go through all pcb which are potential intersect  by score
 	foreach my $pcb (@pcbs) {
 
 		my @score = $self->__GetScore( $posPnl, $pcb );
-		my @allPoints = $self->__GetPoints( $posPnl, $pcb );     # get all points, where score start or end. Sorted
+		my @allPoints = $self->__GetPoints( $posPnl, $pcb );    # get all points, where score start or end. Sorted
 
 		foreach my $sco (@score) {
 
-			my $line = ScoreLine->new($dir);        # Init new lajn
+			my $line = ScoreLine->new($dir);                    # Init new lajn
 
-			
-			my $sPoint = Convertor->DoPoint($sco->GetStartP(), $pcb);
+			my $sPoint = Convertor->DoPoint( $sco->GetStartP(), $pcb );
 			$line->SetStartP($sPoint);
 
-			my $ePoint = Convertor->DoPoint($sco->GetEndP(), $pcb );
+			my $ePoint = Convertor->DoPoint( $sco->GetEndP(), $pcb );
 			$line->SetEndP($ePoint);
 
 			$scoreSet->AddScoreLine($line);
@@ -161,19 +153,19 @@ sub __CreateSet {
 
 }
 
+# prepare score data , DO optimize
 sub __PrepareOptimizeScoreData {
-	my $self = shift;
+	my $self       = shift;
 	my $scoreLayer = shift;
 
 	my $checker  = $self->{"scoreChecker"};
 	my $pcbPlace = $checker->GetPcbPlace();
- 
 
 	# all verticall and horiyontall score positions
-	my @h = $pcbPlace->GetScorePos(ScoEnums->Dir_HSCORE);
-	my @v = $pcbPlace->GetScorePos(ScoEnums->Dir_VSCORE);
-	
-	my @scorePos =(@h, @v);
+	my @h = $pcbPlace->GetScorePos( ScoEnums->Dir_HSCORE );
+	my @v = $pcbPlace->GetScorePos( ScoEnums->Dir_VSCORE );
+
+	my @scorePos = ( @h, @v );
 
 	foreach my $posInfo (@scorePos) {
 
@@ -219,46 +211,42 @@ sub __CreateOptimizeSet {
 		# This line has not to be optimized (connected together on this pcb,
 		# but can be connected with another board)
 		if ($noOptimize) {
-
+			
+			
+			# First check, if there is not complete line
+			# if so, end this line
+			if ( $line->StartPExist() ) {
+				
+					$self->__EndLineOfLastPcb( $line,  $lstPcb, $posPnl);
+					$scoreSet->AddScoreLine($line);
+					$line = ScoreLine->new($dir);
+			}
+			
+ 
 			# Go through points
-			foreach my $pointInf (@allPoints) {
+			for(my $j = 0; $j < scalar(@allPoints); $j++) {
+
+				my $pointInf = $allPoints[$j];
 
 				# get gap between profile and start of score line
 
 				my $reduce = 0;
 
-				#
-				#				# reduce line, if poin is first point OR last poin of score on this pcb
-				#				# AND from profile is less than 4 mm
-				#				if ( ( $point == $allPoints[0] || $point == $allPoints[ scalar(@allPoints) - 1 ] ) ) {
-				#
-				#						my $dist = $pcb->GetProfileDist( $point, $dir );
-				#
-				#						if($dist < 4 ){
-				#							  $reduce = 1;
-				#						}
-				#
-				#				}
-
-#				unless($pointInf->GetDist()){
-#					
-#					print STDERR 1;
-#				}
-				if (defined $pointInf->GetDist() && $pointInf->GetDist() < $self->{"reduce"} ) {
+ 
+				if ( defined $pointInf->GetDist() && $pointInf->GetDist() < $self->{"reduce"} ) {
 					$reduce = 1;
 				}
 
 				unless ( $line->StartPExist() ) {
 
-					# zacni novou
-					#$line->SetStartP($point);
 					$self->__StartLine( $line, $pointInf, $pcb, $reduce );
 
 				}
 				else {
-
-					#$line->SetEndP($point);
+					
+					
 					$self->__EndLine( $line, $pointInf, $pcb, $reduce );
+					
 
 				}
 
@@ -299,20 +287,22 @@ sub __CreateOptimizeSet {
 
 			if ( $line->StartPExist() ) {
 
-				@allPoints = $self->__GetPoints( $posPnl, $lstPcb );
-				$noOptimize = $self->__NoOptimize( $posPnl, $lstPcb );
+#				@allPoints = $self->__GetPoints( $posPnl, $lstPcb );
+#				$noOptimize = $self->__NoOptimize( $posPnl, $lstPcb );
+#
+#				my $point = $allPoints[ scalar(@allPoints) - 1 ];
+#
+#				# ukonci lajnu
+#				#$line->SetEndP( $allPoints[ scalar(@allPoints) - 1 ] );
+#
+#				# Dont recuce lines, when pcb should not be optimized
+#				my $reduce = 1;
+#				if ( $noOptimize && $point->GetDist() > $self->{"reduce"} ) {
+#					$reduce = 0;
+#				}
+#				$self->__EndLine( $line, $point, $lstPcb, $reduce );
 
-				my $point = $allPoints[ scalar(@allPoints) - 1 ];
-
-				# ukonci lajnu
-				#$line->SetEndP( $allPoints[ scalar(@allPoints) - 1 ] );
-
-				# Dont recuce lines, when pcb should not be optimized
-				my $reduce = 1;
-				if ( $noOptimize && $point->GetDist() > $self->{"reduce"} ) {
-					$reduce = 0;
-				}
-				$self->__EndLine( $line, $point, $lstPcb, $reduce );
+				$self->__EndLineOfLastPcb( $line,  $lstPcb, $posPnl);
 
 			}
 		}
@@ -332,19 +322,21 @@ sub __CreateOptimizeSet {
 	# Finally, if some last is not ended ( case when last step contain score)
 	# end this line
 	if ( $line->StartPExist() ) {
-		my @allPoints = $self->__GetPoints( $posPnl, $lstPcb );
-		my $noOptimize = $self->__NoOptimize( $posPnl, $lstPcb );
+#		my @allPoints = $self->__GetPoints( $posPnl, $lstPcb );
+#		my $noOptimize = $self->__NoOptimize( $posPnl, $lstPcb );
+#
+#		my $point = $allPoints[ scalar(@allPoints) - 1 ];
+#
+#		# ukonci lajnu
+#		#$line->SetEndP( $allPoints[ scalar(@allPoints) - 1 ] );
+#		my $reduce = 1;
+#		if ( $noOptimize && $point->GetDist() > $self->{"reduce"} ) {
+#			$reduce = 0;
+#		}
+#
+#		$self->__EndLine( $line, $point, $lstPcb, $reduce );
 
-		my $point = $allPoints[ scalar(@allPoints) - 1 ];
-
-		# ukonci lajnu
-		#$line->SetEndP( $allPoints[ scalar(@allPoints) - 1 ] );
-		my $reduce = 1;
-		if ( $noOptimize && $point->GetDist() > $self->{"reduce"} ) {
-			$reduce = 0;
-		}
-
-		$self->__EndLine( $line, $point, $lstPcb, $reduce );
+		$self->__EndLineOfLastPcb( $line,  $lstPcb, $posPnl);
 
 		$scoreSet->AddScoreLine($line);
 	}
@@ -426,6 +418,29 @@ sub __EndLine {
 	$line->SetEndP($finalPoint);
 }
 
+sub __EndLineOfLastPcb{
+	my $self     = shift;
+	my $line     = shift;
+	my $lstPcb     = shift;
+	my $posPnl     = shift;
+	
+		my @allPoints = $self->__GetPoints( $posPnl, $lstPcb );
+		my $noOptimize = $self->__NoOptimize( $posPnl, $lstPcb );
+
+		my $point = $allPoints[ scalar(@allPoints) - 1 ];
+
+		# ukonci lajnu
+		#$line->SetEndP( $allPoints[ scalar(@allPoints) - 1 ] );
+		my $reduce = 1;
+		if ( $noOptimize && $point->GetDist() > $self->{"reduce"} ) {
+			$reduce = 0;
+		}
+
+		$self->__EndLine( $line, $point, $lstPcb, $reduce );
+	
+	
+}
+
 # For specific pcb, get all points, where score start or end.
 # point are sorted according lines
 # Consider new origin of whole "panel" (pcb are placed in panel)
@@ -483,17 +498,12 @@ sub __GetScore {
 
 	my $posPcb = Convertor->DoPosInfo( $pos, $pcb, 1 );    # consider origin of pcb
 
-	my @allSco = $pcb->GetScoresOnPos($posPcb);                       # get all score lines, on this pcb
+	my @allSco = $pcb->GetScoresOnPos($posPcb);            # get all score lines, on this pcb
 
 	return @allSco;
 }
 
-sub GetScoreData {
-	my $self = shift;
 
-	return $self->{"scoreLayer"};
-
-}
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

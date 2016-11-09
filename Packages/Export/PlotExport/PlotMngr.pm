@@ -1,6 +1,6 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Manager responsible for AOI files creation
+# Description: Manager responsible for PLOT opfx files
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Packages::Export::PlotExport::PlotMngr;
@@ -31,19 +31,16 @@ sub new {
 	my $self      = $class->SUPER::new( $packageId, @_ );
 	bless $self;
 
-	$self->{"inCAM"}  = shift;
-	$self->{"jobId"}  = shift;
-	$self->{"layers"} = shift;
+	$self->{"inCAM"}         = shift;
+	$self->{"jobId"}         = shift;
+	$self->{"layers"}        = shift;
 	$self->{"sendToPlotter"} = shift;
 
-	#my @layers = CamJob->GetBoardBaseLayers( $self->{"inCAM"}, $self->{"jobId"} );
-
 	$self->{"filmCreators"} = FilmCreators->new( $self->{"inCAM"}, $self->{"jobId"} );
-	
 
-	$self->{"opfxCreator"} = OpfxCreator->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"sendToPlotter"});
+	$self->{"opfxCreator"} = OpfxCreator->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"sendToPlotter"} );
 	$self->{"opfxCreator"}->{"onItemResult"}->Add( sub { $self->_OnItemResult(@_) } );
-	
+
 	return $self;
 }
 
@@ -53,29 +50,27 @@ sub Run {
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
 
-	#  ------ Get information "frames" dimension ------
+	# 1) Get information "frames" dimension
 
 	my %smallLim = ();
 	my %bigLim   = ();
 
 	# Get limits of pcb
 	my $result = Helper->GetPcbLimits( $inCAM, $jobId, \%smallLim, \%bigLim );
+
 	# Result of Frame checking
 	my $resultFrameChecking = $self->_GetNewItem("Frame checking");
-	 
-	unless($result){
+
+	unless ($result) {
 		$resultFrameChecking->AddError("Velký nebo malý rámeèek v panelu chybí nebo je špatný. Vlož okolí znovu.");
-		
-		 
+
 	}
 
 	$self->_OnItemResult($resultFrameChecking);
-	 
-	 
-	#  ------ Init film creators ------
-	
-	$self->{"filmCreators"}->Init( $self->{"layers"}, \%smallLim, \%bigLim );
 
+	# 2) Init film creators
+
+	$self->{"filmCreators"}->Init( $self->{"layers"}, \%smallLim, \%bigLim );
 
 	my @resultSets = $self->{"filmCreators"}->GetRuleSets();
 
@@ -103,10 +98,9 @@ sub __InitOpfxCreator {
 
 		foreach my $l ( $resultSet->GetLayers() ) {
 
-		#	my $lInfo = ( grep { $_->{"name"} eq $l->{"gROWname"} } @{ $self->{"layers"} } )[0];
+			#	my $lInfo = ( grep { $_->{"name"} eq $l->{"gROWname"} } @{ $self->{"layers"} } )[0];
 
-			my $plotL = PlotLayer->new( $l->{"name"},     $l->{"polarity"}, $l->{"mirror"},
-										$l->{"comp"}, $l->{"pcbSize"},      $l->{"pcbLimits"} );
+			my $plotL = PlotLayer->new( $l->{"name"}, $l->{"polarity"}, $l->{"mirror"}, $l->{"comp"}, $l->{"pcbSize"}, $l->{"pcbLimits"} );
 
 			push( @plotLayers, $plotL );
 
@@ -134,8 +128,8 @@ sub __FilterRuleSets {
 		my @ruleLayers = $ruleSet->GetLayers();
 
 		foreach my $rl (@ruleLayers) {
- 
-			unless ( $rl->{"plot"}) {
+
+			unless ( $rl->{"plot"} ) {
 				$plot = 0;
 				last;
 
@@ -156,8 +150,7 @@ sub ExportItemsCount {
 
 	my $totalCnt = 0;
 
-	 
-	$totalCnt += scalar(@{$self->{"layers"}});    #export each layer
+	$totalCnt += scalar( @{ $self->{"layers"} } );    #export each layer
 
 	return $totalCnt;
 
@@ -169,37 +162,37 @@ sub ExportItemsCount {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-#	use aliased 'Packages::Export::PlotExport::PlotMngr';
-#
-#	use aliased 'Packages::InCAM::InCAM';
-#
-#	my $inCAM = InCAM->new();
-#
-#	my $jobId = "f13609";
-#
-#	my @layers = CamJob->GetBoardBaseLayers( $inCAM, $jobId );
-#
-#	foreach my $l (@layers) {
-#
-#		$l->{"polarity"} = "positive";
-#
-#		if ( $l->{"gROWname"} =~ /pc/ ) {
-#			$l->{"polarity"} = "negative";
-#		}
-#
-#		$l->{"mirror"} = 0;
-#		if ( $l->{"gROWname"} =~ /c/ ) {
-#			$l->{"mirror"} = 1;
-#		}
-#
-#		$l->{"compensation"} = 30;
-#		$l->{"name"}         = $l->{"gROWname"};
-#	}
-#
-#	@layers = grep { $_->{"name"} =~ /p[cs]/ } @layers;
-#
-#	my $mngr = PlotMngr->new( $inCAM, $jobId, \@layers );
-#	$mngr->Run();
+	#	use aliased 'Packages::Export::PlotExport::PlotMngr';
+	#
+	#	use aliased 'Packages::InCAM::InCAM';
+	#
+	#	my $inCAM = InCAM->new();
+	#
+	#	my $jobId = "f13609";
+	#
+	#	my @layers = CamJob->GetBoardBaseLayers( $inCAM, $jobId );
+	#
+	#	foreach my $l (@layers) {
+	#
+	#		$l->{"polarity"} = "positive";
+	#
+	#		if ( $l->{"gROWname"} =~ /pc/ ) {
+	#			$l->{"polarity"} = "negative";
+	#		}
+	#
+	#		$l->{"mirror"} = 0;
+	#		if ( $l->{"gROWname"} =~ /c/ ) {
+	#			$l->{"mirror"} = 1;
+	#		}
+	#
+	#		$l->{"compensation"} = 30;
+	#		$l->{"name"}         = $l->{"gROWname"};
+	#	}
+	#
+	#	@layers = grep { $_->{"name"} =~ /p[cs]/ } @layers;
+	#
+	#	my $mngr = PlotMngr->new( $inCAM, $jobId, \@layers );
+	#	$mngr->Run();
 }
 
 1;

@@ -1,9 +1,9 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Manager responsible for AOI files creation
+# Description: Manager responsible for core files creation
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::Export::ScoreExport::ScoreMngr;
+package Packages::Export::ScoExport::ScoMngr;
 use base('Packages::Export::MngrBase');
 
 use Class::Interface;
@@ -18,14 +18,15 @@ use aliased 'Enums::EnumsGeneral';
 
 use aliased 'Packages::Scoring::ScoreChecker::ScoreChecker';
 use aliased 'Packages::Scoring::ScoreOptimize::ScoreOptimize';
-use aliased 'Packages::Export::ScoreExport::ProgCreator::ProgCreator';
-use aliased 'Packages::Export::ScoreExport::Enums';
+use aliased 'Packages::Export::ScoExport::ProgCreator::ProgCreator';
+use aliased 'Packages::Export::ScoExport::Enums';
 use aliased 'CamHelpers::CamHelper';
+use aliased 'CamHelpers::CamJob';
 use aliased 'Packages::Scoring::ScoreChecker::Enums' => "ScoEnums";
 use aliased 'Packages::ItemResult::Enums'            => "ResEnums";
 use aliased 'Packages::Polygon::Features::RouteFeatures::RouteFeatures';
 use aliased 'Packages::Polygon::PolygonHelper';
-use aliased 'Packages::Export::ScoreExport::ScoreMarker';
+use aliased 'Packages::Export::ScoExport::ScoreMarker';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -43,11 +44,12 @@ sub new {
 	$self->{"optimize"}  = shift;
 	$self->{"type"}      = shift;
 
+	$self->{"step"}         = "panel";          # step, whic programs are ceated from
 	$self->{"finalLayer"}   = "score_layer";    # name of layer , which contains final score data
-	$self->{"exportLayer"}  = undef;            # layer which score data are taken from
+	$self->{"exportLayer"}  = undef;            # if optimiyation is manual, this is name of layer, which score data are taken form
 	$self->{"optimizeData"} = undef;            # Final data structure, which provide data for export
-	
-	$self->{"frLim"}        = $self->__GetFrLim();
+
+	$self->{"frLim"} = $self->__GetFrLim();
 
 	my $step = "panel";
 
@@ -57,7 +59,6 @@ sub new {
 
 		$self->{"exportLayer"} = $self->{"finalLayer"};
 		$SR = 0;
-
 	}
 	else {
 
@@ -69,8 +70,8 @@ sub new {
 
 	$self->{"scoreCheck"} = ScoreChecker->new( $self->{"inCAM"}, $self->{"jobId"}, $step, $self->{"exportLayer"}, $SR );
 	$self->{"scoreOptimize"} = ScoreOptimize->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"scoreCheck"} );
-	$self->{"marker"} = ScoreMarker->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"scoreCheck"}, $self->{"frLim"} );
-	$self->{"creator"} = ProgCreator->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"coreThick"}, $self->{"frLim"} );
+	$self->{"marker"}  = ScoreMarker->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"scoreCheck"}, $self->{"frLim"} );
+	$self->{"creator"} = ProgCreator->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"coreThick"},  $self->{"frLim"} );
 
 	return $self;
 }
@@ -141,37 +142,31 @@ sub Run {
 		print STDERR $errMess2;
 	}
 
-
 	# 5) Put control lines to solder and signal layers
 	$self->{"marker"}->Run();
-
+	CamJob->SaveJob($inCAM, $jobId);
 
 	# 6) Export program for machine
 	$self->{"creator"}->Build( $self->{"type"}, $self->{"optimizeData"} );
 
+	my $fileSave = $self->_GetNewItem("Saving file");
+
 	if ( $self->{"optimizeData"}->ExistVScore() ) {
-
-		my $fileSave = $self->_GetNewItem("Save x-score file");
-
+ 
 		unless ( $self->{"creator"}->SaveFile( ScoEnums->Dir_VSCORE ) ) {
 
 			$fileSave->AddError("Failed when saving verticall score file.");
 		}
-
-		$self->_OnItemResult($fileSave);
-
 	}
 
 	if ( $self->{"optimizeData"}->ExistHScore() ) {
-
-		my $fileSave = $self->_GetNewItem("Save y-score file");
-
+ 
 		unless ( $self->{"creator"}->SaveFile( ScoEnums->Dir_HSCORE ) ) {
 			$fileSave->AddError("Failed when saving horizontall score file.");
 		}
-
-		$self->_OnItemResult($fileSave);
 	}
+	
+	$self->_OnItemResult($fileSave);
 
 	print STDERR $errMess;
 
@@ -180,21 +175,21 @@ sub Run {
 # get information about	fr dimension
 sub __GetFrLim {
 	my $self = shift;
-	
+
 	my %lim = ();
-	
+
 	if ( CamHelper->LayerExists( $self->{"inCAM"}, $self->{"jobId"}, "fr" ) ) {
-		
+
 		my $fr = RouteFeatures->new();
 		$fr->Parse( $self->{"inCAM"}, $self->{"jobId"}, $self->{"step"}, "fr" );
 		my @features = $fr->GetFeatures();
-		
-		%lim      = PolygonHelper->GetLimByRectangle( \@features );
-		
+
+		%lim = PolygonHelper->GetLimByRectangle( \@features );
+
 		return \%lim;
- 
+
 	}
-	
+
 	return undef;
 }
 
@@ -217,16 +212,16 @@ sub ExportItemsCount {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	use aliased 'Packages::Export::ScoreExport::ScoreMngr';
-
-	use aliased 'Packages::InCAM::InCAM';
-
-	my $inCAM = InCAM->new();
-
-	my $jobId = "f13610";
-
-	my $mngr = ScoreMngr->new( $inCAM, $jobId, 0.3, Enums->Optimize_YES, Enums->Type_CLASSIC );
-	$mngr->Run();
+#	use aliased 'Packages::Export::ScoExport::ScoreMngr';
+#
+#	use aliased 'Packages::InCAM::InCAM';
+#
+#	my $inCAM = InCAM->new();
+#
+#	my $jobId = "f13610";
+#
+#	my $mngr = ScoreMngr->new( $inCAM, $jobId, 0.3, Enums->Optimize_YES, Enums->Type_CLASSIC );
+#	$mngr->Run();
 }
 
 1;

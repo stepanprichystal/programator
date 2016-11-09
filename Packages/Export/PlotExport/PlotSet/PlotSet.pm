@@ -1,5 +1,6 @@
 #-------------------------------------------------------------------------------------------#
-# Description: Wrapper for operations connected with inCam attributes
+# Description: Structure, which contain information for creating opfx file
+# contain Rule set and info about output file name etc..
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 
@@ -11,6 +12,7 @@ use warnings;
 
 #local library
 use aliased 'Packages::Export::PlotExport::Enums';
+
 #-------------------------------------------------------------------------------------------#
 #   Package methods
 #-------------------------------------------------------------------------------------------#
@@ -19,15 +21,11 @@ sub new {
 	my $self  = {};
 
 	bless $self;
-	
 
+	$self->{"resultSet"} = shift;   # rule result set
+	$self->{"layers"}    = shift;	# list of PlotLayer objects
+	$self->{"jobId"}     = shift;
 
-	$self->{"resultSet"} = shift; # rule result set
- 
-	$self->{"layers"}      = shift;
-	
-	$self->{"jobId"} = shift;
- 
 	# Helper propery, when create opfx
 	$self->{"outputLayer"} = undef;    #name of final output layer, contain merged layers
 
@@ -58,25 +56,22 @@ sub GetFilmSize {
 # Return string, whic tell size of film e.g. 24x16
 sub GetFilmSizeInch {
 	my $self = shift;
-	
+
 	my $filmSize = $self->GetFilmSize();
-	my $str = ""; 
-	 
+	my $str      = "";
 
 	if ( $filmSize eq Enums->FilmSize_Small ) {
 
 		$str = "24x16";
 	}
 	elsif ( $filmSize eq Enums->FilmSize_Big ) {
-	
+
 		$str = "24x20";
-		
+
 	}
-	
+
 	return $str;
 }
- 
-
 
 # width of all films, placed together (without gap)
 sub GetFilmsWidth {
@@ -87,14 +82,14 @@ sub GetFilmsWidth {
 }
 
 sub GetOutputFileName {
-	my $self  = shift;
-	
+	my $self = shift;
+
 	my $jobId = $self->{"jobId"};
 
 	my $fName = "$jobId@";
-	
+
 	# whem film contain only one pcb, add "v" to name
-	my $indicator = scalar($self->GetLayers()) == 1 ? "v" : "";
+	my $indicator = scalar( $self->GetLayers() ) == 1 ? "v" : "";
 
 	# Select layer by layer
 	foreach my $plotL ( $self->GetLayers() ) {
@@ -105,8 +100,7 @@ sub GetOutputFileName {
 }
 
 sub GetOutputLayerName {
-	my $self  = shift;
-	
+	my $self = shift;
 
 	my $lName = $self->GetOutputFileName();
 	$lName =~ s/^[a-z]\d*//;
@@ -116,23 +110,22 @@ sub GetOutputLayerName {
 }
 
 sub GetOutputItemName {
-	my $self  = shift;
-	
+	my $self = shift;
+
 	my $str = "";
 
 	# Select layer by layer
 	foreach my $plotL ( $self->GetLayers() ) {
-		
-		if($str ne ""){
+
+		if ( $str ne "" ) {
 			$str .= "+";
 		}
-		
+
 		$str .= $plotL->GetName();
 	}
 
 	return $str;
 }
-
 
 sub GetPolarity {
 	my $self = shift;
@@ -141,24 +134,18 @@ sub GetPolarity {
 
 	# Select layer by layer
 	foreach my $plotL ( $self->GetLayers() ) {
-		
-		
-		
-		if( defined $polarity && $plotL->GetPolarity() ne $polarity){
-			
+
+		if ( defined $polarity && $plotL->GetPolarity() ne $polarity ) {
+
 			$polarity = "mixed";
 			last;
-		} 
-		
+		}
+
 		$polarity = $plotL->GetPolarity();
 	}
-	
+
 	return $polarity;
-
 }
-
-
- 
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

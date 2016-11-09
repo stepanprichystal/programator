@@ -1,6 +1,6 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Cover exporting layers as gerber274x
+# Description: Conversion between origins
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Packages::Scoring::ScoreChecker::OriginConvert;
@@ -20,9 +20,7 @@ use aliased 'Packages::Scoring::ScoreChecker::InfoClasses::ScorePosInfo';
 #  Package methods
 #-------------------------------------------------------------------------------------------#
 
- 
-
-# Conversion of has with keys x, y
+# Convert structure of point
 sub DoPoint {
 	my $self     = shift;
 	my $point    = shift;
@@ -69,15 +67,15 @@ sub DoPosInfo {
 		$pVal += $sign * $pcb->GetOrigin()->{"x"};
 	}
 
-	my $newPos = ScorePosInfo->new($pVal, $dir);
-	
+	my $newPos = ScorePosInfo->new( $pVal, $dir );
+
 	return $newPos;
 }
 
-# Do conversion of position value (inside a step), between "panel" origin and step origin
+# Do conversion for points
 sub __ConsiderOrigin {
-	my $self     = shift;
-	 
+	my $self = shift;
+
 	my $x        = shift;
 	my $y        = shift;
 	my $pcb      = shift;
@@ -89,9 +87,8 @@ sub __ConsiderOrigin {
 		$sign = -1;
 	}
 
-	 
-		$$x += $sign * $pcb->GetOrigin()->{"x"};
-		$$y += $sign * $pcb->GetOrigin()->{"y"};
+	$$x += $sign * $pcb->GetOrigin()->{"x"};
+	$$y += $sign * $pcb->GetOrigin()->{"y"};
 
 }
 

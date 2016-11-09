@@ -32,6 +32,8 @@ sub new {
 	$self->_AddHandler( $ref , Enums->Event_nif_tenting );
 
 	# Provided events
+	$self->_AddEvent( $wrapper->{'onPlotRowChanged'}, Enums->Event_plot_rowChange );
+	 
 
 	return $self;
 }

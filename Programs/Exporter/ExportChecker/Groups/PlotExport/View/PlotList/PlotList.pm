@@ -60,6 +60,11 @@ sub new {
 	$self->__DefineFilmColors();
 
 	$self->__SetLayout();
+	
+	
+	# EVENTS 
+	
+	$self->{"onRowChanged"} = Event->new();
 
 	return $self;
 }
@@ -129,6 +134,7 @@ sub SetLayers{
 	$self->{"szMain"}->Layout();
 }
 
+ 
 
 sub __SetLayout {
 
@@ -153,7 +159,8 @@ sub __SetLayout {
 		# zaregistrovat udalost
 		$self->{"onSelectedChanged"}->Add(sub{ $row->PlotSelectionChanged($self, @_) });
 		
-
+		$row->{"onRowChanged"}->Add(sub{ $self->{"onRowChanged"}->Do(@_) });
+ 
 		$self->AddRow($row);
 
 	}

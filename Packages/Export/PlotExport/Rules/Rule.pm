@@ -1,5 +1,6 @@
 #-------------------------------------------------------------------------------------------#
-# Description: Wrapper for operations connected with inCam attributes
+# Description: Structure which keep inforamtion about possible type od layers, which can be
+# placed on one opfx film
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 
@@ -10,93 +11,88 @@ use strict;
 use warnings;
 
 #local library
- 
 
 #-------------------------------------------------------------------------------------------#
 #   Package methods
 #-------------------------------------------------------------------------------------------#
 
- sub new {
-	my $class     = shift;
-	my $self ={};
-	 
+sub new {
+	my $class = shift;
+	my $self  = {};
+
 	bless $self;
-	
-	$self->{"orientation"} = shift;
+
+	$self->{"orientation"} = shift; # orientation of layers on film horoyontal/verticall
 
 	my @layerTypes = ();
-	$self->{"layerTypes"} = \@layerTypes;
-	 
+	$self->{"layerTypes"} = \@layerTypes; # one or more types of layer, which can be merged in one film
 
 	return $self;
 }
 
- 
+# 
+sub AddSingleTypes {
 
-
-sub AddSingleTypes{
-	
 	my $self = shift;
-	@{$self->{"layerTypes"}} = @_;
- 
+	@{ $self->{"layerTypes"} } = @_;
+
 }
 
-sub AddType2{
-	
-	my $self = shift;
-	my @types = @{shift(@_)};
-	
-	unless(scalar(@types)){
-		
+sub AddType1 {
+
+	my $self  = shift;
+	my @types = @{ shift(@_) };
+
+	unless ( scalar(@types) ) {
+
 		return 0;
 	}
- 
-	push($self->{"layerTypes"},\@types)
+
+	push( $self->{"layerTypes"}, \@types );
 }
 
-sub AddType1{
-	
-	my $self = shift;
-	my @types = @{shift(@_)};
-	
-	unless(scalar(@types)){
-		
+sub AddType2 {
+
+	my $self  = shift;
+	my @types = @{ shift(@_) };
+
+	unless ( scalar(@types) ) {
+
 		return 0;
 	}
- 
-	push($self->{"layerTypes"},\@types)
+
+	push( $self->{"layerTypes"}, \@types );
 }
 
-sub AddTypes{
-	
-	my $self = shift;
-	my @types = @{shift(@_)};
-	
-	unless(scalar(@types)){
-		
+
+
+sub AddTypes {
+
+	my $self  = shift;
+	my @types = @{ shift(@_) };
+
+	unless ( scalar(@types) ) {
+
 		return 0;
 	}
- 
-	push($self->{"layerTypes"},\@types)
+
+	push( $self->{"layerTypes"}, \@types );
 }
 
-sub GetLayerTypes{
+sub GetLayerTypes {
 	my $self = shift;
-	
-	
-	return @{$self->{"layerTypes"}};
-	
+
+	return @{ $self->{"layerTypes"} };
+
 }
 
- 
-sub GetOrientation{
+sub GetOrientation {
 	my $self = shift;
 
 	return $self->{"orientation"};
-	
-	
+
 }
- 
+
 #1;
 
 #-------------------------------------------------------------------------------------------#

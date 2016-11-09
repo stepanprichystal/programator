@@ -79,9 +79,7 @@ sub AddLayerPlotSize {
 	my %bigLim   = %{shift(@_)};
 
 	# Get limits of pcb
-	#$self->GetPcbLimits( $inCAM, $jobId, \%smallLim, \%bigLim );
-
-	#$self->GetPcbDimensions($inCAM, $jobId, \%smallLim, \%bigLim, \%smallDim, \%bigDim);
+ 
 
 	foreach my $l ( @{$layers} ) {
 

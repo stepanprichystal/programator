@@ -1,6 +1,7 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Cover exporting layers for particular machine, which can procces given nc file
+# Description: Set contain position, where is score line placed
+# Contain all score lines on this position also
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Packages::Scoring::ScoreOptimize::ScoreLayer::ScoreSet;
@@ -36,8 +37,8 @@ sub new {
 sub GetLines {
 	my $self    = shift;
 	my $reverse = shift;
-	
-	my @lines   = @{ $self->{"lines"} };
+
+	my @lines = @{ $self->{"lines"} };
 	if ($reverse) {
 
 		my @lines = reverse(@lines);

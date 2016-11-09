@@ -1,6 +1,7 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Cover exporting layers for particular machine, which can procces given nc file
+# Description: Special structure, whihich is returned by methos GetScorePointsOnPos of PcbInfo class
+# contain inforamtion about points which create score line
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Packages::Scoring::ScoreChecker::InfoClasses::PointInfo;
@@ -26,13 +27,8 @@ sub new {
 	$self->{"point"} = shift;
 	$self->{"scoreInfo"}   = shift;
 	$self->{"pointType"}    = shift; # position of point in whole pcb / first /middle/ last (score is sorted FELT/TOP)
-	
-	# distance from profile
-	# if pointType = first -> from TOP/LEFT profile edge
-	# if pointType = middle -> undef
-	# if pointType = last -> from BOTTOM/RIGHT profile edge
-	$self->{"dist"}    = shift; 
  
+	$self->{"dist"}    = shift; 
  
 	return $self;
 }
@@ -69,9 +65,6 @@ sub GetDist {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	#use aliased 'Packages::Export::NCExport::NCExportGroup';
-
-	#print $test;
 
 }
 

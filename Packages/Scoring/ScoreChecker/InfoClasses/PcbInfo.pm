@@ -1,6 +1,7 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Cover exporting layers for particular machine, which can procces given nc file
+# Description: Contain information about one psb step
+# contain dimension, origin (left, bottom corner), score position, etc
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Packages::Scoring::ScoreChecker::InfoClasses::PcbInfo;
@@ -29,12 +30,9 @@ sub new {
 
 	$self->{"pcbId"}  = shift;
 	$self->{"origin"} = shift;
-
-	#$self->{"originY"}     = shift;
 	$self->{"width"}  = shift;
 	$self->{"height"} = shift;
-
-	$self->{"accuracy"}    = shift;
+	$self->{"accuracy"} = shift;
 
 	my %center = ( "x" => $self->{"width"} / 2, "y" => $self->{"height"} / 2 );
 
@@ -43,22 +41,7 @@ sub new {
 	my @sco = ();
 	$self->{"score"} = \@sco;
 
-	#$self->__RoundPoints();
-
 	return $self;
-}
-
-sub __RoundPoints {
-	my $self = shift;
-
-	my $dec = $self->{"dec"};
-
-	$self->{"origin"}->{"x"} = sprintf( "%." . $dec . "f", $self->{"origin"}->{"x"} );
-	$self->{"origin"}->{"y"} = sprintf( "%." . $dec . "f", $self->{"origin"}->{"y"} );
-
-	$self->{"width"}  = sprintf( "%." . $dec . "f", $self->{"width"} );
-	$self->{"height"} = sprintf( "%." . $dec . "f", $self->{"height"} );
-
 }
 
 sub AddScoreLine {
@@ -120,6 +103,7 @@ sub GetScore {
 
 }
 
+# Return all position, where is score located
 sub GetScorePos {
 	my $self = shift;
 	my $dir  = shift;
@@ -138,8 +122,9 @@ sub GetScorePos {
 	return @pos;
 }
 
-# Return  all points, from score lines
+# Return  start and end point of each score on this position
 # points are sorted from TOP/LEFT start L1, end L1, start L2, end L2 etc..
+# point are type of PointInfo class
 sub GetScorePointsOnPos {
 	my $self    = shift;
 	my $posInfo = shift;
@@ -196,8 +181,9 @@ sub GetScorePointsOnPos {
 
 					$dist = $point->{"y"};
 				}
-			}else{
-				
+			}
+			else {
+
 				$type = "middle";
 			}
 
@@ -221,10 +207,8 @@ sub GetScorePointsOnPos {
 
 }
 
-sub ScoreExist {
-
-}
-
+ 
+# Return all scores on given poisition
 sub GetScoresOnPos {
 	my $self    = shift;
 	my $posInfo = shift;
@@ -236,10 +220,10 @@ sub GetScoresOnPos {
 
 	#consider origin o this position
 	# convert to relative to pcbInfo origin
-	
+
 	my @allScp = grep { $_->GetDirection() eq $dir } @{ $self->{"score"} };
 
-	foreach my $sco ( @allScp ) {
+	foreach my $sco (@allScp) {
 
 		my $exist = 0;
 		if ( $dir eq Enums->Dir_HSCORE ) {
@@ -254,13 +238,13 @@ sub GetScoresOnPos {
 				push( @scores, $sco );
 			}
 		}
- 
+
 	}
 
 	return @scores;
 
 }
- 
+
 
 sub IsScoreOnPos {
 	my $self    = shift;
@@ -276,47 +260,7 @@ sub IsScoreOnPos {
 	}
 }
 
-sub GetProfileDist {
-	my $self     = shift;
-	my $point    = shift;
-	my $scoreDir = shift;
-
-	my $minDist = undef;
-	if ( $scoreDir eq Enums->Dir_HSCORE ) {
-
-		$minDist = min( $point->{"x"}, $self->{"width"} - $point->{"x"} );
-
-	}
-	elsif ( $scoreDir eq Enums->Dir_VSCORE ) {
-
-		$minDist = min( $self->{"height"} - $point->{"y"}, $point->{"y"} );
-	}
-
-	return $minDist;
-}
-
-#
-#sub ScoreOnSamePos {
-#	my $self = shift;
-#
-#	my @positions = $self->GetScorePos();
-#
-#	my $exist = 0;
-#
-#	foreach my $pos (@positions) {
-#
-#		my @scores = $self->GetScoresOnPos($pos);
-#		if ( scalar(@scores) > 1 ) {
-#
-#			$exist = 1;
-#			last;
-#		}
-#
-#	}
-#
-#	return $exist;
-#}
-
+ 
 # Some pcb scores we don't want to optimize
 # Exist 2 cases
 # Case 1) if customer has more then one score on same position

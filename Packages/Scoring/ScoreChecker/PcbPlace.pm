@@ -1,6 +1,7 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Cover exporting layers for particular machine, which can procces given nc file
+# Description: Class parse score in steps and create suitable structure for score optimiyation
+# All values are in µm in int
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Packages::Scoring::ScoreChecker::PcbPlace;
@@ -62,7 +63,7 @@ sub Init {
 	}
 
 }
-
+# Return, idf parsed score is traight, and not duplicate
 sub ScoreIsOk {
 	my $self = shift;
 	my $mess = shift;
@@ -83,6 +84,9 @@ sub GetPcbs {
 	return @{ $self->{"pcbs"} };
 }
 
+# return all position, where score is situated
+# Example for verticall score: 2 lines lying on same position x=10 mm
+# - position will be contain point = 10mm and direction verticall
 sub GetScorePos {
 	my $self = shift;
 	my $dir  = shift;
@@ -101,8 +105,7 @@ sub GetScorePos {
 
 	}
 
-	# Reduce (merge) points, which has same location +- accuracz
-
+	# Reduce (merge) points, which has same location +- accuracy
 	my @merged = ();
 	foreach my $posInf (@points) {
 
@@ -121,6 +124,7 @@ sub GetScorePos {
 
 }
 
+# return if score with specific direction is lying on specific position +- accuracy
 sub IsScoreOnPos {
 	my $self    = shift;
 	my $posInfo = shift;
@@ -132,6 +136,7 @@ sub IsScoreOnPos {
 
 }
 
+# Return all pcb, which are intersect by this position
 sub GetPcbOnScorePos {
 	my $self    = shift;
 	my $posInfo = shift;
@@ -182,6 +187,7 @@ sub GetPcbOnScorePos {
 
 }
 
+# Load score lines in step, which contain S&R. This steps are breaked
 sub __LoadNestedSteps {
 	my $self = shift;
 
@@ -270,13 +276,9 @@ sub __LoadNestedSteps {
 		my $pcbInfo = PcbInfo->new( $rep->{"stepName"}, \%origin, $repW, $repH, $self->{"accuracy"} );
 
 		# add score lines, according original score lines in step
-
 		my @score = @{ $step->{"score"} };
 
 		foreach my $l (@score) {
-
-			#my %startP = ( "x" => $self->__Round( $l->{"x1"} ), "y" => $self->__Round( $l->{"y1"} ) );
-			#my %endP   = ( "x" => $self->__Round( $l->{"x2"} ), "y" => $self->__Round( $l->{"y2"} ) );
 
 			my %startP = ( "x" => $l->{"x1"}, "y" => $l->{"y1"} );
 			my %endP   = ( "x" => $l->{"x2"}, "y" => $l->{"y2"} );
@@ -332,6 +334,8 @@ sub __LoadNestedSteps {
 	}
 }
 
+
+# Load score lines in step, S&R is not considered
 sub __LoadStep {
 	my $self = shift;
 
@@ -382,6 +386,13 @@ sub __LoadStep {
 	push( @{ $self->{"pcbs"} }, $pcbInfo );
 }
 
+# Ruction rotate point by specific angle
+# Process is:
+# 1) Rotate point by 90deg
+# 2) Set orifgin left down corner of pcb
+# 3) Rotate point by 90deg
+# 4) Set orifgin left down corner of pcb
+# 5) et cetera....
 sub __RotateAndMovePoint {
 	my $self   = shift;
 	my $point  = shift;
@@ -420,14 +431,13 @@ sub __RotateAndMovePoint {
 
 	}
 
-	$point->{"x"} = int( $point->{"x"} + 0.5 );
+	$point->{"x"} = int( $point->{"x"} + 0.5 ); # round on whole numbers
 	$point->{"y"} = int( $point->{"y"} + 0.5 );
-
-	#$point->{"x"} = sprintf( "%." . $dec . "f", $point->{"x"} );
-	#$point->{"y"} = sprintf( "%." . $dec . "f", $point->{"y"} );
 
 }
 
+
+# Return minimal gap between all pcbs in step
 sub __GetMinPcbGap {
 	my $self = shift;
 
@@ -478,12 +488,12 @@ sub __GetMinPcbGap {
 				my %e2 = ( "start" => $pointsJ[1], "end" => $pointsJ[2] );
 				my %e3 = ( "start" => $pointsJ[2], "end" => $pointsJ[3] );
 				my %e4 = ( "start" => $pointsJ[3], "end" => $pointsJ[0] );
-				
-				my @e = (\%e1, \%e2, \%e3, \%e4);
-				
-				my $minGapTmp = $self->__Pont2LineDist($pointI, \@e);
-				
-				if(!defined $minGap || $minGapTmp < $minGap){
+
+				my @e = ( \%e1, \%e2, \%e3, \%e4 );
+
+				my $minGapTmp = $self->__Pont2LineDist( $pointI, \@e );
+
+				if ( !defined $minGap || $minGapTmp < $minGap ) {
 					$minGap = $minGapTmp;
 				}
 
@@ -491,37 +501,37 @@ sub __GetMinPcbGap {
 		}
 
 	}
-	
+
 	return $minGap;
 }
 
-sub __Pont2LineDist{
-	my $self = shift;
+sub __Pont2LineDist {
+	my $self  = shift;
 	my $point = shift;
-	my @lines = @{shift(@_)};
-	
+	my @lines = @{ shift(@_) };
+
 	my $min = undef;
-	foreach my $l (@lines){
-		
-		my @p = ($point->{"x"}, $point->{"y"});
-		my @lStart = ($l->{"start"}->{"x"}, $l->{"start"}->{"y"});
-		my @lEnd = ($l->{"end"}->{"x"}, $l->{"end"}->{"y"});
-		my @pointsRef = (\@lStart, \@lEnd, \@p);
-		my $dist = abs(DistanceToSegment( \@pointsRef));
-		
-		if(!defined $min || $dist <  $min){
+	foreach my $l (@lines) {
+
+		my @p = ( $point->{"x"}, $point->{"y"} );
+		my @lStart = ( $l->{"start"}->{"x"}, $l->{"start"}->{"y"} );
+		my @lEnd   = ( $l->{"end"}->{"x"},   $l->{"end"}->{"y"} );
+		my @pointsRef = ( \@lStart, \@lEnd, \@p );
+		my $dist = abs( DistanceToSegment( \@pointsRef ) );
+
+		if ( !defined $min || $dist < $min ) {
 			$min = $dist;
-			 
+
 		}
 	}
-	
+
 	return $min;
 }
 
 sub __ToMicron {
 	my $self = shift;
 	my $num  = shift;
-	return int( $num * 1000 + 0.5 );
+	return int( $num * 1000 + 0.5 ); # 0.5, 
 }
 
 #-------------------------------------------------------------------------------------------#

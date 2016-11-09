@@ -77,8 +77,8 @@ sub Run {
 	my @layers = ();
 	
 	my %lInfo = ();
-	$lInfo{"name"}     = "c";
-	$lInfo{"etchingType"}  = "tenting";
+	$lInfo{"name"}     = "v2";
+	$lInfo{"etchingType"}  = "pattern";
 	
 	push(@layers, \%lInfo);
 	

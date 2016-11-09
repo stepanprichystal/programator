@@ -3,13 +3,15 @@
 use strict;
 use warnings;
 
-use lib qw( C:\Perl\site\lib\TpvScripts\Scripts );
+
 
 
 #necessary for load pall packages
-#use FindBin;
-#use lib "$FindBin::Bin/../";
-#use PackagesLib;
+use FindBin;
+use lib "$FindBin::Bin/../";
+use PackagesLib;
+
+use lib qw( C:\Perl\site\lib\TpvScripts\Scripts );
 
 use aliased 'Programs::Exporter::ExportChecker::ExportChecker::ExportChecker';
 use aliased 'Packages::InCAM::InCAM';

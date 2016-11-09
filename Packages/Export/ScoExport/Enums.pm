@@ -1,5 +1,5 @@
 
-package Packages::Export::ScoreExport::Enums;
+package Packages::Export::ScoExport::Enums;
 
 use constant {
 

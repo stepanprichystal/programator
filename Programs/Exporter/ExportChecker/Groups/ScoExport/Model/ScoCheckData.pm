@@ -17,7 +17,7 @@ use File::Copy;
 #use aliased 'CamHelpers::CamLayer';
 #use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'CamHelpers::CamHelper';
-use aliased 'Packages::Export::ScoreExport::Enums' => "ScoEnums";
+use aliased 'Packages::Export::ScoExport::Enums' => "ScoEnums";
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods

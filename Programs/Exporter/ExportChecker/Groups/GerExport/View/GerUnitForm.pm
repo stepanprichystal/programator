@@ -125,10 +125,10 @@ sub __SetLayoutPaste {
 	# DEFINE CONTROLS
 	my $exportPasteChb = Wx::CheckBox->new( $statBox, -1, "Export", &Wx::wxDefaultPosition );
 
-	my $stepTxt    = Wx::StaticText->new( $statBox, -1, "Step",               &Wx::wxDefaultPosition, [ 120, 20 ] );
-	my $notOriTxt  = Wx::StaticText->new( $statBox, -1, "Add Readme.txt",     &Wx::wxDefaultPosition, [ 120, 20 ] );
-	my $profileTxt = Wx::StaticText->new( $statBox, -1, "Add profile", &Wx::wxDefaultPosition, [ 120, 20 ] );
-	my $zipFileTxt = Wx::StaticText->new( $statBox, -1, "Zip files",          &Wx::wxDefaultPosition, [ 120, 20 ] );
+	my $stepTxt    = Wx::StaticText->new( $statBox, -1, "Step",           &Wx::wxDefaultPosition, [ 120, 20 ] );
+	my $notOriTxt  = Wx::StaticText->new( $statBox, -1, "Add Readme.txt", &Wx::wxDefaultPosition, [ 120, 20 ] );
+	my $profileTxt = Wx::StaticText->new( $statBox, -1, "Add profile",    &Wx::wxDefaultPosition, [ 120, 20 ] );
+	my $zipFileTxt = Wx::StaticText->new( $statBox, -1, "Zip files",      &Wx::wxDefaultPosition, [ 120, 20 ] );
 
 	my @steps = CamStep->GetAllStepNames( $self->{"inCAM"}, $self->{"jobId"} );
 	my $last = $steps[ scalar(@steps) - 1 ];
@@ -198,6 +198,28 @@ sub __OnExportPasteChange {
 
 }
 
+sub PlotRowSettChanged {
+	my $self     = shift;
+	my $plotRow = shift;
+ 
+	
+	my %lInfo = $plotRow->GetLayerValues();
+	
+ 
+	foreach my $l (@{$self->{"layers"}}){
+		
+		
+		if($l->{"name"} eq $plotRow->GetRowText()){
+			
+			$l->{"mirror"} = $lInfo{"mirror"};
+			$l->{"polarity"} = $lInfo{"polarity"};
+			$l->{"comp"} = $lInfo{"comp"};
+		}
+	}
+
+
+}
+
 # =====================================================================
 # SET/GET CONTROLS VALUES
 # =====================================================================
@@ -207,7 +229,7 @@ sub __OnExportPasteChange {
 sub SetPasteInfo {
 	my $self = shift;
 	my $info = shift;
-	
+
 	# save all info
 	$self->{"pasteInfo"} = $info;
 
@@ -224,9 +246,7 @@ sub SetPasteInfo {
 sub GetPasteInfo {
 	my $self = shift;
 
-	
-
-	my %info = %{$self->{"pasteInfo"}};
+	my %info = %{ $self->{"pasteInfo"} };
 
 	if ( $self->{"exportPasteChb"}->IsChecked() ) {
 		$info{"export"} = 1;

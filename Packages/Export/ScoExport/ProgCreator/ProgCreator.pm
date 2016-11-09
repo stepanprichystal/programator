@@ -3,7 +3,7 @@
 # Description: Manager responsible for AOI files creation
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::Export::ScoreExport::ProgCreator::ProgCreator;
+package Packages::Export::ScoExport::ProgCreator::ProgCreator;
 
 #3th party library
 use strict;
@@ -15,12 +15,12 @@ use warnings;
 #use aliased 'Packages::Scoring::ScoreChecker::ScoreChecker';
 #use aliased 'Packages::Scoring::ScoreOptimize::ScoreOptimize';
 #
-#use aliased 'Packages::Export::ScoreExport::Enums';
+#use aliased 'Packages::Export::ScoExport::Enums';
 use aliased 'Helpers::JobHelper';
 use aliased 'CamHelpers::CamHooks';
 use aliased 'CamHelpers::CamHelper';
 use aliased 'CamHelpers::CamJob';
-use aliased 'Packages::Export::ScoreExport::ProgCreator::ProgBuilder';
+use aliased 'Packages::Export::ScoExport::ProgCreator::ProgBuilder';
 use aliased 'Packages::Scoring::ScoreChecker::Enums' => "ScoEnums";
 
 use aliased 'Packages::Scoring::ScoreOptimize::ScoreLayer::ScoreLine';

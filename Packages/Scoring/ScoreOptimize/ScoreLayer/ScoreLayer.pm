@@ -1,6 +1,6 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Cover exporting layers for particular machine, which can procces given nc file
+# Description: Structure, whic contain optimiyed score lines
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Packages::Scoring::ScoreOptimize::ScoreLayer::ScoreLayer;
@@ -86,6 +86,7 @@ sub AddScoreSet {
 
 }
 
+# use again old origin
 sub ResetOrigin {
 	my $self = shift;
 
@@ -95,6 +96,7 @@ sub ResetOrigin {
 
 }
 
+# convert all points in strucuture,  to new origin
 sub SetNewOrigin {
 	my $self   = shift;
 	my $origin = shift;
@@ -143,9 +145,7 @@ sub SetNewOrigin {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	#use aliased 'Packages::Export::NCExport::NCExportGroup';
-
-	#print $test;
+ 
 
 }
 

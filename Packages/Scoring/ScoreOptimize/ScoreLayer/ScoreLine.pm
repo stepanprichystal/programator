@@ -1,6 +1,6 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Cover exporting layers for particular machine, which can procces given nc file
+# Description: Struct for score lien
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Packages::Scoring::ScoreOptimize::ScoreLayer::ScoreLine;
@@ -61,7 +61,7 @@ sub SetEndP{
 	 
 }
 
- 
+# Tell if line contain both start and end point
 sub Complete{
 	my $self = shift;
 	

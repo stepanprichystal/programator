@@ -98,6 +98,9 @@ sub __BuildExportData {
 		# read from disc
 		# Load data from file
 		my $serializeData = FileHelper->ReadAsString( $self->{"filePath"} );
+		
+		# Delete file
+		unlink($self->{"filePath"});
 
 		my $json = JSON->new();
 

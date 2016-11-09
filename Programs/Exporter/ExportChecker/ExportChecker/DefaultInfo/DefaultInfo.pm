@@ -265,6 +265,7 @@ sub __InitDefault {
 	if(CamHelper->LayerExists(  $self->{"inCAM"}, $self->{"jobId"}, "score" )){
 		
 		$self->{"scoreChecker"} = ScoreChecker->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"step"}, "score", 1 );
+		$self->{"scoreChecker"}->Init();
 	}
 	
 	

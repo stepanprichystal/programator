@@ -16,7 +16,6 @@ use warnings;
 use Wx;
  
 
-
 #local library
 use Widgets::Style;
 use aliased 'Packages::Events::Event';

@@ -1,6 +1,5 @@
-
 #-------------------------------------------------------------------------------------------#
-# Description: Cover exporting layers for particular machine, which can procces given nc file
+# Description: Sturcture contain info about score line
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Packages::Scoring::ScoreChecker::InfoClasses::ScoreInfo;
@@ -8,7 +7,7 @@ package Packages::Scoring::ScoreChecker::InfoClasses::ScoreInfo;
 #3th party library
 use strict;
 use warnings;
-use Math::Round;
+ 
 
 #local library
 use aliased 'Packages::Scoring::ScoreChecker::Enums';
@@ -27,20 +26,12 @@ sub new {
 	$self->{"startP"} = shift;
 	$self->{"endP"}   = shift;
 	$self->{"dir"}    = shift;
-	$self->{"length"}    = shift;
-	
-	
-	#$self->{"dec"}    = shift;  # tell precision of compering score position
-	
-	
-	
+	$self->{"length"} = shift;
 
-	#$self->__RoundPoints();
 	$self->__SetCourse();
 
 	return $self;
 }
-
 
 sub GetStartP {
 	my $self = shift;
@@ -52,8 +43,7 @@ sub GetEndP {
 	return $self->{"endP"};
 }
 
-
-sub GetLength{
+sub GetLength {
 	my $self = shift;
 	return $self->{"length"};
 }
@@ -74,47 +64,9 @@ sub GetScorePoint {
 	}
 }
 
-
-
 sub GetDirection {
 	my $self = shift;
 	return $self->{"dir"};
-}
-
-sub __RoundPoints {
-	my $self = shift;
-	
-	my $dec= $self->{"dec"};
-
-#	$self->{"startP"}->{"x"} = sprintf( "%.".$dec."f", $self->{"startP"}->{"x"} );
-#	$self->{"startP"}->{"y"} = sprintf( "%.".$dec."f", $self->{"startP"}->{"y"} );
-#
-#	$self->{"endP"}->{"x"} = sprintf( "%.".$dec."f", $self->{"endP"}->{"x"} );
-#	$self->{"endP"}->{"y"} = sprintf( "%.".$dec."f", $self->{"endP"}->{"y"} );
-
-	$self->{"startP"}->{"x"} = int($self->{"startP"}->{"x"} + 0.5);
-	$self->{"startP"}->{"y"} = int( $self->{"startP"}->{"y"} + 0.5);
-
-	$self->{"endP"}->{"x"} = int($self->{"endP"}->{"x"} + 0.5);
-	$self->{"endP"}->{"y"} = int( $self->{"endP"}->{"y"} + 0.5);
-	
-	
-	if($self->GetDirection() eq Enums->Dir_HSCORE ){
-				
-				if($self->GetStartP()->{"y"} != $self->GetEndP()->{"y"}){
-					
-					print STDERR sprintf("%10.20f", $self->GetEndP()->{"y"})."\n";
-					print STDERR sprintf("%10.20f",$self->GetEndP()->{"y"})."\n";
-					
-					print STDERR sprintf("%10.20f", int($self->GetStartP()->{"y"}*100)/100)."\n";
-					print STDERR sprintf("%10.20f",int($self->GetEndP()->{"y"}*100)/100)."\n";
-					
-					print STDERR "22222\n";
-				}
-				
-			}
-
-
 }
 
 # we want to  all:

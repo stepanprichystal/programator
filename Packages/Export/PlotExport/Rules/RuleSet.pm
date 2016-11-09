@@ -1,5 +1,6 @@
 #-------------------------------------------------------------------------------------------#
-# Description: Wrapper for operations connected with inCam attributes
+# Description: Structure keeps, rule, layer which suit to tuhis rule and film size
+# Opfx film is created base on this structure
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 
@@ -32,7 +33,7 @@ sub new {
 
 	return $self;
 }
-
+# Test, if rule set contain as much layer as rule contains "rule types"
 sub Complete {
 	my $self = shift;
 

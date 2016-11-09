@@ -44,27 +44,29 @@ sub Run {
 	my $self = shift;
 
 	my $helper = $self->{"helper"};
-	my $inCAM = $self->{"inCAM"};
+	my $inCAM  = $self->{"inCAM"};
 
-	my $isChanged = 0; # tell if something was changed in pcb
+	my $isChanged = 0;    # tell if something was changed in pcb
 
 	CamHelper->SetStep( $inCAM, "panel" );
 
 	my $patternSch;
 
+	# choose pattern schema. Add pattern frame from surface fill to layer, whci has attribut add_schema = yes
 	if ( $self->{"layerCnt"} > 2 ) {
-		$patternSch = 'pattern-vv';
+		$patternSch = 'pattern-vv+'; 
+
 	}
 	elsif ( $self->{"layerCnt"} == 2 ) {
-		$patternSch = 'pattern-2v';
+		$patternSch = 'pattern-2v+';
 	}
 
 	foreach my $l ( @{ $self->{"layers"} } ) {
 
 		if ( $l->{"etchingType"} eq EnumsGeneral->Etching_TENTING ) {
 
-			if ( $helper->ExistPatternFrame($l->{"name"}) ) {
-				
+			if ( $helper->ExistPatternFrame( $l->{"name"} ) ) {
+
 				$isChanged = 1;
 
 				$helper->ChangeMarkPolarity( $l->{"name"} );
@@ -75,10 +77,10 @@ sub Run {
 		}
 		elsif ( $l->{"etchingType"} eq EnumsGeneral->Etching_PATTERN ) {
 
-			unless ( $helper->ExistPatternFrame($l->{"name"}) ) {
-				
+			unless ( $helper->ExistPatternFrame( $l->{"name"} ) ) {
+
 				$isChanged = 1;
-				
+
 				$helper->ChangeMarkPolarity( $l->{"name"} );
 
 				$helper->AddPatternFrame( $l->{"name"}, $patternSch );
@@ -89,22 +91,22 @@ sub Run {
 
 	my $resultItem = $self->_GetNewItem("Add/del frames");
 	$self->_OnItemResult($resultItem);
-	
+
 	# if job is changed, save it
-	if(	$isChanged){
-		
+	if ($isChanged) {
+
 		my $resultItemSave = $self->_GetNewItem("Saving job");
-		
+
 		$inCAM->HandleException(1);
 
-		CamJob->SaveJob($inCAM, $self->{"jobId"});
-		
+		CamJob->SaveJob( $inCAM, $self->{"jobId"} );
+
 		$resultItemSave->AddError( $inCAM->GetExceptionError() );
 		$inCAM->HandleException(0);
-		
+
 		$self->_OnItemResult($resultItemSave);
 	}
-	
+
 }
 
 sub ExportItemsCount {

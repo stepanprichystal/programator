@@ -9,7 +9,7 @@ use strict;
 use warnings;
 
 # local library
-use aliased "Packages::Export::PreExport::ScoMngr";
+use aliased "Packages::Export::ScoExport::ScoMngr";
 
 
 #-------------------------------------------------------------------------------------------#

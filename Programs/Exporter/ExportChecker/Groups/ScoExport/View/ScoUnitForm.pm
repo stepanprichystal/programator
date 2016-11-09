@@ -15,10 +15,9 @@ use Wx;
 use Widgets::Style;
 use aliased 'Packages::Events::Event';
 
-#use aliased 'CamHelpers::CamLayer';
-#use aliased 'CamHelpers::CamDrilling';
+
 use aliased 'CamHelpers::CamStep';
-use aliased 'Packages::Export::ScoreExport::Enums' => "ScoExport";
+use aliased 'Packages::Export::ScoExport::Enums' => "ScoExport";
 
 #use aliased 'CamHelpers::CamJob';
 
@@ -43,12 +42,7 @@ sub new {
 	# Load data
 
 	$self->__SetLayout();
-
-	#$self->__SetName();
-
-	#$self->Disable();
-
-	#$self->SetBackgroundColour($Widgets::Style::clrLightBlue);
+ 
 
 	# EVENTS
 	$self->{'onCustomerJumpChange'} = Event->new();

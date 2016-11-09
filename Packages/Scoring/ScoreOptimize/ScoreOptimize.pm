@@ -1,6 +1,6 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Cover exporting layers as gerber274x
+# Description: Optimize score data for scoring machine
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Packages::Scoring::ScoreOptimize::ScoreOptimize;
@@ -11,23 +11,6 @@ use warnings;
 use Math::Trig;
 
 #local library
-#use aliased 'Helpers::GeneralHelper';
-#use aliased 'Packages::ItemResult::ItemResult';
-#use aliased 'Enums::EnumsPaths';
-#use aliased 'Helpers::JobHelper';
-#use aliased 'Helpers::FileHelper';
-#use aliased 'CamHelpers::CamHelper';
-#use aliased 'Packages::Export::GerExport::Helper';
-#
-#use aliased 'CamHelpers::CamJob';
-#use aliased 'CamHelpers::CamStepRepeat';
-#use aliased 'Packages::Polygon::Features::ScoreFeatures::ScoreFeatures';
-
-#use aliased 'Packages::Scoring::ScoreChecker::Enums';
-#use aliased 'Packages::Scoring::ScoreChecker::InfoClasses::ScoreInfo';
-#use aliased 'Packages::Scoring::ScoreChecker::PcbPlace';
-#use aliased 'Packages::Scoring::ScoreChecker::OriginConvert';
-
 use aliased 'Packages::Scoring::ScoreOptimize::Optimizator';
 use aliased 'Packages::Scoring::ScoreOptimize::Helper';
 
@@ -49,8 +32,7 @@ sub new {
 	$self->{"helper"} = Helper->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"scoreChecker"}->GetAccuracy() );
 	$self->{"optimizator"} = Optimizator->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"scoreChecker"} );
 
-
-	$self->{"finalLayer"} = "score_layer";    # layer which contain control optimiyed score
+	$self->{"finalLayer"} = "score_layer";    # layer name, which contain control optimized score lines
 
 	return $self;
 }
@@ -66,12 +48,14 @@ sub Run {
 	$self->{"optimizator"}->Run($optimize);
 }
 
+# return, structure (type of ScoreLayer) which contain optimized score data
 sub GetScoreData {
 	my $self = shift;
 
 	return $self->{"optimizator"}->GetScoreData();
 }
 
+# from optimiyed score layer , create layer in matrix
 sub CreateScoreLayer {
 	my $self = shift;
 	my $mess = shift;
@@ -81,6 +65,7 @@ sub CreateScoreLayer {
 	return $res;
 }
 
+# check if optimialiyation succeed
 sub ReCheck {
 	my $self = shift;
 	my $mess = shift;
@@ -95,17 +80,17 @@ sub ReCheck {
 #-------------------------------------------------------------------------------------------#
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
-
-	use aliased 'Packages::Scoring::ScoreChecker::ScoreChecker';
-	use aliased 'Packages::InCAM::InCAM';
-
-	my $jobId = "f52456";
-
-	my $inCAM = InCAM->new();
-
-	my $checker = ScoreChecker->new( $inCAM, $jobId, "panel" );
-
-	print 1;
+#
+#	use aliased 'Packages::Scoring::ScoreChecker::ScoreChecker';
+#	use aliased 'Packages::InCAM::InCAM';
+#
+#	my $jobId = "f52456";
+#
+#	my $inCAM = InCAM->new();
+#
+#	my $checker = ScoreChecker->new( $inCAM, $jobId, "panel" );
+#
+#	print 1;
 
 }
 

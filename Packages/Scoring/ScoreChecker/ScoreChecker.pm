@@ -1,6 +1,9 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Cover exporting layers as gerber274x
+# Description: Class can parse score layer in step and prepare suitable structure for
+# score optimiyation.
+# Can fin out, if step has "customer" jumpscoring etc.
+# All values are in µm in int
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Packages::Scoring::ScoreChecker::ScoreChecker;
@@ -11,20 +14,7 @@ use warnings;
 use Math::Trig;
 
 #local library
-#use aliased 'Helpers::GeneralHelper';
-#use aliased 'Packages::ItemResult::ItemResult';
-#use aliased 'Enums::EnumsPaths';
-#use aliased 'Helpers::JobHelper';
-#use aliased 'Helpers::FileHelper';
-#use aliased 'CamHelpers::CamHelper';
-#use aliased 'Packages::Export::GerExport::Helper';
-#
-#use aliased 'CamHelpers::CamJob';
-#use aliased 'CamHelpers::CamStepRepeat';
-#use aliased 'Packages::Polygon::Features::ScoreFeatures::ScoreFeatures';
-
 use aliased 'Packages::Scoring::ScoreChecker::Enums';
-use aliased 'Packages::Scoring::ScoreChecker::InfoClasses::ScoreInfo';
 use aliased 'Packages::Scoring::ScoreChecker::PcbPlace';
 use aliased 'Packages::Scoring::ScoreChecker::OriginConvert' => "Convertor";
 
@@ -43,23 +33,13 @@ sub new {
 	$self->{"jobId"} = shift;
 	$self->{"step"}  = shift;
 	$self->{"layer"} = shift;
-	$self->{"SR"}    = shift;
+	$self->{"SR"}    = shift;    # break step and repeat
 
-	$self->{"accuracy"} = 100;    # tell precision of compering score position. 1 decimal place
+	# tell precision of compering score position in µm
+	# thus, if two scoreliones are  spaced less than 100µm we consider it, they are on the same position
+	$self->{"accuracy"} = 100;
 
 	$self->{"pcbPlace"} = PcbPlace->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"step"}, $self->{"layer"}, $self->{"SR"}, $self->{"accuracy"} );
-
-	#$self->__Init();
-
-	#my @hscore = $self->{"pcbPlace"}->GetScorePos(Enums->Dir_HSCORE);
-	#my @vscore = $self->{"pcbPlace"}->GetScorePos( Enums->Dir_VSCORE );
-
-	#my @pcb1 = $self->{"pcbPlace"}->GetPcbOnScorePos( $vscore[0] );
-
-	#my @pcb2 = $self->{"pcbPlace"}->GetPcbOnScorePos( $vscore[1] );
-
-	#print "jump = " . $self->IsJumScoring() . " \n\n";
-
 	return $self;
 }
 
@@ -67,9 +47,9 @@ sub Init {
 	my $self = shift;
 
 	$self->{"pcbPlace"}->Init();
-
 }
 
+# Return parsed step and score lines, sturcture is suitable for score optimiyation
 sub GetPcbPlace {
 	my $self = shift;
 	my $mess = "";
@@ -84,11 +64,13 @@ sub GetPcbPlace {
 	}
 }
 
+
 sub GetStep {
 	my $self = shift;
-	 
- 	return $self->{"step"};
+
+	return $self->{"step"};
 }
+
 
 sub GetAccuracy {
 	my $self = shift;
@@ -97,29 +79,17 @@ sub GetAccuracy {
 
 }
 
-#
+# Return, idf parsed score is traight, and not duplicate
 sub ScoreIsOk {
 	my $self = shift;
 	my $mess = shift;
 
-	my $res = $self->{"pcbPlace"}->ScoreIsOk( $mess );
+	my $res = $self->{"pcbPlace"}->ScoreIsOk($mess);
 
 	return $res;
 }
 
-#sub __Init {
-#	my $self = shift;
-#	my $mess = "";
-#
-#	# check if all line strictly horizontal or verticall
-#	unless ( $self->{"pcbPlace"}->ScoreIsOk( \$mess ) ) {
-#
-#		die $mess . " Repair it first. \n";
-#
-#	}
-#
-#}
-
+# tell if in some steps, score is customer jumpscoring
 sub CustomerJumpScoring {
 	my $self = shift;
 
@@ -138,13 +108,13 @@ sub CustomerJumpScoring {
 				last;
 			}
 		}
-
 	}
 
 	return $customerJump;
-
 }
 
+# If steps and scores are arranged such that, ther is no need of jumpscoring,
+# return 1
 sub IsStraight {
 	my $self       = shift;
 	my $isStraight = 1;
@@ -165,7 +135,6 @@ sub IsStraight {
 				last;
 			}
 		}
-
 	}
 
 	# 2) all pcb which are intersect by specific "position" has to has score on this position
@@ -193,6 +162,7 @@ sub IsStraight {
 	return $isStraight;
 }
 
+# Tell if there at least minimal space 4.5mm
 sub PcbDistanceOk {
 	my $self = shift;
 
@@ -206,18 +176,18 @@ sub PcbDistanceOk {
 	return $distOk;
 }
 
+# Return length, which score has to be cutted in each step from profile
 sub GetReduceDist {
 	my $self = shift;
 
 	my $dist         = undef;
 	my $standardDist = 4000;
-	my $minPcbDist = 4500;
-	my $passDist = 11000;    # distance, which score machine pass end of line
+	my $minPcbDist   = 4500;
+	my $passDist     = 11000;    # distance, which score machine pass end of line
 
 	my $gap = $self->{"pcbPlace"}->__GetMinPcbGap();
-	print STDERR "Mezera min bude  o = ".$gap."\n";
-	
-	
+	print STDERR "Mezera min bude  o = " . $gap . "\n";
+
 	unless ( defined $gap ) {
 		return $standardDist;
 	}
@@ -228,19 +198,14 @@ sub GetReduceDist {
 		return -1;
 	}
 
-	#  Machine pass 11mm, but ofr insurence, count with 11mm
-	
-	if( $gap > $passDist){
-		
-		return 0; # don't reduce
-	}
-	
+	#  Machine pass 11mm, but for insurence, count with 11mm
+	if ( $gap > $passDist ) {
 
-	my $reduceScore = ($passDist - $gap );	
-	
-	print STDERR "Drayka bude ykracena o = ".$reduceScore."\n";
-	
-	
+		return 0;    # don't reduce
+	}
+
+	my $reduceScore = ( $passDist - $gap );
+
 	return $reduceScore;
 
 }
@@ -251,16 +216,16 @@ sub GetReduceDist {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	use aliased 'Packages::Scoring::ScoreChecker::ScoreChecker';
-	use aliased 'Packages::InCAM::InCAM';
-
-	my $jobId = "f52456";
-
-	my $inCAM = InCAM->new();
-
-	my $checker = ScoreChecker->new( $inCAM, $jobId, "panel" );
-
-	print 1;
+#	use aliased 'Packages::Scoring::ScoreChecker::ScoreChecker';
+#	use aliased 'Packages::InCAM::InCAM';
+#
+#	my $jobId = "f52456";
+#
+#	my $inCAM = InCAM->new();
+#
+#	my $checker = ScoreChecker->new( $inCAM, $jobId, "panel" );
+#
+#	print 1;
 
 }
 

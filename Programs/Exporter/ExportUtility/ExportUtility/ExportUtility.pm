@@ -382,6 +382,7 @@ sub __CheckFilesHandler {
 		my $cnt = scalar( grep { $_->{"name"} eq $fileName && $_->{"created"} == $fileCreated } @actFiles );
 
 		unless ($cnt) {
+			
 			my %newFile = ( "name" => $fileName, "path" => $filePath, "created" => $fileCreated );
 
 			push( @newFiles, \%newFile );

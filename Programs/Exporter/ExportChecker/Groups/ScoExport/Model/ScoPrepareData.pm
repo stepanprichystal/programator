@@ -14,7 +14,7 @@ use warnings;
 #local library
 use aliased 'Programs::Exporter::ExportChecker::Groups::ScoExport::Model::ScoGroupData';
 use aliased 'Programs::Exporter::ExportChecker::Enums';
-use aliased 'Packages::Export::ScoreExport::Enums' => "ScoEnums";
+use aliased 'Packages::Export::ScoExport::Enums' => "ScoEnums";
 use aliased 'CamHelpers::CamHelper';
 use aliased 'Enums::EnumsGeneral';
 
