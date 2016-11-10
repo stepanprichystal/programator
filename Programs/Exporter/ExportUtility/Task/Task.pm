@@ -55,25 +55,25 @@ sub new {
 	$self->{"itemResultMngr"} = ExportResultMngr->new();
 
 	# Object, which keep all units objects
-	$self->{"units"} = Units->new($self->{"jobId"});
+	$self->{"units"} = Units->new( $self->{"jobId"} );
 
 	# Class responsible for updating StatusFile in job archive
 	$self->{"exportStatus"} = ExportStatus->new( $self->{"jobId"} );
 
 	$self->{"aborted"} = 0;    # Tell if task was aborted by user
 
-	# Tell if job can be send to produce, 
+	# Tell if job can be send to produce,
 	# based on Export results and StatusFile
-	$self->{"canToProduce"} = undef;    
+	$self->{"canToProduce"} = undef;
 
-	$self->{"sentToProduce"} = 0;       # Tell if task was sent to produce
- 
+	$self->{"sentToProduce"} = 0;    # Tell if task was sent to produce
 
 	$self->__InitUnit();
-	
-	$self->{"exportStatus"}->CreateStatusFile();
 
-	return $self;                     
+	my @defaultUnits = $self->{"exportData"}->GetDefaultUnits();
+	$self->{"exportStatus"}->CreateStatusFile( \@defaultUnits );
+
+	return $self;
 }
 
 # ===================================================================
@@ -287,9 +287,14 @@ sub SetToProduceResult {
 		$toProduceMngr->AddItem($item);
 	}
 
-	if ( !$self->{"exportStatus"}->IsExportOk() ) {
-		my $errorStr =
-		  "Can't sent \"to produce\", because some groups wern't exported succesfully in past\n See file <b>ExportStatus</b> in job archive. \" ";
+	my @notExportUnits = ();
+	if ( !$self->{"exportStatus"}->IsExportOk( \@notExportUnits ) ) {
+
+		my @notExportUnits = map { UnitEnums->GetTitle($_) } @notExportUnits;
+		my $str = join( ", ", @notExportUnits );
+
+		my $errorStr = "Can't sent \"to produce\", because some groups wern't exported succesfully in past. \n";
+		$errorStr .= "Groups that need to be exported: <b> $str </b>\n";
 
 		$self->{"canToProduce"} = 0;
 
@@ -406,10 +411,10 @@ sub ProcessProgress {
 # Init groups by exported data
 sub __InitUnit {
 	my $self = shift;
- 
+
 	my @keys = $self->{"exportData"}->GetOrderedUnitKeys(1);
- 
-	$self->{"units"}->Init(\@keys);
+
+	$self->{"units"}->Init( \@keys );
 
 }
 
@@ -420,8 +425,6 @@ sub __GetUnit {
 	return $self->{"units"}->GetUnitById($unitId);
 
 }
-
-
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

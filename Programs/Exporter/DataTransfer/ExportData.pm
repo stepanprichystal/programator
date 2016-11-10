@@ -29,14 +29,15 @@ sub new {
 	$self->{"settings"} = \%settings;
 
 	# EXPORT PROPERTIES
-	$self->{"settings"}->{"time"}      = undef;
-	$self->{"settings"}->{"mode"}      = undef;    # synchronousExport/ asynchronousExport
-	$self->{"settings"}->{"toProduce"} = undef;    # sent to produce 0/1
-	$self->{"settings"}->{"port"}      = undef;    # if export is synchronous, port of server script
-	$self->{"settings"}->{"formPosX"}  = undef;    # position of export cheker form
-	$self->{"settings"}->{"formPosY"}  = undef;    # position of export cheker form
+	$self->{"settings"}->{"time"}         = undef;
+	$self->{"settings"}->{"mode"}         = undef;    # synchronousExport/ asynchronousExport
+	$self->{"settings"}->{"toProduce"}    = undef;    # sent to produce 0/1
+	$self->{"settings"}->{"port"}         = undef;    # if export is synchronous, port of server script
+	$self->{"settings"}->{"formPosX"}     = undef;    # position of export cheker form
+	$self->{"settings"}->{"formPosY"}     = undef;    # position of export cheker form
+	$self->{"settings"}->{"defaultUnits"} = undef;    # units, which has to be exported
 
-	return $self;                                  # Return the reference to the hash.
+	return $self;                                     # Return the reference to the hash.
 }
 
 sub GetExportTime {
@@ -68,6 +69,13 @@ sub GetFormPosition {
 
 	my $pos = Wx::Point->new( $self->{"settings"}->{"formPosX"}, $self->{"settings"}->{"formPosY"} );
 	return $pos;
+}
+
+sub GetDefaultUnits {
+	my $self = shift;
+
+	my @units = @{$self->{"settings"}->{"defaultUnits"}};
+	return @units;
 }
 
 sub GetOrderedUnitKeys {

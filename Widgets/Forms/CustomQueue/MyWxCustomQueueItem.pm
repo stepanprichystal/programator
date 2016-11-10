@@ -70,7 +70,6 @@ sub RecursiveHandler {
 
 		Wx::Event::EVT_LEFT_DOWN( $control, sub { $self->__MouseDown( $control, @_ ) } );
 
-		print $control. "handler added \n";
 	}
 
 	my @childrens = $control->GetChildren();

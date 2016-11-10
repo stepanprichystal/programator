@@ -222,7 +222,7 @@ sub __Refresh {
 	# Set actual gauge value
 	$self->{"gauge"}->SetValue( $self->{"gaugeActual"} );
 
-	print "\n\n == gauge value > " . $self->{"gaugeActual"} . " === actual processed groups: " . $self->{"processedGroupCnt"} . "\n\n";
+	 
 
 	# Set actual group value
 	$self->{"groupNameValTxt"}->SetLabel( $self->{"groupNameActual"} );

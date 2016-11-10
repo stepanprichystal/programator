@@ -94,7 +94,7 @@ sub SetSelected {
 	
 
 	$self->{"mainChb"}->SetValue($selected);
-	$self->__OnSelectedChange();
+	#$self->__OnSelectedChange();
 	
 	
 }
@@ -122,6 +122,7 @@ sub __SetLayout {
 sub __OnSelectedChange {
 	my $self = shift;
 
+	# TODO smazat
 	$self->{"onSelectedChanged"}->Do($self);
 }
 

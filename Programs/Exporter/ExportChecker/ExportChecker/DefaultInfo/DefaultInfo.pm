@@ -22,6 +22,7 @@ use aliased 'CamHelpers::CamDrilling';
 use aliased 'CamHelpers::CamHelper';
 use aliased 'Packages::Scoring::ScoreChecker::ScoreChecker';
 use aliased 'Connectors::HeliosConnector::HegMethods';
+use aliased 'Packages::Technology::EtchOperation';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -167,6 +168,7 @@ sub GetEtchType {
 
 }
 
+ 
 
 sub GetSideByLayer {
 	my $self      = shift;
@@ -219,28 +221,54 @@ sub GetSideByLayer {
 sub GetCompByLayer{
 	my $self      = shift;
 	my $layerName = shift;
-
-	return 0;
+ 
+	
+	my $class = $self->GetPcbClass();
+	my $cuThick = $self->GetBaseCuThick($layerName);
+	
+	my $comp = EtchOperation->KompenzaceIncam($cuThick, $class);
+	
+	return $comp;
 	
 }
 
-sub GetCustomerJump{
+sub GetScoreChecker{
 	my $self      = shift;
 	
 	my $res = 0;
 	
 	if($self->{"scoreChecker"}){
 
-		$res = $self->{"scoreChecker"}->CustomerJumpScoring();
+		return $self->{"scoreChecker"}
 	}
-	
-	return $res;
+ 
 }
 
 sub GetMaterialKind{
 	my $self      = shift;
 	
 	return $self->{"materialKind"};
+}
+
+sub GetBaseCuThick {
+	my $self      = shift;
+	my $layerName = shift;
+
+	my $cuThick;
+
+	if ( HegMethods->GetTypeOfPcb($self->{"jobId"}) eq 'Vicevrstvy' ) {
+
+		$self->{"stackup"} = Stackup->new($self->{"jobId"});
+
+		my $cuLayer = $self->{"stackup"}->GetCuLayer($layerName);
+		$cuThick = $cuLayer->GetThick();
+	}
+	else {
+
+		$cuThick = HegMethods->GetOuterCuThick( $self->{"jobId"}, $layerName );
+	}
+
+	return $cuThick;
 }
 
 sub __InitDefault {

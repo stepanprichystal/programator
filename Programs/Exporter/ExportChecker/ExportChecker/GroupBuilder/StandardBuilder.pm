@@ -15,7 +15,7 @@ use warnings;
 
 #local library
 
-use aliased 'Programs::Exporter::ExportChecker::ExportChecker::GroupTable::GroupTable';
+
 use aliased 'Programs::Exporter::ExportChecker::Groups::PreExport::Presenter::PreUnit';
 use aliased 'Programs::Exporter::ExportChecker::Groups::NifExport::Presenter::NifUnit';
 use aliased 'Programs::Exporter::ExportChecker::Groups::NCExport::Presenter::NCUnit';
@@ -45,7 +45,7 @@ sub Build {
 	
 	# Table 1
 	
-	my $tableTab1 = GroupTable->new("Main groups");
+	my $tableTab1 = $groupTables->AddTable("Main groups");
 	
 	# Units
 	my $preUnit1 = PreUnit->new( $self->{"jobId"});	
@@ -69,8 +69,7 @@ sub Build {
 
 	# Table 2
 	
-	my $tableTab2 = GroupTable->new("Other groups");
-	
+	my $tableTab2 = $groupTables->AddTable("Other groups");
 	# Units
 	
 	my $aoiUnit1 = AOIUnit->new( $self->{"jobId"} );
@@ -80,9 +79,7 @@ sub Build {
 	$row1Tab2->AddCell($aoiUnit1, Enums->Width_25);
 	$row1Tab2->AddCell($etUnit1, Enums->Width_25);
  
-
-	$groupTables->AddTable($tableTab1);
-	$groupTables->AddTable($tableTab2);
+ 
 
 	#$self->{"groupTables"}->AddTable($tableTab2);
 }

@@ -51,8 +51,7 @@ sub new {
 		$self->__RunExportUtility();
 
 	}
-	
-	print STDERR "\n\nKONec &&&&&&&&&&&&&&&&&&&&&&&&&& \n\n";
+ 
 	
 	return $self;
 }

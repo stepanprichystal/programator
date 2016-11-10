@@ -64,7 +64,9 @@ sub PrepareGroupState {
 
 	if ( $self->{"prepareData"}->can("OnGetGroupState") ) {
 
-		$self->{"groupData"}->{"state"} = $self->{"prepareData"}->OnGetGroupState($self);
+		my $state = $self->{"prepareData"}->OnGetGroupState($self);
+		$self->{"groupData"}->{"state"} = $state;
+		$self->{"groupData"}->{"defaultState"} = $state;
 
 	}
 	else {
@@ -88,12 +90,25 @@ sub SetStoredGroupData {
 	}
 }
 
-
+# Return actual group state
+# Can bechanged in exporter checker fomr by user
 sub GetGroupState {
 	my $self = shift;
 
 	if ( $self->{"groupData"} ) {
 		return $self->{"groupData"}->{"state"};
+	}
+
+}
+
+# Return default group state
+# State which is set when exporter checker form is showed
+# Cant't be changed by user
+sub GetGroupDefaultState {
+	my $self = shift;
+
+	if ( $self->{"groupData"} ) {
+		return $self->{"groupData"}->{"defaultState"};
 	}
 
 }

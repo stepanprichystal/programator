@@ -36,9 +36,11 @@ sub AddCell {
 	my $width = shift;
 	
 	my @allUnits = $self->{"tableRef"}->GetAllUnits();
+	my $tabOrderNum = $self->{"tableRef"}->GetOrderNumber();
+	
 	
 	$unit->SetCellWidth($width);
- 	$unit->SetExportOrder(scalar(@allUnits));
+ 	$unit->SetExportOrder($tabOrderNum + scalar(@allUnits));
  	
 	push( @{$self->{"cells"}}, $unit );
 

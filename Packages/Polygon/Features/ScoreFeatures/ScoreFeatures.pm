@@ -31,7 +31,7 @@ sub new {
 
 	$self->{"microns"} = shift;
 	$self->{"accuracy"} = $self->{"microns"} ? 20 : 0.02;    # 20µm is value, which score line could be not strictly ("vertical/horiyontal")
-
+	$self->{"accuracyOverlap"} = $self->{"microns"} ? 500 : 0.5;    # 500µ is min allowed parallel overlap (see existParallelOverlap())
 	#instance of  "base" class Features.pm
 	$self->{"base"} = Features->new();
 
@@ -146,6 +146,11 @@ sub IsStraight {
 	}
 }
 
+# test overlapping example 2 lines on same position
+# L1 start, L2start, L1 end, L2 End
+# OR
+# L1 start, L2start, L2 end, L1 End
+# etc
 sub ExistOverlap {
 	my $self = shift;
 
@@ -181,7 +186,7 @@ sub ExistOverlap {
 
 			}
 			elsif ( $dir eq "vertical" ) {
-				
+
 				if ( $sco->{"x1"} == $point{"x"} ) {
 					%infS = ( "val" => $sco->{"y1"}, "type" => 1 );
 					%infE = ( "val" => $sco->{"y2"}, "type" => -1 );
@@ -223,6 +228,64 @@ sub ExistOverlap {
 
 	}
 
+	return $exist;
+}
+
+# This overlaping mean, score lines are too close each other => too smal gap < 200µm
+sub ExistParallelOverlap {
+	my $self = shift;
+
+	my @lines = @{ $self->{"features"} };
+
+	my $exist = 0;
+
+	my $tolerance = $self->{"accuracyOverlap"};   
+
+	for ( my $i = 0 ; $i < scalar(@lines) ; $i++ ) {
+
+		my $lineI = $lines[$i];
+		my $dirI  = $lineI->{"direction"};
+
+		for ( my $j = 0 ; $j < scalar(@lines) ; $j++ ) {
+
+			my $lineJ = $lines[$j];
+			my $dirJ  = $lineJ->{"direction"};
+
+			if ( $dirI ne $dirJ ) {
+				next;
+			}
+
+			if ( $i == $j ) {
+				next;
+			}
+
+			if ( $dirI eq "vertical" ) {
+				if ( abs( $lineI->{"x1"} - $lineJ->{"x1"} ) <= $tolerance ) {
+
+					
+					# lines are parralel overlaping
+					# now test, if there exist normal overlaping for this two lines
+					if ( $lineI->{"y2"} <= $lineJ->{"y1"} || $lineJ->{"y2"} <= $lineI->{"y1"} ) {
+						$exist = 1;
+						last;
+					}
+				}
+			}
+			elsif ( $dirI eq "horizontal" ) {
+
+				if ( abs( $lineI->{"y1"} - $lineJ->{"y1"} ) <= $tolerance ) {
+
+					# lines are parralel overlaping
+					# now test, if there exist normal overlaping for this two lines
+					if ( $lineI->{"x2"} <= $lineJ->{"x1"} || $lineJ->{"x2"} <= $lineI->{"x1"} ) {
+						$exist = 1;
+						last;
+					}
+				}
+			}
+		}
+	}
+	
 	return $exist;
 }
 

@@ -231,6 +231,8 @@ sub __AddControlLines {
 
 	my $width  = $self->{"width"} * 1000;
 	my $height = $self->{"height"} * 1000;
+	
+	my $lineLen = 40000;
 
 	# ==================================
 	# horizontal score
@@ -242,9 +244,9 @@ sub __AddControlLines {
 	$hPoint = $height - 5000;
 
 	$hLineS{"x"} = - 2000; # start out of pcb 2mm
-	$hLineS{"y"} = $height - 5000;
-	$hLineE{"x"} = 5000 + 40000;
-	$hLineE{"y"} = $height - 5000;
+	$hLineS{"y"} = $height - 10000;
+	$hLineE{"x"} = 5000 + $lineLen;
+	$hLineE{"y"} = $height - 10000;
 
 	# multi VV
 	if ($frLim) {
@@ -279,7 +281,7 @@ sub __AddControlLines {
 	$vLineS{"x"} = $width - 5000;
 	$vLineS{"y"} = $height + 2000; # start out of pcb 2mm;
 	$vLineE{"x"} = $width - 5000;
-	$vLineE{"y"} = $height - 5000 - 40000;
+	$vLineE{"y"} = $height - 5000 - $lineLen;
 
 	# multi VV
 	if ($frLim) {

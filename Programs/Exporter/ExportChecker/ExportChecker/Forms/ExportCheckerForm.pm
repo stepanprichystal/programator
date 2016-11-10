@@ -502,7 +502,7 @@ sub BuildGroupTableForm {
 		$scrollPnl->Layout();
 		my ( $width, $height ) = $groupTableForm->GetSizeWH();
 
-		print "Height of scrollPnale is: $height\n\n";
+		 
 
 		#compute number of rows. One row has height 10 px
 		$scrollPnl->SetRowCount( $height / 10 );

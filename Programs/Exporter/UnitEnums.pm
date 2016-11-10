@@ -42,7 +42,7 @@ sub GetTitle{
 		
 	}elsif($code eq UnitId_PRE){
 		
-		$title = "Job editing";
+		$title = "Frame editing";
 		
 	}elsif($code eq UnitId_PDF){
 		

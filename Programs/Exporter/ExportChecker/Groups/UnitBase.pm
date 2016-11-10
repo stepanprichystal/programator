@@ -104,6 +104,17 @@ sub GetGroupState {
 	return $groupState;
 }
 
+sub GetGroupDefaultState {
+	my $self  = shift;
+
+
+	my $groupState = $self->{"dataMngr"}->GetGroupDefaultState();
+
+	return $groupState;
+}
+
+
+
 sub SetGroupState {
 	my $self       = shift;
 	my $groupState = shift;

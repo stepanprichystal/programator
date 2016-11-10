@@ -171,7 +171,7 @@ sub OutputOpfx {
 	my $exportPath = JobHelper->GetJobArchive($jobId) . "zdroje\\ot";
 
 	unless ( -e $exportPath ) {
-		mkdir($exportPath) or die "Can't create dir: " . $exportPath . $_;
+		mkdir($exportPath) or die "Can't create dir: " .  $exportPath;
 	}
 
 	my $report = EnumsPaths->Client_INCAMTMPAOI . $jobId;

@@ -186,7 +186,7 @@ sub GetReduceDist {
 	my $passDist     = 11000;    # distance, which score machine pass end of line
 
 	my $gap = $self->{"pcbPlace"}->__GetMinPcbGap();
-	print STDERR "Mezera min bude  o = " . $gap . "\n";
+	 
 
 	unless ( defined $gap ) {
 		return $standardDist;

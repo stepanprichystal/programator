@@ -69,7 +69,7 @@ sub new {
 	$self->{"loadingFrmPid"} = shift;
 	
 	
-	print STDERR "\n\n\n\nffffffffffrm".$self->{"loadingFrmPid"}."\n\n\n";
+ 
 
 	$self->{"inCAM"} = undef;
 
@@ -162,7 +162,7 @@ sub __ExportSyncFormHandler {
 	my $self   = shift;
 	my $client = $self->{"client"};
 
-	print STDERR "Export sync\n";
+	 
 
 	#if ( $client->ClientConnected() ) {
 	#
@@ -182,7 +182,7 @@ sub __ExportASyncFormHandler {
 	my $self   = shift;
 	my $client = $self->{"client"};
 
-	print STDERR "Export sync\n";
+	 
 
 	#if ( $client->ClientConnected() ) {
 	#
@@ -261,7 +261,7 @@ sub __CleanUpAndExitForm {
 
 	$self->{"form"}->{"mainFrm"}->Destroy();
 
-	print "\n F O R M destroyed\n"
+ 
 
 }
 
@@ -452,9 +452,7 @@ sub __Connect {
 
 	my $port = $self->{"serverPort"};
 	my $pid  = $self->{"serverPid"};
-	if ( $port && $pid ) {
-		print STDERR "\n\n EXPORTER CHECKER $port   $pid \n\n ";
-	}
+ 
 
 	# Manage conenctio between client and server
 	my $client = $self->{"client"};
@@ -465,7 +463,7 @@ sub __Connect {
 	# try to connect to server
 	my $result = $client->Connect();
 
-	print STDERR "RESULT is $result";
+ 
 
 	# if test ok, connect inCAM library to server
 	if ( $self->{"inCAM"} ) {

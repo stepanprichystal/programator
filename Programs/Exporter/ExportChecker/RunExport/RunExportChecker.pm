@@ -43,8 +43,7 @@ sub new {
 
 	# generate radom port between 2000-4000
 	$self->{"port"} = 2000 + int( rand(2000) );
-	print "\n\n == A H O J ====== =========\n\n";
-	print "\n\n == A H O J ==================" . $self->{"port"} . "=======================\n\n";
+	 
 
 	#run exporter
 	$self->__RunExportChecker( $self->{"jobId"}, $self->{"port"} );

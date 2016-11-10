@@ -138,18 +138,8 @@ sub __SetLayout {
 
 sub PlotSelectionChanged {
 	my $self = shift;
-
-	#my $plotList = shift;
-	#my $row = shift;
-
-	my @selectedLayers = ();
-
-	foreach my $row ( $self->{"parent"}->GetSelectedRows() ) {
-
-		push( @selectedLayers, $row->GetRowText() );
-
-	}
-
+	my @selectedLayers = @{shift(@_)};
+ 
 	$self->{"film1Frm"}->PlotSelectChanged( \@selectedLayers );
 	$self->{"film2Frm"}->PlotSelectChanged( \@selectedLayers );
 }
@@ -157,7 +147,7 @@ sub PlotSelectionChanged {
 sub __OnRowChanged{
 	my $self = shift;
  
- 	$self->{"onRowChanged"}->Do($self);
+ 		$self->{"onRowChanged"}->Do($self);
 }
 
 # =====================================================================

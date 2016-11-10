@@ -67,6 +67,8 @@ sub __BuildExportData {
 		# 1), prepare unit data
  
  		my %unitsData = $self->{"units"}->GetExportData(1);
+ 		
+ 		
  
 		foreach my $unitId ( keys %unitsData ) {
 
@@ -76,21 +78,12 @@ sub __BuildExportData {
 			$self->{"data"}->{"units"}->{$unitId} = $unitData;
 		}
 		 
-		 
-#		my %unitsData = %{ $self->{"unitsData"} };
-#
-#		foreach my $unitId ( keys %unitsData ) {
-#
-#			# unit export data
-#			my $unitData = $unitsData{$unitId};
-#
-#			$self->{"data"}->{"units"}->{$unitId} = $unitData;
-#		}
-
-		# 2) prepare other
-		#$self->{"data"}->{"time"} = "tttt";
-
-		#$self->{"hashData"}->{"location"}  =
+		# 2) save units default state
+		
+		my %unitsState = $self->{"units"}->GetUnitsDefaultState(1);
+		my @activeUnits = keys %unitsState;
+		
+ 		$self->{"hashData"}->{"settings"}->{"defaultUnits"} = \@activeUnits;
 
 	}
 	elsif ( $self->{"mode"} eq Enums->Mode_READ ) {
@@ -100,7 +93,7 @@ sub __BuildExportData {
 		my $serializeData = FileHelper->ReadAsString( $self->{"filePath"} );
 		
 		# Delete file
-		unlink($self->{"filePath"});
+		#unlink($self->{"filePath"});
 
 		my $json = JSON->new();
 

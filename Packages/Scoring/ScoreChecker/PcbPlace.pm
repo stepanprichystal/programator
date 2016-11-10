@@ -207,10 +207,14 @@ sub __LoadNestedSteps {
 
 		my %lim = CamJob->GetProfileLimits( $inCAM, $jobId, $uStep->{"stepName"} );
 
+		foreach my $k (keys %lim){
+			$lim{$k} = int($lim{$k} * 1000 +0.5);
+		}
+
 		$uStep->{"lim"} = \%lim;
 
-		$uStep->{"width"}  = $self->__ToMicron( abs( $lim{"xmax"} - $lim{"xmin"} ) );
-		$uStep->{"height"} = $self->__ToMicron( abs( $lim{"ymax"} - $lim{"ymin"} ) );
+		$uStep->{"width"}  =  abs( $lim{"xmax"} - $lim{"xmin"} ) ;
+		$uStep->{"height"} =  abs( $lim{"ymax"} - $lim{"ymin"} ) ;
 
 	}
 
@@ -226,7 +230,12 @@ sub __LoadNestedSteps {
 		}
 
 		if ( $score->ExistOverlap() ) {
-			$self->{"errorMess"} .= "Some scorelines in step: " . $uStep->{"stepName"} . " are overlapping.";
+			$self->{"errorMess"} .= "Some scorelines in step: " . $uStep->{"stepName"} . " are overlapping (v podélném smìru).";
+			$self->{"initSucc"} = 0;
+		}
+
+		if ( $score->ExistParallelOverlap() ) {
+			$self->{"errorMess"} .= "Some scorelines in step: " . $uStep->{"stepName"} . " are overlapping  (v pøíèném smìru).";
 			$self->{"initSucc"} = 0;
 		}
 

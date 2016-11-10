@@ -1,4 +1,4 @@
-package Programs::Exporter::ExportUtility::Groups::PreExport::PreExportTmp;
+package Programs::Exporter::ExportUtility::Groups::ScoExport::ScoExportTmp;
 
 #3th party library
 use strict;
@@ -6,6 +6,7 @@ use warnings;
 use Wx;
 
 use aliased 'Enums::EnumsPaths';
+use aliased 'Enums::EnumsGeneral';
 use aliased 'Packages::InCAM::InCAM';
 use aliased 'Helpers::GeneralHelper';
 use aliased 'Packages::Events::Event';
@@ -72,18 +73,7 @@ sub Run {
 	my $exportClass = $exportUnit->GetExportClass();
 	
 	
-	# misto pro upravu exportovanych dat
-	
-	my @layers = ();
-	
-	my %lInfo = ();
-	$lInfo{"name"}     = "c";
-	$lInfo{"etchingType"}  = "tenting";
-	
-	push(@layers, \%lInfo);
-	
-	$exportData->SetSignalLayers(\@layers);
-	
+	 
 	 
 	
 

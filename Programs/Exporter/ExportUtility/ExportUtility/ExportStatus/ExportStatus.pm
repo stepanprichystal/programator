@@ -39,6 +39,7 @@ sub new {
 
 sub IsExportOk {
 	my $self = shift;
+	my $notExported = shift;
 
 	my %hashKeys = $self->__ReadExportStatus();
 
@@ -47,8 +48,11 @@ sub IsExportOk {
 	foreach my $k ( keys %hashKeys ) {
 
 		if ( $hashKeys{$k} == 0 ) {
+			
+			push(@{$notExported}, $k );
+			
 			$statusOk = 0;
-			last;
+			 
 		}
 
 	}
@@ -69,14 +73,15 @@ sub DeleteStatusFile {
 
 sub CreateStatusFile {
 	my $self = shift;
+	my @keys = @{shift(@_)};
 
 	# test if file already exist
 	if ( -e $self->{"filePath"} ) {
 		return 1;
 	}
 
-	my $builder = ExportStatusBuilder->new();
-	my @keys    = $builder->GetStatusKeys($self);
+	#my $builder = ExportStatusBuilder->new();
+	#my @keys    = $builder->GetStatusKeys($self);
 
 	my %hashKeys = ();
 

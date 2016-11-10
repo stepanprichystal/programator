@@ -1,6 +1,5 @@
 #-------------------------------------------------------------------------------------------#
-# Description: Every type of pcb has specific content of export status file
-# Author:SPR
+# OBSOLETE - DELETE THIS FILE
 #-------------------------------------------------------------------------------------------#
 package Programs::Exporter::ExportUtility::ExportUtility::ExportStatus::ExportStatusBuilder;
 
@@ -110,8 +109,35 @@ sub VVBuilder{
 	
 	my @statusKeys = ();
 	
+	# nif file - always
 	push(@statusKeys, UnitEnums->UnitId_NIF);
+
+	# nc files - always
 	push(@statusKeys, UnitEnums->UnitId_NC);
+	
+#	# e test
+#	
+#	if($defaultInfo->GetLayerCnt() == 1 && $defaultInfo->GetPcbClass() == 3){
+#		
+#		$state = Enums->GroupState_DISABLE;
+#		
+#	}
+#	
+	
+	push(@statusKeys, UnitEnums->UnitId_NC);
+	
+	
+	
+	
+				   UnitId_NIF => "nif",
+			   UnitId_NC  => "nc",
+			   UnitId_ET => "et",
+			   UnitId_AOI => "aoi",
+			   UnitId_PLOT => "plot",
+			   UnitId_PRE => "pre",
+			   UnitId_GER => "ger", 
+			   UnitId_PDF => "pdf",
+			   UnitId_SCO => "score", 
 	
 	return @statusKeys;
 		

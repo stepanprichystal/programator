@@ -45,7 +45,7 @@ sub Build {
 	
 	# Table 1
 	
-	my $tableTab1 = GroupTable->new("Main groups");
+	my $tableTab1 = $groupTables->AddTable("Main groups");
 	
 	# Units
 	my $preUnit1 = PreUnit->new( $self->{"jobId"});	
@@ -81,7 +81,7 @@ sub Build {
 #	$row1Tab2->AddCell($etUnit1, Enums->Width_25);
  
 
-	$groupTables->AddTable($tableTab1);
+	#$groupTables->AddTable($tableTab1);
 	#$groupTables->AddTable($tableTab2);
 }
  
