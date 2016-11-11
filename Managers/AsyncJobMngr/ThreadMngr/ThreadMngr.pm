@@ -196,7 +196,7 @@ sub __CleanUpAndExit {
 	
 		# Reconnection is necessary because, when is child therad aborted force
 		# inCam library is confused and return odd replies
-		$inCAM->ClientFinish();
+		 
 		$inCAM->Reconnect();
 	 
 

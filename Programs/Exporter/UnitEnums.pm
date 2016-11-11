@@ -8,7 +8,10 @@ use constant {
 			   UnitId_ET => "et",
 			   UnitId_AOI => "aoi",
 			   UnitId_PLOT => "plot",
-			   UnitId_PRE => "pre" 
+			   UnitId_PRE => "pre",
+			   UnitId_GER => "ger", 
+			   UnitId_PDF => "pdf",
+			   UnitId_SCO => "score", 
 };
 
 sub GetTitle{
@@ -39,7 +42,19 @@ sub GetTitle{
 		
 	}elsif($code eq UnitId_PRE){
 		
-		$title = "Job editing";
+		$title = "Frame editing";
+		
+	}elsif($code eq UnitId_PDF){
+		
+		$title = "Pdf file";
+		
+	}elsif($code eq UnitId_GER){
+		
+		$title = "Gerbers";
+		
+	}elsif($code eq UnitId_SCO){
+		
+		$title = "Score programs";
 		
 	}
 	

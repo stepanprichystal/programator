@@ -62,9 +62,9 @@ sub Init {
 	#$self->{"szHeaderBody"}->Fit($self);
 	#	$self->Layout();
 
-	#my ( $w, $h ) = $groupBody->GetSizeWH();
+	#my ( $w, $h ) = $groupBody->GetSizeWH(); Exporter checker
 
-	print 1;
+ 
 
 }
 
@@ -209,7 +209,7 @@ sub __RecursiveHandler {
 
 		Wx::Event::EVT_LEFT_DOWN( $control, sub { $self->__Switch( $control, @_ ) } );
 
-		print $control. "handler added \n";
+	 
 	} 
 
 	my @childrens = $control->GetChildren();

@@ -1,5 +1,5 @@
 #-------------------------------------------------------------------------------------------#
-# Description: Wrapper for operations connected with inCam attributes
+# Description: Class responsible for creation opfx files
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Packages::Export::PlotExport::OpfxCreator::OpfxCreator;
@@ -59,31 +59,29 @@ sub Export {
 	# Create plot step
 	$self->__CreatePlotStep();
 
- 
 	# Export single plot sets
 
 	foreach my $plotSet ( @{ $self->{"plotSets"} } ) {
 
 		# Select layer by layer
 		foreach my $plotL ( $plotSet->GetLayers() ) {
- 
+
 			# Prepare final layer for output on film
 			$self->__PrepareLayer( $plotSet, $plotL );
 		}
- 
+
 		# Prepare (merge if more layers) final layer for plotter set
 		$self->__PrepareOutputLayer($plotSet);
 
 	}
- 
 
 	# Final output of prepared plot sets
 	$self->__OutputPlotSets();
-	
+
 	# Delete plot step
-	if(CamHelper->StepExists($inCAM, $jobId, $self->{"plotStep"})){
-		
-		$inCAM->COM("delete_entity", "job" => $jobId, "type" => "step", "name" => $self->{"plotStep"}); 
+	if ( CamHelper->StepExists( $inCAM, $jobId, $self->{"plotStep"} ) ) {
+
+		$inCAM->COM( "delete_entity", "job" => $jobId, "type" => "step", "name" => $self->{"plotStep"} );
 	}
 
 }
@@ -305,7 +303,8 @@ sub __OutputPlotSets {
 
 			my $stampt = GeneralHelper->GetGUID();
 			$inCAM->PutStampToLog($stampt);
-			$resultItemPlot->AddError( "Failed to create OPFX file: " . $archivePath . "\\" . $plotSet->GetOutputFileName() . ".\nExceptionId:".$stampt );
+			$resultItemPlot->AddError(
+								 "Failed to create OPFX file: " . $archivePath . "\\" . $plotSet->GetOutputFileName() . ".\nExceptionId:" . $stampt );
 		}
 
 		$self->_OnItemResult($resultItemPlot);

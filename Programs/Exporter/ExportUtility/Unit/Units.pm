@@ -26,6 +26,8 @@ use aliased 'Programs::Exporter::ExportUtility::Groups::ETExport::ETUnit';
 use aliased 'Programs::Exporter::ExportUtility::Groups::AOIExport::AOIUnit';
 use aliased 'Programs::Exporter::ExportUtility::Groups::PlotExport::PlotUnit';
 use aliased 'Programs::Exporter::ExportUtility::Groups::PreExport::PreUnit';
+use aliased 'Programs::Exporter::ExportUtility::Groups::ScoExport::ScoUnit';
+use aliased 'Programs::Exporter::ExportUtility::Groups::GerExport::GerUnit';
 #-------------------------------------------------------------------------------------------#
 #  Package methods, requested by IUnit interface
 #-------------------------------------------------------------------------------------------#
@@ -101,6 +103,18 @@ sub __GetUnitClass {
 		$unit = PreUnit->new($unitId, $jobId);
 
 	}
+	elsif ( $unitId eq UnitEnums->UnitId_SCO ) {
+
+		$unit = ScoUnit->new($unitId, $jobId);
+
+	}
+	elsif ( $unitId eq UnitEnums->UnitId_GER ) {
+
+		$unit = GerUnit->new($unitId, $jobId);
+
+	}
+	
+	
 
 	#	elsif ( $unitId eq UnitEnums->UnitId_NC2 ) {
 	#

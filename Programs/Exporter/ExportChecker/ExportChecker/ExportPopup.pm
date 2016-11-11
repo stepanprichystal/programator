@@ -252,7 +252,7 @@ sub __CheckerStartMessageHandler {
 sub __CheckerEndMessageHandler {
 	my ( $self, $frame, $event ) = @_;
 
-	print "\n\n HEREEE \n\n";
+	 
 
 	my %d = %{ $event->GetData };
 

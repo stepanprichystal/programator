@@ -168,6 +168,25 @@ sub WorkLayer{
 
 }
 
+# Affect layer in matrix
+sub AffectLayers{
+	my $self   = shift;
+	my $inCAM  = shift;
+	my $layers  = shift;
+	
+	$inCAM->COM( 'affected_layer', name => "", mode => "all", affected => "no" );
+	
+	
+	foreach my $layer (@{$layers}){
+		#$inCAM->COM("display_layer","name" => $layer,"display" => "yes");
+		$inCAM->COM( 'affected_layer', name => "$layer", mode => "single", affected => "yes" );
+
+	}
+	
+	
+
+}
+
 # InvertPolarity of layer
 sub NegativeLayerData {
 	my $self   = shift;

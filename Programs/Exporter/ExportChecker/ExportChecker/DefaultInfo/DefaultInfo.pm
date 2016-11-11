@@ -19,6 +19,10 @@ use aliased 'Packages::Stackup::Stackup::Stackup';
 use aliased 'Packages::Stackup::StackupNC::StackupNC';
 use aliased 'Packages::Routing::PlatedRoutArea';
 use aliased 'CamHelpers::CamDrilling';
+use aliased 'CamHelpers::CamHelper';
+use aliased 'Packages::Scoring::ScoreChecker::ScoreChecker';
+use aliased 'Connectors::HeliosConnector::HegMethods';
+use aliased 'Packages::Technology::EtchOperation';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -31,22 +35,30 @@ sub new {
 
 	$self->{"inCAM"} = shift;
 	$self->{"jobId"} = shift;
+	$self->{"step"} = "panel";
 
 	# Defaul values
 	$self->{"layerCnt"} = undef;
-
 	$self->{"stackup"} = undef;
-
 	$self->{"stackupNC"} = undef;
-
 	$self->{"pattern"} = undef;
 	$self->{"tenting"} = undef;
+	$self->{"baseLayers"} = undef;
+	$self->{"scoreChecker"} = undef;
+	$self->{"materialKind"} = undef;
+	
 
 	$self->__InitDefault();
 
 	return $self;
 }
 
+
+sub GetBoardBaseLayers {
+	my $self      = shift;
+	
+	return  @{$self->{"baseLayers"}};	
+}
 
 sub GetPcbClass {
 	my $self      = shift;
@@ -156,6 +168,7 @@ sub GetEtchType {
 
 }
 
+ 
 
 sub GetSideByLayer {
 	my $self      = shift;
@@ -205,8 +218,64 @@ sub GetSideByLayer {
 	return $side;
 }
 
+sub GetCompByLayer{
+	my $self      = shift;
+	my $layerName = shift;
+ 
+	
+	my $class = $self->GetPcbClass();
+	my $cuThick = $self->GetBaseCuThick($layerName);
+	
+	my $comp = EtchOperation->KompenzaceIncam($cuThick, $class);
+	
+	return $comp;
+	
+}
+
+sub GetScoreChecker{
+	my $self      = shift;
+	
+	my $res = 0;
+	
+	if($self->{"scoreChecker"}){
+
+		return $self->{"scoreChecker"}
+	}
+ 
+}
+
+sub GetMaterialKind{
+	my $self      = shift;
+	
+	return $self->{"materialKind"};
+}
+
+sub GetBaseCuThick {
+	my $self      = shift;
+	my $layerName = shift;
+
+	my $cuThick;
+
+	if ( HegMethods->GetTypeOfPcb($self->{"jobId"}) eq 'Vicevrstvy' ) {
+
+		$self->{"stackup"} = Stackup->new($self->{"jobId"});
+
+		my $cuLayer = $self->{"stackup"}->GetCuLayer($layerName);
+		$cuThick = $cuLayer->GetThick();
+	}
+	else {
+
+		$cuThick = HegMethods->GetOuterCuThick( $self->{"jobId"}, $layerName );
+	}
+
+	return $cuThick;
+}
+
 sub __InitDefault {
 	my $self = shift;
+
+	my @baseLayers = CamJob->GetBoardBaseLayers($self->{"inCAM"}, $self->{"jobId"} );
+	$self->{"baseLayers"} =  \@baseLayers;
 
 	$self->{"pcbClass"} = CamJob->GetJobPcbClass($self->{"inCAM"}, $self->{"jobId"} );   
 
@@ -220,6 +289,16 @@ sub __InitDefault {
 		$self->{"stackup"} = Stackup->new( $self->{'jobId'} );
 		$self->{"stackupNC"} = StackupNC->new( $self->{"inCAM"}, $self->{"stackup"} );
 	}
+	
+	if(CamHelper->LayerExists(  $self->{"inCAM"}, $self->{"jobId"}, "score" )){
+		
+		$self->{"scoreChecker"} = ScoreChecker->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"step"}, "score", 1 );
+		$self->{"scoreChecker"}->Init();
+	}
+	
+	
+	$self->{"materialKind"} = HegMethods->GetMaterialKind($self->{"jobId"});
+	
 
 }
 

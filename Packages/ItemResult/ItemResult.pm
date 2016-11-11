@@ -36,18 +36,14 @@ sub new {
 	else {
 		$self->{"result"} = Enums->ItemResult_Succ;
 	}
-	
+
 	# Some result items can be included in some group, eg. layers
 	$self->{"group"} = shift;
-	
 
 	my @errors = ();
 	$self->{"errors"} = \@errors;
 	my @warnings = ();
 	$self->{"warnings"} = \@warnings;
-
-
-
 
 	return $self;    # Return the reference to the hash.
 }
@@ -59,23 +55,24 @@ sub Create {
 
 }
 
-
-
-
 sub AddError {
 	my $self = shift;
 	my $mess = shift;
-	$self->{"result"} = Enums->ItemResult_Fail;
 
-	push( @{ $self->{"errors"} }, $mess );
+	if ($mess) {
+		$self->{"result"} = Enums->ItemResult_Fail;
+
+		push( @{ $self->{"errors"} }, $mess );
+	}
+
 }
 
 sub AddErrors {
-	my $self = shift;
+	my $self     = shift;
 	my $messages = shift;
-	
-	foreach my $mess (@{$messages}){
-		
+
+	foreach my $mess ( @{$messages} ) {
+
 		$self->AddError($mess);
 	}
 }
@@ -89,11 +86,11 @@ sub AddWarning {
 }
 
 sub AddWarnings {
-	my $self = shift;
+	my $self     = shift;
 	my $messages = shift;
-	
-	foreach my $mess (@{$messages}){
-		
+
+	foreach my $mess ( @{$messages} ) {
+
 		$self->AddWarning($mess);
 	}
 }
@@ -111,17 +108,17 @@ sub Result {
 }
 
 sub SetItemId {
-	my $self = shift;
+	my $self   = shift;
 	my $itemId = shift;
 	$self->{"itemId"} = $itemId;
 
 }
 
 sub GetErrorStr {
-	my $self = shift;
+	my $self      = shift;
 	my $delimiter = shift;
-	
-	unless($delimiter){
+
+	unless ($delimiter) {
 		$delimiter = "\n";
 	}
 
@@ -135,10 +132,10 @@ sub GetErrorStr {
 }
 
 sub GetWarningStr {
-	my $self = shift;
+	my $self      = shift;
 	my $delimiter = shift;
-	
-	unless($delimiter){
+
+	unless ($delimiter) {
 		$delimiter = "\n";
 	}
 
@@ -153,30 +150,27 @@ sub GetWarningStr {
 
 sub GetErrorCount {
 	my $self = shift;
-	 
+
 	return scalar( @{ $self->{"errors"} } );
 }
 
 sub GetWarningCount {
 	my $self = shift;
-	 
+
 	return scalar( @{ $self->{"warnings"} } );
 }
 
-
-sub SetGroup{
-	my $self = shift;
+sub SetGroup {
+	my $self  = shift;
 	my $value = shift;
 	return $self->{"group"} = $value;
 }
 
-sub GetGroup{
+sub GetGroup {
 	my $self = shift;
-	
+
 	return $self->{"group"};
 }
-
-
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
@@ -184,7 +178,6 @@ sub GetGroup{
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
- 
 }
 
 1;

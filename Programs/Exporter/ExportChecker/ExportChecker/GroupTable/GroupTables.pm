@@ -11,7 +11,7 @@ use strict;
 use warnings;
 
 #local library
-
+use aliased 'Programs::Exporter::ExportChecker::ExportChecker::GroupTable::GroupTable';
  
 
 #-------------------------------------------------------------------------------------------#
@@ -31,10 +31,15 @@ sub new {
 
 sub AddTable {
 	my $self = shift;
-	my $table  = shift;
+	my $title = shift;
+	
+	my $tabCnt = scalar(@{$self->{"groupTables"}});
+	
+	my $table = GroupTable->new($title, $tabCnt + 1);
 
 	push( @{ $self->{"groupTables"} }, $table );
  
+ 	return $table;
 }
  
  

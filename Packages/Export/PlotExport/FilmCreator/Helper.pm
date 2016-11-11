@@ -34,7 +34,7 @@ sub GetPcbLimits {
 	my @features = $feat->GetFeatures();
 
 	# filter line, which create "big" and "small" frame around pcb
-	@features = grep { $_->{"att"}->{".pnl_place"} =~ /pcbf_/i } @features;
+	@features = grep { defined $_->{"att"}->{".pnl_place"} && $_->{"att"}->{".pnl_place"} =~ /pcbf_/i } @features;
 	
 	
 	my @smallFeatures = grep { $_->{"att"}->{".pnl_place"} =~ /small/ } @features;
@@ -79,9 +79,7 @@ sub AddLayerPlotSize {
 	my %bigLim   = %{shift(@_)};
 
 	# Get limits of pcb
-	#$self->GetPcbLimits( $inCAM, $jobId, \%smallLim, \%bigLim );
-
-	#$self->GetPcbDimensions($inCAM, $jobId, \%smallLim, \%bigLim, \%smallDim, \%bigDim);
+ 
 
 	foreach my $l ( @{$layers} ) {
 

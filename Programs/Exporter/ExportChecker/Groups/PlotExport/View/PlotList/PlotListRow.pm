@@ -49,7 +49,7 @@ sub new {
 	$self->__SetLayout();
 
 	# EVENTS
-	#$self->{"onSelectedChanged"}->Add(sub {$self->__PlotSelectionChanged(@_)});
+	$self->{"onRowChanged"} = Event->new();
 
 	return $self;
 }
@@ -114,7 +114,9 @@ sub __SetLayout {
 	my $film2Frm = FilmForm->new( $self->{"parent"}, $self->{"filmRuleSet2"}, $self->{"rowHeight"} );
 
 	# SET EVENTS
-	#Wx::Event::EVT_CHECKBOX( $mainChb, -1, sub { $self->__OnSelectedChange(@_) } );
+	Wx::Event::EVT_COMBOBOX( $mirrorChb, -1, sub { $self->__OnRowChanged(@_) } );
+	Wx::Event::EVT_CHECKBOX( $polarityCb, -1, sub { $self->__OnRowChanged(@_) } );
+	Wx::Event::EVT_TEXT( $compTxt, -1, sub { $self->__OnRowChanged(@_) } );
 
 	$self->_AddCell($layerColor);
 	$self->_AddCell($polarityCb);
@@ -136,20 +138,16 @@ sub __SetLayout {
 
 sub PlotSelectionChanged {
 	my $self = shift;
-
-	#my $plotList = shift;
-	#my $row = shift;
-
-	my @selectedLayers = ();
-
-	foreach my $row ( $self->{"parent"}->GetSelectedRows() ) {
-
-		push( @selectedLayers, $row->GetRowText() );
-
-	}
-
+	my @selectedLayers = @{shift(@_)};
+ 
 	$self->{"film1Frm"}->PlotSelectChanged( \@selectedLayers );
 	$self->{"film2Frm"}->PlotSelectChanged( \@selectedLayers );
+}
+
+sub __OnRowChanged{
+	my $self = shift;
+ 
+ 		$self->{"onRowChanged"}->Do($self);
 }
 
 # =====================================================================
@@ -198,6 +196,8 @@ sub GetLayerValues {
  
 	return %lInfo;
 }
+
+
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

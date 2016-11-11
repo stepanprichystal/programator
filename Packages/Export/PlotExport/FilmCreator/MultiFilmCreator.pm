@@ -1,5 +1,5 @@
 #-------------------------------------------------------------------------------------------#
-# Description: Wrapper for operations connected with inCam attributes
+# Description: Creator, which create sets, contain 2 merged layers - verticall
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 
@@ -24,16 +24,13 @@ use aliased 'Packages::Export::PlotExport::FilmCreator::Helper';
 sub new {
 	my $class = shift;
 
-	my $inCAM  = shift;    #board layers
-	my $jobId  = shift;    #board layers
-	my $layers = shift;    #board layers
+	my $inCAM    = shift;
+	my $jobId    = shift;
+	my $layers   = shift;
 	my $smallLim = shift;
-	my $bigLim  = shift;
+	my $bigLim   = shift;
 
-	#my $pcbsizeProfile = shift; #board layers
-	#my $pcbsizeFrame = shift; #board layers
-	
-	my $self = $class->SUPER::new($inCAM, $jobId, $layers, @_ );
+	my $self = $class->SUPER::new( $inCAM, $jobId, $layers, @_ );
 	bless $self;
 
 	Helper->AddLayerPlotSize( Enums->Size_PROFILE, $layers, $smallLim, $bigLim );
@@ -80,7 +77,7 @@ sub __BuildRules {
 		$rule = $self->_AddRule( Enums->Ori_VERTICAL );
 		$rule->AddSingleTypes( Enums->LType_MASKTOP, Enums->LType_SIGOUTER );
 
-		# 4
+		# 5
 		$rule = $self->_AddRule( Enums->Ori_VERTICAL );
 		$rule->AddSingleTypes( Enums->LType_MASKBOT, Enums->LType_SIGOUTER );
 
@@ -88,19 +85,18 @@ sub __BuildRules {
 
 	if ( $self->{"layerCnt"} >= 2 ) {
 
-		# 3
+		# 4
 		$rule = $self->_AddRule( Enums->Ori_VERTICAL );
 		$rule->AddSingleTypes( Enums->LType_SIGOUTER, Enums->LType_SIGOUTER );
 
 	}
-	
-	
+
+	# 
+
 	$rule = $self->_AddRule( Enums->Ori_VERTICAL );
 	$rule->AddSingleTypes( Enums->LType_GOLDFINGER, Enums->LType_GOLDFINGER );
 
 }
-
- 
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
@@ -110,17 +106,17 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	#my $self             = shift;
 	#	my $inCAM            = shift;
-#	use aliased 'Packages::InCAM::InCAM';
-#	use aliased 'Packages::Export::PlotExport::FilmCreator::MultiFilmCreator';
-#
-#	use aliased 'CamHelpers::CamJob';
-#	my $inCAM = InCAM->new();
-#
-#	my $jobId = "f13609";
-#
-#	my @layers = CamJob->GetBoardBaseLayers( $inCAM, $jobId );
-#
-#	my $creator = MultiFilmCreator->new( $inCAM, $jobId, \@layers );
+	#	use aliased 'Packages::InCAM::InCAM';
+	#	use aliased 'Packages::Export::PlotExport::FilmCreator::MultiFilmCreator';
+	#
+	#	use aliased 'CamHelpers::CamJob';
+	#	my $inCAM = InCAM->new();
+	#
+	#	my $jobId = "f13609";
+	#
+	#	my @layers = CamJob->GetBoardBaseLayers( $inCAM, $jobId );
+	#
+	#	my $creator = MultiFilmCreator->new( $inCAM, $jobId, \@layers );
 
 	#$creator->GetPlotterSets();
 

@@ -230,7 +230,7 @@ sub __SetLayout {
 	my $mainFrm = MyWxFrame->new(
 		$parent,                   # parent window
 		-1,                        # ID -1 means any
-		"Exporter checker",        # title
+		"Exporter checker Job: ".$self->{"jobId"},        # title
 		&Wx::wxDefaultPosition,    # window position
 		[ 1100, 750 ],             # size
 		                           #&Wx::wxSYSTEM_MENU | &Wx::wxCAPTION | &Wx::wxCLIP_CHILDREN | &Wx::wxRESIZE_BORDER | &Wx::wxMINIMIZE_BOX
@@ -290,7 +290,7 @@ sub __SetLayout {
 	$pnlBtns->SetSizer($szBtns);
 
 	$szRow1->Add( $self->__SetLayoutOther($mainPnl),      0,  &Wx::wxEXPAND | &Wx::wxLEFT, 2 );
-	$szRow1->Add( $self->__SetLayoutExportPath($mainPnl), 0,  &Wx::wxEXPAND | &Wx::wxLEFT, 2 );
+	#$szRow1->Add( $self->__SetLayoutExportPath($mainPnl), 0,  &Wx::wxEXPAND | &Wx::wxLEFT, 2 );
 	$szRow1->Add( 10,                                     10, 1,                           &Wx::wxEXPAND );
 	$szRow1->Add( $self->__SetLayoutQuickSet($mainPnl),   0,  &Wx::wxEXPAND | &Wx::wxLEFT, 2 );
 
@@ -369,38 +369,38 @@ sub __SetLayoutQuickSet {
 
 }
 
-# Set layout for Export path box
-sub __SetLayoutExportPath {
-	my $self   = shift;
-	my $parent = shift;
-
-	#define staticboxes
-	my $statBox = Wx::StaticBox->new( $parent, -1, 'Export location' );
-	my $szStatBox = Wx::StaticBoxSizer->new( $statBox, &Wx::wxVERTICAL );
-
-	my $szMain = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
-	my $szRow1 = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
-	my $szRow2 = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
-
-	my $rbClient = Wx::RadioButton->new( $statBox, -1, "C:/Export", &Wx::wxDefaultPosition, [ 110, 22 ], &Wx::wxRB_GROUP );
-	$rbClient->SetBackgroundColour( Wx::Colour->new( 228, 232, 243 ) );
-	my $rbArchiv = Wx::RadioButton->new( $statBox, -1, "Job archive ", &Wx::wxDefaultPosition, [ 110, 22 ] );
-	$rbArchiv->SetBackgroundColour( Wx::Colour->new( 0, 0, 0 ) );
-
-	#$szRow1->Add( $defaultTxt,   1, &Wx::wxEXPAND );
-	$szRow1->Add( $rbClient, 0, &Wx::wxEXPAND );
-
-	#$szRow2->Add( $uncheckAllTxt,   1, &Wx::wxEXPAND );
-	$szRow2->Add( $rbArchiv, 0, &Wx::wxEXPAND );
-
-	$szMain->Add( $szRow1, 1, &Wx::wxEXPAND );
-	$szMain->Add( $szRow2, 1, &Wx::wxEXPAND );
-
-	$szStatBox->Add( $szMain, 1, &Wx::wxEXPAND );
-
-	return $szStatBox;
-
-}
+## Set layout for Export path box
+#sub __SetLayoutExportPath {
+#	my $self   = shift;
+#	my $parent = shift;
+#
+#	#define staticboxes
+#	my $statBox = Wx::StaticBox->new( $parent, -1, 'Export location' );
+#	my $szStatBox = Wx::StaticBoxSizer->new( $statBox, &Wx::wxVERTICAL );
+#
+#	my $szMain = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
+#	my $szRow1 = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
+#	my $szRow2 = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
+#
+#	my $rbClient = Wx::RadioButton->new( $statBox, -1, "C:/Export", &Wx::wxDefaultPosition, [ 110, 22 ], &Wx::wxRB_GROUP );
+#	$rbClient->SetBackgroundColour( Wx::Colour->new( 228, 232, 243 ) );
+#	my $rbArchiv = Wx::RadioButton->new( $statBox, -1, "Job archive ", &Wx::wxDefaultPosition, [ 110, 22 ] );
+#	$rbArchiv->SetBackgroundColour( Wx::Colour->new( 0, 0, 0 ) );
+#
+#	#$szRow1->Add( $defaultTxt,   1, &Wx::wxEXPAND );
+#	$szRow1->Add( $rbClient, 0, &Wx::wxEXPAND );
+#
+#	#$szRow2->Add( $uncheckAllTxt,   1, &Wx::wxEXPAND );
+#	$szRow2->Add( $rbArchiv, 0, &Wx::wxEXPAND );
+#
+#	$szMain->Add( $szRow1, 1, &Wx::wxEXPAND );
+#	$szMain->Add( $szRow2, 1, &Wx::wxEXPAND );
+#
+#	$szStatBox->Add( $szMain, 1, &Wx::wxEXPAND );
+#
+#	return $szStatBox;
+#
+#}
 
 # Set layout for Export path box
 sub __SetLayoutOther {
@@ -502,7 +502,7 @@ sub BuildGroupTableForm {
 		$scrollPnl->Layout();
 		my ( $width, $height ) = $groupTableForm->GetSizeWH();
 
-		print "Height of scrollPnale is: $height\n\n";
+		 
 
 		#compute number of rows. One row has height 10 px
 		$scrollPnl->SetRowCount( $height / 10 );

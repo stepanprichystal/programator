@@ -1,5 +1,5 @@
 #-------------------------------------------------------------------------------------------#
-# Description: Wrapper for operations connected with inCam attributes
+# Description: Interface for Film creator classes
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 
@@ -23,10 +23,6 @@ use warnings;
  
 sub GetRuleSets;
  
-
- 
-
-
  
 
 
@@ -36,12 +32,7 @@ sub GetRuleSets;
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	#my $self             = shift;
-	#	my $inCAM            = shift;
-
-	#use aliased 'HelperScripts::DirStructure';
-
-	#DirStructure->Create();
+ 
 
 }
 

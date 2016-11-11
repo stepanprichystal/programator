@@ -124,7 +124,7 @@ sub __OpenJob {
 
  	my $result = 1;
  
-	# open job
+	# 1) open job
 		 
 	$inCAM->HandleException(1);
   
@@ -139,7 +139,24 @@ sub __OpenJob {
 		$self->__TaskResultEvent( ResultEnums->ItemResult_Fail, $err );
 	}
 	
-	# check out job
+	# 2) Additional check, maximum number of terminal is exceded.
+	# if set step fail, it means max number exceeded
+	
+	$inCAM->HandleException(1);
+	
+	CamHelper->SetStep($self->{"inCAM"}, "panel");
+	
+	$inCAM->HandleException(0);
+	
+	my $err3 = $inCAM->GetExceptionError();
+
+	if ($err3) {
+		$result = 0;
+		$self->__TaskResultEvent( ResultEnums->ItemResult_Fail, "Maximum licence of InCAM is exceeded");
+	}
+ 
+	
+	# 3) check out job
 	
 	$inCAM->HandleException(1);
   

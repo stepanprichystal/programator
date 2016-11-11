@@ -24,6 +24,7 @@ sub new {
 	bless $self;
  
 	$self->{"title"} = shift;
+	$self->{"order"} = shift;
 
 	#require rows in nif section
 	my @rows = ();
@@ -35,6 +36,11 @@ sub new {
 sub GetTitle{
 	my $self = shift;
 	return $self->{"title"};
+}
+
+sub GetOrderNumber{
+	my $self = shift;
+	return $self->{"order"}*100; # x 100 because group in first table has order 101, 102, 103. In secodn table 201,202,203
 }
 
 sub AddRow {

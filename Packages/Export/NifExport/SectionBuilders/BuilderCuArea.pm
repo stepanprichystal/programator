@@ -57,6 +57,7 @@ sub Build {
 	my $stackupNC;
 	my $coreCnt;
 	my $pressCnt;
+ 
 
 	if ( $self->{"layerCnt"} > 2 ) {
 		$stackup   = Stackup->new($jobId);
@@ -336,6 +337,7 @@ sub Build {
 		my $blindTopExist = CamDrilling->NCLayerExists( $inCAM, $jobId, EnumsGeneral->LAYERTYPE_plt_bDrillTop );
 		my $blindBotExist = CamDrilling->NCLayerExists( $inCAM, $jobId, EnumsGeneral->LAYERTYPE_plt_bDrillBot );
 		$blindDrillExist = ( $blindTopExist || $blindBotExist ) ? 1 : 0;
+		
 	}
 
 	#pattern

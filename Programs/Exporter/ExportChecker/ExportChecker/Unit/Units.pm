@@ -225,6 +225,10 @@ sub GetExportData {
 	return %allExportData;
 }
 
+
+
+
+
 sub GetGroupData {
 	my $self = shift;
 
@@ -267,7 +271,27 @@ sub GetActiveUnitsCnt {
 
 
 
+# Return units and its default state
+sub GetUnitsDefaultState {
+	my $self         = shift;
+	my $activeGroups = shift;
 
+	my %units = ();
+
+	my @units = @{ $self->{"units"} };
+	
+	
+	if ($activeGroups) {
+		@units = grep { $_->GetGroupDefaultState() eq Enums->GroupState_ACTIVEON ||  $_->GetGroupDefaultState() eq Enums->GroupState_ACTIVEOFF} @units;
+	}
+	
+	foreach my $unit (@units) {
+		 
+		$units{ $unit->{"unitId"} } = $unit->GetGroupDefaultState();
+	}
+
+	return %units;
+}
 
 
 # ===================================================================

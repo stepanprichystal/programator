@@ -65,7 +65,7 @@ sub OnPrepareGroupData {
 	$groupData->SetNotes("");
 	$groupData->SetDatacode("");
 	$groupData->SetUlLogo("");
-	$groupData->SetJumpScoring(0);
+	$groupData->SetJumpScoring( $defaultInfo->GetScoreChecker()->CustomerJumpScoring());
 
 	# Dimension
 	my %dim = $self->__GetDimension( $inCAM, $jobId );

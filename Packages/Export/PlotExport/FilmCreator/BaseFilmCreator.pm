@@ -1,5 +1,6 @@
 #-------------------------------------------------------------------------------------------#
-# Description: Wrapper for operations connected with inCam attributes
+# Description: Base class, responsible for creating "rule result sets" based od rules
+# Rules are difined in classes, which inherit from this class
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 
@@ -53,6 +54,7 @@ sub _AddRule {
 	return $rule;
 }
 
+# Method produce rule sets, based on rules and available job layers
 sub _RunRules {
 	my $self = shift;
 

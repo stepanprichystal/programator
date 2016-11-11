@@ -32,14 +32,12 @@ sub new {
 
 	my $inCAM = shift;
 	my $jobId = shift;
-	
+
 	my $layers = shift;
 
 	# Name, Color, Polarity, Mirror, Comp
-	my @widths = ( 60, 20, 50, 40, 50, 80, 80, 80, );
+	my @widths = ( 60,     20, 50,         40,       50,     80,      80,       80, );
 	my @titles = ( "Name", "", "Polarity", "Mirror", "Comp", "Films", "Merged", "Single" );
-	
-	
 
 	my $columnCnt    = scalar(@widths);
 	my $columnWidths = \@widths;
@@ -50,85 +48,84 @@ sub new {
 	bless($self);
 
 	$self->{"titles"} = \@titles;
-	$self->{"inCAM"} = $inCAM;
-	$self->{"jobId"} = $jobId;
- 	$self->{"layers"} = $layers;
+	$self->{"inCAM"}  = $inCAM;
+	$self->{"jobId"}  = $jobId;
+	$self->{"layers"} = $layers;
 
 	$self->{"filmCreators"} = FilmCreators->new( $self->{"inCAM"}, $self->{"jobId"} );
-  
 
 	$self->__DefineFilmColors();
 
 	$self->__SetLayout();
 
+	# EVENTS
+
+	$self->{"onRowChanged"} = Event->new();
+
 	return $self;
 }
 
-
-
 sub SetPolarity {
 	my $self = shift;
-	my $val = shift;
-	
+	my $val  = shift;
+
 	my @rows = $self->GetAllRows();
-	
-	foreach my $r (@rows){
-		
+
+	foreach my $r (@rows) {
+
 		$r->SetPolarity($val);
 	}
 }
 
 sub SetMirror {
 	my $self = shift;
-	my $val = shift;
-	
+	my $val  = shift;
+
 	my @rows = $self->GetAllRows();
-	
-	foreach my $r (@rows){
-		
+
+	foreach my $r (@rows) {
+
 		$r->SetMirror($val);
 	}
 }
 
 sub SetComp {
 	my $self = shift;
-	my $val = shift;
-	
+	my $val  = shift;
+
 	my @rows = $self->GetAllRows();
-	
-	foreach my $r (@rows){
-		
+
+	foreach my $r (@rows) {
+
 		$r->SetComp($val);
 	}
 }
 
-sub SetLayers{
-	my $self = shift;
+sub SetLayers {
+	my $self   = shift;
 	my $layers = shift;
-	
- 
+
 	my %smallLim = ();
 	my %bigLim   = ();
 
 	# Get limits of pcb
 	my $result = Helper->GetPcbLimits( $self->{"inCAM"}, $self->{"jobId"}, \%smallLim, \%bigLim );
 	$self->{"filmCreators"}->Init( $layers, \%smallLim, \%bigLim );
- 
-	
+
 	# Set rule sets for each rows
-	foreach my $l (@{$layers}){
-		
-		
-		my $row = $self->GetRowByText($l->{"name"});
-		
-		$row->SetRuleSets($self->__GetRuleSet($l->{"name"}, 1), $self->__GetRuleSet($l->{"name"}, 2) );
+	foreach my $l ( @{$layers} ) {
+
+		my $row = $self->GetRowByText( $l->{"name"} );
+
+		$row->SetRuleSets( $self->__GetRuleSet( $l->{"name"}, 1 ), $self->__GetRuleSet( $l->{"name"}, 2 ) );
 		$row->SetLayerValues($l);
- 
+
 	}
-	
+
+	$self->__OnSelectedChangeHandler();
+
 	$self->{"szMain"}->Layout();
 }
-
 
 sub __SetLayout {
 
@@ -136,42 +133,66 @@ sub __SetLayout {
 
 	# DEFINE SIZERS
 
-	
 	$self->SetHeader( $self->{"titles"} );
 
 	$self->SetVerticalLine( Wx::Colour->new( 206, 206, 206 ) );
-	
-	$self->SetHeaderBackgroundColor(Wx::Colour->new( 240, 240, 240 ) );
+
+	$self->SetHeaderBackgroundColor( Wx::Colour->new( 240, 240, 240 ) );
 
 	#create rows for each laters
 
 	my @layers = @{ $self->{"layers"} };
 	foreach my $l (@layers) {
 
-		my $row = PlotListRow->new( $self, $l);
+		my $row = PlotListRow->new( $self, $l );
 
 		# zaregistrovat udalost
-		$self->{"onSelectedChanged"}->Add(sub{ $row->PlotSelectionChanged($self, @_) });
-		
+		#$self->{"onSelectedChanged"}->Add(sub{ $row->PlotSelectionChanged($self, @_) });
+
+		$row->{"onRowChanged"}->Add( sub { $self->{"onRowChanged"}->Do(@_) } );
 
 		$self->AddRow($row);
 
 	}
 
+	# REGISTER EVENTS
+
+	$self->{"onSelectedChanged"}->Add( sub { $self->__OnSelectedChangeHandler(@_) } );
+
 	# BUILD LAYOUT STRUCTURE
 
 }
 
+sub __OnSelectedChangeHandler {
+	my $self = shift;
+
+	my @selectedLayers = ();
+
+	foreach my $row ( $self->GetSelectedRows() ) {
+
+		push( @selectedLayers, $row->GetRowText() );
+	}
+
+	my @rows = $self->GetAllRows();
+
+	foreach my $r (@rows) {
+		$r->PlotSelectionChanged( \@selectedLayers );
+	}
+
+	print STDERR "test";
+
+}
+
 sub __GetRuleSet {
-	my $self  = shift;
-	my $layerName = shift;
+	my $self       = shift;
+	my $layerName  = shift;
 	my $creatorNum = shift;
 
 	my @ruleSets = $self->{"filmCreators"}->GetRuleSets($creatorNum);
 
 	my $set;
 
-	foreach my $rulSet (@ruleSets ) {
+	foreach my $rulSet (@ruleSets) {
 
 		my @ruleLayers = $rulSet->GetLayers();
 
@@ -184,7 +205,13 @@ sub __GetRuleSet {
 		}
 	}
 
-	if ($set && !defined $set->{"color"}) {
+	if ( $set && !defined $set->{"color"} ) {
+
+		my @notUsedColor = grep { $_->{"used"} != 1 } @{ $self->{"filmColors"} };
+		unless ( scalar(@notUsedColor) ) {
+
+			die "There are no another colors for unit plot";
+		}
 
 		foreach my $c ( @{ $self->{"filmColors"} } ) {
 
@@ -197,7 +224,7 @@ sub __GetRuleSet {
 	}
 
 	# If no set exist, create empty result set
- 
+
 	return $set;
 
 }
@@ -243,12 +270,11 @@ sub __DefineFilmColors {
 #-------------------------------------------------------------------------------------------#
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
+
 	#my $test = Programs::Exporter::ExportChecker::Forms::GroupTableForm->new();
 
 	#$test->MainLoop();
 }
-
- 
 
 1;
 

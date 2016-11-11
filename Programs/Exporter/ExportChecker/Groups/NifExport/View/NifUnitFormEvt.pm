@@ -28,8 +28,9 @@ sub new {
 	my $wrapper = $self->{"wrapper"};
 
 	# Provided handlers
-
-
+	my $ref = $wrapper->can('ChangeCustomerJump');
+	$self->_AddHandler( $ref , Enums->Event_sco_customerJump );
+ 
 	# Provided events
 	
 	$self->_AddEvent( $wrapper->{'onTentingChange'}, Enums->Event_nif_tenting );

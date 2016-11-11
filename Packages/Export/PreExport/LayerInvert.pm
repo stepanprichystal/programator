@@ -27,6 +27,7 @@ sub new {
 
 	$self->{"inCAM"} = shift;
 	$self->{"jobId"} = shift;
+		$self->{"step"} = "panel";
 
 	return $self;
 }
@@ -46,7 +47,7 @@ sub ExistPatternFrame {
 	CamLayer->WorkLayer($inCAM, $lName);  # select tmp
  
 	# select old frame and delete
-	my $count = CamFilter->SelectBySingleAtt($inCAM, ".string", "pattern_frame");
+	my $count = CamFilter->SelectBySingleAtt($inCAM, "pattern_frame", "");
 	
 	# clear layers
 	$inCAM->COM( 'affected_layer', mode => 'all', affected => 'no' );
@@ -71,7 +72,7 @@ sub DelPatternFrame {
 	CamLayer->WorkLayer($inCAM, $lName);  # select tmp
  
 	# select old frame and delete
-	my $count = CamFilter->SelectBySingleAtt($inCAM, ".string", "pattern_frame");
+	my $count = CamFilter->SelectBySingleAtt($inCAM, "pattern_frame", "");
 	if($count){
 		$inCAM->COM("sel_delete");	
 	}
@@ -107,18 +108,28 @@ sub AddPatternFrame {
 	
 	#CamLayer->WorkLayer($inCAM, $lTmp);  # select tmp
 	
-	# Set indicator for later delete
+	# 1) Set indicator, which mark all actual szmbol in layer
 	CamAttributes->SetFeatuesAttribute($inCAM, ".string", "signed");
 	
+	# 2) Place pattern schema to layer
 	
+	# Set attrinute to layer, schema will be placed to layer which has this attribute
+	CamAttributes->SetLayerAttribute($inCAM, "add_schema", "yes", $jobId, $self->{"step"}, $lName);
+ 
 	# put pattern frame
 	$inCAM->COM ('autopan_run_scheme',job=>$jobId, panel=>EnumsProducPanel->PANEL_NAME,pcb=>'o+1',scheme=>$schema);
 	
+	#set $value for attribute on specific layer
+	CamAttributes->SetLayerAttribute($inCAM, "add_schema", "no", $jobId, $self->{"step"}, $lName);	
  
+ 
+ 	# 3) This actions, set attribute pattern_frame to new added symbols(pattern frame)
+ 	CamLayer->WorkLayer($inCAM, $lName);  # select layer and copy to help layer
+ 	
 	CamFilter->SelectBySingleAtt($inCAM, ".string", "signed");
 	$inCAM->COM("sel_reverse");
 	
-	CamAttributes->SetFeatuesAttribute($inCAM, ".string", "pattern_frame");
+	CamAttributes->SetFeatuesAttribute($inCAM, "pattern_frame", "");
 	
 	CamAttributes->DelFeatuesAttribute($inCAM, ".string", "signed");
 	
@@ -154,7 +165,9 @@ sub ChangeMarkPolarity {
 	$self->__AddFilterAtt(  '.geometry', 'centre*' );
 	$self->__AddFilterAtt(  '.geometry', 'OLEC*' );
 	$self->__AddFilterAtt(  '.geometry', 'punch*' );
-
+	$self->__AddFilterAtt(  '.pnl_place', 'SOC*' );
+	$self->__AddFilterAtt(  '.pnl_place', 'Punch*' );
+	
 	$inCAM->COM( 'set_filter_and_or_logic', filter_name => 'popup', criteria => 'inc_attr', logic => 'or' );
 	$inCAM->COM('filter_area_strt');
 	$inCAM->COM( 'filter_area_end', filter_name => 'popup', operation => 'select' );

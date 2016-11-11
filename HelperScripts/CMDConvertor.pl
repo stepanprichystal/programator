@@ -8,7 +8,7 @@ use warnings;
 
 # ============ INPUT LINE =================
 my $inputLine =
-"COM sel_delete_atr,mode=list,attributes=.pnl_place,attr_vals=I";
+"COM profile_to_rout,layer=s,width=200";
 # ============ INPUT LINE =================
 
 

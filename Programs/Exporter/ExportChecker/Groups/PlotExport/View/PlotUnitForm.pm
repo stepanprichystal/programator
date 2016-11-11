@@ -44,6 +44,7 @@ sub new {
 	#$self->Disable();
 
 	# EVENTS
+	$self->{"onPlotRowChanged"} = Event->new();    # when row changed
 
 	return $self;
 }
@@ -61,20 +62,16 @@ sub __SetLayout {
 
 	# DEFINE CONTROLS
 
-	#my $settingsStatBox  = $self->__SetGroup1($self);
-	#my $settingsStatBox2  = $self->__SetGroup2($self);
-
 	my $settingsStatBox = $self->__SetLayoutQuickSettings($self);
 	my $optionsStatBox  = $self->__SetLayoutOptions($self);
 	my $layersStatBox   = $self->__SetLayoutControlList($self);
 
-	#my $layersStatBox = $self->__SetLayoutControlList($self);
-
+ 
 	# SET EVENTS
 
 	# BUILD STRUCTURE OF LAYOUT
 
-	#$szMain->Add( $szStatBox, 0, &Wx::wxEXPAND );
+ 
 
 	# BUILD STRUCTURE OF LAYOUT
 
@@ -103,12 +100,11 @@ sub __SetLayoutQuickSettings {
 	my $allChb = Wx::CheckBox->new( $statBox, -1, "All", &Wx::wxDefaultPosition, [ 70, 22 ] );
 	my @polar = ( "/", "+", "-" );
 	my $polarityCb = Wx::ComboBox->new( $statBox, -1, $polar[0], &Wx::wxDefaultPosition, [ 50, 22 ], \@polar, &Wx::wxCB_READONLY );
-	
-	my $fontPolar =
-	  Wx::Font->new( 11, &Wx::wxFONTFAMILY_DEFAULT  , &Wx::wxFONTSTYLE_NORMAL, &Wx::wxFONTWEIGHT_MAX );
-	
+
+	my $fontPolar = Wx::Font->new( 11, &Wx::wxFONTFAMILY_DEFAULT, &Wx::wxFONTSTYLE_NORMAL, &Wx::wxFONTWEIGHT_MAX );
+
 	$polarityCb->SetFont($fontPolar);
-	
+
 	my $mirrorChb = Wx::CheckBox->new( $statBox, -1, "", [ -1, -1 ], [ 30, 22 ] );
 	my $compTxt = Wx::TextCtrl->new( $statBox, -1, "0", &Wx::wxDefaultPosition, [ 50, 22 ] );
 
@@ -169,6 +165,8 @@ sub __SetLayoutControlList {
 	my $plotList = PlotList->new( $statBox, $self->{"inCAM"}, $self->{"jobId"}, \@layers );
 
 	# SET EVENTS
+	$plotList->{"onRowChanged"}->Add( sub { $self->{"onPlotRowChanged"}->Do(@_) } );
+
 	#Wx::Event::EVT_CHECKBOX( $allChb, -1, sub { $self->__OnSelectAllChangeHandler(@_) } );
 
 	# BUILD STRUCTURE OF LAYOUT
@@ -179,8 +177,6 @@ sub __SetLayoutControlList {
 
 	return $szStatBox;
 }
-
- 
 
 # Select/unselect all in plot list
 sub __OnSelectAllChangeHandler {
@@ -228,7 +224,6 @@ sub __OnCompChangeHandler {
 
 	$self->{"plotList"}->SetComp($val);
 }
- 
 
 # =====================================================================
 # DISABLING CONTROLS
@@ -242,78 +237,76 @@ sub DisableControls {
 # SET/GET CONTROLS VALUES
 # =====================================================================
 
-sub ChangeTentingHandler{
-	my $self  = shift;
-	my $tentingCS = shift;	
-	
+sub ChangeTentingHandler {
+	my $self      = shift;
+	my $tentingCS = shift;
+
 	my $polar = "";
-	if($tentingCS){
+	if ($tentingCS) {
 		$polar = "-";
-	}else{
-			$polar = "+";	
 	}
-	 
+	else {
+		$polar = "+";
+	}
+
 	my @rows = $self->{"plotList"}->GetAllRows();
 
-	foreach my $r (@rows){
+	foreach my $r (@rows) {
 
 		my $lName = $r->GetRowText();
-		
-		if($lName =~ /^[cs]$/){
 
-			$r->SetPolarity($polar);	
+		if ( $lName =~ /^[cs]$/ ) {
+
+			$r->SetPolarity($polar);
 		}
-	} 
- 
+	}
+
 }
- 
+
 # sendtToPlotter
 sub SetSendToPlotter {
-	my $self  = shift;
-	my $val = shift;
+	my $self = shift;
+	my $val  = shift;
 	$self->{"plotterChb"}->SetValue($val);
 }
 
 sub GetSendToPlotter {
-	my $self  = shift;
+	my $self = shift;
 	return $self->{"plotterChb"}->GetValue();
 }
 
 # layers
 sub SetLayers {
-	my $self  = shift;
-	my @layers = @{shift(@_)};
+	my $self   = shift;
+	my @layers = @{ shift(@_) };
 
-
-
-	$self->{"plotList"}->SetLayers(\@layers);
-
+	$self->{"plotList"}->SetLayers( \@layers );
 
 	my $allChecked = 1;
-	foreach my $l (@layers){
- 
-		unless($l->{"plot"}){
+	foreach my $l (@layers) {
+
+		unless ( $l->{"plot"} ) {
 			$allChecked = 0;
 		}
 	}
-	
+
 	$self->{"allChb"}->SetValue($allChecked);
-	
+
 	$self->{"data"}->{"layers"} = shift;
 }
 
 sub GetLayers {
-	my $self  = shift;
-	
-	my @layers = ();
-	my @rows = $self->{"plotList"}->GetAllRows();
+	my $self = shift;
 
-	foreach my $r (@rows){
-		
- 		my %linfo = $r->GetLayerValues();
-		
-		 push(@layers, \%linfo);
-		
+	my @layers = ();
+	my @rows   = $self->{"plotList"}->GetAllRows();
+
+	foreach my $r (@rows) {
+
+		my %linfo = $r->GetLayerValues();
+
+		push( @layers, \%linfo );
+
 	}
 
 	return \@layers;

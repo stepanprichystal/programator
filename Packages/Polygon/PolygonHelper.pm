@@ -100,13 +100,22 @@ sub GetLimByRectangle {
 	return %dim;
 }
 
+
+
+
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	#print $test;
+	use aliased "Packages::Polygon::PolygonHelper";
+
+	my %point = ( "x" => 20, "y" => 10 );
+
+	#PolygonHelper->RotatePointByOrigin( \%point, 180, 20, 10 );
+
+	#print 1;
 
 }
 

@@ -382,10 +382,9 @@ sub __CheckFilesHandler {
 		my $cnt = scalar( grep { $_->{"name"} eq $fileName && $_->{"created"} == $fileCreated } @actFiles );
 
 		unless ($cnt) {
+			
 			my %newFile = ( "name" => $fileName, "path" => $filePath, "created" => $fileCreated );
-
 			push( @newFiles, \%newFile );
-
 		}
 	}
 
@@ -399,6 +398,9 @@ sub __CheckFilesHandler {
 
 			my $dataTransfer = DataTransfer->new( $jobId, EnumsTransfer->Mode_READ );
 			my $exportData = $dataTransfer->GetExportData();
+			
+			my $f = EnumsPaths->Client_EXPORTFILES . $jobId;
+			#unlink($f);
 
 			$self->__AddNewJob( $jobId, $exportData );
 
