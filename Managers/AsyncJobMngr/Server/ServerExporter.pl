@@ -6,7 +6,7 @@
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 
-use lib qw( C:\Perl\site\lib\TpvScripts\Scripts );
+#use lib qw( C:\Perl\site\lib\TpvScripts\Scripts );
 
 =head
 Set up a socket so that a remote user can send commands
@@ -14,7 +14,7 @@ Most of this has been copied from the Perl manual.
 =cut
 
 #use local library;
-use aliased 'Managers::AsyncJobMngr::Helper';
+#use aliased 'Managers::AsyncJobMngr::Helper';
 
 use Socket;
 use Carp;

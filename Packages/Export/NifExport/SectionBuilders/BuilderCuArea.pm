@@ -340,32 +340,16 @@ sub Build {
 		
 	}
 
-	#pattern
-	if ( $self->_IsRequire("pattern") ) {
-
-		my $prog;
-
-		my $condMill_hal = $pltMillExist && $surface =~ /^b$/i;
-
-		if ( !$condMill_hal && !$rsMillExist && !$blindDrillExist ) {
-
-			$prog = 1;
-		}
-		else {
-			$prog = 3;
-		}
-
-		$section->AddRow( "pattern", $prog );
-	}
 
 	#flash
 	if ( $self->_IsRequire("flash") ) {
 
 		my $prog;
 		
-		my $condMill_hal = $pltMillExist && $surface =~ /^b$/i;
+		my $condMill_hal = $pltMillExist && $surface =~ /^b$/i;  # b je hal
+		my $noNcOperation = !$condMill_hal && !$rsMillExist && !$blindDrillExist;
 
-		if ( !$condMill_hal && !$rsMillExist && !$blindDrillExist ) {
+		if ( $noNcOperation || (!$noNcOperation && $cuThickness > 70 )) {
 
 			$prog = 0;
 		}
@@ -374,6 +358,26 @@ sub Build {
 		}
 
 		$section->AddRow( "flash", $prog );
+	}
+
+
+	#pattern
+	if ( $self->_IsRequire("pattern") ) {
+
+		my $prog;
+
+		my $condMill_hal = $pltMillExist && $surface =~ /^b$/i;
+		my $noNcOperation = !$condMill_hal && !$rsMillExist && !$blindDrillExist;
+
+		if ( $noNcOperation || (!$noNcOperation && $cuThickness > 70 )) {
+
+			$prog = 1;
+		}
+		else {
+			$prog = 3;
+		}
+
+		$section->AddRow( "pattern", $prog );
 	}
 
 	#prog_tenting

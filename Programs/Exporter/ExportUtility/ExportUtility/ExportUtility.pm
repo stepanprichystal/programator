@@ -400,7 +400,7 @@ sub __CheckFilesHandler {
 			my $exportData = $dataTransfer->GetExportData();
 			
 			my $f = EnumsPaths->Client_EXPORTFILES . $jobId;
-			#unlink($f);
+			unlink($f);
 
 			$self->__AddNewJob( $jobId, $exportData );
 

@@ -49,7 +49,7 @@ sub Parse {
 
 	$self->{"features"} = $self->{"base"}->{"features"};
 
-	print 1;
+	#print 1;
 }
 
 # Return fatures for route layer
@@ -238,7 +238,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	
 	 
 
-	print 1;
+	#print 1;
 
 }
 

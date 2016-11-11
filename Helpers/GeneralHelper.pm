@@ -271,7 +271,15 @@ sub GetLastInCAMVersion {
 
 	if ($maxNumName) {
 
-		return $inCAMPath . $maxNumName."\\bin\\InCAM.exe";
+		my $path = $inCAMPath . $maxNumName."\\bin\\InCAM.exe";
+
+		unless( -e $path){
+			
+			# try path with folder release_64
+			$path = $inCAMPath . $maxNumName."\\release_64\\bin\\InCAM.exe";
+		}
+
+		return $path
 	}
 	else {
 

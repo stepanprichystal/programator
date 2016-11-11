@@ -493,10 +493,15 @@ sub __CreateServer {
 
 	my $processObj;
 	my $inCAM;
+	
+	my $path =  GeneralHelper->Root() . "\\Managers\\AsyncJobMngr\\Server\\ServerExporter.pl";
+	# turn all backslash - incam need this
+	$path =~ s/\\/\//g;
+	
 
 	#run InCAM editor with serverscript
 	Win32::Process::Create( $processObj, $inCAMPath,
-							"InCAM.exe    -s" . GeneralHelper->Root() . "\\Managers\\AsyncJobMngr\\Server\\ServerExporter.pl  " . $freePort,
+							"InCAM.exe    -s" . $path." " . $freePort,
 							0, THREAD_PRIORITY_NORMAL, "." )
 	  || die "$!\n";
 

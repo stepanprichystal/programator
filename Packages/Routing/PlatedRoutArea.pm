@@ -217,15 +217,15 @@ sub GetAreasOfRout {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	use aliased 'Packages::Routing::RoutingOperation';
+	use aliased 'Packages::Routing::PlatedRoutArea';
 	use aliased 'Packages::InCAM::InCAM';
 
-	my $jobId = "f51788";
+	my $jobId = "f13610";
 	my $inCAM = InCAM->new();
 
 	my $step = "panel";
 
-	my $max = RoutingOperation->PlatedAreaExceed( $inCAM, $jobId, $step );
+	my $max = PlatedRoutArea->PlatedAreaExceed( $inCAM, $jobId, $step );
 
 	print "area exceeded=" . $max . "---\n";
 

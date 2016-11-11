@@ -69,5 +69,38 @@ sub PoolStepPlace {
 					$inCam->COM('sr_tab_add',line=>"$i",step=>"$job",x=>"$placeX",y=>"$placeY",nx=>'1',ny=>'1',angle=>"$rotate");
 			}
 }
+sub PoolStepPlaceXML {
+	my $self  = shift;
+	my $inCam = shift;
+	my $pcbId = shift;
+	my $xmlFile = shift;
+	my $borderLeft = shift;
+	my $borderBot = shift;
+	
+	use XML::Simple;
+	use Data::Dumper;
+
+
+		if($xmlFile){
+			
+				my $getStructure = XMLin("$xmlFile");
+				my $countOfItem = (scalar @{$getStructure->{order}}) - 1;
+
+				for (my $count = 0; $count <= $countOfItem; $count++) {
+								my $job	= lc substr($getStructure->{order}->[$count]->{order_id}, 0, 6);
+									if($job eq $pcbId) {
+											$job = 'o+1';
+									}
+								my $placeX = $getStructure->{order}->[$count]->{x} + $borderLeft;
+								my $placeY = $getStructure->{order}->[$count]->{y} + $borderBot;
+								my $rotate = 0;
+									if ($getStructure->{order}->[$count]->{rotated} == 1) {
+											$rotate = 90;
+									}
+						$inCam->COM('sr_tab_add',line=>"$count",step=>"$job",x=>"$placeX",y=>"$placeY",nx=>'1',ny=>'1',angle=>"$rotate");
+				}
+		}
+}
+
 1;
 

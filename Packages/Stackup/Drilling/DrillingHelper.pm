@@ -64,10 +64,7 @@ sub GetPltNCLayerInfo {
 	foreach my $l (@layers) {
 
 		#unless ($l) { next; }
-
-		unless ( $l->{"type"} ) {
-			print 1;
-		}
+ 
 
 		my $pom = EnumsGeneral->LAYERTYPE_plt_nDrill;
 

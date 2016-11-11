@@ -175,18 +175,18 @@ sub GetFrDimension {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	use aliased 'CamHelpers::CamRouting';
-	use aliased 'Packages::InCAM::InCAM';
-
-	my $inCAM = InCAM->new();
-
-	my $jobId     = "f50251";
-	my $stepName  = "panel";
-	 
-
-	my $minTool = CamRouting->GetMinSlotTool( $inCAM, $jobId, $stepName, "nplt_nMill" );
-	
-	print 1;
+#	use aliased 'CamHelpers::CamRouting';
+#	use aliased 'Packages::InCAM::InCAM';
+#
+#	my $inCAM = InCAM->new();
+#
+#	my $jobId     = "f50251";
+#	my $stepName  = "panel";
+#	 
+#
+#	my $minTool = CamRouting->GetMinSlotTool( $inCAM, $jobId, $stepName, "nplt_nMill" );
+#	
+#	print 1;
 
 
 }

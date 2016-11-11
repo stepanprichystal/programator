@@ -27,7 +27,7 @@ use aliased 'Programs::Exporter::ExportUtility::Groups::NCExport::NCUnit';
 use aliased 'Programs::Exporter::ExportUtility::Unit::Units';
 use aliased 'Programs::Exporter::ExportUtility::ExportUtility::ExportStatus::ExportStatus';
 use aliased 'Programs::Exporter::ExportUtility::ExportResultMngr';
-
+use aliased 'Connectors::HeliosConnector::HegMethods';
 #-------------------------------------------------------------------------------------------#
 #  Package methods, requested by IUnit interface
 #-------------------------------------------------------------------------------------------#
@@ -310,6 +310,13 @@ sub SentToProduce {
 	my $self = shift;
 
 	$self->{"exportStatus"}->DeleteStatusFile();
+	
+	# set state HOTOVO-zadat
+	
+	my $orderRef = HegMethods->GetPcbOrderNumber($self->{"jobId"});
+	my $orderNum = $self->{"jobId"}."-".$orderRef;
+	my $test = HegMethods->UpdatePcbOrderState($orderNum, "HOTOVO-zadat");
+	
 
 	$self->{"sentToProduce"} = 1;
 

@@ -65,7 +65,7 @@ sub __SetLayout {
 		"Exporter checker",        # title
 		&Wx::wxDefaultPosition,    # window position
 		[ 300, 100 ],              # size
-		                           #&Wx::wxSYSTEM_MENU | &Wx::wxCAPTION | &Wx::wxCLIP_CHILDREN | &Wx::wxRESIZE_BORDER | &Wx::wxMINIMIZE_BOX
+		&Wx::wxSTAY_ON_TOP | &Wx::wxSYSTEM_MENU | &Wx::wxCAPTION |    &Wx::wxCLOSE_BOX
 	);
 
 	$mainFrm->Centre(&Wx::wxCENTRE_ON_SCREEN);

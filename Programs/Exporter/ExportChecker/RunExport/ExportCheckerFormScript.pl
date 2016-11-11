@@ -29,12 +29,7 @@ my $pid = shift;
 # pid of loading form
 my $pidLoadFrm = shift;
 
-unless($jobId){
-	
  
-	$jobId = "f13609";
- 
-}
  
 
 

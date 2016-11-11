@@ -75,8 +75,19 @@ sub OnPrepareGroupData {
 	}
 
 	$groupData->SetScoringType($scoringType);
-	$groupData->SetCustomerJump( $defaultInfo->GetScoreChecker()->CustomerJumpScoring() );
-
+	 
+ 
+ 	my $scoreChecker = $defaultInfo->GetScoreChecker();
+	my $jump = 0;
+	if($scoreChecker){
+		$jump = $scoreChecker->CustomerJumpScoring()
+	} 
+	
+	$groupData->SetCustomerJump($jump);
+ 
+ 
+ 
+ 
 	return $groupData;
 }
 

@@ -646,6 +646,19 @@ sub UpdateNCInfo {
 
 }
 
+sub UpdatePcbOrderState {
+	my $self  = shift;
+	my $pcbId = shift;
+	my $state = shift;
+
+	require Connectors::HeliosConnector::HelperWriter;
+ 
+	my $res = Connectors::HeliosConnector::HelperWriter->OnlineWrite_order( "$pcbId", $state, "aktualni_krok" );
+
+	return $res;
+
+}
+
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#
@@ -656,11 +669,12 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
  
 	use aliased 'Connectors::HeliosConnector::HegMethods';
 
-	my $nc_info = "test";
+#	 
+#	HegMethods->GetPcbOrderNumber("f52456");
+#	my $test = HegMethods->UpdatePcbOrderState("f52456-01", "HOTOVO-123");
 
-	my $test = HegMethods->UpdateNCInfo("f50014", $nc_info);
-
-	print $test;
+ 
+ 
  
 #	use aliased 'Connectors::HeliosConnector::HegMethods';
 #
