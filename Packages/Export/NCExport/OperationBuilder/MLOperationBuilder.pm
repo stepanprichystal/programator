@@ -330,8 +330,30 @@ sub __DefinePlatedOperations {
 
 	# 8) Operation name = v1, can contain layer
 	# - @plt_fDrill
-	$opManager->AddOperationDef( "v1", \@plt_fDrill, $stackup->GetPressCount(), "core" );
+	
+	# Find cores, which has not blind or core drilling
+	 
+	my $noNCExist = 0; # tell if  exist core, where is no NC operation
+	for ( my $i = 0 ; $i < $coreCnt ; $i++ ) {
 
+		my $coreNum = $i + 1;
+		my $core    = $stackupNC->GetCore($coreNum);
+
+		my $existNc = 0;
+
+		$existNc +=  $core->ExistNCLayers(Enums->SignalLayer_TOP);
+		$existNc +=  $core->ExistNCLayers(Enums->SignalLayer_BOT);
+		
+		if($existNc == 0){
+			$noNCExist = 1;
+			last;
+		}
+	}
+	
+	if($noNCExist){
+		$opManager->AddOperationDef( "v1", \@plt_fDrill, $stackup->GetPressCount(), "core" );
+	}
+ 
 }
 
 # Create single operations, which represent operation on technical procedure

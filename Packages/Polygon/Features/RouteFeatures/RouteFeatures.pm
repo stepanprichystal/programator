@@ -81,6 +81,11 @@ sub GetChains {
 	my @chains = ();
 
 	foreach my $f ( @{ $self->{"features"} } ) {
+	
+		# if no attributes
+		unless(  $f->{"att"}){
+			next;
+		}
 
 		my %attr = %{ $f->{"att"} };
 

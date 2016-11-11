@@ -76,6 +76,7 @@ sub GetNCLayers {
 
 	my @ncLayers = @{ $self->{"ncLayers"} };
 	my @drillLayers = ();
+	
 	unless(scalar(@ncLayers)){
 		
 		return @drillLayers;
@@ -83,8 +84,12 @@ sub GetNCLayers {
 
 	my $fromLayer = $side eq Enums->SignalLayer_TOP ? $self->{"topSignalLayer"} : $self->{"botSignalLayer"};
 
-	@drillLayers = grep { $_->{"type"} eq $NClayerType } @ncLayers;
+	@drillLayers = @ncLayers;
 
+	if($NClayerType){
+		@drillLayers = grep { $_->{"type"} eq $NClayerType } @drillLayers;	
+	}
+ 
 	#filter layer, which go from <$fromLayer>
 	if ($fromLayer) {
 		@drillLayers = grep { $_->{"gROWdrl_start_name"} eq $fromLayer->GetName() } @drillLayers;

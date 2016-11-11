@@ -21,16 +21,16 @@ my $export = NCExportTmp->new();
 #input parameters
  
  
-my $jobId = "f13610";
+my $jobId = "f52456";
  
  
  
 
 # Exportovat jednotlive vrstvy nebo vsechno
-my $exportSingle = 0;
+my $exportSingle = 1;
 
 # Vrstvy k exportovani, nema vliv pokud $exportSingle == 0
-my @pltLayers  = ();
+my @pltLayers  = ("m");
 my @npltLayers = ();
 
 # Pokud se bude exportovat jednotlive po vrstvach, tak vrstvz dotahnout nejaktakhle:
