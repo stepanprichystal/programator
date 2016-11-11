@@ -29,11 +29,11 @@ sub new {
 	$self = {};
 	bless $self;
 
-	$self->{"microns"} = shift;
-	$self->{"accuracy"} = $self->{"microns"} ? 20 : 0.02;    # 20µm is value, which score line could be not strictly ("vertical/horiyontal")
+	$self->{"microns"}         = shift;
+	$self->{"accuracy"}        = $self->{"microns"} ? 20 : 0.02;    # 20µm is value, which score line could be not strictly ("vertical/horiyontal")
 	$self->{"accuracyOverlap"} = $self->{"microns"} ? 500 : 0.5;    # 500µ is min allowed parallel overlap (see existParallelOverlap())
-	#instance of  "base" class Features.pm
-	$self->{"base"} = Features->new();
+	                                                                #instance of  "base" class Features.pm
+	$self->{"base"}            = Features->new();
 
 	my @features = ();
 	$self->{"features"} = \@features;
@@ -154,7 +154,17 @@ sub IsStraight {
 sub ExistOverlap {
 	my $self = shift;
 
-	my @scores = @{ $self->{"features"} };
+	$self->__ExistOverlap( $self->{"features"} );
+}
+
+# test overlapping example 2 lines on same position
+# L1 start, L2start, L1 end, L2 End
+# OR
+# L1 start, L2start, L2 end, L1 End
+# etc
+sub __ExistOverlap {
+	my $self   = shift;
+	my @scores = @{ shift(@_) };
 
 	my $exist = 0;
 
@@ -239,7 +249,7 @@ sub ExistParallelOverlap {
 
 	my $exist = 0;
 
-	my $tolerance = $self->{"accuracyOverlap"};   
+	my $tolerance = $self->{"accuracyOverlap"};
 
 	for ( my $i = 0 ; $i < scalar(@lines) ; $i++ ) {
 
@@ -259,33 +269,48 @@ sub ExistParallelOverlap {
 				next;
 			}
 
-			if ( $dirI eq "vertical" ) {
-				if ( abs( $lineI->{"x1"} - $lineJ->{"x1"} ) <= $tolerance ) {
+			my %l1 = %{$lineI};
+			my %l2 = %{$lineJ};
 
-					
+			if ( $dirI eq "vertical" ) {
+				if ( abs( $l1{"x1"} - $l2{"x1"} ) <= $tolerance ) {
+
 					# lines are parralel overlaping
 					# now test, if there exist normal overlaping for this two lines
-					if ( $lineI->{"y2"} <= $lineJ->{"y1"} || $lineJ->{"y2"} <= $lineI->{"y1"} ) {
-						$exist = 1;
+					$l2{"x1"} = $l1{"x1"};    # same x position, for testin overlpa
+					my @lines = ( \%l1, \%l2 );
+
+					$exist = $self->__ExistOverlap( \@lines );
+
+					if ($exist) {
 						last;
 					}
 				}
 			}
 			elsif ( $dirI eq "horizontal" ) {
 
-				if ( abs( $lineI->{"y1"} - $lineJ->{"y1"} ) <= $tolerance ) {
+				if ( abs( $l1{"y1"} - $l2{"y1"} ) <= $tolerance ) {
 
 					# lines are parralel overlaping
 					# now test, if there exist normal overlaping for this two lines
-					if ( $lineI->{"x2"} <= $lineJ->{"x1"} || $lineJ->{"x2"} <= $lineI->{"x1"} ) {
-						$exist = 1;
+					$l2{"y1"} = $l1{"y1"};    # same y position, for testin overlpa
+					my @lines = ( \%l1, \%l2 );
+
+					$exist = $self->__ExistOverlap( \@lines );
+
+					if ($exist) {
 						last;
 					}
 				}
 			}
 		}
+
+		if ($exist) {
+			last;
+		}
+
 	}
-	
+
 	return $exist;
 }
 

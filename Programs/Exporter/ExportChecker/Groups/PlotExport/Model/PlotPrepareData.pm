@@ -161,7 +161,7 @@ sub __SetDefaultLayers{
 
 		if ( $l->{"gROWlayer_type"} eq "signal" || $l->{"gROWlayer_type"} eq "power_ground" || $l->{"gROWlayer_type"} eq "mixed" ) {
 
-			$l->{"comp"} = 10;
+			$l->{"comp"} = $defaultInfo->GetCompByLayer($l->{"gROWname"});
 		}
 		else {
 

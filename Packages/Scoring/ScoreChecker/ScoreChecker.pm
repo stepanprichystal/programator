@@ -36,8 +36,8 @@ sub new {
 	$self->{"SR"}    = shift;    # break step and repeat
 
 	# tell precision of compering score position in µm
-	# thus, if two scoreliones are  spaced less than 100µm we consider it, they are on the same position
-	$self->{"accuracy"} = 100;
+	# thus, if two scoreliones are  spaced less than 50µm we consider it, they are on the same position
+	$self->{"accuracy"} = 50;
 
 	$self->{"pcbPlace"} = PcbPlace->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"step"}, $self->{"layer"}, $self->{"SR"}, $self->{"accuracy"} );
 	return $self;
