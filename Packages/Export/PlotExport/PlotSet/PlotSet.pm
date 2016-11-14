@@ -88,8 +88,21 @@ sub GetOutputFileName {
 
 	my $fName = "$jobId@";
 
-	# whem film contain only one pcb, add "v" to name
-	my $indicator = scalar( $self->GetLayers() ) == 1 ? "v" : "";
+	# check if set contain core layer
+	my $coreExist = 0;
+	foreach my $l ($self->GetLayers()){
+		
+		my $lName = $l->GetName();
+		
+		if($lName =~ /^v[\d]+/i){
+			$coreExist = 1;
+			last;
+		}
+		
+	}
+
+	# whem film contain only one pcb, add "v" to name, except core
+	my $indicator = scalar( $self->GetLayers() ) == 1 && !$coreExist ? "v" : "";
 
 	# Select layer by layer
 	foreach my $plotL ( $self->GetLayers() ) {

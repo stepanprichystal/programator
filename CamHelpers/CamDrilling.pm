@@ -275,6 +275,11 @@ sub AddNCLayerType {
 
 			$l->{"type"}   = EnumsGeneral->LAYERTYPE_nplt_kMill;
 			$l->{"plated"} = 0;
+			
+		}elsif ( $l->{"gROWname"} =~ /^f_.*/ ) {
+
+			$l->{"type"}   = EnumsGeneral->LAYERTYPE_nplt_fMillSpec;
+			$l->{"plated"} = 0;
 		}
 	}
 
@@ -291,7 +296,7 @@ sub GetPltNCLayers {
 	my @layers = ( CamJob->GetLayerByType( $inCAM, $jobId, "drill" ), CamJob->GetLayerByType( $inCAM, $jobId, "rout" ) );
 	$self->AddNCLayerType( \@layers );
 
-	my @pltLayers = grep { $_->{"plated"} } @layers;
+	my @pltLayers = grep { $_->{"plated"} && $_->{"type"}} @layers;
 
 	return @pltLayers;
 
@@ -307,7 +312,8 @@ sub GetNPltNCLayers {
 	my @layers = ( CamJob->GetLayerByType( $inCAM, $jobId, "drill" ), CamJob->GetLayerByType( $inCAM, $jobId, "rout" ) );
 	$self->AddNCLayerType( \@layers );
 
-	my @npltLayers = grep { !$_->{"plated"} } @layers;
+	my @npltLayers = grep { !$_->{"plated"} && $_->{"type"} } @layers;
+	 
 
 	return @npltLayers;
 

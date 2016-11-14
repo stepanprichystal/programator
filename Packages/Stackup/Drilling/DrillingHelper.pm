@@ -64,7 +64,6 @@ sub GetPltNCLayerInfo {
 	foreach my $l (@layers) {
 
 		#unless ($l) { next; }
- 
 
 		my $pom = EnumsGeneral->LAYERTYPE_plt_nDrill;
 
@@ -159,6 +158,7 @@ sub GetNPltNCLayerInfo {
 	my @nplt_jbMillTop = ();    #z-axis Top mill of core
 	my @nplt_jbMillBot = ();    #z-axis Bop mill of core
 	my @nplt_kMill     = ();    #milling of connector
+	my @nplt_fMillSpec = ();    #Special milling (ramecke, dovrtani)
 
 	my @ncPar = ();
 	foreach my $l (@layers) {
@@ -189,11 +189,15 @@ sub GetNPltNCLayerInfo {
 		}
 		elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_jbMillBot ) {
 			push( @nplt_jbMillBot, $l );
-
-		}elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_kMill ) {
+		}
+		elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_kMill ) {
 			push( @nplt_kMill, $l );
+		}
+		elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_fMillSpec ) {
+			push( @nplt_fMillSpec, $l );
 
 		}
+
 	}
 
 	$info{ EnumsGeneral->LAYERTYPE_nplt_nMill }     = \@nplt_nMill;
@@ -203,8 +207,9 @@ sub GetNPltNCLayerInfo {
 	$info{ EnumsGeneral->LAYERTYPE_nplt_frMill }    = \@nplt_frMill;
 	$info{ EnumsGeneral->LAYERTYPE_nplt_jbMillTop } = \@nplt_jbMillTop;
 	$info{ EnumsGeneral->LAYERTYPE_nplt_jbMillBot } = \@nplt_jbMillBot;
-	$info{ EnumsGeneral->LAYERTYPE_nplt_kMill } 	= \@nplt_kMill;
-	
+	$info{ EnumsGeneral->LAYERTYPE_nplt_kMill }     = \@nplt_kMill;
+	$info{ EnumsGeneral->LAYERTYPE_nplt_fMillSpec } = \@nplt_fMillSpec;
+
 	return %info;
 }
 

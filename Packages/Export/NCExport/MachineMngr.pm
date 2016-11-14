@@ -355,6 +355,9 @@ sub __SetStaticPropertyTable {
 	$t{ EnumsGeneral->LAYERTYPE_nplt_kMill }{"ml"} = [ 0, 0, 1, 0, 0, 0 ];
 	$t{ EnumsGeneral->LAYERTYPE_nplt_kMill }{"sl"} = [ 0, 0, 1, 0, 0, 0 ];
 
+	$t{ EnumsGeneral->LAYERTYPE_nplt_fMillSpec }{"ml"} = [ 0, 0, 1, 0, 0, 0 ];
+	$t{ EnumsGeneral->LAYERTYPE_nplt_fMillSpec }{"sl"} = [ 0, 0, 1, 0, 0, 0 ];
+
 }
 
 #-------------------------------------------------------------------------------------------#

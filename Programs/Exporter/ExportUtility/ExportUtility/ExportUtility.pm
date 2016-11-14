@@ -11,6 +11,7 @@ use threads::shared;
 use Wx;
 use strict;
 use warnings;
+use File::Copy;
 
 #local library
 
@@ -400,6 +401,9 @@ sub __CheckFilesHandler {
 			my $exportData = $dataTransfer->GetExportData();
 			
 			my $f = EnumsPaths->Client_EXPORTFILES . $jobId;
+			
+			copy($f, EnumsPaths->Client_EXPORTFILES ."backup\\". $jobId); # do backup
+			
 			unlink($f);
 
 			$self->__AddNewJob( $jobId, $exportData );

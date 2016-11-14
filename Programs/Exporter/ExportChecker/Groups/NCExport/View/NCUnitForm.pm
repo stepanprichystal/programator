@@ -49,6 +49,9 @@ sub new {
 	$self->{"plt"} = \@plt;
 
 	my @nplt = CamDrilling->GetNPltNCLayers( $self->{"inCAM"}, $self->{"jobId"} );
+	
+	@nplt = grep {$_->{"gROWname"} !~ /score/} @nplt;
+	
 	$self->{"nplt"} = \@nplt;
 
 	$self->__SetLayout();
@@ -202,11 +205,11 @@ sub __GetCheckedLayers {
 			if ( $self->{"pltChlb"}->IsChecked($i) ) {
 				my $l = ${ $self->{"plt"} }[$i];
 
-				push( @arr, $l );
+				push( @arr, $l->{"gROWname"} );
 			}
 		}
 
-	}
+	} 
 	else {
 
 		for ( my $i = 0 ; $i < scalar( @{ $self->{"nplt"} } ) ; $i++ ) {
@@ -214,7 +217,7 @@ sub __GetCheckedLayers {
 			if ( $self->{"npltChlb"}->IsChecked($i) ) {
 				my $l = ${ $self->{"nplt"} }[$i];
 
-				push( @arr, $l );
+				push( @arr, $l->{"gROWname"} );
 			}
 		}
 	}

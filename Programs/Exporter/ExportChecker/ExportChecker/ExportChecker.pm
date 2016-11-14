@@ -378,6 +378,11 @@ sub __OnResultPopupHandler {
 			#my $portNumber = "200". int(rand(9));    #random number
 			#my $portNumber = "2001";    #random number
 			#my $serverPID  = $$;        # PID
+			
+			# Save and hide form
+			$self->{"form"}->{"mainFrm"}->Hide();
+			CamJob->SaveJob( $inCAM, $self->{"jobId"} );
+			
 
 			my $formPos = $self->{"form"}->{"mainFrm"}->GetPosition();
 
@@ -391,6 +396,8 @@ sub __OnResultPopupHandler {
 
 				#$client->SetConnected(0);
 			}
+			
+
 
 			# Start server in this script
 

@@ -150,6 +150,10 @@ sub ExportItemsCount {
 sub __UpdateNCInfo {
 	my $self = shift;
 
+	if($self->{"exportSingle"}){
+		return  0;
+	}
+
 	# Save nc info table to database
 	my $resultItem = $self->_GetNewItem("Save NC info");
 

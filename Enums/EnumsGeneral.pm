@@ -77,6 +77,7 @@ use constant {
 	LAYERTYPE_nplt_jbMillTop => "nplt_jbMillTop",    #z-axis mill top of core
 	LAYERTYPE_nplt_jbMillBot => "nplt_jbMillBot",    #z-axis mill bot of core
 	LAYERTYPE_nplt_kMill     => "nplt_kmill",        #milling of gold connector
+	LAYERTYPE_nplt_fMillSpec => "nplt_fMillSpec",        #special milling (ramecek, dovrtani apod)
 
 };
 

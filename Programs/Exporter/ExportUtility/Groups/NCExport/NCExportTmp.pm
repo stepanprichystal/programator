@@ -44,7 +44,7 @@ sub Run {
 	my $inCAM = shift;
 	my $jobId = shift;
 
-	my $exportAll  = shift;
+	my $exportSingle  = shift;
 	my $pltLayers  = shift;
 	my $npltLayers = shift;
 
@@ -54,7 +54,7 @@ sub Run {
 
 	my $exportData = NCData->new();
 	
-	$exportData->SetExportSingle($exportAll);
+	$exportData->SetExportSingle($exportSingle);
 	$exportData->SetPltLayers($pltLayers);
 	$exportData->SetNPltLayers($npltLayers);
 	my $export = NCExport->new( UnitEnums->UnitId_NC );
