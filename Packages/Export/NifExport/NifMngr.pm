@@ -27,6 +27,7 @@ use aliased 'CamHelpers::CamJob';
 use aliased 'CamHelpers::CamHelper';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'Connectors::HeliosConnector::HegMethods';
+use aliased 'Helpers::FileHelper';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -165,11 +166,32 @@ sub __Save {
 	}
 
 	my $nifFile;
-	if ( open( $nifFile, "+>", $path ) ) {
+	if ( open( $nifFile, "+>:encoding(cp1252)", $path ) ) {
 
 		$saveSucc = 1;
+		
+#		use Encode;
+#		
+#		my @nif2 = ();
+#		
+#		foreach my $str (@nif){
+#			
+#			$str = encode("1250", $str );
+#			
+#			push(@nif2, $str);
+#		}
+#		
+		
+		
+		
 		print $nifFile @nif;
-
+		
+		close($nifFile);
+		
+		#my $f = FileHelper->ChangeEncoding( $path, "utf8", "cp1250" ); #change encoding because of diacritics and helios
+		#unlink($path);
+		
+		#FileHelper->Copy($f, $path);
 	}
 	else {
 		$saveSucc = $_;

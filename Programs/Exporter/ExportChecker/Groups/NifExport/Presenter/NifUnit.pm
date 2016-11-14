@@ -94,13 +94,13 @@ sub RefreshGUI {
 	my $groupData = $self->{"dataMngr"}->GetGroupData();
 
 	#refresh group form
-	$self->{"form"}->SetTenting( $groupData->{"data"}->{"tenting"} );
-	$self->{"form"}->SetMaska01( $groupData->{"data"}->{"maska01"} );
-	$self->{"form"}->SetPressfit( $groupData->{"data"}->{"pressfit"} );
-	$self->{"form"}->SetNotes( $groupData->{"data"}->{"poznamka"} );
-	$self->{"form"}->SetDatacode( $groupData->{"data"}->{"datacode"} );
-	$self->{"form"}->SetUlLogo( $groupData->{"data"}->{"ul_logo"} );
-	$self->{"form"}->SetJumpScoring( $groupData->{"data"}->{"prerusovana_drazka"} );
+	$self->{"form"}->SetTenting( $groupData->GetTenting());
+	$self->{"form"}->SetMaska01( $groupData->GetMaska01() );
+	$self->{"form"}->SetPressfit( $groupData->GetPressfit() );
+	$self->{"form"}->SetNotes( $groupData->GetNotes() );
+	$self->{"form"}->SetDatacode( $groupData->GetDatacode() );
+	$self->{"form"}->SetUlLogo( $groupData->GetUlLogo() );
+	$self->{"form"}->SetJumpScoring( $groupData->GetJumpScoring() );
 
 	# Dimension
 

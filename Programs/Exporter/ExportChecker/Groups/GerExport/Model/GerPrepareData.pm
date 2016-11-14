@@ -82,8 +82,19 @@ sub __GetLayers {
 		my %info = ();
 
 		$info{"name"} = $l->{"gROWname"};
-		$info{"comp"} = $defaultInfo->GetCompByLayer( $l->{"gROWname"} );
+		
+		#set compensation
+		
+		if ( $l->{"gROWlayer_type"} eq "signal" || $l->{"gROWlayer_type"} eq "power_ground" || $l->{"gROWlayer_type"} eq "mixed" ) {
 
+			$info{"comp"} = $defaultInfo->GetCompByLayer($l->{"gROWname"});
+		}
+		else {
+
+			$info{"comp"} = 0;
+		}
+ 
+ 
 		# set polarity
 
 		if ( $l->{"gROWlayer_type"} eq "silk_screen" ) {

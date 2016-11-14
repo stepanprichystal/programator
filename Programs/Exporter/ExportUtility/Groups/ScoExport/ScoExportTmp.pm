@@ -72,8 +72,8 @@ sub Run {
 
 	my $exportClass = $exportUnit->GetExportClass();
 	
-	
-	 
+	# testing DELETE
+	 $exportData->SetOptimize("optimizeManual");
 	 
 	
 

@@ -188,6 +188,7 @@ sub __OnCustomerJumpChange {
 sub SetCoreThick {
 	my $self  = shift;
 	my $value = shift;
+	
 	$self->{"coreThickValTxt"}->SetValue($value);
 }
 

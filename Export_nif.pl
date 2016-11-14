@@ -20,12 +20,12 @@ use aliased 'Programs::Exporter::ExportUtility::Groups::NifExport::NifExportTmp'
  
 
  
-my $jobId    = "f53904";
+my $jobId    = "f52456";
  
 
  
  
-my $poznamka = "Zpracovano v InCAM222";
+my $poznamka = "Zpracovano v InCAM222 טטטררר";
 my $tenting  = 0;
 my $pressfit = 0;
 my $maska01  = 0;

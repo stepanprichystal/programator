@@ -104,6 +104,7 @@ sub __SetLayout {
 	my $richTxt = Wx::RichTextCtrl->new( $self, -1, 'Notes', &Wx::wxDefaultPosition, [ 100, 120 ], &Wx::wxRE_MULTILINE | &Wx::wxWANTS_CHARS );
 	$richTxt->SetEditable(1);
 	$richTxt->SetBackgroundColour($Widgets::Style::clrWhite);
+	 
 	#$richTxt->Layout();
 
 	# SET EVENTS
@@ -493,6 +494,7 @@ sub GetMaska01 {
 sub SetPressfit {
 	my $self  = shift;
 	my $value = shift;
+	
 	$self->{"pressfitChb"}->SetValue($value);
 }
 
@@ -505,12 +507,27 @@ sub SetNotes {
 	my $self  = shift;
 	my $value = shift;
 	$self->{"richTxt"}->Clear();
-	$self->{"richTxt"}->WriteText($value);
+	$self->{"richTxt"}->WriteText("Test export.");
+	
+	if($value && $value ne ""){
+		
+		
+		$value =~ s/;/\n/g;
+		
+		
+		$self->{"richTxt"}->WriteText($value);
+	}
+
 }
 
 sub GetNotes {
 	my $self = shift;
-	$self->{"richTxt"}->GetValue();
+	
+	my $notes = $self->{"richTxt"}->GetValue();
+	
+	$notes =~ s/\n/;/g;
+	
+	return $notes;
 }
 
 sub SetDatacode {
@@ -521,7 +538,8 @@ sub SetDatacode {
 
 sub GetDatacode {
 	my $self = shift;
-	$self->{"datacodeCb"}->GetValue();
+	
+	return $self->{"datacodeCb"}->GetValue();
 }
 
 sub SetUlLogo {
@@ -532,7 +550,8 @@ sub SetUlLogo {
 
 sub GetUlLogo {
 	my $self = shift;
-	$self->{"ulLogoCb"}->GetValue();
+	
+	return $self->{"ulLogoCb"}->GetValue();
 }
 
 sub SetJumpScoring {

@@ -375,6 +375,10 @@ sub __LoadStep {
 
 	my %lim = CamJob->GetProfileLimits( $inCAM, $jobId, $self->{"step"} );
 
+	foreach my $k (keys %lim){
+			$lim{$k} = int($lim{$k} * 1000 +0.5);
+	}
+
 	my %origin = ( "x" => 0, "y" => 0 );
 	my $w      = abs( $lim{"xmin"} - $lim{"xmax"} );
 	my $h      = abs( $lim{"ymin"} - $lim{"ymax"} );

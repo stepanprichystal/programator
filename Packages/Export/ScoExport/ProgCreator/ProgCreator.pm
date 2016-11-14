@@ -241,7 +241,7 @@ sub __AddControlLines {
 	my %hLineS;
 	my %hLineE;
 
-	$hPoint = $height - 5000;
+	$hPoint = $height - 10000;
 
 	$hLineS{"x"} = - 2000; # start out of pcb 2mm
 	$hLineS{"y"} = $height - 10000;
