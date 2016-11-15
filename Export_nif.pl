@@ -3,6 +3,7 @@
 #3th party library
 use strict;
 use warnings;
+use utf8;
 
 use lib qw( C:\Perl\site\lib\TpvScripts\Scripts );
 
@@ -25,7 +26,7 @@ my $jobId    = "f52456";
 
  
  
-my $poznamka = "Zpracovano v InCAM222 ииишшш";
+my $poznamka = "Zpracovano v InCAM222 ииииииии";
 my $tenting  = 0;
 my $pressfit = 0;
 my $maska01  = 0;

@@ -26,6 +26,7 @@ use aliased 'Helpers::JobHelper';
 use aliased 'CamHelpers::CamJob';
 use aliased 'CamHelpers::CamHelper';
 use aliased 'Enums::EnumsGeneral';
+use aliased 'Enums::EnumsPaths';
 use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'Helpers::FileHelper';
 
@@ -165,28 +166,45 @@ sub __Save {
 		unlink($path);
 	}
 
+	my $tmp = EnumsPaths->Client_INCAMTMPOTHER.$self->{"jobId"}."nif";
+
 	my $nifFile;
-	if ( open( $nifFile, "+>:encoding(cp1252)", $path ) ) {
+	if ( open( $nifFile, "+>", $tmp ) ) {
 
 		$saveSucc = 1;
 		
-#		use Encode;
-#		
+		use Encode;
+		
 #		my @nif2 = ();
 #		
 #		foreach my $str (@nif){
+#			print STDERR "before$str\n";
+#			my $str2 = encode("cp1250", $str );
+#			print STDERR "after$str2\n";
 #			
-#			$str = encode("1250", $str );
+#			print STDERR "before$str\n";
+#			my $str3 = encode("cp1251", $str );
+#			print STDERR "after$str3\n";
 #			
-#			push(@nif2, $str);
+#			
+#			$str2 = $str;
+#			
+#			push(@nif2, $str2);
+#			
 #		}
-#		
 		
+		#$str = encode("cp1250", $str );
 		
 		
 		print $nifFile @nif;
 		
 		close($nifFile);
+		
+		open my $IN, "<:encoding(utf8)", $tmp or die $!;
+		open my $OUT, ">:encoding(cp1250)",$path or die $!;
+		print $OUT $_ while <$IN>;
+		close $IN;
+		close $OUT;
 		
 		#my $f = FileHelper->ChangeEncoding( $path, "utf8", "cp1250" ); #change encoding because of diacritics and helios
 		#unlink($path);

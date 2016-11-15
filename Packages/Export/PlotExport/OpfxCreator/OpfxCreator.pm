@@ -245,7 +245,7 @@ sub __OutputPlotSets {
 			"type"          => "format",
 			"name"          => "LP7008",
 			"dir_path"      => $archivePath,
-			"format_params" => "(break_sr=yes)(break_symbols=yes)(send_to_plotter="
+			"format_params" => "(film_size=$filmSize)(break_sr=yes)(break_symbols=yes)(send_to_plotter="
 			  . $sendToPlotter
 			  . ")(local_copy=yes)(iol_opfx_allow_out_limits=yes)(iol_opfx_use_profile_limits=no)(iol_surface_check=yes)"
 
