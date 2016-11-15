@@ -240,7 +240,7 @@ sub __OutputPlotSets {
 		$inCAM->COM( "output_reload_device", "type" => "format", "name" => "LP7008" );
 
 		# Udate settings o device
-		$inCAM->COM(
+		$inCAM->COM( 
 			"output_update_device",
 			"type"          => "format",
 			"name"          => "LP7008",
