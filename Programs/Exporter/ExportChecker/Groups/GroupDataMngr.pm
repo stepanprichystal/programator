@@ -35,6 +35,7 @@ sub new {
 	$self->{"inCAM"}     = undef;      # inCam will be passed to each available method as new instance
 	                                   # Because some of this method are processed in child thread and inCAM
 	                                   # is connected to specific InCAM editor
+	$self->{"defaultState"} = undef;   # default state, means group must  be exported, before job go to produce 
 
 	$self->{'defaultInfo'} = undef;    # Contain default info about pcb, which is computed (only once) when export start
 
@@ -66,7 +67,7 @@ sub PrepareGroupState {
 
 		my $state = $self->{"prepareData"}->OnGetGroupState($self);
 		$self->{"groupData"}->{"state"} = $state;
-		$self->{"groupData"}->{"defaultState"} = $state;
+		$self->{"defaultState"} = $state;
 
 	}
 	else {
@@ -108,7 +109,7 @@ sub GetGroupDefaultState {
 	my $self = shift;
 
 	if ( $self->{"groupData"} ) {
-		return $self->{"groupData"}->{"defaultState"};
+		return $self->{"defaultState"};
 	}
 
 }

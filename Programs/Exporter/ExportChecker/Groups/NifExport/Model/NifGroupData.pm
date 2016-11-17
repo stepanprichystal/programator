@@ -196,6 +196,19 @@ sub GetNotes {
 	return $self->{"data"}->{"poznamka"};
 }
 
+
+#quick notes
+sub SetQuickNotes {
+	my $self  = shift;
+	my $value = shift;
+	$self->{"data"}->{"quickNotes"} = $value;
+}
+
+sub GetQuickNotes {
+	my $self  = shift;
+	return $self->{"data"}->{"quickNotes"};
+}
+
 #datacode
 sub SetDatacode {
 	my $self  = shift;

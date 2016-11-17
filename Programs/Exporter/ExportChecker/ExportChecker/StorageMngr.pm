@@ -87,6 +87,7 @@ sub GetDataByUnit {
 	$groupData->{"data"} = \%data;
 	$groupData->{"state"} = $unitState;
  
+ 
 	return $groupData;
 }
 

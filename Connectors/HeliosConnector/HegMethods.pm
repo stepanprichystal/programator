@@ -669,13 +669,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
  
 	use aliased 'Connectors::HeliosConnector::HegMethods';
 
-	my $note = HegMethods->GetTpvCustomerNote("f52456");
-	
-	my @notes = split(/\n/, $note);
-	
-	@notes = map ()
 
-	print $note;
 
 #	 
 #	HegMethods->GetPcbOrderNumber("f52456");

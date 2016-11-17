@@ -51,6 +51,7 @@ sub OnExportGroupData {
 	$exportData->SetMaska01( $groupData->GetMaska01() );
 	$exportData->SetPressfit( $groupData->GetPressfit() );
 	$exportData->SetNotes( $groupData->GetNotes() );
+	$exportData->SetQuickNotes( $groupData->GetQuickNotes() );
 	$exportData->SetDatacode( $groupData->GetDatacode() );
 	$exportData->SetUlLogo( $groupData->GetUlLogo() );
 	$exportData->SetJumpScoring( $groupData->GetJumpScoring() );

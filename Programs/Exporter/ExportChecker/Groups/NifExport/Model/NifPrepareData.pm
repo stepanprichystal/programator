@@ -63,6 +63,11 @@ sub OnPrepareGroupData {
 	$groupData->SetMaska01(0);
 	$groupData->SetPressfit(0);
 	$groupData->SetNotes("");
+	
+	# prepare default selected quick notes
+	my @quickNotes = (); 
+	$groupData->SetQuickNotes(\@quickNotes);
+		
 	$groupData->SetDatacode("");
 	$groupData->SetUlLogo("");
 	

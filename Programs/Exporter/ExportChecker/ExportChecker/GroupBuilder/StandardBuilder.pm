@@ -52,7 +52,7 @@ sub Build {
 	my $nifUnit1 = NifUnit->new( $self->{"jobId"});
 	#my $plotUnit1 = PlotUnit->new( $self->{"jobId"} );
 	#my $ncUnit1 = NCUnit->new( $self->{"jobId"});
-	#my $gerUnit1 = GerUnit->new( $self->{"jobId"} );
+	my $gerUnit1 = GerUnit->new( $self->{"jobId"} );
 	#my $scoUnit1 = ScoUnit->new( $self->{"jobId"} );
  
 
@@ -65,19 +65,19 @@ sub Build {
 	my $row2Tab1 = $tableTab1->AddRow();
 	#$row2Tab1->AddCell($ncUnit1, Enums->Width_25);
 	#$row2Tab1->AddCell($scoUnit1, Enums->Width_25);
-	#$row2Tab1->AddCell($gerUnit1, Enums->Width_25);
+	$row2Tab1->AddCell($gerUnit1, Enums->Width_25);
 
 	# Table 2
 	
 	my $tableTab2 = $groupTables->AddTable("Other groups");
 	# Units
 	
-	my $aoiUnit1 = AOIUnit->new( $self->{"jobId"} );
-	my $etUnit1 = ETUnit->new( $self->{"jobId"} );
+	#my $aoiUnit1 = AOIUnit->new( $self->{"jobId"} );
+	#my $etUnit1 = ETUnit->new( $self->{"jobId"} );
 
 	my $row1Tab2 = $tableTab2->AddRow();
-	$row1Tab2->AddCell($aoiUnit1, Enums->Width_25);
-	$row1Tab2->AddCell($etUnit1, Enums->Width_25);
+	#$row1Tab2->AddCell($aoiUnit1, Enums->Width_25);
+	#$row1Tab2->AddCell($etUnit1, Enums->Width_25);
  
  
 

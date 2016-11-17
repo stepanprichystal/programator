@@ -19,7 +19,7 @@ BEGIN {
 
 use aliased 'Programs::Exporter::ExportChecker::ExportChecker::Forms::ScrollPanel';
 use aliased 'Widgets::Forms::MyWxFrame';
-
+use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'Packages::Events::Event';
 use aliased 'Widgets::Forms::MyWxBookCtrlPage';
 use aliased 'Programs::Exporter::ExportChecker::ExportChecker::Forms::GroupTableForm';
@@ -228,12 +228,12 @@ sub __SetLayout {
 
 	#main formDefain forms
 	my $mainFrm = MyWxFrame->new(
-		$parent,                   # parent window
-		-1,                        # ID -1 means any
-		"Exporter checker Job: ".$self->{"jobId"},        # title
-		&Wx::wxDefaultPosition,    # window position
-		[ 1100, 750 ],             # size
-		                           #&Wx::wxSYSTEM_MENU | &Wx::wxCAPTION | &Wx::wxCLIP_CHILDREN | &Wx::wxRESIZE_BORDER | &Wx::wxMINIMIZE_BOX
+		$parent,                                        # parent window
+		-1,                                             # ID -1 means any
+		"Exporter checker Job: " . $self->{"jobId"},    # title
+		&Wx::wxDefaultPosition,                         # window position
+		[ 1100, 750 ],    # size
+		                  #&Wx::wxSYSTEM_MENU | &Wx::wxCAPTION | &Wx::wxCLIP_CHILDREN | &Wx::wxRESIZE_BORDER | &Wx::wxMINIMIZE_BOX
 	);
 
 	$mainFrm->Centre(&Wx::wxCENTRE_ON_SCREEN);
@@ -254,11 +254,10 @@ sub __SetLayout {
 	my $szRow1 = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
 
 	#define staticboxes
-	 
- 	my $customerNote =  $self->__SetLayoutCustomerNote($mainFrm);
-	my $otherOptions =  $self->__SetLayoutOther($mainFrm);
-	my $quickOptions =   $self->__SetLayoutQuickSet($mainFrm);
-	 
+
+	my $customerNote = $self->__SetLayoutCustomerNote($mainPnl);
+	my $otherOptions = $self->__SetLayoutOther($mainPnl);
+	my $quickOptions = $self->__SetLayoutQuickSet($mainPnl);
 
 	#my $secStatBox = Wx::StaticBox->new( $mainPnl, -1, '' );
 	#my $szSecStatBox = Wx::StaticBoxSizer->new( $secStatBox, &Wx::wxVERTICAL );
@@ -292,18 +291,20 @@ sub __SetLayout {
 	$szBtns->Add( $szBtnsChild, 0, &Wx::wxALIGN_RIGHT | &Wx::wxALL );
 	$pnlBtns->SetSizer($szBtns);
 
+
+	 
 	$szRow1->Add( $customerNote, 1, &Wx::wxEXPAND );
 	$szRow1->Add( $otherOptions, 0, &Wx::wxEXPAND );
 	$szRow1->Add( $quickOptions, 0, &Wx::wxEXPAND );
- 
+
 	$szSecStatBox->Add( $nb, 1, &Wx::wxEXPAND );
 
-	$szMain->Add( $szRow1, 0, &Wx::wxEXPAND | &Wx::wxALL, 4 );
-	$szMain->Add( $szSecStatBox,  1, &Wx::wxEXPAND | &Wx::wxALL, 4 );
-	$szMain->Add( $pnlBtns,       0, &Wx::wxEXPAND );
-	
- 
 
+
+	$szMain->Add( $szRow1,       0, &Wx::wxEXPAND | &Wx::wxALL, 4 );
+	$szMain->Add( $szSecStatBox, 1, &Wx::wxEXPAND | &Wx::wxALL, 4 );
+	$szMain->Add( $pnlBtns,      0, &Wx::wxEXPAND );
+	 
 	$mainPnl->SetSizer($szMain);
 
 	$szMainParent->Add( $mainPnl, 1, &Wx::wxEXPAND );
@@ -324,8 +325,6 @@ sub __SetLayout {
 	return $mainFrm;
 }
 
-
-
 # Set layout for Quick set box
 sub __SetLayoutCustomerNote {
 	my $self   = shift;
@@ -337,26 +336,45 @@ sub __SetLayoutCustomerNote {
 
 	my $szMain = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
 	my $szRow1 = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
- 
 
-	my $noteTxt    = Wx::TextCtrl->new( $statBox, -1, " - Default settings\n - ddddddddd\n - ddddddddd\n - ddddddddd\n - ddddddddd\n - ddddddddd",   &Wx::wxDefaultPosition, [ -1, -1 ], &Wx::wxTE_MULTILINE | &Wx::wxBORDER_NONE | &Wx::wxTE_NO_VSCROLL);
- 
+	my $note      = HegMethods->GetTpvCustomerNote("f52456");
+	my $noteFinal = "";
+
+	if ($note) {
+		my @notes = split( /\n/, $note );
+
+		foreach my $note (@notes) {
+
+			$note =~ s/[\r\n\t]//;
+			$note =~ s/^\s*//;
+			$note =~ s/\s*$//;
+
+			if ( $note ne "" ) {
+				$noteFinal .= " - " . $note . "\n";
+			}
+		}
+
+		$noteFinal = substr( $noteFinal, 0, length($noteFinal) - 1 );    # delete last \n
+
+	}
+
+	my $noteTxt = Wx::TextCtrl->new(
+		$statBox, -1, $noteFinal, &Wx::wxDefaultPosition,
+		[ -1, -1 ],
+		&Wx::wxTE_MULTILINE   | &Wx::wxBORDER_NONE | &Wx::wxTE_NO_VSCROLL
+	);
 
 	# REGISTER EVENTS
- 
 
 	#$szRow1->Add( $defaultTxt,   1, &Wx::wxEXPAND );
 	$szRow1->Add( $noteTxt, 1, &Wx::wxEXPAND );
 
- 
 	$szMain->Add( $szRow1, 1, &Wx::wxEXPAND );
 
 	$szStatBox->Add( $szMain, 1, &Wx::wxEXPAND );
 
 	return $szStatBox;
 }
-
- 
 
 # Set layout for Quick set box
 sub __SetLayoutQuickSet {
@@ -471,9 +489,6 @@ sub __SetLayoutOther {
 
 }
 
-
-
-
 sub Test {
 	my $self   = shift;
 	my $parent = shift;
@@ -542,12 +557,10 @@ sub BuildGroupTableForm {
 		$scrollPnl->Layout();
 		my ( $width, $height ) = $groupTableForm->GetSizeWH();
 
-		 
-
 		#compute number of rows. One row has height 10 px
 		$scrollPnl->SetRowCount( $height / 10 );
 	}
-	
+
 	$self->{"mainFrm"}->Thaw();
 
 	# Do conenction between units events/handlers

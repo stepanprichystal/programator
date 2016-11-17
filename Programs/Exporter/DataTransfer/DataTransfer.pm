@@ -8,6 +8,7 @@ package Programs::Exporter::DataTransfer::DataTransfer;
 #3th party library
 use strict;
 use warnings;
+use utf8;
 use JSON;
 
 #local library

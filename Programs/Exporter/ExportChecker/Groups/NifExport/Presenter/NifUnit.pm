@@ -98,6 +98,7 @@ sub RefreshGUI {
 	$self->{"form"}->SetMaska01( $groupData->GetMaska01() );
 	$self->{"form"}->SetPressfit( $groupData->GetPressfit() );
 	$self->{"form"}->SetNotes( $groupData->GetNotes() );
+	$self->{"form"}->SetQuickNotes( $groupData->GetQuickNotes() );
 	$self->{"form"}->SetDatacode( $groupData->GetDatacode() );
 	$self->{"form"}->SetUlLogo( $groupData->GetUlLogo() );
 	$self->{"form"}->SetJumpScoring( $groupData->GetJumpScoring() );
@@ -139,6 +140,7 @@ sub GetGroupData {
 		$groupData->SetMaska01( $frm->GetMaska01() );
 		$groupData->SetPressfit( $frm->GetPressfit() );
 		$groupData->SetNotes( $frm->GetNotes() );
+		$groupData->SetQuickNotes( $frm->GetQuickNotes() );
 		$groupData->SetDatacode( $frm->GetDatacode() );
 		$groupData->SetUlLogo( $frm->GetUlLogo() );
 		$groupData->SetJumpScoring( $frm->GetJumpScoring() );
