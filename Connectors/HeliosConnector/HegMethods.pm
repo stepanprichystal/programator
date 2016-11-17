@@ -669,6 +669,14 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
  
 	use aliased 'Connectors::HeliosConnector::HegMethods';
 
+	my $note = HegMethods->GetTpvCustomerNote("f52456");
+	
+	my @notes = split(/\n/, $note);
+	
+	@notes = map ()
+
+	print $note;
+
 #	 
 #	HegMethods->GetPcbOrderNumber("f52456");
 #	my $test = HegMethods->UpdatePcbOrderState("f52456-01", "HOTOVO-123");
