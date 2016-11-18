@@ -1,6 +1,5 @@
 #-------------------------------------------------------------------------------------------#
-# Description: Responsible for creating "table of column", where GroupWrapperForms are
-# placed in. Is responsible for recaltulating "column" layout.
+# Description: Simple list, based on ControlList, which display nif quick note
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Programs::Exporter::ExportChecker::Groups::NifExport::View::QuickNoteFrm::NoteList;
@@ -46,9 +45,6 @@ sub new {
 
 	$self->{"titles"} = \@titles;
 
-	#	$self->{"inCAM"}  = $inCAM;
-	#	$self->{"jobId"}  = $jobId;
-
 	$self->__SetLayout();
 
 	# EVENTS
@@ -74,9 +70,7 @@ sub SetNotesData {
 			$row->SetSelected(1);
 
 			# set parameters by data
-
 		}
-
 	}
 }
 
@@ -140,25 +134,26 @@ sub __SetLayout {
 				  "title" => "Maska, maska má malé přesahy.",
 				  "text"  => "Maska, maska má malé přesahy."
 	);
- 
-#	my %note3 =
-#	  ( "id" => 3, "title" => "Drážkování, Prokovy/vodiče blízko drážky", "text" => "Drážkování, Prokovy/vodiče blízko drážky." );
-#	my %note4 =
-#	  ( "id" => 4, "title" => "Frézování, Prokovy/vodiče blízko frézování", "text" => "Frézování, Prokovy/vodiče blízko frézování" );
-#	my %note5 =
-#	  ( "id" => 5, "title" => "Frézování, Časově náročné frézování", "text" => "Frézování, Časově náročné frézování." );
-#	my %note6 = ( "id" => 6, "title" => "Dps rozlámat a zabrousit můstky", "text" => "Dps rozlámat a zabrousit můstky." );
-#	my %note7 = ( "id" => 7, "title" => "Dps rozlomit na rozměr",           "text" => "Dps rozlomit na rozměr." );
-#	my %note8 = ( "id" => 8, "title" => "Dps ponechat v panelu",             "text" => "Dps ponechat v panelu." );
+
+	my %note3 =
+	  ( "id" => 3, "title" => "Drážkování, Prokovy/vodiče blízko drážky", "text" => "Drážkování, Prokovy/vodiče blízko drážky." );
+	my %note4 =
+	  ( "id" => 4, "title" => "Frézování, Prokovy/vodiče blízko frézování", "text" => "Frézování, Prokovy/vodiče blízko frézování" )
+	  ;
+	my %note5 =
+	  ( "id" => 5, "title" => "Frézování, Časově náročné frézování", "text" => "Frézování, Časově náročné frézování." );
+	my %note6 = ( "id" => 6, "title" => "Dps rozlámat a zabrousit můstky", "text" => "Dps rozlámat a zabrousit můstky." );
+	my %note7 = ( "id" => 7, "title" => "Dps rozlomit na rozměr",           "text" => "Dps rozlomit na rozměr." );
+	my %note8 = ( "id" => 8, "title" => "Dps ponechat v panelu",             "text" => "Dps ponechat v panelu." );
 
 	push( @notes, \%note1 );
 	push( @notes, \%note2 );
-#	push( @notes, \%note3 );
-#	push( @notes, \%note4 );
-#	push( @notes, \%note5 );
-#	push( @notes, \%note6 );
-#	push( @notes, \%note7 );
-#	push( @notes, \%note8 );
+	push( @notes, \%note3 );
+	push( @notes, \%note4 );
+	push( @notes, \%note5 );
+	push( @notes, \%note6 );
+	push( @notes, \%note7 );
+	push( @notes, \%note8 );
 
 	foreach my $n (@notes) {
 

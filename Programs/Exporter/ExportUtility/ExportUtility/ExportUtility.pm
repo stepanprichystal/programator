@@ -169,6 +169,8 @@ sub __OnJobStateChanged {
 			# refresh GUI to produce
 			$self->{"form"}->SetJobItemToProduceResult($task);
 		}
+		
+
 
 	}
 
@@ -314,7 +316,7 @@ sub __OnToProduceClick {
 
 	my $messMngr = $self->{"form"}->{"messageMngr"};
 	my @mess     = ();
-
+ 
 	$task->SetToProduceResult();
 	$self->{"form"}->SetJobItemToProduceResult($task);
 

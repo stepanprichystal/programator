@@ -1,7 +1,6 @@
 #-------------------------------------------------------------------------------------------#
-# Description: Represent columnLayout.
-# Class keep GroupWrapperForm in Column layout and can move
-# GroupWrapperForm to neighbour columns
+# Description: Basic list row, which show only checkbutton + text. 
+# Used for notes, which has no another parameters - only text
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 
@@ -29,8 +28,7 @@ sub new {
 	my $class        = shift;
 	my $parent       = shift;
 	my $note        = shift;
-	#my $filmRuleSet1 = shift;
-	#my $filmRuleSet2 = shift;
+
 	my $rowHeight    = 20;
 
 	my $self = $class->SUPER::new( $parent, $note->{"title"}, $rowHeight );
@@ -40,14 +38,10 @@ sub new {
 	 
 	$self->{"rowHeight"} = $rowHeight;
 	$self->{"note"} = $note;
- 
-
-	 
 
 	$self->__SetLayout();
 
 	# EVENTS
-	 
 
 	return $self;
 }
@@ -55,8 +49,7 @@ sub new {
 
 sub GetNoteData{
 	my $self = shift;
-	
-	
+
 	my %info = ();
 	
 	$info{"selected"} = $self->IsSelected();
@@ -69,7 +62,6 @@ sub GetNoteData{
  
  
  	return \%info;
-	
 }
  
 
@@ -80,12 +72,9 @@ sub __SetLayout {
  
 	# SET EVENTS
  
-
 	# SET REFERENCES
- 
 }
 
- 
 
 # =====================================================================
 # SET/GET CONTROLS VALUES

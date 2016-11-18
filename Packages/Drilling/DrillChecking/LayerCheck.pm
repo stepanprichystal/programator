@@ -69,28 +69,29 @@ sub CheckNCLayers {
 		$result = 0;
 	}
 
-	# 4) check each NC layers bz type
+	# 4) Check if layer has to set right direction
 
-	# Blind
-	unless ( $self->CheckBlindDrill( $inCAM, $jobId, \@layers, $mess ) ) {
-
-		$result = 0;
-	}
-
-	# standard drill
-	unless ( $self->CheckDrill( $inCAM, $jobId, \@layers, $mess ) ) {
+	unless ( $self->CheckDirTop2Bot( $inCAM, $jobId, \@layers, $mess ) ) {
 
 		$result = 0;
 	}
+ 
+	# 5) Check if layer has to set right direction
 
-	# core drill
-	unless ( $self->CheckCoreDrill( $inCAM, $jobId, \@layers, $mess ) ) {
+	unless ( $self->CheckDirBot2Top( $inCAM, $jobId, \@layers, $mess ) ) {
 
 		$result = 0;
 	}
+ 
 
-	# Depth rout plated/nplated
-	unless ( $self->CheckBlindDrill( $inCAM, $jobId, \@layers, $mess ) ) {
+	# 6) Check if depth is correctly set
+	unless ( $self->CheckContainDepth( $inCAM, $jobId, \@layers, $mess ) ) {
+
+		$result = 0;
+	}
+		
+	# 7) Check if depth is not set
+	unless ( $self->CheckContainNoDepth( $inCAM, $jobId, \@layers, $mess ) ) {
 
 		$result = 0;
 	}
@@ -153,7 +154,7 @@ sub CheckWrongNames {
 	return $result;
 }
 
-sub CheckBlindDrill {
+sub CheckDirTop2Bot {
 	my $self   = shift;
 	my $inCAM  = shift;
 	my $jobId  = shift;
@@ -162,149 +163,57 @@ sub CheckBlindDrill {
 
 	my $result = 1;
 
-	@layers = grep { $_->{"type"} eq EnumsGeneral->LAYERTYPE_plt_bDrillTop || $_->{"type"} eq EnumsGeneral->LAYERTYPE_plt_bDrillBot } @layers;
+	my @t = ();
 
-	# 1) check right direction of drill
+	push( @t, EnumsGeneral->LAYERTYPE_plt_nDrill );
+	push( @t, EnumsGeneral->LAYERTYPE_plt_bDrillTop );
+	push( @t, EnumsGeneral->LAYERTYPE_plt_cDrill );
+	push( @t, EnumsGeneral->LAYERTYPE_plt_nMill );
+	push( @t, EnumsGeneral->LAYERTYPE_plt_bMillTop );
+	push( @t, EnumsGeneral->LAYERTYPE_plt_dcDrill );
+	push( @t, EnumsGeneral->LAYERTYPE_plt_fDrill );
+	push( @t, EnumsGeneral->LAYERTYPE_nplt_nMill );
+	push( @t, EnumsGeneral->LAYERTYPE_nplt_bMillTop );
+	push( @t, EnumsGeneral->LAYERTYPE_nplt_rsMill );
+	push( @t, EnumsGeneral->LAYERTYPE_nplt_frMill );
+	push( @t, EnumsGeneral->LAYERTYPE_nplt_jbMillTop );
+	push( @t, EnumsGeneral->LAYERTYPE_nplt_kMill );
+
+	@layers = $self->__GetLayersByType( \@layers, \@t  );
 
 	foreach my $l (@layers) {
 
 		my $dir   = $l->{"gROWdrl_dir"};
 		my $lName = $l->{"gROWname"};
 
-		if ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_plt_bDrillTop ) {
-
-			if ( $dir && $dir ne "top2bot" ) {
-				$result = 0;
-				$$mess .= "Layer $lName has wrong direction of drilling. Direction has to be: top2bot. \n";
-			}
-
-		}
-		elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_plt_bDrillBot ) {
-
-			if ( $dir ne "bot2top" ) {
-				$result = 0;
-				$$mess .= "Layer $lName has wrong direction of drilling. . Direction has to be: bot2top. \n";
-			}
-		}
-	}
-
-	# 2) check start and end layer
-
-	foreach my $l (@layers) {
-		my $startL    = $l->{"gROWdrl_start"};
-		my $endL      = $l->{"gROWdrl_end"};
-		my $layerName = $l->{"gROWname"};
-
-		if ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_plt_bDrillTop ) {
-
-			if ( $startL >= $endL ) {
-				$result = 0;
-				$$mess .= "Layer: $layerName, drilling start/end layer is wrong in matrix.\n";
-			}
-
-		}
-		elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_plt_bDrillBot ) {
-
-			if ( $endL <= $StartL ) {
-				$result = 0;
-				$$mess .= "Layer: $layerName, drilling start/end layer is wrong in matrix.\n";
-			}
-		}
-	}
-
-	# 3) check if tool depth is set
-
-	foreach my $l (@layers) {
-
-		$self->__ToolDepthSet( $inCAM, $jobId, $l->{"gROWname"}, $mess );
-	}
-}
-
-sub CheckDrill {
-	my $self   = shift;
-	my $inCAM  = shift;
-	my $jobId  = shift;
-	my @layers = @{ shift(@_) };
-	my $mess   = shift;
-
-	my $result = 1;
-
-	@layers = grep { $_->{"type"} eq EnumsGeneral->LAYERTYPE_plt_nDrill || $_->{"type"} eq EnumsGeneral->LAYERTYPE_plt_cDrill } @layers;
-
-	foreach my $l (@layers) {
-
-		# 1) check right direction of drill
-
-		my $dir   = $l->{"gROWdrl_dir"};
-		my $lName = $l->{"gROWname"};
-
-		if ( $dir && $dir ne "top2bot" ) {
+		# not def means top2bot
+		if ( $dir && $dir eq "bot2top") {
 			$result = 0;
-			$$mess .= "Layer $lName has wrong direction of routing. Direction has to be: top2bot. \n";
+			$$mess .= "Layer $lName has wrong direction of drilling/routing. Direction has to be: top2bot. \n";
 		}
-
-		# 2) check start and end layer
 
 		my $startL = $l->{"gROWdrl_start"};
 		my $endL   = $l->{"gROWdrl_end"};
 
-		# normal drill
-		if ( $lName =~ /^m$/ ) {
-			if ( $startL >= $endL ) {
-				$result = 0;
-				$$mess .= "Layer: $lName, drill start/end layer is wrong in matrix.\n";
+		if ( $startL >= $endL ) {
+
+			#exception for core driling, which start/end in same layer
+
+			if ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_plt_cDrill && $startL == $endL ) {
+				next;
 			}
-		}
 
-		# blind - through drill
-		elsif ( $lName =~ /^m\d+$/ ) {
-
-			my $lCnt = CamJob->GetSignalLayerCnt( $inCAM, $jobId );
-
-			if ( $startL >= $endL || $startL == 1 || $endL == $lCnt ) {
-				$result = 0;
-				$$mess .= "Layer: $lName, (blind-through drilling) start/end layer is wrong in matrix.\n";
-			}
-			
-		}
-		
-		# core drill
-		elsif ( $_->{"type"} eq EnumsGeneral->LAYERTYPE_plt_cDrill ) {
-
-			if ( abs($startL - $endL) != 1 ) {
+			if ( abs( $startL - $endL ) != 1 ) {
 				$result = 0;
 				$$mess .= "Layer: $lName, start/end layer is wrong in matrix. Only core layer could be drilled.\n";
 			}
 		}
-		
+
 	}
-	
-	
-	# check if there is no tool depth in layer blind-through
-	foreach my $l (@layers) {
-		
-		my $lName = $l->{"gROWname"};
-		
-		if ( $lName =~ /^m\d+$/ ) {
-			
-			# there are tool depths
-			if($self->__ToolDepthSet( $inCAM, $jobId, $l->{"gROWname"}, $mess )){
-				
-				
-			}
-			
-			
-		}
-		
-		
- 
-	}
-	
-	
-	
+
 }
 
-sub CheckDepthRout {
+sub CheckDirBot2Top {
 	my $self   = shift;
 	my $inCAM  = shift;
 	my $jobId  = shift;
@@ -313,67 +222,114 @@ sub CheckDepthRout {
 
 	my $result = 1;
 
-	@layers = grep {
-		     $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_bMillTop
-		  || $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_bMillBot
-		  || $_->{"type"} eq EnumsGeneral->LAYERTYPE_plt_bMillTop
-		  || $_->{"type"} eq EnumsGeneral->LAYERTYPE_plt_bMillBot
-	} @layers;
+	my @t = ();
 
-	# 1) check right direction of drill
+	push( @t, EnumsGeneral->LAYERTYPE_plt_bDrillBot );
+	push( @t, EnumsGeneral->LAYERTYPE_plt_bMillBot );
+	push( @t, EnumsGeneral->LAYERTYPE_nplt_bMillBot );
+	push( @t, EnumsGeneral->LAYERTYPE_nplt_jbMillBot );
+
+	@layers = $self->__GetLayersByType( \@layers, \@t  );
 
 	foreach my $l (@layers) {
 
 		my $dir   = $l->{"gROWdrl_dir"};
 		my $lName = $l->{"gROWname"};
 
-		if ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_plt_bDrillTop || $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_bDrillTop ) {
-
-			if ( $dir && $dir ne "top2bot" ) {
-				$result = 0;
-				$$mess .= "Layer $lName has wrong direction of routing. Direction has to be: top2bot. \n ";
-			}
-
+		if ( $dir ne "bot2top" ) {
+			$result = 0;
+			$$mess .= "Layer $lName has wrong direction of drilling/routing. Direction has to be: bot2top. \n";
 		}
-		elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_plt_bDrillBot || $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_bDrillBot ) {
 
-			if ( $dir ne "bot2top" ) {
-				$result = 0;
-				$$mess .= "Layer $lName has wrong direction of routing. . Direction has to be: bot2top. \n ";
-			}
+		my $startL = $l->{"gROWdrl_start"};
+		my $endL   = $l->{"gROWdrl_end"};
+
+		unless( defined $endL || defined  $StartL){
+			print STDERR "dddd";
 		}
-	}
 
-	# 2) check start and end layer
-
-	foreach my $l (@layers) {
-		my $startL    = $l->{"gROWdrl_start"};
-		my $endL      = $l->{"gROWdrl_end"};
-		my $layerName = $l->{"gROWname"};
-
-		if ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_plt_bDrillTop || $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_bDrillTop ) {
-
-			if ( $startL >= $endL ) {
-				$result = 0;
-				$$mess .= "Layer: $layerName, routing start/end layer is wrong in matrix.\n ";
-			}
-
-		}
-		elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_plt_bDrillBot || $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_bDrillBot ) {
-
-			if ( $endL <= $StartL ) {
-				$result = 0;
-				$$mess .= "Layer: $layerName, routing start/end layer is wrong in matrix.\n ";
-			}
+		if ( $endL <= $startL ) {
+			$result = 0;
+			$$mess .= "Layer: $layerName, drilling start/end is wrong in matrix. Drilling/routing cant't start and end in same layer.\n";
 		}
 	}
+}
 
-	# 3) check if tool depth is set
+sub CheckContainDepth {
+	my $self   = shift;
+	my $inCAM  = shift;
+	my $jobId  = shift;
+	my @layers = @{ shift(@_) };
+	my $mess   = shift;
+
+	my $result = 1;
+
+	my @t = ();
+
+	push( @t, EnumsGeneral->LAYERTYPE_plt_bDrillTop );
+	push( @t, EnumsGeneral->LAYERTYPE_plt_bDrillBot );
+	push( @t, EnumsGeneral->LAYERTYPE_plt_bMillTop );
+	push( @t, EnumsGeneral->LAYERTYPE_plt_bMillBot );
+	push( @t, EnumsGeneral->LAYERTYPE_nplt_bMillTop );
+	push( @t, EnumsGeneral->LAYERTYPE_nplt_bMillBot );
+	push( @t, EnumsGeneral->LAYERTYPE_nplt_jbMillTop );
+	push( @t, EnumsGeneral->LAYERTYPE_nplt_jbMillBot );
+	
+	@layers = $self->__GetLayersByType( \@layers, \@t  );
 
 	foreach my $l (@layers) {
 
 		$self->__ToolDepthSet( $inCAM, $jobId, $l->{"gROWname"}, $mess );
 	}
+}
+
+sub CheckContainNoDepth {
+	my $self   = shift;
+	my $inCAM  = shift;
+	my $jobId  = shift;
+	my @layers = @{ shift(@_) };
+	my $mess   = shift;
+
+	my $result = 1;
+
+	my @t = ();
+
+	push( @t, EnumsGeneral->LAYERTYPE_plt_nDrill );
+	push( @t, EnumsGeneral->LAYERTYPE_plt_cDrill );
+	push( @t, EnumsGeneral->LAYERTYPE_plt_nMill );
+	push( @t, EnumsGeneral->LAYERTYPE_plt_dcDrill );
+	push( @t, EnumsGeneral->LAYERTYPE_plt_fDrill );
+	push( @t, EnumsGeneral->LAYERTYPE_nplt_nMill );
+	push( @t, EnumsGeneral->LAYERTYPE_nplt_rsMill );
+	push( @t, EnumsGeneral->LAYERTYPE_nplt_frMill );
+	push( @t, EnumsGeneral->LAYERTYPE_nplt_kMill );
+
+	@layers = $self->__GetLayersByType( \@layers, \@t );
+
+	foreach my $l (@layers) {
+
+		$self->__ToolDepthNotSet( $inCAM, $jobId, $l->{"gROWname"}, $mess );
+	}
+}
+
+sub __GetLayersByType {
+	my $self   = shift;
+	my @layers = @{ shift(@_) };
+	my @t      = @{ shift(@_) };
+
+	my @matchL = ();
+
+	foreach my $l (@layers) {
+
+		my $match = scalar( grep { $_ eq $l->{"type"} } @t );
+
+		if ($match) {
+
+			push( @matchL, $l );
+		}
+
+	}
+	return @matchL;
 }
 
 sub __ToolDepthSet {
@@ -428,59 +384,34 @@ sub __ToolDepthSet {
 	}
 
 	return $result;
-
 }
 
-# Function return max aspect ratio from all holes and their depths. For given layer
-sub GetMaxAspectRatioByLayer {
+sub __ToolDepthNotSet {
 	my $self      = shift;
 	my $inCAM     = shift;
 	my $jobId     = shift;
-	my $stepName  = shift;
 	my $layerName = shift;
+	my $mess      = shift;
+
+	my $stepName = "panel";
+
+	my $result = 1;
 
 	#get depths for all diameter
-	my @toolDepths = $self->GetToolDepths( $inCAM, $jobId, "panel", $layerName );
+	my @toolDepths = CamToolDepth->GetToolDepths( $inCAM, $jobId, $stepName, $layerName );
 
-	$inCAM->INFO(
-				  units       => 'mm',
-				  entity_type => 'layer',
-				  entity_path => "$jobId/$stepName/$layerName",
-				  data_type   => 'TOOL',
-				  parameters  => 'drill_size+shape',
-				  options     => "break_sr"
-	);
-	my @toolSize  = @{ $inCAM->{doinfo}{gTOOLdrill_size} };
-	my @toolShape = @{ $inCAM->{doinfo}{gTOOLshape} };
+	foreach my $d (@toolDepths) {
 
-	my $aspectRatio;
+		if ( defined $d->{"depth"} ) {
 
-	for ( my $i = 0 ; $i < scalar(@toolSize) ; $i++ ) {
+			my $t = $d->{"drill_size"};
 
-		my $tSize = $toolSize[$i];
-		my $s     = $toolShape[$i];
-
-		if ( $s ne 'hole' ) {
-			next;
+			$result = 0;
+			$$mess .= "Layer: $layerName, has defined tool depth for tool: $t mm. This layer can't contain depths.\n ";
 		}
-
-		#for each hole diameter, get depth (in mm)
-		my $tDepth;
-
-		my $prepareOk = $self->PrepareToolDepth( $tSize, \@toolDepths, \$tDepth );
-		unless ($prepareOk) {
-			next;
-		}
-
-		my $tmp = ( $tDepth * 1000 ) / $tSize;
-
-		if ( !defined $aspectRatio || $tmp > $aspectRatio ) {
-
-			$aspectRatio = $tmp;
-		}
-
 	}
-	return $aspectRatio;
+
+	return $result;
 }
 
 #-------------------------------------------------------------------------------------------#

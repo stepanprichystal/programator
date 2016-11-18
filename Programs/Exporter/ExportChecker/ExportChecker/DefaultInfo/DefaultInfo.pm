@@ -44,8 +44,12 @@ sub new {
 	$self->{"pattern"} = undef;
 	$self->{"tenting"} = undef;
 	$self->{"baseLayers"} = undef;
+	$self->{"signalLayers"} = undef;
 	$self->{"scoreChecker"} = undef;
 	$self->{"materialKind"} = undef;
+	$self->{"pcbTypeHelios"} = undef; # type by helios oboustranny, neplat etc..
+	$self->{"finalPcbThick"} = undef;
+	
 	
 
 	$self->__InitDefault();
@@ -59,6 +63,13 @@ sub GetBoardBaseLayers {
 	
 	return  @{$self->{"baseLayers"}};	
 }
+
+sub GetSignalLayers {
+	my $self      = shift;
+	
+	return  @{$self->{"signalLayers"}};	
+}
+
 
 sub GetPcbClass {
 	my $self      = shift;
@@ -135,7 +146,6 @@ sub GetEtchType {
 					#$botCopperName = $p->GetBotCopperLayer();
 					last;
 				}
-
 			}
 		}
 
@@ -244,6 +254,14 @@ sub GetScoreChecker{
  
 }
 
+
+sub GetTypeOfPcb{
+	my $self      = shift;
+	
+	return $self->{"pcbTypeHelios"};
+}
+
+
 sub GetMaterialKind{
 	my $self      = shift;
 	
@@ -271,12 +289,31 @@ sub GetBaseCuThick {
 	return $cuThick;
 }
 
+sub GetStackup{
+	my $self      = shift;
+	
+	return $self->{"stackup"};
+}
+
+
+#sub GetFinalPcbThick{
+#	my $self      = shift;
+#	
+#	return $self->{"finalPcbThick"};
+#}
+
+
+
+
 sub __InitDefault {
 	my $self = shift;
 
 	my @baseLayers = CamJob->GetBoardBaseLayers($self->{"inCAM"}, $self->{"jobId"} );
 	$self->{"baseLayers"} =  \@baseLayers;
-
+	
+	 my @signalLayers = CamJob->GetSignalLayer($self->{"inCAM"}, $self->{"jobId"} );
+	$self->{"signalLayers"} =  \@signalLayers;
+ 
 	$self->{"pcbClass"} = CamJob->GetJobPcbClass($self->{"inCAM"}, $self->{"jobId"} );   
 
 	$self->{"layerCnt"} = CamJob->GetSignalLayerCnt( $self->{"inCAM"}, $self->{"jobId"} );
@@ -299,6 +336,9 @@ sub __InitDefault {
 	
 	$self->{"materialKind"} = HegMethods->GetMaterialKind($self->{"jobId"});
 	
+	$self->{"pcbTypeHelios"} = HegMethods->GetTypeOfPcb($self->{"jobId"} eq 'Neplatovany');
+	
+	#$self->{"finalPcbThick"} = JobHelper->GetFinalPcbThick($self->{"jobId"});
 
 }
 

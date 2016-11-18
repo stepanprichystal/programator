@@ -1,6 +1,5 @@
 #-------------------------------------------------------------------------------------------#
-# Description: Popup, which shows result from export checking
-# Allow terminate thread, which does checking
+# Description: Form, which allow set nif quick notes
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Programs::Exporter::ExportChecker::Groups::NifExport::View::QuickNoteFrm::QuickNoteFrm;
@@ -37,22 +36,6 @@ sub new {
 }
 
 
-sub SetNotesData{
-	my $self   = shift;
-	my $data   = shift;
- 
- 	$self->{"noteList"}->SetNotesData($data);
-   
-}  
- 
-sub GetNotesData{
-	my $self   = shift;
-	
-	return $self->{"noteList"}->GetNotesData();
- 
-} 
-
-
 
 sub __SetLayout {
 	my $self = shift;
@@ -66,7 +49,7 @@ sub __SetLayout {
 	$self->SetButtonHeight(20);
 
 	$self->AddButton( "Reset", sub { $self->__ResetClick(@_) } );
-	$self->AddButton( "Ok",   sub { $self->__SetClick(@_) } );
+	$self->AddButton( "Ok",    sub { $self->__SetClick(@_) } );
 
 	# DEFINE LAYOUT STRUCTURE
 
@@ -97,16 +80,37 @@ sub __SetLayoutList {
 
 sub __SetClick {
 	my $self = shift;
-	
+
 	$self->{"mainFrm"}->Hide();
 
 }
 
 sub __ResetClick {
 	my $self = shift;
-	
+
 	$self->{"noteList"}->UnselectAll();
 	$self->{"mainFrm"}->Hide();
+
+}
+
+
+# =====================================================================
+# SET/GET CONTROLS VALUES
+# =====================================================================
+
+
+sub SetNotesData {
+	my $self = shift;
+	my $data = shift;
+
+	$self->{"noteList"}->SetNotesData($data);
+
+}
+
+sub GetNotesData {
+	my $self = shift;
+
+	return $self->{"noteList"}->GetNotesData();
 
 }
 

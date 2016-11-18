@@ -318,16 +318,19 @@ sub SentToProduce {
 		
 		my $succ     = HegMethods->UpdatePcbOrderState( $orderNum, "HOTOVO-zadat" );
 		
-		
+	 
 		$self->{"exportStatus"}->DeleteStatusFile();
 		$self->{"sentToProduce"} = 1;
 	};
 
 	if ( my $e = $@ ) {
 
-		open my $OUT, ">", 'c:\Export\test\err' or die $!;
-		print $OUT "err";
-		close($OUT);
+		 # set status hotovo-yadat fail
+		 my $toProduceMngr = $self->{"produceResultMngr"};
+		 my $item = $toProduceMngr->GetNewItem( "Set state HOTOVO-zadat", EnumsGeneral->ResultType_FAIL );
+
+		$item->AddError("Set state HOTOVO-zadat failed, try it again.");
+		$toProduceMngr->AddItem($item);
 
 	}
 

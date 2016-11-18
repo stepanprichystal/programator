@@ -127,7 +127,7 @@ sub __SetLayout {
 	$szRow2->Add( $dimensionStatBox, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
 
 	#$szMain->Add( $szRow0, 1, &Wx::wxEXPAND );
-	$szMain->Add( $szRow1, 1, &Wx::wxEXPAND );
+	$szMain->Add( $szRow1, 0, &Wx::wxEXPAND );
 	$szMain->Add( $szRow2, 1, &Wx::wxEXPAND );
 
 	$self->SetSizer($szMain);
