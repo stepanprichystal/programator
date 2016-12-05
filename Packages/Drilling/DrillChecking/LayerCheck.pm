@@ -136,6 +136,40 @@ sub CheckAttributes {
 	return $result;
 }
 
+# TODO check on missing rout attribute
+
+# Check if drill layers not contain invalid symbols..
+sub CheckInvalidSymbols {
+	my $self   = shift;
+	my $inCAM  = shift;
+	my $jobId  = shift;
+	my @layers = @{ shift(@_) };
+	my $mess   = shift;
+
+	my $result = 1;
+
+	my @t = ();
+
+	push( @t, EnumsGeneral->LAYERTYPE_plt_nDrill );
+	push( @t, EnumsGeneral->LAYERTYPE_plt_bDrillTop );
+	push( @t, EnumsGeneral->LAYERTYPE_plt_bDrillBot );
+	push( @t, EnumsGeneral->LAYERTYPE_plt_cDrill );
+	push( @t, EnumsGeneral->LAYERTYPE_plt_dcDrill );
+	push( @t, EnumsGeneral->LAYERTYPE_plt_fDrill );
+	
+
+	@layers = $self->__GetLayersByType( \@layers, \@t  );
+
+	foreach my $l (@layers) {
+
+		if ( $l->{"fHist"}->{"total"} == 0 ) {
+			$result = 0;
+			$$mess .= "NC layer: " . $l->{"gROWname"} . " is empty.\n";
+		}
+	}
+
+}
+
 sub CheckWrongNames {
 	my $self   = shift;
 	my @layers = @{ shift(@_) };

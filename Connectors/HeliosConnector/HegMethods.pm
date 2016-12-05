@@ -159,6 +159,7 @@ sub GetBasePcbInfo {
 	}
 }
 
+# Return material kind like FR4, S400, etc..
 sub GetMaterialKind {
 	my $self  = shift;
 	my $pcbId = shift;
@@ -172,6 +173,29 @@ sub GetMaterialKind {
 				 where d.reference_subjektu=_PcbId and  z.cislo_poradace = 22050";
 
 	return Helper->ExecuteScalar( $cmd, \@params );
+
+}
+
+# Return if electrical test if required
+sub GetElTest {
+	my $self  = shift;
+	my $pcbId = shift;
+
+	my @params = ( SqlParameter->new( "_PcbId", Enums->SqlDbType_VARCHAR, $pcbId ) );
+
+	my $cmd = "select top 1
+				 d.eltest
+				 from lcs.desky_22 d with (nolock)
+				  left outer join lcs.zakazky_dps_22_hlavicka z with (nolock) on z.deska=d.cislo_subjektu
+				 where d.reference_subjektu=_PcbId and  z.cislo_poradace = 22050";
+
+	my $val =  Helper->ExecuteScalar( $cmd, \@params );
+	
+	if($val =~ /^f$/i){
+		return 1;
+	}else{
+		return 0;
+	}
 
 }
 

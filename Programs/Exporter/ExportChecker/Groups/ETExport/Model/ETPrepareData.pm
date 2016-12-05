@@ -16,6 +16,7 @@ use warnings;
 #local library
 use aliased 'Programs::Exporter::ExportChecker::Groups::ETExport::Model::ETGroupData';
 use aliased 'Programs::Exporter::ExportChecker::Enums';
+use aliased 'Connectors::HeliosConnector::HegMethods';
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
@@ -35,15 +36,30 @@ sub OnGetGroupState {
 	my $self     = shift;
 	my $dataMngr = shift;    #instance of GroupDataMngr
 	
-	my $defaultInfo = $dataMngr->GetDefaultInfo();	
-	
-	
-	my $state =  Enums->GroupState_ACTIVEON;
-	
-	if($defaultInfo->GetLayerCnt() == 1 && $defaultInfo->GetPcbClass() == 3){
-		
-		$state = Enums->GroupState_DISABLE;
-		
+	 
+	my $defaultInfo = $dataMngr->GetDefaultInfo();
+
+	my $inCAM = $dataMngr->{"inCAM"};
+	my $jobId = $dataMngr->{"jobId"};
+
+	my $state = Enums->GroupState_DISABLE;
+
+	if ( HegMethods->GetElTest($jobId) ) {
+
+		$state = Enums->GroupState_ACTIVEON;
+
+	}
+	else {
+
+		if ( $defaultInfo->GetPcbClass() <= 3 && $defaultInfo->GetLayerCnt() == 1 ) {
+
+			$state = Enums->GroupState_DISABLE;
+
+		}
+		else {
+
+			$state = Enums->GroupState_ACTIVEON;
+		}
 	}
 	
 	#we want nif group allow always, so return ACTIVE ON
