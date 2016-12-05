@@ -22,6 +22,7 @@ use aliased 'Packages::Events::Event';
 use aliased 'CamHelpers::CamLayer';
 use aliased 'Programs::Exporter::ExportChecker::Groups::NifExport::View::NifColorCb';
 use aliased 'Programs::Exporter::ExportChecker::Groups::NifExport::Presenter::NifHelper';
+use aliased 'Programs::Exporter::ExportChecker::Groups::NifExport::View::QuickNoteFrm::QuickNoteFrm';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -42,7 +43,7 @@ sub new {
 	$self->{"jobId"} = $jobId;
 
 
-	$self->__SetLayout();
+	
 
 	 
 
@@ -52,7 +53,10 @@ sub new {
 
 	# PROPERTIES
 	
+	$self->{'quickNoteFrm'} = undef; # window where quick notes are showed
 	$self->{'jumpScoringProp'} = undef; # store information about cust jumpscoring
+	
+	$self->__SetLayout();
 	
 	
 	# EVENTS
@@ -100,10 +104,8 @@ sub __SetLayout {
 
 	my $settingsStatBox  = $self->__SetLayoutSettings($self);
 	my $dimensionStatBox = $self->__SetLayoutDimension($self);
-
-	my $richTxt = Wx::RichTextCtrl->new( $self, -1, 'Notes', &Wx::wxDefaultPosition, [ 100, 120 ], &Wx::wxRE_MULTILINE | &Wx::wxWANTS_CHARS );
-	$richTxt->SetEditable(1);
-	$richTxt->SetBackgroundColour($Widgets::Style::clrWhite);
+	my $noteStatBox = $self->__SetLayoutNote($self);
+	
 	 
 	#$richTxt->Layout();
 
@@ -115,23 +117,24 @@ sub __SetLayout {
 
 	# BUILD STRUCTURE OF LAYOUT
 
-	$szRow1->Add( $settingsStatBox,  1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szRow1->Add( $settingsStatBox,  1, &Wx::wxEXPAND | &Wx::wxALL, 0 );
 	
 
 	#$szRow1->Add( $settingsStatBox,  70, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 	#$szRow1->Add( $settingsStatBox2,  30, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 
-	$szRow2->Add( $richTxt, 1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
-	$szRow2->Add( $dimensionStatBox, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szRow2->Add( $noteStatBox, 1, &Wx::wxEXPAND | &Wx::wxALL, 0 );
+	$szRow2->Add( $dimensionStatBox, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
 
 	#$szMain->Add( $szRow0, 1, &Wx::wxEXPAND );
-	$szMain->Add( $szRow1, 1, &Wx::wxEXPAND );
+	$szMain->Add( $szRow1, 0, &Wx::wxEXPAND );
 	$szMain->Add( $szRow2, 1, &Wx::wxEXPAND );
 
 	$self->SetSizer($szMain);
 
+
 	# save control references
-	$self->{"richTxt"} = $richTxt;
+
 
 }
 
@@ -226,6 +229,61 @@ sub __SetLayoutSettings {
 
 }
 
+
+
+# Set layout for Quick set box
+sub __SetLayoutNote {
+	my $self   = shift;
+	my $parent = shift;
+
+	#define staticboxes
+	my $statBox = Wx::StaticBox->new( $parent, -1, 'Notes' );
+	my $szStatBox = Wx::StaticBoxSizer->new( $statBox, &Wx::wxVERTICAL );
+
+	my $szMain = Wx::BoxSizer->new(&Wx::wxVERTICAL);
+
+	# Load data, for filling form by values
+
+	my $szRow1 = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
+	 
+
+	#my $szRow5 = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
+
+	# DEFINE CONTROLS
+ 
+ 	my $noteTextTxt = Wx::StaticText->new( $statBox, -1, "Text", &Wx::wxDefaultPosition, [ -1, 20 ] );
+	my $quickNoteTxt = Wx::StaticText->new( $statBox, -1, "Quick notes", &Wx::wxDefaultPosition, [ -1, 20 ] );
+ 	my $btnSet = Wx::Button->new( $statBox, -1, "Set", &Wx::wxDefaultPosition,  [ 40, 22 ] );
+ 	
+ 	$self->{'quickNoteFrm'} = QuickNoteFrm->new($self);
+ 
+ 
+ 
+	my $richTxt = Wx::RichTextCtrl->new( $statBox, -1, 'Notes', &Wx::wxDefaultPosition, [ 100, 120 ], &Wx::wxRE_MULTILINE | &Wx::wxWANTS_CHARS );
+	$richTxt->SetEditable(1);
+	$richTxt->SetBackgroundColour($Widgets::Style::clrWhite);
+	
+	
+	# DEFINE EVENTS
+	Wx::Event::EVT_BUTTON( $btnSet, -1, sub { $self->__QuickNotesClick(@_)} );
+	
+
+	# BUILD STRUCTURE OF LAYOUT
+	$szRow1->Add( $noteTextTxt,    1, &Wx::wxEXPAND | &Wx::wxALL, 0 );
+	$szRow1->Add( $quickNoteTxt, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
+	$szRow1->Add( 10,10, 0);
+	$szRow1->Add( $btnSet,    0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
+	 
+
+	$szStatBox->Add( $szRow1, 0, &Wx::wxEXPAND  );
+	$szStatBox->Add( $richTxt, 0 , &Wx::wxEXPAND );
+	 
+	# save control references
+	 $self->{"richTxt"} = $richTxt;
+
+	return $szStatBox;
+}
+
 # Set layout for Quick set box
 sub __SetLayoutDimension {
 	my $self   = shift;
@@ -296,6 +354,14 @@ sub __SetLayoutDimension {
 	$self->{"nasobnostValTxt"}      = $nasobnostValTxt;
 
 	return $szStatBox;
+}
+
+sub __QuickNotesClick{
+	my $self = shift;
+
+	
+	$self->{'quickNoteFrm'}->{"mainFrm"}->CentreOnParent(&Wx::wxBOTH);
+	$self->{'quickNoteFrm'}->{"mainFrm"}->Show();
 }
 
 # Control handlers
@@ -529,6 +595,24 @@ sub GetNotes {
 	
 	return $notes;
 }
+
+
+sub SetQuickNotes {
+	my $self  = shift;
+	my $value = shift;
+ 
+	$self->{"quickNoteFrm"}->SetNotesData($value);
+
+}
+
+sub GetQuickNotes {
+	my $self = shift;
+	
+	return $self->{"quickNoteFrm"}->GetNotesData();
+ 
+}
+
+
 
 sub SetDatacode {
 	my $self  = shift;

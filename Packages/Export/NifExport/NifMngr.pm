@@ -13,6 +13,7 @@ use Class::Interface;
 #3th party library
 use strict;
 use warnings;
+ 
 
 #local library
 
@@ -168,12 +169,16 @@ sub __Save {
 
 	my $tmp = EnumsPaths->Client_INCAMTMPOTHER.$self->{"jobId"}."nif";
 
+	if ( -e $tmp ) {
+		unlink($tmp);
+	}
+
 	my $nifFile;
 	if ( open( $nifFile, "+>", $tmp ) ) {
 
 		$saveSucc = 1;
 		
-		use Encode;
+		#use Encode;
 		
 #		my @nif2 = ();
 #		

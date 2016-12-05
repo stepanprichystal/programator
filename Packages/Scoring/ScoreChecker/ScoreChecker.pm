@@ -183,7 +183,7 @@ sub GetReduceDist {
 	my $dist         = undef;
 	my $standardDist = 4000;
 	my $minPcbDist   = 4500;
-	my $passDist     = 11000;    # distance, which score machine pass end of line
+	my $passDist     = 10000;    # distance, which score machine pass end of line 10 mm
 
 	my $gap = $self->{"pcbPlace"}->__GetMinPcbGap();
 	 

@@ -186,6 +186,9 @@ sub ReadAsString {
 
 	my $f = FileHelper->Open($path);
 	$str = join( "", <$f> );
+	
+	 $str =~ s/^\xEF\xBB\xBF//; # remove utf BOM from start of file
+	
 	FileHelper->Close($f);
 
 	return $str;

@@ -232,8 +232,9 @@ sub __ThreadEnded {
 			my $thrObj = threads->object( @{ $self->{"threads"} }[$i]->{"thrId"} );
 
 			if ( defined $thrObj ) {
-				$thrObj->detach();
-				print "\ndetach\n";
+				print STDERR "\ndetach START\n";
+				#$thrObj->detach(); # mozna zpusobuje free wrong pool
+				print STDERR "\ndetach\n";
 			}
 
 			splice @{ $self->{"threads"} }, $i, 1;    #delete thread from list

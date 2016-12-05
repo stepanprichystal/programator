@@ -43,13 +43,15 @@ sub Build {
 	#poznamka
 	if ( $self->_IsRequire("poznamka") ) {
 
-		$section->AddRow( "poznamka", $nifData{"poznamka"} );
+		# add quick notes too
+ 
+		$section->AddRow( "poznamka", $self->__PrepareNote() );
 	}
 
 	# datacode
 	if ( $self->_IsRequire("datacode") ) {
 
-		$section->AddRow( "datacode", $nifData{"datacode"});
+		$section->AddRow( "datacode", $nifData{"datacode"} );
 	}
 
 	#poznamka
@@ -97,7 +99,37 @@ sub Build {
 
 }
 
+sub __PrepareNote {
+	my $self = shift;
 
+	my %nifData = %{ $self->{"nifData"} };
+
+	my $note  = "";
+	my @notes = ();
+
+	# add customer note
+	if ( $nifData{"poznamka"} ) {
+
+		my @arr = split( ";", $nifData{"poznamka"} );
+
+		push( @notes, @arr );
+	}
+
+	# add quick notes too
+	if ( $nifData{"quickNotes"} ) {
+
+		my @arr = @{ $nifData{"quickNotes"} };
+		
+		@arr = map {$_->{"text"} } @arr;
+
+		push( @notes, @arr );
+	}
+
+	$note = join( ";", @notes);
+
+	return $note;
+
+}
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

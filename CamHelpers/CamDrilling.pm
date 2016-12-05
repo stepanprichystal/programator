@@ -461,8 +461,7 @@ sub GetStagesCnt {
 	return $maxStage;
 }
 
-# For given layer (if is NC layer) return number of stages
-# Search in given layer and look for drill_stage attribute
+# Add max and min tool to each layer
 sub AddHistogramValues {
 	my $self   = shift;
 	my $inCAM  = shift;

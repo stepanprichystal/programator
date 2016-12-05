@@ -16,6 +16,7 @@ use aliased 'CamHelpers::CamLayer';
 use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'CamHelpers::CamHelper';
 use aliased 'Programs::Exporter::ExportChecker::Groups::NifExport::Presenter::NifHelper';
+use aliased 'Packages::Drilling::DrillChecking::LayerCheck';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -40,10 +41,27 @@ sub OnCheckGroupData {
 	my $jobId     = $dataMngr->{"jobId"};
 	my $stepName  = "panel";
 
+	my $exportSingle = $groupData->GetExportSingle();
+	my $pltLayers    = $groupData->GetPltLayers();
+	my $npltLayers   = $groupData->GetNPltLayers();
 
- 
+	# Check inf export single and no layers selected
+	if ($exportSingle) {
+
+		if ( scalar( @{$pltLayers} ) + scalar( @{$npltLayers} ) == 0 ) {
+
+			$dataMngr->_AddErrorResult( "Export single layers", "No single layers was selected." );
+		}
+	}
+
+	# Checking NC layers
+	my $mess = "";
+
+	unless ( LayerCheck->CheckNCLayers( $inCAM, $jobId, \$mess ) ) {
+		$dataMngr->_AddErrorResult( "Checking NC layer", $mess );
+	}
+
 }
- 
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

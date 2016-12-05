@@ -117,8 +117,8 @@ sub __SetLayout {
 	my $film2Frm = FilmForm->new( $self->{"parent"}, $self->{"filmRuleSet2"}, $self->{"rowHeight"} );
 
 	# SET EVENTS
-	Wx::Event::EVT_COMBOBOX( $mirrorChb, -1, sub { $self->__OnRowChanged(@_) } );
-	Wx::Event::EVT_CHECKBOX( $polarityCb, -1, sub { $self->__OnRowChanged(@_) } );
+	Wx::Event::EVT_CHECKBOX( $mirrorChb, -1, sub { $self->__OnRowChanged(@_) } );
+	Wx::Event::EVT_COMBOBOX( $polarityCb, -1, sub { $self->__OnRowChanged(@_) } );
 	Wx::Event::EVT_TEXT( $compTxt, -1, sub { $self->__OnRowChanged(@_) } );
 
 	$self->_AddCell($layerColor);

@@ -16,6 +16,7 @@ use Wx;
 use Widgets::Style;
 use aliased 'Packages::Events::Event';
 use aliased 'Enums::EnumsGeneral';
+
 #use aliased 'CamHelpers::CamLayer';
 #use aliased 'CamHelpers::CamDrilling';
 #use aliased 'CamHelpers::CamStep';
@@ -50,28 +51,6 @@ sub new {
 	return $self;
 }
 
-sub __OnExportPasteChange {
-	my $self = shift;
-
-	if ( $self->{"exportPasteChb"}->IsChecked() ) {
-
-		$self->{"stepCb"}->Enable();
-		$self->{"notOriChb"}->Enable();
-		$self->{"profileChb"}->Enable();
-		$self->{"zipFileChb"}->Enable();
-	}
-	else {
-
-		$self->{"stepCb"}->Disable();
-		$self->{"notOriChb"}->Disable();
-		$self->{"profileChb"}->Disable();
-		$self->{"zipFileChb"}->Disable();
-	}
-
-}
-
-
-
 # --------------------------------------------------------------
 # Handlers, which handle events from another units/groups
 # --------------------------------------------------------------
@@ -81,7 +60,6 @@ sub PlotRowSettChanged {
 	my $plotRow = shift;
 
 	my %lInfo = $plotRow->GetLayerValues();
-
 
 	foreach my $l ( @{ $self->{"layers"} } ) {
 
@@ -104,6 +82,27 @@ sub PlotRowSettChanged {
 			}
 		}
 
+	}
+}
+
+sub ChangeTentingHandler {
+	my $self      = shift;
+	my $tentingCS = shift;
+
+	foreach my $l ( @{ $self->{"layers"} } ) {
+
+		# Set etching type for signal layers by polarity
+		if ( $l->{"name"} =~ /^[cs]$/) {
+			# Set polarity by etching type
+			if ($tentingCS) {
+				$l->{"etchingType"} = EnumsGeneral->Etching_TENTING;
+				$l->{"polarity"}    = "negative";
+			}
+			else {
+				$l->{"etchingType"} = EnumsGeneral->Etching_PATTERN;
+				$l->{"polarity"}    = "positive";
+			}
+		}
 	}
 }
 

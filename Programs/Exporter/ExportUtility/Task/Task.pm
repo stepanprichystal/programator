@@ -28,6 +28,7 @@ use aliased 'Programs::Exporter::ExportUtility::Unit::Units';
 use aliased 'Programs::Exporter::ExportUtility::ExportUtility::ExportStatus::ExportStatus';
 use aliased 'Programs::Exporter::ExportUtility::ExportResultMngr';
 use aliased 'Connectors::HeliosConnector::HegMethods';
+
 #-------------------------------------------------------------------------------------------#
 #  Package methods, requested by IUnit interface
 #-------------------------------------------------------------------------------------------#
@@ -309,16 +310,29 @@ sub SetToProduceResult {
 sub SentToProduce {
 	my $self = shift;
 
-	$self->{"exportStatus"}->DeleteStatusFile();
-	
 	# set state HOTOVO-zadat
-	
-	my $orderRef = HegMethods->GetPcbOrderNumber($self->{"jobId"});
-	my $orderNum = $self->{"jobId"}."-".$orderRef;
-	my $test = HegMethods->UpdatePcbOrderState($orderNum, "HOTOVO-zadat");
-	
 
-	$self->{"sentToProduce"} = 1;
+	eval {
+		my $orderRef = HegMethods->GetPcbOrderNumber( $self->{"jobId"} );
+		my $orderNum = $self->{"jobId"} . "-" . $orderRef;
+		
+		my $succ     = HegMethods->UpdatePcbOrderState( $orderNum, "HOTOVO-zadat" );
+		
+	 
+		$self->{"exportStatus"}->DeleteStatusFile();
+		$self->{"sentToProduce"} = 1;
+	};
+
+	if ( my $e = $@ ) {
+
+		 # set status hotovo-yadat fail
+		 my $toProduceMngr = $self->{"produceResultMngr"};
+		 my $item = $toProduceMngr->GetNewItem( "Set state HOTOVO-zadat", EnumsGeneral->ResultType_FAIL );
+
+		$item->AddError("Set state HOTOVO-zadat failed, try it again.");
+		$toProduceMngr->AddItem($item);
+
+	}
 
 }
 

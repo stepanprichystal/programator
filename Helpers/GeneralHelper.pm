@@ -238,7 +238,7 @@ sub GetLastInCAMVersion {
 	my $self     = shift;
  
 
-	my $inCAMPath = EnumsPaths->Client_INCAMVERSION;
+	my $inCAMPath = EnumsPaths->InCAM_serverDisc;
 	my @version   = ();
 
 	opendir( DIR, $inCAMPath ) or die $!;
@@ -250,10 +250,9 @@ sub GetLastInCAMVersion {
 		if ( $file =~ m/^\./ ) {
 			next;
 		}
+ 
 
-		$file =~ s/\.pm//;
-
-		if ( $file =~ /^\d\.(\d)+SP/ ) {
+		if ( $file =~ /^\d\.(\d)+(SP)?/ ) {
 			push( @version, $file );
 		}
 	}
@@ -273,11 +272,11 @@ sub GetLastInCAMVersion {
 
 		my $path = $inCAMPath . $maxNumName."\\bin\\InCAM.exe";
 
-		unless( -e $path){
-			
-			# try path with folder release_64
-			$path = $inCAMPath . $maxNumName."\\release_64\\bin\\InCAM.exe";
-		}
+#		unless( -e $path){
+#			
+#			# try path with folder release_64
+#			$path = $inCAMPath . $maxNumName."\\release_64\\bin\\InCAM.exe";
+#		}
 
 		return $path
 	}
@@ -294,7 +293,7 @@ sub GetLastInCAMVersion {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	
-	#print Helpers::GeneralHelper->GetLastInCAMVersion();
+	print Helpers::GeneralHelper->GetLastInCAMVersion();
 	
 }
 1;

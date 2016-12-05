@@ -74,29 +74,48 @@ sub SetProgress {
 # Set export indicators
 
 sub SetExportResult {
-	my $self    = shift;
-	my $result  = shift;
-	my $aborted = shift;
+	my $self             = shift;
+	my $result           = shift;	 # tell if there was error during export
+
+	my $aborted          = shift;
+	my $jobSentToProduce = shift;    # tell if job was sent to produce
 
 	my $value     = $self->{"exportedData"}->GetToProduce();
-	my $toProduce = $self->{"exportedData"}->GetToProduce();
+	my $toProduce = $self->{"exportedData"}->GetToProduce();    # tell if user check sent to produce chcekbox
 
-	if ( $toProduce && $result eq EnumsGeneral->ResultType_OK ) {
+	if ( $result eq EnumsGeneral->ResultType_FAIL ) {
+
 		$self->{"btnProduce"}->Disable();
 
 	}
-	elsif ( $toProduce && $result eq EnumsGeneral->ResultType_FAIL ) {
+	else {
 
-		$self->{"btnProduce"}->Enable();
-	}
-	elsif ( !$toProduce && $result eq EnumsGeneral->ResultType_OK ) {
+		if ($jobSentToProduce) {
 
-		$self->{"btnProduce"}->Enable();
-	}
-	elsif ( !$toProduce && $result eq EnumsGeneral->ResultType_FAIL ) {
+			$self->{"btnProduce"}->Disable();
+		}
+		else {
+			$self->{"btnProduce"}->Enable();
+		}
 
-		$self->{"btnProduce"}->Enable();
 	}
+
+	#	if ( $toProduce && $result eq EnumsGeneral->ResultType_OK ) {
+	#		$self->{"btnProduce"}->Disable();
+	#
+	#	}
+	#	elsif ( $toProduce && $result eq EnumsGeneral->ResultType_FAIL ) {
+	#
+	#		$self->{"btnProduce"}->Enable();
+	#	}
+	#	elsif ( !$toProduce && $result eq EnumsGeneral->ResultType_OK ) {
+	#
+	#		$self->{"btnProduce"}->Enable();
+	#	}
+	#	elsif ( !$toProduce && $result eq EnumsGeneral->ResultType_FAIL ) {
+	#
+	#		$self->{"btnProduce"}->Enable();
+	#	}
 
 	$self->{"sentToProduceChb"}->SetValue($value);
 
@@ -164,7 +183,7 @@ sub SetStatus {
 sub SetItemOrder {
 	my $self = shift;
 
-	my $pos = ($self->GetPosition() +1 ). ")";
+	my $pos = ( $self->GetPosition() + 1 ) . ")";
 
 	$self->{"orderTxt"}->SetLabel($pos);
 }
@@ -456,7 +475,6 @@ sub __GetDelimiter {
 
 	my $pnl = Wx::Panel->new( $self, -1, [ -1, -1 ], [ 2, 2 ] );
 	$pnl->SetBackgroundColour( Wx::Colour->new( 150, 150, 150 ) );
-
 
 	return $pnl;
 }

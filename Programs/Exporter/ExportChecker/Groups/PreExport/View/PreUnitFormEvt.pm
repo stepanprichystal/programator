@@ -28,8 +28,8 @@ sub new {
 	my $wrapper = $self->{"wrapper"};
 
 	# Provided handlers
-#	my $ref = $wrapper->can('ChangeTentingHandler');
-#	$self->_AddHandler( $ref , Enums->Event_nif_tenting );
+	my $ref = $wrapper->can('ChangeTentingHandler');
+	$self->_AddHandler( $ref , Enums->Event_nif_tenting );
 
 	# Provided handlers
 	my $ref2 = $wrapper->can('PlotRowSettChanged');

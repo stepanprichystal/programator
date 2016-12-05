@@ -47,6 +47,9 @@ sub new {
 	$self->{"signalLayers"} = undef;
 	$self->{"scoreChecker"} = undef;
 	$self->{"materialKind"} = undef;
+	$self->{"pcbTypeHelios"} = undef; # type by helios oboustranny, neplat etc..
+	$self->{"finalPcbThick"} = undef;
+	
 	
 
 	$self->__InitDefault();
@@ -67,6 +70,7 @@ sub GetSignalLayers {
 	return  @{$self->{"signalLayers"}};	
 }
  
+
 
 sub GetPcbClass {
 	my $self      = shift;
@@ -252,6 +256,14 @@ sub GetScoreChecker{
  
 }
 
+
+sub GetTypeOfPcb{
+	my $self      = shift;
+	
+	return $self->{"pcbTypeHelios"};
+}
+
+
 sub GetMaterialKind{
 	my $self      = shift;
 	
@@ -381,6 +393,22 @@ sub SetDefaultLayersSettings{
 	
 }
 
+sub GetStackup{
+	my $self      = shift;
+	
+	return $self->{"stackup"};
+}
+
+
+#sub GetFinalPcbThick{
+#	my $self      = shift;
+#	
+#	return $self->{"finalPcbThick"};
+#}
+
+
+
+
 sub __InitDefault {
 	my $self = shift;
 
@@ -413,6 +441,9 @@ sub __InitDefault {
 	
 	$self->{"materialKind"} = HegMethods->GetMaterialKind($self->{"jobId"});
 	
+	$self->{"pcbTypeHelios"} = HegMethods->GetTypeOfPcb($self->{"jobId"} eq 'Neplatovany');
+	
+	#$self->{"finalPcbThick"} = JobHelper->GetFinalPcbThick($self->{"jobId"});
 
 }
 

@@ -31,6 +31,7 @@ use constant {
 
 
 use constant {
+	InCAM_serverDisc => "y:\\", 
     InCAM_server => "y:\\server\\", 
     InCAM_users => "y:\\server\\users\\",
     InCAM_hooks => "y:\\server\\site_data\\hooks\\",
