@@ -135,6 +135,12 @@ sub OnCheckGroupData {
 		# a) test id material in helios, match material in stackup
 		my $stackKind = $defaultInfo->GetStackup()->GetStackupType();
 
+		#exception DE 104 eq FR4
+		if($stackKind =~ /DE 104/i){
+			$stackKind = "FR4";
+		}
+
+
 		unless ( $materialKind =~ /$stackKind/i ) {
 
 			$dataMngr->_AddErrorResult( "Stackup material",
@@ -142,11 +148,15 @@ sub OnCheckGroupData {
 		}
 
 		# b) test if created stackup match thickness in helios +-5%
-		my $stackThick = $defaultInfo->GetStackup()->GetFinalThick();
+		my $stackThick = $defaultInfo->GetStackup()->GetFinalThick()/1000;
 
 		unless ( $pcbThickHelios * 0.95 < $stackThick && $pcbThickHelios * 1.05 > $stackThick ) {
+			
+			$stackThick = sprintf("%.2f", $stackThick);
+			$pcbThickHelios = sprintf("%.2f", $pcbThickHelios);
+			
 			$dataMngr->_AddErrorResult( "Stackup thickness",
-										"Stackup thickness ($stackThick) is different from thickness in Helios ($pcbThickHelios)." );
+										"Stackup thickness ($stackThick) isn't match witch thickness in Helios ($pcbThickHelios) +-5%." );
 
 		}
 

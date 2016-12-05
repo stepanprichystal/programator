@@ -1,6 +1,8 @@
 
 #-------------------------------------------------------------------------------------------#
 # Description: Class provide function for loading / saving tif file
+# TIF - technical info file - contain onformation important for produce, for technical list,
+# another support script use this file
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Packages::TifFile::TifFile::TifFile;

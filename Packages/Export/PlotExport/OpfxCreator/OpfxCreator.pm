@@ -267,8 +267,12 @@ sub __OutputPlotSets {
 					 "step"        => $plotPanel,
 					 "layer"       => $outputL,
 					 "device_type" => "LP7008",
-					 "polarity"    => $polarity
+					 "polarity"    => $polarity,
+					 "xstretch"    => "100.013", # magic constant, given historicaly
+					 "ystretch"    => "100.013"
 		);
+ 
+
 
 		$inCAM->COM( "output_device_select_reset", "type" => "format", "name" => "LP7008" );    #toto tady musi byt, nevim proc
 

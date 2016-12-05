@@ -53,7 +53,15 @@ sub OnPrepareGroupData {
 
 	my $defaultInfo = $dataMngr->GetDefaultInfo();
 
-	my @layers = $self->__GetLayers($defaultInfo);
+ 
+	# 1) Prepare default layer settings
+	my @baseLayers = $defaultInfo->GetBoardBaseLayers();
+	$defaultInfo->SetDefaultLayersSettings(\@baseLayers);
+	my @layers = $self->__GetFinalLayers( \@baseLayers );
+	
+	$groupData->SetLayers( \@layers );
+	
+	# 2) Prepare paste settings
 	my %pasteInfo = $self->__GetPasteInfo( $inCAM, $jobId );
 
 	if ( scalar(@layers) ) {
@@ -63,103 +71,127 @@ sub OnPrepareGroupData {
 		$groupData->SetExportLayers(0);
 	}
 
-	$groupData->SetLayers( \@layers );
 	$groupData->SetPasteInfo( \%pasteInfo );
 
 	return $groupData;
 }
 
-sub __GetLayers {
-	my $self        = shift;
-	my $defaultInfo = shift;
 
-	my @baseLayers = $defaultInfo->GetBoardBaseLayers();
 
-	my @layers = ();
+sub __GetFinalLayers {
+	my $self   = shift;
+	my @layers = @{ shift(@_) };
 
-	foreach my $l (@baseLayers) {
+	my @prepared = ();
 
-		my %info = ();
+	foreach my $l (@layers) {
 
-		$info{"name"} = $l->{"gROWname"};
+		my %lInfo = ();
+
+		$lInfo{"plot"}     = 1;
+		$lInfo{"name"}     = $l->{"gROWname"};
+		$lInfo{"polarity"} = $l->{"polarity"};
+		$lInfo{"mirror"}   = $l->{"mirror"};
+		$lInfo{"comp"}     = $l->{"comp"};
 		
-		#set compensation
-		
-		if ( $l->{"gROWlayer_type"} eq "signal" || $l->{"gROWlayer_type"} eq "power_ground" || $l->{"gROWlayer_type"} eq "mixed" ) {
-
-			$info{"comp"} = $defaultInfo->GetCompByLayer($l->{"gROWname"});
-		}
-		else {
-
-			$info{"comp"} = 0;
-		}
- 
- 
-		# set polarity
-
-		if ( $l->{"gROWlayer_type"} eq "silk_screen" ) {
-
-			$info{"polarity"} = "negative";
-
-		}
-		elsif ( $l->{"gROWlayer_type"} eq "solder_mask" ) {
-
-			$info{"polarity"} = "positive";
-
-		}
-		elsif ( $l->{"gROWlayer_type"} eq "signal" || $l->{"gROWlayer_type"} eq "power_ground" || $l->{"gROWlayer_type"} eq "mixed" ) {
-
-			my $etching = $defaultInfo->GetEtchType( $l->{"gROWname"} );
-
-			if ( $etching eq EnumsGeneral->Etching_PATTERN ) {
-				$info{"polarity"} = "positive";
-			}
-			elsif ( $etching eq EnumsGeneral->Etching_TENTING ) {
-				$info{"polarity"} = "negative";
-			}
-		}
-		else {
-
-			$info{"polarity"} = "positive";
-		}
-
-		# Set mirror
-
-		# whatever with "c" is mirrored
-		if ( $l->{"gROWname"} =~ /^[pm]*c$/i ) {
-
-			$info{"mirror"} = 1;
-
-		}
-
-		# whatever with "s" is not mirrored
-		elsif ( $l->{"gROWname"} =~ /^[pm]*s$/i ) {
-
-			$info{"mirror"} = 0;
-
-		}
-
-		# inner layers decide by stackup
-		elsif ( $l->{"gROWname"} =~ /^v\d+$/i ) {
-
-			my $side = $defaultInfo->GetSideByLayer( $l->{"gROWname"} );
-
-			if ( $side eq "top" ) {
-
-				$info{"mirror"} = 1;
-			}
-			else {
-
-				$info{"mirror"} = 0;
-			}
-		}
-
-
-		push( @layers, \%info );
+		push(@prepared, \%lInfo);
 	}
+	
+	return @prepared;
 
-	return @layers;
 }
+#
+#sub __GetLayers {
+#	my $self        = shift;
+#	my $defaultInfo = shift;
+#
+#	my @baseLayers = $defaultInfo->GetBoardBaseLayers();
+#
+#	my @layers = ();
+#
+#	foreach my $l (@baseLayers) {
+#
+#		my %info = ();
+#
+#		$info{"name"} = $l->{"gROWname"};
+#		
+#		#set compensation
+#		
+#		if ( $l->{"gROWlayer_type"} eq "signal" || $l->{"gROWlayer_type"} eq "power_ground" || $l->{"gROWlayer_type"} eq "mixed" ) {
+#
+#			$info{"comp"} = $defaultInfo->GetCompByLayer($l->{"gROWname"});
+#		}
+#		else {
+#
+#			$info{"comp"} = 0;
+#		}
+# 
+# 
+#		# set polarity
+#
+#		if ( $l->{"gROWlayer_type"} eq "silk_screen" ) {
+#
+#			$info{"polarity"} = "negative";
+#
+#		}
+#		elsif ( $l->{"gROWlayer_type"} eq "solder_mask" ) {
+#
+#			$info{"polarity"} = "positive";
+#
+#		}
+#		elsif ( $l->{"gROWlayer_type"} eq "signal" || $l->{"gROWlayer_type"} eq "power_ground" || $l->{"gROWlayer_type"} eq "mixed" ) {
+#
+#			my $etching = $defaultInfo->GetEtchType( $l->{"gROWname"} );
+#
+#			if ( $etching eq EnumsGeneral->Etching_PATTERN ) {
+#				$info{"polarity"} = "positive";
+#			}
+#			elsif ( $etching eq EnumsGeneral->Etching_TENTING ) {
+#				$info{"polarity"} = "negative";
+#			}
+#		}
+#		else {
+#
+#			$info{"polarity"} = "positive";
+#		}
+#
+#		# Set mirror
+#
+#		# whatever with "c" is mirrored
+#		if ( $l->{"gROWname"} =~ /^[pm]*c$/i ) {
+#
+#			$info{"mirror"} = 1;
+#
+#		}
+#
+#		# whatever with "s" is not mirrored
+#		elsif ( $l->{"gROWname"} =~ /^[pm]*s$/i ) {
+#
+#			$info{"mirror"} = 0;
+#
+#		}
+#
+#		# inner layers decide by stackup
+#		elsif ( $l->{"gROWname"} =~ /^v\d+$/i ) {
+#
+#			my $side = $defaultInfo->GetSideByLayer( $l->{"gROWname"} );
+#
+#			if ( $side eq "top" ) {
+#
+#				$info{"mirror"} = 1;
+#			}
+#			else {
+#
+#				$info{"mirror"} = 0;
+#			}
+#		}
+#
+#
+#		push( @layers, \%info );
+#	}
+#
+#	return @layers;
+#}
 
 sub __GetPasteInfo {
 	my $self      = shift;
