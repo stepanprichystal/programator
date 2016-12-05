@@ -45,7 +45,11 @@ sub Run {
 
 	$export->{"onItemResult"}->Add( sub { Test(@_) } );
 
+	 $inCAM->VOF();
+	
 	$export->Run();
+	
+	$inCAM->VOF();
 
 	print "\n========================== E X P O R T: " . UnitEnums->UnitId_AOI . " ===============================\n";
 	print $resultMess;

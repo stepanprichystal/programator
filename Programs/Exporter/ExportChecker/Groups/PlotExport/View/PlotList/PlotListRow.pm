@@ -70,6 +70,7 @@ sub SetPolarity {
 	my $val  = shift;
 
 	$self->{"polarityCb"}->SetValue($val);
+	$self->__OnRowChanged();
 
 }
 
@@ -78,6 +79,7 @@ sub SetMirror {
 	my $val  = shift;
 
 	$self->{"mirrorChb"}->SetValue($val);
+	$self->__OnRowChanged();
 
 }
 
@@ -86,6 +88,7 @@ sub SetComp {
 	my $val  = shift;
 
 	$self->{"compTxt"}->SetValue($val);
+	$self->__OnRowChanged();
 }
 
 sub __SetLayout {

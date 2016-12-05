@@ -21,7 +21,7 @@ use warnings;
 #local library
 
 use aliased 'Programs::Exporter::ExportChecker::Groups::PreExport::View::PreUnitFormEvt';
-
+use aliased 'Programs::Exporter::ExportChecker::Groups::PreExport::View::PreUnitForm';
 use aliased 'Programs::Exporter::ExportChecker::Groups::GroupDataMngr';
 use aliased 'Programs::Exporter::ExportChecker::Groups::PreExport::Model::PreCheckData';
 use aliased 'Programs::Exporter::ExportChecker::Groups::PreExport::Model::PrePrepareData';
@@ -44,7 +44,7 @@ sub new {
 
 	#uique key within all units
 	$self->{"unitId"} = UnitEnums->UnitId_PRE;
-	
+
 	# GUI exist
 	$self->{"formLess"} = 1;
 
@@ -54,8 +54,6 @@ sub new {
 	my $exportData  = PreExportData->new();
 
 	$self->{"dataMngr"} = GroupDataMngr->new( $self->{"jobId"}, $prepareData, $checkData, $exportData );
-	
-
 
 	return $self;    # Return the reference to the hash.
 }
@@ -77,15 +75,19 @@ sub InitForm {
 
 	$self->{"groupWrapper"} = $groupWrapper;
 
-	unless($self->IsFormLess()){
-			
-			my $parent = $groupWrapper->GetParentForGroup();
-			$self->{"form"} = undef;
+	unless ( $self->IsFormLess() ) {
+
+		my $parent = $groupWrapper->GetParentForGroup();
+		$self->{"form"} = undef
+	
+	}else{
+		
+		# init fake/empty view class
+		$self->{"form"} = PreUnitForm->new( $inCAM, $self->{"jobId"} );
 	}
 
-	
 	# init base class with event class
-	$self->{"eventClass"}  = PreUnitFormEvt->new($self);
+	$self->{"eventClass"} = PreUnitFormEvt->new( $self->{"form"} );
 
 	$self->_SetHandlers();
 
@@ -94,11 +96,11 @@ sub InitForm {
 sub RefreshGUI {
 	my $self = shift;
 
-	#my $groupData = $self->{"dataMngr"}->GetGroupData();
+	my $groupData = $self->{"dataMngr"}->GetGroupData();
 
 	#refresh group form
 	#$self->{"form"}->SetSendToPlotter( $groupData->GetSendToPlotter() );
-	#$self->{"form"}->SetLayers( $groupData->GetLayers() );
+	$self->{"form"}->SetSignalLayers( $groupData->GetSignalLayers() );
 
 	#refresh wrapper
 	#$self->_RefreshWrapper();
@@ -108,46 +110,26 @@ sub GetGroupData {
 
 	my $self = shift;
 
-	#my $frm = $self->{"form"};
-	my $groupData = $self->{"dataMngr"}->GetGroupData();
+	my $frm = $self->{"form"};
 
-	# Check changes during setting of export
+	my $groupData;
 
-	if ( defined $self->{"tentingCS"} ) {
+	#if form is init/showed to user, return group data edited by form
+	#else return default group data, not processed by form
 
-		my $etchType;
-		if ( $self->{"tentingCS"} == 1 ) {
-			$etchType = EnumsGeneral->Etching_TENTING;
-		}
-		else {
-			$etchType = EnumsGeneral->Etching_PATTERN;
-		}
+	if ($frm) {
+		$groupData = $self->{"dataMngr"}->GetGroupData();
+ 
+		$groupData->SetSignalLayers( $frm->GetSignalLayers() );
+		 
 
-		my $layers = $groupData->GetSignalLayers();
-		foreach my $l (@{$layers}) {
+	}
+	else {
 
-			if ( $l->{"name"} =~ /^[cs]$/ ) {
-				$l->{"etchingType"} = $etchType;
-			}
-		}
-
-		$groupData->SetSignalLayers($layers );
+		$groupData = $self->{"dataMngr"}->GetGroupData();
 	}
 
 	return $groupData;
-}
-
-# --------------------------------------------------------------
-# Handlers, which handle events from another units/groups
-# --------------------------------------------------------------
-
-sub ChangeTentingHandler {
-	my $self      = shift;
-	my $tentingCS = shift;
-
-	# save new settings to object
-
-	$self->{"tentingCS"} = $tentingCS;
 
 }
 

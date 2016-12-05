@@ -894,7 +894,7 @@ sub parse {
 	my ($request) = shift;
 
 	# TODO smazat GUID
-	my $csh_file = "$ENV{GENESIS_DIR}/tmp/info_csh." . $$ . $self->{"incamGUID"};
+	my $csh_file = "$ENV{INCAM_TMP}/info_csh." . $$ . $self->{"incamGUID"};
 
 	#my $csh_file  = "$ENV{GENESIS_DIR}/tmp/info_csh.$$abc";
 	$request =~ s/\$csh_file/$csh_file/;
@@ -995,7 +995,7 @@ sub INFO {
 	else {
 
 		# TODO smazat GUID
-		my $csh_file = "$ENV{GENESIS_DIR}/tmp/info_csh." . $$ . $self->{"incamGUID"};
+		my $csh_file = "$ENV{INCAM_TMP}/info_csh." . $$ . $self->{"incamGUID"};
 
 		#my $csh_file = "$ENV{GENESIS_DIR}/tmp/info_csh.$$abc";
 		$info_com =~ s/\$csh_file/$csh_file/;

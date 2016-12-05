@@ -58,119 +58,118 @@ sub OnPrepareGroupData {
 	
 	# Prepare default layer settings
 	my @baseLayers = CamJob->GetBoardBaseLayers( $inCAM, $jobId );
-	$self->__SetDefaultLayers(\@baseLayers, $defaultInfo);
+	
+	$defaultInfo->SetDefaultLayersSettings(\@baseLayers);
+	
+	#$self->__SetDefaultLayers(\@baseLayers, $defaultInfo);
 
 	my @layers = $self->__GetFinalLayers( \@baseLayers );
-
  
-
 	$groupData->SetSendToPlotter(0);
 	$groupData->SetLayers(\@layers);
-	 
  
-
 	return $groupData;
 }
 
 
-
-sub __SetDefaultLayers{
-	my $self   = shift;
-	my $layers = shift;	
-	my $defaultInfo = shift;
- 
-
-	# Set polarity of layers
-	foreach my $l (@{$layers}) {
-
-		if ( $l->{"gROWlayer_type"} eq "silk_screen" ) {
-
-			$l->{"polarity"} = "negative";
-
-		}
-		elsif ( $l->{"gROWlayer_type"} eq "solder_mask" ) {
-
-			$l->{"polarity"} = "positive";
-
-		}
-		elsif ( $l->{"gROWlayer_type"} eq "signal" || $l->{"gROWlayer_type"} eq "power_ground" || $l->{"gROWlayer_type"} eq "mixed" ) {
-
-			my $etching = $defaultInfo->GetEtchType( $l->{"gROWname"} );
-
-			if ( $etching eq EnumsGeneral->Etching_PATTERN ) {
-				$l->{"polarity"} = "positive";
-			}
-			elsif ( $etching eq EnumsGeneral->Etching_TENTING ) {
-				$l->{"polarity"} = "negative";
-			}
-		}
-		else {
-
-			$l->{"polarity"} = "positive";
-
-		}
-	}
-
-	# Set mirror of layers
-	foreach my $l (@{$layers}) {
-
-		# whatever with "c" is mirrored
-		if ( $l->{"gROWname"} =~ /^[pm]*c$/i ) {
-
-			$l->{"mirror"} = 1;
-
-		}
-
-		# whatever with "s" is not mirrored
-		elsif ( $l->{"gROWname"} =~ /^[pm]*s$/i ) {
-
-			$l->{"mirror"} = 0;
-
-		}
-
-		# inner layers decide by stackup
-		elsif ( $l->{"gROWname"} =~ /^v\d+$/i ) {
-
-			my $side = $defaultInfo->GetSideByLayer( $l->{"gROWname"} );
-
-			if ( $side eq "top" ) {
-
-				$l->{"mirror"} = 1;
-
-			}
-			else {
-
-				$l->{"mirror"} = 0;
-			}
-		}
-		# if layer end with c, mirror
-		elsif ( $l->{"gROWname"} =~ /c$/i ) {
-
-			$l->{"mirror"} = 1;
-
-		}# if layer end with s, mirror
-		elsif ( $l->{"gROWname"} =~ /s$/i ) {
-
-			$l->{"mirror"} = 0;
-
-		}
-	}
-
-	# Set compensation of signal layer
-	foreach my $l (@{$layers}) {
-
-		if ( $l->{"gROWlayer_type"} eq "signal" || $l->{"gROWlayer_type"} eq "power_ground" || $l->{"gROWlayer_type"} eq "mixed" ) {
-
-			$l->{"comp"} = $defaultInfo->GetCompByLayer($l->{"gROWname"});
-		}
-		else {
-
-			$l->{"comp"} = 0;
-
-		}
-	}
-	
-}
+#
+#sub __SetDefaultLayers{
+#	my $self   = shift;
+#	my $layers = shift;	
+#	my $defaultInfo = shift;
+# 
+#
+#	# Set polarity of layers
+#	foreach my $l (@{$layers}) {
+#
+#		if ( $l->{"gROWlayer_type"} eq "silk_screen" ) {
+#
+#			$l->{"polarity"} = "negative";
+#
+#		}
+#		elsif ( $l->{"gROWlayer_type"} eq "solder_mask" ) {
+#
+#			$l->{"polarity"} = "positive";
+#
+#		}
+#		elsif ( $l->{"gROWlayer_type"} eq "signal" || $l->{"gROWlayer_type"} eq "power_ground" || $l->{"gROWlayer_type"} eq "mixed" ) {
+#
+#			my $etching = $defaultInfo->GetEtchType( $l->{"gROWname"} );
+#
+#			if ( $etching eq EnumsGeneral->Etching_PATTERN ) {
+#				$l->{"polarity"} = "positive";
+#			}
+#			elsif ( $etching eq EnumsGeneral->Etching_TENTING ) {
+#				$l->{"polarity"} = "negative";
+#			}
+#		}
+#		else {
+#
+#			$l->{"polarity"} = "positive";
+#
+#		}
+#	}
+#
+#	# Set mirror of layers
+#	foreach my $l (@{$layers}) {
+#
+#		# whatever with "c" is mirrored
+#		if ( $l->{"gROWname"} =~ /^[pm]*c$/i ) {
+#
+#			$l->{"mirror"} = 1;
+#
+#		}
+#
+#		# whatever with "s" is not mirrored
+#		elsif ( $l->{"gROWname"} =~ /^[pm]*s$/i ) {
+#
+#			$l->{"mirror"} = 0;
+#
+#		}
+#
+#		# inner layers decide by stackup
+#		elsif ( $l->{"gROWname"} =~ /^v\d+$/i ) {
+#
+#			my $side = $defaultInfo->GetSideByLayer( $l->{"gROWname"} );
+#
+#			if ( $side eq "top" ) {
+#
+#				$l->{"mirror"} = 1;
+#
+#			}
+#			else {
+#
+#				$l->{"mirror"} = 0;
+#			}
+#		}
+#		# if layer end with c, mirror
+#		elsif ( $l->{"gROWname"} =~ /c$/i ) {
+#
+#			$l->{"mirror"} = 1;
+#
+#		}# if layer end with s, mirror
+#		elsif ( $l->{"gROWname"} =~ /s$/i ) {
+#
+#			$l->{"mirror"} = 0;
+#
+#		}
+#	}
+#
+#	# Set compensation of signal layer
+#	foreach my $l (@{$layers}) {
+#
+#		if ( $l->{"gROWlayer_type"} eq "signal" || $l->{"gROWlayer_type"} eq "power_ground" || $l->{"gROWlayer_type"} eq "mixed" ) {
+#
+#			$l->{"comp"} = $defaultInfo->GetCompByLayer($l->{"gROWname"});
+#		}
+#		else {
+#
+#			$l->{"comp"} = 0;
+#
+#		}
+#	}
+#	
+#}
 
 sub __GetFinalLayers {
 	my $self   = shift;

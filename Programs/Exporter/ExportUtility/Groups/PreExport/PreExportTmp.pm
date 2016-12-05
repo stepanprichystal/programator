@@ -74,15 +74,15 @@ sub Run {
 	
 	# misto pro upravu exportovanych dat
 	
-	my @layers = ();
+#	my @layers = ();
+#	
+#	my %lInfo = ();
+#	$lInfo{"name"}     = "v2";
+#	$lInfo{"etchingType"}  = "pattern";
+#	
+#	push(@layers, \%lInfo);
 	
-	my %lInfo = ();
-	$lInfo{"name"}     = "v2";
-	$lInfo{"etchingType"}  = "pattern";
-	
-	push(@layers, \%lInfo);
-	
-	$exportData->SetSignalLayers(\@layers);
+#	$exportData->SetSignalLayers(\@layers);
 	
 	 
 	

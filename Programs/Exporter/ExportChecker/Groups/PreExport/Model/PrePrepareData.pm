@@ -55,21 +55,18 @@ sub OnPrepareGroupData {
 	my $defaultInfo = $dataMngr->GetDefaultInfo();
 
 	# Prepare default layer settings
-	my @signalLayers = CamJob->GetSignalLayer( $inCAM, $jobId );
-
-	# Set polarity of layers
-	foreach my $l (@signalLayers ) {
-
-		$l->{"etchingType"} = $defaultInfo->GetEtchType( $l->{"gROWname"} );
-		 
-	}
-
+	my @signalLayers = $defaultInfo->GetSignalLayers();
+ 
+	$defaultInfo->SetDefaultLayersSettings(\@signalLayers);
+	
+ 
 	my @layers = $self->__GetFinalLayers( \@signalLayers );
-
+ 
 	$groupData->SetSignalLayers( \@layers );
 
 	return $groupData;
 }
+
 
 
 sub __GetFinalLayers {
@@ -82,15 +79,21 @@ sub __GetFinalLayers {
 
 		my %lInfo = ();
 
+		$lInfo{"plot"}     = 1;
 		$lInfo{"name"}     = $l->{"gROWname"};
+		$lInfo{"polarity"} = $l->{"polarity"};
 		$lInfo{"etchingType"} = $l->{"etchingType"};
-
-		push( @prepared, \%lInfo );
+		$lInfo{"mirror"}   = $l->{"mirror"};
+		$lInfo{"comp"}     = $l->{"comp"};
+		
+		push(@prepared, \%lInfo);
 	}
-
+	
 	return @prepared;
 
 }
+
+ 
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

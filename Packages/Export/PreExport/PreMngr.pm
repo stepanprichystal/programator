@@ -18,6 +18,7 @@ use aliased 'CamHelpers::CamJob';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'Packages::Export::PreExport::LayerInvert';
 use aliased 'CamHelpers::CamHelper';
+use aliased 'Packages::TifFile::TifSigLayers';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -54,7 +55,7 @@ sub Run {
 
 	# choose pattern schema. Add pattern frame from surface fill to layer, whci has attribut add_schema = yes
 	if ( $self->{"layerCnt"} > 2 ) {
-		$patternSch = 'pattern-vv+'; 
+		$patternSch = 'pattern-vv+';
 
 	}
 	elsif ( $self->{"layerCnt"} == 2 ) {
@@ -106,6 +107,19 @@ sub Run {
 
 		$self->_OnItemResult($resultItemSave);
 	}
+
+
+
+	# 2) Save info to tif file
+	my $file = TifSigLayers->new($self->{"jobId"});
+	my %layers = $file->GetSignalLayers();
+	
+	foreach my $l (@{$self->{"layers"}}){
+ 
+		$layers{$l->{"name"}} = $l;
+	}
+ 
+	$file->SetSignalLayers( \%layers );
 
 }
 

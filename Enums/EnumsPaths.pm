@@ -31,13 +31,13 @@ use constant {
 
 
 use constant {
-    InCAM_server => "\\\\incam\\incam_server\\", 
-    InCAM_users => "\\\\incam\\incam_server\\users\\",
-    InCAM_hooks => "\\\\incam\\incam_server\\site_data\\hooks\\",
-    InCAM_ncdMachines => "\\\\incam\\incam_server\\site_data\\hooks\\ncd\\config\\machines\\",
-    InCAM_ncrMachines => "\\\\incam\\incam_server\\site_data\\hooks\\ncr\\config\\machines\\",
-    InCAM_jobs => "\\\\incam\\incam_db\\incam\\jobs\\",
-    InCAM_jobsdb1 => "\\\\incam\\incam_db\\db1\\jobs\\",
+    InCAM_server => "y:\\server\\", 
+    InCAM_users => "y:\\server\\users\\",
+    InCAM_hooks => "y:\\server\\site_data\\hooks\\",
+    InCAM_ncdMachines => "y:\\server\\site_data\\hooks\\ncd\\config\\machines\\",
+    InCAM_ncrMachines => "y:\\server\\site_data\\hooks\\ncr\\config\\machines\\",
+    InCAM_jobs => "y:\\incam_db1\\incam\\jobs\\",
+    InCAM_jobsdb1 => "y:\\incam_db1\\db1\\jobs\\",
     
 
 };

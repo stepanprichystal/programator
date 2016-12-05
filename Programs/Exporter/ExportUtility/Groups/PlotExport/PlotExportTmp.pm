@@ -72,7 +72,11 @@ sub Run {
 
 	$exportClass->Init( $inCAM, $jobId, $exportData );
 	$exportClass->{"onItemResult"}->Add( sub { Test(@_) } );
+	
+ 
 	$exportClass->Run();
+	
+ 
 
 	print "\n========================== E X P O R T: " . $self->{"id"} . " ===============================\n";
 	print $resultMess;
