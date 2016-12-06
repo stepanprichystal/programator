@@ -28,7 +28,7 @@ sub new {
 
 	$self->{"jobId"} = shift;
 
-	$self->{"filePath"} = JobHelper->GetJobArchive( $self->{"jobId"} ) . $self->{"jobId"} . ".pf";
+	$self->{"filePath"} = JobHelper->GetJobArchive( $self->{"jobId"} ) . $self->{"jobId"} . ".dif";
 
 	my %tifData = ();
 	$self->{"tifData"} = \%tifData;
