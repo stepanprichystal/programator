@@ -18,6 +18,7 @@ use aliased 'CamHelpers::CamToolDepth';
 use aliased 'CamHelpers::CamDrilling';
 use aliased 'CamHelpers::CamJob';
 use aliased 'CamHelpers::CamHistogram';
+use aliased 'Packages::Polygon::Features::RouteFeatures::RouteFeatures';
 
 #-------------------------------------------------------------------------------------------#
 #  Script methods
@@ -28,6 +29,8 @@ sub CheckNCLayers {
 	my $inCAM = shift;
 	my $jobId = shift;
 	my $mess  = shift;
+
+	my $stepName = "panel";
 
 	my $result = 1;
 
@@ -41,11 +44,22 @@ sub CheckNCLayers {
 
 	foreach my $l (@layers) {
 
-		my %fHist = CamHistogram->GetFeatuesHistogram( $inCAM, $jobId, "panel", $l->{"gROWname"} );
+		my %fHist = CamHistogram->GetFeatuesHistogram( $inCAM, $jobId, $stepName, $l->{"gROWname"} );
 		$l->{"fHist"} = \%fHist;
 
-		my %attHist = CamHistogram->GetAttHistogram( $inCAM, $jobId, "panel", $l->{"gROWname"} );
+		my %attHist = CamHistogram->GetAttHistogram( $inCAM, $jobId, $stepName, $l->{"gROWname"} );
 		$l->{"attHist"} = \%attHist;
+
+		if ( $l->{"gROWlayer_type"} eq "rout" ) {
+
+			my $route = RouteFeatures->new();
+
+			$route->Parse( $inCAM, $jobId, $stepName, $l->{"gROWname"}, 1 );
+			my @f = $route->GetFeatures();
+			$l->{"feats"} = \@f;
+
+		}
+
 	}
 
 	# 1) Check if some layer has wronng name
@@ -69,27 +83,33 @@ sub CheckNCLayers {
 		$result = 0;
 	}
 
+	# 4) Check if drill layers not contain invalid symbols..
+
+	unless ( $self->CheckInvalidSymbols( \@layers, $mess ) ) {
+
+		$result = 0;
+	}
+
 	# 4) Check if layer has to set right direction
 
 	unless ( $self->CheckDirTop2Bot( $inCAM, $jobId, \@layers, $mess ) ) {
 
 		$result = 0;
 	}
- 
+
 	# 5) Check if layer has to set right direction
 
 	unless ( $self->CheckDirBot2Top( $inCAM, $jobId, \@layers, $mess ) ) {
 
 		$result = 0;
 	}
- 
 
 	# 6) Check if depth is correctly set
 	unless ( $self->CheckContainDepth( $inCAM, $jobId, \@layers, $mess ) ) {
 
 		$result = 0;
 	}
-		
+
 	# 7) Check if depth is not set
 	unless ( $self->CheckContainNoDepth( $inCAM, $jobId, \@layers, $mess ) ) {
 
@@ -125,6 +145,7 @@ sub CheckAttributes {
 
 	my $result = 1;
 
+	# 1) Check if symbols doesn't contain attribute layers
 	foreach my $l (@layers) {
 
 		if ( $l->{"attHist"}->{".nomenclature"} ) {
@@ -133,16 +154,42 @@ sub CheckAttributes {
 		}
 	}
 
+	my @t = ();
+
+	push( @t, EnumsGeneral->LAYERTYPE_plt_nMill );
+	push( @t, EnumsGeneral->LAYERTYPE_plt_bMillTop );
+	push( @t, EnumsGeneral->LAYERTYPE_plt_bMillBot );
+	push( @t, EnumsGeneral->LAYERTYPE_nplt_nMill );
+	push( @t, EnumsGeneral->LAYERTYPE_nplt_bMillTop );
+	push( @t, EnumsGeneral->LAYERTYPE_nplt_bMillBot );
+	push( @t, EnumsGeneral->LAYERTYPE_nplt_rsMill );
+	push( @t, EnumsGeneral->LAYERTYPE_nplt_frMill );
+	push( @t, EnumsGeneral->LAYERTYPE_nplt_jbMillTop );
+	push( @t, EnumsGeneral->LAYERTYPE_nplt_jbMillBot );
+	push( @t, EnumsGeneral->LAYERTYPE_nplt_kMill );
+
+	@layers = $self->__GetLayersByType( \@layers, \@t );
+
+	# 2) Check if rout layers has attribute rout chain
+	foreach my $l (@layers) {
+
+		# filter pads
+		my @sym = grep { $_->{"type"} ne "P" } @{ $l->{"feats"} };
+
+		my @symRoutLess = grep { !defined $_->{"att"}->{".rout_chain"} } @sym;
+
+		if ( scalar(@symRoutLess) > 0 ) {
+			$result = 0;
+			$$mess .= "NC layer: " . $l->{"gROWname"} . ", some symbols doesn't have assigned rout (attribute .rout_chain).\n";
+		}
+	}
+
 	return $result;
 }
-
-# TODO check on missing rout attribute
 
 # Check if drill layers not contain invalid symbols..
 sub CheckInvalidSymbols {
 	my $self   = shift;
-	my $inCAM  = shift;
-	my $jobId  = shift;
 	my @layers = @{ shift(@_) };
 	my $mess   = shift;
 
@@ -156,17 +203,18 @@ sub CheckInvalidSymbols {
 	push( @t, EnumsGeneral->LAYERTYPE_plt_cDrill );
 	push( @t, EnumsGeneral->LAYERTYPE_plt_dcDrill );
 	push( @t, EnumsGeneral->LAYERTYPE_plt_fDrill );
-	
 
-	@layers = $self->__GetLayersByType( \@layers, \@t  );
+	@layers = $self->__GetLayersByType( \@layers, \@t );
 
 	foreach my $l (@layers) {
 
-		if ( $l->{"fHist"}->{"total"} == 0 ) {
+		if ( $l->{"fHist"}->{"surf"} > 0 || $l->{"fHist"}->{"arc"} > 0 || $l->{"fHist"}->{"line"} > 0 || $l->{"fHist"}->{"text"} > 0 ) {
 			$result = 0;
-			$$mess .= "NC layer: " . $l->{"gROWname"} . " is empty.\n";
+			$$mess .= "NC layer: " . $l->{"gROWname"} . " contains illegal symbol (surface, line, arc or text).\n";
 		}
 	}
+
+	return $result;
 
 }
 
@@ -213,7 +261,7 @@ sub CheckDirTop2Bot {
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_jbMillTop );
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_kMill );
 
-	@layers = $self->__GetLayersByType( \@layers, \@t  );
+	@layers = $self->__GetLayersByType( \@layers, \@t );
 
 	foreach my $l (@layers) {
 
@@ -221,7 +269,7 @@ sub CheckDirTop2Bot {
 		my $lName = $l->{"gROWname"};
 
 		# not def means top2bot
-		if ( $dir && $dir eq "bot2top") {
+		if ( $dir && $dir eq "bot2top" ) {
 			$result = 0;
 			$$mess .= "Layer $lName has wrong direction of drilling/routing. Direction has to be: top2bot. \n";
 		}
@@ -245,6 +293,8 @@ sub CheckDirTop2Bot {
 
 	}
 
+	return $result;
+
 }
 
 sub CheckDirBot2Top {
@@ -263,7 +313,7 @@ sub CheckDirBot2Top {
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_bMillBot );
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_jbMillBot );
 
-	@layers = $self->__GetLayersByType( \@layers, \@t  );
+	@layers = $self->__GetLayersByType( \@layers, \@t );
 
 	foreach my $l (@layers) {
 
@@ -278,7 +328,7 @@ sub CheckDirBot2Top {
 		my $startL = $l->{"gROWdrl_start"};
 		my $endL   = $l->{"gROWdrl_end"};
 
-		unless( defined $endL || defined  $StartL){
+		unless ( defined $endL || defined $StartL ) {
 			print STDERR "dddd";
 		}
 
@@ -287,6 +337,8 @@ sub CheckDirBot2Top {
 			$$mess .= "Layer: $layerName, drilling start/end is wrong in matrix. Drilling/routing cant't start and end in same layer.\n";
 		}
 	}
+
+	return $result;
 }
 
 sub CheckContainDepth {
@@ -308,13 +360,17 @@ sub CheckContainDepth {
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_bMillBot );
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_jbMillTop );
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_jbMillBot );
-	
-	@layers = $self->__GetLayersByType( \@layers, \@t  );
+
+	@layers = $self->__GetLayersByType( \@layers, \@t );
 
 	foreach my $l (@layers) {
 
-		$self->__ToolDepthSet( $inCAM, $jobId, $l->{"gROWname"}, $mess );
+		unless ( $self->__ToolDepthSet( $inCAM, $jobId, $l->{"gROWname"}, $mess ) ) {
+			$result = 0;
+		}
 	}
+
+	return $result;
 }
 
 sub CheckContainNoDepth {
@@ -342,8 +398,12 @@ sub CheckContainNoDepth {
 
 	foreach my $l (@layers) {
 
-		$self->__ToolDepthNotSet( $inCAM, $jobId, $l->{"gROWname"}, $mess );
+		unless ( $self->__ToolDepthNotSet( $inCAM, $jobId, $l->{"gROWname"}, $mess ) ) {
+			$result = 0;
+		}
 	}
+
+	return $result;
 }
 
 sub __GetLayersByType {

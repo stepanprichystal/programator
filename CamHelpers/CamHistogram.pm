@@ -118,7 +118,7 @@ sub GetFeatuesHistogram {
 	);
 
 	my %info = ();
-
+	$info{"line"}   = $inCAM->{doinfo}{gFEAT_HISTline};
 	$info{"pad"}   = $inCAM->{doinfo}{gFEAT_HISTpad};
 	$info{"surf"}  = $inCAM->{doinfo}{gFEAT_HISTsurf};
 	$info{"arc"}   = $inCAM->{doinfo}{gFEAT_HISTarc};
