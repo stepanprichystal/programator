@@ -20,7 +20,6 @@ use aliased "Helpers::FileHelper";
 #  Public method
 #-------------------------------------------------------------------------------------------#
 
- 
 sub new {
 	my $self = shift;
 	$self = {};
@@ -28,14 +27,26 @@ sub new {
 
 	$self->{"jobId"} = shift;
 
-	$self->{"filePath"} = JobHelper->GetJobArchive( $self->{"jobId"} ) . $self->{"jobId"} . ".pf";
+	$self->{"filePath"} = JobHelper->GetJobArchive( $self->{"jobId"} ) . $self->{"jobId"} . ".dif";
 
 	my %tifData = ();
 	$self->{"tifData"} = \%tifData;
-	
+
 	$self->__LoadTifFile();
 
 	return $self;
+}
+
+sub TifFileExist {
+	my $self = shift;
+
+	if (-e $self->{"filePath"} ) {
+		return 1;
+	}
+	else {
+		return 0;
+	}
+
 }
 
 sub __LoadTifFile {
@@ -55,27 +66,22 @@ sub __LoadTifFile {
 	}
 }
 
-
 sub _Save {
-	my $self     = shift;
-	
+	my $self = shift;
+
 	my $json = JSON->new();
 
 	my $serialized = $json->pretty->encode( $self->{"tifData"} );
 
 	#delete old file
-	if(-e  $self->{"filePath"}){
-		unlink $self->{"filePath"};		
+	if ( -e $self->{"filePath"} ) {
+		unlink $self->{"filePath"};
 	}
-
 
 	open( my $f, '>', $self->{"filePath"} );
 	print $f $serialized;
 	close $f;
 }
-
-
- 
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
