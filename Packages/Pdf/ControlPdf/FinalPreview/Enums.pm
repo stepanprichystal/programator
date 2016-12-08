@@ -12,13 +12,7 @@ use constant {
 
 };
 
-
-	push(@{$self->{"layers"}}, LayerData->new(Enums->Type_PLTDEPTHNC));
-	push(@{$self->{"layers"}}, LayerData->new(Enums->Type_NPLTDEPTNC));
-	push(@{$self->{"layers"}}, LayerData->new(Enums->Type_THROUGHNC));
-
-
-
+ 
 use constant {
 	View_FROMTOP => "viewFromTop",
 	View_FROMBOT => "viewFromBot"
