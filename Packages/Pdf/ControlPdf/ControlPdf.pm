@@ -12,6 +12,9 @@ use warnings;
 #local library
 use aliased 'Helpers::GeneralHelper';
 use aliased 'CamHelpers::CamHelper';
+use aliased 'Helpers::JobHelper';
+use aliased 'Packages::Pdf::Template2Pdf::Template2Pdf';
+use aliased 'Packages::Pdf::ControlPdf::HtmlTemplate::TemplateKey';
 
 #-------------------------------------------------------------------------------------------#
 #  Interface
@@ -24,108 +27,34 @@ sub new {
 
 	$self->{"inCAM"} = shift;
 	$self->{"jobId"} = shift;
-	$self->{"step"}  = shift;
+
+	$self->{"lang"} = "en";
+
+	#$self->{"step"}  = shift;
+
+	#$self->{"outputPdf"} = OutputPdf->new();
 
 	return $self;
 }
 
-sub Create {
-	my $self = shift;
-	my $lRef = shift;
-
-	# get all base layers
-	my @layers = CamJob->GetBoardLayers( $self->{"inCAM"}, $self->{"jobId"} );
-
-	# Filter only requested layers
-	if ($lRef) {
-
-		for ( my $i = scalar(@layers) ; $i >= 0 ; $i-- ) {
-
-			my $l = $layers[$i];
-			my $exist = scalar( grep { $_ eq $l->{"gROWname"} } @{$lRef} );
-
-			unless ($exist) {
-				splice @layers, $i, 1;    #remove
-			}
-		}
-	}
-
-	CamHelper->SetStep( $self->{"inCAM"}, $self->{"step"} );
-
-	my $pdfStep = $self->__CreatePdfStep();
-
-	CamHelper->SetStep( $self->{"inCAM"}, $pdfStep );
-
-	$self->__PrepareLayerData( \@layers );
-
-	$self->__DeletePdfStep($pdfStep);
-
-}
-
-sub __PrepareLayerData {
-	my $self   = shift;
-	my @layers = @{ shift(@_) };
-
-	my @finalLayer = ();
-
-	# prepare non  NC layers
-	my @baseLayers = grep { $_->{"gROWlayer_type"} ne "rout" || $_->{"gROWlayer_type"} ne "drill" } @layers;
-	
-	
-	foreach my $l {}
-	
-	
-	
-	my @NCLayers = grep { $_->{"gROWlayer_type"} eq "rout" || $_->{"gROWlayer_type"} eq "drill" } @layers;
-
-}
-
-sub __GetLayerTitle {
-	my $self = shift;
-	my $name = shift;
- 
-}
-
-# create special step, which IPC will be exported from
-sub __CreatePdfStep {
-	my $self = shift;
-
-	my $inCAM = $self->{"inCAM"};
-	my $jobId = $self->{"jobId"};
-
-	my $stepPdf = "pdf_" . $self->{"step"};
-
-	#delete if step already exist
-	if ( CamHelper->StepExists( $inCAM, $jobId, $stepPdf ) ) {
-		$inCAM->COM( "delete_entity", "job" => $jobId, "name" => $stepPdf, "type" => "step" );
-	}
-
-	$inCAM->COM(
-				 'copy_entity',
-				 type             => 'step',
-				 source_job       => $jobId,
-				 source_name      => $self->{"step"},
-				 dest_job         => $jobId,
-				 dest_name        => $stepPdf,
-				 dest_database    => "",
-				 "remove_from_sr" => "yes"
-	);
-
-	return $stepPdf;
-}
-
 # delete pdf step
-sub __DeletePdfStep {
-	my $self    = shift;
-	my $stepPdf = shift;
+sub __ProcessTemplate {
+	my $self = shift;
 
-	my $inCAM = $self->{"inCAM"};
-	my $jobId = $self->{"jobId"};
+	my $tempPath = GeneralHelper->Root() . "\\Packages\\Pdf\\ControlPdf\\HtmlTemplate\\template.html";
 
-	#delete if step already exist
-	if ( CamHelper->StepExists( $inCAM, $jobId, $stepPdf ) ) {
-		$inCAM->COM( "delete_entity", "job" => $jobId, "name" => $stepPdf, "type" => "step" );
-	}
+	# Fill data template
+	my $templData = TemplateKey->new();
+
+	$templData->SetJobId("f12345");
+
+	my $convertor = Template2Pdf->new( $self->{"lang"} );
+
+	my $result = $convertor->Convert( $tempPath, $templData );
+
+	print STDERR "Result of converion: " . $result . ".\n";
+
+	my $outFile = $convertor->GetOutFile();
 }
 
 #-------------------------------------------------------------------------------------------#
@@ -133,6 +62,17 @@ sub __DeletePdfStep {
 #-------------------------------------------------------------------------------------------#
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
+
+	use aliased 'Packages::Pdf::ControlPdf::ControlPdf';
+	use aliased 'Packages::InCAM::InCAM';
+
+	my $inCAM = InCAM->new();
+
+	my $jobId = "f52456";
+
+	my $control = ControlPdf->new( $inCAM, $jobId );
+
+	$control->__ProcessTemplate();
 
 }
 

@@ -8,7 +8,7 @@ use warnings;
 
 # ============ INPUT LINE =================
 my $inputLine =
-"COM profile_to_rout,layer=s,width=200";
+"compensate_layer,source_layer=f,dest_layer=f_comp,dest_layer_type=rout";
 # ============ INPUT LINE =================
 
 

@@ -379,6 +379,27 @@ sub CompensateLayerData {
 	 
 }
 
+# InvertPolarity of layer
+sub RoutCompensation {
+	my $self   = shift;
+	my $inCAM  = shift;
+	my $layer  = shift;
+	my $type  = shift;
+	
+	unless(defined $type){
+		
+		$type = "rout"
+	}
+	
+	my $lName = GeneralHelper->GetGUID();
+	$self->WorkLayer($inCAM, $lName);
+	
+	$inCAM->COM("compensate_layer","source_layer" => $layer,"dest_layer" => $lName,"dest_layer_type" => $type);
+	$inCAM->COM( 'affected_layer', name => $layer, mode => "single", affected => "no" );
+	
+	return $lName;
+}
+
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#

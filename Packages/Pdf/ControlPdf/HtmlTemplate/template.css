@@ -1,0 +1,36 @@
+body {
+    font-family: Arial;
+    font-size: 14px;
+}
+
+.maincell { 
+    background-color: #e8eaed;
+}
+
+.mainheadcell { 
+    background-color: #AF0208;
+    font-size: 30px;
+    color: white;
+    cellpadding:10px;
+    border:1px;
+}
+
+.headcell { 
+    background-color: #cdcfc3;
+
+ font-size: 16px;
+   
+    border:0px;
+}
+
+table {
+   border: 1px solid white;
+   width:100%;
+  
+}
+
+td {
+  padding:5px
+    
+}
+

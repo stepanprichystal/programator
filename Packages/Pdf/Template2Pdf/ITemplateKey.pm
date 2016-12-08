@@ -1,48 +1,39 @@
+
 #-------------------------------------------------------------------------------------------#
-# Description: Contain special function, which work with routing
+# Description: Interface, contain operation for creating nif file
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::Pdf::PdfOperation::PdfOperation;
+package Packages::Pdf::Template2Pdf::ITemplateKey;
 
 #3th party library
 use strict;
 use warnings;
- 
+#use File::Copy;
 
 #local library
 
-use aliased 'Helpers::GeneralHelper';
- 
 
 #-------------------------------------------------------------------------------------------#
-#  Script methods
+#  Interface
 #-------------------------------------------------------------------------------------------#
+
+use Class::Interface;
+&interface;    
+
+sub GetKeyData;     
  
 
-# Return best pilot hole for chain size
-sub MergePdf {
-	my $self       = shift;
- 
-}
 
+ 
+ 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#
-
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
-#
-#	use aliased 'Packages::Routing::PilotHole';
-#	use aliased 'Packages::InCAM::InCAM';
-#
-#	my $jobId = "f13610";
-#	my $inCAM = InCAM->new();
-#
-#	my $step = "o+1";
-#
-#	my $max = PilotHole->AddPilotHole( $inCAM, $jobId, $step, "f");
- 
 
+	 
 }
 
 1;
+
