@@ -53,6 +53,21 @@ sub GetType{
 	return $self->{"type"};
 }
 
+sub GetOutputLayer{
+	my $self = shift;
+	 
+	return $self->{"output"};
+}
+
+ 
+sub SetOutputLayer{
+	my $self = shift;
+	my $lName = shift;
+	
+	
+	$self->{"output"} = $lName;
+}
+ 
  
 sub GetSingleLayers{
 	my $self = shift;

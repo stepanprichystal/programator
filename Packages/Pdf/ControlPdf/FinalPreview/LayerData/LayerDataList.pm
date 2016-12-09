@@ -47,6 +47,23 @@ sub __InitLayers {
 	push( @{ $self->{"layers"} }, LayerData->new( Enums->Type_THROUGHNC ) );
 }
 
+sub GetLayers {
+	my $self = shift;
+
+	return @{ $self->{"layers"} };
+}
+
+
+sub GetLayerByType {
+	my $self = shift;
+	my $type = shift;
+
+	my $layer = ( grep { $_->GetType() eq $type } @{ $self->{"layers"} } )[0];
+
+	return $layer;
+
+}
+
 sub SetLayers {
 	my $self        = shift;
 	my @boardLayers = @{ shift(@_) };

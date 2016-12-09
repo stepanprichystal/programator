@@ -27,15 +27,32 @@ sub new {
 
 	$self->{"inCAM"} = shift;
 	$self->{"jobId"} = shift;
+	$self->{"step"} = shift;
 
 	$self->{"lang"} = "en";
 
-	#$self->{"step"}  = shift;
+	$self->{"pdfStep"} = "pdf_".$self->{"step"};
 
 	#$self->{"outputPdf"} = OutputPdf->new();
 
 	return $self;
 }
+
+
+
+sub Create {
+	my $self = shift;
+
+
+	CamHelper->SetStep( $self->{"inCAM"}, $self->{"step"} );
+
+	my $pdfStep = $self->__CreatePdfStep();
+
+	CamHelper->SetStep( $self->{"inCAM"}, $pdfStep );
+	
+	
+	$self->__DeletePdfStep($pdfStep);
+
 
 # delete pdf step
 sub __ProcessTemplate {
@@ -57,6 +74,81 @@ sub __ProcessTemplate {
 	my $outFile = $convertor->GetOutFile();
 }
 
+
+
+
+# create special step, which IPC will be exported from
+sub __CreatePdfStep {
+	my $self = shift;
+
+	my $inCAM = $self->{"inCAM"};
+	my $jobId = $self->{"jobId"};
+
+	my $stepPdf = $self->{"pdfStep"};
+
+	#delete if step already exist
+	if ( CamHelper->StepExists( $inCAM, $jobId, $stepPdf ) ) {
+		$inCAM->COM( "delete_entity", "job" => $jobId, "name" => $stepPdf, "type" => "step" );
+	}
+
+	$inCAM->COM(
+				 'copy_entity',
+				 type             => 'step',
+				 source_job       => $jobId,
+				 source_name      => $self->{"step"},
+				 dest_job         => $jobId,
+				 dest_name        => $stepPdf,
+				 dest_database    => "",
+				 "remove_from_sr" => "yes"
+	);
+	
+	#check if SR exists in etStep, if so, flattern whole step
+	my $srExist = CamStepRepeat->ExistStepAndRepeats( $inCAM, $jobId, $stepPdf );
+
+	if ($srExist) {
+		$self->__FlatternPdfStep($stepPdf);
+	}
+}
+
+
+
+
+sub __FlatternPdfStep {
+	my $self   = shift;
+	my $stepPdf = shift;
+	my $inCAM  = $self->{"inCAM"};
+	my $jobId  = $self->{"jobId"};
+
+	CamHelper->SetStep( $self->{"inCAM"}, $stepPdf );
+
+	 
+	my @allLayers = CamJob->GetBoardLayers( $inCAM, $jobId );
+
+	 
+
+	foreach my $l (@allLayers) {
+
+		CamLayer->FlatternLayer( $inCAM, $jobId, $stepPdf, $l->{"gROWname"} );
+	}
+	
+	$inCAM->COM( 'sredit_sel_all');
+	$inCAM->COM( 'sredit_del_steps');
+
+}
+
+# delete pdf step
+sub __DeletePdfStep {
+	my $self    = shift;
+	my $stepPdf = shift;
+
+	my $inCAM = $self->{"inCAM"};
+	my $jobId = $self->{"jobId"};
+
+	#delete if step already exist
+	if ( CamHelper->StepExists( $inCAM, $jobId, $stepPdf ) ) {
+		$inCAM->COM( "delete_entity", "job" => $jobId, "name" => $stepPdf, "type" => "step" );
+	}
+}
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#

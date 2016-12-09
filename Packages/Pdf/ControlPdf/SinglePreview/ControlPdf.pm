@@ -189,48 +189,6 @@ sub __PrepareNCLayerData {
 
  
 
-# create special step, which IPC will be exported from
-sub __CreatePdfStep {
-	my $self = shift;
-
-	my $inCAM = $self->{"inCAM"};
-	my $jobId = $self->{"jobId"};
-
-	my $stepPdf = "pdf_" . $self->{"step"};
-
-	#delete if step already exist
-	if ( CamHelper->StepExists( $inCAM, $jobId, $stepPdf ) ) {
-		$inCAM->COM( "delete_entity", "job" => $jobId, "name" => $stepPdf, "type" => "step" );
-	}
-
-	$inCAM->COM(
-				 'copy_entity',
-				 type             => 'step',
-				 source_job       => $jobId,
-				 source_name      => $self->{"step"},
-				 dest_job         => $jobId,
-				 dest_name        => $stepPdf,
-				 dest_database    => "",
-				 "remove_from_sr" => "yes"
-	);
-
-	return $stepPdf;
-}
-
-# delete pdf step
-sub __DeletePdfStep {
-	my $self    = shift;
-	my $stepPdf = shift;
-
-	my $inCAM = $self->{"inCAM"};
-	my $jobId = $self->{"jobId"};
-
-	#delete if step already exist
-	if ( CamHelper->StepExists( $inCAM, $jobId, $stepPdf ) ) {
-		$inCAM->COM( "delete_entity", "job" => $jobId, "name" => $stepPdf, "type" => "step" );
-	}
-}
-
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#

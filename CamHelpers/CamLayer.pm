@@ -187,7 +187,7 @@ sub AffectLayers{
 
 }
 
-# InvertPolarity of layer
+# InvertPolarity of layer in some specified area
 sub NegativeLayerData {
 	my $self   = shift;
 	my $inCAM  = shift;
