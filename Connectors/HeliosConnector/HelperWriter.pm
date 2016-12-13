@@ -80,7 +80,7 @@ sub LogOn {
 	my $password = $__dbPassword;
 	my $language = $__dbLanguage;
 	my $options  = $__dbOptions;
-
+		print STDERR "\n\n ============== Update record 2 =================== \n\n";
 	my $result = $service->LogOn(
 		{
 		  profile  => $profile,     # string
@@ -90,18 +90,24 @@ sub LogOn {
 		  options  => $options,     # string
 		}
 	);
-
+		print STDERR "\n\n ============== Update record 3 =================== \n\n";
 	$result =~ m{\&lt;LogOnResult&gt;(.*?)\&lt;/LogOnResult&gt;};
 	return $1;
 }
 
 sub LogOff {
 	my %args = @_;
+	
+		print STDERR "\n\n ============== Update record 12 =================== \n\n";
+	
+	
 	my $result = $service->LogOff(
 		{
 		  sessionToken => $args{sessionToken},    # string
 		}
 	);
+	
+		print STDERR "\n\n ============== Update record 13 =================== \n\n";
 
 	$result =~ m{\&lt;LogOffResult&gt;(.*?)\&lt;/LogOffResult&gt;};
 	return $1;
@@ -115,7 +121,13 @@ sub CreateXml {
 	my $attribute = $args{attribute};
 	my $value     = $args{value};
 
+
+		print STDERR "\n\n ============== Update record 4 =================== \n\n";
+
 	my $writer = new XML::Writer( OUTPUT => 'self' );
+	
+		print STDERR "\n\n ============== Update record 5 =================== \n\n";
+	
 	$writer->startTag( "INSERTUPDATE", "action" => "update" );
 	$writer->startTag(
 					   "RECORD",
@@ -129,7 +141,13 @@ sub CreateXml {
 	$writer->endTag("ATTRIBUTE");
 	$writer->endTag("RECORD");
 	$writer->endTag("INSERTUPDATE");
+	
+		print STDERR "\n\n ============== Update record 6 =================== \n\n";
+	
 	$writer->end();
+	
+	
+		print STDERR "\n\n ============== Update record 7 =================== \n\n";
 	return $writer->to_string();
 }
 
@@ -138,12 +156,16 @@ sub ProcessXml {
 	my $sessionToken = $args{sessionToken};
 	my $xml          = $args{xml};
 
+		print STDERR "\n\n ============== Update record 9 =================== \n\n";
+
 	my $result = $service->ProcessXml(
 									   {
 										 sessionToken => $sessionToken,
 										 inputXml     => $xml,
 									   }
 	);
+
+	print STDERR "\n\n ============== Update record 10 =================== \n\n";
 
 	$result =~ /STATE=(.*)START/;
 	my $res = $1;
@@ -168,6 +190,8 @@ sub UpdateRecord {
 	my $attribute = $args{attribute};
 	my $value     = $args{value};
 
+	print STDERR "\n\n ============== Update record 1 =================== \n\n";
+
 	my $sessionToken = LogOn();
 
 	my $xml = CreateXml(
@@ -178,8 +202,12 @@ sub UpdateRecord {
 						 value     => $value
 	);
 
+		print STDERR "\n\n ============== Update record 8 =================== \n\n";
+
 	my $processXmlResult = ProcessXml( sessionToken => $sessionToken,
 									   xml          => $xml );
+
+		print STDERR "\n\n ============== Update record 11 =================== \n\n";
 
 	my $logOffResult = LogOff( sessionToken => $sessionToken );
 

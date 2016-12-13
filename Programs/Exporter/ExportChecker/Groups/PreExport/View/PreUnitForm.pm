@@ -69,17 +69,17 @@ sub PlotRowSettChanged {
 			$l->{"polarity"} = $lInfo{"polarity"};
 			$l->{"comp"}     = $lInfo{"comp"};
 
-			# Set etching type for signal layers by polarity
-			if ( $l->{"name"} =~ /^[cs]$/ || $l->{"name"} =~ /^v\d$/ ) {
-
-				# Set polarity by etching type
-				if ( $l->{"polarity"} eq "positive" ) {
-					$l->{"etchingType"} = EnumsGeneral->Etching_PATTERN;
-				}
-				elsif ( $l->{"polarity"} eq "negative" ) {
-					$l->{"etchingType"} = EnumsGeneral->Etching_TENTING;
-				}
-			}
+#			# Set etching type for signal layers by polarity
+#			if ( $l->{"name"} =~ /^[cs]$/ || $l->{"name"} =~ /^v\d$/ ) {
+#
+#				# Set polarity by etching type
+#				if ( $l->{"polarity"} eq "positive" ) {
+#					$l->{"etchingType"} = EnumsGeneral->Etching_PATTERN;
+#				}
+#				elsif ( $l->{"polarity"} eq "negative" ) {
+#					$l->{"etchingType"} = EnumsGeneral->Etching_TENTING;
+#				}
+#			}
 		}
 
 	}
@@ -96,11 +96,11 @@ sub ChangeTentingHandler {
 			# Set polarity by etching type
 			if ($tentingCS) {
 				$l->{"etchingType"} = EnumsGeneral->Etching_TENTING;
-				$l->{"polarity"}    = "negative";
+				#$l->{"polarity"}    = "negative";
 			}
 			else {
 				$l->{"etchingType"} = EnumsGeneral->Etching_PATTERN;
-				$l->{"polarity"}    = "positive";
+				#$l->{"polarity"}    = "positive";
 			}
 		}
 	}

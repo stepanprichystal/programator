@@ -165,6 +165,8 @@ sub __UpdateNCInfo {
 		$resultItem->AddError($resultMess);
 	}
 
+	print STDERR "Update NC info after\n";
+
 	$self->_OnItemResult($resultItem);
 }
 

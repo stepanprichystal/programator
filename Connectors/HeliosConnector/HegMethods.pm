@@ -57,6 +57,7 @@ sub GetAllByPcbId {
 				 d.material_tloustka_medi,
 				 d.material_typ_materialu,
 				 d.poznamka,
+				 d.poznamka_tpv,
 				 d.tloustka,
 				 d.tenting,
 				 d.datacode,

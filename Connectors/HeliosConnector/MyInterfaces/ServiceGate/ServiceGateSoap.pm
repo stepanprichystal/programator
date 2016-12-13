@@ -19,6 +19,9 @@ sub START {
 sub LogOn {
     my ($self, $body, $header) = @_;
     die "LogOn must be called as object method (\$self is <$self>)" if not blessed($self);
+    
+    print STDERR "\n\n ====================== LogOn function 1 =======================\n\n";
+    
     return $self->SUPER::call({
         operation => 'LogOn',
         soap_action => 'http://lcs.cz/webservices/LogOn',
