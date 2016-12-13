@@ -38,6 +38,7 @@ sub new {
 	my @threads = ();
 
 	$self->{"threads"} = \@threads;
+	$self->{"threadCounter"} = 0;
 
 	#raise when new thread start
 	$self->{"onThreadWorker"} = Event->new();
@@ -67,6 +68,10 @@ sub RunNewExport {
 	my $pcbId          = shift;
 	my $pidInCAM       = shift;
 	my $externalServer = shift;
+
+	$self->{"threadCounter"} +=1;
+	
+	print STDERR "\n\n\nExport utility: THERAD ORDER IS :  ".$self->{"threadCounter"}.".\n\n\n";
 
 	my $thrId = $self->__CreateThread( $jobGUID, $port, $pcbId, $pidInCAM, $externalServer );
 
