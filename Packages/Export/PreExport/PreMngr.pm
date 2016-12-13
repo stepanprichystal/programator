@@ -112,11 +112,25 @@ sub Run {
 
 	# 2) Save info to tif file
 	my $file = TifSigLayers->new($self->{"jobId"});
+	
+	# Load old values
 	my %layers = $file->GetSignalLayers();
 	
+	# add new layers or change old
 	foreach my $l (@{$self->{"layers"}}){
  
 		$layers{$l->{"name"}} = $l;
+		
+		# dif contain information about physis mirror
+		# but layer info contain mirror which consider emulsion on films
+		
+		if($l->{"mirror"}){
+			$layers{$l->{"name"}}->{"mirror"} = 0;
+		}else{
+			$layers{$l->{"name"}}->{"mirror"} = 1;
+		}
+ 
+		
 	}
  
 	$file->SetSignalLayers( \%layers );

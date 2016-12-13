@@ -260,6 +260,7 @@ sub GetScoreChecker{
 sub GetTypeOfPcb{
 	my $self      = shift;
 	
+	$self->{"pcbTypeHelios"} = HegMethods->GetTypeOfPcb($self->{"jobId"} eq 'Neplatovany');
 	return $self->{"pcbTypeHelios"};
 }
 
@@ -267,6 +268,7 @@ sub GetTypeOfPcb{
 sub GetMaterialKind{
 	my $self      = shift;
 	
+	$self->{"materialKind"} = HegMethods->GetMaterialKind($self->{"jobId"});
 	return $self->{"materialKind"};
 }
 
@@ -293,6 +295,7 @@ sub GetBaseCuThick {
 
 
 # Set polarity, mirro, compensation for board layers
+# this is used for OPFX export, tif file export
 sub SetDefaultLayersSettings{
 	my $self   = shift;
 	my $layers = shift;	
@@ -324,6 +327,24 @@ sub SetDefaultLayersSettings{
 			elsif ( $etching eq EnumsGeneral->Etching_TENTING ) {
 				$l->{"polarity"} = "negative";
 			}
+			
+			
+			# Edit polarity according InCAM matric polarity
+			# if polarity negative, switch polarity
+			if($l->{"gROWpolarity"} eq "negative"){
+				
+				
+				if($l->{"polarity"} eq "negative"){
+					$l->{"polarity"} = "positive";
+				
+				}elsif($l->{"polarity"} eq "positive"){
+					$l->{"polarity"} = "negative";
+				}
+
+			}
+			
+			
+			
 		}
 		else {
 
@@ -439,9 +460,7 @@ sub __InitDefault {
 	}
 	
 	
-	$self->{"materialKind"} = HegMethods->GetMaterialKind($self->{"jobId"});
 	
-	$self->{"pcbTypeHelios"} = HegMethods->GetTypeOfPcb($self->{"jobId"} eq 'Neplatovany');
 	
 	#$self->{"finalPcbThick"} = JobHelper->GetFinalPcbThick($self->{"jobId"});
 

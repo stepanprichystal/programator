@@ -1,0 +1,60 @@
+XHTML2PDF/pisa 3.0.33 (Build 2010-06-16)
+http://www.xhtml2pdf.com
+
+Copyright 2010 Dirk Holtwick, holtwick.it
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+
+USAGE: pisa [options] SRC [DEST]
+
+SRC
+  Name of a HTML file or a file pattern using * placeholder.
+  If you want to read from stdin use "-" as file name.
+  You may also load an URL over HTTP. Take care of putting
+  the <src> in quotes if it contains characters like "?".
+
+DEST
+  Name of the generated PDF file or "-" if you like
+  to send the result to stdout. Take care that the
+  destination file is not already opened by an other
+  application like the Adobe Reader. If the destination is
+  not writeable a similar name will be calculated automatically.
+
+[options]
+  --base, -b:
+    Specify a base path if input come via STDIN
+  --css, -c:
+    Path to default CSS file
+  --css-dump:
+    Dumps the default CSS definitions to STDOUT
+  --debug, -d:
+    Show debugging informations
+  --encoding:
+    the character encoding of SRC. If left empty (default) this
+    information will be extracted from the HTML header data
+  --help, -h:
+    Show this help text
+  --quiet, -q:
+    Show no messages
+  --start-viewer, -s:
+    Start PDF default viewer on Windows and MacOSX
+    (e.g. AcrobatReader)
+  --version:
+    Show version information
+  --warn, -w:
+    Show warnings
+  --xml, --xhtml, -x:
+    Force parsing in XML Mode
+    (automatically used if file ends with ".xml")
+  --html:
+    Force parsing in HTML Mode (default)

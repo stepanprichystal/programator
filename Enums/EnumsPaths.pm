@@ -39,6 +39,9 @@ use constant {
     InCAM_ncrMachines => "y:\\server\\site_data\\hooks\\ncr\\config\\machines\\",
     InCAM_jobs => "y:\\incam_db1\\incam\\jobs\\",
     InCAM_jobsdb1 => "y:\\incam_db1\\db1\\jobs\\",
+    InCAM_3rdScripts => "y:\\server\\site_data\\scripts3rdParty\\",
+    
+    
     
 
 };

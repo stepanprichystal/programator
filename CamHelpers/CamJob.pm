@@ -61,6 +61,7 @@ sub GetSignalLayer {
 		my $rowFilled  = ${ $inCAM->{doinfo}{gROWtype} }[$i];
 		my $rowContext = ${ $inCAM->{doinfo}{gROWcontext} }[$i];
 		my $rowType    = ${ $inCAM->{doinfo}{gROWlayer_type} }[$i];
+		 
 
 		if ( $rowFilled ne "empty" && $rowContext eq "board" ) {
 
@@ -69,6 +70,8 @@ sub GetSignalLayer {
 				my %info = ();
 				$info{"gROWname"}       = ${ $inCAM->{doinfo}{gROWname} }[$i];
 				$info{"gROWlayer_type"} = ${ $inCAM->{doinfo}{gROWlayer_type} }[$i];
+				$info{"gROWpolarity"} = ${ $inCAM->{doinfo}{gROWpolarity} }[$i];
+				
 
 				push( @arr, \%info );
 
@@ -208,7 +211,7 @@ sub GetAllLayers {
 				  entity_type     => 'matrix',
 				  entity_path     => "$jobId/matrix",
 				  data_type       => 'ROW',
-				  parameters      => "layer_type+name+type+context"
+				  parameters      => "layer_type+name+type+context+polarity"
 	);
 
 	for ( my $i = 0 ; $i < scalar( @{ $inCAM->{doinfo}{gROWname} } ) ; $i++ ) {
@@ -216,6 +219,7 @@ sub GetAllLayers {
 		$info{"gROWname"}       = ${ $inCAM->{doinfo}{gROWname} }[$i];
 		$info{"gROWlayer_type"} = ${ $inCAM->{doinfo}{gROWlayer_type} }[$i];
 		$info{"gROWcontext"}    = ${ $inCAM->{doinfo}{gROWcontext} }[$i];
+		$info{"gROWpolarity"} = ${ $inCAM->{doinfo}{gROWpolarity} }[$i];
 
 		my $rowFilled  = ${ $inCAM->{doinfo}{gROWtype} }[$i];
 		my $rowContext = ${ $inCAM->{doinfo}{gROWcontext} }[$i];

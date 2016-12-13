@@ -104,6 +104,8 @@ sub OnCheckGroupData {
 
 	# 4) Check if material and pcb thickness and base cuthickness is set
 	my $materialKind = $defaultInfo->GetMaterialKind();
+	$materialKind =~ s/[\s\t]//g;
+	
 	my $pcbType      = $defaultInfo->GetTypeOfPcb();
 
 	my $baseCuThickHelios = HegMethods->GetOuterCuThick($jobId);
@@ -140,8 +142,9 @@ sub OnCheckGroupData {
 			$stackKind = "FR4";
 		}
 
+		$stackKind =~ s/[\s\t]//g;
 
-		unless ( $materialKind =~ /$stackKind/i ) {
+		unless ( $materialKind =~ /$stackKind/i || $stackKind =~ /$materialKind/i ) {
 
 			$dataMngr->_AddErrorResult( "Stackup material",
 							"Stackup material doesn't match with material in Helios. Stackup material: $stackKind, Helios material: $materialKind." );
