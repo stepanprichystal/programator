@@ -6,10 +6,8 @@
 package Packages::Pdf::ControlPdf::FinalPreview::OutputPdf;
 
 #3th party library
-use threads;
 use strict;
 use warnings;
-use PDF::API2;
 
 #local library
 use aliased 'Helpers::GeneralHelper';
@@ -61,80 +59,114 @@ sub __OutputPdf {
 	my $inCAM = $self->{"inCAM"};
 
 	my @layers = $layerList->GetLayers();
-	@layers = grep { $_->PrintLayer() } @layers;
+	@layers = grep { $l->PrintLayer()  } @layers;
 
 	my $dirPath = EnumsPaths->Client_INCAMTMPOTHER . GeneralHelper->GetGUID() . "\\";
 	mkdir($dirPath) or die "Can't create dir: " . $dirPath . $_;
 
+	
 	my @layerStr = map { $_->GetOutputLayer() } @layers;
 	my $layerStr = join( "\\;", @layerStr );
 
-	my $multiPdf = EnumsPaths->Client_INCAMTMPOTHER . GeneralHelper->GetGUID() . ".pdf";
-
-	$multiPdf =~ s/\\/\//g;
-
-	$inCAM->COM(
-		'print',
-
-		#title             => '',
-
-		layer_name        => $layerStr,
-		mirrored_layers   => '',
-		draw_profile      => 'no',
-		drawing_per_layer => 'yes',
-		label_layers      => 'no',
-		dest              => 'pdf_file',
-		num_copies        => '1',
-		dest_fname        => $multiPdf,
-
-		paper_size => 'A4',
-
-		#scale_to          => '0.0',
-		#nx                => '1',
-		#ny                => '1',
-		orient => 'none',
-
-		#paper_orient => 'best',
-
-		#paper_width   => 260,
-		#paper_height  => 260,
-		auto_tray     => 'no',
-		top_margin    => '0',
-		bottom_margin => '0',
-		left_margin   => '0',
-		right_margin  => '0',
-		"x_spacing"   => '0',
-		"y_spacing"   => '0',
-
-		#3color1        => $self->__ConvertColor( $l->GetColor()
-	);
-
-	$self->__SplitMultiPdf( $layerList, $multiPdf, $dirPath );
-	$self->__CreatePng( $layerList, $dirPath );
-
-	# use threads;
-	#$thr1 = threads->create('msc', 'perl 1.pl');
-	#$thr2 = threads->create('msc', 'perl 2.pl');
-	#
-	#$thr1->join();
-	#$thr2->join();
-	#
-	#sub msc{ ## make system call
-	#  system( @_ );
-	#}
-
 	# print layer one by one
+	foreach my $l ( $layerList->GetLayers() ) {
+
+		if ( $l->PrintLayer() ) {
+
+			my $output = $dirPath . $l->GetOutputLayer() . ".pdf";
+			$output =~ s/\\/\//g;
+
+			$inCAM->COM(
+				'print',
+
+				#title             => '',
+
+				layer_name        => $layerStr,
+				mirrored_layers   => '',
+				draw_profile      => 'no',
+				drawing_per_layer => 'yes',
+				label_layers      => 'no',
+				dest              => 'pdf_file',
+				num_copies        => '1',
+				dest_fname        => $output,
+
+				paper_size => 'A4',
+
+				#scale_to          => '0.0',
+				#nx                => '1',
+				#ny                => '1',
+				orient => 'none',
+
+				#paper_orient => 'best',
+
+				#paper_width   => 260,
+				#paper_height  => 260,
+				auto_tray     => 'no',
+				top_margin    => '0',
+				bottom_margin => '0',
+				left_margin   => '0',
+				right_margin  => '0',
+				"x_spacing"   => '0',
+				"y_spacing"   => '0',
+				3color1        => $self->__ConvertColor( $l->GetColor() )
+			);
+
+			# merge all png to one
+			my $result = 1;
+
+
+
+c:\Export\report>convert -density 300 test.pdf -shave 20x20 -trim -shave 5x5  +l
+evel-colors green,white -fuzz 20% -transparent white result.png
+
+
+c:\Export\report>convert -density 300 test.pdf -shave 20x20 -trim -shave 5x5  +l
+evel-colors green,white -alpha on -channel a -evaluate set 50% -fuzz 50%  -trans
+parent white result2.png
+
+
+			my @cmd = ( EnumsPaths->InCAM_3rdScripts . "im\\convert.exe" );
+			push( @cmd, "-density 300" );
+			push( @cmd, $output );
+
+			if ( $l->GetTransparency() < 100 ) {
+
+				
+				push( @cmd, " -alpha on -channel a -evaluate set " . $l->GetTransparency() . "%" );
+				push( @cmd, " -fuzz " . (100 - $l->GetTransparency() + 20) . "% -transparent white" );
+				push( @cmd, "-shave 20x20 -trim -shave 5x5" );
+
+			}
+			else {
+
+				 
+				
+				push( @cmd, "-shave 20x20 -trim -shave 5x5" );
+				push( @cmd, " -transparent white " );
+
+			}
+
+			my $pngOutput = $output;
+			$pngOutput =~ s/pdf/png/;
+			push( @cmd, $pngOutput );
+
+			my $cmdStr = join( " ", @cmd );
+			my $systeMres = system($cmdStr);
+
+		}
+	}
 
 	# merge all png to one
+
 	# order of merging
 
-	my @layerStr2 = map { $dirPath . $_->GetOutputLayer() . ".png" } @layers;
-	my $layerStr2 = join( " ", @layerStr2 );
+	my @layerStr = map { $dirPath . $_->GetOutputLayer() . ".png" } @layers;
+	my $layerStr = join( " ", @layerStr );
 
 	my $result = 1;
 
 	my @cmd = ( EnumsPaths->InCAM_3rdScripts . "im\\convert.exe" );
-	push( @cmd, $layerStr2 );
+	push( @cmd, $layerStr );
 
 	push( @cmd, "-flatten" );
 	push( @cmd, "-trim" );
@@ -160,118 +192,6 @@ sub __OutputPdf {
 
 	# merge all png to one
 
-}
-
-sub __CreatePng {
-	my $self      = shift;
-	my $layerList = shift;
-	my $dirPath   = shift;
-
-	my @layers = $layerList->GetLayers();
-	@layers = grep { $_->PrintLayer() } @layers;
-
-	my @threads;
-	$self->{"inCAM"}->{"childThread"} = 1;
-
-	foreach my $l (@layers) {
-
-		# merge all png to one
-		my $result = 1;
-
-		#		c: \Export \report > convert -density 300 test . pdf -shave 20 x 20 -trim -shave 5 x 5 + l evel-colors green,
-		#		white -fuzz 20 % -transparent white result . png
-		#
-		#		  c : \Export \report > convert -density 300 test . pdf -shave 20 x 20 -trim -shave 5 x 5 + l evel-colors green,
-		#		white -alpha on -channel a -evaluate set 50 % -fuzz 50 % -trans parent white result2 . png
-
-		my @cmd = ( EnumsPaths->InCAM_3rdScripts . "im\\convert.exe" );
-		push( @cmd, "-density 300" );
-		push( @cmd, $dirPath . $l->GetOutputLayer() . ".pdf" );
-		push( @cmd, "-shave 20x20 -trim -shave 5x5" );
-		push( @cmd, "+level-colors " . $self->__ConvertColor( $l->GetColor() ) . ",white" );
-
-		if ( $l->GetTransparency() < 100 ) {
-
-			push( @cmd, " -alpha on -channel a -evaluate set " . $l->GetTransparency() . "%" );
-			push( @cmd, "-fuzz 30% -transparent white" );
-
-		}
-		else {
-			push( @cmd, "-transparent white" );
-		}
-
-		my $pngOutput = $dirPath . $l->GetOutputLayer() . ".pdf";
-		$pngOutput =~ s/pdf/png/;
-		push( @cmd, $pngOutput );
-
-		my $cmdStr = join( " ", @cmd );
-
-		my $thr1 = threads->create( sub { $self->__ConvertToPng($cmdStr) } );
-
-		push( @threads, $thr1 );
-		print STDERR "threat created \n";
-
-	}
-
-	foreach (@threads) {
-		$_->join();
-	}
-	$self->{"inCAM"}->{"childThread"} = 0;
-	
-	print STDERR "threats done \n";
-
-}
-
-sub __ConvertToPng {
-	my $self = shift;
-	my $cmd  = shift;
-
-	
-
-	my $systeMres = system($cmd);
-
-}
-
-sub __SplitMultiPdf {
-	my $self      = shift;
-	my $layerList = shift;
-	my $pdfOutput = shift;
-	my $dirPath   = shift;
-
-	my @layers = $layerList->GetLayers();
-	@layers = grep { $_->PrintLayer() } @layers;
-
-	my $pdf_in = PDF::API2->open($pdfOutput);
-
-	foreach my $pagenum ( 1 .. $pdf_in->pages ) {
-
-		my $pdf_out = PDF::API2->new;
-
-		my $page_in = $pdf_in->openpage($pagenum);
-
-		#
-		# create a new page
-		#
-		my $page_out = $pdf_out->page(0);
-
-		my @mbox = $page_in->get_mediabox;
-		$page_out->mediabox(@mbox);
-
-		my $xo = $pdf_out->importPageIntoForm( $pdf_in, $pagenum );
-
-		my $gfx = $page_out->gfx;
-
-		$gfx->formimage(
-			$xo,
-			0, 0,    # x y
-			1
-		);           # scale
-
-		my $out = $dirPath . $layers[ $pagenum - 1 ]->GetOutputLayer() . ".pdf";
-
-		$pdf_out->saveas($out);
-
-	}
 }
 
 #sub __OutputPdf {
@@ -624,23 +544,13 @@ sub __ConvertColor {
 	my $self   = shift;
 	my $rgbStr = shift;
 
-	$rgbStr = "'rgb(" . $rgbStr . ")'";
+	my @rgb = split( ",", $rgbStr );
 
-	return $rgbStr;
+	my $clr = sprintf( "%02d", ( 99 * $rgb[0] ) / 255 ) . sprintf( "%02d", ( 99 * $rgb[1] ) / 255 ) . sprintf( "%02d", ( 99 * $rgb[2] ) / 255 );
+
+	return $clr;
 
 }
-
-#sub __ConvertColor {
-#	my $self   = shift;
-#	my $rgbStr = shift;
-#
-#	my @rgb = split( ",", $rgbStr );
-#
-#	my $clr = sprintf( "%02d", ( 99 * $rgb[0] ) / 255 ) . sprintf( "%02d", ( 99 * $rgb[1] ) / 255 ) . sprintf( "%02d", ( 99 * $rgb[2] ) / 255 );
-#
-#	return $clr;
-#
-#}
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

@@ -8,8 +8,7 @@ use warnings;
 
 # ============ INPUT LINE =================
 my $inputLine =
-"compensate_layer,source_layer=f,dest_layer=f_comp,dest_layer_type=rout";
-# ============ INPUT LINE =================
+"COM clip_area_end,layers_mode=affected_layers,layer=,area=profile,area_type=rectangle,inout=outside,contour_cut=yes,margin=-5,feat_types=line\;pad\;surface\;arc\;text,pol_types=positive\;negative";# ============ INPUT LINE =================
 
 
 my $output = "\$inCAM->COM(";

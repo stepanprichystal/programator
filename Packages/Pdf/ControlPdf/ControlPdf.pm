@@ -13,8 +13,12 @@ use warnings;
 use aliased 'Helpers::GeneralHelper';
 use aliased 'CamHelpers::CamHelper';
 use aliased 'Helpers::JobHelper';
+use aliased 'Enums::EnumsPaths';
+use aliased 'CamHelpers::CamStepRepeat';
 use aliased 'Packages::Pdf::Template2Pdf::Template2Pdf';
 use aliased 'Packages::Pdf::ControlPdf::HtmlTemplate::TemplateKey';
+use aliased 'Packages::Pdf::ControlPdf::FinalPreview::FinalPreview';
+use aliased 'Packages::Pdf::ControlPdf::FinalPreview::Enums' => "EnumsFinal";
 
 #-------------------------------------------------------------------------------------------#
 #  Interface
@@ -27,32 +31,34 @@ sub new {
 
 	$self->{"inCAM"} = shift;
 	$self->{"jobId"} = shift;
-	$self->{"step"} = shift;
+	$self->{"step"}  = shift;
 
 	$self->{"lang"} = "en";
 
-	$self->{"pdfStep"} = "pdf_".$self->{"step"};
+	$self->{"pdfStep"} = "pdf_" . $self->{"step"};
 
-	#$self->{"outputPdf"} = OutputPdf->new();
+	$self->{"outputPath"} = EnumsPaths->Client_INCAMTMPOTHER . GeneralHelper->GetGUID() . ".pdf";
+
+	$self->{"previewTop"} = FinalPreview->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"pdfStep"}, EnumsFinal->View_FROMTOP );
+	$self->{"previewBot"} = FinalPreview->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"pdfStep"}, EnumsFinal->View_FROMBOT );
 
 	return $self;
 }
 
-
-
 sub Create {
 	my $self = shift;
 
-
 	CamHelper->SetStep( $self->{"inCAM"}, $self->{"step"} );
 
-	my $pdfStep = $self->__CreatePdfStep();
+	$self->__CreatePdfStep();
 
-	CamHelper->SetStep( $self->{"inCAM"}, $pdfStep );
-	
-	
-	$self->__DeletePdfStep($pdfStep);
+	CamHelper->SetStep( $self->{"inCAM"}, $self->{"pdfStep"}  );
 
+	# 1) Final preview
+	$self->{"previewTop"}->Create();
+
+	$self->__DeletePdfStep($self->{"pdfStep"} );
+}
 
 # delete pdf step
 sub __ProcessTemplate {
@@ -73,9 +79,6 @@ sub __ProcessTemplate {
 
 	my $outFile = $convertor->GetOutFile();
 }
-
-
-
 
 # create special step, which IPC will be exported from
 sub __CreatePdfStep {
@@ -101,7 +104,7 @@ sub __CreatePdfStep {
 				 dest_database    => "",
 				 "remove_from_sr" => "yes"
 	);
-	
+
 	#check if SR exists in etStep, if so, flattern whole step
 	my $srExist = CamStepRepeat->ExistStepAndRepeats( $inCAM, $jobId, $stepPdf );
 
@@ -110,29 +113,23 @@ sub __CreatePdfStep {
 	}
 }
 
-
-
-
 sub __FlatternPdfStep {
-	my $self   = shift;
+	my $self    = shift;
 	my $stepPdf = shift;
-	my $inCAM  = $self->{"inCAM"};
-	my $jobId  = $self->{"jobId"};
+	my $inCAM   = $self->{"inCAM"};
+	my $jobId   = $self->{"jobId"};
 
 	CamHelper->SetStep( $self->{"inCAM"}, $stepPdf );
 
-	 
 	my @allLayers = CamJob->GetBoardLayers( $inCAM, $jobId );
-
-	 
 
 	foreach my $l (@allLayers) {
 
 		CamLayer->FlatternLayer( $inCAM, $jobId, $stepPdf, $l->{"gROWname"} );
 	}
-	
-	$inCAM->COM( 'sredit_sel_all');
-	$inCAM->COM( 'sredit_del_steps');
+
+	$inCAM->COM('sredit_sel_all');
+	$inCAM->COM('sredit_del_steps');
 
 }
 
@@ -149,6 +146,7 @@ sub __DeletePdfStep {
 		$inCAM->COM( "delete_entity", "job" => $jobId, "name" => $stepPdf, "type" => "step" );
 	}
 }
+
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#
@@ -162,11 +160,9 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $jobId = "f52456";
 
-	my $control = ControlPdf->new( $inCAM, $jobId );
+	my $control = ControlPdf->new( $inCAM, $jobId, "o+1" );
 
-	$control->__ProcessTemplate();
-
+	$control->Create();
 }
 
 1;
-

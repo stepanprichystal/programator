@@ -201,7 +201,7 @@ sub DESTROY {
 	}
 
 	# send(SOCK, "${DIR_PREFIX}CLOSEDOWN \n", 0);
-	if ($s) {
+	if ($s && (!defined $self->{"childThread"} || $self->{"childThread"} == 0)) {
 
 		print $s "${DIR_PREFIX}CLOSEDOWN \n";
 

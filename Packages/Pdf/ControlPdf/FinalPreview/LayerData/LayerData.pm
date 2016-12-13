@@ -26,6 +26,7 @@ sub new {
 	$self->{"order"} = undef;
 	$self->{"color"} = undef;
 	$self->{"output"} = undef;
+	$self->{"transparency"} = 100;
 	
 	my @l = ();
 	$self->{"singleLayers"}    = \@l; 
@@ -33,6 +34,20 @@ sub new {
 	return $self;  
 }
  
+
+sub PrintLayer{
+	my $self = shift;
+	
+	if($self->{"output"} && defined $self->{"color"} && $self->{"color"} ne ""){
+		
+		return 1;
+	}else{
+		
+		return 0;
+	}
+	
+	
+} 
  
 sub GetColor{
 	my $self = shift;
@@ -45,6 +60,22 @@ sub SetColor{
 	
 	
 	$self->{"color"} = $color;
+}
+
+
+sub SetTransparency{
+	my $self = shift;
+	my $val = shift;
+	
+	
+	$self->{"transparency"} = $val;
+}
+
+sub GetTransparency{
+	my $self = shift;
+
+	
+	return $self->{"transparency"};
 }
 
 sub GetType{
@@ -68,6 +99,12 @@ sub SetOutputLayer{
 	$self->{"output"} = $lName;
 }
  
+sub AddSingleLayer{
+	my $self = shift;
+	my $singleL = shift;
+	
+	push(@{$self->{"singleLayers"}}, $singleL);
+}
  
 sub GetSingleLayers{
 	my $self = shift;

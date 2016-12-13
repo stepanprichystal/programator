@@ -3,7 +3,7 @@
 # Description: TifFile - interface for signal layers
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::Pdf::ControlPdf::ControlPdf;
+package Packages::Pdf::ControlPdf::SinglePreview::SinglePreview;
 
 #3th party library
 use strict;

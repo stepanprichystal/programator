@@ -14,8 +14,11 @@ use aliased 'Helpers::GeneralHelper';
 use aliased 'Packages::Pdf::ControlPdf::FinalPreview::LayerData::LayerDataList';
 use aliased 'Packages::Pdf::ControlPdf::FinalPreview::OutputPdf';
 use aliased 'CamHelpers::CamDrilling';
+use aliased 'CamHelpers::CamJob';
 use aliased 'Packages::Pdf::ControlPdf::Helper';
 use aliased 'Enums::EnumsPaths';
+use aliased 'Packages::Pdf::ControlPdf::FinalPreview::Enums';
+use aliased 'Connectors::HeliosConnector::HegMethods';
 
 #-------------------------------------------------------------------------------------------#
 #  Interface
@@ -33,7 +36,7 @@ sub new {
 	$self->{"viewType"} = shift;
 
 	$self->{"layerList"} = LayerDataList->new( $self->{"viewType"} );
-	$self->{"outputPdf"} = OutputPdf->new( $self->{"pdfStep"} );
+	$self->{"outputPdf"} = OutputPdf->new( $self->{"inCAM"},$self->{"jobId"}, $self->{"pdfStep"} );
 
 	$self->{"outputPath"} = EnumsPaths->Client_INCAMTMPOTHER . GeneralHelper->GetGUID() . ".png";
 
@@ -42,7 +45,7 @@ sub new {
 
 sub Create {
 	my $self = shift;
-	my $view = shift;
+ 
 
 	# get all base layers
 	my @layers = CamJob->GetBoardLayers( $self->{"inCAM"}, $self->{"jobId"} );
@@ -60,7 +63,7 @@ sub Create {
 
 	my $outPdf = $self->{"outputPdf"}->GetOutput();
 
-	$self->__ConvertPdfToPng($outPdf);
+	#$self->__ConvertPdfToPng($outPdf);
 
 	return 1;
 }
@@ -72,9 +75,11 @@ sub __ConvertPdfToPng {
 	my $result = 1;
 
 	my @cmd = ( EnumsPaths->InCAM_3rdScripts . "im\\convert.exe" );
-	push( @cmd, "-density 200" );
+	push( @cmd, "-density 400" );
 	push( @cmd, $outputPath );
 	push( @cmd, "-shave 20x20 -trim -shave 5x5" );
+	push( @cmd, "--alpha off" );
+
 	push( @cmd, $self->{"outputPath"} );
 
 	my $cmdStr = join( " ", @cmd );
@@ -99,7 +104,7 @@ sub __PrepareColors {
 	$clrs{ Enums->Type_PCBMAT } = "233,252,199";
 
 	# surface or cu
-	my $surface = HegMethods->GetPcbSurface($jobId);
+	my $surface = HegMethods->GetPcbSurface($self->{"jobId"});
 
 	my $surfClr = "";
 
@@ -129,16 +134,16 @@ sub __PrepareColors {
 
 	# Depth NC plated
 	#multiply surface color
-	my @surfArr = $split ( "," $surfClr );
-	@surfArr = map( $_ * 1 / 4 );
+	my @surfArr = split (",",$surfClr );
+	@surfArr = map { $_ * 1 / 4 } @surfArr;
 
-	$clrs{ Enums->Type_PLTDEPTHNC } = join( ",", @surfArr );
+	$clrs{ Enums->Type_PLTDEPTHNC } = join(",", @surfArr );
 
 	# Depth NC non plated
 	$clrs{ Enums->Type_NPLTDEPTHNC } = "233,252,199";
 
 	# Through NC
-	$clrs{ Enums->Type_THROUGHNC } = "255,255,255";
+	$clrs{ Enums->Type_THROUGHNC } = "250,250,250";
 
 	return \%clrs;
 
@@ -147,32 +152,40 @@ sub __PrepareColors {
 sub __GetMaskColor {
 	my $self = shift;
 
-	my $pcbMask = Helper->GetSolderMaskColor( $self->{"inCAM"}, $self->{"jobId"} );
-	$pcbMask = $self->{"viewType"} eq Enums->View_FROMTOP ? $pcbMask->{"top"} : $pcbMask->{"bot"};
+	my %pcbMask = Helper->GetMaskColor( $self->{"inCAM"}, $self->{"jobId"} );
+	my $pcbMaskVal = $self->{"viewType"} eq Enums->View_FROMTOP ? $pcbMask{"top"} : $pcbMask{"bot"};
+
+	unless($pcbMaskVal){
+		return "";
+	}
 
 	my %colorMap = ();
 	$colorMap{"Z"} = "0,163,11";       # green
-	$colorMap{"V"} = "74,74,74";       # black
+	$colorMap{"B"} = "74,74,74";       # black
 	$colorMap{"W"} = "255,255,255";    #white
 	$colorMap{"M"} = "0,20,235";       #blue
 	$colorMap{"T"} = "255,255,255";    # ??
 	$colorMap{"R"} = "242,0,0";        # red
 
-	return $colorMap{$pcbMask};
+	return $colorMap{$pcbMaskVal};
 }
 
 sub __GetSilkColor {
 	my $self = shift;
 
-	my $pcbSilk = Helper->GetSilkScreenColor( $self->{"inCAM"}, $self->{"jobId"} );
-	$pcbSilk = $self->{"viewType"} eq Enums->View_FROMTOP ? $pcbSilk->{"top"} : $pcbSilk->{"bot"};
+	my %pcbSilk = Helper->GetSilkColor( $self->{"inCAM"}, $self->{"jobId"} );
+	my $pcbSilkVal = $self->{"viewType"} eq Enums->View_FROMTOP ? $pcbSilk{"top"} : $pcbSilk{"bot"};
+
+	unless($pcbSilkVal){
+		return "";
+	}
 
 	my %colorMap = ();
-	$colorMap{"B"} = "255,255,255";    #white
+	$colorMap{"B"} = "250,250,250";    #white
 	$colorMap{"Z"} = "255,247,0";      #yellow
 	$colorMap{"C"} = "74,74,74";       # black
 
-	return $colorMap{$pcbSilk};
+	return $colorMap{$pcbSilkVal};
 }
 
 #-------------------------------------------------------------------------------------------#

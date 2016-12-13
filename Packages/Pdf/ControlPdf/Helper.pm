@@ -12,6 +12,8 @@ use warnings;
 #local library
 use aliased 'Helpers::GeneralHelper';
 use aliased 'Packages::NifFile::NifFile';
+use aliased 'Connectors::HeliosConnector::HegMethods';
+use aliased 'CamHelpers::CamHelper';
 
 #-------------------------------------------------------------------------------------------#
 #  Interface

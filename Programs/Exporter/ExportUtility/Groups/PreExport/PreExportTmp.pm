@@ -11,6 +11,7 @@ use aliased 'Helpers::GeneralHelper';
 use aliased 'Packages::Events::Event';
 use aliased 'Programs::Exporter::UnitEnums';
 use aliased 'Managers::MessageMngr::MessageMngr';
+use aliased 'Enums::EnumsGeneral';
 
 use aliased "Programs::Exporter::ExportUtility::Groups::PreExport::PreUnit"  => "UnitExport";
 use aliased "Programs::Exporter::ExportChecker::Groups::PreExport::Presenter::PreUnit" => "Unit";

@@ -11,6 +11,7 @@ use warnings;
 #local library
 use aliased 'Enums::EnumsPaths';
 use aliased 'Helpers::JobHelper';
+use aliased 'Helpers::FileHelper';
 
 #-------------------------------------------------------------------------------------------#
 #   Package methods
@@ -26,23 +27,26 @@ sub new {
 	my $nifPath = JobHelper->GetJobArchive( $self->{"jobId"} ) . $self->{"jobId"} . ".nif";
 
 	my %nifData = ();
-	$self->{"nifData"} = \%nifData;
+	$self->{"nifData"}  = \%nifData;
 	$self->{"nifExist"} = 0;
 
 	if ( -e $nifPath ) {
-		
+
 		$self->{"nifExist"} = 1;
-		
-		my @lines = @{FileHelper->ReadAsLines($nifPath)};
- 
-		foreach my $l (@lines){
-			
+
+		my @lines = @{ FileHelper->ReadAsLines($nifPath) };
+
+		foreach my $l (@lines) {
+
+			if ( $l =~ /.*[^=]=[^=].*/ ) {
+
 				my @splited = split( "=", $l );
 				chomp @splited;
-				$self->{"nifData"}->{$splited[0]} = $splited[1];
+
+				$self->{"nifData"}->{ $splited[0] } = $splited[1];
+			}
 		}
 	}
-	 
 
 	return $self;
 }
@@ -51,7 +55,7 @@ sub new {
 sub Exist {
 	my $self = shift;
 
-	if ($self->{"nifExist"} ) {
+	if ( $self->{"nifExist"} ) {
 		return 1;
 	}
 	else {
@@ -64,8 +68,8 @@ sub GetValue {
 	my $jobId     = shift;
 	my $attribute = shift;
 
- 	chomp($attribute);
- 
+	chomp($attribute);
+
 	return $self->{"nifData"}->{$attribute};
 }
 
