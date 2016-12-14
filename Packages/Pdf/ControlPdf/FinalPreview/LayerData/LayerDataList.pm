@@ -44,13 +44,19 @@ sub __InitLayers {
 	push( @{ $self->{"layers"} }, LayerData->new( Enums->Type_SILK ) );
 	push( @{ $self->{"layers"} }, LayerData->new( Enums->Type_PLTDEPTHNC ) );
 	push( @{ $self->{"layers"} }, LayerData->new( Enums->Type_NPLTDEPTHNC ) );
-	push( @{ $self->{"layers"} }, LayerData->new( Enums->Type_THROUGHNC ) );
+	push( @{ $self->{"layers"} }, LayerData->new( Enums->Type_PLTTHROUGHNC ) );
+	push( @{ $self->{"layers"} }, LayerData->new( Enums->Type_NPLTTHROUGHNC ) );
 }
 
 sub GetLayers {
 	my $self = shift;
+	my $printable = shift;
 
-	return @{ $self->{"layers"} };
+	my @layers = @{ $self->{"layers"} };
+
+	@layers = grep { $_->PrintLayer() } @layers;
+
+	return @layers;
 }
 
 sub GetLayerByType {
@@ -87,28 +93,43 @@ sub SetLayers {
 				$self->__AddToLayerData( $l, Enums->Type_SILK );
 
 			}
-			elsif ( $l->{"type"} && ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_plt_bDrillTop || $l->{"type"} eq EnumsGeneral->LAYERTYPE_plt_bMillTop ) )
+			elsif ( $l->{"type"}
+					&& ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_plt_bDrillTop || $l->{"type"} eq EnumsGeneral->LAYERTYPE_plt_bMillTop ) )
 			{
 
 				$self->__AddToLayerData( $l, Enums->Type_PLTDEPTHNC );
 
 			}
-			elsif ( $l->{"type"} && ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_bMillTop || $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_score ) ) {
+			elsif ( $l->{"type"} && ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_bMillTop || $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_score ) )
+			{
 
 				$self->__AddToLayerData( $l, Enums->Type_NPLTDEPTHNC );
 
 			}
 			elsif (
-					$l->{"type"}
-					&& (    $l->{"type"} eq EnumsGeneral->LAYERTYPE_plt_nMill
-						 || $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_nMill
-						 || $l->{"type"} eq EnumsGeneral->LAYERTYPE_plt_nDrill
-						 || $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_rsMill
-						 || $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_kMill )
+				$l->{"type"}
+				&& (
+					   $l->{"type"} eq EnumsGeneral->LAYERTYPE_plt_nMill
+					|| $l->{"type"} eq EnumsGeneral->LAYERTYPE_plt_nDrill
+
+				)
 			  )
 			{
 
-				$self->__AddToLayerData( $l, Enums->Type_THROUGHNC );
+				$self->__AddToLayerData( $l, Enums->Type_PLTTHROUGHNC );
+
+			}
+			elsif (
+				$l->{"type"}
+				&& (
+					 $l->{"type"}    eq EnumsGeneral->LAYERTYPE_nplt_nMill
+					 || $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_rsMill 
+					 || $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_kMill
+				)
+			  )
+			{
+
+				$self->__AddToLayerData( $l, Enums->Type_NPLTTHROUGHNC );
 
 			}
 		}
@@ -136,28 +157,44 @@ sub SetLayers {
 				$self->__AddToLayerData( $l, Enums->Type_SILK );
 
 			}
-			elsif ( $l->{"type"} && ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_plt_bDrillBot || $l->{"type"} eq EnumsGeneral->LAYERTYPE_plt_bMillBot ) )
+			elsif ( $l->{"type"}
+					&& ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_plt_bDrillBot || $l->{"type"} eq EnumsGeneral->LAYERTYPE_plt_bMillBot ) )
 			{
 
 				$self->__AddToLayerData( $l, Enums->Type_PLTDEPTHNC );
 
 			}
-			elsif ( $l->{"type"} && ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_bMillBot || $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_score ) ) {
+			elsif ( $l->{"type"}
+					&& ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_bMillBot || $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_score ) )
+			{
 
 				$self->__AddToLayerData( $l, Enums->Type_NPLTDEPTHNC );
 
 			}
 			elsif (
-					$l->{"type"}
-					&& (    $l->{"type"} eq EnumsGeneral->LAYERTYPE_plt_nMill
-						 || $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_nMill
-						 || $l->{"type"} eq EnumsGeneral->LAYERTYPE_plt_nDrill
-						 || $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_rsMill
-						 || $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_kMill )
+				$l->{"type"}
+				&& (
+					   $l->{"type"} eq EnumsGeneral->LAYERTYPE_plt_nMill
+					|| $l->{"type"} eq EnumsGeneral->LAYERTYPE_plt_nDrill
+
+				)
 			  )
 			{
 
-				$self->__AddToLayerData( $l, Enums->Type_THROUGHNC );
+				$self->__AddToLayerData( $l, Enums->Type_PLTTHROUGHNC );
+
+			}
+			elsif (
+				$l->{"type"}
+				&& (
+					 $l->{"type"}    eq EnumsGeneral->LAYERTYPE_nplt_nMill
+					 || $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_rsMill 
+					 || $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_kMill
+				)
+			  )
+			{
+
+				$self->__AddToLayerData( $l, Enums->Type_NPLTTHROUGHNC );
 
 			}
 		}

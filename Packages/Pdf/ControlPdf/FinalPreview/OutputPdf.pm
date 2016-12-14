@@ -60,8 +60,8 @@ sub __OutputPdf {
 
 	my $inCAM = $self->{"inCAM"};
 
-	my @layers = $layerList->GetLayers();
-	@layers = grep { $_->PrintLayer() } @layers;
+	my @layers = $layerList->GetLayers(1);
+	
 
 	my $dirPath = EnumsPaths->Client_INCAMTMPOTHER . GeneralHelper->GetGUID() . "\\";
 	mkdir($dirPath) or die "Can't create dir: " . $dirPath . $_;
@@ -139,7 +139,7 @@ sub __OutputPdf {
 	push( @cmd, "-flatten" );
 	push( @cmd, "-trim" );
 
-	push( @cmd, $dirPath );
+	#push( @cmd, $dirPath );
 
 	push( @cmd, $self->{"outputPath"} );
 
@@ -147,16 +147,16 @@ sub __OutputPdf {
 
 	my $systeMres = system($cmdStr);
 
-	#	foreach my $l (@layers) {
-	#		if ( -e $dirPath . $l->GetOutputLayer() . ".png" ) {
-	#			unlink( $dirPath . $l->GetOutputLayer() . ".png" );
-	#		}
-	#		if ( -e $dirPath . $l->GetOutputLayer() . ".pdf" ) {
-	#			unlink( $dirPath . $l->GetOutputLayer() . ".pdf" );
-	#		}
-	#	}
-	#
-	#	rmdir($dirPath);
+	foreach my $l (@layers) {
+		if ( -e $dirPath . $l->GetOutputLayer() . ".png" ) {
+			unlink( $dirPath . $l->GetOutputLayer() . ".png" );
+		}
+		if ( -e $dirPath . $l->GetOutputLayer() . ".pdf" ) {
+			unlink( $dirPath . $l->GetOutputLayer() . ".pdf" );
+		}
+	}
+
+	rmdir($dirPath);
 
 	# merge all png to one
 
@@ -167,8 +167,8 @@ sub __CreatePng {
 	my $layerList = shift;
 	my $dirPath   = shift;
 
-	my @layers = $layerList->GetLayers();
-	@layers = grep { $_->PrintLayer() } @layers;
+	my @layers = $layerList->GetLayers(1);
+
 
 	my @threads;
 	$self->{"inCAM"}->{"childThread"} = 1;
@@ -186,18 +186,20 @@ sub __CreatePng {
 
 		my @cmd = ( EnumsPaths->InCAM_3rdScripts . "im\\convert.exe" );
 		push( @cmd, "-density 300" );
+
+		#push( @cmd, "-transparent white" );
 		push( @cmd, $dirPath . $l->GetOutputLayer() . ".pdf" );
 		push( @cmd, "-shave 20x20 -trim -shave 5x5" );
-		push( @cmd, "+level-colors " . $self->__ConvertColor( $l->GetColor() ) . ",white" );
+		push( @cmd, "+level-colors " . $self->__ConvertColor( $l->GetColor() ) . ",pink" );
 
 		if ( $l->GetTransparency() < 100 ) {
 
-			push( @cmd, " -alpha on -channel a -evaluate set " . $l->GetTransparency() . "%" );
-			push( @cmd, "-fuzz 30% -transparent white" );
+			push( @cmd, "-alpha on -channel a -evaluate set " . $l->GetTransparency() . "%" );
+			push( @cmd, "-fuzz 30% -transparent pink" );
 
 		}
 		else {
-			push( @cmd, "-transparent white" );
+			push( @cmd, "-transparent pink" );
 		}
 
 		my $pngOutput = $dirPath . $l->GetOutputLayer() . ".pdf";
@@ -217,7 +219,7 @@ sub __CreatePng {
 		$_->join();
 	}
 	$self->{"inCAM"}->{"childThread"} = 0;
-	
+
 	print STDERR "threats done \n";
 
 }
@@ -225,8 +227,6 @@ sub __CreatePng {
 sub __ConvertToPng {
 	my $self = shift;
 	my $cmd  = shift;
-
-	
 
 	my $systeMres = system($cmd);
 
@@ -238,8 +238,8 @@ sub __SplitMultiPdf {
 	my $pdfOutput = shift;
 	my $dirPath   = shift;
 
-	my @layers = $layerList->GetLayers();
-	@layers = grep { $_->PrintLayer() } @layers;
+	my @layers = $layerList->GetLayers(1);
+	
 
 	my $pdf_in = PDF::API2->open($pdfOutput);
 
@@ -353,7 +353,7 @@ sub __OptimizeLayers {
 	my $layerList = shift;
 
 	my $inCAM  = $self->{"inCAM"};
-	my @layers = $layerList->GetLayers();
+	my @layers = $layerList->GetLayers(1);
 
 	my $lName = GeneralHelper->GetGUID();
 
@@ -408,8 +408,10 @@ sub __PrepareLayers {
 	$self->__PrepareSILK( $layerList->GetLayerByType( Enums->Type_SILK ) );
 	$self->__PreparePLTDEPTHNC( $layerList->GetLayerByType( Enums->Type_PLTDEPTHNC ) );
 	$self->__PrepareNPLTDEPTHNC( $layerList->GetLayerByType( Enums->Type_NPLTDEPTHNC ) );
-	$self->__PrepareTHROUGHNC( $layerList->GetLayerByType( Enums->Type_THROUGHNC ) );
-
+	$self->__PreparePLTTHROUGHNC( $layerList->GetLayerByType( Enums->Type_PLTTHROUGHNC ) );
+	$self->__PrepareNPLTTHROUGHNC( $layerList->GetLayerByType( Enums->Type_NPLTTHROUGHNC ) );
+	
+	
 }
 
 # Create layer and fill profile - simulate pcb material
@@ -573,13 +575,15 @@ sub __PrepareNPLTDEPTHNC {
 			$inCAM->COM( "merge_layers", "source_layer" => $l->{"gROWname"}, "dest_layer" => $lName );
 		}
 	}
+	
+	
 
 	$layer->SetOutputLayer($lName);
 
 }
 
 # Compensate this layer and resize about 100µm (plating)
-sub __PrepareTHROUGHNC {
+sub __PreparePLTTHROUGHNC {
 	my $self  = shift;
 	my $layer = shift;
 
@@ -596,13 +600,47 @@ sub __PrepareTHROUGHNC {
 
 			CamLayer->WorkLayer( $inCAM, $l->{"gROWname"} );
 			my $lComp = CamLayer->RoutCompensation( $inCAM, $l->{"gROWname"}, "document" );
+ 
 
-			#			# if plated -> resiye -100µm
-			#			if($l->{"type"} ){
-			#				CamLayer->WorkLayer( $inCAM, $lComp );
-			#				$inCAM->COM( "sel_resize", "size" => -100, "corner_ctl" => "no" );
-			#			}
-			#
+			$inCAM->COM( "merge_layers", "source_layer" => $lComp, "dest_layer" => $lName );
+
+			$inCAM->COM( 'delete_layer', "layer" => $lComp );
+
+		}
+		else {
+
+			$inCAM->COM( "merge_layers", "source_layer" => $l->{"gROWname"}, "dest_layer" => $lName );
+		}
+
+	}
+	
+	CamLayer->WorkLayer( $inCAM, $lName );
+	$inCAM->COM( "sel_resize", "size" => -100, "corner_ctl" => "no" );
+
+	$layer->SetOutputLayer($lName);
+
+}
+
+
+# Compensate this layer and resize about 100µm (plating)
+sub __PrepareNPLTTHROUGHNC {
+	my $self  = shift;
+	my $layer = shift;
+
+	my $inCAM  = $self->{"inCAM"};
+	my @layers = $layer->GetSingleLayers();
+	my $lName  = GeneralHelper->GetGUID();
+
+	$inCAM->COM( 'create_layer', layer => $lName, context => 'misc', type => 'document', polarity => 'positive', ins_layer => '' );
+
+	# compensate
+	foreach my $l (@layers) {
+
+		if ( $l->{"gROWlayer_type"} eq "rout" ) {
+
+			CamLayer->WorkLayer( $inCAM, $l->{"gROWname"} );
+			my $lComp = CamLayer->RoutCompensation( $inCAM, $l->{"gROWname"}, "document" );
+ 
 
 			$inCAM->COM( "merge_layers", "source_layer" => $lComp, "dest_layer" => $lName );
 

@@ -4,7 +4,7 @@
 # type of layer
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::Pdf::ControlPdf::LayerData::LayerData;
+package Packages::Pdf::ControlPdf::SinglePreview::LayerData::LayerData;
 
 
 #3th party library
@@ -12,8 +12,7 @@ use strict;
 use warnings;
 
 #local library
-use aliased 'Packages::Pdf::ControlPdf::LayerData::SingleLayerData';
-
+use aliased 'Packages::Pdf::ControlPdf::SinglePreview::LayerData::LayerDataSingle';
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
@@ -23,53 +22,51 @@ sub new {
 	$self  = {};
 	bless $self;
 
-	$self->{"type"}    = shift;  
- 
-	my @l = ();
-	$self->{"layers"}    = \@l;  
+	$self->{"type"} = shift;
+	$self->{"output"} = undef;
 
-	
+	my @l = ();
+	$self->{"singleLayers"}    = \@l; 
+ 
 	return $self;  
 }
 
+sub GetType{
+	my $self = shift;
+	 
+	return $self->{"type"};
+}
 
+sub GetOutputLayer{
+	my $self = shift;
+	 
+	return $self->{"output"};
+}
+
+ 
+sub SetOutputLayer{
+	my $self = shift;
+	my $lName = shift;
+	
+	
+	$self->{"output"} = $lName;
+}
  
 sub AddSingleLayer{
 	my $self = shift;
-	my $l = shift;
-	my $lTitle = shift;
-	my $lInfo = shift;
+ 
 	
-	my $d = SingleLayerData->new($l, $lTitle, $lInfo);
+	my $singleLayer = LayerDataSingle->new(@_);
 	
-	push(@{$self->{"layers"}}, $d);
-	
+	push(@{$self->{"singleLayers"}}, $singleLayer);
 }
- 
- 
-sub GetLayerByName{
-	my $self = shift;
-	my $name = shift;
-	
-	my $sl = (grep {$_->{"gROWname"} eq $name} @{$self->{"layers"}})[0];
-	return $sl;
-
-}  
  
 sub GetSingleLayers{
 	my $self = shift;
-
-	return @{$self->{"layers"}};
-
-} 
-
-
-sub GetLayerCnt{
-	my $self = shift;
-	
-	
-	return @{$self->{"layers"}};
+	return @{$self->{"singleLayers"}};
 }
+
+
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

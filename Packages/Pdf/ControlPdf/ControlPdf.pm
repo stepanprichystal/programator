@@ -19,6 +19,7 @@ use aliased 'Packages::Pdf::Template2Pdf::Template2Pdf';
 use aliased 'Packages::Pdf::ControlPdf::HtmlTemplate::TemplateKey';
 use aliased 'Packages::Pdf::ControlPdf::FinalPreview::FinalPreview';
 use aliased 'Packages::Pdf::ControlPdf::FinalPreview::Enums' => "EnumsFinal";
+use aliased 'Packages::Pdf::ControlPdf::SinglePreview::SinglePreview';
 
 #-------------------------------------------------------------------------------------------#
 #  Interface
@@ -39,9 +40,11 @@ sub new {
 
 	$self->{"outputPath"} = EnumsPaths->Client_INCAMTMPOTHER . GeneralHelper->GetGUID() . ".pdf";
 
+	 
+	$self->{"template"} = Template2Pdf->new( $self->{"lang"} );
 	$self->{"previewTop"} = FinalPreview->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"pdfStep"}, EnumsFinal->View_FROMTOP );
 	$self->{"previewBot"} = FinalPreview->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"pdfStep"}, EnumsFinal->View_FROMBOT );
-
+	$self->{"previewSingle"} = SinglePreview->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"pdfStep"},$self->{"lang"} );
 	return $self;
 }
 
@@ -54,8 +57,12 @@ sub Create {
 
 	CamHelper->SetStep( $self->{"inCAM"}, $self->{"pdfStep"}  );
 
-	# 1) Final preview
-	$self->{"previewTop"}->Create();
+	# 1) Final preview top
+	#$self->{"previewTop"}->Create();
+	# 2) Final preview bot
+	#$self->{"previewBot"}->Create();
+	
+	$self->{"previewSingle"}->Create();
 
 	$self->__DeletePdfStep($self->{"pdfStep"} );
 }
@@ -69,15 +76,11 @@ sub __ProcessTemplate {
 	# Fill data template
 	my $templData = TemplateKey->new();
 
-	$templData->SetJobId("f12345");
+	$self->{"template"}->SetJobId("f12345");
 
-	my $convertor = Template2Pdf->new( $self->{"lang"} );
-
-	my $result = $convertor->Convert( $tempPath, $templData );
-
-	print STDERR "Result of converion: " . $result . ".\n";
-
-	my $outFile = $convertor->GetOutFile();
+	my $result = $self->{"template"}->Convert( $tempPath, $templData );
+ 
+	my $outFile = $self->{"template"}->GetOutFile();
 }
 
 # create special step, which IPC will be exported from

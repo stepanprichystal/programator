@@ -13,7 +13,9 @@ use Try::Tiny;
 
 #local library
 use aliased 'Enums::EnumsGeneral';
+use aliased 'Enums::EnumsPaths';
 use aliased 'Connectors::HeliosConnector::HegMethods';
+use aliased 'Helpers::GeneralHelper';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -287,7 +289,21 @@ sub UpdateNCInfo {
 
 	eval { 
 		print STDERR "Update NC info 3.\n";
-		HegMethods->UpdateNCInfo( $jobId, $infoStr );
+		
+		# TODO this is temporary solution
+		my $path = GeneralHelper->Root() . "\\Connectors\\HeliosConnector\\UpdateScript.pl"; 
+		my $ncInfo = EnumsPaths->Client_INCAMTMPOTHER . GeneralHelper->GetGUID();
+		
+		print STDERR "path nc info is:".$ncInfo."\n\n";
+		print STDERR "path script is :".$path."\n\n";
+		my $f;
+		open($f, ">", $ncInfo);
+		print $f $infoStr;
+		close($f);
+		system("perl $path $jobId $ncInfo");
+		# TODO this is temporary solution
+		
+#		HegMethods->UpdateNCInfo( $jobId, $infoStr );
 		print STDERR "Update NC info 4.\n";
 	};
 	if ( my $e = $@ ) {

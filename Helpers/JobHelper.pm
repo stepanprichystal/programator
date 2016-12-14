@@ -185,9 +185,9 @@ sub GetJobLayerTitle {
 	}
 
 	# board base layer
-	if ( $l->{"gROWname"} =~ /^[pm]?[cs]$/i ) {
+	elsif ( $l->{"gROWname"} =~ /^[pm]?[cs]$/i ) {
 
-		my %en = {};
+		my %en = ();
 		$en{"pc"} = "Silk screen top";
 		$en{"ps"} = "Silk screen bot";
 		$en{"mc"} = "Solder mask top";
@@ -195,7 +195,7 @@ sub GetJobLayerTitle {
 		$en{"c"}  = "Component layer";
 		$en{"s"}  = "Solder layer (bot)";
 
-		my %czl = {};
+		my %czl = ();
 		$czl{"pc"} = "Potisk top";
 		$czl{"ps"} = "Potisk bot";
 		$czl{"mc"} = "Nepajiva maska top";
@@ -210,7 +210,7 @@ sub GetJobLayerTitle {
 	}
 
 	# nc layers
-	if ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_plt_nDrill ) {
+	elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_plt_nDrill ) {
 
 		$title = "Plated through drilling";
 		if ($cz) {
@@ -325,57 +325,59 @@ sub GetJobLayerInfo {
 			}
 		}
 	}
+	elsif ( $l->{"type"} ) {
 
-	# get start/stop layer
-	my $startStop = "From: " . $l->{"gROWdrl_start_name"} . " to: " . $l->{"gROWdrl_end_name"};
-	if ($cz) {
-		$startStop = "z: " . $l->{"gROWdrl_start_name"} . " do: " . $l->{"gROWdrl_end_name"};
-	}
-
-	# nc layers
-
-	if ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_plt_bDrillTop ) {
-		$info = $startStop;
-
-	}
-	elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_plt_bDrillBot ) {
-		$info = $startStop;
-
-	}
-	elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_plt_cDrill ) {
-		$info = $startStop;
-
-	}
-	elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_plt_nMill && $l->{"gROWname"} =~ /^m\d$/ ) {
-		$info = $startStop;
-
-	}
-	elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_plt_bMillTop ) {
-		$info = $startStop;
-
-	}
-	elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_plt_bMillBot ) {
-		$info = $startStop;
-
-	}
-
-	elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_bMillTop ) {
-		$info = $startStop;
-	}
-	elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_bMillBot ) {
-		$info = $startStop;
-	}
-	elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_rsMill ) {
-		$info = "Milling is used for achive best final quality";
+		# get start/stop layer
+		my $startStop = "From: " . $l->{"gROWdrl_start_name"} . " to: " . $l->{"gROWdrl_end_name"};
 		if ($cz) {
-			$info = "Frezovanio je pouzivano pro dosazeni vysoke kvality opracovani.";
+			$startStop = "z: " . $l->{"gROWdrl_start_name"} . " do: " . $l->{"gROWdrl_end_name"};
 		}
-	}
 
-	elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_kMill ) {
-		$info = "Milling is used before electrical testing";
-		if ($cz) {
-			$info = "Frezovani pred elektrickym testem pro korektni prubeh testu.";
+		# nc layers
+
+		if ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_plt_bDrillTop ) {
+			$info = $startStop;
+
+		}
+		elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_plt_bDrillBot ) {
+			$info = $startStop;
+
+		}
+		elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_plt_cDrill ) {
+			$info = $startStop;
+
+		}
+		elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_plt_nMill && $l->{"gROWname"} =~ /^m\d$/ ) {
+			$info = $startStop;
+
+		}
+		elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_plt_bMillTop ) {
+			$info = $startStop;
+
+		}
+		elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_plt_bMillBot ) {
+			$info = $startStop;
+
+		}
+
+		elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_bMillTop ) {
+			$info = $startStop;
+		}
+		elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_bMillBot ) {
+			$info = $startStop;
+		}
+		elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_rsMill ) {
+			$info = "Milling is used for achive best final quality";
+			if ($cz) {
+				$info = "Frezovanio je pouzivano pro dosazeni vysoke kvality opracovani.";
+			}
+		}
+
+		elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_kMill ) {
+			$info = "Milling is used before electrical testing";
+			if ($cz) {
+				$info = "Frezovani pred elektrickym testem pro korektni prubeh testu.";
+			}
 		}
 	}
 

@@ -142,8 +142,11 @@ sub __PrepareColors {
 	# Depth NC non plated
 	$clrs{ Enums->Type_NPLTDEPTHNC } = "233,252,199";
 
+	# PLT Through NC
+	$clrs{ Enums->Type_PLTTHROUGHNC } = "250,250,250";
+
 	# Through NC
-	$clrs{ Enums->Type_THROUGHNC } = "250,250,250";
+	$clrs{ Enums->Type_NPLTTHROUGHNC } = "250,250,250";
 
 	return \%clrs;
 

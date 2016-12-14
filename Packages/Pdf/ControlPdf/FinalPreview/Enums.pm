@@ -8,7 +8,8 @@ use constant {
 	Type_SILK => "typeSilk",
 	Type_PLTDEPTHNC => "typePltDepthNc",
 	Type_NPLTDEPTHNC => "typeNPltDepthNc",
-	Type_THROUGHNC => "typeThroughNc"
+	Type_PLTTHROUGHNC => "typePltThroughNc",
+	Type_NPLTTHROUGHNC => "typePltThroughNc",
 
 };
 

@@ -4,7 +4,7 @@
 # type of layer
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::Pdf::ControlPdf::LayerData::SingleLayerData;
+package Packages::Pdf::ControlPdf::SinglePreview::LayerData::LayerDataSingle;
 
 
 #3th party library
@@ -21,37 +21,57 @@ sub new {
 	my $self = shift;
 	$self  = {};
 	bless $self;
-
-	$self->{"layer"} = shift;
-	$self->{"title"} = shift;
-	$self->{"info"} = shift;
  
+	$self->{"l"} = shift;
+	$self->{"enTit"} = shift;
+ 	$self->{"czTit"} = shift;
+ 	$self->{"enInf"} = shift;
+ 	$self->{"czInf"} = shift;	
+ 	
 	return $self;  
 }
 
 
-# return name of copper. Name can be
-# c, v2, v3, v4,......, s
-sub AddSigleLayer{
+sub GetLayer{
 	my $self = shift;
-	my $l = shift;
-	my $lTitle = shift;
-	my $lInfo = shift;
 	
-	return $self->{"copperName"};
+	return $self->{"l"};
+	
 }
-
-# Return number from 1 to infinity, according count of cu layers
-# c = 1, v2 = 2, v3 = 3, v4 = 4,......, s = order of last layer
-sub GetCopperNumber{
+ 
+ 
+sub GetTitle{
 	my $self = shift;
-	return $self->{"copperNumber"};
-}
+	my $lang = shift;
+	
+	if($lang eq "cz"){
+		
+		return $self->{"czTit"};
+		
+	}elsif($lang eq "en"){
+		
+		
+		return $self->{"enTit"};
+	}
+	
+} 
 
-sub GetUssage{
+
+sub GetInfo{
 	my $self = shift;
-	return $self->{"usage"};
-}
+	my $lang = shift;
+	
+	if($lang eq "cz"){
+		
+		return $self->{"czInf"};
+		
+	}elsif($lang eq "en"){
+		
+		
+		return $self->{"enInf"};
+	}
+	
+} 
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
