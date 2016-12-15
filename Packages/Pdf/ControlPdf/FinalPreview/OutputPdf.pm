@@ -17,6 +17,7 @@ use aliased 'Enums::EnumsPaths';
 use aliased 'Packages::Pdf::ControlPdf::FinalPreview::Enums';
 use aliased 'CamHelpers::CamLayer';
 use aliased 'CamHelpers::CamJob';
+ use Image::Size;
 
 #-------------------------------------------------------------------------------------------#
 #  Interface
@@ -143,6 +144,12 @@ sub __OutputPdf {
 	my $cmdStr = join( " ", @cmd );
 
 	my $systeMres = system($cmdStr);
+	
+#	
+#    # Get the size of globe.gif
+#    ($globe_x, $globe_y) = imgsize($self->{"outputPath"});
+#    # Assume X=60 and Y=40 for remaining examples
+#	
 
 	foreach my $l (@layers) {
 		if ( -e $dirPath . $l->GetOutputLayer() . ".png" ) {
