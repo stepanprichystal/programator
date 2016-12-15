@@ -61,7 +61,6 @@ sub __OutputPdf {
 	my $inCAM = $self->{"inCAM"};
 
 	my @layers = $layerList->GetLayers(1);
-	
 
 	my $dirPath = EnumsPaths->Client_INCAMTMPOTHER . GeneralHelper->GetGUID() . "\\";
 	mkdir($dirPath) or die "Can't create dir: " . $dirPath . $_;
@@ -169,7 +168,6 @@ sub __CreatePng {
 
 	my @layers = $layerList->GetLayers(1);
 
-
 	my @threads;
 	$self->{"inCAM"}->{"childThread"} = 1;
 
@@ -184,22 +182,30 @@ sub __CreatePng {
 		#		  c : \Export \report > convert -density 300 test . pdf -shave 20 x 20 -trim -shave 5 x 5 + l evel-colors green,
 		#		white -alpha on -channel a -evaluate set 50 % -fuzz 50 % -trans parent white result2 . png
 
+		my $backg = "white";
+		
+		if ( $l->GetTransparency() < 100  && $l->GetColor() eq "250,250,250") {
+			$backg = "orange";
+		}
+		
+
 		my @cmd = ( EnumsPaths->InCAM_3rdScripts . "im\\convert.exe" );
 		push( @cmd, "-density 300" );
 
 		#push( @cmd, "-transparent white" );
 		push( @cmd, $dirPath . $l->GetOutputLayer() . ".pdf" );
 		push( @cmd, "-shave 20x20 -trim -shave 5x5" );
-		push( @cmd, "+level-colors " . $self->__ConvertColor( $l->GetColor() ) . ",pink" );
+		push( @cmd, "+level-colors " . $self->__ConvertColor( $l->GetColor(), ) . ",$backg" );
 
 		if ( $l->GetTransparency() < 100 ) {
 
 			push( @cmd, "-alpha on -channel a -evaluate set " . $l->GetTransparency() . "%" );
-			push( @cmd, "-fuzz 30% -transparent pink" );
+			push( @cmd, "-fuzz 30% -transparent $backg" );
 
 		}
 		else {
-			push( @cmd, "-transparent pink" );
+			push( @cmd, "-transparent $backg" );
+
 		}
 
 		my $pngOutput = $dirPath . $l->GetOutputLayer() . ".pdf";
@@ -239,7 +245,6 @@ sub __SplitMultiPdf {
 	my $dirPath   = shift;
 
 	my @layers = $layerList->GetLayers(1);
-	
 
 	my $pdf_in = PDF::API2->open($pdfOutput);
 
@@ -410,8 +415,7 @@ sub __PrepareLayers {
 	$self->__PrepareNPLTDEPTHNC( $layerList->GetLayerByType( Enums->Type_NPLTDEPTHNC ) );
 	$self->__PreparePLTTHROUGHNC( $layerList->GetLayerByType( Enums->Type_PLTTHROUGHNC ) );
 	$self->__PrepareNPLTTHROUGHNC( $layerList->GetLayerByType( Enums->Type_NPLTTHROUGHNC ) );
-	
-	
+
 }
 
 # Create layer and fill profile - simulate pcb material
@@ -489,6 +493,8 @@ sub __PrepareMASK {
 		CamLayer->NegativeLayerData( $self->{"inCAM"}, $lName, \%lim );
 
 		$layer->SetOutputLayer($lName);
+
+		#if($layer->GetColor())
 
 		$layer->SetTransparency(85);
 	}
@@ -575,8 +581,6 @@ sub __PrepareNPLTDEPTHNC {
 			$inCAM->COM( "merge_layers", "source_layer" => $l->{"gROWname"}, "dest_layer" => $lName );
 		}
 	}
-	
-	
 
 	$layer->SetOutputLayer($lName);
 
@@ -600,7 +604,6 @@ sub __PreparePLTTHROUGHNC {
 
 			CamLayer->WorkLayer( $inCAM, $l->{"gROWname"} );
 			my $lComp = CamLayer->RoutCompensation( $inCAM, $l->{"gROWname"}, "document" );
- 
 
 			$inCAM->COM( "merge_layers", "source_layer" => $lComp, "dest_layer" => $lName );
 
@@ -613,14 +616,13 @@ sub __PreparePLTTHROUGHNC {
 		}
 
 	}
-	
+
 	CamLayer->WorkLayer( $inCAM, $lName );
 	$inCAM->COM( "sel_resize", "size" => -100, "corner_ctl" => "no" );
 
 	$layer->SetOutputLayer($lName);
 
 }
-
 
 # Compensate this layer and resize about 100µm (plating)
 sub __PrepareNPLTTHROUGHNC {
@@ -640,7 +642,6 @@ sub __PrepareNPLTTHROUGHNC {
 
 			CamLayer->WorkLayer( $inCAM, $l->{"gROWname"} );
 			my $lComp = CamLayer->RoutCompensation( $inCAM, $l->{"gROWname"}, "document" );
- 
 
 			$inCAM->COM( "merge_layers", "source_layer" => $lComp, "dest_layer" => $lName );
 
@@ -661,6 +662,15 @@ sub __PrepareNPLTTHROUGHNC {
 sub __ConvertColor {
 	my $self   = shift;
 	my $rgbStr = shift;
+
+	#	my $alpha = shift;
+	#
+	#	if($alpha < 100){
+	#		$rgbStr = "\"rgba(" . $rgbStr . ", ".($alpha/100).")\"";
+	#
+	#	}else{
+	#		$rgbStr = "'rgb(" . $rgbStr . ")'";
+	#	}
 
 	$rgbStr = "'rgb(" . $rgbStr . ")'";
 
@@ -689,4 +699,3 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 }
 
 1;
-

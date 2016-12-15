@@ -58,11 +58,11 @@ sub Create {
 	CamHelper->SetStep( $self->{"inCAM"}, $self->{"pdfStep"}  );
 
 	# 1) Final preview top
-	#$self->{"previewTop"}->Create();
+	$self->{"previewTop"}->Create();
 	# 2) Final preview bot
 	#$self->{"previewBot"}->Create();
 	
-	$self->{"previewSingle"}->Create();
+	#$self->{"previewSingle"}->Create();
 
 	$self->__DeletePdfStep($self->{"pdfStep"} );
 }

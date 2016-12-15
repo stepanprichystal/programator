@@ -445,7 +445,7 @@ sub __InitDefault {
 	$self->{"layerCnt"} = CamJob->GetSignalLayerCnt( $self->{"inCAM"}, $self->{"jobId"} );
 
 	$self->{"platedRoutExceed"} =  PlatedRoutArea->PlatedAreaExceed( $self->{"inCAM"}, $self->{'jobId'}, "panel" );
-	$self->{"rsExist"} =  CamDrilling->NCLayerExists( $self->{"inCAM"}, $self->{'jobId'}, "rs" );
+	$self->{"rsExist"} =  CamDrilling->NCLayerExists( $self->{"inCAM"}, $self->{'jobId'}, EnumsGeneral->LAYERTYPE_nplt_rsMill );
 
 	if ( $self->{"layerCnt"} > 2 ) {
 

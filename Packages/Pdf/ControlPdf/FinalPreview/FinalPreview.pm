@@ -101,7 +101,7 @@ sub __PrepareColors {
 	my %clrs = ();
 
 	# base mat
-	$clrs{ Enums->Type_PCBMAT } = "233,252,199";
+	$clrs{ Enums->Type_PCBMAT } = "233,217,97";
 
 	# surface or cu
 	my $surface = HegMethods->GetPcbSurface($self->{"jobId"});
@@ -109,7 +109,7 @@ sub __PrepareColors {
 	my $surfClr = "";
 
 	if ( $surface =~ /^n$/i ) {
-		$surfClr = "227,186,120";
+		$surfClr = "227,214,145";
 	}
 	elsif ( $surface =~ /^a$/i || $surface =~ /^b$/i ) {
 		$surfClr = "222,222,222";
@@ -163,9 +163,9 @@ sub __GetMaskColor {
 	}
 
 	my %colorMap = ();
-	$colorMap{"Z"} = "0,163,11";       # green
+	$colorMap{"Z"} = "66,135,47";       # green
 	$colorMap{"B"} = "74,74,74";       # black
-	$colorMap{"W"} = "255,255,255";    #white
+	$colorMap{"W"} = "250,250,250";    #white
 	$colorMap{"M"} = "0,20,235";       #blue
 	$colorMap{"T"} = "255,255,255";    # ??
 	$colorMap{"R"} = "242,0,0";        # red
