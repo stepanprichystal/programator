@@ -20,6 +20,7 @@ use aliased 'Packages::Pdf::ControlPdf::HtmlTemplate::TemplateKey';
 use aliased 'Packages::Pdf::ControlPdf::FinalPreview::FinalPreview';
 use aliased 'Packages::Pdf::ControlPdf::FinalPreview::Enums' => "EnumsFinal";
 use aliased 'Packages::Pdf::ControlPdf::SinglePreview::SinglePreview';
+use aliased 'Packages::Pdf::ControlPdf::StackupPreview::StackupPreview';
 
 #-------------------------------------------------------------------------------------------#
 #  Interface
@@ -40,11 +41,12 @@ sub new {
 
 	$self->{"outputPath"} = EnumsPaths->Client_INCAMTMPOTHER . GeneralHelper->GetGUID() . ".pdf";
 
-	 
 	$self->{"template"} = Template2Pdf->new( $self->{"lang"} );
-	$self->{"previewTop"} = FinalPreview->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"pdfStep"}, EnumsFinal->View_FROMTOP );
-	$self->{"previewBot"} = FinalPreview->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"pdfStep"}, EnumsFinal->View_FROMBOT );
-	$self->{"previewSingle"} = SinglePreview->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"pdfStep"},$self->{"lang"} );
+
+	$self->{"stackupPreview"} = StackupPreview->new( $self->{"jobId"} );
+	$self->{"previewTop"}     = FinalPreview->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"pdfStep"}, EnumsFinal->View_FROMTOP );
+	$self->{"previewBot"}     = FinalPreview->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"pdfStep"}, EnumsFinal->View_FROMBOT );
+	$self->{"previewSingle"}  = SinglePreview->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"pdfStep"}, $self->{"lang"} );
 	return $self;
 }
 
@@ -55,16 +57,21 @@ sub Create {
 
 	$self->__CreatePdfStep();
 
-	CamHelper->SetStep( $self->{"inCAM"}, $self->{"pdfStep"}  );
+	CamHelper->SetStep( $self->{"inCAM"}, $self->{"pdfStep"} );
+
+	#$self->{"stackupPreview"}->Create();
 
 	# 1) Final preview top
-	$self->{"previewTop"}->Create();
+	#$self->{"previewTop"}->Create();
+
 	# 2) Final preview bot
 	#$self->{"previewBot"}->Create();
-	
-	#$self->{"previewSingle"}->Create();
 
-	$self->__DeletePdfStep($self->{"pdfStep"} );
+	#$self->{"previewSingle"}->Create();
+	
+	$self->__ProcessTemplate();
+
+	$self->__DeletePdfStep( $self->{"pdfStep"} );
 }
 
 # delete pdf step
@@ -76,10 +83,10 @@ sub __ProcessTemplate {
 	# Fill data template
 	my $templData = TemplateKey->new();
 
-	$self->{"template"}->SetJobId("f12345");
+	#$self->{"template"}->SetJobId("f12345");
 
 	my $result = $self->{"template"}->Convert( $tempPath, $templData );
- 
+
 	my $outFile = $self->{"template"}->GetOutFile();
 }
 

@@ -31,7 +31,7 @@ sub new {
 	$self->{"jobId"}   = shift;
 	$self->{"pdfStep"} = shift;
 
-	$self->{"outputPath"} = EnumsPaths->Client_INCAMTMPOTHER . GeneralHelper->GetGUID() . ".png";
+	$self->{"outputPath"} = EnumsPaths->Client_INCAMTMPOTHER . GeneralHelper->GetGUID() . ".jpg";
 
 	return $self;
 }
@@ -137,10 +137,8 @@ sub __OutputPdf {
 
 	push( @cmd, "-flatten" );
 	push( @cmd, "-trim" );
-
-	#push( @cmd, $dirPath );
-
-	push( @cmd, $self->{"outputPath"} );
+	push( @cmd, "-blur 0.2x0.2 -quality 90%" );
+ 	push( @cmd, $self->{"outputPath"} );
 
 	my $cmdStr = join( " ", @cmd );
 

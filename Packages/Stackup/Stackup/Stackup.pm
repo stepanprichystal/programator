@@ -71,6 +71,16 @@ sub GetFinalThick {
 	return $thick;
 }
 
+
+# Return total thick of this stackup
+sub GetCuLayerCnt {
+	my $self = shift;
+
+	my $lCount      = scalar(grep { $_->GetType() eq Enums->MaterialType_COPPER  } $self->GetAllLayers());
+	
+	return $lCount;
+}
+
 #Return final thickness (in mm units!!) of multilayer pcb base on Cu layer number
 #- This has not be thick of whole pcb, but e.g. thick of one requested core with top/bot cu
 #- Or thick of pcb from layer v2 - v5..
