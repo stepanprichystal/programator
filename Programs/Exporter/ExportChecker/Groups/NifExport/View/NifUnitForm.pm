@@ -23,7 +23,7 @@ use aliased 'CamHelpers::CamLayer';
 use aliased 'Programs::Exporter::ExportChecker::Groups::NifExport::View::NifColorCb';
 use aliased 'Programs::Exporter::ExportChecker::Groups::NifExport::Presenter::NifHelper';
 use aliased 'Programs::Exporter::ExportChecker::Groups::NifExport::View::QuickNoteFrm::QuickNoteFrm';
-
+use aliased 'Helpers::ValueConvertor';
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
@@ -481,14 +481,14 @@ sub SetC_mask_colour {
 	my $self  = shift;
 	my $value = shift;
 
-	my $color = NifHelper->GetMaskCodeToColor($value);
+	my $color = ValueConvertor->GetMaskCodeToColor($value);
 	$self->{"maskTopCb"}->SetValue($color);
 }
 
 sub GetC_mask_colour {
 	my $self  = shift;
 	my $color = $self->{"maskTopCb"}->GetValue();
-	return NifHelper->GetMaskColorToCode($color);
+	return ValueConvertor->GetMaskColorToCode($color);
 }
 
 # s_mask_colour
@@ -496,14 +496,14 @@ sub SetS_mask_colour {
 	my $self  = shift;
 	my $value = shift;
 
-	my $color = NifHelper->GetMaskCodeToColor($value);
+	my $color = ValueConvertor->GetMaskCodeToColor($value);
 	$self->{"maskBotCb"}->SetValue($color);
 }
 
 sub GetS_mask_colour {
 	my $self  = shift;
 	my $color = $self->{"maskBotCb"}->GetValue();
-	return NifHelper->GetMaskColorToCode($color);
+	return ValueConvertor->GetMaskColorToCode($color);
 }
 
 # c_silk_screen_colour
@@ -511,28 +511,28 @@ sub SetC_silk_screen_colour {
 	my $self  = shift;
 	my $value = shift;
 
-	my $color = NifHelper->GetSilkCodeToColor($value);
+	my $color = ValueConvertor->GetSilkCodeToColor($value);
 	$self->{"silkTopCb"}->SetValue($color);
 }
 
 sub GetC_silk_screen_colour {
 	my $self  = shift;
 	my $color = $self->{"silkTopCb"}->GetValue();
-	return NifHelper->GetSilkColorToCode($color);
+	return ValueConvertor->GetSilkColorToCode($color);
 }
 
 sub SetS_silk_screen_colour {
 	my $self  = shift;
 	my $value = shift;
 
-	my $color = NifHelper->GetSilkCodeToColor($value);
+	my $color = ValueConvertor->GetSilkCodeToColor($value);
 	$self->{"silkBotCb"}->SetValue($color);
 }
 
 sub GetS_silk_screen_colour {
 	my $self  = shift;
 	my $color = $self->{"silkBotCb"}->GetValue();
-	return NifHelper->GetSilkColorToCode($color);
+	return ValueConvertor->GetSilkColorToCode($color);
 }
 
 sub SetTenting {

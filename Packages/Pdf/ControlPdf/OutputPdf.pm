@@ -3,15 +3,22 @@
 # Description: TifFile - interface for signal layers
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::Pdf::ControlPdf::StackupPreview::StackupPreview;
+package Packages::Pdf::ControlPdf::OutputPdf;
 
 #3th party library
+use threads;
 use strict;
 use warnings;
+use PDF::API2;
+use List::Util qw[max min];
 
 #local library
 use aliased 'Helpers::GeneralHelper';
 use aliased 'Enums::EnumsPaths';
+use aliased 'Packages::Pdf::ControlPdf::FinalPreview::Enums';
+use aliased 'CamHelpers::CamLayer';
+use aliased 'CamHelpers::CamJob';
+ use Image::Size;
 
 #-------------------------------------------------------------------------------------------#
 #  Interface
@@ -22,30 +29,32 @@ sub new {
 	$self = {};
 	bless $self;
 
+	$self->{"inCAM"}   = shift;
 	$self->{"jobId"}   = shift;
- 
- 	$self->{"outputPath"} = EnumsPaths->Client_INCAMTMPOTHER . GeneralHelper->GetGUID() . ".jpeg";
- 
+	 
+
+	$self->{"outputPath"} = EnumsPaths->Client_INCAMTMPOTHER . GeneralHelper->GetGUID() . ".pdf";
+
 	return $self;
 }
 
-sub Create {
-	my $self = shift;
-	my $pdfStackup = shift; # path
- 
-	# get info about pcb
-	
-	unless(-e $pdfStackup){
-		return 0;
-	}
+sub Output {
+	my $self      = shift;
+	my $layerList = shift;
 
-	my $result = 1;
-	
-	
-	
-	$result = $self->__ConvertToImage($pdfStackup);
+	$self->__AddHeaderFooter($layerList);
+	 
 
-	return $result;
+	return 1;
+
+}
+
+
+sub __AddHeaderFooter{
+	my $self      = shift;
+	
+	
+	
 }
 
 sub GetOutput {
@@ -53,32 +62,7 @@ sub GetOutput {
 
 	return $self->{"outputPath"};
 }
-
-sub __ConvertToImage{
-	my $self = shift;
-	my $pdfStackup = shift; # path
-	
-	 
-
-	my @cmd = ( EnumsPaths->InCAM_3rdScripts . "im\\convert.exe" );
  
-	push( @cmd, "-density 300 -background white -flatten" );
-	push( @cmd, $pdfStackup );
-	push( @cmd, "-rotate 270 - crop 1470x2000+150+500 -trim" );
-	push( @cmd, "-bordercolor white -border 20x20" );
-	push( @cmd, "-gravity center -background white -extent 1600x1600" );
- 	push( @cmd, $self->{"outputPath"} );
-
-	my $cmdStr = join( " ", @cmd );
-
-	my $result = system($cmdStr);
-	
-	
-	return $result;
-	
-}
- 
-
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#
@@ -88,4 +72,3 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 }
 
 1;
-

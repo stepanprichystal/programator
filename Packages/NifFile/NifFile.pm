@@ -65,7 +65,6 @@ sub Exist {
 
 sub GetValue {
 	my $self      = shift;
-	my $jobId     = shift;
 	my $attribute = shift;
 
 	chomp($attribute);

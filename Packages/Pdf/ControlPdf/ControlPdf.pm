@@ -21,6 +21,8 @@ use aliased 'Packages::Pdf::ControlPdf::FinalPreview::FinalPreview';
 use aliased 'Packages::Pdf::ControlPdf::FinalPreview::Enums' => "EnumsFinal";
 use aliased 'Packages::Pdf::ControlPdf::SinglePreview::SinglePreview';
 use aliased 'Packages::Pdf::ControlPdf::StackupPreview::StackupPreview';
+use aliased 'Packages::Pdf::ControlPdf::OutputPdf';
+use aliased 'Packages::Pdf::ControlPdf::FillTemplate';
 
 #-------------------------------------------------------------------------------------------#
 #  Interface
@@ -35,14 +37,16 @@ sub new {
 	$self->{"jobId"} = shift;
 	$self->{"step"}  = shift;
 
-	$self->{"lang"} = "en";
+	$self->{"lang"} = shift;
 
 	$self->{"pdfStep"} = "pdf_" . $self->{"step"};
 
 	$self->{"outputPath"} = EnumsPaths->Client_INCAMTMPOTHER . GeneralHelper->GetGUID() . ".pdf";
 
-	$self->{"template"} = Template2Pdf->new( $self->{"lang"} );
+	$self->{"outputPdf"} = OutputPdf->new();
+	$self->{"fillTemplate"} = FillTemplate->new($self->{"inCAM"}, $self->{"jobId"});
 
+	$self->{"template"}       = Template2Pdf->new( $self->{"lang"} );
 	$self->{"stackupPreview"} = StackupPreview->new( $self->{"jobId"} );
 	$self->{"previewTop"}     = FinalPreview->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"pdfStep"}, EnumsFinal->View_FROMTOP );
 	$self->{"previewBot"}     = FinalPreview->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"pdfStep"}, EnumsFinal->View_FROMBOT );
@@ -52,6 +56,11 @@ sub new {
 
 sub Create {
 	my $self = shift;
+	
+	
+	# check when step is panel, nif file already exist
+	
+	
 
 	CamHelper->SetStep( $self->{"inCAM"}, $self->{"step"} );
 
@@ -59,35 +68,57 @@ sub Create {
 
 	CamHelper->SetStep( $self->{"inCAM"}, $self->{"pdfStep"} );
 
+	# 1) create stackup image
 	#$self->{"stackupPreview"}->Create();
 
-	# 1) Final preview top
-	$self->{"previewTop"}->Create();
+	# 2) Final preview top
+	#$self->{"previewTop"}->Create();
 
-	# 2) Final preview bot
+	# 3) Final preview bot
 	#$self->{"previewBot"}->Create();
 
+	# 4) Create preview single
 	#$self->{"previewSingle"}->Create();
-	
-	#$self->__ProcessTemplate();
+
+	# 5) Process template
+	$self->__ProcessTemplate( $self->{"stackupPreview"}->GetOutput(), $self->{"previewTop"}->GetOutput(), $self->{"previewBot"}->GetOutput() );
+
+	# 6) complete all together and add header and footer
+	$self->{"outputPdf"}->Output();
 
 	$self->__DeletePdfStep( $self->{"pdfStep"} );
 }
 
 # delete pdf step
 sub __ProcessTemplate {
-	my $self = shift;
+	my $self          = shift;
+	my $stackupPath    = shift;
+	my $previewTopPath = shift;
+	my $previewBotPath = shift;
 
 	my $tempPath = GeneralHelper->Root() . "\\Packages\\Pdf\\ControlPdf\\HtmlTemplate\\template.html";
 
 	# Fill data template
 	my $templData = TemplateKey->new();
+ 
 
-	#$self->{"template"}->SetJobId("f12345");
+	$self->{"fillTemplate"}->Fill($templData, $stackupPath, $previewTopPath, $previewBotPath);
+
+	$self->__FillTemplate($templData);
 
 	my $result = $self->{"template"}->Convert( $tempPath, $templData );
 
 	my $outFile = $self->{"template"}->GetOutFile();
+}
+
+sub __FillTemplate {
+	my $self      = shift;
+	my $templData = shift;
+
+	
+
+	#$self->{"template"}->SetJobId("f12345");
+
 }
 
 # create special step, which IPC will be exported from
@@ -170,7 +201,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $jobId = "f52456";
 
-	my $control = ControlPdf->new( $inCAM, $jobId, "o+1" );
+	my $control = ControlPdf->new( $inCAM, $jobId, "o+1", "en" );
 
 	$control->Create();
 }

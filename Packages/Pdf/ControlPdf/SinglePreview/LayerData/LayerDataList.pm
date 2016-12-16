@@ -14,6 +14,7 @@ use warnings;
 use aliased 'Helpers::JobHelper';
 use aliased 'Packages::Pdf::ControlPdf::SinglePreview::Enums';
 use aliased 'Packages::Pdf::ControlPdf::SinglePreview::LayerData::LayerData';
+use aliased 'Helpers::ValueConvertor';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -58,10 +59,10 @@ sub __PrepareBaseLayerData {
 		my %infoData = ();
 		my %info     = ();
 
-		my $enTit = JobHelper->GetJobLayerTitle($l);
-		my $czTit = JobHelper->GetJobLayerTitle( $l, 1 );
-		my $enInf = JobHelper->GetJobLayerInfo($l);
-		my $czInf = JobHelper->GetJobLayerInfo( $l, 1 );
+		my $enTit = ValueConvertor->GetJobLayerTitle($l);
+		my $czTit = ValueConvertor->GetJobLayerTitle( $l, 1 );
+		my $enInf = ValueConvertor->GetJobLayerInfo($l);
+		my $czInf = ValueConvertor->GetJobLayerInfo( $l, 1 );
 
 		$lData->AddSingleLayer( $l, $enTit, $czTit, $enInf, $czInf );
 
@@ -88,10 +89,10 @@ sub __PrepareNCLayerData {
 		my %infoData = ();
 		my %info     = ();
 
-		my $enTit = JobHelper->GetJobLayerTitle($l);
-		my $czTit = JobHelper->GetJobLayerTitle( $l, 1 );
-		my $enInf = JobHelper->GetJobLayerInfo($l);
-		my $czInf = JobHelper->GetJobLayerInfo( $l, 1 );
+		my $enTit = ValueConvertor->GetJobLayerTitle($l);
+		my $czTit = ValueConvertor->GetJobLayerTitle( $l, 1 );
+		my $enInf = ValueConvertor->GetJobLayerInfo($l);
+		my $czInf = ValueConvertor->GetJobLayerInfo( $l, 1 );
 
 		$lData->AddSingleLayer( $l, $enTit, $czTit, $enInf, $czInf );
 
@@ -131,8 +132,8 @@ sub __PrepareNCLayerData {
 		my %infoData = ();
 		my %info     = ();
 
-		my $enTit = "Drill map: " . JobHelper->GetJobLayerTitle($l);
-		my $czTit = "Mapa vrtani: " . JobHelper->GetJobLayerTitle( $l, 1 );
+		my $enTit = "Drill map: " . ValueConvertor->GetJobLayerTitle($l);
+		my $czTit = "Mapa vrtani: " . ValueConvertor->GetJobLayerTitle( $l, 1 );
 		my $enInf = "";
 		my $czInf = "";
 

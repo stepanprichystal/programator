@@ -72,7 +72,7 @@ sub __FillTemplate {
 		my $kItem = $keysData{$k};
 		my $val   = $kItem->GetText( $self->{"lang"} );
 
-		$template =~ s/$k/$val/i;
+		$template =~ s/([>"])$k([<"])/$1$val$2/gi;
 	}
 
 	# remove rest of not substitued keys

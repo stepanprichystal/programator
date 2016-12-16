@@ -61,11 +61,17 @@ sub Create {
 
 	$self->{"outputPdf"}->Output( $self->{"layerList"} );
 
-	my $outPdf = $self->{"outputPdf"}->GetOutput();
+	
 
 	#$self->__ConvertPdfToPng($outPdf);
 
 	return 1;
+}
+
+sub GetOutput {
+	my $self = shift;
+
+	return  $self->{"outputPdf"}->GetOutput();
 }
 
 sub __ConvertPdfToPng {

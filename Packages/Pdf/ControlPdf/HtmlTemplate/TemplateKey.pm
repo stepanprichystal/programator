@@ -30,12 +30,75 @@ sub new {
 	return $self;    # Return the reference to the hash.
 }
 
+sub SetKey{
+	my $self      = shift;
+	my $key      = shift;
+	my $en      = shift;
+	my $cz      = shift;
+	
+	$self->_SaveKeyData($key, $en, $cz);
+}
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 sub SetJobId{
 	my $self      = shift;
 	my $en      = shift;
 	my $cz      = shift;
 	
 	$self->_SaveKeyData("JobId", $en, $cz);
+}
+
+sub SetPreviewTop{
+	my $self      = shift;
+	my $en      = shift;
+	my $cz      = shift;
+	
+	$self->_SaveKeyData("PreviewTop", $en, $cz);
+}
+
+sub SetPreviewBot{
+	my $self      = shift;
+	my $en      = shift;
+	my $cz      = shift;
+	
+	$self->_SaveKeyData("PreviewBot", $en, $cz);
+}
+
+sub SetPreviewStackup{
+	my $self      = shift;
+	my $en      = shift;
+	my $cz      = shift;
+	
+	$self->_SaveKeyData("PreviewStackup", $en, $cz);
 }
  
 #-------------------------------------------------------------------------------------------#

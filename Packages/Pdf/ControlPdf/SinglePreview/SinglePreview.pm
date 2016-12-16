@@ -81,11 +81,17 @@ sub Create {
 	
 	$self->{"outputPdf"}->Output( $self->{"layerList"} );
 
-	my $outPdf = $self->{"outputPdf"}->GetOutput();
-	
+ 
  
 
 }
+
+sub GetOutput {
+	my $self = shift;
+
+	return  $self->{"outputPdf"}->GetOutput();
+}
+
 
 sub __PrepareLayerData {
 	my $self   = shift;

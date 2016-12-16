@@ -17,7 +17,7 @@ use Widgets::Style;
 use aliased 'Packages::Events::Event';
 use aliased 'CamHelpers::CamLayer';
 use aliased 'Programs::Exporter::ExportChecker::Groups::NifExport::Presenter::NifHelper';
-
+use aliased 'Helpers::ValueConvertor';
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#

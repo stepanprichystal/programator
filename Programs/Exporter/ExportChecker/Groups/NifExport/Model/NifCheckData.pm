@@ -16,7 +16,7 @@ use aliased 'CamHelpers::CamLayer';
 use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'CamHelpers::CamHelper';
 use aliased 'Programs::Exporter::ExportChecker::Groups::NifExport::Presenter::NifHelper';
-
+use aliased 'Helpers::ValueConvertor';
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
@@ -80,9 +80,9 @@ sub OnCheckGroupData {
 		$dataMngr->_AddErrorResult(
 									"Maska TOP",
 									"Nesedí barva masky top. Export =>"
-									  . NifHelper->GetMaskCodeToColor($masksColorTopExport)
+									  . ValueConvertor->GetMaskCodeToColor($masksColorTopExport)
 									  . ", Helios => "
-									  . NifHelper->GetMaskCodeToColor( $masksColorIS{"top"} ) . "."
+									  . ValueConvertor->GetMaskCodeToColor( $masksColorIS{"top"} ) . "."
 		);
 	}
 	if ( $masksColorIS{"bot"} ne $masksColorBotExport ) {
@@ -90,9 +90,9 @@ sub OnCheckGroupData {
 		$dataMngr->_AddErrorResult(
 									"Maska BOT",
 									"Nesedí barva masky bot. Export =>"
-									  . NifHelper->GetMaskCodeToColor($masksColorBotExport)
+									  . ValueConvertor->GetMaskCodeToColor($masksColorBotExport)
 									  . ", Helios => "
-									  . NifHelper->GetMaskCodeToColor( $masksColorIS{"bot"} ) . "."
+									  . ValueConvertor->GetMaskCodeToColor( $masksColorIS{"bot"} ) . "."
 		);
 	}
 
@@ -131,9 +131,9 @@ sub OnCheckGroupData {
 		$dataMngr->_AddErrorResult(
 									"Potisk TOP",
 									"Nesedí barva potisku top. Export =>"
-									  . NifHelper->GetSilkCodeToColor($silkColorTopExport)
+									  . ValueConvertor->GetSilkCodeToColor($silkColorTopExport)
 									  . ", Helios => "
-									  . NifHelper->GetSilkCodeToColor( $silkColorIS{"top"} ) . "."
+									  . ValueConvertor->GetSilkCodeToColor( $silkColorIS{"top"} ) . "."
 		);
 	}
 	if ( $silkColorIS{"bot"} ne $silkColorBotExport ) {
@@ -141,9 +141,9 @@ sub OnCheckGroupData {
 		$dataMngr->_AddErrorResult(
 									"Potisk BOT",
 									"Nesedí barva potisku bot. Export =>"
-									  . NifHelper->GetSilkCodeToColor($silkColorBotExport)
+									  . ValueConvertor->GetSilkCodeToColor($silkColorBotExport)
 									  . ", Helios => "
-									  . NifHelper->GetSilkCodeToColor( $silkColorIS{"bot"} ) . "."
+									  . ValueConvertor->GetSilkCodeToColor( $silkColorIS{"bot"} ) . "."
 		);
 	}
 }

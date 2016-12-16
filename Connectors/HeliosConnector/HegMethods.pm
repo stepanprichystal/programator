@@ -119,6 +119,47 @@ sub GetAllByPcbId {
 	}
 }
 
+
+sub GetPcbName {
+	my $self  = shift;
+	my $pcbId = shift;
+
+	my @params = ( SqlParameter->new( "_PcbId", Enums->SqlDbType_VARCHAR, $pcbId ) );
+
+	my $cmd = "select top 1
+				 d.nazev_subjektu board_name
+				 from lcs.desky_22 d with (nolock)
+				  left outer join lcs.zakazky_dps_22_hlavicka z with (nolock) on z.deska=d.cislo_subjektu
+				 where d.reference_subjektu=_PcbId and  z.cislo_poradace = 22050";
+
+ 	return Helper->ExecuteScalar( $cmd, \@params );
+}
+
+
+ 
+
+
+
+sub GetEmployyInfo {
+	my $self  = shift;
+	my $surname = shift;
+
+	my @params = ( );
+
+	my $cmd = "select * 
+				 from lcs.zamestnanci
+				 ";
+
+	my @result = Helper->ExecuteDataSet( $cmd, \@params );
+
+	if ( scalar(@result) == 1 ) {
+		return $result[0];
+	}
+	else {
+		return undef;
+	}
+}
+
 sub GetBasePcbInfo {
 	my $self  = shift;
 	my $pcbId = shift;
@@ -694,7 +735,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
  
 	use aliased 'Connectors::HeliosConnector::HegMethods';
 
-
+	my $test =HegMethods->GetPcbName("f52456");
 
 #	 
 #	HegMethods->GetPcbOrderNumber("f52456");
@@ -709,7 +750,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 #
 #	my $test =  HegMethods->GetTpvCustomerNote("d06224");
 #
-#	print $test;
+	print $test;
  
 
 }

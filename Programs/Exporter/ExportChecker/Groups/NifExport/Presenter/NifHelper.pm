@@ -32,75 +32,7 @@ sub GetPcbSilkColors {
 	return @color;
 }
 
-sub GetMaskColorToCode {
-	my $self  = shift;
-	my $color = shift;
 
-	if ( $color eq "" ) {
-		return "";
-	}
-
-	my %colorMap = ();
-	$colorMap{"Green"}       = "Z";
-	$colorMap{"Black"}       = "B";
-	$colorMap{"White"}       = "W";
-	$colorMap{"Blue"}        = "M";
-	$colorMap{"Transparent"} = "T";
-	$colorMap{"Red"}         = "R";
-
-	return $colorMap{$color};
-}
-
-sub GetMaskCodeToColor {
-	my $self = shift;
-	my $code = shift;
-
-	if ( $code eq "" ) {
-		return "";
-	}
-
-	my %colorMap = ();
-	$colorMap{"Z"} = "Green";
-	$colorMap{"B"} = "Black";
-	$colorMap{"W"} = "White";
-	$colorMap{"M"} = "Blue";
-	$colorMap{"T"} = "Transparent";
-	$colorMap{"R"} = "Red";
-
-	return $colorMap{$code};
-}
-
-sub GetSilkColorToCode {
-	my $self  = shift;
-	my $color = shift;
-
-	if ( $color eq "" ) {
-		return "";
-	}
-
-	my %colorMap = ();
-	$colorMap{"White"}  = "B";
-	$colorMap{"Yellow"} = "Z";
-	$colorMap{"Black"}  = "C";
-
-	return $colorMap{$color};
-}
-
-sub GetSilkCodeToColor {
-	my $self = shift;
-	my $code = shift;
-
-	if ( $code eq "" ) {
-		return "";
-	}
-
-	my %colorMap = ();
-	$colorMap{"B"} = "White";
-	$colorMap{"Z"} = "Yellow";
-	$colorMap{"C"} = "Black";
-
-	return $colorMap{$code};
-}
 
 sub GetColorDef {
 	my $self  = shift;
