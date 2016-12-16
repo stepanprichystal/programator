@@ -10,6 +10,7 @@ use threads;
 use strict;
 use warnings;
 use PDF::API2;
+use List::Util qw[max min];
 
 #local library
 use aliased 'Helpers::GeneralHelper';
@@ -131,6 +132,8 @@ sub __OutputPdf {
 	my @layerStr2 = map { $dirPath . $_->GetOutputLayer() . ".png" } @layers;
 	my $layerStr2 = join( " ", @layerStr2 );
 
+	my $outputTmp = EnumsPaths->Client_INCAMTMPOTHER . GeneralHelper->GetGUID() . ".jpg";
+
 	my $result = 1;
 
 	my @cmd = ( EnumsPaths->InCAM_3rdScripts . "im\\convert.exe" );
@@ -139,17 +142,67 @@ sub __OutputPdf {
 	push( @cmd, "-flatten" );
 	push( @cmd, "-trim" );
 	push( @cmd, "-blur 0.2x0.2 -quality 90%" );
- 	push( @cmd, $self->{"outputPath"} );
+ 	push( @cmd, $outputTmp);
 
 	my $cmdStr = join( " ", @cmd );
 
 	my $systeMres = system($cmdStr);
 	
-#	
+
+	# Adjust image to ratio 3:5	
+
 #    # Get the size of globe.gif
-#    ($globe_x, $globe_y) = imgsize($self->{"outputPath"});
-#    # Assume X=60 and Y=40 for remaining examples
-#	
+    (my $x, my $y) = imgsize($outputTmp);
+    
+     my $rotate =  $x < $y ? 1 : 0;
+     
+     # we want to longer side was width
+     if($rotate){
+     	my $pom = 	$y;
+     	my $y = $x;
+     	my $x = $pom;
+     }
+     
+     
+    my $ratio =  min($x,$y ) /  max($x,$y );
+    
+    # compute new image resolution
+    my $dimW = 0;
+    my $dimH = 0;
+    
+    # compute new height
+    if ($ratio <= 3/5){
+    	
+    	$dimW = max($x,$y );
+    	$dimH = int(($dimW / 5) *3);
+    	
+    }else{
+    # compute new width	
+    
+    	
+    	$dimH = min($x,$y );
+    	$dimW = int(($dimH / 3) *5); 
+    
+    	
+    }
+    
+    
+    my @cmd2 = ( EnumsPaths->InCAM_3rdScripts . "im\\convert.exe" );
+	push( @cmd2, $outputTmp );
+	if($rotate){
+		push( @cmd2, "-rotate 90" );
+	}
+
+
+	push( @cmd2, "-gravity center -background white" );
+	push( @cmd2, "-extent ".$dimW."x".$dimH );
+	 
+ 	push( @cmd2, $self->{"outputPath"} );
+
+	my $cmdStr2 = join( " ", @cmd2 );
+
+	my $systeMres2 = system($cmdStr2);
+ 	
 
 	foreach my $l (@layers) {
 		if ( -e $dirPath . $l->GetOutputLayer() . ".png" ) {
@@ -161,6 +214,8 @@ sub __OutputPdf {
 	}
 
 	rmdir($dirPath);
+	
+	unlink($outputTmp);
 
 	# merge all png to one
 

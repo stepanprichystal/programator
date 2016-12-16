@@ -62,14 +62,14 @@ sub Create {
 	#$self->{"stackupPreview"}->Create();
 
 	# 1) Final preview top
-	#$self->{"previewTop"}->Create();
+	$self->{"previewTop"}->Create();
 
 	# 2) Final preview bot
 	#$self->{"previewBot"}->Create();
 
 	#$self->{"previewSingle"}->Create();
 	
-	$self->__ProcessTemplate();
+	#$self->__ProcessTemplate();
 
 	$self->__DeletePdfStep( $self->{"pdfStep"} );
 }
