@@ -67,6 +67,33 @@ sub AddText {
 	);
 }
 
+
+sub AddPolyline {
+	my $self       = shift;
+	my $inCAM      = shift;
+	my @coord       = @{shift(@_)}; #hash x, y 
+	my $symbol   = shift;
+	my $polarity = shift;    #  
+ 
+ 	if(scalar(@coord) < 3){
+ 		die "Polyline has to have at lest 3 coordinates.\n";
+ 	}
+ 
+ 	$inCAM->COM("add_polyline_strt");
+ 	
+ 	foreach my $c (@coord){
+ 		
+ 		$inCAM->COM("add_polyline_xy","x" => $c->{"x"},"y" => $c->{"y"});
+ 	}
+ 	
+ 	#last is frst
+ 	$inCAM->COM("add_polyline_xy","x" => $coord[0]->{"x"},"y" => $coord[0]->{"y"});
+	$inCAM->COM("add_polyline_end","polarity" => $polarity,"attributes" => "no","symbol" => $symbol,"bus_num_lines" => "0","bus_dist_by" => "pitch","bus_distance" => "0","bus_reference" => "left");
+
+ 
+}
+
+
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#

@@ -72,7 +72,7 @@ sub __FillTemplate {
 		my $kItem = $keysData{$k};
 		my $val   = $kItem->GetText( $self->{"lang"} );
 
-		$template =~ s/([>"])$k([<"])/$1$val$2/gi;
+		$template =~ s/([>"\\])$k([<"\\])/$1$val$2/gi; # means replace all keys which are between characters ><, "" or \
 	}
 
 	# remove rest of not substitued keys
@@ -103,6 +103,7 @@ sub __FinalConvert {
 	my @cmd = ( EnumsPaths->InCAM_3rdScripts . "pythonLib\\xhtml2pdf" );
 	push( @cmd, "--css=$cssPath" );
 	push( @cmd, "-w" );
+	push( @cmd, "--encoding utf8" );
 	push( @cmd, $templPathFinal );
 	push( @cmd, $self->{"outFilePath"} );
 

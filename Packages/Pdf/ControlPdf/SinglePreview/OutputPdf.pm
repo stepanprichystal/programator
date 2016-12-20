@@ -9,13 +9,17 @@ package  Packages::Pdf::ControlPdf::SinglePreview::OutputPdf;
 use strict;
 use warnings;
 use PDF::API2;
- use POSIX;
- 
+use POSIX;
+use List::Util qw[max min];
+
 #local library
 use aliased 'Helpers::GeneralHelper';
 use aliased 'Packages::Pdf::ControlPdf::SinglePreview::Enums';
 use aliased 'Enums::EnumsPaths';
 use aliased 'CamHelpers::CamLayer';
+use aliased 'CamHelpers::CamSymbol';
+use aliased 'CamHelpers::CamJob';
+
 
 #-------------------------------------------------------------------------------------------#
 #  Interface
@@ -51,6 +55,12 @@ sub Output {
 
 }
 
+sub GetOutput {
+	my $self = shift;
+
+	return $self->{"outputPath"};
+}
+
 sub __PrepareLayers {
 	my $self      = shift;
 	my $layerList = shift;
@@ -68,6 +78,9 @@ sub __PrepareLayers {
 
 		}
 	}
+	
+	 
+	
 }
 
 sub __OptimizeLayers {
@@ -77,21 +90,103 @@ sub __OptimizeLayers {
 	my $inCAM  = $self->{"inCAM"};
 	my @layers = $layerList->GetLayers();
 
-	my $lName = GeneralHelper->GetGUID();
 
-	# create border around profile
-	$inCAM->COM( "profile_to_rout", "layer" => $lName, "width" => "10" );
-	CamLayer->WorkLayer( $inCAM, $lName );
 
-	$inCAM->COM("sel_invert");
+	CamLayer->ClearLayers($inCAM);
 
-	# copy border to all output layers
-
+ 
+	# affect all layers
 	foreach my $l (@layers) {
 
 		$inCAM->COM( "affected_layer", "name" => $l->GetOutputLayer(), "mode" => "single", "affected" => "yes" );
 
 	}
+ 
+	# clip area around profile
+	$inCAM->COM(
+				 "clip_area_end",
+				 "layers_mode" => "affected_layers",
+				 "layer"       => "",
+				 "area"        => "profile",
+				 "area_type"   => "rectangle",
+				 "inout"       => "outside",
+				 "contour_cut" => "yes",
+				 "margin"      => "-5",
+				 "feat_types"  => "line\;pad;surface;arc;text",
+				 "pol_types"   => "positive\;negative"
+	);
+	
+	
+	
+
+
+
+
+	my $lName = GeneralHelper->GetGUID();
+
+	# create border around profile. Border has to has ratio min 250:307 because of right place in pdf
+	# if not, pcb layer would be covered by table with title and description of layer
+
+	my %lim = CamJob->GetProfileLimits( $inCAM, $self->{"jobId"}, $self->{"pdfStep"} );
+
+	my $x = abs( $lim{"xmax"} - $lim{"xmin"} );
+	my $y = abs( $lim{"ymax"} - $lim{"ymin"} );
+
+	if ( min( $x, $y ) / max( $x, $y ) < 290 / 307 ) {
+
+		# prepare coordination for frame
+
+		if ( min( $x, $y ) == $x ) {
+
+			# compute min x length
+			my $newX = ( $y / 290 ) * 280;
+			$lim{"xmin"} -= (($newX -$x)  / 2);
+			$lim{"xmax"} += (($newX -$x) / 2);
+
+		}
+		elsif ( min( $x, $y ) == $y ) {
+
+			# compute min x length
+			my $newY = ( $x / 307 ) * 290;
+			$lim{"ymin"} -= (($newY -$y)/ 2);
+			$lim{"ymax"} += (($newY -$y)/ 2);
+		}
+
+		$inCAM->COM( 'create_layer', layer => $lName, context => 'misc', type => 'document', polarity => 'positive', ins_layer => '' );
+		
+		CamLayer->WorkLayer( $inCAM, $lName );
+
+		my %c1 = ( "x" => $lim{"xmin"}, "y" => $lim{"ymin"} );
+		my %c2 = ( "x" => $lim{"xmax"}, "y" => $lim{"ymin"} );
+		my %c3 = ( "x" => $lim{"xmax"}, "y" => $lim{"ymax"} );
+		my %c4 = ( "x" => $lim{"xmin"}, "y" => $lim{"ymax"} );
+		my @coord = ( \%c1, \%c2, \%c3, \%c4 );
+
+		#
+
+		CamSymbol->AddPolyline( $inCAM, \@coord, "r100", "negative" );
+
+	}
+	else {
+
+		# frmae ratio is ok, do frame from profile
+
+		$inCAM->COM( "profile_to_rout", "layer" => $lName, "width" => "10" );
+		CamLayer->WorkLayer( $inCAM, $lName );
+		$inCAM->COM("sel_invert");
+	}
+
+
+	CamLayer->WorkLayer( $inCAM, $lName );
+
+
+	# affect all layers
+	foreach my $l (@layers) {
+
+		$inCAM->COM( "affected_layer", "name" => $l->GetOutputLayer(), "mode" => "single", "affected" => "yes" );
+
+	}
+                                      
 
 	my @layerStr = map { $_->GetOutputLayer() } @layers;
 	my $layerStr = join( "\\;", @layerStr );
@@ -207,13 +302,12 @@ sub __AddTextPdf {
 		# draw info tables
 
 		my @data = $layerList->GetPageData($pagenum);
- 
 
 		for ( my $i = 0 ; $i < scalar(@data) ; $i++ ) {
 
 			if ( $i == 0 ) {
 				my $d = $data[$i];
-				$self->__DrawInfoTable( 20, 435, $d, $page_out, $pdf_out);
+				$self->__DrawInfoTable( 20, 430, $d, $page_out, $pdf_out );
 			}
 			elsif ( $i == 1 ) {
 				my $d = $data[$i];
@@ -221,7 +315,7 @@ sub __AddTextPdf {
 			}
 			elsif ( $i == 2 ) {
 				my $d = $data[$i];
-				$self->__DrawInfoTable( 315, 435, $d, $page_out, $pdf_out );
+				$self->__DrawInfoTable( 315, 430, $d, $page_out, $pdf_out );
 			}
 			elsif ( $i == 3 ) {
 				my $d = $data[$i];
@@ -243,7 +337,7 @@ sub __DrawInfoTable {
 	my $yPos     = shift;
 	my $data     = shift;
 	my $page_out = shift;
-	my $pdf_out = shift;
+	my $pdf_out  = shift;
 
 	my $leftCellW  = 20;
 	my $leftCellH  = 30;
@@ -321,10 +415,10 @@ sub __DrawInfoTable {
 	# add text title
 
 	my $txtInf = $page_out->text;
-	$txtInf->translate( $xPos + 2, $yPos + 2 );
+	$txtInf->translate( $xPos + 2, $yPos + 3 );
 	$txtInf->font( $font, $txtSize );
 	$txtInf->fillcolor("black");
-	$txtInf->text( 'Info:    ' . $data->{"info"} );
+	$txtInf->text( 'Info:       ' . $data->{"info"} );
 
 }
 
@@ -347,6 +441,8 @@ sub __PrepareSTANDARD {
 			$inCAM->COM( "merge_layers", "source_layer" => $lComp, "dest_layer" => $lName );
 
 			$inCAM->COM( 'delete_layer', "layer" => $lComp );
+			
+			#CamLayer->WorkLayer( $inCAM, $lMatrix->{"gROWname"}, 1);
 
 		}
 		else {

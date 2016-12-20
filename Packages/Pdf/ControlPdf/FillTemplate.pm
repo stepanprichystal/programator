@@ -22,7 +22,7 @@ use aliased 'Helpers::JobHelper';
 use aliased 'Helpers::ValueConvertor';
 use aliased 'Helpers::Translator';
 use aliased 'Packages::Stackup::Stackup::Stackup';
-
+use aliased 'CamHelpers::CamAttributes';
 #-------------------------------------------------------------------------------------------#
 #  Interface
 #-------------------------------------------------------------------------------------------#
@@ -58,12 +58,17 @@ sub Fill {
 		$layerCnt = 0;
 	}
 
-	my %authorInf  = $self->__GetAuthorInfo();
+	my %authorInf  = $self->__GetEmployyInfo();
 	my %nifFile    = $self->__GetNifFileInfo();
 	my %stackupInf = $self->__GetStackupInfo($layerCnt);
+	 
+	
+	
+	
+	
 
-	my $rsPath = GeneralHelper->Root() . "\\Packages\\Pdf\\ControlPdf\\HtmlTemplate\\Img\\redSquare.jpg";
-	$template->SetKey( "RedSquare", $rsPath );
+	#my $rsPath = GeneralHelper->Root() . "\\Packages\\Pdf\\ControlPdf\\HtmlTemplate\\Img\\redSquare.jpg";
+	$template->SetKey( "ScriptsRoot",  GeneralHelper->Root() );
 
 	# =================== Table general information ============================
 	$template->SetKey( "GeneralInformation", "General information", "Obecné informace" );
@@ -72,20 +77,20 @@ sub Fill {
 	$template->SetKey( "PcbDataNameVal", HegMethods->GetPcbName( $self->{"jobId"} ) );
 
 	$template->SetKey( "Author", "Cam engineer", "Zpracoval" );
-	$template->SetKey( "AuthorVal", $authorInf{"name"} );
+	$template->SetKey( "AuthorVal", $authorInf{"jmeno"}." ".$authorInf{"prijmeni"} );
 
 	$template->SetKey( "PcbId", "Internal pcb Id", "Interní id" );
 	$template->SetKey( "PcbIdVal", $self->{"jobId"} );
 
 	$template->SetKey( "Email",    "Email" );
-	$template->SetKey( "EmailVal", $authorInf{"email"} );
+	$template->SetKey( "EmailVal", $authorInf{"e_mail"} );
 
 	$template->SetKey( "ReportGenerated", "Report date ", "Datum reportu" );
 
 	$template->SetKey( "ReportGeneratedVal", strftime "%d/%m/%Y", localtime );
 
 	$template->SetKey( "Phone", "Phone", "Telefon" );
-	$template->SetKey( "PhoneVal", $authorInf{"phone"} );
+	$template->SetKey( "PhoneVal", $authorInf{"telefon_prace"} );
 
 	# =================== Table Pcb parameters ============================
 
@@ -179,16 +184,16 @@ sub __GetNifFileInfo {
 	$inf{"s_mask_colour"}        = ValueConvertor->GetMaskCodeToColor( $self->{"nifFile"}->GetValue("s_mask_colour") );
 
 	 
-	$inf{"single"} = $inf{"single_x"} . "mm x " . $inf{"single_y"} . "mm";
+	$inf{"single"} =  $self->{"nifFile"}->GetValue("single_x") . " mm x " . $self->{"nifFile"}->GetValue("single_y") . " mm";
 
 	my $panelSize = "";
-	if ( !defined $inf{"panel_x"} || $inf{"panel_x"} eq "" ) {
+	if ( !defined $self->{"nifFile"}->GetValue("panel_x") || $self->{"nifFile"}->GetValue("panel_x") eq "" ) {
 
 		$inf{"panel"} = " - ";
 	}
 	else {
 
-		$inf{"panel"} = $inf{"panel_x"} . "mm x " . $inf{"panel_y"} . "mm";
+		$inf{"panel"} = $self->{"nifFile"}->GetValue("panel_x") . " mm x " . $self->{"nifFile"}->GetValue("panel_y") . " mm";
 	}
 
 	$inf{"datacode"} = ValueConvertor->GetNifCodeValue( $self->{"nifFile"}->GetValue("datacode") );
@@ -219,7 +224,28 @@ sub __GetStackupInfo {
 		$inf{"material"} = $stackup->GetStackupType();
 	}
 
+	return %inf;
+
 }
+
+sub __GetEmployyInfo {
+	my $self     = shift;
+	 
+
+	my $name = CamAttributes->GetJobAttrByName($self->{"inCAM"},  $self->{"jobId"},"user_name");
+
+	my %employyInf = ();
+
+	if(defined $name && $name ne ""){
+		
+		%employyInf = %{HegMethods->GetEmployyInfo($name)}
+		
+	}
+
+	return %employyInf;
+	
+}
+ 
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

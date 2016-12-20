@@ -8,7 +8,7 @@ use warnings;
 
 # ============ INPUT LINE =================
 my $inputLine =
-"COM cre_drills_map,layer=m,map_layer=m_drillmap,preserve_attr=no,draw_origin=no,define_via_type=no,units=mm,mark_dim=50,mark_line_width=4,mark_location=center,sr=no,slots=no,columns=Count\;Type\;Finish\;Des,notype=plt,table_pos=right,table_align=bottom";# ============ INPUT LINE =================
+"COM add_polyline_end,polarity=positive,attributes=no,symbol=r200,bus_num_lines=0,bus_dist_by=pitch,bus_distance=0,bus_reference=left";# ============ INPUT LINE =================
 
 
 my $output = "\$inCAM->COM(";

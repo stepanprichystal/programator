@@ -21,8 +21,6 @@ use aliased 'Connectors::HeliosConnector::Helper';
 use aliased 'Connectors::SqlParameter';
 use aliased 'Connectors::HeliosConnector::Enums';
 
- 
-
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
@@ -119,7 +117,6 @@ sub GetAllByPcbId {
 	}
 }
 
-
 sub GetPcbName {
 	my $self  = shift;
 	my $pcbId = shift;
@@ -132,23 +129,23 @@ sub GetPcbName {
 				  left outer join lcs.zakazky_dps_22_hlavicka z with (nolock) on z.deska=d.cislo_subjektu
 				 where d.reference_subjektu=_PcbId and  z.cislo_poradace = 22050";
 
- 	return Helper->ExecuteScalar( $cmd, \@params );
+	return Helper->ExecuteScalar( $cmd, \@params );
 }
 
-
- 
-
-
-
 sub GetEmployyInfo {
-	my $self  = shift;
-	my $surname = shift;
+	my $self    = shift;
+	my $userName = shift;
 
-	my @params = ( );
+	my @params = ( SqlParameter->new( "_LoginId", Enums->SqlDbType_VARCHAR, $userName ) );
 
-	my $cmd = "select * 
-				 from lcs.zamestnanci
-				 ";
+	my $cmd = "SELECT cislo_subjektu,
+			e_mail,
+			jmeno,
+			prijmeni,
+			telefon_prace
+			
+			FROM lcs.zamestnanci 
+			WHERE login_id = _LoginId";
 
 	my @result = Helper->ExecuteDataSet( $cmd, \@params );
 
@@ -231,11 +228,12 @@ sub GetElTest {
 				  left outer join lcs.zakazky_dps_22_hlavicka z with (nolock) on z.deska=d.cislo_subjektu
 				 where d.reference_subjektu=_PcbId and  z.cislo_poradace = 22050";
 
-	my $val =  Helper->ExecuteScalar( $cmd, \@params );
-	
-	if($val =~ /^f$/i){
+	my $val = Helper->ExecuteScalar( $cmd, \@params );
+
+	if ( $val =~ /^f$/i ) {
 		return 1;
-	}else{
+	}
+	else {
 		return 0;
 	}
 
@@ -254,13 +252,6 @@ sub GetTypeOfPcb {
 				 from lcs.desky_22 d with (nolock)
 				  left outer join lcs.zakazky_dps_22_hlavicka z with (nolock) on z.deska=d.cislo_subjektu
 				 where d.reference_subjektu=_PcbId and  z.cislo_poradace = 22050";
-
-
-	
-    
-
-
-
 
 	return Helper->ExecuteScalar( $cmd, \@params, 1 );
 
@@ -297,24 +288,24 @@ sub GetSolderMaskColor {
 				 from lcs.desky_22 d with (nolock)
 				  left outer join lcs.zakazky_dps_22_hlavicka z with (nolock) on z.deska=d.cislo_subjektu
 				 where d.reference_subjektu=_PcbId and  z.cislo_poradace = 22050";
-				 
+
 	my %mask = ();
-	
-	my @rows = Helper->ExecuteDataSet( $cmd, \@params);
-	
-	if(scalar(@rows)){
-		
+
+	my @rows = Helper->ExecuteDataSet( $cmd, \@params );
+
+	if ( scalar(@rows) ) {
+
 		$mask{"top"} = $rows[0]->{"c_mask_colour"};
 		$mask{"bot"} = $rows[0]->{"s_mask_colour"};
-		
+
 		return %mask;
-		
-	}else{
-		
+
+	}
+	else {
+
 		return 0;
 	}
 }
-
 
 #Return color of silk screen in hash for top and bot side
 sub GetSilkScreenColor {
@@ -329,20 +320,21 @@ sub GetSilkScreenColor {
 				 from lcs.desky_22 d with (nolock)
 				  left outer join lcs.zakazky_dps_22_hlavicka z with (nolock) on z.deska=d.cislo_subjektu
 				 where d.reference_subjektu=_PcbId and  z.cislo_poradace = 22050";
-				 
+
 	my %silk = ();
-	
-	my @rows = Helper->ExecuteDataSet( $cmd, \@params);
-	
-	if(scalar(@rows)){
-		
+
+	my @rows = Helper->ExecuteDataSet( $cmd, \@params );
+
+	if ( scalar(@rows) ) {
+
 		$silk{"top"} = $rows[0]->{"c_silk_screen_colour"};
 		$silk{"bot"} = $rows[0]->{"s_silk_screen_colour"};
-				
+
 		return %silk;
-		
-	}else{
-		
+
+	}
+	else {
+
 		return 0;
 	}
 }
@@ -381,8 +373,6 @@ sub GetOuterCuThick {
 
 }
 
-
-
 #sqlNoris->getValueNoris($pcbId, 'typ_desky')
 
 sub GetReorderPoolPcb {
@@ -419,10 +409,8 @@ sub UpdateConstructionClass {
 
 }
 
- 
-
 # Return string notes by pcbId for customer (Helios tab UDA)
-sub GetTpvCustomerNote{
+sub GetTpvCustomerNote {
 	my $self  = shift;
 	my $pcbId = shift;
 
@@ -435,7 +423,6 @@ sub GetTpvCustomerNote{
 
 	return Helper->ExecuteScalar( $cmd, \@params );
 }
-
 
 # return all information for pcb offer by pcbId
 sub GetAllByPcbIdOffer {
@@ -477,9 +464,9 @@ sub GetAllByPcbIdOffer {
  				 where d.reference_subjektu=_PcbId and  z.cislo_poradace = 22050
  				 order by z.reference_subjektu desc,n.cislo_subjektu desc,z.cislo_subjektu desc";
 
-	my @result = Helper->ExecuteDataSet( $cmd, \@params, 1);
+	my @result = Helper->ExecuteDataSet( $cmd, \@params, 1 );
 
-	if (scalar(@result) == 1) {
+	if ( scalar(@result) == 1 ) {
 		return $result[0];
 	}
 	else {
@@ -518,16 +505,15 @@ sub GetUserInfoHelios {
 				 where d.reference_subjektu=_PcbId and  z.cislo_poradace = 22050
 				 order by z.reference_subjektu desc,n.cislo_subjektu desc,z.cislo_subjektu desc";
 
-	my @result = Helper->ExecuteDataSet( $cmd, \@params, 1);
+	my @result = Helper->ExecuteDataSet( $cmd, \@params, 1 );
 
-	if (scalar(@result) == 1) {
+	if ( scalar(@result) == 1 ) {
 		return $result[0];
 	}
 	else {
 		return undef;
 	}
 }
-
 
 # Return if pcb is type Pool
 # Function take this information from last ordered pcb/order
@@ -544,11 +530,12 @@ sub GetPcbIsPool {
 				 where d.reference_subjektu=_PcbId and  z.cislo_poradace = 22050
 				 order by z.reference_subjektu desc";
 
-	my $res = Helper->ExecuteScalar( $cmd, \@params);
-	
-	if($res && $res eq "A"){
+	my $res = Helper->ExecuteScalar( $cmd, \@params );
+
+	if ( $res && $res eq "A" ) {
 		return 1;
-	}else{
+	}
+	else {
 		return 0;
 	}
 }
@@ -566,12 +553,12 @@ sub GetDatacodeLayer {
 				 left outer join lcs.zakazky_dps_22_hlavicka z with (nolock) on z.deska=d.cislo_subjektu
 				 where d.reference_subjektu=_PcbId and  z.cislo_poradace = 22050";
 
-	my $res = Helper->ExecuteScalar( $cmd, \@params);
-	
-	if($res){
+	my $res = Helper->ExecuteScalar( $cmd, \@params );
+
+	if ($res) {
 		$res = uc($res);
 	}
-	
+
 	return $res;
 }
 
@@ -588,12 +575,12 @@ sub GetUlLogoLayer {
 				 left outer join lcs.zakazky_dps_22_hlavicka z with (nolock) on z.deska=d.cislo_subjektu
 				 where d.reference_subjektu=_PcbId and  z.cislo_poradace = 22050";
 
-	my $res = Helper->ExecuteScalar( $cmd, \@params);
-	
-	if($res){
+	my $res = Helper->ExecuteScalar( $cmd, \@params );
+
+	if ($res) {
 		$res = uc($res);
 	}
-	
+
 	return $res;
 }
 
@@ -616,13 +603,12 @@ sub GetPcbOrderNumber {
 				 where d.reference_subjektu=_PcbId and  z.cislo_poradace = 22050
 				 order by z.reference_subjektu desc";
 
-	my $res = Helper->ExecuteScalar( $cmd, \@params);
-	
+	my $res = Helper->ExecuteScalar( $cmd, \@params );
+
 	my ($num) = $res =~ m/[a-z]+[\d]+-(\d*)/i;
-	 
+
 	return $num;
 }
-
 
 sub GetNumberOrder {
 	my $self  = shift;
@@ -644,9 +630,9 @@ sub GetNumberOrder {
 				 where d.reference_subjektu=_PcbId and  z.cislo_poradace = 22050
 				 order by z.reference_subjektu desc,n.cislo_subjektu desc,z.cislo_subjektu desc";
 
-			my $res = Helper->ExecuteScalar( $cmd, \@params);
+	my $res = Helper->ExecuteScalar( $cmd, \@params );
 
-		return $res;
+	return $res;
 
 }
 ##Return ID of customer
@@ -656,8 +642,7 @@ sub GetIdcustomer {
 
 	my @params = ( SqlParameter->new( "_PcbId", Enums->SqlDbType_VARCHAR, $pcbId ) );
 
-	my $numberOrder = GetNumberOrder('',$pcbId);
-
+	my $numberOrder = GetNumberOrder( '', $pcbId );
 
 	my $cmd = "select top 1		
 				org.reference_subjektu
@@ -666,11 +651,10 @@ sub GetIdcustomer {
 				WHERE z.reference_subjektu = '$numberOrder'
 				";
 
-	my $res = Helper->ExecuteScalar( $cmd, \@params);
-	
+	my $res = Helper->ExecuteScalar( $cmd, \@params );
+
 	return $res;
 }
-
 
 ##Return ID of customer
 sub GetCustomerInfo {
@@ -679,33 +663,30 @@ sub GetCustomerInfo {
 
 	my @params = ( SqlParameter->new( "_PcbId", Enums->SqlDbType_VARCHAR, $pcbId ) );
 
-	my $numberOrder = GetNumberOrder('',$pcbId);
-
+	my $numberOrder = GetNumberOrder( '', $pcbId );
 
 	my $cmd = "select top 1
 				 c.nazev_subjektu customer
 				 from lcs.desky_22 d with (nolock)
 				 left outer join lcs.subjekty c with (nolock) on c.cislo_subjektu=d.zakaznik
 				 where d.reference_subjektu=_PcbId";
-				 
 
-	my @result = Helper->ExecuteDataSet( $cmd, \@params);
-	
-	if(scalar(@result)){
-		my $href =  $result[0];
+	my @result = Helper->ExecuteDataSet( $cmd, \@params );
+
+	if ( scalar(@result) ) {
+		my $href = $result[0];
 		return %{$href};
 	}
 
 }
 
-
 sub UpdateNCInfo {
-	my $self  = shift;
-	my $pcbId = shift;
+	my $self   = shift;
+	my $pcbId  = shift;
 	my $ncInfo = shift;
 
 	require Connectors::HeliosConnector::HelperWriter;
- 
+
 	my $res = Connectors::HeliosConnector::HelperWriter->OnlineWrite_pcb( "$pcbId", $ncInfo, "nc_info" );
 
 	return $res;
@@ -718,7 +699,7 @@ sub UpdatePcbOrderState {
 	my $state = shift;
 
 	require Connectors::HeliosConnector::HelperWriter;
- 
+
 	my $res = Connectors::HeliosConnector::HelperWriter->OnlineWrite_order( "$pcbId", $state, "aktualni_krok" );
 
 	return $res;
@@ -732,26 +713,29 @@ sub UpdatePcbOrderState {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
- 
 	use aliased 'Connectors::HeliosConnector::HegMethods';
 
-	my $test =HegMethods->GetPcbName("f52456");
+	my $test = HegMethods->GetEmployyInfo("rvi");
+	$test = HegMethods->GetEmployyInfo("mku");
+	$test = HegMethods->GetEmployyInfo("jkr");
+	$test = HegMethods->GetEmployyInfo("rc");
+	$test = HegMethods->GetEmployyInfo("va");
+	$test = HegMethods->GetEmployyInfo("lba");
+	$test = HegMethods->GetEmployyInfo("os");
+	
+	#my $test = HegMethods->GetPcbName("f52456");
 
-#	 
-#	HegMethods->GetPcbOrderNumber("f52456");
-#	my $test = HegMethods->UpdatePcbOrderState("f52456-01", "HOTOVO-123");
+	#
+	#	HegMethods->GetPcbOrderNumber("f52456");
+	#	my $test = HegMethods->UpdatePcbOrderState("f52456-01", "HOTOVO-123");
 
- 
- 
- 
-#	use aliased 'Connectors::HeliosConnector::HegMethods';
-#
-#	my $nc_info = "test";
-#
-#	my $test =  HegMethods->GetTpvCustomerNote("d06224");
-#
+	#	use aliased 'Connectors::HeliosConnector::HegMethods';
+	#
+	#	my $nc_info = "test";
+	#
+	#	my $test =  HegMethods->GetTpvCustomerNote("d06224");
+	#
 	print $test;
- 
 
 }
 

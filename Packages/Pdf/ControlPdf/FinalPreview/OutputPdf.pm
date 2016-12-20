@@ -18,7 +18,7 @@ use aliased 'Enums::EnumsPaths';
 use aliased 'Packages::Pdf::ControlPdf::FinalPreview::Enums';
 use aliased 'CamHelpers::CamLayer';
 use aliased 'CamHelpers::CamJob';
- use Image::Size;
+use Image::Size;
 
 #-------------------------------------------------------------------------------------------#
 #  Interface
@@ -29,9 +29,10 @@ sub new {
 	$self = {};
 	bless $self;
 
-	$self->{"inCAM"}   = shift;
-	$self->{"jobId"}   = shift;
-	$self->{"pdfStep"} = shift;
+	$self->{"viewType"} = shift;
+	$self->{"inCAM"}    = shift;
+	$self->{"jobId"}    = shift;
+	$self->{"pdfStep"}  = shift;
 
 	$self->{"outputPath"} = EnumsPaths->Client_INCAMTMPOTHER . GeneralHelper->GetGUID() . ".jpg";
 
@@ -110,6 +111,12 @@ sub __OutputPdf {
 		#3color1        => $self->__ConvertColor( $l->GetColor()
 	);
 
+	# delete created layers
+	foreach my $lData (@layers) {
+
+		$inCAM->COM( 'delete_layer', "layer" => $lData->GetOutputLayer() );
+	}
+
 	$self->__SplitMultiPdf( $layerList, $multiPdf, $dirPath );
 	$self->__CreatePng( $layerList, $dirPath );
 
@@ -142,67 +149,62 @@ sub __OutputPdf {
 	push( @cmd, "-flatten" );
 	push( @cmd, "-trim" );
 	push( @cmd, "-blur 0.2x0.2 -quality 90%" );
- 	push( @cmd, $outputTmp);
+	push( @cmd, $outputTmp );
 
 	my $cmdStr = join( " ", @cmd );
 
 	my $systeMres = system($cmdStr);
-	
 
-	# Adjust image to ratio 3:5	
+	# Adjust image to ratio 3:5
 
-#    # Get the size of globe.gif
-    (my $x, my $y) = imgsize($outputTmp);
-    
-     my $rotate =  $x < $y ? 1 : 0;
-     
-     # we want to longer side was width
-     if($rotate){
-     	my $pom = 	$y;
-     	my $y = $x;
-     	my $x = $pom;
-     }
-     
-     
-    my $ratio =  min($x,$y ) /  max($x,$y );
-    
-    # compute new image resolution
-    my $dimW = 0;
-    my $dimH = 0;
-    
-    # compute new height
-    if ($ratio <= 3/5){
-    	
-    	$dimW = max($x,$y );
-    	$dimH = int(($dimW / 5) *3);
-    	
-    }else{
-    # compute new width	
-    
-    	
-    	$dimH = min($x,$y );
-    	$dimW = int(($dimH / 3) *5); 
-    
-    	
-    }
-    
-    
-    my @cmd2 = ( EnumsPaths->InCAM_3rdScripts . "im\\convert.exe" );
+	#    # Get the size of globe.gif
+	( my $x, my $y ) = imgsize($outputTmp);
+
+	my $rotate = $x < $y ? 1 : 0;
+
+	# we want to longer side was width
+	if ($rotate) {
+		my $pom = $y;
+		my $y   = $x;
+		my $x   = $pom;
+	}
+
+	my $ratio = min( $x, $y ) / max( $x, $y );
+
+	# compute new image resolution
+	my $dimW = 0;
+	my $dimH = 0;
+
+	# compute new height
+	if ( $ratio <= 3 / 5 ) {
+
+		$dimW = max( $x, $y );
+		$dimH = int( ( $dimW / 5 ) * 3 );
+
+	}
+	else {
+
+		# compute new width
+
+		$dimH = min( $x, $y );
+		$dimW = int( ( $dimH / 3 ) * 5 );
+
+	}
+
+	my @cmd2 = ( EnumsPaths->InCAM_3rdScripts . "im\\convert.exe" );
 	push( @cmd2, $outputTmp );
-	if($rotate){
+	if ($rotate) {
 		push( @cmd2, "-rotate 90" );
 	}
 
-
 	push( @cmd2, "-gravity center -background white" );
-	push( @cmd2, "-extent ".$dimW."x".$dimH );
-	 
- 	push( @cmd2, $self->{"outputPath"} );
+	push( @cmd2, "-extent " . $dimW . "x" . $dimH );
+
+	push( @cmd2, $self->{"outputPath"} );
 
 	my $cmdStr2 = join( " ", @cmd2 );
 
 	my $systeMres2 = system($cmdStr2);
- 	
 
 	foreach my $l (@layers) {
 		if ( -e $dirPath . $l->GetOutputLayer() . ".png" ) {
@@ -214,7 +216,7 @@ sub __OutputPdf {
 	}
 
 	rmdir($dirPath);
-	
+
 	unlink($outputTmp);
 
 	# merge all png to one
@@ -243,11 +245,10 @@ sub __CreatePng {
 		#		white -alpha on -channel a -evaluate set 50 % -fuzz 50 % -trans parent white result2 . png
 
 		my $backg = "white";
-		
-		if ( $l->GetTransparency() < 100  && $l->GetColor() eq "250,250,250") {
+
+		if ( $l->GetTransparency() < 100 && $l->GetColor() eq "250,250,250" ) {
 			$backg = "orange";
 		}
-		
 
 		my @cmd = ( EnumsPaths->InCAM_3rdScripts . "im\\convert.exe" );
 		push( @cmd, "-density 300" );
@@ -460,6 +461,19 @@ sub __OptimizeLayers {
 	);
 	$inCAM->COM( "affected_layer", "mode" => "all", "affected" => "no" );
 	$inCAM->COM( 'delete_layer', "layer" => $lName );
+
+
+	# if preview from BOT mirror all layers
+	if ( $self->{"viewType"} eq Enums->View_FROMBOT ) {
+
+		foreach my $l (@layers) {
+
+			CamLayer->WorkLayer( $inCAM, $l->GetOutputLayer() );
+			CamLayer->MirrorLayerData( $inCAM, $l->GetOutputLayer(), "y" );
+
+		}
+
+	}
 
 }
 

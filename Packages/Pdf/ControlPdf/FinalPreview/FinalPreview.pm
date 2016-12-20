@@ -36,7 +36,7 @@ sub new {
 	$self->{"viewType"} = shift;
 
 	$self->{"layerList"} = LayerDataList->new( $self->{"viewType"} );
-	$self->{"outputPdf"} = OutputPdf->new( $self->{"inCAM"},$self->{"jobId"}, $self->{"pdfStep"} );
+	$self->{"outputPdf"} = OutputPdf->new($self->{"viewType"},  $self->{"inCAM"},$self->{"jobId"}, $self->{"pdfStep"} );
 
 	$self->{"outputPath"} = EnumsPaths->Client_INCAMTMPOTHER . GeneralHelper->GetGUID() . ".png";
 
@@ -146,7 +146,7 @@ sub __PrepareColors {
 	$clrs{ Enums->Type_PLTDEPTHNC } = join(",", @surfArr );
 
 	# Depth NC non plated
-	$clrs{ Enums->Type_NPLTDEPTHNC } = "233,252,199";
+	$clrs{ Enums->Type_NPLTDEPTHNC } = "233,217,97";
 
 	# PLT Through NC
 	$clrs{ Enums->Type_PLTTHROUGHNC } = "250,250,250";

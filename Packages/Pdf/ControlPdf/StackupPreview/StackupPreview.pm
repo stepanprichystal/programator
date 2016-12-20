@@ -12,6 +12,7 @@ use warnings;
 #local library
 use aliased 'Helpers::GeneralHelper';
 use aliased 'Enums::EnumsPaths';
+use aliased 'Packages::Pdf::StackupPdf::StackupPdf';
 
 #-------------------------------------------------------------------------------------------#
 #  Interface
@@ -31,19 +32,21 @@ sub new {
 
 sub Create {
 	my $self = shift;
-	my $pdfStackup = shift; # path
- 
-	# get info about pcb
 	
-	unless(-e $pdfStackup){
+	
+	my $stackup = StackupPdf->new($self->{"jobId"});
+	my $resultCreate = $stackup->Create();
+	
+	unless($resultCreate){
 		return 0;
 	}
-
+	
+	my $path = $stackup->GetStackupPath();
 	my $result = 1;
+ 
+	$result = $self->__ConvertToImage($path);
 	
-	
-	
-	$result = $self->__ConvertToImage($pdfStackup);
+	unlink($path);
 
 	return $result;
 }
@@ -64,7 +67,7 @@ sub __ConvertToImage{
  
 	push( @cmd, "-density 300 -background white -flatten" );
 	push( @cmd, $pdfStackup );
-	push( @cmd, "-rotate 270 - crop 1470x2000+150+500 -trim" );
+	push( @cmd, "-rotate 270 -crop 1470x2000+150+500 -trim" );
 	push( @cmd, "-bordercolor white -border 20x20" );
 	push( @cmd, "-gravity center -background white -extent 1600x1600" );
  	push( @cmd, $self->{"outputPath"} );

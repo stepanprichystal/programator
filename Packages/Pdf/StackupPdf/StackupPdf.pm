@@ -15,6 +15,8 @@ use aliased 'Helpers::GeneralHelper';
 use aliased 'Packages::Pdf::StackupPdf::OutputPdf';
 use aliased 'Packages::Stackup::Stackup::Stackup';
 use aliased 'Connectors::HeliosConnector::HegMethods';
+use aliased 'Helpers::FileHelper';
+use aliased 'Enums::EnumsPaths';
 
 
 #-------------------------------------------------------------------------------------------#
@@ -37,14 +39,19 @@ sub new {
 sub Create {
 	my $self = shift;
  	 
-
+	
+	# test if exist XML file
+	my $stcFile = FileHelper->GetFileNameByPattern( EnumsPaths->Jobs_STACKUPS, $self->{"jobId"} );
+	
+	unless($stcFile){
+		return 0;
+	}
+	
 
 	my $stackup = Stackup->new($self->{"jobId"});
 	my $stackupName = $self->__GetStackupName($stackup);
 
 	$self->{"outputPdf"}->Output($stackupName, $stackup);
- 
-	
  
 	return 1;
 }

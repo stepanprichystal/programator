@@ -95,27 +95,26 @@ sub FlatternLayer {
 	$inCAM->COM( 'delete_layer', "layer" => $tmpLayer );
 }
 
-
 # Remove temporary layers with mark plus
 # RV
 # Example c+++, s+++....
 sub RemoveTempLayerPlus {
-		my $self      = shift;
-		my $inCAM     = shift;
-		my $jobId     = shift;
-		
-		$inCAM->INFO('entity_type'=>'matrix','entity_path'=>"$jobId/matrix",'data_type'=>'ROW');
-    			my $totalRows = ${$inCAM->{doinfo}{gROWrow}}[-1];
-	    				for (my $count=0;$count<=$totalRows;$count++) {
-									my $rowName = ${$inCAM->{doinfo}{gROWname}}[$count];
-									my $rowContext = ${$inCAM->{doinfo}{gROWcontext}}[$count];
-									
-									if ($rowContext eq "misc") {
-											if($rowName =~ /\+\+\+/g) {
-													$inCAM->COM('delete_layer',layer=>"$rowName");
-											}
-									}
-    					}
+	my $self  = shift;
+	my $inCAM = shift;
+	my $jobId = shift;
+
+	$inCAM->INFO( 'entity_type' => 'matrix', 'entity_path' => "$jobId/matrix", 'data_type' => 'ROW' );
+	my $totalRows = ${ $inCAM->{doinfo}{gROWrow} }[-1];
+	for ( my $count = 0 ; $count <= $totalRows ; $count++ ) {
+		my $rowName    = ${ $inCAM->{doinfo}{gROWname} }[$count];
+		my $rowContext = ${ $inCAM->{doinfo}{gROWcontext} }[$count];
+
+		if ( $rowContext eq "misc" ) {
+			if ( $rowName =~ /\+\+\+/g ) {
+				$inCAM->COM( 'delete_layer', layer => "$rowName" );
+			}
+		}
+	}
 }
 
 #Return layers, where marking can be placed
@@ -142,85 +141,111 @@ sub GetMarkingLayers {
 }
 
 # Display single layer and set as work layer
-sub SetLayerTypeLayer{
-	my $self   = shift;
-	my $inCAM  = shift;
-	my $jobId  = shift;
-	my $layer  = shift;
+sub SetLayerTypeLayer {
+	my $self  = shift;
+	my $inCAM = shift;
+	my $jobId = shift;
+	my $layer = shift;
 	my $type  = shift;
-	
-	$inCAM->COM("matrix_layer_type","job" => $jobId,"matrix" => "matrix","layer" => $layer,"type" => $type);
+
+	$inCAM->COM( "matrix_layer_type", "job" => $jobId, "matrix" => "matrix", "layer" => $layer, "type" => $type );
 
 }
-
-
-
 
 # Display single layer and set as work layer
-sub WorkLayer{
-	my $self   = shift;
-	my $inCAM  = shift;
-	my $layer  = shift;
-	
+sub WorkLayer {
+	my $self  = shift;
+	my $inCAM = shift;
+	my $layer = shift;
+ 
+
 	$inCAM->COM( 'affected_layer', name => $layer, mode => "all", affected => "no" );
-	$inCAM->COM("display_layer","name" => $layer,"display" => "yes");
-	$inCAM->COM( 'work_layer',     name => $layer );
+	
+ 	 $inCAM->COM( "display_layer", "name" => $layer, "display" => "yes" );
+	 $inCAM->COM( 'work_layer', name => $layer );
+	 
 
 }
 
+# Hide all layers and all layers are not affected
+sub ClearLayers {
+	my $self  = shift;
+	my $inCAM = shift;
+ 
+ 
+ 	$inCAM->COM( 'clear_layers');
+	$inCAM->COM( 'affected_layer',  mode => "all", affected => "no" );
+}
+
+
+
+
 # Affect layer in matrix
-sub AffectLayers{
+sub AffectLayers {
 	my $self   = shift;
 	my $inCAM  = shift;
-	my $layers  = shift;
-	
+	my $layers = shift;
+
 	$inCAM->COM( 'affected_layer', name => "", mode => "all", affected => "no" );
-	
-	
-	foreach my $layer (@{$layers}){
+
+	foreach my $layer ( @{$layers} ) {
+
 		#$inCAM->COM("display_layer","name" => $layer,"display" => "yes");
 		$inCAM->COM( 'affected_layer', name => "$layer", mode => "single", affected => "yes" );
 
 	}
-	
-	
 
 }
 
 # InvertPolarity of layer in some specified area
 sub NegativeLayerData {
-	my $self   = shift;
-	my $inCAM  = shift;
-	my $layer  = shift;
-	my %dim  = %{shift(@_)};
-	
+	my $self  = shift;
+	my $inCAM = shift;
+	my $layer = shift;
+	my %dim   = %{ shift(@_) };
+
 	my $lName = GeneralHelper->GetGUID();
 	$inCAM->COM( 'create_layer', "layer" => $lName, "context" => 'misc', "type" => 'document', "polarity" => 'positive', "ins_layer" => '' );
-	$self->WorkLayer($inCAM, $lName);
-	
-	
+	$self->WorkLayer( $inCAM, $lName );
+
 	$inCAM->COM("add_surf_fill");
-	$inCAM->COM("add_surf_strt", "surf_type"=> "feature");
-	$inCAM->COM("add_surf_poly_strt", "x"=> $dim{"xMin"}, "y"=> $dim{"yMin"});
-	$inCAM->COM("add_surf_poly_seg", "x"=> $dim{"xMin"}, "y"=> $dim{"yMax"});
-	$inCAM->COM("add_surf_poly_seg", "x"=> $dim{"xMax"}, "y"=> $dim{"yMax"});
-	$inCAM->COM("add_surf_poly_seg", "x"=> $dim{"xMax"}, "y"=> $dim{"yMin"});
-	$inCAM->COM("add_surf_poly_seg", "x"=> $dim{"xMin"}, "y"=> $dim{"yMin"});
+	$inCAM->COM( "add_surf_strt",      "surf_type" => "feature" );
+	$inCAM->COM( "add_surf_poly_strt", "x"         => $dim{"xMin"}, "y" => $dim{"yMin"} );
+	$inCAM->COM( "add_surf_poly_seg",  "x"         => $dim{"xMin"}, "y" => $dim{"yMax"} );
+	$inCAM->COM( "add_surf_poly_seg",  "x"         => $dim{"xMax"}, "y" => $dim{"yMax"} );
+	$inCAM->COM( "add_surf_poly_seg",  "x"         => $dim{"xMax"}, "y" => $dim{"yMin"} );
+	$inCAM->COM( "add_surf_poly_seg",  "x"         => $dim{"xMin"}, "y" => $dim{"yMin"} );
 	$inCAM->COM("add_surf_poly_end");
- 	$inCAM->COM("add_surf_end","polarity" => "positive","attributes" => "no");
- 
-	$self->WorkLayer($inCAM, $layer);
-	$inCAM->COM("sel_move_other","target_layer" => $lName,"invert" => "yes","dx" => "0","dy" => "0","size" => "0","x_anchor" => "0","y_anchor" => "0");
-	
-	$self->WorkLayer($inCAM, $lName);
-	$inCAM->COM("sel_move_other","target_layer" => $layer,"invert" => "no","dx" => "0","dy" => "0","size" => "0","x_anchor" => "0","y_anchor" => "0");
-	
-	$inCAM->COM("delete_layer", "layer"=> $lName);
-	
+	$inCAM->COM( "add_surf_end", "polarity" => "positive", "attributes" => "no" );
+
+	$self->WorkLayer( $inCAM, $layer );
+	$inCAM->COM(
+				 "sel_move_other",
+				 "target_layer" => $lName,
+				 "invert"       => "yes",
+				 "dx"           => "0",
+				 "dy"           => "0",
+				 "size"         => "0",
+				 "x_anchor"     => "0",
+				 "y_anchor"     => "0"
+	);
+
+	$self->WorkLayer( $inCAM, $lName );
+	$inCAM->COM(
+				 "sel_move_other",
+				 "target_layer" => $layer,
+				 "invert"       => "no",
+				 "dx"           => "0",
+				 "dy"           => "0",
+				 "size"         => "0",
+				 "x_anchor"     => "0",
+				 "y_anchor"     => "0"
+	);
+
+	$inCAM->COM( "delete_layer", "layer" => $lName );
+
 	$inCAM->COM( 'affected_layer', name => $layer, mode => "single", affected => "no" );
 }
-
-
 
 # Rotate layer by degree
 # Right step must be open and set
@@ -229,27 +254,35 @@ sub ClipLayerData {
 	my $self   = shift;
 	my $inCAM  = shift;
 	my $layer  = shift;
-	my %rect = %{shift(@_)};
+	my %rect   = %{ shift(@_) };
 	my $inside = shift;
-	 
+
 	my $type = "outside";
-	
-	if($inside){
+
+	if ($inside) {
 		$type = "inside";
-	} 
-	 
-	$self->WorkLayer($inCAM, $layer);
-	
-	$inCAM->COM("clip_area_strt",);
-	$inCAM->COM("clip_area_xy","x" => $rect{"xMin"},"y" => $rect{"yMin"});
-	$inCAM->COM("clip_area_xy","x" => $rect{"xMax"},"y" => $rect{"yMax"});
-	$inCAM->COM("clip_area_end","layers_mode" => "layer_name","layer" => $layer,"area" => "manual","area_type" => "rectangle","inout" => $type,"contour_cut" => "no","margin" => "0","feat_types" => "line\;pad;surface;arc;text","pol_types" => "positive\;negative");
-	
+	}
+
+	$self->WorkLayer( $inCAM, $layer );
+
+	$inCAM->COM( "clip_area_strt", );
+	$inCAM->COM( "clip_area_xy", "x" => $rect{"xMin"}, "y" => $rect{"yMin"} );
+	$inCAM->COM( "clip_area_xy", "x" => $rect{"xMax"}, "y" => $rect{"yMax"} );
+	$inCAM->COM(
+				 "clip_area_end",
+				 "layers_mode" => "layer_name",
+				 "layer"       => $layer,
+				 "area"        => "manual",
+				 "area_type"   => "rectangle",
+				 "inout"       => $type,
+				 "contour_cut" => "no",
+				 "margin"      => "0",
+				 "feat_types"  => "line\;pad;surface;arc;text",
+				 "pol_types"   => "positive\;negative"
+	);
+
 	$inCAM->COM( 'affected_layer', name => $layer, mode => "single", affected => "no" );
 }
-
-
-
 
 # Rotate layer by degree
 # Right step must be open and set
@@ -260,10 +293,10 @@ sub RotateLayerData {
 	my $layer  = shift;
 	my $degree = shift;
 
-	$self->WorkLayer($inCAM, $layer);
-	
+	$self->WorkLayer( $inCAM, $layer );
+
 	$inCAM->COM( "sel_transform", "oper" => "rotate", "angle" => $degree );
-	
+
 	$inCAM->COM( 'affected_layer', name => $layer, mode => "single", affected => "no" );
 }
 
@@ -276,8 +309,7 @@ sub MirrorLayerData {
 	my $layer = shift;
 	my $axis  = shift;
 
-
-	$self->WorkLayer($inCAM, $layer);
+	$self->WorkLayer( $inCAM, $layer );
 
 	if ( $axis eq "x" ) {
 
@@ -304,20 +336,19 @@ sub MoveLayerData {
 	my $x = -1 * $sourcePoint->{"x"} + $targetPoint->{"x"};
 	my $y = -1 * $sourcePoint->{"y"} + $targetPoint->{"y"};
 
- 
-	$self->WorkLayer($inCAM, $layer);
-	
-	$inCAM->COM( "sel_move",       "dx" => $x,     "dy" => $y );
-	
+	$self->WorkLayer( $inCAM, $layer );
+
+	$inCAM->COM( "sel_move", "dx" => $x, "dy" => $y );
+
 	$inCAM->COM( 'affected_layer', name => $layer, mode => "single", affected => "no" );
 }
 
 # Return if, lyer is board type
 sub LayerIsBoard {
 
-	my $self    = shift;
-	my $inCAM   = shift;
-	my $jobName = shift;
+	my $self      = shift;
+	my $inCAM     = shift;
+	my $jobName   = shift;
 	my $layerName = shift;
 
 	$inCAM->INFO(
@@ -329,21 +360,21 @@ sub LayerIsBoard {
 				  parameters      => 'context+layer_type+name'
 	);
 
-	my @layers = @{ $inCAM->{doinfo}{gROWname} };
-	my @types  = @{ $inCAM->{doinfo}{gROWlayer_type} };
-	my @context  = @{ $inCAM->{doinfo}{gROWcontext} };
+	my @layers  = @{ $inCAM->{doinfo}{gROWname} };
+	my @types   = @{ $inCAM->{doinfo}{gROWlayer_type} };
+	my @context = @{ $inCAM->{doinfo}{gROWcontext} };
 
 	my $idx = ( grep { $layerName eq $layers[$_] } 0 .. $#layers )[0];
 
 	if ( defined $idx ) {
 
 		my $con = $context[$idx];
-		
-		if ($con eq "board"){
+
+		if ( $con eq "board" ) {
 			return 1;
 		}
 	}
-	
+
 	return 0;
 }
 
@@ -351,52 +382,51 @@ sub LayerIsBoard {
 # Right step must be open and set
 # Requested data must be selected
 sub CompensateLayerData {
-	my $self  = shift;
-	my $inCAM = shift;
-	my $layer = shift;
-	my $compVal  = shift; # µm
+	my $self    = shift;
+	my $inCAM   = shift;
+	my $layer   = shift;
+	my $compVal = shift;    # µm
 
-
-	$self->WorkLayer($inCAM, $layer);
+	$self->WorkLayer( $inCAM, $layer );
 
 	# resize all positive
-	$inCAM->COM("reset_filter_criteria","filter_name" => "","criteria" => "all");
-	$inCAM->COM("set_filter_polarity","filter_name" => "","positive" => "yes","negative" => "no");
+	$inCAM->COM( "reset_filter_criteria", "filter_name" => "", "criteria" => "all" );
+	$inCAM->COM( "set_filter_polarity", "filter_name" => "", "positive" => "yes", "negative" => "no" );
 	$inCAM->COM("filter_area_strt");
-	$inCAM->COM("filter_area_end","filter_name" => "popup","operation" => "select");
-	$inCAM->COM("sel_resize","size" => $compVal,"corner_ctl" => "no");
+	$inCAM->COM( "filter_area_end", "filter_name" => "popup",  "operation"  => "select" );
+	$inCAM->COM( "sel_resize",      "size"        => $compVal, "corner_ctl" => "no" );
 	$inCAM->COM("sel_clear_feat");
-	
+
 	# resize all negative by oposite value of comp
-	$inCAM->COM("reset_filter_criteria","filter_name" => "","criteria" => "all");
-	$inCAM->COM("set_filter_polarity","filter_name" => "","positive" => "no","negative" => "yes");
+	$inCAM->COM( "reset_filter_criteria", "filter_name" => "", "criteria" => "all" );
+	$inCAM->COM( "set_filter_polarity", "filter_name" => "", "positive" => "no", "negative" => "yes" );
 	$inCAM->COM("filter_area_strt");
-	$inCAM->COM("filter_area_end","filter_name" => "popup","operation" => "select");
-	$inCAM->COM("sel_resize","size" => (-1*$compVal),"corner_ctl" => "no");
+	$inCAM->COM( "filter_area_end", "filter_name" => "popup",           "operation"  => "select" );
+	$inCAM->COM( "sel_resize",      "size"        => ( -1 * $compVal ), "corner_ctl" => "no" );
 	$inCAM->COM("sel_clear_feat");
-	 
-	$inCAM->COM( 'affected_layer', name => $layer, mode => "single", affected => "no" ); 
-	 
+
+	$inCAM->COM( 'affected_layer', name => $layer, mode => "single", affected => "no" );
+
 }
 
 # InvertPolarity of layer
 sub RoutCompensation {
-	my $self   = shift;
-	my $inCAM  = shift;
-	my $layer  = shift;
+	my $self  = shift;
+	my $inCAM = shift;
+	my $layer = shift;
 	my $type  = shift;
-	
-	unless(defined $type){
-		
-		$type = "rout"
+
+	unless ( defined $type ) {
+
+		$type = "rout";
 	}
-	
+
 	my $lName = GeneralHelper->GetGUID();
-	$self->WorkLayer($inCAM, $layer);
-	
-	$inCAM->COM("compensate_layer","source_layer" => $layer,"dest_layer" => $lName,"dest_layer_type" => $type);
-	$inCAM->COM( 'affected_layer', name => $layer, mode => "single", affected => "no" );
-	
+	$self->WorkLayer( $inCAM, $layer );
+
+	$inCAM->COM( "compensate_layer", "source_layer" => $layer, "dest_layer" => $lName,   "dest_layer_type" => $type );
+	$inCAM->COM( 'affected_layer',   name           => $layer, mode         => "single", affected          => "no" );
+
 	return $lName;
 }
 
@@ -406,28 +436,20 @@ sub RoutCompensation {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	
-	 
-	my $jobName          = "f13610";
-	my $layerName          = "fsch";
-
+	my $jobName   = "f13610";
+	my $layerName = "fsch";
 
 	use aliased 'CamHelpers::CamLayer';
 	use aliased 'Packages::InCAM::InCAM';
 
-
 	my $inCAM = InCAM->new();
 
-	my $res = CamLayer->LayerIsBoard($inCAM, $jobName, $layerName);
-	
+	my $res = CamLayer->LayerIsBoard( $inCAM, $jobName, $layerName );
+
 	print $res;
 
 }
 
 1;
 
- 
-
-	
- 
 1;

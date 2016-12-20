@@ -8,10 +8,15 @@ package Packages::Pdf::ControlPdf::ControlPdf;
 #3th party library
 use strict;
 use warnings;
+use File::Copy;
 
 #local library
 use aliased 'Helpers::GeneralHelper';
 use aliased 'CamHelpers::CamHelper';
+use aliased 'CamHelpers::CamJob';
+use aliased 'CamHelpers::CamLayer';
+
+
 use aliased 'Helpers::JobHelper';
 use aliased 'Enums::EnumsPaths';
 use aliased 'CamHelpers::CamStepRepeat';
@@ -43,7 +48,7 @@ sub new {
 
 	$self->{"outputPath"} = EnumsPaths->Client_INCAMTMPOTHER . GeneralHelper->GetGUID() . ".pdf";
 
-	$self->{"outputPdf"} = OutputPdf->new();
+	$self->{"outputPdf"} = OutputPdf->new($self->{"lang"});
 	$self->{"fillTemplate"} = FillTemplate->new($self->{"inCAM"}, $self->{"jobId"});
 
 	$self->{"template"}       = Template2Pdf->new( $self->{"lang"} );
@@ -51,6 +56,7 @@ sub new {
 	$self->{"previewTop"}     = FinalPreview->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"pdfStep"}, EnumsFinal->View_FROMTOP );
 	$self->{"previewBot"}     = FinalPreview->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"pdfStep"}, EnumsFinal->View_FROMBOT );
 	$self->{"previewSingle"}  = SinglePreview->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"pdfStep"}, $self->{"lang"} );
+	
 	return $self;
 }
 
@@ -69,22 +75,30 @@ sub Create {
 	CamHelper->SetStep( $self->{"inCAM"}, $self->{"pdfStep"} );
 
 	# 1) create stackup image
-	#$self->{"stackupPreview"}->Create();
+	$self->{"stackupPreview"}->Create();
 
 	# 2) Final preview top
-	#$self->{"previewTop"}->Create();
+	$self->{"previewTop"}->Create();
 
 	# 3) Final preview bot
-	#$self->{"previewBot"}->Create();
+	$self->{"previewBot"}->Create();
 
 	# 4) Create preview single
-	#$self->{"previewSingle"}->Create();
+	$self->{"previewSingle"}->Create();
 
 	# 5) Process template
 	$self->__ProcessTemplate( $self->{"stackupPreview"}->GetOutput(), $self->{"previewTop"}->GetOutput(), $self->{"previewBot"}->GetOutput() );
+	#$self->__ProcessTemplate( "c:\\Export\\Report\\result.jpg", "c:\\Export\\Report\\result2.jpg", "c:\\Export\\Report\\result2.jpg" );
 
 	# 6) complete all together and add header and footer
-	$self->{"outputPdf"}->Output();
+	$self->{"outputPdf"}->Output($self->{"template"}->GetOutFile(), $self->{"previewSingle"}->GetOutput());
+	
+	if(-e "c:\\Export\\report\\".$self->{"jobId"}.".pdf"){
+		unlink("c:\\Export\\report\\".$self->{"jobId"}.".pdf");
+	}
+	
+	 
+	copy($self->{"outputPdf"}->GetOutput(), "c:\\Export\\report\\".$self->{"jobId"}.".pdf");
 
 	$self->__DeletePdfStep( $self->{"pdfStep"} );
 }
@@ -107,8 +121,7 @@ sub __ProcessTemplate {
 	$self->__FillTemplate($templData);
 
 	my $result = $self->{"template"}->Convert( $tempPath, $templData );
-
-	my $outFile = $self->{"template"}->GetOutFile();
+ 
 }
 
 sub __FillTemplate {
@@ -199,9 +212,9 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId = "f52456";
+	my $jobId = "f10177";
 
-	my $control = ControlPdf->new( $inCAM, $jobId, "o+1", "en" );
+	my $control = ControlPdf->new( $inCAM, $jobId, "mpanel", "cz" );
 
 	$control->Create();
 }

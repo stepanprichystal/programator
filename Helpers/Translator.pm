@@ -1,3 +1,4 @@
+
 #-------------------------------------------------------------------------------------------#
 # Description: Script slouzi pro vypocet hlubky vybrusu pri navadeni na vrtackach.
 # Author:SPR
@@ -5,6 +6,9 @@
 package Helpers::Translator;
 
 #3th party library
+ 
+use utf8; 
+ 
 use strict;
 use warnings;
 
@@ -44,39 +48,39 @@ sub Cz {
 		
 	}elsif($val eq "Component side"){
 	
-		$str = "Strana souèástek";
+		$str = "Strana souÄÃ¡stek";
 		
 	}elsif($val eq "Solder side"){
 	
-		$str = "Strana spojù";
+		$str = "Strana spojÅ¯";
 	}
 	elsif($val eq "Green"){
 	
-		$str = "Zelená";
+		$str = "ZelenÃ¡";
 		
 	}elsif($val eq "Black"){
 	
-		$str = "Èerná";
+		$str = "ÄŒernÃ¡";
 		
 	}elsif($val eq "White"){
 	
-		$str = "Bílá";
+		$str = "BÃ­lÃ¡";
 		
 	}elsif($val eq "Blue"){
 	
-		$str = "Modrá";
+		$str = "ModrÃ¡";
 		
 	}elsif($val eq "Transparent"){
 	
-		$str = "Transparentní";
+		$str = "TransparentnÃ­";
 		
 	}elsif($val eq "Red"){
 	
-		$str = "Èervená";
+		$str = "ÄŒervenÃ¡";
 		
 	}elsif($val eq "Yellow"){
 	
-		$str = "lutá";
+		$str = "Å½lutÃ¡";
 		
 	}
 	
