@@ -11,6 +11,8 @@ use strict;
 use warnings;
 use PDF::API2;
 use List::Util qw[max min];
+use Math::Trig;
+use Image::Size;
 
 #local library
 use aliased 'Helpers::GeneralHelper';
@@ -18,7 +20,9 @@ use aliased 'Enums::EnumsPaths';
 use aliased 'Packages::Pdf::ControlPdf::FinalPreview::Enums';
 use aliased 'CamHelpers::CamLayer';
 use aliased 'CamHelpers::CamJob';
-use Image::Size;
+use aliased 'CamHelpers::CamToolDepth';
+use aliased 'CamHelpers::CamFilter';
+use aliased 'Enums::EnumsGeneral';
 
 #-------------------------------------------------------------------------------------------#
 #  Interface
@@ -285,8 +289,9 @@ sub __CreatePng {
 	foreach (@threads) {
 		$_->join();
 	}
-	$self->{"inCAM"}->{"childThread"} = 0;
 
+	$self->{"inCAM"}->{"childThread"} = 0;
+ 
 	print STDERR "threats done \n";
 
 }
@@ -336,82 +341,12 @@ sub __SplitMultiPdf {
 		my $out = $dirPath . $layers[ $pagenum - 1 ]->GetOutputLayer() . ".pdf";
 
 		$pdf_out->saveas($out);
-
+ 
 	}
+	
+	unlink($pdfOutput);
 }
 
-#sub __OutputPdf {
-#	my $self      = shift;
-#	my $layerList = shift;
-#
-#	my $inCAM = $self->{"inCAM"};
-#
-#	my @lNames = ();
-#	my @colors = ();
-#
-#	foreach my $l ( $layerList->GetLayers() ) {
-#
-#		if ( $l->PrintLayer() ) {
-#			push( @lNames, $l->GetOutputLayer() );
-#			push( @colors, $self->__ConvertColor( $l->GetColor() ) );
-#		}
-#	}
-#
-#	# fill fake colors in order array won't be empty
-#	while ( scalar(@colors) < 7 ) {
-#
-#		push( @colors, "000000" );
-#	}
-#
-#	#$self->{"outputPath"} = "c:/Export/report/pppp.pdf";
-#	print STDERR "path is: " . $self->{"outputPath"} . "\n";
-#	my $lStr = join( "\\;", @lNames );
-#
-#	my $output = $self->{"outputPath"};
-#	$output =~ s/\\/\//g;
-#
-#	print STDERR "test pdf";
-#
-#	$inCAM->COM(
-#		'print',
-#
-#		#title             => '',
-#		layer_name => $lStr,
-#
-#		#layer_name        => "c\;s",
-#		mirrored_layers   => '',
-#		draw_profile      => 'no',
-#		drawing_per_layer => 'no',
-#		label_layers      => 'no',
-#		dest              => 'pdf_file',
-#		num_copies        => '1',
-#		dest_fname        => $output,
-#
-#		paper_size => 'custom',
-#
-#		#scale_to          => '0.0',
-#		#nx                => '1',
-#		#ny                => '1',
-#		orient => 'none',
-#
-#		#paper_orient      => 'best',
-#		paper_width   => 260,
-#		paper_height  => 260,
-#		auto_tray     => 'no',
-#		top_margin    => '0',
-#		bottom_margin => '0',
-#		left_margin   => '0',
-#		right_margin  => '0',
-#		"x_spacing"   => '0',
-#		"y_spacing"   => '0',
-#		color1        => $colors[0],
-#		color2        => $colors[1],
-#		color3        => $colors[2],
-#		color4        => $colors[3],
-#		color5        => $colors[4],
-#		color6        => $colors[5],
-#		color7        => $colors[6]
-#	);
 #}
 
 sub __OptimizeLayers {
@@ -462,17 +397,38 @@ sub __OptimizeLayers {
 	$inCAM->COM( "affected_layer", "mode" => "all", "affected" => "no" );
 	$inCAM->COM( 'delete_layer', "layer" => $lName );
 
-
 	# if preview from BOT mirror all layers
 	if ( $self->{"viewType"} eq Enums->View_FROMBOT ) {
 
-		foreach my $l (@layers) {
+		my %lim = CamJob->GetProfileLimits( $inCAM, $self->{"jobId"}, $self->{"pdfStep"} );
 
-			CamLayer->WorkLayer( $inCAM, $l->GetOutputLayer() );
-			CamLayer->MirrorLayerData( $inCAM, $l->GetOutputLayer(), "y" );
+		my $x = abs( $lim{"xmax"} - $lim{"xmin"} );
+		my $y = abs( $lim{"ymax"} - $lim{"ymin"} );
 
+		if ( min( $x, $y ) / max( $x, $y ) < 290 / 305 ) {
+
+			my $rotateBy = undef;
+
+			my %lim = CamJob->GetProfileLimits( $inCAM, $self->{"jobId"}, $self->{"pdfStep"} );
+
+			my $x = abs( $lim{"xmax"} - $lim{"xmin"} );
+			my $y = abs( $lim{"ymax"} - $lim{"ymin"} );
+
+			if ( $x <= $y ) {
+
+				$rotateBy = "x";
+			}
+			else {
+
+				$rotateBy = "y";
+			}
+
+			foreach my $l (@layers) {
+
+				CamLayer->WorkLayer( $inCAM, $l->GetOutputLayer() );
+				CamLayer->MirrorLayerData( $inCAM, $l->GetOutputLayer(), $rotateBy );
+			}
 		}
-
 	}
 
 }
@@ -523,6 +479,10 @@ sub __PrepareOUTERCU {
 	my $self  = shift;
 	my $layer = shift;
 
+	unless ( $layer->HasLayers() ) {
+		return 0;
+	}
+
 	my $inCAM  = $self->{"inCAM"};
 	my @layers = $layer->GetSingleLayers();
 
@@ -540,6 +500,10 @@ sub __PrepareOUTERCU {
 sub __PrepareMASK {
 	my $self  = shift;
 	my $layer = shift;
+
+	unless ( $layer->HasLayers() ) {
+		return 0;
+	}
 
 	my $inCAM  = $self->{"inCAM"};
 	my @layers = $layer->GetSingleLayers();
@@ -570,7 +534,7 @@ sub __PrepareMASK {
 
 		#if($layer->GetColor())
 
-		$layer->SetTransparency(85);
+		$layer->SetTransparency(80);
 	}
 }
 
@@ -578,6 +542,10 @@ sub __PrepareMASK {
 sub __PrepareSILK {
 	my $self  = shift;
 	my $layer = shift;
+
+	unless ( $layer->HasLayers() ) {
+		return 0;
+	}
 
 	my $inCAM  = $self->{"inCAM"};
 	my @layers = $layer->GetSingleLayers();
@@ -597,9 +565,14 @@ sub __PreparePLTDEPTHNC {
 	my $self  = shift;
 	my $layer = shift;
 
+	unless ( $layer->HasLayers() ) {
+		return 0;
+	}
+
 	my $inCAM  = $self->{"inCAM"};
 	my @layers = $layer->GetSingleLayers();
-	my $lName  = GeneralHelper->GetGUID();
+
+	my $lName = GeneralHelper->GetGUID();
 
 	$inCAM->COM( 'create_layer', layer => $lName, context => 'misc', type => 'document', polarity => 'positive', ins_layer => '' );
 
@@ -609,8 +582,11 @@ sub __PreparePLTDEPTHNC {
 		if ( $l->{"gROWlayer_type"} eq "rout" ) {
 			CamLayer->WorkLayer( $inCAM, $l->{"gROWname"} );
 			my $lComp = CamLayer->RoutCompensation( $inCAM, $l->{"gROWname"}, "document" );
-			$inCAM->COM( "merge_layers", "source_layer" => $lComp, "dest_layer" => $lName );
 
+			# check for special rout 6.5mm with depth
+			$self->__CheckCountersink( $l, $lComp );
+
+			$inCAM->COM( "merge_layers", "source_layer" => $lComp, "dest_layer" => $lName );
 			$inCAM->COM( 'delete_layer', "layer" => $lComp );
 
 		}
@@ -634,6 +610,10 @@ sub __PrepareNPLTDEPTHNC {
 	my $self  = shift;
 	my $layer = shift;
 
+	unless ( $layer->HasLayers() ) {
+		return 0;
+	}
+
 	my $inCAM  = $self->{"inCAM"};
 	my @layers = $layer->GetSingleLayers();
 	my $lName  = GeneralHelper->GetGUID();
@@ -646,8 +626,11 @@ sub __PrepareNPLTDEPTHNC {
 		if ( $l->{"gROWlayer_type"} eq "rout" ) {
 			CamLayer->WorkLayer( $inCAM, $l->{"gROWname"} );
 			my $lComp = CamLayer->RoutCompensation( $inCAM, $l->{"gROWname"}, "document" );
-			$inCAM->COM( "merge_layers", "source_layer" => $lComp, "dest_layer" => $lName );
 
+			# check for special rout 6.5mm with depth
+			$self->__CheckCountersink( $l, $lComp );
+
+			$inCAM->COM( "merge_layers", "source_layer" => $lComp, "dest_layer" => $lName );
 			$inCAM->COM( 'delete_layer', "layer" => $lComp );
 		}
 		else {
@@ -664,6 +647,10 @@ sub __PrepareNPLTDEPTHNC {
 sub __PreparePLTTHROUGHNC {
 	my $self  = shift;
 	my $layer = shift;
+
+	unless ( $layer->HasLayers() ) {
+		return 0;
+	}
 
 	my $inCAM  = $self->{"inCAM"};
 	my @layers = $layer->GetSingleLayers();
@@ -702,6 +689,10 @@ sub __PreparePLTTHROUGHNC {
 sub __PrepareNPLTTHROUGHNC {
 	my $self  = shift;
 	my $layer = shift;
+
+	unless ( $layer->HasLayers() ) {
+		return 0;
+	}
 
 	my $inCAM  = $self->{"inCAM"};
 	my @layers = $layer->GetSingleLayers();
@@ -752,17 +743,76 @@ sub __ConvertColor {
 
 }
 
-#sub __ConvertColor {
-#	my $self   = shift;
-#	my $rgbStr = shift;
-#
-#	my @rgb = split( ",", $rgbStr );
-#
-#	my $clr = sprintf( "%02d", ( 99 * $rgb[0] ) / 255 ) . sprintf( "%02d", ( 99 * $rgb[1] ) / 255 ) . sprintf( "%02d", ( 99 * $rgb[2] ) / 255 );
-#
-#	return $clr;
-#
-#}
+sub __CheckCountersink {
+	my $self      = shift;
+	my $layer     = shift;
+	my $layerComp = shift;
+
+	if (    $layer->{"type"} ne EnumsGeneral->LAYERTYPE_plt_bMillTop
+		 && $layer->{"type"} ne EnumsGeneral->LAYERTYPE_nplt_bMillTop
+		 && $layer->{"type"} ne EnumsGeneral->LAYERTYPE_plt_bMillBot
+		 && $layer->{"type"} ne EnumsGeneral->LAYERTYPE_nplt_bMillBot )
+	{
+		return 0;
+	}
+
+	my $inCAM = $self->{"inCAM"};
+	my $jobId = $self->{"jobId"};
+
+	my $stepName = $self->{"pdfStep"};
+	$stepName =~ s/pdf_//;
+	my $lName    = $layer->{"gROWname"};
+
+	my $result = 1;
+
+	#get depths for all diameter
+	my @toolDepths = CamToolDepth->GetToolDepths( $inCAM, $jobId, $stepName, $lName );
+
+	$inCAM->INFO(
+				  units       => 'mm',
+				  entity_type => 'layer',
+				  entity_path => "$jobId/$stepName/$lName",
+				  data_type   => 'TOOL',
+				  parameters  => 'drill_size+shape',
+				  options     => "break_sr"
+	);
+	my @toolSize  = @{ $inCAM->{doinfo}{gTOOLdrill_size} };
+	my @toolShape = @{ $inCAM->{doinfo}{gTOOLshape} };
+
+	# 2) check if tool depth is set
+	for ( my $i = 0 ; $i < scalar(@toolSize) ; $i++ ) {
+
+		my $tSize = $toolSize[$i];
+
+		#for each hole diameter, get depth (in mm)
+		my $tDepth;
+
+		if ( $tSize == 6500 ) {
+			my $prepareOk = CamToolDepth->PrepareToolDepth( $tSize, \@toolDepths, \$tDepth );
+
+			unless ($prepareOk) {
+
+				die "$tSize doesn't has set deep of milling/drilling.\n";
+			}
+
+			#vypocitej realne odebrani materialu na zaklade hloubkz pojezdu/vrtani
+			# TODO tady se musi dotahnout skutecnz uhel, ne jen 90 stupnu pokazde - ceka az budou kompletne funkcni vrtacky
+			my $toolAngl = 90;
+
+			my $newDiameter = tan( deg2rad( $toolAngl / 2 ) ) * $tDepth;
+			$newDiameter *= 2;       #whole diameter
+			$newDiameter *= 1000;    #um
+			$newDiameter = int($newDiameter);
+
+			# now change 6.5mm to new diameter
+			CamLayer->WorkLayer( $inCAM, $layerComp );
+			CamFilter->BySingleSymbol( $inCAM, "r6500" );
+			$inCAM->COM( "sel_change_sym", "symbol" => "r" . $newDiameter, "reset_angle" => "no" );
+		}
+	}
+
+	return $result;
+}
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

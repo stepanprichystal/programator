@@ -47,9 +47,10 @@ sub Create {
 	my $self = shift;
  
 
-	# get all base layers
+	# get all board layers
 	my @layers = CamJob->GetBoardLayers( $self->{"inCAM"}, $self->{"jobId"} );
-
+	
+	 
 	# add nc info to nc layers
 	my @nclayers = grep { $_->{"gROWlayer_type"} eq "rout" || $_->{"gROWlayer_type"} eq "drill" } @layers;
 	CamDrilling->AddNCLayerType( \@nclayers );
@@ -81,7 +82,7 @@ sub __ConvertPdfToPng {
 	my $result = 1;
 
 	my @cmd = ( EnumsPaths->InCAM_3rdScripts . "im\\convert.exe" );
-	push( @cmd, "-density 400" );
+	push( @cmd, "-density 200" );
 	push( @cmd, $outputPath );
 	push( @cmd, "-shave 20x20 -trim -shave 5x5" );
 	push( @cmd, "--alpha off" );
@@ -107,7 +108,7 @@ sub __PrepareColors {
 	my %clrs = ();
 
 	# base mat
-	$clrs{ Enums->Type_PCBMAT } = "233,217,97";
+	$clrs{ Enums->Type_PCBMAT } = "226,235,150";
 
 	# surface or cu
 	my $surface = HegMethods->GetPcbSurface($self->{"jobId"});
@@ -169,12 +170,12 @@ sub __GetMaskColor {
 	}
 
 	my %colorMap = ();
-	$colorMap{"Z"} = "66,135,47";       # green
+	$colorMap{"Z"} = "0,115,42";       # green
 	$colorMap{"B"} = "74,74,74";       # black
 	$colorMap{"W"} = "250,250,250";    #white
-	$colorMap{"M"} = "0,20,235";       #blue
+	$colorMap{"M"} = "0,86,143";       #blue
 	$colorMap{"T"} = "255,255,255";    # ??
-	$colorMap{"R"} = "242,0,0";        # red
+	$colorMap{"R"} = "196,0,0";        # red
 
 	return $colorMap{$pcbMaskVal};
 }

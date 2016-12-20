@@ -30,20 +30,19 @@ sub GetMaskColor {
 
 	my %mask = ();
 
-	# use nif file
-	if ( !$panelExist || ( $panelExist && !$nifFile->Exist() ) ) {
-
-		%mask = $nifFile->GetSolderMaskColor();
-	}
-	else {
+	if ( !$panelExist ) {
 
 		# use nif norris
 		%mask = HegMethods->GetSolderMaskColor($jobId);
 	}
-	
+	else {
+
+		# use nif file
+		%mask = $nifFile->GetSolderMaskColor();
+	}
+
 	return %mask;
 }
-
 
 # return
 sub GetSilkColor {
@@ -56,17 +55,18 @@ sub GetSilkColor {
 
 	my %silk = ();
 
-	# use nif file
-	if ( !$panelExist || ( $panelExist && !$nifFile->Exist() ) ) {
-
-		%silk = $nifFile->GetSilkScreenColor();
-	}
-	else {
+	if ( !$panelExist ) {
 
 		# use nif norris
 		%silk = HegMethods->GetSilkScreenColor($jobId);
+
 	}
-	
+	else {
+
+		# use nif file
+		%silk = $nifFile->GetSilkScreenColor();
+	}
+
 	return %silk;
 }
 

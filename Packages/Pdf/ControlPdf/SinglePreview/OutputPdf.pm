@@ -20,7 +20,6 @@ use aliased 'CamHelpers::CamLayer';
 use aliased 'CamHelpers::CamSymbol';
 use aliased 'CamHelpers::CamJob';
 
-
 #-------------------------------------------------------------------------------------------#
 #  Interface
 #-------------------------------------------------------------------------------------------#
@@ -33,6 +32,7 @@ sub new {
 	$self->{"inCAM"}   = shift;
 	$self->{"jobId"}   = shift;
 	$self->{"pdfStep"} = shift;
+	$self->{"lang"}    = shift;
 
 	$self->{"outputPath"} = EnumsPaths->Client_INCAMTMPOTHER . GeneralHelper->GetGUID() . ".pdf";
 
@@ -78,9 +78,7 @@ sub __PrepareLayers {
 
 		}
 	}
-	
-	 
-	
+
 }
 
 sub __OptimizeLayers {
@@ -90,18 +88,18 @@ sub __OptimizeLayers {
 	my $inCAM  = $self->{"inCAM"};
 	my @layers = $layerList->GetLayers();
 
-
-
 	CamLayer->ClearLayers($inCAM);
 
- 
 	# affect all layers
 	foreach my $l (@layers) {
 
-		$inCAM->COM( "affected_layer", "name" => $l->GetOutputLayer(), "mode" => "single", "affected" => "yes" );
+		# drillm map layer contains table behind profile
+		if ( $l->GetType() ne Enums->LayerData_DRILLMAP ) {
+			$inCAM->COM( "affected_layer", "name" => $l->GetOutputLayer(), "mode" => "single", "affected" => "yes" );
+		}
 
 	}
- 
+
 	# clip area around profile
 	$inCAM->COM(
 				 "clip_area_end",
@@ -111,20 +109,14 @@ sub __OptimizeLayers {
 				 "area_type"   => "rectangle",
 				 "inout"       => "outside",
 				 "contour_cut" => "yes",
-				 "margin"      => "-5",
+				 "margin"      => "+2000",
 				 "feat_types"  => "line\;pad;surface;arc;text",
 				 "pol_types"   => "positive\;negative"
 	);
-	
-	
-	
-
-
-
 
 	my $lName = GeneralHelper->GetGUID();
 
-	# create border around profile. Border has to has ratio min 250:307 because of right place in pdf
+	# Create border around layer data. Border has to has ratio min 290:305 because of right place in pdf
 	# if not, pcb layer would be covered by table with title and description of layer
 
 	my %lim = CamJob->GetProfileLimits( $inCAM, $self->{"jobId"}, $self->{"pdfStep"} );
@@ -132,28 +124,28 @@ sub __OptimizeLayers {
 	my $x = abs( $lim{"xmax"} - $lim{"xmin"} );
 	my $y = abs( $lim{"ymax"} - $lim{"ymin"} );
 
-	if ( min( $x, $y ) / max( $x, $y ) < 290 / 307 ) {
+	if ( min( $x, $y ) / max( $x, $y ) < 290 / 305 ) {
 
 		# prepare coordination for frame
 
 		if ( min( $x, $y ) == $x ) {
 
 			# compute min x length
-			my $newX = ( $y / 290 ) * 280;
-			$lim{"xmin"} -= (($newX -$x)  / 2);
-			$lim{"xmax"} += (($newX -$x) / 2);
+			my $newX = ( $y / 305 ) * 290;
+			$lim{"xmin"} -= ( ( $newX - $x ) / 2 );
+			$lim{"xmax"} += ( ( $newX - $x ) / 2 );
 
 		}
 		elsif ( min( $x, $y ) == $y ) {
 
 			# compute min x length
-			my $newY = ( $x / 307 ) * 290;
-			$lim{"ymin"} -= (($newY -$y)/ 2);
-			$lim{"ymax"} += (($newY -$y)/ 2);
+			my $newY = ( $x / 305 ) * 290;
+			$lim{"ymin"} -= ( ( $newY - $y ) / 2 );
+			$lim{"ymax"} += ( ( $newY - $y ) / 2 );
 		}
 
 		$inCAM->COM( 'create_layer', layer => $lName, context => 'misc', type => 'document', polarity => 'positive', ins_layer => '' );
-		
+
 		CamLayer->WorkLayer( $inCAM, $lName );
 
 		my %c1 = ( "x" => $lim{"xmin"}, "y" => $lim{"ymin"} );
@@ -163,37 +155,33 @@ sub __OptimizeLayers {
 		my @coord = ( \%c1, \%c2, \%c3, \%c4 );
 
 		#
-
-		CamSymbol->AddPolyline( $inCAM, \@coord, "r100", "negative" );
+		CamSymbol->AddPolyline( $inCAM, \@coord, "r1", "negative" );
 
 	}
 	else {
 
 		# frmae ratio is ok, do frame from profile
-
-		$inCAM->COM( "profile_to_rout", "layer" => $lName, "width" => "10" );
+		$inCAM->COM( "profile_to_rout", "layer" => $lName, "width" => "1" );
 		CamLayer->WorkLayer( $inCAM, $lName );
 		$inCAM->COM("sel_invert");
 	}
 
-
 	CamLayer->WorkLayer( $inCAM, $lName );
-
 
 	# affect all layers
 	foreach my $l (@layers) {
 
-		$inCAM->COM( "affected_layer", "name" => $l->GetOutputLayer(), "mode" => "single", "affected" => "yes" );
-
+		# drillm map layer contains table behind profile
+		if ( $l->GetType() ne Enums->LayerData_DRILLMAP ) {
+			$inCAM->COM( "affected_layer", "name" => $l->GetOutputLayer(), "mode" => "single", "affected" => "yes" );
+		}
 	}
-                                      
 
 	my @layerStr = map { $_->GetOutputLayer() } @layers;
 	my $layerStr = join( "\\;", @layerStr );
 	$inCAM->COM(
 		"sel_copy_other",
-		"dest" => "affected_layers",
-
+		"dest"         => "affected_layers",
 		"target_layer" => $lName . "\\;" . $layerStr,
 		"invert"       => "no"
 
@@ -227,7 +215,7 @@ sub __OutputRawPdf {
 
 		layer_name        => $layerStr,
 		mirrored_layers   => '',
-		draw_profile      => 'no',
+		draw_profile      => 'yes',
 		drawing_per_layer => 'yes',
 		label_layers      => 'no',
 		dest              => 'pdf_file',
@@ -307,19 +295,19 @@ sub __AddTextPdf {
 
 			if ( $i == 0 ) {
 				my $d = $data[$i];
-				$self->__DrawInfoTable( 20, 430, $d, $page_out, $pdf_out );
+				$self->__DrawInfoTable( 15, 430, $d, $page_out, $pdf_out );
 			}
 			elsif ( $i == 1 ) {
 				my $d = $data[$i];
-				$self->__DrawInfoTable( 20, 25, $d, $page_out, $pdf_out );
+				$self->__DrawInfoTable( 15, 23, $d, $page_out, $pdf_out );
 			}
 			elsif ( $i == 2 ) {
 				my $d = $data[$i];
-				$self->__DrawInfoTable( 315, 430, $d, $page_out, $pdf_out );
+				$self->__DrawInfoTable( 310, 430, $d, $page_out, $pdf_out );
 			}
 			elsif ( $i == 3 ) {
 				my $d = $data[$i];
-				$self->__DrawInfoTable( 315, 25, $d, $page_out, $pdf_out );
+				$self->__DrawInfoTable( 310, 23, $d, $page_out, $pdf_out );
 			}
 		}
 
@@ -340,9 +328,9 @@ sub __DrawInfoTable {
 	my $pdf_out  = shift;
 
 	my $leftCellW  = 20;
-	my $leftCellH  = 30;
-	my $rightCellW = 240;
-	my $rightCellH = 30;
+	my $leftCellH  = 25;
+	my $rightCellW = 250;
+	my $rightCellH = 25;
 
 	# draw frame
 	my $frame = $page_out->gfx;
@@ -407,10 +395,16 @@ sub __DrawInfoTable {
 
 	my $txtTitle = $page_out->text;
 	$txtTitle->translate( $xPos + 2, $yPos + $rightCellH - 10 );
-	my $font = $pdf_out->corefont('arial');
+	my $font = $pdf_out->ttfont(GeneralHelper->Root().'\Packages\Pdf\ControlPdf\HtmlTemplate\arial.ttf');
 	$txtTitle->font( $font, $txtSize );
 	$txtTitle->fillcolor("black");
-	$txtTitle->text( 'Title:     ' . $data->{"title"} );
+
+	if ( $self->{"lang"} eq "cz" ) {
+		$txtTitle->text( 'Název    ' . $data->{"title"} );
+	}
+	else {
+		$txtTitle->text( 'Name     ' . $data->{"title"} );
+	}
 
 	# add text title
 
@@ -418,7 +412,13 @@ sub __DrawInfoTable {
 	$txtInf->translate( $xPos + 2, $yPos + 3 );
 	$txtInf->font( $font, $txtSize );
 	$txtInf->fillcolor("black");
-	$txtInf->text( 'Info:       ' . $data->{"info"} );
+
+	if ( $self->{"lang"} eq "cz" ) {
+		$txtInf->text( 'Pozn.    ' . $data->{"info"} );
+	}
+	else {
+		$txtInf->text( 'Info       ' . $data->{"info"} );
+	}
 
 }
 
@@ -432,22 +432,22 @@ sub __PrepareSTANDARD {
 
 	foreach my $sL ( $layerData->GetSingleLayers() ) {
 
-		my $lMatrix = $sL->GetLayer();
+	 
 
-		if ( $lMatrix->{"gROWlayer_type"} eq "rout" ) {
+		if ( $sL->{"gROWlayer_type"} eq "rout" ) {
 
-			CamLayer->WorkLayer( $inCAM, $lMatrix->{"gROWname"} );
-			my $lComp = CamLayer->RoutCompensation( $inCAM, $lMatrix->{"gROWname"}, "document" );
+			CamLayer->WorkLayer( $inCAM, $sL->{"gROWname"} );
+			my $lComp = CamLayer->RoutCompensation( $inCAM, $sL->{"gROWname"}, "document" );
 			$inCAM->COM( "merge_layers", "source_layer" => $lComp, "dest_layer" => $lName );
 
 			$inCAM->COM( 'delete_layer', "layer" => $lComp );
-			
+
 			#CamLayer->WorkLayer( $inCAM, $lMatrix->{"gROWname"}, 1);
 
 		}
 		else {
 
-			$inCAM->COM( "merge_layers", "source_layer" => $lMatrix->{"gROWname"}, "dest_layer" => $lName );
+			$inCAM->COM( "merge_layers", "source_layer" => $sL->{"gROWname"}, "dest_layer" => $lName );
 		}
 
 	}
@@ -463,13 +463,18 @@ sub __PrepareDRILLMAP {
 	my $lName = GeneralHelper->GetGUID();
 
 	my @singleL = $layerData->GetSingleLayers();
-	my $lMatrix = $singleL[0]->GetLayer();
+	my $sL = $singleL[0];
 
-	#CamLayer->SetLayerTypeLayer( $inCAM, $self->{"jobId"}, $lMatrix->{"gROWname"}, "drill" );
+	my $typeChanged = 0;
+	if($sL->{"gROWlayer_type"} eq "rout"){
+		CamLayer->SetLayerTypeLayer( $inCAM, $self->{"jobId"}, $sL->{"gROWname"}, "drill" );
+		$typeChanged = 1;
+	}
+
 
 	$inCAM->COM(
 				 "cre_drills_map",
-				 "layer"           => $lMatrix->{"gROWname"},
+				 "layer"           => $sL->{"gROWname"},
 				 "map_layer"       => $lName,
 				 "preserve_attr"   => "no",
 				 "draw_origin"     => "no",
@@ -480,11 +485,15 @@ sub __PrepareDRILLMAP {
 				 "mark_location"   => "center",
 				 "sr"              => "no",
 				 "slots"           => "no",
-				 "columns"         => "Count\;Type;Finish;Des",
+				 "columns"         => "Count\;Type\;Finish",
 				 "notype"          => "plt",
 				 "table_pos"       => "right",
 				 "table_align"     => "bottom"
 	);
+	
+	if($typeChanged){
+		CamLayer->SetLayerTypeLayer( $inCAM, $self->{"jobId"}, $sL->{"gROWname"}, "rout" );
+	}
 
 	$layerData->SetOutputLayer($lName);
 }

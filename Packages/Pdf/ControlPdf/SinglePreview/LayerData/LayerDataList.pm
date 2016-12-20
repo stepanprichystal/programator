@@ -7,6 +7,7 @@
 package Packages::Pdf::ControlPdf::SinglePreview::LayerData::LayerDataList;
 
 #3th party library
+use utf8;
 use strict;
 use warnings;
 
@@ -54,17 +55,14 @@ sub __PrepareBaseLayerData {
 
 	foreach my $l (@layers) {
 
-		my $lData = LayerData->new( Enums->LayerData_STANDARD );
-
-		my %infoData = ();
-		my %info     = ();
-
 		my $enTit = ValueConvertor->GetJobLayerTitle($l);
 		my $czTit = ValueConvertor->GetJobLayerTitle( $l, 1 );
 		my $enInf = ValueConvertor->GetJobLayerInfo($l);
 		my $czInf = ValueConvertor->GetJobLayerInfo( $l, 1 );
 
-		$lData->AddSingleLayer( $l, $enTit, $czTit, $enInf, $czInf );
+		my $lData = LayerData->new( Enums->LayerData_STANDARD, $enTit, $czTit, $enInf, $czInf );
+
+		$lData->AddSingleLayer($l);
 
 		push( @{ $self->{"layers"} }, $lData );
 	}
@@ -84,17 +82,14 @@ sub __PrepareNCLayerData {
 
 	foreach my $l (@layers) {
 
-		my $lData = LayerData->new( Enums->LayerData_STANDARD );
-
-		my %infoData = ();
-		my %info     = ();
-
 		my $enTit = ValueConvertor->GetJobLayerTitle($l);
 		my $czTit = ValueConvertor->GetJobLayerTitle( $l, 1 );
 		my $enInf = ValueConvertor->GetJobLayerInfo($l);
 		my $czInf = ValueConvertor->GetJobLayerInfo( $l, 1 );
 
-		$lData->AddSingleLayer( $l, $enTit, $czTit, $enInf, $czInf );
+		my $lData = LayerData->new( Enums->LayerData_STANDARD, $enTit, $czTit, $enInf, $czInf );
+
+		$lData->AddSingleLayer($l);
 
 		push( @{ $self->{"layers"} }, $lData );
 	}
@@ -113,33 +108,45 @@ sub __PrepareNCLayerData {
 			$dataWithF->AddSingleLayer($l);    #merging
 		}
 
-		# smazat rs
-		#my $idx = ( grep { $resultData[$_]->GetLayerByName("rs") } 0 .. $#resultData )[0];
+		# delete rs
 
-		#splice @resultData, $idx, 1;                                        # delete rs data
+		my $allL = $self->{"layers"};
+
+		for ( my $i = 0 ; $i < scalar( $self->{"layers"} ) ; $i++ ) {
+				
+				my $l = @{$self->{"layers"}}[$i];
+
+			if ($l == $dataWithRs ) {
+				splice @{ $self->{"layers"} }, $i, 1;
+				last;
+			}
+
+		}
+ 
 	}
 
 	# add drill map layers
 
 	foreach my $l (@layers) {
 
-		if ( $l->{"gROWname"} eq "rs" || $l->{"gROWname"} eq "fk" || $l->{"gROWlayer_type"} ne "drill" ) {
-			next;
+		if ( ( $l->{"gROWlayer_type"} ne "drill" || $l->{"gROWlayer_type"} ne "rout" ) && $l->{"fHist"} && $l->{"fHist"}->{"pad"} > 0 ) {
+
+			my $lData = LayerData->new( Enums->LayerData_DRILLMAP );
+
+			my %infoData = ();
+			my %info     = ();
+
+			my $enTit = "Drill map: " . ValueConvertor->GetJobLayerTitle($l);
+			my $czTit = "Mapa vrtání: " . ValueConvertor->GetJobLayerTitle( $l, 1 );
+			my $enInf = "Units [mm] " . ValueConvertor->GetJobLayerInfo($l);
+			my $czInf = "Jednotky [mm] " . ValueConvertor->GetJobLayerInfo( $l, 1 );
+
+			$lData->AddSingleLayer( $l, $enTit, $czTit, $enInf, $czInf );
+
+			push( @{ $self->{"layers"} }, $lData );
+
 		}
 
-		my $lData = LayerData->new( Enums->LayerData_DRILLMAP );
-
-		my %infoData = ();
-		my %info     = ();
-
-		my $enTit = "Drill map: " . ValueConvertor->GetJobLayerTitle($l);
-		my $czTit = "Mapa vrtani: " . ValueConvertor->GetJobLayerTitle( $l, 1 );
-		my $enInf = "";
-		my $czInf = "";
-
-		$lData->AddSingleLayer( $l, $enTit, $czTit, $enInf, $czInf );
-
-		push( @{ $self->{"layers"} }, $lData );
 	}
 
 	#	# add final layer data to list
@@ -184,7 +191,7 @@ sub GetLayerByName {
 
 		my @single = $lData->GetSingleLayers();
 
-		my $sl = ( grep { $_->GetLayer()->{"gROWname"} eq $name } @single )[0];
+		my $sl = ( grep { $_->{"gROWname"} eq $name } @single )[0];
 
 		if ($sl) {
 
@@ -211,8 +218,8 @@ sub GetPageData {
 		if ($lData) {
 			my @singleLayers = $lData->GetSingleLayers();
 
-			my $tit = join( " + ", map { $_->GetTitle( $self->{"lang"} ) } @singleLayers );
-			my $inf = join( " + ", map { $_->GetInfo( $self->{"lang"} ) } @singleLayers );
+			my $tit = $lData->GetTitle( $self->{"lang"} ) ;
+			my $inf =$lData->GetInfo( $self->{"lang"} ) ;
 
 			my %inf = ( "title" => $tit, "info" => $inf );
 			push( @data, \%inf );

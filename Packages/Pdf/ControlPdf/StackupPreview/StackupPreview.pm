@@ -13,7 +13,7 @@ use warnings;
 use aliased 'Helpers::GeneralHelper';
 use aliased 'Enums::EnumsPaths';
 use aliased 'Packages::Pdf::StackupPdf::StackupPdf';
-
+use aliased 'Helpers::FileHelper';
 #-------------------------------------------------------------------------------------------#
 #  Interface
 #-------------------------------------------------------------------------------------------#
@@ -47,6 +47,8 @@ sub Create {
 	$result = $self->__ConvertToImage($path);
 	
 	unlink($path);
+	
+	FileHelper->DeleteTempFiles();
 
 	return $result;
 }
@@ -67,7 +69,7 @@ sub __ConvertToImage{
  
 	push( @cmd, "-density 300 -background white -flatten" );
 	push( @cmd, $pdfStackup );
-	push( @cmd, "-rotate 270 -crop 1470x2000+150+500 -trim" );
+	push( @cmd, "-rotate 270 -crop 1500x2000+120+500 -trim" );
 	push( @cmd, "-bordercolor white -border 20x20" );
 	push( @cmd, "-gravity center -background white -extent 1600x1600" );
  	push( @cmd, $self->{"outputPath"} );

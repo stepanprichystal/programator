@@ -5,6 +5,7 @@
 package Helpers::ValueConvertor;
 
 #3th party library
+use utf8;
 use strict;
 use warnings;
 
@@ -33,7 +34,7 @@ sub GetJobLayerTitle {
 		my $lNum = $1;
 		$title = "Inner layer number: $lNum.";
 		if ($cz) {
-			$title = "Vnitrni vrstva cislo: $lNum.";
+			$title = "Vnitřní vrstva číslo: $lNum.";
 		}
 	}
 
@@ -51,10 +52,10 @@ sub GetJobLayerTitle {
 		my %czl = ();
 		$czl{"pc"} = "Potisk top";
 		$czl{"ps"} = "Potisk bot";
-		$czl{"mc"} = "Nepajiva maska top";
-		$czl{"ms"} = "Nepajiva maska bot";
-		$czl{"c"}  = "Strana spoju (top)";
-		$czl{"s"}  = "Strana soucastek (bot)";
+		$czl{"mc"} = "Nepájivá maska top";
+		$czl{"ms"} = "Nepájivá maska bot";
+		$czl{"c"}  = "Strana spojů (top)";
+		$czl{"s"}  = "Strana součástek (bot)";
 
 		$title = $en{ $l->{"gROWname"} };
 		if ($cz) {
@@ -67,93 +68,93 @@ sub GetJobLayerTitle {
 
 		$title = "Plated through drilling";
 		if ($cz) {
-			$title = "Prokovene vrtani";
+			$title = "Prokovené vrtání";
 		}
 	}
 	elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_plt_bDrillTop ) {
 		$title = "Plated blind drilling from top";
 		if ($cz) {
-			$title = "Slepe vrtani z top";
+			$title = "Slepé vrtání z top";
 		}
 
 	}
 	elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_plt_bDrillBot ) {
 		$title = "Plated blind drilling from bot";
 		if ($cz) {
-			$title = "Slepe vrtani z bot";
+			$title = "Slepé vrtání z bot";
 		}
 
 	}
 	elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_plt_cDrill ) {
 		$title = "Plated core drilling";
 		if ($cz) {
-			$title = "Prokovene vrtani jadra";
+			$title = "Prokovené vrtání jádra";
 		}
 
 	}
 	elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_plt_nMill ) {
 		$title = "Plated milling";
 		if ($cz) {
-			$title = "Prokovene frezovani";
+			$title = "Prokovené frézování";
 		}
 
 	}
 	elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_plt_bMillTop ) {
 		$title = "Plated z-axis milling from top";
 		if ($cz) {
-			$title = "Prokovene zahloubene frezovani z top";
+			$title = "Prokovené zahloubené frézování z top";
 		}
 
 	}
 	elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_plt_bMillBot ) {
 		$title = "Plated z-axis milling from bot";
 		if ($cz) {
-			$title = "Prokovene zahloubene frezovani z bot";
+			$title = "Prokovené zahloubené frézování z bot";
 		}
 
 	}
 	elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_nMill ) {
 		$title = "Non-plated milling";
 		if ($cz) {
-			$title = "Neprokovene frezovani";
+			$title = "Neprokovené frézování";
 		}
 
 	}
 	elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_bMillTop ) {
 		$title = "Non-plated z-axis milling from top";
 		if ($cz) {
-			$title = "Neprokovene zahloubene frezovani z top";
+			$title = "Neprokovené zahloubené frézování z top";
 		}
 	}
 	elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_bMillBot ) {
 		$title = "Non-plated z-axis milling from bop";
 		if ($cz) {
-			$title = "Neprokovene zahloubene frezovani z bot";
+			$title = "Neprokovené zahloubené frézování z bot";
 		}
 	}
 	elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_rsMill ) {
 		$title = "Non-plated milling before etching";
 		if ($cz) {
-			$title = "Neprokovene frezovani pred leptanim";
+			$title = "Neprokovené frézování před leptáním";
 		}
 
 	}
 	elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_jbMillTop ) {
 		$title = "Non-plated core milling from top";
 		if ($cz) {
-			$title = "Neprokovene hloubkove frezovani jadra z top";
+			$title = "Neprokovené hloubkové leptáním jádra z top";
 		}
 	}
 	elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_jbMillBot ) {
 		$title = "Non-plated core milling from bot";
 		if ($cz) {
-			$title = "Neprokovene hloubkove frezovani jadra z bot";
+			$title = "Neprokovené hloubkové frézování jádra z bot";
 		}
 	}
 	elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_kMill ) {
 		$title = "Milling of connector edge";
 		if ($cz) {
-			$title = "Frezovani hrany konektoru.";
+			$title = "Frézování hrany konektoru.";
 		}
 	}
 
@@ -174,7 +175,7 @@ sub GetJobLayerInfo {
 		if ( $l->{"gROWlayer_type"} eq "power_ground" ) {
 			$info = "Power-ground displayed as negative";
 			if ($cz) {
-				$info = "Power-ground zobrazena negativne";
+				$info = "Power-ground zobrazena negativně";
 			}
 		}
 	}
@@ -200,7 +201,7 @@ sub GetJobLayerInfo {
 			$info = $startStop;
 
 		}
-		elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_plt_nMill && $l->{"gROWname"} =~ /^m\d$/ ) {
+		elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_plt_nDrill && $l->{"gROWname"} =~ /^m\d$/ ) {
 			$info = $startStop;
 
 		}
@@ -222,14 +223,21 @@ sub GetJobLayerInfo {
 		elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_rsMill ) {
 			$info = "Milling is used for achive best final quality";
 			if ($cz) {
-				$info = "Frezovanio je pouzivano pro dosazeni vysoke kvality opracovani.";
+				$info = "Frézování je Používáno pro dosažení vysoké kvality opracování.";
 			}
 		}
 
+		elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_nMill ) {
+			$info = "Layer can contains extra \"pilot-holes\".";
+			if ($cz) {
+				$info = "Vrstva může obsahovat pomocné \"pilot-holes\".";
+			}
+			
+		}
 		elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_kMill ) {
 			$info = "Milling is used before electrical testing";
 			if ($cz) {
-				$info = "Frezovani pred elektrickym testem pro korektni prubeh testu.";
+				$info = "Frézování před elektrickým testem pro korektní průběh testu.";
 			}
 		}
 	}

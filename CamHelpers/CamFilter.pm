@@ -74,6 +74,52 @@ sub __AddFilterAtt {
 	);
 
 }
+
+
+# Select all attributes of step in hash
+# Return count of celected features
+sub BySingleSymbol {
+	my $self  = shift;
+	my $inCAM = shift;
+	my $symbol = shift;
  
+	
+	 
+	$inCAM->COM( 'filter_reset', filter_name => 'popup' );
+	
+ 	$inCAM->COM("set_filter_symbols","filter_name" => "","exclude_symbols" => "no","symbols" => $symbol);
+	 
+	#$inCAM->COM( 'set_filter_and_or_logic', filter_name => 'popup', criteria => 'inc_attr', logic => 'or' );
+	$inCAM->COM('filter_area_strt');
+	$inCAM->COM( 'filter_area_end', filter_name => 'popup', operation => 'select' );
+	
+
+	
+	 
+	
+	$inCAM->COM('get_select_count');
+	
+	return $inCAM->GetReply()
+}
+ 
+ 
+#-------------------------------------------------------------------------------------------#
+#  Place for testing..
+#-------------------------------------------------------------------------------------------#
+my ( $package, $filename, $line ) = caller;
+if ( $filename =~ /DEBUG_FILE.pl/ ) { 
+ 
+ 		use aliased 'CamHelpers::CamFilter';
+	use aliased 'Packages::InCAM::InCAM';
+
+		my $inCAM = InCAM->new();
+		my $jobId = "f52457";
+	#my $step  = "mpanel_10up";
+
+	my $result = CamFilter->BySingleSymbol( $inCAM,  "r4000" );
+
+	#my $self             = shift;
+	
+}
 
 1;

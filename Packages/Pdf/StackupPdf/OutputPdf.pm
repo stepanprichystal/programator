@@ -281,7 +281,7 @@ sub _DrawCore {
 	$page->rectangle( $col2, ${$actualYref}, 207, $lHeight );
 	$page->fill();
 
-	$self->_DrawText( $col0, ${$actualYref}, $txtSize, $layer->GetThick() . " um" );    #draw thicks on left
+	$self->_DrawText( $col0, ${$actualYref}, $txtSize, $layer->GetThick() . " µm" );    #draw thicks on left
 	$self->_DrawText( $col5, ${$actualYref}, $txtSize, $layer->GetText() );             #draw type of material
 	$self->_DrawText( $col6, ${$actualYref}, $txtSize, $layer->GetTextType() );         #draw type of  material quality
 }
@@ -299,7 +299,7 @@ sub _DrawPrepreg {
 	$page->rectangle( $col3, ${$actualYref}, 125, $lHeight );
 	$page->fill();
 
-	$self->_DrawText( $col0, ${$actualYref}, $txtSize, sprintf( "%4.0f", $layer->GetThick() ) . " um" );    #draw thicks on left
+	$self->_DrawText( $col0, ${$actualYref}, $txtSize, sprintf( "%4.0f", $layer->GetThick() ) . " µm" );    #draw thicks on left
 	$self->_DrawText( $col5, ${$actualYref}, $txtSize, $layer->GetText() );                                 #draw type of material
 	$self->_DrawText( $col6, ${$actualYref}, $txtSize, $layer->GetTextType() );                             #draw type of  material quality
 }

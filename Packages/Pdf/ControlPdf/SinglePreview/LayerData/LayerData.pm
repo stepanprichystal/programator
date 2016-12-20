@@ -12,7 +12,7 @@ use strict;
 use warnings;
 
 #local library
-use aliased 'Packages::Pdf::ControlPdf::SinglePreview::LayerData::LayerDataSingle';
+#use aliased 'Packages::Pdf::ControlPdf::SinglePreview::LayerData::LayerDataSingle';
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
@@ -23,13 +23,22 @@ sub new {
 	bless $self;
 
 	$self->{"type"} = shift;
-	$self->{"output"} = undef;
+	
+	
+	$self->{"enTit"} = shift;
+ 	$self->{"czTit"} = shift;
+ 	$self->{"enInf"} = shift;
+ 	$self->{"czInf"} = shift;	
+ 	
+ 	$self->{"output"} = undef;
 
 	my @l = ();
 	$self->{"singleLayers"}    = \@l; 
  
 	return $self;  
 }
+
+ 
 
 sub GetType{
 	my $self = shift;
@@ -54,11 +63,9 @@ sub SetOutputLayer{
  
 sub AddSingleLayer{
 	my $self = shift;
+	my $l = shift;
  
-	
-	my $singleLayer = LayerDataSingle->new(@_);
-	
-	push(@{$self->{"singleLayers"}}, $singleLayer);
+	push(@{$self->{"singleLayers"}}, $l);
 }
  
 sub GetSingleLayers{
@@ -66,6 +73,39 @@ sub GetSingleLayers{
 	return @{$self->{"singleLayers"}};
 }
 
+
+sub GetTitle{
+	my $self = shift;
+	my $lang = shift;
+	
+	if($lang eq "cz"){
+		
+		return $self->{"czTit"};
+		
+	}elsif($lang eq "en"){
+		
+		
+		return $self->{"enTit"};
+	}
+	
+} 
+
+
+sub GetInfo{
+	my $self = shift;
+	my $lang = shift;
+	
+	if($lang eq "cz"){
+		
+		return $self->{"czInf"};
+		
+	}elsif($lang eq "en"){
+		
+		
+		return $self->{"enInf"};
+	}
+	
+} 
 
 
 #-------------------------------------------------------------------------------------------#

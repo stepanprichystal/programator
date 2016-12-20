@@ -9,7 +9,7 @@ use constant {
 	Type_PLTDEPTHNC => "typePltDepthNc",
 	Type_NPLTDEPTHNC => "typeNPltDepthNc",
 	Type_PLTTHROUGHNC => "typePltThroughNc",
-	Type_NPLTTHROUGHNC => "typePltThroughNc",
+	Type_NPLTTHROUGHNC => "typeNPltThroughNc",
 
 };
 

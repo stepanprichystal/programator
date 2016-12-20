@@ -8,7 +8,7 @@ use warnings;
 
 # ============ INPUT LINE =================
 my $inputLine =
-"COM add_polyline_end,polarity=positive,attributes=no,symbol=r200,bus_num_lines=0,bus_dist_by=pitch,bus_distance=0,bus_reference=left";# ============ INPUT LINE =================
+"COM sel_change_sym,symbol=r6000,reset_angle=no";# ============ INPUT LINE =================
 
 
 my $output = "\$inCAM->COM(";

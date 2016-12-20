@@ -14,6 +14,7 @@ use aliased 'Helpers::GeneralHelper';
 use aliased 'CamHelpers::CamHelper';
 use aliased 'CamHelpers::CamJob';
 use aliased 'CamHelpers::CamDrilling';
+use aliased 'CamHelpers::CamHistogram';
 
 use aliased "Helpers::JobHelper";
 use aliased 'Enums::EnumsPaths';
@@ -37,7 +38,7 @@ sub new {
 	$self->{"lang"}        = shift;
 	
 	$self->{"layerList"} = LayerDataList->new( $self->{"lang"} );
-	$self->{"outputPdf"} = OutputPdf->new( $self->{"inCAM"},$self->{"jobId"}, $self->{"pdfStep"}  );
+	$self->{"outputPdf"} = OutputPdf->new( $self->{"inCAM"},$self->{"jobId"}, $self->{"pdfStep"}, $self->{"lang"}  );
 
 	$self->{"outputPath"} = EnumsPaths->Client_INCAMTMPOTHER . GeneralHelper->GetGUID() . ".pdf";
 
@@ -51,7 +52,7 @@ sub Create {
 	# get all base layers
 	my @layers = CamJob->GetBoardLayers( $self->{"inCAM"}, $self->{"jobId"} );
 
-	# Filter only requested layers
+	# 1) Filter only requested layers
 	if ($lRef) {
 
 		for ( my $i = scalar(@layers) ; $i >= 0 ; $i-- ) {
@@ -65,24 +66,26 @@ sub Create {
 		}
 	}
 	
-	# Filter ou helper layers fr, v1, etc..
+	# 2) Filter ou helper layers fr, v1, etc..
+	@layers = grep { $_->{"gROWname"} ne "v1" && $_->{"gROWname"} ne "fr"  && $_->{"gROWname"} ne "fsch"  && $_->{"gROWname"} !~ /^gold[cs]$/} @layers;
+	
  
-	# prepare non  NC layers
+	# 3) Prepare non  NC layers
 	my @NCLayers = grep { $_->{"gROWlayer_type"} eq "rout" || $_->{"gROWlayer_type"} eq "drill" } @layers;
 
 	CamDrilling->AddNCLayerType( \@NCLayers );
 	CamDrilling->AddLayerStartStop( $self->{"inCAM"}, $self->{"jobId"}, \@NCLayers );
- 
 	
-	@layers = grep { $_->{"gROWname"} ne "v1" && $_->{"gROWname"} ne "fr" } @layers;
+	foreach my $l (@NCLayers){
+		my %fHist = CamHistogram->GetFeatuesHistogram( $self->{"inCAM"}, $self->{"jobId"},  $self->{"pdfStep"}, $l->{"gROWname"} );
+		$l->{"fHist"} = \%fHist;
+	}
+
 	
 	
 	$self->{"layerList"}->SetLayers(\@layers);
 	
 	$self->{"outputPdf"}->Output( $self->{"layerList"} );
-
- 
- 
 
 }
 
@@ -93,16 +96,16 @@ sub GetOutput {
 }
 
 
-sub __PrepareLayerData {
-	my $self   = shift;
-	my @layers = @{ shift(@_) };
-
-	my @layerData = ();
-
-	push(@layerData, $self->__PrepareBaseLayerData(\@layers));
-	push(@layerData, $self->__PrepareNCLayerData(\@layers));
-
-}
+#sub __PrepareLayerData {
+#	my $self   = shift;
+#	my @layers = @{ shift(@_) };
+#
+#	my @layerData = ();
+#
+#	push(@layerData, $self->__PrepareBaseLayerData(\@layers));
+#	push(@layerData, $self->__PrepareNCLayerData(\@layers));
+#
+#}
  
 
  

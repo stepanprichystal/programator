@@ -211,9 +211,9 @@ sub __GetStackupInfo {
 
 	# get info from norris
 	if ( $layerCnt <= 2 ) {
-
-		$inf{"thick"} = sprintf( "%.2f mm", $self->{"nifFile"}->GetValue("c_silk_screen_colour") );
-		$inf{"material"} = $self->{"nifFile"}->GetValue("s_silk_screen_colour");
+ 
+		$inf{"thick"} =   sprintf( "%.2f mm", HegMethods->GetPcbMaterialThick($self->{"jobId"} ) );
+		$inf{"material"} = HegMethods->GetMaterialKind($self->{"jobId"});
 
 	}
 	else {

@@ -144,10 +144,10 @@ sub __AddHeaderFooter {
 			else {
 				
 				if ( $self->{"lang"} eq "cz" ) {
-					$title .= "Jednotlivé vrstvy";
+					$title .= "Jednotlivé vrstvy - pohled z vrchu";
 				}
 				else {
-					$title .= "Single layers";
+					$title .= "Single layers - view from top";
 				}
 			}
 
@@ -160,62 +160,7 @@ sub __AddHeaderFooter {
 
 	$pdf_out->save();
 }
-
-#
-#
-#
-#	my $pdf_in  = PDF::API2->open($infile);
-#	my $pdf_out = PDF::API2->new;
-#
-#	foreach my $pagenum ( 1 .. $pdf_in->pages ) {
-#
-#		my $page_in = $pdf_in->openpage($pagenum);
-#
-#		#
-#		# create a new page
-#		#
-#		my $page_out = $pdf_out->page(0);
-#
-#		my @mbox = $page_in->get_mediabox;
-#		$page_out->mediabox(@mbox);
-#
-#		my $xo = $pdf_out->importPageIntoForm( $pdf_in, $pagenum );
-#
-#		#
-#		# lay up the input page in the output page
-#		# note that you can adjust the position and scale, if required
-#		#
-#		my $gfx = $page_out->gfx;
-#
-#		$gfx->formimage(
-#			$xo,
-#			0, 0,    # x y
-#			1
-#		);           # scale
-#
-#		# =================== add 4 tables
-#
-#
-#		my $title = "Production preview: ";
-#
-#		if($pagenum == 1){
-#
-#			$title .= "General";
-#
-#		}elsif($pagenum == 2){
-#
-#			$title .= "Shipping preview";
-#		}else{
-#
-#			$title .= "Single preview";
-#		}
-#
-#
-#		$self->__DrawHeaderFooter( $pagenum, "test", $page_out, $pdf_out );
-#
-#	}
-#
-#	$pdf_out->saveas( $self->{"outputPath"} );
+ 
 
 sub __DrawHeaderFooter {
 	my $self      = shift;
@@ -257,7 +202,10 @@ sub __DrawHeaderFooter {
 
 	my $txtHeader = $page_out->text;
 	$txtHeader->translate( 10, 842 - $headerH + 12 );
-	my $font = $pdf_out->corefont('arial');
+	
+	my $font = $pdf_out->ttfont(GeneralHelper->Root().'\Packages\Pdf\ControlPdf\HtmlTemplate\arial.ttf');
+	
+	#my $font = $pdf_out->corefont('arial');
 	$txtHeader->font( $font, 10 );
 	$txtHeader->fillcolor("white");
 	$txtHeader->text($pageTitle);
@@ -268,7 +216,7 @@ sub __DrawHeaderFooter {
 
 	my $txtFooter = $page_out->text;
 	$txtFooter->translate( 280, 6 );
-	my $font2 = $pdf_out->corefont('arial');
+	 
 	$txtFooter->font( $font, 8 );
 	$txtFooter->fillcolor("white");
 	

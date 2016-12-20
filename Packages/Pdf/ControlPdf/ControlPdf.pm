@@ -28,6 +28,7 @@ use aliased 'Packages::Pdf::ControlPdf::SinglePreview::SinglePreview';
 use aliased 'Packages::Pdf::ControlPdf::StackupPreview::StackupPreview';
 use aliased 'Packages::Pdf::ControlPdf::OutputPdf';
 use aliased 'Packages::Pdf::ControlPdf::FillTemplate';
+use aliased 'Packages::NifFile::NifFile';
 
 #-------------------------------------------------------------------------------------------#
 #  Interface
@@ -64,8 +65,14 @@ sub Create {
 	my $self = shift;
 	
 	
-	# check when step is panel, nif file already exist
+	# check when step is panel, nif file already exist too
+	my $panelExist = CamHelper->StepExists( $self->{"inCAM"}, $self->{"jobId"}, "panel" );
+	my $nifFile = NifFile->new($self->{"jobId"});
 	
+	if($panelExist && !$nifFile->Exist()){
+		
+		return 0;
+	}
 	
 
 	CamHelper->SetStep( $self->{"inCAM"}, $self->{"step"} );
@@ -117,22 +124,14 @@ sub __ProcessTemplate {
  
 
 	$self->{"fillTemplate"}->Fill($templData, $stackupPath, $previewTopPath, $previewBotPath);
-
-	$self->__FillTemplate($templData);
-
-	my $result = $self->{"template"}->Convert( $tempPath, $templData );
  
-}
-
-sub __FillTemplate {
-	my $self      = shift;
-	my $templData = shift;
-
+	my $result = $self->{"template"}->Convert( $tempPath, $templData );
 	
-
-	#$self->{"template"}->SetJobId("f12345");
-
+	unlink($stackupPath);
+ 	unlink($previewTopPath);
+ 	unlink($previewBotPath);
 }
+ 
 
 # create special step, which IPC will be exported from
 sub __CreatePdfStep {
@@ -212,9 +211,9 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId = "f10177";
+	my $jobId = "f57858";
 
-	my $control = ControlPdf->new( $inCAM, $jobId, "mpanel", "cz" );
+	my $control = ControlPdf->new( $inCAM, $jobId, "o+1", "en" );
 
 	$control->Create();
 }
