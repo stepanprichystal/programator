@@ -147,7 +147,7 @@ sub __PrepareColors {
 	$clrs{ Enums->Type_PLTDEPTHNC } = join(",", @surfArr );
 
 	# Depth NC non plated
-	$clrs{ Enums->Type_NPLTDEPTHNC } = "233,217,97";
+	$clrs{ Enums->Type_NPLTDEPTHNC } = "226,235,150";
 
 	# PLT Through NC
 	$clrs{ Enums->Type_PLTTHROUGHNC } = "250,250,250";
@@ -171,9 +171,9 @@ sub __GetMaskColor {
 
 	my %colorMap = ();
 	$colorMap{"Z"} = "0,115,42";       # green
-	$colorMap{"B"} = "74,74,74";       # black
+	$colorMap{"B"} = "59,59,59";       # black
 	$colorMap{"W"} = "250,250,250";    #white
-	$colorMap{"M"} = "0,86,143";       #blue
+	$colorMap{"M"} = "0,48,153";       #blue
 	$colorMap{"T"} = "255,255,255";    # ??
 	$colorMap{"R"} = "196,0,0";        # red
 

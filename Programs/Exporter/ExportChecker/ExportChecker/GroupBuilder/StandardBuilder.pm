@@ -24,6 +24,7 @@ use aliased 'Programs::Exporter::ExportChecker::Groups::ETExport::Presenter::ETU
 use aliased 'Programs::Exporter::ExportChecker::Groups::PlotExport::Presenter::PlotUnit';
 use aliased 'Programs::Exporter::ExportChecker::Groups::GerExport::Presenter::GerUnit';
 use aliased 'Programs::Exporter::ExportChecker::Groups::ScoExport::Presenter::ScoUnit';
+use aliased 'Programs::Exporter::ExportChecker::Groups::PdfExport::Presenter::PdfUnit';
 use aliased 'Programs::Exporter::ExportChecker::ExportChecker::GroupBuilder::Enums';
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -54,7 +55,7 @@ sub Build {
 	my $ncUnit1 = NCUnit->new( $self->{"jobId"});
 	my $gerUnit1 = GerUnit->new( $self->{"jobId"} );
 	my $scoUnit1 = ScoUnit->new( $self->{"jobId"} );
- 
+	my $pdfUnit1 = PdfUnit->new( $self->{"jobId"} );
 
 	my $row1Tab1 = $tableTab1->AddRow();
 	$row1Tab1->AddCell($preUnit1, Enums->Width_50);
@@ -66,7 +67,8 @@ sub Build {
 	$row2Tab1->AddCell($ncUnit1, Enums->Width_25);
 	$row2Tab1->AddCell($scoUnit1, Enums->Width_25);
 	$row2Tab1->AddCell($gerUnit1, Enums->Width_25);
-
+	$row2Tab1->AddCell($pdfUnit1, Enums->Width_25);
+	
 	# Table 2
 	
 	my $tableTab2 = $groupTables->AddTable("Other groups");

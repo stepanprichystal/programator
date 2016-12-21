@@ -13,7 +13,7 @@ use warnings;
 use aliased 'Enums::EnumsPaths';
 use aliased 'Helpers::FileHelper';
 use aliased 'Enums::EnumsGeneral';
-
+use aliased 'Helpers::Translator';
 use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'Packages::Stackup::Stackup::Stackup';
 
@@ -127,7 +127,7 @@ sub GetJobLayerTitle {
 		}
 	}
 	elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_bMillBot ) {
-		$title = "Non-plated z-axis milling from bop";
+		$title = "Non-plated z-axis milling from bot";
 		if ($cz) {
 			$title = "Neprokovené zahloubené frézování z bot";
 		}
@@ -154,7 +154,13 @@ sub GetJobLayerTitle {
 	elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_kMill ) {
 		$title = "Milling of connector edge";
 		if ($cz) {
-			$title = "Frézování hrany konektoru.";
+			$title = "Frézování hrany konektoru";
+		}
+	}
+	elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_score ) {
+		$title = "V-scoring";
+		if ($cz) {
+			$title = "V-drážka";
 		}
 	}
 
@@ -182,9 +188,14 @@ sub GetJobLayerInfo {
 	elsif ( $l->{"type"} ) {
 
 		# get start/stop layer
-		my $startStop = "From: " . $l->{"gROWdrl_start_name"} . " to: " . $l->{"gROWdrl_end_name"};
+		
+		my $from = $self->GetNifCodeValue($l->{"gROWdrl_start_name"});
+		my $to = $self->GetNifCodeValue($l->{"gROWdrl_end_name"});
+		
+		
+		my $startStop = "From: " . $from . " to: " . $to;
 		if ($cz) {
-			$startStop = "z: " . $l->{"gROWdrl_start_name"} . " do: " . $l->{"gROWdrl_end_name"};
+			$startStop = "z: " . Translator->Cz($from) . " do: " . Translator->Cz($to);
 		}
 
 		# nc layers
@@ -278,6 +289,10 @@ sub GetNifCodeValue {
 	elsif ( $code =~ /^s$/i ) {
 
 		$info = "Solder side";
+	
+	}elsif ( $code =~ /^v(\d)$/i ) {
+
+		$info = "Inner layer $1";
 	}
 
 	return $info;

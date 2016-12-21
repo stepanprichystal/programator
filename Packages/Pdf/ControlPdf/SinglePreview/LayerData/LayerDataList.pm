@@ -130,18 +130,15 @@ sub __PrepareNCLayerData {
 	foreach my $l (@layers) {
 
 		if ( ( $l->{"gROWlayer_type"} ne "drill" || $l->{"gROWlayer_type"} ne "rout" ) && $l->{"fHist"} && $l->{"fHist"}->{"pad"} > 0 ) {
-
-			my $lData = LayerData->new( Enums->LayerData_DRILLMAP );
-
-			my %infoData = ();
-			my %info     = ();
-
+ 
 			my $enTit = "Drill map: " . ValueConvertor->GetJobLayerTitle($l);
 			my $czTit = "Mapa vrtání: " . ValueConvertor->GetJobLayerTitle( $l, 1 );
 			my $enInf = "Units [mm] " . ValueConvertor->GetJobLayerInfo($l);
 			my $czInf = "Jednotky [mm] " . ValueConvertor->GetJobLayerInfo( $l, 1 );
 
-			$lData->AddSingleLayer( $l, $enTit, $czTit, $enInf, $czInf );
+			 my $lData = LayerData->new( Enums->LayerData_DRILLMAP, $enTit, $czTit, $enInf, $czInf );
+
+			$lData->AddSingleLayer($l);
 
 			push( @{ $self->{"layers"} }, $lData );
 

@@ -46,7 +46,7 @@ sub GetTitle{
 		
 	}elsif($code eq UnitId_PDF){
 		
-		$title = "Pdf file";
+		$title = "Pdf files";
 		
 	}elsif($code eq UnitId_GER){
 		

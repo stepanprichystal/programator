@@ -635,6 +635,35 @@ sub GetNumberOrder {
 	return $res;
 
 }
+
+##Return ID of customer
+sub GetCustomerInfo {
+	my $self  = shift;
+	my $pcbId = shift;
+
+	my @params = ( SqlParameter->new( "_PcbId", Enums->SqlDbType_VARCHAR, $pcbId ) );
+
+	my $numberOrder = GetNumberOrder( '', $pcbId );
+
+	my $cmd = "select top 1		
+				org.reference_subjektu,
+				org.nazev_subjektu customer,
+				org.zeme
+				FROM lcs.organizace org
+				JOIN lcs.zakazky_dps_22_hlavicka z ON z.zakaznik = org.cislo_subjektu
+				WHERE z.reference_subjektu = '$numberOrder'";
+
+	my @result = Helper->ExecuteDataSet( $cmd, \@params );
+
+	if ( scalar(@result) == 1 ) {
+		return $result[0];
+	}
+	else {
+		return undef;
+	}
+}
+
+
 ##Return ID of customer
 sub GetIdcustomer {
 	my $self  = shift;
@@ -656,29 +685,7 @@ sub GetIdcustomer {
 	return $res;
 }
 
-##Return ID of customer
-sub GetCustomerInfo {
-	my $self  = shift;
-	my $pcbId = shift;
-
-	my @params = ( SqlParameter->new( "_PcbId", Enums->SqlDbType_VARCHAR, $pcbId ) );
-
-	my $numberOrder = GetNumberOrder( '', $pcbId );
-
-	my $cmd = "select top 1
-				 c.nazev_subjektu customer
-				 from lcs.desky_22 d with (nolock)
-				 left outer join lcs.subjekty c with (nolock) on c.cislo_subjektu=d.zakaznik
-				 where d.reference_subjektu=_PcbId";
-
-	my @result = Helper->ExecuteDataSet( $cmd, \@params );
-
-	if ( scalar(@result) ) {
-		my $href = $result[0];
-		return %{$href};
-	}
-
-}
+ 
 
 sub UpdateNCInfo {
 	my $self   = shift;
@@ -715,14 +722,8 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	use aliased 'Connectors::HeliosConnector::HegMethods';
 
-	my $test = HegMethods->GetEmployyInfo("rvi");
-	$test = HegMethods->GetEmployyInfo("mku");
-	$test = HegMethods->GetEmployyInfo("jkr");
-	$test = HegMethods->GetEmployyInfo("rc");
-	$test = HegMethods->GetEmployyInfo("va");
-	$test = HegMethods->GetEmployyInfo("lba");
-	$test = HegMethods->GetEmployyInfo("os");
-	
+	my %test = HegMethods->GetCustomerInfo("d38002");
+	 
 	#my $test = HegMethods->GetPcbName("f52456");
 
 	#
@@ -735,7 +736,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	#
 	#	my $test =  HegMethods->GetTpvCustomerNote("d06224");
 	#
-	print $test;
+	print %test;
 
 }
 

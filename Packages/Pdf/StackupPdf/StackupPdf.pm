@@ -74,7 +74,7 @@ sub __GetStackupName {
 	$pcbThick = sprintf( "%4.3f", ( $pcbThick / 1000 ) );
 	$pcbThick =~ s/\./\,/g;
 
-	my %customerInfo = HegMethods->GetCustomerInfo($self->{"jobId"});
+	my %customerInfo = %{HegMethods->GetCustomerInfo($self->{"jobId"})};
 
 	my $customer = $customerInfo{"customer"};
 

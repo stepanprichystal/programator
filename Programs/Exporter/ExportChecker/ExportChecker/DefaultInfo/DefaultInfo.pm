@@ -20,6 +20,7 @@ use aliased 'Packages::Stackup::StackupNC::StackupNC';
 use aliased 'Packages::Routing::PlatedRoutArea';
 use aliased 'CamHelpers::CamDrilling';
 use aliased 'CamHelpers::CamHelper';
+use aliased 'CamHelpers::CamStep';
 use aliased 'Packages::Scoring::ScoreChecker::ScoreChecker';
 use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'Packages::Technology::EtchOperation';
@@ -35,55 +36,52 @@ sub new {
 
 	$self->{"inCAM"} = shift;
 	$self->{"jobId"} = shift;
-	$self->{"step"} = "panel";
+	$self->{"step"}  = "panel";
 
 	# Defaul values
-	$self->{"layerCnt"} = undef;
-	$self->{"stackup"} = undef;
-	$self->{"stackupNC"} = undef;
-	$self->{"pattern"} = undef;
-	$self->{"tenting"} = undef;
-	$self->{"baseLayers"} = undef;
-	$self->{"signalLayers"} = undef;
-	$self->{"scoreChecker"} = undef;
-	$self->{"materialKind"} = undef;
-	$self->{"pcbTypeHelios"} = undef; # type by helios oboustranny, neplat etc..
+	$self->{"layerCnt"}      = undef;
+	$self->{"stackup"}       = undef;
+	$self->{"stackupNC"}     = undef;
+	$self->{"pattern"}       = undef;
+	$self->{"tenting"}       = undef;
+	$self->{"baseLayers"}    = undef;
+	$self->{"signalLayers"}  = undef;
+	$self->{"scoreChecker"}  = undef;
+	$self->{"materialKind"}  = undef;
+	$self->{"pcbTypeHelios"} = undef;     # type by helios oboustranny, neplat etc..
 	$self->{"finalPcbThick"} = undef;
-	
-	
+	$self->{"allStepsNames"} = undef;     # all steps
+	$self->{"allLayers"}     = undef;     # all layers
+	$self->{"isPool"}        = undef;
 
 	$self->__InitDefault();
 
 	return $self;
 }
 
-
 sub GetBoardBaseLayers {
-	my $self      = shift;
-	
-	return  @{$self->{"baseLayers"}};	
+	my $self = shift;
+
+	return @{ $self->{"baseLayers"} };
 }
 
 sub GetSignalLayers {
-	my $self      = shift;
-	
-	return  @{$self->{"signalLayers"}};	
-}
- 
+	my $self = shift;
 
+	return @{ $self->{"signalLayers"} };
+}
 
 sub GetPcbClass {
-	my $self      = shift;
-	
-	return $self->{"pcbClass"};	
+	my $self = shift;
+
+	return $self->{"pcbClass"};
 }
 
 sub GetLayerCnt {
-	my $self      = shift;	
-	
+	my $self = shift;
+
 	return $self->{"layerCnt"};
 }
-
 
 sub GetEtchType {
 	my $self      = shift;
@@ -98,7 +96,7 @@ sub GetEtchType {
 	}
 	elsif ( $self->{"layerCnt"} == 2 ) {
 
-		if ( $self->{"platedRoutExceed"} || $self->{"rsExist"}) {
+		if ( $self->{"platedRoutExceed"} || $self->{"rsExist"} ) {
 			$etchType = EnumsGeneral->Etching_PATTERN;
 		}
 		else {
@@ -180,8 +178,6 @@ sub GetEtchType {
 
 }
 
- 
-
 sub GetSideByLayer {
 	my $self      = shift;
 	my $layerName = shift;
@@ -230,45 +226,42 @@ sub GetSideByLayer {
 	return $side;
 }
 
-sub GetCompByLayer{
+sub GetCompByLayer {
 	my $self      = shift;
 	my $layerName = shift;
- 
-	
-	my $class = $self->GetPcbClass();
+
+	my $class   = $self->GetPcbClass();
 	my $cuThick = $self->GetBaseCuThick($layerName);
-	
-	my $comp = EtchOperation->KompenzaceIncam($cuThick, $class);
-	
+
+	my $comp = EtchOperation->KompenzaceIncam( $cuThick, $class );
+
 	return $comp;
-	
+
 }
 
-sub GetScoreChecker{
-	my $self      = shift;
-	
+sub GetScoreChecker {
+	my $self = shift;
+
 	my $res = 0;
-	
-	if($self->{"scoreChecker"}){
 
-		return $self->{"scoreChecker"}
+	if ( $self->{"scoreChecker"} ) {
+
+		return $self->{"scoreChecker"};
 	}
- 
+
 }
 
+sub GetTypeOfPcb {
+	my $self = shift;
 
-sub GetTypeOfPcb{
-	my $self      = shift;
-	
-	$self->{"pcbTypeHelios"} = HegMethods->GetTypeOfPcb($self->{"jobId"} eq 'Neplatovany');
+	$self->{"pcbTypeHelios"} = HegMethods->GetTypeOfPcb( $self->{"jobId"} eq 'Neplatovany' );
 	return $self->{"pcbTypeHelios"};
 }
 
+sub GetMaterialKind {
+	my $self = shift;
 
-sub GetMaterialKind{
-	my $self      = shift;
-	
-	$self->{"materialKind"} = HegMethods->GetMaterialKind($self->{"jobId"});
+	$self->{"materialKind"} = HegMethods->GetMaterialKind( $self->{"jobId"} );
 	return $self->{"materialKind"};
 }
 
@@ -278,9 +271,9 @@ sub GetBaseCuThick {
 
 	my $cuThick;
 
-	if ( HegMethods->GetTypeOfPcb($self->{"jobId"}) eq 'Vicevrstvy' ) {
+	if ( HegMethods->GetTypeOfPcb( $self->{"jobId"} ) eq 'Vicevrstvy' ) {
 
-		$self->{"stackup"} = Stackup->new($self->{"jobId"});
+		$self->{"stackup"} = Stackup->new( $self->{"jobId"} );
 
 		my $cuLayer = $self->{"stackup"}->GetCuLayer($layerName);
 		$cuThick = $cuLayer->GetThick();
@@ -293,16 +286,15 @@ sub GetBaseCuThick {
 	return $cuThick;
 }
 
-
 # Set polarity, mirro, compensation for board layers
 # this is used for OPFX export, tif file export
-sub SetDefaultLayersSettings{
+sub SetDefaultLayersSettings {
 	my $self   = shift;
-	my $layers = shift;	
- 
+	my $layers = shift;
+
 	# Set polarity of layers
-	foreach my $l (@{$layers}) {
- 
+	foreach my $l ( @{$layers} ) {
+
 		if ( $l->{"gROWlayer_type"} eq "silk_screen" ) {
 
 			$l->{"polarity"} = "negative";
@@ -314,37 +306,34 @@ sub SetDefaultLayersSettings{
 
 		}
 		elsif ( $l->{"gROWlayer_type"} eq "signal" || $l->{"gROWlayer_type"} eq "power_ground" || $l->{"gROWlayer_type"} eq "mixed" ) {
- 
- 			# set etching type		
+
+			# set etching type
 			my $etching = $self->GetEtchType( $l->{"gROWname"} );
-			
+
 			$l->{"etchingType"} = $etching;
-			
- 			# Set polarity by etching type
+
+			# Set polarity by etching type
 			if ( $etching eq EnumsGeneral->Etching_PATTERN ) {
 				$l->{"polarity"} = "positive";
 			}
 			elsif ( $etching eq EnumsGeneral->Etching_TENTING ) {
 				$l->{"polarity"} = "negative";
 			}
-			
-			
+
 			# Edit polarity according InCAM matric polarity
 			# if polarity negative, switch polarity
-			if($l->{"gROWpolarity"} eq "negative"){
-				
-				
-				if($l->{"polarity"} eq "negative"){
+			if ( $l->{"gROWpolarity"} eq "negative" ) {
+
+				if ( $l->{"polarity"} eq "negative" ) {
 					$l->{"polarity"} = "positive";
-				
-				}elsif($l->{"polarity"} eq "positive"){
+
+				}
+				elsif ( $l->{"polarity"} eq "positive" ) {
 					$l->{"polarity"} = "negative";
 				}
 
 			}
-			
-			
-			
+
 		}
 		else {
 
@@ -354,7 +343,7 @@ sub SetDefaultLayersSettings{
 	}
 
 	# Set mirror of layers
-	foreach my $l (@{$layers}) {
+	foreach my $l ( @{$layers} ) {
 
 		# whatever with "c" is mirrored
 		if ( $l->{"gROWname"} =~ /^[pm]*c$/i ) {
@@ -385,12 +374,13 @@ sub SetDefaultLayersSettings{
 				$l->{"mirror"} = 0;
 			}
 		}
+
 		# if layer end with c, mirror
 		elsif ( $l->{"gROWname"} =~ /c$/i ) {
 
 			$l->{"mirror"} = 1;
 
-		}# if layer end with s, mirror
+		}    # if layer end with s, mirror
 		elsif ( $l->{"gROWname"} =~ /s$/i ) {
 
 			$l->{"mirror"} = 0;
@@ -399,11 +389,11 @@ sub SetDefaultLayersSettings{
 	}
 
 	# Set compensation of signal layer
-	foreach my $l (@{$layers}) {
+	foreach my $l ( @{$layers} ) {
 
 		if ( $l->{"gROWlayer_type"} eq "signal" || $l->{"gROWlayer_type"} eq "power_ground" || $l->{"gROWlayer_type"} eq "mixed" ) {
 
-			$l->{"comp"} = $self->GetCompByLayer($l->{"gROWname"});
+			$l->{"comp"} = $self->GetCompByLayer( $l->{"gROWname"} );
 		}
 		else {
 
@@ -411,57 +401,86 @@ sub SetDefaultLayersSettings{
 
 		}
 	}
-	
+
 }
 
-sub GetStackup{
-	my $self      = shift;
-	
+sub GetStackup {
+	my $self = shift;
+
 	return $self->{"stackup"};
 }
 
+# Return if step exist Doesn't load from income for each request
+sub StepExist {
+	my $self     = shift;
+	my $stepName = shift;
 
-#sub GetFinalPcbThick{
-#	my $self      = shift;
-#	
-#	return $self->{"finalPcbThick"};
-#}
+	my @s = grep { $_ eq $stepName } @{ $self->{"allStepsNames"} };
 
+	if ( scalar(@s) ) {
+		return 1;
+	}
+	else {
+		return 0;
+	}
+}
 
+# Return if layer existDoesn't load from income for each request
+sub LayerExist {
+	my $self      = shift;
+	my $layerName = shift;
+	my @l         = grep { $_->{"gROWname"} eq $layerName } @{ $self->{"allLayers"} };
 
+	if ( scalar(@l) ) {
+		return 1;
+	}
+	else {
+		return 0;
+	}
+}
+
+sub IsPool {
+	my $self      = shift;
+	 
+ 	return $self->{"isPool"};
+}
 
 sub __InitDefault {
 	my $self = shift;
 
-	my @baseLayers = CamJob->GetBoardBaseLayers($self->{"inCAM"}, $self->{"jobId"} );
-	$self->{"baseLayers"} =  \@baseLayers;
+	my @baseLayers = CamJob->GetBoardBaseLayers( $self->{"inCAM"}, $self->{"jobId"} );
+	$self->{"baseLayers"} = \@baseLayers;
 
-	my @signalLayers = CamJob->GetSignalLayer($self->{"inCAM"}, $self->{"jobId"} );
-	$self->{"signalLayers"} =  \@signalLayers;
+	my @signalLayers = CamJob->GetSignalLayer( $self->{"inCAM"}, $self->{"jobId"} );
+	$self->{"signalLayers"} = \@signalLayers;
 
-
-	$self->{"pcbClass"} = CamJob->GetJobPcbClass($self->{"inCAM"}, $self->{"jobId"} );   
+	$self->{"pcbClass"} = CamJob->GetJobPcbClass( $self->{"inCAM"}, $self->{"jobId"} );
 
 	$self->{"layerCnt"} = CamJob->GetSignalLayerCnt( $self->{"inCAM"}, $self->{"jobId"} );
 
-	$self->{"platedRoutExceed"} =  PlatedRoutArea->PlatedAreaExceed( $self->{"inCAM"}, $self->{'jobId'}, "panel" );
-	$self->{"rsExist"} =  CamDrilling->NCLayerExists( $self->{"inCAM"}, $self->{'jobId'}, EnumsGeneral->LAYERTYPE_nplt_rsMill );
+	$self->{"platedRoutExceed"} = PlatedRoutArea->PlatedAreaExceed( $self->{"inCAM"}, $self->{'jobId'}, "panel" );
+	$self->{"rsExist"} = CamDrilling->NCLayerExists( $self->{"inCAM"}, $self->{'jobId'}, EnumsGeneral->LAYERTYPE_nplt_rsMill );
 
 	if ( $self->{"layerCnt"} > 2 ) {
 
 		$self->{"stackup"} = Stackup->new( $self->{'jobId'} );
 		$self->{"stackupNC"} = StackupNC->new( $self->{"inCAM"}, $self->{"stackup"} );
 	}
-	
-	if(CamHelper->LayerExists(  $self->{"inCAM"}, $self->{"jobId"}, "score" )){
-		
+
+	if ( CamHelper->LayerExists( $self->{"inCAM"}, $self->{"jobId"}, "score" ) ) {
+
 		$self->{"scoreChecker"} = ScoreChecker->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"step"}, "score", 1 );
 		$self->{"scoreChecker"}->Init();
 	}
-	
-	
-	
-	
+
+	my @allSteps = CamStep->GetAllStepNames( $self->{"inCAM"}, $self->{"jobId"} );
+	$self->{"allStepsNames"} = undef;    #all steps
+
+	my @allLayers = CamJob->GetAllLayers( $self->{"inCAM"}, $self->{"jobId"} );
+	$self->{"allLayers"} = \@allLayers;
+
+	$self->{"isPool"} = HegMethods->GetPcbIsPool( $self->{"jobId"} );
+
 	#$self->{"finalPcbThick"} = JobHelper->GetFinalPcbThick($self->{"jobId"});
 
 }

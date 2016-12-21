@@ -291,7 +291,7 @@ sub __CreatePng {
 	}
 
 	$self->{"inCAM"}->{"childThread"} = 0;
- 
+
 	print STDERR "threats done \n";
 
 }
@@ -341,9 +341,9 @@ sub __SplitMultiPdf {
 		my $out = $dirPath . $layers[ $pagenum - 1 ]->GetOutputLayer() . ".pdf";
 
 		$pdf_out->saveas($out);
- 
+
 	}
-	
+
 	unlink($pdfOutput);
 }
 
@@ -400,34 +400,26 @@ sub __OptimizeLayers {
 	# if preview from BOT mirror all layers
 	if ( $self->{"viewType"} eq Enums->View_FROMBOT ) {
 
+		my $rotateBy = undef;
+
 		my %lim = CamJob->GetProfileLimits( $inCAM, $self->{"jobId"}, $self->{"pdfStep"} );
 
 		my $x = abs( $lim{"xmax"} - $lim{"xmin"} );
 		my $y = abs( $lim{"ymax"} - $lim{"ymin"} );
 
-		if ( min( $x, $y ) / max( $x, $y ) < 290 / 305 ) {
+		if ( $x <= $y ) {
 
-			my $rotateBy = undef;
+			$rotateBy = "y";
+		}
+		else {
 
-			my %lim = CamJob->GetProfileLimits( $inCAM, $self->{"jobId"}, $self->{"pdfStep"} );
+			$rotateBy = "x";
+		}
 
-			my $x = abs( $lim{"xmax"} - $lim{"xmin"} );
-			my $y = abs( $lim{"ymax"} - $lim{"ymin"} );
+		foreach my $l (@layers) {
 
-			if ( $x <= $y ) {
-
-				$rotateBy = "x";
-			}
-			else {
-
-				$rotateBy = "y";
-			}
-
-			foreach my $l (@layers) {
-
-				CamLayer->WorkLayer( $inCAM, $l->GetOutputLayer() );
-				CamLayer->MirrorLayerData( $inCAM, $l->GetOutputLayer(), $rotateBy );
-			}
+			CamLayer->WorkLayer( $inCAM, $l->GetOutputLayer() );
+			CamLayer->MirrorLayerData( $inCAM, $l->GetOutputLayer(), $rotateBy );
 		}
 	}
 
@@ -532,9 +524,16 @@ sub __PrepareMASK {
 
 		$layer->SetOutputLayer($lName);
 
-		#if($layer->GetColor())
+		#if white, opaque high
+		if($layer->GetColor() eq "250,250,250"){
+					$layer->SetTransparency(92);
+		}else{
+					$layer->SetTransparency(80);
+		}
 
-		$layer->SetTransparency(80);
+
+		
+		
 	}
 }
 
@@ -761,7 +760,7 @@ sub __CheckCountersink {
 
 	my $stepName = $self->{"pdfStep"};
 	$stepName =~ s/pdf_//;
-	my $lName    = $layer->{"gROWname"};
+	my $lName = $layer->{"gROWname"};
 
 	my $result = 1;
 

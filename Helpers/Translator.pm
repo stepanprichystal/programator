@@ -19,6 +19,46 @@ use warnings;
 #   Package methods
 #-------------------------------------------------------------------------------------------#
  
+sub GetNifCodeValue {
+	my $self = shift;
+	my $code = shift;
+
+	my $info = "";
+
+	# inner layer
+	if ( $code =~ /^pc$/i ) {
+
+		$info = "Silk screen top";
+	}
+
+	elsif ( $code =~ /^ps$/i ) {
+
+		$info = "Silk screen bot";
+	}
+
+	elsif ( $code =~ /^mc$/i ) {
+
+		$info = "Solder mask top";
+	}
+	elsif ( $code =~ /^ms$/i ) {
+
+		$info = "Solder mask bot";
+	}
+	elsif ( $code =~ /^c$/i ) {
+
+		$info = "Component side";
+	}
+	elsif ( $code =~ /^s$/i ) {
+
+		$info = "Solder side";
+	
+	}elsif ( $code =~ /^v(\d)$/i ) {
+
+		$info = "Inner layer $1";
+	}
+
+	return $info;
+}
 sub Cz {
 	my $self = shift;
 	my $val    = shift;
@@ -53,6 +93,10 @@ sub Cz {
 	}elsif($val eq "Solder side"){
 	
 		$str = "Strana spojů";
+		
+	}elsif($val =~ /Inner layer (\d)/){
+		
+		 $str = "Vnitřní vrstva $1";
 	}
 	elsif($val eq "Green"){
 	

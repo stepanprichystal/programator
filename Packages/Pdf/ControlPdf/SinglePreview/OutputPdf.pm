@@ -35,6 +35,8 @@ sub new {
 	$self->{"lang"}    = shift;
 
 	$self->{"outputPath"} = EnumsPaths->Client_INCAMTMPOTHER . GeneralHelper->GetGUID() . ".pdf";
+ 
+	$self->{"profileLim"} = undef;
 
 	return $self;
 }
@@ -42,10 +44,16 @@ sub new {
 sub Output {
 	my $self      = shift;
 	my $layerList = shift;
+	
+	my %lim = CamJob->GetProfileLimits( $self->{"inCAM"}, $self->{"jobId"}, $self->{"pdfStep"} );
+
+	$self->{"profileLim"} = \%lim;
+	
 
 	$self->__PrepareLayers($layerList);
 
-	$self->__OptimizeLayers($layerList);
+	$self->__OptimizeStandardLayers($layerList);
+	$self->__OptimizeDrillMapLayers($layerList);
 
 	my $pathPdf = $self->__OutputRawPdf($layerList);
 
@@ -81,7 +89,7 @@ sub __PrepareLayers {
 
 }
 
-sub __OptimizeLayers {
+sub __OptimizeStandardLayers {
 	my $self      = shift;
 	my $layerList = shift;
 
@@ -94,10 +102,9 @@ sub __OptimizeLayers {
 	foreach my $l (@layers) {
 
 		# drillm map layer contains table behind profile
-		if ( $l->GetType() ne Enums->LayerData_DRILLMAP ) {
+		if ( $l->GetType() eq Enums->LayerData_STANDARD ) {
 			$inCAM->COM( "affected_layer", "name" => $l->GetOutputLayer(), "mode" => "single", "affected" => "yes" );
 		}
-
 	}
 
 	# clip area around profile
@@ -119,7 +126,7 @@ sub __OptimizeLayers {
 	# Create border around layer data. Border has to has ratio min 290:305 because of right place in pdf
 	# if not, pcb layer would be covered by table with title and description of layer
 
-	my %lim = CamJob->GetProfileLimits( $inCAM, $self->{"jobId"}, $self->{"pdfStep"} );
+	my %lim = %{ $self->{"profileLim"} };
 
 	my $x = abs( $lim{"xmax"} - $lim{"xmin"} );
 	my $y = abs( $lim{"ymax"} - $lim{"ymin"} );
@@ -166,15 +173,85 @@ sub __OptimizeLayers {
 		$inCAM->COM("sel_invert");
 	}
 
-	CamLayer->WorkLayer( $inCAM, $lName );
+	$self->__CopyFrame( $lName, \@layers );
+}
+
+sub __OptimizeDrillMapLayers {
+	my $self      = shift;
+	my $layerList = shift;
+
+	my $inCAM  = $self->{"inCAM"};
+	my @layers = $layerList->GetLayers();
+
+	CamLayer->ClearLayers($inCAM);
+
+	# Create border around layer data. Border has to has ratio min 290:305 because of right place in pdf
+	# if not, pcb layer would be covered by table with title and description of layer
+
+	#for each layer own border
 
 	# affect all layers
 	foreach my $l (@layers) {
 
-		# drillm map layer contains table behind profile
-		if ( $l->GetType() ne Enums->LayerData_DRILLMAP ) {
-			$inCAM->COM( "affected_layer", "name" => $l->GetOutputLayer(), "mode" => "single", "affected" => "yes" );
+		my $lName = GeneralHelper->GetGUID();
+
+		my %lim = CamJob->GetLayerLimits( $inCAM, $self->{"jobId"}, $self->{"pdfStep"}, $l->GetOutputLayer() );
+
+		my $x = abs( $lim{"xmax"} - $lim{"xmin"} );
+		my $y = abs( $lim{"ymax"} - $lim{"ymin"} );
+
+		# prepare coordination for frame
+
+		if ( min( $x, $y ) == $x ) {
+
+			# compute min x length
+			my $newX = ( $y / 305 ) * 290;
+			$lim{"xmin"} -= ( ( $newX - $x ) / 2 );
+			$lim{"xmax"} += ( ( $newX - $x ) / 2 );
+
 		}
+		elsif ( min( $x, $y ) == $y ) {
+
+			# compute min x length
+			my $newY = ( $x / 305 ) * 290;
+			$lim{"ymin"} -= ( ( $newY - $y ) / 2 );
+			$lim{"ymax"} += ( ( $newY - $y ) / 2 );
+		}
+
+		$inCAM->COM( 'create_layer', layer => $lName, context => 'misc', type => 'document', polarity => 'positive', ins_layer => '' );
+
+		CamLayer->WorkLayer( $inCAM, $lName );
+
+		my %c1 = ( "x" => $lim{"xmin"}, "y" => $lim{"ymin"} );
+		my %c2 = ( "x" => $lim{"xmax"}, "y" => $lim{"ymin"} );
+		my %c3 = ( "x" => $lim{"xmax"}, "y" => $lim{"ymax"} );
+		my %c4 = ( "x" => $lim{"xmin"}, "y" => $lim{"ymax"} );
+		my @coord = ( \%c1, \%c2, \%c3, \%c4 );
+
+		#
+		CamSymbol->AddPolyline( $inCAM, \@coord, "r1", "negative" );
+
+		my @list = ( $l );
+
+		$self->__CopyFrame( $lName, \@list );
+	}
+
+}
+
+sub __CopyFrame {
+	my $self   = shift;
+	my $lName  = shift;
+	my @layers = @{ shift(@_) };
+
+	my $inCAM = $self->{"inCAM"};
+
+	CamLayer->WorkLayer( $inCAM, $lName );
+
+	# affect all layers
+	foreach my $l (@layers) {
+ 
+		 $inCAM->COM( "affected_layer", "name" => $l->GetOutputLayer(), "mode" => "single", "affected" => "yes" );
+ 
 	}
 
 	my @layerStr = map { $_->GetOutputLayer() } @layers;
@@ -395,7 +472,7 @@ sub __DrawInfoTable {
 
 	my $txtTitle = $page_out->text;
 	$txtTitle->translate( $xPos + 2, $yPos + $rightCellH - 10 );
-	my $font = $pdf_out->ttfont(GeneralHelper->Root().'\Packages\Pdf\ControlPdf\HtmlTemplate\arial.ttf');
+	my $font = $pdf_out->ttfont( GeneralHelper->Root() . '\Packages\Pdf\ControlPdf\HtmlTemplate\arial.ttf' );
 	$txtTitle->font( $font, $txtSize );
 	$txtTitle->fillcolor("black");
 
@@ -403,7 +480,7 @@ sub __DrawInfoTable {
 		$txtTitle->text( 'Název    ' . $data->{"title"} );
 	}
 	else {
-		$txtTitle->text( 'Name     ' . $data->{"title"} );
+		$txtTitle->text( 'Name    ' . $data->{"title"} );
 	}
 
 	# add text title
@@ -431,8 +508,6 @@ sub __PrepareSTANDARD {
 	$inCAM->COM( 'create_layer', layer => $lName, context => 'misc', type => 'document', polarity => 'positive', ins_layer => '' );
 
 	foreach my $sL ( $layerData->GetSingleLayers() ) {
-
-	 
 
 		if ( $sL->{"gROWlayer_type"} eq "rout" ) {
 
@@ -463,14 +538,28 @@ sub __PrepareDRILLMAP {
 	my $lName = GeneralHelper->GetGUID();
 
 	my @singleL = $layerData->GetSingleLayers();
-	my $sL = $singleL[0];
+	my $sL      = $singleL[0];
 
+	# change layer to drill if needed
 	my $typeChanged = 0;
-	if($sL->{"gROWlayer_type"} eq "rout"){
+	if ( $sL->{"gROWlayer_type"} eq "rout" ) {
 		CamLayer->SetLayerTypeLayer( $inCAM, $self->{"jobId"}, $sL->{"gROWname"}, "drill" );
 		$typeChanged = 1;
 	}
 
+	# compute table position
+	my $tablePos = undef;
+
+	my %lim = %{ $self->{"profileLim"} };
+
+	my $x = abs( $lim{"xmax"} - $lim{"xmin"} );
+	my $y = abs( $lim{"ymax"} - $lim{"ymin"} );
+	if ( $x <= $y ) {
+		$tablePos = "right";
+	}
+	else {
+		$tablePos = "top";
+	}
 
 	$inCAM->COM(
 				 "cre_drills_map",
@@ -487,11 +576,11 @@ sub __PrepareDRILLMAP {
 				 "slots"           => "no",
 				 "columns"         => "Count\;Type\;Finish",
 				 "notype"          => "plt",
-				 "table_pos"       => "right",
+				 "table_pos"       => "right", # alwazs right, because another option not work
 				 "table_align"     => "bottom"
 	);
-	
-	if($typeChanged){
+
+	if ($typeChanged) {
 		CamLayer->SetLayerTypeLayer( $inCAM, $self->{"jobId"}, $sL->{"gROWname"}, "rout" );
 	}
 
