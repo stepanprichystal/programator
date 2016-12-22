@@ -19,7 +19,7 @@ use aliased 'Packages::Events::Event';
 #use aliased 'CamHelpers::CamDrilling';
 use aliased 'CamHelpers::CamStep';
 
-#use aliased 'CamHelpers::CamJob';
+use aliased 'CamHelpers::CamJob';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -38,6 +38,7 @@ sub new {
 
 	$self->{"inCAM"} = $inCAM;
 	$self->{"jobId"} = $jobId;
+	$self->{"layerCnt"} = CamJob->GetSignalLayerCnt( $self->{"inCAM"}, $self->{"jobId"} );
 
 	# Load data
 	$self->__SetLayout();
@@ -143,8 +144,13 @@ sub __SetLayoutStackup {
 	my $szStatBox = Wx::StaticBoxSizer->new( $statBox, &Wx::wxHORIZONTAL );
 
 	# DEFINE CONTROLS
-
+	
 	my $exportStackupChb = Wx::CheckBox->new( $statBox, -1, "Export", &Wx::wxDefaultPosition );
+	if( $self->{"layerCnt"} <= 2){
+		
+		$exportStackupChb->Disable();
+	}
+	
 
 	# SET EVENTS
 

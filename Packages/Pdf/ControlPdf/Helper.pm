@@ -76,16 +76,7 @@ sub GetSilkColor {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	use aliased 'Packages::Pdf::ControlPdf::ControlPdf';
-	use aliased 'Packages::InCAM::InCAM';
-
-	my $inCAM = InCAM->new();
-
-	my $jobId = "f52456";
-
-	my $control = ControlPdf->new( $inCAM, $jobId );
-
-	$control->__ProcessTemplate();
+	 
 
 }
 

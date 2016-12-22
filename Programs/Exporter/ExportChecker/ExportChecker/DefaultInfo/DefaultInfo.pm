@@ -474,7 +474,7 @@ sub __InitDefault {
 	}
 
 	my @allSteps = CamStep->GetAllStepNames( $self->{"inCAM"}, $self->{"jobId"} );
-	$self->{"allStepsNames"} = undef;    #all steps
+	$self->{"allStepsNames"} = \@allSteps;    #all steps
 
 	my @allLayers = CamJob->GetAllLayers( $self->{"inCAM"}, $self->{"jobId"} );
 	$self->{"allLayers"} = \@allLayers;

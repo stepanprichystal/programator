@@ -50,9 +50,7 @@ sub Output {
 	$self->__PrepareLayers($layerList);
 	$self->__OptimizeLayers($layerList);
 	$self->__OutputPdf($layerList);
-
-	return 1;
-
+ 
 }
 
 sub GetOutput {
@@ -64,6 +62,8 @@ sub GetOutput {
 sub __OutputPdf {
 	my $self      = shift;
 	my $layerList = shift;
+	
+	my $result = 1;
 
 	my $inCAM = $self->{"inCAM"};
 
@@ -144,8 +144,7 @@ sub __OutputPdf {
 	my $layerStr2 = join( " ", @layerStr2 );
 
 	my $outputTmp = EnumsPaths->Client_INCAMTMPOTHER . GeneralHelper->GetGUID() . ".jpg";
-
-	my $result = 1;
+  
 
 	my @cmd = ( EnumsPaths->InCAM_3rdScripts . "im\\convert.exe" );
 	push( @cmd, $layerStr2 );
@@ -158,6 +157,7 @@ sub __OutputPdf {
 	my $cmdStr = join( " ", @cmd );
 
 	my $systeMres = system($cmdStr);
+ 
 
 	# Adjust image to ratio 3:5
 
@@ -209,6 +209,7 @@ sub __OutputPdf {
 	my $cmdStr2 = join( " ", @cmd2 );
 
 	my $systeMres2 = system($cmdStr2);
+ 
 
 	foreach my $l (@layers) {
 		if ( -e $dirPath . $l->GetOutputLayer() . ".png" ) {
@@ -222,8 +223,7 @@ sub __OutputPdf {
 	rmdir($dirPath);
 
 	unlink($outputTmp);
-
-	# merge all png to one
+ 
 
 }
 

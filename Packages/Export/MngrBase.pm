@@ -30,12 +30,18 @@ sub new {
 sub _GetNewItem {
 	my $self = shift;
 	my $id   = shift;
-
+	my $group   = shift;
 	#my $result = shift;
 
 	#my $groupId = $self->{"groupId"};
 
 	my $item = ItemResult->new($id);
+	
+	if($group){
+		
+		$item->SetGroup($group);
+		
+	}
 	
 	return $item;
 

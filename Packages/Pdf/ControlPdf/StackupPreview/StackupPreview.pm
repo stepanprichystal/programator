@@ -14,6 +14,7 @@ use aliased 'Helpers::GeneralHelper';
 use aliased 'Enums::EnumsPaths';
 use aliased 'Packages::Pdf::StackupPdf::StackupPdf';
 use aliased 'Helpers::FileHelper';
+use aliased 'CamHelpers::CamJob';
 #-------------------------------------------------------------------------------------------#
 #  Interface
 #-------------------------------------------------------------------------------------------#
@@ -22,29 +23,40 @@ sub new {
 	my $self = shift;
 	$self = {};
 	bless $self;
-
+	
+	$self->{"inCAM"}   = shift;
 	$self->{"jobId"}   = shift;
  
  	$self->{"outputPath"} = EnumsPaths->Client_INCAMTMPOTHER . GeneralHelper->GetGUID() . ".jpeg";
+ 	
+ 	$self->{"layerCnt"} = CamJob->GetSignalLayerCnt( $self->{"inCAM"}, $self->{"jobId"} );
  
 	return $self;
 }
 
 sub Create {
 	my $self = shift;
-	
+	my $message = shift;
 	
 	my $stackup = StackupPdf->new($self->{"jobId"});
 	my $resultCreate = $stackup->Create();
 	
-	unless($resultCreate){
-		return 0;
+	if($self->{"layerCnt"} <= 2){
+		return 1;
 	}
+	elsif(!$resultCreate && $self->{"layerCnt"} > 2){
+		$$message .= "Error when create stackup preview. Loading stackup failed.";
+		return 0;
+	} 
 	
 	my $path = $stackup->GetStackupPath();
 	my $result = 1;
  
 	$result = $self->__ConvertToImage($path);
+	
+	unless($result){
+		$$message .= "Error when convverting stackup in PDF to image.";
+	}
 	
 	unlink($path);
 	
@@ -78,8 +90,12 @@ sub __ConvertToImage{
 
 	my $result = system($cmdStr);
 	
-	
-	return $result;
+	if($result == 0){
+		return 1;
+	}else{
+		return 0;
+	}
+ 
 	
 }
  

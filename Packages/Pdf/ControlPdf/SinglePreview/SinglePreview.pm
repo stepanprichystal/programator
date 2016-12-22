@@ -47,24 +47,25 @@ sub new {
 
 sub Create {
 	my $self = shift;
-	my $lRef = shift;
+	#my $lRef = shift;
+	my $message = shift;
 
 	# get all base layers
 	my @layers = CamJob->GetBoardLayers( $self->{"inCAM"}, $self->{"jobId"} );
 
 	# 1) Filter only requested layers
-	if ($lRef) {
-
-		for ( my $i = scalar(@layers) ; $i >= 0 ; $i-- ) {
-
-			my $l = $layers[$i];
-			my $exist = scalar( grep { $_ eq $l->{"gROWname"} } @{$lRef} );
-
-			unless ($exist) {
-				splice @layers, $i, 1;    #remove
-			}
-		}
-	}
+#	if ($lRef) {
+#
+#		for ( my $i = scalar(@layers) ; $i >= 0 ; $i-- ) {
+#
+#			my $l = $layers[$i];
+#			my $exist = scalar( grep { $_ eq $l->{"gROWname"} } @{$lRef} );
+#
+#			unless ($exist) {
+#				splice @layers, $i, 1;    #remove
+#			}
+#		}
+#	}
 	
 	# 2) Filter ou helper layers fr, v1, etc..
 	@layers = grep { $_->{"gROWname"} ne "v1" && $_->{"gROWname"} ne "fr"  && $_->{"gROWname"} ne "fsch"  && $_->{"gROWname"} !~ /^gold[cs]$/} @layers;
@@ -86,6 +87,9 @@ sub Create {
 	$self->{"layerList"}->SetLayers(\@layers);
 	
 	$self->{"outputPdf"}->Output( $self->{"layerList"} );
+ 
+	
+	return 1;
 
 }
 

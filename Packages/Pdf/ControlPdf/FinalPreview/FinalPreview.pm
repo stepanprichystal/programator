@@ -36,7 +36,7 @@ sub new {
 	$self->{"viewType"} = shift;
 
 	$self->{"layerList"} = LayerDataList->new( $self->{"viewType"} );
-	$self->{"outputPdf"} = OutputPdf->new($self->{"viewType"},  $self->{"inCAM"},$self->{"jobId"}, $self->{"pdfStep"} );
+	$self->{"outputPdf"} = OutputPdf->new( $self->{"viewType"}, $self->{"inCAM"}, $self->{"jobId"}, $self->{"pdfStep"} );
 
 	$self->{"outputPath"} = EnumsPaths->Client_INCAMTMPOTHER . GeneralHelper->GetGUID() . ".png";
 
@@ -45,12 +45,11 @@ sub new {
 
 sub Create {
 	my $self = shift;
+	my $message = shift;
  
-
 	# get all board layers
 	my @layers = CamJob->GetBoardLayers( $self->{"inCAM"}, $self->{"jobId"} );
-	
-	 
+
 	# add nc info to nc layers
 	my @nclayers = grep { $_->{"gROWlayer_type"} eq "rout" || $_->{"gROWlayer_type"} eq "drill" } @layers;
 	CamDrilling->AddNCLayerType( \@nclayers );
@@ -59,12 +58,8 @@ sub Create {
 	# set layer list
 	$self->{"layerList"}->SetLayers( \@layers );
 	$self->{"layerList"}->SetColors( $self->__PrepareColors() );
-
-	$self->{"outputPdf"}->Output( $self->{"layerList"} );
-
 	
-
-	#$self->__ConvertPdfToPng($outPdf);
+	$self->{"outputPdf"}->Output( $self->{"layerList"} );
 
 	return 1;
 }
@@ -72,7 +67,7 @@ sub Create {
 sub GetOutput {
 	my $self = shift;
 
-	return  $self->{"outputPdf"}->GetOutput();
+	return $self->{"outputPdf"}->GetOutput();
 }
 
 sub __ConvertPdfToPng {
@@ -108,10 +103,33 @@ sub __PrepareColors {
 	my %clrs = ();
 
 	# base mat
-	$clrs{ Enums->Type_PCBMAT } = "226,235,150";
+
+	my $matClr = "226,235,150";
+
+	my $mat = HegMethods->GetMaterialKind( $self->{"jobId"} );
+	if ( $mat =~ /al/i ) {
+
+		if ( $self->{"viewType"} eq Enums->View_FROMTOP ) {
+
+			$matClr = "255,195,156";
+
+		}
+		elsif ( $self->{"viewType"} eq Enums->View_FROMBOT ) {
+
+			$matClr = "230,230,230";
+		}
+
+	}
+	elsif ( $mat =~ /cu/i ) {
+
+		$matClr = "255,195,156";
+
+	}
+
+	$clrs{ Enums->Type_PCBMAT } = $matClr;
 
 	# surface or cu
-	my $surface = HegMethods->GetPcbSurface($self->{"jobId"});
+	my $surface = HegMethods->GetPcbSurface( $self->{"jobId"} );
 
 	my $surfClr = "";
 
@@ -141,13 +159,13 @@ sub __PrepareColors {
 
 	# Depth NC plated
 	#multiply surface color
-	my @surfArr = split (",",$surfClr );
+	my @surfArr = split( ",", $surfClr );
 	@surfArr = map { $_ * 1 / 4 } @surfArr;
 
-	$clrs{ Enums->Type_PLTDEPTHNC } = join(",", @surfArr );
+	$clrs{ Enums->Type_PLTDEPTHNC } = join( ",", @surfArr );
 
 	# Depth NC non plated
-	$clrs{ Enums->Type_NPLTDEPTHNC } = "226,235,150";
+	$clrs{ Enums->Type_NPLTDEPTHNC } = $matClr;
 
 	# PLT Through NC
 	$clrs{ Enums->Type_PLTTHROUGHNC } = "250,250,250";
@@ -165,7 +183,7 @@ sub __GetMaskColor {
 	my %pcbMask = Helper->GetMaskColor( $self->{"inCAM"}, $self->{"jobId"} );
 	my $pcbMaskVal = $self->{"viewType"} eq Enums->View_FROMTOP ? $pcbMask{"top"} : $pcbMask{"bot"};
 
-	unless($pcbMaskVal){
+	unless ($pcbMaskVal) {
 		return "";
 	}
 
@@ -186,7 +204,7 @@ sub __GetSilkColor {
 	my %pcbSilk = Helper->GetSilkColor( $self->{"inCAM"}, $self->{"jobId"} );
 	my $pcbSilkVal = $self->{"viewType"} eq Enums->View_FROMTOP ? $pcbSilk{"top"} : $pcbSilk{"bot"};
 
-	unless($pcbSilkVal){
+	unless ($pcbSilkVal) {
 		return "";
 	}
 

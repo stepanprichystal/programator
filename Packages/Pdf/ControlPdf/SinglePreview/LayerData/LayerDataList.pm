@@ -52,6 +52,8 @@ sub __PrepareBaseLayerData {
 
 	# prepare non  NC layers
 	@layers = grep { $_->{"gROWlayer_type"} ne "rout" && $_->{"gROWlayer_type"} ne "drill" } @layers;
+	
+	 
 
 	foreach my $l (@layers) {
 

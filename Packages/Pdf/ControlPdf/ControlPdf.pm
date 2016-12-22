@@ -16,7 +16,6 @@ use aliased 'CamHelpers::CamHelper';
 use aliased 'CamHelpers::CamJob';
 use aliased 'CamHelpers::CamLayer';
 
-
 use aliased 'Helpers::JobHelper';
 use aliased 'Enums::EnumsPaths';
 use aliased 'CamHelpers::CamStepRepeat';
@@ -49,70 +48,100 @@ sub new {
 
 	$self->{"outputPath"} = EnumsPaths->Client_INCAMTMPOTHER . GeneralHelper->GetGUID() . ".pdf";
 
-	$self->{"outputPdf"} = OutputPdf->new($self->{"lang"});
-	$self->{"fillTemplate"} = FillTemplate->new($self->{"inCAM"}, $self->{"jobId"});
+	$self->{"outputPdf"} = OutputPdf->new( $self->{"lang"} );
+	$self->{"fillTemplate"} = FillTemplate->new( $self->{"inCAM"}, $self->{"jobId"} );
 
 	$self->{"template"}       = Template2Pdf->new( $self->{"lang"} );
-	$self->{"stackupPreview"} = StackupPreview->new( $self->{"jobId"} );
+	$self->{"stackupPreview"} = StackupPreview->new( $self->{"inCAM"}, $self->{"jobId"} );
 	$self->{"previewTop"}     = FinalPreview->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"pdfStep"}, EnumsFinal->View_FROMTOP );
 	$self->{"previewBot"}     = FinalPreview->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"pdfStep"}, EnumsFinal->View_FROMBOT );
 	$self->{"previewSingle"}  = SinglePreview->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"pdfStep"}, $self->{"lang"} );
-	
+
 	return $self;
 }
 
 sub Create {
 	my $self = shift;
-	
-	
+
 	# check when step is panel, nif file already exist too
 	my $panelExist = CamHelper->StepExists( $self->{"inCAM"}, $self->{"jobId"}, "panel" );
-	my $nifFile = NifFile->new($self->{"jobId"});
-	
-	if($panelExist && !$nifFile->Exist()){
-		
+	my $nifFile = NifFile->new( $self->{"jobId"} );
+
+	if ( $panelExist && !$nifFile->Exist() ) {
+
 		return 0;
 	}
-	
 
 	CamHelper->SetStep( $self->{"inCAM"}, $self->{"step"} );
 
 	$self->__CreatePdfStep();
 
 	CamHelper->SetStep( $self->{"inCAM"}, $self->{"pdfStep"} );
+}
+
+sub CreateStackup {
+	my $self = shift;
+	my $mess = shift;
 
 	# 1) create stackup image
-	$self->{"stackupPreview"}->Create();
+ 
+	my $result = $self->{"stackupPreview"}->Create($mess);
+
+	return $result;
+}
+
+sub CreatePreviewTop {
+	my $self = shift;
+	my $mess = shift;
 
 	# 2) Final preview top
-	$self->{"previewTop"}->Create();
+	my $result = $self->{"previewTop"}->Create($mess);
+	return $result;
+}
 
-	# 3) Final preview bot
-	$self->{"previewBot"}->Create();
+sub CreatePreviewBot {
+	my $self = shift;
+	my $mess = shift;
+
+	# 3) Final preview top
+	my $result = $self->{"previewBot"}->Create($mess);
+	return $result;
+}
+
+sub CreatePreviewSingle {
+	my $self = shift;
+	my $mess = shift;
 
 	# 4) Create preview single
-	$self->{"previewSingle"}->Create();
+	my $result = $self->{"previewSingle"}->Create($mess);
+	return $result;
+}
+
+sub GeneratePdf {
+	my $self = shift;
+	my $mess = shift;
+
+	my $result = 1;
 
 	# 5) Process template
 	$self->__ProcessTemplate( $self->{"stackupPreview"}->GetOutput(), $self->{"previewTop"}->GetOutput(), $self->{"previewBot"}->GetOutput() );
-	#$self->__ProcessTemplate( "c:\\Export\\Report\\result.jpg", "c:\\Export\\Report\\result2.jpg", "c:\\Export\\Report\\result2.jpg" );
 
 	# 6) complete all together and add header and footer
-	$self->{"outputPdf"}->Output($self->{"template"}->GetOutFile(), $self->{"previewSingle"}->GetOutput());
-	
-	if(-e "c:\\Export\\report\\".$self->{"jobId"}.".pdf"){
-		unlink("c:\\Export\\report\\".$self->{"jobId"}.".pdf");
-	}
-	
-	 
-	copy($self->{"outputPdf"}->GetOutput(), "c:\\Export\\report\\".$self->{"jobId"}.".pdf");
-
+	$self->{"outputPdf"}->Output( $self->{"template"}->GetOutFile(), $self->{"previewSingle"}->GetOutput() );
 	$self->__DeletePdfStep( $self->{"pdfStep"} );
+
+	return $result;
+}
+
+sub GetOutputPath {
+	my $self = shift;
+
+	return $self->{"outputPdf"}->GetOutput();
 }
 
 # delete pdf step
 sub __ProcessTemplate {
-	my $self          = shift;
+	my $self           = shift;
 	my $stackupPath    = shift;
 	my $previewTopPath = shift;
 	my $previewBotPath = shift;
@@ -121,17 +150,15 @@ sub __ProcessTemplate {
 
 	# Fill data template
 	my $templData = TemplateKey->new();
- 
 
-	$self->{"fillTemplate"}->Fill($templData, $stackupPath, $previewTopPath, $previewBotPath);
- 
+	$self->{"fillTemplate"}->Fill( $templData, $stackupPath, $previewTopPath, $previewBotPath );
+
 	my $result = $self->{"template"}->Convert( $tempPath, $templData );
-	
+
 	unlink($stackupPath);
- 	unlink($previewTopPath);
- 	unlink($previewBotPath);
+	unlink($previewTopPath);
+	unlink($previewBotPath);
 }
- 
 
 # create special step, which IPC will be exported from
 sub __CreatePdfStep {
@@ -211,11 +238,19 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId = "f52456";
-
-	my $control = ControlPdf->new( $inCAM, $jobId, "o+1", "cz" );
-
+	my $jobId = "f58523";
+	
+	my $mess = "";
+ 
+	my $control = ControlPdf->new( $inCAM, $jobId, "mpanel", "en" );
 	$control->Create();
+	$control->CreateStackup(\$mess);
+	$control->CreatePreviewTop(\$mess);
+	$control->CreatePreviewBot(\$mess);		
+	$control->CreatePreviewSingle(\$mess);	
+	$control->GeneratePdf();
+	$control->GetOutputPath();
+	
 }
 
 1;

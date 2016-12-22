@@ -58,8 +58,7 @@ sub Output {
 	my $pathPdf = $self->__OutputRawPdf($layerList);
 
 	$self->__AddTextPdf( $layerList, $pathPdf );
-
-	return 1;
+ 
 
 }
 

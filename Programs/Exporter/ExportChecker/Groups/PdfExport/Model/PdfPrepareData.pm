@@ -74,7 +74,7 @@ sub OnPrepareGroupData {
 	# 3) default lang
 	my $defLang = "English";
 
-	my %inf = HegMethods->GetCustomerInfo($jobId);
+	my %inf = %{HegMethods->GetCustomerInfo($jobId)};
 
 	# if country CZ
 	if ( $inf{"zeme"} eq 25 ) {
