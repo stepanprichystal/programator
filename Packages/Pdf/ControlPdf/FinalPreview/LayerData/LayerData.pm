@@ -25,6 +25,8 @@ sub new {
 	$self->{"type"} = shift;
 	$self->{"order"} = undef;
 	$self->{"color"} = undef;
+	$self->{"texture"} = undef;
+	$self->{"brightness"} = undef; # allow set brightness of final layer/image
 	$self->{"output"} = undef;
 	$self->{"transparency"} = 100;
 	
@@ -38,7 +40,7 @@ sub new {
 sub PrintLayer{
 	my $self = shift;
 	
-	if($self->{"output"} && defined $self->{"color"} && $self->{"color"} ne ""){
+	if($self->{"output"} && ( defined $self->{"color"} || defined $self->{"texture"})){
 		
 		return 1;
 	}else{
@@ -60,6 +62,34 @@ sub SetColor{
 	
 	
 	$self->{"color"} = $color;
+}
+
+ 
+sub GetTexture{
+	my $self = shift;
+	return $self->{"texture"};
+}
+
+sub SetTexture{
+	my $self = shift;
+	my $texture = shift;
+	
+	
+	$self->{"texture"} = $texture;
+}
+
+
+sub GetBrightness{
+	my $self = shift;
+	return $self->{"brightness"};
+}
+
+sub SetBrightness{
+	my $self = shift;
+	my $brightness = shift;
+	
+	
+	$self->{"brightness"} = $brightness;
 }
 
 

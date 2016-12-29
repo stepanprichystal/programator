@@ -49,7 +49,7 @@ sub __InitLayers {
 }
 
 sub GetLayers {
-	my $self = shift;
+	my $self      = shift;
 	my $printable = shift;
 
 	my @layers = @{ $self->{"layers"} };
@@ -120,12 +120,10 @@ sub SetLayers {
 
 			}
 			elsif (
-				$l->{"type"}
-				&& (
-					 $l->{"type"}    eq EnumsGeneral->LAYERTYPE_nplt_nMill
-					 || $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_rsMill 
-					 || $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_kMill
-				)
+					$l->{"type"}
+					&& (    $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_nMill
+						 || $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_rsMill
+						 || $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_kMill )
 			  )
 			{
 
@@ -185,12 +183,10 @@ sub SetLayers {
 
 			}
 			elsif (
-				$l->{"type"}
-				&& (
-					 $l->{"type"}    eq EnumsGeneral->LAYERTYPE_nplt_nMill
-					 || $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_rsMill 
-					 || $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_kMill
-				)
+					$l->{"type"}
+					&& (    $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_nMill
+						 || $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_rsMill
+						 || $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_kMill )
 			  )
 			{
 
@@ -209,7 +205,18 @@ sub SetColors {
 
 	foreach my $l ( @{ $self->{"layers"} } ) {
 
-		$l->SetColor( $colors->{ $l->GetType() } );
+		my $inf = $colors->{ $l->GetType() };
+
+		if ( $inf->{"Type"} eq Enums->Surface_TEXTURE ) {
+
+			$l->SetTexture( $inf->{"Val"} );
+		}
+		elsif ( $inf->{"Type"} eq Enums->Surface_COLOR ) {
+			
+			$l->SetColor( $inf->{"Val"} );
+		}
+		
+		$l->SetBrightness( $inf->{"Brightness"} );
 	}
 }
 

@@ -21,5 +21,16 @@ use constant {
 
 };
  
+use constant {
+	Surface_COLOR => "color",
+	Surface_TEXTURE => "texture" 
+}; 
+ 
+use constant {
+	Texture_GOLD => "gold",
+	Texture_CHEMTINALU => "chemtin_alu",
+	Texture_CU => "cu",
+	Texture_HAL => "hal"
+}; 
 
 1;

@@ -52,8 +52,6 @@ sub __PrepareBaseLayerData {
 
 	# prepare non  NC layers
 	@layers = grep { $_->{"gROWlayer_type"} ne "rout" && $_->{"gROWlayer_type"} ne "drill" } @layers;
-	
-	 
 
 	foreach my $l (@layers) {
 
@@ -115,30 +113,34 @@ sub __PrepareNCLayerData {
 		my $allL = $self->{"layers"};
 
 		for ( my $i = 0 ; $i < scalar( $self->{"layers"} ) ; $i++ ) {
-				
-				my $l = @{$self->{"layers"}}[$i];
 
-			if ($l == $dataWithRs ) {
+			my $l = @{ $self->{"layers"} }[$i];
+
+			if ( $l == $dataWithRs ) {
 				splice @{ $self->{"layers"} }, $i, 1;
 				last;
 			}
 
 		}
- 
+
 	}
 
 	# add drill map layers
 
 	foreach my $l (@layers) {
 
-		if ( ( $l->{"gROWlayer_type"} ne "drill" || $l->{"gROWlayer_type"} ne "rout" ) && $l->{"fHist"} && $l->{"fHist"}->{"pad"} > 0 ) {
- 
+		if (    ( $l->{"gROWlayer_type"} ne "drill" || $l->{"gROWlayer_type"} ne "rout" )
+			 && $l->{"fHist"}
+			 && ( $l->{"fHist"}->{"pad"} > 0 || $l->{"fHist"}->{"line"} > 0 )
+			 &&  $l->{"gROWname"} ne "score")
+		{
+
 			my $enTit = "Drill map: " . ValueConvertor->GetJobLayerTitle($l);
 			my $czTit = "Mapa vrtání: " . ValueConvertor->GetJobLayerTitle( $l, 1 );
 			my $enInf = "Units [mm] " . ValueConvertor->GetJobLayerInfo($l);
 			my $czInf = "Jednotky [mm] " . ValueConvertor->GetJobLayerInfo( $l, 1 );
 
-			 my $lData = LayerData->new( Enums->LayerData_DRILLMAP, $enTit, $czTit, $enInf, $czInf );
+			my $lData = LayerData->new( Enums->LayerData_DRILLMAP, $enTit, $czTit, $enInf, $czInf );
 
 			$lData->AddSingleLayer($l);
 
@@ -217,8 +219,8 @@ sub GetPageData {
 		if ($lData) {
 			my @singleLayers = $lData->GetSingleLayers();
 
-			my $tit = $lData->GetTitle( $self->{"lang"} ) ;
-			my $inf =$lData->GetInfo( $self->{"lang"} ) ;
+			my $tit = $lData->GetTitle( $self->{"lang"} );
+			my $inf = $lData->GetInfo( $self->{"lang"} );
 
 			my %inf = ( "title" => $tit, "info" => $inf );
 			push( @data, \%inf );

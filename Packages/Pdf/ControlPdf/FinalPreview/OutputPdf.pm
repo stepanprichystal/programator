@@ -38,7 +38,7 @@ sub new {
 	$self->{"jobId"}    = shift;
 	$self->{"pdfStep"}  = shift;
 
-	$self->{"outputPath"} = EnumsPaths->Client_INCAMTMPOTHER . GeneralHelper->GetGUID() . ".jpg";
+	$self->{"outputPath"} = EnumsPaths->Client_INCAMTMPOTHER . GeneralHelper->GetGUID() . ".jpeg";
 
 	return $self;
 }
@@ -50,7 +50,7 @@ sub Output {
 	$self->__PrepareLayers($layerList);
 	$self->__OptimizeLayers($layerList);
 	$self->__OutputPdf($layerList);
- 
+
 }
 
 sub GetOutput {
@@ -62,7 +62,7 @@ sub GetOutput {
 sub __OutputPdf {
 	my $self      = shift;
 	my $layerList = shift;
-	
+
 	my $result = 1;
 
 	my $inCAM = $self->{"inCAM"};
@@ -144,7 +144,6 @@ sub __OutputPdf {
 	my $layerStr2 = join( " ", @layerStr2 );
 
 	my $outputTmp = EnumsPaths->Client_INCAMTMPOTHER . GeneralHelper->GetGUID() . ".jpg";
-  
 
 	my @cmd = ( EnumsPaths->InCAM_3rdScripts . "im\\convert.exe" );
 	push( @cmd, $layerStr2 );
@@ -157,7 +156,6 @@ sub __OutputPdf {
 	my $cmdStr = join( " ", @cmd );
 
 	my $systeMres = system($cmdStr);
- 
 
 	# Adjust image to ratio 3:5
 
@@ -209,7 +207,6 @@ sub __OutputPdf {
 	my $cmdStr2 = join( " ", @cmd2 );
 
 	my $systeMres2 = system($cmdStr2);
- 
 
 	foreach my $l (@layers) {
 		if ( -e $dirPath . $l->GetOutputLayer() . ".png" ) {
@@ -223,7 +220,6 @@ sub __OutputPdf {
 	rmdir($dirPath);
 
 	unlink($outputTmp);
- 
 
 }
 
@@ -236,50 +232,118 @@ sub __CreatePng {
 
 	my @threads;
 	$self->{"inCAM"}->{"childThread"} = 1;
+	
+	my @fileToDel = ();
 
 	foreach my $l (@layers) {
 
 		# merge all png to one
 		my $result = 1;
 
-		#		c: \Export \report > convert -density 300 test . pdf -shave 20 x 20 -trim -shave 5 x 5 + l evel-colors green,
-		#		white -fuzz 20 % -transparent white result . png
-		#
-		#		  c : \Export \report > convert -density 300 test . pdf -shave 20 x 20 -trim -shave 5 x 5 + l evel-colors green,
-		#		white -alpha on -channel a -evaluate set 50 % -fuzz 50 % -trans parent white result2 . png
+		my @cmds = ();
+		
+		# get brightness
+		
+		my $brightness = "";
+		$brightness = " -brightness-contrast ".$l->GetBrightness() if(defined $l->GetBrightness());
+		
 
-		my $backg = "white";
+		if ( defined $l->GetTexture()) {
+ 
+			my $texturPath = GeneralHelper->Root()."\\Resources\\Textures\\".$l->GetTexture().".jpeg";
 
-		if ( $l->GetTransparency() < 100 && $l->GetColor() eq "250,250,250" ) {
-			$backg = "orange";
-		}
+			# 1 cast
+			
+			my $tmpImg = EnumsPaths->Client_INCAMTMPOTHER . GeneralHelper->GetGUID() . ".png";
+			
+			push(@fileToDel, $tmpImg);
 
-		my @cmd = ( EnumsPaths->InCAM_3rdScripts . "im\\convert.exe" );
-		push( @cmd, "-density 300" );
+			my @cmd1 = ( EnumsPaths->InCAM_3rdScripts . "im\\convert.exe" );
+			push( @cmd1, "-resize 3000 -density 300" );
 
-		#push( @cmd, "-transparent white" );
-		push( @cmd, $dirPath . $l->GetOutputLayer() . ".pdf" );
-		push( @cmd, "-shave 20x20 -trim -shave 5x5" );
-		push( @cmd, "+level-colors " . $self->__ConvertColor( $l->GetColor(), ) . ",$backg" );
+			#push( @cmd, "-transparent white" );
+			push( @cmd1, $dirPath . $l->GetOutputLayer() . ".pdf" );
+			push( @cmd1, "-flatten -fuzz 30% -transparent black $tmpImg" );
 
-		if ( $l->GetTransparency() < 100 ) {
+			my $cmdStr = join( " ", @cmd1 );
+			#my $systeMres = system($cmdStr_);
+			push(@cmds, $cmdStr);
+ 
+			# 2 cast
 
-			push( @cmd, "-alpha on -channel a -evaluate set " . $l->GetTransparency() . "%" );
-			push( @cmd, "-fuzz 30% -transparent $backg" );
+			my @cmd = ( EnumsPaths->InCAM_3rdScripts . "im\\convert.exe" );
+			push( @cmd, "$texturPath $tmpImg -flatten  -transparent white" );
+			push( @cmd, "-shave 20x20 -trim -shave 5x5" );
+			push( @cmd, $brightness );
+			#push( @cmd, "-transparent white" );
+			my $pngOutput = $dirPath . $l->GetOutputLayer() . ".pdf";
+			$pngOutput =~ s/pdf/png/;
+			push( @cmd, $pngOutput );
+
+ 
+			my $cmdStr2 = join( " ", @cmd );
+			push(@cmds, $cmdStr2);
 
 		}
 		else {
-			push( @cmd, "-transparent $backg" );
+
+			#		c: \Export \report > convert -density 300 test . pdf -shave 20 x 20 -trim -shave 5 x 5 + l evel-colors green,
+			#		white -fuzz 20 % -transparent white result . png
+			#
+			#		  c : \Export \report > convert -density 300 test . pdf -shave 20 x 20 -trim -shave 5 x 5 + l evel-colors green,
+			#		white -alpha on -channel a -evaluate set 50 % -fuzz 50 % -trans parent white result2 . png
+
+			my $flatten = "";
+			$flatten = "-flatten" if($l->GetType() eq Enums->Type_MASK);
+
+			my $backg = "white";
+
+			if ( $l->GetTransparency() < 100 && $l->GetColor() eq "250,250,250" ) {
+				$backg = "orange";
+			}
+
+			my @cmd = ( EnumsPaths->InCAM_3rdScripts . "im\\convert.exe" );
+			push( @cmd, "-resize 3000 -density 300" );
+
+			
+
+			#push( @cmd, "-transparent white" );
+			push( @cmd, $dirPath . $l->GetOutputLayer() . ".pdf" );
+			
+			push( @cmd, "$flatten -shave 20x20 -trim -shave 5x5" );
+			push( @cmd, "+level-colors " . $self->__ConvertColor( $l->GetColor(), ) . ",$backg" );
+
+			if ( $l->GetTransparency() < 100 ) {
+
+				push( @cmd, "-alpha on -channel a -evaluate set " . $l->GetTransparency() . "%" );
+				push( @cmd, "-fuzz 30% -transparent $backg" );
+
+			}
+			else {
+				push( @cmd, "-transparent $backg" );
+
+			}
+
+			#smayat
+			#		if($l->GetType() eq Enums->Type_OUTERCU){
+			#			push( @cmd, "+noise Gaussian -evaluate add 5% -blur 0x0.5" );
+			#		}
+			#
+			#		if($l->GetType() eq Enums->Type_MASK){
+			#			push( @cmd, "+noise Gaussian -evaluate add 5% -blur 0x1.2" );
+			#		}
+			push( @cmd, $brightness );
+
+			my $pngOutput = $dirPath . $l->GetOutputLayer() . ".pdf";
+			$pngOutput =~ s/pdf/png/;
+			push( @cmd, $pngOutput );
+
+			my $cmdStr = join( " ", @cmd );
+			push(@cmds, $cmdStr);
 
 		}
 
-		my $pngOutput = $dirPath . $l->GetOutputLayer() . ".pdf";
-		$pngOutput =~ s/pdf/png/;
-		push( @cmd, $pngOutput );
-
-		my $cmdStr = join( " ", @cmd );
-
-		my $thr1 = threads->create( sub { $self->__ConvertToPng($cmdStr) } );
+		my $thr1 = threads->create( sub { $self->__ConvertToPng(\@cmds) } );
 
 		push( @threads, $thr1 );
 		print STDERR "threat created \n";
@@ -288,6 +352,14 @@ sub __CreatePng {
 
 	foreach (@threads) {
 		$_->join();
+	}
+	
+	foreach my $f (@fileToDel){
+		
+		if(-e $f){
+			unlink($f);
+		}
+		
 	}
 
 	$self->{"inCAM"}->{"childThread"} = 0;
@@ -298,10 +370,14 @@ sub __CreatePng {
 
 sub __ConvertToPng {
 	my $self = shift;
-	my $cmd  = shift;
-
-	my $systeMres = system($cmd);
-
+	my @cmds  = @{shift(@_)};
+	
+	foreach my $cmd (@cmds){
+		
+		my $systeMres = system($cmd);
+		
+	}
+ 
 }
 
 sub __SplitMultiPdf {
@@ -359,7 +435,7 @@ sub __OptimizeLayers {
 	my $lName = GeneralHelper->GetGUID();
 
 	# create border around profile
-	$inCAM->COM( "profile_to_rout", "layer" => $lName, "width" => "100" );
+	$inCAM->COM( "profile_to_rout", "layer" => $lName, "width" => "10" );
 	CamLayer->WorkLayer( $inCAM, $lName );
 
 	# copy border to all output layers
@@ -387,10 +463,10 @@ sub __OptimizeLayers {
 				 "layers_mode" => "affected_layers",
 				 "layer"       => "",
 				 "area"        => "profile",
-				 "area_type"   => "rectangle",
+				 #"area_type"   => "rectangle",
 				 "inout"       => "outside",
 				 "contour_cut" => "yes",
-				 "margin"      => "-5",
+				 "margin"      => "-2",
 				 "feat_types"  => "line\;pad;surface;arc;text",
 				 "pol_types"   => "positive\;negative"
 	);
@@ -525,15 +601,13 @@ sub __PrepareMASK {
 		$layer->SetOutputLayer($lName);
 
 		#if white, opaque high
-		if($layer->GetColor() eq "250,250,250"){
-					$layer->SetTransparency(92);
-		}else{
-					$layer->SetTransparency(80);
+		if ( $layer->GetColor() eq "250,250,250" ) {
+			$layer->SetTransparency(92);
+		}
+		else {
+			$layer->SetTransparency(80);
 		}
 
-
-		
-		
 	}
 }
 
