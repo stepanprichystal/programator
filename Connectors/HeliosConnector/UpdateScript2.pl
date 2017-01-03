@@ -9,25 +9,33 @@ use strict;
 use warnings;
 
 #necessary for load pall packages
-#use FindBin;
-#use lib "$FindBin::Bin/../";
-#use PackagesLib;
-#
-#use lib qw( C:\Perl\site\lib\TpvScripts\Scripts );
+use FindBin;
+use lib "$FindBin::Bin/../";
+use PackagesLib;
+
+use lib qw( C:\Perl\site\lib\TpvScripts\Scripts );
 
 use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'Helpers::FileHelper';
 
-print STDERR "Su yze3e";
-
-my $output = shift(@_); # save here output message
 my $methodName = shift(@_);
 
-my @params = ();
+my @paramFiles = ();
 while ( my $p = shift(@_) ) {
 
-	push( @params, $p );
-	print STDERR $p."\n";
+	push( @paramFiles, $p );
+
+}
+
+# convert file to variale
+my @params = ();
+foreach my $f (@paramFiles) {
+
+	if ( -e $f ) {
+
+		push( @params, FileHelper->ReadAsString($f) );
+		unlink($f);
+	}
 }
 
 my $result = 1;
@@ -56,9 +64,8 @@ elsif ( $methodName eq "UpdatePcbOrderState" ) {
 	}
 
 }
- 
 
-1;
+exit($result);
 
 #unlink $infoStrPath;
 

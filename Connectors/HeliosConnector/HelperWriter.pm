@@ -48,6 +48,8 @@ sub OnlineWrite_order {
 		die HeliosException->new( EnumsErrors->HELIOSDBWRITEERROR , "No details");
 	}
 
+	undef $service;
+
 	return $result;
 }
 

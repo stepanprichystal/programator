@@ -29,11 +29,9 @@ use aliased 'Programs::Exporter::ExportUtility::ExportUtility::JobWorkerClass';
 use aliased 'Programs::Exporter::ExportUtility::Enums';
 use aliased 'Packages::InCAM::InCAM';
 
-
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
-
 
 sub new {
 
@@ -64,7 +62,6 @@ sub new {
 	return $self;
 }
 
-
 # ========================================================================================== #
 # WORER METHOD - THIS METHOD IS PROCESS ASYNCHRONOUSLY IN CHILD THREAD
 # ========================================================================================== #
@@ -78,12 +75,10 @@ sub JobWorker {
 	my $THREAD_PROGRESS_EVT : shared = ${ shift(@_) };
 	my $THREAD_MESSAGE_EVT : shared  = ${ shift(@_) };
 
-
 	#GetExportClass
 	my $task        = $self->__GetTaskById($taskId);
 	my %exportClass = $task->{"units"}->GetExportClass();
 	my $exportData  = $task->GetExportData();
-
 
 	my $jobExport = JobWorkerClass->new( \$THREAD_PROGRESS_EVT, \$THREAD_MESSAGE_EVT, $self->{"form"}->{"mainFrm"} );
 	$jobExport->Init( $pcbId, $taskId, $inCAM, \%exportClass, $exportData );
@@ -121,7 +116,6 @@ sub __OnJobStateChanged {
 	elsif ( $taskState eq EnumsMngr->JobState_RUNNING ) {
 
 		$status = "Running...";
-		
 
 	}
 	elsif ( $taskState eq EnumsMngr->JobState_ABORTING ) {
@@ -143,8 +137,7 @@ sub __OnJobStateChanged {
 			$aborted = 1;
 
 			$status = "Job export aborted by user.";
-			
-			 
+
 		}
 		else {
 
@@ -169,8 +162,6 @@ sub __OnJobStateChanged {
 			# refresh GUI to produce
 			$self->{"form"}->SetJobItemToProduceResult($task);
 		}
-		
-
 
 	}
 
@@ -234,7 +225,7 @@ sub __OnJobMessageEvtHandler {
 		# Update data model
 
 		$task->ProcessGroupResult($data);
-		
+
 		# Refresh GUI - group table
 
 		$self->{"form"}->RefreshGroupTable($task);
@@ -294,7 +285,7 @@ sub __OnRemoveJobClick {
 
 		#if ok, make space for new client (child process)
 		if ($pidServer) {
-			
+
 			$inCAM->CloseServer();
 		}
 
@@ -316,7 +307,7 @@ sub __OnToProduceClick {
 
 	my $messMngr = $self->{"form"}->{"messageMngr"};
 	my @mess     = ();
- 
+
 	$task->SetToProduceResult();
 	$self->{"form"}->SetJobItemToProduceResult($task);
 
@@ -354,6 +345,27 @@ sub __OnToProduceClick {
 	# get results, set gui
 }
 
+sub __OnCloseExporter {
+	my $self = shift;
+
+	# All jobs should be DONE in this time
+
+	# find if some jobs (in synchronous mode) are in queue
+	# if so remove them in order do incam editor free
+	foreach my $task ( @{ $self->{"tasks"} } ) {
+
+		my $exportData = $task->GetExportData();
+
+		if ( $exportData->GetExportMode() eq EnumsTransfer->ExportMode_SYNC ) {
+
+			$self->__OnRemoveJobClick( $task->GetTaskId());
+		}
+	}
+
+}
+
+#update gui
+
 # Handler responsible for reading DIR which contain files with export settings
 # Take every file only once, then delete it
 sub __CheckFilesHandler {
@@ -385,7 +397,7 @@ sub __CheckFilesHandler {
 		my $cnt = scalar( grep { $_->{"name"} eq $fileName && $_->{"created"} == $fileCreated } @actFiles );
 
 		unless ($cnt) {
-			
+
 			my %newFile = ( "name" => $fileName, "path" => $filePath, "created" => $fileCreated );
 			push( @newFiles, \%newFile );
 		}
@@ -401,11 +413,11 @@ sub __CheckFilesHandler {
 
 			my $dataTransfer = DataTransfer->new( $jobId, EnumsTransfer->Mode_READ );
 			my $exportData = $dataTransfer->GetExportData();
-			
+
 			my $f = EnumsPaths->Client_EXPORTFILES . $jobId;
-			
-			copy($f, EnumsPaths->Client_EXPORTFILES ."backup\\". $jobId); # do backup
-			
+
+			copy( $f, EnumsPaths->Client_EXPORTFILES . "backup\\" . $jobId );    # do backup
+
 			unlink($f);
 
 			$self->__AddNewJob( $jobId, $exportData );
@@ -485,6 +497,8 @@ sub __SetHandlers {
 	$self->{"form"}->{'onClick'}->Add( sub     { $self->__OnClick(@_) } );
 	$self->{"form"}->{'onToProduce'}->Add( sub { $self->__OnToProduceClick(@_) } );
 	$self->{"form"}->{'onRemoveJob'}->Add( sub { $self->__OnRemoveJobClick(@_) } );
+
+	$self->{"form"}->{'onJomMngrClose'}->Add( sub { $self->__OnCloseExporter(@_) } );
 
 	# Set worker method
 	$self->{"form"}->_SetThreadWorker( sub { $self->JobWorker(@_) } );

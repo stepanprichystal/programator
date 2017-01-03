@@ -37,6 +37,7 @@ sub OnGetGroupState {
 	my $self     = shift;
 	my $dataMngr = shift;    #instance of GroupDataMngr
 
+ 
 	#we want nif group allow always, so return ACTIVE ON
 	return Enums->GroupState_ACTIVEON;
 

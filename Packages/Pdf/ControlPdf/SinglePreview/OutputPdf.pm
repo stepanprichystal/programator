@@ -284,12 +284,16 @@ sub __OutputRawPdf {
 #my $str = '5D032ED7-6CCB-1014-ACAE-F93E6DB4D31D\;5D080830-6CCB-1014-ACAE-F93E6DB4D31D\;5D0B5C4D-6CCB-1014-ACAE-F93E6DB4D31D\;5D1003CF-6CCB-1014-ACAE-F93E6DB4D31D\;5D1316DD-6CCB-1014-ACAE-F93E6DB4D31D\;5D164EAA-6CCB-1014-ACAE-F93E6DB4D31D\;5D1AB504-6CCB-1014-ACAE-F93E6DB4D31D\;5D1CD02A-6CCB-1014-ACAE-F93E6DB4D31D\;5D1EFEC3-6CCB-1014-ACAE-F93E6DB4D31D\;5D212CDD-6CCB-1014-ACAE-F93E6DB4D31D\;5D232E19-6CCB-1014-ACAE-F93E6DB4D31D\;5D25A1B2-6CCB-1014-ACAE-F93E6DB4D31D\;5D27CD6C-6CCB-1014-ACAE-F93E6DB4D31D\;5D2A27C2-6CCB-1014-ACAE-F93E6DB4D31D\;5D2C27A7-6CCB-1014-ACAE-F93E6DB4D31D\;5D2E0580-6CCB-1014-ACAE-F93E6DB4D31D\;5D2F8DBF-6CCB-1014-ACAE-F93E6DB4D31D\;5D316CAE-6CCB-1014-ACAE-F93E6DB4D31D\;5D3354FB-6CCB-1014-ACAE-F93E6DB4D31D\;5D358317-6CCB-1014-ACAE-F93E6DB4D31D\;5D3764D1-6CCB-1014-ACAE-F93E6DB4D31D\;5D396710-6CCB-1014-ACAE-F93E6DB4D31D\;5D3B4654-6CCB-1014-ACAE-F93E6DB4D31D';
 	$outputPdf =~ s/\\/\//g;
 
+
+	 
+
+
 	$inCAM->COM(
 		'print',
 
 		#title             => '',
 
-		layer_name        => $layerStr,
+		layer_name        => "$layerStr",
 		mirrored_layers   => '',
 		draw_profile      => 'yes',
 		drawing_per_layer => 'yes',
@@ -503,7 +507,7 @@ sub __PrepareSTANDARD {
 	my $layerData = shift;
 
 	my $inCAM = $self->{"inCAM"};
-	my $lName = GeneralHelper->GetGUID();
+	my $lName = GeneralHelper->GetNumUID();
 	$inCAM->COM( 'create_layer', layer => $lName, context => 'misc', type => 'document', polarity => 'positive', ins_layer => '' );
 
 	foreach my $sL ( $layerData->GetSingleLayers() ) {
@@ -534,7 +538,7 @@ sub __PrepareDRILLMAP {
 	my $layerData = shift;
 
 	my $inCAM = $self->{"inCAM"};
-	my $lName = GeneralHelper->GetGUID();
+	my $lName = GeneralHelper->GetNumUID();
 
 	my @singleL = $layerData->GetSingleLayers();
 	my $sL      = $singleL[0];

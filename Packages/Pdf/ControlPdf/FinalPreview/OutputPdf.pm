@@ -23,6 +23,7 @@ use aliased 'CamHelpers::CamJob';
 use aliased 'CamHelpers::CamToolDepth';
 use aliased 'CamHelpers::CamFilter';
 use aliased 'Enums::EnumsGeneral';
+use aliased 'Packages::SystemCall::SystemCall';
 
 #-------------------------------------------------------------------------------------------#
 #  Interface
@@ -230,9 +231,10 @@ sub __CreatePng {
 
 	my @layers = $layerList->GetLayers(1);
 
-	my @threads;
+	#my @threads;
+	my @allCmds = ();
 	$self->{"inCAM"}->{"childThread"} = 1;
-	
+
 	my @fileToDel = ();
 
 	foreach my $l (@layers) {
@@ -241,48 +243,66 @@ sub __CreatePng {
 		my $result = 1;
 
 		my @cmds = ();
-		
-		# get brightness
-		
-		my $brightness = "";
-		$brightness = " -brightness-contrast ".$l->GetBrightness() if(defined $l->GetBrightness());
-		
 
-		if ( defined $l->GetTexture()) {
- 
-			my $texturPath = GeneralHelper->Root()."\\Resources\\Textures\\".$l->GetTexture().".jpeg";
+		# get brightness
+
+		my $brightness = "";
+		$brightness = " -brightness-contrast " . $l->GetBrightness() if ( defined $l->GetBrightness() );
+
+		if ( defined $l->GetTexture() ) {
+
+			my $backg = "black";
+
+			if ( $l->GetTexture() eq Enums->Texture_GOLD ) {
+
+				$backg = "gold3";
+			}
+			elsif ( $l->GetTexture() eq Enums->Texture_CU ) {
+
+				$backg = "tan2";
+			}
+			elsif ( $l->GetTexture() eq Enums->Texture_CHEMTINALU || $l->GetTexture() eq Enums->Texture_HAL ) {
+
+				$backg = "snow3";
+			}
+
+			my $texturPath = GeneralHelper->Root() . "\\Resources\\Textures\\" . $l->GetTexture() . ".jpeg";
 
 			# 1 cast
-			
+
 			my $tmpImg = EnumsPaths->Client_INCAMTMPOTHER . GeneralHelper->GetGUID() . ".png";
-			
-			push(@fileToDel, $tmpImg);
+
+			push( @fileToDel, $tmpImg );
 
 			my @cmd1 = ( EnumsPaths->InCAM_3rdScripts . "im\\convert.exe" );
 			push( @cmd1, "-resize 3000 -density 300" );
 
 			#push( @cmd, "-transparent white" );
 			push( @cmd1, $dirPath . $l->GetOutputLayer() . ".pdf" );
-			push( @cmd1, "-flatten -fuzz 30% -transparent black $tmpImg" );
-
+			push( @cmd1, "-flatten  +level-colors $backg," );
+			push( @cmd1, "-fuzz 20% -transparent $backg $tmpImg" );
+			#push( @cmd1, "-flatten  -fuzz 30% -transparent black $tmpImg" );
 			my $cmdStr = join( " ", @cmd1 );
+
 			#my $systeMres = system($cmdStr_);
-			push(@cmds, $cmdStr);
- 
+			push( @cmds, $cmdStr );
+
 			# 2 cast
 
 			my @cmd = ( EnumsPaths->InCAM_3rdScripts . "im\\convert.exe" );
 			push( @cmd, "$texturPath $tmpImg -flatten  -transparent white" );
 			push( @cmd, "-shave 20x20 -trim -shave 5x5" );
 			push( @cmd, $brightness );
+
 			#push( @cmd, "-transparent white" );
 			my $pngOutput = $dirPath . $l->GetOutputLayer() . ".pdf";
 			$pngOutput =~ s/pdf/png/;
 			push( @cmd, $pngOutput );
 
- 
 			my $cmdStr2 = join( " ", @cmd );
-			push(@cmds, $cmdStr2);
+			push( @cmds, $cmdStr2 );
+			
+			push( @allCmds, \@cmds );
 
 		}
 		else {
@@ -294,7 +314,7 @@ sub __CreatePng {
 			#		white -alpha on -channel a -evaluate set 50 % -fuzz 50 % -trans parent white result2 . png
 
 			my $flatten = "";
-			$flatten = "-flatten" if($l->GetType() eq Enums->Type_MASK);
+			$flatten = "-flatten" if ( $l->GetType() eq Enums->Type_MASK );
 
 			my $backg = "white";
 
@@ -305,11 +325,9 @@ sub __CreatePng {
 			my @cmd = ( EnumsPaths->InCAM_3rdScripts . "im\\convert.exe" );
 			push( @cmd, "-resize 3000 -density 300" );
 
-			
-
 			#push( @cmd, "-transparent white" );
 			push( @cmd, $dirPath . $l->GetOutputLayer() . ".pdf" );
-			
+
 			push( @cmd, "$flatten -shave 20x20 -trim -shave 5x5" );
 			push( @cmd, "+level-colors " . $self->__ConvertColor( $l->GetColor(), ) . ",$backg" );
 
@@ -339,27 +357,41 @@ sub __CreatePng {
 			push( @cmd, $pngOutput );
 
 			my $cmdStr = join( " ", @cmd );
-			push(@cmds, $cmdStr);
+			push( @cmds, $cmdStr );
+			
+		    push( @allCmds, \@cmds );
 
 		}
 
-		my $thr1 = threads->create( sub { $self->__ConvertToPng(\@cmds) } );
+		 # $self->__ConvertToPng( \@cmds )  ;
 
-		push( @threads, $thr1 );
+		#my $thr1 = threads->create( sub { $self->__ConvertToPng( \@cmds ) } );
+
+		#push( @threads, $thr1 );
 		print STDERR "threat created \n";
 
 	}
-
-	foreach (@threads) {
-		$_->join();
+	
+ 	my $script =  GeneralHelper->Root() . "\\Packages\\Pdf\\ControlPdf\\FinalPreview\\CreatePng.pl";
+	
+	my $createPngCall = SystemCall->new($script, \@allCmds);
+	unless($createPngCall->Run()){
+		
+		die "When convert pdf to png.\n";
 	}
 	
-	foreach my $f (@fileToDel){
-		
-		if(-e $f){
+
+#	foreach (@threads) {
+#
+#		$_->join();
+#	}
+
+	foreach my $f (@fileToDel) {
+
+		if ( -e $f ) {
 			unlink($f);
 		}
-		
+
 	}
 
 	$self->{"inCAM"}->{"childThread"} = 0;
@@ -370,14 +402,14 @@ sub __CreatePng {
 
 sub __ConvertToPng {
 	my $self = shift;
-	my @cmds  = @{shift(@_)};
-	
-	foreach my $cmd (@cmds){
-		
+	my @cmds = @{ shift(@_) };
+
+	foreach my $cmd (@cmds) {
+
 		my $systeMres = system($cmd);
-		
+
 	}
- 
+
 }
 
 sub __SplitMultiPdf {
@@ -459,16 +491,17 @@ sub __OptimizeLayers {
 
 	# clip area around profile
 	$inCAM->COM(
-				 "clip_area_end",
-				 "layers_mode" => "affected_layers",
-				 "layer"       => "",
-				 "area"        => "profile",
-				 #"area_type"   => "rectangle",
-				 "inout"       => "outside",
-				 "contour_cut" => "yes",
-				 "margin"      => "-2",
-				 "feat_types"  => "line\;pad;surface;arc;text",
-				 "pol_types"   => "positive\;negative"
+		"clip_area_end",
+		"layers_mode" => "affected_layers",
+		"layer"       => "",
+		"area"        => "profile",
+
+		#"area_type"   => "rectangle",
+		"inout"       => "outside",
+		"contour_cut" => "yes",
+		"margin"      => "-2",
+		"feat_types"  => "line\;pad;surface;arc;text",
+		"pol_types"   => "positive\;negative"
 	);
 	$inCAM->COM( "affected_layer", "mode" => "all", "affected" => "no" );
 	$inCAM->COM( 'delete_layer', "layer" => $lName );

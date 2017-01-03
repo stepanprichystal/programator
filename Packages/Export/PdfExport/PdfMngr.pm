@@ -39,6 +39,8 @@ sub new {
 	$self->{"controlLang"}   = shift;
 	$self->{"exportStackup"} = shift;
 
+	$self->{"layerCnt"} = CamJob->GetSignalLayerCnt( $self->{'inCAM'}, $self->{'jobId'} );
+
 	return $self;
 }
 
@@ -74,17 +76,20 @@ sub __ExportDataControl {
 
 	# 1) Create stackup
 
-	my $resultStackup = $self->_GetNewItem( "Preview stackup", "Control pdf" );
+	if ( $self->{"layerCnt"} > 2 ) {
 
-	my $mess1   = "";
-	my $result1 = $controlPdf->CreateStackup( \$mess1 );
+		my $resultStackup = $self->_GetNewItem( "Preview stackup", "Control pdf" );
 
-	unless ($result1) {
-		$resultStackup->AddError($mess1);
+		my $mess1   = "";
+		my $result1 = $controlPdf->CreateStackup( \$mess1 );
+
+		unless ($result1) {
+			$resultStackup->AddError($mess1);
+		}
+
+		$self->_OnItemResult($resultStackup);
 	}
-
-	$self->_OnItemResult($resultStackup);
-
+	
 	# 2) Create preview top
 
 	my $resultPreviewTop = $self->_GetNewItem( "Preview top", "Control pdf" );
@@ -159,39 +164,31 @@ sub __ExportStackup {
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
 
-
-
-
 	my $stackup      = StackupPdf->new( $self->{"jobId"} );
 	my $resultCreate = $stackup->Create();
 
-
-
 	my $tmpPath = $stackup->GetStackupPath();
-	my $pdfPath = JobHelper->GetJobArchive($jobId) . "pdf/" . $jobId . "-cm.pdf"; 
-	 
-	# create folder 
-	unless(-e JobHelper->GetJobArchive($jobId) . "pdf"){
-			mkdir(JobHelper->GetJobArchive($jobId) . "pdf");
-	 } 
-	 
-	 
-	 if ( -e $pdfPath ) {
-		unlink ($pdfPath);
-	 }
- 
-	 copy( $tmpPath, $pdfPath ) or die "Copy failed: $!";
-	 
-	 
-	 my $resultStackup = $self->_GetNewItem( "Stackup pdf");	 
-	 
-	unless($resultCreate){
+	my $pdfPath = JobHelper->GetJobArchive($jobId) . "pdf/" . $jobId . "-cm.pdf";
+
+	# create folder
+	unless ( -e JobHelper->GetJobArchive($jobId) . "pdf" ) {
+		mkdir( JobHelper->GetJobArchive($jobId) . "pdf" );
+	}
+
+	if ( -e $pdfPath ) {
+		unlink($pdfPath);
+	}
+
+	copy( $tmpPath, $pdfPath ) or die "Copy failed: $!";
+
+	my $resultStackup = $self->_GetNewItem("Stackup pdf");
+
+	unless ($resultCreate) {
 		$resultStackup->AddError("Failed to create pdf stackup");
 	}
- 
 
 	$self->_OnItemResult($resultStackup);
-  
+
 }
 
 sub ExportItemsCount {

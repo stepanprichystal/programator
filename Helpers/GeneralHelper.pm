@@ -90,11 +90,29 @@ sub GetGUID {
 	my $guid = Data::GUID->new;
 
 	my $guidStr = $guid->as_string;
+	
+	
 
 	return $guidStr;
 
 	#return  int(rand(1000000000000000));
 
+}
+
+#Return unique Id
+sub GetNumUID {
+	my $self = shift;
+	my $length = shift;
+	
+	unless($length)
+	{
+		
+		$length = 10;
+	}
+
+ 
+	return  int(rand(10**$length));
+ 
 }
 
 #Trim whitespaces "\s"

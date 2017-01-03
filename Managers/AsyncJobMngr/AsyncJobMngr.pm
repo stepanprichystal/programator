@@ -75,6 +75,8 @@ sub new {
 	$self->{'onJobProgressEvt'}  = Event->new();
 	$self->{'onJobMessageEvt'}   = Event->new();
 	$self->{'onRunJobWorker'}    = Event->new();
+	
+	$self->{'onJomMngrClose'}    = Event->new(); # reise right imidiatelly before destroy this app
 
 	my $mainFrm = $self->__SetLayout( $parent, $title, $dimension );
 
@@ -483,6 +485,9 @@ sub __CloseActiveJobs {
 		$self->{"timerCloseJobs"}->Stop();
 		
 		print STDERR "Destroying main frame 1\n\n";
+		
+		$self->{'onJomMngrClose'}->Do();
+		
 		$frame->Destroy();
 		$self->ExitMainLoop(); # this line is necessery to console window was exited too
 	}
@@ -542,6 +547,8 @@ sub __OnClose {
 
 		# Close or servers, which are waiting or running
 		$self->{"serverMngr"}->SetDestroyOnDemand(0);
+		
+		$self->{'onJomMngrClose'}->Do();
  
 		$self->{"mainFrm"}->Destroy();
 		$self->ExitMainLoop(); # this line is necessery to console window was exited too

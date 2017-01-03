@@ -15,6 +15,7 @@ use Try::Tiny;
 use aliased 'Enums::EnumsGeneral';
 use aliased 'Enums::EnumsPaths';
 use aliased 'Connectors::HeliosConnector::HegMethods';
+
 use aliased 'Helpers::GeneralHelper';
 
 #-------------------------------------------------------------------------------------------#
@@ -291,19 +292,28 @@ sub UpdateNCInfo {
 		print STDERR "Update NC info 3.\n";
 		
 		# TODO this is temporary solution
-		my $path = GeneralHelper->Root() . "\\Connectors\\HeliosConnector\\UpdateScript.pl"; 
-		my $ncInfo = EnumsPaths->Client_INCAMTMPOTHER . GeneralHelper->GetGUID();
-		
-		print STDERR "path nc info is:".$ncInfo."\n\n";
-		print STDERR "path script is :".$path."\n\n";
-		my $f;
-		open($f, ">", $ncInfo);
-		print $f $infoStr;
-		close($f);
-		system("perl $path $jobId $ncInfo");
+#		my $path = GeneralHelper->Root() . "\\Connectors\\HeliosConnector\\UpdateScript.pl"; 
+#		my $ncInfo = EnumsPaths->Client_INCAMTMPOTHER . GeneralHelper->GetGUID();
+#		
+#		print STDERR "path nc info is:".$ncInfo."\n\n";
+#		print STDERR "path script is :".$path."\n\n";
+#		my $f;
+#		open($f, ">", $ncInfo);
+#		print $f $infoStr;
+#		close($f);
+#		system("perl $path $jobId $ncInfo");
 		# TODO this is temporary solution
 		
-#		HegMethods->UpdateNCInfo( $jobId, $infoStr );
+	
+		
+		$result = HegMethods->UpdateNCInfo( $jobId, $infoStr, 1 );
+		unless($result){
+			
+			$$errorMess = "Failed to update NC-info.";
+		}
+		
+		
+		#HegMethods->UpdateNCInfo( $jobId, $infoStr );
 		print STDERR "Update NC info 4.\n";
 	};
 	if ( my $e = $@ ) {

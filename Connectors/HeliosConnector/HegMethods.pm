@@ -20,6 +20,12 @@ use Try::Tiny;
 use aliased 'Connectors::HeliosConnector::Helper';
 use aliased 'Connectors::SqlParameter';
 use aliased 'Connectors::HeliosConnector::Enums';
+use aliased 'Connectors::HeliosConnector::HegMethodsThread';
+
+use aliased 'Helpers::GeneralHelper';
+use aliased 'Packages::SystemCall::SystemCall';
+use aliased 'Connectors::EnumsErrors';
+use aliased 'Packages::Exceptions::HeliosException';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -133,7 +139,7 @@ sub GetPcbName {
 }
 
 sub GetEmployyInfo {
-	my $self    = shift;
+	my $self     = shift;
 	my $userName = shift;
 
 	my @params = ( SqlParameter->new( "_LoginId", Enums->SqlDbType_VARCHAR, $userName ) );
@@ -663,7 +669,6 @@ sub GetCustomerInfo {
 	}
 }
 
-
 ##Return ID of customer
 sub GetIdcustomer {
 	my $self  = shift;
@@ -685,33 +690,87 @@ sub GetIdcustomer {
 	return $res;
 }
 
- 
-
 sub UpdateNCInfo {
-	my $self   = shift;
-	my $pcbId  = shift;
-	my $ncInfo = shift;
+	my $self        = shift;
+	my $pcbId       = shift;
+	my $ncInfo      = shift;
+	my $childThread = shift;
 
-	require Connectors::HeliosConnector::HelperWriter;
+	if ($childThread) {
 
-	my $res = Connectors::HeliosConnector::HelperWriter->OnlineWrite_pcb( "$pcbId", $ncInfo, "nc_info" );
+		my $result =  $self->__SystemCall( "UpdateNCInfo", $pcbId, $ncInfo );
 
-	return $res;
+		return $result;
+	}
+	else {
+
+		#use Connectors::HeliosConnector::HelperWriter;
+		require Connectors::HeliosConnector::HelperWriter;
+
+		my $res = Connectors::HeliosConnector::HelperWriter->OnlineWrite_pcb( "$pcbId", $ncInfo, "nc_info" );
+
+		return $res;
+	}
 
 }
 
 sub UpdatePcbOrderState {
-	my $self  = shift;
-	my $pcbId = shift;
-	my $state = shift;
+	my $self        = shift;
+	my $pcbId       = shift;
+	my $state       = shift;
+	my $childThread = shift;
 
-	require Connectors::HeliosConnector::HelperWriter;
+	 
+	
+	if ($childThread) {
+		 
+		my $result = $self->__SystemCall( "UpdatePcbOrderState", $pcbId, $state );
 
-	my $res = Connectors::HeliosConnector::HelperWriter->OnlineWrite_order( "$pcbId", $state, "aktualni_krok" );
+		return $result;
+	}
+	else {
+		 
+		require Connectors::HeliosConnector::HelperWriter;
 
-	return $res;
+		my $res = Connectors::HeliosConnector::HelperWriter->OnlineWrite_order( "$pcbId", $state, "aktualni_krok" );
+
+		return $res;
+	}
 
 }
+
+
+
+
+#-------------------------------------------------------------------------------------------#
+#  Helper method
+#-------------------------------------------------------------------------------------------#
+
+
+sub __SystemCall {
+	my $self       = shift;
+	my $methodName = shift;
+	my @params     = @_;
+
+
+
+   my $script =  GeneralHelper->Root() . "\\Connectors\\HeliosConnector\\UpdateScript.pl";
+	
+	my $systemCall = SystemCall->new($script, $methodName,  @params);
+	my $result = $systemCall->Run();
+
+	unless($result){
+		
+		my $out = $systemCall->GetOutput();
+		die HeliosException->new( EnumsErrors->HELIOSDBREADERROR, "no details" )
+	}
+
+
+ 
+	return $result;
+ 
+}
+
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
@@ -720,10 +779,12 @@ sub UpdatePcbOrderState {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	use aliased 'Connectors::HeliosConnector::HegMethods';
+		use aliased 'Connectors::HeliosConnector::HegMethods';
+	#
+		my $res = HegMethods->UpdateNCInfo( "f52456", "test1",1 );
+	#
+		print $res;
 
-	my %test = HegMethods->GetCustomerInfo("d38002");
-	 
 	#my $test = HegMethods->GetPcbName("f52456");
 
 	#
@@ -736,7 +797,6 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	#
 	#	my $test =  HegMethods->GetTpvCustomerNote("d06224");
 	#
-	print %test;
 
 }
 

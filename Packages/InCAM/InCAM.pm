@@ -348,6 +348,7 @@ sub sendCommandToPipe {
 	my $flush_status = $|;               # save the flushing status
 	$| = 1;                              # force flushing of the io buffer
 
+
 	print $DIR_PREFIX, "$commandType $command\n";
 	$| = $flush_status;                  # restore the original flush status
 	select($old_select);

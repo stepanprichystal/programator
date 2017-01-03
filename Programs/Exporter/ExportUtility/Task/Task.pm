@@ -316,7 +316,7 @@ sub SentToProduce {
 		my $orderRef = HegMethods->GetPcbOrderNumber( $self->{"jobId"} );
 		my $orderNum = $self->{"jobId"} . "-" . $orderRef;
 		
-		my $succ     = HegMethods->UpdatePcbOrderState( $orderNum, "HOTOVO-zadat" );
+		my $succ     = HegMethods->UpdatePcbOrderState( $orderNum, "HOTOVO-zadat");
 		
 	 
 		$self->{"exportStatus"}->DeleteStatusFile();

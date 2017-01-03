@@ -233,22 +233,32 @@ sub __DeletePdfStep {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
+
+ 
+
 	use aliased 'Packages::Pdf::ControlPdf::ControlPdf';
 	use aliased 'Packages::InCAM::InCAM';
 
 	my $inCAM = InCAM->new();
 
-	my $jobId = "f51305";
+	my $jobId = "f52456";
 	
 	my $mess = "";
  
-	my $control = ControlPdf->new( $inCAM, $jobId, "mpanel", "en" );
+ 
+ 
+ 
+ 
+ 
+	my $control = ControlPdf->new( $inCAM, $jobId, "o+1", "en" );
 	$control->Create();
-	$control->CreateStackup(\$mess);
+	#$control->CreateStackup(\$mess);
 	$control->CreatePreviewTop(\$mess);
-	$control->CreatePreviewBot(\$mess);		
-	$control->CreatePreviewSingle(\$mess);	
-	$control->GeneratePdf();
+	#$control->CreatePreviewBot(\$mess);		
+	#$control->CreatePreviewSingle(\$mess);	
+	#$control->GeneratePdf();
+		
+	
 	#$control->GetOutputPath();
 	
 }
