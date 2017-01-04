@@ -324,7 +324,7 @@ sub __OnClosePopupHandler {
 	$self->{"disableForm"} = 0;
 	$self->__RefreshForm();
 
-	$self->__CleanUpAndExitForm();
+	#$self->__CleanUpAndExitForm();
 
 }
 

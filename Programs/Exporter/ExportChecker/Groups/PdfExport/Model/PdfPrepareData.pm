@@ -43,6 +43,20 @@ sub OnGetGroupState {
 
 }
 
+
+# Method decide if group has to be exported, thus if is mandatory
+# Return enum: Enums->GroupMandatory_<NO/YES>
+sub OnGetGroupMandatory {
+	my $self     = shift;
+	my $dataMngr = shift;    #instance of GroupDataMngr
+
+ 
+	#we want nif group is not mandatory
+	return Enums->GroupMandatory_NO;
+
+}
+
+
 # Default "group data" are prepared in this method
 sub OnPrepareGroupData {
 	my $self     = shift;

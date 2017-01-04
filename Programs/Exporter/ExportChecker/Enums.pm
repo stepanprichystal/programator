@@ -17,7 +17,10 @@ use constant {
 };
 
 
-
+use constant {
+			   GroupMandatory_YES  => "groupMandatoryYes",
+			   GroupMandatory_NO => "groupMandatoryNo"
+};
 
 
 #

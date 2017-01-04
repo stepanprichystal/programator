@@ -271,26 +271,25 @@ sub GetActiveUnitsCnt {
 
 
 
-# Return units and its default state
-sub GetUnitsDefaultState {
+# Return units and info if group is mansatory
+sub GetUnitsMandatory {
 	my $self         = shift;
-	my $activeGroups = shift;
+	my $mandatory = shift;
 
-	my %units = ();
+	 
 
 	my @units = @{ $self->{"units"} };
 	
 	
-	if ($activeGroups) {
-		@units = grep { $_->GetGroupDefaultState() eq Enums->GroupState_ACTIVEON ||  $_->GetGroupDefaultState() eq Enums->GroupState_ACTIVEOFF} @units;
+	if ($mandatory) {
+		@units = grep { $_->GetGroupMandatory() eq Enums->GroupMandatory_YES } @units;
+	}else{
+		
+		@units = grep { $_->GetGroupMandatory() eq Enums->GroupMandatory_NO } @units;
 	}
 	
-	foreach my $unit (@units) {
-		 
-		$units{ $unit->{"unitId"} } = $unit->GetGroupDefaultState();
-	}
-
-	return %units;
+	 
+	return @units;
 }
 
 

@@ -35,7 +35,7 @@ sub new {
 	$self->{"settings"}->{"port"}         = undef;    # if export is synchronous, port of server script
 	$self->{"settings"}->{"formPosX"}     = undef;    # position of export cheker form
 	$self->{"settings"}->{"formPosY"}     = undef;    # position of export cheker form
-	$self->{"settings"}->{"defaultUnits"} = undef;    # units, which has to be exported
+	$self->{"settings"}->{"mandatoryUnits"} = undef;    # units, which has to be exported
 
 	return $self;                                     # Return the reference to the hash.
 }
@@ -71,10 +71,10 @@ sub GetFormPosition {
 	return $pos;
 }
 
-sub GetDefaultUnits {
+sub GetMandatoryUnits {
 	my $self = shift;
 
-	my @units = @{$self->{"settings"}->{"defaultUnits"}};
+	my @units = @{$self->{"settings"}->{"mandatoryUnits"}};
 	return @units;
 }
 

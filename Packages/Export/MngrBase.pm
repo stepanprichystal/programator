@@ -1,7 +1,12 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Structure represent group of operation on technical procedure
-# Tell which operation will be merged, thus which layer will be merged to one file
+# Description: Base class for Managers, which are responsible for export pcb data
+# Rules for creating export scripts.
+# Because each export scripts are launched in "Export utility" in perl ithreads
+# is necessary acomplish this.
+# - code hasn't contain another child thread. Use library Packages::SystemCall for using threads
+# - code hasn't use library Connectors::HeliosConnector::HelperWriter, because free wrong pool errors
+# for this use this library but launeched by Packages::SystemCall again
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Packages::Export::MngrBase;

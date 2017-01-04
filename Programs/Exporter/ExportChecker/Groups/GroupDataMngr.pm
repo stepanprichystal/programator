@@ -15,7 +15,7 @@ use warnings;
 #local library
 use aliased 'Packages::Events::Event';
 use aliased 'Packages::ItemResult::ItemResultMngr';
-
+use aliased 'Programs::Exporter::ExportChecker::Enums';
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
@@ -35,7 +35,7 @@ sub new {
 	$self->{"inCAM"}     = undef;      # inCam will be passed to each available method as new instance
 	                                   # Because some of this method are processed in child thread and inCAM
 	                                   # is connected to specific InCAM editor
-	$self->{"defaultState"} = undef;   # default state, means group must  be exported, before job go to produce 
+	$self->{"mandatory"} = undef;   # default state, means group must  be exported, before job go to produce 
 
 	$self->{'defaultInfo'} = undef;    # Contain default info about pcb, which is computed (only once) when export start
 
@@ -67,11 +67,32 @@ sub PrepareGroupState {
 
 		my $state = $self->{"prepareData"}->OnGetGroupState($self);
 		$self->{"groupData"}->{"state"} = $state;
-		$self->{"defaultState"} = $state;
 
 	}
 	else {
 		die "PrepareData.pm has to implemetn OnGetGroupState method.";
+	}
+}
+
+
+# Set if group has to be exported. If PrepareData class didn't implement method OnGetGroupMandatory
+# Group is mandatory if default state is not DISABLE
+sub PrepareGroupMandatory {
+	my $self = shift;
+
+	if ( $self->{"prepareData"}->can("OnGetGroupMandatory") ) {
+
+		my $isMandatory = $self->{"prepareData"}->OnGetGroupMandatory($self);
+		$self->{"mandatory"} = $isMandatory;
+
+	}
+	else {
+		
+		if($self->{"groupData"}->{"state"} eq Enums->GroupState_DISABLE){
+			$self->{"mandatory"} = Enums->GroupMandatory_NO;
+		}else{
+			$self->{"mandatory"} = Enums->GroupMandatory_YES;
+		}
 	}
 }
 
@@ -105,11 +126,11 @@ sub GetGroupState {
 # Return default group state
 # State which is set when exporter checker form is showed
 # Cant't be changed by user
-sub GetGroupDefaultState {
+sub GetGroupMandatory {
 	my $self = shift;
 
 	if ( $self->{"groupData"} ) {
-		return $self->{"defaultState"};
+		return $self->{"mandatory"};
 	}
 
 }

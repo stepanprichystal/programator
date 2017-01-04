@@ -79,12 +79,12 @@ sub __BuildExportData {
 			$self->{"data"}->{"units"}->{$unitId} = $unitData;
 		}
 		 
-		# 2) save units default state
+		# 2) save units mandatory
 		
-		my %unitsState = $self->{"units"}->GetUnitsDefaultState(1);
-		my @activeUnits = keys %unitsState;
+		my @unitsMandatory = $self->{"units"}->GetUnitsMandatory(1);
+		my @keys = map { $_->GetUnitId() } @unitsMandatory;
 		
- 		$self->{"hashData"}->{"settings"}->{"defaultUnits"} = \@activeUnits;
+ 		$self->{"hashData"}->{"settings"}->{"mandatoryUnits"} = \@keys;
 
 	}
 	elsif ( $self->{"mode"} eq Enums->Mode_READ ) {

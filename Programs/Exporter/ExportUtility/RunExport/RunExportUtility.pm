@@ -97,6 +97,7 @@ sub __RunExportUtility {
 	my $perl = $Config{perlpath};
 
 	# CREATE_NEW_CONSOLE - script will run in completely new console - no interaction with old console
+ 
 
 	Win32::Process::Create( $processObj, $perl,
 							"perl " . GeneralHelper->Root() . "\\Programs\\Exporter\\ExportUtility\\RunExport\\RunExportUtilityScript.pl ",

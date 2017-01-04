@@ -71,8 +71,8 @@ sub new {
 
 	$self->__InitUnit();
 
-	my @defaultUnits = $self->{"exportData"}->GetDefaultUnits();
-	$self->{"exportStatus"}->CreateStatusFile( \@defaultUnits );
+	my @mandatoryUnits = $self->{"exportData"}->GetMandatoryUnits();
+	$self->{"exportStatus"}->CreateStatusFile( \@mandatoryUnits );
 
 	return $self;
 }
@@ -329,7 +329,7 @@ sub SentToProduce {
 		 my $toProduceMngr = $self->{"produceResultMngr"};
 		 my $item = $toProduceMngr->GetNewItem( "Set state HOTOVO-zadat", EnumsGeneral->ResultType_FAIL );
 
-		$item->AddError("Set state HOTOVO-zadat failed, try it again.");
+		$item->AddError("Set state HOTOVO-zadat failed, try it again. Detail: $e\n");
 		$toProduceMngr->AddItem($item);
 
 	}

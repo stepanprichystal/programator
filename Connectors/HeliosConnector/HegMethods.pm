@@ -20,7 +20,7 @@ use Try::Tiny;
 use aliased 'Connectors::HeliosConnector::Helper';
 use aliased 'Connectors::SqlParameter';
 use aliased 'Connectors::HeliosConnector::Enums';
-use aliased 'Connectors::HeliosConnector::HegMethodsThread';
+
 
 use aliased 'Helpers::GeneralHelper';
 use aliased 'Packages::SystemCall::SystemCall';

@@ -59,6 +59,8 @@ sub InitDataMngr {
 		# Load default group data and state
 		$self->{"dataMngr"}->PrepareGroupData();
 		$self->{"dataMngr"}->PrepareGroupState();
+		$self->{"dataMngr"}->PrepareGroupMandatory();
+		
 	}
 }
 
@@ -85,7 +87,7 @@ sub CheckBeforeExport {
 	return $succes;
 }
 
-#sub GetGroupDefaultState {
+#sub GetGroupMandatory {
 #	my $self  = shift;
 #	my $inCAM = shift;
 #
@@ -104,11 +106,11 @@ sub GetGroupState {
 	return $groupState;
 }
 
-sub GetGroupDefaultState {
+sub GetGroupMandatory {
 	my $self  = shift;
 
 
-	my $groupState = $self->{"dataMngr"}->GetGroupDefaultState();
+	my $groupState = $self->{"dataMngr"}->GetGroupMandatory();
 
 	return $groupState;
 }

@@ -490,7 +490,7 @@ sub __OnChangeClick {
 sub __OnCloseHandler {
 	my $self = shift;
 
-	#$self->{"mainFrm"}->Hide();
+	$self->{"mainFrm"}->Hide();
 	$self->{"btnStop"}->Disable();
 	$self->{"groupNameValTxt"}->SetLabel("Exiting checking thread...");
 	$self->{"onStopClickEvt"}->Do(@_);
