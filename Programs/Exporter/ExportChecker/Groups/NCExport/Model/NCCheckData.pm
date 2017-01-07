@@ -15,6 +15,8 @@ use File::Copy;
 use aliased 'CamHelpers::CamLayer';
 use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'CamHelpers::CamHelper';
+use aliased 'CamHelpers::CamStepRepeat';
+use aliased 'CamHelpers::CamHistogram';
 use aliased 'Programs::Exporter::ExportChecker::Groups::NifExport::Presenter::NifHelper';
 use aliased 'Packages::Drilling::DrillChecking::LayerCheck';
 
@@ -27,7 +29,7 @@ sub new {
 	my $self  = {};
 	bless $self;
 
-	return $self;    # Return the reference to the hash.
+	return $self;   # Return the reference to the hash.
 }
 
 # Checking group data before final export
@@ -35,6 +37,8 @@ sub new {
 sub OnCheckGroupData {
 	my $self     = shift;
 	my $dataMngr = shift;    #instance of GroupDataMngr
+
+	my $defaultInfo = $dataMngr->GetDefaultInfo();
 
 	my $groupData = $dataMngr->GetGroupData();
 	my $inCAM     = $dataMngr->{"inCAM"};
@@ -45,7 +49,7 @@ sub OnCheckGroupData {
 	my $pltLayers    = $groupData->GetPltLayers();
 	my $npltLayers   = $groupData->GetNPltLayers();
 
-	# Check inf export single and no layers selected
+	# 1) Check inf export single and no layers selected
 	if ($exportSingle) {
 
 		if ( scalar( @{$pltLayers} ) + scalar( @{$npltLayers} ) == 0 ) {
@@ -54,11 +58,41 @@ sub OnCheckGroupData {
 		}
 	}
 
-	# Checking NC layers
+	# 2) Checking NC layers
 	my $mess = "";
 
 	unless ( LayerCheck->CheckNCLayers( $inCAM, $jobId, \$mess ) ) {
 		$dataMngr->_AddErrorResult( "Checking NC layer", $mess );
+	}
+
+	# 3) If panel contain more drifrent step, check if fsch exist
+	my @uniqueSteps = CamStepRepeat->GetUniqueStepAndRepeat( $inCAM, $jobId, "panel" );
+
+	if ( scalar(@uniqueSteps) > 1 && !$defaultInfo->LayerExist("fsch") ) {
+
+		$dataMngr->_AddErrorResult( "Checking NC layer",
+									"Layer fsch doesn't exist. When panel contains more different steps, fsch must be created." );
+	}
+
+	# 4) Check foot down attributes
+	my $routLayer = "f";
+
+	if ( $defaultInfo->LayerExist("fsch") ) {
+		$routLayer = "fsch";
+	}
+
+	my %hist = CamHistogram->GetAttCountHistogram( $inCAM, $jobId, "panel", $routLayer );
+
+	my $footCnt = 0;
+	if ( defined $hist{".foot_down"}{""} ) {
+		$footCnt = $hist{".foot_down"}{""};
+	}
+
+	my @steps = CamStepRepeat->GetRepeatStep( $inCAM, $jobId, "panel" );
+	my $stepCnt = scalar(@steps);
+
+	if ( $stepCnt != $footCnt ) {
+		$dataMngr->_AddWarningResult( "Checking foots", "Number of 'foot_down' ($footCnt) doesn't match with number of steps ($stepCnt) in layer: $routLayer" );
 	}
 
 }

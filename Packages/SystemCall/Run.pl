@@ -1,8 +1,7 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Class provide function for loading / saving tif file
-# TIF - technical info file - contain onformation important for produce, for technical list,
-# another support script use this file
+# Description: This script deserialize and prepare parameters
+# Than do "require" of "working" script
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 
@@ -31,12 +30,8 @@ my $outputPath = shift;
 my @files = ();
 while ( my $p = shift ) {
 	push( @files, $p );
-	print STDERR "\n file: $outputPath\n";
 }
 
-
-print STDERR "\n Script path $scriptPath\n";
-print STDERR "\n Output path $outputPath\n";
 my @parsed = Helper->ParseParams( \@files );
 
 my $output = undef;    # output value, message
@@ -52,10 +47,8 @@ eval {
 };
 if ($@) {
 
-	$output = $_;
+	$output = $_; # id exception save it as output value
 	
-	#print STDERR "vzjimka $@  $_\n\n";
-
 }
 
 # save result/output message
@@ -69,7 +62,6 @@ if ( -e $outputPath || $output) {
 	close $f;
 }
 
-#print STDERR "redul = $result\n\n";
 
 # return succes/fail
 exit($result);

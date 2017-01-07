@@ -1,5 +1,5 @@
 #-------------------------------------------------------------------------------------------#
-# Description:
+# Description: GUI form for pdf group
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 
@@ -36,8 +36,8 @@ sub new {
 
 	bless($self);
 
-	$self->{"inCAM"} = $inCAM;
-	$self->{"jobId"} = $jobId;
+	$self->{"inCAM"}    = $inCAM;
+	$self->{"jobId"}    = $jobId;
 	$self->{"layerCnt"} = CamJob->GetSignalLayerCnt( $self->{"inCAM"}, $self->{"jobId"} );
 
 	# Load data
@@ -100,9 +100,9 @@ sub __SetLayoutControl {
 	my $last = $steps[ scalar(@steps) - 1 ];
 
 	my $stepCb = Wx::ComboBox->new( $statBox, -1, $last, &Wx::wxDefaultPosition, [ 70, 22 ], \@steps, &Wx::wxCB_READONLY );
-	
-	my @lang = ("English", "Czech");
-	my $last2 = $lang[ scalar(@lang) - 1 ];
+
+	my @lang   = ( "English", "Czech" );
+	my $last2  = $lang[ scalar(@lang) - 1 ];
 	my $langCb = Wx::ComboBox->new( $statBox, -1, $last2, &Wx::wxDefaultPosition, [ 70, 22 ], \@lang, &Wx::wxCB_READONLY );
 
 	# SET EVENTS
@@ -115,14 +115,12 @@ sub __SetLayoutControl {
 
 	$szRowDetail2->Add( $stepTxt, 0, &Wx::wxALL, 0 );
 	$szRowDetail2->Add( $stepCb,  0, &Wx::wxALL, 0 );
-	
+
 	$szRowDetail3->Add( $langTxt, 0, &Wx::wxALL, 0 );
 	$szRowDetail3->Add( $langCb,  0, &Wx::wxALL, 0 );
 
-	 
-
 	$szStatBox->Add( $szRowDetail1, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
-	$szStatBox->Add( 8, 8, 0, &Wx::wxEXPAND );
+	$szStatBox->Add( 8,             8, 0,                          &Wx::wxEXPAND );
 	$szStatBox->Add( $szRowDetail2, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 	$szStatBox->Add( $szRowDetail3, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 
@@ -144,13 +142,12 @@ sub __SetLayoutStackup {
 	my $szStatBox = Wx::StaticBoxSizer->new( $statBox, &Wx::wxHORIZONTAL );
 
 	# DEFINE CONTROLS
-	
+
 	my $exportStackupChb = Wx::CheckBox->new( $statBox, -1, "Export", &Wx::wxDefaultPosition );
-	if( $self->{"layerCnt"} <= 2){
-		
+	if ( $self->{"layerCnt"} <= 2 ) {
+
 		$exportStackupChb->Disable();
 	}
-	
 
 	# SET EVENTS
 

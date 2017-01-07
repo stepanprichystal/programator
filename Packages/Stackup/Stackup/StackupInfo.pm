@@ -48,7 +48,8 @@ sub __LoadInfoFiles {
  
 	#my $strfMultical = FileHelper->ReadAsString( EnumsPaths->Client_INCAMTMPOTHER . $fname2 );
 	
-	my $strfMultical = FileHelper->ReadAsString( EnumsPaths->Client_MULTICALDB );
+	my $multicalDb = GeneralHelper->Root()."\\Resources\\ml.xml";
+	my $strfMultical = FileHelper->ReadAsString( $multicalDb );
  
 
 

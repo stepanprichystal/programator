@@ -1,6 +1,7 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: TifFile - interface for signal layers
+# Description: This class fill special template class
+# Template class than contain all needed data, which are pasted to final PDF
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Packages::Pdf::ControlPdf::FillTemplate;

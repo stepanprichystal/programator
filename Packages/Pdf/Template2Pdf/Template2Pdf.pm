@@ -1,6 +1,10 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: TifFile - interface for signal layers
+# Description: Module allow convert html template to pdf
+# Process of conversion:
+# 1) Fill special template class by keys and values
+# 2) Substitue keys in html template by values
+# 3) convert prepared html template to pdf (converion is done by python program xhtml2pdf)
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Packages::Pdf::Template2Pdf::Template2Pdf;
@@ -34,9 +38,8 @@ sub Convert {
 	my $keyData      = shift;
 	my $outFile      = shift;
 
- 
 	unless ( defined $outFile ) {
-		$outFile = EnumsPaths->Client_INCAMTMPOTHER . GeneralHelper->GetGUID().".pdf";
+		$outFile = EnumsPaths->Client_INCAMTMPOTHER . GeneralHelper->GetGUID() . ".pdf";
 	}
 
 	$self->{"outFilePath"} = $outFile;
@@ -63,6 +66,7 @@ sub __FillTemplate {
 	my $self     = shift;
 	my $template = shift;
 	my $keyData  = shift;
+
 	# substitute keys in template
 
 	my %keysData = $keyData->GetKeyData();
@@ -72,7 +76,7 @@ sub __FillTemplate {
 		my $kItem = $keysData{$k};
 		my $val   = $kItem->GetText( $self->{"lang"} );
 
-		$template =~ s/([>"\\])$k([<"\\])/$1$val$2/gi; # means replace all keys which are between characters ><, "" or \
+		$template =~ s/([>"\\])$k([<"\\])/$1$val$2/gi;    # means replace all keys which are between characters ><, "" or \
 	}
 
 	# remove rest of not substitued keys
@@ -83,22 +87,21 @@ sub __FillTemplate {
 
 sub __FinalConvert {
 	my $self         = shift;
-	my $templData     = shift;
+	my $templData    = shift;
 	my $templPathOri = shift;
 
 	my $result = 1;
 
 	my $cssPath = $templPathOri;
 	$cssPath =~ s/html/css/;
-	
+
 	my $templPathFinal = EnumsPaths->Client_INCAMTMPOTHER . GeneralHelper->GetGUID();
 	my $f;
-	if(open($f, ">", $templPathFinal)){
-		
+	if ( open( $f, ">", $templPathFinal ) ) {
+
 		print $f $templData;
 		close($f);
 	}
-	
 
 	my @cmd = ( EnumsPaths->InCAM_3rdScripts . "pythonLib\\xhtml2pdf" );
 	push( @cmd, "--css=$cssPath" );
@@ -110,14 +113,13 @@ sub __FinalConvert {
 	my $cmdStr = join( " ", @cmd );
 
 	my $systeMres = system($cmdStr);
-	 
+
 	if ( $systeMres > 0 ) {
 		$result = 0;
 	}
-	
-	
+
 	# delete temp file
-	if(-e $templPathFinal){
+	if ( -e $templPathFinal ) {
 		unlink $templPathFinal;
 	}
 

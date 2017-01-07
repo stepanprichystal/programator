@@ -5,6 +5,9 @@
 package Packages::Drilling::DrillChecking::LayerCheck;
 
 #3th party library
+use utf8;
+use strict;
+use warnings;
 use List::MoreUtils qw(uniq);
 
 #local library
@@ -131,7 +134,7 @@ sub CheckIsNotEmpty {
 
 		if ( $l->{"fHist"}->{"total"} == 0 ) {
 			$result = 0;
-			$$mess .= "NC layer: " . $l->{"gROWname"} . " is empty.\n";
+			$$mess .= "NC layer: " . $l->{"gROWname"} . " is empty (doesn't contain any symbols).\n";
 		}
 	}
 
@@ -150,7 +153,7 @@ sub CheckAttributes {
 
 		if ( $l->{"attHist"}->{".nomenclature"} ) {
 			$result = 0;
-			$$mess .= "NC layer: " . $l->{"gROWname"} . " contains attribut .nomenclature.\n";
+			$$mess .= "NC layer: " . $l->{"gROWname"} . " contains attribut .nomenclature. Please remove them.\n";
 		}
 	}
 
@@ -180,7 +183,7 @@ sub CheckAttributes {
 
 		if ( scalar(@symRoutLess) > 0 ) {
 			$result = 0;
-			$$mess .= "NC layer: " . $l->{"gROWname"} . ", some symbols doesn't have assigned rout (attribute .rout_chain).\n";
+			$$mess .= "NC layer: " . $l->{"gROWname"} . ", => some symbols don't have assigned rout (attribute .rout_chain).\n";
 		}
 	}
 
@@ -188,6 +191,7 @@ sub CheckAttributes {
 }
 
 # Check if drill layers not contain invalid symbols..
+# drilling can contain onlz pads
 sub CheckInvalidSymbols {
 	my $self   = shift;
 	my @layers = @{ shift(@_) };
@@ -210,7 +214,7 @@ sub CheckInvalidSymbols {
 
 		if ( $l->{"fHist"}->{"surf"} > 0 || $l->{"fHist"}->{"arc"} > 0 || $l->{"fHist"}->{"line"} > 0 || $l->{"fHist"}->{"text"} > 0 ) {
 			$result = 0;
-			$$mess .= "NC layer: " . $l->{"gROWname"} . " contains illegal symbol (surface, line, arc or text).\n";
+			$$mess .= "NC layer: " . $l->{"gROWname"} . " contains illegal symbol (surface, line, arc or text). Layer can contains only pads.\n";
 		}
 	}
 
@@ -229,7 +233,7 @@ sub CheckWrongNames {
 
 		unless ( $l->{"type"} ) {
 			$result = 0;
-			$$mess .= "NC layer: " . $l->{"gROWname"} . " has wrong name.\n";
+			$$mess .= "NC layer: " . $l->{"gROWname"} . " has wrong name. This is not standard NC layer name. Repair it.\n";
 		}
 	}
 
@@ -271,7 +275,7 @@ sub CheckDirTop2Bot {
 		# not def means top2bot
 		if ( $dir && $dir eq "bot2top" ) {
 			$result = 0;
-			$$mess .= "Layer $lName has wrong direction of drilling/routing. Direction has to be: top2bot. \n";
+			$$mess .= "Layer $lName has wrong direction of drilling/routing. Direction must be: TOP-to-BOT. \n";
 		}
 
 		my $startL = $l->{"gROWdrl_start"};
@@ -279,15 +283,17 @@ sub CheckDirTop2Bot {
 
 		if ( $startL >= $endL ) {
 
-			#exception for core driling, which start/end in same layer
+			# check for core driling, which start/end in same layer
 
-			if ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_plt_cDrill && $startL == $endL ) {
-				next;
-			}
+			if ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_plt_cDrill ) {
 
-			if ( abs( $startL - $endL ) != 1 ) {
-				$result = 0;
-				$$mess .= "Layer: $lName, start/end layer is wrong in matrix. Only core layer could be drilled.\n";
+				if ( $startL == $endL ) {
+					$result = 0;
+					$$mess .=
+"Vrstva: $lName, má špatně nastavený vrták v metrixu u vrtání jádra. Vrták nesmí začínat a končit na stejné vrstvě.\n"
+					  ;
+				}
+
 			}
 		}
 
@@ -322,19 +328,19 @@ sub CheckDirBot2Top {
 
 		if ( $dir ne "bot2top" ) {
 			$result = 0;
-			$$mess .= "Layer $lName has wrong direction of drilling/routing. Direction has to be: bot2top. \n";
+			$$mess .= "Layer $lName has wrong direction of drilling/routing. Direction must be: BOT-to-TOP. \n";
 		}
 
 		my $startL = $l->{"gROWdrl_start"};
 		my $endL   = $l->{"gROWdrl_end"};
 
-		unless ( defined $endL || defined $StartL ) {
-			print STDERR "dddd";
-		}
+		# check for core driling, if doesn wrong direction
 
-		if ( $endL <= $startL ) {
+		if ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_plt_cDrill && $dir && $dir eq "bot2top" ) {
+
 			$result = 0;
-			$$mess .= "Layer: $layerName, drilling start/end is wrong in matrix. Drilling/routing cant't start and end in same layer.\n";
+			$$mess .= "Vrstva: $lName má špatně nastavený vrták v metrixu u vrtání jádra. Vrták musí mít vždy směr TOP-to-BOT.\n";
+
 		}
 	}
 

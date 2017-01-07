@@ -1,11 +1,10 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Special layer - Copper, contain special propery and operation for this
-# type of layer
+# This sctructure contain information: type of layer: mask, silk, copeer etc...
+# Amd Which layer merge
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Packages::Pdf::ControlPdf::FinalPreview::LayerData::LayerData;
-
 
 #3th party library
 use strict;
@@ -19,132 +18,120 @@ use warnings;
 
 sub new {
 	my $self = shift;
-	$self  = {};
+	$self = {};
 	bless $self;
 
-	$self->{"type"} = shift;
-	$self->{"order"} = undef;
-	$self->{"color"} = undef;
-	$self->{"texture"} = undef;
-	$self->{"brightness"} = undef; # allow set brightness of final layer/image
-	$self->{"output"} = undef;
+	$self->{"type"}         = shift;
+	$self->{"order"}        = undef;
+	$self->{"color"}        = undef;
+	$self->{"texture"}      = undef;
+	$self->{"brightness"}   = undef;    # allow set brightness of final layer/image
+	$self->{"output"}       = undef;
 	$self->{"transparency"} = 100;
-	
-	my @l = ();
-	$self->{"singleLayers"}    = \@l; 
- 
-	return $self;  
-}
- 
 
-sub PrintLayer{
+	my @l = ();
+	$self->{"singleLayers"} = \@l;
+
+	return $self;
+}
+
+sub PrintLayer {
 	my $self = shift;
-	
-	if($self->{"output"} && ( defined $self->{"color"} || defined $self->{"texture"})){
-		
+
+	if ( $self->{"output"} && ( defined $self->{"color"} || defined $self->{"texture"} ) ) {
+
 		return 1;
-	}else{
-		
+	}
+	else {
+
 		return 0;
 	}
-	
-	
-} 
- 
-sub GetColor{
+
+}
+
+sub GetColor {
 	my $self = shift;
 	return $self->{"color"};
 }
 
-sub SetColor{
-	my $self = shift;
+sub SetColor {
+	my $self  = shift;
 	my $color = shift;
-	
-	
+
 	$self->{"color"} = $color;
 }
 
- 
-sub GetTexture{
+sub GetTexture {
 	my $self = shift;
 	return $self->{"texture"};
 }
 
-sub SetTexture{
-	my $self = shift;
+sub SetTexture {
+	my $self    = shift;
 	my $texture = shift;
-	
-	
+
 	$self->{"texture"} = $texture;
 }
 
-
-sub GetBrightness{
+sub GetBrightness {
 	my $self = shift;
 	return $self->{"brightness"};
 }
 
-sub SetBrightness{
-	my $self = shift;
+sub SetBrightness {
+	my $self       = shift;
 	my $brightness = shift;
-	
-	
+
 	$self->{"brightness"} = $brightness;
 }
 
-
-sub SetTransparency{
+sub SetTransparency {
 	my $self = shift;
-	my $val = shift;
-	
-	
+	my $val  = shift;
+
 	$self->{"transparency"} = $val;
 }
 
-sub GetTransparency{
+sub GetTransparency {
 	my $self = shift;
 
-	
 	return $self->{"transparency"};
 }
 
-sub GetType{
+sub GetType {
 	my $self = shift;
-	 
+
 	return $self->{"type"};
 }
 
-sub GetOutputLayer{
+sub GetOutputLayer {
 	my $self = shift;
-	 
+
 	return $self->{"output"};
 }
 
- 
-sub SetOutputLayer{
-	my $self = shift;
+sub SetOutputLayer {
+	my $self  = shift;
 	my $lName = shift;
-	
-	
+
 	$self->{"output"} = $lName;
 }
- 
-sub AddSingleLayer{
-	my $self = shift;
+
+sub AddSingleLayer {
+	my $self    = shift;
 	my $singleL = shift;
-	
-	push(@{$self->{"singleLayers"}}, $singleL);
-}
- 
-sub GetSingleLayers{
-	my $self = shift;
-	return @{$self->{"singleLayers"}};
+
+	push( @{ $self->{"singleLayers"} }, $singleL );
 }
 
-
-sub HasLayers{
+sub GetSingleLayers {
 	my $self = shift;
-	scalar( @{$self->{"singleLayers"}});
+	return @{ $self->{"singleLayers"} };
+}
+
+sub HasLayers {
+	my $self = shift;
+	scalar( @{ $self->{"singleLayers"} } );
 }
 
 #-------------------------------------------------------------------------------------------#

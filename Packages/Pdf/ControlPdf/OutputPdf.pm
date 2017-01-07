@@ -1,6 +1,6 @@
-
 #-------------------------------------------------------------------------------------------#
-# Description: TifFile - interface for signal layers
+# Description: Merge together, stackup, preview top bot, preview single
+# Add red stripes to each pages + titles
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Packages::Pdf::ControlPdf::OutputPdf;
@@ -20,7 +20,6 @@ use aliased 'Packages::Pdf::ControlPdf::FinalPreview::Enums';
 use aliased 'CamHelpers::CamLayer';
 use aliased 'CamHelpers::CamJob';
 
-
 #-------------------------------------------------------------------------------------------#
 #  Interface
 #-------------------------------------------------------------------------------------------#
@@ -30,8 +29,6 @@ sub new {
 	$self = {};
 	bless $self;
 
-	#$self->{"inCAM"} = shift;
-	#$self->{"jobId"} = shift;
 	$self->{"lang"} = shift;
 
 	$self->{"outputPath"} = EnumsPaths->Client_INCAMTMPOTHER . GeneralHelper->GetGUID() . ".pdf";
@@ -52,15 +49,6 @@ sub Output {
 		die "Perview single pdf doesn't exist at: $previewSinglePath.\n";
 	}
 
-	#
-	#
-	#	# merge together
-	#	my $pdfT  = CAM::PDF->new($templatePath);
-	#	my $pdfPr = CAM::PDF->new($previewSinglePath);
-	#	$pdfT->appendPDF($pdfPr);
-
-	# delete path
-	#	unlink($previewSinglePath);
 
 	my @files = ( $templatePath, $previewSinglePath );
 
@@ -143,7 +131,7 @@ sub __AddHeaderFooter {
 				}
 			}
 			else {
-				
+
 				if ( $self->{"lang"} eq "cz" ) {
 					$title .= "Jednotlivé vrstvy - pohled z vrchu";
 				}
@@ -161,7 +149,6 @@ sub __AddHeaderFooter {
 
 	$pdf_out->save();
 }
- 
 
 sub __DrawHeaderFooter {
 	my $self      = shift;
@@ -203,9 +190,9 @@ sub __DrawHeaderFooter {
 
 	my $txtHeader = $page_out->text;
 	$txtHeader->translate( 10, 842 - $headerH + 12 );
-	
-	my $font = $pdf_out->ttfont(GeneralHelper->Root().'\Packages\Pdf\ControlPdf\HtmlTemplate\arial.ttf');
-	
+
+	my $font = $pdf_out->ttfont( GeneralHelper->Root() . '\Packages\Pdf\ControlPdf\HtmlTemplate\arial.ttf' );
+
 	#my $font = $pdf_out->corefont('arial');
 	$txtHeader->font( $font, 10 );
 	$txtHeader->fillcolor("white");
@@ -217,17 +204,16 @@ sub __DrawHeaderFooter {
 
 	my $txtFooter = $page_out->text;
 	$txtFooter->translate( 280, 6 );
-	 
+
 	$txtFooter->font( $font, 8 );
 	$txtFooter->fillcolor("white");
-	
-	
+
 	if ( $self->{"lang"} eq "cz" ) {
 		$txtFooter->text( 'Strana - ' . $pageNum );
-	}else{
+	}
+	else {
 		$txtFooter->text( 'Page - ' . $pageNum );
 	}
-	
 
 }
 

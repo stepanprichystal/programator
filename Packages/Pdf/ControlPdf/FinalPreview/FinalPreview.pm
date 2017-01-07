@@ -1,6 +1,6 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: TifFile - interface for signal layers
+# Description: Module create image preview of pcb based on physical layers
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Packages::Pdf::ControlPdf::FinalPreview::FinalPreview;
@@ -33,7 +33,7 @@ sub new {
 	$self->{"jobId"}   = shift;
 	$self->{"pdfStep"} = shift;
 
-	$self->{"viewType"} = shift;
+	$self->{"viewType"} = shift; # TOP/BOT
 
 	$self->{"layerList"} = LayerDataList->new( $self->{"viewType"} );
 	$self->{"outputPdf"} = OutputPdf->new( $self->{"viewType"}, $self->{"inCAM"}, $self->{"jobId"}, $self->{"pdfStep"} );
@@ -43,6 +43,7 @@ sub new {
 	return $self;
 }
 
+# Create image preview
 sub Create {
 	my $self    = shift;
 	my $message = shift;
@@ -64,6 +65,7 @@ sub Create {
 	return 1;
 }
 
+# Return path of image
 sub GetOutput {
 	my $self = shift;
 
@@ -97,6 +99,9 @@ sub __ConvertPdfToPng {
 	return;
 }
 
+
+# Each pcb layer is represent bz color/texture
+# this method is responsible for choose this color/texture
 sub __PrepareColors {
 	my $self = shift;
 	my %clrs = ();
@@ -142,19 +147,19 @@ sub __PrepareColors {
 	}
 	elsif ( $surface =~ /^i$/i || $surface =~ /^g$/i ) {
 		$surf{"Val"} = Enums->Texture_GOLD;
-	
-	}else {    # surface less
+
+	}
+	else {    # surface less
 
 		$surf{"Val"} = Enums->Texture_CU;
 
 	}
-	 
 
 	$clrs{ Enums->Type_OUTERCU } = \%surf;
 
 	# Mask color
 	my %mask = ( "Type" => Enums->Surface_COLOR, "Val" => $self->__GetMaskColor() );
- 	$clrs{ Enums->Type_MASK } = \%mask;
+	$clrs{ Enums->Type_MASK } = \%mask;
 
 	# Silk color
 	my %silk = ( "Type" => Enums->Surface_COLOR, "Val" => $self->__GetSilkColor() );

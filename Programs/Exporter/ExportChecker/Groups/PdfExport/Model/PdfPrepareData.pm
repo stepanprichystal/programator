@@ -15,7 +15,7 @@ use warnings;
 use aliased 'Programs::Exporter::ExportChecker::Groups::PdfExport::Model::PdfGroupData';
 use aliased 'Programs::Exporter::ExportChecker::Enums';
 use aliased 'CamHelpers::CamHelper';
-use aliased 'Enums::EnumsGeneral'; 
+use aliased 'Enums::EnumsGeneral';
 use aliased 'Connectors::HeliosConnector::HegMethods';
 
 #-------------------------------------------------------------------------------------------#
@@ -37,12 +37,10 @@ sub OnGetGroupState {
 	my $self     = shift;
 	my $dataMngr = shift;    #instance of GroupDataMngr
 
- 
 	#we want nif group allow always, so return ACTIVE ON
 	return Enums->GroupState_ACTIVEON;
 
 }
-
 
 # Method decide if group has to be exported, thus if is mandatory
 # Return enum: Enums->GroupMandatory_<NO/YES>
@@ -50,12 +48,10 @@ sub OnGetGroupMandatory {
 	my $self     = shift;
 	my $dataMngr = shift;    #instance of GroupDataMngr
 
- 
 	#we want nif group is not mandatory
 	return Enums->GroupMandatory_NO;
 
 }
-
 
 # Default "group data" are prepared in this method
 sub OnPrepareGroupData {
@@ -89,7 +85,7 @@ sub OnPrepareGroupData {
 	# 3) default lang
 	my $defLang = "English";
 
-	my %inf = %{HegMethods->GetCustomerInfo($jobId)};
+	my %inf = %{ HegMethods->GetCustomerInfo($jobId) };
 
 	# if country CZ
 	if ( $inf{"zeme"} eq 25 ) {
@@ -98,20 +94,19 @@ sub OnPrepareGroupData {
 
 	# 4) default stackup export
 	my $defStackup = 0;
-	
-	if($defaultInfo->GetLayerCnt() > 2){
-		
+
+	if ( $defaultInfo->GetLayerCnt() > 2 ) {
+
 		$defStackup = 1;
 	}
- 
+
 	$groupData->SetExportControl($exportControl);
 	$groupData->SetControlStep($defStep);
 	$groupData->SetControlLang($defLang);
 	$groupData->SetExportStackup($defStackup);
- 
+
 	return $groupData;
 }
- 
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

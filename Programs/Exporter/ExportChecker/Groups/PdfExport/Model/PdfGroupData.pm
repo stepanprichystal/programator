@@ -1,13 +1,11 @@
-
 #-------------------------------------------------------------------------------------------#
-# Description: Cover merging, spliting and checking before exporting NC files
+# Description: Group data
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Programs::Exporter::ExportChecker::Groups::PdfExport::Model::PdfGroupData;
 
 #use Class::Interface;
 #&implements('Programs::Exporter::ExportChecker::Groups::IGroupData');
-
 
 #3th party library
 use strict;
@@ -29,7 +27,6 @@ sub new {
 
 	return $self;    # Return the reference to the hash.
 }
-
 
 # paste info, hash with info
 
@@ -73,7 +70,7 @@ sub GetControlLang {
 	my $value = shift;
 	return $self->{"data"}->{"controlLang"};
 }
- 
+
 sub SetExportStackup {
 	my $self  = shift;
 	my $value = shift;
@@ -84,8 +81,7 @@ sub GetExportStackup {
 	my $self  = shift;
 	my $value = shift;
 	return $self->{"data"}->{"exportStackup"};
-} 
- 
+}
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

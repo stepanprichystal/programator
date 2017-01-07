@@ -1,11 +1,9 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Special layer - Copper, contain special propery and operation for this
-# type of layer
+# Description: Special structure which keep couple key-value
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Packages::Pdf::Template2Pdf::KeyItem;
-
 
 #3th party library
 use strict;
@@ -19,32 +17,33 @@ use warnings;
 
 sub new {
 	my $self = shift;
-	$self  = {};
+	$self = {};
 	bless $self;
-$self->{"key"} = shift;
-	$self->{"en"} = shift;
-	$self->{"cz"} = shift;
- 
-	return $self;  
+	
+	$self->{"key"} = shift;
+	$self->{"en"}  = shift;
+	$self->{"cz"}  = shift;
+
+	return $self;
 }
- 
-sub GetText{
+
+sub GetText {
 	my $self = shift;
 	my $lang = shift;
-	
-	if($lang eq "cz"){
-		
+
+	if ( $lang eq "cz" ) {
+
 		return $self->{"cz"};
-		
-	}elsif($lang eq "en"){
-		
-		
+
+	}
+	elsif ( $lang eq "en" ) {
+
 		return $self->{"en"};
 	}
-	
+
 	return $self->{"title"};
 }
- 
+
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#

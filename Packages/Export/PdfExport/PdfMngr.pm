@@ -1,6 +1,6 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Manager responsible for AOI files creation
+# Description: Manager responsible for export pdf control file and pdf stackup file
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Packages::Export::PdfExport::PdfMngr;
@@ -34,10 +34,10 @@ sub new {
 
 	$self->{"inCAM"}         = shift;
 	$self->{"jobId"}         = shift;
-	$self->{"exportControl"} = shift;
-	$self->{"controlStep"}   = shift;
-	$self->{"controlLang"}   = shift;
-	$self->{"exportStackup"} = shift;
+	$self->{"exportControl"} = shift;    # if export pdf data contro
+	$self->{"controlStep"}   = shift;    # which step export
+	$self->{"controlLang"}   = shift;    # which language use
+	$self->{"exportStackup"} = shift;    # if export stackup pdf to job's archive
 
 	$self->{"layerCnt"} = CamJob->GetSignalLayerCnt( $self->{'inCAM'}, $self->{'jobId'} );
 
@@ -89,7 +89,7 @@ sub __ExportDataControl {
 
 		$self->_OnItemResult($resultStackup);
 	}
-	
+
 	# 2) Create preview top
 
 	my $resultPreviewTop = $self->_GetNewItem( "Preview top", "Control pdf" );
@@ -198,13 +198,17 @@ sub ExportItemsCount {
 
 	if ( $self->{"exportControl"} ) {
 
-		$totalCnt += 2;    # top + bot view
-		$totalCnt += 1;    # single output
-		$totalCnt += 1;    # output final pdf
+		if ( $self->{"layerCnt"} > 2 ) {
+			$totalCnt += 1;    # stackup preview
+		}
+
+		$totalCnt += 2;        # top + bot view
+		$totalCnt += 1;        # single output
+		$totalCnt += 1;        # output final pdf
 	}
 
 	if ( $self->{"exportStackup"} ) {
-		$totalCnt += 1;    # output final pdf
+		$totalCnt += 1;        # output final pdf
 	}
 
 	return $totalCnt;

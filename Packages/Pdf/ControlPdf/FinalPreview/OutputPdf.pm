@@ -1,6 +1,7 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: TifFile - interface for signal layers
+# Description: Responsible for output image previev of pcb
+# Prepare each export layer, print as pdf, convert to image => than merge all layers together
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Packages::Pdf::ControlPdf::FinalPreview::OutputPdf;
@@ -80,6 +81,7 @@ sub __OutputPdf {
 
 	$multiPdf =~ s/\\/\//g;
 
+	# 1) output all layers together
 	$inCAM->COM(
 		'print',
 
@@ -122,25 +124,13 @@ sub __OutputPdf {
 		$inCAM->COM( 'delete_layer', "layer" => $lData->GetOutputLayer() );
 	}
 
+	# 2) split whole pdf to single pdf
 	$self->__SplitMultiPdf( $layerList, $multiPdf, $dirPath );
+
+	# 3) conver each pdf page to image
 	$self->__CreatePng( $layerList, $dirPath );
 
-	# use threads;
-	#$thr1 = threads->create('msc', 'perl 1.pl');
-	#$thr2 = threads->create('msc', 'perl 2.pl');
-	#
-	#$thr1->join();
-	#$thr2->join();
-	#
-	#sub msc{ ## make system call
-	#  system( @_ );
-	#}
-
-	# print layer one by one
-
-	# merge all png to one
-	# order of merging
-
+	# 4) merge all images together
 	my @layerStr2 = map { $dirPath . $_->GetOutputLayer() . ".png" } @layers;
 	my $layerStr2 = join( " ", @layerStr2 );
 
@@ -158,9 +148,10 @@ sub __OutputPdf {
 
 	my $systeMres = system($cmdStr);
 
-	# Adjust image to ratio 3:5
+	# Adjust image to ratio 3:5. Thus if image is square, this fill image by white color
+	# in order image has ratio 3:5
 
-	#    # Get the size of globe.gif
+	# Get the size of globe.gif
 	( my $x, my $y ) = imgsize($outputTmp);
 
 	my $rotate = $x < $y ? 1 : 0;
@@ -224,6 +215,8 @@ sub __OutputPdf {
 
 }
 
+
+# Convert layer in pdf to PNG image
 sub __CreatePng {
 	my $self      = shift;
 	my $layerList = shift;
@@ -249,6 +242,7 @@ sub __CreatePng {
 		my $brightness = "";
 		$brightness = " -brightness-contrast " . $l->GetBrightness() if ( defined $l->GetBrightness() );
 
+		# if layer color is defined by image texture
 		if ( defined $l->GetTexture() ) {
 
 			my $backg = "black";
@@ -281,6 +275,7 @@ sub __CreatePng {
 			push( @cmd1, $dirPath . $l->GetOutputLayer() . ".pdf" );
 			push( @cmd1, "-flatten  +level-colors $backg," );
 			push( @cmd1, "-fuzz 20% -transparent $backg $tmpImg" );
+
 			#push( @cmd1, "-flatten  -fuzz 30% -transparent black $tmpImg" );
 			my $cmdStr = join( " ", @cmd1 );
 
@@ -301,17 +296,12 @@ sub __CreatePng {
 
 			my $cmdStr2 = join( " ", @cmd );
 			push( @cmds, $cmdStr2 );
-			
+
 			push( @allCmds, \@cmds );
 
 		}
+		# if layer is defined by color
 		else {
-
-			#		c: \Export \report > convert -density 300 test . pdf -shave 20 x 20 -trim -shave 5 x 5 + l evel-colors green,
-			#		white -fuzz 20 % -transparent white result . png
-			#
-			#		  c : \Export \report > convert -density 300 test . pdf -shave 20 x 20 -trim -shave 5 x 5 + l evel-colors green,
-			#		white -alpha on -channel a -evaluate set 50 % -fuzz 50 % -trans parent white result2 . png
 
 			my $flatten = "";
 			$flatten = "-flatten" if ( $l->GetType() eq Enums->Type_MASK );
@@ -342,14 +332,6 @@ sub __CreatePng {
 
 			}
 
-			#smayat
-			#		if($l->GetType() eq Enums->Type_OUTERCU){
-			#			push( @cmd, "+noise Gaussian -evaluate add 5% -blur 0x0.5" );
-			#		}
-			#
-			#		if($l->GetType() eq Enums->Type_MASK){
-			#			push( @cmd, "+noise Gaussian -evaluate add 5% -blur 0x1.2" );
-			#		}
 			push( @cmd, $brightness );
 
 			my $pngOutput = $dirPath . $l->GetOutputLayer() . ".pdf";
@@ -358,33 +340,24 @@ sub __CreatePng {
 
 			my $cmdStr = join( " ", @cmd );
 			push( @cmds, $cmdStr );
-			
-		    push( @allCmds, \@cmds );
+
+			push( @allCmds, \@cmds );
 
 		}
 
-		 # $self->__ConvertToPng( \@cmds )  ;
-
-		#my $thr1 = threads->create( sub { $self->__ConvertToPng( \@cmds ) } );
-
-		#push( @threads, $thr1 );
-		print STDERR "threat created \n";
+		print STDERR "threat created (conversion pdf => png)\n";
 
 	}
-	
- 	my $script =  GeneralHelper->Root() . "\\Packages\\Pdf\\ControlPdf\\FinalPreview\\CreatePng.pl";
-	
-	my $createPngCall = SystemCall->new($script, \@allCmds);
-	unless($createPngCall->Run()){
-		
-		die "When convert pdf to png.\n";
-	}
-	
 
-#	foreach (@threads) {
-#
-#		$_->join();
-#	}
+	# conversion is processed in another perl instance by this script
+	my $script = GeneralHelper->Root() . "\\Packages\\Pdf\\ControlPdf\\FinalPreview\\CreatePng.pl";
+
+	my $createPngCall = SystemCall->new( $script, \@allCmds );
+	unless ( $createPngCall->Run() ) {
+
+		die "Error when convert pdf to png.\n";
+	}
+ 
 
 	foreach my $f (@fileToDel) {
 
@@ -396,21 +369,11 @@ sub __CreatePng {
 
 	$self->{"inCAM"}->{"childThread"} = 0;
 
-	print STDERR "threats done \n";
+	print STDERR "threats done (conversion pdf => png)\n";
 
 }
 
-sub __ConvertToPng {
-	my $self = shift;
-	my @cmds = @{ shift(@_) };
-
-	foreach my $cmd (@cmds) {
-
-		my $systeMres = system($cmd);
-
-	}
-
-}
+ 
 
 sub __SplitMultiPdf {
 	my $self      = shift;
@@ -455,8 +418,10 @@ sub __SplitMultiPdf {
 	unlink($pdfOutput);
 }
 
-#}
 
+# clip area arpound profile
+# create border around pcb which is responsible for keep all layer dimension same
+# if preview is bot, mirror data
 sub __OptimizeLayers {
 	my $self      = shift;
 	my $layerList = shift;
@@ -534,6 +499,9 @@ sub __OptimizeLayers {
 
 }
 
+
+# MEthod do necessary stuff for each layer by type
+# like resizing, copying, change polarity, merging, ...
 sub __PrepareLayers {
 	my $self      = shift;
 	my $layerList = shift;

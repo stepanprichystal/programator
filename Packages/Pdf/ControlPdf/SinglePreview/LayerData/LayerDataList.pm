@@ -1,6 +1,8 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Special layer - Copper, contain special propery and operation for this
+# Description: Prepare special structure "LayerData" of each exported layers.
+# This sctructure contain information
+# about exported layers, like name, array of phzsic layer, titles + description
 # type of layer
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
@@ -27,10 +29,8 @@ sub new {
 	bless $self;
 	$self->{"lang"} = shift;
 
-	#$self->{"inCAM"} = shift;
-	#$self->{"jobId"} = shift;
 	my @l = ();
-	$self->{"layers"} = \@l;
+	$self->{"layers"} = \@l; # list of all exported layers <LayerData> type
 
 	return $self;
 }
@@ -38,8 +38,6 @@ sub new {
 sub SetLayers {
 	my $self   = shift;
 	my @layers = @{ shift(@_) };
-
-	# layer data are sorted by final order of printing
 
 	$self->__PrepareBaseLayerData( \@layers );
 	$self->__PrepareNCLayerData( \@layers );
@@ -132,7 +130,7 @@ sub __PrepareNCLayerData {
 		if (    ( $l->{"gROWlayer_type"} ne "drill" || $l->{"gROWlayer_type"} ne "rout" )
 			 && $l->{"fHist"}
 			 && ( $l->{"fHist"}->{"pad"} > 0 || $l->{"fHist"}->{"line"} > 0 )
-			 &&  $l->{"gROWname"} ne "score")
+			 && $l->{"gROWname"} ne "score" )
 		{
 
 			my $enTit = "Drill map: " . ValueConvertor->GetJobLayerTitle($l);
@@ -149,11 +147,6 @@ sub __PrepareNCLayerData {
 		}
 
 	}
-
-	#	# add final layer data to list
-	#	foreach my $lData (@resultData){
-	#
-	#	}
 
 }
 

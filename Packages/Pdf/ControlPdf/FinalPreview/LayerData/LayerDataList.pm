@@ -1,7 +1,7 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Special layer - Copper, contain special propery and operation for this
-# type of layer
+# Description: Prepare special structure "LayerData" for each exported layer.
+# This sctructure contain list <LayerData> and operations with this items
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Packages::Pdf::ControlPdf::FinalPreview::LayerData::LayerDataList;
@@ -212,10 +212,10 @@ sub SetColors {
 			$l->SetTexture( $inf->{"Val"} );
 		}
 		elsif ( $inf->{"Type"} eq Enums->Surface_COLOR ) {
-			
+
 			$l->SetColor( $inf->{"Val"} );
 		}
-		
+
 		$l->SetBrightness( $inf->{"Brightness"} );
 	}
 }

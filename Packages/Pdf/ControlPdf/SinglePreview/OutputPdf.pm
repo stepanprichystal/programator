@@ -1,6 +1,6 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: TifFile - interface for signal layers
+# Description: Responsible o create single pdf from prepared LayerDataList strucure
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package  Packages::Pdf::ControlPdf::SinglePreview::OutputPdf;
@@ -35,7 +35,7 @@ sub new {
 	$self->{"lang"}    = shift;
 
 	$self->{"outputPath"} = EnumsPaths->Client_INCAMTMPOTHER . GeneralHelper->GetGUID() . ".pdf";
- 
+
 	$self->{"profileLim"} = undef;
 
 	return $self;
@@ -44,11 +44,10 @@ sub new {
 sub Output {
 	my $self      = shift;
 	my $layerList = shift;
-	
+
 	my %lim = CamJob->GetProfileLimits( $self->{"inCAM"}, $self->{"jobId"}, $self->{"pdfStep"} );
 
 	$self->{"profileLim"} = \%lim;
-	
 
 	$self->__PrepareLayers($layerList);
 
@@ -58,7 +57,6 @@ sub Output {
 	my $pathPdf = $self->__OutputRawPdf($layerList);
 
 	$self->__AddTextPdf( $layerList, $pathPdf );
- 
 
 }
 
@@ -68,6 +66,8 @@ sub GetOutput {
 	return $self->{"outputPath"};
 }
 
+# Do necessarary adjustment in InCAM with layers
+# And prepare each export layer by LayerData strucutre
 sub __PrepareLayers {
 	my $self      = shift;
 	my $layerList = shift;
@@ -88,6 +88,10 @@ sub __PrepareLayers {
 
 }
 
+
+# Clip all exported layer, add thin frame around data
+# Frame keep right ratio of exported data
+# Ratio mast be 290:305 in order to fit layer data to pdf page and text around
 sub __OptimizeStandardLayers {
 	my $self      = shift;
 	my $layerList = shift;
@@ -175,6 +179,7 @@ sub __OptimizeStandardLayers {
 	$self->__CopyFrame( $lName, \@layers );
 }
 
+# Create drill maps
 sub __OptimizeDrillMapLayers {
 	my $self      = shift;
 	my $layerList = shift;
@@ -230,7 +235,7 @@ sub __OptimizeDrillMapLayers {
 		#
 		CamSymbol->AddPolyline( $inCAM, \@coord, "r1", "negative" );
 
-		my @list = ( $l );
+		my @list = ($l);
 
 		$self->__CopyFrame( $lName, \@list );
 	}
@@ -248,9 +253,9 @@ sub __CopyFrame {
 
 	# affect all layers
 	foreach my $l (@layers) {
- 
-		 $inCAM->COM( "affected_layer", "name" => $l->GetOutputLayer(), "mode" => "single", "affected" => "yes" );
- 
+
+		$inCAM->COM( "affected_layer", "name" => $l->GetOutputLayer(), "mode" => "single", "affected" => "yes" );
+
 	}
 
 	my @layerStr = map { $_->GetOutputLayer() } @layers;
@@ -268,6 +273,7 @@ sub __CopyFrame {
 
 }
 
+# Do output pdf of expor tlayers
 sub __OutputRawPdf {
 	my $self      = shift;
 	my $layerList = shift;
@@ -281,12 +287,11 @@ sub __OutputRawPdf {
 
 	my $outputPdf = EnumsPaths->Client_INCAMTMPOTHER . GeneralHelper->GetGUID() . ".pdf";
 
-#my $str = '5D032ED7-6CCB-1014-ACAE-F93E6DB4D31D\;5D080830-6CCB-1014-ACAE-F93E6DB4D31D\;5D0B5C4D-6CCB-1014-ACAE-F93E6DB4D31D\;5D1003CF-6CCB-1014-ACAE-F93E6DB4D31D\;5D1316DD-6CCB-1014-ACAE-F93E6DB4D31D\;5D164EAA-6CCB-1014-ACAE-F93E6DB4D31D\;5D1AB504-6CCB-1014-ACAE-F93E6DB4D31D\;5D1CD02A-6CCB-1014-ACAE-F93E6DB4D31D\;5D1EFEC3-6CCB-1014-ACAE-F93E6DB4D31D\;5D212CDD-6CCB-1014-ACAE-F93E6DB4D31D\;5D232E19-6CCB-1014-ACAE-F93E6DB4D31D\;5D25A1B2-6CCB-1014-ACAE-F93E6DB4D31D\;5D27CD6C-6CCB-1014-ACAE-F93E6DB4D31D\;5D2A27C2-6CCB-1014-ACAE-F93E6DB4D31D\;5D2C27A7-6CCB-1014-ACAE-F93E6DB4D31D\;5D2E0580-6CCB-1014-ACAE-F93E6DB4D31D\;5D2F8DBF-6CCB-1014-ACAE-F93E6DB4D31D\;5D316CAE-6CCB-1014-ACAE-F93E6DB4D31D\;5D3354FB-6CCB-1014-ACAE-F93E6DB4D31D\;5D358317-6CCB-1014-ACAE-F93E6DB4D31D\;5D3764D1-6CCB-1014-ACAE-F93E6DB4D31D\;5D396710-6CCB-1014-ACAE-F93E6DB4D31D\;5D3B4654-6CCB-1014-ACAE-F93E6DB4D31D';
 	$outputPdf =~ s/\\/\//g;
 
-
-	 
-
+	# here was problem, when there is lots of layer, each layer has long name: fdfsd-df78f7d-f7d8f-f7d8f78d
+	# Than incam command lenght was long and it doeasnt work
+	# So layer are now named as ten position number
 
 	$inCAM->COM(
 		'print',
@@ -334,6 +339,7 @@ sub __OutputRawPdf {
 
 }
 
+# add title and description to each pdf page for each layer
 sub __AddTextPdf {
 	my $self      = shift;
 	my $layerList = shift;
@@ -398,7 +404,7 @@ sub __AddTextPdf {
 	unlink($infile);
 
 }
-
+ 
 sub __DrawInfoTable {
 	my $self     = shift;
 	my $xPos     = shift;
@@ -565,22 +571,22 @@ sub __PrepareDRILLMAP {
 	}
 
 	$inCAM->COM(
-				 "cre_drills_map",
-				 "layer"           => $sL->{"gROWname"},
-				 "map_layer"       => $lName,
-				 "preserve_attr"   => "no",
-				 "draw_origin"     => "no",
-				 "define_via_type" => "no",
-				 "units"           => "mm",
-				 "mark_dim"        => "2000",
-				 "mark_line_width" => "400",
-				 "mark_location"   => "center",
-				 "sr"              => "no",
-				 "slots"           => "no",
-				 "columns"         => "Count\;Type\;Finish",
-				 "notype"          => "plt",
-				 "table_pos"       => "right", # alwazs right, because another option not work
-				 "table_align"     => "bottom"
+		"cre_drills_map",
+		"layer"           => $sL->{"gROWname"},
+		"map_layer"       => $lName,
+		"preserve_attr"   => "no",
+		"draw_origin"     => "no",
+		"define_via_type" => "no",
+		"units"           => "mm",
+		"mark_dim"        => "2000",
+		"mark_line_width" => "400",
+		"mark_location"   => "center",
+		"sr"              => "no",
+		"slots"           => "no",
+		"columns"         => "Count\;Type\;Finish",
+		"notype"          => "plt",
+		"table_pos"       => "right",                 # alwazs right, because another option not work
+		"table_align"     => "bottom"
 	);
 
 	if ($typeChanged) {

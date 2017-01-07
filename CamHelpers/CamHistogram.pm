@@ -22,7 +22,9 @@ use warnings;
 #   Package methods
 #-------------------------------------------------------------------------------------------#
 
-# Return name of all steps 'FEATURES',
+# Return att histgram fo layer
+# Histogram is hash, where keys are name of attributes
+# Some keys contain array with all values of attribute
 sub GetAttHistogram {
 	my $self      = shift;
 	my $inCAM     = shift;
@@ -93,6 +95,77 @@ sub GetAttHistogram {
 	return %attHist;
 }
 
+
+# Return att histgram fo layer
+# Histogram is hash, where keys are name of attributes
+# Some keys contain array with all values of attribute
+sub GetAttCountHistogram {
+	my $self      = shift;
+	my $inCAM     = shift;
+	my $jobId     = shift;
+	my $stepName  = shift;
+	my $layerName = shift;
+	my $breakSR   = shift;
+	my $selected   = shift;
+
+	my $sr = "break_sr+";
+	if ( defined $breakSR && $breakSR == 0 ) {
+		$sr = "";
+	}
+	
+	 my $sel = "";
+	if ( $selected) {
+		$sel = "select+";
+	}
+
+	my $fFeatures = $inCAM->INFO(
+								  units           => 'mm',
+								  angle_direction => 'ccw',
+								  entity_type     => 'layer',
+								  entity_path     => "$jobId/$stepName/$layerName",
+								  data_type       => 'FEATURES',
+								  options         => $sel.$sr . "f0",
+								  parse           => 'no'
+	);
+
+	my %attHist = ();
+
+	my $f;
+	open( $f, $fFeatures );
+
+	while ( my $l = <$f> ) {
+
+		if ( $l =~ /###/ ) { next; }
+
+		$l =~ m/.*;(.*)/;
+
+		unless ($1) {
+			next;
+		}
+
+		my @attr = split( ",", $1 );
+
+		# each line/symbol can contain more attributes
+		foreach my $at (@attr) {
+
+			my @parse = split( "=", $at );
+			
+			# some attributes doesn't have value
+			unless(defined $parse[1]){
+				$parse[1] = "";
+			}
+
+			unless ( $attHist{ $parse[0]}{$parse[1]} ) {
+				$attHist{ $parse[0]}{$parse[1]} = 1;
+			}else{
+				$attHist{ $parse[0]}{$parse[1]} ++;
+			}
+		}
+	}
+	return %attHist;
+}
+
+
 # Return name of all steps
 sub GetFeatuesHistogram {
 	my $self      = shift;
@@ -127,5 +200,32 @@ sub GetFeatuesHistogram {
 
 	return %info;
 }
+
+
+#-------------------------------------------------------------------------------------------#
+#  Place for testing..
+#-------------------------------------------------------------------------------------------#
+my ( $package, $filename, $line ) = caller;
+if ( $filename =~ /DEBUG_FILE.pl/ ) {
+
+	use aliased 'CamHelpers::CamHistogram';
+	use aliased 'Packages::InCAM::InCAM';
+
+	my $inCAM = InCAM->new();
+
+	my $jobId     = "f52456";
+	my $stepName  = "panel";
+	 
+
+	my %hist = CamHistogram->GetAttCountHistogram(  $inCAM, $jobId, "panel", "f");
+	
+	print STDERR "test";
+	
+	 
+
+
+}
+
+
 
 1;

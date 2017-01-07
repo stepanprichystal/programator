@@ -81,6 +81,10 @@ sub FlatternLayer {
 	my $tmpLayer = GeneralHelper->GetGUID();
 
 	$inCAM->COM( 'flatten_layer', "source_layer" => $layerName, "target_layer" => $tmpLayer );
+	
+	$self->WorkLayer($inCAM, $layerName);
+	$inCAM->COM( 'sel_delete');
+	
 	$inCAM->COM(
 				 'copy_layer',
 				 "source_job"   => $jobId,
@@ -93,6 +97,7 @@ sub FlatternLayer {
 	);
 
 	$inCAM->COM( 'delete_layer', "layer" => $tmpLayer );
+	$self->ClearLayers($inCAM);
 }
 
 # Remove temporary layers with mark plus

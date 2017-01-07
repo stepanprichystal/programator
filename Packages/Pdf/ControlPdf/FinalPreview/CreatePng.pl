@@ -1,8 +1,7 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Class provide function for loading / saving tif file
-# TIF - technical info file - contain onformation important for produce, for technical list,
-# another support script use this file
+# Description: Script convert pdf to png. Each conversion run in
+# own thread. Conversion is done by imageMagick program launched by system()
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 
@@ -11,35 +10,14 @@ use threads;
 use strict;
 use warnings;
 
-
-
- 
 #-------------------------------------------------------------------------------------------#
 #  Script code
 #-------------------------------------------------------------------------------------------#
 
- 
-#my @paramFiles = ();
-#while ( my $p = shift ) {
-#	push( @paramFiles, $p );
-#}
-# 
-#my $systemCall = SystemCallScript->new(&Worker, );
-#
+my $output = shift(@_);    # save here output message
+my $cmds   = shift(@_);    # contain commands, which convert pdfs to images by imageMagick
 
 
-#my @parsed = $systemCall->ParseParams(\@paramFiles);
-
-
-my $output = shift(@_);; # save here output message
-my $cmds = shift(@_);
-
-#print "\n param: $cmds\n";
-
-#foreach (@{$cmds}){
-	#print STDERR "\n Param: ".$_."\n";
-#}
- 
 
 Worker($cmds);
 

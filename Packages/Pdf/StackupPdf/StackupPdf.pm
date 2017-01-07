@@ -1,6 +1,6 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: TifFile - interface for signal layers
+# Description: Modul is responsible for creation pdf stackup from prepared xml definition
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Packages::Pdf::StackupPdf::StackupPdf;

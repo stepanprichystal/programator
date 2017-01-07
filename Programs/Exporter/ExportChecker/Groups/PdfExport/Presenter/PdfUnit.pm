@@ -20,7 +20,7 @@ use warnings;
 
 #local library
 #use aliased 'Programs::Exporter::ExportChecker::Groups::NifExport::View::NifUnitForm';
- 
+
 use aliased 'Programs::Exporter::ExportChecker::Groups::GroupDataMngr';
 use aliased 'Programs::Exporter::ExportChecker::Groups::PdfExport::Model::PdfCheckData';
 use aliased 'Programs::Exporter::ExportChecker::Groups::PdfExport::Model::PdfPrepareData';
@@ -29,14 +29,13 @@ use aliased 'Programs::Exporter::UnitEnums';
 use aliased 'Programs::Exporter::ExportChecker::Groups::PdfExport::View::PdfUnitForm';
 use aliased 'Programs::Exporter::ExportChecker::Groups::PdfExport::View::PdfUnitFormEvt';
 
-
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
 
 sub new {
 	my $class = shift;
-	my $self = {};
+	my $self  = {};
 
 	$self = $class->SUPER::new(@_);
 	bless $self;
@@ -44,12 +43,11 @@ sub new {
 	#uique key within all units
 	$self->{"unitId"} = UnitEnums->UnitId_PDF;
 
-	my $checkData = PdfCheckData->new();
+	my $checkData   = PdfCheckData->new();
 	my $prepareData = PdfPrepareData->new();
-	my $exportData = PdfExportData->new();
-		
-	
-	$self->{"dataMngr"} = GroupDataMngr->new( $self->{"jobId"}, $prepareData, $checkData, $exportData);
+	my $exportData  = PdfExportData->new();
+
+	$self->{"dataMngr"} = GroupDataMngr->new( $self->{"jobId"}, $prepareData, $checkData, $exportData );
 
 	return $self;    # Return the reference to the hash.
 }
@@ -75,7 +73,7 @@ sub InitForm {
 	$self->{"form"} = PdfUnitForm->new( $parent, $inCAM, $self->{"jobId"} );
 
 	# init base class with event class
-	$self->{"eventClass"}  = PdfUnitFormEvt->new($self->{"form"});
+	$self->{"eventClass"} = PdfUnitFormEvt->new( $self->{"form"} );
 
 	$self->_SetHandlers();
 
@@ -91,7 +89,6 @@ sub RefreshGUI {
 	$self->{"form"}->SetControlStep( $groupData->GetControlStep() );
 	$self->{"form"}->SetControlLang( $groupData->GetControlLang() );
 	$self->{"form"}->SetExportStackup( $groupData->GetExportStackup() );
- 
 
 	#refresh wrapper
 	$self->_RefreshWrapper();
@@ -110,9 +107,9 @@ sub GetGroupData {
 
 	if ($frm) {
 		$groupData = $self->{"dataMngr"}->GetGroupData();
- 
+
 		$groupData->SetExportControl( $frm->GetExportControl() );
-		$groupData->SetControlStep( $frm->GetControlStep() );	
+		$groupData->SetControlStep( $frm->GetControlStep() );
 		$groupData->SetControlLang( $frm->GetControlLang() );
 		$groupData->SetExportStackup( $frm->GetExportStackup() );
 	}
@@ -123,6 +120,7 @@ sub GetGroupData {
 
 	return $groupData;
 }
+
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#

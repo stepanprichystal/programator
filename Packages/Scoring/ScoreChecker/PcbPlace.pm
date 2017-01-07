@@ -1,12 +1,13 @@
 
 #-------------------------------------------------------------------------------------------#
 # Description: Class parse score in steps and create suitable structure for score optimiyation
-# All values are in �m in int
+# All values are in µm in int
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Packages::Scoring::ScoreChecker::PcbPlace;
 
 #3th party library
+use utf8;
 use strict;
 use warnings;
 use List::MoreUtils qw(uniq);
@@ -111,7 +112,7 @@ sub GetScorePos {
 
 		my $pos = $posInf->GetPosition();
 
-		# merge lines, which has spacinf less than 100�m
+		# merge lines, which has spacinf less than 100µm
 		my $exist = scalar( grep { abs( $_->GetPosition() - $posInf->GetPosition() ) < $self->{"accuracy"} } @merged );
 
 		unless ($exist) {
@@ -225,17 +226,19 @@ sub __LoadNestedSteps {
 		$score->Parse( $inCAM, $jobId, $uStep->{"stepName"}, $self->{"layer"}, 1, 1 );
 
 		unless ( $score->IsStraight() ) {
-			$self->{"errorMess"} .= "Score in step: " . $uStep->{"stepName"} . " is not strictly horizontal or vertical.";
+			$self->{"errorMess"} .= "Některé drážky ve stepu: " . $uStep->{"stepName"} . " nejsou zcela rovné. Nejsou striktně horzontální nebo vertikální.\n";
 			$self->{"initSucc"} = 0;
 		}
 
 		if ( $score->ExistOverlap() ) {
-			$self->{"errorMess"} .= "Some scorelines in step: " . $uStep->{"stepName"} . " are overlapping (v pod�ln�m sm�ru).";
+			$self->{"errorMess"} .= "Některé drážky ve stepu : " . $uStep->{"stepName"} ." se překrývají po své délce (leží na sobě v podélném směru).";
+			$self->{"errorMess"} .= " Oprav ať se nepřekrývají.\n";
 			$self->{"initSucc"} = 0;
 		}
 
 		if ( $score->ExistParallelOverlap() ) {
-			$self->{"errorMess"} .= "Some scorelines in step: " . $uStep->{"stepName"} . " are overlapping  (v p���n�m sm�ru).";
+			$self->{"errorMess"} .= "Některé drážky ve stepu: " . $uStep->{"stepName"} ." se překrývají po své šířce. (leží na sobě)";
+			$self->{"errorMess"} .= " Oprav ať se nepřekrývají.\n";
 			$self->{"initSucc"} = 0;
 		}
 

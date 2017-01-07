@@ -573,7 +573,7 @@ sub SetNotes {
 	my $self  = shift;
 	my $value = shift;
 	$self->{"richTxt"}->Clear();
-	$self->{"richTxt"}->WriteText("Test export.");
+	 
 	
 	if($value && $value ne ""){
 		

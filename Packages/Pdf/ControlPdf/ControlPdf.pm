@@ -1,6 +1,8 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: TifFile - interface for signal layers
+# Description: Is repsponsible for complete export of control pdf
+# Can create TOP/BOT preview of pcb, single layersw previev, stackup previref
+# And complete all to one pdf
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Packages::Pdf::ControlPdf::ControlPdf;
@@ -42,11 +44,11 @@ sub new {
 	$self->{"jobId"} = shift;
 	$self->{"step"}  = shift;
 
-	$self->{"lang"} = shift;
+	$self->{"lang"} = shift;    # language of pdf, values cz/en
 
 	$self->{"pdfStep"} = "pdf_" . $self->{"step"};
 
-	$self->{"outputPath"} = EnumsPaths->Client_INCAMTMPOTHER . GeneralHelper->GetGUID() . ".pdf";
+	$self->{"outputPath"} = EnumsPaths->Client_INCAMTMPOTHER . GeneralHelper->GetGUID() . ".pdf";    # place where pdf is created
 
 	$self->{"outputPdf"} = OutputPdf->new( $self->{"lang"} );
 	$self->{"fillTemplate"} = FillTemplate->new( $self->{"inCAM"}, $self->{"jobId"} );
@@ -60,6 +62,7 @@ sub new {
 	return $self;
 }
 
+# do some initialiyation, create pdf step in InCAM job
 sub Create {
 	my $self = shift;
 
@@ -79,17 +82,19 @@ sub Create {
 	CamHelper->SetStep( $self->{"inCAM"}, $self->{"pdfStep"} );
 }
 
+# Create stackup based on xml, and convert to png
 sub CreateStackup {
 	my $self = shift;
 	my $mess = shift;
 
 	# 1) create stackup image
- 
+
 	my $result = $self->{"stackupPreview"}->Create($mess);
 
 	return $result;
 }
 
+# Create image of real pcb from top
 sub CreatePreviewTop {
 	my $self = shift;
 	my $mess = shift;
@@ -99,6 +104,7 @@ sub CreatePreviewTop {
 	return $result;
 }
 
+# Create image of real pcb from bot
 sub CreatePreviewBot {
 	my $self = shift;
 	my $mess = shift;
@@ -108,6 +114,7 @@ sub CreatePreviewBot {
 	return $result;
 }
 
+# Create pdf preview of single layers
 sub CreatePreviewSingle {
 	my $self = shift;
 	my $mess = shift;
@@ -117,6 +124,7 @@ sub CreatePreviewSingle {
 	return $result;
 }
 
+# complete all together and create one single pdf
 sub GeneratePdf {
 	my $self = shift;
 	my $mess = shift;
@@ -133,13 +141,15 @@ sub GeneratePdf {
 	return $result;
 }
 
+# Return final pdf file
 sub GetOutputPath {
 	my $self = shift;
 
 	return $self->{"outputPdf"}->GetOutput();
 }
 
-# delete pdf step
+# Layout of first page is created by HTML template
+# Template must by first filled by data 
 sub __ProcessTemplate {
 	my $self           = shift;
 	my $stackupPath    = shift;
@@ -233,34 +243,27 @@ sub __DeletePdfStep {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-
- 
-
 	use aliased 'Packages::Pdf::ControlPdf::ControlPdf';
 	use aliased 'Packages::InCAM::InCAM';
 
 	my $inCAM = InCAM->new();
 
 	my $jobId = "f52456";
-	
+
 	my $mess = "";
- 
- 
- 
- 
- 
- 
+
 	my $control = ControlPdf->new( $inCAM, $jobId, "o+1", "en" );
 	$control->Create();
+
 	#$control->CreateStackup(\$mess);
-	$control->CreatePreviewTop(\$mess);
-	#$control->CreatePreviewBot(\$mess);		
-	#$control->CreatePreviewSingle(\$mess);	
+	$control->CreatePreviewTop( \$mess );
+
+	#$control->CreatePreviewBot(\$mess);
+	#$control->CreatePreviewSingle(\$mess);
 	#$control->GeneratePdf();
-		
-	
+
 	#$control->GetOutputPath();
-	
+
 }
 
 1;

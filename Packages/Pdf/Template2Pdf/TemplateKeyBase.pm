@@ -1,7 +1,7 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Structure represent group of operation on technical procedure
-# Tell which operation will be merged, thus which layer will be merged to one file
+# Description: This is template class
+# Allow add and keep keys and values for html template
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Packages::Pdf::Template2Pdf::TemplateKeyBase;
@@ -31,7 +31,7 @@ sub new {
 sub GetKeyData {
 	my $self = shift;
 
-	return %{$self->{'keys'}};
+	return %{ $self->{'keys'} };
 }
 
 sub _SaveKeyData {

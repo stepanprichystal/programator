@@ -1,8 +1,8 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Class provide function for loading / saving tif file
-# TIF - technical info file - contain onformation important for produce, for technical list,
-# another support script use this file
+# Description: Class allow run code in another perl instance
+# Class take arguments: path of script  and array of parameters, which script consum
+# All marameters are serialized to file ande than deserialized and pass to script
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Packages::SystemCall::SystemCall;
@@ -30,9 +30,10 @@ sub new {
 	my @params = ();
 	$self->{"params"} = \@params;
 
-	$self->{"scriptPath"} = shift;
+	$self->{"scriptPath"} = shift;  # path of script which will be execute
 
-	while ( my $p = shift ) {
+	# all parameters, which srcipt above consum
+	while ( my $p = shift ) {    
 
 		$self->_AddParameter($p);
 
@@ -45,6 +46,7 @@ sub new {
 	return $self;
 }
 
+# Execute perl script and return 0/1 depand if script fail(script died)/succes
 sub Run {
 	my $self = shift;
 
@@ -76,18 +78,19 @@ sub Run {
 		$self->{"outputData"} = $d;
 		unlink( $self->{"output"} );
 	}
-	
-	
+
 	#print STDERR "Result system call: $result\n\n";
-	
-	if($result > 0){
+
+	if ( $result > 0 ) {
 		return 0;
-	}else{
+	}
+	else {
 		return 1;
 	}
 
 }
 
+# Script can retun output.
 sub GetOutput {
 	my $self = shift;
 	return $self->{"outputData"};

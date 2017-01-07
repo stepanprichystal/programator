@@ -1,7 +1,6 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Structure represent group of operation on technical procedure
-# Tell which operation will be merged, thus which layer will be merged to one file
+# Description: Inherit class, which help save keys and values to template
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Packages::Pdf::ControlPdf::HtmlTemplate::TemplateKey;
@@ -30,6 +29,7 @@ sub new {
 	return $self;    # Return the reference to the hash.
 }
 
+# Method allow set key and values to this class
 sub SetKey{
 	my $self      = shift;
 	my $key      = shift;

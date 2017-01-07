@@ -1,12 +1,9 @@
-
 #-------------------------------------------------------------------------------------------#
 # Description: This class is responsible for:
 # - Checking group data before final export. Handler: OnCheckGroupData
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Programs::Exporter::ExportChecker::Groups::PdfExport::Model::PdfCheckData;
-
-
 
 #3th party library
 use strict;
@@ -17,7 +14,6 @@ use File::Copy;
 use aliased 'CamHelpers::CamLayer';
 use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'CamHelpers::CamHelper';
-
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -31,30 +27,26 @@ sub new {
 	return $self;    # Return the reference to the hash.
 }
 
-
-sub OnCheckGroupData{
-	my $self = shift;
-	my $dataMngr = shift;	
+sub OnCheckGroupData {
+	my $self     = shift;
+	my $dataMngr = shift;
 
 	my $groupData = $dataMngr->GetGroupData();
-	
-	my $inCAM    = $dataMngr->{"inCAM"};
-	my $jobId    = $dataMngr->{"jobId"};
-	
-	my $defaultInfo = $dataMngr->GetDefaultInfo();
-	 
-	 
-	if ( !$defaultInfo->IsPool() && !$groupData->GetExportControl() ) {
-	 
-		$dataMngr->_AddWarningResult( "Export pdf control", "Dps není v poolu, kontrolní pdf by mìlo být vyexportováno" );
-		
-	} 
-	 
 
-	 
+	my $inCAM = $dataMngr->{"inCAM"};
+	my $jobId = $dataMngr->{"jobId"};
+
+	my $defaultInfo = $dataMngr->GetDefaultInfo();
+
+	# Warning, when pcb is not pool and pdf control is not checked
+	if ( !$defaultInfo->IsPool() && !$groupData->GetExportControl() ) {
+
+		$dataMngr->_AddWarningResult( "Export pdf control", "Dps není v poolu, kontrolní pdf by mìlo být vyexportováno" );
+
+	}
+
 }
 
- 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#

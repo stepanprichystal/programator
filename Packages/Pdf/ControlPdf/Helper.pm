@@ -1,6 +1,6 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: TifFile - interface for signal layers
+# Description: Helper for FillTemplate class
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Packages::Pdf::ControlPdf::Helper;
@@ -19,7 +19,7 @@ use aliased 'CamHelpers::CamHelper';
 #  Interface
 #-------------------------------------------------------------------------------------------#
 
-# return
+# Decide of get mask color ftom NIF/Helios
 sub GetMaskColor {
 	my $self  = shift;
 	my $inCAM = shift;
@@ -44,7 +44,7 @@ sub GetMaskColor {
 	return %mask;
 }
 
-# return
+# Decide of get silk color ftom NIF/Helios
 sub GetSilkColor {
 	my $self  = shift;
 	my $inCAM = shift;

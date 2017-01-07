@@ -252,17 +252,8 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	use aliased 'Packages::Stackup::Stackup::Stackup';
 
-	my $stackup = Stackup->new("f52456");
+	my $stackup = Stackup->new("f52457");
 	#my $stackup = Stackup->new("d99991");
-
-		print $stackup->GetFinalThick();
-		my @cores = $stackup->GetAllCores();
-#
-		my $cuLayer = $stackup->GetCuLayer("v2");
-	#
-		print $cuLayer->GetThick();
-	#
-		print $cuLayer->GetCopperName();
  
 
 	print 1;
