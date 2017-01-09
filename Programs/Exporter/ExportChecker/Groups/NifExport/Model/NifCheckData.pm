@@ -17,6 +17,7 @@ use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'CamHelpers::CamHelper';
 use aliased 'Programs::Exporter::ExportChecker::Groups::NifExport::Presenter::NifHelper';
 use aliased 'Helpers::ValueConvertor';
+use aliased 'Enums::EnumsGeneral';
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
@@ -36,6 +37,9 @@ sub OnCheckGroupData {
 	my $dataMngr = shift;    #instance of GroupDataMngr
 
 	my $groupData = $dataMngr->GetGroupData();
+	
+	my $defaultInfo = $dataMngr->GetDefaultInfo();
+	
 	my $inCAM     = $dataMngr->{"inCAM"};
 	my $jobId     = $dataMngr->{"jobId"};
 	my $stepName  = "panel";
@@ -146,6 +150,17 @@ sub OnCheckGroupData {
 									  . ValueConvertor->GetSilkCodeToColor( $silkColorIS{"bot"} ) . "."
 		);
 	}
+	
+	# Check if dps should be pattern, if tenting is realz unchecked
+	
+	my $tenting = $self->__IsTentingCS($inCAM, $jobId, $defaultInfo);
+	my $tentingForm = $groupData->GetTenting();
+	
+	if(!$tenting && $tentingForm){
+		
+		$dataMngr->_AddWarningResult("Pattern",	"Dps by mìla jít do výroby jako pattern, ale ve formuláši máš zaškrknutý tenting.");
+	}
+	
 }
 
 # check if datacode exist
@@ -213,6 +228,29 @@ sub __CheckMarkingLayer {
 	return $res;
 }
 
+
+sub __IsTentingCS {
+	my $self  = shift;
+	my $inCAM = shift;
+	my $jobId = shift;
+	my $defaultInfo = shift;
+	
+	
+	my $tenting = 0;
+	
+	if( CamHelper->LayerExists($inCAM, $jobId, "c")){
+		
+		my $etch = $defaultInfo->GetEtchType( "c" );
+		
+		if($etch eq EnumsGeneral->Etching_TENTING){
+			
+			$tenting = 1;
+		}
+		
+	}
+	
+	return $tenting;	
+}
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#
