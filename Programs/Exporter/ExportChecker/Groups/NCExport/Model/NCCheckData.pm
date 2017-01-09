@@ -94,6 +94,29 @@ sub OnCheckGroupData {
 	if ( $stepCnt != $footCnt ) {
 		$dataMngr->_AddWarningResult( "Checking foots", "Number of 'foot_down' ($footCnt) doesn't match with number of steps ($stepCnt) in layer: $routLayer" );
 	}
+	
+	# 5) Check, when ALU material, if all plated holes aer in "f" layer
+	
+	if ( $defaultInfo->GetMaterialKind() =~ /al/i ) {
+	
+		my @uniqueSteps = CamStepRepeat->GetUniqueStepAndRepeat( $inCAM, $jobId, "panel" );
+		
+		foreach my $step (@uniqueSteps){
+			
+			my %hist = CamHistogram->GetFeatuesHistogram( $inCAM, $jobId, $step->{"stepName"}, "m");
+			
+			if($hist{"total"} != 0){
+				
+				$dataMngr->_AddErrorResult("Drilling", "Step: ".$step->{"stepName"}." contains drilling in layer 'm'. When material is ALU, all drilling should be moved to layer 'f'.");
+				
+			}
+ 
+		}
+		
+		
+	}
+	
+	
 
 }
 

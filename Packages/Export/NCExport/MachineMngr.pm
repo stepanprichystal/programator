@@ -160,6 +160,8 @@ sub __GetMachinesByVector {
 	$comb{ Enums->Property_DRILLCROSSES } = sub { my ( $m, $o ) = @_; return ( !$m && $o ? 0 : 1 ) };
 	$comb{ Enums->Property_CAMERAS }      = sub { my ( $m, $o ) = @_; return ( !$m && $o ? 0 : 1 ) };
 	$comb{ Enums->Property_MAXTOOL } = sub { my ( $m, $o ) = @_; return ( $m < $o ? 0 : 1 ) };
+	$comb{ Enums->Property_MINTOOL } = sub { my ( $m, $o ) = @_; return ( $m > $o ? 0 : 1 ) };
+	
 
 	#my $sumPropVec = 0;
 	#map { $sumPropVec += $_ } @propVec;
@@ -233,7 +235,8 @@ sub __SetMachines {
 		$prop{ Enums->Property_DRILLCROSSES } = $vals[4];
 		$prop{ Enums->Property_CAMERAS }      = $vals[5];
 		$prop{ Enums->Property_MAXTOOL }      = $vals[6];
-
+		$prop{ Enums->Property_MINTOOL }      = $vals[7];
+		
 		$m{"properties"} = \%prop;
 
 		push( @machines, \%m );
@@ -286,6 +289,9 @@ sub __GetDynamicProperty {
 
 	# get max tool
 	$h{ Enums->Property_MAXTOOL } = $layer->{"maxTool"} / 1000;
+	
+	# get min tool
+	$h{ Enums->Property_MINTOOL } = $layer->{"minTool"} / 1000;
 
 	return %h;
 

@@ -8,7 +8,8 @@ use constant {
 			   Property_ROUTDEPTH    => "routdepth",
 			   Property_DRILLCROSSES => "drillcrosses",
 			   Property_CAMERAS      => "cameras",
-			   Property_MAXTOOL      => "maxtool"
+			   Property_MAXTOOL      => "maxtool",
+			   Property_MINTOOL      => "mintool",
 };
  	 
 

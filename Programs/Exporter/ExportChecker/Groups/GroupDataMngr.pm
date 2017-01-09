@@ -16,6 +16,7 @@ use warnings;
 use aliased 'Packages::Events::Event';
 use aliased 'Packages::ItemResult::ItemResultMngr';
 use aliased 'Programs::Exporter::ExportChecker::Enums';
+
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
@@ -35,7 +36,7 @@ sub new {
 	$self->{"inCAM"}     = undef;      # inCam will be passed to each available method as new instance
 	                                   # Because some of this method are processed in child thread and inCAM
 	                                   # is connected to specific InCAM editor
-	$self->{"mandatory"} = undef;   # default state, means group must  be exported, before job go to produce 
+	$self->{"mandatory"} = undef;      # default state, means group must  be exported, before job go to produce
 
 	$self->{'defaultInfo'} = undef;    # Contain default info about pcb, which is computed (only once) when export start
 
@@ -43,8 +44,6 @@ sub new {
 
 	return $self;                      # Return the reference to the hash.
 }
-
-
 
 sub PrepareGroupData {
 	my $self = shift;
@@ -74,7 +73,6 @@ sub PrepareGroupState {
 	}
 }
 
-
 # Set if group has to be exported. If PrepareData class didn't implement method OnGetGroupMandatory
 # Group is mandatory if default state is not DISABLE
 sub PrepareGroupMandatory {
@@ -87,10 +85,11 @@ sub PrepareGroupMandatory {
 
 	}
 	else {
-		
-		if($self->{"groupData"}->{"state"} eq Enums->GroupState_DISABLE){
+
+		if ( $self->{"groupData"}->{"state"} eq Enums->GroupState_DISABLE ) {
 			$self->{"mandatory"} = Enums->GroupMandatory_NO;
-		}else{
+		}
+		else {
 			$self->{"mandatory"} = Enums->GroupMandatory_YES;
 		}
 	}
@@ -141,7 +140,6 @@ sub SetGroupState {
 
 	$self->{"groupData"}->{"state"} = $groupState;
 }
- 
 
 sub CheckGroupData {
 	my $self = shift;
@@ -184,30 +182,28 @@ sub GetFailResults {
 	return $self->{'resultMngr'}->GetFailResults();
 }
 
-
 sub SetDefaultInfo {
-	my $self       = shift;
-	my $defaultInfo      = shift;
+	my $self        = shift;
+	my $defaultInfo = shift;
 
 	$self->{'defaultInfo'} = $defaultInfo;
 }
 
 sub GetDefaultInfo {
-	my $self       = shift;
+	my $self = shift;
 
 	return $self->{'defaultInfo'};
 }
-
 
 sub _AddErrorResult {
 	my $self    = shift;
 	my $errItem = shift;    # error title (such as name of layer, name of drill etc..)
 	my $error   = shift;
-	
-	unless($errItem){
+
+	unless ($errItem) {
 		die "ErrItem (error title) parameter has to be defined.";
 	}
-	unless($error){
+	unless ($error) {
 		die "Error message parameter has to be defined.";
 	}
 
@@ -222,11 +218,11 @@ sub _AddWarningResult {
 	my $self     = shift;
 	my $warnItem = shift;    # error title (such as name of layer, name of drill etc..)
 	my $warning  = shift;
-	
-	unless($warnItem){
+
+	unless ($warnItem) {
 		die "WarnItem (warn title) parameter has to be defined.";
 	}
-	unless($warning){
+	unless ($warning) {
 		die "Warning message parameter has to be defined.";
 	}
 
@@ -236,7 +232,6 @@ sub _AddWarningResult {
 
 	$self->{'resultMngr'}->AddItem($item);
 }
- 
 
 #
 sub _OnItemResultHandler {
