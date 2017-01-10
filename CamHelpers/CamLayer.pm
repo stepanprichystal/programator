@@ -252,9 +252,7 @@ sub NegativeLayerData {
 	$inCAM->COM( 'affected_layer', name => $layer, mode => "single", affected => "no" );
 }
 
-# Rotate layer by degree
-# Right step must be open and set
-# Requested data must be selected
+# Clipa read data by  rectangle
 sub ClipLayerData {
 	my $self   = shift;
 	my $inCAM  = shift;

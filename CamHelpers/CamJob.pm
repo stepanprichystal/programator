@@ -106,6 +106,23 @@ sub GetProfileLimits {
 	return %limits;
 }
 
+#Return limits of profile, but with camelCase keys
+sub GetProfileLimits2 {
+
+	my $self     = shift;
+	 
+	 my %lim = $self->GetProfileLimits(@_);
+
+	my %limits = ();
+ 
+	$limits{"xMin"} = $lim{"xmin"}
+	$limits{"xMax"} = $lim{"xmax"}
+	$limits{"yMin"} = $lim{"ymin"}
+	$limits{"yMax"} = $lim{"ymax"}
+
+	return %limits;
+}
+
 #Return limits of layer, profile doesn't have influence
 sub GetLayerLimits {
 
