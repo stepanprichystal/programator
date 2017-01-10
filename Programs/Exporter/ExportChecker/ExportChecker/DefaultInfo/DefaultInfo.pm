@@ -48,10 +48,10 @@ sub new {
 	$self->{"signalLayers"}  = undef;
 	$self->{"scoreChecker"}  = undef;
 	$self->{"materialKind"}  = undef;
-	$self->{"pcbTypeHelios"} = undef;     # type by helios oboustranny, neplat etc..
+	$self->{"pcbTypeHelios"} = undef;    # type by helios oboustranny, neplat etc..
 	$self->{"finalPcbThick"} = undef;
-	$self->{"allStepsNames"} = undef;     # all steps
-	$self->{"allLayers"}     = undef;     # all layers
+	$self->{"allStepsNames"} = undef;    # all steps
+	$self->{"allLayers"}     = undef;    # all layers
 	$self->{"isPool"}        = undef;
 
 	$self->__InitDefault();
@@ -233,8 +233,11 @@ sub GetCompByLayer {
 	my $class   = $self->GetPcbClass();
 	my $cuThick = $self->GetBaseCuThick($layerName);
 
-	my $comp = EtchOperation->KompenzaceIncam( $cuThick, $class );
-
+	my $comp = 0;
+	# when neplat, there is layer "c" but 0 comp
+	if ( $cuThick > 0 ) {
+		$comp = EtchOperation->KompenzaceIncam( $cuThick, $class );
+	}
 	return $comp;
 
 }
@@ -440,9 +443,9 @@ sub LayerExist {
 }
 
 sub IsPool {
-	my $self      = shift;
-	 
- 	return $self->{"isPool"};
+	my $self = shift;
+
+	return $self->{"isPool"};
 }
 
 sub __InitDefault {
@@ -459,6 +462,7 @@ sub __InitDefault {
 	$self->{"layerCnt"} = CamJob->GetSignalLayerCnt( $self->{"inCAM"}, $self->{"jobId"} );
 
 	$self->{"platedRoutExceed"} = PlatedRoutArea->PlatedAreaExceed( $self->{"inCAM"}, $self->{'jobId'}, "panel" );
+
 	$self->{"rsExist"} = CamDrilling->NCLayerExists( $self->{"inCAM"}, $self->{'jobId'}, EnumsGeneral->LAYERTYPE_nplt_rsMill );
 
 	if ( $self->{"layerCnt"} > 2 ) {

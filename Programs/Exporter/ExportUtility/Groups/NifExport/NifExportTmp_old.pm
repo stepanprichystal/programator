@@ -1,72 +1,90 @@
-
-#-------------------------------------------------------------------------------------------#
-# Description: This class is responsible for prepare:
-# - default "dataset" (groupData) for displaying them in GUI. Handler: OnPrepareGroupData
-# - decide, if group will be active in GUI. Handler: OnGetGroupState
-# Author:SPR
-#-------------------------------------------------------------------------------------------#
-package Programs::Exporter::ExportChecker::Groups::NifExport::Model::NifPrepareData;
+package Programs::Exporter::ExportUtility::Groups::NifExport::NifExportTmp;
 
 #3th party library
 use strict;
 use warnings;
-
-#local library
-use aliased 'Programs::Exporter::ExportChecker::Groups::NifExport::Model::NifGroupData';
-use aliased 'Programs::Exporter::ExportChecker::Enums';
+use Wx;
 use aliased 'CamHelpers::CamJob';
 use aliased 'CamHelpers::CamHelper';
+use aliased 'CamHelpers::CamLayer';
+
+use aliased 'CamHelpers::CamDrilling';
+use aliased 'Enums::EnumsPaths';
+use aliased 'Enums::EnumsGeneral';
+use aliased 'Helpers::JobHelper';
+use aliased 'Packages::InCAM::InCAM';
+use aliased 'Enums::EnumsMachines';
+use aliased 'Helpers::GeneralHelper';
+use aliased 'Packages::Events::Event';
+
+use aliased 'Programs::Exporter::UnitEnums';
+
+use aliased 'Programs::Exporter::ExportUtility::Groups::NifExport::NifExport';
+use aliased 'Programs::Exporter::DataTransfer::UnitsDataContracts::NifData';
+use aliased 'Programs::Exporter::ExportChecker::Groups::NifExport::Model::NifGroupData';
+
 use aliased 'CamHelpers::CamAttributes';
 use aliased 'Connectors::HeliosConnector::HegMethods';
-use aliased 'Enums::EnumsGeneral';
+
+use aliased 'Programs::Exporter::ExportChecker::Groups::NifExport::Presenter::NifUnit';
+use aliased 'Managers::MessageMngr::MessageMngr';
+use aliased 'CamHelpers::CamAttributes';
 
 #-------------------------------------------------------------------------------------------#
-#  Package methods
+#  NC export, all layers, all machines..
 #-------------------------------------------------------------------------------------------#
+
+my $resultMess = "";
+my $succes     = 1;
 
 sub new {
-	my $class = shift;
-	my $self  = {};
+
+	my $self = shift;
+	$self = {};
 	bless $self;
-
-	return $self;    # Return the reference to the hash.
+	return $self;
 }
 
-# This method decide, if group will be "active" or "passive"
-# If active, decide if group will be switched ON/OFF
-# Return enum: Enums->GroupState_xxx
-sub OnGetGroupState {
-	my $self     = shift;
-	my $dataMngr = shift;    #instance of GroupDataMngr
+sub Run {
+	my $self  = shift;
+	my $inCAM = shift;
+	my $jobId = shift;
 
-	#we want nif group allow always, so return ACTIVE ON
-	return Enums->GroupState_ACTIVEON;
+	my $poznamka  = shift;
+	my $tenting   = shift;
+	my $pressfit  = shift;
+	my $maska01   = shift;
+	my $datacode  = shift;
+	my $ulLogo    = shift;
+	my $jumpScore = shift;
 
-}
+	my $stepName = "panel";
 
-# Default "group data" are prepared in this method
-sub OnPrepareGroupData {
-	my $self     = shift;
-	my $dataMngr = shift;    #instance of GroupDataMngr
+	#GET INPUT NIF INFORMATION
 
 	my $groupData = NifGroupData->new();
 
-	my $inCAM = $dataMngr->{"inCAM"};
-	my $jobId = $dataMngr->{"jobId"};
+	$groupData->SetNotes($poznamka);
+	$groupData->SetTenting($tenting);
+	$groupData->SetPressfit($pressfit);
+	$groupData->SetMaska01($maska01);
+	$groupData->SetDatacode($datacode);
+	$groupData->SetUlLogo($ulLogo);
+	$groupData->SetJumpScoring($jumpScore);
 
-	my $defaultInfo = $dataMngr->GetDefaultInfo();
+	# TODO - vypocet rozmeru pak smazat
 
-	# Controls when step panel not exist
-	$groupData->SetMaska01(0);
-	$groupData->SetPressfit(0);
-	$groupData->SetNotes("");
+	# Dimension
+	my %dim = $self->__GetDimension( $inCAM, $jobId );
 
-	# prepare default selected quick notes
-	my @quickNotes = ();
-	$groupData->SetQuickNotes( \@quickNotes );
+	$groupData->SetSingle_x( $dim{"single_x"} );
+	$groupData->SetSingle_y( $dim{"single_y"} );
+	$groupData->SetPanel_x( $dim{"panel_x"} );
+	$groupData->SetPanel_y( $dim{"panel_y"} );
+	$groupData->SetNasobnost_panelu( $dim{"nasobnost_panelu"} );
+	$groupData->SetNasobnost( $dim{"nasobnost"} );
 
-	$groupData->SetDatacode("");
-	$groupData->SetUlLogo("");
+	
 
 	# Mask color
 
@@ -94,56 +112,74 @@ sub OnPrepareGroupData {
 	$groupData->SetC_silk_screen_colour( $silk2{"top"} );
 	$groupData->SetS_silk_screen_colour( $silk2{"bot"} );
 
-	my $tenting = $self->__IsTenting( $inCAM, $jobId, $defaultInfo );
+	# SMAYAT konece
 
-	$groupData->SetTenting($tenting);
+	# Check data
+	use aliased 'Packages::ItemResult::ItemResultMngr';
+	my $resultMngr = ItemResultMngr->new();
 
-	my $scoreChecker = $defaultInfo->GetScoreChecker();
-	my $jump         = 0;
-	if ($scoreChecker) {
-		$jump = $scoreChecker->CustomerJumpScoring();
-	}
+	my $unit = NifUnit->new( $jobId );
+	$unit->InitDataMngr($inCAM, $groupData);
+		
+	$unit->CheckBeforeExport( $inCAM, \$resultMngr );
 
-	$groupData->SetJumpScoring($jump);
+	unless ( $resultMngr->Succes() ) {
 
-	# Dimension
-	my %dim = $self->__GetDimension( $inCAM, $jobId );
+		my $str = "";
+		$str .= $resultMngr->GetErrorsStr();
+		$str .= $resultMngr->GetWarningsStr();
 
-	$groupData->SetSingle_x( $dim{"single_x"} );
-	$groupData->SetSingle_y( $dim{"single_y"} );
-	$groupData->SetPanel_x( $dim{"panel_x"} );
-	$groupData->SetPanel_y( $dim{"panel_y"} );
-	$groupData->SetNasobnost_panelu( $dim{"nasobnost_panelu"} );
-	$groupData->SetNasobnost( $dim{"nasobnost"} );
+		my $messMngr = MessageMngr->new( $self->{"jobId"} );
 
-	return $groupData;
-}
+		my @mess1 = ( "Kontrola pred exportem", $str );
+		$messMngr->ShowModal( -1, EnumsGeneral->MessageType_ERROR, \@mess1 );
 
-sub __IsTenting {
-	my $self        = shift;
-	my $inCAM       = shift;
-	my $jobId       = shift;
-	my $defaultInfo = shift;
-
-	unless ($defaultInfo) {
 		return 0;
 	}
 
-	my $tenting = 0;
+	my $exportData = $unit->GetExportData($inCAM);
+	
 
-	if ( CamHelper->LayerExists( $inCAM, $jobId, "c" ) ) {
+	my $export = NifExport->new( UnitEnums->UnitId_NIF );
+	$export->Init( $inCAM, $jobId, $exportData );
+	$export->{"onItemResult"}->Add( sub { Test(@_) } );
+	$export->Run();
 
-		my $etch = $defaultInfo->GetEtchType("c");
+	print "\n========================== E X P O R T: " . UnitEnums->UnitId_NIF . " ===============================\n";
+	print $resultMess;
+	print "\n========================== E X P O R T: "
+	  . UnitEnums->UnitId_NIF
+	  . " - F I N I S H: "
+	  . ( $succes ? "SUCCES" : "FAILURE" )
+	  . " ===============================\n";
 
-		if ( $etch eq EnumsGeneral->Etching_TENTING ) {
+	sub Test {
+		my $itemResult = shift;
 
-			$tenting = 1;
+		if ( $itemResult->Result() eq "failure" ) {
+			$succes = 0;
 		}
+
+		$resultMess .= " \n=============== Export task result: ==============\n";
+		$resultMess .= "Task: " . $itemResult->ItemId() . "\n";
+		$resultMess .= "Task result: " . $itemResult->Result() . "\n";
+		$resultMess .= "Task errors: \n" . $itemResult->GetErrorStr() . "\n";
+		$resultMess .= "Task warnings: \n" . $itemResult->GetWarningStr() . "\n";
 
 	}
 
-	return $tenting;
+	unless ($succes) {
+		my $messMngr = MessageMngr->new($jobId);
+
+		my @mess1 = ( "== EXPORT FAILURE === GROUP:  " . UnitEnums->UnitId_NIF . "\n" . $resultMess );
+		$messMngr->ShowModal( -1, EnumsGeneral->MessageType_ERROR, \@mess1 );
+	}
+
+	return $succes;
+
 }
+
+# TODO metodu pak smazat
 
 sub __GetDimension {
 
@@ -292,24 +328,39 @@ sub __GetMultiplOfStep {
 
 }
 
+1;
+
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#
+
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	#	use aliased 'Packages::Export::NCExport::NCExportGroup';
-	#
-	#	my $jobId    = "F13608";
-	#	my $stepName = "panel";
-	#
-	#	my $inCAM = InCAM->new();
-	#
-	#	my $ncgroup = NCExportGroup->new( $inCAM, $jobId );
-	#
-	#	$ncgroup->Run();
+	use aliased 'Programs::Exporter::ExportUtility::Groups::NifExport::NifExportTmp';
+	my $checkOk  = 1;
+	my $jobId    = "f13610";
+	my $stepName = "panel";
+	my $inCAM    = InCAM->new();
 
-	#print $test;
+	#GET INPUT NIF INFORMATION
+
+	my $nifPreGroup = NifPreGroup->new( $inCAM, $jobId );
+
+	my $tenting  = 1;
+	my $pressfit = 0;
+	my $maska01  = 0;
+
+	my $prepareOk = 1;
+	my %exportData = $nifPreGroup->__GetExportData( \$prepareOk, $tenting, $pressfit, $maska01 );
+
+	# Vytvoøení nifu, pokud vstupní parametry jsou OK
+	if ($prepareOk) {
+
+		my $export = NifExportTmp->new();
+		$export->Run( $inCAM, $jobId, $stepName, \%exportData );
+
+	}
 
 }
 

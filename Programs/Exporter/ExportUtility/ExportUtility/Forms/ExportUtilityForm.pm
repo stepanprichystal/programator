@@ -41,13 +41,14 @@ use aliased 'Programs::Exporter::ExportUtility::Helper';
 sub new {
 	my $class   = shift;
 	my $runMode = shift;
+	my $version = shift;
 	my $parent  = shift;
 
 	if ( defined $parent && $parent == -1 ) {
 		$parent = undef;
 	}
 
-	my $title = "Exporter utility";
+	my $title = "Exporter utility - Ver.: $version";
 	my @dimension = ( 1120, 760 );
 
 	my $self = $class->SUPER::new( $runMode, $parent, $title, \@dimension );

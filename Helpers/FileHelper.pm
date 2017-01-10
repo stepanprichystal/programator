@@ -181,8 +181,12 @@ sub GetFileNameByPattern() {
 sub ReadAsString {
 	my $self = shift;
 	my $path = shift;
-
+	
 	my $str = undef;
+	
+	unless(-e $path){
+		return $str;
+	}
 
 	my $f = FileHelper->Open($path);
 	$str = join( "", <$f> );

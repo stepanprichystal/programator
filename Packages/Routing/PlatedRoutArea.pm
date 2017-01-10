@@ -34,7 +34,7 @@ sub PlatedAreaExceed {
 	my $inCAM    = shift;
 	my $jobId    = shift;
 	my $stepName = shift;
-
+	
 	my $maxArea = 19.5;    # approx area of hole 5mm
 
 	my $areaExceed = 0;

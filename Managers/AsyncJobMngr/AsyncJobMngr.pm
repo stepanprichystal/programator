@@ -496,6 +496,8 @@ sub __CloseActiveJobs {
 # Function responsible for properly close threads and servers
 sub __OnClose {
 
+	 
+
 	my ( $self, $mainFrm ) = @_;
 
 	my $jobsRef    = $self->{"jobs"};
@@ -544,6 +546,7 @@ sub __OnClose {
 
 	}
 	else {
+	 
 
 		# Close or servers, which are waiting or running
 		$self->{"serverMngr"}->SetDestroyOnDemand(0);

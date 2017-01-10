@@ -19,6 +19,8 @@ use aliased 'Helpers::GeneralHelper';
 use aliased 'Enums::EnumsPaths';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'Connectors::HeliosConnector::HegMethods';
+use aliased 'Helpers::FileHelper';
+use aliased 'Managers::MessageMngr::MessageMngr';
 
 use aliased 'Programs::Exporter::ExportUtility::Task::Task';
 use aliased 'Programs::Exporter::ExportUtility::ExportUtility::Forms::ExportUtilityForm';
@@ -42,9 +44,12 @@ sub new {
 	my $runMode = shift;
 
 	$self->{"inCAM"} = undef;
+	
+	# Load verion of exporter
+	$self->{"version"} = $self->__GetVersion();
 
 	# Main application form
-	$self->{"form"} = ExportUtilityForm->new($runMode);
+	$self->{"form"} = ExportUtilityForm->new($runMode, $self->{"version"},  undef );
 
 	# Keep all references of used groups/units in form
 	my @tasks = ();
@@ -52,6 +57,8 @@ sub new {
 
 	my @exportFiles = ();
 	$self->{"exportFiles"} = \@exportFiles;
+	
+
 
 	#set base class handlers
 
@@ -436,6 +443,41 @@ sub __Timer5second {
 
 }
 
+
+sub __TimerCheckVersion{
+	my $self = shift;
+	
+	my $verison = $self->__GetVersion();
+	
+	if ($verison == 0 || $self->{"version"} == 0){
+		return 0;
+	}
+	
+	if( $self->{"version"} < $verison){
+		
+		$self->{"timerVersion"}->Stop();
+		
+		my $messMngr = $self->{"form"}->{"messageMngr"};
+
+		my @mess1 = ( "Na serveru je nová verze programu 'Exporter'. Jakmile to bude moné, ukonèi program.", "Chceš program ukonèit nyní?" );
+		my @btn = ( "Ano", "Ukonèím pozdìni");
+		$messMngr->ShowModal( -1, EnumsGeneral->MessageType_INFORMATION, \@mess1, \@btn);
+		
+		# close exporter
+		if($messMngr->Result() == 0){
+
+			$self->{"form"}->__OnClose();
+		}
+		
+		# once to 5 minute
+		$self->{"timerVersion"}->Start(60000*5);
+		
+		
+		
+	}
+	
+}
+
 # ========================================================================================== #
 #  PRIVATE HELPER METHOD
 # ========================================================================================== #
@@ -519,6 +561,34 @@ sub __RunTimers {
 	my $timer5sec = Wx::Timer->new( $formMainFrm, -1, );
 	Wx::Event::EVT_TIMER( $formMainFrm, $timer5sec, sub { $self->__Timer5second(@_) } );
 	$timer5sec->Start(1000);
+	
+ 
+	
+	my $timerVersion = Wx::Timer->new( $formMainFrm, -1, );
+	$self->{"timerVersion"} = $timerVersion;
+	Wx::Event::EVT_TIMER( $formMainFrm, $timerVersion, sub { $self->__TimerCheckVersion(@_) } );
+	$timerVersion->Start(60000*5); # every 5 minutes
+	
+}
+
+sub __GetVersion{
+	my $self = shift;
+	
+	my $verPath = GeneralHelper->Root()."\\Programs\\Exporter\\version.txt";
+	
+	my $str = FileHelper->ReadAsString($verPath);
+	
+	unless(defined $str){
+		return 0;
+	}
+	
+	$str =~ s/\t\r\n\s//g;
+	
+	if(defined $str && $str ne ""){
+		return $str;
+	}else{
+		return 0;
+	}
 }
 
 #

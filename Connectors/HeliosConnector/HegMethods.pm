@@ -21,7 +21,6 @@ use aliased 'Connectors::HeliosConnector::Helper';
 use aliased 'Connectors::SqlParameter';
 use aliased 'Connectors::HeliosConnector::Enums';
 
-
 use aliased 'Helpers::GeneralHelper';
 use aliased 'Packages::SystemCall::SystemCall';
 use aliased 'Connectors::EnumsErrors';
@@ -698,7 +697,7 @@ sub UpdateNCInfo {
 
 	if ($childThread) {
 
-		my $result =  $self->__SystemCall( "UpdateNCInfo", $pcbId, $ncInfo );
+		my $result = $self->__SystemCall( "UpdateNCInfo", $pcbId, $ncInfo );
 
 		return $result;
 	}
@@ -720,16 +719,14 @@ sub UpdatePcbOrderState {
 	my $state       = shift;
 	my $childThread = shift;
 
-	 
-	
 	if ($childThread) {
-		 
+
 		my $result = $self->__SystemCall( "UpdatePcbOrderState", $pcbId, $state );
 
 		return $result;
 	}
 	else {
-		 
+
 		require Connectors::HeliosConnector::HelperWriter;
 
 		my $res = Connectors::HeliosConnector::HelperWriter->OnlineWrite_order( "$pcbId", $state, "aktualni_krok" );
@@ -741,36 +738,95 @@ sub UpdatePcbOrderState {
 
 
 
+## Return value from clolumn "aktualni krok" for pcb order
+#sub GetStatusOfOrder {
+#	my $self    = shift;
+#	my $orderId = shift;
+#
+#	my @params = ( SqlParameter->new( "_OrderId", Enums->SqlDbType_VARCHAR, $orderId ) );
+#	my @params = ();
+#	
+#	
+#	
+#
+#	my $cmd = "SELECT 
+#				lcs.nf_edit_style('stav_zakazky_dps_22', stav) from lcs.zakazky_dps_22_hlavicka WHERE reference_subjektu = 'f59401-01'";
+#
+#	my $res = Helper->ExecuteScalar( $cmd, \@params );
+#
+#	return $res;
+#}
+
+
+
+# Return value from clolumn "aktualni krok" for pcb order
+sub GetStatusOfOrder {
+	my $self    = shift;
+	my $orderId = shift;
+
+	my @params = ( SqlParameter->new( "_OrderId", Enums->SqlDbType_VARCHAR, $orderId ) );
+	
+	
+	my $cmd = "SELECT top 1
+				lcs.nf_edit_style('stav_zakazky_dps_22', stav) stav
+				from lcs.zakazky_dps_22_hlavicka 
+				WHERE reference_subjektu = _OrderId";
+
+	my $res = Helper->ExecuteScalar( $cmd, \@params, 1 );
+
+ 
+	return $res;
+}
+
+ 
+	
+# The select get back 3 values:
+# M for master order
+# S for slave order
+# 0 > without poolservisu
+sub GetInfMasterSlave {
+	my $self    = shift;
+	my $orderId = shift;
+
+	my @params = ( SqlParameter->new( "_OrderId", Enums->SqlDbType_VARCHAR, $orderId ) );
+	 
+
+	my $cmd = "SELECT top 1
+		case when vs1.cislo_vztaz_subjektu is not null then 'S' when vs2.cislo_subjektu is not null then 'M' else '0' end inftype
+		FROM lcs.zakazky_dps_22_hlavicka z
+		LEFT OUTER JOIN lcs.vztahysubjektu vs1 ON vs1.cislo_vztahu = 23054 and vs1.cislo_subjektu = z.cislo_subjektu
+		LEFT OUTER JOIN lcs.vztahysubjektu vs2 ON vs2.cislo_vztahu = 23054 and vs2.cislo_vztaz_subjektu = z.cislo_subjektu
+		WHERE z.reference_subjektu = _OrderId";
+
+	my $res = Helper->ExecuteScalar( $cmd, \@params, 1 );
+
+	return $res;
+}
+
 
 #-------------------------------------------------------------------------------------------#
 #  Helper method
 #-------------------------------------------------------------------------------------------#
-
 
 sub __SystemCall {
 	my $self       = shift;
 	my $methodName = shift;
 	my @params     = @_;
 
+	my $script = GeneralHelper->Root() . "\\Connectors\\HeliosConnector\\UpdateScript.pl";
 
-
-   my $script =  GeneralHelper->Root() . "\\Connectors\\HeliosConnector\\UpdateScript.pl";
-	
-	my $systemCall = SystemCall->new($script, $methodName,  @params);
+	my $systemCall = SystemCall->new( $script, $methodName, @params );
 	my $result = $systemCall->Run();
 
-	unless($result){
-		
+	unless ($result) {
+
 		my $out = $systemCall->GetOutput();
-		die HeliosException->new( EnumsErrors->HELIOSDBREADERROR, "no details" )
+		die HeliosException->new( EnumsErrors->HELIOSDBREADERROR, "no details" );
 	}
 
-
- 
 	return $result;
- 
-}
 
+}
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
@@ -779,11 +835,13 @@ sub __SystemCall {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-		use aliased 'Connectors::HeliosConnector::HegMethods';
+	use aliased 'Connectors::HeliosConnector::HegMethods';
+
 	#
-		my $res = HegMethods->UpdateNCInfo( "f52456", "test1",1 );
+	my $res = HegMethods->GetInfMasterSlave("f13608-01");
+
 	#
-		print $res;
+	print $res;
 
 	#my $test = HegMethods->GetPcbName("f52456");
 

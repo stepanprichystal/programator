@@ -13,7 +13,7 @@ use lib qw( C:\Perl\site\lib\TpvScripts\Scripts );
 #use PackagesLib;
 
 use aliased 'Packages::InCAM::InCAM';
-use aliased 'Programs::Exporter::ExportUtility::Groups::NifExport::NifExportTmp';
+use aliased 'Programs::Exporter::ExportUtility::Groups::NifExport::NifExportTmpPool';
 
 
 
@@ -26,18 +26,18 @@ my $jobId    = "f13608";
 
  
  
-my $poznamka = undef;
-my $tenting  = 0;
-my $pressfit = 1;
-my $maska01  = undef;
-my $datacode  = "ms";
-my $ullogo  = "pc";
-my $jumpScoring  = undef;
+my $poznamka = "Zpraco ";
+my $tenting  = 1;
+my $pressfit = 0;
+my $maska01  = 1;
+my $datacode  = "";
+my $ullogo  = "MC";
+my $jumpScoring  = 0;
 
  
 
 my $inCAM = InCAM->new();
-my $export = NifExportTmp->new();
+my $export = NifExportTmpPool->new();
 
 #return 1 if OK, else 0
 $export->Run( $inCAM, $jobId, $poznamka, $tenting, $pressfit, $maska01, $datacode, $ullogo, $jumpScoring);

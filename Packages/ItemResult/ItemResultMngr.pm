@@ -162,7 +162,7 @@ sub GetWarningsStr {
 				$str .= "Item: " . $item->ItemId();
 			}
 
-			$str .= $item->GetwarningStr();
+			$str .= $item->GetWarningStr();
 		}
 	}
 

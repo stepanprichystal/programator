@@ -151,6 +151,16 @@ sub OnCheckGroupData {
 		);
 	}
 	
+# 
+#	# ===================================================================
+#	# Check which need step "panel", if panel doesn't exit default info = undef
+#	# ===================================================================
+# 
+#	unless($defaultInfo){
+#		
+#		return 0;
+#	}
+	
 	# Check if dps should be pattern, if tenting is realz unchecked
 	
 	my $tenting = $self->__IsTentingCS($inCAM, $jobId, $defaultInfo);
@@ -234,6 +244,10 @@ sub __IsTentingCS {
 	my $inCAM = shift;
 	my $jobId = shift;
 	my $defaultInfo = shift;
+	
+	unless($defaultInfo){
+		return 1;
+	}
 	
 	
 	my $tenting = 0;
