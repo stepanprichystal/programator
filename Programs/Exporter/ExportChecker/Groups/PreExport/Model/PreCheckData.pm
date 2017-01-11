@@ -153,13 +153,13 @@ sub OnCheckGroupData {
 		# b) test if created stackup match thickness in helios +-5%
 		my $stackThick = $defaultInfo->GetStackup()->GetFinalThick()/1000;
 
-		unless ( $pcbThickHelios * 0.95 < $stackThick && $pcbThickHelios * 1.05 > $stackThick ) {
+		unless ( $pcbThickHelios * 0.90 < $stackThick && $pcbThickHelios * 1.10 > $stackThick ) {
 			
 			$stackThick = sprintf("%.2f", $stackThick);
 			$pcbThickHelios = sprintf("%.2f", $pcbThickHelios);
 			
 			$dataMngr->_AddErrorResult( "Stackup thickness",
-										"Stackup thickness ($stackThick) isn't match witch thickness in Helios ($pcbThickHelios) +-5%." );
+										"Stackup thickness ($stackThick) isn't match witch thickness in Helios ($pcbThickHelios) +-10%." );
 
 		}
 

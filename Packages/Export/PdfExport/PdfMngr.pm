@@ -151,7 +151,9 @@ sub __ExportDataControl {
 	my $archivePath = JobHelper->GetJobArchive($jobId) . "zdroje\\" . $self->{"jobId"} . "-control.pdf";
 
 	if ( -e $archivePath ) {
-		unlink($archivePath);
+		unless( unlink($archivePath) ){
+			die "Can not delete old pdf control file (".$archivePath."). Maybe file is still open.\n";
+		}
 	}
 
 	copy( $outputPdf, $archivePath );

@@ -207,11 +207,19 @@ sub GetBasePcbInfo {
 sub GetMaterialKind {
 	my $self  = shift;
 	my $pcbId = shift;
+	my $editStyle = shift;
 
 	my @params = ( SqlParameter->new( "_PcbId", Enums->SqlDbType_VARCHAR, $pcbId ) );
+ 
 
+	my $column = "d.material_druh";
+	
+	if($editStyle){
+		$column = "lcs.nf_edit_style('ddlb_22_material_druh', d.material_druh) mat"
+	}
+ 
 	my $cmd = "select top 1
-				 d.material_druh
+				 ".$column."
 				 from lcs.desky_22 d with (nolock)
 				  left outer join lcs.zakazky_dps_22_hlavicka z with (nolock) on z.deska=d.cislo_subjektu
 				 where d.reference_subjektu=_PcbId and  z.cislo_poradace = 22050";
@@ -838,7 +846,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	use aliased 'Connectors::HeliosConnector::HegMethods';
 
 	#
-	my $res = HegMethods->GetInfMasterSlave("f13608-01");
+	my $res = HegMethods->GetMaterialKind("f52456");
 
 	#
 	print $res;

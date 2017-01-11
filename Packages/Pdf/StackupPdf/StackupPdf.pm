@@ -100,6 +100,12 @@ sub __GetStackupName {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
+
+use aliased 'Packages::Pdf::StackupPdf::StackupPdf';
+
+my $stackup      = StackupPdf->new( "f59541" );
+my $resultCreate = $stackup->Create();
+
 }
 
 1;

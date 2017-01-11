@@ -81,7 +81,7 @@ sub Fill {
 	$template->SetKey( "AuthorVal", $authorInf{"jmeno"}." ".$authorInf{"prijmeni"} );
 
 	$template->SetKey( "PcbId", "Internal pcb Id", "Interní id" );
-	$template->SetKey( "PcbIdVal", $self->{"jobId"} );
+	$template->SetKey( "PcbIdVal", uc($self->{"jobId"}) );
 
 	$template->SetKey( "Email",    "Email" );
 	$template->SetKey( "EmailVal", $authorInf{"e_mail"} );
@@ -110,7 +110,7 @@ sub Fill {
 	$template->SetKey( "SilkBot", "Silkscreen bot", "Potisk bot" );
 	$template->SetKey( "SilkBotVal", $nifFile{"s_silk_screen_colour"}, Translator->Cz( $nifFile{"s_silk_screen_colour"} ) );
 
-	$template->SetKey( "PcbThickness", "Pcb thickness", "Tloušťka dps" );
+	$template->SetKey( "PcbThickness", "Material thickness", "Tloušťka materiálu" );
 
 	$template->SetKey( "PcbThicknessVal", $stackupInf{"thick"} );
 
@@ -140,7 +140,7 @@ sub Fill {
 	$template->SetKey( "MaterialQuality", "Material quality", "Druh materiálu" );
 	$template->SetKey( "MaterialQualityVal", $stackupInf{"material"} );
 
-	$template->SetKey( "PcbThickness", "Total thickness", "Celková tloušťka" );
+	$template->SetKey( "PcbThickness", "Material thickness", "Tloušťka materiálu" );
 	$template->SetKey( "PcbThicknessVal", $stackupInf{"thick"} );
 
 	$template->SetKey( "PreviewStackup", $stackupPath );
@@ -156,18 +156,6 @@ sub Fill {
 	return 1;
 }
 
-sub __GetAuthorInfo {
-	my $self = shift;
-
-	my %inf = ();
-
-	$inf{"phone"} = "777 888 555";
-	$inf{"email"} = "stepan.prichzstal mail.oo";
-	$inf{"name"}  = "Štěpán Přichystal";
-
-	return %inf;
-
-}
 
 sub __GetNifFileInfo {
 	my $self = shift;
@@ -214,16 +202,14 @@ sub __GetStackupInfo {
 	if ( $layerCnt <= 2 ) {
  
 		$inf{"thick"} =   sprintf( "%.2f mm", HegMethods->GetPcbMaterialThick($self->{"jobId"} ) );
-		$inf{"material"} = HegMethods->GetMaterialKind($self->{"jobId"});
-
 	}
 	else {
-
 		#get info from stackup
 		my $stackup = Stackup->new( $self->{"jobId"} );
 		$inf{"thick"} = sprintf( "%.2f mm", $stackup->GetFinalThick() / 1000 );
-		$inf{"material"} = $stackup->GetStackupType();
 	}
+	
+	$inf{"material"} = HegMethods->GetMaterialKind($self->{"jobId"}, 1);
 
 	return %inf;
 

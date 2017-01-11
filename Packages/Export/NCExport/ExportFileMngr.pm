@@ -15,6 +15,7 @@ use aliased 'Helpers::GeneralHelper';
 use aliased 'Packages::ItemResult::ItemResult';
 use aliased 'Enums::EnumsPaths';
 use aliased 'Helpers::JobHelper';
+use aliased 'Helpers::FileHelper';
 use aliased 'CamHelpers::CamHelper';
 use aliased 'CamHelpers::CamStepRepeat';
 
@@ -258,6 +259,17 @@ sub __DeleteOldFiles {
 		}
 
 		closedir($dir);
+	}
+	
+	# Check if exist some "old format" drilling, if so delete. Old format are .ros, .rou, .mes
+	my $archivePath = JobHelper->GetJobArchive( $self->{"jobId"} );
+ 	
+	my @mes = FileHelper->GetFilesNameByPattern( $archivePath, ".mes" );
+	my @ros = FileHelper->GetFilesNameByPattern( $archivePath, ".ros" );
+	my @rou = FileHelper->GetFilesNameByPattern( $archivePath, ".rou" );
+ 
+	foreach my $f ( (@mes, @ros, @rou) ) {
+		unlink $f;
 	}
 }
 
