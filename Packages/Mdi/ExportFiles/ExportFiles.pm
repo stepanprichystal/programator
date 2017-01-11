@@ -191,6 +191,8 @@ sub __ExportGerberLayer {
 	
 	ExportLayers->ExportLayers( $resultItemGer, $inCAM,  $self->{"mdiStep"}, $self->{"layers"}, $exportPath, $jobId, $suffixFunc );
 
+	FiducMark->AddalignmentMark()
+
 }
 
 
