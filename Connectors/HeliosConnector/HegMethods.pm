@@ -207,7 +207,7 @@ sub GetBasePcbInfo {
 sub GetMaterialKind {
 	my $self  = shift;
 	my $pcbId = shift;
-	my $editStyle = shift;
+	my $editStyle = shift;  # if checked ,return value will be edited FR4 => FR4 tg150
 
 	my @params = ( SqlParameter->new( "_PcbId", Enums->SqlDbType_VARCHAR, $pcbId ) );
  
