@@ -573,8 +573,13 @@ sub SetNotes {
 	my $self  = shift;
 	my $value = shift;
 	$self->{"richTxt"}->Clear();
-	 
 	
+	# Temporary set ypracovano v Incamu
+	
+	unless($value =~ /Zpracovano v InCAMu/i){
+		$value = "Zpracovano v InCAMu. ".$value;
+	}
+	 
 	if($value && $value ne ""){
 		
 		
