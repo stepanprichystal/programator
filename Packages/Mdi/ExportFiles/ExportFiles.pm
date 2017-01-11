@@ -91,6 +91,11 @@ sub __ExportLayers {
 	my @layers = ();
 
 	foreach my $l (@layers) {
+		
+		
+		# get limits (define physic dimension) for layer
+		
+		
 
 		# 1) clip data by limits
 		$self->__ClipAreaLayer( $l->{"gROWname"} );
@@ -123,6 +128,12 @@ sub __GetFrLimits {
 		$route->Parse( $inCAM, $jobId, $self->{"mdiStep"}, "fr" );
 		my @features = $route->GetFeatures();
 		%lim = PolygonHelper->GetLimByRectangle( \@features );
+		
+		# fr width is 2mm, reduce limits by 1mm from each side
+		$lim{"xMin"} = $lim{"xMin"} + 1;
+		$lim{"xMax"} = $lim{"xMax"} - 1;
+		$lim{"yMin"} = $lim{"yMin"} + 1;
+		$lim{"yMax"} = $lim{"yMax"} - 1;
 	}
 
 	return %lim;
@@ -202,18 +213,19 @@ sub __ExportXmlLayer {
 
 }
 
-
+# Cut layer data, according physic dimension of pcb
 sub __ClipAreaLayer {
 	my $self      = shift;
 	my $layerName = shift;
 
 	# 0) Get limits by layer type
 
+	my %lim = ();
+	
 	# if top/bot layer, clip around profile
 	if ( $layer->{"gROWname"} =~ /^c$/ || $layer->{"gROWname"} =~ /^s$/ ) {
 
 		%lim = %{ $self->{"profLim"} };
-
 	}
 
 	#if inner layers, clip around fr frame
@@ -249,6 +261,8 @@ sub __CompensateLayer {
 
 }
 
+# Frame define border of data for pcb layer
+# border must be size like physic pcb
 sub __PutFrameAorundPcb {
 	my $self      = shift;
 	my $layerName = shift;
