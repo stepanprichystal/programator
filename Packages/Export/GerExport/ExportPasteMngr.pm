@@ -151,7 +151,7 @@ sub __Export {
 	my $suffixFunc = sub {
 
 		my $l = shift;
-		return "";
+		return ".ger";
 	};
 
 	my @hashLayers = ();
