@@ -541,7 +541,7 @@ sub __OnClose {
 		else {
 
 			#Cancel,  thus continue in work..
-
+			$self->{"timerExport"}->Start(1000);
 		}
 
 	}
