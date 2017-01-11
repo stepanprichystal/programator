@@ -294,7 +294,7 @@ sub SetToProduceResult {
 		my @notExportUnits = map { UnitEnums->GetTitle($_) } @notExportUnits;
 		my $str = join( ", ", @notExportUnits );
 
-		my $errorStr = "Can't sent \"to produce\", because some groups wern't exported succesfully in past. \n";
+		my $errorStr = "Can't sent \"to produce\", because some groups haven't been exported succesfully. \n";
 		$errorStr .= "Groups that need to be exported: <b> $str </b>\n";
 
 		$self->{"canToProduce"} = 0;

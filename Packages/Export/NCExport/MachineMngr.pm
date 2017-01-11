@@ -160,7 +160,7 @@ sub __GetMachinesByVector {
 	$comb{ Enums->Property_DRILLCROSSES } = sub { my ( $m, $o ) = @_; return ( !$m && $o ? 0 : 1 ) };
 	$comb{ Enums->Property_CAMERAS }      = sub { my ( $m, $o ) = @_; return ( !$m && $o ? 0 : 1 ) };
 	$comb{ Enums->Property_MAXTOOL } = sub { my ( $m, $o ) = @_; return ( $m < $o ? 0 : 1 ) };
-	$comb{ Enums->Property_MINTOOL } = sub { my ( $m, $o ) = @_; return ( $m > $o ? 0 : 1 ) };
+	$comb{ Enums->Property_MINTOOL } = sub { my ( $m, $o ) = @_; return ( ($o != 0) && $m > $o ? 0 : 1 ) };
 	
 
 	#my $sumPropVec = 0;

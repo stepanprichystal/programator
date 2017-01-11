@@ -22,8 +22,8 @@ sub new {
 
 	bless $self;
 
-	$self->{"resultSet"} = shift;   # rule result set
-	$self->{"layers"}    = shift;	# list of PlotLayer objects
+	$self->{"resultSet"} = shift;    # rule result set
+	$self->{"layers"}    = shift;    # list of PlotLayer objects
 	$self->{"jobId"}     = shift;
 
 	# Helper propery, when create opfx
@@ -90,22 +90,30 @@ sub GetOutputFileName {
 
 	# check if set contain core layer
 	my $coreExist = 0;
-	foreach my $l ($self->GetLayers()){
-		
+	foreach my $l ( $self->GetLayers() ) {
+
 		my $lName = $l->GetName();
-		
-		if($lName =~ /^v[\d]+/i){
+
+		if ( $lName =~ /^v[\d]+/i ) {
 			$coreExist = 1;
 			last;
 		}
-		
+
 	}
 
 	# whem film contain only one pcb, add "v" to name, except core
 	my $indicator = scalar( $self->GetLayers() ) == 1 && !$coreExist ? "v" : "";
 
 	# Select layer by layer
-	foreach my $plotL ( $self->GetLayers() ) {
+	my @layers = $self->GetLayers();
+	for ( my $i = 0 ; $i < scalar(@layers) ; $i++ ) {
+
+		my $plotL = $layers[$i];
+
+		if ( $i > 0 ) {
+			$fName .= "-";     # add dash, if more layers
+		}
+
 		$fName .= $plotL->GetName() . $indicator . "_" . $plotL->GetComp();
 	}
 
