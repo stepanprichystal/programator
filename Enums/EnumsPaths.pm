@@ -24,8 +24,11 @@ use constant {
 
 use constant {
 	
+	
     Jobs_ARCHIV => "r:\\Archiv\\",  
-    Jobs_STACKUPS => "r:\\PCB\\pcb\\VV_slozeni\\"
+    Jobs_STACKUPS => "r:\\PCB\\pcb\\VV_slozeni\\",
+    Jobs_PCBMDI => "r:\\pcb\\mdi\\",
+    Jobs_MDI => "r:\\mdi\\"
     
 };
 

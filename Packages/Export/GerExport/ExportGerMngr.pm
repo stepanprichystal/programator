@@ -17,7 +17,7 @@ use aliased 'Enums::EnumsPaths';
 use aliased 'Helpers::JobHelper';
 use aliased 'Helpers::FileHelper';
 use aliased 'CamHelpers::CamHelper';
-use aliased 'Packages::Export::GerExport::Helper';
+use aliased 'Packages::Gerbers::Export::ExportLayers => Helper';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods

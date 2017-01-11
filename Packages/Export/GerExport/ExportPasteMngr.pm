@@ -20,7 +20,7 @@ use aliased 'Helpers::JobHelper';
 use aliased 'CamHelpers::CamHelper';
 use aliased 'CamHelpers::CamStepRepeat';
 use aliased 'Helpers::FileHelper';
-use aliased 'Packages::Export::GerExport::Helper';
+use aliased 'Packages::Gerbers::Export::ExportLayers => Helper';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods

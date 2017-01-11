@@ -3,8 +3,8 @@
 # Description: Cover exporting layers as gerber274x
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::Export::GerExport::ExportMdiMngr;
-use base('Packages::Export::MngrBase');
+package Packages::Mdi::ExportFiles::ExportFiles;
+ 
 
 #3th party library
 use strict;
@@ -14,7 +14,7 @@ use warnings;
 use aliased 'Helpers::GeneralHelper';
 
 #use aliased 'Packages::ItemResult::ItemResult';
-#use aliased 'Enums::EnumsPaths';
+use aliased 'Enums::EnumsPaths';
 #use aliased 'Helpers::JobHelper';
 #use aliased 'Helpers::FileHelper';
 #use aliased 'CamHelpers::CamHelper';
@@ -24,16 +24,18 @@ use aliased 'CamHelpers::CamSymbol';
 use aliased 'CamHelpers::CamJob';
 use aliased 'Packages::Polygon::PolygonHelper';
 use aliased 'Packages::Polygon::Features::Features::RouteFeatures';
-
+use aliased 'Packages::Gerbers::Export::ExportLayers';
+use aliased 'Packages::ItemResult::ItemResult';
+use aliased 'Packages::Mdi::ExportFiles::FiducMark';
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
 
 sub new {
 
-	my $class = shift;
+	my $self = shift;
 
-	my $self = $class->SUPER::new(@_);
+	$self = {};
 	bless $self;
 
 	$self->{"inCAM"} = shift;
@@ -42,7 +44,17 @@ sub new {
 	#$self->{"exportLayers"} = shift;
 	#$self->{"layers"}       = shift;
 
+ 
+
 	$self->{"layerCnt"} = CamJob->GetSignalLayerCnt( $self->{"inCAM"}, $self->{"jobId"} );
+	
+	$self->{"pcbClass"} = CamJob->GetJobPcbClass( $self->{"inCAM"}, $self->{"jobId"} );
+	
+	if($self->{"layerCnt"} > 2){
+			$self->{"stackup"} = Stackup->new( $self->{"jobId"} );
+	}
+
+    
 	$self->{"mdiStep"} = "mdi_panel";
 
 	# Get limits of fr, profile
@@ -56,20 +68,45 @@ sub new {
 	return $self;
 }
 
-sub Run {
-	my $self = shift;
+
+sub Run{
+	my $self  = shift;
+	my $layer = shift;
+	
+	$self->__CreateMDIStep();
+	$self->__ExportLayers();
+	$self->__DeleteMdiStep();
+	
+}
+
+
+sub __ExportLayers {
+	my $self  = shift;
+	my $layer = shift;
+
+	my $inCAM = $self->{"inCAM"};
+	my $jobId = $self->{"jobId"};
 
 	# get layer to export
 	my @layers = ();
 
 	foreach my $l (@layers) {
 
-		# clip layer if inner layers clip around fr, else clip around profile
-		$self->__ClipLayer($l);
+		# 1) clip data by limits
+		$self->__ClipAreaLayer( $l->{"gROWname"} );
 
+		# 2) insert frame 100µm width around pcb (fr frame coordinate)
+		$self->__PutFrameAorundPcb( $l->{"gROWname"} );
+
+		# 3) compensate layer by computed compensation
+		$self->__CompensateLayer( $l->{"gROWname"} );
+		
+		# 4) export gerbers
+		$self->__ExportGerberLayer( $l->{"gROWname"} );
+		
+		$self->__ExportXmlLayer( $l->{"gROWname"} );
 	}
 
-	$self->__Export();
 }
 
 sub __GetFrLimits {
@@ -107,42 +144,52 @@ sub __GetProfileLimits {
 	}
 
 	return \%lim;
-
 }
 
-sub __ExportLayers {
-	my $self  = shift;
-	my $layer = shift;
 
-	my $inCAM = $self->{"inCAM"};
-	my $jobId = $self->{"jobId"};
 
-	# get layer to export
-	my @layers = ();
+sub __GetBaseCuThick {
+	my $self      = shift;
+	my $layerName = shift;
 
-	foreach my $l (@layers) {
+	my $cuThick;
 
-		# 1) clip data by limits
-		$self->__ClipAreaLayer( $l->{"gROWname"} );
+	if ( $self->{"layerCnt"} > 2 ) {
+  
+		my $cuLayer = $self->{"stackup"}->GetCuLayer($layerName);
+		$cuThick = $cuLayer->GetThick();
+	}
+	else {
 
-		# 2) insert frame 100µm width around pcb (fr frame coordinate)
-		$self->__PutFrameAorundPcb( $l->{"gROWname"} );
-
-		# 3) compensate layer by computed compensation
-		$self->__CompensateLayer( $l->{"gROWname"} );
-		
-		# 4) export gerbers
-		$self->__ExportGerberLayer( $l->{"gROWname"} );
-		
-		$self->__ExportXmlLayer( $l->{"gROWname"} );
+		$cuThick = HegMethods->GetOuterCuThick( $self->{"jobId"}, $layerName );
 	}
 
+	return $cuThick;
 }
+
 
 
 sub __ExportGerberLayer {
 	my $self      = shift;
 	my $layerName = shift;
+	
+	
+	my $inCAM = $self->{"inCAM"};
+	my $jobId = $self->{"jobId"};
+	 
+	 
+	 # function, which build output layer name, based on layer info
+	my $suffixFunc = sub {
+
+		my $layerName = shift;
+		my $suffix = "_" . $layerName.".ger";
+		return $suffix;
+	};
+	 
+	my $exportPath = EnumsPaths->Jobs_PCBMDI; 
+	my $resultItemGer = ItemResult->new("Output layers");
+	
+	ExportLayers->ExportLayers( $resultItemGer, $inCAM,  $self->{"mdiStep"}, $self->{"layers"}, $exportPath, $jobId, $suffixFunc );
 
 }
 
@@ -180,12 +227,31 @@ sub __ClipAreaLayer {
 sub __CompensateLayer {
 	my $self      = shift;
 	my $layerName = shift;
+	
+	my $inCAM = $self->{"inCAM"};
+	my $jobId = $self->{"jobId"};
+	
+	my $class   = $self->{"pcbClass"};
+	my $cuThick = $self->__GetBaseCuThick($layerName);
+
+	my $comp = 0;
+	# when neplat, there is layer "c" but 0 comp
+	if ( $cuThick > 0 ) {
+		$comp = EtchOperation->GetCompensation( $cuThick, $class );
+	}
+	
+	if($comp > 0){
+		CamLayer->CompensateLayerData( $inCAM, $layerName, $comp);
+	}
+	
 
 }
 
 sub __PutFrameAorundPcb {
 	my $self      = shift;
 	my $layerName = shift;
+	
+
 
 	if ( $self->{ "layerCnt" ) > 2 )
 		  {
@@ -219,11 +285,11 @@ sub __CreateMDIStep {
 	  my $inCAM = $self->{"inCAM"};
 	  my $jobId = $self->{"jobId"};
 
-	  my $stepPdf = $self->{"mdiStep"};
+	  my $step = $self->{"mdiStep"};
 
 	  #delete if step already exist
-	  if ( CamHelper->StepExists( $inCAM, $jobId, $stepPdf ) ) {
-		  $inCAM->COM( "delete_entity", "job" => $jobId, "name" => $stepPdf, "type" => "step" );
+	  if ( CamHelper->StepExists( $inCAM, $jobId, $step ) ) {
+		  $inCAM->COM( "delete_entity", "job" => $jobId, "name" => $step, "type" => "step" );
 	  }
 
 	  $inCAM->COM(
@@ -232,7 +298,7 @@ sub __CreateMDIStep {
 				   source_job       => $jobId,
 				   source_name      => $self->{"step"},
 				   dest_job         => $jobId,
-				   dest_name        => $stepPdf,
+				   dest_name        => $step,
 				   dest_database    => "",
 				   "remove_from_sr" => "yes"
 	  );
@@ -243,6 +309,20 @@ sub __CreateMDIStep {
 	  if ($srExist) {
 		  $self->__FlatternPdfStep($stepPdf);
 	  }
+}
+
+# delete pdf step
+sub __DeleteMdiStep {
+	my $self    = shift;
+	 my $step = $self->{"mdiStep"};
+
+	my $inCAM = $self->{"inCAM"};
+	my $jobId = $self->{"jobId"};
+
+	#delete if step already exist
+	if ( CamHelper->StepExists( $inCAM, $jobId, $step ) ) {
+		$inCAM->COM( "delete_entity", "job" => $jobId, "name" => $step, "type" => "step" );
+	}
 }
 
 sub __FlatternPdfStep {

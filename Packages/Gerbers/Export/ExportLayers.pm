@@ -3,7 +3,7 @@
 # Description: Manager responsible for AOI files creation
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::Export::GerExport::Helper;
+package Packages::Gerbers::Export::ExportLayers;
  
 
 #3th party library
@@ -19,14 +19,7 @@ use aliased 'Helpers::FileHelper';
 #  Package methods
 #-------------------------------------------------------------------------------------------#
  
-sub Run {
-	my $self = shift;
-
-	 
-	 $self->{"gerberMngr"}->Run();
-	 $self->{"pasteMngr"}->Run();
-
-}
+ 
 
 sub ExportLayers {
 	my $self = shift;

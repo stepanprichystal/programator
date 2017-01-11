@@ -381,9 +381,7 @@ sub LayerIsBoard {
 	return 0;
 }
 
-# Mirror layer by x OR y
-# Right step must be open and set
-# Requested data must be selected
+# Compensate layer data by compensation
 sub CompensateLayerData {
 	my $self    = shift;
 	my $inCAM   = shift;

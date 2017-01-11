@@ -236,7 +236,7 @@ sub GetCompByLayer {
 	my $comp = 0;
 	# when neplat, there is layer "c" but 0 comp
 	if ( $cuThick > 0 ) {
-		$comp = EtchOperation->KompenzaceIncam( $cuThick, $class );
+		$comp = EtchOperation->GetCompensation( $cuThick, $class );
 	}
 	return $comp;
 
