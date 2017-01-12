@@ -4,7 +4,7 @@
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Packages::Export::GerExport::ExportPasteMngr;
-use base('Packages::Export::MngrBase');
+use base('Packages::ItemResult::ItemResultMngr');
 
 #3th party library
 use strict;
@@ -20,7 +20,7 @@ use aliased 'Helpers::JobHelper';
 use aliased 'CamHelpers::CamHelper';
 use aliased 'CamHelpers::CamStepRepeat';
 use aliased 'Helpers::FileHelper';
-use aliased 'Packages::Gerbers::Export::ExportLayers => Helper';
+use aliased 'Packages::Gerbers::Export::ExportLayers' => 'Helper';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods

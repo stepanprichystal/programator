@@ -33,6 +33,12 @@ sub ExportLayers {
  
  	my $device = "Gerber274x";
  	
+ 	
+ 	# if last char is slash, remove becaues
+ 	if( substr($archivePath, -1) eq "\\"){
+ 		chop($archivePath);
+ 	}
+ 	
  
  
 # Set step

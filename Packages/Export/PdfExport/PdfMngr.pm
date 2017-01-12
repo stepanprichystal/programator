@@ -4,7 +4,7 @@
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Packages::Export::PdfExport::PdfMngr;
-use base('Packages::Export::MngrBase');
+use base('Packages::ItemResult::ItemResultMngr');
 
 use Class::Interface;
 &implements('Packages::Export::IMngr');

@@ -4,7 +4,7 @@
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Packages::Export::NCExport::MergeFileMngr;
-use base('Packages::Export::MngrBase');
+use base('Packages::ItemResult::ItemResultMngr');
 
 #3th party library
 use strict;

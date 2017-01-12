@@ -9,6 +9,7 @@ use base('Packages::ItemResult::ItemEventMngr');
 #3th party library
 use strict;
 use warnings;
+use File::Copy;
 
 #local library
 use aliased 'Helpers::GeneralHelper';
@@ -17,8 +18,11 @@ use aliased 'Helpers::GeneralHelper';
 use aliased 'Enums::EnumsPaths';
 
 #use aliased 'Helpers::JobHelper';
-#use aliased 'Helpers::FileHelper';
-#use aliased 'CamHelpers::CamHelper';
+use aliased 'Helpers::FileHelper';
+use aliased 'CamHelpers::CamHelper';
+use aliased 'CamHelpers::CamStepRepeat';
+use aliased 'CamHelpers::CamLayer';
+use aliased 'CamHelpers::CamStep';
 #use aliased 'Packages::Export::GerExport::Helper';
 
 use aliased 'CamHelpers::CamSymbol';
@@ -29,6 +33,9 @@ use aliased 'Packages::Gerbers::Export::ExportLayers';
 use aliased 'Packages::ItemResult::ItemResult';
 use aliased 'Packages::Mdi::ExportFiles::FiducMark';
 use aliased 'Packages::Mdi::ExportFiles::Enums';
+use aliased 'Packages::Mdi::ExportFiles::ExportXml';
+use aliased 'Connectors::HeliosConnector::HegMethods';
+use aliased 'Packages::Technology::EtchOperation';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -41,8 +48,7 @@ sub new {
 
 	$self->{"inCAM"} = shift;
 	$self->{"jobId"} = shift;
-	$self->{"step"} = shift;
-
+	$self->{"step"}  = shift;
 
 	# Info about  pcb ===========================
 
@@ -54,17 +60,14 @@ sub new {
 		$self->{"stackup"} = Stackup->new( $self->{"jobId"} );
 	}
 
-	
-
 	# Get limits of fr, profile ===============
 
-	my @frLim = @self->__GetFrLimits();
+	my @frLim = $self->__GetFrLimits();
 	$self->{"frLim"} = \@frLim;
 
-	my %profLim = CamJob->GetProfileLimits2( $inCAM, $lName, $self->{"step"} );
+	my %profLim = CamJob->GetProfileLimits2( $self->{"inCAM"}, $self->{"jobId"}, $self->{"step"} );
 	$self->{"profLim"} = \%profLim;
-	
-	
+
 	# Other properties ========================
 
 	$self->{"mdiStep"} = "mdi_panel";
@@ -78,7 +81,10 @@ sub Run {
 	my $self       = shift;
 	my $layerTypes = shift;
 
+	# delete old MDI files
 	$self->__DeleteOldFiles($layerTypes);
+	
+	# Get all layer for export 
 	my @layers = $self->__GetLayers2Export($layerTypes);
 
 	unless ( scalar(@layers) ) {
@@ -88,7 +94,7 @@ sub Run {
 	$self->__CreateMDIStep();
 	$self->__ExportLayers( \@layers );
 	$self->__DeleteMdiStep();
-	
+
 	return 1;
 
 }
@@ -101,6 +107,8 @@ sub __ExportLayers {
 	my $jobId = $self->{"jobId"};
 
 	foreach my $l (@layers) {
+		
+		CamLayer->WorkLayer($inCAM, $l->{"gROWname"});
 
 		# new result item for lyer
 		my $resultItem = $self->_GetNewItem( $l->{"gROWname"} );
@@ -120,7 +128,7 @@ sub __ExportLayers {
 		# 4) export gerbers
 		my $fiducDCode = $self->__ExportGerberLayer( $l->{"gROWname"} );
 
-		$self->__ExportXmlLayer( $l->{"gROWname"}, $fiducDCode );
+		$self->{"exportXml"}->__ExportXmlLayer( $l, $fiducDCode );
 
 		#  reise result of export
 		$self->_OnItemResult($resultItem);
@@ -138,8 +146,8 @@ sub __DeleteOldFiles {
 
 	if ( $layerTypes->{ Enums->Type_SIGNAL } ) {
 
-		my @f  = FileHelper->GetFilesNameByPattern( EnumsPaths->Jobs_MDI,    $jobId . "^[csv]\d*_mdi" );
-		my @f2 = FileHelper->GetFilesNameByPattern( EnumsPaths->Jobs_PCBMDI, $jobId . "^[csv]\d*_mdi" );
+		my @f  = FileHelper->GetFilesNameByPattern( EnumsPaths->Jobs_MDI,    $jobId . '^[csv]\d*_mdi' );
+		my @f2 = FileHelper->GetFilesNameByPattern( EnumsPaths->Jobs_PCBMDI, $jobId . '^[csv]\d*_mdi' );
 
 		push( @file2del, ( @f, @f2 ) );
 	}
@@ -183,19 +191,19 @@ sub __GetLayers2Export {
 	if ( $layerTypes->{ Enums->Type_SIGNAL } ) {
 
 		my @l = grep { $_->{"gROWname"} =~ /^[csv]\d*$/ } @all;
-		 push( @exportLayers, @l );
+		push( @exportLayers, @l );
 	}
 
 	if ( $layerTypes->{ Enums->Type_MASK } ) {
 
-		my @l = grep { $_->{"gROWname"} =~ /^m[cs]$/ } @all; 
+		my @l = grep { $_->{"gROWname"} =~ /^m[cs]$/ } @all;
 		push( @exportLayers, @l );
 	}
 
 	if ( $layerTypes->{ Enums->Type_PLUG } ) {
 
 		my @l = grep { $_->{"gROWname"} =~ /^plg[cs]$/ } @all;
-		 push( @exportLayers, @l );
+		push( @exportLayers, @l );
 	}
 
 	return @exportLayers;
@@ -203,20 +211,20 @@ sub __GetLayers2Export {
 
 sub __GetLayerLimit {
 	my $self  = shift;
-	my $layer = shift;
+	my $layerName = shift;
 
 	# 0) Get limits by layer type
 
 	my %lim = ();
 
 	# if top/bot layer, clip around profile
-	if ( $layer->{"gROWname"} =~ /^c$/ || $layer->{"gROWname"} =~ /^s$/ ) {
+	if ( $layerName =~ /^c$/ || $layerName =~ /^s$/ ) {
 
 		%lim = %{ $self->{"profLim"} };
 	}
 
 	#if inner layers, clip around fr frame
-	elsif ( $layer->{"gROWname"} =~ /^v\d$/ ) {
+	elsif ($layerName =~ /^v\d$/ ) {
 
 		%lim = %{ $self->{"frLim"} };
 	}
@@ -232,7 +240,7 @@ sub __GetFrLimits {
 
 	my %lim = ();
 
-	if ( CamHelper->LayerExists("fr") ) {
+	if ( CamHelper->LayerExists($inCAM, $jobId, "fr") ) {
 
 		my $route = RouteFeatures->new();
 		$route->Parse( $inCAM, $jobId, $self->{"step"}, "fr" );
@@ -250,22 +258,7 @@ sub __GetFrLimits {
 
 }
 
-sub __GetProfileLimits {
-	my $self = shift;
-
-	my $inCAM = $self->{"inCAM"};
-	my $jobId = $self->{"jobId"};
-
-	my %lim = ();
-
-	if ( CamHelper->LayerExists("fr") ) {
-
-		%lim = CamJob->GetProfileLimits( $inCAM, $lName, $self->{"mdiStep"} );
-
-	}
-
-	return \%lim;
-}
+ 
 
 sub __GetBaseCuThick {
 	my $self      = shift;
@@ -293,7 +286,6 @@ sub __ExportGerberLayer {
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
 
-	my EnumsPaths->Client_INCAMTMPOTHER;
 	my $tmpFileId = GeneralHelper->GetGUID();
 
 	# function, which build output layer name
@@ -304,17 +296,25 @@ sub __ExportGerberLayer {
 	};
 
 	my $resultItemGer = ItemResult->new("Output layers");
+	
+	# init layer
+	my %l = ("name" => $layerName, "mirror" => 0);
+	my @layers = (\%l);
+	
+	# 1 ) Export gerber to temp directory
 
-	my @layers = ($layerName);
-
-	ExportLayers->ExportLayers( $resultItemGer, $inCAM, $self->{"mdiStep"}, $self->{"layers"}, EnumsPaths->Client_INCAMTMPOTHER, $jobId,
+	ExportLayers->ExportLayers( $resultItemGer, $inCAM, $self->{"mdiStep"}, \@layers, EnumsPaths->Client_INCAMTMPOTHER, "",
 								$suffixFunc );
 
-	my $tmpFullPath = EnumsPaths->Client_INCAMTMPOTHER . $tmpFileId;
+	my $tmpFullPath = EnumsPaths->Client_INCAMTMPOTHER .$layerName. $tmpFileId;
 
+	# 2) Add fiducial mark on the bbeginning of gerber data
+	
 	my $fiducDCode = FiducMark->AddalignmentMark( $inCAM, $jobId, $layerName, 'inch', $tmpFullPath, 'cross_*', $self->{"mdiStep"} );
 
-	copy( $tmpFullPath, EnumsPaths->Jobs_PCBMDI . $layerName . "_mdi.ger" ) or die "Unable to copy mdi gerber file from: $tmpFullPath.\n";
+	# 3) Copy file to mdi folder
+	my $finalName = EnumsPaths->Jobs_PCBMDI . $jobId. $layerName . "_mdi.ger";
+	copy( $tmpFullPath, $finalName ) or die "Unable to copy mdi gerber file from: $tmpFullPath.\n";
 
 	return $fiducDCode;
 
@@ -326,7 +326,7 @@ sub __ClipAreaLayer {
 	my $layerName = shift;
 	my %lim       = %{ shift(@_) };
 
-	CamLayer->ClipLayerData( $inCAM, $layer->{"gROWname"}, \%lim );
+	CamLayer->ClipLayerData( $self->{"inCAM"}, $layerName, \%lim );
 }
 
 sub __CompensateLayer {
@@ -359,6 +359,8 @@ sub __PutFrameAorundPcb {
 	my $layerName = shift;
 	my %lim       = %{ shift(@_) };
 
+	my @coord = ();
+
 	my %p1 = ( "x" => $lim{"xMin"}, "y" => $lim{"yMin"} );
 	my %p2 = ( "x" => $lim{"xMin"}, "y" => $lim{"yMax"} );
 	my %p3 = ( "x" => $lim{"xMax"}, "y" => $lim{"yMax"} );
@@ -367,10 +369,9 @@ sub __PutFrameAorundPcb {
 	push( @coord, \%p2 );
 	push( @coord, \%p3 );
 	push( @coord, \%p4 );
-	push( @coord, \%p1 );    # close polygon
 
 	# frame 100µm width around pcb (fr frame coordinate)
-	CamSymbol->AddPolyline( $self->{"inCAM"}, $self->{"frCoord"}, "r100" );
+	CamSymbol->AddPolyline( $self->{"inCAM"}, \@coord, "r100", "positive");
 }
 
 # create special step, which IPC will be exported from
@@ -379,31 +380,10 @@ sub __CreateMDIStep {
 
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
-
-	my $step = $self->{"mdiStep"};
-
-	#delete if step already exist
-	if ( CamHelper->StepExists( $inCAM, $jobId, $step ) ) {
-		$inCAM->COM( "delete_entity", "job" => $jobId, "name" => $step, "type" => "step" );
-	}
-
-	$inCAM->COM(
-				 'copy_entity',
-				 type             => 'step',
-				 source_job       => $jobId,
-				 source_name      => $self->{"step"},
-				 dest_job         => $jobId,
-				 dest_name        => $step,
-				 dest_database    => "",
-				 "remove_from_sr" => "yes"
-	);
-
-	#check if SR exists in etStep, if so, flattern whole step
-	my $srExist = CamStepRepeat->ExistStepAndRepeats( $inCAM, $jobId, $stepPdf );
-
-	if ($srExist) {
-		$self->__FlatternPdfStep($stepPdf);
-	}
+ 
+	CamStep->CreateFlattenStep($inCAM, $jobId, $self->{"step"}, $self->{"mdiStep"});
+ 
+	CamHelper->SetStep($inCAM, $self->{"mdiStep"});
 }
 
 # delete pdf step
@@ -420,25 +400,7 @@ sub __DeleteMdiStep {
 	}
 }
 
-sub __FlatternPdfStep {
-	my $self    = shift;
-	my $stepPdf = shift;
-	my $inCAM   = $self->{"inCAM"};
-	my $jobId   = $self->{"jobId"};
 
-	CamHelper->SetStep( $self->{"inCAM"}, $stepPdf );
-
-	my @allLayers = CamJob->GetBoardLayers( $inCAM, $jobId );
-
-	foreach my $l (@allLayers) {
-
-		CamLayer->FlatternLayer( $inCAM, $jobId, $stepPdf, $l->{"gROWname"} );
-	}
-
-	$inCAM->COM('sredit_sel_all');
-	$inCAM->COM('sredit_del_steps');
-
-}
 
 #
 #sub __Export {
@@ -494,14 +456,14 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId     = "f13608";
-	my $stepName  = "panel";
+	my $jobId    = "f13608";
+	my $stepName = "panel";
 
-	my $export = ExportFiles->new($inCAM, $jobId, $stepName);
-	
-	my %type = (Enums->Type_SIGNAL => "1");
-	
-	$export->Run(\%type);
+	my $export = ExportFiles->new( $inCAM, $jobId, $stepName );
+
+	my %type = ( Enums->Type_SIGNAL => "1" );
+
+	$export->Run( \%type );
 
 }
 

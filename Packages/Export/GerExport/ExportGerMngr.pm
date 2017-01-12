@@ -4,7 +4,7 @@
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Packages::Export::GerExport::ExportGerMngr;
-use base('Packages::Export::MngrBase');
+use base('Packages::ItemResult::ItemResultMngr');
 
 #3th party library
 use strict;
@@ -17,7 +17,7 @@ use aliased 'Enums::EnumsPaths';
 use aliased 'Helpers::JobHelper';
 use aliased 'Helpers::FileHelper';
 use aliased 'CamHelpers::CamHelper';
-use aliased 'Packages::Gerbers::Export::ExportLayers => Helper';
+use aliased 'Packages::Gerbers::Export::ExportLayers' => 'Helper';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
