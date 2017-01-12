@@ -128,7 +128,7 @@ sub __ExportLayers {
 		# 4) export gerbers
 		my $fiducDCode = $self->__ExportGerberLayer( $l->{"gROWname"} );
 
-		$self->{"exportXml"}->__ExportXmlLayer( $l, $fiducDCode );
+		$self->{"exportXml"}->Export( $l, $fiducDCode );
 
 		#  reise result of export
 		$self->_OnItemResult($resultItem);
@@ -227,6 +227,10 @@ sub __GetLayerLimit {
 	elsif ($layerName =~ /^v\d$/ ) {
 
 		%lim = %{ $self->{"frLim"} };
+	
+	}else{
+		
+		%lim = %{ $self->{"profLim"} };
 	}
 
 	return %lim;
@@ -315,9 +319,10 @@ sub __ExportGerberLayer {
 	# 3) Copy file to mdi folder
 	my $finalName = EnumsPaths->Jobs_PCBMDI . $jobId. $layerName . "_mdi.ger";
 	copy( $tmpFullPath, $finalName ) or die "Unable to copy mdi gerber file from: $tmpFullPath.\n";
+	
+	unlink($tmpFullPath);
 
 	return $fiducDCode;
-
 }
 
 # Cut layer data, according physic dimension of pcb

@@ -183,58 +183,65 @@ sub __ExportXml {
 
 	# Fill xml
 
-	$templ->{"job_params"}->{"job_name"}        = $jobId;
-	$templ->{"job_params"}->{"parts_total"}     = 0;
-	$templ->{"job_params"}->{"parts_remaining"} = 0;
+	$templ->{"job_params"}->[0]->{"job_name"}->[0]       = $jobId;
+	$templ->{"job_params"}->[0]->{"parts_total"}->[0]     = 0;
+	$templ->{"job_params"}->[0]->{"parts_remaining"}->[0] = 0;
 
-	$templ->{"job_params"}->{"part_size"}->{"z"} = $self->__GetThickByLayer($layerName);
-	$templ->{"job_params"}->{"part_size"}->{"x"} = $xPnlSize;
-	$templ->{"job_params"}->{"part_size"}->{"y"} = $yPnlSize;
+	$templ->{"job_params"}->[0]->{"part_size"}->[0]->{"z"} = $self->__GetThickByLayer($layerName);
+	$templ->{"job_params"}->[0]->{"part_size"}->[0]->{"x"} = $xPnlSize;
+	$templ->{"job_params"}->[0]->{"part_size"}->[0]->{"y"} = $yPnlSize;
 
-	$templ->{"job_params"}->{"image_position"}->{"x"} = $x_position;
-	$templ->{"job_params"}->{"image_position"}->{"y"} = $y_position;
+	$templ->{"job_params"}->[0]->{"image_position"}->[0]->{"x"} = $x_position;
+	$templ->{"job_params"}->[0]->{"image_position"}->[0]->{"y"} = $y_position;
 
 	if ($mirror) {
 		if ( $xPnlSize > 520 ) {
-			$templ->{"job_params"}->{"rotation"} = 3;
+			$templ->{"job_params"}->[0]->{"rotation"}->[0] = 3;
 		}
 		else {
-			$templ->{"job_params"}->{"rotation"} = 0;
+			$templ->{"job_params"}->[0]->{"rotation"}->[0] = 0;
 		}
 	}
 	else {
 		if ( $yPnlSize > 520 ) {
-			$templ->{"job_params"}->{"rotation"} = 3;
+			$templ->{"job_params"}->[0]->{"rotation"}->[0] = 3;
 		}
 		else {
-			$templ->{"job_params"}->{"rotation"} = 2;
+			$templ->{"job_params"}->[0]->{"rotation"}->[0] = 2;
 		}
 	}
 
-	$templ->{"job_params"}->{"mirror"}->{"x"} = 0;
-	$templ->{"job_params"}->{"mirror"}->{"y"} = $mirror;
+	$templ->{"job_params"}->[0]->{"mirror"}->[0]->{"x"} = 0;
+	$templ->{"job_params"}->[0]->{"mirror"}->[0]->{"y"} = $mirror;
 
-	$templ->{"job_params"}->{"image_object_default"}->{"image_object"}->{"diameter_x"}->{"iterations"}   = $iterations;
-	$templ->{"job_params"}->{"image_object_default"}->{"image_object"}->{"diameter_x"}->{"lowch"}        = $upper;
-	$templ->{"job_params"}->{"image_object_default"}->{"image_object"}->{"diameter_x"}->{"uppch"}        = $lower;
-	$templ->{"job_params"}->{"image_object_default"}->{"image_object"}->{"diameter_x"}->{"value"}        = $diameter;
-	$templ->{"job_params"}->{"image_object_default"}->{"image_object"}->{"diameter_x"}->{"upptol"}       = $upperlimit;
-	$templ->{"job_params"}->{"image_object_default"}->{"image_object"}->{"diameter_x"}->{"lowtol"}       = $lowerlimit;
-	$templ->{"job_params"}->{"image_object_default"}->{"image_object"}->{"image_recognition_acceptance"} = $acceptance;
-	$templ->{"job_params"}->{"image_object_default"}->{"image_object"}->{"image_acquisition_brightness"} = $brightness;
+	$templ->{"job_params"}->[0]->{"image_object_default"}->[0]->{"image_object"}->[0]->{"diameter_x"}->[0]->{"iterations"}   = $iterations;
+	$templ->{"job_params"}->[0]->{"image_object_default"}->[0]->{"image_object"}->[0]->{"diameter_x"}->[0]->{"lowch"}        = $upper;
+	$templ->{"job_params"}->[0]->{"image_object_default"}->[0]->{"image_object"}->[0]->{"diameter_x"}->[0]->{"uppch"}        = $lower;
+	$templ->{"job_params"}->[0]->{"image_object_default"}->[0]->{"image_object"}->[0]->{"diameter_x"}->[0]->{"value"}        = $diameter;
+	$templ->{"job_params"}->[0]->{"image_object_default"}->[0]->{"image_object"}->[0]->{"diameter_x"}->[0]->{"upptol"}       = $upperlimit;
+	$templ->{"job_params"}->[0]->{"image_object_default"}->[0]->{"image_object"}->[0]->{"diameter_x"}->[0]->{"lowtol"}       = $lowerlimit;
+	$templ->{"job_params"}->[0]->{"image_object_default"}->[0]->{"image_object"}->[0]->{"image_recognition_acceptance"}->[0] = $acceptance;
+	$templ->{"job_params"}->[0]->{"image_object_default"}->[0]->{"image_object"}->[0]->{"image_acquisition_brightness"}->[0] = $brightness;
 
 	if ( $polarity eq 'negative' ) {
-		$templ->{"job_params"}->{"polarity"} = 0;
+		$templ->{"job_params"}->[0]->{"polarity"}->[0] = 0;
 	}
 	else {
-		$templ->{"job_params"}->{"polarity"} = 1;
+		$templ->{"job_params"}->[0]->{"polarity"}->[0] = 1;
 	}
 	if ($power) {
-		$templ->{"job_params"}->{"exposure_energy"} = $power;
+		$templ->{"job_params"}->[0]->{"exposure_energy"}->[0] = $power;
 	}
-	$templ->{"job_params"}->{"fiducial_ID_global"} = $fiduc_layer;
+	$templ->{"job_params"}->[0]->{"fiducial_ID_global"}->[0] = $fiduc_layer;
 	
-	my $xmlString = XMLout( $templ->{"job_params"}, RootName => "job_params" );
+	#my $xmlString = XMLout( $templ, RootName => "job_params" );
+ 
+ 
+ my $xmlString = XMLout($templ,
+    		KeepRoot   => 1,
+    		AttrIndent => 0,
+ 
+    		XMLDecl    => '<?xml version="1.0" encoding="utf-8"?>');
  
 	FileHelper->WriteString( EnumsPaths->Jobs_MDI .$self->{"jobId"}.$layerName . "_mdi.xml", $xmlString );
 }
@@ -250,11 +257,7 @@ sub __LoadTemplate {
 
 	my @thickList = ();
 
-	my $xml = XMLin(
-					 $templXml,
-					 ForceArray => undef,
-					 KeyAttr    => undef,
-					 KeepRoot   => 1,
+	my $xml = XMLin($templXml, ForceArray => 1, KeepRoot => 1
 	);
 
 	return $xml;
