@@ -30,7 +30,7 @@ sub AddalignmentMark {
 		my $units = shift;
 		my $pathGerber = shift;
 		my $searchMark = shift;
-		my $stepName = 'panel';
+		my $stepName = shift;
 		my @arrFiducialPosition = ();
 		my $valueDcode = 0;
 		
