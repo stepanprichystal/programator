@@ -24,10 +24,11 @@ use aliased 'Enums::EnumsPaths';
 use aliased 'CamHelpers::CamSymbol';
 use aliased 'CamHelpers::CamJob';
 use aliased 'Packages::Polygon::PolygonHelper';
-use aliased 'Packages::Polygon::Features::Features::RouteFeatures';
+use aliased 'Packages::Polygon::Features::RouteFeatures::RouteFeatures';
 use aliased 'Packages::Gerbers::Export::ExportLayers';
 use aliased 'Packages::ItemResult::ItemResult';
 use aliased 'Packages::Mdi::ExportFiles::FiducMark';
+use aliased 'Packages::Mdi::ExportFiles::Enums';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -40,9 +41,10 @@ sub new {
 
 	$self->{"inCAM"} = shift;
 	$self->{"jobId"} = shift;
+	$self->{"step"} = shift;
 
-	#$self->{"exportLayers"} = shift;
-	#$self->{"layers"}       = shift;
+
+	# Info about  pcb ===========================
 
 	$self->{"layerCnt"} = CamJob->GetSignalLayerCnt( $self->{"inCAM"}, $self->{"jobId"} );
 
@@ -52,38 +54,51 @@ sub new {
 		$self->{"stackup"} = Stackup->new( $self->{"jobId"} );
 	}
 
-	$self->{"mdiStep"} = "mdi_panel";
+	
 
-	# Get limits of fr, profile
+	# Get limits of fr, profile ===============
 
 	my @frLim = @self->__GetFrLimits();
 	$self->{"frLim"} = \@frLim;
 
-	my %profLim = CamJob->GetProfileLimits2( $inCAM, $lName, $self->{"mdiStep"} );
+	my %profLim = CamJob->GetProfileLimits2( $inCAM, $lName, $self->{"step"} );
 	$self->{"profLim"} = \%profLim;
+	
+	
+	# Other properties ========================
+
+	$self->{"mdiStep"} = "mdi_panel";
+
+	$self->{"exportXml"} = ExportXml->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"stackup"}, $self->{"profLim"} );
 
 	return $self;
 }
 
 sub Run {
-	my $self   = shift;
-	my $layers = shift;
+	my $self       = shift;
+	my $layerTypes = shift;
+
+	$self->__DeleteOldFiles($layerTypes);
+	my @layers = $self->__GetLayers2Export($layerTypes);
+
+	unless ( scalar(@layers) ) {
+		return 0;
+	}
 
 	$self->__CreateMDIStep();
-	$self->__ExportLayers();
+	$self->__ExportLayers( \@layers );
 	$self->__DeleteMdiStep();
+	
+	return 1;
 
 }
 
 sub __ExportLayers {
-	my $self  = shift;
-	my $layer = shift;
+	my $self   = shift;
+	my @layers = @{ shift(@_) };
 
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
-
-	# get layer to export
-	my @layers = ();
 
 	foreach my $l (@layers) {
 
@@ -105,12 +120,85 @@ sub __ExportLayers {
 		# 4) export gerbers
 		my $fiducDCode = $self->__ExportGerberLayer( $l->{"gROWname"} );
 
-		$self->__ExportXmlLayer( $l->{"gROWname"}, $fiducDCode);
+		$self->__ExportXmlLayer( $l->{"gROWname"}, $fiducDCode );
 
 		#  reise result of export
 		$self->_OnItemResult($resultItem);
 	}
 
+}
+
+sub __DeleteOldFiles {
+	my $self       = shift;
+	my $layerTypes = shift;
+
+	my $jobId = $self->{"jobId"};
+
+	my @file2del = ();
+
+	if ( $layerTypes->{ Enums->Type_SIGNAL } ) {
+
+		my @f  = FileHelper->GetFilesNameByPattern( EnumsPaths->Jobs_MDI,    $jobId . "^[csv]\d*_mdi" );
+		my @f2 = FileHelper->GetFilesNameByPattern( EnumsPaths->Jobs_PCBMDI, $jobId . "^[csv]\d*_mdi" );
+
+		push( @file2del, ( @f, @f2 ) );
+	}
+
+	if ( $layerTypes->{ Enums->Type_MASK } ) {
+
+		my @f  = FileHelper->GetFilesNameByPattern( EnumsPaths->Jobs_MDI,    $jobId . "^m[cs]_mdi" );
+		my @f2 = FileHelper->GetFilesNameByPattern( EnumsPaths->Jobs_PCBMDI, $jobId . "^m[cs]_mdi" );
+
+		push( @file2del, ( @f, @f2 ) );
+	}
+
+	if ( $layerTypes->{ Enums->Type_PLUG } ) {
+
+		my @f  = FileHelper->GetFilesNameByPattern( EnumsPaths->Jobs_MDI,    $jobId . "^plg[cs]_mdi" );
+		my @f2 = FileHelper->GetFilesNameByPattern( EnumsPaths->Jobs_PCBMDI, $jobId . "^plg[cs]_mdi" );
+
+		push( @file2del, ( @f, @f2 ) );
+
+	}
+
+	foreach (@file2del) {
+		unless ( unlink($_) ) {
+			die "Can not delete mdi file $_.\n";
+		}
+	}
+
+}
+
+sub __GetLayers2Export {
+	my $self       = shift;
+	my $layerTypes = shift;
+
+	my $inCAM = $self->{"inCAM"};
+	my $jobId = $self->{"jobId"};
+
+	my @exportLayers = ();
+
+	my @all = CamJob->GetBoardBaseLayers( $inCAM, $jobId );
+
+	if ( $layerTypes->{ Enums->Type_SIGNAL } ) {
+
+		my @l = grep { $_->{"gROWname"} =~ /^[csv]\d*$/ } @all;
+		 push( @exportLayers, @l );
+	}
+
+	if ( $layerTypes->{ Enums->Type_MASK } ) {
+
+		my @l = grep { $_->{"gROWname"} =~ /^m[cs]$/ } @all; 
+		push( @exportLayers, @l );
+	}
+
+	if ( $layerTypes->{ Enums->Type_PLUG } ) {
+
+		my @l = grep { $_->{"gROWname"} =~ /^plg[cs]$/ } @all;
+		 push( @exportLayers, @l );
+	}
+
+	return @exportLayers;
 }
 
 sub __GetLayerLimit {
@@ -147,7 +235,7 @@ sub __GetFrLimits {
 	if ( CamHelper->LayerExists("fr") ) {
 
 		my $route = RouteFeatures->new();
-		$route->Parse( $inCAM, $jobId, $self->{"mdiStep"}, "fr" );
+		$route->Parse( $inCAM, $jobId, $self->{"step"}, "fr" );
 		my @features = $route->GetFeatures();
 		%lim = PolygonHelper->GetLimByRectangle( \@features );
 
@@ -206,7 +294,7 @@ sub __ExportGerberLayer {
 	my $jobId = $self->{"jobId"};
 
 	my EnumsPaths->Client_INCAMTMPOTHER;
-	= GeneralHelper->GetGUID();
+	my $tmpFileId = GeneralHelper->GetGUID();
 
 	# function, which build output layer name
 	my $suffixFunc = sub {
@@ -229,12 +317,6 @@ sub __ExportGerberLayer {
 	copy( $tmpFullPath, EnumsPaths->Jobs_PCBMDI . $layerName . "_mdi.ger" ) or die "Unable to copy mdi gerber file from: $tmpFullPath.\n";
 
 	return $fiducDCode;
-
-}
-
-sub __ExportXmlLayer {
-	my $self      = shift;
-	my $layerName = shift;
 
 }
 
@@ -407,9 +489,19 @@ sub __FlatternPdfStep {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	#use aliased 'Packages::Export::NCExport::NCExportGroup';
+	use aliased 'Packages::Mdi::ExportFiles::ExportFiles';
+	use aliased 'Packages::InCAM::InCAM';
 
-	#print $test;
+	my $inCAM = InCAM->new();
+
+	my $jobId     = "f13608";
+	my $stepName  = "panel";
+
+	my $export = ExportFiles->new($inCAM, $jobId, $stepName);
+	
+	my %type = (Enums->Type_SIGNAL => "1");
+	
+	$export->Run(\%type);
 
 }
 

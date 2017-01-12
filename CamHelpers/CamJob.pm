@@ -20,7 +20,6 @@ use aliased 'CamHelpers::CamHelper';
 use aliased 'CamHelpers::CamJob';
 use aliased 'CamHelpers::CamAttributes';
 
-
 #my $genesis = new Genesis;
 
 #-------------------------------------------------------------------------------------------#
@@ -61,7 +60,6 @@ sub GetSignalLayer {
 		my $rowFilled  = ${ $inCAM->{doinfo}{gROWtype} }[$i];
 		my $rowContext = ${ $inCAM->{doinfo}{gROWcontext} }[$i];
 		my $rowType    = ${ $inCAM->{doinfo}{gROWlayer_type} }[$i];
-		 
 
 		if ( $rowFilled ne "empty" && $rowContext eq "board" ) {
 
@@ -70,8 +68,7 @@ sub GetSignalLayer {
 				my %info = ();
 				$info{"gROWname"}       = ${ $inCAM->{doinfo}{gROWname} }[$i];
 				$info{"gROWlayer_type"} = ${ $inCAM->{doinfo}{gROWlayer_type} }[$i];
-				$info{"gROWpolarity"} = ${ $inCAM->{doinfo}{gROWpolarity} }[$i];
-				
+				$info{"gROWpolarity"}   = ${ $inCAM->{doinfo}{gROWpolarity} }[$i];
 
 				push( @arr, \%info );
 
@@ -108,17 +105,16 @@ sub GetProfileLimits {
 
 #Return limits of profile, but with camelCase keys
 sub GetProfileLimits2 {
+	my $self = shift;
 
-	my $self     = shift;
-	 
-	 my %lim = $self->GetProfileLimits(@_);
+	my %lim = $self->GetProfileLimits(@_);
 
 	my %limits = ();
- 
-	$limits{"xMin"} = $lim{"xmin"}
-	$limits{"xMax"} = $lim{"xmax"}
-	$limits{"yMin"} = $lim{"ymin"}
-	$limits{"yMax"} = $lim{"ymax"}
+
+	$limits{"xMin"} = $lim{"xmin"}; 
+	$limits{"xMax"} = $lim{"xmax"};
+	$limits{"yMin"} = $lim{"ymin"};
+	$limits{"yMax"} = $lim{"ymax"};
 
 	return %limits;
 }
@@ -154,8 +150,6 @@ sub GetJobPcbClass {
 	return $info{"pcb_class"};
 
 }
-
-
 
 #Create layer
 sub CreateLayer {
@@ -236,13 +230,13 @@ sub GetAllLayers {
 		$info{"gROWname"}       = ${ $inCAM->{doinfo}{gROWname} }[$i];
 		$info{"gROWlayer_type"} = ${ $inCAM->{doinfo}{gROWlayer_type} }[$i];
 		$info{"gROWcontext"}    = ${ $inCAM->{doinfo}{gROWcontext} }[$i];
-		$info{"gROWpolarity"} = ${ $inCAM->{doinfo}{gROWpolarity} }[$i];
+		$info{"gROWpolarity"}   = ${ $inCAM->{doinfo}{gROWpolarity} }[$i];
 
 		my $rowFilled  = ${ $inCAM->{doinfo}{gROWtype} }[$i];
 		my $rowContext = ${ $inCAM->{doinfo}{gROWcontext} }[$i];
 		my $rowType    = ${ $inCAM->{doinfo}{gROWlayer_type} }[$i];
 
-		if ( $rowFilled ne "empty") {
+		if ( $rowFilled ne "empty" ) {
 
 			push( @arr, \%info );
 		}
@@ -257,8 +251,8 @@ sub GetAllLayers {
 # - gROWlayer_type
 # - gROWcontext
 sub GetBoardLayers {
-	my $self  = shift;
-	
+	my $self = shift;
+
 	my @layers = $self->GetAllLayers(@_);
 
 	@layers = grep { $_->{"gROWcontext"} eq "board" } @layers;
@@ -273,15 +267,14 @@ sub GetBoardLayers {
 # - gROWlayer_type
 # - gROWcontext
 sub GetBoardBaseLayers {
-	my $self  = shift;
-	
+	my $self = shift;
+
 	my @layers = $self->GetAllLayers(@_);
 
-	@layers = grep { $_->{"gROWcontext"} eq "board" && $_->{"gROWlayer_type"} ne "rout" && $_->{"gROWlayer_type"} ne "drill"} @layers;
+	@layers = grep { $_->{"gROWcontext"} eq "board" && $_->{"gROWlayer_type"} ne "rout" && $_->{"gROWlayer_type"} ne "drill" } @layers;
 
 	return @layers;
 }
-
 
 #Return layer names by layer type
 sub GetLayerByType {
@@ -302,8 +295,6 @@ sub GetLayerByType {
 	}
 	return @res;
 }
-
-
 
 #set $value for attribute on specific Job
 sub SetJobAttribute {
@@ -334,10 +325,8 @@ sub CloseJob {
 	my $inCam   = shift;
 	my $jobName = shift;
 
-	 
-	$inCam->COM( "close_job","job"              => "$jobName");
+	$inCam->COM( "close_job", "job" => "$jobName" );
 }
-
 
 # Open given job
 sub SaveJob {
@@ -345,10 +334,9 @@ sub SaveJob {
 	my $inCam   = shift;
 	my $jobName = shift;
 
-	$inCam->COM( "save_job","job"              => "$jobName");
-	 
-}
+	$inCam->COM( "save_job", "job" => "$jobName" );
 
+}
 
 # Tell if job is open
 sub IsJobOpen {
@@ -356,36 +344,33 @@ sub IsJobOpen {
 	my $inCam   = shift;
 	my $jobName = shift;
 
-	 
-	$inCam->COM( "is_job_open","job"              => "$jobName");
+	$inCam->COM( "is_job_open", "job" => "$jobName" );
 	my $reply = $inCam->GetReply();
-	
-	if($reply eq "yes"){
+
+	if ( $reply eq "yes" ) {
 		return 1;
-	}else{
+	}
+	else {
 		return 0;
 	}
 }
- 
- 
+
 # CheckIn job
 sub CheckInJob {
 	my $self    = shift;
 	my $inCam   = shift;
 	my $jobName = shift;
 
-	$inCam->COM( "check_inout","job"  => "$jobName", "mode"  => "in", "ent_type"  => "job");
-} 
- 
+	$inCam->COM( "check_inout", "job" => "$jobName", "mode" => "in", "ent_type" => "job" );
+}
+
 # CheckIn job
 sub CheckOutJob {
 	my $self    = shift;
 	my $inCam   = shift;
 	my $jobName = shift;
 
-	$inCam->COM( "check_inout","job"  => "$jobName", "mode"  => "out", "ent_type"  => "job");
+	$inCam->COM( "check_inout", "job" => "$jobName", "mode" => "out", "ent_type" => "job" );
 }
-
-
 
 1;
