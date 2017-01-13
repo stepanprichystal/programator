@@ -114,11 +114,10 @@ sub __PrepareLayer {
 	if ( $plotPolar eq "mixed" && $plotLayer->GetPolarity() eq "negative" ) {
 
 		CamLayer->NegativeLayerData( $inCAM, $lName, $plotLayer->{"pcbLimits"} );
-
 	}
 
 	# Compensate layer
-	if ( $plotLayer->GetComp() > 0 ) {
+	if ( $plotLayer->GetComp() != 0 ) {
 
 		CamLayer->CompensateLayerData( $inCAM, $lName, $plotLayer->GetComp() );
 	}

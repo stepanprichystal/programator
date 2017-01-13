@@ -397,6 +397,12 @@ sub SetDefaultLayersSettings {
 		if ( $l->{"gROWlayer_type"} eq "signal" || $l->{"gROWlayer_type"} eq "power_ground" || $l->{"gROWlayer_type"} eq "mixed" ) {
 
 			$l->{"comp"} = $self->GetCompByLayer( $l->{"gROWname"} );
+			
+			# If layer is negative, set negative compensation
+			if($l->{"gROWpolarity"} eq "negative"){
+				$l->{"comp"} = -$l->{"comp"};
+			}
+			
 		}
 		else {
 

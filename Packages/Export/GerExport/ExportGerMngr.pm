@@ -76,7 +76,7 @@ sub __Export {
 
 		my $l = shift;
 
-		my $suffix = "_komp" . $l->{"comp"} . "um-.ger";
+		my $suffix = "_komp" . abs($l->{"comp"}) . "um-.ger"; # if negative comp, remove minus
 
 		if ( $l->{"polarity"} eq "negative" ) {
 			$suffix = "n" . $suffix;
