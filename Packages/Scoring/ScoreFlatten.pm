@@ -34,6 +34,14 @@ sub FlattenNestedScore {
 	my $inCAM    = shift;
 	my $jobId    = shift;
 	my $stepName = shift;
+	
+	unless(CamHelper->StepExists($inCAM, $jobId, $stepName)){
+		return 0;
+	}
+	
+	unless(CamHelper->LayerExists($inCAM, $jobId, "score")){
+		return 1;
+	}
 
 	CamHelper->SetStep( $inCAM, $stepName );
 
@@ -212,7 +220,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	use aliased 'Packages::Scoring::ScoreFlatten';
 	use aliased 'Packages::InCAM::InCAM';
 
-	my $jobId = "f52456";
+	my $jobId = "f13609";
 	my $inCAM = InCAM->new();
 
 	my $step = "mpanel";
