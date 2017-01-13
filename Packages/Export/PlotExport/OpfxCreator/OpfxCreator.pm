@@ -3,7 +3,7 @@
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Packages::Export::PlotExport::OpfxCreator::OpfxCreator;
-use base('Packages::ItemResult::ItemResultMngr');
+use base('Packages::ItemResult::ItemEventMngr');
 
 #3th party library
 use strict;

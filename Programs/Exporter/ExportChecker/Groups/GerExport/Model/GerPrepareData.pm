@@ -16,6 +16,7 @@ use aliased 'Programs::Exporter::ExportChecker::Groups::GerExport::Model::GerGro
 use aliased 'Programs::Exporter::ExportChecker::Enums';
 use aliased 'CamHelpers::CamHelper';
 use aliased 'Enums::EnumsGeneral';
+use aliased 'Connectors::HeliosConnector::HegMethods';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -61,7 +62,13 @@ sub OnPrepareGroupData {
 	
 	$groupData->SetLayers( \@layers );
 	
-	# 2) Prepare paste settings
+	
+	# 2) Prepare MDI settings
+	my %mdiInfo = $self->__GetMDIInfo($defaultInfo);
+	$groupData->SetMdiInfo( \%mdiInfo );
+	
+	
+	# 3) Prepare paste settings
 	my %pasteInfo = $self->__GetPasteInfo( $inCAM, $jobId );
 
 	if ( scalar(@layers) ) {
@@ -254,6 +261,27 @@ sub __GetPasteInfo {
 
 }
 
+
+
+sub __GetMDIInfo {
+	my $self      = shift;
+	my $defaultInfo  = shift;
+	
+	my %mdiInfo = ();
+
+	my $signal  = $defaultInfo->LayerExist("c");
+	
+	if( HegMethods->GetTypeOfPcb( $self->{"jobId"}) eq "Neplatovany"){
+		$signal = 0;
+	}
+	
+	$mdiInfo{"exportSignal"} = $signal;
+	$mdiInfo{"exportMask"} = ($defaultInfo->LayerExist("mc") || $defaultInfo->LayerExist("ms")) ? 1 : 0;
+	$mdiInfo{"exportPlugs"} = ($defaultInfo->LayerExist("plgc") || $defaultInfo->LayerExist("plgs")) ? 1 : 0;
+
+	return %mdiInfo;
+
+}
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#

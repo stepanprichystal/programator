@@ -4,7 +4,7 @@
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Packages::Export::NifExport::NifMngr;
-use base('Packages::ItemResult::ItemResultMngr');
+use base('Packages::ItemResult::ItemEventMngr');
 
 use Class::Interface;
 &implements('Packages::Export::IMngr');

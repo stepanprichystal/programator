@@ -259,12 +259,21 @@ sub ClipLayerData {
 	my $layer  = shift;
 	my %rect   = %{ shift(@_) };
 	my $inside = shift;
-
+	my $counturCut = shift;
+	
+	
 	my $type = "outside";
 
 	if ($inside) {
 		$type = "inside";
 	}
+	
+	my $countour= "no";
+	
+	if($counturCut){
+		$countour = "yes";
+	}
+ 
 
 	$self->WorkLayer( $inCAM, $layer );
 
@@ -278,7 +287,7 @@ sub ClipLayerData {
 				 "area"        => "manual",
 				 "area_type"   => "rectangle",
 				 "inout"       => $type,
-				 "contour_cut" => "no",
+				 "contour_cut" => $countour,
 				 "margin"      => "0",
 				 "feat_types"  => "line\;pad;surface;arc;text",
 				 "pol_types"   => "positive\;negative"

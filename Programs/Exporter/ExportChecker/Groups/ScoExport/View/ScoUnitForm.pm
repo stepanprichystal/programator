@@ -6,6 +6,9 @@
 package Programs::Exporter::ExportChecker::Groups::ScoExport::View::ScoUnitForm;
 use base qw(Wx::Panel);
 
+use Class::Interface;
+&implements('Programs::Exporter::ExportChecker::Groups::IUnitForm');
+
 #3th party library
 use strict;
 use warnings;
@@ -180,6 +183,18 @@ sub __OnCustomerJumpChange {
 	$self->{"onCustomerJumpChange"}->Do($val);
 
 }
+
+# =====================================================================
+# DISABLING CONTROLS
+# =====================================================================
+
+sub DisableControls{
+	
+	
+}
+
+
+
 
 # =====================================================================
 # SET/GET CONTROLS VALUES

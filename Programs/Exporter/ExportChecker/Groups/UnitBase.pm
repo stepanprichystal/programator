@@ -187,6 +187,13 @@ sub IsFormLess {
  
 }
 
+# Return reference to unit form
+sub GetForm{
+	my $self = shift;
+	
+	return $self->{"form"};
+}
+
 
 sub _SetHandlers {
 	my $self = shift;

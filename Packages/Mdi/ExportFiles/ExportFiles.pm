@@ -1,6 +1,6 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Cover exporting layers as gerber274x
+# Description: Export data for MDI, gerbers + xml
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Packages::Mdi::ExportFiles::ExportFiles;
@@ -13,22 +13,17 @@ use File::Copy;
 
 #local library
 use aliased 'Helpers::GeneralHelper';
-
-#use aliased 'Packages::ItemResult::ItemResult';
 use aliased 'Enums::EnumsPaths';
-
-#use aliased 'Helpers::JobHelper';
 use aliased 'Helpers::FileHelper';
 use aliased 'CamHelpers::CamHelper';
 use aliased 'CamHelpers::CamStepRepeat';
 use aliased 'CamHelpers::CamLayer';
 use aliased 'CamHelpers::CamStep';
-#use aliased 'Packages::Export::GerExport::Helper';
 
 use aliased 'CamHelpers::CamSymbol';
 use aliased 'CamHelpers::CamJob';
 use aliased 'Packages::Polygon::PolygonHelper';
-use aliased 'Packages::Polygon::Features::RouteFeatures::RouteFeatures';
+use aliased 'Packages::Polygon::Features::Features::Features';
 use aliased 'Packages::Gerbers::Export::ExportLayers';
 use aliased 'Packages::ItemResult::ItemResult';
 use aliased 'Packages::Mdi::ExportFiles::FiducMark';
@@ -36,6 +31,7 @@ use aliased 'Packages::Mdi::ExportFiles::Enums';
 use aliased 'Packages::Mdi::ExportFiles::ExportXml';
 use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'Packages::Technology::EtchOperation';
+use aliased 'Packages::TifFile::TifSigLayers';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -56,26 +52,31 @@ sub new {
 
 	$self->{"pcbClass"} = CamJob->GetJobPcbClass( $self->{"inCAM"}, $self->{"jobId"} );
 
-	if ( $self->{"layerCnt"} > 2 ) {
-		$self->{"stackup"} = Stackup->new( $self->{"jobId"} );
-	}
+	
 
 	# Get limits of fr, profile ===============
 
-	my @frLim = $self->__GetFrLimits();
-	$self->{"frLim"} = \@frLim;
+	my %frLim = $self->__GetFrLimits();
+	$self->{"frLim"} = \%frLim;
 
 	my %profLim = CamJob->GetProfileLimits2( $self->{"inCAM"}, $self->{"jobId"}, $self->{"step"} );
 	$self->{"profLim"} = \%profLim;
 
 	# Other properties ========================
+	
+	$self->{"tifFile"} = TifSigLayers->new( $self->{"jobId"} );
+	
+	unless($self->{"tifFile"}->TifFileExist()){
+		die "Dif file must exist when MDI data are exported.\n";
+	}
 
 	$self->{"mdiStep"} = "mdi_panel";
 
-	$self->{"exportXml"} = ExportXml->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"stackup"}, $self->{"profLim"} );
+	$self->{"exportXml"} = ExportXml->new( $self->{"inCAM"}, $self->{"jobId"},  $self->{"profLim"}, $self->{"layerCnt"});
 
 	return $self;
 }
+
 
 sub Run {
 	my $self       = shift;
@@ -83,8 +84,8 @@ sub Run {
 
 	# delete old MDI files
 	$self->__DeleteOldFiles($layerTypes);
-	
-	# Get all layer for export 
+
+	# Get all layer for export
 	my @layers = $self->__GetLayers2Export($layerTypes);
 
 	unless ( scalar(@layers) ) {
@@ -96,7 +97,6 @@ sub Run {
 	$self->__DeleteMdiStep();
 
 	return 1;
-
 }
 
 sub __ExportLayers {
@@ -107,8 +107,8 @@ sub __ExportLayers {
 	my $jobId = $self->{"jobId"};
 
 	foreach my $l (@layers) {
-		
-		CamLayer->WorkLayer($inCAM, $l->{"gROWname"});
+
+		CamLayer->WorkLayer( $inCAM, $l->{"gROWname"} );
 
 		# new result item for lyer
 		my $resultItem = $self->_GetNewItem( $l->{"gROWname"} );
@@ -116,10 +116,10 @@ sub __ExportLayers {
 		# get limits (define physic dimension) for layer
 		my %lim = $self->__GetLayerLimit( $l->{"gROWname"} );
 
-		# 2) insert frame 100µm width around pcb (fr frame coordinate)
+		# 1) insert frame 100µm width around pcb (fr frame coordinate)
 		$self->__PutFrameAorundPcb( $l->{"gROWname"}, \%lim );
 
-		# 1) clip data by limits
+		# 2) clip data by limits
 		$self->__ClipAreaLayer( $l->{"gROWname"}, \%lim );
 
 		# 3) compensate layer by computed compensation
@@ -133,9 +133,9 @@ sub __ExportLayers {
 		#  reise result of export
 		$self->_OnItemResult($resultItem);
 	}
-
 }
 
+# Delete old gerber + xml files
 sub __DeleteOldFiles {
 	my $self       = shift;
 	my $layerTypes = shift;
@@ -177,6 +177,7 @@ sub __DeleteOldFiles {
 
 }
 
+# Return which layers export by type
 sub __GetLayers2Export {
 	my $self       = shift;
 	my $layerTypes = shift;
@@ -209,8 +210,9 @@ sub __GetLayers2Export {
 	return @exportLayers;
 }
 
+# Get limits, by phisic dimension of pcb
 sub __GetLayerLimit {
-	my $self  = shift;
+	my $self      = shift;
 	my $layerName = shift;
 
 	# 0) Get limits by layer type
@@ -224,12 +226,13 @@ sub __GetLayerLimit {
 	}
 
 	#if inner layers, clip around fr frame
-	elsif ($layerName =~ /^v\d$/ ) {
+	elsif ( $layerName =~ /^v\d$/ ) {
 
 		%lim = %{ $self->{"frLim"} };
-	
-	}else{
-		
+
+	}
+	else {
+
 		%lim = %{ $self->{"profLim"} };
 	}
 
@@ -244,10 +247,16 @@ sub __GetFrLimits {
 
 	my %lim = ();
 
-	if ( CamHelper->LayerExists($inCAM, $jobId, "fr") ) {
+	if ( CamHelper->LayerExists( $inCAM, $jobId, "fr" ) ) {
+		
+		CamHelper->SetStep( $inCAM, $self->{"step"} );
+		
+		 # compensate layer, because in genesis Fr has righ compensation, but in incam left comp... Thus coordinate of fr are different
+		my $lName = CamLayer->RoutCompensation($inCAM, "fr", "document");
+		
 
-		my $route = RouteFeatures->new();
-		$route->Parse( $inCAM, $jobId, $self->{"step"}, "fr" );
+		my $route = Features->new();
+		$route->Parse( $inCAM, $jobId, $self->{"step"}, $lName );
 		my @features = $route->GetFeatures();
 		%lim = PolygonHelper->GetLimByRectangle( \@features );
 
@@ -256,6 +265,8 @@ sub __GetFrLimits {
 		$lim{"xMax"} = $lim{"xMax"} - 1;
 		$lim{"yMin"} = $lim{"yMin"} + 1;
 		$lim{"yMax"} = $lim{"yMax"} - 1;
+		
+		$inCAM->COM( 'delete_layer', layer => $lName );
 	}
 
 	return %lim;
@@ -263,26 +274,6 @@ sub __GetFrLimits {
 }
 
  
-
-sub __GetBaseCuThick {
-	my $self      = shift;
-	my $layerName = shift;
-
-	my $cuThick;
-
-	if ( $self->{"layerCnt"} > 2 ) {
-
-		my $cuLayer = $self->{"stackup"}->GetCuLayer($layerName);
-		$cuThick = $cuLayer->GetThick();
-	}
-	else {
-
-		$cuThick = HegMethods->GetOuterCuThick( $self->{"jobId"}, $layerName );
-	}
-
-	return $cuThick;
-}
-
 sub __ExportGerberLayer {
 	my $self      = shift;
 	my $layerName = shift;
@@ -300,26 +291,25 @@ sub __ExportGerberLayer {
 	};
 
 	my $resultItemGer = ItemResult->new("Output layers");
-	
+
 	# init layer
-	my %l = ("name" => $layerName, "mirror" => 0);
-	my @layers = (\%l);
-	
+	my %l = ( "name" => $layerName, "mirror" => 0 );
+	my @layers = ( \%l );
+
 	# 1 ) Export gerber to temp directory
 
-	ExportLayers->ExportLayers( $resultItemGer, $inCAM, $self->{"mdiStep"}, \@layers, EnumsPaths->Client_INCAMTMPOTHER, "",
-								$suffixFunc );
+	ExportLayers->ExportLayers( $resultItemGer, $inCAM, $self->{"mdiStep"}, \@layers, EnumsPaths->Client_INCAMTMPOTHER, "", $suffixFunc );
 
-	my $tmpFullPath = EnumsPaths->Client_INCAMTMPOTHER .$layerName. $tmpFileId;
+	my $tmpFullPath = EnumsPaths->Client_INCAMTMPOTHER . $layerName . $tmpFileId;
 
 	# 2) Add fiducial mark on the bbeginning of gerber data
-	
+
 	my $fiducDCode = FiducMark->AddalignmentMark( $inCAM, $jobId, $layerName, 'inch', $tmpFullPath, 'cross_*', $self->{"mdiStep"} );
 
 	# 3) Copy file to mdi folder
-	my $finalName = EnumsPaths->Jobs_PCBMDI . $jobId. $layerName . "_mdi.ger";
+	my $finalName = EnumsPaths->Jobs_PCBMDI . $jobId . $layerName . "_mdi.ger";
 	copy( $tmpFullPath, $finalName ) or die "Unable to copy mdi gerber file from: $tmpFullPath.\n";
-	
+
 	unlink($tmpFullPath);
 
 	return $fiducDCode;
@@ -331,9 +321,10 @@ sub __ClipAreaLayer {
 	my $layerName = shift;
 	my %lim       = %{ shift(@_) };
 
-	CamLayer->ClipLayerData( $self->{"inCAM"}, $layerName, \%lim );
+	CamLayer->ClipLayerData( $self->{"inCAM"}, $layerName, \%lim, undef, 1);
 }
 
+# Compensate layer by compensation
 sub __CompensateLayer {
 	my $self      = shift;
 	my $layerName = shift;
@@ -341,17 +332,17 @@ sub __CompensateLayer {
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
 
-	my $class   = $self->{"pcbClass"};
-	my $cuThick = $self->__GetBaseCuThick($layerName);
+	my $class = $self->{"pcbClass"};
 
 	my $comp = 0;
+	
+	if ( $layerName =~ /^c$/ || $layerName =~ /^s$/ || $layerName =~ /^v\d$/ ) {
 
-	# when neplat, there is layer "c" but 0 comp
-	if ( $cuThick > 0 ) {
-		$comp = EtchOperation->GetCompensation( $cuThick, $class );
+		my %sigLayers = $self->{"tifFile"}->GetSignalLayers();
+		$comp   = $sigLayers{ $layerName }->{'comp'};
 	}
 
-	if ( $comp > 0 ) {
+	if ( $comp != 0 ) {
 		CamLayer->CompensateLayerData( $inCAM, $layerName, $comp );
 	}
 
@@ -376,19 +367,19 @@ sub __PutFrameAorundPcb {
 	push( @coord, \%p4 );
 
 	# frame 100µm width around pcb (fr frame coordinate)
-	CamSymbol->AddPolyline( $self->{"inCAM"}, \@coord, "r100", "positive");
+	CamSymbol->AddPolyline( $self->{"inCAM"}, \@coord, "r100", "positive" );
 }
 
-# create special step, which IPC will be exported from
+# Create special step, which IPC will be exported from
 sub __CreateMDIStep {
 	my $self = shift;
 
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
- 
-	CamStep->CreateFlattenStep($inCAM, $jobId, $self->{"step"}, $self->{"mdiStep"});
- 
-	CamHelper->SetStep($inCAM, $self->{"mdiStep"});
+
+	CamStep->CreateFlattenStep( $inCAM, $jobId, $self->{"step"}, $self->{"mdiStep"} );
+
+	CamHelper->SetStep( $inCAM, $self->{"mdiStep"} );
 }
 
 # delete pdf step
@@ -404,51 +395,7 @@ sub __DeleteMdiStep {
 		$inCAM->COM( "delete_entity", "job" => $jobId, "name" => $step, "type" => "step" );
 	}
 }
-
-
-
-#
-#sub __Export {
-#	my $self = shift;
-#
-#
-#
-#	my $inCAM = $self->{"inCAM"};
-#	my $jobId = $self->{"jobId"};
-#
-#	my $step = "panel";
-#
-#	my $archive     = JobHelper->GetJobArchive($jobId);
-#	my $output      = JobHelper->GetJobOutput($jobId);
-#	my $archivePath = $archive . "zdroje";
-#
-#	#delete old ger form archive
-#	my @filesToDel = FileHelper->GetFilesNameByPattern( $archivePath, ".ger" );
-#
-#	foreach my $f (@filesToDel) {
-#		unlink $f;
-#	}
-#
-#	# function, which build output layer name, based on layer info
-#	my $suffixFunc = sub {
-#
-#		my $l = shift;
-#
-#		my $suffix = "_komp" . $l->{"comp"} . "um-.ger";
-#
-#		if ( $l->{"polarity"} eq "negative" ) {
-#			$suffix = "n" . $suffix;
-#		}
-#
-#		return $suffix;
-#	};
-#
-#	my $resultItemGer = $self->_GetNewItem("Output layers");
-#
-#	Helper->ExportLayers( $resultItemGer, $inCAM,  $step, $self->{"layers"}, $archivePath, $jobId, $suffixFunc );
-#
-#	$self->_OnItemResult($resultItemGer);
-#}
+ 
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
@@ -466,7 +413,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $export = ExportFiles->new( $inCAM, $jobId, $stepName );
 
-	my %type = ( Enums->Type_SIGNAL => "1" );
+	my %type = ( Enums->Type_SIGNAL => "1",Enums->Type_MASK => "1", Enums->Type_PLUG => "1" );
 
 	$export->Run( \%type );
 

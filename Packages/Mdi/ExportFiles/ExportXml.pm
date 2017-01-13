@@ -1,6 +1,6 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Cover exporting layers as gerber274x
+# Description: Export XML files for MDI gerbers
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Packages::Mdi::ExportFiles::ExportXml;
@@ -12,26 +12,13 @@ use XML::Simple;
 
 #local library
 use aliased 'Helpers::GeneralHelper';
-
-#use aliased 'Packages::ItemResult::ItemResult';
 use aliased 'Enums::EnumsPaths';
-
-#use aliased 'Helpers::JobHelper';
 use aliased 'Helpers::FileHelper';
-
-#use aliased 'CamHelpers::CamHelper';
-#use aliased 'Packages::Export::GerExport::Helper';
-
-#use aliased 'CamHelpers::CamSymbol';
-#use aliased 'CamHelpers::CamJob';
-#use aliased 'Packages::Polygon::PolygonHelper';
-#use aliased 'Packages::Polygon::Features::Features::RouteFeatures';
-#use aliased 'Packages::Gerbers::Export::ExportLayers';
-#use aliased 'Packages::ItemResult::ItemResult';
-#use aliased 'Packages::Mdi::ExportFiles::FiducMark';
 use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'Packages::NifFile::NifFile';
 use aliased 'Packages::TifFile::TifSigLayers';
+use aliased 'Packages::Stackup::Stackup::Stackup';
+use aliased 'Enums::EnumsGeneral';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -42,24 +29,25 @@ sub new {
 	$self = {};
 	bless $self;
 
-	$self->{"inCAM"}   = shift;
-	$self->{"jobId"}   = shift;
-	$self->{"stackup"} = shift;
+	$self->{"inCAM"}    = shift;
+	$self->{"jobId"}    = shift;
+	$self->{"profLim"}  = shift;
+	$self->{"layerCnt"} = shift;
 
-	$self->{"profLim"} = shift;
+	if ( $self->{"layerCnt"} > 2 ) {
+		$self->{"stackup"} = Stackup->new( $self->{"jobId"} );
+	}
 
 	$self->{"tifFile"} = TifSigLayers->new( $self->{"jobId"} );
-	$self->{"nifFile"} =  NifFile->new( $self->{"jobId"} );
-	
-	unless($self->{"tifFile"}->TifFileExist()){
+	$self->{"nifFile"} = NifFile->new( $self->{"jobId"} );
+
+	unless ( $self->{"tifFile"}->TifFileExist() ) {
 		die "Dif file must exist when MDI data are exported.\n";
 	}
-	
-	unless($self->{"nifFile"}->Exist()){
+
+	unless ( $self->{"nifFile"}->Exist() ) {
 		die "Nif file must exist when MDI data are exported.\n";
 	}
-	
- 
 
 	return $self;
 }
@@ -92,10 +80,8 @@ sub Export {
 		$polarity = "positive";
 
 	}
-	
+
 	$self->__ExportXml( $l->{"gROWname"}, $mirror, $polarity, $etching, $fiduc_layer );
-	
-	
 
 }
 
@@ -131,7 +117,7 @@ sub __ExportXml {
 
 		}
 		else {
-			if (  $self->{"nifFile"}->GetValue("flash") > 0 ) {
+			if ( $self->{"nifFile"}->GetValue("flash") > 0 ) {
 				$diameter   = 2.87;
 				$brightness = 8;
 				$upperlimit = 0.08;
@@ -177,13 +163,12 @@ sub __ExportXml {
 	$upper      = 0.02;
 	$lower      = -0.02;
 
- 
 	my $xPnlSize = $self->{"profLim"}->{"xMax"} - $self->{"profLim"}->{"xMin"};
 	my $yPnlSize = $self->{"profLim"}->{"yMax"} - $self->{"profLim"}->{"yMin"};
 
 	# Fill xml
 
-	$templ->{"job_params"}->[0]->{"job_name"}->[0]       = $jobId;
+	$templ->{"job_params"}->[0]->{"job_name"}->[0]        = $jobId . $layerName . "_mdi";
 	$templ->{"job_params"}->[0]->{"parts_total"}->[0]     = 0;
 	$templ->{"job_params"}->[0]->{"parts_remaining"}->[0] = 0;
 
@@ -233,21 +218,25 @@ sub __ExportXml {
 		$templ->{"job_params"}->[0]->{"exposure_energy"}->[0] = $power;
 	}
 	$templ->{"job_params"}->[0]->{"fiducial_ID_global"}->[0] = $fiduc_layer;
-	
+
 	#my $xmlString = XMLout( $templ, RootName => "job_params" );
- 
- 
- my $xmlString = XMLout($templ,
-    		KeepRoot   => 1,
-    		AttrIndent => 0,
- 
-    		XMLDecl    => '<?xml version="1.0" encoding="utf-8"?>');
- 
-	FileHelper->WriteString( EnumsPaths->Jobs_MDI .$self->{"jobId"}.$layerName . "_mdi.xml", $xmlString );
+
+	my $xmlString = XMLout(
+		$templ,
+		KeepRoot   => 1,
+		AttrIndent => 0,
+
+		XMLDecl => '<?xml version="1.0" encoding="utf-8"?>'
+	);
+
+	my $finalFile = EnumsPaths->Jobs_MDI . $self->{"jobId"} . $layerName . "_mdi.xml";
+
+	FileHelper->WriteString($finalFile , $xmlString );
+	
+	unless(-e $finalFile){
+		die "Xml file for MDI gerber ($finalFile) doesn't exist.\n";
+	}	
 }
-
-
-
 
 sub __LoadTemplate {
 	my $self = shift;
@@ -257,7 +246,10 @@ sub __LoadTemplate {
 
 	my @thickList = ();
 
-	my $xml = XMLin($templXml, ForceArray => 1, KeepRoot => 1
+	my $xml = XMLin(
+					 $templXml,
+					 ForceArray => 1,
+					 KeepRoot   => 1
 	);
 
 	return $xml;
@@ -266,26 +258,37 @@ sub __LoadTemplate {
 sub __GetThickByLayer {
 	my $self = shift;
 
-	my $layer = shift;    #layer of number. Simple c,1,2,s or v1, v2 use ENUMS::Layers
+	my $layer = shift;    #l
 
 	my $thick = 0;        #total thick
 
-	if ( HegMethods->GetTypeOfPcb( $self->{"jobId"} ) eq 'Vicevrstvy' ) {
+	# for multilayer copper layer read thick from stackup, else return total thick
+	if ( $self->{"layerCnt"} > 2 ) {
 
 		my $stackup = $self->{"stackup"};
 
-		$thick = $stackup->GetThickByLayerName($layer);
+		# for signal layers
+		if ( $layer =~ /^c$/ || $layer =~ /^s$/ || $layer =~ /^v\d$/ ) {
 
-		my $cuLayer = $stackup->GetCuLayer($layer);
+			$thick = $stackup->GetThickByLayerName($layer);
 
-		#test by Mira, add 80um (except cores)
-		if ( $cuLayer->GetType() eq EnumsGeneral->Layers_TOP || $cuLayer->GetType() eq EnumsGeneral->Layers_BOT ) {
+			my $cuLayer = $stackup->GetCuLayer($layer);
+
+			#test by Mira, add 80um (except cores)
+			if ( $cuLayer->GetType() eq EnumsGeneral->Layers_TOP || $cuLayer->GetType() eq EnumsGeneral->Layers_BOT ) {
+				$thick += 0.080;
+			}
+		}
+		else {
+
+			# For Mask, Plugs..
+
+			$thick = $stackup->GetFinalThick();
 			$thick += 0.080;
 		}
 
 	}
 	else {
-
 		$thick = HegMethods->GetPcbMaterialThick( $self->{"jobId"} );
 
 		#test by Mira, add 80um (except cores)

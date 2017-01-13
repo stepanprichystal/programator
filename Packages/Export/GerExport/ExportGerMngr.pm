@@ -4,7 +4,7 @@
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Packages::Export::GerExport::ExportGerMngr;
-use base('Packages::ItemResult::ItemResultMngr');
+use base('Packages::ItemResult::ItemEventMngr');
 
 #3th party library
 use strict;
@@ -85,7 +85,7 @@ sub __Export {
 		return $suffix;
 	};
 
-	my $resultItemGer = $self->_GetNewItem("Output layers");
+	my $resultItemGer = $self->_GetNewItem("Single layers");
 	
 	Helper->ExportLayers( $resultItemGer, $inCAM,  $step, $self->{"layers"}, $archivePath, $jobId, $suffixFunc );
 

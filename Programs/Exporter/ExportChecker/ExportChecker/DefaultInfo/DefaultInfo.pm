@@ -257,7 +257,7 @@ sub GetScoreChecker {
 sub GetTypeOfPcb {
 	my $self = shift;
 
-	$self->{"pcbTypeHelios"} = HegMethods->GetTypeOfPcb( $self->{"jobId"} eq 'Neplatovany' );
+	$self->{"pcbTypeHelios"} = HegMethods->GetTypeOfPcb( $self->{"jobId"});
 	return $self->{"pcbTypeHelios"};
 }
 

@@ -122,6 +122,34 @@ sub GetAllByPcbId {
 	}
 }
 
+
+sub GetInfoAfterStartProduce {
+	my $self  = shift;
+	my $pcbId = shift;
+
+	my @params = ( SqlParameter->new( "_PcbId", Enums->SqlDbType_VARCHAR, $pcbId ) );
+
+	my $cmd = "select top 1
+			 
+				 z.pocet_prirezu,
+				 z.prirezu_navic
+				 
+				 from lcs.desky_22 d with (nolock)
+				 left outer join lcs.subjekty c with (nolock) on c.cislo_subjektu=d.zakaznik
+				 left outer join lcs.subjekty m with (nolock) on m.cislo_subjektu=d.material
+				 left outer join lcs.zakazky_dps_22_hlavicka z with (nolock) on z.deska=d.cislo_subjektu
+				 where d.reference_subjektu=_PcbId and  z.cislo_poradace = 22050";
+
+	my @result = Helper->ExecuteDataSet( $cmd, \@params );
+
+	if (@result) {
+		return $result[0];
+	}
+	else {
+		return undef;
+	}
+}
+
 sub GetPcbName {
 	my $self  = shift;
 	my $pcbId = shift;
@@ -838,7 +866,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	use aliased 'Connectors::HeliosConnector::HegMethods';
 
 	#
-	my $res = HegMethods->GetInfMasterSlave("f13608-01");
+	my $res = HegMethods->GetInfoAfterStartProduce("f19729");
 
 	#
 	print $res;

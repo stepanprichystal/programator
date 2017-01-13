@@ -4,7 +4,7 @@
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Packages::Export::GerExport::ExportPasteMngr;
-use base('Packages::ItemResult::ItemResultMngr');
+use base('Packages::ItemResult::ItemEventMngr');
 
 #3th party library
 use strict;
@@ -162,7 +162,7 @@ sub __Export {
 		push( @hashLayers, \%lInfo );
 	}
 
-	my $resultItemPast = $self->_GetNewItem("Output paste");
+	my $resultItemPast = $self->_GetNewItem("Paste data");
 
 	Helper->ExportLayers( $resultItemPast, $inCAM, $step, \@hashLayers, $archivePath, "", $suffixFunc );
 

@@ -4,7 +4,7 @@
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Packages::Export::GerExport::GerMngr;
-use base('Packages::ItemResult::ItemResultMngr');
+use base('Packages::ItemResult::ItemEventMngr');
 
 use Class::Interface;
 &implements('Packages::Export::IMngr');
@@ -20,6 +20,7 @@ use aliased 'Packages::Export::PreExport::LayerInvert';
 use aliased 'CamHelpers::CamHelper';
 use aliased 'Packages::Export::GerExport::ExportGerMngr';
 use aliased 'Packages::Export::GerExport::ExportPasteMngr';
+use aliased 'Packages::Export::GerExport::ExportMdiMngr';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -31,27 +32,31 @@ sub new {
 	my $self      = $class->SUPER::new( $packageId, @_ );
 	bless $self;
 
-	$self->{"inCAM"}  = shift;
-	$self->{"jobId"}  = shift;
+	$self->{"inCAM"}        = shift;
+	$self->{"jobId"}        = shift;
 	$self->{"exportLayers"} = shift;
-	$self->{"layers"} = shift;
-	$self->{"paste"} = shift;
-	 
-	$self->{"gerberMngr"} =  ExportGerMngr->new($self->{"inCAM"}, $self->{"jobId"}, $self->{"exportLayers"}, $self->{"layers"});
+	$self->{"layers"}       = shift;
+	$self->{"paste"}        = shift;
+	$self->{"mdiInfo"}      = shift;
+
+	$self->{"gerberMngr"} = ExportGerMngr->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"exportLayers"}, $self->{"layers"} );
 	$self->{"gerberMngr"}->{"onItemResult"}->Add( sub { $self->_OnItemResult(@_) } );
-	
-	$self->{"pasteMngr"} = 	 ExportPasteMngr->new($self->{"inCAM"}, $self->{"jobId"}, $self->{"paste"});
+
+	$self->{"pasteMngr"} = ExportPasteMngr->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"paste"} );
 	$self->{"pasteMngr"}->{"onItemResult"}->Add( sub { $self->_OnItemResult(@_) } );
-	
+
+	$self->{"mdiMngr"} = ExportMdiMngr->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"mdiInfo"} );
+	$self->{"mdiMngr"}->{"onItemResult"}->Add( sub { $self->_OnItemResult(@_) } );
+
 	return $self;
 }
 
 sub Run {
 	my $self = shift;
 
-	 
-	 $self->{"gerberMngr"}->Run();
-	 $self->{"pasteMngr"}->Run();
+	$self->{"gerberMngr"}->Run();
+	$self->{"pasteMngr"}->Run();
+	$self->{"mdiMngr"}->Run();
 
 }
 
@@ -60,8 +65,9 @@ sub ExportItemsCount {
 
 	my $totalCnt = 0;
 
-	$totalCnt += $self->{"exportLayers"}  ? 1: 0;;    #gerbers
-	$totalCnt += $self->{"paste"}->{"export"} ? 1: 0; # paste
+	$totalCnt += $self->{"exportLayers"}      ? 1 : 0;    #gerbers
+	$totalCnt += $self->{"paste"}->{"export"} ? 1 : 0;    # paste
+	$totalCnt += $self->{"mdiMngr"}->GetExportLayerCnt(); # paste
 
 	return $totalCnt;
 

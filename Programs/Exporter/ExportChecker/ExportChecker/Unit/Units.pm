@@ -110,6 +110,7 @@ sub RefreshGUI {
 	foreach my $unit ( @{ $self->{"units"} } ) {
 
 		$unit->RefreshGUI();
+		$unit->GetForm()->DisableControls();
 	}
 
 }
