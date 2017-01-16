@@ -17,6 +17,7 @@ use aliased "Programs::Exporter::ExportChecker::Groups::GerExport::Presenter::Ge
 
 use aliased 'Programs::Exporter::ExportChecker::ExportChecker::DefaultInfo::DefaultInfo';
 use aliased 'Packages::ItemResult::ItemResultMngr';
+use aliased 'Enums::EnumsGeneral';
 
 #-------------------------------------------------------------------------------------------#
 #  NC export, all layers, all machines..

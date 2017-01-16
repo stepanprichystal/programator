@@ -599,6 +599,10 @@ sub GetDatacodeLayer {
 	if ($res) {
 		$res = uc($res);
 	}
+	
+	unless(defined $res){
+		$res = "";
+	}
 
 	return $res;
 }
@@ -620,6 +624,10 @@ sub GetUlLogoLayer {
 
 	if ($res) {
 		$res = uc($res);
+	}
+
+	unless(defined $res){
+		$res = "";
 	}
 
 	return $res;

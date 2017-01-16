@@ -222,6 +222,11 @@ sub __AddLayerTypes {
 		} 
 
 	}
+	
+	# if layer has no type, it is unknown for rules, which combine layers into film
+	# Thus remove it from list
+	
+	@{ $self->{"layers"} } = grep { defined $_->{"plotType"}} @{ $self->{"layers"} };
 }
 
 

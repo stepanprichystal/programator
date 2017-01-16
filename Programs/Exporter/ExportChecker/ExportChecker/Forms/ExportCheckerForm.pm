@@ -232,7 +232,7 @@ sub __SetLayout {
 		-1,                                             # ID -1 means any
 		"Exporter checker Job: " . $self->{"jobId"},    # title
 		&Wx::wxDefaultPosition,                         # window position
-		[ 1100, 750 ],    # size
+		[ 1120, 750 ],    # size
 		                  #&Wx::wxSYSTEM_MENU | &Wx::wxCAPTION | &Wx::wxCLIP_CHILDREN | &Wx::wxRESIZE_BORDER | &Wx::wxMINIMIZE_BOX
 	);
 

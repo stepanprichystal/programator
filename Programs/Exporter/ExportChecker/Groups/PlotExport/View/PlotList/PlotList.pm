@@ -20,6 +20,7 @@ use aliased 'Packages::Events::Event';
 use aliased 'Packages::Export::PlotExport::FilmCreator::FilmCreators';
 use aliased 'Packages::Export::PlotExport::FilmCreator::Helper';
 use aliased 'Helpers::GeneralHelper';
+use aliased 'Widgets::Forms::CustomControlList::Enums';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -43,7 +44,7 @@ sub new {
 	my $columnWidths = \@widths;
 	my $verticalLine = 1;
 
-	my $self = $class->SUPER::new( $parent, $columnCnt, $columnWidths, $verticalLine );
+	my $self = $class->SUPER::new( $parent, , Enums->Mode_CHECKBOX, $columnCnt, $columnWidths, $verticalLine );
 
 	bless($self);
 

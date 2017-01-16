@@ -17,6 +17,7 @@ use Wx qw(:sizer wxDefaultPosition wxDefaultSize wxDEFAULT_DIALOG_STYLE wxRESIZE
 
 use Widgets::Style;
 use aliased 'Packages::Events::Event';
+use aliased 'Widgets::Forms::CustomControlList::Enums';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -32,19 +33,19 @@ sub new {
 	bless($self);
 
 	$self->{"parent"} = $parent;
-	$self->{"text"} = $text;
-	
-	unless($rowHeight){
+	$self->{"text"}   = $text;
+
+	unless ($rowHeight) {
 		$rowHeight = -1;
 	}
-	
+
 	$self->{"rowHeight"} = $rowHeight;
 
 	#cells
 	my @cells = ();
 	$self->{"cells"} = \@cells;
 
-	$self->__SetLayout();
+	#$self->__SetLayout();
 
 	my @groups = ();
 	$self->{"groups"} = \@groups;
@@ -85,39 +86,44 @@ sub GetCellsByPos {
 sub IsSelected {
 	my $self = shift;
 
-	return $self->{"mainChb"}->GetValue();
+	return $self->{"mainControl"}->GetValue();
 }
 
 sub SetSelected {
-	my $self = shift;
+	my $self     = shift;
 	my $selected = shift;
-	
 
-	$self->{"mainChb"}->SetValue($selected);
+	$self->{"mainControl"}->SetValue($selected);
+
 	#$self->__OnSelectedChange();
-	
-	
-}
-
-sub __SetLayout {
-	my $self = shift;
-
-	my $mainChb = Wx::CheckBox->new( $self->{"parent"}, -1, $self->{"text"}, [-1,-1], [-1, $self->{"rowHeight"} ] );
-
-	#my $jobIdTxt = Wx::StaticText->new( $self->{"parent"}, -1, "test", [ -1, -1 ] );
-	#my $btnProduce = Wx::Button->new( $self->{"parent"}, -1, "Produce", &Wx::wxDefaultPosition, [ 60, 20 ] );
-
-	# SET EVENTS
-	Wx::Event::EVT_CHECKBOX( $mainChb, -1, sub { $self->__OnSelectedChange(@_) } );
-
-	$self->_AddCell($mainChb);
-
-	#$self->__AddCell($jobIdTxt);
-	#$self->__AddCell($btnProduce);
-
-	$self->{"mainChb"} = $mainChb;
 
 }
+
+sub SetMode {
+	my $self     = shift;
+	my $listMode = shift;
+
+	my $mainControl;
+
+	if ( $listMode eq Enums->Mode_CHECKBOX ) {
+
+		$mainControl = Wx::CheckBox->new( $self->{"parent"}, -1, $self->{"text"}, [ -1, -1 ], [ -1, $self->{"rowHeight"} ] );
+
+		# SET EVENTS
+		Wx::Event::EVT_CHECKBOX( $mainControl, -1, sub { $self->__OnSelectedChange(@_) } );
+
+	}
+	elsif ( $listMode eq Enums->Mode_CHECKBOXLESS ) {
+		$mainControl = Wx::StaticText->new( $self->{"parent"}, -1, $self->{"text"}, [ -1, -1 ], [ -1, $self->{"rowHeight"} ] );
+	}
+
+ 	# putt control on first position
+	unshift ( @{ $self->{"cells"} }, $mainControl);
+	
+	$self->{"mainControl"} = $mainControl;
+
+}
+ 
 
 sub __OnSelectedChange {
 	my $self = shift;
@@ -131,11 +137,11 @@ sub __OnSelectedChange {
 #-------------------------------------------------------------------------------------------#
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
+
 	#my $test = Programs::Exporter::ExportChecker::Forms::GroupTableForm->new();
 
 	#$test->MainLoop();
 }
 
- 
 1;
 
