@@ -86,6 +86,14 @@ sub __BuildRules {
 
 	$rule = $self->_AddRule( Enums->Ori_HORIZONTAL );
 	$rule->AddSingleTypes( Enums->LType_SIGINNER );
+	
+	my $goldUsed = $self->__PlotTypeUsed( \@ruleSetMulti, Enums->LType_GOLDFINGER );
+	unless ($goldUsed) {
+		
+		$rule = $self->_AddRule( Enums->Ori_HORIZONTAL );
+		$rule->AddSingleTypes( Enums->LType_GOLDFINGER );	
+	}
+	
 }
 
 # Tell if plot type is already used in rulesets created by "multi creator"
