@@ -18,6 +18,8 @@ use aliased 'CamHelpers::CamJob';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'Packages::Export::PreExport::LayerInvert';
 use aliased 'CamHelpers::CamHelper';
+use aliased 'Enums::EnumsPaths';
+use aliased 'Helpers::FileHelper';
 use aliased 'Packages::Export::GerExport::ExportGerMngr';
 use aliased 'Packages::Export::GerExport::ExportPasteMngr';
 use aliased 'Packages::Export::GerExport::ExportMdiMngr';
@@ -53,11 +55,39 @@ sub new {
 
 sub Run {
 	my $self = shift;
+	
+	$self->__DeleteOldFiles();
 
 	$self->{"gerberMngr"}->Run();
 	$self->{"pasteMngr"}->Run();
+
 	#$self->{"mdiMngr"}->Run();
 
+}
+
+# Before export , delete MDI gerber and JetPrint gerber
+sub __DeleteOldFiles {
+	my $self       = shift;
+ 
+	my $jobId = $self->{"jobId"};
+
+	my @file2del = ();
+
+	# delete MDI files;
+
+	my @f1 = FileHelper->GetFilesNameByPattern( EnumsPaths->Jobs_MDI, $jobId );
+	push( @file2del, @f1 );
+
+	# delete Jet print files;
+
+	my @f2 = FileHelper->GetFilesNameByPattern( EnumsPaths->Jobs_JETPRINT, $jobId );
+	push( @file2del, @f2 );
+	
+	foreach (@file2del) {
+		unless ( unlink($_) ) {
+			die "Can not delete mdi file $_.\n";
+		}
+	}
 }
 
 sub ExportItemsCount {
