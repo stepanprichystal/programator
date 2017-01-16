@@ -1,5 +1,5 @@
 #-------------------------------------------------------------------------------------------#
-# Description: Simple list, based on ControlList, which display nif quick note
+# Description: Simple list, based on ControlList, which display layers for markings in pcb
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Programs::Exporter::ExportChecker::Groups::NifExport::View::MarkingFrm::MarkingList;
@@ -16,7 +16,7 @@ use Wx qw(:sizer wxDefaultPosition wxDefaultSize wxDEFAULT_DIALOG_STYLE wxRESIZE
 
 use Widgets::Style;
 use aliased 'Programs::Exporter::ExportChecker::Groups::NifExport::View::MarkingFrm::MarkingRowBasic';
-
+use aliased 'Widgets::Forms::CustomControlList::Enums';
 use aliased 'Helpers::GeneralHelper';
 
 #-------------------------------------------------------------------------------------------#
@@ -31,19 +31,22 @@ sub new {
 	#my $inCAM = shift;
 	#my $jobId = shift;
 
+	my @layers = ( "pc", "mc", "c", "s", "ms", "ps" );    # layers, where marking can be present
+
 	# Name, Color, Polarity, Mirror, Comp
-	my @widths = ( 40,   40,   40,  40,  40,   40 );
-	my @titles = ( "pc", "mc", "c", "s", "ms", "ps" );
+	my @widths = ( 65, 18, 18, 18, 18, 18, 18 );
+	my @titles = ( "Marking", @layers );
 
 	my $columnCnt    = scalar(@widths);
 	my $columnWidths = \@widths;
 	my $verticalLine = 1;
 
-	my $self = $class->SUPER::new( $parent, $columnCnt, $columnWidths, $verticalLine );
+	my $self = $class->SUPER::new( $parent, Enums->Mode_CHECKBOXLESS, $columnCnt, $columnWidths, $verticalLine );
 
 	bless($self);
 
 	$self->{"titles"} = \@titles;
+	$self->{"layers"} = \@layers;
 
 	$self->__SetLayout();
 
@@ -52,68 +55,62 @@ sub new {
 	return $self;
 }
 
-sub SetMarkingData {
-	my $self      = shift;
-	my @notesData = @{ shift(@_) };
-
-	$self->UnselectAll();
-
-	my @allRows = $self->GetAllRows();
-
-	foreach my $data (@notesData) {
-
-		my $row = ( grep { $_->GetNoteData()->{"id"} == $data->{"id"} } @allRows )[0];
-
-		if ($row) {
-
-			# set row selected
-			$row->SetSelected(1);
-
-			# set parameters by data
-		}
-	}
-}
-
-sub SetUlLogo {
-	my $self = shift;
-	my $data = shift;
-
-	my $row = $self->GetAllRows()[0];
-	$row->SetMarkingData($data);
-}
-
-sub SetUlLogo {
-	my $self = shift;
-	my $data = shift;
-
-	my $row = $self->GetAllRows()[0];
-
-	$row->SetMarkingData($data);
-}
-
 sub SetDataCode {
 	my $self = shift;
 	my $data = shift;
 
-	my $row = $self->GetAllRows()[1];
+	my $row = ($self->GetAllRows())[0];
 
+	$row->SetMarkingData($data);
+}
+
+sub GetDataCode {
+	my $self = shift;
+
+	my $row = ($self->GetAllRows())[0];
+
+	return $row->GetMarkingData();
+}
+
+
+sub SetUlLogo {
+	my $self = shift;
+	my $data = shift;
+
+	my $row = ($self->GetAllRows())[1];
 	$row->SetMarkingData($data);
 }
 
 sub GetUlLogo {
 	my $self = shift;
 
-	my $row = $self->GetAllRows()[0];
+	my $row = ($self->GetAllRows())[1];
 
 	return $row->GetMarkingData();
 }
 
-sub GetDataCode {
-	my $self = shift;
 
-	my $row = $self->GetAllRows()[1];
+# Disable layers, which are not in matrix
+sub DisableControls {
+	my $self      = shift;
+	my @allLayers = @{shift(@_)};
 
-	return $row->GetMarkingData();
+	my @disableLayer = ();
+
+	foreach my $l ( @{ $self->{"layers"} } ) {
+
+		my $lExist = scalar( grep { $_->{"gROWname"} eq $l } @allLayers );
+
+		unless ($lExist) {
+			push( @disableLayer, $l );
+		}
+	}
+
+	foreach my $row ( $self->GetAllRows() ) {
+
+		$row->DisableControls(\@disableLayer);
+	}
+
 }
 
 sub __SetLayout {
@@ -131,12 +128,11 @@ sub __SetLayout {
 	# Define notes
 	my @notes = ();
 
-	my $rowUl = MarkingRowBasic->new( $self, "UL logo" );
-
-	$self->AddRow($rowUl);
-
-	my $rowDatacode = MarkingRowBasic->new( $self, "Datacode" );
+	my $rowDatacode = MarkingRowBasic->new( $self, "Datacode", $self->{"layers"} );
 	$self->AddRow($rowDatacode);
+
+	my $rowUl = MarkingRowBasic->new( $self, "UL logo", $self->{"layers"} );
+	$self->AddRow($rowUl);
 
 	# REGISTER EVENTS
 

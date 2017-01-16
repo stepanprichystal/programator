@@ -17,6 +17,7 @@ use Wx qw(:sizer wxDefaultPosition wxDefaultSize wxDEFAULT_DIALOG_STYLE wxRESIZE
 use Widgets::Style;
 use aliased 'Widgets::Forms::CustomControlList::ControlListColumn';
 use aliased 'Packages::Events::Event';
+use aliased 'Widgets::Forms::CustomControlList::Enums';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods

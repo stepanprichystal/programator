@@ -16,7 +16,7 @@ use Wx qw(:sizer wxDefaultPosition wxDefaultSize wxDEFAULT_DIALOG_STYLE wxRESIZE
 
 use Widgets::Style;
 use aliased 'Programs::Exporter::ExportChecker::Groups::NifExport::View::QuickNoteFrm::NoteRowBasic';
-
+use aliased 'Widgets::Forms::CustomControlList::Enums';
 use aliased 'Helpers::GeneralHelper';
 
 #-------------------------------------------------------------------------------------------#
@@ -39,7 +39,7 @@ sub new {
 	my $columnWidths = \@widths;
 	my $verticalLine = 1;
 
-	my $self = $class->SUPER::new( $parent, $columnCnt, $columnWidths, $verticalLine );
+	my $self = $class->SUPER::new( $parent, Enums->Mode_CHECKBOX, $columnCnt, $columnWidths, $verticalLine );
 
 	bless($self);
 

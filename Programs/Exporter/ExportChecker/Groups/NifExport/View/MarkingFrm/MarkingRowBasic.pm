@@ -1,6 +1,5 @@
 #-------------------------------------------------------------------------------------------#
-# Description: Basic list row, which show only checkbutton + text.
-# Used for notes, which has no another parameters - only text
+# Description: Basic list row, which show name of marikings + checkbox for each marking layer
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 
@@ -23,9 +22,10 @@ use aliased 'Packages::Events::Event';
 #-------------------------------------------------------------------------------------------#
 sub new {
 
-	my $class       = shift;
-	my $parent      = shift;
-	my $markingName = shift;
+	my $class         = shift;
+	my $parent        = shift;
+	my $markingName   = shift;
+	my $markingLayers = shift;
 
 	my $rowHeight = 20;
 
@@ -35,7 +35,16 @@ sub new {
 
 	$self->{"markingName"} = $markingName;
 
+	# init marking layers
 	my @l = ();
+
+	foreach my $l ( @{$markingLayers} ) {
+
+		# couple layer name + checkbox
+		my %inf = ( "name" => $l, "chb" => undef );
+		push( @l, \%inf );
+	}
+
 	$self->{"layers"} = \@l;
 
 	$self->__SetLayout();
@@ -49,16 +58,18 @@ sub SetMarkingData {
 	my $self = shift;
 	my $data = shift;
 	
-	my @layerNames = split(",", $data);
-	
- 	chomp (@layerNames);
+	# remove whitespaces, convert to lower
+	$data =~ s/\s//g;
+	$data = lc($data);
+
+	my @layerNames = split( ",", $data );
  
 	foreach my $inf ( @{ $self->{"layers"} } ) {
-		
+
 		my $lExist = scalar( grep { $_ eq $inf->{"name"} } @layerNames );
-		
-		if($lExist){
-			
+
+		if ($lExist) {
+
 			$inf->{"chb"}->SetValue(1);
 		}
 	}
@@ -67,7 +78,7 @@ sub SetMarkingData {
 sub GetMarkingData {
 	my $self = shift;
 
-	my @layers = "";
+	my @layers = ();
 
 	foreach my $inf ( @{ $self->{"layers"} } ) {
 
@@ -77,21 +88,21 @@ sub GetMarkingData {
 		}
 	}
 
-	return join( ",", @layers );
+	my $str = join( ",", @layers );
+	$str = uc($str);
+
+	return $str;
 }
 
 sub DisableControls {
-	my $self      = shift;
-	my @allLayers = shift;
+	my $self          = shift;
+	my @disableLayers = @{shift(@_)};
 
-	foreach my $inf ( @{ $self->{"layers"} } ) {
+	foreach my $lName (@disableLayers) {
 
-		my $lExist = scalar( grep { $_->{"gROWname"} eq $inf->{"name"} } @allLayers );
+		my $lInfo = ( grep { $_->{"name"} eq $lName } @{ $self->{"layers"} } )[0];
 
-		unless ($lExist) {
-
-			$inf->{"chb"}->Disable();
-		}
+		$lInfo->{"chb"}->Disable();
 	}
 }
 
@@ -100,16 +111,12 @@ sub __SetLayout {
 
 	# DEFINE CELLS
 
-	my @arr = ( "pc", "mc", "c", "s", "ms", "ps" );
+	foreach my $l ( @{ $self->{"layers"} } ) {
 
-	foreach my $l (@arr) {
-
-		my $chb = Wx::CheckBox->new( $self->{"parent"}, -1, $l, [ -1, -1 ], [ -1, $self->{"rowHeight"} ] );
+		my $chb = Wx::CheckBox->new( $self->{"parent"}, -1, "", [ -1, -1 ], [ -1, $self->{"rowHeight"} ] );
 		$self->_AddCell($chb);
 
-		my %inf = ( "name" => $l, "chb" => $chb );
-
-		push( @{ $self->{"layers"} }, \%inf );
+		$l->{"chb"} = $chb;
 
 	}
 

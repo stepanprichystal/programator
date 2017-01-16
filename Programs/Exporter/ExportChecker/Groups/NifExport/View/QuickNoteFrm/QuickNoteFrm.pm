@@ -75,7 +75,6 @@ sub __SetLayoutList {
 	$self->{"noteList"} = $noteList;
 
 	return $szStatBox;
-
 }
 
 sub __SetClick {

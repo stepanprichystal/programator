@@ -23,6 +23,7 @@ use aliased 'CamHelpers::CamLayer';
 use aliased 'Programs::Exporter::ExportChecker::Groups::NifExport::View::NifColorCb';
 use aliased 'Programs::Exporter::ExportChecker::Groups::NifExport::Presenter::NifHelper';
 use aliased 'Programs::Exporter::ExportChecker::Groups::NifExport::View::QuickNoteFrm::QuickNoteFrm';
+use aliased 'Programs::Exporter::ExportChecker::Groups::NifExport::View::MarkingFrm::MarkingList';
 use aliased 'Helpers::ValueConvertor';
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -32,20 +33,18 @@ sub new {
 	my $class  = shift;
 	my $parent = shift;
 
-	my $inCAM = shift;
-	my $jobId = shift;
+	my $inCAM       = shift;
+	my $jobId       = shift;
+	my $defaultInfo = shift;
 
 	my $self = $class->SUPER::new($parent);
 
 	bless($self);
 
-	$self->{"inCAM"} = $inCAM;
-	$self->{"jobId"} = $jobId;
-
-
-	
-
-	 
+	$self->{"inCAM"}       = $inCAM;
+	$self->{"jobId"}       = $jobId;
+	$self->{"defaultInfo"} = $defaultInfo;
+ 
 
 	#$self->Disable();
 
@@ -170,13 +169,8 @@ sub __SetLayoutSettings {
 	my $pressfitChb    = Wx::CheckBox->new( $statBox, -1, "Pressfit",     &Wx::wxDefaultPosition, [ $textWidth, 20 ] );
 	#my $jumpscoringChb = Wx::CheckBox->new( $statBox, -1, "Jump scoring", &Wx::wxDefaultPosition, [ $textWidth, 20 ] );
 
-	my $datacodeCb =
-	  Wx::ComboBox->new( $statBox, -1, $markingLNames[0], &Wx::wxDefaultPosition, [ $cbWidth, 20 ], \@markingLNames, &Wx::wxCB_READONLY );
-	my $ulLogoCb =
-	  Wx::ComboBox->new( $statBox, -1, $markingLNames[0], &Wx::wxDefaultPosition, [ $cbWidth, 20 ], \@markingLNames, &Wx::wxCB_READONLY );
-
-	my $datacodeTxt = Wx::StaticText->new( $statBox, -1, "Data code", &Wx::wxDefaultPosition, [ 60, 20 ] );
-	my $ulLogoTxt   = Wx::StaticText->new( $statBox, -1, "UL logo",   &Wx::wxDefaultPosition, [ 60, 20 ] );
+  
+	my $markingFrm = MarkingList->new($statBox);
 
 	my $silkTopCb = NifColorCb->new( $statBox, $self->{"inCAM"}, $self->{"jobId"}, "Silk top",        \@silkColor );
 	my $maskTopCb = NifColorCb->new( $statBox, $self->{"inCAM"}, $self->{"jobId"}, "Mask top", \@maskColor );
@@ -192,11 +186,7 @@ sub __SetLayoutSettings {
 	$szCol1->Add( $pressfitChb,    0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 	#$szCol1->Add( $jumpscoringChb, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 
-	$szCol2->Add( $datacodeTxt, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
-	$szCol2->Add( $ulLogoTxt,   0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
-
-	$szCol3->Add( $datacodeCb, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
-	$szCol3->Add( $ulLogoCb,   0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szCol2->Add( $markingFrm, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 
 	$szCol4->Add( $silkTopCb, 0, &Wx::wxALL,                 1 );
 	$szCol4->Add( $maskTopCb, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
@@ -205,19 +195,18 @@ sub __SetLayoutSettings {
 
 	#$szRow1->Add( 10,         10, 1,         &Wx::wxGROW );    #expander
 
-	$szStatBox->Add( $szCol1, 0, &Wx::wxEXPAND | &Wx::wxLEFT, 0  );
-	$szStatBox->Add( $szCol2, 0, &Wx::wxEXPAND | &Wx::wxLEFT, 40 );
-	$szStatBox->Add( $szCol3, 0, &Wx::wxEXPAND | &Wx::wxLEFT, 2 );
-	$szStatBox->Add( $szCol4, 0, &Wx::wxEXPAND | &Wx::wxLEFT, 40 );
+	$szStatBox->Add( $szCol1, 0, &Wx::wxEXPAND | &Wx::wxLEFT,   );
+	$szStatBox->Add( $szCol2, 0, &Wx::wxEXPAND | &Wx::wxLEFT, 20);
+	#$szStatBox->Add( $szCol3, 0, &Wx::wxEXPAND | &Wx::wxLEFT, 2 );
+	$szStatBox->Add( $szCol4, 0, &Wx::wxEXPAND | &Wx::wxLEFT, 20 );
 	
 	
 	# Set References
 	$self->{"tentingChb"} = $tentingChb;
 	$self->{"maskaChb"} = $maskaChb;
 	$self->{"pressfitChb"} = $pressfitChb;
-	#$self->{"jumpscoringChb"} = $jumpscoringChb;
-	$self->{"datacodeCb"} = $datacodeCb;
-	$self->{"ulLogoCb"} = $ulLogoCb;
+
+	$self->{"markingFrm"} = $markingFrm;
 	
 	$self->{"silkTopCb"} = $silkTopCb;
 	$self->{"maskTopCb"} = $maskTopCb;
@@ -379,7 +368,11 @@ sub __OnTentingChangeHandler {
 # =====================================================================
 
 sub DisableControls{
-	
+	my $self = shift;
+ 
+	# Disable layer in marking form
+	my @allBaseL = $self->{"defaultInfo"}->GetBoardBaseLayers();
+	$self->{"markingFrm"}->DisableControls(\@allBaseL);
 	
 }
 
@@ -616,31 +609,32 @@ sub GetQuickNotes {
 	return $self->{"quickNoteFrm"}->GetNotesData();
  
 }
-
-
+ 
 
 sub SetDatacode {
 	my $self  = shift;
 	my $value = shift;
-	$self->{"datacodeCb"}->SetValue($value);
+
+	$self->{"markingFrm"}->SetDataCode($value);
 }
 
 sub GetDatacode {
 	my $self = shift;
 	
-	return $self->{"datacodeCb"}->GetValue();
+	return $self->{"markingFrm"}->GetDataCode();
 }
 
 sub SetUlLogo {
 	my $self  = shift;
 	my $value = shift;
-	$self->{"ulLogoCb"}->SetValue($value);
+ 
+	$self->{"markingFrm"}->SetUlLogo($value);
 }
 
 sub GetUlLogo {
 	my $self = shift;
 	
-	return $self->{"ulLogoCb"}->GetValue();
+	return $self->{"markingFrm"}->GetUlLogo();
 }
 
 sub SetJumpScoring {

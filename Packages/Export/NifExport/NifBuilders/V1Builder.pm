@@ -60,7 +60,7 @@ sub Build {
 	push(@req, "s_silk_screen_colour");
 	push(@req, "lak_typ");
 	push(@req, "uhlik_typ");
-	#push(@req, "typ_dps");
+	push(@req, "film_konektoru");
 	push(@req, "prokoveni");
 	push(@req, "datum_pripravy");
 	

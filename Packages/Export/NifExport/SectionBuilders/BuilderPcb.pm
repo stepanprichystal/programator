@@ -133,6 +133,12 @@ sub Build {
 	if ( $self->_IsRequire("uhlik_typ") ) {
 		$section->AddRow( "uhlik_typ", $self->__GetUhlikTyp() );
 	}
+	
+	#film_konektoru
+	if ( $self->_IsRequire("film_konektoru") ) {
+		$section->AddRow( "film_konektoru", $self->__GetGoldFilmTyp() );
+	}	
+	
 
 	#prokoveni
 	if ( $self->_IsRequire("prokoveni") ) {
@@ -162,6 +168,12 @@ sub __GetUhlikTyp {
 	return $self->__GetLayerExist( "gc", "gs" );
 }
 
+sub __GetGoldFilmTyp {
+	my $self = shift;
+	return $self->__GetLayerExist( "goldc", "golds" );
+}
+ 
+
 sub __GetLayerExist {
 	my $self = shift;
 	my $top  = shift;
@@ -174,15 +186,19 @@ sub __GetLayerExist {
 	my $lcExist = CamHelper->LayerExists( $inCAM, $jobId, $top );
 	my $lsExist = CamHelper->LayerExists( $inCAM, $jobId, $bot );
 
+	my $res = "";
+
 	if ( $lcExist && $lsExist ) {
-		return 2;
+		$res = 2;
 	}
 	elsif ( $lcExist && !$lsExist ) {
-		return "C";
+		$res = "C";
 	}
 	elsif ( !$lcExist && $lsExist ) {
-		return "S";
+		$res = "S";
 	}
+	
+	return $res;
 }
 
 sub __GetProkoveni {

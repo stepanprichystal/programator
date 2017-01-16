@@ -65,8 +65,9 @@ sub OnPrepareGroupData {
 	my @quickNotes = ();
 	$groupData->SetQuickNotes( \@quickNotes );
 
-	$groupData->SetDatacode("");
-	$groupData->SetUlLogo("");
+	# prepare datacode
+	$groupData->SetDatacode( HegMethods->GetDatacodeLayer($jobId) );
+	$groupData->SetUlLogo(HegMethods->GetUlLogoLayer($jobId));
 
 	# Mask color
 

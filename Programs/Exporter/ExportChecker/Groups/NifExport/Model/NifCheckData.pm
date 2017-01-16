@@ -201,6 +201,14 @@ sub __CheckMarkingLayer {
 	my $self        = shift;
 	my $layerExport = shift;
 	my $layerIS     = shift;
+	
+	# convert to lower
+	$layerExport = lc($layerExport);
+	$layerIS = lc($layerIS);
+	
+	# remove whitespaces
+	$layerExport =~ s/\s//g;
+	$layerIS =~ s/\s//g;
 
 	my $res = "";
 
@@ -213,20 +221,28 @@ sub __CheckMarkingLayer {
 		$res = $layerIS;
 	}
 
+	# case when marking in helios exist but in export no
+	if ( $layerExport eq "" &&  $layerIS ne "")  {
+		$res = undef;    #error
+	}
+
 	# case, when marking is in IS and set in export too
-	if ( ( $layerExport && $layerExport ne "" ) && ( $layerIS && $layerIS ne "" ) ) {
+	if ( defined $layerExport &&  defined $layerIS &&  ($layerExport ne "" && $layerIS ne "") ) {
 
 		$res = $layerIS;
 
 		#test if marking are both same, as $layerExport as $layerIS
-		$layerExport = uc($layerExport);
-		$layerIS     = uc($layerIS);
 
-		if ( $layerIS && $layerExport ) {
-			if ( $layerExport ne $layerIS ) {
-
-				$res = undef;    #error
-			}
+		# mraking is in format.: MC, C or as single value: MC
+		my @exportLayers = split(",", $layerExport);
+		@exportLayers = sort { $a cmp $b } @exportLayers;
+		
+		my @isLayers = split(",", $layerIS);
+		@isLayers = sort { $a cmp $b } @isLayers;
+		
+		# if arrays are different, error
+		unless ( @exportLayers ~~ @isLayers ) {
+			$res = undef;    #error
 		}
 
 	}

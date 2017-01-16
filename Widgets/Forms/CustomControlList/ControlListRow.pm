@@ -103,14 +103,6 @@ sub SetMode {
 	my $self     = shift;
 	my $listMode = shift;
 
-	$self->__SetLayout($listMode);
-
-}
-
-sub __SetLayout {
-	my $self     = shift;
-	my $listMode = shift;
-
 	my $mainControl;
 
 	if ( $listMode eq Enums->Mode_CHECKBOX ) {
@@ -125,10 +117,13 @@ sub __SetLayout {
 		$mainControl = Wx::StaticText->new( $self->{"parent"}, -1, $self->{"text"}, [ -1, -1 ], [ -1, $self->{"rowHeight"} ] );
 	}
 
-	$self->_AddCell($mainControl);
-
+ 	# putt control on first position
+	unshift ( @{ $self->{"cells"} }, $mainControl);
+	
 	$self->{"mainControl"} = $mainControl;
+
 }
+ 
 
 sub __OnSelectedChange {
 	my $self = shift;
