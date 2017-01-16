@@ -26,6 +26,7 @@ sub new {
 
 	my $class        = shift;
 	my $parent       = shift;
+	my $mode 		 = shift;
 	my $columnCnt    = shift;
 	my $columnWidths = shift;
 	my $verticalLine = shift;
@@ -34,6 +35,7 @@ sub new {
 
 	bless($self);
 
+	$self->{"mode"}    		= $mode;
 	$self->{"columnCnt"}    = $columnCnt;
 	$self->{"columnWidth"}  = $columnWidths;
 	$self->{"verticalLine"} = $verticalLine;
@@ -83,6 +85,10 @@ sub AddRow {
 	my $self = shift;
 	my $row  = shift;
 	push( @{ $self->{"rows"} }, $row );
+	
+	# adjust row by CntrolListRow
+	$row->SetMode($self->{"mode"});
+	
 
 	# Register on select changed
 
