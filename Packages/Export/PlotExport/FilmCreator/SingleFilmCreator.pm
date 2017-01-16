@@ -27,8 +27,8 @@ sub new {
 	my $inCAM        = shift;    #board layers
 	my $jobId        = shift;    #board layers
 	my $layers       = shift;    #board layers
-	my $smallLim = shift;
-	my $bigLim  = shift;
+	my $smallLim     = shift;
+	my $bigLim       = shift;
 	my $multiCreator = shift;    #board layers
 
 	#my $pcbsizeProfile = shift; #board layers
@@ -67,7 +67,7 @@ sub __BuildRules {
 		$rule = $self->_AddRule( Enums->Ori_HORIZONTAL );
 		$rule->AddSingleTypes( Enums->LType_SILKTOP );
 	}
-	
+
 	# Add rule, only if layer type "SILKBOT" is not already used in result set created by "multiCreator"
 	my $silkBotUsed = $self->__PlotTypeUsed( \@ruleSetMulti, Enums->LType_SILKBOT );
 	unless ($silkBotUsed) {
@@ -86,6 +86,14 @@ sub __BuildRules {
 
 	$rule = $self->_AddRule( Enums->Ori_HORIZONTAL );
 	$rule->AddSingleTypes( Enums->LType_SIGINNER );
+
+	my $goldUsed = $self->__PlotTypeUsed( \@ruleSetMulti, Enums->LType_GOLDFINGER );
+	unless ($goldUsed) {
+
+		$rule = $self->_AddRule( Enums->Ori_HORIZONTAL );
+		$rule->AddSingleTypes( Enums->LType_GOLDFINGER );
+	}
+
 }
 
 # Tell if plot type is already used in rulesets created by "multi creator"
@@ -110,7 +118,6 @@ sub __PlotTypeUsed {
 	}
 	return $used;
 }
-
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
