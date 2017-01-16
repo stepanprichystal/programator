@@ -62,7 +62,7 @@ sub OnPrepareGroupData {
 	$groupData->SetLayers( \@layers );
 
 	# 2) Prepare MDI settings
-	my %mdiInfo = $self->__GetMDIInfo($defaultInfo);
+	my %mdiInfo = $self->__GetMDIInfo($jobId, $defaultInfo);
 	$groupData->SetMdiInfo( \%mdiInfo );
 
 	# 3) Prepare paste settings
@@ -248,6 +248,7 @@ sub __GetPasteInfo {
 
 	$pasteInfo{"addProfile"} = 1;
 	$pasteInfo{"zipFile"}    = 1;
+
 	#$pasteInfo{"layers"}     = \@layers;    #join(";", @layers);
 
 	return %pasteInfo;
@@ -256,7 +257,9 @@ sub __GetPasteInfo {
 
 sub __GetMDIInfo {
 	my $self        = shift;
+	my $jobId = shift;
 	my $defaultInfo = shift;
+	
 
 	my %mdiInfo = ();
 
@@ -267,8 +270,15 @@ sub __GetMDIInfo {
 	}
 
 	$mdiInfo{"exportSignal"} = $signal;
-	$mdiInfo{"exportMask"}   = ( $defaultInfo->LayerExist("mc") || $defaultInfo->LayerExist("ms") ) ? 1 : 0;
-	$mdiInfo{"exportPlugs"}  = ( $defaultInfo->LayerExist("plgc") || $defaultInfo->LayerExist("plgs") ) ? 1 : 0;
+
+	if ( ( $defaultInfo->LayerExist("mc") || $defaultInfo->LayerExist("ms") ) && $defaultInfo->GetPcbClass() >= 8 ) {
+		$mdiInfo{"exportMask"} = 1;
+	}
+	else {
+		$mdiInfo{"exportMask"} = 0;
+	}
+	
+	$mdiInfo{"exportPlugs"} = ( $defaultInfo->LayerExist("plgc") || $defaultInfo->LayerExist("plgs") ) ? 1 : 0;
 
 	return %mdiInfo;
 
@@ -280,18 +290,7 @@ sub __GetMDIInfo {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	#	use aliased 'Packages::Export::NCExport::NCExportGroup';
-	#
-	#	my $jobId    = "F13608";
-	#	my $stepName = "panel";
-	#
-	#	my $inCAM = InCAM->new();
-	#
-	#	my $ncgroup = NCExportGroup->new( $inCAM, $jobId );
-	#
-	#	$ncgroup->Run();
-
-	#print $test;
+ 
 
 }
 

@@ -105,13 +105,13 @@ sub OnCheckGroupData {
 	# 4) Check if material and pcb thickness and base cuthickness is set
 	my $materialKind = $defaultInfo->GetMaterialKind();
 	$materialKind =~ s/[\s\t]//g;
-	
-	my $pcbType      = $defaultInfo->GetTypeOfPcb();
+
+	my $pcbType = $defaultInfo->GetTypeOfPcb();
 
 	my $baseCuThickHelios = HegMethods->GetOuterCuThick($jobId);
 	my $pcbThickHelios    = HegMethods->GetPcbMaterialThick($jobId);
 
-	# Check if helios contain base cutthick, pcb thick
+	# 5) Check if helios contain base cutthick, pcb thick
 	if ( $layerCnt >= 1 && $pcbType ne "Neplatovany" ) {
 
 		unless ( defined $baseCuThickHelios ) {
@@ -125,7 +125,7 @@ sub OnCheckGroupData {
 		}
 	}
 
-	# Check if helios contain material kind
+	# 6) Check if helios contain material kind
 	unless ( defined $materialKind ) {
 
 		$dataMngr->_AddErrorResult( "Material", "Material kind (Fr4, IS400, etc..) is not defined in Helios." );
@@ -138,7 +138,7 @@ sub OnCheckGroupData {
 		my $stackKind = $defaultInfo->GetStackup()->GetStackupType();
 
 		#exception DE 104 eq FR4
-		if($stackKind =~ /DE 104/i){
+		if ( $stackKind =~ /DE 104/i ) {
 			$stackKind = "FR4";
 		}
 
@@ -151,18 +151,42 @@ sub OnCheckGroupData {
 		}
 
 		# b) test if created stackup match thickness in helios +-5%
-		my $stackThick = $defaultInfo->GetStackup()->GetFinalThick()/1000;
+		my $stackThick = $defaultInfo->GetStackup()->GetFinalThick() / 1000;
 
 		unless ( $pcbThickHelios * 0.95 < $stackThick && $pcbThickHelios * 1.05 > $stackThick ) {
-			
-			$stackThick = sprintf("%.2f", $stackThick);
-			$pcbThickHelios = sprintf("%.2f", $pcbThickHelios);
-			
+
+			$stackThick     = sprintf( "%.2f", $stackThick );
+			$pcbThickHelios = sprintf( "%.2f", $pcbThickHelios );
+
 			$dataMngr->_AddErrorResult( "Stackup thickness",
 										"Stackup thickness ($stackThick) isn't match witch thickness in Helios ($pcbThickHelios) +-5%." );
 
 		}
 
+	}
+
+	# 7) Check if contain negative layers, if powerground type is set and vice versa
+
+	my @sigLayers = $defaultInfo->GetSignalLayers();
+
+	foreach my $l (@sigLayers) {
+
+		if (    ( $l->{"gROWpolarity"} eq "negative" && $l->{"gROWlayer_type"} ne "power_ground" )
+			 || ( $l->{"gROWpolarity"} ne "negative" && $l->{"gROWlayer_type"} eq "power_ground" ) )
+		{
+
+			$dataMngr->_AddErrorResult(
+										"Negative layer",
+										"Layer: "
+										  . $l->{"gROWname"}
+										  . " has type: '"
+										  . $l->{"gROWlayer_type"}
+										  . "' and polarity: '"
+										  . $l->{"gROWpolarity"}
+										  . "'. It is wrong. Set polarity 'negative' and type 'power_ground'."
+			);
+
+		}
 	}
 
 }
