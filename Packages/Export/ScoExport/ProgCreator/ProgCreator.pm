@@ -39,8 +39,8 @@ sub new {
 	$self->{"inCAM"}     = shift;
 	$self->{"jobId"}     = shift;
 	$self->{"coreThick"} = shift;
-	$self->{"frLim"} = shift;
-	$self->{"step"} = "panel";
+	$self->{"frLim"}     = shift;
+	$self->{"step"}      = "panel";
 
 	$self->{"pcbThick"} = JobHelper->GetFinalPcbThick( $self->{"jobId"} ) / 1000;
 
@@ -49,8 +49,6 @@ sub new {
 
 	$self->{"width"}  = abs( $lim{"xmax"} - $lim{"xmin"} );
 	$self->{"height"} = abs( $lim{"ymax"} - $lim{"ymin"} );
-
-
 
 	return $self;
 }
@@ -231,78 +229,83 @@ sub __AddControlLines {
 
 	my $width  = $self->{"width"} * 1000;
 	my $height = $self->{"height"} * 1000;
-	
+
 	my $lineLen = 40000;
 
 	# ==================================
 	# horizontal score
 	# ==================================
-	my $hPoint;
-	my %hLineS;
-	my %hLineE;
+	if ( $scoreData->ExistHScore() ) {
 
-	$hPoint = $height - 10000;
+		my $hPoint;
+		my %hLineS;
+		my %hLineE;
 
-	$hLineS{"x"} = - 2000; # start out of pcb 2mm
-	$hLineS{"y"} = $height - 10000;
-	$hLineE{"x"} = 5000 + $lineLen;
-	$hLineE{"y"} = $height - 10000;
+		$hPoint = $height - 10000;
 
-	# multi VV
-	if ($frLim) {
+		$hLineS{"x"} = -2000;             # start out of pcb 2mm
+		$hLineS{"y"} = $height - 10000;
+		$hLineE{"x"} = 5000 + $lineLen;
+		$hLineE{"y"} = $height - 10000;
 
-		$hPoint -= $height - $frLim->{"yMax"};
+		# multi VV
+		if ($frLim) {
 
-		$hLineS{"x"} += $frLim->{"xMin"};
-		$hLineS{"y"} -= $height - $frLim->{"yMax"};
-		$hLineE{"x"} += $frLim->{"xMin"};
-		$hLineE{"y"} -= $height - $frLim->{"yMax"};
+			$hPoint -= $height - $frLim->{"yMax"};
+
+			$hLineS{"x"} += $frLim->{"xMin"};
+			$hLineS{"y"} -= $height - $frLim->{"yMax"};
+			$hLineE{"x"} += $frLim->{"xMin"};
+			$hLineE{"y"} -= $height - $frLim->{"yMax"};
+		}
+
+		# horizontal line
+
+		my $hScoreSet = ScoreSet->new( $hPoint, ScoEnums->Dir_HSCORE );
+		my $hline = ScoreLine->new( ScoEnums->Dir_HSCORE );
+		$hline->SetStartP( \%hLineS );
+		$hline->SetEndP( \%hLineE );
+		$hScoreSet->AddScoreLine($hline);
+
+		$scoreData->AddScoreSet($hScoreSet);
 	}
-
-	# horizontal line
-
-	my $hScoreSet = ScoreSet->new( $hPoint, ScoEnums->Dir_HSCORE );
-	my $hline = ScoreLine->new( ScoEnums->Dir_HSCORE );
-	$hline->SetStartP( \%hLineS );
-	$hline->SetEndP( \%hLineE );
-	$hScoreSet->AddScoreLine($hline);
-
-	$scoreData->AddScoreSet($hScoreSet);
 
 	# ==================================
 	# vertical score
 	# ==================================
-	my $vPoint;
-	my %vLineS;
-	my %vLineE;
+	if ( $scoreData->ExistVScore() ) {
+		my $vPoint;
+		my %vLineS;
+		my %vLineE;
 
-	$vPoint = $width - 5000;
+		$vPoint = $width - 5000;
 
-	$vLineS{"x"} = $width - 5000;
-	$vLineS{"y"} = $height + 2000; # start out of pcb 2mm;
-	$vLineE{"x"} = $width - 5000;
-	$vLineE{"y"} = $height - 5000 - $lineLen;
+		$vLineS{"x"} = $width - 5000;
+		$vLineS{"y"} = $height + 2000;              # start out of pcb 2mm;
+		$vLineE{"x"} = $width - 5000;
+		$vLineE{"y"} = $height - 5000 - $lineLen;
 
-	# multi VV
-	if ($frLim) {
+		# multi VV
+		if ($frLim) {
 
-		$vPoint -= $width - $frLim->{"xMax"};
+			$vPoint -= $width - $frLim->{"xMax"};
 
-		$vLineS{"x"} -= $width - $frLim->{"xMax"};
-		$vLineS{"y"} -= $height - $frLim->{"yMax"};
-		$vLineE{"x"} -= $width - $frLim->{"xMax"};
-		$vLineE{"y"} -= $height - $frLim->{"yMax"};
+			$vLineS{"x"} -= $width - $frLim->{"xMax"};
+			$vLineS{"y"} -= $height - $frLim->{"yMax"};
+			$vLineE{"x"} -= $width - $frLim->{"xMax"};
+			$vLineE{"y"} -= $height - $frLim->{"yMax"};
+		}
+
+		# horizontal line
+
+		my $vScoreSet = ScoreSet->new( $vPoint, ScoEnums->Dir_VSCORE );
+		my $vline = ScoreLine->new( ScoEnums->Dir_VSCORE );
+		$vline->SetStartP( \%vLineS );
+		$vline->SetEndP( \%vLineE );
+		$vScoreSet->AddScoreLine($vline);
+
+		$scoreData->AddScoreSet($vScoreSet);
 	}
-
-	# horizontal line
-
-	my $vScoreSet = ScoreSet->new( $vPoint, ScoEnums->Dir_VSCORE );
-	my $vline = ScoreLine->new( ScoEnums->Dir_VSCORE );
-	$vline->SetStartP( \%vLineS );
-	$vline->SetEndP( \%vLineE );
-	$vScoreSet->AddScoreLine($vline);
-
-	$scoreData->AddScoreSet($vScoreSet);
 
 }
 

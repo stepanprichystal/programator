@@ -22,6 +22,8 @@ use aliased 'Packages::Export::ScoExport::ProgCreator::ProgCreator';
 use aliased 'Packages::Export::ScoExport::Enums';
 use aliased 'CamHelpers::CamHelper';
 use aliased 'CamHelpers::CamJob';
+use aliased 'Helpers::JobHelper';
+use aliased 'Helpers::FileHelper';
 use aliased 'Packages::Scoring::ScoreChecker::Enums' => "ScoEnums";
 use aliased 'Packages::ItemResult::Enums'            => "ResEnums";
 use aliased 'Packages::Polygon::Features::RouteFeatures::RouteFeatures';
@@ -156,6 +158,8 @@ sub Run {
 	$self->{"creator"}->Build( $self->{"type"}, $self->{"optimizeData"} );
 
 	my $fileSave = $self->_GetNewItem("Saving file");
+	
+	$self->__DeleteOldFiles();
 
 	if ( $self->{"optimizeData"}->ExistVScore() ) {
  
@@ -176,6 +180,25 @@ sub Run {
 
 	print STDERR $errMess;
 
+}
+
+
+# If export all, delete all files in job atchiov nc directory
+sub __DeleteOldFiles {
+	my $self = shift;
+
+	my $path = JobHelper->GetJobArchive( $self->{"jobId"} );
+	 
+
+	my $archivePath = JobHelper->GetJobArchive( $self->{"jobId"} );
+ 	
+	my @jum = FileHelper->GetFilesNameByPattern( $archivePath, ".jum" );
+	my @cut = FileHelper->GetFilesNameByPattern( $archivePath, ".cut" );
+	 
+ 
+	foreach my $f ( (@jum, @cut) ) {
+		unlink $f;
+	}
 }
 
 # get information about	fr dimension
