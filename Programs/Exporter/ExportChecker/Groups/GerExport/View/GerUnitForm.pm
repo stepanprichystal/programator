@@ -6,6 +6,10 @@
 package Programs::Exporter::ExportChecker::Groups::GerExport::View::GerUnitForm;
 use base qw(Wx::Panel);
 
+use Class::Interface;
+&implements('Programs::Exporter::ExportChecker::Groups::IUnitForm');
+
+
 #3th party library
 use strict;
 use warnings;
@@ -29,15 +33,17 @@ sub new {
 	my $class  = shift;
 	my $parent = shift;
 
-	my $inCAM = shift;
-	my $jobId = shift;
+	my $inCAM       = shift;
+	my $jobId       = shift;
+	my $defaultInfo = shift;
 
 	my $self = $class->SUPER::new($parent);
 
 	bless($self);
 
-	$self->{"inCAM"} = $inCAM;
-	$self->{"jobId"} = $jobId;
+	$self->{"inCAM"}       = $inCAM;
+	$self->{"jobId"}       = $jobId;
+	$self->{"defaultInfo"} = $defaultInfo;
 
 	# Load data
 
@@ -62,16 +68,22 @@ sub __SetLayout {
 
 	my $szMain = Wx::BoxSizer->new(&Wx::wxVERTICAL);
 
+	my $szRow1 = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
+
 	# DEFINE CONTROLS
 	my $gerbers = $self->__SetLayoutGerbers($self);
+	my $mdi     = $self->__SetLayoutMDI($self);
 	my $paste   = $self->__SetLayoutPaste($self);
 
 	# SET EVENTS
 
 	# BUILD STRUCTURE OF LAYOUT
 
-	$szMain->Add( $gerbers, 0, &Wx::wxEXPAND );
-	$szMain->Add( 15, 15, 0, &Wx::wxEXPAND );
+	$szRow1->Add( $gerbers, 50, &Wx::wxEXPAND );
+	$szRow1->Add( $mdi,     50, &Wx::wxEXPAND );
+
+	$szMain->Add( $szRow1, 0, &Wx::wxEXPAND );
+	$szMain->Add( 5, 5, 0, &Wx::wxEXPAND );
 	$szMain->Add( $paste, 0, &Wx::wxEXPAND );
 
 	$self->SetSizer($szMain);
@@ -86,8 +98,8 @@ sub __SetLayoutGerbers {
 	my $parent = shift;
 
 	#define staticboxes
-	my $statBox = Wx::StaticBox->new( $parent, -1, 'Layers' );
-	my $szStatBox = Wx::StaticBoxSizer->new( $statBox, &Wx::wxHORIZONTAL );
+	my $statBox = Wx::StaticBox->new( $parent, -1, 'Single layers' );
+	my $szStatBox = Wx::StaticBoxSizer->new( $statBox, &Wx::wxVERTICAL );
 
 	# DEFINE CONTROLS
 
@@ -97,10 +109,42 @@ sub __SetLayoutGerbers {
 
 	# BUILD STRUCTURE OF LAYOUT
 
-	$szStatBox->Add( $exportChb, 1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szStatBox->Add( $exportChb, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szStatBox->Add( 5, 5, 1, &Wx::wxEXPAND );
 
 	# Set References
 	$self->{"exportLayersChb"} = $exportChb;
+
+	return $szStatBox;
+}
+
+# Set layout for MDI
+sub __SetLayoutMDI {
+	my $self   = shift;
+	my $parent = shift;
+
+	#define staticboxes
+	my $statBox = Wx::StaticBox->new( $parent, -1, 'MDI data' );
+	my $szStatBox = Wx::StaticBoxSizer->new( $statBox, &Wx::wxVERTICAL );
+
+	# DEFINE CONTROLS
+
+	my $signalChb = Wx::CheckBox->new( $statBox, -1, "Signal layers", &Wx::wxDefaultPosition );
+	my $maskChb   = Wx::CheckBox->new( $statBox, -1, "Mask layers",  &Wx::wxDefaultPosition );
+	my $plugChb   = Wx::CheckBox->new( $statBox, -1, "Plug layers",   &Wx::wxDefaultPosition );
+
+	# SET EVENTS
+
+	# BUILD STRUCTURE OF LAYOUT
+
+	$szStatBox->Add( $signalChb, 1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szStatBox->Add( $maskChb,   1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szStatBox->Add( $plugChb,   1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+
+	# Set References
+	$self->{"signalChb"} = $signalChb;
+	$self->{"maskChb"}   = $maskChb;
+	$self->{"plugChb"}   = $plugChb;
 
 	return $szStatBox;
 }
@@ -111,7 +155,7 @@ sub __SetLayoutPaste {
 	my $parent = shift;
 
 	#define staticboxes
-	my $statBox = Wx::StaticBox->new( $parent, -1, 'Paste' );
+	my $statBox = Wx::StaticBox->new( $parent, -1, 'Paste data' );
 	my $szStatBox = Wx::StaticBoxSizer->new( $statBox, &Wx::wxVERTICAL );
 
 	my $szRowMain1 = Wx::BoxSizer->new(&Wx::wxVERTICAL);
@@ -199,24 +243,42 @@ sub __OnExportPasteChange {
 }
 
 sub PlotRowSettChanged {
-	my $self     = shift;
+	my $self    = shift;
 	my $plotRow = shift;
- 
-	
+
 	my %lInfo = $plotRow->GetLayerValues();
-	
- 
-	foreach my $l (@{$self->{"layers"}}){
-		
-		
-		if($l->{"name"} eq $plotRow->GetRowText()){
-			
-			$l->{"mirror"} = $lInfo{"mirror"};
+
+	foreach my $l ( @{ $self->{"layers"} } ) {
+
+		if ( $l->{"name"} eq $plotRow->GetRowText() ) {
+
+			$l->{"mirror"}   = $lInfo{"mirror"};
 			$l->{"polarity"} = $lInfo{"polarity"};
-			$l->{"comp"} = $lInfo{"comp"};
+			$l->{"comp"}     = $lInfo{"comp"};
 		}
 	}
 
+}
+
+# =====================================================================
+# DISABLING CONTROLS
+# =====================================================================
+
+sub DisableControls {
+	my $self = shift;
+
+	my $defaultInfo = $self->{"defaultInfo"};
+	if ( !$defaultInfo->LayerExist("c") || $defaultInfo->GetTypeOfPcb( $self->{"jobId"} ) eq "Neplatovany" ) {
+		$self->{"signalChb"}->Disable();
+	}
+
+	unless ( $defaultInfo->LayerExist("mc") && $defaultInfo->LayerExist("ms") ) {
+		$self->{"maskChb"}->Disable();
+	}
+
+	unless ( $defaultInfo->LayerExist("plgc") && $defaultInfo->LayerExist("plgs") ) {
+		$self->{"plugChb"}->Disable();
+	}
 
 }
 
@@ -315,6 +377,47 @@ sub GetLayers {
 	my $self = shift;
 
 	return $self->{"layers"};
+}
+
+# Mdi data =================================================================
+
+sub SetMdiInfo {
+	my $self = shift;
+	my $info = shift;
+
+	$self->{"signalChb"}->SetValue( $info->{"exportSignal"} );
+	$self->{"maskChb"}->SetValue( $info->{"exportMask"} );
+	$self->{"plugChb"}->SetValue( $info->{"exportPlugs"} );
+
+}
+
+sub GetMdiInfo {
+	my $self = shift;
+
+	my %info = ();
+
+	if ( $self->{"signalChb"}->IsChecked() ) {
+		$info{"exportSignal"} = 1;
+	}
+	else {
+		$info{"exportSignal"} = 0;
+	}
+
+	if ( $self->{"maskChb"}->IsChecked() ) {
+		$info{"exportMask"} = 1;
+	}
+	else {
+		$info{"exportMask"} = 0;
+	}
+
+	if ( $self->{"plugChb"}->IsChecked() ) {
+		$info{"exportPlugs"} = 1;
+	}
+	else {
+		$info{"exportPlugs"} = 0;
+	}
+
+	return \%info;
 }
 
 1;

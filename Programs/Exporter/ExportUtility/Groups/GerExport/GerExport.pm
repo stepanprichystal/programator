@@ -48,9 +48,9 @@ sub Init {
 	my $exportLayers =  $exportData->GetExportLayers();
 	my $layers =  $exportData->GetLayers();
 	my $pasteInfo =  $exportData->GetPasteInfo();
-
+	my $mdiInfo =  $exportData->GetMdiInfo();
 	
-	my $mngr  = GerMngr->new( $inCAM, $jobId, $exportLayers, $layers, $pasteInfo);
+	my $mngr  = GerMngr->new( $inCAM, $jobId, $exportLayers, $layers, $pasteInfo, $mdiInfo);
 	
 	$mngr->{"onItemResult"}->Add( sub { $self->_OnItemResultHandler(@_) } );
 	

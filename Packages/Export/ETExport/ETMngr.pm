@@ -4,7 +4,7 @@
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Packages::Export::ETExport::ETMngr;
-use base('Packages::Export::MngrBase');
+use base('Packages::ItemResult::ItemEventMngr');
 
 use Class::Interface;
 &implements('Packages::Export::IMngr');

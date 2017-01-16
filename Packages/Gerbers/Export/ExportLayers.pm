@@ -1,10 +1,9 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Manager responsible for AOI files creation
+# Description: Do export of gerber layers
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::Export::GerExport::Helper;
- 
+package Packages::Gerbers::Export::ExportLayers;
 
 #3th party library
 use strict;
@@ -18,52 +17,58 @@ use aliased 'Helpers::FileHelper';
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
- 
-sub Run {
-	my $self = shift;
-
-	 
-	 $self->{"gerberMngr"}->Run();
-	 $self->{"pasteMngr"}->Run();
-
-}
 
 sub ExportLayers {
-	my $self = shift;
-	my $resultItem = shift;
-	my $inCAM = shift;
-	my $step = shift;
-	my @layers = @{shift(@_)};
+	my $self        = shift;
+	my $resultItem  = shift;
+	my $inCAM       = shift;
+	my $step        = shift;
+	my @layers      = @{ shift(@_) };
 	my $archivePath = shift;
-	my $prefix = shift;
-	my $suffixFunc = shift;
- 
- 	my $device = "Gerber274x";
- 	
- 
- 
-# Set step
-	CamHelper->SetStep($inCAM, $step);
+	my $prefix      = shift;
+	my $suffixFunc  = shift;
+	my $breakSR     = shift;
+	my $breakSymbol = shift;
+
+	# Set default break step and repeat
+	my $brSR = "no";
+
+	if ($breakSR) {
+		$brSR = "yes";
+	}
+
+	# Set default break symbols
+	my $brSym = "no";
+
+	if ($breakSymbol) {
+		$brSym = "yes";
+	}
+
+	my $device = "Gerber274x";
+
+	# if last char is slash, remove becaues
+	if ( substr( $archivePath, -1 ) eq "\\" ) {
+		chop($archivePath);
+	}
+
+	# Set step
+	CamHelper->SetStep( $inCAM, $step );
 
 	# Add output device
 	$inCAM->COM( "output_add_device", "type" => "format", "name" => $device );
 
-	 
+	foreach my $l (@layers) {
 
-	foreach my $l (@layers ) {
+		my $suffix = $suffixFunc->($l);
 
-			my $suffix = $suffixFunc->($l);
-
-		
-		
 		my $mirror;
-		
-		if($l->{"mirror"}){
+
+		if ( $l->{"mirror"} ) {
 			$mirror = "yes";
-		}else{
+		}
+		else {
 			$mirror = "no";
 		}
-		 
 
 		# Reset settings of device
 		$inCAM->COM( "output_reload_device", "type" => "format", "name" => $device );
@@ -76,14 +81,12 @@ sub ExportLayers {
 			"dir_path"      => $archivePath,
 			"prefix"        => $prefix,
 			"suffix"        => $suffix,
-			"format_params" => "(break_sr=yes)(break_symbols=yes)"
+			"format_params" => "(break_sr=$brSR)(break_symbols=$brSym)"
 
 		);
 
 		# Filter only layer, which we want to output
 		$inCAM->COM( "output_device_set_lyrs_filter", "type" => "format", "name" => $device, "layers_filter" => $l->{"name"} );
-
-		
 
 		# Necessery set layer, otherwise
 		$inCAM->COM(
@@ -115,15 +118,15 @@ sub ExportLayers {
 		}
 
 		# test if file was outputed
-		my $fname = $prefix . $l->{"name"} .$suffix;
+		my $fname = $prefix . $l->{"name"} . $suffix;
 		my $fileExist = FileHelper->GetFileNameByPattern( $archivePath . "\\", $fname );
 		unless ($fileExist) {
- 
+
 			$resultItem->AddError( "Failed to create Gerber file: " . $archivePath . "\\" . $fname );
 		}
 
 	}
- 
+
 }
 
 #-------------------------------------------------------------------------------------------#

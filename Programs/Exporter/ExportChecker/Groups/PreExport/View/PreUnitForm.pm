@@ -7,6 +7,9 @@ package Programs::Exporter::ExportChecker::Groups::PreExport::View::PreUnitForm;
 
 #use base qw(Wx::Panel);
 
+use Class::Interface;
+&implements('Programs::Exporter::ExportChecker::Groups::IUnitForm');
+
 #3th party library
 use strict;
 use warnings;
@@ -105,6 +108,17 @@ sub ChangeTentingHandler {
 		}
 	}
 }
+
+
+# =====================================================================
+# DISABLING CONTROLS
+# =====================================================================
+
+sub DisableControls{
+	
+	
+}
+
 
 # =====================================================================
 # SET/GET CONTROLS VALUES

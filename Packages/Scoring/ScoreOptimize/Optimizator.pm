@@ -5,7 +5,7 @@
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Packages::Scoring::ScoreOptimize::Optimizator;
-use base('Packages::Export::MngrBase');
+use base('Packages::ItemResult::ItemEventMngr');
 
 #3th party library
 use strict;

@@ -4,7 +4,7 @@
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Packages::Export::GerExport::ExportPasteMngr;
-use base('Packages::Export::MngrBase');
+use base('Packages::ItemResult::ItemEventMngr');
 
 #3th party library
 use strict;
@@ -20,7 +20,7 @@ use aliased 'Helpers::JobHelper';
 use aliased 'CamHelpers::CamHelper';
 use aliased 'CamHelpers::CamStepRepeat';
 use aliased 'Helpers::FileHelper';
-use aliased 'Packages::Export::GerExport::Helper';
+use aliased 'Packages::Gerbers::Export::ExportLayers' => 'Helper';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -51,7 +51,7 @@ sub Run {
 	my $notOriginal = $self->{"pasteInfo"}->{"notOriginal"};
 	my $zipFile     = $self->{"pasteInfo"}->{"zipFile"};
 
-	my $archive = JobHelper->GetJobArchive( $self->{"jobId"} ). "zdroje\\";
+	my $archive      = JobHelper->GetJobArchive( $self->{"jobId"} ) . "zdroje\\";
 	my $archivePaste = $archive . "data_paste";
 
 	unless ( -e $archivePaste ) {
@@ -89,8 +89,7 @@ sub Run {
 
 			next unless $f =~ /^[a-z]/i;
 
-			 
-			$zip->addFile( $archivePaste . "\\" . $f, $f);
+			$zip->addFile( $archivePaste . "\\" . $f, $f );
 
 		}
 		close $dir;
@@ -98,7 +97,7 @@ sub Run {
 		## Add a directory
 		#my $dir = $zip->addDirectory( $archivePath . "\\" );
 
-		if ( $zip->writeToFileNamed( $archive . $self->{"jobId"}."_paste_data.zip" ) == AZ_OK ) {
+		if ( $zip->writeToFileNamed( $archive . $self->{"jobId"} . "_paste_data.zip" ) == AZ_OK ) {
 
 			rmtree($archivePaste) or die "Cannot rmtree '$archivePaste' : $!";
 		}
@@ -117,7 +116,7 @@ sub __Export {
 
 	my $step       = $self->{"pasteInfo"}->{"step"};
 	my $addProfile = $self->{"pasteInfo"}->{"addProfile"};
-	my @layers     = @{ $self->{"pasteInfo"}->{"layers"} };
+	my @layers     = $self->__GetPasteLayers();
 
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
@@ -162,11 +161,41 @@ sub __Export {
 		push( @hashLayers, \%lInfo );
 	}
 
-	my $resultItemPast = $self->_GetNewItem("Output paste");
+	my $resultItemPast = $self->_GetNewItem("Paste data");
 
 	Helper->ExportLayers( $resultItemPast, $inCAM, $step, \@hashLayers, $archivePath, "", $suffixFunc );
 
 	$self->_OnItemResult($resultItemPast);
+}
+
+
+# layers end with _ori has highest priority
+sub __GetPasteLayers {
+	my $self = shift;
+
+	my $inCAM = $self->{"inCAM"};
+	my $jobId = $self->{"jobId"};
+
+	my @layers = ();
+
+	my $sa_ori  = CamHelper->LayerExists( $inCAM, $jobId, "sa_ori" );
+	my $sb_ori  = CamHelper->LayerExists( $inCAM, $jobId, "sb_ori" );
+	my $sa_made = CamHelper->LayerExists( $inCAM, $jobId, "sa_made" );
+	my $sb_made = CamHelper->LayerExists( $inCAM, $jobId, "sb_made" );
+
+	if ( $sa_ori || $sb_ori ) {
+
+		push( @layers, "sa_ori" ) if $sa_ori;
+		push( @layers, "sb_ori" ) if $sb_ori;
+
+	}
+	elsif ( $sa_made || $sb_made ) {
+
+		push( @layers, "sa_made" ) if $sa_made;
+		push( @layers, "sb_made" ) if $sb_made;
+
+	}
+	return @layers;
 }
 
 #-------------------------------------------------------------------------------------------#

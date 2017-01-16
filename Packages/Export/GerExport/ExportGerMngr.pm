@@ -4,7 +4,7 @@
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Packages::Export::GerExport::ExportGerMngr;
-use base('Packages::Export::MngrBase');
+use base('Packages::ItemResult::ItemEventMngr');
 
 #3th party library
 use strict;
@@ -17,7 +17,7 @@ use aliased 'Enums::EnumsPaths';
 use aliased 'Helpers::JobHelper';
 use aliased 'Helpers::FileHelper';
 use aliased 'CamHelpers::CamHelper';
-use aliased 'Packages::Export::GerExport::Helper';
+use aliased 'Packages::Gerbers::Export::ExportLayers' => 'Helper';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -76,7 +76,7 @@ sub __Export {
 
 		my $l = shift;
 
-		my $suffix = "_komp" . $l->{"comp"} . "um-.ger";
+		my $suffix = "_komp" . abs($l->{"comp"}) . "um-.ger"; # if negative comp, remove minus
 
 		if ( $l->{"polarity"} eq "negative" ) {
 			$suffix = "n" . $suffix;
@@ -85,7 +85,7 @@ sub __Export {
 		return $suffix;
 	};
 
-	my $resultItemGer = $self->_GetNewItem("Output layers");
+	my $resultItemGer = $self->_GetNewItem("Single layers");
 	
 	Helper->ExportLayers( $resultItemGer, $inCAM,  $step, $self->{"layers"}, $archivePath, $jobId, $suffixFunc );
 

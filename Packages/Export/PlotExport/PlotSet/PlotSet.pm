@@ -114,7 +114,7 @@ sub GetOutputFileName {
 			$fName .= "-";     # add dash, if more layers
 		}
 
-		$fName .= $plotL->GetName() . $indicator . "_" . $plotL->GetComp();
+		$fName .= $plotL->GetName() . $indicator . "_" . abs($plotL->GetComp()); # if negative comp, remove minus
 	}
 
 	return $fName;

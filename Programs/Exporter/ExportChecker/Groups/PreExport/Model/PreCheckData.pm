@@ -111,7 +111,7 @@ sub OnCheckGroupData {
 	my $baseCuThickHelios = HegMethods->GetOuterCuThick($jobId);
 	my $pcbThickHelios    = HegMethods->GetPcbMaterialThick($jobId);
 
-	# Check if helios contain base cutthick, pcb thick
+	# 5) Check if helios contain base cutthick, pcb thick
 	if ( $layerCnt >= 1 && $pcbType ne "Neplatovany" ) {
 
 		unless ( defined $baseCuThickHelios ) {
@@ -125,7 +125,7 @@ sub OnCheckGroupData {
 		}
 	}
 
-	# Check if helios contain material kind
+	# 6) Check if helios contain material kind
 	unless ( defined $materialKind ) {
 
 		$dataMngr->_AddErrorResult( "Material", "Material kind (Fr4, IS400, etc..) is not defined in Helios." );
@@ -163,6 +163,30 @@ sub OnCheckGroupData {
 
 		}
 
+	}
+
+	# 7) Check if contain negative layers, if powerground type is set and vice versa
+
+	my @sigLayers = $defaultInfo->GetSignalLayers();
+
+	foreach my $l (@sigLayers) {
+
+		if (    ( $l->{"gROWpolarity"} eq "negative" && $l->{"gROWlayer_type"} ne "power_ground" )
+			 || ( $l->{"gROWpolarity"} ne "negative" && $l->{"gROWlayer_type"} eq "power_ground" ) )
+		{
+
+			$dataMngr->_AddErrorResult(
+										"Negative layer",
+										"Layer: "
+										  . $l->{"gROWname"}
+										  . " has type: '"
+										  . $l->{"gROWlayer_type"}
+										  . "' and polarity: '"
+										  . $l->{"gROWpolarity"}
+										  . "'. It is wrong. Set polarity 'negative' and type 'power_ground'."
+			);
+
+		}
 	}
 
 }

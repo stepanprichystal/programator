@@ -236,7 +236,7 @@ sub GetCompByLayer {
 	my $comp = 0;
 	# when neplat, there is layer "c" but 0 comp
 	if ( $cuThick > 0 ) {
-		$comp = EtchOperation->KompenzaceIncam( $cuThick, $class );
+		$comp = EtchOperation->GetCompensation( $cuThick, $class );
 	}
 	return $comp;
 
@@ -257,7 +257,7 @@ sub GetScoreChecker {
 sub GetTypeOfPcb {
 	my $self = shift;
 
-	$self->{"pcbTypeHelios"} = HegMethods->GetTypeOfPcb( $self->{"jobId"} eq 'Neplatovany' );
+	$self->{"pcbTypeHelios"} = HegMethods->GetTypeOfPcb( $self->{"jobId"});
 	return $self->{"pcbTypeHelios"};
 }
 
@@ -397,6 +397,12 @@ sub SetDefaultLayersSettings {
 		if ( $l->{"gROWlayer_type"} eq "signal" || $l->{"gROWlayer_type"} eq "power_ground" || $l->{"gROWlayer_type"} eq "mixed" ) {
 
 			$l->{"comp"} = $self->GetCompByLayer( $l->{"gROWname"} );
+			
+			# If layer is negative, set negative compensation
+			if($l->{"gROWpolarity"} eq "negative"){
+				$l->{"comp"} = -$l->{"comp"};
+			}
+			
 		}
 		else {
 

@@ -19,7 +19,7 @@ use aliased 'CamHelpers::CamHelper';
 
 
 ## return value of kompenzation according to settings Miroslav Tobola.
-sub KompenzaceIncam {
+sub GetCompensation {
 		my $self = shift;
 		my $cuThickness = shift;
 		my $constrClass = shift;

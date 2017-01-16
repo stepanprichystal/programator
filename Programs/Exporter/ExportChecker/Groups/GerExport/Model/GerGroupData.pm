@@ -50,6 +50,20 @@ sub GetPasteInfo {
 	return $self->{"data"}->{"pasteInfo"};
 }
  
+# mdi info, hash with info if mask, signal, plug layers are exported
+ 
+sub SetMdiInfo {
+	my $self  = shift;
+	my $value = shift;
+	$self->{"data"}->{"mdiInfo"} = $value;
+}
+
+sub GetMdiInfo {
+	my $self  = shift;
+	my $value = shift;
+	return $self->{"data"}->{"mdiInfo"};
+}
+ 
  
 # export layers
 sub SetExportLayers {

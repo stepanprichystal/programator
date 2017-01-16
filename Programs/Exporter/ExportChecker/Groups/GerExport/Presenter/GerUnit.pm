@@ -72,7 +72,7 @@ sub InitForm {
 	$self->{"groupWrapper"} = $groupWrapper;
 
 	my $parent = $groupWrapper->GetParentForGroup();
-	$self->{"form"} = GerUnitForm->new( $parent, $inCAM, $self->{"jobId"} );
+	$self->{"form"} = GerUnitForm->new( $parent, $inCAM, $self->{"jobId"}, $self->{"dataMngr"}->GetDefaultInfo() );
 
 	# init base class with event class
 	$self->{"eventClass"}  = GerUnitFormEvt->new($self->{"form"});
@@ -88,6 +88,7 @@ sub RefreshGUI {
 
 	#refresh group form
 	$self->{"form"}->SetPasteInfo( $groupData->GetPasteInfo() );
+	$self->{"form"}->SetMdiInfo( $groupData->GetMdiInfo() );
 	$self->{"form"}->SetExportLayers( $groupData->GetExportLayers() );
 	$self->{"form"}->SetLayers( $groupData->GetLayers() );
 	
@@ -112,6 +113,7 @@ sub GetGroupData {
 
 
 		$groupData->SetPasteInfo( $frm->GetPasteInfo() );
+		$groupData->SetMdiInfo( $frm->GetMdiInfo() );
 		$groupData->SetExportLayers( $frm->GetExportLayers() );	
 		$groupData->SetLayers( $frm->GetLayers() );
 	

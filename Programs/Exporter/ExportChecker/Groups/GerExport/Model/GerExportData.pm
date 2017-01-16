@@ -63,7 +63,8 @@ sub OnExportGroupData {
  	$exportData->SetExportLayers( $groupData->GetExportLayers() );
 	$exportData->SetLayers( $groupData->GetLayers() );
 	$exportData->SetPasteInfo( $groupData->GetPasteInfo() );
-  
+  	$exportData->SetMdiInfo( $groupData->GetMdiInfo() );
+  	
 	return $exportData;
 
 }

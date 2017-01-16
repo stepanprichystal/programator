@@ -82,7 +82,7 @@ sub Exists {
 }
 
 #Check if file/directory exists by pattern
-sub ExistsByPattern() {
+sub ExistsByPattern {
 	my $self     = shift;
 	my $path     = shift;
 	my $partName = shift;
@@ -140,9 +140,7 @@ sub GetFilesNameByPattern {
 
 		if ( $file =~ /$partName/i ) {
 
-			$filePath = $dirPath . $file;
-			
-			
+			$filePath = $dirPath . $file;	
 			push(@files, $filePath);
 		}
 	}

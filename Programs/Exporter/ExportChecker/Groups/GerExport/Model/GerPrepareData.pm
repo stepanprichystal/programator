@@ -16,6 +16,7 @@ use aliased 'Programs::Exporter::ExportChecker::Groups::GerExport::Model::GerGro
 use aliased 'Programs::Exporter::ExportChecker::Enums';
 use aliased 'CamHelpers::CamHelper';
 use aliased 'Enums::EnumsGeneral';
+use aliased 'Connectors::HeliosConnector::HegMethods';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -53,16 +54,19 @@ sub OnPrepareGroupData {
 
 	my $defaultInfo = $dataMngr->GetDefaultInfo();
 
- 
 	# 1) Prepare default layer settings
 	my @baseLayers = $defaultInfo->GetBoardBaseLayers();
-	$defaultInfo->SetDefaultLayersSettings(\@baseLayers);
+	$defaultInfo->SetDefaultLayersSettings( \@baseLayers );
 	my @layers = $self->__GetFinalLayers( \@baseLayers );
-	
+
 	$groupData->SetLayers( \@layers );
-	
-	# 2) Prepare paste settings
-	my %pasteInfo = $self->__GetPasteInfo( $inCAM, $jobId );
+
+	# 2) Prepare MDI settings
+	my %mdiInfo = $self->__GetMDIInfo($jobId, $defaultInfo);
+	$groupData->SetMdiInfo( \%mdiInfo );
+
+	# 3) Prepare paste settings
+	my %pasteInfo = $self->__GetPasteInfo( $inCAM, $jobId, $defaultInfo );
 
 	if ( scalar(@layers) ) {
 		$groupData->SetExportLayers(1);
@@ -75,8 +79,6 @@ sub OnPrepareGroupData {
 
 	return $groupData;
 }
-
-
 
 sub __GetFinalLayers {
 	my $self   = shift;
@@ -93,13 +95,14 @@ sub __GetFinalLayers {
 		$lInfo{"polarity"} = $l->{"polarity"};
 		$lInfo{"mirror"}   = $l->{"mirror"};
 		$lInfo{"comp"}     = $l->{"comp"};
-		
-		push(@prepared, \%lInfo);
+
+		push( @prepared, \%lInfo );
 	}
-	
+
 	return @prepared;
 
 }
+
 #
 #sub __GetLayers {
 #	my $self        = shift;
@@ -114,9 +117,9 @@ sub __GetFinalLayers {
 #		my %info = ();
 #
 #		$info{"name"} = $l->{"gROWname"};
-#		
+#
 #		#set compensation
-#		
+#
 #		if ( $l->{"gROWlayer_type"} eq "signal" || $l->{"gROWlayer_type"} eq "power_ground" || $l->{"gROWlayer_type"} eq "mixed" ) {
 #
 #			$info{"comp"} = $defaultInfo->GetCompByLayer($l->{"gROWname"});
@@ -125,8 +128,8 @@ sub __GetFinalLayers {
 #
 #			$info{"comp"} = 0;
 #		}
-# 
-# 
+#
+#
 #		# set polarity
 #
 #		if ( $l->{"gROWlayer_type"} eq "silk_screen" ) {
@@ -194,39 +197,39 @@ sub __GetFinalLayers {
 #}
 
 sub __GetPasteInfo {
-	my $self      = shift;
-	my $inCAM     = shift;
-	my $jobId     = shift;
-	my %pasteInfo = ();
+	my $self        = shift;
+	my $inCAM       = shift;
+	my $jobId       = shift;
+	my $defaultInfo = shift;
+	my %pasteInfo   = ();
 
 	#my @layers = CamJob->GetSignalLayerNames( $inCAM, $jobId );
 
-	my $sa_ori  = CamHelper->LayerExists( $inCAM, $jobId, "sa_ori" );
-	my $sb_ori  = CamHelper->LayerExists( $inCAM, $jobId, "sa_ori" );
-	my $sa_made = CamHelper->LayerExists( $inCAM, $jobId, "sa_made" );
-	my $sb_made = CamHelper->LayerExists( $inCAM, $jobId, "sb_made" );
+	my $sa_ori      = $defaultInfo->LayerExist("sa_ori");
+	my $sb_ori      = $defaultInfo->LayerExist("sb_ori");
+	my $sa_made     = $defaultInfo->LayerExist("sa_made");
+	my $sb_made     = $defaultInfo->LayerExist("sb_made");
 	my $mpanelExist = CamHelper->StepExists( $inCAM, $jobId, "mpanel" );
 
-	my @layers = ();
+	#my @layers     = ();
 	my $pasteExist = 1;
 
 	if ( $sa_ori || $sb_ori ) {
 
 		$pasteInfo{"notOriginal"} = 0;
 		$pasteInfo{"export"}      = 1;
-		
-		
-		push(@layers, "sa_ori") if $sa_ori;
-		push(@layers, "sb_ori") if $sb_ori;
+
+		#push( @layers, "sa_ori" ) if $sa_ori;
+		#push( @layers, "sb_ori" ) if $sb_ori;
 
 	}
 	elsif ( $sa_made || $sb_made ) {
 
 		$pasteInfo{"notOriginal"} = 1;
 		$pasteInfo{"export"}      = 1;
-		
-		push(@layers, "sa_made") if $sa_made;
-		push(@layers, "sb_made") if $sb_made;
+
+		#push( @layers, "sa_made" ) if $sa_made;
+		#push( @layers, "sb_made" ) if $sb_made;
 
 	}
 	else {
@@ -234,23 +237,50 @@ sub __GetPasteInfo {
 		$pasteInfo{"notOriginal"} = 0;
 		$pasteInfo{"export"}      = 0;
 	}
-	
-	 
 
 	if ($mpanelExist) {
 		$pasteInfo{"step"} = "mpanel";
 	}
 	else {
-		$pasteInfo{"step"} = "o+1";
-		$pasteInfo{"export"}      = 0;
+		$pasteInfo{"step"}   = "o+1";
+		$pasteInfo{"export"} = 0;
 	}
 
 	$pasteInfo{"addProfile"} = 1;
 	$pasteInfo{"zipFile"}    = 1;
-	$pasteInfo{"layers"}    =  \@layers;#join(";", @layers);
-	
+
+	#$pasteInfo{"layers"}     = \@layers;    #join(";", @layers);
 
 	return %pasteInfo;
+
+}
+
+sub __GetMDIInfo {
+	my $self        = shift;
+	my $jobId = shift;
+	my $defaultInfo = shift;
+	
+
+	my %mdiInfo = ();
+
+	my $signal = $defaultInfo->LayerExist("c");
+
+	if ( HegMethods->GetTypeOfPcb( $self->{"jobId"} ) eq "Neplatovany" ) {
+		$signal = 0;
+	}
+
+	$mdiInfo{"exportSignal"} = $signal;
+
+	if ( ( $defaultInfo->LayerExist("mc") || $defaultInfo->LayerExist("ms") ) && $defaultInfo->GetPcbClass() >= 8 ) {
+		$mdiInfo{"exportMask"} = 1;
+	}
+	else {
+		$mdiInfo{"exportMask"} = 0;
+	}
+	
+	$mdiInfo{"exportPlugs"} = ( $defaultInfo->LayerExist("plgc") || $defaultInfo->LayerExist("plgs") ) ? 1 : 0;
+
+	return %mdiInfo;
 
 }
 
@@ -260,18 +290,7 @@ sub __GetPasteInfo {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	#	use aliased 'Packages::Export::NCExport::NCExportGroup';
-	#
-	#	my $jobId    = "F13608";
-	#	my $stepName = "panel";
-	#
-	#	my $inCAM = InCAM->new();
-	#
-	#	my $ncgroup = NCExportGroup->new( $inCAM, $jobId );
-	#
-	#	$ncgroup->Run();
-
-	#print $test;
+ 
 
 }
 

@@ -252,21 +252,28 @@ sub NegativeLayerData {
 	$inCAM->COM( 'affected_layer', name => $layer, mode => "single", affected => "no" );
 }
 
-# Rotate layer by degree
-# Right step must be open and set
-# Requested data must be selected
+# Clipa read data by  rectangle
 sub ClipLayerData {
 	my $self   = shift;
 	my $inCAM  = shift;
 	my $layer  = shift;
 	my %rect   = %{ shift(@_) };
 	my $inside = shift;
-
+	my $counturCut = shift;
+	
+	
 	my $type = "outside";
 
 	if ($inside) {
 		$type = "inside";
 	}
+	
+	my $countour= "no";
+	
+	if($counturCut){
+		$countour = "yes";
+	}
+ 
 
 	$self->WorkLayer( $inCAM, $layer );
 
@@ -280,7 +287,7 @@ sub ClipLayerData {
 				 "area"        => "manual",
 				 "area_type"   => "rectangle",
 				 "inout"       => $type,
-				 "contour_cut" => "no",
+				 "contour_cut" => $countour,
 				 "margin"      => "0",
 				 "feat_types"  => "line\;pad;surface;arc;text",
 				 "pol_types"   => "positive\;negative"
@@ -383,9 +390,7 @@ sub LayerIsBoard {
 	return 0;
 }
 
-# Mirror layer by x OR y
-# Right step must be open and set
-# Requested data must be selected
+# Compensate layer data by compensation
 sub CompensateLayerData {
 	my $self    = shift;
 	my $inCAM   = shift;
