@@ -217,11 +217,7 @@ sub __OutputPlotSets {
 	my $archivePath = $archive . "zdroje";
 
 	#delete old opfx form archive
-	my @filesToDel = FileHelper->GetFilesNameByPattern( $archivePath, $jobId . "@" );
-
-	foreach my $f (@filesToDel) {
-		unlink $f;
-	}
+	$self->__DeleteOldFiles();
 
 	#$inCAM->COM( "set_subsystem", "name" => "Output" );
 
@@ -239,7 +235,7 @@ sub __OutputPlotSets {
 		$inCAM->COM( "output_reload_device", "type" => "format", "name" => "LP7008" );
 
 		# Udate settings o device
-		$inCAM->COM( 
+		$inCAM->COM(
 			"output_update_device",
 			"type"          => "format",
 			"name"          => "LP7008",
@@ -261,17 +257,15 @@ sub __OutputPlotSets {
 
 		# Necessery set layer, otherwise
 		$inCAM->COM(
-					 "image_set_elpd2",
-					 "job"         => $jobId,
-					 "step"        => $plotPanel,
-					 "layer"       => $outputL,
-					 "device_type" => "LP7008",
-					 "polarity"    => $polarity,
-					 "xstretch"    => "100.013", # magic constant, given historicaly
-					 "ystretch"    => "100.013"
+			"image_set_elpd2",
+			"job"         => $jobId,
+			"step"        => $plotPanel,
+			"layer"       => $outputL,
+			"device_type" => "LP7008",
+			"polarity"    => $polarity,
+			"xstretch"    => "100.013",    # magic constant, given historicaly
+			"ystretch"    => "100.013"
 		);
- 
-
 
 		$inCAM->COM( "output_device_select_reset", "type" => "format", "name" => "LP7008" );    #toto tady musi byt, nevim proc
 
@@ -350,6 +344,31 @@ sub __CreatePlotStep {
 	# Set step panel ploter
 	$inCAM->COM( "set_step", "name" => $plotPanel );
 
+}
+
+sub __DeleteOldFiles {
+	my $self = shift;
+
+	my $jobId       = $self->{"jobId"};
+	my $archivePath = JobHelper->GetJobArchive($jobId) . "zdroje";
+
+	my @filesToDel = ();
+
+	# Delete all files, which contain layer name from layer set
+	foreach my $plotSet ( @{ $self->{"plotSets"} } ) {
+
+		foreach my $layer ( $plotSet->GetLayers() ) {
+
+			my $name = $layer->GetName();
+			my @f    = FileHelper->GetFilesNameByPattern( $archivePath, "$jobId@" . $name . "v?_" );     # when single layer on film
+			my @f2   = FileHelper->GetFilesNameByPattern( $archivePath, "$jobId@.*-" . $name . "_" );    # when two layer on films
+			push( @filesToDel, ( @f, @f2 ) );
+		}
+	}
+
+	foreach my $f (@filesToDel) {
+		unlink $f;
+	}
 }
 
 #-------------------------------------------------------------------------------------------#

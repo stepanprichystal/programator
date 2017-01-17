@@ -100,7 +100,7 @@ sub __SetLayoutSettings {
 	my $last  = $steps[ scalar(@steps) - 1 ];
 
 	my $stepCb = Wx::ComboBox->new( $parent, -1, $last, &Wx::wxDefaultPosition, [ 50, 25 ], \@steps, &Wx::wxCB_READONLY );
-	 
+	 	#my $tentingChb     = Wx::CheckBox->new( $statBox, -1, "Tenting (c,s)",      &Wx::wxDefaultPosition, [ $textWidth, 20 ] );
 
 	# SET EVENTS
 

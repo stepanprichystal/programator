@@ -38,6 +38,18 @@ sub GetStepToTest {
 	my $self  = shift;
 	return $self->{"data"}->{"stepToTest"};
 }
+
+
+# If create et step
+sub SetCreateEtStep {
+	my $self  = shift;
+	$self->{"data"}->{"createEtStep"} = shift;
+}
+
+sub GetCreateEtStep {
+	my $self  = shift;
+	return $self->{"data"}->{"createEtStep"};
+}
  
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

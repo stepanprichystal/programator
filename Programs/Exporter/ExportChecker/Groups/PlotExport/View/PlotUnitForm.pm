@@ -100,34 +100,20 @@ sub __SetLayoutQuickSettings {
 	my $szStatBox = Wx::StaticBoxSizer->new( $statBox, &Wx::wxHORIZONTAL );
 
 	# DEFINE CONTROLS
-	my $allChb = Wx::CheckBox->new( $statBox, -1, "All", &Wx::wxDefaultPosition, [ 70, 22 ] );
-	my @polar = ( "/", "+", "-" );
-	my $polarityCb = Wx::ComboBox->new( $statBox, -1, $polar[0], &Wx::wxDefaultPosition, [ 50, 22 ], \@polar, &Wx::wxCB_READONLY );
-
-	my $fontPolar = Wx::Font->new( 11, &Wx::wxFONTFAMILY_DEFAULT, &Wx::wxFONTSTYLE_NORMAL, &Wx::wxFONTWEIGHT_MAX );
-
-	$polarityCb->SetFont($fontPolar);
-
-	my $mirrorChb = Wx::CheckBox->new( $statBox, -1, "", [ -1, -1 ], [ 30, 22 ] );
-	my $compTxt = Wx::TextCtrl->new( $statBox, -1, "0", &Wx::wxDefaultPosition, [ 50, 22 ] );
+	my $allChb = Wx::CheckBox->new( $statBox, -1, "All", &Wx::wxDefaultPosition, [ 70, 20 ] );
+	 
 
 	# SET EVENTS
 	Wx::Event::EVT_CHECKBOX( $allChb, -1, sub { $self->__OnSelectAllChangeHandler(@_) } );
-	Wx::Event::EVT_COMBOBOX( $polarityCb, -1, sub { $self->__OnPolarityChangeHandler(@_) } );
-	Wx::Event::EVT_CHECKBOX( $mirrorChb, -1, sub { $self->__OnMirrorChangeHandler(@_) } );
-	Wx::Event::EVT_TEXT( $compTxt, -1, sub { $self->__OnCompChangeHandler(@_) } );
+	 
 
 	# BUILD STRUCTURE OF LAYOUT
 	$szStatBox->Add( $allChb,     0, &Wx::wxEXPAND | &Wx::wxLEFT, 2 );
-	$szStatBox->Add( $polarityCb, 0, &Wx::wxEXPAND | &Wx::wxLEFT, 8 );
-	$szStatBox->Add( $mirrorChb,  0, &Wx::wxEXPAND | &Wx::wxLEFT, 8 );
-	$szStatBox->Add( $compTxt,    0, &Wx::wxEXPAND | &Wx::wxLEFT, 8 );
+	 
 
 	# Set References
 	$self->{"allChb"}     = $allChb;
-	$self->{"polarityCb"} = $polarityCb;
-	$self->{"mirrorChb"}  = $mirrorChb;
-	$self->{"compTxt"}    = $compTxt;
+	 
 
 	return $szStatBox;
 }
@@ -197,36 +183,7 @@ sub __OnSelectAllChangeHandler {
 
 }
 
-# Change polarity of  all in plot list
-sub __OnPolarityChangeHandler {
-	my $self = shift;
-	my $chb  = shift;
-
-	my $val = $self->{"polarityCb"}->GetValue();
-
-	$self->{"plotList"}->SetPolarity($val);
-}
-
-# Control handlers
-sub __OnMirrorChangeHandler {
-	my $self = shift;
-	my $chb  = shift;
-
-	my $isMirror = $self->{"mirrorChb"}->IsChecked();
-
-	$self->{"plotList"}->SetMirror($isMirror);
-
-}
-
-# Control handlers
-sub __OnCompChangeHandler {
-	my $self = shift;
-	my $chb  = shift;
-
-	my $val = $self->{"compTxt"}->GetValue();
-
-	$self->{"plotList"}->SetComp($val);
-}
+ 
 
 # =====================================================================
 # DISABLING CONTROLS
