@@ -54,12 +54,11 @@ sub __PasteLayersExist {
 	my $defaultInfo = shift;
 
 	#my @layers = CamJob->GetSignalLayerNames( $inCAM, $jobId );
-
-	my $sa_ori  = $defaultInfo->LayerExist("sa_ori");
-	my $sb_ori  = $defaultInfo->LayerExist("sb_ori");
-	my $sa_made = $defaultInfo->LayerExist("sa_made");
-	my $sb_made = $defaultInfo->LayerExist("sb_made");
-
+	my $sa_ori  = $defaultInfo->LayerExist("sa_ori")  || $defaultInfo->LayerExist("sa-ori")  ? 1 : 0;
+	my $sb_ori  = $defaultInfo->LayerExist("sb_ori")  || $defaultInfo->LayerExist("sb-ori")  ? 1 : 0;
+	my $sa_made = $defaultInfo->LayerExist("sa_made") || $defaultInfo->LayerExist("sa-made") ? 1 : 0;
+	my $sb_made = $defaultInfo->LayerExist("sb_made") || $defaultInfo->LayerExist("sb-made") ? 1 : 0;
+ 
 	if ( !$sa_ori && !$sb_ori && !$sa_made && !$sb_made ) {
 
 		return 0;

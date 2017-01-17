@@ -10,12 +10,16 @@ package Programs::Exporter::ExportChecker::Groups::ScoExport::Model::ScoCheckDat
 use strict;
 use warnings;
 use File::Copy;
+use List::MoreUtils qw(uniq);
 
 #local library
 #use aliased 'CamHelpers::CamLayer';
 #use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'CamHelpers::CamHelper';
+use aliased 'CamHelpers::CamStepRepeat';
+
 use aliased 'Packages::Export::ScoExport::Enums' => "ScoEnums";
+use aliased 'Packages::Polygon::Features::ScoreFeatures::ScoreFeatures';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -39,7 +43,7 @@ sub OnCheckGroupData {
 
 	my $defaultInfo = $dataMngr->GetDefaultInfo();
 
-	# Check of coe thick
+	# 1) Check of core thick
 
 	my $thick = $groupData->GetCoreThick();
 
@@ -52,7 +56,7 @@ sub OnCheckGroupData {
 
 	my $opt = $groupData->GetOptimize();
 
-	# if manual, check if layer score_layer exist
+	# 2) if manual, check if layer score_layer exist
 	if ( $opt eq ScoEnums->Optimize_MANUAL ) {
 
 		my $scoExist = CamHelper->LayerExists( $inCAM, $jobId, "score_layer" );
@@ -65,7 +69,7 @@ sub OnCheckGroupData {
 		}
 	}
 
-	# if score is ok
+	# 3) if score is ok
 
 	my $scoreChecker = $defaultInfo->GetScoreChecker();
 	my $errMess      = "";
@@ -74,6 +78,56 @@ sub OnCheckGroupData {
 		$dataMngr->_AddErrorResult( "Score data", $errMess );
 	}
 
+
+	# 4) check if mpanel exist, if some nested steps in panel contain score
+
+	if ( $defaultInfo->LayerExist("score") && $defaultInfo->StepExist("mpanel") ) {
+
+		my @sr = CamStepRepeat->GetStepAndRepeat( $inCAM, $jobId, "mpanel" );
+
+		# Check if any step and repeat contain score
+		my $scoreExist = 0;
+		my @scoreSteps = ();
+
+		foreach my $srStep (@sr) {
+
+			my $name = $srStep->{"gSRstep"};
+
+			if ( $self->__ScoreExist( $inCAM, $jobId, $name ) ) {
+				push( @scoreSteps, $name );
+			}
+		}
+
+		if ( scalar(@scoreSteps) ) {
+			my $strSteps = join( ", ", uniq(@scoreSteps) );
+
+			$dataMngr->_AddErrorResult(
+				"Score data", "Step 'mpanel' obsahuje stepy ($strSteps), které obsahují dráku. Pøesuò tuto dráku do stepu 'mpanel'. Pouij script: FlattenScoreScript.pl"
+			);
+		}
+
+	}
+
+}
+
+# check if in given step score exist
+sub __ScoreExist {
+	my $self     = shift;
+	my $inCAM    = shift;
+	my $jobId    = shift;
+	my $stepName = shift;
+
+	my $score = ScoreFeatures->new(1);
+
+	$score->Parse( $inCAM, $jobId, $stepName, "score", 1 );
+	my @lines = $score->GetFeatures();
+
+	if ( scalar(@lines) ) {
+		return 1;
+	}
+	else {
+		return 0;
+	}
 }
 
 #-------------------------------------------------------------------------------------------#

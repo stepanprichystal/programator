@@ -62,7 +62,7 @@ sub OnPrepareGroupData {
 	$groupData->SetLayers( \@layers );
 
 	# 2) Prepare MDI settings
-	my %mdiInfo = $self->__GetMDIInfo($jobId, $defaultInfo);
+	my %mdiInfo = $self->__GetMDIInfo( $jobId, $defaultInfo );
 	$groupData->SetMdiInfo( \%mdiInfo );
 
 	# 3) Prepare paste settings
@@ -205,10 +205,10 @@ sub __GetPasteInfo {
 
 	#my @layers = CamJob->GetSignalLayerNames( $inCAM, $jobId );
 
-	my $sa_ori      = $defaultInfo->LayerExist("sa_ori");
-	my $sb_ori      = $defaultInfo->LayerExist("sb_ori");
-	my $sa_made     = $defaultInfo->LayerExist("sa_made");
-	my $sb_made     = $defaultInfo->LayerExist("sb_made");
+	my $sa_ori  = $defaultInfo->LayerExist("sa_ori")  || $defaultInfo->LayerExist("sa-ori")  ? 1 : 0;
+	my $sb_ori  = $defaultInfo->LayerExist("sb_ori")  || $defaultInfo->LayerExist("sb-ori")  ? 1 : 0;
+	my $sa_made = $defaultInfo->LayerExist("sa_made") || $defaultInfo->LayerExist("sa-made") ? 1 : 0;
+	my $sb_made = $defaultInfo->LayerExist("sb_made") || $defaultInfo->LayerExist("sb-made") ? 1 : 0;
 	my $mpanelExist = CamHelper->StepExists( $inCAM, $jobId, "mpanel" );
 
 	#my @layers     = ();
@@ -257,15 +257,14 @@ sub __GetPasteInfo {
 
 sub __GetMDIInfo {
 	my $self        = shift;
-	my $jobId = shift;
+	my $jobId       = shift;
 	my $defaultInfo = shift;
-	
 
 	my %mdiInfo = ();
 
 	my $signal = $defaultInfo->LayerExist("c");
 
-	if ( HegMethods->GetTypeOfPcb( $self->{"jobId"} ) eq "Neplatovany" ) {
+	if ( HegMethods->GetTypeOfPcb($jobId) eq "Neplatovany" ) {
 		$signal = 0;
 	}
 
@@ -277,7 +276,7 @@ sub __GetMDIInfo {
 	else {
 		$mdiInfo{"exportMask"} = 0;
 	}
-	
+
 	$mdiInfo{"exportPlugs"} = ( $defaultInfo->LayerExist("plgc") || $defaultInfo->LayerExist("plgs") ) ? 1 : 0;
 
 	return %mdiInfo;
@@ -289,8 +288,6 @@ sub __GetMDIInfo {
 #-------------------------------------------------------------------------------------------#
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
-
- 
 
 }
 
