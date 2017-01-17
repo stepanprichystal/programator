@@ -37,7 +37,10 @@ sub new {
 	$self->{"inCAM"} = shift;
 	$self->{"jobId"} = shift;
 
-	$self->{"stepToTest"} = shift;    #step, which will be tested
+	$self->{"stepToTest"}   = shift;    #step, which will be tested
+	$self->{"createEtStep"} = shift;    #step, which will be tested
+
+	$self->{"etStep"} = "et_" . $self->{"stepToTest"};    # name of et step, which ipc is exported from
 
 	return $self;
 }
@@ -45,15 +48,29 @@ sub new {
 sub Run {
 	my $self = shift;
 
-	my $inCAM      = $self->{"inCAM"};
-	my $jobId      = $self->{"jobId"};
-	my $etStepName = $self->__CreateEtStep();
-	
+	my $inCAM = $self->{"inCAM"};
+	my $jobId = $self->{"jobId"};
+
+	my $etStepName = $self->{"etStep"};
+
+
+	if ( $self->{"createEtStep"} ) {
+		
+		$self->__CreateEtStep();
+	}
+	else {
+
+		# test if step already exist
+		unless ( CamHelper->StepExists( $inCAM, $jobId, $etStepName ) ) {
+
+			die "Et step: $etStepName must be created before export ipc.\n";
+		}
+	}
+
 	#open et step
-	$inCAM->COM("set_step", "name"=> $etStepName);
+	$inCAM->COM( "set_step", "name" => $etStepName );
 	$inCAM->COM( 'open_entity', job => $jobId, type => 'step', name => $etStepName, iconic => 'no' );
 	$inCAM->AUX( 'set_group', group => $inCAM->{COMANS} );
-	
 
 	#remove step named "coupon" if exist
 	my $couponExist = CamStepRepeat->ExistStepAndRepeat( $inCAM, $jobId, $etStepName, "coupon" );
@@ -87,7 +104,8 @@ sub __CreateEtStep {
 	my $jobId      = $self->{"jobId"};
 	my $stepToTest = $self->{"stepToTest"};
 
-	my $stepEt = "et_" . $stepToTest;
+	my $stepEt = $self->{"etStep"};
+
 	#CamHelper->OpenJob( $inCAM, $jobId );
 
 	$inCAM->COM( 'open_entity', job => $jobId, type => 'step', name => $stepToTest, iconic => 'no' );
@@ -98,7 +116,6 @@ sub __CreateEtStep {
 		$inCAM->COM( "delete_entity", "job" => $jobId, "name" => $stepEt, "type" => "step" );
 	}
 
-	 
 	$inCAM->COM(
 				 'copy_entity',
 				 type             => 'step',
@@ -109,13 +126,7 @@ sub __CreateEtStep {
 				 dest_database    => "",
 				 "remove_from_sr" => "yes"
 	);
-	
 
-	
- 
- 
-
-	return $stepEt;
 }
 
 # Flattern all layers in et step. Thus, et step doesn't contain
@@ -158,23 +169,19 @@ sub __FlatternETStep {
 	}
 
 	#$inCAM->COM( 'sr_active', top => '0', bottom => '0', left => '0', right => '0' );
- 
+
 	$inCAM->COM( "set_step", "name" => $etStep );
-	
-	$inCAM->COM( 'sredit_sel_all');
-	$inCAM->COM( 'sredit_del_steps');
-	
- 
-	
- 
+
+	$inCAM->COM('sredit_sel_all');
+	$inCAM->COM('sredit_del_steps');
+
 	#delete SMD attributes
-	
+
 	$inCAM->COM( 'affected_layer', name => "", mode => "all", affected => "yes" );
 	$inCAM->COM("sel_all_feat");
-	$inCAM->COM("sel_delete_atr","mode" => "list","attributes" => ".smd");
+	$inCAM->COM( "sel_delete_atr", "mode" => "list", "attributes" => ".smd" );
 	$inCAM->COM( 'affected_layer', name => "", mode => "all", affected => "no" );
 	$inCAM->COM("clear_highlight");
-
 
 }
 
@@ -187,11 +194,9 @@ sub __EditProfileByFr {
 	my $jobId = $self->{"jobId"};
 
 	my $frFeatures = Features->new();
-	$frFeatures->Parse($inCAM, $jobId, $etStep, "fr");
-	
+	$frFeatures->Parse( $inCAM, $jobId, $etStep, "fr" );
+
 	my @frLines = $frFeatures->GetFeatures();
-
-
 
 	#draw profile by points form fr layer
 	$inCAM->COM( "profile_poly_strt", "x" => $frLines[0]->{"x1"}, "y" => $frLines[0]->{"y1"} );
@@ -200,28 +205,26 @@ sub __EditProfileByFr {
 	$inCAM->COM( "profile_poly_seg",  "x" => $frLines[3]->{"x1"}, "y" => $frLines[3]->{"y1"} );
 	$inCAM->COM( "profile_poly_seg",  "x" => $frLines[0]->{"x1"}, "y" => $frLines[0]->{"y1"} );
 	$inCAM->COM("profile_poly_end");
-	
+
 	#set datum point and origin to minimal coordinate
-	
+
 	my $xMin;
-	my $yMin;	
-	
-	foreach my $points (@frLines){
-		
-		if(!defined $xMin || $points->{"x1"} < $xMin){
+	my $yMin;
+
+	foreach my $points (@frLines) {
+
+		if ( !defined $xMin || $points->{"x1"} < $xMin ) {
 			$xMin = $points->{"x1"};
 		}
-		
-		if(!defined $yMin || $points->{"y1"} < $yMin){
+
+		if ( !defined $yMin || $points->{"y1"} < $yMin ) {
 			$yMin = $points->{"y1"};
 		}
-		
+
 	}
-	
+
 	$inCAM->COM( "datum", "x" => $xMin, "y" => $yMin );
 	$inCAM->COM( "origin", "push_in_stack" => 0, "x" => $xMin, "y" => $yMin );
-	
-	
 
 }
 
@@ -307,20 +310,17 @@ sub __ResulETOptimize {
 	$self->_OnItemResult($resultItem);
 }
 
-
-sub ExportItemsCount{
+sub ExportItemsCount {
 	my $self = shift;
-	
+
 	my $totalCnt = 0;
-	
-	
-	$totalCnt += 1; # EtStep Created
-	$totalCnt += 1; # Et set createed
-	$totalCnt += 1; # Et optimize
-	 
-	
+
+	$totalCnt += 1;    # EtStep Created
+	$totalCnt += 1;    # Et set createed
+	$totalCnt += 1;    # Et optimize
+
 	return $totalCnt;
-	
+
 }
 
 #-------------------------------------------------------------------------------------------#

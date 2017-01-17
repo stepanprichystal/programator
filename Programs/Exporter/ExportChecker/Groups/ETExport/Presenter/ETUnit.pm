@@ -71,7 +71,7 @@ sub InitForm {
 	$self->{"groupWrapper"} = $groupWrapper;
 
 	my $parent = $groupWrapper->GetParentForGroup();
-	$self->{"form"} = ETUnitForm->new( $parent, $inCAM, $self->{"jobId"} );
+	$self->{"form"} = ETUnitForm->new( $parent, $inCAM, $self->{"jobId"}, $self->{"dataMngr"}->GetDefaultInfo() );
 
 	$self->_SetHandlers();
 
@@ -84,7 +84,7 @@ sub RefreshGUI {
 
 	#refresh group form
 	$self->{"form"}->SetStepToTest( $groupData->GetStepToTest() );
-
+	$self->{"form"}->SetCreateEtStep( $groupData->GetCreateEtStep() );
 
 	#refresh wrapper
 	$self->_RefreshWrapper();
@@ -105,6 +105,7 @@ sub GetGroupData {
 		$groupData = $self->{"dataMngr"}->GetGroupData();
 		
 		$groupData->SetStepToTest( $frm->GetStepToTest() );
+		$groupData->SetCreateEtStep( $frm->GetCreateEtStep() );
 			
 	}
 	else {

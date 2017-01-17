@@ -22,9 +22,11 @@ BEGIN {
 #local library
 use Widgets::Style;
 use aliased 'Packages::Events::Event';
+
 #use aliased 'CamHelpers::CamLayer';
 #use aliased 'CamHelpers::CamDrilling';
 use aliased 'CamHelpers::CamStep';
+
 #use aliased 'CamHelpers::CamJob';
 
 #-------------------------------------------------------------------------------------------#
@@ -35,25 +37,23 @@ sub new {
 	my $class  = shift;
 	my $parent = shift;
 
-	my $inCAM = shift;
-	my $jobId = shift;
-
+	my $inCAM       = shift;
+	my $jobId       = shift;
+	my $defaultInfo = shift;
 
 	my $self = $class->SUPER::new($parent);
 
 	bless($self);
 
-	$self->{"inCAM"} = $inCAM;
-	$self->{"jobId"} = $jobId;
-
+	$self->{"inCAM"}       = $inCAM;
+	$self->{"jobId"}       = $jobId;
+	$self->{"defaultInfo"} = $defaultInfo;
 
 	# Load data
- 
-	 
+
 	$self->__SetLayout();
- 
+
 	# EVENTS
- 
 
 	return $self;
 }
@@ -93,48 +93,71 @@ sub __SetLayoutSettings {
 	my $szCol2 = Wx::BoxSizer->new(&Wx::wxVERTICAL);
 
 	# DEFINE CONTROLS
-	my $stepTxt   = Wx::StaticText->new( $parent, -1, "Step",   &Wx::wxDefaultPosition, [ 50, 150 ] );
-	 
- 
-	my @steps = CamStep->GetAllStepNames($self->{"inCAM"}, $self->{"jobId"});
-	my $last  = $steps[ scalar(@steps) - 1 ];
+	my $stepTxt = Wx::StaticText->new( $parent, -1, "Step", &Wx::wxDefaultPosition, [ 50, 22 ] );
 
-	my $stepCb = Wx::ComboBox->new( $parent, -1, $last, &Wx::wxDefaultPosition, [ 50, 25 ], \@steps, &Wx::wxCB_READONLY );
-	 	#my $tentingChb     = Wx::CheckBox->new( $statBox, -1, "Tenting (c,s)",      &Wx::wxDefaultPosition, [ $textWidth, 20 ] );
+	my @steps = CamStep->GetAllStepNames( $self->{"inCAM"}, $self->{"jobId"} );
+	my $last = $steps[ scalar(@steps) - 1 ];
+
+	my $stepCb = Wx::ComboBox->new( $parent, -1, $last, &Wx::wxDefaultPosition, [ 50, 22 ], \@steps, &Wx::wxCB_READONLY );
+
+	my $createStepTxt = Wx::StaticText->new( $parent, -1, "Create ET step", &Wx::wxDefaultPosition, [ 50, 22 ] );
+	my $createStepChb = Wx::CheckBox->new( $parent, -1, "", &Wx::wxDefaultPosition, [ 50, 22 ] );
 
 	# SET EVENTS
+	Wx::Event::EVT_COMBOBOX( $stepCb, -1, sub { $self->__OnStepChange(@_) } );
 
 	# BUILD STRUCTURE OF LAYOUT
-	$szCol1->Add( $stepTxt,   0, &Wx::wxEXPAND | &Wx::wxALL, 1 ); 
+	$szCol1->Add( $stepTxt,       0, &Wx::wxEXPAND | &Wx::wxALL, 2 );
+	$szCol1->Add( $createStepTxt, 0, &Wx::wxEXPAND | &Wx::wxALL, 2 );
+	$szCol1->Add( 5,5, 1, &Wx::wxEXPAND );
 
-	$szCol2->Add( $stepCb,     0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
- 
+	$szCol2->Add( $stepCb,        0, &Wx::wxEXPAND | &Wx::wxALL, 2 );
+	$szCol2->Add( $createStepChb, 0, &Wx::wxEXPAND | &Wx::wxALL, 2 );
+	$szCol2->Add( 5,100, 1, &Wx::wxEXPAND );
 
-	$szStatBox->Add( $szCol1, 40, &Wx::wxEXPAND | &Wx::wxLEFT, 0 );
-	$szStatBox->Add( $szCol2, 60, &Wx::wxEXPAND | &Wx::wxLEFT, 0 );
+	$szStatBox->Add( $szCol1, 50, &Wx::wxEXPAND | &Wx::wxLEFT, 0 );
+	$szStatBox->Add( $szCol2, 50, &Wx::wxEXPAND | &Wx::wxLEFT, 0 );
 
 	# Set References
-	$self->{"stepCb"}     = $stepCb;
- 
+	$self->{"stepCb"}        = $stepCb;
+	$self->{"createStepChb"} = $createStepChb;
 	return $szStatBox;
 }
- 
+
+# When change steps
+sub __OnStepChange {
+	my $self = shift;
+
+	# disable "create et step" if doesnt exist
+	$self->DisableControls();
+}
+
 # =====================================================================
 # DISABLING CONTROLS
 # =====================================================================
 
-sub DisableControls{
-	
-	
-} 
+sub DisableControls {
+	my $self = shift;
+
+	# disable "create et step" if doesnt exist
+	my $actualStep = $self->{"stepCb"}->GetValue();
+	unless ( $self->{"defaultInfo"}->StepExist( "et_" . $actualStep ) ) {
+
+		$self->{"createStepChb"}->Disable();
+		$self->{"createStepChb"}->SetValue(1);
+
+	}
+	else {
+		$self->{"createStepChb"}->Enable();
+	}
  
- 
+}
+
 # =====================================================================
 # SET/GET CONTROLS VALUES
 # =====================================================================
 
-# Dimension ========================================================
-
+# Step to test ========================================================
 
 sub SetStepToTest {
 	my $self  = shift;
@@ -148,7 +171,26 @@ sub GetStepToTest {
 	return $self->{"stepCb"}->GetValue();
 }
 
+# Create ET step ========================================================
 
- 
+sub SetCreateEtStep {
+	my $self = shift;
+	my $value = shift;
+
+	$self->{"createStepChb"}->SetValue($value);
+}
+
+sub GetCreateEtStep {
+	my $self = shift;
+
+	if ( $self->{"createStepChb"}->IsChecked() ) {
+
+		return 1;
+	}
+	else {
+
+		return 0;
+	}
+}
 
 1;

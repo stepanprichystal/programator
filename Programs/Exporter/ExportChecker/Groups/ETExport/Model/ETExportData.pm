@@ -61,6 +61,7 @@ sub OnExportGroupData {
 	my $exportData = ETData->new();
  
 	$exportData->SetStepToTest( $groupData->GetStepToTest() );
+	$exportData->SetCreateEtStep( $groupData->GetCreateEtStep() );
   
 	return $exportData;
 

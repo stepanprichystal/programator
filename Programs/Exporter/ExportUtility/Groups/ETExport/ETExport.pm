@@ -54,8 +54,9 @@ sub Init {
 	
 	
 	my $step = $exportData->GetStepToTest();
+	my $createEtStep = $exportData->GetCreateEtStep();
 	
-	my $mngr = ETMngr->new($inCAM, $jobId, $step);
+	my $mngr = ETMngr->new($inCAM, $jobId, $step, $createEtStep);
 	
 	$mngr->{"onItemResult"}->Add( sub { $self->_OnItemResultHandler(@_) } );
 	

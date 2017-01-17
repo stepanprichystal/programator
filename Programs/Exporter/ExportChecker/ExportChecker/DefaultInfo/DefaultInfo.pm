@@ -89,9 +89,9 @@ sub GetEtchType {
 
 	my $etchType = EnumsGeneral->Etching_NO;
 
-	if ( $self->{"layerCnt"} == 1 ) {
+	if ( $self->{"layerCnt"} <= 1 ) {
 
-		$etchType = EnumsGeneral->Etching_TENTING;
+		$etchType = EnumsGeneral->Etching_NO;
 
 	}
 	elsif ( $self->{"layerCnt"} == 2 ) {

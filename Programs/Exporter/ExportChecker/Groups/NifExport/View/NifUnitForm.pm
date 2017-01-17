@@ -374,6 +374,14 @@ sub DisableControls{
 	my @allBaseL = $self->{"defaultInfo"}->GetBoardBaseLayers();
 	$self->{"markingFrm"}->DisableControls(\@allBaseL);
 	
+	
+	# disable tenting chb when layercnt <= 1
+	
+	if($self->{"defaultInfo"}->GetLayerCnt() <= 1){
+		
+		$self->{"tentingChb"}->Disable();
+	}
+	
 }
 
 

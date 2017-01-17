@@ -63,7 +63,7 @@ sub OnPrepareGroupData {
 	
 	#$self->__SetDefaultLayers(\@baseLayers, $defaultInfo);
 
-	my @layers = $self->__GetFinalLayers( \@baseLayers );
+	my @layers = $self->__GetFinalLayers( \@baseLayers, $defaultInfo );
  
 	$groupData->SetSendToPlotter(0);
 	$groupData->SetLayers(\@layers);
@@ -174,6 +174,7 @@ sub OnPrepareGroupData {
 sub __GetFinalLayers {
 	my $self   = shift;
 	my @layers = @{ shift(@_) };
+	my $defaultInfo = shift;
 
 	my @prepared = ();
 
@@ -190,6 +191,18 @@ sub __GetFinalLayers {
 		push(@prepared, \%lInfo);
 	}
 	
+	# remove/not plot layer "c" if no copper pcb
+	if($defaultInfo->GetTypeOfPcb() eq "Neplatovany"){
+		
+		foreach (@prepared){
+			
+			if($_->{"name"} eq "c"){
+				$_->{"plot"} = 0;
+				last;
+			}
+		}
+	}
+ 
 	return @prepared;
 
 }

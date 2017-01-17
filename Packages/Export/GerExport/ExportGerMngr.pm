@@ -51,13 +51,12 @@ sub Run {
 sub __Export {
 	my $self = shift;
 	
-
-
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
-
 	my $step = "panel";
-
+	
+	# remove layers, which has plot= 0;
+	@{$self->{"layers"}} = grep {$_->{"plot"}} @{$self->{"layers"}};
 	 
 
 	my $archive     = JobHelper->GetJobArchive($jobId);

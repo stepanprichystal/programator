@@ -67,7 +67,7 @@ sub OnPrepareGroupData {
 
 	# prepare datacode
 	$groupData->SetDatacode( HegMethods->GetDatacodeLayer($jobId) );
-	$groupData->SetUlLogo(HegMethods->GetUlLogoLayer($jobId));
+	$groupData->SetUlLogo( HegMethods->GetUlLogoLayer($jobId) );
 
 	# Mask color
 
@@ -132,17 +132,20 @@ sub __IsTenting {
 
 	my $tenting = 0;
 
-	if ( CamHelper->LayerExists( $inCAM, $jobId, "c" ) ) {
+	# if layer cnt > 1
+	if ( $defaultInfo->GetLayerCnt() >= 1 ) {
 
-		my $etch = $defaultInfo->GetEtchType("c");
+		if ( CamHelper->LayerExists( $inCAM, $jobId, "c" ) ) {
 
-		if ( $etch eq EnumsGeneral->Etching_TENTING ) {
+			my $etch = $defaultInfo->GetEtchType("c");
 
-			$tenting = 1;
+			if ( $etch eq EnumsGeneral->Etching_TENTING ) {
+
+				$tenting = 1;
+			}
 		}
-
 	}
-
+	
 	return $tenting;
 }
 

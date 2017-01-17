@@ -81,6 +81,9 @@ sub OnPrepareGroupData {
  
 
 	$groupData->SetStepToTest("panel");
+ 
+	$groupData->SetCreateEtStep(1);
+	
 	 
  	return $groupData;
 }
