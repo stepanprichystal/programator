@@ -137,8 +137,11 @@ sub ETSetOutput {
 	}
 
 	my $params =
-"(dir_path=$outPath)(filename=$fileName)(extension=$fileSuff)(dx=0)(dy=0)(angle=0)(adapter_coord=no)(angle_direction=cw)(out_unit=inch)(adjacency=no)(out_mid_points=no)(net_name_from_one=no)(tooling=yes)(trace=yes)(surface_mode=contour)(surface_aperture=25.4)(min_brush_for_fill=25.4)(_099_extention_rec=no)(iol_ipcd356a_radius_tol=2)(iol_ipcd356a_outline_draw_size=50)(iol_ipcd356a_output_profiles=yes)";
+"(dir_path=$outPath)(filename=$fileName)(extension=$fileSuff)(dx=0)(dy=0)(angle=0)(adapter_coord=no)(angle_direction=cw)(out_unit=inch)(adjacency=no)(out_mid_points=yes)(net_name_from_one=no)(tooling=yes)(trace=yes)(surface_mode=contour)(surface_aperture=25.4)(min_brush_for_fill=25.4)(_099_extention_rec=no)(iol_ipcd356a_radius_tol=2)(iol_ipcd356a_outline_draw_size=50)(iol_ipcd356a_output_profiles=yes)";
  	
+
+ 
+
 	my $result = $inCAM->COM(
 							  "et_output",
 							  "job"                => $jobName,
