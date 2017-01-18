@@ -44,7 +44,27 @@ sub OnCheckGroupData {
 
 	if ( $pasteInfo->{"export"} && !$self->__PasteLayersExist($defaultInfo) ) {
 
-		$dataMngr->_AddErrorResult( "Paste data", "Nelze exportovat data na pastu. Vrstvy sa_ori, sb_ori ani sa_made, sb_made neexistují.\n" );
+		$dataMngr->_AddErrorResult( "Paste data", "Nelze exportovat data na pastu. Vrstvy sa-ori, sb-ori ani sa-made, sb-made neexistují.\n" );
+	}
+
+	# 2) When wound old format of paste file - with underscore, warning
+	my $sa_ori  = $defaultInfo->LayerExist("sa_ori");
+	my $sb_ori  = $defaultInfo->LayerExist("sb_ori");
+	my $sa_made = $defaultInfo->LayerExist("sa_made");
+	my $sb_made = $defaultInfo->LayerExist("sb_made");
+
+	if ( $sa_ori || $sb_ori || $sa_made || $sb_made ) {
+
+		my @layers = ();
+		push( @layers, "sa_ori" )  if ($sa_ori);
+		push( @layers, "sb_ori" )  if ($sb_ori);
+		push( @layers, "sa_made" ) if ($sa_made);
+		push( @layers, "sb_made" ) if ($sb_made);
+
+		my $str = join( ", ", @layers );
+
+		$dataMngr->_AddWarningResult( "Paste data",
+			   "Byl nalezen starý formát názvu pasty s podtržítkem ($str). Pokud chceš pastu vyexportovat použij nový název s pomlèkou.\n" );
 	}
 
 }
@@ -54,11 +74,11 @@ sub __PasteLayersExist {
 	my $defaultInfo = shift;
 
 	#my @layers = CamJob->GetSignalLayerNames( $inCAM, $jobId );
-	my $sa_ori  = $defaultInfo->LayerExist("sa_ori")  || $defaultInfo->LayerExist("sa-ori")  ? 1 : 0;
-	my $sb_ori  = $defaultInfo->LayerExist("sb_ori")  || $defaultInfo->LayerExist("sb-ori")  ? 1 : 0;
-	my $sa_made = $defaultInfo->LayerExist("sa_made") || $defaultInfo->LayerExist("sa-made") ? 1 : 0;
-	my $sb_made = $defaultInfo->LayerExist("sb_made") || $defaultInfo->LayerExist("sb-made") ? 1 : 0;
- 
+	my $sa_ori  =  $defaultInfo->LayerExist("sa-ori");
+	my $sb_ori  =  $defaultInfo->LayerExist("sb-ori");
+	my $sa_made =  $defaultInfo->LayerExist("sa-made");
+	my $sb_made =  $defaultInfo->LayerExist("sb-made");
+
 	if ( !$sa_ori && !$sb_ori && !$sa_made && !$sb_made ) {
 
 		return 0;

@@ -45,7 +45,6 @@ sub Init {
 	$self->{"exportData"} = $exportData;
 	
  
-	
 	my $coreThick =  $exportData->GetCoreThick();
 	my $optimize =  $exportData->GetOptimize();
 	my $scoringType =  $exportData->GetScoringType();

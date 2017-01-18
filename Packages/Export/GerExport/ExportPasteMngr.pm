@@ -117,6 +117,10 @@ sub __Export {
 	my $step       = $self->{"pasteInfo"}->{"step"};
 	my $addProfile = $self->{"pasteInfo"}->{"addProfile"};
 	my @layers     = $self->__GetPasteLayers();
+	
+	if(scalar(@layers) == 0){
+		die "No paste layers for export.\n";
+	}
 
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
@@ -177,39 +181,23 @@ sub __GetPasteLayers {
 
 	my @layers = ();
 
-	my $sa_ori  = CamHelper->LayerExists( $inCAM, $jobId, "sa_ori" );
-	my $sa_ori2 = CamHelper->LayerExists( $inCAM, $jobId, "sa-ori" );
-	my $sb_ori  = CamHelper->LayerExists( $inCAM, $jobId, "sb_ori" );
-	my $sb_ori2 = CamHelper->LayerExists( $inCAM, $jobId, "sb-ori" );
-
-	my $sa_made  = CamHelper->LayerExists( $inCAM, $jobId, "sa_made" );
-	my $sa_made2 = CamHelper->LayerExists( $inCAM, $jobId, "sa-made" );
-	my $sb_made  = CamHelper->LayerExists( $inCAM, $jobId, "sb_made" );
-	my $sb_made2 = CamHelper->LayerExists( $inCAM, $jobId, "sb-made" );
+	my $sa_ori  = CamHelper->LayerExists( $inCAM, $jobId, "sa-ori" );
+	my $sb_ori  = CamHelper->LayerExists( $inCAM, $jobId, "sb-ori" );
+	my $sa_made = CamHelper->LayerExists( $inCAM, $jobId, "sa-made" );
+	my $sb_made = CamHelper->LayerExists( $inCAM, $jobId, "sb-made" );
 
 	if ( $sa_ori || $sb_ori ) {
 
-		push( @layers, "sa_ori" ) if $sa_ori;
-		push( @layers, "sb_ori" ) if $sb_ori;
-
-	}
-	elsif ( $sa_ori || $sb_ori ) {
-
-		push( @layers, "sa-ori" ) if $sa_ori2;
-		push( @layers, "sb-ori" ) if $sb_ori2;
+		push( @layers, "sa-ori" ) if $sa_ori;
+		push( @layers, "sb-ori" ) if $sb_ori;
 
 	}
 	elsif ( $sa_made || $sb_made ) {
 
-		push( @layers, "sa_made" ) if $sa_made;
-		push( @layers, "sb_made" ) if $sb_made;
+		push( @layers, "sa-made" ) if $sa_made;
+		push( @layers, "sb-made" ) if $sb_made;
 	}
-	elsif ( $sa_made2 || $sb_made2 ) {
 
-		push( @layers, "sa-made" ) if $sa_made2;
-		push( @layers, "sb-made" ) if $sb_made2;
-
-	}
 	return @layers;
 }
 

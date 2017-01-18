@@ -108,11 +108,11 @@ sub Run {
 		$checkScoreRes->AddError("Small gap between pcb steps. Minimal gap is 4.5mm");
 	}
 	
-	# Check if pcb distance is ok
-	unless ( $self->{"scoreCheck"}->PcbDistanceOk() ) {
+	# Check if pcb distance is ok. This was commented, because distance is important only when score is not straight..
+	#unless ( $self->{"scoreCheck"}->PcbDistanceOk() ) {
 
-		$checkScoreRes->AddError("Gap between pcb is too small. Do bigger gap, min 4.5mm.");
-	}
+	#	$checkScoreRes->AddError("Gap between pcb is too small. Do bigger gap, min 4.5mm.");
+	#}
 
 	$self->_OnItemResult($checkScoreRes);
 

@@ -61,19 +61,19 @@ sub OnPrepareGroupData {
 
 	$groupData->SetLayers( \@layers );
 
-	# 2) Prepare MDI settings
-	my %mdiInfo = $self->__GetMDIInfo( $jobId, $defaultInfo );
-	$groupData->SetMdiInfo( \%mdiInfo );
-
-	# 3) Prepare paste settings
-	my %pasteInfo = $self->__GetPasteInfo( $inCAM, $jobId, $defaultInfo );
-
 	if ( scalar(@layers) ) {
 		$groupData->SetExportLayers(1);
 	}
 	else {
 		$groupData->SetExportLayers(0);
 	}
+	
+	# 2) Prepare MDI settings
+	my %mdiInfo = $self->__GetMDIInfo( $jobId, $defaultInfo );
+	$groupData->SetMdiInfo( \%mdiInfo );
+
+	# 3) Prepare paste settings
+	my %pasteInfo = $self->__GetPasteInfo( $inCAM, $jobId, $defaultInfo );
 
 	$groupData->SetPasteInfo( \%pasteInfo );
 
@@ -126,10 +126,10 @@ sub __GetPasteInfo {
 
 	#my @layers = CamJob->GetSignalLayerNames( $inCAM, $jobId );
 
-	my $sa_ori  = $defaultInfo->LayerExist("sa_ori")  || $defaultInfo->LayerExist("sa-ori")  ? 1 : 0;
-	my $sb_ori  = $defaultInfo->LayerExist("sb_ori")  || $defaultInfo->LayerExist("sb-ori")  ? 1 : 0;
-	my $sa_made = $defaultInfo->LayerExist("sa_made") || $defaultInfo->LayerExist("sa-made") ? 1 : 0;
-	my $sb_made = $defaultInfo->LayerExist("sb_made") || $defaultInfo->LayerExist("sb-made") ? 1 : 0;
+	my $sa_ori  = $defaultInfo->LayerExist("sa-ori");
+	my $sb_ori  = $defaultInfo->LayerExist("sb-ori");
+	my $sa_made = $defaultInfo->LayerExist("sa-made");
+	my $sb_made = $defaultInfo->LayerExist("sb-made");
 	my $mpanelExist = CamHelper->StepExists( $inCAM, $jobId, "mpanel" );
 
 	#my @layers     = ();
@@ -140,17 +140,11 @@ sub __GetPasteInfo {
 		$pasteInfo{"notOriginal"} = 0;
 		$pasteInfo{"export"}      = 1;
 
-		#push( @layers, "sa_ori" ) if $sa_ori;
-		#push( @layers, "sb_ori" ) if $sb_ori;
-
 	}
 	elsif ( $sa_made || $sb_made ) {
 
 		$pasteInfo{"notOriginal"} = 1;
 		$pasteInfo{"export"}      = 1;
-
-		#push( @layers, "sa_made" ) if $sa_made;
-		#push( @layers, "sb_made" ) if $sb_made;
 
 	}
 	else {

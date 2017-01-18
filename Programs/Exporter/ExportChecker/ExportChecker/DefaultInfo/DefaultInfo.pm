@@ -319,7 +319,7 @@ sub SetDefaultLayersSettings {
 			if ( $etching eq EnumsGeneral->Etching_PATTERN ) {
 				$l->{"polarity"} = "positive";
 			}
-			elsif ( $etching eq EnumsGeneral->Etching_TENTING ) {
+			elsif ( $etching eq EnumsGeneral->Etching_TENTING || $etching eq EnumsGeneral->Etching_NO ) {
 				$l->{"polarity"} = "negative";
 			}
 

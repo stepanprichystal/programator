@@ -71,11 +71,7 @@ sub Run {
 	my $exportUnit = UnitExport->new( $self->{"id"} );
 
 	my $exportClass = $exportUnit->GetExportClass();
-	
-	# testing DELETE
-	 $exportData->SetOptimize("optimizeManual");
-	 
-	
+ 
 
 	$exportClass->Init( $inCAM, $jobId, $exportData );
 	$exportClass->{"onItemResult"}->Add( sub { Test(@_) } );

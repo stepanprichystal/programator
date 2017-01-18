@@ -22,6 +22,7 @@ use aliased 'Helpers::GeneralHelper';
 #-------------------------------------------------------------------------------------------#
 
 # return area of gold fingers, if exist
+# area is in mm^2
 sub GetGoldFingerArea {
 	my $self        = shift;
 	my $cuThickness = shift;
