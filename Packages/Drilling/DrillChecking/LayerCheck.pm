@@ -170,7 +170,9 @@ sub CheckAttributes {
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_jbMillTop );
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_jbMillBot );
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_kMill );
-
+	push( @t, EnumsGeneral->LAYERTYPE_nplt_lcMill );
+	push( @t, EnumsGeneral->LAYERTYPE_nplt_lsMill );
+	
 	@layers = $self->__GetLayersByType( \@layers, \@t );
 
 	# 2) Check if rout layers has attribute rout chain
@@ -263,6 +265,8 @@ sub CheckDirTop2Bot {
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_rsMill );
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_frMill );
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_jbMillTop );
+	push( @t, EnumsGeneral->LAYERTYPE_nplt_lcMill );
+	push( @t, EnumsGeneral->LAYERTYPE_nplt_lsMill );
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_kMill );
 
 	@layers = $self->__GetLayersByType( \@layers, \@t );
@@ -398,6 +402,8 @@ sub CheckContainNoDepth {
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_nMill );
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_rsMill );
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_frMill );
+	push( @t, EnumsGeneral->LAYERTYPE_nplt_lcMill );
+	push( @t, EnumsGeneral->LAYERTYPE_nplt_lsMill );
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_kMill );
 
 	@layers = $self->__GetLayersByType( \@layers, \@t );

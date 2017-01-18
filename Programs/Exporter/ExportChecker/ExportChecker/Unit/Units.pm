@@ -41,11 +41,8 @@ sub Init {
 	my $jobId = shift;
 	my @units = @{ shift(@_) };
 	
-	
-	## each export has to contai special group "PreGroup"
-	#my $preUnit1 = PreUnit->new( $jobId);	
-	#push(@units, $preUnit1);
-
+ 
+	# Each unit contain reference on default info - info with general info about pcb
 	$self->{"defaultInfo"} = DefaultInfo->new( $inCAM, $jobId );
 
 	# Save to each unit->dataMngr default info
@@ -54,20 +51,7 @@ sub Init {
 		$unit->SetDefaultInfo( $self->{"defaultInfo"} );
 	}
 
-
-#	# Do conenction between units events/handlers
-#	 
-#
-#	foreach my $unitA (@units) {
-#
-#		my @unitEvents = $unitA->GetEventClass()->GetEvents();
-#
-#		# search handler for this event type in all units
-#		foreach my $unitB (@units) {
-#
-#			$unitB->GetEventClass()->ConnectEvents( \@unitEvents );
-#		}
-#	}
+ 
 
 	$self->{"units"} = \@units;
 

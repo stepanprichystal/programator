@@ -16,6 +16,7 @@ use warnings;
 #local library
 use aliased 'Packages::Stackup::Drilling::DrillingHelper';
 use aliased 'Enums::EnumsGeneral';
+
 #-------------------------------------------------------------------------------------------#
 #  Interface
 #-------------------------------------------------------------------------------------------#
@@ -110,15 +111,15 @@ sub __DefinePlatedOperations {
 	my %pltDrillInfo = %{ $self->{"pltDrillInfo"} };    #contain array of hashes of all NC layers with info (start/stop drill layer)
 
 	#plated
-	my @plt_nDrill    = @{ $pltDrillInfo{EnumsGeneral->LAYERTYPE_plt_nDrill} };       #normall through holes plated
-	my @plt_cDrill    = @{ $pltDrillInfo{EnumsGeneral->LAYERTYPE_plt_cDrill} };       #core plated
-	my @plt_bDrillTop = @{ $pltDrillInfo{EnumsGeneral->LAYERTYPE_plt_bDrillTop} };    #blind holes top
-	my @plt_bDrillBot = @{ $pltDrillInfo{EnumsGeneral->LAYERTYPE_plt_bDrillBot} };    #blind holes bot
-	my @plt_fDrill    = @{ $pltDrillInfo{EnumsGeneral->LAYERTYPE_plt_fDrill} };       #frame drilling
-	my @plt_nMill     = @{ $pltDrillInfo{EnumsGeneral->LAYERTYPE_plt_nMill} };        #normall mill slits
-	my @plt_bMillTop  = @{ $pltDrillInfo{EnumsGeneral->LAYERTYPE_plt_bMillTop} };     #z-axis top mill slits
-	my @plt_bMillBot  = @{ $pltDrillInfo{EnumsGeneral->LAYERTYPE_plt_bMillBot} };     #z-axis bot mill slits
-	my @plt_dcDrill   = @{ $pltDrillInfo{EnumsGeneral->LAYERTYPE_plt_dcDrill} };      #drill crosses
+	my @plt_nDrill    = @{ $pltDrillInfo{ EnumsGeneral->LAYERTYPE_plt_nDrill } };       #normall through holes plated
+	my @plt_cDrill    = @{ $pltDrillInfo{ EnumsGeneral->LAYERTYPE_plt_cDrill } };       #core plated
+	my @plt_bDrillTop = @{ $pltDrillInfo{ EnumsGeneral->LAYERTYPE_plt_bDrillTop } };    #blind holes top
+	my @plt_bDrillBot = @{ $pltDrillInfo{ EnumsGeneral->LAYERTYPE_plt_bDrillBot } };    #blind holes bot
+	my @plt_fDrill    = @{ $pltDrillInfo{ EnumsGeneral->LAYERTYPE_plt_fDrill } };       #frame drilling
+	my @plt_nMill     = @{ $pltDrillInfo{ EnumsGeneral->LAYERTYPE_plt_nMill } };        #normall mill slits
+	my @plt_bMillTop  = @{ $pltDrillInfo{ EnumsGeneral->LAYERTYPE_plt_bMillTop } };     #z-axis top mill slits
+	my @plt_bMillBot  = @{ $pltDrillInfo{ EnumsGeneral->LAYERTYPE_plt_bMillBot } };     #z-axis bot mill slits
+	my @plt_dcDrill   = @{ $pltDrillInfo{ EnumsGeneral->LAYERTYPE_plt_dcDrill } };      #drill crosses
 
 	# 1) Operation name = c - can contain layer
 	# - $plt_nDrill
@@ -147,12 +148,14 @@ sub __DefineNPlatedOperations {
 	my %npltDrillInfo = %{ $self->{"npltDrillInfo"} };    #contain array of hashes of all NC layers with info (start/stop drill layer)
 
 	#non plated
-	my @nplt_nMill    = @{ $npltDrillInfo{EnumsGeneral->LAYERTYPE_nplt_nMill} };       #normall mill slits
-	my @nplt_bMillTop = @{ $npltDrillInfo{EnumsGeneral->LAYERTYPE_nplt_bMillTop} };    #z-axis top mill
-	my @nplt_bMillBot = @{ $npltDrillInfo{EnumsGeneral->LAYERTYPE_nplt_bMillBot} };    #z-axis bot mill
-	my @nplt_rsMill   = @{ $npltDrillInfo{EnumsGeneral->LAYERTYPE_nplt_rsMill} };      #rs mill before plating
-	my @nplt_frMill   = @{ $npltDrillInfo{EnumsGeneral->LAYERTYPE_nplt_frMill} };      #milling frame
-	my @nplt_kMill   = @{ $npltDrillInfo{EnumsGeneral->LAYERTYPE_nplt_kMill} };      #milling conneector 
+	my @nplt_nMill    = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_nMill } };       #normall mill slits
+	my @nplt_bMillTop = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_bMillTop } };    #z-axis top mill
+	my @nplt_bMillBot = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_bMillBot } };    #z-axis bot mill
+	my @nplt_rsMill   = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_rsMill } };      #rs mill before plating
+	my @nplt_frMill   = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_frMill } };      #milling frame
+	my @nplt_kMill    = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_kMill } };       #milling conneector
+	my @nplt_lcMill   = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_lcMill } };      #milling template snim lak c
+	my @nplt_lsMill   = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_lsMill } };      #milling template snim lak s
 	
 	#Define operation:
 
@@ -181,13 +184,19 @@ sub __DefineNPlatedOperations {
 	# - @nplt_rsMill
 	$opManager->AddOperationDef( "rs", \@nplt_rsMill, -1 );
 
-	# 5) Operation name = k - can contain layer
+	# 5) Operation name = fk - can contain layer
 	# - @nplt_kMill
 	$opManager->AddOperationDef( "fk", \@nplt_kMill, -1 );
 
+	# 6) Operation name = flc - can contain layer
+	# - @nplt_lcMill
+	$opManager->AddOperationDef( "flc", \@nplt_lcMill, -1 );
+
+	# 7) Operation name = fls - can contain layer
+	# - @nplt_lsMill
+	$opManager->AddOperationDef( "fls", \@nplt_lsMill, -1 );
 }
 
- 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#

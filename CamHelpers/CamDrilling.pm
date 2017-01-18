@@ -276,6 +276,16 @@ sub AddNCLayerType {
 			$l->{"type"}   = EnumsGeneral->LAYERTYPE_nplt_kMill;
 			$l->{"plated"} = 0;
 			
+		}elsif ( $l->{"gROWname"} =~ /^flc$/ ) {
+
+			$l->{"type"}   = EnumsGeneral->LAYERTYPE_nplt_lcMill;
+			$l->{"plated"} = 0;
+			
+		}elsif ( $l->{"gROWname"} =~ /^fls$/ ) {
+
+			$l->{"type"}   = EnumsGeneral->LAYERTYPE_nplt_lsMill;
+			$l->{"plated"} = 0;
+			
 		}elsif ( $l->{"gROWname"} =~ /^f_.*/ ) {
 
 			$l->{"type"}   = EnumsGeneral->LAYERTYPE_nplt_fMillSpec;
