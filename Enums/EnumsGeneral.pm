@@ -77,8 +77,8 @@ use constant {
 	LAYERTYPE_nplt_jbMillTop => "nplt_jbMillTop",    #z-axis mill top of core
 	LAYERTYPE_nplt_jbMillBot => "nplt_jbMillBot",    #z-axis mill bot of core
 	LAYERTYPE_nplt_kMill     => "nplt_kmill",        #milling of gold connector
-	LAYERTYPE_nplt_lMillTop  => "nplt_lMillTop",     #milling of template TOP (snimaci lak)
-	LAYERTYPE_nplt_lMillBot  => "nplt_lMillBot",     #milling of template TOP (snimaci lak)
+	LAYERTYPE_nplt_lcMill  => "nplt_lcMill",     #milling of template for c side (snimaci lak)
+	LAYERTYPE_nplt_lsMill  => "nplt_lsMill",     #milling of template for s side (snimaci lak)
 	LAYERTYPE_nplt_fMillSpec => "nplt_fMillSpec",    #special milling (ramecek, dovrtani apod)
 
 };

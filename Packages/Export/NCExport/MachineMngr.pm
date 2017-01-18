@@ -21,7 +21,6 @@ use aliased 'Helpers::GeneralHelper';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'CamHelpers::CamJob';
 
-
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
@@ -63,7 +62,7 @@ sub AssignMachines {
 
 }
 
-# create "vector of properties" for given NC operation, 
+# create "vector of properties" for given NC operation,
 # which machine should have for process nc operation
 sub __GetPropertyVector {
 	my $self          = shift;
@@ -161,7 +160,6 @@ sub __GetMachinesByVector {
 	$comb{ Enums->Property_CAMERAS }      = sub { my ( $m, $o ) = @_; return ( !$m && $o ? 0 : 1 ) };
 	$comb{ Enums->Property_MAXTOOL } = sub { my ( $m, $o ) = @_; return ( $m < $o ? 0 : 1 ) };
 	$comb{ Enums->Property_MINTOOL } = sub { my ( $m, $o ) = @_; return ( $m > $o ? 0 : 1 ) };
-	
 
 	#my $sumPropVec = 0;
 	#map { $sumPropVec += $_ } @propVec;
@@ -236,7 +234,7 @@ sub __SetMachines {
 		$prop{ Enums->Property_CAMERAS }      = $vals[5];
 		$prop{ Enums->Property_MAXTOOL }      = $vals[6];
 		$prop{ Enums->Property_MINTOOL }      = $vals[7];
-		
+
 		$m{"properties"} = \%prop;
 
 		push( @machines, \%m );
@@ -289,7 +287,7 @@ sub __GetDynamicProperty {
 
 	# get max tool
 	$h{ Enums->Property_MAXTOOL } = $layer->{"maxTool"} / 1000;
-	
+
 	# get min tool
 	$h{ Enums->Property_MINTOOL } = $layer->{"minTool"} / 1000;
 
@@ -354,12 +352,18 @@ sub __SetStaticPropertyTable {
 
 	$t{ EnumsGeneral->LAYERTYPE_nplt_jbMillTop }{"ml"} = [ 0, 0, 0, 1, 0, 1 ];
 	$t{ EnumsGeneral->LAYERTYPE_nplt_jbMillTop }{"sl"} = [ 0, 0, 0, 1, 0, 1 ];
-	
+
 	$t{ EnumsGeneral->LAYERTYPE_nplt_jbMillBot }{"ml"} = [ 0, 0, 0, 1, 0, 1 ];
 	$t{ EnumsGeneral->LAYERTYPE_nplt_jbMillBot }{"sl"} = [ 0, 0, 0, 1, 0, 1 ];
 
 	$t{ EnumsGeneral->LAYERTYPE_nplt_kMill }{"ml"} = [ 0, 0, 1, 0, 0, 0 ];
 	$t{ EnumsGeneral->LAYERTYPE_nplt_kMill }{"sl"} = [ 0, 0, 1, 0, 0, 0 ];
+
+	$t{ EnumsGeneral->LAYERTYPE_nplt_lcMill }{"ml"} = [ 0, 0, 1, 0, 0, 0 ];
+	$t{ EnumsGeneral->LAYERTYPE_nplt_lcMill }{"sl"} = [ 0, 0, 1, 0, 0, 0 ];
+	
+	$t{ EnumsGeneral->LAYERTYPE_nplt_lsMill }{"ml"} = [ 0, 0, 1, 0, 0, 0 ];
+	$t{ EnumsGeneral->LAYERTYPE_nplt_lsMill }{"sl"} = [ 0, 0, 1, 0, 0, 0 ];
 
 	$t{ EnumsGeneral->LAYERTYPE_nplt_fMillSpec }{"ml"} = [ 0, 0, 1, 0, 0, 0 ];
 	$t{ EnumsGeneral->LAYERTYPE_nplt_fMillSpec }{"sl"} = [ 0, 0, 1, 0, 0, 0 ];

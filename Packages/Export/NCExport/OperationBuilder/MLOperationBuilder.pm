@@ -225,8 +225,7 @@ sub __DefinePlatedOperations {
 		my $topSignal    = $press->GetTopSigLayer();
 		my $startTop     = $topSignal->GetNumber();
 		my $startTopName = $topSignal->GetName();
-		
- 
+
 		#plated normal drilling "m" start from top in layer <$drillStartTop>
 		my @normalTop = grep { $_->{"gROWdrl_start"} == $startTop } @plt_nDrill;
 		push( @layers, @normalTop );
@@ -299,7 +298,7 @@ sub __DefinePlatedOperations {
 		my $coreNum = $i + 1;
 		my $core    = $stackupNC->GetCore($coreNum);
 
-		my @layers  = ();
+		my @layers = ();
 		my @layersCore = $core->GetNCLayers( Enums->SignalLayer_TOP, EnumsGeneral->LAYERTYPE_plt_cDrill );
 
 		# if exist core drilling
@@ -330,10 +329,10 @@ sub __DefinePlatedOperations {
 
 	# 8) Operation name = v1, can contain layer
 	# - @plt_fDrill
-	
+
 	# Find cores, which has not blind or core drilling
-	 
-	my $noNCExist = 0; # tell if  exist core, where is no NC operation
+
+	my $noNCExist = 0;    # tell if  exist core, where is no NC operation
 	for ( my $i = 0 ; $i < $coreCnt ; $i++ ) {
 
 		my $coreNum = $i + 1;
@@ -341,19 +340,19 @@ sub __DefinePlatedOperations {
 
 		my $existNc = 0;
 
-		$existNc +=  $core->ExistNCLayers(Enums->SignalLayer_TOP);
-		$existNc +=  $core->ExistNCLayers(Enums->SignalLayer_BOT);
-		
-		if($existNc == 0){
+		$existNc += $core->ExistNCLayers( Enums->SignalLayer_TOP );
+		$existNc += $core->ExistNCLayers( Enums->SignalLayer_BOT );
+
+		if ( $existNc == 0 ) {
 			$noNCExist = 1;
 			last;
 		}
 	}
-	
-	if($noNCExist){
+
+	if ($noNCExist) {
 		$opManager->AddOperationDef( "v1", \@plt_fDrill, $stackup->GetPressCount(), "core" );
 	}
- 
+
 }
 
 # Create single operations, which represent operation on technical procedure
@@ -375,7 +374,9 @@ sub __DefineNPlatedOperations {
 	my @nplt_frMill    = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_frMill } };       #milling frame
 	my @nplt_jbMillTop = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_jbMillTop } };    #z-axis Top mill of core
 	my @nplt_jbMillBot = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_jbMillBot } };    #z-axis bot mill of core
-	my @nplt_kMill     = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_kMill} };      	   #milling conneector 
+	my @nplt_lcMill    = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_lcMill } };       #milling template snim lak c
+	my @nplt_lsMill    = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_lsMill } };       #milling template snim lak s
+	my @nplt_kMill     = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_kMill } };        #milling conneector
 
 	#Define operation:
 
@@ -476,14 +477,20 @@ sub __DefineNPlatedOperations {
 	# 8) Operation name = fr - can contain layer
 	# - @nplt_frMill
 	$opManager->AddOperationDef( "fr", \@nplt_frMill, $stackup->GetPressCount() );
-	
+
 	# 9) Operation name = k - can contain layer
 	# - @nplt_kMill
-	$opManager->AddOperationDef( "fk", \@nplt_kMill, , $stackup->GetPressCount() );
+	$opManager->AddOperationDef( "fk", \@nplt_kMill, $stackup->GetPressCount() );
+	
+	# 10) Operation name = flc - can contain layer
+	# - @nplt_lcMill
+	$opManager->AddOperationDef( "flc", \@nplt_lcMill, -1 );
+
+	# 11) Operation name = fls - can contain layer
+	# - @nplt_lsMill
+	$opManager->AddOperationDef( "fls", \@nplt_lsMill, -1 );
 
 }
-
- 
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
