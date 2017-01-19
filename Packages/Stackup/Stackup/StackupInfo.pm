@@ -44,16 +44,20 @@ sub __LoadInfoFiles {
 	my $self = shift;
 	#my $multicalPath    = shift;
 
-	#my $fname2 = FileHelper->ChangeEncoding( EnumsPaths->Client_MULTICALDB, "cp1252", "utf8" );
- 
+	#my $fname2 = FileHelper->ChangeEncoding( GeneralHelper->Root()."\\Resources\\ml.xml", "utf8", "utf8" );
 	#my $strfMultical = FileHelper->ReadAsString( EnumsPaths->Client_INCAMTMPOTHER . $fname2 );
 	
+ 
+ 	# File ml.xml has to be in  8utf8
 	my $multicalDb = GeneralHelper->Root()."\\Resources\\ml.xml";
-	my $strfMultical = FileHelper->ReadAsString( $multicalDb );
+	my $strfMultical = FileHelper->ReadAsString( $multicalDb);
  
 
+	$strfMultical =~ s/\xC2//g; # remove 	latin capital letter a with circumflex from string
+	
+	 
 
-	my $xml = XMLin( $strfMultical, KeyAttr => { quality => 'id' }, );
+	my $xml = XMLin( $strfMultical, KeyAttr => { quality => 'id' } );
 	$self->{"multicalInfo"} = $xml;
  
 }

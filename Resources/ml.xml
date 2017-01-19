@@ -1,108 +1,111 @@
 ﻿<root version="9" dateString="03/2016">
   <mlList>
-    <ml name="4-layer ML" ename="4-layer ML" dname="4-Lagen Multilayer" fname="multicouches 4 couches" iname="4-fogli multistrato" rname="4-layer ML" soll="1,500" pt="hyd">
-      <element pos="1" type="Copper" id="4" p="100" />
-      <element pos="2" type="Prepreg" id="10" qId="1" />
-      <element pos="3" type="Prepreg" id="10" qId="1" />
-      <element pos="4" type="Copper" id="8" p="75" />
-      <element pos="5" type="Core" id="17" qId="1" />
-      <element pos="6" type="Copper" id="8" p="75" />
-      <element pos="7" type="Prepreg" id="10" qId="1" />
-      <element pos="8" type="Prepreg" id="10" qId="1" />
-      <element pos="9" type="Copper" id="4" p="100" />
+    <ml name="4-layer ML" ename="4-layer ML" dname="4-Lagen Multilayer" fname="multicouches 4 couches" iname="4-fogli multistrato" rname="4-layer ML" soll="1,580" pt="hyd">
+       <element pos="1" id="4" p="100"  type="Copper" />
+       <element pos="2" id="12"  qId="6" type="Prepreg" />
+       <element pos="3" id="12"  qId="6" type="Prepreg" />
+       <element pos="4" id="5" p="40"  type="Copper" />
+       <element pos="5" id="18"  qId="6" type="Core" />
+       <element pos="6" id="5" p="40"  type="Copper" />
+       <element pos="7" id="12"  qId="6" type="Prepreg" />
+       <element pos="8" id="12"  qId="6" type="Prepreg" />
+       <element pos="9" id="4" p="100"  type="Copper" />
     </ml>
-    <ml name="12-layer ML" ename="12-layer ML" dname="12-Lagen Multilayer" fname="multicouches 12 couches" iname="12-fogli multistrato" rname="12-layer ML" soll="2,000" pt="hyd">
-      <element pos="1" type="Copper" id="4" p="100" />
-      <element pos="2" type="Prepreg" id="2" qId="1" />
-      <element pos="3" type="Prepreg" id="2" qId="1" />
-      <element pos="4" type="Copper" id="8" p="75" />
-      <element pos="5" type="Core" id="6" qId="1" />
-      <element pos="6" type="Copper" id="5" p="65" />
-      <element pos="7" type="Prepreg" id="2" qId="1" />
-      <element pos="8" type="Prepreg" id="2" qId="1" />
-      <element pos="4" type="Copper" id="8" p="75" />
-      <element pos="5" type="Core" id="6" qId="1" />
-      <element pos="6" type="Copper" id="8" p="75" />
-      <element pos="7" type="Prepreg" id="2" qId="1" />
-      <element pos="8" type="Prepreg" id="2" qId="1" />
-      <element pos="4" type="Copper" id="5" p="65" />
-      <element pos="5" type="Core" id="6" qId="1" />
-      <element pos="6" type="Copper" id="8" p="75" />
-      <element pos="7" type="Prepreg" id="2" qId="1" />
-      <element pos="8" type="Prepreg" id="2" qId="1" />
-      <element pos="4" type="Copper" id="5" p="65" />
-      <element pos="5" type="Core" id="6" qId="1" />
-      <element pos="6" type="Copper" id="5" p="65" />
-      <element pos="7" type="Prepreg" id="2" qId="1" />
-      <element pos="8" type="Prepreg" id="2" qId="1" />
-      <element pos="4" type="Copper" id="5" p="65" />
-      <element pos="5" type="Core" id="6" qId="1" />
-      <element pos="6" type="Copper" id="5" p="65" />
-      <element pos="7" type="Prepreg" id="2" qId="1" />
-      <element pos="8" type="Prepreg" id="2" qId="1" />
-      <element pos="9" type="Copper" id="4" p="100" />
+    <ml name="12-layer ML" ename="12-layer ML" dname="12-Lagen Multilayer" fname="multicouches 12 couches" iname="12-fogli multistrato" rname="12-layer ML" soll="1,550" pt="hyd">
+		<element pos="1" type="Copper" id="2" p="100" />
+		<element pos="2" type="Prepreg" id="3" qId="6" />
+		<element pos="3" type="Prepreg" id="3" qId="6" />
+		<element pos="4" type="Copper" id="4" p="52" />
+		<element pos="5" type="Core" id="4" qId="6" />
+		<element pos="6" type="Copper" id="4" p="52" />
+		<element pos="7" type="Prepreg" id="3" qId="6" />
+		<element pos="8" type="Prepreg" id="3" qId="6" />
+		<element pos="4" type="Copper" id="4" p="52" />
+		<element pos="5" type="Core" id="4" qId="6" />
+		<element pos="6" type="Copper" id="4" p="52" />
+		<element pos="7" type="Prepreg" id="3" qId="6" />
+		<element qId="6" id="3" type="Prepreg" />
+		<element p="52" id="4" type="Copper" />
+		<element qId="6" id="4" type="Core" />
+		<element p="52" id="4" type="Copper" />
+		<element qId="6" id="3" type="Prepreg" />
+		<element pos="8" type="Prepreg" id="3" qId="6" />
+		<element pos="4" type="Copper" id="4" p="52" />
+		<element pos="5" type="Core" id="4" qId="6" />
+		<element pos="6" type="Copper" id="4" p="52" />
+		<element pos="7" type="Prepreg" id="3" qId="6" />
+		<element pos="8" type="Prepreg" id="3" qId="6" />
+		<element pos="4" type="Copper" id="4" p="52" />
+		<element pos="5" type="Core" id="4" qId="6" />
+		<element pos="6" type="Copper" id="4" p="52" />
+		<element pos="7" type="Prepreg" id="3" qId="6" />
+		<element pos="8" type="Prepreg" id="3" qId="6" />
+		<element pos="9" type="Copper" id="2" p="100" />
     </ml>
-    <ml name="10-layer ML" ename="10-layer ML" dname="10-Lagen Multilayer" fname="multicouches 10 couches" iname="10-fogli multistrato" rname="10-layer ML" soll="2,000" pt="hyd">
-      <element pos="1" type="Copper" id="4" p="100" />
-      <element pos="2" type="Prepreg" id="2" qId="1" />
-      <element pos="3" type="Prepreg" id="2" qId="1" />
-      <element pos="4" type="Copper" id="8" p="75" />
-      <element pos="5" type="Core" id="8" qId="1" />
-      <element pos="6" type="Copper" id="5" p="65" />
-      <element pos="7" type="Prepreg" id="2" qId="1" />
-      <element pos="8" type="Prepreg" id="2" qId="1" />
-      <element pos="4" type="Copper" id="8" p="75" />
-      <element pos="5" type="Core" id="9" qId="1" />
-      <element pos="6" type="Copper" id="8" p="75" />
-      <element pos="7" type="Prepreg" id="2" qId="1" />
-      <element pos="8" type="Prepreg" id="2" qId="1" />
-      <element pos="4" type="Copper" id="5" p="65" />
-      <element pos="5" type="Core" id="9" qId="1" />
-      <element pos="6" type="Copper" id="8" p="75" />
-      <element pos="7" type="Prepreg" id="2" qId="1" />
-      <element pos="8" type="Prepreg" id="2" qId="1" />
-      <element pos="4" type="Copper" id="5" p="65" />
-      <element pos="5" type="Core" id="8" qId="1" />
-      <element pos="6" type="Copper" id="5" p="65" />
-      <element pos="7" type="Prepreg" id="2" qId="1" />
-      <element pos="8" type="Prepreg" id="2" qId="1" />
-      <element pos="9" type="Copper" id="4" p="100" />
+    <ml name="10-layer ML" ename="10-layer ML" dname="10-Lagen Multilayer" fname="multicouches 10 couches" iname="10-fogli multistrato" rname="10-layer ML" soll="1,550" pt="hyd">
+		<element pos="1" type="Copper" id="4" p="100" />
+		<element pos="2" type="Prepreg" id="1" qId="6" />
+		<element pos="3" type="Prepreg" id="1" qId="6" />
+		<element pos="4" type="Copper" id="5" p="52" />
+		<element pos="5" type="Core" id="7" qId="6" />
+		<element pos="6" type="Copper" id="5" p="52" />
+		<element pos="7" type="Prepreg" id="1" qId="6" />
+		<element pos="8" type="Prepreg" id="1" qId="6" />
+		<element pos="4" type="Copper" id="5" p="52" />
+		<element pos="5" type="Core" id="7" qId="6" />
+		<element pos="6" type="Copper" id="5" p="52" />
+		<element pos="7" type="Prepreg" id="1" qId="6" />
+		<element pos="8" type="Prepreg" id="1" qId="6" />
+		<element pos="4" type="Copper" id="5" p="52" />
+		<element pos="5" type="Core" id="7" qId="6" />
+		<element pos="6" type="Copper" id="5" p="52" />
+		<element pos="7" type="Prepreg" id="1" qId="6" />
+		<element pos="8" type="Prepreg" id="1" qId="6" />
+		<element pos="4" type="Copper" id="5" p="52" />
+		<element pos="5" type="Core" id="7" qId="6" />
+		<element pos="6" type="Copper" id="5" p="52" />
+		<element pos="7" type="Prepreg" id="1" qId="6" />
+		<element pos="8" type="Prepreg" id="1" qId="6" />
+		<element pos="9" type="Copper" id="4" p="100" />
     </ml>
-    <ml name="8-layer ML" ename="8-layer ML" dname="8-Lagen Multilayer" fname="multicouches 8 couches" iname="8-fogli multistrato" rname="8-layer ML" soll="2,000" pt="hyd">
-      <element pos="1" type="Copper" id="4" p="100" />
-      <element pos="2" type="Prepreg" id="2" qId="1" />
-      <element pos="3" type="Prepreg" id="2" qId="1" />
-      <element pos="4" type="Copper" id="8" p="75" />
-      <element pos="5" type="Core" id="12" qId="1" />
-      <element pos="6" type="Copper" id="5" p="65" />
-      <element pos="7" type="Prepreg" id="2" qId="1" />
-      <element pos="8" type="Prepreg" id="2" qId="1" />
-      <element pos="4" type="Copper" id="8" p="75" />
-      <element pos="5" type="Core" id="12" qId="1" />
-      <element pos="6" type="Copper" id="8" p="75" />
-      <element pos="7" type="Prepreg" id="2" qId="1" />
-      <element pos="8" type="Prepreg" id="2" qId="1" />
-      <element pos="4" type="Copper" id="5" p="65" />
-      <element pos="5" type="Core" id="12" qId="1" />
-      <element pos="6" type="Copper" id="8" p="75" />
-      <element pos="7" type="Prepreg" id="2" qId="1" />
-      <element pos="8" type="Prepreg" id="2" qId="1" />
-      <element pos="9" type="Copper" id="4" p="100" />
+    <ml name="8-layer ML" ename="8-layer ML" dname="8-Lagen Multilayer" fname="multicouches 8 couches" iname="8-fogli multistrato" rname="8-layer ML" soll="1,580" pt="hyd">
+		<element pos="1" type="Copper" id="4" p="100" />
+		<element qId="6" id="3" type="Prepreg" />
+		<element qId="6" id="3" type="Prepreg" />
+		<element pos="4" type="Copper" id="5" p="40" />
+		<element pos="5" type="Core" id="7" qId="6" />
+		<element pos="6" type="Copper" id="5" p="40" />
+		<element qId="6" id="3" type="Prepreg" />
+		<element qId="6" id="6" type="Prepreg" />
+		<element qId="6" id="3" type="Prepreg" />
+		<element pos="4" type="Copper" id="5" p="40" />
+		<element pos="5" type="Core" id="7" qId="6" />
+		<element pos="6" type="Copper" id="5" p="40" />
+		<element qId="6" id="3" type="Prepreg" />
+		<element qId="6" id="6" type="Prepreg" />
+		<element qId="6" id="3" type="Prepreg" />
+		<element pos="4" type="Copper" id="5" p="40" />
+		<element pos="5" type="Core" id="7" qId="6" />
+		<element pos="6" type="Copper" id="5" p="40" />
+		<element qId="6" id="3" type="Prepreg" />
+		<element qId="6" id="3" type="Prepreg" />
+		<element pos="9" type="Copper" id="4" p="100" />
     </ml>
-    <ml name="6-layer ML" ename="6-layer ML" dname="6-Lagen Multilayer" fname="multicouches 6 couches" iname="6-fogli multistrato" rname="6-layer ML" soll="1,500" pt="hyd">
+    <ml name="6-layer ML" ename="6-layer ML" dname="6-Lagen Multilayer" fname="multicouches 6 couches" iname="6-fogli multistrato" rname="6-layer ML" soll="1,540" pt="hyd">
       <element pos="1" type="Copper" id="4" p="100" />
-      <element pos="2" type="Prepreg" id="4" qId="1" />
-      <element pos="3" type="Prepreg" id="4" qId="1" />
-      <element pos="4" type="Copper" id="8" p="75" />
-      <element pos="5" type="Core" id="12" qId="1" />
-      <element pos="6" type="Copper" id="8" p="75" />
-      <element pos="7" type="Prepreg" id="4" qId="1" />
-      <element pos="8" type="Prepreg" id="4" qId="1" />
-      <element pos="4" type="Copper" id="8" p="75" />
-      <element pos="5" type="Core" id="12" qId="1" />
-      <element pos="6" type="Copper" id="8" p="75" />
-      <element pos="7" type="Prepreg" id="4" qId="1" />
-      <element pos="8" type="Prepreg" id="4" qId="1" />
+      <element pos="2" type="Prepreg" id="6" qId="6" />
+      <element pos="3" type="Prepreg" id="6" qId="6" />
+      <element pos="4" type="Copper" id="5" p="40" />
+      <element pos="5" qId="6" id="9" type="Core" />
+      <element pos="6" type="Copper" id="5" p="40" />
+      <element pos="7" type="Prepreg" id="6" qId="6" />
+      <element pos="8" qId="6" id="6" type="Prepreg" />
+      <element pos="9" type="Prepreg" id="6" qId="6" />
+      <element pos="10" type="Copper" id="5" p="40" />
+      <element pos="5" type="Core" id="9" qId="6" />
+      <element pos="6" type="Copper" id="5" p="40" />
+      <element pos="7" type="Prepreg" id="6" qId="6" />
+      <element pos="8" type="Prepreg" id="6" qId="6" />
       <element pos="9" type="Copper" id="4" p="100" />
     </ml>
   </mlList>
@@ -171,7 +174,7 @@
       <item id="11" text=" 360 µm   [ 2 x 7628M ]" d="357" er="4.98" hg="40" />
       <item id="12" text=" 380 µm   [ 2 x 7628M ]" d="381" er="4.88" hg="43" />
       <item id="13" text=" 410 µm   [ 2 x 7628M ]" d="402" er="4.81" hg="45" />
-      <item id="15" text=" 460 µm   [ 2 x 7628, 1 x 2116 ]" d="439" er="4.95" hg="41" />
+      <item id="15" text=" 460 µm   [ 2 x 7628 ]" d="439" er="4.95" hg="41" />
       <item id="14" text=" 510 µm   [ 3 x  7628 ]" d="507" er="4.98" hg="40" />
       <item id="16" text=" 540 µm   [ 3 x 7628M ]" d="535" er="4.98" hg="40" />
       <item id="17" text=" 610 µm   [ 3 x 7628M ]" d="604" er="4.81" hg="45" />
@@ -340,16 +343,17 @@
       <item id="12" text="7628  [ FZ 01 ]" lg="380" sf="7" rg="202.0" rd="0.173" />
       <item id="10" text="7628  [ FZ 98 ]" lg="412" sf="7.9" rg="202.0" rd="0.173" />
     </quality>
-    <quality id="3" text="IS 410 ML" gE="6.1" gD="2.54" hE="3.64" hD="1.30">
+    <quality id="7" text="IS 410 ML" gE="6.1" gD="2.54" hE="3.64" hD="1.30">
       <item id="1" text="106  [ MD 01 ]" lg="77" sf="1.4" rg="24.4" rd="0.033" />
       <item id="2" text="106  [ MD 02 ]" lg="95" sf="1.5" rg="24.4" rd="0.033" />
       <item id="3" text="1080 [ MD 01 ]" lg="125" sf="2.3" rg="46.8" rd="0.053" />
       <item id="4" text="1080 [ MD 02 ]" lg="150" sf="2.5" rg="46.8" rd="0.053" />
       <item id="5" text="1080 [ MD 03 ]" lg="105" sf="2.1" rg="46.8" rd="0.053" />
-      <item id="6" text="2113 [ MD 01 ]" lg="170" sf="3.2" rg="78" rd="0.079" />
-      <item id="7" text="2116 [ MD 01 ]" lg="188" sf="3.5" rg="103.8" rd="0.094" />
-      <item id="8" text="2116 [ MD 02 ]" lg="215" sf="3.7" rg="103.8" rd="0.094" />
-      <item id="9" text="7628 [ MD 01 ]" lg="345" sf="6.6" rg="202.0" rd="0.173" />
+      <item id="7" text="2113 [ MD 01 ]" lg="170" sf="3.2" rg="78" rd="0.079" />
+      <item id='8' text='2125 [ MD 01 ]' lg='182' sf='3.5' rg='87.5'  rd='0.091'/>
+      <item id="6" text="2116 [ MD 01 ]" lg="188" sf="3.5" rg="103.8" rd="0.094" />
+      <item id="9" text="2116 [ MD 02 ]" lg="215" sf="3.7" rg="103.8" rd="0.094" />
+      <item id="12" text="7628 [ MD 01 ]" lg="345" sf="6.6" rg="202.0" rd="0.173" />
       <item id="10" text="7628 [ MD 02 ]" lg="360" sf="6.7" rg="202.0" rd="0.173" />
       <item id="11" text="7628 [ MD 03 ]" lg="369" sf="6.7" rg="202.0" rd="0.173" /> 
     </quality>

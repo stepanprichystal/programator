@@ -39,16 +39,21 @@ sub Open {
 	my $self  = shift;
 	my $path  = shift;
 	my $write = shift;
-
+	my $encoding = shift;
+ 
 	my $f         = undef;
-	my $operation = "<$path";
+	my $operation = "<";
 
 	if ($write)    #write and create
 	{
-		$operation = "+>$path";
+		$operation = "+>";
+	}
+	
+	if($encoding){
+		$operation .= ":encoding($encoding)";
 	}
 
-	if ( open( $f, $operation ) ) {
+	if ( open( $f, $operation, $path ) ) {
 		return $f;
 	}
 	else {
@@ -179,6 +184,7 @@ sub GetFileNameByPattern() {
 sub ReadAsString {
 	my $self = shift;
 	my $path = shift;
+	my $encoding = shift;
 	
 	my $str = undef;
 	
@@ -186,7 +192,7 @@ sub ReadAsString {
 		return $str;
 	}
 
-	my $f = FileHelper->Open($path);
+	my $f = FileHelper->Open($path, 0, $encoding);
 	$str = join( "", <$f> );
 	
 	 $str =~ s/^\xEF\xBB\xBF//; # remove utf BOM from start of file

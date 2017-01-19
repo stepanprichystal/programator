@@ -10,14 +10,12 @@ use strict;
 use warnings;
 use PDF::Create;
 use English;
- 
+
 #local library
 use aliased 'Helpers::GeneralHelper';
 use aliased 'Helpers::JobHelper';
 use aliased 'Enums::EnumsPaths';
 use aliased 'Packages::Stackup::Enums';
-
-
 
 #-------------------------------------------------------------------------------------------#
 #   GLOBAL variables
@@ -25,8 +23,7 @@ use aliased 'Packages::Stackup::Enums';
 
 #stackup pdf has dimension 842 x 595 (A4 format rotate about 90 degree)
 #start point for drawing stackup image
-my $starX  = 30;
-my $startY = 400;
+my $starX = 30;
 
 #coordinates for drawing stackup
 my $col0  = $starX;
@@ -52,10 +49,9 @@ my $row6 = 235;
 my $row7 = 100;
 
 #variables for creating pdf
-my $page    = undef;
+
 my $f1      = undef;
 my $txtSize = 9;
-
 
 #-------------------------------------------------------------------------------------------#
 #  Public methods
@@ -70,25 +66,28 @@ sub new {
 	$self->{"jobId"}   = shift;
 	$self->{"pdfStep"} = shift;
 
+	$self->{"startY"}     = undef;                                                                # this y coordinate, where stackup image starts from
+	$self->{"page"}       = undef;                                                                # xml page
 	$self->{"outputPath"} = EnumsPaths->Client_INCAMTMPOTHER . GeneralHelper->GetGUID() . ".pdf";
 
 	return $self;
 }
 
 sub Output {
-	my $self      = shift;
+	my $self        = shift;
 	my $stackupName = shift;
 	my $stackup     = shift;
 
-	$self->_CreatePdfStackup($stackupName, $stackup);
+	$self->{"startY"} = 400;       # start stackup image from coordinate 400px
+
+	$self->_CreatePdfStackup( $stackupName, $stackup );
 
 	return 1;
 }
 
+sub GetOutput {
+	my $self = shift;
 
-sub GetOutput{
-	my $self      = shift;
-	
 	return $self->{"outputPath"};
 }
 
@@ -98,11 +97,11 @@ sub _CreatePdfStackup {
 	my $stackupName = shift;
 	my $stackup     = shift;
 
-	my $lCount   =  $stackup->GetCuLayerCnt();
-	
+	my $lCount = $stackup->GetCuLayerCnt();
+
 	my $pcbThick = $stackup->GetFinalThick();
 
-	my $pcbPath = JobHelper->GetJobArchive($self->{"jobId"});
+	my $pcbPath = JobHelper->GetJobArchive( $self->{"jobId"} );
 
 	#Enums::Paths->PCBARCHIV . substr( $pcbId, 0, 3 ) . "/" . $pcbId . "/";
 
@@ -119,7 +118,7 @@ sub _CreatePdfStackup {
 
 	#my $a4 = $pdf->new_page('MediaBox' => @d);
 	my $a4 = $pdf->new_page( 'MediaBox' => @d, 'Rotate' => '90' );    #UNCOMMENT FOR PAGE ROTATION
-	$page = $a4->new_page();
+	$self->{"page"} = $a4->new_page();
 	$f1 = $pdf->font(
 					  'Subtype'  => 'Type1',
 					  'Encoding' => 'WinAnsiEncoding',
@@ -129,7 +128,7 @@ sub _CreatePdfStackup {
 	my $blankGap = 2;                                                 #2mm
 
 	#draw stackup image
-	$self->_DrawGrayBox( $starX, \$startY );
+	$self->_DrawGrayBox($starX);
 
 	my @stackupList = $stackup->GetAllLayers();
 	my $layer;
@@ -138,7 +137,6 @@ sub _CreatePdfStackup {
 	for ( my $i = 0 ; $i < scalar(@stackupList) ; $i++ ) {
 
 		$layer = $stackupList[$i];
-		 
 
 		if ( $i > 0 ) {
 			$layerPrev = $stackupList[ $i - 1 ];
@@ -149,10 +147,10 @@ sub _CreatePdfStackup {
 			#add vertical gap
 			if ($layerPrev) {
 				unless ( $layerPrev->GetType() eq Enums->MaterialType_CORE ) {
-					$startY -= $blankGap;
+					$self->{"startY"} -= $blankGap;
 				}
 			}
-			$self->_DrawCopper( $starX, \$startY, $layer );
+			$self->_DrawCopper( $starX, $layer );
 
 		}
 		elsif ( $layer->GetType() eq Enums->MaterialType_PREPREG ) {
@@ -161,9 +159,9 @@ sub _CreatePdfStackup {
 
 			foreach my $p (@childPrepregs) {
 
-				$startY -= $blankGap;
+				$self->{"startY"} -= $blankGap;
 
-				$self->_DrawPrepreg( $starX, \$startY, $p );
+				$self->_DrawPrepreg( $starX, $p );
 			}
 
 		}
@@ -172,35 +170,35 @@ sub _CreatePdfStackup {
 			#add vertical gap
 			if ($layerPrev) {
 				unless ( $layerPrev->GetType() eq Enums->MaterialType_COPPER ) {
-					$startY -= $blankGap;
+					$self->{"startY"} -= $blankGap;
 				}
 			}
 
-			$self->_DrawCore( $starX, \$startY, $layer );
+			$self->_DrawCore( $starX, $layer );
 
 		}
 	}
-	$startY -= $blankGap;
-	$self->_DrawGrayBox( $starX, \$startY );
+	$self->{"startY"} -= $blankGap;
+	$self->_DrawGrayBox($starX);
 
 	#draw stackup type
 	$self->_DrawStackupType($stackup);
 
 	#draw lines
 
-	$page->set_width(2);
-	$page->line( $col7, $row1, $col7,  $row7 );
-	$page->line( $col8, $row3, $col12, $row3 );
-	$page->line( $col8, $row5, $col12, $row5 );
+	$self->{"page"}->set_width(2);
+	$self->{"page"}->line( $col7, $row1, $col7,  $row7 );
+	$self->{"page"}->line( $col8, $row3, $col12, $row3 );
+	$self->{"page"}->line( $col8, $row5, $col12, $row5 );
 
 	#sraw texts
 
-	$page->string( $f1, 22, $col9, $row2, $stackupName );
+	$self->{"page"}->string( $f1, 22, $col9, $row2, $stackupName );
 
-	$page->string( $f1, 18, $col9,  $row4, "Number of Cu layers" );
-	$page->string( $f1, 18, $col11, $row4, $lCount );
-	$page->string( $f1, 18, $col9,  $row6, "Actual thickness" );
-	$page->string( $f1, 18, $col11, $row6, sprintf( "%4.3f", ( $pcbThick / 1000 ) ) );
+	$self->{"page"}->string( $f1, 18, $col9,  $row4, "Number of Cu layers" );
+	$self->{"page"}->string( $f1, 18, $col11, $row4, $lCount );
+	$self->{"page"}->string( $f1, 18, $col9,  $row6, "Actual thickness" );
+	$self->{"page"}->string( $f1, 18, $col11, $row6, sprintf( "%4.3f", ( $pcbThick / 1000 ) ) );
 
 	$pdf->close;
 
@@ -217,104 +215,99 @@ sub _DrawText {
 	my $text = shift;
 
 	#print $col."/".$row."-".$size.$text;
-	$page->setrgbcolor( 0, 0, 0 );
-	$page->string( $f1, $size, $col, $row, $text );
+	$self->{"page"}->setrgbcolor( 0, 0, 0 );
+	$self->{"page"}->string( $f1, $size, $col, $row, $text );
 }
 
 #tl 9x240
 sub _DrawGrayBox {
-	my $self       = shift;
-	my $startX     = shift;
-	my $actualYref = shift;
+	my $self   = shift;
+	my $startX = shift;
 
 	my $lHeight = 9;
-	${$actualYref} -= $lHeight;
+	$self->{"startY"} -= $lHeight;
 
-	$page->setrgbcolor( 146 / 255, 146 / 255, 146 / 255 );
-	$page->rectangle( $col1, ${$actualYref}, 243, $lHeight );
-	$page->fill();
-	$page->stroke();
+	$self->{"page"}->setrgbcolor( 146 / 255, 146 / 255, 146 / 255 );
+	$self->{"page"}->rectangle( $col1, $self->{"startY"}, 243, $lHeight );
+	$self->{"page"}->fill();
+	$self->{"page"}->stroke();
 
 }
 
 #tl 12x300
 sub _DrawCopper {
-	my $self       = shift;
-	my $startX     = shift;
-	my $actualYref = shift;
-	my $layer      = shift;
+	my $self   = shift;
+	my $startX = shift;
+	my $layer  = shift;
 
 	my $lHeight = 10;
-	${$actualYref} -= $lHeight;
+	$self->{"startY"} -= $lHeight;
 
-	$page->setrgbcolor( 156 / 255, 1 / 255, 1 / 255 );
+	$self->{"page"}->setrgbcolor( 156 / 255, 1 / 255, 1 / 255 );
 
 	if ( $layer->GetUssage() * 100 < 100 ) {
-		$page->rectangle( $col2,       ${$actualYref}, 50, $lHeight );
-		$page->rectangle( $col2 + 52,  ${$actualYref}, 50, $lHeight );
-		$page->rectangle( $col2 + 104, ${$actualYref}, 30, $lHeight );
-		$page->rectangle( $col2 + 136, ${$actualYref}, 71, $lHeight );
+		$self->{"page"}->rectangle( $col2,       $self->{"startY"}, 50, $lHeight );
+		$self->{"page"}->rectangle( $col2 + 52,  $self->{"startY"}, 50, $lHeight );
+		$self->{"page"}->rectangle( $col2 + 104, $self->{"startY"}, 30, $lHeight );
+		$self->{"page"}->rectangle( $col2 + 136, $self->{"startY"}, 71, $lHeight );
 	}
 	else {
-		$page->rectangle( $col2, ${$actualYref}, 207, $lHeight );
+		$self->{"page"}->rectangle( $col2, $self->{"startY"}, 207, $lHeight );
 	}
 
-	$page->fill();
+	$self->{"page"}->fill();
 
 	#draw type  and usage of Cu
 	my $usage = ( $layer->GetUssage() * 100 ) . " %";
-	$self->_DrawText( $col4, ${$actualYref}, $txtSize, $layer->GetText() . "  " . $usage );
+	$self->_DrawText( $col4, $self->{"startY"}, $txtSize, $layer->GetText() . "  " . $usage );
 
 }
 
 #tl 9
 sub _DrawCore {
-	my $self       = shift;
-	my $startX     = shift;
-	my $actualYref = shift;
-	my $layer      = shift;
+	my $self   = shift;
+	my $startX = shift;
+	my $layer  = shift;
 
 	my $lHeight = 14;
-	${$actualYref} -= $lHeight;
+	$self->{"startY"} -= $lHeight;
 
-	$page->setrgbcolor( 159 / 255, 149 / 255, 19 / 255 );
-	$page->rectangle( $col2, ${$actualYref}, 207, $lHeight );
-	$page->fill();
+	$self->{"page"}->setrgbcolor( 159 / 255, 149 / 255, 19 / 255 );
+	$self->{"page"}->rectangle( $col2, $self->{"startY"}, 207, $lHeight );
+	$self->{"page"}->fill();
 
-	$self->_DrawText( $col0, ${$actualYref}, $txtSize, $layer->GetThick() . " µm" );    #draw thicks on left
-	$self->_DrawText( $col5, ${$actualYref}, $txtSize, $layer->GetText() );             #draw type of material
-	$self->_DrawText( $col6, ${$actualYref}, $txtSize, $layer->GetTextType() );         #draw type of  material quality
+	$self->_DrawText( $col0, $self->{"startY"}, $txtSize, $layer->GetThick() . " µm" );    #draw thicks on left
+	$self->_DrawText( $col5, $self->{"startY"}, $txtSize, $layer->GetText() );              #draw type of material
+	$self->_DrawText( $col6, $self->{"startY"}, $txtSize, $layer->GetTextType() );          #draw type of  material quality
 }
 
 sub _DrawPrepreg {
-	my $self       = shift;
-	my $startX     = shift;
-	my $actualYref = shift;
-	my $layer      = shift;
+	my $self   = shift;
+	my $startX = shift;
+	my $layer  = shift;
 
 	my $lHeight = 10;
-	${$actualYref} -= $lHeight;
+	$self->{"startY"} -= $lHeight;
 
-	$page->setrgbcolor( 71 / 255, 143 / 255, 71 / 255 );
-	$page->rectangle( $col3, ${$actualYref}, 125, $lHeight );
-	$page->fill();
+	$self->{"page"}->setrgbcolor( 71 / 255, 143 / 255, 71 / 255 );
+	$self->{"page"}->rectangle( $col3, $self->{"startY"}, 125, $lHeight );
+	$self->{"page"}->fill();
 
-	$self->_DrawText( $col0, ${$actualYref}, $txtSize, sprintf( "%4.0f", $layer->GetThick() ) . " µm" );    #draw thicks on left
-	$self->_DrawText( $col5, ${$actualYref}, $txtSize, $layer->GetText() );                                 #draw type of material
-	$self->_DrawText( $col6, ${$actualYref}, $txtSize, $layer->GetTextType() );                             #draw type of  material quality
+	$self->_DrawText( $col0, $self->{"startY"}, $txtSize, sprintf( "%4.0f", $layer->GetThick() ) . " µm" );    #draw thicks on left
+	$self->_DrawText( $col5, $self->{"startY"}, $txtSize, $layer->GetText() );                                  #draw type of material
+	$self->_DrawText( $col6, $self->{"startY"}, $txtSize, $layer->GetTextType() );                              #draw type of  material quality
 }
 
 sub _DrawStackupType {
 	my $self    = shift;
 	my $stackup = shift;
 
-	#$page->setrgbcolor( 71 / 255, 143 / 255, 71 / 255 );
-	#$page->rectangle( $col3, ${$actualYref}, 125, $lHeight );
-	#$page->fill();
-	$page->string( $f1, 20, 100, 480, $stackup->GetStackupType() );
+	#$self->{"page"}->setrgbcolor( 71 / 255, 143 / 255, 71 / 255 );
+	#$self->{"page"}->rectangle( $col3, $self->{"startY"}, 125, $lHeight );
+	#$self->{"page"}->fill();
+	$self->{"page"}->string( $f1, 20, 100, 480, $stackup->GetStackupType() );
 
 }
-
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

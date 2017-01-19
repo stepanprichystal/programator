@@ -188,6 +188,20 @@ sub OnCheckGroupData {
 			}
 		}
 	}
+	
+	# 9) Control if exist customer panel and customer set in a same time
+	
+	my $custPnlExist = $defaultInfo->GetJobAttrByName("customer_panel" );
+	if($custPnlExist eq "yes"){
+		my $custSetExist = $defaultInfo->GetJobAttrByName( "customer_set" );
+		
+		if($custSetExist eq "yes"){
+			$dataMngr->_AddErrorResult( "Panelisation",
+											"V atributech jobu je aktivní 'zákaznický panel' i 'zákaznické sady'. Zvol pouze jednu možnost panelizace." );
+		}
+	}
+	
+	
 
 }
 

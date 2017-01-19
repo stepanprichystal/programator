@@ -51,6 +51,8 @@ sub Fill {
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
 
+	# Load info about pcb
+	
 	my $pcbType = HegMethods->GetTypeOfPcb($jobId);
 	my $layerCnt = CamJob->GetSignalLayerCnt( $inCAM, $jobId );
 
@@ -58,15 +60,15 @@ sub Fill {
 
 		$layerCnt = 0;
 	}
+	
+	my $custSetExist = CamAttributes->GetJobAttrByName( $inCAM, $jobId, "customer_set" );      # zakaznicke sady
+	
 
 	my %authorInf  = $self->__GetEmployyInfo();
 	my %nifFile    = $self->__GetNifFileInfo();
 	my %stackupInf = $self->__GetStackupInfo($layerCnt);
 	 
-	
-	
-	
-	
+ 
 
 	#my $rsPath = GeneralHelper->Root() . "\\Packages\\Pdf\\ControlPdf\\HtmlTemplate\\Img\\redSquare.jpg";
 	$template->SetKey( "ScriptsRoot",  GeneralHelper->Root() );
@@ -97,7 +99,12 @@ sub Fill {
 
 	$template->SetKey( "PcbParameters", "Pcb parameters", "Parametry dps" );
 
-	$template->SetKey( "SingleSize", "Single size", "Rozměr kusu" );
+	if($custSetExist eq "yes"){
+		$template->SetKey( "SingleSize", "Set size", "Rozměr sady" );
+	}else{
+		$template->SetKey( "SingleSize", "Single size", "Rozměr kusu" );
+	}
+ 
 	$template->SetKey( "SingleSizeVal", $nifFile{"single"});
 
 	$template->SetKey( "SilkTop", "Silkscreen top", "Potisk top" );

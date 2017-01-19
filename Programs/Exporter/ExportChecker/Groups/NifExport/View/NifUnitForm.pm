@@ -25,6 +25,7 @@ use aliased 'Programs::Exporter::ExportChecker::Groups::NifExport::Presenter::Ni
 use aliased 'Programs::Exporter::ExportChecker::Groups::NifExport::View::QuickNoteFrm::QuickNoteFrm';
 use aliased 'Programs::Exporter::ExportChecker::Groups::NifExport::View::MarkingFrm::MarkingList';
 use aliased 'Helpers::ValueConvertor';
+use aliased 'CamHelpers::CamAttributes';
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
@@ -277,9 +278,12 @@ sub __SetLayoutNote {
 sub __SetLayoutDimension {
 	my $self   = shift;
 	my $parent = shift;
+	
+	my $inCAM = $self->{"inCAM"};
+	my $jobId = $self->{"jobId"};
 
 	#define staticboxes
-	my $statBox = Wx::StaticBox->new( $parent, -1, 'Dimension' );
+	my $statBox = Wx::StaticBox->new( $parent, -1, 'Panelisation' );
 	my $szStatBox = Wx::StaticBoxSizer->new( $statBox, &Wx::wxVERTICAL );
 
 	#my $szMain = Wx::BoxSizer->new(&Wx::wxVERTICAL);
@@ -290,49 +294,70 @@ sub __SetLayoutDimension {
 	my $szRow2 = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
 	my $szRow3 = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
 	my $szRow4 = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
+	my $szRow5 = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
 
 	#my $szRow5 = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
 
 	# DEFINE CONTROLS
+	my $typeTxt = Wx::StaticText->new( $statBox, -1, "Type:", &Wx::wxDefaultPosition, [ 50, 20 ] );
+	
+	my $custPnlExist = $self->{"defaultInfo"}->GetJobAttrByName( "customer_panel" );    # zakaznicky panel
+	my $custSetExist = $self->{"defaultInfo"}->GetJobAttrByName( "customer_set" );      # zakaznicke sady
+	
+	my $type = "Standard";
+	if($custPnlExist eq "yes"){
+		$type = "Customer panel";
+	}elsif($custSetExist eq "yes"){
+		$type = "Customer set";
+	}
+	
+	my $typeValTxt = Wx::StaticText->new( $statBox, -1, $type, &Wx::wxDefaultPosition, [ 100, 20 ] );
+	
+	
 	my $singlexTxt = Wx::StaticText->new( $statBox, -1, "Single X:", &Wx::wxDefaultPosition, [ 50, 20 ] );
 	my $singleyTxt = Wx::StaticText->new( $statBox, -1, "Y:",        &Wx::wxDefaultPosition, [ 20, 20 ] );
 
 	my $singlexValTxt = Wx::StaticText->new( $statBox, -1, "0.0" , &Wx::wxDefaultPosition, [ 40, 20 ]);
 	my $singleyValTxt = Wx::StaticText->new( $statBox, -1, "0.0" , &Wx::wxDefaultPosition, [ 40, 20 ]);
 
-	my $panelxTxt = Wx::StaticText->new( $statBox, -1, "Panel X:", &Wx::wxDefaultPosition, [ 50, 20 ] );
+	my $panelxTxt = Wx::StaticText->new( $statBox, -1, "Panel  X:", &Wx::wxDefaultPosition, [ 50, 20 ] );
 	my $panelyTxt = Wx::StaticText->new( $statBox, -1, "Y:",       &Wx::wxDefaultPosition, [ 20, 20 ] );
 
 	my $panelxValTxt = Wx::StaticText->new( $statBox, -1, "0.0" , &Wx::wxDefaultPosition, [ 40, 20 ]);
 	my $panelyValTxt = Wx::StaticText->new( $statBox, -1, "0.0" , &Wx::wxDefaultPosition, [ 40, 20 ]);
 
-	my $nasobnostPanelTxt = Wx::StaticText->new( $statBox, -1, "Nasobnost panel:", &Wx::wxDefaultPosition, [100, 20 ] );
+	my $nasobnostPanelTxt = Wx::StaticText->new( $statBox, -1, "Multiplicity panel:", &Wx::wxDefaultPosition, [100, 20 ] );
 	my $nasobnostPanelValTxt = Wx::StaticText->new( $statBox, -1, "0.0" , &Wx::wxDefaultPosition, [ 40, 20 ]);
 
-	my $nasobnostTxt = Wx::StaticText->new( $statBox, -1, "Nasobnost:", &Wx::wxDefaultPosition, [ 100, 20 ] );
+	my $nasobnostTxt = Wx::StaticText->new( $statBox, -1, "Multiplicity:", &Wx::wxDefaultPosition, [ 100, 20 ] );
 	my $nasobnostValTxt = Wx::StaticText->new( $statBox, -1, "0.0", &Wx::wxDefaultPosition, [ 40, 20 ] );
 
 	# BUILD STRUCTURE OF LAYOUT
-	$szRow1->Add( $singlexTxt,    0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
-	$szRow1->Add( $singlexValTxt, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
-	$szRow1->Add( $singleyTxt,    0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
-	$szRow1->Add( $singleyValTxt, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	
+	$szRow1->Add( $typeTxt,    0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szRow1->Add( $typeValTxt, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	
+	$szRow2->Add( $singlexTxt,    0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szRow2->Add( $singlexValTxt, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szRow2->Add( $singleyTxt,    0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szRow2->Add( $singleyValTxt, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 
-	$szRow2->Add( $panelxTxt,    0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
-	$szRow2->Add( $panelxValTxt, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
-	$szRow2->Add( $panelyTxt,    0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
-	$szRow2->Add( $panelyValTxt, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szRow3->Add( $panelxTxt,    0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szRow3->Add( $panelxValTxt, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szRow3->Add( $panelyTxt,    0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szRow3->Add( $panelyValTxt, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 
-	$szRow3->Add( $nasobnostPanelTxt,    0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
-	$szRow3->Add( $nasobnostPanelValTxt, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szRow4->Add( $nasobnostPanelTxt,    0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szRow4->Add( $nasobnostPanelValTxt, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 
-	$szRow4->Add( $nasobnostTxt,    0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
-	$szRow4->Add( $nasobnostValTxt, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szRow5->Add( $nasobnostTxt,    0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szRow5->Add( $nasobnostValTxt, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 
 	$szStatBox->Add( $szRow1, 0, &Wx::wxEXPAND  );
 	$szStatBox->Add( $szRow2, 0 , &Wx::wxEXPAND );
 	$szStatBox->Add( $szRow3, 0 , &Wx::wxEXPAND );
 	$szStatBox->Add( $szRow4, 0 , &Wx::wxEXPAND );
+	$szStatBox->Add( $szRow5, 0 , &Wx::wxEXPAND );
 
 	# save control references
 	$self->{"singlexValTxt"}        = $singlexValTxt;

@@ -108,7 +108,7 @@ sub OnPrepareGroupData {
 	$groupData->SetJumpScoring($jump);
 
 	# Dimension
-	my %dim = $self->__GetDimension( $inCAM, $jobId );
+	my %dim = $self->__GetDimension( $inCAM, $jobId, $defaultInfo );
 
 	$groupData->SetSingle_x( $dim{"single_x"} );
 	$groupData->SetSingle_y( $dim{"single_y"} );
@@ -145,7 +145,7 @@ sub __IsTenting {
 			}
 		}
 	}
-	
+
 	return $tenting;
 }
 
@@ -154,6 +154,7 @@ sub __GetDimension {
 	my $self  = shift;
 	my $inCAM = shift;
 	my $jobId = shift;
+	my $defaultInfo = shift;
 
 	my %dim = ();
 	$dim{"single_x"}         = "";
@@ -174,18 +175,10 @@ sub __GetDimension {
 		%profilM = CamJob->GetProfileLimits( $inCAM, $jobId, "mpanel" );
 	}
 
-	#get information about customer panel if wxist
+	#get information about customer panel if exist
 
-	my $custPnlExist = CamAttributes->GetJobAttrByName( $inCAM, $jobId, "customer_panel" );
-	my $custSingleX;
-	my $custSingleY;
-	my $custPnlMultipl;
-
-	if ( $custPnlExist eq "yes" ) {
-		$custSingleX    = CamAttributes->GetJobAttrByName( $inCAM, $jobId, "cust_pnl_singlex" );
-		$custSingleY    = CamAttributes->GetJobAttrByName( $inCAM, $jobId, "cust_pnl_singley" );
-		$custPnlMultipl = CamAttributes->GetJobAttrByName( $inCAM, $jobId, "cust_pnl_multipl" );
-	}
+	my $custPnlExist = $defaultInfo->GetJobAttrByName("customer_panel" );    # zakaznicky panel
+	my $custSetExist = $defaultInfo->GetJobAttrByName("customer_set" );      # zakaznicke sady
 
 	#get inforamtion about multiplicity steps
 	my $mpanelMulipl;
@@ -207,6 +200,10 @@ sub __GetDimension {
 	#set dimension by "customer panel"
 	if ( $custPnlExist eq "yes" ) {
 
+		my $custSingleX    = $defaultInfo->GetJobAttrByName("cust_pnl_singlex" );
+		my $custSingleY    = $defaultInfo->GetJobAttrByName("cust_pnl_singley" );
+		my $custPnlMultipl = $defaultInfo->GetJobAttrByName("cust_pnl_multipl" );
+
 		$dim{"single_x"}         = $custSingleX;
 		$dim{"single_y"}         = $custSingleY;
 		$dim{"panel_x"}          = abs( $profilO1{"xmax"} - $profilO1{"xmin"} );
@@ -214,6 +211,32 @@ sub __GetDimension {
 		$dim{"nasobnost_panelu"} = $custPnlMultipl;
 		$dim{"nasobnost"}        = $custPnlMultipl * $panelMultipl;
 
+	}
+
+	# set dimension by "customer set"
+	elsif ( $custSetExist eq "yes" ) {
+
+		my $custSetMultipl = $defaultInfo->GetJobAttrByName( "cust_set_multipl" );
+		my $mpanelX        = abs( $profilM{"xmax"} - $profilM{"xmin"} );
+		my $mpanelY        = abs( $profilM{"ymax"} - $profilM{"ymin"} );
+
+		# compute dimension based on number of count in mpanel
+		if ( $custSetMultipl == 1 ) {
+			$dim{"single_x"} = $mpanelX;
+			$dim{"single_y"} = $mpanelY;
+		}
+		else {
+
+			# create fake dimension of one set
+
+			$dim{"single_x"} = $mpanelX;
+			$dim{"single_y"} = $mpanelY / $custSetMultipl;
+		}
+
+		$dim{"panel_x"}          = $mpanelX;
+		$dim{"panel_y"}          = $mpanelY;
+		$dim{"nasobnost_panelu"} = $custSetMultipl;
+		$dim{"nasobnost"}        = $custSetMultipl * $panelMultipl;
 	}
 	else {
 

@@ -21,6 +21,7 @@ use aliased 'Packages::Routing::PlatedRoutArea';
 use aliased 'CamHelpers::CamDrilling';
 use aliased 'CamHelpers::CamHelper';
 use aliased 'CamHelpers::CamStep';
+use aliased 'CamHelpers::CamAttributes';
 use aliased 'Packages::Scoring::ScoreChecker::ScoreChecker';
 use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'Packages::Technology::EtchOperation';
@@ -53,7 +54,8 @@ sub new {
 	$self->{"allStepsNames"} = undef;    # all steps
 	$self->{"allLayers"}     = undef;    # all layers
 	$self->{"isPool"}        = undef;
-
+	$self->{"surface"} 		 = undef;
+	$self->{"jobAttributes"} = undef; # all job attributes
 	$self->__InitDefault();
 
 	return $self;
@@ -310,12 +312,12 @@ sub SetDefaultLayersSettings {
 		}
 		elsif ( $l->{"gROWlayer_type"} eq "signal" || $l->{"gROWlayer_type"} eq "power_ground" || $l->{"gROWlayer_type"} eq "mixed" ) {
 
-			# set etching type
+			# 1) set etching type
 			my $etching = $self->GetEtchType( $l->{"gROWname"} );
 
 			$l->{"etchingType"} = $etching;
 
-			# Set polarity by etching type
+			# 2) Set polarity by etching type
 			if ( $etching eq EnumsGeneral->Etching_PATTERN ) {
 				$l->{"polarity"} = "positive";
 			}
@@ -323,7 +325,16 @@ sub SetDefaultLayersSettings {
 				$l->{"polarity"} = "negative";
 			}
 
-			# Edit polarity according InCAM matric polarity
+			# 3) Exception for layer c, s and Galvanic gold. Polarity always postitive
+			if($l->{"gROWname"} eq "c" || $l->{"gROWname"} eq "s"  ){
+				
+				if($self->{"surface"} =~ /g/i){
+					$l->{"polarity"} = "positive";
+				}
+			}
+			
+
+			# 4) Edit polarity according InCAM matrix polarity
 			# if polarity negative, switch polarity
 			if ( $l->{"gROWpolarity"} eq "negative" ) {
 
@@ -454,6 +465,15 @@ sub IsPool {
 	return $self->{"isPool"};
 }
 
+
+sub GetJobAttrByName{
+	my $self = shift;
+	my $attr = shift;
+	
+	return $self->{"jobAttributes"}->{$attr};
+}
+
+
 sub __InitDefault {
 	my $self = shift;
 
@@ -490,6 +510,11 @@ sub __InitDefault {
 	$self->{"allLayers"} = \@allLayers;
 
 	$self->{"isPool"} = HegMethods->GetPcbIsPool( $self->{"jobId"} );
+	
+	$self->{"surface"} = HegMethods->GetPcbSurface($self->{"jobId"});
+	
+	my %jobAtt = CamAttributes->GetJobAttr($self->{"inCAM"}, $self->{"jobId"});
+	$self->{"jobAttributes"} = \%jobAtt;
 
 	#$self->{"finalPcbThick"} = JobHelper->GetFinalPcbThick($self->{"jobId"});
 
