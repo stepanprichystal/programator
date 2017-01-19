@@ -64,6 +64,7 @@ sub OnPrepareGroupData {
 	my $jobId = $dataMngr->{"jobId"};
 
 	my $defaultInfo = $dataMngr->GetDefaultInfo();
+	my $customerNote = $defaultInfo->GetCustomerNote();
 
 	# 1) Export control
 	my $exportControl = 1;
@@ -99,11 +100,21 @@ sub OnPrepareGroupData {
 
 		$defStackup = 1;
 	}
+	
+	# 5) default info to pdf
+	my $defInfoToPdf = 1;
+
+	if ($customerNote->NoInfoToPdf()) {
+
+		$defInfoToPdf = 0;
+	}
+	
 
 	$groupData->SetExportControl($exportControl);
 	$groupData->SetControlStep($defStep);
 	$groupData->SetControlLang($defLang);
 	$groupData->SetExportStackup($defStackup);
+	$groupData->SetInfoToPdf($defInfoToPdf);
 
 	return $groupData;
 }

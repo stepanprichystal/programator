@@ -25,6 +25,8 @@ use aliased 'CamHelpers::CamAttributes';
 use aliased 'Packages::Scoring::ScoreChecker::ScoreChecker';
 use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'Packages::Technology::EtchOperation';
+use aliased 'Packages::Other::CustomerNote';
+
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -54,8 +56,11 @@ sub new {
 	$self->{"allStepsNames"} = undef;    # all steps
 	$self->{"allLayers"}     = undef;    # all layers
 	$self->{"isPool"}        = undef;
-	$self->{"surface"} 		 = undef;
-	$self->{"jobAttributes"} = undef; # all job attributes
+	$self->{"surface"}       = undef;
+	$self->{"jobAttributes"} = undef;    # all job attributes
+	$self->{"costomerInfo"}  = undef;    # info about customer, name, reference, ...
+	$self->{"costomerNote"} = undef;    # notes about customer, like export paste, info to pdf, ..
+
 	$self->__InitDefault();
 
 	return $self;
@@ -236,6 +241,7 @@ sub GetCompByLayer {
 	my $cuThick = $self->GetBaseCuThick($layerName);
 
 	my $comp = 0;
+
 	# when neplat, there is layer "c" but 0 comp
 	if ( $cuThick > 0 ) {
 		$comp = EtchOperation->GetCompensation( $cuThick, $class );
@@ -259,7 +265,7 @@ sub GetScoreChecker {
 sub GetTypeOfPcb {
 	my $self = shift;
 
-	$self->{"pcbTypeHelios"} = HegMethods->GetTypeOfPcb( $self->{"jobId"});
+	$self->{"pcbTypeHelios"} = HegMethods->GetTypeOfPcb( $self->{"jobId"} );
 	return $self->{"pcbTypeHelios"};
 }
 
@@ -326,13 +332,12 @@ sub SetDefaultLayersSettings {
 			}
 
 			# 3) Exception for layer c, s and Galvanic gold. Polarity always postitive
-			if($l->{"gROWname"} eq "c" || $l->{"gROWname"} eq "s"  ){
-				
-				if($self->{"surface"} =~ /g/i){
+			if ( $l->{"gROWname"} eq "c" || $l->{"gROWname"} eq "s" ) {
+
+				if ( $self->{"surface"} =~ /g/i ) {
 					$l->{"polarity"} = "positive";
 				}
 			}
-			
 
 			# 4) Edit polarity according InCAM matrix polarity
 			# if polarity negative, switch polarity
@@ -408,12 +413,12 @@ sub SetDefaultLayersSettings {
 		if ( $l->{"gROWlayer_type"} eq "signal" || $l->{"gROWlayer_type"} eq "power_ground" || $l->{"gROWlayer_type"} eq "mixed" ) {
 
 			$l->{"comp"} = $self->GetCompByLayer( $l->{"gROWname"} );
-			
+
 			# If layer is negative, set negative compensation
-			if($l->{"gROWpolarity"} eq "negative"){
+			if ( $l->{"gROWpolarity"} eq "negative" ) {
 				$l->{"comp"} = -$l->{"comp"};
 			}
-			
+
 		}
 		else {
 
@@ -465,14 +470,18 @@ sub IsPool {
 	return $self->{"isPool"};
 }
 
-
-sub GetJobAttrByName{
+sub GetJobAttrByName {
 	my $self = shift;
 	my $attr = shift;
-	
+
 	return $self->{"jobAttributes"}->{$attr};
 }
 
+sub GetCustomerNote{
+	my $self = shift;
+	
+	return $self->{"costomerNote"};
+}
 
 sub __InitDefault {
 	my $self = shift;
@@ -510,13 +519,17 @@ sub __InitDefault {
 	$self->{"allLayers"} = \@allLayers;
 
 	$self->{"isPool"} = HegMethods->GetPcbIsPool( $self->{"jobId"} );
-	
-	$self->{"surface"} = HegMethods->GetPcbSurface($self->{"jobId"});
-	
-	my %jobAtt = CamAttributes->GetJobAttr($self->{"inCAM"}, $self->{"jobId"});
+
+	$self->{"surface"} = HegMethods->GetPcbSurface( $self->{"jobId"} );
+
+	my %jobAtt = CamAttributes->GetJobAttr( $self->{"inCAM"}, $self->{"jobId"} );
 	$self->{"jobAttributes"} = \%jobAtt;
 
-	#$self->{"finalPcbThick"} = JobHelper->GetFinalPcbThick($self->{"jobId"});
+	$self->{"costomerInfo"} = HegMethods->GetCustomerInfo( $self->{"jobId"} );
+
+	$self->{"costomerNote"} = CustomerNote->new( $self->{"costomerInfo"}->{"reference_subjektu"} );
+
+	 
 
 }
 

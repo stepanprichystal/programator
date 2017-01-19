@@ -123,6 +123,8 @@ sub __GetPasteInfo {
 	my $jobId       = shift;
 	my $defaultInfo = shift;
 	my %pasteInfo   = ();
+	
+	my $customerNote = $defaultInfo->GetCustomerNote();
 
 	#my @layers = CamJob->GetSignalLayerNames( $inCAM, $jobId );
 
@@ -161,7 +163,35 @@ sub __GetPasteInfo {
 		$pasteInfo{"export"} = 0;
 	}
 
-	$pasteInfo{"addProfile"} = 1;
+	# default is add profile
+	if(defined $customerNote->ProfileToPaste()){
+		$pasteInfo{"addProfile"} = $customerNote->ProfileToPaste();
+		
+	}else{
+		
+		$pasteInfo{"addProfile"} = 1;
+	}
+	
+	 # default is don't add single profile
+	if(defined $customerNote->ProfileToPaste()){
+		$pasteInfo{"addSingleProfile"} = $customerNote->SingleProfileToPaste();
+		
+	}else{
+		
+		$pasteInfo{"addSingleProfile"} = 0;
+	}
+
+	 
+	# default is don't add fiducials to paste
+	if(defined $customerNote->FiducialToPaste()){
+		$pasteInfo{"addFiducial"} = $customerNote->FiducialToPaste();
+		
+	}else{
+		
+		$pasteInfo{"addFiducial"} = 0;
+	} 
+ 
+	 
 	$pasteInfo{"zipFile"}    = 1;
 
 	#$pasteInfo{"layers"}     = \@layers;    #join(";", @layers);

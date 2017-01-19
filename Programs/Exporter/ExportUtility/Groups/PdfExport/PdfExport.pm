@@ -46,9 +46,12 @@ sub Init {
 	my $exportControl = $exportData->GetExportControl();
 	my $controlStep   = $exportData->GetControlStep();
 	my $controlLang   = $exportData->GetControlLang();
+	my $infoToPdf = $exportData->GetInfoToPdf();
 	my $exportStackup = $exportData->GetExportStackup();
 
-	my $mngr = PdfMngr->new( $inCAM, $jobId, $exportControl, $controlStep, $controlLang, $exportStackup );
+	
+
+	my $mngr = PdfMngr->new( $inCAM, $jobId, $exportControl, $controlStep, $controlLang, $infoToPdf, $exportStackup );
 
 	$mngr->{"onItemResult"}->Add( sub { $self->_OnItemResultHandler(@_) } );
 

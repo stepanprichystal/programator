@@ -49,6 +49,7 @@ sub OnExportGroupData {
 	$exportData->SetControlStep( $groupData->GetControlStep() );
 	$exportData->SetControlLang( $groupData->GetControlLang() );
 	$exportData->SetExportStackup( $groupData->GetExportStackup() );
+	$exportData->SetInfoToPdf( $groupData->GetInfoToPdf() );
 	
 	 
 	return $exportData;

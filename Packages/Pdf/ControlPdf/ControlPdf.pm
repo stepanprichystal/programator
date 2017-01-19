@@ -45,6 +45,7 @@ sub new {
 	$self->{"step"}  = shift;
 
 	$self->{"lang"} = shift;    # language of pdf, values cz/en
+	$self->{"infoToPdf"} = shift;
 
 	$self->{"pdfStep"} = "pdf_" . $self->{"step"};
 
@@ -161,7 +162,7 @@ sub __ProcessTemplate {
 	# Fill data template
 	my $templData = TemplateKey->new();
 
-	$self->{"fillTemplate"}->Fill( $templData, $stackupPath, $previewTopPath, $previewBotPath );
+	$self->{"fillTemplate"}->Fill( $templData, $stackupPath, $previewTopPath, $previewBotPath, $self->{"infoToPdf"} );
 
 	my $result = $self->{"template"}->Convert( $tempPath, $templData );
 

@@ -89,6 +89,8 @@ sub RefreshGUI {
 	$self->{"form"}->SetControlStep( $groupData->GetControlStep() );
 	$self->{"form"}->SetControlLang( $groupData->GetControlLang() );
 	$self->{"form"}->SetExportStackup( $groupData->GetExportStackup() );
+	$self->{"form"}->SetInfoToPdf( $groupData->GetInfoToPdf() );
+	
 
 	#refresh wrapper
 	$self->_RefreshWrapper();
@@ -112,6 +114,7 @@ sub GetGroupData {
 		$groupData->SetControlStep( $frm->GetControlStep() );
 		$groupData->SetControlLang( $frm->GetControlLang() );
 		$groupData->SetExportStackup( $frm->GetExportStackup() );
+		$groupData->SetInfoToPdf( $frm->GetInfoToPdf() );
 	}
 	else {
 

@@ -24,6 +24,7 @@ use aliased 'Helpers::ValueConvertor';
 use aliased 'Helpers::Translator';
 use aliased 'Packages::Stackup::Stackup::Stackup';
 use aliased 'CamHelpers::CamAttributes';
+
 #-------------------------------------------------------------------------------------------#
 #  Interface
 #-------------------------------------------------------------------------------------------#
@@ -47,12 +48,13 @@ sub Fill {
 	my $stackupPath    = shift;
 	my $previewTopPath = shift;
 	my $previewBotPath = shift;
+	my $infoToPdf      = shift;    # if put info about operator to pdf
 
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
 
 	# Load info about pcb
-	
+
 	my $pcbType = HegMethods->GetTypeOfPcb($jobId);
 	my $layerCnt = CamJob->GetSignalLayerCnt( $inCAM, $jobId );
 
@@ -60,18 +62,15 @@ sub Fill {
 
 		$layerCnt = 0;
 	}
-	
-	my $custSetExist = CamAttributes->GetJobAttrByName( $inCAM, $jobId, "customer_set" );      # zakaznicke sady
-	
+
+	my $custSetExist = CamAttributes->GetJobAttrByName( $inCAM, $jobId, "customer_set" );    # zakaznicke sady
 
 	my %authorInf  = $self->__GetEmployyInfo();
 	my %nifFile    = $self->__GetNifFileInfo();
 	my %stackupInf = $self->__GetStackupInfo($layerCnt);
-	 
- 
 
 	#my $rsPath = GeneralHelper->Root() . "\\Packages\\Pdf\\ControlPdf\\HtmlTemplate\\Img\\redSquare.jpg";
-	$template->SetKey( "ScriptsRoot",  GeneralHelper->Root() );
+	$template->SetKey( "ScriptsRoot", GeneralHelper->Root() );
 
 	# =================== Table general information ============================
 	$template->SetKey( "GeneralInformation", "General information", "Obecné informace" );
@@ -80,39 +79,40 @@ sub Fill {
 	$template->SetKey( "PcbDataNameVal", HegMethods->GetPcbName( $self->{"jobId"} ) );
 
 	$template->SetKey( "Author", "Cam engineer", "Zpracoval" );
-	$template->SetKey( "AuthorVal", $authorInf{"jmeno"}." ".$authorInf{"prijmeni"} );
+	$template->SetKey( "AuthorVal", $infoToPdf ? ($authorInf{"jmeno"} . " " . $authorInf{"prijmeni"}) : "-" );
 
 	$template->SetKey( "PcbId", "Internal pcb Id", "Interní id" );
-	$template->SetKey( "PcbIdVal", uc($self->{"jobId"}) );
+	$template->SetKey( "PcbIdVal", uc( $self->{"jobId"} ) );
 
 	$template->SetKey( "Email",    "Email" );
-	$template->SetKey( "EmailVal", $authorInf{"e_mail"} );
+	$template->SetKey( "EmailVal", $infoToPdf ? ($authorInf{"e_mail"}) : "-" );
 
 	$template->SetKey( "ReportGenerated", "Report date ", "Datum reportu" );
 
 	$template->SetKey( "ReportGeneratedVal", strftime "%d/%m/%Y", localtime );
 
 	$template->SetKey( "Phone", "Phone", "Telefon" );
-	$template->SetKey( "PhoneVal", $authorInf{"telefon_prace"} );
+	$template->SetKey( "PhoneVal", $infoToPdf ? ($authorInf{"telefon_prace"}) : "-" );
 
 	# =================== Table Pcb parameters ============================
 
 	$template->SetKey( "PcbParameters", "Pcb parameters", "Parametry dps" );
 
-	if($custSetExist eq "yes"){
+	if ( $custSetExist eq "yes" ) {
 		$template->SetKey( "SingleSize", "Set size", "Rozměr sady" );
-	}else{
+	}
+	else {
 		$template->SetKey( "SingleSize", "Single size", "Rozměr kusu" );
 	}
- 
-	$template->SetKey( "SingleSizeVal", $nifFile{"single"});
+
+	$template->SetKey( "SingleSizeVal", $nifFile{"single"} );
 
 	$template->SetKey( "SilkTop", "Silkscreen top", "Potisk top" );
 	$template->SetKey( "SilkTopVal", $nifFile{"c_silk_screen_colour"}, Translator->Cz( $nifFile{"c_silk_screen_colour"} ) );
 
 	$template->SetKey( "PanelSize", "Panel size", "Rozměr panelu" );
 
-	$template->SetKey( "PanelSizeVal", $nifFile{"panel"});
+	$template->SetKey( "PanelSizeVal", $nifFile{"panel"} );
 
 	$template->SetKey( "SilkBot", "Silkscreen bot", "Potisk bot" );
 	$template->SetKey( "SilkBotVal", $nifFile{"s_silk_screen_colour"}, Translator->Cz( $nifFile{"s_silk_screen_colour"} ) );
@@ -163,7 +163,6 @@ sub Fill {
 	return 1;
 }
 
-
 sub __GetNifFileInfo {
 	my $self = shift;
 
@@ -179,8 +178,7 @@ sub __GetNifFileInfo {
 	$inf{"c_mask_colour"}        = ValueConvertor->GetMaskCodeToColor( $self->{"nifFile"}->GetValue("c_mask_colour") );
 	$inf{"s_mask_colour"}        = ValueConvertor->GetMaskCodeToColor( $self->{"nifFile"}->GetValue("s_mask_colour") );
 
-	 
-	$inf{"single"} =  $self->{"nifFile"}->GetValue("single_x") . " mm x " . $self->{"nifFile"}->GetValue("single_y") . " mm";
+	$inf{"single"} = $self->{"nifFile"}->GetValue("single_x") . " mm x " . $self->{"nifFile"}->GetValue("single_y") . " mm";
 
 	my $panelSize = "";
 	if ( !defined $self->{"nifFile"}->GetValue("panel_x") || $self->{"nifFile"}->GetValue("panel_x") eq "" ) {
@@ -207,39 +205,38 @@ sub __GetStackupInfo {
 
 	# get info from norris
 	if ( $layerCnt <= 2 ) {
- 
-		$inf{"thick"} =   sprintf( "%.2f mm", HegMethods->GetPcbMaterialThick($self->{"jobId"} ) );
+
+		$inf{"thick"} = sprintf( "%.2f mm", HegMethods->GetPcbMaterialThick( $self->{"jobId"} ) );
 	}
 	else {
+
 		#get info from stackup
 		my $stackup = Stackup->new( $self->{"jobId"} );
 		$inf{"thick"} = sprintf( "%.2f mm", $stackup->GetFinalThick() / 1000 );
 	}
-	
-	$inf{"material"} = HegMethods->GetMaterialKind($self->{"jobId"}, 1);
+
+	$inf{"material"} = HegMethods->GetMaterialKind( $self->{"jobId"}, 1 );
 
 	return %inf;
 
 }
 
 sub __GetEmployyInfo {
-	my $self     = shift;
-	 
+	my $self = shift;
 
-	my $name = CamAttributes->GetJobAttrByName($self->{"inCAM"},  $self->{"jobId"},"user_name");
+	my $name = CamAttributes->GetJobAttrByName( $self->{"inCAM"}, $self->{"jobId"}, "user_name" );
 
 	my %employyInf = ();
 
-	if(defined $name && $name ne ""){
-		
-		%employyInf = %{HegMethods->GetEmployyInfo($name)}
-		
+	if ( defined $name && $name ne "" ) {
+
+		%employyInf = %{ HegMethods->GetEmployyInfo($name) }
+
 	}
 
 	return %employyInf;
-	
+
 }
- 
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

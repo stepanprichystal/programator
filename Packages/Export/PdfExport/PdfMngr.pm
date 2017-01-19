@@ -37,6 +37,7 @@ sub new {
 	$self->{"exportControl"} = shift;    # if export pdf data contro
 	$self->{"controlStep"}   = shift;    # which step export
 	$self->{"controlLang"}   = shift;    # which language use
+	$self->{"infoToPdf"}   	 = shift;    	# put info about operator to pdf
 	$self->{"exportStackup"} = shift;    # if export stackup pdf to job's archive
 
 	$self->{"layerCnt"} = CamJob->GetSignalLayerCnt( $self->{'inCAM'}, $self->{'jobId'} );

@@ -882,7 +882,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	use aliased 'Connectors::HeliosConnector::HegMethods';
 
 	#
-	my $res = HegMethods->GetMaterialKind("f52456");
+	my $res = HegMethods->GetCustomerInfo("f52456");
 
 	#
 	print $res;

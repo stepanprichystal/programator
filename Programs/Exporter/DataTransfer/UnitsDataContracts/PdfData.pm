@@ -65,6 +65,22 @@ sub GetControlLang {
 	return $self->{"data"}->{"controlLang"};
 }
  
+# Info about tpv technik to pdf
+
+sub GetInfoToPdf {
+	my $self  = shift;
+	my $value = shift;
+	return $self->{"data"}->{"infoToPdf"};
+}
+
+sub SetInfoToPdf {
+	my $self  = shift;
+	my $value = shift;
+	$self->{"data"}->{"infoToPdf"} = $value;
+}
+ 
+ 
+ 
 sub SetExportStackup {
 	my $self  = shift;
 	my $value = shift;

@@ -20,7 +20,7 @@ use Widgets::Style;
 use aliased 'Packages::Events::Event';
 
 #use aliased 'CamHelpers::CamLayer';
-#use aliased 'CamHelpers::CamDrilling';
+use aliased 'CamHelpers::CamStepRepeat';
 use aliased 'CamHelpers::CamStep';
 
 #use aliased 'CamHelpers::CamJob';
@@ -167,38 +167,42 @@ sub __SetLayoutPaste {
 	my $szRowDetail4 = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
 
 	# DEFINE CONTROLS
+	
+	
 	my $exportPasteChb = Wx::CheckBox->new( $statBox, -1, "Export", &Wx::wxDefaultPosition );
 
-	my $stepTxt    = Wx::StaticText->new( $statBox, -1, "Step",           &Wx::wxDefaultPosition, [ 120, 20 ] );
-	my $notOriTxt  = Wx::StaticText->new( $statBox, -1, "Add Readme.txt", &Wx::wxDefaultPosition, [ 120, 20 ] );
-	my $profileTxt = Wx::StaticText->new( $statBox, -1, "Add profile",    &Wx::wxDefaultPosition, [ 120, 20 ] );
-	my $zipFileTxt = Wx::StaticText->new( $statBox, -1, "Zip files",      &Wx::wxDefaultPosition, [ 120, 20 ] );
-
+	 my $stepTxt     = Wx::StaticText->new( $statBox, -1, "Step", &Wx::wxDefaultPosition );
 	my @steps = CamStep->GetAllStepNames( $self->{"inCAM"}, $self->{"jobId"} );
 	my $last = $steps[ scalar(@steps) - 1 ];
 
 	my $stepCb     = Wx::ComboBox->new( $statBox, -1, $last, &Wx::wxDefaultPosition, [ 70, 20 ], \@steps, &Wx::wxCB_READONLY );
-	my $notOriChb  = Wx::CheckBox->new( $statBox, -1, "",    &Wx::wxDefaultPosition, [ 70, 20 ] );
-	my $profileChb = Wx::CheckBox->new( $statBox, -1, "",    &Wx::wxDefaultPosition, [ 70, 20 ] );
-	my $zipFileChb = Wx::CheckBox->new( $statBox, -1, "",    &Wx::wxDefaultPosition, [ 70, 20 ] );
+	my $notOriChb  = Wx::CheckBox->new( $statBox, -1, "Readme.txt",    &Wx::wxDefaultPosition, [ 70, 20 ] );
+	my $profileChb = Wx::CheckBox->new( $statBox, -1, "Add outer prof.",    &Wx::wxDefaultPosition, [ 70, 20 ] );
+	my $singleProfileChb = Wx::CheckBox->new( $statBox, -1, "Add inner prof.",  &Wx::wxDefaultPosition, [ 70, 20 ] );
+	my $addFiducialChb = Wx::CheckBox->new( $statBox, -1, "Add fiducials",  &Wx::wxDefaultPosition, [ 70, 20 ] );
+	my $zipFileChb = Wx::CheckBox->new( $statBox, -1, "Zip files",    &Wx::wxDefaultPosition, [ 70, 20 ] );
 
 	# SET EVENTS
 
 	Wx::Event::EVT_CHECKBOX( $exportPasteChb, -1, sub { $self->__OnExportPasteChange(@_) } );
+	Wx::Event::EVT_COMBOBOX( $stepCb, -1, sub { $self->__OnStepChange(@_) } );
+	
 
 	# BUILD STRUCTURE OF LAYOUT
 
-	$szRowDetail1->Add( $stepTxt, 0, &Wx::wxALL, 0 );
-	$szRowDetail1->Add( $stepCb,  0, &Wx::wxALL, 0 );
+	$szRowDetail1->Add( $stepTxt, 50, &Wx::wxALL, 0 );
+	$szRowDetail1->Add( $stepCb,  50, &Wx::wxALL, 0 );
+	
+ 
 
-	$szRowDetail2->Add( $notOriTxt, 0, &Wx::wxALL, 0 );
-	$szRowDetail2->Add( $notOriChb, 0, &Wx::wxALL, 0 );
+	$szRowDetail2->Add( $profileChb, 50, &Wx::wxALL, 0 );
+	$szRowDetail2->Add( $notOriChb, 50, &Wx::wxALL, 0 );
 
-	$szRowDetail3->Add( $profileTxt, 0, &Wx::wxALL, 0 );
-	$szRowDetail3->Add( $profileChb, 0, &Wx::wxALL, 0 );
+	$szRowDetail3->Add( $singleProfileChb,50, &Wx::wxALL, 0 );
+	$szRowDetail3->Add( $zipFileChb, 50, &Wx::wxALL, 0 );
 
-	$szRowDetail4->Add( $zipFileTxt, 0, &Wx::wxALL, 0 );
-	$szRowDetail4->Add( $zipFileChb, 0, &Wx::wxALL, 0 );
+	$szRowDetail4->Add( $addFiducialChb, 50, &Wx::wxALL, 0 );
+	$szRowDetail4->Add(5, 5, 50, &Wx::wxALL, 0 );
 
 	$szRowMain1->Add( $exportPasteChb, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
 
@@ -217,6 +221,8 @@ sub __SetLayoutPaste {
 	$self->{"stepCb"}     = $stepCb;
 	$self->{"notOriChb"}  = $notOriChb;
 	$self->{"profileChb"} = $profileChb;
+	$self->{"singleProfileChb"} = $singleProfileChb;
+	$self->{"addFiducialChb"} = $addFiducialChb;
 	$self->{"zipFileChb"} = $zipFileChb;
 
 	return $szStatBox;
@@ -231,6 +237,8 @@ sub __OnExportPasteChange {
 		$self->{"notOriChb"}->Enable();
 		$self->{"profileChb"}->Enable();
 		$self->{"zipFileChb"}->Enable();
+		$self->{"singleProfileChb"}->Enable();
+		$self->{"addFiducialChb"}->Enable();
 	}
 	else {
 
@@ -238,9 +246,36 @@ sub __OnExportPasteChange {
 		$self->{"notOriChb"}->Disable();
 		$self->{"profileChb"}->Disable();
 		$self->{"zipFileChb"}->Disable();
+		$self->{"singleProfileChb"}->Disable();
+		$self->{"addFiducialChb"}->Disable();
+ 	
 	}
 
 }
+
+
+# When change steps
+sub __OnStepChange {
+	my $self = shift;
+
+	my $inCAM = $self->{"inCAM"};
+	my $jobId = $self->{"jobId"};
+
+	my $stepName = $self->{"stepCb"}->GetValue();
+	my $srExist = CamStepRepeat->ExistStepAndRepeats( $inCAM, $jobId, $stepName );
+
+	unless ($srExist) {
+ 		$self->{"singleProfileChb"}->Disable();
+ 		$self->{"singleProfileChb"}->SetValue(0);
+ 		$self->{"addFiducialChb"}->Disable();
+ 		$self->{"addFiducialChb"}->SetValue(0);
+	}else{
+		$self->{"singleProfileChb"}->Enable();
+		$self->{"addFiducialChb"}->Enable();
+	}
+ 
+}
+
 
 sub PlotRowSettChanged {
 	my $self    = shift;
@@ -299,8 +334,10 @@ sub SetPasteInfo {
 	$self->{"stepCb"}->SetValue( $info->{"step"} );
 	$self->{"notOriChb"}->SetValue( $info->{"notOriginal"} );
 	$self->{"profileChb"}->SetValue( $info->{"addProfile"} );
+	$self->{"singleProfileChb"}->SetValue( $info->{"addSingleProfile"} );
+	$self->{"addFiducialChb"}->SetValue( $info->{"addFiducial"} );
 	$self->{"zipFileChb"}->SetValue( $info->{"zipFile"} );
-
+ 
 	$self->__OnExportPasteChange();
 
 }
@@ -330,6 +367,20 @@ sub GetPasteInfo {
 	else {
 		$info{"addProfile"} = 0;
 	}
+	
+	if ( $self->{"singleProfileChb"}->IsChecked() ) {
+		$info{"addSingleProfile"} = 1;
+	}
+	else {
+		$info{"addSingleProfile"} = 0;
+	}
+	
+	if ( $self->{"addFiducialChb"}->IsChecked() ) {
+		$info{"addFiducial"} = 1;
+	}
+	else {
+		$info{"addFiducial"} = 0;
+	}	
 
 	if ( $self->{"zipFileChb"}->IsChecked() ) {
 		$info{"zipFile"} = 1;
@@ -337,6 +388,7 @@ sub GetPasteInfo {
 	else {
 		$info{"zipFile"} = 0;
 	}
+ 
 
 	$info{"step"} = $self->{"stepCb"}->GetValue();
 

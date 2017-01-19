@@ -25,6 +25,34 @@ use aliased 'Connectors::LogConnector::Enums';
 #  Package methods
 #-------------------------------------------------------------------------------------------#
 
+sub GetCustomerInfo {
+	my $self  = shift;
+	my $customerId = shift;
+	my $childPcbId = shift;
+	
+	my @params = (SqlParameter->new( "_CustomerId", Enums->SqlDbType_VARCHAR, $customerId ));
+	
+	my $cmd    = "SELECT * 
+    				FROM customer_note as t1
+    				WHERE t1.CustomerId = _CustomerId
+    				LIMIT 1";
+		
+
+	my @result = Helper->ExecuteDataSet( $cmd, \@params );
+	
+	if(scalar(@result)){
+		
+		return $result[0];
+		
+	}else{
+		return 0;
+	}
+
+	return @result;
+}
+
+
+
 sub GetLatestActionsByPcbId {
 	my $self  = shift;
 	my $pcbId = shift;
@@ -328,38 +356,18 @@ sub GetErrorLogs {
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#
  
-if (0) {
+ 
+my ( $package, $filename, $line ) = caller;
+if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	use Connectors::LogConnector::LogMethods;
-	my $test = Connectors::LogConnector::Methods->GetAllLogs();
-
-	 #Methods->InsertActionLog("f00555", "mku", "dorout");
-	 
-	 print $test; 
+	use aliased 'Connectors::LogConnector::LogMethods';
+	
+	my $info = LogMethods->GetCustomerInfo("01982");
+	
+	print 1;
+	
 }
-
-if (0) {
-
-	#use Connectors::LogConnector::LogMethods;
-	# my $test = Methods->GetAllLogs();
-
-	 #Connectors::LogConnector::Methods->InsertActionLog("f00555", "mku", "dorout");
-	 
-	 #Connectors::LogConnector::Methods->InsertMessageLog("f00555", "mku", "checksomethning", "Did", "Information");
-	 
-	 
-	# my @messType = ("Did", "Test");
-	# my $pom = Connectors::LogConnector::Methods->GetActionAndMessages("f00555", undef, 0, 1, \@messType);
-	 
-#	my $pcbId = shift;
-#	my $userName = shift;
-#	my $typeAction = shift; #bool
-#	my $typeMessage = shift; #bool
-#	my $typeMessageTemp = shift; #array of types
-#	my @typeMessage = ();
-	 
-	 print "finish"; 
-}
+ 
 
 1;
  

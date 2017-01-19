@@ -90,6 +90,7 @@ sub __SetLayoutControl {
 	my $szRowDetail1 = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
 	my $szRowDetail2 = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
 	my $szRowDetail3 = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
+	my $szRowDetail4 = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
 
 	#my $szRowDetail4 = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
 
@@ -97,7 +98,8 @@ sub __SetLayoutControl {
 	my $exportControlChb = Wx::CheckBox->new( $statBox, -1, "Export", &Wx::wxDefaultPosition );
 
 	my $stepTxt = Wx::StaticText->new( $statBox, -1, "Step", &Wx::wxDefaultPosition, [ 120, 22 ] );
-	my $langTxt = Wx::StaticText->new( $statBox, -1, "Lang", &Wx::wxDefaultPosition, [ 120, 22 ] );
+	my $langTxt = Wx::StaticText->new( $statBox, -1, "Language", &Wx::wxDefaultPosition, [ 120, 22 ] );
+	my $operatorTxt = Wx::StaticText->new( $statBox, -1, "Operator info", &Wx::wxDefaultPosition, [ 120, 22 ] );
 
 	my @steps = CamStep->GetAllStepNames( $self->{"inCAM"}, $self->{"jobId"} );
 	my $last = $steps[ scalar(@steps) - 1 ];
@@ -107,6 +109,8 @@ sub __SetLayoutControl {
 	my @lang   = ( "English", "Czech" );
 	my $last2  = $lang[ scalar(@lang) - 1 ];
 	my $langCb = Wx::ComboBox->new( $statBox, -1, $last2, &Wx::wxDefaultPosition, [ 70, 22 ], \@lang, &Wx::wxCB_READONLY );
+	
+	my $operatorChb = Wx::CheckBox->new( $statBox, -1, "", &Wx::wxDefaultPosition );
 
 	# SET EVENTS
 
@@ -116,21 +120,26 @@ sub __SetLayoutControl {
 
 	$szRowDetail1->Add( $exportControlChb, 0, &Wx::wxALL, 0 );
 
-	$szRowDetail2->Add( $stepTxt, 0, &Wx::wxALL, 0 );
-	$szRowDetail2->Add( $stepCb,  0, &Wx::wxALL, 0 );
+	$szRowDetail2->Add( $stepTxt, 0, &Wx::wxALL, 1 );
+	$szRowDetail2->Add( $stepCb,  0, &Wx::wxALL, 1 );
 
-	$szRowDetail3->Add( $langTxt, 0, &Wx::wxALL, 0 );
-	$szRowDetail3->Add( $langCb,  0, &Wx::wxALL, 0 );
+	$szRowDetail3->Add( $langTxt, 0, &Wx::wxALL, 1 );
+	$szRowDetail3->Add( $langCb,  0, &Wx::wxALL, 1 );
+	
+	$szRowDetail4->Add( $operatorTxt, 0, &Wx::wxALL, 1 );
+	$szRowDetail4->Add( $operatorChb,  0, &Wx::wxALL, 1 );
 
 	$szStatBox->Add( $szRowDetail1, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 	$szStatBox->Add( 8,             8, 0,                          &Wx::wxEXPAND );
 	$szStatBox->Add( $szRowDetail2, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 	$szStatBox->Add( $szRowDetail3, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szStatBox->Add( $szRowDetail4, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 
 	# Set References
 	$self->{"exportControlChb"} = $exportControlChb;
 	$self->{"stepCb"}           = $stepCb;
 	$self->{"langCb"}           = $langCb;
+	$self->{"operatorChb"}           = $operatorChb;
 
 	return $szStatBox;
 }
@@ -240,6 +249,29 @@ sub GetControlLang {
 
 	return $self->{"langCb"}->GetValue();
 }
+
+# Info about tpv technik to pdf
+
+sub GetInfoToPdf {
+	my $self  = shift;
+	
+	if ( $self->{"operatorChb"}->IsChecked() ) {
+
+		return 1;
+	}
+	else {
+		return 0;
+	}
+}
+
+sub SetInfoToPdf {
+	my $self  = shift;
+	my $value = shift;
+	$self->{"operatorChb"}->SetValue($value);
+}
+
+ 
+
 
 sub SetExportStackup {
 	my $self = shift;

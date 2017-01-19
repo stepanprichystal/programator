@@ -37,14 +37,22 @@ sub OnCheckGroupData {
 	my $jobId = $dataMngr->{"jobId"};
 
 	my $defaultInfo = $dataMngr->GetDefaultInfo();
+	my $customerNote = $defaultInfo->GetCustomerNote();
 
-	# Warning, when pcb is not pool and pdf control is not checked
+	# 1) Warning, when pcb is not pool and pdf control is not checked
 	if ( !$defaultInfo->IsPool() && !$groupData->GetExportControl() ) {
 
 		$dataMngr->_AddWarningResult( "Export pdf control", "Dps není v poolu, kontrolní pdf by mìlo být vyexportováno" );
 
 	}
+	
+	
+	# 2) Check if customer dont ewant operator info, if it is disables
+	if ($customerNote->NoInfoToPdf() && $groupData->GetInfoToPdf() ) {
 
+		$dataMngr->_AddErrorResult( "Operator info in pdf", "Zákazník si nepøeje dávat info o operátorovi TPV do kontrolního PDF. Zruš volbu 'Operator info'" );
+	}
+ 
 }
 
 #-------------------------------------------------------------------------------------------#
