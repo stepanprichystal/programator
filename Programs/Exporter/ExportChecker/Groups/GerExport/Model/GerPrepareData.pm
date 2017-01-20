@@ -8,6 +8,7 @@
 package Programs::Exporter::ExportChecker::Groups::GerExport::Model::GerPrepareData;
 
 #3th party library
+use utf8;
 use strict;
 use warnings;
 

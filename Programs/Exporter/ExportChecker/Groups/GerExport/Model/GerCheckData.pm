@@ -7,6 +7,7 @@
 package Programs::Exporter::ExportChecker::Groups::GerExport::Model::GerCheckData;
 
 #3th party library
+use utf8;
 use strict;
 use warnings;
 use File::Copy;
@@ -15,6 +16,7 @@ use File::Copy;
 use aliased 'CamHelpers::CamLayer';
 use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'CamHelpers::CamHelper';
+use aliased 'CamHelpers::CamHistogram';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -35,19 +37,95 @@ sub OnCheckGroupData {
 	my $inCAM = $dataMngr->{"inCAM"};
 	my $jobId = $dataMngr->{"jobId"};
 
-	my $groupData   = $dataMngr->GetGroupData();
-	my $defaultInfo = $dataMngr->GetDefaultInfo();
-
-	# 1) Check when export is checked, if paste layers exist
+	my $groupData    = $dataMngr->GetGroupData();
+	my $defaultInfo  = $dataMngr->GetDefaultInfo();
+	my $customerNote = $defaultInfo->GetCustomerNote();
 
 	my $pasteInfo = $groupData->GetPasteInfo();
 
-	if ( $pasteInfo->{"export"} && !$self->__PasteLayersExist($defaultInfo) ) {
+	# 1) check if customer request paste files
 
-		$dataMngr->_AddErrorResult( "Paste data", "Nelze exportovat data na pastu. Vrstvy sa-ori, sb-ori ani sa-made, sb-made neexistuj�.\n" );
+	if ( defined $customerNote->ExportPaste() ) {
+
+		if ( $pasteInfo->{"export"} != $customerNote->ExportPaste() ) {
+
+			$dataMngr->_AddErrorResult(
+										"Export paste",
+										"Zákazník si "
+										  . ( $customerNote->ExportPaste() ? "přeje" : "nepřeje" )
+										  . " exportovat paste files. Zaškrtni volbu 'Export'.\n"
+			);
+		}
 	}
 
-	# 2) When wound old format of paste file - with underscore, warning
+	# 2) Check when export is checked,
+
+	if ( $pasteInfo->{"export"} ) {
+
+		#if paste layers exist
+		if ( !$self->__PasteLayersExist($defaultInfo) ) {
+			$dataMngr->_AddErrorResult( "Paste data", "Nelze exportovat data na pastu. Vrstvy sa-ori, sb-ori ani sa-made, sb-made neexistují.\n" );
+		}
+
+		# check customer request to profile
+		if ( defined $customerNote->ProfileToPaste() ) {
+
+			if ( $pasteInfo->{"addProfile"} != $customerNote->ProfileToPaste() ) {
+				$dataMngr->_AddErrorResult(
+											"Profile to paste",
+											"Zákazník si "
+											  . ( $customerNote->ProfileToPaste() ? "přeje" : "nepřeje" )
+											  . " vkládat profil do šablon pasty. Oprav volbu 'Add profile'.\n"
+				);
+			}
+		}
+
+		# check customer request to single profile
+		if ( defined $customerNote->SingleProfileToPaste() ) {
+
+			if ( $pasteInfo->{"addSingleProfile"} != $customerNote->SingleProfileToPaste() ) {
+				$dataMngr->_AddErrorResult(
+											"Single profile to paste",
+											"Zákazník si "
+											  . ( $customerNote->SingleProfileToPaste() ? "přeje" : "nepřeje" )
+											  . " vkládat profil vnitřních stepů do šablon pasty. Oprav volbu 'Add single profile'.\n"
+				);
+			}
+		}
+
+		# check customer request add fiduc
+		if ( defined $customerNote->FiducialToPaste() ) {
+
+			if ( $pasteInfo->{"addFiducial"} != $customerNote->FiducialToPaste() ) {
+				$dataMngr->_AddErrorResult(
+											"Fiducials to paste",
+											"Zákazník si "
+											  . ( $customerNote->FiducialToPaste() ? "přeje" : "nepřeje" )
+											  . " vkládat fiduciální značky do šablon pasty. Oprav volbu 'Add fiducials'.\n"
+				);
+			}
+		}
+
+		# If there is option add fiducials, check if there are fiduc in step
+		if ( $pasteInfo->{"addFiducial"} ) {
+
+			if ( $defaultInfo->LayerExist("c") ) {
+				my %attHist = CamHistogram->GetAttHistogram( $inCAM, $jobId, $pasteInfo->{"step"}, "c", 0 );
+
+				unless ( $attHist{".fiducial_name"} ) {
+					$dataMngr->_AddErrorResult(
+												"Fiducials to paste",
+												"Fiduciální značky chybí ve vrstvě 'c' ve stepu '"
+												  . $pasteInfo->{"step"}
+												  . "'. Pokud je chceš přidat do šablony, vlož fiduciální značky do vrstvy 'c'. Značky musí mít atribut .fiducial_name.\n"
+					);
+				}
+			}
+		}
+
+	}
+
+	# 4) When wound old format of paste file - with underscore, warning
 	my $sa_ori  = $defaultInfo->LayerExist("sa_ori");
 	my $sb_ori  = $defaultInfo->LayerExist("sb_ori");
 	my $sa_made = $defaultInfo->LayerExist("sa_made");
@@ -64,7 +142,7 @@ sub OnCheckGroupData {
 		my $str = join( ", ", @layers );
 
 		$dataMngr->_AddWarningResult( "Paste data",
-			   "Byl nalezen star� form�t n�zvu pasty s podtr��tkem ($str). Pokud chce� pastu vyexportovat pou�ij nov� n�zev s poml�kou.\n" );
+			  "Byl nalezen starý formát názvu pasty s podtržítkem ($str). Pokud chceš pastu vyexportovat použij nový název s pomlčkou.\n" );
 	}
 
 }
@@ -74,10 +152,10 @@ sub __PasteLayersExist {
 	my $defaultInfo = shift;
 
 	#my @layers = CamJob->GetSignalLayerNames( $inCAM, $jobId );
-	my $sa_ori  =  $defaultInfo->LayerExist("sa-ori");
-	my $sb_ori  =  $defaultInfo->LayerExist("sb-ori");
-	my $sa_made =  $defaultInfo->LayerExist("sa-made");
-	my $sb_made =  $defaultInfo->LayerExist("sb-made");
+	my $sa_ori  = $defaultInfo->LayerExist("sa-ori");
+	my $sb_ori  = $defaultInfo->LayerExist("sb-ori");
+	my $sa_made = $defaultInfo->LayerExist("sa-made");
+	my $sb_made = $defaultInfo->LayerExist("sb-made");
 
 	if ( !$sa_ori && !$sb_ori && !$sa_made && !$sb_made ) {
 

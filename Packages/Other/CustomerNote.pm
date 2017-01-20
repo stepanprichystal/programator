@@ -2,6 +2,8 @@
 #-------------------------------------------------------------------------------------------#
 # Description: Class mapp values from db for customer. Some customers has extra request like
 # add profile to paste files, no add info about customer, etc..
+# Important: If some customer attribut value is null or not set, it means, customer has no special request
+# for this option! So null or "" doesnt mean "no", but not defined 
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Packages::Other::CustomerNote;
@@ -57,19 +59,16 @@ sub NoInfoToPdf {
 	}
 }
 
-sub PasteRequested {
+sub ExportPaste {
 	my $self = shift;
 
 	# default value if note doesnt exist
-	if(!$self->Exist() || !defined $self->{"notes"}->{"PasteRequested"}){
-		return 0;
+	if(!$self->Exist() ){
+		return undef;
 	}
 	
-	if($self->{"notes"}->{"PasteRequested"}){
-		return 1;
-	}else{
-		return 0;
-	}
+	return $self->{"notes"}->{"ExportPaste"};
+
 }
  
 sub ProfileToPaste {
@@ -103,7 +102,7 @@ sub FiducialToPaste {
 		return undef;
 	}
 	
-	return $self->{"notes"}->{"FiducialToPaste"};
+	return $self->{"notes"}->{"FiducialsToPaste"};
 }
 
 #-------------------------------------------------------------------------------------------#

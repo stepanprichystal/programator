@@ -19,6 +19,10 @@ use aliased 'Enums::EnumsPaths';
 use aliased 'Helpers::JobHelper';
 use aliased 'CamHelpers::CamHelper';
 use aliased 'CamHelpers::CamStepRepeat';
+use aliased 'CamHelpers::CamLayer';
+use aliased 'CamHelpers::CamHistogram';
+use aliased 'CamHelpers::CamFilter';
+
 use aliased 'Helpers::FileHelper';
 use aliased 'Packages::Gerbers::Export::ExportLayers' => 'Helper';
 
@@ -114,32 +118,109 @@ sub __Export {
 	my $self        = shift;
 	my $archivePath = shift;
 
-	my $step       = $self->{"pasteInfo"}->{"step"};
-	my $addProfile = $self->{"pasteInfo"}->{"addProfile"};
-	my @layers     = $self->__GetPasteLayers();
-	
-	if(scalar(@layers) == 0){
+	my $step             = $self->{"pasteInfo"}->{"step"};
+	my $addProfile       = $self->{"pasteInfo"}->{"addProfile"};
+	my $addSingleProfile = $self->{"pasteInfo"}->{"addSingleProfile"};
+	my $addFiducial      = $self->{"pasteInfo"}->{"addFiducial"};
+	my @layers           = $self->__GetPasteLayers();
+
+	if ( scalar(@layers) == 0 ) {
 		die "No paste layers for export.\n";
 	}
 
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
-
+	
 	CamHelper->SetStep( $inCAM, $step );
 
-	if ( $step eq "mpanel" ) {
 
-		if ($addProfile) {
+	# 1) add profile from  to step
+	if ($addProfile) {
 
-			#CamLayer->AffectLayers( $inCAM, @layers );
-			#$inCAM->COM('sel_delete');
+		#CamLayer->AffectLayers( $inCAM, @layers );
+		#$inCAM->COM('sel_delete');
 
-			foreach my $l (@layers) {
+		foreach my $l (@layers) {
 
-				$inCAM->COM( "profile_to_rout", "layer" => $l, "width" => "200" );
-			}
+			$inCAM->COM( "profile_to_rout", "layer" => $l, "width" => "200" );
 		}
 	}
+
+	# 2) add profile from nested steps
+	if ($addSingleProfile) {
+
+		my @uniqueSR = CamStepRepeat->GetUniqueStepAndRepeat( $inCAM, $jobId, $step );
+
+		if ( scalar(@uniqueSR) > 0 ) {
+
+			my $lTmp = GeneralHelper->GetGUID();
+
+			foreach my $sr (@uniqueSR) {
+
+				CamHelper->SetStep( $inCAM, $sr->{"stepName"} );
+				$inCAM->COM( "profile_to_rout", "layer" => $lTmp, "width" => "200" );
+			}
+
+			CamHelper->SetStep( $inCAM, $step );
+			CamLayer->FlatternLayer( $inCAM, $jobId, $step, $lTmp );
+
+			# copy nested profiles to sa, sb layers..
+			foreach my $l (@layers) {
+
+				$inCAM->COM( "merge_layers", "source_layer" => $lTmp, "dest_layer" => $l );
+
+			}
+			CamLayer->ClearLayers($inCAM);
+			$inCAM->COM( "delete_layer", "layer" => $lTmp );
+
+		}
+		else {
+
+			die "No nested steps in step: " . $step . ". Can't add nested step profiles";
+		}
+
+	}
+
+	# 3) Add fiducials
+
+	if ($addFiducial) {
+
+		my %attHist = CamHistogram->GetAttHistogram( $inCAM, $jobId, $step, "c", 0 );
+		if ( $attHist{".fiducial_name"} ) {
+
+			CamHelper->SetStep( $inCAM, $step );
+
+			# delete old fiducials
+			foreach my $l (@layers) {
+
+				CamLayer->WorkLayer( $inCAM, $l );
+				if(CamFilter->SelectBySingleAtt( $inCAM, ".fiducial_name", "*" )){
+					$inCAM->COM("sel_delete");
+				};
+				
+			}
+
+			# put diduc to paste
+			CamLayer->WorkLayer( $inCAM, "c" );
+			if ( CamFilter->SelectBySingleAtt( $inCAM, ".fiducial_name", "*" ) ) {
+
+				my $strL = join( "\\;", @layers );
+
+				$inCAM->COM(
+							 "sel_copy_other",
+							 "dest"         => "layer_name",
+							 "target_layer" => $strL,
+							 "invert"       => "no"
+				);
+			}
+		}
+		else {
+			die "No fiducial marks in step: " . $step . ". Can't add fiducials to paste files";
+		}
+	}
+
+	# unselect all layers
+	CamLayer->ClearLayers($inCAM);
 
 	# export layers
 
@@ -207,9 +288,26 @@ sub __GetPasteLayers {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	#use aliased 'Packages::Export::NCExport::NCExportGroup';
+	use aliased 'Packages::Export::GerExport::ExportPasteMngr';
+	use aliased 'Packages::InCAM::InCAM';
 
-	#print $test;
+	my $inCAM = InCAM->new();
+	my $jobId = "f52456";
+
+	my %pasteInfo = ();
+
+	$pasteInfo{"notOriginal"} = 0;
+	$pasteInfo{"step"} = "mpanel";
+	$pasteInfo{"export"} = 1;
+	$pasteInfo{"addProfile"} = 1;
+	$pasteInfo{"addSingleProfile"} = 1;
+	$pasteInfo{"addFiducial"} = 1;
+	$pasteInfo{"zipFile"} = 1;
+
+	my $export = ExportPasteMngr->new($inCAM, $jobId, \%pasteInfo);
+	$export->Run();
+
+	  #print $test;
 
 }
 

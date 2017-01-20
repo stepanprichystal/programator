@@ -46,7 +46,7 @@ sub GetJobLayerTitle {
 		$en{"ps"} = "Silk screen bot";
 		$en{"mc"} = "Solder mask top";
 		$en{"ms"} = "Solder mask bot";
-		$en{"c"}  = "Component layer";
+		$en{"c"}  = "Component layer (top)";
 		$en{"s"}  = "Solder layer (bot)";
 
 		my %czl = ();
@@ -54,8 +54,8 @@ sub GetJobLayerTitle {
 		$czl{"ps"} = "Potisk bot";
 		$czl{"mc"} = "Nepájivá maska top";
 		$czl{"ms"} = "Nepájivá maska bot";
-		$czl{"c"}  = "Strana spojů (top)";
-		$czl{"s"}  = "Strana součástek (bot)";
+		$czl{"c"}  = "Strana součástek (top)";
+		$czl{"s"}  = "Strana spojů (bot)";
 
 		$title = $en{ $l->{"gROWname"} };
 		if ($cz) {

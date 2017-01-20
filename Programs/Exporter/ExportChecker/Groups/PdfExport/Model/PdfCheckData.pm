@@ -6,6 +6,7 @@
 package Programs::Exporter::ExportChecker::Groups::PdfExport::Model::PdfCheckData;
 
 #3th party library
+use utf8;
 use strict;
 use warnings;
 use File::Copy;
@@ -42,7 +43,7 @@ sub OnCheckGroupData {
 	# 1) Warning, when pcb is not pool and pdf control is not checked
 	if ( !$defaultInfo->IsPool() && !$groupData->GetExportControl() ) {
 
-		$dataMngr->_AddWarningResult( "Export pdf control", "Dps nenÌ v poolu, kontrolnÌ pdf by mÏlo b˝t vyexportov·no" );
+		$dataMngr->_AddWarningResult( "Export pdf control", "Dps nen√≠ v poolu, kontroln√≠ pdf by mƒõlo b√Ωt vyexportov√°no." );
 
 	}
 	
@@ -50,7 +51,7 @@ sub OnCheckGroupData {
 	# 2) Check if customer dont ewant operator info, if it is disables
 	if ($customerNote->NoInfoToPdf() && $groupData->GetInfoToPdf() ) {
 
-		$dataMngr->_AddErrorResult( "Operator info in pdf", "Z·kaznÌk si nep¯eje d·vat info o oper·torovi TPV do kontrolnÌho PDF. Zruö volbu 'Operator info'" );
+		$dataMngr->_AddErrorResult( "Operator info in pdf", "Z√°kazn√≠k si nep≈ôeje vkl√°dat info o oper√°torovi TPV do pdf. Zru≈° volbu 'Operator info'" );
 	}
  
 }

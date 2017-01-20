@@ -1,39 +1,31 @@
-#!/usr/bin/perl
-
-use PDF::API2;
-
-my $infile  = "c:\\Export\\report\\test.pdf";
  
- 
-my $pdf_in  = PDF::API2->open($infile);
+
+# Vztvoreni textury. skopiruje alpha channel z out.png a aplikujee na gold.jpeg
+
+C:\Export\report>convert gold.jpeg ( out.png -channel a -separate +channel ) -al
+pha off -compose copy_opacity -composite  out2.png
 
 
-foreach my $pagenum ( 1 .. $pdf_in->pages ) {
-	
-	my $pdf_out = PDF::API2->new;
 
-	my $page_in = $pdf_in->openpage($pagenum);
 
-	#
-	# create a new page
-	#
-	my $page_out = $pdf_out->page(0);
 
-	my @mbox = $page_in->get_mediabox;
-	$page_out->mediabox(@mbox);
+# vztvoreni  vrstvz s normlani barvou
 
-	my $xo = $pdf_out->importPageIntoForm( $pdf_in, $pagenum );
-	
-		my $gfx = $page_out->gfx;
+C:\Export\report>convert ( -size 3000x3000 canvas:green ) ( out.png -channel a -
+separate +channel ) -alpha off -compose copy_opacity -composite  out2.png
 
-	$gfx->formimage(
-		$xo,
-		0, 0,    # x y
-		1
-	);           # scale
-	
-	$pdf_out->saveas("c:\\Export\\report\\page".$pagenum.".pdf");
- 
-}
 
- 
+# 1) 
+C:\Export\report>convert mc.png +clone  -compose Copy_Opacity -composite -alpha
+copy -channel A -negate out.png
+
+# 2) asi rychlejsi
+
+C:\Export\report>convert mc.png -background black -alpha copy -type truecolormatte -alpha copy -channel A -negate out.png
+
+
+#Nastaveni pruhlednosti
+
+C:\Export\report>convert out2.png -fuzz 20% -matte -fill "rgba(0,255,0, 0.1)" -o
+paque "rgba(0 ,255,0,1)" out3.png
+

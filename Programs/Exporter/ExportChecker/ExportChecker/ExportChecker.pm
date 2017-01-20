@@ -321,6 +321,13 @@ sub __OnGroupChangeState {
 sub __OnClosePopupHandler {
 	my $self = shift;
 
+	# After close popup window is necessery Re-connect to income server
+	# Because checking was processed in child thread and was connected
+	# to this income server
+
+	$self->__Connect();
+
+
 	$self->{"disableForm"} = 0;
 	$self->__RefreshForm();
 

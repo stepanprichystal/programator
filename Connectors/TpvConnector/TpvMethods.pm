@@ -32,9 +32,18 @@ sub GetCustomerInfo {
 	
 	my @params = (SqlParameter->new( "_CustomerId", Enums->SqlDbType_VARCHAR, $customerId ));
 	
-	my $cmd    = "SELECT * 
-    				FROM customer_note as t1
-    				WHERE t1.CustomerId = _CustomerId
+	# if some value is empty, we want return null, we say by this, customer has no request for this attribut
+	
+	my $cmd    = "SELECT 
+
+					IF(ExportPaste = '', null , ExportPaste) as ExportPaste,
+					IF(ProfileToPaste = '', null , ProfileToPaste) as ProfileToPaste,
+					IF(SingleProfileToPaste = '', null , SingleProfileToPaste) as SingleProfileToPaste,
+					IF(FiducialsToPaste = '', null , FiducialsToPaste) as FiducialsToPaste,
+					IF(NoTpvInfoPdf = '', null , NoTpvInfoPdf) as NoTpvInfoPdf
+					
+    				FROM customer_note 
+    				WHERE CustomerId = _CustomerId
     				LIMIT 1";
 		
 
