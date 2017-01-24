@@ -122,15 +122,15 @@ sub __OutputPdf {
 	foreach my $l (@layers) {
 		if ( -e $dirPath . $l->GetOutputLayer() . ".png" ) {
 
-			#unlink( $dirPath . $l->GetOutputLayer() . ".png" );
+			unlink( $dirPath . $l->GetOutputLayer() . ".png" );
 		}
 		if ( -e $dirPath . $l->GetOutputLayer() . ".pdf" ) {
 
-			#unlink( $dirPath . $l->GetOutputLayer() . ".pdf" );
+			unlink( $dirPath . $l->GetOutputLayer() . ".pdf" );
 		}
 	}
 
-	#rmdir($dirPath);
+	rmdir($dirPath);
 
 }
 
@@ -307,7 +307,8 @@ sub __CreatePng {
 		my @cmds4 = ();
 
 		# run 'convert' console application
-		push( @cmds4, EnumsPaths->InCAM_3rdScripts . "im2\\convert.exe" );
+		push( @cmds4, EnumsPaths->InCAM_3rdScripts . "im\\convert.exe" );
+		#push( @cmds4, "convert" );
 
 		push( @cmds4, " ( " );
 		push( @cmds4, $cmds3Str );
@@ -424,7 +425,7 @@ sub __MergePng {
 
 	}
 
-	my @cmd2 = ( EnumsPaths->InCAM_3rdScripts . "im2\\convert.exe" );
+	my @cmd2 = ( EnumsPaths->InCAM_3rdScripts . "im\\convert.exe" );
 	push( @cmd2, $outputTmp );
 	
 	if ($rotate) {

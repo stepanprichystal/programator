@@ -1,7 +1,6 @@
 
 #-------------------------------------------------------------------------------------------#
-# This sctructure contain information: type of layer: mask, silk, copeer etc...
-# Amd Which layer merge
+# Description: Information about color or texcture of given layer
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Packages::Pdf::ControlPdf::FinalPreview::LayerData::LayerColor;

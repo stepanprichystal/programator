@@ -1,7 +1,6 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Responsible for output image previev of pcb
-# Prepare each export layer, print as pdf, convert to image => than merge all layers together
+# Description: Responsible for prepare layers before print as pdf
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Packages::Pdf::ControlPdf::FinalPreview::OutputPrepare;
@@ -52,7 +51,7 @@ sub PrepareLayers {
 	my $layerList = shift;
 
 	# get limits of step
-	my %lim = CamJob->GetProfileLimits2( $self->{"inCAM"}, $self->{"jobId"}, $self->{"pdfStep"} );
+	my %lim = CamJob->GetProfileLimits2( $self->{"inCAM"}, $self->{"jobId"}, $self->{"pdfStep"}, 1 );
 	$self->{"profileLim"} = \%lim;
 
 	# prepare layers

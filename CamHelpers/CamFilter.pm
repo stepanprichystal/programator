@@ -95,6 +95,7 @@ sub BySingleSymbol {
 	return $inCAM->GetReply();
 }
 
+# Select surface by area
 sub BySurfaceArea {
 	my $self    = shift;
 	my $inCAM   = shift;
@@ -140,8 +141,8 @@ sub BySurfaceArea {
 
 }
 
-# Select all attributes of step in hash
-# Return count of celected features
+# Select features, based on reference layer
+# Is possible do condition by feature attribute (both - layer and reference layer symbols)
 sub SelectByReferenece {
 	my $self        = shift;
 	my $inCAM       = shift;

@@ -71,7 +71,7 @@ sub __ExportDataControl {
 		$lang = "cz";
 	}
 
-	my $controlPdf = ControlPdf->new( $inCAM, $jobId, $self->{"controlStep"}, $lang );
+	my $controlPdf = ControlPdf->new( $inCAM, $jobId, $self->{"controlStep"}, $lang, $self->{"infoToPdf"} );
 
 	$controlPdf->Create();
 

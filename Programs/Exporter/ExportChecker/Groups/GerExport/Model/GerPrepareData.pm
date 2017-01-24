@@ -164,13 +164,13 @@ sub __GetPasteInfo {
 		$pasteInfo{"export"} = 0;
 	}
 
-	# default is add profile
+	# default is not add profile
 	if(defined $customerNote->ProfileToPaste()){
 		$pasteInfo{"addProfile"} = $customerNote->ProfileToPaste();
 		
 	}else{
 		
-		$pasteInfo{"addProfile"} = 1;
+		$pasteInfo{"addProfile"} = 0;
 	}
 	
 	 # default is don't add single profile

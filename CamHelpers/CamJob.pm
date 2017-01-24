@@ -81,19 +81,32 @@ sub GetSignalLayer {
 #Return limits of profile
 sub GetProfileLimits {
 
-	my $self     = shift;
-	my $inCAM    = shift;
-	my $jobName  = shift;
-	my $stepName = shift;
+	my $self           = shift;
+	my $inCAM          = shift;
+	my $jobName        = shift;
+	my $stepName       = shift;
+	my $considerOrigin = shift;
+ 
 
 	my %limits;
 
-	$inCAM->INFO(
-				  units       => 'mm',
-				  entity_type => 'step',
-				  entity_path => "$jobName/$stepName",
-				  data_type   => 'PROF_LIMITS'
-	);
+	unless ($considerOrigin) {
+		$inCAM->INFO(
+					  units       => 'mm',
+					  entity_type => 'step',
+					  entity_path => "$jobName/$stepName",
+					  data_type   => 'PROF_LIMITS'
+		);
+	}
+	else {
+		$inCAM->INFO(
+					  units       => 'mm',
+					  entity_type => 'step',
+					  entity_path => "$jobName/$stepName",
+					  data_type   => 'PROF_LIMITS',
+					  "options"   => "consider_origin"
+		);
+	}
 
 	$limits{"xmin"} = ( $inCAM->{doinfo}{gPROF_LIMITSxmin} );
 	$limits{"xmax"} = ( $inCAM->{doinfo}{gPROF_LIMITSxmax} );
@@ -111,7 +124,7 @@ sub GetProfileLimits2 {
 
 	my %limits = ();
 
-	$limits{"xMin"} = $lim{"xmin"}; 
+	$limits{"xMin"} = $lim{"xmin"};
 	$limits{"xMax"} = $lim{"xmax"};
 	$limits{"yMin"} = $lim{"ymin"};
 	$limits{"yMax"} = $lim{"ymax"};
