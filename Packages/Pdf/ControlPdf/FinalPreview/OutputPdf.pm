@@ -121,9 +121,11 @@ sub __OutputPdf {
 	# 5) delete temporary png and directory
 	foreach my $l (@layers) {
 		if ( -e $dirPath . $l->GetOutputLayer() . ".png" ) {
+
 			#unlink( $dirPath . $l->GetOutputLayer() . ".png" );
 		}
 		if ( -e $dirPath . $l->GetOutputLayer() . ".pdf" ) {
+
 			#unlink( $dirPath . $l->GetOutputLayer() . ".pdf" );
 		}
 	}
@@ -184,13 +186,13 @@ sub __GetResolution {
 
 	my %lim = CamJob->GetProfileLimits2( $inCAM, $jobId, $self->{"pdfStep"} );
 
-	my $x = abs( $lim{"xMax"} - $lim{"xMin"} ) +8; # value ten is 2x5 mm frame from each side, which is added
-	my $y = abs( $lim{"yMax"} - $lim{"yMin"} ) +8; # value ten is 2x5 mm frame from each side, which is added
+	my $x = abs( $lim{"xMax"} - $lim{"xMin"} ) + 8;    # value ten is 2x5 mm frame from each side, which is added
+	my $y = abs( $lim{"yMax"} - $lim{"yMin"} ) + 8;    # value ten is 2x5 mm frame from each side, which is added
 
-	my $maxPcbSize = 300;           # asume, max pcb are 350 mm long
-	my $pcbSize = max( $x, $y );    # longer side of actual pcb
+	my $maxPcbSize = 300;                              # asume, max pcb are 350 mm long
+	my $pcbSize = max( $x, $y );                       # longer side of actual pcb
 
-	my $maxFloatRes = 2000;         # resolution of 'x', which is depand on image size
+	my $maxFloatRes = 2000;                            # resolution of 'x', which is depand on image size
 
 	my $pcbFloatRes = $pcbSize / $maxPcbSize * $maxFloatRes;
 
@@ -198,32 +200,31 @@ sub __GetResolution {
 	my $maxResX = 3000;
 	my $maxResY = 4245;
 
-
 	# if pcb x dimension exceed max x dimension
 	#if ( $pcbResolution > $maxFloatRes ) {
-		#$pcbResolution = $maxFloatRes;
+	#$pcbResolution = $maxFloatRes;
 	#}
 
 	# final pcb resolution, compute resolution Y side
 
-	my $pcbResY = int( (  $maxResY - $maxFloatRes) + $pcbFloatRes );
-	
-	if($pcbResY > $maxResY){
+	my $pcbResY = int( ( $maxResY - $maxFloatRes ) + $pcbFloatRes );
+
+	if ( $pcbResY > $maxResY ) {
 		$pcbResY = $maxResY;
 	}
-	
-	my $pcbResX = int( ($pcbResY / max($x, $y)) *  min($x, $y) ); # compute y size based on pcb ratio
-	
+
+	my $pcbResX = int( ( $pcbResY / max( $x, $y ) ) * min( $x, $y ) );    # compute y size based on pcb ratio
+
 	# if y resolution is begger than max, recompute y resolution
-	
-	if( $pcbResX > $maxResX){
-		
+
+	if ( $pcbResX > $maxResX ) {
+
 		$pcbResX = $maxResX;
-		$pcbResY = int( ($pcbResX / min($x, $y) ) *  max($x, $y) ); # compute y size based on pcb ratio
+		$pcbResY = int( ( $pcbResX / min( $x, $y ) ) * max( $x, $y ) );   # compute y size based on pcb ratio
 	}
- 
+
 	# test if pcb resolution in y exceed max y dimension
- 
+
 	my %res = ( "x" => $pcbResX, "y" => $pcbResY );
 
 	return %res;
@@ -253,13 +254,12 @@ sub __CreatePng {
 		# and copy alpha channel, which is created from white background
 		my @cmds1 = ();
 
-
 		# command convert pdf to png with specific resolution
 		push( @cmds1, " ( " );
-		
+
 		push( @cmds1, " -density 300" );
 		push( @cmds1, $dirPath . $l->GetOutputLayer() . ".pdf -flatten" );
-		push( @cmds1, "-shave 20x20 -trim -shave 5x5" );          # shave two borders around image
+		push( @cmds1, "-shave 20x20 -trim -shave 5x5" );                     # shave two borders around image
 		push( @cmds1, "-resize " . $resolution->{"x"} );
 
 		push( @cmds1, " ) " );
@@ -267,7 +267,7 @@ sub __CreatePng {
 		# command from white do transparent and copy alpha channel
 		push( @cmds1, "-background black -alpha copy -type truecolormatte -alpha copy -channel A -negate" );
 
-		my $cmds1str = join( " ", @cmds1 );                                                            # finnal comand cmd1
+		my $cmds1str = join( " ", @cmds1 );                                  # finnal comand cmd1
 
 		# 2) ============================================================================================
 		# Cmd2 - based on surface type TEXTURE/COLOR take texture image or create colored canvas
@@ -277,6 +277,7 @@ sub __CreatePng {
 		if ( $layerSurf->GetType() eq Enums->Surface_COLOR ) {
 
 			push( @cmds2, "-size " . $resolution->{"x"} . "x" . $resolution->{"y"} . " canvas:" . $self->__ConvertColor( $layerSurf->GetColor() ) );
+
 			#push( @cmds2, "-background " .  $self->__ConvertColor( $layerSurf->GetColor() ) );
 
 		}
@@ -284,7 +285,7 @@ sub __CreatePng {
 
 			my $texturPath = GeneralHelper->Root() . "\\Resources\\Textures\\" . $layerSurf->GetTexture() . ".jpeg";
 
-			push( @cmds2, $texturPath . " -crop " . $resolution->{"x"} . "x" . $resolution->{"y"}."+0+0" );
+			push( @cmds2, $texturPath . " -crop " . $resolution->{"x"} . "x" . $resolution->{"y"} . "+0+0" );
 		}
 
 		my $cmds2Str = join( " ", @cmds2 );    # finnal comand cmd2
@@ -304,13 +305,13 @@ sub __CreatePng {
 		# Cmd4 -add brightness, and set transparetnt, set output path
 
 		my @cmds4 = ();
-		
+
 		# run 'convert' console application
 		push( @cmds4, EnumsPaths->InCAM_3rdScripts . "im2\\convert.exe" );
 
-		push( @cmds4, " ( ");
+		push( @cmds4, " ( " );
 		push( @cmds4, $cmds3Str );
-		push( @cmds4, " ) ");
+		push( @cmds4, " ) " );
 
 		my $brightness = ( $layerSurf->GetBrightness() != 0 ) ? " -brightness-contrast " . $layerSurf->GetBrightness() : "";
 		my $opaque = "";
@@ -331,7 +332,7 @@ sub __CreatePng {
 		my $cmds4Str = join( " ", @cmds4 );    # finnal comand cmd3
 
 		push( @allCmds, $cmds4Str );
- 
+
 		#print $cmds4Str."\n\n\n";
 
 	}
@@ -346,7 +347,7 @@ sub __CreatePng {
 
 		die "Error when convert pdf to png.\n";
 	}
-	
+
 	print STDERR "threats done (conversion pdf => png)\n";
 
 }
@@ -364,14 +365,20 @@ sub __MergePng {
 
 	my $outputTmp = EnumsPaths->Client_INCAMTMPOTHER . GeneralHelper->GetGUID() . ".jpg";
 
+	# 1) Flatten all images/layers together
 	my @cmd = ( EnumsPaths->InCAM_3rdScripts . "im\\convert.exe" );
 	push( @cmd, $layerStr2 );
 
-
-
-	push( @cmd, "-background white" );
+	push( @cmd, "-background " . $self->__ConvertColor( $layerList->GetBackground() ) );
 	push( @cmd, "-flatten" );
 	push( @cmd, "-trim" );
+	
+	 #if background image is not white, add little border around whole image
+	if ( $layerList->GetBackground() ne "255,255,255" ) {
+		push( @cmd, "-bordercolor " . $self->__ConvertColor( $layerList->GetBackground() ) . " -border 20x20" );
+	}
+	
+
 	#push( @cmd, "-blur 0.2x0.2" );
 	push( @cmd, "-quality 82%" );
 	push( @cmd, $outputTmp );
@@ -380,7 +387,7 @@ sub __MergePng {
 
 	my $systeMres = system($cmdStr);
 
-	# Adjust image to ratio 3:5. Thus if image is square, this fill image by white color
+	# 2) Adjust image to ratio 3:5. Thus if image is square, this fill image by white color
 	# in order image has ratio 3:5
 
 	# Get the size of globe.gif
@@ -419,11 +426,12 @@ sub __MergePng {
 
 	my @cmd2 = ( EnumsPaths->InCAM_3rdScripts . "im2\\convert.exe" );
 	push( @cmd2, $outputTmp );
+	
 	if ($rotate) {
 		push( @cmd2, "-rotate 90" );
 	}
 
-	push( @cmd2, "-gravity center -background white" );
+	push( @cmd2, "-gravity center -background " . $self->__ConvertColor( $layerList->GetBackground() ) );
 	push( @cmd2, "-extent " . $dimW . "x" . $dimH );
 
 	push( @cmd2, $self->{"outputPath"} );

@@ -14,6 +14,8 @@ use warnings;
 use aliased 'Packages::Pdf::ControlPdf::FinalPreview::LayerData::LayerData';
 use aliased 'Packages::Pdf::ControlPdf::FinalPreview::Enums';
 use aliased 'Enums::EnumsGeneral';
+use aliased 'CamHelpers::CamHistogram';
+use aliased 'Connectors::HeliosConnector::HegMethods';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -47,6 +49,7 @@ sub __InitLayers {
 	push( @{ $self->{"layers"} }, LayerData->new( Enums->Type_NPLTDEPTHNC ) );
 	push( @{ $self->{"layers"} }, LayerData->new( Enums->Type_PLTTHROUGHNC ) );
 	push( @{ $self->{"layers"} }, LayerData->new( Enums->Type_NPLTTHROUGHNC ) );
+	push( @{ $self->{"layers"} }, LayerData->new( Enums->Type_GOLDFINGER ) );
 }
 
 sub GetLayers {
@@ -79,12 +82,15 @@ sub SetLayers {
 	if ( $self->{"viewType"} eq Enums->View_FROMTOP ) {
 
 		foreach my $l (@boardLayers) {
+			
 			if ( $l->{"gROWname"} =~ /^c$/ ) {
 
 				$self->__AddToLayerData( $l, Enums->Type_OUTERCU );
-				
 				$self->__AddToLayerData( $l, Enums->Type_OUTERSURFACE );
 
+				if ( $l->{".gold_plating"} ) {
+					$self->__AddToLayerData( $l, Enums->Type_GOLDFINGER );
+				}
 			}
 			elsif ( $l->{"gROWname"} =~ /^mc$/ ) {
 
@@ -146,7 +152,6 @@ sub SetLayers {
 			if ( $l->{"gROWname"} =~ /^s$/ ) {
 
 				$self->__AddToLayerData( $l, Enums->Type_OUTERCU );
-				
 				$self->__AddToLayerData( $l, Enums->Type_OUTERSURFACE );
 
 			}
@@ -212,6 +217,35 @@ sub SetColors {
 
 		my $surface = $colors->{ $l->GetType() };
 		$l->SetSurface($surface);
+	}
+
+	# set color for THROUGH type of layers, according background
+
+	my $background = $self->GetBackground();
+
+	my $plt  = $self->GetLayerByType( Enums->Type_PLTTHROUGHNC );
+	my $nplt = $self->GetLayerByType( Enums->Type_NPLTTHROUGHNC );
+
+	$plt->GetSurface()->SetColor($background);
+	$nplt->GetSurface()->SetColor($background);
+}
+
+# Return background color of final image
+# if image has white mask, background will be pink
+sub GetBackground {
+	my $self = shift;
+
+	my $l    = $self->GetLayerByType( Enums->Type_MASK );
+	my $surf = $l->GetSurface();
+
+	if ( $surf->GetType() eq Enums->Surface_COLOR && $surf->GetColor() eq "250,250,250" ) {
+
+		return "153,217,234";    # pink
+
+	}
+	else {
+
+		return "255,255,255";    # white
 	}
 }
 

@@ -70,6 +70,7 @@ sub __PrepareLayers {
 	$self->__PreparePCBMAT( $layerList->GetLayerByType( Enums->Type_PCBMAT ) );
 	$self->__PrepareOUTERCU( $layerList->GetLayerByType( Enums->Type_OUTERCU ) );
 	$self->__PrepareOUTERSURFACE( $layerList->GetLayerByType( Enums->Type_OUTERSURFACE ) );
+	$self->__PrepareGOLDFINGER( $layerList->GetLayerByType( Enums->Type_GOLDFINGER ) );
 	$self->__PrepareMASK( $layerList->GetLayerByType( Enums->Type_MASK ) );
 	$self->__PrepareSILK( $layerList->GetLayerByType( Enums->Type_SILK ) );
 	$self->__PreparePLTDEPTHNC( $layerList->GetLayerByType( Enums->Type_PLTDEPTHNC ) );
@@ -160,10 +161,74 @@ sub __PrepareOUTERSURFACE {
 			CamLayer->Contourize( $inCAM, $lNameMask );
 			$inCAM->COM( "merge_layers", "source_layer" => $lNameMask, "dest_layer" => $lName, "invert" => "yes" );
 			$inCAM->COM( "delete_layer", "layer" => $lNameMask );
+
 			#CamLayer->Contourize( $inCAM, $lName );
 		}
 
 		$layer->SetOutputLayer($lName);
+	}
+}
+
+# goldfinger layer
+sub __PrepareGOLDFINGER {
+	my $self  = shift;
+	my $layer = shift;
+
+	unless ( $layer->HasLayers() ) {
+		return 0;
+	}
+
+	my $inCAM = $self->{"inCAM"};
+	my $jobId = $self->{"jobId"};
+
+	my @layers = $layer->GetSingleLayers();
+
+	if ( $layers[0] ) {
+
+		my $lNameCu = GeneralHelper->GetGUID();
+
+		my $mask = "m" . $layers[0]->{"gROWname"};
+
+		# If mask exist,
+		# 1) copy mask, where gold plating pads are placed in cu
+		# 2) do negative from this mask, contourize
+		# 3) copy cu layer to temp
+		# 4) Merge this temp mask (negative) with tem cu
+		if ( CamHelper->LayerExists( $inCAM, $jobId, $mask ) ) {
+
+			my $lNameMask = GeneralHelper->GetGUID();
+
+			 
+			my $result = CamFilter->SelectByReferenece( $inCAM, "touch", $mask, undef, undef, "positive", $layers[0]->{"gROWname"},
+														".gold_plating", "", undef );
+	 									 
+			if ( $result > 0 ) {
+
+				my @l = ($lNameMask);
+				CamLayer->CopySelected( $inCAM, \@l, 0 );
+				CamLayer->WorkLayer( $inCAM, $lNameMask );
+				CamLayer->NegativeLayerData( $inCAM, $lNameMask, $self->{"profileLim"} );
+				CamLayer->Contourize( $inCAM, $lNameMask );
+				
+				 
+
+				# copy copper to temp layer
+				$inCAM->COM( "merge_layers", "source_layer" => $layers[0]->{"gROWname"}, "dest_layer" => $lNameCu );
+
+				# copy mask temp negati to cu temp
+				$inCAM->COM( "merge_layers", "source_layer" => $lNameMask, "dest_layer" => $lNameCu, "invert" => "yes" );
+				$inCAM->COM( "delete_layer", "layer" => $lNameMask );
+				
+				 
+			}
+
+		}
+		else {
+
+			$inCAM->COM( "merge_layers", "source_layer" => $layers[0]->{"gROWname"}, "dest_layer" => $lNameCu );
+		}
+
+		$layer->SetOutputLayer($lNameCu);
 	}
 }
 
@@ -389,7 +454,7 @@ sub __PrepareNPLTTHROUGHNC {
 		CamLayer->WorkLayer( $inCAM, $lTmp );
 
 		# 2) Select all 'small pieces'/surfaces and copy them negative to $lName
-		CamLayer->Contourize($inCAM, $lTmp);
+		CamLayer->Contourize( $inCAM, $lTmp );
 		CamLayer->WorkLayer( $inCAM, $lTmp );
 
 		# Select 'surface pieces'
@@ -397,13 +462,13 @@ sub __PrepareNPLTTHROUGHNC {
 		my $profileArea =
 		  abs( $self->{"profileLim"}->{"xMin"} - $self->{"profileLim"}->{"xMax"} ) *
 		  abs( $self->{"profileLim"}->{"yMin"} - $self->{"profileLim"}->{"yMax"} );
-		my $maxArea = $profileArea / 3;
+		my $maxArea = $profileArea / 10;
 
 		if ( CamFilter->BySurfaceArea( $inCAM, 0, $maxArea ) > 0 ) {
 			my @layers = ($lName);
 			CamLayer->CopySelected( $inCAM, \@layers, 0, 100 );
 		}
-		
+
 		$inCAM->COM( 'delete_layer', "layer" => $lTmp );
 	}
 
@@ -511,7 +576,7 @@ sub __OptimizeLayers {
 		#"area_type"   => "rectangle",
 		"inout"       => "outside",
 		"contour_cut" => "yes",
-		"margin"      => "0",
+		"margin"      => "-2", # cut 2µm inside of pcb, because cut exactly on border can coause ilegal surfaces, in nplt mill example
 		"feat_types"  => "line\;pad;surface;arc;text",
 		"pol_types"   => "positive\;negative"
 	);

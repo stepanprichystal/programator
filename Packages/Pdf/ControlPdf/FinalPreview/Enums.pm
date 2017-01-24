@@ -11,7 +11,7 @@ use constant {
 	Type_NPLTDEPTHNC => "typeNPltDepthNc",
 	Type_PLTTHROUGHNC => "typePltThroughNc",
 	Type_NPLTTHROUGHNC => "typeNPltThroughNc",
-
+	Type_GOLDFINGER => "typeGoldFinger"
 };
 
  
