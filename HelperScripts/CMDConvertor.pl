@@ -8,7 +8,7 @@ use warnings;
 
 # ============ INPUT LINE =================
 my $inputLine =
-"COM sel_change_sym,symbol=r6000,reset_angle=no";# ============ INPUT LINE =================
+"sel_copy_other,dest=layer_name,target_layer=ddd,invert=no,dx=0,dy=0,size=0,x_anchor=0,y_anchor=0 ";# ============ INPUT LINE =================
 
 
 my $output = "\$inCAM->COM(";

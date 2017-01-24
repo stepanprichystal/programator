@@ -20,8 +20,7 @@ my $jobId = $ENV{"JOB"};
 my $inCAM = InCAM->new();
 
 my $step = "mpanel";
-
-$jobId = "f60190";
+ 
 
 my $max = ScoreFlatten->FlattenNestedScore( $inCAM, $jobId, $step );
 

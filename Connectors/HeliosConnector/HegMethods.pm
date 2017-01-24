@@ -881,15 +881,15 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	use aliased 'Connectors::HeliosConnector::HegMethods';
 
-	#
-	my $res = HegMethods->GetCustomerInfo("f52456");
+	
+	# my $res = HegMethods->GetCustomerInfo("f52456");
 
-	#
-	print $res;
+	
+	# print $res;
 
-	#my $test = HegMethods->GetPcbName("f52456");
+	# my $test = HegMethods->GetPcbName("f52456");
 
-	#
+	
 	#	HegMethods->GetPcbOrderNumber("f52456");
 	#	my $test = HegMethods->UpdatePcbOrderState("f52456-01", "HOTOVO-123");
 

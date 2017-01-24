@@ -40,6 +40,7 @@ sub __InitLayers {
 
 	push( @{ $self->{"layers"} }, LayerData->new( Enums->Type_PCBMAT ) );
 	push( @{ $self->{"layers"} }, LayerData->new( Enums->Type_OUTERCU ) );
+	push( @{ $self->{"layers"} }, LayerData->new( Enums->Type_OUTERSURFACE ) );
 	push( @{ $self->{"layers"} }, LayerData->new( Enums->Type_MASK ) );
 	push( @{ $self->{"layers"} }, LayerData->new( Enums->Type_SILK ) );
 	push( @{ $self->{"layers"} }, LayerData->new( Enums->Type_PLTDEPTHNC ) );
@@ -81,6 +82,8 @@ sub SetLayers {
 			if ( $l->{"gROWname"} =~ /^c$/ ) {
 
 				$self->__AddToLayerData( $l, Enums->Type_OUTERCU );
+				
+				$self->__AddToLayerData( $l, Enums->Type_OUTERSURFACE );
 
 			}
 			elsif ( $l->{"gROWname"} =~ /^mc$/ ) {
@@ -143,6 +146,8 @@ sub SetLayers {
 			if ( $l->{"gROWname"} =~ /^s$/ ) {
 
 				$self->__AddToLayerData( $l, Enums->Type_OUTERCU );
+				
+				$self->__AddToLayerData( $l, Enums->Type_OUTERSURFACE );
 
 			}
 			elsif ( $l->{"gROWname"} =~ /^ms$/ ) {
@@ -205,18 +210,8 @@ sub SetColors {
 
 	foreach my $l ( @{ $self->{"layers"} } ) {
 
-		my $inf = $colors->{ $l->GetType() };
-
-		if ( $inf->{"Type"} eq Enums->Surface_TEXTURE ) {
-
-			$l->SetTexture( $inf->{"Val"} );
-		}
-		elsif ( $inf->{"Type"} eq Enums->Surface_COLOR ) {
-
-			$l->SetColor( $inf->{"Val"} );
-		}
-
-		$l->SetBrightness( $inf->{"Brightness"} );
+		my $surface = $colors->{ $l->GetType() };
+		$l->SetSurface($surface);
 	}
 }
 

@@ -103,6 +103,53 @@ sub BySingleSymbol {
 }
  
  
+ 
+sub BySurfaceArea {
+	my $self  = shift;
+	my $inCAM = shift;
+	my $minArea = shift; 
+	my $maxArea = shift; 
+	
+	
+	unless($minArea){
+		$minArea = 0;
+	}
+	
+	unless($maxArea){
+		$maxArea = 0;
+	}
+	
+	$inCAM->COM( "set_filter_type", "filter_name" => "", "lines" => "yes", "pads" => "yes", "surfaces" => "yes", "arcs" => "yes", "text" => "yes" );
+	$inCAM->COM( "set_filter_polarity", "filter_name" => "", "positive" => "yes", "negative" => "yes" );
+
+	$inCAM->COM('adv_filter_reset');
+	$inCAM->COM('filter_area_strt');
+
+	$inCAM->COM(
+				 "adv_filter_set",
+				 "filter_name"   => "popup",
+				 "active"        => "yes",
+				 "limit_box"     => "no",
+				 "bound_box"     => "no",
+				 "srf_values"    => "yes",
+				 "min_islands"   => "0",
+				 "max_islands"   => "0",
+				 "min_holes"     => "0",
+				 "max_holes"     => "0",
+				 "min_edges"     => "0",
+				 "max_edges"     => "0",
+				 "srf_area"      => "yes",
+				 "min_area"      => $minArea,
+				 "max_area"      => $maxArea,
+				 "mirror"        => "any",
+				 "ccw_rotations" => ""
+	);
+
+	$inCAM->COM( "filter_area_end", "filter_name" => "popup", "operation" => "select" );
+	return  $inCAM->GetReply();
+	
+}
+ 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#

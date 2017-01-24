@@ -17,8 +17,6 @@ use warnings;
 my $output = shift(@_);    # save here output message
 my $cmds   = shift(@_);    # contain commands, which convert pdfs to images by imageMagick
 
-
-
 Worker($cmds);
 
 sub Worker {
@@ -31,9 +29,9 @@ sub Worker {
 		die "Parameter cmd is not defined.\n";
 	}
 
-	foreach my $allCmd ( @{$cmds} ) {
+	foreach my $cmd ( @{$cmds} ) {
 
-		my $thr1 = threads->create( sub { __ConvertToPng($allCmd) } );
+		my $thr1 = threads->create( sub { __ConvertToPng($cmd) } );
 
 		push( @threadsObj, $thr1 );
 	}
@@ -47,13 +45,9 @@ sub Worker {
 
 sub __ConvertToPng {
 
-	my @cmds = @{ shift(@_) };
+	my $cmd = shift;
 
-	foreach my $cmd (@cmds) {
-
-		my $systeMres = system($cmd);
-
-	}
+	my $systeMres = system($cmd);
 
 }
 

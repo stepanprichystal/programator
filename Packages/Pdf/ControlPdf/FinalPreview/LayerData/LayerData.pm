@@ -23,11 +23,8 @@ sub new {
 
 	$self->{"type"}         = shift;
 	$self->{"order"}        = undef;
-	$self->{"color"}        = undef;
-	$self->{"texture"}      = undef;
-	$self->{"brightness"}   = undef;    # allow set brightness of final layer/image
+	$self->{"surface"}      = undef;
 	$self->{"output"}       = undef;
-	$self->{"transparency"} = 100;
 
 	my @l = ();
 	$self->{"singleLayers"} = \@l;
@@ -38,7 +35,7 @@ sub new {
 sub PrintLayer {
 	my $self = shift;
 
-	if ( $self->{"output"} && ( defined $self->{"color"} || defined $self->{"texture"} ) ) {
+	if ( $self->{"output"} ) {
 
 		return 1;
 	}
@@ -49,53 +46,16 @@ sub PrintLayer {
 
 }
 
-sub GetColor {
-	my $self = shift;
-	return $self->{"color"};
-}
-
-sub SetColor {
-	my $self  = shift;
-	my $color = shift;
-
-	$self->{"color"} = $color;
-}
-
-sub GetTexture {
-	my $self = shift;
-	return $self->{"texture"};
-}
-
-sub SetTexture {
-	my $self    = shift;
-	my $texture = shift;
-
-	$self->{"texture"} = $texture;
-}
-
-sub GetBrightness {
-	my $self = shift;
-	return $self->{"brightness"};
-}
-
-sub SetBrightness {
-	my $self       = shift;
-	my $brightness = shift;
-
-	$self->{"brightness"} = $brightness;
-}
-
-sub SetTransparency {
-	my $self = shift;
-	my $val  = shift;
-
-	$self->{"transparency"} = $val;
-}
-
-sub GetTransparency {
+sub GetSurface {
 	my $self = shift;
 
-	return $self->{"transparency"};
+	return $self->{"surface"};
+}
+
+sub SetSurface {
+	my $self = shift;
+
+	$self->{"surface"} = shift;
 }
 
 sub GetType {

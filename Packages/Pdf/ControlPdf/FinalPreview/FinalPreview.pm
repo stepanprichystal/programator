@@ -12,13 +12,16 @@ use warnings;
 #local library
 use aliased 'Helpers::GeneralHelper';
 use aliased 'Packages::Pdf::ControlPdf::FinalPreview::LayerData::LayerDataList';
+use aliased 'Packages::Pdf::ControlPdf::FinalPreview::LayerData::LayerColor';
 use aliased 'Packages::Pdf::ControlPdf::FinalPreview::OutputPdf';
+use aliased 'Packages::Pdf::ControlPdf::FinalPreview::OutputPrepare';
 use aliased 'CamHelpers::CamDrilling';
 use aliased 'CamHelpers::CamJob';
 use aliased 'Packages::Pdf::ControlPdf::Helper';
 use aliased 'Enums::EnumsPaths';
 use aliased 'Packages::Pdf::ControlPdf::FinalPreview::Enums';
 use aliased 'Connectors::HeliosConnector::HegMethods';
+
 
 #-------------------------------------------------------------------------------------------#
 #  Interface
@@ -36,8 +39,8 @@ sub new {
 	$self->{"viewType"} = shift; # TOP/BOT
 
 	$self->{"layerList"} = LayerDataList->new( $self->{"viewType"} );
+	$self->{"outputPrepare"} = OutputPrepare->new( $self->{"viewType"}, $self->{"inCAM"}, $self->{"jobId"}, $self->{"pdfStep"});
 	$self->{"outputPdf"} = OutputPdf->new( $self->{"viewType"}, $self->{"inCAM"}, $self->{"jobId"}, $self->{"pdfStep"} );
-
 	$self->{"outputPath"} = EnumsPaths->Client_INCAMTMPOTHER . GeneralHelper->GetGUID() . ".png";
 
 	return $self;
@@ -60,6 +63,7 @@ sub Create {
 	$self->{"layerList"}->SetLayers( \@layers );
 	$self->{"layerList"}->SetColors( $self->__PrepareColors() );
 
+	$self->{"outputPrepare"}->PrepareLayers( $self->{"layerList"} );
 	$self->{"outputPdf"}->Output( $self->{"layerList"} );
 
 	return 1;
@@ -81,7 +85,7 @@ sub __ConvertPdfToPng {
 	my @cmd = ( EnumsPaths->InCAM_3rdScripts . "im\\convert.exe" );
 	push( @cmd, "-density 200" );
 	push( @cmd, $outputPath );
-	push( @cmd, "-shave 20x20 -trim -shave 5x5" );
+	push( @cmd, "-shave 20x20 -trim -shave 2x2" );
 	push( @cmd, "--alpha off" );
 
 	push( @cmd, $self->{"outputPath"} );
@@ -105,88 +109,123 @@ sub __ConvertPdfToPng {
 sub __PrepareColors {
 	my $self = shift;
 	my %clrs = ();
+	
+	# final surface of pcb
+	my $surface = HegMethods->GetPcbSurface( $self->{"jobId"} );
+	
 
-	# base mat
+	# Pcb material
 
-	my %material = ( "Type" => Enums->Surface_COLOR, "Val" => "226,235,150" );
+	my $pcbMatClr = LayerColor->new(Enums->Surface_COLOR, "226,235,150");
+	$clrs{ Enums->Type_PCBMAT } = $pcbMatClr;
 
 	my $mat = HegMethods->GetMaterialKind( $self->{"jobId"} );
 	if ( $mat =~ /al/i ) {
 
-		$material{"Type"} = Enums->Surface_TEXTURE;
+		 
+		$pcbMatClr->SetType(Enums->Surface_TEXTURE);
 
 		if ( $self->{"viewType"} eq Enums->View_FROMTOP ) {
 
-			$material{"Val"} = Enums->Texture_CU;
-
+			$pcbMatClr->SetTexture(Enums->Texture_CU);
 		}
 		elsif ( $self->{"viewType"} eq Enums->View_FROMBOT ) {
 
-			$material{"Val"} = Enums->Texture_CHEMTINALU;
+			$pcbMatClr->SetTexture(Enums->Texture_CHEMTINALU);
 		}
 	}
 	elsif ( $mat =~ /cu/i ) {
 
-		$material{"Type"} = Enums->Surface_TEXTURE;
-		$material{"Val"}  = Enums->Texture_CU;
+		$pcbMatClr->SetType(Enums->Surface_TEXTURE);
+		$pcbMatClr->SetTexture(Enums->Texture_CU);
 
 	}
 
-	$clrs{ Enums->Type_PCBMAT } = \%material;
+ 
+	# Outer cu
+	my $outerCuClr = undef;
 
-	# surface or cu
-	my $surface = HegMethods->GetPcbSurface( $self->{"jobId"} );
+	if($surface eq "" || $surface =~ /^n$/i){
+		
+		$outerCuClr = LayerColor->new(Enums->Surface_TEXTURE, Enums->Texture_CU);
+	}else{
+		
+		$outerCuClr = LayerColor->new(Enums->Surface_COLOR,  "232,141,77");
+	}
 
-	my %surf = ( "Type" => Enums->Surface_TEXTURE );
+	$clrs{ Enums->Type_OUTERCU } = $outerCuClr;
 
+
+	# Outer surface 
+	
+	my $outerSurfaceClr = LayerColor->new(Enums->Surface_TEXTURE,  Enums->Texture_CU);
+	$clrs{ Enums->Type_OUTERSURFACE } = $outerSurfaceClr;
+	
+ 
 	if ( $surface =~ /^a$/i || $surface =~ /^b$/i ) {
-		$surf{"Val"} = Enums->Texture_HAL;
+		$outerSurfaceClr->SetTexture(Enums->Texture_HAL);
 	}
 	elsif ( $surface =~ /^c$/i ) {
-		$surf{"Val"} = Enums->Texture_CHEMTINALU;
+		$outerSurfaceClr->SetTexture(Enums->Texture_CHEMTINALU);
 	}
 	elsif ( $surface =~ /^i$/i || $surface =~ /^g$/i ) {
-		$surf{"Val"} = Enums->Texture_GOLD;
-
-	}
-	else {    # surface less
-
-		$surf{"Val"} = Enums->Texture_CU;
-
+		$outerSurfaceClr->SetTexture(Enums->Texture_GOLD);
 	}
 
-	$clrs{ Enums->Type_OUTERCU } = \%surf;
 
 	# Mask color
-	my %mask = ( "Type" => Enums->Surface_COLOR, "Val" => $self->__GetMaskColor() );
-	$clrs{ Enums->Type_MASK } = \%mask;
+	
+	my $maskClr = LayerColor->new(Enums->Surface_COLOR,  $self->__GetMaskColor());
+	$maskClr->SetOpaque(80);
+	$clrs{ Enums->Type_MASK } = $maskClr;
+
 
 	# Silk color
-	my %silk = ( "Type" => Enums->Surface_COLOR, "Val" => $self->__GetSilkColor() );
-	$clrs{ Enums->Type_SILK } = \%silk;
 
-	# Depth NC plated
-	#multiply surface color
-	#my @surfArr = split( ",", $surfClr );
-	#@surfArr = map { $_ * 1 / 4 } @surfArr;
+	my $silkClr = LayerColor->new(Enums->Surface_COLOR,  $self->__GetSilkColor());
+	$clrs{ Enums->Type_SILK } = $silkClr;
 
-	#$clrs{ Enums->Type_PLTDEPTHNC } = join( ",", @surfArr );
-	my %pltDepthSurf = %surf;
-	$pltDepthSurf{"Brightness"} = -15;
-	$clrs{ Enums->Type_PLTDEPTHNC } = \%pltDepthSurf;
+	# Depth NC plated - same as surface but dareker
+	
+	my $pltDepthClr = LayerColor->new();
+	$clrs{ Enums->Type_PLTDEPTHNC } = $pltDepthClr;
+	
+	$pltDepthClr->SetType($outerSurfaceClr->GetType());
+	$pltDepthClr->SetBrightness($outerSurfaceClr->GetBrightness() -15);
+	
+	if($outerSurfaceClr->GetType() eq Enums->Surface_COLOR){
+		$pltDepthClr->SetColor($outerSurfaceClr->GetColor());
+	}else{
+		$pltDepthClr->SetTexture($outerSurfaceClr->GetTexture());
+	}
+	
+	 
+	# Depth NC nonplated - same as material pcb but darker
 
-	# Depth NC non plated
-	my %npltDepthSurf = %material;
-	$npltDepthSurf{"Brightness"} = -20;
-	$clrs{ Enums->Type_NPLTDEPTHNC } = \%npltDepthSurf;
+	my $npltDepthClr = LayerColor->new();
+	$clrs{ Enums->Type_NPLTDEPTHNC } = $npltDepthClr;
+	
+	$npltDepthClr->SetType($pcbMatClr->GetType());
+	$npltDepthClr->SetBrightness($pcbMatClr->GetBrightness() -15);
+	
+	if($pcbMatClr->GetType() eq Enums->Surface_COLOR){
+		$npltDepthClr->SetColor($pcbMatClr->GetColor());
+	}else{
+		$npltDepthClr->SetTexture($pcbMatClr->GetTexture());
+	}
+
 
 	# PLT Through NC
-	my %plt = ( "Type" => Enums->Surface_COLOR, "Val" => "250,250,250" );
-	$clrs{ Enums->Type_PLTTHROUGHNC } = \%plt;
+	
+	my $pltThroughNcClr = LayerColor->new(Enums->Surface_COLOR,  "250,250,250");
+	$clrs{ Enums->Type_PLTTHROUGHNC } = $pltThroughNcClr;
+	
 
-	# Through NC
-	my %nplt = ( "Type" => Enums->Surface_COLOR, "Val" => "250,250,250" );
-	$clrs{ Enums->Type_NPLTTHROUGHNC } = \%nplt;
+	# NPLT Through NC
+	
+	my $npltThroughNcClr = LayerColor->new(Enums->Surface_COLOR,  "250,250,250");
+	$clrs{ Enums->Type_NPLTTHROUGHNC } = $npltThroughNcClr;
+ 
 
 	return \%clrs;
 

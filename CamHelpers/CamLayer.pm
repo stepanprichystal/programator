@@ -81,10 +81,10 @@ sub FlatternLayer {
 	my $tmpLayer = GeneralHelper->GetGUID();
 
 	$inCAM->COM( 'flatten_layer', "source_layer" => $layerName, "target_layer" => $tmpLayer );
-	
-	$self->WorkLayer($inCAM, $layerName);
-	$inCAM->COM( 'sel_delete');
-	
+
+	$self->WorkLayer( $inCAM, $layerName );
+	$inCAM->COM('sel_delete');
+
 	$inCAM->COM(
 				 'copy_layer',
 				 "source_job"   => $jobId,
@@ -162,13 +162,11 @@ sub WorkLayer {
 	my $self  = shift;
 	my $inCAM = shift;
 	my $layer = shift;
- 
 
 	$inCAM->COM( 'affected_layer', name => $layer, mode => "all", affected => "no" );
-	
- 	 $inCAM->COM( "display_layer", "name" => $layer, "display" => "yes" );
-	 $inCAM->COM( 'work_layer', name => $layer );
-	 
+
+	$inCAM->COM( "display_layer", "name" => $layer, "display" => "yes" );
+	$inCAM->COM( 'work_layer', name => $layer );
 
 }
 
@@ -176,14 +174,10 @@ sub WorkLayer {
 sub ClearLayers {
 	my $self  = shift;
 	my $inCAM = shift;
- 
- 
- 	$inCAM->COM( 'clear_layers');
-	$inCAM->COM( 'affected_layer',  mode => "all", affected => "no" );
+
+	$inCAM->COM('clear_layers');
+	$inCAM->COM( 'affected_layer', mode => "all", affected => "no" );
 }
-
-
-
 
 # Affect layer in matrix
 sub AffectLayers {
@@ -254,26 +248,24 @@ sub NegativeLayerData {
 
 # Clipa read data by  rectangle
 sub ClipLayerData {
-	my $self   = shift;
-	my $inCAM  = shift;
-	my $layer  = shift;
-	my %rect   = %{ shift(@_) };
-	my $inside = shift;
+	my $self       = shift;
+	my $inCAM      = shift;
+	my $layer      = shift;
+	my %rect       = %{ shift(@_) };
+	my $inside     = shift;
 	my $counturCut = shift;
-	
-	
+
 	my $type = "outside";
 
 	if ($inside) {
 		$type = "inside";
 	}
-	
-	my $countour= "no";
-	
-	if($counturCut){
+
+	my $countour = "no";
+
+	if ($counturCut) {
 		$countour = "yes";
 	}
- 
 
 	$self->WorkLayer( $inCAM, $layer );
 
@@ -440,6 +432,42 @@ sub RoutCompensation {
 	return $lName;
 }
 
+# Countourize given layer
+sub Contourize {
+	my $self  = shift;
+	my $inCAM = shift;
+	my $layer = shift;
+
+	$self->WorkLayer( $inCAM, $layer );
+
+	$inCAM->COM( "sel_contourize", "accuracy" => "6.35", "break_to_islands" => "yes", "clean_hole_size" => "76.2", "clean_hole_mode" => "x_or_y" );
+
+	$self->ClearLayers($inCAM);
+}
+
+# Copy selected features to other layer
+sub CopySelected {
+	my $self   = shift;
+	my $inCAM  = shift;
+	my @layers = @{ shift(@_) };
+	my $invert = shift;
+	my $resize = shift;
+ 
+	my $layerStr = join( "\\;", @layers );
+
+	$inCAM->COM(
+				 "sel_copy_other",
+				 "dest"         => "layer_name",
+				 "target_layer" => $layerStr,
+				 "invert"       => $invert ? "yes" : "no",
+				 "dx"           => "0",
+				 "dy"           => "0",
+				 "size"         => $resize ? $resize : 0,
+				 "x_anchor"     => "0",
+				 "y_anchor"     => "0 "
+	);
+
+}
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#

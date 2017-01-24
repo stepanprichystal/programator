@@ -49,10 +49,7 @@ sub Output {
 	my $self      = shift;
 	my $layerList = shift;
 
-	$self->__PrepareLayers($layerList);
-	$self->__OptimizeLayers($layerList);
 	$self->__OutputPdf($layerList);
-
 }
 
 sub GetOutput {
@@ -71,54 +68,39 @@ sub __OutputPdf {
 
 	my @layers = $layerList->GetLayers(1);
 
+	# folder, where are putted temporary layer pdf and layer png
 	my $dirPath = EnumsPaths->Client_INCAMTMPOTHER . GeneralHelper->GetGUID() . "\\";
 	mkdir($dirPath) or die "Can't create dir: " . $dirPath . $_;
 
+	# 1) output all layers together
 	my @layerStr = map { $_->GetOutputLayer() } @layers;
 	my $layerStr = join( "\\;", @layerStr );
 
 	my $multiPdf = EnumsPaths->Client_INCAMTMPOTHER . GeneralHelper->GetGUID() . ".pdf";
-
 	$multiPdf =~ s/\\/\//g;
 
-	# 1) output all layers together
 	$inCAM->COM(
-		'print',
-
-		#title             => '',
-
-		layer_name        => $layerStr,
-		mirrored_layers   => '',
-		draw_profile      => 'no',
-		drawing_per_layer => 'yes',
-		label_layers      => 'no',
-		dest              => 'pdf_file',
-		num_copies        => '1',
-		dest_fname        => $multiPdf,
-
-		paper_size => 'A4',
-
-		#scale_to          => '0.0',
-		#nx                => '1',
-		#ny                => '1',
-		orient => 'none',
-
-		#paper_orient => 'best',
-
-		#paper_width   => 260,
-		#paper_height  => 260,
-		auto_tray     => 'no',
-		top_margin    => '0',
-		bottom_margin => '0',
-		left_margin   => '0',
-		right_margin  => '0',
-		"x_spacing"   => '0',
-		"y_spacing"   => '0',
-
-		#3color1        => $self->__ConvertColor( $l->GetColor()
+				 'print',
+				 layer_name        => $layerStr,
+				 mirrored_layers   => '',
+				 draw_profile      => 'no',
+				 drawing_per_layer => 'yes',
+				 label_layers      => 'no',
+				 dest              => 'pdf_file',
+				 num_copies        => '1',
+				 dest_fname        => $multiPdf,
+				 paper_size        => 'A4',
+				 orient            => 'none',
+				 auto_tray         => 'no',
+				 top_margin        => '0',
+				 bottom_margin     => '0',
+				 left_margin       => '0',
+				 right_margin      => '0',
+				 "x_spacing"       => '0',
+				 "y_spacing"       => '0'
 	);
 
-	# delete created layers
+	# delete helper layers
 	foreach my $lData (@layers) {
 
 		$inCAM->COM( 'delete_layer', "layer" => $lData->GetOutputLayer() );
@@ -127,253 +109,28 @@ sub __OutputPdf {
 	# 2) split whole pdf to single pdf
 	$self->__SplitMultiPdf( $layerList, $multiPdf, $dirPath );
 
+	# 3) compute image resolution by phzsic size of pcb
+	my %resolution = $self->__GetResolution();
+
 	# 3) conver each pdf page to image
-	$self->__CreatePng( $layerList, $dirPath );
+	$self->__CreatePng( $layerList, $dirPath, \%resolution );
 
 	# 4) merge all images together
-	my @layerStr2 = map { $dirPath . $_->GetOutputLayer() . ".png" } @layers;
-	my $layerStr2 = join( " ", @layerStr2 );
+	$self->__MergePng( $layerList, $dirPath );
 
-	my $outputTmp = EnumsPaths->Client_INCAMTMPOTHER . GeneralHelper->GetGUID() . ".jpg";
-
-	my @cmd = ( EnumsPaths->InCAM_3rdScripts . "im\\convert.exe" );
-	push( @cmd, $layerStr2 );
-
-	push( @cmd, "-flatten" );
-	push( @cmd, "-trim" );
-	push( @cmd, "-blur 0.2x0.2 -quality 90%" );
-	push( @cmd, $outputTmp );
-
-	my $cmdStr = join( " ", @cmd );
-
-	my $systeMres = system($cmdStr);
-
-	# Adjust image to ratio 3:5. Thus if image is square, this fill image by white color
-	# in order image has ratio 3:5
-
-	# Get the size of globe.gif
-	( my $x, my $y ) = imgsize($outputTmp);
-
-	my $rotate = $x < $y ? 1 : 0;
-
-	# we want to longer side was width
-	if ($rotate) {
-		my $pom = $y;
-		my $y   = $x;
-		my $x   = $pom;
-	}
-
-	my $ratio = min( $x, $y ) / max( $x, $y );
-
-	# compute new image resolution
-	my $dimW = 0;
-	my $dimH = 0;
-
-	# compute new height
-	if ( $ratio <= 3 / 5 ) {
-
-		$dimW = max( $x, $y );
-		$dimH = int( ( $dimW / 5 ) * 3 );
-
-	}
-	else {
-
-		# compute new width
-
-		$dimH = min( $x, $y );
-		$dimW = int( ( $dimH / 3 ) * 5 );
-
-	}
-
-	my @cmd2 = ( EnumsPaths->InCAM_3rdScripts . "im\\convert.exe" );
-	push( @cmd2, $outputTmp );
-	if ($rotate) {
-		push( @cmd2, "-rotate 90" );
-	}
-
-	push( @cmd2, "-gravity center -background white" );
-	push( @cmd2, "-extent " . $dimW . "x" . $dimH );
-
-	push( @cmd2, $self->{"outputPath"} );
-
-	my $cmdStr2 = join( " ", @cmd2 );
-
-	my $systeMres2 = system($cmdStr2);
-
+	# 5) delete temporary png and directory
 	foreach my $l (@layers) {
 		if ( -e $dirPath . $l->GetOutputLayer() . ".png" ) {
-			unlink( $dirPath . $l->GetOutputLayer() . ".png" );
+			#unlink( $dirPath . $l->GetOutputLayer() . ".png" );
 		}
 		if ( -e $dirPath . $l->GetOutputLayer() . ".pdf" ) {
-			unlink( $dirPath . $l->GetOutputLayer() . ".pdf" );
+			#unlink( $dirPath . $l->GetOutputLayer() . ".pdf" );
 		}
 	}
 
-	rmdir($dirPath);
-
-	unlink($outputTmp);
+	#rmdir($dirPath);
 
 }
-
-
-# Convert layer in pdf to PNG image
-sub __CreatePng {
-	my $self      = shift;
-	my $layerList = shift;
-	my $dirPath   = shift;
-
-	my @layers = $layerList->GetLayers(1);
-
-	#my @threads;
-	my @allCmds = ();
-	$self->{"inCAM"}->{"childThread"} = 1;
-
-	my @fileToDel = ();
-
-	foreach my $l (@layers) {
-
-		# merge all png to one
-		my $result = 1;
-
-		my @cmds = ();
-
-		# get brightness
-
-		my $brightness = "";
-		$brightness = " -brightness-contrast " . $l->GetBrightness() if ( defined $l->GetBrightness() );
-
-		# if layer color is defined by image texture
-		if ( defined $l->GetTexture() ) {
-
-			my $backg = "black";
-
-			if ( $l->GetTexture() eq Enums->Texture_GOLD ) {
-
-				$backg = "gold3";
-			}
-			elsif ( $l->GetTexture() eq Enums->Texture_CU ) {
-
-				$backg = "tan2";
-			}
-			elsif ( $l->GetTexture() eq Enums->Texture_CHEMTINALU || $l->GetTexture() eq Enums->Texture_HAL ) {
-
-				$backg = "snow3";
-			}
-
-			my $texturPath = GeneralHelper->Root() . "\\Resources\\Textures\\" . $l->GetTexture() . ".jpeg";
-
-			# 1 cast
-
-			my $tmpImg = EnumsPaths->Client_INCAMTMPOTHER . GeneralHelper->GetGUID() . ".png";
-
-			push( @fileToDel, $tmpImg );
-
-			my @cmd1 = ( EnumsPaths->InCAM_3rdScripts . "im\\convert.exe" );
-			push( @cmd1, "-resize 3000 -density 300" );
-
-			#push( @cmd, "-transparent white" );
-			push( @cmd1, $dirPath . $l->GetOutputLayer() . ".pdf" );
-			push( @cmd1, "-flatten  +level-colors $backg," );
-			push( @cmd1, "-fuzz 20% -transparent $backg $tmpImg" );
-
-			#push( @cmd1, "-flatten  -fuzz 30% -transparent black $tmpImg" );
-			my $cmdStr = join( " ", @cmd1 );
-
-			#my $systeMres = system($cmdStr_);
-			push( @cmds, $cmdStr );
-
-			# 2 cast
-
-			my @cmd = ( EnumsPaths->InCAM_3rdScripts . "im\\convert.exe" );
-			push( @cmd, "$texturPath $tmpImg -flatten  -transparent white" );
-			push( @cmd, "-shave 20x20 -trim -shave 5x5" );
-			push( @cmd, $brightness );
-
-			#push( @cmd, "-transparent white" );
-			my $pngOutput = $dirPath . $l->GetOutputLayer() . ".pdf";
-			$pngOutput =~ s/pdf/png/;
-			push( @cmd, $pngOutput );
-
-			my $cmdStr2 = join( " ", @cmd );
-			push( @cmds, $cmdStr2 );
-
-			push( @allCmds, \@cmds );
-
-		}
-		# if layer is defined by color
-		else {
-
-			my $flatten = "";
-			$flatten = "-flatten" if ( $l->GetType() eq Enums->Type_MASK );
-
-			my $backg = "white";
-
-			if ( $l->GetTransparency() < 100 && $l->GetColor() eq "250,250,250" ) {
-				$backg = "orange";
-			}
-
-			my @cmd = ( EnumsPaths->InCAM_3rdScripts . "im\\convert.exe" );
-			push( @cmd, "-resize 3000 -density 300" );
-
-			#push( @cmd, "-transparent white" );
-			push( @cmd, $dirPath . $l->GetOutputLayer() . ".pdf" );
-
-			push( @cmd, "$flatten -shave 20x20 -trim -shave 5x5" );
-			push( @cmd, "+level-colors " . $self->__ConvertColor( $l->GetColor(), ) . ",$backg" );
-
-			if ( $l->GetTransparency() < 100 ) {
-
-				push( @cmd, "-alpha on -channel a -evaluate set " . $l->GetTransparency() . "%" );
-				push( @cmd, "-fuzz 30% -transparent $backg" );
-
-			}
-			else {
-				push( @cmd, "-transparent $backg" );
-
-			}
-
-			push( @cmd, $brightness );
-
-			my $pngOutput = $dirPath . $l->GetOutputLayer() . ".pdf";
-			$pngOutput =~ s/pdf/png/;
-			push( @cmd, $pngOutput );
-
-			my $cmdStr = join( " ", @cmd );
-			push( @cmds, $cmdStr );
-
-			push( @allCmds, \@cmds );
-
-		}
-
-		print STDERR "threat created (conversion pdf => png)\n";
-
-	}
-
-	# conversion is processed in another perl instance by this script
-	my $script = GeneralHelper->Root() . "\\Packages\\Pdf\\ControlPdf\\FinalPreview\\CreatePng.pl";
-
-	my $createPngCall = SystemCall->new( $script, \@allCmds );
-	unless ( $createPngCall->Run() ) {
-
-		die "Error when convert pdf to png.\n";
-	}
- 
-
-	foreach my $f (@fileToDel) {
-
-		if ( -e $f ) {
-			unlink($f);
-		}
-
-	}
-
-	$self->{"inCAM"}->{"childThread"} = 0;
-
-	print STDERR "threats done (conversion pdf => png)\n";
-
-}
-
- 
 
 sub __SplitMultiPdf {
 	my $self      = shift;
@@ -418,474 +175,282 @@ sub __SplitMultiPdf {
 	unlink($pdfOutput);
 }
 
-
-# clip area arpound profile
-# create border around pcb which is responsible for keep all layer dimension same
-# if preview is bot, mirror data
-sub __OptimizeLayers {
-	my $self      = shift;
-	my $layerList = shift;
-
-	my $inCAM  = $self->{"inCAM"};
-	my @layers = $layerList->GetLayers(1);
-
-	my $lName = GeneralHelper->GetGUID();
-
-	# create border around profile
-	$inCAM->COM( "profile_to_rout", "layer" => $lName, "width" => "10" );
-	CamLayer->WorkLayer( $inCAM, $lName );
-
-	# copy border to all output layers
-
-	foreach my $l (@layers) {
-
-		$inCAM->COM( "affected_layer", "name" => $l->GetOutputLayer(), "mode" => "single", "affected" => "yes" );
-
-	}
-
-	my @layerStr = map { $_->GetOutputLayer() } @layers;
-	my $layerStr = join( "\\;", @layerStr );
-	$inCAM->COM(
-		"sel_copy_other",
-		"dest" => "affected_layers",
-
-		"target_layer" => $lName . "\\;" . $layerStr,
-		"invert"       => "no"
-
-	);
-
-	# clip area around profile
-	$inCAM->COM(
-		"clip_area_end",
-		"layers_mode" => "affected_layers",
-		"layer"       => "",
-		"area"        => "profile",
-
-		#"area_type"   => "rectangle",
-		"inout"       => "outside",
-		"contour_cut" => "yes",
-		"margin"      => "-2",
-		"feat_types"  => "line\;pad;surface;arc;text",
-		"pol_types"   => "positive\;negative"
-	);
-	$inCAM->COM( "affected_layer", "mode" => "all", "affected" => "no" );
-	$inCAM->COM( 'delete_layer', "layer" => $lName );
-
-	# if preview from BOT mirror all layers
-	if ( $self->{"viewType"} eq Enums->View_FROMBOT ) {
-
-		my $rotateBy = undef;
-
-		my %lim = CamJob->GetProfileLimits( $inCAM, $self->{"jobId"}, $self->{"pdfStep"} );
-
-		my $x = abs( $lim{"xmax"} - $lim{"xmin"} );
-		my $y = abs( $lim{"ymax"} - $lim{"ymin"} );
-
-		if ( $x <= $y ) {
-
-			$rotateBy = "y";
-		}
-		else {
-
-			$rotateBy = "x";
-		}
-
-		foreach my $l (@layers) {
-
-			CamLayer->WorkLayer( $inCAM, $l->GetOutputLayer() );
-			CamLayer->MirrorLayerData( $inCAM, $l->GetOutputLayer(), $rotateBy );
-		}
-	}
-
-}
-
-
-# MEthod do necessary stuff for each layer by type
-# like resizing, copying, change polarity, merging, ...
-sub __PrepareLayers {
-	my $self      = shift;
-	my $layerList = shift;
-
-	$self->__PreparePCBMAT( $layerList->GetLayerByType( Enums->Type_PCBMAT ) );
-	$self->__PrepareOUTERCU( $layerList->GetLayerByType( Enums->Type_OUTERCU ) );
-	$self->__PrepareMASK( $layerList->GetLayerByType( Enums->Type_MASK ) );
-	$self->__PrepareSILK( $layerList->GetLayerByType( Enums->Type_SILK ) );
-	$self->__PreparePLTDEPTHNC( $layerList->GetLayerByType( Enums->Type_PLTDEPTHNC ) );
-	$self->__PrepareNPLTDEPTHNC( $layerList->GetLayerByType( Enums->Type_NPLTDEPTHNC ) );
-	$self->__PreparePLTTHROUGHNC( $layerList->GetLayerByType( Enums->Type_PLTTHROUGHNC ) );
-	$self->__PrepareNPLTTHROUGHNC( $layerList->GetLayerByType( Enums->Type_NPLTTHROUGHNC ) );
-
-}
-
-# Create layer and fill profile - simulate pcb material
-sub __PreparePCBMAT {
-	my $self  = shift;
-	my $layer = shift;
+# Convert layer in pdf to PNG image
+sub __GetResolution {
+	my $self = shift;
 
 	my $inCAM = $self->{"inCAM"};
-	my $lName = GeneralHelper->GetGUID();
+	my $jobId = $self->{"jobId"};
 
-	$inCAM->COM( 'create_layer', layer => $lName, context => 'misc', type => 'document', polarity => 'positive', ins_layer => '' );
+	my %lim = CamJob->GetProfileLimits2( $inCAM, $jobId, $self->{"pdfStep"} );
 
-	$inCAM->COM(
-				 "sr_fill",
-				 "type"          => "solid",
-				 "solid_type"    => "surface",
-				 "min_brush"     => "25.4",
-				 "cut_prims"     => "no",
-				 "polarity"      => "positive",
-				 "consider_rout" => "no",
-				 "dest"          => "layer_name",
-				 "layer"         => $lName,
-				 "stop_at_steps" => ""
-	);
+	my $x = abs( $lim{"xMax"} - $lim{"xMin"} ) +8; # value ten is 2x5 mm frame from each side, which is added
+	my $y = abs( $lim{"yMax"} - $lim{"yMin"} ) +8; # value ten is 2x5 mm frame from each side, which is added
 
-	$layer->SetOutputLayer($lName);
+	my $maxPcbSize = 300;           # asume, max pcb are 350 mm long
+	my $pcbSize = max( $x, $y );    # longer side of actual pcb
+
+	my $maxFloatRes = 2000;         # resolution of 'x', which is depand on image size
+
+	my $pcbFloatRes = $pcbSize / $maxPcbSize * $maxFloatRes;
+
+	# max resolution, if pcb has max size
+	my $maxResX = 3000;
+	my $maxResY = 4245;
+
+
+	# if pcb x dimension exceed max x dimension
+	#if ( $pcbResolution > $maxFloatRes ) {
+		#$pcbResolution = $maxFloatRes;
+	#}
+
+	# final pcb resolution, compute resolution Y side
+
+	my $pcbResY = int( (  $maxResY - $maxFloatRes) + $pcbFloatRes );
+	
+	if($pcbResY > $maxResY){
+		$pcbResY = $maxResY;
+	}
+	
+	my $pcbResX = int( ($pcbResY / max($x, $y)) *  min($x, $y) ); # compute y size based on pcb ratio
+	
+	# if y resolution is begger than max, recompute y resolution
+	
+	if( $pcbResX > $maxResX){
+		
+		$pcbResX = $maxResX;
+		$pcbResY = int( ($pcbResX / min($x, $y) ) *  max($x, $y) ); # compute y size based on pcb ratio
+	}
+ 
+	# test if pcb resolution in y exceed max y dimension
+ 
+	my %res = ( "x" => $pcbResX, "y" => $pcbResY );
+
+	return %res;
 }
 
-# Dont do nothing and export cu layer as is
-sub __PrepareOUTERCU {
-	my $self  = shift;
-	my $layer = shift;
+# Convert layer in pdf to PNG image
+sub __CreatePng {
+	my $self       = shift;
+	my $layerList  = shift;
+	my $dirPath    = shift;
+	my $resolution = shift;
 
-	unless ( $layer->HasLayers() ) {
-		return 0;
-	}
+	my @layers = $layerList->GetLayers(1);
 
-	my $inCAM  = $self->{"inCAM"};
-	my @layers = $layer->GetSingleLayers();
+	my @allCmds = ();
 
-	if ( $layers[0] ) {
+	my @fileToDel = ();
 
-		my $lName = GeneralHelper->GetGUID();
-
-		$inCAM->COM( "merge_layers", "source_layer" => $layers[0]->{"gROWname"}, "dest_layer" => $lName );
-
-		$layer->SetOutputLayer($lName);
-	}
-}
-
-# Invert solder mask
-sub __PrepareMASK {
-	my $self  = shift;
-	my $layer = shift;
-
-	unless ( $layer->HasLayers() ) {
-		return 0;
-	}
-
-	my $inCAM  = $self->{"inCAM"};
-	my @layers = $layer->GetSingleLayers();
-
-	if ( $layers[0] ) {
-		my $lName = GeneralHelper->GetGUID();
-
-		my $maskLayer = $layers[0]->{"gROWname"};
-
-		# Select layer as work
-
-		CamLayer->WorkLayer( $inCAM, $maskLayer );
-
-		$inCAM->COM( "merge_layers", "source_layer" => $maskLayer, "dest_layer" => $lName );
-
-		CamLayer->WorkLayer( $inCAM, $lName );
-
-		my %lim = CamJob->GetProfileLimits( $self->{"inCAM"}, $self->{"jobId"}, $self->{"pdfStep"} );
-
-		$lim{"xMin"} = $lim{"xmin"};
-		$lim{"xMax"} = $lim{"xmax"};
-		$lim{"yMin"} = $lim{"ymin"};
-		$lim{"yMax"} = $lim{"ymax"};
-
-		CamLayer->NegativeLayerData( $self->{"inCAM"}, $lName, \%lim );
-
-		$layer->SetOutputLayer($lName);
-
-		#if white, opaque high
-		if ( $layer->GetColor() eq "250,250,250" ) {
-			$layer->SetTransparency(92);
-		}
-		else {
-			$layer->SetTransparency(80);
-		}
-
-	}
-}
-
-# Dont do nothing and export silk as is
-sub __PrepareSILK {
-	my $self  = shift;
-	my $layer = shift;
-
-	unless ( $layer->HasLayers() ) {
-		return 0;
-	}
-
-	my $inCAM  = $self->{"inCAM"};
-	my @layers = $layer->GetSingleLayers();
-
-	if ( $layers[0] ) {
-
-		my $lName = GeneralHelper->GetGUID();
-
-		$inCAM->COM( "merge_layers", "source_layer" => $layers[0]->{"gROWname"}, "dest_layer" => $lName );
-
-		$layer->SetOutputLayer($lName);
-	}
-}
-
-# Compensate this layer and resize about 100µm (plating)
-sub __PreparePLTDEPTHNC {
-	my $self  = shift;
-	my $layer = shift;
-
-	unless ( $layer->HasLayers() ) {
-		return 0;
-	}
-
-	my $inCAM  = $self->{"inCAM"};
-	my @layers = $layer->GetSingleLayers();
-
-	my $lName = GeneralHelper->GetGUID();
-
-	$inCAM->COM( 'create_layer', layer => $lName, context => 'misc', type => 'document', polarity => 'positive', ins_layer => '' );
-
-	# compensate
 	foreach my $l (@layers) {
 
-		if ( $l->{"gROWlayer_type"} eq "rout" ) {
-			CamLayer->WorkLayer( $inCAM, $l->{"gROWname"} );
-			my $lComp = CamLayer->RoutCompensation( $inCAM, $l->{"gROWname"}, "document" );
+		my $layerSurf = $l->GetSurface();
 
-			# check for special rout 6.5mm with depth
-			$self->__CheckCountersink( $l, $lComp );
+		my $result = 1;
 
-			$inCAM->COM( "merge_layers", "source_layer" => $lComp, "dest_layer" => $lName );
-			$inCAM->COM( 'delete_layer', "layer" => $lComp );
+		# 1) ============================================================================================
+		# Cmd1 - take pdf, convert to png with specific resolution, flatten (in order full opaque image)
+		# and copy alpha channel, which is created from white background
+		my @cmds1 = ();
+
+
+		# command convert pdf to png with specific resolution
+		push( @cmds1, " ( " );
+		
+		push( @cmds1, " -density 300" );
+		push( @cmds1, $dirPath . $l->GetOutputLayer() . ".pdf -flatten" );
+		push( @cmds1, "-shave 20x20 -trim -shave 5x5" );          # shave two borders around image
+		push( @cmds1, "-resize " . $resolution->{"x"} );
+
+		push( @cmds1, " ) " );
+
+		# command from white do transparent and copy alpha channel
+		push( @cmds1, "-background black -alpha copy -type truecolormatte -alpha copy -channel A -negate" );
+
+		my $cmds1str = join( " ", @cmds1 );                                                            # finnal comand cmd1
+
+		# 2) ============================================================================================
+		# Cmd2 - based on surface type TEXTURE/COLOR take texture image or create colored canvas
+
+		my @cmds2 = ();
+
+		if ( $layerSurf->GetType() eq Enums->Surface_COLOR ) {
+
+			push( @cmds2, "-size " . $resolution->{"x"} . "x" . $resolution->{"y"} . " canvas:" . $self->__ConvertColor( $layerSurf->GetColor() ) );
+			#push( @cmds2, "-background " .  $self->__ConvertColor( $layerSurf->GetColor() ) );
 
 		}
-		else {
+		elsif ( $layerSurf->GetType() eq Enums->Surface_TEXTURE ) {
 
-			$inCAM->COM( "merge_layers", "source_layer" => $l->{"gROWname"}, "dest_layer" => $lName );
+			my $texturPath = GeneralHelper->Root() . "\\Resources\\Textures\\" . $layerSurf->GetTexture() . ".jpeg";
+
+			push( @cmds2, $texturPath . " -crop " . $resolution->{"x"} . "x" . $resolution->{"y"}."+0+0" );
 		}
+
+		my $cmds2Str = join( " ", @cmds2 );    # finnal comand cmd2
+
+		# 3) ============================================================================================
+		# Cmd3 - merge created canvas/background with copied alpha channel created in cmd1
+
+		my @cmds3 = ();
+
+		push( @cmds3, $cmds2Str );
+		push( @cmds3, " ( " . $cmds1str . " -channel a -separate +channel ) " );
+		push( @cmds3, " -alpha off -compose copy_opacity -composite " );
+
+		my $cmds3Str = join( " ", @cmds3 );    # finnal comand cmd3
+
+		# 4) ============================================================================================
+		# Cmd4 -add brightness, and set transparetnt, set output path
+
+		my @cmds4 = ();
+		
+		# run 'convert' console application
+		push( @cmds4, EnumsPaths->InCAM_3rdScripts . "im2\\convert.exe" );
+
+		push( @cmds4, " ( ");
+		push( @cmds4, $cmds3Str );
+		push( @cmds4, " ) ");
+
+		my $brightness = ( $layerSurf->GetBrightness() != 0 ) ? " -brightness-contrast " . $layerSurf->GetBrightness() : "";
+		my $opaque = "";
+
+		if ( $layerSurf->GetOpaque() < 100 ) {
+			$opaque =
+			    "-fuzz 20% -matte -fill "
+			  . $self->__ConvertColor( $layerSurf->GetColor(), $layerSurf->GetOpaque() )
+			  . " -opaque "
+			  . $self->__ConvertColor( $layerSurf->GetColor() );
+		}
+
+		push( @cmds4, $brightness );
+		push( @cmds4, $opaque );
+
+		push( @cmds4, $dirPath . $l->GetOutputLayer() . ".png" );
+
+		my $cmds4Str = join( " ", @cmds4 );    # finnal comand cmd3
+
+		push( @allCmds, $cmds4Str );
+ 
+		#print $cmds4Str."\n\n\n";
 
 	}
 
-	# resize
-	CamLayer->WorkLayer( $inCAM, $lName );
-	$inCAM->COM( "sel_resize", "size" => -100, "corner_ctl" => "no" );
+	print STDERR "threat created (conversion pdf => png)\n";
 
-	$layer->SetOutputLayer($lName);
+	# conversion is processed in another perl instance by this script
+	my $script = GeneralHelper->Root() . "\\Packages\\Pdf\\ControlPdf\\FinalPreview\\CreatePng.pl";
+
+	my $createPngCall = SystemCall->new( $script, \@allCmds );
+	unless ( $createPngCall->Run() ) {
+
+		die "Error when convert pdf to png.\n";
+	}
+	
+	print STDERR "threats done (conversion pdf => png)\n";
 
 }
 
-# Compensate this layer and resize about 100µm (plating)
-sub __PrepareNPLTDEPTHNC {
-	my $self  = shift;
-	my $layer = shift;
+# Merge converted png together
+sub __MergePng {
+	my $self      = shift;
+	my $layerList = shift;
+	my $dirPath   = shift;
 
-	unless ( $layer->HasLayers() ) {
-		return 0;
+	my @layers = $layerList->GetLayers(1);
+
+	my @layerStr2 = map { $dirPath . $_->GetOutputLayer() . ".png" } @layers;
+	my $layerStr2 = join( " ", @layerStr2 );
+
+	my $outputTmp = EnumsPaths->Client_INCAMTMPOTHER . GeneralHelper->GetGUID() . ".jpg";
+
+	my @cmd = ( EnumsPaths->InCAM_3rdScripts . "im\\convert.exe" );
+	push( @cmd, $layerStr2 );
+
+
+
+	push( @cmd, "-background white" );
+	push( @cmd, "-flatten" );
+	push( @cmd, "-trim" );
+	#push( @cmd, "-blur 0.2x0.2" );
+	push( @cmd, "-quality 82%" );
+	push( @cmd, $outputTmp );
+
+	my $cmdStr = join( " ", @cmd );
+
+	my $systeMres = system($cmdStr);
+
+	# Adjust image to ratio 3:5. Thus if image is square, this fill image by white color
+	# in order image has ratio 3:5
+
+	# Get the size of globe.gif
+	( my $x, my $y ) = imgsize($outputTmp);
+
+	my $rotate = $x < $y ? 1 : 0;
+
+	# we want to longer side was width
+	if ($rotate) {
+		my $pom = $y;
+		my $y   = $x;
+		my $x   = $pom;
 	}
 
-	my $inCAM  = $self->{"inCAM"};
-	my @layers = $layer->GetSingleLayers();
-	my $lName  = GeneralHelper->GetGUID();
+	my $ratio = min( $x, $y ) / max( $x, $y );
 
-	$inCAM->COM( 'create_layer', layer => $lName, context => 'misc', type => 'document', polarity => 'positive', ins_layer => '' );
+	# compute new image resolution
+	my $dimW = 0;
+	my $dimH = 0;
 
-	# compensate
-	foreach my $l (@layers) {
+	# compute new height
+	if ( $ratio <= 3 / 5 ) {
 
-		if ( $l->{"gROWlayer_type"} eq "rout" ) {
-			CamLayer->WorkLayer( $inCAM, $l->{"gROWname"} );
-			my $lComp = CamLayer->RoutCompensation( $inCAM, $l->{"gROWname"}, "document" );
+		$dimW = max( $x, $y );
+		$dimH = int( ( $dimW / 5 ) * 3 );
 
-			# check for special rout 6.5mm with depth
-			$self->__CheckCountersink( $l, $lComp );
-
-			$inCAM->COM( "merge_layers", "source_layer" => $lComp, "dest_layer" => $lName );
-			$inCAM->COM( 'delete_layer', "layer" => $lComp );
-		}
-		else {
-
-			$inCAM->COM( "merge_layers", "source_layer" => $l->{"gROWname"}, "dest_layer" => $lName );
-		}
 	}
+	else {
 
-	$layer->SetOutputLayer($lName);
+		# compute new width
 
-}
-
-# Compensate this layer and resize about 100µm (plating)
-sub __PreparePLTTHROUGHNC {
-	my $self  = shift;
-	my $layer = shift;
-
-	unless ( $layer->HasLayers() ) {
-		return 0;
-	}
-
-	my $inCAM  = $self->{"inCAM"};
-	my @layers = $layer->GetSingleLayers();
-	my $lName  = GeneralHelper->GetGUID();
-
-	$inCAM->COM( 'create_layer', layer => $lName, context => 'misc', type => 'document', polarity => 'positive', ins_layer => '' );
-
-	# compensate
-	foreach my $l (@layers) {
-
-		if ( $l->{"gROWlayer_type"} eq "rout" ) {
-
-			CamLayer->WorkLayer( $inCAM, $l->{"gROWname"} );
-			my $lComp = CamLayer->RoutCompensation( $inCAM, $l->{"gROWname"}, "document" );
-
-			$inCAM->COM( "merge_layers", "source_layer" => $lComp, "dest_layer" => $lName );
-
-			$inCAM->COM( 'delete_layer', "layer" => $lComp );
-
-		}
-		else {
-
-			$inCAM->COM( "merge_layers", "source_layer" => $l->{"gROWname"}, "dest_layer" => $lName );
-		}
+		$dimH = min( $x, $y );
+		$dimW = int( ( $dimH / 3 ) * 5 );
 
 	}
 
-	CamLayer->WorkLayer( $inCAM, $lName );
-	$inCAM->COM( "sel_resize", "size" => -100, "corner_ctl" => "no" );
-
-	$layer->SetOutputLayer($lName);
-
-}
-
-# Compensate this layer and resize about 100µm (plating)
-sub __PrepareNPLTTHROUGHNC {
-	my $self  = shift;
-	my $layer = shift;
-
-	unless ( $layer->HasLayers() ) {
-		return 0;
+	my @cmd2 = ( EnumsPaths->InCAM_3rdScripts . "im2\\convert.exe" );
+	push( @cmd2, $outputTmp );
+	if ($rotate) {
+		push( @cmd2, "-rotate 90" );
 	}
 
-	my $inCAM  = $self->{"inCAM"};
-	my @layers = $layer->GetSingleLayers();
-	my $lName  = GeneralHelper->GetGUID();
+	push( @cmd2, "-gravity center -background white" );
+	push( @cmd2, "-extent " . $dimW . "x" . $dimH );
 
-	$inCAM->COM( 'create_layer', layer => $lName, context => 'misc', type => 'document', polarity => 'positive', ins_layer => '' );
+	push( @cmd2, $self->{"outputPath"} );
 
-	# compensate
-	foreach my $l (@layers) {
+	my $cmdStr2 = join( " ", @cmd2 );
 
-		if ( $l->{"gROWlayer_type"} eq "rout" ) {
+	my $systeMres2 = system($cmdStr2);
 
-			CamLayer->WorkLayer( $inCAM, $l->{"gROWname"} );
-			my $lComp = CamLayer->RoutCompensation( $inCAM, $l->{"gROWname"}, "document" );
-
-			$inCAM->COM( "merge_layers", "source_layer" => $lComp, "dest_layer" => $lName );
-
-			$inCAM->COM( 'delete_layer', "layer" => $lComp );
-
-		}
-		else {
-
-			$inCAM->COM( "merge_layers", "source_layer" => $l->{"gROWname"}, "dest_layer" => $lName );
-		}
-
-	}
-
-	$layer->SetOutputLayer($lName);
+	unlink($outputTmp);
 
 }
 
 sub __ConvertColor {
 	my $self   = shift;
 	my $rgbStr = shift;
+	my $opaque = shift;
 
-	#	my $alpha = shift;
-	#
-	#	if($alpha < 100){
-	#		$rgbStr = "\"rgba(" . $rgbStr . ", ".($alpha/100).")\"";
-	#
-	#	}else{
-	#		$rgbStr = "'rgb(" . $rgbStr . ")'";
-	#	}
+	if ( defined $opaque && $opaque < 100 ) {
+		$rgbStr = "\"rgba(" . $rgbStr . ", " . ( ($opaque) / 100 ) . ")\"";
 
-	$rgbStr = "'rgb(" . $rgbStr . ")'";
+	}
+	else {
+		$rgbStr = "\"rgb(" . $rgbStr . ")\"";
+	}
 
 	return $rgbStr;
 
-}
-
-sub __CheckCountersink {
-	my $self      = shift;
-	my $layer     = shift;
-	my $layerComp = shift;
-
-	if (    $layer->{"type"} ne EnumsGeneral->LAYERTYPE_plt_bMillTop
-		 && $layer->{"type"} ne EnumsGeneral->LAYERTYPE_nplt_bMillTop
-		 && $layer->{"type"} ne EnumsGeneral->LAYERTYPE_plt_bMillBot
-		 && $layer->{"type"} ne EnumsGeneral->LAYERTYPE_nplt_bMillBot )
-	{
-		return 0;
-	}
-
-	my $inCAM = $self->{"inCAM"};
-	my $jobId = $self->{"jobId"};
-
-	my $stepName = $self->{"pdfStep"};
-	$stepName =~ s/pdf_//;
-	my $lName = $layer->{"gROWname"};
-
-	my $result = 1;
-
-	#get depths for all diameter
-	my @toolDepths = CamToolDepth->GetToolDepths( $inCAM, $jobId, $stepName, $lName );
-
-	$inCAM->INFO(
-				  units       => 'mm',
-				  entity_type => 'layer',
-				  entity_path => "$jobId/$stepName/$lName",
-				  data_type   => 'TOOL',
-				  parameters  => 'drill_size+shape',
-				  options     => "break_sr"
-	);
-	my @toolSize  = @{ $inCAM->{doinfo}{gTOOLdrill_size} };
-	my @toolShape = @{ $inCAM->{doinfo}{gTOOLshape} };
-
-	# 2) check if tool depth is set
-	for ( my $i = 0 ; $i < scalar(@toolSize) ; $i++ ) {
-
-		my $tSize = $toolSize[$i];
-
-		#for each hole diameter, get depth (in mm)
-		my $tDepth;
-
-		if ( $tSize == 6500 ) {
-			my $prepareOk = CamToolDepth->PrepareToolDepth( $tSize, \@toolDepths, \$tDepth );
-
-			unless ($prepareOk) {
-
-				die "$tSize doesn't has set deep of milling/drilling.\n";
-			}
-
-			#vypocitej realne odebrani materialu na zaklade hloubkz pojezdu/vrtani
-			# TODO tady se musi dotahnout skutecnz uhel, ne jen 90 stupnu pokazde - ceka az budou kompletne funkcni vrtacky
-			my $toolAngl = 90;
-
-			my $newDiameter = tan( deg2rad( $toolAngl / 2 ) ) * $tDepth;
-			$newDiameter *= 2;       #whole diameter
-			$newDiameter *= 1000;    #um
-			$newDiameter = int($newDiameter);
-
-			# now change 6.5mm to new diameter
-			CamLayer->WorkLayer( $inCAM, $layerComp );
-			CamFilter->BySingleSymbol( $inCAM, "r6500" );
-			$inCAM->COM( "sel_change_sym", "symbol" => "r" . $newDiameter, "reset_angle" => "no" );
-		}
-	}
-
-	return $result;
 }
 
 #-------------------------------------------------------------------------------------------#

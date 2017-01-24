@@ -4,6 +4,7 @@ package Packages::Pdf::ControlPdf::FinalPreview::Enums;
 use constant {
 	Type_PCBMAT => "typePcbMat",
 	Type_OUTERCU => "typeOuterCu",
+	Type_OUTERSURFACE => "typeOuterSurface",
 	Type_MASK => "typeMask",
 	Type_SILK => "typeSilk",
 	Type_PLTDEPTHNC => "typePltDepthNc",
