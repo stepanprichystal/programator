@@ -77,7 +77,7 @@ sub __ConvertToImage {
 	my $self       = shift;
 	my $pdfStackup = shift;    # path
 
-	my @cmd = ( EnumsPaths->InCAM_3rdScripts . "im\\convert.exe" );
+	my @cmd = ( EnumsPaths->Client_IMAGEMAGICK."convert.exe" );
 
 	push( @cmd, "-density 300 -background white -flatten" );
 	push( @cmd, $pdfStackup );

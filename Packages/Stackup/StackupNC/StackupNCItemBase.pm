@@ -52,6 +52,16 @@ sub GetBotSigLayer {
 	return $self->{"botSignalLayer"};
 }
 
+## Return number of signal layer, which create this stackup info
+#sub GetSignalLayerCnt {
+#	my $self = shift;
+#	
+#	my $cnt = $self->GetBotSigLayer->GetNumber() - $self->GetTopSigLayer->GetNumber() +1 ;
+#	
+#	return $cnt;
+#}
+ 
+
 # Return if exist NC layer of given side TOP/BOT
 sub ExistNCLayers {
 	my $self        = shift;

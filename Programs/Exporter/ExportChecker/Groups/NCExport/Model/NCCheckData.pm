@@ -29,7 +29,7 @@ sub new {
 	my $self  = {};
 	bless $self;
 
-	return $self;   # Return the reference to the hash.
+	return $self;    # Return the reference to the hash.
 }
 
 # Checking group data before final export
@@ -92,31 +92,61 @@ sub OnCheckGroupData {
 	my $stepCnt = scalar(@steps);
 
 	if ( $stepCnt != $footCnt ) {
-		$dataMngr->_AddWarningResult( "Checking foots", "Number of 'foot_down' ($footCnt) doesn't match with number of steps ($stepCnt) in layer: $routLayer" );
+		$dataMngr->_AddWarningResult( "Checking foots",
+									  "Number of 'foot_down' ($footCnt) doesn't match with number of steps ($stepCnt) in layer: $routLayer" );
 	}
-	
+
 	# 5) Check, when ALU material, if all plated holes aer in "f" layer
-	
+
 	if ( $defaultInfo->GetMaterialKind() =~ /al/i ) {
-	
+
 		my @uniqueSteps = CamStepRepeat->GetUniqueStepAndRepeat( $inCAM, $jobId, "panel" );
-		
-		foreach my $step (@uniqueSteps){
-			
-			my %hist = CamHistogram->GetFeatuesHistogram( $inCAM, $jobId, $step->{"stepName"}, "m");
-			
-			if($hist{"total"} != 0){
-				
-				$dataMngr->_AddErrorResult("Drilling", "Step: ".$step->{"stepName"}." contains drilling in layer 'm'. When material is ALU, all drilling should be moved to layer 'f'.");
-				
+
+		foreach my $step (@uniqueSteps) {
+
+			my %hist = CamHistogram->GetFeatuesHistogram( $inCAM, $jobId, $step->{"stepName"}, "m" );
+
+			if ( $hist{"total"} != 0 ) {
+
+				$dataMngr->_AddErrorResult(
+											"Drilling",
+											"Step: "
+											  . $step->{"stepName"}
+											  . " contains drilling in layer 'm'. When material is ALU, all drilling should be moved to layer 'f'."
+				);
+
 			}
- 
+
 		}
-		
-		
+
 	}
-	
-	
+
+	# 6) Check if fsch exist, and if "f" was changed if "fsch" was changed too
+	if ( $defaultInfo->LayerExist("fsch") ) {
+
+		my @uniqueSteps = CamStepRepeat->GetUniqueNestedStepAndRepeat( $inCAM, $jobId, "panel" );
+
+		my $fModified = 0;
+		foreach my $step (@uniqueSteps) {
+
+			my @f = ( $step->{"stepName"}, "f" );
+			if ( CamHelper->EntityChanged( $inCAM, $jobId, "modified", \@f ) ) {
+				$fModified = 1;
+				last;
+			}
+		}
+
+		# if f modified, check if
+		if ($fModified) {
+			my @fsch = ( "panel", "fsch" );
+			unless ( CamHelper->EntityChanged( $inCAM, $jobId, "modified", \@fsch ) ) {
+				$dataMngr->_AddWarningResult( "Old 'fsch' layer",
+											  "Layer 'f' was changed, but layer 'fsch' not. If necessary, change 'fsch' layer too.\n" );
+
+			}
+		}
+
+	}
 
 }
 

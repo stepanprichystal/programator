@@ -220,10 +220,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	my %hist = CamHistogram->GetAttCountHistogram(  $inCAM, $jobId, "panel", "f");
 	
 	print STDERR "test";
-	
-	 
-
-
+ 
 }
 
 

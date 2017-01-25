@@ -27,7 +27,6 @@ use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'Packages::Technology::EtchOperation';
 use aliased 'Packages::Other::CustomerNote';
 
-
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
@@ -59,7 +58,7 @@ sub new {
 	$self->{"surface"}       = undef;
 	$self->{"jobAttributes"} = undef;    # all job attributes
 	$self->{"costomerInfo"}  = undef;    # info about customer, name, reference, ...
-	$self->{"costomerNote"} = undef;    # notes about customer, like export paste, info to pdf, ..
+	$self->{"costomerNote"}  = undef;    # notes about customer, like export paste, info to pdf, ..
 
 	$self->__InitDefault();
 
@@ -122,9 +121,9 @@ sub GetEtchType {
 		#my $topCopperName = undef;
 		#my $botCopperName = undef;
 
-		my $core  = $self->{"stackup"}->GetCoreByCopperLayer($layerName);
-		my $press = undef;
+		my $core = $self->{"stackup"}->GetCoreByCopperLayer($layerName);
 
+		# a) create  stackup item contains one core
 		if ($core) {
 
 			#$topCopperName = $core->GetTopCopperLayer()->GetCopperName();
@@ -135,39 +134,77 @@ sub GetEtchType {
 			$stackupNCitem = $self->{"stackupNC"}->GetCore($order);
 
 		}
-		else {
 
-			# find, which press was layer pressed in
-			foreach my $pNum ( keys %pressInfo ) {
+		# b) create stackup item, which conatin > 2 signal layer (pressing)
+		# (sometimes ona layer is exposed twise in production
+		# E.g. when 4vv stackup is make from 2 cores)
 
-				my $p = $pressInfo{$pNum};
+		my $press = undef;
 
-				if ( $p->GetTopCopperLayer() eq $layerName || $p->GetBotCopperLayer() eq $layerName ) {
-					$press = $p;
+		# find, which press was layer pressed in
+		foreach my $pNum ( keys %pressInfo ) {
 
-					my $order = $press->GetPressOrder();
-					$stackupNCitem = $self->{"stackupNC"}->GetPress($order);
+			my $p = $pressInfo{$pNum};
 
-					#$topCopperName = p->GetTopCopperLayer();
-					#$botCopperName = $p->GetBotCopperLayer();
-					last;
-				}
+			if ( $p->GetTopCopperLayer() eq $layerName || $p->GetBotCopperLayer() eq $layerName ) {
+				$press = $p;
 
+				my $order = $press->GetPressOrder();
+				$stackupNCitem = $self->{"stackupNC"}->GetPress($order);
+
+				#$topCopperName = p->GetTopCopperLayer();
+				#$botCopperName = $p->GetBotCopperLayer();
+				last;
 			}
+
 		}
 
 		# 2) Now decide, if there is blind drilling in stackupItem ( = pressInfo/coreInfo)
 
-		if (    $stackupNCitem->ExistNCLayers( StackupEnums->SignalLayer_TOP, EnumsGeneral->LAYERTYPE_plt_bDrillTop )
-			 || $stackupNCitem->ExistNCLayers( StackupEnums->SignalLayer_BOT, EnumsGeneral->LAYERTYPE_plt_bDrillBot ) )
-		{
+		# core can have different etching
+		if ( $core && !$press ) {
 
-			$etchType = EnumsGeneral->Etching_PATTERN;
+			# if core contain core drilling -> tenting
+
+			if ( $stackupNCitem->ExistNCLayers( StackupEnums->SignalLayer_TOP, EnumsGeneral->LAYERTYPE_plt_cDrill ) ) {
+
+				$etchType = EnumsGeneral->Etching_TENTING;
+			}
+
+			# if top layer of core contain blind drill top -> pattern (e.g. when 4vv stackup is make from 2 cores)
+
+			if ( $stackupNCitem->GetTopSigLayer()->GetName() eq $layerName ) {
+				if ( $stackupNCitem->ExistNCLayers( StackupEnums->SignalLayer_TOP, EnumsGeneral->LAYERTYPE_plt_bDrillTop ) ) {
+					$etchType = EnumsGeneral->Etching_PATTERN;
+				}
+				else {
+					$etchType = EnumsGeneral->Etching_TENTING;
+				}
+			}
+
+			# if bot layer of core contain blind drill bot -> pattern (e.g. when 4vv stackup is make from 2 cores)
+			if ( $stackupNCitem->GetBotSigLayer()->GetName() eq $layerName ) {
+				if ( $stackupNCitem->ExistNCLayers( StackupEnums->SignalLayer_BOT, EnumsGeneral->LAYERTYPE_plt_bDrillBot ) ) {
+					$etchType = EnumsGeneral->Etching_PATTERN;
+				}
+				else {
+					$etchType = EnumsGeneral->Etching_TENTING;
+				}
+			}
 
 		}
-		else {
+		elsif ($press) {
 
-			$etchType = EnumsGeneral->Etching_TENTING;
+			# if press, when both side of stackup item has to have same etching type
+
+			if (    $stackupNCitem->ExistNCLayers( StackupEnums->SignalLayer_TOP, EnumsGeneral->LAYERTYPE_plt_bDrillTop )
+				 || $stackupNCitem->ExistNCLayers( StackupEnums->SignalLayer_BOT, EnumsGeneral->LAYERTYPE_plt_bDrillBot ) )
+			{
+				$etchType = EnumsGeneral->Etching_PATTERN;
+			}
+			else {
+				$etchType = EnumsGeneral->Etching_TENTING;
+			}
 		}
 
 		# 3) Check on plated rout most outer layers
@@ -477,9 +514,9 @@ sub GetJobAttrByName {
 	return $self->{"jobAttributes"}->{$attr};
 }
 
-sub GetCustomerNote{
+sub GetCustomerNote {
 	my $self = shift;
-	
+
 	return $self->{"costomerNote"};
 }
 
@@ -528,8 +565,6 @@ sub __InitDefault {
 	$self->{"costomerInfo"} = HegMethods->GetCustomerInfo( $self->{"jobId"} );
 
 	$self->{"costomerNote"} = CustomerNote->new( $self->{"costomerInfo"}->{"reference_subjektu"} );
-
-	 
 
 }
 

@@ -18,6 +18,7 @@ use aliased 'Enums::EnumsPaths';
 use aliased 'CamHelpers::CamJob';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'Connectors::HeliosConnector::HegMethods';
+use aliased 'Helpers::FileHelper';
 
 #-------------------------------------------------------------------------------------------#
 #   Package methods
@@ -52,19 +53,16 @@ sub OpenJob {
 	my $inCam   = shift;
 	my $jobName = shift;
 
-#	$inCam->COM(
-#				 "clipb_open_job",
-#				 job              => "$jobName",
-#				 update_clipboard => "view_job"
-#	);
+	#	$inCam->COM(
+	#				 "clipb_open_job",
+	#				 job              => "$jobName",
+	#				 update_clipboard => "view_job"
+	#	);
 	$inCam->COM( "open_job", job => "$jobName", "open_win" => "yes" );
 
 	$inCam->AUX( 'set_group', group => $inCam->{COMANS} );
 
 }
-
-
-
 
 #Open job and step in genesis
 sub OpenJobAndStep {
@@ -107,17 +105,14 @@ sub OpenStep {
 	);
 }
 
-
 # Set step in InCAM
 sub SetStep {
 	my $self     = shift;
 	my $inCAM    = shift;
 	my $stepName = shift;
- 
+
 	$inCAM->COM( "set_step", "name" => $stepName );
 }
- 
-
 
 # Open given job
 sub SaveAndCloseJob {
@@ -125,14 +120,9 @@ sub SaveAndCloseJob {
 	my $inCam   = shift;
 	my $jobName = shift;
 
-	$inCam->COM( "save_job","job"              => "$jobName");
-	$inCam->COM( "close_job","job"              => "$jobName");
+	$inCam->COM( "save_job",  "job" => "$jobName" );
+	$inCam->COM( "close_job", "job" => "$jobName" );
 }
-
-
- 
- 
- 
 
 #Return if step exists
 sub StepExists {
@@ -174,6 +164,7 @@ sub LayerExists {
 	my $self    = shift;
 	my $inCAM   = shift;
 	my $jobName = shift;
+
 	#my $stepName  = shift; # param isn't need
 	my $layerName = shift;
 
@@ -203,6 +194,7 @@ sub LayerType {
 	my $self    = shift;
 	my $inCAM   = shift;
 	my $jobName = shift;
+
 	#my $stepName  = shift;  # param isn't need
 	my $layerName = shift;
 
@@ -269,5 +261,121 @@ sub GetPcbType {
 
 	return $type;
 }
+
+sub EntityChanged {
+	my $self   = shift;
+	my $inCAM  = shift;
+	my $jobId  = shift;
+	my $type   = shift;    # created/modified
+	my @entity = @{shift(@_)};
+
+	# 1) load file with changes
+	my $infoFile = $inCAM->INFO(
+								 "units"           => 'mm',
+								 "angle_direction" => 'ccw',
+								 "entity_type"     => 'job',
+								 "entity_path"     => $jobId,
+								 "data_type"       => 'CHANGES',
+								 "parse"           => 'no'
+	);
+
+	unless ( -e $infoFile ) {
+		die "Infofile job CHANGES doesn't exist.\n";
+	}
+
+	my $linesRef = FileHelper->ReadAsLines($infoFile);
+
+	unlink($infoFile);
+
+	my $entities = undef;
+
+	my %hash = ();
+
+	my @created  = ();
+	my @modified = ();
+	$hash{"created"}  = \@created;
+	$hash{"modified"} = \@modified;
+
+	if ($linesRef) {
+
+		my @lines = @{$linesRef};
+
+		foreach my $l (@lines) {
+
+			if ( $l =~ /^[\s\t\n]$/ || $l =~ /-{3,}/ ) {
+				next;
+			}
+
+			$l = lc($l);
+			chomp($l);
+
+			if ( $l =~ "created entities" ) {
+				$entities = "created";
+			}
+			elsif ( $l =~ "modified entities" ) {
+				$entities = "modified";
+			}
+			else {
+
+				unless ($entities) {
+					next;
+				}
+
+				# Parse lines
+				# each item of array = one level (step, layer, ...)
+				my $str    = "";
+				my @ent    = split( ",", $l );
+				my @entRes = ();
+
+				# get entity values
+				foreach my $e (@ent) {
+					my $val = (split("=", $e))[1];
+					 $val =~ s/\s//g;
+					push( @entRes, $val ) if ( defined $val );
+				}
+
+				push( @{ $hash{$entities} }, lc( join( "/", @entRes ) ) );
+			}
+		}
+	}
+
+	# 2) Check if entities was modified/created
+
+	my $entitStr = join( "/", @entity );
+	$entitStr = lc($entitStr);
+	$entitStr = quotemeta $entitStr;
+ 
+	my $exist = grep { $_ =~ /^$entitStr$/i } @{ $hash{$type} };
+
+	if ($exist) {
+		return 1;
+	}
+	else {
+		return 0;
+	}
+}
+
+#-------------------------------------------------------------------------------------------#
+#  Place for testing..
+#-------------------------------------------------------------------------------------------#
+my ( $package, $filename, $line ) = caller;
+if ( $filename =~ /DEBUG_FILE.pl/ ) {
+
+	use aliased 'CamHelpers::CamHelper';
+	use aliased 'Packages::InCAM::InCAM';
+
+	my $inCAM = InCAM->new();
+
+	my $jobId     = "f13609";
+	my $stepName  = "panel";
+	 
+	my @arr =  ("mpanel", "m");
+
+	my $res = CamHelper->EntityChanged(  $inCAM, $jobId, "modified", \@arr);
+	
+	print STDERR "test";
+ 
+}
+
 
 1;

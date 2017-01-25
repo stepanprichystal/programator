@@ -501,7 +501,7 @@ sub __CreateServer {
 
 	#run InCAM editor with serverscript
 	Win32::Process::Create( $processObj, $inCAMPath,
-							"InCAM.exe    -s" . $path." " . $freePort,
+							"InCAM.exe -s" . $path." " . $freePort,
 							0, THREAD_PRIORITY_NORMAL, "." )
 	  || die "$!\n";
 
@@ -517,8 +517,6 @@ sub __CreateServer {
 	# creaate and test server connection
 	$pidServer = $self->__CreateServerConn($freePort);
 
-	# Temoporary solution because -x is not working in inCAM
-	#$self->__MoveWindowOut($pidInCAM);
 
 	#if ok, reise event port ready
 	if ($pidServer) {
