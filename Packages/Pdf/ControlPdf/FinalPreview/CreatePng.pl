@@ -47,6 +47,12 @@ sub __ConvertToPng {
 
 	my $cmd = shift;
 
+	my @args = ($cmd);
+    
+
+#print 'c:\\Program Files\\ImageMagick\\convert.exe'. " ".$cmd;
+#
+#	my $systeMres = system('c:\Program Files\ImageMagick\convert.exe'. " ".$cmd);
 	my $systeMres = system($cmd);
 
 }

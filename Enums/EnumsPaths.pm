@@ -6,8 +6,10 @@ use constant {
     Client_PCBLOCAL => "c:\\pcb\\",
     Client_EXPORTLOCAL => "c:\\Export\\",
     Client_ELTESTS => "c:\\Boards\\",
-    Client_MULTICALDB => "c:\\Program Files (x86)\\Multical5-1\\ml.xml",
+    #Client_MULTICALDB => "c:\\Program Files (x86)\\Multical5-1\\ml.xml",
     Client_INCAMVERSION => "c:\\opt\\InCAM\\",
+    Client_IMAGEMAGICK => "c:\\im\\",
+    
    
 
  	# Paths for log

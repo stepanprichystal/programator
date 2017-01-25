@@ -307,7 +307,10 @@ sub __CreatePng {
 		my @cmds4 = ();
 
 		# run 'convert' console application
-		push( @cmds4, EnumsPaths->InCAM_3rdScripts . "im\\convert.exe" );
+		
+		 
+		
+		push( @cmds4, EnumsPaths->Client_IMAGEMAGICK."convert.exe" );
 		#push( @cmds4, "convert" );
 
 		push( @cmds4, " ( " );
@@ -367,7 +370,7 @@ sub __MergePng {
 	my $outputTmp = EnumsPaths->Client_INCAMTMPOTHER . GeneralHelper->GetGUID() . ".jpg";
 
 	# 1) Flatten all images/layers together
-	my @cmd = ( EnumsPaths->InCAM_3rdScripts . "im\\convert.exe" );
+	my @cmd = ( EnumsPaths->Client_IMAGEMAGICK."convert.exe" );
 	push( @cmd, $layerStr2 );
 
 	push( @cmd, "-background " . $self->__ConvertColor( $layerList->GetBackground() ) );
@@ -425,7 +428,7 @@ sub __MergePng {
 
 	}
 
-	my @cmd2 = ( EnumsPaths->InCAM_3rdScripts . "im\\convert.exe" );
+	my @cmd2 = (EnumsPaths->Client_IMAGEMAGICK."convert.exe" );
 	push( @cmd2, $outputTmp );
 	
 	if ($rotate) {
