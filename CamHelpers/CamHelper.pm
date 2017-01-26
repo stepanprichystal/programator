@@ -295,7 +295,8 @@ sub EntityChanged {
 	my @modified = ();
 	$hash{"created"}  = \@created;
 	$hash{"modified"} = \@modified;
-
+	$hash{"deleted"} = \@modified;
+	
 	if ($linesRef) {
 
 		my @lines = @{$linesRef};
@@ -314,6 +315,9 @@ sub EntityChanged {
 			}
 			elsif ( $l =~ "modified entities" ) {
 				$entities = "modified";
+			
+			}elsif ( $l =~ "deleted entities" ) {
+				$entities = "deleted";
 			}
 			else {
 

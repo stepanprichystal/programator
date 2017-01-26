@@ -10,6 +10,20 @@ use warnings;
 
 #local library
 
+#define connection parameters for TPV DB
+%logDb = ();
+
+$tpvDb{"connectionTimeout"} = 1;
+$tpvDb{"commandTimeout"} = 30;
+$tpvDb{"dbUserName"}     = "tpv_user";
+$tpvDb{"dbName"}         = "tpv_log";
+$tpvDb{"dbPassword"}     = "1234";
+$tpvDb{"dbHost"}         = "192.168.2.2"; #tpv-server
+$tpvDb{"dbPort"}         = "3306";
+$tpvDb{"dbAllowed"}         = 1; # set here => 0, when Database is out service!
+
+
+
 #define connection parameters for log DB
 %logDb = ();
 

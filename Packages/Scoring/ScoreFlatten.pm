@@ -173,7 +173,7 @@ sub __ScoreRepair {
 	$score->Parse( $inCAM, $jobId, $stepName, "score", 0 );
 	my @scoreFeatures = $score->GetFeatures();
 
-	my $dist = 4;                                                               #sit from profile
+	my $dist = 0;                                                               #sit from profile
 	my %profileLimts = CamJob->GetProfileLimits( $inCAM, $jobId, $stepName );
 
 	# 1) do score streight

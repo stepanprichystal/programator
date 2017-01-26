@@ -71,7 +71,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	use aliased 'Connectors::TpvConnector::TpvMethods';
 	
-	my $info = TpvMethods->GetCustomerInfo("01982");
+	my $info = TpvMethods->GetCustomerInfo("04119");
 	
 	print 1;
 	

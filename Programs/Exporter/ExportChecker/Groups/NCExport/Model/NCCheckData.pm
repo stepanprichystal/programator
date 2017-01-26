@@ -126,28 +126,44 @@ sub OnCheckGroupData {
 
 		my @uniqueSteps = CamStepRepeat->GetUniqueNestedStepAndRepeat( $inCAM, $jobId, "panel" );
 
-		my $fModified = 0;
-		foreach my $step (@uniqueSteps) {
+		my $fschCreated = 0;
 
-			my @f = ( $step->{"stepName"}, "f" );
-			if ( CamHelper->EntityChanged( $inCAM, $jobId, "modified", \@f ) ) {
-				$fModified = 1;
+		# check if fsch was created
+
+		foreach my $step (@uniqueSteps) {
+			my @f = ( $step->{"stepName"}, "fsch" );
+			if ( CamHelper->EntityChanged( $inCAM, $jobId, "created", \@f ) ) {
+				$fschCreated = 1;
 				last;
 			}
 		}
 
-		# if f modified, check if
-		if ($fModified) {
-			my @fsch = ( "panel", "fsch" );
-			unless ( CamHelper->EntityChanged( $inCAM, $jobId, "modified", \@fsch ) ) {
-				$dataMngr->_AddWarningResult( "Old 'fsch' layer",
-											  "Layer 'f' was changed, but layer 'fsch' not. If necessary, change 'fsch' layer too.\n" );
 
+		# if fsch was created after open job, do not control
+		unless ($fschCreated) {
+
+			my $fModified = 0;
+			foreach my $step (@uniqueSteps) {
+
+				my @f = ( $step->{"stepName"}, "f" );
+				if ( CamHelper->EntityChanged( $inCAM, $jobId, "modified", \@f ) ) {
+					$fModified = 1;
+					last;
+				}
 			}
+
+			# if f modified, check if
+			if ($fModified) {
+				my @fsch = ( "panel", "fsch" );
+				unless ( CamHelper->EntityChanged( $inCAM, $jobId, "modified", \@fsch ) ) {
+					$dataMngr->_AddWarningResult( "Old 'fsch' layer",
+												 "Layer 'f' was changed, but layer 'fsch' not. If necessary, change 'fsch' layer in 'panel' too.\n" );
+
+				}
+			}
+
 		}
-
 	}
-
 }
 
 #-------------------------------------------------------------------------------------------#

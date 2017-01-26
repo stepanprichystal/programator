@@ -74,6 +74,27 @@ sub CheckProfileDistance {
 	my %profile = %{ shift(@_) };
 	my $dist    = shift;
 	my $errors  = shift;
+	
+	my $origX = 0;
+	my $origY = 0;
+	
+	# check if origin is not in null position
+	# if so,  compute origin compensation and add this value to each lines coodrdinations and profile point
+	if($profile{"xmin"} < 0){
+		
+		$origX = -$profile{"xmin"};
+		
+	} 
+	
+	if($profile{"ymin"} < 0 ){
+		
+		$origY = -$profile{"ymin"};
+		
+	} 
+	
+	
+	
+
 
 	my $result    = Enums->ScoreLength_OK;
 	my $tolerance = 0.1;
@@ -91,16 +112,16 @@ sub CheckProfileDistance {
 		if ( $lines[$i]->{"direction"} eq "vertical" ) {
 
 			#check if line is not too long
-			if (    $lines[$i]->{"y1"} < $profile{"ymin"} + $dist
-				 || $lines[$i]->{"y2"} > $profile{"ymax"} - $dist )
+			if (    $lines[$i]->{"y1"} + $origY < $profile{"ymin"} + $dist +$origY
+				 || $lines[$i]->{"y2"} + $origY > $profile{"ymax"} - $dist +$origY)
 			{
 				$result = Enums->ScoreLength_TOOLONG;
 				last;
 			}
 
 			#check if line is not too short
-			if (    ( ( $lines[$i]->{"y1"} - $profile{"ymin"} ) < 0 || ( $lines[$i]->{"y1"} - $profile{"ymin"} ) < $maxGap )
-				 && ( ( $lines[$i]->{"y2"} - $profile{"ymax"} ) > 0 || ( $profile{"ymax"} - $lines[$i]->{"y2"} ) < $maxGap ) ) 
+			if (    ( ( $lines[$i]->{"y1"} + $origY - $profile{"ymin"}  + $origY) < 0 || ( $lines[$i]->{"y1"} + $origY- $profile{"ymin"} + $origY) < $maxGap )
+				 && ( ( $lines[$i]->{"y2"} + $origY - $profile{"ymax"}  + $origY) > 0 || ( $profile{"ymax"} + $origY- $lines[$i]->{"y2"} + $origY) < $maxGap ) ) 
 			  {
 
 				  #ok
@@ -115,16 +136,16 @@ sub CheckProfileDistance {
 		elsif ( $lines[$i]->{"direction"} eq "horizontal" ) {
 
 			 #check if line is not too long
-			if (    $lines[$i]->{"x1"} < $profile{"xmin"} + $dist
-				 || $lines[$i]->{"x2"} > $profile{"xmax"} - $dist )
+			if (    $lines[$i]->{"x1"} + $origX < $profile{"xmin"} + $dist+ $origX
+				 || $lines[$i]->{"x2"} + $origX > $profile{"xmax"} - $dist + $origX)
 			{
 				  $result = Enums->ScoreLength_TOOLONG;
 				  last;
 			  }
 
 			  #check if line is not too short
-			  if (    ( ( $lines[$i]->{"x1"} - $profile{"xmin"} ) < 0 || ( $lines[$i]->{"x1"} - $profile{"xmin"} ) < $maxGap )
-				   && ( ( $lines[$i]->{"x2"} - $profile{"xmax"} ) > 0 || ( $profile{"xmax"} - $lines[$i]->{"x2"} ) < $maxGap ) ) 
+			  if (    ( ( $lines[$i]->{"x1"} + $origX- $profile{"xmin"} + $origX) < 0 || ( $lines[$i]->{"x1"} + $origX- $profile{"xmin"} + $origX) < $maxGap )
+				   && ( ( $lines[$i]->{"x2"} + $origX- $profile{"xmax"} + $origX) > 0 || ( $profile{"xmax"}+ $origX - $lines[$i]->{"x2"} + $origX) < $maxGap ) ) 
 				{
 
 					#ok

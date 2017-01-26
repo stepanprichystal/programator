@@ -848,6 +848,25 @@ sub GetInfMasterSlave {
 }
 
 
+# Return value of term order
+sub GetTermOfOrder {
+	my $self    = shift;
+	my $orderId = shift;
+
+	my @params = ( SqlParameter->new( "_OrderId", Enums->SqlDbType_VARCHAR, $orderId ) );
+	
+	
+	my $cmd = "SELECT top 1
+				termin
+				from lcs.zakazky_dps_22_hlavicka 
+				WHERE reference_subjektu = _OrderId";
+
+	my $res = Helper->ExecuteScalar( $cmd, \@params, 1 );
+
+ 
+	return $res;
+}
+
 #-------------------------------------------------------------------------------------------#
 #  Helper method
 #-------------------------------------------------------------------------------------------#

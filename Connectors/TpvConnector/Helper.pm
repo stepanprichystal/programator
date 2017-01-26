@@ -23,14 +23,14 @@ use Connectors::Config;
 #  Package methods
 #-------------------------------------------------------------------------------------------#
 
-my $__conTimeout = $Connectors::Config::logDb{"connectionTimeout"};
-my $__commandTimeout = $Connectors::Config::logDb{"commandTimeout"};
-my $__dbUserName     = $Connectors::Config::logDb{"dbUserName"};
-my $__dbName         = $Connectors::Config::logDb{"dbName"};
-my $__dbPassword     = $Connectors::Config::logDb{"dbPassword"};
-my $__dbHost         = $Connectors::Config::logDb{"dbHost"};
-my $__dbPort         = $Connectors::Config::logDb{"dbPort"};
-my $__dbAllowed         = $Connectors::Config::logDb{"dbAllowed"};
+my $__conTimeout = $Connectors::Config::tpvDb{"connectionTimeout"};
+my $__commandTimeout = $Connectors::Config::tpvDb{"commandTimeout"};
+my $__dbUserName     = $Connectors::Config::tpvDb{"dbUserName"};
+my $__dbName         = $Connectors::Config::tpvDb{"dbName"};
+my $__dbPassword     = $Connectors::Config::tpvDb{"dbPassword"};
+my $__dbHost         = $Connectors::Config::tpvDb{"dbHost"};
+my $__dbPort         = $Connectors::Config::tpvDb{"dbPort"};
+my $__dbAllowed         = $Connectors::Config::tpvDb{"dbAllowed"};
 
 sub __OpenConnection {
 

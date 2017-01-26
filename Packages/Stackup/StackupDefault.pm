@@ -88,12 +88,14 @@ sub CreateStackup {
 
 	my $defaultName = $lCount . "vv_" . $stackType . ".xml";
 
-	my @mess = ("Který typ standardního stackupu chceš vygenerovat? (IS400 pouze velký pøíøez)");
-	my @btn = ( "IS400", "FR4" );
+	#my @mess = ("Který typ standardního stackupu chceš vygenerovat? (IS400 pouze velký pøíøez)");
+	#my @btn = ( "IS400", "FR4" );
 
-	$messMngr->ShowModal( -1, EnumsGeneral->MessageType_INFORMATION, \@mess, \@btn );
+	#$messMngr->ShowModal( -1, EnumsGeneral->MessageType_INFORMATION, \@mess, \@btn );
 
-	my $res = $messMngr->Result();
+	#my $res = $messMngr->Result();
+	my $res = 0;
+	
 
 	my $path;
 
@@ -142,9 +144,9 @@ sub CreateStackup {
 		}
 
 		copy( $stackTempPath, $pdfArchive ) or die "Copy failed: $!";
-		@mess = ( "Standardni stackup :" . $stackupName . ".xml byl automaticky vygenerovan" );
+		my @mess2 = ( "Standardni stackup :" . $stackupName . ".xml byl automaticky vygenerovan" );
 
-		$messMngr->Show( -1, EnumsGeneral->MessageType_INFORMATION, \@mess );
+		$messMngr->Show( -1, EnumsGeneral->MessageType_INFORMATION, \@mess2 );
 	}
 
 	#Tidy up temp dir
@@ -326,7 +328,7 @@ my ( $package, $filename, $line ) = caller;
 
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-		my $pcbId        = "f52456";
+		my $pcbId        = "f13608";
 		my $layerCnt     = 4;
 		my @innerCuUsage = ( 50,30 );
 		my $outerCuThick = 18;

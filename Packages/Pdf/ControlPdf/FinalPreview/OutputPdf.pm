@@ -126,11 +126,11 @@ sub __OutputPdf {
 		}
 		if ( -e $dirPath . $l->GetOutputLayer() . ".pdf" ) {
 
-			unlink( $dirPath . $l->GetOutputLayer() . ".pdf" );
+			#unlink( $dirPath . $l->GetOutputLayer() . ".pdf" );
 		}
 	}
 
-	rmdir($dirPath);
+	#rmdir($dirPath);
 
 }
 
@@ -337,7 +337,7 @@ sub __CreatePng {
 
 		push( @allCmds, $cmds4Str );
 
-		#print $cmds4Str."\n\n\n";
+		print $cmds4Str."\n\n\n";
 
 	}
 
