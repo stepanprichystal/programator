@@ -126,11 +126,11 @@ sub __OutputPdf {
 		}
 		if ( -e $dirPath . $l->GetOutputLayer() . ".pdf" ) {
 
-			#unlink( $dirPath . $l->GetOutputLayer() . ".pdf" );
+			unlink( $dirPath . $l->GetOutputLayer() . ".pdf" );
 		}
 	}
 
-	#rmdir($dirPath);
+	rmdir($dirPath);
 
 }
 
@@ -330,6 +330,13 @@ sub __CreatePng {
 
 		push( @cmds4, $brightness );
 		push( @cmds4, $opaque );
+		
+		# if surfeace is texture, this line convert all transparent color to solid color and back to transparnt
+		# This cauze smaller size of final image (because most of area is transparent) and faster creation
+		if ( $layerSurf->GetType() eq Enums->Surface_TEXTURE ) {
+			
+			push( @cmds4, " -fill blue -opaque none -fill none -opaque blue" );
+		}
 
 		push( @cmds4, $dirPath . $l->GetOutputLayer() . ".png" );
 

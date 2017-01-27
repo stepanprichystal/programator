@@ -8,7 +8,7 @@ use warnings;
 
 # ============ INPUT LINE =================
 my $inputLine =
-"sel_copy_other,dest=layer_name,target_layer=ddd,invert=no,dx=0,dy=0,size=0,x_anchor=0,y_anchor=0 ";# ============ INPUT LINE =================
+"chklist_erf,chklist=Checks,nact=1,erf=Class_6-Euro-Out (0)";# ============ INPUT LINE =================
 
 
 my $output = "\$inCAM->COM(";

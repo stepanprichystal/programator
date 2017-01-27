@@ -179,7 +179,9 @@ sub __ExportStackup {
 	}
 
 	if ( -e $pdfPath ) {
-		unlink($pdfPath);
+		unless( unlink($pdfPath) ){
+			die "Can not delete old pdf stackup file (".$pdfPath."). Maybe file is still open.\n";
+		}
 	}
 
 	copy( $tmpPath, $pdfPath ) or die "Copy failed: $!";
