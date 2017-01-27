@@ -221,7 +221,7 @@ sub __PrepareDrillMaps {
 		"slots"           => "no",
 		"columns"         => "Count\;Type\;+Tol\;-Tol\;Finish",
 		"notype"          => "abort",
-		"table_pos"       => "right",                       # alwazs right, because another option not work
+		"table_pos"       => "right",                      
 		"table_align"     => "bottom"
 	);
 
