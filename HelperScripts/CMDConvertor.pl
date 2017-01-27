@@ -8,8 +8,7 @@ use warnings;
 
 # ============ INPUT LINE =================
 my $inputLine =
-"chklist_erf,chklist=Checks,nact=1,erf=Class_6-Euro-Out (0)";# ============ INPUT LINE =================
-
+"copy_layer,source_job=f13608,source_step=o+1,source_layer=f,dest=layer_name,dest_step=,dest_layer=dddd,mode=append,invert=no,copy_notes=no,copy_attrs=no,copy_lpd=new_layers_only,copy_sr_feat=no (0)";# ============ INPUT LINE =================
 
 my $output = "\$inCAM->COM(";
 my @splitted = split( ",", $inputLine );

@@ -77,14 +77,17 @@ sub __AddFilterAtt {
 
 # Select all attributes of step in hash
 # Return count of celected features
-sub BySingleSymbol {
+sub BySymbols {
 	my $self   = shift;
 	my $inCAM  = shift;
-	my $symbol = shift;
+	my @symbols = @{shift(@_)};
+	
+	my $symbolStr = join("\\;", @symbols);
+	
 
 	$inCAM->COM( 'filter_reset', filter_name => 'popup' );
 
-	$inCAM->COM( "set_filter_symbols", "filter_name" => "", "exclude_symbols" => "no", "symbols" => $symbol );
+	$inCAM->COM( "set_filter_symbols", "filter_name" => "", "exclude_symbols" => "no", "symbols" => $symbolStr );
 
 	#$inCAM->COM( 'set_filter_and_or_logic', filter_name => 'popup', criteria => 'inc_attr', logic => 'or' );
 	$inCAM->COM('filter_area_strt');
@@ -206,7 +209,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	#my $step  = "mpanel_10up";
 
-	my $result = CamFilter->SelectByReferenece( $inCAM, "include", "mc", undef, undef, "positive", "c", ".gold_plating", undef, undef);
+	my $result = CamFilter->BySymbols( $inCAM, "r500", "r1100");
 
 	#my $self             = shift;
 	

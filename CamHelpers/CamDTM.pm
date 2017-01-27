@@ -5,7 +5,6 @@
 
 package CamHelpers::CamDTM;
 
-
 #3th party library
 use Genesis;
 use strict;
@@ -15,7 +14,6 @@ use warnings;
 
 use aliased 'Enums::EnumsPaths';
 use aliased 'CamHelpers::CamHelper';
-
 
 #-------------------------------------------------------------------------------------------#
 #   Package methods
@@ -51,8 +49,8 @@ sub GetDTMUserColNames {
 	}
 
 	close($f);
-	
-	return @names
+
+	return @names;
 }
 
 # Return value of user column in DTM
@@ -79,8 +77,6 @@ sub GetDTMUserColumns {
 
 	my @clmnName = CamHelpers::CamDTM->GetDTMUserColNames($inCAM);
 
-	 
-
 	my @a   = ();
 	my $cnt = scalar(@gTOOLuser_des);
 
@@ -104,27 +100,124 @@ sub GetDTMUserColumns {
 		push( @a, \%info );
 	}
 
-#	print "\n\n==========================BEFOE RETURN =============================================\n\n";
-#
-#	for ( my $i = 0 ; $i < scalar(@a) ; $i++ ) {
-#		print "fff";
-#
-#		my %h = %{ $a[$i] };
-#
-#		#print "Nastroj: ". $h->{"drill_size"}.$h->{"depth"}."\n";
-#
-#		foreach my $key ( keys %h ) {
-#
-#			# do whatever you want with $key and $value here ...
-#			my $value = $h{$key};
-#			print "Nastroj:    $key costs $value\n";
-#		}
-#
-#	}
-#
-#	print "\n\n========================== BEFROE RETURN END===================================\n\n";
+	#	print "\n\n==========================BEFOE RETURN =============================================\n\n";
+	#
+	#	for ( my $i = 0 ; $i < scalar(@a) ; $i++ ) {
+	#		print "fff";
+	#
+	#		my %h = %{ $a[$i] };
+	#
+	#		#print "Nastroj: ". $h->{"drill_size"}.$h->{"depth"}."\n";
+	#
+	#		foreach my $key ( keys %h ) {
+	#
+	#			# do whatever you want with $key and $value here ...
+	#			my $value = $h{$key};
+	#			print "Nastroj:    $key costs $value\n";
+	#		}
+	#
+	#	}
+	#
+	#	print "\n\n========================== BEFROE RETURN END===================================\n\n";
 
 	return @a;
+}
+
+# Return info about tool in DTM
+# Result: array of hashes. Each has contain info about row in DTM
+sub GetDTMColumns {
+	my $self    = shift;
+	my $inCAM   = shift;
+	my $jobId   = shift;
+	my $step    = shift;
+	my $layer   = shift;
+	my $breakSR = shift;
+
+	#get values of user columns for each tool
+
+	my @tools = ();
+
+	if ($breakSR) {
+		$inCAM->INFO(
+					  units           => 'mm',
+					  angle_direction => 'ccw',
+					  entity_type     => 'layer',
+					  entity_path     => "$jobId/$step/$layer",
+					  data_type       => 'TOOL',
+					  options         => "break_sr"
+		);
+
+	}
+	else {
+		$inCAM->INFO(
+					  units           => 'mm',
+					  angle_direction => 'ccw',
+					  entity_type     => 'layer',
+					  entity_path     => "$jobId/$step/$layer",
+					  data_type       => 'TOOL' 
+					   
+		);
+	}
+
+	for ( my $i = 0 ; $i < scalar( @{ $inCAM->{doinfo}{gTOOLnum} } ) ; $i++ ) {
+		my %info = ();
+		$info{"gTOOLnum"}         = ${ $inCAM->{doinfo}{gTOOLnum} }[$i];
+		$info{"gTOOLcount"}       = ${ $inCAM->{doinfo}{gTOOLcount} }[$i];
+		$info{"gTOOLshape"}       = ${ $inCAM->{doinfo}{gTOOLshape} }[$i];
+		$info{"gTOOLtype"}        = ${ $inCAM->{doinfo}{gTOOLtype} }[$i];
+		$info{"gTOOLtype2"}       = ${ $inCAM->{doinfo}{gTOOLtype2} }[$i];
+		$info{"gTOOLmin_tol"}     = ${ $inCAM->{doinfo}{gTOOLmin_tol} }[$i];
+		$info{"gTOOLmax_tol"}     = ${ $inCAM->{doinfo}{gTOOLmax_tol} }[$i];
+		$info{"gTOOLfinish_size"} = ${ $inCAM->{doinfo}{gTOOLfinish_size} }[$i];
+		$info{"gTOOLdrill_size"}  = ${ $inCAM->{doinfo}{gTOOLdrill_size} }[$i];
+		$info{"gTOOLbit"}         = ${ $inCAM->{doinfo}{gTOOLbit} }[$i];
+		$info{"gTOOLslot_len"}    = ${ $inCAM->{doinfo}{gTOOLslot_len} }[$i];
+
+		push( @tools, \%info );
+
+	}
+
+	return @tools;
+}
+
+# Returnt tool from DTM by type
+sub GetDTMColumnsByType {
+	my $self    = shift;
+	my $inCAM   = shift;
+	my $jobId   = shift;
+	my $step    = shift;
+	my $layer   = shift;
+	my $type    = shift;    # standard, plated, non_plated, press_fit
+	my $breakSR = shift;
+
+	my @tools = $self->GetDTMColumns( $inCAM, $jobId, $step, $layer, $breakSR );
+
+	@tools = grep { $_->{"gTOOLtype2"} eq $type } @tools;
+
+	return @tools;
+}
+
+#-------------------------------------------------------------------------------------------#
+#  Place for testing..
+#-------------------------------------------------------------------------------------------#
+my ( $package, $filename, $line ) = caller;
+if ( $filename =~ /DEBUG_FILE.pl/ ) {
+
+	use aliased 'CamHelpers::CamDTM';
+	use aliased 'Packages::InCAM::InCAM';
+
+	my $inCAM = InCAM->new();
+	my $jobId = "f13608";
+
+	#my $step  = "mpanel_10up";
+
+	my @result = CamDTM->GetDTMColumns( $inCAM, $jobId, "o+1", "m" );
+	@result = CamDTM->GetDTMColumnsByType( $inCAM, $jobId, "o+1", "m", "press_fit" );
+
+	#my $self             = shift;
+
+	print 1;
+
 }
 
 1;
