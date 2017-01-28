@@ -21,6 +21,8 @@ use aliased 'Helpers::JobHelper';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'CamHelpers::CamCopperArea';
 use aliased 'CamHelpers::CamHistogram';
+use aliased 'CamHelpers::CamDTM';
+use aliased 'Packages::Tooling::PressfitOperation';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -168,11 +170,11 @@ sub OnCheckGroupData {
 
 		my %histC = CamHistogram->GetAttHistogram( $inCAM, $jobId, "panel", "c" );
 		my %histS = ();
-		
-		if($defaultInfo->LayerExist("s")){
+
+		if ( $defaultInfo->LayerExist("s") ) {
 			%histS = CamHistogram->GetAttHistogram( $inCAM, $jobId, "panel", "s" );
 		}
-		
+
 		if ( $histC{".gold_plating"} || $histS{".gold_plating"} ) {
 
 			my $cuThickness = $defaultInfo->GetBaseCuThick("c");
@@ -188,20 +190,30 @@ sub OnCheckGroupData {
 			}
 		}
 	}
-	
+
 	# 9) Control if exist customer panel and customer set in a same time
-	
-	my $custPnlExist = $defaultInfo->GetJobAttrByName("customer_panel" );
-	if($custPnlExist eq "yes"){
-		my $custSetExist = $defaultInfo->GetJobAttrByName( "customer_set" );
-		
-		if($custSetExist eq "yes"){
+
+	my $custPnlExist = $defaultInfo->GetJobAttrByName("customer_panel");
+	if ( $custPnlExist eq "yes" ) {
+		my $custSetExist = $defaultInfo->GetJobAttrByName("customer_set");
+
+		if ( $custSetExist eq "yes" ) {
 			$dataMngr->_AddErrorResult( "Panelisation",
-											"V atributech jobu je aktivní 'zákaznický panel' i 'zákaznické sady'. Zvol pouze jednu možnost panelizace." );
+								  "V atributech jobu je aktivní 'zákaznický panel' i 'zákaznické sady'. Zvol pouze jednu možnost panelizace." );
 		}
 	}
-	
-	
+
+	# 10) Check if exist pressfit, if is checked in nif
+	if ( $defaultInfo->GetPressfitExist() && !$groupData->GetPressfit() ) {
+
+		$dataMngr->_AddErrorResult( "Pressfit", "Nìkteré nástroje v dps jsou typu 'pressfit', možnost 'Pressfit' by mìla být použita." );
+	}
+
+	# 11) If exist pressfit, check if finsh size and tolerances are set
+	if ( $groupData->GetPressfit() ) {
+
+		$self->__CheckPressfitTools($dataMngr);
+	}
 
 }
 
@@ -310,6 +322,39 @@ sub __IsTentingCS {
 	}
 
 	return $tenting;
+}
+
+# check if tool has finis size and tolerance
+sub __CheckPressfitTools {
+	my $self     = shift;
+	my $dataMngr = shift;
+
+	my $inCAM = $dataMngr->{"inCAM"};
+	my $jobId = $dataMngr->{"jobId"};
+
+	my @layers = PressfitOperation->GetPressfitLayers( $inCAM, $jobId, "panel" );
+
+	foreach my $l (@layers) {
+
+		my @tools = CamDTM->GetDTMColumnsByType( $inCAM, $jobId, "panel", $l, "press_fit", 1 );
+
+		foreach my $t (@tools) {
+
+			# test on finish size
+			if (    !defined $t->{"gTOOLfinish_size"}
+				 || $t->{"gTOOLfinish_size"} == 0
+				 || $t->{"gTOOLfinish_size"} eq ""
+				 || $t->{"gTOOLfinish_size"} eq "?" )
+			{
+				$dataMngr->_AddErrorResult( "Pressfit", "Tool: " . $t->{"gTOOLnum"} . " has no finish size (layer: '".$l."'). Complete it.\n" );
+			}
+
+			if ( $t->{"gTOOLmin_tol"} == 0 && $t->{"gTOOLmax_tol"} == 0 ) {
+
+				$dataMngr->_AddErrorResult( "Pressfit", "Tool: " . $t->{"gTOOLnum"} . " hasn't defined tolerance (layer: '".$l."'). Complete it.\n" );
+			}
+		}
+	}
 }
 
 #-------------------------------------------------------------------------------------------#

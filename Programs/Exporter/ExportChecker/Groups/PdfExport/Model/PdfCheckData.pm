@@ -53,6 +53,7 @@ sub OnCheckGroupData {
 
 		$dataMngr->_AddErrorResult( "Operator info in pdf", "Zákazník si nepřeje vkládat info o operátorovi TPV do pdf. Zruš volbu 'Operator info'" );
 	}
+	
  
 }
 

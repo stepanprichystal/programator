@@ -79,8 +79,6 @@ sub SetInfoToPdf {
 	$self->{"data"}->{"infoToPdf"} = $value;
 }
  
- 
- 
 sub SetExportStackup {
 	my $self  = shift;
 	my $value = shift;
@@ -92,6 +90,19 @@ sub GetExportStackup {
 	my $value = shift;
 	return $self->{"data"}->{"exportStackup"};
 } 
+
+
+sub SetExportPressfit {
+	my $self  = shift;
+	my $value = shift;
+	$self->{"data"}->{"exportPressfit"} = $value;
+}
+
+sub GetExportPressfit {
+	my $self  = shift;
+	my $value = shift;
+	return $self->{"data"}->{"exportPressfit"};
+}
  
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

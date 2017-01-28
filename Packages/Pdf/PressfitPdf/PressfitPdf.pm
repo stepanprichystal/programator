@@ -150,6 +150,8 @@ sub __PrepareDrillMapsLayer {
 		my @pressFit = CamDTM->GetDTMColumnsByType( $inCAM, $jobId, $step->{"stepName"}, $layer, "press_fit" );
 
 		if ( scalar(@pressFit) ) {
+			
+			$self->__CheckTools(\@pressFit);
 
 			CamHelper->SetStep( $inCAM, $step->{"stepName"} );
 
@@ -241,6 +243,26 @@ sub __PrepareDrillMaps {
 
 	return $lDrillMap;
 
+}
+
+# check if tool has finis size and tolerance
+sub __CheckTools{
+	my $self = shift;
+	my @tools = @{shift(@_)};
+	
+	foreach my $t (@tools){
+		
+		# test on finish size
+		if(!defined $t->{"gTOOLfinish_size"} || $t->{"gTOOLfinish_size"} == 0 || $t->{"gTOOLfinish_size"} eq "" || $t->{"gTOOLfinish_size"} eq "?"){
+			
+			die "Tool: ".$t->{"gTOOLnum"}. " has no finish size.\n";
+		}
+		
+		if( $t->{"gTOOLmin_tol"} == 0 &&  $t->{"gTOOLmax_tol"} == 0){
+			
+			die "Tool: ".$t->{"gTOOLnum"}. " has not defined tolerance.\n";
+		}	
+	}
 }
 
 #-------------------------------------------------------------------------------------------#

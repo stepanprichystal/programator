@@ -2,7 +2,7 @@
 # Description: Contain special function, which work with tooling
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::Tooling::ToolOperation;
+package Packages::Tooling::PressfitOperation;
 
 #3th party library
 use strict;
@@ -17,6 +17,37 @@ use aliased 'CamHelpers::CamHelper';
 #  Script methods
 #-------------------------------------------------------------------------------------------#
 
+# Return layer name where is pressfit
+sub GetPressfitLayers {
+	my $self    = shift;
+	my $inCAM   = shift;
+	my $jobId   = shift;
+	my $step    = shift;    # step which is breaked and controlled
+	my $breakSR = shift;
+
+	my @layers = ();
+
+	if ( CamHelper->LayerExists( $inCAM, $jobId, "m" ) ) {
+
+		my @result = CamDTM->GetDTMColumnsByType( $inCAM, $jobId, $step, "m", "press_fit", $breakSR );
+
+		if ( scalar(@result) ) {
+			push( @layers, "m" );
+		}
+	}
+
+	if ( CamHelper->LayerExists( $inCAM, $jobId, "f" ) ) {
+
+		my @result = CamDTM->GetDTMColumnsByType( $inCAM, $jobId, $step, "f", "press_fit", $breakSR );
+
+		if ( scalar(@result) ) {
+			push( @layers, "f" );
+		}
+	}
+
+	return @layers;
+}
+
 # Return if exist pressfit in job in layer m,f
 sub ExistPressfitJob {
 	my $self    = shift;
@@ -27,27 +58,15 @@ sub ExistPressfitJob {
 
 	my $exist = 0;
 
-	if ( CamHelper->LayerExists( $inCAM, $jobId, "m" ) ) {
+	my @l = $self->GetPressfitLayers( $inCAM, $jobId, $step, $breakSR );
 
-		my @result = CamDTM->GetDTMColumnsByType( $inCAM, $jobId, $step, "m", "press_fit", $breakSR );
-
-		if ( scalar(@result) ) {
-			$exist = 1;
-		}
+	if ( scalar(@l) ) {
+		return 1;
+	}
+	else {
+		return 0;
 	}
 
-	unless ($exist) {
-		if ( CamHelper->LayerExists( $inCAM, $jobId, "f" ) ) {
-
-			my @result = CamDTM->GetDTMColumnsByType( $inCAM, $jobId, $step, "f", "press_fit", $breakSR );
-
-			if ( scalar(@result) ) {
-				$exist = 1;
-			}
-		}
-	}
-
-	return $exist;
 }
 
 #

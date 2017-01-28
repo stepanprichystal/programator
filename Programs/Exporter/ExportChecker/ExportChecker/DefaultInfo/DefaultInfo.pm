@@ -26,6 +26,7 @@ use aliased 'Packages::Scoring::ScoreChecker::ScoreChecker';
 use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'Packages::Technology::EtchOperation';
 use aliased 'Packages::Other::CustomerNote';
+use aliased 'Packages::Tooling::PressfitOperation';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -59,6 +60,7 @@ sub new {
 	$self->{"jobAttributes"} = undef;    # all job attributes
 	$self->{"costomerInfo"}  = undef;    # info about customer, name, reference, ...
 	$self->{"costomerNote"}  = undef;    # notes about customer, like export paste, info to pdf, ..
+	$self->{"pressfitExist"} = undef;    # if pressfit exist in job
 
 	$self->__InitDefault();
 
@@ -520,6 +522,12 @@ sub GetCustomerNote {
 	return $self->{"costomerNote"};
 }
 
+sub GetPressfitExist {
+	my $self = shift;
+
+	return $self->{"pressfitExist"};
+}
+
 sub __InitDefault {
 	my $self = shift;
 
@@ -565,6 +573,8 @@ sub __InitDefault {
 	$self->{"costomerInfo"} = HegMethods->GetCustomerInfo( $self->{"jobId"} );
 
 	$self->{"costomerNote"} = CustomerNote->new( $self->{"costomerInfo"}->{"reference_subjektu"} );
+	
+	$self->{"pressfitExist"} = PressfitOperation->ExistPressfitJob($self->{"inCAM"}, $self->{"jobId"}, $self->{"step"}, 1);
 
 }
 
