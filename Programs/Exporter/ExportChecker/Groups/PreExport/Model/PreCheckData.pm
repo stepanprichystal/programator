@@ -198,7 +198,7 @@ sub OnCheckGroupData {
 		if ( $attHist{".rout_chain"} || $attHist{".comp"} ) {
 
 			$dataMngr->_AddErrorResult( "Rout attributes",
-										"Layer :" . $l->{"gROWname"} . " contains rout attributes: .rout_chain and .comp. Delete them." );
+										"Layer : " . $l->{"gROWname"} . " contains rout attributes: '.rout_chain' or '.comp'. Delete them from layer." );
 		}
 	}
 
