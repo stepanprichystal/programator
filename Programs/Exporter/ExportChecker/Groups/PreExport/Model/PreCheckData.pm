@@ -16,6 +16,7 @@ use aliased 'CamHelpers::CamLayer';
 use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'CamHelpers::CamHelper';
 use aliased 'CamHelpers::CamJob';
+use aliased 'CamHelpers::CamHistogram';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -105,8 +106,8 @@ sub OnCheckGroupData {
 	# 4) Check if material and pcb thickness and base cuthickness is set
 	my $materialKind = $defaultInfo->GetMaterialKind();
 	$materialKind =~ s/[\s\t]//g;
-	
-	my $pcbType      = $defaultInfo->GetTypeOfPcb();
+
+	my $pcbType = $defaultInfo->GetTypeOfPcb();
 
 	my $baseCuThickHelios = HegMethods->GetOuterCuThick($jobId);
 	my $pcbThickHelios    = HegMethods->GetPcbMaterialThick($jobId);
@@ -138,7 +139,7 @@ sub OnCheckGroupData {
 		my $stackKind = $defaultInfo->GetStackup()->GetStackupType();
 
 		#exception DE 104 eq FR4
-		if($stackKind =~ /DE 104/i){
+		if ( $stackKind =~ /DE 104/i ) {
 			$stackKind = "FR4";
 		}
 
@@ -151,13 +152,13 @@ sub OnCheckGroupData {
 		}
 
 		# b) test if created stackup match thickness in helios +-5%
-		my $stackThick = $defaultInfo->GetStackup()->GetFinalThick()/1000;
+		my $stackThick = $defaultInfo->GetStackup()->GetFinalThick() / 1000;
 
 		unless ( $pcbThickHelios * 0.90 < $stackThick && $pcbThickHelios * 1.10 > $stackThick ) {
-			
-			$stackThick = sprintf("%.2f", $stackThick);
-			$pcbThickHelios = sprintf("%.2f", $pcbThickHelios);
-			
+
+			$stackThick     = sprintf( "%.2f", $stackThick );
+			$pcbThickHelios = sprintf( "%.2f", $pcbThickHelios );
+
 			$dataMngr->_AddErrorResult( "Stackup thickness",
 										"Stackup thickness ($stackThick) isn't match witch thickness in Helios ($pcbThickHelios) +-10%." );
 
@@ -185,10 +186,21 @@ sub OnCheckGroupData {
 										  . $l->{"gROWpolarity"}
 										  . "'. It is wrong. Set polarity 'negative' and type 'power_ground'."
 			);
-
 		}
 	}
- 
+
+	# 8) Check if board base layers, not contain attribute .rout_chan
+
+	foreach my $l (   $defaultInfo->GetBoardBaseLayers()  ) {
+
+		my %attHist = CamHistogram->GetAttHistogram( $inCAM, $jobId, "panel", $l->{"gROWname"}, 1 );
+
+		if ( $attHist{".rout_chain"} || $attHist{".comp"} ) {
+
+			$dataMngr->_AddErrorResult( "Rout attributes",
+										"Layer :" . $l->{"gROWname"} . " contains rout attributes: .rout_chain and .comp. Delete them." );
+		}
+	}
 
 }
 
