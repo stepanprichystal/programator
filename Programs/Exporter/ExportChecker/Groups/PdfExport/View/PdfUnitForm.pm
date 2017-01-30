@@ -215,12 +215,14 @@ sub __OnExportControlChange {
 
 		$self->{"stepCb"}->Enable();
 		$self->{"langCb"}->Enable();
+				$self->{"operatorChb"}->Enable();
 
 	}
 	else {
 
 		$self->{"stepCb"}->Disable();
 		$self->{"langCb"}->Disable();
+		$self->{"operatorChb"}->Disable();
 	}
 
 }
@@ -233,10 +235,11 @@ sub DisableControls{
 	my $self = shift;
 	
 	unless($self->{"defaultInfo"}->GetPressfitExist()){
-		$self->{"exportPressfitChb"}->Enable();
-	}else{
+
 		$self->{"exportPressfitChb"}->SetValue(0);
 		$self->{"exportPressfitChb"}->Disable();
+	}else{
+		$self->{"exportPressfitChb"}->Enable();
 	}
 
 }

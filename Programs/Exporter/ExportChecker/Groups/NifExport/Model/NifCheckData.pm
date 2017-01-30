@@ -208,8 +208,24 @@ sub OnCheckGroupData {
 
 		$dataMngr->_AddErrorResult( "Pressfit", "Nìkteré nástroje v dps jsou typu 'pressfit', možnost 'Pressfit' by mìla být použita." );
 	}
+	
+	 # 11) Check if exist pressfit, if is checked in nif
+	if ( $defaultInfo->GetMeritPressfitIS() && !$groupData->GetPressfit() ) {
 
-	# 11) If exist pressfit, check if finsh size and tolerances are set
+		$dataMngr->_AddErrorResult( "Pressfit", "V IS je u dps požadavek na 'pressfit', volba 'Pressfit' by mìla být použita." );
+	}
+
+	# 12) if pressfit is checked, but is not in data
+	if ( !$defaultInfo->GetPressfitExist() && $groupData->GetPressfit() ) {
+
+		$dataMngr->_AddErrorResult(
+			"Pressfit",
+			"Volba 'Pressfit' je použita, ale žádné otvory typu pressfit nebyly nalezeny."
+			  . " Prosím zruš volbu nebo pøidej pressfit otvory (ppomocí Drill Tool Manageru)."
+		);
+	}
+ 
+	# 13) If exist pressfit, check if finsh size and tolerances are set
 	if ( $groupData->GetPressfit() ) {
 
 		$self->__CheckPressfitTools($dataMngr);
@@ -332,7 +348,7 @@ sub __CheckPressfitTools {
 	my $inCAM = $dataMngr->{"inCAM"};
 	my $jobId = $dataMngr->{"jobId"};
 
-	my @layers = PressfitOperation->GetPressfitLayers( $inCAM, $jobId, "panel" );
+	my @layers = PressfitOperation->GetPressfitLayers( $inCAM, $jobId, "panel", 1 );
 
 	foreach my $l (@layers) {
 
@@ -346,12 +362,13 @@ sub __CheckPressfitTools {
 				 || $t->{"gTOOLfinish_size"} eq ""
 				 || $t->{"gTOOLfinish_size"} eq "?" )
 			{
-				$dataMngr->_AddErrorResult( "Pressfit", "Tool: " . $t->{"gTOOLnum"} . " has no finish size (layer: '".$l."'). Complete it.\n" );
+				$dataMngr->_AddErrorResult( "Pressfit", "Tool: " . $t->{"gTOOLdrill_size"} . "µm has no finish size (layer: '" . $l . "'). Complete it.\n" );
 			}
 
 			if ( $t->{"gTOOLmin_tol"} == 0 && $t->{"gTOOLmax_tol"} == 0 ) {
 
-				$dataMngr->_AddErrorResult( "Pressfit", "Tool: " . $t->{"gTOOLnum"} . " hasn't defined tolerance (layer: '".$l."'). Complete it.\n" );
+				$dataMngr->_AddErrorResult( "Pressfit",
+											"Tool: " . $t->{"gTOOLdrill_size"} . "µm hasn't defined tolerance (layer: '" . $l . "'). Complete it.\n" );
 			}
 		}
 	}

@@ -61,6 +61,9 @@ sub new {
 	$self->{"costomerInfo"}  = undef;    # info about customer, name, reference, ...
 	$self->{"costomerNote"}  = undef;    # notes about customer, like export paste, info to pdf, ..
 	$self->{"pressfitExist"} = undef;    # if pressfit exist in job
+	$self->{"pcbBaseInfo"} = undef;    # contain base info about pcb from IS
+	
+	
 
 	$self->__InitDefault();
 
@@ -528,6 +531,30 @@ sub GetPressfitExist {
 	return $self->{"pressfitExist"};
 }
 
+sub GetPcbBaseInfo{
+	my $self = shift;
+	my $key = shift;
+	
+	if($key){
+		return $self->{"pcbBaseInfo"}->{$key};
+	}else{
+		return $self->{"pcbBaseInfo"};
+	}
+}
+
+# Return if pressfit existbased on info from IS
+sub GetMeritPressfitIS{
+	my $self = shift;
+	my $key = shift;
+	
+	if($self->{"pcbBaseInfo"}->{"merit_presfitt"} =~ /^A$/i){
+		return 1;
+	}else{
+		return 0;
+	}
+}
+
+
 sub __InitDefault {
 	my $self = shift;
 
@@ -575,6 +602,8 @@ sub __InitDefault {
 	$self->{"costomerNote"} = CustomerNote->new( $self->{"costomerInfo"}->{"reference_subjektu"} );
 	
 	$self->{"pressfitExist"} = PressfitOperation->ExistPressfitJob($self->{"inCAM"}, $self->{"jobId"}, $self->{"step"}, 1);
+	
+	$self->{"pcbBaseInfo"} = HegMethods->GetBasePcbInfo( $self->{"jobId"} );
 
 }
 

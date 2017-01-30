@@ -208,6 +208,7 @@ sub GetBasePcbInfo {
 				 d.material_tloustka,
 				 d.material_tloustka_medi,
 				 d.material_typ_materialu,
+				 d.merit_presfitt,
 				 z.pooling
 				 from lcs.desky_22 d with (nolock)
 				 left outer join lcs.subjekty c with (nolock) on c.cislo_subjektu=d.zakaznik

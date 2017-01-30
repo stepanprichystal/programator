@@ -83,10 +83,10 @@ sub Create {
 }
 
 # Return all stacku paths
-sub GetStackupPath {
+sub GetPressfitPaths {
 	my $self = shift;
 
-	return $self->{"outputPaths"};
+	return @{$self->{"outputPaths"}};
 }
 
 sub __OutputPdf {
@@ -130,7 +130,7 @@ sub __OutputPdf {
 				 "color2"          => '990000'
 	);
 
-	#$inCAM->COM( 'delete_layer', "layer" => $drillMap->{"layer"} );
+	$inCAM->COM( 'delete_layer', "layer" => $drillMap->{"layer"} );
 
 	return $pdfFile;
 }
@@ -202,7 +202,7 @@ sub __PrepareDrillMaps {
 
 	my @symb = map { "r" . $_->{"gTOOLdrill_size"} } @pressFit;
 
-	my $result = CamFilter->BySymbols( $inCAM, \@symb );
+	my $result = CamFilter->SelectBySingleAtt( $inCAM, ".plated_type", "press_fit" );
 
 	$inCAM->COM("sel_reverse");
 	$inCAM->COM("sel_delete");
@@ -227,7 +227,7 @@ sub __PrepareDrillMaps {
 		"table_align"     => "bottom"
 	);
 
-	#$inCAM->COM( 'delete_layer', "layer" => $lPressfit );
+	$inCAM->COM( 'delete_layer', "layer" => $lPressfit );
 
 	# 3) Add text job id to layer
 
@@ -235,11 +235,15 @@ sub __PrepareDrillMaps {
 
 	my %profileLim = CamJob->GetProfileLimits2( $self->{"inCAM"}, $self->{"jobId"}, $step, 1 );
 
-	my %position = ( "x" => $profileLim{"xMin"}, "y" => $profileLim{"yMax"} + 10 );
+	my %positionTit = ( "x" => $profileLim{"xMin"}, "y" => $profileLim{"yMax"} + 10 );
 
-	CamSymbol->AddText( $inCAM, $jobId, $step, $layer, "Pressfit [mm] - " . lc($jobId), \%position, 6, 2 );
+	CamSymbol->AddText( $inCAM, $jobId, $step, $lDrillMap, "Pressfit [mm] - " . uc($jobId), \%positionTit, 6, 2 );
+	
+	my %positionInf = ( "x" => $profileLim{"xMax"} + 2, "y" => $profileLim{"yMin"} - 5 );
+	
+	CamSymbol->AddText( $inCAM, $jobId, $step, $lDrillMap, "For pressfit measurements use the column 'Finish'", \%positionInf, 2, 0.5 );
 
-	$inCAM->COM( "profile_to_rout", "layer" => $layer, "width" => "200" );
+	$inCAM->COM( "profile_to_rout", "layer" => $lDrillMap, "width" => "200" );
 
 	return $lDrillMap;
 
@@ -255,12 +259,12 @@ sub __CheckTools{
 		# test on finish size
 		if(!defined $t->{"gTOOLfinish_size"} || $t->{"gTOOLfinish_size"} == 0 || $t->{"gTOOLfinish_size"} eq "" || $t->{"gTOOLfinish_size"} eq "?"){
 			
-			die "Tool: ".$t->{"gTOOLnum"}. " has no finish size.\n";
+			die "Pressfit tool: ". $t->{"gTOOLdrill_size"} . "µm has no finish size.\n";
 		}
 		
 		if( $t->{"gTOOLmin_tol"} == 0 &&  $t->{"gTOOLmax_tol"} == 0){
 			
-			die "Tool: ".$t->{"gTOOLnum"}. " has not defined tolerance.\n";
+			die "Pressfit tool: ". $t->{"gTOOLdrill_size"} . "µm has not defined tolerance.\n";
 		}	
 	}
 }

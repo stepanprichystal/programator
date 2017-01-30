@@ -69,7 +69,7 @@ sub __AddFilterAtt {
 				 max_int_val        => 0,
 				 min_float_val      => 0,
 				 max_float_val      => 0,
-				 option             => '',
+				 option             => $attVal,
 				 text               => $attVal
 	);
 

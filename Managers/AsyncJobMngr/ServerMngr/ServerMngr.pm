@@ -501,7 +501,7 @@ sub __CreateServer {
 
 	#run InCAM editor with serverscript
 	Win32::Process::Create( $processObj, $inCAMPath,
-							"InCAM.exe -x -s" . $path." " . $freePort,
+							"InCAM.exe -s" . $path." " . $freePort,
 							0, THREAD_PRIORITY_NORMAL, "." )
 	  || die "$!\n";
 
@@ -510,7 +510,7 @@ sub __CreateServer {
 	# Temoporary solution because -x is not working in inCAM
 	#$self->__MoveWindowOut($pidInCAM);
 
-	#my $worker = threads->create( sub { $self->__MoveWindowOut($pidInCAM) } );
+	my $worker = threads->create( sub { $self->__MoveWindowOut($pidInCAM) } );
 
 	Helper->Print( "CLIENT PID: " . $pidInCAM . " (InCAM)........................................is launching\n" );
 

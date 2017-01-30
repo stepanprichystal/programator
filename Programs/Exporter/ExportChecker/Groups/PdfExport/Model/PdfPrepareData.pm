@@ -112,7 +112,7 @@ sub OnPrepareGroupData {
 	# 6) default pressfit export
 	my $defPressfit = 0;
 
-	if ( $defaultInfo->GetPressfitExist()) {
+	if ( $defaultInfo->GetPressfitExist() || $defaultInfo->GetMeritPressfitIS()) {
 
 		$defPressfit = 1;
 	}
