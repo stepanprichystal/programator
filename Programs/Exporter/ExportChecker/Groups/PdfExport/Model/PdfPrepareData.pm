@@ -93,7 +93,15 @@ sub OnPrepareGroupData {
 		$defLang = "Czech";
 	}
 
-	# 4) default stackup export
+	# 4) default info to pdf
+	my $defInfoToPdf = 1;
+
+	if ($customerNote->NoInfoToPdf()) {
+
+		$defInfoToPdf = 0;
+	}
+
+	# 5) default stackup export
 	my $defStackup = 0;
 
 	if ( $defaultInfo->GetLayerCnt() > 2 ) {
@@ -101,20 +109,21 @@ sub OnPrepareGroupData {
 		$defStackup = 1;
 	}
 	
-	# 5) default info to pdf
-	my $defInfoToPdf = 1;
+	# 6) default pressfit export
+	my $defPressfit = 0;
 
-	if ($customerNote->NoInfoToPdf()) {
+	if ( $defaultInfo->GetPressfitExist() || $defaultInfo->GetMeritPressfitIS()) {
 
-		$defInfoToPdf = 0;
+		$defPressfit = 1;
 	}
 	
 
 	$groupData->SetExportControl($exportControl);
 	$groupData->SetControlStep($defStep);
 	$groupData->SetControlLang($defLang);
-	$groupData->SetExportStackup($defStackup);
 	$groupData->SetInfoToPdf($defInfoToPdf);
+	$groupData->SetExportStackup($defStackup);
+	$groupData->SetExportPressfit($defPressfit);
 
 	return $groupData;
 }

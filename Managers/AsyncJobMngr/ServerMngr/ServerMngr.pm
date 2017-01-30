@@ -508,7 +508,7 @@ sub __CreateServer {
 	$pidInCAM = $processObj->GetProcessID();
 
 	# Temoporary solution because -x is not working in inCAM
-	$self->__MoveWindowOut($pidInCAM);
+	#$self->__MoveWindowOut($pidInCAM);
 
 	my $worker = threads->create( sub { $self->__MoveWindowOut($pidInCAM) } );
 

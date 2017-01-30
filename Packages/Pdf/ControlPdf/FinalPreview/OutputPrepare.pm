@@ -537,7 +537,8 @@ sub __CheckCountersink {
 
 			# now change 6.5mm to new diameter
 			CamLayer->WorkLayer( $inCAM, $layerComp );
-			CamFilter->BySingleSymbol( $inCAM, "r6500" );
+			my @syms = ("r6500");
+			CamFilter->BySymbols( $inCAM, \@syms);
 			$inCAM->COM( "sel_change_sym", "symbol" => "r" . $newDiameter, "reset_angle" => "no" );
 		}
 	}

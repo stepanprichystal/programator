@@ -70,7 +70,7 @@ sub InitForm {
 	$self->{"groupWrapper"} = $groupWrapper;
 
 	my $parent = $groupWrapper->GetParentForGroup();
-	$self->{"form"} = PdfUnitForm->new( $parent, $inCAM, $self->{"jobId"} );
+	$self->{"form"} = PdfUnitForm->new( $parent, $inCAM, $self->{"jobId"} , $self->{"dataMngr"}->GetDefaultInfo() );
 
 	# init base class with event class
 	$self->{"eventClass"} = PdfUnitFormEvt->new( $self->{"form"} );
@@ -89,6 +89,7 @@ sub RefreshGUI {
 	$self->{"form"}->SetControlStep( $groupData->GetControlStep() );
 	$self->{"form"}->SetControlLang( $groupData->GetControlLang() );
 	$self->{"form"}->SetExportStackup( $groupData->GetExportStackup() );
+	$self->{"form"}->SetExportPressfit( $groupData->GetExportPressfit() );
 	$self->{"form"}->SetInfoToPdf( $groupData->GetInfoToPdf() );
 	
 
@@ -114,6 +115,7 @@ sub GetGroupData {
 		$groupData->SetControlStep( $frm->GetControlStep() );
 		$groupData->SetControlLang( $frm->GetControlLang() );
 		$groupData->SetExportStackup( $frm->GetExportStackup() );
+		$groupData->SetExportPressfit( $frm->GetExportPressfit() );
 		$groupData->SetInfoToPdf( $frm->GetInfoToPdf() );
 	}
 	else {

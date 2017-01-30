@@ -34,6 +34,8 @@ sub new {
 
 	my $inCAM = shift;
 	my $jobId = shift;
+	my $defaultInfo = shift;
+
 
 	my $self = $class->SUPER::new($parent);
 
@@ -41,6 +43,8 @@ sub new {
 
 	$self->{"inCAM"}    = $inCAM;
 	$self->{"jobId"}    = $jobId;
+	$self->{"defaultInfo"} = $defaultInfo;
+	
 	$self->{"layerCnt"} = CamJob->GetSignalLayerCnt( $self->{"inCAM"}, $self->{"jobId"} );
 
 	# Load data
@@ -61,15 +65,19 @@ sub __SetLayout {
 	# DEFINE CONTROLS
 	my $control = $self->__SetLayoutControl($self);
 	my $stackup = $self->__SetLayoutStackup($self);
-
+	my $pressfit = $self->__SetLayoutPressfit($self);
+	
+	
 	# SET EVENTS
 
 	# BUILD STRUCTURE OF LAYOUT
 
 	$szMain->Add( $control, 0, &Wx::wxEXPAND );
-	$szMain->Add( 15, 15, 0, &Wx::wxEXPAND );
+	$szMain->Add( 5, 5, 0, &Wx::wxEXPAND );
 	$szMain->Add( $stackup, 0, &Wx::wxEXPAND );
-
+	$szMain->Add( 5, 5, 0, &Wx::wxEXPAND );
+	$szMain->Add( $pressfit, 0, &Wx::wxEXPAND );
+	
 	$self->SetSizer($szMain);
 
 	# save control references
@@ -173,6 +181,33 @@ sub __SetLayoutStackup {
 	return $szStatBox;
 }
 
+# Set layout for Quick set box
+sub __SetLayoutPressfit {
+	my $self   = shift;
+	my $parent = shift;
+
+	#define staticboxes
+	my $statBox = Wx::StaticBox->new( $parent, -1, 'Pressfit' );
+	my $szStatBox = Wx::StaticBoxSizer->new( $statBox, &Wx::wxHORIZONTAL );
+
+	# DEFINE CONTROLS
+
+	my $exportPressfitChb = Wx::CheckBox->new( $statBox, -1, "Export", &Wx::wxDefaultPosition );
+ 
+
+	# SET EVENTS
+
+	# BUILD STRUCTURE OF LAYOUT
+
+	$szStatBox->Add( $exportPressfitChb, 1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+
+	# Set References
+	$self->{"exportPressfitChb"} = $exportPressfitChb;
+
+	return $szStatBox;
+}
+
+
 sub __OnExportControlChange {
 	my $self = shift;
 
@@ -180,12 +215,14 @@ sub __OnExportControlChange {
 
 		$self->{"stepCb"}->Enable();
 		$self->{"langCb"}->Enable();
+				$self->{"operatorChb"}->Enable();
 
 	}
 	else {
 
 		$self->{"stepCb"}->Disable();
 		$self->{"langCb"}->Disable();
+		$self->{"operatorChb"}->Disable();
 	}
 
 }
@@ -195,8 +232,16 @@ sub __OnExportControlChange {
 # =====================================================================
 
 sub DisableControls{
+	my $self = shift;
 	
-	
+	unless($self->{"defaultInfo"}->GetPressfitExist()){
+
+		$self->{"exportPressfitChb"}->SetValue(0);
+		$self->{"exportPressfitChb"}->Disable();
+	}else{
+		$self->{"exportPressfitChb"}->Enable();
+	}
+
 }
 
 
@@ -271,20 +316,36 @@ sub SetInfoToPdf {
 }
 
  
-
-
 sub SetExportStackup {
 	my $self = shift;
 	my $val  = shift;
 
 	$self->{"exportStackupChb"}->SetValue($val);
-
 }
 
 sub GetExportStackup {
 	my $self = shift;
 
 	if ( $self->{"exportStackupChb"}->IsChecked() ) {
+
+		return 1;
+	}
+	else {
+		return 0;
+	}
+}
+
+sub SetExportPressfit {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->{"exportPressfitChb"}->SetValue($val);
+}
+
+sub GetExportPressfit {
+	my $self = shift;
+
+	if ( $self->{"exportPressfitChb"}->IsChecked() ) {
 
 		return 1;
 	}

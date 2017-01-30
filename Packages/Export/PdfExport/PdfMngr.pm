@@ -21,6 +21,7 @@ use aliased 'Helpers::JobHelper';
 use aliased 'CamHelpers::CamHelper';
 use aliased 'Packages::Pdf::StackupPdf::StackupPdf';
 use aliased 'Packages::Pdf::ControlPdf::ControlPdf';
+use aliased 'Packages::Pdf::PressfitPdf::PressfitPdf';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -32,13 +33,14 @@ sub new {
 	my $self      = $class->SUPER::new( $packageId, @_ );
 	bless $self;
 
-	$self->{"inCAM"}         = shift;
-	$self->{"jobId"}         = shift;
-	$self->{"exportControl"} = shift;    # if export pdf data contro
-	$self->{"controlStep"}   = shift;    # which step export
-	$self->{"controlLang"}   = shift;    # which language use
-	$self->{"infoToPdf"}   	 = shift;    	# put info about operator to pdf
-	$self->{"exportStackup"} = shift;    # if export stackup pdf to job's archive
+	$self->{"inCAM"}          = shift;
+	$self->{"jobId"}          = shift;
+	$self->{"exportControl"}  = shift;    # if export pdf data contro
+	$self->{"controlStep"}    = shift;    # which step export
+	$self->{"controlLang"}    = shift;    # which language use
+	$self->{"infoToPdf"}      = shift;    # put info about operator to pdf
+	$self->{"exportStackup"}  = shift;    # if export stackup pdf to job's archive
+	$self->{"exportPressfit"} = shift;    # if export pressfit pdf
 
 	$self->{"layerCnt"} = CamJob->GetSignalLayerCnt( $self->{'inCAM'}, $self->{'jobId'} );
 
@@ -47,12 +49,24 @@ sub new {
 
 sub Run {
 	my $self = shift;
+
+	my $jobId = $self->{"jobId"};
+
+	# create folder for pdf files
+	unless ( -e JobHelper->GetJobArchive($jobId) . "pdf" ) {
+		mkdir( JobHelper->GetJobArchive($jobId) . "pdf" );
+	}
+
 	if ( $self->{"exportControl"} ) {
 		$self->__ExportDataControl();
 	}
 
 	if ( $self->{"exportStackup"} ) {
 		$self->__ExportStackup();
+	}
+
+	if ( $self->{"exportPressfit"} ) {
+		$self->__ExportPressfit();
 	}
 
 }
@@ -152,8 +166,8 @@ sub __ExportDataControl {
 	my $archivePath = JobHelper->GetJobArchive($jobId) . "zdroje\\" . $self->{"jobId"} . "-control.pdf";
 
 	if ( -e $archivePath ) {
-		unless( unlink($archivePath) ){
-			die "Can not delete old pdf control file (".$archivePath."). Maybe file is still open.\n";
+		unless ( unlink($archivePath) ) {
+			die "Can not delete old pdf control file (" . $archivePath . "). Maybe file is still open.\n";
 		}
 	}
 
@@ -179,8 +193,8 @@ sub __ExportStackup {
 	}
 
 	if ( -e $pdfPath ) {
-		unless( unlink($pdfPath) ){
-			die "Can not delete old pdf stackup file (".$pdfPath."). Maybe file is still open.\n";
+		unless ( unlink($pdfPath) ) {
+			die "Can not delete old pdf stackup file (" . $pdfPath . "). Maybe file is still open.\n";
 		}
 	}
 
@@ -193,6 +207,44 @@ sub __ExportStackup {
 	}
 
 	$self->_OnItemResult($resultStackup);
+
+}
+
+sub __ExportPressfit {
+	my $self = shift;
+
+	my $inCAM = $self->{"inCAM"};
+	my $jobId = $self->{"jobId"};
+
+	my $pressfit = PressfitPdf->new( $inCAM, $jobId );
+	my $resultCreate = $pressfit->Create("panel");
+
+	my @tmpPahs = $pressfit->GetPressfitPaths();
+
+	my $pdfPath = JobHelper->GetJobArchive($jobId) . "pdf\\" . $jobId . "_pressfit_";
+
+	for ( my $i = 0 ; $i < scalar(@tmpPahs) ; $i++ ) {
+
+		my $f = $pdfPath . ( $i + 1 ) . ".pdf";
+
+		if ( -e $f ) {
+			unless ( unlink($f) ) {
+				die "Can not delete old pdf pressfit file (" . $f . "). Maybe file is still open.\n";
+			}
+		}
+
+		copy( $tmpPahs[$i], $f ) or die "Copy failed: $!";
+		unlink($tmpPahs[$i]);
+
+	}
+
+	my $resultPressfit = $self->_GetNewItem("Pressfit pdf");
+
+	unless ($resultCreate) {
+		$resultPressfit->AddError("Failed to create pdf pressfit");
+	}
+
+	$self->_OnItemResult($resultPressfit);
 
 }
 
@@ -213,8 +265,12 @@ sub ExportItemsCount {
 	}
 
 	if ( $self->{"exportStackup"} ) {
-		$totalCnt += 1;        # output final pdf
+		$totalCnt += 1;        # output stackup pdf
 	}
+	
+	if ( $self->{"exportPressfit"} ) {
+		$totalCnt += 1;        # output pressfit pdf
+	}	
 
 	return $totalCnt;
 

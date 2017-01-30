@@ -58,7 +58,16 @@ sub OnPrepareGroupData {
 
 	# Controls when step panel not exist
 	$groupData->SetMaska01(0);
-	$groupData->SetPressfit(0);
+	
+	# Preapre pressfit
+	my $defPressfit = 0;
+
+	if ( $defaultInfo->GetPressfitExist() || $defaultInfo->GetMeritPressfitIS()) {
+
+		$defPressfit = 1;
+	}
+ 
+	$groupData->SetPressfit($defPressfit);
 	$groupData->SetNotes("");
 
 	# prepare default selected quick notes
