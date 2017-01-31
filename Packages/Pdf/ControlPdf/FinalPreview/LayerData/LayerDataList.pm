@@ -82,7 +82,7 @@ sub SetLayers {
 	if ( $self->{"viewType"} eq Enums->View_FROMTOP ) {
 
 		foreach my $l (@boardLayers) {
-			
+
 			if ( $l->{"gROWname"} =~ /^c$/ ) {
 
 				$self->__AddToLayerData( $l, Enums->Type_OUTERCU );
@@ -153,6 +153,10 @@ sub SetLayers {
 
 				$self->__AddToLayerData( $l, Enums->Type_OUTERCU );
 				$self->__AddToLayerData( $l, Enums->Type_OUTERSURFACE );
+
+				if ( $l->{".gold_plating"} ) {
+					$self->__AddToLayerData( $l, Enums->Type_GOLDFINGER );
+				}
 
 			}
 			elsif ( $l->{"gROWname"} =~ /^ms$/ ) {

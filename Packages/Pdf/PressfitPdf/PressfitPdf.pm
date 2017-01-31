@@ -202,7 +202,7 @@ sub __PrepareDrillMaps {
 
 	my @symb = map { "r" . $_->{"gTOOLdrill_size"} } @pressFit;
 
-	my $result = CamFilter->SelectBySingleAtt( $inCAM, ".plated_type", "press_fit" );
+	my $result = CamFilter->SelectBySingleAtt( $inCAM, $jobId, ".plated_type", "press_fit" );
 
 	$inCAM->COM("sel_reverse");
 	$inCAM->COM("sel_delete");

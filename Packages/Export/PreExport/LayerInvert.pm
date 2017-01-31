@@ -47,7 +47,7 @@ sub ExistPatternFrame {
 	CamLayer->WorkLayer($inCAM, $lName);  # select tmp
  
 	# select old frame and delete
-	my $count = CamFilter->SelectBySingleAtt($inCAM, "pattern_frame", "");
+	my $count = CamFilter->SelectBySingleAtt($inCAM, $jobId, "pattern_frame", "");
 	
 	# clear layers
 	$inCAM->COM( 'affected_layer', mode => 'all', affected => 'no' );
@@ -72,7 +72,7 @@ sub DelPatternFrame {
 	CamLayer->WorkLayer($inCAM, $lName);  # select tmp
  
 	# select old frame and delete
-	my $count = CamFilter->SelectBySingleAtt($inCAM, "pattern_frame", "");
+	my $count = CamFilter->SelectBySingleAtt($inCAM, $jobId, "pattern_frame", "");
 	if($count){
 		$inCAM->COM("sel_delete");	
 	}
@@ -126,7 +126,7 @@ sub AddPatternFrame {
  	# 3) This actions, set attribute pattern_frame to new added symbols(pattern frame)
  	CamLayer->WorkLayer($inCAM, $lName);  # select layer and copy to help layer
  	
-	CamFilter->SelectBySingleAtt($inCAM, ".string", "signed");
+	CamFilter->SelectBySingleAtt($inCAM, $jobId, ".string", "signed");
 	$inCAM->COM("sel_reverse");
 	
 	CamAttributes->SetFeatuesAttribute($inCAM, "pattern_frame", "");

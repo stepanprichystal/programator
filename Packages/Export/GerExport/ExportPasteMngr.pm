@@ -194,7 +194,7 @@ sub __Export {
 			foreach my $l (@layers) {
 
 				CamLayer->WorkLayer( $inCAM, $l );
-				if(CamFilter->SelectBySingleAtt( $inCAM, ".fiducial_name", "*" )){
+				if(CamFilter->SelectBySingleAtt( $inCAM, $jobId, ".fiducial_name", "*" )){
 					$inCAM->COM("sel_delete");
 				};
 				
@@ -202,7 +202,7 @@ sub __Export {
 
 			# put diduc to paste
 			CamLayer->WorkLayer( $inCAM, "c" );
-			if ( CamFilter->SelectBySingleAtt( $inCAM, ".fiducial_name", "*" ) ) {
+			if ( CamFilter->SelectBySingleAtt( $inCAM, $jobId, ".fiducial_name", "*" ) ) {
 
 				my $strL = join( "\\;", @layers );
 

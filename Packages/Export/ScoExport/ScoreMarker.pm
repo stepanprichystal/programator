@@ -142,7 +142,7 @@ sub __DrawPoints {
 			CamLayer->WorkLayer( $inCAM, $l );    # select tmp
 
 			# select old frame and delete
-			my $count = CamFilter->SelectBySingleAtt( $inCAM, "control_score_lines", "" );
+			my $count = CamFilter->SelectBySingleAtt( $inCAM, $jobId, "control_score_lines", "" );
 
 			if ($count) {
 				$inCAM->COM("sel_delete");

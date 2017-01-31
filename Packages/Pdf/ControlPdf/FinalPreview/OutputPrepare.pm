@@ -198,7 +198,7 @@ sub __PrepareGOLDFINGER {
 			my $lNameMask = GeneralHelper->GetGUID();
 
 			 
-			my $result = CamFilter->SelectByReferenece( $inCAM, "touch", $mask, undef, undef, "positive", $layers[0]->{"gROWname"},
+			my $result = CamFilter->SelectByReferenece( $inCAM, $jobId, "touch", $mask, undef, undef, "positive", $layers[0]->{"gROWname"},
 														".gold_plating", "", undef );
 	 									 
 			if ( $result > 0 ) {

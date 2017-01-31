@@ -21,8 +21,8 @@ use warnings;
 #-------------------------------------------------------------------------------------------#
 #   Package methods
 #-------------------------------------------------------------------------------------------#
- 
- #return all attributes of step in hash
+
+#return all attributes of step in hash
 sub GetJobAttr {
 
 	my $self  = shift;
@@ -127,7 +127,6 @@ sub SetLayerAttribute {
 	my $stepName  = shift;
 	my $layerName = shift;
 
-
 	$inCAM->COM(
 				 "set_attribute",
 				 "type"      => "layer",
@@ -143,7 +142,6 @@ sub SetLayerAttribute {
 
 }
 
-
 # Set atribute on selected features on affected layers
 sub SetFeatuesAttribute {
 
@@ -152,11 +150,10 @@ sub SetFeatuesAttribute {
 	my $attribute = shift;
 	my $value     = shift;
 
-	$inCAM->COM("cur_atr_reset",);
-	$inCAM->COM("cur_atr_set","attribute" => $attribute,"text" => $value);
-	$inCAM->COM("sel_change_atr","mode" => "add");
- 
-	 
+	$inCAM->COM( "cur_atr_reset", );
+	$inCAM->COM( "cur_atr_set", "attribute" => $attribute, "text" => $value );
+	$inCAM->COM( "sel_change_atr", "mode" => "add" );
+
 }
 
 # Delete atribute from selected features on affected layers
@@ -167,12 +164,50 @@ sub DelFeatuesAttribute {
 	my $attribute = shift;
 	my $value     = shift;
 
-	$inCAM->COM("sel_delete_atr","mode" => "list","attributes" => $attribute,"attr_vals" => $value);
- 
-	 
-}
- 
+	$inCAM->COM( "sel_delete_atr", "mode" => "list", "attributes" => $attribute, "attr_vals" => $value );
 
- 
+}
+
+# Return array of all atributes in job (feature attributes)
+sub GetAttrParams {
+	my $self  = shift;
+	my $inCAM = shift;
+	my $jobId = shift;
+
+	my @arr = ();
+
+	$inCAM->INFO(
+				  units           => 'mm',
+				  angle_direction => 'ccw',
+				  entity_type     => 'attributes',
+				  entity_path     => "$jobId",
+				  data_type       => 'ATR',
+				  parameters      => "name+type"
+	);
+
+	for ( my $i = 0 ; $i < scalar( @{ $inCAM->{doinfo}{gATRname} } ) ; $i++ ) {
+		my %info = ();
+		$info{"gATRname"} = ${ $inCAM->{doinfo}{gATRname} }[$i];
+		$info{"gATRtype"} = ${ $inCAM->{doinfo}{gATRtype} }[$i];
+		push( @arr, \%info );
+
+	}
+	return @arr;
+}
+
+# Return attribute information by attribute name
+sub GetAttrParamsByName {
+	my $self  = shift;
+	my $inCAM = shift;
+	my $jobId = shift;
+	my $attrName = shift;
+	
+	my @attr = $self->GetAttrParams($inCAM, $jobId);
+	
+	my $att = (grep { $_->{"gATRname"} eq $attrName} @attr)[0];
+	
+	return %{$att};
+}
+
 
 1;
