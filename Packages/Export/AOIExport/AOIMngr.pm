@@ -28,6 +28,7 @@ use aliased 'CamHelpers::CamStepRepeat';
 use aliased 'Packages::Stackup::Stackup::Stackup';
 use aliased 'Helpers::JobHelper';
 use aliased 'CamHelpers::CamDrilling';
+use aliased 'Packages::ItemResult::Enums' => "ItemResEnums";
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -108,8 +109,15 @@ sub Run {
 	# STOP HANDLE EXCEPTION IN INCAM
 	$inCAM->HandleException(0);
 
-	$resultItemOpenSession->AddErrors( $inCAM->GetExceptionError() );
+	$resultItemOpenSession->AddError( $inCAM->GetExceptionError() );
 	$self->_OnItemResult($resultItemOpenSession);
+	
+	# Do not continue, if any AOI seats is not free
+	if($resultItemOpenSession->Result() eq ItemResEnums->ItemResult_Fail){
+	
+		return 0;	
+	}
+	
 
 	$inCAM->COM( "cdr_set_current_cdr_name", "job" => $jobId, "step" => $stepToTest, "set_name" => $setName );
 

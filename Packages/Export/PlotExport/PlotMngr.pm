@@ -20,7 +20,8 @@ use aliased 'Packages::Export::PlotExport::PlotSet::PlotLayer';
 use aliased 'Packages::Export::PlotExport::OpfxCreator::OpfxCreator';
 use aliased 'CamHelpers::CamJob';
 use aliased 'Packages::Export::PlotExport::FilmCreator::Helper';
-
+use aliased 'Helpers::JobHelper';
+use aliased 'Helpers::FileHelper';
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
@@ -50,7 +51,11 @@ sub Run {
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
 
-	# 1) Get information "frames" dimension
+	# 1) Delete old format opfx files
+	$self->__DeleteOldFiles();
+
+
+	# 2) Get information "frames" dimension
 
 	my %smallLim = ();
 	my %bigLim   = ();
@@ -68,7 +73,7 @@ sub Run {
 
 	$self->_OnItemResult($resultFrameChecking);
 
-	# 2) Init film creators
+	# 3) Init film creators
 
 	$self->{"filmCreators"}->Init( $self->{"layers"}, \%smallLim, \%bigLim );
 
@@ -144,6 +149,26 @@ sub __FilterRuleSets {
 	return @filterRuleSets;
 
 }
+
+# If export all, delete all old formatted files in archiv
+sub __DeleteOldFiles {
+	my $self = shift;
+
+	my $jobId = $self->{"jobId"};
+	
+	my $archivePath = JobHelper->GetJobArchive($jobId ) . "Zdroje\\";
+	
+	# Check if exist some "old format" drilling, if so delete. Old format are .ros, .rou, .mes
+ 	
+ 	#new format of opfx: f61826@c_36-s_36-03, f61826@cv_36-06
+ 	#old format of opfx: f20002@ms-mc-01
+	my @oldF = FileHelper->GetFilesNameByPattern( $archivePath, "$jobId@[a-z]+-[a-z]+-" );
+ 
+	foreach my $f ( @oldF ) {
+		unlink $f;
+	}
+}
+
 
 sub ExportItemsCount {
 	my $self = shift;

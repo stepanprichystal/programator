@@ -34,7 +34,7 @@ sub PlatedAreaExceed {
 	my $inCAM    = shift;
 	my $jobId    = shift;
 	my $stepName = shift;
-	
+
 	my $maxArea = 19.5;    # approx area of hole 5mm
 
 	my $areaExceed = 0;
@@ -47,7 +47,7 @@ sub PlatedAreaExceed {
 
 		CamDrilling->AddHistogramValues( $inCAM, $jobId, \@layers );
 
-		if ( $layer{"minTool"} && $layer{"maxTool"} > 5000 ) {
+		if ( $layer{"maxTool"} && $layer{"maxTool"} > 5000 ) {
 
 			$areaExceed = 1;
 		}
@@ -124,13 +124,14 @@ sub GetAreasOfRout {
 
 	CamLayer->WorkLayer( $inCAM, $compL );
 
-	my %limits = CamJob->GetProfileLimits( $inCAM, $jobId, $stepName );
-	my $profileArea = abs( $limits{"xmin"} - $limits{"xmax"} ) * abs( $limits{"ymin"} - $limits{"ymax"} );
+	my %limits = CamJob->GetProfileLimits2( $inCAM, $jobId, $stepName );
 
-	$limits{"xMin"} = $limits{"xmin"};
-	$limits{"xMax"} = $limits{"xmax"};
-	$limits{"yMin"} = $limits{"ymin"};
-	$limits{"yMax"} = $limits{"ymax"};
+	$limits{"xMin"} -= 3;
+	$limits{"xMax"} += 3;
+	$limits{"yMin"} -= 3;
+	$limits{"yMax"} += 3;
+
+	my $profileArea = abs( $limits{"xMin"} - $limits{"xMax"} ) * abs( $limits{"yMin"} - $limits{"yMax"} );
 
 	CamLayer->NegativeLayerData( $inCAM, $compL, \%limits );
 
@@ -220,7 +221,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	use aliased 'Packages::Routing::PlatedRoutArea';
 	use aliased 'Packages::InCAM::InCAM';
 
-	my $jobId = "f13610";
+	my $jobId = "f61619";
 	my $inCAM = InCAM->new();
 
 	my $step = "panel";

@@ -32,6 +32,7 @@ sub new {
 	return $self;
 }
 
+# Return if exist customer record in db
 sub Exist {
 	my $self = shift;
 
@@ -62,7 +63,7 @@ sub NoInfoToPdf {
 sub ExportPaste {
 	my $self = shift;
 
-	# default value if note doesnt exist
+	# default value if customer is not in db
 	if(!$self->Exist() ){
 		return undef;
 	}
@@ -103,6 +104,17 @@ sub FiducialToPaste {
 	}
 	
 	return $self->{"notes"}->{"FiducialsToPaste"};
+}
+
+sub ExportPdfControl {
+	my $self = shift;
+  
+	if(!$self->Exist()){
+		return undef;
+	}
+  
+	return $self->{"notes"}->{"ExportPdfControl"};
+
 }
 
 #-------------------------------------------------------------------------------------------#

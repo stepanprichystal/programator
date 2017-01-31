@@ -216,14 +216,15 @@ sub GetReduceDist {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-#	use aliased 'Packages::Scoring::ScoreChecker::ScoreChecker';
-#	use aliased 'Packages::InCAM::InCAM';
+	use aliased 'Packages::Scoring::ScoreChecker::ScoreChecker';
+	use aliased 'Packages::InCAM::InCAM';
 #
-#	my $jobId = "f52456";
+	my $jobId = "f13609";
 #
-#	my $inCAM = InCAM->new();
+	my $inCAM = InCAM->new();
 #
-#	my $checker = ScoreChecker->new( $inCAM, $jobId, "panel" );
+	my $checker = ScoreChecker->new( $inCAM, $jobId, "panel", "score", 1 );
+	$checker->Init();
 #
 #	print 1;
 

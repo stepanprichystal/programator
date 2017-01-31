@@ -83,6 +83,10 @@ sub Run {
 
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
+	
+	my $exportFiles = 1; # indicate if check, optimize are ok and we can export files
+	
+	
 
 	my $checkScoreRes = $self->_GetNewItem("Score check");
 
@@ -144,6 +148,8 @@ sub Run {
 		unless ( $self->{"scoreOptimize"}->ReCheck( \$errMess2 ) ) {
 
 			$optScoreRes->AddError($errMess2);
+			$exportFiles = 0;
+
 		}
 		$self->_OnItemResult($optScoreRes);
 
@@ -155,11 +161,18 @@ sub Run {
 	CamJob->SaveJob($inCAM, $jobId);
 
 	# 6) Export program for machine
+	
+	$self->__DeleteOldFiles();
+	
+	unless($exportFiles){
+		return 0;
+	}
+	
 	$self->{"creator"}->Build( $self->{"type"}, $self->{"optimizeData"} );
 
 	my $fileSave = $self->_GetNewItem("Saving file");
 	
-	$self->__DeleteOldFiles();
+
 
 	if ( $self->{"optimizeData"}->ExistVScore() ) {
  

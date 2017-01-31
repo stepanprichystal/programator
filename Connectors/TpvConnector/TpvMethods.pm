@@ -1,5 +1,3 @@
-
-
 #-------------------------------------------------------------------------------------------#
 # Description: Widget slouzici pro zobrazovani zprav ruznych typu uzivateli
 # Author:SPR
@@ -40,7 +38,8 @@ sub GetCustomerInfo {
 					IF(ProfileToPaste = '', null , ProfileToPaste) as ProfileToPaste,
 					IF(SingleProfileToPaste = '', null , SingleProfileToPaste) as SingleProfileToPaste,
 					IF(FiducialsToPaste = '', null , FiducialsToPaste) as FiducialsToPaste,
-					IF(NoTpvInfoPdf = '', null , NoTpvInfoPdf) as NoTpvInfoPdf
+					IF(NoTpvInfoPdf = '', null , NoTpvInfoPdf) as NoTpvInfoPdf,
+					IF(ExportPdfControl = '', null , ExportPdfControl) as ExportPdfControl
 					
     				FROM customer_note 
     				WHERE CustomerId = _CustomerId
@@ -71,7 +70,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	use aliased 'Connectors::TpvConnector::TpvMethods';
 	
-	my $info = TpvMethods->GetCustomerInfo("04119");
+	my $info = TpvMethods->GetCustomerInfo("05626");
 	
 	print 1;
 	

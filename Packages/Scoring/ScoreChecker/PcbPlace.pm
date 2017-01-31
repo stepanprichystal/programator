@@ -246,7 +246,7 @@ sub __LoadNestedSteps {
 
 		# register lines to zero, if origin is not in left lower corner
 
-		if ( $uStep->{"lim"}->{"xmin"} < 0 ) {
+		if ( $uStep->{"lim"}->{"xmin"} < 0 ||  $uStep->{"lim"}->{"ymin"} < 0 ) {
 
 			foreach my $l (@lines) {
 

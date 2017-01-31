@@ -265,10 +265,11 @@ sub __DeleteOldFiles {
 	my $archivePath = JobHelper->GetJobArchive( $self->{"jobId"} );
  	
 	my @mes = FileHelper->GetFilesNameByPattern( $archivePath, ".mes" );
+	my @meg = FileHelper->GetFilesNameByPattern( $archivePath, ".meg" );
 	my @ros = FileHelper->GetFilesNameByPattern( $archivePath, ".ros" );
 	my @rou = FileHelper->GetFilesNameByPattern( $archivePath, ".rou" );
  
-	foreach my $f ( (@mes, @ros, @rou) ) {
+	foreach my $f ( (@mes, @meg, @ros, @rou) ) {
 		unlink $f;
 	}
 }

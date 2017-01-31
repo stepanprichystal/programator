@@ -68,8 +68,9 @@ sub OnPrepareGroupData {
 
 	# 1) Export control
 	my $exportControl = 1;
+	my $custExportControl = $customerNote->ExportPdfControl();
 
-	if ( $defaultInfo->IsPool() ) {
+	if ( $defaultInfo->IsPool() || (defined $custExportControl &&  $custExportControl == 0 )) {
 		$exportControl = 0;
 	}
 

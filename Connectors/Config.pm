@@ -11,7 +11,7 @@ use warnings;
 #local library
 
 #define connection parameters for TPV DB
-%logDb = ();
+%tpvDb = ();
 
 $tpvDb{"connectionTimeout"} = 1;
 $tpvDb{"commandTimeout"} = 30;
