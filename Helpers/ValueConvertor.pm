@@ -48,6 +48,7 @@ sub GetJobLayerTitle {
 		$en{"ms"} = "Solder mask bot";
 		$en{"c"}  = "Component layer (top)";
 		$en{"s"}  = "Solder layer (bot)";
+		$en{"lc"} = "Silk screen top";
 
 		my %czl = ();
 		$czl{"pc"} = "Potisk top";
