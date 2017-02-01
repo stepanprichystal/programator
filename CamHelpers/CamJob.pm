@@ -386,4 +386,18 @@ sub CheckOutJob {
 	$inCam->COM( "check_inout", "job" => "$jobName", "mode" => "out", "ent_type" => "job" );
 }
 
+# Get all jobs name in job database, where is actual job
+sub GetJobList {
+	my $self    = shift;
+	my $inCAM   = shift;
+
+	$inCAM->INFO("units" => 'mm', "angle_direction" => 'ccw', "entity_type" => 'root',     "data_type" => 'JOBS_LIST');
+ 
+	my @jobs =  @{ $inCAM->{doinfo}{gJOBS_LIST } };	
+	
+	return @jobs;
+}
+
+
+
 1;

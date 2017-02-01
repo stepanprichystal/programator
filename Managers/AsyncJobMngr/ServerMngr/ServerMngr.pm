@@ -485,6 +485,8 @@ sub __CreateServer {
 
 	my $inCAMPath = GeneralHelper->GetLastInCAMVersion();
 
+	$inCAMPath .= "bin\\InCAM.exe";
+
 	unless ( -f $inCAMPath )    # does it exist?
 	{
 		print "InCAM does not exist on path: " . $inCAMPath;

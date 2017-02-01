@@ -126,6 +126,7 @@ sub GetAreasOfRout {
 
 	my %limits = CamJob->GetProfileLimits2( $inCAM, $jobId, $stepName );
 
+	# plus 3 mm to each side, because pcb can contain sideplating on edge of pcb, thus count this milling too
 	$limits{"xMin"} -= 3;
 	$limits{"xMax"} += 3;
 	$limits{"yMin"} -= 3;

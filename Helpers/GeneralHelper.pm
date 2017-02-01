@@ -252,6 +252,10 @@ sub CreateStackTrace {
 	return $str;
 }
 
+
+
+
+
 sub GetLastInCAMVersion {
 	my $self     = shift;
  
@@ -288,15 +292,8 @@ sub GetLastInCAMVersion {
 
 	if ($maxNumName) {
 
-		my $path = $inCAMPath . $maxNumName."\\bin\\InCAM.exe";
 
-#		unless( -e $path){
-#			
-#			# try path with folder release_64
-#			$path = $inCAMPath . $maxNumName."\\release_64\\bin\\InCAM.exe";
-#		}
-
-		return $path
+		return $inCAMPath . $maxNumName."\\";
 	}
 	else {
 
