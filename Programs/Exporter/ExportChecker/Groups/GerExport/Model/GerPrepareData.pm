@@ -141,19 +141,19 @@ sub __GetPasteInfo {
 	if ( $sa_ori || $sb_ori ) {
 
 		$pasteInfo{"notOriginal"} = 0;
-		$pasteInfo{"export"}      = 1;
+		$pasteExist      = 1;
 
 	}
 	elsif ( $sa_made || $sb_made ) {
 
 		$pasteInfo{"notOriginal"} = 1;
-		$pasteInfo{"export"}      = 1;
+		$pasteExist      = 1;
 
 	}
 	else {
 
 		$pasteInfo{"notOriginal"} = 0;
-		$pasteInfo{"export"}      = 0;
+		$pasteExist      = 0;
 	}
 
 	if ($mpanelExist) {
@@ -161,8 +161,15 @@ sub __GetPasteInfo {
 	}
 	else {
 		$pasteInfo{"step"}   = "o+1";
+	}
+
+	# default if export paste
+	if($pasteExist){
+		$pasteInfo{"export"} = 1;
+	}else{
 		$pasteInfo{"export"} = 0;
 	}
+	
 
 	# default is not add profile
 	if(defined $customerNote->ProfileToPaste()){

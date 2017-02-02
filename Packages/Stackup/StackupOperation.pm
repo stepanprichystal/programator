@@ -105,13 +105,13 @@ my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 
-	#use aliased 'Packages::Stackup::StackupOperation';
+	use aliased 'Packages::Stackup::StackupOperation';
 
-	#my $test = StackupOperation->OuterCore("f13610");
+	my $test = StackupOperation->GetThickByLayer("f61721", "v2");
 
 	 
 
-	#print $test;
+	print $test;
 
 }
 
