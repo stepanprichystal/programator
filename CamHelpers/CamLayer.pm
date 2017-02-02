@@ -163,7 +163,7 @@ sub WorkLayer {
 	my $inCAM = shift;
 	my $layer = shift;
 
-	$inCAM->COM( 'affected_layer', name => $layer, mode => "all", affected => "no" );
+	$self->ClearLayers($inCAM);
 
 	$inCAM->COM( "display_layer", "name" => $layer, "display" => "yes" );
 	$inCAM->COM( 'work_layer', name => $layer );

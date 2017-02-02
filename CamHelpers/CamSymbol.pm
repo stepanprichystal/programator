@@ -22,9 +22,6 @@ use aliased 'Enums::EnumsPaths';
 sub AddText {
 	my $self       = shift;
 	my $inCAM      = shift;
-	my $jobId      = shift;
-	my $step       = shift;
-	my $layer      = shift;
 	my $text       = shift;
 	my $position   = shift;
 	my $textHeight = shift;    # font size in mm
@@ -101,55 +98,111 @@ sub AddPolyline {
 
 }
 
+sub AddLine {
+	my $self     = shift;
+	my $inCAM    = shift;
+	my $startP   = shift;    #hash x, y
+	my $endP     = shift;
+	my $symbol   = shift;
+	my $polarity = shift;    #
+
+	$polarity = defined $polarity ? $polarity : 'positive';
+
+	$inCAM->COM(
+				 'add_line',
+				 attributes => 'yes',
+				 "xs"       => $startP->{"x"},
+				 "ys"       => $startP->{"y"},
+				 "xe"       => $endP->{"x"},
+				 "ye"       => $endP->{"y"},
+				 "symbol"   => $symbol,
+				 "polarity" => $polarity
+	);
+
+}
+
 sub AddTable {
 	my $self       = shift;
 	my $inCAM      = shift;
-	my $position   = shift;
-	my @colWidths  = @{ shift(@_) };
-	my $rowHeight  = shift;
+	my $position   = shift;				# position of table, hash x,y
+	my @colWidths  = @{ shift(@_) };	# each column width in mm
+	my $rowHeight  = shift;				# row height in mm
 	my $textHeight = shift;            # font size in mm
-	my $lineWidth  = shift;            # font size in mm
-	my @rows       = shift;
+	my $lineWidth  = shift;            # font width in mm
+	my @rows       = @{ shift(@_) };
 
-	my $rowCnt     = scalar(@rows);
-	my $colCnt     = scalar(@colWidths);
-	my $tableWidth = sum(@colWidths);
+	# my compute dimension
+	my $tableWidth  = sum(@colWidths);
+	my $tableHeight = scalar(@rows) * $rowHeight;
+
+	my $rowCnt = scalar(@rows);
+	my $colCnt = scalar(@colWidths);
 
 	my $rowPos = $position->{"y"};
-	my $colPos = $position->{"x"};
 
 	# add rows
 	for ( my $i = 0 ; $i < $rowCnt ; $i++ ) {
 
 		my %startP = ( "x" => $position->{"x"}, "y" => $rowPos );
 		my %endP = ( "x" => $tableWidth, "y" => $rowPos );
-		$self->AddLine();
+		$self->AddLine( $inCAM, \%startP, \%endP, "r200" );
 		$rowPos += $rowHeight;
 
 		# add last row line
 		if ( $i + 1 == $rowCnt ) {
 			my %startP = ( "x" => $position->{"x"}, "y" => $rowPos );
 			my %endP = ( "x" => $tableWidth, "y" => $rowPos );
-			$self->AddLine();
+			$self->AddLine( $inCAM, \%startP, \%endP, "r200" );
 		}
 	}
-	
+
+	my $colPos = $position->{"x"};
+
 	# add cols
+	for ( my $i = 0 ; $i < $colCnt ; $i++ ) {
+
+		my %startP = ( "x" => $colPos, "y" => $position->{"y"} );
+		my %endP   = ( "x" => $colPos, "y" => $position->{"y"} + $tableHeight );
+
+		$self->AddLine( $inCAM, \%startP, \%endP, "r200" );
+		$colPos += $colWidths[$i];
+
+		# add last column line
+		if ( $i + 1 == $colCnt ) {
+			%startP = ( "x" => $colPos, "y" => $position->{"y"} );
+			%endP   = ( "x" => $colPos, "y" => $position->{"y"} +$tableHeight );
+
+			$self->AddLine( $inCAM, \%startP, \%endP, "r200" );
+		}
+	}
+
+	# Fill table with text
+ 
+	@rows = reverse(@rows);    # we fill from bot
+	my $txtPosY = $position->{"y"};
 	for ( my $i = 0 ; $i < $rowCnt ; $i++ ) {
 
-		my %startP = ( "x" => $position->{"x"}, "y" => $rowPos );
-		my %endP = ( "x" => $tableWidth, "y" => $rowPos );
-		$self->AddLine();
-		$rowPos += $rowHeight;
+		my $rowData = $rows[$i];
 
-		# add last row line
-		if ( $i + 1 == $rowCnt ) {
-			my %startP = ( "x" => $position->{"x"}, "y" => $rowPos );
-			my %endP = ( "x" => $tableWidth, "y" => $rowPos );
-			$self->AddLine();
+		my $txtPosX = $position->{"x"};
+
+		for ( my $j = 0 ; $j < $colCnt ; $j++ ) {
+
+			my $cellData = @{$rowData}[$j];
+			unless ( defined $cellData ) {
+				$cellData = "";
+			}
+
+			my %posTxt = ( "x" => $txtPosX + $colWidths[$j]*0.05 , "y" => $txtPosY  + ( $rowHeight - $textHeight ) / 2 );
+
+			$self->AddText( $inCAM, $cellData, \%posTxt, $textHeight, 1 );
+
+			$txtPosX += $colWidths[$j];    # update position X
 		}
-	}
 
+		$txtPosY += $rowHeight;    # update position Y
+
+	}
 }
 
 #-------------------------------------------------------------------------------------------#
@@ -157,21 +210,30 @@ sub AddTable {
 #-------------------------------------------------------------------------------------------#
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
+	use aliased 'CamHelpers::CamSymbol';
+	use aliased 'Packages::InCAM::InCAM';
 
-	#
-	#	my $jobName          = "f13610";
-	#	my $layerName          = "fsch";
-	#
-	#
-	#	use aliased 'CamHelpers::CamLayer';
-	#	use aliased 'Packages::InCAM::InCAM';
-	#
-	#
-	#	my $inCAM = InCAM->new();
-	#
-	#	my $res = CamLayer->LayerIsBoard($inCAM, $jobName, $layerName);
-	#
-	#	print $res;
+	my $jobName   = "f13608";
+	my $layerName = "c";
+
+	my $inCAM = InCAM->new();
+	
+	$inCAM->COM("sel_delete");
+
+	my %pos = ( "x" => 0, "y" => 0 );
+
+	my @colWidths = ( 70, 60, 60 );
+
+	my @row1 = ( "Tool [mm]", "Depth [mm]", "Tool angle" );
+	my @row2 = ( 2000, 1.2, );
+
+	my @rows = ( \@row1, \@row2 );
+
+	CamSymbol->AddTable( $inCAM, \%pos, \@colWidths, 10, 5, 2, \@rows );
+
+
+	my %posTitl = ( "x" => 0, "y" => scalar(@rows)*10  + 5 );
+	CamSymbol->AddText( $inCAM, "Tool depths definition", \%posTitl, 6, 1 );
 
 }
 

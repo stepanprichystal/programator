@@ -58,21 +58,33 @@ sub GetDTMUserColNames {
 # For everz row in DTM, return value of user column in hash
 # Result: array of hashes
 sub GetDTMUserColumns {
-	my $self  = shift;
-	my $inCAM = shift;
-	my $jobId = shift;
-	my $step  = shift;
-	my $layer = shift;
+	my $self    = shift;
+	my $inCAM   = shift;
+	my $jobId   = shift;
+	my $step    = shift;
+	my $layer   = shift;
+	my $breakSR = shift;
 
 	#get values of user columns for each tool
-	$inCAM->INFO(
-				  units           => 'mm',
-				  angle_direction => 'ccw',
-				  entity_type     => 'layer',
-				  entity_path     => "$jobId/$step/$layer",
-				  data_type       => 'TOOL',
-				  options         => "break_sr"
-	);
+	if ($breakSR) {
+		$inCAM->INFO(
+					  units           => 'mm',
+					  angle_direction => 'ccw',
+					  entity_type     => 'layer',
+					  entity_path     => "$jobId/$step/$layer",
+					  data_type       => 'TOOL',
+					  options         => "break_sr"
+		);
+	}
+	else {
+		$inCAM->INFO(
+					  units           => 'mm',
+					  angle_direction => 'ccw',
+					  entity_type     => 'layer',
+					  entity_path     => "$jobId/$step/$layer",
+					  data_type       => 'TOOL'
+		);
+	}
 
 	my @gTOOLuser_des = @{ $inCAM->{doinfo}{gTOOLuser_des} };
 
@@ -134,7 +146,10 @@ sub GetDTMColumns {
 	my $layer   = shift;
 	my $breakSR = shift;
 
-	#get values of user columns for each tool
+	# 1) Get tool user columns
+	my @userTools = $self->GetDTMUserColumns( $inCAM, $jobId, $step, $layer, $breakSR );
+
+	# 2) get values of user columns for each tool
 
 	my @tools = ();
 
@@ -173,6 +188,7 @@ sub GetDTMColumns {
 		$info{"gTOOLdrill_size"}  = ${ $inCAM->{doinfo}{gTOOLdrill_size} }[$i];
 		$info{"gTOOLbit"}         = ${ $inCAM->{doinfo}{gTOOLbit} }[$i];
 		$info{"gTOOLslot_len"}    = ${ $inCAM->{doinfo}{gTOOLslot_len} }[$i];
+		$info{"userColumns"}      = $userTools[$i];
 
 		push( @tools, \%info );
 
@@ -229,6 +245,8 @@ sub SetDTMTools {
 	my @tools   = @{ shift(@_) };
 	my $DTMType = shift;            # vysledne, vrtane
 
+	my @userClmns = CamHelpers::CamDTM->GetDTMUserColNames($inCAM); # User column name
+
 	CamLayer->WorkLayer( $inCAM, $layer );
 
 	$inCAM->COM('tools_tab_reset');
@@ -240,6 +258,19 @@ sub SetDTMTools {
 		$toolType =~ s/^plated$/plate/;
 		$toolType =~ s/^non_plated$/nplate/;
 
+		# Prepare user column values
+		my @vals = ();
+		foreach my $userClmn (@userClmns){
+			
+			my $v = $t->{"userColumns"}->{$userClmn};
+			unless(defined $v){
+				$v = "";
+			}
+			push (@vals, $v);
+		}
+		
+		my $userColumns = join( "\\;", @vals );
+
 		$inCAM->COM(
 					 'tools_tab_add',
 					 "num"         => $t->{"gTOOLnum"},
@@ -249,7 +280,8 @@ sub SetDTMTools {
 					 "max_tol"     => $t->{"gTOOLmax_tol"},
 					 "bit"         => $t->{"gTOOLbit"},
 					 "finish_size" => $t->{"gTOOLfinish_size"},
-					 "drill_size"  => $t->{"gTOOLdrill_size"}
+					 "drill_size"  => $t->{"gTOOLdrill_size"},
+					 "user_des"    => $userColumns
 		);
 	}
 
