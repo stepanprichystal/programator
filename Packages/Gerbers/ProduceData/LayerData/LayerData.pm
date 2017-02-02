@@ -25,7 +25,7 @@ sub new {
 	$self->{"name"}   = shift;    # physic name of file
 	$self->{"title"}  = shift;    # description of layer
 	$self->{"info"}   = shift;    # extra info of layer
-	$self->{"output"} = undef;    # name of prepared layer in matrix
+	$self->{"output"} = shift;    # name of prepared layer in matrix
 
 	return $self;
 }

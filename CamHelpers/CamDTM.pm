@@ -14,6 +14,7 @@ use warnings;
 
 use aliased 'Enums::EnumsPaths';
 use aliased 'CamHelpers::CamHelper';
+use aliased 'CamHelpers::CamLayer';
 
 #-------------------------------------------------------------------------------------------#
 #   Package methods
@@ -150,12 +151,12 @@ sub GetDTMColumns {
 	}
 	else {
 		$inCAM->INFO(
-					  units           => 'mm',
-					  angle_direction => 'ccw',
-					  entity_type     => 'layer',
-					  entity_path     => "$jobId/$step/$layer",
-					  data_type       => 'TOOL' 
-					   
+			units           => 'mm',
+			angle_direction => 'ccw',
+			entity_type     => 'layer',
+			entity_path     => "$jobId/$step/$layer",
+			data_type       => 'TOOL'
+
 		);
 	}
 
@@ -195,6 +196,70 @@ sub GetDTMColumnsByType {
 	@tools = grep { $_->{"gTOOLtype2"} eq $type } @tools;
 
 	return @tools;
+}
+
+# Returnt tool type of DTM vrtane/vysledne
+sub GetDTMUToolsType {
+	my $self  = shift;
+	my $inCAM = shift;
+	my $jobId = shift;
+	my $step  = shift;
+	my $layer = shift;
+
+	$inCAM->INFO(
+				  "units"           => 'mm',
+				  "angle_direction" => 'ccw',
+				  "entity_type"     => 'layer',
+				  "entity_path"     => "$jobId/$step/$layer",
+				  "data_type"       => 'TOOL_USER'
+	);
+
+	my $toolType = $inCAM->{doinfo}{"gTOOL_USER"};
+
+	return $toolType;
+}
+
+# Set new tools to DTM
+sub SetDTMTools {
+	my $self    = shift;
+	my $inCAM   = shift;
+	my $jobId   = shift;
+	my $step    = shift;
+	my $layer   = shift;
+	my @tools   = @{ shift(@_) };
+	my $DTMType = shift;            # vysledne, vrtane
+
+	CamLayer->WorkLayer( $inCAM, $layer );
+
+	$inCAM->COM('tools_tab_reset');
+
+	foreach my $t (@tools) {
+
+		# change type values ( command tool return values non_plated and plated, but tools_tab_set consum plate, nplate)
+		my $toolType = $t->{"gTOOLtype"};
+		$toolType =~ s/^plated$/plate/;
+		$toolType =~ s/^non_plated$/nplate/;
+
+		$inCAM->COM(
+					 'tools_tab_add',
+					 "num"         => $t->{"gTOOLnum"},
+					 "type"        => $toolType,
+					 "type2"       => $t->{"gTOOLtype2"},
+					 "min_tol"     => $t->{"gTOOLmin_tol"},
+					 "max_tol"     => $t->{"gTOOLmax_tol"},
+					 "bit"         => $t->{"gTOOLbit"},
+					 "finish_size" => $t->{"gTOOLfinish_size"},
+					 "drill_size"  => $t->{"gTOOLdrill_size"}
+		);
+	}
+
+	if ($DTMType) {
+		$inCAM->COM( 'tools_set', layer => $layer, thickness => '0', user_params => $DTMType );
+	}
+	else {
+		$inCAM->COM( 'tools_set', layer => $layer, thickness => '0' );
+	}
+
 }
 
 #-------------------------------------------------------------------------------------------#

@@ -17,16 +17,20 @@ use Image::Size;
 #local library
 use aliased 'Helpers::GeneralHelper';
 use aliased 'Enums::EnumsPaths';
+use aliased 'Enums::EnumsGeneral';
 use aliased 'Packages::Gerbers::ProduceData::Enums';
 use aliased 'CamHelpers::CamLayer';
 use aliased 'CamHelpers::CamJob';
 use aliased 'Packages::Gerbers::ProduceData::LayerData::LayerData';
 use aliased 'Helpers::ValueConvertor';
+use aliased 'CamHelpers::CamFilter';
+use aliased 'CamHelpers::CamDTM';
+
 #use aliased 'CamHelpers::CamToolDepth';
 #use aliased 'CamHelpers::CamFilter';
 #use aliased 'CamHelpers::CamHelper';
 #use aliased 'CamHelpers::CamSymbol';
-#use aliased 'Enums::EnumsGeneral';
+
 #use aliased 'Packages::SystemCall::SystemCall';
 
 #-------------------------------------------------------------------------------------------#
@@ -68,11 +72,12 @@ sub __PrepareLayers {
 	my $layers = shift;
 
 	$self->__PrepareBASEBOARD( $layers, Enums->Type_BOARDLAYERS );
-	$self->__PrepareNCDEPTHMILL( $layers, Enums->Type_NCLAYERS );
-	$self->__PrepareNCMILL( $layers, Enums->Type_NCLAYERS );
 	$self->__PrepareNCDRILL( $layers, Enums->Type_NCLAYERS );
-	$self->__PrepareOUTLINE( $layers, Enums->Type_OUTLINE );
-	$self->__PrepareDOCUMENT( $layers, Enums->Type_DOCUMENT );
+	$self->__PrepareNCMILL( $layers, Enums->Type_NCLAYERS );
+	$self->__PrepareNCDEPTHMILL( $layers, Enums->Type_NCLAYERS );
+
+	#$self->__PrepareOUTLINE( $layers, Enums->Type_OUTLINE );
+	#$self->__PrepareDOCUMENT( $layers, Enums->Type_DOCUMENT );
 
 }
 
@@ -86,572 +91,248 @@ sub __PrepareBASEBOARD {
 
 	foreach my $l (@layers) {
 
-		my $lData = LayerData->new($type);
-		
-		ValueConvertor->GetJobLayerTitle($l)
-		
-		$lData
+		my $tit = ValueConvertor->GetJobLayerTitle($l);
+		my $inf = ValueConvertor->GetJobLayerInfo($l);
 
+		my $lData = LayerData->new( $type, $l->{"gROWname"}, $tit, $inf, $l->{"gROWname"} );
 
-	
-	}
-
-	my $inCAM = $self->{"inCAM"};
-	my $lName = GeneralHelper->GetGUID();
-
-	$inCAM->COM( 'create_layer', layer => $lName, context => 'misc', type => 'document', polarity => 'positive', ins_layer => '' );
-
-	$inCAM->COM(
-				 "sr_fill",
-				 "type"          => "solid",
-				 "solid_type"    => "surface",
-				 "min_brush"     => "25.4",
-				 "cut_prims"     => "no",
-				 "polarity"      => "positive",
-				 "consider_rout" => "no",
-				 "dest"          => "layer_name",
-				 "layer"         => $lName,
-				 "stop_at_steps" => ""
-	);
-
-	$layer->SetOutputLayer($lName);
-}
-
-# Dont do nothing and export cu layer as is
-sub __PrepareOUTERCU {
-	my $self  = shift;
-	my $layer = shift;
-
-	unless ( $layer->HasLayers() ) {
-		return 0;
-	}
-
-	my $inCAM  = $self->{"inCAM"};
-	my @layers = $layer->GetSingleLayers();
-
-	if ( $layers[0] ) {
-
-		my $lName = GeneralHelper->GetGUID();
-
-		$inCAM->COM( "merge_layers", "source_layer" => $layers[0]->{"gROWname"}, "dest_layer" => $lName );
-
-		$layer->SetOutputLayer($lName);
+		$self->{"layerList"}->AddLayer($lData);
 	}
 }
 
-# Dont do nothing and export cu layer as is
-sub __PrepareOUTERSURFACE {
-	my $self  = shift;
-	my $layer = shift;
-
-	unless ( $layer->HasLayers() ) {
-		return 0;
-	}
+# Create layer and fill profile - simulate pcb material
+sub __PrepareNCDRILL {
+	my $self   = shift;
+	my @layers = @{ shift(@_) };
+	my $type   = shift;
 
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
 
-	my @layers = $layer->GetSingleLayers();
+	@layers = grep {
+		(     $_->{"type"} eq EnumsGeneral->LAYERTYPE_plt_nDrill
+		   || $_->{"type"} eq EnumsGeneral->LAYERTYPE_plt_cDrill
+		   || $_->{"type"} eq EnumsGeneral->LAYERTYPE_plt_bDrillTop
+		   || $_->{"type"} eq EnumsGeneral->LAYERTYPE_plt_bDrillBot )
+		  && $_->{"gROWcontext"} eq "board"
+	} @layers;
 
-	if ( $layers[0] ) {
+	foreach my $l (@layers) {
+
+		my $tit   = ValueConvertor->GetJobLayerTitle($l);
+		my $inf   = ValueConvertor->GetJobLayerInfo($l);
+		my $lName = GeneralHelper->GetGUID();
+
+		$inCAM->COM(
+					 "copy_layer",
+					 "source_job"   => $jobId,
+					 "source_step"  => $self->{"step"},
+					 "source_layer" => $l->{"gROWname"},
+					 "dest"         => "layer_name",
+					 "dest_step"    => $self->{"step"},
+					 "dest_layer"   => $lName,
+					 "mode"         => "append"
+		);
+
+		$self->__ComputeNewDTMTools($lName);
+
+		my $lData = LayerData->new( $type, $l->{"gROWname"}, $tit, $inf, $lName );
+
+		$self->{"layerList"}->AddLayer($lData);
+
+	}
+}
+
+# Create layer and fill profile - simulate pcb material
+sub __PrepareNCMILL {
+	my $self   = shift;
+	my @layers = @{ shift(@_) };
+	my $type   = shift;
+
+	my $inCAM = $self->{"inCAM"};
+	my $jobId = $self->{"jobId"};
+
+	# Scoring single + plated mill single
+
+	my @layersSingle =
+	  grep { $_->{"type"} eq EnumsGeneral->LAYERTYPE_plt_nMill || $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_score } @layers;
+
+	foreach my $l (@layersSingle) {
+
+		my $tit = ValueConvertor->GetJobLayerTitle($l);
+		my $inf = ValueConvertor->GetJobLayerInfo($l);
 
 		my $lName = GeneralHelper->GetGUID();
-		$inCAM->COM( "merge_layers", "source_layer" => $layers[0]->{"gROWname"}, "dest_layer" => $lName );
 
-		my $mask = "m" . $layers[0]->{"gROWname"};
+		$inCAM->COM(
+					 "copy_layer",
+					 "source_job"   => $jobId,
+					 "source_step"  => $self->{"step"},
+					 "source_layer" => $l->{"gROWname"},
+					 "dest"         => "layer_name",
+					 "dest_step"    => $self->{"step"},
+					 "dest_layer"   => $lName,
+					 "mode"         => "append"
+		);
 
-		# If mask exist,
-		# 1) copy to help layer, 2) do negative and conturize
-		if ( CamHelper->LayerExists( $inCAM, $jobId, $mask ) ) {
+		$self->__ComputeNewDTMTools($lName);
 
-			my $lNameMask = GeneralHelper->GetGUID();
-			$inCAM->COM( "merge_layers", "source_layer" => $mask, "dest_layer" => $lNameMask );
+		my $lData = LayerData->new( $type, $l->{"gROWname"}, $tit, $inf, $lName );
 
-			CamLayer->WorkLayer( $inCAM, $lNameMask );
-			CamLayer->NegativeLayerData( $inCAM, $lNameMask, $self->{"profileLim"} );
-			CamLayer->Contourize( $inCAM, $lNameMask );
-			$inCAM->COM( "merge_layers", "source_layer" => $lNameMask, "dest_layer" => $lName, "invert" => "yes" );
-			$inCAM->COM( "delete_layer", "layer" => $lNameMask );
+		$self->{"layerList"}->AddLayer($lData);
+	}
 
-			#CamLayer->Contourize( $inCAM, $lName );
+	# Merge: mill, rs, k mill layers
+
+	my @layersMill = grep {
+		     $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_nMill
+		  || $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_kMill
+		  || $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_rsMill
+	} @layers;
+
+	if ( scalar(@layersMill) ) {
+
+		my $lName = GeneralHelper->GetGUID();
+
+		my $tit = ValueConvertor->GetJobLayerTitle("f");
+		my $inf = ValueConvertor->GetJobLayerInfo("f");
+
+		foreach my $l (@layersMill) {
+
+			$inCAM->COM(
+						 "copy_layer",
+						 "source_job"   => $jobId,
+						 "source_step"  => $self->{"step"},
+						 "source_layer" => $l->{"gROWname"},
+						 "dest"         => "layer_name",
+						 "dest_step"    => $self->{"step"},
+						 "dest_layer"   => $lName,
+						 "mode"         => "append"
+			);
+
+			$self->__ComputeNewDTMTools($lName);
+			my $lData = LayerData->new( $type, "f", $tit, $inf, $lName );
+
+			$self->{"layerList"}->AddLayer($lData);
 		}
-
-		$layer->SetOutputLayer($lName);
 	}
 }
 
-# goldfinger layer
-sub __PrepareGOLDFINGER {
-	my $self  = shift;
-	my $layer = shift;
-
-	unless ( $layer->HasLayers() ) {
-		return 0;
-	}
+# Create layer and fill profile - simulate pcb material
+sub __PrepareNCDEPTHMILL {
+	my $self   = shift;
+	my @layers = @{ shift(@_) };
+	my $type   = shift;
 
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
 
-	my @layers = $layer->GetSingleLayers();
+	# all depth nc layers
 
-	if ( $layers[0] ) {
+	@layers = grep {
+		(     $_->{"type"} eq EnumsGeneral->LAYERTYPE_plt_bMillTop
+		   || $_->{"type"} eq EnumsGeneral->LAYERTYPE_plt_bMillBot
+		   || $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_bMillTop
+		   || $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_bMillBot
+		   || $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_jbMillTop
+		   || $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_jbMillBot )
+		  && $_->{"gROWcontext"} eq "board"
+	  } @layers;
+ 
 
-		my $lNameCu = GeneralHelper->GetGUID();
+	  foreach my $l (@layers){
 
-		my $mask = "m" . $layers[0]->{"gROWname"};
+		my $tit = ValueConvertor->GetJobLayerTitle($l);
+		my $inf = ValueConvertor->GetJobLayerInfo($l);
 
-		# If mask exist,
-		# 1) copy mask, where gold plating pads are placed in cu
-		# 2) do negative from this mask, contourize
-		# 3) copy cu layer to temp
-		# 4) Merge this temp mask (negative) with tem cu
-		if ( CamHelper->LayerExists( $inCAM, $jobId, $mask ) ) {
+		my $lName = GeneralHelper->GetGUID();
 
-			my $lNameMask = GeneralHelper->GetGUID();
+		$inCAM->COM(
+					 "copy_layer",
+					 "source_job"   => $jobId,
+					 "source_step"  => $self->{"step"},
+					 "source_layer" => $l->{"gROWname"},
+					 "dest"         => "layer_name",
+					 "dest_step"    => $self->{"step"},
+					 "dest_layer"   => $lName,
+					 "mode"         => "append"
+		);
 
-			my $result = CamFilter->SelectByReferenece( $inCAM, $jobId, "touch", $mask, undef, undef, "positive", $layers[0]->{"gROWname"},
-														".gold_plating", "", undef );
+		$self->__ComputeNewDTMTools($lName);
+		
+		# add table with depth information		
 
-			if ( $result > 0 ) {
+		my $lData = LayerData->new( $type, $l->{"gROWname"}, $tit, $inf, $lName );
 
-				my @l = ($lNameMask);
-				CamLayer->CopySelected( $inCAM, \@l, 0 );
-				CamLayer->WorkLayer( $inCAM, $lNameMask );
-				CamLayer->NegativeLayerData( $inCAM, $lNameMask, $self->{"profileLim"} );
-				CamLayer->Contourize( $inCAM, $lNameMask );
+		$self->{"layerList"}->AddLayer($lData);
+	  }
 
-				# copy copper to temp layer
-				$inCAM->COM( "merge_layers", "source_layer" => $layers[0]->{"gROWname"}, "dest_layer" => $lNameCu );
+	  
+}
 
-				# copy mask temp negati to cu temp
-				$inCAM->COM( "merge_layers", "source_layer" => $lNameMask, "dest_layer" => $lNameCu, "invert" => "yes" );
-				$inCAM->COM( "delete_layer", "layer" => $lNameMask );
+sub __ComputeNewDTMTools {
+	my $self  = shift;
+	my $lName = shift;
 
+	my $inCAM = $self->{"inCAM"};
+	my $jobId = $self->{"jobId"};
+
+	# Prepare tool table for drill map and final sizes of data (depand on column DSize in DTM)
+
+	my @tools = CamDTM->GetDTMColumns( $inCAM, $jobId, $self->{"step"}, $lName );
+
+	my $DTMType = CamDTM->GetDTMUToolsType( $inCAM, $jobId, $self->{"step"}, $lName );
+
+	# check if dest size are defined
+	my @badSize = grep { !defined $_->{"gTOOLdrill_size"} || $_->{"gTOOLdrill_size"} == 0 || $_->{"gTOOLdrill_size"} eq "" } @tools;
+
+	if (@badSize) {
+		@badSize = map { $_->{"gTOOLfinish_size"} } @badSize;
+		my $toolStr = join( ", ", @badSize );
+		die "Tools: $toolStr, has not set drill size.\n";
+	}
+
+	# 1) If some tool has not finish size, correct it by putting there drill size (if vysledne resize -100µm)
+
+	foreach my $t (@tools) {
+
+		if ( !defined $t->{"gTOOLfinish_size"} || $t->{"gTOOLfinish_size"} == 0 || $t->{"gTOOLfinish_size"} eq "" ) {
+
+			if ( $DTMType eq "vysledne" ) {
+
+				$t->{"gTOOLfinish_size"} = $t->{"gTOOLdrill_size"} - 100;    # 100µm - this is size of plating
+
+			}
+			elsif ( $DTMType eq "vrtane" ) {
+				$t->{"gTOOLfinish_size"} = $t->{"gTOOLdrill_size"};
 			}
 
 		}
-		else {
-
-			$inCAM->COM( "merge_layers", "source_layer" => $layers[0]->{"gROWname"}, "dest_layer" => $lNameCu );
-		}
-
-		$layer->SetOutputLayer($lNameCu);
-	}
-}
-
-# Invert solder mask
-sub __PrepareMASK {
-	my $self  = shift;
-	my $layer = shift;
-
-	unless ( $layer->HasLayers() ) {
-		return 0;
 	}
 
-	my $inCAM  = $self->{"inCAM"};
-	my @layers = $layer->GetSingleLayers();
+	# 2) Copy 'finish' value to 'drill size' value.
+	# Drill size has to contain value of finih size, because all pads, lines has size depand on this column
+	# And we want diameters size after plating
 
-	if ( $layers[0] ) {
-		my $lName = GeneralHelper->GetGUID();
+	foreach my $t (@tools) {
 
-		my $maskLayer = $layers[0]->{"gROWname"};
-
-		# Select layer as work
-
-		CamLayer->WorkLayer( $inCAM, $maskLayer );
-
-		$inCAM->COM( "merge_layers", "source_layer" => $maskLayer, "dest_layer" => $lName );
-
-		CamLayer->WorkLayer( $inCAM, $lName );
-
-		CamLayer->NegativeLayerData( $self->{"inCAM"}, $lName, $self->{"profileLim"} );
-
-		$layer->SetOutputLayer($lName);
-
-	}
-}
-
-# Dont do nothing and export silk as is
-sub __PrepareSILK {
-	my $self  = shift;
-	my $layer = shift;
-
-	unless ( $layer->HasLayers() ) {
-		return 0;
-	}
-
-	my $inCAM  = $self->{"inCAM"};
-	my @layers = $layer->GetSingleLayers();
-
-	if ( $layers[0] ) {
-
-		my $lName = GeneralHelper->GetGUID();
-
-		$inCAM->COM( "merge_layers", "source_layer" => $layers[0]->{"gROWname"}, "dest_layer" => $lName );
-
-		$layer->SetOutputLayer($lName);
-	}
-}
-
-# Compensate this layer and resize about 100µm (plating)
-sub __PreparePLTDEPTHNC {
-	my $self  = shift;
-	my $layer = shift;
-
-	unless ( $layer->HasLayers() ) {
-		return 0;
-	}
-
-	my $inCAM  = $self->{"inCAM"};
-	my @layers = $layer->GetSingleLayers();
-
-	my $lName = GeneralHelper->GetGUID();
-
-	$inCAM->COM( 'create_layer', layer => $lName, context => 'misc', type => 'document', polarity => 'positive', ins_layer => '' );
-
-	# compensate
-	foreach my $l (@layers) {
-
-		if ( $l->{"gROWlayer_type"} eq "rout" ) {
-			CamLayer->WorkLayer( $inCAM, $l->{"gROWname"} );
-			my $lComp = CamLayer->RoutCompensation( $inCAM, $l->{"gROWname"}, "document" );
-
-			# check for special rout 6.5mm with depth
-			$self->__CheckCountersink( $l, $lComp );
-
-			$inCAM->COM( "merge_layers", "source_layer" => $lComp, "dest_layer" => $lName );
-			$inCAM->COM( 'delete_layer', "layer" => $lComp );
+		if ( $DTMType eq "vysledne" ) {
+			$t->{"gTOOLdrill_size"} = $t->{"gTOOLfinish_size"};    # 100µm - this is size of plating
 
 		}
-		else {
-
-			$inCAM->COM( "merge_layers", "source_layer" => $l->{"gROWname"}, "dest_layer" => $lName );
+		elsif ( $DTMType eq "vrtane" ) {
+			$t->{"gTOOLdrill_size"} = $t->{"gTOOLfinish_size"} - 100;
 		}
-
 	}
 
-	# resize
+	# 3) Set new values to DTM
+	CamDTM->SetDTMTools( $inCAM, $jobId, $self->{"step"}, $lName, \@tools );
+
+	# 4) Adjust surfaces in layer. All must be -100µm
 	CamLayer->WorkLayer( $inCAM, $lName );
-	$inCAM->COM( "sel_resize", "size" => -100, "corner_ctl" => "no" );
-
-	$layer->SetOutputLayer($lName);
-
-}
-
-# Compensate this layer and resize about 100µm (plating)
-sub __PrepareNPLTDEPTHNC {
-	my $self  = shift;
-	my $layer = shift;
-
-	unless ( $layer->HasLayers() ) {
-		return 0;
-	}
-
-	my $inCAM  = $self->{"inCAM"};
-	my @layers = $layer->GetSingleLayers();
-	my $lName  = GeneralHelper->GetGUID();
-
-	$inCAM->COM( 'create_layer', layer => $lName, context => 'misc', type => 'document', polarity => 'positive', ins_layer => '' );
-
-	# compensate
-	foreach my $l (@layers) {
-
-		if ( $l->{"gROWlayer_type"} eq "rout" ) {
-			CamLayer->WorkLayer( $inCAM, $l->{"gROWname"} );
-			my $lComp = CamLayer->RoutCompensation( $inCAM, $l->{"gROWname"}, "document" );
-
-			# check for special rout 6.5mm with depth
-			$self->__CheckCountersink( $l, $lComp );
-
-			$inCAM->COM( "merge_layers", "source_layer" => $lComp, "dest_layer" => $lName );
-			$inCAM->COM( 'delete_layer', "layer" => $lComp );
-		}
-		else {
-
-			$inCAM->COM( "merge_layers", "source_layer" => $l->{"gROWname"}, "dest_layer" => $lName );
-		}
-	}
-
-	$layer->SetOutputLayer($lName);
-
-}
-
-# Compensate this layer and resize about 100µm (plating)
-sub __PreparePLTTHROUGHNC {
-	my $self  = shift;
-	my $layer = shift;
-
-	unless ( $layer->HasLayers() ) {
-		return 0;
-	}
-
-	my $inCAM  = $self->{"inCAM"};
-	my @layers = $layer->GetSingleLayers();
-	my $lName  = GeneralHelper->GetGUID();
-
-	$inCAM->COM( 'create_layer', layer => $lName, context => 'misc', type => 'document', polarity => 'positive', ins_layer => '' );
-
-	# compensate
-	foreach my $l (@layers) {
-
-		if ( $l->{"gROWlayer_type"} eq "rout" ) {
-
-			CamLayer->WorkLayer( $inCAM, $l->{"gROWname"} );
-			my $lComp = CamLayer->RoutCompensation( $inCAM, $l->{"gROWname"}, "document" );
-
-			$inCAM->COM( "merge_layers", "source_layer" => $lComp, "dest_layer" => $lName );
-
-			$inCAM->COM( 'delete_layer', "layer" => $lComp );
-
-		}
-		else {
-
-			$inCAM->COM( "merge_layers", "source_layer" => $l->{"gROWname"}, "dest_layer" => $lName );
-		}
-
-	}
-
-	CamLayer->WorkLayer( $inCAM, $lName );
-	$inCAM->COM( "sel_resize", "size" => -100, "corner_ctl" => "no" );
-
-	$layer->SetOutputLayer($lName);
-
-}
-
-# Nonplated layer
-sub __PrepareNPLTTHROUGHNC {
-	my $self  = shift;
-	my $layer = shift;
-
-	unless ( $layer->HasLayers() ) {
-		return 0;
-	}
-
-	my $inCAM  = $self->{"inCAM"};
-	my @layers = $layer->GetSingleLayers();
-	my $lName  = GeneralHelper->GetGUID();
-
-	$inCAM->COM( 'create_layer', layer => $lName, context => 'misc', type => 'document', polarity => 'positive', ins_layer => '' );
-
-	# compensate
-	foreach my $l (@layers) {
-
-		if ( $l->{"gROWlayer_type"} eq "rout" ) {
-
-			CamLayer->WorkLayer( $inCAM, $l->{"gROWname"} );
-			my $lComp = CamLayer->RoutCompensation( $inCAM, $l->{"gROWname"}, "document" );
-
-			$inCAM->COM( "merge_layers", "source_layer" => $lComp, "dest_layer" => $lName );
-
-			$inCAM->COM( 'delete_layer', "layer" => $lComp );
-
-		}
-		else {
-
-			$inCAM->COM( "merge_layers", "source_layer" => $l->{"gROWname"}, "dest_layer" => $lName );
-		}
-
-		# There can by small remains of pcb material, which is not milled
-		# We don't want see this pieces in pdf, so delete tem from layer $lName
-		my $lTmp = GeneralHelper->GetGUID();
-		$inCAM->COM( "merge_layers", "source_layer" => $lName, "dest_layer" => $lTmp );
-
-		# 1) do negative of prepared rout layer
-		CamLayer->NegativeLayerData( $inCAM, $lTmp, $self->{"profileLim"} );
-		CamLayer->WorkLayer( $inCAM, $lTmp );
-
-		# 2) Select all 'small pieces'/surfaces and copy them negative to $lName
-		CamLayer->Contourize( $inCAM, $lTmp );
-		CamLayer->WorkLayer( $inCAM, $lTmp );
-
-		# Select 'surface pieces'
-
-		my $profileArea =
-		  abs( $self->{"profileLim"}->{"xMin"} - $self->{"profileLim"}->{"xMax"} ) *
-		  abs( $self->{"profileLim"}->{"yMin"} - $self->{"profileLim"}->{"yMax"} );
-		my $maxArea = $profileArea / 10;
-
-		if ( CamFilter->BySurfaceArea( $inCAM, 0, $maxArea ) > 0 ) {
-			my @layers = ($lName);
-			CamLayer->CopySelected( $inCAM, \@layers, 0, 100 );
-		}
-
-		$inCAM->COM( 'delete_layer', "layer" => $lTmp );
-	}
-
-	$layer->SetOutputLayer($lName);
-}
-
-sub __CheckCountersink {
-	my $self      = shift;
-	my $layer     = shift;
-	my $layerComp = shift;
-
-	if (    $layer->{"type"} ne EnumsGeneral->LAYERTYPE_plt_bMillTop
-		 && $layer->{"type"} ne EnumsGeneral->LAYERTYPE_nplt_bMillTop
-		 && $layer->{"type"} ne EnumsGeneral->LAYERTYPE_plt_bMillBot
-		 && $layer->{"type"} ne EnumsGeneral->LAYERTYPE_nplt_bMillBot )
-	{
-		return 0;
-	}
-
-	my $inCAM = $self->{"inCAM"};
-	my $jobId = $self->{"jobId"};
-
-	my $stepName = $self->{"pdfStep"};
-	$stepName =~ s/pdf_//;
-	my $lName = $layer->{"gROWname"};
-
-	my $result = 1;
-
-	#get depths for all diameter
-	my @toolDepths = CamToolDepth->GetToolDepths( $inCAM, $jobId, $stepName, $lName );
-
-	$inCAM->INFO(
-				  units       => 'mm',
-				  entity_type => 'layer',
-				  entity_path => "$jobId/$stepName/$lName",
-				  data_type   => 'TOOL',
-				  parameters  => 'drill_size+shape',
-				  options     => "break_sr"
-	);
-	my @toolSize  = @{ $inCAM->{doinfo}{gTOOLdrill_size} };
-	my @toolShape = @{ $inCAM->{doinfo}{gTOOLshape} };
-
-	# 2) check if tool depth is set
-	for ( my $i = 0 ; $i < scalar(@toolSize) ; $i++ ) {
-
-		my $tSize = $toolSize[$i];
-
-		#for each hole diameter, get depth (in mm)
-		my $tDepth;
-
-		if ( $tSize == 6500 ) {
-			my $prepareOk = CamToolDepth->PrepareToolDepth( $tSize, \@toolDepths, \$tDepth );
-
-			unless ($prepareOk) {
-
-				die "$tSize doesn't has set deep of milling/drilling.\n";
-			}
-
-			#vypocitej realne odebrani materialu na zaklade hloubkz pojezdu/vrtani
-			# TODO tady se musi dotahnout skutecnz uhel, ne jen 90 stupnu pokazde - ceka az budou kompletne funkcni vrtacky
-			my $toolAngl = 90;
-
-			my $newDiameter = tan( deg2rad( $toolAngl / 2 ) ) * $tDepth;
-			$newDiameter *= 2;       #whole diameter
-			$newDiameter *= 1000;    #um
-			$newDiameter = int($newDiameter);
-
-			# now change 6.5mm to new diameter
-			CamLayer->WorkLayer( $inCAM, $layerComp );
-			my @syms = ("r6500");
-			CamFilter->BySymbols( $inCAM, \@syms );
-			$inCAM->COM( "sel_change_sym", "symbol" => "r" . $newDiameter, "reset_angle" => "no" );
-		}
-	}
-
-	return $result;
-}
-
-# Clip area arpound profile
-# Create border around pcb which is responsible for keep all layer dimension same
-# border is 5mm behind profile
-# if preview is bot, mirror data
-sub __OptimizeLayers {
-	my $self      = shift;
-	my $layerList = shift;
-
-	my $inCAM  = $self->{"inCAM"};
-	my @layers = $layerList->GetLayers(1);
-
-	# 1) Clip area behind profile
-
-	CamLayer->ClearLayers($inCAM);
-
-	foreach my $l (@layers) {
-
-		$inCAM->COM( "affected_layer", "name" => $l->GetOutputLayer(), "mode" => "single", "affected" => "yes" );
-	}
-
-	# clip area around profile
-	$inCAM->COM(
-		"clip_area_end",
-		"layers_mode" => "affected_layers",
-		"layer"       => "",
-		"area"        => "profile",
-
-		#"area_type"   => "rectangle",
-		"inout"       => "outside",
-		"contour_cut" => "yes",
-		"margin"      => "-2",        # cut 2µm inside of pcb, because cut exactly on border can coause ilegal surfaces, in nplt mill example
-		"feat_types" => "line\;pad;surface;arc;text",
-		"pol_types"  => "positive\;negative"
-	);
-	$inCAM->COM( "affected_layer", "mode" => "all", "affected" => "no" );
-
-	# 2) Create frame 5mm behind profile. Frame define border of layer data
-
-	my $lName = GeneralHelper->GetGUID();
-	$inCAM->COM( 'create_layer', "layer" => $lName, "context" => 'misc', "type" => 'document', "polarity" => 'positive', "ins_layer" => '' );
-	CamLayer->WorkLayer( $inCAM, $lName );
-
-	# frame width 2mm
-	my $frame = 4;
-
-	my @coord = ();
-
-	my %p1 = ( "x" => $self->{"profileLim"}->{"xMin"} - $frame, "y" => $self->{"profileLim"}->{"yMin"} - $frame );
-	my %p2 = ( "x" => $self->{"profileLim"}->{"xMin"} - $frame, "y" => $self->{"profileLim"}->{"yMax"} + $frame );
-	my %p3 = ( "x" => $self->{"profileLim"}->{"xMax"} + $frame, "y" => $self->{"profileLim"}->{"yMax"} + $frame );
-	my %p4 = ( "x" => $self->{"profileLim"}->{"xMax"} + $frame, "y" => $self->{"profileLim"}->{"yMin"} - $frame );
-	push( @coord, \%p1 );
-	push( @coord, \%p2 );
-	push( @coord, \%p3 );
-	push( @coord, \%p4 );
-
-	# frame 100µm width around pcb (fr frame coordinate)
-	CamSymbol->AddPolyline( $self->{"inCAM"}, \@coord, "r10", "positive" );
-
-	# copy border to all output layers
-
-	my @layerStr = map { $_->GetOutputLayer() } @layers;
-	my $layerStr = join( "\\;", @layerStr );
-	$inCAM->COM(
-		"sel_copy_other",
-		"dest"         => "layer_name",
-		"target_layer" => $layerStr,
-		"invert"       => "no"
-
-	);
-
-	$inCAM->COM( 'delete_layer', "layer" => $lName );
-	CamLayer->ClearLayers($inCAM);
-
-	# if preview from BOT mirror all layers
-	if ( $self->{"viewType"} eq Enums->View_FROMBOT ) {
-
-		my $rotateBy = undef;
-
-		my %lim = %{ $self->{"profileLim"} };
-
-		my $x = abs( $lim{"xMax"} - $lim{"xMin"} );
-		my $y = abs( $lim{"yMax"} - $lim{"yMin"} );
-
-		if ( $x <= $y ) {
-
-			$rotateBy = "y";
-		}
-		else {
-
-			$rotateBy = "x";
-		}
-
-		foreach my $l (@layers) {
-
-			CamLayer->WorkLayer( $inCAM, $l->GetOutputLayer() );
-			CamLayer->MirrorLayerData( $inCAM, $l->GetOutputLayer(), $rotateBy );
-		}
+	my @types = ("surface");
+	if ( CamFilter->ByTypes( $inCAM, \@types ) > 0 ) {
+		$inCAM->COM( "sel_resize", "size" => -100 );
 	}
 
 }

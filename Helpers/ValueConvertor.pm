@@ -48,8 +48,11 @@ sub GetJobLayerTitle {
 		$en{"ms"} = "Solder mask bot";
 		$en{"c"}  = "Component layer (top)";
 		$en{"s"}  = "Solder layer (bot)";
-		$en{"lc"} = "Silk screen top";
-
+		$en{"lc"} = "Peelable mask (top)";
+		$en{"ls"} = "Peelable mask (bot)";
+		$en{"gc"} = "Carbon paste (top)";
+		$en{"gs"} = "Carbon paste (bot)";
+		
 		my %czl = ();
 		$czl{"pc"} = "Potisk top";
 		$czl{"ps"} = "Potisk bot";
@@ -57,6 +60,10 @@ sub GetJobLayerTitle {
 		$czl{"ms"} = "Nepájivá maska bot";
 		$czl{"c"}  = "Strana součástek (top)";
 		$czl{"s"}  = "Strana spojů (bot)";
+		$czl{"lc"} = "Snímací lak (top)";
+		$czl{"ls"} = "Snímací lak (bot)";
+		$czl{"gc"} = "Grafit (top)";
+		$czl{"gs"} = "Grafit (bot)";
 
 		$title = $en{ $l->{"gROWname"} };
 		if ($cz) {

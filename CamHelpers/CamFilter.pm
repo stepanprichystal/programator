@@ -131,6 +131,32 @@ sub BySymbols {
 	return $inCAM->GetReply();
 }
 
+# Select features by type
+sub ByTypes {
+	my $self   = shift;
+	my $inCAM  = shift;
+	my @types = @{shift(@_)};
+	
+	my $typeStr = join("\\;", @types);
+	
+
+	$inCAM->COM( 'filter_reset', filter_name => 'popup' );
+	
+	$inCAM->COM('filter_set',
+				 'filter_name'  => 'popup',
+				 'update_popup' => 'no',
+				 'feat_types'   => $typeStr,
+				 'polarity'     => "positive\;negative"
+	);
+ 
+	$inCAM->COM('filter_area_strt');
+	$inCAM->COM( 'filter_area_end', filter_name => 'popup', operation => 'select' );
+
+	$inCAM->COM('get_select_count');
+
+	return $inCAM->GetReply();
+}
+
 # Select surface by area
 sub BySurfaceArea {
 	my $self    = shift;
