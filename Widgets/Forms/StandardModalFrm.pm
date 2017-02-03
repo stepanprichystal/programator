@@ -1,5 +1,7 @@
 #-------------------------------------------------------------------------------------------#
 # Description: Standard window, wchich allow add buttons to bottom part of window
+# Form is based on MyWxDialog, thus allow show window bz ShowModal - script stop 
+# and continue after closing window
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Widgets::Forms::StandardModalFrm;
