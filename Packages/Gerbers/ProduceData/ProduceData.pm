@@ -15,7 +15,8 @@ use aliased 'Enums::EnumsPaths';
 use aliased 'Helpers::GeneralHelper';
 use aliased 'Packages::Gerbers::ProduceData::LayerData::LayerDataList';
 use aliased 'Packages::Gerbers::ProduceData::Output';
-use aliased 'Packages::Gerbers::ProduceData::OutputPrepare';
+use aliased 'Packages::Gerbers::ProduceData::PrepareLayers';
+use aliased 'Packages::Gerbers::ProduceData::PrepareInfo';
 use aliased 'Packages::Gerbers::ProduceData::Enums';
 use aliased 'CamHelpers::CamStep';
 use aliased 'CamHelpers::CamHelper';
@@ -39,7 +40,8 @@ sub new {
 	$self->{"data_step"} = "data_" . $self->{"step"};
 
 	$self->{"layerList"}     = LayerDataList->new();
-	$self->{"outputPrepare"} = OutputPrepare->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"data_step"}, $self->{"layerList"} );
+	$self->{"prepareLayers"} = PrepareLayers->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"data_step"}, $self->{"layerList"} );
+	$self->{"prepareInfo"} = PrepareInfo->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"data_step"}, $self->{"layerList"} );
 	$self->{"output"}        = Output->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"data_step"} );
 	$self->{"outputPath"}    = EnumsPaths->Client_INCAMTMPOTHER . GeneralHelper->GetGUID() . ".png";
 
@@ -67,7 +69,10 @@ sub Create {
 	CamDrilling->AddLayerStartStop( $self->{"inCAM"}, $self->{"jobId"}, \@nclayers );
 
 	# Prepare layers for export
-	$self->{"outputPrepare"}->PrepareLayers( \@layers );
+	$self->{"prepareLayers"}->Prepare( \@layers );
+
+	# Prepare info file readme.txt
+	$self->{"prepareInfo"}->Prepare( \@layers );
 
 	$self->{"output"}->Output( $self->{"layerList"} );
 

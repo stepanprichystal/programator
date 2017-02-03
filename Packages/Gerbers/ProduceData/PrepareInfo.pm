@@ -3,16 +3,15 @@
 # Description: Responsible for prepare layers before print as pdf
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::Gerbers::ProduceData::PrepareLayers;
+package Packages::Gerbers::ProduceData::PrepareInfo;
 
 #3th party library
 use threads;
 use strict;
 use warnings;
-use PDF::API2;
-use List::Util qw[max min];
-use Math::Trig;
-use Image::Size;
+
+use Time::localtime;
+
 
 #local library
 use aliased 'Helpers::GeneralHelper';
@@ -47,8 +46,6 @@ sub new {
 	$self->{"step"}      = shift;
 	$self->{"layerList"} = shift;
 
-	$self->{"profileLim"} = undef;    # limits of pdf step
-
 	return $self;
 }
 
@@ -56,13 +53,35 @@ sub Prepare {
 	my $self   = shift;
 	my $layers = shift;
 
-	# get limits of step
-	my %lim = CamJob->GetProfileLimits2( $self->{"inCAM"}, $self->{"jobId"}, $self->{"step"}, 1 );
-	$self->{"profileLim"} = \%lim;
+	my @lines = ();
+	
+	
+	my $time = sprintf "%02.f:%02.f:%02.f",localtime->hour(),localtime->min(),localtime->sec();
+	my $date = sprintf "%02.f.%02.f.%04.f",localtime->mday(),(localtime->mon() + 1),(localtime->year() + 1900);
+	
 
-	# prepare layers
-	$self->__PrepareLayers($layers);
+	push( @lines, "Information to the pcb number: " . uc( $self->{"jobId"} ) );
+	push( @lines, "" );
+	push( @lines, $self->__CompleteLine("Pcb:", uc( $self->{"jobId"} )) );
+	push( @lines, $self->__CompleteLine("Export date:",    "$date at $time\n" ) );
 
+}
+
+sub __CompleteLine {
+	my $self = shift;
+	my $leftText = shift;
+	my $rightText = shift;
+
+	 
+	my $fillCnt  = int( 100 - length($len) );    # 100 is requested total title len
+
+	my $fill = "";
+
+	for ( my $i = 0 ; $i < $fillCnt ; $i++ ) {
+		$fill .= " ";
+	}
+
+	return $leftText.$fill.$rightText;
 }
 
 # MEthod do necessary stuff for each layer by type
