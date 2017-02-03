@@ -53,175 +53,105 @@ sub new {
 
 sub Prepare {
 	my $self   = shift;
-	my $layers = shift;
-	my $type   = shift;
+	my @layers = @{shift(@_)};
+	my $type  = shift;
 
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
 	my $step  = $self->{"step"};
 
-	$self->__PrepareNCDRILL( $layers, $type );
-	$self->__PrepareNCMILL( $layers, $type );
+		@layers = grep {
+		     $_->{"type"} eq EnumsGeneral->LAYERTYPE_plt_bMillTop
+		  || $_->{"type"} eq EnumsGeneral->LAYERTYPE_plt_bMillBot
+		  || $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_bMillTop
+		  || $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_bMillBot
+		  || $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_jbMillTop
+		  || $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_jbMillBot
+	} @layers;
+
+	foreach my $l (@layers) {
+		
+		$self->__ProcessNClayer($l, $type);
+		
+	}
 
 }
+
+
+
 
 # MEthod do necessary stuff for each layer by type
 # like resizing, copying, change polarity, merging, ...
-sub __PrepareLayers {
+sub __ProcessNClayer {
 	my $self   = shift;
-	my $layers = shift;
-
-	$self->__PrepareBASEBOARD( $layers, Enums->Type_BOARDLAYERS );
-	$self->__PrepareNCDRILL( $layers, Enums->Type_NCLAYERS );
-	$self->__PrepareNCMILL( $layers, Enums->Type_NCLAYERS );
-	$self->__PrepareNCDEPTHMILL( $layers, Enums->Type_NCLAYERS );
-	$self->__PrepareOUTLINE( $layers, Enums->Type_OUTLINE );
-
-}
-
-# Create layer and fill profile - simulate pcb material
-sub __PrepareBASEBOARD {
-	my $self   = shift;
-	my @layers = @{ shift(@_) };
-	my $type   = shift;
-
-	@layers = grep { $_->{"gROWcontext"} eq "board" && $_->{"gROWlayer_type"} ne "drill" && $_->{"gROWlayer_type"} ne "rout" } @layers;
-
-	foreach my $l (@layers) {
-
-		my $tit = ValueConvertor->GetJobLayerTitle($l);
-		my $inf = ValueConvertor->GetJobLayerInfo($l);
-
-		my $lData = LayerData->new( $type, ValueConvertor->GetFileNameByLayer($l), $tit, $inf, $l->{"gROWname"} );
-
-		$self->{"layerList"}->AddLayer($lData);
-	}
-}
-
-# Create layer and fill profile - simulate pcb material
-sub __PrepareNCDRILL {
-	my $self   = shift;
-	my @layers = @{ shift(@_) };
-	my $type   = shift;
-
-	my $inCAM = $self->{"inCAM"};
-	my $jobId = $self->{"jobId"};
-
-	@layers = grep { $_->{"type"} && $_->{"gROWcontext"} eq "board" } @layers;
-	@layers = grep {
-		     $_->{"type"} eq EnumsGeneral->LAYERTYPE_plt_nDrill
-		  || $_->{"type"} eq EnumsGeneral->LAYERTYPE_plt_cDrill
-		  || $_->{"type"} eq EnumsGeneral->LAYERTYPE_plt_bDrillTop
-		  || $_->{"type"} eq EnumsGeneral->LAYERTYPE_plt_bDrillBot
-
-	} @layers;
-
-	foreach my $l (@layers) {
-
-		my $tit   = ValueConvertor->GetJobLayerTitle($l);
-		my $inf   = ValueConvertor->GetJobLayerInfo($l);
-		my $lName = GeneralHelper->GetGUID();
-
-		$inCAM->COM(
-					 "copy_layer",
-					 "source_job"   => $jobId,
-					 "source_step"  => $self->{"step"},
-					 "source_layer" => $l->{"gROWname"},
-					 "dest"         => "layer_name",
-					 "dest_step"    => $self->{"step"},
-					 "dest_layer"   => $lName,
-					 "mode"         => "append"
-		);
-
-		$self->__ComputeNewDTMTools( $lName, $l->{"plated"} );
-
-		my $lData = LayerData->new( $type, ValueConvertor->GetFileNameByLayer($l), $tit, $inf, $lName );
-
-		$self->{"layerList"}->AddLayer($lData);
-
-	}
-}
-
-# Create layer and fill profile - simulate pcb material
-sub __PrepareNCMILL {
-	my $self   = shift;
-	my @layers = @{ shift(@_) };
-	my $type   = shift;
-
-	@layers = grep { $_->{"type"} && $_->{"gROWcontext"} eq "board" } @layers;
-
-	my $inCAM = $self->{"inCAM"};
-	my $jobId = $self->{"jobId"};
-
-	# Scoring single + plated mill single
-
-	my @layersSingle =
-	  grep { $_->{"type"} eq EnumsGeneral->LAYERTYPE_plt_nMill || $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_score } @layers;
-
-	foreach my $l (@layersSingle) {
-
-		my $tit = ValueConvertor->GetJobLayerTitle($l);
-		my $inf = ValueConvertor->GetJobLayerInfo($l);
-
-		my $lName = GeneralHelper->GetGUID();
-
-		$inCAM->COM(
-					 "copy_layer",
-					 "source_job"   => $jobId,
-					 "source_step"  => $self->{"step"},
-					 "source_layer" => $l->{"gROWname"},
-					 "dest"         => "layer_name",
-					 "dest_step"    => $self->{"step"},
-					 "dest_layer"   => $lName,
-					 "mode"         => "append"
-		);
-
-		$self->__ComputeNewDTMTools( $lName, $l->{"plated"} );
-
-		my $lData = LayerData->new( $type, ValueConvertor->GetFileNameByLayer($l), $tit, $inf, $lName );
-
-		$self->{"layerList"}->AddLayer($lData);
-	}
-
-	# Merge: mill, rs, k mill layers
-
-	my @layersMill = grep {
-		     $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_nMill
-		  || $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_kMill
-		  || $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_rsMill
-	} @layers;
-
-	if ( scalar(@layersMill) ) {
-
-		my $lName = GeneralHelper->GetGUID();
-
-		my $f = ( grep { $_->{"gROWname"} eq "f" } @layers )[0];
-
-		my $tit = ValueConvertor->GetJobLayerTitle($f);
-		my $inf = ValueConvertor->GetJobLayerInfo($f);
-
-		foreach my $l (@layersMill) {
-
-			$inCAM->COM(
-						 "copy_layer",
-						 "source_job"   => $jobId,
-						 "source_step"  => $self->{"step"},
-						 "source_layer" => $l->{"gROWname"},
-						 "dest"         => "layer_name",
-						 "dest_step"    => $self->{"step"},
-						 "dest_layer"   => $lName,
-						 "mode"         => "append"
-			);
-
+	my $l = shift;
+	my $type  = shift;
+	
+ 	my %lines_arcs = %{$l->{"symHist"}->{"lines_arcs"}};
+ 	my %pads = %{$l->{"symHist"}->{"pads"}};
+ 	
+ 	
+ 	# 1) Proces slots (lines + arcs)
+ 	
+	foreach my $sym (keys %lines_arcs){
+		
+		if($lines_arcs{$sym} > 0){
+			
+			my @depths = $self->__GetDepths();
+			
+			foreach my $depth (@depths){
+				
+				__ProcessTypeSlot	
+				
+			}
 		}
-
-		$self->__ComputeNewDTMTools( $lName, $f->{"plated"} );
-		my $lData = LayerData->new( $type, ValueConvertor->GetFileNameByLayer($f), $tit, $inf, $lName );
-
-		$self->{"layerList"}->AddLayer($lData);
 	}
+	
+ 	# 2) Proces holes ( pads )
+ 	
+	foreach my $sym (keys %pads){
+		
+		if($pads{$sym} > 0){
+			
+			my @depths = $self->__GetDepths();
+			
+			foreach my $depth (@depths){
+				
+				__ProcessTypeHole	
+				
+			}
+		}
+	}
+	
+	
+	# 3) Process surfaces 
+	if($l->{"fHist"}->{"surf"} > 0){
+		
+		
+		
+		
+		
+	}
+ 
 }
 
+# Copy type of symbols to new layer and return layer name
+sub __GetNewLayer{
+	my $self   = shift;
+	my $sourceL = shift;
+	my $type = shift;
+	my $symbol = shift;
+	
+	
+	my $lName = GeneralHelper->GetGUID();
+	
+	
+	
+	
+	
+}
+
+ 
 # Create layer and fill profile - simulate pcb material
 sub __PrepareNCDEPTHMILL {
 	my $self   = shift;
@@ -300,113 +230,7 @@ sub __PrepareOUTLINE {
 		$self->{"layerList"}->AddLayer($lData);
 	}
 }
-
-sub __ComputeNewDTMTools {
-	my $self   = shift;
-	my $lName  = shift;
-	my $plated = shift;
-
-	my $inCAM = $self->{"inCAM"};
-	my $jobId = $self->{"jobId"};
-
-	# Prepare tool table for drill map and final sizes of data (depand on column DSize in DTM)
-
-	my @tools = CamDTM->GetDTMColumns( $inCAM, $jobId, $self->{"step"}, $lName );
-
-	my $DTMType = CamDTM->GetDTMUToolsType( $inCAM, $jobId, $self->{"step"}, $lName );
-
-	if ( $DTMType ne "vrtane" && $DTMType ne "vysledne" ) {
-		die "Typ v Drill tool manageru (vysledne/vrtane) neni nastaven u vrstvy: '" . $lName . "' ";
-	}
-
-	# check if dest size are defined
-	my @badSize = grep { !defined $_->{"gTOOLdrill_size"} || $_->{"gTOOLdrill_size"} == 0 || $_->{"gTOOLdrill_size"} eq "" } @tools;
-
-	if (@badSize) {
-		@badSize = map { $_->{"gTOOLfinish_size"} } @badSize;
-		my $toolStr = join( ", ", @badSize );
-		die "Tools: $toolStr, has not set drill size.\n";
-	}
-
-	# 1) If some tool has not finish size, correct it by putting there drill size (if vysledne resize -100µm)
-
-	foreach my $t (@tools) {
-
-		if ( !defined $t->{"gTOOLfinish_size"} || $t->{"gTOOLfinish_size"} == 0 || $t->{"gTOOLfinish_size"} eq "" ) {
-
-			if ( $DTMType eq "vysledne" ) {
-
-				$t->{"gTOOLfinish_size"} = $t->{"gTOOLdrill_size"} - 100;    # 100µm - this is size of plating
-
-			}
-			elsif ( $DTMType eq "vrtane" ) {
-				$t->{"gTOOLfinish_size"} = $t->{"gTOOLdrill_size"};
-			}
-
-		}
-	}
-
-	# 2) Copy 'finish' value to 'drill size' value.
-	# Drill size has to contain value of finih size, because all pads, lines has size depand on this column
-	# And we want diameters size after plating
-
-	foreach my $t (@tools) {
-
-		if ( $DTMType eq "vrtane" && $plated ) {
-			$t->{"gTOOLdrill_size"} = $t->{"gTOOLfinish_size"} - 100;
-		}
-		else {
-			$t->{"gTOOLdrill_size"} = $t->{"gTOOLfinish_size"};
-		}
-	}
-
-	# 3) Set new values to DTM
-	CamDTM->SetDTMTools( $inCAM, $jobId, $self->{"step"}, $lName, \@tools );
-
-	# 4) Adjust surfaces in layer. All must be -100µm
-	CamLayer->WorkLayer( $inCAM, $lName );
-
-	# 5) Resize all surfaces -100
-
-	if ($plated) {
-
-		my @types = ("surface");
-		if ( CamFilter->ByTypes( $inCAM, \@types ) > 0 ) {
-
-			my $lNameSurf     = GeneralHelper->GetGUID();
-			my $lNameSurfComp = GeneralHelper->GetGUID();
-
-			$inCAM->COM(
-						 "sel_move_other",
-						 "target_layer" => $lNameSurf,
-						 "invert"       => "no",
-						 "dx"           => "0",
-						 "dy"           => "0",
-						 "size"         => "0",
-						 "x_anchor"     => "0",
-						 "y_anchor"     => "0"
-			);
-
-			CamLayer->WorkLayer( $inCAM, $lNameSurf );
-			RoutCompensation( $inCAM, $lNameSurfComp, 'document' );
-
-			CamLayer->WorkLayer( $inCAM, $lNameSurfComp );
-			$inCAM->COM( "sel_resize", "size" => -100 );
-			$inCAM->COM(
-				"sel_copy_other",
-				"dest"         => "layer_name",
-				"target_layer" => $lName,
-				"invert"       => "no"
-
-			);
-			$inCAM->COM( "delete_layer", "layer" => $lNameSurf );
-			$inCAM->COM( "delete_layer", "layer" => $lNameSurfComp );
-
-			CamLayer->WorkLayer( $inCAM, $lName );
-		}
-	}
-
-}
+ 
 
 sub __GetDepthTable {
 	my $self  = shift;

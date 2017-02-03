@@ -38,6 +38,12 @@ sub AddLayer{
 	my $self      = shift;
 	my $layer      = shift;
 	
+	
+	# test if exist data layer with already used type of 'original layer'
+	# E.g. type nplt_mill_top is already used, so increase  property 'number' in datalayer
+	# This regardin only NC layers
+ 
+	
 	push(@{$self->{"layers"}}, $layer);
 } 
  

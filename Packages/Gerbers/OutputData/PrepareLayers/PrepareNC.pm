@@ -42,15 +42,16 @@ sub new {
 	$self = {};
 	bless $self;
 
-	$self->{"inCAM"}     = shift;
-	$self->{"jobId"}     = shift;
-	$self->{"step"}      = shift;
-	$self->{"layerList"} = shift;
+	$self->{"inCAM"}      = shift;
+	$self->{"jobId"}      = shift;
+	$self->{"step"}       = shift;
+	$self->{"layerList"}  = shift;
 	$self->{"profileLim"} = shift;
 
-
-	$self->{"prepareNCStandard"} = PrepareNCStandard->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"step"}, $self->{"layerList"}, $self->{"profileLim"} );
-	$self->{"prepareNCDrawing"} = PrepareNCDrawing->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"step"}, $self->{"layerList"}, $self->{"profileLim"} );
+	$self->{"prepareNCStandard"} =
+	  PrepareNCStandard->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"step"}, $self->{"layerList"}, $self->{"profileLim"} );
+	$self->{"prepareNCDrawing"} =
+	  PrepareNCDrawing->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"step"}, $self->{"layerList"}, $self->{"profileLim"} );
 
 	$self->{"plateThick"} = 100;    # value of plating in holes 100 µm
 
@@ -66,7 +67,6 @@ sub Prepare {
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
 	my $step  = $self->{"step"};
- 
 
 	# Set layer info for each NC layer
 	@layers = grep { $_->{"type"} && $_->{"gROWcontext"} eq "board" } @layers;
@@ -75,11 +75,29 @@ sub Prepare {
 	CamDrilling->AddLayerStartStop( $self->{"inCAM"}, $self->{"jobId"}, \@layers );
 
 	foreach my $l (@layers) {
+		
+		# Features histogram
 		my %fHist = CamHistogram->GetFeatuesHistogram( $inCAM, $jobId, $step, $l->{"gROWname"} );
 		$l->{"fHist"} = \%fHist;
 
+		# feature attributes histogram
 		my %attHist = CamHistogram->GetAttCountHistogram( $inCAM, $jobId, $step, $l->{"gROWname"} );
 		$l->{"attHist"} = \%attHist;
+
+		# symbol histogram - combine line and arcs conut (because we use same tool)
+		my %sHist = CamHistogram->GetSymHistogram( $inCAM, $jobId, "o+1", "m", 1, 1 );
+
+		my %line_arcs = ();
+		foreach my $k ( keys %{ $sHist{"lines"} } ) {
+			$line_arcs{$k} = 0;
+
+			$line_arcs{$k} += $sHist{"lines"}->{$k} if ( defined $sHist{"lines"}->{$k} );
+			$line_arcs{$k} += $sHist{"arcs"}->{$k}  if ( defined $sHist{"arcs"}->{$k} );
+		}
+		$sHist{"lines_arcs"} = \%line_arcs;
+
+		$l->{"symHist"} = \%sHist;
+
 	}
 
 	# 1) Check if all parameters are ok. Such as vysledne/vrtane, one surfae depth per layer, etc..
@@ -181,9 +199,9 @@ sub __SetFinishSizes {
 
 		# 3) Set new values to DTM
 		CamDTM->SetDTMTools( $inCAM, $jobId, $self->{"step"}, $lName, \@tools );
-		
+
 		# 4) If some tools same, merge it
-				$inCAM->COM("tools_merge", "layer" => $lName);
+		$inCAM->COM( "tools_merge", "layer" => $lName );
 
 	}
 }
