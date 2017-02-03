@@ -2,9 +2,8 @@
 # Description: Standard window, wchich allow add buttons to bottom part of window
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Widgets::Forms::StandardFrm;
-use base 'Wx::App';
-
+package Widgets::Forms::StandardModalFrm;
+use base 'Widgets::Forms::MyWxDialog';
 
 
 #3th party library
@@ -24,19 +23,29 @@ use Widgets::Style;
 #-------------------------------------------------------------------------------------------#
 sub new {
 
-	my $self      = shift;
+	my $class  = shift;
 	my $parent    = shift;
 	my $title     = shift;
 	my $dimension = shift;
-	$self = {};
+	
+	my $self = {};
 
-	if ( !defined $parent || $parent == -1 ) {
-		$self = Wx::App->new( \&OnInit );
+	if ( defined $parent && $parent == -1 ) {
+		$parent = undef;
 	}
+
+	$self = $class->SUPER::new(
+		$parent,                   # parent window
+		-1,                        # ID -1 means any
+		$title,                        # title
+		&Wx::wxDefaultPosition,    # window position
+		$dimension,
+		&Wx::wxSYSTEM_MENU | &Wx::wxCAPTION | &Wx::wxCLIP_CHILDREN | &Wx::wxRESIZE_BORDER | &Wx::wxMINIMIZE_BOX    #| &Wx::wxCLOSE_BOX
+	);
 
 	bless($self);
 
-	my $mainFrm = $self->__SetLayout( $parent, $title, $dimension );
+	$self->__SetLayout(   );
 
 	# Properties
 	$self->{"btnHeight"} = 30;
@@ -84,7 +93,7 @@ sub AddButton {
 
 	$self->{"szBtnsChild"}->Add( $btn, 0, &Wx::wxALL, 2 );
 
-	$self->{"mainFrm"}->Layout();
+	$self->Layout();
 
 }
 
@@ -92,20 +101,8 @@ sub AddButton {
 
 sub __SetLayout {
 	my $self      = shift;
-	my $parent    = shift;
-	my $title     = shift;
-	my $dimension = shift;
-
-	#main formDefain forms
-	my $mainFrm = MyWxFrame->new(
-								  $parent,                   # parent window
-								  -1,                        # ID -1 means any
-								  $title,                    # title
-								  &Wx::wxDefaultPosition,    # window position
-								  $dimension,                # size
-	);
-
-	$mainFrm->CentreOnParent(&Wx::wxBOTH);
+ 
+	$self->CentreOnParent(&Wx::wxBOTH);
 
 	# DEFINE SIZERS
 
@@ -116,7 +113,7 @@ sub __SetLayout {
 
 	#my $pnlContainer = Wx::Panel->new( $mainFrm, -1 );
 
-	my $pnlBtns = Wx::Panel->new( $mainFrm, -1 );
+	my $pnlBtns = Wx::Panel->new( $self, -1 );
 	$pnlBtns->SetBackgroundColour($Widgets::Style::clrDefaultFrm);
 	my $szBtns      = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
 	my $szBtnsChild = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
@@ -133,17 +130,17 @@ sub __SetLayout {
 	$szMain->Add( $szContainer, 1, &Wx::wxEXPAND );
 	$szMain->Add( $pnlBtns,     0, &Wx::wxEXPAND );
 
-	$mainFrm->SetSizer($szMain);
-	$mainFrm->Layout();
+	$self->SetSizer($szMain);
+	$self->Layout();
 
 	# SET REFERENCES
 
 	$self->{"szBtnsChild"} = $szBtnsChild;
 	$self->{"pnlBtns"}     = $pnlBtns;
-	$self->{"mainFrm"}     = $mainFrm;
+	#$self->{"mainFrm"}     = $mainFrm;
 	$self->{"szContainer"} = $szContainer;
 
-	return $mainFrm;
+	 
 }
 
 
