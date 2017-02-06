@@ -6,7 +6,7 @@ use constant {
 			   Primitive_ARC     => "primitiveArc",
 			   Primitive_SURFACE => "primitiveSurface",
 			   Primitive_PAD     => "primitivePad",
-			   Primitive_Text    => "primitiveText"
+			   Primitive_TEXT    => "primitiveText"
 };
 
 

@@ -7,6 +7,7 @@
 package Packages::CAM::SymbolDrawing::SymbolDrawing;
 
 #3th party library
+use utf8;
 use strict;
 use warnings;
 
@@ -77,6 +78,11 @@ sub __DrawPrimitives {
 		if ( $t eq Enums->Primitive_LINE ) {
 
 			$self->__DrawLine($p);
+
+		}
+		elsif ( $t eq Enums->Primitive_TEXT ) {
+
+			$self->__DrawText($p);
 		}
 
 	}
@@ -86,7 +92,7 @@ sub __DrawPrimitives {
 sub __DrawLine {
 	my $self = shift;
 	my $line = shift;
- 
+
 	# consider origin of whole draw
 
 	my $sP = $line->GetStartP();
@@ -95,6 +101,19 @@ sub __DrawLine {
 	$eP->Move( $self->{"position"}->X(), $self->{"position"}->Y() );
 
 	CamSymbol->AddLine( $self->{"inCAM"}, $sP, $eP, $line->GetSymbol(), $line->GetPolarity() );
+
+}
+
+sub __DrawText {
+	my $self = shift;
+	my $t    = shift;
+
+	# consider origin of whole draw
+
+	my $p = $t->GetPosition();
+	$p->Move( $self->{"position"}->X(), $self->{"position"}->Y() );
+	
+	CamSymbol->AddText( $self->{"inCAM"}, $t->GetValue(), $p, $t->GetHeight(), $t->GetLineWidth(), $t->GetMirror(), $t->GetPolarity(),$t->GetAngle() );
 
 }
 
@@ -126,16 +145,22 @@ sub __GetPrimitives {
 #-------------------------------------------------------------------------------------------#
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
-	
+
 	use aliased 'Packages::CAM::SymbolDrawing::SymbolDrawing';
 	use aliased 'Packages::InCAM::InCAM';
 	use aliased 'Packages::CAM::SymbolDrawing::SymbolLib::DimVertical1';
 
 	my $inCAM = InCAM->new();
-	
-	
-	my $dim = DimVertical1->new(Point->new(0, 0), Point->new(0, -80), Point->new(0, 10), Point->new(0, -90), "r200");
-	
+
+	$inCAM->COM("sel_delete");
+
+	#	my $textValue     = shift;
+	#	my $textHeight    = shift;     # font size in mm
+	#	my $textLineWidth = shift;     # font size in mm
+
+	my $dim =
+	  DimVertical1->new( Point->new( 0, 0 ), Point->new( 0, -80 ), Point->new( 0, 10 ), Point->new( 0, -190 ), "r1000", " Dim 50 mm", 10, 2 );
+
 	my $draw = SymbolDrawing->new($inCAM);
 	$draw->AddSymbol($dim);
 	$draw->Draw();

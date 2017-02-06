@@ -26,6 +26,13 @@ sub new {
 	$self = {};
 	bless $self;
 	
+	$self->{"point"} = shift;
+	$self->{"polarity"} = shift;
+	
+	unless( defined $self->{"polarity"}){
+		$self->{"polarity"} = Enums->Polar_POSITIVE;
+	}
+	
 	#$self->{"position"} = shift
 	my @prims = ();
 	$self->{"primitives"} = \@prims;  # primitives, whci create this symbol
@@ -69,6 +76,12 @@ sub GetSymbols {
 
 }
 
+sub GetPolarity {
+	my $self  = shift;
+	 
+	return $self->{"polarity"};
+
+}
 
 sub Copy{
 	my $self  = shift;

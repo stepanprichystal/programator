@@ -8,6 +8,7 @@ package Packages::CAM::SymbolDrawing::Point;
 #3th party library
 use strict;
 use warnings;
+use Storable qw(dclone);
 
 #local library
 use aliased 'Packages::CAM::SymbolDrawing::Enums';
@@ -56,6 +57,13 @@ sub Move{
 		$self->{"x"} += $x;
 		$self->{"y"} += $y;
 } 
+
+
+sub Copy{
+	my $self  = shift;
+ 
+	return dclone($self);
+}
 
 
 #-------------------------------------------------------------------------------------------#

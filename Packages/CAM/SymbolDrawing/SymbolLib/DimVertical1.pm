@@ -26,6 +26,7 @@ use warnings;
 use aliased 'Packages::CAM::SymbolDrawing::Enums';
 use aliased 'Packages::CAM::SymbolDrawing::Point';
 use aliased 'Packages::CAM::SymbolDrawing::Primitive::PrimitiveLine';
+use aliased 'Packages::CAM::SymbolDrawing::Primitive::PrimitiveText';
 
 #-------------------------------------------------------------------------------------------#
 #  Interface
@@ -38,8 +39,14 @@ sub new {
 	my $secArrowPoint  = shift;
 	my $lineStart      = shift;
 	my $lineEnd        = shift;
+	my $symbol         = shift;    # symbol of dim lines
 
-	my $symbol   = shift;
+	my $textValue     = shift;
+	my $textHeight    = shift;     # font size in mm
+	my $textLineWidth = shift;     # font size in mm
+	my $textMirror    = shift;
+	my $textAngle     = shift;
+
 	my $polarity = shift;
 
 	my $self = {};
@@ -50,6 +57,12 @@ sub new {
 	$self->{"secArrowPoint"}  = $secArrowPoint;
 	$self->{"lineStart"}      = $lineStart;
 	$self->{"lineEnd"}        = $lineEnd;
+
+	$self->{"textValue"}     = $textValue;
+	$self->{"textHeight"}    = $textHeight;
+	$self->{"textLineWidth"} = $textLineWidth;
+	$self->{"textMirror"}    = $textMirror;
+	$self->{"textAngle"}     = $textAngle;
 
 	$self->{"symbol"} = $symbol;
 
@@ -88,6 +101,18 @@ sub __DefineSymbol {
 	# code line
 
 	$self->AddPrimitive( PrimitiveLine->new( $self->{"lineStart"}, $self->{"lineEnd"}, $self->{"symbol"} ) );
+
+	# add text value
+
+	my $textPos = $self->{"lineEnd"}->Copy();
+	$textPos->Move( 5, 0 );
+	
+	$self->AddPrimitive(
+						 PrimitiveText->new(  $self->{"textValue"},  $textPos,             $self->{"textHeight"},
+											 $self->{"textLineWidth"}, $self->{"textMirror"},  $self->{"textAngle"}, $self->GetPolarity()
+						 )
+	);
+
 }
 
 #-------------------------------------------------------------------------------------------#
