@@ -1,36 +1,71 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Inteface, which  define  operation for feature parser
+# Description: Class can parse incam layer fetures. Parsed features, contain only
+# basic info like coordinate, attrubutes etc..
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::CAM::SymbolDrawing::Primitive::IPrimitive;
+package Packages::CAM::SymbolDrawing::Primitive::PrimitiveBase;
+
+
 
 #3th party library
 use strict;
 use warnings;
+use Storable qw(dclone);
 
 #local library
-
-
+use aliased 'Packages::CAM::SymbolDrawing::Enums';
+ 
 #-------------------------------------------------------------------------------------------#
 #  Interface
 #-------------------------------------------------------------------------------------------#
 
-use Class::Interface;
-&interface;     
+sub new {
 
-sub GetFeatures;     
-sub Parse;   
-
-1;
+	my $self = shift;
+	$self = {};
+	bless $self;
+	
+	$self->{"type"} = shift;
+	$self->{"polarity"} = shift;
+	
+	unless( defined $self->{"polarity"}){
+		$self->{"polarity"} = Enums->Polar_POSITIVE;
+	}
  
+	return $self;
+}
+
+#parse features layer
+
+sub GetType {
+	my $self  = shift;
+	 
+	return $self->{"type"};
+
+}
+ 
+sub GetPolarity {
+	my $self  = shift;
+	 
+	return $self->{"polarity"};
+
+}
+
+sub Copy{
+	my $self  = shift;
+ 
+	return dclone($self);
+}
+
+
+
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	 
 }
 
 1;

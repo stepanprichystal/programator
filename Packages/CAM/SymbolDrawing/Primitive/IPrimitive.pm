@@ -19,9 +19,11 @@ use warnings;
 use Class::Interface;
 &interface;     
 
-sub GetFeatures;     
-sub Parse;   
-
+sub GetPolarity;     
+sub GetType;  
+sub MirrorY;
+	
+ 
 1;
  
 #-------------------------------------------------------------------------------------------#

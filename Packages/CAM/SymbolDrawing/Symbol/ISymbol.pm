@@ -3,7 +3,7 @@
 # Description: Inteface, which  define  operation for feature parser
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::CAM::SymbolDrawing::Primitive::IPrimitive;
+package Packages::CAM::SymbolDrawing::Symbol::ISymbol;
 
 #3th party library
 use strict;
@@ -19,8 +19,8 @@ use warnings;
 use Class::Interface;
 &interface;     
 
-sub GetFeatures;     
-sub Parse;   
+sub GetPrimitives;
+sub GetSymbols;
 
 1;
  
