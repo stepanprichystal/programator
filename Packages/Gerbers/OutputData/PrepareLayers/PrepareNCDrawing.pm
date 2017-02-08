@@ -15,7 +15,7 @@ use Math::Trig;
 use aliased 'Helpers::GeneralHelper';
 use aliased 'Enums::EnumsPaths';
 use aliased 'Enums::EnumsGeneral';
-use aliased 'Packages::Gerbers::ProduceData::Enums';
+use aliased 'Packages::Gerbers::OutputData::Enums';
 use aliased 'CamHelpers::CamLayer';
 use aliased 'CamHelpers::CamJob';
 use aliased 'Packages::Gerbers::OutputData::LayerData::LayerData';
@@ -23,8 +23,7 @@ use aliased 'Helpers::ValueConvertor';
 use aliased 'CamHelpers::CamFilter';
 use aliased 'CamHelpers::CamDTM';
 use aliased 'CamHelpers::CamToolDepth';
-
- 
+use aliased 'Packages::CAM::FeatureFilter::FeatureFilter';
 
 #use aliased 'CamHelpers::CamFilter';
 #use aliased 'CamHelpers::CamHelper';
@@ -53,14 +52,14 @@ sub new {
 
 sub Prepare {
 	my $self   = shift;
-	my @layers = @{shift(@_)};
-	my $type  = shift;
+	my @layers = @{ shift(@_) };
+	my $type   = shift;
 
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
 	my $step  = $self->{"step"};
 
-		@layers = grep {
+	@layers = grep {
 		     $_->{"type"} eq EnumsGeneral->LAYERTYPE_plt_bMillTop
 		  || $_->{"type"} eq EnumsGeneral->LAYERTYPE_plt_bMillBot
 		  || $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_bMillTop
@@ -70,88 +69,131 @@ sub Prepare {
 	} @layers;
 
 	foreach my $l (@layers) {
-		
-		$self->__ProcessNClayer($l, $type);
-		
+
+		$self->__ProcessNClayer( $l, $type );
+
 	}
 
 }
-
-
-
 
 # MEthod do necessary stuff for each layer by type
 # like resizing, copying, change polarity, merging, ...
 sub __ProcessNClayer {
-	my $self   = shift;
-	my $l = shift;
-	my $type  = shift;
-	
- 	my %lines_arcs = %{$l->{"symHist"}->{"lines_arcs"}};
- 	my %pads = %{$l->{"symHist"}->{"pads"}};
- 	
- 	
- 	# 1) Proces slots (lines + arcs)
- 	
-	foreach my $sym (keys %lines_arcs){
-		
-		if($lines_arcs{$sym} > 0){
-			
+	my $self = shift;
+	my $l    = shift;
+	my $type = shift;
+
+	my %lines_arcs = %{ $l->{"symHist"}->{"lines_arcs"} };
+	my %pads       = %{ $l->{"symHist"}->{"pads"} };
+
+	# 1) Proces slots (lines + arcs)
+
+	foreach my $sym ( keys %lines_arcs ) {
+
+		if ( $lines_arcs{$sym} > 0 ) {
+
+			my $depth = $self->__GetSymbolDepth($sym);
+
+			my $lName = $self->__SeparateSymbol( $l, Enums->Symbol_SLOT, $sym, $depth );
+
+			__ProcessTypeSlot
+
+		}
+	}
+
+	# 2) Proces holes ( pads )
+
+	foreach my $sym ( keys %pads ) {
+
+		if ( $pads{$sym} > 0 ) {
+
 			my @depths = $self->__GetDepths();
-			
-			foreach my $depth (@depths){
-				
-				__ProcessTypeSlot	
-				
+
+			foreach my $depth (@depths) {
+
+				__ProcessTypeHole
+
 			}
 		}
 	}
-	
- 	# 2) Proces holes ( pads )
- 	
-	foreach my $sym (keys %pads){
-		
-		if($pads{$sym} > 0){
-			
-			my @depths = $self->__GetDepths();
-			
-			foreach my $depth (@depths){
-				
-				__ProcessTypeHole	
-				
-			}
-		}
+
+	# 3) Process surfaces
+	if ( $l->{"fHist"}->{"surf"} > 0 ) {
+
 	}
-	
-	
-	# 3) Process surfaces 
-	if($l->{"fHist"}->{"surf"} > 0){
-		
-		
-		
-		
-		
-	}
- 
+
 }
 
 # Copy type of symbols to new layer and return layer name
-sub __GetNewLayer{
-	my $self   = shift;
+sub __SeparateSymbol {
+	my $self    = shift;
 	my $sourceL = shift;
-	my $type = shift;
-	my $symbol = shift;
-	
-	
+	my $type    = shift;    # slot / hole / surface
+	my $symbol  = shift;
+	my $depth   = shift;
+
+	my $inCAM = $self->{"inCAM"};
+
+	# 1) copy source layer to
+
 	my $lName = GeneralHelper->GetGUID();
-	
-	
-	
-	
-	
+
+	my $f = FeatureFilter->new( $inCAM, $sourceL->{"gROWname"} );
+
+	if ( $type eq Enums->Enums->Symbol_HOLE ) {
+
+		my @types = ("pad");
+		$f->SetTypes( \@types );
+
+		my @syms = ($symbol);
+		$f->AddIncludeSymbols( \@syms );
+
+	}
+	elsif ( $type eq Enums->Enums->Symbol_SLOT ) {
+
+	}
+	elsif ( $type eq Enums->Enums->Symbol_SURFACE ) {
+
+	}
+
+	unless ( $f->Select() > 0 ) {
+		die "no features selected.\n";
+	}
+
+	$inCAM->COM(
+				 "sel_copy_other",
+				 "dest"         => "layer_name",
+				 "target_layer" => $lName
+	);
+
+	# if slot or surface, do compensation
+	if ( $type eq Enums->Enums->Symbol_SLOT || $type eq Enums->Enums->Symbol_SURFACE ) {
+
+		CamLayer->WorkLayer( $inCAM, $lName);
+		my $lComp = CamLayer->RoutCompensation( $inCAM, $sourceL->{"gROWname"}, "document" );
+
+		CamLayer->WorkLayer( $inCAM, $lName );
+		$inCAM->COM("sel_delete");
+
+		$inCAM->COM( "merge_layers", "source_layer" => $lComp, "dest_layer" => $lName );
+		$inCAM->COM( "delete_layer", "layer" => $lComp );
+	}
+
 }
 
- 
+# Copy type of symbols to new layer and return layer name
+sub __GetSymbolDepth {
+	my $self    = shift;
+	my $sourceL = shift;
+	my $symbol  = shift;
+	
+	
+
+
+	my $lName = GeneralHelper->GetGUID();
+
+}
+
 # Create layer and fill profile - simulate pcb material
 sub __PrepareNCDEPTHMILL {
 	my $self   = shift;
@@ -230,7 +272,6 @@ sub __PrepareOUTLINE {
 		$self->{"layerList"}->AddLayer($lData);
 	}
 }
- 
 
 sub __GetDepthTable {
 	my $self  = shift;

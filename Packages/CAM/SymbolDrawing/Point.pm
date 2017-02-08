@@ -80,6 +80,13 @@ sub Rotate {
  
 }
 
+sub MirrorX {
+	my $self = shift;
+	my $point = shift;
+ 
+	$self->{"y"} = $point->{"y"} - ($self->{"y"}- $point->{"y"});
+}
+
 sub Copy {
 	my $self = shift;
 

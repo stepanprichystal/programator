@@ -23,17 +23,19 @@ sub AddArcStartCenterEnd {
 	my $startP   = shift;
 	my $centerP  = shift;
 	my $endP     = shift;
+	my $direction     = shift;
 	my $symbol   = shift;    #hash x, y
 	my $polarity = shift;    #
 
 	$polarity = defined $polarity ? $polarity : 'positive';
+	$direction = defined $direction ? $direction : 'cw';
 
 	$inCAM->COM(
 		"add_arc",
 		"symbol"     => $symbol,
 		"polarity"   => $polarity,
 		"attributes" => "no",
-		"direction"  => "cw",
+		"direction"  => $direction,
 		"xs"         => $startP->{"x"},
 		"ys"         => $startP->{"y"},
 		"xe"         => $endP->{"x"},

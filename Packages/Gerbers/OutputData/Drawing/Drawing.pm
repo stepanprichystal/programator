@@ -9,6 +9,8 @@ package Packages::Gerbers::OutputData::Drawing::Drawing;
 #3th party library
 use strict;
 use warnings;
+use Math::Trig;
+use Math::Geometry::Planar;
 
 #local library
 
@@ -17,6 +19,9 @@ use aliased 'CamHelpers::CamLayer';
 use aliased 'Packages::CAM::SymbolDrawing::Point';
 use aliased 'Packages::CAM::SymbolDrawing::SymbolDrawing';
 use aliased 'Packages::CAM::SymbolDrawing::Primitive::PrimitiveSurfPoly';
+use aliased 'Packages::CAM::SymbolDrawing::Primitive::PrimitiveText';
+use aliased 'Packages::CAM::SymbolDrawing::Primitive::PrimitiveLine';
+
 use aliased 'Packages::CAM::SymbolDrawing::Primitive::Helper::SurfaceLinePattern';
 use aliased 'Packages::Gerbers::OutputData::Enums';
 use aliased 'Packages::CAM::SymbolDrawing::SymbolLib::DimV1Lines';
@@ -36,314 +41,448 @@ sub new {
 	bless $self;
 	$self->{"inCAM"}    = shift;
 	$self->{"layer"}    = shift;
+	$self->{"position"} = shift;    # top/bot
 	$self->{"pcbThick"} = shift;    # pcbthick in mm
 	$self->{"side"}     = shift;    # top/bot
 
-	$self->{"scale"}            = 10;
-	$self->{"drawWidth"}        = 200;
-	$self->{"drawOutlineWidth"} = "500";
-	$self->{"dimLineWidth"}     = "r200";
+	$self->{"scale"}            = 5;
+	$self->{"drawWidth"}        = 120;
+	$self->{"drawOutlineWidth"} = "400";
+	$self->{"dimLineWidth"}     = "r150";
 	$self->{"dimTextWidth"}     = "1";
-	$self->{"dimTextHeight"}    = 4;
+	$self->{"dimTextHeight"}    = 3;
+	$self->{"dimTextMirror"}    = 0;
+	$self->{"dimTextAngle"}     = 0;
 
-	$self->{"drawing"} = SymbolDrawing->new( $self->{"inCAM"} );
+	# title settings
+	$self->{"titleTextHeight"}    = 3;
+	$self->{"titleTextLineWidth"} = 1.5;
+	$self->{"titlePosition"}      = $self->{"position"}->Copy();
+	$self->{"titlePosition"}->Move( 0, 45 );
+
+	# mirror all texts in drawing, 
+	if ( $self->{"side"} eq "bot" ) {
+
+		$self->{"dimTextMirror"} = 1;
+		$self->{"position"}->Move(0, -$self->{"pcbThick"}*$self->{"scale"});
+	}
+
+	$self->{"drawing"}      = SymbolDrawing->new( $self->{"inCAM"}, $self->{"position"} );
+	$self->{"drawingTitle"} = SymbolDrawing->new( $self->{"inCAM"}, $self->{"titlePosition"} );
+
+	# mirror drawing
+	if ( $self->{"side"} eq "bot" ) {
+ 
+		$self->{"drawing"}->SetMirrorX();
+	 
+	}
+	
+	
 
 	return $self;
 }
 
-sub CreateDraw {
-	my $self     = shift;
-	my $pcbThick = shift;    # pcbthick in mm
+sub Create {
+	my $self = shift;
 
-	my $side       = shift;  # top/bot
-	my $type       = shift;  # countersink z-axis
-	my $symbolType = shift;  # slot/hole/surface
+	my $type       = shift;    # countersink z-axis
+	my $symbolType = shift;    # slot/hole/surface
 	my $diameter   = shift;
 	my $depth      = shift;
 	my $angle      = shift;
 
-	my @surfPoints = ();
+	$self->__CreateDraw( $type, $symbolType, $diameter, $depth, $angle );
+	$self->__CreateTexts( $type, $symbolType );
+}
 
-	$self->__CreatePcbDraw( \@surfPoints, $pcbThick );
-	$self->__CreateDetailDraw( \@surfPoints, $type, $symbolType, $diameter, $depth, $angle );
+sub __CreateDraw {
+	my $self = shift;
+
+	my $type       = shift;    # countersink z-axis
+	my $symbolType = shift;    # slot/hole/surface
+	my $diameter   = shift;
+	my $depth      = shift;
+	my $angle      = shift;
 
 	# 1) Add pcb surface primitive
-
-	my $pcbSurf = PrimitiveSurfPoly->new( \@surfPoints, SurfaceLinePattern->new( 1, $self->{"drawOutlineWidth"}, 45, 0, 20, 2000 ) );
-	$self->{"drawing"}->AddPrimitive($pcbSurf);
+	$self->__CreateDetailDraw( $type, $symbolType, $diameter, $depth, $angle );
 
 	# 2) Add pcb thick dimension
 
 	my $w     = $self->{"drawWidth"};
-	my $drawH = $pcbThick * $self->{"scale"};    # mm
+	my $drawH = $self->{"pcbThick"} * $self->{"scale"};    # mm
 
-	my $dimThick = DimV1->new( "bot", int( $w * 0.01 ),
-							   $drawH,
-							   int( $w * 0.2 ),
-							   $self->{"dimLineWidth"},
-							   $pcbThick . "mm (pcb thick)",
-							   $self->{"dimTextHeight"},
-							   $self->{"dimTextWidth"} );
+	my $dimThick = DimV1->new(
+							   "bot",  int( $w * 0.01 ),
+							   $drawH, int( $w * 0.2 ),
+							   $self->{"dimLineWidth"},  sprintf( "%.1f", $self->{"pcbThick"} ) . "mm (pcb thick)",
+							   $self->{"dimTextHeight"}, $self->{"dimTextWidth"},
+							   $self->{"dimTextMirror"}, $self->{"dimTextAngle"}
+	);
 	$self->{"drawing"}->AddSymbol( $dimThick, Point->new( int( $w * 0.9 ), 0 ) );
 
-	# 4) draw picture to layer
+	# 3) draw picture to layer
 	CamLayer->WorkLayer( $self->{"inCAM"}, $self->{"layer"} );
 	$self->{"drawing"}->Draw();
 
 }
 
-# Measure is 1: 10, thus pcb thisk 1.5 mm will be draw as thicj 15mm
-sub __GetPcbDrawSide {
+sub __CreateTexts {
 	my $self       = shift;
-	my $surfPoints = shift;
-	my $side       = shift;
+	my $type       = shift;    # countersink z-axis
+	my $symbolType = shift;    # slot/hole/surface
 
-	my $drawW = $self->{"drawWidth"};                      # mm
-	my $drawH = $self->{"pcbThick"} * $self->{"scale"};    # mm
-
-	my $flashLen = int( $drawH / 3 );
-	my $flashP1  = -$flashLen;
-	my $flashP2  = -int( $flashLen + 1 * ( $flashLen / 3 ) );
-	my $flashP3  = -int( $flashLen + 2 * ( $flashLen / 3 ) );
-	my $flashP4  = -int( $flashLen + 3 * ( $flashLen / 3 ) );
-
-	if ( $side eq "right" ) {
-		push( @{$surfPoints}, Point->new( $drawW, 0 ) );    # top right corner
-
-		# klikihak on the right side
-
-		push(
-			  @{$surfPoints},
-			  (
-				 Point->new( $drawW,     $flashP1 ),
-				 Point->new( $drawW + 4, $flashP2 ),
-				 Point->new( $drawW - 4, $flashP3 ),
-				 Point->new( $drawW,     $flashP4 )
-			  )
-		);                                                  # right flash
-
-		push( @{$surfPoints}, Point->new( $drawW, -$drawH ) );    # bot right corner
-
-	}
-	elsif ( $side eq "left" ) {
-
-		push( @{$surfPoints}, Point->new( 0, -$drawH ) );         # bot left corner
-
-		# klikihak on the left side
-
-		push( @{$surfPoints},
-			  ( Point->new( 0, $flashP4 ), Point->new( 0 + 4, $flashP3 ), Point->new( 0 - 4, $flashP2 ), Point->new( 0, $flashP1 ) ) );  # right flash
-
-		push( @{$surfPoints}, Point->new( 0, 0 ) );    # top left corner
-	}
-
-}
-
-sub __CreateDetailDraw {
-	my $self       = shift;
-	my $surfPoints = shift;
-	my $type       = shift;
-	my $symbolType = shift;                            # slot/hole/surface                             # countersink z-axis
-	my $diameter   = shift;
-	my $depth      = shift;
-	my $angle      = shift;
+	my $title = "Drawing: ";
 
 	if ( $type eq Enums->Depth_ZAXIS ) {
 
-		if ( $symbolType eq Enums->Symbol_SURFACE ) {
-
-			$self->__CreateDetailZaxisSurf( $surfPoints, $depth );
-		}
-		else {
-
-			$self->__CreateDetailZaxis( $surfPoints, $symbolType, $diameter, $depth );
-		}
-
+		$title .= "Z-axis milling from " . uc( $self->{"side"} ) . ". Type - ";
 	}
 	elsif ( $type eq Enums->Depth_COUNTERSINK ) {
 
-		$self->__CreateDetailCountersink( $surfPoints, $symbolType, $diameter, $depth, $angle );
+		$title .= "Countersink from " . uc( $self->{"side"} ) . ". Type - ";
 	}
 
-}
+	if ( $symbolType eq Enums->Symbol_SLOT ) {
+		$title .= "slot";
+	}
+	elsif ( $symbolType eq Enums->Symbol_HOLE ) {
+		$title .= "hole";
+	}
+	elsif ( $symbolType eq Enums->Symbol_SURFACE ) {
+		$title .= "surface";
+	}
 
-sub __CreateDetailZaxis {
-	my $self       = shift;
-	my $surfPoints = shift;
-	my $symbolType = shift;    # slot/hole/surface
-	my $diameter   = shift;
-	my $depth      = shift;
+	$self->{"drawingTitle"}->AddPrimitive( PrimitiveText->new( $title, Point->new(), $self->{"titleTextHeight"}, $self->{"titleTextLineWidth"} ) );
 
-	# 1) Add right side of draw
-	$self->__GetPcbDrawSide( $surfPoints, "right" );
+	$self->{"drawingTitle"}
+	  ->AddPrimitive( PrimitiveLine->new( Point->new( 0, -2 ), Point->new( length($title) * $self->{"titleTextHeight"}, -2 ), "r300" ) );
+	$self->{"drawingTitle"}
+	  ->AddPrimitive( PrimitiveLine->new( Point->new( 0, -3 ), Point->new( length($title) * $self->{"titleTextHeight"}, -3 ), "r300" ) );
 
-	# 2) Add left side of draw
-	$self->__GetPcbDrawSide( $surfPoints, "left" );
+	$self->{"drawingTitle"}->AddPrimitive(
+		PrimitiveText->new( "(1:".$self->{"scale"}.")",   Point->new( 0, -10  ), 4, 1 ) );
 
-	# 3) create detail part of surface
-	my $drawW        = $self->{"drawWidth"};
-	my $diameterReal = $diameter * $self->{"scale"};
-	my $depthReal    = $depth * $self->{"scale"};
+		$self->{"drawingTitle"}->Draw();
+	}
 
-	my $x1 = int( ( $drawW - $diameterReal ) / 2 );
-	my $x2 = int( ( $drawW - $diameterReal ) / 2 + $diameterReal );
+	# Measure is 1: 10, thus pcb thisk 1.5 mm will be draw as thicj 15mm
+	sub __GetPcbDrawSide {
+		my $self       = shift;
+		my $surfPoints = shift;
+		my $side       = shift;
 
-	push( @{$surfPoints}, Point->new( $x1, 0 ) );
-	push( @{$surfPoints}, Point->new( $x1, -$depthReal ) );
-	push( @{$surfPoints}, Point->new( $x2, -$depthReal ) );
-	push( @{$surfPoints}, Point->new( $x2, 0 ) );
+		my $drawW = $self->{"drawWidth"};                      # mm
+		my $drawH = $self->{"pcbThick"} * $self->{"scale"};    # mm
 
-	# 4) create dimension draw for tool
+		my $flashLen = int( $drawH / 3 );
+		my $flashP1  = -$flashLen;
+		my $flashP2  = -int( $flashLen + 1 * ( $flashLen / 3 ) );
+		my $flashP3  = -int( $flashLen + 2 * ( $flashLen / 3 ) );
+		my $flashP4  = -int( $flashLen + 3 * ( $flashLen / 3 ) );
 
-	my $w = $self->{"drawWidth"};
+		if ( $side eq "right" ) {
+			push( @{$surfPoints}, Point->new( $drawW, 0 ) );    # top right corner
 
-	my $dimTool = DimH1Lines->new(
-								   "top",                          "right",
-								   int( $w * 0.1 ),                int( $w * 0.01 ),
-								   $diameterReal,                  int( $w * 0.2 ),
-								   "both",                         $self->{"dimLineWidth"},
-								   "D " . $diameter . "mm (tool)", $self->{"dimTextHeight"},
-								   $self->{"dimTextWidth"}
-	);
-	$self->{"drawing"}->AddSymbol( $dimTool, Point->new( $x1, 0 ) );
+			# klikihak on the right side
 
-	# 5) create dimension draw for depth
-	my $dimDepth = DimV1Lines->new(
-									"left",                "bot",                    int( $w * 0.05 ), int( $w * 0.01 ),
-									$depthReal,            int( $w * 0.2 ),          "both",           $self->{"dimLineWidth"},
-									$depth . "mm (depth)", $self->{"dimTextHeight"}, $self->{"dimTextWidth"}
-	);
-	$self->{"drawing"}->AddSymbol( $dimDepth, Point->new( $x1, 0 ) );
+			push(
+				  @{$surfPoints},
+				  (
+					 Point->new( $drawW,     $flashP1 ),
+					 Point->new( $drawW + 4, $flashP2 ),
+					 Point->new( $drawW - 4, $flashP3 ),
+					 Point->new( $drawW,     $flashP4 )
+				  )
+			);                                                  # right flash
 
-}
+			push( @{$surfPoints}, Point->new( $drawW, -$drawH ) );    # bot right corner
 
-sub __CreateDetailZaxisSurf {
-	my $self       = shift;
-	my $surfPoints = shift;
-	my $depth      = shift;
+		}
+		elsif ( $side eq "left" ) {
 
-	# 1) Add right side of draw
-	$self->__GetPcbDrawSide( $surfPoints, "right" );
+			push( @{$surfPoints}, Point->new( 0, -$drawH ) );         # bot left corner
 
-	# 2) Add left side of draw
-	$self->__GetPcbDrawSide( $surfPoints, "left" );
+			# klikihak on the left side
 
-	# 3) create detail part of surface
-	my $drawW     = $self->{"drawWidth"};
-	my $depthReal = $depth * $self->{"scale"};
+			push(
+				  @{$surfPoints},
+				  ( Point->new( 0, $flashP4 ), Point->new( 0 + 4, $flashP3 ), Point->new( 0 - 4, $flashP2 ), Point->new( 0, $flashP1 ) )
+			);                                                        # right flash
 
-	my @points = ();
+			push( @{$surfPoints}, Point->new( 0, 0 ) );               # top left corner
+		}
 
-	my $percent30 = int( $drawW / 3 );
+	}
 
-	push( @{$surfPoints}, Point->new( $percent30,     0 ) );
-	push( @{$surfPoints}, Point->new( $percent30,     -$depthReal ) );
-	push( @{$surfPoints}, Point->new( 2 * $percent30, -$depthReal ) );
-	push( @{$surfPoints}, Point->new( 2 * $percent30, 0 ) );
+	sub __CreateDetailDraw {
+		my $self       = shift;
+		my $type       = shift;
+		my $symbolType = shift;                                       # slot/hole/surface                             # countersink z-axis
+		my $diameter   = shift;
+		my $depth      = shift;
+		my $angle      = shift;
 
-	# 4) create dimension draw for depth
+		if ( $type eq Enums->Depth_ZAXIS ) {
 
-	my $w = $self->{"drawWidth"};
+			if ( $symbolType eq Enums->Symbol_SURFACE ) {
 
-	my $dimDepth = DimV1Lines->new(
-									"left",                "bot",                    int( $w * 0.05 ), int( $w * 0.01 ),
-									$depthReal,            int( $w * 0.2 ),          "both",           $self->{"dimLineWidth"},
-									$depth . "mm (depth)", $self->{"dimTextHeight"}, $self->{"dimTextWidth"}
-	);
-	$self->{"drawing"}->AddSymbol( $dimDepth, Point->new( $percent30, 0 ) );
+				$self->__CreateDetailZaxisSurf($depth);
+			}
+			else {
 
-}
+				$self->__CreateDetailZaxis( $symbolType, $diameter, $depth );
+			}
 
-sub __CreateDetailCountersink {
-	my $self       = shift;
-	my $surfPoints = shift;
-	my $symbolType = shift;    # slot/hole/surface
-	my $diameter   = shift;
-	my $depth      = shift;
-	my $angle      = shift;
+		}
+		elsif ( $type eq Enums->Depth_COUNTERSINK ) {
 
-	# 1) create detail part of surface
-	my @surfPointsDetail = ();
+			$self->__CreateDetailCountersink( $symbolType, $depth, $angle );
+		}
 
-	my $drawW        = $self->{"drawWidth"};
-	my $diameterReal = $diameter * $self->{"scale"};
-	my $depthReal    = $depth * $self->{"scale"};
+	}
 
-	my @points = ();
+	sub __AddDetailDraw {
+		my $self       = shift;
+		my $surfPoints = shift;
 
-	my $x1 = int( ( $drawW - $diameterReal ) / 2 );
-	my $x2 = int( $drawW / 2 );
-	my $x3 = int( ( $drawW - $diameterReal ) / 2 + $diameterReal );
+		my $pcbSurf = PrimitiveSurfPoly->new( $surfPoints, SurfaceLinePattern->new( 1, $self->{"drawOutlineWidth"}, 45, 0, 20, 1500 ) );
+		$self->{"drawing"}->AddPrimitive($pcbSurf);
 
-	push( @surfPointsDetail, Point->new( $x1, 0 ) );
-	push( @surfPointsDetail, Point->new( $x2, -$depthReal ) );
-	push( @surfPointsDetail, Point->new( $x3, 0 ) );
+	}
 
-	# if depth of tool is smaller than pcb thick, do drawing from one surface
-	if ( $depth < $self->{"pcbThick"} ) {
+	sub __CreateDetailZaxis {
+		my $self       = shift;
+		my $symbolType = shift;    # slot/hole/surface
+		my $diameter   = shift;
+		my $depth      = shift;
+
+		my @surfPoints = ();
 
 		# 1) Add right side of draw
-		$self->__GetPcbDrawSide( $surfPoints, "right" );
+		$self->__GetPcbDrawSide( \@surfPoints, "right" );
 
 		# 2) Add left side of draw
-		$self->__GetPcbDrawSide( $surfPoints, "left" );
+		$self->__GetPcbDrawSide( \@surfPoints, "left" );
 
-		push( @{$surfPoints}, @surfPointsDetail );
+		# 3) create detail part of surface
+		my $drawW        = $self->{"drawWidth"};
+		my $diameterReal = $diameter * $self->{"scale"};
+		my $depthReal    = $depth * $self->{"scale"};
+
+		my $x1 = int( ( $drawW - $diameterReal ) / 2 );
+		my $x2 = int( ( $drawW - $diameterReal ) / 2 + $diameterReal );
+
+		push( @surfPoints, Point->new( $x1, 0 ) );
+		push( @surfPoints, Point->new( $x1, -$depthReal ) );
+		push( @surfPoints, Point->new( $x2, -$depthReal ) );
+		push( @surfPoints, Point->new( $x2, 0 ) );
+
+		$self->__AddDetailDraw( \@surfPoints );
+
+		# 4) create dimension draw for tool
+
+		my $w = $self->{"drawWidth"};
+
+		my $dimTool = DimH1Lines->new(
+									   "top",                          "right",
+									   int( $w * 0.1 ),                int( $w * 0.01 ),
+									   $diameterReal,                  int( $w * 0.2 ),
+									   "both",                         $self->{"dimLineWidth"},
+									   "D " . $diameter . "mm (tool)", $self->{"dimTextHeight"},
+									   $self->{"dimTextWidth"},        $self->{"dimTextMirror"},
+									   $self->{"dimTextAngle"}
+		);
+		$self->{"drawing"}->AddSymbol( $dimTool, Point->new( $x1, 0 ) );
+
+		# 5) create dimension draw for depth
+		my $dimDepth = DimV1Lines->new(
+										"left",           "bot",
+										int( $w * 0.05 ), int( $w * 0.01 ),
+										$depthReal,       int( $w * 0.2 ),
+										"both",           $self->{"dimLineWidth"},
+										sprintf( "%.1f", $depth ) . "mm (depth)", $self->{"dimTextHeight"},
+										$self->{"dimTextWidth"}, $self->{"dimTextMirror"},
+										$self->{"dimTextAngle"}
+		);
+		$self->{"drawing"}->AddSymbol( $dimDepth, Point->new( $x1, 0 ) );
+
 	}
-	# do drawing rfom two separate surfaces
-	else {
-		
-		# left survace		
-		
-		
+
+	sub __CreateDetailZaxisSurf {
+		my $self  = shift;
+		my $depth = shift;
+
+		my @surfPoints = ();
+
+		# 1) Add right side of draw
+		$self->__GetPcbDrawSide( \@surfPoints, "right" );
+
+		# 2) Add left side of draw
+		$self->__GetPcbDrawSide( \@surfPoints, "left" );
+
+		# 3) create detail part of surface
+		my $drawW     = $self->{"drawWidth"};
+		my $depthReal = $depth * $self->{"scale"};
+
+		my @points = ();
+
+		my $percent30 = int( $drawW / 3 );
+
+		push( @surfPoints, Point->new( $percent30,     0 ) );
+		push( @surfPoints, Point->new( $percent30,     -$depthReal ) );
+		push( @surfPoints, Point->new( 2 * $percent30, -$depthReal ) );
+		push( @surfPoints, Point->new( 2 * $percent30, 0 ) );
+
+		$self->__AddDetailDraw( \@surfPoints );
+
+		# 4) create dimension draw for depth
+
+		my $w = $self->{"drawWidth"};
+
+		my $dimDepth = DimV1Lines->new(
+										"left",           "bot",
+										int( $w * 0.05 ), int( $w * 0.01 ),
+										$depthReal,       int( $w * 0.2 ),
+										"both",           $self->{"dimLineWidth"},
+										sprintf( "%.1f", $depth ) . "mm (depth)", $self->{"dimTextHeight"},
+										$self->{"dimTextWidth"}, $self->{"dimTextMirror"},
+										$self->{"dimTextAngle"}
+		);
+		$self->{"drawing"}->AddSymbol( $dimDepth, Point->new( $percent30, 0 ) );
+
 	}
 
-	# 2) create dimension draw for tool
-	my $w = $self->{"drawWidth"};
+	sub __CreateDetailCountersink {
+		my $self       = shift;
+		my $symbolType = shift;    # slot/hole/surface
 
-	my $dimTool = DimH1Lines->new(
-								   "bot",                   "left",                   int( $w * 0.15 ), int( $w * 0.01 ),
-								   $diameterReal,           int( $w * 0.2 ),          "both",           $self->{"dimLineWidth"},
-								   "D " . $diameter . "mm", $self->{"dimTextHeight"}, $self->{"dimTextWidth"}
-	);
-	$self->{"drawing"}->AddSymbol( $dimTool, Point->new( $x3, 0 ) );
+		my $depth = shift;
+		my $angle = shift;
 
-	# 3) create dimension draw for depth
-	my $dimDepth = DimV1Lines->new(
-									"right",               "bot",                    abs( $x3 - $x2 ), int( $w * 0.01 ),
-									$depthReal,            int( $w * 0.2 ),          "second",         $self->{"dimLineWidth"},
-									$depth . "mm (depth)", $self->{"dimTextHeight"}, $self->{"dimTextWidth"}
-	);
-	$self->{"drawing"}->AddSymbol( $dimDepth, Point->new( $x2, 0 ) );
+		# compute diameter of tool by angle and depth
+		my $diameter = tan( deg2rad( $angle / 2 ) ) * $depth * 2;
 
-	# 4) create dimension draw for angle
-	my $dimAngle =
-	  DimAngle1->new( $angle, int( $w * 0.25 ), $self->{"dimLineWidth"}, $angle . " deg.", $self->{"dimTextHeight"}, $self->{"dimTextWidth"} );
-	$self->{"drawing"}->AddSymbol( $dimAngle, Point->new( $x2, -$depthReal ) );
+		# 1) create detail part of surface
 
-}
+		my $drawW        = $self->{"drawWidth"};
+		my $drawH        = $self->{"pcbThick"} * $self->{"scale"};    # mm
+		my $diameterReal = $diameter * $self->{"scale"};
+		my $depthReal    = $depth * $self->{"scale"};
 
-#-------------------------------------------------------------------------------------------#
-#  Place for testing..
-#-------------------------------------------------------------------------------------------#
-my ( $package, $filename, $line ) = caller;
-if ( $filename =~ /DEBUG_FILE.pl/ ) {
+		my @points = ();
 
-	use aliased 'Packages::Gerbers::OutputData::Drawing::Drawing';
-	use aliased 'Packages::InCAM::InCAM';
-	use aliased 'Packages::Gerbers::OutputData::Enums';
+		my $x1 =   ($drawW - $diameterReal ) / 2 ;
+		my $x2 =  $drawW / 2 ;
+		my $x3 =  ( $drawW - $diameterReal ) / 2 + $diameterReal ;
 
-	my $inCAM = InCAM->new();
+		# if depth of tool is smaller than pcb thick, do drawing from one surface
+		if ( $depth < $self->{"pcbThick"} ) {
 
-	$inCAM->COM("sel_delete");
+			my @surfPoints = ();
 
-	my $draw = Drawing->new( $inCAM, "test" );
+			# 1) Add right side of draw
+			$self->__GetPcbDrawSide( \@surfPoints, "right" );
 
-	#$draw->CreateDraw( 1.5, "top", Enums->Depth_ZAXIS, Enums->Symbol_SLOT, 2, 1 );
-	#$draw->CreateDraw( 1.5, "top", Enums->Depth_ZAXIS, Enums->Symbol_SURFACE, 2, 1 );
-	$draw->CreateDraw( 1.5, "top", Enums->Depth_COUNTERSINK, Enums->Symbol_SLOT, 2, 1, 90 );
+			# 2) Add left side of draw
+			$self->__GetPcbDrawSide( \@surfPoints, "left" );
 
-}
+			push( @surfPoints, Point->new( $x1, 0 ) );
+			push( @surfPoints, Point->new( $x2, -$depthReal ) );
+			push( @surfPoints, Point->new( $x3, 0 ) );
 
-1;
+			$self->__AddDetailDraw( \@surfPoints );
+		}
+
+		# do drawing rfom two separate surfaces
+		else {
+
+			my $xTmp = $drawH / tan( deg2rad( 90 - ( $angle / 2 ) ) );
+
+			# left survace
+			my @surfPoints1 = ();
+
+			push( @surfPoints1, Point->new( $x1, 0 ) );
+
+			push( @surfPoints1, Point->new( $xTmp + $x1, -$drawH ) );
+
+			$self->__GetPcbDrawSide( \@surfPoints1, "left" );
+			$self->__AddDetailDraw( \@surfPoints1 );
+
+			# right surface
+			my @surfPoints2 = ();
+
+			$self->__GetPcbDrawSide( \@surfPoints2, "right" );
+
+			push( @surfPoints2, Point->new( $x3 - $xTmp, -$drawH ) );
+
+			push( @surfPoints2, Point->new( $x3, 0 ) );
+			$self->__AddDetailDraw( \@surfPoints2 );
+
+		}
+
+		# 2) create dimension draw for tool
+		my $w = $self->{"drawWidth"};
+
+		my $dimTool = DimH1Lines->new(
+									   "bot",            "left",
+									   int( $w * 0.2 ), int( $w * 0.01 ),
+									   $diameterReal,    int( $w * 0.2 ),
+									   "both",           $self->{"dimLineWidth"},
+									   "D " . sprintf( "%.1f", $diameter ) . "mm", $self->{"dimTextHeight"},
+									   $self->{"dimTextWidth"}, $self->{"dimTextMirror"},
+									   $self->{"dimTextAngle"}
+		);
+		$self->{"drawing"}->AddSymbol( $dimTool, Point->new( $x3, 0 ) );
+
+		# 3) create dimension draw for depth
+		my $dimDepth = DimV1Lines->new(
+										"right",          "bot",
+										abs( $x3 - $x2 ), int( $w * 0.01 ),
+										$depthReal,       int( $w * 0.2 ),
+										"second",         $self->{"dimLineWidth"},
+										sprintf( "%.1f", $depth ) . "mm (depth)", $self->{"dimTextHeight"},
+										$self->{"dimTextWidth"}, $self->{"dimTextMirror"},
+										$self->{"dimTextAngle"}
+		);
+		$self->{"drawing"}->AddSymbol( $dimDepth, Point->new( $x2, 0 ) );
+
+		# 4) create dimension draw for angle
+		my $dimAngle = DimAngle1->new( $angle,
+									   int( $w * 0.20 ),
+									   $self->{"dimLineWidth"},
+									   $angle . " deg.",
+									   $self->{"dimTextHeight"},
+									   $self->{"dimTextWidth"},
+									   $self->{"dimTextMirror"},
+									   $self->{"dimTextAngle"} );
+		$self->{"drawing"}->AddSymbol( $dimAngle, Point->new( $x2, -$depthReal ) );
+
+	}
+
+	#-------------------------------------------------------------------------------------------#
+	#  Place for testing..
+	#-------------------------------------------------------------------------------------------#
+	my ( $package, $filename, $line ) = caller;
+	if ( $filename =~ /DEBUG_FILE.pl/ ) {
+
+		use aliased 'Packages::Gerbers::OutputData::Drawing::Drawing';
+		use aliased 'Packages::InCAM::InCAM';
+		use aliased 'Packages::Gerbers::OutputData::Enums';
+		use aliased 'Packages::CAM::SymbolDrawing::Point';
+
+		my $inCAM = InCAM->new();
+
+		$inCAM->COM("sel_delete");
+
+		my $draw = Drawing->new( $inCAM, "test", Point->new( 20, 40 ), 1.5, "bot" );
+
+		#$draw->Create( Enums->Depth_ZAXIS, Enums->Symbol_SLOT, 2, 1 );
+		$draw->Create( Enums->Depth_ZAXIS, Enums->Symbol_SURFACE, 2, 1 );
+
+		#$draw->Create( Enums->Depth_COUNTERSINK, Enums->Symbol_SLOT, 4, 3, 60 );
+
+	}
+
+	1;
 

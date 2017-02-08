@@ -38,6 +38,12 @@ sub new {
 	unless ( $self->{"position"} ) {
 		$self->{"position"} = Point->new();
 	}
+	
+	$self->{"mirrorX"} = 0;
+	$self->{"mirrorY"} = 0;
+	$self->{"mirrorXPoint"} = $self->{"position"}->Copy();
+	$self->{"mirrorYPoint"} = $self->{"position"}->Copy();
+	
 
 	my @syms = ();
 	$self->{"symbol"} = SymbolBase->new();    # parent of all symbols and primitives
@@ -59,6 +65,27 @@ sub AddPrimitive {
 	my $primitive = shift;
 
 	$self->{"symbol"}->AddPrimitive($primitive);
+}
+
+sub SetMirrorX{
+	my $self      = shift;
+	my $mirrorPoint      = shift;
+	
+	$self->{"mirrorX"} = 1;
+	
+	if(defined $mirrorPoint){
+	$self->{"mirrorXPoint"} = $mirrorPoint;
+	}
+}
+
+sub SetMirrorY{
+	my $self      = shift;
+	my $mirrorPoint      = shift;
+	$self->{"mirrorY"} = 1;
+	
+	if(defined $mirrorPoint){
+	$self->{"mirrorYPoint"} = $mirrorPoint;
+	}
 }
 
 sub Draw {
@@ -125,7 +152,14 @@ sub __DrawLine {
 	my $eP = $line->GetEndP();
 	$sP->Move( $self->{"position"}->X() + $symbolPos->X(), $self->{"position"}->Y() + $symbolPos->Y() );
 	$eP->Move( $self->{"position"}->X() + $symbolPos->X(), $self->{"position"}->Y() + $symbolPos->Y() );
-
+	
+	# consider mirror
+	if($self->{"mirrorX"}){
+		
+		$sP->MirrorX($self->{"mirrorXPoint"});
+		$eP->MirrorX($self->{"mirrorXPoint"});
+	}
+  
 	CamSymbol->AddLine( $self->{"inCAM"}, $sP, $eP, $line->GetSymbol(), $line->GetPolarity() );
 
 }
@@ -134,14 +168,32 @@ sub __DrawText {
 	my $self      = shift;
 	my $t         = shift;
 	my $symbolPos = shift;
+	
 
 	# consider origin of whole draw
 
 	my $p = $t->GetPosition();
 	$p->Move( $self->{"position"}->X() + $symbolPos->X(), $self->{"position"}->Y() + $symbolPos->Y() );
+	
+	# consider mirror
+	
+	my $mirror = $t->GetMirror();
+  
+	if($self->{"mirrorX"}){
+		
+		$p->MirrorX($self->{"mirrorXPoint"});
+		$p->Move(0, - $t->GetHeight());
+		
+		if($mirror == 1){
+			$mirror = 0;
+		}else{
+			$mirror = 1;
+		}
+ 
+	}
 
 	CamSymbol->AddText( $self->{"inCAM"},   $t->GetValue(),  $p,                $t->GetHeight(),
-						$t->GetLineWidth(), $t->GetMirror(), $t->GetPolarity(), $t->GetAngle() );
+						$t->GetLineWidth(), $mirror, $t->GetPolarity(),  $t->GetAngle() );
 
 }
 
@@ -149,6 +201,8 @@ sub __DrawArcSCE {
 	my $self      = shift;
 	my $arc       = shift;
 	my $symbolPos = shift;
+
+	my $dir = "cw";
 
 	# consider origin of whole draw
 
@@ -159,8 +213,21 @@ sub __DrawArcSCE {
 	$sP->Move( $self->{"position"}->X() + $symbolPos->X(), $self->{"position"}->Y() + $symbolPos->Y() );
 	$cP->Move( $self->{"position"}->X() + $symbolPos->X(), $self->{"position"}->Y() + $symbolPos->Y() );
 	$eP->Move( $self->{"position"}->X() + $symbolPos->X(), $self->{"position"}->Y() + $symbolPos->Y() );
+	
+	
+	# consider mirror
+	if($self->{"mirrorX"}){
+		
+		$sP->MirrorX($self->{"mirrorXPoint"});
+		$cP->MirrorX($self->{"mirrorXPoint"});
+		$eP->MirrorX($self->{"mirrorXPoint"});
+		
+		# and switch start and
+		$dir = "ccw";
+	}
+	
 
-	CamSymbolArc->AddArcStartCenterEnd( $self->{"inCAM"}, $sP, $cP, $eP, $arc->GetSymbol(), $arc->GetPolarity() );
+	CamSymbolArc->AddArcStartCenterEnd( $self->{"inCAM"}, $sP, $cP, $eP, $dir, $arc->GetSymbol(), $arc->GetPolarity() );
 
 }
 
@@ -174,6 +241,16 @@ sub __DrawSurfPoly {
 
 		$p->Move( $self->{"position"}->X() + $symbolPos->X(), $self->{"position"}->Y() + $symbolPos->Y() );
 	}
+	
+		# consider mirror
+		# consider mirror
+	if($self->{"mirrorX"}){
+	foreach my $p ( $surf->GetPoints() ) {
+
+		$p->MirrorX($self->{"mirrorXPoint"});
+	}
+	}
+  
 
 	# set surface pattern
 	my $patt = $surf->GetPattern();
