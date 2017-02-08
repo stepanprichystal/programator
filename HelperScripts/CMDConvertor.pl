@@ -8,7 +8,7 @@ use warnings;
 
 # ============ INPUT LINE =================
 my $inputLine =
-" add_arc,symbol=r200,polarity=positive,attributes=no,direction=cw,xs=87.9776,ys=219.2224375,xe=294.9716525,ye=305.276935,xc=138.52058,yc=389.62447";
+"COM sel_change_sym,symbol=r4000,reset_angle=no";
 my $output = "\$inCAM->COM(";
 my @splitted = split( ",", $inputLine );
 

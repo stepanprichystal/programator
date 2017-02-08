@@ -16,7 +16,7 @@ use aliased 'Helpers::GeneralHelper';
 
 use aliased 'Packages::Gerbers::OutputData::PrepareLayers::PrepareBase';
 use aliased 'Packages::Gerbers::OutputData::PrepareLayers::PrepareNC';
-
+use aliased 'Packages::Gerbers::OutputData::LayerData::LayerDataList';
 
 use aliased 'Packages::Gerbers::ProduceData::Output';
 use aliased 'Packages::Gerbers::ProduceData::PrepareLayers';
@@ -66,14 +66,23 @@ sub Create {
 	CamStep->CreateFlattenStep( $inCAM, $jobId, $self->{"step"}, $self->{"data_step"} );
 	CamHelper->SetStep( $inCAM, $self->{"data_step"} );
 
-	# get all board layers
+	# get all layers of export
 	my @layers = CamJob->GetAllLayers( $self->{"inCAM"}, $self->{"jobId"} );
+	
+	# filter layers, which we don't want to export
+	grep { $_->{"gROWname"} } @layers;
  
 	# Prepare layers for export
 	$self->{"prepareBase"}->Prepare( \@layers );
 	$self->{"prepareNC"}->Prepare( \@layers );
  
 	return 1;
+}
+
+sub __GetLayersForExport{
+		my $self = shift;
+	
+	
 }
 
 # Return path of image
@@ -89,7 +98,7 @@ sub GetLayers {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	use aliased 'Packages::Gerbers::ProduceData::ProduceData';
+	use aliased 'Packages::Gerbers::OutputData::OutputData';
 
 	use aliased 'Packages::InCAM::InCAM';
 
@@ -101,9 +110,8 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $mess = "";
 
-	my $control = ProduceData->new( $inCAM, $jobId, "o+1" );
+	my $control = OutputData->new( $inCAM, $jobId, "o+1" );
 	$control->Create( \$mess );
-
 }
 
 1;

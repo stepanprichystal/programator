@@ -27,9 +27,11 @@ use aliased 'CamHelpers::CamToolDepth';
 use aliased 'Packages::Gerbers::OutputData::PrepareLayers::PrepareNCDrawing';
 use aliased 'Packages::Gerbers::OutputData::PrepareLayers::PrepareNCStandard';
 
-#use aliased 'CamHelpers::CamFilter';
+use aliased 'CamHelpers::CamDrilling';
 use aliased 'CamHelpers::CamAttributes';
 use aliased 'CamHelpers::CamSymbol';
+use aliased 'CamHelpers::CamHistogram';
+
 
 #use aliased 'Packages::SystemCall::SystemCall';
 
@@ -69,9 +71,10 @@ sub Prepare {
 	my $step  = $self->{"step"};
 
 	# Set layer info for each NC layer
+	CamDrilling->AddNCLayerType( \@layers );
 	@layers = grep { $_->{"type"} && $_->{"gROWcontext"} eq "board" } @layers;
 	@layers = grep { $_->{"gROWlayer_type"} eq "rout" || $_->{"gROWlayer_type"} eq "drill" } @layers;
-	CamDrilling->AddNCLayerType( \@layers );
+	
 	CamDrilling->AddLayerStartStop( $self->{"inCAM"}, $self->{"jobId"}, \@layers );
 
 	foreach my $l (@layers) {
@@ -213,7 +216,7 @@ sub __PrepareLayers {
 	my $layers = shift;
 
 	$self->{"prepareNCStandard"}->Prepare( $layers, Enums->Type_NCLAYERS );
-	$self->{"prepareNCDepth"}->Prepare( $layers, Enums->Type_NCLAYERS );
+	$self->{"prepareNCDrawing"}->Prepare( $layers, Enums->Type_NCLAYERS );
 
 }
 

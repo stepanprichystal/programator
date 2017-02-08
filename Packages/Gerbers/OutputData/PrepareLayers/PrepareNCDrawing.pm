@@ -10,6 +10,7 @@ use strict;
 use warnings;
 use List::Util qw[max min];
 use Math::Trig;
+use Math::Geometry::Planar;
 
 #local library
 use aliased 'Helpers::GeneralHelper';
@@ -24,9 +25,10 @@ use aliased 'CamHelpers::CamFilter';
 use aliased 'CamHelpers::CamDTM';
 use aliased 'CamHelpers::CamToolDepth';
 use aliased 'Packages::CAM::FeatureFilter::FeatureFilter';
+use aliased 'Packages::Gerbers::OutputData::Drawing::Drawing';
 
 #use aliased 'CamHelpers::CamFilter';
-#use aliased 'CamHelpers::CamHelper';
+use aliased 'Helpers::JobHelper';
 use aliased 'CamHelpers::CamSymbol';
 
 #use aliased 'Packages::SystemCall::SystemCall';
@@ -46,6 +48,8 @@ sub new {
 	$self->{"layerList"} = shift;
 
 	$self->{"profileLim"} = undef;    # limits of pdf step
+
+	$self->{"pcbThick"} = JobHelper->GetFinalPcbThick( $self->{"jobId"} );
 
 	return $self;
 }
@@ -83,20 +87,45 @@ sub __ProcessNClayer {
 	my $l    = shift;
 	my $type = shift;
 
+	my $inCAM = $self->{"inCAM"};
+
 	my %lines_arcs = %{ $l->{"symHist"}->{"lines_arcs"} };
 	my %pads       = %{ $l->{"symHist"}->{"pads"} };
+
+	# Get if NC operation is from top/bot
+	my $side = $l->{"gROWname"} =~ /c/ ? "top" : "bot";
 
 	# 1) Proces slots (lines + arcs)
 
 	foreach my $sym ( keys %lines_arcs ) {
 
+		my ($toolSize) = $sym =~ /^\w(\d*)/;
+
 		if ( $lines_arcs{$sym} > 0 ) {
 
-			my $depth = $self->__GetSymbolDepth($sym);
-
+			my $depth = $self->__GetSymbolDepth( $l, $sym );
 			my $lName = $self->__SeparateSymbol( $l, Enums->Symbol_SLOT, $sym, $depth );
 
-			__ProcessTypeSlot
+			my $draw = Drawing->new( $inCAM, $lName, Point->new( 0, $self->{"profileLim"}->{"yMax"} ), $self->{"pcbThick"}, $side );
+
+			# Test on special countersink tool
+			if ( $toolSize == 6500 ) {
+
+				#compute real milled hole/line diameter
+				# TODO zmenit 90 stupnu je zde natvrdo
+				my $angle      = 90;
+				my $newDiamter = tan( deg2rad( $angle / 2 ) ) * $depth * 2;
+
+				# change all symbols in layer to this new diameter
+				CamLayer->WorkLayer($lName);
+				$inCAM->COM( "sel_change_sym", "symbol" => "r" . $newDiamter, "reset_angle" => "no" );
+
+				$draw->Create( Enums->Depth_COUNTERSINK, Enums->Symbol_SLOT, $toolSize / 1000, $depth, $angle );
+
+			}
+			else {
+				$draw->Create( Enums->Depth_ZAXIS, Enums->Symbol_SLOT, $toolSize / 1000, $depth );
+			}
 
 		}
 	}
@@ -105,14 +134,32 @@ sub __ProcessNClayer {
 
 	foreach my $sym ( keys %pads ) {
 
+		my ($toolSize) = $sym =~ /^\w(\d*)/;
+
 		if ( $pads{$sym} > 0 ) {
 
-			my @depths = $self->__GetDepths();
+			my $depth = $self->__GetSymbolDepth( $l, $sym );
+			my $lName = $self->__SeparateSymbol( $l, Enums->Symbol_HOLE, $sym, $depth );
 
-			foreach my $depth (@depths) {
+			my $draw = Drawing->new( $inCAM, $lName, Point->new( 0, $self->{"profileLim"}->{"yMax"} ), $self->{"pcbThick"}, $side );
 
-				__ProcessTypeHole
+			# Test on special countersink tool
+			if ( $toolSize == 6500 ) {
 
+				#compute real milled hole/line diameter
+				# TODO ymenit 90 stupnu je zde natvrdo
+				my $angle      = 90;
+				my $newDiamter = tan( deg2rad( $angle / 2 ) ) * $depth * 2;
+
+				# change all symbols in layer to this new diameter
+				CamLayer->WorkLayer($lName);
+				$inCAM->COM( "sel_change_sym", "symbol" => "r" . $newDiamter, "reset_angle" => "no" );
+
+				$draw->Create( Enums->Depth_COUNTERSINK, Enums->Symbol_HOLE, $toolSize / 1000, $depth, $angle );
+
+			}
+			else {
+				$draw->Create( Enums->Depth_ZAXIS, Enums->Symbol_HOLE, $toolSize / 1000, $depth );
 			}
 		}
 	}
@@ -120,6 +167,11 @@ sub __ProcessNClayer {
 	# 3) Process surfaces
 	if ( $l->{"fHist"}->{"surf"} > 0 ) {
 
+		my $depth = $self->__GetSurfaceDepth($l);
+		my $lName = $self->__SeparateSymbol( $l, Enums->Symbol_SURFACE, undef, $depth );
+
+		my $draw = Drawing->new( $inCAM, $lName, Point->new( 0, $self->{"profileLim"}->{"yMax"} ), $self->{"pcbThick"}, $side );
+		$draw->Create( Enums->Depth_ZAXIS, Enums->Symbol_SURFACE, undef, $depth );
 	}
 
 }
@@ -128,7 +180,7 @@ sub __ProcessNClayer {
 sub __SeparateSymbol {
 	my $self    = shift;
 	my $sourceL = shift;
-	my $type    = shift;    # slot / hole / surface
+	my $type    = shift;                                                              # slot / hole / surface
 	my $symbol  = shift;
 	my $depth   = shift;
 
@@ -169,7 +221,7 @@ sub __SeparateSymbol {
 	# if slot or surface, do compensation
 	if ( $type eq Enums->Enums->Symbol_SLOT || $type eq Enums->Enums->Symbol_SURFACE ) {
 
-		CamLayer->WorkLayer( $inCAM, $lName);
+		CamLayer->WorkLayer( $inCAM, $lName );
 		my $lComp = CamLayer->RoutCompensation( $inCAM, $sourceL->{"gROWname"}, "document" );
 
 		CamLayer->WorkLayer( $inCAM, $lName );
@@ -186,12 +238,38 @@ sub __GetSymbolDepth {
 	my $self    = shift;
 	my $sourceL = shift;
 	my $symbol  = shift;
-	
-	
 
+	my $inCAM = $self->{"inCAM"};
+	my $jobId = $self->{"jobId"};
 
-	my $lName = GeneralHelper->GetGUID();
+	my @tools = CamDTM->GetDTMColumns( $inCAM, $jobId, $self->{"step"}, $sourceL->{"gROWname"} );
 
+	my ($toolSize) = $symbol =~ /^\w(\d*)/;
+
+	my $tool = ( grep { $_->{"gTOOLdrill_size"} == $toolSize } @tools )[0];
+
+	return $tool->{"userColumns"}->{"Depth"};
+}
+
+# Return depth of surafaces in given layer
+# Layer shoul contain same depth for all surfaces
+sub __GetSurfaceDepth {
+	my $self   = shift;
+	my $l      = shift;
+	my $symbol = shift;
+
+	my $inCAM = $self->{"inCAM"};
+	my $jobId = $self->{"jobId"};
+
+	my %attHist = CamHistogram->GetAttHistogram( $inCAM, $jobId, $self->{"step"}, $l->{"gROWname"} );
+
+	my @depths = @{ $attHist{".depth"} };
+
+	unless ( scalar(@depths) ) {
+		die "No .depth attribute in surface. \n";
+	}
+
+	return $depths[0];
 }
 
 # Create layer and fill profile - simulate pcb material
@@ -325,35 +403,7 @@ sub __GetDepthTable {
 
 	return @rows;
 }
-
-sub __InsertDepthTable {
-	my $self  = shift;
-	my $lname = shift;
-
-	my $inCAM = $self->{"inCAM"};
-
-	my @rows = $self->__GetDepthTable($lname);
-	unless (@rows) {
-		return 0;
-	}
-
-	CamLayer->WorkLayer( $inCAM, $lname );
-
-	my $tabPosY = abs( $self->{"profileLim"}->{"yMax"} - $self->{"profileLim"}->{"yMin"} ) + 20;
-	my $tabPosX = 0;
-	my %pos     = ( "x" => $tabPosX, "y" => $tabPosY );
-
-	my @colWidths = ( 70, 60, 60 );
-
-	my @row1 = ( "Tool [mm]", "Depth [mm]", "Tool info" );
-	@rows = ( \@row1, @rows );
-
-	CamSymbol->AddTable( $inCAM, \%pos, \@colWidths, 10, 5, 2, \@rows );
-
-	my $tableHeight = scalar(@rows) * 10;
-	my %posTitl = ( "x" => $tabPosX, "y" => $tabPosY + $tableHeight + 5 );
-	CamSymbol->AddText( $inCAM, "Tool depths definition", \%posTitl, 6, 1 );
-}
+ 
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

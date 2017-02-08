@@ -73,7 +73,7 @@ sub __CompleteLine {
 	my $rightText = shift;
 
 	 
-	my $fillCnt  = int( 100 - length($len) );    # 100 is requested total title len
+	my $fillCnt  = int( 100 - length($leftText) );    # 100 is requested total title len
 
 	my $fill = "";
 
