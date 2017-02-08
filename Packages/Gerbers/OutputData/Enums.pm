@@ -11,4 +11,16 @@ use constant {
 	Type_DOCUMENT => "typeDocument" 
 };
  
+ use constant {
+	Depth_COUNTERSINK => "typeCountersink",
+	Depth_ZAXIS => "typeZaxis"
+};
+
+ use constant {
+	Symbol_SLOT => "symbolSlot",
+	Symbol_HOLE => "symbolHole",
+	Symbol_SURFACE => "symbolSurface"
+};
+ 
+ 
 1;

@@ -22,7 +22,7 @@ use Class::Interface;
 sub GetPolarity;     
 sub GetType;  
 sub MirrorY;
-	
+sub MirrorX;
  
 1;
  

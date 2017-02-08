@@ -3,8 +3,8 @@ package Packages::CAM::SymbolDrawing::Enums;
 
 use constant {
 			   Primitive_LINE    => "primitiveLine",
-			   Primitive_ARC     => "primitiveArc",
-			   Primitive_SURFACE => "primitiveSurface",
+			   Primitive_ARCSCE     => "primitiveArcSCE",  # arc defined bz start center end point
+			   Primitive_SURFACEPOLY => "primitiveSurfacePoly", # polygon surface
 			   Primitive_PAD     => "primitivePad",
 			   Primitive_TEXT    => "primitiveText"
 };

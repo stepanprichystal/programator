@@ -45,6 +45,12 @@ sub MirrorY {
 	$self->{"endP"}->{"x"}   *= -1;
 }
 
+sub MirrorX {
+	my $self = shift;
+	$self->{"startP"}->{"y"} *= -1;
+	$self->{"endP"}->{"y"}   *= -1;
+} 
+
 sub GetStartP {
 	my $self = shift;
 

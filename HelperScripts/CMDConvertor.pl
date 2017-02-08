@@ -8,8 +8,7 @@ use warnings;
 
 # ============ INPUT LINE =================
 my $inputLine =
-"copy_layer,source_job=f13608,source_step=o+1,source_layer=f,dest=layer_name,dest_step=,dest_layer=dddd,mode=append,invert=no,copy_notes=no,copy_attrs=no,copy_lpd=new_layers_only,copy_sr_feat=no (0)";# ============ INPUT LINE =================
-
+" add_arc,symbol=r200,polarity=positive,attributes=no,direction=cw,xs=87.9776,ys=219.2224375,xe=294.9716525,ye=305.276935,xc=138.52058,yc=389.62447";
 my $output = "\$inCAM->COM(";
 my @splitted = split( ",", $inputLine );
 

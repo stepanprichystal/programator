@@ -118,17 +118,19 @@ sub AddLine {
 				 "symbol"   => $symbol,
 				 "polarity" => $polarity
 	);
-
 }
+
+ 
+ 
 
 sub AddTable {
 	my $self       = shift;
 	my $inCAM      = shift;
-	my $position   = shift;				# position of table, hash x,y
-	my @colWidths  = @{ shift(@_) };	# each column width in mm
-	my $rowHeight  = shift;				# row height in mm
-	my $textHeight = shift;            # font size in mm
-	my $lineWidth  = shift;            # font width in mm
+	my $position   = shift;             # position of table, hash x,y
+	my @colWidths  = @{ shift(@_) };    # each column width in mm
+	my $rowHeight  = shift;             # row height in mm
+	my $textHeight = shift;             # font size in mm
+	my $lineWidth  = shift;             # font width in mm
 	my @rows       = @{ shift(@_) };
 
 	# my compute dimension
@@ -170,14 +172,14 @@ sub AddTable {
 		# add last column line
 		if ( $i + 1 == $colCnt ) {
 			%startP = ( "x" => $colPos, "y" => $position->{"y"} );
-			%endP   = ( "x" => $colPos, "y" => $position->{"y"} +$tableHeight );
+			%endP   = ( "x" => $colPos, "y" => $position->{"y"} + $tableHeight );
 
 			$self->AddLine( $inCAM, \%startP, \%endP, "r200" );
 		}
 	}
 
 	# Fill table with text
- 
+
 	@rows = reverse(@rows);    # we fill from bot
 	my $txtPosY = $position->{"y"};
 	for ( my $i = 0 ; $i < $rowCnt ; $i++ ) {
@@ -193,14 +195,14 @@ sub AddTable {
 				$cellData = "";
 			}
 
-			my %posTxt = ( "x" => $txtPosX + $colWidths[$j]*0.05 , "y" => $txtPosY  + ( $rowHeight - $textHeight ) / 2 );
+			my %posTxt = ( "x" => $txtPosX + $colWidths[$j] * 0.05, "y" => $txtPosY + ( $rowHeight - $textHeight ) / 2 );
 
 			$self->AddText( $inCAM, $cellData, \%posTxt, $textHeight, 1 );
 
 			$txtPosX += $colWidths[$j];    # update position X
 		}
 
-		$txtPosY += $rowHeight;    # update position Y
+		$txtPosY += $rowHeight;            # update position Y
 
 	}
 }
@@ -217,23 +219,34 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	my $layerName = "c";
 
 	my $inCAM = InCAM->new();
-	
+
 	$inCAM->COM("sel_delete");
 
-	my %pos = ( "x" => 0, "y" => 0 );
+	#	my %pos = ( "x" => 0, "y" => 0 );
+	#
+	#	my @colWidths = ( 70, 60, 60 );
+	#
+	#	my @row1 = ( "Tool [mm]", "Depth [mm]", "Tool angle" );
+	#	my @row2 = ( 2000, 1.2, );
+	#
+	#	my @rows = ( \@row1, \@row2 );
+	#
+	#	CamSymbol->AddTable( $inCAM, \%pos, \@colWidths, 10, 5, 2, \@rows );
+	#
+	#	my %posTitl = ( "x" => 0, "y" => scalar(@rows) * 10 + 5 );
+	#	CamSymbol->AddText( $inCAM, "Tool depths definition", \%posTitl, 6, 1 );
 
-	my @colWidths = ( 70, 60, 60 );
+	my @points = ();
+	my %point1 = ( "x" => 0, "y" => 0 );
+	my %point2 = ( "x" => 100, "y" => 0 );
+	my %point3 = ( "x" => 100, "y" => 100 );
+	my %point4 = ( "x" => 0, "y" => 100 );
 
-	my @row1 = ( "Tool [mm]", "Depth [mm]", "Tool angle" );
-	my @row2 = ( 2000, 1.2, );
+	@points = ( \%point1, \%point2, \%point3, \%point4 );
 
-	my @rows = ( \@row1, \@row2 );
+	CamSymbol->AddSurfaceLinePattern( $inCAM, 1, 100, undef, 45, 50, 1000);
 
-	CamSymbol->AddTable( $inCAM, \%pos, \@colWidths, 10, 5, 2, \@rows );
-
-
-	my %posTitl = ( "x" => 0, "y" => scalar(@rows)*10  + 5 );
-	CamSymbol->AddText( $inCAM, "Tool depths definition", \%posTitl, 6, 1 );
+	CamSymbol->AddSurfacePolyline( $inCAM, \@points, 1 )
 
 }
 

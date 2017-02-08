@@ -1,9 +1,9 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Class which represent primitive geometric - text
+# Description: Class which represent primitive geometric - arc defined by start-center-end point
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::CAM::SymbolDrawing::Primitive::PrimitiveText;
+package Packages::CAM::SymbolDrawing::Primitive::PrimitiveArcSCE;
 use base ("Packages::CAM::SymbolDrawing::Primitive::PrimitiveBase");
 
 use Class::Interface;
@@ -22,77 +22,60 @@ use aliased 'Packages::CAM::SymbolDrawing::Enums';
 #-------------------------------------------------------------------------------------------#
 
 sub new {
-	my $class     = shift;
-	my $value     = shift;
-	my $position  = shift;    # font size in mm
-	my $height    = shift;    # font size in mm
-	my $lineWidth = shift;    # font size in mm
-	my $mirror    = shift;
-	my $angle     = shift;
-	my $polarity  = shift;    #
+	my $class    = shift;
+	my $startP   = shift;
+	my $centerP  = shift;
+	my $endP     = shift;
+	my $symbol   = shift;
+	my $polarity = shift;    #
 
 	my $self = {};
-	$self = $class->SUPER::new( Enums->Primitive_TEXT, $polarity );
+	$self = $class->SUPER::new( Enums->Primitive_ARCSCE, $polarity );
 	bless $self;
 
-	$self->{"value"}     = $value;
-	$self->{"position"}  = $position;
-	$self->{"height"}    = $height;
-	$self->{"lineWidth"} = $lineWidth;
-	$self->{"mirror"}    = $mirror;
-	$self->{"angle"}     = $angle;
+	$self->{"startP"} = $startP;
+	$self->{"centerP"} = $centerP;
+	$self->{"endP"}   = $endP;
+	$self->{"symbol"} = $symbol;
 
 	return $self;
 }
 
 sub MirrorY {
 	my $self = shift;
-	$self->{"position"}->{"x"} *= -1;
-
+	$self->{"startP"}->{"x"} *= -1;
+	$self->{"endP"}->{"x"}   *= -1;
 }
 
 sub MirrorX {
 	my $self = shift;
-	$self->{"position"}->{"y"} *= -1;
+	$self->{"startP"}->{"y"} *= -1;
+	$self->{"endP"}->{"y"}   *= -1;
+} 
 
-}
-
-sub GetValue {
+sub GetStartP {
 	my $self = shift;
 
-	return $self->{"value"};
+	return $self->{"startP"};
 }
 
-sub GetPosition {
+sub GetCenterP {
 	my $self = shift;
 
-	return $self->{"position"};
+	return $self->{"centerP"};
 }
 
-sub GetHeight {
+sub GetEndP {
 	my $self = shift;
 
-	return $self->{"height"};
+	return $self->{"endP"};
 }
 
-sub GetLineWidth {
+sub GetSymbol {
 	my $self = shift;
 
-	return $self->{"lineWidth"};
+	return $self->{"symbol"};
 }
-
-sub GetMirror {
-	my $self = shift;
-
-	return $self->{"mirror"};
-}
-
-sub GetAngle {
-	my $self = shift;
-
-	return $self->{"angle"};
-}
-
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

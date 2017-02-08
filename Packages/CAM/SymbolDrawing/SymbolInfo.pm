@@ -4,7 +4,7 @@
 # basic info like coordinate, attrubutes etc..
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::CAM::SymbolDrawing::Symbol::SymbolBase;
+package Packages::CAM::SymbolDrawing::SymbolInfo;
  
 #3th party library
 use strict;
@@ -15,7 +15,6 @@ use Storable qw(dclone);
 
 use aliased 'Packages::CAM::SymbolDrawing::Enums';
 use aliased 'Packages::CAM::SymbolDrawing::Point';
-use aliased 'Packages::CAM::SymbolDrawing::SymbolInfo';
 
 #-------------------------------------------------------------------------------------------#
 #  Interface
@@ -27,67 +26,31 @@ sub new {
 	$self = {};
 	bless $self;
 	
-	$self->{"polarity"} = shift;
+	$self->{"symbol"} = shift;
+	$self->{"position"} = shift;
 	
-	unless( defined $self->{"polarity"}){
-		$self->{"polarity"} = Enums->Polar_POSITIVE;
+	unless($self->{"position"}){
+		$self->{"position"} = Point->new(0,0);
 	}
 	
-	#$self->{"position"} = shift
-	my @prims = ();
-	$self->{"primitives"} = \@prims;  # primitives, whci create this symbol
-	my @syms = ();
-	$self->{"symbols"} = \@syms;	# can contain another chold symbols
- 
+	 
 	return $self;
 }
 
  
-sub AddPrimitive {
+sub GetSymbol {
 	my $self  = shift;
-	my $primitive  = shift;
  
-	 
-	push( @{$self->{"primitives"}}, $primitive);
-
+	return $self->{"symbol"};
 }
 
 
-sub AddSymbol {
-	my $self  = shift;
-	my $symbol  = shift;
-	my $position = shift;
- 
-	push( @{$self->{"symbols"}}, SymbolInfo->new($symbol, $position));
-}  
- 
-sub GetPrimitives {
-	my $self  = shift;
-	 
-	return @{$self->{"primitives"}};
-
-}
- 
-sub GetSymbols {
-	my $self  = shift;
-	 
-	return @{$self->{"symbols"}};
-
-}
-
-sub GetPolarity {
-	my $self  = shift;
-	 
-	return $self->{"polarity"};
-
-}
-
-sub Copy{
+sub GetPosition {
 	my $self  = shift;
  
-	return dclone($self);
+	return $self->{"position"};
 }
-
+ 
 
 
 #-------------------------------------------------------------------------------------------#

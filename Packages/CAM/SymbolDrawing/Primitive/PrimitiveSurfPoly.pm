@@ -1,9 +1,9 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Class which represent primitive geometric - text
+# Description: Class which represent primitive geometric - surface created by polygon
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::CAM::SymbolDrawing::Primitive::PrimitiveText;
+package Packages::CAM::SymbolDrawing::Primitive::PrimitiveSurfPoly;
 use base ("Packages::CAM::SymbolDrawing::Primitive::PrimitiveBase");
 
 use Class::Interface;
@@ -16,83 +16,65 @@ use warnings;
 
 #local library
 use aliased 'Packages::CAM::SymbolDrawing::Enums';
+use aliased 'Packages::CAM::SymbolDrawing::Primitive::Helper::SurfaceSolidPattern';
 
 #-------------------------------------------------------------------------------------------#
 #  Interface
 #-------------------------------------------------------------------------------------------#
 
 sub new {
-	my $class     = shift;
-	my $value     = shift;
-	my $position  = shift;    # font size in mm
-	my $height    = shift;    # font size in mm
-	my $lineWidth = shift;    # font size in mm
-	my $mirror    = shift;
-	my $angle     = shift;
-	my $polarity  = shift;    #
+	my $class    = shift;
+	my $points   = shift;    #
+	my $pattern  = shift;
+	my $polarity = shift;    #
 
 	my $self = {};
-	$self = $class->SUPER::new( Enums->Primitive_TEXT, $polarity );
+	$self = $class->SUPER::new( Enums->Primitive_SURFACEPOLY, $polarity );
 	bless $self;
 
-	$self->{"value"}     = $value;
-	$self->{"position"}  = $position;
-	$self->{"height"}    = $height;
-	$self->{"lineWidth"} = $lineWidth;
-	$self->{"mirror"}    = $mirror;
-	$self->{"angle"}     = $angle;
+	$self->{"points"} = $points;
+	$self->{"pattern"} = $pattern;
+	
+	# Set default pattern solid
+	unless ( defined $self->{"pattern"} ) {
+		$self->{"pattern"} = SurfaceSolidPattern->new( 0, 0 );
+	}
 
 	return $self;
 }
 
 sub MirrorY {
 	my $self = shift;
-	$self->{"position"}->{"x"} *= -1;
-
+	
+	foreach my $p (@{$self->{"points"}}){
+		
+		$p->{"x"} *= -1;
+		$p->{"x"}   *= -1;
+	}	
 }
 
 sub MirrorX {
 	my $self = shift;
-	$self->{"position"}->{"y"} *= -1;
-
+	
+	foreach my $p (@{$self->{"points"}}){
+		
+		$p->{"y"} *= -1;
+		$p->{"y"}   *= -1;
+	}	
 }
 
-sub GetValue {
+sub GetPoints {
 	my $self = shift;
 
-	return $self->{"value"};
+	return @{$self->{"points"}};
 }
 
-sub GetPosition {
+sub GetPattern {
 	my $self = shift;
 
-	return $self->{"position"};
+	return $self->{"pattern"};
 }
-
-sub GetHeight {
-	my $self = shift;
-
-	return $self->{"height"};
-}
-
-sub GetLineWidth {
-	my $self = shift;
-
-	return $self->{"lineWidth"};
-}
-
-sub GetMirror {
-	my $self = shift;
-
-	return $self->{"mirror"};
-}
-
-sub GetAngle {
-	my $self = shift;
-
-	return $self->{"angle"};
-}
-
+ 
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
