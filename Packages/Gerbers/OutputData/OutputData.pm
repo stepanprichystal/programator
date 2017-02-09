@@ -67,11 +67,9 @@ sub Create {
 	CamHelper->SetStep( $inCAM, $self->{"data_step"} );
 
 	# get all layers of export
-	my @layers = CamJob->GetAllLayers( $self->{"inCAM"}, $self->{"jobId"} );
-	
-	# filter layers, which we don't want to export
-	grep { $_->{"gROWname"} } @layers;
+	my @layers = $self->__GetLayersForExport();
  
+  
 	# Prepare layers for export
 	$self->{"prepareBase"}->Prepare( \@layers );
 	$self->{"prepareNC"}->Prepare( \@layers );
@@ -80,9 +78,14 @@ sub Create {
 }
 
 sub __GetLayersForExport{
-		my $self = shift;
+	 my $self = shift;
 	
+	my @layers = CamJob->GetAllLayers( $self->{"inCAM"}, $self->{"jobId"} );
 	
+	# filter layers, which we don't want to export
+	@layers = grep { $_->{"gROWname"} ne "fr" && $_->{"gROWname"} ne "v1"} @layers;
+	
+	return @layers;
 }
 
 # Return path of image

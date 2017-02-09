@@ -192,7 +192,7 @@ sub __SeparateSymbol {
 
 	my $f = FeatureFilter->new( $inCAM, $sourceL->{"gROWname"} );
 
-	if ( $type eq Enums->Enums->Symbol_HOLE ) {
+	if ( $type eq Enums->Symbol_HOLE ) {
 
 		my @types = ("pad");
 		$f->SetTypes( \@types );
@@ -201,10 +201,20 @@ sub __SeparateSymbol {
 		$f->AddIncludeSymbols( \@syms );
 
 	}
-	elsif ( $type eq Enums->Enums->Symbol_SLOT ) {
+	elsif ( $type eq Enums->Symbol_SLOT ) {
+
+		my @types = ("line", "arc");
+		$f->SetTypes( \@types );
+
+		my @syms = ($symbol);
+		$f->AddIncludeSymbols( \@syms );
 
 	}
-	elsif ( $type eq Enums->Enums->Symbol_SURFACE ) {
+	elsif ( $type eq Enums->Symbol_SURFACE ) {
+
+		 my @types = ("surface");
+		$f->SetTypes( \@types );
+ 
 
 	}
 
