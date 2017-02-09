@@ -6,7 +6,7 @@
 package Packages::Stackup::StackupDefault;
 
 #loading of locale modules
-use LoadLibrary;
+ 
 
 #3th party library
 use English;
@@ -244,7 +244,8 @@ sub _SetCuUsage {
 
 	for ( my $i = 0 ; $i < scalar(@elements) ; $i++ ) {
 
-		if ( $elements[$i]->{type} =~ /Enums->MaterialType_COPPER/i ) {
+		my $type = Enums->MaterialType_COPPER;
+		if ( $elements[$i]->{type} =~ /$type/i ) {
 			@{ $xml->{ml}->{element} }[$i]->{p} = $innerCuUsage[$cuPos];
 			$cuPos++;
 		}
@@ -260,6 +261,12 @@ sub _CreateNewStackup {
 
 	$xml->{"ml"}{"soll"} = 0;
 	my $xmlString = XMLout( $xml->{ml}, RootName => "ml" );
+	
+	my @oldStackups = FileHelper->GetFilesNameByPattern(EnumsPaths->Jobs_STACKUPS, $pcbId);
+	
+	foreach my $f (@oldStackups){
+		unlink $f;
+	}
 
 	FileHelper->WriteString( EnumsPaths->Jobs_STACKUPS . $stackupName . "\.xml", $xmlString );
 }
@@ -328,11 +335,11 @@ my ( $package, $filename, $line ) = caller;
 
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-		my $pcbId        = "f13608";
-		my $layerCnt     = 4;
-		my @innerCuUsage = ( 50,30 );
+		my $pcbId        = "f13609";
+		my $layerCnt     = 6;
+		my @innerCuUsage = ( 2,1, 30, 40 );
 		my $outerCuThick = 18;
-		my $pcbClass     = 8;
+		my $pcbClass     = 6;
 
 		use aliased 'Packages::Stackup::StackupDefault';
 
