@@ -11,11 +11,10 @@ use strict;
 use warnings;
 
 #local library
-use aliased 'Packages::Pdf::ControlPdf::FinalPreview::LayerData::LayerData';
-use aliased 'Packages::Pdf::ControlPdf::FinalPreview::Enums';
+
 use aliased 'Enums::EnumsGeneral';
 use aliased 'CamHelpers::CamHistogram';
-use aliased 'Connectors::HeliosConnector::HegMethods';
+use aliased 'Packages::Gerbers::OutputData::Enums';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -25,40 +24,59 @@ sub new {
 	my $self = shift;
 	$self = {};
 	bless $self;
- 
+
 	my @l = ();
 	$self->{"layers"} = \@l;
- 
 
 	return $self;
 }
 
- 
-sub AddLayer{
-	my $self      = shift;
-	my $layer      = shift;
-	
-	
+sub AddLayer {
+	my $self  = shift;
+	my $layer = shift;
+
+	$layer->{"number"} = undef;
+
 	# test if exist data layer with already used type of 'original layer'
 	# E.g. type nplt_mill_top is already used, so increase  property 'number' in datalayer
 	# This regardin only NC layers
- 
-	
-	push(@{$self->{"layers"}}, $layer);
-} 
- 
+
+	if ( $layer->GetType() eq Enums->Type_DRILLMAP ) {
+
+			$layer->{"number"} = $layer->GetParent()->GetNumber();
+
+	}else {
+		
+		my $ori = $layer->GetOriLayer();
+
+		if ( defined $ori->{"type"} ) {
+
+			# filter NC layers
+			my @nc = grep { defined $_->GetOriLayer() && defined $_->GetOriLayer()->{"type"} } @{ $self->{"layers"} };
+
+			my @lSame = grep { $_->GetOriLayer()->{"type"} eq $ori->{"type"} } @nc;
+
+			if ( scalar(@lSame) ) {
+				
+				# if only one layer is same type, add number
+				if ( scalar(@lSame) == 1 ){
+					 $lSame[0]->{"number"} = 1;
+				}
+
+				
+				$layer->{"number"} = scalar(@lSame) + 1;
+			}
+		}
+	}
+
+	push( @{ $self->{"layers"} }, $layer );
+}
 
 sub GetLayers {
-#	my $self      = shift;
-#	my $printable = shift;
-#
-#	my @layers = @{ $self->{"layers"} };
-#
-#	@layers = grep { $_->PrintLayer() } @layers;
-#
-#	return @layers;
+	my $self = shift;
+
+	return @{ $self->{"layers"} };
 }
- 
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

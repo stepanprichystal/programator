@@ -111,7 +111,7 @@ sub __DefineSymbol {
 
 	# add text value
 
-	my $textPos = Point->new( $self->{"x"} + 5 , $self->{"y4"});
+	my $textPos = Point->new( $self->{"x"} + 2 , $self->{"y4"});
 
 	$self->AddPrimitive(
 						 PrimitiveText->new(

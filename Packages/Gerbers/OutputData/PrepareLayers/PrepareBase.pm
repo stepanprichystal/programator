@@ -13,11 +13,12 @@ use warnings;
 use aliased 'Helpers::GeneralHelper';
 use aliased 'Enums::EnumsPaths';
 use aliased 'Enums::EnumsGeneral';
-use aliased 'Packages::Gerbers::ProduceData::Enums';
+ 
 use aliased 'CamHelpers::CamLayer';
 use aliased 'CamHelpers::CamJob';
 use aliased 'Packages::Gerbers::OutputData::LayerData::LayerData';
 use aliased 'Helpers::ValueConvertor';
+use aliased 'Packages::Gerbers::OutputData::Enums';
 #-------------------------------------------------------------------------------------------#
 #  Interface
 #-------------------------------------------------------------------------------------------#
@@ -93,20 +94,19 @@ sub __PrepareOUTLINE {
 	CamLayer->WorkLayer( $inCAM, $lName );
 
 	$inCAM->COM( "profile_to_rout", "layer" => $lName, "width" => "200" );
-
-	@layers = grep { $_->{"gROWcontext"} eq "board" && $_->{"gROWlayer_type"} ne "drill" && $_->{"gROWlayer_type"} ne "rout" } @layers;
-
-	foreach my $l (@layers) {
-
-		my $enTit = "Outline pcb";
-		my $czTit = "Obrys dps";
-		my $enInf = "";
-		my $czInf = "";
-
-		my $lData = LayerData->new( $type, undef, "dim", $enTit, $czTit, $enInf, $czInf, $lName );
+ 
+ 		# fake layer 'o'
+ 		my %l = ("gROWname" => "o");
+ 
+		my $enTit = ValueConvertor->GetJobLayerTitle(\%l);
+		my $czTit = ValueConvertor->GetJobLayerTitle( \%l, 1 );
+		my $enInf = ValueConvertor->GetJobLayerInfo(\%l);
+		my $czInf = ValueConvertor->GetJobLayerInfo( \%l, 1 );
+ 
+		my $lData = LayerData->new( $type, \%l, $enTit, $czTit, $enInf, $czInf, $lName );
 
 		$self->{"layerList"}->AddLayer($lData);
-	}
+	 
 }
 
 #-------------------------------------------------------------------------------------------#

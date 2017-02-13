@@ -17,16 +17,12 @@ use aliased 'Helpers::GeneralHelper';
 use aliased 'Packages::Gerbers::OutputData::PrepareLayers::PrepareBase';
 use aliased 'Packages::Gerbers::OutputData::PrepareLayers::PrepareNC';
 use aliased 'Packages::Gerbers::OutputData::LayerData::LayerDataList';
-
-use aliased 'Packages::Gerbers::ProduceData::Output';
-use aliased 'Packages::Gerbers::ProduceData::PrepareLayers';
-use aliased 'Packages::Gerbers::ProduceData::PrepareInfo';
-use aliased 'Packages::Gerbers::ProduceData::Enums';
+ 
 use aliased 'CamHelpers::CamStep';
 use aliased 'CamHelpers::CamHelper';
 use aliased 'CamHelpers::CamJob';
 use aliased 'CamHelpers::CamDrilling';
-
+use aliased 'CamHelpers::CamStepRepeat';
 
 #-------------------------------------------------------------------------------------------#
 #  Interface
@@ -42,22 +38,23 @@ sub new {
 	$self->{"step"}  = shift;
 
 	$self->{"data_step"} = "data_" . $self->{"step"};
-	
+
 	# get limits of step
 	my %lim = CamJob->GetProfileLimits2( $self->{"inCAM"}, $self->{"jobId"}, $self->{"step"}, 0 );
 	$self->{"profileLim"} = \%lim;
 
-	$self->{"layerList"}     = LayerDataList->new();
-	$self->{"prepareBase"} = PrepareBase->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"data_step"}, $self->{"layerList"}, $self->{"profileLim"}  );
-	$self->{"prepareNC"} = PrepareNC->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"data_step"}, $self->{"layerList"}, $self->{"profileLim"}  );
- 
+	$self->{"layerList"} = LayerDataList->new();
+	$self->{"prepareBase"} = PrepareBase->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"data_step"}, $self->{"layerList"}, $self->{"profileLim"} );
+	$self->{"prepareNC"} = PrepareNC->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"data_step"}, $self->{"layerList"}, $self->{"profileLim"} );
+
 	return $self;
 }
 
 # Create image preview
 sub Create {
-	my $self    = shift;
-	my $message = shift;
+	my $self        = shift;
+	my $message     = shift;
+	my $layerFilter = shift;    # request on onlyu some layers
 
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
@@ -65,34 +62,55 @@ sub Create {
 	# 1) Create flattened step
 	CamStep->CreateFlattenStep( $inCAM, $jobId, $self->{"step"}, $self->{"data_step"} );
 	CamHelper->SetStep( $inCAM, $self->{"data_step"} );
+	my @childSteps = CamStepRepeat->GetUniqueNestedStepAndRepeat( $inCAM, $jobId, $self->{"step"} );
 
 	# get all layers of export
-	my @layers = $self->__GetLayersForExport();
- 
-  
+	my @layers = $self->__GetLayersForExport($layerFilter);
+
 	# Prepare layers for export
 	$self->{"prepareBase"}->Prepare( \@layers );
-	$self->{"prepareNC"}->Prepare( \@layers );
- 
+	$self->{"prepareNC"}->Prepare( \@layers, \@childSteps );
+
 	return 1;
 }
 
-sub __GetLayersForExport{
-	 my $self = shift;
-	
-	my @layers = CamJob->GetAllLayers( $self->{"inCAM"}, $self->{"jobId"} );
-	
-	# filter layers, which we don't want to export
-	@layers = grep { $_->{"gROWname"} ne "fr" && $_->{"gROWname"} ne "v1"} @layers;
-	
-	return @layers;
-}
-
-# Return path of image
+# Return DataLayer objects
 sub GetLayers {
 	my $self = shift;
 
 	return $self->{"layerList"}->GetLayers();
+}
+
+# Return step name, where layers are created
+sub GetStepName {
+	my $self = shift;
+
+	return $self->{"data_step"};
+}
+
+sub __GetLayersForExport {
+	my $self        = shift;
+	my $layerFilter = shift;
+
+	my @allLayers = CamJob->GetAllLayers( $self->{"inCAM"}, $self->{"jobId"} );
+	my @layers = ();
+
+	# 1) Filter  requsted layer s
+	if ($layerFilter) {
+
+		my %tmp;
+		@tmp{ @{$layerFilter} } = ();
+		@layers = grep { exists $tmp{ $_->{"gROWname"} } } @allLayers;
+
+	}
+	else {
+		@layers = @allLayers;
+	}
+
+	# 2) Filter internal layers, which are unable to export
+	@layers = grep { $_->{"gROWname"} ne "fr" && $_->{"gROWname"} ne "v1" } @layers;
+
+	return @layers;
 }
 
 #-------------------------------------------------------------------------------------------#
@@ -106,8 +124,6 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	use aliased 'Packages::InCAM::InCAM';
 
 	my $inCAM = InCAM->new();
-	
-	 
 
 	my $jobId = "f13608";
 

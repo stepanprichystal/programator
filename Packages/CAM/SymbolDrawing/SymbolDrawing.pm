@@ -319,15 +319,15 @@ sub __GetPrimitives {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	use aliased 'Packages::CAM::SymbolDrawing::SymbolDrawing';
-	use aliased 'Packages::InCAM::InCAM';
-	use aliased 'Packages::CAM::SymbolDrawing::SymbolLib::DimV1Lines';
-	use aliased 'Packages::CAM::SymbolDrawing::SymbolLib::DimH1Lines';
-	use aliased 'Packages::CAM::SymbolDrawing::SymbolLib::DimAngle1';
-
-	my $inCAM = InCAM->new();
-
-	$inCAM->COM("sel_delete");
+#	use aliased 'Packages::CAM::SymbolDrawing::SymbolDrawing';
+#	use aliased 'Packages::InCAM::InCAM';
+#	use aliased 'Packages::CAM::SymbolDrawing::SymbolLib::DimV1Lines';
+#	use aliased 'Packages::CAM::SymbolDrawing::SymbolLib::DimH1Lines';
+#	use aliased 'Packages::CAM::SymbolDrawing::SymbolLib::DimAngle1';
+#
+#	my $inCAM = InCAM->new();
+#
+#	$inCAM->COM("sel_delete");
 
 	#	my $textValue     = shift;
 	#	my $textHeight    = shift;     # font size in mm

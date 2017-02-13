@@ -30,11 +30,37 @@ sub new {
 	return $self;
 }
 
+sub GetType {
+	my $self = shift;
+
+	return $self->{"type"};
+}
+
+sub GetName {
+	my $self = shift;
+
+	return $self->{"name"};
+}
+
+sub GetTitle {
+	my $self = shift;
+
+	return $self->{"title"};
+}
+
+sub GetInfo {
+	my $self = shift;
+
+	return $self->{"info"};
+}
+
 sub SetOutput {
 	my $self = shift;
 
 	$self->{"output"} = shift;
 }
+
+
 
 sub GetOutput {
 	my $self = shift;

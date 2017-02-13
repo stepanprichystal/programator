@@ -8,7 +8,8 @@ use constant {
 	Type_NCLAYERS => "typeNCLayers",
 	Type_NCDEPTHLAYERS => "typeNCDepthLayers",
 	Type_OUTLINE => "typeOutline",
-	Type_DOCUMENT => "typeDocument" 
+	Type_DOCUMENT => "typeDocument",
+	Type_DRILLMAP => "typeDrillMap",
 };
  
  use constant {

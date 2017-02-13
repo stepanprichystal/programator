@@ -26,10 +26,12 @@ use aliased 'CamHelpers::CamDTM';
 use aliased 'CamHelpers::CamToolDepth';
 use aliased 'Packages::CAM::FeatureFilter::FeatureFilter';
 use aliased 'Packages::Gerbers::OutputData::Drawing::Drawing';
+use aliased 'Packages::CAM::SymbolDrawing::Point';
 
-#use aliased 'CamHelpers::CamFilter';
+use aliased 'CamHelpers::CamHistogram';
 use aliased 'Helpers::JobHelper';
 use aliased 'CamHelpers::CamSymbol';
+ 
 
 #use aliased 'Packages::SystemCall::SystemCall';
 
@@ -47,9 +49,9 @@ sub new {
 	$self->{"step"}      = shift;
 	$self->{"layerList"} = shift;
 
-	$self->{"profileLim"} = undef;    # limits of pdf step
+	$self->{"profileLim"} = shift;    # limits of pdf step
 
-	$self->{"pcbThick"} = JobHelper->GetFinalPcbThick( $self->{"jobId"} );
+	$self->{"pcbThick"} = JobHelper->GetFinalPcbThick( $self->{"jobId"} ) / 1000;    # in mm
 
 	return $self;
 }
@@ -87,7 +89,16 @@ sub __ProcessNClayer {
 	my $l    = shift;
 	my $type = shift;
 
+	my $enTit = ValueConvertor->GetJobLayerTitle($l);
+	my $czTit = ValueConvertor->GetJobLayerTitle( $l, 1 );
+	my $enInf = ValueConvertor->GetJobLayerInfo($l);
+	my $czInf = ValueConvertor->GetJobLayerInfo( $l, 1 );
+
+	my $drawingPos = Point->new( 0, abs( $self->{"profileLim"}->{"yMax"} - $self->{"profileLim"}->{"yMin"} ) + 50 );    # starts 150
+
 	my $inCAM = $self->{"inCAM"};
+	my $jobId = $self->{"jobId"};
+	my $step  = $self->{"step"};
 
 	my %lines_arcs = %{ $l->{"symHist"}->{"lines_arcs"} };
 	my %pads       = %{ $l->{"symHist"}->{"pads"} };
@@ -106,18 +117,23 @@ sub __ProcessNClayer {
 			my $depth = $self->__GetSymbolDepth( $l, $sym );
 			my $lName = $self->__SeparateSymbol( $l, Enums->Symbol_SLOT, $sym, $depth );
 
-			my $draw = Drawing->new( $inCAM, $lName, Point->new( 0, $self->{"profileLim"}->{"yMax"} ), $self->{"pcbThick"}, $side );
+			my $draw = Drawing->new( $inCAM, $lName, $drawingPos, $self->{"pcbThick"}, $side, $l->{"plated"} );
 
 			# Test on special countersink tool
-			if ( $toolSize == 6500 ) {
+			if ( ( !$l->{"plated"} && $toolSize == 6500 ) || ( $l->{"plated"} && $toolSize == 6400 ) ) {
+
+				# if slot/hole is plated, finial depth will be smaller -100µm
+				if ( $l->{"plated"} ) {
+					$depth -= 0.1;
+				}
 
 				#compute real milled hole/line diameter
 				# TODO zmenit 90 stupnu je zde natvrdo
-				my $angle      = 90;
-				my $newDiamter = tan( deg2rad( $angle / 2 ) ) * $depth * 2;
+				my $angle      = 120;
+				my $newDiamter = ( tan( deg2rad( $angle / 2 ) ) * $depth * 2 ) * 1000;
 
 				# change all symbols in layer to this new diameter
-				CamLayer->WorkLayer($lName);
+				CamLayer->WorkLayer( $inCAM, $lName );
 				$inCAM->COM( "sel_change_sym", "symbol" => "r" . $newDiamter, "reset_angle" => "no" );
 
 				$draw->Create( Enums->Depth_COUNTERSINK, Enums->Symbol_SLOT, $toolSize / 1000, $depth, $angle );
@@ -127,7 +143,13 @@ sub __ProcessNClayer {
 				$draw->Create( Enums->Depth_ZAXIS, Enums->Symbol_SLOT, $toolSize / 1000, $depth );
 			}
 
+			# Add anew layerData to datalist
+
+			my $lData = LayerData->new( $type, $l, $enTit, $czTit, $enInf, $czInf, $lName );
+			$self->{"layerList"}->AddLayer($lData);
+
 		}
+
 	}
 
 	# 2) Proces holes ( pads )
@@ -141,18 +163,23 @@ sub __ProcessNClayer {
 			my $depth = $self->__GetSymbolDepth( $l, $sym );
 			my $lName = $self->__SeparateSymbol( $l, Enums->Symbol_HOLE, $sym, $depth );
 
-			my $draw = Drawing->new( $inCAM, $lName, Point->new( 0, $self->{"profileLim"}->{"yMax"} ), $self->{"pcbThick"}, $side );
+			my $draw = Drawing->new( $inCAM, $lName, $drawingPos, $self->{"pcbThick"}, $side, $l->{"plated"} );
 
 			# Test on special countersink tool
-			if ( $toolSize == 6500 ) {
+			if ( ( !$l->{"plated"} && $toolSize == 6500 ) || ( $l->{"plated"} && $toolSize == 6400 ) ) {
+
+				# if slot/hole is plated, finial depth will be smaller -100µm
+				if ( $l->{"plated"} ) {
+					$depth -= 0.1;
+				}
 
 				#compute real milled hole/line diameter
 				# TODO ymenit 90 stupnu je zde natvrdo
-				my $angle      = 90;
-				my $newDiamter = tan( deg2rad( $angle / 2 ) ) * $depth * 2;
+				my $angle      = 120;
+				my $newDiamter = ( tan( deg2rad( $angle / 2 ) ) * $depth * 2 ) * 1000;
 
 				# change all symbols in layer to this new diameter
-				CamLayer->WorkLayer($lName);
+				CamLayer->WorkLayer( $inCAM, $lName );
 				$inCAM->COM( "sel_change_sym", "symbol" => "r" . $newDiamter, "reset_angle" => "no" );
 
 				$draw->Create( Enums->Depth_COUNTERSINK, Enums->Symbol_HOLE, $toolSize / 1000, $depth, $angle );
@@ -161,6 +188,11 @@ sub __ProcessNClayer {
 			else {
 				$draw->Create( Enums->Depth_ZAXIS, Enums->Symbol_HOLE, $toolSize / 1000, $depth );
 			}
+
+			# Add anew layerData to datalist
+
+			my $lData = LayerData->new( $type, $l, $enTit, $czTit, $enInf, $czInf, $lName );
+			$self->{"layerList"}->AddLayer($lData);
 		}
 	}
 
@@ -168,10 +200,28 @@ sub __ProcessNClayer {
 	if ( $l->{"fHist"}->{"surf"} > 0 ) {
 
 		my $depth = $self->__GetSurfaceDepth($l);
-		my $lName = $self->__SeparateSymbol( $l, Enums->Symbol_SURFACE, undef, $depth );
+		my $lName = $self->__SeparateSymbol( $l, Enums->Symbol_SURFACE, undef, $depth, $l->{"plated"} );
 
-		my $draw = Drawing->new( $inCAM, $lName, Point->new( 0, $self->{"profileLim"}->{"yMax"} ), $self->{"pcbThick"}, $side );
+		# if surface is plated, finial depth will be smaller -100µm
+		if ( $l->{"plated"} ) {
+			$depth -= 0.1;
+		}
+
+		my $draw = Drawing->new( $inCAM, $lName, $drawingPos, $self->{"pcbThick"}, $side, $l->{"plated"} );
 		$draw->Create( Enums->Depth_ZAXIS, Enums->Symbol_SURFACE, undef, $depth );
+
+		# Add anew layerData to datalist
+
+		my $lData = LayerData->new( $type, $l, $enTit, $czTit, $enInf, $czInf, $lName );
+		$self->{"layerList"}->AddLayer($lData);
+	}
+
+	# Do control, if prcesssed layer is empty. All symbols hsould be moved
+
+	my %hist = CamHistogram->GetFeatuesHistogram( $inCAM, $jobId, $step, $l->{"gROWname"} );
+	if ( $hist{"total"} > 0 ) {
+
+		die "Some featuers was no processed and left in layer " . $l->{"gROWname"} . "\n.";
 	}
 
 }
@@ -180,7 +230,7 @@ sub __ProcessNClayer {
 sub __SeparateSymbol {
 	my $self    = shift;
 	my $sourceL = shift;
-	my $type    = shift;                                                              # slot / hole / surface
+	my $type    = shift;    # slot / hole / surface
 	my $symbol  = shift;
 	my $depth   = shift;
 
@@ -203,7 +253,7 @@ sub __SeparateSymbol {
 	}
 	elsif ( $type eq Enums->Symbol_SLOT ) {
 
-		my @types = ("line", "arc");
+		my @types = ( "line", "arc" );
 		$f->SetTypes( \@types );
 
 		my @syms = ($symbol);
@@ -212,9 +262,8 @@ sub __SeparateSymbol {
 	}
 	elsif ( $type eq Enums->Symbol_SURFACE ) {
 
-		 my @types = ("surface");
+		my @types = ("surface");
 		$f->SetTypes( \@types );
- 
 
 	}
 
@@ -223,16 +272,17 @@ sub __SeparateSymbol {
 	}
 
 	$inCAM->COM(
-				 "sel_copy_other",
-				 "dest"         => "layer_name",
-				 "target_layer" => $lName
+		"sel_move_other",
+
+		# "dest"         => "layer_name",
+		"target_layer" => $lName
 	);
 
 	# if slot or surface, do compensation
-	if ( $type eq Enums->Enums->Symbol_SLOT || $type eq Enums->Enums->Symbol_SURFACE ) {
+	if ( $type eq Enums->Symbol_SLOT || $type eq Enums->Symbol_SURFACE ) {
 
 		CamLayer->WorkLayer( $inCAM, $lName );
-		my $lComp = CamLayer->RoutCompensation( $inCAM, $sourceL->{"gROWname"}, "document" );
+		my $lComp = CamLayer->RoutCompensation( $inCAM, $lName, "document" );
 
 		CamLayer->WorkLayer( $inCAM, $lName );
 		$inCAM->COM("sel_delete");
@@ -240,6 +290,8 @@ sub __SeparateSymbol {
 		$inCAM->COM( "merge_layers", "source_layer" => $lComp, "dest_layer" => $lName );
 		$inCAM->COM( "delete_layer", "layer" => $lComp );
 	}
+
+	return $lName;
 
 }
 
@@ -258,7 +310,13 @@ sub __GetSymbolDepth {
 
 	my $tool = ( grep { $_->{"gTOOLdrill_size"} == $toolSize } @tools )[0];
 
-	return $tool->{"userColumns"}->{"Depth"};
+	my $depth = $tool->{"userColumns"}->{"depth"};
+
+	if ( !defined $depth || $depth == 0 ) {
+		die "Depth is not defined for tool $symbol in layer " . $sourceL->{"gROWname"} . ".\n";
+	}
+
+	return $depth;
 }
 
 # Return depth of surafaces in given layer
@@ -273,13 +331,24 @@ sub __GetSurfaceDepth {
 
 	my %attHist = CamHistogram->GetAttHistogram( $inCAM, $jobId, $self->{"step"}, $l->{"gROWname"} );
 
+	unless ( defined $attHist{".depth"} ) {
+		die "No .depth in attribute in surface. \n";
+	}
+
 	my @depths = @{ $attHist{".depth"} };
 
 	unless ( scalar(@depths) ) {
-		die "No .depth attribute in surface. \n";
+		die "No .depth value in attribute in surface. \n";
 	}
 
-	return $depths[0];
+	if ( !defined $depths[0] || $depths[0] == 0 ) {
+		die "Depth is not defined for surfaces in layer " . $l->{"gROWname"} . ".\n";
+	}
+
+	# TODO chzba incam, hloubka je v inch misto mm
+	my $d = sprintf( "%.1f", $depths[0] * 25.4 );
+
+	return $d;
 }
 
 # Create layer and fill profile - simulate pcb material
@@ -413,7 +482,6 @@ sub __GetDepthTable {
 
 	return @rows;
 }
- 
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

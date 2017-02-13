@@ -113,6 +113,21 @@ sub SetTypes {
 
 }
 
+
+sub SetText {
+	my $self  = shift;
+	my $text = shift;
+ 
+	my $inCAM = $self->{"inCAM"};
+
+	$inCAM->COM(
+				 'set_filter_text',
+				 'filter_name'  => "",
+				 'text' => $text
+	);
+
+}
+
 sub AddIncludeSymbols {
 	my $self     = shift;
  	my @symbols = @{shift(@_)};

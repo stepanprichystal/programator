@@ -61,7 +61,7 @@ sub OnCheckGroupData {
 	# 2) Checking NC layers
 	my $mess = "";
 
-	unless ( LayerCheck->CheckNCLayers( $inCAM, $jobId, \$mess ) ) {
+	unless ( LayerCheck->CheckNCLayers( $inCAM, $jobId, $stepName, undef, \$mess ) ) {
 		$dataMngr->_AddErrorResult( "Checking NC layer", $mess );
 	}
 

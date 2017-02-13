@@ -30,6 +30,10 @@ sub new {
 	$self->{"czInf"} = shift;
 	
 	$self->{"output"} = shift;    # name of prepared layer in matrix
+	
+	$self->{"number"} = undef;    # when more "layerData" has similar "oriLayer" type, this is unique number
+	
+	$self->{"parent"} = undef;    # soma layer can be connect with another layer (eg drill map parent layer, contan data which are use for creaet drill map)
 
 	return $self;
 }
@@ -46,6 +50,62 @@ sub GetOutput {
 	return $self->{"output"};
 }
 
+sub GetType {
+	my $self = shift;
+
+	return $self->{"type"};
+}
+
+sub GetOriLayer {
+	my $self = shift;
+
+	return $self->{"oriLayer"};
+}
+
+sub GetNumber {
+	my $self = shift;
+	
+	return $self->{"number"}
+	
+}
+
+sub GetTitle {
+	my $self = shift;
+	my $cz = shift;
+	
+	if($cz){
+		return  $self->{"czTit"};
+	}else{
+		
+		return  $self->{"enTit"};
+	}
+}
+
+sub GetInfo {
+	my $self = shift;
+	my $cz = shift;
+	
+	if($cz){
+		return  $self->{"czInf"};
+	}else{
+		
+		return  $self->{"enInf"};
+	}
+}
+
+
+sub SetParent {
+	my $self = shift;
+
+	$self->{"parent"} = shift;
+}
+
+
+sub GetParent {
+	my $self = shift;
+
+	return $self->{"parent"};
+}
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#

@@ -15,7 +15,7 @@ use Math::Trig;
 use aliased 'Helpers::GeneralHelper';
 use aliased 'Enums::EnumsPaths';
 use aliased 'Enums::EnumsGeneral';
-use aliased 'Packages::Gerbers::ProduceData::Enums';
+use aliased 'Packages::Gerbers::OutputData::Enums';
 use aliased 'CamHelpers::CamLayer';
 use aliased 'CamHelpers::CamJob';
 use aliased 'Packages::Gerbers::OutputData::LayerData::LayerData';
@@ -31,6 +31,9 @@ use aliased 'CamHelpers::CamDrilling';
 use aliased 'CamHelpers::CamAttributes';
 use aliased 'CamHelpers::CamSymbol';
 use aliased 'CamHelpers::CamHistogram';
+use aliased 'Packages::Drilling::DrillChecking::LayerCheck';
+use aliased 'Packages::CAM::FeatureFilter::FeatureFilter';
+
 
 
 #use aliased 'Packages::SystemCall::SystemCall';
@@ -57,38 +60,54 @@ sub new {
 
 	$self->{"plateThick"} = 100;    # value of plating in holes 100 µm
 
-	$self->{"profileLim"} = undef;  # limits of pdf step
-
 	return $self;
 }
 
 sub Prepare {
-	my $self   = shift;
-	my @layers = @{ shift(@_) };
+	my $self       = shift;
+	my @layers     = @{ shift(@_) };
+	my @childSteps = @{ shift(@_) };
 
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
 	my $step  = $self->{"step"};
 
-	# Set layer info for each NC layer
+	# Set layer info for each NC layer and filter only NC board layer
 	CamDrilling->AddNCLayerType( \@layers );
 	@layers = grep { $_->{"type"} && $_->{"gROWcontext"} eq "board" } @layers;
 	@layers = grep { $_->{"gROWlayer_type"} eq "rout" || $_->{"gROWlayer_type"} eq "drill" } @layers;
-	
 	CamDrilling->AddLayerStartStop( $self->{"inCAM"}, $self->{"jobId"}, \@layers );
 
+	# Load feature histogram histogram
 	foreach my $l (@layers) {
-		
-		# Features histogram
+
 		my %fHist = CamHistogram->GetFeatuesHistogram( $inCAM, $jobId, $step, $l->{"gROWname"} );
 		$l->{"fHist"} = \%fHist;
 
-		# feature attributes histogram
+	}
+
+	# 1) Check if all parameters are ok. Such as vysledne/vrtane, one surfae depth per layer, etc..
+	$self->__CheckNCLayers( \@layers );
+
+	# 2) Remove attributes chain from surface, resize if plated surface
+	$self->__AdjustSurfaces( \@layers );
+
+	# 3) If step is originally flattened with nested steps, use DTM type vzsledne/vratne form child
+	# step, if is not set
+	$self->__SetDTMType( \@layers, \@childSteps );
+
+	# 3) Set all NC layers to finish sizes (consider type of DTM vysledne/vrtane)
+	$self->__SetFinishSizes( \@layers );
+
+	# 4) Load histograms about layer features and their attribues
+	foreach my $l (@layers) {
+
+		# a) feature attributes histogram
 		my %attHist = CamHistogram->GetAttCountHistogram( $inCAM, $jobId, $step, $l->{"gROWname"} );
 		$l->{"attHist"} = \%attHist;
 
-		# symbol histogram - combine line and arcs conut (because we use same tool)
-		my %sHist = CamHistogram->GetSymHistogram( $inCAM, $jobId, "o+1", "m", 1, 1 );
+		# b) symbol histogram - combine line and arcs conut (because we use same tool)
+		my %sHist = CamHistogram->GetSymHistogram( $inCAM, $jobId, $step, $l->{"gROWname"}, 1, 1 );
 
 		my %line_arcs = ();
 		foreach my $k ( keys %{ $sHist{"lines"} } ) {
@@ -98,21 +117,30 @@ sub Prepare {
 			$line_arcs{$k} += $sHist{"arcs"}->{$k}  if ( defined $sHist{"arcs"}->{$k} );
 		}
 		$sHist{"lines_arcs"} = \%line_arcs;
-
 		$l->{"symHist"} = \%sHist;
 
 	}
 
-	# 1) Check if all parameters are ok. Such as vysledne/vrtane, one surfae depth per layer, etc..
-
-	# 2) Remove attributes chain from surface, resize if plated surface
-	$self->__AdjustSurfaces( \@layers );
-
-	# 3) Set all NC layers to finish sizes (consider type of DTM vysledne/vrtane)
-	$self->__SetFinishSizes( \@layers );
-
-	# 4) Create layer data for NC layers
+	# 5) Create layer data for NC layers
 	$self->__PrepareLayers( \@layers );
+
+}
+
+sub __CheckNCLayers {
+	my $self   = shift;
+	my @layers = @{ shift(@_) };
+
+	my $inCAM = $self->{"inCAM"};
+	my $jobId = $self->{"jobId"};
+
+	my $mess = "";
+
+	my @layerNames = map { $_->{"gROWname"} } @layers;
+
+	unless ( LayerCheck->CheckNCLayers( $inCAM, $jobId, $self->{"step"}, \@layerNames, \$mess ) ) {
+
+		die "Can't prepare NC layers for output. NC layers contains error: $mess \n";
+	}
 
 }
 
@@ -126,13 +154,54 @@ sub __AdjustSurfaces {
 
 	foreach my $l (@layers) {
 
-		if ( $l->{"fHist"}->{"surf"} > 0 ) {
-			CamLayer->WorkLayer( $inCAM, $l->{"gROWname"} );
-			CamAttributes->DelFeatuesAttribute( $inCAM, ".rout_chain", "*" );
+		if ( $l->{"fHist"}->{"surf"} > 0 && $l->{"plated"} ) {
 
-			if ( $l->{"plated"} ) {
+			my $f = FeatureFilter->new( $inCAM, $l->{"gROWname"} );
 
-				$inCAM->COM( "sel_resize", "size" => -$self->{"plateThick"} );
+			my @types = ("surface");
+			$f->SetTypes( \@types );
+
+			# delete rout chain attribute in order resize plated survaces
+			if ( $f->Select() > 0 ) {
+
+				CamAttributes->DelFeatuesAttribute( $inCAM, ".rout_chain", "" );
+				
+				if ( $f->Select() ) { 
+					$inCAM->COM( "sel_resize", "size" => -$self->{"plateThick"} ); 
+				}
+			}
+
+			CamLayer->ClearLayers($inCAM);
+		}
+	}
+}
+
+sub __SetDTMType {
+	my $self       = shift;
+	my @layers     = @{ shift(@_) };
+	my @childSteps = @{ shift(@_) };
+
+	unless ( scalar(@childSteps) ) {
+		return 0;
+	}
+
+	my $inCAM = $self->{"inCAM"};
+	my $jobId = $self->{"jobId"};
+
+	foreach my $l (@layers) {
+
+		my $lName = $l->{"gROWname"};
+		my $DTMType = CamDTM->GetDTMUToolsType( $inCAM, $jobId, $self->{"step"}, $lName );
+
+		# if DTM type not set, find type in nested ste[s]
+		if ( $DTMType ne "vrtane" && $DTMType ne "vysledne" ) {
+
+			foreach my $s (@childSteps) {
+				my $childDTMType = CamDTM->GetDTMUToolsType( $inCAM, $jobId, $s->{"stepName"}, $lName );
+				if ( $childDTMType eq "vrtane" || $childDTMType eq "vysledne" ) {
+					CamDTM->SetDTMTable( $inCAM, $jobId, $self->{"step"}, $lName, $childDTMType );
+					last;
+				}
 			}
 		}
 	}

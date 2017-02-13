@@ -28,17 +28,32 @@ use aliased 'Packages::Polygon::Features::RouteFeatures::RouteFeatures';
 #-------------------------------------------------------------------------------------------#
 
 sub CheckNCLayers {
-	my $self  = shift;
-	my $inCAM = shift;
-	my $jobId = shift;
-	my $mess  = shift;
-
-	my $stepName = "panel";
+	my $self        = shift;
+	my $inCAM       = shift;
+	my $jobId       = shift;
+	my $stepName = shift;
+	my $layerFilter = shift;
+	my $mess        = shift;
+ 
 
 	my $result = 1;
 
 	# Get all layers
-	my @layers = ( CamJob->GetLayerByType( $inCAM, $jobId, "drill" ), CamJob->GetLayerByType( $inCAM, $jobId, "rout" ) );
+	my @allLayers = ( CamJob->GetLayerByType( $inCAM, $jobId, "drill" ), CamJob->GetLayerByType( $inCAM, $jobId, "rout" ) );
+	my @layers = ();
+
+	# Filter if exist requsted layer
+	if ($layerFilter) {
+
+		my %tmp;
+		@tmp{ @{$layerFilter} } = ();
+		@layers = grep { exists $tmp{ $_->{"gROWname"} } } @allLayers;
+
+	}
+	else {
+		@layers = @allLayers;
+	}
+ 
 
 	CamDrilling->AddNCLayerType( \@layers );
 	CamDrilling->AddLayerStartStop( $inCAM, $jobId, \@layers );
@@ -108,13 +123,13 @@ sub CheckNCLayers {
 	}
 
 	# 6) Check if depth is correctly set
-	unless ( $self->CheckContainDepth( $inCAM, $jobId, \@layers, $mess ) ) {
+	unless ( $self->CheckContainDepth( $inCAM, $jobId, $stepName,  \@layers, $mess ) ) {
 
 		$result = 0;
 	}
 
 	# 7) Check if depth is not set
-	unless ( $self->CheckContainNoDepth( $inCAM, $jobId, \@layers, $mess ) ) {
+	unless ( $self->CheckContainNoDepth( $inCAM, $jobId, $stepName, \@layers, $mess ) ) {
 
 		$result = 0;
 	}
@@ -172,7 +187,7 @@ sub CheckAttributes {
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_kMill );
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_lcMill );
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_lsMill );
-	
+
 	@layers = $self->__GetLayersByType( \@layers, \@t );
 
 	# 2) Check if rout layers has attribute rout chain
@@ -294,8 +309,7 @@ sub CheckDirTop2Bot {
 				if ( $startL == $endL ) {
 					$result = 0;
 					$$mess .=
-"Vrstva: $lName, má špatně nastavený vrták v metrixu u vrtání jádra. Vrták nesmí začínat a končit na stejné vrstvě.\n"
-					  ;
+"Vrstva: $lName, má špatně nastavený vrták v metrixu u vrtání jádra. Vrták nesmí začínat a končit na stejné vrstvě.\n";
 				}
 
 			}
@@ -355,6 +369,7 @@ sub CheckContainDepth {
 	my $self   = shift;
 	my $inCAM  = shift;
 	my $jobId  = shift;
+	my $stepName = shift;
 	my @layers = @{ shift(@_) };
 	my $mess   = shift;
 
@@ -375,7 +390,7 @@ sub CheckContainDepth {
 
 	foreach my $l (@layers) {
 
-		unless ( $self->__ToolDepthSet( $inCAM, $jobId, $l->{"gROWname"}, $mess ) ) {
+		unless ( $self->__ToolDepthSet( $inCAM, $jobId, $stepName, $l->{"gROWname"}, $mess ) ) {
 			$result = 0;
 		}
 	}
@@ -387,6 +402,7 @@ sub CheckContainNoDepth {
 	my $self   = shift;
 	my $inCAM  = shift;
 	my $jobId  = shift;
+	my $stepName = shift;
 	my @layers = @{ shift(@_) };
 	my $mess   = shift;
 
@@ -410,7 +426,7 @@ sub CheckContainNoDepth {
 
 	foreach my $l (@layers) {
 
-		unless ( $self->__ToolDepthNotSet( $inCAM, $jobId, $l->{"gROWname"}, $mess ) ) {
+		unless ( $self->__ToolDepthNotSet( $inCAM, $jobId, $stepName, $l->{"gROWname"}, $mess ) ) {
 			$result = 0;
 		}
 	}
@@ -442,10 +458,11 @@ sub __ToolDepthSet {
 	my $self      = shift;
 	my $inCAM     = shift;
 	my $jobId     = shift;
+	my $stepName = shift;
 	my $layerName = shift;
 	my $mess      = shift;
 
-	my $stepName = "panel";
+	
 
 	my $result = 1;
 
@@ -496,10 +513,10 @@ sub __ToolDepthNotSet {
 	my $self      = shift;
 	my $inCAM     = shift;
 	my $jobId     = shift;
+	my $stepName  = shift;
 	my $layerName = shift;
 	my $mess      = shift;
-
-	my $stepName = "panel";
+ 
 
 	my $result = 1;
 

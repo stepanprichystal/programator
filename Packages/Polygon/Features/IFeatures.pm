@@ -3,7 +3,7 @@
 # Description: Inteface, which  define  operation for feature parser
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::CAM::SymbolDrawing::Primitive::IPrimitive;
+package Packages::Polygon::Features::IFeatures;
 
 #3th party library
 use strict;

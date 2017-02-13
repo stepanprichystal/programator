@@ -28,8 +28,17 @@ sub GetJobLayerTitle {
 
 	my $title = "";
 
+	# outline
+	if ( $l->{"gROWname"} =~ /^o$/i ) {
+ 
+		$title = "Outline";
+		if ($cz) {
+			$title = "Obrys";
+		}
+	}
+
 	# inner layer
-	if ( $l->{"gROWname"} =~ /^v(\d)$/i ) {
+	elsif ( $l->{"gROWname"} =~ /^v(\d)$/i ) {
 
 		my $lNum = $1;
 		$title = "Inner layer number: $lNum.";
@@ -432,48 +441,48 @@ sub GetFileNameByLayer {
 	}
 	elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_plt_bDrillTop ) {
 
-		$name = "pth_" . $l->{"gROWdrl_start"} . "-" . $l->{"gROWdrl_end"} . $numInName;
+		$name = "pth_" . $l->{"gROWdrl_start"} . "-" . $l->{"gROWdrl_end"};
 
 	}
 	elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_plt_bDrillBot ) {
 
-		$name = "pth_blind_" . $l->{"gROWdrl_start"} . "-" . $l->{"gROWdrl_end"} . $numInName;
+		$name = "pth_blind_" . $l->{"gROWdrl_start"} . "-" . $l->{"gROWdrl_end"}
 	}
 	elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_plt_cDrill ) {
-		$name = "pth_core_" . $l->{"gROWdrl_start"} . "-" . $l->{"gROWdrl_end"} . $numInName;
+		$name = "pth_core_" . $l->{"gROWdrl_start"} . "-" . $l->{"gROWdrl_end"};
 	}
 	elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_plt_nMill ) {
-		$name = "mill_pth" . $numInName;
+		$name = "mill_pth";
 
 	}
 	elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_plt_bMillTop ) {
 
-		$name = "mill_pth_top" . $numInName;
+		$name = "mill_pth_top";
 
 	}
 	elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_plt_bMillBot ) {
-		$name = "mill_pth_bot" . $numInName;
+		$name = "mill_pth_bot";
 
 	}
 	elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_nMill ) {
-		$name = "mill" . $numInName;
+		$name = "mill";
 
 	}
 	elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_bMillTop ) {
-		$name = "mill_top" . $numInName;
+		$name = "mill_top";
 	}
 	elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_bMillBot ) {
-		$name = "mill_bot" . $numInName;
+		$name = "mill_bot";
 	}
 	elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_rsMill ) {
 		$name = undef;    # we do not export rs
 
 	}
 	elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_jbMillTop ) {
-		$name = "mill_core_top" . $numInName;
+		$name = "mill_core_top";
 	}
 	elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_jbMillBot ) {
-		$name = "mill_core_bot" . $numInName;
+		$name = "mill_core_bot";
 	}
 	elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_kMill ) {
 		$name = undef;

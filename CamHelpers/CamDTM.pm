@@ -2,11 +2,9 @@
 # Description: Helper module for InCAM Drill tool manager
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-
 package CamHelpers::CamDTM;
 
 #3th party library
-use Genesis;
 use strict;
 use warnings;
 
@@ -43,9 +41,12 @@ sub GetDTMUserColNames {
 
 	while ( my $row = <$f> ) {
 
-		$row =~ m/NAME=(\w*)/gi;
-		if ( $1 && $1 ne "" ) {
-			push( @names, $1 );
+		 
+		if ($row =~ m/NAME=(\w*)/gi ) {
+			
+			my $name = $1;
+			$name =~ s/\s//g;
+			push( @names, $name );
 		}
 	}
 
@@ -88,7 +89,7 @@ sub GetDTMUserColumns {
 
 	my @gTOOLuser_des = @{ $inCAM->{doinfo}{gTOOLuser_des} };
 
-	my @clmnName = CamHelpers::CamDTM->GetDTMUserColNames($inCAM);
+	my @clmnName = $self->GetDTMUserColNames($inCAM);
 
 	my @a   = ();
 	my $cnt = scalar(@gTOOLuser_des);
@@ -292,6 +293,21 @@ sub SetDTMTools {
 		$inCAM->COM( 'tools_set', layer => $layer, thickness => '0' );
 	}
 
+}
+
+
+# Set new tools to DTM
+sub SetDTMTable {
+	my $self    = shift;
+	my $inCAM   = shift;
+	my $jobId   = shift;
+	my $step    = shift;
+	my $layer   = shift;
+	my $DTMType = shift;            # vysledne, vrtane
+ 
+
+	 $inCAM->COM( 'tools_set', layer => $layer, thickness => '0', user_params => $DTMType );
+ 
 }
 
 #-------------------------------------------------------------------------------------------#

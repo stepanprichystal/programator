@@ -11,11 +11,10 @@ use strict;
 use warnings;
 
 #local library
-use aliased 'Packages::Pdf::ControlPdf::FinalPreview::LayerData::LayerData';
-use aliased 'Packages::Pdf::ControlPdf::FinalPreview::Enums';
+use aliased 'Packages::Gerbers::ProduceData::LayerData::LayerData';
 use aliased 'Enums::EnumsGeneral';
-use aliased 'CamHelpers::CamHistogram';
-use aliased 'Connectors::HeliosConnector::HegMethods';
+use aliased 'Helpers::ValueConvertor';
+use aliased 'Packages::Gerbers::OutputData::Enums';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -25,34 +24,75 @@ sub new {
 	my $self = shift;
 	$self = {};
 	bless $self;
- 
+	
+	$self->{"jobId"} = shift;
+
+
+
 	my @l = ();
 	$self->{"layers"} = \@l;
- 
+	
+	$self->{"stepName"} = undef;
 
 	return $self;
 }
 
+sub AddLayers {
+	my $self   = shift;
+	my $layers = shift;    # layer, typ of Packages::Gerbers::OutputData::LayerData::LayerData
+
+	foreach my $lOutput ( @{$layers} ) {
+
+		my $oriL = $lOutput->GetOriLayer();
+
+		my $fileName = ValueConvertor->GetFileNameByLayer($oriL);
  
-sub AddLayer{
-	my $self      = shift;
-	my $layer      = shift;
+		if ( defined $lOutput->GetNumber() ) {
+			$fileName .= "_" . $lOutput->GetNumber();
+		}
+		
+		if(  $lOutput->GetType() eq Enums->Type_DRILLMAP){
+			$fileName .= "_map";
+		}
+		
 	
-	push(@{$self->{"layers"}}, $layer);
-} 
- 
+		$fileName = $self->{"jobId"}.$fileName.".ger";
+
+		my $l = LayerData->new( $lOutput->GetType(), $fileName, $lOutput->GetTitle(), $lOutput->GetInfo(), $lOutput->GetOutput() );
+
+		push( @{ $self->{"layers"} }, $l );
+
+	}
+}
 
 sub GetLayers {
-#	my $self      = shift;
-#	my $printable = shift;
-#
-#	my @layers = @{ $self->{"layers"} };
-#
-#	@layers = grep { $_->PrintLayer() } @layers;
-#
-#	return @layers;
-}
+	my $self      = shift;
  
+	return  @{ $self->{"layers"} };
+}
+
+sub GetLayersByType {
+	my $self      = shift;
+ 	my $type      = shift;
+ 	
+ 	
+ 	my @layers = grep { $_->GetType() eq $type } @{ $self->{"layers"} };
+ 	
+	return @layers ;
+}
+
+sub GetStepName {
+	my $self      = shift;
+ 
+	return  $self->{"stepName"};
+}
+
+
+sub SetStepName {
+	my $self      = shift;
+ 
+	$self->{"stepName"} = shift;
+}
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
