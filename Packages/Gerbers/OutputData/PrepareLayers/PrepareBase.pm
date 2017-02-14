@@ -41,8 +41,7 @@ sub new {
 sub Prepare {
 	my $self   = shift;
 	my $layers = shift;
-
-
+ 
 
 	# prepare layers
 	$self->__PrepareLayers($layers);
@@ -65,17 +64,23 @@ sub __PrepareBASEBOARD {
 	my $self   = shift;
 	my @layers = @{ shift(@_) };
 	my $type   = shift;
+	
+	my $inCAM = $self->{"inCAM"};
 
 	@layers = grep { $_->{"gROWcontext"} eq "board" && $_->{"gROWlayer_type"} ne "drill" && $_->{"gROWlayer_type"} ne "rout" } @layers;
 
 	foreach my $l (@layers) {
+		
+		my $lName = GeneralHelper->GetGUID();
 
 		my $enTit = ValueConvertor->GetJobLayerTitle($l);
 		my $czTit = ValueConvertor->GetJobLayerTitle( $l, 1 );
 		my $enInf = ValueConvertor->GetJobLayerInfo($l);
 		my $czInf = ValueConvertor->GetJobLayerInfo( $l, 1 );
+		
+		$inCAM->COM( "merge_layers", "source_layer" => $l->{"gROWname"}, "dest_layer" => $lName );
 
-		my $lData = LayerData->new( $type, $l, $enTit, $czTit, $enInf, $czInf, $l->{"gROWname"} );
+		my $lData = LayerData->new( $type, $l, $enTit, $czTit, $enInf, $czInf, $lName );
 
 		$self->{"layerList"}->AddLayer($lData);
 	}

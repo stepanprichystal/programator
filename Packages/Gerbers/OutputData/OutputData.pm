@@ -17,7 +17,7 @@ use aliased 'Helpers::GeneralHelper';
 use aliased 'Packages::Gerbers::OutputData::PrepareLayers::PrepareBase';
 use aliased 'Packages::Gerbers::OutputData::PrepareLayers::PrepareNC';
 use aliased 'Packages::Gerbers::OutputData::LayerData::LayerDataList';
- 
+
 use aliased 'CamHelpers::CamStep';
 use aliased 'CamHelpers::CamHelper';
 use aliased 'CamHelpers::CamJob';
@@ -44,7 +44,8 @@ sub new {
 	$self->{"profileLim"} = \%lim;
 
 	$self->{"layerList"} = LayerDataList->new();
-	$self->{"prepareBase"} = PrepareBase->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"data_step"}, $self->{"layerList"}, $self->{"profileLim"} );
+	$self->{"prepareBase"} =
+	  PrepareBase->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"data_step"}, $self->{"layerList"}, $self->{"profileLim"} );
 	$self->{"prepareNC"} = PrepareNC->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"data_step"}, $self->{"layerList"}, $self->{"profileLim"} );
 
 	return $self;
@@ -86,6 +87,29 @@ sub GetStepName {
 	my $self = shift;
 
 	return $self->{"data_step"};
+}
+
+# After using prepared layers, delete layers and step from job
+sub Clear {
+	my $self = shift;
+
+	my $inCAM = $self->{"inCAM"};
+	my $jobId = $self->{"jobId"};
+
+	foreach my $l ( $self->GetLayers()  ) {
+
+		my $lName = $l->GetOutput();
+
+		if ( CamHelper->LayerExists( $inCAM, $jobId, $lName ) ) {
+			$inCAM->COM( "delete_layer", "layer" => $lName );
+		}
+
+		#delete if step  exist
+		if ( CamHelper->StepExists( $inCAM, $jobId, $self->{"data_step"} ) ) {
+			$inCAM->COM( "delete_entity", "job" => $jobId, "name" => $self->{"data_step"}, "type" => "step" );
+		}
+
+	}
 }
 
 sub __GetLayersForExport {
@@ -131,6 +155,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $control = OutputData->new( $inCAM, $jobId, "o+1" );
 	$control->Create( \$mess );
+	
 }
 
 1;

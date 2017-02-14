@@ -81,19 +81,31 @@ sub __PrepareNCDRILL {
 	} @layers;
 
 	foreach my $l (@layers) {
+		
+		my $lName = GeneralHelper->GetGUID();
 
 		my $enTit = ValueConvertor->GetJobLayerTitle($l);
 		my $czTit = ValueConvertor->GetJobLayerTitle( $l, 1 );
 		my $enInf = ValueConvertor->GetJobLayerInfo($l);
 		my $czInf = ValueConvertor->GetJobLayerInfo( $l, 1 );
+		
+		 $inCAM->COM(	"copy_layer",
+						 "source_job"   => $jobId,
+						 "source_step"  => $self->{"step"},
+						 "source_layer" => $l->{"gROWname"},
+						 "dest"         => "layer_name",
+						 "dest_step"    => $self->{"step"},
+						 "dest_layer"   => $lName,
+						 "mode"         => "append"
+		 );
 
-		my $lData = LayerData->new( $type, $l, $enTit, $czTit, $enInf, $czInf, $l->{"gROWname"} );
+		my $lData = LayerData->new( $type, $l, $enTit, $czTit, $enInf, $czInf, $lName );
 
 		$self->{"layerList"}->AddLayer($lData);
 
 		# Add Drill map
 
-		my $drillMap = $self->__CreateDrillMaps( $l, $l->{"gROWname"}, Enums->Type_DRILLMAP, $enTit, $czTit, $enInf, $czInf );
+		my $drillMap = $self->__CreateDrillMaps( $l, $lName, Enums->Type_DRILLMAP, $enTit, $czTit, $enInf, $czInf );
 
 		if ($drillMap) {
 			$drillMap->SetParent($lData);
@@ -123,8 +135,11 @@ sub __PrepareNCMILL {
 		my $czTit = ValueConvertor->GetJobLayerTitle( $l, 1 );
 		my $enInf = ValueConvertor->GetJobLayerInfo($l);
 		my $czInf = ValueConvertor->GetJobLayerInfo( $l, 1 );
+		
+		# Compensate layer
+		my $lComp = CamLayer->RoutCompensation($inCAM, $l->{"gROWname"}, "document");
 
-		my $lData = LayerData->new( $type, $l, $enTit, $czTit, $enInf, $czInf, $l->{"gROWname"} );
+		my $lData = LayerData->new( $type, $l, $enTit, $czTit, $enInf, $czInf, $lComp );
 
 		$self->{"layerList"}->AddLayer($lData);
 
@@ -132,7 +147,7 @@ sub __PrepareNCMILL {
 
 		# Add Drill map
 
-		my $drillMap = $self->__CreateDrillMaps( $l, $l->{"gROWname"},  Enums->Type_DRILLMAP, $enTit, $czTit, $enInf, $czInf );
+		my $drillMap = $self->__CreateDrillMaps( $l, $lComp,  Enums->Type_DRILLMAP, $enTit, $czTit, $enInf, $czInf );
 
 		if ($drillMap) {
 			$drillMap->SetParent($lData);
@@ -180,14 +195,18 @@ sub __PrepareNCMILL {
 
 		# After merging layers, merge tools in DTM
 		$inCAM->COM( "tools_merge", "layer" => $lName );
+		
+		 # Compensate layer
+		my $lComp = CamLayer->RoutCompensation($inCAM, $lName, "document");
+		$inCAM->COM("delete_layer", "layer"=> $lName);
 
-		my $lData = LayerData->new( $type, $lMain, $enTit, $czTit, $enInf, $czInf, $lName );
+		my $lData = LayerData->new( $type, $lMain, $enTit, $czTit, $enInf, $czInf, $lComp );
 
 		$self->{"layerList"}->AddLayer($lData);
 
 		# Add Drill map
 
-		my $drillMap = $self->__CreateDrillMaps( $lMain, $lName, Enums->Type_DRILLMAP, $enTit, $czTit, $enInf, $czInf );
+		my $drillMap = $self->__CreateDrillMaps( $lMain, $lComp, Enums->Type_DRILLMAP, $enTit, $czTit, $enInf, $czInf );
 
 		if ($drillMap) {
 			$drillMap->SetParent($lData);

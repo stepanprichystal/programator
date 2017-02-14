@@ -248,6 +248,7 @@ sub SetDTMTools {
 
 	my @userClmns = CamHelpers::CamDTM->GetDTMUserColNames($inCAM); # User column name
 
+	CamHelper->SetStep( $inCAM, $step );
 	CamLayer->WorkLayer( $inCAM, $layer );
 
 	$inCAM->COM('tools_tab_reset');

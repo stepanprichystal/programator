@@ -83,7 +83,7 @@ sub __Export {
 
 		my $l = shift;
 
-		my $fileName = $l->{"fileName"};
+		my $fileName = $l->{"fileName"}.".ger";
 
 		return $fileName;
 	};

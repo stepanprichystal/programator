@@ -129,7 +129,7 @@ sub __ProcessNClayer {
 
 				#compute real milled hole/line diameter
 				# TODO zmenit 90 stupnu je zde natvrdo
-				my $angle      = 120;
+				my $angle      = 90;
 				my $newDiamter = ( tan( deg2rad( $angle / 2 ) ) * $depth * 2 ) * 1000;
 
 				# change all symbols in layer to this new diameter
@@ -175,7 +175,7 @@ sub __ProcessNClayer {
 
 				#compute real milled hole/line diameter
 				# TODO ymenit 90 stupnu je zde natvrdo
-				my $angle      = 120;
+				my $angle      = 90;
 				my $newDiamter = ( tan( deg2rad( $angle / 2 ) ) * $depth * 2 ) * 1000;
 
 				# change all symbols in layer to this new diameter

@@ -24,14 +24,12 @@ sub new {
 	my $self = shift;
 	$self = {};
 	bless $self;
-	
+
 	$self->{"jobId"} = shift;
-
-
 
 	my @l = ();
 	$self->{"layers"} = \@l;
-	
+
 	$self->{"stepName"} = undef;
 
 	return $self;
@@ -43,54 +41,88 @@ sub AddLayers {
 
 	foreach my $lOutput ( @{$layers} ) {
 
-		my $oriL = $lOutput->GetOriLayer();
-
-		my $fileName = ValueConvertor->GetFileNameByLayer($oriL);
- 
-		if ( defined $lOutput->GetNumber() ) {
-			$fileName .= "_" . $lOutput->GetNumber();
+		# Process only layers, which has no parent
+		if ( $lOutput->GetParent() ) {
+			next;
 		}
-		
-		if(  $lOutput->GetType() eq Enums->Type_DRILLMAP){
-			$fileName .= "_map";
-		}
-		
-	
-		$fileName = $self->{"jobId"}.$fileName.".ger";
 
-		my $l = LayerData->new( $lOutput->GetType(), $fileName, $lOutput->GetTitle(), $lOutput->GetInfo(), $lOutput->GetOutput() );
+		my $name       = "";
+		my $nameSuffix = 0;
 
+		$self->__GetFileName( $lOutput, \$name, \$nameSuffix );
+
+		my $l = LayerData->new( $lOutput->GetType(), $name, $nameSuffix, $lOutput->GetTitle(), $lOutput->GetInfo(), $lOutput->GetOutput() );
 		push( @{ $self->{"layers"} }, $l );
 
+		# Process parent layers
+
+		foreach my $child ( @{$layers} ) {
+
+			if ( defined $child->GetParent() && $child->GetParent() == $lOutput ) {
+
+				my $lChild = LayerData->new( $child->GetType(), $name, $nameSuffix, $child->GetTitle(), $child->GetInfo(), $child->GetOutput() );
+				push( @{ $self->{"layers"} }, $lChild );
+
+				$lChild->{"parent"} = $l;
+			}
+		}
 	}
 }
 
+sub __GetFileName {
+	my $self       = shift;
+	my $lOutput    = shift;
+	my $name       = shift;
+	my $nameSuffix = shift;
+
+	# 1) get new name
+	my $oriL = $lOutput->GetOriLayer();
+
+	$$name = $self->{"jobId"} . ValueConvertor->GetFileNameByLayer($oriL);
+
+#	if ( $lOutput->GetType() eq Enums->Type_DRILLMAP ) {
+#		$$name .= "_map";
+#	}
+
+	# 2) verify if same name exist (consider only layer without parent)
+
+	my @same = grep { !defined $_->{"parent"} && $_->{"name"} eq $$name } @{ $self->{"layers"} };
+
+	if ( scalar(@same) ) {
+
+		if ( scalar(@same) == 1 ) {
+			$same[0]->{"nameSuffix"} = 1;
+		}
+
+		$$nameSuffix = scalar(@same) + 1;
+	}
+
+}
+
 sub GetLayers {
-	my $self      = shift;
- 
-	return  @{ $self->{"layers"} };
+	my $self = shift;
+
+	return @{ $self->{"layers"} };
 }
 
 sub GetLayersByType {
-	my $self      = shift;
- 	my $type      = shift;
- 	
- 	
- 	my @layers = grep { $_->GetType() eq $type } @{ $self->{"layers"} };
- 	
-	return @layers ;
+	my $self = shift;
+	my $type = shift;
+
+	my @layers = grep { $_->GetType() eq $type } @{ $self->{"layers"} };
+
+	return @layers;
 }
 
 sub GetStepName {
-	my $self      = shift;
- 
-	return  $self->{"stepName"};
+	my $self = shift;
+
+	return $self->{"stepName"};
 }
 
-
 sub SetStepName {
-	my $self      = shift;
- 
+	my $self = shift;
+
 	$self->{"stepName"} = shift;
 }
 

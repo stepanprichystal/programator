@@ -86,6 +86,9 @@ sub Create {
 	$self->{"outputInfo"}->Output( $self->{"layerList"} );
 
 	$self->__ZipFiles();
+	
+	# clear job
+	#$outData->Clear();
 
 	return 1;
 }
@@ -144,12 +147,13 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	
 	my $inCAM = InCAM->new();
 
-	my $jobId = "f52456";
+	my $jobId = "f60789";
 
 	my $mess = "";
 
 	my $control = ProduceData->new( $inCAM, $jobId, "o+1" );
 	$control->Create(  );
+	
  
 }
 

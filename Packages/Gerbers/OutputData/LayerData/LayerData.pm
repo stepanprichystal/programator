@@ -31,9 +31,10 @@ sub new {
 	
 	$self->{"output"} = shift;    # name of prepared layer in matrix
 	
-	$self->{"number"} = undef;    # when more "layerData" has similar "oriLayer" type, this is unique number
-	
-	$self->{"parent"} = undef;    # soma layer can be connect with another layer (eg drill map parent layer, contan data which are use for creaet drill map)
+ 
+ 	# Property for type Type_DRILLMAP
+ 	
+	$self->{"parent"} = undef;    # layer, which drill map is based on
 
 	return $self;
 }

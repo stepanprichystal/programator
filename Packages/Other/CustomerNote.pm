@@ -117,6 +117,17 @@ sub ExportPdfControl {
 
 }
 
+sub ExportDataControl {
+	my $self = shift;
+  
+	if(!$self->Exist()){
+		return undef;
+	}
+  
+	return $self->{"notes"}->{"ExportDataControl"};
+
+}
+
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#

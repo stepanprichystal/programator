@@ -68,7 +68,7 @@ sub Output {
 
 	foreach my $l ( $layerList->GetLayersByType( EnumsOutput->Type_BOARDLAYERS ) ) {
 
-		push( @lines, $self->__CompleteLine( " - ". $l->GetName(), $l->GetTitle() . $self->__GetInfo($l) ) );
+		push( @lines, $self->__CompleteLine( " - ". $l->GetName().".ger", $l->GetTitle() . $self->__GetInfo($l) ) );
 
 	}
 
@@ -79,7 +79,7 @@ sub Output {
 
 	foreach my $l ( ( $layerList->GetLayersByType( EnumsOutput->Type_NCLAYERS ), $layerList->GetLayersByType( EnumsOutput->Type_NCDEPTHLAYERS ) ) ) {
 
-		push( @lines, $self->__CompleteLine( " - ".$l->GetName(), $l->GetTitle() . $self->__GetInfo($l) ) );
+		push( @lines, $self->__CompleteLine( " - ".$l->GetName().".ger", $l->GetTitle() . $self->__GetInfo($l) ) );
 
 	}
 
@@ -90,7 +90,7 @@ sub Output {
 
 	foreach my $l ( ( $layerList->GetLayersByType( EnumsOutput->Type_OUTLINE ), $layerList->GetLayersByType( EnumsOutput->Type_DRILLMAP ) ) ) {
 
-		push( @lines, $self->__CompleteLine( " - ".$l->GetName(), $l->GetTitle() . $self->__GetInfo($l) ) );
+		push( @lines, $self->__CompleteLine( " - ".$l->GetName().".ger", $l->GetTitle() . $self->__GetInfo($l) ) );
 
 	}
 
