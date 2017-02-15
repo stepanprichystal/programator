@@ -89,8 +89,9 @@ sub RefreshGUI {
 	#refresh group form
 	$self->{"form"}->SetExportCooper( $groupData->GetExportCooper() );
 	$self->{"form"}->SetExportET( $groupData->GetExportET() );
-	$self->{"form"}->SetExportETStep( $groupData->GetExportETStep() );
+	$self->{"form"}->SetCooperStep( $groupData->GetCooperStep() );
 	$self->{"form"}->SetExportControl( $groupData->GetExportControl() );
+	$self->{"form"}->SetControlStep( $groupData->GetControlStep() );
  
 
 	#refresh wrapper
@@ -114,8 +115,9 @@ sub GetGroupData {
 
 		$groupData->SetExportCooper( $frm->GetExportCooper() );
 		$groupData->SetExportET( $frm->GetExportET() );
-		$groupData->SetExportETStep( $frm->GetExportETStep() );	
+		$groupData->SetCooperStep( $frm->GetCooperStep() );	
 		$groupData->SetExportControl( $frm->GetExportControl() );
+		$groupData->SetControlStep( $frm->GetControlStep() );	
  	
 	}
 	else {

@@ -62,8 +62,9 @@ sub OnExportGroupData {
  
  	$exportData->SetExportCooper( $groupData->GetExportCooper() );
 	$exportData->SetExportET( $groupData->GetExportET() );
-	$exportData->SetExportETStep( $groupData->GetExportETStep() );
+	$exportData->SetCooperStep( $groupData->GetCooperStep() );
   	$exportData->SetExportControl( $groupData->GetExportControl() );
+  	$exportData->SetControlStep( $groupData->GetControlStep() );
  
   	
 	return $exportData;

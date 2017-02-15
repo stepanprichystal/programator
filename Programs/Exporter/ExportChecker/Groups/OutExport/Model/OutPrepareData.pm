@@ -79,14 +79,14 @@ sub OnPrepareGroupData {
 	$groupData->SetExportCooper(0);
 	$groupData->SetExportET(1);
 
-	my $etStep      = "o+1";
+	my $cooperStep      = "o+1";
 	my $mpanelExist = $defaultInfo->StepExist("mpanel");
 
 	if ($mpanelExist) {
-		$etStep = "mpanel";
+		$cooperStep = "mpanel";
 	}
 
-	$groupData->SetExportETStep($etStep);
+	$groupData->SetCooperStep($cooperStep);
 
 	my $exportControl = 0;
 
@@ -95,6 +95,8 @@ sub OnPrepareGroupData {
 	}
 
 	$groupData->SetExportControl($exportControl);
+	
+	$groupData->SetControlStep($cooperStep);
 
 	return $groupData;
 }

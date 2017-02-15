@@ -148,6 +148,13 @@ sub GetWarningStr {
 	return $str;
 }
 
+
+sub GetErrors {
+	my $self = shift;
+
+	return  @{ $self->{"errors"} };
+}
+
 sub GetErrorCount {
 	my $self = shift;
 

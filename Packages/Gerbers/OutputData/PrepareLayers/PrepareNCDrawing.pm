@@ -27,7 +27,7 @@ use aliased 'CamHelpers::CamToolDepth';
 use aliased 'Packages::CAM::FeatureFilter::FeatureFilter';
 use aliased 'Packages::Gerbers::OutputData::Drawing::Drawing';
 use aliased 'Packages::CAM::SymbolDrawing::Point';
-
+use aliased 'Enums::EnumsDrill';
 use aliased 'CamHelpers::CamHistogram';
 use aliased 'Helpers::JobHelper';
 use aliased 'CamHelpers::CamSymbol';
@@ -304,13 +304,13 @@ sub __GetSymbolDepth {
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
 
-	my @tools = CamDTM->GetDTMColumns( $inCAM, $jobId, $self->{"step"}, $sourceL->{"gROWname"} );
+	my @tools = CamDTM->GetDTMTools( $inCAM, $jobId, $self->{"step"}, $sourceL->{"gROWname"} );
 
 	my ($toolSize) = $symbol =~ /^\w(\d*)/;
 
 	my $tool = ( grep { $_->{"gTOOLdrill_size"} == $toolSize } @tools )[0];
 
-	my $depth = $tool->{"userColumns"}->{"depth"};
+	my $depth = $tool->{"userColumns"}->{EnumsDrill->DTMclmn_DEPTH};
 
 	if ( !defined $depth || $depth == 0 ) {
 		die "Depth is not defined for tool $symbol in layer " . $sourceL->{"gROWname"} . ".\n";

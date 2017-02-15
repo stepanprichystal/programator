@@ -29,6 +29,7 @@ use aliased 'Programs::Exporter::ExportUtility::Groups::PreExport::PreUnit';
 use aliased 'Programs::Exporter::ExportUtility::Groups::ScoExport::ScoUnit';
 use aliased 'Programs::Exporter::ExportUtility::Groups::GerExport::GerUnit';
 use aliased 'Programs::Exporter::ExportUtility::Groups::PdfExport::PdfUnit';
+use aliased 'Programs::Exporter::ExportUtility::Groups::OutExport::OutUnit';
 #-------------------------------------------------------------------------------------------#
 #  Package methods, requested by IUnit interface
 #-------------------------------------------------------------------------------------------#
@@ -117,6 +118,11 @@ sub __GetUnitClass {
 	elsif ( $unitId eq UnitEnums->UnitId_PDF ) {
 
 		$unit = PdfUnit->new($unitId, $jobId);
+
+	}
+	elsif ( $unitId eq UnitEnums->UnitId_OUT ) {
+
+		$unit = OutUnit->new($unitId, $jobId);
 
 	}
 	

@@ -74,7 +74,7 @@ sub __SetLayout {
 	# BUILD STRUCTURE OF LAYOUT
  
 	$szMain->Add( $cooper, 0, &Wx::wxEXPAND );
-	$szMain->Add( 5, 5, 0, &Wx::wxEXPAND );
+	$szMain->Add( 10, 10, 0, &Wx::wxEXPAND );
 	$szMain->Add( $control, 0, &Wx::wxEXPAND );
 
 	$self->SetSizer($szMain);
@@ -101,30 +101,33 @@ sub __SetLayoutCooper {
 	
 	my $exportCooperChb = Wx::CheckBox->new( $statBox, -1, "Export", &Wx::wxDefaultPosition );
 	
+	 my $cooperStepTxt     = Wx::StaticText->new( $statBox, -1, "Step", &Wx::wxDefaultPosition );
 	 my $exportEtTxt     = Wx::StaticText->new( $statBox, -1, "Export ET", &Wx::wxDefaultPosition );
-	 my $etStepTxt     = Wx::StaticText->new( $statBox, -1, "ET step", &Wx::wxDefaultPosition );
 	
 	
-	my $exportETChb = Wx::CheckBox->new( $statBox, -1, "Export", &Wx::wxDefaultPosition );
+	
+	my $exportETChb = Wx::CheckBox->new( $statBox, -1, "", &Wx::wxDefaultPosition );
 	
 	my @steps = CamStep->GetAllStepNames( $self->{"inCAM"}, $self->{"jobId"} );
 	my $last = $steps[ scalar(@steps) - 1 ];
-	my $etStepCb     = Wx::ComboBox->new( $statBox, -1, $last, &Wx::wxDefaultPosition, [ 70, 20 ], \@steps, &Wx::wxCB_READONLY );
+	my $cooperStepCb     = Wx::ComboBox->new( $statBox, -1, $last, &Wx::wxDefaultPosition, [ 70, 22 ], \@steps, &Wx::wxCB_READONLY );
 	
 	# SET EVENTS
 
 	Wx::Event::EVT_CHECKBOX( $exportCooperChb, -1, sub { $self->__OnExportCoopChange(@_) } );
-	Wx::Event::EVT_CHECKBOX( $exportETChb, -1, sub { $self->__OnExportETChange(@_) } );
+	 
  
 	# BUILD STRUCTURE OF LAYOUT
  
 	$szRowMain1->Add( $exportCooperChb, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
 	
-	$szRowMain2->Add( $exportEtTxt, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
-	$szRowMain2->Add( $exportETChb, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
+	$szRowMain2->Add( $cooperStepTxt, 50, &Wx::wxEXPAND | &Wx::wxALL, 0 );
+	$szRowMain2->Add( $cooperStepCb, 50, &Wx::wxEXPAND | &Wx::wxALL, 0 );
+	
+	$szRowMain3->Add( $exportEtTxt, 50, &Wx::wxEXPAND | &Wx::wxALL, 0 );
+	$szRowMain3->Add( $exportETChb, 50, &Wx::wxEXPAND | &Wx::wxALL, 0 );
 
-	$szRowMain3->Add( $etStepTxt, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
-	$szRowMain3->Add( $etStepCb, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
+
 
 	$szStatBox->Add( $szRowMain1, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
 	$szStatBox->Add( 10, 10, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
@@ -134,7 +137,7 @@ sub __SetLayoutCooper {
 	# Set References
 	$self->{"exportCooperChb"} = $exportCooperChb;
 	$self->{"exportETChb"}     = $exportETChb;
-	$self->{"etStepCb"}  = $etStepCb;
+	$self->{"cooperStepCb"}  = $cooperStepCb;
 	
 	return $szStatBox;
 } 
@@ -149,55 +152,52 @@ sub __SetLayoutControl {
 	my $statBox = Wx::StaticBox->new( $parent, -1, 'Control data' );
 	my $szStatBox = Wx::StaticBoxSizer->new( $statBox, &Wx::wxVERTICAL );
 
-	my $szRowMain1 = Wx::BoxSizer->new(&Wx::wxVERTICAL);
+	
+	my $szRowMain1 = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
+	my $szRowMain2 = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
 
 	# DEFINE CONTROLS
 	
 	my $exportControlChb = Wx::CheckBox->new( $statBox, -1, "Export", &Wx::wxDefaultPosition );
+	
+	 my $controlStepTxt     = Wx::StaticText->new( $statBox, -1, "Step", &Wx::wxDefaultPosition );
+
+	my @steps = CamStep->GetAllStepNames( $self->{"inCAM"}, $self->{"jobId"} );
+	my $last = $steps[ scalar(@steps) - 1 ];
+	my $controlStepCb     = Wx::ComboBox->new( $statBox, -1, $last, &Wx::wxDefaultPosition, [ 70, 22 ], \@steps, &Wx::wxCB_READONLY );
 
 	# SET EVENTS
+	
+	Wx::Event::EVT_CHECKBOX( $exportControlChb, -1, sub { $self->__OnExportControlChange(@_) } );
 
 	# BUILD STRUCTURE OF LAYOUT
  
 	$szRowMain1->Add( $exportControlChb, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
+	
+	$szRowMain2->Add( $controlStepTxt, 50, &Wx::wxEXPAND | &Wx::wxALL, 0 );
+	$szRowMain2->Add( $controlStepCb, 50, &Wx::wxEXPAND | &Wx::wxALL, 0 );
  
 	$szStatBox->Add( $szRowMain1, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
 	$szStatBox->Add( 10, 10, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
+	$szStatBox->Add( $szRowMain2, 1, &Wx::wxEXPAND | &Wx::wxALL, 0 );
  
 
 	# Set References
 	$self->{"exportControlChb"} = $exportControlChb;
- 
+ 	$self->{"controlStepCb"} = $controlStepCb;
 	return $szStatBox;
 }
 
 sub __OnExportCoopChange {
 	my $self = shift;
 
-	if ( $self->{"exportCooperChb"}->IsChecked() ) {
-
-		$self->{"exportETChb"}->Enable();
-		$self->{"etStepCb"}->Enable();		 
-	}
-	else {
-		
-		$self->{"exportETChb"}->Disable();
-		$self->{"etStepCb"}->Disable();	
- 	
-	}
+	$self->DisableControls();
 }
 
-sub __OnExportETChange {
+sub __OnExportControlChange {
 	my $self = shift;
-
-	if ( $self->{"exportETChb"}->IsChecked() ) {
-
-		$self->{"etStepCb"}->Enable();		 
-	}
-	else {
 		
-		$self->{"etStepCb"}->Disable();	
-	}
+	$self->DisableControls();
 }
 
   
@@ -209,6 +209,26 @@ sub DisableControls {
 	my $self = shift;
 
 	my $defaultInfo = $self->{"defaultInfo"};
+	
+	if ( $self->{"exportCooperChb"}->IsChecked() ) {
+
+		$self->{"exportETChb"}->Enable();
+		$self->{"cooperStepCb"}->Enable();	
+
+	}
+	else {
+		$self->{"exportETChb"}->Disable();
+		$self->{"cooperStepCb"}->Disable();	
+	}
+	
+	if ( $self->{"exportControlChb"}->IsChecked() ) {
+
+		$self->{"controlStepCb"}->Enable();	
+	}
+	else {
+		
+		$self->{"controlStepCb"}->Disable();	
+	}
  
 }
 
@@ -238,6 +258,23 @@ sub GetExportCooper {
 	}
 }
  
+ 
+# Cooperation step ===========================================================
+
+sub SetCooperStep {
+	my $self  = shift;
+	my $val  = shift;
+	
+	$self->{"cooperStepCb"}->SetValue($val);
+	 
+} 
+
+sub GetCooperStep {
+	my $self  = shift;
+	
+	return $self->{"cooperStepCb"}->GetValue();
+} 
+ 
 # Export ET ===========================================================
 
 sub SetExportET {
@@ -261,21 +298,7 @@ sub GetExportET {
 } 
 
 
-# Electric step ===========================================================
 
-sub SetExportETStep {
-	my $self  = shift;
-	my $val  = shift;
-	
-	$self->{"etStepCb"}->SetValue($val);
-	 
-} 
-
-sub GetExportETStep {
-	my $self  = shift;
-	
-	return $self->{"etStepCb"}->GetValue();
-}
 
 # Export control ===========================================================
 
@@ -299,6 +322,22 @@ sub GetExportControl {
 	}
 }
 
+
+# Cooperation step ===========================================================
+
+sub SetControlStep {
+	my $self  = shift;
+	my $val  = shift;
+	
+	$self->{"controlStepCb"}->SetValue($val);
+	 
+} 
+
+sub GetControlStep {
+	my $self  = shift;
+	
+	return $self->{"controlStepCb"}->GetValue();
+}
  
 
 1;

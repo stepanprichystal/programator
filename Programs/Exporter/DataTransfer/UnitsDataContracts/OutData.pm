@@ -42,6 +42,21 @@ sub GetExportCooper {
 	return $self->{"data"}->{"exportCooper"};
 }
 
+
+# Cooperation step
+sub SetCooperStep {
+	my $self  = shift;
+	$self->{"data"}->{"cooperStep"} = shift;
+} 
+
+sub GetCooperStep {
+	my $self  = shift;
+	my $value = shift;
+	
+	return $self->{"data"}->{"cooperStep"};
+}
+
+
 # export electric test for cooper
 sub SetExportET {
 	my $self  = shift;
@@ -53,18 +68,7 @@ sub GetExportET {
 	my $value = shift;
 	return $self->{"data"}->{"exportET"};
 }
-
-# Electric step
-sub SetExportETStep {
-	my $self  = shift;
-	$self->{"data"}->{"exportETStep"} = shift;
-} 
-
-sub GetExportETStep {
-	my $self  = shift;
-	my $value = shift;
-	return $self->{"data"}->{"exportETStep"};
-}
+ 
  
 # export data control
 sub SetExportControl {
@@ -77,6 +81,19 @@ sub GetExportControl {
 	my $self  = shift;
 	my $value = shift;
 	return $self->{"data"}->{"exportControl"};
+}
+
+# Control data step
+sub SetControlStep {
+	my $self  = shift;
+	$self->{"data"}->{"controlStep"} = shift;
+} 
+
+sub GetControlStep {
+	my $self  = shift;
+	my $value = shift;
+	
+	return $self->{"data"}->{"controlStep"};
 }
  
 #-------------------------------------------------------------------------------------------#

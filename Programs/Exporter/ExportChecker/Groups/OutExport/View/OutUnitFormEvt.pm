@@ -28,8 +28,7 @@ sub new {
 	my $wrapper = $self->{"wrapper"};
 
 	# Provided handlers
-	my $ref = $wrapper->can('PlotRowSettChanged');
-	$self->_AddHandler( $ref , Enums->Event_plot_rowChange );
+	 
 
 	# Provided events
 

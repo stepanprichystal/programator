@@ -147,7 +147,7 @@ sub __PrepareDrillMapsLayer {
 
 	foreach my $step (@steps) {
 
-		my @pressFit = CamDTM->GetDTMColumnsByType( $inCAM, $jobId, $step->{"stepName"}, $layer, "press_fit" );
+		my @pressFit = CamDTM->GetDTMToolsByType( $inCAM, $jobId, $step->{"stepName"}, $layer, "press_fit" );
 
 		if ( scalar(@pressFit) ) {
 			

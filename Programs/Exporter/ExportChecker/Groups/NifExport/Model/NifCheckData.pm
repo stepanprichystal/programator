@@ -352,7 +352,7 @@ sub __CheckPressfitTools {
 
 	foreach my $l (@layers) {
 
-		my @tools = CamDTM->GetDTMColumnsByType( $inCAM, $jobId, "panel", $l, "press_fit", 1 );
+		my @tools = CamDTM->GetDTMToolsByType( $inCAM, $jobId, "panel", $l, "press_fit", 1 );
 
 		foreach my $t (@tools) {
 

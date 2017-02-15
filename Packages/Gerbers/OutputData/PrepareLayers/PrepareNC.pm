@@ -33,6 +33,7 @@ use aliased 'CamHelpers::CamSymbol';
 use aliased 'CamHelpers::CamHistogram';
 use aliased 'Packages::Drilling::DrillChecking::LayerCheck';
 use aliased 'Packages::CAM::FeatureFilter::FeatureFilter';
+use aliased 'Enums::EnumsDrill';
 
 
 
@@ -191,14 +192,14 @@ sub __SetDTMType {
 	foreach my $l (@layers) {
 
 		my $lName = $l->{"gROWname"};
-		my $DTMType = CamDTM->GetDTMUToolsType( $inCAM, $jobId, $self->{"step"}, $lName );
+		my $DTMType = CamDTM->GetDTMToolsByType( $inCAM, $jobId, $self->{"step"}, $lName );
 
 		# if DTM type not set, find type in nested ste[s]
-		if ( $DTMType ne "vrtane" && $DTMType ne "vysledne" ) {
+		if ( $DTMType ne EnumsDrill->DTM_VRTANE && $DTMType ne EnumsDrill->DTM_VYSLEDNE ) {
 
 			foreach my $s (@childSteps) {
-				my $childDTMType = CamDTM->GetDTMUToolsType( $inCAM, $jobId, $s->{"stepName"}, $lName );
-				if ( $childDTMType eq "vrtane" || $childDTMType eq "vysledne" ) {
+				my $childDTMType = CamDTM->GetDTMToolsByType( $inCAM, $jobId, $s->{"stepName"}, $lName );
+				if ( $childDTMType eq EnumsDrill->DTM_VRTANE || $childDTMType eq EnumsDrill->DTM_VYSLEDNE ) {
 					CamDTM->SetDTMTable( $inCAM, $jobId, $self->{"step"}, $lName, $childDTMType );
 					last;
 				}
@@ -216,15 +217,20 @@ sub __SetFinishSizes {
 	my $jobId = $self->{"jobId"};
 
 	foreach my $l (@layers) {
+		
+		# except score latyer
+		if($l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_score){
+			next;
+		}
 
 		my $lName = $l->{"gROWname"};
 
 		# Prepare tool table for drill map and final sizes of data (depand on column DSize in DTM)
 
-		my @tools = CamDTM->GetDTMColumns( $inCAM, $jobId, $self->{"step"}, $lName );
-		my $DTMType = CamDTM->GetDTMUToolsType( $inCAM, $jobId, $self->{"step"}, $lName );
+		my @tools = CamDTM->GetDTMTools( $inCAM, $jobId, $self->{"step"}, $lName );
+		my $DTMType = CamDTM->GetDTMToolsByType( $inCAM, $jobId, $self->{"step"}, $lName );
 
-		if ( $DTMType ne "vrtane" && $DTMType ne "vysledne" ) {
+		if ( $DTMType ne EnumsDrill->DTM_VRTANE && $DTMType ne EnumsDrill->DTM_VYSLEDNE ) {
 			die "Typ v Drill tool manageru (vysledne/vrtane) neni nastaven u vrstvy: '" . $lName . "' ";
 		}
 
@@ -243,12 +249,12 @@ sub __SetFinishSizes {
 
 			if ( !defined $t->{"gTOOLfinish_size"} || $t->{"gTOOLfinish_size"} == 0 || $t->{"gTOOLfinish_size"} eq "" ) {
 
-				if ( $DTMType eq "vysledne" ) {
+				if ( $DTMType eq EnumsDrill->DTM_VYSLEDNE ) {
 
 					$t->{"gTOOLfinish_size"} = $t->{"gTOOLdrill_size"} - $self->{"plateThick"};    # 100µm - this is size of plating
 
 				}
-				elsif ( $DTMType eq "vrtane" ) {
+				elsif ( $DTMType eq EnumsDrill->DTM_VRTANE ) {
 					$t->{"gTOOLfinish_size"} = $t->{"gTOOLdrill_size"};
 				}
 
@@ -261,7 +267,7 @@ sub __SetFinishSizes {
 
 		foreach my $t (@tools) {
 
-			if ( $DTMType eq "vrtane" && $l->{"plated"} ) {
+			if ( $DTMType eq EnumsDrill->DTM_VRTANE && $l->{"plated"} ) {
 				$t->{"gTOOLdrill_size"} = $t->{"gTOOLfinish_size"} - $self->{"plateThick"};
 			}
 			else {

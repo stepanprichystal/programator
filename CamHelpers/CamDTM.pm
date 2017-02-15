@@ -139,7 +139,7 @@ sub GetDTMUserColumns {
 
 # Return info about tool in DTM
 # Result: array of hashes. Each has contain info about row in DTM
-sub GetDTMColumns {
+sub GetDTMTools {
 	my $self    = shift;
 	my $inCAM   = shift;
 	my $jobId   = shift;
@@ -199,7 +199,7 @@ sub GetDTMColumns {
 }
 
 # Returnt tool from DTM by type
-sub GetDTMColumnsByType {
+sub GetDTMToolsByType {
 	my $self    = shift;
 	my $inCAM   = shift;
 	my $jobId   = shift;
@@ -208,7 +208,7 @@ sub GetDTMColumnsByType {
 	my $type    = shift;    # standard, plated, non_plated, press_fit
 	my $breakSR = shift;
 
-	my @tools = $self->GetDTMColumns( $inCAM, $jobId, $step, $layer, $breakSR );
+	my @tools = $self->GetDTMTools( $inCAM, $jobId, $step, $layer, $breakSR );
 
 	@tools = grep { $_->{"gTOOLtype2"} eq $type } @tools;
 
@@ -216,7 +216,7 @@ sub GetDTMColumnsByType {
 }
 
 # Returnt tool type of DTM vrtane/vysledne
-sub GetDTMUToolsType {
+sub GetDTMToolsByType {
 	my $self  = shift;
 	my $inCAM = shift;
 	my $jobId = shift;
@@ -325,8 +325,8 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	#my $step  = "mpanel_10up";
 
-	my @result = CamDTM->GetDTMColumns( $inCAM, $jobId, "o+1", "m" );
-	@result = CamDTM->GetDTMColumnsByType( $inCAM, $jobId, "o+1", "m", "press_fit" );
+	my @result = CamDTM->GetDTMTools( $inCAM, $jobId, "o+1", "m" );
+	@result = CamDTM->GetDTMToolsByType( $inCAM, $jobId, "o+1", "m", "press_fit" );
 
 	#my $self             = shift;
 

@@ -40,6 +40,7 @@ sub Run {
 	my $self  = shift;
 	my $inCAM = shift;
 	my $jobId = shift;
+	
 
 	$self->{"defaultInfo"} = DefaultInfo->new( $inCAM, $jobId );
 

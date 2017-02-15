@@ -88,7 +88,7 @@ sub __Export {
 		return $fileName;
 	};
 
-	ExportLayers->ExportLayers2( $resultItemGer, $inCAM, $stepName, \@hashLayers, $self->{"filesDir"}, $nameFunc );
+	ExportLayers->ExportLayers2( $resultItemGer, $inCAM, $stepName, \@hashLayers, $self->{"filesDir"}, $nameFunc, 1,1 );
 
 	$self->_OnItemResult($resultItemGer);
 }

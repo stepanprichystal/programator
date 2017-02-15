@@ -25,6 +25,7 @@ use aliased 'CamHelpers::CamStep';
 use aliased 'CamHelpers::CamHelper';
 use aliased 'CamHelpers::CamJob';
 use aliased 'Packages::Gerbers::OutputData::OutputData';
+use aliased 'Packages::ItemResult::Enums' => "EnumsResult";
 
 #-------------------------------------------------------------------------------------------#
 #  Interface
@@ -38,6 +39,8 @@ sub new {
 	$self->{"inCAM"} = shift;
 	$self->{"jobId"} = shift;
 	$self->{"step"}  = shift;
+	
+	$self->{"produceDataResult"} = $self->_GetNewItem("Produce data");
 
 	my $filesDir = EnumsPaths->Client_INCAMTMPOTHER . GeneralHelper->GetGUID()."\\";
 	 mkdir($filesDir) or die "Can't create dir: " . $filesDir . $_;
@@ -47,7 +50,7 @@ sub new {
 	$self->{"outputInfo"}   = OutputInfo->new( $self->{"inCAM"}, $self->{"jobId"}, $filesDir );
 	
 	
-	$self->{"outputLayers"}->{"onItemResult"}->Add( sub { $self->_OnItemResult(@_) } );
+	$self->{"outputLayers"}->{"onItemResult"}->Add( sub { $self->__OnLayersResult(@_) } );
 	
 	$self->{"filesDir"} = $filesDir;
 	$self->{"outputZip"} = EnumsPaths->Client_INCAMTMPOTHER.GeneralHelper->GetGUID().".zip";
@@ -88,8 +91,11 @@ sub Create {
 	$self->__ZipFiles();
 	
 	# clear job
-	#$outData->Clear();
+	$outData->Clear();
+ 
 
+	$self->_OnItemResult($self->{"produceDataResult"});
+	
 	return 1;
 }
 
@@ -98,9 +104,19 @@ sub Create {
 sub GetOutput {
 	my $self = shift;
 
-	return $self->{"outputZip"}->GetOutput();
+	return $self->{"outputZip"};
 }
 
+
+sub __OnLayersResult{
+	my $self = shift;
+	my $item = shift;
+	
+	if($item->Result() eq EnumsResult->ItemResult_Fail){
+		
+		$self->{"produceDataResult"}->AddErrors($item->GetErrors());
+	}
+}
 
 
 sub __ZipFiles {
@@ -147,7 +163,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	
 	my $inCAM = InCAM->new();
 
-	my $jobId = "f60789";
+	my $jobId = "f52456";
 
 	my $mess = "";
 

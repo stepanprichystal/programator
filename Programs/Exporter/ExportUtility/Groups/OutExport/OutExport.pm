@@ -47,11 +47,11 @@ sub Init {
  
 	my $exportCooper =  $exportData->GetExportCooper();
 	my $exportEt =  $exportData->GetExportET();
-	my $exportETStep =  $exportData->GetExportETStep();
+	my $cooperStep =  $exportData->GetCooperStep();
 	my $exportControl =  $exportData->GetExportControl();
- 
+ 	my $controlStep =  $exportData->GetControlStep();
 	
-	my $mngr  = OutMngr->new( $inCAM, $jobId, $exportCooper, $exportEt, $exportETStep, $exportControl);
+	my $mngr  = OutMngr->new( $inCAM, $jobId, $exportCooper, $cooperStep, $exportEt, $exportControl, $controlStep);
 	
 	$mngr->{"onItemResult"}->Add( sub { $self->_OnItemResultHandler(@_) } );
 	

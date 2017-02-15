@@ -163,7 +163,7 @@ sub ExportLayers2 {
 	}
 
 	# 1) export to TMP directory
-	$self->ExportLayers( $resultItem, $inCAM, $step, \@layers, EnumsPaths->Client_INCAMTMPOTHER, "", $suffixFunc );
+	$self->ExportLayers( $resultItem, $inCAM, $step, \@layers, EnumsPaths->Client_INCAMTMPOTHER, "", $suffixFunc, $breakSR, $breakSymbol );
 
 	# 2) move to finish dir and rename
 	foreach my $l (@layers) {
@@ -172,7 +172,7 @@ sub ExportLayers2 {
 
 		if ( -e $file ) {
 
-			move( $file, $archivePath . "\\" . $nameFunc->($l) );
+			move( $file, $archivePath . "\\" . $nameFunc->($l) ); 
 		}
 	}
 
