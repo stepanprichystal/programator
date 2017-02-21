@@ -45,7 +45,7 @@ sub PlatedAreaExceed {
 		my %layer = ( "gROWname" => "m" );
 		my @layers = ( \%layer );
 
-		CamDrilling->AddHistogramValues( $inCAM, $jobId, \@layers );
+		CamDrilling->AddHistogramValues( $inCAM, $jobId,$stepName, \@layers );
 
 		if ( $layer{"maxTool"} && $layer{"maxTool"} > 5000 ) {
 

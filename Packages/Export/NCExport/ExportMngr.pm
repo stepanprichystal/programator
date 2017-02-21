@@ -52,8 +52,8 @@ sub new {
 	my @nplt = CamDrilling->GetNPltNCLayers( $self->{"inCAM"}, $self->{"jobId"} );
 	$self->{"npltLayers"} = \@nplt;
 
-	CamDrilling->AddHistogramValues( $self->{"inCAM"}, $self->{"jobId"}, $self->{"pltLayers"} );
-	CamDrilling->AddHistogramValues( $self->{"inCAM"}, $self->{"jobId"}, $self->{"npltLayers"} );
+	CamDrilling->AddHistogramValues( $self->{"inCAM"}, $self->{"jobId"},$self->{"stepName"}, $self->{"pltLayers"} );
+	CamDrilling->AddHistogramValues( $self->{"inCAM"}, $self->{"jobId"}, $self->{"stepName"},$self->{"npltLayers"} );
 
 	# Filter layers, if export single
 	if ( $self->{"exportSingle"} ) {

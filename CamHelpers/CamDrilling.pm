@@ -476,6 +476,7 @@ sub AddHistogramValues {
 	my $self   = shift;
 	my $inCAM  = shift;
 	my $jobId  = shift;
+	my $step  = shift;
 	my $layers = shift;    #specify layers
 
 	for ( my $i = 0 ; $i < scalar( @{$layers} ) ; $i++ ) {
@@ -487,7 +488,7 @@ sub AddHistogramValues {
 					  "units"           => 'mm',
 					  "angle_direction" => 'ccw',
 					  "entity_type"     => 'layer',
-					  "entity_path"     => "$jobId/panel/$lName",
+					  "entity_path"     => "$jobId/$step/$lName",
 					  "data_type"       => 'SYMS_HIST',
 					  "options"         => "break_sr"
 		);
