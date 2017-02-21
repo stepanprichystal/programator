@@ -13,6 +13,7 @@ use warnings;
 use aliased 'Enums::EnumsPaths';
 use aliased 'CamHelpers::CamHelper';
 use aliased 'CamHelpers::CamLayer';
+use aliased 'Enums::EnumsDrill';
 
 #-------------------------------------------------------------------------------------------#
 #   Package methods
@@ -41,9 +42,8 @@ sub GetDTMUserColNames {
 
 	while ( my $row = <$f> ) {
 
-		 
-		if ($row =~ m/NAME=(\w*)/gi ) {
-			
+		if ( $row =~ m/NAME=(\w*)/gi ) {
+
 			my $name = $1;
 			$name =~ s/\s//g;
 			push( @names, $name );
@@ -106,7 +106,18 @@ sub GetDTMUserColumns {
 
 		for ( my $j = 0 ; $j < scalar(@clmnName) ; $j++ ) {
 
-			$info{ $clmnName[$j] } = $clmnVal[$j];
+			if ( $clmnName[$j] eq EnumsDrill->DTMclmn_DEPTH ) {
+				my $depth = $clmnVal[$j];
+				if ( defined $depth ) {
+					$depth =~ s/,/\./;
+					$depth = sprintf( "%.2f", $depth );
+					$info{ $clmnName[$j] } = $depth;
+				}
+
+			}
+			else {
+				$info{ $clmnName[$j] } = $clmnVal[$j];
+			}
 
 			#print "YDEYDE";
 		}
@@ -216,7 +227,7 @@ sub GetDTMToolsByType {
 }
 
 # Returnt tool type of DTM vrtane/vysledne
-sub GetDTMToolsByType {
+sub GetDTMType {
 	my $self  = shift;
 	my $inCAM = shift;
 	my $jobId = shift;
@@ -246,12 +257,17 @@ sub SetDTMTools {
 	my @tools   = @{ shift(@_) };
 	my $DTMType = shift;            # vysledne, vrtane
 
-	my @userClmns = CamHelpers::CamDTM->GetDTMUserColNames($inCAM); # User column name
+	my @userClmns = CamHelpers::CamDTM->GetDTMUserColNames($inCAM);    # User column name
 
 	CamHelper->SetStep( $inCAM, $step );
 	CamLayer->WorkLayer( $inCAM, $layer );
 
+	unless ( defined $DTMType ) {
+		$DTMType = $self->GetDTMType( $inCAM, $jobId, $step, $layer );
+	}
+
 	$inCAM->COM('tools_tab_reset');
+
 
 	foreach my $t (@tools) {
 
@@ -262,16 +278,18 @@ sub SetDTMTools {
 
 		# Prepare user column values
 		my @vals = ();
-		foreach my $userClmn (@userClmns){
-			
+		foreach my $userClmn (@userClmns) {
+
 			my $v = $t->{"userColumns"}->{$userClmn};
-			unless(defined $v){
+			unless ( defined $v ) {
 				$v = "";
 			}
-			push (@vals, $v);
+			push( @vals, $v );
 		}
-		
+
 		my $userColumns = join( "\\;", @vals );
+
+		
 
 		$inCAM->COM(
 					 'tools_tab_add',
@@ -283,19 +301,51 @@ sub SetDTMTools {
 					 "bit"         => $t->{"gTOOLbit"},
 					 "finish_size" => $t->{"gTOOLfinish_size"},
 					 "drill_size"  => $t->{"gTOOLdrill_size"},
+					 "shape"       => $t->{"gTOOLshape"},
 					 "user_des"    => $userColumns
 		);
+
+		#		$inCAM->INFO(
+		#					  units           => 'mm',
+		#					  angle_direction => 'ccw',
+		#					  entity_type     => 'layer',
+		#					  entity_path     => "$jobId/$step/$layer",
+		#					  data_type       => 'TOOL',
+		#					  options         => "break_sr"
+		#		);
+
+		 
+
+		
 	}
 
-	if ($DTMType) {
-		$inCAM->COM( 'tools_set', layer => $layer, thickness => '0', user_params => $DTMType );
-	}
-	else {
-		$inCAM->COM( 'tools_set', layer => $layer, thickness => '0' );
-	}
+$inCAM->COM( 'tools_set', layer => $layer, thickness => '0', user_params => $DTMType );
+		 
+		 # toto tady musi byt, jinak po tools_set nefunguje spravne shape slot/hole v DTM
+		$inCAM->COM( 'tools_show', "layer" => "$layer");
+		#$inCAM->COM('tools_recalc');
+		
+#				$inCAM->INFO(
+#							  units           => 'mm',
+#							  angle_direction => 'ccw',
+#							  entity_type     => 'layer',
+#							  entity_path     => "$jobId/$step/$layer",
+#							  data_type       => 'TOOL',
+#							  options         => "break_sr"
+#				);
+				
+				#print 1;
+
+
+	#$inCAM->COM( 'tools_set', layer => $layer, thickness => '0', user_params => $DTMType );
+
+	#$inCAM->COM('tools_recalc');
+
+	#print STDERR "ddd";
+
+	# smayat
 
 }
-
 
 # Set new tools to DTM
 sub SetDTMTable {
@@ -304,11 +354,10 @@ sub SetDTMTable {
 	my $jobId   = shift;
 	my $step    = shift;
 	my $layer   = shift;
-	my $DTMType = shift;            # vysledne, vrtane
- 
+	my $DTMType = shift;    # vysledne, vrtane
 
-	 $inCAM->COM( 'tools_set', layer => $layer, thickness => '0', user_params => $DTMType );
- 
+	$inCAM->COM( 'tools_set', layer => $layer, thickness => '0', user_params => $DTMType );
+
 }
 
 #-------------------------------------------------------------------------------------------#

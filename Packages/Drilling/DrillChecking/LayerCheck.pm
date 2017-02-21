@@ -14,14 +14,12 @@ use List::MoreUtils qw(uniq);
 
 #use aliased 'Helpers::GeneralHelper';
 use aliased 'Enums::EnumsGeneral';
-
-#use aliased 'CamHelpers::CamHelper';
-#use aliased 'Helpers::FileHelper';
-use aliased 'CamHelpers::CamToolDepth';
+ 
 use aliased 'CamHelpers::CamDrilling';
 use aliased 'CamHelpers::CamJob';
 use aliased 'CamHelpers::CamHistogram';
 use aliased 'Packages::Polygon::Features::RouteFeatures::RouteFeatures';
+use aliased 'Packages::CAM::UniDTM::UniDTM';
 
 #-------------------------------------------------------------------------------------------#
 #  Script methods
@@ -31,10 +29,9 @@ sub CheckNCLayers {
 	my $self        = shift;
 	my $inCAM       = shift;
 	my $jobId       = shift;
-	my $stepName = shift;
+	my $stepName    = shift;
 	my $layerFilter = shift;
 	my $mess        = shift;
- 
 
 	my $result = 1;
 
@@ -53,12 +50,11 @@ sub CheckNCLayers {
 	else {
 		@layers = @allLayers;
 	}
- 
 
 	CamDrilling->AddNCLayerType( \@layers );
 	CamDrilling->AddLayerStartStop( $inCAM, $jobId, \@layers );
 
-	# Add histogram
+	# Add histogram and uni DTM
 
 	foreach my $l (@layers) {
 
@@ -77,6 +73,8 @@ sub CheckNCLayers {
 			$l->{"feats"} = \@f;
 
 		}
+
+		$l->{"uniDTM"} = UniDTM->new( $inCAM, $jobId, $stepName, $l->{"gROWname"}, 1 );
 
 	}
 
@@ -121,14 +119,21 @@ sub CheckNCLayers {
 
 		$result = 0;
 	}
+	
+	# 6) Check if tool parameters are set correctly
+	unless ( $self->CheckToolParameters( $inCAM, $jobId, $stepName, \@layers, $mess ) ) {
 
-	# 6) Check if depth is correctly set
-	unless ( $self->CheckContainDepth( $inCAM, $jobId, $stepName,  \@layers, $mess ) ) {
+		$result = 0;
+	}
+	
+
+	# 7) Check if depth is correctly set
+	unless ( $self->CheckContainDepth( $inCAM, $jobId, $stepName, \@layers, $mess ) ) {
 
 		$result = 0;
 	}
 
-	# 7) Check if depth is not set
+	# 8) Check if depth is not set
 	unless ( $self->CheckContainNoDepth( $inCAM, $jobId, $stepName, \@layers, $mess ) ) {
 
 		$result = 0;
@@ -365,13 +370,34 @@ sub CheckDirBot2Top {
 	return $result;
 }
 
-sub CheckContainDepth {
-	my $self   = shift;
-	my $inCAM  = shift;
-	my $jobId  = shift;
+# Check if tools are unique within while layer, check if all necessary parameters are set
+sub CheckToolParameters {
+	my $self     = shift;
+	my $inCAM    = shift;
+	my $jobId    = shift;
 	my $stepName = shift;
-	my @layers = @{ shift(@_) };
-	my $mess   = shift;
+	my @layers   = @{ shift(@_) };
+	my $mess     = shift;
+
+	my $result = 1;
+ 
+	foreach my $l (@layers) {
+
+		unless ( $l->{"uniDTM"}->CheckTools($mess) ) {
+			$result = 0;
+		}
+	}
+
+	return $result;
+}
+
+sub CheckContainDepth {
+	my $self     = shift;
+	my $inCAM    = shift;
+	my $jobId    = shift;
+	my $stepName = shift;
+	my @layers   = @{ shift(@_) };
+	my $mess     = shift;
 
 	my $result = 1;
 
@@ -390,7 +416,7 @@ sub CheckContainDepth {
 
 	foreach my $l (@layers) {
 
-		unless ( $self->__ToolDepthSet( $inCAM, $jobId, $stepName, $l->{"gROWname"}, $mess ) ) {
+		unless ( $l->{"uniDTM"}->GetChecks()->CheckToolDepthSet($mess) ) {
 			$result = 0;
 		}
 	}
@@ -399,12 +425,12 @@ sub CheckContainDepth {
 }
 
 sub CheckContainNoDepth {
-	my $self   = shift;
-	my $inCAM  = shift;
-	my $jobId  = shift;
+	my $self     = shift;
+	my $inCAM    = shift;
+	my $jobId    = shift;
 	my $stepName = shift;
-	my @layers = @{ shift(@_) };
-	my $mess   = shift;
+	my @layers   = @{ shift(@_) };
+	my $mess     = shift;
 
 	my $result = 1;
 
@@ -426,12 +452,13 @@ sub CheckContainNoDepth {
 
 	foreach my $l (@layers) {
 
-		unless ( $self->__ToolDepthNotSet( $inCAM, $jobId, $stepName, $l->{"gROWname"}, $mess ) ) {
+		unless ( $l->{"uniDTM"}->GetChecks()->CheckToolDepthNotSet($mess) ) {
 			$result = 0;
 		}
 	}
 
 	return $result;
+
 }
 
 sub __GetLayersByType {
@@ -453,89 +480,7 @@ sub __GetLayersByType {
 	}
 	return @matchL;
 }
-
-sub __ToolDepthSet {
-	my $self      = shift;
-	my $inCAM     = shift;
-	my $jobId     = shift;
-	my $stepName = shift;
-	my $layerName = shift;
-	my $mess      = shift;
-
-	
-
-	my $result = 1;
-
-	#get depths for all diameter
-	my @toolDepths = CamToolDepth->GetToolDepths( $inCAM, $jobId, $stepName, $layerName );
-
-	$inCAM->INFO(
-				  units       => 'mm',
-				  entity_type => 'layer',
-				  entity_path => "$jobId/$stepName/$layerName",
-				  data_type   => 'TOOL',
-				  parameters  => 'drill_size+shape',
-				  options     => "break_sr"
-	);
-	my @toolSize  = @{ $inCAM->{doinfo}{gTOOLdrill_size} };
-	my @toolShape = @{ $inCAM->{doinfo}{gTOOLshape} };
-
-	# 1) Check if there are same tools
-	my @uniq = uniq @toolSize;
-
-	if ( scalar(@uniq) < scalar(@toolSize) ) {
-
-		$result = 0;
-		$$mess .= "Layer: $layerName, contain more tools with same tool-size. Tool size has to be unique in Drill tool table. \n ";
-	}
-
-	# 2) check if tool depth is set
-	for ( my $i = 0 ; $i < scalar(@toolSize) ; $i++ ) {
-
-		my $tSize = $toolSize[$i];
-
-		#for each hole diameter, get depth (in mm)
-		my $tDepth;
-
-		my $prepareOk = CamToolDepth->PrepareToolDepth( $tSize, \@toolDepths, \$tDepth );
-		unless ($prepareOk) {
-
-			$result = 0;
-			$$mess .= "Layer: $layerName, depth is not valid/set for tool: $tSize mm.\n ";
-
-		}
-	}
-
-	return $result;
-}
-
-sub __ToolDepthNotSet {
-	my $self      = shift;
-	my $inCAM     = shift;
-	my $jobId     = shift;
-	my $stepName  = shift;
-	my $layerName = shift;
-	my $mess      = shift;
  
-
-	my $result = 1;
-
-	#get depths for all diameter
-	my @toolDepths = CamToolDepth->GetToolDepths( $inCAM, $jobId, $stepName, $layerName );
-
-	foreach my $d (@toolDepths) {
-
-		if ( defined $d->{"depth"} ) {
-
-			my $t = $d->{"drill_size"};
-
-			$result = 0;
-			$$mess .= "Layer: $layerName, has defined tool depth for tool: $t mm. This layer can't contain depths.\n ";
-		}
-	}
-
-	return $result;
-}
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
@@ -553,7 +498,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $mess = "";
 
-	my $result = LayerCheck->CheckNCLayers( $inCAM, $jobId, \$mess );
+	my $result = LayerCheck->CheckNCLayers( $inCAM, $jobId, "o+1", undef, \$mess );
 
 	print STDERR "Result is $result \n";
 

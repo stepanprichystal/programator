@@ -91,7 +91,7 @@ sub Create {
 	$self->__ZipFiles();
 	
 	# clear job
-	$outData->Clear();
+	#$outData->Clear();
  
 
 	$self->_OnItemResult($self->{"produceDataResult"});
@@ -167,7 +167,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $mess = "";
 
-	my $control = ProduceData->new( $inCAM, $jobId, "o+1" );
+	my $control = ProduceData->new( $inCAM, $jobId, "mpanel" );
 	$control->Create(  );
 	
  

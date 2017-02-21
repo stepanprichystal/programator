@@ -21,7 +21,6 @@ use aliased 'Packages::Gerbers::OutputData::LayerData::LayerData';
 use aliased 'Helpers::ValueConvertor';
 use aliased 'CamHelpers::CamFilter';
 use aliased 'CamHelpers::CamDTM';
-use aliased 'CamHelpers::CamToolDepth';
  
 #use aliased 'CamHelpers::CamFilter';
 #use aliased 'CamHelpers::CamHelper';
@@ -235,7 +234,7 @@ sub __CreateDrillMaps {
 	# 1) copy pads to new layer
 	my $lNamePads = GeneralHelper->GetGUID();
 
-	my $f = FeatureFilter->new( $inCAM, $drillLayer );
+	my $f = FeatureFilter->new( $inCAM, $jobId, $drillLayer );
 	my @types = ("pad");
 	$f->SetTypes( \@types );
 
@@ -272,7 +271,7 @@ sub __CreateDrillMaps {
 		"table_align"     => "bottom"
 	);
 	
-	$f = FeatureFilter->new( $inCAM, $lNameMap );
+	$f = FeatureFilter->new( $inCAM, $jobId, $lNameMap );
 	@types = ("text");
 	$f->SetTypes( \@types );
 	$f->SetText("*Drill*");

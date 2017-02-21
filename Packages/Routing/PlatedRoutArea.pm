@@ -222,10 +222,10 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	use aliased 'Packages::Routing::PlatedRoutArea';
 	use aliased 'Packages::InCAM::InCAM';
 
-	my $jobId = "f61619";
+	my $jobId = "f52456";
 	my $inCAM = InCAM->new();
 
-	my $step = "panel";
+	my $step = "o+1";
 
 	my $max = PlatedRoutArea->PlatedAreaExceed( $inCAM, $jobId, $step );
 

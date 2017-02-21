@@ -46,7 +46,7 @@ sub new {
 	$self->{"layerList"} = LayerDataList->new();
 	$self->{"prepareBase"} =
 	  PrepareBase->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"data_step"}, $self->{"layerList"}, $self->{"profileLim"} );
-	$self->{"prepareNC"} = PrepareNC->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"data_step"}, $self->{"layerList"}, $self->{"profileLim"} );
+	$self->{"prepareNC"} = PrepareNC->new( $self->{"inCAM"}, $self->{"jobId"},  $self->{"step"}, $self->{"data_step"}, $self->{"layerList"}, $self->{"profileLim"} );
 
 	return $self;
 }

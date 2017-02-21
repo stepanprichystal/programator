@@ -11,6 +11,8 @@ use warnings;
 
 #local library
 use aliased 'CamHelpers::CamLayer';
+use aliased 'CamHelpers::CamAttributes';
+
 
 #-------------------------------------------------------------------------------------------#
 #  Public method
@@ -22,6 +24,7 @@ sub new {
 	bless $self;
 
 	$self->{"inCAM"}     = shift;
+	$self->{"jobId"}     = shift;
 	$self->{"layerName"} = shift;
 	
 	 
@@ -154,6 +157,67 @@ sub AddExcludeSymbols {
 
 }
 
+
+sub AddIncludeAtt {
+	my $self       = shift;
+	my $attName    = shift;
+	my $attVal     = shift;
+	my $refenrence = shift;    # if set, attributes are set for reference filter
+
+	unless ( defined $attName ) {
+		return 0;
+	}
+	
+	my $inCAM = $self->{"inCAM"};
+	my $jobId = $self->{"jobId"};
+	
+	# decide, which type is attribute
+	my %attrInfo = CamAttributes->GetAttrParamsByName($inCAM, $jobId, $attName);
+
+	my $min_int_val = 0;
+	my $max_int_val = 0;
+	my $min_float_val = 0;
+	my $max_float_val = 0;
+	my $option = "";
+	my $text = "";
+	
+	if($attrInfo{"gATRtype"} eq "int"){
+		
+		$min_int_val = $attVal->{"min"};
+		$max_int_val = $attVal->{"max"};
+		
+	}elsif($attrInfo{"gATRtype"} eq "float"){
+		
+		$min_float_val = $attVal->{"min"};
+		$max_float_val = $attVal->{"max"};
+		
+	}elsif($attrInfo{"gATRtype"} eq "option"){
+		
+		$option = $attVal;
+		
+	}elsif($attrInfo{"gATRtype"} eq "text"){
+		
+		$text = $attVal;	
+	}
+	
+
+	$inCAM->COM(
+				 'set_filter_attributes',
+				 filter_name => !$refenrence ? 'popup' : 'ref_select',
+				 exclude_attributes => 'no',
+				 condition          => 'yes',
+				 attribute          => $attName,
+				 min_int_val        => $min_int_val,
+				 max_int_val        => $max_int_val,
+				 min_float_val      => $min_float_val,
+				 max_float_val      => $max_float_val,
+				 option             => $option,
+				 text               => $text
+	);
+
+}
+
+
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#
@@ -164,17 +228,21 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	use aliased 'Packages::InCAM::InCAM';
 
 	my $inCAM = InCAM->new();
-	my $jobId = "f13608";
+	my $jobId = "f52456";
 	
-	my $f = FeatureFilter->new($inCAM, "m");
+	my $f = FeatureFilter->new($inCAM,$jobId, "fzc");
 	
-	$f->SetPolarity("positive");
+	#$f->SetPolarity("positive");
 	
-	my @types = ("surface", "pad");
-	$f->SetTypes(\@types);
+	#my @types = ("surface", "pad");
+	#$f->SetTypes(\@types);
 	
-	my @syms = ("r500", "r1");
-	$f->AddIncludeSymbols(  \["r500", "r1"] );
+	#my @syms = ("r500", "r1");
+	#$f->AddIncludeSymbols(  \["r500", "r1"] );
+ 
+	
+	 my %num = ("min"=> 1100/1000 / 25.4 ,   "max"=> 1100/1000 / 25.4);
+	$f->AddIncludeAtt(".rout_tool", \%num );	
 	
 	print $f->Select();
 	

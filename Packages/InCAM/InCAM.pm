@@ -923,7 +923,7 @@ sub parse {
 			$self->{doinfo}{$var} = [@words];
 
 			# TODO odkomentovat
-			$self->{$var} = [@words];
+			#$self->{$var} = [@words];
 		}
 		else {
 			$value =~ s/\Q<^M>/\cM/g;
@@ -932,7 +932,7 @@ sub parse {
 			$self->{doinfo}{$var} = $value;
 
 			# TODO odkomentovat
-			$self->{$var} = $value;
+			#$self->{$var} = $value;
 		}
 	}
 	close($fCSH_FILE);
@@ -941,6 +941,9 @@ sub parse {
 
 sub INFO {
 	my ($self) = shift;
+	
+	# before new info command, clear old responzes
+	$self->{doinfo} = ();
 
 	unless ( $self->{"connected"} ) {
 		return;

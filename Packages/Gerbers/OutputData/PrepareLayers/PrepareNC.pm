@@ -22,11 +22,10 @@ use aliased 'Packages::Gerbers::OutputData::LayerData::LayerData';
 use aliased 'Helpers::ValueConvertor';
 use aliased 'CamHelpers::CamFilter';
 use aliased 'CamHelpers::CamDTM';
-use aliased 'CamHelpers::CamToolDepth';
 
 use aliased 'Packages::Gerbers::OutputData::PrepareLayers::PrepareNCDrawing';
 use aliased 'Packages::Gerbers::OutputData::PrepareLayers::PrepareNCStandard';
-
+use aliased 'CamHelpers::CamHelper';
 use aliased 'CamHelpers::CamDrilling';
 use aliased 'CamHelpers::CamAttributes';
 use aliased 'CamHelpers::CamSymbol';
@@ -34,8 +33,6 @@ use aliased 'CamHelpers::CamHistogram';
 use aliased 'Packages::Drilling::DrillChecking::LayerCheck';
 use aliased 'Packages::CAM::FeatureFilter::FeatureFilter';
 use aliased 'Enums::EnumsDrill';
-
-
 
 #use aliased 'Packages::SystemCall::SystemCall';
 
@@ -50,6 +47,7 @@ sub new {
 
 	$self->{"inCAM"}      = shift;
 	$self->{"jobId"}      = shift;
+	$self->{"oriStep"}       = shift;
 	$self->{"step"}       = shift;
 	$self->{"layerList"}  = shift;
 	$self->{"profileLim"} = shift;
@@ -84,8 +82,8 @@ sub Prepare {
 
 		my %fHist = CamHistogram->GetFeatuesHistogram( $inCAM, $jobId, $step, $l->{"gROWname"} );
 		$l->{"fHist"} = \%fHist;
-
 	}
+ 
 
 	# 1) Check if all parameters are ok. Such as vysledne/vrtane, one surfae depth per layer, etc..
 	$self->__CheckNCLayers( \@layers );
@@ -138,7 +136,27 @@ sub __CheckNCLayers {
 
 	my @layerNames = map { $_->{"gROWname"} } @layers;
 
-	unless ( LayerCheck->CheckNCLayers( $inCAM, $jobId, $self->{"step"}, \@layerNames, \$mess ) ) {
+	unless ( LayerCheck->CheckNCLayers( $inCAM, $jobId, $self->{"oriStep"}, \@layerNames, \$mess ) ) {
+
+		# Do clean up
+
+		my $inCAM = $self->{"inCAM"};
+		my $jobId = $self->{"jobId"};
+
+		foreach my $l ( $self->{"layerList"}->GetLayers() ) {
+
+			my $lName = $l->GetOutput();
+
+			if ( CamHelper->LayerExists( $inCAM, $jobId, $lName ) ) {
+				$inCAM->COM( "delete_layer", "layer" => $lName );
+			}
+
+			#delete if step  exist
+			if ( CamHelper->StepExists( $inCAM, $jobId, $self->{"step"} ) ) {
+				$inCAM->COM( "delete_entity", "job" => $jobId, "name" => $self->{"step"}, "type" => "step" );
+			}
+
+		}
 
 		die "Can't prepare NC layers for output. NC layers contains error: $mess \n";
 	}
@@ -157,7 +175,7 @@ sub __AdjustSurfaces {
 
 		if ( $l->{"fHist"}->{"surf"} > 0 && $l->{"plated"} ) {
 
-			my $f = FeatureFilter->new( $inCAM, $l->{"gROWname"} );
+			my $f = FeatureFilter->new( $inCAM, $jobId, $l->{"gROWname"} );
 
 			my @types = ("surface");
 			$f->SetTypes( \@types );
@@ -166,9 +184,9 @@ sub __AdjustSurfaces {
 			if ( $f->Select() > 0 ) {
 
 				CamAttributes->DelFeatuesAttribute( $inCAM, ".rout_chain", "" );
-				
-				if ( $f->Select() ) { 
-					$inCAM->COM( "sel_resize", "size" => -$self->{"plateThick"} ); 
+
+				if ( $f->Select() ) {
+					$inCAM->COM( "sel_resize", "size" => -$self->{"plateThick"} );
 				}
 			}
 
@@ -192,13 +210,13 @@ sub __SetDTMType {
 	foreach my $l (@layers) {
 
 		my $lName = $l->{"gROWname"};
-		my $DTMType = CamDTM->GetDTMToolsByType( $inCAM, $jobId, $self->{"step"}, $lName );
+		my $DTMType = CamDTM->GetDTMType( $inCAM, $jobId, $self->{"step"}, $lName );
 
 		# if DTM type not set, find type in nested ste[s]
 		if ( $DTMType ne EnumsDrill->DTM_VRTANE && $DTMType ne EnumsDrill->DTM_VYSLEDNE ) {
 
 			foreach my $s (@childSteps) {
-				my $childDTMType = CamDTM->GetDTMToolsByType( $inCAM, $jobId, $s->{"stepName"}, $lName );
+				my $childDTMType = CamDTM->GetDTMType( $inCAM, $jobId, $s->{"stepName"}, $lName );
 				if ( $childDTMType eq EnumsDrill->DTM_VRTANE || $childDTMType eq EnumsDrill->DTM_VYSLEDNE ) {
 					CamDTM->SetDTMTable( $inCAM, $jobId, $self->{"step"}, $lName, $childDTMType );
 					last;
@@ -217,9 +235,9 @@ sub __SetFinishSizes {
 	my $jobId = $self->{"jobId"};
 
 	foreach my $l (@layers) {
-		
+
 		# except score latyer
-		if($l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_score){
+		if ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_score ) {
 			next;
 		}
 
@@ -228,7 +246,7 @@ sub __SetFinishSizes {
 		# Prepare tool table for drill map and final sizes of data (depand on column DSize in DTM)
 
 		my @tools = CamDTM->GetDTMTools( $inCAM, $jobId, $self->{"step"}, $lName );
-		my $DTMType = CamDTM->GetDTMToolsByType( $inCAM, $jobId, $self->{"step"}, $lName );
+		my $DTMType = CamDTM->GetDTMType( $inCAM, $jobId, $self->{"step"}, $lName );
 
 		if ( $DTMType ne EnumsDrill->DTM_VRTANE && $DTMType ne EnumsDrill->DTM_VYSLEDNE ) {
 			die "Typ v Drill tool manageru (vysledne/vrtane) neni nastaven u vrstvy: '" . $lName . "' ";
@@ -277,6 +295,15 @@ sub __SetFinishSizes {
 
 		# 3) Set new values to DTM
 		CamDTM->SetDTMTools( $inCAM, $jobId, $self->{"step"}, $lName, \@tools );
+
+		$inCAM->INFO(
+					  units           => 'mm',
+					  angle_direction => 'ccw',
+					  entity_type     => 'layer',
+					  entity_path     => "$jobId/" . $self->{"step"} . "/$lName",
+					  data_type       => 'TOOL',
+					  options         => "break_sr"
+		);
 
 		# 4) If some tools same, merge it
 		$inCAM->COM( "tools_merge", "layer" => $lName );

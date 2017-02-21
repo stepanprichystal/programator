@@ -20,7 +20,8 @@ use aliased 'Enums::EnumsPaths';
 use aliased 'Packages::Pdf::ControlPdf::FinalPreview::Enums';
 use aliased 'CamHelpers::CamLayer';
 use aliased 'CamHelpers::CamJob';
-use aliased 'CamHelpers::CamToolDepth';
+use aliased 'Packages::CAM::UniDTM::UniDTM';
+use aliased 'Packages::CAM::UniDTM::Enums' => "DTMEnums";
 use aliased 'CamHelpers::CamFilter';
 use aliased 'CamHelpers::CamHelper';
 use aliased 'CamHelpers::CamSymbol';
@@ -497,7 +498,7 @@ sub __CheckCountersink {
 	my $result = 1;
 
 	#get depths for all diameter
-	my @toolDepths = CamToolDepth->GetToolDepths( $inCAM, $jobId, $stepName, $lName );
+	 
 
 	$inCAM->INFO(
 				  units       => 'mm',
@@ -514,18 +515,16 @@ sub __CheckCountersink {
 	for ( my $i = 0 ; $i < scalar(@toolSize) ; $i++ ) {
 
 		my $tSize = $toolSize[$i];
-
+ 
 		#for each hole diameter, get depth (in mm)
 		my $tDepth;
 
 		if ( $tSize == 6500 ) {
-			my $prepareOk = CamToolDepth->PrepareToolDepth( $tSize, \@toolDepths, \$tDepth );
-
-			unless ($prepareOk) {
-
-				die "$tSize doesn't has set deep of milling/drilling.\n";
-			}
-
+			
+			my $uniDTM = UniDTM->new( $inCAM, $jobId, $stepName, $lName, 1 );
+ 
+			$tDepth = $uniDTM->GetToolDepth($tSize, $toolShape[$i]);
+ 
 			#vypocitej realne odebrani materialu na zaklade hloubkz pojezdu/vrtani
 			# TODO tady se musi dotahnout skutecnz uhel, ne jen 90 stupnu pokazde - ceka az budou kompletne funkcni vrtacky
 			my $toolAngl = 90;

@@ -100,6 +100,95 @@ sub FlatternLayer {
 	$self->ClearLayers($inCAM);
 }
 
+
+
+## flattern layer
+## create tem flattern layer, delete original layer and place flatern data to original layer
+#sub FlatternNCLayer {
+#	my $self      = shift;
+#	my $inCAM     = shift;
+#	my $jobId     = shift;
+#	my $stepName  = shift;
+#	my $layerName = shift;
+#
+#
+#	# 1)  When lazer is flattening, chech if nested step has some "?" or "0" value in finish size
+#	# if so, values, from DTM user columns are not coppied, so change "?" to proper value
+#	my @childSteps = CamStepRepeat->GetUniqueNestedStepAndRepeat( $inCAM, $jobId, $step );
+#
+#		foreach my $stepChild (@childSteps) {
+#
+#			my $change = 0;
+#
+#			my @tools = CamDTM->GetDTMTools( $inCAM, $jobId, $stepChild->{"stepName"}, $layerName );
+#			my $DTMType = CamDTM->GetDTMType( $inCAM, $jobId, $stepChild->{"stepName"}, $layerName );
+#
+#			print STDERR "\n\n DTM TYPE IS $DTMType \n\n";
+#
+#			foreach my $t (@tools) {
+#
+#				if ( !defined $t->{"gTOOLfinish_size"} || $t->{"gTOOLfinish_size"} eq "" || $t->{"gTOOLfinish_size"} == 0 ) {
+#
+#					$t->{"gTOOLfinish_size"} = $t->{"gTOOLdrill_size"};
+#
+#					if ( $DTMType eq EnumsDrill->DTM_VYSLEDNE ) {
+#						$t->{"gTOOLfinish_size"} -= 100;
+#					}
+#
+#					$change = 1;
+#				}
+#			}
+#
+#			if ($change) {
+#
+#				print STDERR "\n\n SET TOOL\n\n";
+#
+#				CamDTM->SetDTMTools( $inCAM, $jobId, $stepChild->{"stepName"}, $layerName, \@tools, $DTMType );
+#			}
+#		}
+#
+#		CamHelper->SetStep( $inCAM, $step );
+#		
+#		# 2) 		# if rout layer, change to drill, in other hand user column will not be considered (InCAM BUG)
+#		my $cahngedToDrill = 0;
+#		my $layerType = CamHelper->LayerType( $inCAM, $jobId, $layerName );
+#
+#		if ( $layerType eq "rout" ) {
+#
+#			$cahngedToDrill = 1;
+#			CamLayer->SetLayerTypeLayer( $inCAM, $jobId, $layerName, "drill" );
+#		}
+# 
+#	my $tmpLayer = GeneralHelper->GetGUID();
+#
+#	$inCAM->COM( 'flatten_layer', "source_layer" => $layerName, "target_layer" => $tmpLayer );
+#
+#	$self->WorkLayer( $inCAM, $layerName );
+#	$inCAM->COM('sel_delete');
+#
+#	$inCAM->COM(
+#				 'copy_layer',
+#				 "source_job"   => $jobId,
+#				 "source_step"  => $stepName,
+#				 "source_layer" => $tmpLayer,
+#				 "dest"         => 'layer_name',
+#				 "dest_layer"   => $layerName,
+#				 "mode"         => 'replace',
+#				 "invert"       => 'no'
+#	);
+#
+#	$inCAM->COM( 'delete_layer', "layer" => $tmpLayer );
+#	
+#	
+#	# 3)
+#	
+#	
+#	$self->ClearLayers($inCAM);
+#	
+#	
+#}
+
+
 # Remove temporary layers with mark plus
 # RV
 # Example c+++, s+++....
@@ -156,6 +245,8 @@ sub SetLayerTypeLayer {
 	$inCAM->COM( "matrix_layer_type", "job" => $jobId, "matrix" => "matrix", "layer" => $layer, "type" => $type );
 
 }
+
+ 
 
 # Display single layer and set as work layer
 sub WorkLayer {

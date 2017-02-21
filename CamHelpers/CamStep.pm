@@ -44,6 +44,7 @@ sub CreateFlattenStep {
 	my $jobId = shift;
 	my $sourceStep = shift;
 	my $targetStep = shift;
+	my $treatDTM = shift; # when 1, dtm user columns will be flattened too
 	 
 
 	#delete if step already exist
@@ -66,7 +67,7 @@ sub CreateFlattenStep {
 	my $srExist = CamStepRepeat->ExistStepAndRepeats( $inCAM, $jobId, $targetStep );
 
 	if ($srExist) {
-		$self->__FlatternPdfStep($inCAM, $jobId,$targetStep);
+		$self->__FlatternPdfStep($inCAM, $jobId,$targetStep, $treatDTM);
 	}
 
 }
@@ -77,6 +78,7 @@ sub __FlatternPdfStep {
 	my $inCAM   = shift;
 	my $jobId   = shift;
 	my $stepPdf = shift;
+	my $treatDTM = shift;
 
 	CamHelper->SetStep( $inCAM, $stepPdf );
 
