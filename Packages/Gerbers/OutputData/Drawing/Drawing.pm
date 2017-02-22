@@ -116,7 +116,7 @@ sub __CreateDraw {
 	my $dimThick = DimV1->new(
 							   "bot",  ( $w * 0.01 ),
 							   $drawH, ( $w * 0.2 ),
-							   $self->{"dimLineWidth"},  sprintf( "%.1f", $self->{"pcbThick"} ) . "mm (pcb thick)",
+							   $self->{"dimLineWidth"},  sprintf( "%.2f", $self->{"pcbThick"} ) . "mm (pcb thick)",
 							   $self->{"dimTextHeight"}, $self->{"dimTextWidth"},
 							   $self->{"dimTextMirror"}, $self->{"dimTextAngle"}
 	);
@@ -315,7 +315,7 @@ sub __CreateDetailZaxis {
 									( $w * 0.05 ), ( $w * 0.01 ),
 									$depthReal,       ( $w * 0.2 ),
 									"both",           $self->{"dimLineWidth"},
-									sprintf( "%.1f", $depth ) . "mm (depth)", $self->{"dimTextHeight"},
+									sprintf( "%.2f", $depth ) . "mm (depth)", $self->{"dimTextHeight"},
 									$self->{"dimTextWidth"}, $self->{"dimTextMirror"},
 									$self->{"dimTextAngle"}
 	);
@@ -363,7 +363,7 @@ sub __CreateDetailZaxisSurf {
 									( $w * 0.05 ), ( $w * 0.01 ),
 									$depthReal,       ( $w * 0.2 ),
 									"both",           $self->{"dimLineWidth"},
-									sprintf( "%.1f", $depth ) . "mm (depth)", $self->{"dimTextHeight"},
+									sprintf( "%.2f", $depth ) . "mm (depth)", $self->{"dimTextHeight"},
 									$self->{"dimTextWidth"}, $self->{"dimTextMirror"},
 									$self->{"dimTextAngle"}
 	);
@@ -447,7 +447,7 @@ sub __CreateDetailCountersink {
 								   ( $w * 0.2 ), ( $w * 0.01 ),
 								   $diameterReal,   ( $w * 0.2 ),
 								   "both",          $self->{"dimLineWidth"},
-								   "D " . sprintf( "%.1f", $diameter ) . "mm", $self->{"dimTextHeight"},
+								   "D " . sprintf( "%.2f", $diameter ) . "mm", $self->{"dimTextHeight"},
 								   $self->{"dimTextWidth"}, $self->{"dimTextMirror"},
 								   $self->{"dimTextAngle"}
 	);
@@ -459,7 +459,7 @@ sub __CreateDetailCountersink {
 									abs( $x3 - $x2 ), ( $w * 0.01 ),
 									$depthReal,       ( $w * 0.2 ),
 									"second",         $self->{"dimLineWidth"},
-									sprintf( "%.1f", $depth ) . "mm (depth)", $self->{"dimTextHeight"},
+									sprintf( "%.2f", $depth ) . "mm (depth)", $self->{"dimTextHeight"},
 									$self->{"dimTextWidth"}, $self->{"dimTextMirror"},
 									$self->{"dimTextAngle"}
 	);

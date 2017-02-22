@@ -61,7 +61,7 @@ sub Create {
 	my $jobId = $self->{"jobId"};
 
 	# 1) Create flattened step
-	CamStep->CreateFlattenStep( $inCAM, $jobId, $self->{"step"}, $self->{"data_step"} );
+	CamStep->CreateFlattenStep( $inCAM, $jobId, $self->{"step"}, $self->{"data_step"}, 1 );
 	CamHelper->SetStep( $inCAM, $self->{"data_step"} );
 	my @childSteps = CamStepRepeat->GetUniqueNestedStepAndRepeat( $inCAM, $jobId, $self->{"step"} );
 

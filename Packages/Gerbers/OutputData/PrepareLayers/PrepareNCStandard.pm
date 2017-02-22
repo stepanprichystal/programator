@@ -81,7 +81,7 @@ sub __PrepareNCDRILL {
 
 	foreach my $l (@layers) {
 		
-		my $lName = GeneralHelper->GetGUID();
+		my $lName = GeneralHelper->GetNumUID();
 
 		my $enTit = ValueConvertor->GetJobLayerTitle($l);
 		my $czTit = ValueConvertor->GetJobLayerTitle( $l, 1 );
@@ -229,7 +229,7 @@ sub __CreateDrillMaps {
 	my $jobId    = $self->{"jobId"};
 	my $stepName = $self->{"step"};
 
-	my $lNameMap = GeneralHelper->GetGUID();
+	my $lNameMap = GeneralHelper->GetNumUID();
 
 	# 1) copy pads to new layer
 	my $lNamePads = GeneralHelper->GetGUID();

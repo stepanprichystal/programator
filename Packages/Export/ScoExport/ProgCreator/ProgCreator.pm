@@ -17,7 +17,7 @@ use warnings;
 #
 #use aliased 'Packages::Export::ScoExport::Enums';
 use aliased 'Helpers::JobHelper';
-use aliased 'CamHelpers::CamHooks';
+use aliased 'CamHelpers::CamNCHooks';
 use aliased 'CamHelpers::CamHelper';
 use aliased 'CamHelpers::CamJob';
 use aliased 'Packages::Export::ScoExport::ProgCreator::ProgBuilder';
@@ -63,7 +63,7 @@ sub Build {
 	my $step  = $self->{"step"};
 
 	# get coordinate of left bottom olec hole
-	my @marks = CamHooks->GetLayerCamMarks( $inCAM, $jobId, $step, "c" );
+	my @marks = CamNCHooks->GetLayerCamMarks( $inCAM, $jobId, $step, "c" );
 	my $originVsco =
 	  ( grep { $_->{"att"}->{".geometry"} && $_->{"att"}->{".geometry"} =~ /olec/i && $_->{"att"}->{".pnl_place"} =~ /left-bot/i } @marks )[0];
 	my $originHsco =

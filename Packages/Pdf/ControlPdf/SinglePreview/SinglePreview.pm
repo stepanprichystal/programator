@@ -22,6 +22,7 @@ use aliased 'Enums::EnumsPaths';
 use aliased 'Packages::Pdf::ControlPdf::SinglePreview::LayerData::LayerDataList';
 
 use aliased 'Packages::Pdf::ControlPdf::SinglePreview::OutputPdf';
+use aliased 'Packages::Gerbers::OutputData::OutputData';
 
 #-------------------------------------------------------------------------------------------#
 #  Interface
@@ -34,11 +35,13 @@ sub new {
 
 	$self->{"inCAM"}   = shift;
 	$self->{"jobId"}   = shift;
-	$self->{"pdfStep"} = shift;
+	$self->{"step"} = shift;
 	$self->{"lang"}    = shift;
 
+	$self->{"outputData"} = OutputData->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"step"} );
+
 	$self->{"layerList"} = LayerDataList->new( $self->{"lang"} );
-	$self->{"outputPdf"} = OutputPdf->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"pdfStep"}, $self->{"lang"} );
+	$self->{"outputPdf"} = OutputPdf->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"outputData"}->GetStepName(), $self->{"lang"} );
 
 	$self->{"outputPath"} = EnumsPaths->Client_INCAMTMPOTHER . GeneralHelper->GetGUID() . ".pdf";
 
@@ -47,31 +50,29 @@ sub new {
 
 sub Create {
 	my $self = shift;
-
 	#my $lRef = shift;
 	my $message = shift;
 
-	# get all base layers
-	my @layers = CamJob->GetBoardLayers( $self->{"inCAM"}, $self->{"jobId"} );
+	# prepare layers for export
+ 
+	my $mess   = "";
+	my $result = $self->{"outputData"}->Create( \$mess );
 
-	 
-	# 2) Filter ou helper layers fr, v1, etc..
-	@layers = grep { $_->{"gROWname"} ne "v1" && $_->{"gROWname"} ne "fr" && $_->{"gROWname"} ne "fsch" && $_->{"gROWname"} !~ /^gold[cs]$/ } @layers;
-
-	# 3) Prepare non  NC layers
-	my @NCLayers = grep { $_->{"gROWlayer_type"} eq "rout" || $_->{"gROWlayer_type"} eq "drill" } @layers;
-
-	CamDrilling->AddNCLayerType( \@NCLayers );
-	CamDrilling->AddLayerStartStop( $self->{"inCAM"}, $self->{"jobId"}, \@NCLayers );
-
-	foreach my $l (@NCLayers) {
-		my %fHist = CamHistogram->GetFeatuesHistogram( $self->{"inCAM"}, $self->{"jobId"}, $self->{"pdfStep"}, $l->{"gROWname"} );
-		$l->{"fHist"} = \%fHist;
+	unless ($result) {
+		die "Error when preparing layers for output.". $mess."\n";
 	}
 
-	$self->{"layerList"}->SetLayers( \@layers );
+	my @dataLayers = $self->{"outputData"}->GetLayers();
+	my $stepName   = $self->{"outputData"}->GetStepName();
 
+ 	$self->{"layerList"}->SetStepName( $stepName);
+	$self->{"layerList"}->SetLayers( \@dataLayers);
+ 
 	$self->{"outputPdf"}->Output( $self->{"layerList"} );
+
+
+	# clear job
+	$self->{"outputData"}->Clear();
 
 	return 1;
 

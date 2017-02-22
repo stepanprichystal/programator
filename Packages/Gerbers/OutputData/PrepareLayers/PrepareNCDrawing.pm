@@ -267,7 +267,7 @@ sub __SeparateSymbol {
 
 	# 1) copy source layer to
 
-	my $lName = GeneralHelper->GetGUID();
+	my $lName = GeneralHelper->GetNumUID();
 
 	my $f = FeatureFilter->new( $inCAM, $jobId, $sourceL->{"gROWname"} );
 

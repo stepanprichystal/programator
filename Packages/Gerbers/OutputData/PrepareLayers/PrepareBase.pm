@@ -71,7 +71,7 @@ sub __PrepareBASEBOARD {
 
 	foreach my $l (@layers) {
 		
-		my $lName = GeneralHelper->GetGUID();
+		my $lName = GeneralHelper->GetNumUID();
 
 		my $enTit = ValueConvertor->GetJobLayerTitle($l);
 		my $czTit = ValueConvertor->GetJobLayerTitle( $l, 1 );
@@ -93,7 +93,7 @@ sub __PrepareOUTLINE {
 
 	my $inCAM = $self->{"inCAM"};
 
-	my $lName = GeneralHelper->GetGUID();
+	my $lName = GeneralHelper->GetNumUID();
 	$inCAM->COM( 'create_layer', layer => $lName, context => 'misc', type => 'document', polarity => 'positive', ins_layer => '' );
 
 	CamLayer->WorkLayer( $inCAM, $lName );

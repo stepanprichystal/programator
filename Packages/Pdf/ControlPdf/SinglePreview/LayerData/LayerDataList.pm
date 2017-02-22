@@ -29,138 +29,19 @@ sub new {
 	bless $self;
 	$self->{"lang"} = shift;
 
+	$self->{"stepName"} = undef;
+
 	my @l = ();
-	$self->{"layers"} = \@l; # list of all exported layers <LayerData> type
+	$self->{"layers"} = \@l;    # list of all exported layers <LayerData> type
 
 	return $self;
 }
 
 sub SetLayers {
 	my $self   = shift;
-	my @layers = @{ shift(@_) };
+	my $layers = shift;         # layer, typ of Packages::Gerbers::OutputData::LayerData::LayerData
 
-	$self->__PrepareBaseLayerData( \@layers );
-	$self->__PrepareNCLayerData( \@layers );
-
-}
-
-sub __PrepareBaseLayerData {
-	my $self   = shift;
-	my @layers = @{ shift(@_) };
-
-	# prepare non  NC layers
-	@layers = grep { $_->{"gROWlayer_type"} ne "rout" && $_->{"gROWlayer_type"} ne "drill" } @layers;
-
-	foreach my $l (@layers) {
-
-		my $enTit = ValueConvertor->GetJobLayerTitle($l);
-		my $czTit = ValueConvertor->GetJobLayerTitle( $l, 1 );
-		my $enInf = ValueConvertor->GetJobLayerInfo($l);
-		my $czInf = ValueConvertor->GetJobLayerInfo( $l, 1 );
-
-		my $lData = LayerData->new( Enums->LayerData_STANDARD, $enTit, $czTit, $enInf, $czInf );
-
-		$lData->AddSingleLayer($l);
-
-		push( @{ $self->{"layers"} }, $lData );
-	}
-
-}
-
-sub __PrepareNCLayerData {
-	my $self   = shift;
-	my @layers = @{ shift(@_) };
-
-	@layers = grep { $_->{"gROWlayer_type"} eq "rout" || $_->{"gROWlayer_type"} eq "drill" } @layers;
-
-	# prepare non  NC layers
-
-	#CamDrilling->AddNCLayerType( \@layers );
-	#CamDrilling->AddLayerStartStop( $self->{"inCAM"}, $self->{"jobId"}, \@layers );
-
-	foreach my $l (@layers) {
-
-		my $enTit = ValueConvertor->GetJobLayerTitle($l);
-		my $czTit = ValueConvertor->GetJobLayerTitle( $l, 1 );
-		my $enInf = ValueConvertor->GetJobLayerInfo($l);
-		my $czInf = ValueConvertor->GetJobLayerInfo( $l, 1 );
-
-		my $lData = LayerData->new( Enums->LayerData_STANDARD, $enTit, $czTit, $enInf, $czInf );
-
-		$lData->AddSingleLayer($l);
-
-		push( @{ $self->{"layers"} }, $lData );
-	}
-
-	# merge f + rs layer data  if exist
-
-	my $dataWithF  = $self->GetLayerByName("f");
-	my $dataWithRs = $self->GetLayerByName("rs");
-
-	# if data containing layer rs and f exist, merge them
-	if ( $dataWithF && $dataWithRs ) {
-
-		my @rsLayers = $dataWithRs->GetSingleLayers();
-
-		foreach my $l (@rsLayers) {
-			$dataWithF->AddSingleLayer($l);    #merging
-		}
-
-		# delete rs
-
-		my $allL = $self->{"layers"};
-
-		for ( my $i = 0 ; $i < scalar( $self->{"layers"} ) ; $i++ ) {
-
-			my $l = @{ $self->{"layers"} }[$i];
-
-			if ( $l == $dataWithRs ) {
-				splice @{ $self->{"layers"} }, $i, 1;
-				last;
-			}
-
-		}
-
-	}
-
-	# add drill map layers
-
-	foreach my $l (@layers) {
-
-		if (    ( $l->{"gROWlayer_type"} ne "drill" || $l->{"gROWlayer_type"} ne "rout" )
-			 && $l->{"fHist"}
-			 && ( $l->{"fHist"}->{"pad"} > 0 || $l->{"fHist"}->{"line"} > 0 )
-			 && $l->{"gROWname"} ne "score" )
-		{
-
-			my $enTit = "Drill map: " . ValueConvertor->GetJobLayerTitle($l);
-			my $czTit = "Mapa vrtání: " . ValueConvertor->GetJobLayerTitle( $l, 1 );
-			my $enInf = "Units [mm] " . ValueConvertor->GetJobLayerInfo($l);
-			my $czInf = "Jednotky [mm] " . ValueConvertor->GetJobLayerInfo( $l, 1 );
-
-			my $lData = LayerData->new( Enums->LayerData_DRILLMAP, $enTit, $czTit, $enInf, $czInf );
-
-			$lData->AddSingleLayer($l);
-
-			push( @{ $self->{"layers"} }, $lData );
-
-		}
-
-	}
-
-}
-
-sub AddSingleLayer {
-	my $self  = shift;
-	my $l     = shift;
-	my $enTit = shift;
-	my $czTit = shift;
-	my $enInf = shift;
-	my $czInf = shift;
-
-	my $d = SingleLayerData->new( $l, $enTit, $czTit, $enInf, $czInf );
-
-	push( @{ $self->{"layers"} }, $d );
+	push( @{ $self->{"layers"} }, @{$layers} );
 
 }
 
@@ -168,7 +49,27 @@ sub GetLayers {
 	my $self = shift;
 
 	return @{ $self->{"layers"} };
+}
 
+sub GetLayersByType {
+	my $self = shift;
+	my $type = shift;
+
+	my @layers = grep { $_->GetType() eq $type } @{ $self->{"layers"} };
+
+	return @layers;
+}
+
+sub GetStepName {
+	my $self = shift;
+
+	return $self->{"stepName"};
+}
+
+sub SetStepName {
+	my $self = shift;
+
+	$self->{"stepName"} = shift;
 }
 
 sub GetLayerCnt {
@@ -177,23 +78,24 @@ sub GetLayerCnt {
 	return @{ $self->{"layers"} };
 }
 
-sub GetLayerByName {
-	my $self = shift;
-	my $name = shift;
-
-	foreach my $lData ( @{ $self->{"layers"} } ) {
-
-		my @single = $lData->GetSingleLayers();
-
-		my $sl = ( grep { $_->{"gROWname"} eq $name } @single )[0];
-
-		if ($sl) {
-
-			return $lData;
-		}
-	}
-
-}
+#
+#sub GetLayerByName {
+#	my $self = shift;
+#	my $name = shift;
+#
+#	foreach my $lData ( @{ $self->{"layers"} } ) {
+#
+#		my @single = $lData->GetSingleLayers();
+#
+#		my $sl = ( grep { $_->{"gROWname"} eq $name } @single )[0];
+#
+#		if ($sl) {
+#
+#			return $lData;
+#		}
+#	}
+#
+#}
 
 sub GetPageData {
 	my $self    = shift;
@@ -210,7 +112,7 @@ sub GetPageData {
 		my $lData = $layers[ $start + $i ];
 
 		if ($lData) {
-			my @singleLayers = $lData->GetSingleLayers();
+			#my @singleLayers = $lData->GetSingleLayers();
 
 			my $tit = $lData->GetTitle( $self->{"lang"} );
 			my $inf = $lData->GetInfo( $self->{"lang"} );

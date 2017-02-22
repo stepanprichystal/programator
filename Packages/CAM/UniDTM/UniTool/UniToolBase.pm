@@ -3,7 +3,7 @@
 # Description:  Class represent universal tool regardless it is tool from surface, pad, slot..
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::CAM::UniDTM::UniTool;
+package Packages::CAM::UniDTM::UniTool::UniToolBase;
 
 #3th party library
 use strict;
@@ -33,31 +33,22 @@ sub new {
 	# following parameters must be same for all tools, which has
 	# same "key" created by drillSize + typeProcess
 
-	$self->{"depth"}    = 0;     # Value of tool depth
-	$self->{"magazine"} = "";    # Magazine code
+	$self->{"depth"}        = 0;        # Value of tool depth
+	$self->{"magazine"}     = undef;    # Magazine code
+	$self->{"magazineInfo"} = "";       # Magazine info (will be converted to magazineCode)
 
-	$self->{"tol+"} = 0;         # +tolerance
-	$self->{"tol-"} = 0;         # -tolerance
-
-	# -----------------------------
-	# Property for type Source_DTM
-	# -----------------------------
-
-	# Type, which contain tools in standard DTM
-	$self->{"typeTool"} = undef;    # TypeTool_HOLE/TypeTool_SLOT
-
-	# Types based on purpose
-	$self->{"typeUse"} = undef;     # plate/nplate/pressfit/via
-
-	$self->{"finishSize"} = undef;  # finish size of tool
+	$self->{"tol+"} = 0;                # +tolerance
+	$self->{"tol-"} = 0;                # -tolerance
 
 	# -----------------------------
-	# Property for type Source_DTMSurf
+	# Property for special tool
 	# -----------------------------
 
-	$self->{"drillSize2"} = undef;    # diameter of rout pocket tool
+	# indicate if tool is special. Special tools are defined by "magazineInfo"
+	# Listo of tools are in MagazineSpec
+	$self->{"special"} = 0;
 
-	$self->{"surfaceId"} = undef;     # sign surface where is tool defined
+	$self->{"angle"} = undef;    # angle of tool 90,120, etc..
 
 	return $self;
 }
@@ -78,6 +69,30 @@ sub DepthIsOk {
 }
 
 # GET SET property
+
+sub GetSpecial {
+	my $self = shift;
+
+	return $self->{"special"};
+}
+
+sub SetSpecial {
+	my $self = shift;
+
+	$self->{"special"} = shift;
+}
+
+sub GetAngle {
+	my $self = shift;
+
+	return $self->{"angle"};
+}
+
+sub SetAngle {
+	my $self = shift;
+
+	$self->{"angle"} = shift;
+}
 
 sub GetDrillSize {
 	my $self = shift;
@@ -100,11 +115,11 @@ sub GetSource {
 sub SetDepth {
 	my $self  = shift;
 	my $depth = shift;
-	
+
 	if ( defined $depth ) {
 		$self->{"depth"} = $depth;
 	}
- 
+
 }
 
 sub GetDepth {
@@ -129,6 +144,22 @@ sub GetMagazine {
 	return $self->{"magazine"};
 }
 
+sub SetMagazineInfo {
+	my $self     = shift;
+	my $magazine = shift;
+
+	if ( defined $magazine ) {
+		$self->{"magazineInfo"} = $magazine;
+	}
+
+}
+
+sub GetMagazineInfo {
+	my $self = shift;
+
+	return $self->{"magazineInfo"};
+}
+
 sub SetTolPlus {
 	my $self = shift;
 
@@ -151,66 +182,6 @@ sub GetTolMinus {
 	my $self = shift;
 
 	return $self->{"tol-"};
-}
-
-sub SetTypeTool {
-	my $self = shift;
-
-	$self->{"typeTool"} = shift;
-}
-
-sub GetTypeTool {
-	my $self = shift;
-
-	return $self->{"typeTool"};
-}
-
-sub SetTypeUse {
-	my $self = shift;
-
-	$self->{"typeUse"} = shift;
-}
-
-sub GetTypeUse {
-	my $self = shift;
-
-	return $self->{"typeUse"};
-}
-
-sub GetDrillSize2 {
-	my $self = shift;
-
-	return $self->{"drillSize2"};
-}
-
-sub SetDrillSize2 {
-	my $self = shift;
-
-	$self->{"drillSize2"} = shift;
-}
-
-sub GetSurfaceId {
-	my $self = shift;
-
-	return $self->{"surfaceId"};
-}
-
-sub SetSurfaceId {
-	my $self = shift;
-
-	$self->{"surfaceId"} = shift;
-}
-
-sub GetFinishSize {
-	my $self = shift;
-
-	return $self->{"finishSize"};
-}
-
-sub SetFinishSize {
-	my $self = shift;
-
-	$self->{"finishSize"} = shift;
 }
 
 #-------------------------------------------------------------------------------------------#

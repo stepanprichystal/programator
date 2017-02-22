@@ -165,7 +165,7 @@ sub __GetAllSurfaceTools {
 		}
 
 		my $depth    = EnumsDrill->DTMatt_DEPTH;
-		my $magazine = EnumsDrill->DTMatt_MAGAZINE;
+		my $magazine = EnumsDrill->DTMatt_MAGINFO;
 
 		# set defaul tool values
 		my %tInfo = ( "id" => $surfId );
@@ -214,7 +214,7 @@ sub __GetAllSurfaceTools {
  
 				}
 			}
-			elsif ( $at =~ /\$magazine=\s*(.*)\s*/ ) {
+			elsif ( $at =~ /$magazine=\s*(.*)\s*/ ) {
 
 				$tInfo{$magazine} = $1;
 

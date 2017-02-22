@@ -11,14 +11,14 @@ use constant {
 # represent names of DTM user column
 use constant {
 			   DTMclmn_DEPTH   => "depth",
-			   DTMclmn_MAGAZINE   => "magazine"
+			   DTMclmn_MAGINFO   => "magazine_info"
 }; 
 
 
 # represent names of DTM surface user attributes
 use constant {
 			   DTMatt_DEPTH   => "tool_depth",
-			   DTMatt_MAGAZINE   => "tool_magazine"
+			   DTMatt_MAGINFO   => "tool_magazine_info"
 }; 
 
 1;

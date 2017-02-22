@@ -21,112 +21,112 @@ use aliased 'Packages::CAM::UniDTM::Enums' => "DTMEnums";
 #   Package methods
 #-------------------------------------------------------------------------------------------#
 
-#return formated depth for given size
-sub PrepareToolDepth {
-	my $self       = shift;
-	my $toolSize   = shift;
-	my @toolDepths = @{ shift(@_) };
-	my $toolDepth  = shift;
-
-	my $toolIdx;
-	$toolIdx = ( grep { $toolDepths[$_]->{"drill_size"} == $toolSize } 0 .. $#toolDepths )[0];
-
-	if ( defined $toolIdx ) {
-
-		unless ( $toolDepths[$toolIdx]->{"depth"} ) {
-			return 0;
-		}
-
-		my $tmp = $toolDepths[$toolIdx]->{"depth"};
-		$tmp =~ s/,/\./;
-		$tmp = sprintf( "%.2f", $tmp );
-
-		# depth is in mm, so assume range > 0 and  < 10 mm
-
-		if ( $tmp <= 0 || $tmp >= 10 || $tmp eq "" ) {
-			return 0;
-		}
-
-		$$toolDepth = $tmp;
-	}
-
-	return 1;
-
-}
-
-#Return tools from Drill tool manager with
-# - all user columns
-# - and finish size columns
-sub GetToolDepths {
-	my $self      = shift;
-	my $inCAM     = shift;
-	my $jobId     = shift;
-	my $stepName  = shift;
-	my $layerName = shift;
-
-	#	print STDERR $jobId. "\n";
-	#	print $step. "\n";
-	#	print $layer. "\n";
-
-	my @res = ();
-
-	# 1) Get drill tool information  from DTM (slot and holes)
-	$inCAM->INFO(
-				  units           => 'mm',
-				  angle_direction => 'ccw',
-				  entity_type     => 'layer',
-				  entity_path     => "$jobId/$stepName/$layerName",
-				  data_type       => 'TOOL',
-				  options         => "break_sr"
-	);
-
-	my @gTOOLdrill_size = @{ $inCAM->{doinfo}{gTOOLdrill_size} };
-	my @gTOOLshape      = @{ $inCAM->{doinfo}{gTOOLshape} };
-
-	my @arr = ();
-	my $cnt = scalar(@gTOOLdrill_size);
-
-	for ( my $i = 0 ; $i < $cnt ; $i++ ) {
-
-		my %info = ();
-		$info{"drill_size"} = $gTOOLdrill_size[$i];
-		$info{"gTOOLshape"} = $gTOOLshape[$i];
-		push( @arr, \%info );
-	}
-
-	#Add all user clmns to each tool
-	my @userClmns = CamDTM->GetDTMUserColumns( $inCAM, $jobId, $stepName, $layerName, 1 );
-
-	for ( my $i = 0 ; $i < scalar(@arr) ; $i++ ) {
-
-		my %newInfo = ( %{ $arr[$i] }, %{ $userClmns[$i] } );
-		push( @res, \%newInfo );
-	}
-
-	# 2) Add tool information from DTM surfaces
-	# heach of all tools has to have same keys, convert them
-	my @surfTools = CamDTMSurf->GetDTMTools( $inCAM, $jobId, $stepName, $layerName, 1 );
-
-	foreach my $t (@surfTools) {
-
-		my %tInfo = ();
-
-		$tInfo{"drill_size"}                = $t->{".rout_tool"};
-		$tInfo{ EnumsDrill->DTMclmn_DEPTH } = $t->{ EnumsDrill->DTMatt_DEPTH };
-		$tInfo{"gTOOLshape"}                = "slot";
-
-		push( @res, \%tInfo );
-	}
-
-	#	# 3) Check if there is no more chain tool with same diameter..
-	#	my $mess = "";
-	#	unless($self->CheckToolDepth($inCAM, $jobId, $stepName, $layerName, \$mess)){
-	#
-	#		die $mess;
-	#	}
-
-	return @res;
-}
+##return formated depth for given size
+#sub PrepareToolDepth {
+#	my $self       = shift;
+#	my $toolSize   = shift;
+#	my @toolDepths = @{ shift(@_) };
+#	my $toolDepth  = shift;
+#
+#	my $toolIdx;
+#	$toolIdx = ( grep { $toolDepths[$_]->{"drill_size"} == $toolSize } 0 .. $#toolDepths )[0];
+#
+#	if ( defined $toolIdx ) {
+#
+#		unless ( $toolDepths[$toolIdx]->{"depth"} ) {
+#			return 0;
+#		}
+#
+#		my $tmp = $toolDepths[$toolIdx]->{"depth"};
+#		$tmp =~ s/,/\./;
+#		$tmp = sprintf( "%.2f", $tmp );
+#
+#		# depth is in mm, so assume range > 0 and  < 10 mm
+#
+#		if ( $tmp <= 0 || $tmp >= 10 || $tmp eq "" ) {
+#			return 0;
+#		}
+#
+#		$$toolDepth = $tmp;
+#	}
+#
+#	return 1;
+#
+#}
+#
+##Return tools from Drill tool manager with
+## - all user columns
+## - and finish size columns
+#sub GetToolDepths {
+#	my $self      = shift;
+#	my $inCAM     = shift;
+#	my $jobId     = shift;
+#	my $stepName  = shift;
+#	my $layerName = shift;
+#
+#	#	print STDERR $jobId. "\n";
+#	#	print $step. "\n";
+#	#	print $layer. "\n";
+#
+#	my @res = ();
+#
+#	# 1) Get drill tool information  from DTM (slot and holes)
+#	$inCAM->INFO(
+#				  units           => 'mm',
+#				  angle_direction => 'ccw',
+#				  entity_type     => 'layer',
+#				  entity_path     => "$jobId/$stepName/$layerName",
+#				  data_type       => 'TOOL',
+#				  options         => "break_sr"
+#	);
+#
+#	my @gTOOLdrill_size = @{ $inCAM->{doinfo}{gTOOLdrill_size} };
+#	my @gTOOLshape      = @{ $inCAM->{doinfo}{gTOOLshape} };
+#
+#	my @arr = ();
+#	my $cnt = scalar(@gTOOLdrill_size);
+#
+#	for ( my $i = 0 ; $i < $cnt ; $i++ ) {
+#
+#		my %info = ();
+#		$info{"drill_size"} = $gTOOLdrill_size[$i];
+#		$info{"gTOOLshape"} = $gTOOLshape[$i];
+#		push( @arr, \%info );
+#	}
+#
+#	#Add all user clmns to each tool
+#	my @userClmns = CamDTM->GetDTMUserColumns( $inCAM, $jobId, $stepName, $layerName, 1 );
+#
+#	for ( my $i = 0 ; $i < scalar(@arr) ; $i++ ) {
+#
+#		my %newInfo = ( %{ $arr[$i] }, %{ $userClmns[$i] } );
+#		push( @res, \%newInfo );
+#	}
+#
+#	# 2) Add tool information from DTM surfaces
+#	# heach of all tools has to have same keys, convert them
+#	my @surfTools = CamDTMSurf->GetDTMTools( $inCAM, $jobId, $stepName, $layerName, 1 );
+#
+#	foreach my $t (@surfTools) {
+#
+#		my %tInfo = ();
+#
+#		$tInfo{"drill_size"}                = $t->{".rout_tool"};
+#		$tInfo{ EnumsDrill->DTMclmn_DEPTH } = $t->{ EnumsDrill->DTMatt_DEPTH };
+#		$tInfo{"gTOOLshape"}                = "slot";
+#
+#		push( @res, \%tInfo );
+#	}
+#
+#	#	# 3) Check if there is no more chain tool with same diameter..
+#	#	my $mess = "";
+#	#	unless($self->CheckToolDepth($inCAM, $jobId, $stepName, $layerName, \$mess)){
+#	#
+#	#		die $mess;
+#	#	}
+#
+#	return @res;
+#}
 
 #sub CheckToolDepth {
 #	my $self  = shift;

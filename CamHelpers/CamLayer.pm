@@ -17,6 +17,10 @@ use aliased 'CamHelpers::CamJob';
 use aliased 'CamHelpers::CamCopperArea';
 use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'Helpers::GeneralHelper';
+use aliased 'CamHelpers::CamDTM';
+use aliased 'Enums::EnumsDrill';
+use aliased 'CamHelpers::CamStepRepeat';
+
 
 #-------------------------------------------------------------------------------------------#
 #   Package methods
@@ -100,94 +104,70 @@ sub FlatternLayer {
 	$self->ClearLayers($inCAM);
 }
 
+# Flattern NC layer
+# Create tem flattern layer, delete original layer and place flatern data to original layer
+# Difference from function FlatternLayer is, that this methd consider user column values in DTM
+# FlatternLayer delete all user column values in flattned layer
+sub FlatternNCLayer {
+	my $self      = shift;
+	my $inCAM     = shift;
+	my $jobId     = shift;
+	my $stepName  = shift;
+	my $layerName = shift;
 
+	# 1)  When lazer is flattening, chech if nested step has some "?" or "0" value in finish size
+	# if so, values, from DTM user columns are not coppied, so change "?" to proper value
+	my @childSteps = CamStepRepeat->GetUniqueNestedStepAndRepeat( $inCAM, $jobId, $stepName );
 
-## flattern layer
-## create tem flattern layer, delete original layer and place flatern data to original layer
-#sub FlatternNCLayer {
-#	my $self      = shift;
-#	my $inCAM     = shift;
-#	my $jobId     = shift;
-#	my $stepName  = shift;
-#	my $layerName = shift;
-#
-#
-#	# 1)  When lazer is flattening, chech if nested step has some "?" or "0" value in finish size
-#	# if so, values, from DTM user columns are not coppied, so change "?" to proper value
-#	my @childSteps = CamStepRepeat->GetUniqueNestedStepAndRepeat( $inCAM, $jobId, $step );
-#
-#		foreach my $stepChild (@childSteps) {
-#
-#			my $change = 0;
-#
-#			my @tools = CamDTM->GetDTMTools( $inCAM, $jobId, $stepChild->{"stepName"}, $layerName );
-#			my $DTMType = CamDTM->GetDTMType( $inCAM, $jobId, $stepChild->{"stepName"}, $layerName );
-#
-#			print STDERR "\n\n DTM TYPE IS $DTMType \n\n";
-#
-#			foreach my $t (@tools) {
-#
-#				if ( !defined $t->{"gTOOLfinish_size"} || $t->{"gTOOLfinish_size"} eq "" || $t->{"gTOOLfinish_size"} == 0 ) {
-#
-#					$t->{"gTOOLfinish_size"} = $t->{"gTOOLdrill_size"};
-#
-#					if ( $DTMType eq EnumsDrill->DTM_VYSLEDNE ) {
-#						$t->{"gTOOLfinish_size"} -= 100;
-#					}
-#
-#					$change = 1;
-#				}
-#			}
-#
-#			if ($change) {
-#
-#				print STDERR "\n\n SET TOOL\n\n";
-#
-#				CamDTM->SetDTMTools( $inCAM, $jobId, $stepChild->{"stepName"}, $layerName, \@tools, $DTMType );
-#			}
-#		}
-#
-#		CamHelper->SetStep( $inCAM, $step );
-#		
-#		# 2) 		# if rout layer, change to drill, in other hand user column will not be considered (InCAM BUG)
-#		my $cahngedToDrill = 0;
-#		my $layerType = CamHelper->LayerType( $inCAM, $jobId, $layerName );
-#
-#		if ( $layerType eq "rout" ) {
-#
-#			$cahngedToDrill = 1;
-#			CamLayer->SetLayerTypeLayer( $inCAM, $jobId, $layerName, "drill" );
-#		}
-# 
-#	my $tmpLayer = GeneralHelper->GetGUID();
-#
-#	$inCAM->COM( 'flatten_layer', "source_layer" => $layerName, "target_layer" => $tmpLayer );
-#
-#	$self->WorkLayer( $inCAM, $layerName );
-#	$inCAM->COM('sel_delete');
-#
-#	$inCAM->COM(
-#				 'copy_layer',
-#				 "source_job"   => $jobId,
-#				 "source_step"  => $stepName,
-#				 "source_layer" => $tmpLayer,
-#				 "dest"         => 'layer_name',
-#				 "dest_layer"   => $layerName,
-#				 "mode"         => 'replace',
-#				 "invert"       => 'no'
-#	);
-#
-#	$inCAM->COM( 'delete_layer', "layer" => $tmpLayer );
-#	
-#	
-#	# 3)
-#	
-#	
-#	$self->ClearLayers($inCAM);
-#	
-#	
-#}
+	foreach my $stepChild (@childSteps) {
 
+		my $change = 0;
+
+		my @tools = CamDTM->GetDTMTools( $inCAM, $jobId, $stepChild->{"stepName"}, $layerName );
+		my $DTMType = CamDTM->GetDTMType( $inCAM, $jobId, $stepChild->{"stepName"}, $layerName );
+
+		foreach my $t (@tools) {
+
+			if ( !defined $t->{"gTOOLfinish_size"} || $t->{"gTOOLfinish_size"} eq "" || $t->{"gTOOLfinish_size"} == 0 ) {
+
+				$t->{"gTOOLfinish_size"} = $t->{"gTOOLdrill_size"};
+
+				if ( $DTMType eq EnumsDrill->DTM_VYSLEDNE ) {
+					$t->{"gTOOLfinish_size"} -= 100;
+				}
+
+				$change = 1;
+			}
+		}
+
+		if ($change) {
+
+			CamDTM->SetDTMTools( $inCAM, $jobId, $stepChild->{"stepName"}, $layerName, \@tools, $DTMType );
+		}
+	}
+
+	CamHelper->SetStep( $inCAM, $stepName );
+
+	# 2)  if rout layer, change to drill, in other hand user column will not be considered (InCAM BUG)
+	my $chahngedToDrill = 0;
+	my $layerType = CamHelper->LayerType( $inCAM, $jobId, $layerName );
+
+	if ( $layerType eq "rout" ) {
+
+		$chahngedToDrill = 1;
+		$self->SetLayerTypeLayer( $inCAM, $jobId, $layerName, "drill" );
+	}
+
+	$self->FlatternLayer( $inCAM, $jobId, $stepName, $layerName );
+
+	# 3) change back to rout
+	if ($chahngedToDrill) {
+		$self->SetLayerTypeLayer( $inCAM, $jobId, $layerName, "rout" );
+	}
+
+	$self->ClearLayers($inCAM);
+
+}
 
 # Remove temporary layers with mark plus
 # RV
@@ -245,8 +225,6 @@ sub SetLayerTypeLayer {
 	$inCAM->COM( "matrix_layer_type", "job" => $jobId, "matrix" => "matrix", "layer" => $layer, "type" => $type );
 
 }
-
- 
 
 # Display single layer and set as work layer
 sub WorkLayer {
@@ -377,6 +355,46 @@ sub ClipLayerData {
 	);
 
 	$inCAM->COM( 'affected_layer', name => $layer, mode => "single", affected => "no" );
+}
+
+sub ClipAreaByProf {
+	my $self       = shift;
+	my $inCAM      = shift;
+	my $layer      = shift;
+	my $margin 	   = shift;
+	my $inside     = shift;
+	my $counturCut = shift;
+	
+	my $type = "outside";
+
+	if ($inside) {
+		$type = "inside";
+	}
+
+	my $countour = "no";
+
+	if ($counturCut) {
+		$countour = "yes";
+	}
+	
+	
+	$self->WorkLayer( $inCAM, $layer );
+	
+	$inCAM->COM(
+				 "clip_area_end",
+				 "layers_mode" => "layer_name",
+				 "layer"       => $layer,
+				 "area"        => "profile",
+				 "area_type"   => "rectangle",
+				 "inout"       => $type,
+				 "contour_cut" => $countour,
+				 "margin"      => $margin,
+				 "feat_types"  => "line\;pad;surface;arc;text",
+				 "pol_types"   => "positive\;negative"
+	);
+	
+	$inCAM->COM( 'affected_layer', name => $layer, mode => "single", affected => "no" );
+	
 }
 
 # Rotate layer by degree
@@ -514,7 +532,7 @@ sub RoutCompensation {
 		$type = "rout";
 	}
 
-	my $lName = GeneralHelper->GetGUID();
+	my $lName = GeneralHelper->GetNumUID();
 	$self->WorkLayer( $inCAM, $layer );
 
 	$inCAM->COM( "compensate_layer", "source_layer" => $layer, "dest_layer" => $lName,   "dest_layer_type" => $type );
@@ -543,7 +561,7 @@ sub CopySelected {
 	my @layers = @{ shift(@_) };
 	my $invert = shift;
 	my $resize = shift;
- 
+
 	my $layerStr = join( "\\;", @layers );
 
 	$inCAM->COM(
@@ -559,6 +577,7 @@ sub CopySelected {
 	);
 
 }
+
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#

@@ -161,7 +161,7 @@ sub __ExportNcSet {
 	# STOP HANDLE EXCEPTION IN INCAM
 	$inCAM->HandleException(0);
 
-	$methodRes->AddErrors( $inCAM->GetExceptionError() );
+	$methodRes->AddError( $inCAM->GetExceptionError() );
 	 
 	#if ( $inCAM->GetStatus() > 1 ) {
 	#	$methodRes->AddError( $inCAM->GetExceptionError() );

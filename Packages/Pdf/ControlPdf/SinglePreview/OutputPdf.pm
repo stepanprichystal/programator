@@ -15,6 +15,7 @@ use List::Util qw[max min];
 #local library
 use aliased 'Helpers::GeneralHelper';
 use aliased 'Packages::Pdf::ControlPdf::SinglePreview::Enums';
+use aliased ' Packages::Gerbers::OutputData::Enums' => "OutputEnums";
 use aliased 'Enums::EnumsPaths';
 use aliased 'CamHelpers::CamLayer';
 use aliased 'CamHelpers::CamSymbol';
@@ -49,10 +50,10 @@ sub Output {
 
 	$self->{"profileLim"} = \%lim;
 
-	$self->__PrepareLayers($layerList);
+	#$self->__PrepareLayers($layerList);
 
-	$self->__OptimizeStandardLayers($layerList);
-	$self->__OptimizeDrillMapLayers($layerList);
+	$self->__OptimizeLayers($layerList);
+	#$self->__OptimizeDrillMapLayers($layerList);
 
 	my $pathPdf = $self->__OutputRawPdf($layerList);
 
@@ -66,27 +67,27 @@ sub GetOutput {
 	return $self->{"outputPath"};
 }
 
-# Do necessarary adjustment in InCAM with layers
-# And prepare each export layer by LayerData strucutre
-sub __PrepareLayers {
-	my $self      = shift;
-	my $layerList = shift;
-
-	foreach my $lData ( $layerList->GetLayers() ) {
-
-		if ( $lData->GetType() eq Enums->LayerData_STANDARD ) {
-
-			$self->__PrepareSTANDARD($lData);
-
-		}
-		elsif ( $lData->GetType() eq Enums->LayerData_DRILLMAP ) {
-
-			$self->__PrepareDRILLMAP($lData);
-
-		}
-	}
-
-}
+## Do necessarary adjustment in InCAM with layers
+## And prepare each export layer by LayerData strucutre
+#sub __PrepareLayers {
+#	my $self      = shift;
+#	my $layerList = shift;
+#
+#	foreach my $lData ( $layerList->GetLayers() ) {
+#
+#		if ( $lData->GetType() eq Enums->LayerData_STANDARD ) {
+#
+#			$self->__PrepareSTANDARD($lData);
+#
+#		}
+#		elsif ( $lData->GetType() eq Enums->LayerData_DRILLMAP ) {
+#
+#			$self->__PrepareDRILLMAP($lData);
+#
+#		}
+#	}
+#
+#}
 
 
 # Clip all exported layer, add thin frame around data
@@ -104,9 +105,11 @@ sub __OptimizeStandardLayers {
 	# affect all layers
 	foreach my $l (@layers) {
 
-		# drillm map layer contains table behind profile
-		if ( $l->GetType() eq Enums->LayerData_STANDARD ) {
-			$inCAM->COM( "affected_layer", "name" => $l->GetOutputLayer(), "mode" => "single", "affected" => "yes" );
+		# drillm map  and layer with depth contains features behind profile
+		if ( $l->GetType() ne OutputEnums->Type_NCDEPTHLAYERS &&  $l->GetType() ne OutputEnums->Type_DRILLMAP) {
+			
+			$inCAM->COM( "affected_layer", "name" => $l->GetOutput(), "mode" => "single", "affected" => "yes" );
+			
 		}
 	}
 
@@ -180,7 +183,7 @@ sub __OptimizeStandardLayers {
 }
 
 # Create drill maps
-sub __OptimizeDrillMapLayers {
+sub __OptimizeLayers {
 	my $self      = shift;
 	my $layerList = shift;
 
@@ -198,8 +201,10 @@ sub __OptimizeDrillMapLayers {
 	foreach my $l (@layers) {
 
 		my $lName = GeneralHelper->GetGUID();
+		
+		$inCAM->COM( "profile_to_rout", "layer" => $l->GetOutput(), "width" => 1 );
 
-		my %lim = CamJob->GetLayerLimits( $inCAM, $self->{"jobId"}, $self->{"pdfStep"}, $l->GetOutputLayer() );
+		my %lim = CamJob->GetLayerLimits( $inCAM, $self->{"jobId"}, $self->{"pdfStep"}, $l->GetOutput() );
 
 		my $x = abs( $lim{"xmax"} - $lim{"xmin"} );
 		my $y = abs( $lim{"ymax"} - $lim{"ymin"} );
@@ -222,9 +227,9 @@ sub __OptimizeDrillMapLayers {
 			$lim{"ymax"} += ( ( $newY - $y ) / 2 );
 		}
 
-		$inCAM->COM( 'create_layer', layer => $lName, context => 'misc', type => 'document', polarity => 'positive', ins_layer => '' );
+		#$inCAM->COM( 'create_layer', layer => $lName, context => 'misc', type => 'document', polarity => 'positive', ins_layer => '' );
 
-		CamLayer->WorkLayer( $inCAM, $lName );
+		CamLayer->WorkLayer( $inCAM, $l->GetOutput() );
 
 		my %c1 = ( "x" => $lim{"xmin"}, "y" => $lim{"ymin"} );
 		my %c2 = ( "x" => $lim{"xmax"}, "y" => $lim{"ymin"} );
@@ -234,10 +239,12 @@ sub __OptimizeDrillMapLayers {
 
 		#
 		CamSymbol->AddPolyline( $inCAM, \@coord, "r1", "negative" );
+		
+		
 
-		my @list = ($l);
+		#my @list = ($l);
 
-		$self->__CopyFrame( $lName, \@list );
+		#$self->__CopyFrame( $lName, \@list );
 	}
 
 }
@@ -254,11 +261,11 @@ sub __CopyFrame {
 	# affect all layers
 	foreach my $l (@layers) {
 
-		$inCAM->COM( "affected_layer", "name" => $l->GetOutputLayer(), "mode" => "single", "affected" => "yes" );
+		$inCAM->COM( "affected_layer", "name" => $l->GetOutput(), "mode" => "single", "affected" => "yes" );
 
 	}
 
-	my @layerStr = map { $_->GetOutputLayer() } @layers;
+	my @layerStr = map { $_->GetOutput() } @layers;
 	my $layerStr = join( "\\;", @layerStr );
 	$inCAM->COM(
 		"sel_copy_other",
@@ -282,7 +289,7 @@ sub __OutputRawPdf {
 
 	my @layers = $layerList->GetLayers();
 
-	my @layerStr = map { $_->GetOutputLayer() } @layers;
+	my @layerStr = map { $_->GetOutput() } @layers;
 	my $layerStr = join( "\\;", @layerStr );
 
 	my $outputPdf = EnumsPaths->Client_INCAMTMPOTHER . GeneralHelper->GetGUID() . ".pdf";
@@ -330,10 +337,10 @@ sub __OutputRawPdf {
 	);
 
 	# delete created layers
-	foreach my $lData (@layers) {
-
-		$inCAM->COM( 'delete_layer', "layer" => $lData->GetOutputLayer() );
-	}
+#	foreach my $lData (@layers) {
+#
+#		$inCAM->COM( 'delete_layer', "layer" => $lData->GetOutput() );
+#	}
 
 	return $outputPdf;
 

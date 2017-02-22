@@ -17,7 +17,7 @@ use warnings;
 #
 #use aliased 'Packages::Export::ScoExport::Enums';
 use aliased 'Helpers::JobHelper';
-use aliased 'CamHelpers::CamHooks';
+use aliased 'CamHelpers::CamNCHooks';
 use aliased 'Packages::Export::ScoExport::Enums';
 use aliased 'Packages::Scoring::ScoreChecker::Enums' => "ScoEnums";
 

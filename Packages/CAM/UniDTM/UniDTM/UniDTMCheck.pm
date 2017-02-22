@@ -3,7 +3,7 @@
 # Description: Do checks of tool in Universal DTM
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::CAM::UniDTM::UniDTMCheck;
+package Packages::CAM::UniDTM::UniDTM::UniDTMCheck;
 
 #3th party library
 use strict;
@@ -12,7 +12,7 @@ use warnings;
 #local library
 use aliased 'CamHelpers::CamDTM';
 use aliased 'CamHelpers::CamDTMSurf';
-use aliased 'Packages::CAM::UniDTM::UniTool';
+
 use aliased 'Packages::CAM::UniDTM::Enums';
 use aliased 'Enums::EnumsDrill';
 
@@ -49,7 +49,11 @@ sub CheckTools {
 	unless ( $self->__CheckDrillSize($mess) ) {
 		$result = 0;
 	}
-
+	
+	unless ( $self->__CheckMagazine($mess) ) {
+		$result = 0;
+	}
+ 
 	return $result;
 }
 
@@ -68,14 +72,15 @@ sub CheckToolDepthSet {
 	foreach my $t (@noTools) {
 		$result = 0;
 
-		my $str = "NC layer: ".$self->{"layer"}.". ";
+		my $str = "NC layer: " . $self->{"layer"} . ". ";
 
 		if ( $t->GetSource() eq Enums->Source_DTM ) {
 			$str .= "Tool: " . $t->GetDrillSize() . " in DTM has wrong value of Depth column (depth is: \"" . $t->GetDepth() . "\").\n";
 		}
 		else {
 
-			$str .= "Surface id: \"" . $t->GetSurfaceId() . "\" has wrong value of \"tool_depth\" attribute (depth is: \"" . $t->GetDepth() . "\").\n";
+			$str .=
+			  "Surface id: \"" . $t->GetSurfaceId() . "\" has wrong value of \"tool_depth\" attribute (depth is: \"" . $t->GetDepth() . "\").\n";
 		}
 
 		$$mess .= $str;
@@ -84,7 +89,6 @@ sub CheckToolDepthSet {
 
 	return $result;
 }
-
 
 # Check is depth is is not set in tools
 sub CheckToolDepthNotSet {
@@ -101,7 +105,7 @@ sub CheckToolDepthNotSet {
 	foreach my $t (@depthTools) {
 		$result = 0;
 
-		my $str = "NC layer: ".$self->{"layer"}.". ";
+		my $str = "NC layer: " . $self->{"layer"} . ". ";
 
 		if ( $t->GetSource() eq Enums->Source_DTM ) {
 			$str .= "Tool: " . $t->GetDrillSize() . " in DTM has set \"depth\" column. This tool can't contain depth.\n";
@@ -137,15 +141,16 @@ sub __CheckUniqueTools {
 
 			# if tools equal, check if all attributes are same
 			if ( $ti->GetDrillSize() == $tj->GetDrillSize() && $ti->GetTypeProcess() eq $tj->GetTypeProcess() ) {
-			    my $mStr = "NC layer: ".$self->{"layer"}.". ";
+				my $mStr = "NC layer: " . $self->{"layer"} . ". ";
 				$mStr .= "Same  tools (" . $ti->GetDrillSize() . "µm, " . $ti->GetTypeProcess() . ") has different parameter \"%s\" ";
 				$mStr .= "(";
 				$mStr .=
 				  $ti->GetSource() eq Enums->Source_DTM
 				  ? "column value: \"%s\" in DTM "
-				  : "attribnute value: \"%s\" in surface id: \"" . $ti->GetSurfaceId()."\"";
+				  : "attribnute value: \"%s\" in surface id: \"" . $ti->GetSurfaceId() . "\"";
 				$mStr .= "is not equal to ";
-				$mStr .= $tj->GetSource() eq Enums->Source_DTM
+				$mStr .=
+				  $tj->GetSource() eq Enums->Source_DTM
 				  ? "column value: \"%s\" in DTM "
 				  : "attribute value: \"%s\" in surface ids: " . $tj->GetSurfaceId();
 				$mStr .= ")";
@@ -156,9 +161,9 @@ sub __CheckUniqueTools {
 					$$mess .= sprintf( $mStr, "depth", $tools[$i]->GetDepth(), $tools[$j]->GetDepth() );
 				}
 
-				if ( $tools[$i]->GetMagazine() ne $tools[$j]->GetMagazine() ) {
+				if ( $tools[$i]->GetMagazineInfo() ne $tools[$j]->GetMagazineInfo() ) {
 					$result = 0;
-					$$mess .= sprintf( $mStr, "magazine", $tools[$i]->GetMagazine(), $tools[$j]->GetMagazine() );
+					$$mess .= sprintf( $mStr, "magazine info", $tools[$i]->GetMagazine(), $tools[$j]->GetMagazine() );
 				}
 
 				if ( $tools[$i]->GetTolPlus() ne $tools[$j]->GetTolPlus() ) {
@@ -192,7 +197,7 @@ sub __CheckDrillSize {
 
 	foreach my $t (@noTools) {
 		$result = 0;
-		 my $str = "NC layer: ".$self->{"layer"}.". ";
+		my $str = "NC layer: " . $self->{"layer"} . ". ";
 
 		if ( $t->GetSource() eq Enums->Source_DTM ) {
 			$str .= "Tool: " . $t->GetFinishSize() . " in DTM has not set Drill size.\n";
@@ -211,10 +216,45 @@ sub __CheckDrillSize {
 	my @wrongTool = grep { !defined $_->GetDrillSize2() || $_->GetDrillSize2() eq "" || $_->GetDrillSize() != $_->GetDrillSize2() } @toolsSurf;
 
 	foreach my $t (@wrongTool) {
-
-		$$mess .= "NC layer: ".$self->{"layer"}.". Attributes \".rout_tool\" and \".rout_tool2\" are not equal. Surface id: \"" . $t->GetSurfaceId() . "\".\n";
+		$result = 0;
+		$$mess .=
+		    "NC layer: "
+		  . $self->{"layer"}
+		  . ". Attributes \".rout_tool\" and \".rout_tool2\" are not equal. Surface id: \""
+		  . $t->GetSurfaceId() . "\".\n";
 	}
 
+	return $result;
+}
+
+# If tool is special, test if magazine property is set
+sub __CheckMagazine {
+	my $self = shift;
+	my $mess = shift;
+
+	my $result = 1;
+
+	my @tools = @{ $self->{"tools"} };
+
+	# 1) Check if drillsize is defined
+	my @noMagCode = grep { defined $_->GetMagazineInfo() && $_->GetMagazineInfo() ne "" && ( !defined $_->GetMagazine() || $_->GetMagazine() eq "" ) } @tools;
+
+	foreach my $t (@noMagCode) {
+		$result = 0;
+		my $str = "NC layer: " . $self->{"layer"} . ". ";
+
+		if ( $t->GetSource() eq Enums->Source_DTM ) {
+
+			$str .= "Finding magazine for DTM special tool: ";
+		}
+		else {
+			$str .= "Finding magazine for surface (id: \"" . $t->GetSurfaceId() . "\") special tool: ";
+		}
+
+		$str .= $t->GetFinishSize() . "µm was not succes. (magazine info: \"" . $t->GetMagazineInfo() . "\").\n";
+
+		$$mess .= $str;
+	}
 	return $result;
 }
 

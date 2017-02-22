@@ -25,27 +25,24 @@ use aliased 'Helpers::GeneralHelper';
 #-------------------------------------------------------------------------------------------#
 
 # Return name of all steps
- sub GetAllStepNames {
-	my $self      = shift;
-	my $inCAM     = shift;
-	my $jobId     = shift;
- 
- 
-	$inCAM->INFO(units => 'mm', angle_direction => 'ccw', entity_type => 'job', entity_path => $jobId,data_type => 'STEPS_LIST');
-	
-	return @{$inCAM->{doinfo}{gSTEPS_LIST}};
-}
+sub GetAllStepNames {
+	my $self  = shift;
+	my $inCAM = shift;
+	my $jobId = shift;
 
+	$inCAM->INFO( units => 'mm', angle_direction => 'ccw', entity_type => 'job', entity_path => $jobId, data_type => 'STEPS_LIST' );
+
+	return @{ $inCAM->{doinfo}{gSTEPS_LIST} };
+}
 
 # create special step, which IPC will be exported from
 sub CreateFlattenStep {
-	my $self = shift;
-	my $inCAM = shift;
-	my $jobId = shift;
+	my $self       = shift;
+	my $inCAM      = shift;
+	my $jobId      = shift;
 	my $sourceStep = shift;
 	my $targetStep = shift;
-	my $treatDTM = shift; # when 1, dtm user columns will be flattened too
-	 
+	my $treatDTM   = shift;    # when 1, dtm user columns will be flattened too
 
 	#delete if step already exist
 	if ( CamHelper->StepExists( $inCAM, $jobId, $targetStep ) ) {
@@ -67,17 +64,16 @@ sub CreateFlattenStep {
 	my $srExist = CamStepRepeat->ExistStepAndRepeats( $inCAM, $jobId, $targetStep );
 
 	if ($srExist) {
-		$self->__FlatternPdfStep($inCAM, $jobId,$targetStep, $treatDTM);
+		$self->__FlatternPdfStep( $inCAM, $jobId, $targetStep, $treatDTM );
 	}
 
 }
 
-
 sub __FlatternPdfStep {
-	my $self    = shift;
-	my $inCAM   = shift;
-	my $jobId   = shift;
-	my $stepPdf = shift;
+	my $self     = shift;
+	my $inCAM    = shift;
+	my $jobId    = shift;
+	my $stepPdf  = shift;
 	my $treatDTM = shift;
 
 	CamHelper->SetStep( $inCAM, $stepPdf );
@@ -86,13 +82,17 @@ sub __FlatternPdfStep {
 
 	foreach my $l (@allLayers) {
 
-		CamLayer->FlatternLayer( $inCAM, $jobId, $stepPdf, $l->{"gROWname"} );
+		if ( $treatDTM && ( $l->{"gROWlayer_type"} eq "drill" || $l->{"gROWlayer_type"} eq "rout" ) ) {
+			
+			CamLayer->FlatternNCLayer( $inCAM, $jobId, $stepPdf, $l->{"gROWname"} );
+		}
+		else {
+			CamLayer->FlatternLayer( $inCAM, $jobId, $stepPdf, $l->{"gROWname"} );
+		}
 	}
 
 	$inCAM->COM('sredit_sel_all');
 	$inCAM->COM('sredit_del_steps');
-
 }
- 
 
 1;
