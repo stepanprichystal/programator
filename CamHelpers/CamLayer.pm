@@ -393,7 +393,7 @@ sub ClipAreaByProf {
 				 "pol_types"   => "positive\;negative"
 	);
 	
-	$inCAM->COM( 'affected_layer', name => $layer, mode => "single", affected => "no" );
+	$inCAM->COM( 'display_layer',name=> $layer,display=>'no',number=>'1');
 	
 }
 

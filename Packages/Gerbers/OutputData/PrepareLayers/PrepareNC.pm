@@ -30,7 +30,7 @@ use aliased 'CamHelpers::CamDrilling';
 use aliased 'CamHelpers::CamAttributes';
 use aliased 'CamHelpers::CamSymbol';
 use aliased 'CamHelpers::CamHistogram';
-use aliased 'Packages::Drilling::DrillChecking::LayerCheck';
+use aliased 'Packages::Drilling::DrillChecking::LayerCheckError';
 use aliased 'Packages::CAM::FeatureFilter::FeatureFilter';
 use aliased 'Enums::EnumsDrill';
 
@@ -136,7 +136,7 @@ sub __CheckNCLayers {
 
 	my @layerNames = map { $_->{"gROWname"} } @layers;
 
-	unless ( LayerCheck->CheckNCLayers( $inCAM, $jobId, $self->{"oriStep"}, \@layerNames, \$mess ) ) {
+	unless ( LayerCheckError->CheckNCLayers( $inCAM, $jobId, $self->{"oriStep"}, \@layerNames, \$mess ) ) {
 
 		# Do clean up
 

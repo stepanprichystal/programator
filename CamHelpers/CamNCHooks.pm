@@ -333,14 +333,14 @@ sub GetMaterialParams {
 	my $materialName = shift;
 	my $machine      = shift;
 	my $ncPath       = shift;    # \\incam\incam_server\site_data\hooks\<ncr OR ncd>\
-
+ 
 	my $materialFile = undef;
 
 	my @d = ();                  # drilling params
 	my @r = ();                  # routing params
 	my @s = ();                  # special params
 
-	my %params = ( "drill" => \@d, "rout" => \@r, "special" => \@s );
+	my %params = ( "drill" => \@d, "rout" => \@r, "special" => \@s, "ok" => 1 );
 
 	#load parameters only when material exist
 	if ($materialName) {
@@ -369,6 +369,8 @@ sub GetMaterialParams {
 
 			$materialFile = "G200";
 		}
+		
+		print STDERR "\n\n$materialName - $ncPath - $materialFile\n\n";
 	}
 
 	#IS420
@@ -386,12 +388,14 @@ sub GetMaterialParams {
 	#NEREZOVA_OCEL
 
 	unless ($materialFile) {
-		return 0;
+		$params{"ok"} = 0;
 	}
 
 	$materialFile = $ncPath . "parametersFile\\" . $machine . "\\" . $materialFile;
 
 	if ( open( my $fMat, "$materialFile" ) ) {
+		
+		print STDERR "\n\n file opened $materialFile\n\n";
 
 		my $section = undef;
 
@@ -399,6 +403,8 @@ sub GetMaterialParams {
 
 			if ( $l =~ /#\s*drill/i ) {
 				$section = "drill";
+				
+				print STDERR "\n\n section drill \n\n";
 			}
 			elsif ( $l =~ /#\s*rout/i ) {
 				$section = "rout";
@@ -413,10 +419,14 @@ sub GetMaterialParams {
 		}
 
 		close($fMat);
-
-		return %params;
+		
+	}else{
+		
+		$params{"ok"} = 0;
+		 
 	}
-
+	
+	return %params
 }
 
 1;

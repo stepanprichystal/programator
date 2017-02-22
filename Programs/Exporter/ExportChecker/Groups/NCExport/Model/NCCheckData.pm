@@ -18,7 +18,8 @@ use aliased 'CamHelpers::CamHelper';
 use aliased 'CamHelpers::CamStepRepeat';
 use aliased 'CamHelpers::CamHistogram';
 use aliased 'Programs::Exporter::ExportChecker::Groups::NifExport::Presenter::NifHelper';
-use aliased 'Packages::Drilling::DrillChecking::LayerCheck';
+use aliased 'Packages::Drilling::DrillChecking::LayerCheckError';
+use aliased 'Packages::Drilling::DrillChecking::LayerCheckWarn';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -59,10 +60,16 @@ sub OnCheckGroupData {
 	}
 
 	# 2) Checking NC layers
-	my $mess = "";
+	my $mess = ""; # errors
 
-	unless ( LayerCheck->CheckNCLayers( $inCAM, $jobId, $stepName, undef, \$mess ) ) {
+	unless ( LayerCheckError->CheckNCLayers( $inCAM, $jobId, $stepName, undef, \$mess ) ) {
 		$dataMngr->_AddErrorResult( "Checking NC layer", $mess );
+	}
+	
+	my $mess2 = ""; # warnings
+
+	unless ( LayerCheckWarn->CheckNCLayers( $inCAM, $jobId, $stepName, undef, \$mess2 ) ) {
+		$dataMngr->_AddWarningResult( "Checking NC layer", $mess2 );
 	}
 
 	# 3) If panel contain more drifrent step, check if fsch exist

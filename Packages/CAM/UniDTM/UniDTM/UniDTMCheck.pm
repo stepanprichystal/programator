@@ -30,12 +30,16 @@ sub new {
 	$self->{"step"}    = shift;
 	$self->{"layer"}   = shift;
 	$self->{"breakSR"} = shift;
+	
+	$self->{"materialName"} = shift;
+	
 	$self->{"tools"}   = shift;
 
 	return $self;
 }
 
 # Check if tools parameters are ok
+# When some errors occure here, proper NC export is not possible
 sub CheckTools {
 	my $self = shift;
 	my $mess = shift;
@@ -49,11 +53,7 @@ sub CheckTools {
 	unless ( $self->__CheckDrillSize($mess) ) {
 		$result = 0;
 	}
-	
-	unless ( $self->__CheckMagazine($mess) ) {
-		$result = 0;
-	}
- 
+	 
 	return $result;
 }
 
@@ -119,6 +119,39 @@ sub CheckToolDepthNotSet {
 
 	}
 
+	return $result;
+}
+
+# If tool is special, test if magazine info property is set properly
+# and magazine code is find
+sub CheckMagazine {
+	my $self = shift;
+	my $mess = shift;
+
+	my $result = 1;
+
+	my @tools = @{ $self->{"tools"} };
+
+	# 1) Check if drillsize is defined
+	my @noMagCode = grep { defined $_->GetMagazineInfo() && $_->GetMagazineInfo() ne "" && ( !defined $_->GetMagazine() || $_->GetMagazine() eq "" ) } @tools;
+
+	foreach my $t (@noMagCode) {
+		$result = 0;
+		my $str = "NC layer: " . $self->{"layer"} . ". ";
+
+		if ( $t->GetSource() eq Enums->Source_DTM ) {
+
+			$str .= "Finding magazine for DTM special tool: ";
+		}
+		else {
+			$str .= "Finding magazine for surface (id: \"" . $t->GetSurfaceId() . "\") special tool: ";
+		}
+
+		$str .= $t->GetDrillSize() . "µm was not succes. (magazine info: \"" . $t->GetMagazineInfo() . "\", pcb material: \"".$self->{"materialName"}."\").\n";
+		$str .= "Check speial tools definition file at y:\\server\\site_data\\scripts\\Config\\MagazineSpec.xml";
+
+		$$mess .= $str;
+	}
 	return $result;
 }
 
@@ -227,36 +260,7 @@ sub __CheckDrillSize {
 	return $result;
 }
 
-# If tool is special, test if magazine property is set
-sub __CheckMagazine {
-	my $self = shift;
-	my $mess = shift;
 
-	my $result = 1;
-
-	my @tools = @{ $self->{"tools"} };
-
-	# 1) Check if drillsize is defined
-	my @noMagCode = grep { defined $_->GetMagazineInfo() && $_->GetMagazineInfo() ne "" && ( !defined $_->GetMagazine() || $_->GetMagazine() eq "" ) } @tools;
-
-	foreach my $t (@noMagCode) {
-		$result = 0;
-		my $str = "NC layer: " . $self->{"layer"} . ". ";
-
-		if ( $t->GetSource() eq Enums->Source_DTM ) {
-
-			$str .= "Finding magazine for DTM special tool: ";
-		}
-		else {
-			$str .= "Finding magazine for surface (id: \"" . $t->GetSurfaceId() . "\") special tool: ";
-		}
-
-		$str .= $t->GetFinishSize() . "µm was not succes. (magazine info: \"" . $t->GetMagazineInfo() . "\").\n";
-
-		$$mess .= $str;
-	}
-	return $result;
-}
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

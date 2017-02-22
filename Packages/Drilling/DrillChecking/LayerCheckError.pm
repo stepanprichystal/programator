@@ -1,8 +1,9 @@
 #-------------------------------------------------------------------------------------------#
-# Description: Contain special function, which work with drilling
+# Description: Class is responsible for checking drilling errors
+# when some errors occur, NC export is not possible
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::Drilling::DrillChecking::LayerCheck;
+package Packages::Drilling::DrillChecking::LayerCheckError;
 
 #3th party library
 use utf8;
@@ -489,7 +490,7 @@ sub __GetLayersByType {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	use aliased 'Packages::Drilling::DrillChecking::LayerCheck';
+	use aliased 'Packages::Drilling::DrillChecking::LayerCheckError';
 
 	use aliased 'Packages::InCAM::InCAM';
 
@@ -498,7 +499,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $mess = "";
 
-	my $result = LayerCheck->CheckNCLayers( $inCAM, $jobId, "o+1", undef, \$mess );
+	my $result = LayerCheckError->CheckNCLayers( $inCAM, $jobId, "o+1", undef, \$mess );
 
 	print STDERR "Result is $result \n";
 

@@ -45,12 +45,14 @@ sub new {
 
 	$self->{"magazineDef"}  = undef;
 	$self->{"magazineSpec"} = undef;
+	
+	$self->{"materialName"} = HegMethods->GetMaterialKind($self->{"jobId"});
 
 	my @t = ();
 	$self->{"tools"} = \@t;
 
 	$self->{"check"} =
-	  UniDTMCheck->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"step"}, $self->{"layer"}, $self->{"breakSR"}, $self->{"tools"} );
+	  UniDTMCheck->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"step"}, $self->{"layer"}, $self->{"breakSR"}, $self->{"materialName"},  $self->{"tools"} );
 
 	$self->__LoadMagazineXml();
 
@@ -219,7 +221,7 @@ sub __LoadToolsMagazine {
 
 	my $jobId = $self->{"jobId"};
 
-	my $materialName = HegMethods->GetMaterialKind($jobId);
+	my $materialName = $self->{"materialName"};
 	my $operation    = $self->__GetOperationByLayer();
 
 	foreach my $t ( @{ $self->{"tools"} } ) {
