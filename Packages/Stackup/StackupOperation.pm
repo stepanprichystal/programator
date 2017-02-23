@@ -63,6 +63,63 @@ sub GetThickByLayer {
 	return ( sprintf "%3.2f", ($thick) );
 }
 
+# Return if Cu layer has orientation TOP/BOT
+# Orientation is based on view pcb from top
+# Return string "top" or "bot"
+sub GetSideByLayer {
+	my $self      = shift;
+	my $jobId = shift;
+	my $layerName = shift;
+	my $stackup = shift;
+	
+	unless(defined $stackup){
+		$stackup = Stackup->new($jobId);
+	}
+
+	my $side = "";
+
+	my %pressInfo = $stackup->GetPressInfo();
+	my $core      = $stackup->GetCoreByCopperLayer($layerName);
+	my $press     = undef;
+
+	if ($core) {
+
+		my $topCopperName = $core->GetTopCopperLayer()->GetCopperName();
+		my $botCopperName = $core->GetBotCopperLayer()->GetCopperName();
+
+		if ( $layerName eq $topCopperName ) {
+
+			$side = "top";
+		}
+		elsif ( $layerName eq $botCopperName ) {
+
+			$side = "bot";
+		}
+	}
+	else {
+
+		# find, which press was layer pressed in
+		foreach my $pNum ( keys %pressInfo ) {
+
+			my $p = $pressInfo{$pNum};
+
+			if ( $p->GetTopCopperLayer() eq $layerName ) {
+
+				$side = "top";
+				last;
+
+			}
+			elsif ( $p->GetBotCopperLayer() eq $layerName ) {
+
+				$side = "bot";
+				last;
+			}
+		}
+	}
+
+	return $side;
+}
+
 
 # If stackup contains core topmost or very bottom (Cu-core-cu-prepreg-Cu-core-cu)
 # Return 1, else 0
@@ -107,7 +164,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	use aliased 'Packages::Stackup::StackupOperation';
 
-	my $test = StackupOperation->GetThickByLayer("f61721", "v2");
+	my $test = StackupOperation->GetSideByLayer("f52456", "v3");
 
 	 
 

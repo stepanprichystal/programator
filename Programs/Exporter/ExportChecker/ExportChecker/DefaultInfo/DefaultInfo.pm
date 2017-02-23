@@ -27,6 +27,7 @@ use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'Packages::Technology::EtchOperation';
 use aliased 'Packages::Other::CustomerNote';
 use aliased 'Packages::Tooling::PressfitOperation';
+use aliased 'Packages::Stackup::StackupOperation';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -227,50 +228,13 @@ sub GetEtchType {
 
 }
 
+# Return if Cu layer has orientation TOP/BOT
+# Orientation is based on view pcb from top
 sub GetSideByLayer {
 	my $self      = shift;
 	my $layerName = shift;
-
-	my $side = "";
-
-	my %pressInfo = $self->{"stackup"}->GetPressInfo();
-	my $core      = $self->{"stackup"}->GetCoreByCopperLayer($layerName);
-	my $press     = undef;
-
-	if ($core) {
-
-		my $topCopperName = $core->GetTopCopperLayer()->GetCopperName();
-		my $botCopperName = $core->GetBotCopperLayer()->GetCopperName();
-
-		if ( $layerName eq $topCopperName ) {
-
-			$side = "top";
-		}
-		elsif ( $layerName eq $botCopperName ) {
-
-			$side = "bot";
-		}
-	}
-	else {
-
-		# find, which press was layer pressed in
-		foreach my $pNum ( keys %pressInfo ) {
-
-			my $p = $pressInfo{$pNum};
-
-			if ( $p->GetTopCopperLayer() eq $layerName ) {
-
-				$side = "top";
-				last;
-
-			}
-			elsif ( $p->GetBotCopperLayer() eq $layerName ) {
-
-				$side = "bot";
-				last;
-			}
-		}
-	}
+ 
+	my $side = StackupOperation->GetSideByLayer($self->{"jobId"}, $layerName, $self->{"stackup"});
 
 	return $side;
 }
