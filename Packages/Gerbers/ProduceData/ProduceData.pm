@@ -17,14 +17,13 @@ use File::Path 'rmtree';
 use aliased 'Enums::EnumsPaths';
 use aliased 'Helpers::GeneralHelper';
 use aliased 'Packages::Gerbers::ProduceData::LayerData::LayerDataList';
- 
 use aliased 'Packages::Gerbers::ProduceData::OutputLayers';
 use aliased 'Packages::Gerbers::ProduceData::OutputInfo';
 use aliased 'Packages::Gerbers::ProduceData::Enums';
 use aliased 'CamHelpers::CamStep';
 use aliased 'CamHelpers::CamHelper';
 use aliased 'CamHelpers::CamJob';
-use aliased 'Packages::Gerbers::OutputData::OutputData';
+use aliased 'Packages::CAMJob::OutputData::OutputData';
 use aliased 'Packages::ItemResult::Enums' => "EnumsResult";
 
 #-------------------------------------------------------------------------------------------#

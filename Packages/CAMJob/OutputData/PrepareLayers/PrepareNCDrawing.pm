@@ -3,7 +3,7 @@
 # Description: Responsible for prepare layers before print as pdf
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::Gerbers::OutputData::PrepareLayers::PrepareNCDrawing;
+package Packages::CAMJob::OutputData::PrepareLayers::PrepareNCDrawing;
 
 #3th party library
 use strict;
@@ -16,17 +16,17 @@ use Math::Geometry::Planar;
 use aliased 'Helpers::GeneralHelper';
 use aliased 'Enums::EnumsPaths';
 use aliased 'Enums::EnumsGeneral';
-use aliased 'Packages::Gerbers::OutputData::Enums';
+use aliased 'Packages::CAMJob::OutputData::Enums';
 use aliased 'CamHelpers::CamLayer';
 use aliased 'CamHelpers::CamJob';
-use aliased 'Packages::Gerbers::OutputData::LayerData::LayerData';
+use aliased 'Packages::CAMJob::OutputData::LayerData::LayerData';
 use aliased 'Helpers::ValueConvertor';
 use aliased 'CamHelpers::CamFilter';
 use aliased 'CamHelpers::CamDTM';
 use aliased 'Packages::CAM::UniDTM::UniDTM';
 use aliased 'Packages::CAM::UniDTM::Enums' => "DTMEnums";
 use aliased 'Packages::CAM::FeatureFilter::FeatureFilter';
-use aliased 'Packages::Gerbers::OutputData::Drawing::Drawing';
+use aliased 'Packages::CAMJob::OutputData::Drawing::Drawing';
 use aliased 'Packages::CAM::SymbolDrawing::Point';
 use aliased 'Enums::EnumsDrill';
 use aliased 'CamHelpers::CamHistogram';

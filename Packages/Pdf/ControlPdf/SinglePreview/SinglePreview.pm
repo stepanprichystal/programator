@@ -22,7 +22,7 @@ use aliased 'Enums::EnumsPaths';
 use aliased 'Packages::Pdf::ControlPdf::SinglePreview::LayerData::LayerDataList';
 
 use aliased 'Packages::Pdf::ControlPdf::SinglePreview::OutputPdf';
-use aliased 'Packages::Gerbers::OutputData::OutputData';
+use aliased 'Packages::CAMJob::OutputData::OutputData';
 
 #-------------------------------------------------------------------------------------------#
 #  Interface

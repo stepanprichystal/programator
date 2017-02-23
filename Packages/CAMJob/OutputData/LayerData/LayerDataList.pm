@@ -4,7 +4,7 @@
 # This sctructure contain list <LayerData> and operations with this items
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::Gerbers::OutputData::LayerData::LayerDataList;
+package Packages::CAMJob::OutputData::LayerData::LayerDataList;
 
 #3th party library
 use strict;
@@ -14,7 +14,7 @@ use warnings;
 
 use aliased 'Enums::EnumsGeneral';
 use aliased 'CamHelpers::CamHistogram';
-use aliased 'Packages::Gerbers::OutputData::Enums';
+use aliased 'Packages::CAMJob::OutputData::Enums';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods

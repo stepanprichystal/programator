@@ -4,7 +4,7 @@
 # This sctructure contain list <LayerData> and operations with this items
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::Gerbers::OutputData::Drawing::Drawing;
+package Packages::CAMJob::OutputData::Drawing::Drawing;
 
 #3th party library
 use strict;
@@ -23,7 +23,7 @@ use aliased 'Packages::CAM::SymbolDrawing::Primitive::PrimitiveText';
 use aliased 'Packages::CAM::SymbolDrawing::Primitive::PrimitiveLine';
 
 use aliased 'Packages::CAM::SymbolDrawing::Primitive::Helper::SurfaceLinePattern';
-use aliased 'Packages::Gerbers::OutputData::Enums';
+use aliased 'Packages::CAMJob::OutputData::Enums';
 use aliased 'Packages::CAM::SymbolDrawing::SymbolLib::DimV1Lines';
 
 use aliased 'Packages::CAM::SymbolDrawing::SymbolLib::DimH1Lines';

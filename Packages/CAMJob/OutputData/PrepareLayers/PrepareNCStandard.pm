@@ -3,7 +3,7 @@
 # Description: Responsible for prepare layers before print as pdf
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::Gerbers::OutputData::PrepareLayers::PrepareNCStandard;
+package Packages::CAMJob::OutputData::PrepareLayers::PrepareNCStandard;
 
 #3th party library
 use strict;
@@ -17,7 +17,7 @@ use aliased 'Enums::EnumsGeneral';
 use aliased 'Packages::Gerbers::OutputData::Enums';
 use aliased 'CamHelpers::CamLayer';
 use aliased 'CamHelpers::CamJob';
-use aliased 'Packages::Gerbers::OutputData::LayerData::LayerData';
+use aliased 'Packages::CAMJob::OutputData::LayerData::LayerData';
 use aliased 'Helpers::ValueConvertor';
 use aliased 'CamHelpers::CamFilter';
 use aliased 'CamHelpers::CamDTM';

@@ -3,7 +3,7 @@
 # Description: Module create image preview of pcb based on physical layers
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::Gerbers::OutputData::OutputData;
+package Packages::CAMJob::OutputData::OutputData;
 
 #3th party library
 use strict;
@@ -14,9 +14,9 @@ use warnings;
 use aliased 'Enums::EnumsPaths';
 use aliased 'Helpers::GeneralHelper';
 
-use aliased 'Packages::Gerbers::OutputData::PrepareLayers::PrepareBase';
-use aliased 'Packages::Gerbers::OutputData::PrepareLayers::PrepareNC';
-use aliased 'Packages::Gerbers::OutputData::LayerData::LayerDataList';
+use aliased 'Packages::CAMJob::OutputData::PrepareLayers::PrepareBase';
+use aliased 'Packages::CAMJob::OutputData::PrepareLayers::PrepareNC';
+use aliased 'Packages::CAMJob::OutputData::LayerData::LayerDataList';
 
 use aliased 'CamHelpers::CamStep';
 use aliased 'CamHelpers::CamHelper';

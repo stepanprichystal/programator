@@ -1,5 +1,5 @@
 
-package Packages::Gerbers::OutputData::Enums;
+package Packages::CAMJob::OutputData::Enums;
 
  
 

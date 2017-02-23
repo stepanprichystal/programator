@@ -4,7 +4,7 @@
 # Amd Which layer merge
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::Gerbers::OutputData::LayerData::LayerData;
+package Packages::CAMJob::OutputData::LayerData::LayerData;
 
 #3th party library
 use strict;
