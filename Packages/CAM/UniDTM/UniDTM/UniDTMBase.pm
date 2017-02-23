@@ -51,12 +51,11 @@ sub new {
 	my @t = ();
 	$self->{"tools"} = \@t;
 
-	$self->{"check"} =
-	  UniDTMCheck->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"step"}, $self->{"layer"}, $self->{"breakSR"}, $self->{"materialName"},  $self->{"tools"} );
-
 	$self->__LoadMagazineXml();
 
 	$self->__InitUniDTM();
+	
+	$self->{"check"} =  UniDTMCheck->new( $self );
 
 	return $self;
 }
@@ -87,6 +86,7 @@ sub GetTools {
 }
 
 # Return reduced unique tools
+# If tool parameters are wrong, script die
 sub GetUniqueTools {
 	my $self = shift;
 
@@ -118,6 +118,33 @@ sub GetUniqueTools {
 
 	return @tools;
 }
+
+
+
+# Return distinct tools by drillsize + processtype
+# Tools can be wrong defined!
+# Parameter check is not done!
+# This is used only for checking, when we want finale listo of diameters
+#sub GetReducedTools {
+#	my $self = shift;
+#
+#	my $mess = "";
+# 
+#	# Tools, some can be duplicated
+#	# Do distinst by "tool key" (drillSize + typeProcess)
+#	my %seen;
+#	my @toolsUniq = grep { !$seen{ $_->GetDrillSize() . $_->GetTypeProcess() }++ } @{ $self->{"tools"} };
+#
+#	my @tools = ();
+#
+#	foreach my $t (@toolsUniq) {
+#
+#		my $tNew = UniToolBase->new( $t->GetDrillSize(), $t->GetTypeProcess() );
+#		push( @tools, $tNew );
+#	}
+#
+#	return @tools;
+#}
 
 # Return unique tool by drillsize and type chain/hole
 sub GetTool {

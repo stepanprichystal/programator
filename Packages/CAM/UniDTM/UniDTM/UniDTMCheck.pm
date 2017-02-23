@@ -15,6 +15,7 @@ use aliased 'CamHelpers::CamDTMSurf';
 
 use aliased 'Packages::CAM::UniDTM::Enums';
 use aliased 'Enums::EnumsDrill';
+use List::MoreUtils qw(uniq);
 
 #-------------------------------------------------------------------------------------------#
 #  Public method
@@ -25,15 +26,7 @@ sub new {
 	$self = {};
 	bless $self;
 
-	$self->{"inCAM"}   = shift;
-	$self->{"jobId"}   = shift;
-	$self->{"step"}    = shift;
-	$self->{"layer"}   = shift;
-	$self->{"breakSR"} = shift;
-	
-	$self->{"materialName"} = shift;
-	
-	$self->{"tools"}   = shift;
+	$self->{"unitDTM"} = shift;
 
 	return $self;
 }
@@ -53,7 +46,7 @@ sub CheckTools {
 	unless ( $self->__CheckDrillSize($mess) ) {
 		$result = 0;
 	}
-	 
+
 	return $result;
 }
 
@@ -64,7 +57,7 @@ sub CheckToolDepthSet {
 
 	my $result = 1;
 
-	my @tools = @{ $self->{"tools"} };
+	my @tools = @{ $self->{"unitDTM"}->{"tools"} };
 
 	# Check if drillsize is defined
 	my @noTools = grep { !$_->DepthIsOk() } @tools;
@@ -72,7 +65,7 @@ sub CheckToolDepthSet {
 	foreach my $t (@noTools) {
 		$result = 0;
 
-		my $str = "NC layer: " . $self->{"layer"} . ". ";
+		my $str = "NC layer: " . $self->{"unitDTM"}->{"layer"} . ". ";
 
 		if ( $t->GetSource() eq Enums->Source_DTM ) {
 			$str .= "Tool: " . $t->GetDrillSize() . " in DTM has wrong value of Depth column (depth is: \"" . $t->GetDepth() . "\").\n";
@@ -97,7 +90,7 @@ sub CheckToolDepthNotSet {
 
 	my $result = 1;
 
-	my @tools = @{ $self->{"tools"} };
+	my @tools = @{ $self->{"unitDTM"}->{"tools"} };
 
 	# Check if drillsize is defined
 	my @depthTools = grep { $_->DepthIsOk() } @tools;
@@ -105,7 +98,7 @@ sub CheckToolDepthNotSet {
 	foreach my $t (@depthTools) {
 		$result = 0;
 
-		my $str = "NC layer: " . $self->{"layer"} . ". ";
+		my $str = "NC layer: " . $self->{"unitDTM"}->{"layer"} . ". ";
 
 		if ( $t->GetSource() eq Enums->Source_DTM ) {
 			$str .= "Tool: " . $t->GetDrillSize() . " in DTM has set \"depth\" column. This tool can't contain depth.\n";
@@ -130,14 +123,15 @@ sub CheckMagazine {
 
 	my $result = 1;
 
-	my @tools = @{ $self->{"tools"} };
+	my @tools = @{ $self->{"unitDTM"}->{"tools"} };
 
 	# 1) Check if drillsize is defined
-	my @noMagCode = grep { defined $_->GetMagazineInfo() && $_->GetMagazineInfo() ne "" && ( !defined $_->GetMagazine() || $_->GetMagazine() eq "" ) } @tools;
+	my @noMagCode =
+	  grep { defined $_->GetMagazineInfo() && $_->GetMagazineInfo() ne "" && ( !defined $_->GetMagazine() || $_->GetMagazine() eq "" ) } @tools;
 
 	foreach my $t (@noMagCode) {
 		$result = 0;
-		my $str = "NC layer: " . $self->{"layer"} . ". ";
+		my $str = "NC layer: " . $self->{"unitDTM"}->{"layer"} . ". ";
 
 		if ( $t->GetSource() eq Enums->Source_DTM ) {
 
@@ -147,11 +141,60 @@ sub CheckMagazine {
 			$str .= "Finding magazine for surface (id: \"" . $t->GetSurfaceId() . "\") special tool: ";
 		}
 
-		$str .= $t->GetDrillSize() . "µm was not succes. (magazine info: \"" . $t->GetMagazineInfo() . "\", pcb material: \"".$self->{"materialName"}."\").\n";
-		$str .= "Check speial tools definition file at y:\\server\\site_data\\scripts\\Config\\MagazineSpec.xml";
+		$str .=
+		    $t->GetDrillSize()
+		  . "µm was not succes. (magazine info: \""
+		  . $t->GetMagazineInfo()
+		  . "\", pcb material: \""
+		  . $self->{"unitDTM"}->{"materialName"}
+		  . "\").\n";
+		$str .= "Check special tools definition file at y:\\server\\site_data\\scripts\\Config\\MagazineSpec.xml.\n";
 
 		$$mess .= $str;
 	}
+	return $result;
+}
+
+# Check if some tools are same diameter as special tools and
+# theses tools doesn't have magazine info
+sub CheckSpecialTools {
+	my $self = shift;
+	my $mess = shift;
+
+	my $result = 1;
+
+	my @tools = @{$self->{"unitDTM"}->{"tools"}};
+
+	my @diametres  = map { $_->GetDrillSize() } @tools;
+	my @specTool   = ();
+	my @uniDTMTool = ();
+	foreach my $k ( keys %{ $self->{"unitDTM"}->{"magazineSpec"}->{"tool"} } ) {
+
+		my $tXml = $self->{"unitDTM"}->{"magazineSpec"}->{"tool"}->{$k};
+
+		my @spec = grep { $_ / 1000 == $tXml->{"diameter"} } @diametres;
+		if(scalar(@spec)){
+			push( @specTool, "\"" . $k . "\"" );
+			push( @uniDTMTool, ( $tXml->{"diameter"} * 1000 ) . "µm" );
+		}
+
+
+	}
+
+	# get unique tools
+	@specTool   = uniq(@specTool);
+	@uniDTMTool = uniq(@uniDTMTool);
+
+	if ( scalar(@specTool) ) {
+
+		$result = 0;
+		my $str  = join( "; ", @specTool );
+		my $str2 = join( "; ", @uniDTMTool );
+		$$mess .=
+		    "Some standard tools ($str2), which are used have same diameter as special tools: $str."
+		  . " You really don't want to use special tools? If so, fill \"magazine info\" parameter.\n";
+	}
+
 	return $result;
 }
 
@@ -163,7 +206,7 @@ sub __CheckUniqueTools {
 
 	my $result = 1;
 
-	my @tools = @{ $self->{"tools"} };
+	my @tools = @{ $self->{"unitDTM"}->{"tools"} };
 
 	for ( my $i = 0 ; $i < scalar(@tools) ; $i++ ) {
 
@@ -174,7 +217,7 @@ sub __CheckUniqueTools {
 
 			# if tools equal, check if all attributes are same
 			if ( $ti->GetDrillSize() == $tj->GetDrillSize() && $ti->GetTypeProcess() eq $tj->GetTypeProcess() ) {
-				my $mStr = "NC layer: " . $self->{"layer"} . ". ";
+				my $mStr = "NC layer: " . $self->{"unitDTM"}->{"layer"} . ". ";
 				$mStr .= "Same  tools (" . $ti->GetDrillSize() . "µm, " . $ti->GetTypeProcess() . ") has different parameter \"%s\" ";
 				$mStr .= "(";
 				$mStr .=
@@ -223,14 +266,14 @@ sub __CheckDrillSize {
 
 	my $result = 1;
 
-	my @tools = @{ $self->{"tools"} };
+	my @tools = @{ $self->{"unitDTM"}->{"tools"} };
 
 	# 1) Check if drillsize is defined
 	my @noTools = grep { !defined $_->GetDrillSize() || $_->GetDrillSize() eq "" || $_->GetDrillSize() == 0 } @tools;
 
 	foreach my $t (@noTools) {
 		$result = 0;
-		my $str = "NC layer: " . $self->{"layer"} . ". ";
+		my $str = "NC layer: " . $self->{"unitDTM"}->{"layer"} . ". ";
 
 		if ( $t->GetSource() eq Enums->Source_DTM ) {
 			$str .= "Tool: " . $t->GetFinishSize() . " in DTM has not set Drill size.\n";
@@ -252,7 +295,7 @@ sub __CheckDrillSize {
 		$result = 0;
 		$$mess .=
 		    "NC layer: "
-		  . $self->{"layer"}
+		  . $self->{"unitDTM"}->{"layer"}
 		  . ". Attributes \".rout_tool\" and \".rout_tool2\" are not equal. Surface id: \""
 		  . $t->GetSurfaceId() . "\".\n";
 	}
@@ -261,7 +304,7 @@ sub __CheckDrillSize {
 }
 
 
-
+ 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#

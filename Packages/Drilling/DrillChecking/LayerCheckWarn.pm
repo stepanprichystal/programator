@@ -107,7 +107,15 @@ sub CheckToolParameters {
 
 		unless ( $l->{"uniDTM"}->GetChecks()->CheckMagazine($mess) ) {
 			$result = 0;
+			$$mess .= "\n";
 		}
+		
+		unless ( $l->{"uniDTM"}->GetChecks()->CheckSpecialTools($mess) ) {
+			$result = 0;
+			$$mess .= "\n";
+		}
+		
+		
 	}
 
 	return $result;
