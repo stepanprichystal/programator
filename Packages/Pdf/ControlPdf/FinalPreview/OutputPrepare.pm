@@ -499,44 +499,27 @@ sub __CheckCountersink {
 
 	#get depths for all diameter
 	 
+	# load UniDTM for layer
+	my $unitDTM = UniDTM->new( $inCAM, $jobId, $stepName, $lName, 1 );
 
-	$inCAM->INFO(
-				  units       => 'mm',
-				  entity_type => 'layer',
-				  entity_path => "$jobId/$stepName/$lName",
-				  data_type   => 'TOOL',
-				  parameters  => 'drill_size+shape',
-				  options     => "break_sr"
-	);
-	my @toolSize  = @{ $inCAM->{doinfo}{gTOOLdrill_size} };
-	my @toolShape = @{ $inCAM->{doinfo}{gTOOLshape} };
-
+	 
 	# 2) check if tool depth is set
-	for ( my $i = 0 ; $i < scalar(@toolSize) ; $i++ ) {
-
-		my $tSize = $toolSize[$i];
- 
-		#for each hole diameter, get depth (in mm)
-		my $tDepth;
-
-		if ( $tSize == 6500 ) {
+	foreach my $t ($unitDTM->GetUniqueTools()){
+		
+		if ( $t->GetSpecial() && defined $t->GetAngle() && $t->GetAngle() > 0 ) {
 			
-			my $uniDTM = UniDTM->new( $inCAM, $jobId, $stepName, $lName, 1 );
+			#vypocitej realne odebrani materialu na zaklade hloubky pojezdu/vrtani
  
-			$tDepth = $uniDTM->GetToolDepth($tSize, $toolShape[$i]);
- 
-			#vypocitej realne odebrani materialu na zaklade hloubkz pojezdu/vrtani
-			# TODO tady se musi dotahnout skutecnz uhel, ne jen 90 stupnu pokazde - ceka az budou kompletne funkcni vrtacky
-			my $toolAngl = 90;
+			my $toolAngl = $t->GetAngle();
 
-			my $newDiameter = tan( deg2rad( $toolAngl / 2 ) ) * $tDepth;
+			my $newDiameter = tan( deg2rad( $toolAngl / 2 ) ) * $t->GetDepth();
 			$newDiameter *= 2;       #whole diameter
 			$newDiameter *= 1000;    #um
 			$newDiameter = int($newDiameter);
 
-			# now change 6.5mm to new diameter
+			# now change old diameter to new diameter
 			CamLayer->WorkLayer( $inCAM, $layerComp );
-			my @syms = ("r6500");
+			my @syms = ("r".$t->GetDrillSize());
 			CamFilter->BySymbols( $inCAM, \@syms);
 			$inCAM->COM( "sel_change_sym", "symbol" => "r" . $newDiameter, "reset_angle" => "no" );
 		}

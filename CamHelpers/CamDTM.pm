@@ -14,6 +14,9 @@ use aliased 'Enums::EnumsPaths';
 use aliased 'CamHelpers::CamHelper';
 use aliased 'CamHelpers::CamLayer';
 use aliased 'Enums::EnumsDrill';
+use aliased 'Enums::EnumsGeneral';
+use aliased 'CamHelpers::CamStepRepeat';
+use aliased 'CamHelpers::CamDrilling';
 
 #-------------------------------------------------------------------------------------------#
 #   Package methods
@@ -247,6 +250,66 @@ sub GetDTMType {
 	return $toolType;
 }
 
+# Return default DTM type for step
+# If panel level step has not DTM, go through nested step and inherit type form them
+# If neither panel level nor nested steps have DTM type, return undef
+sub GetDTMDefaultType {
+	my $self    = shift;
+	my $inCAM   = shift;
+	my $jobId   = shift;
+	my $step    = shift;
+	my $layer   = shift;
+	my $breakSR = shift;
+
+	# 1) Get DTM type from step or from child steps
+	my $DTMType = $self->GetDTMType( $inCAM, $jobId, $step, $layer );
+
+	if ( $breakSR && ( $DTMType ne EnumsDrill->DTM_VRTANE && $DTMType ne EnumsDrill->DTM_VYSLEDNE ) ) {
+
+		my @childSteps = CamStepRepeat->GetUniqueNestedStepAndRepeat( $inCAM, $jobId, $step );
+
+		if ( scalar(@childSteps) ) {
+
+			foreach my $s (@childSteps) {
+				my $childDTMType = $self->GetDTMType( $inCAM, $jobId, $s->{"stepName"}, $layer );
+				if ( $childDTMType eq EnumsDrill->DTM_VRTANE || $childDTMType eq EnumsDrill->DTM_VYSLEDNE ) {
+					$DTMType = $childDTMType;
+					last;
+				}
+			}
+		}
+	}
+
+	# 2) if still type is not known, we can set default type
+	# 'vrtane', if layer is nonplated
+	if ( $DTMType ne EnumsDrill->DTM_VRTANE && $DTMType ne EnumsDrill->DTM_VYSLEDNE ) {
+
+		my %l = ( "gROWname" => $layer );
+		my @la = ( \%l );
+
+		CamDrilling->AddNCLayerType( \@la );
+
+		if ( !$l{"plated"} ) {
+			$DTMType = EnumsDrill->DTM_VRTANE;
+		}
+	}
+
+	# 3) if still type is not known, some plated layers has predefined type
+	if ( $DTMType ne EnumsDrill->DTM_VRTANE && $DTMType ne EnumsDrill->DTM_VYSLEDNE ) {
+
+		my %l = ( "gROWname" => $layer );
+		my @la = ( \%l );
+
+		CamDrilling->AddNCLayerType( \@la );
+
+		if ( $l{"type"} eq EnumsGeneral->LAYERTYPE_plt_fDrill || $l{"type"} eq EnumsGeneral->LAYERTYPE_plt_dcDrill ) {
+			$DTMType = EnumsDrill->DTM_VYSLEDNE;
+		}
+	}
+
+	return $DTMType;
+}
+
 # Set new tools to DTM
 sub SetDTMTools {
 	my $self    = shift;
@@ -268,7 +331,6 @@ sub SetDTMTools {
 
 	$inCAM->COM('tools_tab_reset');
 
-
 	foreach my $t (@tools) {
 
 		# change type values ( command tool return values non_plated and plated, but tools_tab_set consum plate, nplate)
@@ -288,8 +350,6 @@ sub SetDTMTools {
 		}
 
 		my $userColumns = join( "\\;", @vals );
-
-		
 
 		$inCAM->COM(
 					 'tools_tab_add',
@@ -314,28 +374,25 @@ sub SetDTMTools {
 		#					  options         => "break_sr"
 		#		);
 
-		 
-
-		
 	}
 
-$inCAM->COM( 'tools_set', layer => $layer, thickness => '0', user_params => $DTMType );
-		 
-		 # toto tady musi byt, jinak po tools_set nefunguje spravne shape slot/hole v DTM
-		$inCAM->COM( 'tools_show', "layer" => "$layer");
-		#$inCAM->COM('tools_recalc');
-		
-#				$inCAM->INFO(
-#							  units           => 'mm',
-#							  angle_direction => 'ccw',
-#							  entity_type     => 'layer',
-#							  entity_path     => "$jobId/$step/$layer",
-#							  data_type       => 'TOOL',
-#							  options         => "break_sr"
-#				);
-				
-				#print 1;
+	$inCAM->COM( 'tools_set', layer => $layer, thickness => '0', user_params => $DTMType );
 
+	# toto tady musi byt, jinak po tools_set nefunguje spravne shape slot/hole v DTM
+	$inCAM->COM( 'tools_show', "layer" => "$layer" );
+
+	#$inCAM->COM('tools_recalc');
+
+	#				$inCAM->INFO(
+	#							  units           => 'mm',
+	#							  angle_direction => 'ccw',
+	#							  entity_type     => 'layer',
+	#							  entity_path     => "$jobId/$step/$layer",
+	#							  data_type       => 'TOOL',
+	#							  options         => "break_sr"
+	#				);
+
+	#print 1;
 
 	#$inCAM->COM( 'tools_set', layer => $layer, thickness => '0', user_params => $DTMType );
 

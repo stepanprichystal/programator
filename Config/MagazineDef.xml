@@ -1,6 +1,6 @@
 ﻿<?xml version="1.0" encoding="UTF-8"?>
 
-
+<!-- This file specified magazines for tools, based on operation and material type -->
 
 <operations>
    <operation name="PlatedDrill">

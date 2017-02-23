@@ -47,6 +47,16 @@ sub OnCheckGroupData {
 		 $dataMngr->_AddWarningResult("Export data control", "Zákazník požaduje kontrolní gerber data, ale ty je nemáš v exportu zaškrknuté.");
 		 
 	}
+	
+	if($groupData->GetExportControl()){
+		
+		$dataMngr->_AddWarningResult("Export data control", "Exportujes nove data kontrol! Nacti si vyexportovane date zpet a zkontroluj prumery vysledne/vrtane a data obecne. Pomuzes tim odladit chyby!");
+	}
+	
+		if($groupData->GetExportCooper()){
+		
+		$dataMngr->_AddWarningResult("Export kooperace", "Exportujes nove data do kooperace!!! Nacti si vyexportovane date zpet a zkontroluj prumery vysledne/vrtane a data obecne. Pomuzes tim odladit chyby!");
+	}
 
 }
  

@@ -48,7 +48,7 @@ sub GetJobLayerTitle {
 	}
 
 	# board base layer
-	elsif ( $l->{"gROWname"} =~ /^[pm]?[cs]$/i ) {
+	elsif ( $l->{"gROWname"} =~ /^[pmlg]?[cs]$/i ) {
 
 		my %en = ();
 		$en{"pc"} = "Silk screen top";
@@ -416,7 +416,7 @@ sub GetFileNameByLayer {
 	}
 
 	# board base layer
-	elsif ( $l->{"gROWname"} =~ /^[pm]?[cs]$/i ) {
+	elsif ( $l->{"gROWname"} =~ /^[pmlg]?[cs]$/i ) {
 
 		my %en = ();
 		$en{"pc"} = "plt";

@@ -1,4 +1,9 @@
 ﻿<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- This file specified special tools for drilling/routing -->
+<!-- Each tool must have name - without spaces + diameter -->
+<!-- Some tool can have another option parameters like angle -->
+
 <tools>
    <tool name="d6.5a90" code="850" diameter="6.5" angle="90">
       <magazine material="FR4">W11</magazine>

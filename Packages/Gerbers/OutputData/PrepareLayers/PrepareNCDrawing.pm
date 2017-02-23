@@ -136,7 +136,7 @@ sub __ProcessNClayer {
 		my $toolSize = $t->GetDrillSize();
 
 		# Test on special countersink tool
-		if ( ( !$l->{"plated"} && $toolSize == 6500 ) || ( $l->{"plated"} && $toolSize == 6400 ) ) {
+		if (  $t->GetSpecial() && defined $t->GetAngle() && $t->GetAngle() > 0 ) {
 
 			# if slot/hole is plated, finial depth will be smaller -100µm
 			if ( $l->{"plated"} ) {
@@ -144,8 +144,7 @@ sub __ProcessNClayer {
 			}
 
 			#compute real milled hole/line diameter
-			# TODO zmenit 90 stupnu je zde natvrdo
-			my $angle      = 90;
+			my $angle      = $t->GetAngle();
 			my $newDiamter = ( tan( deg2rad( $angle / 2 ) ) * $depth * 2 ) * 1000;
 
 			# change all symbols in layer to this new diameter
@@ -185,7 +184,7 @@ sub __ProcessNClayer {
 		my $draw = Drawing->new( $inCAM, $lName, $drawingPos, $self->{"pcbThick"}, $side, $l->{"plated"} );
 
 		# Test on special countersink tool
-		if ( ( !$l->{"plated"} && $toolSize == 6500 ) || ( $l->{"plated"} && $toolSize == 6400 ) ) {
+		if (  $t->GetSpecial() && defined $t->GetAngle() && $t->GetAngle() > 0 ) {
 
 			# if slot/hole is plated, finial depth will be smaller -100µm
 			if ( $l->{"plated"} ) {
@@ -193,8 +192,7 @@ sub __ProcessNClayer {
 			}
 
 			#compute real milled hole/line diameter
-			# TODO ymenit 90 stupnu je zde natvrdo
-			my $angle      = 90;
+			my $angle      = $t->GetAngle();
 			my $newDiamter = ( tan( deg2rad( $angle / 2 ) ) * $depth * 2 ) * 1000;
 
 			# change all symbols in layer to this new diameter

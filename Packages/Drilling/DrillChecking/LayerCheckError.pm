@@ -18,6 +18,8 @@ use aliased 'Enums::EnumsGeneral';
  
 use aliased 'CamHelpers::CamDrilling';
 use aliased 'CamHelpers::CamJob';
+use aliased 'CamHelpers::CamDTM';
+use aliased 'Enums::EnumsDrill';
 use aliased 'CamHelpers::CamHistogram';
 use aliased 'Packages::Polygon::Features::RouteFeatures::RouteFeatures';
 use aliased 'Packages::CAM::UniDTM::UniDTM';
@@ -384,9 +386,21 @@ sub CheckToolParameters {
  
 	foreach my $l (@layers) {
 
+		#1) # Check if tools are unique within while layer, check if all necessary parameters are set
 		unless ( $l->{"uniDTM"}->CheckTools($mess) ) {
 			$result = 0;
+			
 		}
+		
+		#2) Check if DTM type is set (vrtane/vzsledne)
+		my $DTMType = CamDTM->GetDTMDefaultType($inCAM, $jobId, $stepName, $l->{"gROWname"}, 1);
+		
+		if ( $DTMType ne EnumsDrill->DTM_VRTANE && $DTMType ne EnumsDrill->DTM_VYSLEDNE ) {
+			$result = 0;
+			$$mess .= "NC layer \"".$l->{"gROWname"}."\".\n";
+			$$mess .= "Layer, which contains plated routing/drilling must have set DTM type \"vrtane\" or \"vysledne\" at least in nested steps.\n";
+		}
+ 
 	}
 
 	return $result;

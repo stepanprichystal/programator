@@ -65,7 +65,7 @@ sub CheckToolDepthSet {
 	foreach my $t (@noTools) {
 		$result = 0;
 
-		my $str = "NC layer: " . $self->{"unitDTM"}->{"layer"} . ". ";
+		my $str = "NC layer: " . $self->{"unitDTM"}->{"layer"} . ". \n";
 
 		if ( $t->GetSource() eq Enums->Source_DTM ) {
 			$str .= "Tool: " . $t->GetDrillSize() . " in DTM has wrong value of Depth column (depth is: \"" . $t->GetDepth() . "\").\n";
@@ -98,7 +98,7 @@ sub CheckToolDepthNotSet {
 	foreach my $t (@depthTools) {
 		$result = 0;
 
-		my $str = "NC layer: " . $self->{"unitDTM"}->{"layer"} . ". ";
+		my $str = "NC layer: " . $self->{"unitDTM"}->{"layer"} . ". \n";
 
 		if ( $t->GetSource() eq Enums->Source_DTM ) {
 			$str .= "Tool: " . $t->GetDrillSize() . " in DTM has set \"depth\" column. This tool can't contain depth.\n";
@@ -131,7 +131,7 @@ sub CheckMagazine {
 
 	foreach my $t (@noMagCode) {
 		$result = 0;
-		my $str = "NC layer: " . $self->{"unitDTM"}->{"layer"} . ". ";
+		my $str = "NC layer: " . $self->{"unitDTM"}->{"layer"} . ". \n";
 
 		if ( $t->GetSource() eq Enums->Source_DTM ) {
 
@@ -165,14 +165,14 @@ sub CheckSpecialTools {
 
 	my @tools = @{$self->{"unitDTM"}->{"tools"}};
 
-	my @diametres  = map { $_->GetDrillSize() } @tools;
+	 
 	my @specTool   = ();
 	my @uniDTMTool = ();
 	foreach my $k ( keys %{ $self->{"unitDTM"}->{"magazineSpec"}->{"tool"} } ) {
 
 		my $tXml = $self->{"unitDTM"}->{"magazineSpec"}->{"tool"}->{$k};
 
-		my @spec = grep { $_ / 1000 == $tXml->{"diameter"} } @diametres;
+		my @spec = grep { $_->GetDrillSize()/ 1000 == $tXml->{"diameter"} && (!defined $_->GetMagazineInfo() || $_->GetMagazineInfo() eq "") } @tools;
 		if(scalar(@spec)){
 			push( @specTool, "\"" . $k . "\"" );
 			push( @uniDTMTool, ( $tXml->{"diameter"} * 1000 ) . "µm" );
@@ -188,10 +188,13 @@ sub CheckSpecialTools {
 	if ( scalar(@specTool) ) {
 
 		$result = 0;
+		
+		$$mess .= "NC layer: " . $self->{"unitDTM"}->{"layer"} . ". \n";
+		
 		my $str  = join( "; ", @specTool );
 		my $str2 = join( "; ", @uniDTMTool );
 		$$mess .=
-		    "Some standard tools ($str2), which are used have same diameter as special tools: $str."
+		    "Some standard tools ($str2) which are used, have same diameter as available special tools: $str."
 		  . " You really don't want to use special tools? If so, fill \"magazine info\" parameter.\n";
 	}
 

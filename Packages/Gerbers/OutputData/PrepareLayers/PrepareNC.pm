@@ -47,7 +47,7 @@ sub new {
 
 	$self->{"inCAM"}      = shift;
 	$self->{"jobId"}      = shift;
-	$self->{"oriStep"}       = shift;
+	$self->{"oriStep"}    = shift;
 	$self->{"step"}       = shift;
 	$self->{"layerList"}  = shift;
 	$self->{"profileLim"} = shift;
@@ -83,7 +83,6 @@ sub Prepare {
 		my %fHist = CamHistogram->GetFeatuesHistogram( $inCAM, $jobId, $step, $l->{"gROWname"} );
 		$l->{"fHist"} = \%fHist;
 	}
- 
 
 	# 1) Check if all parameters are ok. Such as vysledne/vrtane, one surfae depth per layer, etc..
 	$self->__CheckNCLayers( \@layers );
@@ -212,15 +211,13 @@ sub __SetDTMType {
 		my $lName = $l->{"gROWname"};
 		my $DTMType = CamDTM->GetDTMType( $inCAM, $jobId, $self->{"step"}, $lName );
 
-		# if DTM type not set, find type in nested ste[s]
+		# if DTM type not set, set default DTM type
 		if ( $DTMType ne EnumsDrill->DTM_VRTANE && $DTMType ne EnumsDrill->DTM_VYSLEDNE ) {
 
-			foreach my $s (@childSteps) {
-				my $childDTMType = CamDTM->GetDTMType( $inCAM, $jobId, $s->{"stepName"}, $lName );
-				if ( $childDTMType eq EnumsDrill->DTM_VRTANE || $childDTMType eq EnumsDrill->DTM_VYSLEDNE ) {
-					CamDTM->SetDTMTable( $inCAM, $jobId, $self->{"step"}, $lName, $childDTMType );
-					last;
-				}
+			$DTMType = CamDTM->GetDTMDefaultType( $inCAM, $jobId, $self->{"step"}, $lName, 1 );
+
+			if ( $DTMType eq EnumsDrill->DTM_VRTANE || $DTMType eq EnumsDrill->DTM_VYSLEDNE ) {
+				CamDTM->SetDTMTable( $inCAM, $jobId, $self->{"step"}, $lName, $DTMType );
 			}
 		}
 	}
