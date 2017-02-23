@@ -32,15 +32,15 @@ sub GetAttHistogram {
 	my $stepName  = shift;
 	my $layerName = shift;
 	my $breakSR   = shift;
-	my $selected   = shift;
+	my $selected  = shift;
 
 	my $sr = "break_sr+";
 	if ( defined $breakSR && $breakSR == 0 ) {
 		$sr = "";
 	}
-	
-	 my $sel = "";
-	if ( $selected) {
+
+	my $sel = "";
+	if ($selected) {
 		$sel = "select+";
 	}
 
@@ -50,7 +50,7 @@ sub GetAttHistogram {
 								  entity_type     => 'layer',
 								  entity_path     => "$jobId/$stepName/$layerName",
 								  data_type       => 'FEATURES',
-								  options         => $sel.$sr . "f0",
+								  options         => $sel . $sr . "f0",
 								  parse           => 'no'
 	);
 
@@ -95,7 +95,6 @@ sub GetAttHistogram {
 	return %attHist;
 }
 
-
 # Return att histgram fo layer
 # Histogram is hash, where keys are name of attributes
 # Some keys contain array with all values of attribute
@@ -106,15 +105,15 @@ sub GetAttCountHistogram {
 	my $stepName  = shift;
 	my $layerName = shift;
 	my $breakSR   = shift;
-	my $selected   = shift;
+	my $selected  = shift;
 
 	my $sr = "break_sr+";
 	if ( defined $breakSR && $breakSR == 0 ) {
 		$sr = "";
 	}
-	
-	 my $sel = "";
-	if ( $selected) {
+
+	my $sel = "";
+	if ($selected) {
 		$sel = "select+";
 	}
 
@@ -124,7 +123,7 @@ sub GetAttCountHistogram {
 								  entity_type     => 'layer',
 								  entity_path     => "$jobId/$stepName/$layerName",
 								  data_type       => 'FEATURES',
-								  options         => $sel.$sr . "f0",
+								  options         => $sel . $sr . "f0",
 								  parse           => 'no'
 	);
 
@@ -149,22 +148,22 @@ sub GetAttCountHistogram {
 		foreach my $at (@attr) {
 
 			my @parse = split( "=", $at );
-			
+
 			# some attributes doesn't have value
-			unless(defined $parse[1]){
+			unless ( defined $parse[1] ) {
 				$parse[1] = "";
 			}
 
-			unless ( $attHist{ $parse[0]}{$parse[1]} ) {
-				$attHist{ $parse[0]}{$parse[1]} = 1;
-			}else{
-				$attHist{ $parse[0]}{$parse[1]} ++;
+			unless ( $attHist{ $parse[0] }{ $parse[1] } ) {
+				$attHist{ $parse[0] }{ $parse[1] } = 1;
+			}
+			else {
+				$attHist{ $parse[0] }{ $parse[1] }++;
 			}
 		}
 	}
 	return %attHist;
 }
-
 
 # Return name of all steps
 sub GetFeatuesHistogram {
@@ -191,7 +190,7 @@ sub GetFeatuesHistogram {
 	);
 
 	my %info = ();
-	$info{"line"}   = $inCAM->{doinfo}{gFEAT_HISTline};
+	$info{"line"}  = $inCAM->{doinfo}{gFEAT_HISTline};
 	$info{"pad"}   = $inCAM->{doinfo}{gFEAT_HISTpad};
 	$info{"surf"}  = $inCAM->{doinfo}{gFEAT_HISTsurf};
 	$info{"arc"}   = $inCAM->{doinfo}{gFEAT_HISTarc};
@@ -201,7 +200,75 @@ sub GetFeatuesHistogram {
 	return %info;
 }
 
+# Return symbol historgram, for each szmbol type return:
+# Standard struct - array of hashes, where each hash contain Symbol value, count of symbols
+# Hahs struct - hash, where symbols are keys and values are count of symbols
+sub GetSymHistogram {
+	my $self          = shift;
+	my $inCAM         = shift;
+	my $jobId         = shift;
+	my $stepName      = shift;
+	my $layerName     = shift;
+	my $breakSR       = shift;
+	my $hashStructure = shift;
 
+	my $sr = "break_sr";
+	if ( defined $breakSR && $breakSR == 0 ) {
+		$sr = "";
+	}
+
+	$inCAM->INFO(
+				  "units"           => 'mm',
+				  "angle_direction" => 'ccw',
+				  "entity_type"     => 'layer',
+				  "entity_path"     => "$jobId/$stepName/$layerName",
+				  "data_type"       => 'SYMS_HIST',
+				  "parameters"      => "arc+line+pad+symbol",
+				  "options"         => $sr
+	);
+
+	my %result = ();
+
+	if ($hashStructure) {
+
+		my %lines = ();
+		my %arcs  = ();
+		my %pads  = ();
+
+		%result = ( "lines" => \%lines, "arcs" => \%arcs, "pads" => \%pads );
+		for ( my $i = 0 ; $i < scalar( @{ $inCAM->{doinfo}{gSYMS_HISTsymbol} } ) ; $i++ ) {
+
+			my $sym = @{ $inCAM->{doinfo}{gSYMS_HISTsymbol} }[$i];
+			$lines{$sym} = @{ $inCAM->{doinfo}{gSYMS_HISTline} }[$i];
+			$arcs{$sym}  = @{ $inCAM->{doinfo}{gSYMS_HISTarc} }[$i];
+			$pads{$sym}  = @{ $inCAM->{doinfo}{gSYMS_HISTpad} }[$i];
+		}
+	}
+	else {
+
+		my @lines = ();
+		my @arcs  = ();
+		my @pads  = ();
+
+		%result = ( "lines" => \@lines, "arcs" => \@arcs, "pads" => \@pads );
+
+		for ( my $i = 0 ; $i < scalar( @{ $inCAM->{doinfo}{gSYMS_HISTsymbol} } ) ; $i++ ) {
+
+			my $sym = @{ $inCAM->{doinfo}{gSYMS_HISTsymbol} }[$i];
+
+			my %line = ( "sym" => $sym, "cnt" => @{ $inCAM->{doinfo}{gSYMS_HISTline} }[$i] );
+			my %arc  = ( "sym" => $sym, "cnt" => @{ $inCAM->{doinfo}{gSYMS_HISTarc} }[$i] );
+			my %pad  = ( "sym" => $sym, "cnt" => @{ $inCAM->{doinfo}{gSYMS_HISTpad} }[$i] );
+
+			push( @lines, \%line );
+			push( @arcs,  \%arc );
+			push( @pads,  \%pad );
+		}
+	}
+
+	return %result;
+}
+ 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#
@@ -213,16 +280,32 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId     = "f52456";
-	my $stepName  = "panel";
-	 
+	my $jobId    = "f13608";
+	my $stepName = "panel";
 
-	my %hist = CamHistogram->GetAttCountHistogram(  $inCAM, $jobId, "panel", "f");
-	
-	print STDERR "test";
+
+	my %hist = CamHistogram->GetSymHistogram( $inCAM, $jobId, "o+1", "m", 1, 1 );
  
+ 	my %line_arcs = ();
+ 	
+ 	foreach my $k (keys %{$hist{"lines"}}){
+ 		
+ 		 my $lCnt = $hist{"lines"}->{$k};
+ 		 my $aCnt = $hist{"arcs"}->{$k};
+ 		 
+ 		 my $t = 0;
+ 		 
+ 		 $t += $lCnt if(defined $lCnt);
+ 		 $t += $aCnt if(defined $aCnt);
+ 		 
+ 		 $line_arcs{$k} = $t;
+ 	}
+ 
+ 	$hist{"lines_arcs"} = \%line_arcs;
+ 
+	 
+	print STDERR "test";
+
 }
-
-
 
 1;

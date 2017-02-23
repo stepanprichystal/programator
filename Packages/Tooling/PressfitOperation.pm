@@ -29,7 +29,7 @@ sub GetPressfitLayers {
 
 	if ( CamHelper->LayerExists( $inCAM, $jobId, "m" ) ) {
 
-		my @result = CamDTM->GetDTMColumnsByType( $inCAM, $jobId, $step, "m", "press_fit", $breakSR );
+		my @result = CamDTM->GetDTMToolsByType( $inCAM, $jobId, $step, "m", "press_fit", $breakSR );
 
 		if ( scalar(@result) ) {
 			push( @layers, "m" );
@@ -38,7 +38,7 @@ sub GetPressfitLayers {
 
 	if ( CamHelper->LayerExists( $inCAM, $jobId, "f" ) ) {
 
-		my @result = CamDTM->GetDTMColumnsByType( $inCAM, $jobId, $step, "f", "press_fit", $breakSR );
+		my @result = CamDTM->GetDTMToolsByType( $inCAM, $jobId, $step, "f", "press_fit", $breakSR );
 
 		if ( scalar(@result) ) {
 			push( @layers, "f" );
@@ -83,7 +83,7 @@ sub ExistPressfitJob {
 #
 #		foreach my $step (@steps) {
 #
-#			my @result = CamDTM->GetDTMColumnsByType( $inCAM, $jobId, $step->{"stepName"}, $layer, "press_fit" );
+#			my @result = CamDTM->GetDTMToolsByType( $inCAM, $jobId, $step->{"stepName"}, $layer, "press_fit" );
 #
 #
 #		}

@@ -2,11 +2,9 @@
 # Description: Helper module for InCAM Drill tool manager
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-
 package CamHelpers::CamDTM;
 
 #3th party library
-use Genesis;
 use strict;
 use warnings;
 
@@ -14,6 +12,11 @@ use warnings;
 
 use aliased 'Enums::EnumsPaths';
 use aliased 'CamHelpers::CamHelper';
+use aliased 'CamHelpers::CamLayer';
+use aliased 'Enums::EnumsDrill';
+use aliased 'Enums::EnumsGeneral';
+use aliased 'CamHelpers::CamStepRepeat';
+use aliased 'CamHelpers::CamDrilling';
 
 #-------------------------------------------------------------------------------------------#
 #   Package methods
@@ -42,9 +45,11 @@ sub GetDTMUserColNames {
 
 	while ( my $row = <$f> ) {
 
-		$row =~ m/NAME=(\w*)/gi;
-		if ( $1 && $1 ne "" ) {
-			push( @names, $1 );
+		if ( $row =~ m/NAME=(\w*)/gi ) {
+
+			my $name = $1;
+			$name =~ s/\s//g;
+			push( @names, $name );
 		}
 	}
 
@@ -57,25 +62,37 @@ sub GetDTMUserColNames {
 # For everz row in DTM, return value of user column in hash
 # Result: array of hashes
 sub GetDTMUserColumns {
-	my $self  = shift;
-	my $inCAM = shift;
-	my $jobId = shift;
-	my $step  = shift;
-	my $layer = shift;
+	my $self    = shift;
+	my $inCAM   = shift;
+	my $jobId   = shift;
+	my $step    = shift;
+	my $layer   = shift;
+	my $breakSR = shift;
 
 	#get values of user columns for each tool
-	$inCAM->INFO(
-				  units           => 'mm',
-				  angle_direction => 'ccw',
-				  entity_type     => 'layer',
-				  entity_path     => "$jobId/$step/$layer",
-				  data_type       => 'TOOL',
-				  options         => "break_sr"
-	);
+	if ($breakSR) {
+		$inCAM->INFO(
+					  units           => 'mm',
+					  angle_direction => 'ccw',
+					  entity_type     => 'layer',
+					  entity_path     => "$jobId/$step/$layer",
+					  data_type       => 'TOOL',
+					  options         => "break_sr"
+		);
+	}
+	else {
+		$inCAM->INFO(
+					  units           => 'mm',
+					  angle_direction => 'ccw',
+					  entity_type     => 'layer',
+					  entity_path     => "$jobId/$step/$layer",
+					  data_type       => 'TOOL'
+		);
+	}
 
 	my @gTOOLuser_des = @{ $inCAM->{doinfo}{gTOOLuser_des} };
 
-	my @clmnName = CamHelpers::CamDTM->GetDTMUserColNames($inCAM);
+	my @clmnName = $self->GetDTMUserColNames($inCAM);
 
 	my @a   = ();
 	my $cnt = scalar(@gTOOLuser_des);
@@ -92,7 +109,18 @@ sub GetDTMUserColumns {
 
 		for ( my $j = 0 ; $j < scalar(@clmnName) ; $j++ ) {
 
-			$info{ $clmnName[$j] } = $clmnVal[$j];
+			if ( $clmnName[$j] eq EnumsDrill->DTMclmn_DEPTH ) {
+				my $depth = $clmnVal[$j];
+				if ( defined $depth ) {
+					$depth =~ s/,/\./;
+					$depth = sprintf( "%.2f", $depth );
+					$info{ $clmnName[$j] } = $depth;
+				}
+
+			}
+			else {
+				$info{ $clmnName[$j] } = $clmnVal[$j];
+			}
 
 			#print "YDEYDE";
 		}
@@ -125,7 +153,7 @@ sub GetDTMUserColumns {
 
 # Return info about tool in DTM
 # Result: array of hashes. Each has contain info about row in DTM
-sub GetDTMColumns {
+sub GetDTMTools {
 	my $self    = shift;
 	my $inCAM   = shift;
 	my $jobId   = shift;
@@ -133,7 +161,10 @@ sub GetDTMColumns {
 	my $layer   = shift;
 	my $breakSR = shift;
 
-	#get values of user columns for each tool
+	# 1) Get tool user columns
+	my @userTools = $self->GetDTMUserColumns( $inCAM, $jobId, $step, $layer, $breakSR );
+
+	# 2) get values of user columns for each tool
 
 	my @tools = ();
 
@@ -150,12 +181,12 @@ sub GetDTMColumns {
 	}
 	else {
 		$inCAM->INFO(
-					  units           => 'mm',
-					  angle_direction => 'ccw',
-					  entity_type     => 'layer',
-					  entity_path     => "$jobId/$step/$layer",
-					  data_type       => 'TOOL' 
-					   
+			units           => 'mm',
+			angle_direction => 'ccw',
+			entity_type     => 'layer',
+			entity_path     => "$jobId/$step/$layer",
+			data_type       => 'TOOL'
+
 		);
 	}
 
@@ -172,6 +203,7 @@ sub GetDTMColumns {
 		$info{"gTOOLdrill_size"}  = ${ $inCAM->{doinfo}{gTOOLdrill_size} }[$i];
 		$info{"gTOOLbit"}         = ${ $inCAM->{doinfo}{gTOOLbit} }[$i];
 		$info{"gTOOLslot_len"}    = ${ $inCAM->{doinfo}{gTOOLslot_len} }[$i];
+		$info{"userColumns"}      = $userTools[$i];
 
 		push( @tools, \%info );
 
@@ -181,7 +213,7 @@ sub GetDTMColumns {
 }
 
 # Returnt tool from DTM by type
-sub GetDTMColumnsByType {
+sub GetDTMToolsByType {
 	my $self    = shift;
 	my $inCAM   = shift;
 	my $jobId   = shift;
@@ -190,11 +222,199 @@ sub GetDTMColumnsByType {
 	my $type    = shift;    # standard, plated, non_plated, press_fit
 	my $breakSR = shift;
 
-	my @tools = $self->GetDTMColumns( $inCAM, $jobId, $step, $layer, $breakSR );
+	my @tools = $self->GetDTMTools( $inCAM, $jobId, $step, $layer, $breakSR );
 
 	@tools = grep { $_->{"gTOOLtype2"} eq $type } @tools;
 
 	return @tools;
+}
+
+# Returnt tool type of DTM vrtane/vysledne
+sub GetDTMType {
+	my $self  = shift;
+	my $inCAM = shift;
+	my $jobId = shift;
+	my $step  = shift;
+	my $layer = shift;
+
+	$inCAM->INFO(
+				  "units"           => 'mm',
+				  "angle_direction" => 'ccw',
+				  "entity_type"     => 'layer',
+				  "entity_path"     => "$jobId/$step/$layer",
+				  "data_type"       => 'TOOL_USER'
+	);
+
+	my $toolType = $inCAM->{doinfo}{"gTOOL_USER"};
+
+	return $toolType;
+}
+
+# Return default DTM type for step
+# If panel level step has not DTM, go through nested step and inherit type form them
+# If neither panel level nor nested steps have DTM type, return undef
+sub GetDTMDefaultType {
+	my $self    = shift;
+	my $inCAM   = shift;
+	my $jobId   = shift;
+	my $step    = shift;
+	my $layer   = shift;
+	my $breakSR = shift;
+
+	# 1) Get DTM type from step or from child steps
+	my $DTMType = $self->GetDTMType( $inCAM, $jobId, $step, $layer );
+
+	if ( $breakSR && ( $DTMType ne EnumsDrill->DTM_VRTANE && $DTMType ne EnumsDrill->DTM_VYSLEDNE ) ) {
+
+		my @childSteps = CamStepRepeat->GetUniqueNestedStepAndRepeat( $inCAM, $jobId, $step );
+
+		if ( scalar(@childSteps) ) {
+
+			foreach my $s (@childSteps) {
+				my $childDTMType = $self->GetDTMType( $inCAM, $jobId, $s->{"stepName"}, $layer );
+				if ( $childDTMType eq EnumsDrill->DTM_VRTANE || $childDTMType eq EnumsDrill->DTM_VYSLEDNE ) {
+					$DTMType = $childDTMType;
+					last;
+				}
+			}
+		}
+	}
+
+	# 2) if still type is not known, we can set default type
+	# 'vrtane', if layer is nonplated
+	if ( $DTMType ne EnumsDrill->DTM_VRTANE && $DTMType ne EnumsDrill->DTM_VYSLEDNE ) {
+
+		my %l = ( "gROWname" => $layer );
+		my @la = ( \%l );
+
+		CamDrilling->AddNCLayerType( \@la );
+
+		if ( !$l{"plated"} ) {
+			$DTMType = EnumsDrill->DTM_VRTANE;
+		}
+	}
+
+	# 3) if still type is not known, some plated layers has predefined type
+	if ( $DTMType ne EnumsDrill->DTM_VRTANE && $DTMType ne EnumsDrill->DTM_VYSLEDNE ) {
+
+		my %l = ( "gROWname" => $layer );
+		my @la = ( \%l );
+
+		CamDrilling->AddNCLayerType( \@la );
+
+		if ( $l{"type"} eq EnumsGeneral->LAYERTYPE_plt_fDrill || $l{"type"} eq EnumsGeneral->LAYERTYPE_plt_dcDrill ) {
+			$DTMType = EnumsDrill->DTM_VYSLEDNE;
+		}
+	}
+
+	return $DTMType;
+}
+
+# Set new tools to DTM
+sub SetDTMTools {
+	my $self    = shift;
+	my $inCAM   = shift;
+	my $jobId   = shift;
+	my $step    = shift;
+	my $layer   = shift;
+	my @tools   = @{ shift(@_) };
+	my $DTMType = shift;            # vysledne, vrtane
+
+	my @userClmns = CamHelpers::CamDTM->GetDTMUserColNames($inCAM);    # User column name
+
+	CamHelper->SetStep( $inCAM, $step );
+	CamLayer->WorkLayer( $inCAM, $layer );
+
+	unless ( defined $DTMType ) {
+		$DTMType = $self->GetDTMType( $inCAM, $jobId, $step, $layer );
+	}
+
+	$inCAM->COM('tools_tab_reset');
+
+	foreach my $t (@tools) {
+
+		# change type values ( command tool return values non_plated and plated, but tools_tab_set consum plate, nplate)
+		my $toolType = $t->{"gTOOLtype"};
+		$toolType =~ s/^plated$/plate/;
+		$toolType =~ s/^non_plated$/nplate/;
+
+		# Prepare user column values
+		my @vals = ();
+		foreach my $userClmn (@userClmns) {
+
+			my $v = $t->{"userColumns"}->{$userClmn};
+			unless ( defined $v ) {
+				$v = "";
+			}
+			push( @vals, $v );
+		}
+
+		my $userColumns = join( "\\;", @vals );
+
+		$inCAM->COM(
+					 'tools_tab_add',
+					 "num"         => $t->{"gTOOLnum"},
+					 "type"        => $toolType,
+					 "type2"       => $t->{"gTOOLtype2"},
+					 "min_tol"     => $t->{"gTOOLmin_tol"},
+					 "max_tol"     => $t->{"gTOOLmax_tol"},
+					 "bit"         => $t->{"gTOOLbit"},
+					 "finish_size" => $t->{"gTOOLfinish_size"},
+					 "drill_size"  => $t->{"gTOOLdrill_size"},
+					 "shape"       => $t->{"gTOOLshape"},
+					 "user_des"    => $userColumns
+		);
+
+		#		$inCAM->INFO(
+		#					  units           => 'mm',
+		#					  angle_direction => 'ccw',
+		#					  entity_type     => 'layer',
+		#					  entity_path     => "$jobId/$step/$layer",
+		#					  data_type       => 'TOOL',
+		#					  options         => "break_sr"
+		#		);
+
+	}
+
+	$inCAM->COM( 'tools_set', layer => $layer, thickness => '0', user_params => $DTMType );
+
+	# toto tady musi byt, jinak po tools_set nefunguje spravne shape slot/hole v DTM
+	$inCAM->COM( 'tools_show', "layer" => "$layer" );
+
+	#$inCAM->COM('tools_recalc');
+
+	#				$inCAM->INFO(
+	#							  units           => 'mm',
+	#							  angle_direction => 'ccw',
+	#							  entity_type     => 'layer',
+	#							  entity_path     => "$jobId/$step/$layer",
+	#							  data_type       => 'TOOL',
+	#							  options         => "break_sr"
+	#				);
+
+	#print 1;
+
+	#$inCAM->COM( 'tools_set', layer => $layer, thickness => '0', user_params => $DTMType );
+
+	#$inCAM->COM('tools_recalc');
+
+	#print STDERR "ddd";
+
+	# smayat
+
+}
+
+# Set new tools to DTM
+sub SetDTMTable {
+	my $self    = shift;
+	my $inCAM   = shift;
+	my $jobId   = shift;
+	my $step    = shift;
+	my $layer   = shift;
+	my $DTMType = shift;    # vysledne, vrtane
+
+	$inCAM->COM( 'tools_set', layer => $layer, thickness => '0', user_params => $DTMType );
+
 }
 
 #-------------------------------------------------------------------------------------------#
@@ -211,8 +431,8 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	#my $step  = "mpanel_10up";
 
-	my @result = CamDTM->GetDTMColumns( $inCAM, $jobId, "o+1", "m" );
-	@result = CamDTM->GetDTMColumnsByType( $inCAM, $jobId, "o+1", "m", "press_fit" );
+	my @result = CamDTM->GetDTMTools( $inCAM, $jobId, "o+1", "m" );
+	@result = CamDTM->GetDTMToolsByType( $inCAM, $jobId, "o+1", "m", "press_fit" );
 
 	#my $self             = shift;
 

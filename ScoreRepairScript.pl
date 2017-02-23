@@ -25,6 +25,7 @@ use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'Packages::Scoring::Optimalization::Helper';
 use aliased 'Packages::Scoring::Optimalization::Enums';
 use aliased 'Packages::Polygon::Features::ScoreFeatures::ScoreFeatures';
+use aliased 'Managers::MessageMngr::MessageMngr';
 #-------------------------------------------------------------------------------------------#
 #  Script methods
 #-------------------------------------------------------------------------------------------#
@@ -161,7 +162,7 @@ if ( $inCAM->{doinfo}{gEXISTS} eq "yes" ) {
 
 		if ( scalar(@mess) > 0 ) {
 
-			my $messMngr = Managers::MessageMngr::MessageMngr->new($jobName);
+			my $messMngr =  MessageMngr->new($jobName);
 			$messMngr->ShowModal( -1, EnumsGeneral->MessageType_INFORMATION, \@mess );
 
 		}

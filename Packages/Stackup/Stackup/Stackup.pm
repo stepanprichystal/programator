@@ -253,6 +253,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	use aliased 'Packages::Stackup::Stackup::Stackup';
 
 	my $stackup = Stackup->new("f61721");
+ 
 	
 	print "\n Final thick: ".$stackup->GetFinalThick()."\n";
 	

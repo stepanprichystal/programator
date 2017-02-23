@@ -147,7 +147,7 @@ sub __PrepareDrillMapsLayer {
 
 	foreach my $step (@steps) {
 
-		my @pressFit = CamDTM->GetDTMColumnsByType( $inCAM, $jobId, $step->{"stepName"}, $layer, "press_fit" );
+		my @pressFit = CamDTM->GetDTMToolsByType( $inCAM, $jobId, $step->{"stepName"}, $layer, "press_fit" );
 
 		if ( scalar(@pressFit) ) {
 			
@@ -237,11 +237,11 @@ sub __PrepareDrillMaps {
 
 	my %positionTit = ( "x" => $profileLim{"xMin"}, "y" => $profileLim{"yMax"} + 10 );
 
-	CamSymbol->AddText( $inCAM, $jobId, $step, $lDrillMap, "Pressfit [mm] - " . uc($jobId), \%positionTit, 6, 2 );
+	CamSymbol->AddText( $inCAM,"Pressfit [mm] - " . uc($jobId), \%positionTit, 6, 2 );
 	
 	my %positionInf = ( "x" => $profileLim{"xMax"} + 2, "y" => $profileLim{"yMin"} - 5 );
 	
-	CamSymbol->AddText( $inCAM, $jobId, $step, $lDrillMap, "For pressfit measurements use the column 'Finish'", \%positionInf, 2, 0.5 );
+	CamSymbol->AddText( $inCAM, "For pressfit measurements use the column 'Finish'", \%positionInf, 2, 0.5 );
 
 	$inCAM->COM( "profile_to_rout", "layer" => $lDrillMap, "width" => "200" );
 

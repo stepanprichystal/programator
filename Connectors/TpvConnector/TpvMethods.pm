@@ -39,7 +39,8 @@ sub GetCustomerInfo {
 					IF(SingleProfileToPaste = '', null , SingleProfileToPaste) as SingleProfileToPaste,
 					IF(FiducialsToPaste = '', null , FiducialsToPaste) as FiducialsToPaste,
 					IF(NoTpvInfoPdf = '', null , NoTpvInfoPdf) as NoTpvInfoPdf,
-					IF(ExportPdfControl = '', null , ExportPdfControl) as ExportPdfControl
+					IF(ExportPdfControl = '', null , ExportPdfControl) as ExportPdfControl,
+					IF(ExportDataControl = '', null , ExportDataControl) as ExportDataControl
 					
     				FROM customer_note 
     				WHERE CustomerId = _CustomerId

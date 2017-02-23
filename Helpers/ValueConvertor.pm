@@ -28,8 +28,17 @@ sub GetJobLayerTitle {
 
 	my $title = "";
 
+	# outline
+	if ( $l->{"gROWname"} =~ /^o$/i ) {
+ 
+		$title = "Outline";
+		if ($cz) {
+			$title = "Obrys";
+		}
+	}
+
 	# inner layer
-	if ( $l->{"gROWname"} =~ /^v(\d)$/i ) {
+	elsif ( $l->{"gROWname"} =~ /^v(\d)$/i ) {
 
 		my $lNum = $1;
 		$title = "Inner layer number: $lNum.";
@@ -39,7 +48,7 @@ sub GetJobLayerTitle {
 	}
 
 	# board base layer
-	elsif ( $l->{"gROWname"} =~ /^[pm]?[cs]$/i ) {
+	elsif ( $l->{"gROWname"} =~ /^[pmlg]?[cs]$/i ) {
 
 		my %en = ();
 		$en{"pc"} = "Silk screen top";
@@ -48,6 +57,10 @@ sub GetJobLayerTitle {
 		$en{"ms"} = "Solder mask bot";
 		$en{"c"}  = "Component layer (top)";
 		$en{"s"}  = "Solder layer (bot)";
+		$en{"lc"} = "Peelable mask (top)";
+		$en{"ls"} = "Peelable mask (bot)";
+		$en{"gc"} = "Carbon paste (top)";
+		$en{"gs"} = "Carbon paste (bot)";
 
 		my %czl = ();
 		$czl{"pc"} = "Potisk top";
@@ -56,6 +69,10 @@ sub GetJobLayerTitle {
 		$czl{"ms"} = "Nepájivá maska bot";
 		$czl{"c"}  = "Strana součástek (top)";
 		$czl{"s"}  = "Strana spojů (bot)";
+		$czl{"lc"} = "Snímací lak (top)";
+		$czl{"ls"} = "Snímací lak (bot)";
+		$czl{"gc"} = "Grafit (top)";
+		$czl{"gs"} = "Grafit (bot)";
 
 		$title = $en{ $l->{"gROWname"} };
 		if ($cz) {
@@ -188,11 +205,10 @@ sub GetJobLayerInfo {
 	elsif ( $l->{"type"} ) {
 
 		# get start/stop layer
-		
-		my $from = $self->GetNifCodeValue($l->{"gROWdrl_start_name"});
-		my $to = $self->GetNifCodeValue($l->{"gROWdrl_end_name"});
-		
-		
+
+		my $from = $self->GetNifCodeValue( $l->{"gROWdrl_start_name"} );
+		my $to   = $self->GetNifCodeValue( $l->{"gROWdrl_end_name"} );
+
 		my $startStop = "From: " . $from . " to: " . $to;
 		if ($cz) {
 			$startStop = "z: " . Translator->Cz($from) . " do: " . Translator->Cz($to);
@@ -243,7 +259,7 @@ sub GetJobLayerInfo {
 			if ($cz) {
 				$info = "Vrstva může obsahovat pomocné \"pilot-holes\".";
 			}
-			
+
 		}
 		elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_kMill ) {
 			$info = "Milling is used before electrical testing";
@@ -289,8 +305,9 @@ sub GetNifCodeValue {
 	elsif ( $code =~ /^s$/i ) {
 
 		$info = "Solder side";
-	
-	}elsif ( $code =~ /^v(\d)$/i ) {
+
+	}
+	elsif ( $code =~ /^v(\d)$/i ) {
 
 		$info = "Inner layer $1";
 	}
@@ -369,6 +386,113 @@ sub GetSilkCodeToColor {
 	return $colorMap{$code};
 
 	#
+}
+
+# Return name of file of exported layer
+sub GetFileNameByLayer {
+	my $self = shift;
+	my $l    = shift;
+
+	my $name = "";
+	my ($numInName) = $l->{"gROWname"} =~ /(\d*)/;
+	unless (defined) {
+		$numInName = "";
+	}
+	else {
+		$numInName = "_" . $numInName;
+	}
+
+	# outline
+	if ( $l->{"gROWname"} =~ /^o$/i ) {
+		$name = "dim";
+
+	}
+
+	# inner layer
+	elsif ( $l->{"gROWname"} =~ /^v(\d)$/i ) {
+
+		my $lNum = $1;
+		$name = "in" . $lNum;
+	}
+
+	# board base layer
+	elsif ( $l->{"gROWname"} =~ /^[pmlg]?[cs]$/i ) {
+
+		my %en = ();
+		$en{"pc"} = "plt";
+		$en{"ps"} = "plb";
+		$en{"mc"} = "smt";
+		$en{"ms"} = "smb";
+		$en{"c"}  = "top";
+		$en{"s"}  = "bot";
+		$en{"lc"} = "lc";
+		$en{"ls"} = "ls";
+		$en{"gc"} = "gc";
+		$en{"gs"} = "gs";
+
+		$name = $en{ $l->{"gROWname"} };
+
+	}
+
+	# nc layers
+	elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_plt_nDrill ) {
+
+		$name = "pth";
+	}
+	elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_plt_bDrillTop ) {
+
+		$name = "pth_" . $l->{"gROWdrl_start"} . "-" . $l->{"gROWdrl_end"};
+
+	}
+	elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_plt_bDrillBot ) {
+
+		$name = "pth_blind_" . $l->{"gROWdrl_start"} . "-" . $l->{"gROWdrl_end"}
+	}
+	elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_plt_cDrill ) {
+		$name = "pth_core_" . $l->{"gROWdrl_start"} . "-" . $l->{"gROWdrl_end"};
+	}
+	elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_plt_nMill ) {
+		$name = "mill_pth";
+
+	}
+	elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_plt_bMillTop ) {
+
+		$name = "mill_pth_top";
+
+	}
+	elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_plt_bMillBot ) {
+		$name = "mill_pth_bot";
+
+	}
+	elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_nMill ) {
+		$name = "mill";
+
+	}
+	elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_bMillTop ) {
+		$name = "mill_top";
+	}
+	elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_bMillBot ) {
+		$name = "mill_bot";
+	}
+	elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_rsMill ) {
+		$name = undef;    # we do not export rs
+
+	}
+	elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_jbMillTop ) {
+		$name = "mill_core_top";
+	}
+	elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_jbMillBot ) {
+		$name = "mill_core_bot";
+	}
+	elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_kMill ) {
+		$name = undef;
+	}
+	elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_score ) {
+		$name = "score";
+	}
+
+	return $name;
+
 }
 
 #-------------------------------------------------------------------------------------------#

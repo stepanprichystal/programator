@@ -93,15 +93,17 @@ sub __SetLayoutSettings {
 	my $szCol2 = Wx::BoxSizer->new(&Wx::wxVERTICAL);
 
 	# DEFINE CONTROLS
-	my $stepTxt = Wx::StaticText->new( $parent, -1, "Step", &Wx::wxDefaultPosition, [ 50, 22 ] );
+	my $stepTxt = Wx::StaticText->new( $parent, -1, "Original step", &Wx::wxDefaultPosition, [ 50, 22 ] );
 
 	my @steps = CamStep->GetAllStepNames( $self->{"inCAM"}, $self->{"jobId"} );
+	@steps =  grep { $_ !~ /et_/} @steps;
 	my $last = $steps[ scalar(@steps) - 1 ];
 
 	my $stepCb = Wx::ComboBox->new( $parent, -1, $last, &Wx::wxDefaultPosition, [ 50, 22 ], \@steps, &Wx::wxCB_READONLY );
 
-	my $createStepTxt = Wx::StaticText->new( $parent, -1, "Create ET step", &Wx::wxDefaultPosition, [ 50, 22 ] );
+	my $createStepTxt = Wx::StaticText->new( $parent, -1, "Create \"et_".$stepCb->GetValue()."\"", &Wx::wxDefaultPosition, [ 50, 22 ] );
 	my $createStepChb = Wx::CheckBox->new( $parent, -1, "", &Wx::wxDefaultPosition, [ 50, 22 ] );
+	 
 
 	# SET EVENTS
 	Wx::Event::EVT_COMBOBOX( $stepCb, -1, sub { $self->__OnStepChange(@_) } );
@@ -121,12 +123,16 @@ sub __SetLayoutSettings {
 	# Set References
 	$self->{"stepCb"}        = $stepCb;
 	$self->{"createStepChb"} = $createStepChb;
+	$self->{"createStepTxt"} = $createStepTxt;
+	
 	return $szStatBox;
 }
 
 # When change steps
 sub __OnStepChange {
 	my $self = shift;
+	
+	$self->{"createStepTxt"}->SetLabel("Create  \"et_".$self->{"stepCb"}->GetValue()."\"");
 
 	# disable "create et step" if doesnt exist
 	$self->DisableControls();

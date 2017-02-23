@@ -107,7 +107,7 @@ sub GetChains {
 				
 				}else{
 					
-					#value is returned in inch so treanslate to mm
+					#value is returned in inch so treanslate to mm TODO chzba incam
 					if($attr{".rout_tool"})
 					{
 						$attr{".rout_tool"} = sprintf( "%.1f", $attr{".rout_tool"} * 25.4 ) *1000;

@@ -1,5 +1,5 @@
 #-------------------------------------------------------------------------------------------#
-# Description: Script slouzi pro vypocet hlubky vybrusu pri navadeni na vrtackach.
+# Description: Reading information from nif file
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Packages::NifFile::NifFile;

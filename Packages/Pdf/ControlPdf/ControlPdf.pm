@@ -58,7 +58,7 @@ sub new {
 	$self->{"stackupPreview"} = StackupPreview->new( $self->{"inCAM"}, $self->{"jobId"} );
 	$self->{"previewTop"}     = FinalPreview->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"pdfStep"}, EnumsFinal->View_FROMTOP );
 	$self->{"previewBot"}     = FinalPreview->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"pdfStep"}, EnumsFinal->View_FROMBOT );
-	$self->{"previewSingle"}  = SinglePreview->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"pdfStep"}, $self->{"lang"} );
+	$self->{"previewSingle"}  = SinglePreview->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"step"}, $self->{"lang"} );
 
 	return $self;
 }
@@ -249,7 +249,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId = "f13609";
+	my $jobId = "f52456";
 
 	my $mess = "";
 
@@ -257,10 +257,10 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	$control->Create();
 
 	#$control->CreateStackup(\$mess);
-	$control->CreatePreviewTop( \$mess );
+	#$control->CreatePreviewTop( \$mess );
 
 	#$control->CreatePreviewBot(\$mess);
-	#$control->CreatePreviewSingle(\$mess);
+	$control->CreatePreviewSingle(\$mess);
 	#$control->GeneratePdf();
 
 	#$control->GetOutputPath();

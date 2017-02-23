@@ -8,16 +8,22 @@ package Packages::Gerbers::Export::ExportLayers;
 #3th party library
 use strict;
 use warnings;
+use File::Copy;
 
 #local library
 use aliased 'CamHelpers::CamJob';
 use aliased 'CamHelpers::CamHelper';
 use aliased 'Helpers::FileHelper';
+use aliased 'Helpers::GeneralHelper';
+use aliased 'Enums::EnumsPaths';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
 
+# Export gerbers for each layer in @layers param
+# This function allow set final name by defining funcs, which return suffix and preffix for file name
+# Middle of file name  is name of exported layer
 sub ExportLayers {
 	my $self        = shift;
 	my $resultItem  = shift;
@@ -25,8 +31,8 @@ sub ExportLayers {
 	my $step        = shift;
 	my @layers      = @{ shift(@_) };
 	my $archivePath = shift;
-	my $prefix      = shift;
-	my $suffixFunc  = shift;
+	my $prefix      = shift; # string, which is put before each files
+	my $suffixFunc  = shift; # function, which return suffix, which is add behind file
 	my $breakSR     = shift;
 	my $breakSymbol = shift;
 
@@ -125,6 +131,49 @@ sub ExportLayers {
 			$resultItem->AddError( "Failed to create Gerber file: " . $archivePath . "\\" . $fname );
 		}
 
+	}
+
+}
+
+
+# Export gerbers for each layer in @layers param
+# This function allow set final name by defining func, which return final file name
+sub ExportLayers2 {
+	my $self        = shift;
+	my $resultItem  = shift;
+	my $inCAM       = shift;
+	my $step        = shift;
+	my @layers      = @{ shift(@_) };
+	my $archivePath = shift;
+	my $nameFunc    = shift; # func which define name of final file
+	my $breakSR     = shift;
+	my $breakSymbol = shift;
+
+	my $filesDir = EnumsPaths->Client_INCAMTMPOTHER . GeneralHelper->GetGUID() . "\\";
+
+	my $suffixFunc = sub {
+		my $l = shift;
+		return $l->{"guid"};
+	};
+
+	foreach my $l (@layers) {
+
+		my $fName = GeneralHelper->GetGUID();
+		$l->{"guid"} = $fName;
+	}
+
+	# 1) export to TMP directory
+	$self->ExportLayers( $resultItem, $inCAM, $step, \@layers, EnumsPaths->Client_INCAMTMPOTHER, "", $suffixFunc, $breakSR, $breakSymbol );
+
+	# 2) move to finish dir and rename
+	foreach my $l (@layers) {
+
+		my $file = EnumsPaths->Client_INCAMTMPOTHER . $l->{"name"} . $l->{"guid"};
+
+		if ( -e $file ) {
+
+			move( $file, $archivePath . "\\" . $nameFunc->($l) ); 
+		}
 	}
 
 }

@@ -8,6 +8,7 @@ package CamHelpers::CamSymbol;
 #3th party library
 use strict;
 use warnings;
+use List::Util qw[sum];
 
 #loading of locale modules
 
@@ -21,9 +22,6 @@ use aliased 'Enums::EnumsPaths';
 sub AddText {
 	my $self       = shift;
 	my $inCAM      = shift;
-	my $jobId      = shift;
-	my $step       = shift;
-	my $layer      = shift;
 	my $text       = shift;
 	my $position   = shift;
 	my $textHeight = shift;    # font size in mm
@@ -50,70 +48,205 @@ sub AddText {
 	}
 
 	$inCAM->COM(
-		"add_text",
-		"type"      => "string",
-		"polarity"  => $polarity,
-		"x"         => $position->{"x"},
-		"y"         => $position->{"y"},
-		"text"      => $text,
-		"fontname"  => "standard",
-		"height"    => $textHeight,
-		"style"     => "regular",
-		"width"     => "normal",
-		"mirror"    => $mirror,
-		"angle"     => $angle,
-		"direction" => "cw",
-		"w_factor"  => $lineWidth
+				 "add_text",
+				 "type"      => "string",
+				 "polarity"  => $polarity,
+				 "x"         => $position->{"x"},
+				 "y"         => $position->{"y"},
+				 "text"      => $text,
+				 "fontname"  => "standard",
+				 "height"    => $textHeight,
+				 "style"     => "regular",
+				 "width"     => "normal",
+				 "mirror"    => $mirror,
+				 "angle"     => $angle,
+				 "direction" => "cw",
+				 "w_factor"  => $lineWidth
 	);
 }
 
-
 sub AddPolyline {
-	my $self       = shift;
-	my $inCAM      = shift;
-	my @coord       = @{shift(@_)}; #hash x, y 
+	my $self     = shift;
+	my $inCAM    = shift;
+	my @coord    = @{ shift(@_) };    #hash x, y
 	my $symbol   = shift;
-	my $polarity = shift;    #  
- 
- 	if(scalar(@coord) < 3){
- 		die "Polyline has to have at lest 3 coordinates.\n";
- 	}
- 
- 	$inCAM->COM("add_polyline_strt");
- 	
- 	foreach my $c (@coord){
- 		
- 		$inCAM->COM("add_polyline_xy","x" => $c->{"x"},"y" => $c->{"y"});
- 	}
- 	
- 	#last is frst
- 	$inCAM->COM("add_polyline_xy","x" => $coord[0]->{"x"},"y" => $coord[0]->{"y"});
-	$inCAM->COM("add_polyline_end","polarity" => $polarity,"attributes" => "no","symbol" => $symbol,"bus_num_lines" => "0","bus_dist_by" => "pitch","bus_distance" => "0","bus_reference" => "left");
+	my $polarity = shift;             #
 
- 
+	if ( scalar(@coord) < 3 ) {
+		die "Polyline has to have at lest 3 coordinates.\n";
+	}
+
+	$inCAM->COM("add_polyline_strt");
+
+	foreach my $c (@coord) {
+
+		$inCAM->COM( "add_polyline_xy", "x" => $c->{"x"}, "y" => $c->{"y"} );
+	}
+
+	#last is frst
+	$inCAM->COM( "add_polyline_xy", "x" => $coord[0]->{"x"}, "y" => $coord[0]->{"y"} );
+	$inCAM->COM(
+				 "add_polyline_end",
+				 "polarity"      => $polarity,
+				 "attributes"    => "no",
+				 "symbol"        => $symbol,
+				 "bus_num_lines" => "0",
+				 "bus_dist_by"   => "pitch",
+				 "bus_distance"  => "0",
+				 "bus_reference" => "left"
+	);
+
 }
 
+sub AddLine {
+	my $self     = shift;
+	my $inCAM    = shift;
+	my $startP   = shift;    #hash x, y
+	my $endP     = shift;
+	my $symbol   = shift;
+	my $polarity = shift;    #
+
+	$polarity = defined $polarity ? $polarity : 'positive';
+
+	$inCAM->COM(
+				 'add_line',
+				 attributes => 'yes',
+				 "xs"       => $startP->{"x"},
+				 "ys"       => $startP->{"y"},
+				 "xe"       => $endP->{"x"},
+				 "ye"       => $endP->{"y"},
+				 "symbol"   => $symbol,
+				 "polarity" => $polarity
+	);
+}
+
+ 
+ 
+
+sub AddTable {
+	my $self       = shift;
+	my $inCAM      = shift;
+	my $position   = shift;             # position of table, hash x,y
+	my @colWidths  = @{ shift(@_) };    # each column width in mm
+	my $rowHeight  = shift;             # row height in mm
+	my $textHeight = shift;             # font size in mm
+	my $lineWidth  = shift;             # font width in mm
+	my @rows       = @{ shift(@_) };
+
+	# my compute dimension
+	my $tableWidth  = sum(@colWidths);
+	my $tableHeight = scalar(@rows) * $rowHeight;
+
+	my $rowCnt = scalar(@rows);
+	my $colCnt = scalar(@colWidths);
+
+	my $rowPos = $position->{"y"};
+
+	# add rows
+	for ( my $i = 0 ; $i < $rowCnt ; $i++ ) {
+
+		my %startP = ( "x" => $position->{"x"}, "y" => $rowPos );
+		my %endP = ( "x" => $tableWidth, "y" => $rowPos );
+		$self->AddLine( $inCAM, \%startP, \%endP, "r200" );
+		$rowPos += $rowHeight;
+
+		# add last row line
+		if ( $i + 1 == $rowCnt ) {
+			my %startP = ( "x" => $position->{"x"}, "y" => $rowPos );
+			my %endP = ( "x" => $tableWidth, "y" => $rowPos );
+			$self->AddLine( $inCAM, \%startP, \%endP, "r200" );
+		}
+	}
+
+	my $colPos = $position->{"x"};
+
+	# add cols
+	for ( my $i = 0 ; $i < $colCnt ; $i++ ) {
+
+		my %startP = ( "x" => $colPos, "y" => $position->{"y"} );
+		my %endP   = ( "x" => $colPos, "y" => $position->{"y"} + $tableHeight );
+
+		$self->AddLine( $inCAM, \%startP, \%endP, "r200" );
+		$colPos += $colWidths[$i];
+
+		# add last column line
+		if ( $i + 1 == $colCnt ) {
+			%startP = ( "x" => $colPos, "y" => $position->{"y"} );
+			%endP   = ( "x" => $colPos, "y" => $position->{"y"} + $tableHeight );
+
+			$self->AddLine( $inCAM, \%startP, \%endP, "r200" );
+		}
+	}
+
+	# Fill table with text
+
+	@rows = reverse(@rows);    # we fill from bot
+	my $txtPosY = $position->{"y"};
+	for ( my $i = 0 ; $i < $rowCnt ; $i++ ) {
+
+		my $rowData = $rows[$i];
+
+		my $txtPosX = $position->{"x"};
+
+		for ( my $j = 0 ; $j < $colCnt ; $j++ ) {
+
+			my $cellData = @{$rowData}[$j];
+			unless ( defined $cellData ) {
+				$cellData = "";
+			}
+
+			my %posTxt = ( "x" => $txtPosX + $colWidths[$j] * 0.05, "y" => $txtPosY + ( $rowHeight - $textHeight ) / 2 );
+
+			$self->AddText( $inCAM, $cellData, \%posTxt, $textHeight, 1 );
+
+			$txtPosX += $colWidths[$j];    # update position X
+		}
+
+		$txtPosY += $rowHeight;            # update position Y
+
+	}
+}
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
+	use aliased 'CamHelpers::CamSymbol';
+	use aliased 'Packages::InCAM::InCAM';
 
+	my $jobName   = "f13608";
+	my $layerName = "c";
+
+	my $inCAM = InCAM->new();
+
+	$inCAM->COM("sel_delete");
+
+	#	my %pos = ( "x" => 0, "y" => 0 );
 	#
-	#	my $jobName          = "f13610";
-	#	my $layerName          = "fsch";
+	#	my @colWidths = ( 70, 60, 60 );
 	#
+	#	my @row1 = ( "Tool [mm]", "Depth [mm]", "Tool angle" );
+	#	my @row2 = ( 2000, 1.2, );
 	#
-	#	use aliased 'CamHelpers::CamLayer';
-	#	use aliased 'Packages::InCAM::InCAM';
+	#	my @rows = ( \@row1, \@row2 );
 	#
+	#	CamSymbol->AddTable( $inCAM, \%pos, \@colWidths, 10, 5, 2, \@rows );
 	#
-	#	my $inCAM = InCAM->new();
-	#
-	#	my $res = CamLayer->LayerIsBoard($inCAM, $jobName, $layerName);
-	#
-	#	print $res;
+	#	my %posTitl = ( "x" => 0, "y" => scalar(@rows) * 10 + 5 );
+	#	CamSymbol->AddText( $inCAM, "Tool depths definition", \%posTitl, 6, 1 );
+
+	my @points = ();
+	my %point1 = ( "x" => 0, "y" => 0 );
+	my %point2 = ( "x" => 100, "y" => 0 );
+	my %point3 = ( "x" => 100, "y" => 100 );
+	my %point4 = ( "x" => 0, "y" => 100 );
+
+	@points = ( \%point1, \%point2, \%point3, \%point4 );
+
+	CamSymbol->AddSurfaceLinePattern( $inCAM, 1, 100, undef, 45, 50, 1000);
+
+	CamSymbol->AddSurfacePolyline( $inCAM, \@points, 1 )
 
 }
 
