@@ -9,7 +9,6 @@ use base ("Packages::CAM::SymbolDrawing::Primitive::PrimitiveBase");
 use Class::Interface;
 
 &implements('Packages::CAM::SymbolDrawing::Primitive::IPrimitive');
-
 #3th party library
 use strict;
 use warnings;
@@ -32,9 +31,9 @@ sub new {
 	$self = $class->SUPER::new( Enums->Primitive_SURFACEPOLY, $polarity );
 	bless $self;
 
-	$self->{"points"} = $points;
+	$self->{"points"}  = $points;
 	$self->{"pattern"} = $pattern;
-	
+
 	# Set default pattern solid
 	unless ( defined $self->{"pattern"} ) {
 		$self->{"pattern"} = SurfaceSolidPattern->new( 0, 0 );
@@ -45,28 +44,28 @@ sub new {
 
 sub MirrorY {
 	my $self = shift;
-	
-	foreach my $p (@{$self->{"points"}}){
-		
+
+	foreach my $p ( @{ $self->{"points"} } ) {
+
 		$p->{"x"} *= -1;
-		$p->{"x"}   *= -1;
-	}	
+		$p->{"x"} *= -1;
+	}
 }
 
 sub MirrorX {
 	my $self = shift;
-	
-	foreach my $p (@{$self->{"points"}}){
-		
+
+	foreach my $p ( @{ $self->{"points"} } ) {
+
 		$p->{"y"} *= -1;
-		$p->{"y"}   *= -1;
-	}	
+		$p->{"y"} *= -1;
+	}
 }
 
 sub GetPoints {
 	my $self = shift;
 
-	return @{$self->{"points"}};
+	return @{ $self->{"points"} };
 }
 
 sub GetPattern {
@@ -74,7 +73,6 @@ sub GetPattern {
 
 	return $self->{"pattern"};
 }
- 
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

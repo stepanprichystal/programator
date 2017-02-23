@@ -1,6 +1,6 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Responsible for prepare layers before print as pdf
+# Description: Responsible for prepare non NC layers
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Packages::CAMJob::OutputData::PrepareLayers::PrepareBase;
@@ -13,12 +13,13 @@ use warnings;
 use aliased 'Helpers::GeneralHelper';
 use aliased 'Enums::EnumsPaths';
 use aliased 'Enums::EnumsGeneral';
- 
+
 use aliased 'CamHelpers::CamLayer';
 use aliased 'CamHelpers::CamJob';
 use aliased 'Packages::CAMJob::OutputData::LayerData::LayerData';
 use aliased 'Helpers::ValueConvertor';
 use aliased 'Packages::CAMJob::OutputData::Enums';
+
 #-------------------------------------------------------------------------------------------#
 #  Interface
 #-------------------------------------------------------------------------------------------#
@@ -41,7 +42,6 @@ sub new {
 sub Prepare {
 	my $self   = shift;
 	my $layers = shift;
- 
 
 	# prepare layers
 	$self->__PrepareLayers($layers);
@@ -64,20 +64,20 @@ sub __PrepareBASEBOARD {
 	my $self   = shift;
 	my @layers = @{ shift(@_) };
 	my $type   = shift;
-	
+
 	my $inCAM = $self->{"inCAM"};
 
 	@layers = grep { $_->{"gROWcontext"} eq "board" && $_->{"gROWlayer_type"} ne "drill" && $_->{"gROWlayer_type"} ne "rout" } @layers;
 
 	foreach my $l (@layers) {
-		
+
 		my $lName = GeneralHelper->GetNumUID();
 
 		my $enTit = ValueConvertor->GetJobLayerTitle($l);
 		my $czTit = ValueConvertor->GetJobLayerTitle( $l, 1 );
 		my $enInf = ValueConvertor->GetJobLayerInfo($l);
 		my $czInf = ValueConvertor->GetJobLayerInfo( $l, 1 );
-		
+
 		$inCAM->COM( "merge_layers", "source_layer" => $l->{"gROWname"}, "dest_layer" => $lName );
 
 		my $lData = LayerData->new( $type, $l, $enTit, $czTit, $enInf, $czInf, $lName );
@@ -99,19 +99,19 @@ sub __PrepareOUTLINE {
 	CamLayer->WorkLayer( $inCAM, $lName );
 
 	$inCAM->COM( "profile_to_rout", "layer" => $lName, "width" => "200" );
- 
- 		# fake layer 'o'
- 		my %l = ("gROWname" => "o");
- 
-		my $enTit = ValueConvertor->GetJobLayerTitle(\%l);
-		my $czTit = ValueConvertor->GetJobLayerTitle( \%l, 1 );
-		my $enInf = ValueConvertor->GetJobLayerInfo(\%l);
-		my $czInf = ValueConvertor->GetJobLayerInfo( \%l, 1 );
- 
-		my $lData = LayerData->new( $type, \%l, $enTit, $czTit, $enInf, $czInf, $lName );
 
-		$self->{"layerList"}->AddLayer($lData);
-	 
+	# fake layer 'o'
+	my %l = ( "gROWname" => "o" );
+
+	my $enTit = ValueConvertor->GetJobLayerTitle( \%l );
+	my $czTit = ValueConvertor->GetJobLayerTitle( \%l, 1 );
+	my $enInf = ValueConvertor->GetJobLayerInfo( \%l );
+	my $czInf = ValueConvertor->GetJobLayerInfo( \%l, 1 );
+
+	my $lData = LayerData->new( $type, \%l, $enTit, $czTit, $enInf, $czInf, $lName );
+
+	$self->{"layerList"}->AddLayer($lData);
+
 }
 
 #-------------------------------------------------------------------------------------------#

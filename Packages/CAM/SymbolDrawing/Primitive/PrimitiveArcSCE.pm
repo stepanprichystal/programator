@@ -33,10 +33,10 @@ sub new {
 	$self = $class->SUPER::new( Enums->Primitive_ARCSCE, $polarity );
 	bless $self;
 
-	$self->{"startP"} = $startP;
+	$self->{"startP"}  = $startP;
 	$self->{"centerP"} = $centerP;
-	$self->{"endP"}   = $endP;
-	$self->{"symbol"} = $symbol;
+	$self->{"endP"}    = $endP;
+	$self->{"symbol"}  = $symbol;
 
 	return $self;
 }
@@ -51,7 +51,7 @@ sub MirrorX {
 	my $self = shift;
 	$self->{"startP"}->{"y"} *= -1;
 	$self->{"endP"}->{"y"}   *= -1;
-} 
+}
 
 sub GetStartP {
 	my $self = shift;

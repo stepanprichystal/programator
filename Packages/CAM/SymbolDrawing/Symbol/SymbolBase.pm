@@ -1,11 +1,9 @@
-
 #-------------------------------------------------------------------------------------------#
-# Description: Class can parse incam layer fetures. Parsed features, contain only
-# basic info like coordinate, attrubutes etc..
+# Description: Base class of symbol. Contain common property like polarity, list of primitives
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Packages::CAM::SymbolDrawing::Symbol::SymbolBase;
- 
+
 #3th party library
 use strict;
 use warnings;
@@ -26,69 +24,64 @@ sub new {
 	my $self = shift;
 	$self = {};
 	bless $self;
-	
+
 	$self->{"polarity"} = shift;
-	
-	unless( defined $self->{"polarity"}){
+
+	unless ( defined $self->{"polarity"} ) {
 		$self->{"polarity"} = Enums->Polar_POSITIVE;
 	}
-	
+
 	#$self->{"position"} = shift
 	my @prims = ();
-	$self->{"primitives"} = \@prims;  # primitives, whci create this symbol
+	$self->{"primitives"} = \@prims;    # primitives, whci create this symbol
 	my @syms = ();
-	$self->{"symbols"} = \@syms;	# can contain another chold symbols
- 
+	$self->{"symbols"} = \@syms;        # can contain another chold symbols
+
 	return $self;
 }
 
- 
 sub AddPrimitive {
-	my $self  = shift;
-	my $primitive  = shift;
- 
-	 
-	push( @{$self->{"primitives"}}, $primitive);
+	my $self      = shift;
+	my $primitive = shift;
+
+	push( @{ $self->{"primitives"} }, $primitive );
 
 }
-
 
 sub AddSymbol {
-	my $self  = shift;
-	my $symbol  = shift;
+	my $self     = shift;
+	my $symbol   = shift;
 	my $position = shift;
- 
-	push( @{$self->{"symbols"}}, SymbolInfo->new($symbol, $position));
-}  
- 
+
+	push( @{ $self->{"symbols"} }, SymbolInfo->new( $symbol, $position ) );
+}
+
 sub GetPrimitives {
-	my $self  = shift;
-	 
-	return @{$self->{"primitives"}};
+	my $self = shift;
+
+	return @{ $self->{"primitives"} };
 
 }
- 
+
 sub GetSymbols {
-	my $self  = shift;
-	 
-	return @{$self->{"symbols"}};
+	my $self = shift;
+
+	return @{ $self->{"symbols"} };
 
 }
 
 sub GetPolarity {
-	my $self  = shift;
-	 
+	my $self = shift;
+
 	return $self->{"polarity"};
 
 }
 
-sub Copy{
-	my $self  = shift;
- 
+sub Copy {
+	my $self = shift;
+
 	return dclone($self);
 }
-
-
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

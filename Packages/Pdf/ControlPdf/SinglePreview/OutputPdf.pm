@@ -15,7 +15,7 @@ use List::Util qw[max min];
 #local library
 use aliased 'Helpers::GeneralHelper';
 use aliased 'Packages::Pdf::ControlPdf::SinglePreview::Enums';
-use aliased ' Packages::Gerbers::OutputData::Enums' => "OutputEnums";
+use aliased 'Packages::CAMJob::OutputData::Enums' => "OutputEnums";
 use aliased 'Enums::EnumsPaths';
 use aliased 'CamHelpers::CamLayer';
 use aliased 'CamHelpers::CamSymbol';

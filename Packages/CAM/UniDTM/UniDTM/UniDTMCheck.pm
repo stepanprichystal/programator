@@ -1,4 +1,3 @@
-
 #-------------------------------------------------------------------------------------------#
 # Description: Do checks of tool in Universal DTM
 # Author:SPR
@@ -68,7 +67,7 @@ sub CheckToolDepthSet {
 		my $str = "NC layer: " . $self->{"unitDTM"}->{"layer"} . ". \n";
 
 		if ( $t->GetSource() eq Enums->Source_DTM ) {
-			$str .= "Tool: " . $t->GetDrillSize() . " in DTM has wrong value of Depth column (depth is: \"" . $t->GetDepth() . "\").\n";
+			$str .= "Tool: " . $t->GetDrillSize() . "µm in DTM has wrong value of Depth column (depth is: \"" . $t->GetDepth() . "\").\n";
 		}
 		else {
 
@@ -101,7 +100,7 @@ sub CheckToolDepthNotSet {
 		my $str = "NC layer: " . $self->{"unitDTM"}->{"layer"} . ". \n";
 
 		if ( $t->GetSource() eq Enums->Source_DTM ) {
-			$str .= "Tool: " . $t->GetDrillSize() . " in DTM has set \"depth\" column. This tool can't contain depth.\n";
+			$str .= "Tool: " . $t->GetDrillSize() . "µm in DTM has set \"depth\" column. This tool can't contain depth.\n";
 		}
 		else {
 
@@ -163,21 +162,20 @@ sub CheckSpecialTools {
 
 	my $result = 1;
 
-	my @tools = @{$self->{"unitDTM"}->{"tools"}};
+	my @tools = @{ $self->{"unitDTM"}->{"tools"} };
 
-	 
 	my @specTool   = ();
 	my @uniDTMTool = ();
 	foreach my $k ( keys %{ $self->{"unitDTM"}->{"magazineSpec"}->{"tool"} } ) {
 
 		my $tXml = $self->{"unitDTM"}->{"magazineSpec"}->{"tool"}->{$k};
 
-		my @spec = grep { $_->GetDrillSize()/ 1000 == $tXml->{"diameter"} && (!defined $_->GetMagazineInfo() || $_->GetMagazineInfo() eq "") } @tools;
-		if(scalar(@spec)){
+		my @spec =
+		  grep { $_->GetDrillSize() / 1000 == $tXml->{"diameter"} && ( !defined $_->GetMagazineInfo() || $_->GetMagazineInfo() eq "" ) } @tools;
+		if ( scalar(@spec) ) {
 			push( @specTool, "\"" . $k . "\"" );
 			push( @uniDTMTool, ( $tXml->{"diameter"} * 1000 ) . "µm" );
 		}
-
 
 	}
 
@@ -188,9 +186,9 @@ sub CheckSpecialTools {
 	if ( scalar(@specTool) ) {
 
 		$result = 0;
-		
+
 		$$mess .= "NC layer: " . $self->{"unitDTM"}->{"layer"} . ". \n";
-		
+
 		my $str  = join( "; ", @specTool );
 		my $str2 = join( "; ", @uniDTMTool );
 		$$mess .=
@@ -306,8 +304,6 @@ sub __CheckDrillSize {
 	return $result;
 }
 
-
- 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#

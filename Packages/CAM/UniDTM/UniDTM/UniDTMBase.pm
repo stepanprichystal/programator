@@ -1,4 +1,3 @@
-
 #-------------------------------------------------------------------------------------------#
 # Description: Contain listo of all tools in layer, regardless it is tool from surface, pad,
 # lines..
@@ -45,8 +44,8 @@ sub new {
 
 	$self->{"magazineDef"}  = undef;
 	$self->{"magazineSpec"} = undef;
-	
-	$self->{"materialName"} = HegMethods->GetMaterialKind($self->{"jobId"});
+
+	$self->{"materialName"} = HegMethods->GetMaterialKind( $self->{"jobId"} );
 
 	my @t = ();
 	$self->{"tools"} = \@t;
@@ -54,8 +53,8 @@ sub new {
 	$self->__LoadMagazineXml();
 
 	$self->__InitUniDTM();
-	
-	$self->{"check"} =  UniDTMCheck->new( $self );
+
+	$self->{"check"} = UniDTMCheck->new($self);
 
 	return $self;
 }
@@ -119,8 +118,6 @@ sub GetUniqueTools {
 	return @tools;
 }
 
-
-
 # Return distinct tools by drillsize + processtype
 # Tools can be wrong defined!
 # Parameter check is not done!
@@ -129,7 +126,7 @@ sub GetUniqueTools {
 #	my $self = shift;
 #
 #	my $mess = "";
-# 
+#
 #	# Tools, some can be duplicated
 #	# Do distinst by "tool key" (drillSize + typeProcess)
 #	my %seen;
@@ -151,8 +148,8 @@ sub GetTool {
 	my $self        = shift;
 	my $drillSize   = shift;
 	my $typeProcess = shift;
-	
-	unless($typeProcess){
+
+	unless ($typeProcess) {
 		$typeProcess = Enums->TypeProc_HOLE;
 	}
 

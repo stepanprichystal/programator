@@ -1,6 +1,11 @@
-
 #-------------------------------------------------------------------------------------------#
-# Description: Helper method over Universal Drill tool manager
+# Description: Represent Universal Drill tool manager
+# This manager contain general information about all tools in NC layer
+# Each tool contain
+# - DrillSize
+# - Process type
+# - Depth
+# - Magazine
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Packages::CAM::UniDTM::UniDTM;
@@ -52,12 +57,11 @@ sub GetToolDepth {
 	}
 }
 
-
 sub GetToolMagazine {
 	my $self        = shift;
 	my $drillSize   = shift;
 	my $typeProcess = shift;
- 
+
 	my $tool = $self->GetTool( $drillSize, $typeProcess );
 
 	if ($tool) {
@@ -68,6 +72,7 @@ sub GetToolMagazine {
 		die "Tool: $drillSize with type: $typeProcess doesn't exist.\n";
 	}
 }
+
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#
@@ -84,8 +89,6 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $mess   = "";
 	my $result = $unitDTM->GetChecks()->CheckSpecialTools( \$mess );
-
- 
 
 	print "fff";
 

@@ -19,6 +19,15 @@ use aliased 'CamHelpers::CamAttributes';
 #-------------------------------------------------------------------------------------------#
 #   Package methods
 #-------------------------------------------------------------------------------------------#
+
+# Return hash:
+# nasobnost_panelu
+# nasobnost
+# single_x
+# single_y
+# panel_x
+# panel_y
+
 sub GetDimension {
 
 	my $self  = shift;

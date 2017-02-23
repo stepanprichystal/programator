@@ -1,6 +1,6 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Responsible for prepare layers before print as pdf
+# Description: Responsible for prepare layers which contains tool depth drawing
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Packages::CAMJob::OutputData::PrepareLayers::PrepareNCDrawing;

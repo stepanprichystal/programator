@@ -1,6 +1,6 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Responsible for prepare layers before print as pdf
+# Description: Output prepared layers as gerber
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Packages::Gerbers::ProduceData::OutputLayers;
@@ -52,15 +52,7 @@ sub __Export {
 
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
-	#
-	#	my @exportedFiles = ();
-	#
-	#	foreach my $l (@layers) {
-	#
-	#		my $path = $self->{"filesDir"} . $jobId . $l->GetName() . ".ger";
-	#		push( @exportedFiles, $path );
-	#
-	#	}
+ 
 
 	# function, which build output layer name, based on layer info
 
@@ -77,18 +69,16 @@ sub __Export {
 		push( @hashLayers, \%lInfo );
 	}
 
-
-
 	my $nameFunc = sub {
 
 		my $l = shift;
 
-		my $fileName = $l->{"fileName"}.".ger";
+		my $fileName = $l->{"fileName"} . ".ger";
 
 		return $fileName;
 	};
 
-	ExportLayers->ExportLayers2( $resultItemGer, $inCAM, $stepName, \@hashLayers, $self->{"filesDir"}, $nameFunc, 1,1 );
+	ExportLayers->ExportLayers2( $resultItemGer, $inCAM, $stepName, \@hashLayers, $self->{"filesDir"}, $nameFunc, 1, 1 );
 
 	$self->_OnItemResult($resultItemGer);
 }

@@ -69,27 +69,6 @@ sub ExistPressfitJob {
 
 }
 
-#
-#sub ExistPressfitLayer {
-#	my $self  = shift;
-#	my $inCAM = shift;
-#	my $jobId = shift;
-#	my $step  = shift;
-#	my $layer  = shift;
-#
-#	my @steps = CamStepRepeat->GetUniqueNestedStepAndRepeat( $inCAM, $jobId, $step );
-#
-#	my $exist = 0;
-#
-#		foreach my $step (@steps) {
-#
-#			my @result = CamDTM->GetDTMToolsByType( $inCAM, $jobId, $step->{"stepName"}, $layer, "press_fit" );
-#
-#
-#		}
-#	}
-#}
-
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#

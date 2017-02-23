@@ -14,7 +14,7 @@ use warnings;
 use aliased 'Packages::Gerbers::ProduceData::LayerData::LayerData';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'Helpers::ValueConvertor';
-use aliased 'Packages::Gerbers::OutputData::Enums';
+use aliased 'Packages::CAMJob::OutputData::Enums';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -79,10 +79,7 @@ sub __GetFileName {
 	my $oriL = $lOutput->GetOriLayer();
 
 	$$name = $self->{"jobId"} . ValueConvertor->GetFileNameByLayer($oriL);
-
-#	if ( $lOutput->GetType() eq Enums->Type_DRILLMAP ) {
-#		$$name .= "_map";
-#	}
+ 
 
 	# 2) verify if same name exist (consider only layer without parent)
 

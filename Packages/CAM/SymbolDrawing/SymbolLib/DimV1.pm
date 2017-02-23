@@ -1,6 +1,6 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: 'Code' type of:
+# Description: 'Dimension' type of:
 #
 #  \|/   - length 1
 #   |	 - length 2

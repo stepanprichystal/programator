@@ -1,7 +1,8 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Class can parse incam layer fetures. Parsed features, contain only
-# basic info like coordinate, attrubutes etc..
+# Description: Simple "drawing" which allow keep simple symbols
+# Then draw this symbols on specific coordinate with specific mirror
+# Allow draw symbols and primitives. See class ISymbol and IPrimitive
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Packages::CAM::SymbolDrawing::SymbolDrawing;
@@ -38,12 +39,11 @@ sub new {
 	unless ( $self->{"position"} ) {
 		$self->{"position"} = Point->new();
 	}
-	
-	$self->{"mirrorX"} = 0;
-	$self->{"mirrorY"} = 0;
+
+	$self->{"mirrorX"}      = 0;
+	$self->{"mirrorY"}      = 0;
 	$self->{"mirrorXPoint"} = $self->{"position"}->Copy();
 	$self->{"mirrorYPoint"} = $self->{"position"}->Copy();
-	
 
 	my @syms = ();
 	$self->{"symbol"} = SymbolBase->new();    # parent of all symbols and primitives
@@ -67,24 +67,24 @@ sub AddPrimitive {
 	$self->{"symbol"}->AddPrimitive($primitive);
 }
 
-sub SetMirrorX{
-	my $self      = shift;
-	my $mirrorPoint      = shift;
-	
+sub SetMirrorX {
+	my $self        = shift;
+	my $mirrorPoint = shift;
+
 	$self->{"mirrorX"} = 1;
-	
-	if(defined $mirrorPoint){
-	$self->{"mirrorXPoint"} = $mirrorPoint;
+
+	if ( defined $mirrorPoint ) {
+		$self->{"mirrorXPoint"} = $mirrorPoint;
 	}
 }
 
-sub SetMirrorY{
-	my $self      = shift;
-	my $mirrorPoint      = shift;
+sub SetMirrorY {
+	my $self        = shift;
+	my $mirrorPoint = shift;
 	$self->{"mirrorY"} = 1;
-	
-	if(defined $mirrorPoint){
-	$self->{"mirrorYPoint"} = $mirrorPoint;
+
+	if ( defined $mirrorPoint ) {
+		$self->{"mirrorYPoint"} = $mirrorPoint;
 	}
 }
 
@@ -136,9 +136,7 @@ sub __DrawPrimitives {
 			}
 
 		}
-
 	}
-
 }
 
 sub __DrawLine {
@@ -152,14 +150,14 @@ sub __DrawLine {
 	my $eP = $line->GetEndP();
 	$sP->Move( $self->{"position"}->X() + $symbolPos->X(), $self->{"position"}->Y() + $symbolPos->Y() );
 	$eP->Move( $self->{"position"}->X() + $symbolPos->X(), $self->{"position"}->Y() + $symbolPos->Y() );
-	
+
 	# consider mirror
-	if($self->{"mirrorX"}){
-		
-		$sP->MirrorX($self->{"mirrorXPoint"});
-		$eP->MirrorX($self->{"mirrorXPoint"});
+	if ( $self->{"mirrorX"} ) {
+
+		$sP->MirrorX( $self->{"mirrorXPoint"} );
+		$eP->MirrorX( $self->{"mirrorXPoint"} );
 	}
-  
+
 	CamSymbol->AddLine( $self->{"inCAM"}, $sP, $eP, $line->GetSymbol(), $line->GetPolarity() );
 
 }
@@ -168,32 +166,31 @@ sub __DrawText {
 	my $self      = shift;
 	my $t         = shift;
 	my $symbolPos = shift;
-	
 
 	# consider origin of whole draw
 
 	my $p = $t->GetPosition();
 	$p->Move( $self->{"position"}->X() + $symbolPos->X(), $self->{"position"}->Y() + $symbolPos->Y() );
-	
+
 	# consider mirror
-	
+
 	my $mirror = $t->GetMirror();
-  
-	if($self->{"mirrorX"}){
-		
-		$p->MirrorX($self->{"mirrorXPoint"});
-		$p->Move(0, - $t->GetHeight());
-		
-		if($mirror == 1){
+
+	if ( $self->{"mirrorX"} ) {
+
+		$p->MirrorX( $self->{"mirrorXPoint"} );
+		$p->Move( 0, -$t->GetHeight() );
+
+		if ( $mirror == 1 ) {
 			$mirror = 0;
-		}else{
+		}
+		else {
 			$mirror = 1;
 		}
- 
+
 	}
 
-	CamSymbol->AddText( $self->{"inCAM"},   $t->GetValue(),  $p,                $t->GetHeight(),
-						$t->GetLineWidth(), $mirror, $t->GetPolarity(),  $t->GetAngle() );
+	CamSymbol->AddText( $self->{"inCAM"}, $t->GetValue(), $p, $t->GetHeight(), $t->GetLineWidth(), $mirror, $t->GetPolarity(), $t->GetAngle() );
 
 }
 
@@ -213,19 +210,17 @@ sub __DrawArcSCE {
 	$sP->Move( $self->{"position"}->X() + $symbolPos->X(), $self->{"position"}->Y() + $symbolPos->Y() );
 	$cP->Move( $self->{"position"}->X() + $symbolPos->X(), $self->{"position"}->Y() + $symbolPos->Y() );
 	$eP->Move( $self->{"position"}->X() + $symbolPos->X(), $self->{"position"}->Y() + $symbolPos->Y() );
-	
-	
+
 	# consider mirror
-	if($self->{"mirrorX"}){
-		
-		$sP->MirrorX($self->{"mirrorXPoint"});
-		$cP->MirrorX($self->{"mirrorXPoint"});
-		$eP->MirrorX($self->{"mirrorXPoint"});
-		
+	if ( $self->{"mirrorX"} ) {
+
+		$sP->MirrorX( $self->{"mirrorXPoint"} );
+		$cP->MirrorX( $self->{"mirrorXPoint"} );
+		$eP->MirrorX( $self->{"mirrorXPoint"} );
+
 		# and switch start and
 		$dir = "ccw";
 	}
-	
 
 	CamSymbolArc->AddArcStartCenterEnd( $self->{"inCAM"}, $sP, $cP, $eP, $dir, $arc->GetSymbol(), $arc->GetPolarity() );
 
@@ -241,16 +236,15 @@ sub __DrawSurfPoly {
 
 		$p->Move( $self->{"position"}->X() + $symbolPos->X(), $self->{"position"}->Y() + $symbolPos->Y() );
 	}
-	
-		# consider mirror
-		# consider mirror
-	if($self->{"mirrorX"}){
-	foreach my $p ( $surf->GetPoints() ) {
 
-		$p->MirrorX($self->{"mirrorXPoint"});
+	# consider mirror
+	# consider mirror
+	if ( $self->{"mirrorX"} ) {
+		foreach my $p ( $surf->GetPoints() ) {
+
+			$p->MirrorX( $self->{"mirrorXPoint"} );
+		}
 	}
-	}
-  
 
 	# set surface pattern
 	my $patt = $surf->GetPattern();
@@ -258,12 +252,9 @@ sub __DrawSurfPoly {
 	if ( $patt->GetPredefined_pattern_type() eq "lines" ) {
 
 		CamSymbolSurf->AddSurfaceLinePattern(
-											  $self->{"inCAM"},
-											  $patt->GetOutline_draw(),
-											  $patt->GetOutline_width(),
-											  $patt->GetLines_angle(),
-											  $patt->GetOutline_invert(),
-											  $patt->GetLines_width(),
+											  $self->{"inCAM"},           $patt->GetOutline_draw(),
+											  $patt->GetOutline_width(),  $patt->GetLines_angle(),
+											  $patt->GetOutline_invert(), $patt->GetLines_width(),
 											  $patt->GetLines_dist()
 		);
 
@@ -319,15 +310,15 @@ sub __GetPrimitives {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-#	use aliased 'Packages::CAM::SymbolDrawing::SymbolDrawing';
-#	use aliased 'Packages::InCAM::InCAM';
-#	use aliased 'Packages::CAM::SymbolDrawing::SymbolLib::DimV1Lines';
-#	use aliased 'Packages::CAM::SymbolDrawing::SymbolLib::DimH1Lines';
-#	use aliased 'Packages::CAM::SymbolDrawing::SymbolLib::DimAngle1';
-#
-#	my $inCAM = InCAM->new();
-#
-#	$inCAM->COM("sel_delete");
+	#	use aliased 'Packages::CAM::SymbolDrawing::SymbolDrawing';
+	#	use aliased 'Packages::InCAM::InCAM';
+	#	use aliased 'Packages::CAM::SymbolDrawing::SymbolLib::DimV1Lines';
+	#	use aliased 'Packages::CAM::SymbolDrawing::SymbolLib::DimH1Lines';
+	#	use aliased 'Packages::CAM::SymbolDrawing::SymbolLib::DimAngle1';
+	#
+	#	my $inCAM = InCAM->new();
+	#
+	#	$inCAM->COM("sel_delete");
 
 	#	my $textValue     = shift;
 	#	my $textHeight    = shift;     # font size in mm

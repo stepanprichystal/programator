@@ -1,6 +1,8 @@
-
 #-------------------------------------------------------------------------------------------#
-# Description: Module create image preview of pcb based on physical layers
+# Description: Responsible for preparing job board layers for output.
+# - Flatten data
+# - Adjust tool diameters
+# - Create depth drawing, etc, ..
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Packages::CAMJob::OutputData::OutputData;
@@ -46,7 +48,8 @@ sub new {
 	$self->{"layerList"} = LayerDataList->new();
 	$self->{"prepareBase"} =
 	  PrepareBase->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"data_step"}, $self->{"layerList"}, $self->{"profileLim"} );
-	$self->{"prepareNC"} = PrepareNC->new( $self->{"inCAM"}, $self->{"jobId"},  $self->{"step"}, $self->{"data_step"}, $self->{"layerList"}, $self->{"profileLim"} );
+	$self->{"prepareNC"} =
+	  PrepareNC->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"step"}, $self->{"data_step"}, $self->{"layerList"}, $self->{"profileLim"} );
 
 	return $self;
 }
@@ -96,7 +99,7 @@ sub Clear {
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
 
-	foreach my $l ( $self->GetLayers()  ) {
+	foreach my $l ( $self->GetLayers() ) {
 
 		my $lName = $l->GetOutput();
 
@@ -143,19 +146,19 @@ sub __GetLayersForExport {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	use aliased 'Packages::Gerbers::OutputData::OutputData';
+	use aliased 'Packages::CAMJob::OutputData::OutputData';
 
 	use aliased 'Packages::InCAM::InCAM';
 
 	my $inCAM = InCAM->new();
 
-	my $jobId = "f13608";
+	my $jobId = "f52456";
 
 	my $mess = "";
 
-	my $control = OutputData->new( $inCAM, $jobId, "o+1" );
+	my $control = OutputData->new( $inCAM, $jobId, "mpanel" );
 	$control->Create( \$mess );
-	
+
 }
 
 1;

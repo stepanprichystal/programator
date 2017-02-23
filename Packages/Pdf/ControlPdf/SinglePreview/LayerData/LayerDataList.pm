@@ -1,8 +1,8 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Prepare special structure "LayerData" of each exported layers.
-# This sctructure contain information
-# about exported layers, like name, array of phzsic layer, titles + description
+# Description: Prepare special structure "LayerData" for each exported layer.
+# This sctructure contain list <Packages::CAMJob::OutputData::LayerData::LayerData> 
+# and operations with this items
 # type of layer
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
@@ -78,25 +78,6 @@ sub GetLayerCnt {
 	return @{ $self->{"layers"} };
 }
 
-#
-#sub GetLayerByName {
-#	my $self = shift;
-#	my $name = shift;
-#
-#	foreach my $lData ( @{ $self->{"layers"} } ) {
-#
-#		my @single = $lData->GetSingleLayers();
-#
-#		my $sl = ( grep { $_->{"gROWname"} eq $name } @single )[0];
-#
-#		if ($sl) {
-#
-#			return $lData;
-#		}
-#	}
-#
-#}
-
 sub GetPageData {
 	my $self    = shift;
 	my $pageNum = shift;
@@ -104,14 +85,14 @@ sub GetPageData {
 	my @data = ();
 
 	my @layers = @{ $self->{"layers"} };
-
-	my $start = ( $pageNum - 1 ) * 4;
+	my $start  = ( $pageNum - 1 ) * 4;
 
 	for ( my $i = 0 ; $i < 4 ; $i++ ) {
 
 		my $lData = $layers[ $start + $i ];
 
 		if ($lData) {
+
 			#my @singleLayers = $lData->GetSingleLayers();
 
 			my $tit = $lData->GetTitle( $self->{"lang"} );

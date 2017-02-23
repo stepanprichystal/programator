@@ -1,6 +1,6 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: 'Code' type of :
+# Description: 'Dimension' type of :
 #   angle
 #  \    /
 #   \  /
@@ -20,6 +20,7 @@ use strict;
 use warnings;
 use Math::Trig;
 use Math::Geometry::Planar;
+
 #local library
 use aliased 'Packages::CAM::SymbolDrawing::Enums';
 use aliased 'Packages::CAM::SymbolDrawing::Point';
@@ -32,10 +33,10 @@ use aliased 'Packages::CAM::SymbolDrawing::Primitive::PrimitiveArcSCE';
 #-------------------------------------------------------------------------------------------#
 
 sub new {
-	my $class   = shift;
-	my $angle    = shift;    # angle in degree
+	my $class  = shift;
+	my $angle  = shift;    # angle in degree
 	my $length = shift;    # length of left+right line
-	my $symbol  = shift;    # symbol of dim lines
+	my $symbol = shift;    # symbol of dim lines
 
 	my $textValue     = shift;    # text of dimension
 	my $textHeight    = shift;    # font size in mm
@@ -49,19 +50,17 @@ sub new {
 	$self = $class->SUPER::new($polarity);
 	bless $self;
 
-	
-
-	$self->{"angle"} = $angle;
+	$self->{"angle"}  = $angle;
 	$self->{"length"} = $length;
 	$self->{"symbol"} = $symbol;
-	
+
 	$self->{"textValue"}     = $textValue;
 	$self->{"textHeight"}    = $textHeight;
 	$self->{"textLineWidth"} = $textLineWidth;
 	$self->{"textMirror"}    = $textMirror;
 	$self->{"textAngle"}     = $textAngle;
 
- 	$self->__DefineSymbol();
+	$self->__DefineSymbol();
 
 	return $self;
 }
@@ -70,73 +69,73 @@ sub __DefineSymbol {
 	my $self = shift;
 
 	# compute end points of twho helper lines
-	
-	my $leftLineXPos = -1* sin( deg2rad($self->{"angle"}/2)) * $self->{"length"};
-	my $leftLineYPos = cos( deg2rad($self->{"angle"}/2)) * $self->{"length"};
-	
+
+	my $leftLineXPos = -1 * sin( deg2rad( $self->{"angle"} / 2 ) ) * $self->{"length"};
+	my $leftLineYPos = cos( deg2rad( $self->{"angle"} / 2 ) ) * $self->{"length"};
+
 	# Add arc primitive
-	
-	my $startArcXPos = -1* sin( deg2rad($self->{"angle"}/2)) * $self->{"length"}*0.95;
-	my $startArcYPos = cos( deg2rad($self->{"angle"}/2)) * $self->{"length"}*0.95;
-	
-	my $endArcXPos = -1*$startArcXPos;
+
+	my $startArcXPos = -1 * sin( deg2rad( $self->{"angle"} / 2 ) ) * $self->{"length"} * 0.95;
+	my $startArcYPos = cos( deg2rad( $self->{"angle"} / 2 ) ) * $self->{"length"} * 0.95;
+
+	my $endArcXPos = -1 * $startArcXPos;
 	my $endArcYPos = $startArcYPos;
- 	
-	my $arc = PrimitiveArcSCE->new(Point->new( $startArcXPos, $startArcYPos), Point->new( 0, 0), Point->new( $endArcXPos, $endArcYPos), $self->{"symbol"});
+
+	my $arc = PrimitiveArcSCE->new( Point->new( $startArcXPos, $startArcYPos ),
+									Point->new( 0,           0 ),
+									Point->new( $endArcXPos, $endArcYPos ),
+									$self->{"symbol"} );
 	$self->AddPrimitive($arc);
-	
-	 # Add left helper line
- 
- 
-	my $leftLine = PrimitiveLine->new( Point->new( 0, 0),
-										   Point->new( $leftLineXPos,$ leftLineYPos ),
-										   $self->{"symbol"} );
+
+	# Add left helper line
+
+	my $leftLine = PrimitiveLine->new( Point->new( 0, 0 ), Point->new( $leftLineXPos, $leftLineYPos ), $self->{"symbol"} );
 	my $rightLine = $leftLine->Copy();
 	$rightLine->MirrorY();
 
 	$self->AddPrimitive($leftLine);
 	$self->AddPrimitive($rightLine);
-	
+
 	# Add Arrows
-	my $arrowLength = $self->{"length"}*0.05;
-	
+	my $arrowLength = $self->{"length"} * 0.05;
+
 	# define arrow point on zero
-	my $lTopArrPoint = Point->new($arrowLength, $arrowLength);
-	my $lBotArrPoint = Point->new($arrowLength, -$arrowLength);
-	
-	my $rTopArrPoint = Point->new(-$arrowLength, $arrowLength);
-	my $rBotArrPoint = Point->new(-$arrowLength, - $arrowLength);
-	
+	my $lTopArrPoint = Point->new( $arrowLength, $arrowLength );
+	my $lBotArrPoint = Point->new( $arrowLength, -$arrowLength );
+
+	my $rTopArrPoint = Point->new( -$arrowLength, $arrowLength );
+	my $rBotArrPoint = Point->new( -$arrowLength, -$arrowLength );
+
 	# a) rotate arrows point
-	$lTopArrPoint->Rotate($self->{"angle"}/2);
-	$lBotArrPoint->Rotate($self->{"angle"}/2);
+	$lTopArrPoint->Rotate( $self->{"angle"} / 2 );
+	$lBotArrPoint->Rotate( $self->{"angle"} / 2 );
 
-	$rTopArrPoint->Rotate($self->{"angle"}/2,1);
-	$rBotArrPoint->Rotate($self->{"angle"}/2,1);
-	
+	$rTopArrPoint->Rotate( $self->{"angle"} / 2, 1 );
+	$rBotArrPoint->Rotate( $self->{"angle"} / 2, 1 );
+
 	# b) move point, to final position
-	$lTopArrPoint->Move($startArcXPos, $startArcYPos);
-	$lBotArrPoint->Move($startArcXPos, $startArcYPos);
+	$lTopArrPoint->Move( $startArcXPos, $startArcYPos );
+	$lBotArrPoint->Move( $startArcXPos, $startArcYPos );
 
-	$rTopArrPoint->Move($endArcXPos, $endArcYPos);
-	$rBotArrPoint->Move($endArcXPos, $endArcYPos);
-	
+	$rTopArrPoint->Move( $endArcXPos, $endArcYPos );
+	$rBotArrPoint->Move( $endArcXPos, $endArcYPos );
+
 	# c) create line based on this point
-	
-	my $lTopArrLine = PrimitiveLine->new( Point->new( $startArcXPos, $startArcYPos),$lTopArrPoint, $self->{"symbol"} );
-	my $lBotArrLine = PrimitiveLine->new( Point->new( $startArcXPos, $startArcYPos),$lBotArrPoint, $self->{"symbol"} );
-	
-	my $rTopArrLine = PrimitiveLine->new( Point->new( $endArcXPos, $endArcYPos),$rTopArrPoint, $self->{"symbol"} );
-	my $rBotArrLine = PrimitiveLine->new( Point->new( $endArcXPos, $endArcYPos),$rBotArrPoint, $self->{"symbol"} );
- 
- 	$self->AddPrimitive($lTopArrLine);
-  	$self->AddPrimitive($lBotArrLine);
-   	$self->AddPrimitive($rTopArrLine);
-    $self->AddPrimitive($rBotArrLine);
- 
+
+	my $lTopArrLine = PrimitiveLine->new( Point->new( $startArcXPos, $startArcYPos ), $lTopArrPoint, $self->{"symbol"} );
+	my $lBotArrLine = PrimitiveLine->new( Point->new( $startArcXPos, $startArcYPos ), $lBotArrPoint, $self->{"symbol"} );
+
+	my $rTopArrLine = PrimitiveLine->new( Point->new( $endArcXPos, $endArcYPos ), $rTopArrPoint, $self->{"symbol"} );
+	my $rBotArrLine = PrimitiveLine->new( Point->new( $endArcXPos, $endArcYPos ), $rBotArrPoint, $self->{"symbol"} );
+
+	$self->AddPrimitive($lTopArrLine);
+	$self->AddPrimitive($lBotArrLine);
+	$self->AddPrimitive($rTopArrLine);
+	$self->AddPrimitive($rBotArrLine);
+
 	# add text value
 
-	my $textPos = Point->new(0, $self->{"length"});
+	my $textPos = Point->new( 0, $self->{"length"} );
 
 	$self->AddPrimitive(
 						 PrimitiveText->new(
@@ -146,13 +145,7 @@ sub __DefineSymbol {
 	);
 
 }
-
-sub __MovePoint{
-	my $self = shift;
-	
-	
-}
-
+ 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#

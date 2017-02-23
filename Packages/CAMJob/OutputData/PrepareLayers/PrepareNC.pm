@@ -1,6 +1,6 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Responsible for prepare layers before print as pdf
+# Description: Responsible for prepare NC layers
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Packages::CAMJob::OutputData::PrepareLayers::PrepareNC;
@@ -92,7 +92,7 @@ sub Prepare {
 
 	# 3) If step is originally flattened with nested steps, use DTM type vzsledne/vratne form child
 	# step, if is not set
-	$self->__SetDTMType( \@layers, \@childSteps );
+	#$self->__SetDTMType( \@layers, \@childSteps );
 
 	# 3) Set all NC layers to finish sizes (consider type of DTM vysledne/vrtane)
 	$self->__SetFinishSizes( \@layers );
@@ -243,7 +243,16 @@ sub __SetFinishSizes {
 		# Prepare tool table for drill map and final sizes of data (depand on column DSize in DTM)
 
 		my @tools = CamDTM->GetDTMTools( $inCAM, $jobId, $self->{"step"}, $lName );
-		my $DTMType = CamDTM->GetDTMType( $inCAM, $jobId, $self->{"step"}, $lName );
+		
+		
+		my $DTMType = CamDTM->GetDTMType( $inCAM, $jobId, $self->{"oriStep"}, $lName );
+
+		# if DTM type not set, set default DTM type
+		if ( $DTMType ne EnumsDrill->DTM_VRTANE && $DTMType ne EnumsDrill->DTM_VYSLEDNE ) {
+
+			$DTMType = CamDTM->GetDTMDefaultType( $inCAM, $jobId, $self->{"oriStep"}, $lName, 1 );
+		}
+ 
 
 		if ( $DTMType ne EnumsDrill->DTM_VRTANE && $DTMType ne EnumsDrill->DTM_VYSLEDNE ) {
 			die "Typ v Drill tool manageru (vysledne/vrtane) neni nastaven u vrstvy: '" . $lName . "' ";

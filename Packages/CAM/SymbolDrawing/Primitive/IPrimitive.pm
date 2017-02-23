@@ -1,6 +1,6 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Inteface, which  define  operation for feature parser
+# Description: Inteface, which  define  primitive operations
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Packages::CAM::SymbolDrawing::Primitive::IPrimitive;

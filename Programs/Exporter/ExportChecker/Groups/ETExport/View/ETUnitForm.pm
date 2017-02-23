@@ -170,6 +170,8 @@ sub SetStepToTest {
 	my $value = shift;
 
 	$self->{"stepCb"}->SetValue($value);
+	$self->__OnStepChange();
+	
 }
 
 sub GetStepToTest {

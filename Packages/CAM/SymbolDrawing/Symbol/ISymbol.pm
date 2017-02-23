@@ -1,6 +1,6 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Inteface, which  define  operation for feature parser
+# Description: Inteface, which define symbol operation
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Packages::CAM::SymbolDrawing::Symbol::ISymbol;

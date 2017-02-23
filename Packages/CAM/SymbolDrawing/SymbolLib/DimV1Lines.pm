@@ -1,6 +1,6 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: 'Code' type of :
+# Description: 'Dimension' type of :
 # $x - position
 #
 #  ______\|/   - $length1
@@ -39,11 +39,11 @@ sub new {
 
 	my $type1   = shift;    # if dimension si on right/left
 	my $type2   = shift;    # if dimension is on top/bot
-	my $width  = shift;    # height of helper lines
+	my $width   = shift;    # height of helper lines
 	my $length1 = shift;
 	my $length2 = shift;
 	my $length3 = shift;
-	my $line = shift;    # both/first/second first= only first line showed, second = only second line showed
+	my $line    = shift;    # both/first/second first= only first line showed, second = only second line showed
 
 	my $symbol        = shift;    # symbol of dim lines
 	my $textValue     = shift;    # text value of dimension
@@ -71,7 +71,7 @@ sub new {
 	$self->{"length1"}       = $length1;
 	$self->{"length2"}       = $length2;
 	$self->{"length3"}       = $length3;
-	$self->{"line"}       = $line;
+	$self->{"line"}          = $line;
 	$self->{"symbol"}        = $symbol;
 	$self->{"textValue"}     = $textValue;
 	$self->{"textHeight"}    = $textHeight;
@@ -100,31 +100,26 @@ sub __DefineSymbol {
 
 	if ( $self->{"line"} eq "both" || $self->{"line"} eq "first" ) {
 
-	$self->AddPrimitive(
-						 PrimitiveLine->new(
-											 Point->new( $self->{"x"}, $self->{"y"} ),
-											 Point->new( $self->{"width"}, $self->{"y"}  ),
-											 $self->{"symbol"}
-						 )
-	);
-	
+		$self->AddPrimitive(
+					PrimitiveLine->new( Point->new( $self->{"x"}, $self->{"y"} ), Point->new( $self->{"width"}, $self->{"y"} ), $self->{"symbol"} ) );
+
 	}
 
-if ( $self->{"line"} eq "both" || $self->{"line"} eq "second" ) {
+	if ( $self->{"line"} eq "both" || $self->{"line"} eq "second" ) {
 
-	my $yPosLine2 = undef;
+		my $yPosLine2 = undef;
 
-	if ( $self->{"type2"} eq "bot" ) {
-		$yPosLine2 = -1 * $self->{"length2"};
+		if ( $self->{"type2"} eq "bot" ) {
+			$yPosLine2 = -1 * $self->{"length2"};
+		}
+		else {
+			$yPosLine2 = $self->{"length2"};
+		}
+
+		$self->AddPrimitive(
+						PrimitiveLine->new( Point->new( $self->{"x"}, $yPosLine2 ), Point->new( $self->{"width"}, $yPosLine2 ), $self->{"symbol"} ) );
+
 	}
-	else {
-		$yPosLine2 = $self->{"length2"};
-	}
-
-	$self->AddPrimitive(
-		PrimitiveLine->new( Point->new( $self->{"x"}, $yPosLine2), Point->new( $self->{"width"} , $yPosLine2), $self->{"symbol"} ) );
-		
-}
 
 }
 

@@ -1,6 +1,6 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Module create image preview of pcb based on physical layers
+# Description: Responsible for preparing control data or cooperaton data
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Packages::Gerbers::ProduceData::ProduceData;
@@ -32,35 +32,33 @@ use aliased 'Packages::ItemResult::Enums' => "EnumsResult";
 
 sub new {
 	my $class = shift;
-	my $self = $class->SUPER::new(@_);
+	my $self  = $class->SUPER::new(@_);
 	bless $self;
 
 	$self->{"inCAM"} = shift;
 	$self->{"jobId"} = shift;
 	$self->{"step"}  = shift;
-	
+
 	$self->{"produceDataResult"} = $self->_GetNewItem("Produce data");
 
-	my $filesDir = EnumsPaths->Client_INCAMTMPOTHER . GeneralHelper->GetGUID()."\\";
-	 mkdir($filesDir) or die "Can't create dir: " . $filesDir . $_;
+	my $filesDir = EnumsPaths->Client_INCAMTMPOTHER . GeneralHelper->GetGUID() . "\\";
+	mkdir($filesDir) or die "Can't create dir: " . $filesDir . $_;
 
-	$self->{"layerList"}    = LayerDataList->new($self->{"jobId"});
+	$self->{"layerList"}    = LayerDataList->new( $self->{"jobId"} );
 	$self->{"outputLayers"} = OutputLayers->new( $self->{"inCAM"}, $self->{"jobId"}, $filesDir );
 	$self->{"outputInfo"}   = OutputInfo->new( $self->{"inCAM"}, $self->{"jobId"}, $filesDir );
-	
-	
+
 	$self->{"outputLayers"}->{"onItemResult"}->Add( sub { $self->__OnLayersResult(@_) } );
-	
-	$self->{"filesDir"} = $filesDir;
-	$self->{"outputZip"} = EnumsPaths->Client_INCAMTMPOTHER.GeneralHelper->GetGUID().".zip";
+
+	$self->{"filesDir"}  = $filesDir;
+	$self->{"outputZip"} = EnumsPaths->Client_INCAMTMPOTHER . GeneralHelper->GetGUID() . ".zip";
 
 	return $self;
 }
 
 # Create image preview
 sub Create {
-	my $self    = shift;
-	 
+	my $self = shift;
 
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
@@ -72,7 +70,7 @@ sub Create {
 	my $result = $outData->Create( \$mess );
 
 	unless ($result) {
-		die "Error when preparing layers for output.". $mess."\n";
+		die "Error when preparing layers for output." . $mess . "\n";
 	}
 
 	my @dataLayers = $outData->GetLayers();
@@ -88,16 +86,14 @@ sub Create {
 	$self->{"outputInfo"}->Output( $self->{"layerList"} );
 
 	$self->__ZipFiles();
-	
+
 	# clear job
 	$outData->Clear();
- 
 
-	$self->_OnItemResult($self->{"produceDataResult"});
-	
+	$self->_OnItemResult( $self->{"produceDataResult"} );
+
 	return 1;
 }
-
 
 # Return path of image
 sub GetOutput {
@@ -106,17 +102,15 @@ sub GetOutput {
 	return $self->{"outputZip"};
 }
 
-
-sub __OnLayersResult{
+sub __OnLayersResult {
 	my $self = shift;
 	my $item = shift;
-	
-	if($item->Result() eq EnumsResult->ItemResult_Fail){
-		
-		$self->{"produceDataResult"}->AddErrors($item->GetErrors());
+
+	if ( $item->Result() eq EnumsResult->ItemResult_Fail ) {
+
+		$self->{"produceDataResult"}->AddErrors( $item->GetErrors() );
 	}
 }
-
 
 sub __ZipFiles {
 	my $self = shift;
@@ -141,14 +135,13 @@ sub __ZipFiles {
 
 	if ( $zip->writeToFileNamed( $self->{"outputZip"} ) == AZ_OK ) {
 
-		rmtree($self->{"filesDir"}) or die "Cannot rmtree ".$self->{"filesDir"}." : $!";
+		rmtree( $self->{"filesDir"} ) or die "Cannot rmtree " . $self->{"filesDir"} . " : $!";
 	}
 	else {
 
 		die 'Error when zip output jpb files';
 	}
 }
-
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
@@ -159,7 +152,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	use aliased 'Packages::Gerbers::ProduceData::ProduceData';
 
 	use aliased 'Packages::InCAM::InCAM';
-	
+
 	my $inCAM = InCAM->new();
 
 	my $jobId = "f52456";
@@ -167,9 +160,8 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	my $mess = "";
 
 	my $control = ProduceData->new( $inCAM, $jobId, "panel" );
-	$control->Create(  );
-	
- 
+	$control->Create();
+
 }
 
 1;

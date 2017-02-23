@@ -1,7 +1,7 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Prepare special structure "LayerData" for each exported layer.
-# This sctructure contain list <LayerData> and operations with this items
+# Description: Special structure responsible for draw
+# technical image about depth drilling/routing
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Packages::CAMJob::OutputData::Drawing::Drawing;
@@ -44,7 +44,7 @@ sub new {
 	$self->{"position"} = shift;    # top/bot
 	$self->{"pcbThick"} = shift;    # pcbthick in mm
 	$self->{"side"}     = shift;    # top/bot
-	$self->{"plated"}     = shift;    # 1/0
+	$self->{"plated"}   = shift;    # 1/0
 
 	$self->{"scale"}            = 5;
 	$self->{"drawWidth"}        = 120;
@@ -90,8 +90,6 @@ sub Create {
 	my $depth      = shift;
 	my $angle      = shift;
 
-	
-
 	$self->__CreateDraw( $type, $symbolType, $diameter, $depth, $angle );
 	$self->__CreateTexts( $type, $symbolType );
 }
@@ -113,13 +111,15 @@ sub __CreateDraw {
 	my $w     = $self->{"drawWidth"};
 	my $drawH = $self->{"pcbThick"} * $self->{"scale"};    # mm
 
-	my $dimThick = DimV1->new(
-							   "bot",  ( $w * 0.01 ),
-							   $drawH, ( $w * 0.2 ),
-							   $self->{"dimLineWidth"},  sprintf( "%.2f", $self->{"pcbThick"} ) . "mm (pcb thick)",
-							   $self->{"dimTextHeight"}, $self->{"dimTextWidth"},
-							   $self->{"dimTextMirror"}, $self->{"dimTextAngle"}
-	);
+	my $dimThick = DimV1->new( "bot", ( $w * 0.01 ),
+							   $drawH,
+							   ( $w * 0.2 ),
+							   $self->{"dimLineWidth"},
+							   sprintf( "%.2f", $self->{"pcbThick"} ) . "mm (pcb thick)",
+							   $self->{"dimTextHeight"},
+							   $self->{"dimTextWidth"},
+							   $self->{"dimTextMirror"},
+							   $self->{"dimTextAngle"} );
 	$self->{"drawing"}->AddSymbol( $dimThick, Point->new( ( $w * 0.9 ), 0 ) );
 
 	# 3) draw picture to layer
@@ -134,14 +134,13 @@ sub __CreateTexts {
 	my $symbolType = shift;    # slot/hole/surface
 
 	my $title = "";
-	
-	
-	if($self->{"plated"}){
+
+	if ( $self->{"plated"} ) {
 		$title .= "Plated ";
-	}else{
+	}
+	else {
 		$title .= "Non plated ";
 	}
-	
 
 	if ( $type eq Enums->Depth_ZAXIS ) {
 
@@ -170,8 +169,8 @@ sub __CreateTexts {
 	  ->AddPrimitive( PrimitiveLine->new( Point->new( 0, -3 ), Point->new( length($title) * $self->{"titleTextHeight"}, -3 ), "r300" ) );
 
 	$self->{"drawingTitle"}->AddPrimitive( PrimitiveText->new( "(1:" . $self->{"scale"} . ")", Point->new( 0, -10 ), 4, 1 ) );
-	
-	if($self->{"plated"}){
+
+	if ( $self->{"plated"} ) {
 		$self->{"drawingTitle"}->AddPrimitive( PrimitiveText->new( "Note: All measures are after plating", Point->new( 25, -8 ), 2, 1 ) );
 	}
 
@@ -187,11 +186,11 @@ sub __GetPcbDrawSide {
 	my $drawW = $self->{"drawWidth"};                      # mm
 	my $drawH = $self->{"pcbThick"} * $self->{"scale"};    # mm
 
-	my $flashLen =  $drawH / 3 ;
+	my $flashLen = $drawH / 3;
 	my $flashP1  = -$flashLen;
-	my $flashP2  = - ($flashLen + 1 * ( $flashLen / 3 ) );
-	my $flashP3  = - ($flashLen + 2 * ( $flashLen / 3 ) );
-	my $flashP4  = - ($flashLen + 3 * ( $flashLen / 3 ) );
+	my $flashP2  = -( $flashLen + 1 * ( $flashLen / 3 ) );
+	my $flashP3  = -( $flashLen + 2 * ( $flashLen / 3 ) );
+	my $flashP4  = -( $flashLen + 3 * ( $flashLen / 3 ) );
 
 	if ( $side eq "right" ) {
 		push( @{$surfPoints}, Point->new( $drawW, 0 ) );    # top right corner
@@ -266,9 +265,9 @@ sub __CreateDetailZaxis {
 	my $symbolType = shift;    # slot/hole/surface
 	my $diameter   = shift;
 	my $depth      = shift;
-	
-	if($depth >= $self->{"pcbThick"}){
-		die "Tool depth $depth is bigger than pcb thick ".$self->{"pcbThick"}.".\n";
+
+	if ( $depth >= $self->{"pcbThick"} ) {
+		die "Tool depth $depth is bigger than pcb thick " . $self->{"pcbThick"} . ".\n";
 	}
 
 	my @surfPoints = ();
@@ -299,9 +298,9 @@ sub __CreateDetailZaxis {
 	my $w = $self->{"drawWidth"};
 
 	my $dimTool = DimH1Lines->new(
-								   "top",                          "right",
-								   ( $w * 0.1 ),                ( $w * 0.01 ),
-								   $diameterReal,                  ( $w * 0.2 ),
+								   "top", "right",
+								   ( $w * 0.1 ), ( $w * 0.01 ),
+								   $diameterReal, ( $w * 0.2 ),
 								   "both",                         $self->{"dimLineWidth"},
 								   "D " . $diameter . "mm (tool)", $self->{"dimTextHeight"},
 								   $self->{"dimTextWidth"},        $self->{"dimTextMirror"},
@@ -311,10 +310,10 @@ sub __CreateDetailZaxis {
 
 	# 5) create dimension draw for depth
 	my $dimDepth = DimV1Lines->new(
-									"left",           "bot",
+									"left", "bot",
 									( $w * 0.05 ), ( $w * 0.01 ),
-									$depthReal,       ( $w * 0.2 ),
-									"both",           $self->{"dimLineWidth"},
+									$depthReal, ( $w * 0.2 ),
+									"both", $self->{"dimLineWidth"},
 									sprintf( "%.2f", $depth ) . "mm (depth)", $self->{"dimTextHeight"},
 									$self->{"dimTextWidth"}, $self->{"dimTextMirror"},
 									$self->{"dimTextAngle"}
@@ -326,9 +325,9 @@ sub __CreateDetailZaxis {
 sub __CreateDetailZaxisSurf {
 	my $self  = shift;
 	my $depth = shift;
-	
-	if($depth >= $self->{"pcbThick"}){
-		die "Tool depth $depth is bigger than pcb thick ".$self->{"pcbThick"}.".\n";
+
+	if ( $depth >= $self->{"pcbThick"} ) {
+		die "Tool depth $depth is bigger than pcb thick " . $self->{"pcbThick"} . ".\n";
 	}
 
 	my @surfPoints = ();
@@ -359,10 +358,10 @@ sub __CreateDetailZaxisSurf {
 	my $w = $self->{"drawWidth"};
 
 	my $dimDepth = DimV1Lines->new(
-									"left",           "bot",
+									"left", "bot",
 									( $w * 0.05 ), ( $w * 0.01 ),
-									$depthReal,       ( $w * 0.2 ),
-									"both",           $self->{"dimLineWidth"},
+									$depthReal, ( $w * 0.2 ),
+									"both", $self->{"dimLineWidth"},
 									sprintf( "%.2f", $depth ) . "mm (depth)", $self->{"dimTextHeight"},
 									$self->{"dimTextWidth"}, $self->{"dimTextMirror"},
 									$self->{"dimTextAngle"}
@@ -443,10 +442,10 @@ sub __CreateDetailCountersink {
 	my $w = $self->{"drawWidth"};
 
 	my $dimTool = DimH1Lines->new(
-								   "bot",           "left",
+								   "bot", "left",
 								   ( $w * 0.2 ), ( $w * 0.01 ),
-								   $diameterReal,   ( $w * 0.2 ),
-								   "both",          $self->{"dimLineWidth"},
+								   $diameterReal, ( $w * 0.2 ),
+								   "both", $self->{"dimLineWidth"},
 								   "D " . sprintf( "%.2f", $diameter ) . "mm", $self->{"dimTextHeight"},
 								   $self->{"dimTextWidth"}, $self->{"dimTextMirror"},
 								   $self->{"dimTextAngle"}
@@ -455,10 +454,10 @@ sub __CreateDetailCountersink {
 
 	# 3) create dimension draw for depth
 	my $dimDepth = DimV1Lines->new(
-									"right",          "bot",
+									"right", "bot",
 									abs( $x3 - $x2 ), ( $w * 0.01 ),
-									$depthReal,       ( $w * 0.2 ),
-									"second",         $self->{"dimLineWidth"},
+									$depthReal, ( $w * 0.2 ),
+									"second", $self->{"dimLineWidth"},
 									sprintf( "%.2f", $depth ) . "mm (depth)", $self->{"dimTextHeight"},
 									$self->{"dimTextWidth"}, $self->{"dimTextMirror"},
 									$self->{"dimTextAngle"}
@@ -484,21 +483,21 @@ sub __CreateDetailCountersink {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-#	use aliased 'Packages::Gerbers::OutputData::Drawing::Drawing';
-#	use aliased 'Packages::InCAM::InCAM';
-#	use aliased 'Packages::Gerbers::OutputData::Enums';
-#	use aliased 'Packages::CAM::SymbolDrawing::Point';
-#
-#	my $inCAM = InCAM->new();
-#
-#	$inCAM->COM("sel_delete");
-#
-#	my $draw = Drawing->new( $inCAM, "test", Point->new( 20, 40 ), 1.5, "bot" );
-#
-#	#$draw->Create( Enums->Depth_ZAXIS, Enums->Symbol_SLOT, 2, 1 );
-#	$draw->Create( Enums->Depth_ZAXIS, Enums->Symbol_SURFACE, 2, 1 );
-#
-#	#$draw->Create( Enums->Depth_COUNTERSINK, Enums->Symbol_SLOT, 4, 3, 60 );
+	#	use aliased 'Packages::Gerbers::OutputData::Drawing::Drawing';
+	#	use aliased 'Packages::InCAM::InCAM';
+	#	use aliased 'Packages::Gerbers::OutputData::Enums';
+	#	use aliased 'Packages::CAM::SymbolDrawing::Point';
+	#
+	#	my $inCAM = InCAM->new();
+	#
+	#	$inCAM->COM("sel_delete");
+	#
+	#	my $draw = Drawing->new( $inCAM, "test", Point->new( 20, 40 ), 1.5, "bot" );
+	#
+	#	#$draw->Create( Enums->Depth_ZAXIS, Enums->Symbol_SLOT, 2, 1 );
+	#	$draw->Create( Enums->Depth_ZAXIS, Enums->Symbol_SURFACE, 2, 1 );
+	#
+	#	#$draw->Create( Enums->Depth_COUNTERSINK, Enums->Symbol_SLOT, 4, 3, 60 );
 
 }
 

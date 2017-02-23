@@ -1,4 +1,3 @@
-
 #-------------------------------------------------------------------------------------------#
 # Description: Class which represent primitive geometric - text
 # Author:SPR
@@ -92,7 +91,6 @@ sub GetAngle {
 
 	return $self->{"angle"};
 }
-
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

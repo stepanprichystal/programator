@@ -1,6 +1,6 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: 'Code' type of (but 90 degree rotated):
+# Description: 'Dimension' type of (but 90 degree ccw rotated):
 # $x - position
 #
 #  ______\|/   - $length1
@@ -37,13 +37,13 @@ use aliased 'Packages::CAM::SymbolDrawing::SymbolLib::DimH1';
 sub new {
 	my $class = shift;
 
-	my $type1    = shift;    # if dimension si on top/bot
-	my $type2    = shift;    # if dimension is on right/left
-	my $height   = shift;    # height of helper lines
-	my $length1  = shift;
-	my $length2  = shift;
-	my $length3  = shift;
-	my $line = shift;    # both/first/second first= only first line showed, second = only second line showed
+	my $type1   = shift;    # if dimension si on top/bot
+	my $type2   = shift;    # if dimension is on right/left
+	my $height  = shift;    # height of helper lines
+	my $length1 = shift;
+	my $length2 = shift;
+	my $length3 = shift;
+	my $line    = shift;    # both/first/second first= only first line showed, second = only second line showed
 
 	my $symbol        = shift;    # symbol of dim lines
 	my $textValue     = shift;    # text value of dimension
@@ -71,7 +71,7 @@ sub new {
 	$self->{"length1"}       = $length1;
 	$self->{"length2"}       = $length2;
 	$self->{"length3"}       = $length3;
-	$self->{"line"}       = $line;
+	$self->{"line"}          = $line;
 	$self->{"symbol"}        = $symbol;
 	$self->{"textValue"}     = $textValue;
 	$self->{"textHeight"}    = $textHeight;

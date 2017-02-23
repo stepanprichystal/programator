@@ -1,6 +1,7 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Responsible for prepare layers before print as pdf
+# Description: Responsible for prepariong text file with information about exported job
+# and layers
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Packages::Gerbers::ProduceData::OutputInfo;
@@ -17,7 +18,7 @@ use aliased 'Helpers::GeneralHelper';
 use aliased 'Helpers::FileHelper';
 use aliased 'Enums::EnumsPaths';
 use aliased 'Enums::EnumsGeneral';
-use aliased 'Packages::Gerbers::OutputData::Enums' => "EnumsOutput";
+use aliased 'Packages::CAMJob::OutputData::Enums' => "EnumsOutput";
 
 #-------------------------------------------------------------------------------------------#
 #  Interface

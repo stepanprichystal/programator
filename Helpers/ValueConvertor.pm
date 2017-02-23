@@ -1,5 +1,6 @@
 #-------------------------------------------------------------------------------------------#
-# Description: Script slouzi pro vypocet hlubky vybrusu pri navadeni na vrtackach.
+# Description: Conversion layername to titles, infos, file names, etc...
+# Here put all "conversion" stuff
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Helpers::ValueConvertor;

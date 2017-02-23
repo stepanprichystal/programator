@@ -15,6 +15,7 @@ use warnings;
 use aliased 'CamHelpers::CamHelper';
 use aliased 'CamHelpers::CamLayer';
 use aliased 'CamHelpers::CamAttributes';
+
 #use aliased 'Connectors::HeliosConnector::HegMethods';
 #use aliased 'Helpers::GeneralHelper';
 
@@ -27,17 +28,16 @@ use aliased 'CamHelpers::CamAttributes';
 sub SelectBySingleAtt {
 	my $self     = shift;
 	my $inCAM    = shift;
-	my $jobId      = shift;
+	my $jobId    = shift;
 	my $att      = shift;
-	my $attValue = shift; 
-
+	my $attValue = shift;
 
 	my $polarity = shift;    # not implemented yet
 	my $symbol   = shift;    # not implemented yet
 
 	$inCAM->COM( 'filter_reset', filter_name => 'popup' );
 
-	$self->__AddFilterAtt( $inCAM, $jobId,  $att, $attValue);
+	$self->__AddFilterAtt( $inCAM, $jobId, $att, $attValue );
 
 	#$inCAM->COM( 'set_filter_and_or_logic', filter_name => 'popup', criteria => 'inc_attr', logic => 'or' );
 	$inCAM->COM('filter_area_strt');
@@ -63,34 +63,36 @@ sub __AddFilterAtt {
 	}
 
 	# decide, which type is attribute
-	my %attrInfo = CamAttributes->GetAttrParamsByName($inCAM, $jobId, $attName);
+	my %attrInfo = CamAttributes->GetAttrParamsByName( $inCAM, $jobId, $attName );
 
-	my $min_int_val = 0;
-	my $max_int_val = 0;
+	my $min_int_val   = 0;
+	my $max_int_val   = 0;
 	my $min_float_val = 0;
 	my $max_float_val = 0;
-	my $option = "";
-	my $text = "";
-	
-	if($attrInfo{"gATRtype"} eq "int"){
-		
+	my $option        = "";
+	my $text          = "";
+
+	if ( $attrInfo{"gATRtype"} eq "int" ) {
+
 		$min_int_val = $attVal->{"min"};
 		$max_int_val = $attVal->{"max"};
-		
-	}elsif($attrInfo{"gATRtype"} eq "float"){
-		
+
+	}
+	elsif ( $attrInfo{"gATRtype"} eq "float" ) {
+
 		$min_float_val = $attVal->{"min"};
 		$max_float_val = $attVal->{"max"};
-		
-	}elsif($attrInfo{"gATRtype"} eq "option"){
-		
-		$option = $attVal;
-		
-	}elsif($attrInfo{"gATRtype"} eq "text"){
-		
-		$text = $attVal;	
+
 	}
-	
+	elsif ( $attrInfo{"gATRtype"} eq "option" ) {
+
+		$option = $attVal;
+
+	}
+	elsif ( $attrInfo{"gATRtype"} eq "text" ) {
+
+		$text = $attVal;
+	}
 
 	$inCAM->COM(
 				 'set_filter_attributes',
@@ -111,12 +113,11 @@ sub __AddFilterAtt {
 # Select all attributes of step in hash
 # Return count of celected features
 sub BySymbols {
-	my $self   = shift;
-	my $inCAM  = shift;
-	my @symbols = @{shift(@_)};
-	
-	my $symbolStr = join("\\;", @symbols);
-	
+	my $self    = shift;
+	my $inCAM   = shift;
+	my @symbols = @{ shift(@_) };
+
+	my $symbolStr = join( "\\;", @symbols );
 
 	$inCAM->COM( 'filter_reset', filter_name => 'popup' );
 
@@ -133,22 +134,22 @@ sub BySymbols {
 
 # Select features by type
 sub ByTypes {
-	my $self   = shift;
-	my $inCAM  = shift;
-	my @types = @{shift(@_)};
-	
-	my $typeStr = join("\\;", @types);
-	
+	my $self  = shift;
+	my $inCAM = shift;
+	my @types = @{ shift(@_) };
+
+	my $typeStr = join( "\\;", @types );
 
 	$inCAM->COM( 'filter_reset', filter_name => 'popup' );
-	
-	$inCAM->COM('filter_set',
+
+	$inCAM->COM(
+				 'filter_set',
 				 'filter_name'  => 'popup',
 				 'update_popup' => 'no',
 				 'feat_types'   => $typeStr,
 				 'polarity'     => "positive\;negative"
 	);
- 
+
 	$inCAM->COM('filter_area_strt');
 	$inCAM->COM( 'filter_area_end', filter_name => 'popup', operation => 'select' );
 
@@ -208,7 +209,7 @@ sub BySurfaceArea {
 sub SelectByReferenece {
 	my $self        = shift;
 	my $inCAM       = shift;
-	my $jobId      	= shift;
+	my $jobId       = shift;
 	my $mode        = shift;    # touch, disjoint, etc..
 	my $layer       = shift;
 	my $att         = shift;
@@ -219,13 +220,12 @@ sub SelectByReferenece {
 	my $refAttValue = shift;
 	my $refPolarity = shift;
 
-	CamLayer->WorkLayer($inCAM, $layer);
+	CamLayer->WorkLayer( $inCAM, $layer );
 
 	$inCAM->COM( 'filter_reset', filter_name => 'popup' );
 
 	# Set filtered layer ====================================================================
-
-	$self->__AddFilterAtt( $inCAM,$jobId, $att, $attValue );
+	$self->__AddFilterAtt( $inCAM, $jobId, $att, $attValue );
 
 	$inCAM->COM(
 				 'filter_set',
@@ -237,7 +237,7 @@ sub SelectByReferenece {
 
 	# Set reference layer ====================================================================
 
-	$self->__AddFilterAtt( $inCAM, $jobId,  $refAtt, $refAttValue, 1 );
+	$self->__AddFilterAtt( $inCAM, $jobId, $refAtt, $refAttValue, 1 );
 
 	#$inCAM->COM( 'filter_area_end', filter_name => 'popup', operation => 'select' );
 
@@ -269,10 +269,10 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	#my $step  = "mpanel_10up";
 
-	my $result = CamFilter->SelectBySingleAtt( $inCAM, $jobId,  ".plated_type", "press_fit");
+	my $result = CamFilter->SelectBySingleAtt( $inCAM, $jobId, ".plated_type", "press_fit" );
 
 	#my $self             = shift;
-	
+
 	print 1;
 
 }

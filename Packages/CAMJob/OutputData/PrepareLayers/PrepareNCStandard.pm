@@ -1,6 +1,6 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Responsible for prepare layers before print as pdf
+# Description: Responsible for prepare standard NC layers + drill maps
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Packages::CAMJob::OutputData::PrepareLayers::PrepareNCStandard;
@@ -14,14 +14,14 @@ use List::Util qw[max min];
 use aliased 'Helpers::GeneralHelper';
 use aliased 'Enums::EnumsPaths';
 use aliased 'Enums::EnumsGeneral';
-use aliased 'Packages::Gerbers::OutputData::Enums';
+use aliased 'Packages::CAMJob::OutputData::Enums';
 use aliased 'CamHelpers::CamLayer';
 use aliased 'CamHelpers::CamJob';
 use aliased 'Packages::CAMJob::OutputData::LayerData::LayerData';
 use aliased 'Helpers::ValueConvertor';
 use aliased 'CamHelpers::CamFilter';
 use aliased 'CamHelpers::CamDTM';
- 
+
 #use aliased 'CamHelpers::CamFilter';
 #use aliased 'CamHelpers::CamHelper';
 use aliased 'CamHelpers::CamSymbol';
@@ -80,23 +80,24 @@ sub __PrepareNCDRILL {
 	} @layers;
 
 	foreach my $l (@layers) {
-		
+
 		my $lName = GeneralHelper->GetNumUID();
 
 		my $enTit = ValueConvertor->GetJobLayerTitle($l);
 		my $czTit = ValueConvertor->GetJobLayerTitle( $l, 1 );
 		my $enInf = ValueConvertor->GetJobLayerInfo($l);
 		my $czInf = ValueConvertor->GetJobLayerInfo( $l, 1 );
-		
-		 $inCAM->COM(	"copy_layer",
-						 "source_job"   => $jobId,
-						 "source_step"  => $self->{"step"},
-						 "source_layer" => $l->{"gROWname"},
-						 "dest"         => "layer_name",
-						 "dest_step"    => $self->{"step"},
-						 "dest_layer"   => $lName,
-						 "mode"         => "append"
-		 );
+
+		$inCAM->COM(
+					 "copy_layer",
+					 "source_job"   => $jobId,
+					 "source_step"  => $self->{"step"},
+					 "source_layer" => $l->{"gROWname"},
+					 "dest"         => "layer_name",
+					 "dest_step"    => $self->{"step"},
+					 "dest_layer"   => $lName,
+					 "mode"         => "append"
+		);
 
 		my $lData = LayerData->new( $type, $l, $enTit, $czTit, $enInf, $czInf, $lName );
 
@@ -134,9 +135,9 @@ sub __PrepareNCMILL {
 		my $czTit = ValueConvertor->GetJobLayerTitle( $l, 1 );
 		my $enInf = ValueConvertor->GetJobLayerInfo($l);
 		my $czInf = ValueConvertor->GetJobLayerInfo( $l, 1 );
-		
+
 		# Compensate layer
-		my $lComp = CamLayer->RoutCompensation($inCAM, $l->{"gROWname"}, "document");
+		my $lComp = CamLayer->RoutCompensation( $inCAM, $l->{"gROWname"}, "document" );
 
 		my $lData = LayerData->new( $type, $l, $enTit, $czTit, $enInf, $czInf, $lComp );
 
@@ -146,7 +147,7 @@ sub __PrepareNCMILL {
 
 		# Add Drill map
 
-		my $drillMap = $self->__CreateDrillMaps( $l, $lComp,  Enums->Type_DRILLMAP, $enTit, $czTit, $enInf, $czInf );
+		my $drillMap = $self->__CreateDrillMaps( $l, $lComp, Enums->Type_DRILLMAP, $enTit, $czTit, $enInf, $czInf );
 
 		if ($drillMap) {
 			$drillMap->SetParent($lData);
@@ -194,10 +195,10 @@ sub __PrepareNCMILL {
 
 		# After merging layers, merge tools in DTM
 		$inCAM->COM( "tools_merge", "layer" => $lName );
-		
-		 # Compensate layer
-		my $lComp = CamLayer->RoutCompensation($inCAM, $lName, "document");
-		$inCAM->COM("delete_layer", "layer"=> $lName);
+
+		# Compensate layer
+		my $lComp = CamLayer->RoutCompensation( $inCAM, $lName, "document" );
+		$inCAM->COM( "delete_layer", "layer" => $lName );
 
 		my $lData = LayerData->new( $type, $lMain, $enTit, $czTit, $enInf, $czInf, $lComp );
 
@@ -267,20 +268,20 @@ sub __CreateDrillMaps {
 		"slots"           => "no",
 		"columns"         => "Count\;Type",
 		"notype"          => "plt",
-		"table_pos"       => "right",                 # alwazs right, because another option not work
+		"table_pos"       => "right",         # alwazs right, because another option not work
 		"table_align"     => "bottom"
 	);
-	
+
 	$f = FeatureFilter->new( $inCAM, $jobId, $lNameMap );
 	@types = ("text");
 	$f->SetTypes( \@types );
 	$f->SetText("*Drill*");
-	
-	if($f->Select() > 0){
-		
-		$inCAM -> COM ('sel_change_txt',"text" =>'Finish');																	
+
+	if ( $f->Select() > 0 ) {
+
+		$inCAM->COM( 'sel_change_txt', "text" => 'Finish' );
 	}
-	
+
 	$inCAM->COM( "delete_layer", "layer" => $lNamePads );
 
 	my $lDataMap = LayerData->new( $type, $oriLayer,
@@ -288,8 +289,6 @@ sub __CreateDrillMaps {
 								   "Mapa vrtání: " . $czTit,
 								   "Units [mm] " . $enInf,
 								   "Jednotky [mm] " . $czInf, $lNameMap );
-								   
-								   
 
 	return $lDataMap;
 }

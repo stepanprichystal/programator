@@ -1,7 +1,6 @@
 
 #-------------------------------------------------------------------------------------------#
-# This sctructure contain information: type of layer: mask, silk, copeer etc...
-# Amd Which layer merge
+# Description: Structure contain information about prepared job layer
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Packages::CAMJob::OutputData::LayerData::LayerData;
@@ -21,20 +20,19 @@ sub new {
 	$self = {};
 	bless $self;
 
-	$self->{"type"}   = shift; # type of Packages::Gerbers::OutputData::Enums
-	$self->{"oriLayer"}   = shift;    # ori matrix layer
-	
-	$self->{"enTit"} = shift; # titles
+	$self->{"type"}     = shift;    # type of Packages::Gerbers::OutputData::Enums
+	$self->{"oriLayer"} = shift;    # ori matrix layer
+
+	$self->{"enTit"} = shift;       # titles
 	$self->{"czTit"} = shift;
-	$self->{"enInf"} = shift; # description
+	$self->{"enInf"} = shift;       # description
 	$self->{"czInf"} = shift;
-	
-	$self->{"output"} = shift;    # name of prepared layer in matrix
-	
- 
- 	# Property for type Type_DRILLMAP
- 	
-	$self->{"parent"} = undef;    # layer, which drill map is based on
+
+	$self->{"output"} = shift;      # name of prepared layer in matrix
+
+	# Property for type Type_DRILLMAP
+
+	$self->{"parent"} = undef;      # layer, which drill map is based on
 
 	return $self;
 }
@@ -65,35 +63,36 @@ sub GetOriLayer {
 
 sub GetNumber {
 	my $self = shift;
-	
+
 	return $self->{"number"}
-	
+
 }
 
 sub GetTitle {
 	my $self = shift;
-	my $cz = shift;
-	
-	if($cz){
-		return  $self->{"czTit"};
-	}else{
-		
-		return  $self->{"enTit"};
+	my $cz   = shift;
+
+	if ($cz) {
+		return $self->{"czTit"};
+	}
+	else {
+
+		return $self->{"enTit"};
 	}
 }
 
 sub GetInfo {
 	my $self = shift;
-	my $cz = shift;
-	
-	if($cz){
-		return  $self->{"czInf"};
-	}else{
-		
-		return  $self->{"enInf"};
+	my $cz   = shift;
+
+	if ($cz) {
+		return $self->{"czInf"};
+	}
+	else {
+
+		return $self->{"enInf"};
 	}
 }
-
 
 sub SetParent {
 	my $self = shift;
@@ -101,12 +100,12 @@ sub SetParent {
 	$self->{"parent"} = shift;
 }
 
-
 sub GetParent {
 	my $self = shift;
 
 	return $self->{"parent"};
 }
+
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#

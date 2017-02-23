@@ -1,6 +1,6 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: 'Code' type of (but rotated 90 degree ccw):
+# Description: 'Dimension' type of (but rotated 90 degree ccw):
 #
 #  \|/   - length 1
 #   |	 - length 2
@@ -45,11 +45,11 @@ sub new {
 	my $textLineWidth = shift;    # font size in mm
 	my $textMirror    = shift;
 	my $textAngle     = shift;
-	my $textPosition     = shift; #top/bot
+	my $textPosition  = shift;    #top/bot
 
 	my $polarity = shift;
-	
-	$textPosition = defined $textPosition? $textPosition : "top";
+
+	$textPosition = defined $textPosition ? $textPosition : "top";
 
 	my $self = {};
 	$self = $class->SUPER::new($polarity);
@@ -72,7 +72,7 @@ sub new {
 	$self->{"textLineWidth"} = $textLineWidth;
 	$self->{"textMirror"}    = $textMirror;
 	$self->{"textAngle"}     = $textAngle;
-	$self->{"textPosition"}     = $textPosition;
+	$self->{"textPosition"}  = $textPosition;
 
 	$self->{"symbol"} = $symbol;
 

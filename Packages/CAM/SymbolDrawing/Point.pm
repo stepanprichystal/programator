@@ -1,5 +1,5 @@
 #-------------------------------------------------------------------------------------------#
-# Description: Class which represent primitive geometric - line
+# Description: Keep info about point + some helper function with point
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Packages::CAM::SymbolDrawing::Point;
@@ -61,7 +61,7 @@ sub Rotate {
 	my $self  = shift;
 	my $angle = shift;    # angle in degree
 	my $cw    = shift;    # angle in degree
-	
+
 	my $y;
 	my $x;
 
@@ -71,20 +71,20 @@ sub Rotate {
 
 	}
 	else {
-		$y =  $self->{"y"} * cos( deg2rad($angle) ) + $self->{"x"} * sin( deg2rad($angle) );
+		$y = $self->{"y"} * cos( deg2rad($angle) ) + $self->{"x"} * sin( deg2rad($angle) );
 		$x = -$self->{"y"} * sin( deg2rad($angle) ) + $self->{"x"} * cos( deg2rad($angle) );
 	}
-	
+
 	$self->{"y"} = $y;
 	$self->{"x"} = $x;
- 
+
 }
 
 sub MirrorX {
-	my $self = shift;
+	my $self  = shift;
 	my $point = shift;
- 
-	$self->{"y"} = $point->{"y"} - ($self->{"y"}- $point->{"y"});
+
+	$self->{"y"} = $point->{"y"} - ( $self->{"y"} - $point->{"y"} );
 }
 
 sub Copy {

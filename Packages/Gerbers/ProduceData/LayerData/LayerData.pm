@@ -1,7 +1,6 @@
 
 #-------------------------------------------------------------------------------------------#
-# This sctructure contain information: type of layer: mask, silk, copeer etc...
-# Amd Which layer merge
+# Description: Structure contain information about prepared job layer
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Packages::Gerbers::ProduceData::LayerData::LayerData;
@@ -11,7 +10,7 @@ use strict;
 use warnings;
 
 #local library
-use aliased 'Packages::Gerbers::OutputData::Enums';
+use aliased 'Packages::CAMJob::OutputData::Enums';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -50,16 +49,16 @@ sub GetName {
 
 	if ( $self->{"type"} eq Enums->Type_DRILLMAP && $self->{"parent"} ) {
 
-		$name = $self->{"parent"}->GetName()."_map";
+		$name = $self->{"parent"}->GetName() . "_map";
 	}
 	else {
 		if ( $self->{"nameSuffix"} > 0 ) {
 
-			$name = $self->{"name"} . "_" . $self->{"nameSuffix"}  ;
+			$name = $self->{"name"} . "_" . $self->{"nameSuffix"};
 		}
 		else {
 
-			$name = $self->{"name"} ;
+			$name = $self->{"name"};
 		}
 	}
 
@@ -72,7 +71,7 @@ sub GetTitle {
 
 	if ( $self->{"type"} eq Enums->Type_DRILLMAP && $self->{"parent"} ) {
 
-		$tit .= "Drill map for: " . $self->{"parent"}->GetName().".ger";
+		$tit .= "Drill map for: " . $self->{"parent"}->GetName() . ".ger";
 	}
 	else {
 
@@ -84,7 +83,7 @@ sub GetTitle {
 
 sub GetInfo {
 	my $self = shift;
-	
+
 	my $inf = "";
 
 	if ( $self->{"type"} eq Enums->Type_DRILLMAP && $self->{"parent"} ) {
@@ -97,7 +96,7 @@ sub GetInfo {
 	}
 
 	return $inf;
- 
+
 }
 
 sub SetOutput {

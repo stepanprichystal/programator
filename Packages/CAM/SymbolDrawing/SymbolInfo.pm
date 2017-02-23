@@ -1,7 +1,6 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Class can parse incam layer fetures. Parsed features, contain only
-# basic info like coordinate, attrubutes etc..
+# Description: Class which keep symbol reference and absolute position to origin
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Packages::CAM::SymbolDrawing::SymbolInfo;
@@ -27,7 +26,7 @@ sub new {
 	bless $self;
 	
 	$self->{"symbol"} = shift;
-	$self->{"position"} = shift;
+	$self->{"position"} = shift; # absolute position to origin
 	
 	unless($self->{"position"}){
 		$self->{"position"} = Point->new(0,0);
