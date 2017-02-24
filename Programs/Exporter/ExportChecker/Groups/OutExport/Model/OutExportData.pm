@@ -13,23 +13,6 @@ use warnings;
 use File::Copy;
 
 #local library
-#use aliased 'CamHelpers::CamJob';
-#use aliased 'CamHelpers::CamHelper';
-#use aliased 'CamHelpers::CamLayer';
-#use aliased 'CamHelpers::CamAttributes';
-#
-#
-#use aliased 'CamHelpers::CamDrilling';
-#use aliased 'Enums::EnumsPaths';
-#use aliased 'Enums::EnumsGeneral';
-#use aliased 'Helpers::JobHelper';
-#use aliased 'Packages::InCAM::InCAM';
-#use aliased 'Enums::EnumsMachines';
-#use aliased 'Helpers::GeneralHelper';
-#use aliased 'Packages::Events::Event';
-#use aliased 'Connectors::HeliosConnector::HegMethods';
-#use aliased 'Managers::MessageMngr::MessageMngr';
-
 use aliased 'Programs::Exporter::DataTransfer::UnitsDataContracts::OutData';
 
 #-------------------------------------------------------------------------------------------#

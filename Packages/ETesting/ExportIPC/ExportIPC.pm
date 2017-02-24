@@ -5,7 +5,6 @@
 #-------------------------------------------------------------------------------------------#
 package Packages::ETesting::ExportIPC::ExportIPC;
 use base('Packages::ItemResult::ItemEventMngr');
- 
 
 #3th party library
 use strict;
@@ -28,8 +27,8 @@ use aliased 'Enums::EnumsPaths';
 #-------------------------------------------------------------------------------------------#
 
 sub new {
-	my $class     = shift;
-	my $self      = $class->SUPER::new( @_ );
+	my $class = shift;
+	my $self  = $class->SUPER::new(@_);
 	bless $self;
 
 	$self->{"inCAM"} = shift;
@@ -44,16 +43,16 @@ sub new {
 }
 
 sub Export {
-	my $self = shift;
+	my $self        = shift;
+	my $outFileName = shift;                              # name for ipc file
 
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
 
 	my $etStepName = $self->{"etStep"};
 
-
 	if ( $self->{"createEtStep"} ) {
-		
+
 		$self->__CreateEtStep();
 	}
 	else {
@@ -90,10 +89,10 @@ sub Export {
 		$self->__EditProfileByFr($etStepName);
 
 	}
-	
+
 	$self->__ResulETStepCreated();
 
-	$self->__CreateIpc($etStepName);
+	$self->__CreateIpc( $etStepName, $outFileName );
 }
 
 # create special step, which IPC will be exported from
@@ -149,8 +148,6 @@ sub __FlatternETStep {
 	}
 	$inCAM->COM('sel_delete');
 	$inCAM->COM( 'affected_layer', name => "", mode => "all", affected => "no" );
-
-	
 
 	my @allLayers = CamJob->GetBoardLayers( $inCAM, $jobId );
 
@@ -233,12 +230,13 @@ sub __EditProfileByFr {
 # Export it
 # Function watch all InCAM error what happen in this function
 sub __CreateIpc {
-	my $self   = shift;
-	my $etStep = shift;
+	my $self        = shift;
+	my $etStep      = shift;
+	my $outFileName = shift;
 
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
- 
+
 	my $setupOptName = "atg_flying";    #default setting saved in incam library
 	my @steps        = ($etStep);
 
@@ -266,11 +264,20 @@ sub __CreateIpc {
 	unless ($resultEtSet) {
 		$resultItemEtSet->AddError( $inCAM->GetExceptionError() );
 	}
- 
-	my $outPath = EnumsPaths->Client_ELTESTS . $jobId .($self->{"stepToTest"} eq "panel" ? "" : "_".$self->{"stepToTest"}). "t";
-	my $outName =  $jobId .($self->{"stepToTest"} eq "panel" ? "" : "_".$self->{"stepToTest"}). "t";
 
-	$resultEtSet = ETSet->ETSetOutput( $inCAM, $jobId, $etStep, $optName, $etsetName, $outPath, $outName);
+	my $outPath = EnumsPaths->Client_ELTESTS . $jobId;
+	my $outName = $jobId;
+
+	if ($outFileName) {
+		$outPath .= "_" . $outFileName;
+		$outName .= "_" . $outFileName;
+	}
+	else {
+		$outPath .= "t";
+		$outName .= "t";
+	}
+	
+	$resultEtSet = ETSet->ETSetOutput( $inCAM, $jobId, $etStep, $optName, $etsetName, $outPath, $outName );
 
 	unless ($resultEtSet) {
 		$resultItemEtSet->AddError( $inCAM->GetExceptionError() );
@@ -311,7 +318,6 @@ sub __ResulETOptimize {
 
 	$self->_OnItemResult($resultItem);
 }
- 
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

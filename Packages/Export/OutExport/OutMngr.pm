@@ -1,6 +1,6 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Manager responsible for AOI files creation
+# Description: Manager responsible for output data-contorl, data-cooperation
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Packages::Export::OutExport::OutMngr;
@@ -92,7 +92,7 @@ sub __ExportCooperation {
 	
 	if($self->{"exportEt"}){
 		
-		$self->{"exportIPC"}->Export();
+		$self->{"exportIPC"}->Export("kooperace");
 	}
 }
 
