@@ -99,7 +99,6 @@ sub __RunExportChecker {
 	Win32::Process::Create( $processObj, $perl, "perl " . GeneralHelper->Root() . "\\Programs\\Exporter\\ExportChecker\\RunExport\\ExportCheckerFormScript.pl $jobId $port $pid $loadingFrmId",
 							1, NORMAL_PRIORITY_CLASS, "." )
 	  || die "Failed to create CloseZombie process.\n";
-
 }
 
 sub __RunServer {

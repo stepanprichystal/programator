@@ -160,11 +160,14 @@ sub __DeleteOldFiles {
 	
 	# Check if exist some "old format" drilling, if so delete. Old format are .ros, .rou, .mes
  	
- 	#new format of opfx: f61826@c_36-s_36-03, f61826@cv_36-06
- 	#old format of opfx: f20002@ms-mc-01
+ 	# new format of opfx: f61826@c_36-s_36-03, f61826@cv_36-06
+ 	# old format of opfx: f20002@ms-mc-01
+  	# old format of opfx: f20002@ms-01
+  	# old format of opfx: f20002@v2-01
 	my @oldF = FileHelper->GetFilesNameByPattern( $archivePath, "$jobId@[a-z]+-[a-z]+-" );
+	my @oldFSingl = FileHelper->GetFilesNameByPattern( $archivePath, "$jobId@[a-z0-9]+-[0-9]+");
  
-	foreach my $f ( @oldF ) {
+	foreach my $f ( (@oldF, @oldFSingl) ) {
 		unlink $f;
 	}
 }

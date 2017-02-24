@@ -1,20 +1,32 @@
-	use aliased 'Managers::MessageMngr::MessageMngr';
-	use aliased 'Enums::EnumsGeneral';
+#!/usr/bin/perl -w
 
-	# typy oken:
-	# MessageType_ERROR
-	# MessageType_SYSTEMERROR
-	# MessageType_WARNING
-	# MessageType_QUESTION
-	# MessageType_INFORMATION
+use Win32::Process;
+use Config;
 
-	my @mess1 = ("ahoj <b>toto je tucne </b>ahoj.\n");
-	my @btn = ( "tl1", "tl2" );
+my $jobId = shift;
 
-	my $messMngr = MessageMngr->new("D3333");
+#$jobId = "ddddddd";
+ 
+#system("\\\\incam\\incam_server\\site_data\\scripts\\TriggerPage.pl $jobId");
 
-	$messMngr->ShowModal( -1, EnumsGeneral->MessageType_WARNING, \@mess1 );    #  Script se zastavi
+open( my $fh, '>>', 'c:\\test\\test.txt' );
 
-	my $btnNumber = $messMngr->Result();    # vraci poradove cislo zmacknuteho tlacitka (pocitano od 1, zleva)
+__TriggerPage();
 
-	$messMngr->Show( -1, EnumsGeneral->MessageType_WARNING, \@mess1 )    #  Script se nezastavi a jede dal;
+sub __TriggerPage {
+	my $self = shift;
+
+	#server pid
+	my $pid = $$;
+
+	#my $processObj;
+	my $perl = $Config{perlpath};
+	my $processObj2;
+	Win32::Process::Create( $processObj2, $perl, "perl " . "\\\\incam\\incam_server\\site_data\\scripts\\TriggerPage.pl $jobId",
+							1, NORMAL_PRIORITY_CLASS, "." )
+	  || print $fh  "Unable to run trigger page for: $jobId\n";
+
+}
+
+print $fh "Run job Id: $jobId\n";
+close($fh);

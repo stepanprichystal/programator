@@ -61,7 +61,7 @@ sub Run {
 	$self->{"gerberMngr"}->Run();
 	$self->{"pasteMngr"}->Run();
 
-	#$self->{"mdiMngr"}->Run();
+	$self->{"mdiMngr"}->Run();
 
 }
 
