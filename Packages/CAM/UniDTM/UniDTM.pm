@@ -83,14 +83,14 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	use aliased 'Packages::InCAM::InCAM';
 
 	my $inCAM = InCAM->new();
-	my $jobId = "f52456";
+	my $jobId = "f13609";
 
-	my $unitDTM = UniDTM->new( $inCAM, $jobId, "panel", "fzc", 1 );
+	my $unitDTM = UniDTM->new( $inCAM, $jobId, "panel", "m", 1 );
 
 	my $mess   = "";
 	my $result = $unitDTM->GetChecks()->CheckSpecialTools( \$mess );
 
-	print "fff";
+	 
 
 }
 

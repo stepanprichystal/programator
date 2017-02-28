@@ -15,7 +15,7 @@ use List::MoreUtils qw(uniq);
 
 #use aliased 'Helpers::GeneralHelper';
 use aliased 'Enums::EnumsGeneral';
- 
+
 use aliased 'CamHelpers::CamDrilling';
 use aliased 'CamHelpers::CamJob';
 use aliased 'CamHelpers::CamDTM';
@@ -122,13 +122,12 @@ sub CheckNCLayers {
 
 		$result = 0;
 	}
-	
+
 	# 6) Check if tool parameters are set correctly
 	unless ( $self->CheckToolParameters( $inCAM, $jobId, $stepName, \@layers, $mess ) ) {
 
 		$result = 0;
 	}
-	
 
 	# 7) Check if depth is correctly set
 	unless ( $self->CheckContainDepth( $inCAM, $jobId, $stepName, \@layers, $mess ) ) {
@@ -365,7 +364,8 @@ sub CheckDirBot2Top {
 		if ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_plt_cDrill && $dir && $dir eq "bot2top" ) {
 
 			$result = 0;
-			$$mess .= "Vrstva: $lName má špatně nastavený vrták v metrixu u vrtání jádra. Vrták musí mít vždy směr TOP-to-BOT.\n";
+			$$mess .=
+"Vrstva: $lName má špatně nastavený vrták v metrixu u vrtání jádra. Vrták musí mít vždy směr TOP-to-BOT.\n";
 
 		}
 	}
@@ -383,26 +383,26 @@ sub CheckToolParameters {
 	my $mess     = shift;
 
 	my $result = 1;
- 
+
 	foreach my $l (@layers) {
 
-		#1) # Check if tools are unique within while layer, check if all necessary parameters are set
+		# 1) Check if tools are unique within while layer, check if all necessary parameters are set
 		unless ( $l->{"uniDTM"}->CheckTools($mess) ) {
 			$result = 0;
-			
+
 		}
-		
-		#2) Check if DTM type is set (vrtane/vzsledne)
-		my $DTMType = CamDTM->GetDTMDefaultType($inCAM, $jobId, $stepName, $l->{"gROWname"}, 1);
-		
+
+		# 2) Check if DTM type is set (vrtane/vzsledne)
+		my $DTMType = CamDTM->GetDTMDefaultType( $inCAM, $jobId, $stepName, $l->{"gROWname"}, 1 );
+
 		if ( $DTMType ne EnumsDrill->DTM_VRTANE && $DTMType ne EnumsDrill->DTM_VYSLEDNE ) {
 			$result = 0;
-			$$mess .= "NC layer \"".$l->{"gROWname"}."\".\n";
+			$$mess .= "NC layer \"" . $l->{"gROWname"} . "\".\n";
 			$$mess .= "Layer, which contains plated routing/drilling must have set DTM type \"vrtane\" or \"vysledne\" at least in nested steps.\n";
 		}
- 
-	}
 
+	}
+ 
 	return $result;
 }
 
@@ -495,7 +495,6 @@ sub __GetLayersByType {
 	}
 	return @matchL;
 }
- 
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

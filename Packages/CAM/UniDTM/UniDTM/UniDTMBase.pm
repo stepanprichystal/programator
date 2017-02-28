@@ -26,6 +26,7 @@ use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'Helpers::GeneralHelper';
 use aliased 'Helpers::FileHelper';
 use aliased 'CamHelpers::CamHelper';
+use aliased 'Packages::CAM::UniDTM::PilotDef::PilotDef';
 
 #-------------------------------------------------------------------------------------------#
 #  Public method
@@ -41,6 +42,9 @@ sub new {
 	$self->{"step"}    = shift;
 	$self->{"layer"}   = shift;
 	$self->{"breakSR"} = shift;
+
+	my @pilots = ();
+	$self->{"pilotDefs"} = \@pilots;
 
 	$self->{"magazineDef"}  = undef;
 	$self->{"magazineSpec"} = undef;
@@ -155,6 +159,8 @@ sub GetTool {
 
 	my $mess = "";
 
+	 
+
 	my @tools = $self->GetUniqueTools();
 	@tools = grep { $_->GetDrillSize() eq $drillSize && $_->GetTypeProcess() eq $typeProcess } @tools;
 
@@ -175,6 +181,25 @@ sub GetChecks {
 
 	return $self->{"check"};
 }
+
+
+
+# Return object which contain pilot diameters for specified diameter
+sub GetPilots {
+	my $self        = shift;
+	my $drillSize   = shift;
+	
+	my @diameters = ();
+	
+	my $pDef = (grep { $_->GetDrillSize() == $drillSize } @{$self->{"pilotDefs"}})[0];	
+	
+	if($pDef){
+		 @diameters = $pDef->GetPilotDiameters();
+	}
+ 
+	return @diameters;
+}
+
 
 sub __InitUniDTM {
 	my $self = shift;
@@ -234,10 +259,47 @@ sub __InitUniDTM {
 		push( @{ $self->{"tools"} }, $uniT );
 	}
 
-	# 3) Load magazine code by magazine info
+	# 3) Add pilot hole definitions if tools diameter is bigger than 5.3mm
+	$self->__AddPilotHolesDefinition();
+
+	# 4) Load magazine code by magazine info
 
 	$self->__LoadToolsMagazine();
 
+}
+
+# Add pilot tool definitions (2.8mm + 4.6 mm) if tools diameter is bigger than 5.3mm
+sub __AddPilotHolesDefinition {
+	my $self = shift;
+
+	my $jobId = $self->{"jobId"};
+
+	my @bigTools = grep { $_->GetDrillSize() > 5300 && $_->GetTypeProcess() eq Enums->TypeProc_HOLE } @{ $self->{"tools"} };
+
+	# 1) add poliot diameters to big hole
+	foreach my $t (@bigTools) {
+
+		my $pilotDef = PilotDef->new( $t->GetDrillSize() );
+
+		if ( $t->GetDrillSize() > 5300 ) {
+			$pilotDef->AddPilotDiameter(2800);
+			$pilotDef->AddPilotDiameter(4600);
+		}
+
+		push( @{ $self->{"pilotDefs"} }, $pilotDef );
+	}
+
+	# 2) Go throught pilot holes and add their tool definition
+
+	foreach my $pDef ( @{ $self->{"pilotDefs"} } ) {
+
+		foreach my $d ( $pDef->GetPilotDiameters() ) {
+
+			my $uniT = UniToolDTM->new( $d, Enums->TypeProc_HOLE, Enums->Source_DTM );
+
+			push( @{ $self->{"tools"} }, $uniT );
+		}
+	}
 }
 
 sub __LoadToolsMagazine {

@@ -1,5 +1,5 @@
 #-------------------------------------------------------------------------------------------#
-# Description: Package contains helper function for InCAM hooks such as: ncd/outfile, ncr/outfile etc..
+# Description: Package contains helper function for InCAM hooks such as: ncd/outfile, ncr/outfile etc.. 
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package CamHelpers::CamNCHooks;
@@ -11,6 +11,7 @@ use warnings;
 #local library
 use aliased 'CamHelpers::CamDrilling';
 use aliased 'CamHelpers::CamDTM';
+use aliased 'CamHelpers::CamJob';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'Enums::EnumsPaths';
 use aliased 'Packages::CAM::UniDTM::Enums' => 'DTMEnums';
@@ -80,6 +81,8 @@ sub GetLayerCamMarks {
 	my $jobId    = shift;
 	my $stepName = shift;
 	my $layer    = shift;
+	my $mirrorX  = shift;
+
 	my @features = ();
 
 	my $fFeatures = $inCAM->INFO(
@@ -123,11 +126,28 @@ sub GetLayerCamMarks {
 
 		push( @features, \%featInfo );
 	}
+
+	# mirror cam marks by center x
+	if ($mirrorX) {
+
+		my %profLimits = CamJob->GetProfileLimits2( $inCAM, $jobId, $stepName, $layer );
+		my $centerX = abs( $profLimits{"xMax"} - $profLimits{"xMin"} ) / 2;
+
+		foreach my $f (@features) {
+
+			# get distance of null point from x center of panel
+			my $v = ( $centerX - $f->{"x1"} );
+
+			$f->{"x1"} += 2 * $v;
+		}
+	}
+
 	return @features;
 }
 
 # return line with coordinates of scanmark, by scanmark attributes
 # scanmark coordinates are recomputed according nullpoint
+# If marks are for NC operation from bot, consider pcb is turned on the machine table
 sub GetScanMark {
 	my $self      = shift;
 	my @scanMarks = @{ shift(@_) };
@@ -146,7 +166,6 @@ sub GetScanMark {
 	print STDERR "null y:" . $nullPoint{"y"} . "\n\n";
 
 	return sprintf( "X%.3f", $point{"x"} ) . sprintf( "Y%.3f", $point{"y"} );
-
 }
 
 # return coordinates of scanmark in hash
@@ -217,10 +236,10 @@ sub __GetToolParamLine {
 
 	my $line;
 
-	unless ( $par  ) {
+	unless ($par) {
 		return undef;
 	}
-
+ 
 	my $toolSize     = $tool->GetDrillSize() / 1000;
 	my $magazineInfo = $tool->GetMagazineInfo();
 
@@ -256,7 +275,7 @@ sub __GetToolParamLine {
 		foreach (@par) {
 
 			$_ =~ m/C(.*)F/i;
-			
+
 			my $t = $1;
 
 			if ( defined $t && $t == $toolSize ) {
@@ -333,7 +352,7 @@ sub GetMaterialParams {
 	my $materialName = shift;
 	my $machine      = shift;
 	my $ncPath       = shift;    # \\incam\incam_server\site_data\hooks\<ncr OR ncd>\
- 
+
 	my $materialFile = undef;
 
 	my @d = ();                  # drilling params
@@ -369,7 +388,7 @@ sub GetMaterialParams {
 
 			$materialFile = "G200";
 		}
-		
+
 		print STDERR "\n\n$materialName - $ncPath - $materialFile\n\n";
 	}
 
@@ -394,7 +413,7 @@ sub GetMaterialParams {
 	$materialFile = $ncPath . "parametersFile\\" . $machine . "\\" . $materialFile;
 
 	if ( open( my $fMat, "$materialFile" ) ) {
-		
+
 		print STDERR "\n\n file opened $materialFile\n\n";
 
 		my $section = undef;
@@ -403,7 +422,7 @@ sub GetMaterialParams {
 
 			if ( $l =~ /#\s*drill/i ) {
 				$section = "drill";
-				
+
 				print STDERR "\n\n section drill \n\n";
 			}
 			elsif ( $l =~ /#\s*rout/i ) {
@@ -419,14 +438,15 @@ sub GetMaterialParams {
 		}
 
 		close($fMat);
-		
-	}else{
-		
-		$params{"ok"} = 0;
-		 
+
 	}
-	
-	return %params
+	else {
+
+		$params{"ok"} = 0;
+
+	}
+
+	return %params;
 }
 
 1;
