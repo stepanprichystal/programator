@@ -169,8 +169,20 @@ sub __ExportXml {
 	# Fill xml
 
 	$templ->{"job_params"}->[0]->{"job_name"}->[0]        = $jobId . $layerName . "_mdi";
-	$templ->{"job_params"}->[0]->{"parts_total"}->[0]     = 0;
-	$templ->{"job_params"}->[0]->{"parts_remaining"}->[0] = 0;
+	
+	my $info = HegMethods->GetInfoAfterStartProduce($jobId);
+	my $parts = 0;
+	
+	if( defined $info->{'pocet_prirezu'} &&   $info->{'pocet_prirezu'} > 0) {
+ 		$parts+= $info->{'pocet_prirezu'};
+	}
+	
+	if( defined $info->{'prirezu_navic'} &&   $info->{'prirezu_navic'} > 0) {
+ 		$parts+= $info->{'prirezu_navic'};
+	}
+ 
+	$templ->{"job_params"}->[0]->{"parts_total"}->[0]     = $parts;
+	$templ->{"job_params"}->[0]->{"parts_remaining"}->[0] = $parts;
 
 	$templ->{"job_params"}->[0]->{"part_size"}->[0]->{"z"} = $self->__GetThickByLayer($layerName);
 	$templ->{"job_params"}->[0]->{"part_size"}->[0]->{"x"} = $xPnlSize;

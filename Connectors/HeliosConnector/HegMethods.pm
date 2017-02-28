@@ -20,7 +20,6 @@ use Try::Tiny;
 use aliased 'Connectors::HeliosConnector::Helper';
 use aliased 'Connectors::SqlParameter';
 use aliased 'Connectors::HeliosConnector::Enums';
-
 use aliased 'Helpers::GeneralHelper';
 use aliased 'Packages::SystemCall::SystemCall';
 use aliased 'Connectors::EnumsErrors';
@@ -902,10 +901,10 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	use aliased 'Connectors::HeliosConnector::HegMethods';
 
 	
-	# my $res = HegMethods->GetCustomerInfo("f52456");
+	 my $res = HegMethods->GetStatusOfOrder("f65111-01");
 
 	
-	# print $res;
+	 print $res;
 
 	# my $test = HegMethods->GetPcbName("f52456");
 

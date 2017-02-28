@@ -288,9 +288,9 @@ sub __CheckDrillSize {
 		$$mess .= $str;
 	}
 
-	# 2) Check if drillsize 2 == 0 or is equal to drill size 1 ( type Source_DTMSurf)
+	# 2) Check if drillsize2 is not 0 and is different from drill size 1 ( type Source_DTMSurf)
 	my @toolsSurf = grep { $_->GetSource() eq Enums->Source_DTMSURF } @tools;
-	my @wrongTool = grep { !defined $_->GetDrillSize2() || $_->GetDrillSize2() eq "" || $_->GetDrillSize() != $_->GetDrillSize2() } @toolsSurf;
+	my @wrongTool = grep { defined $_->GetDrillSize2() && $_->GetDrillSize2() != 0 && $_->GetDrillSize() != $_->GetDrillSize2() } @toolsSurf;
 
 	foreach my $t (@wrongTool) {
 		$result = 0;

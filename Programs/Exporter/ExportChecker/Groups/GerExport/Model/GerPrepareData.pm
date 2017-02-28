@@ -232,10 +232,7 @@ sub __GetMDIInfo {
 
 	$mdiInfo{"exportPlugs"} = ( $defaultInfo->LayerExist("plgc") || $defaultInfo->LayerExist("plgs") ) ? 1 : 0;
 
-
-	# SMAYAT
-	$mdiInfo{"exportSignal"} = 0;
-
+ 
 	return %mdiInfo;
 
 }

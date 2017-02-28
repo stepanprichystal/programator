@@ -108,7 +108,8 @@ sub __OnLayersResult {
 
 	if ( $item->Result() eq EnumsResult->ItemResult_Fail ) {
 
-		$self->{"produceDataResult"}->AddErrors( $item->GetErrors() );
+		my @errors = $item->GetErrors();
+		$self->{"produceDataResult"}->AddErrors(\@errors);
 	}
 }
 
@@ -155,11 +156,11 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId = "f52456";
+	my $jobId = "f65036";
 
 	my $mess = "";
 
-	my $control = ProduceData->new( $inCAM, $jobId, "panel" );
+	my $control = ProduceData->new( $inCAM, $jobId, "mpanel" );
 	$control->Create();
 
 }

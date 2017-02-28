@@ -1,41 +1,39 @@
- 
+use Win32::AdminMisc;
+use Win32;
 
-# Vztvoreni textury. skopiruje alpha channel z out.png a aplikujee na gold.jpeg
+$Domain   = 'con';
+$User     = 'administrator';
+$Password = '**********';
 
-C:\Export\report>convert goldmc.jpeg ( out.png -channel a -separate +channel ) -alpha off -compose copy_opacity -composite  out2.png
+$Process = "cmd /c \"type c:\\autoexec.bat\"";
+if ( Win32::AdminMisc::LogonAsUser( $Domain, $User, $Password, LOGON32_L +OGON_INTERACTIVE ) ) {
+	print "Successfully logged on.\n";
+	print "\nLaunching ...\n";
 
-
-
-
-
-# vztvoreni  vrstvz s normlani barvou
-
-C:\Export\report>convert ( -size 3000x3000 canvas:green ) ( out.png -channel a -
-separate +channel ) -alpha off -compose copy_opacity -composite  out2.png
-
-
-# 1) 
-C:\Export\report>convert mc.png +clone  -compose Copy_Opacity -composite -alpha copy -channel A -negate out.png
-
-# 2) asi rychlejsi
-
-C:\Export\report>convert mc.png -background black -alpha copy -type truecolormatte -alpha copy -channel A -negate out.png
-
-
-#Nastaveni pruhlednosti
-
-C:\Export\report>convert out2.png -fuzz 20% -matte -fill "rgba(0,255,0, 0.1)" -opaque "rgba(0 ,255,0,1)" out3.png
-
-
-
-# all in one
-
-
-C:\Export\report>convert goldmc.jpeg ( ( -density 300 mc.pdf -background black -
-alpha copy -type truecolormatte -alpha copy -channel A -negate ) -channel a -sep
-arate +channel ) -alpha off -compose copy_opacity -composite png32:out2.png
-
-
-***********COMMAND    24Jan2017.104916.085 InCAM 22260 stepan 3.02 (174462) Windows 64 Bit
-set_filter_attributes,filter_name=ref_select,exclude_attributes=no,max_int_val=0,min_int_val=0,attri
-bute=.gold_plating,text=,option=,max_float_val=0,min_float_val=0,condition=yes (6)
+	$Result = Win32::AdminMisc::CreateProcessAsUser(
+		$Process,
+		"Flags",   CREATE_NEW_CONSOLE,
+		"XSize",   640,
+		"YSize",   400,
+		"X",       200,
+		"Y",       175,
+		"XBuffer", 80,
+		"YBuffer", 175,
+		"Title",   "Title: $User" . "'s $Pr
++ocess program",
+		"Fill", BACKGROUND_BLUE |
+		  FOREGROUND_RED |
+		  FOREGROUND_BLUE |
+		  FOREGROUND_INTENSITY |
+		  FOREGROUND_GREEN,
+	);
+	if ($Result) {
+		print "Successful! The new PID is $Result.\n";
+	}
+	else {
+		print "Failed.\n\tError: " . Win32::FormatMessage( Win32::Admin +Misc::GetError() ) . "\n";
+	}
+}
+else {
+	print "Failed to logon.\n\tError" . Win32::AdminMisc::GetError();
+}

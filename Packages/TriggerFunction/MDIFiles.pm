@@ -5,11 +5,7 @@
 
 package Packages::TriggerFunction::MDIFiles;
 
-#use lib qw(.. C:/Vyvoj/Perl/test);
-#use LoadLibrary2;
-
 #3th party library
-use Genesis;
 use strict;
 use warnings;
 use Path::Tiny qw(path);
