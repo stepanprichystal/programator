@@ -174,16 +174,24 @@ sub PutMessRightPlace {
 	}
 
 	#push mess on right place
-
+	my $messPrev = undef;
 	for ( my $i = 0 ; $i < scalar( @{ $file->{"body"} } ) + scalar(@mess) ; $i++ ) {
 
 		my $l = @{ $file->{"body"} }[$i];
 		if ( $l->{"tool"} ) {
 			my $m = shift(@mess);
-			$m->{"line"} = "\n" . $m->{"line"} . "\n";
-			splice @{ $file->{"body"} }, $i, 0, $m;
-			$i++;    #skip right added line
-
+			
+			my $lVal = quotemeta $m->{"line"};
+			# if message is same as previous message, do not add message
+			if ( !( defined $messPrev && $messPrev->{"line"} =~ $lVal ) ) {
+				
+				$m->{"line"} = "\n" . $m->{"line"} . "\n";
+				splice @{ $file->{"body"} }, $i, 0, $m;
+				$i++;    #skip right added line
+			}
+			
+			$messPrev = $m;
+ 
 			unless ( scalar(@mess) ) {
 				last;
 			}
@@ -285,39 +293,36 @@ sub UpdateNCInfo {
 	print STDERR "Update NC info 1.\n";
 
 	my $infoStr = $self->__BuildNcInfo( \@info );
-	
+
 	print STDERR "Update NC info 2.\n";
 
-	eval { 
+	eval {
 		print STDERR "Update NC info 3.\n";
-		
+
 		# TODO this is temporary solution
-#		my $path = GeneralHelper->Root() . "\\Connectors\\HeliosConnector\\UpdateScript.pl"; 
-#		my $ncInfo = EnumsPaths->Client_INCAMTMPOTHER . GeneralHelper->GetGUID();
-#		
-#		print STDERR "path nc info is:".$ncInfo."\n\n";
-#		print STDERR "path script is :".$path."\n\n";
-#		my $f;
-#		open($f, ">", $ncInfo);
-#		print $f $infoStr;
-#		close($f);
-#		system("perl $path $jobId $ncInfo");
+		#		my $path = GeneralHelper->Root() . "\\Connectors\\HeliosConnector\\UpdateScript.pl";
+		#		my $ncInfo = EnumsPaths->Client_INCAMTMPOTHER . GeneralHelper->GetGUID();
+		#
+		#		print STDERR "path nc info is:".$ncInfo."\n\n";
+		#		print STDERR "path script is :".$path."\n\n";
+		#		my $f;
+		#		open($f, ">", $ncInfo);
+		#		print $f $infoStr;
+		#		close($f);
+		#		system("perl $path $jobId $ncInfo");
 		# TODO this is temporary solution
-		
-	
-		
+
 		$result = HegMethods->UpdateNCInfo( $jobId, $infoStr, 1 );
-		unless($result){
-			
+		unless ($result) {
+
 			$$errorMess = "Failed to update NC-info.";
 		}
-		
-		
+
 		#HegMethods->UpdateNCInfo( $jobId, $infoStr );
 		print STDERR "Update NC info 4.\n";
 	};
 	if ( my $e = $@ ) {
-		 
+
 		if ( ref($e) && $e->isa("Packages::Exceptions::HeliosException") ) {
 
 			$$errorMess = $e->{"mess"};
