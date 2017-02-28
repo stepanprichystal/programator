@@ -135,7 +135,7 @@ sub __GetLayersForExport {
 	}
 
 	# 2) Filter internal layers, which are unable to export
-	@layers = grep { $_->{"gROWname"} ne "fr" && $_->{"gROWname"} ne "v1" } @layers;
+	@layers = grep { $_->{"gROWname"} ne "fr" && $_->{"gROWname"} ne "v1" && $_->{"gROWname"} ne "fsch"} @layers;
 
 	return @layers;
 }
