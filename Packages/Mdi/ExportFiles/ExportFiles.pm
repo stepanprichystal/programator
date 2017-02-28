@@ -220,7 +220,7 @@ sub __GetLayerLimit {
 	my %lim = ();
 
 	# if top/bot layer, clip around fr frame
-	if ( $layerName =~ /^c$/ || $layerName =~ /^s$/ ) {
+	if ($self->{"layerCnt"} > 2 && ($layerName =~ /^c$/ || $layerName =~ /^s$/) ) {
 		
 		%lim = %{ $self->{"frLim"} };	
 	}
@@ -408,12 +408,12 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId    = "f13608";
+	my $jobId    = "f65136";
 	my $stepName = "panel";
 
 	my $export = ExportFiles->new( $inCAM, $jobId, $stepName );
 
-	my %type = ( Enums->Type_SIGNAL => "1",Enums->Type_MASK => "1", Enums->Type_PLUG => "1" );
+	my %type = ( Enums->Type_SIGNAL => "1",Enums->Type_MASK => "0", Enums->Type_PLUG => "0" );
 
 	$export->Run( \%type );
 
