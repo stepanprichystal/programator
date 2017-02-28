@@ -215,10 +215,11 @@ sub __ReturnGroupItem {
 	}
 }
 
+
 # All single operations will not be exported for each machine, which can process this
 # operation item
-# Export only for these machines, which are not included in group operation, which contain
-# given operation item
+# Export only for these machines/operations, which are not included in group operation
+# In other words, we want export only 'complete' (eg: m + r + sc1) nc programs and not complete (eg: only m)
 sub ReduceMachines {
 	my $self = shift;
 
@@ -249,26 +250,67 @@ sub ReduceMachines {
 		#if opDef was found in @opSearchOps, get all machines
 		if ( scalar( grep { $opDef->{"name"} eq $_->{"name"} } @opSearchOps ) ) {
 
-			@machinesForDel = @{ $opSearch->{"machines"} };
-			last;
+			 my @m = ();
+			 $opItem->{"machines"} = \@m;
+			 last;
 		}
-	}
-
-	#Redce machines of given operation... Delete machines contain in @machinesForDel
-	if ( scalar(@machinesForDel) ) {
-
-		my $machRef = $opItem->{"machines"};
-
-		for ( my $i = scalar( @{$machRef} ) - 1 ; $i >= 0 ; $i-- ) {
-
-			#if machine is contained in @machinesForDel, delete it
-			if ( scalar( grep { ${$machRef}[$i]->{"id"} eq $_->{"id"} } @machinesForDel ) ) {
-
-				splice @{$machRef}, $i, 1;
-			}
-		}
-	}
+	} 
 }
+
+## All single operations will not be exported for each machine, which can process this
+## operation item
+## Export only for these machines, which are not included in group operation, which contain
+## given operation item
+#sub ReduceMachines {
+#	my $self = shift;
+#
+#	#my $machines = shift;
+#	my $opItem = shift;
+#
+#	if ( $opItem->{"operationGroup"} ) {
+#		return 0;
+#	}
+#
+#	my @machinesForDel = ();
+#	my $opDef          = ${ $opItem->{"operations"} }[0];
+#
+#	#find operation item, which this Operation item is merged in
+#
+#	#all operation items
+#	my @items = @{ $self->{"operItems"} };
+#
+#	foreach my $opSearch (@items) {
+#
+#		if ( !$opSearch->{"operationGroup"} ) {
+#			next;
+#		}
+#
+#		#all operation definitions of actual operation Item
+#		my @opSearchOps = @{ $opSearch->{"operations"} };
+#
+#		#if opDef was found in @opSearchOps, get all machines
+#		if ( scalar( grep { $opDef->{"name"} eq $_->{"name"} } @opSearchOps ) ) {
+#
+#			@machinesForDel = @{ $opSearch->{"machines"} };
+#			last;
+#		}
+#	}
+#
+#	#Redce machines of given operation... Delete machines contain in @machinesForDel
+#	if ( scalar(@machinesForDel) ) {
+#
+#		my $machRef = $opItem->{"machines"};
+#
+#		for ( my $i = scalar( @{$machRef} ) - 1 ; $i >= 0 ; $i-- ) {
+#
+#			#if machine is contained in @machinesForDel, delete it
+#			if ( scalar( grep { ${$machRef}[$i]->{"id"} eq $_->{"id"} } @machinesForDel ) ) {
+#
+#				splice @{$machRef}, $i, 1;
+#			}
+#		}
+#	}
+#}
 
 # Create units, which contain info which layer merge, what is name of final nc file etc
 sub __BuildOperationItems {
