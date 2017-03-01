@@ -57,7 +57,9 @@ sub new {
 	$self->{"prepareNCDrawing"} =
 	  PrepareNCDrawing->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"step"}, $self->{"layerList"}, $self->{"profileLim"} );
 
-	$self->{"plateThick"} = 100;    # value of plating in holes 100 µm
+	$self->{"layerCnt"} = CamJob->GetSignalLayerCnt( $self->{"inCAM"}, $self->{"jobId"} );
+
+	$self->{"plateThick"} = 100;                                          # value of plating in holes 100 µm
 
 	return $self;
 }
@@ -243,8 +245,7 @@ sub __SetFinishSizes {
 		# Prepare tool table for drill map and final sizes of data (depand on column DSize in DTM)
 
 		my @tools = CamDTM->GetDTMTools( $inCAM, $jobId, $self->{"step"}, $lName );
-		
-		
+
 		my $DTMType = CamDTM->GetDTMType( $inCAM, $jobId, $self->{"oriStep"}, $lName );
 
 		# if DTM type not set, set default DTM type
@@ -252,7 +253,6 @@ sub __SetFinishSizes {
 
 			$DTMType = CamDTM->GetDTMDefaultType( $inCAM, $jobId, $self->{"oriStep"}, $lName, 1 );
 		}
- 
 
 		if ( $DTMType ne EnumsDrill->DTM_VRTANE && $DTMType ne EnumsDrill->DTM_VYSLEDNE ) {
 			die "Typ v Drill tool manageru (vysledne/vrtane) neni nastaven u vrstvy: '" . $lName . "' ";
@@ -291,7 +291,8 @@ sub __SetFinishSizes {
 
 		foreach my $t (@tools) {
 
-			if ( $DTMType eq EnumsDrill->DTM_VRTANE && $l->{"plated"} ) {
+			# if DTM is vrtane + layer is plated + it is plated through dps (layer cnt >= 2)
+			if ( $DTMType eq EnumsDrill->DTM_VRTANE && $l->{"plated"} && $self->{"layerCnt"} >= 2 ) {
 				$t->{"gTOOLdrill_size"} = $t->{"gTOOLfinish_size"} - $self->{"plateThick"};
 			}
 			else {

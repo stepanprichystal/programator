@@ -5,11 +5,7 @@
 
 package Packages::TriggerFunction::NCFiles;
 
-#use lib qw(.. C:/Vyvoj/Perl/test);
-#use LoadLibrary2;
-
 #3th party library
-use Genesis;
 use strict;
 use warnings;
 use Path::Tiny qw(path);
@@ -18,7 +14,7 @@ use Path::Tiny qw(path);
 use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'Helpers::JobHelper';
 
-#my $genesis = new Genesis;
+
 
 #-------------------------------------------------------------------------------------------#
 #   Package methods
@@ -43,9 +39,9 @@ sub ChangePcbOrderNumber {
 			next if ( $file =~ /^\.$/ );
 			next if ( $file =~ /^\.\.$/ );
 
-			if (    $file =~ /^c[0-9]*\.[\D]$/i
-				 || $file =~ /^j[0-9]+\.[\D]$/i
-				 || $file =~ /^v1\.[\D]$/i )
+			if (    $file =~ /^($jobId)_c[0-9]*\.[\D]$/i
+				 || $file =~ /^($jobId)_j[0-9]+\.[\D]$/i
+				 || $file =~ /^($jobId)_v1\.[\D]$/i )
 			{
 				push( @ncFiles, $ncPath . $file );
 			}
@@ -87,11 +83,11 @@ sub ChangePcbOrderNumber {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	#use aliased 'Packages::TriggerFunction::NCFiles';
+	use aliased 'Packages::TriggerFunction::NCFiles';
 
-	#NCFiles->ChangePcbOrderNumber("f13610");
+	NCFiles->ChangePcbOrderNumber("f64061");
 
-	#print 1;
+	print STDERR "ttt";
 
 }
 

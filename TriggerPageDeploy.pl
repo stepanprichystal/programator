@@ -22,6 +22,7 @@ my $jobId     = shift;    # job for process
 my $processed = 1;
 
 # 1) change some lines in MDI xml files eval
+
 eval {
 
 	MDIFiles->AddPartsNumber($jobId);
@@ -37,15 +38,13 @@ if ($@) {
 eval {
 
 	NCFiles->ChangePcbOrderNumber($jobId);
+
 };
 if ($@) {
 
 	$processed = 0;
 	Log( "\n Error when processing \"NC files\" job: $jobId.\n" . $@, 1 );
 }
-
-
-
 
 
 # Log
@@ -68,10 +67,10 @@ sub Log {
 
 	# 3 attem to write to file
 
-	my $logPath = "c:\\Apache24\\htdocs\\tpv\\Logs\\Log.txt";    #current dir
+	my $logPath = "c:\\Apache24\\htdocs\\tpv2\\Logs\\Log.txt";    #current dir
 
 	if ($err) {
-		$logPath = "c:\\Apache24\\htdocs\\tpv\\Logs\\LogErr.txt";
+		$logPath = "c:\\Apache24\\htdocs\\tpv2\\Logs\\LogErr.txt";
 	}
 
 	ReduceLog($logPath);

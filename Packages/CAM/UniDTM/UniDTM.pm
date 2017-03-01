@@ -85,7 +85,9 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	my $inCAM = InCAM->new();
 	my $jobId = "f13609";
 
-	my $unitDTM = UniDTM->new( $inCAM, $jobId, "panel", "m", 1 );
+	my $unitDTM = UniDTM->new( $inCAM, $jobId, "panel", "dc", 1 );
+	
+	my @tools = $unitDTM->GetUniqueTools();
 
 	my $mess   = "";
 	my $result = $unitDTM->GetChecks()->CheckSpecialTools( \$mess );

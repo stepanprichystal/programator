@@ -383,6 +383,8 @@ sub CheckToolParameters {
 	my $mess     = shift;
 
 	my $result = 1;
+	
+	my $layerCnt = CamJob->GetSignalLayerCnt( $inCAM, $jobId );
 
 	foreach my $l (@layers) {
 
@@ -400,7 +402,16 @@ sub CheckToolParameters {
 			$$mess .= "NC layer \"" . $l->{"gROWname"} . "\".\n";
 			$$mess .= "Layer, which contains plated routing/drilling must have set DTM type \"vrtane\" or \"vysledne\" at least in nested steps.\n";
 		}
-
+		
+		# 3) If "neplat/1 side pcb" check if DTM type is "vrtane"
+		if($layerCnt < 2 ){
+			
+			if ( $DTMType eq EnumsDrill->DTM_VYSLEDNE){
+				$result = 0;
+				$$mess .= "NC layer \"" . $l->{"gROWname"} . "\".\n";
+				$$mess .= "Pcb which is NOT plated has to set Drill Tool Manager type: \"vrtane\" not type: \"vysledne\". \n";
+			}	
+		}
 	}
  
 	return $result;
@@ -508,11 +519,11 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	use aliased 'Packages::InCAM::InCAM';
 
 	my $inCAM = InCAM->new();
-	my $jobId = "f52456";
+	my $jobId = "f64061";
 
 	my $mess = "";
 
-	my $result = LayerCheckError->CheckNCLayers( $inCAM, $jobId, "o+1", undef, \$mess );
+	my $result = LayerCheckError->CheckNCLayers( $inCAM, $jobId, "panel", undef, \$mess );
 
 	print STDERR "Result is $result \n";
 

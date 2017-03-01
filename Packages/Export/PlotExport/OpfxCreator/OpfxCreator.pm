@@ -17,6 +17,7 @@ use aliased 'CamHelpers::CamLayer';
 use aliased 'CamHelpers::CamHelper';
 use aliased 'Helpers::GeneralHelper';
 use aliased 'CamHelpers::CamJob';
+use aliased 'Packages::CAM::FeatureFilter::FeatureFilter';
 
 use aliased 'Helpers::FileHelper';
 
@@ -101,14 +102,38 @@ sub __PrepareLayer {
 
 	$inCAM->COM( 'flatten_layer', "source_layer" => $plotLayer->GetName(), "target_layer" => $lName );
 
+	# 1) Find Olec marks and move them by 0.03 mm towards the nearest corner. Request by Temny
+	foreach my $plnPlace ( ( "left-top", "right-top", "right-bot", "left-bot" ) ) {
+
+		my $f = FeatureFilter->new( $inCAM, $self->{"jobId"}, $lName);
+		$f->AddIncludeAtt( ".geometry",  "*olec*" );
+		$f->AddIncludeAtt( ".pnl_place", "*$plnPlace*" );
+
+		if ( $f->Select() ) {
+
+			if ( $plnPlace eq ("left-top") ) {
+				$inCAM->COM( "sel_transform", "x_offset" => -0.03, "y_offset" => 0.03, "mode" => "axis" );
+			}
+			elsif ( $plnPlace eq ("right-top") ) {
+				$inCAM->COM( "sel_transform", "x_offset" => 0.03, "y_offset" => 0.03, "mode" => "axis" );
+			}
+			elsif ( $plnPlace eq ("right-bot") ) {
+				$inCAM->COM( "sel_transform", "x_offset" => 0.03, "y_offset" => -0.03, "mode" => "axis" );
+			}
+			elsif ( $plnPlace eq ("left-bot") ) {
+				$inCAM->COM( "sel_transform", "x_offset" => -0.03, "y_offset" => -0.03, "mode" => "axis" );
+			}
+		}
+	}
+
 	# Select pom layer as work
 	CamLayer->WorkLayer( $inCAM, $lName );
 
-	# Remove frame
+	# 2) Remove frame
 
 	CamLayer->ClipLayerData( $inCAM, $lName, $plotLayer->GetLimits() );
 
-	# change polarity
+	# 3) change polarity
 
 	my $plotPolar = $plotSet->GetPolarity();
 	if ( $plotPolar eq "mixed" && $plotLayer->GetPolarity() eq "negative" ) {
@@ -116,24 +141,25 @@ sub __PrepareLayer {
 		CamLayer->NegativeLayerData( $inCAM, $lName, $plotLayer->{"pcbLimits"} );
 	}
 
-	# Compensate layer
+	# 4) Compensate layer
 	if ( $plotLayer->GetComp() != 0 ) {
 
 		CamLayer->CompensateLayerData( $inCAM, $lName, $plotLayer->GetComp() );
 	}
 
-	# Rotate layer
+	# 5) Rotate layer
 	if ( $plotSet->GetOrientation() eq Enums->Ori_HORIZONTAL ) {
 
 		CamLayer->RotateLayerData( $inCAM, $lName, 270 );
 	}
 
-	# Mirror layer
+	# 6) Mirror layer
 	if ( $plotLayer->Mirror() ) {
 
 		CamLayer->MirrorLayerData( $inCAM, $lName, "y" );
 	}
 
+	
 }
 
 # Create special layer, which will be outputed

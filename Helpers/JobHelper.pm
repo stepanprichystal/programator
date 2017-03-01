@@ -70,7 +70,7 @@ sub StackupExist {
 	my $self  = shift;
 	my $jobId = shift;
 
-	unless ( FileHelper->ExistsByPattern( EnumsPaths->Jobs_STACKUPS, $jobId . "_" ) ) {
+	unless ( FileHelper->GetFileNameByPattern( EnumsPaths->Jobs_STACKUPS, $jobId . "_" ) ) {
 
 		return 0;
 	}
@@ -175,9 +175,9 @@ sub GetIsolationByClass {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	#use aliased 'Helpers::JobHelper';
+	use aliased 'Helpers::JobHelper';
 
-	#print JobHelper->GetBaseCuThick("F13608", "v3");
+	print JobHelper->GetBaseCuThick("f64061", "c");
 
 	#print "\n1";
 }

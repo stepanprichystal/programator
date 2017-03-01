@@ -102,6 +102,8 @@ sub OnCheckGroupData {
 	if ($err) {
 		$dataMngr->_AddErrorResult( "Layer check", "Order of signal layers in matrix is wrong. Fix it." );
 	}
+	
+	
 
 	# 4) Check if material and pcb thickness and base cuthickness is set
 	my $materialKind = $defaultInfo->GetMaterialKind();
@@ -189,7 +191,35 @@ sub OnCheckGroupData {
 		}
 	}
 
-	# 8) Check if board base layers, not contain attribute .rout_chan
+	# 8) check if  if positive inner layer contains theraml pads
+	if($defaultInfo->GetLayerCnt() > 2){
+	
+		my @layers = $defaultInfo->GetSignalLayers();
+		
+		foreach my $l (@layers){
+			
+			if($l->{"gROWname"} =~ /^v\d$/){
+				
+				my %symHist = CamHistogram->GetSymHistogram($inCAM, $jobId, $stepName, $l->{"gROWname"});
+				
+				if($l->{"gROWpolarity"} eq "negative"){
+					next;
+				}
+				
+				my @thermalPads = grep { $_->{"sym"} =~ /th/ } @{$symHist{"pads"}};
+				
+				if(scalar(@thermalPads)){
+					$dataMngr->_AddErrorResult( "Inner layers",
+										"Layer : \"" . $l->{"gROWname"} . "\" contains thermal pads and is type: \"positive\". Are you sure, layer shouldn't be negative?" );
+				}
+				
+			}
+		}
+	}
+	
+
+
+	# 9) Check if board base layers, not contain attribute .rout_chan
 
 	foreach my $l (   $defaultInfo->GetBoardBaseLayers()  ) {
 
