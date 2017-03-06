@@ -44,7 +44,8 @@ sub Run {
 	my %types = (
 				 Enums->Type_SIGNAL => $self->{"mdiInfo"}->{"exportSignal"},
 				 Enums->Type_MASK   => $self->{"mdiInfo"}->{"exportMask"},
-				 Enums->Type_PLUG   => $self->{"mdiInfo"}->{"exportPlugs"}
+				 Enums->Type_PLUG   => $self->{"mdiInfo"}->{"exportPlugs"},
+				 Enums->Type_GOLD   => $self->{"mdiInfo"}->{"exportGold"}
 	);
 	
 	$export->Run(\%types);
@@ -91,6 +92,13 @@ sub GetExportLayerCnt{
 	if($self->{"mdiInfo"}->{"exportMask"}){
 		
 		my @l = grep { $_->{"gROWname"} =~ /^plg[cs]$/ } @layers;
+		$layerNumber += scalar(@l);
+
+	}
+	
+	if($self->{"mdiInfo"}->{"exportMask"}){
+		
+		my @l = grep { $_->{"gROWname"} =~ /^gold[cs]$/ } @layers;
 		$layerNumber += scalar(@l);
 
 	}

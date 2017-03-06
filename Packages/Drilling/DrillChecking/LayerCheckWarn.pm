@@ -118,12 +118,16 @@ sub CheckToolParameters {
 		
 	}
 	
-	 # 3) Check if rout layers don't contain tool less than 500µm
+	 # 3) Check if rout layers don't contain tool less than 500µm (exept score)
 	foreach my $l ( grep { $_->{"gROWlayer_type"} eq "rout" } @layers ) {
 
 		my @unitTools = $l->{"uniDTM"}->GetTools();
 
 		foreach my $t (@unitTools) {
+			
+			if($l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_score){
+				next;
+			}
 
 			if ( $t->GetDrillSize() < 500 ) {
 				$result = 0;

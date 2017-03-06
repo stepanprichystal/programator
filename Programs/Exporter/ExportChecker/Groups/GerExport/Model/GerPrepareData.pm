@@ -231,6 +231,8 @@ sub __GetMDIInfo {
 	}
 
 	$mdiInfo{"exportPlugs"} = ( $defaultInfo->LayerExist("plgc") || $defaultInfo->LayerExist("plgs") ) ? 1 : 0;
+	
+	$mdiInfo{"exportGold"} = ( $defaultInfo->LayerExist("goldc") || $defaultInfo->LayerExist("golds") ) ? 1 : 0;
 
  
 	return %mdiInfo;

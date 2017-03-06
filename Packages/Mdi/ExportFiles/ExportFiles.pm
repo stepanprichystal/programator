@@ -168,6 +168,15 @@ sub __DeleteOldFiles {
 		push( @file2del, ( @f, @f2 ) );
 
 	}
+	
+	if ( $layerTypes->{ Enums->Type_GOLD } ) {
+
+		my @f  = FileHelper->GetFilesNameByPattern( EnumsPaths->Jobs_MDI,    $jobId . "^gold[cs]_mdi" );
+		my @f2 = FileHelper->GetFilesNameByPattern( EnumsPaths->Jobs_PCBMDI, $jobId . "^gold[cs]_mdi" );
+
+		push( @file2del, ( @f, @f2 ) );
+
+	}
 
 	foreach (@file2del) {
 		unless ( unlink($_) ) {
@@ -206,6 +215,12 @@ sub __GetLayers2Export {
 		my @l = grep { $_->{"gROWname"} =~ /^plg[cs]$/ } @all;
 		push( @exportLayers, @l );
 	}
+	
+	if ( $layerTypes->{ Enums->Type_GOLD } ) {
+
+		my @l = grep { $_->{"gROWname"} =~ /^gold[cs]$/ } @all;
+		push( @exportLayers, @l );
+	}	
 
 	return @exportLayers;
 }
@@ -220,7 +235,7 @@ sub __GetLayerLimit {
 	my %lim = ();
 
 	# if top/bot layer, clip around fr frame
-	if ($self->{"layerCnt"} > 2 && ($layerName =~ /^c$/ || $layerName =~ /^s$/) ) {
+	if ($self->{"layerCnt"} > 2 && ($layerName =~ /^[goldm]*c$/ || $layerName =~ /^[goldm]*s$/) ) {
 		
 		%lim = %{ $self->{"frLim"} };	
 	}

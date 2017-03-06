@@ -280,34 +280,30 @@ sub __GetThickByLayer {
 		my $stackup = $self->{"stackup"};
 
 		# for signal layers
-		if ( $layer =~ /^c$/ || $layer =~ /^s$/ || $layer =~ /^v\d$/ ) {
+		if ( $layer =~ /^[plg]*c$/ || $layer =~ /^[plg]*s$/ || $layer =~ /^v\d$/ ) {
 
+			# thick in mm
 			$thick = $stackup->GetThickByLayerName($layer);
-
-			my $cuLayer = $stackup->GetCuLayer($layer);
-
-			#test by Mira, add 80um (except cores)
-			if ( $cuLayer->GetType() eq EnumsGeneral->Layers_TOP || $cuLayer->GetType() eq EnumsGeneral->Layers_BOT ) {
-				$thick += 0.080;
-			}
 		}
 		else {
 
-			# For Mask, Plugs..
-
-			$thick = $stackup->GetFinalThick();
-			$thick += 0.080;
+			# For Mask, Plugs.. in mm
+			$thick = $stackup->GetFinalThick() / 1000;
 		}
 
 	}
 	else {
 		$thick = HegMethods->GetPcbMaterialThick( $self->{"jobId"} );
 
-		#test by Mira, add 80um (except cores)
-		$thick += 0.080;
+		
 	}
+	
+	#test by Mira, add 80um (value of resist 40 + 40 µm)
+	$thick += 0.080;
+	
+	$thick = sprintf ("%.3f", $thick );
 
-	return ( sprintf "%3.2f", ($thick) );
+	return  $thick;
 }
 
 #-------------------------------------------------------------------------------------------#

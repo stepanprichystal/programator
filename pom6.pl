@@ -1,39 +1,71 @@
-use Win32::AdminMisc;
-use Win32;
+#!/usr/bin/perl -w
 
-$Domain   = 'con';
-$User     = 'administrator';
-$Password = '**********';
+#3th party library
+use strict;
+use warnings;
+use utf8;
 
-$Process = "cmd /c \"type c:\\autoexec.bat\"";
-if ( Win32::AdminMisc::LogonAsUser( $Domain, $User, $Password, LOGON32_L +OGON_INTERACTIVE ) ) {
-	print "Successfully logged on.\n";
-	print "\nLaunching ...\n";
+#use lib qw( C:\Perl\site\lib\TpvScripts\Scripts );
 
-	$Result = Win32::AdminMisc::CreateProcessAsUser(
-		$Process,
-		"Flags",   CREATE_NEW_CONSOLE,
-		"XSize",   640,
-		"YSize",   400,
-		"X",       200,
-		"Y",       175,
-		"XBuffer", 80,
-		"YBuffer", 175,
-		"Title",   "Title: $User" . "'s $Pr
-+ocess program",
-		"Fill", BACKGROUND_BLUE |
-		  FOREGROUND_RED |
-		  FOREGROUND_BLUE |
-		  FOREGROUND_INTENSITY |
-		  FOREGROUND_GREEN,
+#necessary for load pall packagesff
+use FindBin;
+use lib "$FindBin::Bin/../";
+use PackagesLib;
+
+use aliased 'Packages::InCAM::InCAM';
+use aliased 'Programs::Exporter::ExportUtility::Groups::NifExport::NifExportTmp';
+
+my $inCAM = InCAM->new();
+my $jobId = "f52456";
+my $step  = "o+1";
+my $layer = "f";
+
+my $symbolType = GetFeatureType( $inCAM, $jobId, $step, $layer );
+
+if ( $symbolType =~ /s/i ) {
+
+	print "JE to surface";
+}else{
+	
+	print "Neni to surface";
+}
+ 
+
+sub GetFeatureType {
+	my $inCAM = shift;
+	my $jobId = shift;
+	my $step  = shift;
+	my $layer = shift;
+
+	$inCAM->COM( "units", "type" => "mm" );
+
+	my $infoFile = $inCAM->INFO(
+								 units           => 'mm',
+								 angle_direction => 'ccw',
+								 entity_type     => 'layer',
+								 entity_path     => "$jobId/$step/$layer",
+								 data_type       => 'FEATURES',
+								 options         => "select+f0",
+								 parse           => 'no'
 	);
-	if ($Result) {
-		print "Successful! The new PID is $Result.\n";
+
+	my $f;
+	open( $f, "<" . $infoFile );
+	my @feat = <$f>;
+	close($f);
+	unlink($infoFile);
+
+	foreach my $f (@feat) {
+
+		if ( $f =~ /###/ ) { next; }
+
+		my @attr = ();
+
+		# line, arcs, pads
+		if ( $f =~ m/^#(\w*)/i ) {
+			return $1;
+		}
 	}
-	else {
-		print "Failed.\n\tError: " . Win32::FormatMessage( Win32::Admin +Misc::GetError() ) . "\n";
-	}
+
 }
-else {
-	print "Failed to logon.\n\tError" . Win32::AdminMisc::GetError();
-}
+

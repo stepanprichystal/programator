@@ -90,7 +90,7 @@ sub CheckNCLayers {
 
 	# 2) Check if layer is not empty
 
-	unless ( $self->CheckIsNotEmpty( \@layers, $mess ) ) {
+	unless ( $self->CheckIsNotEmpty( \@layers, $stepName,  $mess ) ) {
 
 		$result = 0;
 	}
@@ -148,11 +148,17 @@ sub CheckNCLayers {
 sub CheckIsNotEmpty {
 	my $self   = shift;
 	my @layers = @{ shift(@_) };
+	my $stepName = shift;
 	my $mess   = shift;
 
 	my $result = 1;
 
 	foreach my $l (@layers) {
+		
+		# if panel is not step, NC layer can be empty
+		if($stepName ne "panel" && defined $l->{"type"}){
+			next;
+		}
 
 		if ( $l->{"fHist"}->{"total"} == 0 ) {
 			$result = 0;

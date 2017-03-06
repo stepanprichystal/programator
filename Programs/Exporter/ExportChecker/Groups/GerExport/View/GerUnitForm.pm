@@ -132,7 +132,7 @@ sub __SetLayoutMDI {
 	my $signalChb = Wx::CheckBox->new( $statBox, -1, "Signal layers", &Wx::wxDefaultPosition );
 	my $maskChb   = Wx::CheckBox->new( $statBox, -1, "Mask layers",  &Wx::wxDefaultPosition );
 	my $plugChb   = Wx::CheckBox->new( $statBox, -1, "Plug layers",   &Wx::wxDefaultPosition );
-
+	my $goldChb   = Wx::CheckBox->new( $statBox, -1, "Gold layers",   &Wx::wxDefaultPosition );
 	# SET EVENTS
 
 	# BUILD STRUCTURE OF LAYOUT
@@ -140,11 +140,13 @@ sub __SetLayoutMDI {
 	$szStatBox->Add( $signalChb, 1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 	$szStatBox->Add( $maskChb,   1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 	$szStatBox->Add( $plugChb,   1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
-
+	$szStatBox->Add( $goldChb,   1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	
 	# Set References
 	$self->{"signalChb"} = $signalChb;
 	$self->{"maskChb"}   = $maskChb;
-	$self->{"plugChb"}   = $plugChb;
+	$self->{"plugChb"}   = $plugChb;	
+	$self->{"goldChb"}   = $goldChb;
 
 	return $szStatBox;
 }
@@ -314,6 +316,10 @@ sub DisableControls {
 	unless ( $defaultInfo->LayerExist("plgc") && $defaultInfo->LayerExist("plgs") ) {
 		$self->{"plugChb"}->Disable();
 	}
+	
+	unless ( $defaultInfo->LayerExist("goldc") && $defaultInfo->LayerExist("golds") ) {
+		$self->{"goldChb"}->Disable();
+	}
 
 }
 
@@ -440,6 +446,7 @@ sub SetMdiInfo {
 	$self->{"signalChb"}->SetValue( $info->{"exportSignal"} );
 	$self->{"maskChb"}->SetValue( $info->{"exportMask"} );
 	$self->{"plugChb"}->SetValue( $info->{"exportPlugs"} );
+	$self->{"goldChb"}->SetValue( $info->{"exportGold"} );
 
 }
 
@@ -468,7 +475,14 @@ sub GetMdiInfo {
 	else {
 		$info{"exportPlugs"} = 0;
 	}
-
+	
+	if ( $self->{"goldChb"}->IsChecked() ) {
+		$info{"exportGold"} = 1;
+	}
+	else {
+		$info{"exportGold"} = 0;
+	}	
+	
 	return \%info;
 }
 

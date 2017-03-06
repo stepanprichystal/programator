@@ -1,7 +1,7 @@
 
 #-------------------------------------------------------------------------------------------#
 # Description: Prepare special structure "LayerData" for each exported layer.
-# This sctructure contain list <Packages::CAMJob::OutputData::LayerData::LayerData> 
+# This sctructure contain list <Packages::CAMJob::OutputData::LayerData::LayerData>
 # and operations with this items
 # type of layer
 # Author:SPR
@@ -94,8 +94,11 @@ sub GetPageData {
 		if ($lData) {
 
 			#my @singleLayers = $lData->GetSingleLayers();
+			
+			my $langu = $self->{"lang"};
+			my $tit = $lData->GetTitle( $langu);
 
-			my $tit = $lData->GetTitle( $self->{"lang"} );
+			#my $tit = $lData->GetTitle( $self->{"lang"} );
 			my $inf = $lData->GetInfo( $self->{"lang"} );
 
 			my %inf = ( "title" => $tit, "info" => $inf );

@@ -73,7 +73,7 @@ sub Create {
 
 	if ( $panelExist && !$nifFile->Exist() ) {
 
-		return 0;
+		die "If panel exist, nif file has to exist too.";
 	}
 
 	CamHelper->SetStep( $self->{"inCAM"}, $self->{"step"} );
@@ -256,14 +256,14 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	my $control = ControlPdf->new( $inCAM, $jobId, "o+1", "en" );
 	$control->Create();
 
-	#$control->CreateStackup(\$mess);
+	$control->CreateStackup(\$mess);
 	#$control->CreatePreviewTop( \$mess );
 
 	#$control->CreatePreviewBot(\$mess);
 	$control->CreatePreviewSingle(\$mess);
-	#$control->GeneratePdf();
+	$control->GeneratePdf();
 
-	#$control->GetOutputPath();
+	$control->GetOutputPath();
 	
 
 

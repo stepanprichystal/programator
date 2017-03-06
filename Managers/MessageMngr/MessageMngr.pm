@@ -283,9 +283,9 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	$messMngr->ShowModal( -1, EnumsGeneral->MessageType_WARNING, \@mess1 );    #  Script se zastavi
 
-	my $btnNumber = $messMngr->Result();    # vraci poradove cislo zmacknuteho tlacitka (pocitano od 1, zleva)
+	#my $btnNumber = $messMngr->Result();    # vraci poradove cislo zmacknuteho tlacitka (pocitano od 1, zleva)
 
-	$messMngr->Show( -1, EnumsGeneral->MessageType_WARNING, \@mess1 );    #  Script se nezastavi a jede dal;
+	#$messMngr->Show( -1, EnumsGeneral->MessageType_WARNING, \@mess1 );    #  Script se nezastavi a jede dal;
 
 	
 	

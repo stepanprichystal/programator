@@ -52,9 +52,7 @@ sub Parse {
 		
 		$breakSRVal = "";
 	}
-	
-	
-	
+ 
 
 	$inCAM->COM("units", "type"=> "mm");
 

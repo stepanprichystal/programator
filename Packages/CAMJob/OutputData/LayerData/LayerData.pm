@@ -70,12 +70,12 @@ sub GetNumber {
 
 sub GetTitle {
 	my $self = shift;
-	my $cz   = shift;
+	my $lang   = shift;
 
-	if ($cz) {
+	if ($lang eq "cz") {
 		return $self->{"czTit"};
 	}
-	else {
+	elsif($lang eq "en") {
 
 		return $self->{"enTit"};
 	}
@@ -83,12 +83,12 @@ sub GetTitle {
 
 sub GetInfo {
 	my $self = shift;
-	my $cz   = shift;
+	my $lang   = shift;
 
-	if ($cz) {
+	if ($lang eq "cz") {
 		return $self->{"czInf"};
 	}
-	else {
+	elsif($lang eq "en") {
 
 		return $self->{"enInf"};
 	}

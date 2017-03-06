@@ -55,7 +55,7 @@ sub new {
 }
 
 
-# Return total thick of this stackup
+# Return total thick of this stackup in µm
 sub GetFinalThick {
 	my $self = shift;
 
