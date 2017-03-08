@@ -13,7 +13,7 @@ use Math::Geometry::Planar;    #Math-Geometry-Planar-GPC
 
 #local library
 use aliased 'Packages::Polygon::PolygonFeatures';
-use aliased 'Packages::Polygon::PolygonPoints';
+use aliased 'Packages::Polygon::PointsTransform';
 
 #-------------------------------------------------------------------------------------------#
 #  Public method
@@ -47,7 +47,7 @@ sub RotateRout {
 		if ( $f->{"type"} =~ /a/i ) {
 
 			my %p1 = ( "x" => $f->{"xmid"}, "y" => $f->{"ymid"} );
-			%p1 = PolygonPoints->RotatePoint( $p1, $angle );
+			%p1 = PointsTransform->RotatePoint( $p1, $angle );
 
 			$f->{"xmid"} = $p1{"x"};
 			$f->{"ymid"} = $p1{"y"};
@@ -60,7 +60,7 @@ sub RotateRout {
 
 				@{ $f->{"envelop"} }[$i]
 
-				  my %newP = PolygonPoints->RotatePoint( @{ $f->{"envelop"} }[$i], $angle );
+				  my %newP = PointsTransform->RotatePoint( @{ $f->{"envelop"} }[$i], $angle );
 				@{ $f->{"envelop"} }[$i] = \%newP;
 			}
 		}

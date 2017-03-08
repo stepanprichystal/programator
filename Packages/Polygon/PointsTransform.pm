@@ -3,7 +3,7 @@
 # Description: Contain helper function for polzgon created from list of points
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::Polygon::PolygonPoints;
+package Packages::Polygon::PointsTransform;
 
 #3th party library
 use strict;
@@ -21,138 +21,7 @@ use aliased 'Packages::Polygon::Enums';
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
-
-
-# Return polygon direction CW/CCW
-# Features must be sorted
-sub GetPolygonDirection {
-	my $self = shift;
-
-	my @poly = @{ shift(@_) };
-
-	push( @poly, $poly[0] );
-
-	if ( polygon_is_clockwise(@poly) ) {
-		return Enums->Dir_CW;
-	}
-	else {
-		return Enums->Dir_CCW;
-	}
-}
-
-# Test intersection between poly1 and poly2
-# Return  Pos_INSIDE/Pos_OUTSIDE/Pos_INTERSECT
-# eg Pos_INSIDE means, poly1 is inside poly2
-# if point of poly2 lay on polygon border 1, it considered as INSIDE polygon
-# Note: This works only if polygons are convex!!
-sub GetPoly2PolyIntersect {
-	my $self  = shift;
-	my @poly1 = @{ shift(@_) };
-	my @poly2 = @{ shift(@_) };
-	
-
-	my $inPoint  = 0;
-	my $outPoint = 0;
-
-	my $polygon = Math::Geometry::Planar->new();
-	$polygon->points( \@poly2 );
-
-	for ( my $i = 0 ; $i < scalar(@poly1) ; $i++ ) {
-
-		my $p = $poly1[$i];
-
-		if ( $polygon->isinside($p) ) {
-			$inPoint++;
-		}
-		else {
-			$outPoint++;
-		}
-	}
-
-	my $pos = undef;
-
-	if ( $inPoint && !$outPoint ) {
-		$pos = Enums->Pos_INSIDE;
-	}
-	elsif ( !$inPoint && $outPoint ) {
-		$pos = Enums->Pos_OUTSIDE;
-	}
-	else {
-		$pos = Enums->Pos_INTERSECT;
-	}
-
-	return $pos;
-}
-
-# Return if points are inside polz
-sub GetPoints2PolygonPosition {
-	my $self  = shift;
-	my @points = @{ shift(@_) };
-	my @poly = @{ shift(@_) };
  
- 	my $inside = 0;
- 	my $outside = 0;
-
-	my $polygon = Math::Geometry::Planar->new();
-	$polygon->points( \@poly );
-	
-	for ( my $i = 0 ; $i < scalar(@points) ; $i++ ) {
-
-		my $p = $points[$i];
-
-		if ( $polygon->isinside($p) ) {
-			$inside = 1;
-			 
-		}else{
-			$outside = 1;
-		}	
-	}
-	
-	my $pos = undef;
-	
-	if ( $inside && !$outside ) {
-		$pos = Enums->Pos_INSIDE;
-	}
-	elsif ( !$inside && $outside ) {
-		$pos = Enums->Pos_OUTSIDE;
-	}else{
-		$pos = Enums->Pos_INSIDEOUTSIDE;
-	}
-	
-	return $pos;
-}
-
-
-
-# Return envelop "convex hull" for points
-sub GetConvexHull {
-	my $self  = shift;
-	my @points = @{ shift(@_) };
- 
-	 my $hull_array_ref = convex_hull(\@points);
- 
-	
-	return @{$hull_array_ref};
-}
-
-# Return envelop "convex hull" for points
-sub GetCentroid {
-	my $self  = shift;
-	my @points = @{ shift(@_) };
-	
-	my $point = undef;
-	if(scalar(@points)> 2){
-		
-		my $polygon = Math::Geometry::Planar->new();
-		$polygon->points( \@points );
-		$point = $polygon->centroid();
-		
-	}else{
-		$point =  $points[0];
-	}
- 
-	 return $point;
-}
 
 # Ruction rotate point by specific angle
 # Point is rotated around zero (0,0)
@@ -190,7 +59,54 @@ sub RotatePoint {
 	return \%new;
 }
 
- 
+# Return limits of all features
+# Consider only lines, arc start + end points
+sub GetLimByPoints {
+	my $self     = shift;
+	my @points = @{ shift(@_) };
+
+	my %dim = ();
+
+	if ( scalar(@points) > 0 ) {
+
+		my $minX;
+		my $minY;
+		my $maxX;
+		my $maxY;
+
+		foreach my $f (@points) {
+
+			# find minimum
+			if ( !defined $minX || $f->{"x1"} < $minX ) {
+
+				$minX = $f->{"x1"};
+			}
+
+			if ( !defined $minY || $f->{"y1"} < $minY ) {
+
+				$minY = $f->{"y1"};
+			}
+
+			#find maximum
+			if ( !defined $maxX || $f->{"x1"} > $maxX ) {
+
+				$maxX = $f->{"x1"};
+			}
+
+			if ( !defined $maxY || $f->{"y1"} > $maxY ) {
+
+				$maxY = $f->{"y1"};
+			}
+		}
+
+		$dim{"xMin"} = $minX;
+		$dim{"xMax"} = $maxX;
+		$dim{"yMin"} = $minY;
+		$dim{"yMax"} = $maxY;
+	}
+
+	return %dim;
+}
 
 
 #-------------------------------------------------------------------------------------------#
