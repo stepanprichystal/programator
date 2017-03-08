@@ -47,7 +47,7 @@ sub Parse {
 	my $layer = shift;
 	my $breakSR = shift;
 
-	$self->{"base"}->Parse( $inCAM, $jobId, $step, $layer, $breakSR );
+	$self->{"base"}->Parse( $inCAM, $jobId, $step, $layer, $breakSR);
 
 	my @baseFeats = $self->{"base"}->GetFeatures();
 	my @features  = ();
@@ -127,6 +127,8 @@ sub GetChains {
 	}
 	return @chains;
 }
+
+
 
  
 

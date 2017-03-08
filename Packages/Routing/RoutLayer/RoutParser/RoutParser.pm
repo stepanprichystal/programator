@@ -1,0 +1,125 @@
+#-------------------------------------------------------------------------------------------#
+# Description: Do checks of tool in Universal DTM
+# Author:SPR
+#-------------------------------------------------------------------------------------------#
+package Packages::Routing::RoutLayer::RoutParser::RoutParser;
+
+#3th party library
+use strict;
+use warnings;
+use Math::Trig;
+
+#local library
+use aliased 'Packages::Polygon::Features::RouteFeatures::RouteFeatures';
+ 
+
+#-------------------------------------------------------------------------------------------#
+#  Public method
+#-------------------------------------------------------------------------------------------#
+ 
+
+# Check if tools parameters are ok
+# When some errors occure here, proper NC export is not possible
+sub GetFeatures {
+	my $self = shift;
+	my $inCAM = shift;
+	my $jobId = shift;
+	my $step  = shift;
+	my $layer = shift;
+	my $breakSR = shift;
+	 
+	  
+	my $parser = RouteFeatures->new();
+	
+	$parser->Parse();
+	
+	my @features =  $parser->GetFeatures();
+ 
+}
+
+ 
+
+# Check if all chains (lines, arc, surf) contain attribute .rout_chain
+sub CheckRoutAttributes {
+	my $self = shift;
+	my @features = shift(@_);
+	my $mess = shift;
+
+	my $result = 1;
+
+	my @chains = ();
+
+	foreach my $f ( @features) {
+	
+		# if no attributes
+		unless(  $f->{"att"}){
+			$mess .= "No rout atributes in feature id: ". $f->{"id"}.".\n";
+			$result = 0;
+			next;
+		}
+
+		my %attr = %{ $f->{"att"} };
+
+		# if features contain attribute rout chain
+		if ( !($attr{".rout_chain"} && $attr{".rout_chain"} > 0 )) {
+		
+			$mess .= "No rout atributes \".rout_chain\" in feature id: ". $f->{"id"}.".\n";
+			$result = 0;
+			
+		}
+	}
+
+	return $result;	
+}
+
+ 
+#helpner computation of length, position of center point in arc etc
+sub AddGeometricAtt {
+	my $self = shift;
+	my $edge = shift;
+
+	#print ${$edge}->{"x1"};
+
+	my ( $l, $d ) = ( 0, 0 );
+
+	#distance between points at line
+	if ( $edge->{"type"} eq "L" ) {
+		$edge->{"length"} =
+		  sqrt( ( $edge->{"x1"} - $edge->{"x2"} )**2 + ( $edge->{"y2"} - $edge->{"y1"} )**2 );
+	}
+
+	if ( $edge->{"type"} eq "A" ) {
+
+		#distance of start/end point
+		$edge->{"distance"} =
+		  sqrt( ( $edge->{"x1"} - $edge->{"x2"} )**2 + ( $edge->{"y2"} - $edge->{"y1"} )**2 );
+
+		#size of diameter
+		$edge->{"diameter"} = 2 *
+		  sqrt( ( $edge->{"xmid"} - $edge->{"x2"} )**2 + ( $edge->{"y2"} - $edge->{"ymid"} )**2 );
+
+		$edge->{"radius"}    = $edge->{"diameter"} / 2;
+		$edge->{"perimeter"} = 2 * pi * $edge->{"radius"};
+
+#test if center point of arc lay on right or left from line (position = sign( (Bx-Ax)*(Y-Ay) - (By-Ay)*(X-Ax) ))
+# when positive = lay on left, when negative = lay on right
+ 
+
+		#compute length of arc
+		$edge->{"innerangle"} = RouteChainHelper->GetArcInnerAngle($edge);
+		$edge->{"length"} =
+		  deg2rad( $edge->{"innerangle"} ) * $edge->{"radius"};    #compute length of arc
+	}
+} 
+ 
+#-------------------------------------------------------------------------------------------#
+#  Place for testing..
+#-------------------------------------------------------------------------------------------#
+my ( $package, $filename, $line ) = caller;
+if ( $filename =~ /DEBUG_FILE.pl/ ) {
+
+	 
+}
+
+1;
+
