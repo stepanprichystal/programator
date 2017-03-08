@@ -294,12 +294,16 @@ sub __GetThickByLayer {
 	}
 	else {
 		$thick = HegMethods->GetPcbMaterialThick( $self->{"jobId"} );
-
-		
 	}
 	
-	#test by Mira, add 80um (value of resist 40 + 40 µm)
-	$thick += 0.080;
+	# if not core, add plating 35µm
+	if($layer !~ /^v\d$/){
+				
+		$thick += 0.035;
+	}
+	
+	# add value of resist 38 + 19 µm
+	$thick += 0.057;
 	
 	$thick = sprintf ("%.3f", $thick );
 

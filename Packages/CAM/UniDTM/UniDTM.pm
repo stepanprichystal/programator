@@ -73,6 +73,34 @@ sub GetToolMagazine {
 	}
 }
 
+# Return tool which has minimal diameter
+sub GetMinTool {
+	my $self        = shift;
+	my $processType = shift;
+
+	my @tools = $self->GetUniqueTools();
+
+	if ($processType) {
+
+		@tools = grep { $_->GetTypeProcess() eq $processType } @tools;
+	}
+
+	my $minTool  = undef;
+	my $minToolD = undef;
+
+	for ( my $i = 0 ; $i < scalar(@tools) ; $i++ ) {
+
+		my $t = $tools[$i];
+
+		if ( !defined $minToolD || $t->GetDrillSize() < $minToolD ) {
+			$minTool  = $t;
+			$minToolD = $t->GetDrillSize();
+		}
+	}
+	
+	return $minTool;
+}
+
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#
@@ -83,17 +111,13 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	use aliased 'Packages::InCAM::InCAM';
 
 	my $inCAM = InCAM->new();
-	my $jobId = "f13609";
+	my $jobId = "f52456";
 
-	my $unitDTM = UniDTM->new( $inCAM, $jobId, "panel", "dc", 1 );
-	
-	my @tools = $unitDTM->GetUniqueTools();
+	my $unitDTM = UniDTM->new( $inCAM, $jobId, "o+1", "f", 1 );
 
-	my $mess   = "";
-	my $result = $unitDTM->GetChecks()->CheckSpecialTools( \$mess );
+	my $tools = $unitDTM->GetMinTool("chain");
 
-	 
-
+	print "ee";
 }
 
 1;

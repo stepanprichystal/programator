@@ -21,6 +21,8 @@ use aliased 'CamHelpers::CamDrilling';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'CamHelpers::CamCopperArea';
 use aliased 'Packages::Polygon::Features::RouteFeatures::RouteFeatures';
+use aliased 'Packages::CAM::UniDTM::UniDTM';
+use aliased 'Packages::CAM::UniDTM::Enums' => 'DTMEnums';
 
 #my $genesis = new Genesis;
 
@@ -28,7 +30,7 @@ use aliased 'Packages::Polygon::Features::RouteFeatures::RouteFeatures';
 #   Package methods
 #-------------------------------------------------------------------------------------------#
 
-#Return minimal slot tool for given layer and layer type
+#Return minimal slot tool for given layer and layer type in mm
 # Type EnumsGeneral->LAYERTYPE
 sub GetMinSlotTool {
 
@@ -40,37 +42,8 @@ sub GetMinSlotTool {
 
 	my @layers = CamDrilling->GetNCLayersByType( $inCAM, $jobId, $layertype );
 
-	my $minTool;
-
-	foreach my $layer (@layers) {
-
-		$inCAM->INFO(
-					  units       => 'mm',
-					  entity_type => 'layer',
-					  entity_path => "$jobId/$stepName/" . $layer->{"gROWname"},
-					  data_type   => 'TOOL',
-					  parameters  => 'drill_size+shape',
-					  options     => "break_sr"
-		);
-		my @toolSize  = @{ $inCAM->{doinfo}{gTOOLdrill_size} };
-		my @toolShape = @{ $inCAM->{doinfo}{gTOOLshape} };
-
-		for ( my $i = 0 ; $i < scalar(@toolSize) ; $i++ ) {
-
-			my $t = $toolSize[$i];
-			my $s = $toolShape[$i];
-
-			if ( $s eq 'slot' ) {
-
-				if ( !defined $minTool || $t < $minTool ) {
-					$minTool = $t;
-				}
-
-			}
-
-		}
-	}
-
+	my $minTool = $self->GetMinSlotToolByLayers( $inCAM, $jobId, $stepName, \@layers );
+	
 	return $minTool;
 }
 
@@ -88,45 +61,23 @@ sub GetMinSlotToolByLayers {
 
 	foreach my $layer (@layers) {
 
-		$inCAM->INFO(
-					  units       => 'mm',
-					  entity_type => 'layer',
-					  entity_path => "$jobId/$stepName/" . $layer->{"gROWname"},
-					  data_type   => 'TOOL',
-					  parameters  => 'drill_size+shape',
-					  options     => "break_sr"
-		);
-		my @toolSize  = @{ $inCAM->{doinfo}{gTOOLdrill_size} };
-		my @toolShape = @{ $inCAM->{doinfo}{gTOOLshape} };
+		my $unitDTM = UniDTM->new( $inCAM, $jobId, $stepName, $layer->{"gROWname"}, 1 );
+		my $tool = $unitDTM->GetMinTool(DTMEnums->TypeProc_CHAIN);
 
-		for ( my $i = 0 ; $i < scalar(@toolSize) ; $i++ ) {
-
-			my $t = $toolSize[$i];
-			my $s = $toolShape[$i];
-
-			if ( $s eq 'slot' ) {
-
-				if ( !defined $minTool || $t < $minTool ) {
-					$minTool = $t;
-				}
-
-			}
-
+		if ( !defined $minTool || $tool->GetDrillSize() < $minTool ) {
+			$minTool = $tool->GetDrillSize();
 		}
 	}
 
 	return $minTool;
 }
 
-
-
 # Return hash, where are dimension of panel
 sub GetFrDimension {
-	my $self      = shift;
-	my $inCAM     = shift;
-	my $jobId     = shift;
-	my $stepName  = shift;
- 
+	my $self     = shift;
+	my $inCAM    = shift;
+	my $jobId    = shift;
+	my $stepName = shift;
 
 	my %dim = ( "xSize" => -1, "ySize" => -1 );
 
@@ -167,27 +118,24 @@ sub GetFrDimension {
 
 }
 
-
-
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-#	use aliased 'CamHelpers::CamRouting';
-#	use aliased 'Packages::InCAM::InCAM';
-#
-#	my $inCAM = InCAM->new();
-#
-#	my $jobId     = "f50251";
-#	my $stepName  = "panel";
-#	 
-#
-#	my $minTool = CamRouting->GetMinSlotTool( $inCAM, $jobId, $stepName, "nplt_nMill" );
-#	
-#	print 1;
-
+	#	use aliased 'CamHelpers::CamRouting';
+	#	use aliased 'Packages::InCAM::InCAM';
+	#
+	#	my $inCAM = InCAM->new();
+	#
+	#	my $jobId     = "f50251";
+	#	my $stepName  = "panel";
+	#
+	#
+	#	my $minTool = CamRouting->GetMinSlotTool( $inCAM, $jobId, $stepName, "nplt_nMill" );
+	#
+	#	print 1;
 
 }
 

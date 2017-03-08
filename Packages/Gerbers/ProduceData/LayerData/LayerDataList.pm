@@ -31,6 +31,8 @@ sub new {
 	$self->{"layers"} = \@l;
 
 	$self->{"stepName"} = undef;
+	
+	$self->{"lang"} = "en";
 
 	return $self;
 }
@@ -51,7 +53,7 @@ sub AddLayers {
 
 		$self->__GetFileName( $lOutput, \$name, \$nameSuffix );
 
-		my $l = LayerData->new( $lOutput->GetType(), $name, $nameSuffix, $lOutput->GetTitle(), $lOutput->GetInfo(), $lOutput->GetOutput() );
+		my $l = LayerData->new( $lOutput->GetType(), $name, $nameSuffix, $lOutput->GetTitle($self->{"lang"}), $lOutput->GetInfo($self->{"lang"}), $lOutput->GetOutput() );
 		push( @{ $self->{"layers"} }, $l );
 
 		# Process parent layers
@@ -60,7 +62,7 @@ sub AddLayers {
 
 			if ( defined $child->GetParent() && $child->GetParent() == $lOutput ) {
 
-				my $lChild = LayerData->new( $child->GetType(), $name, $nameSuffix, $child->GetTitle(), $child->GetInfo(), $child->GetOutput() );
+				my $lChild = LayerData->new( $child->GetType(), $name, $nameSuffix, $child->GetTitle($self->{"lang"}), $child->GetInfo($self->{"lang"}), $child->GetOutput() );
 				push( @{ $self->{"layers"} }, $lChild );
 
 				$lChild->{"parent"} = $l;
