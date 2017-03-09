@@ -46,6 +46,14 @@ sub OnCheckGroupData {
 	my @sig      = $defaultInfo->GetSignalLayers();
 	my $layerCnt = $defaultInfo->GetLayerCnt();
 
+	# 1) Check if pcb class is at lest 3
+	my $pcbClass = $defaultInfo->GetPcbClass();
+	if(!defined $pcbClass || $pcbClass < 3){
+
+		$dataMngr->_AddErrorResult("Pcb class", "Pcb class is equal to \"$pcbClass\". Check job attribute: \"PcbClass\" and set at least value \"3\".\n");
+	}
+
+
 	# 1) Check if layers has set polarity
 	my @layers = @{ $groupData->GetSignalLayers() };
 
