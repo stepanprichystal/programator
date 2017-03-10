@@ -59,6 +59,19 @@ sub Copy {
 	return dclone($self);
 }
 
+sub GetGroupGUID{
+	my $self = shift;
+	
+	return $self->{"groupGUID"};
+}
+
+sub SetGroupGUID{
+	my $self = shift;
+	my $guid = shift;
+	
+	$self->{"groupGUID"} = $guid;
+}
+
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#

@@ -18,6 +18,7 @@ use aliased 'Packages::CAM::SymbolDrawing::Primitive::PrimitiveLine';
 use aliased 'Packages::CAM::SymbolDrawing::Primitive::PrimitiveArcSCE';
 use aliased 'Packages::CAM::SymbolDrawing::Point';
 use aliased 'Packages::CAM::FeatureFilter::FeatureFilter';
+use aliased 'Packages::Polygon::Features::Features::Features';
 
 #-------------------------------------------------------------------------------------------#
 #  Public method
@@ -48,6 +49,8 @@ sub DrawRoute {
 	my $step  = $self->{"step"};
 	my $layer = $self->{"layer"};
 
+	my $routStartGuid = -1;
+
 	CamHelper->SetStep( $inCAM, $step );
 	CamLayer->WorkLayer( $inCAM, $layer );
 
@@ -57,29 +60,32 @@ sub DrawRoute {
 	for ( my $i = 0 ; $i < scalar(@sorteEdges) ; $i++ ) {
 
 		# draw rout
-
+		my $primitive = undef;
 		if ( $sorteEdges[$i]->{"type"} eq "L" ) {
 
-			my $line = PrimitiveLine->new(
-										   Point->new( $sorteEdges[$i]->{"x1"}, $sorteEdges[$i]->{"y1"} ),
-										   Point->new( $sorteEdges[$i]->{"x2"}, $sorteEdges[$i]->{"y2"} ),
-										   "r400"
+			$primitive = PrimitiveLine->new(
+											 Point->new( $sorteEdges[$i]->{"x1"}, $sorteEdges[$i]->{"y1"} ),
+											 Point->new( $sorteEdges[$i]->{"x2"}, $sorteEdges[$i]->{"y2"} ),
+											 "r400"
 			);
-
-			$draw->AddPrimitive($line);
-
 		}
 		elsif ( $sorteEdges[$i]{"type"} eq "A" ) {
 
-			my $arc = PrimitiveArcSCE->new(
-											Point->new( $sorteEdges[$i]->{"x1"},   $sorteEdges[$i]->{"y1"} ),
-											Point->new( $sorteEdges[$i]->{"xmid"}, $sorteEdges[$i]->{"ymid"} ),
-											Point->new( $sorteEdges[$i]->{"x2"},   $sorteEdges[$i]->{"y2"} ),
-											$sorteEdges[$i]->{"newDir"},
-											"r400"
+			$primitive = PrimitiveArcSCE->new(
+											   Point->new( $sorteEdges[$i]->{"x1"},   $sorteEdges[$i]->{"y1"} ),
+											   Point->new( $sorteEdges[$i]->{"xmid"}, $sorteEdges[$i]->{"ymid"} ),
+											   Point->new( $sorteEdges[$i]->{"x2"},   $sorteEdges[$i]->{"y2"} ),
+											   $sorteEdges[$i]->{"newDir"},
+											   "r400"
 			);
+		}
 
-			$draw->AddPrimitive($arc);
+		$draw->AddPrimitive($primitive);
+
+		# save GUID of start rout
+		if ( $sorteEdges[$i]->{"id"} eq $routStart->{"id"} ) {
+
+			$routStartGuid = $primitive->GetGroupGUID();
 		}
 
 	}
@@ -87,17 +93,27 @@ sub DrawRoute {
 	my @ids = $draw->Draw();
 
 	my $f = FeatureFilter->new( $inCAM, $jobId, $step );
-	$f->AddFeatureIndexes( \@ids );
+
+	$f->AddIncludeAtt( "feat_group_guid", $routStartGuid );
 	if ( $f->Select() ) {
+
+		# Get id of rout start feature
+		my $layerFeat = Features->new();
+		$layerFeat->Parse( $inCAM, $jobId, $step, $layer );
+		my @feats = $layerFeat->GetFeatureByGroupGUID();
+
+		# feat for start should be only one
+		if ( scalar(@feats) != 1 ) {
+			die "Error when finding rout start feature";
+		}
 
 		$inCAM->COM(
 			'chain_add',
-			"layer" => $layer,
-			"chain" => 1,
-			"size"  => $toolSize / 1000,
-			"comp"  => $comp,
-
-			#first          => "$startId",
+			"layer"          => $layer,
+			"chain"          => 999,
+			"size"           => $toolSize / 1000,
+			"comp"           => $comp,
+			first            => $feats[0],
 			"chng_direction" => 0
 		);
 	}

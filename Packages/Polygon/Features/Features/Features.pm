@@ -85,6 +85,40 @@ sub GetFeatures {
 
 }
 
+# Return features by feature id (unique per layer)
+sub GetFeatureById {
+	my $self = shift;
+	my $id = shift;
+
+	my @features = grep { $_->{"id"} eq $id }  @{ $self->{"features"} };
+	
+	# feature id are unique per layer, but when BreakSR, more feature can have same id
+	if(scalar(@features)){
+		return @features
+	}else{
+		
+		return 0;
+	}
+
+}
+
+# Return features by feature id (unique per layer)
+sub GetFeatureByGroupGUID {
+	my $self = shift;
+	my $groupGuid = shift;
+
+	my @features = grep { $_->{"att"}->{"feat_group_id"} eq $groupGuid }  @{ $self->{"features"} };
+	
+	# feature id are unique per layer, but when BreakSR, more feature can have same id
+	if(scalar(@features)){
+		return @features
+	}else{
+		
+		return 0;
+	}
+
+}
+
 sub __ParseLines {
 
 	my $self  = shift;

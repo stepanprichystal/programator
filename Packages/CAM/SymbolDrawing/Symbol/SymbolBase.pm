@@ -14,7 +14,7 @@ use Storable qw(dclone);
 use aliased 'Packages::CAM::SymbolDrawing::Enums';
 use aliased 'Packages::CAM::SymbolDrawing::Point';
 use aliased 'Packages::CAM::SymbolDrawing::SymbolInfo';
-
+use aliased 'Helpers::GeneralHelper'; 
 #-------------------------------------------------------------------------------------------#
 #  Interface
 #-------------------------------------------------------------------------------------------#
@@ -36,6 +36,9 @@ sub new {
 	$self->{"primitives"} = \@prims;    # primitives, whci create this symbol
 	my @syms = ();
 	$self->{"symbols"} = \@syms;        # can contain another chold symbols
+	
+	# Unique number which are signed all drawed features. Attribute "feat_group_id"
+	$self->{"groupGUID"} = GeneralHelper->GetGUID();
 
 	return $self;
 }
@@ -44,8 +47,11 @@ sub AddPrimitive {
 	my $self      = shift;
 	my $primitive = shift;
 
+	$primitive->SetGroupGUID($self->{"groupGUID"});
+ 
 	push( @{ $self->{"primitives"} }, $primitive );
-
+	
+	
 }
 
 sub AddSymbol {
@@ -81,6 +87,12 @@ sub Copy {
 	my $self = shift;
 
 	return dclone($self);
+}
+
+sub GetGroupGUID{
+	my $self = shift;
+	
+	return $self->{"groupGUID"};
 }
 
 #-------------------------------------------------------------------------------------------#
