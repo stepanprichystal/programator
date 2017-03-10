@@ -108,7 +108,7 @@ sub AddLine {
 
 	$polarity = defined $polarity ? $polarity : 'positive';
 
-	$inCAM->COM(
+	return $inCAM->COM(
 				 'add_line',
 				 attributes => 'yes',
 				 "xs"       => $startP->{"x"},

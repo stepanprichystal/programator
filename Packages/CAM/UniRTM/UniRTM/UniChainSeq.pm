@@ -39,9 +39,10 @@ sub new {
 	$self = {};
 	bless $self;
  
+ 	$self->{"chain"}       = shift; 
 	$self->{"cyclic"}       = undef;
 	$self->{"direction"}    = undef;
-	$self->{"footDown"}     = 0;
+	$self->{"footDown"}     = undef; # features, which cintain foot_down attribute
 	$self->{"isInside"}     = 0;        # if is inside another chain sequence
 	
 	my @outsideChainSeq = ();
@@ -85,6 +86,27 @@ sub GetPoints {
  
 	return @points;
 
+}
+
+sub HasFootDown {
+	my $self = shift;
+
+	if(defined($self->{"footDown"})){
+		return 1;
+	}else{
+		return 0;
+	}
+ 
+}
+
+sub GetStrInfo {
+	my $self = shift;
+
+	my @features = @{ $self->{"features"}};
+	my @ids =  map { $_->{"id"} } @features;
+	my $idStr = join(";", @ids);
+	
+	my $str = "Chain number: \"".$self->GetChain()->GetChainOrder()."\" ( feature ids: \"".$idStr."\")"; 
 }
 
 # GET/SET Properties -------------------------------------
@@ -190,6 +212,12 @@ sub GetFootDown {
 
 }
 
+sub GetChain {
+	my $self = shift;
+
+	return $self->{"chain"};
+
+}
  
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

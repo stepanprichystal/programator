@@ -145,6 +145,12 @@ sub SetFeatures {
 
 }
 
+sub GetComp {
+	my $self = shift;
+
+	return $self->{"comp"};
+}
+
 sub SetComp {
 	my $self = shift;
 	my $comp = shift;

@@ -26,8 +26,10 @@ sub new {
 	my $startP   = shift;
 	my $centerP  = shift;
 	my $endP     = shift;
+	my $direction = shift; # cw/ccw, default is cw
 	my $symbol   = shift;
 	my $polarity = shift;    #
+	
 
 	my $self = {};
 	$self = $class->SUPER::new( Enums->Primitive_ARCSCE, $polarity );
@@ -36,6 +38,16 @@ sub new {
 	$self->{"startP"}  = $startP;
 	$self->{"centerP"} = $centerP;
 	$self->{"endP"}    = $endP;
+	
+	
+	$self->{"direction"}  = $direction;
+	unless($self->{"direction"})
+	{
+		$self->{"direction"} = "cw";
+	}
+	
+	
+	
 	$self->{"symbol"}  = $symbol;
 
 	return $self;
@@ -71,11 +83,19 @@ sub GetEndP {
 	return $self->{"endP"};
 }
 
+sub GetDirection {
+	my $self = shift;
+
+	return $self->{"direction"};
+}
+
 sub GetSymbol {
 	my $self = shift;
 
 	return $self->{"symbol"};
 }
+
+
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

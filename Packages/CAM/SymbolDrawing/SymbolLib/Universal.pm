@@ -78,7 +78,7 @@ sub __DefineSymbol {
 	my $endArcXPos = -1*$startArcXPos;
 	my $endArcYPos = $startArcYPos;
  	
-	my $arc = PrimitiveArcSCE->new(Point->new( $startArcXPos, $startArcYPos), Point->new( 0, 0), Point->new( $endArcXPos, $endArcYPos), $self->{"symbol"});
+	my $arc = PrimitiveArcSCE->new(Point->new( $startArcXPos, $startArcYPos), Point->new( 0, 0), Point->new( $endArcXPos, $endArcYPos),undef, $self->{"symbol"});
 	$self->AddPrimitive($arc);
 	
 	 # Add left helper line

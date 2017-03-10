@@ -30,7 +30,7 @@ sub AddArcStartCenterEnd {
 	$polarity = defined $polarity ? $polarity : 'positive';
 	$direction = defined $direction ? $direction : 'cw';
 
-	$inCAM->COM(
+	return $inCAM->COM(
 		"add_arc",
 		"symbol"     => $symbol,
 		"polarity"   => $polarity,

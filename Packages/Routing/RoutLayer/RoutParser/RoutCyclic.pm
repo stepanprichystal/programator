@@ -19,10 +19,10 @@ use aliased 'Packages::CAM::UniDTM::Enums';
 use aliased 'Enums::EnumsRout';
 use List::MoreUtils qw(uniq);
 use aliased 'Packages::Polygon::PolygonPoints';
+
 #-------------------------------------------------------------------------------------------#
 #  Public method
 #-------------------------------------------------------------------------------------------#
-
 
 # neni odzkousena
 sub IsCyclic {
@@ -57,8 +57,8 @@ sub IsCyclic {
 sub GetRoutDirection {
 	my $self        = shift;
 	my @sortedFeats = @{ shift(@_) };
-	
-	my @points =  map { [ $_->{"x1"}, $_->{"y1"} ] } @sortedFeats;    # rest of points "x2,y2"
+
+	my @points = map { [ $_->{"x1"}, $_->{"y1"} ] } @sortedFeats;    # rest of points "x2,y2"
 
 	return PolygonPoints->GetPolygonDirection( \@points );
 }
@@ -81,7 +81,7 @@ sub SetRoutDirection {
 }
 
 # One chain can have more features
-# Some features can have same start/end point (are connected)
+# Some features can have same start/end point (are connected). Only arc and lines can create sequences
 # Thiese featurec join to "sequences"
 # Return list of sequences, where sequence is list of features
 sub GetRoutSequences {
@@ -94,20 +94,31 @@ sub GetRoutSequences {
 		return 0;
 	}
 
-	my $seqDone = 0;
-	my %actEdge;
+	# 1) all features which are not line or arc add as single sequences
+	my @nonSeqFeats = grep { $_->{"type"} !~ /l/i && $_->{"type"} !~ /a/i } @edges;
+
+	foreach my $f (@nonSeqFeats) {
+		my @s = ($f);
+		push( @sequences, \@s );
+	}
+
+	# 2) filter all non arc and line features
+	@edges = grep { $_->{"type"} =~ /l/i || $_->{"type"} =~ /a/i } @edges;
+
+	my $searchDone = scalar(@edges) ? 0 : 1;
 
 	my @seq = ();
 
-	while ( !$seqDone ) {
+	# 3) search sequences, until all edges are not used in some sequence
+	while ( !$searchDone ) {
 
 		if ( scalar(@seq) == 0 ) {
 			push( @seq, $edges[0] );
-			splice @edges, 0, 1;    # remove from edges
+			splice @edges, 0, 1;             # remove from edges
 		}
 
 		#take arbitrary edge
-		 
+
 		#find next part of chain
 		my $isFind = 0;    # if some edges from @edge array was find
 
@@ -138,7 +149,7 @@ sub GetRoutSequences {
 			}
 		}
 
-		if (!$isFind || scalar(@edges) == 0) {
+		if ( !$isFind || scalar(@edges) == 0 ) {
 
 			my @seqTmp = @seq;
 			push( @sequences, \@seqTmp );
@@ -147,10 +158,10 @@ sub GetRoutSequences {
 
 		if ( scalar(@edges) == 0 ) {
 
-			$seqDone = 1;
+			$searchDone = 1;
 		}
 	}
-	
+
 	return @sequences;
 }
 
@@ -221,7 +232,6 @@ sub GetSortedRout {
 					splice @edges, $i, 1;
 					%actEdge = %e;
 
-					 
 					last;
 				}
 			}
@@ -238,22 +248,23 @@ sub GetSortedRout {
 				$sorted = 1;
 			}
 		}
-		
-		
+
 	}
+
 	#if circle case = one arc
-	elsif(scalar(@edges) == 1 && $edges[0]->{"type"} =~ /a/i) {
-		
+	elsif ( scalar(@edges) == 1 && $edges[0]->{"type"} =~ /a/i ) {
+
 		$edges[0]{"switchPoints"} = 0;
 		push( @sorteEdges, $edges[0] );
-	
-	}elsif(scalar(@edges) == 1){
+
+	}
+	elsif ( scalar(@edges) == 1 ) {
 		@sorteEdges = ();
 		return @sorteEdges;
 	}
-	
+
 	# if polygon is not close, return 0
-	if($isOpen){
+	if ($isOpen) {
 		@sorteEdges = ();
 		return @sorteEdges;
 	}
@@ -263,7 +274,7 @@ sub GetSortedRout {
 
 	#test if polzgon is circle (one arc)
 	if (    ( scalar(@sorteEdges) == 1 && $sorteEdges[0]->{"oriDir"} eq EnumsRout->Dir_CCW )
-		 || ( scalar(@sorteEdges) > 1 && $self->GetRoutDirection(\@sorteEdges) eq EnumsRout->Dir_CCW ) )
+		 || ( scalar(@sorteEdges) > 1 && $self->GetRoutDirection( \@sorteEdges ) eq EnumsRout->Dir_CCW ) )
 	{
 
 		@sorteEdges = reverse @sorteEdges;

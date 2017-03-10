@@ -69,6 +69,20 @@ sub new {
 	return $self;
 }
 
+sub GetChains{
+	my $self = shift;
+	
+	return @{$self->{"chains"}};
+}
+
+sub GetChainSequences{
+	my $self = shift;
+	
+	my @seqs   = map { $_->GetChainSequences() } @{$self->{"chains"}};
+	
+	return @seqs;
+}
+
 sub __InitUniRTM {
 	my $self = shift;
 

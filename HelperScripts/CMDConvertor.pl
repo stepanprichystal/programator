@@ -8,7 +8,7 @@ use warnings;
 
 # ============ INPUT LINE =================
 my $inputLine =
-"COM sel_change_sym,symbol=r4000,reset_angle=no";
+"adv_filter_set,filter_name=popup,active=yes,limit_box=no,bound_box=no,indexes=461\;462,srf_values=no,srf_area=no,mirror=any,ccw_rotations=";
 my $output = "\$inCAM->COM(";
 my @splitted = split( ",", $inputLine );
 

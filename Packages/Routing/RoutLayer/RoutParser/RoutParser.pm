@@ -11,49 +11,46 @@ use Math::Trig;
 
 #local library
 use aliased 'Packages::Polygon::Features::RouteFeatures::RouteFeatures';
- 
+use aliased 'Packages::Routing::RoutLayer::RoutMath::RoutMath';
+use aliased 'Packages::Routing::RoutLayer::RoutParser::RoutArc';
 
 #-------------------------------------------------------------------------------------------#
 #  Public method
 #-------------------------------------------------------------------------------------------#
- 
 
 # Check if tools parameters are ok
 # When some errors occure here, proper NC export is not possible
 sub GetFeatures {
-	my $self = shift;
-	my $inCAM = shift;
-	my $jobId = shift;
-	my $step  = shift;
-	my $layer = shift;
+	my $self    = shift;
+	my $inCAM   = shift;
+	my $jobId   = shift;
+	my $step    = shift;
+	my $layer   = shift;
 	my $breakSR = shift;
-	 
-	  
-	my $parser = RouteFeatures->new();
-	
-	$parser->Parse();
-	
-	my @features =  $parser->GetFeatures();
- 
-}
 
- 
+	my $parser = RouteFeatures->new();
+
+	$parser->Parse();
+
+	my @features = $parser->GetFeatures();
+
+}
 
 # Check if all chains (lines, arc, surf) contain attribute .rout_chain
 sub CheckRoutAttributes {
-	my $self = shift;
+	my $self     = shift;
 	my @features = shift(@_);
-	my $mess = shift;
+	my $mess     = shift;
 
 	my $result = 1;
 
 	my @chains = ();
 
-	foreach my $f ( @features) {
-	
+	foreach my $f (@features) {
+
 		# if no attributes
-		unless(  $f->{"att"}){
-			$mess .= "No rout atributes in feature id: ". $f->{"id"}.".\n";
+		unless ( $f->{"att"} ) {
+			$mess .= "No rout atributes in feature id: " . $f->{"id"} . ".\n";
 			$result = 0;
 			next;
 		}
@@ -61,18 +58,17 @@ sub CheckRoutAttributes {
 		my %attr = %{ $f->{"att"} };
 
 		# if features contain attribute rout chain
-		if ( !($attr{".rout_chain"} && $attr{".rout_chain"} > 0 )) {
-		
-			$mess .= "No rout atributes \".rout_chain\" in feature id: ". $f->{"id"}.".\n";
+		if ( !( $attr{".rout_chain"} && $attr{".rout_chain"} > 0 ) ) {
+
+			$mess .= "No rout atributes \".rout_chain\" in feature id: " . $f->{"id"} . ".\n";
 			$result = 0;
-			
+
 		}
 	}
 
-	return $result;	
+	return $result;
 }
 
- 
 #helpner computation of length, position of center point in arc etc
 sub AddGeometricAtt {
 	my $self = shift;
@@ -95,30 +91,27 @@ sub AddGeometricAtt {
 		  sqrt( ( $edge->{"x1"} - $edge->{"x2"} )**2 + ( $edge->{"y2"} - $edge->{"y1"} )**2 );
 
 		#size of diameter
-		$edge->{"diameter"} = 2 *
-		  sqrt( ( $edge->{"xmid"} - $edge->{"x2"} )**2 + ( $edge->{"y2"} - $edge->{"ymid"} )**2 );
+		$edge->{"diameter"} = 2 * sqrt( ( $edge->{"xmid"} - $edge->{"x2"} )**2 + ( $edge->{"y2"} - $edge->{"ymid"} )**2 );
 
 		$edge->{"radius"}    = $edge->{"diameter"} / 2;
 		$edge->{"perimeter"} = 2 * pi * $edge->{"radius"};
 
-#test if center point of arc lay on right or left from line (position = sign( (Bx-Ax)*(Y-Ay) - (By-Ay)*(X-Ax) ))
-# when positive = lay on left, when negative = lay on right
- 
+		#test if center point of arc lay on right or left from line (position = sign( (Bx-Ax)*(Y-Ay) - (By-Ay)*(X-Ax) ))
+		# when positive = lay on left, when negative = lay on right
 
 		#compute length of arc
-		$edge->{"innerangle"} = RouteChainHelper->GetArcInnerAngle($edge);
+		$edge->{"innerangle"} = RoutArc->GetArcInnerAngle($edge);
 		$edge->{"length"} =
-		  deg2rad( $edge->{"innerangle"} ) * $edge->{"radius"};    #compute length of arc
+		  deg2rad( $edge->{"innerangle"} ) * $edge->{"radius"};               #compute length of arc
 	}
-} 
- 
+}
+
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	 
 }
 
 1;

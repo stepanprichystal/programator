@@ -12,6 +12,7 @@ use Math::ConvexHull qw/convex_hull/;
 use Math::Polygon::Calc;                 #Math-Polygon
 use Math::Geometry::Planar;              #Math-Geometry-Planar-GPC
 use Math::Trig;
+use Math::Trig ':pi';
 
 #local library
 use aliased 'Packages::Polygon::Enums';
@@ -153,43 +154,6 @@ sub GetCentroid {
  
 	 return $point;
 }
-
-# Ruction rotate point by specific angle
-# Point is rotated around zero (0,0)
-sub RotatePoint {
-	my $self   = shift;
-	my $point  = shift;  # for accurate calculation give in µm
-	my $angle  = shift;
- 
-	my $num = $angle / 90;
-
-	my $angle90 = pi / 2;
-	
-	my %new = ();
-	
-	$new{"x"} = $point->{"x"};
-	$new{"y"} = $point->{"y"};
-
-	# only if angel is not 360
-	if ( $num < 4 ) {
-		for ( my $i = 0 ; $i < $num ; $i++ ) {
- 
- 			my %tmp = ();
-
-			$tmp{"x"} = $new{"x"} * cos(pip2) - $new{"y"} * sin(pip2);
-			$tmp{"y"} = $new{"y"} * cos(pip2) + $new{"x"} * sin(pip2);
-
-			$new{"x"} = $tmp{"x"};
-			$new{"y"} = $tmp{"y"};
-		}
-	}
-
-	$new{"x"} = int( $new{"x"} + 0.5 ); # round on whole numbers
-	$new{"y"} = int( $new{"y"} + 0.5 );
-
-	return \%new;
-}
-
  
 
 

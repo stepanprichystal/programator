@@ -10,6 +10,7 @@ use warnings;
 use Math::Trig;
 use Math::Polygon::Calc;                 #Math-Polygon
 use Math::Geometry::Planar;              #Math-Geometry-Planar-GPC
+use POSIX 'floor';
 
 #local library
 use aliased 'Packages::Polygon::Features::RouteFeatures::RouteFeatures';

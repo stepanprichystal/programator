@@ -18,11 +18,17 @@ use aliased 'Packages::Polygon::PointsTransform';
 #-------------------------------------------------------------------------------------------#
 #  Public method
 #-------------------------------------------------------------------------------------------#
+
+
+ 
+
+
 # Rotate rout by angle CW
+# All coordinate should be in mm
 sub RotateRout {
 	my $self     = shift;
 	my $angle    = shift;
-	my @features = shift(@_);
+	my @features = @{shift(@_)};
 
 	# 1) rotate all feature points
 	foreach my $f (@features) {
@@ -30,71 +36,74 @@ sub RotateRout {
 		# line / arcs
 		if ( $f->{"type"} =~ /[la]/i ) {
 
-			my %p1 = ( "x" => $f->{"x1"}, "y" => $f->{"y1"} );
-			my %p2 = ( "x" => $f->{"x2"}, "y" => $f->{"y2"} );
+			my %p1 = ( "x" => $f->{"x1"} * 1000, "y" => $f->{"y1"}  * 1000);
+			my %p2 = ( "x" => $f->{"x2"} * 1000, "y" => $f->{"y2"} * 1000 );
 
-			%p1 = PolygonPoints->RotatePoint( $p1, $angle );
-			%p2 = PolygonPoints->RotatePoint( $p2, $angle );
+			%p1 = PointsTransform->RotatePoint( \%p1, $angle );
+			%p2 = PointsTransform->RotatePoint( \%p2, $angle );
+ 
+			$f->{"x1"} = $p1{"x"} /1000; 
+			$f->{"y1"} = $p1{"y"} /1000;
 
-			$f->{"x1"} = $p1{"x"};
-			$f->{"y1"} = $p1{"y"};
-
-			$f->{"x2"} = $p2{"x"};
-			$f->{"y2"} = $p2{"y"};
+			$f->{"x2"} = $p2{"x"}/1000;
+			$f->{"y2"} = $p2{"y"}/1000;
 		}
 
 		# arc
 		if ( $f->{"type"} =~ /a/i ) {
 
-			my %p1 = ( "x" => $f->{"xmid"}, "y" => $f->{"ymid"} );
-			%p1 = PointsTransform->RotatePoint( $p1, $angle );
+			my %p1 = ( "x" => $f->{"xmid"} * 1000, "y" => $f->{"ymid"} * 1000 );
+			%p1 = PointsTransform->RotatePoint( \%p1, $angle );
 
-			$f->{"xmid"} = $p1{"x"};
-			$f->{"ymid"} = $p1{"y"};
+			$f->{"xmid"} = $p1{"x"}/1000;
+			$f->{"ymid"} = $p1{"y"}/1000;
 		}
 
 		# surf
 		if ( $f->{"type"} =~ /s/i ) {
 
+			my @envelopNew = ();
+ 
 			for ( my $i = 0 ; $i < scalar( @{ $f->{"envelop"} } ) ; $i++ ) {
+ 
+				my %p1 = ( "x" => $f->{"envelop"}->[$i]->{"x"} * 1000, "y" => $f->{"envelop"}->[$i]->{"y"}  * 1000);
 
-				@{ $f->{"envelop"} }[$i]
-
-				  my %newP = PointsTransform->RotatePoint( @{ $f->{"envelop"} }[$i], $angle );
-				@{ $f->{"envelop"} }[$i] = \%newP;
+				my %newP = PointsTransform->RotatePoint( \%p1, $angle );
+ 
+ 				$p1{"x"} /= 1000;
+ 				$p1{"y"} /= 1000;
+ 
+				$f->{"envelop"}->[$i] = \%newP;
 			}
 		}
-
 	}
 }
 
 
 # Rotate rout by angle CW
-sub MoveRoutToZero {
+sub MoveRout {
 	my $self     = shift;
-	my $angle    = shift;
-	my @features = shift(@_);
-	
-	my %lim = PolygonFeatures->GetLimByRectangle(\@features);
+	my $xSize    = shift;
+	my $ySize    = shift;
+	my @features = @{shift(@_)};
  
-
 	# 1) move to zero
 	foreach my $f (@features) {
 
 		# line / arcs
 		if ( $f->{"type"} =~ /[la]/i ) {
 
-			$f->{"x1"} -= $lim{"xMin"};
-			$f->{"y1"} -= $lim{"yMin"};
-			$f->{"x2"} -= $lim{"xMin"};
-			$f->{"y2"} -= $lim{"yMin"};
+			$f->{"x1"} += $xSize;
+			$f->{"y1"} += $ySize;
+			$f->{"x2"} += $xSize;
+			$f->{"y2"} += $ySize;
 		}
 
 		# arc
 		if ( $f->{"type"} =~ /a/i ) {
- 
-			$f->{"xmid"}  -= $lim{"xMin"};
-			$f->{"ymid"}  -= $lim{"yMin"};
+
+			$f->{"xmid"} += $xSize;
+			$f->{"ymid"} += $ySize;
 		}
 
 		# surf
@@ -102,13 +111,13 @@ sub MoveRoutToZero {
 
 			for ( my $i = 0 ; $i < scalar( @{ $f->{"envelop"} } ) ; $i++ ) {
 
-				@{ $f->{"envelop"} }[$i]->{"x"} -= $lim{"xMin"};
-				@{ $f->{"envelop"} }[$i]->{"x"} -= $lim{"yMin"};
+				@{ $f->{"envelop"} }[$i]->{"x"} += $xSize;
+				@{ $f->{"envelop"} }[$i]->{"y"} += $ySize;
 			}
 		}
-
 	}
 }
+
 
 
 #-------------------------------------------------------------------------------------------#

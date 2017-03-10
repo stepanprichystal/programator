@@ -12,6 +12,7 @@ use Math::ConvexHull qw/convex_hull/;
 use Math::Polygon::Calc;                 #Math-Polygon
 use Math::Geometry::Planar;              #Math-Geometry-Planar-GPC
 use Math::Trig;
+use Math::Trig ':pi';
 
 #local library
 use aliased 'Packages::Polygon::Enums';
@@ -52,11 +53,8 @@ sub RotatePoint {
 			$new{"y"} = $tmp{"y"};
 		}
 	}
-
-	$new{"x"} = int( $new{"x"} + 0.5 ); # round on whole numbers
-	$new{"y"} = int( $new{"y"} + 0.5 );
-
-	return \%new;
+ 
+	return %new;
 }
 
 # Return limits of all features
@@ -77,25 +75,25 @@ sub GetLimByPoints {
 		foreach my $f (@points) {
 
 			# find minimum
-			if ( !defined $minX || $f->{"x1"} < $minX ) {
+			if ( !defined $minX || $f->{"x"} < $minX ) {
 
-				$minX = $f->{"x1"};
+				$minX = $f->{"x"};
 			}
 
-			if ( !defined $minY || $f->{"y1"} < $minY ) {
+			if ( !defined $minY || $f->{"y"} < $minY ) {
 
-				$minY = $f->{"y1"};
+				$minY = $f->{"y"};
 			}
 
 			#find maximum
-			if ( !defined $maxX || $f->{"x1"} > $maxX ) {
+			if ( !defined $maxX || $f->{"x"} > $maxX ) {
 
-				$maxX = $f->{"x1"};
+				$maxX = $f->{"x"};
 			}
 
-			if ( !defined $maxY || $f->{"y1"} > $maxY ) {
+			if ( !defined $maxY || $f->{"y"} > $maxY ) {
 
-				$maxY = $f->{"y1"};
+				$maxY = $f->{"y"};
 			}
 		}
 

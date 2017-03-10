@@ -85,7 +85,7 @@ sub GetChains {
 
 		foreach my $seqPoints (@sequences) {
 
-			my $chSeq = UniChainSeq->new();
+			my $chSeq = UniChainSeq->new($ch);
 
 			$chSeq->SetFeatures($seqPoints);
 			$self->__SetChainSeqProperties($chSeq);

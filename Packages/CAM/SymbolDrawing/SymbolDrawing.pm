@@ -100,13 +100,16 @@ sub Draw {
 	#$self->Mirror()
 
 	# 3) Draw primitives
-	$self->__DrawPrimitives( \@primitives );
+	my @ids = $self->__DrawPrimitives( \@primitives );
 
 }
 
+# Draw all defined primitives, return ids of newly created features
 sub __DrawPrimitives {
 	my $self       = shift;
 	my @primitives = @{ shift(@_) };
+
+	my @ids = ();
 
 	foreach my $pInfo (@primitives) {
 
@@ -117,26 +120,27 @@ sub __DrawPrimitives {
 
 			if ( $p->GetType() eq Enums->Primitive_LINE ) {
 
-				$self->__DrawLine( $p, $pos );
+				push( @ids, $self->__DrawLine( $p, $pos ) );
 
 			}
 			elsif ( $p->GetType() eq Enums->Primitive_TEXT ) {
 
-				$self->__DrawText( $p, $pos );
+				push( @ids, $self->__DrawText( $p, $pos ) );
 
 			}
 			elsif ( $p->GetType() eq Enums->Primitive_ARCSCE ) {
 
-				$self->__DrawArcSCE( $p, $pos );
+				push( @ids, $self->__DrawArcSCE( $p, $pos ) );
 
 			}
 			elsif ( $p->GetType() eq Enums->Primitive_SURFACEPOLY ) {
 
-				$self->__DrawSurfPoly( $p, $pos );
+				push( @ids, $self->__DrawSurfPoly( $p, $pos ) );
 			}
-
 		}
 	}
+	
+	return @ids;
 }
 
 sub __DrawLine {
@@ -158,7 +162,7 @@ sub __DrawLine {
 		$eP->MirrorX( $self->{"mirrorXPoint"} );
 	}
 
-	CamSymbol->AddLine( $self->{"inCAM"}, $sP, $eP, $line->GetSymbol(), $line->GetPolarity() );
+	return CamSymbol->AddLine( $self->{"inCAM"}, $sP, $eP, $line->GetSymbol(), $line->GetPolarity() );
 
 }
 
@@ -190,7 +194,7 @@ sub __DrawText {
 
 	}
 
-	CamSymbol->AddText( $self->{"inCAM"}, $t->GetValue(), $p, $t->GetHeight(), $t->GetLineWidth(), $mirror, $t->GetPolarity(), $t->GetAngle() );
+	return CamSymbol->AddText( $self->{"inCAM"}, $t->GetValue(), $p, $t->GetHeight(), $t->GetLineWidth(), $mirror, $t->GetPolarity(), $t->GetAngle() );
 
 }
 
@@ -199,7 +203,7 @@ sub __DrawArcSCE {
 	my $arc       = shift;
 	my $symbolPos = shift;
 
-	my $dir = "cw";
+	my $dir = $arc->GetDirection();
 
 	# consider origin of whole draw
 
@@ -222,7 +226,7 @@ sub __DrawArcSCE {
 		$dir = "ccw";
 	}
 
-	CamSymbolArc->AddArcStartCenterEnd( $self->{"inCAM"}, $sP, $cP, $eP, $dir, $arc->GetSymbol(), $arc->GetPolarity() );
+	return CamSymbolArc->AddArcStartCenterEnd( $self->{"inCAM"}, $sP, $cP, $eP, $dir, $arc->GetSymbol(), $arc->GetPolarity() );
 
 }
 
@@ -265,7 +269,7 @@ sub __DrawSurfPoly {
 	}
 
 	my @points = $surf->GetPoints();
-	CamSymbolSurf->AddSurfacePolyline( $self->{"inCAM"}, \@points, 1 );
+	return CamSymbolSurf->AddSurfacePolyline( $self->{"inCAM"}, \@points, 1 );
 
 }
 

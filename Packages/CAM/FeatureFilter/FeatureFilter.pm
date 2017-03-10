@@ -32,6 +32,8 @@ sub new {
 	$self->{"includeAttr"} = undef;   # Included attributes name + value
 	$self->{"excludeAttr"} = undef;   # Included attributes name + value
 
+	$self->{"featureIndexes"} = undef;    # filter by featuer indexes
+
 	$self->Reset();
 
 	return $self;
@@ -71,6 +73,9 @@ sub Reset {
 	$self->{"includeAttr"} = \@ia;
 	my @ea = ();
 	$self->{"excludeAttr"} = \@ea;
+
+	my @fi = ();
+	$self->{"featureIndexes"} = \@fi;
 
 }
 
@@ -209,6 +214,27 @@ sub AddIncludeAtt {
 				 max_float_val      => $max_float_val,
 				 option             => $option,
 				 text               => $text
+	);
+
+}
+
+# include attribute and att value to filter
+sub AddFeatureIndexes {
+	my $self           = shift;
+	my $featureIndexes = shift;
+
+	push( @{ $self->{"featureIndexes"} }, @{$featureIndexes} );
+
+	my $str = join( "\\;", @{ $self->{"featureIndexes"} } );
+	
+	my $inCAM = $self->{"inCAM"};
+
+	$inCAM->COM(
+		"adv_filter_set",
+		"filter_name" => "popup",
+		"active"      => "yes",
+		"indexes"     => $str,
+
 	);
 
 }
