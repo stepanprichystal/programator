@@ -100,16 +100,13 @@ sub Draw {
 	#$self->Mirror()
 
 	# 3) Draw primitives
-	my @ids = $self->__DrawPrimitives( \@primitives );
+	$self->__DrawPrimitives( \@primitives );
 
 }
 
-# Draw all defined primitives, return ids of newly created features
 sub __DrawPrimitives {
 	my $self       = shift;
 	my @primitives = @{ shift(@_) };
-
-	my @ids = ();
 
 	foreach my $pInfo (@primitives) {
 
@@ -120,27 +117,26 @@ sub __DrawPrimitives {
 
 			if ( $p->GetType() eq Enums->Primitive_LINE ) {
 
-				push( @ids, $self->__DrawLine( $p, $pos ) );
+				$self->__DrawLine( $p, $pos );
 
 			}
 			elsif ( $p->GetType() eq Enums->Primitive_TEXT ) {
 
-				push( @ids, $self->__DrawText( $p, $pos ) );
+				$self->__DrawText( $p, $pos );
 
 			}
 			elsif ( $p->GetType() eq Enums->Primitive_ARCSCE ) {
 
-				push( @ids, $self->__DrawArcSCE( $p, $pos ) );
+				$self->__DrawArcSCE( $p, $pos );
 
 			}
 			elsif ( $p->GetType() eq Enums->Primitive_SURFACEPOLY ) {
 
-				push( @ids, $self->__DrawSurfPoly( $p, $pos ) );
+				$self->__DrawSurfPoly( $p, $pos );
 			}
+
 		}
 	}
-	
-	return @ids;
 }
 
 sub __DrawLine {
@@ -162,7 +158,7 @@ sub __DrawLine {
 		$eP->MirrorX( $self->{"mirrorXPoint"} );
 	}
 
-	return CamSymbol->AddLine( $self->{"inCAM"}, $sP, $eP, $line->GetSymbol(), $line->GetPolarity() );
+	CamSymbol->AddLine( $self->{"inCAM"}, $sP, $eP, $line->GetSymbol(), $line->GetPolarity() );
 
 }
 
@@ -194,7 +190,7 @@ sub __DrawText {
 
 	}
 
-	return CamSymbol->AddText( $self->{"inCAM"}, $t->GetValue(), $p, $t->GetHeight(), $t->GetLineWidth(), $mirror, $t->GetPolarity(), $t->GetAngle() );
+	CamSymbol->AddText( $self->{"inCAM"}, $t->GetValue(), $p, $t->GetHeight(), $t->GetLineWidth(), $mirror, $t->GetPolarity(), $t->GetAngle() );
 
 }
 
@@ -226,7 +222,7 @@ sub __DrawArcSCE {
 		$dir = "ccw";
 	}
 
-	return CamSymbolArc->AddArcStartCenterEnd( $self->{"inCAM"}, $sP, $cP, $eP, $dir, $arc->GetSymbol(), $arc->GetPolarity() );
+	CamSymbolArc->AddArcStartCenterEnd( $self->{"inCAM"}, $sP, $cP, $eP, $dir, $arc->GetSymbol(), $arc->GetPolarity() );
 
 }
 
@@ -269,7 +265,7 @@ sub __DrawSurfPoly {
 	}
 
 	my @points = $surf->GetPoints();
-	return CamSymbolSurf->AddSurfacePolyline( $self->{"inCAM"}, \@points, 1 );
+	CamSymbolSurf->AddSurfacePolyline( $self->{"inCAM"}, \@points, 1 );
 
 }
 
