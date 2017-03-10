@@ -504,7 +504,7 @@ sub __CreateServer {
 	#run InCAM editor with serverscript
 	Win32::Process::Create( $processObj, $inCAMPath,
 							"InCAM.exe -s" . $path." " . $freePort,
-							0, THREAD_PRIORITY_NORMAL, "." )
+							1, THREAD_PRIORITY_NORMAL, "." )
 	  || die "$!\n";
 
 	$pidInCAM = $processObj->GetProcessID();
