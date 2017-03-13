@@ -17,6 +17,7 @@ use aliased 'Packages::Routing::RoutLayer::RoutParser::RoutParser';
 use aliased 'Packages::Polygon::PolygonFeatures';
 use aliased 'Packages::Routing::RoutLayer::RoutMath::RoutMath';
 use aliased 'Packages::Polygon::PointsTransform';
+use aliased "Packages::Polygon::PolygonPoints";
 
 #-------------------------------------------------------------------------------------------#
 #  Public method
@@ -189,7 +190,10 @@ sub ProcessModify {
 	#Do changes
 	if ( $modify->{"result"} ) {
 
-		# 1) Process "break line" modification
+		# 1) Store rout points (polygon) before modification
+		my @pointsBefore = map { [ $_->{"x2"}, $_->{"y2"} ] } @{$sorteEdges};
+
+		# 2) Process "break line" modification
 
 		my @breakLines = @{ $modify->{"breakLine"} };
 
@@ -216,6 +220,13 @@ sub ProcessModify {
 				splice @$sorteEdges, $i + 1, 0, \%featInfo;
 
 			}
+		}
+
+		# 3) compare areas of "rout polygon" before modification and after modification
+		my @pointsAfter = map { [ $_->{"x2"}, $_->{"y2"} ] } @{$sorteEdges};
+
+		unless ( PolygonPoints->PolygonAreEqual( \@pointsBefore, \@pointsAfter ) ) {
+			die "Error during modification rout. Area of \"rout polygon\" was changed affter modification.\n";
 		}
 	}
 
@@ -379,7 +390,7 @@ sub GetRoutFootDown {
 
 		if ( $candidates[$i]{"type"} eq "A" ) {
 
-			$dist = $dist * 1.2;                   #because of type "Arc", add little disadvantage 20%
+			$dist = $dist * 1.2;    #because of type "Arc", add little disadvantage 20%
 		}
 
 		if ( !defined $min || $dist < $min ) {

@@ -244,9 +244,9 @@ sub __ParseLines {
 
 			my @attValue = split( "=", $at );
 			
-			my $attVal = $attValue[1]; 
-			unless(defined $attVal){
-				$attVal
+			# some attributes doesn't have value, so put there "-"
+			unless(defined  $attValue[1]){
+				 $attValue[1] = "-";
 			}
 			$featInfo->{"att"}{ $attValue[0] } = $attValue[1];
 		}

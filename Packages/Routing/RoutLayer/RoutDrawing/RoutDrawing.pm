@@ -92,7 +92,7 @@ sub DrawRoute {
 
 	my @ids = $draw->Draw();
 
-	my $f = FeatureFilter->new( $inCAM, $jobId, $step );
+	my $f = FeatureFilter->new( $inCAM, $jobId, $layer );
 
 	$f->AddIncludeAtt( "feat_group_guid", $routStartGuid );
 	if ( $f->Select() ) {
@@ -108,15 +108,39 @@ sub DrawRoute {
 		}
 
 		$inCAM->COM(
-			'chain_add',
-			"layer"          => $layer,
-			"chain"          => 999,
-			"size"           => $toolSize / 1000,
-			"comp"           => $comp,
-			first            => $feats[0],
-			"chng_direction" => 0
+					 'chain_add',
+					 "layer"          => $layer,
+					 "chain"          => 999,
+					 "size"           => $toolSize / 1000,
+					 "comp"           => $comp,
+					 first            => $feats[0],
+					 "chng_direction" => 0
 		);
 	}
+}
+
+
+sub DeleteRoute {
+	my $self  = shift;
+	my @edges = @{ shift(@_) };
+
+	my $inCAM = $self->{"inCAM"};
+	my $jobId = $self->{"jobId"};
+	my $layer = $self->{"layer"};
+	my $step  = $self->{"step"};
+
+	CamHelper->SetStep( $inCAM, $step );
+
+	# Get id of rout start feature
+	my $f = FeatureFilter->new( $inCAM, $jobId, $layer );
+
+	my @ids = map { $_->{"id"} } @edges;
+	$f->AddFeatureIndexes( \@ids );
+	
+	if($f->Select()){
+		$inCAM->COM("sel_delete");
+	}
+
 }
 
 #-------------------------------------------------------------------------------------------#

@@ -13,6 +13,7 @@ use Math::Polygon::Calc;                 #Math-Polygon
 use Math::Geometry::Planar;              #Math-Geometry-Planar-GPC
 use Math::Trig;
 use Math::Trig ':pi';
+use Math::Polygon;
 
 #local library
 use aliased 'Packages::Polygon::Enums';
@@ -154,6 +155,24 @@ sub GetCentroid {
  
 	 return $point;
 }
+
+# Return if polzgon are equals
+#
+
+sub PolygonAreEqual {
+	my $self  = shift;
+	my @points1 = @{ shift(@_) };
+ 	my @points2 = @{ shift(@_) };
+ 	
+ 	my $poly1 = Math::Polygon->new( @points1 );
+ 	my $poly2 = Math::Polygon->new( @points2 );
+ 	
+ 	if($poly1->area() eq $poly2->area()){
+ 		return 1;
+ 	}else{
+ 		return 0;
+ 	}
+}
  
 
 
@@ -165,16 +184,14 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	use aliased "Packages::Polygon::PolygonPoints";
 
-	my @points2 = ( [0,0], [0,5], [5,5], [5,0] );
+	my @points1 = ( [0,0], [0,5], [5,5], [5,0] );
 	
-	my @points = ( [4.50644, 69.2869675], [5.08195, 69.4691725], [5.08195, 68.4691725], [3.7708175, 68.3225475], [2.7708175, 71.3225475] );
+	my @points2 = ( [0,0], [0.2,2], [0,5], [5,5], [5,0] );
 
 	#print PolygonHelper->GetPoly2PolyIntersect( \@points, \@points2);
 	
-	my @p = PolygonPoints->GetConvexHull( \@points);
-
-
-
+	my $p = PolygonPoints->PolygonAreEqual( \@points1, \@points2);
+ 
 	print "ddd";
 	
 	#     #OB 4.50644 69.2869675 I

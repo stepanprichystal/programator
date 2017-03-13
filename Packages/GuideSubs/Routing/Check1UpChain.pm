@@ -16,6 +16,8 @@ use aliased 'Enums::EnumsRout';
 use aliased 'CamHelpers::CamAttributes';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'Packages::Routing::RoutLayer::RoutDrawing::RoutDrawing';
+use aliased 'Packages::Routing::RoutLayer::RoutStart::RoutStart';
+use aliased 'Packages::Routing::RoutLayer::RoutDrawing::RoutDrawing';
 
 #-------------------------------------------------------------------------------------------#
 #  Public method
@@ -189,9 +191,9 @@ sub TestFindFoots {
 			my @m = ("Byly nalezeni vhodní kandidáti na patku, ale fréza se musí uparvit.");
 			my @b = ( "Upravit frézu", "Neupravovat" );
 			$messMngr->ShowModal( -1, EnumsGeneral->MessageType_WARNING, \@m, \@b );    #  Script se zastavi
-			if ( $messMngr->Result() == 1 ) {
+			if ( $messMngr->Result() == 0 ) {
 
-				$routModify = 1;
+				$routModify = 0;
 
 			}
 			else {
@@ -215,6 +217,7 @@ sub TestFindFoots {
 				if ($routModify) {
 
 					# překreslit frézu
+					my $draw = RoutDrawing->new($inCAM, $jobId, "o+1", "o");
 				}
 
 			}
@@ -292,6 +295,7 @@ sub __GetUnitRTM {
 	my $step  = shift;
 	my $layer = shift;
 
+ 
 	my $unitRTM = UniRTM->new( $inCAM, $jobId, $step, $layer );
 
 	return $unitRTM;
@@ -316,8 +320,16 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	my $jobId = "f52456";
 	my $step  = "o+1";
 	my $layer = "f";
+	
+	my $mess = "";
 
-	my $res = Check1UpChain->LeftRoutChecks($inCAM, $jobId, $step, $layer, $messMngr );
+	#my $res = Check1UpChain->LeftRoutChecks($inCAM, $jobId, $step, $layer, \$mess );
+	
+		my $res = Check1UpChain->TestFindFoots($inCAM, $jobId, $step, $layer, $messMngr );
+
+ 
+
+	print $mess;
 
 	print STDERR "test";
 

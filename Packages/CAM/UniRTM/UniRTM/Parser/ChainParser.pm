@@ -149,11 +149,7 @@ sub __SetChainSeqProperties {
 
 	if ( scalar(@foots) ) {
 
-		$uniChainSeq->SetFootDown(1);
-	}
-	else {
-
-		$uniChainSeq->SetFootDown(0);
+		$uniChainSeq->SetFootsDown(\@foots);
 	}
 
 	# 5) Set features type

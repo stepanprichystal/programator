@@ -117,22 +117,26 @@ sub GetRoutSequences {
 			splice @edges, 0, 1;             # remove from edges
 		}
 
-		#take arbitrary edge
-
+ 
 		#find next part of chain
 		my $isFind = 0;    # if some edges from @edge array was find
 
 		for ( my $i = 0 ; $i < scalar(@seq) ; $i++ ) {
 
-			my $x = sprintf( "%.3f", $seq[$i]->{"x2"} );
-			my $y = sprintf( "%.3f", $seq[$i]->{"y2"} );
+			my $x1seq = sprintf( "%.3f", $seq[$i]->{"x1"} );
+			my $y1seq = sprintf( "%.3f", $seq[$i]->{"y1"} );
+			my $x2seq = sprintf( "%.3f", $seq[$i]->{"x2"} );
+			my $y2seq = sprintf( "%.3f", $seq[$i]->{"y2"} );
 
 			for ( my $j = 0 ; $j < scalar(@edges) ; $j++ ) {
-
-				my %e = %{ $edges[$j] };
-
-				if (    ( $x == sprintf( "%.3f", $e{"x1"} ) && $y == sprintf( "%.3f", $e{"y1"} ) )
-					 || ( $x == sprintf( "%.3f", $e{"x2"} ) && $y == sprintf( "%.3f", $e{"y2"} ) ) )
+				
+				my $x1edge = sprintf( "%.3f", $edges[$j]->{"x1"} );
+				my $y1edge = sprintf( "%.3f", $edges[$j]->{"y1"} );
+				my $x2edge = sprintf( "%.3f", $edges[$j]->{"x2"} );
+				my $y2edge = sprintf( "%.3f", $edges[$j]->{"y2"} );
+	 
+				if ( ($x1seq == $x1edge && $y1seq == $y1edge) || ($x1seq == $x2edge && $y1seq == $y2edge)  ||
+					 ($x2seq == $x1edge && $y2seq == $y1edge) || ($x2seq == $x2edge && $y2seq == $y2edge)   )
 				{
 
 					$isFind = 1;
