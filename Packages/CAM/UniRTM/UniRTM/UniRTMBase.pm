@@ -130,7 +130,8 @@ sub __InitUniRTM {
 					$pos = PolygonPoints->GetPoints2PolygonPosition( \@seqInPoints, \@seqOutPoints );
 				}
 
-				if ( $pos eq PolyEnums->Pos_INSIDE ) {
+				
+				if ( $pos ne PolyEnums->Pos_OUTSIDE ) {
 					$seqIn->SetIsInside(1);
 					$seqIn->AddOutsideChainSeq($seqOut);
 				}

@@ -243,6 +243,8 @@ sub __ParseLines {
 		foreach my $at (@attr) {
 
 			my @attValue = split( "=", $at );
+			
+			my $attVal = $attValue[1]; 
 			$featInfo->{"att"}{ $attValue[0] } = $attValue[1];
 		}
 

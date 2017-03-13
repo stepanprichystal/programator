@@ -18,7 +18,7 @@ use warnings;
 #local library
 
 use aliased 'Packages::CAM::UniDTM::Enums';
-use aliased 'Enums::EnumsDrill';
+use aliased 'Enums::EnumsRout';
 
 #-------------------------------------------------------------------------------------------#
 #  Public method
@@ -37,7 +37,7 @@ sub new {
 sub GetOutlineChains {
 	my $self = shift;
 
-	my @chains = grep { $_->GetComp () eq EnumsDrill->Comp_LEFT } @{ $self->{"chains"} }; # only left
+	my @chains = grep { $_->GetComp () eq EnumsRout->Comp_LEFT } @{ $self->{"chains"} }; # only left
 	my @seqs   = map { $_->GetChainSequences() } @chains;
 	@seqs   = grep { !$_->GetIsInside() && $_->GetCyclic() } @seqs; # are not inside + are cyclic
 }
@@ -46,7 +46,7 @@ sub GetOutlineChains {
 sub GetNoOutlineChains {
 	my $self = shift;
 
-	my @chains = grep { $_->GetComp () eq EnumsDrill->Comp_LEFT } @{ $self->{"chains"} };
+	my @chains = grep { $_->GetComp () eq EnumsRout->Comp_LEFT } @{ $self->{"chains"} };
 	my @seqs   = map { $_->GetChainSequences() } @chains;
 
 	@seqs = grep { $_->GetCyclic() } @seqs;

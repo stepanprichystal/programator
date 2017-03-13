@@ -2,7 +2,7 @@
 # Description: Do checks of tool in Universal DTM
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::Routing::RoutLayer::RoutParser::RoutParser;
+package Packages::GuideSubs::Routing::Check1UpChain;
 
 #3th party library
 use utf8;
@@ -22,7 +22,7 @@ use aliased 'Packages::Routing::RoutLayer::RoutDrawing::RoutDrawing';
 #-------------------------------------------------------------------------------------------#
 
 # Check if there is outline layer, if all other layer (inner, right etc) are in this outline layer
-sub OutlineChainIsOuter {
+sub OutsideChains {
 	my $self     = shift;
 	my $inCAM    = shift;
 	my $jobId    = shift;
@@ -42,11 +42,11 @@ sub OutlineChainIsOuter {
 		my @seq = $unitRTM->GetChainSequences();
 
 		my %tmp;
-		@tmp{ map { $_->{"id"} } @lefts } = ();
+		@tmp{ map { $_ } @lefts } = ();
 
-		my @otherLayers = grep { exists $tmp{ $_->{"id"} } } @seq;
+		my @otherLayers = grep { !exists $tmp{ $_ } } @seq;
 
-		my @notInside = grep { !$_->IsInside() } @otherLayers;
+		my @notInside = grep { !$_->GetIsInside() } @otherLayers;
 
 		if ( scalar(@notInside) ) {
 
@@ -54,10 +54,10 @@ sub OutlineChainIsOuter {
 			my $str = join( "; ", @info );
 
 			my @m =
-			  ( "Ve vrstvě: \"" . $layer . "\" jsou frézy, které by měly být uvnitř obrysové frézy, ale nejsou.", "Je to tak správně?" );
+			  ( "Ve vrstvě: \"" . $layer . "\" jsou frézy, které by měly být uvnitř obrysové frézy, ale nejsou ($str).", "Je to tak správně?" );
 			my @b = ( "Ano", "Není, opravím to" );
 			$messMngr->ShowModal( -1, EnumsGeneral->MessageType_WARNING, \@m, \@b );    #  Script se zastavi
-			if ( $messMngr->Result() == 2 ) {
+			if ( $messMngr->Result() == 1 ) {
 				$result = 0;
 			}
 
@@ -70,6 +70,7 @@ sub OutlineChainIsOuter {
 # Check if there is noly bridges rout
 # if so, save this information to job attribute "rout_on_bridges"
 sub OnlyBridges {
+	my $self = shift;
 	my $inCAM    = shift;
 	my $jobId    = shift;
 	my $step     = shift;
@@ -79,7 +80,7 @@ sub OnlyBridges {
 	my $result = 1;
 
 	# reset attribut "rout_on_bridges" to NO, thus pcb is not on bridges
-	CamAttributes->SetJobAttribute( $jobId, $jobId, "rout_on_bridges", "no" );
+	CamAttributes->SetJobAttribute($inCAM, $jobId, "rout_on_bridges", 0 );
 
 	my $unitRTM = UniRTM->new( $inCAM, $jobId, $step, $layer );
 
@@ -97,7 +98,7 @@ sub OnlyBridges {
 			my @m = ("Ve vrstvě není ani obrysová vrstva ani můstky. Je to tak správně?");
 			my @b = ( "Ano", "Ne" );
 			$messMngr->ShowModal( -1, EnumsGeneral->MessageType_WARNING, \@m, \@b );    #  Script se zastavi
-			if ( $messMngr->Result() == 2 ) {
+			if ( $messMngr->Result() == 1 ) {
 				$result = 0;
 			}
 
@@ -106,10 +107,10 @@ sub OnlyBridges {
 		# maybe thera are bridges, but not LEFT
 		elsif ( scalar(@lefts) == 0 ) {
 
-			my @m = ("Ve vrstvě není ani obrysová vrstva ani můstky s kompenzací left. Pokud tam jsou můstky nastav jim kompenzaci left.");
+			my @m = ("Ve vrstvě není ani obrysová vrstva ani můstky s kompenzací left. Pokud je pcb na můstky nastav jim kompenzaci left.");
 			my @b = ( "Takhle je to správně", "Opravím můstky na LEFT" );
 			$messMngr->ShowModal( -1, EnumsGeneral->MessageType_WARNING, \@m, \@b );    #  Script se zastavi
-			if ( $messMngr->Result() == 2 ) {
+			if ( $messMngr->Result() == 1 ) {
 				$result = 0;
 			}
 
@@ -121,10 +122,10 @@ sub OnlyBridges {
 			my @m = ("Pravděpodobně je dps ponechaná na můstky, které mají kompenzaci left. Pokud to není pravda oprav frézu.");
 			my @b = ( "Takhle je to správně", "Opravím frézu" );
 			$messMngr->ShowModal( -1, EnumsGeneral->MessageType_WARNING, \@m, \@b );    #  Script se zastavi
-			if ( $messMngr->Result() == 1 ) {
+			if ( $messMngr->Result() == 0 ) {
 
 				# set pcb is rout on bridges
-				CamAttributes->SetJobAttribute( $jobId, $jobId, "rout_on_bridges", "yes" );
+				CamAttributes->SetJobAttribute( $inCAM, $jobId, "rout_on_bridges", 1 );
 
 			}
 			else {
@@ -136,8 +137,9 @@ sub OnlyBridges {
 	return $result;
 }
 
+# Check when left rout exists
 sub LeftRoutChecks {
-
+	my $self = shift;
 	my $inCAM = shift;
 	my $jobId = shift;
 	my $step  = shift;
@@ -151,7 +153,7 @@ sub LeftRoutChecks {
 	# 1) test if tehere are left no cyclic rout, which has foot down
 	my @lefts   = grep { $_->GetComp() eq EnumsRout->Comp_LEFT } $unitRTM->GetChains();
 	my @leftSeq = map  { $_->GetChainSequences() } @lefts;
-	@leftSeq = grep { $_->GetCyclic() && $_->HasFootDown() } @leftSeq;
+	@leftSeq = grep { !$_->GetCyclic() && $_->HasFootDown() } @leftSeq;
 
 	if ( scalar(@leftSeq) ) {
 		$result = 0;
@@ -301,6 +303,23 @@ sub __GetUnitRTM {
 #-------------------------------------------------------------------------------------------#
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
+
+	use aliased 'Packages::GuideSubs::Routing::Check1UpChain';
+	use aliased 'Packages::InCAM::InCAM';
+	use aliased 'Managers::MessageMngr::MessageMngr';
+	use aliased 'Enums::EnumsGeneral';
+
+	my $messMngr = MessageMngr->new("D3333");
+
+	my $inCAM = InCAM->new();
+
+	my $jobId = "f52456";
+	my $step  = "o+1";
+	my $layer = "f";
+
+	my $res = Check1UpChain->LeftRoutChecks($inCAM, $jobId, $step, $layer, $messMngr );
+
+	print STDERR "test";
 
 }
 

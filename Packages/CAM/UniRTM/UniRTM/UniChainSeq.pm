@@ -43,7 +43,7 @@ sub new {
 	$self->{"cyclic"}       = undef;
 	$self->{"direction"}    = undef;
 	$self->{"footDown"}     = undef; # features, which cintain foot_down attribute
-	$self->{"isInside"}     = 0;        # if is inside another chain sequence
+	$self->{"isInside"}     = 0;        # if is inside another chain sequence (inside mean fully inside or at lesast partly)
 	
 	my @outsideChainSeq = ();
 	$self->{"outsideChainSeq"} = \@outsideChainSeq;    # chain seq ref, which is this chain sequence inside
@@ -91,7 +91,7 @@ sub GetPoints {
 sub HasFootDown {
 	my $self = shift;
 
-	if(defined($self->{"footDown"})){
+	if(defined($self->{"footDown"}) && !$self->{"footDown"}){
 		return 1;
 	}else{
 		return 0;
