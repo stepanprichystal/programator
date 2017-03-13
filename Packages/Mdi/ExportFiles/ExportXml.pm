@@ -170,7 +170,8 @@ sub __ExportXml {
 
 	$templ->{"job_params"}->[0]->{"job_name"}->[0]        = $jobId . $layerName . "_mdi";
 	
-	my $info = HegMethods->GetInfoAfterStartProduce($jobId);
+	my $orderNum = HegMethods->GetPcbOrderNumber($jobId);
+	my $info = HegMethods->GetInfoAfterStartProduce($jobId."-".$orderNum);
 	my $parts = 0;
 	
 	if( defined $info->{'pocet_prirezu'} &&   $info->{'pocet_prirezu'} > 0) {

@@ -14,34 +14,48 @@ use Try::Tiny;
 
 #local library
 use lib qw( \\\\incam\\InCAM\\server\\site_data\\scripts);
+#use lib qw( C:\Perl\site\lib\TpvScripts\Scripts );
 use aliased 'Packages::TriggerFunction::MDIFiles';
 use aliased 'Enums::EnumsPaths';
 use aliased 'Packages::TriggerFunction::NCFiles';
+use aliased 'Connectors::HeliosConnector::HegMethods';
 
-my $jobId     = shift;    # job for process
+my $orderId     = shift;    # job order for process
+ 
+
+# old way is only job id f123645
+# new way is ordefr id f12345-01
+#if old way get the biggest order id
+
+unless( $orderId =~ /^(\w\d+)-.*$/){
+	
+	my $orderNum = HegMethods->GetPcbOrderNumber($orderId);
+	$orderId .= "-".$orderNum;
+}
+ 
 my $processed = 1;
 
 # 1) change some lines in MDI xml files eval
 eval {
 
-	MDIFiles->AddPartsNumber($jobId);
+	MDIFiles->AddPartsNumber($orderId);
 
 };
 if ($@) {
 
 	$processed = 0;
-	Log( "\n Error when processing \"MDI files\" job: $jobId.\n" . $@, 1 );
+	Log( "\n Error when processing \"MDI files\" job: $orderId.\n" . $@, 1 );
 }
 
 # 2) change drilled number in NC files
 eval {
 
-	NCFiles->ChangePcbOrderNumber($jobId);
+	NCFiles->ChangePcbOrderNumber($orderId);
 };
 if ($@) {
 
 	$processed = 0;
-	Log( "\n Error when processing \"NC files\" job: $jobId.\n" . $@, 1 );
+	Log( "\n Error when processing \"NC files\" job: $orderId.\n" . $@, 1 );
 }
 
 
@@ -86,7 +100,7 @@ sub Log {
 	}
 
 	if ($fileOpen) {
-		print $fh $jobId . " - " . $mess . " at $now_string \n";
+		print $fh $orderId . " - " . $mess . " at $now_string \n";
 		close($fh);
 	}
 

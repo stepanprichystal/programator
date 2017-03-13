@@ -121,7 +121,9 @@ sub GetAllByPcbId {
 	}
 }
 
-
+ 
+# Return hash ref with information about order
+# parameter is pcbid with order id: eg: f12345-01
 sub GetInfoAfterStartProduce {
 	my $self  = shift;
 	my $pcbId = shift;
@@ -137,7 +139,7 @@ sub GetInfoAfterStartProduce {
 				 left outer join lcs.subjekty c with (nolock) on c.cislo_subjektu=d.zakaznik
 				 left outer join lcs.subjekty m with (nolock) on m.cislo_subjektu=d.material
 				 left outer join lcs.zakazky_dps_22_hlavicka z with (nolock) on z.deska=d.cislo_subjektu
-				 where d.reference_subjektu=_PcbId and  z.cislo_poradace = 22050";
+				 where z.reference_subjektu=_PcbId and  z.cislo_poradace = 22050";
 
 	my @result = Helper->ExecuteDataSet( $cmd, \@params );
 
@@ -901,7 +903,9 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	use aliased 'Connectors::HeliosConnector::HegMethods';
 
 	
-	 my $res = HegMethods->GetStatusOfOrder("f65111-01");
+	 my $num = HegMethods->GetPcbOrderNumber("d35934");
+	
+	 my $res = HegMethods->GetInfoAfterStartProduce("d35934-$num");
 
 	
 	 print $res;

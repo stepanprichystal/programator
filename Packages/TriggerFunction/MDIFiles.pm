@@ -23,9 +23,13 @@ use aliased 'Enums::EnumsPaths';
 #-------------------------------------------------------------------------------------------#
 
 # Function add value of tag <parts_total>, <parts_remaining> in each mdi-xml file of requested job
+# parameter $orderId is eg: F12345-01
 sub AddPartsNumber {
 	my $self  = shift;
-	my $jobId = shift;
+	my $orderId = shift;
+	
+	my $jobId =  $orderId;
+	$jobId =~ s/-.*$//;
 	
 	my $reg = $jobId.".*_mdi.xml";
 	
@@ -35,7 +39,7 @@ sub AddPartsNumber {
 		return 1;
 	} 
 	
-	my $info = HegMethods->GetInfoAfterStartProduce($jobId);
+	my $info = HegMethods->GetInfoAfterStartProduce($orderId);
 	
 	if( !defined $info->{'pocet_prirezu'} ||   !defined $info->{'prirezu_navic'}){
 		return 0;
@@ -66,7 +70,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	use aliased 'Packages::TriggerFunction::MDIFiles';
 
-	my $test = MDIFiles->AddPartsNumber("f13608");
+	my $test = MDIFiles->AddPartsNumber("f52456-01");
 
 	print $test;
  

@@ -71,25 +71,32 @@ sub GetPanelName {
 		use XML::Simple;
 		use Data::Dumper;
 
-		my $getStructure = XMLin("$fileName");
+		my $sufixFile = substr $fileName, -3;
 		
-		
-		
-				if (HegMethods->GetTypeOfPcb($jobName) eq 'Vicevrstvy') {
-						@nameOfPanel = (EnumsProducPanel->SIZE_MULTILAYER_SMALL, EnumsProducPanel->SIZE_MULTILAYER_BIG);
-				}else{
-						@nameOfPanel = (EnumsProducPanel->SIZE_STANDARD_SMALL, EnumsProducPanel->SIZE_STANDARD_BIG);
-				}
-
-				foreach my $panel (@nameOfPanel){
-								my %dimsPanelHash = PanelDimension->GetDimensionPanel($inCAM, $panel);
-								
-										if (_CompareTolerance($dimsPanelHash{'PanelSizeX'}, ($getStructure->{panel_width} + $dimsPanelHash{'BorderLeft'} + $dimsPanelHash{'BorderRight'} )) == 1 and 
-											_CompareTolerance($dimsPanelHash{'PanelSizeY'}, ($getStructure->{panel_height} + $dimsPanelHash{'BorderTop'} + $dimsPanelHash{'BorderBot'} )) == 1) {
-													$panelSizeName = $panel;
-										}
-				}
-		return ($panelSizeName);
+		if ($sufixFile =~ /[Xx][Mm][Ll]/ ) {
+			
+					my $getStructure = XMLin("$fileName");
+					
+					
+					
+							if (HegMethods->GetTypeOfPcb($jobName) eq 'Vicevrstvy') {
+									@nameOfPanel = (EnumsProducPanel->SIZE_MULTILAYER_SMALL, EnumsProducPanel->SIZE_MULTILAYER_BIG);
+							}else{
+									@nameOfPanel = (EnumsProducPanel->SIZE_STANDARD_SMALL, EnumsProducPanel->SIZE_STANDARD_BIG);
+							}
+    			
+							foreach my $panel (@nameOfPanel){
+											my %dimsPanelHash = PanelDimension->GetDimensionPanel($inCAM, $panel);
+											
+													if (_CompareTolerance($dimsPanelHash{'PanelSizeX'}, ($getStructure->{panel_width} + $dimsPanelHash{'BorderLeft'} + $dimsPanelHash{'BorderRight'} )) == 1 and 
+														_CompareTolerance($dimsPanelHash{'PanelSizeY'}, ($getStructure->{panel_height} + $dimsPanelHash{'BorderTop'} + $dimsPanelHash{'BorderBot'} )) == 1) {
+																$panelSizeName = $panel;
+													}
+							}
+					return ($panelSizeName);
+		}else{
+					return (0);
+		}
 				
 
 }
@@ -100,7 +107,7 @@ sub GetPanelName {
 sub _CompareTolerance {
 		my $reference = shift;
 		my $testValue = shift;
-		my $tolerance = 2; #in mm
+		my $tolerance = 10; #in mm
 		
 		my $minTolerace = $reference - $tolerance;
 		my $maxTolerace = $reference + $tolerance;

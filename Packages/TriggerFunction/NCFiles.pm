@@ -22,11 +22,17 @@ use aliased 'Helpers::JobHelper';
 
 # Function replace pcb order number in all NC files placed in archive, which contains this number
 # Example if dps is second ordered: M97,F12345 => M97,F12345-2
+# parameter $orderId is eg: F12345-01
 sub ChangePcbOrderNumber {
 	my $self  = shift;
-	my $jobId = shift;
+	my $orderId = shift;
+	
+	my $jobId =  $orderId;
+	$jobId =~ s/-.*$//;
 
-	my $orderNum = int( HegMethods->GetPcbOrderNumber($jobId) );
+	my ($orderNum) = $orderId =~ m/^\w\d+-(\d*)$/;
+	$orderNum = int ($orderNum);
+ 
 	my $ncPath   = JobHelper->GetJobArchive($jobId) . "nc\\";
 
 	my @ncFiles = ();
@@ -85,7 +91,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	use aliased 'Packages::TriggerFunction::NCFiles';
 
-	NCFiles->ChangePcbOrderNumber("f64061");
+	NCFiles->ChangePcbOrderNumber("f52456-01");
 
 	print STDERR "ttt";
 

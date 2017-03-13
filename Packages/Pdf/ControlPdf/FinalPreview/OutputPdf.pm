@@ -98,6 +98,10 @@ sub __OutputPdf {
 				 "x_spacing"       => '0',
 				 "y_spacing"       => '0'
 	);
+	
+	unless(-e $multiPdf){
+		die "Nepodarilo se vytvorit PDF, asi chyba \"CAT.exe\" nic s jobem nedelej a volej SPR";
+	}
 
 	# delete helper layers
 	foreach my $lData (@layers) {
