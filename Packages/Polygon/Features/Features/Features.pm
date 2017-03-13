@@ -245,6 +245,9 @@ sub __ParseLines {
 			my @attValue = split( "=", $at );
 			
 			my $attVal = $attValue[1]; 
+			unless(defined $attVal){
+				$attVal
+			}
 			$featInfo->{"att"}{ $attValue[0] } = $attValue[1];
 		}
 
