@@ -12,6 +12,7 @@ use warnings;
 #local library
 use aliased 'CamHelpers::CamLayer';
 use aliased 'CamHelpers::CamAttributes';
+use aliased 'Packages::CAM::FeatureFilter::Enums';
 
 #-------------------------------------------------------------------------------------------#
 #  Public method
@@ -59,6 +60,8 @@ sub Reset {
 	my $inCAM = $self->{"inCAM"};
 
 	CamLayer->WorkLayer( $self->{"inCAM"}, $self->{"layerName"} );
+
+	$self->{"inCAM"}->COM('adv_filter_reset');
 
 	$self->{"inCAM"}->COM( 'filter_reset', filter_name => 'popup' );
 
@@ -226,7 +229,7 @@ sub AddFeatureIndexes {
 	push( @{ $self->{"featureIndexes"} }, @{$featureIndexes} );
 
 	my $str = join( "\\;", @{ $self->{"featureIndexes"} } );
-	
+
 	my $inCAM = $self->{"inCAM"};
 
 	$inCAM->COM(
@@ -237,6 +240,16 @@ sub AddFeatureIndexes {
 
 	);
 
+}
+
+# Set logic between include attributes
+sub SetIncludeAttrCond {
+	my $self = shift;
+	my $cond = shift;
+	
+	my $inCAM = $self->{"inCAM"};
+
+	$inCAM->COM( "set_filter_and_or_logic", "filter_name" => "popup", "criteria" => "inc_attr", "logic" => $cond );
 }
 
 #-------------------------------------------------------------------------------------------#

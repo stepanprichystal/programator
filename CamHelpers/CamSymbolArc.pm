@@ -34,7 +34,7 @@ sub AddArcStartCenterEnd {
 		"add_arc",
 		"symbol"     => $symbol,
 		"polarity"   => $polarity,
-		"attributes" => "no",
+		"attributes" => "yes",
 		"direction"  => $direction,
 		"xs"         => $startP->{"x"},
 		"ys"         => $startP->{"y"},

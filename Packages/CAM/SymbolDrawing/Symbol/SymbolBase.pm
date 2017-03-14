@@ -39,6 +39,9 @@ sub new {
 	
 	# Unique number which are signed all drawed features. Attribute "feat_group_id"
 	$self->{"groupGUID"} = GeneralHelper->GetGUID();
+	
+	# Indicate if pass symbol group GUID to added primitives. Default yes
+	$self->{"passGUID2prim"} = 1;
 
 	return $self;
 }
@@ -47,7 +50,9 @@ sub AddPrimitive {
 	my $self      = shift;
 	my $primitive = shift;
 
-	$primitive->SetGroupGUID($self->{"groupGUID"});
+	if($self->{"passGUID2prim"}){
+		$primitive->SetGroupGUID($self->{"groupGUID"});
+	}
  
 	push( @{ $self->{"primitives"} }, $primitive );
 	
@@ -93,6 +98,13 @@ sub GetGroupGUID{
 	my $self = shift;
 	
 	return $self->{"groupGUID"};
+}
+
+sub SetPassGUID2prim{
+	my $self = shift;
+	my $val = shift;
+	
+	$self->{"passGUID2prim"} = $val;	
 }
 
 #-------------------------------------------------------------------------------------------#

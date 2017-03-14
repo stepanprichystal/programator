@@ -40,6 +40,7 @@ sub new {
 	$self = {};
 	bless $self;
 	$self->{"inCAM"}    = shift;
+	$self->{"jobId"}    = shift;
 	$self->{"layer"}    = shift;    # layer where drawing is placed
 	$self->{"position"} = shift;    # top/bot
 	$self->{"pcbThick"} = shift;    # pcbthick in mm
@@ -68,8 +69,8 @@ sub new {
 		$self->{"position"}->Move( 0, -$self->{"pcbThick"} * $self->{"scale"} );
 	}
 
-	$self->{"drawing"}      = SymbolDrawing->new( $self->{"inCAM"}, $self->{"position"} );
-	$self->{"drawingTitle"} = SymbolDrawing->new( $self->{"inCAM"}, $self->{"titlePosition"} );
+	$self->{"drawing"}      = SymbolDrawing->new( $self->{"inCAM"}, $self->{"jobId"},  $self->{"position"} );
+	$self->{"drawingTitle"} = SymbolDrawing->new( $self->{"inCAM"},$self->{"jobId"},  $self->{"titlePosition"} );
 
 	# mirror drawing
 	if ( $self->{"side"} eq "bot" ) {

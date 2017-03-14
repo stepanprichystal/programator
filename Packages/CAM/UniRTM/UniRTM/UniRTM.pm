@@ -37,20 +37,26 @@ sub new {
 sub GetOutlineChains {
 	my $self = shift;
 
-	my @chains = grep { $_->GetComp () eq EnumsRout->Comp_LEFT } @{ $self->{"chains"} }; # only left
-	my @seqs   = map { $_->GetChainSequences() } @chains;
-	@seqs   = grep { !$_->GetIsInside() && $_->GetCyclic() } @seqs; # are not inside + are cyclic
+	my @seqs = map { $_->GetChainSequences() } @{ $self->{"chains"} };
+	@seqs = grep { $_->IsOutline() } @seqs;
+	
+	return @seqs;
 }
 
-# Get left cycle chain
-sub GetNoOutlineChains {
+# Get max chain number
+sub GetMaxChainNumber {
 	my $self = shift;
 
-	my @chains = grep { $_->GetComp () eq EnumsRout->Comp_LEFT } @{ $self->{"chains"} };
-	my @seqs   = map { $_->GetChainSequences() } @chains;
+	my $max = 0;
+	foreach my $ch ( @{ $self->{"chains"} } ) {
 
-	@seqs = grep { $_->GetCyclic() } @seqs;
+		# set max value
+		if ( $ch->GetChainOrder() > $max ) {
+			$max = $ch->GetChainOrder();
+		}
+	}
 
+	return $max;
 }
 
 #-------------------------------------------------------------------------------------------#
@@ -81,34 +87,29 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	#}
 
 	#my %foot = RoutStart->GetRoutFootDown( \@features );
-	
+
 	#my %start = RoutStart->GetRoutStart( \@features );
-	
-	my $draw = RoutDrawing->new($inCAM, $jobId, "o+1", "o");
-	
-	my $rotation = RoutRotation->new(\@features);
-	$rotation->Rotate(90, $draw);
-	
-	$draw->DrawRoute(\@features);
-	
-	 
-	 
+
+	my $draw = RoutDrawing->new( $inCAM, $jobId, "o+1", "o" );
+
+	my $rotation = RoutRotation->new( \@features );
+	$rotation->Rotate( 90, $draw );
+
+	$draw->DrawRoute( \@features );
+
 	$inCAM->COM("sel_delete");
-	
-	
+
 	$rotation->RotateBack();
-	
-	$draw->DrawRoute(\@features);
+
+	$draw->DrawRoute( \@features );
 
 	print STDERR "test";
 
 }
 
-sub Line{
-	my @features = @{shift(@_)};
-	
-	 
-	
+sub Line {
+	my @features = @{ shift(@_) };
+
 }
 
 1;

@@ -131,7 +131,7 @@ sub __ProcessNClayer {
 			next;
 		}
 
-		my $draw = Drawing->new( $inCAM, $lName, $drawingPos, $self->{"pcbThick"}, $side, $l->{"plated"} );
+		my $draw = Drawing->new( $inCAM, $jobId, $lName, $drawingPos, $self->{"pcbThick"}, $side, $l->{"plated"} );
 
 		my $toolSize = $t->GetDrillSize();
 

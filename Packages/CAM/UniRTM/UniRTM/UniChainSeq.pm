@@ -9,26 +9,11 @@ package Packages::CAM::UniRTM::UniRTM::UniChainSeq;
 #3th party library
 use strict;
 use warnings;
-use XML::Simple;
 
 #local library
 use aliased 'Packages::CAM::UniRTM::Enums';
 
-#use aliased 'CamHelpers::CamDTM';
-#use aliased 'CamHelpers::CamDTMSurf';
-#use aliased 'CamHelpers::CamDrilling';
-#use aliased 'Packages::CAM::UniDTM::UniTool::UniToolBase';
-#use aliased 'Packages::CAM::UniDTM::UniTool::UniToolDTM';
-#use aliased 'Packages::CAM::UniDTM::UniTool::UniToolDTMSURF';
-#use aliased 'Packages::CAM::UniDTM::Enums';
-#use aliased 'Enums::EnumsDrill';
-#use aliased 'Enums::EnumsGeneral';
-#use aliased 'Packages::CAM::UniDTM::UniDTM::UniDTMCheck';
-#use aliased 'Connectors::HeliosConnector::HegMethods';
-#use aliased 'Helpers::GeneralHelper';
-#use aliased 'Helpers::FileHelper';
-#use aliased 'CamHelpers::CamHelper';
-#use aliased 'Packages::CAM::UniDTM::PilotDef::PilotDef';
+use aliased 'Enums::EnumsRout';
 
 #-------------------------------------------------------------------------------------------#
 #  Public method
@@ -38,23 +23,22 @@ sub new {
 	my $self = shift;
 	$self = {};
 	bless $self;
- 
- 	$self->{"chain"}       = shift; 
-	$self->{"cyclic"}       = undef;
-	$self->{"direction"}    = undef;
-	
+
+	$self->{"chain"}     = shift;
+	$self->{"cyclic"}    = undef;
+	$self->{"direction"} = undef;
+
 	my @foots = ();
-	$self->{"footsDown"}     = \@foots; # features, which cintain foot_down attribute
-	
-	$self->{"isInside"}     = 0;        # if is inside another chain sequence (inside mean fully inside or at lesast partly)
-	
+	$self->{"footsDown"} = \@foots;    # features, which cintain foot_down attribute
+
+	$self->{"isInside"} = 0;           # if is inside another chain sequence (inside mean fully inside or at lesast partly)
+
 	my @outsideChainSeq = ();
 	$self->{"outsideChainSeq"} = \@outsideChainSeq;    # chain seq ref, which is this chain sequence inside
 
 	my @features = ();
-	$self->{"features"} = \@features; # features, wchich chain sequnece is created from
-	$self->{"featureType"} = undef;  # tell type of features, wchich chain is created from. FeatType_SURF/FeatType_LINEARC
- 
+	$self->{"features"}    = \@features;               # features, wchich chain sequnece is created from
+	$self->{"featureType"} = undef;                    # tell type of features, wchich chain is created from. FeatType_SURF/FeatType_LINEARC
 
 	return $self;
 }
@@ -75,18 +59,19 @@ sub GetPoints {
 
 	my @features = $self->GetFeatures();
 
- 	if($self->GetFeatureType eq Enums->FeatType_SURF){
- 		
- 		my @envPoints =  map { @{$_->{"envelop"}} } $self->GetFeatures();
- 		
- 		push( @points, map { [ $_->{"x"}, $_->{"y"} ] } @envPoints );
- 		
- 	}else{
- 		
- 		push( @points, [ $features[0]->{"x1"}, $features[0]->{"y1"} ] );    # first point "x1,y1" of feature chain
+	if ( $self->GetFeatureType eq Enums->FeatType_SURF ) {
+
+		my @envPoints = map { @{ $_->{"envelop"} } } $self->GetFeatures();
+
+		push( @points, map { [ $_->{"x"}, $_->{"y"} ] } @envPoints );
+
+	}
+	else {
+
+		push( @points, [ $features[0]->{"x1"}, $features[0]->{"y1"} ] );    # first point "x1,y1" of feature chain
 		push( @points, map { [ $_->{"x2"}, $_->{"y2"} ] } $self->GetFeatures() );    # rest of points "x2,y2"
- 	}
- 
+	}
+
 	return @points;
 
 }
@@ -94,9 +79,24 @@ sub GetPoints {
 sub HasFootDown {
 	my $self = shift;
 
-	if(scalar(@{$self->{"footsDown"}})){
+	if ( scalar( @{ $self->{"footsDown"} } ) ) {
 		return 1;
-	}else{
+	}
+	else {
+		return 0;
+	}
+}
+
+# Chain seq is cyclic when com is left, is not inside another rout and is cyclic
+sub IsOutline {
+	my $self = shift;
+
+	if ( $self->GetChain()->GetComp() eq EnumsRout->Comp_LEFT && !$self->GetIsInside() && $self->GetCyclic() ) {
+
+		return 1;
+	}
+	else {
+		
 		return 0;
 	}
 }
@@ -104,15 +104,14 @@ sub HasFootDown {
 sub GetStrInfo {
 	my $self = shift;
 
-	my @features = @{ $self->{"features"}};
-	my @ids =  map { $_->{"id"} } @features;
-	my $idStr = join(";", @ids);
-	
-	my $str = "Chain number: \"".$self->GetChain()->GetChainOrder()."\" ( feature ids: \"".$idStr."\")"; 
+	my @features = @{ $self->{"features"} };
+	my @ids      = map { $_->{"id"} } @features;
+	my $idStr    = join( ";", @ids );
+
+	my $str = "Chain number: \"" . $self->GetChain()->GetChainOrder() . "\" ( feature ids: \"" . $idStr . "\")";
 }
 
 # GET/SET Properties -------------------------------------
- 
 
 sub GetFeatures {
 	my $self = shift;
@@ -136,9 +135,9 @@ sub SetFeatures {
 	$self->{"features"} = $features;
 
 }
- 
+
 sub SetFeatureType {
-	my $self  = shift;
+	my $self = shift;
 	my $type = shift;
 
 	$self->{"featureType"} = $type;
@@ -151,7 +150,6 @@ sub GetFeatureType {
 	return $self->{"featureType"};
 
 }
-
 
 sub SetIsInside {
 	my $self     = shift;
@@ -172,7 +170,7 @@ sub AddOutsideChainSeq {
 	my $self  = shift;
 	my $chain = shift;
 
-	push(@{$self->{"outsideChainSeq"}}, $chain);
+	push( @{ $self->{"outsideChainSeq"} }, $chain );
 
 }
 
@@ -184,7 +182,7 @@ sub GetOutsideChainSeq {
 }
 
 sub SetCyclic {
-	my $self     = shift;
+	my $self   = shift;
 	my $cyclic = shift;
 
 	$self->{"cyclic"} = $cyclic;
@@ -198,7 +196,6 @@ sub GetCyclic {
 
 }
 
-
 sub SetFootsDown {
 	my $self     = shift;
 	my $footDown = shift;
@@ -210,7 +207,7 @@ sub SetFootsDown {
 sub GetFootsDown {
 	my $self = shift;
 
-	return @{$self->{"footsDown"}};
+	return @{ $self->{"footsDown"} };
 
 }
 
@@ -220,7 +217,7 @@ sub GetChain {
 	return $self->{"chain"};
 
 }
- 
+
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#

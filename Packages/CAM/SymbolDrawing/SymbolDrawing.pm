@@ -34,6 +34,7 @@ sub new {
 	bless $self;
 
 	$self->{"inCAM"}    = shift;
+	$self->{"jobId"}    = shift;
 	$self->{"position"} = shift;
 
 	unless ( $self->{"position"} ) {
@@ -47,6 +48,8 @@ sub new {
 
 	my @syms = ();
 	$self->{"symbol"} = SymbolBase->new();    # parent of all symbols and primitives
+	
+	$self->{"symbol"}->SetPassGUID2prim(0);  # we don't want all primitives has same group GUID
 
 	return $self;
 }
@@ -65,6 +68,8 @@ sub AddPrimitive {
 	my $primitive = shift;
 
 	$self->{"symbol"}->AddPrimitive($primitive);
+	
+	
 }
 
 sub SetMirrorX {
@@ -114,6 +119,10 @@ sub __DrawPrimitives {
 		my $pos        = $pInfo->{"position"};
 
 		foreach my $p ( @{$primitives} ) {
+			
+			# Every primitive feature have set attribute feat_group_id
+			CamSymbol->AddCurAttribute($self->{"inCAM"}, $self->{"jobId"}, "feat_group_id", $p->GetGroupGUID());
+			
 
 			if ( $p->GetType() eq Enums->Primitive_LINE ) {
 
@@ -134,7 +143,8 @@ sub __DrawPrimitives {
 
 				$self->__DrawSurfPoly( $p, $pos );
 			}
-
+			
+			CamSymbol->ResetCurAttributes($self->{"inCAM"});
 		}
 	}
 }

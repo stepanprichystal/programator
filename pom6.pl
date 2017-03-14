@@ -16,11 +16,31 @@ use aliased 'Packages::InCAM::InCAM';
 
 
 my $inCAM = InCAM->new();
+
+my @arr = GetAttrParams($inCAM);
  
-$inCAM->COM("get_work_layer");
+sub GetAttrParams {
+	 
+	my $inCAM = shift;
+	my $jobId = shift;
 
+	my @arr = ();
 
+	$inCAM->INFO(
+				  units           => 'mm',
+				  angle_direction => 'ccw',
+				  entity_type     => 'attributes',
+				  #entity_path     => "$jobId",
+				  data_type       => 'ATR',
+				  parameters      => "name+type"
+	);
 
-my $layer = $inCAM->GetReply();
+	for ( my $i = 0 ; $i < scalar( @{ $inCAM->{doinfo}{gATRname} } ) ; $i++ ) {
+		my %info = ();
+		$info{"gATRname"} = ${ $inCAM->{doinfo}{gATRname} }[$i];
+		$info{"gATRtype"} = ${ $inCAM->{doinfo}{gATRtype} }[$i];
+		push( @arr, \%info );
 
-print "\n\n\n\n $layer ========= \n\n\n\n";
+	}
+	return @arr;
+}

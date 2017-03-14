@@ -18,22 +18,6 @@ use aliased 'Packages::CAM::UniRTM::UniRTM::Parser::RoutParser';
 use aliased 'Packages::CAM::UniRTM::UniRTM::Parser::ChainParser';
 use aliased 'Packages::Polygon::PolygonPoints';
 
-#use aliased 'CamHelpers::CamDTM';
-#use aliased 'CamHelpers::CamDTMSurf';
-#use aliased 'CamHelpers::CamDrilling';
-#use aliased 'Packages::CAM::UniDTM::UniTool::UniToolBase';
-#use aliased 'Packages::CAM::UniDTM::UniTool::UniToolDTM';
-#use aliased 'Packages::CAM::UniDTM::UniTool::UniToolDTMSURF';
-#use aliased 'Packages::CAM::UniDTM::Enums';
-#use aliased 'Enums::EnumsDrill';
-#use aliased 'Enums::EnumsGeneral';
-#use aliased 'Packages::CAM::UniDTM::UniDTM::UniDTMCheck';
-#use aliased 'Connectors::HeliosConnector::HegMethods';
-#use aliased 'Helpers::GeneralHelper';
-#use aliased 'Helpers::FileHelper';
-#use aliased 'CamHelpers::CamHelper';
-#use aliased 'Packages::CAM::UniDTM::PilotDef::PilotDef';
-
 #-------------------------------------------------------------------------------------------#
 #  Public method
 #-------------------------------------------------------------------------------------------#
@@ -69,17 +53,22 @@ sub new {
 	return $self;
 }
 
-sub GetChains{
+# return chains sorted by chain order
+sub GetChains {
 	my $self = shift;
-	
-	return @{$self->{"chains"}};
+
+	my @chains = @{ $self->{"chains"} };
+
+	@chains = sort { $a->GetChainOrder() <=> $b->GetChainOrder() } @chains;
+
+	return @chains;
 }
 
-sub GetChainSequences{
+sub GetChainSequences {
 	my $self = shift;
-	
-	my @seqs   = map { $_->GetChainSequences() } @{$self->{"chains"}};
-	
+
+	my @seqs = map { $_->GetChainSequences() } @{ $self->{"chains"} };
+
 	return @seqs;
 }
 
@@ -130,7 +119,6 @@ sub __InitUniRTM {
 					$pos = PolygonPoints->GetPoints2PolygonPosition( \@seqInPoints, \@seqOutPoints );
 				}
 
-				
 				if ( $pos ne PolyEnums->Pos_OUTSIDE ) {
 					$seqIn->SetIsInside(1);
 					$seqIn->AddOutsideChainSeq($seqOut);

@@ -18,7 +18,9 @@ use aliased 'Packages::CAM::SymbolDrawing::Primitive::PrimitiveLine';
 use aliased 'Packages::CAM::SymbolDrawing::Primitive::PrimitiveArcSCE';
 use aliased 'Packages::CAM::SymbolDrawing::Point';
 use aliased 'Packages::CAM::FeatureFilter::FeatureFilter';
+use aliased 'Packages::CAM::FeatureFilter::Enums' => "FilterEnums";
 use aliased 'Packages::Polygon::Features::Features::Features';
+use aliased 'Packages::CAM::UniRTM::UniRTM::UniRTM';
 
 #-------------------------------------------------------------------------------------------#
 #  Public method
@@ -54,9 +56,11 @@ sub DrawRoute {
 	CamHelper->SetStep( $inCAM, $step );
 	CamLayer->WorkLayer( $inCAM, $layer );
 
-	my $draw = SymbolDrawing->new($inCAM);
+	my $draw = SymbolDrawing->new( $inCAM, $self->{"jobId"} );
 
-	#switch start and end point of edges
+	my @groupGUIDs = ();
+
+	# 1) Fill drawing with rout edges
 	for ( my $i = 0 ; $i < scalar(@sorteEdges) ; $i++ ) {
 
 		# draw rout
@@ -68,6 +72,8 @@ sub DrawRoute {
 											 Point->new( $sorteEdges[$i]->{"x2"}, $sorteEdges[$i]->{"y2"} ),
 											 "r400"
 			);
+
+			push( @groupGUIDs, $primitive->GetGroupGUID() );
 		}
 		elsif ( $sorteEdges[$i]{"type"} eq "A" ) {
 
@@ -78,6 +84,8 @@ sub DrawRoute {
 											   $sorteEdges[$i]->{"newDir"},
 											   "r400"
 			);
+
+			push( @groupGUIDs, $primitive->GetGroupGUID() );
 		}
 
 		$draw->AddPrimitive($primitive);
@@ -90,35 +98,49 @@ sub DrawRoute {
 
 	}
 
-	my @ids = $draw->Draw();
+	# 2) get new number of chain (max number from exist chains +1)
+	my $unitRTM = UniRTM->new( $inCAM, $jobId, $step, $layer );
+	my $newChainNum = $unitRTM->GetMaxChainNumber() + 1;
 
+	# 3) Draw new rout
+	$draw->Draw();
+
+	# 4) Select rout and do chain
 	my $f = FeatureFilter->new( $inCAM, $jobId, $layer );
 
-	$f->AddIncludeAtt( "feat_group_guid", $routStartGuid );
+	foreach my $guid (@groupGUIDs) {
+		$f->AddIncludeAtt( "feat_group_id", $guid );
+	}
+
+	$f->SetIncludeAttrCond( FilterEnums->Logic_OR );
+
 	if ( $f->Select() ) {
 
-		# Get id of rout start feature
+		# 1) Get id of rout start feature
 		my $layerFeat = Features->new();
 		$layerFeat->Parse( $inCAM, $jobId, $step, $layer );
-		my @feats = $layerFeat->GetFeatureByGroupGUID();
+		my @feats = $layerFeat->GetFeatureByGroupGUID($routStartGuid);
 
 		# feat for start should be only one
 		if ( scalar(@feats) != 1 ) {
 			die "Error when finding rout start feature";
 		}
 
+		
+
 		$inCAM->COM(
-					 'chain_add',
-					 "layer"          => $layer,
-					 "chain"          => 999,
-					 "size"           => $toolSize / 1000,
-					 "comp"           => $comp,
-					 first            => $feats[0],
-					 "chng_direction" => 0
+			'chain_add',
+			"layer"          => $layer,
+			"chain"          => $newChainNum,
+			"size"           => $toolSize / 1000,
+			"comp"           => $comp,
+			"first"          => $feats[0]->{"id"},
+			"chng_direction" => 0
 		);
 	}
+	
+	$f->Reset();
 }
-
 
 sub DeleteRoute {
 	my $self  = shift;
@@ -136,8 +158,8 @@ sub DeleteRoute {
 
 	my @ids = map { $_->{"id"} } @edges;
 	$f->AddFeatureIndexes( \@ids );
-	
-	if($f->Select()){
+
+	if ( $f->Select() ) {
 		$inCAM->COM("sel_delete");
 	}
 

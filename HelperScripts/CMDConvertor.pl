@@ -8,7 +8,7 @@ use warnings;
 
 # ============ INPUT LINE =================
 my $inputLine =
-"adv_filter_set,filter_name=popup,active=yes,limit_box=no,bound_box=no,indexes=461\;462,srf_values=no,srf_area=no,mirror=any,ccw_rotations=";
+"set_filter_and_or_logic,filter_name=popup,criteria=inc_attr,logic=or";
 my $output = "\$inCAM->COM(";
 my @splitted = split( ",", $inputLine );
 

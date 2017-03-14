@@ -107,7 +107,7 @@ sub GetFeatureByGroupGUID {
 	my $self = shift;
 	my $groupGuid = shift;
 
-	my @features = grep { $_->{"att"}->{"feat_group_id"} eq $groupGuid }  @{ $self->{"features"} };
+	my @features = grep { defined $_->{"att"}->{"feat_group_id"} && $_->{"att"}->{"feat_group_id"} eq $groupGuid }  @{ $self->{"features"} };
 	
 	# feature id are unique per layer, but when BreakSR, more feature can have same id
 	if(scalar(@features)){

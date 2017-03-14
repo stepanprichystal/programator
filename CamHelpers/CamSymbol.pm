@@ -13,6 +13,7 @@ use List::Util qw[sum];
 #loading of locale modules
 
 use aliased 'Enums::EnumsPaths';
+use aliased 'CamHelpers::CamAttributes';
 
 #-------------------------------------------------------------------------------------------#
 #   Package methods
@@ -108,20 +109,18 @@ sub AddLine {
 
 	$polarity = defined $polarity ? $polarity : 'positive';
 
-	return $inCAM->COM(
-				 'add_line',
-				 attributes => 'yes',
-				 "xs"       => $startP->{"x"},
-				 "ys"       => $startP->{"y"},
-				 "xe"       => $endP->{"x"},
-				 "ye"       => $endP->{"y"},
-				 "symbol"   => $symbol,
-				 "polarity" => $polarity
-	);
+	return
+	  $inCAM->COM(
+				   'add_line',
+				   attributes => 'yes',
+				   "xs"       => $startP->{"x"},
+				   "ys"       => $startP->{"y"},
+				   "xe"       => $endP->{"x"},
+				   "ye"       => $endP->{"y"},
+				   "symbol"   => $symbol,
+				   "polarity" => $polarity
+	  );
 }
-
- 
- 
 
 sub AddTable {
 	my $self       = shift;
@@ -207,6 +206,61 @@ sub AddTable {
 	}
 }
 
+# Reset current attributes, which will be added to added symbol
+sub ResetCurAttributes {
+	my $self  = shift;
+	my $inCAM = shift;
+
+	$inCAM->COM("cur_atr_reset");
+
+}
+
+# Set current attributes, which will be added to added symbol
+sub AddCurAttribute {
+	my $self    = shift;
+	my $inCAM   = shift;
+	my $jobId   = shift;
+	my $attName = shift;
+	my $attVal  = shift;
+
+	# decide, which type is attribute
+	my %attrInfo = CamAttributes->GetAttrParamsByName( $inCAM, $jobId, $attName );
+
+	my $int   = 0;
+	my $float   = 0;
+	my $option        = "";
+	my $text          = "";
+
+	if ( $attrInfo{"gATRtype"} eq "int" ) {
+
+		$int  = $attVal;
+	 
+	}
+	elsif ( $attrInfo{"gATRtype"} eq "float" ) {
+
+		$float  = $attVal;
+		 
+	}
+	elsif ( $attrInfo{"gATRtype"} eq "option" ) {
+
+		$option = $attVal;
+
+	}
+	elsif ( $attrInfo{"gATRtype"} eq "text" ) {
+
+		$text = $attVal;
+	}
+
+	$inCAM->COM(
+		'cur_atr_set',
+		"attribute" => $attName,
+		"int"       => $int,
+		"float"     => $float,
+		"option"    => $option,
+		"text"      => $text
+	);
+}
+
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#
@@ -244,7 +298,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	@points = ( \%point1, \%point2, \%point3, \%point4 );
 
-	CamSymbol->AddSurfaceLinePattern( $inCAM, 1, 100, undef, 45, 50, 1000);
+	CamSymbol->AddSurfaceLinePattern( $inCAM, 1, 100, undef, 45, 50, 1000 );
 
 	CamSymbol->AddSurfacePolyline( $inCAM, \@points, 1 )
 
