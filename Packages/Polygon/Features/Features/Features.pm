@@ -44,14 +44,17 @@ sub Parse {
 	my $step  = shift;
 	my $layer = shift;
 	my $breakSR = shift;
+	my $selected = shift; # parse only selected feature
 	
 	
-	my $breakSRVal;
+	my $breakSRVal = "";
 	if($breakSR){
 		$breakSRVal = "break_sr+";
-	}else{
-		
-		$breakSRVal = "";
+	} 
+	
+	my $selectedVal= "";
+	if($selected){
+		$selectedVal = "select+";
 	}
  
 
@@ -63,7 +66,7 @@ sub Parse {
 								 entity_type     => 'layer',
 								 entity_path     => "$jobId/$step/$layer",
 								 data_type       => 'FEATURES',
-								 options         => $breakSRVal."feat_index+f0",
+								 options         => $breakSRVal.$selectedVal."feat_index+f0",
 								 parse           => 'no'
 	);
 	my $f;

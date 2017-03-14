@@ -5,6 +5,7 @@
 package Packages::GuideSubs::Routing::Check1UpChainTool;
 
 #3th party library
+use utf8;
 use strict;
 use warnings;
 use Math::Trig;
@@ -12,6 +13,7 @@ use Math::Trig;
 #local library
 use aliased 'Packages::CAM::UniRTM::UniRTM::UniRTM';
 use aliased 'Enums::EnumsGeneral';
+use aliased 'CamHelpers::CamAttributes';
 
 #-------------------------------------------------------------------------------------------#
 #  Public method
@@ -45,11 +47,11 @@ sub ToolsAreOrdered {
 			my $str =
 			    "Tool: \""
 			  . $chains[$i]->GetChainSize()
-			  . "µm\" (chain: \""
+			  . "Âµm\" (chain: \""
 			  . $chains[$i]->GetChainOrder()
 			  . "\") is placed after larger tool: \""
 			  . $chains[ $i - 1 ]->GetChainSize()
-			  . "µm\" (chain: \""
+			  . "Âµm\" (chain: \""
 			  . $chains[ $i - 1 ]->GetChainOrder() . "\")\n";
 			push( @wrongSorted, $str );
 			$result = 0;
@@ -62,8 +64,8 @@ sub ToolsAreOrdered {
 		my $str = join( "", @wrongSorted );
 
 		my @m =
-		  ( "Ve vrstvì: \"" . $layer . "\" jsou špatnì seøazené nástroje frézování:\n $str", " Je tohle poøadí frézování zámìrné?" );
-		my @b = ( "Ano je to zámìr", "Není, opravím to" );
+		  ( "Ve vrstvÄ›: \"" . $layer . "\" jsou Å¡patnÄ› seÅ™azenÃ© nÃ¡stroje pro frÃ©zovÃ¡nÃ­:\n $str", " Je tohle poÅ™adÃ­ frÃ©zovÃ¡nÃ­ zÃ¡mÄ›rnÃ©?" );
+		my @b = ( "Ano je to zÃ¡mÄ›r", "NenÃ­, opravÃ­m to" );
 		$messMngr->ShowModal( -1, EnumsGeneral->MessageType_WARNING, \@m, \@b );    #  Script se zastavi
 		if ( $messMngr->Result() == 0 ) {
 			$result = 1;
@@ -104,11 +106,9 @@ sub OutlineToolIsLast {
 
 		foreach my $chSeq ( $ch->GetChainSequences() ) {
 
-			if ( $chSeq->IsOutline() ) {
-
-				unless ($outlineStart) {
-					$outlineStart = 1;
-				}
+			if ( $chSeq->IsOutline() && !$outlineStart ) {
+ 				
+ 				$outlineStart = 1; 
 				next;
 			}
 
@@ -118,11 +118,9 @@ sub OutlineToolIsLast {
 					$result = 0;
 
 					$$mess .=
-					    "Ve vrstvì: \""
+					    "Ve vrstvÄ›: \""
 					  . $layer
-					  . "\" jsou špatnì seøazené frézy. Obrysové frézy musí být v seznamu poslední. "
-					  . $chSeq->GetStrInfo() . " \n";
-
+					  . "\" jsou Å¡patnÄ› seÅ™azenÃ© frÃ©zy. FrÃ©za ". $chSeq->GetStrInfo() ." nesmÃ­ bÃ½t za obrysovÃ½mi frÃ©zami. Oprav to.\n"; 
 				}
 			}
 		}
@@ -152,7 +150,9 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $mess = "";
 
-	my $res = Check1UpChainTool->ToolsAreOrdered( $inCAM, $jobId, $step, $layer, $messMngr );
+	#my $res = Check1UpChainTool->ToolsAreOrdered( $inCAM, $jobId, $step, $layer, $messMngr );
+	
+	my $res = Check1UpChainTool->OutlineToolIsLast( $inCAM, $jobId, $step, $layer, \$mess );
 
 	print $mess;
 
