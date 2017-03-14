@@ -225,6 +225,17 @@ sub SetLayerTypeLayer {
 	$inCAM->COM( "matrix_layer_type", "job" => $jobId, "matrix" => "matrix", "layer" => $layer, "type" => $type );
 
 }
+# Set polarity of layer
+sub SetLayerPolarityLayer {
+	my $self  = shift;
+	my $inCAM = shift;
+	my $jobId = shift;
+	my $layer = shift;
+	my $polarity  = shift;
+
+	$inCAM->COM( "matrix_layer_polar", "job" => $jobId, "matrix" => "matrix", "layer" => $layer, "polarity" => $polarity );
+
+}
 
 # Display single layer and set as work layer
 sub WorkLayer {
