@@ -114,12 +114,11 @@ sub GetRoutSequences {
 
 		if ( scalar(@seq) == 0 ) {
 			push( @seq, $edges[0] );
-			splice @edges, 0, 1;             # remove from edges
+			splice @edges, 0, 1;    # remove from edges
 		}
 
- 
 		#find next part of chain
-		my $isFind = 0;    # if some edges from @edge array was find
+		my $isFind = 0;             # if some edges from @edge array was find
 
 		for ( my $i = 0 ; $i < scalar(@seq) ; $i++ ) {
 
@@ -129,14 +128,16 @@ sub GetRoutSequences {
 			my $y2seq = sprintf( "%.3f", $seq[$i]->{"y2"} );
 
 			for ( my $j = 0 ; $j < scalar(@edges) ; $j++ ) {
-				
+
 				my $x1edge = sprintf( "%.3f", $edges[$j]->{"x1"} );
 				my $y1edge = sprintf( "%.3f", $edges[$j]->{"y1"} );
 				my $x2edge = sprintf( "%.3f", $edges[$j]->{"x2"} );
 				my $y2edge = sprintf( "%.3f", $edges[$j]->{"y2"} );
-	 
-				if ( ($x1seq == $x1edge && $y1seq == $y1edge) || ($x1seq == $x2edge && $y1seq == $y2edge)  ||
-					 ($x2seq == $x1edge && $y2seq == $y1edge) || ($x2seq == $x2edge && $y2seq == $y2edge)   )
+
+				if (    ( $x1seq == $x1edge && $y1seq == $y1edge )
+					 || ( $x1seq == $x2edge && $y1seq == $y2edge )
+					 || ( $x2seq == $x1edge && $y2seq == $y1edge )
+					 || ( $x2seq == $x2edge && $y2seq == $y2edge ) )
 				{
 
 					$isFind = 1;
@@ -171,9 +172,17 @@ sub GetRoutSequences {
 
 # Return sorted rout  CW
 # Works out only for close polygon
+# If rout is open, return empty array
 sub GetSortedRout {
 	my $self  = shift;
 	my @edges = @{ shift(@_) };
+
+	# Result of sorting edges
+	my %result = ();
+	$result{"result"}  = 1;        # if 1 sorting ok, else rout was open
+	$result{"changes"} = 0;        # sme changes are done, arc fragment, switch edge points..
+	$result{"openPoint"} = undef;        # if rout is open, point where rout is open
+	$result{"edges"}   = undef;    # sorted edges
 
 	my @sorteEdges = ();
 	my $sorted     = 0;
@@ -245,6 +254,9 @@ sub GetSortedRout {
 			if ( $isFind == 0 ) {
 				$sorted = 1;
 				$isOpen = 1;
+				my %inf = ("x" => $x , "y"=>  $y);
+				$result{"openPoint"} = \%inf;
+				
 				last;
 			}
 
@@ -269,8 +281,9 @@ sub GetSortedRout {
 
 	# if polygon is not close, return 0
 	if ($isOpen) {
-		@sorteEdges = ();
-		return @sorteEdges;
+		
+		$result{"result"} = 0;
+		return %result;
 	}
 
 	#Set polygon as Clockwise
@@ -317,10 +330,20 @@ sub GetSortedRout {
 
 	#pokud obrys obsahuje obloukz, je potreba je potreba je dostatecne aproximovat,
 	#aby jsme spolehlive spocitali zda je obrys CW nebo CCW
+	my $fragmented = 0;
+	@sorteEdges = RoutArc->FragmentArcReplace( \@sorteEdges, -1, \$fragmented );
 
-	@sorteEdges = RoutArc->FragmentArcReplace( \@sorteEdges, -1 );
 
-	return @sorteEdges;
+	my $switched = scalar(grep { $_->{"switchPoints"} } @sorteEdges);
+
+	# Test if changes on rout  are done
+	if($switched || $fragmented){
+		$result{"changes"} = 1;
+	}
+	
+	$result{"edges"} = \@sorteEdges;
+ 
+	return %result;
 }
 
 #-------------------------------------------------------------------------------------------#

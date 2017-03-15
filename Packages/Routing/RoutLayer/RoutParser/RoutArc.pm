@@ -28,6 +28,7 @@ sub FragmentArcReplace {
 	my $self             = shift;
 	my @sorteEdges       = @{ shift(@_) };
 	my $defaultSegNumber = shift;
+	my $fragmented = shift;
  
 
 	#pokud obrys obsahuje obloukz, je potreba je potreba je dostatecne aproximovat,
@@ -49,6 +50,7 @@ sub FragmentArcReplace {
 
 			if ( scalar(@arcPoints) > 2 ) {
  
+				$$fragmented = 1;
 
 				#insert new arc
 				for ( my $j = 0 ; $j < scalar(@arcPoints) - 1 ; $j++ ) {

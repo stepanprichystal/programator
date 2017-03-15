@@ -250,7 +250,7 @@ sub TestFindStart {
 
 		my %modify = RoutStart->RoutNeedModify( \@features );
 
-		if ( $modify{"result"} ) {
+		if ( $modify{"result"} ) { # tadz p5idat test na to jestli bzla seqence kodifikovana pri nacitani
 
 			my @m =
 			  (   "Vhodní kandidáti na patku (při rotaci dps: $rotateAngle) byli nalezeni, ale fréza se musí uparvit "
@@ -269,9 +269,9 @@ sub TestFindStart {
 				return $result;
 			}
 
+
 			RoutStart->ProcessModify( \%modify, \@features );
 			my %startResult = RoutStart->GetRoutFootDown( \@features );
-
 			unless ( $startResult{"result"} ) {
 
 				my @m = ( "Začátek frézy pro levý horní roh frézy: " . $left->GetStrInfo() . " nebyl nalezen" );

@@ -27,6 +27,8 @@ sub new {
 	$self->{"chain"}     = shift;
 	$self->{"cyclic"}    = undef;
 	$self->{"direction"} = undef;
+	
+	$self->{"modified"} = 0; # only when seq is cyclic. If modified = 1, sequence was modified during parsing (arc fragment, edge point switching etc..)
 
 	my @foots = ();
 	$self->{"footsDown"} = \@foots;    # features, which cintain foot_down attribute
@@ -215,6 +217,21 @@ sub GetChain {
 	my $self = shift;
 
 	return $self->{"chain"};
+
+}
+
+sub SetModified {
+	my $self     = shift;
+	my $modified = shift;
+
+	$self->{"modified"} = $modified;
+
+}
+
+sub GetModified {
+	my $self = shift;
+
+	return @{ $self->{"modified"} };
 
 }
 

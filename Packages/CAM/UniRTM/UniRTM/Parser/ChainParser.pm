@@ -131,12 +131,13 @@ sub __SetChainSeqProperties {
 	my @features = $uniChainSeq->GetFeatures();
 
 	# 2) This sort chain featues (sort only cyclic polygon)
-	my @sorted = RoutCyclic->GetSortedRout( \@features );
-
-	if (@sorted) {
+	my %result = RoutCyclic->GetSortedRout( \@features );
+	
+	if($result{"result"}){
 
 		$uniChainSeq->SetCyclic(1);
-		$uniChainSeq->SetFeatures( \@sorted );
+		$uniChainSeq->SetFeatures( $result{"edges"} );
+		$uniChainSeq->SetModified( $result{"changes"} );
 
 	}
 	else {

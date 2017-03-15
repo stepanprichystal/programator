@@ -16,6 +16,25 @@ use warnings;
 #  Public method
 #-------------------------------------------------------------------------------------------#
  
+ #Detecting of small inner radiuses
+sub CheckSmallRadius {
+	my $self       = shift;
+	my @sorteEdges = @{ shift(@_) };
+	 
+	my $result = 1;
+
+	if ( scalar(@sorteEdges) > 1 ) {
+
+		if ( grep { $_->{"diameter"} <= 2.2 && $_->{"newDir"} eq "CCW" } @sorteEdges ) {
+			$result = 0;
+	 
+		}
+	}
+	
+	return $result;
+}
+ 
+ 
  sub CheckNarrowPlaces {
 	my $self       = shift;
 	my @sorteEdges = @{ shift(@_) };
