@@ -104,6 +104,11 @@ sub CheckToolParameters {
 	my $result = 1;
  
 	foreach my $l (@layers) {
+		
+		# if uniDTM check fail, dont do another control
+		unless($l->{"uniDTM"}->CheckTools()){
+			next;
+		}
 
 		unless ( $l->{"uniDTM"}->GetChecks()->CheckMagazine($mess) ) {
 			$result = 0;
@@ -120,6 +125,11 @@ sub CheckToolParameters {
 	
 	 # 3) Check if rout layers don't contain tool less than 500µm (exept score)
 	foreach my $l ( grep { $_->{"gROWlayer_type"} eq "rout" } @layers ) {
+		
+		# if uniDTM check fail, dont do another control
+		unless($l->{"uniDTM"}->CheckTools()){
+			next;
+		}
 
 		my @unitTools = $l->{"uniDTM"}->GetTools();
 
