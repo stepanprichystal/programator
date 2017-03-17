@@ -15,6 +15,7 @@ use aliased 'Packages::CAM::UniRTM::UniRTM::UniChainSeq';
 use aliased 'Packages::CAM::UniRTM::UniRTM::UniChain';
 use aliased 'Packages::CAM::UniRTM::Enums';
 use aliased 'Enums::EnumsDrill';
+use aliased 'Enums::EnumsRout';
 use aliased 'Packages::Routing::RoutLayer::RoutParser::RoutCyclic';
 use List::MoreUtils qw(uniq);
 
@@ -132,10 +133,11 @@ sub __SetChainSeqProperties {
 
 	# 2) This sort chain featues (sort only cyclic polygon)
 	my %result = RoutCyclic->GetSortedRout( \@features );
-	
-	if($result{"result"}){
+
+	if ( $result{"result"} ) {
 
 		$uniChainSeq->SetCyclic(1);
+		$uniChainSeq->SetDirection( RoutCyclic->GetRoutDirection( $result{"edges"} ) );
 		$uniChainSeq->SetFeatures( $result{"edges"} );
 		$uniChainSeq->SetModified( $result{"changes"} );
 
@@ -150,7 +152,7 @@ sub __SetChainSeqProperties {
 
 	if ( scalar(@foots) ) {
 
-		$uniChainSeq->SetFootsDown(\@foots);
+		$uniChainSeq->SetFootsDown( \@foots );
 	}
 
 	# 5) Set features type

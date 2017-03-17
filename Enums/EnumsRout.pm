@@ -3,8 +3,8 @@ package Enums::EnumsRout;
 
 # represent type of DTM vzsledne/vratne holes
 use constant {
-			   Dir_CW   => "directionCW",
-			   Dir_CCW   => "directionCCW"
+			   Dir_CW   => "CW",
+			   Dir_CCW   => "CCW"
 };
  
 use constant {

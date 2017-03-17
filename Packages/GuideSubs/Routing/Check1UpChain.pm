@@ -9,16 +9,20 @@ use utf8;
 use strict;
 use warnings;
 use Math::Trig;
+use Clone qw(clone);
 
 #local library
 use aliased 'Packages::CAM::UniRTM::UniRTM::UniRTM';
 use aliased 'Enums::EnumsRout';
 use aliased 'CamHelpers::CamAttributes';
+
 use aliased 'Enums::EnumsGeneral';
 use aliased 'Packages::Routing::RoutLayer::RoutDrawing::RoutDrawing';
 use aliased 'Packages::Routing::RoutLayer::RoutStart::RoutStart';
 use aliased 'Packages::Routing::RoutLayer::RoutDrawing::RoutDrawing';
 use aliased 'Packages::Routing::RoutLayer::RoutStart::RoutRotation';
+	use aliased 'Enums::EnumsGeneral';
+	use aliased 'CamHelpers::CamHelper';
 
 #-------------------------------------------------------------------------------------------#
 #  Public method
@@ -229,81 +233,146 @@ sub TestFindStart {
 	my $rotateAngle = shift;    # if foot down is tested on rotated pcb. Rotation is CCW
 	my $messMngr    = shift;
 
-	my $result     = 1;
-	my $routModify = 0;
+	my %result = ( "result" => 1, "startEdge" => undef );
 
 	my $unitRTM = UniRTM->new( $inCAM, $jobId, $step, $layer );
 
 	my @lefts = $unitRTM->GetOutlineChains();
+	my @res   = ();
 
 	foreach my $left (@lefts) {
 
-		my @features = $left->GetFeatures();
-
-		my $rotation = RoutRotation->new( \@features );    # class responsible for rout rotaion
-
-		# if foot down is tested on rotated pcb
-		if ( $rotateAngle > 0 ) {
-
-			$rotation->Rotate($rotateAngle);
-		}
-
-		my %modify = RoutStart->RoutNeedModify( \@features );
-
-		if ( $modify{"result"} ) { # tadz p5idat test na to jestli bzla seqence kodifikovana pri nacitani
-
-			my @m =
-			  (   "Vhodní kandidáti na patku (při rotaci dps: $rotateAngle) byli nalezeni, ale fréza se musí uparvit "
-				. $left->GetStrInfo()
-				. ".\n" );
-			my @b = ( "Upravit frézu", "Neupravovat" );
-			$messMngr->ShowModal( -1, EnumsGeneral->MessageType_WARNING, \@m, \@b );    #  Script se zastavi
-			if ( $messMngr->Result() == 0 ) {
-
-				$routModify = 1;
-
-			}
-			else {
-
-				$result = 0;
-				return $result;
-			}
-
-
-			RoutStart->ProcessModify( \%modify, \@features );
-			my %startResult = RoutStart->GetRoutFootDown( \@features );
-			unless ( $startResult{"result"} ) {
-
-				my @m = ( "Začátek frézy pro levý horní roh frézy: " . $left->GetStrInfo() . " nebyl nalezen" );
-
-				$messMngr->ShowModal( -1, EnumsGeneral->MessageType_WARNING, \@m );    #  Script se zastavi
-				$result = 0;
-			}
-			else {
-
-				if ($routModify) {
-
-					# překreslit frézu
-					my $draw = RoutDrawing->new( $inCAM, $jobId, $step, $layer );
-
-					my @delete = grep { $_->{"id"} > 0 } @features;
-
-					$draw->DeleteRoute( \@delete );
-
-					# if foot down is tested on rotated pcb, rotate back before drawing
-					if ( $rotateAngle > 0 ) {
-						$rotation->RotateBack();
-					}
-
-					$draw->DrawRoute( \@features, 2000, EnumsRout->Comp_LEFT, $startResult{"edge"} );    # draw new
-
-				}
-
-			}
-		}
+		my %result = $self->TestFindStartSingle( $inCAM, $jobId, $step, $layer, $rotateAngle, $left, $messMngr );
+		push( @res, \%result );
 	}
 
-	return $result;
+	return @res;
+}
+
+sub TestFindStartSingle {
+	my $self        = shift;
+	my $inCAM       = shift;
+	my $jobId       = shift;
+	my $step        = shift;
+	my $layer       = shift;
+	my $rotateAngle = shift;    # if foot down is tested on rotated pcb. Rotation is CCW
+	my $left        = shift;
+	my $messMngr    = shift;
+
+	my %result = ( "result" => 1, "startEdge" => undef, "angle" => $rotateAngle );
+
+	my @features = $left->GetFeatures();
+
+	my $rotation = RoutRotation->new( \@features );    # class responsible for rout rotaion
+
+	# if foot down is tested on rotated pcb
+	if ( $rotateAngle > 0 ) {
+
+		$rotation->Rotate($rotateAngle);
+	}
+
+	my %modify = RoutStart->RoutNeedModify( \@features );
+
+	my $routModify = 0;
+
+	if ( $modify{"result"} ) {                         # tadz p5idat test na to jestli bzla seqence kodifikovana pri nacitani
+
+		$routModify = 1;
+
+		RoutStart->ProcessModify( \%modify, \@features );
+	}
+
+	my %startResult = RoutStart->GetRoutStart( \@features );
+	my %footResult  = RoutStart->GetRoutFootDown( \@features );
+
+	# if foot down is tested on rotated pcb, rotate back before drawing
+	if ( $rotateAngle > 0 ) {
+		$rotation->RotateBack();
+	}
+
+	unless ( $startResult{"result"} ) {
+
+		my @m = ( "Začátek frézy pro dps : " . $left->GetStrInfo() . " při rotaci dps: $rotateAngle° nebyl nalezen" );
+
+		$messMngr->ShowModal( -1, EnumsGeneral->MessageType_WARNING, \@m );    #  Script se zastavi
+		$result{"result"} = 0;
+	}
+	else {
+
+		if ( $routModify || $left->GetModified() ) {
+
+			# překreslit frézu
+			my $draw = RoutDrawing->new( $inCAM, $jobId, $step, $layer );
+
+			my @delete = grep { $_->{"id"} > 0 } @features;
+
+			$draw->DeleteRoute( \@delete );
+
+			$draw->DrawRoute( \@features, 2000, EnumsRout->Comp_LEFT, $startResult{"edge"} );    # draw new
+
+			# Show information message
+			my @m = (
+					  "Fréza byla upravena, aby byly nalezeni vhodní kandidáti na patku (při rotaci dps: $rotateAngle°)",
+					  "Fréza: " . $left->GetStrInfo()
+			);
+
+			$messMngr->ShowModal( -1, EnumsGeneral->MessageType_WARNING, \@m );                  #  Script se zastavi
+		}
+
+		my $startCopy = clone( $footResult{"edge"} );
+		$result{"startEdge"} = $startCopy;
+	}
+
+	return %result;
+}
+
+sub TestFindAndDrawStarts {
+	my $self     = shift;
+	my $inCAM    = shift;
+	my $jobId    = shift;
+	my $step     = shift;
+	my $layer    = shift;
+	my $angle0   = shift;    # if foot down is tested on rotated pcb. Rotation is CCW
+	my $angle270 = shift;    # if foot down is tested on rotated pcb. Rotation is CCW
+	my $messMngr = shift;
+
+	my @foots = ();
+
+	if ($angle270) {
+		my @res = $self->TestFindStart( $inCAM, $jobId, $step, $layer, 270, $messMngr );
+		push( @foots, @res );
+	}
+
+	if ($angle0) {
+		my @res = $self->TestFindStart( $inCAM, $jobId, $step, $layer, 0, $messMngr );
+		push( @foots, @res );
+	}
+
+
+
+	# Draw foots
+
+	my $lName = "footdown_" . $jobId;
+
+	if ( CamHelper->LayerExists( $inCAM, $jobId, $lName ) ) {
+		$inCAM->COM( "delete_layer", "layer" => $lName );
+	}
+
+	$inCAM->COM( 'create_layer', layer => $lName, context => 'misc', type => 'document', polarity => 'positive', ins_layer => '' );
+
+	my $drawView = RoutDrawing->new( $inCAM, $jobId, $step, $lName );
+
+	$drawView->DrawStartRoutResult( \@foots );
+
+	$inCAM->COM(
+				 "display_layer",
+				 name    => $layer,
+				 display => "yes",
+				 number  => 2
+	);
+
+	$inCAM->COM( "work_layer", name => $layer );
+
 }
 
 #-------------------------------------------------------------------------------------------#
@@ -315,26 +384,26 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	use aliased 'Packages::GuideSubs::Routing::Check1UpChain';
 	use aliased 'Packages::InCAM::InCAM';
 	use aliased 'Managers::MessageMngr::MessageMngr';
-	use aliased 'Enums::EnumsGeneral';
+
+	use aliased 'Packages::Routing::RoutLayer::RoutDrawing::RoutDrawing';
 
 	my $messMngr = MessageMngr->new("D3333");
 
 	my $inCAM = InCAM->new();
 
-	my $jobId = "f52456";
-	my $step  = "o+1";
-	my $layer = "d";
+	my $jobId = "d99992";
+	my $step  = "o";
+
+	# Get work layer
+	$inCAM->COM('get_work_layer');
+
+	my $layer = "$inCAM->{COMANS}";    # layer where rout is original rout
 
 	my $mess = "";
 
-	#my $res = Check1UpChain->LeftRoutChecks($inCAM, $jobId, $step, $layer, \$mess );
+	my $res = Check1UpChain->TestFindAndDrawStarts($inCAM, $jobId, $step, $layer, 1, 1, $messMngr );
 
-	my $res = Check1UpChain->TestFindStart( $inCAM, $jobId, $step, $layer, 270, $messMngr );
-	$res = Check1UpChain->TestFindStart( $inCAM, $jobId, $step, $layer, 0, $messMngr );
-
-	print $mess;
-
-	print STDERR "\nReult is $res \n";
+	#my $res = Check1UpChain->OnlyBridges( $inCAM, $jobId, $step, $layer, $messMngr );
 
 }
 

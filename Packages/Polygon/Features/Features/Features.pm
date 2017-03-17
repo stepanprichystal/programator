@@ -38,27 +38,25 @@ sub new {
 #parse features layer
 
 sub Parse {
-	my $self  = shift;
-	my $inCAM = shift;
-	my $jobId = shift;
-	my $step  = shift;
-	my $layer = shift;
-	my $breakSR = shift;
-	my $selected = shift; # parse only selected feature
-	
-	
+	my $self     = shift;
+	my $inCAM    = shift;
+	my $jobId    = shift;
+	my $step     = shift;
+	my $layer    = shift;
+	my $breakSR  = shift;
+	my $selected = shift;    # parse only selected feature
+
 	my $breakSRVal = "";
-	if($breakSR){
+	if ($breakSR) {
 		$breakSRVal = "break_sr+";
-	} 
-	
-	my $selectedVal= "";
-	if($selected){
+	}
+
+	my $selectedVal = "";
+	if ($selected) {
 		$selectedVal = "select+";
 	}
- 
 
-	$inCAM->COM("units", "type"=> "mm");
+	$inCAM->COM( "units", "type" => "mm" );
 
 	my $infoFile = $inCAM->INFO(
 								 units           => 'mm',
@@ -66,7 +64,7 @@ sub Parse {
 								 entity_type     => 'layer',
 								 entity_path     => "$jobId/$step/$layer",
 								 data_type       => 'FEATURES',
-								 options         => $breakSRVal.$selectedVal."feat_index+f0",
+								 options         => $breakSRVal . $selectedVal . "feat_index+f0",
 								 parse           => 'no'
 	);
 	my $f;
@@ -91,15 +89,16 @@ sub GetFeatures {
 # Return features by feature id (unique per layer)
 sub GetFeatureById {
 	my $self = shift;
-	my $id = shift;
+	my $id   = shift;
 
-	my @features = grep { $_->{"id"} eq $id }  @{ $self->{"features"} };
-	
+	my @features = grep { $_->{"id"} eq $id } @{ $self->{"features"} };
+
 	# feature id are unique per layer, but when BreakSR, more feature can have same id
-	if(scalar(@features)){
-		return @features
-	}else{
-		
+	if ( scalar(@features) ) {
+		return @features;
+	}
+	else {
+
 		return 0;
 	}
 
@@ -107,19 +106,15 @@ sub GetFeatureById {
 
 # Return features by feature id (unique per layer)
 sub GetFeatureByGroupGUID {
-	my $self = shift;
+	my $self      = shift;
 	my $groupGuid = shift;
 
-	my @features = grep { defined $_->{"att"}->{"feat_group_id"} && $_->{"att"}->{"feat_group_id"} eq $groupGuid }  @{ $self->{"features"} };
-	
-	# feature id are unique per layer, but when BreakSR, more feature can have same id
-	if(scalar(@features)){
-		return @features
-	}else{
-		
-		return 0;
-	}
+	my @features = grep { defined $_->{"att"}->{"feat_group_id"} && $_->{"att"}->{"feat_group_id"} eq $groupGuid } @{ $self->{"features"} };
 
+	# feature id are unique per layer, but when BreakSR, more feature can have same id
+	 
+	return @features;
+ 
 }
 
 sub __ParseLines {
@@ -129,27 +124,24 @@ sub __ParseLines {
 
 	my @features = ();
 
-	for(my $i = 0; $i < scalar(@lines); $i++) {
-		
+	for ( my $i = 0 ; $i < scalar(@lines) ; $i++ ) {
+
 		my $l = $lines[$i];
 
 		if ( $l =~ /###/ ) { next; }
 
 		my $featInfo = Item->new();
-		
+
 		my @attr = ();
 
-
 		# line, arcs, pads
-		if($l =~ m/^#(\d*)\s*#(\w)\s*((-?[0-9]*\.?[0-9]*\s)*)\s*r([0-9]*\.?[0-9]*)\s*([\w\d\s]*);?(.*)/i)
-		{
+		if ( $l =~ m/^#(\d*)\s*#(\w)\s*((-?[0-9]*\.?[0-9]*\s)*)\s*r([0-9]*\.?[0-9]*)\s*([\w\d\s]*);?(.*)/i ) {
 			$featInfo->{"id"}   = $1;
 			$featInfo->{"type"} = $2;
-			
+
 			my @points = split( /\s/, $3 );
-			
+
 			#remove sign from zero value, when after rounding there minus left
- 
 
 			$featInfo->{"x1"} = $points[0];
 			$featInfo->{"y1"} = $points[1];
@@ -157,99 +149,99 @@ sub __ParseLines {
 			$featInfo->{"y2"} = $points[3];
 
 			$featInfo->{"thick"} = $5;
-			
-			
+
 			if ( $featInfo->{"type"} eq "A" ) {
 
-			#$featInfo->{"xmid"} = sprintf( "%.3f", $points[4] );
-			#$featInfo->{"ymid"} = sprintf( "%.3f", $points[5] );
-			$featInfo->{"xmid"} = $points[4];
-			$featInfo->{"ymid"} = $points[5];
+				#$featInfo->{"xmid"} = sprintf( "%.3f", $points[4] );
+				#$featInfo->{"ymid"} = sprintf( "%.3f", $points[5] );
+				$featInfo->{"xmid"} = $points[4];
+				$featInfo->{"ymid"} = $points[5];
 
-			my $dir = $6;
-			$dir =~ m/([YN])/;
-			$featInfo->{"oriDir"} = $1 eq "Y" ? "CW" : "CCW";
+				my $dir = $6;
+				$dir =~ m/([YN])/;
+				
+				$featInfo->{"oriDir"} = $1 eq "Y" ? "CW" : "CCW";
+				
 			}
-			
-			
+
 			@attr = split( ",", $7 );
-		 
-			
+
 		}
+
 		# surfaces
-		elsif($l =~ m/^#(\d*)\s*#(s)\s*([\w\d\s]*);?(.*)/i){
-		
+		elsif ( $l =~ m/^#(\d*)\s*#(s)\s*([\w\d\s]*);?(.*)/i ) {
+
 			$featInfo->{"id"}   = $1;
 			$featInfo->{"type"} = $2;
 			@attr = split( ",", $4 );
-			
+
 			my $l = $lines[$i];
-			
+
 			$i++;
 			my @envelop = ();
-			while ( $lines[$i] =~ m/^#\s*#o[besc]\s*((-?[0-9]*\.?[0-9]*\s)*)/i ){
-				
-				my $lll = $lines[$i];
+			while ( $lines[$i] =~ m/^#\s*#o[besc]\s*((-?[0-9]*\.?[0-9]*\s)*)/i ) {
+
+				my $lll  = $lines[$i];
 				my $lll2 = $1;
-				
+
 				my @points = split( /\s/, $1 );
-				
-				for(my $ip = 0;  $ip <scalar(@points); $ip +=2){
-					
-					my @p = ( sprintf("%.2f",$points[$ip]),  sprintf("%.2f",$points[$ip+1]) ); # x and y
-					push(@envelop, \@p);
+
+				for ( my $ip = 0 ; $ip < scalar(@points) ; $ip += 2 ) {
+
+					my @p = ( sprintf( "%.2f", $points[$ip] ), sprintf( "%.2f", $points[ $ip + 1 ] ) );    # x and y
+					push( @envelop, \@p );
 				}
- 
+
 				$i++;
 			}
-			
+
 			$i--;
 
 			# 1) Reduce same point from surface
 			my @envReduced = ();
-			foreach my $e (@envelop){
-				
-				unless(grep { @{$_}[0] == @{$e}[0]  &&    @{$_}[1] == @{$e}[1]} @envReduced ){
+			foreach my $e (@envelop) {
 
-					push(@envReduced, $e);
-				} 
+				unless ( grep { @{$_}[0] == @{$e}[0] && @{$_}[1] == @{$e}[1] } @envReduced ) {
+
+					push( @envReduced, $e );
+				}
 			}
-			
+
 			# 2 ) If points cnt is smaller than 3, do not envelop
 			my @envelopFinal = ();
-			if(scalar(@envReduced) < 3){
-				push(@envelopFinal, $envReduced[0]);
-			}else{
-				@envelopFinal = PolygonPoints->GetConvexHull(\@envelop);
-			 
+			if ( scalar(@envReduced) < 3 ) {
+				push( @envelopFinal, $envReduced[0] );
 			}
-			
+			else {
+				@envelopFinal = PolygonPoints->GetConvexHull( \@envelop );
+
+			}
+
 			my @envelopFinalHash = ();
-			foreach my $p (@envelopFinal){
-				my %pInf = ("x" => @{$p}[0], "y" => @{$p}[1]);
- 				push(@envelopFinalHash, \%pInf);
+			foreach my $p (@envelopFinal) {
+				my %pInf = ( "x" => @{$p}[0], "y" => @{$p}[1] );
+				push( @envelopFinalHash, \%pInf );
 			}
-	 
+
 			$featInfo->{"envelop"} = \@envelopFinalHash;
-			
+
 			# 3) Set center point of surface
-			my $centroid = PolygonPoints->GetCentroid(\@envelopFinal);
- 	
-		
-		}else{
-			
+			my $centroid = PolygonPoints->GetCentroid( \@envelopFinal );
+
+		}
+		else {
+
 			next;
 		}
 
-	 
-	 	# parse attributes
+		# parse attributes
 		foreach my $at (@attr) {
 
 			my @attValue = split( "=", $at );
-			
+
 			# some attributes doesn't have value, so put there "-"
-			unless(defined  $attValue[1]){
-				 $attValue[1] = "-";
+			unless ( defined $attValue[1] ) {
+				$attValue[1] = "-";
 			}
 			$featInfo->{"att"}{ $attValue[0] } = $attValue[1];
 		}
@@ -259,7 +251,6 @@ sub __ParseLines {
 
 	return @features;
 }
-
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

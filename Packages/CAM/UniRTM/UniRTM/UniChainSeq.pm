@@ -27,8 +27,9 @@ sub new {
 	$self->{"chain"}     = shift;
 	$self->{"cyclic"}    = undef;
 	$self->{"direction"} = undef;
-	
-	$self->{"modified"} = 0; # only when seq is cyclic. If modified = 1, sequence was modified during parsing (arc fragment, edge point switching etc..)
+
+	$self->{"modified"} =
+	  0;    # only when seq is cyclic. If modified = 1, sequence was modified during parsing (arc fragment, edge point switching etc..)
 
 	my @foots = ();
 	$self->{"footsDown"} = \@foots;    # features, which cintain foot_down attribute
@@ -93,12 +94,16 @@ sub HasFootDown {
 sub IsOutline {
 	my $self = shift;
 
-	if ( $self->GetChain()->GetComp() eq EnumsRout->Comp_LEFT && !$self->GetIsInside() && $self->GetCyclic() ) {
+	if (    $self->GetChain()->GetComp() eq EnumsRout->Comp_LEFT
+		 && !$self->GetIsInside()
+		 && $self->GetCyclic()
+		 && $self->GetDirection() eq EnumsRout->Dir_CW )
+	{
 
 		return 1;
 	}
 	else {
-		
+
 		return 0;
 	}
 }
@@ -231,8 +236,21 @@ sub SetModified {
 sub GetModified {
 	my $self = shift;
 
-	return @{ $self->{"modified"} };
+	return  $self->{"modified"} ;
 
+}
+
+sub SetDirection {
+	my $self = shift;
+	my $dir  = shift;
+
+	$self->{"direction"} = $dir;
+}
+
+sub GetDirection {
+	my $self = shift;
+
+	return $self->{"direction"};
 }
 
 #-------------------------------------------------------------------------------------------#

@@ -11,6 +11,7 @@ use Math::Trig;
 use Math::Polygon::Calc;       #Math-Polygon
 use Math::Geometry::Planar;    #Math-Geometry-Planar-GPC
 use Math::Vec qw(NewVec);
+use Clone qw(clone);
 
 #local library
 use aliased 'Packages::Routing::RoutLayer::RoutParser::RoutParser';
@@ -18,6 +19,8 @@ use aliased 'Packages::Polygon::PolygonFeatures';
 use aliased 'Packages::Routing::RoutLayer::RoutMath::RoutMath';
 use aliased 'Packages::Polygon::PointsTransform';
 use aliased "Packages::Polygon::PolygonPoints";
+use aliased 'Helpers::GeneralHelper';
+use aliased 'Packages::Routing::RoutLayer::RoutParser::RoutParser';
 
 #-------------------------------------------------------------------------------------------#
 #  Public method
@@ -53,8 +56,8 @@ sub RoutNeedModify {
 
 		my $breakLine = 0;
 
-		#kontrola jestli nasledujici usecka je rovnobezna s aktualni. Aby freza nezajizdela do desky.
-		#pokud ne, je potreba linu roydelit
+		# kontrola jestli nasledujici usecka je rovnobezna s aktualni. Aby freza nezajizdela do desky.
+		# pokud ne, je potreba linu rozdelit
 
 		my ( $vAct, $vNext, $innerAngel, $posOfPoint ) = ( undef, undef, 0, undef );
 		my $origin = NewVec( 0, 0, 0 );
@@ -71,7 +74,8 @@ sub RoutNeedModify {
 
 			$innerAngel = rad2deg( $origin->InnerAnglePoints( $vAct, $vNext ) );
 
-			if ( $posOfPoint eq "right" && $innerAngel < 180 ) {
+			# inner angle 179, means, next edge must be "almost (179deg 1 deg tolerance because float error)" straight
+			if ( $posOfPoint eq "right" && $innerAngel < 179 ) {
 				$breakLine = 1;
 
 			}
@@ -104,7 +108,9 @@ sub RoutNeedModify {
 		#kontrola jestli 2. nasledujici usecka v poradi  je rovnobezna s 1. nasledujici useckou. Aby freza nezajizdela do desky.
 		#pokud ne, je potreba linu rozdelit. V podstate stejna kontrola jako vzse, ale u nasledujiciho elementu v poradi
 		unless ($breakLine) {
-			if ( $sorteEdges[$idNext]{"length"} < 2 ) {
+
+			# +0,1 means tolerance, because lnegth can be eg.1.99995
+			if ( ( $sorteEdges[$idNext]{"length"} + 0.1 ) < 2 ) {
 
 				$vAct =
 				  NewVec( $sorteEdges[$idNext]{"x1"} - $sorteEdges[$idNext]{"x2"}, $sorteEdges[$idNext]{"y1"} - $sorteEdges[$idNext]{"y2"}, 0 );
@@ -191,7 +197,8 @@ sub ProcessModify {
 	if ( $modify->{"result"} ) {
 
 		# 1) Store rout points (polygon) before modification
-		my @pointsBefore = map { [ $_->{"x2"}, $_->{"y2"} ] } @{$sorteEdges};
+
+		my $routBefore = clone($sorteEdges);
 
 		# 2) Process "break line" modification
 
@@ -204,7 +211,7 @@ sub ProcessModify {
 			if ($break) {
 				my %featInfo;
 
-				$featInfo{"id"}   = -1;
+				$featInfo{"id"}   = GeneralHelper->GetNumUID();
 				$featInfo{"type"} = $sorteEdges->[$i]{"type"};
 
 				$featInfo{"x1"} = $break->{"breakX"};
@@ -223,9 +230,8 @@ sub ProcessModify {
 		}
 
 		# 3) compare areas of "rout polygon" before modification and after modification
-		my @pointsAfter = map { [ $_->{"x2"}, $_->{"y2"} ] } @{$sorteEdges};
-
-		unless ( PolygonPoints->PolygonAreEqual( \@pointsBefore, \@pointsAfter ) ) {
+		unless ( RoutParser->RoutAreasEquals( $routBefore, $sorteEdges ) )
+		{
 			die "Error during modification rout. Area of \"rout polygon\" was changed affter modification.\n";
 		}
 	}
@@ -241,6 +247,17 @@ sub GetPossibleFootDowns {
 
 	# All edges are rout start candidates
 	my @footDowns = ();
+	
+	#get limit of rout points
+	my @points = ();
+	foreach my $e (@sorteEdges) {
+
+		my %p1 = ( "x" => $e->{"x1"}, "y" => $e->{"y1"} );
+		my %p2 = ( "x" => $e->{"x2"}, "y" => $e->{"y2"} );
+		push( @points, ( \%p1, \%p2 ) );
+	}
+	
+	my %lim = PointsTransform->GetLimByPoints( \@points );
 
 	my ( $l, $d, $dir ) = ( 0, 0 );
 
@@ -259,6 +276,7 @@ sub GetPossibleFootDowns {
 			if ( ( $sorteEdges[$i]{"y1"} + 4 ) > $sorteEdges[$i]{"y2"} ) {
 
 				$footDowns[$i] = 0;    # delete candidate
+				next;
 			}
 
 			my $idBefore =
@@ -271,6 +289,7 @@ sub GetPossibleFootDowns {
 				 && $sorteEdges[$i]{"length"} < 6 )
 			{
 				$footDowns[$i] = 0;    # delete candidate
+				next;
 			}
 
 			my $lBott = abs( $sorteEdges[$i]{"x2"} - $sorteEdges[$i]{"x1"} );
@@ -279,7 +298,9 @@ sub GetPossibleFootDowns {
 			#RULE 3) - if angel between vertical line and "ortogonal line" is bigger than 10°
 			#It's mean, that line for foot down has to be as much verticall as possible +-10 degree
 			if ( $alfa > 25 ) {
+
 				$footDowns[$i] = 0;    # delete candidate
+				next;
 			}
 
 		}
@@ -289,12 +310,17 @@ sub GetPossibleFootDowns {
 
 			#RULE 1) - length of arc has to be larget than 5
 			if ( $l < 5 ) {
+
 				$footDowns[$i] = 0;    # delete candidate
+				next;
+
 			}
 
 			#RULE 2) - diameter of arc has to be larget than 15
 			if ( $d < 15 ) {
+
 				$footDowns[$i] = 0;    # delete candidate
+				next;
 			}
 
 			#RULE 3) - filter only suitable arc
@@ -304,27 +330,63 @@ sub GetPossibleFootDowns {
 					 && $sorteEdges[$i]{"y1"} < $sorteEdges[$i]{"y2"} )
 				{
 					$footDowns[$i] = 0;    # delete candidate
+					next;
 
 				}
 				elsif (    $sorteEdges[$i]{"x1"} > $sorteEdges[$i]{"x2"}
-						&& $sorteEdges[$i]{"y1"} > $sorteEdges[$i]{"y2"} )
+						&& $sorteEdges[$i]{"y1"} >= $sorteEdges[$i]{"y2"} )
 				{
 					$footDowns[$i] = 0;    # delete candidate
+					next;
 				}
 				elsif (    $sorteEdges[$i]{"x1"} < $sorteEdges[$i]{"x2"}
-						&& $sorteEdges[$i]{"y1"} > $sorteEdges[$i]{"y2"} )
+						&& $sorteEdges[$i]{"y1"} >= $sorteEdges[$i]{"y2"} )
 				{
 					$footDowns[$i] = 0;    # delete candidate
+					next;
 				}
 			}
 
 			#RULE 4) - filter only suitable arc
-			if (    $dir eq "CW"
-				 && $sorteEdges[$i]{"x1"} < $sorteEdges[$i]{"x2"} )
-			{
-				$footDowns[$i] = 0;        # delete candidate
+			if ( $dir eq "CW" ) {
+
+				#if ( $sorteEdges[$i]{"x1"} < $sorteEdges[$i]{"x2"} ) {
+				#$footDowns[$i] = 0;    # delete candidate
+				#next;
+				#}
+
+				if ( $sorteEdges[$i]{"y1"} > $sorteEdges[$i]{"y2"} ) {
+					$footDowns[$i] = 0;    # delete candidate
+					next;
+				}
+
 			}
+
+			# RULE 5) - take line between start and end point of arc
+			# Compute agnle bwtwee this line and straight  line parallel with X axis
+			# angel can be 45deg on both side
+			if ( $sorteEdges[$i]{"y2"} > $sorteEdges[$i]{"y1"} && abs( $sorteEdges[$i]{"x2"} - $sorteEdges[$i]{"x1"} ) > 0 ) {
+				my $a =
+				  rad2deg( atan( abs( $sorteEdges[$i]{"y2"} - $sorteEdges[$i]{"y1"} ) / abs( $sorteEdges[$i]{"x2"} - $sorteEdges[$i]{"x1"} ) ) );
+				if ( ( 90 - $a ) > 45 ) {
+					$footDowns[$i] = 0;    # delete candidate
+					next;
+				} 
+			}
+ 
+
 		}
+		
+		
+		# RULES for both lines and arc
+		# Whole "edge" has to by located in left half of pcb
+		my $part = 0.50; # 55% of pcb width
+		if(($sorteEdges[$i]->{"x1"}  - $lim{"xMin"}) > (($lim{"xMax"}- $lim{"xMin"})*$part) && ($sorteEdges[$i]->{"x2"} - $lim{"xMin"}) > (($lim{"xMax"}-$lim{"xMin"})*$part)){
+			 $footDowns[$i] = 0;    # delete candidate
+			 next;
+		}
+		
+		
 	}
 
 	my @footDownEdge = ();
@@ -377,20 +439,29 @@ sub GetRoutFootDown {
 
 	my %lim = PointsTransform->GetLimByPoints( \@points );
 
-	#Compute nearest distance from profile point (top-left) to polygon points.
+	#Compute nearest distance from profile point (left and 80% top) to polygon points.
 	#Take End point from each edge. We assume, that polzgon is Clockwise direction.
+	# distance is related to point 80% of pcb height, because it give better result in choosing proper candidate
+
+	my $relatePointH = 0.80; 
+	
+	# if rout is circle
+	if(scalar(grep { $_->{"type"} eq "A" && $_->{"newDir"} eq "CW"  } @sorteEdges) == scalar(@sorteEdges) ){
+		$relatePointH = 0.60;
+	}
 
 	my $min  = undef;
 	my $idx  = -1;
 	my $dist = 0;
 
+ 
 	for ( my $i = 0 ; $i < scalar(@candidates) ; $i++ ) {
 
-		$dist = sqrt( ( $lim{"xMin"} - $candidates[$i]{"x2"} )**2 + ( $lim{"yMax"} - $candidates[$i]{"y2"} )**2 );
+		$dist = sqrt( ( $lim{"xMin"} - $candidates[$i]{"x2"} )**2 + ( ($lim{"yMax"}-$lim{"yMin"})*$relatePointH - ($candidates[$i]{"y2"} -$lim{"yMin"}) )**2 );
 
 		if ( $candidates[$i]{"type"} eq "A" ) {
 
-			$dist = $dist * 1.2;    #because of type "Arc", add little disadvantage 20%
+			$dist = $dist * 1.3;    #because of type "Arc", add little disadvantage 20%
 		}
 
 		if ( !defined $min || $dist < $min ) {

@@ -14,6 +14,8 @@ use warnings;
 use aliased 'Packages::CAM::SymbolDrawing::SymbolDrawing';
 use aliased 'CamHelpers::CamHelper';
 use aliased 'CamHelpers::CamLayer';
+use aliased 'CamHelpers::CamAttributes';
+
 use aliased 'Packages::CAM::SymbolDrawing::Primitive::PrimitiveLine';
 use aliased 'Packages::CAM::SymbolDrawing::Primitive::PrimitiveArcSCE';
 use aliased 'Packages::CAM::SymbolDrawing::Point';
@@ -21,6 +23,7 @@ use aliased 'Packages::CAM::FeatureFilter::FeatureFilter';
 use aliased 'Packages::CAM::FeatureFilter::Enums' => "FilterEnums";
 use aliased 'Packages::Polygon::Features::Features::Features';
 use aliased 'Packages::CAM::UniRTM::UniRTM::UniRTM';
+use aliased 'Packages::CAM::SymbolDrawing::Primitive::PrimitiveText';
 
 #-------------------------------------------------------------------------------------------#
 #  Public method
@@ -126,7 +129,8 @@ sub DrawRoute {
 			die "Error when finding rout start feature";
 		}
 
-		
+		# In order rout has proper direction CW
+		# First add route as none, then xhange to left
 
 		$inCAM->COM(
 			'chain_add',
@@ -134,11 +138,18 @@ sub DrawRoute {
 			"chain"          => $newChainNum,
 			"size"           => $toolSize / 1000,
 			"comp"           => $comp,
-			"first"          => $feats[0]->{"id"},
+			"first"          => $feats[0]->{"id"} - 1,    # id of edge, which should route start - 1 (-1 is necessary)
 			"chng_direction" => 0
 		);
+
+		#		print STDERR "\n\n\n". $feats[0]->{"id"}."\n\n\n";
+		#
+		#		if($f->Select()){
+		#			CamAttributes->SetFeaturesAttribute($inCAM, $jobId, ".comp", $comp);
+		#		};
+
 	}
-	
+
 	$f->Reset();
 }
 
@@ -162,6 +173,78 @@ sub DeleteRoute {
 	if ( $f->Select() ) {
 		$inCAM->COM("sel_delete");
 	}
+
+}
+
+# draw layer, where are signed start routs
+sub DrawStartRoutResult {
+	my $self   = shift;
+	my @starts = @{ shift(@_) };
+
+	my $inCAM = $self->{"inCAM"};
+	my $jobId = $self->{"jobId"};
+	my $step  = $self->{"step"};
+	my $layer = $self->{"layer"};
+
+	CamHelper->SetStep( $inCAM, $step );
+	CamLayer->WorkLayer( $inCAM, $layer );
+
+	my $draw = SymbolDrawing->new( $inCAM, $self->{"jobId"} );
+
+	my $primitive = undef;
+
+	# prepare text, no foot find
+	my @noFoots = grep { $_->{"result"} == 0 } @starts;
+
+	if ( scalar(@noFoots) ) {
+		@noFoots = map { $_->{"angle"} . " deg" } @noFoots;
+		my $str = "NOT FIND FOOTS: " . join( "; ", @noFoots );
+
+		$draw->AddPrimitive( PrimitiveText->new( $str, Point->new( 0, -20 ), 5, 2 ) );
+	}
+
+	foreach my $start (@starts) {
+
+		unless ( $start->{"result"} ) {
+
+			next;
+		}
+
+		if ( $start->{"startEdge"}->{"type"} eq "L" ) {
+
+			$primitive = PrimitiveLine->new(
+											 Point->new( $start->{"startEdge"}->{"x1"}, $start->{"startEdge"}->{"y1"} ),
+											 Point->new( $start->{"startEdge"}->{"x2"}, $start->{"startEdge"}->{"y2"} ),
+											 "r3000"
+			);
+
+		}
+		elsif ( $start->{"startEdge"}->{"type"} eq "A" ) {
+
+			$primitive = PrimitiveArcSCE->new(
+											   Point->new( $start->{"startEdge"}->{"x1"},   $start->{"startEdge"}->{"y1"} ),
+											   Point->new( $start->{"startEdge"}->{"xmid"}, $start->{"startEdge"}->{"ymid"} ),
+											   Point->new( $start->{"startEdge"}->{"x2"},   $start->{"startEdge"}->{"y2"} ),
+											   $start->{"startEdge"}->{"newDir"},
+											   "r3000"
+			);
+
+		}
+
+		$draw->AddPrimitive($primitive);
+
+		# ad tect
+
+		my $txt = PrimitiveText->new(
+			"Foot: " . $start->{"angle"} . "deg",
+			Point->new( $start->{"startEdge"}->{"x2"} - 30, $start->{"startEdge"}->{"y2"} - 10 ),
+			2.2, 1.2
+		);
+		$draw->AddPrimitive($txt);
+
+	}
+
+	$draw->Draw();
 
 }
 

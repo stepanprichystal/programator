@@ -7,39 +7,43 @@ package Packages::Routing::RoutLayer::RoutOutline::RoutOutline;
 #3th party library
 use strict;
 use warnings;
- 
+use Math::Geometry::Planar;    #Math-Geometry-Planar-GPC
+use Math::Trig;
+use Math::Polygon::Calc;       #Math-Polygon
+use Math::Geometry::Planar;    #Math-Geometry-Planar-GPC
+use List::Util qw( min max );
 
 #local library
- 
+use aliased 'Packages::Routing::RoutLayer::RoutParser::RoutArc';
 
 #-------------------------------------------------------------------------------------------#
 #  Public method
 #-------------------------------------------------------------------------------------------#
- 
- #Detecting of small inner radiuses
+
+#Detecting of small inner radiuses
 sub CheckSmallRadius {
 	my $self       = shift;
 	my @sorteEdges = @{ shift(@_) };
-	 
+
 	my $result = 1;
 
 	if ( scalar(@sorteEdges) > 1 ) {
 
-		if ( grep { $_->{"diameter"} <= 2.2 && $_->{"newDir"} eq "CCW" } @sorteEdges ) {
+		my @arcs = grep { $_->{"type"} =~ /A/i } @sorteEdges;
+		if ( grep { $_->{"diameter"} <= 2.2 && $_->{"newDir"} eq "CCW" } @arcs ) {
 			$result = 0;
-	 
+
 		}
 	}
-	
+
 	return $result;
 }
- 
- 
- sub CheckNarrowPlaces {
+
+sub CheckNarrowPlaces {
 	my $self       = shift;
 	my @sorteEdges = @{ shift(@_) };
-	
-	my %result     = ();
+
+	my %result = ();
 	$result{"result"} = 1;
 
 	use Clone qw(clone);
@@ -49,7 +53,7 @@ sub CheckSmallRadius {
 	my %lineCoord;
 	my @middle = ( 0, 0 );
 
-	@sorteEdgesCopy = RouteChainHelper->__FragmentArcReplace( \@sorteEdgesCopy, 20 );
+	#@sorteEdgesCopy = RoutArc->FragmentArcReplace( \@sorteEdgesCopy, 20 );  Nevim proc je tatdz ten radek ????
 	my @poly = map { [ $_->{"x1"}, $_->{"y1"} ] } @sorteEdgesCopy;
 
 	#push( @poly, $poly[0] ); #make polygon cyclic
@@ -83,14 +87,10 @@ sub CheckSmallRadius {
 				unless ( polygon_contains_point( \@middle, ( @poly, $poly[0] ) ) ) {
 
 					#test if count length of lines/arc between points is > 2
-					my ($idxStart) = grep {
-						     $sorteEdgesCopy[$_]{"x1"} eq $poly[$i][0]
-						  && $sorteEdgesCopy[$_]{"y1"} eq $poly[$i][1]
-					} 0 .. $#sorteEdgesCopy;
-					my ($idxEnd) = grep {
-						     $sorteEdgesCopy[$_]{"x1"} eq $poly[$j][0]
-						  && $sorteEdgesCopy[$_]{"y1"} eq $poly[$j][1]
-					} 0 .. $#sorteEdgesCopy;
+					my ($idxStart) =
+					  grep { $sorteEdgesCopy[$_]{"x1"} eq $poly[$i][0] && $sorteEdgesCopy[$_]{"y1"} eq $poly[$i][1] } 0 .. $#sorteEdgesCopy;
+					my ($idxEnd) =
+					  grep { $sorteEdgesCopy[$_]{"x1"} eq $poly[$j][0] && $sorteEdgesCopy[$_]{"y1"} eq $poly[$j][1] } 0 .. $#sorteEdgesCopy;
 
 					if ( $idxStart >= 0 ) {
 
@@ -128,14 +128,15 @@ sub CheckSmallRadius {
 	}
 
 	if ( scalar(@lines) > 0 ) {
-		
+
 		$result{"result"} = 0;
 		$result{"places"} = \@lines;
 	}
-	
-	return \%result;
+
+	return %result;
 
 }
+
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#
@@ -147,8 +148,6 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 	my $jobId = "f13608";
-
- 
 
 }
 

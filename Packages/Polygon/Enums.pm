@@ -12,8 +12,8 @@ use constant {
 
 # represent polzgon direction
 use constant {
-			   Dir_CW   => "directionCW",
-			   Dir_CCW   => "directionCCW"
+			   Dir_CW   => "CW",
+			   Dir_CCW   => "CCW"
 };
   
   

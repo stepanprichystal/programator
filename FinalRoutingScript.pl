@@ -26,6 +26,7 @@ use aliased 'CamHelpers::CamLayer';
 use aliased 'Packages::Polygon::Features::Features::Features';
 use aliased 'Managers::MessageMngr::MessageMngr';
 use aliased 'Enums::EnumsGeneral';
+use aliased 'Enums::EnumsRout';
 use aliased 'Packages::Routing::RoutLayer::RoutOutline::RoutOutline';
 use aliased 'Packages::CAM::SymbolDrawing::SymbolDrawing';
 use aliased 'Packages::CAM::SymbolDrawing::Primitive::PrimitiveLine';
@@ -33,6 +34,8 @@ use aliased 'Packages::CAM::SymbolDrawing::Point';
 use aliased 'Packages::Routing::RoutLayer::RoutOutline::RoutRadiusHelper';
 use aliased 'Packages::Routing::RoutLayer::RoutDrawing::RoutDrawing';
 use aliased 'Packages::Routing::RoutLayer::RoutParser::RoutCyclic';
+use aliased 'Packages::Routing::RoutLayer::RoutParser::RoutParser';
+use aliased 'Packages::Routing::RoutLayer::RoutStart::RoutStart';
 
 #-------------------------------------------------------------------------------------------#
 #  Script methods
@@ -78,7 +81,6 @@ if ( scalar(@chainFeatures) ) {
 		$messMngr->ShowModal( -1, EnumsGeneral->MessageType_ERROR, \@m );
 		exit(0);
 	}
-
 }
 else {
 
@@ -157,6 +159,11 @@ sub __DoChain {
 	my $changes  = 0;
 	my @features = $fWork->GetFeatures();    #get all edges of final routing
 
+	# Add geometric attributes
+	foreach my $f (@features) {
+		RoutParser->AddGeometricAtt($f);
+	}
+
 	#some arcs may do problems, when they are too thin ( around 25um, sometimes around 100um)
 	#desgin to rout works properly when route thick is 200um, thus reshape to 200um and design to rout
 	#once again
@@ -166,12 +173,14 @@ sub __DoChain {
 	TestOpenRout( $sortResult{"result"}, $sortResult{"openPoint"} );
 
 	my @sorteEdges = @{ $sortResult{"edges"} };
+	
+	RoutCyclic->SetRoutDirection( \@sorteEdges, EnumsRout->Dir_CW );
 
 	TestNarrowPlaces( \@sorteEdges );
 
 	my %radiusResult = TestSmallRadius( \@sorteEdges );
 
-	my %footResult = FindFootDown( \@sorteEdges );
+	my %footResult = FindRoutStart( \@sorteEdges );
 
 	DrawNewRout( \@sorteEdges, \%radiusResult, \%footResult );
 
@@ -179,8 +188,12 @@ sub __DoChain {
 
 	my @m = ();
 
+	#	if ( $radiusResult{"radiusRepaired"} ) {
+	#		push( @m, "V obrysové fréze byly eliminovány některé arky. Zkontroluj to." );
+	#	}
+
 	if ( $radiusResult{"newDrillHole"} ) {
-		push( @m, "Do obrzsové frézy byly přidány otvory, které nahradily některé arky. Zkontrolu správnost." );
+		push( @m, "Do obrysové frézy byly přidány otvory, které nahradily některé arky. Zkontrolu správnost." );
 	}
 
 	unless ( $footResult{"result"} ) {
@@ -211,7 +224,7 @@ sub DrawNewRout {
 	}
 	else {
 		#take arbitrary
-		$startEdge = $sorteEdges[0]->{"edge"};
+		$startEdge = $sorteEdges[0];
 	}
 
 	# 1) Draw new rout
@@ -302,10 +315,10 @@ sub TestOpenRout {
 		$inCAM->COM( 'create_layer', "layer" => $lName, "context" => 'misc', "type" => 'document', "polarity" => 'positive', "ins_layer" => '' );
 
 		$inCAM->COM(
-						   "display_layer",
-						   name    => $lName,
-						   display => "yes",
-						   number  => 2
+					 "display_layer",
+					 name    => $lName,
+					 display => "yes",
+					 number  => 2
 		);
 		$inCAM->COM( "work_layer", name => $lName );
 
@@ -325,9 +338,9 @@ sub TestOpenRout {
 		$inCAM->COM( "work_layer", name => $pomLayer );
 
 		__UndoRoute( $workLayer, $pomLayer );
+		exit;
 	}
 
-	exit;
 }
 
 # Show error message, and draw open point
@@ -346,7 +359,13 @@ sub TestNarrowPlaces {
 		my $lName = 'narrow_places_' . $jobId;
 		$inCAM->COM( 'create_layer', "layer" => $lName, "context" => 'misc', "type" => 'document', "polarity" => 'positive', "ins_layer" => '' );
 
-		CamLayer->WorkLayer( $inCAM, $lName );
+		$inCAM->COM(
+					 "display_layer",
+					 name    => $lName,
+					 display => "yes",
+					 number  => 2
+		);
+		$inCAM->COM( "work_layer", name => $lName );
 
 		my $draw = SymbolDrawing->new( $inCAM, $jobId );
 
@@ -361,7 +380,13 @@ sub TestNarrowPlaces {
 
 		$draw->Draw();
 
-		CamLayer->WorkLayer( $inCAM, $pomLayer );
+		$inCAM->COM(
+					 "display_layer",
+					 name    => $pomLayer,
+					 display => "yes",
+					 number  => 3
+		);
+		$inCAM->COM( "work_layer", name => $pomLayer );
 
 		__UndoRoute( $workLayer, $pomLayer );
 
@@ -371,36 +396,31 @@ sub TestNarrowPlaces {
 }
 
 # Test on small radiuses
+# Return result of reparation of small radiuses
 sub TestSmallRadius {
-	my @sorteEdges = @{ shift(@_) };
+	my $sorteEdges = shift;
 
 	# Check small radiuses
 
-	my %result = RoutOutline->CheckSmallRadius( \@sorteEdges );
+	my %result = ( "radiusRepaired" => 0 );
 
-	unless ( $result{"result"} ) {
+	# if small radiuses, repair it
+	unless ( RoutOutline->CheckSmallRadius($sorteEdges) ) {
+
 		my @btns = ( "Ano opravit + kontrola", "Ano opravit", "Neopravovat" );
 		my @m = ("V obrysové fréze jsou arky s rádiusem menším jak 2mm. Chceš tyto arky eliminovat?");
-		$messMngr->ShowModal( -1, EnumsGeneral->MessageType_ERROR, \@m );
+		$messMngr->ShowModal( -1, EnumsGeneral->MessageType_ERROR, \@m, \@btns );
 
-		my $messRes = $messMngr->GetReply();
+		my $messRes = $messMngr->Result();
 
 		if ( $messRes == 0 || $messRes == 1 ) {
 
-			my %resultRepair = RoutRadiusHelper->RemoveRadiuses( \@sorteEdges );
-
-			#				my %result = ();
-			#				$result{"result"}          = 1;        # if no error, result 1
-			#				$result{"boundArc"}        = 0;
-			#				$result{"boundArcVal"}     = undef;
-			#				$result{"newDrillHole"}    = 0;
-			#				$result{"newDrillHoleVal"} = undef;
-			#				$result{"edges"}           = undef;    # adjusted rout
+			my %resultRepair = RoutRadiusHelper->RemoveRadiuses($sorteEdges);
 
 			# 1) Test on bounded arcs
-			if ( $result{"boundArc"} ) {
+			if ( $resultRepair{"boundArc"} ) {
 
-				@m = ("V obrzsové fréze jsou arky, které neumím ellimenivat (ark spojený/vytvořený z více arků)");
+				@m = ("V obrysové fréze jsou arky, které neumím ellimenivat (ark spojený/vytvořený z více arků)");
 				$messMngr->ShowModal( -1, EnumsGeneral->MessageType_ERROR, \@m );
 
 				my $lName = 'bounded_arcs_' . $jobId;
@@ -413,13 +433,19 @@ sub TestSmallRadius {
 							 "ins_layer" => ''
 				);
 
-				CamLayer->WorkLayer( $inCAM, $lName );
+				$inCAM->COM(
+					"display_layer",
+					name    => $lName,
+					display => "yes",
+					number  => 2
+				);
+				$inCAM->COM( "work_layer", name => $lName );
 
 				$inCAM->COM(
 							 'add_pad',
 							 attributes => 'no',
-							 x          => $result{"boundArcVal"}->{"x"},
-							 y          => $result{"boundArcVal"}->{"y"},
+							 x          => $resultRepair{"boundArcVal"}->{"x"},
+							 y          => $resultRepair{"boundArcVal"}->{"y"},
 							 symbol     => 's5000'
 				);
 				$inCAM->COM(
@@ -434,11 +460,19 @@ sub TestSmallRadius {
 				exit;
 			}
 
-			if ( $messRes == 1 ) {
+			if ( $messRes == 0 ) {
 
 				$deleteOriginal = 0;
 
 			}
+
+			# complete return hash
+			$result{"radiusRepaired"}  = 1;
+			$result{"boundArc"}        = $resultRepair{"boundArc"};
+			$result{"boundArcVal"}     = $resultRepair{"boundArcVal"};
+			$result{"newDrillHole"}    = $resultRepair{"newDrillHole"};
+			$result{"newDrillHoleVal"} = $resultRepair{"newDrillHoleVal"};
+
 		}
 		else {
 			__UndoRoute( $workLayer, $pomLayer );
@@ -451,17 +485,17 @@ sub TestSmallRadius {
 
 }
 
-sub FindFootDown {
-	my @sorteEdges = @{ shift(@_) };
+sub FindRoutStart {
+	my $sorteEdges = shift;
 
-	my %modify = RoutStart->RoutNeedModify( \@sorteEdges );
+	my %modify = RoutStart->RoutNeedModify($sorteEdges);
 
 	if ( $modify{"result"} ) {
 
-		RoutStart->ProcessModify( \%modify, \@sorteEdges );
+		RoutStart->ProcessModify( \%modify, $sorteEdges );
 	}
 
-	my %startResult = RoutStart->GetRoutFootDown( \@sorteEdges );
+	my %startResult = RoutStart->GetRoutStart($sorteEdges);
 
 	return %startResult;
 
@@ -520,7 +554,7 @@ sub CheckRouteThick {
 	}
 }
 
-##delte helper layers
+# delte helper layers
 sub __DeletePomLayers {
 
 	my @names = CamJob->GetAllLayers( $inCAM, $jobId );

@@ -24,10 +24,10 @@ use aliased 'Packages::Polygon::PolygonPoints';
 #  Public method
 #-------------------------------------------------------------------------------------------#
 
-# neni odzkousena
+# Return if rout iis cyclic
 sub IsCyclic {
 	my $self        = shift;
-	my @sortedFeats = shift;
+	my @sortedFeats = @{ shift(@_) };
 
 	my $cyclic = 1;
 
@@ -53,30 +53,77 @@ sub IsCyclic {
 	return $cyclic;
 }
 
-#return polygon direction CW/CCW
+# Return polygon direction CW/CCW
 sub GetRoutDirection {
 	my $self        = shift;
 	my @sortedFeats = @{ shift(@_) };
 
-	my @points = map { [ $_->{"x1"}, $_->{"y1"} ] } @sortedFeats;    # rest of points "x2,y2"
+	unless ( $self->IsCyclic( \@sortedFeats ) ) {
+		die "Rout must be cyclilc to determine rout direction";
+	}
 
-	return PolygonPoints->GetPolygonDirection( \@points );
+	my $dir = undef;
+
+	# Special case, when rout is created by one arc, return arc direction
+	if ( scalar(@sortedFeats) == 1 && $sortedFeats[0]->{"type"} eq "A" ) {
+
+		$dir = $sortedFeats[0]->{"newDir"};
+	}
+	else {
+
+		my @points = map { [ $_->{"x1"}, $_->{"y1"} ] } @sortedFeats;    # rest of points "x2,y2"
+		$dir = PolygonPoints->GetPolygonDirection( \@points );
+	}
+
+	return $dir;
 }
 
+# Set new rout direction CW/CCW
+# Rout must by cyclic
 sub SetRoutDirection {
 	my $self        = shift;
+	my $sortedEdges = shift;
 	my $newDir      = shift;
-	my @sortedFeats = @{ shift(@_) };
 
-	my @poly = map { [ $_->{"x1"}, $_->{"y1"} ] } @sortedFeats;
+	unless ( $self->IsCyclic($sortedEdges) ) {
+		die "Rout must be cyclilc to determine rout direction";
+	}
 
-	my $oriDir = $self->GetPolygonDirection(@poly);
+	# Get original direction
+	my $oriDir = $self->GetRoutDirection($sortedEdges);
 
 	if ( $oriDir eq $newDir ) {
 		return 0;
 	}
 
-	# zmen smser vsech features
+	my @ori = @{$sortedEdges};
+
+	# Switch direction
+
+	@ori = reverse @ori;
+	@{$sortedEdges} = @ori;    # set reversed edges
+
+	#switch start and end point of edges
+	for ( my $i = 0 ; $i < scalar( @{$sortedEdges} ) ; $i++ ) {
+
+		my $pX = $sortedEdges->[$i]->{"x2"};
+		my $pY = $sortedEdges->[$i]->{"y2"};
+
+		$sortedEdges->[$i]->{"x2"} = $sortedEdges->[$i]->{"x1"};
+		$sortedEdges->[$i]->{"y2"} = $sortedEdges->[$i]->{"y1"};
+		$sortedEdges->[$i]->{"x1"} = $pX;
+		$sortedEdges->[$i]->{"y1"} = $pY;
+
+		#compute new arc direction depending on original direction and switchin start/end point
+		if ( $sortedEdges->[$i]->{"type"} eq "A" ) {
+
+			$sortedEdges->[$i]->{"newDir"} = ( $sortedEdges->[$i]->{"newDir"} eq EnumsRout->Dir_CW ) ? EnumsRout->Dir_CCW : EnumsRout->Dir_CW;
+		}
+
+		# SwitchPoints property tell if points are switched against original version
+		$sortedEdges->[$i]->{"switchPoints"} = ( $sortedEdges->[$i]->{"switchPoints"} == 1 ) ? 0 : 1;
+
+	}
 
 }
 
@@ -173,16 +220,19 @@ sub GetRoutSequences {
 # Return sorted rout  CW
 # Works out only for close polygon
 # If rout is open, return empty array
+# What means "sorted":
+# - rout chan be made by edges with differnet dierction ..|-->|-->|<--|-->|...
+# - this method do same direction CW/CCW randomly by first choosed edge
 sub GetSortedRout {
 	my $self  = shift;
 	my @edges = @{ shift(@_) };
 
 	# Result of sorting edges
 	my %result = ();
-	$result{"result"}  = 1;        # if 1 sorting ok, else rout was open
-	$result{"changes"} = 0;        # sme changes are done, arc fragment, switch edge points..
-	$result{"openPoint"} = undef;        # if rout is open, point where rout is open
-	$result{"edges"}   = undef;    # sorted edges
+	$result{"result"}    = 1;        # if 1 sorting ok, else rout was open
+	$result{"changes"}   = 0;        # sme changes are done, arc fragment, switch edge points..
+	$result{"openPoint"} = undef;    # if rout is open, point where rout is open
+	$result{"edges"}     = undef;    # sorted edges
 
 	my @sorteEdges = ();
 	my $sorted     = 0;
@@ -224,6 +274,10 @@ sub GetSortedRout {
 				{
 					$isFind = 1;
 
+					if ( $e{"type"} eq "A" ) {
+						$e{"newDir"} = $e{"oriDir"};    # set new drirection to default = eroginal dir
+					}
+
 					#switch edge points for achieve same-oriented polygon
 					if ( ( $x == sprintf( "%.3f", $e{"x2"} ) && $y == sprintf( "%.3f", $e{"y2"} ) ) ) {
 
@@ -233,6 +287,12 @@ sub GetSortedRout {
 						$e{"y2"} = $e{"y1"};
 						$e{"x1"} = $pX;
 						$e{"y1"} = $pY;
+
+						# switch direction
+						if ( $e{"type"} eq "A" ) {
+
+							$e{"newDir"} = $e{"newDir"} eq EnumsRout->Dir_CW ? EnumsRout->Dir_CCW : EnumsRout->Dir_CW;
+						}
 
 						$e{"switchPoints"} = 1;
 					}
@@ -254,9 +314,9 @@ sub GetSortedRout {
 			if ( $isFind == 0 ) {
 				$sorted = 1;
 				$isOpen = 1;
-				my %inf = ("x" => $x , "y"=>  $y);
+				my %inf = ( "x" => $x, "y" => $y );
 				$result{"openPoint"} = \%inf;
-				
+
 				last;
 			}
 
@@ -271,6 +331,7 @@ sub GetSortedRout {
 	elsif ( scalar(@edges) == 1 && $edges[0]->{"type"} =~ /a/i ) {
 
 		$edges[0]{"switchPoints"} = 0;
+		$edges[0]{"newDir"}       = $edges[0]{"oriDir"};
 		push( @sorteEdges, $edges[0] );
 
 	}
@@ -281,51 +342,9 @@ sub GetSortedRout {
 
 	# if polygon is not close, return 0
 	if ($isOpen) {
-		
+
 		$result{"result"} = 0;
 		return %result;
-	}
-
-	#Set polygon as Clockwise
-	my @coord = map { [ $_->{"x1"}, $_->{"y1"} ] } @sorteEdges;
-
-	#test if polzgon is circle (one arc)
-	if (    ( scalar(@sorteEdges) == 1 && $sorteEdges[0]->{"oriDir"} eq EnumsRout->Dir_CCW )
-		 || ( scalar(@sorteEdges) > 1 && $self->GetRoutDirection( \@sorteEdges ) eq EnumsRout->Dir_CCW ) )
-	{
-
-		@sorteEdges = reverse @sorteEdges;
-
-		#switch start and end point of edges
-		for ( my $i = 0 ; $i < scalar(@sorteEdges) ; $i++ ) {
-
-			my $pX = $sorteEdges[$i]->{"x2"};
-			my $pY = $sorteEdges[$i]->{"y2"};
-
-			$sorteEdges[$i]->{"x2"} = $sorteEdges[$i]->{"x1"};
-			$sorteEdges[$i]->{"y2"} = $sorteEdges[$i]->{"y1"};
-			$sorteEdges[$i]->{"x1"} = $pX;
-			$sorteEdges[$i]->{"y1"} = $pY;
-
-			$sorteEdges[$i]->{"switchPoints"} = ( $sorteEdges[$i]->{"switchPoints"} == 1 ) ? 0 : 1;
-
-		}
-	}
-
-	#compute new arc direction depending on original direction and switchin start/end point
-	for ( my $i = 0 ; $i < scalar(@sorteEdges) ; $i++ ) {
-
-		if ( $sorteEdges[$i]->{"type"} eq "A" ) {
-			if ( $sorteEdges[$i]->{"switchPoints"} == 0 ) {
-
-				$sorteEdges[$i]->{"newDir"} = $sorteEdges[$i]->{"oriDir"};
-			}
-			elsif ( $sorteEdges[$i]->{"switchPoints"} == 1 ) {
-
-				$sorteEdges[$i]->{"newDir"} =
-				  ( $sorteEdges[$i]->{"oriDir"} eq EnumsRout->Dir_CW ) ? EnumsRout->Dir_CCW : EnumsRout->Dir_CW;
-			}
-		}
 	}
 
 	#pokud obrys obsahuje obloukz, je potreba je potreba je dostatecne aproximovat,
@@ -333,16 +352,17 @@ sub GetSortedRout {
 	my $fragmented = 0;
 	@sorteEdges = RoutArc->FragmentArcReplace( \@sorteEdges, -1, \$fragmented );
 
+	# Get information about original direction
 
-	my $switched = scalar(grep { $_->{"switchPoints"} } @sorteEdges);
+	my $switched = scalar( grep { $_->{"switchPoints"} } @sorteEdges );
 
 	# Test if changes on rout  are done
-	if($switched || $fragmented){
+	if ( $switched || $fragmented ) {
 		$result{"changes"} = 1;
 	}
-	
+
 	$result{"edges"} = \@sorteEdges;
- 
+
 	return %result;
 }
 
@@ -357,18 +377,6 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 	my $jobId = "f13608";
-
-	my $f = FeatureFilter->new( $inCAM, "m" );
-
-	$f->SetPolarity("positive");
-
-	my @types = ( "surface", "pad" );
-	$f->SetTypes( \@types );
-
-	my @syms = ( "r500", "r1" );
-	$f->AddIncludeSymbols( \[ "r500", "r1" ] );
-
-	print $f->Select();
 
 	print "fff";
 

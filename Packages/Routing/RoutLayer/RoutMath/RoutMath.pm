@@ -54,7 +54,7 @@ sub VectorInnerEdge {
 	$vNext = NewVec( $x2, $y2, 0 );
 
 	$posOfPoint =
-	  MathRoute->PosOfPoint( 0, 0, @{$vBef}[0], @{$vBef}[1], @{$vNext}[0], @{$vNext}[1] );
+	  $self->PosOfPoint( 0, 0, @{$vBef}[0], @{$vBef}[1], @{$vNext}[0], @{$vNext}[1] );
 	$angel = rad2deg( $origin->InnerAnglePoints( $vBef, $vNext ) );
 
 	if ( $posOfPoint eq "right" ) {

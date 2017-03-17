@@ -17,7 +17,8 @@ use POSIX 'floor';
 #local library
 
 use aliased 'Packages::Routing::RoutLayer::RoutMath::RoutMath';
-
+use aliased 'Packages::Routing::RoutLayer::RoutParser::RoutParser';
+use aliased 'Helpers::GeneralHelper';
 #-------------------------------------------------------------------------------------------#
 #   Package methods
 #-------------------------------------------------------------------------------------------#
@@ -25,21 +26,20 @@ use aliased 'Packages::Routing::RoutLayer::RoutMath::RoutMath';
 #Remove small radiuses and replace them by lines, if it is possible
 sub RemoveRadiuses {
 	my $self       = shift;
-	my @sorteEdges = @{ shift(@_) };
+	my $sorteEdges = shift;
 	my $errors     = shift;
 
-	if ( !scalar(@sorteEdges) > 1 ) {
+	if ( !scalar( @{$sorteEdges} ) > 1 ) {
 		return -1;
 	}
 
 	#
 	my %result = ();
-	$result{"result"}          = 1;        # if no error, result 1
+	$result{"result"}          = 1;       # if no error, result 1
 	$result{"boundArc"}        = 0;
 	$result{"boundArcVal"}     = undef;
 	$result{"newDrillHole"}    = 0;
 	$result{"newDrillHoleVal"} = undef;
-	$result{"edges"}           = undef;    # adjusted rout
 
 	my $finder      = Math::Intersection::StraightLine->new();
 	my @idToDel     = ();                                        #contain id's with arcm which will be deleted
@@ -48,40 +48,40 @@ sub RemoveRadiuses {
 	my $vectorAngel;                                             # angel betveen two vectors
 	my $intersec;                                                #test if neighbour lines of arc have intersection
 
-	for ( my $i = scalar(@sorteEdges) - 1 ; $i >= 0 ; $i-- ) {
+	for ( my $i = scalar( @{$sorteEdges} ) - 1 ; $i >= 0 ; $i-- ) {
 
-		unless (    $sorteEdges[$i]->{"type"} eq "A"
-				 && $sorteEdges[$i]->{"newDir"} eq "CCW"
-				 && $sorteEdges[$i]->{"diameter"} <= 2.2
-				 && $sorteEdges[$i]->{"distance"} <= 2.2 )
+		unless (    $sorteEdges->[$i]->{"type"} eq "A"
+				 && $sorteEdges->[$i]->{"newDir"} eq "CCW"
+				 && $sorteEdges->[$i]->{"diameter"} <= 2.2
+				 && $sorteEdges->[$i]->{"distance"} <= 2.2 )
 		{
 			next;
 		}
 
-		my %arc = %{ $sorteEdges[$i] };
+		my %arc = %{ $sorteEdges->[$i] };
 
-		my $next = ( $i + 1 == scalar(@sorteEdges) ) ? 0 : $i + 1;
+		my $next = ( $i + 1 == scalar( @{$sorteEdges} ) ) ? 0 : $i + 1;
 		my $before =
 		  ( $i == 0 )
-		  ? scalar(@sorteEdges) - 1
+		  ? scalar( @{$sorteEdges} ) - 1
 		  : $i - 1;
 
 		#test if arc neighbours are line and
-		unless (    $sorteEdges[$next]->{"type"} eq "L"
-				 && $sorteEdges[$before]->{"type"} eq "L" )
+		unless (    $sorteEdges->[$next]->{"type"} eq "L"
+				 && $sorteEdges->[$before]->{"type"} eq "L" )
 		{
 			my %val;
 
-			if ( $sorteEdges[$next]->{"type"} eq "A" ) {
+			if ( $sorteEdges->[$next]->{"type"} eq "A" ) {
 				%val = (
-						 "x" => $sorteEdges[$next]->{"x1"},
-						 "y" => $sorteEdges[$next]->{"y1"}
+						 "x" => $sorteEdges->[$next]->{"x1"},
+						 "y" => $sorteEdges->[$next]->{"y1"}
 				);
 			}
-			if ( $sorteEdges[$before]->{"type"} eq "A" ) {
+			if ( $sorteEdges->[$before]->{"type"} eq "A" ) {
 				%val = (
-						 "x" => $sorteEdges[$before]->{"x2"},
-						 "y" => $sorteEdges[$before]->{"y2"}
+						 "x" => $sorteEdges->[$before]->{"x2"},
+						 "y" => $sorteEdges->[$before]->{"y2"}
 				);
 			}
 			$result{"boundArc"}    = 1;
@@ -100,21 +100,24 @@ sub RemoveRadiuses {
 		}
 
 		#Are paralel
-		my $parallel = MathRoute->LinesAreParallel( $sorteEdges[$before], $sorteEdges[$next] );
+		my $parallel = RoutMath->LinesAreParallel( $sorteEdges->[$before], $sorteEdges->[$next] );
 
 		if ( !$parallel ) {
-			my $vector_a = [ [ $sorteEdges[$next]->{"x1"}, $sorteEdges[$next]->{"y1"} ], [ $sorteEdges[$next]->{"x2"}, $sorteEdges[$next]->{"y2"} ] ];
-			my $vector_b =
-			  [ [ $sorteEdges[$before]->{"x1"}, $sorteEdges[$before]->{"y1"} ], [ $sorteEdges[$before]->{"x2"}, $sorteEdges[$before]->{"y2"} ] ];
+			my $vector_a =
+			  [ [ $sorteEdges->[$next]->{"x1"}, $sorteEdges->[$next]->{"y1"} ], [ $sorteEdges->[$next]->{"x2"}, $sorteEdges->[$next]->{"y2"} ] ];
+			my $vector_b = [
+							 [ $sorteEdges->[$before]->{"x1"}, $sorteEdges->[$before]->{"y1"} ],
+							 [ $sorteEdges->[$before]->{"x2"}, $sorteEdges->[$before]->{"y2"} ]
+			];
 
 			$intersec = $finder->points( $vector_a, $vector_b );
 
 		}
 		else {
-			my $vBef =
-			  NewVec( $sorteEdges[$before]->{"x2"} - $sorteEdges[$before]->{"x1"}, $sorteEdges[$before]->{"y2"} - $sorteEdges[$before]->{"y1"}, 0 );
+			my $vBef = NewVec( $sorteEdges->[$before]->{"x2"} - $sorteEdges->[$before]->{"x1"},
+							   $sorteEdges->[$before]->{"y2"} - $sorteEdges->[$before]->{"y1"}, 0 );
 			my $vJoinLine =
-			  NewVec( $sorteEdges[$next]{"x1"} - $sorteEdges[$before]->{"x2"}, $sorteEdges[$next]{"y1"} - $sorteEdges[$before]->{"y2"}, 0 );
+			  NewVec( $sorteEdges->[$next]{"x1"} - $sorteEdges->[$before]->{"x2"}, $sorteEdges->[$next]{"y1"} - $sorteEdges->[$before]->{"y2"}, 0 );
 
 			$innerAngel =
 			  sprintf( "%.1f", rad2deg( $origin->InnerAnglePoints( $vBef, $vJoinLine ) ) );
@@ -137,16 +140,19 @@ sub RemoveRadiuses {
 
 		if ( $posOfLine eq "intersection" ) {
 			$vectorAngel =
-			  MathRoute->VectorInnerEdge(
-										  $sorteEdges[$before]{"x1"} - $sorteEdges[$before]{"x2"},
-										  $sorteEdges[$before]{"y1"} - $sorteEdges[$before]{"y2"},
-										  $sorteEdges[$next]{"x2"} - $sorteEdges[$next]{"x1"},
-										  $sorteEdges[$next]{"y2"} - $sorteEdges[$next]{"y1"}
+			  RoutMath->VectorInnerEdge(
+										 $sorteEdges->[$before]{"x1"} - $sorteEdges->[$before]{"x2"},
+										 $sorteEdges->[$before]{"y1"} - $sorteEdges->[$before]{"y2"},
+										 $sorteEdges->[$next]{"x2"} - $sorteEdges->[$next]{"x1"},
+										 $sorteEdges->[$next]{"y2"} - $sorteEdges->[$next]{"y1"}
 			  );
 
 			my $posOfIntersection =
-			  MathRoute->PosOfPoint( @{$intersec}[0],            @{$intersec}[1],          $sorteEdges[$before]{"x2"},
-									 $sorteEdges[$before]{"y2"}, $sorteEdges[$next]{"x1"}, $sorteEdges[$next]{"y1"} );
+			  RoutMath->PosOfPoint( @{$intersec}[0], @{$intersec}[1],
+									$sorteEdges->[$before]{"x2"},
+									$sorteEdges->[$before]{"y2"},
+									$sorteEdges->[$next]{"x1"},
+									$sorteEdges->[$next]{"y1"} );
 
 			if (    $vectorAngel > 180 && $posOfIntersection eq "right"
 				 || $vectorAngel < 180 && $posOfIntersection eq "left" )
@@ -167,8 +173,8 @@ sub RemoveRadiuses {
 			my ( $vRadiusBef, $vRadiusNext, $innerAngel ) = ( undef, undef, 0 );
 			my $origin = NewVec( 0, 0, 0 );
 
-			$vRadiusBef  = NewVec( $arc{"xmid"} - $sorteEdges[$before]{"x2"}, $arc{"ymid"} - $sorteEdges[$before]{"y2"}, 0 );
-			$vRadiusNext = NewVec( $sorteEdges[$next]{"x1"} - $arc{"xmid"},   $sorteEdges[$next]{"y1"} - $arc{"ymid"},   0 );
+			$vRadiusBef  = NewVec( $arc{"xmid"} - $sorteEdges->[$before]{"x2"}, $arc{"ymid"} - $sorteEdges->[$before]{"y2"}, 0 );
+			$vRadiusNext = NewVec( $sorteEdges->[$next]{"x1"} - $arc{"xmid"},   $sorteEdges->[$next]{"y1"} - $arc{"ymid"},   0 );
 
 			$innerAngel = rad2deg( $origin->InnerAnglePoints( $vRadiusBef, $vRadiusNext ) );
 
@@ -177,17 +183,17 @@ sub RemoveRadiuses {
 			my $intersectX = @{$intersec}[0];
 			my $intersectY = @{$intersec}[1];
 
-			$sorteEdges[$next]->{"x1"}   = $intersectX;
-			$sorteEdges[$next]->{"y1"}   = $intersectY;
-			$sorteEdges[$before]->{"x2"} = $intersectX;
-			$sorteEdges[$before]->{"y2"} = $intersectY;
+			$sorteEdges->[$next]->{"x1"}   = $intersectX;
+			$sorteEdges->[$next]->{"y1"}   = $intersectY;
+			$sorteEdges->[$before]->{"x2"} = $intersectX;
+			$sorteEdges->[$before]->{"y2"} = $intersectY;
 
 			$vectorAngel =
-			  MathRoute->VectorInnerEdge(
-										  $sorteEdges[$i]{"x1"} - $sorteEdges[$i]{"x2"},
-										  $sorteEdges[$i]{"y1"} - $sorteEdges[$i]{"y2"},
-										  $sorteEdges[$next]{"x2"} - $sorteEdges[$next]{"x1"},
-										  $sorteEdges[$next]{"y2"} - $sorteEdges[$next]{"y1"}
+			  RoutMath->VectorInnerEdge(
+										 $sorteEdges->[$i]{"x1"} - $sorteEdges->[$i]{"x2"},
+										 $sorteEdges->[$i]{"y1"} - $sorteEdges->[$i]{"y2"},
+										 $sorteEdges->[$next]{"x2"} - $sorteEdges->[$next]{"x1"},
+										 $sorteEdges->[$next]{"y2"} - $sorteEdges->[$next]{"y1"}
 			  );
 
 			#SMAYAT
@@ -216,17 +222,17 @@ sub RemoveRadiuses {
 		elsif ( $posOfLine eq "parallel-overlapping" ) {
 
 			my %featInfo;
-			$featInfo{"id"}           = -1;
+			$featInfo{"id"}           = GeneralHelper->GetNumUID();
 			$featInfo{"type"}         = "L";
-			$featInfo{"x1"}           = $sorteEdges[$before]->{"x2"};
-			$featInfo{"y1"}           = $sorteEdges[$before]->{"y2"};
-			$featInfo{"x2"}           = $sorteEdges[$next]->{"x1"};
-			$featInfo{"y2"}           = $sorteEdges[$next]->{"y1"};
-			$featInfo{"switchPoints"} = $sorteEdges[$next]->{"switchPoints"};
+			$featInfo{"x1"}           = $sorteEdges->[$before]->{"x2"};
+			$featInfo{"y1"}           = $sorteEdges->[$before]->{"y2"};
+			$featInfo{"x2"}           = $sorteEdges->[$next]->{"x1"};
+			$featInfo{"y2"}           = $sorteEdges->[$next]->{"y1"};
+			$featInfo{"switchPoints"} = $sorteEdges->[$next]->{"switchPoints"};
 
-			RouteChainHelper->__AddGeometricAtt( \%featInfo );
+			RoutParser->AddGeometricAtt( \%featInfo );
 
-			splice @sorteEdges, $i + 1, 0, \%featInfo;
+			splice @{$sorteEdges}, $i + 1, 0, \%featInfo;
 
 			push( @idToDel, $arc{"id"} );
 
@@ -260,11 +266,11 @@ sub RemoveRadiuses {
 			my $intersec;
 			my @box;
 
-			$vBef =
-			  NewVec( $sorteEdges[$before]->{"x2"} - $sorteEdges[$before]->{"x1"}, $sorteEdges[$before]->{"y2"} - $sorteEdges[$before]->{"y1"}, 0 );
-			$vNext = NewVec( $sorteEdges[$next]{"x2"} - $sorteEdges[$next]{"x1"}, $sorteEdges[$next]{"y2"} - $sorteEdges[$next]{"y1"}, 0 );
+			$vBef = NewVec( $sorteEdges->[$before]->{"x2"} - $sorteEdges->[$before]->{"x1"},
+							$sorteEdges->[$before]->{"y2"} - $sorteEdges->[$before]->{"y1"}, 0 );
+			$vNext = NewVec( $sorteEdges->[$next]{"x2"} - $sorteEdges->[$next]{"x1"}, $sorteEdges->[$next]{"y2"} - $sorteEdges->[$next]{"y1"}, 0 );
 			$vJoinLine =
-			  NewVec( $sorteEdges[$next]{"x1"} - $sorteEdges[$before]->{"x2"}, $sorteEdges[$next]{"y1"} - $sorteEdges[$before]->{"y2"}, 0 );
+			  NewVec( $sorteEdges->[$next]{"x1"} - $sorteEdges->[$before]->{"x2"}, $sorteEdges->[$next]{"y1"} - $sorteEdges->[$before]->{"y2"}, 0 );
 			my @plus     = $vBef->Plus($vNext);
 			my @minus    = $vBef->Minus($vNext);
 			my $plusLen  = Math::Vec::Length( \@plus );
@@ -279,14 +285,14 @@ sub RemoveRadiuses {
 			{
 
 				#imaginare bounding box
-				@box = RouteRadiusHelper->__CreateBoxFirstCase( $sorteEdges[$before], $sorteEdges[$next], \%arc );
+				@box = $self->__CreateBoxFirstCase( $sorteEdges->[$before], $sorteEdges->[$next], \%arc );
 			}
 
 			#this is second case
 			elsif (    $plusLen > $minusLen
 					|| $posOfLine eq "intersection-special" )
 			{
-				@box = RouteRadiusHelper->__CreateBoxSecondCase( $sorteEdges[$before], $sorteEdges[$next], \%arc );
+				@box = $self->__CreateBoxSecondCase( $sorteEdges->[$before], $sorteEdges->[$next], \%arc );
 
 			}
 			else {
@@ -294,22 +300,22 @@ sub RemoveRadiuses {
 			}
 
 			#remove old arc
-			splice @sorteEdges, $i, 1;    #remove arc
+			splice @{$sorteEdges}, $i, 1;    #remove arc
 
 			#add new line to @sorted lines
 			for ( my $k = scalar(@box) - 1 ; $k > 0 ; $k-- ) {
 
 				my %featInfo;
-				$featInfo{"id"}   = -1;
+				$featInfo{"id"}   = GeneralHelper->GetNumUID();
 				$featInfo{"type"} = "L";
 				$featInfo{"x1"}   = $box[ $k - 1 ][0];
 				$featInfo{"y1"}   = $box[ $k - 1 ][1];
 				$featInfo{"x2"}   = $box[$k][0];
 				$featInfo{"y2"}   = $box[$k][1];
 
-				RouteChainHelper->__AddGeometricAtt( \%featInfo );
+				RoutParser->AddGeometricAtt( \%featInfo );
 
-				splice @sorteEdges, $i, 0, \%featInfo;
+				splice @{$sorteEdges}, $i, 0, \%featInfo;
 			}
 		}
 	}
@@ -319,10 +325,9 @@ sub RemoveRadiuses {
 
 		my $arcId = $idToDel[$i];
 
-		my ($idx) =
-		  grep { $sorteEdges[$_]{"id"} eq $arcId } 0 .. $#sorteEdges;
+		my ($idx) = grep { $sorteEdges->[$_]{"id"} eq $arcId } 0 .. $#$sorteEdges;
 
-		splice @sorteEdges, $idx, 1;    #remove arc
+		splice @{$sorteEdges}, $idx, 1;                                              #remove arc
 
 	}
 
@@ -332,8 +337,6 @@ sub RemoveRadiuses {
 		$result{"newDrillHoleVal"} = \@drillPoints;
 
 	}
-
-	$result{"edges"} = \@sorteEdges;
 
 	return %result;
 }

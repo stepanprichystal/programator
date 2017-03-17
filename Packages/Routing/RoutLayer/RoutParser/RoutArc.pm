@@ -12,9 +12,11 @@ use Math::Polygon::Calc;                 #Math-Polygon
 use Math::Geometry::Planar;              #Math-Geometry-Planar-GPC
 use POSIX 'floor';
 
+
 #local library
 use aliased 'Packages::Polygon::Features::RouteFeatures::RouteFeatures';
- 
+use aliased 'Helpers::GeneralHelper'; 
+use aliased 'Packages::Routing::RoutLayer::RoutParser::RoutParser';
 
 #-------------------------------------------------------------------------------------------#
 #  Public method
@@ -59,7 +61,7 @@ sub FragmentArcReplace {
 
 					%featInfo = %{ $sorteEdges[$i] };
 
-					$featInfo{"id"} = -1;
+					$featInfo{"id"} = GeneralHelper->GetNumUID();
 
 					#$featInfo{"x1"} = sprintf( "%.3f", $arcPoints[$j][0] );
 					#$featInfo{"y1"} = sprintf( "%.3f", $arcPoints[$j][1] );
@@ -73,7 +75,7 @@ sub FragmentArcReplace {
 					$featInfo{"x2"} = $arcPoints[ $j + 1 ][0];
 					$featInfo{"y2"} = $arcPoints[ $j + 1 ][1];
 
-					#Rout->__AddGeometricAtt( \%featInfo );
+					RoutParser->AddGeometricAtt( \%featInfo );
 
 					splice @sorteEdges, $i + $j + 1, 0, \%featInfo;
 				}

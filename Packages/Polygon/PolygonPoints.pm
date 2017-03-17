@@ -156,22 +156,16 @@ sub GetCentroid {
 	 return $point;
 }
 
-# Return if polzgon are equals
-#
-
-sub PolygonAreEqual {
+# Get polygon area
+sub GetPolygonArea {
 	my $self  = shift;
 	my @points1 = @{ shift(@_) };
- 	my @points2 = @{ shift(@_) };
- 	
+
+ 	push(@points1, $points1[0]);
+ 
  	my $poly1 = Math::Polygon->new( @points1 );
- 	my $poly2 = Math::Polygon->new( @points2 );
- 	
- 	if($poly1->area() eq $poly2->area()){
- 		return 1;
- 	}else{
- 		return 0;
- 	}
+ 	 
+ 	return $poly1->area();
 }
  
 

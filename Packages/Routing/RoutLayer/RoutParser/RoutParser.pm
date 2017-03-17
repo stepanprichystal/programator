@@ -13,6 +13,7 @@ use Math::Trig;
 use aliased 'Packages::Polygon::Features::RouteFeatures::RouteFeatures';
 use aliased 'Packages::Routing::RoutLayer::RoutMath::RoutMath';
 use aliased 'Packages::Routing::RoutLayer::RoutParser::RoutArc';
+use aliased 'Packages::Polygon::PolygonPoints';
 
 #-------------------------------------------------------------------------------------------#
 #  Public method
@@ -30,7 +31,7 @@ sub GetFeatures {
 
 	my $parser = RouteFeatures->new();
 
-	$parser->Parse();
+	$parser->Parse($inCAM, $jobId, $step, $layer, $breakSR);
 
 	my @features = $parser->GetFeatures();
 
@@ -104,6 +105,26 @@ sub AddGeometricAtt {
 		$edge->{"length"} =
 		  deg2rad( $edge->{"innerangle"} ) * $edge->{"radius"};               #compute length of arc
 	}
+}
+
+# Compeare areas of two cyclic rout, with tolerance 0,01mm2
+sub RoutAreasEquals {
+	my $self  = shift;
+	my @features1 = @{ shift(@_) };
+ 	my @features2 = @{ shift(@_) };
+ 	
+ 	my @points1 = map { [ $_->{"x2"}, $_->{"y2"} ] } @features1;
+ 	my @points2= map { [ $_->{"x2"}, $_->{"y2"} ] } @features2;
+ 
+ 	my $area1 = PolygonPoints->GetPolygonArea(\@points1);
+ 	my $area2 = PolygonPoints->GetPolygonArea(\@points2);
+ 
+ 	# tolerance 0.01 mm2
+ 	if(abs ($area1 - $area2) < 0.01){
+ 		return 1;
+ 	}else{
+ 		return 0;
+ 	}
 }
 
 #-------------------------------------------------------------------------------------------#
