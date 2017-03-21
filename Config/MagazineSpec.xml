@@ -17,4 +17,8 @@
       <magazine material="FR4">W13</magazine>
       <magazine material="IS400">W13</magazine>
    </tool>
+   <tool name="d2.0a30" code="803" diameter="2.0" angle="30">
+      <magazine material="FR4">W14</magazine>
+      <magazine material="IS400">W14</magazine>
+   </tool> 
 </tools>

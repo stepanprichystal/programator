@@ -271,9 +271,16 @@ sub __InitUniDTM {
 # Add pilot tool definitions (2.8mm + 4.6 mm) if tools diameter is bigger than 5.3mm
 sub __AddPilotHolesDefinition {
 	my $self = shift;
-
+	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
-
+	
+	# Add pilot holes only for plated
+	my $lType = CamHelper->LayerType($inCAM, $jobId, $self->{"layer"});
+ 
+	if($lType ne "drill" ){
+		return 0;
+	}
+ 
 	my @bigTools = grep { $_->GetDrillSize() > 5300 && $_->GetTypeProcess() eq Enums->TypeProc_HOLE } @{ $self->{"tools"} };
 
 	# 1) add poliot diameters to big hole
