@@ -8,7 +8,7 @@ use warnings;
 
 # ============ INPUT LINE =================
 my $inputLine =
-"chain_add,layer=f_f52456,chain_type=regular_chain,chain=1,size=2,flag=0,feed=0,speed=0,infeed_speed=0,retract_speed=0,pressure_foot=none,first=25,chng_direction=0,comp=left,repeat=no,plunge=no (0)";
+"create_entity,job=f52456,name=dddddddddddd,db=,is_fw=no,type=step,fw_type=form";
 my $output = "\$inCAM->COM(";
 my @splitted = split( ",", $inputLine );
 

@@ -373,6 +373,12 @@ sub GetPossibleFootDowns {
 					next;
 				} 
 			}
+			
+			# RULE 6) - inner angle is bigger than 170
+			if ( $sorteEdges[$i]{"innerangle"} > 170){
+				$footDowns[$i] = 0;    # delete candidate
+				next;
+			}
  
 
 		}
