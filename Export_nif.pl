@@ -21,17 +21,17 @@ use aliased 'Programs::Exporter::ExportUtility::Groups::NifExport::NifExportTmp'
  
 
  
-my $jobId    = "f13608";
+my $jobId    = "f67116";
  
 
  
  
 my $poznamka = undef;
 my $tenting  = 0;
-my $pressfit = 1;
+my $pressfit = 0;
 my $maska01  = undef;
-my $datacode  = "ms";
-my $ullogo  = "pc";
+my $datacode  = "MC";
+my $ullogo  = "MC";
 my $jumpScoring  = undef;
 
  

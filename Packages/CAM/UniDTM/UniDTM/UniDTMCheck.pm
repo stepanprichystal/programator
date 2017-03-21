@@ -163,6 +163,9 @@ sub CheckSpecialTools {
 	my $result = 1;
 
 	my @tools = @{ $self->{"unitDTM"}->{"tools"} };
+	
+	# Do not this check for tools 2mm (because each pscb contain tool 2mm and this control is bothering)
+	@tools = grep { $_->GetDrillSize() != 2000 } @tools;
 
 	my @specTool   = ();
 	my @uniDTMTool = ();
