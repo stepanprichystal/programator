@@ -4,7 +4,7 @@
 # Responsible for tools are unique (diameter + typeProc)
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::CAM::UniRTM::UniRTM::UniChain;
+package Packages::ExportPool::Routing::StepList::StepRotation;
 
 #3th party library
 use strict;
@@ -31,6 +31,9 @@ use aliased 'Helpers::GeneralHelper';
 #use aliased 'Packages::CAM::UniDTM::PilotDef::PilotDef';
 
 use aliased 'Packages::CAM::UniRTM::UniRTM::UniRTM';
+use aliased 'Packages::ExportPool::Routing::StepList::StepPlace';
+use aliased 'CamHelpers::CamLayer';
+
 
 #-------------------------------------------------------------------------------------------#
 #  Public method
@@ -42,7 +45,7 @@ sub new {
 	bless $self;
 
 	$self->{"stepName"} = shift;
-	$self->{"workStep"} = shift;
+	#$self->{"workStep"} = shift;
 	$self->{"layer"}    = shift;
 	$self->{"angle"}    = shift;
 
@@ -62,7 +65,8 @@ sub Init {
 	my $self      = shift;
 	my $inCAM     = shift;
 	my $jobId     = shift;
-	my @placement = shift;
+	my $targetStep     = shift;
+	my @placement = @{shift(@_)};
 
 	# Prepare rout work layer
 	$self->{"routLayer"} = GeneralHelper->GetGUID();
@@ -80,8 +84,8 @@ sub Init {
 
 	if ( $self->{"angle"} > 0 ) {
 
-		$self->WorkLayer( $inCAM, $self->{"routLayer"} );
-		$inCAM->COM( "sel_transform", "x_anchor" => 0, "y_anchor" => 0, "oper" => "rotate", "angle" => $self->{"angle"} );
+		CamLayer->WorkLayer( $inCAM, $self->{"routLayer"} );
+		$inCAM->COM( "sel_transform", "direction" => "ccw", "x_anchor" => 0, "y_anchor" => 0, "oper" => "rotate", "angle" => $self->{"angle"} );
 
 	}
 
@@ -94,7 +98,7 @@ sub Init {
 	}
 
 	# Load uniRTM
-	$self->{"uniRTM"} = UniRTM->new( $inCAM, $jobId, $self->{"stepName"}, $self->{"routLayer"} );
+	$self->{"uniRTM"} = UniRTM->new( $inCAM, $jobId, $targetStep, $self->{"routLayer"} );
 
 	# Load foots..
 
@@ -131,6 +135,13 @@ sub UserFootExist {
 	my $self = shift;
 
 }
+
+sub GetStepPlaces {
+	my $self = shift;
+
+	return @{$self->{"stepPlaces"}};
+}
+ 
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

@@ -3,7 +3,7 @@
 # Description: Manager responsible for NIF creation
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::Export::NifExport::NifMngr;
+package Packages::ExportPool::Routing::RoutingMngr;
 use base('Packages::ItemResult::ItemEventMngr');
  
 
@@ -23,11 +23,15 @@ use warnings;
 #use aliased 'Packages::Export::NifExport::NifBuilders::PoolBuilder';
 #use aliased 'Helpers::JobHelper';
 #use aliased 'CamHelpers::CamJob';
-#use aliased 'CamHelpers::CamHelper';
+use aliased 'CamHelpers::CamHelper';
 #use aliased 'Enums::EnumsGeneral';
 #use aliased 'Enums::EnumsPaths';
 #use aliased 'Connectors::HeliosConnector::HegMethods';
 #use aliased 'Helpers::FileHelper';
+use aliased 'Packages::ExportPool::Routing::StepList::StepList';
+use aliased 'Packages::ExportPool::Routing::StepCheck::StepCheck';
+use aliased 'Packages::ExportPool::Routing::RoutStart::RoutStart';
+use aliased 'Packages::ItemResult::Enums' => "ResEnums";
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -43,9 +47,9 @@ sub new {
 	$self->{"jobId"}   = shift;
 	 
 	$self->{"stepList"} = StepList->new($self->{"inCAM"}, $self->{"jobId"}, "panel", "f"); 
-	 
-	
-	 
+	$self->{"stepCheck"} = StepCheck->new($self->{"inCAM"}, $self->{"jobId"}, $self->{"stepList"}); 
+	$self->{"routStart"} = RoutStart->new($self->{"inCAM"}, $self->{"jobId"}, $self->{"stepList"}); 
+ 
 	return $self;
 }
 
@@ -55,13 +59,49 @@ sub Run {
 	
 	$self->{"stepList"}->Init();
 	
+ 
+	$self->__ProcessResult($self->{"stepCheck"}->OnlyBridges());
 	
-
+	$self->__ProcessResult($self->{"stepCheck"}->OutsideChains());
+	
+	$self->__ProcessResult($self->{"stepCheck"}->LeftRoutChecks());
+	
+	$self->__ProcessResult($self->{"stepCheck"}->OutlineToolIsLast());
+	
+	$self->__ProcessResult($self->{"routStart"}->FindStart());
+	
+	$self->__ProcessResult($self->{"routStart"}->CreateFsch());
+ 
+ 
+ 	$self->{"stepList"}->Clean();
  
 }
 
 sub Continue{
 	my $self = shift;
+	
+	
+}
+
+
+sub __ProcessResult{
+	my $self = shift;
+	my $res = shift;
+	
+	
+	unless( $res eq ResEnums->ItemResult_Fail ){
+		
+		if($res->GetWarningCount() > 0){
+			
+			print STDERR "Warning:\n\n".$res->GetWarningStr();
+		}
+		
+		if($res->GetErrorCount() > 0){
+			
+			print STDERR "Errors:\n\n".$res->GetErrorStr();
+		}
+		  
+	}
 	
 }
  
@@ -70,6 +110,18 @@ sub Continue{
 #-------------------------------------------------------------------------------------------#
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
+
+	use aliased 'Packages::ExportPool::Routing::RoutingMngr';
+	use aliased 'Packages::InCAM::InCAM';
+ 
+
+	my $inCAM = InCAM->new();
+
+	my $jobId = "f52456";
+	 
+	
+	my $routMngr = RoutingMngr->new($inCAM, $jobId);
+	$routMngr->Run();
 
 }
 

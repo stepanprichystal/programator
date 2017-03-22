@@ -131,7 +131,7 @@ sub GetRepeatStep {
 		my %info = ();
 		$info{"stepName"} = ${ $inCAM->{doinfo}{gREPEATstep} }[$i];
 		$info{"originX"}  = ${ $inCAM->{doinfo}{gREPEATxa} }[$i];
-		$info{"originY"}  = ${ $inCAM->{doinfo}{gREPEATxa} }[$i];
+		$info{"originY"}  = ${ $inCAM->{doinfo}{gREPEATya} }[$i];
 		$info{"angle"}    = ${ $inCAM->{doinfo}{gREPEATangle} }[$i];
 
 #		# mistake in Incam angle_direction => 'ccw' not work, thus:

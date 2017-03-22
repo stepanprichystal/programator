@@ -4,7 +4,7 @@
 # Responsible for tools are unique (diameter + typeProc)
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::CAM::UniRTM::UniRTM::UniChain;
+package Packages::ExportPool::Routing::StepList::Step;
 
 #3th party library
 use strict;
@@ -26,8 +26,10 @@ use aliased 'Packages::CAM::UniRTM::Enums';
 #use aliased 'Connectors::HeliosConnector::HegMethods';
 #use aliased 'Helpers::GeneralHelper';
 #use aliased 'Helpers::FileHelper';
-#use aliased 'CamHelpers::CamHelper';
+#use aliased 'CamHelpers::CamAttributes';
 #use aliased 'Packages::CAM::UniDTM::PilotDef::PilotDef';
+use aliased 'Packages::ExportPool::Routing::StepList::StepRotation';
+use aliased 'CamHelpers::CamAttributes';
 
 use aliased 'Packages::CAM::UniRTM::UniRTM::UniRTM';
 
@@ -40,11 +42,10 @@ sub new {
 	$self = {};
 	bless $self;
  
-	$self->{"inCAM"} = shift;
-	$self->{"jobId"}    = shift;
+	
 	
 	$self->{"stepName"} = shift;
-	$self->{"workStep"} = shift;
+	#$self->{"workStep"} = shift;
 	$self->{"layer"}    = shift;
 
 	$self->{"uniRTM"}            = undef;
@@ -58,10 +59,10 @@ sub new {
 
 sub Init {
 	my $self    = shift;
-	
-	my $inCAM   = $self->{"inCAM"};
-	my $jobId   = $self->{"jobId"};
+	my $inCAM   = shift;
+	my $jobId   = shift;
 	my @repeats = @{ shift(@_) };
+	my $targetStep = shift;
 
 	# 1) Init object for all rotation
 
@@ -73,8 +74,8 @@ sub Init {
 
 			my @rotPlacement = grep { $_->{"angle"} == $r->{"angle"} } @repeats;
 
-			my $stepRot = StepRotation->new( $self->{"stepName"},$self->{"layer"}, $r->{"angle"} );
-			$stepRot->Init( $inCAM, $jobId, \@rotPlacement );
+			my $stepRot = StepRotation->new( $self->{"stepName"},  $self->{"layer"}, $r->{"angle"} );
+			$stepRot->Init( $inCAM, $jobId, $targetStep, \@rotPlacement );
 			
 			push(@{$self->{"stepRotations"}}, $stepRot);
 
@@ -125,6 +126,13 @@ sub GetUserRoutOnBridges {
 
 	return $self->{"userRoutOnBridges"};
 }
+
+sub GetStepName {
+	my $self = shift;
+
+	return $self->{"stepName"};
+}
+ 
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

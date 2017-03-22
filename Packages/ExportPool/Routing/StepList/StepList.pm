@@ -4,7 +4,7 @@
 # Responsible for tools are unique (diameter + typeProc)
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::CAM::UniRTM::UniRTM::UniChain;
+package Packages::ExportPool::Routing::StepList::StepList;
 
 #3th party library
 use strict;
@@ -28,6 +28,12 @@ use aliased 'Packages::CAM::UniRTM::Enums';
 #use aliased 'Helpers::GeneralHelper';
 #use aliased 'Helpers::FileHelper';
 use aliased 'CamHelpers::CamHelper';
+use aliased 'CamHelpers::CamAttributes';
+use aliased 'CamHelpers::CamStepRepeat';
+use aliased 'Packages::ExportPool::Routing::StepList::Step';
+
+
+
 
 #use aliased 'Packages::CAM::UniDTM::PilotDef::PilotDef';
 
@@ -42,9 +48,9 @@ sub new {
 
 	$self->{"inCAM"}      = shift;
 	$self->{"jobId"}      = shift;
-	$self->{"parentStep"} = shift;
+	$self->{"targetStep"} = shift;
 	$self->{"layer"}      = shift;
-	$self->{"workStep"}   = "work_" . $self->{"parentStep"};
+	#$self->{"workStep"}   = "work_" . $self->{"targetStep"};
 
 	my @steps = ();
 	$self->{"steps"} = \@steps;    # features, wchich chain is created from
@@ -60,33 +66,33 @@ sub Init {
 
 	# create work step
 	#delete if step already exist
-	unless ( CamHelper->StepExists( $inCAM, $jobId, $self->{"workStep"} ) ) {
-
-		$inCAM->COM(
-					 "create_entity",
-					 "job"     => $jobId,
-					 "name"    => $self->{"workStep"},
-					 "db"      => "",
-					 "is_fw"   => "no",
-					 "type"    => "step",
-					 "fw_type" => "form"
-		);
-	}
-	
-	CamHelper->SetStep($inCAM, $self->{"workStep"});
+#	unless ( CamHelper->StepExists( $inCAM, $jobId, $self->{"workStep"} ) ) {
+#
+#		$inCAM->COM(
+#					 "create_entity",
+#					 "job"     => $jobId,
+#					 "name"    => $self->{"workStep"},
+#					 "db"      => "",
+#					 "is_fw"   => "no",
+#					 "type"    => "step",
+#					 "fw_type" => "form"
+#		);
+#	}
+#	
+	CamHelper->SetStep($inCAM, $self->{"targetStep"});
 
 	# init steps
 
-	my @repeatsSR = CamAttributes->GetRepeatStep( $inCAM, $jobId, $self->{"parentStep"} );
-	my @uniqueSR = CamAttributes->GetUniqueStepAndRepeat( $inCAM, $jobId, $self->{"parentStep"} );
+	my @repeatsSR = CamStepRepeat->GetRepeatStep( $inCAM, $jobId, $self->{"targetStep"} );
+	my @uniqueSR = CamStepRepeat->GetUniqueStepAndRepeat( $inCAM, $jobId, $self->{"targetStep"} );
 
 	foreach my $uStep (@uniqueSR) {
 
 		my @rep = grep { $_->{"stepName"} eq $uStep->{"stepName"} } @repeatsSR;
 
-		my $step = Step->new( $inCAM, $jobId, $uStep->{"stepName"},$self->{"workStep"} , $self->{"layer"} );
+		my $step = Step->new( $uStep->{"stepName"} , $self->{"layer"} );
 
-		$step->Init(\@rep );
+		$step->Init( $inCAM, $jobId, \@rep, $self->{"targetStep"} );
 
 		push( @{ $self->{"steps"} }, $step );
 	}
@@ -98,13 +104,13 @@ sub Clean {
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
 
-	if ( CamHelper->StepExists( $inCAM, $jobId, $self->{"workStep"} ) ) {
-
-		$inCAM->COM( "delete_entity", "job" => $jobId, "name" => $self->{"workStep"}, "type" => "step" );
-	}
+#	if ( CamHelper->StepExists( $inCAM, $jobId, $self->{"workStep"} ) ) {
+#
+#		$inCAM->COM( "delete_entity", "job" => $jobId, "name" => $self->{"workStep"}, "type" => "step" );
+#	}
 
 	my @routLayers = map {
-		map { $_->GetGetRoutLayer() }
+		map { $_->GetRoutLayer() }
 		  $_->GetStepRotations()
 	} @{ $self->{"steps"} };
 
@@ -117,6 +123,19 @@ sub Clean {
 	}
 
 }
+
+sub GetSteps{
+	my $self = shift;
+	
+	return @{$self->{"steps"}};	
+}
+
+sub GetStep{
+	my $self = shift;
+	
+	return  $self->{"targetStep"};	
+}
+ 
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
