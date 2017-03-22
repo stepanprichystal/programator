@@ -17,6 +17,7 @@ use aliased 'Packages::Polygon::Enums' => "PolyEnums";
 use aliased 'Packages::CAM::UniRTM::UniRTM::Parser::RoutParser';
 use aliased 'Packages::CAM::UniRTM::UniRTM::Parser::ChainParser';
 use aliased 'Packages::Polygon::PolygonPoints';
+use aliased 'Packages::CAM::UniRTM::UniRTM::Parser::ChainToolParser';
 
 #-------------------------------------------------------------------------------------------#
 #  Public method
@@ -40,13 +41,14 @@ sub new {
 
 	my @chains = ();
 	$self->{"chains"} = \@chains;
+	
+	my @chainList = ();
+	$self->{"chainList"} = \@chainList;
 
 	$self->{"innerRout"}     = undef;
 	$self->{"outerRout"}     = undef;
 	$self->{"outerBrdgRout"} = undef;
-
-	my @nested = ();
-	$self->{"uniRTMlist"} = \@nested;
+ 
 
 	$self->__InitUniRTM();
 
@@ -72,6 +74,14 @@ sub GetChainSequences {
 	return @seqs;
 }
 
+sub GetChainList {
+	my $self = shift;
+ 
+	return @{ $self->{"chainList"} };
+}
+
+ 
+
 sub __InitUniRTM {
 	my $self = shift;
 
@@ -81,13 +91,25 @@ sub __InitUniRTM {
 	my $layer   = $self->{"layer"};
 	my $breakSR = $self->{"breakSR"};
 
+	
+
 	# 1) Parse features
 	my @features = RoutParser->GetFeatures( $inCAM, $jobId, $step, $layer, $breakSR );
 	$self->{"features"} = \@features;
+	
+	# 2) Get route chain list
+	my @chainList = ChainToolParser->GetChainList(\@features);
+	$self->{"chainList"} = \@chainList;
+ 
 
 	# 2) Get route chains by same .rout_tool atribute
-	my @chains = ChainParser->GetChains( \@features );
+	my @chains = ChainParser->GetChains( \@chainList, \@features );
 	$self->{"chains"} = \@chains;
+	
+	
+	
+	
+	
 
 	# 4) Get information about mutual position of chain sequences
 	# If chain is inside another chain, save this information

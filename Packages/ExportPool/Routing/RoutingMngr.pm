@@ -70,7 +70,8 @@ sub Run {
 	
 	$self->__ProcessResult($self->{"routStart"}->FindStart());
 	
-	$self->__ProcessResult($self->{"routStart"}->CreateFsch());
+	my %convTable = ();
+	$self->__ProcessResult($self->{"routStart"}->CreateFsch(\%convTable));
  
  
  	$self->{"stepList"}->Clean();

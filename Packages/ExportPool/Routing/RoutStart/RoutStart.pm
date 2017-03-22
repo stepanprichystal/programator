@@ -185,7 +185,8 @@ sub __FindStart {
 
 sub CreateFsch {
 	my $self = shift;
-
+	my $convTable = shift;
+	
 	my $resultItem = ItemResult->new("Create fsch");
 
 	my $inCAM = $self->{"inCAM"};
@@ -221,8 +222,22 @@ sub CreateFsch {
 							 "x_anchor"     => "0",
 							 "y_anchor"     => "0"
 				);
+				
+				# Get new chain number and store to conversion table
+				my @oldChains =  $sRot->GetUniRTM()->GetChainList();
+				
+				my $unitRTM = UniRTM->new( $inCAM, $jobId, $self->{"stepList"}->GetStep(), $fschLayer );
+				 
+				my @newChains = ($unitRTM->GetChainList())[- scalar(@oldChains)..-1];
+				
+				my %t = ();
+				for (my $i =0; $i < scalar(@oldChains); $i++){
+					
+					$t{$oldChains[$i]->GetChainOrder()} = $newChains[$i]->GetChainOrder();					
+				}
+				
+				$convTable->{$sPlc->GetStepId()} = \%t;
 			}
-
 		}
 	}
 

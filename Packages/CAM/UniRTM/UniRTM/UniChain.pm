@@ -39,12 +39,8 @@ sub new {
 	$self = {};
 	bless $self;
 
-	$self->{"chainOrder"} = shift;
-	$self->{"chainSize"}  = undef;    # size of tool in µm
- 
-	$self->{"comp"}         = undef;
- 
-
+	$self->{"chainTool"} = shift;
+	 
 	my @chainSeq = ();
 	$self->{"chainSequences"} = \@chainSeq; # features, wchich chain is created from
 
@@ -89,10 +85,7 @@ sub GetChainPoints {
 
 }
 
-
-
-
-
+ 
 
 
 # GET/SET Properties -------------------------------------
@@ -118,7 +111,7 @@ sub GetChainSequences {
 sub GetChainOrder {
 	my $self = shift;
 
-	return $self->{"chainOrder"};
+	return $self->{"chainTool"}->{"chainOrder"};
 
 }
 
@@ -148,16 +141,10 @@ sub SetFeatures {
 sub GetComp {
 	my $self = shift;
 
-	return $self->{"comp"};
+	return $self->{"chainTool"}->{"comp"};
 }
 
-sub SetComp {
-	my $self = shift;
-	my $comp = shift;
-
-	$self->{"comp"} = $comp;
-
-}
+ 
 
 sub SetFootDown {
 	my $self = shift;
@@ -196,21 +183,13 @@ sub GetOutsideChain {
 	return $self->{"outsideChain"};
 
 }
-
-
-
-
-sub SetChainSize {
-	my $self  = shift;
-	my $type = shift;
-
-	$self->{"chainSize"} = $type;
-}
+ 
+ 
 
 sub GetChainSize {
 	my $self = shift;
 
-	return $self->{"chainSize"};
+	return $self->{"chainTool"}->{"chainSize"};
 }
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

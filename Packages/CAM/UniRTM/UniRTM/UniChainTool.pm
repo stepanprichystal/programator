@@ -4,19 +4,16 @@
 # Responsible for tools are unique (diameter + typeProc)
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
+package Packages::CAM::UniRTM::UniRTM::UniChainTool;
 
-package Packages::ExportPool::Routing::StepList::StepPlace;
 #3th party library
 use strict;
 use warnings;
- 
+use XML::Simple;
 
 #local library
 use aliased 'Packages::CAM::UniRTM::Enums';
-
-
-use aliased 'Helpers::GeneralHelper';
-
+ 
 
 #-------------------------------------------------------------------------------------------#
 #  Public method
@@ -27,32 +24,39 @@ sub new {
 	$self = {};
 	bless $self;
 
-	$self->{"posX"} = shift;
-	$self->{"posY"}  = shift;    # size of tool in µm
-	
-	$self->{"id"}  = GeneralHelper->GetGUID();
+	$self->{"chainOrder"} = shift;
+	$self->{"chainSize"}  = shift;    # size of tool in µm
+	$self->{"comp"}       = shift;
  
 	return $self;
 }
+
+# Helper methods -------------------------------------
  
-sub GetPosX {
-	my $self = shift;
-	
-	return $self->{"posX"};
-}
 
-sub GetPosY {
-	my $self = shift;
-	
-	return $self->{"posY"};
-}
+# GET/SET Properties -------------------------------------
+ 
 
-sub GetStepId {
+sub GetChainOrder {
 	my $self = shift;
-	
-	return $self->{"id"};
-}
 
+	return $self->{"chainOrder"};
+
+}
+ 
+ 
+sub GetComp {
+	my $self = shift;
+
+	return $self->{"comp"};
+}
+ 
+
+sub GetChainSize {
+	my $self = shift;
+
+	return $self->{"chainSize"};
+}
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#

@@ -74,7 +74,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	my $inCAM = InCAM->new();
 	my $jobId = "f52456";
 
-	my $unitRTM = UniRTM->new( $inCAM, $jobId, "o+1", "d" );
+	my $unitRTM = UniRTM->new( $inCAM, $jobId, "o+1", "f" );
 
 	my @lefts = $unitRTM->GetLeftCycleChains();
 

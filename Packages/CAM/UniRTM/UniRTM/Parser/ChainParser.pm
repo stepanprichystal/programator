@@ -27,76 +27,89 @@ use List::MoreUtils qw(uniq);
 # When some errors occure here, proper NC export is not possible
 
 sub GetChains {
-	my $self     = shift;
-	my @features = @{ shift(@_) };
+	my $self      = shift;
+	my @chainList = @{ shift(@_) };
+	my @features  = @{ shift(@_) };
 
 	my @chains = ();
 
 	# 1) Detect Chain
-	foreach my $f (@features) {
+	foreach my $ch (@chainList) {
 
-		# if no attributes
-		unless ( $f->{"att"} ) {
-			next;
-		}
-
-		my %attr = %{ $f->{"att"} };
-
-		# if features contain attribute rout chain
-		if ( $attr{".rout_chain"} && $attr{".rout_chain"} > 0 ) {
-
-			my $uniChain = undef;
-
-			$uniChain = ( grep { $_->GetChainOrder() eq $attr{".rout_chain"} } @chains )[0];
-
-			#  unless chain with given routchain, exist, add feature
-			unless ($uniChain) {
-
-				#
-				#				unless(defined $attr{".rout_tool"}){
-				#
-				#					print "dd";
-				#				}
-				#
-				my $chainOrder = $attr{".rout_chain"};
-
-				#				my $chainSize = sprintf( "%.1f", $attr{".rout_tool"} * 25.4 ) * 1000;
-
-				$uniChain = UniChain->new($chainOrder);
-
-				push( @chains, $uniChain );
-
-			}
-
-			# Add features
-			$uniChain->AddFeature($f);
-		}
-
-	}
-
-	# 2) Complete chain information
-	foreach my $ch (@chains) {
+		my $uniChain = UniChain->new($ch);
 
 		# 1) Set chain property
-		$self->__SetChainProperties($ch);
+		#$self->__SetChainProperties($ch);
 
-		my @features = $ch->GetFeatures();
+		my @featChain = grep { $_->{"att"}->{".rout_chain"} == $ch->GetChainOrder() } @features;
 
 		my @sequences = RoutCyclic->GetRoutSequences( \@features );
 
 		foreach my $seqPoints (@sequences) {
 
-			my $chSeq = UniChainSeq->new($ch);
+			my $chSeq = UniChainSeq->new($uniChain);
 
 			$chSeq->SetFeatures($seqPoints);
 			$self->__SetChainSeqProperties($chSeq);
 
-			$ch->AddChainSeq($chSeq);
+			$uniChain->AddChainSeq($chSeq);
 		}
-	}
 
+		push( @chains, $uniChain );
+	}
 	return @chains;
 }
+
+#sub GetChains {
+#	my $self     = shift;
+#	my @features = @{ shift(@_) };
+#
+#	my @chains = ();
+#
+#	# 1) Detect Chain
+#	foreach my $f (@features) {
+#
+#		# if no attributes
+#		unless ( $f->{"att"} ) {
+#			next;
+#		}
+#
+#		my %attr = %{ $f->{"att"} };
+#
+#		# if features contain attribute rout chain
+#		if ( $attr{".rout_chain"} && $attr{".rout_chain"} > 0 ) {
+#
+#			my $uniChain = undef;
+#
+#			$uniChain = ( grep { $_->GetChainOrder() eq $attr{".rout_chain"} } @chains )[0];
+#
+#			#  unless chain with given routchain, exist, add feature
+#			unless ($uniChain) {
+#
+#				#
+#				#				unless(defined $attr{".rout_tool"}){
+#				#
+#				#					print "dd";
+#				#				}
+#				#
+#				my $chainOrder = $attr{".rout_chain"};
+#
+#				#				my $chainSize = sprintf( "%.1f", $attr{".rout_tool"} * 25.4 ) * 1000;
+#
+#				$uniChain = UniChain->new($chainOrder);
+#
+#				push( @chains, $uniChain );
+#
+#			}
+#
+#			# Add features
+#			$uniChain->AddFeature($f);
+#		}
+#
+#	}
+#
+#	return @chains;
+#}
 
 sub __SetChainProperties {
 	my $self     = shift;
