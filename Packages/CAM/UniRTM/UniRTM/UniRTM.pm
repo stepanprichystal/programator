@@ -39,7 +39,7 @@ sub GetOutlineChains {
 
 	my @seqs = map { $_->GetChainSequences() } @{ $self->{"chains"} };
 	@seqs = grep { $_->IsOutline() } @seqs;
-	
+
 	return @seqs;
 }
 
@@ -57,6 +57,50 @@ sub GetMaxChainNumber {
 	}
 
 	return $max;
+}
+
+# Get left cycle chain
+sub GetChainListByOutline {
+	my $self    = shift;
+	my $outline = shift;    # if 1, return only outline chain tool. If 0, return all except outline tool
+
+	my @chainList = $self->GetChainList();
+
+	for ( my $i = scalar(@chainList) - 1 ; $i >= 0 ; $i-- ) {
+
+		# get chain woth actual chainTool
+		my $chainTool = $chainList[$i];
+
+		my $ch = $self->GetChainByChainTool($chainTool);
+
+		# test if given chai contain outline rout, if so remove from chainlist
+
+		my $exist = scalar( grep { $_->IsOutline() } $ch->GetChainSequences() );
+
+		if ($outline) {
+			unless ($exist) {
+				splice @chainList, $i, 1;
+			}
+		}
+		else {
+			if ($exist) {
+				splice @chainList, $i, 1;
+			}
+		}
+
+	}
+	
+	return @chainList;
+}
+
+sub GetChainByChainTool {
+	my $self      = shift;
+	my $chainTool = shift;
+
+	my @chains = $self->GetChains();
+	my $ch = ( grep { $_->{"chainTool"} == $chainTool } @chains )[0];
+
+	return $ch;
 }
 
 #-------------------------------------------------------------------------------------------#

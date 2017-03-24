@@ -43,7 +43,7 @@ sub GetChains {
 
 		my @featChain = grep { $_->{"att"}->{".rout_chain"} == $ch->GetChainOrder() } @features;
 
-		my @sequences = RoutCyclic->GetRoutSequences( \@features );
+		my @sequences = RoutCyclic->GetRoutSequences( \@featChain );
 
 		foreach my $seqPoints (@sequences) {
 
@@ -175,6 +175,23 @@ sub __SetChainSeqProperties {
 	else {
 		$uniChainSeq->SetFeatureType( Enums->FeatType_LINEARC );
 	}
+	
+	# 6) Set start edge of  chain
+	my @feats = $uniChainSeq->GetFeatures();
+	
+	my $minEId = undef;
+	my $minIdx = undef;
+	
+	for (my $i = 0; $i < scalar(@feats); $i++){
+		
+		if(!defined $minEId || $minEId > $feats[$i]->{"id"}){
+			$minEId = $feats[$i]->{"id"};
+			$minIdx = $i;
+		}	
+	}
+	
+	$uniChainSeq->SetStartEdge($feats[$minIdx]);
+	
 }
 
 #-------------------------------------------------------------------------------------------#

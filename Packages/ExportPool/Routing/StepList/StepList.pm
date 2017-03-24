@@ -31,6 +31,7 @@ use aliased 'CamHelpers::CamHelper';
 use aliased 'CamHelpers::CamAttributes';
 use aliased 'CamHelpers::CamStepRepeat';
 use aliased 'Packages::ExportPool::Routing::StepList::Step';
+use aliased 'Packages::CAM::UniRTM::UniRTM::UniRTM';
 
 
 
@@ -135,6 +136,23 @@ sub GetStep{
 	
 	return  $self->{"targetStep"};	
 }
+ 
+sub GetLayer{
+	my $self = shift;
+	
+	return  $self->{"layer"};	
+}
+ 
+ 
+sub ReloadStepRotation {
+	my $self = shift;
+	my $stepRot = shift;
+	my $inCAM = $self->{"inCAM"};
+	my $jobId = $self->{"jobId"};
+ 
+	my $u = UniRTM->new( $inCAM, $jobId, $self->{"targetStep"}, $stepRot->GetRoutLayer() );
+	$stepRot->SetUniRTM($u)
+} 
  
 
 #-------------------------------------------------------------------------------------------#

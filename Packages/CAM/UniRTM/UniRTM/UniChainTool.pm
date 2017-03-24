@@ -13,6 +13,7 @@ use XML::Simple;
 
 #local library
 use aliased 'Packages::CAM::UniRTM::Enums';
+use aliased 'Helpers::GeneralHelper';
  
 
 #-------------------------------------------------------------------------------------------#
@@ -27,6 +28,8 @@ sub new {
 	$self->{"chainOrder"} = shift;
 	$self->{"chainSize"}  = shift;    # size of tool in µm
 	$self->{"comp"}       = shift;
+	
+	 
  
 	return $self;
 }
@@ -57,6 +60,8 @@ sub GetChainSize {
 
 	return $self->{"chainSize"};
 }
+
+ 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#

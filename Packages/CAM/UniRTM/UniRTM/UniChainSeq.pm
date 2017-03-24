@@ -28,11 +28,12 @@ sub new {
 	$self->{"cyclic"}    = undef;
 	$self->{"direction"} = undef;
 
-	$self->{"modified"} =
-	  0;    # only when seq is cyclic. If modified = 1, sequence was modified during parsing (arc fragment, edge point switching etc..)
+	$self->{"startEdge"} = undef;
 
 	my @foots = ();
 	$self->{"footsDown"} = \@foots;    # features, which cintain foot_down attribute
+
+
 
 	$self->{"isInside"} = 0;           # if is inside another chain sequence (inside mean fully inside or at lesast partly)
 
@@ -42,6 +43,12 @@ sub new {
 	my @features = ();
 	$self->{"features"}    = \@features;               # features, wchich chain sequnece is created from
 	$self->{"featureType"} = undef;                    # tell type of features, wchich chain is created from. FeatType_SURF/FeatType_LINEARC
+	
+	
+	# ==== Property set, only if rout is cyclic ====
+	
+	$self->{"modified"} = 0;    # only when seq is cyclic. If modified = 1, sequence was modified during parsing (arc fragment, edge point switching etc..)
+	
 
 	return $self;
 }
@@ -253,6 +260,19 @@ sub GetDirection {
 	return $self->{"direction"};
 }
 
+
+sub SetStartEdge {
+	my $self = shift;
+	my $dir  = shift;
+
+	$self->{"startEdge"} = $dir;
+}
+
+sub GetStartEdge {
+	my $self = shift;
+
+	return $self->{"startEdge"};
+}
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#

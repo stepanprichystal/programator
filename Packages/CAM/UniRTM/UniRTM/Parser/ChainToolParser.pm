@@ -67,7 +67,7 @@ sub GetChainList {
 						$chainTool = sprintf( "%.1f", $attr{".rout_tool"} * 25.4 ) * 1000;    # add ifnp about rout tool size
 					}
 
-					if ( attr { ".comp" } eq "left" ) {
+					if ( $attr{ ".comp" } eq "left" ) {
 						$chainComp = "ccw";
 					}
 					else {

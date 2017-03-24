@@ -32,6 +32,7 @@ use aliased 'Packages::ExportPool::Routing::StepList::StepList';
 use aliased 'Packages::ExportPool::Routing::StepCheck::StepCheck';
 use aliased 'Packages::ExportPool::Routing::RoutStart::RoutStart';
 use aliased 'Packages::ItemResult::Enums' => "ResEnums";
+use aliased 'Packages::ExportPool::Routing::ToolsOrder::ToolsOrder';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -47,8 +48,10 @@ sub new {
 	$self->{"jobId"}   = shift;
 	 
 	$self->{"stepList"} = StepList->new($self->{"inCAM"}, $self->{"jobId"}, "panel", "f"); 
+	
 	$self->{"stepCheck"} = StepCheck->new($self->{"inCAM"}, $self->{"jobId"}, $self->{"stepList"}); 
 	$self->{"routStart"} = RoutStart->new($self->{"inCAM"}, $self->{"jobId"}, $self->{"stepList"}); 
+	$self->{"toolsOrder"} = ToolsOrder->new($self->{"inCAM"}, $self->{"jobId"}, $self->{"stepList"}); 
  
 	return $self;
 }
@@ -70,11 +73,17 @@ sub Run {
 	
 	$self->__ProcessResult($self->{"routStart"}->FindStart());
 	
-	my %convTable = ();
-	$self->__ProcessResult($self->{"routStart"}->CreateFsch(\%convTable));
+	my %convTable1 = ();
+	my %convTable2 = ();
+	
+	$self->__ProcessResult($self->{"routStart"}->CreateFsch(\%convTable1, \%convTable2));
+ 
+ 	$self->__ProcessResult($self->{"toolsOrder"}->SetInnerOrder(\%convTable1, \%convTable2));
+ 
+  	$self->__ProcessResult($self->{"toolsOrder"}->SetOutlineOrder(\%convTable1, \%convTable2));
  
  
- 	$self->{"stepList"}->Clean();
+ 	#$self->{"stepList"}->Clean();
  
 }
 

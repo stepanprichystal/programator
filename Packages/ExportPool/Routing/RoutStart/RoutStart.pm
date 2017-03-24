@@ -19,6 +19,7 @@ use aliased 'Packages::ItemResult::ItemResult';
 #use aliased 'Helpers::FileHelper';
 use aliased 'CamHelpers::CamHelper';
 use aliased 'CamHelpers::CamLayer';
+use aliased 'CamHelpers::CamAttributes';
 
 #use aliased 'Packages::Gerbers::Export::ExportLayers' => 'Helper';
 use aliased 'Packages::CAM::UniRTM::UniRTM::UniRTM';
@@ -104,7 +105,7 @@ sub __FindStart {
 
 			}
 		}
-		
+
 		# 2) Find start of chain by script, if is not already found
 		if ( !$startByAtt ) {
 
@@ -112,7 +113,7 @@ sub __FindStart {
 
 			my $routModify = 0;
 
-			if ( $modify{"result"} ) {    
+			if ( $modify{"result"} ) {
 
 				$routModify = 1;
 				RoutStart->ProcessModify( \%modify, \@features );
@@ -136,6 +137,7 @@ sub __FindStart {
 					$draw->DeleteRoute( \@delete );
 
 					$draw->DrawRoute( \@features, 2000, EnumsRout->Comp_LEFT, $startResult{"edge"} );    # draw new
+
 				}
 			}
 		}
@@ -181,12 +183,17 @@ sub __FindStart {
 
 		}
 	}
+
+	# Reload UniRTM for "rotated step" layer, because set route start or rout modification, changed feature ids
+	$self->{"stepList"}->ReloadStepRotation($stepRot);
+
 }
 
 sub CreateFsch {
-	my $self = shift;
-	my $convTable = shift;
-	
+	my $self       = shift;
+	my $convTable1 = shift;    # old rout chain order => "fsch" chain order
+	my $convTable2 = shift;    # "fsch" chain order =>   "fsch" chain tool guid
+
 	my $resultItem = ItemResult->new("Create fsch");
 
 	my $inCAM = $self->{"inCAM"};
@@ -208,35 +215,20 @@ sub CreateFsch {
 
 			foreach my $sPlc ( $sRot->GetStepPlaces() ) {
 
-				my $lTmp = GeneralHelper->GetGUID();
+				#				# Fill conver tables
+				#				my %t  = ();
+				#				my %t2 = ();
+				#				for ( my $i = 0 ; $i < scalar(@oldChains) ; $i++ ) {
+				#
+				#					$t{ $oldChains[$i]->GetChainOrder() } = $newChains[$i]->GetChainOrder();
+				#
+				#					# fill conver table. Each item is couple : "new fsch chain order" => chain tool id
+				#					$t2{ $t{ $oldChains[$i]->GetChainOrder() } } = $convTmp{ $oldChains[$i]->GetChainOrder()};
+				#				}
+				#
+				#				$convTable1->{ $sPlc->GetStepId() } = \%t;
+				#				$convTable2->{ $sPlc->GetStepId() } = \%t2;
 
-				CamLayer->WorkLayer( $inCAM, $sRot->GetRoutLayer() );
-
-				$inCAM->COM(
-							 "sel_copy_other",
-							 "target_layer" => $fschLayer,
-							 "invert"       => "no",
-							 "dx"           => $sPlc->GetPosX(),
-							 "dy"           => $sPlc->GetPosY(),
-							 "size"         => "0",
-							 "x_anchor"     => "0",
-							 "y_anchor"     => "0"
-				);
-				
-				# Get new chain number and store to conversion table
-				my @oldChains =  $sRot->GetUniRTM()->GetChainList();
-				
-				my $unitRTM = UniRTM->new( $inCAM, $jobId, $self->{"stepList"}->GetStep(), $fschLayer );
-				 
-				my @newChains = ($unitRTM->GetChainList())[- scalar(@oldChains)..-1];
-				
-				my %t = ();
-				for (my $i =0; $i < scalar(@oldChains); $i++){
-					
-					$t{$oldChains[$i]->GetChainOrder()} = $newChains[$i]->GetChainOrder();					
-				}
-				
-				$convTable->{$sPlc->GetStepId()} = \%t;
 			}
 		}
 	}
@@ -244,17 +236,79 @@ sub CreateFsch {
 	return $resultItem;
 }
 
-#-------------------------------------------------------------------------------------------#
-#  Place for testing..
-#-------------------------------------------------------------------------------------------#
-my ( $package, $filename, $line ) = caller;
-if ( $filename =~ /DEBUG_FILE.pl/ ) {
+sub __CopyRoutToFsch {
+	my $self      = shift;
+	my $sRot      = shift;
+	my $sPlc      = shift;
+	my $convTable = shift;
 
-	#use aliased 'Packages::Export::NCExport::NCExportGroup';
+	my $inCAM = $self->{"inCAM"};
+	my $jobId = $self->{"jobId"};
 
-	#print $test;
+	my $fschLayer = "fsch";
 
-}
 
-1;
+	# 1) Copy prepared rout to fsch
+
+	CamLayer->WorkLayer( $inCAM, $sRot->GetRoutLayer() );
+
+	my %convTmp = ();    # temporary convert table
+
+	$inCAM->COM(
+				 "sel_copy_other",
+				 "target_layer" => $fschLayer,
+				 "invert"       => "no",
+				 "dx"           => $sPlc->GetPosX(),
+				 "dy"           => $sPlc->GetPosY(),
+				 "size"         => "0",
+				 "x_anchor"     => "0",
+				 "y_anchor"     => "0"
+	);
+
+	# 2) Get new rout id
+
+	# Get new chain number and store to conversion table
+	my @oldChains = $sRot->GetUniRTM()->GetChainList();
+
+	my $unitRTM = UniRTM->new( $inCAM, $jobId, $self->{"stepList"}->GetStep(), $fschLayer );
+
+	my @newChains = ( $unitRTM->GetChainList() )[ -scalar(@oldChains) .. -1 ];
+
+	# Set "stepPlace" guid to all rout features to possible identification
+	for ( my $i = 0; $i < scalar(@oldChains); $i++ ){
+
+			my $chainId = GeneralHelper->GetGUID();    # Guid, which will be signed all features with sam chain
+
+			my $f = FeatureFilter->new( $inCAM, $jobId, $sRot->GetRoutLayer() );
+
+			my %idVal = ( "min" => $chTool->GetChainOrder(), "max" => $chTool->GetChainOrder() );
+			$f->AddIncludeAtt( ".rout_chain", \%idVal );
+
+			if ( $f->Select() ) {
+
+				CamAttributes->SetFeaturesAttribute( $inCAM, $jobId, "feat_group_id", $chainId );
+			}
+			else {
+				die "not chain featuer selected";
+			}
+
+			$convTable1->{ $sPlc->GetStepId() }->{ $chTool->GetChainOrder() } = $chainId;
+
+		}
+
+	}
+
+	#-------------------------------------------------------------------------------------------#
+	#  Place for testing..
+	#-------------------------------------------------------------------------------------------#
+	my ( $package, $filename, $line ) = caller;
+	if ( $filename =~ /DEBUG_FILE.pl/ ) {
+
+		#use aliased 'Packages::Export::NCExport::NCExportGroup';
+
+		#print $test;
+
+	}
+
+	1;
 
