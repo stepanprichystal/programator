@@ -74,13 +74,12 @@ sub Run {
 	$self->__ProcessResult($self->{"routStart"}->FindStart());
 	
 	my %convTable1 = ();
-	my %convTable2 = ();
-	
-	$self->__ProcessResult($self->{"routStart"}->CreateFsch(\%convTable1, \%convTable2));
+
+	$self->__ProcessResult($self->{"routStart"}->CreateFsch(\%convTable1));
  
- 	$self->__ProcessResult($self->{"toolsOrder"}->SetInnerOrder(\%convTable1, \%convTable2));
+ 	$self->__ProcessResult($self->{"toolsOrder"}->SetInnerOrder(\%convTable1));
  
-  	$self->__ProcessResult($self->{"toolsOrder"}->SetOutlineOrder(\%convTable1, \%convTable2));
+  	$self->__ProcessResult($self->{"toolsOrder"}->SetOutlineOrder(\%convTable1));
  
  
  	#$self->{"stepList"}->Clean();

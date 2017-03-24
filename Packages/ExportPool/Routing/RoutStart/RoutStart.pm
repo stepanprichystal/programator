@@ -214,6 +214,8 @@ sub CreateFsch {
 		foreach my $sRot ( $s->GetStepRotations() ) {
 
 			foreach my $sPlc ( $sRot->GetStepPlaces() ) {
+				
+				$self->__CopyRoutToFsch($sRot, $sPlc, $convTable1);
 
 				#				# Fill conver tables
 				#				my %t  = ();
@@ -247,7 +249,6 @@ sub __CopyRoutToFsch {
 
 	my $fschLayer = "fsch";
 
-
 	# 1) Copy prepared rout to fsch
 
 	CamLayer->WorkLayer( $inCAM, $sRot->GetRoutLayer() );
@@ -265,7 +266,7 @@ sub __CopyRoutToFsch {
 				 "y_anchor"     => "0"
 	);
 
-	# 2) Get new rout id
+	# 2) Get new chain ids
 
 	# Get new chain number and store to conversion table
 	my @oldChains = $sRot->GetUniRTM()->GetChainList();
@@ -274,41 +275,45 @@ sub __CopyRoutToFsch {
 
 	my @newChains = ( $unitRTM->GetChainList() )[ -scalar(@oldChains) .. -1 ];
 
-	# Set "stepPlace" guid to all rout features to possible identification
-	for ( my $i = 0; $i < scalar(@oldChains); $i++ ){
+	# 3) Generate guid for each new chain and set this guid to all chain features in fsch
+	for ( my $i = 0 ; $i < scalar(@oldChains) ; $i++ ) {
 
-			my $chainId = GeneralHelper->GetGUID();    # Guid, which will be signed all features with sam chain
+		my $oldChain = $oldChains[$i];
+		my $newChain = $newChains[$i];
 
-			my $f = FeatureFilter->new( $inCAM, $jobId, $sRot->GetRoutLayer() );
+		my $chainId = GeneralHelper->GetGUID();    # Guid, which will be signed all features with sam chain
 
-			my %idVal = ( "min" => $chTool->GetChainOrder(), "max" => $chTool->GetChainOrder() );
-			$f->AddIncludeAtt( ".rout_chain", \%idVal );
+		my $f = FeatureFilter->new( $inCAM, $jobId, $fschLayer );
 
-			if ( $f->Select() ) {
+		my %idVal = ( "min" => $oldChain->GetChainOrder(), "max" => $oldChain->GetChainOrder() );
+		$f->AddIncludeAtt( ".rout_chain", \%idVal );
 
-				CamAttributes->SetFeaturesAttribute( $inCAM, $jobId, "feat_group_id", $chainId );
-			}
-			else {
-				die "not chain featuer selected";
-			}
+		# Test if count of selected features in fsch is ok
+		my $featCnt = scalar($sRot->GetUniRTM()->GetChainByChainTool($oldChain)->GetFeatures());
+	 
+		if ( $f->Select() == $featCnt) {
 
-			$convTable1->{ $sPlc->GetStepId() }->{ $chTool->GetChainOrder() } = $chainId;
-
+			CamAttributes->SetFeaturesAttribute( $inCAM, $jobId, "feat_group_id", $chainId );
+		}
+		else {
+			die "not chain featuer selected";
 		}
 
+		$convTable->{ $sPlc->GetStepId() }->{$oldChain->GetChainOrder()} = $chainId;
 	}
+}
 
-	#-------------------------------------------------------------------------------------------#
-	#  Place for testing..
-	#-------------------------------------------------------------------------------------------#
-	my ( $package, $filename, $line ) = caller;
-	if ( $filename =~ /DEBUG_FILE.pl/ ) {
+#-------------------------------------------------------------------------------------------#
+#  Place for testing..
+#-------------------------------------------------------------------------------------------#
+my ( $package, $filename, $line ) = caller;
+if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-		#use aliased 'Packages::Export::NCExport::NCExportGroup';
+	#use aliased 'Packages::Export::NCExport::NCExportGroup';
 
-		#print $test;
+	#print $test;
 
-	}
+}
 
-	1;
+1;
 

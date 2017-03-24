@@ -46,8 +46,7 @@ sub new {
 
 sub SetInnerOrder {
 	my $self       = shift;
-	my $convTable1  = shift;
-	my $convTable2  = shift;
+	my $convTable  = shift;
 	my $resultItem = ItemResult->new("Inner chain order");
 
 	my $inCAM = $self->{"inCAM"};
@@ -72,18 +71,20 @@ sub SetInnerOrder {
 
 	# renumber chains
 
-	$self->__RenumberTools( \@finalOrder, $convTable1, $convTable2, 1 );
+	$self->__RenumberTools( \@finalOrder, $convTable, 1 );
 
 	return $resultItem;
 }
 
 sub SetOutlineOrder {
 	my $self       = shift;
-	my $convTable1  = shift;
-	my $convTable2  = shift;
+	my $convTable  = shift;
 	my $resultItem = ItemResult->new("Outline chain order");
 
 	my $inCAM = $self->{"inCAM"};
+	my $jobId = $self->{"jobId"};
+	
+	my $fschLayer = "fsch";
 
 	# create tool queue
 	my @outlineChains = ();
@@ -132,17 +133,57 @@ sub SetOutlineOrder {
 	my @finalOrder = SortTools->SortOutlineTools( \@outlineChains );
 
 	# renumber chains
-
-	$self->__RenumberTools( \@finalOrder, $convTable1,$convTable2, 60 );
+	# get max chain order in fsch
+	my $unitRTM = UniRTM->new( $inCAM, $jobId, $self->{"stepList"}->GetStep(), $fschLayer );
+ 
+	$self->__RenumberTools( \@finalOrder, $convTable, $unitRTM->GetMaxChainNumber() +1 );
 
 	return $resultItem;
 }
 
+sub ToolRenumberCheck{
+	my $self       = shift;
+	my $convTable  = shift;
+	my $resultItem = ItemResult->new("Outline chain order");
+
+	my $inCAM = $self->{"inCAM"};
+	my $jobId = $self->{"jobId"};
+	
+	my $fschLayer = "fsch";
+	
+	my $unitRTM = UniRTM->new( $inCAM, $jobId, $self->{"stepList"}->GetStep(), $fschLayer );
+	
+	
+	# 1) Check if features with same tool chain order has same value of attribute "feat_group_id"
+	# Test on preview operation - set new chain order	
+	foreach my $ch ($unitRTM->GetChains()){
+		
+		my @feats = $ch->GetFeatures();
+		
+		# check if first value is same as other
+		my $feat_group_id = $feats[0]->{"att"}->{"feat_group_id"};
+		
+		my @wrongVal = grep {$_->{"att"}->{"feat_group_id"} ne $feat_group_id } @feats;
+		
+		if(scalar(@wrongVal)){
+			$resultItem->AddError("Error during sorting tools in fsch layer. Not all chain features has same \"feat_group_id\". Chain: ".$ch->GetChainOrder()."\n");
+		}
+	}
+	
+	# 2) Order of tools has to by 
+	
+	
+	
+	
+	
+}
+
+
+
 sub __RenumberTools {
 	my $self        = shift;
 	my @finalOrder  = @{ shift(@_) };
-	my $convTable1   = shift;
-	my $convTable2   = shift;
+	my $convTable   = shift;
 	my $startNumber = shift;
 
 	my $inCAM = $self->{"inCAM"};
@@ -161,15 +202,15 @@ sub __RenumberTools {
 		my $oriChainNum = $stepChain->{"chainOrder"};
 
 		# Get real "fsch chain order" by convert
-		my $realChainNum = $convTable1->{$stepId}->{$oriChainNum};
+		#my $realChainNum = $convTable->{$stepId}->{$oriChainNum};
 		
 		# Get chain tool guid
-		my $chainToolId = $convTable2->{$stepId}->{$realChainNum};
+		my $chainToolId = $convTable->{$stepId}->{$oriChainNum};
 
 		my $f = FeatureFilter->new( $inCAM, $jobId, $fschLayer );
 
-		my %idVal = ( "min" => $realChainNum, "max" => $realChainNum );
-		$f->AddIncludeAtt( ".rout_chain",   \%idVal );
+		#my %idVal = ( "min" => $realChainNum, "max" => $realChainNum );
+		#$f->AddIncludeAtt( ".rout_chain",   \%idVal );
 		$f->AddIncludeAtt( "feat_group_id", $chainToolId );
 
 		if ( $f->Select() ) {

@@ -42,6 +42,8 @@ sub GetChains {
 		#$self->__SetChainProperties($ch);
 
 		my @featChain = grep { $_->{"att"}->{".rout_chain"} == $ch->GetChainOrder() } @features;
+		
+		$uniChain->SetFeatures(\@featChain);
 
 		my @sequences = RoutCyclic->GetRoutSequences( \@featChain );
 

@@ -47,16 +47,9 @@ sub GetOutlineChains {
 sub GetMaxChainNumber {
 	my $self = shift;
 
-	my $max = 0;
-	foreach my $ch ( @{ $self->{"chains"} } ) {
+	my @chainList = $self->GetChainList();
 
-		# set max value
-		if ( $ch->GetChainOrder() > $max ) {
-			$max = $ch->GetChainOrder();
-		}
-	}
-
-	return $max;
+	return $chainList[scalar(@chainList)-1]->GetChainOrder();
 }
 
 # Get left cycle chain
@@ -102,6 +95,9 @@ sub GetChainByChainTool {
 
 	return $ch;
 }
+
+
+ 
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
