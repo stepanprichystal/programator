@@ -77,9 +77,14 @@ sub Run {
 
 	$self->__ProcessResult($self->{"routStart"}->CreateFsch(\%convTable1));
  
- 	$self->__ProcessResult($self->{"toolsOrder"}->SetInnerOrder(\%convTable1));
+ 	my $toolOrder = 1;
+ 	$self->__ProcessResult($self->{"toolsOrder"}->SetInnerOrder(\%convTable1, \$toolOrder));
  
-  	$self->__ProcessResult($self->{"toolsOrder"}->SetOutlineOrder(\%convTable1));
+  	$self->__ProcessResult($self->{"toolsOrder"}->SetOutlineOrder(\%convTable1, \$toolOrder));
+  	
+  	$self->__ProcessResult($self->{"toolsOrder"}->ToolRenumberCheck());
+  	
+  	
  
  
  	#$self->{"stepList"}->Clean();
@@ -126,7 +131,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId = "f52456";
+	my $jobId = "f67314";
 	 
 	
 	my $routMngr = RoutingMngr->new($inCAM, $jobId);

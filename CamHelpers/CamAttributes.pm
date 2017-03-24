@@ -233,8 +233,10 @@ sub DelFeatuesAttribute {
 	my $value     = shift;
 
 	$inCAM->COM( "sel_delete_atr", "mode" => "list", "attributes" => $attribute, "attr_vals" => $value );
-
 }
+
+ 
+
 
 # Return array of all atributes in job (feature attributes)
 sub GetAttrParams {

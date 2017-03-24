@@ -4,67 +4,46 @@
 # Responsible for tools are unique (diameter + typeProc)
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::Routing::RoutLayer::RoutDrawing::RoutDrawing;
+package Packages::Routing::RoutLayer::RoutChain::RoutChain;
 
 #3th party library
 use strict;
 use warnings;
 
 #local library
-use aliased 'Packages::CAM::SymbolDrawing::SymbolDrawing';
-use aliased 'CamHelpers::CamHelper';
-use aliased 'CamHelpers::CamLayer';
-use aliased 'CamHelpers::CamAttributes';
-
-use aliased 'Packages::CAM::SymbolDrawing::Primitive::PrimitiveLine';
-use aliased 'Packages::CAM::SymbolDrawing::Primitive::PrimitiveArcSCE';
-use aliased 'Packages::CAM::SymbolDrawing::Point';
-use aliased 'Packages::CAM::FeatureFilter::FeatureFilter';
-use aliased 'Packages::CAM::FeatureFilter::Enums' => "FilterEnums";
-use aliased 'Packages::Polygon::Features::Features::Features';
-use aliased 'Packages::CAM::UniRTM::UniRTM::UniRTM';
-use aliased 'Packages::CAM::SymbolDrawing::Primitive::PrimitiveText';
+ 
 
 #-------------------------------------------------------------------------------------------#
 #  Public method
 #-------------------------------------------------------------------------------------------#
+ 
 
-sub new {
-	my $self = shift;
-	$self = {};
-	bless $self;
-
+sub SetFootDown {
+	my $self       = shift;
+	my @outlineFeatures = @{ shift(@_) }; 
 	$self->{"inCAM"} = shift;
 	$self->{"jobId"} = shift;
 	$self->{"step"}  = shift;
-	$self->{"layer"} = shift;
+	$self->{"layer"}  = shift;
 
-	return $self;
-}
+	
 
-sub DrawRoute {
-	my $self       = shift;
-	my @sorteEdges = @{ shift(@_) };
-	my $toolSize   = shift;
-	my $comp       = shift;
-	my $routStart  = shift;
-	my $setFootAtt = shift;            # if set foot down attribute
 
 	my $footDown = undef;
-
+	
 	# determine foot down edge by rout start
 	if ($setFootAtt) {
-	 
+		my @s = @{$serverRef};
 		my $idx = ( grep { $sorteEdges[$_] == $routStart } 0 .. $#sorteEdges )[0];
 
 		if ( $idx == 0 ) {
 			$footDown = $sorteEdges[ scalar(@sorteEdges) ];
 		}
 		else {
-			$footDown = $sorteEdges[ $idx - 1 ];
+			$footDown = $sorteEdges[ scalar(@sorteEdges) - 1 ];
 		}
 
-		if ( !defined $footDown ) {
+		if ( !defined $footDownEdge ) {
 			die "Foot down edge was not found";
 		}
 	}
@@ -75,7 +54,7 @@ sub DrawRoute {
 	my $layer = $self->{"layer"};
 
 	my $routStartGuid = -1;
-	my $footDownGuid  = -1;
+	my $footDownGuid = -1;
 
 	CamHelper->SetStep( $inCAM, $step );
 	CamLayer->WorkLayer( $inCAM, $layer );
@@ -119,8 +98,8 @@ sub DrawRoute {
 
 			$routStartGuid = $primitive->GetGroupGUID();
 		}
-
-		# save GUID of start rout
+		
+		 # save GUID of start rout
 		if ( $sorteEdges[$i]->{"id"} eq $footDown->{"id"} ) {
 
 			$footDownGuid = $primitive->GetGroupGUID();
@@ -146,6 +125,7 @@ sub DrawRoute {
 
 	if ( $f->Select() ) {
 
+		
 		# 1) Set rout start of chain
 
 		#  Get id of rout start feature
@@ -171,21 +151,18 @@ sub DrawRoute {
 			"chng_direction" => 0
 		);
 
+		# 2) Set foot down attribute
+		#  Get id of rout start feature
+		my $layerFeat = Features->new();
+		$layerFeat->Parse( $inCAM, $jobId, $step, $layer );
+		my @feats = $layerFeat->GetFeatureByGroupGUID($routStartGuid);
+
 		# feat for start should be only one
 		if ( scalar(@feats) != 1 ) {
 			die "Error when finding rout start feature";
 		}
-
-		my $f = FeatureFilter->new( $inCAM, $jobId, $self->{"layer"} );
-		$f->AddIncludeAtt( "feat_group_id", $footDownGuid );
-
-		if ( $f->Select() == 1 ) {
-			CamAttributes->SetFeaturesAttribute( $inCAM, $jobId, ".foot_down" );
-
-		}
-		else {
-			die "One Foot down feature was not selected\n";
-		}
+		
+		
 
 	}
 

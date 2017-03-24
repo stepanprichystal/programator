@@ -14,6 +14,7 @@ use warnings;
 use aliased 'Helpers::GeneralHelper';
 use aliased 'Packages::ItemResult::ItemResult';
 
+use aliased 'Enums::EnumsRout';
 #use aliased 'Enums::EnumsPaths';
 #use aliased 'Helpers::JobHelper';
 #use aliased 'Helpers::FileHelper';
@@ -53,6 +54,9 @@ sub FindStart {
 
 		foreach my $sRot ( $s->GetStepRotations() ) {
 
+
+			$self->__RemoveFootAttr($sRot);
+			
 			$self->__FindStart( $sRot, "f", $resultItem );
 
 		}
@@ -84,6 +88,9 @@ sub __FindStart {
 		my $startByAtt    = 0;
 		my $startByScript = 0;
 		my $startEdge     = undef;
+		my $footEdge      = undef;
+		
+		my $routModify = 0; # indicate, if rout is modifie during searching start
 
 		# 1) Find start of chain by user foot down attribute
 		my $attFootName = undef;
@@ -97,11 +104,13 @@ sub __FindStart {
 
 		if ( defined $attFootName ) {
 
-			my $edge = ( grep { $_{"att"}->{$attFootName} } @features )[0];
+			my $edge = ( grep { $_->{"att"}->{$attFootName} } @features )[0];
 
 			if ( defined $edge ) {
 				$startByAtt = 1;
-				$startEdge  = $edge;
+				
+				$footEdge   = $edge;
+				$startEdge  = $self->__GetStartByFootEdge( $edge, \@features );
 
 			}
 		}
@@ -110,8 +119,7 @@ sub __FindStart {
 		if ( !$startByAtt ) {
 
 			my %modify = RoutStart->RoutNeedModify( \@features );
-
-			my $routModify = 0;
+ 
 
 			if ( $modify{"result"} ) {
 
@@ -125,7 +133,6 @@ sub __FindStart {
 			if ( $startResult{"result"} ) {
 
 				$startByScript = 1;
-				$startEdge     = $startResult{"edge"};
 
 				if ( $routModify || $outline->GetModified() ) {
 
@@ -136,8 +143,13 @@ sub __FindStart {
 
 					$draw->DeleteRoute( \@delete );
 
-					$draw->DrawRoute( \@features, 2000, EnumsRout->Comp_LEFT, $startResult{"edge"} );    # draw new
+					$draw->DrawRoute( \@features, 2000, EnumsRout->Comp_LEFT, $startResult{"edge"}, 1 );    # draw new
 
+				}
+				else {
+
+					$startEdge = $startResult{"edge"};
+					$footEdge = $self->__GetFootEdgeByStart( $startResult{"edge"}, \@features );
 				}
 			}
 		}
@@ -145,25 +157,46 @@ sub __FindStart {
 		# 3) If start found, set it
 		if ( $startByAtt || $startByScript ) {
 
-			my $f = FeatureFilter->new( $inCAM, $jobId, $stepRot->GetRoutLayer() );
-			my @ids = ( $startEdge->{"id"} );
-			$f->AddFeatureIndexes( \@ids );
+			# Set rout start + foot down attribute, if is no already set
+			if ( !( $routModify || $outline->GetModified() ) ) {
 
-			if ( $f->Select() ) {
+				# 1)  set rout start attribute
+				my $f = FeatureFilter->new( $inCAM, $jobId, $stepRot->GetRoutLayer() );
+				my @ids = ( $footEdge->{"id"} );
+				$f->AddFeatureIndexes( \@ids );
 
-				$inCAM->COM(
-							 "chain_set_plunge",
-							 "start_of_chain" => "yes",
-							 "mode"           => "straight",
-							 "apply_to"       => "all",
-							 "inl_mode"       => "straight",
-							 "layer"          => $stepRot->GetRoutLayer(),
-							 "type"           => "open"
-				);
+				if ( $f->Select() ) {
 
-			}
-			else {
-				die "Rout start was not selected\n";
+					CamAttributes->SetFeaturesAttribute( $inCAM, $jobId, ".foot_down" );
+
+				}
+				else {
+					die "Foot down feature was not selected\n";
+				}
+
+				# 2) set rout start attribute
+
+				$f->Reset();
+				my @ids2 = ( $startEdge->{"id"} );
+				$f->AddFeatureIndexes( \@ids2 );
+
+				if ( $f->Select() ) {
+
+					$inCAM->COM(
+								 "chain_set_plunge",
+								 "start_of_chain" => "yes",
+								 "mode"           => "straight",
+								 "apply_to"       => "all",
+								 "inl_mode"       => "straight",
+								 "layer"          => $stepRot->GetRoutLayer(),
+								 "type"           => "open"
+					);
+
+				}
+				else {
+					die "Rout start was not selected\n";
+				}
+
 			}
 
 		}
@@ -189,10 +222,11 @@ sub __FindStart {
 
 }
 
+
+
 sub CreateFsch {
-	my $self       = shift;
-	my $convTable1 = shift;    # old rout chain order => "fsch" chain order
-	my $convTable2 = shift;    # "fsch" chain order =>   "fsch" chain tool guid
+	my $self      = shift;
+	my $convTable = shift;    # old rout chain order => "fsch" chain order
 
 	my $resultItem = ItemResult->new("Create fsch");
 
@@ -214,8 +248,8 @@ sub CreateFsch {
 		foreach my $sRot ( $s->GetStepRotations() ) {
 
 			foreach my $sPlc ( $sRot->GetStepPlaces() ) {
-				
-				$self->__CopyRoutToFsch($sRot, $sPlc, $convTable1);
+
+				$self->__CopyRoutToFsch( $sRot, $sPlc, $convTable );
 
 				#				# Fill conver tables
 				#				my %t  = ();
@@ -237,6 +271,65 @@ sub CreateFsch {
 
 	return $resultItem;
 }
+
+
+
+sub __RemoveFootAttr {
+	my $self    = shift;
+	my $stepRot = shift;
+	
+	 my $inCAM = $self->{"inCAM"};
+	 
+	CamLayer->WorkLayer($inCAM, $stepRot->GetRoutLayer()); 
+	
+	CamAttributes->DelFeatuesAttribute( $inCAM, ".foot_down", "" );
+}
+
+
+sub __GetFootEdgeByStart {
+	my $self      = shift;
+	my $startEdge = shift;
+	my @features  = @{ shift(@_) };
+	my $foot      = undef;
+
+	for ( my $i = 0 ; $i < scalar(@features) ; $i++ ) {
+
+		if ( $features[$i] == $startEdge ) {
+
+			if ( $i == 0 ) {
+				$foot = $features[ scalar(@features) - 1 ];
+			}
+			else {
+				$foot = $features[ $i - 1 ];
+			}
+		}
+	}
+
+	return $foot;
+}
+
+sub __GetStartByFootEdge {
+	my $self      = shift;
+	my $foot = shift;
+	my @features  = @{ shift(@_) };
+	my $startEdge      = undef;
+
+	for ( my $i = 0 ; $i < scalar(@features) ; $i++ ) {
+
+		if ( $features[$i] == $foot ) {
+
+			if ( $i +1 == scalar(@features)) {
+				$startEdge = $features[ 0 ];
+			}
+			else {
+				$startEdge = $features[ $i + 1 ];
+			}
+		}
+	}
+
+	return $startEdge;
+}
+
 
 sub __CopyRoutToFsch {
 	my $self      = shift;
@@ -285,13 +378,13 @@ sub __CopyRoutToFsch {
 
 		my $f = FeatureFilter->new( $inCAM, $jobId, $fschLayer );
 
-		my %idVal = ( "min" => $oldChain->GetChainOrder(), "max" => $oldChain->GetChainOrder() );
+		my %idVal = ( "min" => $newChain->GetChainOrder(), "max" => $newChain->GetChainOrder() );
 		$f->AddIncludeAtt( ".rout_chain", \%idVal );
 
 		# Test if count of selected features in fsch is ok
-		my $featCnt = scalar($sRot->GetUniRTM()->GetChainByChainTool($oldChain)->GetFeatures());
-	 
-		if ( $f->Select() == $featCnt) {
+		my $featCnt = scalar( $sRot->GetUniRTM()->GetChainByChainTool($oldChain)->GetFeatures() );
+
+		if ( $f->Select() == $featCnt ) {
 
 			CamAttributes->SetFeaturesAttribute( $inCAM, $jobId, "feat_group_id", $chainId );
 		}
@@ -299,7 +392,7 @@ sub __CopyRoutToFsch {
 			die "not chain featuer selected";
 		}
 
-		$convTable->{ $sPlc->GetStepId() }->{$oldChain->GetChainOrder()} = $chainId;
+		$convTable->{ $sPlc->GetStepId() }->{ $oldChain->GetChainOrder() } = $chainId;
 	}
 }
 
