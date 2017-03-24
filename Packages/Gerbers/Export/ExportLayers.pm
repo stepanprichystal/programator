@@ -108,7 +108,7 @@ sub ExportLayers {
 		$inCAM->COM( "output_device_select",       "type" => "format", "name" => $device );
 
 		$inCAM->HandleException(1);
-
+	 
 		my $plotResult = $inCAM->COM(
 									  "output_device",
 									  "type"                 => "format",
@@ -129,6 +129,13 @@ sub ExportLayers {
 		unless ($fileExist) {
 
 			$resultItem->AddError( "Failed to create Gerber file: " . $archivePath . "\\" . $fname );
+		}
+		
+		my $fileSize =  -s $archivePath . "\\" . $fname;
+		if( $fileSize == 0 ){
+			
+			$resultItem->AddError( "Error during create Gerber file: " . $archivePath . "\\" . $fname.". File size is 0kB." );
+			
 		}
 
 	}

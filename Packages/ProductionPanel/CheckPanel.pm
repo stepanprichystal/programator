@@ -36,6 +36,7 @@ sub RunCheckOfPanel {
 
 	push @errorList, _CheckCountOfPcb( $inCAM, $jobId );
 	push @errorList, _CheckPolarityInnerLayer( $inCAM, $jobId );
+	push @errorList,_CheckDimDepensMaterial( $inCAM, $jobId );
 
 	#push @errorList, _CheckBlindAndGalvGold($inCAM, $jobId);
 
@@ -45,6 +46,28 @@ sub RunCheckOfPanel {
 	}
 }
 
+
+
+# Warning that your panel has width 305 but not AL_core
+sub _CheckDimDepensMaterial {
+	my $inCAM = shift;
+	my $jobId = shift;
+	my $info;
+
+	my %dim = JobDim->GetDimension( $inCAM, $jobId );
+	
+	
+
+			if ($dim{"vyrobni_panel_x"} == 305 or $dim{"vyrobni_panel_x"} == 230) {
+					unless (HegMethods->GetMaterialKind( $jobId, 0 ) eq 'AL_CORE') {
+						
+						$info ='- Zkontroluj nestandardni rozmer panelu, ' . $dim{"vyrobni_panel_x"} . 'x' . $dim{"vyrobni_panel_y"};
+					}
+			}
+	
+	return ($info);
+}	
+	
 # Check count of pcb in HEG against panel pcb
 # because whe exist offer so exist count of pcb in HEG
 sub _CheckCountOfPcb {

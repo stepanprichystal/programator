@@ -126,7 +126,7 @@ sub __ExportLayers {
 		$self->__CompensateLayer( $l->{"gROWname"} );
 
 		# 4) export gerbers
-		my $fiducDCode = $self->__ExportGerberLayer( $l->{"gROWname"} );
+		my $fiducDCode = $self->__ExportGerberLayer( $l->{"gROWname"}, $resultItem );
 
 		$self->{"exportXml"}->Export( $l, $fiducDCode );
 
@@ -292,6 +292,7 @@ sub __GetFrLimits {
 sub __ExportGerberLayer {
 	my $self      = shift;
 	my $layerName = shift;
+	my $resultItemGer = shift;
 
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
@@ -305,7 +306,7 @@ sub __ExportGerberLayer {
 		return $tmpFileId;
 	};
 
-	my $resultItemGer = ItemResult->new("Output layers");
+	#my $resultItemGer = ItemResult->new("Output layers");
 
 	# init layer
 	my %l = ( "name" => $layerName, "mirror" => 0 );
