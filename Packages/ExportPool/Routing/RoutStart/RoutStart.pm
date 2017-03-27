@@ -49,6 +49,9 @@ sub FindStart {
 	my $self = shift;
 
 	my $resultItem = ItemResult->new("Find rout start");
+	
+	my $errStep = (); 
+	$resultItem->{"errStartSteps"} = \$errStep; # save stepPlace, where start was not found
 
 	foreach my $s ( $self->{"stepList"}->GetSteps() ) {
 
@@ -94,14 +97,10 @@ sub __FindStart {
 
 		# 1) Find start of chain by user foot down attribute
 		my $attFootName = undef;
-		if ( $stepRot->GetAngle() == 0 ) {
-			$attFootName = "foot_down_0deg";
+		if ( defined $stepRot->GetAngle() && $stepRot->GetAngle() >= 0 ) {
+			$attFootName = "foot_down_".$stepRot->GetAngle()."deg";
 		}
-		elsif ( $stepRot->GetAngle() == 270 ) {
-
-			$attFootName = "foot_down_270deg";
-		}
-
+		 
 		if ( defined $attFootName ) {
 
 			my $edge = ( grep { $_->{"att"}->{$attFootName} } @features )[0];
@@ -211,6 +210,9 @@ sub __FindStart {
 			  . "\" nebyl nalezen vhodný počátek frézy. Urči počátek frézy při otočení dps: \""
 			  . $stepRot->GetAngle()
 			  . "\" pomocí atributu: \"$attFootName\"";
+			  
+			  
+			push(@{$resItem->{"errStartSteps"}}, $stepRot);
 
 			$resItem->AddError($m);
 

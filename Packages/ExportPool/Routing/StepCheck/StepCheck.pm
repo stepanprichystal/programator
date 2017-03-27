@@ -156,7 +156,7 @@ sub __OutsideChains {
 
 		my @notInside = grep { !$_->GetIsInside() } @otherLayers;
 
-		if ( scalar(@notInside) ) {
+		if ( scalar(@notInside) && !$stepObj->GetUserRoutOnBridges() ) {
 
 			my @info = map { $_->GetStrInfo() } @notInside;
 			my $str = join( "; ", @info );
@@ -258,6 +258,27 @@ sub __LeftRoutChecks {
 
 			$resItem->AddError($m);
 		}
+	}
+	
+	# 4) If some chain tool containoutline, all another chain must by outline
+	my @chains   =  $unitRTM->GetChains();
+	
+	foreach my $ch (@chains){
+		
+		my @outline = grep { $_->IsOutline() } $ch->GetChainSequences();
+		
+		if(scalar(@outline) && scalar(@outline) != scalar($ch->GetChainSequences())){
+			
+			my $m =
+			    "Ve stepu: \""
+			  . $stepObj->GetStepName()
+			  . "\", ve vrstvě: \"$layer\" jsou jedním nástrojem: \"".$ch->GetStrInfo."\" dfinovány orbysové i neobrysové frézy dohromady. Nelze, oprav to.\n";
+
+			$resItem->AddError($m);
+		}
+		
+			
+		
 	}
 
 }

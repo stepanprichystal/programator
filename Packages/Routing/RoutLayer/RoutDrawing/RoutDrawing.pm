@@ -215,11 +215,14 @@ sub DeleteRoute {
 
 }
 
-# draw layer, where are signed start routs
-sub DrawStartRoutResult {
-	my $self   = shift;
-	my @starts = @{ shift(@_) };
+ 
 
+# draw layer, where are signed start routs
+sub DrawFootRoutResult {
+	my $self   = shift;
+	my @foots = @{ shift(@_) };
+	my $drawLabel = shift;
+ 
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
 	my $step  = $self->{"step"};
@@ -233,7 +236,7 @@ sub DrawStartRoutResult {
 	my $primitive = undef;
 
 	# prepare text, no foot find
-	my @noFoots = grep { $_->{"result"} == 0 } @starts;
+	my @noFoots = grep { $_->{"result"} == 0 } @foots;
 
 	if ( scalar(@noFoots) ) {
 		@noFoots = map { $_->{"angle"} . " deg" } @noFoots;
@@ -242,29 +245,29 @@ sub DrawStartRoutResult {
 		$draw->AddPrimitive( PrimitiveText->new( $str, Point->new( 0, -20 ), 5, 2 ) );
 	}
 
-	foreach my $start (@starts) {
+	foreach my $foot (@foots) {
 
-		unless ( $start->{"result"} ) {
+		unless ( $foot->{"result"} ) {
 
 			next;
 		}
 
-		if ( $start->{"startEdge"}->{"type"} eq "L" ) {
+		if ( $foot->{"footEdge"}->{"type"} eq "L" ) {
 
 			$primitive = PrimitiveLine->new(
-											 Point->new( $start->{"startEdge"}->{"x1"}, $start->{"startEdge"}->{"y1"} ),
-											 Point->new( $start->{"startEdge"}->{"x2"}, $start->{"startEdge"}->{"y2"} ),
+											 Point->new( $foot->{"footEdge"}->{"x1"}, $foot->{"footEdge"}->{"y1"} ),
+											 Point->new( $foot->{"footEdge"}->{"x2"}, $foot->{"footEdge"}->{"y2"} ),
 											 "r3000"
 			);
 
 		}
-		elsif ( $start->{"startEdge"}->{"type"} eq "A" ) {
+		elsif ( $foot->{"footEdge"}->{"type"} eq "A" ) {
 
 			$primitive = PrimitiveArcSCE->new(
-											   Point->new( $start->{"startEdge"}->{"x1"},   $start->{"startEdge"}->{"y1"} ),
-											   Point->new( $start->{"startEdge"}->{"xmid"}, $start->{"startEdge"}->{"ymid"} ),
-											   Point->new( $start->{"startEdge"}->{"x2"},   $start->{"startEdge"}->{"y2"} ),
-											   $start->{"startEdge"}->{"newDir"},
+											   Point->new( $foot->{"footEdge"}->{"x1"},   $foot->{"footEdge"}->{"y1"} ),
+											   Point->new( $foot->{"footEdge"}->{"xmid"}, $foot->{"footEdge"}->{"ymid"} ),
+											   Point->new( $foot->{"footEdge"}->{"x2"},   $foot->{"footEdge"}->{"y2"} ),
+											   $foot->{"footEdge"}->{"newDir"},
 											   "r3000"
 			);
 
@@ -273,11 +276,15 @@ sub DrawStartRoutResult {
 		$draw->AddPrimitive($primitive);
 
 		# ad tect
-
-		my $txt = PrimitiveText->new( "Foot: " . $start->{"angle"} . "deg",
-									  Point->new( $start->{"startEdge"}->{"x2"} - 30, $start->{"startEdge"}->{"y2"} - 10 ),
+		
+		if($drawLabel){
+			 my $txt = PrimitiveText->new( "Foot: " . $foot->{"angle"} . "deg",
+									  Point->new( $foot->{"footEdge"}->{"x2"} - 30, $foot->{"footEdge"}->{"y2"} - 10 ),
 									  2.2, 1.2 );
-		$draw->AddPrimitive($txt);
+			$draw->AddPrimitive($txt);
+		}
+
+
 
 	}
 

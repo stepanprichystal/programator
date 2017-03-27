@@ -34,7 +34,6 @@ use aliased 'Packages::CAM::UniRTM::UniRTM::UniRTM';
 use aliased 'Packages::ExportPool::Routing::StepList::StepPlace';
 use aliased 'CamHelpers::CamLayer';
 
-
 #-------------------------------------------------------------------------------------------#
 #  Public method
 #-------------------------------------------------------------------------------------------#
@@ -45,9 +44,10 @@ sub new {
 	bless $self;
 
 	$self->{"stepName"} = shift;
+
 	#$self->{"workStep"} = shift;
-	$self->{"layer"}    = shift;
-	$self->{"angle"}    = shift;
+	$self->{"layer"} = shift;
+	$self->{"angle"} = shift;
 
 	$self->{"uniRTM"}   = undef;
 	$self->{"userFoot"} = undef;
@@ -62,11 +62,11 @@ sub new {
 }
 
 sub Init {
-	my $self      = shift;
-	my $inCAM     = shift;
-	my $jobId     = shift;
-	my $targetStep     = shift;
-	my @placement = @{shift(@_)};
+	my $self       = shift;
+	my $inCAM      = shift;
+	my $jobId      = shift;
+	my $targetStep = shift;
+	my @placement  = @{ shift(@_) };
 
 	# Prepare rout work layer
 	$self->{"routLayer"} = GeneralHelper->GetGUID();
@@ -92,7 +92,8 @@ sub Init {
 	# Init step placement
 	foreach my $plc (@placement) {
 
-		my $stepPlc = StepPlace->new( $plc->{"originX"}, $plc->{"originY"} );
+		my $stepPlc = StepPlace->new( $plc->{"originX"}, $plc->{"originY"}, $plc->{"gREPEATxmin"}, $plc->{"gREPEATymin"}, $plc->{"gREPEATxMax"},,
+									  $plc->{"gREPEATyMax"} );
 		push( @{ $self->{"stepPlaces"} }, $stepPlc );
 
 	}
@@ -119,8 +120,6 @@ sub GetUniRTM {
 	return $self->{"uniRTM"};
 }
 
-
-
 sub GetRoutLayer {
 	my $self = shift;
 
@@ -141,9 +140,8 @@ sub UserFootExist {
 sub GetStepPlaces {
 	my $self = shift;
 
-	return @{$self->{"stepPlaces"}};
+	return @{ $self->{"stepPlaces"} };
 }
- 
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

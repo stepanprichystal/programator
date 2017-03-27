@@ -30,6 +30,11 @@ sub new {
 	$self->{"posX"} = shift;
 	$self->{"posY"}  = shift;    # size of tool in µm
 	
+	$self->{"xMin"}  = shift;    # size of tool in µm
+	$self->{"yMin"}  = shift;    # size of tool in µm
+	$self->{"xMax"}  = shift;    # size of tool in µm
+	$self->{"yMax"}  = shift;    # size of tool in µm
+	
 	$self->{"id"}  = GeneralHelper->GetGUID();
  
 	return $self;
@@ -45,6 +50,30 @@ sub GetPosY {
 	my $self = shift;
 	
 	return $self->{"posY"};
+}
+
+sub GetXMin {
+	my $self = shift;
+	
+	return $self->{"xMin"};
+}
+
+sub GetYMin {
+	my $self = shift;
+	
+	return $self->{"yMin"};
+}
+
+sub GetXMax {
+	my $self = shift;
+	
+	return $self->{"xMax"};
+}
+
+sub GetYMax {
+	my $self = shift;
+	
+	return $self->{"yMax"};
 }
 
 sub GetStepId {

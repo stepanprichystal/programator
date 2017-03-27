@@ -138,6 +138,14 @@ sub SetOutlineOrder {
  
 
 	$self->__RenumberTools( \@finalOrder, $convTable, $toolOrderNum );
+	
+	# Set result of sorting to result item for later display to user
+	my @allStepPlc = 
+	my @stepPlcOrder = map { $ste } @finalOrder;
+ 
+	
+	
+	$resultItem->{"stepPlcOrder"} = 
 
 	return $resultItem;
 }

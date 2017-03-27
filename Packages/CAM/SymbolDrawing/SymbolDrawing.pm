@@ -112,6 +112,8 @@ sub Draw {
 sub __DrawPrimitives {
 	my $self       = shift;
 	my @primitives = @{ shift(@_) };
+	
+	$self->{"inCAM"}->COM( "cur_atr_reset"); # reset currently set attributes
 
 	foreach my $pInfo (@primitives) {
 

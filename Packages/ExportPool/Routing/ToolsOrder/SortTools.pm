@@ -27,82 +27,79 @@ use aliased 'Enums::EnumsRout';
 #-------------------------------------------------------------------------------------------#
 
 sub SortOutlineTools {
-	my $self       = shift;
+	my $self          = shift;
 	my $outlineChains = shift;
-	
-	my @sortedChains = $self->__SortByStartPoint($outlineChains, 10);
-	
+
+	my @sortedChains = $self->__SortByStartPoint( $outlineChains, 10 );
+
 	my @final = ();
-	
-	foreach my $sCh (@sortedChains){
-		my %inf = ("stepId" => $sCh->{"stepId"}, "chainOrder" => $sCh->{"chainTool"}->GetChainOrder());
-		push(@final, \%inf);
+
+	foreach my $sCh (@sortedChains) {
+		my %inf = ( "stepId" => $sCh->{"stepId"}, "chainOrder" => $sCh->{"chainTool"}->GetChainOrder() );
+		push( @final, \%inf );
 	}
- 
+
 	return @final;
 }
 
+sub __SortByStartPoint {
 
-sub __SortByStartPoint{
-	
-	my $self   = shift;
-	my @unsortedCh = @{ shift(@_) }; #array of hashes with starting point of chain
-	my $tol =  shift; 			     #tolerance for chains in same column in mm
-	
-	my @sortedCh = (); #final sorted array
-	my $isSorted = 0;  
+	my $self       = shift;
+	my @unsortedCh = @{ shift(@_) };    #array of hashes with starting point of chain
+	my $tol        = shift;             #tolerance for chains in same column in mm
+
+	my @sortedCh = ();                  #final sorted array
+	my $isSorted = 0;
 
 	#sort by X value - descending
-	@unsortedCh =  sort { $a->{coord}->{x} <=> $b->{coord}->{x} } @unsortedCh;
-	my @columnByX = (); 
+	@unsortedCh = sort { $a->{coord}->{x} <=> $b->{coord}->{x} } @unsortedCh;
+	my @columnByX = ();
 
-	while (!$isSorted){
-		
+	while ( !$isSorted ) {
+
 		#take last one largest X point value
 		my $largestX = $unsortedCh[$#unsortedCh]->{coord}->{x};
-		
+
 		#test if more chain has same X coordinate
 		my $idxOfMaxY = -1;
-		my $max =-1;
-		
-		for(my $i = 0 ; $i < scalar(@unsortedCh); $i++)
-		{
-			if($unsortedCh[$i]->{coord}->{x} == $largestX && $unsortedCh[$i]->{coord}->{y} > $max){
-				
-				$max = $unsortedCh[$i]->{coord}->{y};
+		my $max       = -1;
+
+		for ( my $i = 0 ; $i < scalar(@unsortedCh) ; $i++ ) {
+			if ( $unsortedCh[$i]->{coord}->{x} == $largestX && $unsortedCh[$i]->{coord}->{y} > $max ) {
+
+				$max       = $unsortedCh[$i]->{coord}->{y};
 				$idxOfMaxY = $i;
 			}
 		}
 
 		#get Y value of most right point
 		my $yOflargestX = $unsortedCh[$idxOfMaxY]->{coord}->{y};
-		
+
 		#get points, which X coordinate is larger then ($largestX - $tol)
-		@columnByX = grep {($_->{coord}->{x} >= $largestX - $tol)
-							#&&
-						   #($_->{coord}->{y} <= $yOflargestX)
-						   } @unsortedCh;
-		
+		@columnByX = grep {
+			( $_->{coord}->{x} >= $largestX - $tol )
+
+			  #&&
+			  #($_->{coord}->{y} <= $yOflargestX)
+		} @unsortedCh;
+
 		#remove chose points from @unsortedCh array
-		@unsortedCh = @unsortedCh[0 .. $#unsortedCh-$#columnByX-1];
-		
+		@unsortedCh = @unsortedCh[ 0 .. $#unsortedCh - $#columnByX - 1 ];
+
 		#sort chose points by their Y coordinate. Ascending
-		@columnByX =  sort { $a->{coord}->{y} <=> $b->{coord}->{y} } @columnByX;
-		
+		@columnByX = sort { $a->{coord}->{y} <=> $b->{coord}->{y} } @columnByX;
+
 		#sort chose point by Y coordinate (ascending) and push to @sortedCh array
-		push @sortedCh, (map {$_} @columnByX);
-		
-		if(scalar(@unsortedCh) == 0)
-		{
+		push @sortedCh, ( map { $_ } @columnByX );
+
+		if ( scalar(@unsortedCh) == 0 ) {
 			$isSorted = 1;
 		}
 
 	}
-	
+
 	return @sortedCh;
 }
-
-
 
 # $toolQueues hash of chains
 # keys are step guid and value is array of object (type of UniChainTool)
@@ -120,7 +117,7 @@ sub SortNotOutlineTools {
 	while ($qNotEmpty) {
 
 		# 1) Choose next current tool
-		my $currTool = $self->__ChooseNextTool(\@uniTools, $toolQueues);
+		my $currTool = $self->__ChooseNextTool( \@uniTools, $toolQueues );
 
 		# 2) Move all tools from queues tops to final queue
 		$self->__PutToFinalQueue( \@finalQueue, $toolQueues, $currTool );
@@ -128,7 +125,7 @@ sub SortNotOutlineTools {
 		# 3) Test if queues are empty
 		$qNotEmpty = scalar( map { @{ $toolQueues->{$_} } } keys $toolQueues );
 	}
- 
+
 	return @finalQueue;
 }
 
@@ -143,19 +140,22 @@ sub __PutToFinalQueue {
 
 	foreach my $comp (@compOrder) {
 
-		foreach my $stepId ( keys $toolQueues ) {
+		foreach my $stepId ( sort { $a cmp $b } keys $toolQueues ) {
 
-			my @actQueue = @{ $toolQueues->{$stepId} };
+			if ( scalar( @{ $toolQueues->{$stepId} } ) == 0 ) {
+				next;
+			}
 
-			for ( my $i = 0 ; $i < scalar(@actQueue) ; $i++ ) {
+			# check if tool on top of quue has requesteed diameter and comp
+			while (    scalar( @{ $toolQueues->{$stepId} } )
+					&& $toolQueues->{$stepId}->[0]->GetChainSize() == $currTool
+					&& $toolQueues->{$stepId}->[0]->GetComp() eq $comp )
+			{
 
-				if ( $actQueue[$i]->GetChainSize() == $currTool && $actQueue[$i]->GetComp() eq $comp ) {
+				my %inf = ( "stepId" => $stepId, "chainOrder" => ( shift @{ $toolQueues->{$stepId} } )->GetChainOrder() );
 
-					my %inf = ( "stepId" => $stepId, "chainOrder" => (shift @{ $toolQueues->{$stepId} })->GetChainOrder() );
-					
-					push(@{$finalQueue}, \%inf);
+				push( @{$finalQueue}, \%inf );
 
-				}
 			}
 		}
 	}
@@ -172,7 +172,7 @@ sub __ChooseNextTool {
 
 	for ( my $i = 0 ; $i < scalar(@uniTools) ; $i++ ) {
 
-		foreach my $stepId ( keys $toolQueues ) {
+		foreach my $stepId ( sort { $a cmp $b } keys $toolQueues ) {
 
 			my @actQueue = @{ $toolQueues->{$stepId} };
 
@@ -191,7 +191,7 @@ sub __ChooseNextTool {
 					# If so, this is not tool what we want, take another
 
 					# all tools from all queues (except tools on top of queuq)
-					my @buffTools = map  { @{ $toolQueues->{$_} }[ - (scalar( @{ $toolQueues->{$_} } )-1) .. -1 ] } keys $toolQueues;
+					my @buffTools = map  { @{ $toolQueues->{$_} }[ -( scalar( @{ $toolQueues->{$_} } ) - 1 ) .. -1 ] } keys $toolQueues;
 					my @sameTools = grep { $_->GetChainSize() == $uniTools[$i] } @buffTools;
 
 					if ( scalar(@sameTools) == 0 ) {

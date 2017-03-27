@@ -233,7 +233,7 @@ sub TestFindStart {
 	my $rotateAngle = shift;    # if foot down is tested on rotated pcb. Rotation is CCW
 	my $messMngr    = shift;
 
-	my %result = ( "result" => 1, "startEdge" => undef );
+	my %result = ( "result" => 1, "footEdge" => undef );
 
 	my $unitRTM = UniRTM->new( $inCAM, $jobId, $step, $layer );
 
@@ -259,7 +259,7 @@ sub TestFindStartSingle {
 	my $left        = shift;
 	my $messMngr    = shift;
 
-	my %result = ( "result" => 1, "startEdge" => undef, "angle" => $rotateAngle );
+	my %result = ( "result" => 1, "footEdge" => undef, "angle" => $rotateAngle );
 
 	my @features = $left->GetFeatures();
 
@@ -320,7 +320,7 @@ sub TestFindStartSingle {
 		}
 
 		my $startCopy = clone( $footResult{"edge"} );
-		$result{"startEdge"} = $startCopy;
+		$result{"footEdge"} = $startCopy;
 	}
 
 	return %result;

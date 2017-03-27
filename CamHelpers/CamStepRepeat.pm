@@ -142,7 +142,6 @@ sub GetRepeatStep {
 		$info{"originYNew"} = ${ $inCAM->{doinfo}{gREPEATymin} }[$i];
 
 		$info{"gREPEATxmin"} = ${ $inCAM->{doinfo}{gREPEATxmin} }[$i];
-		$info{"gREPEATxmin"} = ${ $inCAM->{doinfo}{gREPEATxmin} }[$i];
 		$info{"gREPEATymin"} = ${ $inCAM->{doinfo}{gREPEATymin} }[$i];
 		$info{"gREPEATxmax"} = ${ $inCAM->{doinfo}{gREPEATxmax} }[$i];
 		$info{"gREPEATymax"} = ${ $inCAM->{doinfo}{gREPEATymax} }[$i];

@@ -33,6 +33,7 @@ use aliased 'Packages::ExportPool::Routing::StepCheck::StepCheck';
 use aliased 'Packages::ExportPool::Routing::RoutStart::RoutStart';
 use aliased 'Packages::ItemResult::Enums' => "ResEnums";
 use aliased 'Packages::ExportPool::Routing::ToolsOrder::ToolsOrder';
+use aliased 'Packages::ExportPool::Routing::RoutDraw::RoutDraw';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -52,6 +53,8 @@ sub new {
 	$self->{"stepCheck"} = StepCheck->new($self->{"inCAM"}, $self->{"jobId"}, $self->{"stepList"}); 
 	$self->{"routStart"} = RoutStart->new($self->{"inCAM"}, $self->{"jobId"}, $self->{"stepList"}); 
 	$self->{"toolsOrder"} = ToolsOrder->new($self->{"inCAM"}, $self->{"jobId"}, $self->{"stepList"}); 
+ 	$self->{"routDraw"} = RoutDraw->new($self->{"inCAM"}, $self->{"jobId"}, $self->{"stepList"}); 
+ 
  
 	return $self;
 }
@@ -71,7 +74,9 @@ sub Run {
 	
 	$self->__ProcessResult($self->{"stepCheck"}->OutlineToolIsLast());
 	
-	$self->__ProcessResult($self->{"routStart"}->FindStart());
+	my $resItem = $self->{"routStart"}->FindStart();
+	
+	$self->__ProcessResult($resItem);
 	
 	my %convTable1 = ();
 
@@ -83,6 +88,10 @@ sub Run {
   	$self->__ProcessResult($self->{"toolsOrder"}->SetOutlineOrder(\%convTable1, \$toolOrder));
   	
   	$self->__ProcessResult($self->{"toolsOrder"}->ToolRenumberCheck());
+  	
+  	 $self->{"routDraw"}->DrawRoutStarts($resItem->{"errStartSteps"});
+  	 
+  	 
   	
   	
  
@@ -131,7 +140,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId = "f67314";
+	my $jobId = "f52456";
 	 
 	
 	my $routMngr = RoutingMngr->new($inCAM, $jobId);

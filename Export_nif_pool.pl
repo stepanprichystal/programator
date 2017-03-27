@@ -5,12 +5,12 @@ use strict;
 use warnings;
 use utf8;
 
-use lib qw( C:\Perl\site\lib\TpvScripts\Scripts );
+#use lib qw( C:\Perl\site\lib\TpvScripts\Scripts );
 
 #necessary for load pall packagesff
-#use FindBin;
-#use lib "$FindBin::Bin/../";
-#use PackagesLib;
+use FindBin;
+use lib "$FindBin::Bin/../";
+use PackagesLib;
 
 use aliased 'Packages::InCAM::InCAM';
 use aliased 'Programs::Exporter::ExportUtility::Groups::NifExport::NifExportTmpPool';
@@ -26,10 +26,10 @@ my $jobId    = "f13608";
 
  
  
-my $poznamka = "Zpraco ";
+my $poznamka = "";
 my $tenting  = 1;
 my $pressfit = 0;
-my $maska01  = 1;
+my $maska01  = 0;
 my $datacode  = "";
 my $ullogo  = "MC";
 my $jumpScoring  = 0;

@@ -137,6 +137,15 @@ sub GetStep{
 	return  $self->{"targetStep"};	
 }
  
+ 
+sub GetAllStepPlaces{
+	my $self = shift;
+	
+	my @all =  map { $_->GetStepPlaces() } (map{ $_->GetStepRotations() } $self->GetSteps());  
+	
+	return @all;	
+} 
+ 
 sub GetLayer{
 	my $self = shift;
 	

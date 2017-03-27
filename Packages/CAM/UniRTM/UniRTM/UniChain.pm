@@ -191,6 +191,13 @@ sub GetChainSize {
 
 	return $self->{"chainTool"}->{"chainSize"};
 }
+
+sub GetStrInfo {
+	my $self = shift;
+
+	return "Chain number: \"" . $self->GetChainOrder();
+}
+
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#

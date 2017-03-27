@@ -89,7 +89,7 @@ sub Init {
 
 	my %att = CamAttributes->GetStepAttr( $inCAM, $jobId, $self->{"stepName"} );
 
-	if ( defined $att{"rout_on_bridges"} && $att{"rout_on_bridges"} == 1 ) {
+	if ( defined $att{"rout_on_bridges"} && $att{"rout_on_bridges"} eq "yes" ) {
 		$self->{"userRoutOnBridges"} = 1;
 	}
 
