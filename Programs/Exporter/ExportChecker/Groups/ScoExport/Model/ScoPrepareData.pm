@@ -36,7 +36,7 @@ sub new {
 sub OnGetGroupState {
 	my $self     = shift;
 	my $dataMngr = shift;    #instance of GroupDataMngr
-	
+
 	my $inCAM = $dataMngr->{"inCAM"};
 	my $jobId = $dataMngr->{"jobId"};
 
@@ -62,9 +62,18 @@ sub OnPrepareGroupData {
 	my $inCAM = $dataMngr->{"inCAM"};
 	my $jobId = $dataMngr->{"jobId"};
 
-	my $defaultInfo = $dataMngr->GetDefaultInfo();
+	my $defaultInfo  = $dataMngr->GetDefaultInfo();
+	my $customerNote = $defaultInfo->GetCustomerNote();
 
-	$groupData->SetCoreThick(0.3);
+	my $custScoreCoreThick = $customerNote->ScoreCoreThick();
+
+	if ( defined $custScoreCoreThick ) {
+		$groupData->SetCoreThick($custScoreCoreThick);
+	}
+	else {
+		$groupData->SetCoreThick(0.3);
+	}
+
 	$groupData->SetOptimize( ScoEnums->Optimize_YES );
 
 	my $scoringType = ScoEnums->Type_CLASSIC;
@@ -75,22 +84,17 @@ sub OnPrepareGroupData {
 	}
 
 	$groupData->SetScoringType($scoringType);
-	 
- 
- 	my $scoreChecker = $defaultInfo->GetScoreChecker();
-	my $jump = 0;
-	if($scoreChecker){
-		$jump = $scoreChecker->CustomerJumpScoring()
-	} 
-	
+
+	my $scoreChecker = $defaultInfo->GetScoreChecker();
+	my $jump         = 0;
+	if ($scoreChecker) {
+		$jump = $scoreChecker->CustomerJumpScoring();
+	}
+
 	$groupData->SetCustomerJump($jump);
- 
- 
- 
- 
+
 	return $groupData;
 }
-
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

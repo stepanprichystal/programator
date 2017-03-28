@@ -40,7 +40,8 @@ sub GetCustomerInfo {
 					IF(FiducialsToPaste = '', null , FiducialsToPaste) as FiducialsToPaste,
 					IF(NoTpvInfoPdf = '', null , NoTpvInfoPdf) as NoTpvInfoPdf,
 					IF(ExportPdfControl = '', null , ExportPdfControl) as ExportPdfControl,
-					IF(ExportDataControl = '', null , ExportDataControl) as ExportDataControl
+					IF(ExportDataControl = '', null , ExportDataControl) as ExportDataControl,
+					IF(ScoreCoreThick = '', null , ScoreCoreThick) as ScoreCoreThick
 					
     				FROM customer_note 
     				WHERE CustomerId = _CustomerId

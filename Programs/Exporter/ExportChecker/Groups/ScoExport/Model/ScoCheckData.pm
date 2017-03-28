@@ -42,6 +42,7 @@ sub OnCheckGroupData {
 	my $groupData = $dataMngr->GetGroupData();
 
 	my $defaultInfo = $dataMngr->GetDefaultInfo();
+	my $customerNote = $defaultInfo->GetCustomerNote();
 
 	# 1) Check of core thick
 
@@ -51,7 +52,15 @@ sub OnCheckGroupData {
 
 	if ( !defined $thick || $thick <= 0 || $thick > 3 ) {
 
-		$dataMngr->_AddErrorResult( "Tlouöùka z˘statku", "Tlouöùka z˘statku dps po dr·ûkov·nÌ je nulov· nebo nenÌ definovan·." );
+		$dataMngr->_AddErrorResult( "Tlou≈°≈•ka z≈Østatku", "Tlou≈°≈•ka z≈Østatku dps po dr√°≈ækov√°n√≠ je nulov√° nebo nen√≠ definovan√°." );
+	}
+
+	# Check if core thick match with customer request
+	my $custScoreCoreThick = $customerNote->ScoreCoreThick();
+
+	if ( defined $custScoreCoreThick && $custScoreCoreThick !=  $thick) {
+	
+		$dataMngr->_AddErrorResult( "Tlou≈°≈•ka z≈Østatku", "Tlou≈°≈•ka z≈Østatku dps po dr√°≈ækov√°n√≠ (".$thick."mm) neodpov√≠d√° po≈æadavku z√°kazn√≠ka (".$custScoreCoreThick."mm)." );
 	}
 
 	my $opt = $groupData->GetOptimize();
@@ -63,7 +72,7 @@ sub OnCheckGroupData {
 
 		unless ($scoExist) {
 
-			my $m = "Pokud je zvolena oprimalizace manual, musÌ existovat vrstva 'score_layer', podle kterÈ se dr·ûka vyexportuje.";
+			my $m = "Pokud je zvolena oprimalizace manual, mus√≠ existovat vrstva 'score_layer', podle kter√© se dr√°≈æka vyexportuje.";
 
 			$dataMngr->_AddErrorResult( "Optimalizace manual", $m );
 		}
@@ -102,7 +111,7 @@ sub OnCheckGroupData {
 			my $strSteps = join( ", ", uniq(@scoreSteps) );
 
 			$dataMngr->_AddErrorResult(
-				"Score data", "Step 'mpanel' obsahuje stepy ($strSteps), kterÈ obsahujÌ dr·ûku. P¯esuÚ tuto dr·ûku do stepu 'mpanel'. Pouûij script: FlattenScoreScript.pl"
+				"Score data", "Step 'mpanel' obsahuje stepy ($strSteps), kter√© obsahuj√≠ dr√°≈æku. P≈ôesu≈à tuto dr√°≈æku do stepu 'mpanel'. Pou≈æij script: FlattenScoreScript.pl"
 			);
 		}
 

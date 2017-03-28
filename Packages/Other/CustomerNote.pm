@@ -128,6 +128,17 @@ sub ExportDataControl {
 
 }
 
+sub ScoreCoreThick {
+	my $self = shift;
+  
+	if(!$self->Exist()){
+		return undef;
+	}
+  
+	return $self->{"notes"}->{"ScoreCoreThick"};
+
+}
+
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#
