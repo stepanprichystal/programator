@@ -140,12 +140,18 @@ sub SetOutlineOrder {
 	$self->__RenumberTools( \@finalOrder, $convTable, $toolOrderNum );
 	
 	# Set result of sorting to result item for later display to user
-	my @allStepPlc = 
-	my @stepPlcOrder = map { $ste } @finalOrder;
+	 
+	 
+	 
+	 
+	my @chainIds = ();
+	foreach my $rout (@finalOrder){
  
-	
-	
-	$resultItem->{"stepPlcOrder"} = 
+		push(@chainIds, $convTable->{$rout->{"stepId"}}->{$rout->{"chainOrder"}});
+ 
+	}
+ 
+	$resultItem->{"chainOrderIds"} = \@chainIds;
 
 	return $resultItem;
 }

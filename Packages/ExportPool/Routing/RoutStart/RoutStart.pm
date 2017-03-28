@@ -50,8 +50,8 @@ sub FindStart {
 
 	my $resultItem = ItemResult->new("Find rout start");
 	
-	my $errStep = (); 
-	$resultItem->{"errStartSteps"} = \$errStep; # save stepPlace, where start was not found
+	my @errStep = (); 
+	$resultItem->{"errStartSteps"} = \@errStep; # save stepPlace, where start was not found
 
 	foreach my $s ( $self->{"stepList"}->GetSteps() ) {
 
@@ -212,7 +212,9 @@ sub __FindStart {
 			  . "\" pomocí atributu: \"$attFootName\"";
 			  
 			  
-			push(@{$resItem->{"errStartSteps"}}, $stepRot);
+			  
+			my %inf = ("stepRotation" => $stepRot, "outlineChaibSeq" => $outline) ;
+			push(@{$resItem->{"errStartSteps"}}, \%inf);
 
 			$resItem->AddError($m);
 

@@ -138,12 +138,15 @@ sub GetStep{
 }
  
  
-sub GetAllStepPlaces{
+sub GetStepPlace{
 	my $self = shift;
+	my $stepPlcId = shift;
 	
 	my @all =  map { $_->GetStepPlaces() } (map{ $_->GetStepRotations() } $self->GetSteps());  
 	
-	return @all;	
+	my $step = (grep { $_->GetStepId() eq $stepPlcId} @all)[0];
+	
+	return $step;	
 } 
  
 sub GetLayer{

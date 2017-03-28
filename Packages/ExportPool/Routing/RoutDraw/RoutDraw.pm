@@ -15,8 +15,9 @@ use warnings;
 use aliased 'Packages::CAM::SymbolDrawing::SymbolDrawing';
 use aliased 'Packages::Routing::RoutLayer::RoutDrawing::RoutDrawing';
 use aliased 'Packages::Polygon::Features::RouteFeatures::RouteFeatures';
+use aliased 'Packages::Polygon::PointsTransform';
 
-#use aliased 'CamHelpers::CamHelper';
+use aliased 'CamHelpers::CamHelper';
 use aliased 'CamHelpers::CamLayer';
 
 #use aliased 'CamHelpers::CamAttributes';
@@ -30,7 +31,7 @@ use aliased 'Packages::CAM::SymbolDrawing::Point';
 #use aliased 'Packages::CAM::FeatureFilter::Enums' => "FilterEnums";
 #use aliased 'Packages::Polygon::Features::Features::Features';
 #use aliased 'Packages::CAM::UniRTM::UniRTM::UniRTM';
-#use aliased 'Packages::CAM::SymbolDrawing::Primitive::PrimitiveText';
+use aliased 'Packages::CAM::SymbolDrawing::Primitive::PrimitiveText';
 
 #-------------------------------------------------------------------------------------------#
 #  Public method
@@ -49,8 +50,34 @@ sub new {
 	return $self;
 }
 
+sub CreateResultLayer {
+	my $self         = shift;
+	my $notFound     = shift;
+	my $stepPlcOrder = shift;
+
+	my $inCAM = $self->{"inCAM"};
+	my $jobId = $self->{"jobId"};
+
+	# Create result layer
+
+	my $lName = "rout_order_result";
+
+	if ( CamHelper->LayerExists( $inCAM, $jobId, $lName ) ) {
+		$inCAM->COM( 'delete_layer', "layer" => $lName );
+	}
+
+	$inCAM->COM( 'create_layer', layer => $lName, context => 'misc', type => 'rout', polarity => 'positive', ins_layer => '' );
+
+	# Draw foots
+	$self->__DrawRoutFoots( $lName, $notFound );
+
+	# Draw tool order
+	$self->__DrawOutlineOrder( $lName, $stepPlcOrder );
+
+}
+
 # draw layer, where are signed start routs
-sub DrawRoutFoots {
+sub __DrawRoutFoots {
 	my $self     = shift;
 	my $layer    = shift;
 	my @notFound = @{ shift(@_) };
@@ -63,7 +90,7 @@ sub DrawRoutFoots {
 	# Get all edges, where is attribute foot down
 	my $parse = RouteFeatures->new();
 	$parse->Parse( $inCAM, $jobId, $self->{"stepList"}->GetStep(), $fschLayer );
-	my @features = $parse->GetFeatuers();
+	my @features = $parse->GetFeatures();
 
 	my @foots = grep { defined $_->{"att"}->{".foot_down"} } @features;
 
@@ -75,33 +102,50 @@ sub DrawRoutFoots {
 	}
 
 	my $routDrawing = RoutDrawing->new( $inCAM, $jobId, $self->{"stepList"}->GetStep(), $layer );
-	$routDrawing->DrawFootRoutResult( \@footsInf );
+	$routDrawing->DrawFootRoutResult( \@footsInf, 0);
 
 	# Draw, where foot was not found
-	CamLayer->WorkLayer($layer);
-	my $draw = SymbolDrawing->new( $inCAM, $jobId );
+	CamLayer->WorkLayer( $inCAM, $layer );
 
-	foreach my $stePlc (@notFound) {
+	# hash contain:
+	# stepRotation - object of StepRotation
+	# outlineChaibSeq - UniChainSeq
+	foreach my $inf (@notFound) {
 
-		my $l1 =
-		  PrimitiveLine->new( Point->new( $stePlc->GetXMin(), $stePlc->GetYMax() ), Point->new( $stePlc->GetXMax(), $stePlc->GetYMin() ), "r2000" );
+		#get limit of rout points
+		my @points = ();
+		foreach my $e ( $inf->{"outlineChaibSeq"}->GetFeatures() ) {
 
-		my $l2 =
-		  PrimitiveLine->new( Point->new( $stePlc->GetXMin(), $stePlc->GetYMin() ), Point->new( $stePlc->GetXMax(), $stePlc->GetYMax() ), "r2000" );
+			my %p1 = ( "x" => $e->{"x1"}, "y" => $e->{"y1"} );
+			my %p2 = ( "x" => $e->{"x2"}, "y" => $e->{"y2"} );
+			push( @points, ( \%p1, \%p2 ) );
+		}
 
-		$draw->AddPrimitive($l1);
-		$draw->AddPrimitive($l2);
+		my %lim = PointsTransform->GetLimByPoints( \@points );
+
+		foreach my $stepPlc ( $inf->{"stepRotation"}->GetStepPlaces() ) {
+			my $draw = SymbolDrawing->new( $inCAM, $jobId, Point->new( $stepPlc->GetPosX(), $stepPlc->GetPosY() ) );
+
+			my $l1 =
+			  PrimitiveLine->new( Point->new( $lim{"xMin"}, $lim{"yMax"} ), Point->new( $lim{"xMax"}, $lim{"yMin"} ), "r800" );
+
+			my $l2 =
+			  PrimitiveLine->new( Point->new( $lim{"xMin"}, $lim{"yMin"} ), Point->new( $lim{"xMax"}, $lim{"yMax"} ), "r800" );
+
+			$draw->AddPrimitive($l1);
+			$draw->AddPrimitive($l2);
+
+			$draw->Draw();
+		}
+
 	}
-
-	$draw->Draw();
-
 }
 
 # draw layer, where are signed start routs
-sub DrawOutlineOrder {
-	my $self     = shift;
-	my $layer    = shift;
-	my @notFound = @{ shift(@_) };
+sub __DrawOutlineOrder {
+	my $self         = shift;
+	my $layer        = shift;
+	my @chainOrderId = @{ shift(@_) };
 
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
@@ -111,40 +155,40 @@ sub DrawOutlineOrder {
 	# Get all edges, where is attribute foot down
 	my $parse = RouteFeatures->new();
 	$parse->Parse( $inCAM, $jobId, $self->{"stepList"}->GetStep(), $fschLayer );
-	my @features = $parse->GetFeatuers();
-
-	my @foots = grep { defined $_->{"att"}->{".foot_down"} } @features;
-
-	my @footsInf = ();
-	foreach my $f (@foots) {
-
-		my %inf = ( "angle" => 0, "result" => 1, "footEdge" => $f );
-		push( @footsInf, \%inf );
-	}
-
-	my $routDrawing = RoutDrawing->new( $inCAM, $jobId, $self->{"stepList"}->GetStep(), $layer );
-	$routDrawing->DrawFootRoutResult( \@footsInf );
 
 	# Draw, where foot was not found
-	CamLayer->WorkLayer($layer);
+	CamLayer->WorkLayer( $inCAM, $layer );
 	my $draw = SymbolDrawing->new( $inCAM, $jobId );
 
-	foreach my $stePlc (@notFound) {
+	my $order = 1;
+	foreach my $chainId (@chainOrderId) {
 
-		my $l1 =
-		  PrimitiveLine->new( Point->new( $stePlc->GetXMin(), $stePlc->GetYMax() ), Point->new( $stePlc->GetXMax(), $stePlc->GetYMin() ), "r2000" );
+		#get limit of rout points
+		my @points = ();
+		foreach my $e ( $parse->GetFeatureByGroupGUID($chainId) ) {
 
-		my $l2 =
-		  PrimitiveLine->new( Point->new( $stePlc->GetXMin(), $stePlc->GetYMin() ), Point->new( $stePlc->GetXMax(), $stePlc->GetYMax() ), "r2000" );
+			my %p1 = ( "x" => $e->{"x1"}, "y" => $e->{"y1"} );
+			my %p2 = ( "x" => $e->{"x2"}, "y" => $e->{"y2"} );
+			push( @points, ( \%p1, \%p2 ) );
+		}
 
-		$draw->AddPrimitive($l1);
-		$draw->AddPrimitive($l2);
+		my %lim = PointsTransform->GetLimByPoints( \@points );
+
+		my $txt = PrimitiveText->new(
+									  $order,
+									  Point->new(
+												  ( ( $lim{"xMax"} - $lim{"xMin"} ) / 2 ) + $lim{"xMin"},
+												  ( ( $lim{"yMax"} - $lim{"yMin"} ) / 2 ) + $lim{"yMin"}
+									  ),
+									  8, 3
+		);
+		$draw->AddPrimitive($txt);
+
+		$order++;
 	}
 
 	$draw->Draw();
-
 }
-
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

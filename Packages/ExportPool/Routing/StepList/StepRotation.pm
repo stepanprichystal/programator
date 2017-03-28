@@ -92,8 +92,8 @@ sub Init {
 	# Init step placement
 	foreach my $plc (@placement) {
 
-		my $stepPlc = StepPlace->new( $plc->{"originX"}, $plc->{"originY"}, $plc->{"gREPEATxmin"}, $plc->{"gREPEATymin"}, $plc->{"gREPEATxMax"},,
-									  $plc->{"gREPEATyMax"} );
+		my $stepPlc = StepPlace->new( $plc->{"originX"}, $plc->{"originY"}, $plc->{"gREPEATxmin"}, $plc->{"gREPEATymin"}, $plc->{"gREPEATxmax"},
+									  $plc->{"gREPEATymax"} );
 		push( @{ $self->{"stepPlaces"} }, $stepPlc );
 
 	}
@@ -141,6 +141,12 @@ sub GetStepPlaces {
 	my $self = shift;
 
 	return @{ $self->{"stepPlaces"} };
+}
+
+sub GetStepName {
+	my $self = shift;
+
+	return $self->{"stepName"};
 }
 
 #-------------------------------------------------------------------------------------------#

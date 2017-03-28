@@ -72,6 +72,14 @@ sub GetFeatures {
 	return @{ $self->{"features"} };
 }
 
+sub GetFeatureByGroupGUID{
+	my $self = shift;
+	
+	
+	return $self->{"base"}->GetFeatureByGroupGUID(@_); 
+	
+}
+
 # Return array of unique route chain hashes
 # Each info contain at least:
 # "tool_size" = tool size

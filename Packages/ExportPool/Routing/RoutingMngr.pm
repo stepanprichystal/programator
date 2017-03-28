@@ -5,13 +5,10 @@
 #-------------------------------------------------------------------------------------------#
 package Packages::ExportPool::Routing::RoutingMngr;
 use base('Packages::ItemResult::ItemEventMngr');
- 
-
 
 #3th party library
 use strict;
 use warnings;
- 
 
 #local library
 
@@ -24,6 +21,7 @@ use warnings;
 #use aliased 'Helpers::JobHelper';
 #use aliased 'CamHelpers::CamJob';
 use aliased 'CamHelpers::CamHelper';
+
 #use aliased 'Enums::EnumsGeneral';
 #use aliased 'Enums::EnumsPaths';
 #use aliased 'Connectors::HeliosConnector::HegMethods';
@@ -45,89 +43,84 @@ sub new {
 	my $self      = $class->SUPER::new( $packageId, @_ );
 	bless $self;
 
-	$self->{"inCAM"}   = shift;
-	$self->{"jobId"}   = shift;
-	 
-	$self->{"stepList"} = StepList->new($self->{"inCAM"}, $self->{"jobId"}, "panel", "f"); 
-	
-	$self->{"stepCheck"} = StepCheck->new($self->{"inCAM"}, $self->{"jobId"}, $self->{"stepList"}); 
-	$self->{"routStart"} = RoutStart->new($self->{"inCAM"}, $self->{"jobId"}, $self->{"stepList"}); 
-	$self->{"toolsOrder"} = ToolsOrder->new($self->{"inCAM"}, $self->{"jobId"}, $self->{"stepList"}); 
- 	$self->{"routDraw"} = RoutDraw->new($self->{"inCAM"}, $self->{"jobId"}, $self->{"stepList"}); 
- 
- 
+	$self->{"inCAM"} = shift;
+	$self->{"jobId"} = shift;
+
+	$self->{"stepList"} = StepList->new( $self->{"inCAM"}, $self->{"jobId"}, "panel", "f" );
+
+	$self->{"stepCheck"} = StepCheck->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"stepList"} );
+	$self->{"routStart"} = RoutStart->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"stepList"} );
+	$self->{"toolsOrder"} = ToolsOrder->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"stepList"} );
+	$self->{"routDraw"} = RoutDraw->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"stepList"} );
+
 	return $self;
 }
 
- 
 sub Run {
 	my $self = shift;
-	
+
 	$self->{"stepList"}->Init();
-	
- 
-	$self->__ProcessResult($self->{"stepCheck"}->OnlyBridges());
-	
-	$self->__ProcessResult($self->{"stepCheck"}->OutsideChains());
-	
-	$self->__ProcessResult($self->{"stepCheck"}->LeftRoutChecks());
-	
-	$self->__ProcessResult($self->{"stepCheck"}->OutlineToolIsLast());
-	
-	my $resItem = $self->{"routStart"}->FindStart();
-	
-	$self->__ProcessResult($resItem);
-	
+
+	$self->__ProcessResult( $self->{"stepCheck"}->OnlyBridges() );
+
+	$self->__ProcessResult( $self->{"stepCheck"}->OutsideChains() );
+
+	$self->__ProcessResult( $self->{"stepCheck"}->LeftRoutChecks() );
+
+	$self->__ProcessResult( $self->{"stepCheck"}->OutlineToolIsLast() );
+
+	my $resFindStart = $self->{"routStart"}->FindStart();
+
+	$self->__ProcessResult($resFindStart);
+
 	my %convTable1 = ();
 
-	$self->__ProcessResult($self->{"routStart"}->CreateFsch(\%convTable1));
+	$self->__ProcessResult( $self->{"routStart"}->CreateFsch( \%convTable1 ) );
+
+	my $toolOrder = 1;
+	$self->__ProcessResult( $self->{"toolsOrder"}->SetInnerOrder( \%convTable1, \$toolOrder ) );
+
+	my $resOutlineOrder = $self->{"toolsOrder"}->SetOutlineOrder( \%convTable1, \$toolOrder );
+
+	$self->__ProcessResult($resOutlineOrder);
+
+	$self->__ProcessResult( $self->{"toolsOrder"}->ToolRenumberCheck() );
+
+	
+
+	$self->{"routDraw"}->CreateResultLayer( $resFindStart->{"errStartSteps"}, $resOutlineOrder->{"chainOrderIds"}  );
+
  
- 	my $toolOrder = 1;
- 	$self->__ProcessResult($self->{"toolsOrder"}->SetInnerOrder(\%convTable1, \$toolOrder));
- 
-  	$self->__ProcessResult($self->{"toolsOrder"}->SetOutlineOrder(\%convTable1, \$toolOrder));
-  	
-  	$self->__ProcessResult($self->{"toolsOrder"}->ToolRenumberCheck());
-  	
-  	 $self->{"routDraw"}->DrawRoutStarts($resItem->{"errStartSteps"});
-  	 
-  	 
-  	
-  	
- 
- 
- 	#$self->{"stepList"}->Clean();
- 
+
+	#$self->{"stepList"}->Clean();
+
 }
 
-sub Continue{
+sub Continue {
 	my $self = shift;
-	
-	
+
 }
 
-
-sub __ProcessResult{
+sub __ProcessResult {
 	my $self = shift;
-	my $res = shift;
-	
-	
-	unless( $res eq ResEnums->ItemResult_Fail ){
-		
-		if($res->GetWarningCount() > 0){
-			
-			print STDERR "Warning:\n\n".$res->GetWarningStr();
+	my $res  = shift;
+
+	unless ( $res eq ResEnums->ItemResult_Fail ) {
+
+		if ( $res->GetWarningCount() > 0 ) {
+
+			print STDERR "Warning:\n\n" . $res->GetWarningStr();
 		}
-		
-		if($res->GetErrorCount() > 0){
-			
-			print STDERR "Errors:\n\n".$res->GetErrorStr();
+
+		if ( $res->GetErrorCount() > 0 ) {
+
+			print STDERR "Errors:\n\n" . $res->GetErrorStr();
 		}
-		  
+
 	}
-	
+
 }
- 
+
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#
@@ -136,14 +129,15 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	use aliased 'Packages::ExportPool::Routing::RoutingMngr';
 	use aliased 'Packages::InCAM::InCAM';
- 
 
 	my $inCAM = InCAM->new();
 
 	my $jobId = "f52456";
-	 
-	
-	my $routMngr = RoutingMngr->new($inCAM, $jobId);
+
+
+	$inCAM->COM("disp_off");
+
+	my $routMngr = RoutingMngr->new( $inCAM, $jobId );
 	$routMngr->Run();
 
 }
