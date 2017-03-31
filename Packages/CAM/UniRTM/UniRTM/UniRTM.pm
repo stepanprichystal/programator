@@ -48,8 +48,13 @@ sub GetMaxChainNumber {
 	my $self = shift;
 
 	my @chainList = $self->GetChainList();
+	
+	if(scalar(@chainList)){
+		return $chainList[scalar(@chainList)-1]->GetChainOrder();
+	}else{
+		return 0;
+	}
 
-	return $chainList[scalar(@chainList)-1]->GetChainOrder();
 }
 
 # Get left cycle chain
@@ -112,7 +117,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	use aliased 'Packages::Routing::RoutLayer::RoutDrawing::RoutDrawing';
 
 	my $inCAM = InCAM->new();
-	my $jobId = "f52456";
+	my $jobId = "f67718";
 
 	my $unitRTM = UniRTM->new( $inCAM, $jobId, "o+1", "f" );
 

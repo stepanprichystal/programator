@@ -57,6 +57,8 @@ sub Parse {
 	foreach my $f (@baseFeats) {
 
 		my $newF = RouteItem->new($f);
+		
+		
 
 		push( @features, $newF );
 	}

@@ -42,7 +42,11 @@ sub IsCyclic {
 			$next = $sortedFeats[ $i + 1 ];
 		}
 
-		if ( !( $sortedFeats[$i]->{"x2"} == $next->{"x1"} && $sortedFeats[$i]->{"y2"} == $next->{"y1"} ) ) {
+		if (
+			 !(    sprintf( "%.3f", $sortedFeats[$i]->{"x2"} ) == sprintf( "%.3f", $next->{"x1"} )
+				&& sprintf( "%.3f", $sortedFeats[$i]->{"y2"} ) == sprintf( "%.3f", $next->{"y1"} ) )
+		  )
+		{
 			$cyclic = 0;
 			last;
 
@@ -328,7 +332,11 @@ sub GetSortedRout {
 	}
 
 	#if circle case = one arc
-	elsif ( scalar(@edges) == 1 && $edges[0]->{"type"} =~ /a/i ) {
+	elsif (    scalar(@edges) == 1
+			&& $edges[0]->{"type"} =~ /a/i
+			&& sprintf( "%.3f", $edges[0]->{"x1"} ) == sprintf( "%.3f", $edges[0]->{"x2"} )
+			&& sprintf( "%.3f", $edges[0]->{"y1"} ) == sprintf( "%.3f", $edges[0]->{"y2"} ) )
+	{
 
 		$edges[0]{"switchPoints"} = 0;
 		$edges[0]{"newDir"}       = $edges[0]{"oriDir"};

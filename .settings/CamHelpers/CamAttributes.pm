@@ -84,6 +84,31 @@ sub SetJobAttribute {
 	);
 }
 
+
+#set step attribute
+sub SetStepAttribute {
+
+	my $self    = shift;
+	my $inCAM   = shift;
+	my $jobId   = shift;
+	my $step   = shift;
+	my $attName = shift;
+	my $value   = shift;
+
+	$inCAM->COM(
+				 "set_attribute",
+				 "type"      => "step",
+				 "job"       => $jobId,
+				 "entity"    => "",
+				 "attribute" => $attName,
+				 "value"     => $value,
+				 "name1"     => $step,
+				 "name2"     => "",
+				 "name3"     => "",
+				 "units"     => "mm"
+	);
+}
+
 #return all attributes of step in hash
 sub GetStepAttr {
 

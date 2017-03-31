@@ -8,7 +8,8 @@ use warnings;
 
 # ============ INPUT LINE =================
 my $inputLine =
-"chain_change_num,layer=f,renumber_sequentially=no,chain=7,new_chain=1";
+"sel_buffer_options,mode=merge_layers,rotation=0,mirror=yes,polarity=no,fixed_datum=no (0)";
+
 my $output = "\$inCAM->COM(";
 my @splitted = split( ",", $inputLine );
 

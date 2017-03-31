@@ -145,6 +145,13 @@ sub __DrawPrimitives {
 
 				$self->__DrawSurfPoly( $p, $pos );
 			}
+			elsif ( $p->GetType() eq Enums->Primitive_PAD ) {
+
+				$self->__DrawPad( $p, $pos );
+			}
+			
+			
+			
 			
 			CamSymbol->ResetCurAttributes($self->{"inCAM"});
 		}
@@ -203,6 +210,38 @@ sub __DrawText {
 	}
 
 	CamSymbol->AddText( $self->{"inCAM"}, $t->GetValue(), $p, $t->GetHeight(), $t->GetLineWidth(), $mirror, $t->GetPolarity(), $t->GetAngle() );
+
+}
+
+sub __DrawPad {
+	my $self      = shift;
+	my $t         = shift;
+	my $symbolPos = shift;
+
+	# consider origin of whole draw
+
+	my $p = $t->GetPosition();
+	$p->Move( $self->{"position"}->X() + $symbolPos->X(), $self->{"position"}->Y() + $symbolPos->Y() );
+
+	# consider mirror
+
+	my $mirror = $t->GetMirror();
+
+	if ( $self->{"mirrorX"} ) {
+
+		$p->MirrorX( $self->{"mirrorXPoint"} );
+		$p->Move( 0, -$t->GetHeight() );
+
+		if ( $mirror == 1 ) {
+			$mirror = 0;
+		}
+		else {
+			$mirror = 1;
+		}
+
+	}
+
+	CamSymbol->AddPad( $self->{"inCAM"}, $t->GetSymbol(), $p, $mirror, $t->GetPolarity() );
 
 }
 

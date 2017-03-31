@@ -18,6 +18,7 @@ use aliased 'CamHelpers::CamAttributes';
 
 use aliased 'Packages::CAM::SymbolDrawing::Primitive::PrimitiveLine';
 use aliased 'Packages::CAM::SymbolDrawing::Primitive::PrimitiveArcSCE';
+use aliased 'Packages::CAM::SymbolDrawing::Primitive::PrimitivePad';
 use aliased 'Packages::CAM::SymbolDrawing::Point';
 use aliased 'Packages::CAM::FeatureFilter::FeatureFilter';
 use aliased 'Packages::CAM::FeatureFilter::Enums' => "FilterEnums";
@@ -54,7 +55,7 @@ sub DrawRoute {
 
 	# determine foot down edge by rout start
 	if ($setFootAtt) {
-	 
+
 		my $idx = ( grep { $sorteEdges[$_] == $routStart } 0 .. $#sorteEdges )[0];
 
 		if ( $idx == 0 ) {
@@ -171,20 +172,20 @@ sub DrawRoute {
 			"chng_direction" => 0
 		);
 
-		# feat for start should be only one
-		if ( scalar(@feats) != 1 ) {
-			die "Error when finding rout start feature";
-		}
+		# Set foot down attribute
 
-		my $f = FeatureFilter->new( $inCAM, $jobId, $self->{"layer"} );
-		$f->AddIncludeAtt( "feat_group_id", $footDownGuid );
+		if ($setFootAtt) {
 
-		if ( $f->Select() == 1 ) {
-			CamAttributes->SetFeaturesAttribute( $inCAM, $jobId, ".foot_down" );
+			my $f = FeatureFilter->new( $inCAM, $jobId, $self->{"layer"} );
+			$f->AddIncludeAtt( "feat_group_id", $footDownGuid );
 
-		}
-		else {
-			die "One Foot down feature was not selected\n";
+			if ( $f->Select() == 1 ) {
+				CamAttributes->SetFeaturesAttribute( $inCAM, $jobId, ".foot_down" );
+
+			}
+			else {
+				die "One Foot down feature was not selected\n";
+			}
 		}
 
 	}
@@ -215,14 +216,13 @@ sub DeleteRoute {
 
 }
 
- 
-
 # draw layer, where are signed start routs
 sub DrawFootRoutResult {
-	my $self   = shift;
-	my @foots = @{ shift(@_) };
-	my $drawLabel = shift;
- 
+	my $self          = shift;
+	my @foots         = @{ shift(@_) };
+	my $drawLabel     = shift;
+	my $drawStartRout = shift;
+
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
 	my $step  = $self->{"step"};
@@ -263,11 +263,17 @@ sub DrawFootRoutResult {
 		}
 		elsif ( $foot->{"footEdge"}->{"type"} eq "A" ) {
 
+			# Direction is defined, depand on which source features come..
+			my $dir = $foot->{"footEdge"}->{"newDir"};
+			if(!defined $dir){
+				$dir = $foot->{"footEdge"}->{"oriDir"};
+			}
+
 			$primitive = PrimitiveArcSCE->new(
 											   Point->new( $foot->{"footEdge"}->{"x1"},   $foot->{"footEdge"}->{"y1"} ),
 											   Point->new( $foot->{"footEdge"}->{"xmid"}, $foot->{"footEdge"}->{"ymid"} ),
 											   Point->new( $foot->{"footEdge"}->{"x2"},   $foot->{"footEdge"}->{"y2"} ),
-											   $foot->{"footEdge"}->{"newDir"},
+											   $dir,
 											   "r3000"
 			);
 
@@ -276,15 +282,18 @@ sub DrawFootRoutResult {
 		$draw->AddPrimitive($primitive);
 
 		# ad tect
-		
-		if($drawLabel){
-			 my $txt = PrimitiveText->new( "Foot: " . $foot->{"angle"} . "deg",
-									  Point->new( $foot->{"footEdge"}->{"x2"} - 30, $foot->{"footEdge"}->{"y2"} - 10 ),
-									  2.2, 1.2 );
+
+		if ($drawLabel) {
+			my $txt = PrimitiveText->new( "Foot: " . $foot->{"angle"} . "deg",
+										  Point->new( $foot->{"footEdge"}->{"x2"} - 30, $foot->{"footEdge"}->{"y2"} - 10 ),
+										  2.2, 1.2 );
 			$draw->AddPrimitive($txt);
 		}
 
-
+		if ($drawStartRout) {
+			my $pad = PrimitivePad->new( "r5000", Point->new( $foot->{"footEdge"}->{"x2"}, $foot->{"footEdge"}->{"y2"} ) );
+			$draw->AddPrimitive($pad);
+		}
 
 	}
 

@@ -30,7 +30,7 @@ sub ToolsAreOrdered {
 	my $result = 1;
 
 	my $unitRTM = UniRTM->new( $inCAM, $jobId, $step, $layer );
-	my @chains = $unitRTM->GetChains();
+	my @chains = $unitRTM->GetChainListByOutline(0);
 
 	my @wrongSorted = ();
 

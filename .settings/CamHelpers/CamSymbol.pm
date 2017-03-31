@@ -122,6 +122,40 @@ sub AddLine {
 	  );
 }
 
+sub AddPad {
+	my $self     = shift;
+	my $inCAM    = shift;
+	my $symbol   = shift;
+	my $pos      = shift;    #hash x, y
+	my $mirror   = shift;
+	my $polarity = shift;    #
+
+	$polarity = defined $polarity ? $polarity : 'positive';
+
+	if ($mirror) {
+		$mirror = "yes";
+	}
+	else {
+		$mirror = "no";
+	}
+
+	return
+	  $inCAM->COM(
+				   "add_pad",
+				   "attributes" => 'yes',
+				   "symbol"    => $symbol,
+				   "polarity"  => $polarity,
+				   "x"         => $pos->{"x"},
+				   "y"         => $pos->{"y"},
+				   "mirror"    => $mirror,
+				   "angle"     => "0",
+				   "direction" => "ccw",
+				   "resize"    => "0",
+				   "xscale"    => "1",
+				   "yscale"    => "1"
+	  );
+}
+
 sub AddTable {
 	my $self       = shift;
 	my $inCAM      = shift;
@@ -226,20 +260,20 @@ sub AddCurAttribute {
 	# decide, which type is attribute
 	my %attrInfo = CamAttributes->GetAttrParamsByName( $inCAM, $jobId, $attName );
 
-	my $int   = 0;
-	my $float   = 0;
-	my $option        = "";
-	my $text          = "";
+	my $int    = 0;
+	my $float  = 0;
+	my $option = "";
+	my $text   = "";
 
 	if ( $attrInfo{"gATRtype"} eq "int" ) {
 
-		$int  = $attVal;
-	 
+		$int = $attVal;
+
 	}
 	elsif ( $attrInfo{"gATRtype"} eq "float" ) {
 
-		$float  = $attVal;
-		 
+		$float = $attVal;
+
 	}
 	elsif ( $attrInfo{"gATRtype"} eq "option" ) {
 
@@ -252,12 +286,12 @@ sub AddCurAttribute {
 	}
 
 	$inCAM->COM(
-		'cur_atr_set',
-		"attribute" => $attName,
-		"int"       => $int,
-		"float"     => $float,
-		"option"    => $option,
-		"text"      => $text
+				 'cur_atr_set',
+				 "attribute" => $attName,
+				 "int"       => $int,
+				 "float"     => $float,
+				 "option"    => $option,
+				 "text"      => $text
 	);
 }
 

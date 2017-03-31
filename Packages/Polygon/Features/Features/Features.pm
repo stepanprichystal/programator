@@ -258,6 +258,32 @@ sub __ParseLines {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
+
+	use aliased 'Packages::Polygon::Features::Features::Features';
+	use aliased 'Packages::InCAM::InCAM';
+
+	my $f = Features->new();
+
+	my $jobId = "f52456";
+	my $inCAM = InCAM->new();
+
+	my $step  = "o+1";
+	my $layer = "f";
+
+	$f->Parse( $inCAM, $jobId, $step, $layer, 0, 1);
+
+	my @features = $f->GetFeatures();
+	
+	if(scalar(@features) == 1){
+		
+		print STDERR "x1=".$features[0]->{"x1"};
+		print STDERR "x1=".$features[0]->{"y1"};
+	}
+
+
+
+
+
 }
 
 1;

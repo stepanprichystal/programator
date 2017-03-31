@@ -19,10 +19,10 @@ use aliased 'CamHelpers::CamAttributes';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'Packages::Routing::RoutLayer::RoutDrawing::RoutDrawing';
 use aliased 'Packages::Routing::RoutLayer::RoutStart::RoutStart';
- 
+
 use aliased 'Packages::Routing::RoutLayer::RoutStart::RoutRotation';
-	use aliased 'Enums::EnumsGeneral';
-	use aliased 'CamHelpers::CamHelper';
+use aliased 'Enums::EnumsGeneral';
+use aliased 'CamHelpers::CamHelper';
 
 #-------------------------------------------------------------------------------------------#
 #  Public method
@@ -61,13 +61,19 @@ sub OutsideChains {
 			my $str = join( "; ", @info );
 
 			my @m = (
-					  "Ve vrstvě: \"" . $layer . "\" jsou frézy, které by měly být uvnitř obrysové frézy, ale nejsou ($str).",
-					  "Je to tak správně?"
+				"Ve vrstvě: \""
+				  . $layer
+				  . "\" jsou frézy, které by měly být uvnitř obrysové frézy, ale nejsou ($str). Pravděpodobně kromě desek na patku jsou ve stepu i dps na můstky",
+				"Je to pravda?"
 			);
-			my @b = ( "Ano", "Není, opravím to" );
+			my @b = ( "Ano, step obsahuje i dps na můstky", "Není to tak, opravím to" );
 			$messMngr->ShowModal( -1, EnumsGeneral->MessageType_WARNING, \@m, \@b );    #  Script se zastavi
 			if ( $messMngr->Result() == 1 ) {
 				$result = 0;
+			}
+			else {
+				# set pcb is rout on bridges
+				CamAttributes->SetStepAttribute( $inCAM, $jobId, $step, "rout_on_bridges", "yes" );
 			}
 
 		}
@@ -89,7 +95,7 @@ sub OnlyBridges {
 	my $result = 1;
 
 	# reset attribut "rout_on_bridges" to NO, thus pcb is not on bridges
-	CamAttributes->SetJobAttribute( $inCAM, $jobId, "rout_on_bridges", 0 );
+	CamAttributes->SetStepAttribute( $inCAM, $jobId, $step, "rout_on_bridges", "no" );
 
 	my $unitRTM = UniRTM->new( $inCAM, $jobId, $step, $layer );
 
@@ -134,7 +140,7 @@ sub OnlyBridges {
 			if ( $messMngr->Result() == 0 ) {
 
 				# set pcb is rout on bridges
-				CamAttributes->SetJobAttribute( $inCAM, $jobId, "rout_on_bridges", 1 );
+				CamAttributes->SetStepAttribute( $inCAM, $jobId, $step, "rout_on_bridges", "yes" );
 
 			}
 			else {
@@ -162,66 +168,109 @@ sub LeftRoutChecks {
 	# 1) test if tehere are left no cyclic rout, which has foot down
 	my @lefts   = grep { $_->GetComp() eq EnumsRout->Comp_LEFT } $unitRTM->GetChains();
 	my @leftSeq = map  { $_->GetChainSequences() } @lefts;
-	@leftSeq = grep { !$_->GetCyclic() && $_->HasFootDown() } @leftSeq;
+	@leftSeq = grep { $_->HasFootDown() } @leftSeq;
 
 	if ( scalar(@leftSeq) ) {
+
 		$result = 0;
 
 		my @info = map { $_->GetStrInfo() } @leftSeq;
 		my $str = join( "; ", @info );
-		$$mess .= "Ve vrstvě: \"" . $layer . "\" jsou frézy s kompenzací left, které nejsou obrysové a mají patku. " . $str;
+		my $m =
+		    "Ve stepu: \""
+		  . $step
+		  . "\", ve vrstvě: \"$layer\" jsou frézy s kompenzací­ left, které mají­ nastavenou patku (.foot_down attribut) ($str)";
+
+		$$mess .= $m;
+
 	}
 
 	# 2) Test if outline orut has only one attribute "foot_down_<angle>deg" of specific kind
 	my @outlines = $unitRTM->GetOutlineChains();
 
-	foreach my $o (@outlines) {
+	foreach my $oSeq (@outlines) {
 
-		foreach my $oSeq ( $o->GetChainSequences() ) {
+		my $m = "";
 
-			my @foot_down_0deg = grep { defined $_->{"att"}->{"foot_down_0deg"} } $oSeq->GetFeatures();
+		my @foot_down_0deg = grep { defined $_->{"att"}->{"foot_down_0deg"} } $oSeq->GetFeatures();
 
-			if ( scalar(@foot_down_0deg) > 1 ) {
-				$result = 0;
-				$$mess .=
-				  "Ve vrstvě: \"" . $layer . "\" je fréza: " . $oSeq->GetStrInfo() . ", která má více atributů \"foot_down_0deg\". Oprav to.\n";
-			}
+		if ( scalar(@foot_down_0deg) > 1 ) {
 
-			my @foot_down_270deg = grep { defined $_->{"att"}->{"foot_down_270deg"} } $oSeq->GetFeatures();
+			$result = 0;
 
-			if ( scalar(@foot_down_270deg) > 1 ) {
-				$result = 0;
-				$$mess .=
-				    "Ve vrstvě: \""
-				  . $layer
-				  . "\" je fréza: "
-				  . $oSeq->GetStrInfo()
-				  . ", která má více atributů \"foot_down_270deg\". Oprav to.\n";
-			}
+			my $m =
+			    "Ve stepu: \""
+			  . $step
+			  . "\", ve vrstvě: \"$layer\" je \"feature\": "
+			  . $oSeq->GetStrInfo()
+			  . ", která má více attributů \"foot_down_<uhel>deg\". Oprav to.\n";
+
+			$$mess .= $m;
+		}
+
+		my @foot_down_270deg = grep { defined $_->{"att"}->{"foot_down_270deg"} } $oSeq->GetFeatures();
+
+		if ( scalar(@foot_down_270deg) > 1 ) {
+
+			my $m =
+			    "Ve stepu: \""
+			  . $step
+			  . "\", ve vrstvě: \"$layer\" je fréza: "
+			  . $oSeq->GetStrInfo()
+			  . ", která má více atributů \"foot_down_270deg\". Oprav to.\n";
+
+			$$mess .= $m;
 		}
 	}
 
 	# 3) Outline rout. Test if one feature doesn\t have more attributes "foot_down" eg: foot_down_0deg + foot_down_90deg
 
-	foreach my $o (@outlines) {
+	foreach my $oSeq (@outlines) {
 
-		foreach my $oSeq ( $o->GetChainSequences() ) {
+		foreach my $f ( $oSeq->GetFeatures() ) {
 
-			my @wrongAtt = grep { defined $_->{"att"}->{"foot_down_0deg"} && defined $_->{"att"}->{"foot_down_270deg"} } $oSeq->GetFeatures();
+			my @wrongFeats = grep { $_ =~ /foot_down_/i } keys %{ $f->{"att"} };
 
-			if ( scalar(@wrongAtt) > 1 ) {
-
-				my @ids = map { $_->{"id"} } @wrongAtt;
-				my $str = join( ";", @ids );
+			if ( scalar(@wrongFeats) > 1 ) {
 
 				$result = 0;
-				$$mess .=
-				    "Ve vrstvě: \""
-				  . $layer
-				  . "\" jsou \"features\", ktereé mají zároveň atribut \"foot_down_0deg\" i \"foot_down_270deg\". Oprav to.\n";
+				my $m =
+				    "Ve stepu: \""
+				  . $step
+				  . "\", ve vrstvě: \"$layer\" je \"feature\" ("
+				  . $f->{"id"}
+				  . "), které má­ zároveň atribut \"foot_down_0deg\" i \"foot_down_270deg\". Oprav to.\n";
+
+				$$mess .= $m;
 			}
 		}
 	}
+
+	# 4) If some chain tool containoutline, all another chain must by outline
+	my @chains = $unitRTM->GetChains();
+
+	foreach my $ch (@chains) {
+
+		my @outline = grep { $_->IsOutline() } $ch->GetChainSequences();
+
+		if ( scalar(@outline) && scalar(@outline) != scalar( $ch->GetChainSequences() ) ) {
+
+			$result = 0;
+
+			my $m =
+			    "Ve stepu: \""
+			  . $step
+			  . "\", ve vrstvě: \"$layer\" jsou jední­m nástrojem: \""
+			  . $ch->GetStrInfo
+			  . "\" definovány orbysové i neobrysové frézy dohromady - nelze. "
+			  . " Každá obrysová fréza musí mít svůj vlastní \"chain\".\n";
+
+			$$mess .= $m;
+		}
+
+	}
+	
+	return $result;
 }
 
 sub TestFindStart {
@@ -271,56 +320,76 @@ sub TestFindStartSingle {
 		$rotation->Rotate($rotateAngle);
 	}
 
-	my %modify = RoutStart->RoutNeedModify( \@features );
+	my $startByAtt    = 0;
+	my $startByScript = 0;
+	my $footDownEdge  = undef;
 
-	my $routModify = 0;
-
-	if ( $modify{"result"} ) {                         # tadz p5idat test na to jestli bzla seqence kodifikovana pri nacitani
-
-		$routModify = 1;
-
-		RoutStart->ProcessModify( \%modify, \@features );
+	# 1) Find start of chain by user foot down attribute
+	my $attFootName = undef;
+	if ( $rotateAngle >= 0 ) {
+		$attFootName = "foot_down_" . $rotateAngle . "deg";
 	}
 
-	my %startResult = RoutStart->GetRoutStart( \@features );
-	my %footResult  = RoutStart->GetRoutFootDown( \@features );
+	if ( defined $attFootName ) {
 
-	# if foot down is tested on rotated pcb, rotate back before drawing
-	if ( $rotateAngle > 0 ) {
-		$rotation->RotateBack();
+		my $edge = ( grep { $_->{"att"}->{$attFootName} } @features )[0];
+
+		if ( defined $edge ) {
+			$startByAtt   = 1;
+			$footDownEdge = $edge;
+		}
 	}
 
-	unless ( $startResult{"result"} ) {
+	# 2) Find start of chain by script, if is not already found
+	if ( !$startByAtt ) {
 
+		my %modify = RoutStart->RoutNeedModify( \@features );
+
+		my $routModify = 0;
+
+		if ( $modify{"result"} ) {    # tadz p5idat test na to jestli bzla seqence kodifikovana pri nacitani
+
+			$routModify = 1;
+			RoutStart->ProcessModify( \%modify, \@features );
+		}
+
+		my %startResult = RoutStart->GetRoutStart( \@features );
+		my %footResult  = RoutStart->GetRoutFootDown( \@features );
+
+		# if foot down is tested on rotated pcb, rotate back before drawing
+		if ( $rotateAngle > 0 ) {
+			$rotation->RotateBack();
+		}
+
+		if ( $startResult{"result"} ) {
+
+			$startByScript = 1;
+			$footDownEdge  = $footResult{"edge"};
+
+			if ( $routModify || $left->GetModified() ) {
+
+				# překreslit frézu
+				my $draw = RoutDrawing->new( $inCAM, $jobId, $step, $layer );
+
+				my @delete = grep { $_->{"id"} > 0 } @features;
+
+				$draw->DeleteRoute( \@delete );
+
+				$draw->DrawRoute( \@features, 2000, EnumsRout->Comp_LEFT, $startResult{"edge"} );    # draw new
+			}
+		}
+	}
+
+	if ( $startByAtt || $startByScript ) {
+
+		my $startCopy = clone($footDownEdge);
+		$result{"footEdge"} = $startCopy;
+	}
+	else {
 		my @m = ( "Začátek frézy pro dps : " . $left->GetStrInfo() . " při rotaci dps: $rotateAngle° nebyl nalezen" );
 
 		$messMngr->ShowModal( -1, EnumsGeneral->MessageType_WARNING, \@m );    #  Script se zastavi
 		$result{"result"} = 0;
-	}
-	else {
-
-		if ( $routModify || $left->GetModified() ) {
-
-			# překreslit frézu
-			my $draw = RoutDrawing->new( $inCAM, $jobId, $step, $layer );
-
-			my @delete = grep { $_->{"id"} > 0 } @features;
-
-			$draw->DeleteRoute( \@delete );
-
-			$draw->DrawRoute( \@features, 2000, EnumsRout->Comp_LEFT, $startResult{"edge"} );    # draw new
-
-			# Show information message
-			my @m = (
-					  "Fréza byla upravena, aby byly nalezeni vhodní kandidáti na patku (při rotaci dps: $rotateAngle°)",
-					  "Fréza: " . $left->GetStrInfo()
-			);
-
-			$messMngr->ShowModal( -1, EnumsGeneral->MessageType_WARNING, \@m );                  #  Script se zastavi
-		}
-
-		my $startCopy = clone( $footResult{"edge"} );
-		$result{"footEdge"} = $startCopy;
 	}
 
 	return %result;
@@ -336,19 +405,17 @@ sub TestFindAndDrawStarts {
 	my $angle270 = shift;    # if foot down is tested on rotated pcb. Rotation is CCW
 	my $messMngr = shift;
 
-	my @foots = ();
+	my @footResults = ();
 
 	if ($angle270) {
 		my @res = $self->TestFindStart( $inCAM, $jobId, $step, $layer, 270, $messMngr );
-		push( @foots, @res );
+		push( @footResults, @res );
 	}
 
 	if ($angle0) {
 		my @res = $self->TestFindStart( $inCAM, $jobId, $step, $layer, 0, $messMngr );
-		push( @foots, @res );
+		push( @footResults, @res );
 	}
-
-
 
 	# Draw foots
 
@@ -362,7 +429,7 @@ sub TestFindAndDrawStarts {
 
 	my $drawView = RoutDrawing->new( $inCAM, $jobId, $step, $lName );
 
-	$drawView->DrawStartRoutResult( \@foots );
+	$drawView->DrawFootRoutResult( \@footResults, 1, 1 );
 
 	$inCAM->COM(
 				 "display_layer",
@@ -372,6 +439,16 @@ sub TestFindAndDrawStarts {
 	);
 
 	$inCAM->COM( "work_layer", name => $layer );
+
+	# Show info, if foot down was not found
+	my $notFound = scalar( grep { !$_->{"result"} } @footResults );
+
+	if ($notFound) {
+		return 0;
+	}
+	else {
+		return 1;
+	}
 
 }
 
@@ -401,7 +478,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $mess = "";
 
-	my $res = Check1UpChain->TestFindAndDrawStarts($inCAM, $jobId, $step, $layer, 1, 1, $messMngr );
+	my $res = Check1UpChain->TestFindAndDrawStarts( $inCAM, $jobId, $step, $layer, 1, 1, $messMngr );
 
 	#my $res = Check1UpChain->OnlyBridges( $inCAM, $jobId, $step, $layer, $messMngr );
 
