@@ -27,6 +27,8 @@ use aliased 'Packages::CAM::UniRTM::Enums';
 #use aliased 'Connectors::HeliosConnector::HegMethods';
 #use aliased 'Helpers::GeneralHelper';
 #use aliased 'Helpers::FileHelper';
+use aliased 'CamHelpers::CamLayer';
+use aliased 'CamHelpers::CamJob';
 use aliased 'CamHelpers::CamHelper';
 use aliased 'CamHelpers::CamAttributes';
 use aliased 'CamHelpers::CamStepRepeat';
@@ -61,12 +63,12 @@ sub Init {
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
 
-	CamHelper->SetStep( $inCAM, $self->{"step"} );
+	CamHelper->SetStep( $inCAM, $self->GetStep() );
 
 	# init steps
 
 	my @repeatsSR = CamStepRepeat->GetRepeatStep( $inCAM, $jobId, $self->{"step"} );
-	 
+
 	# No nested step can have SR
 
 	#	my @wrongSRsteps = grep { CamStepRepeat->ExistStepAndRepeats( $inCAM, $jobId, $_->{"stepName"} )   } @uniqueSR;
@@ -77,19 +79,80 @@ sub Init {
 
 	foreach my $rStep (@repeatsSR) {
 
-		my @repeatsSR = grep { $_->{"stepName"} eq $rStep->{"stepName"} } @repeatsSR;
-		my @rotations = map  { $_->{"angle"} } @repeatsSR;
-		@rotations = uniq(@rotations);
-
-		# For each rotation create nested step
-		foreach my $rot (@rotations) {
-
-			my $nestedStep = SRNestedStep->new( $rStep->{"stepName"}, $rot );
-			$nestedStep->Init($inCAM, $jobId, $self->{"sourceLayer"});
+		my $alreadyInit =  scalar(grep { $_->GetStepName() eq $rStep->{"stepName"} && $_->GetAngle() eq $rStep->{"angle"} } $self->GetNestedSteps());
  
+ 		unless($alreadyInit){
+ 			my $nestedStep = SRNestedStep->new( $rStep->{"stepName"}, $rStep->{"angle"} );
+			$self->__InitNestedStep($nestedStep);
+
 			push( @{ $self->{"nestedSteps"} }, $nestedStep );
-		}
+ 		}
+ 
+		 
 	}
+}
+
+sub __InitNestedStep {
+	my $self       = shift;
+	my $nestedStep = shift;
+
+	my $inCAM = $self->{"inCAM"};
+	my $jobId = $self->{"jobId"};
+
+	# Prepare rout work layer
+
+	$inCAM->COM(
+		'copy_layer',
+		"source_job"   => $jobId,
+		"source_step"  => $nestedStep->GetStepName(),
+		"source_layer" => $self->{"sourceLayer"},
+		"dest"         => 'layer_name',
+		"dest_layer"   => $nestedStep->GetRoutLayer(),
+		"mode"         => 'replace',
+		"invert"       => 'no'
+
+	);
+
+	# move to zero
+
+	my %lim = CamJob->GetProfileLimits2( $inCAM, $jobId, $nestedStep->GetStepName(), 1 );
+
+	if ( $lim{"xMin"} < 0 || $lim{"yMin"} < 0 ) {
+
+		CamLayer->WorkLayer( $inCAM, $nestedStep->GetRoutLayer() );
+		$inCAM->COM(
+					 "sel_transform",
+					 "oper"      => "",
+					 "x_anchor"  => "0",
+					 "y_anchor"  => "0",
+					 "angle"     => "0",
+					 "direction" => "ccw",
+					 "x_scale"   => "1",
+					 "y_scale"   => "1",
+					 "x_offset"  => -$lim{"xMin"},
+					 "y_offset"  => -$lim{"yMin"},
+					 "mode"      => "anchor",
+					 "duplicate" => "no"
+		);
+	}
+
+	if ( $nestedStep->GetAngle() > 0 ) {
+
+		CamLayer->WorkLayer( $inCAM, $nestedStep->GetRoutLayer() );
+		$inCAM->COM(
+					 "sel_transform",
+					 "direction" => "ccw",
+					 "x_anchor"  => 0,
+					 "y_anchor"  => 0,
+					 "oper"      => "rotate",
+					 "angle"     => $nestedStep->GetAngle()
+		);
+	}
+
+	# Load uniRTM
+	my $uniRTM = UniRTM->new( $inCAM, $jobId, $self->GetStep(), $nestedStep->GetRoutLayer() );
+	$nestedStep->SetUniRTM($uniRTM);
+
 }
 
 sub Clean {
@@ -98,15 +161,7 @@ sub Clean {
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
 
-	#	if ( CamHelper->StepExists( $inCAM, $jobId, $self->{"workStep"} ) ) {
-	#
-	#		$inCAM->COM( "delete_entity", "job" => $jobId, "name" => $self->{"workStep"}, "type" => "step" );
-	#	}
-
-	my @routLayers = map {
-		map { $_->GetRoutLayer() }
-		  $_->GetStepRotations()
-	} @{ $self->{"steps"} };
+	my @routLayers = map { $_->GetRoutLayer() } @{ $self->{"nestedSteps"} };
 
 	foreach my $l (@routLayers) {
 
@@ -119,12 +174,12 @@ sub Clean {
 }
 
 sub GetNestedStep {
-	my $self = shift;
+	my $self     = shift;
 	my $stepName = shift;
 	my $rotation = shift;
 
-	my $step = (grep { $_->GetStepName() eq $stepName &&  $_->GetAngle() == $rotation } @{ $self->{"nestedSteps"} })[0];
-	
+	my $step = ( grep { $_->GetStepName() eq $stepName && $_->GetAngle() == $rotation } @{ $self->{"nestedSteps"} } )[0];
+
 	return $step;
 }
 
@@ -140,21 +195,19 @@ sub GetStep {
 	return $self->{"step"};
 }
 
- 
-
 sub GetSourceLayer {
 	my $self = shift;
 
 	return $self->{"sourceLayer"};
 }
 
-sub ReloadNestedStep {
-	my $self    = shift;
+sub ReloadStepUniRTM {
+	my $self       = shift;
 	my $nestedStep = shift;
-	my $inCAM   = $self->{"inCAM"};
-	my $jobId   = $self->{"jobId"};
+	my $inCAM      = $self->{"inCAM"};
+	my $jobId      = $self->{"jobId"};
 
-	my $u = UniRTM->new( $inCAM, $jobId, $self->{"targetStep"}, $nestedStep->GetRoutLayer() );
+	my $u = UniRTM->new( $inCAM, $jobId, $self->GetStep(), $nestedStep->GetRoutLayer() );
 	$nestedStep->SetUniRTM($u);
 }
 

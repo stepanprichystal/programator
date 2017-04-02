@@ -45,7 +45,7 @@ sub new {
 
 	$self->{"inCAM"}    = shift;
 	$self->{"jobId"}    = shift;
-	$self->{"stepList"} = shift;
+	$self->{"step"} = shift;
 	$self->{"flatLayer"} = shift;
 
 	return $self;
@@ -90,7 +90,7 @@ sub __DrawRoutFoots {
 
 	# Get all edges, where is attribute foot down
 	my $parse = RouteFeatures->new();
-	$parse->Parse( $inCAM, $jobId, $self->{"stepList"}->GetStep(), $self->{"flatLayer"} );
+	$parse->Parse( $inCAM, $jobId, $self->{"step"}, $self->{"flatLayer"} );
 	my @features = $parse->GetFeatures();
 
 	my @foots = grep { defined $_->{"att"}->{".foot_down"} } @features;
@@ -102,7 +102,7 @@ sub __DrawRoutFoots {
 		push( @footsInf, \%inf );
 	}
 
-	my $routDrawing = RoutDrawing->new( $inCAM, $jobId, $self->{"stepList"}->GetStep(), $layer );
+	my $routDrawing = RoutDrawing->new( $inCAM, $jobId, $self->{"step"}, $layer );
 	$routDrawing->DrawFootRoutResult( \@footsInf, 0, 1);
 
 	# Draw, where foot was not found
@@ -155,7 +155,7 @@ sub __DrawOutlineOrder {
 
 	# Get all edges, where is attribute foot down
 	my $parse = RouteFeatures->new();
-	$parse->Parse( $inCAM, $jobId, $self->{"stepList"}->GetStep(), $self->{"flatLayer"} );
+	$parse->Parse( $inCAM, $jobId, $self->{"step"}, $self->{"flatLayer"} );
 
 	# Draw, where foot was not found
 	CamLayer->WorkLayer( $inCAM, $layer );

@@ -29,12 +29,12 @@ use aliased 'CamHelpers::CamStepRepeat';
 #use aliased 'Helpers::FileHelper';
 use aliased 'Helpers::GeneralHelper';
 
-use aliased 'Packages::Routing::RoutLayer::FlattenRout::StepList::StepList';
+use aliased 'Packages::Routing::RoutLayer::FlattenRout::SRFlatten::SRStep::SRStep';
 use aliased 'Packages::Routing::RoutLayer::FlattenRout::StepCheck::StepCheck';
 use aliased 'Packages::Routing::RoutLayer::FlattenRout::RoutStart::RoutStart';
 use aliased 'Packages::ItemResult::Enums' => "ResEnums";
 use aliased 'Packages::Routing::RoutLayer::FlattenRout::RoutDraw::RoutDraw';
-use aliased 'Packages::Routing::RoutLayer::FlattenRout::FlattenRout::FlattenRout';
+use aliased 'Packages::Routing::RoutLayer::FlattenRout::SRFlatten::FlattenRout';
 use aliased 'Packages::ItemResult::ItemResult';
 
 #-------------------------------------------------------------------------------------------#
@@ -57,18 +57,8 @@ sub new {
 
 	# Test if nested steps has to be flatened, because contain SR
 	$self->{"preparedL"} = $self->{"layer"};
-	if ( $self->__NestedStepsAreSR() ) {
-		$self->{"preparedL"} = GeneralHelper->GetGUID();
-	}
-
-	# Init of helper objects
-
-	$self->{"stepList"} = StepList->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"stepName"}, $self->{"preparedL"}, 0 );
-
-	$self->{"stepCheck"} = StepCheck->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"stepList"} );
-	$self->{"routStart"} = RoutStart->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"stepList"}, $self->{"flatLayer"} );
-	$self->{"flattenRout"} = FlattenRout->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"step"}, $self->{"stepList"}, $self->{"flatLayer"} );
-	$self->{"routDraw"} = RoutDraw->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"stepList"}, $self->{"flatLayer"} );
+	
+	$self->{"inCAM"}->COM("disp_off");
 
 	return $self;
 }
@@ -84,37 +74,61 @@ sub Run {
 	# 1) Check if step contain only not SR steps. If Nested steps contain SR, flatten them and sort tool
 	$self->__ProcessResult( $self->__FlattenNestedSteps() );
 
-	# 2) init step list
-	$self->{"stepList"}->Init( $self->{"flatLayer"} );
+	# 2) init structure suitable for, flatten step, rout checking and rout start finding
+	my $SRStep = SRStep->new( $inCAM, $jobId, $self->{"stepName"}, $self->{"preparedL"} );
+	$SRStep->Init();
 
 	# 3) checks
+	my $checks = StepCheck->new( $inCAM, $jobId, $SRStep );
 
-	$self->__ProcessResult( $self->{"stepCheck"}->OnlyBridges() );
+	$self->__ProcessResult( $checks->OnlyBridges() );
 
-	$self->__ProcessResult( $self->{"stepCheck"}->OutsideChains() );
+	$self->__ProcessResult( $checks->OutsideChains() );
 
-	$self->__ProcessResult( $self->{"stepCheck"}->LeftRoutChecks() );
+	$self->__ProcessResult( $checks->LeftRoutChecks() );
 
-	$self->__ProcessResult( $self->{"stepCheck"}->OutlineToolIsLast() );
+	$self->__ProcessResult( $checks->OutlineToolIsLast() );
 
-	my $resFindStart = $self->{"routStart"}->FindStart();
+	# 4) Find start of chains
+
+	my $routStart = RoutStart->new( $inCAM, $jobId, $SRStep );
+
+	my $resFindStart = $routStart->FindStart();
 
 	$self->__ProcessResult($resFindStart);
 
-	my $resFlattenRout = $self->{"flattenRout"}->Create();
+	# 5) Flatten modified and checked rout chains
+
+	my $flatt = FlattenRout->new( $inCAM, $jobId, $self->{"flatLayer"}, 0 );
+
+	my $resFlattenRout = $flatt->CreateFromSRStep($SRStep);
 
 	$self->__ProcessResult($resFlattenRout);
 
-	$self->{"routDraw"}->CreateResultLayer( $resFindStart->{"errStartSteps"}, $resFlattenRout->{"chainOrderIds"} );
-	$self->{"stepList"}->Clean();
+	# 6) Draw start chain and foots to new layer
 
+	my $draw = RoutDraw->new( $inCAM, $jobId, $self->{"stepName"}, $self->{"flatLayer"} );
+
+	$draw->CreateResultLayer( $resFindStart->{"errStartSteps"}, $resFlattenRout->{"chainOrderIds"} );
+	
+	
+	# 7) Cleaning matrix...
+	
+	# it means, that nested step was SR and flattened later for nested step was created... SO delete it
+	if($self->{"preparedL"} ne $self->{"layer"}){
+		
+		$inCAM->COM( 'delete_layer', "layer" => $self->{"preparedL"} );
+	}
+	
+	$SRStep->Clean();
+
+	
 	if ( $self->{"deleteLayer"} ) {
 
 		if ( CamHelper->LayerExists( $inCAM, $jobId, $self->{"flatLayer"} ) ) {
 			$inCAM->COM( 'delete_layer', "layer" => $self->{"flatLayer"} );
 		}
 	}
-
 }
 
 sub __NestedStepsAreSR {
@@ -141,13 +155,17 @@ sub __FlattenNestedSteps {
 
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
-
-	unless ( $self->__NestedStepsAreSR() ) {
-		return 0;
-	}
-
+	
 	my $resultItem = ItemResult->new("Flatten nested steps");
 
+	unless ( $self->__NestedStepsAreSR() ) {
+		return $resultItem;
+	}
+
+	if ( $self->__NestedStepsAreSR() ) {
+		$self->{"preparedL"} = GeneralHelper->GetGUID();
+	}
+ 
 	#my @repeatsSR = CamStepRepeat->GetRepeatStep( $inCAM, $jobId, $self->{"stepName"} );
 	my @uniqueSR = CamStepRepeat->GetUniqueStepAndRepeat( $self->{"inCAM"}, $self->{"jobId"}, $self->{"stepName"} );
 
@@ -179,18 +197,18 @@ sub __FlattenNestedSteps {
 				die "Step can't contin SandR steps";
 			}
 		}
-
-		my $stepList = StepList->new( $inCAM, $jobId, $step->{"stepName"}, $self->{"layer"}, 1 );
-		$stepList->Init();
-
-		my $flat = FlattenRout->new( $inCAM, $jobId, $step->{"stepName"}, $stepList, $self->{"preparedL"} );
-
-		$flat->Create();
+		my $flat = FlattenRout->new( $inCAM, $jobId, $self->{"preparedL"}, 1 );
+		my $resItem = $flat->CreateFromStepName( $step->{"stepName"}, $self->{"layer"}, $resultItem);
+		 
 	}
 
 	# 2) rest of not SR step copy to new "flatten" layer
+	
+	
 
 	foreach my $step (@noSRsteps) {
+		
+		CamHelper->SetStep($inCAM, $step->{"stepName"});
 
 		$inCAM->COM(
 					 'copy_layer',
@@ -205,7 +223,6 @@ sub __FlattenNestedSteps {
 	}
 
 	return $resultItem;
-
 }
 
 sub __ProcessResult {

@@ -34,7 +34,7 @@ sub new {
 
 	$self->{"inCAM"}    = shift;
 	$self->{"jobId"}    = shift;
-	$self->{"stepList"} = shift;
+	$self->{"SRStep"} = shift;
 
 	return $self;
 }
@@ -44,7 +44,7 @@ sub OnlyBridges {
 
 	my $resultItem = ItemResult->new("Rout bridges");
 
-	foreach my $s ( $self->{"stepList"}->GetSteps() ) {
+	foreach my $s ( $self->{"SRStep"}->GetNestedSteps() ) {
 
 		$self->__OnlyBridges( $s, "f", $resultItem );
 	}
@@ -57,7 +57,7 @@ sub OutsideChains {
 
 	my $resultItem = ItemResult->new("Outside rout");
 
-	foreach my $s ( $self->{"stepList"}->GetSteps() ) {
+	foreach my $s ( $self->{"SRStep"}->GetNestedSteps() ) {
 
 		$self->__OutsideChains( $s, "f", $resultItem );
 	}
@@ -70,7 +70,7 @@ sub LeftRoutChecks {
 
 	my $resultItem = ItemResult->new("Left comp. rout");
 
-	foreach my $s ( $self->{"stepList"}->GetSteps() ) {
+	foreach my $s ( $self->{"SRStep"}->GetNestedSteps() ) {
 
 		$self->__LeftRoutChecks( $s, "f", $resultItem );
 	}
@@ -83,7 +83,7 @@ sub OutlineToolIsLast {
 
 	my $resultItem = ItemResult->new("Tools order");
 
-	foreach my $s ( $self->{"stepList"}->GetSteps() ) {
+	foreach my $s ( $self->{"SRStep"}->GetNestedSteps() ) {
 
 		$self->__OutlineToolIsLast( $s, "f", $resultItem );
 	}
@@ -95,7 +95,7 @@ sub OutlineToolIsLast {
 # if so, save this information to job attribute "rout_on_bridges"
 sub __OnlyBridges {
 	my $self    = shift;
-	my $stepObj = shift;
+	my $nestedStep = shift;
 	my $layer   = shift;
 	my $resItem = shift;
 
@@ -106,7 +106,7 @@ sub __OnlyBridges {
 
 	# reset attribut "rout_on_bridges" to NO, thus pcb is not on bridges
 
-	my $unitRTM  = $stepObj->GetUniRTM();
+	my $unitRTM  = $nestedStep->GetUniRTM();
 	my @outlines = $unitRTM->GetOutlineChains();
 
 	my @chains = $unitRTM->GetChains();
@@ -116,11 +116,11 @@ sub __OnlyBridges {
 	unless ( scalar(@outlines) ) {
 
 		# no chains at layer
-		if ( !$stepObj->GetUserRoutOnBridges() ) {
+		if ( !$nestedStep->GetUserRoutOnBridges() ) {
 
 			my $m =
 			    "Ve stepu: \""
-			  . $stepObj->GetStepName()
+			  . $nestedStep->GetStepName()
 			  . "\", ve vrstvě: \"$layer\""
 			  . " není­ ani obrysová vrstva ani můstky s kompenzací­ left. Pokud je pcb na můstky nastav jim kompenzaci left.";
 
@@ -133,14 +133,14 @@ sub __OnlyBridges {
 sub __OutsideChains {
 	my $self = shift;
 
-	my $stepObj = shift;
+	my $nestedStep = shift;
 	my $layer   = shift;
 	my $resItem = shift;
 
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
 
-	my $unitRTM = $stepObj->GetUniRTM();
+	my $unitRTM = $nestedStep->GetUniRTM();
 
 	my @lefts = $unitRTM->GetOutlineChains();
 
@@ -156,14 +156,14 @@ sub __OutsideChains {
 
 		my @notInside = grep { !$_->GetIsInside() } @otherLayers;
 
-		if ( scalar(@notInside) && !$stepObj->GetUserRoutOnBridges() ) {
+		if ( scalar(@notInside) && !$nestedStep->GetUserRoutOnBridges() ) {
 
 			my @info = map { $_->GetStrInfo() } @notInside;
 			my $str = join( "; ", @info );
 
 			my $m =
 			    "Ve stepu: \""
-			  . $stepObj->GetStepName()
+			  . $nestedStep->GetStepName()
 			  . "\", ve vrstvě: \""
 			  . $layer
 			  . "\" jsou frézy, které by měly být uvnitř obrysové frézy, ale nejsou ($str)."
@@ -179,14 +179,14 @@ sub __OutsideChains {
 # Check when left rout exists
 sub __LeftRoutChecks {
 	my $self    = shift;
-	my $stepObj = shift;
+	my $nestedStep = shift;
 	my $layer   = shift;
 	my $resItem = shift;
 
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
 
-	my $unitRTM = $stepObj->GetUniRTM();
+	my $unitRTM = $nestedStep->GetUniRTM();
 
 	# 1) test if tehere are left no cyclic rout, which has foot down
 	my @lefts   = grep { $_->GetComp() eq EnumsRout->Comp_LEFT } $unitRTM->GetChains();
@@ -199,7 +199,7 @@ sub __LeftRoutChecks {
 		my $str = join( "; ", @info );
 		my $m =
 		    "Ve zdrojovém stepu: \""
-		  . $stepObj->GetStepName()
+		  . $nestedStep->GetStepName()
 		  . "\", ve vrstvě: \"$layer\" jsou frézy s kompenzací­ left, které mají­ nastavenou patku (.foot_down attribut) ($str). Patka však nijak neovlivní flattenovanou vrstvu.";
 
 		$resItem->AddWarning($m);
@@ -217,7 +217,7 @@ sub __LeftRoutChecks {
 		if ( scalar(@foot_down_0deg) > 1 ) {
 			my $m =
 			    "Ve stepu: \""
-			  . $stepObj->GetStepName()
+			  . $nestedStep->GetStepName()
 			  . "\", ve vrstvě: \"$layer\" je fréza: "
 			  . $oSeq->GetStrInfo()
 			  . ", která má více attributů \"foot_down_0deg\". Oprav to.\n";
@@ -231,7 +231,7 @@ sub __LeftRoutChecks {
 
 			my $m =
 			    "Ve stepu: \""
-			  . $stepObj->GetStepName()
+			  . $nestedStep->GetStepName()
 			  . "\", ve vrstvě: \"$layer\" je fréza: "
 			  . $oSeq->GetStrInfo()
 			  . ", která má více atributů \"foot_down_270deg\". Oprav to.\n";
@@ -252,7 +252,7 @@ sub __LeftRoutChecks {
 
 				my $m =
 				    "Ve stepu: \""
-				  . $stepObj->GetStepName()
+				  . $nestedStep->GetStepName()
 				  . "\", ve vrstvě: \"$layer\" je \"feature\" ("
 				  . $f->{"id"}
 				  . "), které má­ zároveň atribut \"foot_down_0deg\" i \"foot_down_270deg\". Oprav to.\n";
@@ -273,7 +273,7 @@ sub __LeftRoutChecks {
 
 			my $m =
 			    "Ve stepu: \""
-			  . $stepObj->GetStepName()
+			  . $nestedStep->GetStepName()
 			  . "\", ve vrstvě: \"$layer\" jsou jední­m nástrojem: \""
 			  . $ch->GetStrInfo
 			  . "\" definovány orbysové i neobrysové frézy dohromady - nelze. "
@@ -289,14 +289,14 @@ sub __LeftRoutChecks {
 # Check if tool sizes are sorted ASC
 sub __OutlineToolIsLast {
 	my $self    = shift;
-	my $stepObj = shift;
+	my $nestedStep = shift;
 	my $layer   = shift;
 	my $resItem = shift;
 
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
 
-	my $unitRTM = $stepObj->GetUniRTM();
+	my $unitRTM = $nestedStep->GetUniRTM();
 
 	my @chains = $unitRTM->GetChains();
 
@@ -322,7 +322,7 @@ sub __OutlineToolIsLast {
 				unless ( $chSeq->IsOutline() ) {
 					my $m =
 					    "Ve stepu: \""
-					  . $stepObj->GetStepName()
+					  . $nestedStep->GetStepName()
 					  . "\", ve vrstvě: \"$layer\" jsou špatně seřazené frézy. Fréza "
 					  . $chSeq->GetStrInfo()
 					  . " nesmí­ být za obrysovými frézami. Oprav to.\n";

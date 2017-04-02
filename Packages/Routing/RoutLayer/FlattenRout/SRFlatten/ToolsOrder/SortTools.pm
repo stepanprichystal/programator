@@ -3,7 +3,7 @@
 # Description: Cover exporting layers as gerber274x
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::Routing::RoutLayer::FlattenRout::SRFlatten::SortTools;
+package Packages::Routing::RoutLayer::FlattenRout::SRFlatten::ToolsOrder::SortTools;
 
 #3th party library
 use utf8;

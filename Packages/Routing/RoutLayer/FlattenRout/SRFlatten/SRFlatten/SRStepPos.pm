@@ -97,6 +97,12 @@ sub GetUniRTM {
 	return $self->{"SRStep"}->GetUniRTM();
 }
 
+
+sub GetStepName {
+	my $self = shift;
+
+	return $self->{"SRStep"}->GetStepName();
+}
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#

@@ -4,7 +4,7 @@
 # Responsible for tools are unique (diameter + typeProc)
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::Routing::RoutLayer::FlattenRout::SRFlatten::SRFlatten::Rout2Sort;
+package Packages::Routing::RoutLayer::FlattenRout::SRFlatten::ToolsOrder::GroupChain;
 
 #3th party library
 use strict;
@@ -25,18 +25,20 @@ use aliased 'Packages::CAM::UniRTM::Enums';
 #use aliased 'Packages::CAM::UniDTM::UniDTM::UniDTMCheck';
 #use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'Helpers::GeneralHelper';
+
 #use aliased 'CamHelpers::CamStepRepeat';
 
 #use aliased 'Helpers::FileHelper';
 use aliased 'CamHelpers::CamHelper';
+
 #use aliased 'Packages::CAM::UniDTM::PilotDef::PilotDef';
 
 #use aliased 'Packages::CAM::UniRTM::UniRTM::UniRTM';
 #use aliased 'Packages::Routing::RoutLayer::FlattenRout::StepList::StepPlace';
 use aliased 'CamHelpers::CamLayer';
 use aliased 'CamHelpers::CamJob';
-#use aliased 'Packages::Routing::RoutLayer::FlattenRout::RoutStart::RoutStart';
 
+#use aliased 'Packages::Routing::RoutLayer::FlattenRout::RoutStart::RoutStart';
 
 #-------------------------------------------------------------------------------------------#
 #  Public method
@@ -47,35 +49,54 @@ sub new {
 	$self = {};
 	bless $self;
 
-	$self->{"stepId"} = shift;
-	$self->{"routPosX"} = shift;
-	$self->{"routPosY"} = shift;
-	$self->{"uniRTM"} = shift;
- 
+	$self->{"groupId"}     = shift;
+	$self->{"sourceStep"}  = shift;
+	$self->{"sourceLayer"} = shift;
+	$self->{"groupPosX"}   = shift;
+	$self->{"groupPosY"}   = shift;
+	$self->{"groupUniRTM"} = shift;
+
 	return $self;
 }
 
- sub GetStepId {
+sub GetGroupId {
 	my $self = shift;
-	
-	return $self->{"id"};
+
+	return $self->{"groupId"};
 }
 
-sub GetRoutPosX {
+sub GetSourceStep {
 	my $self = shift;
-	
-	return $self->{"routPosX"};
+
+	return $self->{"sourceStep"};
 }
 
-sub GetRoutPosY {
+ sub GetSourceLayer {
 	my $self = shift;
-	
-	return $self->{"routPosY"};
+
+	return $self->{"sourceLayer"};
 }
 
+sub GetGroupPosX {
+	my $self = shift;
+
+	return $self->{"groupPosX"};
+}
+
+sub GetGroupPosY {
+	my $self = shift;
+
+	return $self->{"groupPosY"};
+}
+
+sub GetGroupUniRTM {
+	my $self = shift;
+
+	return $self->{"groupUniRTM"};
+}
 
 # =======================================
-# SRStep methods 
+# SRStep methods
 # =======================================
 
 #sub GetAngle {

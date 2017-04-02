@@ -57,63 +57,6 @@ sub new {
 	return $self;
 }
 
-sub Init {
-	my $self       = shift;
-	my $inCAM      = shift;
-	my $jobId      = shift;
-	my $oriLayer = shift;
- 
-	# Prepare rout work layer
-	
-	CamHelper->SetStep($inCAM, $self->{"stepName"});
-	 
-	$inCAM->COM(
-		'copy_layer',
-		"source_job"   => $jobId,
-		"source_step"  => $self->{"stepName"},
-		"source_layer" => $oriLayer,
-		"dest"         => 'layer_name',
-		"dest_layer"   => $self->{"routLayer"},
-		"mode"         => 'replace',
-		"invert"       => 'no'
-
-	);
-
-	# move to zero
-
-	my %lim = CamJob->GetProfileLimits2( $inCAM, $jobId, $self->{"stepName"}, 1 );
-
-	if ( $lim{"xMin"} < 0 || $lim{"yMin"} < 0 ) {
-
-		CamLayer->WorkLayer( $inCAM, $self->{"routLayer"} );
-		$inCAM->COM(
-					 "sel_transform",
-					 "oper"      => "",
-					 "x_anchor"  => "0",
-					 "y_anchor"  => "0",
-					 "angle"     => "0",
-					 "direction" => "ccw",
-					 "x_scale"   => "1",
-					 "y_scale"   => "1",
-					 "x_offset"  => -$lim{"xMin"},
-					 "y_offset"  => -$lim{"yMin"},
-					 "mode"      => "anchor",
-					 "duplicate" => "no"
-		);
-	}
-
-	if ( $self->{"angle"} > 0 ) {
-
-		CamLayer->WorkLayer( $inCAM, $self->{"routLayer"} );
-		$inCAM->COM( "sel_transform", "direction" => "ccw", "x_anchor" => 0, "y_anchor" => 0, "oper" => "rotate", "angle" => $self->{"angle"} );
-	}
-
-
-	# Load uniRTM
-	$self->{"uniRTM"} = UniRTM->new( $inCAM, $jobId, $self->{"stepName"}, $self->{"routLayer"} );
-
-	 
-}
 
 ## If layer contain SR steps, flatten and sort tools
 #sub __InitSortSRTool {
