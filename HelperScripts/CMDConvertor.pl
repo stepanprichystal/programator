@@ -7,8 +7,7 @@ use warnings;
 
 
 # ============ INPUT LINE =================
-my $inputLine =
-"sel_buffer_options,mode=merge_layers,rotation=0,mirror=yes,polarity=no,fixed_datum=no (0)";
+my $inputLine ="$f->INFO(units => 'mm', angle_direction => 'ccw', entity_type => 'step', entity_path => "f52456/mpanel", data_type => 'DATUM');";
 
 my $output = "\$inCAM->COM(";
 my @splitted = split( ",", $inputLine );

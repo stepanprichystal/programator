@@ -1,5 +1,5 @@
 #-------------------------------------------------------------------------------------------#
-# Description: Do checks of tool in Universal DTM
+# Description: Helper class for rout transformation
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Packages::Routing::RoutLayer::RoutParser::RoutTransform;

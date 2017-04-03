@@ -1,5 +1,5 @@
 #-------------------------------------------------------------------------------------------#
-# Description: Do checks of tool in Universal DTM
+# Description: Helper class, which is responsible for finding suitable rout start and foot edge
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Packages::Routing::RoutLayer::RoutStart::RoutStart;

@@ -1,5 +1,5 @@
 #-------------------------------------------------------------------------------------------#
-# Description: Do checks of tool in Universal DTM
+# Description: Helper class working with arcs in rout layer
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Packages::Routing::RoutLayer::RoutParser::RoutArc;

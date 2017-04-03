@@ -35,7 +35,7 @@ sub SortOutlineTools {
 	my @final = ();
 
 	foreach my $sCh (@sortedChains) {
-		my %inf = ( "stepId" => $sCh->{"stepId"}, "chainOrder" => $sCh->{"chainTool"}->GetChainOrder() );
+		my %inf = ( "chainGroupId" => $sCh->{"chainGroupId"}, "chainOrder" => $sCh->{"chainTool"}->GetChainOrder() );
 		push( @final, \%inf );
 	}
 
@@ -140,19 +140,19 @@ sub __PutToFinalQueue {
 
 	foreach my $comp (@compOrder) {
 
-		foreach my $stepId ( sort { $a cmp $b } keys $toolQueues ) {
+		foreach my $chainGroupId ( sort { $a cmp $b } keys $toolQueues ) {
 
-			if ( scalar( @{ $toolQueues->{$stepId} } ) == 0 ) {
+			if ( scalar( @{ $toolQueues->{$chainGroupId} } ) == 0 ) {
 				next;
 			}
 
 			# check if tool on top of quue has requesteed diameter and comp
-			while (    scalar( @{ $toolQueues->{$stepId} } )
-					&& $toolQueues->{$stepId}->[0]->GetChainSize() == $currTool
-					&& $toolQueues->{$stepId}->[0]->GetComp() eq $comp )
+			while (    scalar( @{ $toolQueues->{$chainGroupId} } )
+					&& $toolQueues->{$chainGroupId}->[0]->GetChainSize() == $currTool
+					&& $toolQueues->{$chainGroupId}->[0]->GetComp() eq $comp )
 			{
 
-				my %inf = ( "stepId" => $stepId, "chainOrder" => ( shift @{ $toolQueues->{$stepId} } )->GetChainOrder() );
+				my %inf = ( "chainGroupId" => $chainGroupId, "chainOrder" => ( shift @{ $toolQueues->{$chainGroupId} } )->GetChainOrder() );
 
 				push( @{$finalQueue}, \%inf );
 
@@ -174,9 +174,9 @@ sub __ChooseNextTool {
 
 	for ( my $i = 0 ; $i < scalar(@uniTools) ; $i++ ) {
 
-		foreach my $stepId ( sort { $a cmp $b } keys $toolQueues ) {
+		foreach my $chainGroupId ( sort { $a cmp $b } keys $toolQueues ) {
 
-			my @actQueue = @{ $toolQueues->{$stepId} };
+			my @actQueue = @{ $toolQueues->{$chainGroupId} };
 
 			if ( scalar(@actQueue) ) {
 

@@ -1,5 +1,5 @@
 #-------------------------------------------------------------------------------------------#
-# Description: Do checks of tool in Universal DTM
+# Description: Helper class, which parse rout layers, add special attributes to edges etc..
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Packages::Routing::RoutLayer::RoutParser::RoutParser;

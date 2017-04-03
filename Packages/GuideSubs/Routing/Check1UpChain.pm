@@ -1,5 +1,5 @@
 #-------------------------------------------------------------------------------------------#
-# Description: Do checks of tool in Universal DTM
+# Description: Checking rout layer during processing pcb
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Packages::GuideSubs::Routing::Check1UpChain;
@@ -269,7 +269,27 @@ sub LeftRoutChecks {
 		}
 
 	}
-	
+
+	# 5) Each outline rout must have own chain tool
+	foreach my $ch (@chains) {
+
+		my @outline = grep { $_->IsOutline() } $ch->GetChainSequences();
+
+		if ( scalar(@outline) > 1 ) {
+
+			my $m =
+			    "Ve stepu: \""
+			  . $step
+			  . "\", ve vrstvě: \"$layer\" je jední­m nástrojem: \""
+			  . $ch->GetStrInfo
+			  . "\" definováno více obrysových vrstev frézy dohromady - nelze. "
+			  . " Každá obrysová fréza musí mít svůj vlastní \"chain\".\n";
+
+			$$mess .= $m;
+		}
+
+	}
+
 	return $result;
 }
 

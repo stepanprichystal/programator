@@ -1,7 +1,5 @@
 #-------------------------------------------------------------------------------------------#
-# Description: Contain listo of all tools in layer, regardless it is tool from surface, pad,
-# lines..
-# Responsible for tools are unique (diameter + typeProc)
+# Description: Special structure for flatenning step. Contain position of SR in step
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Packages::Routing::RoutLayer::FlattenRout::SRFlatten::SRFlatten::SRFlatten;
@@ -13,26 +11,10 @@ use List::MoreUtils qw(uniq);
 
 #local library
 use aliased 'Packages::CAM::UniRTM::Enums';
-
-#use aliased 'CamHelpers::CamDTM';
-#use aliased 'CamHelpers::CamDTMSurf';
-#use aliased 'CamHelpers::CamDrilling';
-#use aliased 'Packages::CAM::UniDTM::UniTool::UniToolBase';
-#use aliased 'Packages::CAM::UniDTM::UniTool::UniToolDTM';
-#use aliased 'Packages::CAM::UniDTM::UniTool::UniToolDTMSURF';
-#use aliased 'Packages::CAM::UniDTM::Enums';
-#use aliased 'Enums::EnumsDrill';
-#use aliased 'Enums::EnumsGeneral';
-#use aliased 'Packages::CAM::UniDTM::UniDTM::UniDTMCheck';
-#use aliased 'Connectors::HeliosConnector::HegMethods';
-#use aliased 'Helpers::GeneralHelper';
-#use aliased 'Helpers::FileHelper';
 use aliased 'CamHelpers::CamHelper';
 use aliased 'CamHelpers::CamAttributes';
 use aliased 'CamHelpers::CamStepRepeat';
 use aliased 'Packages::Routing::RoutLayer::FlattenRout::SRFlatten::SRFlatten::SRStepPos';
-
-#use aliased 'Packages::CAM::UniDTM::PilotDef::PilotDef';
 
 #-------------------------------------------------------------------------------------------#
 #  Public method
@@ -65,8 +47,8 @@ sub Init {
 	# init steps
 	my @repeatsSR = CamStepRepeat->GetRepeatStep( $inCAM, $jobId, $self->{"SRStep"}->GetStep() );
 	foreach my $rStep (@repeatsSR) {
-		
-		my $nestStep = $self->{"SRStep"}->GetNestedStep($rStep->{"stepName"}, $rStep->{"angle"});
+
+		my $nestStep = $self->{"SRStep"}->GetNestedStep( $rStep->{"stepName"}, $rStep->{"angle"} );
 
 		my $srStepPos = SRStepPos->new( $nestStep, $rStep->{"originX"}, $rStep->{"originY"} );
 		push( @{ $self->{"stepPos"} }, $srStepPos );
@@ -74,15 +56,11 @@ sub Init {
 	}
 }
 
-
-
 sub GetStepPositions {
 	my $self = shift;
 
-	return @{$self->{"stepPos"}};
+	return @{ $self->{"stepPos"} };
 }
-
- 
 
 sub GetStep {
 	my $self = shift;

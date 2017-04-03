@@ -1,6 +1,6 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Cover exporting layers as gerber274x
+# Description: Cover checking rout layer during flatenning layer
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Packages::Routing::RoutLayer::FlattenRout::StepCheck::StepCheck;
@@ -11,14 +11,7 @@ use strict;
 use warnings;
 
 #local library
-#use aliased 'Helpers::GeneralHelper';
 use aliased 'Packages::ItemResult::ItemResult';
-
-#use aliased 'Enums::EnumsPaths';
-#use aliased 'Helpers::JobHelper';
-#use aliased 'Helpers::FileHelper';
-#use aliased 'CamHelpers::CamHelper';
-#use aliased 'Packages::Gerbers::Export::ExportLayers' => 'Helper';
 use aliased 'Packages::CAM::UniRTM::UniRTM::UniRTM';
 use aliased 'Enums::EnumsRout';
 
@@ -32,8 +25,8 @@ sub new {
 	my $self  = {};
 	bless $self;
 
-	$self->{"inCAM"}    = shift;
-	$self->{"jobId"}    = shift;
+	$self->{"inCAM"}  = shift;
+	$self->{"jobId"}  = shift;
 	$self->{"SRStep"} = shift;
 
 	return $self;
@@ -94,10 +87,10 @@ sub OutlineToolIsLast {
 # Check if there is noly bridges rout
 # if so, save this information to job attribute "rout_on_bridges"
 sub __OnlyBridges {
-	my $self    = shift;
+	my $self       = shift;
 	my $nestedStep = shift;
-	my $layer   = shift;
-	my $resItem = shift;
+	my $layer      = shift;
+	my $resItem    = shift;
 
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
@@ -124,7 +117,7 @@ sub __OnlyBridges {
 			  . "\", ve vrstvě: \"$layer\""
 			  . " není­ ani obrysová vrstva ani můstky s kompenzací­ left. Pokud je pcb na můstky nastav jim kompenzaci left.";
 
-			$resItem->AddWarning($m);
+			$resItem->AddError($m);
 		}
 	}
 }
@@ -134,8 +127,8 @@ sub __OutsideChains {
 	my $self = shift;
 
 	my $nestedStep = shift;
-	my $layer   = shift;
-	my $resItem = shift;
+	my $layer      = shift;
+	my $resItem    = shift;
 
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
@@ -166,8 +159,7 @@ sub __OutsideChains {
 			  . $nestedStep->GetStepName()
 			  . "\", ve vrstvě: \""
 			  . $layer
-			  . "\" jsou frézy, které by měly být uvnitř obrysové frézy, ale nejsou ($str)."
-			  . "Je to tak sprvně?";
+			  . "\" jsou frézy, které by měly být uvnitř obrysové frézy, ale nejsou ($str).";
 
 			$resItem->AddError($m);
 
@@ -178,10 +170,10 @@ sub __OutsideChains {
 
 # Check when left rout exists
 sub __LeftRoutChecks {
-	my $self    = shift;
+	my $self       = shift;
 	my $nestedStep = shift;
-	my $layer   = shift;
-	my $resItem = shift;
+	my $layer      = shift;
+	my $resItem    = shift;
 
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
@@ -284,14 +276,35 @@ sub __LeftRoutChecks {
 
 	}
 
+	# 5) Each outline rout must have own chain tool
+
+	foreach my $ch (@chains) {
+
+		my @outline = grep { $_->IsOutline() } $ch->GetChainSequences();
+
+		if ( scalar(@outline) > 1 ) {
+
+			my $m =
+			    "Ve stepu: \""
+			  . $nestedStep->GetStepName()
+			  . "\", ve vrstvě: \"$layer\" je jední­m nástrojem: \""
+			  . $ch->GetStrInfo
+			  . "\" definováno více obrysových vrstev frézy dohromady - nelze. "
+			  . " Každá obrysová fréza musí mít svůj vlastní \"chain\".\n";
+
+			$resItem->AddError($m);
+		}
+
+	}
+
 }
 
 # Check if tool sizes are sorted ASC
 sub __OutlineToolIsLast {
-	my $self    = shift;
+	my $self       = shift;
 	my $nestedStep = shift;
-	my $layer   = shift;
-	my $resItem = shift;
+	my $layer      = shift;
+	my $resItem    = shift;
 
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};

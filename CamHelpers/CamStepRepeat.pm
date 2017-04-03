@@ -8,6 +8,7 @@ package CamHelpers::CamStepRepeat;
 #3th party library
 use strict;
 use warnings;
+use List::Util qw[max];
 
 #loading of locale modules
 #use aliased 'Helpers::JobHelper';
@@ -19,6 +20,63 @@ use warnings;
 #-------------------------------------------------------------------------------------------#
 #   Package methods
 #-------------------------------------------------------------------------------------------#
+
+# Return depth of SR in given step
+# 1 - means, there is panel and 1up nested steps inside
+# 2 - means, there is panel, inside panel which contain 1up steps inside
+sub GetStepAndRepeatDepth {
+	my $self     = shift;
+	my $inCAM    = shift;
+	my $jobId    = shift;
+	my $stepName = shift;
+
+	my @uniqueSteps = ();
+
+	my %step = ( "stepName" => $stepName, "depth" => 0 );
+
+	my $depth = -1;
+
+	$self->__ExploreStepDepth( $inCAM, $jobId, \%step, \@uniqueSteps, $depth );
+
+	# remove inspected step, we want only nested
+	@uniqueSteps = map { $_->{"depth"} } @uniqueSteps;
+
+	my $depthMax = max(@uniqueSteps);
+
+	return $depthMax;
+}
+
+sub __ExploreStepDepth {
+	my $self        = shift;
+	my $inCAM       = shift;
+	my $jobId       = shift;
+	my $exploreStep = shift;
+	my $uniqueSteps = shift;
+	my $depth       = shift;
+
+	my @childs = $self->GetUniqueStepAndRepeat( $inCAM, $jobId, $exploreStep->{"stepName"} );
+
+	$depth++;
+
+	if ( scalar(@childs) ) {
+
+		# recusive search another nested steps
+		foreach my $ch (@childs) {
+
+			$self->__ExploreStepDepth( $inCAM, $jobId, $ch, $uniqueSteps, $depth );
+
+		}
+	}
+
+	# this step has no childern, test, if is not already in array
+
+	$exploreStep->{"depth"} = $depth;
+
+	push( @{$uniqueSteps}, $exploreStep );
+	
+	
+
+}
 
 #Return information about all nested steps (in all deepness) steps in given step
 sub GetUniqueNestedStepAndRepeat {
@@ -56,13 +114,13 @@ sub __ExploreStep {
 			$self->__ExploreStep( $inCAM, $jobId, $ch, $uniqueSteps );
 
 		}
-
 	}
 
 	# this step has no childern, test, if is not already in array
 	my $exist = scalar( grep { $_->{"stepName"} eq $exploreStep->{"stepName"} } @{$uniqueSteps} );
 
 	unless ($exist) {
+
 		push( @{$uniqueSteps}, $exploreStep );
 	}
 
@@ -134,9 +192,9 @@ sub GetRepeatStep {
 		$info{"originY"}  = ${ $inCAM->{doinfo}{gREPEATya} }[$i];
 		$info{"angle"}    = ${ $inCAM->{doinfo}{gREPEATangle} }[$i];
 
-#		# mistake in Incam angle_direction => 'ccw' not work, thus:
-#		
-#		$info{"angle"} = 360 - $info{"angle"};
+		#		# mistake in Incam angle_direction => 'ccw' not work, thus:
+		#
+		#		$info{"angle"} = 360 - $info{"angle"};
 
 		$info{"originXNew"} = ${ $inCAM->{doinfo}{gREPEATxmin} }[$i];
 		$info{"originYNew"} = ${ $inCAM->{doinfo}{gREPEATymin} }[$i];
@@ -145,8 +203,6 @@ sub GetRepeatStep {
 		$info{"gREPEATymin"} = ${ $inCAM->{doinfo}{gREPEATymin} }[$i];
 		$info{"gREPEATxmax"} = ${ $inCAM->{doinfo}{gREPEATxmax} }[$i];
 		$info{"gREPEATymax"} = ${ $inCAM->{doinfo}{gREPEATymax} }[$i];
-
-
 
 		push( @arr, \%info );
 
@@ -213,14 +269,16 @@ sub DeleteStepAndRepeat {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	#	use aliased 'CamHelpers::CamStepRepeat';
-	#use aliased 'Packages::InCAM::InCAM';
+	use aliased 'CamHelpers::CamStepRepeat';
+	use aliased 'Packages::InCAM::InCAM';
 
-	#	my $inCAM = InCAM->new();
-	#	my $jobId = "f13610";
-	#my $step  = "mpanel_10up";
+	my $inCAM = InCAM->new();
+	my $jobId = "f52456";
+	my $step  = "o+1";
 
-	#my @steps = CamStepRepeat->GetUniqueNestedStepAndRepeat( $inCAM, $jobId, $step );
+	my $depth = CamStepRepeat->GetStepAndRepeatDepth( $inCAM, $jobId, $step );
+
+	print STDERR $depth;
 
 	#my $self             = shift;
 	#	my $inCAM            = shift;

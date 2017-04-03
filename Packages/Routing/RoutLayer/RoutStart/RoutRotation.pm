@@ -1,7 +1,5 @@
 #-------------------------------------------------------------------------------------------#
-# Description: Contain listo of all tools in layer, regardless it is tool from surface, pad,
-# lines..
-# Responsible for tools are unique (diameter + typeProc)
+# Description: Class can rotate rout chain, than do some modification and rotate it back
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Packages::Routing::RoutLayer::RoutStart::RoutRotation;
@@ -36,14 +34,14 @@ sub new {
 
 	#get limits of rout chain by points
 	my @points = ();
-	foreach my $f (@{$self->{"features"}}) {
+	foreach my $f ( @{ $self->{"features"} } ) {
 		my %p1 = ( "x" => $f->{"x1"}, "y" => $f->{"y1"} );
 		my %p2 = ( "x" => $f->{"x2"}, "y" => $f->{"y2"} );
 		push( @points, ( \%p1, \%p2 ) );
 	}
 
 	my %lim = PointsTransform->GetLimByPoints( \@points );
- 
+
 	$self->{"lim"} = \%lim;
 
 	$self->__Init();
@@ -53,10 +51,10 @@ sub new {
 
 sub Rotate {
 	my $self  = shift;
-	my $angle = shift;  # rotate counter clockwise
-	my $draw = shift;
-	
-	if( $angle % 90 > 1 ){
+	my $angle = shift;    # rotate counter clockwise
+	my $draw  = shift;
+
+	if ( $angle % 90 > 1 ) {
 		die "Angle value is wrong. Only increments of 90deg are possible.\n";
 	}
 
@@ -69,18 +67,17 @@ sub Rotate {
 	# 1) test if features are in zero
 
 	if ( $self->{"lim"}->{"xMin"} != 0 || $self->{"lim"}->{"yMin"} != 0 ) {
-		
+
 		$self->{"routMoved"}  = 1;
 		$self->{"routMovedX"} = $self->{"lim"}->{"xMin"};
 		$self->{"routMovedY"} = $self->{"lim"}->{"yMin"};
 
-		RoutTransform->MoveRout(-$self->{"routMovedX"}, -$self->{"routMovedY"}, $self->{"features"} );
+		RoutTransform->MoveRout( -$self->{"routMovedX"}, -$self->{"routMovedY"}, $self->{"features"} );
 	}
 
 	# 2) rotate
 	my $angle90 = 90;
 	my $num     = $angle / $angle90;
-	 
 
 	# Pcb widtt /height
 	my $width  = abs( $self->{"lim"}->{"xMax"} - $self->{"lim"}->{"xMin"} );
@@ -89,15 +86,10 @@ sub Rotate {
 	# only if angel is not 360
 	if ( $num < 4 ) {
 		for ( my $i = 0 ; $i < $num ; $i++ ) {
-			
-			 
-			
 
 			RoutTransform->RotateRout( $angle90, $self->{"features"} );
-			
+
 			#$draw->DrawRoute($self->{"features"});
-	
-			 
 
 			if ( $i % 2 == 0 ) {
 
@@ -107,36 +99,31 @@ sub Rotate {
 
 				RoutTransform->MoveRout( $width, 0, $self->{"features"} );
 			}
-			
+
 			#$draw->DrawRoute($self->{"features"});
-	
-			 
+
 		}
 	}
 }
 
 sub RotateBack {
-	my $self  = shift;
-	
-
-
+	my $self = shift;
 
 	# 2) rotate
 
-	my $angle = 360 -  $self->{"rotateAngle"};  # rotate  clockwise
-	
+	my $angle = 360 - $self->{"rotateAngle"};    # rotate  clockwise
+
 	my $angle90 = 90;
 	my $num     = $angle / $angle90;
-	
 
 	# Pcb widtt /height
 	my $width  = abs( $self->{"lim"}->{"xMax"} - $self->{"lim"}->{"xMin"} );
 	my $height = abs( $self->{"lim"}->{"yMax"} - $self->{"lim"}->{"yMin"} );
-	
+
 	# switch height and width
-	if( $num % 2 != 0 ){
+	if ( $num % 2 != 0 ) {
 		my $tmp = $width;
-		$width = $height;
+		$width  = $height;
 		$height = $tmp;
 	}
 
@@ -156,18 +143,15 @@ sub RotateBack {
 			}
 		}
 	}
-	
-	
-	 # 1) test if features was moved to zero
 
-	if ($self->{"routMoved"} ) {
- 
-		RoutTransform->MoveRout($self->{"routMovedX"}, $self->{"routMovedY"}, $self->{"features"} );
+	# 1) test if features was moved to zero
+
+	if ( $self->{"routMoved"} ) {
+
+		RoutTransform->MoveRout( $self->{"routMovedX"}, $self->{"routMovedY"}, $self->{"features"} );
 	}
-	
+
 }
-
-
 
 sub __Init {
 	my $self = shift;

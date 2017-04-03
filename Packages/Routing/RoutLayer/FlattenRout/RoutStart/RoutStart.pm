@@ -1,6 +1,6 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Cover exporting layers as gerber274x
+# Description: Find start of rout and add foot down atribut to rout layers
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Packages::Routing::RoutLayer::FlattenRout::RoutStart::RoutStart;
@@ -13,17 +13,10 @@ use warnings;
 #local library
 use aliased 'Helpers::GeneralHelper';
 use aliased 'Packages::ItemResult::ItemResult';
-
 use aliased 'Enums::EnumsRout';
-
-#use aliased 'Enums::EnumsPaths';
-#use aliased 'Helpers::JobHelper';
-#use aliased 'Helpers::FileHelper';
 use aliased 'CamHelpers::CamHelper';
 use aliased 'CamHelpers::CamLayer';
 use aliased 'CamHelpers::CamAttributes';
-
-#use aliased 'Packages::Gerbers::Export::ExportLayers' => 'Helper';
 use aliased 'Packages::CAM::UniRTM::UniRTM::UniRTM';
 use aliased 'Packages::Routing::RoutLayer::RoutStart::RoutStart';
 use aliased 'Packages::Routing::RoutLayer::RoutDrawing::RoutDrawing';
@@ -39,11 +32,10 @@ sub new {
 	my $self  = {};
 	bless $self;
 
-	$self->{"inCAM"}    = shift;
-	$self->{"jobId"}    = shift;
+	$self->{"inCAM"}  = shift;
+	$self->{"jobId"}  = shift;
 	$self->{"SRStep"} = shift;
-	 
-	
+
 	return $self;
 }
 
@@ -53,26 +45,23 @@ sub FindStart {
 	my $resultItem = ItemResult->new("Find rout start");
 
 	my @errStep = ();
-	$resultItem->{"errStartSteps"} = \@errStep;    # save stepPlace, where start was not found
-	
-	CamHelper->SetStep($self->{"inCAM"}, $self->{"SRStep"}->GetStep());
+	$resultItem->{"errStartSteps"} = \@errStep;    # save information, where start was not found
+
+	CamHelper->SetStep( $self->{"inCAM"}, $self->{"SRStep"}->GetStep() );
 
 	foreach my $s ( $self->{"SRStep"}->GetNestedSteps() ) {
 
-		print STDERR "\n Zpracovani stepu " . $s->GetStepName() . "\n";
- 
-			$self->__RemoveFootAttr($s);
 
-			$self->__FindStart( $s, $resultItem );
- 
+		$self->__RemoveFootAttr($s);
+
+		$self->__FindStart( $s, $resultItem );
 
 	}
 
 	return $resultItem;
 }
 
-# Check if there is noly bridges rout
-# if so, save this information to job attribute "rout_on_bridges"
+
 sub __FindStart {
 	my $self    = shift;
 	my $stepRot = shift;
@@ -138,7 +127,7 @@ sub __FindStart {
 					print STDERR "\n\n Modifikace " . $stepRot->GetAngle() . "\n\n";
 
 					# Redraw outline chain
-					my $draw = RoutDrawing->new( $inCAM, $jobId, $self->{"stepList"}->GetStep(), $stepRot->GetRoutLayer() );
+					my $draw = RoutDrawing->new( $inCAM, $jobId, $self->{"SRStep"}->GetStep(), $stepRot->GetRoutLayer() );
 
 					my @delete = grep { $_->{"id"} > 0 } @features;
 
@@ -206,7 +195,8 @@ sub __FindStart {
 			my $m =
 			    "Pro step: \""
 			  . $stepRot->GetStepName()
-			  . "\", vrstvu: \"".$self->{"SRStep"}->GetSourceLayer()."\""
+			  . "\", vrstvu: \""
+			  . $self->{"SRStep"}->GetSourceLayer() . "\""
 			  . " při rotaci dps: \""
 			  . $stepRot->GetAngle()
 			  . "\" nebyl nalezen vhodný počátek frézy. Urči počátek frézy při otočení dps: \""
@@ -225,8 +215,6 @@ sub __FindStart {
 	$self->{"SRStep"}->ReloadStepUniRTM($stepRot);
 
 }
-
- 
 
 sub __RemoveFootAttr {
 	my $self    = shift;
@@ -282,8 +270,6 @@ sub __GetStartByFootEdge {
 
 	return $startEdge;
 }
-
- 
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

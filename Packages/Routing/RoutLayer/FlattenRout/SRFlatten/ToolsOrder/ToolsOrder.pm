@@ -1,6 +1,6 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Cover exporting layers as gerber274x
+# Description: Class cover sorting chain tools in flatenned layer
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Packages::Routing::RoutLayer::FlattenRout::SRFlatten::ToolsOrder::ToolsOrder;
@@ -13,17 +13,9 @@ use warnings;
 #local library
 use aliased 'Helpers::GeneralHelper';
 use aliased 'Packages::ItemResult::ItemResult';
-
-#use aliased 'Enums::EnumsPaths';
-#use aliased 'Helpers::JobHelper';
-#use aliased 'Helpers::FileHelper';
 use aliased 'CamHelpers::CamHelper';
 use aliased 'CamHelpers::CamAttributes';
-
-#use aliased 'Packages::Gerbers::Export::ExportLayers' => 'Helper';
 use aliased 'Packages::CAM::UniRTM::UniRTM::UniRTM';
-
-#use aliased 'Enums::EnumsRout';
 use aliased 'CamHelpers::CamLayer';
 use aliased 'Packages::Routing::RoutLayer::FlattenRout::SRFlatten::ToolsOrder::SortTools';
 use aliased 'Packages::CAM::FeatureFilter::FeatureFilter';
@@ -40,25 +32,28 @@ sub new {
 	$self->{"inCAM"}       = shift;
 	$self->{"jobId"}       = shift;
 	$self->{"chainGroups"} = shift;
-	$self->{"convTable"}   = shift;
-	$self->{"step"}   = shift;
+	
+	# contain hash, where key is old step chain nuber and value is GUID represent new chain in flatenned layer
+	# Theses values are available by "group chain guid", which represent all chains in step
+	$self->{"convTable"}   = shift; 
+	$self->{"step"}        = shift;
 	$self->{"flatLayer"}   = shift;
 	$self->{"resultItem"}  = shift;
-	
-	$self->{"toolOrderNum"} = 1; # start renumber chain from number one
+
+	$self->{"toolOrderNum"} = 1;       # start renumber chain from number one
 
 	return $self;
 }
 
 sub SetInnerOrder {
 	my $self = shift;
- 
+
 	my $inCAM = $self->{"inCAM"};
 
 	# create tool queue
 	my %toolQueues = ();
 
-	foreach my $chGroup ( @{$self->{"chainGroups"}} ) {
+	foreach my $chGroup ( @{ $self->{"chainGroups"} } ) {
 
 		# get not outline chain tool list
 		my @chainList = $chGroup->GetGroupUniRTM()->GetChainListByOutline(0);
@@ -76,15 +71,13 @@ sub SetInnerOrder {
 sub SetOutlineOrder {
 	my $self = shift;
 
-	
-
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
 
 	# create tool queue
 	my @outlineChains = ();
 
-	foreach my $chGroup ( @{$self->{"chainGroups"}} ) {
+	foreach my $chGroup ( @{ $self->{"chainGroups"} } ) {
 
 		# get not outline chain tool list
 
@@ -111,9 +104,10 @@ sub SetOutlineOrder {
 			}
 
 			my %inf = (
-						"stepId"    => $chGroup->GetGroupId(),
-						"chainTool" => $chainTool,
-						"coord" => { "x" => $startEdges[$minIdx]->{"x1"} + $chGroup->GetGroupPosX(), "y" => $startEdges[$minIdx]->{"y1"} + $chGroup->GetGroupPosY() }
+				  "chainGroupId" => $chGroup->GetGroupId(),
+				  "chainTool"    => $chainTool,
+				  "coord" =>
+					{ "x" => $startEdges[$minIdx]->{"x1"} + $chGroup->GetGroupPosX(), "y" => $startEdges[$minIdx]->{"y1"} + $chGroup->GetGroupPosY() }
 			);
 			push( @outlineChains, \%inf );
 		}
@@ -130,7 +124,7 @@ sub SetOutlineOrder {
 	my @chainIds = ();
 	foreach my $rout (@finalOrder) {
 
-		push( @chainIds, $self->{"convTable"}->{ $rout->{"stepId"} }->{ $rout->{"chainOrder"} } );
+		push( @chainIds, $self->{"convTable"}->{ $rout->{"chainGroupId"} }->{ $rout->{"chainOrder"} } );
 
 	}
 
@@ -205,6 +199,7 @@ sub ToolRenumberCheck {
 
 }
 
+# Renumber tool chain order in flatenned layer by newlz acquired order
 sub __RenumberTools {
 	my $self       = shift;
 	my @finalOrder = @{ shift(@_) };
@@ -212,27 +207,22 @@ sub __RenumberTools {
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
 
-	CamHelper->SetStep( $inCAM, $self->{"step"});
+	CamHelper->SetStep( $inCAM, $self->{"step"} );
 
 	foreach my $stepChain (@finalOrder) {
 
-		my $stepId      = $stepChain->{"stepId"};
-		my $oriChainNum = $stepChain->{"chainOrder"};
-
-		# Get real "fsch chain order" by convert
-		#my $realChainNum = $self->{"convTable"}->{$stepId}->{$oriChainNum};
+		my $chainGroupId = $stepChain->{"chainGroupId"};
+		my $oriChainNum  = $stepChain->{"chainOrder"};
 
 		# Get chain tool guid
-		my $chainToolId = $self->{"convTable"}->{$stepId}->{$oriChainNum};
+		my $chainToolId = $self->{"convTable"}->{$chainGroupId}->{$oriChainNum};
 
 		my $f = FeatureFilter->new( $inCAM, $jobId, $self->{"flatLayer"} );
 
-		#my %idVal = ( "min" => $realChainNum, "max" => $realChainNum );
-		#$f->AddIncludeAtt( ".rout_chain",   \%idVal );
 		$f->AddIncludeAtt( "feat_group_id", $chainToolId );
 
 		if ( $f->Select() ) {
-			CamAttributes->SetFeaturesAttribute( $inCAM, $jobId, ".rout_chain", $self->{"toolOrderNum"}  );
+			CamAttributes->SetFeaturesAttribute( $inCAM, $jobId, ".rout_chain", $self->{"toolOrderNum"} );
 		}
 		else {
 			die "No chain selected, when changing chain order";
@@ -240,7 +230,7 @@ sub __RenumberTools {
 
 		$self->{"toolOrderNum"}++;
 	}
-	
+
 	$inCAM->COM("sel_clear_feat");
 
 }

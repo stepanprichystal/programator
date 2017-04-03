@@ -1,6 +1,6 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Cover exporting layers as gerber274x
+# Description: Class can flatten arbotrary rout layer and sort tools
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Packages::Routing::RoutLayer::FlattenRout::SRFlatten::FlattenRout;
@@ -11,30 +11,15 @@ use strict;
 use warnings;
 
 #local library
-#use aliased 'Helpers::GeneralHelper';
-#use aliased 'Packages::ItemResult::ItemResult';
-
-#use aliased 'Enums::EnumsRout';
 use aliased 'Helpers::GeneralHelper';
-
-#use aliased 'Enums::EnumsPaths';
-#use aliased 'Helpers::JobHelper';
-#use aliased 'Helpers::FileHelper';
 use aliased 'CamHelpers::CamHelper';
 use aliased 'CamHelpers::CamLayer';
 use aliased 'CamHelpers::CamAttributes';
-
-#use aliased 'Packages::Gerbers::Export::ExportLayers' => 'Helper';
 use aliased 'Packages::CAM::UniRTM::UniRTM::UniRTM';
-
-#use aliased 'Packages::Routing::RoutLayer::RoutStart::RoutStart';
-#use aliased 'Packages::Routing::RoutLayer::RoutDrawing::RoutDrawing';
 use aliased 'Packages::CAM::FeatureFilter::FeatureFilter';
-
 use aliased 'Packages::ItemResult::Enums' => "ResEnums";
 use aliased 'Packages::ItemResult::ItemResult';
 use aliased 'Packages::Routing::RoutLayer::FlattenRout::SRFlatten::ToolsOrder::ToolsOrder';
-
 use aliased 'Packages::Routing::RoutLayer::FlattenRout::SRFlatten::SRStep::SRStep';
 use aliased 'Packages::Routing::RoutLayer::FlattenRout::SRFlatten::SRFlatten::SRFlatten';
 use aliased 'Packages::Routing::RoutLayer::FlattenRout::SRFlatten::ToolsOrder::GroupChain';
@@ -51,17 +36,19 @@ sub new {
 
 	$self->{"inCAM"}            = shift;
 	$self->{"jobId"}            = shift;
-	$self->{"flatLayer"}        = shift;
-	$self->{"considerStepRout"} = shift;
+	$self->{"flatLayer"}        = shift;    # name of result flatened layer
+	$self->{"considerStepRout"} = shift;    # if yes, also rout contained in "flatenned step" will by faltenned
+	$self->{"delFlatLayer"}     = shift;    # delete flat layer if exist
 
 	return $self;
 }
 
+# Flattened layer can be created by step name
 sub CreateFromStepName {
 	my $self        = shift;
 	my $stepName    = shift;
 	my $sourceLayer = shift;
-	my $resultItem = shift;
+	my $resultItem  = shift;
 
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
@@ -69,26 +56,27 @@ sub CreateFromStepName {
 	my $srStep = SRStep->new( $inCAM, $jobId, $stepName, $sourceLayer );
 	$srStep->Init();
 
-	 $self->CreateFromSRStep($srStep, $resultItem);
-	 
-	 $srStep->Clean();
-	 
-	 return $resultItem;
+	$self->CreateFromSRStep( $srStep, $resultItem );
+
+	$srStep->Clean();
+
+	return $resultItem;
 
 }
 
+# Flattened layer can be created by special strusture "SRStep"
 sub CreateFromSRStep {
-	my $self   = shift;
-	my $srStep = shift;
+	my $self       = shift;
+	my $srStep     = shift;
 	my $itemResult = shift;
 
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
-	
-	unless(defined $itemResult){
+
+	unless ( defined $itemResult ) {
 		$itemResult = ItemResult->new("Layer flatten");
 	}
- 
+
 	# 1) Create structures for creating flatten layer and tool ordering
 
 	my $srFlatten = SRFlatten->new( $inCAM, $jobId, $srStep, $self->{"flatLayer"} );
@@ -104,25 +92,25 @@ sub CreateFromSRStep {
 
 	# 3) Sort inner routs chains and than outline rout chains
 
-	my $toolOrder = ToolsOrder->new( $inCAM, $jobId, \@groupChains, \%convTable, $srFlatten->GetStep(), $self->{"flatLayer"} , $itemResult );
+	my $toolOrder = ToolsOrder->new( $inCAM, $jobId, \@groupChains, \%convTable, $srFlatten->GetStep(), $self->{"flatLayer"}, $itemResult );
 
 	$toolOrder->SetInnerOrder();
 
 	$toolOrder->SetOutlineOrder();
 
-	# 3) Check if sortin result is what we expected
+	# 4) Check if sortin result is what we expected
 
 	$toolOrder->ToolRenumberCheck();
-	
- 
+
 	return $itemResult;
 
 }
 
+# Return list of "chain groups" - special structure suitable for ordering chainlist
 sub __GetGroupChains {
 	my $self      = shift;
 	my $srFlatten = shift;
-	
+
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
 
@@ -152,6 +140,7 @@ sub __GetGroupChains {
 	return @groupChains;
 }
 
+# Copy chains from steps to result flatten layer
 sub __CreateFlatLayer {
 	my $self        = shift;
 	my $convTable   = shift;
@@ -161,13 +150,18 @@ sub __CreateFlatLayer {
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
 
-	if ( CamHelper->LayerExists( $inCAM, $jobId, $self->{"flatLayer"} ) ) {
-		$inCAM->COM( 'delete_layer', "layer" => $self->{"flatLayer"} );
+	if ( $self->{"delFlatLayer"} ) {
+		if ( CamHelper->LayerExists( $inCAM, $jobId, $self->{"flatLayer"} ) ) {
+			$inCAM->COM( 'delete_layer', "layer" => $self->{"flatLayer"} );
+		}
 	}
 
-	$inCAM->COM( 'create_layer', layer => $self->{"flatLayer"}, context => 'board', type => 'rout', polarity => 'positive', ins_layer => '' );
+	unless ( CamHelper->LayerExists( $inCAM, $jobId, $self->{"flatLayer"} ) ) {
 
-	CamHelper->SetStep( $inCAM, $srFlatten->GetStep());
+		$inCAM->COM( 'create_layer', layer => $self->{"flatLayer"}, context => 'board', type => 'rout', polarity => 'positive', ins_layer => '' );
+	}
+
+	CamHelper->SetStep( $inCAM, $srFlatten->GetStep() );
 
 	foreach my $groupChain (@groupChains) {
 
@@ -185,8 +179,8 @@ sub __CopyRoutToFlatLayer {
 	my $self        = shift;
 	my $groupId     = shift;
 	my $sourceLayer = shift;
-	my $groupPosX = shift;
-	my $groupPosY = shift;
+	my $groupPosX   = shift;
+	my $groupPosY   = shift;
 	my $groupUniRTM = shift;
 	my $convTable   = shift;
 	my $srFlatten   = shift;
@@ -195,10 +189,8 @@ sub __CopyRoutToFlatLayer {
 	my $jobId = $self->{"jobId"};
 
 	# 1) Copy prepared rout to fsch
-	
-	CamLayer->WorkLayer( $inCAM, $sourceLayer );
 
-	#my %convTmp = ();    # temporary convert table
+	CamLayer->WorkLayer( $inCAM, $sourceLayer );
 
 	# 2) Get new chain ids
 
@@ -232,27 +224,16 @@ sub __CopyRoutToFlatLayer {
 	}
 
 	$inCAM->COM("sel_clear_feat");
-#
-#	$inCAM->COM( "sel_buffer_options", "mode" => "merge_layers", "rotation" => "0", "mirror" => "no", "polarity" => "no", "fixed_datum" => "no" );
-#	$inCAM->COM("sel_buffer_clear");
-#	$inCAM->COM( "sel_buffer_copy", "x_datum" => "0", "y_datum" => "0" );
-#
-#	CamHelper->SetStep( $inCAM, $srFlatten->GetStep() );
-#	CamLayer->WorkLayer( $inCAM, $self->{"flatLayer"} );
-#
-#	$inCAM->COM( "sel_buffer_paste", "x" => $groupPosX, "y" => $groupPosY );
-#	$inCAM->COM("sel_buffer_clear");
-
-		$inCAM->COM(
-					 "sel_copy_other",
-					 "target_layer" => $self->{"flatLayer"},
-					 "invert"       => "no",
-					 "dx"           => $groupPosX,
-					 "dy"           => $groupPosY,
-					 "size"         => "0",
-					 "x_anchor"     => 0,
-					 "y_anchor"     => 0,
-		);
+	$inCAM->COM(
+				 "sel_copy_other",
+				 "target_layer" => $self->{"flatLayer"},
+				 "invert"       => "no",
+				 "dx"           => $groupPosX,
+				 "dy"           => $groupPosY,
+				 "size"         => "0",
+				 "x_anchor"     => 0,
+				 "y_anchor"     => 0,
+	);
 
 }
 

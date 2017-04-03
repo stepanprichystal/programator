@@ -1,7 +1,6 @@
 #-------------------------------------------------------------------------------------------#
-# Description: Contain listo of all tools in layer, regardless it is tool from surface, pad,
-# lines..
-# Responsible for tools are unique (diameter + typeProc)
+# Description: Helper class, which copy rout in nested steps (contained in flattened step)
+# and rotate them by SR table. Than we can do modification such as set rout start, do checks etc..
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Packages::Routing::RoutLayer::FlattenRout::SRFlatten::SRStep::SRStep;
@@ -13,29 +12,14 @@ use List::MoreUtils qw(uniq);
 
 #local library
 use aliased 'Packages::CAM::UniRTM::Enums';
-
-#use aliased 'CamHelpers::CamDTM';
-#use aliased 'CamHelpers::CamDTMSurf';
-#use aliased 'CamHelpers::CamDrilling';
-#use aliased 'Packages::CAM::UniDTM::UniTool::UniToolBase';
-#use aliased 'Packages::CAM::UniDTM::UniTool::UniToolDTM';
-#use aliased 'Packages::CAM::UniDTM::UniTool::UniToolDTMSURF';
-#use aliased 'Packages::CAM::UniDTM::Enums';
-#use aliased 'Enums::EnumsDrill';
-#use aliased 'Enums::EnumsGeneral';
-#use aliased 'Packages::CAM::UniDTM::UniDTM::UniDTMCheck';
-#use aliased 'Connectors::HeliosConnector::HegMethods';
-#use aliased 'Helpers::GeneralHelper';
-#use aliased 'Helpers::FileHelper';
 use aliased 'CamHelpers::CamLayer';
 use aliased 'CamHelpers::CamJob';
 use aliased 'CamHelpers::CamHelper';
 use aliased 'CamHelpers::CamAttributes';
 use aliased 'CamHelpers::CamStepRepeat';
+use aliased 'CamHelpers::CamStep';
 use aliased 'Packages::Routing::RoutLayer::FlattenRout::SRFlatten::SRStep::SRNestedStep';
 use aliased 'Packages::CAM::UniRTM::UniRTM::UniRTM';
-
-#use aliased 'Packages::CAM::UniDTM::PilotDef::PilotDef';
 
 #-------------------------------------------------------------------------------------------#
 #  Public method
@@ -69,26 +53,17 @@ sub Init {
 
 	my @repeatsSR = CamStepRepeat->GetRepeatStep( $inCAM, $jobId, $self->{"step"} );
 
-	# No nested step can have SR
-
-	#	my @wrongSRsteps = grep { CamStepRepeat->ExistStepAndRepeats( $inCAM, $jobId, $_->{"stepName"} )   } @uniqueSR;
-	#
-	#	if(scalar(@wrongSRsteps)){
-	#		die "Nested steps has not contain step and repeat\n";
-	#	}
-
 	foreach my $rStep (@repeatsSR) {
 
-		my $alreadyInit =  scalar(grep { $_->GetStepName() eq $rStep->{"stepName"} && $_->GetAngle() eq $rStep->{"angle"} } $self->GetNestedSteps());
- 
- 		unless($alreadyInit){
- 			my $nestedStep = SRNestedStep->new( $rStep->{"stepName"}, $rStep->{"angle"} );
+		my $alreadyInit = scalar( grep { $_->GetStepName() eq $rStep->{"stepName"} && $_->GetAngle() eq $rStep->{"angle"} } $self->GetNestedSteps() );
+
+		unless ($alreadyInit) {
+			my $nestedStep = SRNestedStep->new( $rStep->{"stepName"}, $rStep->{"angle"} );
 			$self->__InitNestedStep($nestedStep);
 
 			push( @{ $self->{"nestedSteps"} }, $nestedStep );
- 		}
- 
-		 
+		}
+
 	}
 }
 
@@ -116,6 +91,13 @@ sub __InitNestedStep {
 	# move to zero
 
 	my %lim = CamJob->GetProfileLimits2( $inCAM, $jobId, $nestedStep->GetStepName(), 1 );
+	my %datum = CamStep->GetDatumPoint( $inCAM, $jobId, $nestedStep->GetStepName(), 1 );
+
+	if ( abs($lim{"xMin"} - $datum{"x"}) > 0.001 || abs($lim{"yMin"} - $datum{"y"}) > 0.001 ) {
+		die "Step: \""
+		  . $nestedStep->GetStepName()
+		  . "\" . Left down corner of profile is not equal to datum point. Move datump point to left down corner of step profile!.\n";
+	}
 
 	if ( $lim{"xMin"} < 0 || $lim{"yMin"} < 0 ) {
 
@@ -153,8 +135,17 @@ sub __InitNestedStep {
 	my $uniRTM = UniRTM->new( $inCAM, $jobId, $self->GetStep(), $nestedStep->GetRoutLayer() );
 	$nestedStep->SetUniRTM($uniRTM);
 
+	# Load necessary att
+
+	my %att = CamAttributes->GetStepAttr( $inCAM, $jobId, $nestedStep->GetStepName() );
+
+	if ( defined $att{"rout_on_bridges"} && $att{"rout_on_bridges"} eq "yes" ) {
+		$nestedStep->{"userRoutOnBridges"} = 1;
+	}
+
 }
 
+# Remove layer, where step rout was coppied
 sub Clean {
 	my $self = shift;
 

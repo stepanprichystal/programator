@@ -1,5 +1,5 @@
 #-------------------------------------------------------------------------------------------#
-# Description: Do checks of tool in Universal DTM
+# Description: Checking rout layer - tools,  during processing pcb
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Packages::GuideSubs::Routing::Check1UpChainTool;

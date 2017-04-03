@@ -1,7 +1,5 @@
 #-------------------------------------------------------------------------------------------#
-# Description: Contain listo of all tools in layer, regardless it is tool from surface, pad,
-# lines..
-# Responsible for tools are unique (diameter + typeProc)
+# Description: Contain functions for drawing rout, displaying rout foot etc..
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Packages::Routing::RoutLayer::RoutDrawing::RoutDrawing;

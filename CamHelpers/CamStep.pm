@@ -95,4 +95,26 @@ sub __FlatternPdfStep {
 	$inCAM->COM('sredit_del_steps');
 }
 
+# Return name of all steps
+sub GetDatumPoint {
+	my $self  = shift;
+	my $inCAM = shift;
+	my $jobId = shift;
+	my $stepName = shift;
+	my $considerOrigin = shift;
+
+ 	if($considerOrigin){
+ 		$inCAM->INFO("units" => 'mm', "angle_direction" => 'ccw', "entity_type" => 'step', "entity_path" => "$jobId/$stepName", "data_type" => 'DATUM', "options" => "consider_origin");
+	
+ 	}else{
+ 		$inCAM->INFO("units" => 'mm', "angle_direction" => 'ccw', "entity_type" => 'step', "entity_path" => "$jobId/$stepName", "data_type" => 'DATUM' );
+	
+ 	}
+
+	
+	my %inf = ("x" => $inCAM->{doinfo}{gDATUMx}, "y" => $inCAM->{doinfo}{gDATUMy}); 
+	 
+	return %inf;
+}
+
 1;

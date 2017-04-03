@@ -117,13 +117,13 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	use aliased 'Packages::Routing::RoutLayer::RoutDrawing::RoutDrawing';
 
 	my $inCAM = InCAM->new();
-	my $jobId = "f67718";
+	my $jobId = "f52456";
 
-	my $unitRTM = UniRTM->new( $inCAM, $jobId, "o+1", "f" );
+	my $unitRTM = UniRTM->new( $inCAM, $jobId, "mpanel", "test" );
 
-	my @lefts = $unitRTM->GetLeftCycleChains();
+	my @out = $unitRTM->GetOutlineChains();
 
-	my @features = $lefts[0]->GetFeatures();
+	#my @features = $lefts[0]->GetFeatures();
 
 	#my %modify = RoutStart->RoutNeedModify( \@features );
 
@@ -135,18 +135,18 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	#my %start = RoutStart->GetRoutStart( \@features );
 
-	my $draw = RoutDrawing->new( $inCAM, $jobId, "o+1", "o" );
-
-	my $rotation = RoutRotation->new( \@features );
-	$rotation->Rotate( 90, $draw );
-
-	$draw->DrawRoute( \@features );
-
-	$inCAM->COM("sel_delete");
-
-	$rotation->RotateBack();
-
-	$draw->DrawRoute( \@features );
+#	my $draw = RoutDrawing->new( $inCAM, $jobId, "o+1", "o" );
+#
+#	my $rotation = RoutRotation->new( \@features );
+#	$rotation->Rotate( 90, $draw );
+#
+#	$draw->DrawRoute( \@features );
+#
+#	$inCAM->COM("sel_delete");
+#
+#	$rotation->RotateBack();
+#
+#	$draw->DrawRoute( \@features );
 
 	print STDERR "test";
 

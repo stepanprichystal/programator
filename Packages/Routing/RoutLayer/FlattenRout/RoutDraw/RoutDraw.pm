@@ -1,7 +1,5 @@
 #-------------------------------------------------------------------------------------------#
-# Description: Contain listo of all tools in layer, regardless it is tool from surface, pad,
-# lines..
-# Responsible for tools are unique (diameter + typeProc)
+# Description: Create/draw result  of flattened layer to new layer
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Packages::Routing::RoutLayer::FlattenRout::RoutDraw::RoutDraw;
@@ -16,21 +14,11 @@ use aliased 'Packages::CAM::SymbolDrawing::SymbolDrawing';
 use aliased 'Packages::Routing::RoutLayer::RoutDrawing::RoutDrawing';
 use aliased 'Packages::Polygon::Features::RouteFeatures::RouteFeatures';
 use aliased 'Packages::Polygon::PointsTransform';
-
 use aliased 'CamHelpers::CamHelper';
 use aliased 'CamHelpers::CamLayer';
-
-#use aliased 'CamHelpers::CamAttributes';
-#
+use aliased 'CamHelpers::CamStepRepeat';
 use aliased 'Packages::CAM::SymbolDrawing::Primitive::PrimitiveLine';
-
-#use aliased 'Packages::CAM::SymbolDrawing::Primitive::PrimitiveArcSCE';
 use aliased 'Packages::CAM::SymbolDrawing::Point';
-
-#use aliased 'Packages::CAM::FeatureFilter::FeatureFilter';
-#use aliased 'Packages::CAM::FeatureFilter::Enums' => "FilterEnums";
-#use aliased 'Packages::Polygon::Features::Features::Features';
-#use aliased 'Packages::CAM::UniRTM::UniRTM::UniRTM';
 use aliased 'Packages::CAM::SymbolDrawing::Primitive::PrimitiveText';
 
 #-------------------------------------------------------------------------------------------#
@@ -43,9 +31,9 @@ sub new {
 	my $self  = {};
 	bless $self;
 
-	$self->{"inCAM"}    = shift;
-	$self->{"jobId"}    = shift;
-	$self->{"step"} = shift;
+	$self->{"inCAM"}     = shift;
+	$self->{"jobId"}     = shift;
+	$self->{"step"}      = shift;
 	$self->{"flatLayer"} = shift;
 
 	return $self;
@@ -86,8 +74,6 @@ sub __DrawRoutFoots {
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
 
-	 
-
 	# Get all edges, where is attribute foot down
 	my $parse = RouteFeatures->new();
 	$parse->Parse( $inCAM, $jobId, $self->{"step"}, $self->{"flatLayer"} );
@@ -103,7 +89,7 @@ sub __DrawRoutFoots {
 	}
 
 	my $routDrawing = RoutDrawing->new( $inCAM, $jobId, $self->{"step"}, $layer );
-	$routDrawing->DrawFootRoutResult( \@footsInf, 0, 1);
+	$routDrawing->DrawFootRoutResult( \@footsInf, 0, 1 );
 
 	# Draw, where foot was not found
 	CamLayer->WorkLayer( $inCAM, $layer );
@@ -124,8 +110,14 @@ sub __DrawRoutFoots {
 
 		my %lim = PointsTransform->GetLimByPoints( \@points );
 
-		foreach my $stepPlc ( $inf->{"stepRotation"}->GetStepPlaces() ) {
-			my $draw = SymbolDrawing->new( $inCAM, $jobId, Point->new( $stepPlc->GetPosX(), $stepPlc->GetPosY() ) );
+		my @repeatsSR = CamStepRepeat->GetRepeatStep( $inCAM, $jobId, $self->{"step"} );
+
+		@repeatsSR = grep { $_->{"stepName"} eq $inf->{"stepRotation"}->GetStepName()  && $_->{"angle"} eq $inf->{"stepRotation"}->GetAngle() } @repeatsSR;
+
+		foreach my $rStep (@repeatsSR) {
+
+			#foreach my $stepPlc ( $inf->{"stepRotation"} ) {
+			my $draw = SymbolDrawing->new( $inCAM, $jobId, Point->new( $rStep->{"originX"}, $rStep->{"originY"} ) );
 
 			my $l1 =
 			  PrimitiveLine->new( Point->new( $lim{"xMin"}, $lim{"yMax"} ), Point->new( $lim{"xMax"}, $lim{"yMin"} ), "r800" );
@@ -151,8 +143,6 @@ sub __DrawOutlineOrder {
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
 
-	 
-
 	# Get all edges, where is attribute foot down
 	my $parse = RouteFeatures->new();
 	$parse->Parse( $inCAM, $jobId, $self->{"step"}, $self->{"flatLayer"} );
@@ -167,7 +157,6 @@ sub __DrawOutlineOrder {
 		#get limit of rout points
 		my @points = ();
 		foreach my $e ( $parse->GetFeatureByGroupGUID($chainId) ) {
-
 			my %p1 = ( "x" => $e->{"x1"}, "y" => $e->{"y1"} );
 			my %p2 = ( "x" => $e->{"x2"}, "y" => $e->{"y2"} );
 			push( @points, ( \%p1, \%p2 ) );
