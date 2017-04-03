@@ -13,59 +13,34 @@ use lib "$FindBin::Bin/../";
 use PackagesLib;
 
 use aliased 'Packages::InCAM::InCAM';
-use aliased 'Programs::Exporter::ExportUtility::Groups::NifExport::NifExportTmp';
+
 
 my $inCAM = InCAM->new();
-my $jobId = "f52456";
-my $step  = "o+1";
-my $layer = "f";
 
-my $symbolType = GetFeatureType( $inCAM, $jobId, $step, $layer );
-
-if ( $symbolType =~ /s/i ) {
-
-	print "JE to surface";
-}else{
-	
-	print "Neni to surface";
-}
+my @arr = GetAttrParams($inCAM);
  
-
-sub GetFeatureType {
+sub GetAttrParams {
+	 
 	my $inCAM = shift;
 	my $jobId = shift;
-	my $step  = shift;
-	my $layer = shift;
 
-	$inCAM->COM( "units", "type" => "mm" );
+	my @arr = ();
 
-	my $infoFile = $inCAM->INFO(
-								 units           => 'mm',
-								 angle_direction => 'ccw',
-								 entity_type     => 'layer',
-								 entity_path     => "$jobId/$step/$layer",
-								 data_type       => 'FEATURES',
-								 options         => "select+f0",
-								 parse           => 'no'
+	$inCAM->INFO(
+				  units           => 'mm',
+				  angle_direction => 'ccw',
+				  entity_type     => 'attributes',
+				  #entity_path     => "$jobId",
+				  data_type       => 'ATR',
+				  parameters      => "name+type"
 	);
 
-	my $f;
-	open( $f, "<" . $infoFile );
-	my @feat = <$f>;
-	close($f);
-	unlink($infoFile);
+	for ( my $i = 0 ; $i < scalar( @{ $inCAM->{doinfo}{gATRname} } ) ; $i++ ) {
+		my %info = ();
+		$info{"gATRname"} = ${ $inCAM->{doinfo}{gATRname} }[$i];
+		$info{"gATRtype"} = ${ $inCAM->{doinfo}{gATRtype} }[$i];
+		push( @arr, \%info );
 
-	foreach my $f (@feat) {
-
-		if ( $f =~ /###/ ) { next; }
-
-		my @attr = ();
-
-		# line, arcs, pads
-		if ( $f =~ m/^#(\w*)/i ) {
-			return $1;
-		}
 	}
-
+	return @arr;
 }
-

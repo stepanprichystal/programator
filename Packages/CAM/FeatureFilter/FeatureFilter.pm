@@ -12,6 +12,7 @@ use warnings;
 #local library
 use aliased 'CamHelpers::CamLayer';
 use aliased 'CamHelpers::CamAttributes';
+use aliased 'Packages::CAM::FeatureFilter::Enums';
 
 #-------------------------------------------------------------------------------------------#
 #  Public method
@@ -31,6 +32,8 @@ sub new {
 
 	$self->{"includeAttr"} = undef;   # Included attributes name + value
 	$self->{"excludeAttr"} = undef;   # Included attributes name + value
+
+	$self->{"featureIndexes"} = undef;    # filter by featuer indexes
 
 	$self->Reset();
 
@@ -58,6 +61,8 @@ sub Reset {
 
 	CamLayer->WorkLayer( $self->{"inCAM"}, $self->{"layerName"} );
 
+	$self->{"inCAM"}->COM('adv_filter_reset');
+
 	$self->{"inCAM"}->COM( 'filter_reset', filter_name => 'popup' );
 
 	# Clear properties
@@ -71,6 +76,9 @@ sub Reset {
 	$self->{"includeAttr"} = \@ia;
 	my @ea = ();
 	$self->{"excludeAttr"} = \@ea;
+
+	my @fi = ();
+	$self->{"featureIndexes"} = \@fi;
 
 }
 
@@ -211,6 +219,37 @@ sub AddIncludeAtt {
 				 text               => $text
 	);
 
+}
+
+# include attribute and att value to filter
+sub AddFeatureIndexes {
+	my $self           = shift;
+	my $featureIndexes = shift;
+
+	push( @{ $self->{"featureIndexes"} }, @{$featureIndexes} );
+
+	my $str = join( "\\;", @{ $self->{"featureIndexes"} } );
+
+	my $inCAM = $self->{"inCAM"};
+
+	$inCAM->COM(
+		"adv_filter_set",
+		"filter_name" => "popup",
+		"active"      => "yes",
+		"indexes"     => $str,
+
+	);
+
+}
+
+# Set logic between include attributes
+sub SetIncludeAttrCond {
+	my $self = shift;
+	my $cond = shift;
+	
+	my $inCAM = $self->{"inCAM"};
+
+	$inCAM->COM( "set_filter_and_or_logic", "filter_name" => "popup", "criteria" => "inc_attr", "logic" => $cond );
 }
 
 #-------------------------------------------------------------------------------------------#

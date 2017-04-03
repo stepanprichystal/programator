@@ -15,6 +15,7 @@ use warnings;
 
 #local library
 use aliased 'Packages::ItemResult::Enums';
+#use aliased 'Packages::ItemResult::ItemResult';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -148,6 +149,12 @@ sub GetWarningStr {
 	return $str;
 }
 
+
+sub GetWarnings {
+	my $self = shift;
+
+	return  @{ $self->{"warnings"} };
+}
 
 sub GetErrors {
 	my $self = shift;

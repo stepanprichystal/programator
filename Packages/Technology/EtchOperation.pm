@@ -11,6 +11,7 @@ use warnings;
 
 #local library
 use aliased 'CamHelpers::CamHelper';
+use Genesis;
  
 
 #-------------------------------------------------------------------------------------------#

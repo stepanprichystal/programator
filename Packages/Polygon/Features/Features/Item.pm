@@ -51,6 +51,10 @@ sub new {
 
 	#attributes of features
 	$self->{"att"} = undef;
+	
+	# surface envelop
+	my @points = ();
+	$self->{"envelop"} = \@points; # start and end points are not equal
 
 	return $self;
 }

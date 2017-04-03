@@ -12,7 +12,7 @@ use warnings;
 
 
 #local library
-use aliased 'Packages::Polygon::PolygonHelper';
+use aliased 'Packages::Polygon::PolygonFeatures';
 use aliased 'Packages::Export::PlotExport::Enums';
 use aliased 'Packages::Polygon::Features::Features::Features';
 
@@ -46,11 +46,11 @@ sub GetPcbLimits {
 	
 	
 
-	my %lim = PolygonHelper->GetLimByRectangle( \@smallFeatures );
+	my %lim = PolygonFeatures->GetLimByRectangle( \@smallFeatures );
 
 	%{$smallLim} = %lim;
 
-	my %lim2 = PolygonHelper->GetLimByRectangle( \@bigFeatures );
+	my %lim2 = PolygonFeatures->GetLimByRectangle( \@bigFeatures );
 
 	%{$bigLim} = %lim2;
 	

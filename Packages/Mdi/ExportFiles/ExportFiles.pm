@@ -22,7 +22,7 @@ use aliased 'CamHelpers::CamStep';
 
 use aliased 'CamHelpers::CamSymbol';
 use aliased 'CamHelpers::CamJob';
-use aliased 'Packages::Polygon::PolygonHelper';
+use aliased 'Packages::Polygon::PolygonFeatures';
 use aliased 'Packages::Polygon::Features::Features::Features';
 use aliased 'Packages::Gerbers::Export::ExportLayers';
 use aliased 'Packages::ItemResult::ItemResult';
@@ -273,7 +273,7 @@ sub __GetFrLimits {
 		my $route = Features->new();
 		$route->Parse( $inCAM, $jobId, $self->{"step"}, $lName );
 		my @features = $route->GetFeatures();
-		%lim = PolygonHelper->GetLimByRectangle( \@features );
+		%lim = PolygonFeatures->GetLimByRectangle( \@features );
 
 		# fr width is 2mm, reduce limits by 1mm from each side
 		$lim{"xMin"} = $lim{"xMin"} + 1;

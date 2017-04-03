@@ -444,7 +444,6 @@ sub __RotateAndMovePoint {
 			}
 
 		}
-
 	}
 
 	$point->{"x"} = int( $point->{"x"} + 0.5 ); # round on whole numbers

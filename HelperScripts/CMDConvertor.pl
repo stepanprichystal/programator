@@ -7,8 +7,8 @@ use warnings;
 
 
 # ============ INPUT LINE =================
-my $inputLine =
-"COM sel_change_sym,symbol=r4000,reset_angle=no";
+my $inputLine ="$f->INFO(units => 'mm', angle_direction => 'ccw', entity_type => 'step', entity_path => "f52456/mpanel", data_type => 'DATUM');";
+
 my $output = "\$inCAM->COM(";
 my @splitted = split( ",", $inputLine );
 

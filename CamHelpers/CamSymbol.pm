@@ -13,6 +13,7 @@ use List::Util qw[sum];
 #loading of locale modules
 
 use aliased 'Enums::EnumsPaths';
+use aliased 'CamHelpers::CamAttributes';
 
 #-------------------------------------------------------------------------------------------#
 #   Package methods
@@ -108,20 +109,52 @@ sub AddLine {
 
 	$polarity = defined $polarity ? $polarity : 'positive';
 
-	$inCAM->COM(
-				 'add_line',
-				 attributes => 'yes',
-				 "xs"       => $startP->{"x"},
-				 "ys"       => $startP->{"y"},
-				 "xe"       => $endP->{"x"},
-				 "ye"       => $endP->{"y"},
-				 "symbol"   => $symbol,
-				 "polarity" => $polarity
-	);
+	return
+	  $inCAM->COM(
+				   'add_line',
+				   attributes => 'yes',
+				   "xs"       => $startP->{"x"},
+				   "ys"       => $startP->{"y"},
+				   "xe"       => $endP->{"x"},
+				   "ye"       => $endP->{"y"},
+				   "symbol"   => $symbol,
+				   "polarity" => $polarity
+	  );
 }
 
- 
- 
+sub AddPad {
+	my $self     = shift;
+	my $inCAM    = shift;
+	my $symbol   = shift;
+	my $pos      = shift;    #hash x, y
+	my $mirror   = shift;
+	my $polarity = shift;    #
+
+	$polarity = defined $polarity ? $polarity : 'positive';
+
+	if ($mirror) {
+		$mirror = "yes";
+	}
+	else {
+		$mirror = "no";
+	}
+
+	return
+	  $inCAM->COM(
+				   "add_pad",
+				   "attributes" => 'yes',
+				   "symbol"    => $symbol,
+				   "polarity"  => $polarity,
+				   "x"         => $pos->{"x"},
+				   "y"         => $pos->{"y"},
+				   "mirror"    => $mirror,
+				   "angle"     => "0",
+				   "direction" => "ccw",
+				   "resize"    => "0",
+				   "xscale"    => "1",
+				   "yscale"    => "1"
+	  );
+}
 
 sub AddTable {
 	my $self       = shift;
@@ -207,6 +240,61 @@ sub AddTable {
 	}
 }
 
+# Reset current attributes, which will be added to added symbol
+sub ResetCurAttributes {
+	my $self  = shift;
+	my $inCAM = shift;
+
+	$inCAM->COM("cur_atr_reset");
+
+}
+
+# Set current attributes, which will be added to added symbol
+sub AddCurAttribute {
+	my $self    = shift;
+	my $inCAM   = shift;
+	my $jobId   = shift;
+	my $attName = shift;
+	my $attVal  = shift;
+
+	# decide, which type is attribute
+	my %attrInfo = CamAttributes->GetAttrParamsByName( $inCAM, $jobId, $attName );
+
+	my $int    = 0;
+	my $float  = 0;
+	my $option = "";
+	my $text   = "";
+
+	if ( $attrInfo{"gATRtype"} eq "int" ) {
+
+		$int = $attVal;
+
+	}
+	elsif ( $attrInfo{"gATRtype"} eq "float" ) {
+
+		$float = $attVal;
+
+	}
+	elsif ( $attrInfo{"gATRtype"} eq "option" ) {
+
+		$option = $attVal;
+
+	}
+	elsif ( $attrInfo{"gATRtype"} eq "text" ) {
+
+		$text = $attVal;
+	}
+
+	$inCAM->COM(
+				 'cur_atr_set',
+				 "attribute" => $attName,
+				 "int"       => $int,
+				 "float"     => $float,
+				 "option"    => $option,
+				 "text"      => $text
+	);
+}
+
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#
@@ -244,7 +332,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	@points = ( \%point1, \%point2, \%point3, \%point4 );
 
-	CamSymbol->AddSurfaceLinePattern( $inCAM, 1, 100, undef, 45, 50, 1000);
+	CamSymbol->AddSurfaceLinePattern( $inCAM, 1, 100, undef, 45, 50, 1000 );
 
 	CamSymbol->AddSurfacePolyline( $inCAM, \@points, 1 )
 

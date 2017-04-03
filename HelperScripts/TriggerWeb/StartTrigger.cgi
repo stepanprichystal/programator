@@ -37,14 +37,9 @@ eval {
 	__TriggerPage();
 
 
-	print "<html> <head>\n";
-	print "<title>TriggerScript</title>";
-	print "</head>\n";
-	print "<body>\n";
+	# 3) Tell to helios, all ists ok
 	print "OK";
-	print "</body></html>\n";
-
-	 
+ 
 
 
 	# Run script triggerPage in new window indipendently on this web
@@ -74,7 +69,7 @@ eval {
 		# 3 attem to write to file
 
  
-		my $logPath = ( fileparse($0) )[1]."\\Log.txt";    #current dir
+		my $logPath = ( fileparse($0) )[1]."\\Logs\\Log.txt";    #current dir
  
 
 		ReduceLog($logPath);

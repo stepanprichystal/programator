@@ -27,7 +27,7 @@ use aliased 'Helpers::FileHelper';
 use aliased 'Packages::Scoring::ScoreChecker::Enums' => "ScoEnums";
 use aliased 'Packages::ItemResult::Enums'            => "ResEnums";
 use aliased 'Packages::Polygon::Features::RouteFeatures::RouteFeatures';
-use aliased 'Packages::Polygon::PolygonHelper';
+use aliased 'Packages::Polygon::PolygonFeatures';
 use aliased 'Packages::Export::ScoExport::ScoreMarker';
 
 #-------------------------------------------------------------------------------------------#
@@ -226,7 +226,7 @@ sub __GetFrLim {
 		$fr->Parse( $self->{"inCAM"}, $self->{"jobId"}, $self->{"step"}, "fr" );
 		my @features = $fr->GetFeatures();
 
-		%lim = PolygonHelper->GetLimByRectangle( \@features );
+		%lim = PolygonFeatures->GetLimByRectangle( \@features );
 
 		return \%lim;
 

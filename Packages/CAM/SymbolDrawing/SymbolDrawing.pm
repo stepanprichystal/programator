@@ -34,6 +34,7 @@ sub new {
 	bless $self;
 
 	$self->{"inCAM"}    = shift;
+	$self->{"jobId"}    = shift;
 	$self->{"position"} = shift;
 
 	unless ( $self->{"position"} ) {
@@ -47,6 +48,8 @@ sub new {
 
 	my @syms = ();
 	$self->{"symbol"} = SymbolBase->new();    # parent of all symbols and primitives
+	
+	$self->{"symbol"}->SetPassGUID2prim(0);  # we don't want all primitives has same group GUID
 
 	return $self;
 }
@@ -65,6 +68,8 @@ sub AddPrimitive {
 	my $primitive = shift;
 
 	$self->{"symbol"}->AddPrimitive($primitive);
+	
+	
 }
 
 sub SetMirrorX {
@@ -107,6 +112,8 @@ sub Draw {
 sub __DrawPrimitives {
 	my $self       = shift;
 	my @primitives = @{ shift(@_) };
+	
+	$self->{"inCAM"}->COM( "cur_atr_reset"); # reset currently set attributes
 
 	foreach my $pInfo (@primitives) {
 
@@ -114,6 +121,10 @@ sub __DrawPrimitives {
 		my $pos        = $pInfo->{"position"};
 
 		foreach my $p ( @{$primitives} ) {
+			
+			# Every primitive feature have set attribute feat_group_id
+			CamSymbol->AddCurAttribute($self->{"inCAM"}, $self->{"jobId"}, "feat_group_id", $p->GetGroupGUID());
+			
 
 			if ( $p->GetType() eq Enums->Primitive_LINE ) {
 
@@ -134,7 +145,15 @@ sub __DrawPrimitives {
 
 				$self->__DrawSurfPoly( $p, $pos );
 			}
+			elsif ( $p->GetType() eq Enums->Primitive_PAD ) {
 
+				$self->__DrawPad( $p, $pos );
+			}
+			
+			
+			
+			
+			CamSymbol->ResetCurAttributes($self->{"inCAM"});
 		}
 	}
 }
@@ -194,12 +213,44 @@ sub __DrawText {
 
 }
 
+sub __DrawPad {
+	my $self      = shift;
+	my $t         = shift;
+	my $symbolPos = shift;
+
+	# consider origin of whole draw
+
+	my $p = $t->GetPosition();
+	$p->Move( $self->{"position"}->X() + $symbolPos->X(), $self->{"position"}->Y() + $symbolPos->Y() );
+
+	# consider mirror
+
+	my $mirror = $t->GetMirror();
+
+	if ( $self->{"mirrorX"} ) {
+
+		$p->MirrorX( $self->{"mirrorXPoint"} );
+		$p->Move( 0, -$t->GetHeight() );
+
+		if ( $mirror == 1 ) {
+			$mirror = 0;
+		}
+		else {
+			$mirror = 1;
+		}
+
+	}
+
+	CamSymbol->AddPad( $self->{"inCAM"}, $t->GetSymbol(), $p, $mirror, $t->GetPolarity() );
+
+}
+
 sub __DrawArcSCE {
 	my $self      = shift;
 	my $arc       = shift;
 	my $symbolPos = shift;
 
-	my $dir = "cw";
+	my $dir = $arc->GetDirection();
 
 	# consider origin of whole draw
 

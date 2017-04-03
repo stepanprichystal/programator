@@ -61,6 +61,54 @@ sub GetJobAttrByName {
 	return $allAttr{$attName};
 }
 
+#set job attribute
+sub SetJobAttribute {
+
+	my $self    = shift;
+	my $inCAM   = shift;
+	my $jobId   = shift;
+	my $attName = shift;
+	my $value   = shift;
+
+	$inCAM->COM(
+				 "set_attribute",
+				 "type"      => "job",
+				 "job"       => $jobId,
+				 "entity"    => "",
+				 "attribute" => $attName,
+				 "value"     => $value,
+				 "name1"     => "",
+				 "name2"     => "",
+				 "name3"     => "",
+				 "units"     => "mm"
+	);
+}
+
+
+#set step attribute
+sub SetStepAttribute {
+
+	my $self    = shift;
+	my $inCAM   = shift;
+	my $jobId   = shift;
+	my $step   = shift;
+	my $attName = shift;
+	my $value   = shift;
+
+	$inCAM->COM(
+				 "set_attribute",
+				 "type"      => "step",
+				 "job"       => $jobId,
+				 "entity"    => "",
+				 "attribute" => $attName,
+				 "value"     => $value,
+				 "name1"     => $step,
+				 "name2"     => "",
+				 "name3"     => "",
+				 "units"     => "mm"
+	);
+}
+
 #return all attributes of step in hash
 sub GetStepAttr {
 
@@ -143,6 +191,8 @@ sub SetLayerAttribute {
 }
 
 # Set atribute on selected features on affected layers
+# Only attributes type: text
+# Note: error in name SetFEATUESAttribute
 sub SetFeatuesAttribute {
 
 	my $self      = shift;
@@ -156,6 +206,49 @@ sub SetFeatuesAttribute {
 
 }
 
+# Set atribute on selected features on affected layers
+# Possible for all types of attributes
+sub SetFeaturesAttribute {
+	my $self    = shift;
+	my $inCAM   = shift;
+	my $jobId   = shift;
+	my $attName = shift;
+	my $attVal  = shift;
+
+	# decide, which type is attribute
+	my %attrInfo = $self->GetAttrParamsByName( $inCAM, $jobId, $attName );
+
+	my $int    = 0;
+	my $float  = 0;
+	my $option = "";
+	my $text   = "";
+
+	if ( $attrInfo{"gATRtype"} eq "int" ) {
+		$int = $attVal;
+	}
+	elsif ( $attrInfo{"gATRtype"} eq "float" ) {
+		$float = $attVal;
+	}
+	elsif ( $attrInfo{"gATRtype"} eq "option" ) {
+		$option = $attVal;
+	}
+	elsif ( $attrInfo{"gATRtype"} eq "text" ) {
+		$text = $attVal;
+	}
+
+	$inCAM->COM( "cur_atr_reset", );
+	$inCAM->COM(
+				 'cur_atr_set',
+				 "attribute" => $attName,
+				 "int"       => $int,
+				 "float"     => $float,
+				 "option"    => $option,
+				 "text"      => $text
+	);
+
+	$inCAM->COM( "sel_change_atr", "mode" => "add" );
+}
+
 # Delete atribute from selected features on affected layers
 sub DelFeatuesAttribute {
 
@@ -165,8 +258,10 @@ sub DelFeatuesAttribute {
 	my $value     = shift;
 
 	$inCAM->COM( "sel_delete_atr", "mode" => "list", "attributes" => $attribute, "attr_vals" => $value );
-
 }
+
+ 
+
 
 # Return array of all atributes in job (feature attributes)
 sub GetAttrParams {
@@ -197,17 +292,16 @@ sub GetAttrParams {
 
 # Return attribute information by attribute name
 sub GetAttrParamsByName {
-	my $self  = shift;
-	my $inCAM = shift;
-	my $jobId = shift;
+	my $self     = shift;
+	my $inCAM    = shift;
+	my $jobId    = shift;
 	my $attrName = shift;
-	
-	my @attr = $self->GetAttrParams($inCAM, $jobId);
-	
-	my $att = (grep { $_->{"gATRname"} eq $attrName} @attr)[0];
-	
+
+	my @attr = $self->GetAttrParams( $inCAM, $jobId );
+
+	my $att = ( grep { $_->{"gATRname"} eq $attrName } @attr )[0];
+
 	return %{$att};
 }
-
 
 1;

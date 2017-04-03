@@ -47,7 +47,7 @@ sub Parse {
 	my $layer = shift;
 	my $breakSR = shift;
 
-	$self->{"base"}->Parse( $inCAM, $jobId, $step, $layer, $breakSR );
+	$self->{"base"}->Parse( $inCAM, $jobId, $step, $layer, $breakSR);
 
 	my @baseFeats = $self->{"base"}->GetFeatures();
 	my @features  = ();
@@ -57,6 +57,8 @@ sub Parse {
 	foreach my $f (@baseFeats) {
 
 		my $newF = RouteItem->new($f);
+		
+		
 
 		push( @features, $newF );
 	}
@@ -70,6 +72,14 @@ sub GetFeatures {
 	my $self = shift;
 
 	return @{ $self->{"features"} };
+}
+
+sub GetFeatureByGroupGUID{
+	my $self = shift;
+	
+	
+	return $self->{"base"}->GetFeatureByGroupGUID(@_); 
+	
 }
 
 # Return array of unique route chain hashes
@@ -127,6 +137,8 @@ sub GetChains {
 	}
 	return @chains;
 }
+
+
 
  
 
