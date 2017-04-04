@@ -47,7 +47,7 @@ sub Check {
 	my $step  = $self->{"step"};
 	my $layer = $self->{"layer"};
 	
-	CamHelper->SetStep($jobId, $step);
+	CamHelper->SetStep($inCAM, $step);
 
 
 
