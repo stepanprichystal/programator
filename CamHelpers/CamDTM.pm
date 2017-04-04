@@ -308,6 +308,12 @@ sub GetDTMDefaultType {
 		{
 			$DTMType = EnumsDrill->DTM_VYSLEDNE;
 		}
+		elsif (    $l{"type"} eq EnumsGeneral->LAYERTYPE_plt_bDrillTop
+				|| $l{"type"} eq EnumsGeneral->LAYERTYPE_plt_bDrillBot )
+		{
+
+			$DTMType = EnumsDrill->DTM_VRTANE;
+		}
 	}
 
 	return $DTMType;

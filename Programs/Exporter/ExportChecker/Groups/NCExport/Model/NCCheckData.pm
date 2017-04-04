@@ -20,6 +20,7 @@ use aliased 'CamHelpers::CamHistogram';
 use aliased 'Programs::Exporter::ExportChecker::Groups::NifExport::Presenter::NifHelper';
 use aliased 'Packages::Drilling::DrillChecking::LayerCheckError';
 use aliased 'Packages::Drilling::DrillChecking::LayerCheckWarn';
+use aliased 'Packages::Routing::RoutLayer::RoutChecks::RoutCheckTools';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -60,13 +61,13 @@ sub OnCheckGroupData {
 	}
 
 	# 2) Checking NC layers
-	my $mess = ""; # errors
+	my $mess = "";    # errors
 
 	unless ( LayerCheckError->CheckNCLayers( $inCAM, $jobId, $stepName, undef, \$mess ) ) {
 		$dataMngr->_AddErrorResult( "Checking NC layer", $mess );
 	}
-	
-	my $mess2 = ""; # warnings
+
+	my $mess2 = "";    # warnings
 
 	unless ( LayerCheckWarn->CheckNCLayers( $inCAM, $jobId, $stepName, undef, \$mess2 ) ) {
 		$dataMngr->_AddWarningResult( "Checking NC layer", $mess2 );
@@ -81,7 +82,46 @@ sub OnCheckGroupData {
 									"Layer fsch doesn't exist. When panel contains more different steps, fsch must be created." );
 	}
 
-	# 4) Check foot down attributes
+	# 4) Check if contain only one kind of nested step but with various rotation
+
+	if ( scalar(@uniqueSteps) == 1 ) {
+
+		my @repeatsSR = CamStepRepeat->GetRepeatStep( $inCAM, $jobId, "panel" );
+
+		my $angle = $repeatsSR[0]->{"angle"};
+		my @diffAngle = grep { $_->{"angle"} != $angle } @repeatsSR;
+
+		if ( scalar(@diffAngle) && !$defaultInfo->LayerExist("fsch") ) {
+			$dataMngr->_AddErrorResult( "Checking NC layer",
+								 "Layer fsch doesn't exist. When panel contains one type of step but with various rotations, fsch must be created." );
+		}
+	}
+
+	# 5) Check if outline chain are last in chain list
+	my $checkLayer = "f";
+	my @checkSteps = ();
+
+	if ( $defaultInfo->LayerExist("fsch") ) {
+
+		$checkLayer = "fsch";
+		push( @checkSteps, "panel" );
+	}
+	else {
+
+		my @uniqNestSteps = CamStepRepeat->GetUniqueNestedStepAndRepeat( $inCAM, $jobId, "panel" );
+		@checkSteps = map { $_->{"stepName"} } @uniqNestSteps;
+	}
+
+	foreach my $s (@checkSteps) {
+
+		my $messOutline = "";
+		unless ( RoutCheckTools->OutlineToolIsLast( $inCAM, $jobId, $s, $checkLayer, \$messOutline ) ) {
+			$dataMngr->_AddErrorResult( "Checking NC layer - outlines", $messOutline );
+		}
+
+	}
+
+	# 6) Check foot down attributes
 	my $routLayer = "f";
 
 	if ( $defaultInfo->LayerExist("fsch") ) {
@@ -103,7 +143,7 @@ sub OnCheckGroupData {
 									  "Number of 'foot_down' ($footCnt) doesn't match with number of steps ($stepCnt) in layer: $routLayer" );
 	}
 
-	# 5) Check, when ALU material, if all plated holes aer in "f" layer
+	# 7) Check, when ALU material, if all plated holes aer in "f" layer
 
 	if ( $defaultInfo->GetMaterialKind() =~ /al/i ) {
 
@@ -128,7 +168,7 @@ sub OnCheckGroupData {
 
 	}
 
-	# 6) Check if fsch exist, and if "f" was changed if "fsch" was changed too
+	# 8) Check if fsch exist, and if "f" was changed if "fsch" was changed too
 	if ( $defaultInfo->LayerExist("fsch") ) {
 
 		my @uniqueSteps = CamStepRepeat->GetUniqueNestedStepAndRepeat( $inCAM, $jobId, "panel" );
@@ -144,7 +184,6 @@ sub OnCheckGroupData {
 				last;
 			}
 		}
-
 
 		# if fsch was created after open job, do not control
 		unless ($fschCreated) {

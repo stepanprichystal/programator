@@ -40,7 +40,7 @@ sub Create {
 
 	$flatten->{"onItemResult"}->Add( sub { $self->__ProcesResult(@_) } );
 
-	$flatten->Run();
+	my $result = $flatten->Run();
 
 	# process errors warnings
 
@@ -60,7 +60,7 @@ sub Create {
 
 	}
 
-	return $self;
+	return $result;
 }
 
 sub __ProcesResult {
@@ -92,11 +92,11 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId = "f67718";
+	my $jobId = "f68022";
   
 
 	my $fsch = CreateFsch->new( $inCAM, $jobId);
-	$fsch->Create();
+	print $fsch->Create();
 
 }
 

@@ -11,6 +11,14 @@ use Win32::Process::Info;
 use Win32::Process::List;
 use Getopt::Std;
 
+#necessary for load pall packages
+use FindBin;
+use lib "$FindBin::Bin/../";
+use PackagesLib;
+
+use lib qw( C:\Perl\site\lib\TpvScripts\Scripts );
+
+
 #use local library;
 use aliased 'Managers::AsyncJobMngr::Helper';
 
@@ -53,7 +61,7 @@ foreach my $pid ( sort { $a <=> $b } keys %list ) {
 				if ( $1 == $port ) {
 					Win32::Process::KillProcess( $pid, 0 );
 
-					Helper->Print ("ZOMBIE: PID: " . $pid . ", port:" . $port . "....................................was killed\n");
+					Helper->Print ("ZOMBIE: NAME: $name PID: " . $pid . ", port:" . $port . "....................................was killed\n");
 
 				}
 			}

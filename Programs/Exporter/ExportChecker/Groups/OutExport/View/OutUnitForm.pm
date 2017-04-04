@@ -180,6 +180,12 @@ sub __OnExportCoopChange {
 	my $self = shift;
 
 	$self->DisableControls();
+
+	if ( $self->{"exportCooperChb"}->IsChecked() ) {
+		$self->{"exportETChb"}->SetValue(1);
+	}else{
+		$self->{"exportETChb"}->SetValue(0);
+	}
 }
 
 sub __OnExportControlChange {
@@ -197,16 +203,7 @@ sub DisableControls {
 
 	my $defaultInfo = $self->{"defaultInfo"};
 
-	if ( $self->{"exportCooperChb"}->IsChecked() ) {
-
-		$self->{"exportETChb"}->Enable();
-		$self->{"cooperStepCb"}->Enable();
-
-	}
-	else {
-		$self->{"exportETChb"}->Disable();
-		$self->{"cooperStepCb"}->Disable();
-	}
+ 
 
 	if ( $self->{"exportControlChb"}->IsChecked() ) {
 

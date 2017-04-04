@@ -20,7 +20,6 @@ use aliased 'Packages::Routing::RoutLayer::RoutMath::RoutMath';
 use aliased 'Packages::Polygon::PointsTransform';
 use aliased "Packages::Polygon::PolygonPoints";
 use aliased 'Helpers::GeneralHelper';
-use aliased 'Packages::Routing::RoutLayer::RoutParser::RoutParser';
 
 #-------------------------------------------------------------------------------------------#
 #  Public method

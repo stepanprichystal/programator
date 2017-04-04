@@ -55,6 +55,10 @@ sub Run {
 		$self->__ExportCooperation();
 	}
 
+	if ( $self->{"exportEt"} ) {
+		$self->__ExportCooperationET();
+	}
+
 	if ( $self->{"exportControl"} ) {
 
 		$self->__ExportControl();
@@ -87,8 +91,17 @@ sub __ExportCooperation {
 	}
 
 	move( $sourcePath, $archivPath . $jobId . "_data.zip" ) or die "Can't move file to : " . $archivPath . $jobId . "_data.zip" . $_;
-	
-	# 2) Export electric test
+ 
+}
+
+sub __ExportCooperationET {
+	my $self = shift;
+
+	my $inCAM = $self->{"inCAM"};
+	my $jobId = $self->{"jobId"};
+
+ 
+	# 1) Export electric test
 	
 	if($self->{"exportEt"}){
 		

@@ -164,8 +164,10 @@ sub __GetPasteInfo {
 	}
 
 	# default if export paste
-	if($pasteExist){
+	if($pasteExist && !$defaultInfo->IsPool()){
+ 
 		$pasteInfo{"export"} = 1;
+		
 	}else{
 		$pasteInfo{"export"} = 0;
 	}
@@ -197,12 +199,10 @@ sub __GetPasteInfo {
 	}else{
 		
 		$pasteInfo{"addFiducial"} = 0;
-	} 
- 
+	}
 	 
 	$pasteInfo{"zipFile"}    = 1;
-
-	#$pasteInfo{"layers"}     = \@layers;    #join(";", @layers);
+ 
 
 	return %pasteInfo;
 

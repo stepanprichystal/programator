@@ -135,8 +135,13 @@ sub __GetLayersForExport {
 	}
 
 	# 2) Filter internal layers, which are unable to export
-	@layers = grep { $_->{"gROWname"} ne "fr" && $_->{"gROWname"} ne "v1" && $_->{"gROWname"} ne "fsch"} @layers;
-
+	
+	my @internal = ( "fr", "v1", "fsch", "goldc", "golds");
+	
+	my %tmp;
+	@tmp{ @internal } = ();
+	@layers = grep { !exists $tmp{ $_->{"gROWname"} } } @layers;
+ 
 	return @layers;
 }
 
@@ -152,11 +157,11 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId = "f65036";
+	my $jobId = "f52456";
 
 	my $mess = "";
 
-	my $control = OutputData->new( $inCAM, $jobId, "mpanel" );
+	my $control = OutputData->new( $inCAM, $jobId, "o+1" );
 	$control->Create( \$mess );
 
 }

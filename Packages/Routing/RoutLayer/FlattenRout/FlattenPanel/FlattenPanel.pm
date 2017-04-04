@@ -39,7 +39,7 @@ sub new {
 	$self->{"layer"}     = shift;    # source layer, which is flattened
 	$self->{"flatLayer"} = shift;    # name of result flattened layer
 
-	$self->{"deleteLayer"} = 0;      # indicate if remove final faltten layer in case of errors
+	$self->{"result"} = 1;      # indicate if remove final faltten layer in case of errors
 
 	# Test if nested steps has to be flatened, because contain SR
 	$self->{"preparedL"} = $self->{"layer"};
@@ -105,12 +105,14 @@ sub Run {
 
 	$SRStep->Clean();
 
-	if ( $self->{"deleteLayer"} ) {
+	unless ( $self->{"result"} ) {
 
 		if ( CamHelper->LayerExists( $inCAM, $jobId, $self->{"flatLayer"} ) ) {
 			$inCAM->COM( 'delete_layer', "layer" => $self->{"flatLayer"} );
 		}
 	}
+	
+	return  $self->{"result"};
 }
 
 # Return 1 if nested steps contain SR too
@@ -216,7 +218,7 @@ sub __ProcessResult {
 
 		if ( $res->GetErrorCount() > 0 ) {
 
-			$self->{"deleteLayer"} = 1;
+			$self->{"result"} = 0;
 
 			print STDERR "Errors:\n\n" . $res->GetErrorStr();
 		}

@@ -45,7 +45,9 @@ sub Init {
 	$self->{"data"}        = shift;    # export data
 	
 	# Supress all toolkit exception/error windows
-	$self->{"inCAM"} ->SupressToolkitException(1);
+	$self->{"inCAM"}->SupressToolkitException(1);
+	# Switch of displa actions in InCAM editor
+	$self->{"inCAM"}->COM("disp_off");
 
 }
 

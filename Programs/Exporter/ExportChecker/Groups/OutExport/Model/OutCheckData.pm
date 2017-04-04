@@ -48,15 +48,7 @@ sub OnCheckGroupData {
 		 
 	}
 	
-	if($groupData->GetExportControl()){
-		
-		$dataMngr->_AddWarningResult("Export data control", "Exportujes nove data kontrol! Nacti si vyexportovane date zpet a zkontroluj prumery vysledne/vrtane a data obecne. Pomuzes tim odladit chyby!");
-	}
-	
-		if($groupData->GetExportCooper()){
-		
-		$dataMngr->_AddWarningResult("Export kooperace", "Exportujes nove data do kooperace!!! Nacti si vyexportovane date zpet a zkontroluj prumery vysledne/vrtane a data obecne. Pomuzes tim odladit chyby!");
-	}
+ 
 
 }
  

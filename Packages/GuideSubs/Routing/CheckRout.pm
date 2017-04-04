@@ -15,6 +15,7 @@ use aliased 'Packages::GuideSubs::Routing::Check1UpChain';
 use aliased 'Packages::GuideSubs::Routing::Check1UpChainTool';
 use aliased 'Managers::MessageMngr::MessageMngr';
 use aliased 'Enums::EnumsGeneral';
+use aliased 'CamHelpers::CamHelper';
 use aliased 'Packages::ItemResult::ItemResult';
 
 #-------------------------------------------------------------------------------------------#
@@ -45,6 +46,8 @@ sub Check {
 	my $jobId = $self->{"jobId"};
 	my $step  = $self->{"step"};
 	my $layer = $self->{"layer"};
+	
+	CamHelper->SetStep($jobId, $step);
 
 
 

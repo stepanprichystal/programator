@@ -77,7 +77,7 @@ sub OnPrepareGroupData {
 	my $customerNote = $defaultInfo->GetCustomerNote();
 
 	$groupData->SetExportCooper(0);
-	$groupData->SetExportET(1);
+	$groupData->SetExportET(0);
 
 	my $cooperStep      = "o+1";
 	my $mpanelExist = $defaultInfo->StepExist("mpanel");

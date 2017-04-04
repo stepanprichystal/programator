@@ -1,0 +1,2416 @@
+
+use aliased 'CamHelp***********COMMAND    03Apr2017.152432.403 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+display_layer,display=yes,name=3002319335 (4)
+***********COMMAND    03Apr2017.152432.403 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+work_layer,name=3002319335 (4)
+***********COMMAND    03Apr2017.152432.403 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command work_layer ended
+***********COMMAND    03Apr2017.152432.403 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command display_layer ended
+Script message: work_layer,name=3002319335
+***********COMMAND    03Apr2017.152432.403 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+work_layer,name=3002319335 (4)
+***********COMMAND    03Apr2017.152432.403 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command work_layer ended
+Script message: add_polyline_strt
+***********COMMAND    03Apr2017.152432.403 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+add_polyline_strt (4)
+***********COMMAND    03Apr2017.152432.413 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command add_polyline_strt ended
+Script message: add_polyline_xy,x=-70.7029672131147,y=-5.0005
+***********COMMAND    03Apr2017.152432.413 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+add_polyline_xy,x=-70.7029672131147,y=-5.0005 (4)
+***********COMMAND    03Apr2017.152432.413 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command add_polyline_xy ended
+Script message: add_polyline_xy,x=168.238967213115,y=-5.0005
+***********COMMAND    03Apr2017.152432.413 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+add_polyline_xy,x=168.238967213115,y=-5.0005 (4)
+***********COMMAND    03Apr2017.152432.413 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command add_polyline_xy ended
+Script message: add_polyline_xy,x=168.238967213115,y=246.3005
+***********COMMAND    03Apr2017.152432.413 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+add_polyline_xy,x=168.238967213115,y=246.3005 (4)
+***********COMMAND    03Apr2017.152432.413 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command add_polyline_xy ended
+Script message: add_polyline_xy,x=-70.7029672131147,y=246.3005
+***********COMMAND    03Apr2017.152432.413 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+add_polyline_xy,x=-70.7029672131147,y=246.3005 (4)
+***********COMMAND    03Apr2017.152432.413 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command add_polyline_xy ended
+Script message: add_polyline_xy,x=-70.7029672131147,y=-5.0005
+***********COMMAND    03Apr2017.152432.413 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+add_polyline_xy,x=-70.7029672131147,y=-5.0005 (4)
+***********COMMAND    03Apr2017.152432.413 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command add_polyline_xy ended
+Script message: add_polyline_end,bus_distance=0,bus_dist_by=pitch,symbol=r1,bus_
+num_lines=0,bus_reference=left,polarity=negative,attributes=no
+***********COMMAND    03Apr2017.152432.413 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+add_polyline_end,bus_distance=0,bus_dist_by=pitch,symbol=r1,bus_num_lines=0,bus_
+reference=left,polarity=negative,attributes=no (4)
+***********COMMAND    03Apr2017.152432.423 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command add_polyline_end ended
+Script message: profile_to_rout,width=1,layer=9028320312
+***********COMMAND    03Apr2017.152432.423 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+profile_to_rout,width=1,layer=9028320312 (4)
+***********COMMAND    03Apr2017.152432.423 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command profile_to_rout ended
+Script message: info,out_file=c:/tmp/info_csh.383485D4832B0-71D2-1014-9723-89616
+DB4D31D,write_mode=replace, units= mm,args= -t layer -e f52456/data_mpanel/90283
+20312 -d LIMITS
+***********COMMAND    03Apr2017.152432.423 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+info,out_file=c:/tmp/info_csh.383485D4832B0-71D2-1014-9723-89616DB4D31D,write_mo
+de=replace, units= mm,args= -t layer -e f52456/data_mpanel/9028320312 -d LIMITS
+    (4)
+***********COMMAND    03Apr2017.152432.423 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command info ended
+Script message: clear_layers
+***********COMMAND    03Apr2017.152432.433 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+clear_layers (4)
+***********COMMAND    03Apr2017.152432.433 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command clear_layers ended
+Script message: affected_layer,affected=no,mode=all
+***********COMMAND    03Apr2017.152432.433 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+affected_layer,affected=no,mode=all (4)
+***********COMMAND    03Apr2017.152432.433 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command affected_layer ended
+Script message: display_layer,display=yes,name=9028320312
+***********COMMAND    03Apr2017.152432.443 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+display_layer,display=yes,name=9028320312 (4)
+***********COMMAND    03Apr2017.152432.443 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+work_layer,name=9028320312 (4)
+***********COMMAND    03Apr2017.152432.443 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command work_layer ended
+***********COMMAND    03Apr2017.152432.443 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command display_layer ended
+Script message: work_layer,name=9028320312
+***********COMMAND    03Apr2017.152432.443 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+work_layer,name=9028320312 (4)
+***********COMMAND    03Apr2017.152432.443 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command work_layer ended
+Script message: add_polyline_strt
+***********COMMAND    03Apr2017.152432.443 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+add_polyline_strt (4)
+***********COMMAND    03Apr2017.152432.453 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command add_polyline_strt ended
+Script message: add_polyline_xy,x=-70.8451147540984,y=-5.15
+***********COMMAND    03Apr2017.152432.453 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+add_polyline_xy,x=-70.8451147540984,y=-5.15 (4)
+***********COMMAND    03Apr2017.152432.453 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command add_polyline_xy ended
+Script message: add_polyline_xy,x=168.381114754098,y=-5.15
+***********COMMAND    03Apr2017.152432.453 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+add_polyline_xy,x=168.381114754098,y=-5.15 (4)
+***********COMMAND    03Apr2017.152432.453 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command add_polyline_xy ended
+Script message: add_polyline_xy,x=168.381114754098,y=246.45
+***********COMMAND    03Apr2017.152432.453 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+add_polyline_xy,x=168.381114754098,y=246.45 (4)
+***********COMMAND    03Apr2017.152432.453 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command add_polyline_xy ended
+Script message: add_polyline_xy,x=-70.8451147540984,y=246.45
+***********COMMAND    03Apr2017.152432.453 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+add_polyline_xy,x=-70.8451147540984,y=246.45 (4)
+***********COMMAND    03Apr2017.152432.453 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command add_polyline_xy ended
+Script message: add_polyline_xy,x=-70.8451147540984,y=-5.15
+***********COMMAND    03Apr2017.152432.453 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+add_polyline_xy,x=-70.8451147540984,y=-5.15 (4)
+***********COMMAND    03Apr2017.152432.453 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command add_polyline_xy ended
+Script message: add_polyline_end,bus_distance=0,bus_dist_by=pitch,symbol=r1,bus_
+num_lines=0,bus_reference=left,polarity=negative,attributes=no
+***********COMMAND    03Apr2017.152432.453 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+add_polyline_end,bus_distance=0,bus_dist_by=pitch,symbol=r1,bus_num_lines=0,bus_
+reference=left,polarity=negative,attributes=no (4)
+***********COMMAND    03Apr2017.152432.463 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command add_polyline_end ended
+Script message: profile_to_rout,width=1,layer=3619995117
+***********COMMAND    03Apr2017.152432.463 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+profile_to_rout,width=1,layer=3619995117 (4)
+***********COMMAND    03Apr2017.152432.463 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command profile_to_rout ended
+Script message: info,out_file=c:/tmp/info_csh.383485D4832B0-71D2-1014-9723-89616
+DB4D31D,write_mode=replace, units= mm,args= -t layer -e f52456/data_mpanel/36199
+95117 -d LIMITS
+***********COMMAND    03Apr2017.152432.463 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+info,out_file=c:/tmp/info_csh.383485D4832B0-71D2-1014-9723-89616DB4D31D,write_mo
+de=replace, units= mm,args= -t layer -e f52456/data_mpanel/3619995117 -d LIMITS
+    (4)
+***********COMMAND    03Apr2017.152432.473 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command info ended
+Script message: clear_layers
+***********COMMAND    03Apr2017.152432.473 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+clear_layers (4)
+***********COMMAND    03Apr2017.152432.473 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command clear_layers ended
+Script message: affected_layer,affected=no,mode=all
+***********COMMAND    03Apr2017.152432.473 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+affected_layer,affected=no,mode=all (4)
+***********COMMAND    03Apr2017.152432.483 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command affected_layer ended
+Script message: display_layer,display=yes,name=3619995117
+***********COMMAND    03Apr2017.152432.483 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+display_layer,display=yes,name=3619995117 (4)
+***********COMMAND    03Apr2017.152432.483 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+work_layer,name=3619995117 (4)
+***********COMMAND    03Apr2017.152432.483 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command work_layer ended
+***********COMMAND    03Apr2017.152432.493 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command display_layer ended
+Script message: work_layer,name=3619995117
+***********COMMAND    03Apr2017.152432.493 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+work_layer,name=3619995117 (4)
+***********COMMAND    03Apr2017.152432.493 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command work_layer ended
+Script message: add_polyline_strt
+***********COMMAND    03Apr2017.152432.493 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+add_polyline_strt (4)
+***********COMMAND    03Apr2017.152432.493 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command add_polyline_strt ended
+Script message: add_polyline_xy,x=-70.7029672131147,y=-5.0005
+***********COMMAND    03Apr2017.152432.493 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+add_polyline_xy,x=-70.7029672131147,y=-5.0005 (4)
+***********COMMAND    03Apr2017.152432.493 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command add_polyline_xy ended
+Script message: add_polyline_xy,x=168.238967213115,y=-5.0005
+***********COMMAND    03Apr2017.152432.493 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+add_polyline_xy,x=168.238967213115,y=-5.0005 (4)
+***********COMMAND    03Apr2017.152432.493 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command add_polyline_xy ended
+Script message: add_polyline_xy,x=168.238967213115,y=246.3005
+***********COMMAND    03Apr2017.152432.493 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+add_polyline_xy,x=168.238967213115,y=246.3005 (4)
+***********COMMAND    03Apr2017.152432.493 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command add_polyline_xy ended
+Script message: add_polyline_xy,x=-70.7029672131147,y=246.3005
+***********COMMAND    03Apr2017.152432.493 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+add_polyline_xy,x=-70.7029672131147,y=246.3005 (4)
+***********COMMAND    03Apr2017.152432.503 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command add_polyline_xy ended
+Script message: add_polyline_xy,x=-70.7029672131147,y=-5.0005
+***********COMMAND    03Apr2017.152432.503 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+add_polyline_xy,x=-70.7029672131147,y=-5.0005 (4)
+***********COMMAND    03Apr2017.152432.503 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command add_polyline_xy ended
+Script message: add_polyline_end,bus_distance=0,bus_dist_by=pitch,symbol=r1,bus_
+num_lines=0,bus_reference=left,polarity=negative,attributes=no
+***********COMMAND    03Apr2017.152432.503 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+add_polyline_end,bus_distance=0,bus_dist_by=pitch,symbol=r1,bus_num_lines=0,bus_
+reference=left,polarity=negative,attributes=no (4)
+***********COMMAND    03Apr2017.152432.503 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command add_polyline_end ended
+Script message: profile_to_rout,width=1,layer=5581665039
+***********COMMAND    03Apr2017.152432.503 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+profile_to_rout,width=1,layer=5581665039 (4)
+***********COMMAND    03Apr2017.152432.513 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command profile_to_rout ended
+Script message: info,out_file=c:/tmp/info_csh.383485D4832B0-71D2-1014-9723-89616
+DB4D31D,write_mode=replace, units= mm,args= -t layer -e f52456/data_mpanel/55816
+65039 -d LIMITS
+***********COMMAND    03Apr2017.152432.513 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+info,out_file=c:/tmp/info_csh.383485D4832B0-71D2-1014-9723-89616DB4D31D,write_mo
+de=replace, units= mm,args= -t layer -e f52456/data_mpanel/5581665039 -d LIMITS
+    (4)
+***********COMMAND    03Apr2017.152432.513 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command info ended
+Script message: clear_layers
+***********COMMAND    03Apr2017.152432.513 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+clear_layers (4)
+***********COMMAND    03Apr2017.152432.523 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command clear_layers ended
+Script message: affected_layer,affected=no,mode=all
+***********COMMAND    03Apr2017.152432.523 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+affected_layer,affected=no,mode=all (4)
+***********COMMAND    03Apr2017.152432.523 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command affected_layer ended
+Script message: display_layer,display=yes,name=5581665039
+***********COMMAND    03Apr2017.152432.523 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+display_layer,display=yes,name=5581665039 (4)
+***********COMMAND    03Apr2017.152432.523 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+work_layer,name=5581665039 (4)
+***********COMMAND    03Apr2017.152432.533 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command work_layer ended
+***********COMMAND    03Apr2017.152432.533 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command display_layer ended
+Script message: work_layer,name=5581665039
+***********COMMAND    03Apr2017.152432.533 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+work_layer,name=5581665039 (4)
+***********COMMAND    03Apr2017.152432.533 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command work_layer ended
+Script message: add_polyline_strt
+***********COMMAND    03Apr2017.152432.533 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+add_polyline_strt (4)
+***********COMMAND    03Apr2017.152432.533 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command add_polyline_strt ended
+Script message: add_polyline_xy,x=-70.7029672131147,y=-5.0005
+***********COMMAND    03Apr2017.152432.533 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+add_polyline_xy,x=-70.7029672131147,y=-5.0005 (4)
+***********COMMAND    03Apr2017.152432.533 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command add_polyline_xy ended
+Script message: add_polyline_xy,x=168.238967213115,y=-5.0005
+***********COMMAND    03Apr2017.152432.543 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+add_polyline_xy,x=168.238967213115,y=-5.0005 (4)
+***********COMMAND    03Apr2017.152432.543 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command add_polyline_xy ended
+Script message: add_polyline_xy,x=168.238967213115,y=246.3005
+***********COMMAND    03Apr2017.152432.543 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+add_polyline_xy,x=168.238967213115,y=246.3005 (4)
+***********COMMAND    03Apr2017.152432.543 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command add_polyline_xy ended
+Script message: add_polyline_xy,x=-70.7029672131147,y=246.3005
+***********COMMAND    03Apr2017.152432.543 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+add_polyline_xy,x=-70.7029672131147,y=246.3005 (4)
+***********COMMAND    03Apr2017.152432.543 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command add_polyline_xy ended
+Script message: add_polyline_xy,x=-70.7029672131147,y=-5.0005
+***********COMMAND    03Apr2017.152432.543 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+add_polyline_xy,x=-70.7029672131147,y=-5.0005 (4)
+***********COMMAND    03Apr2017.152432.543 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command add_polyline_xy ended
+Script message: add_polyline_end,bus_distance=0,bus_dist_by=pitch,symbol=r1,bus_
+num_lines=0,bus_reference=left,polarity=negative,attributes=no
+***********COMMAND    03Apr2017.152432.543 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+add_polyline_end,bus_distance=0,bus_dist_by=pitch,symbol=r1,bus_num_lines=0,bus_
+reference=left,polarity=negative,attributes=no (4)
+***********COMMAND    03Apr2017.152432.553 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command add_polyline_end ended
+Script message: profile_to_rout,width=1,layer=6250915527
+***********COMMAND    03Apr2017.152432.553 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+profile_to_rout,width=1,layer=6250915527 (4)
+***********COMMAND    03Apr2017.152432.553 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command profile_to_rout ended
+Script message: info,out_file=c:/tmp/info_csh.383485D4832B0-71D2-1014-9723-89616
+DB4D31D,write_mode=replace, units= mm,args= -t layer -e f52456/data_mpanel/62509
+15527 -d LIMITS
+***********COMMAND    03Apr2017.152432.553 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+info,out_file=c:/tmp/info_csh.383485D4832B0-71D2-1014-9723-89616DB4D31D,write_mo
+de=replace, units= mm,args= -t layer -e f52456/data_mpanel/6250915527 -d LIMITS
+    (4)
+***********COMMAND    03Apr2017.152432.553 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command info ended
+Script message: clear_layers
+***********COMMAND    03Apr2017.152432.553 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+clear_layers (4)
+***********COMMAND    03Apr2017.152432.563 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command clear_layers ended
+Script message: affected_layer,affected=no,mode=all
+***********COMMAND    03Apr2017.152432.563 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+affected_layer,affected=no,mode=all (4)
+***********COMMAND    03Apr2017.152432.563 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command affected_layer ended
+Script message: display_layer,display=yes,name=6250915527
+***********COMMAND    03Apr2017.152432.563 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+display_layer,display=yes,name=6250915527 (4)
+***********COMMAND    03Apr2017.152432.573 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+work_layer,name=6250915527 (4)
+***********COMMAND    03Apr2017.152432.573 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command work_layer ended
+***********COMMAND    03Apr2017.152432.573 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command display_layer ended
+Script message: work_layer,name=6250915527
+***********COMMAND    03Apr2017.152432.573 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+work_layer,name=6250915527 (4)
+***********COMMAND    03Apr2017.152432.573 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command work_layer ended
+Script message: add_polyline_strt
+***********COMMAND    03Apr2017.152432.573 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+add_polyline_strt (4)
+***********COMMAND    03Apr2017.152432.583 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command add_polyline_strt ended
+Script message: add_polyline_xy,x=-70.7029672131147,y=-5.0005
+***********COMMAND    03Apr2017.152432.583 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+add_polyline_xy,x=-70.7029672131147,y=-5.0005 (4)
+***********COMMAND    03Apr2017.152432.583 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command add_polyline_xy ended
+Script message: add_polyline_xy,x=168.238967213115,y=-5.0005
+***********COMMAND    03Apr2017.152432.583 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+add_polyline_xy,x=168.238967213115,y=-5.0005 (4)
+***********COMMAND    03Apr2017.152432.583 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command add_polyline_xy ended
+Script message: add_polyline_xy,x=168.238967213115,y=246.3005
+***********COMMAND    03Apr2017.152432.583 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+add_polyline_xy,x=168.238967213115,y=246.3005 (4)
+***********COMMAND    03Apr2017.152432.583 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command add_polyline_xy ended
+Script message: add_polyline_xy,x=-70.7029672131147,y=246.3005
+***********COMMAND    03Apr2017.152432.583 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+add_polyline_xy,x=-70.7029672131147,y=246.3005 (4)
+***********COMMAND    03Apr2017.152432.583 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command add_polyline_xy ended
+Script message: add_polyline_xy,x=-70.7029672131147,y=-5.0005
+***********COMMAND    03Apr2017.152432.583 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+add_polyline_xy,x=-70.7029672131147,y=-5.0005 (4)
+***********COMMAND    03Apr2017.152432.583 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command add_polyline_xy ended
+Script message: add_polyline_end,bus_distance=0,bus_dist_by=pitch,symbol=r1,bus_
+num_lines=0,bus_reference=left,polarity=negative,attributes=no
+***********COMMAND    03Apr2017.152432.583 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+add_polyline_end,bus_distance=0,bus_dist_by=pitch,symbol=r1,bus_num_lines=0,bus_
+reference=left,polarity=negative,attributes=no (4)
+***********COMMAND    03Apr2017.152432.593 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command add_polyline_end ended
+Script message: profile_to_rout,width=1,layer=8286437988
+***********COMMAND    03Apr2017.152432.593 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+profile_to_rout,width=1,layer=8286437988 (4)
+***********COMMAND    03Apr2017.152432.593 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command profile_to_rout ended
+Script message: info,out_file=c:/tmp/info_csh.383485D4832B0-71D2-1014-9723-89616
+DB4D31D,write_mode=replace, units= mm,args= -t layer -e f52456/data_mpanel/82864
+37988 -d LIMITS
+***********COMMAND    03Apr2017.152432.593 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+info,out_file=c:/tmp/info_csh.383485D4832B0-71D2-1014-9723-89616DB4D31D,write_mo
+de=replace, units= mm,args= -t layer -e f52456/data_mpanel/8286437988 -d LIMITS
+    (4)
+***********COMMAND    03Apr2017.152432.603 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command info ended
+Script message: clear_layers
+***********COMMAND    03Apr2017.152432.603 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+clear_layers (4)
+***********COMMAND    03Apr2017.152432.603 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command clear_layers ended
+Script message: affected_layer,affected=no,mode=all
+***********COMMAND    03Apr2017.152432.603 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+affected_layer,affected=no,mode=all (4)
+***********COMMAND    03Apr2017.152432.613 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command affected_layer ended
+Script message: display_layer,display=yes,name=8286437988
+***********COMMAND    03Apr2017.152432.613 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+display_layer,display=yes,name=8286437988 (4)
+***********COMMAND    03Apr2017.152432.613 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+work_layer,name=8286437988 (4)
+***********COMMAND    03Apr2017.152432.613 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command work_layer ended
+***********COMMAND    03Apr2017.152432.623 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command display_layer ended
+Script message: work_layer,name=8286437988
+***********COMMAND    03Apr2017.152432.623 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+work_layer,name=8286437988 (4)
+***********COMMAND    03Apr2017.152432.623 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command work_layer ended
+Script message: add_polyline_strt
+***********COMMAND    03Apr2017.152432.623 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+add_polyline_strt (4)
+***********COMMAND    03Apr2017.152432.623 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command add_polyline_strt ended
+Script message: add_polyline_xy,x=-70.7029672131147,y=-5.0005
+***********COMMAND    03Apr2017.152432.623 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+add_polyline_xy,x=-70.7029672131147,y=-5.0005 (4)
+***********COMMAND    03Apr2017.152432.623 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command add_polyline_xy ended
+Script message: add_polyline_xy,x=168.238967213115,y=-5.0005
+***********COMMAND    03Apr2017.152432.623 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+add_polyline_xy,x=168.238967213115,y=-5.0005 (4)
+***********COMMAND    03Apr2017.152432.623 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command add_polyline_xy ended
+Script message: add_polyline_xy,x=168.238967213115,y=246.3005
+***********COMMAND    03Apr2017.152432.623 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+add_polyline_xy,x=168.238967213115,y=246.3005 (4)
+***********COMMAND    03Apr2017.152432.633 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command add_polyline_xy ended
+Script message: add_polyline_xy,x=-70.7029672131147,y=246.3005
+***********COMMAND    03Apr2017.152432.633 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+add_polyline_xy,x=-70.7029672131147,y=246.3005 (4)
+***********COMMAND    03Apr2017.152432.633 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command add_polyline_xy ended
+Script message: add_polyline_xy,x=-70.7029672131147,y=-5.0005
+***********COMMAND    03Apr2017.152432.633 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+add_polyline_xy,x=-70.7029672131147,y=-5.0005 (4)
+***********COMMAND    03Apr2017.152432.633 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command add_polyline_xy ended
+Script message: add_polyline_end,bus_distance=0,bus_dist_by=pitch,symbol=r1,bus_
+num_lines=0,bus_reference=left,polarity=negative,attributes=no
+***********COMMAND    03Apr2017.152432.633 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+add_polyline_end,bus_distance=0,bus_dist_by=pitch,symbol=r1,bus_num_lines=0,bus_
+reference=left,polarity=negative,attributes=no (4)
+***********COMMAND    03Apr2017.152432.633 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command add_polyline_end ended
+Script message: profile_to_rout,width=1,layer=3931884765
+***********COMMAND    03Apr2017.152432.633 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+profile_to_rout,width=1,layer=3931884765 (4)
+***********COMMAND    03Apr2017.152432.643 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command profile_to_rout ended
+Script message: info,out_file=c:/tmp/info_csh.383485D4832B0-71D2-1014-9723-89616
+DB4D31D,write_mode=replace, units= mm,args= -t layer -e f52456/data_mpanel/39318
+84765 -d LIMITS
+***********COMMAND    03Apr2017.152432.643 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+info,out_file=c:/tmp/info_csh.383485D4832B0-71D2-1014-9723-89616DB4D31D,write_mo
+de=replace, units= mm,args= -t layer -e f52456/data_mpanel/3931884765 -d LIMITS
+    (4)
+***********COMMAND    03Apr2017.152432.643 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command info ended
+Script message: clear_layers
+***********COMMAND    03Apr2017.152432.643 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+clear_layers (4)
+***********COMMAND    03Apr2017.152432.653 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command clear_layers ended
+Script message: affected_layer,affected=no,mode=all
+***********COMMAND    03Apr2017.152432.653 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+affected_layer,affected=no,mode=all (4)
+***********COMMAND    03Apr2017.152432.653 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command affected_layer ended
+Script message: display_layer,display=yes,name=3931884765
+***********COMMAND    03Apr2017.152432.653 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+display_layer,display=yes,name=3931884765 (4)
+***********COMMAND    03Apr2017.152432.663 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+work_layer,name=3931884765 (4)
+***********COMMAND    03Apr2017.152432.663 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command work_layer ended
+***********COMMAND    03Apr2017.152432.663 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command display_layer ended
+Script message: work_layer,name=3931884765
+***********COMMAND    03Apr2017.152432.663 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+work_layer,name=3931884765 (4)
+***********COMMAND    03Apr2017.152432.663 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command work_layer ended
+Script message: add_polyline_strt
+***********COMMAND    03Apr2017.152432.663 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+add_polyline_strt (4)
+***********COMMAND    03Apr2017.152432.663 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command add_polyline_strt ended
+Script message: add_polyline_xy,x=-70.8451147540984,y=-5.15
+***********COMMAND    03Apr2017.152432.663 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+add_polyline_xy,x=-70.8451147540984,y=-5.15 (4)
+***********COMMAND    03Apr2017.152432.673 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command add_polyline_xy ended
+Script message: add_polyline_xy,x=168.381114754098,y=-5.15
+***********COMMAND    03Apr2017.152432.673 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+add_polyline_xy,x=168.381114754098,y=-5.15 (4)
+***********COMMAND    03Apr2017.152432.673 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command add_polyline_xy ended
+Script message: add_polyline_xy,x=168.381114754098,y=246.45
+***********COMMAND    03Apr2017.152432.673 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+add_polyline_xy,x=168.381114754098,y=246.45 (4)
+***********COMMAND    03Apr2017.152432.673 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command add_polyline_xy ended
+Script message: add_polyline_xy,x=-70.8451147540984,y=246.45
+***********COMMAND    03Apr2017.152432.673 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+add_polyline_xy,x=-70.8451147540984,y=246.45 (4)
+***********COMMAND    03Apr2017.152432.673 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command add_polyline_xy ended
+Script message: add_polyline_xy,x=-70.8451147540984,y=-5.15
+***********COMMAND    03Apr2017.152432.673 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+add_polyline_xy,x=-70.8451147540984,y=-5.15 (4)
+***********COMMAND    03Apr2017.152432.673 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command add_polyline_xy ended
+Script message: add_polyline_end,bus_distance=0,bus_dist_by=pitch,symbol=r1,bus_
+num_lines=0,bus_reference=left,polarity=negative,attributes=no
+***********COMMAND    03Apr2017.152432.673 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+add_polyline_end,bus_distance=0,bus_dist_by=pitch,symbol=r1,bus_num_lines=0,bus_
+reference=left,polarity=negative,attributes=no (4)
+***********COMMAND    03Apr2017.152432.683 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command add_polyline_end ended
+Script message: profile_to_rout,width=1,layer=5093383789
+***********COMMAND    03Apr2017.152432.683 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+profile_to_rout,width=1,layer=5093383789 (4)
+***********COMMAND    03Apr2017.152432.683 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command profile_to_rout ended
+Script message: info,out_file=c:/tmp/info_csh.383485D4832B0-71D2-1014-9723-89616
+DB4D31D,write_mode=replace, units= mm,args= -t layer -e f52456/data_mpanel/50933
+83789 -d LIMITS
+***********COMMAND    03Apr2017.152432.683 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+info,out_file=c:/tmp/info_csh.383485D4832B0-71D2-1014-9723-89616DB4D31D,write_mo
+de=replace, units= mm,args= -t layer -e f52456/data_mpanel/5093383789 -d LIMITS
+    (4)
+***********COMMAND    03Apr2017.152432.693 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command info ended
+Script message: clear_layers
+***********COMMAND    03Apr2017.152432.693 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+clear_layers (4)
+***********COMMAND    03Apr2017.152432.693 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command clear_layers ended
+Script message: affected_layer,affected=no,mode=all
+***********COMMAND    03Apr2017.152432.693 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+affected_layer,affected=no,mode=all (4)
+***********COMMAND    03Apr2017.152432.703 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command affected_layer ended
+Script message: display_layer,display=yes,name=5093383789
+***********COMMAND    03Apr2017.152432.703 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+display_layer,display=yes,name=5093383789 (4)
+***********COMMAND    03Apr2017.152432.703 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+work_layer,name=5093383789 (4)
+***********COMMAND    03Apr2017.152432.703 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command work_layer ended
+***********COMMAND    03Apr2017.152432.703 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command display_layer ended
+Script message: work_layer,name=5093383789
+***********COMMAND    03Apr2017.152432.703 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+work_layer,name=5093383789 (4)
+***********COMMAND    03Apr2017.152432.703 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command work_layer ended
+Script message: add_polyline_strt
+***********COMMAND    03Apr2017.152432.713 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+add_polyline_strt (4)
+***********COMMAND    03Apr2017.152432.713 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command add_polyline_strt ended
+Script message: add_polyline_xy,x=-70.7975737704918,y=-5.1
+***********COMMAND    03Apr2017.152432.713 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+add_polyline_xy,x=-70.7975737704918,y=-5.1 (4)
+***********COMMAND    03Apr2017.152432.713 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command add_polyline_xy ended
+Script message: add_polyline_xy,x=168.333573770492,y=-5.1
+***********COMMAND    03Apr2017.152432.713 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+add_polyline_xy,x=168.333573770492,y=-5.1 (4)
+***********COMMAND    03Apr2017.152432.713 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command add_polyline_xy ended
+Script message: add_polyline_xy,x=168.333573770492,y=246.4
+***********COMMAND    03Apr2017.152432.713 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+add_polyline_xy,x=168.333573770492,y=246.4 (4)
+***********COMMAND    03Apr2017.152432.713 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command add_polyline_xy ended
+Script message: add_polyline_xy,x=-70.7975737704918,y=246.4
+***********COMMAND    03Apr2017.152432.713 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+add_polyline_xy,x=-70.7975737704918,y=246.4 (4)
+***********COMMAND    03Apr2017.152432.713 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command add_polyline_xy ended
+Script message: add_polyline_xy,x=-70.7975737704918,y=-5.1
+***********COMMAND    03Apr2017.152432.713 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+add_polyline_xy,x=-70.7975737704918,y=-5.1 (4)
+***********COMMAND    03Apr2017.152432.713 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command add_polyline_xy ended
+Script message: add_polyline_end,bus_distance=0,bus_dist_by=pitch,symbol=r1,bus_
+num_lines=0,bus_reference=left,polarity=negative,attributes=no
+***********COMMAND    03Apr2017.152432.713 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+add_polyline_end,bus_distance=0,bus_dist_by=pitch,symbol=r1,bus_num_lines=0,bus_
+reference=left,polarity=negative,attributes=no (4)
+***********COMMAND    03Apr2017.152432.723 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command add_polyline_end ended
+Script message: profile_to_rout,width=1,layer=9182739257
+***********COMMAND    03Apr2017.152432.723 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+profile_to_rout,width=1,layer=9182739257 (4)
+***********COMMAND    03Apr2017.152432.723 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command profile_to_rout ended
+Script message: info,out_file=c:/tmp/info_csh.383485D4832B0-71D2-1014-9723-89616
+DB4D31D,write_mode=replace, units= mm,args= -t layer -e f52456/data_mpanel/91827
+39257 -d LIMITS
+***********COMMAND    03Apr2017.152432.723 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+info,out_file=c:/tmp/info_csh.383485D4832B0-71D2-1014-9723-89616DB4D31D,write_mo
+de=replace, units= mm,args= -t layer -e f52456/data_mpanel/9182739257 -d LIMITS
+    (4)
+***********COMMAND    03Apr2017.152432.723 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command info ended
+Script message: clear_layers
+***********COMMAND    03Apr2017.152432.733 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+clear_layers (4)
+***********COMMAND    03Apr2017.152432.733 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command clear_layers ended
+Script message: affected_layer,affected=no,mode=all
+***********COMMAND    03Apr2017.152432.733 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+affected_layer,affected=no,mode=all (4)
+***********COMMAND    03Apr2017.152432.733 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command affected_layer ended
+Script message: display_layer,display=yes,name=9182739257
+***********COMMAND    03Apr2017.152432.733 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+display_layer,display=yes,name=9182739257 (4)
+***********COMMAND    03Apr2017.152432.733 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+work_layer,name=9182739257 (4)
+***********COMMAND    03Apr2017.152432.743 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command work_layer ended
+***********COMMAND    03Apr2017.152432.743 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command display_layer ended
+Script message: work_layer,name=9182739257
+***********COMMAND    03Apr2017.152432.743 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+work_layer,name=9182739257 (4)
+***********COMMAND    03Apr2017.152432.743 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command work_layer ended
+Script message: add_polyline_strt
+***********COMMAND    03Apr2017.152432.743 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+add_polyline_strt (4)
+***********COMMAND    03Apr2017.152432.743 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command add_polyline_strt ended
+Script message: add_polyline_xy,x=-70.7029672131147,y=-5.0005
+***********COMMAND    03Apr2017.152432.743 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+add_polyline_xy,x=-70.7029672131147,y=-5.0005 (4)
+***********COMMAND    03Apr2017.152432.743 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command add_polyline_xy ended
+Script message: add_polyline_xy,x=168.238967213115,y=-5.0005
+***********COMMAND    03Apr2017.152432.743 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+add_polyline_xy,x=168.238967213115,y=-5.0005 (4)
+***********COMMAND    03Apr2017.152432.753 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command add_polyline_xy ended
+Script message: add_polyline_xy,x=168.238967213115,y=246.3005
+***********COMMAND    03Apr2017.152432.753 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+add_polyline_xy,x=168.238967213115,y=246.3005 (4)
+***********COMMAND    03Apr2017.152432.753 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command add_polyline_xy ended
+Script message: add_polyline_xy,x=-70.7029672131147,y=246.3005
+***********COMMAND    03Apr2017.152432.753 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+add_polyline_xy,x=-70.7029672131147,y=246.3005 (4)
+***********COMMAND    03Apr2017.152432.753 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command add_polyline_xy ended
+Script message: add_polyline_xy,x=-70.7029672131147,y=-5.0005
+***********COMMAND    03Apr2017.152432.753 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+add_polyline_xy,x=-70.7029672131147,y=-5.0005 (4)
+***********COMMAND    03Apr2017.152432.753 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command add_polyline_xy ended
+Script message: add_polyline_end,bus_distance=0,bus_dist_by=pitch,symbol=r1,bus_
+num_lines=0,bus_reference=left,polarity=negative,attributes=no
+***********COMMAND    03Apr2017.152432.753 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+add_polyline_end,bus_distance=0,bus_dist_by=pitch,symbol=r1,bus_num_lines=0,bus_
+reference=left,polarity=negative,attributes=no (4)
+***********COMMAND    03Apr2017.152432.753 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command add_polyline_end ended
+Script message: profile_to_rout,width=1,layer=58288574
+***********COMMAND    03Apr2017.152432.753 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+profile_to_rout,width=1,layer=58288574 (4)
+***********COMMAND    03Apr2017.152432.763 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command profile_to_rout ended
+Script message: info,out_file=c:/tmp/info_csh.383485D4832B0-71D2-1014-9723-89616
+DB4D31D,write_mode=replace, units= mm,args= -t layer -e f52456/data_mpanel/58288
+574 -d LIMITS
+***********COMMAND    03Apr2017.152432.763 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+info,out_file=c:/tmp/info_csh.383485D4832B0-71D2-1014-9723-89616DB4D31D,write_mo
+de=replace, units= mm,args= -t layer -e f52456/data_mpanel/58288574 -d LIMITS
+  (4)
+***********COMMAND    03Apr2017.152432.763 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command info ended
+Script message: clear_layers
+***********COMMAND    03Apr2017.152432.763 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+clear_layers (4)
+***********COMMAND    03Apr2017.152432.773 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command clear_layers ended
+Script message: affected_layer,affected=no,mode=all
+***********COMMAND    03Apr2017.152432.773 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+affected_layer,affected=no,mode=all (4)
+***********COMMAND    03Apr2017.152432.773 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command affected_layer ended
+Script message: display_layer,display=yes,name=58288574
+***********COMMAND    03Apr2017.152432.773 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+display_layer,display=yes,name=58288574 (4)
+***********COMMAND    03Apr2017.152432.773 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+work_layer,name=58288574 (4)
+***********COMMAND    03Apr2017.152432.773 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command work_layer ended
+***********COMMAND    03Apr2017.152432.783 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command display_layer ended
+Script message: work_layer,name=58288574
+***********COMMAND    03Apr2017.152432.783 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+work_layer,name=58288574 (4)
+***********COMMAND    03Apr2017.152432.783 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command work_layer ended
+Script message: add_polyline_strt
+***********COMMAND    03Apr2017.152432.783 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+add_polyline_strt (4)
+***********COMMAND    03Apr2017.152432.783 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command add_polyline_strt ended
+Script message: add_polyline_xy,x=-42.1273549180328,y=-5.0254
+***********COMMAND    03Apr2017.152432.783 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+add_polyline_xy,x=-42.1273549180328,y=-5.0254 (4)
+***********COMMAND    03Apr2017.152432.783 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command add_polyline_xy ended
+Script message: add_polyline_xy,x=196.838254918033,y=-5.0254
+***********COMMAND    03Apr2017.152432.783 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+add_polyline_xy,x=196.838254918033,y=-5.0254 (4)
+***********COMMAND    03Apr2017.152432.783 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command add_polyline_xy ended
+Script message: add_polyline_xy,x=196.838254918033,y=246.3005
+***********COMMAND    03Apr2017.152432.783 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+add_polyline_xy,x=196.838254918033,y=246.3005 (4)
+***********COMMAND    03Apr2017.152432.783 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command add_polyline_xy ended
+Script message: add_polyline_xy,x=-42.1273549180328,y=246.3005
+***********COMMAND    03Apr2017.152432.783 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+add_polyline_xy,x=-42.1273549180328,y=246.3005 (4)
+***********COMMAND    03Apr2017.152432.793 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command add_polyline_xy ended
+Script message: add_polyline_xy,x=-42.1273549180328,y=-5.0254
+***********COMMAND    03Apr2017.152432.793 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+add_polyline_xy,x=-42.1273549180328,y=-5.0254 (4)
+***********COMMAND    03Apr2017.152432.793 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command add_polyline_xy ended
+Script message: add_polyline_end,bus_distance=0,bus_dist_by=pitch,symbol=r1,bus_
+num_lines=0,bus_reference=left,polarity=negative,attributes=no
+***********COMMAND    03Apr2017.152432.793 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+add_polyline_end,bus_distance=0,bus_dist_by=pitch,symbol=r1,bus_num_lines=0,bus_
+reference=left,polarity=negative,attributes=no (4)
+***********COMMAND    03Apr2017.152432.793 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command add_polyline_end ended
+Script message: profile_to_rout,width=1,layer=9590148925
+***********COMMAND    03Apr2017.152432.793 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+profile_to_rout,width=1,layer=9590148925 (4)
+***********COMMAND    03Apr2017.152432.793 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command profile_to_rout ended
+Script message: info,out_file=c:/tmp/info_csh.383485D4832B0-71D2-1014-9723-89616
+DB4D31D,write_mode=replace, units= mm,args= -t layer -e f52456/data_mpanel/95901
+48925 -d LIMITS
+***********COMMAND    03Apr2017.152432.803 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+info,out_file=c:/tmp/info_csh.383485D4832B0-71D2-1014-9723-89616DB4D31D,write_mo
+de=replace, units= mm,args= -t layer -e f52456/data_mpanel/9590148925 -d LIMITS
+    (4)
+***********COMMAND    03Apr2017.152432.803 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command info ended
+Script message: clear_layers
+***********COMMAND    03Apr2017.152432.803 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+clear_layers (4)
+***********COMMAND    03Apr2017.152432.803 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command clear_layers ended
+Script message: affected_layer,affected=no,mode=all
+***********COMMAND    03Apr2017.152432.813 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+affected_layer,affected=no,mode=all (4)
+***********COMMAND    03Apr2017.152432.813 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command affected_layer ended
+Script message: display_layer,display=yes,name=9590148925
+***********COMMAND    03Apr2017.152432.813 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+display_layer,display=yes,name=9590148925 (4)
+***********COMMAND    03Apr2017.152432.813 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+work_layer,name=9590148925 (4)
+***********COMMAND    03Apr2017.152432.813 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command work_layer ended
+***********COMMAND    03Apr2017.152432.823 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command display_layer ended
+Script message: work_layer,name=9590148925
+***********COMMAND    03Apr2017.152432.823 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+work_layer,name=9590148925 (4)
+***********COMMAND    03Apr2017.152432.823 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command work_layer ended
+Script message: add_polyline_strt
+***********COMMAND    03Apr2017.152432.823 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+add_polyline_strt (4)
+***********COMMAND    03Apr2017.152432.823 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command add_polyline_strt ended
+Script message: add_polyline_xy,x=-115.47904807377,y=-243.3596425
+***********COMMAND    03Apr2017.152432.823 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+add_polyline_xy,x=-115.47904807377,y=-243.3596425 (4)
+***********COMMAND    03Apr2017.152432.823 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command add_polyline_xy ended
+Script message: add_polyline_xy,x=350.099448073771,y=-243.3596425
+***********COMMAND    03Apr2017.152432.823 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+add_polyline_xy,x=350.099448073771,y=-243.3596425 (4)
+***********COMMAND    03Apr2017.152432.823 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command add_polyline_xy ended
+Script message: add_polyline_xy,x=350.099448073771,y=246.3005
+***********COMMAND    03Apr2017.152432.823 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+add_polyline_xy,x=350.099448073771,y=246.3005 (4)
+***********COMMAND    03Apr2017.152432.823 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command add_polyline_xy ended
+Script message: add_polyline_xy,x=-115.47904807377,y=246.3005
+***********COMMAND    03Apr2017.152432.823 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+add_polyline_xy,x=-115.47904807377,y=246.3005 (4)
+***********COMMAND    03Apr2017.152432.823 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command add_polyline_xy ended
+Script message: add_polyline_xy,x=-115.47904807377,y=-243.3596425
+***********COMMAND    03Apr2017.152432.823 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+add_polyline_xy,x=-115.47904807377,y=-243.3596425 (4)
+***********COMMAND    03Apr2017.152432.833 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command add_polyline_xy ended
+Script message: add_polyline_end,bus_distance=0,bus_dist_by=pitch,symbol=r1,bus_
+num_lines=0,bus_reference=left,polarity=negative,attributes=no
+***********COMMAND    03Apr2017.152432.833 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+add_polyline_end,bus_distance=0,bus_dist_by=pitch,symbol=r1,bus_num_lines=0,bus_
+reference=left,polarity=negative,attributes=no (4)
+***********COMMAND    03Apr2017.152432.833 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command add_polyline_end ended
+Script message: profile_to_rout,width=1,layer=2942199707
+***********COMMAND    03Apr2017.152432.833 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+profile_to_rout,width=1,layer=2942199707 (4)
+***********COMMAND    03Apr2017.152432.833 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command profile_to_rout ended
+Script message: info,out_file=c:/tmp/info_csh.383485D4832B0-71D2-1014-9723-89616
+DB4D31D,write_mode=replace, units= mm,args= -t layer -e f52456/data_mpanel/29421
+99707 -d LIMITS
+***********COMMAND    03Apr2017.152432.833 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+info,out_file=c:/tmp/info_csh.383485D4832B0-71D2-1014-9723-89616DB4D31D,write_mo
+de=replace, units= mm,args= -t layer -e f52456/data_mpanel/2942199707 -d LIMITS
+    (4)
+***********COMMAND    03Apr2017.152432.843 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command info ended
+Script message: clear_layers
+***********COMMAND    03Apr2017.152432.843 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+clear_layers (4)
+***********COMMAND    03Apr2017.152432.843 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command clear_layers ended
+Script message: affected_layer,affected=no,mode=all
+***********COMMAND    03Apr2017.152432.843 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+affected_layer,affected=no,mode=all (4)
+***********COMMAND    03Apr2017.152432.853 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command affected_layer ended
+Script message: display_layer,display=yes,name=2942199707
+***********COMMAND    03Apr2017.152432.853 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+display_layer,display=yes,name=2942199707 (4)
+***********COMMAND    03Apr2017.152432.853 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+work_layer,name=2942199707 (4)
+***********COMMAND    03Apr2017.152432.853 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command work_layer ended
+***********COMMAND    03Apr2017.152432.853 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command display_layer ended
+Script message: work_layer,name=2942199707
+***********COMMAND    03Apr2017.152432.853 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+work_layer,name=2942199707 (4)
+***********COMMAND    03Apr2017.152432.863 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command work_layer ended
+Script message: add_polyline_strt
+***********COMMAND    03Apr2017.152432.863 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+add_polyline_strt (4)
+***********COMMAND    03Apr2017.152432.863 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command add_polyline_strt ended
+Script message: add_polyline_xy,x=-4.657697397541,y=-7
+***********COMMAND    03Apr2017.152432.863 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+add_polyline_xy,x=-4.657697397541,y=-7 (4)
+***********COMMAND    03Apr2017.152432.863 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command add_polyline_xy ended
+Script message: add_polyline_xy,x=238.086564897541,y=-7
+***********COMMAND    03Apr2017.152432.863 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+add_polyline_xy,x=238.086564897541,y=-7 (4)
+***********COMMAND    03Apr2017.152432.863 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command add_polyline_xy ended
+Script message: add_polyline_xy,x=238.086564897541,y=248.3
+***********COMMAND    03Apr2017.152432.863 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+add_polyline_xy,x=238.086564897541,y=248.3 (4)
+***********COMMAND    03Apr2017.152432.863 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command add_polyline_xy ended
+Script message: add_polyline_xy,x=-4.657697397541,y=248.3
+***********COMMAND    03Apr2017.152432.863 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+add_polyline_xy,x=-4.657697397541,y=248.3 (4)
+***********COMMAND    03Apr2017.152432.863 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command add_polyline_xy ended
+Script message: add_polyline_xy,x=-4.657697397541,y=-7
+***********COMMAND    03Apr2017.152432.863 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+add_polyline_xy,x=-4.657697397541,y=-7 (4)
+***********COMMAND    03Apr2017.152432.873 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command add_polyline_xy ended
+Script message: add_polyline_end,bus_distance=0,bus_dist_by=pitch,symbol=r1,bus_
+num_lines=0,bus_reference=left,polarity=negative,attributes=no
+***********COMMAND    03Apr2017.152432.873 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+add_polyline_end,bus_distance=0,bus_dist_by=pitch,symbol=r1,bus_num_lines=0,bus_
+reference=left,polarity=negative,attributes=no (4)
+***********COMMAND    03Apr2017.152432.873 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command add_polyline_end ended
+Script message: profile_to_rout,width=1,layer=3947448730
+***********COMMAND    03Apr2017.152432.873 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+profile_to_rout,width=1,layer=3947448730 (4)
+***********COMMAND    03Apr2017.152432.873 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command profile_to_rout ended
+Script message: info,out_file=c:/tmp/info_csh.383485D4832B0-71D2-1014-9723-89616
+DB4D31D,write_mode=replace, units= mm,args= -t layer -e f52456/data_mpanel/39474
+48730 -d LIMITS
+***********COMMAND    03Apr2017.152432.873 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+info,out_file=c:/tmp/info_csh.383485D4832B0-71D2-1014-9723-89616DB4D31D,write_mo
+de=replace, units= mm,args= -t layer -e f52456/data_mpanel/3947448730 -d LIMITS
+    (4)
+***********COMMAND    03Apr2017.152432.883 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command info ended
+Script message: clear_layers
+***********COMMAND    03Apr2017.152432.883 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+clear_layers (4)
+***********COMMAND    03Apr2017.152432.883 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command clear_layers ended
+Script message: affected_layer,affected=no,mode=all
+***********COMMAND    03Apr2017.152432.883 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+affected_layer,affected=no,mode=all (4)
+***********COMMAND    03Apr2017.152432.893 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command affected_layer ended
+Script message: display_layer,display=yes,name=3947448730
+***********COMMAND    03Apr2017.152432.893 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+display_layer,display=yes,name=3947448730 (4)
+***********COMMAND    03Apr2017.152432.893 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+work_layer,name=3947448730 (4)
+***********COMMAND    03Apr2017.152432.893 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command work_layer ended
+***********COMMAND    03Apr2017.152432.893 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command display_layer ended
+Script message: work_layer,name=3947448730
+***********COMMAND    03Apr2017.152432.903 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+work_layer,name=3947448730 (4)
+***********COMMAND    03Apr2017.152432.903 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command work_layer ended
+Script message: add_polyline_strt
+***********COMMAND    03Apr2017.152432.903 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+add_polyline_strt (4)
+***********COMMAND    03Apr2017.152432.903 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command add_polyline_strt ended
+Script message: add_polyline_xy,x=-42.1273549180328,y=-5.0254
+***********COMMAND    03Apr2017.152432.903 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+add_polyline_xy,x=-42.1273549180328,y=-5.0254 (4)
+***********COMMAND    03Apr2017.152432.903 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command add_polyline_xy ended
+Script message: add_polyline_xy,x=196.838254918033,y=-5.0254
+***********COMMAND    03Apr2017.152432.903 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+add_polyline_xy,x=196.838254918033,y=-5.0254 (4)
+***********COMMAND    03Apr2017.152432.903 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command add_polyline_xy ended
+Script message: add_polyline_xy,x=196.838254918033,y=246.3005
+***********COMMAND    03Apr2017.152432.903 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+add_polyline_xy,x=196.838254918033,y=246.3005 (4)
+***********COMMAND    03Apr2017.152432.903 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command add_polyline_xy ended
+Script message: add_polyline_xy,x=-42.1273549180328,y=246.3005
+***********COMMAND    03Apr2017.152432.903 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+add_polyline_xy,x=-42.1273549180328,y=246.3005 (4)
+***********COMMAND    03Apr2017.152432.903 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command add_polyline_xy ended
+Script message: add_polyline_xy,x=-42.1273549180328,y=-5.0254
+***********COMMAND    03Apr2017.152432.903 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+add_polyline_xy,x=-42.1273549180328,y=-5.0254 (4)
+***********COMMAND    03Apr2017.152432.913 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command add_polyline_xy ended
+Script message: add_polyline_end,bus_distance=0,bus_dist_by=pitch,symbol=r1,bus_
+num_lines=0,bus_reference=left,polarity=negative,attributes=no
+***********COMMAND    03Apr2017.152432.913 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+add_polyline_end,bus_distance=0,bus_dist_by=pitch,symbol=r1,bus_num_lines=0,bus_
+reference=left,polarity=negative,attributes=no (4)
+***********COMMAND    03Apr2017.152432.913 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command add_polyline_end ended
+Script message: print,layer_name=3002319335\;9028320312\;3619995117\;5581665039\
+;6250915527\;8286437988\;3931884765\;5093383789\;9182739257\;58288574\;959014892
+5\;2942199707\;3947448730,dest=pdf_file,paper_size=A4,num_copies=1,drawing_per_l
+ayer=yes,dest_fname=c:/tmp/InCam/scripts/other/64D9A1A5-71D2-1014-9723-89616DB4D
+31D.pdf,right_margin=0,y_spacing=0,top_margin=0,nx=2,x_spacing=0,draw_profile=ye
+s,left_margin=0,ny=2,orient=none,bottom_margin=0,label_layers=no,mirrored_layers
+=
+***********COMMAND    03Apr2017.152432.913 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+print,layer_name=3002319335\;9028320312\;3619995117\;5581665039\;6250915527\;828
+6437988\;3931884765\;5093383789\;9182739257\;58288574\;9590148925\;2942199707\;3
+947448730,dest=pdf_file,paper_size=A4,num_copies=1,drawing_per_layer=yes,dest_fn
+ame=c:/tmp/InCam/scripts/other/64D9A1A5-71D2-1014-9723-89616DB4D31D.pdf,right_ma
+rgin=0,y_spacing=0,top_margin=0,nx=2,x_spacing=0,draw_profile=yes,left_margin=0,
+ny=2,orient=none,bottom_margin=0,label_layers=no,mirrored_layers= (4)
+
+ The following Configuration params may affect the Output :
+ ==========================================================
+iol_ps_no_margin - yes
+
+ ==========================================================
+
+ The following Configuration params may affect the Output :
+ ==========================================================
+iol_ps_no_margin - yes
+
+ ==========================================================
+
+ The following Configuration params may affect the Output :
+ ==========================================================
+iol_ps_no_margin - yes
+
+ ==========================================================
+
+ The following Configuration params may affect the Output :
+ ==========================================================
+iol_ps_no_margin - yes
+
+ ==========================================================
+
+ The following Configuration params may affect the Output :
+ ==========================================================
+iol_ps_no_margin - yes
+
+ ==========================================================
+
+ The following Configuration params may affect the Output :
+ ==========================================================
+iol_ps_no_margin - yes
+
+ ==========================================================
+
+ The following Configuration params may affect the Output :
+ ==========================================================
+iol_ps_no_margin - yes
+
+ ==========================================================
+
+ The following Configuration params may affect the Output :
+ ==========================================================
+iol_ps_no_margin - yes
+
+ ==========================================================
+
+ The following Configuration params may affect the Output :
+ ==========================================================
+iol_ps_no_margin - yes
+
+ ==========================================================
+
+ The following Configuration params may affect the Output :
+ ==========================================================
+iol_ps_no_margin - yes
+
+ ==========================================================
+
+ The following Configuration params may affect the Output :
+ ==========================================================
+iol_ps_no_margin - yes
+
+ ==========================================================
+
+ The following Configuration params may affect the Output :
+ ==========================================================
+iol_ps_no_margin - yes
+
+ ==========================================================
+
+ The following Configuration params may affect the Output :
+ ==========================================================
+iol_ps_no_margin - yes
+
+ ==========================================================
+
+ The following Configuration params may affect the Output :
+ ==========================================================
+iol_ps_no_margin - yes
+
+ ==========================================================
+
+ The following Configuration params may affect the Output :
+ ==========================================================
+iol_ps_no_margin - yes
+
+ ==========================================================
+
+ The following Configuration params may affect the Output :
+ ==========================================================
+iol_ps_no_margin - yes
+
+ ==========================================================
+C:\usr\local\bin\tr: write error: Invalid argument
+C:\usr\local\bin\cat: write error: Invalid argument
+***********COMMAND    03Apr2017.152434.283 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command print ended
+Script message: info,out_file=c:/tmp/info_csh.383485D4832B0-71D2-1014-9723-89616
+DB4D31D,write_mode=replace,angle_direction=ccw, units= mm,args= -t matrix -e f52
+456/matrix -d ROW -p name
+***********COMMAND    03Apr2017.152434.863 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+info,out_file=c:/tmp/info_csh.383485D4832B0-71D2-1014-9723-89616DB4D31D,write_mo
+de=replace,angle_direction=ccw, units= mm,args= -t matrix -e f52456/matrix -d RO
+W -p name    (4)
+***********COMMAND    03Apr2017.152434.873 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command info ended
+Script message: delete_layer,layer=3002319335
+***********COMMAND    03Apr2017.152434.973 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+delete_layer,layer=3002319335 (4)
+***********COMMAND    03Apr2017.152434.993 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command delete_layer ended
+Script message: info,out_file=c:/tmp/info_csh.383485D4832B0-71D2-1014-9723-89616
+DB4D31D,write_mode=replace, units = inch,args= -t step -e f52456/data_mpanel -d
+exists
+***********COMMAND    03Apr2017.152434.993 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+info,out_file=c:/tmp/info_csh.383485D4832B0-71D2-1014-9723-89616DB4D31D,write_mo
+de=replace, units = inch,args= -t step -e f52456/data_mpanel -d exists     (4)
+***********COMMAND    03Apr2017.152434.993 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command info ended
+Script message: delete_entity,name=data_mpanel,job=f52456,type=step
+***********COMMAND    03Apr2017.152435.003 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+delete_entity,name=data_mpanel,job=f52456,type=step (4)
+***********COMMAND    03Apr2017.152435.033 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+set_step,name=o+1 (99)
+***********COMMAND    03Apr2017.152435.033 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+set_group,group=99 (-1)
+***********COMMAND    03Apr2017.152435.033 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command set_group ended
+***********COMMAND    03Apr2017.152435.033 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+set_group,group=0 (-1)
+***********COMMAND    03Apr2017.152435.033 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command set_group ended
+***********COMMAND    03Apr2017.152435.033 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+snap_mode,mode=off (0)
+***********COMMAND    03Apr2017.152435.043 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command snap_mode ended
+***********COMMAND    03Apr2017.152435.213 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+top_tab,tab=Display (0)
+***********COMMAND    03Apr2017.152435.213 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command top_tab ended
+***********COMMAND    03Apr2017.152435.223 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command set_step ended
+***********COMMAND    03Apr2017.152435.243 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command delete_entity ended
+Script message: info,out_file=c:/tmp/info_csh.383485D4832B0-71D2-1014-9723-89616
+DB4D31D,write_mode=replace,angle_direction=ccw, units= mm,args= -t matrix -e f52
+456/matrix -d ROW -p name
+***********COMMAND    03Apr2017.152435.243 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+info,out_file=c:/tmp/info_csh.383485D4832B0-71D2-1014-9723-89616DB4D31D,write_mo
+de=replace,angle_direction=ccw, units= mm,args= -t matrix -e f52456/matrix -d RO
+W -p name    (0)
+***********COMMAND    03Apr2017.152435.263 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command info ended
+Script message: delete_layer,layer=9028320312
+***********COMMAND    03Apr2017.152435.273 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+delete_layer,layer=9028320312 (0)
+***********COMMAND    03Apr2017.152435.283 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command delete_layer ended
+Script message: info,out_file=c:/tmp/info_csh.383485D4832B0-71D2-1014-9723-89616
+DB4D31D,write_mode=replace, units = inch,args= -t step -e f52456/data_mpanel -d
+exists
+***********COMMAND    03Apr2017.152435.283 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+info,out_file=c:/tmp/info_csh.383485D4832B0-71D2-1014-9723-89616DB4D31D,write_mo
+de=replace, units = inch,args= -t step -e f52456/data_mpanel -d exists     (0)
+***********COMMAND    03Apr2017.152435.283 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command info ended
+Script message: info,out_file=c:/tmp/info_csh.383485D4832B0-71D2-1014-9723-89616
+DB4D31D,write_mode=replace,angle_direction=ccw, units= mm,args= -t matrix -e f52
+456/matrix -d ROW -p name
+***********COMMAND    03Apr2017.152435.293 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+info,out_file=c:/tmp/info_csh.383485D4832B0-71D2-1014-9723-89616DB4D31D,write_mo
+de=replace,angle_direction=ccw, units= mm,args= -t matrix -e f52456/matrix -d RO
+W -p name    (0)
+***********COMMAND    03Apr2017.152435.293 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command info ended
+Script message: delete_layer,layer=3619995117
+***********COMMAND    03Apr2017.152435.293 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+delete_layer,layer=3619995117 (0)
+***********COMMAND    03Apr2017.152435.303 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command delete_layer ended
+Script message: info,out_file=c:/tmp/info_csh.383485D4832B0-71D2-1014-9723-89616
+DB4D31D,write_mode=replace, units = inch,args= -t step -e f52456/data_mpanel -d
+exists
+***********COMMAND    03Apr2017.152435.303 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+info,out_file=c:/tmp/info_csh.383485D4832B0-71D2-1014-9723-89616DB4D31D,write_mo
+de=replace, units = inch,args= -t step -e f52456/data_mpanel -d exists     (0)
+***********COMMAND    03Apr2017.152435.313 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command info ended
+Script message: info,out_file=c:/tmp/info_csh.383485D4832B0-71D2-1014-9723-89616
+DB4D31D,write_mode=replace,angle_direction=ccw, units= mm,args= -t matrix -e f52
+456/matrix -d ROW -p name
+***********COMMAND    03Apr2017.152435.313 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+info,out_file=c:/tmp/info_csh.383485D4832B0-71D2-1014-9723-89616DB4D31D,write_mo
+de=replace,angle_direction=ccw, units= mm,args= -t matrix -e f52456/matrix -d RO
+W -p name    (0)
+***********COMMAND    03Apr2017.152435.313 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command info ended
+Script message: delete_layer,layer=5581665039
+***********COMMAND    03Apr2017.152435.313 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+delete_layer,layer=5581665039 (0)
+***********COMMAND    03Apr2017.152435.323 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command delete_layer ended
+Script message: info,out_file=c:/tmp/info_csh.383485D4832B0-71D2-1014-9723-89616
+DB4D31D,write_mode=replace, units = inch,args= -t step -e f52456/data_mpanel -d
+exists
+***********COMMAND    03Apr2017.152435.323 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+info,out_file=c:/tmp/info_csh.383485D4832B0-71D2-1014-9723-89616DB4D31D,write_mo
+de=replace, units = inch,args= -t step -e f52456/data_mpanel -d exists     (0)
+***********COMMAND    03Apr2017.152435.333 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command info ended
+Script message: info,out_file=c:/tmp/info_csh.383485D4832B0-71D2-1014-9723-89616
+DB4D31D,write_mode=replace,angle_direction=ccw, units= mm,args= -t matrix -e f52
+456/matrix -d ROW -p name
+***********COMMAND    03Apr2017.152435.333 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+info,out_file=c:/tmp/info_csh.383485D4832B0-71D2-1014-9723-89616DB4D31D,write_mo
+de=replace,angle_direction=ccw, units= mm,args= -t matrix -e f52456/matrix -d RO
+W -p name    (0)
+***********COMMAND    03Apr2017.152435.333 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command info ended
+Script message: delete_layer,layer=6250915527
+***********COMMAND    03Apr2017.152435.333 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+delete_layer,layer=6250915527 (0)
+***********COMMAND    03Apr2017.152435.343 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command delete_layer ended
+Script message: info,out_file=c:/tmp/info_csh.383485D4832B0-71D2-1014-9723-89616
+DB4D31D,write_mode=replace, units = inch,args= -t step -e f52456/data_mpanel -d
+exists
+***********COMMAND    03Apr2017.152435.343 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+info,out_file=c:/tmp/info_csh.383485D4832B0-71D2-1014-9723-89616DB4D31D,write_mo
+de=replace, units = inch,args= -t step -e f52456/data_mpanel -d exists     (0)
+***********COMMAND    03Apr2017.152435.353 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command info ended
+Script message: info,out_file=c:/tmp/info_csh.383485D4832B0-71D2-1014-9723-89616
+DB4D31D,write_mode=replace,angle_direction=ccw, units= mm,args= -t matrix -e f52
+456/matrix -d ROW -p name
+***********COMMAND    03Apr2017.152435.353 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+info,out_file=c:/tmp/info_csh.383485D4832B0-71D2-1014-9723-89616DB4D31D,write_mo
+de=replace,angle_direction=ccw, units= mm,args= -t matrix -e f52456/matrix -d RO
+W -p name    (0)
+***********COMMAND    03Apr2017.152435.353 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command info ended
+Script message: delete_layer,layer=8286437988
+***********COMMAND    03Apr2017.152435.353 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+delete_layer,layer=8286437988 (0)
+***********COMMAND    03Apr2017.152435.363 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command delete_layer ended
+Script message: info,out_file=c:/tmp/info_csh.383485D4832B0-71D2-1014-9723-89616
+DB4D31D,write_mode=replace, units = inch,args= -t step -e f52456/data_mpanel -d
+exists
+***********COMMAND    03Apr2017.152435.363 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+info,out_file=c:/tmp/info_csh.383485D4832B0-71D2-1014-9723-89616DB4D31D,write_mo
+de=replace, units = inch,args= -t step -e f52456/data_mpanel -d exists     (0)
+***********COMMAND    03Apr2017.152435.373 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command info ended
+Script message: info,out_file=c:/tmp/info_csh.383485D4832B0-71D2-1014-9723-89616
+DB4D31D,write_mode=replace,angle_direction=ccw, units= mm,args= -t matrix -e f52
+456/matrix -d ROW -p name
+***********COMMAND    03Apr2017.152435.373 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+info,out_file=c:/tmp/info_csh.383485D4832B0-71D2-1014-9723-89616DB4D31D,write_mo
+de=replace,angle_direction=ccw, units= mm,args= -t matrix -e f52456/matrix -d RO
+W -p name    (0)
+***********COMMAND    03Apr2017.152435.373 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command info ended
+Script message: delete_layer,layer=3931884765
+***********COMMAND    03Apr2017.152435.373 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+delete_layer,layer=3931884765 (0)
+***********COMMAND    03Apr2017.152435.383 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command delete_layer ended
+Script message: info,out_file=c:/tmp/info_csh.383485D4832B0-71D2-1014-9723-89616
+DB4D31D,write_mode=replace, units = inch,args= -t step -e f52456/data_mpanel -d
+exists
+***********COMMAND    03Apr2017.152435.383 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+info,out_file=c:/tmp/info_csh.383485D4832B0-71D2-1014-9723-89616DB4D31D,write_mo
+de=replace, units = inch,args= -t step -e f52456/data_mpanel -d exists     (0)
+***********COMMAND    03Apr2017.152435.393 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command info ended
+Script message: info,out_file=c:/tmp/info_csh.383485D4832B0-71D2-1014-9723-89616
+DB4D31D,write_mode=replace,angle_direction=ccw, units= mm,args= -t matrix -e f52
+456/matrix -d ROW -p name
+***********COMMAND    03Apr2017.152435.393 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+info,out_file=c:/tmp/info_csh.383485D4832B0-71D2-1014-9723-89616DB4D31D,write_mo
+de=replace,angle_direction=ccw, units= mm,args= -t matrix -e f52456/matrix -d RO
+W -p name    (0)
+***********COMMAND    03Apr2017.152435.393 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command info ended
+Script message: delete_layer,layer=5093383789
+***********COMMAND    03Apr2017.152435.393 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+delete_layer,layer=5093383789 (0)
+***********COMMAND    03Apr2017.152435.403 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command delete_layer ended
+Script message: info,out_file=c:/tmp/info_csh.383485D4832B0-71D2-1014-9723-89616
+DB4D31D,write_mode=replace, units = inch,args= -t step -e f52456/data_mpanel -d
+exists
+***********COMMAND    03Apr2017.152435.403 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+info,out_file=c:/tmp/info_csh.383485D4832B0-71D2-1014-9723-89616DB4D31D,write_mo
+de=replace, units = inch,args= -t step -e f52456/data_mpanel -d exists     (0)
+***********COMMAND    03Apr2017.152435.413 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command info ended
+Script message: info,out_file=c:/tmp/info_csh.383485D4832B0-71D2-1014-9723-89616
+DB4D31D,write_mode=replace,angle_direction=ccw, units= mm,args= -t matrix -e f52
+456/matrix -d ROW -p name
+***********COMMAND    03Apr2017.152435.413 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+info,out_file=c:/tmp/info_csh.383485D4832B0-71D2-1014-9723-89616DB4D31D,write_mo
+de=replace,angle_direction=ccw, units= mm,args= -t matrix -e f52456/matrix -d RO
+W -p name    (0)
+***********COMMAND    03Apr2017.152435.413 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command info ended
+Script message: delete_layer,layer=9182739257
+***********COMMAND    03Apr2017.152435.413 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+delete_layer,layer=9182739257 (0)
+***********COMMAND    03Apr2017.152435.423 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command delete_layer ended
+Script message: info,out_file=c:/tmp/info_csh.383485D4832B0-71D2-1014-9723-89616
+DB4D31D,write_mode=replace, units = inch,args= -t step -e f52456/data_mpanel -d
+exists
+***********COMMAND    03Apr2017.152435.423 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+info,out_file=c:/tmp/info_csh.383485D4832B0-71D2-1014-9723-89616DB4D31D,write_mo
+de=replace, units = inch,args= -t step -e f52456/data_mpanel -d exists     (0)
+***********COMMAND    03Apr2017.152435.433 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command info ended
+Script message: info,out_file=c:/tmp/info_csh.383485D4832B0-71D2-1014-9723-89616
+DB4D31D,write_mode=replace,angle_direction=ccw, units= mm,args= -t matrix -e f52
+456/matrix -d ROW -p name
+***********COMMAND    03Apr2017.152435.433 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+info,out_file=c:/tmp/info_csh.383485D4832B0-71D2-1014-9723-89616DB4D31D,write_mo
+de=replace,angle_direction=ccw, units= mm,args= -t matrix -e f52456/matrix -d RO
+W -p name    (0)
+***********COMMAND    03Apr2017.152435.433 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command info ended
+Script message: delete_layer,layer=58288574
+***********COMMAND    03Apr2017.152435.433 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+delete_layer,layer=58288574 (0)
+***********COMMAND    03Apr2017.152435.443 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command delete_layer ended
+Script message: info,out_file=c:/tmp/info_csh.383485D4832B0-71D2-1014-9723-89616
+DB4D31D,write_mode=replace, units = inch,args= -t step -e f52456/data_mpanel -d
+exists
+***********COMMAND    03Apr2017.152435.443 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+info,out_file=c:/tmp/info_csh.383485D4832B0-71D2-1014-9723-89616DB4D31D,write_mo
+de=replace, units = inch,args= -t step -e f52456/data_mpanel -d exists     (0)
+***********COMMAND    03Apr2017.152435.453 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command info ended
+Script message: info,out_file=c:/tmp/info_csh.383485D4832B0-71D2-1014-9723-89616
+DB4D31D,write_mode=replace,angle_direction=ccw, units= mm,args= -t matrix -e f52
+456/matrix -d ROW -p name
+***********COMMAND    03Apr2017.152435.453 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+info,out_file=c:/tmp/info_csh.383485D4832B0-71D2-1014-9723-89616DB4D31D,write_mo
+de=replace,angle_direction=ccw, units= mm,args= -t matrix -e f52456/matrix -d RO
+W -p name    (0)
+***********COMMAND    03Apr2017.152435.453 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command info ended
+Script message: delete_layer,layer=9590148925
+***********COMMAND    03Apr2017.152435.463 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+delete_layer,layer=9590148925 (0)
+***********COMMAND    03Apr2017.152435.463 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command delete_layer ended
+Script message: info,out_file=c:/tmp/info_csh.383485D4832B0-71D2-1014-9723-89616
+DB4D31D,write_mode=replace, units = inch,args= -t step -e f52456/data_mpanel -d
+exists
+***********COMMAND    03Apr2017.152435.473 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+info,out_file=c:/tmp/info_csh.383485D4832B0-71D2-1014-9723-89616DB4D31D,write_mo
+de=replace, units = inch,args= -t step -e f52456/data_mpanel -d exists     (0)
+***********COMMAND    03Apr2017.152435.473 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command info ended
+Script message: info,out_file=c:/tmp/info_csh.383485D4832B0-71D2-1014-9723-89616
+DB4D31D,write_mode=replace,angle_direction=ccw, units= mm,args= -t matrix -e f52
+456/matrix -d ROW -p name
+***********COMMAND    03Apr2017.152435.473 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+info,out_file=c:/tmp/info_csh.383485D4832B0-71D2-1014-9723-89616DB4D31D,write_mo
+de=replace,angle_direction=ccw, units= mm,args= -t matrix -e f52456/matrix -d RO
+W -p name    (0)
+***********COMMAND    03Apr2017.152435.473 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command info ended
+Script message: delete_layer,layer=2942199707
+***********COMMAND    03Apr2017.152435.483 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+delete_layer,layer=2942199707 (0)
+***********COMMAND    03Apr2017.152435.483 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command delete_layer ended
+Script message: info,out_file=c:/tmp/info_csh.383485D4832B0-71D2-1014-9723-89616
+DB4D31D,write_mode=replace, units = inch,args= -t step -e f52456/data_mpanel -d
+exists
+***********COMMAND    03Apr2017.152435.493 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+info,out_file=c:/tmp/info_csh.383485D4832B0-71D2-1014-9723-89616DB4D31D,write_mo
+de=replace, units = inch,args= -t step -e f52456/data_mpanel -d exists     (0)
+***********COMMAND    03Apr2017.152435.493 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command info ended
+Script message: info,out_file=c:/tmp/info_csh.383485D4832B0-71D2-1014-9723-89616
+DB4D31D,write_mode=replace,angle_direction=ccw, units= mm,args= -t matrix -e f52
+456/matrix -d ROW -p name
+***********COMMAND    03Apr2017.152435.493 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+info,out_file=c:/tmp/info_csh.383485D4832B0-71D2-1014-9723-89616DB4D31D,write_mo
+de=replace,angle_direction=ccw, units= mm,args= -t matrix -e f52456/matrix -d RO
+W -p name    (0)
+***********COMMAND    03Apr2017.152435.493 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command info ended
+Script message: delete_layer,layer=3947448730
+***********COMMAND    03Apr2017.152435.503 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+delete_layer,layer=3947448730 (0)
+***********COMMAND    03Apr2017.152435.503 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command delete_layer ended
+Script message: info,out_file=c:/tmp/info_csh.383485D4832B0-71D2-1014-9723-89616
+DB4D31D,write_mode=replace, units = inch,args= -t step -e f52456/data_mpanel -d
+exists
+***********COMMAND    03Apr2017.152435.513 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+info,out_file=c:/tmp/info_csh.383485D4832B0-71D2-1014-9723-89616DB4D31D,write_mo
+de=replace, units = inch,args= -t step -e f52456/data_mpanel -d exists     (0)
+***********COMMAND    03Apr2017.152435.513 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command info ended
+ ==========Job WorkerClass Progress, UnitId:pdf - 66.6666666666667
+
+
+
+items cnt:0 ==== Group cnt0
+
+
+Height = 395, Page height is: 395
+ Column 1 :
+ Column 2 :
+ Column 3 :
+HEIGHT OF PAGE CONTENT IS: 395
+
+
+
+items cnt:0 ==== Group cnt0
+
+
+
+
+
+items cnt:0 ==== Group cnt0
+
+
+ =========================== Total progress per task: 45
+Script message: info,out_file=c:/tmp/info_csh.383485D4832B0-71D2-1014-9723-89616
+DB4D31D,write_mode=replace, units = inch,args= -t matrix -e f52456/matrix -d ROW
+
+***********COMMAND    03Apr2017.152435.583 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+info,out_file=c:/tmp/info_csh.383485D4832B0-71D2-1014-9723-89616DB4D31D,write_mo
+de=replace, units = inch,args= -t matrix -e f52456/matrix -d ROW     (0)
+***********COMMAND    03Apr2017.152435.603 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command info ended
+Script message: info,out_file=c:/tmp/info_csh.383485D4832B0-71D2-1014-9723-89616
+DB4D31D,write_mode=replace,angle_direction=ccw, units= mm,args= -t job -e f52456
+ -d ATTR -p name+val
+***********COMMAND    03Apr2017.152435.623 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+info,out_file=c:/tmp/info_csh.383485D4832B0-71D2-1014-9723-89616DB4D31D,write_mo
+de=replace,angle_direction=ccw, units= mm,args= -t job -e f52456 -d ATTR -p name
++val    (0)
+***********COMMAND    03Apr2017.152435.633 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command info ended
+Script message: info,out_file=c:/tmp/info_csh.383485D4832B0-71D2-1014-9723-89616
+DB4D31D,write_mode=replace,angle_direction=ccw, units= mm,args= -t job -e f52456
+ -d ATTR -p name+val
+***********COMMAND    03Apr2017.152435.643 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+info,out_file=c:/tmp/info_csh.383485D4832B0-71D2-1014-9723-89616DB4D31D,write_mo
+de=replace,angle_direction=ccw, units= mm,args= -t job -e f52456 -d ATTR -p name
++val    (0)
+***********COMMAND    03Apr2017.152435.643 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command info ended
+Wide character in print at C:\Perl\site\lib\TpvScripts\Scripts/Packages/Pdf/Temp
+late2Pdf/Template2Pdf.pm line 102.
+Converting c:\tmp\InCam\scripts\other\65788334-71D2-1014-9723-89616DB4D31D to c:
+\tmp\InCam\scripts\other\657638C8-71D2-1014-9723-89616DB4D31D.pdf...
+WARNING [xhtml2pdf] Created temporary file c:\users\spr\appdata\local\temp\tmpie
+yac_
+Script message: info,out_file=c:/tmp/info_csh.383485D4832B0-71D2-1014-9723-89616
+DB4D31D,write_mode=replace, units = inch,args= -t step -e f52456/pdf_mpanel -d e
+xists
+***********COMMAND    03Apr2017.152436.913 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+info,out_file=c:/tmp/info_csh.383485D4832B0-71D2-1014-9723-89616DB4D31D,write_mo
+de=replace, units = inch,args= -t step -e f52456/pdf_mpanel -d exists     (0)
+***********COMMAND    03Apr2017.152436.923 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command info ended
+Script message: delete_entity,name=pdf_mpanel,job=f52456,type=step
+***********COMMAND    03Apr2017.152436.923 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+delete_entity,name=pdf_mpanel,job=f52456,type=step (0)
+***********COMMAND    03Apr2017.152436.953 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command delete_entity ended
+ ==========Job WorkerClass Progress, UnitId:pdf - 83.3333333333333
+
+
+
+items cnt:0 ==== Group cnt0
+
+
+Height = 395, Page height is: 395
+ Column 1 :
+ Column 2 :
+ Column 3 :
+HEIGHT OF PAGE CONTENT IS: 395
+
+
+
+items cnt:0 ==== Group cnt0
+
+
+
+
+
+items cnt:0 ==== Group cnt0
+
+
+ =========================== Total progress per task: 54
+ ==========Job WorkerClass Progress, UnitId:pdf - 100
+Script message: check_inout,mode=in,job=f52456,ent_type=job
+***********COMMAND    03Apr2017.152437.683 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+check_inout,mode=in,job=f52456,ent_type=job (0)
+
+
+
+items cnt:0 ==== Group cnt0
+
+
+Height = 395, Page height is: 395
+ Column 1 :
+ Column 2 :
+ Column 3 :
+HEIGHT OF PAGE CONTENT IS: 395
+
+
+
+items cnt:0 ==== Group cnt0
+
+
+
+
+
+items cnt:0 ==== Group cnt0
+
+
+ =========================== Total progress per task: 62
+***********COMMAND    03Apr2017.152438.354 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command check_inout ended
+Script message: close_job,job=f52456
+***********COMMAND    03Apr2017.152438.354 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+close_job,job=f52456 (0)
+***********COMMAND    03Apr2017.152438.534 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command close_job ended
+
+detach START
+
+detach
+Script message: close_toolkit
+***********COMMAND    03Apr2017.152439.584 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+close_toolkit (-1)
+***********COMMAND    03Apr2017.152439.584 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command close_toolkit ended
+
+
+ close toolikt ################
+
+====== E X P O R T ======= SERVER: PID: 33488, port:1001........................
+............was closed
+Script message:
+Script C:/Perl/site/lib/TPVSCR~1/Scripts/Managers/ASYNCJ~1/Server/ServerExporter
+.pl ended OK
+***********COMMAND    03Apr2017.152439.614 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+disp_on (-1)
+***********COMMAND    03Apr2017.152439.614 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command disp_on ended
+***********COMMAND    03Apr2017.152439.614 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+origin_on (-1)
+***********COMMAND    03Apr2017.152439.614 InCAM 17456 stepan 3.02 (174462) Wind
+ows 64 Bit
+Command origin_on ended
+ers::CamHelper';
+use aliased 'CamHelpers::CamLayer';
+use aliased 'CamHelpers::CamAttributes';
+
+#use aliased 'Packages::Gerbers::Export::ExportLayers' => 'Helper';
+use aliased 'Packages::CAM::UniRTM::UniRTM::UniRTM';
+use aliased 'Packages::Routing::RoutLayer::RoutStart::RoutStart';
+use aliased 'Packages::Routing::RoutLayer::RoutDrawing::RoutDrawing';
+use aliased 'Packages::CAM::FeatureFilter::FeatureFilter';
+
+#-------------------------------------------------------------------------------------------#
+#  Package methods
+#-------------------------------------------------------------------------------------------#
+
+sub new {
+
+	my $class = shift;
+	my $self  = {};
+	bless $self;
+
+	$self->{"inCAM"}    = shift;
+	$self->{"jobId"}    = shift;
+	$self->{"stepList"} = shift;
+
+	return $self;
+}
+
+sub FindStart {
+	my $self = shift;
+
+	my $resultItem = ItemResult->new("Find rout start");
+
+	my @errStep = ();
+	$resultItem->{"errStartSteps"} = \@errStep;    # save stepPlace, where start was not found
+
+	foreach my $s ( $self->{"stepList"}->GetSteps() ) {
+
+		print STDERR "\n Zpracovani stepu " . $s->GetStepName() . "\n";
+
+		foreach my $sRot ( $s->GetStepRotations() ) {
+
+			$self->__RemoveFootAttr($sRot);
+
+			$self->__FindStart( $sRot, "f", $resultItem );
+
+		}
+
+	}
+
+	return $resultItem;
+}
+
+# Check if there is noly bridges rout
+# if so, save this information to job attribute "rout_on_bridges"
+sub __FindStart {
+	my $self    = shift;
+	my $stepRot = shift;
+	my $layer   = shift;
+	my $resItem = shift;
+
+	my $inCAM = $self->{"inCAM"};
+	my $jobId = $self->{"jobId"};
+
+	# reset attribut "rout_on_bridges" to NO, thus pcb is not on bridges
+
+	my $unitRTM  = $stepRot->GetUniRTM();
+	my @outlines = $unitRTM->GetOutlineChains();
+
+	foreach my $outline (@outlines) {
+
+		my @features      = $outline->GetFeatures();
+		my $startByAtt    = 0;
+		my $startByScript = 0;
+		my $startEdge     = undef;
+		my $footEdge      = undef;
+
+		my $routModify = 0;    # indicate, if rout is modifie during searching start
+
+		# 1) Find start of chain by user foot down attribute
+		my $attFootName = undef;
+		if ( defined $stepRot->GetAngle() && $stepRot->GetAngle() >= 0 ) {
+			$attFootName = "foot_down_" . $stepRot->GetAngle() . "deg";
+		}
+
+		if ( defined $attFootName ) {
+
+			my $edge = ( grep { $_->{"att"}->{$attFootName} } @features )[0];
+
+			if ( defined $edge ) {
+				$startByAtt = 1;
+
+				$footEdge = $edge;
+				$startEdge = $self->__GetStartByFootEdge( $edge, \@features );
+
+			}
+		}
+
+		# 2) Find start of chain by script, if is not already found
+		if ( !$startByAtt ) {
+
+			my %modify = RoutStart->RoutNeedModify( \@features );
+
+			if ( $modify{"result"} ) {
+
+				$routModify = 1;
+				RoutStart->ProcessModify( \%modify, \@features );
+			}
+
+			my %startResult = RoutStart->GetRoutStart( \@features );
+			my %footResult  = RoutStart->GetRoutFootDown( \@features );
+
+			if ( $startResult{"result"} ) {
+
+				$startByScript = 1;
+
+				if ( $routModify || $outline->GetModified() ) {
+
+					print STDERR "\n\n Modifikace " . $stepRot->GetAngle() . "\n\n";
+
+					# Redraw outline chain
+					my $draw = RoutDrawing->new( $inCAM, $jobId, $self->{"stepList"}->GetStep(), $stepRot->GetRoutLayer() );
+
+					my @delete = grep { $_->{"id"} > 0 } @features;
+
+					$draw->DeleteRoute( \@delete );
+
+					$draw->DrawRoute( \@features, 2000, EnumsRout->Comp_LEFT, $startResult{"edge"}, 1 );    # draw new
+
+				}
+				else {
+
+					$startEdge = $startResult{"edge"};
+					$footEdge = $self->__GetFootEdgeByStart( $startResult{"edge"}, \@features );
+				}
+			}
+		}
+
+		# 3) If start found, set it
+		if ( $startByAtt || $startByScript ) {
+
+			# Set rout start + foot down attribute, if is no already set
+			if ( !( $routModify || $outline->GetModified() ) ) {
+
+				# 1)  set rout start attribute
+				my $f = FeatureFilter->new( $inCAM, $jobId, $stepRot->GetRoutLayer() );
+				my @ids = ( $footEdge->{"id"} );
+				$f->AddFeatureIndexes( \@ids );
+
+				if ( $f->Select() ) {
+
+					CamAttributes->SetFeaturesAttribute( $inCAM, $jobId, ".foot_down" );
+
+				}
+				else {
+					die "Foot down feature was not selected\n";
+				}
+
+				# 2) set rout start attribute
+
+				$f->Reset();
+				my @ids2 = ( $startEdge->{"id"} );
+				$f->AddFeatureIndexes( \@ids2 );
+
+				if ( $f->Select() ) {
+
+					$inCAM->COM(
+								 "chain_set_plunge",
+								 "start_of_chain" => "yes",
+								 "mode"           => "straight",
+								 "apply_to"       => "all",
+								 "inl_mode"       => "straight",
+								 "layer"          => $stepRot->GetRoutLayer(),
+								 "type"           => "open"
+					);
+
+				}
+				else {
+					die "Rout start was not selected\n";
+				}
+
+			}
+
+		}
+		else {
+
+			my $m =
+			    "Pro step: \""
+			  . $stepRot->GetStepName()
+			  . "\", vrstvu: \"$layer\""
+			  . " při rotaci dps: \""
+			  . $stepRot->GetAngle()
+			  . "\" nebyl nalezen vhodný počátek frézy. Urči počátek frézy při otočení dps: \""
+			  . $stepRot->GetAngle()
+			  . "\" pomocí atributu: \"$attFootName\"";
+
+			my %inf = ( "stepRotation" => $stepRot, "outlineChaibSeq" => $outline );
+			push( @{ $resItem->{"errStartSteps"} }, \%inf );
+
+			$resItem->AddError($m);
+
+		}
+	}
+
+	# Reload UniRTM for "rotated step" layer, because set route start or rout modification, changed feature ids
+	$self->{"stepList"}->ReloadStepRotation($stepRot);
+
+}
+
+sub CreateFsch {
+	my $self      = shift;
+	my $convTable = shift;    # old rout chain order => "fsch" chain order
+
+	my $resultItem = ItemResult->new("Create fsch");
+
+	my $inCAM = $self->{"inCAM"};
+	my $jobId = $self->{"jobId"};
+
+	my $fschLayer = "fsch";
+
+	if ( CamHelper->LayerExists( $inCAM, $jobId, $fschLayer ) ) {
+		$inCAM->COM( 'delete_layer', "layer" => $fschLayer );
+	}
+
+	$inCAM->COM( 'create_layer', layer => $fschLayer, context => 'board', type => 'rout', polarity => 'positive', ins_layer => '' );
+
+	CamHelper->SetStep( $inCAM, $self->{"stepList"}->GetStep() );
+
+	foreach my $s ( $self->{"stepList"}->GetSteps() ) {
+
+		foreach my $sRot ( $s->GetStepRotations() ) {
+
+			foreach my $sPlc ( $sRot->GetStepPlaces() ) {
+
+				$self->__CopyRoutToFsch( $sRot, $sPlc, $convTable );
+
+				#				# Fill conver tables
+				#				my %t  = ();
+				#				my %t2 = ();
+				#				for ( my $i = 0 ; $i < scalar(@oldChains) ; $i++ ) {
+				#
+				#					$t{ $oldChains[$i]->GetChainOrder() } = $newChains[$i]->GetChainOrder();
+				#
+				#					# fill conver table. Each item is couple : "new fsch chain order" => chain tool id
+				#					$t2{ $t{ $oldChains[$i]->GetChainOrder() } } = $convTmp{ $oldChains[$i]->GetChainOrder()};
+				#				}
+				#
+				#				$convTable1->{ $sPlc->GetStepId() } = \%t;
+				#				$convTable2->{ $sPlc->GetStepId() } = \%t2;
+
+			}
+		}
+	}
+
+	return $resultItem;
+}
+
+sub __RemoveFootAttr {
+	my $self    = shift;
+	my $stepRot = shift;
+
+	my $inCAM = $self->{"inCAM"};
+
+	CamLayer->WorkLayer( $inCAM, $stepRot->GetRoutLayer() );
+
+	CamAttributes->DelFeatuesAttribute( $inCAM, ".foot_down", "" );
+}
+
+sub __GetFootEdgeByStart {
+	my $self      = shift;
+	my $startEdge = shift;
+	my @features  = @{ shift(@_) };
+	my $foot      = undef;
+
+	for ( my $i = 0 ; $i < scalar(@features) ; $i++ ) {
+
+		if ( $features[$i] == $startEdge ) {
+
+			if ( $i == 0 ) {
+				$foot = $features[ scalar(@features) - 1 ];
+			}
+			else {
+				$foot = $features[ $i - 1 ];
+			}
+		}
+	}
+
+	return $foot;
+}
+
+sub __GetStartByFootEdge {
+	my $self      = shift;
+	my $foot      = shift;
+	my @features  = @{ shift(@_) };
+	my $startEdge = undef;
+
+	for ( my $i = 0 ; $i < scalar(@features) ; $i++ ) {
+
+		if ( $features[$i] == $foot ) {
+
+			if ( $i + 1 == scalar(@features) ) {
+				$startEdge = $features[0];
+			}
+			else {
+				$startEdge = $features[ $i + 1 ];
+			}
+		}
+	}
+
+	return $startEdge;
+}
+
+sub __CopyRoutToFsch {
+	my $self      = shift;
+	my $sRot      = shift;
+	my $sPlc      = shift;
+	my $convTable = shift;
+
+	my $inCAM = $self->{"inCAM"};
+	my $jobId = $self->{"jobId"};
+
+	my $fschLayer = "fsch";
+
+	# 1) Copy prepared rout to fsch
+
+	CamLayer->WorkLayer( $inCAM, $sRot->GetRoutLayer() );
+
+	#my %convTmp = ();    # temporary convert table
+
+	# 2) Get new chain ids
+
+	# Get new chain number and store to conversion table
+	my @oldChains = $sRot->GetUniRTM()->GetChainList();
+
+	# 3) Generate guid for each new chain and set this guid to all chain features in fsch
+	for ( my $i = 0 ; $i < scalar(@oldChains) ; $i++ ) {
+
+		my $oldChain = $oldChains[$i];
+
+		my $chainId = GeneralHelper->GetGUID();    # Guid, which will be signed all features with sam chain
+
+		my $f = FeatureFilter->new( $inCAM, $jobId, $sRot->GetRoutLayer() );
+
+		my %idVal = ( "min" => $oldChain->GetChainOrder(), "max" => $oldChain->GetChainOrder() );
+		$f->AddIncludeAtt( ".rout_chain", \%idVal );
+
+		# Test if count of selected features in fsch is ok
+		my $featCnt = scalar( $sRot->GetUniRTM()->GetChainByChainTool($oldChain)->GetFeatures() );
+
+		if ( $f->Select() == $featCnt ) {
+
+			CamAttributes->SetFeaturesAttribute( $inCAM, $jobId, "feat_group_id", $chainId );
+		}
+		else {
+			die "not chain featuer selected";
+		}
+
+		$convTable->{ $sPlc->GetStepId() }->{ $oldChain->GetChainOrder() } = $chainId;
+	}
+
+	$inCAM->COM(
+				 "sel_copy_other",
+				 "target_layer" => $fschLayer,
+				 "invert"       => "no",
+				 "dx"           => $sPlc->GetPosX(),
+				 "dy"           => $sPlc->GetPosY(),
+				 "size"         => "0",
+				 "x_anchor"     => "0",
+				 "y_anchor"     => "0"
+	);
+
+	#my $unitRTM = UniRTM->new( $inCAM, $jobId, $self->{"stepList"}->GetStep(), $fschLayer );
+
+	#	my @newChains = ( $unitRTM->GetChainList() )[ -scalar(@oldChains) .. -1 ];
+	#
+	#	# 3) Generate guid for each new chain and set this guid to all chain features in fsch
+	#	for ( my $i = 0 ; $i < scalar(@oldChains) ; $i++ ) {
+	#
+	#		my $oldChain = $oldChains[$i];
+	#		my $newChain = $newChains[$i];
+	#
+	#		my $chainId = GeneralHelper->GetGUID();    # Guid, which will be signed all features with sam chain
+	#
+	#		my $f = FeatureFilter->new( $inCAM, $jobId, $fschLayer );
+	#
+	#		my %idVal = ( "min" => $newChain->GetChainOrder(), "max" => $newChain->GetChainOrder() );
+	#		$f->AddIncludeAtt( ".rout_chain", \%idVal );
+	#
+	#		# Test if count of selected features in fsch is ok
+	#		my $featCnt = scalar( $sRot->GetUniRTM()->GetChainByChainTool($oldChain)->GetFeatures() );
+	#
+	#		if ( $f->Select() == $featCnt ) {
+	#
+	#			CamAttributes->SetFeaturesAttribute( $inCAM, $jobId, "feat_group_id", $chainId );
+	#		}
+	#		else {
+	#			die "not chain featuer selected";
+	#		}
+	#
+	#		$convTable->{ $sPlc->GetStepId() }->{ $oldChain->GetChainOrder() } = $chainId;
+	#	}
+}
+
+#-------------------------------------------------------------------------------------------#
+#  Place for testing..
+#-------------------------------------------------------------------------------------------#
+my ( $package, $filename, $line ) = caller;
+if ( $filename =~ /DEBUG_FILE.pl/ ) {
+
+	#use aliased 'Packages::Export::NCExport::NCExportGroup';
+
+	#print $test;
+
+}
+
+1;
+

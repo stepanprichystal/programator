@@ -45,7 +45,7 @@ sub OnCheckGroupData {
 
 	# 1) check if customer request paste files
 
-	if ( defined $customerNote->ExportPaste() ) {
+	if ( defined $customerNote->ExportPaste() && !$defaultInfo->IsPool()) {
 
 		if ( $pasteInfo->{"export"} != $customerNote->ExportPaste() ) {
 

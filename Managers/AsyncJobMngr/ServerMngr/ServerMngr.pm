@@ -500,6 +500,7 @@ sub __CreateServer {
 	# turn all backslash - incam need this
 	$path =~ s/\\/\//g;
 	
+	print STDERR "\n New Incam instance launching  on $inCAMPath $path \n";
 
 	#run InCAM editor with serverscript
 	Win32::Process::Create( $processObj, $inCAMPath,
