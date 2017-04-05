@@ -46,7 +46,7 @@ sub RoutChainAttOk {
 		
 		my $str = join(";", @chainMiss);
 		
-		$$mess .= "Step:  \"$step\", layer:  \"$layer\". Some features (ids: $str) doesn't contain rout attribut \".rout_chain\".";  
+		$$mess .= "Step:  \"$step\", some features (id numbers: $str) doesn't contain rout in layer: \"$layer\".";  
 	}
 	
 	return $result;
