@@ -181,7 +181,7 @@ sub __ProcessNClayer {
 			next;
 		}
 
-		my $draw = Drawing->new( $inCAM, $lName, $drawingPos, $self->{"pcbThick"}, $side, $l->{"plated"} );
+		my $draw = Drawing->new( $inCAM, $jobId, $lName, $drawingPos, $self->{"pcbThick"}, $side, $l->{"plated"} );
 
 		# Test on special countersink tool
 		if (  $t->GetSpecial() && defined $t->GetAngle() && $t->GetAngle() > 0 ) {
@@ -234,7 +234,7 @@ sub __ProcessNClayer {
 			$depth -= 0.1;
 		}
 
-		my $draw = Drawing->new( $inCAM, $lName, $drawingPos, $self->{"pcbThick"}, $side, $l->{"plated"} );
+		my $draw = Drawing->new( $inCAM, $jobId, $lName, $drawingPos, $self->{"pcbThick"}, $side, $l->{"plated"} );
 		$draw->Create( Enums->Depth_ZAXIS, Enums->Symbol_SURFACE, undef, $depth );
 
 		# Add anew layerData to datalist
