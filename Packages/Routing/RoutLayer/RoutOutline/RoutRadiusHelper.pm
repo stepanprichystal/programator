@@ -453,7 +453,7 @@ sub __CreateBoxSecondCase {
 	$vBef = [ [ $edgeBefore{"x1"}, $edgeBefore{"y1"} ], [ $edgeBefore{"x2"}, $edgeBefore{"y2"} ] ];
 
 	# get second point of "normal" line
-	@normal = RouteRadiusHelper->__GetEndVerticalLine( $edgeNext{"x1"}, $edgeNext{"y1"}, $edgeNext{"x2"}, $edgeNext{"y2"} );
+	@normal = $self->__GetEndVerticalLine( $edgeNext{"x1"}, $edgeNext{"y1"}, $edgeNext{"x2"}, $edgeNext{"y2"} );
 
 	$vNext = [ [ $edgeNext{"x1"}, $edgeNext{"y1"} ], [ $normal[0], $normal[1] ] ];
 
@@ -466,7 +466,7 @@ sub __CreateBoxSecondCase {
 	#4th point
 
 	# get second point of "normal" line
-	@normal = RouteRadiusHelper->__GetEndVerticalLine( $edgeBefore{"x2"}, $edgeBefore{"y2"}, $edgeBefore{"x1"}, $edgeBefore{"y1"} );
+	@normal = $self->__GetEndVerticalLine( $edgeBefore{"x2"}, $edgeBefore{"y2"}, $edgeBefore{"x1"}, $edgeBefore{"y1"} );
 
 	$vBef = [ [ $edgeBefore{"x2"}, $edgeBefore{"y2"} ], [ $normal[0], $normal[1] ] ];
 

@@ -315,9 +315,11 @@ sub __LoadToolsMagazine {
 	my $jobId = $self->{"jobId"};
 
 	my $materialName = $self->{"materialName"};
-	my $operation    = $self->__GetOperationByLayer();
+	
 
 	foreach my $t ( @{ $self->{"tools"} } ) {
+		
+		my $operation    = $self->__GetOperationByLayer($t);
 
 		my $mInfo = $t->GetMagazineInfo();
 
@@ -361,6 +363,9 @@ sub __LoadToolsMagazine {
 
 sub __GetOperationByLayer {
 	my $self = shift;
+	my $tool = shift;
+	
+	my $typeProc = $tool->GetTypeProcess();
 
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
@@ -374,23 +379,25 @@ sub __GetOperationByLayer {
 	$l{"gROWlayer_type"} = CamHelper->LayerType( $inCAM, $jobId, $self->{"layer"} );
 
 	my $operation = undef;
+	
+	
 
-	if ( $l{"plated"} && $l{"gROWlayer_type"} eq "drill" ) {
+	if ( $l{"plated"} && $typeProc eq Enums->TypeProc_HOLE ) {
 
 		$operation = "PlatedDrill";
 
 	}
-	elsif ( $l{"plated"} && $l{"gROWlayer_type"} eq "rout" ) {
+	elsif ( $l{"plated"} && $typeProc eq Enums->TypeProc_CHAIN ) {
 
 		$operation = "PlatedRout";
 
 	}
-	elsif ( !$l{"plated"} && $l{"gROWlayer_type"} eq "drill" ) {
+	elsif ( !$l{"plated"} && $typeProc eq Enums->TypeProc_HOLE ) {
 
 		$operation = "NPlatedDrill";
 
 	}
-	elsif ( !$l{"plated"} && $l{"gROWlayer_type"} eq "rout" ) {
+	elsif ( !$l{"plated"} && $typeProc eq Enums->TypeProc_CHAIN) {
 
 		$operation = "NPlatedRout";
 

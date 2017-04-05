@@ -120,9 +120,11 @@ sub DrawRoute {
 		}
 
 		# save GUID of start rout
-		if ( $sorteEdges[$i]->{"id"} eq $footDown->{"id"} ) {
+		if ($setFootAtt) {
+			if ( $sorteEdges[$i]->{"id"} eq $footDown->{"id"} ) {
 
-			$footDownGuid = $primitive->GetGroupGUID();
+				$footDownGuid = $primitive->GetGroupGUID();
+			}
 		}
 
 	}
@@ -206,10 +208,35 @@ sub DeleteRoute {
 	my $f = FeatureFilter->new( $inCAM, $jobId, $layer );
 
 	my @ids = map { $_->{"id"} } @edges;
-	$f->AddFeatureIndexes( \@ids );
 
-	if ( $f->Select() ) {
-		$inCAM->COM("sel_delete");
+	# if there is too much feature ids, split it and delete rout in cycle
+
+	my @idsPart = ();
+
+	# each loop delete 20 edges
+	for ( my $i = 0 ; $i < scalar(@ids) ; $i++ ) {
+
+		push( @idsPart, $ids[$i] );
+
+		if ( scalar(@idsPart) == 20 ) {
+			$f->AddFeatureIndexes( \@idsPart );
+
+			if ( $f->Select() ) {
+				$inCAM->COM("sel_delete");
+			}
+			$f->Reset();
+			@idsPart = ();
+		}
+	}
+
+	# delete rest of edges
+	if ( scalar(@idsPart) ) {
+		$f->AddFeatureIndexes( \@idsPart );
+		if ( $f->Select() ) {
+
+			$inCAM->COM("sel_delete");
+			$f->Reset();
+		}
 	}
 
 }
@@ -263,7 +290,7 @@ sub DrawFootRoutResult {
 
 			# Direction is defined, depand on which source features come..
 			my $dir = $foot->{"footEdge"}->{"newDir"};
-			if(!defined $dir){
+			if ( !defined $dir ) {
 				$dir = $foot->{"footEdge"}->{"oriDir"};
 			}
 

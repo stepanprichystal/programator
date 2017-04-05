@@ -17,6 +17,7 @@ use aliased 'Managers::MessageMngr::MessageMngr';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'CamHelpers::CamHelper';
 use aliased 'Packages::ItemResult::ItemResult';
+use aliased 'Packages::Routing::RoutLayer::RoutChecks::RoutLayer';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -46,10 +47,26 @@ sub Check {
 	my $jobId = $self->{"jobId"};
 	my $step  = $self->{"step"};
 	my $layer = $self->{"layer"};
-	
-	CamHelper->SetStep($inCAM, $step);
 
+	CamHelper->SetStep( $inCAM, $step );
 
+	my $resRoutChainAtt = 0;
+	while ( !$resRoutChainAtt ) {
+
+		my $mess = "";
+
+		$resRoutChainAtt = RoutLayer->RoutChainAttOk( $inCAM, $jobId, $step, $layer, \$mess );
+
+		unless ($resRoutChainAtt) {
+
+			my @m = ($mess);
+
+			$self->{"messMngr"}->ShowModal( -1, EnumsGeneral->MessageType_ERROR, \@m );           #  Script se zastavi
+
+			$inCAM->PAUSE("Oprav chybu a pokracuj...");
+		}
+
+	}
 
 	my $resOnlyBridges = 0;
 	while ( !$resOnlyBridges ) {
@@ -61,8 +78,7 @@ sub Check {
 		}
 
 	}
-	
-	
+
 	my $resOutsideChains = 0;
 	while ( !$resOutsideChains ) {
 
