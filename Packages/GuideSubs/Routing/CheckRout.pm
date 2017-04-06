@@ -18,6 +18,8 @@ use aliased 'Enums::EnumsGeneral';
 use aliased 'CamHelpers::CamHelper';
 use aliased 'Packages::ItemResult::ItemResult';
 use aliased 'Packages::Routing::RoutLayer::RoutChecks::RoutLayer';
+use aliased 'CamHelpers::CamLayer';
+use aliased 'Connectors::HeliosConnector::HegMethods';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -36,6 +38,8 @@ sub new {
 	#$self->{"resultItem"} = ItemResult->new("Final result");
 	$self->{"messMngr"} = MessageMngr->new( $self->{"jobId"} );
 
+	$self->{"isPool"} = HegMethods->GetPcbIsPool( $self->{"jobId"} );
+
 	return $self;
 
 }
@@ -49,6 +53,7 @@ sub Check {
 	my $layer = $self->{"layer"};
 
 	CamHelper->SetStep( $inCAM, $step );
+	CamLayer->WorkLayer( $inCAM, $layer );
 
 	my $resRoutChainAtt = 0;
 	while ( !$resRoutChainAtt ) {
@@ -61,33 +66,36 @@ sub Check {
 
 			my @m = ($mess);
 
-			$self->{"messMngr"}->ShowModal( -1, EnumsGeneral->MessageType_ERROR, \@m );           #  Script se zastavi
+			$self->{"messMngr"}->ShowModal( -1, EnumsGeneral->MessageType_ERROR, \@m );    #  Script se zastavi
 
 			$inCAM->PAUSE("Oprav chybu a pokracuj...");
 		}
-
 	}
 
-	my $resOnlyBridges = 0;
-	while ( !$resOnlyBridges ) {
+	if ( $self->{"isPool"} ) {
 
-		$resOnlyBridges = Check1UpChain->OnlyBridges( $inCAM, $jobId, $step, $layer, $self->{"messMngr"} );
+		my $resOnlyBridges = 0;
+		while ( !$resOnlyBridges ) {
 
-		unless ($resOnlyBridges) {
-			$inCAM->PAUSE("Oprav chybu a pokracuj...");
+			$resOnlyBridges = Check1UpChain->OnlyBridges( $inCAM, $jobId, $step, $layer, $self->{"messMngr"} );
+
+			unless ($resOnlyBridges) {
+				$inCAM->PAUSE("Oprav chybu a pokracuj...");
+			}
 		}
-
 	}
 
-	my $resOutsideChains = 0;
-	while ( !$resOutsideChains ) {
+	if ( $self->{"isPool"} ) {
+		my $resOutsideChains = 0;
+		while ( !$resOutsideChains ) {
 
-		$resOutsideChains = Check1UpChain->OutsideChains( $inCAM, $jobId, $step, $layer, $self->{"messMngr"} );
+			$resOutsideChains = Check1UpChain->OutsideChains( $inCAM, $jobId, $step, $layer, $self->{"messMngr"} );
 
-		unless ($resOutsideChains) {
-			$inCAM->PAUSE("Oprav chybu a pokracuj...");
+			unless ($resOutsideChains) {
+				$inCAM->PAUSE("Oprav chybu a pokracuj...");
+			}
+
 		}
-
 	}
 
 	my $resLeftRout = 0;
@@ -95,7 +103,7 @@ sub Check {
 
 		my $mess = "";
 
-		$resLeftRout = Check1UpChain->LeftRoutChecks( $inCAM, $jobId, $step, $layer, \$mess );
+		$resLeftRout = Check1UpChain->LeftRoutChecks( $inCAM, $jobId, $step, $layer, $self->{"isPool"}, \$mess );
 
 		unless ($resLeftRout) {
 
@@ -108,15 +116,17 @@ sub Check {
 
 	}
 
-	my $resTestFindAndDrawStarts = 0;
-	while ( !$resTestFindAndDrawStarts ) {
+	if ( $self->{"isPool"} ) {
+		my $resTestFindAndDrawStarts = 0;
+		while ( !$resTestFindAndDrawStarts ) {
 
-		$resTestFindAndDrawStarts = Check1UpChain->TestFindAndDrawStarts( $inCAM, $jobId, $step, $layer, 1, 1, $self->{"messMngr"} );
+			$resTestFindAndDrawStarts = Check1UpChain->TestFindAndDrawStarts( $inCAM, $jobId, $step, $layer, 1, 1, $self->{"messMngr"} );
 
-		unless ($resTestFindAndDrawStarts) {
-			$inCAM->PAUSE("Oprav chybu a pokracuj...");
+			unless ($resTestFindAndDrawStarts) {
+				$inCAM->PAUSE("Oprav chybu a pokracuj...");
+			}
+
 		}
-
 	}
 
 	my $resToolsAreOrdered = 0;

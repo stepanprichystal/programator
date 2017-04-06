@@ -24,6 +24,7 @@ use aliased 'Packages::Routing::RoutLayer::RoutStart::RoutRotation';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'CamHelpers::CamHelper';
 
+
 #-------------------------------------------------------------------------------------------#
 #  Public method
 #-------------------------------------------------------------------------------------------#
@@ -102,40 +103,68 @@ sub OnlyBridges {
 	my @outlines = $unitRTM->GetOutlineChains();
 
 	my @chains = $unitRTM->GetChains();
-	my @lefts = grep { $_->GetComp() eq EnumsRout->Comp_LEFT } @chains;
+	my @lefts  = grep { $_->GetComp() eq EnumsRout->Comp_LEFT } @chains;
+	my @none   = grep { $_->GetComp() eq EnumsRout->Comp_NONE } @chains;
 
 	# If not exist outline rout, check if pcb is on bridges
 	unless ( scalar(@outlines) ) {
 
 		# no chains at layer
-		unless (@chains) {
+		if ( scalar(@chains) == 0 ) {
 
-			my @m = ("Ve vrstvě není ani obrysová vrstva ani můstky. Je to tak správně?");
-			my @b = ( "Ano", "Ne" );
+			my @m = ("Ve vrstvě neobsahuje žádnou frézu. Je to tak správně?");
+			my @b = ( "Ano vrstva je prázdná, ", "Fréza je špatně, opravím ji" );
 			$messMngr->ShowModal( -1, EnumsGeneral->MessageType_WARNING, \@m, \@b );    #  Script se zastavi
 			if ( $messMngr->Result() == 1 ) {
 				$result = 0;
 			}
 
 		}
-
-		# maybe thera are bridges, but not LEFT
 		elsif ( scalar(@lefts) == 0 ) {
 
-			my @m = ("Ve vrstvě není ani obrysová vrstva ani můstky s kompenzací left. Pokud je pcb na můstky nastav jim kompenzaci left.");
-			my @b = ( "Takhle je to správně", "Opravím můstky na LEFT" );
+			my @m = ("Ve vrstvě není obrysová fréza. Obsahuje vrstva pouze vnitřní výřezy?");
+			my @b = ( "Ano, vrstva obsahuje pouze vnitřní výřezy", "Ne, dps obsahuje obrysovou frézu, opravím to", "Ne, dps je na můstky" );
 			$messMngr->ShowModal( -1, EnumsGeneral->MessageType_WARNING, \@m, \@b );    #  Script se zastavi
+
 			if ( $messMngr->Result() == 1 ) {
 				$result = 0;
 			}
+			elsif ( $messMngr->Result() == 2 ) {
+
+				# maybe thera are bridges, but not LEFT
+				if ( scalar(@lefts) == 0 && scalar(@none) == 0 ) {
+
+					my @m = ("Ve vrstvě nejsou  můstky s kompenzací left ani none. Pokud je to možné nastav můstkům kompenzaci \"left\".");
+					my @b = ("Opravím můstky na \"left\" nebo \"none\"");
+					$messMngr->ShowModal( -1, EnumsGeneral->MessageType_WARNING, \@m, \@b );    #  Script se zastavi
+					if ( $messMngr->Result() == 0 ) {
+						$result = 0;
+					}
+
+				}
+
+				# there are probably bridges with left comp
+				elsif ( scalar(@lefts) == 0 && scalar(@none) ) {
+
+					my @m = ("Pravděpodobně je dps ponechaná na můstky, které mají kompenzaci \"none\". Je to tak?");
+					my @b = ( "Ano, dps je na můstky s kompenzací \"none\"", "Ne, dps opravím na můstky s kompenzací \"left\"" );
+					$messMngr->ShowModal( -1, EnumsGeneral->MessageType_WARNING, \@m, \@b );    #  Script se zastavi
+					if ( $messMngr->Result() == 0 ) {
+
+						# set pcb is rout on bridges
+						CamAttributes->SetStepAttribute( $inCAM, $jobId, $step, "rout_on_bridges", "yes" );
+					}
+					else {
+						$result = 0;
+					}
+				}
+
+			}
 
 		}
-
-		# there are probably bridges with left comp
-		else {
-
-			my @m = ("Pravděpodobně je dps ponechaná na můstky, které mají kompenzaci left. Pokud to není pravda oprav frézu.");
-			my @b = ( "Takhle je to správně", "Opravím frézu" );
+		elsif ( scalar(@lefts) ) {
+			my @m = ("Pravděpodobně je dps ponechaná na můstky, které mají kompenzaci \"left\". Je to tak?");
+			my @b = ( "Ano, dps je na můstky s kompenzací \"left\"", "Ne, vrstva by měla obsahovat obrysovou frézu, opravím to" );
 			$messMngr->ShowModal( -1, EnumsGeneral->MessageType_WARNING, \@m, \@b );    #  Script se zastavi
 			if ( $messMngr->Result() == 0 ) {
 
@@ -147,6 +176,7 @@ sub OnlyBridges {
 				$result = 0;
 			}
 		}
+
 	}
 
 	return $result;
@@ -159,30 +189,36 @@ sub LeftRoutChecks {
 	my $jobId = shift;
 	my $step  = shift;
 	my $layer = shift;
+	my $isPool =shift;
 	my $mess  = shift;
 
 	my $result = 1;
 
+	
+
 	my $unitRTM = UniRTM->new( $inCAM, $jobId, $step, $layer );
 
 	# 1) test if tehere are left no cyclic rout, which has foot down
-	my @lefts   = grep { $_->GetComp() eq EnumsRout->Comp_LEFT } $unitRTM->GetChains();
-	my @leftSeq = map  { $_->GetChainSequences() } @lefts;
-	@leftSeq = grep { $_->HasFootDown() } @leftSeq;
 
-	if ( scalar(@leftSeq) ) {
+	if ($isPool) {
+		my @lefts   = grep { $_->GetComp() eq EnumsRout->Comp_LEFT } $unitRTM->GetChains();
+		my @leftSeq = map  { $_->GetChainSequences() } @lefts;
+		@leftSeq = grep { $_->HasFootDown() } @leftSeq;
 
-		$result = 0;
+		if ( scalar(@leftSeq) ) {
 
-		my @info = map { $_->GetStrInfo() } @leftSeq;
-		my $str = join( "; ", @info );
-		my $m =
-		    "Ve stepu: \""
-		  . $step
-		  . "\", ve vrstvě: \"$layer\" jsou frézy s kompenzací­ left, které mají­ nastavenou patku (.foot_down attribut) ($str)";
+			$result = 0;
 
-		$$mess .= $m;
+			my @info = map { $_->GetStrInfo() } @leftSeq;
+			my $str = join( "; ", @info );
+			my $m =
+			    "Ve stepu: \""
+			  . $step
+			  . "\", ve vrstvě: \"$layer\" jsou frézy s kompenzací­ left, které mají­ nastavenou patku (.foot_down attribut) ($str)";
 
+			$$mess .= $m;
+
+		}
 	}
 
 	# 2) Test if outline orut has only one attribute "foot_down_<angle>deg" of specific kind
@@ -438,27 +474,31 @@ sub TestFindAndDrawStarts {
 	}
 
 	# Draw foots
+	if ( scalar(@footResults) ) {
 
-	my $lName = "footdown_" . $jobId;
+		my $lName = "footdown_" . $jobId;
 
-	if ( CamHelper->LayerExists( $inCAM, $jobId, $lName ) ) {
-		$inCAM->COM( "delete_layer", "layer" => $lName );
+		if ( CamHelper->LayerExists( $inCAM, $jobId, $lName ) ) {
+			$inCAM->COM( "delete_layer", "layer" => $lName );
+		}
+
+		$inCAM->COM( 'create_layer', layer => $lName, context => 'misc', type => 'document', polarity => 'positive', ins_layer => '' );
+
+		my $drawView = RoutDrawing->new( $inCAM, $jobId, $step, $lName );
+
+		$drawView->DrawFootRoutResult( \@footResults, 1, 1 );
+
+		$inCAM->COM(
+					 "display_layer",
+					 name    => $layer,
+					 display => "yes",
+					 number  => 2
+		);
+
+		$inCAM->COM( "work_layer", name => $layer );
+
+		$inCAM->PAUSE("Zkontroluj navrzene patky...");
 	}
-
-	$inCAM->COM( 'create_layer', layer => $lName, context => 'misc', type => 'document', polarity => 'positive', ins_layer => '' );
-
-	my $drawView = RoutDrawing->new( $inCAM, $jobId, $step, $lName );
-
-	$drawView->DrawFootRoutResult( \@footResults, 1, 1 );
-
-	$inCAM->COM(
-				 "display_layer",
-				 name    => $layer,
-				 display => "yes",
-				 number  => 2
-	);
-
-	$inCAM->COM( "work_layer", name => $layer );
 
 	# Show info, if foot down was not found
 	my $notFound = scalar( grep { !$_->{"result"} } @footResults );
