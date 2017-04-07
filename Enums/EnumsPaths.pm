@@ -3,6 +3,7 @@ package Enums::EnumsPaths;
 
 use constant {
 	Client_EXPORTFILES => "c:\\Export\\ExportFiles\\",
+	Client_EXPORTFILESPOOL => "c:\\Export\\ExportFilesPool\\",
 	Client_PCBLOCAL    => "c:\\pcb\\",
 	Client_EXPORTLOCAL => "c:\\Export\\",
 	Client_ELTESTS     => "c:\\Boards\\",

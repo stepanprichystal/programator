@@ -4,7 +4,7 @@
 # Keep also state of group and export error information
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Programs::Exporter::ExportUtility::Groups::GroupData;
+package Managers::AbstractQueue::Groups::GroupData;
 
 #3th party library
 use strict;
@@ -12,8 +12,8 @@ use warnings;
 
 #local library
 #use aliased 'Programs::Exporter::ExportChecker::Enums';
-use aliased 'Programs::Exporter::ExportUtility::ExportResultMngr';
-use aliased 'Programs::Exporter::ExportUtility::Enums';
+use aliased 'Managers::AbstractQueue::ExportResultMngr';
+use aliased 'Managers::AbstractQueue::Enums';
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#

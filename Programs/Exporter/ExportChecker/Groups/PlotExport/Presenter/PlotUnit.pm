@@ -28,7 +28,7 @@ use aliased 'Programs::Exporter::ExportChecker::Groups::PlotExport::Model::PlotP
 use aliased 'Programs::Exporter::ExportChecker::Groups::PlotExport::Model::PlotExportData';
 use aliased 'Programs::Exporter::ExportChecker::Groups::PlotExport::Model::PlotGroupData';
 use aliased 'Packages::Events::Event';
-use aliased 'Programs::Exporter::UnitEnums';
+use aliased 'Programs::Exporter::ExporterUtility::UnitEnums';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods

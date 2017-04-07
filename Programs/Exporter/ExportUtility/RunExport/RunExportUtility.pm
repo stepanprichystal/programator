@@ -18,6 +18,7 @@ use Win32::Process::List;
 use aliased 'Helpers::GeneralHelper';
 use aliased 'Managers::MessageMngr::MessageMngr';
 use aliased 'Enums::EnumsGeneral';
+use aliased 'Managers::AbstractQueue::AbstractQueue::Helper';
 
 sub new {
 	my $self = shift;
@@ -32,7 +33,7 @@ sub new {
 	}
 
 	#run exporter
-	my $isRuning = $self->__CheckRunningInstance();
+	my $isRuning = Helper->CheckRunningInstance("RunExportUtility.pl");
 
 	if ($isRuning) {
 
@@ -47,48 +48,15 @@ sub new {
 	}
 	else {
 
-		#run exporter
-		$self->__RunExportUtility();
+ 
+		Helper->__RunExportUtility();
 
 	}
  
 	
 	return $self;
 }
-
-sub __CheckRunningInstance {
-	my $self = shift;
-
-	my $exist = 0;
-
-	my $procName;
-	my $args;
-	my $p    = Win32::Process::List->new();
-	my $pi   = Win32::Process::Info->new();
-	my %list = $p->GetProcesses();
-
-	foreach my $pid ( sort { $a <=> $b } keys %list ) {
-		$procName = $list{$pid};
-
-		if ( $procName =~ /^perl.exe/i ) {
-
-			my $procInfo = $pi->GetProcInfo($pid);
-			if ( defined $procInfo && scalar( @{$procInfo} ) ) {
-
-				$args = @{$procInfo}[0]->{"CommandLine"};
-
-				if ( defined $args && $args =~ /RunExportUtilityScript.pl/ ) {
-
-					$exist = 1;
-					last;
-				}
-			}
-		}
-
-	}
-
-	return $exist;
-}
+ 
 
 sub __RunExportUtility {
 	my $self = shift;

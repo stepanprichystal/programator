@@ -5,7 +5,7 @@
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Programs::Exporter::ExportUtility::ExportUtility::Forms::JobQueueItemForm;
-use base qw(Widgets::Forms::CustomQueue::MyWxCustomQueueItem);
+use base qw(Managers::AbstractQueue::AbstractQueue::Forms::JobQueueItemForm);
 
 #3th party library
 use Wx;
@@ -18,7 +18,7 @@ use aliased 'Packages::Events::Event';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'Widgets::Forms::ErrorIndicator::ErrorIndicator';
 use aliased 'Widgets::Forms::ResultIndicator::ResultIndicator';
-use aliased 'Programs::Exporter::DataTransfer::Enums' => 'EnumsTransfer';
+use aliased 'Managers::AbstractQueue::ExportData::Enums' => 'EnumsTransfer';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -35,26 +35,18 @@ sub new {
 	my $groupMngr    = shift;
 	my $itemMngr     = shift;
 
-	my $self = $class->SUPER::new( $parent, $taskId );
+	my $self = $class->SUPER::new( $parent, $jobId, $taskId, $exportedData, $taskMngr, $groupMngr, $itemMngr );
 
 	bless($self);
 
 	# PROPERTIES
-	$self->{"jobId"}        = $jobId;
-	$self->{"taskId"}       = $taskId;
-	$self->{"exportedData"} = $exportedData;
-
 	$self->{"produceMngr"} = $produceMngr;
-	$self->{"taskMngr"}    = $taskMngr;
-	$self->{"groupMngr"}   = $groupMngr;
-	$self->{"itemMngr"}    = $itemMngr;
 
 	$self->__SetLayout();
 
 	# EVENTS
+
 	$self->{"onProduce"} = Event->new();
-	$self->{"onAbort"}   = Event->new();
-	$self->{"onRemove"}  = Event->new();
 
 	return $self;
 }
@@ -74,8 +66,8 @@ sub SetProgress {
 # Set export indicators
 
 sub SetExportResult {
-	my $self             = shift;
-	my $result           = shift;	 # tell if there was error during export
+	my $self   = shift;
+	my $result = shift;    # tell if there was error during export
 
 	my $aborted          = shift;
 	my $jobSentToProduce = shift;    # tell if job was sent to produce
@@ -204,18 +196,6 @@ sub __OnProduce {
 
 }
 
-sub __OnAbort {
-	my $self = shift;
-
-	$self->{"onAbort"}->Do( $self->{"taskId"} );
-}
-
-sub __OnRemove {
-	my $self = shift;
-
-	$self->{"onRemove"}->Do( $self->{"taskId"} );
-}
-
 # ========================================================================
 # SET LAYOUT
 # ========================================================================
@@ -274,11 +254,11 @@ sub __SetLayout {
 
 	$szMain->Add( $stateTxt, 0, &Wx::wxALIGN_CENTER_VERTICAL | &Wx::wxLEFT, 6 );
 
-	$szMain->Add( $self->__GetDelimiter(), 0, &Wx::wxEXPAND );    # add delimiter
+	$szMain->Add( $self->_GetDelimiter(), 0, &Wx::wxEXPAND );    # add delimiter
 
 	$szMain->Add( $toptions, 0, &Wx::wxEXPAND | &Wx::wxLEFT, 5 );
 
-	$szMain->Add( $self->__GetDelimiter($self), 0, &Wx::wxEXPAND );    # add delimiter
+	$szMain->Add( $self->_GetDelimiter($self), 0, &Wx::wxEXPAND );    # add delimiter
 
 	$szMain->Add( $result, 0, &Wx::wxEXPAND | &Wx::wxLEFT, 5 );
 
@@ -468,15 +448,6 @@ sub __SetToProduceBtn {
 	}
 
 	$self->{"sentToProduceChb"}->SetValue($value);
-}
-
-sub __GetDelimiter {
-	my $self = shift;
-
-	my $pnl = Wx::Panel->new( $self, -1, [ -1, -1 ], [ 2, 2 ] );
-	$pnl->SetBackgroundColour( Wx::Colour->new( 150, 150, 150 ) );
-
-	return $pnl;
 }
 
 #-------------------------------------------------------------------------------------------#

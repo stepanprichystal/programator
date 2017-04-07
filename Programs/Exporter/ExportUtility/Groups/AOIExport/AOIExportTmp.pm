@@ -8,7 +8,7 @@ use aliased 'Enums::EnumsGeneral';
 
 use aliased 'Programs::Exporter::ExportUtility::Groups::AOIExport::AOIExport';
 use aliased 'Programs::Exporter::DataTransfer::UnitsDataContracts::AOIData';
-use aliased 'Programs::Exporter::UnitEnums';
+use aliased 'Programs::Exporter::ExporterUtility::UnitEnums';
 
 #use aliased 'Programs::Exporter::ExportChecker::Groups::AOIExport::Presenter::AOIUnit';
 use aliased 'Managers::MessageMngr::MessageMngr';

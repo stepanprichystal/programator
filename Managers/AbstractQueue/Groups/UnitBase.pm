@@ -1,21 +1,20 @@
 
 #-------------------------------------------------------------------------------------------#
 # Description: Base class for units. Provide necessary methods, which allow specific unit 
-# to be exported by ExportUtility program
+# to be exported by AbstractQueue program
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Programs::Exporter::ExportUtility::Groups::UnitBase;
+package Managers::AbstractQueue::Groups::UnitBase;
 
 #3th party library
 use strict;
 use warnings;
 
 #local library
-use aliased 'Programs::Exporter::ExportChecker::Enums';
 use aliased 'Packages::Events::Event';
-use aliased 'Programs::Exporter::ExportUtility::ExportUtility::Forms::Group::GroupWrapperForm';
+use aliased 'Managers::AbstractQueue::AbstractQueue::Forms::Group::GroupWrapperForm';
 use aliased 'Enums::EnumsGeneral';
-use aliased 'Programs::Exporter::ExportUtility::Groups::GroupData';
+use aliased 'Managers::AbstractQueue::Groups::GroupData';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -28,6 +27,8 @@ sub new {
 	
 	# uique key within all units
 	$self->{"unitId"} = shift;
+	
+	$self->{"unitTitle"} = shift;
 
 	$self->{"jobId"} = shift;
 
@@ -57,7 +58,7 @@ sub InitForm {
 	#$self->{"form"} = GroupWrapperForm->new( $parent);
 	$self->{"form"} = GroupWrapperForm->new( $parent, $self->{"jobId"}, $itemResultMngr, $groupResultMngr );
 
-	$self->{"form"}->Init( $self->{"unitId"} );
+	$self->{"form"}->Init( $self->{"unitTitle"} );
 
 }
 

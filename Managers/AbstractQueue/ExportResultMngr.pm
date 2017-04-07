@@ -5,7 +5,7 @@
 # from child thread to main thread.
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Programs::Exporter::ExportUtility::ExportResultMngr;
+package Managers::AbstractQueue::ExportResultMngr;
 use base('Packages::ItemResult::ItemResultMngr');
 
 #3th party library
@@ -15,7 +15,7 @@ use warnings;
 #local library
 use aliased 'Packages::ItemResult::ItemResult';
 use aliased 'Packages::ItemResult::Enums';
-use aliased 'Programs::Exporter::ExportUtility::Enums';
+use aliased 'Managers::AbstractQueue::Enums';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods

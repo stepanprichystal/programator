@@ -1,9 +1,10 @@
-#öß§²
 #-------------------------------------------------------------------------------------------#
-# Description: Cover merging, spliting and checking before exporting NC files
+# Description: Base class, keep ob task data for one job, 
+# which fill be processed by "Exporter utility"
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Programs::Exporter::DataTransfer::ExportData;
+use base("Managers::AbstractQueue::ExportData::ExportData");
 
 #3th party library
 use strict;
@@ -18,50 +19,25 @@ use aliased 'Programs::Exporter::ExportChecker::Enums';
 #  Package methods
 #-------------------------------------------------------------------------------------------#
 sub new {
-	my $self = shift;
-	$self = {};
-	bless $self;
+	my $class = shift;
+	my $self = $class->SUPER::new( @_);
 
-	my %units = ();
-	$self->{"units"} = \%units;
-
-	my %settings = ();
-	$self->{"settings"} = \%settings;
+	bless($self);
+ 
 
 	# EXPORT PROPERTIES
-	$self->{"settings"}->{"time"}         = undef;
-	$self->{"settings"}->{"mode"}         = undef;    # synchronousExport/ asynchronousExport
+	 
 	$self->{"settings"}->{"toProduce"}    = undef;    # sent to produce 0/1
-	$self->{"settings"}->{"port"}         = undef;    # if export is synchronous, port of server script
 	$self->{"settings"}->{"formPosX"}     = undef;    # position of export cheker form
 	$self->{"settings"}->{"formPosY"}     = undef;    # position of export cheker form
-	$self->{"settings"}->{"mandatoryUnits"} = undef;    # units, which has to be exported
 
 	return $self;                                     # Return the reference to the hash.
-}
-
-sub GetExportTime {
-	my $self = shift;
-
-	return $self->{"settings"}->{"time"};
-}
-
-sub GetExportMode {
-	my $self = shift;
-
-	return $self->{"settings"}->{"mode"};
 }
 
 sub GetToProduce {
 	my $self = shift;
 
 	return $self->{"settings"}->{"toProduce"};
-}
-
-sub GetPort {
-	my $self = shift;
-
-	return $self->{"settings"}->{"port"};
 }
 
 sub GetFormPosition {
@@ -71,43 +47,6 @@ sub GetFormPosition {
 	return $pos;
 }
 
-sub GetMandatoryUnits {
-	my $self = shift;
-
-	my @units = @{$self->{"settings"}->{"mandatoryUnits"}};
-	return @units;
-}
-
-sub GetOrderedUnitKeys {
-	my $self = shift;
-	my $desc = shift;
-
-	my %unitsData = %{ $self->{"units"} };
-	my @keys      = ();
-	if ($desc) {
-		@keys = sort { $unitsData{$b}->{"data"}->{"__UNITORDER__"} <=> $unitsData{$a}->{"data"}->{"__UNITORDER__"} } keys %unitsData;
-	}
-	else {
-		@keys = sort { $unitsData{$a}->{"data"}->{"__UNITORDER__"} <=> $unitsData{$b}->{"data"}->{"__UNITORDER__"} } keys %unitsData;
-	}
-
-	return @keys;
-}
-
-# Tenting
-sub GetUnitData {
-	my $self   = shift;
-	my $unitId = shift;
-
-	my $exportData = $self->{"units"}->{$unitId};
-	return $exportData;
-}
-
-sub GetAllUnitData {
-	my $self = shift;
-
-	return %{ $self->{"units"} };
-}
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

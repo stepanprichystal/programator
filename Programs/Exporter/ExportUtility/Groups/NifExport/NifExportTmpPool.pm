@@ -17,7 +17,7 @@ use aliased 'Enums::EnumsMachines';
 use aliased 'Helpers::GeneralHelper';
 use aliased 'Packages::Events::Event';
 
-use aliased 'Programs::Exporter::UnitEnums';
+use aliased 'Programs::Exporter::ExporterUtility::UnitEnums';
 
 use aliased 'CamHelpers::CamAttributes';
 use aliased 'Connectors::HeliosConnector::HegMethods';

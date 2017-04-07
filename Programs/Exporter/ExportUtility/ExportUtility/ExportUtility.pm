@@ -4,6 +4,7 @@
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Programs::Exporter::ExportUtility::ExportUtility::ExportUtility;
+use base("Managers::AbstractQueue::AbstractQueue::AbstractQueue");
 
 #3th party library
 use threads;
@@ -21,11 +22,12 @@ use aliased 'Enums::EnumsGeneral';
 use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'Helpers::FileHelper';
 use aliased 'Managers::MessageMngr::MessageMngr';
-
+use aliased 'Managers::AbstractQueue::AbstractQueue::ExportStatus::ExportStatus';
 use aliased 'Programs::Exporter::ExportUtility::Task::Task';
 use aliased 'Programs::Exporter::ExportUtility::ExportUtility::Forms::ExportUtilityForm';
 use aliased 'Programs::Exporter::DataTransfer::DataTransfer';
-use aliased 'Programs::Exporter::DataTransfer::Enums' => 'EnumsTransfer';
+use aliased 'Managers::AbstractQueue::ExportData::Enums' => 'EnumsExportData';
+use aliased 'Managers::AbstractQueue::ExportData::Enums' => 'EnumsTransfer';
 use aliased 'Managers::AsyncJobMngr::Enums'           => 'EnumsMngr';
 use aliased 'Programs::Exporter::ExportUtility::ExportUtility::JobWorkerClass';
 use aliased 'Programs::Exporter::ExportUtility::Enums';
@@ -36,35 +38,27 @@ use aliased 'Packages::InCAM::InCAM';
 #-------------------------------------------------------------------------------------------#
 
 sub new {
+	my $class = shift;
 
-	my $self = shift;
-	$self = {};
-	bless($self);
-
+	# Tray or window mode
 	my $runMode = shift;
 
-	$self->{"inCAM"} = undef;
-	
-	# Load verion of exporter
-	$self->{"version"} = $self->__GetVersion();
-
 	# Main application form
-	$self->{"form"} = ExportUtilityForm->new($runMode, $self->{"version"},  undef );
+	my $form = ExportUtilityForm->new( $runMode, undef );
 
-	# Keep all references of used groups/units in form
-	my @tasks = ();
-	$self->{"tasks"} = \@tasks;
+	my $self = $class->SUPER::new($form);
+	bless $self;
 
 	my @exportFiles = ();
 	$self->{"exportFiles"} = \@exportFiles;
-	
-
 
 	#set base class handlers
 
 	$self->__SetHandlers();
 
-	$self->__Run();
+	$self->__RunTimers();
+
+	$self->_Run();
 
 	return $self;
 }
@@ -81,13 +75,14 @@ sub JobWorker {
 	my $inCAM                        = shift;
 	my $THREAD_PROGRESS_EVT : shared = ${ shift(@_) };
 	my $THREAD_MESSAGE_EVT : shared  = ${ shift(@_) };
+	my $stopVar                      = shift;
 
 	#GetExportClass
-	my $task        = $self->__GetTaskById($taskId);
+	my $task        = $self->_GetTaskById($taskId);
 	my %exportClass = $task->{"units"}->GetExportClass();
 	my $exportData  = $task->GetExportData();
 
-	my $jobExport = JobWorkerClass->new( \$THREAD_PROGRESS_EVT, \$THREAD_MESSAGE_EVT, $self->{"form"}->{"mainFrm"} );
+	my $jobExport = JobWorkerClass->new( \$THREAD_PROGRESS_EVT, \$THREAD_MESSAGE_EVT, $stopVar, $self->{"form"}->{"mainFrm"} );
 	$jobExport->Init( $pcbId, $taskId, $inCAM, \%exportClass, $exportData );
 
 	$jobExport->RunExport();
@@ -98,61 +93,17 @@ sub JobWorker {
 #  BASE CLASS HANDLERS
 # ========================================================================================== #
 
+# First is called this function in base class, then is called this handler
 sub __OnJobStateChanged {
 	my $self            = shift;
 	my $taskId          = shift;
 	my $taskState       = shift;
 	my $taskStateDetail = shift;
 
-	my $task       = $self->__GetTaskById($taskId);
+	my $task       = $self->_GetTaskById($taskId);
 	my $exportData = $task->GetExportData();
 
-	my $status = "";
-
-	if ( $taskState eq EnumsMngr->JobState_WAITINGQUEUE ) {
-
-		$status = "Waiting in queue.";
-
-	}
-	elsif ( $taskState eq EnumsMngr->JobState_WAITINGPORT ) {
-
-		$status = "Waiting on InCAM port.";
-		$self->{"form"}->ActivateForm( 1, $exportData->GetFormPosition() );
-
-	}
-	elsif ( $taskState eq EnumsMngr->JobState_RUNNING ) {
-
-		$status = "Running...";
-
-	}
-	elsif ( $taskState eq EnumsMngr->JobState_ABORTING ) {
-
-		$status = "Aborting job...";
-
-	}
-	elsif ( $taskState eq EnumsMngr->JobState_DONE ) {
-
-		# Refresh GUI - job queue
-
-		#	 ExitType_SUCCES => 'Succes',
-		#	ExitType_FAILED => 'Failed',
-		#	ExitType_FORCE  => 'Force',
-
-		my $aborted = 0;
-
-		if ( $taskStateDetail eq EnumsMngr->ExitType_FORCE ) {
-			$aborted = 1;
-
-			$status = "Job export aborted by user.";
-
-		}
-		else {
-
-			$status = "Job export finished.";
-		}
-
-		$task->ProcessTaskDone($aborted);
-		$self->{"form"}->SetJobItemResult($task);
+	if ( $taskState eq EnumsMngr->JobState_DONE ) {
 
 		# Setting to produce if is checked by export settings
 		if ( $task->GetJobShouldToProduce() ) {
@@ -169,139 +120,42 @@ sub __OnJobStateChanged {
 			# refresh GUI to produce
 			$self->{"form"}->SetJobItemToProduceResult($task);
 		}
-
 	}
-
-	$self->{"form"}->SetJobItemStatus( $taskId, $status );
-
 }
 
-# Start when some items wass processed and contain value of progress
+# First is called this function in base class, then is called this handler
 sub __OnJobProgressEvtHandler {
 	my $self   = shift;
 	my $taskId = shift;
 	my $data   = shift;
 
-	my $task = $self->__GetTaskById($taskId);
-
-	$task->ProcessProgress($data);
-
-	$self->{"form"}->SetJobItemProgress( $taskId, $task->GetProgress() );
-
-	#my $task = $self->__GetTaskById($taskId);
-
-	#$self->{"gauge"}->SetValue($value);
-
-	#print "Exporter utility:  job progress, job id: " . $jobGUID . " - value: " . $value . "\n";
-
 }
 
+# First is called this function in base class, then is called this handler
 sub __OnJobMessageEvtHandler {
 	my $self     = shift;
 	my $taskId   = shift;
 	my $messType = shift;
 	my $data     = shift;
 
-	my $task = $self->__GetTaskById($taskId);
-
-	#print "Exporter utility::  task id: " . $taskId . " - messType: " . $messType. "\n";
-
-	# CATCH GROUP ITEM MESSAGE
-
-	if ( $messType eq Enums->EventType_ITEM_RESULT ) {
-
-		# Update data model and refresh group
-
-		$task->ProcessItemResult($data);
-
-		# Refresh GUI - group table
-
-		$self->{"form"}->RefreshGroupTable($task);
-
-		# Refresh GUI - job queue
-
-		$self->{"form"}->SetJobQueueErrorCnt($task);
-		$self->{"form"}->SetJobQueueWarningCnt($task);
-
-	}
-
-	# CATCH GROUP MESSAGE
-
-	if ( $messType eq Enums->EventType_GROUP_RESULT ) {
-
-		# Update data model
-
-		$task->ProcessGroupResult($data);
-
-		# Refresh GUI - group table
-
-		$self->{"form"}->RefreshGroupTable($task);
-
-		# Refresh GUI - job queue
-		$self->{"form"}->SetJobQueueErrorCnt($task);
-		$self->{"form"}->SetJobQueueWarningCnt($task);
-
-	}
-	elsif ( $messType eq Enums->EventType_GROUP_START ) {
-
-		# Update group form status
-
-		$task->ProcessGroupStart($data);
-
-	}
-	elsif ( $messType eq Enums->EventType_GROUP_END ) {
-
-		# Update group form status
-		$task->ProcessGroupEnd($data);
-
-	}
-
-	# CATCH TASK MESSAGE
-
-	if ( $messType eq Enums->EventType_TASK_RESULT ) {
-
-		# Update data model
-		$task->ProcessTaskResult($data);
-
-		# Refresh GUI - job queue
-		$self->{"form"}->SetJobQueueErrorCnt($task);
-		$self->{"form"}->SetJobQueueWarningCnt($task);
-
-	}
 }
 
-sub __OnRemoveJobClick {
-	my $self   = shift;
-	my $taskId = shift;
+# First is called this function in base class, then is called this handler
+sub __OnCloseExporter {
+	my $self = shift;
 
-	my $task = $self->__GetTaskById($taskId);
+	# All jobs should be DONE in this time
 
-	#if mode was synchrounous, we have to quit server script
+	# find if some jobs (in synchronous mode) are in queue
+	# if so remove them in order do incam editor free
+	foreach my $task ( @{ $self->{"tasks"} } ) {
 
-	my $exportData = $task->GetExportData();
+		my $exportData = $task->GetExportData();
 
-	if ( $exportData->GetExportMode() eq EnumsTransfer->ExportMode_SYNC ) {
+		if ( $exportData->GetExportMode() eq EnumsExportData->ExportMode_SYNC ) {
 
-		my $port = $exportData->GetPort();
-
-		my $inCAM = InCAM->new( "port" => $port );
-
-		#$inCAM->ServerReady();
-
-		my $pidServer = $inCAM->ServerReady();
-
-		#if ok, make space for new client (child process)
-		if ($pidServer) {
-
-			$inCAM->CloseServer();
+			$self->__OnRemoveJobClick( $task->GetTaskId() );
 		}
-
-		print STDERR "Close server, $port\n\n";
-
-		$self->{"form"}->_DestroyExternalServer($port);
-
-		# hide exporter
-		$self->{"form"}->ActivateForm(0);
 	}
 
 }
@@ -310,7 +164,7 @@ sub __OnToProduceClick {
 	my $self   = shift;
 	my $taskId = shift;
 
-	my $task = $self->__GetTaskById($taskId);
+	my $task = $self->_GetTaskById($taskId);
 
 	my $messMngr = $self->{"form"}->{"messageMngr"};
 	my @mess     = ();
@@ -350,25 +204,6 @@ sub __OnToProduceClick {
 
 	#update gui
 	# get results, set gui
-}
-
-sub __OnCloseExporter {
-	my $self = shift;
-
-	# All jobs should be DONE in this time
-
-	# find if some jobs (in synchronous mode) are in queue
-	# if so remove them in order do incam editor free
-	foreach my $task ( @{ $self->{"tasks"} } ) {
-
-		my $exportData = $task->GetExportData();
-
-		if ( $exportData->GetExportMode() eq EnumsTransfer->ExportMode_SYNC ) {
-
-			$self->__OnRemoveJobClick( $task->GetTaskId());
-		}
-	}
-
 }
 
 #update gui
@@ -425,7 +260,8 @@ sub __CheckFilesHandler {
 
 			copy( $f, EnumsPaths->Client_EXPORTFILES . "backup\\" . $jobId );    # do backup
 
-			unlink($f);
+			# TODO odkomentovat abt to mazalo
+			#unlink($f);
 
 			$self->__AddNewJob( $jobId, $exportData );
 
@@ -434,113 +270,32 @@ sub __CheckFilesHandler {
 
 }
 
-# Helper  function, which run every 5 second
-# Can be use e.g for refresh GUI etc..
-sub __Timer5second {
-	my $self = shift;
-
-	$self->{"form"}->RefreshSettings();
-
-}
-
-
-sub __TimerCheckVersion{
-	my $self = shift;
-	
-	my $verison = $self->__GetVersion();
-	
-	if ($verison == 0 || $self->{"version"} == 0){
-		return 0;
-	}
-	
-	if( $self->{"version"} < $verison){
-		
-		$self->{"timerVersion"}->Stop();
-		
-		my $messMngr = $self->{"form"}->{"messageMngr"};
-
-		my @mess1 = ( "Na serveru je nová verze programu 'Exporter'. Jakmile to bude moné, ukonèi program.", "Chceš program ukonèit nyní?" );
-		my @btn = ( "Ano", "Ukonèím pozdìni");
-		$messMngr->ShowModal( -1, EnumsGeneral->MessageType_INFORMATION, \@mess1, \@btn);
-		
-		# close exporter
-		if($messMngr->Result() == 0){
-
-			$self->{"form"}->__OnClose();
-		}
-		
-		# once to 5 minute
-		$self->{"timerVersion"}->Start(60000*5);
-		
-		
-		
-	}
-	
-}
-
 # ========================================================================================== #
 #  PRIVATE HELPER METHOD
 # ========================================================================================== #
-
-sub __Run {
-	my $self = shift;
-	$self->{"form"}->{"mainFrm"}->Show(1);
-
-	$self->__RunTimers();
-
-	$self->{"form"}->MainLoop();
-
-}
 
 sub __AddNewJob {
 	my $self       = shift;
 	my $jobId      = shift;
 	my $exportData = shift;
 
-	# unique id per each task
-	my $guid = GeneralHelper->GetGUID();
+	my $status = ExportStatus->new( $jobId, "Pcb" );
 
-	my $task = Task->new( $guid, $jobId, $exportData );
+	my $task = Task->new( $jobId, $exportData, $status );
 
-	push( @{ $self->{"tasks"} }, $task );
-
-	print "zde 1\n";
-
-	# prepare gui
-	$self->{"form"}->AddNewTaskGUI($task);
-
-	# Add new task to queue
-	$self->{"form"}->AddNewTask($task);
-
-}
-
-sub __GetTaskById {
-	my $self   = shift;
-	my $taskId = shift;
-
-	foreach my $task ( @{ $self->{"tasks"} } ) {
-
-		if ( $task->GetTaskId() eq $taskId ) {
-
-			return $task;
-		}
-	}
+	$self->_AddNewJob($task);
 }
 
 sub __SetHandlers {
 	my $self = shift;
 
 	#Set base handler
-
 	$self->{"form"}->{'onJobStateChanged'}->Add( sub { $self->__OnJobStateChanged(@_) } );
 	$self->{"form"}->{'onJobProgressEvt'}->Add( sub  { $self->__OnJobProgressEvtHandler(@_) } );
 	$self->{"form"}->{'onJobMessageEvt'}->Add( sub   { $self->__OnJobMessageEvtHandler(@_) } );
 
 	$self->{"form"}->{'onClick'}->Add( sub     { $self->__OnClick(@_) } );
 	$self->{"form"}->{'onToProduce'}->Add( sub { $self->__OnToProduceClick(@_) } );
-	$self->{"form"}->{'onRemoveJob'}->Add( sub { $self->__OnRemoveJobClick(@_) } );
-
-	$self->{"form"}->{'onJomMngrClose'}->Add( sub { $self->__OnCloseExporter(@_) } );
 
 	# Set worker method
 	$self->{"form"}->_SetThreadWorker( sub { $self->JobWorker(@_) } );
@@ -558,37 +313,6 @@ sub __RunTimers {
 	$self->{"timerFiles"} = $timerFiles;
 	$timerFiles->Start(200);
 
-	my $timer5sec = Wx::Timer->new( $formMainFrm, -1, );
-	Wx::Event::EVT_TIMER( $formMainFrm, $timer5sec, sub { $self->__Timer5second(@_) } );
-	$timer5sec->Start(1000);
-	
- 
-	
-	my $timerVersion = Wx::Timer->new( $formMainFrm, -1, );
-	$self->{"timerVersion"} = $timerVersion;
-	Wx::Event::EVT_TIMER( $formMainFrm, $timerVersion, sub { $self->__TimerCheckVersion(@_) } );
-	$timerVersion->Start(60000*5); # every 5 minutes
-	
-}
-
-sub __GetVersion{
-	my $self = shift;
-	
-	my $verPath = GeneralHelper->Root()."\\Programs\\Exporter\\version.txt";
-	
-	my $str = FileHelper->ReadAsString($verPath);
-	
-	unless(defined $str){
-		return 0;
-	}
-	
-	$str =~ s/\t\r\n\s//g;
-	
-	if(defined $str && $str ne ""){
-		return $str;
-	}else{
-		return 0;
-	}
 }
 
 #

@@ -13,7 +13,7 @@ use aliased 'Managers::MessageMngr::MessageMngr';
 
 use aliased 'Programs::Exporter::ExportUtility::Groups::ETExport::ETExport';
 use aliased 'Programs::Exporter::DataTransfer::UnitsDataContracts::ETData';
-use aliased 'Programs::Exporter::UnitEnums';
+use aliased 'Programs::Exporter::ExporterUtility::UnitEnums';
 
 #-------------------------------------------------------------------------------------------#
 #  NC export, all layers, all machines..

@@ -75,11 +75,16 @@ sub RunNewExport {
 
 	my $thrId = $self->__CreateThread( $jobGUID, $port, $pcbId, $pidInCAM, $externalServer );
 
+	# special shared variable, which child process periodically read and decide if stop or continue in task
+	my $stopped = 0;
+	share($stopped);
+
 	my %thrInfo = (
 					"jobGUID" => $jobGUID,
 					"thrId"   => $thrId,
 					"port"    => $port,
-					"pcbId"   => $pcbId
+					"pcbId"   => $pcbId,
+					"stopped" => \$stopped
 	);
 
 	push( @{ $self->{"threads"} }, \%thrInfo );
@@ -136,6 +141,35 @@ sub ExitThread {
 	}
 }
 
+# Process request for stoping thread
+# Set special "stop" shared variable, which child process periodically control
+sub StopThread {
+	my $self    = shift;
+	my $jobGUID = shift;
+
+	my $thr = ( grep { $_->{"jobGUID"} eq $jobGUID } @{ $self->{"threads"} } )[0];
+
+	if ( defined $thr ) {
+		
+		${$thr->{"stopped"}} = 1;  
+	}
+}
+
+# Process request for continue thread
+# Set special "stop" shared variable, which child process periodically control
+sub ContinueThread {
+	my $self    = shift;
+	my $jobGUID = shift;
+
+	my $thr = ( grep { $_->{"jobGUID"} eq $jobGUID } @{ $self->{"threads"} } )[0];
+
+	if ( defined $thr ) {
+		
+		${$thr->{"stopped"}} = 0;  
+	}
+}
+
+
 sub __CreateThread {
 	my $self           = shift;
 	my $jobGUID        = shift;
@@ -143,6 +177,7 @@ sub __CreateThread {
 	my $pcbId          = shift;
 	my $pidInCAM       = shift;
 	my $externalServer = shift;
+	my $stopVar = shift;
 
 	# TODO smazat
 
@@ -150,7 +185,7 @@ sub __CreateThread {
 
 	# return $$;
 
-	my $worker = threads->create( sub { $self->__WorkerMethod( $jobGUID, $port, $pcbId, $pidInCAM, $externalServer ) } );
+	my $worker = threads->create( sub { $self->__WorkerMethod( $jobGUID, $port, $pcbId, $pidInCAM, $externalServer, $stopVar ) } );
 
 	$worker->set_thread_exit_only(1);    # tell only this child thread will be exited
 
@@ -167,9 +202,12 @@ sub __WorkerMethod {
 	my $pcbId          = shift;
 	my $pidInCAM       = shift;
 	my $externalServer = shift;
+	my $stopVar = shift;
+	 
 
 	# TODO odkomentovat
 	my $inCAM = InCAM->new( "remote" => 'localhost', "port" => $port );
+	#my $inCAM = InCAM->new();
 	$inCAM->StarLog( $pidInCAM, $pcbId );
 
 	#my $inCAM = undef;
@@ -185,7 +223,7 @@ sub __WorkerMethod {
 
 	my $onThreadWorker = $self->{'onThreadWorker'};
 	if ( $onThreadWorker->Handlers() ) {
-		$onThreadWorker->Do( $pcbId, $jobGUID, $inCAM, \$THREAD_PROGRESS_EVT, \$THREAD_MESSAGE_EVT );
+		$onThreadWorker->Do( $pcbId, $jobGUID, $inCAM, \$THREAD_PROGRESS_EVT, \$THREAD_MESSAGE_EVT, $stopVar );
 	}
 
 	$self->__CleanUpAndExit( $inCAM, $jobGUID, $pcbId, Enums->ExitType_SUCCES );

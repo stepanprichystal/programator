@@ -19,7 +19,7 @@ use aliased 'Packages::Events::Event';
 
 use aliased 'Programs::Exporter::ExportUtility::Groups::NCExport::NCExport';
 use aliased 'Programs::Exporter::DataTransfer::UnitsDataContracts::NCData';
-use aliased 'Programs::Exporter::UnitEnums';
+use aliased 'Programs::Exporter::ExporterUtility::UnitEnums';
 
 use aliased 'Managers::MessageMngr::MessageMngr';
 

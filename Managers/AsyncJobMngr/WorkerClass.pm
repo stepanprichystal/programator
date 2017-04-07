@@ -33,6 +33,7 @@ sub new {
 
 	$THREAD_PROGRESS_EVT   = ${ shift(@_) };
 	$THREAD_MESSAGE_EVT    = ${ shift(@_) };
+	$self->{"stopThread"}  = shift;
 	$self->{"exporterFrm"} = shift;
 
 	return $self;
@@ -95,6 +96,8 @@ sub _SendProgressEvt {
 	Wx::PostEvent( $self->{"exporterFrm"}, $threvent );
 
 }
+
+
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

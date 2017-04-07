@@ -38,7 +38,7 @@ use aliased 'Programs::Exporter::ExportUtility::RunExport::RunExportUtility';
 
 use aliased 'Programs::Exporter::DataTransfer::DataTransfer';
 use aliased 'Programs::Exporter::ExportChecker::Enums';
-use aliased 'Programs::Exporter::DataTransfer::Enums' => 'EnumsTransfer';
+use aliased 'Managers::AbstractQueue::ExportData::Enums' => 'EnumsTransfer';
 use aliased 'Programs::Exporter::ExportUtility::Helper';
 use aliased 'Helpers::GeneralHelper';
 use aliased 'Widgets::Forms::LoadingForm';

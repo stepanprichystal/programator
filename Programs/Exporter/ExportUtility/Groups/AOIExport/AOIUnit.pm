@@ -9,10 +9,10 @@
 # Author:SPR
 #--------------------------------------------------------------------------------------------
 package Programs::Exporter::ExportUtility::Groups::AOIExport::AOIUnit;
-use base 'Programs::Exporter::ExportUtility::Groups::UnitBase';
+use base 'Managers::AbstractQueue::Groups::UnitBase';
 
 use Class::Interface;
-&implements('Programs::Exporter::ExportUtility::Unit::IUnit');
+&implements('Managers::AbstractQueue::Unit::IUnit');
 
 #3th party library
 use strict;
@@ -23,10 +23,10 @@ use warnings;
 
 #use aliased 'Programs::Exporter::ExportChecker::Groups::NifExport::Model::NifDataMngr';
  
-use aliased 'Programs::Exporter::UnitEnums';
-use aliased 'Programs::Exporter::ExportUtility::ExportUtility::Forms::Group::GroupWrapperForm';
+use aliased 'Programs::Exporter::ExporterUtility::UnitEnums';
+use aliased 'Managers::AbstractQueue::AbstractQueue::Forms::Group::GroupWrapperForm';
 use aliased 'Programs::Exporter::ExportUtility::Groups::AOIExport::AOIExport';
-use aliased 'Programs::Exporter::ExportUtility::Groups::GroupData';
+use aliased 'Managers::AbstractQueue::Groups::GroupData';
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
@@ -39,7 +39,7 @@ sub new {
 	bless $self;
  
   	# reference on class responsible for export
-	$self->{"unitExport"} = AOIExport->new($self->{"unitId"});
+	$self->{"unitExport"} = AOIExport->new($self->{"unitId"}, UnitEnums->GetTitle($self->{"unitId"}));
  
 	return $self;    # Return the reference to the hash.
 }

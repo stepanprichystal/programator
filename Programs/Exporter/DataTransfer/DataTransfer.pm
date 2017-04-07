@@ -15,7 +15,7 @@ use JSON;
 use aliased "Programs::Exporter::DataTransfer::ExportData";
 use aliased "Enums::EnumsPaths";
 use aliased "Helpers::FileHelper";
-use aliased 'Programs::Exporter::DataTransfer::Enums';
+use aliased 'Managers::AbstractQueue::ExportData::Enums';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -68,9 +68,7 @@ sub __BuildExportData {
 		# 1), prepare unit data
  
  		my %unitsData = $self->{"units"}->GetExportData(1);
- 		
- 		
- 
+
 		foreach my $unitId ( keys %unitsData ) {
 
 			# unit export data

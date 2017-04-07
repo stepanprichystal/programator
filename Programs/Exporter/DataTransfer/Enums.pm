@@ -1,5 +1,5 @@
 
-package Programs::Exporter::DataTransfer::Enums;
+package Managers::AbstractQueue::ExportData::Enums;
 
 use constant {
 			   Mode_READ      => "readMode",
@@ -7,10 +7,6 @@ use constant {
 };
 
  
- use constant {
-			   ExportMode_SYNC  => "synchronousExport",
-			   ExportMode_ASYNC  => "asynchronousExport"
-};
  
  
  

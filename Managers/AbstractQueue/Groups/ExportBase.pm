@@ -2,7 +2,7 @@
 # Description: Base class for unit export classes.
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Programs::Exporter::ExportUtility::Groups::ExportBase;
+package Managers::AbstractQueue::Groups::ExportBase;
 
 #3th party library
 use strict;
