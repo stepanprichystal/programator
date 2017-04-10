@@ -22,17 +22,16 @@ use aliased 'Enums::EnumsGeneral';
 use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'Helpers::FileHelper';
 use aliased 'Managers::MessageMngr::MessageMngr';
-use aliased 'Managers::AbstractQueue::AbstractQueue::ExportStatus::ExportStatus';
+use aliased 'Managers::AbstractQueue::Task::TaskStatus::TaskStatus';
 use aliased 'Programs::Exporter::ExportPool::Task::Task';
 use aliased 'Programs::Exporter::ExportPool::ExportPool::Forms::ExportPoolForm';
-use aliased 'Programs::Exporter::DataTransfer::DataTransfer';
-use aliased 'Managers::AbstractQueue::ExportData::Enums' => 'EnumsExportData';
-use aliased 'Managers::AbstractQueue::ExportData::Enums' => 'EnumsTransfer';
-use aliased 'Managers::AsyncJobMngr::Enums'           => 'EnumsMngr';
+use aliased 'Programs::Exporter::ExportPool::Task::TaskData::DataParser';
+ 
+use aliased 'Programs::Exporter::ExportPool::DataTransfer::Enums' => 'EnumsTransfer';
+use aliased 'Managers::AsyncJobMngr::Enums'           => 'EnumsJobMngr';
 use aliased 'Programs::Exporter::ExportPool::ExportPool::JobWorkerClass';
 use aliased 'Programs::Exporter::ExportPool::Enums';
 use aliased 'Packages::InCAM::InCAM';
-use aliased 'Programs::Exporter::ExportPool::ExportData::DataParser';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -81,10 +80,10 @@ sub JobWorker {
 	#GetExportClass
 	my $task        = $self->_GetTaskById($taskId);
 	my %exportClass = $task->{"units"}->GetExportClass();
-	my $exportData  = $task->GetExportData();
+	my $taskData  = $task->GetTaskData();
 
 	my $jobExport = JobWorkerClass->new( \$THREAD_PROGRESS_EVT, \$THREAD_MESSAGE_EVT, $stopVar, $self->{"form"}->{"mainFrm"} );
-	$jobExport->Init( $pcbId, $taskId, $inCAM, \%exportClass, $exportData );
+	$jobExport->Init( $pcbId, $taskId, $inCAM, \%exportClass, $taskData );
 
 	$jobExport->RunExport();
 
@@ -102,24 +101,24 @@ sub __OnJobStateChanged {
 	my $taskStateDetail = shift;
 
 	my $task       = $self->_GetTaskById($taskId);
-	my $exportData = $task->GetExportData();
+	my $taskData = $task->GetTaskData();
 
-	if ( $taskState eq EnumsMngr->JobState_DONE ) {
+	if ( $taskState eq EnumsJobMngr->JobState_DONE ) {
 
-		# Setting to Export if is checked by export settings
-		if ( $task->GetJobShouldToExport() ) {
+		# Setting to produce if is checked by export settings
+		if ( $task->GetJobShouldToProduce() ) {
 
-			# Set values, if job can be send to export
-			$task->SetToExportResult();
+			# Set values, if job can be sent to produce
+			$task->SetToProduceResult();
 
-			# if can eb send to export without errror, send it
-			if ( $task->GetJobCanToExport() ) {
+			# if can eb sent to produce without errror, send it
+			if ( $task->GetJobCanToProduce() ) {
 
-				$task->SendToExport();
+				$task->SentToProduce();
 			}
 
-			# refresh GUI to Export
-			$self->{"form"}->SetJobItemToExportResult($task);
+			# refresh GUI to produce
+			$self->{"form"}->SetJobItemToProduceResult($task);
 		}
 	}
 }
@@ -151,9 +150,9 @@ sub __OnCloseExporter {
 	# if so remove them in order do incam editor free
 	foreach my $task ( @{ $self->{"tasks"} } ) {
 
-		my $exportData = $task->GetExportData();
+		my $taskData = $task->GetTaskData();
 
-		if ( $exportData->GetExportMode() eq EnumsExportData->ExportMode_SYNC ) {
+		if ( $taskData->GetExportMode() eq EnumsTaskData->TaskMode_SYNC ) {
 
 			$self->__OnRemoveJobClick( $task->GetTaskId() );
 		}
@@ -161,7 +160,7 @@ sub __OnCloseExporter {
 
 }
 
-sub __OnToExportClick {
+sub __OnToProduceClick {
 	my $self   = shift;
 	my $taskId = shift;
 
@@ -170,35 +169,35 @@ sub __OnToExportClick {
 	my $messMngr = $self->{"form"}->{"messageMngr"};
 	my @mess     = ();
 
-	$task->SetToExportResult();
-	$self->{"form"}->SetJobItemToExportResult($task);
+	$task->SetToProduceResult();
+	$self->{"form"}->SetJobItemToProduceResult($task);
 
 	#update gui
 
-	# Can send to export but show errors
-	if ( $task->GetJobCanToExport() && $task->ResultToExport() eq EnumsGeneral->ResultType_FAIL ) {
+	# Can sent to produce but show errors
+	if ( $task->GetJobCanToProduce() && $task->ResultToProduce() eq EnumsGeneral->ResultType_FAIL ) {
 
 		push( @mess, "You can send job to product, but first check errors." );
-		my @btns = ( "Cancel", "send to export" );
+		my @btns = ( "Cancel", "Sent to produce" );
 		$messMngr->ShowModal( -1, EnumsGeneral->MessageType_WARNING, \@mess, \@btns );
 
 		if ( $messMngr->Result() == 1 ) {
-			$task->SendToExport();
-			$self->{"form"}->SetJobItemToExportResult($task);
+			$task->SentToProduce();
+			$self->{"form"}->SetJobItemToProduceResult($task);
 
 		}
 	}
 
-	# Can send to export, sent directly
-	elsif ( $task->GetJobCanToExport() && $task->ResultToExport() eq EnumsGeneral->ResultType_OK ) {
+	# Can sent to produce, sent directly
+	elsif ( $task->GetJobCanToProduce() && $task->ResultToProduce() eq EnumsGeneral->ResultType_OK ) {
 
-		$task->SendToExport();
-		$self->{"form"}->SetJobItemToExportResult($task);
+		$task->SentToProduce();
+		$self->{"form"}->SetJobItemToProduceResult($task);
 
 	}
-	elsif ( !$task->GetJobCanToExport() ) {
+	elsif ( !$task->GetJobCanToProduce() ) {
 
-		push( @mess, "You CAN'T send job to product, check \"to Export\" errors." );
+		push( @mess, "You CAN'T send job to product, check \"to produce\" errors." );
 		my @btns = ("Ok");
 		$messMngr->ShowModal( -1, EnumsGeneral->MessageType_ERROR, \@mess, \@btns );
 	}
@@ -250,22 +249,22 @@ sub __CheckFilesHandler {
 		@newFiles = sort { $a->{"created"} <=> $b->{"created"} } @newFiles;
 		push( @{ $self->{"exportFiles"} }, @newFiles );
 
-		foreach my $poolFile (@newFiles) {
+		foreach my $jobFile (@newFiles) {
 
-			my $fileName = $poolFile->{"name"};
-			my $path = $poolFile->{"path"};
+			my $path = $jobFile->{"path"};
+			my $taskName = $jobFile->{"name"};
 			
-			my $f = EnumsPaths->Client_EXPORTFILESPOOL . $fileName;
+			my $path = EnumsPaths->Client_EXPORTFILESPOOL . $path;
 
-			my $dataParser = DataParser->new( );
-			my $exportData = $dataParser->GetExportData($f);
+			my $dataParser = DataParser->new( $path  );
+			my $taskData = $dataParser->GetExportData();
  
-			copy( $f, EnumsPaths->Client_EXPORTFILESPOOL . "backup\\" . $fileName );    # do backup
+			copy( $f, EnumsPaths->Client_EXPORTFILESPOOL . "backup\\" . $taskName );    # do backup
 
 			# TODO odkomentovat abt to mazalo
 			#unlink($f);
 
-			$self->__AddNewJob( $jobId, $exportData );
+			$self->__AddNewJob( $taskName, $taskData );
 
 		}
 	}
@@ -279,11 +278,11 @@ sub __CheckFilesHandler {
 sub __AddNewJob {
 	my $self       = shift;
 	my $jobId      = shift;
-	my $exportData = shift;
+	my $taskData = shift;
 
-	my $status = ExportStatus->new( $jobId, "Pcb" );
+	my $status = TaskStatus->new( $jobId, "Pcb" );
 
-	my $task = Task->new( $jobId, $exportData, $status );
+	my $task = Task->new( $jobId, $taskData, $status );
 
 	$self->_AddNewJob($task);
 }
@@ -297,7 +296,7 @@ sub __SetHandlers {
 	$self->{"form"}->{'onJobMessageEvt'}->Add( sub   { $self->__OnJobMessageEvtHandler(@_) } );
 
 	$self->{"form"}->{'onClick'}->Add( sub     { $self->__OnClick(@_) } );
-	$self->{"form"}->{'onToExport'}->Add( sub { $self->__OnToExportClick(@_) } );
+	$self->{"form"}->{'onToProduce'}->Add( sub { $self->__OnToProduceClick(@_) } );
 
 	# Set worker method
 	$self->{"form"}->_SetThreadWorker( sub { $self->JobWorker(@_) } );
@@ -345,7 +344,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	use aliased 'Programs::Exporter::ExportPool::ExportPool::ExportPool';
 	use aliased 'Widgets::Forms::MyTaskBarIcon';
 
-	my $exporter = ExportPool->new( EnumsMngr->RUNMODE_WINDOW );
+	my $exporter = ExportPool->new( EnumsJobMngr->RUNMODE_WINDOW );
 
 	#my $form = $exporter->{"form"}->{"mainFrm"};
 

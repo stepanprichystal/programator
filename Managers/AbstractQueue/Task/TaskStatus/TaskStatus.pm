@@ -1,12 +1,12 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Is responsible for saving/loading information about ExportStatus
-# By ExportStatus file we can decide, if job is exported ok and if could be send to produce
-# ExportStatus is file which contain name of export groups, and values
-# if group has been exported succes or not
+# Description: Is responsible for saving/loading information about TaskStatus
+# By TaskStatus file we can decide, if job is tasked ok and if could be send to produce
+# TaskStatus is file which contain name of task groups, and values
+# if group has been tasked succes or not
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Managers::AbstractQueue::AbstractQueue::ExportStatus::ExportStatus;
+package Managers::AbstractQueue::Task::TaskStatus::TaskStatus;
 
 #3th party library
 use strict;
@@ -33,16 +33,16 @@ sub new {
  
 	my $fileSuffix = shift;
 
-	$self->{"filePath"} = JobHelper->GetJobArchive( $self->{"jobId"} ) . "ExportStatus_".$fileSuffix;
+	$self->{"filePath"} = JobHelper->GetJobArchive( $self->{"jobId"} ) . "TaskStatus_".$fileSuffix;
 
 	return $self;
 }
 
-sub IsExportOk {
+sub IsTaskOk {
 	my $self = shift;
-	my $notExported = shift;
+	my $notTasked = shift;
 
-	my %hashKeys = $self->__ReadExportStatus();
+	my %hashKeys = $self->__ReadTaskStatus();
 
 	my $statusOk = 1;
 
@@ -50,7 +50,7 @@ sub IsExportOk {
 
 		if ( $hashKeys{$k} == 0 ) {
 			
-			push(@{$notExported}, $k );
+			push(@{$notTasked}, $k );
 			
 			$statusOk = 0;
 			 
@@ -81,7 +81,7 @@ sub CreateStatusFile {
 		return 1;
 	}
 
-	#my $builder = ExportStatusBuilder->new();
+	#my $builder = TaskStatusBuilder->new();
 	#my @keys    = $builder->GetStatusKeys($self);
 
 	my %hashKeys = ();
@@ -92,31 +92,31 @@ sub CreateStatusFile {
 		$hashKeys{$k} = 0;
 	}
 
-	$self->__SaveExportStatus( \%hashKeys );
+	$self->__SaveTaskStatus( \%hashKeys );
 }
 
 sub UpdateStatusFile {
 	my $self         = shift;
 	my $unitKey      = shift;
-	my $exportResult = shift;
+	my $taskResult = shift;
 
 	my $result = 0;
 
-	if ( $exportResult eq EnumsGeneral->ResultType_OK ) {
+	if ( $taskResult eq EnumsGeneral->ResultType_OK ) {
 		$result = 1;
 	}
-	elsif ( $exportResult eq EnumsGeneral->ResultType_FAIL ) {
+	elsif ( $taskResult eq EnumsGeneral->ResultType_FAIL ) {
 		$result = 0;
 	}
 
-	my %hashKeys = $self->__ReadExportStatus();
+	my %hashKeys = $self->__ReadTaskStatus();
 
 	$hashKeys{$unitKey} = $result;
 
-	$self->__SaveExportStatus( \%hashKeys );
+	$self->__SaveTaskStatus( \%hashKeys );
 }
 
-sub __SaveExportStatus {
+sub __SaveTaskStatus {
 	my $self     = shift;
 	my %hashData = %{ shift(@_) };
 
@@ -132,7 +132,7 @@ sub __SaveExportStatus {
 	close $f;
 }
 
-sub __ReadExportStatus {
+sub __ReadTaskStatus {
 	my $self = shift;
 
 	# read from disc
@@ -152,7 +152,7 @@ sub __ReadExportStatus {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	#use aliased 'Programs::Exporter::ExportChecker::ExportChecker::StorageMngr';
+	#use aliased 'Programs::AbstractQueue::TaskChecker::TaskChecker::StorageMngr';
 
 	#my $id
 

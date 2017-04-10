@@ -4,7 +4,7 @@
 # This data will be passed to each group
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Programs::Exporter::ExportPool::ExportData::GroupData;
+package Programs::Exporter::ExportPool::Task::TaskData::GroupData;
 
 #3th party library
 use strict;
@@ -79,7 +79,7 @@ sub SetChildJobs {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	#my $app = Programs::Exporter::ExporterUtility->new();
+	#my $app = Programs::Exporter::ExportPool->new();
 
 	#$app->Test();
 

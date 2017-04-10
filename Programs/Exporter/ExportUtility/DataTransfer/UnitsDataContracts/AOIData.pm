@@ -4,7 +4,7 @@
 # between ExportChecker and ExportUtility
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Programs::Exporter::DataTransfer::UnitsDataContracts::GerData;
+package Programs::Exporter::ExportUtility::DataTransfer::UnitsDataContracts::AOIData;
  
 #3th party library
 use strict;
@@ -29,45 +29,19 @@ sub new {
 }
  
  
-# paste info
-sub SetPasteInfo {
+# stepToTest
+sub SetStepToTest {
 	my $self  = shift;
 	my $value = shift;
-	$self->{"data"}->{"pasteInfo"} = $value;
+	$self->{"data"}->{"stepToTest"} = $value;
 }
 
-sub GetPasteInfo {
+sub GetStepToTest {
 	my $self  = shift;
 	my $value = shift;
-	return $self->{"data"}->{"pasteInfo"};
+	return $self->{"data"}->{"stepToTest"};
 }
  
-# mdi info, hash with info if mask, signal, plug layers are exported
- 
-sub SetMdiInfo {
-	my $self  = shift;
-	my $value = shift;
-	$self->{"data"}->{"mdiInfo"} = $value;
-}
-
-sub GetMdiInfo {
-	my $self  = shift;
-	my $value = shift;
-	return $self->{"data"}->{"mdiInfo"};
-}
-
-# export layers
-sub SetExportLayers {
-	my $self  = shift;
-	$self->{"data"}->{"exportLayers"} = shift;
-} 
-
-
-sub GetExportLayers {
-	my $self  = shift;
-	my $value = shift;
-	return $self->{"data"}->{"exportLayers"};
-} 
  
 # layers to test 
 sub SetLayers {
@@ -79,6 +53,7 @@ sub GetLayers {
 	my $self  = shift;
 	return $self->{"data"}->{"layers"};
 } 
+
  
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

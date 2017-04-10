@@ -1,7 +1,7 @@
 
 #-------------------------------------------------------------------------------------------#
 # Description: Class is used as data store for Unit object
-# Keep also state of group and export error information
+# Keep also state of group and task error information
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Managers::AbstractQueue::Groups::GroupData;
@@ -11,8 +11,8 @@ use strict;
 use warnings;
 
 #local library
-#use aliased 'Programs::Exporter::ExportChecker::Enums';
-use aliased 'Managers::AbstractQueue::ExportResultMngr';
+#use aliased 'Programs::AbstractQueue::ExportChecker::Enums';
+use aliased 'Managers::AbstractQueue::TaskResultMngr';
 use aliased 'Managers::AbstractQueue::Enums';
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -24,9 +24,9 @@ sub new {
 
 	# state data for gui controls
 	 
-	$self->{"itemsMngr"} = ExportResultMngr->new();
+	$self->{"itemsMngr"} = TaskResultMngr->new();
 	
-	$self->{"groupMngr"} = ExportResultMngr->new();
+	$self->{"groupMngr"} = TaskResultMngr->new();
 	
 	# state of whole group. Value is enum GroupState_xx
 	$self->{"state"} = Enums->GroupState_WAITING;

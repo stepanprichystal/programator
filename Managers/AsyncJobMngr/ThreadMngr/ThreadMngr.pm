@@ -49,19 +49,19 @@ sub new {
 sub Init {
 	my $self = shift;
 
-	$self->{"exporterFrm"} = shift;
+	$self->{"abstractQueueFrm"} = shift;
 
 	$THREAD_PROGRESS_EVT = ${ shift(@_) };
 	$THREAD_MESSAGE_EVT  = ${ shift(@_) };
 	$THREAD_DONE_EVT     = ${ shift(@_) };
 
 	$THREAD_END_EVT = Wx::NewEventType;
-	Wx::Event::EVT_COMMAND( $self->{"exporterFrm"}, -1, $THREAD_END_EVT, sub { $self->__ThreadEndedHandler(@_) } );
+	Wx::Event::EVT_COMMAND( $self->{"abstractQueueFrm"}, -1, $THREAD_END_EVT, sub { $self->__ThreadEndedHandler(@_) } );
 
 }
 
 # Processrequest for starting new thread
-sub RunNewExport {
+sub RunNewtask {
 	my $self           = shift;
 	my $jobGUID        = shift;
 	my $port           = shift;
@@ -71,7 +71,7 @@ sub RunNewExport {
 
 	$self->{"threadCounter"} +=1;
 	
-	print STDERR "\n\n\nExport utility: THERAD ORDER IS :  ".$self->{"threadCounter"}.".\n\n\n";
+	print STDERR "\n\n\ntask utility: THERAD ORDER IS :  ".$self->{"threadCounter"}.".\n\n\n";
 
 	my $thrId = $self->__CreateThread( $jobGUID, $port, $pcbId, $pidInCAM, $externalServer );
 
@@ -233,7 +233,7 @@ sub __WorkerMethod {
 sub __CleanUpAndExit {
 	my ( $selfMain, $inCAM, $jobGUID, $pcbId, $exitType, $externalServer ) = @_;
 
-	# If user aborted job and it is "asynchronous" export (not external server prepared)
+	# If user aborted job and it is "asynchronous" task (not external server prepared)
 	# Close job
 	if ( $exitType eq Enums->ExitType_FORCE && !$externalServer ) {
 	
@@ -262,7 +262,7 @@ sub __CleanUpAndExit {
 	$resExit{"exitType"} = $exitType;
 
 	my $threvent2 = new Wx::PlThreadEvent( -1, $THREAD_END_EVT, \%resExit );
-	Wx::PostEvent( $selfMain->{"exporterFrm"}, $threvent2 );
+	Wx::PostEvent( $selfMain->{"abstractQueueFrm"}, $threvent2 );
 
 }
 
@@ -287,7 +287,7 @@ sub __ThreadEnded {
 			$res{"exitType"} = $exitType;
 
 			my $threvent = new Wx::PlThreadEvent( -1, $THREAD_DONE_EVT, \%res );
-			Wx::PostEvent( $self->{"exporterFrm"}, $threvent );
+			Wx::PostEvent( $self->{"abstractQueueFrm"}, $threvent );
 
 			last;
 		}

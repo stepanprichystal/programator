@@ -12,7 +12,7 @@ use warnings;
 
 #local library
 
-use aliased 'Programs::Exporter::DataTransfer::UnitsDataContracts::PlotData';
+use aliased 'Programs::Exporter::ExportUtility::DataTransfer::UnitsDataContracts::PlotData';
 use aliased 'CamHelpers::CamAttributes';
 #-------------------------------------------------------------------------------------------#
 #  Package methods

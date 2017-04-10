@@ -131,7 +131,7 @@ sub GetNCInfo {
 	return @infoTable;
 }
 
-sub ExportItemsCount {
+sub TaskItemsCount {
 	my $self = shift;
 
 	my $totalCnt = 0;

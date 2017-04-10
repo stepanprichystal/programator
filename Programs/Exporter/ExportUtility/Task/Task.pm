@@ -15,7 +15,7 @@ use strict;
 use warnings;
 
 #local library
-use aliased 'Programs::Exporter::ExporterUtility::UnitEnums';
+use aliased 'Programs::Exporter::ExportUtility::UnitEnums';
 
 use aliased 'Enums::EnumsGeneral';
 use aliased 'Programs::Exporter::ExportUtility::Groups::NifExport::NifUnit';
@@ -33,7 +33,7 @@ use aliased 'Programs::Exporter::ExportUtility::Groups::ScoExport::ScoUnit';
 use aliased 'Programs::Exporter::ExportUtility::Groups::GerExport::GerUnit';
 use aliased 'Programs::Exporter::ExportUtility::Groups::PdfExport::PdfUnit';
 use aliased 'Programs::Exporter::ExportUtility::Groups::OutExport::OutUnit';
-use aliased 'Managers::AbstractQueue::ExportResultMngr';
+use aliased 'Managers::AbstractQueue::TaskResultMngr';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods, requested by IUnit interface
@@ -47,7 +47,7 @@ sub new {
 
 	# Managers, contains information about results of
 	# whole task, groups, single items, etc
- 	$self->{"produceResultMngr"} = ExportResultMngr->new();
+ 	$self->{"produceResultMngr"} = TaskResultMngr->new();
  
 	# Tell if job can be send to produce,
 	# based on Export results and StatusFile
@@ -131,7 +131,7 @@ sub GetJobCanToProduce {
 sub GetJobShouldToProduce {
 	my $self = shift;
 
-	return $self->{"exportData"}->GetToProduce();
+	return $self->{"taskData"}->GetToProduce();
 }
 
 # Test if job can be send to produce
@@ -168,7 +168,7 @@ sub SetToProduceResult {
 	}
 
 	my @notExportUnits = ();
-	if ( !$self->{"exportStatus"}->IsExportOk( \@notExportUnits ) ) {
+	if ( !$self->{"taskStatus"}->IsTaskOk( \@notExportUnits ) ) {
 
 		my @notExportUnits = map { UnitEnums->GetTitle($_) } @notExportUnits;
 		my $str = join( ", ", @notExportUnits );
@@ -198,7 +198,7 @@ sub SentToProduce {
 		my $succ     = HegMethods->UpdatePcbOrderState( $orderNum, "HOTOVO-zadat");
 		
 	 
-		$self->{"exportStatus"}->DeleteStatusFile();
+		$self->{"taskStatus"}->DeleteStatusFile();
 		$self->{"sentToProduce"} = 1;
 	};
 
@@ -223,7 +223,7 @@ sub SentToProduce {
  sub __InitUnits {
 	my $self = shift;
  
-	my @keys = $self->{"exportData"}->GetOrderedUnitKeys(1);
+	my @keys = $self->{"taskData"}->GetOrderedUnitKeys(1);
 	my @allUnits = ();
 
 	foreach my $key (@keys) {
@@ -243,56 +243,56 @@ sub __GetUnitClass {
 	my $unit;
 	my $jobId = $self->{"jobId"};
 	
-	
+	my $title = UnitEnums->GetTitle($unitId);
 
 	if ( $unitId eq UnitEnums->UnitId_NIF ) {
 
-		$unit = NifUnit->new($unitId, $jobId);
+		$unit = NifUnit->new($unitId, $jobId, $title);
 
 	}
 	elsif ( $unitId eq UnitEnums->UnitId_NC ) {
 
-		$unit = NCUnit->new($unitId, $jobId);
+		$unit = NCUnit->new($unitId, $jobId, $title);
 
 	}
 	elsif ( $unitId eq UnitEnums->UnitId_AOI ) {
 
-		$unit = AOIUnit->new($unitId, $jobId);
+		$unit = AOIUnit->new($unitId, $jobId, $title);
 
 	}
 	elsif ( $unitId eq UnitEnums->UnitId_ET ) {
 
-		$unit = ETUnit->new($unitId, $jobId);
+		$unit = ETUnit->new($unitId, $jobId, $title);
 
 	}
 	elsif ( $unitId eq UnitEnums->UnitId_PLOT ) {
 
-		$unit = PlotUnit->new($unitId, $jobId);
+		$unit = PlotUnit->new($unitId, $jobId, $title);
 
 	}
 	elsif ( $unitId eq UnitEnums->UnitId_PRE ) {
 
-		$unit = PreUnit->new($unitId, $jobId);
+		$unit = PreUnit->new($unitId, $jobId, $title);
 
 	}
 	elsif ( $unitId eq UnitEnums->UnitId_SCO ) {
 
-		$unit = ScoUnit->new($unitId, $jobId);
+		$unit = ScoUnit->new($unitId, $jobId, $title);
 
 	}
 	elsif ( $unitId eq UnitEnums->UnitId_GER ) {
 
-		$unit = GerUnit->new($unitId, $jobId);
+		$unit = GerUnit->new($unitId, $jobId, $title);
 
 	}
 	elsif ( $unitId eq UnitEnums->UnitId_PDF ) {
 
-		$unit = PdfUnit->new($unitId, $jobId);
+		$unit = PdfUnit->new($unitId, $jobId, $title);
 
 	}
 	elsif ( $unitId eq UnitEnums->UnitId_OUT ) {
 
-		$unit = OutUnit->new($unitId, $jobId);
+		$unit = OutUnit->new($unitId, $jobId, $title);
 
 	}
 	

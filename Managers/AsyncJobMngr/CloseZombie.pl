@@ -26,10 +26,11 @@ use aliased 'Managers::AsyncJobMngr::Helper';
 
 
 my %options = ();
-getopts( "i:", \%options );
+getopts( "i:n:", \%options );
  
 
 my $port = $options{"i"};
+my $scriptName = $options{"n"}; # name of script which use AsyncJobMngr. We need this name for killing zombie perl and incam
 
 unless ($port) {
 	exit(0);
@@ -51,10 +52,10 @@ foreach my $pid ( sort { $a <=> $b } keys %list ) {
 
 		my $procInfo = $pi->GetProcInfo($pid);
 		if ( defined $procInfo && scalar( @{$procInfo} ) ) {
-
+ 
 			$args = @{$procInfo}[0]->{"CommandLine"};    # Get the max
 
-			if ( defined $args && $args =~ /ServerExporter/ ) {
+			if ( defined $args && $args =~ /ServerAsyncJob/ && $args =~ /$scriptName/ ) {
 
 				$args =~ m/(\d+)$/;
 

@@ -26,7 +26,7 @@ use aliased 'Programs::Exporter::ExportUtility::ExportUtility::Forms::JobQueueFo
 use aliased 'Managers::MessageMngr::MessageMngr';
 use aliased 'Widgets::Forms::CustomNotebook::CustomNotebook';
 use aliased 'Widgets::Forms::MyWxBookCtrlPage';
-use aliased 'Managers::AbstractQueue::ExportData::Enums' => 'EnumsTransfer';
+ 
 use aliased 'Managers::AsyncJobMngr::ServerMngr::ServerInfo';
 
 #-------------------------------------------------------------------------------------------#
@@ -37,9 +37,10 @@ sub new {
 	my $class = shift;
 
 	my $title = "Exporter utility";
+	my $name = "Exporter utility";
 	my @dimension = ( 1120, 760 );
 
-	my $self = $class->SUPER::new( @_, $title, \@dimension );
+	my $self = $class->SUPER::new( @_, $title,$name, \@dimension );
 
 	bless($self);
 
@@ -111,9 +112,9 @@ sub __OnSetJobQueue {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	#use aliased 'Programs::Exporter::ExporterUtility';
+	#use aliased 'Programs::Exporter::ExportUtility';
 
-	#my $exporter = ExporterUtility->new();
+	#my $exporter = ExportUtility->new();
 
 	#$app->Test();
 

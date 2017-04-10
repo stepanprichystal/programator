@@ -4,7 +4,7 @@
 # between ExportChecker and ExportUtility
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Programs::Exporter::DataTransfer::UnitsDataContracts::PdfData;
+package Programs::Exporter::ExportUtility::DataTransfer::UnitsDataContracts::ScoData;
  
 #3th party library
 use strict;
@@ -28,81 +28,56 @@ sub new {
 	return $self; 
 }
  
-
-sub SetExportControl {
+ 
+# core thick in mm
+sub SetCoreThick {
 	my $self  = shift;
 	my $value = shift;
-	$self->{"data"}->{"exportControl"} = $value;
+	$self->{"data"}->{"coreThick"} = $value;
 }
 
-sub GetExportControl {
+sub GetCoreThick {
 	my $self  = shift;
 	my $value = shift;
-	return $self->{"data"}->{"exportControl"};
-}
-
-sub SetControlStep {
-	my $self  = shift;
-	my $value = shift;
-	$self->{"data"}->{"controlStep"} = $value;
-}
-
-sub GetControlStep {
-	my $self  = shift;
-	my $value = shift;
-	return $self->{"data"}->{"controlStep"};
-}
-
-sub SetControlLang {
-	my $self  = shift;
-	my $value = shift;
-	$self->{"data"}->{"controlLang"} = $value;
-}
-
-sub GetControlLang {
-	my $self  = shift;
-	my $value = shift;
-	return $self->{"data"}->{"controlLang"};
+	return $self->{"data"}->{"coreThick"};
 }
  
-# Info about tpv technik to pdf
-
-sub GetInfoToPdf {
-	my $self  = shift;
-	my $value = shift;
-	return $self->{"data"}->{"infoToPdf"};
-}
-
-sub SetInfoToPdf {
-	my $self  = shift;
-	my $value = shift;
-	$self->{"data"}->{"infoToPdf"} = $value;
-}
  
-sub SetExportStackup {
+# Optimize yes/no/manual
+sub SetOptimize {
 	my $self  = shift;
-	my $value = shift;
-	$self->{"data"}->{"exportStackup"} = $value;
-}
-
-sub GetExportStackup {
-	my $self  = shift;
-	my $value = shift;
-	return $self->{"data"}->{"exportStackup"};
+	$self->{"data"}->{"optimize"} = shift;
 } 
 
 
-sub SetExportPressfit {
+sub GetOptimize {
 	my $self  = shift;
 	my $value = shift;
-	$self->{"data"}->{"exportPressfit"} = $value;
+	return $self->{"data"}->{"optimize"};
+}
+ 
+# Scoring type classic/one direction
+sub SetScoringType {
+	my $self  = shift;
+	$self->{"data"}->{"scoringType"} = shift;
 }
 
-sub GetExportPressfit {
+sub GetScoringType {
 	my $self  = shift;
-	my $value = shift;
-	return $self->{"data"}->{"exportPressfit"};
+	return $self->{"data"}->{"scoringType"};
+} 
+
+
+# Customer jump scoring
+sub SetCustomerJump {
+	my $self  = shift;
+	$self->{"data"}->{"customerJump"} = shift;
 }
+
+sub GetCustomerJump {
+	my $self  = shift;
+	return $self->{"data"}->{"customerJump"};
+} 
  
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

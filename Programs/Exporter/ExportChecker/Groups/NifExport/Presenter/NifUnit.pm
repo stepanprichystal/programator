@@ -29,7 +29,7 @@ use aliased 'Programs::Exporter::ExportChecker::Groups::NifExport::Model::NifPre
 use aliased 'Programs::Exporter::ExportChecker::Groups::NifExport::Model::NifExportData';
 use aliased 'Programs::Exporter::ExportChecker::Groups::NifExport::Model::NifGroupData';
 use aliased 'Packages::Events::Event';
-use aliased 'Programs::Exporter::ExporterUtility::UnitEnums';
+use aliased 'Programs::Exporter::ExportUtility::UnitEnums';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods

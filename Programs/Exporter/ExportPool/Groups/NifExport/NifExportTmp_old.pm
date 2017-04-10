@@ -20,7 +20,7 @@ use aliased 'Packages::Events::Event';
 use aliased 'Programs::Exporter::ExportPool::UnitEnums';
 
 use aliased 'Programs::Exporter::ExportPool::Groups::NifExport::NifExport';
-use aliased 'Programs::Exporter::DataTransfer::UnitsDataContracts::NifData';
+use aliased 'Programs::Exporter::ExportPool::DataTransfer::UnitsDataContracts::NifData';
 use aliased 'Programs::Exporter::ExportChecker::Groups::NifExport::Model::NifGroupData';
 
 use aliased 'CamHelpers::CamAttributes';
@@ -137,11 +137,11 @@ sub Run {
 		return 0;
 	}
 
-	my $exportData = $unit->GetExportData($inCAM);
+	my $taskData = $unit->GetTaskData($inCAM);
 	
 
 	my $export = NifExport->new( UnitEnums->UnitId_NIF );
-	$export->Init( $inCAM, $jobId, $exportData );
+	$export->Init( $inCAM, $jobId, $taskData );
 	$export->{"onItemResult"}->Add( sub { Test(@_) } );
 	$export->Run();
 
@@ -352,13 +352,13 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	my $maska01  = 0;
 
 	my $prepareOk = 1;
-	my %exportData = $nifPreGroup->__GetExportData( \$prepareOk, $tenting, $pressfit, $maska01 );
+	my %taskData = $nifPreGroup->__GetTaskData( \$prepareOk, $tenting, $pressfit, $maska01 );
 
 	# Vytvoøení nifu, pokud vstupní parametry jsou OK
 	if ($prepareOk) {
 
 		my $export = NifExportTmp->new();
-		$export->Run( $inCAM, $jobId, $stepName, \%exportData );
+		$export->Run( $inCAM, $jobId, $stepName, \%taskData );
 
 	}
 

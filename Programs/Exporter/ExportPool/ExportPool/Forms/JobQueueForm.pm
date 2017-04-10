@@ -36,7 +36,7 @@ sub new {
 
 	#EVENTS
  
-	$self->{"onExport"}          = Event->new();
+	$self->{"onProduce"}          = Event->new();
  
 	return $self;
 }
@@ -47,15 +47,15 @@ sub AddItem {
 
 	my $taskId      = $task->GetTaskId();
 	my $jobId       = $task->GetJobId();;
-	my $exportData  = $task->GetExportData();
-	my $ExportMngr  = $task->ToExportResultMngr();
+	my $taskData  = $task->GetTaskData();
+	my $produceMngr = $task->ProduceResultMngr();
 	my $taskMngr    = $task->GetTaskResultMngr();
 	my $groupMngr   = $task->GetGroupResultMngr();
 	my $itemMngr    = $task->GetGroupItemResultMngr();
 
-	my $item = JobQueueItemForm->new( $self->GetParentForItem(), $jobId, $taskId, $exportData, $ExportMngr, $taskMngr, $groupMngr, $itemMngr );
+	my $item = JobQueueItemForm->new( $self->GetParentForItem(), $jobId, $taskId, $taskData, $produceMngr, $taskMngr, $groupMngr, $itemMngr );
 	
-	$item->{"onExport"}->Add( sub { $self->{"onExport"}->Do(@_) } );
+	$item->{"onProduce"}->Add( sub { $self->{"onProduce"}->Do(@_) } );
 
 	return $self->_AddItem($item);
 }
@@ -80,10 +80,10 @@ sub __SetLayout {
 
 }
 
-sub __OnExport {
+sub __OnProduce {
 	my $self = shift;
 
-	$self->{"onExport"}->Do( $self->{"taskId"} );
+	$self->{"onProduce"}->Do( $self->{"taskId"} );
 
 }
 

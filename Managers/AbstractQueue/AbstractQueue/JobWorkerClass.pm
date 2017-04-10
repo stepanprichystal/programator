@@ -1,6 +1,6 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Responsible for run export of all groups, which are passed to this class
+# Description: Responsible for run task of all groups, which are passed to this class
 # Object of this class is created in asynchronous thread
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
@@ -20,7 +20,7 @@ use aliased 'CamHelpers::CamJob';
 use aliased 'CamHelpers::CamHelper';
 use aliased 'Packages::ItemResult::Enums' => 'ResultEnums';
 use aliased 'Managers::AbstractQueue::Enums';
-use aliased 'Managers::AbstractQueue::ExportData::Enums' => "DataEnums";
+ 
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -41,8 +41,8 @@ sub Init {
 	$self->{"pcbId"}       = shift;
 	$self->{"taskId"}      = shift;
 	$self->{"inCAM"}       = shift;
-	$self->{"exportClass"} = shift;    # classes for export each group
-	$self->{"data"}        = shift;    # export data
+	$self->{"taskClass"} = shift;    # classes for task each group
+	$self->{"data"}        = shift;    # task data
 	
 	# Supress all toolkit exception/error windows
 	$self->{"inCAM"}->SupressToolkitException(1);
@@ -186,12 +186,12 @@ sub _StopThread {
 
 
 # ====================================================================================
-# Function, which sent messages to main thread about state of exporting
+# Function, which sent messages to main thread about state of tasking
 # ====================================================================================
 
 sub _ItemResultEvent {
 	my $self        = shift;
-	my $exportClass = shift;
+	my $taskClass = shift;
 	my $unitId      = shift;
 	my $itemResult  = shift;
 
@@ -211,9 +211,9 @@ sub _ItemResultEvent {
 
 	my %data2 = ();
 	$data2{"unitId"} = $unitId;
-	$data2{"value"}  = $exportClass->GetProgressValue();
+	$data2{"value"}  = $taskClass->GetProgressValue();
 
-	print " ==========Job WorkerClass Progress, UnitId:" . $unitId . " - " . $exportClass->GetProgressValue() . "\n";
+	print " ==========Job WorkerClass Progress, UnitId:" . $unitId . " - " . $taskClass->GetProgressValue() . "\n";
 
 	$self->_SendProgressEvt( \%data2 );
 
@@ -271,7 +271,7 @@ sub _GroupExportEvent {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	#my $app = Programs::Exporter::ExporterUtility->new();
+	#my $app = Programs::AbstractQueue::AbstractQueueUtility->new();
 
 	#$app->Test();
 

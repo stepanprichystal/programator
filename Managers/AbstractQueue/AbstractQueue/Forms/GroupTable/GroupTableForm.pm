@@ -295,7 +295,7 @@ sub __GetColumnAvgHeight {
 #-------------------------------------------------------------------------------------------#
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
-	my $test = Programs::Exporter::ExportChecker::Forms::GroupTableForm->new();
+	my $test = Programs::AbstractQueue::ExportChecker::Forms::GroupTableForm->new();
 
 	$test->MainLoop();
 }

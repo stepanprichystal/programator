@@ -18,13 +18,13 @@ use warnings;
 #  Package methods
 #-------------------------------------------------------------------------------------------#
 
-# Process data, emmited, when item export finis
+# Process data, emmited, when item task finis
 sub ProcessItemResult;
 
-# Process data, emmited, when group export finis
+# Process data, emmited, when group task finis
 sub ProcessGroupResult;
 
-# Get actual total resul od export group
+# Get actual total resul od task group
 sub Result;
 
 sub GetErrorsCnt;
@@ -34,13 +34,13 @@ sub GetWarningsCnt;
 # Get total progress
 sub GetProgress;
 
-# Get manager, which keep information about item export errors
+# Get manager, which keep information about item task errors
 sub GetGroupItemResultMngr;
 
-# Get manager, which keep information about group export errors
+# Get manager, which keep information about group task errors
 sub GetGroupResultMngr;
 
-# Return class, which contain code responsible for export 
+# Return class, which contain code responsible for task 
 sub GetExportClass;
 
 #-------------------------------------------------------------------------------------------#

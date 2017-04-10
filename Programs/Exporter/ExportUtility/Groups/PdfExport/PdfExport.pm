@@ -37,27 +37,27 @@ sub Init {
 	my $self       = shift;
 	my $inCAM      = shift;
 	my $jobId      = shift;
-	my $exportData = shift;
+	my $taskData = shift;
 
 	$self->{"inCAM"}      = $inCAM;
 	$self->{"jobId"}      = $jobId;
-	$self->{"exportData"} = $exportData;
+	$self->{"taskData"} = $taskData;
 
-	my $exportControl = $exportData->GetExportControl();
-	my $controlStep   = $exportData->GetControlStep();
-	my $controlLang   = $exportData->GetControlLang();
-	my $infoToPdf = $exportData->GetInfoToPdf();
-	my $exportStackup = $exportData->GetExportStackup();
-	my $exportPressfit = $exportData->GetExportPressfit();
+	my $exportControl = $taskData->GetExportControl();
+	my $controlStep   = $taskData->GetControlStep();
+	my $controlLang   = $taskData->GetControlLang();
+	my $infoToPdf = $taskData->GetInfoToPdf();
+	my $exportStackup = $taskData->GetExportStackup();
+	my $exportPressfit = $taskData->GetExportPressfit();
 	
 
 	my $mngr = PdfMngr->new( $inCAM, $jobId, $exportControl, $controlStep, $controlLang, $infoToPdf, $exportStackup, $exportPressfit );
 
 	$mngr->{"onItemResult"}->Add( sub { $self->_OnItemResultHandler(@_) } );
 
-	$self->{"exportMngr"} = $mngr;
+	$self->{"taskMngr"} = $mngr;
 
-	$self->{"itemsCount"} = $mngr->ExportItemsCount();
+	$self->{"itemsCount"} = $mngr->TaskItemsCount();
 
 }
 

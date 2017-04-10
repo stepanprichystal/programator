@@ -12,7 +12,7 @@ use aliased 'Programs::Exporter::ExportChecker::Groups::NCExport::Model::NCGroup
 use aliased 'Managers::MessageMngr::MessageMngr';
 
 use aliased 'Programs::Exporter::ExportPool::Groups::ETExport::ETExport';
-use aliased 'Programs::Exporter::DataTransfer::UnitsDataContracts::ETData';
+use aliased 'Programs::Exporter::ExportPool::DataTransfer::UnitsDataContracts::ETData';
 use aliased 'Programs::Exporter::ExportPool::UnitEnums';
 
 #-------------------------------------------------------------------------------------------#
@@ -39,11 +39,11 @@ sub Run {
 
 	#GET INPUT NIF INFORMATION
 
-	my $exportData = ETData->new();
+	my $taskData = ETData->new();
 
-$exportData->SetStepToTest($stepToTest);
+$taskData->SetStepToTest($stepToTest);
  my $export = ETExport->new( UnitEnums->UnitId_ET );
-$export->Init( $inCAM, $jobId, $exportData );
+$export->Init( $inCAM, $jobId, $taskData );
 
 $export->{"onItemResult"}->Add( sub { Test(@_) } );
 

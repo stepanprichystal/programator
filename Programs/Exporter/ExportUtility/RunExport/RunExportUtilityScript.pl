@@ -27,8 +27,8 @@ use aliased 'Managers::AbstractQueue::AbstractQueue::Helper';
 
 my $console = Win32::Console->new;
 
-$console->Title( 'Cmd of ExporterUtility PID:' . $$ );
-Helper->ShowExportWindow( 0, "Cmd of ExporterUtility PID:" . $$ );
+$console->Title( 'Cmd of ExportUtility PID:' . $$ );
+Helper->ShowExportWindow( 0, "Cmd of ExportUtility PID:" . $$ );
 
 my $exporter = ExportUtility->new( EnumsMngr->RUNMODE_TRAY );
 

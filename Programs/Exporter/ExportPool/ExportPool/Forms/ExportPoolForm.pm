@@ -26,7 +26,7 @@ use aliased 'Programs::Exporter::ExportPool::ExportPool::Forms::JobQueueForm';
 use aliased 'Managers::MessageMngr::MessageMngr';
 use aliased 'Widgets::Forms::CustomNotebook::CustomNotebook';
 use aliased 'Widgets::Forms::MyWxBookCtrlPage';
-use aliased 'Managers::AbstractQueue::ExportData::Enums' => 'EnumsTransfer';
+ 
 use aliased 'Managers::AsyncJobMngr::ServerMngr::ServerInfo';
 
 #-------------------------------------------------------------------------------------------#
@@ -37,9 +37,10 @@ sub new {
 	my $class = shift;
 
 	my $title = "Exporter utility";
+	my $name = "Exporter utility";
 	my @dimension = ( 1120, 760 );
 
-	my $self = $class->SUPER::new( @_, $title, \@dimension );
+	my $self = $class->SUPER::new( @_, $title,$name, \@dimension );
 
 	bless($self);
 
@@ -47,7 +48,7 @@ sub new {
 
 	# Events
 
-	$self->{"onToExport"} = Event->new();
+	$self->{"onToProduce"} = Event->new();
 
 	# Set base class handlers
 	$self->{"onSetJobQueue"}->Add( sub { $self->__OnSetJobQueue(@_) } );
@@ -63,26 +64,26 @@ sub new {
 # Mehtods for update job queue items
 # ============================================================
 
-sub SetJobItemToExportResult {
+sub SetJobItemToProduceResult {
 	my $self = shift;
 	my $task = shift;
 
 	my $jobItem = $self->{"jobQueue"}->GetItem( $task->GetTaskId() );
 
-	$jobItem->SetExportErrors( $task->GetExportErrorsCnt() );
-	$jobItem->SetExportWarnings( $task->GetExportWarningsCnt() );
-	$jobItem->SetToExportResult( $task->ResultToExport(), $task->GetJobSendToExport() );
+	$jobItem->SetProduceErrors( $task->GetProduceErrorsCnt() );
+	$jobItem->SetProduceWarnings( $task->GetProduceWarningsCnt() );
+	$jobItem->SetProduceResult( $task->ResultToProduce(), $task->GetJobSentToProduce() );
 }
 
 # ======================================================
 # HANDLERS of job queue item
 # ======================================================
 
-sub __OnExportJobClick {
+sub __OnProduceJobClick {
 	my $self   = shift;
 	my $taskId = shift;
 
-	$self->{"onToExport"}->Do($taskId);
+	$self->{"onToProduce"}->Do($taskId);
 
 }
 
@@ -99,7 +100,7 @@ sub __OnSetJobQueue {
 
 	$$jobQueue = JobQueueForm->new( $parent, $dimension );
 
-	$$jobQueue->{"onExport"}->Add( sub { $self->__OnExportJobClick(@_) } );
+	$$jobQueue->{"onProduce"}->Add( sub { $self->__OnProduceJobClick(@_) } );
 }
 
 #-------------------------------------------------------------------------------------------#
@@ -111,9 +112,9 @@ sub __OnSetJobQueue {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	#use aliased 'Programs::Exporter::ExporterUtility';
+	#use aliased 'Programs::Exporter::ExportPool';
 
-	#my $exporter = ExporterUtility->new();
+	#my $exporter = ExportPool->new();
 
 	#$app->Test();
 

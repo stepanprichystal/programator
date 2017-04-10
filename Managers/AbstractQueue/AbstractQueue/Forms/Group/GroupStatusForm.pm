@@ -1,6 +1,6 @@
 #-------------------------------------------------------------------------------------------#
 # Description: Form which is placed in header of GroupWrapperForm
-# Display actual state of group, like "Exporting", ...And display errors during exporting
+# Display actual state of group, like "Exporting", ...And display errors during tasking
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 

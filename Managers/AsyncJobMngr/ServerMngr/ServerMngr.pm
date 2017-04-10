@@ -39,6 +39,9 @@ sub new {
 
 	my @servers = ();
 
+	$self->{"asyncScriptName"} = shift; # name of script which use AsyncJobMngr. We need this name for killing zombie perl and incam
+	$self->{"asyncScriptName"} =~ s/\s//g; # remove spaces
+
 	$self->{"servers"} = \@servers;
 
 	$self->{"maxCntUser"}      = -1;      # max count of server set by user
@@ -61,12 +64,12 @@ sub new {
 sub Init {
 	my $self = shift;
 
-	$self->{"exporterFrm"} = shift;
+	$self->{"abstractQueueFrm"} = shift;
 
 	$PORT_READY_EXPORTER_EVT = ${ shift(@_) };
 
 	$PORT_READY_EVT = Wx::NewEventType;
-	Wx::Event::EVT_COMMAND( $self->{"exporterFrm"}, -1, $PORT_READY_EVT, sub { $self->__PortReadyHandler(@_) } );
+	Wx::Event::EVT_COMMAND( $self->{"abstractQueueFrm"}, -1, $PORT_READY_EVT, sub { $self->__PortReadyHandler(@_) } );
 
 }
 
@@ -496,7 +499,7 @@ sub __CreateServer {
 	my $processObj;
 	my $inCAM;
 	
-	my $path =  GeneralHelper->Root() . "\\Managers\\AsyncJobMngr\\Server\\ServerExporter.pl";
+	my $path =  GeneralHelper->Root() . "\\Managers\\AsyncJobMngr\\Server\\ServerAsyncJob.pl";
 	# turn all backslash - incam need this
 	$path =~ s/\\/\//g;
 	
@@ -504,7 +507,7 @@ sub __CreateServer {
 
 	#run InCAM editor with serverscript
 	Win32::Process::Create( $processObj, $inCAMPath,
-							"InCAM.exe -s" . $path." " . $freePort,
+							"InCAM.exe -s" . $path." " . $freePort." ".$self->{"asyncScriptName"},
 							0, THREAD_PRIORITY_NORMAL, "." )
 	  || die "$!\n";
 
@@ -536,7 +539,7 @@ sub __CreateServer {
 		$res{"pidServer"} = $pidServer;
 
 		my $threvent = new Wx::PlThreadEvent( -1, $PORT_READY_EVT, \%res );
-		Wx::PostEvent( $self->{"exporterFrm"}, $threvent );
+		Wx::PostEvent( $self->{"abstractQueueFrm"}, $threvent );
 
 	}
 	else {
@@ -574,7 +577,7 @@ sub __CreateServerExternal {
 		$res{"pidServer"} = $pidServer;
 
 		my $threvent = new Wx::PlThreadEvent( -1, $PORT_READY_EVT, \%res );
-		Wx::PostEvent( $self->{"exporterFrm"}, $threvent );
+		Wx::PostEvent( $self->{"abstractQueueFrm"}, $threvent );
 
 	}
 	else {
@@ -678,7 +681,7 @@ sub __CloseZombie {
 	my $processObj;
 	my $perl = $Config{perlpath};
 
-	Win32::Process::Create( $processObj, $perl, "perl " . GeneralHelper->Root() . "\\Managers\\AsyncJobMngr\\CloseZombie.pl -i $port",
+	Win32::Process::Create( $processObj, $perl, "perl " . GeneralHelper->Root() . "\\Managers\\AsyncJobMngr\\CloseZombie.pl -i $port -n ".$self->{"asyncScriptName"},
 							1, NORMAL_PRIORITY_CLASS, "." )
 	  || die "Failed to create CloseZombie process.\n";
 
@@ -695,7 +698,7 @@ sub __PortReady {
 	$res{"pidInCAM"} = $pidInCAM;
 
 	my $threvent = new Wx::PlThreadEvent( -1, $PORT_READY_EXPORTER_EVT, \%res );
-	Wx::PostEvent( $self->{"exporterFrm"}, $threvent );
+	Wx::PostEvent( $self->{"abstractQueueFrm"}, $threvent );
 }
 
 sub __PortReadyHandler {

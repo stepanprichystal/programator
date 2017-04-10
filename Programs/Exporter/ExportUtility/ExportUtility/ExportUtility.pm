@@ -22,13 +22,13 @@ use aliased 'Enums::EnumsGeneral';
 use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'Helpers::FileHelper';
 use aliased 'Managers::MessageMngr::MessageMngr';
-use aliased 'Managers::AbstractQueue::AbstractQueue::ExportStatus::ExportStatus';
+use aliased 'Managers::AbstractQueue::Task::TaskStatus::TaskStatus';
 use aliased 'Programs::Exporter::ExportUtility::Task::Task';
 use aliased 'Programs::Exporter::ExportUtility::ExportUtility::Forms::ExportUtilityForm';
-use aliased 'Programs::Exporter::DataTransfer::DataTransfer';
-use aliased 'Managers::AbstractQueue::ExportData::Enums' => 'EnumsExportData';
-use aliased 'Managers::AbstractQueue::ExportData::Enums' => 'EnumsTransfer';
-use aliased 'Managers::AsyncJobMngr::Enums'           => 'EnumsMngr';
+use aliased 'Programs::Exporter::ExportUtility::DataTransfer::DataTransfer';
+ 
+use aliased 'Programs::Exporter::ExportUtility::DataTransfer::Enums' => 'EnumsTransfer';
+use aliased 'Managers::AsyncJobMngr::Enums'           => 'EnumsJobMngr';
 use aliased 'Programs::Exporter::ExportUtility::ExportUtility::JobWorkerClass';
 use aliased 'Programs::Exporter::ExportUtility::Enums';
 use aliased 'Packages::InCAM::InCAM';
@@ -80,10 +80,10 @@ sub JobWorker {
 	#GetExportClass
 	my $task        = $self->_GetTaskById($taskId);
 	my %exportClass = $task->{"units"}->GetExportClass();
-	my $exportData  = $task->GetExportData();
+	my $taskData  = $task->GetTaskData();
 
 	my $jobExport = JobWorkerClass->new( \$THREAD_PROGRESS_EVT, \$THREAD_MESSAGE_EVT, $stopVar, $self->{"form"}->{"mainFrm"} );
-	$jobExport->Init( $pcbId, $taskId, $inCAM, \%exportClass, $exportData );
+	$jobExport->Init( $pcbId, $taskId, $inCAM, \%exportClass, $taskData );
 
 	$jobExport->RunExport();
 
@@ -101,9 +101,9 @@ sub __OnJobStateChanged {
 	my $taskStateDetail = shift;
 
 	my $task       = $self->_GetTaskById($taskId);
-	my $exportData = $task->GetExportData();
+	my $taskData = $task->GetTaskData();
 
-	if ( $taskState eq EnumsMngr->JobState_DONE ) {
+	if ( $taskState eq EnumsJobMngr->JobState_DONE ) {
 
 		# Setting to produce if is checked by export settings
 		if ( $task->GetJobShouldToProduce() ) {
@@ -150,9 +150,9 @@ sub __OnCloseExporter {
 	# if so remove them in order do incam editor free
 	foreach my $task ( @{ $self->{"tasks"} } ) {
 
-		my $exportData = $task->GetExportData();
+		my $taskData = $task->GetTaskData();
 
-		if ( $exportData->GetExportMode() eq EnumsExportData->ExportMode_SYNC ) {
+		if ( $taskData->GetExportMode() eq EnumsTaskData->TaskMode_SYNC ) {
 
 			$self->__OnRemoveJobClick( $task->GetTaskId() );
 		}
@@ -254,7 +254,7 @@ sub __CheckFilesHandler {
 			my $jobId = $jobFile->{"name"};
 
 			my $dataTransfer = DataTransfer->new( $jobId, EnumsTransfer->Mode_READ );
-			my $exportData = $dataTransfer->GetExportData();
+			my $taskData = $dataTransfer->GetExportData();
 
 			my $f = EnumsPaths->Client_EXPORTFILES . $jobId;
 
@@ -263,7 +263,7 @@ sub __CheckFilesHandler {
 			# TODO odkomentovat abt to mazalo
 			#unlink($f);
 
-			$self->__AddNewJob( $jobId, $exportData );
+			$self->__AddNewJob( $jobId, $taskData );
 
 		}
 	}
@@ -277,11 +277,11 @@ sub __CheckFilesHandler {
 sub __AddNewJob {
 	my $self       = shift;
 	my $jobId      = shift;
-	my $exportData = shift;
+	my $taskData = shift;
 
-	my $status = ExportStatus->new( $jobId, "Pcb" );
+	my $status = TaskStatus->new( $jobId, "Pcb" );
 
-	my $task = Task->new( $jobId, $exportData, $status );
+	my $task = Task->new( $jobId, $taskData, $status );
 
 	$self->_AddNewJob($task);
 }
@@ -343,7 +343,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	use aliased 'Programs::Exporter::ExportUtility::ExportUtility::ExportUtility';
 	use aliased 'Widgets::Forms::MyTaskBarIcon';
 
-	my $exporter = ExportUtility->new( EnumsMngr->RUNMODE_WINDOW );
+	my $exporter = ExportUtility->new( EnumsJobMngr->RUNMODE_WINDOW );
 
 	#my $form = $exporter->{"form"}->{"mainFrm"};
 

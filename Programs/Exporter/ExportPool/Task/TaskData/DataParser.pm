@@ -3,7 +3,7 @@
 # Description: Class which prepare export data from pool xml file
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Programs::Exporter::ExportPool::ExportData::DataParser;
+package Programs::Exporter::ExportPool::Task::TaskData::DataParser;
 
 #3th party library
 use strict;
@@ -12,12 +12,12 @@ use XML::Simple;
 use List::MoreUtils qw(uniq);
 
 #local library
-use aliased 'Programs::Exporter::ExportPool::ExportData::GroupData';
+use aliased 'Programs::Exporter::ExportPool::Task::TaskData::GroupData';
 use aliased 'Helpers::GeneralHelper';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'Helpers::FileHelper';
-use aliased 'Managers::AbstractQueue::ExportData::ExportData';
-use aliased 'Managers::AbstractQueue::ExportData::Enums' => "BaseEnums";
+use aliased 'Managers::AbstractQueue::Task::TaskData::TaskData';
+use aliased 'Managers::AsyncJobMngr::Enums' => "EnumsJobMngr";
 use aliased 'Programs::Exporter::ExportPool::UnitEnums';
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -46,7 +46,7 @@ sub GetExportData {
 	
 	
 	$exportData->{"settings"}->{"time"}         = $time;
-	$exportData->{"settings"}->{"mode"}         = BaseEnums->ExportMode_ASYNC;    # synchronousExport/ asynchronousExport
+	$exportData->{"settings"}->{"mode"}         = EnumsJobMngr->TaskMode_ASYNC;    # synchronousExport/ asynchronousExport
 	
 	my @mandatory = (UnitEnums->UnitId_MERGE, UnitEnums->UnitId_ROUT, UnitEnums->UnitId_EXPORT);
 	$exportData->{"settings"}->{"mandatoryUnits"} = \@mandatory;    # units, which has to be exported
@@ -134,7 +134,7 @@ sub __GetGroupData{
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	use aliased 'Programs::Exporter::ExportPool::ExportData::DataParser';
+	use aliased 'Programs::Exporter::ExportPool::Task::TaskData::DataParser';
 
 	my $parser = DataParser->new();
 	$parser->GetExportData("c:\\Export\\ExportFilesPool\\test.xml");

@@ -1,7 +1,7 @@
 
 #-------------------------------------------------------------------------------------------#
 # Description: Form represent one JobQueue item. Contain controls which show
-# status of exporting job.
+# status of tasking job.
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Managers::AbstractQueue::AbstractQueue::Forms::JobQueueItemForm;
@@ -18,7 +18,7 @@ use aliased 'Packages::Events::Event';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'Widgets::Forms::ErrorIndicator::ErrorIndicator';
 use aliased 'Widgets::Forms::ResultIndicator::ResultIndicator';
-use aliased 'Managers::AbstractQueue::ExportData::Enums' => 'EnumsTransfer';
+ 
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -29,7 +29,7 @@ sub new {
 	my $parent       = shift;
 	my $jobId        = shift;
 	my $taskId       = shift;
-	my $exportedData = shift;
+	my $taskData = shift;
 	my $taskMngr     = shift;
 	my $groupMngr    = shift;
 	my $itemMngr     = shift;
@@ -41,7 +41,7 @@ sub new {
 	# PROPERTIES
 	$self->{"jobId"}        = $jobId;
 	$self->{"taskId"}       = $taskId;
-	$self->{"exportedData"} = $exportedData;
+	$self->{"taskData"} = $taskData;
 
 	$self->{"taskMngr"}  = $taskMngr;
 	$self->{"groupMngr"} = $groupMngr;

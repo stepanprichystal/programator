@@ -1,5 +1,5 @@
 
-package Programs::Exporter::ExporterUtility::UnitEnums;
+package Programs::Exporter::ExportUtility::UnitEnums;
  
 
 use constant {
@@ -71,7 +71,7 @@ sub GetTitle{
 #	my $self = shift;
 #	my $unit = shift;
 #	
-#	use aliased 'Programs::Exporter::ExporterUtility::UnitEnums';
+#	use aliased 'Programs::Exporter::ExportUtility::UnitEnums';
 #	
 #	my $description;
 #	

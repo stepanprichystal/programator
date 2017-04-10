@@ -20,7 +20,8 @@ use aliased 'CamHelpers::CamJob';
 use aliased 'CamHelpers::CamHelper';
 use aliased 'Packages::ItemResult::Enums' => 'ResultEnums';
 use aliased 'Managers::AbstractQueue::Enums';
-use aliased 'Managers::AbstractQueue::ExportData::Enums' => "DataEnums";
+use aliased 'Managers::AsyncJobMngr::Enums'           => 'EnumsJobMngr';
+ 
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -46,7 +47,7 @@ sub RunExport {
 	#my @keys = ;
 
 	# Open job, only if asynchronous mode
-	if($mode eq DataEnums->ExportMode_ASYNC ){
+	if($mode eq EnumsJobMngr->TaskMode_ASYNC ){
 		$self->_OpenJob();
 	}
 
@@ -58,7 +59,7 @@ sub RunExport {
 
 			#tell group export start
 
-			my $exportData = $unitsData{$unitId};
+			my $taskData = $unitsData{$unitId};
 
 			# Event when group export start
 			$self->_GroupExportEvent( Enums->EventType_GROUP_START, $unitId );
@@ -68,7 +69,7 @@ sub RunExport {
 			eval {
 			
 				# Process group
-				$self->__ProcessGroup( $unitId, $exportData );
+				$self->__ProcessGroup( $unitId, $taskData );
 			};
 			if ( my $e = $@ ) {
 
@@ -95,7 +96,7 @@ sub RunExport {
 
 		#close job
 		
-		if($mode eq DataEnums->ExportMode_ASYNC ){
+		if($mode eq EnumsJobMngr->TaskMode_ASYNC ){
 			
 			$self->_CloseJob();
 		}
@@ -107,22 +108,22 @@ sub RunExport {
 sub __ProcessGroup {
 	my $self       = shift;
 	my $unitId     = shift;
-	my $exportData = shift;    # export data for specific group
+	my $taskData = shift;    # export data for specific group
 
 	 
 	my $inCAM = $self->{"inCAM"};
 
 	# Get right export class and init
-	my $exportClass = $self->{"exportClass"}->{$unitId};
-	$exportClass->Init( $inCAM, $self->{"pcbId"}, $exportData );
+	my $taskClass = $self->{"taskClass"}->{$unitId};
+	$taskClass->Init( $inCAM, $self->{"pcbId"}, $taskData );
 
 	# Set handlers
-	$exportClass->{"onItemResult"}->Add( sub { $self->_ItemResultEvent( $exportClass, $unitId, @_ ) } );
+	$taskClass->{"onItemResult"}->Add( sub { $self->_ItemResultEvent( $taskClass, $unitId, @_ ) } );
 
 	
 
 	# Final export group
-	$exportClass->Run();
+	$taskClass->Run();
 
 	 
 
@@ -144,7 +145,7 @@ sub __ProcessGroup {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	#my $app = Programs::Exporter::ExporterUtility->new();
+	#my $app = Programs::Exporter::ExportUtility->new();
 
 	#$app->Test();
 

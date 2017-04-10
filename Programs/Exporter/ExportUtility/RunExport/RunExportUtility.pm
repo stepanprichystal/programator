@@ -18,7 +18,7 @@ use Win32::Process::List;
 use aliased 'Helpers::GeneralHelper';
 use aliased 'Managers::MessageMngr::MessageMngr';
 use aliased 'Enums::EnumsGeneral';
-use aliased 'Managers::AbstractQueue::AbstractQueue::Helper';
+use aliased 'Managers::AbstractQueue::Helper';
 
 sub new {
 	my $self = shift;

@@ -4,7 +4,7 @@
 # between ExportChecker and ExportUtility
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Programs::Exporter::DataTransfer::UnitsDataContracts::PreData;
+package Programs::Exporter::ExportUtility::DataTransfer::UnitsDataContracts::ETData;
  
 #3th party library
 use strict;
@@ -28,16 +28,27 @@ sub new {
 	return $self; 
 }
  
- 
-# layers
-sub SetSignalLayers {
+ # stepToTest
+sub SetStepToTest {
 	my $self  = shift;
-	$self->{"data"}->{"layers"} = shift;
+	$self->{"data"}->{"stepToTest"} = shift;
 }
 
-sub GetSignalLayers {
+sub GetStepToTest {
 	my $self  = shift;
-	return $self->{"data"}->{"layers"};
+	return $self->{"data"}->{"stepToTest"};
+}
+
+
+# If create et step
+sub SetCreateEtStep {
+	my $self  = shift;
+	$self->{"data"}->{"createEtStep"} = shift;
+}
+
+sub GetCreateEtStep {
+	my $self  = shift;
+	return $self->{"data"}->{"createEtStep"};
 }
  
 #-------------------------------------------------------------------------------------------#

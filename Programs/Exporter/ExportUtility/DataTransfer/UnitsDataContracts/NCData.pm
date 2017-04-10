@@ -4,7 +4,7 @@
 # between ExportChecker and ExportUtility
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Programs::Exporter::DataTransfer::UnitsDataContracts::ScoData;
+package Programs::Exporter::ExportUtility::DataTransfer::UnitsDataContracts::NCData;
  
 #3th party library
 use strict;
@@ -29,54 +29,37 @@ sub new {
 }
  
  
-# core thick in mm
-sub SetCoreThick {
+# exportSingle
+sub SetExportSingle {
 	my $self  = shift;
-	my $value = shift;
-	$self->{"data"}->{"coreThick"} = $value;
+	$self->{"data"}->{"exportSingle"} = shift;
 }
 
-sub GetCoreThick {
+sub GetExportSingle {
 	my $self  = shift;
-	my $value = shift;
-	return $self->{"data"}->{"coreThick"};
+	return $self->{"data"}->{"exportSingle"};
 }
  
- 
-# Optimize yes/no/manual
-sub SetOptimize {
+# Plt layers 
+sub SetPltLayers {
 	my $self  = shift;
-	$self->{"data"}->{"optimize"} = shift;
+	$self->{"data"}->{"pltLayers"} = shift;
+}
+
+sub GetPltLayers {
+	my $self  = shift;
+	return $self->{"data"}->{"pltLayers"};
 } 
 
-
-sub GetOptimize {
+# NPlt layers 
+sub SetNPltLayers {
 	my $self  = shift;
-	my $value = shift;
-	return $self->{"data"}->{"optimize"};
-}
- 
-# Scoring type classic/one direction
-sub SetScoringType {
-	my $self  = shift;
-	$self->{"data"}->{"scoringType"} = shift;
+	$self->{"data"}->{"npltLayers"} = shift;
 }
 
-sub GetScoringType {
+sub GetNPltLayers {
 	my $self  = shift;
-	return $self->{"data"}->{"scoringType"};
-} 
-
-
-# Customer jump scoring
-sub SetCustomerJump {
-	my $self  = shift;
-	$self->{"data"}->{"customerJump"} = shift;
-}
-
-sub GetCustomerJump {
-	my $self  = shift;
-	return $self->{"data"}->{"customerJump"};
+	return $self->{"data"}->{"npltLayers"};
 } 
  
 #-------------------------------------------------------------------------------------------#

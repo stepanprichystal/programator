@@ -18,7 +18,8 @@ use aliased 'Packages::Events::Event';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'Widgets::Forms::ErrorIndicator::ErrorIndicator';
 use aliased 'Widgets::Forms::ResultIndicator::ResultIndicator';
-use aliased 'Managers::AbstractQueue::ExportData::Enums' => 'EnumsTransfer';
+use aliased 'Managers::AsyncJobMngr::Enums'           => 'EnumsJobMngr';
+ 
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -29,13 +30,13 @@ sub new {
 	my $parent       = shift;
 	my $jobId        = shift;
 	my $taskId       = shift;
-	my $exportedData = shift;
+	my $taskData = shift;
 	my $produceMngr  = shift;
 	my $taskMngr     = shift;
 	my $groupMngr    = shift;
 	my $itemMngr     = shift;
 
-	my $self = $class->SUPER::new( $parent, $jobId, $taskId, $exportedData, $taskMngr, $groupMngr, $itemMngr );
+	my $self = $class->SUPER::new( $parent, $jobId, $taskId, $taskData, $taskMngr, $groupMngr, $itemMngr );
 
 	bless($self);
 
@@ -72,8 +73,8 @@ sub SetExportResult {
 	my $aborted          = shift;
 	my $jobSentToProduce = shift;    # tell if job was sent to produce
 
-	my $value     = $self->{"exportedData"}->GetToProduce();
-	my $toProduce = $self->{"exportedData"}->GetToProduce();    # tell if user check sent to produce chcekbox
+	my $value     = $self->{"taskData"}->GetToProduce();
+	my $toProduce = $self->{"taskData"}->GetToProduce();    # tell if user check sent to produce chcekbox
 
 	if ( $result eq EnumsGeneral->ResultType_FAIL ) {
 
@@ -410,7 +411,7 @@ sub __SetLayoutResult {
 sub __SetExportTime {
 	my $self = shift;
 
-	my $value = $self->{"exportedData"}->GetExportTime();
+	my $value = $self->{"taskData"}->GetExportTime();
 
 	$self->{"jobTimeTxt"}->SetLabel($value);
 }
@@ -418,13 +419,13 @@ sub __SetExportTime {
 sub __SetExportMode {
 	my $self = shift;
 
-	my $value = $self->{"exportedData"}->GetExportMode();
+	my $value = $self->{"taskData"}->GetExportMode();
 
-	if ( $value eq EnumsTransfer->ExportMode_SYNC ) {
+	if ( $value eq EnumsJobMngr->TaskMode_SYNC ) {
 
 		$value = 0;
 	}
-	elsif ( $value eq EnumsTransfer->ExportMode_ASYNC ) {
+	elsif ( $value eq EnumsJobMngr->TaskMode_ASYNC ) {
 
 		$value = 1;
 	}
@@ -434,7 +435,7 @@ sub __SetExportMode {
 
 sub __SetToProduce {
 	my $self  = shift;
-	my $value = $self->{"exportedData"}->GetToProduce();
+	my $value = $self->{"taskData"}->GetToProduce();
 
 	$self->{"sentToProduceChb"}->SetValue($value);
 }
@@ -442,8 +443,8 @@ sub __SetToProduce {
 sub __SetToProduceBtn {
 	my $self = shift;
 
-	my $value = $self->{"exportedData"}->GetToProduce();
-	if ( $self->{"exportedData"}->GetToProduce() ) {
+	my $value = $self->{"taskData"}->GetToProduce();
+	if ( $self->{"taskData"}->GetToProduce() ) {
 		$self->{"btnProduce"}->Disable();
 	}
 

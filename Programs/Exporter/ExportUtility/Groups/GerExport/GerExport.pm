@@ -37,26 +37,26 @@ sub Init {
 	my $self       = shift;
 	my $inCAM      = shift;
 	my $jobId      = shift;
-	my $exportData = shift;
+	my $taskData = shift;
 	 
 
 	$self->{"inCAM"}      = $inCAM;
 	$self->{"jobId"}      = $jobId;
-	$self->{"exportData"} = $exportData;
+	$self->{"taskData"} = $taskData;
 	
  
-	my $exportLayers =  $exportData->GetExportLayers();
-	my $layers =  $exportData->GetLayers();
-	my $pasteInfo =  $exportData->GetPasteInfo();
-	my $mdiInfo =  $exportData->GetMdiInfo();
+	my $exportLayers =  $taskData->GetExportLayers();
+	my $layers =  $taskData->GetLayers();
+	my $pasteInfo =  $taskData->GetPasteInfo();
+	my $mdiInfo =  $taskData->GetMdiInfo();
 	
 	my $mngr  = GerMngr->new( $inCAM, $jobId, $exportLayers, $layers, $pasteInfo, $mdiInfo);
 	
 	$mngr->{"onItemResult"}->Add( sub { $self->_OnItemResultHandler(@_) } );
 	
-	$self->{"exportMngr"} = $mngr;
+	$self->{"taskMngr"} = $mngr;
 	
-	$self->{"itemsCount"} = $mngr->ExportItemsCount();
+	$self->{"itemsCount"} = $mngr->TaskItemsCount();
 	
 }
 

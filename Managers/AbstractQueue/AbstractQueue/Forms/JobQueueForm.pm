@@ -14,7 +14,6 @@ use strict;
 use warnings;
 
 #local library
-use aliased 'Programs::Exporter::ExportUtility::ExportUtility::Forms::JobQueueItemForm';
 use aliased 'Packages::Events::Event';
 
 #-------------------------------------------------------------------------------------------#

@@ -9,7 +9,7 @@ use aliased 'Enums::EnumsPaths';
 use aliased 'Packages::InCAM::InCAM';
 use aliased 'Helpers::GeneralHelper';
 use aliased 'Packages::Events::Event';
-use aliased 'Programs::Exporter::ExporterUtility::UnitEnums';
+use aliased 'Programs::Exporter::ExportUtility::UnitEnums';
 use aliased 'Managers::MessageMngr::MessageMngr';
 use aliased 'Enums::EnumsGeneral';
 use aliased "Programs::Exporter::ExportUtility::Groups::NifExport::NifUnit"  => "UnitExport";
@@ -100,13 +100,13 @@ sub Run {
 		return 0;
 	}
 
-	my $exportData = $unit->GetExportData($inCAM);
+	my $taskData = $unit->GetTaskData($inCAM);
 
 	my $exportUnit = UnitExport->new( $self->{"id"} );
 
 	my $exportClass = $exportUnit->GetExportClass();
 
-	$exportClass->Init( $inCAM, $jobId, $exportData );
+	$exportClass->Init( $inCAM, $jobId, $taskData );
 	$exportClass->{"onItemResult"}->Add( sub { Test(@_) } );
 	
  

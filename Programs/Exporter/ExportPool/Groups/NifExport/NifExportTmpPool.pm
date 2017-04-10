@@ -26,7 +26,7 @@ use aliased 'Managers::MessageMngr::MessageMngr';
 use aliased 'CamHelpers::CamAttributes';
 
 use aliased 'Packages::Export::NifExport::NifMngr';
-use aliased 'Programs::Exporter::DataTransfer::UnitsDataContracts::NifData';
+use aliased 'Programs::Exporter::ExportPool::DataTransfer::UnitsDataContracts::NifData';
 use aliased 'Packages::ItemResult::ItemResultMngr';
 
 #-------------------------------------------------------------------------------------------#
@@ -65,28 +65,28 @@ sub Run {
 
  
 
-	my $exportData = NifData->new();
+	my $taskData = NifData->new();
 
 	if ( defined $poznamka ) {
-		$exportData->SetNotes($poznamka);
+		$taskData->SetNotes($poznamka);
 	}
 	if ( defined $tenting ) {
-		$exportData->SetTenting($tenting);
+		$taskData->SetTenting($tenting);
 	}
 	if ( defined $pressfit ) {
-		$exportData->SetPressfit($pressfit);
+		$taskData->SetPressfit($pressfit);
 	}
 	if ( defined $maska01 ) {
-		$exportData->SetMaska01($maska01);
+		$taskData->SetMaska01($maska01);
 	}
 	if ( defined $datacode ) {
-		$exportData->SetDatacode($datacode);
+		$taskData->SetDatacode($datacode);
 	}
 	if ( defined $ulLogo ) {
-		$exportData->SetUlLogo($ulLogo);
+		$taskData->SetUlLogo($ulLogo);
 	}
 	if ( defined $jumpScore ) {
-		$exportData->SetJumpScoring($jumpScore);
+		$taskData->SetJumpScoring($jumpScore);
 	}
 
 	#mask
@@ -97,8 +97,8 @@ sub Run {
 	unless ( defined $masks2{"bot"} ) {
 		$masks2{"bot"} = "";
 	}
-	$exportData->SetC_mask_colour( $masks2{"top"} );
-	$exportData->SetS_mask_colour( $masks2{"bot"} );
+	$taskData->SetC_mask_colour( $masks2{"top"} );
+	$taskData->SetS_mask_colour( $masks2{"bot"} );
 
 	#silk
 	my %silk2 = HegMethods->GetSilkScreenColor($jobId);
@@ -110,16 +110,16 @@ sub Run {
 		$silk2{"bot"} = "";
 	}
 
-	$exportData->SetC_silk_screen_colour( $silk2{"top"} );
-	$exportData->SetS_silk_screen_colour( $silk2{"bot"} );
+	$taskData->SetC_silk_screen_colour( $silk2{"top"} );
+	$taskData->SetS_silk_screen_colour( $silk2{"bot"} );
 
 	my %dim = $self->__GetDimension( $inCAM, $jobId );
 
-	$exportData->SetSingle_x( $dim{"single_x"} );
-	$exportData->SetSingle_y( $dim{"single_y"} );
+	$taskData->SetSingle_x( $dim{"single_x"} );
+	$taskData->SetSingle_y( $dim{"single_y"} );
 
 	my $name = CamAttributes->GetJobAttrByName( $inCAM, $jobId, "user_name" );
-	$exportData->SetZpracoval($name);
+	$taskData->SetZpracoval($name);
 
 	# ========================================================
 	# Check GROUP DATA =====================================
@@ -186,7 +186,7 @@ sub Run {
 	# Export =============================================================
 	# ====================================================================
 
-	my %exportNifData = %{ $exportData->{"data"} };
+	my %exportNifData = %{ $taskData->{"data"} };
 
 	my $nifMngr = NifMngr->new( $inCAM, $jobId, \%exportNifData );
 
@@ -278,13 +278,13 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	my $maska01  = 0;
 
 	my $prepareOk = 1;
-	my %exportData = $nifPreGroup->__GetExportData( \$prepareOk, $tenting, $pressfit, $maska01 );
+	my %taskData = $nifPreGroup->__GetTaskData( \$prepareOk, $tenting, $pressfit, $maska01 );
 
 	# Vytvoøení nifu, pokud vstupní parametry jsou OK
 	if ($prepareOk) {
 
 		my $export = NifExportTmp->new();
-		$export->Run( $inCAM, $jobId, $stepName, \%exportData );
+		$export->Run( $inCAM, $jobId, $stepName, \%taskData );
 
 	}
 

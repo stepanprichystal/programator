@@ -4,7 +4,7 @@
 # between ExportChecker and ExportUtility
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Programs::Exporter::DataTransfer::UnitsDataContracts::NCData;
+package Programs::Exporter::ExportUtility::DataTransfer::UnitsDataContracts::PlotData;
  
 #3th party library
 use strict;
@@ -28,39 +28,27 @@ sub new {
 	return $self; 
 }
  
- 
-# exportSingle
-sub SetExportSingle {
+# sendtToPlotter
+sub SetSendToPlotter {
 	my $self  = shift;
-	$self->{"data"}->{"exportSingle"} = shift;
+	$self->{"data"}->{"sendtToPlotter"} = shift;
 }
 
-sub GetExportSingle {
+sub GetSendToPlotter {
 	my $self  = shift;
-	return $self->{"data"}->{"exportSingle"};
-}
- 
-# Plt layers 
-sub SetPltLayers {
-	my $self  = shift;
-	$self->{"data"}->{"pltLayers"} = shift;
+	return $self->{"data"}->{"sendtToPlotter"};
 }
 
-sub GetPltLayers {
+# layers
+sub SetLayers {
 	my $self  = shift;
-	return $self->{"data"}->{"pltLayers"};
-} 
-
-# NPlt layers 
-sub SetNPltLayers {
-	my $self  = shift;
-	$self->{"data"}->{"npltLayers"} = shift;
+	$self->{"data"}->{"layers"} = shift;
 }
 
-sub GetNPltLayers {
+sub GetLayers {
 	my $self  = shift;
-	return $self->{"data"}->{"npltLayers"};
-} 
+	return $self->{"data"}->{"layers"};
+}
  
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

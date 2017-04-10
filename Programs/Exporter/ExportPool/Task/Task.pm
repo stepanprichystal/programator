@@ -4,7 +4,7 @@
 # - Initialize units
 # - Pass message to specific units
 # - Responsible for updating ExportStauts
-# - Responsible for sending pcb to Export
+# - Responsible for sending pcb to produce
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Programs::Exporter::ExportPool::Task::Task;
@@ -33,7 +33,7 @@ use aliased 'Programs::Exporter::ExportPool::Groups::ScoExport::ScoUnit';
 use aliased 'Programs::Exporter::ExportPool::Groups::GerExport::GerUnit';
 use aliased 'Programs::Exporter::ExportPool::Groups::PdfExport::PdfUnit';
 use aliased 'Programs::Exporter::ExportPool::Groups::OutExport::OutUnit';
-use aliased 'Managers::AbstractQueue::ExportResultMngr';
+use aliased 'Managers::AbstractQueue::TaskResultMngr';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods, requested by IUnit interface
@@ -47,13 +47,13 @@ sub new {
 
 	# Managers, contains information about results of
 	# whole task, groups, single items, etc
- 	$self->{"ToExportResultMngr"} = ExportResultMngr->new();
+ 	$self->{"produceResultMngr"} = TaskResultMngr->new();
  
-	# Tell if job can be send to export,
+	# Tell if job can be send to produce,
 	# based on Export results and StatusFile
-	$self->{"canToExport"} = undef;
+	$self->{"canToProduce"} = undef;
 
-	$self->{"SendToExport"} = 0;    # Tell if task was send to export
+	$self->{"sentToProduce"} = 0;    # Tell if task was sent to produce
 	
 	$self->__InitUnits();
 
@@ -66,10 +66,10 @@ sub new {
 # ===================================================================
  
 
-sub ToExportResultMngr {
+sub ProduceResultMngr {
 	my $self = shift;
 
-	return $self->{"ToExportResultMngr"};
+	return $self->{"produceResultMngr"};
 }
  
 
@@ -79,11 +79,11 @@ sub ToExportResultMngr {
 
   
 
-# Return result, which tell if pcb can be send to export
-sub ResultToExport {
+# Return result, which tell if pcb can be send to produce
+sub ResultToProduce {
 	my $self = shift;
 
-	my $res = $self->{"ExportResultMngr"}->Succes();
+	my $res = $self->{"produceResultMngr"}->Succes();
 
 	if ($res) {
 		$res = EnumsGeneral->ResultType_OK;
@@ -95,65 +95,65 @@ sub ResultToExport {
 }
  
 
-sub GetExportErrorsCnt {
+sub GetProduceErrorsCnt {
 	my $self = shift;
 
-	return $self->{"ExportResultMngr"}->GetErrorsCnt();
+	return $self->{"produceResultMngr"}->GetErrorsCnt();
 }
 
-sub GetExportWarningsCnt {
+sub GetProduceWarningsCnt {
 	my $self = shift;
 
-	return $self->{"ExportResultMngr"}->GetWarningsCnt();
+	return $self->{"produceResultMngr"}->GetWarningsCnt();
 }
 
 # ===================================================================
-# Method regardings "to Export" issue
+# Method regardings "to produce" issue
 # ===================================================================
 
-# Tell if job was send to export
-sub GetJobSendToExport {
+# Tell if job was sent to produce
+sub GetJobSentToProduce {
 	my $self = shift;
 
-	return $self->{"SendToExport"};
+	return $self->{"sentToProduce"};
 }
 
 # Tell if job was not aborted by user during export
-# If no, job can/hasn't be send to export
-sub GetJobCanToExport {
+# If no, job can/hasn't be sent to produce
+sub GetJobCanToProduce {
 	my $self = shift;
 
-	return $self->{"canToExport"};
+	return $self->{"canToProduce"};
 }
 
 # Tell if user checked in export, job should be sent
 # to product automatically
-sub GetJobShouldToExport {
+sub GetJobShouldToProduce {
 	my $self = shift;
 
-	return $self->{"exportData"}->GetToExport();
+	return $self->{"taskData"}->GetToProduce();
 }
 
-# Test if job can be send to export
+# Test if job can be send to produce
 # Set results of this action to manager
-sub SetToExportResult {
+sub SetToProduceResult {
 	my $self = shift;
 
-	$self->{"canToExport"} = 1;
+	$self->{"canToProduce"} = 1;
 
-	my $ToExportMngr = $self->{"ExportResultMngr"};
+	my $toProduceMngr = $self->{"produceResultMngr"};
 
-	$ToExportMngr->Clear();
+	$toProduceMngr->Clear();
 
 	# check if export is succes
 	if ( $self->Result() eq EnumsGeneral->ResultType_FAIL ) {
 
-		my $errorStr = "Can't sent \"to Export\",  ";
+		my $errorStr = "Can't sent \"to produce\",  ";
 
 		if ( $self->GetJobAborted() ) {
 
 			$errorStr .= "because export was aborted by user.";
-			$self->{"canToExport"} = 0;
+			$self->{"canToProduce"} = 0;
 
 		}
 		else {
@@ -161,32 +161,32 @@ sub SetToExportResult {
 			$errorStr .= "because export was not succes.";
 		}
 
-		my $item = $ToExportMngr->GetNewItem( "send to export", EnumsGeneral->ResultType_FAIL );
+		my $item = $toProduceMngr->GetNewItem( "Sent to produce", EnumsGeneral->ResultType_FAIL );
 
 		$item->AddError($errorStr);
-		$ToExportMngr->AddItem($item);
+		$toProduceMngr->AddItem($item);
 	}
 
 	my @notExportUnits = ();
-	if ( !$self->{"exportStatus"}->IsExportOk( \@notExportUnits ) ) {
+	if ( !$self->{"taskStatus"}->IsTaskOk( \@notExportUnits ) ) {
 
 		my @notExportUnits = map { UnitEnums->GetTitle($_) } @notExportUnits;
 		my $str = join( ", ", @notExportUnits );
 
-		my $errorStr = "Can't sent \"to Export\", because some groups haven't been exported succesfully. \n";
+		my $errorStr = "Can't sent \"to produce\", because some groups haven't been exported succesfully. \n";
 		$errorStr .= "Groups that need to be exported: <b> $str </b>\n";
 
-		$self->{"canToExport"} = 0;
+		$self->{"canToProduce"} = 0;
 
-		my $item = $ToExportMngr->GetNewItem( "Export status", EnumsGeneral->ResultType_FAIL );
+		my $item = $toProduceMngr->GetNewItem( "Export status", EnumsGeneral->ResultType_FAIL );
 
 		$item->AddError($errorStr);
-		$ToExportMngr->AddItem($item);
+		$toProduceMngr->AddItem($item);
 	}
 
 }
 
-sub SendToExport {
+sub SentToProduce {
 	my $self = shift;
 
 	# set state HOTOVO-zadat
@@ -198,18 +198,18 @@ sub SendToExport {
 		my $succ     = HegMethods->UpdatePcbOrderState( $orderNum, "HOTOVO-zadat");
 		
 	 
-		$self->{"exportStatus"}->DeleteStatusFile();
-		$self->{"SendToExport"} = 1;
+		$self->{"taskStatus"}->DeleteStatusFile();
+		$self->{"sentToProduce"} = 1;
 	};
 
 	if ( my $e = $@ ) {
 
 		 # set status hotovo-yadat fail
-		 my $ToExportMngr = $self->{"ExportResultMngr"};
-		 my $item = $ToExportMngr->GetNewItem( "Set state HOTOVO-zadat", EnumsGeneral->ResultType_FAIL );
+		 my $toProduceMngr = $self->{"produceResultMngr"};
+		 my $item = $toProduceMngr->GetNewItem( "Set state HOTOVO-zadat", EnumsGeneral->ResultType_FAIL );
 
 		$item->AddError("Set state HOTOVO-zadat failed, try it again. Detail: $e\n");
-		$ToExportMngr->AddItem($item);
+		$toProduceMngr->AddItem($item);
 
 	}
 
@@ -223,7 +223,7 @@ sub SendToExport {
  sub __InitUnits {
 	my $self = shift;
  
-	my @keys = $self->{"exportData"}->GetOrderedUnitKeys(1);
+	my @keys = $self->{"taskData"}->GetOrderedUnitKeys(1);
 	my @allUnits = ();
 
 	foreach my $key (@keys) {
@@ -243,56 +243,56 @@ sub __GetUnitClass {
 	my $unit;
 	my $jobId = $self->{"jobId"};
 	
-	
+	my $title = UnitEnums->GetTitle($unitId);
 
 	if ( $unitId eq UnitEnums->UnitId_NIF ) {
 
-		$unit = NifUnit->new($unitId, $jobId);
+		$unit = NifUnit->new($unitId, $jobId, $title);
 
 	}
 	elsif ( $unitId eq UnitEnums->UnitId_NC ) {
 
-		$unit = NCUnit->new($unitId, $jobId);
+		$unit = NCUnit->new($unitId, $jobId, $title);
 
 	}
 	elsif ( $unitId eq UnitEnums->UnitId_AOI ) {
 
-		$unit = AOIUnit->new($unitId, $jobId);
+		$unit = AOIUnit->new($unitId, $jobId, $title);
 
 	}
 	elsif ( $unitId eq UnitEnums->UnitId_ET ) {
 
-		$unit = ETUnit->new($unitId, $jobId);
+		$unit = ETUnit->new($unitId, $jobId, $title);
 
 	}
 	elsif ( $unitId eq UnitEnums->UnitId_PLOT ) {
 
-		$unit = PlotUnit->new($unitId, $jobId);
+		$unit = PlotUnit->new($unitId, $jobId, $title);
 
 	}
 	elsif ( $unitId eq UnitEnums->UnitId_PRE ) {
 
-		$unit = PreUnit->new($unitId, $jobId);
+		$unit = PreUnit->new($unitId, $jobId, $title);
 
 	}
 	elsif ( $unitId eq UnitEnums->UnitId_SCO ) {
 
-		$unit = ScoUnit->new($unitId, $jobId);
+		$unit = ScoUnit->new($unitId, $jobId, $title);
 
 	}
 	elsif ( $unitId eq UnitEnums->UnitId_GER ) {
 
-		$unit = GerUnit->new($unitId, $jobId);
+		$unit = GerUnit->new($unitId, $jobId, $title);
 
 	}
 	elsif ( $unitId eq UnitEnums->UnitId_PDF ) {
 
-		$unit = PdfUnit->new($unitId, $jobId);
+		$unit = PdfUnit->new($unitId, $jobId, $title);
 
 	}
 	elsif ( $unitId eq UnitEnums->UnitId_OUT ) {
 
-		$unit = OutUnit->new($unitId, $jobId);
+		$unit = OutUnit->new($unitId, $jobId, $title);
 
 	}
 	

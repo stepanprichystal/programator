@@ -12,7 +12,7 @@ use warnings;
 
 #local library
 
-use aliased 'Programs::Exporter::DataTransfer::UnitsDataContracts::NCData';
+use aliased 'Programs::Exporter::ExportUtility::DataTransfer::UnitsDataContracts::NCData';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods

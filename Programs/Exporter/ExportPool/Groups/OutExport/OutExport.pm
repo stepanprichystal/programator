@@ -37,27 +37,27 @@ sub Init {
 	my $self       = shift;
 	my $inCAM      = shift;
 	my $jobId      = shift;
-	my $exportData = shift;
+	my $taskData = shift;
 	 
 
 	$self->{"inCAM"}      = $inCAM;
 	$self->{"jobId"}      = $jobId;
-	$self->{"exportData"} = $exportData;
+	$self->{"taskData"} = $taskData;
 	
  
-	my $exportCooper =  $exportData->GetExportCooper();
-	my $exportEt =  $exportData->GetExportET();
-	my $cooperStep =  $exportData->GetCooperStep();
-	my $exportControl =  $exportData->GetExportControl();
- 	my $controlStep =  $exportData->GetControlStep();
+	my $exportCooper =  $taskData->GetExportCooper();
+	my $exportEt =  $taskData->GetExportET();
+	my $cooperStep =  $taskData->GetCooperStep();
+	my $exportControl =  $taskData->GetExportControl();
+ 	my $controlStep =  $taskData->GetControlStep();
 	
 	my $mngr  = OutMngr->new( $inCAM, $jobId, $exportCooper, $cooperStep, $exportEt, $exportControl, $controlStep);
 	
 	$mngr->{"onItemResult"}->Add( sub { $self->_OnItemResultHandler(@_) } );
 	
-	$self->{"exportMngr"} = $mngr;
+	$self->{"taskMngr"} = $mngr;
 	
-	$self->{"itemsCount"} = $mngr->ExportItemsCount();
+	$self->{"itemsCount"} = $mngr->TaskItemsCount();
 	
 }
 

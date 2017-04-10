@@ -4,7 +4,7 @@
 # between ExportChecker and ExportUtility
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Programs::Exporter::DataTransfer::UnitsDataContracts::NifData;
+package Programs::Exporter::ExportUtility::DataTransfer::UnitsDataContracts::NifData;
  
 #3th party library
 use strict;

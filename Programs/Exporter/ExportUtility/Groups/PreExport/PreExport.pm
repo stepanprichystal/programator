@@ -37,25 +37,25 @@ sub Init {
 	my $self       = shift;
 	my $inCAM      = shift;
 	my $jobId      = shift;
-	my $exportData = shift;
+	my $taskData = shift;
 	 
 
 	$self->{"inCAM"}      = $inCAM;
 	$self->{"jobId"}      = $jobId;
-	$self->{"exportData"} = $exportData;
+	$self->{"taskData"} = $taskData;
 	
  
 	
-	my $layers =  $exportData->GetSignalLayers();
+	my $layers =  $taskData->GetSignalLayers();
 
 	
 	my $mngr  = PreMngr->new( $inCAM, $jobId, $layers);
 	
 	$mngr->{"onItemResult"}->Add( sub { $self->_OnItemResultHandler(@_) } );
 	
-	$self->{"exportMngr"} = $mngr;
+	$self->{"taskMngr"} = $mngr;
 	
-	$self->{"itemsCount"} = $mngr->ExportItemsCount();
+	$self->{"itemsCount"} = $mngr->TaskItemsCount();
 	
 }
 

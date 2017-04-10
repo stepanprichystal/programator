@@ -5,7 +5,7 @@
 # from child thread to main thread.
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Managers::AbstractQueue::ExportResultMngr;
+package Managers::AbstractQueue::TaskResultMngr;
 use base('Packages::ItemResult::ItemResultMngr');
 
 #3th party library

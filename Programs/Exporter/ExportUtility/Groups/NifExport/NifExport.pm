@@ -45,19 +45,19 @@ sub Init {
 	my $self       = shift;
 	my $inCAM      = shift;
 	my $jobId      = shift;
-	my $exportData = shift;
+	my $taskData = shift;
 	 
 
 	$self->{"inCAM"}      = $inCAM;
 	$self->{"jobId"}      = $jobId;
-	$self->{"exportData"} = $exportData;
+	$self->{"taskData"} = $taskData;
 	
  
  
 	
 	 
 	
-	my %exportNifData = %{$exportData->{"data"}};
+	my %exportNifData = %{$taskData->{"data"}};
 	
 	
 	
@@ -65,9 +65,9 @@ sub Init {
 	
 	$nifMngr->{"onItemResult"}->Add( sub { $self->_OnItemResultHandler(@_) } );
 	
-	$self->{"exportMngr"} = $nifMngr;
+	$self->{"taskMngr"} = $nifMngr;
 	
-	$self->{"itemsCount"} = $nifMngr->ExportItemsCount();
+	$self->{"itemsCount"} = $nifMngr->TaskItemsCount();
 	
  
 }

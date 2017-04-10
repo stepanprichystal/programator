@@ -14,7 +14,6 @@ use warnings;
 
 #local library
 use aliased "Packages::Events::Event";
-use aliased 'Programs::Exporter::ExportChecker::Enums';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'Packages::ItemResult::ItemResultMngr';
 
@@ -251,15 +250,15 @@ sub GetGroupResultMngr {
 sub GetExportClass {
 	my $self = shift;
 
-	my %exportClasses = ();
+	my %taskClasses = ();
 
 	foreach my $unit ( @{ $self->{"units"} } ) {
 
 		my $class = $unit->GetExportClass();
-		$exportClasses{ $unit->{"unitId"} } = $class;
+		$taskClasses{ $unit->{"unitId"} } = $class;
 	}
 
-	return %exportClasses;
+	return %taskClasses;
 }
 
 # ===================================================================
@@ -293,7 +292,7 @@ sub GetUnitById {
 	}
 }
 
-# Return number of active units for export
+# Return number of active units for task
 sub GetActiveUnitsCnt {
 	my $self = shift;
 	my @activeOnUnits = grep { $_->GetGroupState() eq Enums->GroupState_ACTIVEON } @{ $self->{"units"} };

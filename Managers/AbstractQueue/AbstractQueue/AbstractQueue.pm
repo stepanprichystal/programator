@@ -1,6 +1,6 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Core of Export utility program. Manage whole process of exporting.
+# Description: Core of Export utility program. Manage whole process of tasking.
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Managers::AbstractQueue::AbstractQueue::AbstractQueue;
@@ -24,9 +24,9 @@ use aliased 'Managers::MessageMngr::MessageMngr';
 
 use aliased 'Managers::AbstractQueue::Task::Task';
 use aliased 'Managers::AbstractQueue::AbstractQueue::Forms::AbstractQueueForm';
-use aliased 'Programs::Exporter::DataTransfer::DataTransfer';
-use aliased 'Managers::AbstractQueue::ExportData::Enums' => 'EnumsTransfer';
-use aliased 'Managers::AsyncJobMngr::Enums'           => 'EnumsMngr';
+ 
+ 
+use aliased 'Managers::AsyncJobMngr::Enums'           => 'EnumsJobMngr';
 use aliased 'Managers::AbstractQueue::AbstractQueue::JobWorkerClass';
 use aliased 'Managers::AbstractQueue::Enums';
 use aliased 'Packages::InCAM::InCAM';
@@ -74,32 +74,32 @@ sub __OnJobStateChangedBase {
 	my $taskStateDetail = shift;
 
 	my $task       = $self->_GetTaskById($taskId);
-	my $exportData = $task->GetExportData();
+	my $taskData = $task->GetTaskData();
 
 	my $status = "";
 
-	if ( $taskState eq EnumsMngr->JobState_WAITINGQUEUE ) {
+	if ( $taskState eq EnumsJobMngr->JobState_WAITINGQUEUE ) {
 
 		$status = "Waiting in queue.";
 
 	}
-	elsif ( $taskState eq EnumsMngr->JobState_WAITINGPORT ) {
+	elsif ( $taskState eq EnumsJobMngr->JobState_WAITINGPORT ) {
 
 		$status = "Waiting on InCAM port.";
-		$self->{"form"}->ActivateForm( 1, $exportData->GetFormPosition() );
+		$self->{"form"}->ActivateForm( 1, $taskData->GetFormPosition() );
 
 	}
-	elsif ( $taskState eq EnumsMngr->JobState_RUNNING ) {
+	elsif ( $taskState eq EnumsJobMngr->JobState_RUNNING ) {
 
 		$status = "Running...";
 
 	}
-	elsif ( $taskState eq EnumsMngr->JobState_ABORTING ) {
+	elsif ( $taskState eq EnumsJobMngr->JobState_ABORTING ) {
 
 		$status = "Aborting job...";
 
 	}
-	elsif ( $taskState eq EnumsMngr->JobState_DONE ) {
+	elsif ( $taskState eq EnumsJobMngr->JobState_DONE ) {
 
 		# Refresh GUI - job queue
 
@@ -109,15 +109,15 @@ sub __OnJobStateChangedBase {
 
 		my $aborted = 0;
 
-		if ( $taskStateDetail eq EnumsMngr->ExitType_FORCE ) {
+		if ( $taskStateDetail eq EnumsJobMngr->ExitType_FORCE ) {
 			$aborted = 1;
 
-			$status = "Job export aborted by user.";
+			$status = "Job task aborted by user.";
 
 		}
 		else {
 
-			$status = "Job export finished.";
+			$status = "Job task finished.";
 		}
 
 		$task->ProcessTaskDone($aborted);
@@ -146,7 +146,7 @@ sub __OnJobProgressEvtHandlerBase {
 
 	#$self->{"gauge"}->SetValue($value);
 
-	#print "Exporter utility:  job progress, job id: " . $jobGUID . " - value: " . $value . "\n";
+	#print "AbstractQueue utility:  job progress, job id: " . $jobGUID . " - value: " . $value . "\n";
 
 }
 
@@ -159,7 +159,7 @@ sub __OnJobMessageEvtHandlerBase {
 
 	my $task = $self->_GetTaskById($taskId);
 
-	#print "Exporter utility::  task id: " . $taskId . " - messType: " . $messType. "\n";
+	#print "AbstractQueue utility::  task id: " . $taskId . " - messType: " . $messType. "\n";
 
 	# CATCH GROUP ITEM MESSAGE
 
@@ -234,11 +234,11 @@ sub __OnRemoveJobClick {
 
 	#if mode was synchrounous, we have to quit server script
 
-	my $exportData = $task->GetExportData();
+	my $taskData = $task->GetTaskData();
 
-	if ( $exportData->GetExportMode() eq EnumsTransfer->ExportMode_SYNC ) {
+	if ( $taskData->GetExportMode() eq EnumsJobMngr->TaskMode_SYNC ) {
 
-		my $port = $exportData->GetPort();
+		my $port = $taskData->GetPort();
 
 		my $inCAM = InCAM->new( "port" => $port );
 
@@ -256,14 +256,14 @@ sub __OnRemoveJobClick {
 
 		$self->{"form"}->_DestroyExternalServer($port);
 
-		# hide exporter
+		# hide abstractQueue
 		$self->{"form"}->ActivateForm(0);
 	}
 
 }
 
 # First is called this function in base class, then is called handler in inherit class
-sub __OnCloseExporterBase {
+sub __OnCloseAbstractQueueBase {
 	my $self = shift;
 
 	# All jobs should be DONE in this time
@@ -296,11 +296,11 @@ sub __TimerCheckVersion {
 
 		my $messMngr = $self->{"form"}->{"messageMngr"};
 
-		my @mess1 = ( "Na serveru je nová verze programu 'Exporter'. Jakmile to bude možné, ukonèi program.", "Chceš program ukonèit nyní?" );
+		my @mess1 = ( "Na serveru je nová verze programu 'AbstractQueue'. Jakmile to bude možné, ukonèi program.", "Chceš program ukonèit nyní?" );
 		my @btn = ( "Ano", "Ukonèím pozdìni" );
 		$messMngr->ShowModal( -1, EnumsGeneral->MessageType_INFORMATION, \@mess1, \@btn );
 
-		# close exporter
+		# close abstractQueue
 		if ( $messMngr->Result() == 0 ) {
 
 			$self->{"form"}->__OnClose();
@@ -367,7 +367,7 @@ sub __SetHandlersBase {
 	$self->{"form"}->{'onJobProgressEvt'}->Add( sub  { $self->__OnJobProgressEvtHandlerBase(@_) } );
 	$self->{"form"}->{'onJobMessageEvt'}->Add( sub   { $self->__OnJobMessageEvtHandlerBase(@_) } );
 
-	$self->{"form"}->{'onJomMngrClose'}->Add( sub { $self->__OnCloseExporterBase(@_) } );
+	$self->{"form"}->{'onJomMngrClose'}->Add( sub { $self->__OnCloseAbstractQueueBase(@_) } );
 
 }
 
@@ -429,13 +429,13 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	use aliased 'Managers::AbstractQueue::AbstractQueue::AbstractQueue';
 	use aliased 'Widgets::Forms::MyTaskBarIcon';
 
-	my $exporter = AbstractQueue->new( EnumsMngr->RUNMODE_WINDOW );
+	my $abstractQueue = AbstractQueue->new( EnumsJobMngr->RUNMODE_WINDOW );
 
-	#my $form = $exporter->{"form"}->{"mainFrm"};
+	#my $form = $abstractQueue->{"form"}->{"mainFrm"};
 
-	#my $trayicon = MyTaskBarIcon->new( "Exporter", $form);
+	#my $trayicon = MyTaskBarIcon->new( "AbstractQueue", $form);
 
-	#$trayicon->AddMenuItem("Exit Exporter", sub {  $exporter->{"form"}->OnClose() });
+	#$trayicon->AddMenuItem("Exit AbstractQueue", sub {  $abstractQueue->{"form"}->OnClose() });
 	#$trayicon->AddMenuItem("Open", sub { print "Open"; });
 
 	#	sub __OnLeftClick {

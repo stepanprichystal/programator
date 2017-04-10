@@ -37,26 +37,26 @@ sub Init {
 	my $self       = shift;
 	my $inCAM      = shift;
 	my $jobId      = shift;
-	my $exportData = shift;
+	my $taskData = shift;
 	 
 
 	$self->{"inCAM"}      = $inCAM;
 	$self->{"jobId"}      = $jobId;
-	$self->{"exportData"} = $exportData;
+	$self->{"taskData"} = $taskData;
 	
  
-	my $coreThick =  $exportData->GetCoreThick();
-	my $optimize =  $exportData->GetOptimize();
-	my $scoringType =  $exportData->GetScoringType();
+	my $coreThick =  $taskData->GetCoreThick();
+	my $optimize =  $taskData->GetOptimize();
+	my $scoringType =  $taskData->GetScoringType();
 	 
 	
 	my $mngr  = ScoMngr->new( $inCAM, $jobId, $coreThick, $optimize, $scoringType);
 	
 	$mngr->{"onItemResult"}->Add( sub { $self->_OnItemResultHandler(@_) } );
 	
-	$self->{"exportMngr"} = $mngr;
+	$self->{"taskMngr"} = $mngr;
 	
-	$self->{"itemsCount"} = $mngr->ExportItemsCount();
+	$self->{"itemsCount"} = $mngr->TaskItemsCount();
 	
 }
 

@@ -42,22 +42,22 @@ sub Init {
 	my $self       = shift;
 	my $inCAM      = shift;
 	my $jobId      = shift;
-	my $exportData = shift;
+	my $taskData = shift;
 	 
 
 	
  
 	
-	my $exportSingle = $exportData->GetExportSingle();
-	my $pltLayers = $exportData->GetPltLayers();
-	my $npltLayers = $exportData->GetNPltLayers();
+	my $exportSingle = $taskData->GetExportSingle();
+	my $pltLayers = $taskData->GetPltLayers();
+	my $npltLayers = $taskData->GetNPltLayers();
 	
 	my $mngr = ExportMngr->new( $inCAM, $jobId, "panel", $exportSingle, $pltLayers, $npltLayers);
 	$mngr->{"onItemResult"}->Add( sub { $self->_OnItemResultHandler(@_) } );
 	
-	$self->{"exportMngr"} = $mngr;
+	$self->{"taskMngr"} = $mngr;
 	
-	$self->{"itemsCount"} = $mngr->ExportItemsCount();
+	$self->{"itemsCount"} = $mngr->TaskItemsCount();
 	
  
 }

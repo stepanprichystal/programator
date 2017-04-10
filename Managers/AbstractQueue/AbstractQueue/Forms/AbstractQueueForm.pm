@@ -28,7 +28,8 @@ use aliased 'Managers::MessageMngr::MessageMngr';
 use aliased 'Managers::AbstractQueue::AbstractQueue::Forms::GroupTable::GroupTableForm';
 use aliased 'Widgets::Forms::CustomNotebook::CustomNotebook';
 use aliased 'Widgets::Forms::MyWxBookCtrlPage';
-use aliased 'Managers::AbstractQueue::ExportData::Enums' => 'EnumsTransfer';
+ 
+use aliased 'Managers::AsyncJobMngr::Enums' => 'EnumsJobMngr';
 use aliased 'Managers::AsyncJobMngr::ServerMngr::ServerInfo';
 use aliased 'Managers::AbstractQueue::Helper';
  
@@ -42,13 +43,14 @@ sub new {
 	my $runMode   = shift;
 	my $parent    = shift;
 	my $title     = shift;
+	my $name     = shift;
 	my $dimension = shift;
 
 	if ( defined $parent && $parent == -1 ) {
 		$parent = undef;
 	}
 
-	my $self = $class->SUPER::new( $runMode, $parent, $title, $dimension );
+	my $self = $class->SUPER::new( $runMode, $parent, $title, $name, $dimension );
 	bless($self);
 
 	# Properties
@@ -120,20 +122,20 @@ sub AddNewTask {
 	my $self = shift;
 	my $task = shift;
 
-	my $exportData = $task->GetExportData();
+	my $taskData = $task->GetTaskData();
 
-	my $mode = $exportData->GetExportMode();
+	my $mode = $taskData->GetExportMode();
 
-	if ( $mode eq EnumsTransfer->ExportMode_SYNC ) {
+	if ( $mode eq EnumsJobMngr->TaskMode_SYNC ) {
 
-		my $port = $exportData->GetPort();
+		my $port = $taskData->GetPort();
 
 		my $serverInfo = ServerInfo->new();
 		$serverInfo->{"port"} = $port;
 
 		$self->_AddJobToQueue( $task->GetJobId(), $task->GetTaskId(), $serverInfo );
 	}
-	elsif ( $mode eq EnumsTransfer->ExportMode_ASYNC ) {
+	elsif ( $mode eq EnumsJobMngr->TaskMode_ASYNC ) {
 
 		$self->_AddJobToQueue( $task->GetJobId(), $task->GetTaskId() );
 	}
@@ -159,7 +161,7 @@ sub ActivateForm {
 		$self->{"mainFrm"}->SetFocus();
 		$self->{"mainFrm"}->Raise();
 
-		#		my @windows = FindWindowLike( 0, "Exporter utility" );
+		#		my @windows = FindWindowLike( 0, "AbstractQueue utility" );
 		#		for (@windows) {
 		#
 		#			   SetForegroundWindow( $_);
@@ -357,7 +359,7 @@ sub __OnShowConsoleChecked {
 		$val = 0;
 	}
 
-	Helper->ShowExportWindow( $val, "Cmd of ExporterUtility PID:" . $$ );
+	Helper->ShowExportWindow( $val, "Cmd of AbstractQueueUtility PID:" . $$ );
 
 }
 
@@ -408,7 +410,7 @@ sub __SetLayout {
 	my $jobsQueueStatBox = $self->__SetLayoutJobsQueue($page1);
 
 	my $settingsStatBox       = $self->__SetLayoutInCAMSettings($page2);
-	my $exportSettingsStatBox = $self->__SetLayoutExporterSettings($page2);
+	my $taskSettingsStatBox = $self->__SetLayoutAbstractQueueSettings($page2);
 
 	my $groupsStatBox = $self->__SetLayoutGroups($page1);
 
@@ -432,13 +434,13 @@ sub __SetLayout {
 	$szPage1->Add( $szRow2, 1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 
 	$szPage2->Add( $settingsStatBox,       1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
-	$szPage2->Add( $exportSettingsStatBox, 1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szPage2->Add( $taskSettingsStatBox, 1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 
 	$szMain->Add( $nb,      1, &Wx::wxEXPAND );
 	$szMain->Add( $pnlBtns, 0, &Wx::wxEXPAND );
 
 	# REGISTER EVENTS
-	#Wx::Event::EVT_BUTTON( $btnHide, -1, sub { $self->__OnHideExporter() } );
+	#Wx::Event::EVT_BUTTON( $btnHide, -1, sub { $self->__OnHideAbstractQueue() } );
 
 	#Wx::Event::EVT_BUTTON( $btnExport, -1, sub { $self->__OnExportForceClick(@_) } );
 
@@ -564,7 +566,7 @@ sub __SetLayoutInCAMSettings {
 }
 
 # Set layout for Quick set box
-sub __SetLayoutExporterSettings {
+sub __SetLayoutAbstractQueueSettings {
 	my $self   = shift;
 	my $parent = shift;
 
@@ -572,7 +574,7 @@ sub __SetLayoutExporterSettings {
 	my %sett = $self->_GetServerSettings();
 
 	#define staticboxes
-	my $statBox = Wx::StaticBox->new( $parent, -1, 'Exporter - settings' );
+	my $statBox = Wx::StaticBox->new( $parent, -1, 'AbstractQueue - settings' );
 	my $szStatBox = Wx::StaticBoxSizer->new( $statBox, &Wx::wxVERTICAL );
 
 	my $szRow1 = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
@@ -625,13 +627,13 @@ sub __SetLayoutGroups {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	#use aliased 'Programs::Exporter::ExporterUtility';
+	#use aliased 'Programs::AbstractQueue::AbstractQueueUtility';
 
-	#my $exporter = ExporterUtility->new();
+	#my $abstractQueue = AbstractQueueUtility->new();
 
 	#$app->Test();
 
-	#$exporter->MainLoop;
+	#$abstractQueue->MainLoop;
 
 }
 

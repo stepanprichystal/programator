@@ -1,7 +1,7 @@
 
 #-------------------------------------------------------------------------------------------#
 # Description: Base class for units. Provide necessary methods, which allow specific unit 
-# to be exported by AbstractQueue program
+# to be tasked by AbstractQueue program
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Managers::AbstractQueue::Groups::UnitBase;
@@ -27,19 +27,18 @@ sub new {
 	
 	# uique key within all units
 	$self->{"unitId"} = shift;
-	
-	$self->{"unitTitle"} = shift;
-
 	$self->{"jobId"} = shift;
+	$self->{"unitTitle"} = shift;
+	
 
 	 
 	
 	$self->{"form"}   = undef;    # reference on GroupWrapperForm object
 
-	$self->{"unitExport"} = undef; # reference on class responsible for export
+	$self->{"unitExport"} = undef; # reference on class responsible for task
 
 	# store, where data for units are saved
-	# keep also state of group and export error information
+	# keep also state of group and task error information
 	$self->{"groupData"} = GroupData->new(); 
 
 	return $self;

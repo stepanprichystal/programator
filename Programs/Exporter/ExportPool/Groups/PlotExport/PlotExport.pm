@@ -37,26 +37,26 @@ sub Init {
 	my $self       = shift;
 	my $inCAM      = shift;
 	my $jobId      = shift;
-	my $exportData = shift;
+	my $taskData = shift;
 	 
 
 	$self->{"inCAM"}      = $inCAM;
 	$self->{"jobId"}      = $jobId;
-	$self->{"exportData"} = $exportData;
+	$self->{"taskData"} = $taskData;
 	
  
 	
-	my $layers =  $exportData->GetLayers();
-	my $sendToPlotter =  $exportData->GetSendToPlotter();
+	my $layers =  $taskData->GetLayers();
+	my $sendToPlotter =  $taskData->GetSendToPlotter();
 	
 	
 	my $mngr  = PlotMngr->new( $inCAM, $jobId, $layers, $sendToPlotter);
 	
 	$mngr->{"onItemResult"}->Add( sub { $self->_OnItemResultHandler(@_) } );
 	
-	$self->{"exportMngr"} = $mngr;
+	$self->{"taskMngr"} = $mngr;
 	
-	$self->{"itemsCount"} = $mngr->ExportItemsCount();
+	$self->{"itemsCount"} = $mngr->TaskItemsCount();
 	
  
 }

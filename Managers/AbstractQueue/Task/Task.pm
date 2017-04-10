@@ -24,8 +24,7 @@ use aliased 'Helpers::GeneralHelper';
 #use aliased 'Managers::AbstractQueue::AbstractQueue::Groups::NC4Unit';
 #use aliased 'Managers::AbstractQueue::AbstractQueue::Groups::NC5Unit';
 use aliased 'Managers::AbstractQueue::Unit::Units';
-use aliased 'Managers::AbstractQueue::AbstractQueue::ExportStatus::ExportStatus';
-use aliased 'Managers::AbstractQueue::ExportResultMngr';
+use aliased 'Managers::AbstractQueue::TaskResultMngr';
 use aliased 'Connectors::HeliosConnector::HegMethods';
 
 #-------------------------------------------------------------------------------------------#
@@ -39,9 +38,9 @@ sub new {
 
 	$self->{"jobId"} = shift;    # job id, which is processed
 
-	$self->{"exportData"} = shift;    # exported data, from ExportChecker program
+	$self->{"taskData"} = shift;    # tasked data, from ExportChecker program
 
-	$self->{"exportStatus"} = shift;  # Class responsible for updating StatusFile in job archive
+	$self->{"taskStatus"} = shift;  # Class responsible for updating StatusFile in job archive
 	
 	# Object, which keep all units objects
 	$self->{"units"} = Units->new( $self->{"jobId"} );
@@ -52,16 +51,16 @@ sub new {
 	# Managers, contains information about results of
 	# whole task, groups, single items, etc
 
-	$self->{"taskResultMngr"} = ExportResultMngr->new();
+	$self->{"taskResultMngr"} = TaskResultMngr->new();
 
-	$self->{"groupResultMngr"} = ExportResultMngr->new();
+	$self->{"groupResultMngr"} = TaskResultMngr->new();
 
-	$self->{"itemResultMngr"} = ExportResultMngr->new();
+	$self->{"itemResultMngr"} = TaskResultMngr->new();
 
 	$self->{"aborted"} = 0;    # Tell if task was aborted by user
  
-	my @mandatoryUnits = $self->{"exportData"}->GetMandatoryUnits();
-	$self->{"exportStatus"}->CreateStatusFile( \@mandatoryUnits );
+	my @mandatoryUnits = $self->{"taskData"}->GetMandatoryUnits();
+	$self->{"taskStatus"}->CreateStatusFile( \@mandatoryUnits );
  
 	return $self;
 }
@@ -87,9 +86,9 @@ sub GetAllUnits {
 	return $self->{"units"}->GetUnits();
 }
 
-sub GetExportData {
+sub GetTaskData {
 	my $self = shift;
-	return $self->{"exportData"};
+	return $self->{"taskData"};
 }
 
 sub GetTaskResultMngr {
@@ -119,7 +118,7 @@ sub GetJobAborted {
 	return $self->{"aborted"};
 }
 
-# Return export Result of whole task
+# Return task Result of whole task
 sub Result {
 	my $self = shift;
 
@@ -241,7 +240,7 @@ sub ProcessGroupEnd {
 
 	$unit->ProcessGroupEnd();
 
-	$self->{"exportStatus"}->UpdateStatusFile( $unitId, $unit->Result() );
+	$self->{"taskStatus"}->UpdateStatusFile( $unitId, $unit->Result() );
 }
 
 sub ProcessTaskResult {

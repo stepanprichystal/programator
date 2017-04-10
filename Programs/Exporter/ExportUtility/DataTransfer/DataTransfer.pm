@@ -3,7 +3,7 @@
 # Description: Is responsible for saving/loading serialization group data to/from disc
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Programs::Exporter::DataTransfer::DataTransfer;
+package Programs::Exporter::ExportUtility::DataTransfer::DataTransfer;
 
 #3th party library
 use strict;
@@ -12,10 +12,10 @@ use utf8;
 use JSON;
 
 #local library
-use aliased "Programs::Exporter::DataTransfer::ExportData";
+use aliased "Programs::Exporter::ExportUtility::DataTransfer::ExportData";
 use aliased "Enums::EnumsPaths";
 use aliased "Helpers::FileHelper";
-use aliased 'Managers::AbstractQueue::ExportData::Enums';
+use aliased 'Programs::Exporter::ExportUtility::DataTransfer::Enums';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods

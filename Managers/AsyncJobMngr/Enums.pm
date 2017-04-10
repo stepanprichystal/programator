@@ -29,4 +29,11 @@ use constant {
 
 };
 
+
+ use constant {
+			   TaskMode_SYNC  => "synchronousExport",
+			   TaskMode_ASYNC  => "asynchronousExport"
+};
+ 
+
 1;

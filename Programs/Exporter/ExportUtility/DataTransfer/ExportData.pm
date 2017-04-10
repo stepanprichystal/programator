@@ -3,8 +3,8 @@
 # which fill be processed by "Exporter utility"
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Programs::Exporter::DataTransfer::ExportData;
-use base("Managers::AbstractQueue::ExportData::ExportData");
+package Programs::Exporter::ExportUtility::DataTransfer::ExportData;
+use base("Managers::AbstractQueue::Task::TaskData::TaskData");
 
 #3th party library
 use strict;

@@ -1,5 +1,5 @@
 #-------------------------------------------------------------------------------------------#
-# Description: Base class for unit export classes.
+# Description: Base class for unit task classes.
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Managers::AbstractQueue::Groups::ExportBase;
@@ -11,7 +11,7 @@ use warnings;
 use aliased 'Packages::Events::Event';
  
 #-------------------------------------------------------------------------------------------#
-#  NC export, all layers, all machines..
+#  NC task, all layers, all machines..
 #-------------------------------------------------------------------------------------------#
 
 sub new {
@@ -23,18 +23,18 @@ sub new {
 
 	$self->{"unitId"} = shift;
 
-	# Approximate count of exported items 
+	# Approximate count of tasked items 
 	# (because computing progressbar value)
 	$self->{"itemsCount"}          = 0;  
 	
-	# Count of already exported items
+	# Count of already tasked items
 	$self->{"processedItemsCount"} = 0;
 
 	$self->{"inCAM"}      = undef;
 	$self->{"jobId"}      = undef;
 	
-	# Contains data (from ExportFiles/job file) necessary for export
-	$self->{"exportData"} = undef;
+	# Contains data (from ExportFiles/job file) necessary for task
+	$self->{"taskData"} = undef;
 
 	# EVENTS
 
@@ -44,11 +44,11 @@ sub new {
 	return $self;
 }
 
-# Run export of group
+# Run task of group
 sub Run {
 	my $self = shift;
 
-	$self->{"exportMngr"}->Run();
+	$self->{"taskMngr"}->Run();
 
 }
 

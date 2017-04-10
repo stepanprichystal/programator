@@ -25,7 +25,7 @@ use aliased 'Programs::Exporter::ExportChecker::Groups::GroupDataMngr';
 use aliased 'Programs::Exporter::ExportChecker::Groups::ScoExport::Model::ScoCheckData';
 use aliased 'Programs::Exporter::ExportChecker::Groups::ScoExport::Model::ScoPrepareData';
 use aliased 'Programs::Exporter::ExportChecker::Groups::ScoExport::Model::ScoExportData';
-use aliased 'Programs::Exporter::ExporterUtility::UnitEnums';
+use aliased 'Programs::Exporter::ExportUtility::UnitEnums';
 use aliased 'Programs::Exporter::ExportChecker::Groups::ScoExport::View::ScoUnitForm';
 use aliased 'Programs::Exporter::ExportChecker::Groups::ScoExport::View::ScoUnitFormEvt';
 

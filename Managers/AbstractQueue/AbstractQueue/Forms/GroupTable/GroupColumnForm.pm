@@ -194,9 +194,7 @@ sub __GetChildCnt {
 #-------------------------------------------------------------------------------------------#
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
-	my $test = Programs::Exporter::ExportChecker::Forms::GroupTableForm->new();
-
-	$test->MainLoop();
+	 
 }
 
 1;

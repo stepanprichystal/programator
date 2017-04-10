@@ -20,7 +20,7 @@ use warnings;
 
 #local library
  
-use aliased 'Programs::Exporter::ExporterUtility::UnitEnums';
+use aliased 'Programs::Exporter::ExportUtility::UnitEnums';
 use aliased 'Programs::Exporter::ExportUtility::Groups::ScoExport::ScoExport';
 
 #-------------------------------------------------------------------------------------------#
@@ -35,7 +35,7 @@ sub new {
 	bless $self;
 
  	# reference on class responsible for export
-	$self->{"unitExport"} = ScoExport->new($self->{"unitId"}, UnitEnums->GetTitle($self->{"unitId"}));
+	$self->{"unitExport"} = ScoExport->new($self->{"unitId"});
  
 	return $self; 
 }

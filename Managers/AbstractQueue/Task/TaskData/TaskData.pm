@@ -2,7 +2,7 @@
 # Description: Base class, keep ob task data for one job, which fill be processed by "abstract job queue"
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Managers::AbstractQueue::ExportData::ExportData;
+package Managers::AbstractQueue::Task::TaskData::TaskData;
 
 #3th party library
 use strict;
@@ -11,7 +11,7 @@ use File::Copy;
 use Wx;
 
 #local library
-use aliased 'Programs::Exporter::ExportChecker::Enums';
+ 
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -30,8 +30,8 @@ sub new {
 	# EXPORT PROPERTIES
 	$self->{"settings"}->{"time"}         = undef;
 	$self->{"settings"}->{"mode"}         = undef;    # synchronousExport/ asynchronousExport
-	$self->{"settings"}->{"port"}         = undef;    # if export is synchronous, port of server script
-	$self->{"settings"}->{"mandatoryUnits"} = undef;    # units, which has to be exported
+	$self->{"settings"}->{"port"}         = undef;    # if task is synchronous, port of server script
+	$self->{"settings"}->{"mandatoryUnits"} = undef;    # units, which has to be tasked
 
 	return $self;                                     # Return the reference to the hash.
 }
@@ -84,8 +84,8 @@ sub GetUnitData {
 	my $self   = shift;
 	my $unitId = shift;
 
-	my $exportData = $self->{"units"}->{$unitId};
-	return $exportData;
+	my $taskData = $self->{"units"}->{$unitId};
+	return $taskData;
 }
 
 sub GetAllUnitData {

@@ -14,7 +14,7 @@ use Wx qw(:sizer wxDefaultPosition wxDefaultSize wxDEFAULT_DIALOG_STYLE wxRESIZE
 #local library
 
 use aliased 'Programs::Exporter::ExportChecker::ExportChecker::Forms::GroupWrapperForm';
-use aliased 'Programs::Exporter::ExporterUtility::UnitEnums';
+use aliased 'Programs::Exporter::ExportUtility::UnitEnums';
 
 use Widgets::Style;
 

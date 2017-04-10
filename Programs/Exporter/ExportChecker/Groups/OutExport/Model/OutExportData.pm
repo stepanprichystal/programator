@@ -13,7 +13,7 @@ use warnings;
 use File::Copy;
 
 #local library
-use aliased 'Programs::Exporter::DataTransfer::UnitsDataContracts::OutData';
+use aliased 'Programs::Exporter::ExportUtility::DataTransfer::UnitsDataContracts::OutData';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods

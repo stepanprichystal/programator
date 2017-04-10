@@ -360,7 +360,7 @@ sub __DeleteOutputFiles {
 	}
 }
 
-sub ExportItemsCount {
+sub TaskItemsCount {
 	my $self = shift;
 
 	my $totalCnt = 0;

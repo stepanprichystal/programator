@@ -7,7 +7,7 @@ use warnings;
 use aliased 'Enums::EnumsGeneral';
 
 use aliased 'Programs::Exporter::ExportPool::Groups::AOIExport::AOIExport';
-use aliased 'Programs::Exporter::DataTransfer::UnitsDataContracts::AOIData';
+use aliased 'Programs::Exporter::ExportPool::DataTransfer::UnitsDataContracts::AOIData';
 use aliased 'Programs::Exporter::ExportPool::UnitEnums';
 
 #use aliased 'Programs::Exporter::ExportChecker::Groups::AOIExport::Presenter::AOIUnit';
@@ -36,12 +36,12 @@ sub Run {
 
 	#GET INPUT NIF INFORMATION
 
-	my $exportData = AOIData->new();
+	my $taskData = AOIData->new();
 
-	$exportData->SetStepToTest("panel");
+	$taskData->SetStepToTest("panel");
 
 	my $export = AOIExport->new( UnitEnums->UnitId_AOI );
-	$export->Init( $inCAM, $jobId, $exportData );
+	$export->Init( $inCAM, $jobId, $taskData );
 
 	$export->{"onItemResult"}->Add( sub { Test(@_) } );
 

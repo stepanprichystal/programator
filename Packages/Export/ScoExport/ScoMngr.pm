@@ -235,7 +235,7 @@ sub __GetFrLim {
 	return undef;
 }
 
-sub ExportItemsCount {
+sub TaskItemsCount {
 	my $self = shift;
 
 	my $totalCnt = 0;

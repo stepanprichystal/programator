@@ -4,7 +4,7 @@
 # between ExportChecker and ExportUtility
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Programs::Exporter::DataTransfer::UnitsDataContracts::OutData;
+package Programs::Exporter::ExportUtility::DataTransfer::UnitsDataContracts::PdfData;
  
 #3th party library
 use strict;
@@ -28,54 +28,12 @@ sub new {
 	return $self; 
 }
  
- 
-# export data kooperace
-sub SetExportCooper {
-	my $self  = shift;
-	$self->{"data"}->{"exportCooper"} = shift;
-} 
 
-
-sub GetExportCooper {
-	my $self  = shift;
-	my $value = shift;
-	return $self->{"data"}->{"exportCooper"};
-}
-
-
-# Cooperation step
-sub SetCooperStep {
-	my $self  = shift;
-	$self->{"data"}->{"cooperStep"} = shift;
-} 
-
-sub GetCooperStep {
-	my $self  = shift;
-	my $value = shift;
-	
-	return $self->{"data"}->{"cooperStep"};
-}
-
-
-# export electric test for cooper
-sub SetExportET {
-	my $self  = shift;
-	$self->{"data"}->{"exportET"} = shift;
-} 
-
-sub GetExportET {
-	my $self  = shift;
-	my $value = shift;
-	return $self->{"data"}->{"exportET"};
-}
- 
- 
-# export data control
 sub SetExportControl {
 	my $self  = shift;
-	$self->{"data"}->{"exportControl"} = shift;
-} 
-
+	my $value = shift;
+	$self->{"data"}->{"exportControl"} = $value;
+}
 
 sub GetExportControl {
 	my $self  = shift;
@@ -83,17 +41,67 @@ sub GetExportControl {
 	return $self->{"data"}->{"exportControl"};
 }
 
-# Control data step
 sub SetControlStep {
 	my $self  = shift;
-	$self->{"data"}->{"controlStep"} = shift;
-} 
+	my $value = shift;
+	$self->{"data"}->{"controlStep"} = $value;
+}
 
 sub GetControlStep {
 	my $self  = shift;
 	my $value = shift;
-	
 	return $self->{"data"}->{"controlStep"};
+}
+
+sub SetControlLang {
+	my $self  = shift;
+	my $value = shift;
+	$self->{"data"}->{"controlLang"} = $value;
+}
+
+sub GetControlLang {
+	my $self  = shift;
+	my $value = shift;
+	return $self->{"data"}->{"controlLang"};
+}
+ 
+# Info about tpv technik to pdf
+
+sub GetInfoToPdf {
+	my $self  = shift;
+	my $value = shift;
+	return $self->{"data"}->{"infoToPdf"};
+}
+
+sub SetInfoToPdf {
+	my $self  = shift;
+	my $value = shift;
+	$self->{"data"}->{"infoToPdf"} = $value;
+}
+ 
+sub SetExportStackup {
+	my $self  = shift;
+	my $value = shift;
+	$self->{"data"}->{"exportStackup"} = $value;
+}
+
+sub GetExportStackup {
+	my $self  = shift;
+	my $value = shift;
+	return $self->{"data"}->{"exportStackup"};
+} 
+
+
+sub SetExportPressfit {
+	my $self  = shift;
+	my $value = shift;
+	$self->{"data"}->{"exportPressfit"} = $value;
+}
+
+sub GetExportPressfit {
+	my $self  = shift;
+	my $value = shift;
+	return $self->{"data"}->{"exportPressfit"};
 }
  
 #-------------------------------------------------------------------------------------------#

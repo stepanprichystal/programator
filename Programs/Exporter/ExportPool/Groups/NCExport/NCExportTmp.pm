@@ -18,7 +18,7 @@ use aliased 'Packages::Export::NCExport::FileHelper::Parser';
 use aliased 'Packages::Events::Event';
 
 use aliased 'Programs::Exporter::ExportPool::Groups::NCExport::NCExport';
-use aliased 'Programs::Exporter::DataTransfer::UnitsDataContracts::NCData';
+use aliased 'Programs::Exporter::ExportPool::DataTransfer::UnitsDataContracts::NCData';
 use aliased 'Programs::Exporter::ExportPool::UnitEnums';
 
 use aliased 'Managers::MessageMngr::MessageMngr';
@@ -52,13 +52,13 @@ sub Run {
 
 	#GET INPUT NIF INFORMATION
 
-	my $exportData = NCData->new();
+	my $taskData = NCData->new();
 	
-	$exportData->SetExportSingle($exportSingle);
-	$exportData->SetPltLayers($pltLayers);
-	$exportData->SetNPltLayers($npltLayers);
+	$taskData->SetExportSingle($exportSingle);
+	$taskData->SetPltLayers($pltLayers);
+	$taskData->SetNPltLayers($npltLayers);
 	my $export = NCExport->new( UnitEnums->UnitId_NC );
-	$export->Init( $inCAM, $jobId, $exportData );
+	$export->Init( $inCAM, $jobId, $taskData );
 	$export->{"onItemResult"}->Add( sub { Test(@_) } );
 	$export->Run();
 

@@ -47,13 +47,13 @@ sub AddItem {
 
 	my $taskId      = $task->GetTaskId();
 	my $jobId       = $task->GetJobId();;
-	my $exportData  = $task->GetExportData();
+	my $taskData  = $task->GetTaskData();
 	my $produceMngr = $task->ProduceResultMngr();
 	my $taskMngr    = $task->GetTaskResultMngr();
 	my $groupMngr   = $task->GetGroupResultMngr();
 	my $itemMngr    = $task->GetGroupItemResultMngr();
 
-	my $item = JobQueueItemForm->new( $self->GetParentForItem(), $jobId, $taskId, $exportData, $produceMngr, $taskMngr, $groupMngr, $itemMngr );
+	my $item = JobQueueItemForm->new( $self->GetParentForItem(), $jobId, $taskId, $taskData, $produceMngr, $taskMngr, $groupMngr, $itemMngr );
 	
 	$item->{"onProduce"}->Add( sub { $self->{"onProduce"}->Do(@_) } );
 

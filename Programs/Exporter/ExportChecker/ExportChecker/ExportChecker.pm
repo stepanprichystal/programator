@@ -36,10 +36,11 @@ use aliased 'Programs::Exporter::ExportChecker::ExportChecker::StorageMngr';
 use aliased 'Programs::Exporter::ExportChecker::ExportChecker::ExportPopup';
 use aliased 'Programs::Exporter::ExportUtility::RunExport::RunExportUtility';
 
-use aliased 'Programs::Exporter::DataTransfer::DataTransfer';
+use aliased 'Programs::Exporter::ExportUtility::DataTransfer::DataTransfer';
 use aliased 'Programs::Exporter::ExportChecker::Enums';
-use aliased 'Managers::AbstractQueue::ExportData::Enums' => 'EnumsTransfer';
-use aliased 'Programs::Exporter::ExportUtility::Helper';
+use aliased 'Managers::AsyncJobMngr::Enums'           => 'EnumsJobMngr';
+use aliased 'Programs::Exporter::ExportUtility::DataTransfer::Enums' => 'EnumsTransfer';
+ 
 use aliased 'Helpers::GeneralHelper';
 use aliased 'Widgets::Forms::LoadingForm';
 use aliased 'CamHelpers::CamHelper';
@@ -175,7 +176,7 @@ sub __ExportSyncFormHandler {
 	#my $typeOfPcb = HegMethods->GetTypeOfPcb( $self->{"jobId"} );
 
 	#my $typeOfPcb = HegMethods->GetTypeOfPcb( $self->{"jobId"} );
-	$self->__CheckBeforeExport( EnumsTransfer->ExportMode_SYNC );
+	$self->__CheckBeforeExport( EnumsJobMngr->TaskMode_SYNC );
 }
 
 sub __ExportASyncFormHandler {
@@ -195,7 +196,7 @@ sub __ExportASyncFormHandler {
 	#my $typeOfPcb = HegMethods->GetTypeOfPcb( $self->{"jobId"} );
 
 	#my $typeOfPcb = HegMethods->GetTypeOfPcb( $self->{"jobId"} );
-	$self->__CheckBeforeExport( EnumsTransfer->ExportMode_ASYNC );
+	$self->__CheckBeforeExport( EnumsJobMngr->TaskMode_ASYNC );
 
 }
 
@@ -359,7 +360,7 @@ sub __OnResultPopupHandler {
 		my $inCAM  = $self->{"inCAM"};
 		my $client = $self->{"client"};
 
-		if ( $exportMode eq EnumsTransfer->ExportMode_ASYNC ) {
+		if ( $exportMode eq EnumsJobMngr->TaskMode_ASYNC ) {
 
 			
 
@@ -378,7 +379,7 @@ sub __OnResultPopupHandler {
 			$dataTransfer->SaveData( $exportMode, $toProduce );
 
 		}
-		elsif ( $exportMode eq EnumsTransfer->ExportMode_SYNC ) {
+		elsif ( $exportMode eq EnumsJobMngr->TaskMode_SYNC ) {
 
 			# Generate random port number
 

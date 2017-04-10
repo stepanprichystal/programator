@@ -18,7 +18,8 @@ use aliased 'Packages::Events::Event';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'Widgets::Forms::ErrorIndicator::ErrorIndicator';
 use aliased 'Widgets::Forms::ResultIndicator::ResultIndicator';
-use aliased 'Managers::AbstractQueue::ExportData::Enums' => 'EnumsTransfer';
+use aliased 'Managers::AsyncJobMngr::Enums'           => 'EnumsJobMngr';
+ 
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -29,24 +30,24 @@ sub new {
 	my $parent       = shift;
 	my $jobId        = shift;
 	my $taskId       = shift;
-	my $exportedData = shift;
-	my $ExportMngr  = shift;
+	my $taskData = shift;
+	my $produceMngr  = shift;
 	my $taskMngr     = shift;
 	my $groupMngr    = shift;
 	my $itemMngr     = shift;
 
-	my $self = $class->SUPER::new( $parent, $jobId, $taskId, $exportedData, $taskMngr, $groupMngr, $itemMngr );
+	my $self = $class->SUPER::new( $parent, $jobId, $taskId, $taskData, $taskMngr, $groupMngr, $itemMngr );
 
 	bless($self);
 
 	# PROPERTIES
-	$self->{"ExportMngr"} = $ExportMngr;
+	$self->{"produceMngr"} = $produceMngr;
 
 	$self->__SetLayout();
 
 	# EVENTS
 
-	$self->{"onExport"} = Event->new();
+	$self->{"onProduce"} = Event->new();
 
 	return $self;
 }
@@ -70,46 +71,46 @@ sub SetExportResult {
 	my $result = shift;    # tell if there was error during export
 
 	my $aborted          = shift;
-	my $jobSendToExport = shift;    # tell if job was send to export
+	my $jobSentToProduce = shift;    # tell if job was sent to produce
 
-	my $value     = $self->{"exportedData"}->GetToExport();
-	my $ToExport = $self->{"exportedData"}->GetToExport();    # tell if user check send to export chcekbox
+	my $value     = $self->{"taskData"}->GetToProduce();
+	my $toProduce = $self->{"taskData"}->GetToProduce();    # tell if user check sent to produce chcekbox
 
 	if ( $result eq EnumsGeneral->ResultType_FAIL ) {
 
-		$self->{"btnExport"}->Disable();
+		$self->{"btnProduce"}->Disable();
 
 	}
 	else {
 
-		if ($jobSendToExport) {
+		if ($jobSentToProduce) {
 
-			$self->{"btnExport"}->Disable();
+			$self->{"btnProduce"}->Disable();
 		}
 		else {
-			$self->{"btnExport"}->Enable();
+			$self->{"btnProduce"}->Enable();
 		}
 
 	}
 
-	#	if ( $ToExport && $result eq EnumsGeneral->ResultType_OK ) {
-	#		$self->{"btnExport"}->Disable();
+	#	if ( $toProduce && $result eq EnumsGeneral->ResultType_OK ) {
+	#		$self->{"btnProduce"}->Disable();
 	#
 	#	}
-	#	elsif ( $ToExport && $result eq EnumsGeneral->ResultType_FAIL ) {
+	#	elsif ( $toProduce && $result eq EnumsGeneral->ResultType_FAIL ) {
 	#
-	#		$self->{"btnExport"}->Enable();
+	#		$self->{"btnProduce"}->Enable();
 	#	}
-	#	elsif ( !$ToExport && $result eq EnumsGeneral->ResultType_OK ) {
+	#	elsif ( !$toProduce && $result eq EnumsGeneral->ResultType_OK ) {
 	#
-	#		$self->{"btnExport"}->Enable();
+	#		$self->{"btnProduce"}->Enable();
 	#	}
-	#	elsif ( !$ToExport && $result eq EnumsGeneral->ResultType_FAIL ) {
+	#	elsif ( !$toProduce && $result eq EnumsGeneral->ResultType_FAIL ) {
 	#
-	#		$self->{"btnExport"}->Enable();
+	#		$self->{"btnProduce"}->Enable();
 	#	}
 
-	$self->{"SendToExportChb"}->SetValue($value);
+	$self->{"sentToProduceChb"}->SetValue($value);
 
 	unless ($aborted) {
 		$self->SetProgress(100);
@@ -135,34 +136,34 @@ sub SetExportWarningCnt {
 	$self->{"exportWarnInd"}->SetErrorCnt($count);
 }
 
-# Set "send to export" indicators
-sub SetToExportResult {
+# Set "sent to produce" indicators
+sub SetProduceResult {
 	my $self             = shift;
 	my $stauts           = shift;
-	my $jobSendToExport = shift;
+	my $jobSentToProduce = shift;
 
-	if ($jobSendToExport) {
+	if ($jobSentToProduce) {
 
 		$stauts = EnumsGeneral->ResultType_OK;
-		$self->SetStatus("Job was send to export");
-		$self->{"btnExport"}->Disable();
+		$self->SetStatus("Job was sent to produce");
+		$self->{"btnProduce"}->Disable();
 	}
 
-	$self->{"ExportRI"}->SetStatus($stauts);
+	$self->{"produceRI"}->SetStatus($stauts);
 }
 
-sub SetExportErrors {
+sub SetProduceErrors {
 	my $self  = shift;
 	my $count = shift;
 
-	$self->{"ExportErrInd"}->SetErrorCnt($count);
+	$self->{"produceErrInd"}->SetErrorCnt($count);
 }
 
-sub SetExportWarnings {
+sub SetProduceWarnings {
 	my $self  = shift;
 	my $count = shift;
 
-	$self->{"ExportWarnInd"}->SetErrorCnt($count);
+	$self->{"produceWarnInd"}->SetErrorCnt($count);
 }
 
 sub SetStatus {
@@ -189,10 +190,10 @@ sub GetTaskId {
 # ITEM QUEUE HANDLERS
 # ==============================================
 
-sub __OnExport {
+sub __OnProduce {
 	my $self = shift;
 
-	$self->{"onExport"}->Do( $self->{"taskId"} );
+	$self->{"onProduce"}->Do( $self->{"taskId"} );
 
 }
 
@@ -224,7 +225,7 @@ sub __SetLayout {
 
 	my $result = $self->__SetLayoutResult();
 
-	my $btnExport = Wx::Button->new( $self, -1, "Export", &Wx::wxDefaultPosition, [ 60, 20 ] );
+	my $btnProduce = Wx::Button->new( $self, -1, "Produce", &Wx::wxDefaultPosition, [ 60, 20 ] );
 	my $btnAbort   = Wx::Button->new( $self, -1, "Abort",   &Wx::wxDefaultPosition, [ 60, 20 ] );
 	my $btnRemove  = Wx::Button->new( $self, -1, "Remove",  &Wx::wxDefaultPosition, [ 60, 20 ] );
 
@@ -236,7 +237,7 @@ sub __SetLayout {
 	#my $btnDefault = Wx::Button->new( $self, -1, "Default settings", &Wx::wxDefaultPosition, [ 110, 22 ] );
 
 	# DEFINE EVENTS
-	Wx::Event::EVT_BUTTON( $btnExport, -1, sub { $self->__OnExport(@_) } );
+	Wx::Event::EVT_BUTTON( $btnProduce, -1, sub { $self->__OnProduce(@_) } );
 	Wx::Event::EVT_BUTTON( $btnAbort,   -1, sub { $self->__OnAbort(@_) } );
 	Wx::Event::EVT_BUTTON( $btnRemove,  -1, sub { $self->__OnRemove(@_) } );
 
@@ -262,7 +263,7 @@ sub __SetLayout {
 
 	$szMain->Add( $result, 0, &Wx::wxEXPAND | &Wx::wxLEFT, 5 );
 
-	$szMain->Add( $btnExport, 0, &Wx::wxEXPAND | &Wx::wxLEFT, 15 );
+	$szMain->Add( $btnProduce, 0, &Wx::wxEXPAND | &Wx::wxLEFT, 15 );
 	$szMain->Add( $btnAbort,   0, &Wx::wxEXPAND | &Wx::wxLEFT, 2 );
 	$szMain->Add( $btnRemove,  0, &Wx::wxEXPAND | &Wx::wxLEFT, 2 );
 
@@ -275,15 +276,15 @@ sub __SetLayout {
 	$self->{"gauge"}         = $gauge;
 	$self->{"percentageTxt"} = $percentageTxt;
 	$self->{"stateTxt"}      = $stateTxt;
-	$self->{"btnExport"}    = $btnExport;
+	$self->{"btnProduce"}    = $btnProduce;
 	$self->{"btnAbort"}      = $btnAbort;
 	$self->{"btnRemove"}     = $btnRemove;
 
 	# Set default control content
 	$self->__SetExportTime();
 	$self->__SetExportMode();
-	$self->__SetToExport();
-	$self->__SetToExportBtn();
+	$self->__SetToProduce();
+	$self->__SetToProduceBtn();
 
 	$self->RecursiveHandler($self);
 
@@ -325,19 +326,19 @@ sub __SetLayoutOptions {
 	# DEFINE CONTROLS
 
 	my $asyncChb         = Wx::CheckBox->new( $self, -1, "On background",   [ -1, -1 ], [ 130, 20 ] );
-	my $SendToExportChb = Wx::CheckBox->new( $self, -1, "send to export", [ -1, -1 ], [ 130, 20 ] );
+	my $sentToProduceChb = Wx::CheckBox->new( $self, -1, "Sent to produce", [ -1, -1 ], [ 130, 20 ] );
 
 	$asyncChb->Disable();
-	$SendToExportChb->Disable();
+	$sentToProduceChb->Disable();
 
 	# DEFINE STRUCTURE
 
 	$szMain->Add( $asyncChb,         0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
-	$szMain->Add( $SendToExportChb, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szMain->Add( $sentToProduceChb, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 
 	# SAVE REFERENCES
 	$self->{"asyncChb"}         = $asyncChb;
-	$self->{"SendToExportChb"} = $SendToExportChb;
+	$self->{"sentToProduceChb"} = $sentToProduceChb;
 
 	return $szMain;
 
@@ -353,10 +354,10 @@ sub __SetLayoutResult {
 	# DEFINE CONTROLS
 
 	my $exportTxt  = Wx::StaticText->new( $self, -1, "Export result  :", [ -1, -1 ], [ 90, 20 ] );
-	my $ExportTxt = Wx::StaticText->new( $self, -1, "send to export:", [ -1, -1 ], [ 90, 20 ] );
+	my $produceTxt = Wx::StaticText->new( $self, -1, "Sent to produce:", [ -1, -1 ], [ 90, 20 ] );
 
 	my $exportRI  = ResultIndicator->new( $self, 20 );
-	my $ExportRI = ResultIndicator->new( $self, 20 );
+	my $produceRI = ResultIndicator->new( $self, 20 );
 
 	my $exportErrInd  = ErrorIndicator->new( $self, EnumsGeneral->MessageType_ERROR,   15, undef, $self->{"jobId"} );
 	my $exportWarnInd = ErrorIndicator->new( $self, EnumsGeneral->MessageType_WARNING, 15, undef, $self->{"jobId"} );
@@ -371,8 +372,8 @@ sub __SetLayoutResult {
 	$exportWarnInd->AddMenuItem( "Groups", $self->{"groupMngr"} );
 	$exportWarnInd->AddMenuItem( "Items",  $self->{"itemMngr"} );
 
-	my $ExportErrInd  = ErrorIndicator->new( $self, EnumsGeneral->MessageType_ERROR,   15, undef, $self->{"jobId"}, $self->{"ExportMngr"} );
-	my $ExportWarnInd = ErrorIndicator->new( $self, EnumsGeneral->MessageType_WARNING, 15, undef, $self->{"jobId"}, $self->{"ExportMngr"} );
+	my $produceErrInd  = ErrorIndicator->new( $self, EnumsGeneral->MessageType_ERROR,   15, undef, $self->{"jobId"}, $self->{"produceMngr"} );
+	my $produceWarnInd = ErrorIndicator->new( $self, EnumsGeneral->MessageType_WARNING, 15, undef, $self->{"jobId"}, $self->{"produceMngr"} );
 
 	# DEFINE STRUCTURE
 
@@ -382,22 +383,22 @@ sub __SetLayoutResult {
 	$szRow1->Add( $exportErrInd,  0,  &Wx::wxEXPAND | &Wx::wxALL, 0 );
 	$szRow1->Add( $exportWarnInd, 0,  &Wx::wxEXPAND | &Wx::wxALL, 0 );
 
-	$szRow2->Add( $ExportTxt,     0,  &Wx::wxEXPAND | &Wx::wxALL, 0 );
-	$szRow2->Add( $ExportRI,      0,  &Wx::wxEXPAND | &Wx::wxALL, 0 );
+	$szRow2->Add( $produceTxt,     0,  &Wx::wxEXPAND | &Wx::wxALL, 0 );
+	$szRow2->Add( $produceRI,      0,  &Wx::wxEXPAND | &Wx::wxALL, 0 );
 	$szRow2->Add( 15,              20, 0,                          &Wx::wxEXPAND );
-	$szRow2->Add( $ExportErrInd,  0,  &Wx::wxEXPAND | &Wx::wxALL, 0 );
-	$szRow2->Add( $ExportWarnInd, 0,  &Wx::wxEXPAND | &Wx::wxALL, 0 );
+	$szRow2->Add( $produceErrInd,  0,  &Wx::wxEXPAND | &Wx::wxALL, 0 );
+	$szRow2->Add( $produceWarnInd, 0,  &Wx::wxEXPAND | &Wx::wxALL, 0 );
 
 	$szMain->Add( $szRow1, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
 	$szMain->Add( $szRow2, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
 
 	# SAVE REFERENCES
 	$self->{"exportRI"}       = $exportRI;
-	$self->{"ExportRI"}      = $ExportRI;
+	$self->{"produceRI"}      = $produceRI;
 	$self->{"exportErrInd"}   = $exportErrInd;
 	$self->{"exportWarnInd"}  = $exportWarnInd;
-	$self->{"ExportErrInd"}  = $ExportErrInd;
-	$self->{"ExportWarnInd"} = $ExportWarnInd;
+	$self->{"produceErrInd"}  = $produceErrInd;
+	$self->{"produceWarnInd"} = $produceWarnInd;
 
 	return $szMain;
 
@@ -410,7 +411,7 @@ sub __SetLayoutResult {
 sub __SetExportTime {
 	my $self = shift;
 
-	my $value = $self->{"exportedData"}->GetExportTime();
+	my $value = $self->{"taskData"}->GetExportTime();
 
 	$self->{"jobTimeTxt"}->SetLabel($value);
 }
@@ -418,13 +419,13 @@ sub __SetExportTime {
 sub __SetExportMode {
 	my $self = shift;
 
-	my $value = $self->{"exportedData"}->GetExportMode();
+	my $value = $self->{"taskData"}->GetExportMode();
 
-	if ( $value eq EnumsTransfer->ExportMode_SYNC ) {
+	if ( $value eq EnumsJobMngr->TaskMode_SYNC ) {
 
 		$value = 0;
 	}
-	elsif ( $value eq EnumsTransfer->ExportMode_ASYNC ) {
+	elsif ( $value eq EnumsJobMngr->TaskMode_ASYNC ) {
 
 		$value = 1;
 	}
@@ -432,22 +433,22 @@ sub __SetExportMode {
 	$self->{"asyncChb"}->SetValue($value);
 }
 
-sub __SetToExport {
+sub __SetToProduce {
 	my $self  = shift;
-	my $value = $self->{"exportedData"}->GetToExport();
+	my $value = $self->{"taskData"}->GetToProduce();
 
-	$self->{"SendToExportChb"}->SetValue($value);
+	$self->{"sentToProduceChb"}->SetValue($value);
 }
 
-sub __SetToExportBtn {
+sub __SetToProduceBtn {
 	my $self = shift;
 
-	my $value = $self->{"exportedData"}->GetToExport();
-	if ( $self->{"exportedData"}->GetToExport() ) {
-		$self->{"btnExport"}->Disable();
+	my $value = $self->{"taskData"}->GetToProduce();
+	if ( $self->{"taskData"}->GetToProduce() ) {
+		$self->{"btnProduce"}->Disable();
 	}
 
-	$self->{"SendToExportChb"}->SetValue($value);
+	$self->{"sentToProduceChb"}->SetValue($value);
 }
 
 #-------------------------------------------------------------------------------------------#

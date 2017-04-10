@@ -31,7 +31,7 @@ use aliased 'Managers::AsyncJobMngr::Enums';
 use aliased 'Widgets::Forms::MyTaskBarIcon';
 use aliased 'Managers::AsyncJobMngr::SettingsHelper';
 
-#use aliased 'Programs::Exporter::ThreadBase';
+#use aliased 'Programs::AbstractQueue::ThreadBase';
 use aliased 'Packages::Events::Event';
 
 #-------------------------------------------------------------------------------------------#
@@ -43,6 +43,7 @@ sub new {
 	my $runMode   = shift;
 	my $parent    = shift;
 	my $title     = shift;
+	my $name      = shift;    # name which is used in tray menu, etc (Export, Pool export etc.. this is only arbitrary string)
 	my $dimension = shift;
 
 	# Get name of caller package
@@ -64,7 +65,7 @@ sub new {
 
 	my @jobs = ();
 	$self->{"jobs"}       = \@jobs;
-	$self->{"serverMngr"} = ServerMngr->new();
+	$self->{"serverMngr"} = ServerMngr->new($name);
 	$self->{"threadMngr"} = ThreadMngr->new();
 
 	$self->{"settingsHelper"} = SettingsHelper->new( $self->{"serverMngr"}, $packageFull );
@@ -75,17 +76,15 @@ sub new {
 	$self->{'onJobProgressEvt'}  = Event->new();
 	$self->{'onJobMessageEvt'}   = Event->new();
 	$self->{'onRunJobWorker'}    = Event->new();
-	
-	$self->{'onJomMngrClose'}    = Event->new(); # reise right imidiatelly before destroy this app
 
-	my $mainFrm = $self->__SetLayout( $parent, $title, $dimension );
+	$self->{'onJomMngrClose'} = Event->new();    # reise right imidiatelly before destroy this app
+
+	my $mainFrm = $self->__SetLayout( $parent, $title, $name, $dimension );
 
 	$self->__RunTimers();
 
 	return $self;
 }
-
- 
 
 sub OnInit {
 	return 1;
@@ -116,7 +115,7 @@ sub _AddJobToQueue {
 	# TODO SMAZAT
 	#$jobInfo{"port"}  = undef;
 	#$jobInfo{"state"} = Enums->JobState_RUNNING;
-	#$self->{"threadMngr"}->RunNewExport( $uniqueId, $jobInfo{"port"}, $pcbId );
+	#$self->{"threadMngr"}->RunNewtask( $uniqueId, $jobInfo{"port"}, $pcbId );
 
 	$self->{'onJobStateChanged'}->Do( $jobInfo{"jobGUID"}, $jobInfo{"state"} );
 
@@ -257,8 +256,6 @@ sub _SetThreadWorker {
 
 }
 
-
-
 #-------------------------------------------------------------------------------------------#
 #  Handlers, proccessing events from ThreadMngr, ServerMngr
 #-------------------------------------------------------------------------------------------#
@@ -276,18 +273,16 @@ sub __PortReadyHandler {
 
 		${ $self->{"jobs"} }[$i]{"port"}  = $d{"port"};
 		${ $self->{"jobs"} }[$i]{"state"} = Enums->JobState_RUNNING;
-		 
-		
-		
+
 		#${ $self->{"jobs"} }[$i]{"port"}  = $d{"port"};#
 
-		my $pcbId   = ${ $self->{"jobs"} }[$i]{"pcbId"};
-		my $jobGUID = ${ $self->{"jobs"} }[$i]{"jobGUID"};
+		my $pcbId          = ${ $self->{"jobs"} }[$i]{"pcbId"};
+		my $jobGUID        = ${ $self->{"jobs"} }[$i]{"jobGUID"};
 		my $externalServer = ${ $self->{"jobs"} }[$i]{"serverInfo"} ? 1 : 0;
 
 		$self->{'onJobStateChanged'}->Do( $jobGUID, Enums->JobState_RUNNING );
 
-		$self->{"threadMngr"}->RunNewExport( $jobGUID, $d{"port"}, $pcbId, $d{"pidInCAM"}, $externalServer);
+		$self->{"threadMngr"}->RunNewtask( $jobGUID, $d{"port"}, $pcbId, $d{"pidInCAM"}, $externalServer );
 
 	}
 
@@ -309,7 +304,6 @@ sub __ThreadDoneHandler {
 	#reise event
 	$self->{'onJobStateChanged'}->Do( $jobGUID, Enums->JobState_DONE, $exitType );
 }
-
 
 sub __ThreadProgressHandler {
 	my ( $self, $frame, $event ) = @_;
@@ -413,24 +407,24 @@ sub __SetLayout {
 	my $self      = shift;
 	my $parent    = shift;
 	my $title     = shift;
+	my $name      = shift;
 	my @dimension = @{ shift(@_) };
-
 
 	#main formDefain forms
 	my $mainFrm = MyWxFrame->new(
-		$parent,    # parent window
-		-1,         # ID -1 means any
-		$title,     # title
+		$parent,                      # parent window
+		-1,                           # ID -1 means any
+		$title,                       # title
 
-		[ -1, -1 ], # window position
-		\@dimension,    # size   &Wx::wxSTAY_ON_TOP |
+		[ -1, -1 ],                   # window position
+		\@dimension,                  # size   &Wx::wxSTAY_ON_TOP |
 		&Wx::wxSTAY_ON_TOP | &Wx::wxSYSTEM_MENU | &Wx::wxCAPTION | &Wx::wxRESIZE_BORDER | &Wx::wxMINIMIZE_BOX | &Wx::wxMAXIMIZE_BOX | &Wx::wxCLOSE_BOX
 	);
 
 	if ( $self->{"runMode"} eq Enums->RUNMODE_TRAY ) {
 
-		my $trayicon = MyTaskBarIcon->new( "Exporter", $mainFrm );
-		$trayicon->AddMenuItem( "Exit Exporter", sub { $self->__OnClose() } );
+		my $trayicon = MyTaskBarIcon->new( $name, $mainFrm );
+		$trayicon->AddMenuItem( "Exit " . $name, sub { $self->__OnClose() } );
 		$mainFrm->{'onClose'}->Add( sub { $mainFrm->Hide(); } );    #Set onClose handler
 
 	}
@@ -458,11 +452,8 @@ sub __SetLayout {
 	$self->{"serverMngr"}->Init( $self->{"mainFrm"}, \$PORT_READY_EVT );
 	$self->{"threadMngr"}->Init( $self->{"mainFrm"}, \$THREAD_PROGRESS_EVT, \$THREAD_MESSAGE_EVT, \$THREAD_DONE_EVT );
 
- 
-
 	return $mainFrm;
 }
-
 
 sub __CloseActiveJobs {
 	my ( $self, $frame, $event ) = @_;
@@ -485,20 +476,18 @@ sub __CloseActiveJobs {
 	# jinak cekame ay se spusti pripadne joby, co jsou ve stavu WAITINGPORT
 	if ( scalar( @{$jobsRef} ) == 0 ) {
 		$self->{"timerCloseJobs"}->Stop();
-		
+
 		print STDERR "Destroying main frame 1\n\n";
-		
+
 		$self->{'onJomMngrClose'}->Do();
-		
+
 		$frame->Destroy();
-		$self->ExitMainLoop(); # this line is necessery to console window was exited too
+		$self->ExitMainLoop();    # this line is necessery to console window was exited too
 	}
 }
 
 # Function responsible for properly close threads and servers
 sub __OnClose {
-
-	 
 
 	my ( $self, $mainFrm ) = @_;
 
@@ -507,7 +496,7 @@ sub __OnClose {
 	my $activeJobs = 0;
 
 	# Stop timers - we don't want take another jobs from queue
-	$self->{"timerExport"}->Stop();
+	$self->{"timertask"}->Stop();
 
 	my @jobsName = ();
 
@@ -543,26 +532,23 @@ sub __OnClose {
 		else {
 
 			#Cancel,  thus continue in work..
-			$self->{"timerExport"}->Start(1000);
+			$self->{"timertask"}->Start(1000);
 		}
 
 	}
 	else {
-	 
 
 		# Close or servers, which are waiting or running
 		$self->{"serverMngr"}->SetDestroyOnDemand(0);
-		
+
 		$self->{'onJomMngrClose'}->Do();
- 
+
 		$self->{"mainFrm"}->Destroy();
-		$self->ExitMainLoop(); # this line is necessery to console window was exited too
-		
+		$self->ExitMainLoop();    # this line is necessery to console window was exited too
+
 	}
 
 }
-
-
 
 sub __OnClick {
 
@@ -589,10 +575,10 @@ sub __RemoveJob {
 sub __RunTimers {
 	my $self = shift;
 
-	my $timerExport = Wx::Timer->new( $self->{"mainFrm"}, -1, );
-	Wx::Event::EVT_TIMER( $self->{"mainFrm"}, $timerExport, sub { __TakeFromQueueHandler( $self, @_ ) } );
-	$timerExport->Start(1000);
-	$self->{"timerExport"} = $timerExport;
+	my $timertask = Wx::Timer->new( $self->{"mainFrm"}, -1, );
+	Wx::Event::EVT_TIMER( $self->{"mainFrm"}, $timertask, sub { __TakeFromQueueHandler( $self, @_ ) } );
+	$timertask->Start(1000);
+	$self->{"timertask"} = $timertask;
 
 	my $timerCloseOnDemand = Wx::Timer->new( $self->{"mainFrm"}, -1, );
 	Wx::Event::EVT_TIMER( $self->{"mainFrm"}, $timerCloseOnDemand, sub { $self->{"serverMngr"}->DestroyServersOnDemand(@_) } );
@@ -646,7 +632,7 @@ sub __GetJobInfo {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	#my $app = Programs::Exporter::AsyncJobMngr->new();
+	#my $app = Programs::AbstractQueue::AsyncJobMngr->new();
 
 	#$app->Test();
 

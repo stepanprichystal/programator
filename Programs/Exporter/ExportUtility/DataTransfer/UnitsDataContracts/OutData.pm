@@ -4,7 +4,7 @@
 # between ExportChecker and ExportUtility
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Programs::Exporter::DataTransfer::UnitsDataContracts::PlotData;
+package Programs::Exporter::ExportUtility::DataTransfer::UnitsDataContracts::OutData;
  
 #3th party library
 use strict;
@@ -28,26 +28,72 @@ sub new {
 	return $self; 
 }
  
-# sendtToPlotter
-sub SetSendToPlotter {
+ 
+# export data kooperace
+sub SetExportCooper {
 	my $self  = shift;
-	$self->{"data"}->{"sendtToPlotter"} = shift;
+	$self->{"data"}->{"exportCooper"} = shift;
+} 
+
+
+sub GetExportCooper {
+	my $self  = shift;
+	my $value = shift;
+	return $self->{"data"}->{"exportCooper"};
 }
 
-sub GetSendToPlotter {
+
+# Cooperation step
+sub SetCooperStep {
 	my $self  = shift;
-	return $self->{"data"}->{"sendtToPlotter"};
+	$self->{"data"}->{"cooperStep"} = shift;
+} 
+
+sub GetCooperStep {
+	my $self  = shift;
+	my $value = shift;
+	
+	return $self->{"data"}->{"cooperStep"};
 }
 
-# layers
-sub SetLayers {
+
+# export electric test for cooper
+sub SetExportET {
 	my $self  = shift;
-	$self->{"data"}->{"layers"} = shift;
+	$self->{"data"}->{"exportET"} = shift;
+} 
+
+sub GetExportET {
+	my $self  = shift;
+	my $value = shift;
+	return $self->{"data"}->{"exportET"};
+}
+ 
+ 
+# export data control
+sub SetExportControl {
+	my $self  = shift;
+	$self->{"data"}->{"exportControl"} = shift;
+} 
+
+
+sub GetExportControl {
+	my $self  = shift;
+	my $value = shift;
+	return $self->{"data"}->{"exportControl"};
 }
 
-sub GetLayers {
+# Control data step
+sub SetControlStep {
 	my $self  = shift;
-	return $self->{"data"}->{"layers"};
+	$self->{"data"}->{"controlStep"} = shift;
+} 
+
+sub GetControlStep {
+	my $self  = shift;
+	my $value = shift;
+	
+	return $self->{"data"}->{"controlStep"};
 }
  
 #-------------------------------------------------------------------------------------------#

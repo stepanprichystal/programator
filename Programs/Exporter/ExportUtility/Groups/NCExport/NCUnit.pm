@@ -23,7 +23,7 @@ use warnings;
 
 #use aliased 'Programs::Exporter::ExportChecker::Groups::NifExport::Model::NifDataMngr';
  
-use aliased 'Programs::Exporter::ExporterUtility::UnitEnums';
+use aliased 'Programs::Exporter::ExportUtility::UnitEnums';
 use aliased 'Managers::AbstractQueue::AbstractQueue::Forms::Group::GroupWrapperForm';
 use aliased 'Programs::Exporter::ExportUtility::Groups::NCExport::NCExport';
 use aliased 'Managers::AbstractQueue::Groups::GroupData';
@@ -40,7 +40,7 @@ sub new {
 
  
   	# reference on class responsible for export
-	$self->{"unitExport"} = NCExport->new($self->{"unitId"}, UnitEnums->GetTitle($self->{"unitId"}));
+	$self->{"unitExport"} = NCExport->new($self->{"unitId"});
  
 	return $self;    # Return the reference to the hash.
 }
