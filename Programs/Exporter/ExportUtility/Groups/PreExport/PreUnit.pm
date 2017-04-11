@@ -35,7 +35,7 @@ sub new {
 	bless $self;
 
  	# reference on class responsible for export
-	$self->{"unitExport"} = PreExport->new($self->{"unitId"});
+	$self->{"unitTaskClass"} = PreExport->new($self->{"unitId"});
  
 	return $self; 
 }

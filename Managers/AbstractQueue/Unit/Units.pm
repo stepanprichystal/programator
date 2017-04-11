@@ -247,14 +247,14 @@ sub GetGroupResultMngr {
 	return $resultMngr;
 }
 
-sub GetExportClass {
+sub GetTaskClass {
 	my $self = shift;
 
 	my %taskClasses = ();
 
 	foreach my $unit ( @{ $self->{"units"} } ) {
 
-		my $class = $unit->GetExportClass();
+		my $class = $unit->GetTaskClass();
 		$taskClasses{ $unit->{"unitId"} } = $class;
 	}
 

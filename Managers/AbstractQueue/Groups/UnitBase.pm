@@ -35,7 +35,7 @@ sub new {
 	
 	$self->{"form"}   = undef;    # reference on GroupWrapperForm object
 
-	$self->{"unitExport"} = undef; # reference on class responsible for task
+	$self->{"unitTaskClass"} = undef; # reference on class responsible for task
 
 	# store, where data for units are saved
 	# keep also state of group and task error information
@@ -73,7 +73,7 @@ sub ProcessItemResult {
 	my $errorsStr  = shift;
 	my $warningStr = shift;
 
-	my $item = $self->{"groupData"}->{"itemsMngr"}->CreateExportItem( $id, $result, $group, $errorsStr, $warningStr );
+	my $item = $self->{"groupData"}->{"itemsMngr"}->CreateTaskItem( $id, $result, $group, $errorsStr, $warningStr );
 
 	$self->{"form"}->AddItem($item);
 
@@ -93,7 +93,7 @@ sub ProcessGroupResult {
 	my $id = $self->{"unitId"};
 
 	# Update model
-	my $item = $self->{"groupData"}->{"groupMngr"}->CreateExportItem( $id, $result, undef, $errorsStr, $warningStr );
+	my $item = $self->{"groupData"}->{"groupMngr"}->CreateTaskItem( $id, $result, undef, $errorsStr, $warningStr );
 
 	# Update group status form GUI
 	$self->{"form"}->SetErrorCnt( $self->GetErrorsCnt() );
@@ -153,17 +153,17 @@ sub GetGroupResultMngr {
 	return $self->{"groupData"}->{"groupMngr"};
 }
 
-sub GetExportClass {
+sub GetTaskClass {
 	my $self = shift;
 
-	return $self->{"unitExport"};
+	return $self->{"unitTaskClass"};
 }
 
 sub ProcessGroupStart {
 	my $self = shift;
 
 	# Update group status form GUI
-	$self->{"form"}->SetStatus("Export...");
+	$self->{"form"}->SetStatus("Processing...");
 }
 sub ProcessGroupEnd {
 	my $self = shift;

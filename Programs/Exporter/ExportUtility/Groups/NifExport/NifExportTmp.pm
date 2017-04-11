@@ -104,7 +104,7 @@ sub Run {
 
 	my $exportUnit = UnitExport->new( $self->{"id"} );
 
-	my $exportClass = $exportUnit->GetExportClass();
+	my $exportClass = $exportUnit->GetTaskClass();
 
 	$exportClass->Init( $inCAM, $jobId, $taskData );
 	$exportClass->{"onItemResult"}->Add( sub { Test(@_) } );

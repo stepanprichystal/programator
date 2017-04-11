@@ -16,6 +16,7 @@ use Wx qw(:sizer wxDefaultPosition wxDefaultSize wxDEFAULT_DIALOG_STYLE wxRESIZE
 
 use Widgets::Style;
 use aliased 'Managers::AbstractQueue::AbstractQueue::Forms::GroupTable::GroupColumnForm';
+use aliased 'Managers::AbstractQueue::StyleConf';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -31,6 +32,7 @@ sub new {
 
 	$self->{"columnNumber"} = 3;
 	$self->{"parent"}       = $parent;
+ 
 
 	return $self;
 }
@@ -133,6 +135,8 @@ sub RearrangeGroups {
 		}
 	}
 }
+ 
+
 
 # Create column, for placing GroupWrappersForm
 sub __SetLayout {
@@ -142,7 +146,7 @@ sub __SetLayout {
 
 	my $szMain = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
 
-	$self->SetBackgroundColour( Wx::Colour->new( 255, 255, 255 ) );
+	$self->SetBackgroundColour( StyleConf->GetColor("clrGroupTableBackg") );
 
 	# DEFINE SIZERS
 	my @columns = ();
@@ -295,9 +299,7 @@ sub __GetColumnAvgHeight {
 #-------------------------------------------------------------------------------------------#
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
-	my $test = Programs::AbstractQueue::ExportChecker::Forms::GroupTableForm->new();
-
-	$test->MainLoop();
+ 
 }
 
 1;

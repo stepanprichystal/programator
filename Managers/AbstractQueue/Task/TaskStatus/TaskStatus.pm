@@ -17,7 +17,7 @@ use JSON;
 use aliased "Enums::EnumsPaths";
 use aliased "Enums::EnumsGeneral";
 use aliased "Helpers::FileHelper";
- 
+use aliased 'Helpers::GeneralHelper';
 use aliased 'Helpers::JobHelper';
 
 #-------------------------------------------------------------------------------------------#
@@ -28,12 +28,13 @@ sub new {
 	my $class = shift;
 	my $self  = {};
 	bless $self;
-
-	$self->{"jobId"} = shift;
  
-	my $fileSuffix = shift;
-
-	$self->{"filePath"} = JobHelper->GetJobArchive( $self->{"jobId"} ) . "TaskStatus_".$fileSuffix;
+	$self->{"filePath"} = shift;
+	
+	unless($self->{"filePath"}){
+		$self->{"filePath"} =   EnumsPaths->Client_INCAMTMPOTHER . GeneralHelper->GetGUID();
+	}
+ 
 
 	return $self;
 }

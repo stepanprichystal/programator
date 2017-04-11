@@ -5,14 +5,14 @@ use warnings;
 
 use lib qw( C:\Perl\site\lib\TpvScripts\Scripts );
 
-use aliased 'Programs::Exporter::ExportPool::ExportPool::ExportPool';
+use aliased 'Programs::PoolMerge::PoolMerge::PoolMerge';
 use aliased 'Managers::AsyncJobMngr::Enums'           => 'EnumsMngr';
 use aliased 'Packages::InCAM::InCAM';
 #use aliased 'Programs::Exporter::ExportChecker::Server::Client';
 
 
 
-my $exporter = ExportPool->new(EnumsMngr->RUNMODE_TRAY);
+my $poolMerger = PoolMerge->new(EnumsMngr->RUNMODE_TRAY);
 
  
 #Win32::OLE->new

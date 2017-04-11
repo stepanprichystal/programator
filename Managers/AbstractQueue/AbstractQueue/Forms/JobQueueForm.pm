@@ -15,6 +15,7 @@ use warnings;
 
 #local library
 use aliased 'Packages::Events::Event';
+use aliased 'Managers::AbstractQueue::StyleConf';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -78,9 +79,9 @@ sub __SetLayout {
 	my $self = shift;
 
 	$self->SetItemGap(2);
-
-	$self->SetItemUnselectColor( Wx::Colour->new( 240, 240, 240 ) );
-	$self->SetItemSelectColor( Wx::Colour->new( 215, 230, 251 ) );
+ 
+	$self->SetItemUnselectColor( StyleConf->GetColor("clrGroupBackg") );
+	$self->SetItemSelectColor( StyleConf->GetColor("clrItemSelected") );
 
 	# SET EVENTS
 

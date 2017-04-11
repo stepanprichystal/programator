@@ -56,8 +56,10 @@ foreach my $pid ( sort { $a <=> $b } keys %list ) {
 			$args = @{$procInfo}[0]->{"CommandLine"};    # Get the max
 
 			if ( defined $args && $args =~ /ServerAsyncJob/ && $args =~ /$scriptName/ ) {
+				
+				print STDERR "CLOSE ZOMBIE: $args $port\n";
 
-				$args =~ m/(\d+)$/;
+				$args =~ m/pl\s(\d+)/;
 
 				if ( $1 == $port ) {
 					Win32::Process::KillProcess( $pid, 0 );

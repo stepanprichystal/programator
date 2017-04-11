@@ -35,7 +35,7 @@ sub new {
 	bless $self;
 
  	# reference on class responsible for export
-	$self->{"unitExport"} = NifExport->new($self->{"unitId"});
+	$self->{"unitTaskClass"} = NifExport->new($self->{"unitId"});
  
 	return $self; 
 }

@@ -18,6 +18,7 @@ use Widgets::Style;
 use aliased 'Enums::EnumsGeneral';
 use aliased 'Helpers::GeneralHelper';
 use aliased 'Widgets::Forms::ErrorIndicator::ErrorIndicator';
+use aliased 'Managers::AbstractQueue::StyleConf';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -45,7 +46,7 @@ sub __SetLayout {
 
 	#define panels
 
-	$self->SetBackgroundColour( Wx::Colour->new( 215, 230, 251 ) );    #gray
+	$self->SetBackgroundColour(  StyleConf->GetColor("clrGroupStatus")  );    #gray
 
 	# DEFINE CONTROLS
 

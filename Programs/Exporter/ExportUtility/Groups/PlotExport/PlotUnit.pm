@@ -35,7 +35,7 @@ sub new {
 	bless $self;
 
  	# reference on class responsible for export
-	$self->{"unitExport"} = PlotExport->new($self->{"unitId"});
+	$self->{"unitTaskClass"} = PlotExport->new($self->{"unitId"});
  
 	return $self; 
 }

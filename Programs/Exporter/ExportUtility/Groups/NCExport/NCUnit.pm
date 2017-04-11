@@ -40,7 +40,7 @@ sub new {
 
  
   	# reference on class responsible for export
-	$self->{"unitExport"} = NCExport->new($self->{"unitId"});
+	$self->{"unitTaskClass"} = NCExport->new($self->{"unitId"});
  
 	return $self;    # Return the reference to the hash.
 }

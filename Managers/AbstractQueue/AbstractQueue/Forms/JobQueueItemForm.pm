@@ -93,9 +93,14 @@ sub __OnRemove {
 	$self->{"onRemove"}->Do( $self->{"taskId"} );
 }
 
-# ========================================================================
-# SET LAYOUT
-# ========================================================================
+ 
+# ==============================================
+# PUBLIC FUNCTION
+# ==============================================
+sub GetTaskId {
+	my $self = shift;
+	return $self->{"taskId"};
+}
 
 
 
@@ -104,8 +109,9 @@ sub __OnRemove {
 # ==============================================
 sub _GetDelimiter {
 	my $self = shift;
+	
 
-	my $pnl = Wx::Panel->new( $self, -1, [ -1, -1 ], [ 2, 2 ] );
+	my $pnl = Wx::Panel->new( $self, -1, [ -1, -1 ], [ 1, 1 ] );
 	$pnl->SetBackgroundColour( Wx::Colour->new( 150, 150, 150 ) );
 
 	return $pnl;

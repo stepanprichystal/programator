@@ -11,7 +11,6 @@ use strict;
 use warnings;
 
 #local library
-#use aliased 'Programs::AbstractQueue::ExportChecker::Enums';
 use aliased 'Managers::AbstractQueue::TaskResultMngr';
 use aliased 'Managers::AbstractQueue::Enums';
 #-------------------------------------------------------------------------------------------#

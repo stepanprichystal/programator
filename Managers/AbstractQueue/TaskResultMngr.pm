@@ -29,8 +29,8 @@ sub new {
 	return $self;    # Return the reference to the hash.
 }
 
-# Create Item result, from "flaterned" data which come from Export-job-worker thread
-sub CreateExportItem {
+# Create Item result, from "flaterned" data which come from Task-job-worker thread
+sub CreateTaskItem {
 	my $self       = shift;
 	my $id         = shift;
 	my $result     = shift;

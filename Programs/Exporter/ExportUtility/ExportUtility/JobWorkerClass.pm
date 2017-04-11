@@ -41,7 +41,7 @@ sub RunExport {
 
 	my %unitsData = $self->{"data"}->GetAllUnitData();
 	my @keys      = $self->{"data"}->GetOrderedUnitKeys();
-	my $mode = 		$self->{"data"}->GetExportMode();
+	my $mode = 		$self->{"data"}->GetTaskMode();
 
 	# sort keys by nhash value "__UNITORDER__"
 	#my @keys = ;
@@ -62,7 +62,7 @@ sub RunExport {
 			my $taskData = $unitsData{$unitId};
 
 			# Event when group export start
-			$self->_GroupExportEvent( Enums->EventType_GROUP_START, $unitId );
+			$self->_GroupTaskEvent( Enums->EventType_GROUP_START, $unitId );
 
 			# DON'T USE TRY/CATCH (TINY LIBRARY), IF SO, NORRIS WRITTER DOESN'T WORK
 			# catch all unexpected exception in thread
@@ -91,7 +91,7 @@ sub RunExport {
 			}
 
 			# Event when group export end
-			$self->_GroupExportEvent( Enums->EventType_GROUP_END, $unitId );
+			$self->_GroupTaskEvent( Enums->EventType_GROUP_END, $unitId );
 		}
 
 		#close job

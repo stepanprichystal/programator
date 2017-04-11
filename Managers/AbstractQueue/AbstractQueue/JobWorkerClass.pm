@@ -20,7 +20,6 @@ use aliased 'CamHelpers::CamJob';
 use aliased 'CamHelpers::CamHelper';
 use aliased 'Packages::ItemResult::Enums' => 'ResultEnums';
 use aliased 'Managers::AbstractQueue::Enums';
- 
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -32,24 +31,30 @@ sub new {
 	my $self = $class->SUPER::new(@_);
 	bless($self);
 
+	$self->{"pcbId"}     = undef;
+	$self->{"taskId"}    = undef;
+	$self->{"inCAM"}     = undef;
+	$self->{"taskClass"} = undef;    # classes for task each group
+	$self->{"data"}      = undef;    # task data
+
 	return $self;
 }
 
 sub Init {
 	my $self = shift;
 
-	$self->{"pcbId"}       = shift;
-	$self->{"taskId"}      = shift;
-	$self->{"inCAM"}       = shift;
+	$self->{"pcbId"}     = shift;
+	$self->{"taskId"}    = shift;
+	$self->{"inCAM"}     = shift;
 	$self->{"taskClass"} = shift;    # classes for task each group
-	$self->{"data"}        = shift;    # task data
-	
+	$self->{"data"}      = shift;    # task data
+
 	# Supress all toolkit exception/error windows
 	$self->{"inCAM"}->SupressToolkitException(1);
+
 	# Switch of displa actions in InCAM editor
 	$self->{"inCAM"}->COM("disp_off");
 }
-
 
 # Method open and checkou job
 sub _OpenJob {
@@ -57,55 +62,53 @@ sub _OpenJob {
 
 	my $inCAM = $self->{"inCAM"};
 
- 	my $result = 1;
- 
+	my $result = 1;
+
 	# 1) open job
-		 
+
 	$inCAM->HandleException(1);
-  
+
 	CamHelper->OpenJob( $self->{"inCAM"}, $self->{"pcbId"} );
-	
+
 	$inCAM->HandleException(0);
-	
+
 	my $err = $inCAM->GetExceptionError();
 
 	if ($err) {
 		$result = 0;
 		$self->_TaskResultEvent( ResultEnums->ItemResult_Fail, $err );
 	}
-	
+
 	# 2) Additional check, maximum number of terminal is exceded.
 	# if set step fail, it means max number exceeded
-	
+
 	$inCAM->HandleException(1);
-	
-	CamHelper->SetStep($self->{"inCAM"}, "panel");
-	
+
+	CamHelper->SetStep( $self->{"inCAM"}, "panel" );
+
 	$inCAM->HandleException(0);
-	
+
 	my $err3 = $inCAM->GetExceptionError();
 
 	if ($err3) {
 		$result = 0;
-		$self->_TaskResultEvent( ResultEnums->ItemResult_Fail, "Maximum licence of InCAM is exceeded");
+		$self->_TaskResultEvent( ResultEnums->ItemResult_Fail, "Maximum licence of InCAM is exceeded" );
 	}
- 
-	
+
 	# 3) check out job
-	
+
 	$inCAM->HandleException(1);
-  
+
 	CamJob->CheckOutJob( $self->{"inCAM"}, $self->{"pcbId"} );
-	
+
 	$inCAM->HandleException(0);
-	
+
 	my $err2 = $inCAM->GetExceptionError();
 
 	if ($err2) {
 		$result = 0;
 		$self->_TaskResultEvent( ResultEnums->ItemResult_Fail, $err );
 	}
-	
 
 	unless ($result) {
 
@@ -119,16 +122,20 @@ sub _OpenJob {
 sub _CloseJob {
 	my $self = shift;
 	my $save = shift;
+	
+	unless($self->{"pcbId"}){
+		return 0;
+	}
 
 	my $inCAM = $self->{"inCAM"};
 
 	# START HANDLE EXCEPTION IN INCAM
 	$inCAM->HandleException(1);
 
-	if($save){
+	if ($save) {
 		CamJob->SaveJob( $self->{"inCAM"}, $self->{"pcbId"} );
 	}
-	
+
 	CamJob->CheckInJob( $self->{"inCAM"}, $self->{"pcbId"} );
 	CamJob->CloseJob( $self->{"inCAM"}, $self->{"pcbId"} );
 
@@ -151,16 +158,16 @@ sub _CloseJob {
 # Close job, sleep until stop variable is set to 1
 sub _CheckStopThread {
 	my $self = shift;
-	
-	my $threadStoped  = 0;
+
+	my $threadStoped = 0;
 
 	if ( ${ $self->{"stopThread"} } ) {
-		
+
 		$threadStoped = 1;
-		
+
 		# 1) Close job
 		$self->_CloseJob(1);
-		
+
 		# 2) Sleep until stop var is set to 0
 		while (1) {
 
@@ -169,11 +176,11 @@ sub _CheckStopThread {
 				last;
 			}
 		}
-		
+
 		# 3) Open job again
 		$self->_OpenJob();
 	}
-	
+
 	return $threadStoped;
 }
 
@@ -184,16 +191,15 @@ sub _StopThread {
 	${ $self->{"stopThread"} } = 1;
 }
 
-
 # ====================================================================================
 # Function, which sent messages to main thread about state of tasking
 # ====================================================================================
 
 sub _ItemResultEvent {
-	my $self        = shift;
-	my $taskClass = shift;
-	my $unitId      = shift;
-	my $itemResult  = shift;
+	my $self       = shift;
+	my $taskClass  = shift;
+	my $unitId     = shift;
+	my $itemResult = shift;
 
 	# Item result event
 
@@ -251,15 +257,30 @@ sub _TaskResultEvent {
 
 }
 
-sub _GroupExportEvent {
+sub _GroupTaskEvent {
 	my $self   = shift;
-	my $type   = shift;    #GROUP_EXPORT_<START/END>
+	my $type   = shift;    #GROUP_TASK_<START/END>
 	my $unitId = shift;
 
 	my %data = ();
 	$data{"unitId"} = $unitId;
 
 	$self->_SendMessageEvt( $type, \%data );
+}
+
+# Take "data" (scalar variable) from item result and send
+sub _SpecialEvent {
+	my $self       = shift;
+	my $unitId     = shift;
+	my $itemResult = shift;
+ 
+
+	my %data1 = ();
+	$data1{"unitId"} = $unitId;
+	$data1{"itemId"} = $itemResult->ItemId();
+	$data1{"data"}   = $itemResult->GetData();
+
+	$self->_SendMessageEvt( Enums->EventType_SPECIAL, \%data1 );
 }
 
 #-------------------------------------------------------------------------------------------#

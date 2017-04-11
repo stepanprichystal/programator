@@ -75,6 +75,16 @@ sub SetJobItemToProduceResult {
 	$jobItem->SetProduceResult( $task->ResultToProduce(), $task->GetJobSentToProduce() );
 }
 
+sub SetJobItemResult {
+	my $self = shift;
+	my $task = shift;
+
+	my $jobItem = $self->{"jobQueue"}->GetItem( $task->GetTaskId() );
+
+	$jobItem->SetTaskResult( $task->Result(), $task->GetJobAborted(), $task->GetJobSentToProduce() );
+
+}
+
 # ======================================================
 # HANDLERS of job queue item
 # ======================================================

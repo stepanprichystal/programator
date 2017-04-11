@@ -69,7 +69,7 @@ sub Run {
 
 	my $exportUnit = UnitExport->new( $self->{"id"} );
 
-	my $exportClass = $exportUnit->GetExportClass();
+	my $exportClass = $exportUnit->GetTaskClass();
 	
 	
 	 

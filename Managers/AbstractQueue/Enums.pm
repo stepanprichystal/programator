@@ -3,11 +3,11 @@ package Managers::AbstractQueue::Enums;
 
 use constant {
 	EventType_ITEM_RESULT  => "itemResult",
-	EventType_GROUP_START  => "groupExportStart",
-	EventType_GROUP_END    => "groupExportEnd",
+	EventType_GROUP_START  => "groupTaskStart",
+	EventType_GROUP_END    => "groupTaskEnd",
 	EventType_GROUP_RESULT => "groupResult",
 	EventType_TASK_RESULT  => "taskResult",
-	EventType_THREAD_STOP  => "threadStop"
+	EventType_SPECIAL      => "special"           # item, whcih keeps extra info (eg, chose master pcbid of pool)
 
 };
 

@@ -72,12 +72,14 @@ sub RunNewtask {
 	$self->{"threadCounter"} +=1;
 	
 	print STDERR "\n\n\ntask utility: THERAD ORDER IS :  ".$self->{"threadCounter"}.".\n\n\n";
-
-	my $thrId = $self->__CreateThread( $jobGUID, $port, $pcbId, $pidInCAM, $externalServer );
-
+	
 	# special shared variable, which child process periodically read and decide if stop or continue in task
 	my $stopped = 0;
 	share($stopped);
+
+	my $thrId = $self->__CreateThread( $jobGUID, $port, $pcbId, $pidInCAM, $externalServer, \$stopped );
+
+	
 
 	my %thrInfo = (
 					"jobGUID" => $jobGUID,

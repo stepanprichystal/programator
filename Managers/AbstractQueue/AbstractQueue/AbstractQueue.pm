@@ -1,6 +1,6 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Core of Export utility program. Manage whole process of tasking.
+# Description: Core of Abstract queue program. Manage whole process of tasking.
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Managers::AbstractQueue::AbstractQueue::AbstractQueue;
@@ -236,7 +236,7 @@ sub __OnRemoveJobClick {
 
 	my $taskData = $task->GetTaskData();
 
-	if ( $taskData->GetExportMode() eq EnumsJobMngr->TaskMode_SYNC ) {
+	if ( $taskData->GetTaskMode() eq EnumsJobMngr->TaskMode_SYNC ) {
 
 		my $port = $taskData->GetPort();
 
@@ -267,6 +267,18 @@ sub __OnCloseAbstractQueueBase {
 	my $self = shift;
 
 	# All jobs should be DONE in this time
+
+	# find if some jobs (in synchronous mode) are in queue
+	# if so remove them in order do incam editor free
+	foreach my $task ( @{ $self->{"tasks"} } ) {
+
+		my $taskData = $task->GetTaskData();
+
+		if ( $taskData->GetTaskMode() eq EnumsJobMngr->TaskMode_SYNC ) {
+
+			$self->__OnRemoveJobClick( $task->GetTaskId() );
+		}
+	}
 
 }
 
@@ -394,10 +406,12 @@ sub __GetVersion {
 	# Get path of version file
 	my $className = ref $self->{"form"};
 	my @arr = split( "::", $className );
+	
+	@arr =  @arr[0..(scalar(@arr)-4)];
 
-	my $packagePath = join( "\\", @arr[ 0 .. 2 ] );
+	my $packagePath = join( "\\", @arr );
 
-	my $verPath = GeneralHelper->Root() . "\\" . $packagePath . "\\version.txt";
+	my $verPath = GeneralHelper->Root() . "\\" . $packagePath . "\\Config\\Version.txt";
 
 	my $str = FileHelper->ReadAsString($verPath);
 

@@ -402,8 +402,8 @@ sub __TakeFromQueueHandler {
 #  Private methods
 #-------------------------------------------------------------------------------------------#
 
-sub __SetLayout {
 
+sub __SetLayout {
 	my $self      = shift;
 	my $parent    = shift;
 	my $title     = shift;

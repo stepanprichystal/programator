@@ -16,6 +16,7 @@ use warnings;
 #local library
 use aliased 'Programs::Exporter::ExportUtility::ExportUtility::Forms::JobQueueItemForm';
 use aliased 'Packages::Events::Event';
+use aliased 'Managers::AbstractQueue::StyleConf';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -60,6 +61,16 @@ sub AddItem {
 	return $self->_AddItem($item);
 }
 
+sub SetJobItemResult {
+	my $self = shift;
+	my $task = shift;
+
+	my $jobItem = $self->{"jobQueue"}->GetItem( $task->GetTaskId() );
+
+	$jobItem->SetTaskResult( $task->Result(), $task->GetJobAborted(), $task->GetJobSentToProduce() );
+
+}
+
 sub RemoveJobFromQueue {
 	my $self   = shift;
 	my $itemId = shift;
@@ -75,8 +86,8 @@ sub __SetLayout {
 
 	$self->SetItemGap(2);
 
-	$self->SetItemUnselectColor( Wx::Colour->new( 240, 240, 240 ) );
-	$self->SetItemSelectColor( Wx::Colour->new( 215, 230, 251 ) );
+	$self->SetItemUnselectColor( StyleConf->GetColor("clrItemUnSelected") );
+	$self->SetItemSelectColor(  StyleConf->GetColor("clrItemSelected"));
 
 }
 

@@ -3,6 +3,9 @@
 # Description: Widget slouzici pro zobrazovani zprav ruznych typu uzivateli
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
+
+our $stylePath = undef; # global variable, which set path to configuration file
+
 package Managers::AbstractQueue::AbstractQueue::Forms::AbstractQueueForm;
 use base 'Managers::AsyncJobMngr::AsyncJobMngr';
 
@@ -20,18 +23,15 @@ use aliased 'Helpers::FileHelper';
 use aliased 'Helpers::GeneralHelper';
 use aliased 'Enums::EnumsPaths';
 use aliased 'Enums::EnumsGeneral';
-
 use aliased 'Packages::Events::Event';
-
 use aliased 'Managers::MessageMngr::MessageMngr';
-
 use aliased 'Managers::AbstractQueue::AbstractQueue::Forms::GroupTable::GroupTableForm';
 use aliased 'Widgets::Forms::CustomNotebook::CustomNotebook';
 use aliased 'Widgets::Forms::MyWxBookCtrlPage';
- 
 use aliased 'Managers::AsyncJobMngr::Enums' => 'EnumsJobMngr';
 use aliased 'Managers::AsyncJobMngr::ServerMngr::ServerInfo';
 use aliased 'Managers::AbstractQueue::Helper';
+use aliased 'Managers::AbstractQueue::StyleConf';
  
 
 #-------------------------------------------------------------------------------------------#
@@ -56,14 +56,13 @@ sub new {
 	# Properties
 
 	$self->{"messageMngr"} = MessageMngr->new($title);
-
+ 
 	# Events
 
 	$self->{"onClick"}       = Event->new();
 	$self->{"onRemoveJob"}   = Event->new();
 	$self->{"onSetJobQueue"} = Event->new();    # raise during layyout initialization to get "job queue" gui
-
-	
+ 
 
 	return $self;
 }
@@ -87,6 +86,7 @@ sub AddVersion {
 # Public method
 # ======================================================
 
+
 # Add all necessery GUI forms, when new job is added
 sub AddNewTaskGUI {
 	my $self = shift;
@@ -105,6 +105,8 @@ sub AddNewTaskGUI {
 	my $page     = $notebook->AddPage($taskId);
 
 	my $groupTableForm = GroupTableForm->new( $page->GetParent() );
+ 
+	 
 	$groupTableForm->InitGroupTable( \@units );
 
 	$page->AddContent($groupTableForm);
@@ -124,7 +126,7 @@ sub AddNewTask {
 
 	my $taskData = $task->GetTaskData();
 
-	my $mode = $taskData->GetExportMode();
+	my $mode = $taskData->GetTaskMode();
 
 	if ( $mode eq EnumsJobMngr->TaskMode_SYNC ) {
 
@@ -176,6 +178,8 @@ sub ActivateForm {
 	}
 }
 
+ 
+
 # ============================================================
 # Mehtods for update job queue items
 # ============================================================
@@ -200,15 +204,7 @@ sub SetJobItemProgress {
 	$jobItem->SetProgress($value);
 }
 
-sub SetJobItemResult {
-	my $self = shift;
-	my $task = shift;
 
-	my $jobItem = $self->{"jobQueue"}->GetItem( $task->GetTaskId() );
-
-	$jobItem->SetExportResult( $task->Result(), $task->GetJobAborted(), $task->GetJobSentToProduce() );
-
-}
 
 sub SetJobQueueErrorCnt {
 	my $self = shift;
@@ -216,7 +212,7 @@ sub SetJobQueueErrorCnt {
 
 	my $jobItem = $self->{"jobQueue"}->GetItem( $task->GetTaskId() );
 
-	$jobItem->SetExportErrorCnt( $task->GetErrorsCnt() );
+	$jobItem->SetTaskErrorCnt( $task->GetErrorsCnt() );
 
 }
 
@@ -226,7 +222,7 @@ sub SetJobQueueWarningCnt {
 
 	my $jobItem = $self->{"jobQueue"}->GetItem( $task->GetTaskId() );
 
-	$jobItem->SetExportWarningCnt( $task->GetWarningsCnt() );
+	$jobItem->SetTaskWarningCnt( $task->GetWarningsCnt() );
 
 }
 
@@ -359,7 +355,7 @@ sub __OnShowConsoleChecked {
 		$val = 0;
 	}
 
-	Helper->ShowExportWindow( $val, "Cmd of AbstractQueueUtility PID:" . $$ );
+	Helper->ShowAbstractQueueWindow( $val, "Cmd of AbstractQueueUtility PID:" . $$ );
 
 }
 
@@ -368,8 +364,17 @@ sub __OnShowConsoleChecked {
 # ========================================================================================== #
 
 sub __SetLayout {
-
 	my $self    = shift;
+	
+	# Set path of style configuration file
+	my $className = ref $self;
+	my @arr = split( "::", $className );
+	@arr =  @arr[0..(scalar(@arr)-4)];
+	my $packagePath = join( "\\", @arr);
+ 
+	$main::stylePath = GeneralHelper->Root() . "\\" . $packagePath . "\\Config\\Style.txt";
+ 
+ 
 	my $mainFrm = $self->{"mainFrm"};
 
 	# DEFINE SIZERS
@@ -387,7 +392,7 @@ sub __SetLayout {
 	# DEFINE PANELS
 
 	my $pnlBtns = Wx::Panel->new( $mainFrm, -1 );
-	$pnlBtns->SetBackgroundColour($Widgets::Style::clrDefaultFrm);
+	$pnlBtns->SetBackgroundColour( StyleConf->GetColor("clrStatusBar"));
 
 	# DEFINE CONTROLS
 
@@ -440,13 +445,12 @@ sub __SetLayout {
 	$szMain->Add( $pnlBtns, 0, &Wx::wxEXPAND );
 
 	# REGISTER EVENTS
-	#Wx::Event::EVT_BUTTON( $btnHide, -1, sub { $self->__OnHideAbstractQueue() } );
 
-	#Wx::Event::EVT_BUTTON( $btnExport, -1, sub { $self->__OnExportForceClick(@_) } );
 
 	# SAVE NECESSARY CONTROLS
 
 	$self->{"mainFrm"} = $mainFrm;
+	$self->{"pnlBtns"} = $pnlBtns;
 	$self->{"szMain"}  = $szMain;
 
 	$mainFrm->SetSizer($szMain);

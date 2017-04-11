@@ -27,22 +27,24 @@ sub new {
 	my %settings = ();
 	$self->{"settings"} = \%settings;
 
-	# EXPORT PROPERTIES
+	# TASK PROPERTIES
 	$self->{"settings"}->{"time"}         = undef;
-	$self->{"settings"}->{"mode"}         = undef;    # synchronousExport/ asynchronousExport
+	$self->{"settings"}->{"mode"}         = undef;    # synchronousTask/ asynchronousTask
 	$self->{"settings"}->{"port"}         = undef;    # if task is synchronous, port of server script
 	$self->{"settings"}->{"mandatoryUnits"} = undef;    # units, which has to be tasked
+	$self->{"settings"}->{"formPosX"}     = undef;    # position of export cheker form
+	$self->{"settings"}->{"formPosY"}     = undef;    # position of export cheker form
 
 	return $self;                                     # Return the reference to the hash.
 }
 
-sub GetExportTime {
+sub GetTaskTime {
 	my $self = shift;
 
 	return $self->{"settings"}->{"time"};
 }
 
-sub GetExportMode {
+sub GetTaskMode {
 	my $self = shift;
 
 	return $self->{"settings"}->{"mode"};
@@ -93,6 +95,14 @@ sub GetAllUnitData {
 
 	return %{ $self->{"units"} };
 }
+
+sub GetFormPosition {
+	my $self = shift;
+
+	my $pos = Wx::Point->new( $self->{"settings"}->{"formPosX"}, $self->{"settings"}->{"formPosY"} );
+	return $pos;
+}
+
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

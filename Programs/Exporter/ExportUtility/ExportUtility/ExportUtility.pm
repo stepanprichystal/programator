@@ -17,6 +17,7 @@ use File::Copy;
 #local library
 
 use aliased 'Helpers::GeneralHelper';
+use aliased 'Helpers::JobHelper';
 use aliased 'Enums::EnumsPaths';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'Connectors::HeliosConnector::HegMethods';
@@ -77,9 +78,9 @@ sub JobWorker {
 	my $THREAD_MESSAGE_EVT : shared  = ${ shift(@_) };
 	my $stopVar                      = shift;
 
-	#GetExportClass
+	#GetTaskClass
 	my $task        = $self->_GetTaskById($taskId);
-	my %exportClass = $task->{"units"}->GetExportClass();
+	my %exportClass = $task->{"units"}->GetTaskClass();
 	my $taskData  = $task->GetTaskData();
 
 	my $jobExport = JobWorkerClass->new( \$THREAD_PROGRESS_EVT, \$THREAD_MESSAGE_EVT, $stopVar, $self->{"form"}->{"mainFrm"} );
@@ -120,6 +121,8 @@ sub __OnJobStateChanged {
 			# refresh GUI to produce
 			$self->{"form"}->SetJobItemToProduceResult($task);
 		}
+		
+		
 	}
 }
 
@@ -144,19 +147,7 @@ sub __OnJobMessageEvtHandler {
 sub __OnCloseExporter {
 	my $self = shift;
 
-	# All jobs should be DONE in this time
-
-	# find if some jobs (in synchronous mode) are in queue
-	# if so remove them in order do incam editor free
-	foreach my $task ( @{ $self->{"tasks"} } ) {
-
-		my $taskData = $task->GetTaskData();
-
-		if ( $taskData->GetExportMode() eq EnumsTaskData->TaskMode_SYNC ) {
-
-			$self->__OnRemoveJobClick( $task->GetTaskId() );
-		}
-	}
+ 
 
 }
 
@@ -212,6 +203,12 @@ sub __OnToProduceClick {
 # Take every file only once, then delete it
 sub __CheckFilesHandler {
 	my ( $self, $mainFrm, $event ) = @_;
+	
+	
+	# If dir for export files doesn't exist, create it
+	unless ( -e EnumsPaths->Client_EXPORTFILES ) {
+		mkdir( EnumsPaths->Client_EXPORTFILES ) or die "Can't create dir: " . EnumsPaths->Client_EXPORTFILES . $_;
+	}
 
 	my @actFiles = @{ $self->{"exportFiles"} };
 	my @newFiles = ();
@@ -279,7 +276,9 @@ sub __AddNewJob {
 	my $jobId      = shift;
 	my $taskData = shift;
 
-	my $status = TaskStatus->new( $jobId, "Pcb" );
+	my $path = JobHelper->GetJobArchive( $jobId) . "Status_export";
+
+	my $status = TaskStatus->new( $path);
 
 	my $task = Task->new( $jobId, $taskData, $status );
 

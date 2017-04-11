@@ -29,7 +29,7 @@ sub new {
 	$self->{'onItemResult'}       = Event->new();    # 1) - standard event, which inform if task was succes/fail
 	                                                 # 2) - special event, which inform if it is worth to continue,
 	                                                 # if some standar event resul is Fail
-	$self->{'onItemStatusResult'} = Event->new();
+	$self->{'onStatusResult'} = Event->new();
 
 	return $self;                               
 }
@@ -66,14 +66,14 @@ sub _OnItemResult {
 	}
 }
 
-sub _OnItemStatusResult {
+sub _OnStatusResult {
 	my $self       = shift;
 	my $itemResult = shift;
 
 	#raise onJobStarRun event
-	my $onItemStatusResult = $self->{'onItemStatusResult'};
-	if ( $onItemStatusResult->Handlers() ) {
-		$onItemStatusResult->Do($itemResult);
+	my $onStatusResult = $self->{'onStatusResult'};
+	if ( $onStatusResult->Handlers() ) {
+		$onStatusResult->Do($itemResult);
 	}
 }
 

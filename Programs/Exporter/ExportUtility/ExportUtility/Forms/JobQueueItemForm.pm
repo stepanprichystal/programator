@@ -18,23 +18,22 @@ use aliased 'Packages::Events::Event';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'Widgets::Forms::ErrorIndicator::ErrorIndicator';
 use aliased 'Widgets::Forms::ResultIndicator::ResultIndicator';
-use aliased 'Managers::AsyncJobMngr::Enums'           => 'EnumsJobMngr';
- 
+use aliased 'Managers::AsyncJobMngr::Enums' => 'EnumsJobMngr';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
 
 sub new {
-	my $class        = shift;
-	my $parent       = shift;
-	my $jobId        = shift;
-	my $taskId       = shift;
-	my $taskData = shift;
-	my $produceMngr  = shift;
-	my $taskMngr     = shift;
-	my $groupMngr    = shift;
-	my $itemMngr     = shift;
+	my $class       = shift;
+	my $parent      = shift;
+	my $jobId       = shift;
+	my $taskId      = shift;
+	my $taskData    = shift;
+	my $produceMngr = shift;
+	my $taskMngr    = shift;
+	my $groupMngr   = shift;
+	my $itemMngr    = shift;
 
 	my $self = $class->SUPER::new( $parent, $jobId, $taskId, $taskData, $taskMngr, $groupMngr, $itemMngr );
 
@@ -66,7 +65,7 @@ sub SetProgress {
 
 # Set export indicators
 
-sub SetExportResult {
+sub SetTaskResult {
 	my $self   = shift;
 	my $result = shift;    # tell if there was error during export
 
@@ -122,14 +121,14 @@ sub SetExportResult {
 	$self->{"exportRI"}->SetStatus($result);
 }
 
-sub SetExportErrorCnt {
+sub SetTaskErrorCnt {
 	my $self  = shift;
 	my $count = shift;
 
 	$self->{"exportErrInd"}->SetErrorCnt($count);
 }
 
-sub SetExportWarningCnt {
+sub SetTaskWarningCnt {
 	my $self  = shift;
 	my $count = shift;
 
@@ -181,10 +180,6 @@ sub SetItemOrder {
 	$self->{"orderTxt"}->SetLabel($pos);
 }
 
-sub GetTaskId {
-	my $self = shift;
-	return $self->{"taskId"};
-}
 
 # ==============================================
 # ITEM QUEUE HANDLERS
@@ -411,7 +406,7 @@ sub __SetLayoutResult {
 sub __SetExportTime {
 	my $self = shift;
 
-	my $value = $self->{"taskData"}->GetExportTime();
+	my $value = $self->{"taskData"}->GetTaskTime();
 
 	$self->{"jobTimeTxt"}->SetLabel($value);
 }
@@ -419,7 +414,7 @@ sub __SetExportTime {
 sub __SetExportMode {
 	my $self = shift;
 
-	my $value = $self->{"taskData"}->GetExportMode();
+	my $value = $self->{"taskData"}->GetTaskMode();
 
 	if ( $value eq EnumsJobMngr->TaskMode_SYNC ) {
 

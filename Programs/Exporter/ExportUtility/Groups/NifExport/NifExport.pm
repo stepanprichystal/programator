@@ -3,7 +3,7 @@
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Programs::Exporter::ExportUtility::Groups::NifExport::NifExport;
-use base('Managers::AbstractQueue::Groups::ExportBase');
+use base('Managers::AbstractQueue::Groups::TaskClassBase');
 #3th party library
 use strict;
 use warnings;

@@ -40,6 +40,9 @@ sub new {
 
 	# Some result items can be included in some group, eg. layers
 	$self->{"group"} = shift;
+	
+	# Result can keep extra information besides wanning or errors
+	$self->{"data"} = shift;
 
 	my @errors = ();
 	$self->{"errors"} = \@errors;
@@ -184,6 +187,19 @@ sub GetGroup {
 	my $self = shift;
 
 	return $self->{"group"};
+}
+
+
+sub SetData {
+	my $self  = shift;
+	my $value = shift;
+	return $self->{"data"} = $value;
+}
+
+sub GetData {
+	my $self = shift;
+
+	return $self->{"data"};
 }
 
 #-------------------------------------------------------------------------------------------#

@@ -31,8 +31,8 @@ use constant {
 
 
  use constant {
-			   TaskMode_SYNC  => "synchronousExport",
-			   TaskMode_ASYNC  => "asynchronousExport"
+			   TaskMode_SYNC  => "synchronousTask",
+			   TaskMode_ASYNC  => "asynchronousTask"
 };
  
 

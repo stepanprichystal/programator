@@ -3,7 +3,7 @@
 # Description: Represent one task, which are in the queue. Responsible for
 # - Initialize units
 # - Pass message to specific units
-# - Responsible for updating ExportStauts
+# - Responsible for updating TaskStauts
 # - Responsible for sending pcb to produce
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
@@ -38,7 +38,7 @@ sub new {
 
 	$self->{"jobId"} = shift;    # job id, which is processed
 
-	$self->{"taskData"} = shift;    # tasked data, from ExportChecker program
+	$self->{"taskData"} = shift;    # tasked data, necessary for task processing
 
 	$self->{"taskStatus"} = shift;  # Class responsible for updating StatusFile in job archive
 	
@@ -252,7 +252,7 @@ sub ProcessTaskResult {
 	my $warningStr = $data->{"warnings"};
 	my $id         = $self->{"jobId"};
 
-	$self->{"taskResultMngr"}->CreateExportItem( $id, $result, undef, $errorsStr, $warningStr );
+	$self->{"taskResultMngr"}->CreateTaskItem( $id, $result, undef, $errorsStr, $warningStr );
 
 }
 

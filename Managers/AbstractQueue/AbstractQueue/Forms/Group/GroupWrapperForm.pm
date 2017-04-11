@@ -20,6 +20,7 @@ use aliased 'Managers::AbstractQueue::AbstractQueue::Forms::Group::GroupItemForm
 use aliased 'Managers::AbstractQueue::AbstractQueue::Forms::Group::ItemForm';
 use aliased 'Managers::AbstractQueue::AbstractQueue::Forms::Group::GroupStatusForm';
 use aliased 'Packages::ItemResult::ItemResultMngr';
+use aliased 'Managers::AbstractQueue::StyleConf';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -115,12 +116,12 @@ sub __SetLayout {
 
 	# DEFINE PANELS
 
-	$pnlHeader->SetBackgroundColour( Wx::Colour->new( 228, 232, 243 ) );
+	$pnlHeader->SetBackgroundColour(  StyleConf->GetColor("clrGroupHeader") );
 
 	#$pnlHeader->SetBackgroundColour($Widgets::Style::clrLightGreen);
 
 	my $pnlBody = Wx::Panel->new( $self, -1 );
-	$pnlBody->SetBackgroundColour( Wx::Colour->new( 245, 245, 245 ) );
+	$pnlBody->SetBackgroundColour(  StyleConf->GetColor("clrGroupBackg"));
 
 	# use Wx qw( EVT_MOUSE_EVENTS);
 	# use Wx qw(:sizer wxDefaultPosition wxDefaultSize wxDEFAULT_DIALOG_STYLE wxRESIZE_BORDER);

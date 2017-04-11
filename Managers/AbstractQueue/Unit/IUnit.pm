@@ -41,7 +41,7 @@ sub GetGroupItemResultMngr;
 sub GetGroupResultMngr;
 
 # Return class, which contain code responsible for task 
-sub GetExportClass;
+sub GetTaskClass;
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

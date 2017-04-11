@@ -150,7 +150,7 @@ sub __Run {
 		Win32::Process::KillProcess( $self->{"loadingFrmPid"}, 0 );
 	}
 
-	#Helper->ShowExportWindow(0,"Loading Exporter Checker");
+	#Helper->ShowAbstractQueueWindow(0,"Loading Exporter Checker");
 
 	$self->{"form"}->MainLoop();
 

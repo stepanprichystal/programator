@@ -28,8 +28,7 @@ sub new {
 	# EXPORT PROPERTIES
 	 
 	$self->{"settings"}->{"toProduce"}    = undef;    # sent to produce 0/1
-	$self->{"settings"}->{"formPosX"}     = undef;    # position of export cheker form
-	$self->{"settings"}->{"formPosY"}     = undef;    # position of export cheker form
+
 
 	return $self;                                     # Return the reference to the hash.
 }
@@ -40,12 +39,6 @@ sub GetToProduce {
 	return $self->{"settings"}->{"toProduce"};
 }
 
-sub GetFormPosition {
-	my $self = shift;
-
-	my $pos = Wx::Point->new( $self->{"settings"}->{"formPosX"}, $self->{"settings"}->{"formPosY"} );
-	return $pos;
-}
 
 
 #-------------------------------------------------------------------------------------------#
