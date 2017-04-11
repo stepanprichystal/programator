@@ -70,16 +70,7 @@ sub SetJobItemResult {
 
 }
 
-sub SetMasterJob {
-	my $self = shift;
-	my $task = shift;
-	my $masteJob = shift;
-	
-	my $jobItem = $self->{"jobQueue"}->GetItem( $task->GetTaskId() );
 
-	$jobItem->SetMasterJob( $masteJob);
-	
-}
 
 
 sub RemoveJobFromQueue {

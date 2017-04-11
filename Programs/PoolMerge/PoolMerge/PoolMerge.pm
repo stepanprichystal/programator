@@ -156,8 +156,7 @@ sub __OnJobMessageEvtHandler {
 		}
 		elsif ( $data->{"itemId"} eq Enums->EventItemType_MASTER ) {
 
-			my $masterJob = $data->{"data"};
-			$self->{"form"}->SetMasterJob($task);
+			$self->{"form"}->SetMasterJob($task, $data->{"data"});
 
 		}
 	}

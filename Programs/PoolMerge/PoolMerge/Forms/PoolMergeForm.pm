@@ -38,7 +38,7 @@ sub new {
 
 	my $title = "Pool merger";
 	my $name = "Pool merger";
-	my @dimension = ( 1120, 760 );
+	my @dimension = ( 1100, 760 );
 
 	my $self = $class->SUPER::new( @_, $title,$name, \@dimension );
 
@@ -87,6 +87,17 @@ sub SetJobItemResult {
 
 	$jobItem->SetTaskResult( $task->Result(), $task->GetJobAborted(), $task->GetJobSentToExport() );
 
+}
+
+sub SetMasterJob {
+	my $self = shift;
+	my $task = shift;
+	my $masteJob = shift;
+	
+	my $jobItem = $self->{"jobQueue"}->GetItem( $task->GetTaskId() );
+
+	$jobItem->SetMasterJob( $masteJob);
+	
 }
 
 # ======================================================

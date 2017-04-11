@@ -165,7 +165,7 @@ sub SetMasterJob {
 	my $self = shift;
 	my $masterJob = shift;
 
-	$self->{"poolMasterTxt"}->SetLabel("Master: $masterJob");
+	$self->{"poolMasterTxt"}->SetLabel("master: $masterJob");
 }
  
 
@@ -188,13 +188,24 @@ sub __SetLayout {
 
 	my $szMain  = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
 	my $orderSz = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
+	
+	my $szCol = Wx::BoxSizer->new(&Wx::wxVERTICAL);
+	my $szRow1 = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
+	my $szRow2 = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
 
 	# DEFINE CONTROLS
+	
+	 
+	my $gauge = Wx::Gauge->new( $self, -1, 100, [ -1, -1 ], [ -1, 5 ], &Wx::wxGA_HORIZONTAL );
+	$gauge->SetValue(0);
 
 	my $orderPnl = Wx::Panel->new( $self, -1, [ -1, -1 ], [ 40, 45 ] );
-	$orderPnl->SetBackgroundColour( Wx::Colour->new( 255, 200, 10 ) );
+	$orderPnl->SetBackgroundColour( Wx::Colour->new( 83, 215, 253 ) );
 	my $orderTxt = Wx::StaticText->new( $orderPnl, -1, "0)", [ -1, -1 ] );
-
+	
+	my $fontLblBold = Wx::Font->new( 11, &Wx::wxFONTFAMILY_DEFAULT, &Wx::wxFONTSTYLE_NORMAL, &Wx::wxFONTWEIGHT_NORMAL );
+	
+	$orderTxt->SetFont( $fontLblBold );    # set text color
 	my $title    = $self->__SetLayoutTitle();
 	my $progress = $self->__SetLayoutProgres();
 	my $toptions = $self->__SetLayoutOptions();
@@ -203,33 +214,31 @@ sub __SetLayout {
 
 	# DEFINE STRUCTURE
 
-	$szMain->Add( 0, 40, 0 );
-
-	$orderSz->Add( $orderTxt, 0, &Wx::wxLEFT | &Wx::wxALIGN_CENTER_VERTICAL | &Wx::wxALIGN_CENTER, 10 );
-
-	$szMain->Add( $orderPnl, 0, &Wx::wxEXPAND );
-	$szMain->Add( $title,    0, &Wx::wxEXPAND | &Wx::wxLEFT, 3  );
-
-	$szMain->Add( $self->_GetDelimiter(), 0, &Wx::wxEXPAND | &Wx::wxLEFT, 5  );    # add delimiter
-
-	$szMain->Add( $progress, 0, &Wx::wxEXPAND );
-
-	$szMain->Add( $self->_GetDelimiter(), 0, &Wx::wxEXPAND );    # add delimiter
-
-	$szMain->Add( $toptions, 0, &Wx::wxEXPAND | &Wx::wxLEFT, 5 );
-
-	$szMain->Add( $self->_GetDelimiter($self), 0, &Wx::wxEXPAND );    # add delimiter
-
-	$szMain->Add( $result, 0, &Wx::wxEXPAND | &Wx::wxLEFT, 5 );
-
-	$szMain->Add( $buttons, 0, &Wx::wxEXPAND | &Wx::wxLEFT, 0 );
-
 	$orderPnl->SetSizer($orderSz);
 
+	$orderSz->Add( $orderTxt, 0, &Wx::wxLEFT | &Wx::wxALIGN_CENTER_VERTICAL | &Wx::wxALIGN_CENTER, 10 );
+	$szRow1->Add( $toptions, 0, &Wx::wxEXPAND | &Wx::wxLEFT, 5 );
+	$szRow1->Add( $self->_GetDelimiter($self), 0, &Wx::wxEXPAND );    # add delimiter
+	$szRow1->Add( $progress, 0, &Wx::wxEXPAND | &Wx::wxLEFT, 10);
+	$szRow1->Add( $self->_GetDelimiter(), 0, &Wx::wxEXPAND );    # add delimiter
+	
+	$szRow1->Add( $result, 0, &Wx::wxEXPAND | &Wx::wxLEFT, 5 );
+	$szRow1->Add( $buttons, 0, &Wx::wxEXPAND | &Wx::wxLEFT, 0 );
+	$szRow2->Add( $gauge, 1, &Wx::wxEXPAND | &Wx::wxLEFT, 0 );
+	
+	$szCol->Add( $szRow1, 1,  &Wx::wxEXPAND);
+	$szCol->Add( $szRow2, 0, &Wx::wxEXPAND);
+	
+	$szMain->Add( $orderPnl, 0, &Wx::wxEXPAND );
+	$szMain->Add( $title,    0, &Wx::wxEXPAND | &Wx::wxLEFT, 8  );
+	$szMain->Add( $self->_GetDelimiter(), 0, &Wx::wxEXPAND | &Wx::wxLEFT, 10  );    # add delimiter
+	$szMain->Add( $szCol, 1, &Wx::wxEXPAND);
+ 
 	$self->SetSizer($szMain);
 
 	# SAVE REFERENCES
 	$self->{"orderTxt"} = $orderTxt;
+	$self->{"gauge"}         = $gauge;
 
 	# Set default control content
 	$self->__SetMergeTime();
@@ -284,23 +293,23 @@ sub __SetLayoutProgres {
 
 	# DEFINE CONTROLS
 
-	my $gauge = Wx::Gauge->new( $self, -1, 100, [ -1, -1 ], [ 370, 20 ], &Wx::wxGA_HORIZONTAL );
-	$gauge->SetValue(0);
+	#my $gauge = Wx::Gauge->new( $self, -1, 100, [ -1, -1 ], [ 370, 20 ], &Wx::wxGA_HORIZONTAL );
+	#$gauge->SetValue(0);
 
 	my $percentageTxt = Wx::StaticText->new( $self, -1, "0%", [ -1, -1 ], [ 30, 10 ] );
 
-	my $stateTxt = Wx::StaticText->new( $self, -1, "Waiting for InCAM", [ -1, -1 ], [ 150, 10 ] );
+	my $stateTxt = Wx::StaticText->new( $self, -1, "Waiting for InCAM", [ -1, -1 ], [ 235, 10 ] );
 
 	# DEFINE STRUCTURE
 	$szStatus->Add( $percentageTxt, 0, &Wx::wxEXPAND | &Wx::wxLEFT, 5 );
-	$szStatus->Add( $stateTxt,      1, &Wx::wxEXPAND | &Wx::wxLEFT, 5 );
+	$szStatus->Add( $stateTxt,      1, &Wx::wxEXPAND | &Wx::wxLEFT, 10 );
 
-	$szMain->Add( $gauge, 50, &Wx::wxEXPAND | &Wx::wxALL, 0 );
-	$szMain->Add( 2, 2, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
-	$szMain->Add( $szStatus, 50, &Wx::wxEXPAND | &Wx::wxALL, 0 );
+	#$szMain->Add( $gauge, 50, &Wx::wxEXPAND | &Wx::wxALL, 0 );
+	$szMain->Add( 2, 2, 30, &Wx::wxEXPAND | &Wx::wxALL, 0 );
+	$szMain->Add( $szStatus, 70, &Wx::wxEXPAND | &Wx::wxALL, 0 );
 
 	# SAVE REFERENCES
-	$self->{"gauge"}         = $gauge;
+	#$self->{"gauge"}         = $gauge;
 	$self->{"percentageTxt"} = $percentageTxt;
 	$self->{"stateTxt"}      = $stateTxt;
 
@@ -317,10 +326,19 @@ sub __SetLayoutOptions {
 
 	# DEFINE CONTROLS
 
-	my $poolTypeTxt   = Wx::StaticText->new( $self, -1, "Type: " . $self->{"taskData"}->GetPoolType(),       [ -1, -1 ], [ 100, 1 ] );
-	my $poolSurfTxt   = Wx::StaticText->new( $self, -1, "Surf: " . $self->{"taskData"}->GetPoolSurface(),    [ -1, -1 ], [ 100, 1 ] );
-	my $poolTimeTxt   = Wx::StaticText->new( $self, -1, "Export: " . $self->{"taskData"}->GetPoolExported(), [ -1, -1 ], [ 100, 1 ] );
-	my $poolMasterTxt = Wx::StaticText->new( $self, -1, "Master: ",                                          [ -1, -1 ], [ 100, 1 ] );
+	my $poolTypeTxt   = Wx::StaticText->new( $self, -1, "type: " . $self->{"taskData"}->GetPoolType(),       [ -1, -1 ], [ 100, 1 ] );
+	my $poolSurfTxt   = Wx::StaticText->new( $self, -1, "surf: " . $self->{"taskData"}->GetPoolSurface(),    [ -1, -1 ], [ 100, 1 ] );
+	my $poolTimeTxt   = Wx::StaticText->new( $self, -1, "export: " . $self->{"taskData"}->GetPoolExported(), [ -1, -1 ], [ 100, 1 ] );
+	my $poolMasterTxt = Wx::StaticText->new( $self, -1, "master: -",                                          [ -1, -1 ], [ 100, 1 ] );
+	
+	$poolTypeTxt->SetForegroundColour( Wx::Colour->new( 100, 100, 100 ) );    # set text color
+	$poolSurfTxt->SetForegroundColour( Wx::Colour->new( 100, 100, 100 ) );    # set text color
+	$poolTimeTxt->SetForegroundColour( Wx::Colour->new( 100, 100, 100 ) );    # set text color
+	$poolMasterTxt->SetForegroundColour( Wx::Colour->new( 100, 100, 100 ) );    # set text color
+	
+#	my $fontLblBold = Wx::Font->new( 10, &Wx::wxFONTFAMILY_DEFAULT, &Wx::wxFONTSTYLE_NORMAL, &Wx::wxFONTWEIGHT_BOLD );
+#	
+#	$poolMasterTxt->SetFont($fontLblBold);
 
 #	$poolTypeTxt->Disable();
 #	$poolSurfTxt->Disable();
@@ -389,7 +407,7 @@ sub __SetLayoutResult {
 	$szRow2->Add( $toExportErrInd,  0,  &Wx::wxEXPAND | &Wx::wxALL, 0 );
 	$szRow2->Add( $toExportWarnInd, 0,  &Wx::wxEXPAND | &Wx::wxALL, 0 );
 
-	$szMain->Add( $szRow1, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
+	$szMain->Add( $szRow1, 0, &Wx::wxEXPAND | &Wx::wxTOP, 1 );
 	$szMain->Add( $szRow2, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
 
 	# SAVE REFERENCES
@@ -414,11 +432,11 @@ sub __SetLayoutBtns {
 
 	# DEFINE CONTROLS
 
-	my $btnToExport = Wx::Button->new( $self, -1, "Export",   &Wx::wxDefaultPosition, [ 60, 10 ] );
-	my $btnContinue = Wx::Button->new( $self, -1, "Continue", &Wx::wxDefaultPosition, [ 60, 10 ] );
-	my $btnAbort    = Wx::Button->new( $self, -1, "Abort",    &Wx::wxDefaultPosition, [ 60, 10 ] );
-	my $btnRestart  = Wx::Button->new( $self, -1, "Restart",  &Wx::wxDefaultPosition, [ 60, 10 ] );
-	my $btnRemove   = Wx::Button->new( $self, -1, "Remove",   &Wx::wxDefaultPosition, [ 60, 10 ] );
+	my $btnToExport = Wx::Button->new( $self, -1, "Export",   &Wx::wxDefaultPosition, [ 80, 10 ] );
+	my $btnContinue = Wx::Button->new( $self, -1, "Continue", &Wx::wxDefaultPosition, [ 80, 10 ] );
+	my $btnAbort    = Wx::Button->new( $self, -1, "Abort",    &Wx::wxDefaultPosition, [ 80, 10 ] );
+	my $btnRestart  = Wx::Button->new( $self, -1, "Restart",  &Wx::wxDefaultPosition, [ 80, 10 ] );
+	my $btnRemove   = Wx::Button->new( $self, -1, "Remove",   &Wx::wxDefaultPosition, [ 80, 10 ] );
 
 	$btnRemove->Disable();
 	$btnToExport->Disable();
@@ -434,13 +452,13 @@ sub __SetLayoutBtns {
 
 	# DEFINE STRUCTURE
 
-	$szCol1->Add( $btnToExport, 1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
-	$szCol1->Add( $btnRestart, 1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szCol1->Add( $btnToExport, 1, &Wx::wxEXPAND | &Wx::wxTOP, 1 );
+	$szCol1->Add( $btnRestart, 1, &Wx::wxEXPAND | &Wx::wxTOP, 1 );
 
-	$szCol2->Add( $btnContinue, 1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
-	$szCol2->Add( $btnAbort,    1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szCol2->Add( $btnContinue, 1, &Wx::wxEXPAND | &Wx::wxTOP, 1 );
+	$szCol2->Add( $btnAbort,    1, &Wx::wxEXPAND | &Wx::wxTOP, 1 );
 
-	$szCol3->Add( $btnRemove,  1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szCol3->Add( $btnRemove,  1, &Wx::wxEXPAND | &Wx::wxTOP, 1 );
 	
 
 	$szMain->Add( $szCol1, 0, &Wx::wxEXPAND | &Wx::wxLEFT, 15 );
