@@ -250,7 +250,13 @@ sub GetCompByLayer {
 
 	# when neplat, there is layer "c" but 0 comp
 	if ( $cuThick > 0 ) {
-		$comp = EtchOperation->GetCompensation( $cuThick, $class );
+		
+		# Detect if it is inner layer
+		my $inner = $layerName =~ /^v\d+$/ ? 1 : 0;
+		
+		 
+		
+		$comp = EtchOperation->GetCompensation( $cuThick, $class, $inner );
 	}
 	return $comp;
 
