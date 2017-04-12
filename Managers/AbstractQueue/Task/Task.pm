@@ -277,6 +277,17 @@ sub ProcessProgress {
 
 }
 
+
+sub ProcessTaskContinue {
+	my $self = shift;
+	my $data = shift;
+
+	my $unitId   = $data->{"unitId"};
+	 
+	my $unit = $self->_GetUnit($unitId);
+
+	$unit->ProcessTaskContinue($unitId);
+}
 #-------------------------------------------------------------------------------------------#
 #  Protected method
 #-------------------------------------------------------------------------------------------#

@@ -194,6 +194,19 @@ sub _AbortJob {
 
 }
 
+ 
+# Continue paused job, set special variable which thread periodically read for STOP/CONTINUE
+sub _ContinueJob {
+	my $self    = shift;
+	my $jobGUID = shift;
+	
+	$self->{"threadMngr"}->ContinueThread( $jobGUID );
+	
+	
+}
+
+
+
 sub _SetMaxServerCount {
 	my $self     = shift;
 	my $maxCount = shift;

@@ -14,8 +14,8 @@ use strict;
 use warnings;
 
 #local library
+use aliased 'Managers::AbstractQueue::Enums' => "EnumsAbstrQ";
 use aliased 'Programs::PoolMerge::Enums' => "EnumsPool";
-
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
@@ -35,20 +35,34 @@ sub new {
 sub Run {
 	my $self = shift;
 
-	for ( my $i = 0 ; $i < 5 ; $i++ ) {
+	for ( my $i = 0 ; $i < 15 ; $i++ ) {
 		
 		
 		sleep(1);
 
-		my $res = $self->_GetNewItem("recyklus $i");
-		$self->_OnItemResult($res);
+		
 
 		if ( $i == 0 ) {
 
 			my $resSpec = $self->_GetNewItem(EnumsPool->EventItemType_MASTER);
-			$resSpec->SetData("f67777");
+			$resSpec->SetData("2");
 			$self->_OnStatusResult($resSpec);
 		}
+		
+		if ( $i == 5 ) {
+			my $res = $self->_GetNewItem("recyklus $i");
+			$res->AddError("chyba");
+			$self->_OnItemResult($res);
+			
+			
+			my $resSpec = $self->_GetNewItem(EnumsAbstrQ->EventItemType_STOP);
+			$self->_OnStatusResult($resSpec);
+			return 0;
+		}
+		
+		
+		my $res = $self->_GetNewItem("recyklus $i");
+		$self->_OnItemResult($res);
 
 	}
 

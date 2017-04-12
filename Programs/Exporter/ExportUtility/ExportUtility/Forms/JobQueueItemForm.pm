@@ -233,8 +233,8 @@ sub __SetLayout {
 
 	# DEFINE EVENTS
 	Wx::Event::EVT_BUTTON( $btnProduce, -1, sub { $self->__OnProduce(@_) } );
-	Wx::Event::EVT_BUTTON( $btnAbort,   -1, sub { $self->__OnAbort(@_) } );
-	Wx::Event::EVT_BUTTON( $btnRemove,  -1, sub { $self->__OnRemove(@_) } );
+	Wx::Event::EVT_BUTTON( $btnAbort,   -1, sub { $self->_OnAbort(@_) } );
+	Wx::Event::EVT_BUTTON( $btnRemove,  -1, sub { $self->_OnRemove(@_) } );
 
 	# DEFINE STRUCTURE
 

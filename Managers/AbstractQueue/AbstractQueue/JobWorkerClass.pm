@@ -18,6 +18,7 @@ use aliased 'Helpers::GeneralHelper';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'CamHelpers::CamJob';
 use aliased 'CamHelpers::CamHelper';
+use aliased 'CamHelpers::CamStep';
 use aliased 'Packages::ItemResult::Enums' => 'ResultEnums';
 use aliased 'Managers::AbstractQueue::Enums';
 
@@ -59,8 +60,21 @@ sub Init {
 # Method open and checkou job
 sub _OpenJob {
 	my $self = shift;
+	my $step = shift;
+	
+	return 0;
 
+	unless ( $self->{"pcbId"} ) {
+		return 0;
+	}
 	my $inCAM = $self->{"inCAM"};
+
+	# choose step if not defined
+	unless ( defined $step ) {
+
+		my @names = CamStep->GetAllStepNames( $inCAM, $self->{"pcbId"} );
+		$step = $names[0];
+	}
 
 	my $result = 1;
 
@@ -84,7 +98,7 @@ sub _OpenJob {
 
 	$inCAM->HandleException(1);
 
-	CamHelper->SetStep( $self->{"inCAM"}, "panel" );
+	CamHelper->SetStep( $self->{"inCAM"}, $step );
 
 	$inCAM->HandleException(0);
 
@@ -123,7 +137,9 @@ sub _CloseJob {
 	my $self = shift;
 	my $save = shift;
 	
-	unless($self->{"pcbId"}){
+	return 0;
+
+	unless ( $self->{"pcbId"} ) {
 		return 0;
 	}
 
@@ -273,7 +289,6 @@ sub _SpecialEvent {
 	my $self       = shift;
 	my $unitId     = shift;
 	my $itemResult = shift;
- 
 
 	my %data1 = ();
 	$data1{"unitId"} = $unitId;

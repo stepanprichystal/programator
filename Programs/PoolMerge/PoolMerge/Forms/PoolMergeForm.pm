@@ -89,6 +89,25 @@ sub SetJobItemResult {
 
 }
 
+sub SetJobItemStopped {
+	my $self   = shift;
+	my $task = shift;
+
+	my $jobItem = $self->{"jobQueue"}->GetItem( $task->GetTaskId() );
+ 
+	$jobItem->SetJobItemStopped();
+}
+
+
+sub SetJobItemContinue {
+	my $self   = shift;
+	my $task = shift;
+
+	my $jobItem = $self->{"jobQueue"}->GetItem( $task->GetTaskId() );
+ 
+	$jobItem->SetJobItemContinue();
+}
+
 sub SetMasterJob {
 	my $self = shift;
 	my $task = shift;

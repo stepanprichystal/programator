@@ -288,6 +288,25 @@ sub __OnAbortJobClick {
 
 }
 
+
+sub __OnContinueJobClick {
+	my $self   = shift;
+	my $taskId = shift;
+
+	$self->_ContinueJob($taskId);
+
+}
+
+sub __OnRestartJobClick {
+	my $self   = shift;
+	my $taskId = shift;
+
+	#$self->_ContinueJob($taskId);
+
+}
+
+
+
 sub __OnClickExit {
 
 	my ( $self, $button ) = @_;
@@ -477,6 +496,8 @@ sub __SetLayoutJobsQueue {
 
 	$jobQueue->{"onRemove"}->Add( sub           { $self->__OnRemoveJobClick(@_) } );
 	$jobQueue->{"onAbort"}->Add( sub            { $self->__OnAbortJobClick(@_) } );
+	$jobQueue->{"onContinue"}->Add( sub            { $self->__OnContinueJobClick(@_) } );
+	$jobQueue->{"onRestart"}->Add( sub            { $self->__OnRestartJobClick(@_) } );
 	$jobQueue->{"onSelectItemChange"}->Add( sub { $self->__JobItemSeletedChange(@_) } );
 
 	#my $btnDefault    = Wx::Button->new( $statBox, -1, "Default settings",   &Wx::wxDefaultPosition, [ 110, 22 ] );

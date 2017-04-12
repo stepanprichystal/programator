@@ -63,31 +63,31 @@ sub new {
 # ITEM QUEUE HANDLERS
 # ==============================================
 
-sub __OnStop {
+sub _OnStop {
 	my $self = shift;
 
 	$self->{"onStop"}->Do( $self->{"taskId"} );
 }
 
-sub __OnContinue {
+sub _OnContinue {
 	my $self = shift;
 
 	$self->{"onContinue"}->Do( $self->{"taskId"} );
 }
 
-sub __OnAbort {
+sub _OnAbort {
 	my $self = shift;
 
 	$self->{"onAbort"}->Do( $self->{"taskId"} );
 }
 
-sub __OnRestart {
+sub _OnRestart {
 	my $self = shift;
 
 	$self->{"onRestart"}->Do( $self->{"taskId"} );
 }
 
-sub __OnRemove {
+sub _OnRemove {
 	my $self = shift;
 
 	$self->{"onRemove"}->Do( $self->{"taskId"} );

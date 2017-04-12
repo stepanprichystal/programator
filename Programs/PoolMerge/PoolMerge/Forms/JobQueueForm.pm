@@ -16,6 +16,7 @@ use warnings;
 #local library
 use aliased 'Programs::PoolMerge::PoolMerge::Forms::JobQueueItemForm';
 use aliased 'Packages::Events::Event';
+use aliased 'Managers::AbstractQueue::StyleConf';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -88,8 +89,8 @@ sub __SetLayout {
 
 	$self->SetItemGap(2);
 
-	$self->SetItemUnselectColor( Wx::Colour->new( 240, 240, 240 ) );
-	$self->SetItemSelectColor( Wx::Colour->new( 248, 217, 186 ) );
+	$self->SetItemUnselectColor( StyleConf->GetColor("clrItemUnSelected") );
+	$self->SetItemSelectColor(  StyleConf->GetColor("clrItemSelected"));
 
 }
 

@@ -223,6 +223,28 @@ sub __OnJobMessageEvtHandlerBase {
 		$self->{"form"}->SetJobQueueWarningCnt($task);
 
 	}
+	
+	# CATCH SPECIAL ITEM MESSAGE
+
+	if ( $messType eq Enums->EventType_SPECIAL ) {
+
+		if ( $data->{"itemId"} eq Enums->EventItemType_STOP ) {
+ 
+		}
+		elsif ( $data->{"itemId"} eq Enums->EventItemType_CONTINUE ) {
+
+ 			# 1) remove all results from result managers (items, group, task managers)
+ 			
+ 			$task->ProcessTaskContinue($data);
+ 			
+ 			 
+ 			# Refresh GUI - group table
+
+			$self->{"form"}->RefreshGroupTable($task);
+ 
+ 
+		} 
+	}
 }
 
 # First is called this function in base class, then is called handler in inherit class

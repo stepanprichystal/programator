@@ -4,4 +4,4 @@ clrGroupBackg =  242, 242, 242
 clrGroupHeader = 233, 236, 245
 clrGroupStatus = 215, 230, 251
 clrItemSelected = 215, 230, 251
-clrItemUnSelected = 245, 245, 245
+clrItemUnSelected = 242, 242, 242

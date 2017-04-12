@@ -631,13 +631,13 @@ sub __MoveWindowOut {
 	my $self = shift;
 	my $pid  = shift;
 
-		print STDERR "Searchin InCAM window PID $pid.\n";
+	print STDERR "Searchin InCAM window PID $pid.\n";
 
 	while (1) {
 
 		my @windows = FindWindowLike( 0, "$pid" );
 		for (@windows) {
-
+			print STDERR "windows hiden\n\n";
 			ShowWindow( $_, 0 );
 			SetWindowPos( $_, 0, -10000, -10000, 0, 0, 0 );
 

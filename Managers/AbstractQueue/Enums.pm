@@ -11,6 +11,14 @@ use constant {
 
 };
 
+ use constant {
+	EventItemType_STOP  => "itemTypeStop",
+	EventItemType_CONTINUE  => "itemTypeContinue" 
+	 
+
+};
+
+
 # used for merge and late split messages into one string
 use constant { ItemResult_DELIMITER => "#<%<" };
 

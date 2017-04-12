@@ -180,6 +180,20 @@ sub ProcessProgress {
 
 }
 
+
+sub ProcessTaskContinue {
+	my $self  = shift;
+	my $value = shift;
+ 
+	my $itemsErrorCnt = $self->{"groupData"}->{"itemsMngr"}->Clear();
+	my $groupErrorCnt = $self->{"groupData"}->{"groupMngr"}->Clear();
+	
+	$self->{"form"}->Clear();
+	
+	
+ 
+}
+
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#

@@ -45,7 +45,9 @@ sub RunTask {
 
 	# sort keys by nhash value "__UNITORDER__"
 
-	foreach my $unitId (@keys) {
+	for (my $i =0; $i < scalar(@keys); $i++){
+		
+		my $unitId = $keys[$i];
 
 		#tell group export start
 
@@ -84,8 +86,9 @@ sub RunTask {
 		if ( $self->_CheckStopThread() ) {
 
 			# sent message, thread is now continues..
-			my $itemRes = ItemResult->new( Enums->EventItemType_CONTINUE );
-			$self->_ItemSpecialEvent( $unitId, $itemRes );
+			my $itemRes = ItemResult->new( EnumsAbstrQ->EventItemType_CONTINUE );
+			$self->_SpecialEvent( $unitId, $itemRes );
+			$i--;
 
 		}
 
@@ -135,20 +138,25 @@ sub __ItemSpecialEvent {
 
 	# 1) Handle special events
 
-	if ( $itemResult->ItemId() eq Enums->EventItemType_STOP ) {
+	if ( $itemResult->ItemId() eq EnumsAbstrQ->EventItemType_STOP ) {
 
 		$self->_StopThread();
+		$self->_SpecialEvent( $unitId, $itemResult );
 
 	}
 	elsif ( $itemResult->ItemId() eq Enums->EventItemType_MASTER ) {
 
 		# save pcb id (important, because base class use it when export finish or for task stop/continue)
-		$self->{"pcbId"} = $itemResult->{"masterJobId"};
+		$self->{"pcbId"} = $itemResult->GetData();
+		$self->_SpecialEvent( $unitId, $itemResult );
+		
+		$self->_OpenJob();
+ 	
 	}
 
-	# 2) send specia event to abstract queue form
+	 
 
-	$self->_SpecialEvent( $unitId, $itemResult );
+	
 
 }
 

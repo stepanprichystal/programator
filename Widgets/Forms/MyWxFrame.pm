@@ -22,7 +22,7 @@ sub new {
 
 	$self->SetBackgroundColour($Widgets::Style::clrWhite);
 
-	my $btmIco = Wx::Bitmap->new( GeneralHelper->Root() . "/Resources/Images/Icon.bmp", &Wx::wxBITMAP_TYPE_BMP );
+	my $btmIco = Wx::Bitmap->new( GeneralHelper->Root() . "/Resources/Images/Icon_brown.bmp", &Wx::wxBITMAP_TYPE_BMP );
 	my $icon = Wx::Icon->new();
 	$icon->CopyFromBitmap($btmIco);
 	$self->SetIcon($icon);

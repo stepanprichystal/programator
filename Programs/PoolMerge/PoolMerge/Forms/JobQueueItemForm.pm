@@ -73,7 +73,6 @@ sub SetTaskResult {
 	my $aborted         = shift;
 	my $jobSentToExport = shift;    # tell if job was sent to toExport
 
- 
 	if ( $result eq EnumsGeneral->ResultType_FAIL ) {
 
 		$self->{"btnToExport"}->Disable();
@@ -90,13 +89,17 @@ sub SetTaskResult {
 		}
 
 	}
- 
+
 	unless ($aborted) {
 		$self->SetProgress(100);
 	}
 
+	# set buttons
+
 	$self->{"btnAbort"}->Disable();
 	$self->{"btnRemove"}->Enable();
+	$self->{"btnContinue"}->Disable();
+	$self->{"btnRestart"}->Enable();
 
 	$self->{"mergeRI"}->SetStatus($result);
 }
@@ -155,19 +158,39 @@ sub SetStatus {
 sub SetItemOrder {
 	my $self = shift;
 
-	my $pos = ( $self->GetPosition() + 1 ) . ")";
+	my $pos = ( $self->GetPosition() + 1 );
 
 	$self->{"orderTxt"}->SetLabel($pos);
 }
 
-
 sub SetMasterJob {
-	my $self = shift;
+	my $self      = shift;
 	my $masterJob = shift;
 
 	$self->{"poolMasterTxt"}->SetLabel("master: $masterJob");
 }
- 
+
+sub SetJobItemStopped {
+	my $self = shift;
+
+	# set buttons
+	$self->{"btnToExport"}->Disable();
+	$self->{"btnAbort"}->Disable();
+	$self->{"btnRemove"}->Enable();
+	$self->{"btnContinue"}->Enable();
+	$self->{"btnRestart"}->Enable();
+}
+
+sub SetJobItemContinue {
+	my $self = shift;
+
+	# set buttons
+	$self->{"btnToExport"}->Disable();
+	$self->{"btnAbort"}->Enable();
+	$self->{"btnRemove"}->Disable();
+	$self->{"btnContinue"}->Disable();
+	$self->{"btnRestart"}->Disable();
+}
 
 # ==============================================
 # ITEM QUEUE HANDLERS
@@ -180,6 +203,24 @@ sub __OnToExport {
 
 }
 
+sub __OnContinue {
+	my $self = shift;
+
+	# 1) Disable buttons
+	# set buttons
+	$self->{"btnToExport"}->Disable();
+	$self->{"btnAbort"}->Disable();
+	$self->{"btnRemove"}->Disable();
+	$self->{"btnContinue"}->Enable();
+	$self->{"btnRestart"}->Disable();
+	
+	$self->SetStatus("Preparing to continue ...");
+
+	# 2) call base handler
+	$self->_OnContinue(@_);
+
+}
+
 # ========================================================================
 # SET LAYOUT
 # ========================================================================
@@ -188,24 +229,24 @@ sub __SetLayout {
 
 	my $szMain  = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
 	my $orderSz = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
-	
-	my $szCol = Wx::BoxSizer->new(&Wx::wxVERTICAL);
+
+	my $szCol  = Wx::BoxSizer->new(&Wx::wxVERTICAL);
 	my $szRow1 = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
 	my $szRow2 = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
 
 	# DEFINE CONTROLS
-	
-	 
-	my $gauge = Wx::Gauge->new( $self, -1, 100, [ -1, -1 ], [ -1, 5 ], &Wx::wxGA_HORIZONTAL );
+
+	my $gauge = Wx::Gauge->new( $self, -1, 100, [ -1, -1 ], [ -1, 4 ], &Wx::wxGA_HORIZONTAL );
 	$gauge->SetValue(0);
 
 	my $orderPnl = Wx::Panel->new( $self, -1, [ -1, -1 ], [ 40, 45 ] );
 	$orderPnl->SetBackgroundColour( Wx::Colour->new( 83, 215, 253 ) );
-	my $orderTxt = Wx::StaticText->new( $orderPnl, -1, "0)", [ -1, -1 ] );
-	
-	my $fontLblBold = Wx::Font->new( 11, &Wx::wxFONTFAMILY_DEFAULT, &Wx::wxFONTSTYLE_NORMAL, &Wx::wxFONTWEIGHT_NORMAL );
-	
-	$orderTxt->SetFont( $fontLblBold );    # set text color
+	my $orderTxt = Wx::StaticText->new( $orderPnl, -1, "0", [ -1, -1 ] );
+
+	my $fontLblBold = Wx::Font->new( 11, &Wx::wxFONTFAMILY_DEFAULT, &Wx::wxFONTSTYLE_NORMAL, &Wx::wxFONTWEIGHT_BOLD );
+	$orderTxt->SetForegroundColour( Wx::Colour->new( 1, 87, 112 ) );    # set text color
+	$orderTxt->SetFont($fontLblBold);                                   # set text color
+
 	my $title    = $self->__SetLayoutTitle();
 	my $progress = $self->__SetLayoutProgres();
 	my $toptions = $self->__SetLayoutOptions();
@@ -216,29 +257,29 @@ sub __SetLayout {
 
 	$orderPnl->SetSizer($orderSz);
 
-	$orderSz->Add( $orderTxt, 0, &Wx::wxLEFT | &Wx::wxALIGN_CENTER_VERTICAL | &Wx::wxALIGN_CENTER, 10 );
+	$orderSz->Add( $orderTxt, 0, &Wx::wxLEFT | &Wx::wxALIGN_CENTER_VERTICAL | &Wx::wxALIGN_CENTER, 12 );
 	$szRow1->Add( $toptions, 0, &Wx::wxEXPAND | &Wx::wxLEFT, 5 );
 	$szRow1->Add( $self->_GetDelimiter($self), 0, &Wx::wxEXPAND );    # add delimiter
-	$szRow1->Add( $progress, 0, &Wx::wxEXPAND | &Wx::wxLEFT, 10);
-	$szRow1->Add( $self->_GetDelimiter(), 0, &Wx::wxEXPAND );    # add delimiter
-	
-	$szRow1->Add( $result, 0, &Wx::wxEXPAND | &Wx::wxLEFT, 5 );
+	$szRow1->Add( $progress, 0, &Wx::wxEXPAND | &Wx::wxLEFT, 10 );
+	$szRow1->Add( $self->_GetDelimiter(), 0, &Wx::wxEXPAND );         # add delimiter
+
+	$szRow1->Add( $result,  0, &Wx::wxEXPAND | &Wx::wxLEFT, 5 );
 	$szRow1->Add( $buttons, 0, &Wx::wxEXPAND | &Wx::wxLEFT, 0 );
-	$szRow2->Add( $gauge, 1, &Wx::wxEXPAND | &Wx::wxLEFT, 0 );
-	
-	$szCol->Add( $szRow1, 1,  &Wx::wxEXPAND);
-	$szCol->Add( $szRow2, 0, &Wx::wxEXPAND);
-	
+	$szRow2->Add( $gauge,   1, &Wx::wxEXPAND | &Wx::wxLEFT, 0 );
+
+	$szCol->Add( $szRow1, 1, &Wx::wxEXPAND );
+	$szCol->Add( $szRow2, 0, &Wx::wxEXPAND );
+
 	$szMain->Add( $orderPnl, 0, &Wx::wxEXPAND );
-	$szMain->Add( $title,    0, &Wx::wxEXPAND | &Wx::wxLEFT, 8  );
-	$szMain->Add( $self->_GetDelimiter(), 0, &Wx::wxEXPAND | &Wx::wxLEFT, 10  );    # add delimiter
-	$szMain->Add( $szCol, 1, &Wx::wxEXPAND);
- 
+	$szMain->Add( $title, 0, &Wx::wxEXPAND | &Wx::wxLEFT, 8 );
+	$szMain->Add( $self->_GetDelimiter(), 0, &Wx::wxEXPAND | &Wx::wxLEFT, 10 );    # add delimiter
+	$szMain->Add( $szCol, 1, &Wx::wxEXPAND );
+
 	$self->SetSizer($szMain);
 
 	# SAVE REFERENCES
 	$self->{"orderTxt"} = $orderTxt;
-	$self->{"gauge"}         = $gauge;
+	$self->{"gauge"}    = $gauge;
 
 	# Set default control content
 	$self->__SetMergeTime();
@@ -261,9 +302,8 @@ sub __SetLayoutTitle {
 	# DEFINE CONTROLS
 
 	my $pnlName = $self->{"taskData"}->GetPanelName();
-	
 
-	my $pnlIdTxt = Wx::StaticText->new( $self, -1,$self->{"taskData"}->GetPanelName(), [ -1, -1 ] );
+	my $pnlIdTxt = Wx::StaticText->new( $self, -1, $self->{"taskData"}->GetPanelName(), [ -1, -1 ] );
 	$pnlIdTxt->SetFont($fontLblBold);
 
 	my $pnlTimeTxt = Wx::StaticText->new( $self, -1, [ -1, -1 ] );
@@ -329,21 +369,21 @@ sub __SetLayoutOptions {
 	my $poolTypeTxt   = Wx::StaticText->new( $self, -1, "type: " . $self->{"taskData"}->GetPoolType(),       [ -1, -1 ], [ 100, 1 ] );
 	my $poolSurfTxt   = Wx::StaticText->new( $self, -1, "surf: " . $self->{"taskData"}->GetPoolSurface(),    [ -1, -1 ], [ 100, 1 ] );
 	my $poolTimeTxt   = Wx::StaticText->new( $self, -1, "export: " . $self->{"taskData"}->GetPoolExported(), [ -1, -1 ], [ 100, 1 ] );
-	my $poolMasterTxt = Wx::StaticText->new( $self, -1, "master: -",                                          [ -1, -1 ], [ 100, 1 ] );
-	
+	my $poolMasterTxt = Wx::StaticText->new( $self, -1, "master: -",                                         [ -1, -1 ], [ 100, 1 ] );
+
 	$poolTypeTxt->SetForegroundColour( Wx::Colour->new( 100, 100, 100 ) );    # set text color
 	$poolSurfTxt->SetForegroundColour( Wx::Colour->new( 100, 100, 100 ) );    # set text color
 	$poolTimeTxt->SetForegroundColour( Wx::Colour->new( 100, 100, 100 ) );    # set text color
-	$poolMasterTxt->SetForegroundColour( Wx::Colour->new( 100, 100, 100 ) );    # set text color
-	
-#	my $fontLblBold = Wx::Font->new( 10, &Wx::wxFONTFAMILY_DEFAULT, &Wx::wxFONTSTYLE_NORMAL, &Wx::wxFONTWEIGHT_BOLD );
-#	
-#	$poolMasterTxt->SetFont($fontLblBold);
+	$poolMasterTxt->SetForegroundColour( Wx::Colour->new( 100, 100, 100 ) );  # set text color
 
-#	$poolTypeTxt->Disable();
-#	$poolSurfTxt->Disable();
-#	$poolTimeTxt->Disable();
-#	$poolMasterTxt->Disable();
+	#	my $fontLblBold = Wx::Font->new( 10, &Wx::wxFONTFAMILY_DEFAULT, &Wx::wxFONTSTYLE_NORMAL, &Wx::wxFONTWEIGHT_BOLD );
+	#
+	#	$poolMasterTxt->SetFont($fontLblBold);
+
+	#	$poolTypeTxt->Disable();
+	#	$poolSurfTxt->Disable();
+	#	$poolTimeTxt->Disable();
+	#	$poolMasterTxt->Disable();
 
 	# DEFINE STRUCTURE
 
@@ -446,20 +486,19 @@ sub __SetLayoutBtns {
 	# DEFINE EVENTS
 	Wx::Event::EVT_BUTTON( $btnToExport, -1, sub { $self->__OnToExport(@_) } );
 	Wx::Event::EVT_BUTTON( $btnContinue, -1, sub { $self->__OnContinue(@_) } );
-	Wx::Event::EVT_BUTTON( $btnAbort,    -1, sub { $self->__OnAbort(@_) } );
-	Wx::Event::EVT_BUTTON( $btnRemove,   -1, sub { $self->__OnRemove(@_) } );
-	Wx::Event::EVT_BUTTON( $btnRestart,  -1, sub { $self->__OnRestart(@_) } );
+	Wx::Event::EVT_BUTTON( $btnAbort,    -1, sub { $self->_OnAbort(@_) } );
+	Wx::Event::EVT_BUTTON( $btnRemove,   -1, sub { $self->_OnRemove(@_) } );
+	Wx::Event::EVT_BUTTON( $btnRestart,  -1, sub { $self->_OnRestart(@_) } );
 
 	# DEFINE STRUCTURE
 
 	$szCol1->Add( $btnToExport, 1, &Wx::wxEXPAND | &Wx::wxTOP, 1 );
-	$szCol1->Add( $btnRestart, 1, &Wx::wxEXPAND | &Wx::wxTOP, 1 );
+	$szCol1->Add( $btnRestart,  1, &Wx::wxEXPAND | &Wx::wxTOP, 1 );
 
 	$szCol2->Add( $btnContinue, 1, &Wx::wxEXPAND | &Wx::wxTOP, 1 );
 	$szCol2->Add( $btnAbort,    1, &Wx::wxEXPAND | &Wx::wxTOP, 1 );
 
-	$szCol3->Add( $btnRemove,  1, &Wx::wxEXPAND | &Wx::wxTOP, 1 );
-	
+	$szCol3->Add( $btnRemove, 1, &Wx::wxEXPAND | &Wx::wxTOP, 1 );
 
 	$szMain->Add( $szCol1, 0, &Wx::wxEXPAND | &Wx::wxLEFT, 15 );
 	$szMain->Add( $szCol2, 0, &Wx::wxEXPAND | &Wx::wxLEFT, 1 );
@@ -516,12 +555,10 @@ sub __SetSentToExport {
 sub __SetSentToExportBtn {
 	my $self = shift;
 
-			$self->{"btnToExport"}->Disable();
-	
-	
+	$self->{"btnToExport"}->Disable();
+
 }
 
- 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#

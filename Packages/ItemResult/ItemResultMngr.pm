@@ -81,6 +81,18 @@ sub Clear {
 
 }
 
+sub RemoveItem{
+	my $self = shift;
+	my $itemId = shift;
+	
+	for( my $i = scalar(@{$self->{"itemResults"}}) -1; $i >= 0; $i--){
+		
+		if($self->{"itemResults"}->[$i]->GetItemId() eq $itemId){
+			splice @{$self->{"itemResults"}}, $i, 1;
+		}
+	}
+}
+
 sub Succes {
 	my $self = shift;
 

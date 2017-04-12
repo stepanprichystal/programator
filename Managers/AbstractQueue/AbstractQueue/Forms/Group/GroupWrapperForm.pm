@@ -13,7 +13,6 @@ use Wx;
 use Widgets::Style;
 
 #local library
- 
 
 use aliased 'Packages::Events::Event';
 use aliased 'Managers::AbstractQueue::AbstractQueue::Forms::Group::GroupItemForm';
@@ -46,7 +45,6 @@ sub new {
 	$self->__SetLayout();
 
 	#EVENTS
-
 
 	return $self;
 }
@@ -90,8 +88,31 @@ sub AddItem {
 	#$self->{"bodySizer"}->Layout();
 }
 
+# Remove all items and clear errors and warnings
+sub Clear {
+	my $self       = shift;
+	# Clear Items record
+
+	my @childs = $self->{"bodySizer"}->GetChildren();
+
+	for ( my $i = scalar(@childs) - 1 ; $i >= 0 ; $i-- ) {
+		
+
+		 my $item     = $childs[$i]->GetWindow();
+		 $self->{"bodySizer"}->Remove($i);
+
+		$item->Destroy();
+	}
+	
+	$self->{"bodySizer"}->Layout();
+
+	# Clear groups
+	@{ $self->{"groups"} } = ();
+
+}
+
 sub Init {
-	my $self      = shift;
+	my $self  = shift;
 	my $title = shift;
 
 	#my $groupBody = shift;
@@ -99,7 +120,6 @@ sub Init {
 	#my $title = UnitEnums->GetTitle($groupName);
 
 	$self->{"headerTxt"}->SetLabel($title);
-
 
 }
 
@@ -116,12 +136,12 @@ sub __SetLayout {
 
 	# DEFINE PANELS
 
-	$pnlHeader->SetBackgroundColour(  StyleConf->GetColor("clrGroupHeader") );
+	$pnlHeader->SetBackgroundColour( StyleConf->GetColor("clrGroupHeader") );
 
 	#$pnlHeader->SetBackgroundColour($Widgets::Style::clrLightGreen);
 
 	my $pnlBody = Wx::Panel->new( $self, -1 );
-	$pnlBody->SetBackgroundColour(  StyleConf->GetColor("clrGroupBackg"));
+	$pnlBody->SetBackgroundColour( StyleConf->GetColor("clrGroupBackg") );
 
 	# use Wx qw( EVT_MOUSE_EVENTS);
 	# use Wx qw(:sizer wxDefaultPosition wxDefaultSize wxDEFAULT_DIALOG_STYLE wxRESIZE_BORDER);

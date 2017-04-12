@@ -27,7 +27,7 @@ use aliased 'Programs::PoolMerge::Task::Task';
 use aliased 'Programs::PoolMerge::PoolMerge::Forms::PoolMergeForm';
 use aliased 'Programs::PoolMerge::Task::TaskData::DataParser';
 use aliased 'Managers::AsyncJobMngr::Enums'  => 'EnumsJobMngr';
-use aliased 'Managers::AbstractQueue::Enums' => "EnumsAbstQ";
+use aliased 'Managers::AbstractQueue::Enums' => "EnumsAbstrQ";
 use aliased 'Programs::PoolMerge::PoolMerge::JobWorkerClass';
 use aliased 'Programs::PoolMerge::Enums';
 
@@ -142,16 +142,18 @@ sub __OnJobMessageEvtHandler {
 
 	# CATCH SPECIAL ITEM MESSAGE
 
-	if ( $messType eq EnumsAbstQ->EventType_SPECIAL ) {
+	if ( $messType eq EnumsAbstrQ->EventType_SPECIAL ) {
 
-		if ( $data->{"itemId"} eq Enums->EventItemType_STOP ) {
+		if ( $data->{"itemId"} eq EnumsAbstrQ->EventItemType_STOP ) {
 
-			$self->{"form"}->SetJobItemStatus( $taskId, "Pool merging is paused..." );
+			$self->{"form"}->SetJobItemStatus( $taskId, "Pool merging is paused ..." );
+			$self->{"form"}->SetJobItemStopped($task);
 
 		}
-		elsif ( $data->{"itemId"} eq Enums->EventItemType_CONTINUE ) {
+		elsif ( $data->{"itemId"} eq EnumsAbstrQ->EventItemType_CONTINUE ) {
 
-			$self->{"form"}->SetJobItemStatus( $taskId, "Pool merging is paused..." );
+			$self->{"form"}->SetJobItemStatus( $taskId, "Running ..." );
+			$self->{"form"}->SetJobItemContinue($task);
 
 		}
 		elsif ( $data->{"itemId"} eq Enums->EventItemType_MASTER ) {
@@ -162,7 +164,7 @@ sub __OnJobMessageEvtHandler {
 	}
 
 }
-
+ 
 # First is called this function in base class, then is called this handler
 sub __OnCloseExporter {
 	my $self = shift;
