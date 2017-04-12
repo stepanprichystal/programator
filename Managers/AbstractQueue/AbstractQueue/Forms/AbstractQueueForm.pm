@@ -4,7 +4,7 @@
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 
-our $stylePath = undef; # global variable, which set path to configuration file
+our $stylePath = undef;    # global variable, which set path to configuration file
 
 package Managers::AbstractQueue::AbstractQueue::Forms::AbstractQueueForm;
 use base 'Managers::AsyncJobMngr::AsyncJobMngr';
@@ -32,7 +32,6 @@ use aliased 'Managers::AsyncJobMngr::Enums' => 'EnumsJobMngr';
 use aliased 'Managers::AsyncJobMngr::ServerMngr::ServerInfo';
 use aliased 'Managers::AbstractQueue::Helper';
 use aliased 'Managers::AbstractQueue::StyleConf';
- 
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -43,7 +42,7 @@ sub new {
 	my $runMode   = shift;
 	my $parent    = shift;
 	my $title     = shift;
-	my $name     = shift;
+	my $name      = shift;
 	my $dimension = shift;
 
 	if ( defined $parent && $parent == -1 ) {
@@ -56,21 +55,20 @@ sub new {
 	# Properties
 
 	$self->{"messageMngr"} = MessageMngr->new($title);
- 
+
 	# Events
 
 	$self->{"onClick"}       = Event->new();
 	$self->{"onRemoveJob"}   = Event->new();
 	$self->{"onSetJobQueue"} = Event->new();    # raise during layyout initialization to get "job queue" gui
- 
 
 	return $self;
 }
 
-sub Init{
-	my $self = shift;
+sub Init {
+	my $self    = shift;
 	my $mainFrm = $self->__SetLayout();
-	
+
 }
 
 sub AddVersion {
@@ -85,7 +83,6 @@ sub AddVersion {
 # ======================================================
 # Public method
 # ======================================================
-
 
 # Add all necessery GUI forms, when new job is added
 sub AddNewTaskGUI {
@@ -105,8 +102,7 @@ sub AddNewTaskGUI {
 	my $page     = $notebook->AddPage($taskId);
 
 	my $groupTableForm = GroupTableForm->new( $page->GetParent() );
- 
-	 
+
 	$groupTableForm->InitGroupTable( \@units );
 
 	$page->AddContent($groupTableForm);
@@ -178,8 +174,6 @@ sub ActivateForm {
 	}
 }
 
- 
-
 # ============================================================
 # Mehtods for update job queue items
 # ============================================================
@@ -203,8 +197,6 @@ sub SetJobItemProgress {
 
 	$jobItem->SetProgress($value);
 }
-
-
 
 sub SetJobQueueErrorCnt {
 	my $self = shift;
@@ -288,7 +280,6 @@ sub __OnAbortJobClick {
 
 }
 
-
 sub __OnContinueJobClick {
 	my $self   = shift;
 	my $taskId = shift;
@@ -304,8 +295,6 @@ sub __OnRestartJobClick {
 	#$self->_ContinueJob($taskId);
 
 }
-
-
 
 sub __OnClickExit {
 
@@ -383,17 +372,16 @@ sub __OnShowConsoleChecked {
 # ========================================================================================== #
 
 sub __SetLayout {
-	my $self    = shift;
-	
+	my $self = shift;
+
 	# Set path of style configuration file
 	my $className = ref $self;
 	my @arr = split( "::", $className );
-	@arr =  @arr[0..(scalar(@arr)-4)];
-	my $packagePath = join( "\\", @arr);
- 
+	@arr = @arr[ 0 .. ( scalar(@arr) - 4 ) ];
+	my $packagePath = join( "\\", @arr );
+
 	$main::stylePath = GeneralHelper->Root() . "\\" . $packagePath . "\\Config\\Style.txt";
- 
- 
+
 	my $mainFrm = $self->{"mainFrm"};
 
 	# DEFINE SIZERS
@@ -411,7 +399,7 @@ sub __SetLayout {
 	# DEFINE PANELS
 
 	my $pnlBtns = Wx::Panel->new( $mainFrm, -1 );
-	$pnlBtns->SetBackgroundColour( StyleConf->GetColor("clrStatusBar"));
+	$pnlBtns->SetBackgroundColour( StyleConf->GetColor("clrStatusBar") );
 
 	# DEFINE CONTROLS
 
@@ -433,7 +421,7 @@ sub __SetLayout {
 
 	my $jobsQueueStatBox = $self->__SetLayoutJobsQueue($page1);
 
-	my $settingsStatBox       = $self->__SetLayoutInCAMSettings($page2);
+	my $settingsStatBox     = $self->__SetLayoutInCAMSettings($page2);
 	my $taskSettingsStatBox = $self->__SetLayoutAbstractQueueSettings($page2);
 
 	my $groupsStatBox = $self->__SetLayoutGroups($page1);
@@ -457,14 +445,13 @@ sub __SetLayout {
 	$szPage1->Add( $szRow1, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 	$szPage1->Add( $szRow2, 1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 
-	$szPage2->Add( $settingsStatBox,       1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szPage2->Add( $settingsStatBox,     1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 	$szPage2->Add( $taskSettingsStatBox, 1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 
 	$szMain->Add( $nb,      1, &Wx::wxEXPAND );
 	$szMain->Add( $pnlBtns, 0, &Wx::wxEXPAND );
 
 	# REGISTER EVENTS
-
 
 	# SAVE NECESSARY CONTROLS
 
@@ -487,7 +474,7 @@ sub __SetLayoutJobsQueue {
 	my $statBox = Wx::StaticBox->new( $parent, -1, 'Jobs queue' );
 	my $szStatBox = Wx::StaticBoxSizer->new( $statBox, &Wx::wxVERTICAL );
 
-	my @dimension = (500, 200);
+	my @dimension = ( 500, 200 );
 	my $jobQueue = undef;
 
 	$self->{"onSetJobQueue"}->Do( $parent, \@dimension, \$jobQueue );
@@ -496,8 +483,8 @@ sub __SetLayoutJobsQueue {
 
 	$jobQueue->{"onRemove"}->Add( sub           { $self->__OnRemoveJobClick(@_) } );
 	$jobQueue->{"onAbort"}->Add( sub            { $self->__OnAbortJobClick(@_) } );
-	$jobQueue->{"onContinue"}->Add( sub            { $self->__OnContinueJobClick(@_) } );
-	$jobQueue->{"onRestart"}->Add( sub            { $self->__OnRestartJobClick(@_) } );
+	$jobQueue->{"onContinue"}->Add( sub         { $self->__OnContinueJobClick(@_) } );
+	$jobQueue->{"onRestart"}->Add( sub          { $self->__OnRestartJobClick(@_) } );
 	$jobQueue->{"onSelectItemChange"}->Add( sub { $self->__JobItemSeletedChange(@_) } );
 
 	#my $btnDefault    = Wx::Button->new( $statBox, -1, "Default settings",   &Wx::wxDefaultPosition, [ 110, 22 ] );
