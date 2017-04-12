@@ -19,7 +19,8 @@ use aliased 'Programs::PoolMerge::UnitEnums';
 
 use aliased 'Enums::EnumsGeneral';
 use aliased 'Programs::PoolMerge::Groups::MergeGroup::MergeUnit';
- 
+use aliased 'Programs::PoolMerge::Groups::RoutGroup::RoutUnit';
+use aliased 'Programs::PoolMerge::Groups::OutputGroup::OutputUnit';
 
 use aliased 'Connectors::HeliosConnector::HegMethods';
  
@@ -232,6 +233,15 @@ sub __GetUnitClass {
 	if ( $unitId eq UnitEnums->UnitId_MERGE ) {
 
 		$unit = MergeUnit->new($unitId, $jobId, $title);
+
+	}
+	elsif ( $unitId eq UnitEnums->UnitId_ROUT ) {
+
+		$unit = RoutUnit->new($unitId, $jobId, $title);
+
+	}elsif ( $unitId eq UnitEnums->UnitId_OUTPUT ) {
+
+		$unit = OutputUnit->new($unitId, $jobId, $title);
 
 	}
 	

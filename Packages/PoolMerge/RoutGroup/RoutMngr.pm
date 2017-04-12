@@ -3,7 +3,7 @@
 # Description: Manager responsible for AOI files creation
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::PoolMerge::MergeGroup::MergeMngr;
+package Packages::PoolMerge::RoutGroup::RoutMngr;
 use base('Packages::ItemResult::ItemEventMngr');
 
 use Class::Interface;
@@ -37,28 +37,20 @@ sub new {
 sub Run {
 	my $self = shift;
 
-	for ( my $i = 0 ; $i < 10 ; $i++ ) {
+	for ( my $i = 0 ; $i < 5 ; $i++ ) {
 
 		sleep(1);
 
-		if ( $i == 0 ) {
-
-			my $resSpec = $self->_GetNewItem( EnumsPool->EventItemType_MASTER );
-			$resSpec->SetData("2");
-			$self->_OnStatusResult($resSpec);
-		}
+		 
 
 		if ( $i == 2 ) {
 
 			my $str = FileHelper->ReadAsString('c:\Perl\site\lib\TpvScripts\Scripts\test');
-			
-			my $t = substr($str, 0, 1);
-			$t = substr($str, 1, 1);
 
-			if (substr($str, 0, 1)) {
+			 if (substr($str, 1, 1)) {
 
 				my $res = $self->_GetNewItem("recyklus $i");
-				$res->AddError("chyba");
+				$res->AddError("chyba rout");
 				$self->_OnItemResult($res);
 
 				my $resSpec = $self->_GetNewItem( EnumsAbstrQ->EventItemType_STOP );
@@ -66,15 +58,8 @@ sub Run {
 				return 0;
 			}
 		}
-		
-		
-		my $res = $self->_GetNewItem("recyklus $i");
-		
-		if($i == 3){
-			#$res->AddError("error where stoping thread is nonsens");
-		}
 
-		
+		my $res = $self->_GetNewItem("recyklus rout $i");
 		$self->_OnItemResult($res);
 
 	}
@@ -86,7 +71,7 @@ sub TaskItemsCount {
 
 	my $totalCnt = 0;
 
-	$totalCnt += 10;    # getting sucesfully AOI manager
+	$totalCnt += 5;    # getting sucesfully AOI manager
 
 	return $totalCnt;
 

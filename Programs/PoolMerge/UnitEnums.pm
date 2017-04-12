@@ -5,7 +5,7 @@ package Programs::PoolMerge::UnitEnums;
 use constant {
 			   UnitId_MERGE => "merge",
 			   UnitId_ROUT  => "rout",
-			   UnitId_EXPORT => "export"
+			   UnitId_OUTPUT => "output"
 			 
 };
 
@@ -23,7 +23,7 @@ sub GetTitle{
 		
 		$title = "Rout creation";
 		
-	}elsif($code eq UnitId_EXPORT){
+	}elsif($code eq UnitId_OUTPUT){
 		
 		$title = "Export prepare";
 		

@@ -11,6 +11,7 @@ use warnings;
 use XML::Simple;
 use List::MoreUtils qw(uniq);
 use File::Basename;
+use Storable qw(dclone);
 
 #local library
 use aliased 'Programs::PoolMerge::Task::TaskData::GroupData';
@@ -20,6 +21,7 @@ use aliased 'Helpers::FileHelper';
 use aliased 'Programs::PoolMerge::Task::TaskData::TaskData';
 use aliased 'Managers::AsyncJobMngr::Enums' => "EnumsJobMngr";
 use aliased 'Programs::PoolMerge::UnitEnums';
+
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
@@ -35,51 +37,55 @@ sub new {
 sub GetTaskData {
 	my $self = shift;
 	my $path = shift;
-	 
-	
+
 	# 1) init gorup data
 	my $groupData = $self->__GetGroupData($path);
-	
+
 	# 2) task data
 	my $taskData = TaskData->new();
-	
+
 	my ( $sec, $min, $hour ) = localtime();
 	my $time = sprintf( "%02d:%02d", $hour, $min );
-	
-	
-	$taskData->{"settings"}->{"time"}         = $time;
-	$taskData->{"settings"}->{"mode"}         = EnumsJobMngr->TaskMode_ASYNC;    # synchronousTask/ asynchronousTask
-	
+
+	$taskData->{"settings"}->{"time"} = $time;
+	$taskData->{"settings"}->{"mode"} = EnumsJobMngr->TaskMode_ASYNC;    # synchronousTask/ asynchronousTask
+
 	# parse file name and store info
-	
+
 	my $fileName = basename($path);
-	my ($panelName, $type, $surface, $exportTime) = $fileName =~ /(pan\d+)_([\d-]+)-(\w+)_([\d-]+)/; 
-	
+	my ( $panelName, $type, $surface, $exportTime ) = $fileName =~ /(pan\d+)_([\d-]+)-(\w+)_([\d-]+)/;
+
 	$panelName =~ s/pan/panel /i;
-	
-	$taskData->{"settings"}->{"panelName"}    = $panelName;     
-	$taskData->{"settings"}->{"poolType"}    = $type;     
-	$taskData->{"settings"}->{"poolSurface"}    = $surface;     
-	$taskData->{"settings"}->{"poolExported"}    = $exportTime;  
-	
-	
+
+	$taskData->{"settings"}->{"panelName"}    = $panelName;
+	$taskData->{"settings"}->{"poolType"}     = $type;
+	$taskData->{"settings"}->{"poolSurface"}  = $surface;
+	$taskData->{"settings"}->{"poolExported"} = $exportTime;
+
 	#my @mandatory = (UnitEnums->UnitId_MERGE, UnitEnums->UnitId_ROUT, UnitEnums->UnitId_EXPORT);
-	my @mandatory = (UnitEnums->UnitId_MERGE);
-	$taskData->{"settings"}->{"mandatoryUnits"} = \@mandatory;    # units, which has to be processed
-	
-	foreach my $unit (@mandatory){
-		
-		$taskData->{"units"}->{$unit} = $groupData;
+	my @mandatory = ( UnitEnums->UnitId_MERGE, UnitEnums->UnitId_ROUT, UnitEnums->UnitId_OUTPUT );
+	$taskData->{"settings"}->{"mandatoryUnits"} = \@mandatory;              # units, which has to be processed
+
+	for ( my $i = 0 ; $i < scalar(@mandatory) ; $i++ ) {
+
+		my $unit = $mandatory[$i];
+			
+		my $gData = dclone($groupData);
+
+		$taskData->{"units"}->{$unit} = $gData;
+
+		$taskData->{"units"}->{$unit}->{"data"}->{"__UNITORDER__"} = $i
+
 	}
-	
+
 	return $taskData;
- 
+
 }
 
-sub __GetGroupData{
+sub __GetGroupData {
 	my $self = shift;
 	my $path = shift;
-	
+
 	# 1) open file
 
 	my $xmlF = FileHelper->Open($path);
@@ -134,11 +140,9 @@ sub __GetGroupData{
 	}
 
 	$groupData->SetChildJobs( \@jobInf );
-	
-	
-	
-	return $groupData;		
-	
+
+	return $groupData;
+
 }
 
 #-------------------------------------------------------------------------------------------#

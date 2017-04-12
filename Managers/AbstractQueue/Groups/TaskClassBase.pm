@@ -9,6 +9,7 @@ use strict;
 use warnings;
 
 use aliased 'Packages::Events::Event';
+use aliased 'Managers::AbstractQueue::Enums' => "EnumsAbstrQ";
  
 #-------------------------------------------------------------------------------------------#
 #  NC task, all layers, all machines..
@@ -27,7 +28,6 @@ sub new {
 	# (because computing progressbar value)
 	$self->{"itemsCount"}          = 0;  
 	
-	# Count of already tasked items
 	$self->{"processedItemsCount"} = 0;
 
 	$self->{"inCAM"}      = undef;
@@ -59,7 +59,7 @@ sub Run {
 sub GetProgressValue {
 	my $self       = shift;
 	my $itemResult = shift;
-
+	
 	my $val = $self->{"processedItemsCount"} / $self->{"itemsCount"} * 100;	
 }
 
@@ -75,6 +75,12 @@ sub _OnItemResultHandler {
 sub _OnStatusResultHandler {
 	my $self       = shift;
 	my $itemResult = shift;
+	
+	# Delete items rocessed counter, because, group will be processed from begining
+	if($itemResult->{"itemId"} eq EnumsAbstrQ->EventItemType_STOP){
+		
+		$self->{"processedItemsCount"} = 0;
+	}
  
 	$self->{"onStatusResult"}->Do($itemResult);
 }

@@ -43,15 +43,21 @@ sub RunTask {
 	my @keys      = $self->{"data"}->GetOrderedUnitKeys();
 	my $mode      = $self->{"data"}->GetTaskMode();
 
-	# sort keys by nhash value "__UNITORDER__"
+	# 1) Init groups
 
-	for (my $i =0; $i < scalar(@keys); $i++){
-		
-		my $unitId = $keys[$i];
+	for ( my $i = 0 ; $i < scalar(@keys) ; $i++ ) {
 
-		#tell group export start
-
+		my $unitId   = $keys[$i];
 		my $taskData = $unitsData{$unitId};
+
+		$self->__InitGroup( $unitId, $taskData );
+	}
+
+	# 2) Process groups
+
+	for ( my $i = 0 ; $i < scalar(@keys) ; $i++ ) {
+
+		my $unitId = $keys[$i];
 
 		# Event when group export start
 		$self->_GroupTaskEvent( EnumsAbstrQ->EventType_GROUP_START, $unitId );
@@ -61,7 +67,7 @@ sub RunTask {
 		eval {
 
 			# Process group
-			$self->__ProcessGroup( $unitId, $taskData );
+			$self->__ProcessGroup($unitId);
 		};
 		if ( my $e = $@ ) {
 
@@ -91,9 +97,13 @@ sub RunTask {
 			$i--;
 
 		}
+		else {
 
-		# Event when group export end
-		$self->_GroupTaskEvent( EnumsAbstrQ->EventType_GROUP_END, $unitId );
+			# Event when group export end
+			$self->_GroupTaskEvent( EnumsAbstrQ->EventType_GROUP_END, $unitId );
+
+		}
+
 	}
 
 	#close job
@@ -104,7 +114,7 @@ sub RunTask {
 	}
 }
 
-sub __ProcessGroup {
+sub __InitGroup {
 	my $self     = shift;
 	my $unitId   = shift;
 	my $taskData = shift;    # export data for specific group
@@ -125,9 +135,17 @@ sub __ProcessGroup {
 	# b) "master" - pass master job id, which was choosen
 	$taskClass->{"onStatusResult"}->Add( sub { $self->__ItemSpecialEvent( $taskClass, $unitId, @_ ) } );
 
+}
+
+sub __ProcessGroup {
+	my $self   = shift;
+	my $unitId = shift;
+
+	# Get right export class and init
+	my $taskClass = $self->{"taskClass"}->{$unitId};
+
 	# Final export group
 	$taskClass->Run();
-
 }
 
 sub __ItemSpecialEvent {
@@ -149,14 +167,10 @@ sub __ItemSpecialEvent {
 		# save pcb id (important, because base class use it when export finish or for task stop/continue)
 		$self->{"pcbId"} = $itemResult->GetData();
 		$self->_SpecialEvent( $unitId, $itemResult );
-		
+
 		$self->_OpenJob();
- 	
+
 	}
-
-	 
-
-	
 
 }
 

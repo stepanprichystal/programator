@@ -46,7 +46,7 @@ sub __SetLayout {
 
 	#define panels
 
-	$self->SetBackgroundColour(  StyleConf->GetColor("clrGroupStatus")  );    #gray
+	$self->SetBackgroundColour( StyleConf->GetColor("clrGroupStatus") );    #gray
 
 	# DEFINE CONTROLS
 
@@ -68,7 +68,6 @@ sub __SetLayout {
 	$groupWarnInd->AddMenuItem( "Group", $self->{"resultGroupMngr"} );
 	$groupWarnInd->AddMenuItem( "Items", $self->{"resultItemMngr"} );
 
-	 
 	# SET EVENTS
 
 	# BUILD STRUCTURE OF LAYOUT
@@ -97,13 +96,14 @@ sub SetErrorCnt {
 	my $cnt  = shift;
 
 	$self->{"groupErrInd"}->SetErrorCnt($cnt);
-	
-	
 
 	if ( $cnt > 0 ) {
 		$self->{"groupErrInd"}->Show(1);
 		$self->__SetColor("red");
 
+	}
+	else {
+		$self->{"groupErrInd"}->Show(0);
 	}
 
 	#$self->{"szMain"}->Layout();
@@ -120,6 +120,9 @@ sub SetWarningCnt {
 		$self->{"groupWarnInd"}->Show(1);
 		$self->__SetColor("red");
 
+	}
+	else {
+		$self->{"groupWarnInd"}->Show(0);
 	}
 
 	#$self->{"szMain"}->Layout();
@@ -143,6 +146,16 @@ sub SetResult {
 
 }
 
+sub Clear{
+	my $self  = shift;
+	
+	$self->__SetColor("default");
+	
+	$self->SetErrorCnt(0);
+	$self->SetWarningCnt(0);
+	
+}
+
 sub __SetColor {
 	my $self  = shift;
 	my $color = shift;
@@ -155,6 +168,10 @@ sub __SetColor {
 	elsif ( $color eq "red" ) {
 
 		$self->SetBackgroundColour( Wx::Colour->new( 255, 204, 204 ) );    #red
+	}
+	elsif ( $color eq "default" ) {
+		
+		$self->SetBackgroundColour( StyleConf->GetColor("clrGroupStatus") );    # light gray
 	}
 
 	$self->Refresh();

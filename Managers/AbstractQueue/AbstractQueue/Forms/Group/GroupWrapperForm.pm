@@ -91,6 +91,7 @@ sub AddItem {
 # Remove all items and clear errors and warnings
 sub Clear {
 	my $self       = shift;
+	
 	# Clear Items record
 
 	my @childs = $self->{"bodySizer"}->GetChildren();
@@ -105,7 +106,11 @@ sub Clear {
 	}
 	
 	$self->{"bodySizer"}->Layout();
-
+	
+ 	# Clear status
+	$self->{"groupStatus"}->Clear();
+ 
+ 
 	# Clear groups
 	@{ $self->{"groups"} } = ();
 

@@ -91,6 +91,10 @@ sub SetErrorCnt {
 		my $err = Wx::Bitmap->new( $self->{"pathEnable"}, &Wx::wxBITMAP_TYPE_PNG );
 		$self->{"statBtmError"}->SetBitmap($err);
 
+	}else{
+		
+		my $err = Wx::Bitmap->new( $self->{"pathDisable"}, &Wx::wxBITMAP_TYPE_PNG );
+		$self->{"statBtmError"}->SetBitmap($err);
 	}
 
 	$self->{"szMain"}->Layout();
