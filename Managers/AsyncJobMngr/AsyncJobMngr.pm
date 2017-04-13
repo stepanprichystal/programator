@@ -6,6 +6,9 @@
 # Properly Exiting after job done, exiting after Force exit by user
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
+
+our $stylePath = undef;    # global variable, which set path to configuration file
+
 package Managers::AsyncJobMngr::AsyncJobMngr;
 use base 'Wx::App';
 
@@ -30,7 +33,7 @@ use aliased 'Managers::MessageMngr::MessageMngr';
 use aliased 'Managers::AsyncJobMngr::Enums';
 use aliased 'Widgets::Forms::MyTaskBarIcon';
 use aliased 'Managers::AsyncJobMngr::SettingsHelper';
-
+use aliased 'Managers::AbstractQueue::AppConf';
 #use aliased 'Programs::AbstractQueue::ThreadBase';
 use aliased 'Packages::Events::Event';
 
@@ -39,23 +42,25 @@ use aliased 'Packages::Events::Event';
 #-------------------------------------------------------------------------------------------#
 
 sub new {
-	my $self      = shift;
+	my $class      = shift;
 	my $runMode   = shift;
 	my $parent    = shift;
 	my $title     = shift;
 	my $name      = shift;    # name which is used in tray menu, etc (Export, Pool export etc.. this is only arbitrary string)
-	my $dimension = shift;
+	
 
 	# Get name of caller package
 	my ( $packageFull, $filename, $line ) = caller;
 
-	$self = {};
+	my $self = {};
 
 	unless ($parent) {
 		$self = Wx::App->new( \&OnInit );
 	}
 
 	bless($self);
+	
+	$self->__SetConfPath($class);
 
 	# PROPERTIES
 
@@ -79,7 +84,7 @@ sub new {
 
 	$self->{'onJomMngrClose'} = Event->new();    # reise right imidiatelly before destroy this app
 
-	my $mainFrm = $self->__SetLayout( $parent, $title, $name, $dimension );
+	my $mainFrm = $self->__SetLayout( $parent, $title, $name );
 
 	$self->__RunTimers();
 
@@ -165,7 +170,7 @@ sub _AbortJob {
 
 	my $job = ${ $self->{"jobs"} }[$i];
 
-	if ( $job->{"state"} eq Enums->JobState_RUNNING ) {
+	if ( $job->{"state"} eq Enums->JobState_RUNNING || $job->{"state"} eq Enums->JobState_RESTARTING ) {
 
 		# first exit running thread
 		$self->{"threadMngr"}->ExitThread( $job->{"jobGUID"} );
@@ -194,18 +199,43 @@ sub _AbortJob {
 
 }
 
- 
+
+# Two type of restarting
+
+# If job is not DONE do Force restart by user. How it works:
+# 1) set job stat - restarting
+# 2) do standard abort
+# 3) then after abort, end event is catched and job exit type is changed from exit FORCE to FORCERESTART
+
+# If job is already DONE, only send message gob state change to ExitType_FORCERESTART
+sub _RestartJob {
+	my $self    = shift;
+	my $jobGUID = shift;
+
+	my $jobInf = $self->__GetJobInfo($jobGUID);
+
+	if ( $jobInf->{"state"} ne Enums->JobState_DONE ) {
+
+		# 1)  set job stat - restarting
+		$self->__SetJobState( $jobGUID, Enums->JobState_RESTARTING );
+
+		# 2) do standard abort
+		$self->_AbortJob($jobGUID);
+	}
+	else {
+		#reise event
+		$self->{'onJobStateChanged'}->Do( $jobGUID, Enums->JobState_DONE, Enums->ExitType_FORCERESTART );
+	}
+}
+
 # Continue paused job, set special variable which thread periodically read for STOP/CONTINUE
 sub _ContinueJob {
 	my $self    = shift;
 	my $jobGUID = shift;
-	
-	$self->{"threadMngr"}->ContinueThread( $jobGUID );
-	
-	
+
+	$self->{"threadMngr"}->ContinueThread($jobGUID);
+
 }
-
-
 
 sub _SetMaxServerCount {
 	my $self     = shift;
@@ -312,7 +342,18 @@ sub __ThreadDoneHandler {
 
 	my $jobInfo = $self->__GetJobInfo( $d{"jobGUID"} );
 	$self->{"serverMngr"}->ReturnServerPort( $jobInfo->{"port"} );
-	$self->__RemoveJob( $d{"jobGUID"} );
+	
+	#$self->__RemoveJob( $d{"jobGUID"} );
+	
+	
+	# Send message, thread exited FORCE or FORCERESTART or SUCCES
+	# do difference between exit FORCE - by aborting bz user and exit FORCE because of restart
+	if ( $exitType eq Enums->ExitType_FORCE && $jobInfo->{"state"} eq Enums->JobState_RESTARTING ) {
+		$exitType = Enums->ExitType_FORCERESTART;
+	}
+	
+	# Set new job state DONE
+	$self->__SetJobState( $jobGUID, Enums->JobState_DONE );
 
 	#reise event
 	$self->{'onJobStateChanged'}->Do( $jobGUID, Enums->JobState_DONE, $exitType );
@@ -415,22 +456,23 @@ sub __TakeFromQueueHandler {
 #  Private methods
 #-------------------------------------------------------------------------------------------#
 
-
 sub __SetLayout {
 	my $self      = shift;
 	my $parent    = shift;
 	my $title     = shift;
 	my $name      = shift;
-	my @dimension = @{ shift(@_) };
+	
+	my @dimension = ( AppConf->GetValue("windowWidth"), AppConf->GetValue("windowHeight") );
+	 
 
 	#main formDefain forms
 	my $mainFrm = MyWxFrame->new(
-		$parent,                      # parent window
-		-1,                           # ID -1 means any
-		$title,                       # title
+		$parent,    # parent window
+		-1,         # ID -1 means any
+		$title,     # title
 
-		[ -1, -1 ],                   # window position
-		\@dimension,                  # size   &Wx::wxSTAY_ON_TOP |
+		[ -1, -1 ], # window position
+		\@dimension,    # size   &Wx::wxSTAY_ON_TOP |
 		&Wx::wxSTAY_ON_TOP | &Wx::wxSYSTEM_MENU | &Wx::wxCAPTION | &Wx::wxRESIZE_BORDER | &Wx::wxMINIMIZE_BOX | &Wx::wxMAXIMIZE_BOX | &Wx::wxCLOSE_BOX
 	);
 
@@ -636,6 +678,21 @@ sub __GetJobInfo {
 	}
 }
 
+
+# Set path (global variable) to app configuration file
+sub __SetConfPath {
+	my $self = shift;
+	my $caller = shift;
+ 
+	# Set path of style configuration file
+	#my $className = ref $self;
+	my @arr = split( "::", $caller );
+	@arr = @arr[ 0 .. ( scalar(@arr) - 4 ) ];
+	my $packagePath = join( "\\", @arr );
+
+	$main::stylePath = GeneralHelper->Root() . "\\" . $packagePath . "\\Config\\Config.txt";
+	
+}
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#

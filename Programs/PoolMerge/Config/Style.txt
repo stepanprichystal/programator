@@ -1,7 +1,0 @@
-clrStatusBar =  238, 224, 208 
-clrGroupTableBackg =  255, 255, 255
-clrGroupBackg =  242, 242, 242
-clrGroupHeader = 247, 225, 187 
-clrGroupStatus = 250, 233, 192
-clrItemSelected = 250, 233, 192
-clrItemUnSelected = 242, 242, 242

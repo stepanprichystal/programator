@@ -15,7 +15,7 @@ use warnings;
 
 #local library
 use aliased 'Packages::Events::Event';
-use aliased 'Managers::AbstractQueue::StyleConf';
+use aliased 'Managers::AbstractQueue::AppConf';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -80,8 +80,8 @@ sub __SetLayout {
 
 	$self->SetItemGap(2);
  
-	$self->SetItemUnselectColor( StyleConf->GetColor("clrGroupBackg") );
-	$self->SetItemSelectColor( StyleConf->GetColor("clrItemSelected") );
+	$self->SetItemUnselectColor( AppConf->GetColor("clrGroupBackg") );
+	$self->SetItemSelectColor( AppConf->GetColor("clrItemSelected") );
 
 	# SET EVENTS
 

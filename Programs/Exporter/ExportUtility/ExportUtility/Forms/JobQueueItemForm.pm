@@ -175,7 +175,7 @@ sub SetStatus {
 sub SetItemOrder {
 	my $self = shift;
 
-	my $pos = ( $self->GetPosition() + 1 ) . ")";
+	my $pos = ( $self->GetPosition() + 1 );
 
 	$self->{"orderTxt"}->SetLabel($pos);
 }
@@ -205,7 +205,11 @@ sub __SetLayout {
 
 	my $orderPnl = Wx::Panel->new( $self, -1, [ -1, -1 ], [ 40, 40 ] );
 	$orderPnl->SetBackgroundColour( Wx::Colour->new( 255, 200, 10 ) );
-	my $orderTxt = Wx::StaticText->new( $orderPnl, -1, "0)", [ -1, -1 ] );
+	my $orderTxt = Wx::StaticText->new( $orderPnl, -1, "0", [ -1, -1 ] );
+	
+	my $fontLblBold = Wx::Font->new( 11, &Wx::wxFONTFAMILY_DEFAULT, &Wx::wxFONTSTYLE_NORMAL, &Wx::wxFONTWEIGHT_BOLD );
+	$orderTxt->SetForegroundColour( Wx::Colour->new( 98, 75, 0 ) );    # set text color
+	$orderTxt->SetFont($fontLblBold);                                   # set text color
 
 	my $title = $self->__SetLayoutTitle();
 
@@ -240,7 +244,7 @@ sub __SetLayout {
 
 	$szMain->Add( 0, 40, 0 );
 
-	$orderSz->Add( $orderTxt, 0, &Wx::wxLEFT | &Wx::wxALIGN_CENTER_VERTICAL | &Wx::wxALIGN_CENTER, 10 );
+	$orderSz->Add( $orderTxt, 0, &Wx::wxLEFT | &Wx::wxALIGN_CENTER_VERTICAL | &Wx::wxALIGN_CENTER, 15 );
 
 	$szMain->Add( $orderPnl, 0, &Wx::wxEXPAND );
 	$szMain->Add( $title,    0, &Wx::wxEXPAND );

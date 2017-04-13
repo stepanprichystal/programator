@@ -25,7 +25,7 @@ use aliased 'Helpers::GeneralHelper';
 #use aliased 'Managers::AbstractQueue::AbstractQueue::Groups::NC5Unit';
 use aliased 'Managers::AbstractQueue::Unit::Units';
 use aliased 'Managers::AbstractQueue::TaskResultMngr';
-use aliased 'Connectors::HeliosConnector::HegMethods';
+#use aliased 'Connectors::HeliosConnector::HegMethods';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods, requested by IUnit interface

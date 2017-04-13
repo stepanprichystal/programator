@@ -19,7 +19,7 @@ use File::Copy;
 use aliased 'Helpers::GeneralHelper';
 use aliased 'Enums::EnumsPaths';
 use aliased 'Enums::EnumsGeneral';
-use aliased 'Connectors::HeliosConnector::HegMethods';
+#use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'Helpers::FileHelper';
 use aliased 'Managers::MessageMngr::MessageMngr';
 use aliased 'Managers::AbstractQueue::Task::TaskStatus::TaskStatus';
@@ -103,6 +103,12 @@ sub __OnJobStateChanged {
 	my $task     = $self->_GetTaskById($taskId);
 	my $taskData = $task->GetTaskData();
 
+	if ( defined $taskStateDetail
+		&& ( $taskStateDetail eq EnumsJobMngr->ExitType_FORCE || $taskStateDetail eq EnumsJobMngr->ExitType_FORCERESTART ) )
+	{
+		return;
+	}
+
 	if ( $taskState eq EnumsJobMngr->JobState_DONE ) {
 
 		# Send to export if
@@ -158,13 +164,13 @@ sub __OnJobMessageEvtHandler {
 		}
 		elsif ( $data->{"itemId"} eq Enums->EventItemType_MASTER ) {
 
-			$self->{"form"}->SetMasterJob($task, $data->{"data"});
+			$self->{"form"}->SetMasterJob( $task, $data->{"data"} );
 
 		}
 	}
 
 }
- 
+
 # First is called this function in base class, then is called this handler
 sub __OnCloseExporter {
 	my $self = shift;
@@ -217,6 +223,18 @@ sub __OnSentToExportClick {
 	# get results, set gui
 }
 
+# When job item is restarted, we need set task object, for creating new job item
+sub __OnSetNewTaskHandler {
+	my $self     = shift;
+	my $jobId    = shift;
+	my $taskData = shift;
+	my $task     = shift;
+
+	my $status = TaskStatus->new(undef);
+
+	$$task = Task->new( $jobId, $taskData, $status );
+}
+
 #update gui
 
 # Handler responsible for reading DIR which contain files with export settings
@@ -258,6 +276,7 @@ sub __CheckFilesHandler {
 
 			my %newFile = ( "name" => $fileName, "path" => $filePath, "created" => $fileCreated );
 			push( @newFiles, \%newFile );
+ 
 		}
 	}
 
@@ -311,6 +330,8 @@ sub __SetHandlers {
 
 	$self->{"form"}->{'onClick'}->Add( sub        { $self->__OnClick(@_) } );
 	$self->{"form"}->{'onSentToExport'}->Add( sub { $self->__OnSentToExportClick(@_) } );
+
+	$self->{'onSetNewTask'}->Add( sub { $self->__OnSetNewTaskHandler(@_) } );
 
 	# Set worker method
 	$self->{"form"}->_SetThreadWorker( sub { $self->JobWorker(@_) } );

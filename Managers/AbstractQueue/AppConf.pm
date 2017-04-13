@@ -2,7 +2,7 @@
 # Description: Script slouzi pro vypocet hlubky vybrusu pri navadeni na vrtackach.
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Managers::AbstractQueue::StyleConf;
+package Managers::AbstractQueue::AppConf;
 
 #3th party library
 use strict;
@@ -40,6 +40,16 @@ sub GetColor {
 	return $clr;
 }
 
+sub GetValue{
+	my $self = shift;
+	my $key  = shift;
+
+	my $val =  $self->__GetVal($key);
+	
+	$val =~ s/^\s+|\s+$//g;
+	
+	return $val;
+}
 
 sub __GetVal{
 	my $self = shift;
@@ -52,6 +62,8 @@ sub __GetVal{
 	}
 
 	my @lines = @{ FileHelper->ReadAsLines($main::stylePath) };
+	
+	@lines = grep { $_ !~ /^#/ } @lines;
  
 	foreach my $l (@lines){
 		my @arr = split("=", $l);
@@ -61,41 +73,7 @@ sub __GetVal{
 	}
  
 }
-
-sub CheckRunningInstance {
-	my $self       = shift;
-	my $scriptName = shift;                                        # name of running script
-
-	my $exist = 0;
-
-	my $procName;
-	my $args;
-	my $p    = Win32::Process::List->new();
-	my $pi   = Win32::Process::Info->new();
-	my %list = $p->GetProcesses();
-
-	foreach my $pid ( sort { $a <=> $b } keys %list ) {
-		$procName = $list{$pid};
-
-		if ( $procName =~ /^perl.exe/i ) {
-
-			my $procInfo = $pi->GetProcInfo($pid);
-			if ( defined $procInfo && scalar( @{$procInfo} ) ) {
-
-				$args = @{$procInfo}[0]->{"CommandLine"};
-
-				if ( defined $args && $args =~ /RunAbstractQueueScript.pl/ ) {
-
-					$exist = 1;
-					last;
-				}
-			}
-		}
-
-	}
-
-	return $exist;
-}
+ 
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

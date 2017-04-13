@@ -18,7 +18,7 @@ use Widgets::Style;
 use aliased 'Enums::EnumsGeneral';
 use aliased 'Helpers::GeneralHelper';
 use aliased 'Widgets::Forms::ErrorIndicator::ErrorIndicator';
-use aliased 'Managers::AbstractQueue::StyleConf';
+use aliased 'Managers::AbstractQueue::AppConf';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -46,7 +46,7 @@ sub __SetLayout {
 
 	#define panels
 
-	$self->SetBackgroundColour( StyleConf->GetColor("clrGroupStatus") );    #gray
+	$self->SetBackgroundColour( AppConf->GetColor("clrGroupStatus") );    #gray
 
 	# DEFINE CONTROLS
 
@@ -171,7 +171,7 @@ sub __SetColor {
 	}
 	elsif ( $color eq "default" ) {
 		
-		$self->SetBackgroundColour( StyleConf->GetColor("clrGroupStatus") );    # light gray
+		$self->SetBackgroundColour( AppConf->GetColor("clrGroupStatus") );    # light gray
 	}
 
 	$self->Refresh();

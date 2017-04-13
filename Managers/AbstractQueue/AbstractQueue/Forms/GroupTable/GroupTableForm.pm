@@ -16,7 +16,7 @@ use Wx qw(:sizer wxDefaultPosition wxDefaultSize wxDEFAULT_DIALOG_STYLE wxRESIZE
 
 use Widgets::Style;
 use aliased 'Managers::AbstractQueue::AbstractQueue::Forms::GroupTable::GroupColumnForm';
-use aliased 'Managers::AbstractQueue::StyleConf';
+use aliased 'Managers::AbstractQueue::AppConf';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -146,7 +146,7 @@ sub __SetLayout {
 
 	my $szMain = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
 
-	$self->SetBackgroundColour( StyleConf->GetColor("clrGroupTableBackg") );
+	$self->SetBackgroundColour( AppConf->GetColor("clrGroupTableBackg") );
 
 	# DEFINE SIZERS
 	my @columns = ();
@@ -203,7 +203,7 @@ sub __SetLayout {
 			my $sepPnl = Wx::Panel->new( $self, -1 );
 			$sepPnl->SetBackgroundColour( Wx::Colour->new( 200, 200, 200 ) );
 			$sepPnl->SetSizer($sepSz);
-			$sepSz->Add( 5, 5, 0, &Wx::wxEXPAND );
+			$sepSz->Add( 2, 2, 0, &Wx::wxEXPAND );
 
 			$szMain->Add( $sepPnl, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );    #
 

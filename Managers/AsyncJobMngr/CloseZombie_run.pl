@@ -26,7 +26,7 @@ Win32::Process::Create( $processObj,
                          "." ) ||  die "Failed to create process.\n";
                          
                          
-         print "zacatek cekani";
+     
          
          $processObj->Wait(INFINITE);
          

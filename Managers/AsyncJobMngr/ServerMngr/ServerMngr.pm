@@ -22,6 +22,7 @@ use aliased 'Packages::InCAM::InCAM';
 use aliased 'Managers::AsyncJobMngr::Helper';
 use aliased 'Managers::AsyncJobMngr::Enums';
 use aliased 'Managers::AsyncJobMngr::ServerMngr::ServerInfo';
+use aliased 'Managers::AbstractQueue::AppConf';
 
 #use aliased 'Enums::EnumsGeneral';
 #-------------------------------------------------------------------------------------------#
@@ -47,10 +48,12 @@ sub new {
 	$self->{"maxCntUser"}      = -1;      # max count of server set by user
 	$self->{"maxCntTotal"}     = 9;       # max allowed number of server
 	$self->{"actualCntRuning"} = -1;
-	$self->{"startPort"}       = 1000;    # Port for ExportUtility start from 1000, Port for ExportChecker start from 2000,
+	$self->{"startPort"}       = AppConf->GetValue("portStart") ;    # Port for ExportUtility start from 1000, Port for ExportChecker start from 2000,
 
 	$self->{"destroyOnDemand"} = 1;       # close server only on demand, not immediately
 	$self->{"destroyDelay"}    = -1;      # destroy server after 12s of WAITING state
+	
+	$self->__CloseZombie(undef, 0);
 
 	$self->__InitServers();
 
@@ -173,6 +176,7 @@ sub PrepareServerPort {
 				my $port = $s->{"port"};
 
 				my $worker = threads->create( sub { $self->__CreateServer( $port, $jobGUID ) } );
+				$worker->detach();
 
 				last;
 			}
@@ -482,7 +486,7 @@ sub __CreateServer {
 	my $pidServer;
 
 	#test on zombified server and close
-	$self->__CloseZombie($freePort);
+	$self->__CloseZombie($freePort, 1);
 
 	#start new server on $freePort
 
@@ -598,6 +602,7 @@ sub __CreateServerConn {
 	# first test of connection
 	$inCAM = InCAM->new( "remote" => 'localhost', "port" => $port );
 
+	my $sleep = int(rand(5) + 2);
 	# next tests of connecton. Wait, until server script is not ready
 	while ( !defined $inCAM || !$inCAM->{"socketOpen"} || !$inCAM->{"connected"} ) {
 		if ($inCAM) {
@@ -606,16 +611,24 @@ sub __CreateServerConn {
 
 			Helper->Print("CLIENT(parent): PID: $$  try connect to server port: $port....failed\n");
 		}
-		sleep(2);
+		sleep($sleep);
 
 		$inCAM = InCAM->new( "remote" => 'localhost', "port" => $port );
 	}
+	
+ 
+	
+	print STDERR "Connected, next test if server ready\n";
 
 	#server seems ready, try send message and get server pid
 	my $pidServer = $inCAM->ServerReady();
+	
+	print STDERR "Server ready, next client finish\n";
 
 	if ($pidServer) {
 		$inCAM->ClientFinish();
+		
+		print STDERR "Client finish, end of thread\n";
 
 		return $pidServer;
 	}
@@ -677,6 +690,11 @@ sub __CloseZombie {
 
 	my $self = shift;
 	my $port = shift;
+	my $wait = shift;
+	
+	unless(defined $port){
+		$port = "-";
+	}
 
 	my $processObj;
 	my $perl = $Config{perlpath};
@@ -685,7 +703,10 @@ sub __CloseZombie {
 							1, NORMAL_PRIORITY_CLASS, "." )
 	  || die "Failed to create CloseZombie process.\n";
 
+
+	if($wait){
 	$processObj->Wait(INFINITE);
+	}
 
 }
 

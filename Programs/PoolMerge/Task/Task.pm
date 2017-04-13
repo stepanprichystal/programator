@@ -22,7 +22,7 @@ use aliased 'Programs::PoolMerge::Groups::MergeGroup::MergeUnit';
 use aliased 'Programs::PoolMerge::Groups::RoutGroup::RoutUnit';
 use aliased 'Programs::PoolMerge::Groups::OutputGroup::OutputUnit';
 
-use aliased 'Connectors::HeliosConnector::HegMethods';
+#use aliased 'Connectors::HeliosConnector::HegMethods';
  
  
 use aliased 'Managers::AbstractQueue::TaskResultMngr';
@@ -176,27 +176,27 @@ sub SentToExport {
 
 	# set state HOTOVO-zadat
 
-	eval {
-		my $orderRef = HegMethods->GetPcbOrderNumber( $self->{"jobId"} );
-		my $orderNum = $self->{"jobId"} . "-" . $orderRef;
-		
-		my $succ     = HegMethods->UpdatePcbOrderState( $orderNum, "HOTOVO-zadat");
-		
-	 
-		$self->{"taskStatus"}->DeleteStatusFile();
-		$self->{"sentToExport"} = 1;
-	};
-
-	if ( my $e = $@ ) {
-
-		 # set status hotovo-yadat fail
-		 my $sentToExportMngr = $self->{"toExportResultMngr"};
-		 my $item = $sentToExportMngr->GetNewItem( "Set state HOTOVO-zadat", EnumsGeneral->ResultType_FAIL );
-
-		$item->AddError("Set state HOTOVO-zadat failed, try it again. Detail: $e\n");
-		$sentToExportMngr->AddItem($item);
-
-	}
+#	eval {
+#		my $orderRef = HegMethods->GetPcbOrderNumber( $self->{"jobId"} );
+#		my $orderNum = $self->{"jobId"} . "-" . $orderRef;
+#		
+#		my $succ     = HegMethods->UpdatePcbOrderState( $orderNum, "HOTOVO-zadat");
+#		
+#	 
+#		$self->{"taskStatus"}->DeleteStatusFile();
+#		$self->{"sentToExport"} = 1;
+#	};
+#
+#	if ( my $e = $@ ) {
+#
+#		 # set status hotovo-yadat fail
+#		 my $sentToExportMngr = $self->{"toExportResultMngr"};
+#		 my $item = $sentToExportMngr->GetNewItem( "Set state HOTOVO-zadat", EnumsGeneral->ResultType_FAIL );
+#
+#		$item->AddError("Set state HOTOVO-zadat failed, try it again. Detail: $e\n");
+#		$sentToExportMngr->AddItem($item);
+#
+#	}
 
 }
 

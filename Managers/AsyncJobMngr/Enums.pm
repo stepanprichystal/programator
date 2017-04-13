@@ -2,8 +2,9 @@
 package Managers::AsyncJobMngr::Enums;
 
 use constant {
-	ExitType_SUCCES => 'Succes',
-	ExitType_FORCE => 'Force',
+	ExitType_SUCCES     => 'Succes',
+	ExitType_FORCE      => 'Force',
+	ExitType_FORCERESTART => 'ForceRestart',
 
 };
 
@@ -12,6 +13,7 @@ use constant {
 			   JobState_WAITINGQUEUE => "waitingQueue",
 			   JobState_WAITINGPORT  => "waitingPort",
 			   JobState_ABORTING     => "aborting",
+			   JobState_RESTARTING   => "restarting",
 			   JobState_DONE         => "done"
 };
 
@@ -29,11 +31,9 @@ use constant {
 
 };
 
-
- use constant {
+use constant {
 			   TaskMode_SYNC  => "synchronousTask",
-			   TaskMode_ASYNC  => "asynchronousTask"
+			   TaskMode_ASYNC => "asynchronousTask"
 };
- 
 
 1;

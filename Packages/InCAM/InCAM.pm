@@ -82,6 +82,7 @@ package Packages::InCAM::InCAM;
 use Exporter;
 use Socket;
 use Time::HiRes;
+use IO::Socket;
 
 #my library
 use aliased 'Packages::InCAM::Helper';
@@ -294,7 +295,7 @@ sub openSocket {
 
 	#print STDERR "\n\nBEFORESOCKET OPEN 2 %%%%%%%%%%%%%%%%%%  %%%%%%%%%%\n\n";
 
-	use IO::Socket;
+	
 
 	#print STDERR "\n\nBEFORESOCKET OPEN 3 %%%%%%%%%%%%%%%%%%  %%%%%%%%%%\n\n";
 

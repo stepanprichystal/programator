@@ -4,7 +4,7 @@
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 
-our $stylePath = undef;    # global variable, which set path to configuration file
+
 
 package Managers::AbstractQueue::AbstractQueue::Forms::AbstractQueueForm;
 use base 'Managers::AsyncJobMngr::AsyncJobMngr';
@@ -31,7 +31,7 @@ use aliased 'Widgets::Forms::MyWxBookCtrlPage';
 use aliased 'Managers::AsyncJobMngr::Enums' => 'EnumsJobMngr';
 use aliased 'Managers::AsyncJobMngr::ServerMngr::ServerInfo';
 use aliased 'Managers::AbstractQueue::Helper';
-use aliased 'Managers::AbstractQueue::StyleConf';
+use aliased 'Managers::AbstractQueue::AppConf';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -43,13 +43,12 @@ sub new {
 	my $parent    = shift;
 	my $title     = shift;
 	my $name      = shift;
-	my $dimension = shift;
 
 	if ( defined $parent && $parent == -1 ) {
 		$parent = undef;
 	}
 
-	my $self = $class->SUPER::new( $runMode, $parent, $title, $name, $dimension );
+	my $self = $class->SUPER::new( $runMode, $parent, $title, $name );
 	bless($self);
 
 	# Properties
@@ -288,11 +287,15 @@ sub __OnContinueJobClick {
 
 }
 
+
+# Two type of restarting
+# 1) job is not DONE (job is stoped). Need abort job first, tahn restart
+# 2) job is DONE, only restart job
 sub __OnRestartJobClick {
 	my $self   = shift;
 	my $taskId = shift;
 
-	#$self->_ContinueJob($taskId);
+	$self->_RestartJob($taskId);
 
 }
 
@@ -368,19 +371,19 @@ sub __OnShowConsoleChecked {
 }
 
 # ========================================================================================== #
+#  PRIVATE HELPER METHODS
+# ========================================================================================== #
+
+
+
+# ========================================================================================== #
 #  BUILD GUI SECTION
 # ========================================================================================== #
 
 sub __SetLayout {
 	my $self = shift;
 
-	# Set path of style configuration file
-	my $className = ref $self;
-	my @arr = split( "::", $className );
-	@arr = @arr[ 0 .. ( scalar(@arr) - 4 ) ];
-	my $packagePath = join( "\\", @arr );
 
-	$main::stylePath = GeneralHelper->Root() . "\\" . $packagePath . "\\Config\\Style.txt";
 
 	my $mainFrm = $self->{"mainFrm"};
 
@@ -399,7 +402,7 @@ sub __SetLayout {
 	# DEFINE PANELS
 
 	my $pnlBtns = Wx::Panel->new( $mainFrm, -1 );
-	$pnlBtns->SetBackgroundColour( StyleConf->GetColor("clrStatusBar") );
+	$pnlBtns->SetBackgroundColour( AppConf->GetColor("clrStatusBar") );
 
 	# DEFINE CONTROLS
 
@@ -474,7 +477,7 @@ sub __SetLayoutJobsQueue {
 	my $statBox = Wx::StaticBox->new( $parent, -1, 'Jobs queue' );
 	my $szStatBox = Wx::StaticBoxSizer->new( $statBox, &Wx::wxVERTICAL );
 
-	my @dimension = ( 500, 200 );
+	my @dimension = ( 500, AppConf->GetValue("queueHeight")  );
 	my $jobQueue = undef;
 
 	$self->{"onSetJobQueue"}->Do( $parent, \@dimension, \$jobQueue );
@@ -524,7 +527,7 @@ sub __SetLayoutInCAMSettings {
 	my $runningCntValSb = Wx::StaticText->new( $parent, -1, "0", [ -1, -1 ] );
 	my $waitingCntValSb = Wx::StaticText->new( $parent, -1, "0", [ -1, -1 ] );
 
-	my @inCamCount = ( 0, 1, 2, 3, 4, 5, 6, 7, 8 );
+	my @inCamCount = ( 0, 1, 2, 3 );
 	my $maxCountCb = Wx::ComboBox->new( $parent, -1, $sett{"maxCntUser"}, [ -1, -1 ], [ 200, 22 ], \@inCamCount, &Wx::wxCB_READONLY );
 
 	my @inCamDelay = ( 0.2, 0.5, 1, 2, 5, 10, 20, 40 );

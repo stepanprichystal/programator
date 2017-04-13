@@ -176,7 +176,7 @@ sub SetJobItemStopped {
 	# set buttons
 	$self->{"btnToExport"}->Disable();
 	$self->{"btnAbort"}->Disable();
-	$self->{"btnRemove"}->Enable();
+	$self->{"btnRemove"}->Disable();
 	$self->{"btnContinue"}->Enable();
 	$self->{"btnRestart"}->Enable();
 }
@@ -482,6 +482,7 @@ sub __SetLayoutBtns {
 	$btnToExport->Disable();
 	$btnContinue->Disable();
 	$btnRestart->Disable();
+	 
 
 	# DEFINE EVENTS
 	Wx::Event::EVT_BUTTON( $btnToExport, -1, sub { $self->__OnToExport(@_) } );

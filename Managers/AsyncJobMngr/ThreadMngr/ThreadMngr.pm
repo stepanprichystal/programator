@@ -188,8 +188,9 @@ sub __CreateThread {
 	# return $$;
 
 	my $worker = threads->create( sub { $self->__WorkerMethod( $jobGUID, $port, $pcbId, $pidInCAM, $externalServer, $stopVar ) } );
-
+ 	
 	$worker->set_thread_exit_only(1);    # tell only this child thread will be exited
+	#$worker->detach();
 
 	return $worker->tid();
 }
@@ -257,7 +258,8 @@ sub __CleanUpAndExit {
 	}
 
 	$inCAM->ClientFinish();
-
+	
+ 
 	my %resExit : shared = ();
 	$resExit{"jobGUID"}  = $jobGUID;
 	$resExit{"thrId"}    = threads->tid();
@@ -279,6 +281,7 @@ sub __ThreadEnded {
 			if ( defined $thrObj ) {
 				print STDERR "\ndetach START\n";
 				#$thrObj->detach(); # mozna zpusobuje free wrong pool
+				 $thrObj = undef;
 				print STDERR "\ndetach\n";
 			}
 

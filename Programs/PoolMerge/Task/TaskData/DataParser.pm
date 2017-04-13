@@ -63,7 +63,7 @@ sub GetTaskData {
 	$taskData->{"settings"}->{"poolExported"} = $exportTime;
 
 	#my @mandatory = (UnitEnums->UnitId_MERGE, UnitEnums->UnitId_ROUT, UnitEnums->UnitId_EXPORT);
-	my @mandatory = ( UnitEnums->UnitId_MERGE, UnitEnums->UnitId_ROUT, UnitEnums->UnitId_OUTPUT );
+	my @mandatory = ( UnitEnums->UnitId_MERGE  );
 	$taskData->{"settings"}->{"mandatoryUnits"} = \@mandatory;              # units, which has to be processed
 
 	for ( my $i = 0 ; $i < scalar(@mandatory) ; $i++ ) {

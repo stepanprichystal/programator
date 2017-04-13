@@ -3,6 +3,9 @@
 # Description: Core of Abstract queue program. Manage whole process of tasking.
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
+
+
+
 package Managers::AbstractQueue::AbstractQueue::AbstractQueue;
 
 #3th party library
@@ -18,18 +21,18 @@ use File::Copy;
 use aliased 'Helpers::GeneralHelper';
 use aliased 'Enums::EnumsPaths';
 use aliased 'Enums::EnumsGeneral';
-use aliased 'Connectors::HeliosConnector::HegMethods';
+#use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'Helpers::FileHelper';
 use aliased 'Managers::MessageMngr::MessageMngr';
 
 use aliased 'Managers::AbstractQueue::Task::Task';
 use aliased 'Managers::AbstractQueue::AbstractQueue::Forms::AbstractQueueForm';
- 
- 
-use aliased 'Managers::AsyncJobMngr::Enums'           => 'EnumsJobMngr';
+
+use aliased 'Managers::AsyncJobMngr::Enums' => 'EnumsJobMngr';
 use aliased 'Managers::AbstractQueue::AbstractQueue::JobWorkerClass';
 use aliased 'Managers::AbstractQueue::Enums';
 use aliased 'Packages::InCAM::InCAM';
+use aliased 'Packages::Events::Event';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -59,6 +62,10 @@ sub new {
 
 	$self->__SetHandlersBase();
 
+	# events
+
+	$self->{'onSetNewTask'} = Event->new();
+
 	return $self;
 }
 
@@ -73,7 +80,7 @@ sub __OnJobStateChangedBase {
 	my $taskState       = shift;
 	my $taskStateDetail = shift;
 
-	my $task       = $self->_GetTaskById($taskId);
+	my $task     = $self->_GetTaskById($taskId);
 	my $taskData = $task->GetTaskData();
 
 	my $status = "";
@@ -113,6 +120,13 @@ sub __OnJobStateChangedBase {
 			$aborted = 1;
 
 			$status = "Job task aborted by user.";
+
+		}
+		elsif ( $taskStateDetail eq EnumsJobMngr->ExitType_FORCERESTART ) {
+
+			$self->__RestartTask($task);
+
+			return;
 
 		}
 		else {
@@ -223,27 +237,25 @@ sub __OnJobMessageEvtHandlerBase {
 		$self->{"form"}->SetJobQueueWarningCnt($task);
 
 	}
-	
+
 	# CATCH SPECIAL ITEM MESSAGE
 
 	if ( $messType eq Enums->EventType_SPECIAL ) {
 
 		if ( $data->{"itemId"} eq Enums->EventItemType_STOP ) {
- 
+
 		}
 		elsif ( $data->{"itemId"} eq Enums->EventItemType_CONTINUE ) {
 
- 			# 1) remove all results from result managers (items, group, task managers)
- 			
- 			$task->ProcessTaskContinue($data);
- 			
- 			 
- 			# Refresh GUI - group table
+			# 1) remove all results from result managers (items, group, task managers)
+
+			$task->ProcessTaskContinue($data);
+
+			# Refresh GUI - group table
 
 			$self->{"form"}->RefreshGroupTable($task);
- 
- 
-		} 
+
+		}
 	}
 }
 
@@ -330,7 +342,8 @@ sub __TimerCheckVersion {
 
 		my $messMngr = $self->{"form"}->{"messageMngr"};
 
-		my @mess1 = ( "Na serveru je nová verze programu 'AbstractQueue'. Jakmile to bude možné, ukonèi program.", "Chceš program ukonèit nyní?" );
+		my @mess1 =
+		  ( "Na serveru je nová verze programu 'AbstractQueue'. Jakmile to bude možné, ukonèi program.", "Chceš program ukonèit nyní?" );
 		my @btn = ( "Ano", "Ukonèím pozdìni" );
 		$messMngr->ShowModal( -1, EnumsGeneral->MessageType_INFORMATION, \@mess1, \@btn );
 
@@ -422,14 +435,40 @@ sub __RunTimersBase {
 
 }
 
+# Restart task
+sub __RestartTask {
+	my $self = shift;
+	my $task = shift;
+
+	my $taskId = $task->GetTaskId();
+
+	# 1) job is properlz aborted + keep task
+	my $taskData  = $task->GetTaskData();
+	my $taskJobId = $task->GetJobId();
+
+	# 2) remove job from queue
+	$self->{"form"}->__OnRemoveJobClick($taskId);
+
+	# 3) start new same job
+	my $newTask = 0;
+	$self->{"onSetNewTask"}->Do( $taskJobId, $taskData, \$newTask );
+
+	if ( !defined $newTask || $newTask == 0 ) {
+		die "new task was not init";
+	}
+
+	$self->_AddNewJob($newTask);
+
+}
+
 sub __GetVersion {
 	my $self = shift;
 
 	# Get path of version file
 	my $className = ref $self->{"form"};
 	my @arr = split( "::", $className );
-	
-	@arr =  @arr[0..(scalar(@arr)-4)];
+
+	@arr = @arr[ 0 .. ( scalar(@arr) - 4 ) ];
 
 	my $packagePath = join( "\\", @arr );
 

@@ -28,6 +28,7 @@ use aliased 'Widgets::Forms::CustomNotebook::CustomNotebook';
 use aliased 'Widgets::Forms::MyWxBookCtrlPage';
  
 use aliased 'Managers::AsyncJobMngr::ServerMngr::ServerInfo';
+use aliased 'Managers::AbstractQueue::AppConf';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -38,9 +39,9 @@ sub new {
 
 	my $title = "Pool merger";
 	my $name = "Pool merger";
-	my @dimension = ( 1100, 760 );
+	 
 
-	my $self = $class->SUPER::new( @_, $title,$name, \@dimension );
+	my $self = $class->SUPER::new( @_, $title,$name  );
 
 	bless($self);
 

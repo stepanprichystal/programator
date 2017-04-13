@@ -1,3 +1,5 @@
+# colors of main form
+
 clrStatusBar =  215, 220, 238 
 clrGroupTableBackg =  255, 255, 255
 clrGroupBackg =  242, 242, 242
@@ -5,3 +7,18 @@ clrGroupHeader = 233, 236, 245
 clrGroupStatus = 215, 230, 251
 clrItemSelected = 215, 230, 251
 clrItemUnSelected = 242, 242, 242
+
+
+# app willl use port number start with this number
+
+portStart = 1000
+
+# height of quuene in px
+
+queueHeight = 280
+
+
+# height and width of main window
+windowWidth = 1120
+windowHeight = 760
+ 

@@ -28,6 +28,7 @@ use aliased 'Widgets::Forms::CustomNotebook::CustomNotebook';
 use aliased 'Widgets::Forms::MyWxBookCtrlPage';
  
 use aliased 'Managers::AsyncJobMngr::ServerMngr::ServerInfo';
+use aliased 'Managers::AbstractQueue::AppConf';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -38,7 +39,8 @@ sub new {
 
 	my $title = "Exporter utility";
 	my $name = "Exporter utility";
-	my @dimension = ( 1120, 760 );
+	
+	my @dimension = ( AppConf->GetValue("windowWidth"), AppConf->GetColor("windowHeight") );
 
 	my $self = $class->SUPER::new( @_, $title,$name, \@dimension );
 
