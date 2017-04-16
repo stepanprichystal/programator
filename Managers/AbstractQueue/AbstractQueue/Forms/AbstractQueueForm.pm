@@ -118,7 +118,7 @@ sub AddNewTaskGUI {
 sub AddNewTask {
 	my $self = shift;
 	my $task = shift;
-
+ 
 	my $taskData = $task->GetTaskData();
 
 	my $mode = $taskData->GetTaskMode();
@@ -130,11 +130,11 @@ sub AddNewTask {
 		my $serverInfo = ServerInfo->new();
 		$serverInfo->{"port"} = $port;
 
-		$self->_AddJobToQueue( $task->GetJobId(), $task->GetTaskId(), $serverInfo );
+		$self->_AddJobToQueue( $task->GetJobId(), $task->GetTaskId(), $task->GetTaskStrData(),  $serverInfo );
 	}
 	elsif ( $mode eq EnumsJobMngr->TaskMode_ASYNC ) {
 
-		$self->_AddJobToQueue( $task->GetJobId(), $task->GetTaskId() );
+		$self->_AddJobToQueue( $task->GetJobId(), $task->GetTaskId(), $task->GetTaskStrData() );
 	}
 
 }

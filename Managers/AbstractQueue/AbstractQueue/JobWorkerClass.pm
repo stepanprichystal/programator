@@ -35,8 +35,10 @@ sub new {
 	$self->{"pcbId"}     = undef;
 	$self->{"taskId"}    = undef;
 	$self->{"inCAM"}     = undef;
-	$self->{"taskClass"} = undef;    # classes for task each group
-	$self->{"data"}      = undef;    # task data
+	$self->{"unitBuilder"} = undef;    # classes for task each group
+	
+	my %workerUnits = undef;
+	$self->{"workerUnits"}      = \%workerUnits;    # task data
 
 	return $self;
 }
@@ -47,14 +49,23 @@ sub Init {
 	$self->{"pcbId"}     = shift;
 	$self->{"taskId"}    = shift;
 	$self->{"inCAM"}     = shift;
-	$self->{"taskClass"} = shift;    # classes for task each group
-	$self->{"data"}      = shift;    # task data
+	$self->{"unitBuilder"} = shift;    # builder generate JobWorker units with data, based on unit string data
+	
+	
+	$self->{"workerUnits"} = $self->{"unitBuilder"}->GetUnits();
 
 	# Supress all toolkit exception/error windows
 	$self->{"inCAM"}->SupressToolkitException(1);
 
 	# Switch of displa actions in InCAM editor
 	$self->{"inCAM"}->COM("disp_off");
+}
+
+
+sub _GetWorkUnits{
+	my $self = shift;
+	
+	return %{$self->{"workerUnits"}};
 }
 
 # Method open and checkou job

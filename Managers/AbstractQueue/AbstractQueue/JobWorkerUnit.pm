@@ -2,7 +2,7 @@
 # Description: Base class for unit task classes.
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Managers::AbstractQueue::Groups::TaskClassBase;
+package Managers::AbstractQueue::AbstractQueue::JobWorkerUnit;
 
 #3th party library
 use strict;

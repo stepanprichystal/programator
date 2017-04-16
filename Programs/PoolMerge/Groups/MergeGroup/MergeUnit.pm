@@ -25,7 +25,7 @@ use warnings;
  
 use aliased 'Programs::PoolMerge::UnitEnums';
 use aliased 'Managers::AbstractQueue::AbstractQueue::Forms::Group::GroupWrapperForm';
-use aliased 'Programs::PoolMerge::Groups::MergeGroup::MergeGroup';
+use aliased 'Programs::PoolMerge::Groups::MergeGroup::MergeWorkUnit';
 use aliased 'Managers::AbstractQueue::Groups::GroupData';
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -37,9 +37,6 @@ sub new {
 
 	$self = $class->SUPER::new(@_);
 	bless $self;
- 
-  	# reference on class responsible for export
-	$self->{"unitTaskClass"} = MergeGroup->new($self->{"unitId"});
  
 	return $self;    # Return the reference to the hash.
 }

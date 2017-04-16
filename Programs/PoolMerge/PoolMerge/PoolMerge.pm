@@ -13,12 +13,14 @@ use Wx;
 use strict;
 use warnings;
 use File::Copy;
+use JSON;
 
 #local library
 
 use aliased 'Helpers::GeneralHelper';
 use aliased 'Enums::EnumsPaths';
 use aliased 'Enums::EnumsGeneral';
+
 #use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'Helpers::FileHelper';
 use aliased 'Managers::MessageMngr::MessageMngr';
@@ -30,7 +32,7 @@ use aliased 'Managers::AsyncJobMngr::Enums'  => 'EnumsJobMngr';
 use aliased 'Managers::AbstractQueue::Enums' => "EnumsAbstrQ";
 use aliased 'Programs::PoolMerge::PoolMerge::JobWorkerClass';
 use aliased 'Programs::PoolMerge::Enums';
-
+use aliased 'Programs::PoolMerge::PoolMerge::UnitBuilder';
 use aliased 'Packages::InCAM::InCAM';
 
 #-------------------------------------------------------------------------------------------#
@@ -72,6 +74,7 @@ sub JobWorker {
 	my $self                         = shift;
 	my $pcbId                        = shift;
 	my $taskId                       = shift;
+	my $jobStrData                   = shift;
 	my $inCAM                        = shift;
 	my $THREAD_PROGRESS_EVT : shared = ${ shift(@_) };
 	my $THREAD_MESSAGE_EVT : shared  = ${ shift(@_) };
@@ -79,11 +82,12 @@ sub JobWorker {
 
 	#GetTaskClass
 	my $task      = $self->_GetTaskById($taskId);
-	my %taskClass = $task->{"units"}->GetTaskClass();
-	my $taskData  = $task->GetTaskData();
+ 
+	my $unitBuilder = UnitBuilder->new($jobStrData);
+	 
 
 	my $poolMerge = JobWorkerClass->new( \$THREAD_PROGRESS_EVT, \$THREAD_MESSAGE_EVT, $stopVar, $self->{"form"}->{"mainFrm"} );
-	$poolMerge->Init( $pcbId, $taskId, $inCAM, \%taskClass, $taskData );
+	$poolMerge->Init( $pcbId, $taskId, $unitBuilder, $inCAM, );
 
 	$poolMerge->RunTask();
 
@@ -104,7 +108,7 @@ sub __OnJobStateChanged {
 	my $taskData = $task->GetTaskData();
 
 	if ( defined $taskStateDetail
-		&& ( $taskStateDetail eq EnumsJobMngr->ExitType_FORCE || $taskStateDetail eq EnumsJobMngr->ExitType_FORCERESTART ) )
+		 && ( $taskStateDetail eq EnumsJobMngr->ExitType_FORCE || $taskStateDetail eq EnumsJobMngr->ExitType_FORCERESTART ) )
 	{
 		return;
 	}
@@ -276,7 +280,7 @@ sub __CheckFilesHandler {
 
 			my %newFile = ( "name" => $fileName, "path" => $filePath, "created" => $fileCreated );
 			push( @newFiles, \%newFile );
- 
+
 		}
 	}
 
@@ -289,15 +293,27 @@ sub __CheckFilesHandler {
 			my $path     = $jobFile->{"path"};
 			my $taskName = $jobFile->{"name"};
 
+			my $xmlString = FileHelper->ReadAsString($path);
+			my $xmlName   = basename($path);
+
 			my $dataParser = DataParser->new();
-			my $taskData   = $dataParser->GetTaskData($path);
+			my $taskData = $dataParser->GetTaskDataByString( $xmlString, $xmlName );
 
 			copy( $path, EnumsPaths->Client_EXPORTFILESPOOL . "backup\\" . $taskName );    # do backup
 
 			# TODO odkomentovat abt to mazalo
 			#unlink($f);
 
-			$self->__AddNewJob( $taskData->GetPanelName(), $taskData );
+			# serialize job data to strin
+			my %hashData = ();
+			$hashData{"fileName"} = $xmlName;
+			$hashData{"xmlData"}  = $xmlString;
+
+			my $json = JSON->new();
+
+			my $taskStrData = $json->pretty->encode(\%hashData);
+
+			$self->__AddNewJob( $taskData->GetPanelName(), $taskData, $taskStrData );
 
 		}
 	}
@@ -312,10 +328,11 @@ sub __AddNewJob {
 	my $self     = shift;
 	my $jobId    = shift;
 	my $taskData = shift;
+	my $taskStrData = shift;
 
 	my $status = TaskStatus->new(undef);
 
-	my $task = Task->new( $jobId, $taskData, $status );
+	my $task = Task->new( $jobId, $taskData, $taskStrData,  $status );
 
 	$self->_AddNewJob($task);
 }

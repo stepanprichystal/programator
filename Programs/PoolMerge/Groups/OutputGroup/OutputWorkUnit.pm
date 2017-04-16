@@ -3,8 +3,8 @@
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 
-package Programs::PoolMerge::Groups::OutputGroup::OutputGroup;
-use base('Managers::AbstractQueue::Groups::TaskClassBase');
+package Programs::PoolMerge::Groups::OutputGroup::OutputWorkUnit;
+use base('Managers::AbstractQueue::AbstractQueue::JobWorkerUnit');
 #3th party library
 use strict;
 use warnings;

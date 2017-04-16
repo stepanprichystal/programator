@@ -34,6 +34,7 @@ use aliased 'Managers::AsyncJobMngr::Enums';
 use aliased 'Widgets::Forms::MyTaskBarIcon';
 use aliased 'Managers::AsyncJobMngr::SettingsHelper';
 use aliased 'Managers::AbstractQueue::AppConf';
+
 #use aliased 'Programs::AbstractQueue::ThreadBase';
 use aliased 'Packages::Events::Event';
 
@@ -42,12 +43,11 @@ use aliased 'Packages::Events::Event';
 #-------------------------------------------------------------------------------------------#
 
 sub new {
-	my $class      = shift;
-	my $runMode   = shift;
-	my $parent    = shift;
-	my $title     = shift;
-	my $name      = shift;    # name which is used in tray menu, etc (Export, Pool export etc.. this is only arbitrary string)
-	
+	my $class   = shift;
+	my $runMode = shift;
+	my $parent  = shift;
+	my $title   = shift;
+	my $name    = shift;    # name which is used in tray menu, etc (Export, Pool export etc.. this is only arbitrary string)
 
 	# Get name of caller package
 	my ( $packageFull, $filename, $line ) = caller;
@@ -59,7 +59,7 @@ sub new {
 	}
 
 	bless($self);
-	
+
 	$self->__SetConfPath($class);
 
 	# PROPERTIES
@@ -104,7 +104,9 @@ sub _AddJobToQueue {
 	my $self       = shift;
 	my $pcbId      = shift;
 	my $uniqueId   = shift;    #unique task id
+	my $jobStrData = shift;    # string data, job process is based on them
 	my $serverInfo = shift;    #server info, if external incam server is already prepared
+	
 
 	# new job item
 	my %jobInfo = (
@@ -113,6 +115,7 @@ sub _AddJobToQueue {
 					"state"      => Enums->JobState_WAITINGQUEUE,
 					"port"       => -1,
 					"serverInfo" => $serverInfo,
+					"jobStrData" => $jobStrData
 	);
 
 	push( @{ $self->{"jobs"} }, \%jobInfo );
@@ -198,7 +201,6 @@ sub _AbortJob {
 	}
 
 }
-
 
 # Two type of restarting
 
@@ -297,6 +299,8 @@ sub _SetThreadWorker {
 	#add handler, when new thread start
 	$self->{"threadMngr"}->{"onThreadWorker"}->Add($workerMethod);
 
+	$self->{"threadMngr"}->InitThreadPool();
+
 }
 
 #-------------------------------------------------------------------------------------------#
@@ -325,7 +329,8 @@ sub __PortReadyHandler {
 
 		$self->{'onJobStateChanged'}->Do( $jobGUID, Enums->JobState_RUNNING );
 
-		$self->{"threadMngr"}->RunNewtask( $jobGUID, $d{"port"}, $pcbId, $d{"pidInCAM"}, $externalServer );
+		$self->{"threadMngr"}->RunNewtask( $jobGUID, ${ $self->{"jobs"}}[$i]->{"jobStrData"}, $d{"port"}, $pcbId, $d{"pidInCAM"}, $externalServer )
+		  ;
 
 	}
 
@@ -342,16 +347,15 @@ sub __ThreadDoneHandler {
 
 	my $jobInfo = $self->__GetJobInfo( $d{"jobGUID"} );
 	$self->{"serverMngr"}->ReturnServerPort( $jobInfo->{"port"} );
-	
+
 	#$self->__RemoveJob( $d{"jobGUID"} );
-	
-	
+
 	# Send message, thread exited FORCE or FORCERESTART or SUCCES
 	# do difference between exit FORCE - by aborting bz user and exit FORCE because of restart
 	if ( $exitType eq Enums->ExitType_FORCE && $jobInfo->{"state"} eq Enums->JobState_RESTARTING ) {
 		$exitType = Enums->ExitType_FORCERESTART;
 	}
-	
+
 	# Set new job state DONE
 	$self->__SetJobState( $jobGUID, Enums->JobState_DONE );
 
@@ -457,13 +461,12 @@ sub __TakeFromQueueHandler {
 #-------------------------------------------------------------------------------------------#
 
 sub __SetLayout {
-	my $self      = shift;
-	my $parent    = shift;
-	my $title     = shift;
-	my $name      = shift;
-	
+	my $self   = shift;
+	my $parent = shift;
+	my $title  = shift;
+	my $name   = shift;
+
 	my @dimension = ( AppConf->GetValue("windowWidth"), AppConf->GetValue("windowHeight") );
-	 
 
 	#main formDefain forms
 	my $mainFrm = MyWxFrame->new(
@@ -678,12 +681,11 @@ sub __GetJobInfo {
 	}
 }
 
-
 # Set path (global variable) to app configuration file
 sub __SetConfPath {
-	my $self = shift;
+	my $self   = shift;
 	my $caller = shift;
- 
+
 	# Set path of style configuration file
 	#my $className = ref $self;
 	my @arr = split( "::", $caller );
@@ -691,8 +693,9 @@ sub __SetConfPath {
 	my $packagePath = join( "\\", @arr );
 
 	$main::stylePath = GeneralHelper->Root() . "\\" . $packagePath . "\\Config\\Config.txt";
-	
+
 }
+
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#

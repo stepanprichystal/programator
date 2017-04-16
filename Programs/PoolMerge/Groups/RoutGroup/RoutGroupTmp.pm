@@ -1,4 +1,4 @@
-package Programs::PoolMerge::Groups::RoutGroup::RoutGroupTmp;
+package Programs::PoolMerge::Groups::RoutGroup::RoutWorkUnitTmp;
 
 #3th party library
 use strict;
@@ -6,7 +6,7 @@ use warnings;
 
 use aliased 'Enums::EnumsGeneral';
 
-use aliased 'Programs::PoolMerge::Groups::RoutGroup::RoutGroup';
+use aliased 'Programs::PoolMerge::Groups::RoutGroup::RoutWorkUnit';
 use aliased 'Programs::PoolMerge::DataTransfer::UnitsDataContracts::AOIData';
 use aliased 'Programs::PoolMerge::UnitEnums';
 
@@ -40,7 +40,7 @@ sub Run {
 
 	$taskData->SetStepToTest("panel");
 
-	my $export = RoutGroup->new( UnitEnums->UnitId_AOI );
+	my $export = RoutWorkUnit->new( UnitEnums->UnitId_AOI );
 	$export->Init( $inCAM, $jobId, $taskData );
 
 	$export->{"onItemResult"}->Add( sub { Test(@_) } );

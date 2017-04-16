@@ -390,6 +390,7 @@ sub _GetTaskById {
 sub _AddNewJob {
 	my $self = shift;
 	my $task = shift;
+	
 
 	push( @{ $self->{"tasks"} }, $task );
 

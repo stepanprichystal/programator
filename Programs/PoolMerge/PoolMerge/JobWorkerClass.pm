@@ -38,8 +38,8 @@ sub new {
 
 sub RunTask {
 	my $self = shift;
-
-	my %unitsData = $self->{"data"}->GetAllUnitData();
+ 
+	my %workUnits = $self->_GetWorkUnits();
 	my @keys      = $self->{"data"}->GetOrderedUnitKeys();
 	my $mode      = $self->{"data"}->GetTaskMode();
 
@@ -48,9 +48,9 @@ sub RunTask {
 	for ( my $i = 0 ; $i < scalar(@keys) ; $i++ ) {
 
 		my $unitId   = $keys[$i];
-		my $taskData = $unitsData{$unitId};
+		my $workUnit = $workUnits{$unitId};
 
-		$self->__InitGroup( $unitId, $taskData );
+		$self->__InitGroup( $unitId, $workUnit );
 	}
 
 	# 2) Process groups
@@ -141,11 +141,12 @@ sub __ProcessGroup {
 	my $self   = shift;
 	my $unitId = shift;
 
+	my %workUnits = $self->_GetWorkUnits();
 	# Get right export class and init
-	my $taskClass = $self->{"taskClass"}->{$unitId};
+	my $workUnit = $workUnits{$unitId};
 
 	# Final export group
-	$taskClass->Run();
+	$workUnit->Run();
 }
 
 sub __ItemSpecialEvent {

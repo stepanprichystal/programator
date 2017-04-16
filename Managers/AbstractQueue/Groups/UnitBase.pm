@@ -30,12 +30,10 @@ sub new {
 	$self->{"jobId"} = shift;
 	$self->{"unitTitle"} = shift;
 	
-
-	 
-	
+  
 	$self->{"form"}   = undef;    # reference on GroupWrapperForm object
 
-	$self->{"unitTaskClass"} = undef; # reference on class responsible for task
+	 
 
 	# store, where data for units are saved
 	# keep also state of group and task error information

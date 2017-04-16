@@ -34,12 +34,37 @@ sub new {
 	return $self;
 }
 
-sub GetTaskData {
+sub GetTaskDataByString{
+	my $self = shift;
+	my $xmlString = shift;
+	my $xmlName = shift;
+	
+	$self->__GetTaskData($xmlString, $xmlName);
+ 	
+}
+
+
+sub GetTaskDataByPath{
 	my $self = shift;
 	my $path = shift;
+ 
+	
+	my $xmlString = FileHelper->ReadAsString($path);
+	my $xmlName = basename($path);
+	
+	$self->__GetTaskData($xmlString, $xmlName);
+ 	
+}
 
+
+sub __GetTaskData {
+	my $self = shift;
+	my $xmlString = shift;
+	my $xmlName = shift;
+	 
+ 
 	# 1) init gorup data
-	my $groupData = $self->__GetGroupData($path);
+	my $groupData = $self->__GetGroupData($xmlString);
 
 	# 2) task data
 	my $taskData = TaskData->new();
@@ -51,9 +76,8 @@ sub GetTaskData {
 	$taskData->{"settings"}->{"mode"} = EnumsJobMngr->TaskMode_ASYNC;    # synchronousTask/ asynchronousTask
 
 	# parse file name and store info
-
-	my $fileName = basename($path);
-	my ( $panelName, $type, $surface, $exportTime ) = $fileName =~ /(pan\d+)_([\d-]+)-(\w+)_([\d-]+)/;
+ 
+	my ( $panelName, $type, $surface, $exportTime ) = $xmlName =~ /(pan\d+)_([\d-]+)-(\w+)_([\d-]+)/;
 
 	$panelName =~ s/pan/panel /i;
 
@@ -84,14 +108,15 @@ sub GetTaskData {
 
 sub __GetGroupData {
 	my $self = shift;
-	my $path = shift;
-
+	#my $path = shift;
+	my $stringXml = shift;
+ 
 	# 1) open file
 
-	my $xmlF = FileHelper->Open($path);
+	#my $xmlF = FileHelper->Open($string);
 
 	my $xml = XMLin(
-		$xmlF,
+		$stringXml,
 
 		#ForceArray => 1,
 		# KeepRoot   => 1

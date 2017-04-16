@@ -10,6 +10,7 @@ use threads;
 use threads::shared;
 use Wx;
 use Time::HiRes qw (sleep);
+use Thread::Queue;
 
 #3th party library
 use strict;
@@ -42,6 +43,11 @@ sub new {
 
 	#raise when new thread start
 	$self->{"onThreadWorker"} = Event->new();
+	
+	
+		### Global Variables ###
+
+	
 
 	return $self;
 }
@@ -57,13 +63,48 @@ sub Init {
 
 	$THREAD_END_EVT = Wx::NewEventType;
 	Wx::Event::EVT_COMMAND( $self->{"abstractQueueFrm"}, -1, $THREAD_END_EVT, sub { $self->__ThreadEndedHandler(@_) } );
+	
 
+}
+
+sub InitThreadPool{
+	my $self = shift;
+		
+	# Maximum working threads
+	$self->{"MAX_THREADS"} = 3;
+
+	# Flag to inform all threads that application is terminating
+	$self->{"TERM :shared"} = 0;
+
+	# Threads add their ID to this queue when they are ready for work
+	# Also, when app terminates a -1 is added to this queue
+	$self->{"IDLE_QUEUE"} = Thread::Queue->new();
+	
+	
+	 # Thread work queues referenced by thread ID
+    my %work_queues;
+    $self->{"work_queues"} = \%work_queues;
+
+    # Create the thread pool
+    for (1..$self->{"MAX_THREADS"}) {
+        # Create a work queue for a thread
+        my $work_q = Thread::Queue->new();
+
+        # Create the thread, and give it the work queue
+        my $thr = threads->create(sub { $self->worker( $work_q)});
+
+        # Remember the thread's work queue
+        $work_queues{$thr->tid()} = $work_q;
+    }
+	
+	
 }
 
 # Processrequest for starting new thread
 sub RunNewtask {
 	my $self           = shift;
 	my $jobGUID        = shift;
+	my $jobStrData 	= shift;
 	my $port           = shift;
 	my $pcbId          = shift;
 	my $pidInCAM       = shift;
@@ -77,7 +118,7 @@ sub RunNewtask {
 	my $stopped = 0;
 	share($stopped);
 
-	my $thrId = $self->__CreateThread( $jobGUID, $port, $pcbId, $pidInCAM, $externalServer, \$stopped );
+	my $thrId = $self->__CreateThread( $jobGUID,$jobStrData, $port, $pcbId, $pidInCAM, $externalServer, \$stopped );
 
 	
 
@@ -175,6 +216,7 @@ sub ContinueThread {
 sub __CreateThread {
 	my $self           = shift;
 	my $jobGUID        = shift;
+		my $jobStrData 	= shift;
 	my $port           = shift;
 	my $pcbId          = shift;
 	my $pidInCAM       = shift;
@@ -186,13 +228,28 @@ sub __CreateThread {
 	# $self->__WorkerMethod( $jobGUID, $port, $pcbId, $pidInCAM ) ;
 
 	# return $$;
+	
+	 # Wait for an available thread
+     my $tid = $self->{"IDLE_QUEUE"}->dequeue();
 
-	my $worker = threads->create( sub { $self->__WorkerMethod( $jobGUID, $port, $pcbId, $pidInCAM, $externalServer, $stopVar ) } );
+      # Check for termination condition
+      
+
+      # Give the thread some work to do
+      
+     # my @ary = ($jobGUID, $port, $pcbId, $pidInCAM, $externalServer);
+     my @ary :shared = ($jobGUID, $jobStrData, $port, $pcbId, $pidInCAM, $externalServer, $stopVar);
+ 	 
+    # my $pom = 1;
+ 	  $self->{"work_queues"}->{$tid}->enqueue(\@ary);
+ 
+
+	#my $worker = threads->create( sub { $self->__WorkerMethod( $jobGUID, $port, $pcbId, $pidInCAM, $externalServer, $stopVar ) } );
  	
-	$worker->set_thread_exit_only(1);    # tell only this child thread will be exited
+	#$worker->set_thread_exit_only(1);    # tell only this child thread will be exited
 	#$worker->detach();
 
-	return $worker->tid();
+	return $tid;
 }
 
 # This method is called, when new thread starts
@@ -201,6 +258,7 @@ sub __WorkerMethod {
 	my $self = shift;
 
 	my $jobGUID        = shift;
+	my $jobStrData =  shift;
 	my $port           = shift;
 	my $pcbId          = shift;
 	my $pidInCAM       = shift;
@@ -226,12 +284,62 @@ sub __WorkerMethod {
 
 	my $onThreadWorker = $self->{'onThreadWorker'};
 	if ( $onThreadWorker->Handlers() ) {
-		$onThreadWorker->Do( $pcbId, $jobGUID, $inCAM, \$THREAD_PROGRESS_EVT, \$THREAD_MESSAGE_EVT, $stopVar );
+		$onThreadWorker->Do( $pcbId, $jobGUID, $jobStrData,  $inCAM, \$THREAD_PROGRESS_EVT, \$THREAD_MESSAGE_EVT, $stopVar );
 	}
 
 	$self->__CleanUpAndExit( $inCAM, $jobGUID, $pcbId, Enums->ExitType_SUCCES );
 
 }
+
+
+
+sub worker
+{
+	my $self = shift;
+    my ($work_q) = @_;
+
+    # This thread's ID
+    my $tid = threads->tid();
+
+    # Work loop
+    do {
+        # Indicate that were are ready to do work
+        printf("Idle     -> %2d\n", $tid);
+        $self->{"IDLE_QUEUE"}->enqueue($tid);
+
+        # Wait for work from the queue
+        my $work = $work_q->dequeue();
+
+        # If no more work, exit
+        #last if ($work < 0);
+
+        # Do some work while monitoring $TERM
+        printf("            %2d <- Working\n", $tid);
+        
+        #sleep(5);
+         
+         my $jobGUID = $work->[0];
+         my $jobStrData =  $work->[1]; 
+         my $port= $work->[2]; 
+         my $pcbId= $work->[3]; 
+         my $pidInCAM= $work->[4]; 
+         my $externalServer= $work->[5];
+         my $stop= $work->[6];
+      
+ 
+        $self-> __WorkerMethod($jobGUID, $jobStrData, $port, $pcbId, $pidInCAM, $externalServer, $stop);
+         
+
+        # Loop back to idle state if not told to terminate
+    } while (1);
+
+    # All done
+    printf("Finished -> %2d\n", $tid);
+}
+
+
+
+
 
 sub __CleanUpAndExit {
 	my ( $selfMain, $inCAM, $jobGUID, $pcbId, $exitType, $externalServer ) = @_;

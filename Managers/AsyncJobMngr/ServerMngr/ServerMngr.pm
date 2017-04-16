@@ -14,6 +14,7 @@ use Wx;
 use Config;
 use Win32::GuiTest qw(FindWindowLike SetWindowPos ShowWindow);
 use Time::HiRes qw (sleep);
+use Thread::Queue;
 
 #use Try::Tiny;
 
@@ -40,24 +41,30 @@ sub new {
 
 	my @servers = ();
 
-	$self->{"asyncScriptName"} = shift; # name of script which use AsyncJobMngr. We need this name for killing zombie perl and incam
-	$self->{"asyncScriptName"} =~ s/\s//g; # remove spaces
+	$self->{"asyncScriptName"} = shift;       # name of script which use AsyncJobMngr. We need this name for killing zombie perl and incam
+	$self->{"asyncScriptName"} =~ s/\s//g;    # remove spaces
 
 	$self->{"servers"} = \@servers;
 
-	$self->{"maxCntUser"}      = -1;      # max count of server set by user
-	$self->{"maxCntTotal"}     = 9;       # max allowed number of server
+	$self->{"maxCntUser"}      = -1;                                # max count of server set by user
+	$self->{"maxCntTotal"}     = 9;                                 # max allowed number of server
 	$self->{"actualCntRuning"} = -1;
-	$self->{"startPort"}       = AppConf->GetValue("portStart") ;    # Port for ExportUtility start from 1000, Port for ExportChecker start from 2000,
+	$self->{"startPort"}       = AppConf->GetValue("portStart");    # Port for ExportUtility start from 1000, Port for ExportChecker start from 2000,
 
-	$self->{"destroyOnDemand"} = 1;       # close server only on demand, not immediately
-	$self->{"destroyDelay"}    = -1;      # destroy server after 12s of WAITING state
+	$self->{"destroyOnDemand"} = 1;                                 # close server only on demand, not immediately
+	$self->{"destroyDelay"}    = -1;                                # destroy server after 12s of WAITING state
+
+
 	
-	$self->__CloseZombie(undef, 0);
+	
+	
+	
+
+	$self->__CloseZombie( undef, 0 );
 
 	$self->__InitServers();
 
-	return $self;                         # Return the reference to the hash.
+	return $self;                                    # Return the reference to the hash.
 }
 
 # ==============================================
@@ -176,8 +183,7 @@ sub PrepareServerPort {
 				my $port = $s->{"port"};
 
 				my $worker = threads->create( sub { $self->__CreateServer( $port, $jobGUID ) } );
-				$worker->detach();
-
+			 
 				last;
 			}
 		}
@@ -378,32 +384,30 @@ sub DestroyServer {
 		}
 
 		my $s = @{$serverRef}[$idx];
-		
+
 		my $closedSucc = 0;
-		
+
 		#try to connect to server and close it nice
-		
+
 		my $inCAM = InCAM->new( "remote" => 'localhost', "port" => $port );
-		if( $inCAM->ServerReady()){
-			
+		if ( $inCAM->ServerReady() ) {
+
 			my $closed = $inCAM->COM("close_toolkit");
-			
-			if($closed == 0){
+
+			if ( $closed == 0 ) {
 				$closedSucc = 1;
-				
+
 				# we has to close server perl scritp, unless inCAM will be still running
 				Win32::Process::KillProcess( $s->{"pidServer"}, 0 );
 				print STDERR "\n\n close toolikt ################ \n\n";
 			}
 		}
-		
-		unless($closedSucc){	 
+
+		unless ($closedSucc) {
 
 			Win32::Process::KillProcess( $s->{"pidServer"}, 0 );
 			Win32::Process::KillProcess( $s->{"pidInCAM"},  0 );
 		}
-		
-
 
 		Helper->Print( "SERVER: PID: " . $s->{"pidServer"} . ", port:" . $s->{"port"} . "....................................was closed\n" );
 
@@ -486,7 +490,7 @@ sub __CreateServer {
 	my $pidServer;
 
 	#test on zombified server and close
-	$self->__CloseZombie($freePort, 1);
+	$self->__CloseZombie( $freePort, 1 );
 
 	#start new server on $freePort
 
@@ -502,22 +506,20 @@ sub __CreateServer {
 
 	my $processObj;
 	my $inCAM;
-	
-	my $path =  GeneralHelper->Root() . "\\Managers\\AsyncJobMngr\\Server\\ServerAsyncJob.pl";
+
+	my $path = GeneralHelper->Root() . "\\Managers\\AsyncJobMngr\\Server\\ServerAsyncJob.pl";
+
 	# turn all backslash - incam need this
 	$path =~ s/\\/\//g;
-	
+
 	print STDERR "\n New Incam instance launching  on $inCAMPath $path \n";
 
 	#run InCAM editor with serverscript
-	Win32::Process::Create( $processObj, $inCAMPath,
-							"InCAM.exe -s" . $path." " . $freePort." ".$self->{"asyncScriptName"},
+	Win32::Process::Create( $processObj, $inCAMPath, "InCAM.exe -s" . $path . " " . $freePort . " " . $self->{"asyncScriptName"},
 							0, THREAD_PRIORITY_NORMAL, "." )
 	  || die "$!\n";
 
 	$pidInCAM = $processObj->GetProcessID();
-
-	
 
 	#my $worker = threads->create( sub { $self->__MoveWindowOut($pidInCAM) } );
 
@@ -525,10 +527,9 @@ sub __CreateServer {
 
 	# creaate and test server connection
 	$pidServer = $self->__CreateServerConn($freePort);
-	
+
 	# Temoporary solution because -x is not working in inCAM
 	$self->__MoveWindowOut($pidInCAM);
-
 
 	#if ok, reise event port ready
 	if ($pidServer) {
@@ -602,7 +603,8 @@ sub __CreateServerConn {
 	# first test of connection
 	$inCAM = InCAM->new( "remote" => 'localhost', "port" => $port );
 
-	my $sleep = int(rand(5) + 2);
+	my $sleep = int( rand(5) + 2 );
+
 	# next tests of connecton. Wait, until server script is not ready
 	while ( !defined $inCAM || !$inCAM->{"socketOpen"} || !$inCAM->{"connected"} ) {
 		if ($inCAM) {
@@ -615,19 +617,17 @@ sub __CreateServerConn {
 
 		$inCAM = InCAM->new( "remote" => 'localhost', "port" => $port );
 	}
-	
- 
-	
+
 	print STDERR "Connected, next test if server ready\n";
 
 	#server seems ready, try send message and get server pid
 	my $pidServer = $inCAM->ServerReady();
-	
+
 	print STDERR "Server ready, next client finish\n";
 
 	if ($pidServer) {
 		$inCAM->ClientFinish();
-		
+
 		print STDERR "Client finish, end of thread\n";
 
 		return $pidServer;
@@ -656,7 +656,7 @@ sub __MoveWindowOut {
 
 			return 1;
 		}
-		
+
 		sleep(0.02);
 
 		#print STDERR ".";
@@ -691,21 +691,21 @@ sub __CloseZombie {
 	my $self = shift;
 	my $port = shift;
 	my $wait = shift;
-	
-	unless(defined $port){
+
+	unless ( defined $port ) {
 		$port = "-";
 	}
 
 	my $processObj;
 	my $perl = $Config{perlpath};
 
-	Win32::Process::Create( $processObj, $perl, "perl " . GeneralHelper->Root() . "\\Managers\\AsyncJobMngr\\CloseZombie.pl -i $port -n ".$self->{"asyncScriptName"},
+	Win32::Process::Create( $processObj, $perl,
+							"perl " . GeneralHelper->Root() . "\\Managers\\AsyncJobMngr\\CloseZombie.pl -i $port -n " . $self->{"asyncScriptName"},
 							1, NORMAL_PRIORITY_CLASS, "." )
 	  || die "Failed to create CloseZombie process.\n";
 
-
-	if($wait){
-	$processObj->Wait(INFINITE);
+	if ($wait) {
+		$processObj->Wait(INFINITE);
 	}
 
 }

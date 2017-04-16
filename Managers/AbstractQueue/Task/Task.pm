@@ -38,7 +38,9 @@ sub new {
 
 	$self->{"jobId"} = shift;    # job id, which is processed
 
-	$self->{"taskData"} = shift;    # tasked data, necessary for task processing
+	$self->{"taskData"} = shift;    # prepared task data, necessary for task processing
+	
+	$self->{"taskStrData"} = shift;    # task data serialized in string
 
 	$self->{"taskStatus"} = shift;  # Class responsible for updating StatusFile in job archive
 	
@@ -89,6 +91,11 @@ sub GetAllUnits {
 sub GetTaskData {
 	my $self = shift;
 	return $self->{"taskData"};
+}
+
+sub GetTaskStrData {
+	my $self = shift;
+	return $self->{"taskStrData"};
 }
 
 sub GetTaskResultMngr {
