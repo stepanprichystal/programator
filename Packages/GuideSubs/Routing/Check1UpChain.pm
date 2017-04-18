@@ -496,7 +496,7 @@ sub TestFindAndDrawStarts {
 		);
 
 		$inCAM->COM( "work_layer", name => $layer );
-
+		$inCAM->COM( "zoom_home");
 		$inCAM->PAUSE("Zkontroluj navrzene patky...");
 	}
 
