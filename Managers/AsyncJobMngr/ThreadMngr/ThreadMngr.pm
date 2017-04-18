@@ -78,7 +78,7 @@ sub InitThreadPool {
 	my $self = shift;
 
 	# Maximum working threads
-	$self->{"MAX_THREADS"} = 15;
+	$self->{"MAX_THREADS"} = 4;
 	$self->{"MIN_THREADS"} = 3;
 
 	# Flag to inform all threads that application is terminating

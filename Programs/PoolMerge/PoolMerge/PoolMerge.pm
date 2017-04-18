@@ -46,6 +46,7 @@ sub new {
 	# Tray or window mode
 	my $runMode = shift;
 
+	
 	# Main application form
 	my $form = PoolMergeForm->new( $runMode, undef );
 

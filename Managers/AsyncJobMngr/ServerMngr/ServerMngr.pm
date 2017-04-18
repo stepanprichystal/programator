@@ -576,6 +576,11 @@ sub __CreateServer {
 	$path =~ s/\\/\//g;
 
 	print STDERR "\n New Incam instance launching  on $inCAMPath $path \n";
+	
+	# sometimes happen, when 2 or more INCAM servers are launeched a same time, parl fail (no reason)
+	# this is stupid solution, sleep random time
+	my $sleep = int( rand(5));
+	sleep($sleep); 
 
 	#run InCAM editor with serverscript
 	Win32::Process::Create( $processObj, $inCAMPath, "InCAM.exe -s" . $path . " " . $freePort . " " . $self->{"asyncScriptName"},
@@ -666,7 +671,7 @@ sub __CreateServerConn {
 	# first test of connection
 	$inCAM = InCAM->new( "remote" => 'localhost', "port" => $port );
 
-	#my $sleep = int( rand(5) + 2 );
+
 
 	# next tests of connecton. Wait, until server script is not ready
 	while ( !defined $inCAM || !$inCAM->{"socketOpen"} || !$inCAM->{"connected"} ) {

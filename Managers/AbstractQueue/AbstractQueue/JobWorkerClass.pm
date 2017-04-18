@@ -77,7 +77,7 @@ sub _OpenJob {
 
 	return 0;
 
-	unless ( $$self->{"pcbId"} ) {
+	unless ( ${$self->{"pcbId"}} ) {
 		return 0;
 	}
 	my $inCAM = $self->{"inCAM"};
@@ -85,7 +85,7 @@ sub _OpenJob {
 	# choose step if not defined
 	unless ( defined $step ) {
 
-		my @names = CamStep->GetAllStepNames( $inCAM, $$self->{"pcbId"} );
+		my @names = CamStep->GetAllStepNames( $inCAM, ${$self->{"pcbId"}} );
 		$step = $names[0];
 	}
 
@@ -95,7 +95,7 @@ sub _OpenJob {
 
 	$inCAM->HandleException(1);
 
-	CamHelper->OpenJob( $self->{"inCAM"}, $$self->{"pcbId"} );
+	CamHelper->OpenJob( $self->{"inCAM"}, ${$self->{"pcbId"}} );
 
 	$inCAM->HandleException(0);
 
@@ -126,7 +126,7 @@ sub _OpenJob {
 
 	$inCAM->HandleException(1);
 
-	CamJob->CheckOutJob( $self->{"inCAM"}, $$self->{"pcbId"} );
+	CamJob->CheckOutJob( $self->{"inCAM"}, ${$self->{"pcbId"}} );
 
 	$inCAM->HandleException(0);
 
@@ -152,7 +152,7 @@ sub _CloseJob {
 
 	return 0;
 
-	unless ( $$self->{"pcbId"} ) {
+	unless ( ${$self->{"pcbId"}} ) {
 		return 0;
 	}
 
@@ -162,11 +162,11 @@ sub _CloseJob {
 	$inCAM->HandleException(1);
 
 	if ($save) {
-		CamJob->SaveJob( $self->{"inCAM"}, $$self->{"pcbId"} );
+		CamJob->SaveJob( $self->{"inCAM"}, ${$self->{"pcbId"}} );
 	}
 
-	CamJob->CheckInJob( $self->{"inCAM"}, $$self->{"pcbId"} );
-	CamJob->CloseJob( $self->{"inCAM"}, $$self->{"pcbId"} );
+	CamJob->CheckInJob( $self->{"inCAM"}, ${$self->{"pcbId"}} );
+	CamJob->CloseJob( $self->{"inCAM"}, ${$self->{"pcbId"}} );
 
 	# STOP HANDLE EXCEPTION IN INCAM
 	$inCAM->HandleException(0);

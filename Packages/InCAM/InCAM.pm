@@ -304,7 +304,7 @@ sub openSocket {
 											   PeerPort => $port,
 											   Type     => SOCK_STREAM,
 											   Timeout  => 0.1
-	);
+	) or print STDERR "\n Can't bind : $@\n";
 
 	if ( $self->{"socket"} ) {
 
@@ -565,7 +565,7 @@ sub __Connect {
 	#	}
 
 	if ($sOpen) {
-		my $end = Time::HiRes::gettimeofday();
+		 
 
 		#printf( "%.2f\n", $end - $start );
 		#print "YES";
