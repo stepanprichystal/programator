@@ -40,8 +40,8 @@ sub RunTask {
 	my $self = shift;
  
 	my %workUnits = $self->_GetWorkUnits();
-	my @keys      = $self->{"data"}->GetOrderedUnitKeys();
-	my $mode      = $self->{"data"}->GetTaskMode();
+	my @keys      = $self->{"taskData"}->GetOrderedUnitKeys();
+	my $mode      = $self->{"taskData"}->GetTaskMode();
 
 	# 1) Init groups
 
@@ -122,18 +122,17 @@ sub __InitGroup {
 	my $inCAM = $self->{"inCAM"};
 
 	# Get right export class and init
-	my $taskClass = $self->{"taskClass"}->{$unitId};
-	$taskClass->Init( $inCAM, $self->{"pcbId"}, $taskData );
-
+	my $workUnit = $self->{"workerUnits"}->{$unitId};
+	
 	# Set handlers
 
 	# catch item with results
-	$taskClass->{"onItemResult"}->Add( sub { $self->_ItemResultEvent( $taskClass, $unitId, @_ ) } );
+	$workUnit->{"onItemResult"}->Add( sub { $self->_ItemResultEvent( $workUnit, $unitId, @_ ) } );
 
 	# catch item with special importence
 	# a) "stop" - task should be stopped, because of errors
 	# b) "master" - pass master job id, which was choosen
-	$taskClass->{"onStatusResult"}->Add( sub { $self->__ItemSpecialEvent( $taskClass, $unitId, @_ ) } );
+	$workUnit->{"onStatusResult"}->Add( sub { $self->__ItemSpecialEvent( $workUnit, $unitId, @_ ) } );
 
 }
 
@@ -166,7 +165,7 @@ sub __ItemSpecialEvent {
 	elsif ( $itemResult->ItemId() eq Enums->EventItemType_MASTER ) {
 
 		# save pcb id (important, because base class use it when export finish or for task stop/continue)
-		$self->{"pcbId"} = $itemResult->GetData();
+		${$self->{"pcbId"}} = $itemResult->GetData();
 		$self->_SpecialEvent( $unitId, $itemResult );
 
 		$self->_OpenJob();

@@ -23,6 +23,8 @@ sub new {
 	# PROPERTIES
 
 	$self->{"unitId"} = shift;
+	
+	$self->{"taskMngr"} = shift; # Class responsible for process specific "task group"
 
 	# Approximate count of tasked items 
 	# (because computing progressbar value)
@@ -35,8 +37,7 @@ sub new {
 	
 	# Contains data  necessary for process task
 	$self->{"taskData"} = undef;
-	
-	$self->{"taskMngr"} = undef; # Class responsible for process specific "task group"
+ 
 
 	# EVENTS
 
@@ -54,6 +55,8 @@ sub Run {
 	$self->{"taskMngr"}->Run();
 
 }
+
+
 
 # Return process group value in percent
 sub GetProgressValue {

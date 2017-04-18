@@ -32,13 +32,14 @@ sub new {
 	my $self = $class->SUPER::new(@_);
 	bless($self);
 
-	$self->{"pcbId"}     = undef;
-	$self->{"taskId"}    = undef;
-	$self->{"inCAM"}     = undef;
+	$self->{"pcbId"}       = undef;
+	$self->{"taskId"}      = undef;
+	$self->{"inCAM"}       = undef;
 	$self->{"unitBuilder"} = undef;    # classes for task each group
-	
-	my %workerUnits = undef;
-	$self->{"workerUnits"}      = \%workerUnits;    # task data
+
+	my %workerUnits = ();
+	$self->{"workerUnits"} = \%workerUnits;   
+	$self->{"taskData"} = undef; # prepared task data
 
 	return $self;
 }
@@ -46,13 +47,15 @@ sub new {
 sub Init {
 	my $self = shift;
 
-	$self->{"pcbId"}     = shift;
-	$self->{"taskId"}    = shift;
-	$self->{"inCAM"}     = shift;
-	$self->{"unitBuilder"} = shift;    # builder generate JobWorker units with data, based on unit string data
+	$self->{"pcbId"}       = shift;
+	$self->{"taskId"}      = shift;
+	$self->{"unitBuilder"} = shift;            # builder generate JobWorker units with data, based on unit string data
+	$self->{"inCAM"}       = shift;
+
+	my %units = $self->{"unitBuilder"}->GetUnits();
+	$self->{"workerUnits"} = \%units;
 	
-	
-	$self->{"workerUnits"} = $self->{"unitBuilder"}->GetUnits();
+	$self->{"taskData"} = $self->{"unitBuilder"}->GetTaskData();
 
 	# Supress all toolkit exception/error windows
 	$self->{"inCAM"}->SupressToolkitException(1);
@@ -61,21 +64,20 @@ sub Init {
 	$self->{"inCAM"}->COM("disp_off");
 }
 
-
-sub _GetWorkUnits{
+sub _GetWorkUnits {
 	my $self = shift;
-	
-	return %{$self->{"workerUnits"}};
+
+	return %{ $self->{"workerUnits"} };
 }
 
 # Method open and checkou job
 sub _OpenJob {
 	my $self = shift;
 	my $step = shift;
-	
+
 	return 0;
 
-	unless ( $self->{"pcbId"} ) {
+	unless ( $$self->{"pcbId"} ) {
 		return 0;
 	}
 	my $inCAM = $self->{"inCAM"};
@@ -83,7 +85,7 @@ sub _OpenJob {
 	# choose step if not defined
 	unless ( defined $step ) {
 
-		my @names = CamStep->GetAllStepNames( $inCAM, $self->{"pcbId"} );
+		my @names = CamStep->GetAllStepNames( $inCAM, $$self->{"pcbId"} );
 		$step = $names[0];
 	}
 
@@ -93,7 +95,7 @@ sub _OpenJob {
 
 	$inCAM->HandleException(1);
 
-	CamHelper->OpenJob( $self->{"inCAM"}, $self->{"pcbId"} );
+	CamHelper->OpenJob( $self->{"inCAM"}, $$self->{"pcbId"} );
 
 	$inCAM->HandleException(0);
 
@@ -124,7 +126,7 @@ sub _OpenJob {
 
 	$inCAM->HandleException(1);
 
-	CamJob->CheckOutJob( $self->{"inCAM"}, $self->{"pcbId"} );
+	CamJob->CheckOutJob( $self->{"inCAM"}, $$self->{"pcbId"} );
 
 	$inCAM->HandleException(0);
 
@@ -147,10 +149,10 @@ sub _OpenJob {
 sub _CloseJob {
 	my $self = shift;
 	my $save = shift;
-	
+
 	return 0;
 
-	unless ( $self->{"pcbId"} ) {
+	unless ( $$self->{"pcbId"} ) {
 		return 0;
 	}
 
@@ -160,11 +162,11 @@ sub _CloseJob {
 	$inCAM->HandleException(1);
 
 	if ($save) {
-		CamJob->SaveJob( $self->{"inCAM"}, $self->{"pcbId"} );
+		CamJob->SaveJob( $self->{"inCAM"}, $$self->{"pcbId"} );
 	}
 
-	CamJob->CheckInJob( $self->{"inCAM"}, $self->{"pcbId"} );
-	CamJob->CloseJob( $self->{"inCAM"}, $self->{"pcbId"} );
+	CamJob->CheckInJob( $self->{"inCAM"}, $$self->{"pcbId"} );
+	CamJob->CloseJob( $self->{"inCAM"}, $$self->{"pcbId"} );
 
 	# STOP HANDLE EXCEPTION IN INCAM
 	$inCAM->HandleException(0);

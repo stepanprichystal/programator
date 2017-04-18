@@ -4,6 +4,7 @@
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Programs::PoolMerge::PoolMerge::UnitBuilder;
+use base("Managers::AbstractQueue::AbstractQueue::UnitBuilderBase");
 
 use Class::Interface;
 &implements('Managers::AbstractQueue::AbstractQueue::IUnitBuilder');
@@ -11,71 +12,61 @@ use Class::Interface;
 #3th party library
 use strict;
 use warnings;
- 
+use JSON;
 
 #local library
 use aliased "Programs::PoolMerge::Task::TaskData::DataParser";
 use aliased 'Programs::PoolMerge::Groups::MergeGroup::MergeWorkUnit';
 use aliased 'Programs::PoolMerge::Groups::OutputGroup::OutputWorkUnit';
 use aliased 'Programs::PoolMerge::Groups::RoutGroup::RoutWorkUnit';
+use aliased 'Programs::PoolMerge::UnitEnums';
+
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
 
 sub new {
 	my $class = shift;
-	my $self  = {};
+	my $self  = $class->SUPER::new(@_);
 	bless $self;
+
+	my $json     = JSON->new();
+	my $hashData = $json->decode( $self->{"jobStrData"} );
+
+	my $dataParser = DataParser->new();
+	$self->{"taskData"} = $dataParser->GetTaskDataByString( $hashData->{"xmlData"}, $hashData->{"fileName"} );
 
 	return $self;
 }
 
-sub GetUnits {
-	my $self           = shift;
-	my $stringUnitData = shift;
-	my $stringFileName = shift;
-
-	my $dataParser = DataParser->new();
-	my $taskData   = $dataParser->GetTaskDataByString($stringUnitData, $stringFileName);
+sub GetTaskData {
+	my $self     = shift;
 	
-	return 
-	
-	
-
+	return  $self->{"taskData"};
 }
 
-
-sub __InitWorkerUnits{
-	my $self           = shift;
-	my $taskData = shift;
+sub GetUnits {
+	my $self     = shift;
 	
-	my @keys = $taskData->GetOrderedUnitKeys(1);
+	my $taskData = $self->{"taskData"};
+
+	my @keys     = $taskData->GetOrderedUnitKeys(1);
 	my %allUnits = ();
 
 	foreach my $key (@keys) {
 
 		my $unit = $self->__GetUnitClass($key);
-		$allUnits{$key} =  $unit;
+
+		my $unitTaskData = $taskData->GetUnitData($key);
+
+		$unit->Init( $self->{"inCAM"}, $self->{"jobId"}, $unitTaskData );
+
+		$allUnits{$key} = $unit;
 	}
 
 	return %allUnits;
 }
- 
-sub __InitUnits {
-	my $self = shift;
- 
-	my @keys = $self->{"taskData"}->GetOrderedUnitKeys(1);
-	my @allUnits = ();
 
-	foreach my $key (@keys) {
-
-		my $unit = $self->__GetUnitClass($key);
-		push( @allUnits, $unit );
-	}
-
-	$self->{"units"}->SetUnits(\@allUnits);
-
-}
 # Return initialized "unit" object by unitId
 sub __GetUnitClass {
 	my $self   = shift;
@@ -83,26 +74,26 @@ sub __GetUnitClass {
 
 	my $unit;
 	my $jobId = $self->{"jobId"};
-	
-	my $title = UnitEnums->GetTitle($unitId);
 
 	if ( $unitId eq UnitEnums->UnitId_MERGE ) {
 
 		$unit = MergeWorkUnit->new($unitId);
-		
+
 	}
 	elsif ( $unitId eq UnitEnums->UnitId_ROUT ) {
 
 		$unit = RoutWorkUnit->new($unitId);
 
-	}elsif ( $unitId eq UnitEnums->UnitId_OUTPUT ) {
+	}
+	elsif ( $unitId eq UnitEnums->UnitId_OUTPUT ) {
 
 		$unit = OutputWorkUnit->new($unitId);
 
 	}
- 
+
 	return $unit;
 }
+
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#

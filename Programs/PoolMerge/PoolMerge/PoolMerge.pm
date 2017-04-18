@@ -14,6 +14,7 @@ use strict;
 use warnings;
 use File::Copy;
 use JSON;
+use File::Basename;
 
 #local library
 
@@ -72,24 +73,24 @@ sub new {
 #this handler run, when new job thread is created
 sub JobWorker {
 	my $self                         = shift;
-	my $pcbId                        = shift;
+	my $pcbIdShare                        = shift;
 	my $taskId                       = shift;
 	my $jobStrData                   = shift;
 	my $inCAM                        = shift;
 	my $THREAD_PROGRESS_EVT : shared = ${ shift(@_) };
 	my $THREAD_MESSAGE_EVT : shared  = ${ shift(@_) };
-	my $stopVar                      = shift;
+	my $stopVarShare                      = shift;
 
 	#GetTaskClass
 	my $task      = $self->_GetTaskById($taskId);
  
-	my $unitBuilder = UnitBuilder->new($jobStrData);
+	my $unitBuilder = UnitBuilder->new($inCAM, $$pcbIdShare, $jobStrData);
 	 
 
-	my $poolMerge = JobWorkerClass->new( \$THREAD_PROGRESS_EVT, \$THREAD_MESSAGE_EVT, $stopVar, $self->{"form"}->{"mainFrm"} );
-	$poolMerge->Init( $pcbId, $taskId, $unitBuilder, $inCAM, );
+	my $workerClass = JobWorkerClass->new( \$THREAD_PROGRESS_EVT, \$THREAD_MESSAGE_EVT, $stopVarShare, $self->{"form"}->{"mainFrm"} );
+	$workerClass->Init( $pcbIdShare, $taskId, $unitBuilder, $inCAM, );
 
-	$poolMerge->RunTask();
+	$workerClass->RunTask();
 
 }
 
@@ -232,11 +233,12 @@ sub __OnSetNewTaskHandler {
 	my $self     = shift;
 	my $jobId    = shift;
 	my $taskData = shift;
+	my $taskStrData = shift;
 	my $task     = shift;
 
 	my $status = TaskStatus->new(undef);
 
-	$$task = Task->new( $jobId, $taskData, $status );
+	$$task = Task->new( $jobId, $taskData, $taskStrData, $status );
 }
 
 #update gui

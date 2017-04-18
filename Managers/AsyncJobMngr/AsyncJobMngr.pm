@@ -106,7 +106,6 @@ sub _AddJobToQueue {
 	my $uniqueId   = shift;    #unique task id
 	my $jobStrData = shift;    # string data, job process is based on them
 	my $serverInfo = shift;    #server info, if external incam server is already prepared
-	
 
 	# new job item
 	my %jobInfo = (
@@ -326,11 +325,11 @@ sub __PortReadyHandler {
 		my $pcbId          = ${ $self->{"jobs"} }[$i]{"pcbId"};
 		my $jobGUID        = ${ $self->{"jobs"} }[$i]{"jobGUID"};
 		my $externalServer = ${ $self->{"jobs"} }[$i]{"serverInfo"} ? 1 : 0;
+		my $jobStrData     = ${ $self->{"jobs"} }[$i]{"jobStrData"};
 
 		$self->{'onJobStateChanged'}->Do( $jobGUID, Enums->JobState_RUNNING );
 
-		$self->{"threadMngr"}->RunNewtask( $jobGUID, ${ $self->{"jobs"}}[$i]->{"jobStrData"}, $d{"port"}, $pcbId, $d{"pidInCAM"}, $externalServer )
-		  ;
+		$self->{"threadMngr"}->RunNewtask( $jobGUID, $jobStrData, $d{"port"}, $pcbId, $d{"pidInCAM"}, $externalServer );
 
 	}
 
@@ -508,6 +507,7 @@ sub __SetLayout {
 	Wx::Event::EVT_COMMAND( $self->{"mainFrm"}, -1, $PORT_READY_EVT, sub { $self->__PortReadyHandler(@_) } );
 
 	$self->{"serverMngr"}->Init( $self->{"mainFrm"}, \$PORT_READY_EVT );
+	$self->{"serverMngr"}->InitThreadPool();
 	$self->{"threadMngr"}->Init( $self->{"mainFrm"}, \$THREAD_PROGRESS_EVT, \$THREAD_MESSAGE_EVT, \$THREAD_DONE_EVT );
 
 	return $mainFrm;

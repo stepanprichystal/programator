@@ -445,6 +445,7 @@ sub __RestartTask {
 
 	# 1) job is properlz aborted + keep task
 	my $taskData  = $task->GetTaskData();
+	my $taskStrData  = $task->GetTaskStrData();
 	my $taskJobId = $task->GetJobId();
 
 	# 2) remove job from queue
@@ -452,7 +453,7 @@ sub __RestartTask {
 
 	# 3) start new same job
 	my $newTask = 0;
-	$self->{"onSetNewTask"}->Do( $taskJobId, $taskData, \$newTask );
+	$self->{"onSetNewTask"}->Do( $taskJobId, $taskData, $taskStrData, \$newTask );
 
 	if ( !defined $newTask || $newTask == 0 ) {
 		die "new task was not init";

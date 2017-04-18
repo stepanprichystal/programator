@@ -54,17 +54,11 @@ sub new {
 	$self->{"destroyOnDemand"} = 1;                                 # close server only on demand, not immediately
 	$self->{"destroyDelay"}    = -1;                                # destroy server after 12s of WAITING state
 
-
-	
-	
-	
-	
-
 	$self->__CloseZombie( undef, 0 );
 
 	$self->__InitServers();
-
-	return $self;                                    # Return the reference to the hash.
+ 
+	return $self;                                                   # Return the reference to the hash.
 }
 
 # ==============================================
@@ -81,6 +75,27 @@ sub Init {
 	$PORT_READY_EVT = Wx::NewEventType;
 	Wx::Event::EVT_COMMAND( $self->{"abstractQueueFrm"}, -1, $PORT_READY_EVT, sub { $self->__PortReadyHandler(@_) } );
 
+}
+
+sub InitThreadPool {
+	my $self = shift;
+
+	# Maximum working threads, which start new incam
+	$self->{"MAX_THREADS"} = 3;
+
+	# Threads add their ID to this queue when they are ready for work
+	# Also, when app terminates a -1 is added to this queue
+	$self->{"IDLE_QUEUE"} = Thread::Queue->new();
+
+	# Thread work queues referenced by thread ID
+	my %work_queues;
+	$self->{"work_queues"} = \%work_queues;
+
+	# Create the thread pool
+	for ( 1 .. $self->{"MAX_THREADS"} ) {
+		$self->__AddThreadPool();
+
+	}
 }
 
 # Check if free server are available
@@ -182,8 +197,14 @@ sub PrepareServerPort {
 				#create server in separete ports
 				my $port = $s->{"port"};
 
-				my $worker = threads->create( sub { $self->__CreateServer( $port, $jobGUID ) } );
-			 
+				# Wait for an available thread
+				my $tid = $self->{"IDLE_QUEUE"}->dequeue();
+
+				# run thread
+
+				my @ary : shared = ( $port, $jobGUID );
+				$self->{"work_queues"}->{$tid}->enqueue( \@ary );
+
 				last;
 			}
 		}
@@ -213,7 +234,8 @@ sub PrepareExternalServerPort {
 			${$serverRef}[$i]->{"external"} = 1;
 
 			#test, if server is really ready. Try to connect
-			my $worker = threads->create( sub { $self->__CreateServerExternal( $serverInfo->{"port"}, $jobGUID ) } );
+			#my $worker = threads->create( sub { $self->__CreateServerExternal( $serverInfo->{"port"}, $jobGUID ) } );
+			 $self->__CreateServerExternal( $serverInfo->{"port"}, $jobGUID );
 
 			last;
 
@@ -476,6 +498,47 @@ sub GetServerStat {
 # ==============================================
 # Private method
 # ==============================================
+sub __AddThreadPool {
+	my $self = shift;
+
+	# Create a work queue for a thread
+	my $work_q = Thread::Queue->new();
+
+	# Create the thread, and give it the work queue
+	my $thr = threads->create( sub { $self->__PoolWorker($work_q) } );
+	$thr->set_thread_exit_only(1);
+
+	# Remember the thread's work queue
+	$self->{"work_queues"}->{ $thr->tid() } = $work_q;
+}
+
+sub __PoolWorker {
+	my $self = shift;
+	my ($work_q) = @_;
+
+	# This thread's ID
+	my $tid = threads->tid();
+
+	# Work loop
+	do {
+
+		# Indicate that were are ready to do work
+		printf( "Idle     -> %2d\n", $tid );
+		$self->{"IDLE_QUEUE"}->enqueue($tid);
+
+		# Wait for work from the queue
+		my $work = $work_q->dequeue();
+
+		# Do work
+
+		my $port    = $work->[0];
+		my $jobGUID = $work->[1];
+
+		$self->__CreateServer( $port, $jobGUID );
+
+		# Loop back to idle state if not told to terminate
+	} while (1);
+}
 
 # This method is called asynchronously
 # Start InCAM with "server" script and wait untill
@@ -603,7 +666,7 @@ sub __CreateServerConn {
 	# first test of connection
 	$inCAM = InCAM->new( "remote" => 'localhost', "port" => $port );
 
-	my $sleep = int( rand(5) + 2 );
+	#my $sleep = int( rand(5) + 2 );
 
 	# next tests of connecton. Wait, until server script is not ready
 	while ( !defined $inCAM || !$inCAM->{"socketOpen"} || !$inCAM->{"connected"} ) {
@@ -613,22 +676,22 @@ sub __CreateServerConn {
 
 			Helper->Print("CLIENT(parent): PID: $$  try connect to server port: $port....failed\n");
 		}
-		sleep($sleep);
+		sleep(1);
 
 		$inCAM = InCAM->new( "remote" => 'localhost', "port" => $port );
 	}
 
-	print STDERR "Connected, next test if server ready\n";
+	#print STDERR "Connected, next test if server ready\n";
 
 	#server seems ready, try send message and get server pid
 	my $pidServer = $inCAM->ServerReady();
 
-	print STDERR "Server ready, next client finish\n";
+	#print STDERR "Server ready, next client finish\n";
 
 	if ($pidServer) {
 		$inCAM->ClientFinish();
 
-		print STDERR "Client finish, end of thread\n";
+		#print STDERR "Client finish, end of thread\n";
 
 		return $pidServer;
 	}

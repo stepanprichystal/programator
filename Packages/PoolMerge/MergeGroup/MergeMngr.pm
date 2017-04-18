@@ -37,7 +37,7 @@ sub new {
 sub Run {
 	my $self = shift;
 
-	for ( my $i = 0 ; $i < 5 ; $i++ ) {
+	for ( my $i = 0 ; $i < 10 ; $i++ ) {
 
 		sleep(1);
 
@@ -86,7 +86,7 @@ sub TaskItemsCount {
 
 	my $totalCnt = 0;
 
-	$totalCnt += 5;    # getting sucesfully AOI manager
+	$totalCnt += 10;    # getting sucesfully AOI manager
 
 	return $totalCnt;
 
