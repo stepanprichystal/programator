@@ -8,12 +8,7 @@ use base('Managers::AbstractQueue::AbstractQueue::JobWorkerUnit');
 #3th party library
 use strict;
 use warnings;
-
-#use aliased 'Programs::Exporter::ExportChecker::Groups::NifExport::Model::NifGroupData';
-#use aliased 'Programs::PoolMerge::Groups::NifExport::NifGroup';
-
-#use aliased 'Programs::Exporter::ExportChecker::Groups::NifExport::Presenter::NifUnit';
-#use aliased 'Managers::MessageMngr::MessageMngr';
+ 
 
 use aliased 'Packages::Events::Event';
 use aliased 'Packages::PoolMerge::MergeGroup::MergeMngr';
@@ -47,12 +42,10 @@ sub Init {
 	my $self       = shift;
 	my $inCAM      = shift;
 	my $jobId      = shift;
-	my $taskData = shift;
-	 
+ 
+	my $taskData = $self->{"taskData"};
 
-	 
-	 
-	my $mngr = MergeMngr->new($inCAM, $jobId);
+	my $mngr = MergeMngr->new($inCAM, $jobId, $taskData);
 	
 	$mngr->{"onItemResult"}->Add( sub { $self->_OnItemResultHandler(@_) } );
 	$mngr->{"onStatusResult"}->Add( sub { $self->_OnStatusResultHandler(@_) } );

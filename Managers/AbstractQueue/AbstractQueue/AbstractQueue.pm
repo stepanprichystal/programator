@@ -416,6 +416,10 @@ sub __SetHandlersBase {
 	$self->{"form"}->{'onJobMessageEvt'}->Add( sub   { $self->__OnJobMessageEvtHandlerBase(@_) } );
 
 	$self->{"form"}->{'onJomMngrClose'}->Add( sub { $self->__OnCloseAbstractQueueBase(@_) } );
+	
+	$self->{"form"}->{'onRemoveJob'}->Add( sub { $self->__OnRemoveJobClick(@_) } );
+	
+	
 
 }
 

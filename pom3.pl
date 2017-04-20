@@ -1,32 +1,13 @@
 use strict;
 use warnings;
-use threads;
-use Thread::Queue;
-my $q = Thread::Queue->new();    # A new empty queue
-                                 # Worker thread
-my $thr = threads->create(
-	sub {
-		# Thread will loop until no more work
-		while (1){
-		 my $item = $q->dequeue();
-			                                               # Do work on $item
-			 sleep(1);
-			 print $item;
-			 
-		}
-	}
-);
+use File::Copy;
 
-my $item = 10;
+my $p = 'c:\Export\ExportFiles\pan2_4-18-1500-Imersnizlato_17-09-58.xml';
 
-# Send work to the thread
-$q->enqueue($item, 2, 3, 4, 5);
+for ( my $i = 0 ; $i < 20 ; $i++ ) {
 
-sleep (2);
+	my $newName = "c:\\Export\\ExportFiles\\pan" . $i . "_4-18-1500-Imersnizlato_17-09-58.xml";
 
-$q->enqueue(6, 7, 8, 9, 10);
+	  copy( $p, $newName );
 
-sleep (10);
-
-# Signal that there is no more work to be sent
-$q->end();
+}

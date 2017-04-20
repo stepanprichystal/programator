@@ -36,13 +36,7 @@ use aliased 'Managers::AbstractQueue::AppConf';
 
 sub new {
 	my $class = shift;
-
-	my $title = "Exporter utility";
-	my $name = "Exporter utility";
-	
-	my @dimension = ( AppConf->GetValue("windowWidth"), AppConf->GetColor("windowHeight") );
-
-	my $self = $class->SUPER::new( @_, $title,$name, \@dimension );
+ 	my $self = $class->SUPER::new( @_);
 
 	bless($self);
 

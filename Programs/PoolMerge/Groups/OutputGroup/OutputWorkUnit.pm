@@ -47,11 +47,9 @@ sub Init {
 	my $self       = shift;
 	my $inCAM      = shift;
 	my $jobId      = shift;
-	my $taskData = shift;
-	 
-
-	 
-	 
+	
+	my $taskData = $self->{"taskData"};
+ 
 	my $mngr = OutputMngr->new($inCAM, $jobId);
 	
 	$mngr->{"onItemResult"}->Add( sub { $self->_OnItemResultHandler(@_) } );

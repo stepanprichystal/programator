@@ -38,7 +38,32 @@ sub new {
 
 sub RunTask {
 	my $self = shift;
- 
+
+	eval {
+		$self->__RunTask();
+
+	};
+	if ( my $e = $@ ) {
+
+		my $errStr = "";
+
+		# get string error from exception
+		if ( $e->can("Error") ) {
+
+			$errStr .= $e->Error();
+		}
+		else {
+			$errStr .= $e;
+		}
+
+		$self->_TaskResultEvent( ResultEnums->ItemResult_Fail, $errStr );
+	}
+
+}
+
+sub __RunTask {
+	my $self = shift;
+
 	my %workUnits = $self->_GetWorkUnits();
 	my @keys      = $self->{"taskData"}->GetOrderedUnitKeys();
 	my $mode      = $self->{"taskData"}->GetTaskMode();
@@ -49,13 +74,15 @@ sub RunTask {
 
 		my $unitId   = $keys[$i];
 		my $workUnit = $workUnits{$unitId};
+		$self->__InitGroup($unitId);
 
-		$self->__InitGroup( $unitId, $workUnit );
 	}
 
 	# 2) Process groups
 
 	for ( my $i = 0 ; $i < scalar(@keys) ; $i++ ) {
+
+		my $taskStopped = 0;
 
 		my $unitId = $keys[$i];
 
@@ -68,6 +95,10 @@ sub RunTask {
 
 			# Process group
 			$self->__ProcessGroup($unitId);
+
+			if ( $self->_CheckStopThread() ) {
+				$taskStopped = 1;
+			}
 		};
 		if ( my $e = $@ ) {
 
@@ -89,7 +120,9 @@ sub RunTask {
 		}
 
 		# check if thread should be stopped
-		if ( $self->_CheckStopThread() ) {
+		if ($taskStopped) {
+
+			$taskStopped = 0;
 
 			# sent message, thread is now continues..
 			my $itemRes = ItemResult->new( EnumsAbstrQ->EventItemType_CONTINUE );
@@ -115,15 +148,16 @@ sub RunTask {
 }
 
 sub __InitGroup {
-	my $self     = shift;
-	my $unitId   = shift;
-	my $taskData = shift;    # export data for specific group
+	my $self   = shift;
+	my $unitId = shift;
 
 	my $inCAM = $self->{"inCAM"};
 
 	# Get right export class and init
 	my $workUnit = $self->{"workerUnits"}->{$unitId};
-	
+
+	$workUnit->Init( $inCAM, ${ $self->{"pcbId"} } );
+
 	# Set handlers
 
 	# catch item with results
@@ -141,6 +175,7 @@ sub __ProcessGroup {
 	my $unitId = shift;
 
 	my %workUnits = $self->_GetWorkUnits();
+
 	# Get right export class and init
 	my $workUnit = $workUnits{$unitId};
 
@@ -165,10 +200,12 @@ sub __ItemSpecialEvent {
 	elsif ( $itemResult->ItemId() eq Enums->EventItemType_MASTER ) {
 
 		# save pcb id (important, because base class use it when export finish or for task stop/continue)
-		${$self->{"pcbId"}} = $itemResult->GetData();
+		${ $self->{"pcbId"} } = $itemResult->GetData();
 		$self->_SpecialEvent( $unitId, $itemResult );
 
-		$self->_OpenJob();
+		unless ( $self->_OpenJob() ) {
+			die "Unable to open master job " . ${ $self->{"pcbId"} } . "\n";
+		}
 
 	}
 

@@ -18,21 +18,21 @@ use warnings;
 use aliased 'Programs::Exporter::ExportUtility::UnitEnums';
 
 use aliased 'Enums::EnumsGeneral';
-use aliased 'Programs::Exporter::ExportUtility::Groups::NifExport::NifUnit';
-use aliased 'Programs::Exporter::ExportUtility::Groups::NCExport::NCUnit';
+ 
 
 use aliased 'Connectors::HeliosConnector::HegMethods';
 
-use aliased 'Programs::Exporter::ExportUtility::Groups::NifExport::NifUnit';
-use aliased 'Programs::Exporter::ExportUtility::Groups::NCExport::NCUnit';
-use aliased 'Programs::Exporter::ExportUtility::Groups::ETExport::ETUnit';
-use aliased 'Programs::Exporter::ExportUtility::Groups::AOIExport::AOIUnit';
-use aliased 'Programs::Exporter::ExportUtility::Groups::PlotExport::PlotUnit';
-use aliased 'Programs::Exporter::ExportUtility::Groups::PreExport::PreUnit';
-use aliased 'Programs::Exporter::ExportUtility::Groups::ScoExport::ScoUnit';
-use aliased 'Programs::Exporter::ExportUtility::Groups::GerExport::GerUnit';
-use aliased 'Programs::Exporter::ExportUtility::Groups::PdfExport::PdfUnit';
-use aliased 'Programs::Exporter::ExportUtility::Groups::OutExport::OutUnit';
+#use aliased 'Programs::Exporter::ExportUtility::Groups::NifExport::NifUnit';
+#use aliased 'Programs::Exporter::ExportUtility::Groups::NCExport::NCUnit';
+#use aliased 'Programs::Exporter::ExportUtility::Groups::ETExport::ETUnit';
+#use aliased 'Programs::Exporter::ExportUtility::Groups::AOIExport::AOIUnit';
+#use aliased 'Programs::Exporter::ExportUtility::Groups::PlotExport::PlotUnit';
+#use aliased 'Programs::Exporter::ExportUtility::Groups::PreExport::PreUnit';
+#use aliased 'Programs::Exporter::ExportUtility::Groups::ScoExport::ScoUnit';
+#use aliased 'Programs::Exporter::ExportUtility::Groups::GerExport::GerUnit';
+#use aliased 'Programs::Exporter::ExportUtility::Groups::PdfExport::PdfUnit';
+#use aliased 'Programs::Exporter::ExportUtility::Groups::OutExport::OutUnit';
+use aliased 'Managers::AbstractQueue::Unit::UnitBase';
 use aliased 'Managers::AbstractQueue::TaskResultMngr';
 
 #-------------------------------------------------------------------------------------------#
@@ -239,68 +239,15 @@ sub SentToProduce {
 sub __GetUnitClass {
 	my $self   = shift;
 	my $unitId = shift;
-
-	my $unit;
+ 
 	my $jobId = $self->{"jobId"};
 	
 	my $title = UnitEnums->GetTitle($unitId);
-
-	if ( $unitId eq UnitEnums->UnitId_NIF ) {
-
-		$unit = NifUnit->new($unitId, $jobId, $title);
-
-	}
-	elsif ( $unitId eq UnitEnums->UnitId_NC ) {
-
-		$unit = NCUnit->new($unitId, $jobId, $title);
-
-	}
-	elsif ( $unitId eq UnitEnums->UnitId_AOI ) {
-
-		$unit = AOIUnit->new($unitId, $jobId, $title);
-
-	}
-	elsif ( $unitId eq UnitEnums->UnitId_ET ) {
-
-		$unit = ETUnit->new($unitId, $jobId, $title);
-
-	}
-	elsif ( $unitId eq UnitEnums->UnitId_PLOT ) {
-
-		$unit = PlotUnit->new($unitId, $jobId, $title);
-
-	}
-	elsif ( $unitId eq UnitEnums->UnitId_PRE ) {
-
-		$unit = PreUnit->new($unitId, $jobId, $title);
-
-	}
-	elsif ( $unitId eq UnitEnums->UnitId_SCO ) {
-
-		$unit = ScoUnit->new($unitId, $jobId, $title);
-
-	}
-	elsif ( $unitId eq UnitEnums->UnitId_GER ) {
-
-		$unit = GerUnit->new($unitId, $jobId, $title);
-
-	}
-	elsif ( $unitId eq UnitEnums->UnitId_PDF ) {
-
-		$unit = PdfUnit->new($unitId, $jobId, $title);
-
-	}
-	elsif ( $unitId eq UnitEnums->UnitId_OUT ) {
-
-		$unit = OutUnit->new($unitId, $jobId, $title);
-
-	}
 	
- 
-
+	my $unit = UnitBase->new($unitId, $jobId, $title);
+  
 	return $unit;
 }
- 
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

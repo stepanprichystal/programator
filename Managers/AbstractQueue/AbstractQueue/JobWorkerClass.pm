@@ -52,16 +52,16 @@ sub Init {
 	$self->{"unitBuilder"} = shift;            # builder generate JobWorker units with data, based on unit string data
 	$self->{"inCAM"}       = shift;
 
-	my %units = $self->{"unitBuilder"}->GetUnits();
-	$self->{"workerUnits"} = \%units;
-	
-	$self->{"taskData"} = $self->{"unitBuilder"}->GetTaskData();
-
 	# Supress all toolkit exception/error windows
 	$self->{"inCAM"}->SupressToolkitException(1);
 
 	# Switch of displa actions in InCAM editor
 	$self->{"inCAM"}->COM("disp_off");
+	
+	my %units = $self->{"unitBuilder"}->GetUnits();
+	$self->{"workerUnits"} = \%units;
+	
+	$self->{"taskData"} = $self->{"unitBuilder"}->GetTaskData();
 }
 
 sub _GetWorkUnits {
@@ -75,19 +75,14 @@ sub _OpenJob {
 	my $self = shift;
 	my $step = shift;
 
-	return 0;
+	#return 0;
 
 	unless ( ${$self->{"pcbId"}} ) {
 		return 0;
 	}
 	my $inCAM = $self->{"inCAM"};
 
-	# choose step if not defined
-	unless ( defined $step ) {
 
-		my @names = CamStep->GetAllStepNames( $inCAM, ${$self->{"pcbId"}} );
-		$step = $names[0];
-	}
 
 	my $result = 1;
 
@@ -110,6 +105,17 @@ sub _OpenJob {
 	# if set step fail, it means max number exceeded
 
 	$inCAM->HandleException(1);
+	
+	unless($result){
+		return 0;
+	}
+	
+	# choose step if not defined
+	if (!defined $step ) {
+
+		my @names = CamStep->GetAllStepNames( $inCAM, ${$self->{"pcbId"}} );
+		$step = $names[0];
+	}
 
 	CamHelper->SetStep( $self->{"inCAM"}, $step );
 
@@ -120,6 +126,10 @@ sub _OpenJob {
 	if ($err3) {
 		$result = 0;
 		$self->_TaskResultEvent( ResultEnums->ItemResult_Fail, "Maximum licence of InCAM is exceeded" );
+	}
+	
+	unless($result){
+		return 0;
 	}
 
 	# 3) check out job
@@ -150,7 +160,7 @@ sub _CloseJob {
 	my $self = shift;
 	my $save = shift;
 
-	return 0;
+	#return 0;
 
 	unless ( ${$self->{"pcbId"}} ) {
 		return 0;
@@ -164,7 +174,7 @@ sub _CloseJob {
 	if ($save) {
 		CamJob->SaveJob( $self->{"inCAM"}, ${$self->{"pcbId"}} );
 	}
-
+ 
 	CamJob->CheckInJob( $self->{"inCAM"}, ${$self->{"pcbId"}} );
 	CamJob->CloseJob( $self->{"inCAM"}, ${$self->{"pcbId"}} );
 
@@ -207,7 +217,9 @@ sub _CheckStopThread {
 		}
 
 		# 3) Open job again
-		$self->_OpenJob();
+		unless($self->_OpenJob()){
+			die "Unable open job after task continue.\n";
+		}
 	}
 
 	return $threadStoped;

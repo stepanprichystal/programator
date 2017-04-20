@@ -49,7 +49,7 @@ sub new {
 	else {
 
  
-		Helper->__RunExportUtility();
+		$self->__RunExportUtility();
 
 	}
  
@@ -73,7 +73,7 @@ sub __RunExportUtility {
 	  || die "Failed to create ExportUtility process.\n";
 
 	
-
+	 
 
 }
 

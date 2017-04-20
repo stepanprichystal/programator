@@ -304,7 +304,7 @@ sub openSocket {
 											   PeerPort => $port,
 											   Type     => SOCK_STREAM,
 											   Timeout  => 0.1
-	) or print STDERR "\n Can't bind : $@\n";
+	);
 
 	if ( $self->{"socket"} ) {
 

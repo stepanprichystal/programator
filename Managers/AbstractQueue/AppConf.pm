@@ -1,5 +1,5 @@
 #-------------------------------------------------------------------------------------------#
-# Description: Script slouzi pro vypocet hlubky vybrusu pri navadeni na vrtackach.
+# Description: Can read app configuration from Config.txt files, placed in root dir of app
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Managers::AbstractQueue::AppConf;
@@ -19,7 +19,7 @@ use aliased 'Helpers::FileHelper';
 #   Package methods
 #-------------------------------------------------------------------------------------------#
 
-# Return base cu thick by layer
+# Return wx color based on rgb values
 sub GetColor {
 	my $self = shift;
 	my $key  = shift;
@@ -40,6 +40,7 @@ sub GetColor {
 	return $clr;
 }
 
+# Return pure value from vonfig file
 sub GetValue{
 	my $self = shift;
 	my $key  = shift;
@@ -55,7 +56,7 @@ sub __GetVal{
 	my $self = shift;
 	my $key  = shift;
 	
-	print STDERR $main::stylePath;
+	#print STDERR $main::stylePath;
 	
 	unless ( -e $main::stylePath ) {
 		die "Configuration style file doesn't exist";

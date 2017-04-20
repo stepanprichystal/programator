@@ -337,8 +337,11 @@ sub CloseJob {
 	my $self    = shift;
 	my $inCam   = shift;
 	my $jobName = shift;
+	
+	if($self->IsJobOpen($inCam, $jobName)){
 
-	$inCam->COM( "close_job", "job" => "$jobName" );
+		$inCam->COM( "close_job", "job" => "$jobName" );
+	}
 }
 
 # Open given job
@@ -374,7 +377,10 @@ sub CheckInJob {
 	my $inCam   = shift;
 	my $jobName = shift;
 
-	$inCam->COM( "check_inout", "job" => "$jobName", "mode" => "in", "ent_type" => "job" );
+	if($self->IsJobOpen($inCam, $jobName)){
+
+		$inCam->COM( "check_inout", "job" => "$jobName", "mode" => "in", "ent_type" => "job" );
+	}
 }
 
 # CheckIn job

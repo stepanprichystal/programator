@@ -3,6 +3,7 @@ package Programs::Exporter::ExportUtility::DataTransfer::Enums;
 
 use constant {
 			   Mode_READ      => "readMode",
+			   Mode_READFROMSTR      => "readFromStrMode",
 			   Mode_WRITE        => "writeMode"
 };
 

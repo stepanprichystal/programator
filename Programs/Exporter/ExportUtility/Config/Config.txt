@@ -13,12 +13,21 @@ clrItemUnSelected = 242, 242, 242
 
 portStart = 1000
 
-# height of quuene in px
+# height of quuene in percentage, rest of height are group details
 
-queueHeight = 280
+queueHeight = 40
 
 
 # height and width of main window
 windowWidth = 1120
 windowHeight = 760
+
+# app icon name, stored in resouces/images
+appIcon = Icon.bmp
+
+# Name of app in tray icon
+appNameTray = Export Utility
+
+# Name of app in title
+appName = Export Utility
  

@@ -27,12 +27,13 @@ use aliased 'Managers::AbstractQueue::Task::TaskStatus::TaskStatus';
 use aliased 'Programs::Exporter::ExportUtility::Task::Task';
 use aliased 'Programs::Exporter::ExportUtility::ExportUtility::Forms::ExportUtilityForm';
 use aliased 'Programs::Exporter::ExportUtility::DataTransfer::DataTransfer';
- 
+
 use aliased 'Programs::Exporter::ExportUtility::DataTransfer::Enums' => 'EnumsTransfer';
-use aliased 'Managers::AsyncJobMngr::Enums'           => 'EnumsJobMngr';
+use aliased 'Managers::AsyncJobMngr::Enums'                          => 'EnumsJobMngr';
 use aliased 'Programs::Exporter::ExportUtility::ExportUtility::JobWorkerClass';
 use aliased 'Programs::Exporter::ExportUtility::Enums';
 use aliased 'Packages::InCAM::InCAM';
+use aliased 'Programs::Exporter::ExportUtility::ExportUtility::UnitBuilder';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -71,22 +72,23 @@ sub new {
 #this handler run, when new job thread is created
 sub JobWorker {
 	my $self                         = shift;
-	my $pcbId                        = shift;
+	my $pcbIdShare                   = shift;
 	my $taskId                       = shift;
+	my $jobStrData                   = shift;
 	my $inCAM                        = shift;
 	my $THREAD_PROGRESS_EVT : shared = ${ shift(@_) };
 	my $THREAD_MESSAGE_EVT : shared  = ${ shift(@_) };
-	my $stopVar                      = shift;
+	my $stopVarShare                 = shift;
 
 	#GetTaskClass
-	my $task        = $self->_GetTaskById($taskId);
-	my %exportClass = $task->{"units"}->GetTaskClass();
-	my $taskData  = $task->GetTaskData();
+	my $task = $self->_GetTaskById($taskId);
 
-	my $jobExport = JobWorkerClass->new( \$THREAD_PROGRESS_EVT, \$THREAD_MESSAGE_EVT, $stopVar, $self->{"form"}->{"mainFrm"} );
-	$jobExport->Init( $pcbId, $taskId, $inCAM, \%exportClass, $taskData );
+	my $unitBuilder = UnitBuilder->new( $inCAM, $$pcbIdShare, $jobStrData );
 
-	$jobExport->RunExport();
+	my $workerClass = JobWorkerClass->new( \$THREAD_PROGRESS_EVT, \$THREAD_MESSAGE_EVT, $stopVarShare, $self->{"form"}->{"mainFrm"} );
+	$workerClass->Init( $pcbIdShare, $taskId, $unitBuilder, $inCAM, );
+
+	$workerClass->RunTask();
 
 }
 
@@ -101,7 +103,7 @@ sub __OnJobStateChanged {
 	my $taskState       = shift;
 	my $taskStateDetail = shift;
 
-	my $task       = $self->_GetTaskById($taskId);
+	my $task     = $self->_GetTaskById($taskId);
 	my $taskData = $task->GetTaskData();
 
 	if ( $taskState eq EnumsJobMngr->JobState_DONE ) {
@@ -121,8 +123,7 @@ sub __OnJobStateChanged {
 			# refresh GUI to produce
 			$self->{"form"}->SetJobItemToProduceResult($task);
 		}
-		
-		
+
 	}
 }
 
@@ -146,8 +147,6 @@ sub __OnJobMessageEvtHandler {
 # First is called this function in base class, then is called this handler
 sub __OnCloseExporter {
 	my $self = shift;
-
- 
 
 }
 
@@ -203,8 +202,7 @@ sub __OnToProduceClick {
 # Take every file only once, then delete it
 sub __CheckFilesHandler {
 	my ( $self, $mainFrm, $event ) = @_;
-	
-	
+
 	# If dir for export files doesn't exist, create it
 	unless ( -e EnumsPaths->Client_EXPORTFILES ) {
 		mkdir( EnumsPaths->Client_EXPORTFILES ) or die "Can't create dir: " . EnumsPaths->Client_EXPORTFILES . $_;
@@ -253,15 +251,23 @@ sub __CheckFilesHandler {
 			my $dataTransfer = DataTransfer->new( $jobId, EnumsTransfer->Mode_READ );
 			my $taskData = $dataTransfer->GetExportData();
 
-			my $f = EnumsPaths->Client_EXPORTFILES . $jobId;
+			my $f          = EnumsPaths->Client_EXPORTFILES . $jobId;
+			my $jsonString = FileHelper->ReadAsString($f);
 
 			copy( $f, EnumsPaths->Client_EXPORTFILES . "backup\\" . $jobId );    # do backup
 
 			# TODO odkomentovat abt to mazalo
 			#unlink($f);
 
-			$self->__AddNewJob( $jobId, $taskData );
+			# serialize job data to strin
+			my %hashData = ();
+			$hashData{"jsonData"} = $jsonString;
 
+			my $json = JSON->new();
+
+			my $taskStrData = $json->pretty->encode( \%hashData );
+
+			$self->__AddNewJob( $jobId, $taskData, $taskStrData );
 		}
 	}
 
@@ -272,15 +278,16 @@ sub __CheckFilesHandler {
 # ========================================================================================== #
 
 sub __AddNewJob {
-	my $self       = shift;
-	my $jobId      = shift;
-	my $taskData = shift;
+	my $self        = shift;
+	my $jobId       = shift;
+	my $taskData    = shift;
+	my $taskStrData = shift;
 
-	my $path = JobHelper->GetJobArchive( $jobId) . "Status_export";
+	my $path = JobHelper->GetJobArchive($jobId) . "Status_export";
 
-	my $status = TaskStatus->new( $path);
+	my $status = TaskStatus->new($path);
 
-	my $task = Task->new( $jobId, $taskData, $status );
+	my $task = Task->new( $jobId, $taskData, $taskStrData, $status );
 
 	$self->_AddNewJob($task);
 }

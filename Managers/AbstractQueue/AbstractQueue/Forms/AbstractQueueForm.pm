@@ -41,20 +41,16 @@ sub new {
 	my $class     = shift;
 	my $runMode   = shift;
 	my $parent    = shift;
-	my $title     = shift;
-	my $name      = shift;
-
+ 
 	if ( defined $parent && $parent == -1 ) {
 		$parent = undef;
 	}
 
-	my $self = $class->SUPER::new( $runMode, $parent, $title, $name );
+	my $self = $class->SUPER::new( $runMode, $parent  );
 	bless($self);
 
 	# Properties
-
-	$self->{"messageMngr"} = MessageMngr->new($title);
-
+ 
 	# Events
 
 	$self->{"onClick"}       = Event->new();
@@ -444,9 +440,9 @@ sub __SetLayout {
 	#$szRow1->Add( $settingsStatBox,  20, &Wx::wxEXPAND );
 
 	$szRow2->Add( $groupsStatBox, 1, &Wx::wxEXPAND );
-
-	$szPage1->Add( $szRow1, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
-	$szPage1->Add( $szRow2, 1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+ 
+	$szPage1->Add( $szRow1, AppConf->GetValue("queueHeight"), &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szPage1->Add( $szRow2, 100 - AppConf->GetValue("queueHeight"), &Wx::wxEXPAND | &Wx::wxALL, 1 );
 
 	$szPage2->Add( $settingsStatBox,     1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 	$szPage2->Add( $taskSettingsStatBox, 1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
@@ -477,7 +473,7 @@ sub __SetLayoutJobsQueue {
 	my $statBox = Wx::StaticBox->new( $parent, -1, 'Jobs queue' );
 	my $szStatBox = Wx::StaticBoxSizer->new( $statBox, &Wx::wxVERTICAL );
 
-	my @dimension = ( 500, AppConf->GetValue("queueHeight")  );
+	my @dimension = ( 500, 100 );
 	my $jobQueue = undef;
 
 	$self->{"onSetJobQueue"}->Do( $parent, \@dimension, \$jobQueue );

@@ -2,15 +2,20 @@
 # Description: This class contains code, which provides export of specific group
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Programs::Exporter::ExportUtility::Groups::ScoExport::ScoExport;
+package Programs::Exporter::ExportUtility::Groups::ETExport::ETWorkUnit;
 use base('Managers::AbstractQueue::AbstractQueue::JobWorkerUnit');
 #3th party library
 use strict;
 use warnings;
 
-# local library
-use aliased "Packages::Export::ScoExport::ScoMngr";
+#use aliased 'Programs::Exporter::ExportChecker::Groups::NifExport::Model::NifGroupData';
+#use aliased 'Programs::Exporter::ExportUtility::Groups::NifExport::NifGroup';
 
+#use aliased 'Programs::Exporter::ExportChecker::Groups::NifExport::Presenter::NifUnit';
+#use aliased 'Managers::MessageMngr::MessageMngr';
+
+use aliased 'Packages::Events::Event';
+use aliased 'Packages::Export::ETExport::ETMngr';
 
 #-------------------------------------------------------------------------------------------#
 #  NC export, all layers, all machines..
@@ -32,25 +37,24 @@ sub new {
 
 	return $self;
 }
+ 
+
+
 
 sub Init {
 	my $self       = shift;
 	my $inCAM      = shift;
 	my $jobId      = shift;
-	my $taskData = shift;
-	 
-
+	
+	my $taskData = $self->{"taskData"};
+ 
 	$self->{"inCAM"}      = $inCAM;
 	$self->{"jobId"}      = $jobId;
-	$self->{"taskData"} = $taskData;
-	
  
-	my $coreThick =  $taskData->GetCoreThick();
-	my $optimize =  $taskData->GetOptimize();
-	my $scoringType =  $taskData->GetScoringType();
-	 
+	my $step = $taskData->GetStepToTest();
+	my $createEtStep = $taskData->GetCreateEtStep();
 	
-	my $mngr  = ScoMngr->new( $inCAM, $jobId, $coreThick, $optimize, $scoringType);
+	my $mngr = ETMngr->new($inCAM, $jobId, $step, $createEtStep);
 	
 	$mngr->{"onItemResult"}->Add( sub { $self->_OnItemResultHandler(@_) } );
 	

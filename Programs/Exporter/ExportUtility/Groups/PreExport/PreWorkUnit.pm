@@ -2,20 +2,15 @@
 # Description: This class contains code, which provides export of specific group
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Programs::Exporter::ExportUtility::Groups::NCExport::NCExport;
+package Programs::Exporter::ExportUtility::Groups::PreExport::PreWorkUnit;
 use base('Managers::AbstractQueue::AbstractQueue::JobWorkerUnit');
 #3th party library
 use strict;
 use warnings;
 
-#use aliased 'Programs::Exporter::ExportChecker::Groups::NifExport::Model::NifGroupData';
-#use aliased 'Programs::Exporter::ExportUtility::Groups::NifExport::NifGroup';
+# local library
+use aliased "Packages::Export::PreExport::PreMngr";
 
-#use aliased 'Programs::Exporter::ExportChecker::Groups::NifExport::Presenter::NifUnit';
-#use aliased 'Managers::MessageMngr::MessageMngr';
-
-use aliased 'Packages::Events::Event';
-use aliased 'Packages::Export::NCExport::ExportMngr';
 
 #-------------------------------------------------------------------------------------------#
 #  NC export, all layers, all machines..
@@ -42,29 +37,26 @@ sub Init {
 	my $self       = shift;
 	my $inCAM      = shift;
 	my $jobId      = shift;
-	my $taskData = shift;
-	 
-
-	
+ 
+	$self->{"inCAM"}      = $inCAM;
+	$self->{"jobId"}      = $jobId;
  
 	
-	my $exportSingle = $taskData->GetExportSingle();
-	my $pltLayers = $taskData->GetPltLayers();
-	my $npltLayers = $taskData->GetNPltLayers();
+	my $layers =  $self->{"taskData"}->GetSignalLayers();
+
 	
-	my $mngr = ExportMngr->new( $inCAM, $jobId, "panel", $exportSingle, $pltLayers, $npltLayers);
+	my $mngr  = PreMngr->new( $inCAM, $jobId, $layers);
+	
 	$mngr->{"onItemResult"}->Add( sub { $self->_OnItemResultHandler(@_) } );
 	
 	$self->{"taskMngr"} = $mngr;
 	
 	$self->{"itemsCount"} = $mngr->TaskItemsCount();
 	
- 
 }
- 
- 
- 
- 
+
+
+
 1;
 
 #-------------------------------------------------------------------------------------------#

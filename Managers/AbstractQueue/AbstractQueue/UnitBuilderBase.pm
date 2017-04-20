@@ -1,6 +1,7 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Is responsible for saving/loading serialization group data to/from disc
+# Description: Base class, responsible for initialiyation "worker unit", which are processed
+# by worker class in child thread
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Managers::AbstractQueue::AbstractQueue::UnitBuilderBase;
@@ -24,7 +25,7 @@ sub new {
 	
 	$self->{"inCAM"} = shift;
 	$self->{"jobId"} = shift;
-	$self->{"jobStrData"} = shift;
+	$self->{"jobStrData"} = shift; # serialized task data necessary for task procession
 
 	return $self;
 }
@@ -35,11 +36,7 @@ sub new {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	#use aliased 'Programs::Exporter::ExportChecker::ExportChecker::StorageMngr';
-
-	#my $id
-
-	#my $form = StorageMngr->new();
+ 
 
 }
 

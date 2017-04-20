@@ -2,7 +2,7 @@
 # Description: This class contains code, which provides export of specific group
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Programs::Exporter::ExportUtility::Groups::GerExport::GerExport;
+package Programs::Exporter::ExportUtility::Groups::GerExport::GerWorkUnit;
 use base('Managers::AbstractQueue::AbstractQueue::JobWorkerUnit');
 #3th party library
 use strict;
@@ -37,12 +37,12 @@ sub Init {
 	my $self       = shift;
 	my $inCAM      = shift;
 	my $jobId      = shift;
-	my $taskData = shift;
-	 
-
+	
+	my $taskData = $self->{"taskData"};
+ 
 	$self->{"inCAM"}      = $inCAM;
 	$self->{"jobId"}      = $jobId;
-	$self->{"taskData"} = $taskData;
+ 
 	
  
 	my $exportLayers =  $taskData->GetExportLayers();

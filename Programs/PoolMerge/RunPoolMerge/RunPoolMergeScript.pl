@@ -21,7 +21,7 @@ use lib qw( C:\Perl\site\lib\TpvScripts\Scripts );
 
 use aliased 'Programs::PoolMerge::PoolMerge::PoolMerge';
 use aliased 'Managers::AsyncJobMngr::Enums' => 'EnumsMngr';
-use aliased 'Managers::AbstractQueue::AbstractQueue::Helper';
+use aliased 'Managers::AbstractQueue::Helper';
  
 
 

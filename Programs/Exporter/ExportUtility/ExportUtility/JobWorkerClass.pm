@@ -20,8 +20,7 @@ use aliased 'CamHelpers::CamJob';
 use aliased 'CamHelpers::CamHelper';
 use aliased 'Packages::ItemResult::Enums' => 'ResultEnums';
 use aliased 'Managers::AbstractQueue::Enums';
-use aliased 'Managers::AsyncJobMngr::Enums'           => 'EnumsJobMngr';
- 
+use aliased 'Managers::AsyncJobMngr::Enums' => 'EnumsJobMngr';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -29,37 +28,72 @@ use aliased 'Managers::AsyncJobMngr::Enums'           => 'EnumsJobMngr';
 
 sub new {
 	my $class = shift;
-	my $self = $class->SUPER::new(@_);
+	my $self  = $class->SUPER::new(@_);
 	bless($self);
 
 	return $self;
 }
- 
 
-sub RunExport {
+sub RunTask {
 	my $self = shift;
 
-	my %unitsData = $self->{"data"}->GetAllUnitData();
-	my @keys      = $self->{"data"}->GetOrderedUnitKeys();
-	my $mode = 		$self->{"data"}->GetTaskMode();
+	eval {
+		$self->__RunTask();
+
+	};
+	if ( my $e = $@ ) {
+
+		my $errStr = "";
+
+		# get string error from exception
+		if ( $e->can("Error") ) {
+
+			$errStr .= $e->Error();
+		}
+		else {
+			$errStr .= $e;
+		}
+
+		$self->_TaskResultEvent( ResultEnums->ItemResult_Fail, $errStr );
+	}
+
+}
+
+sub __RunTask {
+	my $self = shift;
+
+	my %workUnits = $self->_GetWorkUnits();
+	my @keys      = $self->{"taskData"}->GetOrderedUnitKeys();
+	my $mode      = $self->{"taskData"}->GetTaskMode();
 
 	# sort keys by nhash value "__UNITORDER__"
 	#my @keys = ;
 
 	# Open job, only if asynchronous mode
-	if($mode eq EnumsJobMngr->TaskMode_ASYNC ){
-		$self->_OpenJob();
+	if ( $mode eq EnumsJobMngr->TaskMode_ASYNC ) {
+		$self->_OpenJob("panel");
 	}
 
-
 	# Open job
-	if ( CamJob->IsJobOpen($self->{"inCAM"}, $self->{"pcbId"})) {
+	if ( CamJob->IsJobOpen( $self->{"inCAM"}, ${ $self->{"pcbId"} } ) ) {
 
-		foreach my $unitId (@keys) {
+		# 1) Init groups
+
+		for ( my $i = 0 ; $i < scalar(@keys) ; $i++ ) {
+
+			my $unitId   = $keys[$i];
+			my $workUnit = $workUnits{$unitId};
+
+			$self->__InitGroup($unitId);
+		}
+
+		# 2) Process groups
+
+		for ( my $i = 0 ; $i < scalar(@keys) ; $i++ ) {
+
+			my $unitId = $keys[$i];
 
 			#tell group export start
-
-			my $taskData = $unitsData{$unitId};
 
 			# Event when group export start
 			$self->_GroupTaskEvent( Enums->EventType_GROUP_START, $unitId );
@@ -67,9 +101,9 @@ sub RunExport {
 			# DON'T USE TRY/CATCH (TINY LIBRARY), IF SO, NORRIS WRITTER DOESN'T WORK
 			# catch all unexpected exception in thread
 			eval {
-			
+
 				# Process group
-				$self->__ProcessGroup( $unitId, $taskData );
+				$self->__ProcessGroup($unitId);
 			};
 			if ( my $e = $@ ) {
 
@@ -87,7 +121,7 @@ sub RunExport {
 				}
 
 				$self->_GroupResultEvent( $unitId, ResultEnums->ItemResult_Fail, $errStr );
-				 
+
 			}
 
 			# Event when group export end
@@ -95,47 +129,45 @@ sub RunExport {
 		}
 
 		#close job
-		
-		if($mode eq EnumsJobMngr->TaskMode_ASYNC ){
-			
+
+		if ( $mode eq EnumsJobMngr->TaskMode_ASYNC ) {
+
 			$self->_CloseJob();
 		}
 	}
 }
- 
- 
 
-sub __ProcessGroup {
-	my $self       = shift;
-	my $unitId     = shift;
-	my $taskData = shift;    # export data for specific group
+sub __InitGroup {
+	my $self   = shift;
+	my $unitId = shift;
 
-	 
 	my $inCAM = $self->{"inCAM"};
 
 	# Get right export class and init
-	my $taskClass = $self->{"taskClass"}->{$unitId};
-	$taskClass->Init( $inCAM, $self->{"pcbId"}, $taskData );
+	my $workUnit = $self->{"workerUnits"}->{$unitId};
+
+	$workUnit->Init( $inCAM, ${ $self->{"pcbId"} } );
 
 	# Set handlers
-	$taskClass->{"onItemResult"}->Add( sub { $self->_ItemResultEvent( $taskClass, $unitId, @_ ) } );
 
-	
-
-	# Final export group
-	$taskClass->Run();
-
-	 
-
-#	my $err = $inCAM->GetExceptionError();
-#
-#	if ($err) {
-#
-#		$self->_GroupResultEvent( $unitId, ResultEnums->ItemResult_Fail, $err );
-#	}
+	# catch item with results
+	$workUnit->{"onItemResult"}->Add( sub { $self->_ItemResultEvent( $workUnit, $unitId, @_ ) } );
 
 }
- 
+
+sub __ProcessGroup {
+	my $self   = shift;
+	my $unitId = shift;
+
+	my %workUnits = $self->_GetWorkUnits();
+
+	# Get right export class and init
+	my $workUnit = $workUnits{$unitId};
+
+	# Final export group
+	$workUnit->Run();
+}
+
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#

@@ -2,7 +2,7 @@
 # Description: This class contains code, which provides export of specific group
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Programs::Exporter::ExportUtility::Groups::PdfExport::PdfExport;
+package Programs::Exporter::ExportUtility::Groups::PdfExport::PdfWorkUnit;
 use base('Managers::AbstractQueue::AbstractQueue::JobWorkerUnit');
 
 #3th party library
@@ -37,11 +37,13 @@ sub Init {
 	my $self       = shift;
 	my $inCAM      = shift;
 	my $jobId      = shift;
-	my $taskData = shift;
+	
+	my $taskData = $self->{"taskData"};
 
 	$self->{"inCAM"}      = $inCAM;
 	$self->{"jobId"}      = $jobId;
-	$self->{"taskData"} = $taskData;
+	
+ 
 
 	my $exportControl = $taskData->GetExportControl();
 	my $controlStep   = $taskData->GetControlStep();

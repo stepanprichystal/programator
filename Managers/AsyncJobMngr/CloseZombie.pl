@@ -1,5 +1,5 @@
 #-------------------------------------------------------------------------------------------#
-# Description: Close zombified InCAM server running on specific port
+# Description: Close zombified InCAM server running on specific port or port range
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 
@@ -22,14 +22,24 @@ use lib qw( C:\Perl\site\lib\TpvScripts\Scripts );
 use aliased 'Managers::AsyncJobMngr::Helper';
 
 my %options = ();
-getopts( "i:n:", \%options );
+getopts( "i:r:", \%options );
 
-my $port       = $options{"i"};
-my $scriptName = $options{"n"};    # name of script which use AsyncJobMngr. We need this name for killing zombie perl and incam
+my $port      = $options{"i"};
+my $portRange = $options{"r"};
 
-if ($port eq "-") {
+my $portFrom = undef;
+my $portTo   = undef;
+
+if ( $port eq "-" ) {
+
+	( $portFrom, $portTo ) = $portRange =~ m/(\d+)-(\d+)/;
 	$port = undef;
 	print STDERR "\n\nPort is not specified, kill all\n";
+}
+else {
+
+	$portFrom = $port;
+	$portTo   = $port;
 }
 
 my $args;
@@ -50,22 +60,14 @@ foreach my $pid ( sort { $a <=> $b } keys %list ) {
 
 			$args = @{$procInfo}[0]->{"CommandLine"};    # Get the max
 
-			if ( defined $args && $args =~ /ServerAsyncJob/ && $args =~ /$scriptName/ ) {
-
-				print STDERR "CLOSE ZOMBIE: $args $port\n";
-
+			if ( defined $args && $args =~ /ServerAsyncJob/ ) {
+ 
 				$args =~ m/pl\s(\d+)/;
 
-				if ( defined $port ) {
-					if ( $1 == $port ) {
-						Win32::Process::KillProcess( $pid, 0 );
-						Helper->Print( "ZOMBIE: NAME: $name PID: " . $pid . ", port:" . $port . "....................................was killed\n" );
-					}
-				}
-				else {
-
+				if ( $1 >= $portFrom && $1 <= $portTo ) {
+					
 					Win32::Process::KillProcess( $pid, 0 );
-					Helper->Print( "ZOMBIE: NAME: $name PID: " . $pid .  "....................................was killed\n" );
+					Helper->Print( "ZOMBIE: NAME: $name PID: " . $pid . " PORT: $1 ....................................was killed. Path $args \n" );
 				}
 
 			}

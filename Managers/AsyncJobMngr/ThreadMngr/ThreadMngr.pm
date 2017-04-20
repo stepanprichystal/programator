@@ -43,14 +43,14 @@ sub new {
 
 	#raise when new thread start
 	$self->{"onThreadWorker"} = Event->new();
- 
+
 	return $self;
 }
 
 sub DESTROY {
 	my $self = shift;
 
-	# clean up thread pool
+	# clean up created thread pools
 	foreach my $thrId ( keys %{ $self->{"work_queues"} } ) {
 
 		my $thrObj = threads->object($thrId);
@@ -81,11 +81,7 @@ sub InitThreadPool {
 	$self->{"MAX_THREADS"} = 4;
 	$self->{"MIN_THREADS"} = 3;
 
-	# Flag to inform all threads that application is terminating
-	$self->{"TERM :shared"} = 0;
-
 	# Threads add their ID to this queue when they are ready for work
-	# Also, when app terminates a -1 is added to this queue
 	$self->{"IDLE_QUEUE"} = Thread::Queue->new();
 
 	# Thread work queues referenced by thread ID
@@ -98,7 +94,6 @@ sub InitThreadPool {
 
 	}
 }
-
 
 # Processrequest for starting new thread
 sub RunNewtask {
@@ -157,21 +152,6 @@ sub ExitThread {
 
 				#$thrObj->detach();
 
-				# when we exit thread, it is necessary create new thread and add to thraad pool
-				my $threadPoolCnt = 0;
-				foreach my $thrId ( keys %{ $self->{"work_queues"} } ) {
-
-					my $thrObj = threads->object($thrId);
-					if ( defined $thrObj && $thrObj->is_running() ) {
-						$threadPoolCnt++;
-					}
-				}
-
-				if ( $threadPoolCnt <= $self->{"MIN_THREADS"} ) {
-
-					$self->__AddThreadPool();
-				}
-
 				$thrObj->kill('KILL');
 
 				Helper->Print( "Thread:   port:" . $thr->{"port"} . "...........................try to end thread\n" );
@@ -221,8 +201,7 @@ sub ContinueThread {
 	}
 }
 
-
-
+# Create new thread pool and add it
 sub __AddThreadPool {
 	my $self = shift;
 
@@ -237,6 +216,26 @@ sub __AddThreadPool {
 	$self->{"work_queues"}->{ $thr->tid() } = $work_q;
 }
 
+sub __FillThreadPool {
+	my $self = shift;
+
+	# when we exit thread, it is necessary create new thread and add to thraad pool
+	# because we want keep maximum thread readz in order do more task in same time
+	my $threadPoolCnt = 0;
+	foreach my $thrId ( keys %{ $self->{"work_queues"} } ) {
+
+		my $thrObj = threads->object($thrId);
+		if ( defined $thrObj && $thrObj->is_running() ) {
+			$threadPoolCnt++;
+		}
+	}
+
+	for(my $i = 0; $i <  ($self->{"MIN_THREADS"} - $threadPoolCnt ); $i++){
+ 
+		print STDERR "\n Add new thread pool. TOtal cnt: $threadPoolCnt. \n";
+		$self->__AddThreadPool();
+	}
+}
 
 sub __CreateThread {
 	my $self           = shift;
@@ -247,30 +246,20 @@ sub __CreateThread {
 	my $pidInCAM       = shift;
 	my $externalServer = shift;
 	my $stopVarShare   = shift;
-
-	# TODO smazat
-
-	# $self->__WorkerMethod( $jobGUID, $port, $pcbId, $pidInCAM ) ;
-
-	# return $$;
+	
+	# check if thread pool has minimal count of pools
+	$self->__FillThreadPool();
 
 	# Wait for an available thread
 	my $tid = $self->{"IDLE_QUEUE"}->dequeue();
 
 	# Check for termination condition
 
-	# Give the thread some work to do
-
-	# my @ary = ($jobGUID, $port, $pcbId, $pidInCAM, $externalServer);
+	# Pass parameters to prepared thread
 	my @ary : shared = ( $jobGUID, $jobStrData, $port, $pcbIdShare, $pidInCAM, $externalServer, $stopVarShare );
 
 	# my $pom = 1;
 	$self->{"work_queues"}->{$tid}->enqueue( \@ary );
-
-	#my $worker = threads->create( sub { $self->__WorkerMethod( $jobGUID, $port, $pcbId, $pidInCAM, $externalServer, $stopVar ) } );
-
-	#$worker->set_thread_exit_only(1);    # tell only this child thread will be exited
-	#$worker->detach();
 
 	return $tid;
 }
@@ -292,10 +281,13 @@ sub __WorkerMethod {
 		$onThreadWorker->Do( $pcbIdShare, $jobGUID, $jobStrData, $inCAM, \$THREAD_PROGRESS_EVT, \$THREAD_MESSAGE_EVT, $stopVarShare );
 	}
 
+	print STDERR "\n thread task end PCBid: $$pcbIdShare \n";
+
 	$self->__CleanUpAndExit( $inCAM, $jobGUID, $pcbIdShare, Enums->ExitType_SUCCES );
 
 }
 
+# Pool thread metohod, where is infinit loop and wait for work (new task)
 sub __PoolWorker {
 	my $self = shift;
 	my ($work_q) = @_;
@@ -307,7 +299,6 @@ sub __PoolWorker {
 	do {
 
 		# Indicate that were are ready to do work
-		printf( "Idle     -> %2d\n", $tid );
 		$self->{"IDLE_QUEUE"}->enqueue($tid);
 
 		# Wait for work from the queue
@@ -317,7 +308,6 @@ sub __PoolWorker {
 		#last if ($work < 0);
 
 		# Do some work while monitoring $TERM
-		printf( "            %2d <- Working\n", $tid );
 
 		#sleep(5);
 
@@ -328,6 +318,8 @@ sub __PoolWorker {
 		my $pidInCAM       = $work->[4];
 		my $externalServer = $work->[5];
 		my $stop           = $work->[6];
+
+		print STDERR "\n Thread pool start PCB: $$pcbIdShare \n";
 
 		# TODO odkomentovat
 		my $inCAM = InCAM->new( "remote" => 'localhost', "port" => $port );
@@ -351,8 +343,6 @@ sub __PoolWorker {
 		# Loop back to idle state if not told to terminate
 	} while (1);
 
-	# All done
-	printf( "Finished -> %2d\n", $tid );
 }
 
 sub __CleanUpAndExit {
@@ -395,14 +385,6 @@ sub __ThreadEnded {
 
 	for ( my $i = 0 ; $i < scalar( @{ $self->{"threadTasks"} } ) ; $i++ ) {
 		if ( @{ $self->{"threadTasks"} }[$i]->{"jobGUID"} eq $jobGUID ) {
-
-			#			my $thrObj = threads->object( @{ $self->{"threadTasks"} }[$i]->{"thrId"} );
-			#
-			#			if ( defined $thrObj ) {
-			#				print STDERR "\ndetach START\n";
-			#				 $thrObj = undef;
-			#				print STDERR "\ndetach\n";
-			#			}
 
 			splice @{ $self->{"threadTasks"} }, $i, 1;    #delete thread from list
 

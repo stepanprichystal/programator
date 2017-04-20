@@ -1,6 +1,7 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Is responsible for saving/loading serialization group data to/from disc
+# Description: Child class, responsible for initialiyation "worker unit", which are processed
+# by worker class in child thread
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Programs::PoolMerge::PoolMerge::UnitBuilder;
@@ -55,11 +56,13 @@ sub GetUnits {
 
 	foreach my $key (@keys) {
 
-		my $unit = $self->__GetUnitClass($key);
-
 		my $unitTaskData = $taskData->GetUnitData($key);
 
-		$unit->Init( $self->{"inCAM"}, $self->{"jobId"}, $unitTaskData );
+		my $unit = $self->__GetUnitClass($key);
+
+		$unit->SetTaskData($unitTaskData);
+
+		#$unit->Init( $self->{"inCAM"}, $self->{"jobId"}, $unitTaskData );
 
 		$allUnits{$key} = $unit;
 	}

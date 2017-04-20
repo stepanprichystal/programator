@@ -1,4 +1,4 @@
-
+#öß§²
 #-------------------------------------------------------------------------------------------#
 # Description: Job manager provide szstem for running more then one InCAM asynchronously
 # in own child thread. Is responsible for:
@@ -46,8 +46,6 @@ sub new {
 	my $class   = shift;
 	my $runMode = shift;
 	my $parent  = shift;
-	my $title   = shift;
-	my $name    = shift;    # name which is used in tray menu, etc (Export, Pool export etc.. this is only arbitrary string)
 
 	# Get name of caller package
 	my ( $packageFull, $filename, $line ) = caller;
@@ -70,10 +68,12 @@ sub new {
 
 	my @jobs = ();
 	$self->{"jobs"}       = \@jobs;
-	$self->{"serverMngr"} = ServerMngr->new($name);
+	$self->{"serverMngr"} = ServerMngr->new();
 	$self->{"threadMngr"} = ThreadMngr->new();
 
 	$self->{"settingsHelper"} = SettingsHelper->new( $self->{"serverMngr"}, $packageFull );
+
+	$self->{"messageMngr"} = MessageMngr->new( AppConf->GetValue("appName") );
 
 	# EVENTS
 
@@ -84,7 +84,7 @@ sub new {
 
 	$self->{'onJomMngrClose'} = Event->new();    # reise right imidiatelly before destroy this app
 
-	my $mainFrm = $self->__SetLayout( $parent, $title, $name );
+	my $mainFrm = $self->__SetLayout($parent);
 
 	$self->__RunTimers();
 
@@ -329,6 +329,12 @@ sub __PortReadyHandler {
 
 		$self->{'onJobStateChanged'}->Do( $jobGUID, Enums->JobState_RUNNING );
 
+		print STDERR "\n\n Job $pcbId IS start running PORT: " . $d{"port"} . " PIDINCAM: " . $d{"pidInCAM"} . "\n\n";
+
+		if ( !defined $d{"pidInCAM"} ) {
+			print STDERR "pidincam is not defined";
+		}
+
 		$self->{"threadMngr"}->RunNewtask( $jobGUID, $jobStrData, $d{"port"}, $pcbId, $d{"pidInCAM"}, $externalServer );
 
 	}
@@ -462,26 +468,28 @@ sub __TakeFromQueueHandler {
 sub __SetLayout {
 	my $self   = shift;
 	my $parent = shift;
-	my $title  = shift;
-	my $name   = shift;
 
 	my @dimension = ( AppConf->GetValue("windowWidth"), AppConf->GetValue("windowHeight") );
 
 	#main formDefain forms
 	my $mainFrm = MyWxFrame->new(
-		$parent,    # parent window
-		-1,         # ID -1 means any
-		$title,     # title
-
-		[ -1, -1 ], # window position
-		\@dimension,    # size   &Wx::wxSTAY_ON_TOP |
+		$parent,                         # parent window
+		-1,                              # ID -1 means any
+		AppConf->GetValue("appName"),    # title
+		[ -1, -1 ],                      # window position
+		\@dimension,                     # size   &Wx::wxSTAY_ON_TOP |
 		&Wx::wxSTAY_ON_TOP | &Wx::wxSYSTEM_MENU | &Wx::wxCAPTION | &Wx::wxRESIZE_BORDER | &Wx::wxMINIMIZE_BOX | &Wx::wxMAXIMIZE_BOX | &Wx::wxCLOSE_BOX
 	);
 
+	my $iconPath = GeneralHelper->Root() . "/Resources/Images/" . AppConf->GetValue("appIcon");
+
+	$mainFrm->SetCustomIcon($iconPath);
+
 	if ( $self->{"runMode"} eq Enums->RUNMODE_TRAY ) {
 
-		my $trayicon = MyTaskBarIcon->new( $name, $mainFrm );
-		$trayicon->AddMenuItem( "Exit " . $name, sub { $self->__OnClose() } );
+		my $trayicon = MyTaskBarIcon->new( AppConf->GetValue("appNameTray"), $mainFrm, $iconPath );
+		$trayicon->AddMenuItem( "Exit " . AppConf->GetValue("appNameTray"), sub { $self->__OnClose() } );
+		$self->{"trayicon"} = $trayicon;
 		$mainFrm->{'onClose'}->Add( sub { $mainFrm->Hide(); } );    #Set onClose handler
 
 	}
@@ -493,6 +501,8 @@ sub __SetLayout {
 	$self->{"mainFrm"} = $mainFrm;
 
 	#EVENTS
+
+	 
 
 	my $THREAD_DONE_EVT : shared = Wx::NewEventType;
 	Wx::Event::EVT_COMMAND( $self->{"mainFrm"}, -1, $THREAD_DONE_EVT, sub { $self->__ThreadDoneHandler(@_) } );

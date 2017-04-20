@@ -41,8 +41,7 @@ sub new {
 
 	my @servers = ();
 
-	$self->{"asyncScriptName"} = shift;       # name of script which use AsyncJobMngr. We need this name for killing zombie perl and incam
-	$self->{"asyncScriptName"} =~ s/\s//g;    # remove spaces
+ 
 
 	$self->{"servers"} = \@servers;
 
@@ -54,7 +53,9 @@ sub new {
 	$self->{"destroyOnDemand"} = 1;                                 # close server only on demand, not immediately
 	$self->{"destroyDelay"}    = -1;                                # destroy server after 12s of WAITING state
 
-	$self->__CloseZombie( undef, 0 );
+
+	my $range = $self->{"startPort"}."-".($self->{"startPort"} +999);
+	$self->__CloseZombie( undef, 0);
 
 	$self->__InitServers();
  
@@ -236,6 +237,7 @@ sub PrepareExternalServerPort {
 			#test, if server is really ready. Try to connect
 			#my $worker = threads->create( sub { $self->__CreateServerExternal( $serverInfo->{"port"}, $jobGUID ) } );
 			 $self->__CreateServerExternal( $serverInfo->{"port"}, $jobGUID );
+			 
 
 			last;
 
@@ -575,19 +577,23 @@ sub __CreateServer {
 	# turn all backslash - incam need this
 	$path =~ s/\\/\//g;
 
-	print STDERR "\n New Incam instance launching  on $inCAMPath $path \n";
+	
 	
 	# sometimes happen, when 2 or more INCAM servers are launeched a same time, parl fail (no reason)
 	# this is stupid solution, sleep random time
-	my $sleep = int( rand(5));
+	my $sleep = int( rand(10));
 	sleep($sleep); 
 
 	#run InCAM editor with serverscript
 	Win32::Process::Create( $processObj, $inCAMPath, "InCAM.exe -s" . $path . " " . $freePort . " " . $self->{"asyncScriptName"},
 							0, THREAD_PRIORITY_NORMAL, "." )
 	  || die "$!\n";
+	  
+ 
 
 	$pidInCAM = $processObj->GetProcessID();
+	
+	print STDERR "\n New Incam instance PID: $pidInCAM is launching  on $inCAMPath $path \n";
 
 	#my $worker = threads->create( sub { $self->__MoveWindowOut($pidInCAM) } );
 
@@ -759,16 +765,20 @@ sub __CloseZombie {
 	my $self = shift;
 	my $port = shift;
 	my $wait = shift;
-
+ 
+	# If port is not defined, kill all server with port in ranch 
+	my $range = "-"; 
+ 
 	unless ( defined $port ) {
 		$port = "-";
+		$range = $self->{"startPort"}."-".($self->{"startPort"} +999); 
 	}
 
 	my $processObj;
 	my $perl = $Config{perlpath};
 
 	Win32::Process::Create( $processObj, $perl,
-							"perl " . GeneralHelper->Root() . "\\Managers\\AsyncJobMngr\\CloseZombie.pl -i $port -n " . $self->{"asyncScriptName"},
+							"perl " . GeneralHelper->Root() . "\\Managers\\AsyncJobMngr\\CloseZombie.pl -i $port -r $range",
 							1, NORMAL_PRIORITY_CLASS, "." )
 	  || die "Failed to create CloseZombie process.\n";
 

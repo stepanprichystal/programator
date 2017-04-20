@@ -22,14 +22,14 @@ use aliased 'Packages::Events::Event';
 #-------------------------------------------------------------------------------------------#
 
 sub new {
-	my ( $class, $title, $form ) = @_;
+	my ( $class, $title, $form, $iconPath ) = @_;
 
 	my $self = {};
 	bless($self);
 
 	$self->{"taskBarIcon"} = Wx::TaskBarIcon->new();
 
-	my $btmIco = Wx::Bitmap->new( GeneralHelper->Root() . "/Resources/Images/Icon.bmp", &Wx::wxBITMAP_TYPE_BMP );
+	my $btmIco = Wx::Bitmap->new( $iconPath , &Wx::wxBITMAP_TYPE_BMP );
 	my $icon = Wx::Icon->new();
 	$icon->CopyFromBitmap($btmIco);
 
@@ -52,7 +52,13 @@ sub new {
 	#$self->{"onLeftClick"} = Event->new();
 
 	return $self;
+}
 
+sub DESTROY{
+	my $self = shift;
+	
+	$self->{"taskBarIcon"}->RemoveIcon();
+	
 }
 
 sub AddMenuItem {

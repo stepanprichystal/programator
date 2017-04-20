@@ -18,9 +18,10 @@ use warnings;
 use aliased 'Programs::PoolMerge::UnitEnums';
 
 use aliased 'Enums::EnumsGeneral';
-use aliased 'Programs::PoolMerge::Groups::MergeGroup::MergeUnit';
-use aliased 'Programs::PoolMerge::Groups::RoutGroup::RoutUnit';
-use aliased 'Programs::PoolMerge::Groups::OutputGroup::OutputUnit';
+#use aliased 'Programs::PoolMerge::Groups::MergeGroup::MergeUnit';
+#use aliased 'Programs::PoolMerge::Groups::RoutGroup::RoutUnit';
+#use aliased 'Programs::PoolMerge::Groups::OutputGroup::OutputUnit';
+use aliased 'Managers::AbstractQueue::Unit::UnitBase';
 
 #use aliased 'Connectors::HeliosConnector::HegMethods';
  
@@ -224,29 +225,13 @@ sub SentToExport {
 sub __GetUnitClass {
 	my $self   = shift;
 	my $unitId = shift;
-
-	my $unit;
+ 
 	my $jobId = $self->{"jobId"};
 	
 	my $title = UnitEnums->GetTitle($unitId);
-
-	if ( $unitId eq UnitEnums->UnitId_MERGE ) {
-
-		$unit = MergeUnit->new($unitId, $jobId, $title);
-
-	}
-	elsif ( $unitId eq UnitEnums->UnitId_ROUT ) {
-
-		$unit = RoutUnit->new($unitId, $jobId, $title);
-
-	}elsif ( $unitId eq UnitEnums->UnitId_OUTPUT ) {
-
-		$unit = OutputUnit->new($unitId, $jobId, $title);
-
-	}
 	
- 
-
+	my $unit = UnitBase->new($unitId, $jobId, $title);
+  
 	return $unit;
 }
  

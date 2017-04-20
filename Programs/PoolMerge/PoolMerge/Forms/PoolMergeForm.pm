@@ -37,11 +37,10 @@ use aliased 'Managers::AbstractQueue::AppConf';
 sub new {
 	my $class = shift;
 
-	my $title = "Pool merger";
-	my $name = "Pool merger";
+	 
 	 
 
-	my $self = $class->SUPER::new( @_, $title,$name  );
+	my $self = $class->SUPER::new( @_  );
 
 	bless($self);
 

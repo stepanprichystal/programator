@@ -59,8 +59,9 @@ sub OpenJob {
 	#				 update_clipboard => "view_job"
 	#	);
 	$inCam->COM( "open_job", job => "$jobName", "open_win" => "yes" );
-
+ 
 	$inCam->AUX( 'set_group', group => $inCam->{COMANS} );
+	 
 
 }
 

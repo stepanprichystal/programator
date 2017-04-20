@@ -49,7 +49,7 @@ sub new {
 	else {
 
  
-		Helper->__RunPoolMerge();
+		$self->__RunPoolMerge();
 
 	}
  

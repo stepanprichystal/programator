@@ -2,25 +2,19 @@
 # Description: This class contains code, which provides export of specific group
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Programs::Exporter::ExportUtility::Groups::AOIExport::AOIExport;
+package Programs::Exporter::ExportUtility::Groups::ScoExport::ScoWorkUnit;
 use base('Managers::AbstractQueue::AbstractQueue::JobWorkerUnit');
 #3th party library
 use strict;
 use warnings;
 
-#use aliased 'Programs::Exporter::ExportChecker::Groups::NifExport::Model::NifGroupData';
-#use aliased 'Programs::Exporter::ExportUtility::Groups::NifExport::NifGroup';
+# local library
+use aliased "Packages::Export::ScoExport::ScoMngr";
 
-#use aliased 'Programs::Exporter::ExportChecker::Groups::NifExport::Presenter::NifUnit';
-#use aliased 'Managers::MessageMngr::MessageMngr';
-
-use aliased 'Packages::Events::Event';
-use aliased 'Packages::Export::AOIExport::AOIMngr';
 
 #-------------------------------------------------------------------------------------------#
 #  NC export, all layers, all machines..
 #-------------------------------------------------------------------------------------------#
-
 
 sub new {
 
@@ -38,24 +32,26 @@ sub new {
 
 	return $self;
 }
- 
-
-
 
 sub Init {
 	my $self       = shift;
 	my $inCAM      = shift;
 	my $jobId      = shift;
-	my $taskData = shift;
+	
+	my $taskData = $self->{"taskData"};
 	 
 
 	$self->{"inCAM"}      = $inCAM;
 	$self->{"jobId"}      = $jobId;
-	$self->{"taskData"} = $taskData;
+	 
 	
+ 
+	my $coreThick =  $taskData->GetCoreThick();
+	my $optimize =  $taskData->GetOptimize();
+	my $scoringType =  $taskData->GetScoringType();
+	 
 	
-	my $step = $taskData->GetStepToTest();
-	my $mngr = AOIMngr->new($inCAM, $jobId, $step);
+	my $mngr  = ScoMngr->new( $inCAM, $jobId, $coreThick, $optimize, $scoringType);
 	
 	$mngr->{"onItemResult"}->Add( sub { $self->_OnItemResultHandler(@_) } );
 	
@@ -63,14 +59,9 @@ sub Init {
 	
 	$self->{"itemsCount"} = $mngr->TaskItemsCount();
 	
- 
 }
 
 
-
-
-
- 
 
 1;
 

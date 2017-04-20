@@ -34,6 +34,9 @@ sub new {
 	# This parameter have to be passed only in Write mode
 	$self->{"units"} = shift;
 	
+	# only in read mode. If data should be load not from file but from string variable
+	$self->{"fileDataStr"} = shift; 
+	
 	 
 
 	#$self->{"location"}  = shift;
@@ -85,11 +88,18 @@ sub __BuildExportData {
  		$self->{"hashData"}->{"settings"}->{"mandatoryUnits"} = \@keys;
 
 	}
-	elsif ( $self->{"mode"} eq Enums->Mode_READ ) {
+	elsif ( $self->{"mode"} eq Enums->Mode_READ ||  $self->{"mode"} eq Enums->Mode_READFROMSTR) {
 
 		# read from disc
 		# Load data from file
-		my $serializeData = FileHelper->ReadAsString( $self->{"filePath"} );
+		my $serializeData = undef;
+		
+		if($self->{"mode"} eq Enums->Mode_READ){
+			$serializeData =  FileHelper->ReadAsString( $self->{"filePath"} );
+		
+		}elsif($self->{"mode"} eq Enums->Mode_READFROMSTR){
+			$serializeData =  $self->{"fileDataStr"};
+		}
 		
 		# Delete file
 		#unlink($self->{"filePath"});
@@ -137,7 +147,7 @@ sub GetExportData {
 	return $self->{"data"};
 
 }
-
+ 
 # Serialize class "ExportData"
 sub SaveData {
 	my $self      = shift;

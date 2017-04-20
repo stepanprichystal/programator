@@ -4,7 +4,10 @@
 # to be tasked by AbstractQueue program
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Managers::AbstractQueue::Groups::UnitBase;
+package Managers::AbstractQueue::Unit::UnitBase;
+
+use Class::Interface;
+&implements('Managers::AbstractQueue::Unit::IUnit');
 
 #3th party library
 use strict;

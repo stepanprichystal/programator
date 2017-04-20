@@ -4,10 +4,10 @@
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Packages::PoolMerge::MergeGroup::MergeMngr;
-use base('Packages::ItemResult::ItemEventMngr');
+use base('Packages::PoolMerge::PoolMngrBase');
 
 use Class::Interface;
-&implements('Packages::Export::IMngr');
+&implements('Packages::PoolMerge::IMngr');
 
 #3th party library
 use strict;
@@ -17,6 +17,7 @@ use warnings;
 use aliased 'Managers::AbstractQueue::Enums' => "EnumsAbstrQ";
 use aliased 'Programs::PoolMerge::Enums'     => "EnumsPool";
 use aliased 'Helpers::FileHelper';
+use aliased 'Packages::PoolMerge::MergeGroup::MasterJobHelper';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -30,12 +31,26 @@ sub new {
 
 	$self->{"inCAM"} = shift;
 	$self->{"jobId"} = shift;
+	$self->{"poolInfo"} = shift;
 
 	return $self;
 }
 
 sub Run {
 	my $self = shift;
+	
+	my @ordersInfo = $self->{"poolInfo"}->GetChildJobs();
+	
+	my $master = undef;
+	my $mess = "";
+	my $masterRes = MasterJobHelper->GetMasterJob(\@ordersInfo, \$master, \$mess);
+	
+	unless($masterRes){
+		print STDERR $mess;
+	}
+	
+	return 0;
+	
 
 	for ( my $i = 0 ; $i < 10 ; $i++ ) {
 
@@ -43,9 +58,9 @@ sub Run {
 
 		if ( $i == 0 ) {
 
-			my $resSpec = $self->_GetNewItem( EnumsPool->EventItemType_MASTER );
-			$resSpec->SetData("2");
-			$self->_OnStatusResult($resSpec);
+			#my $resSpec = $self->_GetNewItem( EnumsPool->EventItemType_MASTER );
+			#$resSpec->SetData("2");
+			#$self->_OnStatusResult($resSpec);
 		}
 
 		if ( $i == 2 ) {
@@ -74,7 +89,6 @@ sub Run {
 			#$res->AddError("error where stoping thread is nonsens");
 		}
 
-		
 		$self->_OnItemResult($res);
 
 	}

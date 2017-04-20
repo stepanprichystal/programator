@@ -260,7 +260,7 @@ sub __SetLayout {
 	$orderSz->Add( $orderTxt, 0, &Wx::wxLEFT | &Wx::wxALIGN_CENTER_VERTICAL | &Wx::wxALIGN_CENTER, 12 );
 	$szRow1->Add( $toptions, 0, &Wx::wxEXPAND | &Wx::wxLEFT, 5 );
 	$szRow1->Add( $self->_GetDelimiter($self), 0, &Wx::wxEXPAND );    # add delimiter
-	$szRow1->Add( $progress, 0, &Wx::wxEXPAND | &Wx::wxLEFT, 10 );
+	$szRow1->Add( $progress, 1, &Wx::wxEXPAND | &Wx::wxLEFT, 10 );
 	$szRow1->Add( $self->_GetDelimiter(), 0, &Wx::wxEXPAND );         # add delimiter
 
 	$szRow1->Add( $result,  0, &Wx::wxEXPAND | &Wx::wxLEFT, 5 );

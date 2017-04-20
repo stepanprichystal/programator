@@ -13,10 +13,19 @@ clrItemUnSelected = 242, 242, 242
 
 portStart = 3000
 
-# height of quuene in px
+# height of quuene in percentage, rest of height are group details
 
-queueHeight = 340
+queueHeight = 60
 
 # height and width of main window
 windowWidth = 1100
 windowHeight = 800
+
+# app icon name, stored in resouces/images
+appIcon = Icon_brown.bmp
+
+# Name of app in tray icon
+appNameTray = Pool merger
+
+# Name of app in title
+appName = Pool merger

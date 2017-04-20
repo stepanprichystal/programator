@@ -24,7 +24,10 @@ sub new {
 
 	$self->{"unitId"} = shift;
 	
-	$self->{"taskMngr"} = shift; # Class responsible for process specific "task group"
+	# Contains data  necessary for process task
+	$self->{"taskData"} = shift;
+	
+	$self->{"taskMngr"} = undef; # Class responsible for process specific "task group"
 
 	# Approximate count of tasked items 
 	# (because computing progressbar value)
@@ -35,8 +38,7 @@ sub new {
 	$self->{"inCAM"}      = undef;
 	$self->{"jobId"}      = undef;
 	
-	# Contains data  necessary for process task
-	$self->{"taskData"} = undef;
+	
  
 
 	# EVENTS
@@ -56,6 +58,13 @@ sub Run {
 
 }
 
+sub SetTaskData{
+	my $self = shift;
+	my $taskData = shift;
+	
+	$self->{"taskData"} = $taskData;
+	
+}
 
 
 # Return process group value in percent

@@ -2,7 +2,7 @@
 # Description: This class contains code, which provides export of specific group
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Programs::Exporter::ExportUtility::Groups::NifExport::NifExport;
+package Programs::Exporter::ExportUtility::Groups::NCExport::NCWorkUnit;
 use base('Managers::AbstractQueue::AbstractQueue::JobWorkerUnit');
 #3th party library
 use strict;
@@ -14,11 +14,8 @@ use warnings;
 #use aliased 'Programs::Exporter::ExportChecker::Groups::NifExport::Presenter::NifUnit';
 #use aliased 'Managers::MessageMngr::MessageMngr';
 
- 
-use aliased 'Packages::Export::NifExport::NifMngr';
-
-
- 
+use aliased 'Packages::Events::Event';
+use aliased 'Packages::Export::NCExport::ExportMngr';
 
 #-------------------------------------------------------------------------------------------#
 #  NC export, all layers, all machines..
@@ -45,35 +42,26 @@ sub Init {
 	my $self       = shift;
 	my $inCAM      = shift;
 	my $jobId      = shift;
-	my $taskData = shift;
-	 
-
-	$self->{"inCAM"}      = $inCAM;
-	$self->{"jobId"}      = $jobId;
-	$self->{"taskData"} = $taskData;
 	
+	my $taskData = $self->{"taskData"};
  
- 
+	my $exportSingle = $taskData->GetExportSingle();
+	my $pltLayers = $taskData->GetPltLayers();
+	my $npltLayers = $taskData->GetNPltLayers();
 	
-	 
+	my $mngr = ExportMngr->new( $inCAM, $jobId, "panel", $exportSingle, $pltLayers, $npltLayers);
+	$mngr->{"onItemResult"}->Add( sub { $self->_OnItemResultHandler(@_) } );
 	
-	my %exportNifData = %{$taskData->{"data"}};
+	$self->{"taskMngr"} = $mngr;
 	
-	
-	
-	my $nifMngr = NifMngr->new( $inCAM, $jobId, \%exportNifData );
-	
-	$nifMngr->{"onItemResult"}->Add( sub { $self->_OnItemResultHandler(@_) } );
-	
-	$self->{"taskMngr"} = $nifMngr;
-	
-	$self->{"itemsCount"} = $nifMngr->TaskItemsCount();
+	$self->{"itemsCount"} = $mngr->TaskItemsCount();
 	
  
 }
-
-
-
+ 
+ 
+ 
+ 
 1;
 
 #-------------------------------------------------------------------------------------------#
