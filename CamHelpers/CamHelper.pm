@@ -371,12 +371,12 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId     = "f13609";
+	my $jobId     = "f69854";
 	my $stepName  = "panel";
 	 
 	my @arr =  ("mpanel", "m");
 
-	my $res = CamHelper->EntityChanged(  $inCAM, $jobId, "modified", \@arr);
+	my $res = CamHelper->StepExists(  $inCAM, $jobId, "o+1");
 	
 	print STDERR "test";
  

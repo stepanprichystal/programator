@@ -17,21 +17,25 @@ use warnings;
 use aliased 'Managers::AbstractQueue::Enums' => "EnumsAbstrQ";
 use aliased 'Programs::PoolMerge::Enums'     => "EnumsPool";
 use aliased 'Helpers::FileHelper';
-use aliased 'Packages::PoolMerge::MergeGroup::MasterJobHelper';
+ 
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
 
 sub new {
-	my $class     = shift;
-	my $packageId = __PACKAGE__;
-	my $self      = $class->SUPER::new( $packageId, @_ );
+	my $class    = shift;
+	my $inCAM    = shift;
+	my $poolInfo = shift;
+	my $self     = $class->SUPER::new( $poolInfo->GetInfoFile(), @_ );
 	bless $self;
 
-	$self->{"inCAM"} = shift;
-	$self->{"jobId"} = shift;
-	$self->{"poolInfo"} = shift;
+	$self->{"inCAM"}    = $inCAM;
+	$self->{"poolInfo"} = $poolInfo;
+
+	$self->{"panelCreation"} = PanelCreation->new( $inCAM, $poolInfo );
+	$self->{"panelCreation"}->{"onItemResult"}->Add( sub { $self->_OnPoolItemResult(@_) } );
+	$self->{"pcbLabel"} = PcbLabel->new( $inCAM, $poolInfo );
 
 	return $self;
 }
@@ -39,60 +43,57 @@ sub new {
 sub Run {
 	my $self = shift;
 	
-	my @ordersInfo = $self->{"poolInfo"}->GetChildJobs();
+	my $masterJob = $self->GetValInfoFile("masterJob");
 	
-	my $master = undef;
-	my $mess = "";
-	my $masterRes = MasterJobHelper->GetMasterJob(\@ordersInfo, \$master, \$mess);
-	
-	unless($masterRes){
-		print STDERR $mess;
+	# Let "pool merger" know, master job was chosen
+	# Then "pool merger" open it
+	if(defined $masterJob){
+		
+		$self->_OnSetMasterJob($masterJob);
+		
+	}else{
+		die "Master job is not defined";
 	}
 	
-	return 0;
 	
+	# 2) Copy child step to master job
+	my $copyStepsRes = $self->_GetNewItem("Mater job checks");
+ 
+	$self->{"panelCreation"}->CopySteps($masterJob);
+	
+	
+	
+	# 3) Final check of step copy
+	my $stepCopyRes = $self->_GetNewItem("Step copy check");
+	my $mess    = "";
 
-	for ( my $i = 0 ; $i < 10 ; $i++ ) {
+	unless ( $self->{"panelCreation"}->CopyStepFinalCheck(  $masterJob, \$mess ) ) {
 
-		sleep(1);
-
-		if ( $i == 0 ) {
-
-			#my $resSpec = $self->_GetNewItem( EnumsPool->EventItemType_MASTER );
-			#$resSpec->SetData("2");
-			#$self->_OnStatusResult($resSpec);
-		}
-
-		if ( $i == 2 ) {
-
-			my $str = FileHelper->ReadAsString('c:\Perl\site\lib\TpvScripts\Scripts\test');
-			
-			my $t = substr($str, 0, 1);
-			$t = substr($str, 1, 1);
-
-			if (substr($str, 0, 1)) {
-
-				my $res = $self->_GetNewItem("recyklus $i");
-				$res->AddError("chyba");
-				$self->_OnItemResult($res);
-
-				my $resSpec = $self->_GetNewItem( EnumsAbstrQ->EventItemType_STOP );
-				$self->_OnStatusResult($resSpec);
-				return 0;
-			}
-		}
-		
-		
-		my $res = $self->_GetNewItem("recyklus $i");
-		
-		if($i == 3){
-			#$res->AddError("error where stoping thread is nonsens");
-		}
-
-		$self->_OnItemResult($res);
-
+		$stepCopyRes->AddError($mess);
 	}
 
+	$self->_OnPoolItemResult($stepCopyRes);
+	
+	
+	# 3) Check on empty layers of steps
+	my $emptyLayersRes = $self->_GetNewItem("Step copy check");
+	$mess    = "";
+
+	unless ( $self->{"panelCreation"}->EmptyLayers(  $masterJob, \$mess ) ) {
+
+		$emptyLayersRes->AddWarning($mess);
+	}
+
+	$self->_OnPoolItemResult($emptyLayersRes);
+	
+ 
+}
+
+sub __OnStepCopyResult{
+	my $self = shift;
+	my $result = shift;
+	
+	
 }
 
 sub TaskItemsCount {
@@ -100,7 +101,11 @@ sub TaskItemsCount {
 
 	my $totalCnt = 0;
 
-	$totalCnt += 10;    # getting sucesfully AOI manager
+	$totalCnt += scalar($self->{"poolInfo"}->GetJobNames()) -1 ;    # copy all jobs to master (-1 master)
+	$totalCnt += 1; # final control of copy step
+	$totalCnt += 1; # check on empty layers
+	$totalCnt += 1; # panel ceration
+	$totalCnt += 1; # put labels check
 
 	return $totalCnt;
 

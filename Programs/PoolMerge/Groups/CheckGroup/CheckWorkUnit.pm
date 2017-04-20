@@ -3,14 +3,14 @@
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 
-package Programs::PoolMerge::Groups::MergeGroup::MergeWorkUnit;
+package Programs::PoolMerge::Groups::CheckGroup::CheckWorkUnit;
 use base('Managers::AbstractQueue::AbstractQueue::JobWorkerUnit');
 #3th party library
 use strict;
 use warnings;
  
 
-use aliased 'Packages::PoolMerge::MergeGroup::MergeMngr';
+use aliased 'Packages::PoolMerge::CheckGroup::CheckMngr';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -44,7 +44,7 @@ sub Init {
  
 	my $taskData = $self->{"taskData"};
 	
-	my $mngr = MergeMngr->new($inCAM, $jobId, $taskData);
+	my $mngr = CheckMngr->new($inCAM, $taskData);
 	
 	$mngr->{"onItemResult"}->Add( sub { $self->_OnItemResultHandler(@_) } );
 	$mngr->{"onStatusResult"}->Add( sub { $self->_OnStatusResultHandler(@_) } );

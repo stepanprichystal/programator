@@ -9,6 +9,8 @@ package Programs::PoolMerge::Task::TaskData::GroupData;
 #3th party library
 use strict;
 use warnings;
+use List::MoreUtils qw(uniq);
+
 
 #local library
  
@@ -25,25 +27,33 @@ sub new {
 	# dim where values are in hash (keys: width, height)
 	my %dim = ();
 	$self->{"pnlDim"} = \%dim;
-
-	# nae of mother job
-	$self->{"motherJob"} = undef;
-
-	# all job names, which are merged, except maother job
-	my @childJobs = ();
-	$self->{"childJobs"} = \@childJobs;
-
+ 
 	# child job info
-	my @jobsInfo = ();
-	$self->{"jobsInfo"} = \@jobsInfo;
+	my @ordersInfo = ();
+	$self->{"ordersInfo"} = \@ordersInfo;
+	
+	# name of file for manager group comunication
+	$self->{"infoFile"} = undef;
 
 	return $self;
 }
 
-sub GetMotherJob {
+sub GetJobNames {
 	my $self = shift;
 
-	return $self->{"motherJob"};
+	my @names = map { $_->{"jobName"} } @{ $self->{"ordersInfo"} };
+	
+	@names = uniq(@names);
+
+	return @names;
+}
+
+sub GetOrderNames {
+	my $self = shift;
+
+	my @names = map { $_->{"orderId"} } @{ $self->{"ordersInfo"} };
+
+	return @names;
 }
 
 sub GetPnlDim {
@@ -58,16 +68,22 @@ sub SetPnlDim {
 	$self->{"pnlDim"} = shift;
 }
 
-sub GetChildJobs {
+sub GetOrdersInfo {
 	my $self = shift;
 
-	return @{ $self->{"childJobs"} };
+	return @{ $self->{"ordersInfo"} };
 }
 
-sub SetChildJobs {
+sub SetOrdersInfo {
 	my $self = shift;
 
-	return $self->{"childJobs"} = shift;
+	return $self->{"ordersInfo"} = shift;
+}
+
+sub GetInfoFile {
+	my $self = shift;
+
+	return  $self->{"infoFile"};
 }
 
 #-------------------------------------------------------------------------------------------#

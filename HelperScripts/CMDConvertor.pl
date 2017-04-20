@@ -7,7 +7,7 @@ use warnings;
 
 
 # ============ INPUT LINE =================
-my $inputLine ="$f->INFO(units => 'mm', angle_direction => 'ccw', entity_type => 'step', entity_path => "f52456/mpanel", data_type => 'DATUM');";
+my $inputLine ="copy_entity,type=step,source_job=f13608,source_name=o+1,dest_job=f52457,dest_name=f13608,dest_database=,remove_from_sr=no";
 
 my $output = "\$inCAM->COM(";
 my @splitted = split( ",", $inputLine );

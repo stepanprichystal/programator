@@ -12,6 +12,7 @@ use XML::Simple;
 use List::MoreUtils qw(uniq);
 use File::Basename;
 use Storable qw(dclone);
+use Digest::MD5;
 
 #local library
 use aliased 'Programs::PoolMerge::Task::TaskData::GroupData';
@@ -101,6 +102,8 @@ sub __GetTaskData {
 		$taskData->{"units"}->{$unit}->{"data"}->{"__UNITORDER__"} = $i
 
 	}
+	
+ 	
 
 	return $taskData;
 
@@ -130,22 +133,23 @@ sub __GetGroupData {
 
 	my @order = @{ $xml->{"order"} };
 
-	my @jobNames = map { $_->{"order_id"} } @order;
-	@jobNames = uniq(@jobNames);
+	my @orderIds = map { $_->{"order_id"} } @order;
+	@orderIds = uniq(@orderIds);
 
-	my @jobInf = ();
+	my @orderInf = ();
 
-	foreach my $job (@jobNames) {
+	foreach my $orderId (@orderIds) {
 
-		my ($jobName) = $job =~ /^(\w\d+)/;
+		my ($jobName) = $orderId =~ /^(\w\d+)/;
+		$jobName = lc($jobName);
 
-		my @all = grep { $_->{"order_id"} eq $job } @order;
+		my @all = grep { $_->{"order_id"} eq $orderId } @order;
 
 		my @pos = ();
 
 		# get width and height from first order item
 		my %order = (
-					  "orderId" => $job,
+					  "orderId" => $orderId,
 					  "jobName" => $jobName,
 					  "width"   => $all[0]->{"w"},
 					  "height"  => $all[0]->{"h"},
@@ -160,11 +164,28 @@ sub __GetGroupData {
 
 		}
 
-		push( @jobInf, \%order );
+		push( @orderInf, \%order );
 
 	}
 
-	$groupData->SetChildJobs( \@jobInf );
+	$groupData->SetOrdersInfo( \@orderInf );
+	
+	
+	
+	# genereate file name, where helper info will be stored (like mother job name)
+ 	# this file is used across by all group managers fot their comunication
+ 	
+ 		
+ 	my $ctx = Digest::MD5->new;
+ 	
+ 	# generate name based on order names
+ 	my @names = $groupData->GetJobNames();
+ 	my $str = join( ";", @names);
+ 	
+ 	$ctx->add($str);
+ 
+ 
+ 	$groupData->{"infoFile"} = $ctx->hexdigest();
 
 	return $groupData;
 

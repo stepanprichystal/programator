@@ -121,7 +121,6 @@ sub GetAllByPcbId {
 	}
 }
 
- 
 # Return hash ref with information about order
 # parameter is pcbid with order id: eg: f12345-01
 sub GetInfoAfterStartProduce {
@@ -235,21 +234,20 @@ sub GetBasePcbInfo {
 
 # Return material kind like FR4, S400, etc..
 sub GetMaterialKind {
-	my $self  = shift;
-	my $pcbId = shift;
-	my $editStyle = shift;  # if checked ,return value will be edited FR4 => FR4 tg150
+	my $self      = shift;
+	my $pcbId     = shift;
+	my $editStyle = shift;    # if checked ,return value will be edited FR4 => FR4 tg150
 
 	my @params = ( SqlParameter->new( "_PcbId", Enums->SqlDbType_VARCHAR, $pcbId ) );
- 
 
 	my $column = "d.material_druh";
-	
-	if($editStyle){
-		$column = "lcs.nf_edit_style('ddlb_22_material_druh', d.material_druh) mat"
+
+	if ($editStyle) {
+		$column = "lcs.nf_edit_style('ddlb_22_material_druh', d.material_druh) mat";
 	}
- 
+
 	my $cmd = "select top 1
-				 ".$column."
+				 " . $column . "
 				 from lcs.desky_22 d with (nolock)
 				  left outer join lcs.zakazky_dps_22_hlavicka z with (nolock) on z.deska=d.cislo_subjektu
 				 where d.reference_subjektu=_PcbId and  z.cislo_poradace = 22050";
@@ -601,8 +599,8 @@ sub GetDatacodeLayer {
 	if ($res) {
 		$res = uc($res);
 	}
-	
-	unless(defined $res){
+
+	unless ( defined $res ) {
 		$res = "";
 	}
 
@@ -628,7 +626,7 @@ sub GetUlLogoLayer {
 		$res = uc($res);
 	}
 
-	unless(defined $res){
+	unless ( defined $res ) {
 		$res = "";
 	}
 
@@ -782,37 +780,15 @@ sub UpdatePcbOrderState {
 
 }
 
+ 
 
-
-## Return value from clolumn "aktualni krok" for pcb order
-#sub GetStatusOfOrder {
-#	my $self    = shift;
-#	my $orderId = shift;
-#
-#	my @params = ( SqlParameter->new( "_OrderId", Enums->SqlDbType_VARCHAR, $orderId ) );
-#	my @params = ();
-#	
-#	
-#	
-#
-#	my $cmd = "SELECT 
-#				lcs.nf_edit_style('stav_zakazky_dps_22', stav) from lcs.zakazky_dps_22_hlavicka WHERE reference_subjektu = 'f59401-01'";
-#
-#	my $res = Helper->ExecuteScalar( $cmd, \@params );
-#
-#	return $res;
-#}
-
-
-
-# Return value from clolumn "aktualni krok" for pcb order
+# Return value from clolumn "stav" for pcb order
 sub GetStatusOfOrder {
 	my $self    = shift;
 	my $orderId = shift;
 
 	my @params = ( SqlParameter->new( "_OrderId", Enums->SqlDbType_VARCHAR, $orderId ) );
-	
-	
+
 	my $cmd = "SELECT top 1
 				lcs.nf_edit_style('stav_zakazky_dps_22', stav) stav
 				from lcs.zakazky_dps_22_hlavicka 
@@ -820,12 +796,29 @@ sub GetStatusOfOrder {
 
 	my $res = Helper->ExecuteScalar( $cmd, \@params, 1 );
 
- 
 	return $res;
 }
 
+# Return value from clolumn "aktualni krok" for pcb order
  
-	
+sub GetCurStepOfOrder {
+	my $self      = shift;
+	my $orderId   = shift;
+	 
+
+	my @params = ( SqlParameter->new( "_OrderId", Enums->SqlDbType_VARCHAR, $orderId ) );
+ 
+
+	my $cmd = "select top 1
+				 t1.aktualni_krok
+				from lcs.zakazky_dps_22_hlavicka AS t1
+				WHERE reference_subjektu = _OrderId";
+
+	my $res = Helper->ExecuteScalar( $cmd, \@params, 1 );
+
+	return $res;
+}
+
 # The select get back 3 values:
 # M for master order
 # S for slave order
@@ -835,7 +828,6 @@ sub GetInfMasterSlave {
 	my $orderId = shift;
 
 	my @params = ( SqlParameter->new( "_OrderId", Enums->SqlDbType_VARCHAR, $orderId ) );
-	 
 
 	my $cmd = "SELECT top 1
 		case when vs1.cislo_vztaz_subjektu is not null then 'S' when vs2.cislo_subjektu is not null then 'M' else '0' end inftype
@@ -849,15 +841,13 @@ sub GetInfMasterSlave {
 	return $res;
 }
 
-
 # Return value of term order
 sub GetTermOfOrder {
 	my $self    = shift;
 	my $orderId = shift;
 
 	my @params = ( SqlParameter->new( "_OrderId", Enums->SqlDbType_VARCHAR, $orderId ) );
-	
-	
+
 	my $cmd = "SELECT top 1
 				termin
 				from lcs.zakazky_dps_22_hlavicka 
@@ -865,7 +855,6 @@ sub GetTermOfOrder {
 
 	my $res = Helper->ExecuteScalar( $cmd, \@params, 1 );
 
- 
 	return $res;
 }
 
@@ -902,17 +891,12 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	use aliased 'Connectors::HeliosConnector::HegMethods';
 
-	
-	 my $num = HegMethods->GetPcbOrderNumber("d35934");
-	
-	 my $res = HegMethods->GetInfoAfterStartProduce("d35934-$num");
+	my $num = HegMethods->GetCurStepOfOrder("f69854-01", 1);
 
-	
-	 print $res;
+	print $num;
 
 	# my $test = HegMethods->GetPcbName("f52456");
 
-	
 	#	HegMethods->GetPcbOrderNumber("f52456");
 	#	my $test = HegMethods->UpdatePcbOrderState("f52456-01", "HOTOVO-123");
 

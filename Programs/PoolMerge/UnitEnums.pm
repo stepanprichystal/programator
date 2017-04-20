@@ -3,6 +3,7 @@ package Programs::PoolMerge::UnitEnums;
  
 
 use constant {
+			   UnitId_CHECK => "check",
 			   UnitId_MERGE => "merge",
 			   UnitId_ROUT  => "rout",
 			   UnitId_OUTPUT => "output"
@@ -15,7 +16,12 @@ sub GetTitle{
 	
 	my $title = "Unknown";
 	
-	if($code eq UnitId_MERGE){
+	if($code eq UnitId_CHECK){
+		
+		$title = "Checks";
+		
+	}
+	elsif($code eq UnitId_MERGE){
 		
 		$title = "Merge jobs";
 		

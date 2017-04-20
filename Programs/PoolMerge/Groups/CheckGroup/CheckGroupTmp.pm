@@ -1,4 +1,4 @@
-package Programs::PoolMerge::Groups::MergeGroup::MergeGroupTmp;
+package Programs::PoolMerge::Groups::CheckGroup::CheckGroupTmp;
 
 #3th party library
 use strict;
@@ -10,10 +10,10 @@ use aliased 'Enums::EnumsGeneral';
 use aliased 'Programs::PoolMerge::UnitEnums';
 use aliased 'Managers::AbstractQueue::AbstractQueue::JobWorkerUnit';
 
-#use aliased 'Programs::Exporter::ExportChecker::Groups::MergeGroup::Presenter::AOIUnit';
+#use aliased 'Programs::Exporter::ExportChecker::Groups::CheckGroup::Presenter::AOIUnit';
 use aliased 'Managers::MessageMngr::MessageMngr';
 use aliased "Programs::PoolMerge::Task::TaskData::DataParser";
-use aliased "Programs::PoolMerge::Groups::MergeGroup::MergeWorkUnit" => "Unit";
+use aliased "Programs::PoolMerge::Groups::CheckGroup::CheckWorkUnit" => "Unit";
 
 #-------------------------------------------------------------------------------------------#
 #  NC export, all layers, all machines..
@@ -37,10 +37,10 @@ sub Run {
 	my $self       = shift;
 	my $inCAM      = shift;
 	my $path = shift;
-
+	
 	#PARSE INPUT DATA
 
-	
+	 
  
 	my $dataParser = DataParser->new();
 	my $taskDataAll = $dataParser->GetTaskDataByPath( $path);
