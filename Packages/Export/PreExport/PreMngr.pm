@@ -55,11 +55,11 @@ sub Run {
 
 	# choose pattern schema. Add pattern frame from surface fill to layer, whci has attribut add_schema = yes
 	if ( $self->{"layerCnt"} > 2 ) {
-		$patternSch = 'pattern-vv';
+		$patternSch = 'pattern-vv+';
 
 	}
 	elsif ( $self->{"layerCnt"} == 2 ) {
-		$patternSch = 'pattern-2v';
+		$patternSch = 'pattern-2v+';
 	}
 
 	foreach my $l ( @{ $self->{"layers"} } ) {
