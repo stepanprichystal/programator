@@ -250,6 +250,8 @@ sub WorkLayer {
 
 }
 
+ 
+
 # Hide all layers and all layers are not affected
 sub ClearLayers {
 	my $self  = shift;

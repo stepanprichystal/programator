@@ -7,7 +7,7 @@ use warnings;
 
 
 # ============ INPUT LINE =================
-my $inputLine ="copy_entity,type=step,source_job=f13608,source_name=o+1,dest_job=f52457,dest_name=f13608,dest_database=,remove_from_sr=no";
+my $inputLine ="sel_copy_other,dest=layer_name,target_layer=c\;s,invert=no,dx=0,dy=0,size=0,x_anchor=0,y_anchor=0";
 
 my $output = "\$inCAM->COM(";
 my @splitted = split( ",", $inputLine );

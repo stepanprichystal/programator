@@ -87,6 +87,13 @@ sub MirrorX {
 	$self->{"y"} = $point->{"y"} - ( $self->{"y"} - $point->{"y"} );
 }
 
+sub MirrorY {
+	my $self  = shift;
+	my $point = shift;
+
+	$self->{"x"} = $point->{"x"} - ( $self->{"x"} - $point->{"x"} );
+}
+
 sub Copy {
 	my $self = shift;
 

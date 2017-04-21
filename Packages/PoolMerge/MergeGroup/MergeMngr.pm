@@ -17,7 +17,6 @@ use warnings;
 use aliased 'Managers::AbstractQueue::Enums' => "EnumsAbstrQ";
 use aliased 'Programs::PoolMerge::Enums'     => "EnumsPool";
 use aliased 'Helpers::FileHelper';
- 
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -33,6 +32,7 @@ sub new {
 	$self->{"inCAM"}    = $inCAM;
 	$self->{"poolInfo"} = $poolInfo;
 
+	$self->{"copySteps"} = CopySteps->new( $inCAM, $poolInfo );
 	$self->{"panelCreation"} = PanelCreation->new( $inCAM, $poolInfo );
 	$self->{"panelCreation"}->{"onItemResult"}->Add( sub { $self->_OnPoolItemResult(@_) } );
 	$self->{"pcbLabel"} = PcbLabel->new( $inCAM, $poolInfo );
@@ -42,58 +42,53 @@ sub new {
 
 sub Run {
 	my $self = shift;
-	
+
 	my $masterJob = $self->GetValInfoFile("masterJob");
-	
+
 	# Let "pool merger" know, master job was chosen
 	# Then "pool merger" open it
-	if(defined $masterJob){
-		
+	if ( defined $masterJob ) {
+
 		$self->_OnSetMasterJob($masterJob);
-		
-	}else{
+
+	}
+	else {
 		die "Master job is not defined";
 	}
-	
-	
+
 	# 2) Copy child step to master job
 	my $copyStepsRes = $self->_GetNewItem("Mater job checks");
- 
+
 	$self->{"panelCreation"}->CopySteps($masterJob);
-	
-	
-	
+
 	# 3) Final check of step copy
 	my $stepCopyRes = $self->_GetNewItem("Step copy check");
-	my $mess    = "";
+	my $mess        = "";
 
-	unless ( $self->{"panelCreation"}->CopyStepFinalCheck(  $masterJob, \$mess ) ) {
+	unless ( $self->{"panelCreation"}->CopyStepFinalCheck( $masterJob, \$mess ) ) {
 
 		$stepCopyRes->AddError($mess);
 	}
 
 	$self->_OnPoolItemResult($stepCopyRes);
-	
-	
+
 	# 3) Check on empty layers of steps
 	my $emptyLayersRes = $self->_GetNewItem("Step copy check");
-	$mess    = "";
+	$mess = "";
 
-	unless ( $self->{"panelCreation"}->EmptyLayers(  $masterJob, \$mess ) ) {
+	unless ( $self->{"panelCreation"}->EmptyLayers( $masterJob, \$mess ) ) {
 
 		$emptyLayersRes->AddWarning($mess);
 	}
 
 	$self->_OnPoolItemResult($emptyLayersRes);
-	
- 
+
 }
 
-sub __OnStepCopyResult{
-	my $self = shift;
+sub __OnStepCopyResult {
+	my $self   = shift;
 	my $result = shift;
-	
-	
+
 }
 
 sub TaskItemsCount {
@@ -101,11 +96,11 @@ sub TaskItemsCount {
 
 	my $totalCnt = 0;
 
-	$totalCnt += scalar($self->{"poolInfo"}->GetJobNames()) -1 ;    # copy all jobs to master (-1 master)
-	$totalCnt += 1; # final control of copy step
-	$totalCnt += 1; # check on empty layers
-	$totalCnt += 1; # panel ceration
-	$totalCnt += 1; # put labels check
+	$totalCnt += scalar( $self->{"poolInfo"}->GetJobNames() ) - 1;    # copy all jobs to master (-1 master)
+	$totalCnt += 1;                                                   # final control of copy step
+	$totalCnt += 1;                                                   # check on empty layers
+	$totalCnt += 1;                                                   # panel ceration
+	$totalCnt += 1;                                                   # put labels check
 
 	return $totalCnt;
 

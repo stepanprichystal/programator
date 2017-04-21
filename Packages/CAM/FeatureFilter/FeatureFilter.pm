@@ -23,9 +23,10 @@ sub new {
 	$self = {};
 	bless $self;
 
-	$self->{"inCAM"}     = shift;
-	$self->{"jobId"}     = shift;
-	$self->{"layerName"} = shift;
+	$self->{"inCAM"}      = shift;
+	$self->{"jobId"}      = shift;
+	$self->{"layerName"}  = shift;
+	$self->{"layerNames"} = shift;    # array of layer names, in case of more layers we want to filter
 
 	$self->{"includeSym"} = undef;    # Included symbols
 	$self->{"excludeSym"} = undef;    # Excluded symbols
@@ -59,8 +60,18 @@ sub Reset {
 
 	my $inCAM = $self->{"inCAM"};
 
-	CamLayer->WorkLayer( $self->{"inCAM"}, $self->{"layerName"} );
+	if ( defined $self->{"layerNames"} ) {
 
+		CamLayer->AffectLayers( $self->{"inCAM"}, $self->{"layerNames"} );
+	}
+	elsif ( defined $self->{"layerName"} ) {
+
+		CamLayer->WorkLayer( $self->{"inCAM"}, $self->{"layerName"} );
+	}
+	else {
+
+		die "no layer defined";
+	}
 	$self->{"inCAM"}->COM('adv_filter_reset');
 
 	$self->{"inCAM"}->COM( 'filter_reset', filter_name => 'popup' );
@@ -87,9 +98,25 @@ sub Unselect {
 
 }
 
+
+# Tell where use filter in layer
+# Mode:
+#0 - ignore the profile
+#1 - inside the profile
+#2 - outside the profile
+sub SetProfile {
+	my $self = shift;
+	my $mode = shift;    #  both\positive\negative
+
+	my $inCAM = $self->{"inCAM"};
+
+	$inCAM->COM( 'set_filter_profile', 'mode' => $mode );
+}
+
+
 sub SetPolarity {
 	my $self     = shift;
-	my $polarity = shift;    #  both\positive\negative
+	my $polarity = shift;                                    #  both\positive\negative
 
 	my $inCAM = $self->{"inCAM"};
 
@@ -246,7 +273,7 @@ sub AddFeatureIndexes {
 sub SetIncludeAttrCond {
 	my $self = shift;
 	my $cond = shift;
-	
+
 	my $inCAM = $self->{"inCAM"};
 
 	$inCAM->COM( "set_filter_and_or_logic", "filter_name" => "popup", "criteria" => "inc_attr", "logic" => $cond );

@@ -61,7 +61,7 @@ sub AddText {
 				 "width"     => "normal",
 				 "mirror"    => $mirror,
 				 "angle"     => $angle,
-				 "direction" => "cw",
+				 "direction" => "ccw",
 				 "w_factor"  => $lineWidth
 	);
 }
