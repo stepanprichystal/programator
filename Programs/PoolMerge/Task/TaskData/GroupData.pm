@@ -62,6 +62,18 @@ sub GetPnlDim {
 	return %{ $self->{"pnlDim"} };
 }
 
+sub GetPnlW {
+	my $self = shift;
+
+	return $self->{"pnlDim"}->{"width"};
+}
+
+sub GetPnlH {
+	my $self = shift;
+
+	return $self->{"pnlDim"}->{"height"};
+}
+
 sub SetPnlDim {
 	my $self = shift;
 

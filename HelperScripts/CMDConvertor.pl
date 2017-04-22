@@ -7,7 +7,7 @@ use warnings;
 
 
 # ============ INPUT LINE =================
-my $inputLine ="sel_copy_other,dest=layer_name,target_layer=c\;s,invert=no,dx=0,dy=0,size=0,x_anchor=0,y_anchor=0";
+my $inputLine ="sr_tab_add,step=mpanel,line=0,x=0,y=0,nx=1,ny=1,dx=354.49932,dy=198.4976,angle=0,direction=ccw,flip=no,mirror=no";
 
 my $output = "\$inCAM->COM(";
 my @splitted = split( ",", $inputLine );

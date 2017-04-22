@@ -15,7 +15,7 @@ use List::Util qw[max];
 #use aliased 'Enums::EnumsPaths';
 #use aliased 'Packages::InCAM::InCAM';
 #use aliased 'CamHelpers::CamJob';
-#use aliased 'CamHelpers::CamHelper';
+use aliased 'CamHelpers::CamHelper';
 
 #-------------------------------------------------------------------------------------------#
 #   Package methods
@@ -261,6 +261,33 @@ sub DeleteStepAndRepeat {
 			$inCAM->COM( 'sr_tab_del', line => ( $i + 1 ) );
 		}
 	}
+}
+
+# add step and repeat
+sub AddStepAndRepeat {
+	my $self     = shift;
+	my $inCAM    = shift;
+	my $stepName = shift;
+	my $srName   = shift;
+	my $posX = shift;
+	my $posY = shift;
+	
+	my $angle = shift;
+	my $nx = shift;
+	my $ny = shift;
+	my $dx = shift;
+	my $dy = shift;
+	
+	$nx = 1 if (!defined $nx);
+	$ny = 1 if (!defined $ny);
+	$dx = 0 if (!defined $dx);
+	$dy = 0 if (!defined $dy);
+	$angle = 0 if (!defined defined $angle);
+	
+	 
+	CamHelper->SetStep($inCAM, $stepName);
+	
+	$inCAM->COM("sr_tab_add","step" => $srName, "x" => $posX,"y" => $posY,"nx" => $nx,"ny" => $ny,"dx" => $dx,"dy" => $dy,"angle" => $angle,"direction" => "ccw","flip" => "no","mirror" => "no");
 }
 
 #-------------------------------------------------------------------------------------------#

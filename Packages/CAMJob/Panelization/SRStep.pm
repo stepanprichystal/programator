@@ -1,8 +1,6 @@
 #-------------------------------------------------------------------------------------------#
 # Description: Responsible for preparing job board layers for output.
-# - Flatten data
-# - Adjust tool diameters
-# - Create depth drawing, etc, ..
+ 
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Packages::CAMJob::Panelization::SRStep;
@@ -24,7 +22,7 @@ use warnings;
 #use aliased 'CamHelpers::CamHelper';
 #use aliased 'CamHelpers::CamJob';
 #use aliased 'CamHelpers::CamDrilling';
-#use aliased 'CamHelpers::CamStepRepeat';
+use aliased 'CamHelpers::CamStepRepeat';
 
 #-------------------------------------------------------------------------------------------#
 #  Interface
@@ -37,6 +35,7 @@ sub new {
 
 	$self->{"inCAM"} = shift;
 	$self->{"jobId"} = shift;
+	$self->{"step"} = shift;
 
 	return $self;
 }
@@ -44,13 +43,17 @@ sub new {
 # Create image preview
 sub Create {
 	my $self       = shift;
-	my $stepName   = shift;
+	
 	my $stepWidth  = shift;    # request on onlyu some layers
 	my $stepHeight = shift;    # request on onlyu some layers
 	my $margTop    = shift;
-	my $margRight  = shift;
 	my $margBot    = shift;
 	my $margLeft   = shift;
+	my $margRight  = shift;
+
+
+	
+	my $stepName = $self->{"step"};
 
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
@@ -59,97 +62,62 @@ sub Create {
 		$inCAM->COM( "delete_entity", "job" => $jobId, "name" => $stepName, "type" => "step" );
 	}
 
-	$inCAM->COM(
-		'create_entity',
-		"job"     => "$jobName",
-		"name"    => $stepName,
-		"db"      => "",
-		"is_fw"   => 'no',
-		"type"    => 'step',
-		"fw_type" => 'form'
+	$inCAM->COM(  'create_entity',
+				 "job"     => $jobId,
+				 "name"    => $stepName,
+				 "db"      => "",
+				 "is_fw"   => 'no',
+				 "type"    => 'step',
+				 "fw_type" => 'form'
 	);
 
-	# 1) Create flattened step
-	CamStep->CreateFlattenStep( $inCAM, $jobId, $self->{"step"}, $self->{"data_step"}, 1 );
-	CamHelper->SetStep( $inCAM, $self->{"data_step"} );
-	my @childSteps = CamStepRepeat->GetUniqueNestedStepAndRepeat( $inCAM, $jobId, $self->{"step"} );
+	CamHelper->SetStep( $inCAM, $stepName );
 
-	# get all layers of export
-	my @layers = $self->__GetLayersForExport($layerFilter);
+	$inCAM->COM( 'panel_size', "width" => $stepWidth, "height" => $stepHeight );
 
-	# Prepare layers for export
-	$self->{"prepareBase"}->Prepare( \@layers );
-	$self->{"prepareNC"}->Prepare( \@layers, \@childSteps );
-
-	return 1;
+	$inCAM->COM(
+		'sr_active',
+		"top"    => $margTop,
+		"bottom" => $margBot,
+		"left"   => $margLeft,
+		"right"  => $margRight
+	);
+ 
 }
 
-# Return DataLayer objects
-sub GetLayers {
-	my $self = shift;
-
-	return $self->{"layerList"}->GetLayers();
+ 
+	
+sub AddSRStep {
+	my $self     = shift;
+	my $stepName = shift;
+	my $srName   = shift;
+	my $posX = shift;
+	my $posY = shift;
+	my $angle = shift;
+	my $nx = shift;
+	my $ny = shift;
+	my $dx = shift;
+	my $dy = shift;
+	
+	my $inCAM = $self->{"inCAM"};
+	
+ 	CamStepRepeat->AddStepAndRepeat($inCAM, $self->{"step"}, $stepName, $posX, $posY, $angle, $nx, $ny, $dx, $dy);
 }
 
-# Return step name, where layers are created
-sub GetStepName {
-	my $self = shift;
-
-	return $self->{"data_step"};
-}
-
-# After using prepared layers, delete layers and step from job
-sub Clear {
-	my $self = shift;
-
+sub AddSchema{
+	my $self     = shift;
+	my $schema   = shift;
+	
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
-
-	foreach my $l ( $self->GetLayers() ) {
-
-		my $lName = $l->GetOutput();
-
-		if ( CamHelper->LayerExists( $inCAM, $jobId, $lName ) ) {
-			$inCAM->COM( "delete_layer", "layer" => $lName );
-		}
-
-		#delete if step  exist
-		if ( CamHelper->StepExists( $inCAM, $jobId, $self->{"data_step"} ) ) {
-			$inCAM->COM( "delete_entity", "job" => $jobId, "name" => $self->{"data_step"}, "type" => "step" );
-		}
-
-	}
+	my $stepName = $self->{"step"};
+	
+	my @steps = CamStepRepeat->GetUniqueStepAndRepeat($inCAM, $jobId, $stepName);
+	
+	$inCAM->COM ('autopan_run_scheme',"job"=>$jobId, "panel"=> $stepName,"pcb"=>$steps[0]->{"stepName"},"scheme"=>$schema);
 }
-
-sub __GetLayersForExport {
-	my $self        = shift;
-	my $layerFilter = shift;
-
-	my @allLayers = CamJob->GetAllLayers( $self->{"inCAM"}, $self->{"jobId"} );
-	my @layers = ();
-
-	# 1) Filter  requsted layer s
-	if ($layerFilter) {
-
-		my %tmp;
-		@tmp{ @{$layerFilter} } = ();
-		@layers = grep { exists $tmp{ $_->{"gROWname"} } } @allLayers;
-
-	}
-	else {
-		@layers = @allLayers;
-	}
-
-	# 2) Filter internal layers, which are unable to export
-
-	my @internal = ( "fr", "v1", "fsch", "goldc", "golds" );
-
-	my %tmp;
-	@tmp{@internal} = ();
-	@layers = grep { !exists $tmp{ $_->{"gROWname"} } } @layers;
-
-	return @layers;
-}
+ 
+ 
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
@@ -157,18 +125,18 @@ sub __GetLayersForExport {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	use aliased 'Packages::CAMJob::OutputData::OutputData';
-
-	use aliased 'Packages::InCAM::InCAM';
-
-	my $inCAM = InCAM->new();
-
-	my $jobId = "f52456";
-
-	my $mess = "";
-
-	my $control = OutputData->new( $inCAM, $jobId, "o+1" );
-	$control->Create( \$mess );
+#	use aliased 'Packages::CAMJob::OutputData::OutputData';
+#
+#	use aliased 'Packages::InCAM::InCAM';
+#
+#	my $inCAM = InCAM->new();
+#
+#	my $jobId = "f52456";
+#
+#	my $mess = "";
+#
+#	my $control = OutputData->new( $inCAM, $jobId, "o+1" );
+#	$control->Create( \$mess );
 
 }
 

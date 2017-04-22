@@ -19,6 +19,8 @@ use aliased 'CamHelpers::CamHelper';
 use aliased 'Packages::NifFile::NifFile';
 use aliased 'CamHelpers::CamHistogram';
 use aliased 'Packages::CAM::FeatureFilter::FeatureFilter';
+use aliased 'Packages::ProductionPanel::PanelDimension';
+use aliased 'Packages::CAMJob::Panelization::SRStep';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -35,162 +37,63 @@ sub new {
 	return $self;
 }
 
-sub CopySteps {
-	my $self      = shift;
-	my $masterJob = shift;
+ 
 
-	my $result = 1;
-
-	my $inCAM = $self->{"inCAM"};
-
-	my @jobNames = $self->{"poolInfo"}->GetJobNames();
-	@jobNames = grep { $_ !~ /^$masterJob$/i } @jobNames;
-
-	foreach my $jobName (@jobNames) {
-
-		my $copyStepRes = $self->_GetNewItem( $jobName, "Copy step \"o+1\"" );
-
-		# 1) check on negative signal layers
-		my @signalLayers = CamJob->GetBoardBaseLayers( $inCAM, $jobName );
-		my @wrongPolar = grep { $_->{"gROWpolarity"} eq "negative" } @signalLayers;
-
-		if ( scalar(@wrongPolar) ) {
-
-			@wrongPolar = map { $_->{"gROWpolarity"} } @wrongPolar;
-			my $lStr = join( "; ", @wrongPolar );
-
-			$copyStepRes->AddError("Pool job can't contain negative signal layers (\"$lStr\"). Child job $jobName");
-		}
-
-		# 2) delete step if exist
-		if ( CamHelper->StepExists( $inCAM, $masterJob, $jobName ) ) {
-			$inCAM->COM( "delete_entity", "job" => $masterJob, "name" => $jobName, "type" => "step" );
-		}
-
-		$inCAM->HandleException(1);
-
-		# 3) copy step to master, name of step is jobname
-		$inCAM->COM(
-					 "copy_entity",
-					 "type"           => "step",
-					 "source_job"     => "f13608",
-					 "source_name"    => "o+1",
-					 "dest_job"       => $masterJob,
-					 "dest_name"      => $jobName,
-					 "dest_database"  => "",
-					 "remove_from_sr" => "no"
-		);
-
-		$inCAM->HandleException(0);
-
-		my $err = $inCAM->GetExceptionError();
-		if ($err) {
-
-			$err .= "Error when copy step \"o+1\" from job $jobName to master job.\n" . $err;
-			$copyStepRes->AddError($err);
-
-		}
-
-		$self->_OnItemResult($copyStepRes);
-	}
-
-	return $result;
-}
-
-sub CopyStepFinalCheck {
-	my $self      = shift;
-	my $masterJob = shift;
-	my $mess      = shift;
-
-	my $result = 1;
-
-	my $inCAM = $self->{"inCAM"};
-
-	my @jobNames = $self->{"poolInfo"}->GetJobNames();
-	@jobNames = grep { $_ !~ /^$masterJob$/i } @jobNames;
-
-	# 1) check if master job contain all child o+1 steps
-	my @steps = CamStep->GetAllStepNames( $inCAM, $masterJob );
-
-	foreach my $stepName (@jobNames) {
-
-		my $exist = scalar( grep { $_ eq $stepName } @steps );
-		unless ($exist) {
-
-			$result = 0;
-			$$mess .= "Child step \"o+1\" from job \"$stepName\" was not copied to \"master job\".\n";
-		}
-	}
-
-	# 2) Delete all after profile
-	my @signal = map { $_->{"gROWname"} } CamJob->GetSignalLayer( $inCAM, $masterJob );
-
-	my @stepClip = ( @jobNames, "o+1" );
-
-	foreach my $step (@stepClip) {
-
-		CamHelper->SetStep( $inCAM, $step );
-		CamLayer->AffectLayers( $inCAM, \@signal );
-
-		$inCAM->COM(
-					 "clip_area_end",
-					 "layers_mode" => "affected_layers",
-					 "area"        => "profile",
-					 "area_type"   => "rectangle",
-					 "inout"       => "outside",
-					 "contour_cut" => "yes",
-					 "margin"      => "300",
-					 "feat_types"  => "line\;pad;surface;arc;text",
-					 "pol_types"   => "positive\;negative"
-		);
-	}
-
-}
-
+# Decide which panel dimensions use, based on layer cnt and dimension from pool file
 sub CreatePanel {
 	my $self      = shift;
 	my $masterJob = shift;
-	my $mess      = shift;
-
-	my $result = 1;
-
-	my $inCAM = $self->{"inCAM"};
-	
-}
-
-sub EmptyLayers {
-	my $self      = shift;
-	my $masterJob = shift;
-	my $mess      = shift;
 
 	my $result = 1;
 
 	my $inCAM = $self->{"inCAM"};
 
-	my @jobNames = $self->{"poolInfo"}->GetJobNames();
+	my @orders = $self->{"poolInfo"}->GetOrdersInfo();
 
-	my @baseLayers = CamJob->GetBoardBaseLayers( $inCAM, $masterJob );
-	@baseLayers = map { $_->{"gROWname"} } @baseLayers;
+	my $layerCnt = CamJob->GetSignalLayerCnt( $inCAM, $masterJob );
 
-	# check only mask and signal layers + layer f
-	my @testLayers = grep { $_ =~ /^[m]?[cs]$/i } @baseLayers;
-	@testLayers = ( @testLayers, grep { $_ =~ /^v\d+$/i } @baseLayers );
-	push( @testLayers, "f" );
+	# 1) Choose panel type  Enums::EnumsProducPanel::panelsize_XXX
+	my $panelType = PanelDimension->GetPanelNameByArea( $masterJob, $self->{"poolInfo"}->GetPnlW(), $self->{"poolInfo"}->GetPnlH() );
 
-	foreach my $stepName (@jobNames) {
+	my $panelDims = PanelDimension->GetDimensionPanel( $inCAM, $panelType );
 
-		foreach my $l (@testLayers) {
-			my %hist = CamHistogram->GetFeatuesHistogram( $inCAM, $masterJob, $stepName, $l );
+	# 2) Create new "panel" step
+	my $newPnl = SRStep->new( $inCAM, $masterJob, "panel" );
 
-			if ( $hist{"total"} == 0 ) {
+	$newPnl->Create( $panelDims->{"PanelSizeX"}, $panelDims->{"PanelSizeY"}, $panelDims->{"BorderTop"},
+					 $panelDims->{"BorderBot"},  $panelDims->{"BorderLeft"}, $panelDims->{"BorderRight"} );
 
-				$result = 0;
-				$$mess .= "Layer \"$l\" in step \"$stepName\" in master job is empty. Is it ok?\n";
-			}
+	# 3) add step and repeat
+
+	foreach my $orderInf (@orders) {
+
+		foreach my $pos ( @{ $orderInf->{"pos"} } ) {
+
+			$newPnl->AddSRStep( "panel", $orderInf->{"jobName"}, $pos->{"x"}, $pos->{"y"}, ( $pos->{"rotated"} ? 270 : 0 ) );
 		}
 	}
 
- 
+	# 4) add schema
+	my $schema = undef;
+
+	if ( $layerCnt <= 2 ) {
+
+		$schema = "1a2v";
+	}
+	else {
+
+		if ( $panelDims->{"PanelSizeY"} == 407 ) {
+			$schema = '4v-407';
+		}
+		else {
+			$schema = '4v-485';
+		}
+	}
+	
+	$newPnl->AddSchema($schema);
+	
+	return $result;
+}
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
