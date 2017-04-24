@@ -282,8 +282,8 @@ sub AddStepAndRepeat {
 	$ny = 1 if (!defined $ny);
 	$dx = 0 if (!defined $dx);
 	$dy = 0 if (!defined $dy);
-	$angle = 0 if (!defined defined $angle);
 	
+	$angle = 0 if (!defined defined $angle);
 	 
 	CamHelper->SetStep($inCAM, $stepName);
 	

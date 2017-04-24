@@ -48,28 +48,35 @@ sub CreatePanel {
 
 	my $inCAM = $self->{"inCAM"};
 
-	my @orders = $self->{"poolInfo"}->GetOrdersInfo();
 
+	
 	my $layerCnt = CamJob->GetSignalLayerCnt( $inCAM, $masterJob );
 
 	# 1) Choose panel type  Enums::EnumsProducPanel::panelsize_XXX
-	my $panelType = PanelDimension->GetPanelNameByArea( $masterJob, $self->{"poolInfo"}->GetPnlW(), $self->{"poolInfo"}->GetPnlH() );
+	my $panelType = PanelDimension->GetPanelNameByArea( $inCAM, $masterJob, $self->{"poolInfo"}->GetPnlW(), $self->{"poolInfo"}->GetPnlH() );
 
-	my $panelDims = PanelDimension->GetDimensionPanel( $inCAM, $panelType );
+	my %panelDims = PanelDimension->GetDimensionPanel( $inCAM, $panelType );
 
 	# 2) Create new "panel" step
 	my $newPnl = SRStep->new( $inCAM, $masterJob, "panel" );
 
-	$newPnl->Create( $panelDims->{"PanelSizeX"}, $panelDims->{"PanelSizeY"}, $panelDims->{"BorderTop"},
-					 $panelDims->{"BorderBot"},  $panelDims->{"BorderLeft"}, $panelDims->{"BorderRight"} );
+	$newPnl->Create( $panelDims{"PanelSizeX"}, $panelDims{"PanelSizeY"}, $panelDims{"BorderTop"},
+					 $panelDims{"BorderBot"},  $panelDims{"BorderLeft"}, $panelDims{"BorderRight"} );
 
 	# 3) add step and repeat
-
+	my @orders = $self->{"poolInfo"}->GetOrdersInfo();
+ 
 	foreach my $orderInf (@orders) {
+		
+		my $stepName =  $orderInf->{"jobName"};
+		
+		if($stepName =~ /^$masterJob$/i){
+			$stepName = "o+1";
+		}
 
 		foreach my $pos ( @{ $orderInf->{"pos"} } ) {
 
-			$newPnl->AddSRStep( "panel", $orderInf->{"jobName"}, $pos->{"x"}, $pos->{"y"}, ( $pos->{"rotated"} ? 270 : 0 ) );
+			$newPnl->AddSRStep($stepName, $pos->{"x"} + $panelDims{"BorderLeft"}, $pos->{"y"} + $panelDims{"BorderBot"}, ( $pos->{"rotated"} ? 270 : 0 ) );
 		}
 	}
 
@@ -82,7 +89,7 @@ sub CreatePanel {
 	}
 	else {
 
-		if ( $panelDims->{"PanelSizeY"} == 407 ) {
+		if ( $panelDims{"PanelSizeY"} == 407 ) {
 			$schema = '4v-407';
 		}
 		else {

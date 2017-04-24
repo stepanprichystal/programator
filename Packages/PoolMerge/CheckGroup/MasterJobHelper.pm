@@ -115,7 +115,7 @@ sub CheckMasterJob {
 
 	if ( scalar(@steps) > 2 ) {
 		$$mess .= "Master job (\"$masterjob\") should contain only two steps: \"original\" and \"o+1\" step.\n";
-		$$mess .= "But master job contains: " . join( "; ", @steps ) . ".";
+		$$mess .= "But master job contains steps: " . join( "; ", @steps ) . ".";
 
 		$result = 0;
 	}

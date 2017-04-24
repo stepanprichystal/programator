@@ -62,6 +62,16 @@ sub Run {
 	}
 
 	$self->_OnPoolItemResult($masterJobRes);
+	
+	
+	# 3) Check if jobs exist
+	my $jobsExistRes = $self->_GetNewItem("Jobs exist");
+	$mess         = "";
+
+	unless ( $self->{"checkHelper"}->PoolJobsExist( \$mess ) ) {
+
+		$jobsExistRes->AddError($mess);
+	}
 
 	# 2) Check master job
 	my $masterJobCheckRes = $self->_GetNewItem("Mater job checks");
@@ -74,16 +84,7 @@ sub Run {
 
 	$self->_OnPoolItemResult($masterJobCheckRes);
 
-
-
-	# 3) Check if jobs exist
-	my $jobsExistRes = $self->_GetNewItem("Jobs exist");
-	$mess         = "";
-
-	unless ( $self->{"checkHelper"}->PoolJobsExist( \$mess ) ) {
-
-		$jobsExistRes->AddError($mess);
-	}
+ 
 
 	$self->_OnPoolItemResult($jobsExistRes);
 

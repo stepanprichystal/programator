@@ -9,6 +9,7 @@ package Packages::ProductionPanel::PanelDimension;
 use aliased 'Enums::EnumsProducPanel';
 use aliased 'Packages::ProductionPanel::PanelDimension';
 use aliased 'Connectors::HeliosConnector::HegMethods';
+use aliased 'CamHelpers::CamJob';
 
 #-------------------------------------------------------------------------------------------#
 #   Package methods
@@ -79,7 +80,7 @@ sub GetPanelName {
 
 		my $getStructure = XMLin("$fileName");
 
-		$panelSizeName = $self->GetPanelNameByArea( $jobName, $getStructure->{panel_width}, $getStructure->{panel_height} );
+		$panelSizeName = $self->GetPanelNameByArea( $inCAM, $jobName, $getStructure->{panel_width}, $getStructure->{panel_height} );
 
 		return ($panelSizeName);
 	}
@@ -91,13 +92,16 @@ sub GetPanelName {
 
 sub GetPanelNameByArea {
 	my $self    = shift;
+	my $inCAM = shift;
 	my $jobName = shift;
 	my $areaW   = shift;
 	my $areaH   = shift;
 
 	my $resultName = undef;
+	
+	my $layerCnt = CamJob->GetSignalLayerCnt( $inCAM, $jobName );
 
-	if ( HegMethods->GetTypeOfPcb($jobName) eq 'Vicevrstvy' ) {
+	if ( $layerCnt > 2 ) {
 		@nameOfPanel = ( EnumsProducPanel->SIZE_MULTILAYER_SMALL, EnumsProducPanel->SIZE_MULTILAYER_BIG );
 	}
 	else {

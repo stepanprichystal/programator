@@ -42,7 +42,7 @@ sub new {
 sub FindStart {
 	my $self = shift;
 
-	my $resultItem = ItemResult->new("Find rout start");
+	my $resultItem = ItemResult->new("Identify rout start");
 
 	my @errStep = ();
 	$resultItem->{"errStartSteps"} = \@errStep;    # save information, where start was not found

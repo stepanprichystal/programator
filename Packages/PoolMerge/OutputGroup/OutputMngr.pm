@@ -3,11 +3,11 @@
 # Description: Manager responsible for AOI files creation
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::PoolMerge::OutputGroup::OutputMngr;
-use base('Packages::ItemResult::ItemEventMngr');
+package Packages::PoolMerge::MergeGroup::OutputMngr;
+use base('Packages::PoolMerge::PoolMngrBase');
 
 use Class::Interface;
-&implements('Packages::Export::IMngr');
+&implements('Packages::PoolMerge::IMngr');
 
 #3th party library
 use strict;
@@ -17,19 +17,27 @@ use warnings;
 use aliased 'Managers::AbstractQueue::Enums' => "EnumsAbstrQ";
 use aliased 'Programs::PoolMerge::Enums'     => "EnumsPool";
 use aliased 'Helpers::FileHelper';
-
+use aliased 'Packages::PoolMerge::MergeGroup::OtherSettings';
+ 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
 
 sub new {
-	my $class     = shift;
-	my $packageId = __PACKAGE__;
-	my $self      = $class->SUPER::new( $packageId, @_ );
+	my $class    = shift;
+	my $inCAM    = shift;
+	my $poolInfo = shift;
+	my $self     = $class->SUPER::new( $poolInfo->GetInfoFile(), @_ );
 	bless $self;
 
-	$self->{"inCAM"} = shift;
-	$self->{"jobId"} = shift;
+	$self->{"inCAM"}    = $inCAM;
+	$self->{"poolInfo"} = $poolInfo;
+
+	$self->{"copySteps"} = CopySteps->new( $inCAM, $poolInfo );
+	$self->{"copySteps"}->{"onItemResult"}->Add( sub { $self->_OnPoolItemResult(@_) } );
+	$self->{"panelCreation"} = PanelCreation->new( $inCAM, $poolInfo );
+	$self->{"pcbLabel"} = PcbLabel->new( $inCAM, $poolInfo );
+	 
 
 	return $self;
 }
@@ -37,32 +45,75 @@ sub new {
 sub Run {
 	my $self = shift;
 
-	for ( my $i = 0 ; $i < 5 ; $i++ ) {
+	my $masterJob = $self->GetValInfoFile("masterJob");
 
-		sleep(1);
+	# Let "pool merger" know, master job was chosen
+	# Then "pool merger" open it
+	if ( defined $masterJob ) {
 
-		 
-
-		if ( $i == 2 ) {
-
-			my $str = FileHelper->ReadAsString('c:\Perl\site\lib\TpvScripts\Scripts\test');
-
-			 if (substr($str, 2, 1)) {
-
-				my $res = $self->_GetNewItem("recyklus $i");
-				$res->AddError("chyba out");
-				$self->_OnItemResult($res);
-
-				my $resSpec = $self->_GetNewItem( EnumsAbstrQ->EventItemType_STOP );
-				$self->_OnStatusResult($resSpec);
-				return 0;
-			}
-		}
-
-		my $res = $self->_GetNewItem("recyklus out $i");
-		$self->_OnItemResult($res);
+		$self->_OnSetMasterJob($masterJob);
 
 	}
+	else {
+		die "Master job is not defined";
+	}
+
+	# 2) Copy child step to master job
+	my $copyStepsRes = $self->_GetNewItem("Mater job checks");
+
+	$self->{"copySteps"}->CopySteps($masterJob);
+
+	# 3) Final check of step copy
+	my $stepCopyCheckRes = $self->_GetNewItem("Step copy check");
+	my $mess        = "";
+
+	unless ( $self->{"copySteps"}->CopyStepFinalCheck( $masterJob, \$mess ) ) {
+
+		$stepCopyCheckRes->AddError($mess);
+	}
+
+	$self->_OnPoolItemResult($stepCopyCheckRes);
+
+	# 3) Check on empty layers of steps
+	my $emptyLayersRes = $self->_GetNewItem("Empty layers");
+	$mess = "";
+
+	unless ( $self->{"copySteps"}->EmptyLayers( $masterJob, \$mess ) ) {
+
+		$emptyLayersRes->AddWarning($mess);
+	}
+
+	$self->_OnPoolItemResult($emptyLayersRes);
+	
+	
+	 # 3) Check on empty layers of steps
+	my $createPanelRes = $self->_GetNewItem("Create panel");
+	$mess = "";
+
+	unless ( $self->{"panelCreation"}->CreatePanel( $masterJob, \$mess ) ) {
+
+		$createPanelRes->AddError($mess);
+	}
+
+	$self->_OnPoolItemResult($createPanelRes);
+	
+	
+	# 3) Check on empty layers of steps
+	my $addLabelsRes = $self->_GetNewItem("Add labels");
+	$mess = "";
+
+	unless ( $self->{"pcbLabel"}->AddLabels( $masterJob, \$mess ) ) {
+
+		$addLabelsRes->AddError($mess);
+	}
+
+	$self->_OnPoolItemResult($addLabelsRes);
+
+}
+
+sub __OnStepCopyResult {
+	my $self   = shift;
+	my $result = shift;
 
 }
 
@@ -71,7 +122,8 @@ sub TaskItemsCount {
 
 	my $totalCnt = 0;
 
-	$totalCnt += 5;    # getting sucesfully AOI manager
+	$totalCnt += scalar( $self->{"poolInfo"}->GetJobNames() ) - 1;    # copy all jobs to master (-1 master)
+	$totalCnt += 4;                                                   # other checks..
 
 	return $totalCnt;
 

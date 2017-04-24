@@ -12,7 +12,7 @@ use lib qw( C:\Perl\site\lib\TpvScripts\Scripts );
 #use PackagesLib;
 
 use aliased 'Packages::InCAM::InCAM';
-use aliased 'Programs::PoolMerge::Groups::MergeGroup::MergeGroupTmp';
+use aliased 'Programs::PoolMerge::Groups::RoutGroup::RoutGroupTmp';
 
  
 my $inCAM    = InCAM->new();
@@ -21,5 +21,5 @@ my $inCAM    = InCAM->new();
 #GET INPUT NIF INFORMATION
  
 my $path = "c:\\Export\\ExportFiles\\Pool\\backup\\pan3_2-18-1500-Imersnizlato_12-39-35.xml";
-my $export = MergeGroupTmp->new();
+my $export = RoutGroupTmp->new();
 $export->Run( $inCAM, $path );

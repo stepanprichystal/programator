@@ -20,6 +20,7 @@ use aliased 'Packages::Events::Event';
 use aliased 'Packages::ItemResult::ItemResult';
 use aliased 'Packages::ItemResult::Enums';
 use aliased 'Managers::AbstractQueue::Enums' => "EnumsAbstrQ";
+use aliased 'Programs::PoolMerge::Enums' => "EnumsPool";
 use aliased "Enums::EnumsPaths";
 
 #-------------------------------------------------------------------------------------------#

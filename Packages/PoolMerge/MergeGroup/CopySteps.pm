@@ -14,8 +14,10 @@ use DateTime;
 
 #local library
 use aliased 'Connectors::HeliosConnector::HegMethods';
+use aliased 'CamHelpers::CamStep';
 use aliased 'CamHelpers::CamJob';
 use aliased 'CamHelpers::CamHelper';
+use aliased 'CamHelpers::CamLayer';
 use aliased 'Packages::NifFile::NifFile';
 use aliased 'CamHelpers::CamHistogram';
 use aliased 'Packages::CAM::FeatureFilter::FeatureFilter';
@@ -56,7 +58,7 @@ sub CopySteps {
 
 		if ( scalar(@wrongPolar) ) {
 
-			@wrongPolar = map { $_->{"gROWpolarity"} } @wrongPolar;
+			@wrongPolar = map { $_->{"gROWname"} } @wrongPolar;
 			my $lStr = join( "; ", @wrongPolar );
 
 			$copyStepRes->AddError("Pool job can't contain negative signal layers (\"$lStr\"). Child job $jobName");
@@ -70,16 +72,23 @@ sub CopySteps {
 		$inCAM->HandleException(1);
 
 		# 3) copy step to master, name of step is jobname
+
+		unless ( CamJob->IsJobOpen( $inCAM, $jobName ) ) {
+			$inCAM->COM( "open_job", job => "$jobName", "open_win" => "no" );
+		}
+
 		$inCAM->COM(
 					 "copy_entity",
 					 "type"           => "step",
-					 "source_job"     => "f13608",
+					 "source_job"     => $jobName,
 					 "source_name"    => "o+1",
 					 "dest_job"       => $masterJob,
 					 "dest_name"      => $jobName,
 					 "dest_database"  => "",
 					 "remove_from_sr" => "no"
 		);
+
+		CamJob->CloseJob( $inCAM, $jobName );
 
 		$inCAM->HandleException(0);
 
@@ -112,6 +121,10 @@ sub CopyStepFinalCheck {
 	# 1) check if master job contain all child o+1 steps
 	my @steps = CamStep->GetAllStepNames( $inCAM, $masterJob );
 
+	# set aux group (we need run cmd for master job now)
+	$inCAM->COM( "open_job", job => "$masterJob", "open_win" => "yes" );
+	$inCAM->AUX( 'set_group', group => $inCAM->{COMANS} );
+
 	foreach my $stepName (@jobNames) {
 
 		my $exist = scalar( grep { $_ eq $stepName } @steps );
@@ -139,15 +152,36 @@ sub CopyStepFinalCheck {
 					 "area_type"   => "rectangle",
 					 "inout"       => "outside",
 					 "contour_cut" => "yes",
-					 "margin"      => "300",
+					 "margin"      => "500",
 					 "feat_types"  => "line\;pad;surface;arc;text",
 					 "pol_types"   => "positive\;negative"
 		);
 	}
 
-}
+	# Check if pcb is in zero and zero and datum point are on same position
 
- 
+	my @stepsZero = ( @jobNames, "o+1" );
+
+	foreach my $step (@stepsZero) {
+
+		my %lim = CamJob->GetProfileLimits2( $inCAM, $masterJob, $step, 1 );
+		my %datum = CamStep->GetDatumPoint( $inCAM, $masterJob, $step, 1 );
+
+		if ( abs( $lim{"xMin"} - $datum{"x"} ) > 0.001 || abs( $lim{"yMin"} - $datum{"y"} ) > 0.001 ) {
+
+			$result = 0;
+			$$mess .= "Ve stepu: $step není datum-point umístěn v nule. Posuň datum point do nuly!.\n";
+		}
+
+		if ( int( $lim{"xMin"} ) != 0 || int( $lim{"yMin"} ) != 0 ) {
+
+			$result = 0;
+			$$mess .= "Ve stepu: $step není levý dolní roh profilu v \"nule\". Oprav to\n";
+		}
+	}
+
+	return $result;
+}
 
 sub EmptyLayers {
 	my $self      = shift;
@@ -159,6 +193,8 @@ sub EmptyLayers {
 	my $inCAM = $self->{"inCAM"};
 
 	my @jobNames = $self->{"poolInfo"}->GetJobNames();
+	@jobNames = grep { $_ !~ /^$masterJob$/i } @jobNames;
+	@jobNames = ( @jobNames, "o+1" );
 
 	my @baseLayers = CamJob->GetBoardBaseLayers( $inCAM, $masterJob );
 	@baseLayers = map { $_->{"gROWname"} } @baseLayers;
@@ -181,7 +217,8 @@ sub EmptyLayers {
 		}
 	}
 
- 
+	return $result;
+}
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

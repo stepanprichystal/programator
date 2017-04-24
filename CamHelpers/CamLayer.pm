@@ -267,6 +267,7 @@ sub AffectLayers {
 	my $inCAM  = shift;
 	my $layers = shift;
 
+	$inCAM->COM('clear_layers');
 	$inCAM->COM( 'affected_layer', name => "", mode => "all", affected => "no" );
 
 	foreach my $layer ( @{$layers} ) {

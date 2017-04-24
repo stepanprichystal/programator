@@ -3,7 +3,7 @@
 # Description: Manager responsible for AOI files creation
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::PoolMerge::MergeGroup::PcbLabel;
+package Packages::PoolMerge::MergeGroup::PutLabels;
 
 #3th party library
 use utf8;
@@ -23,10 +23,10 @@ use aliased 'Packages::CAM::FeatureFilter::FeatureFilter';
 use aliased 'Packages::CAM::SymbolDrawing::Primitive::PrimitiveLine';
 use aliased 'Packages::CAM::SymbolDrawing::Point';
 use aliased 'Packages::CAM::SymbolDrawing::Primitive::PrimitiveText';
-use aliased 'Packages::PoolMerge::MergeGroup::PcbLabel';
 use aliased 'CamHelpers::CamHistogram';
-use aliased 'Packages::Stackup::StackupOperation';
-use aliased 'Packages::Stackup::Stackup::Stackup';
+use aliased 'Packages::PoolMerge::MergeGroup::LabelSym';
+use aliased 'CamHelpers::CamAttributes';
+ 
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -52,11 +52,13 @@ sub AddLabels {
 
 	my $inCAM = $self->{"inCAM"};
 
-	# 1) Identify step
-	my @jobNames = $self->{"poolInfo"}->GetJobNames();
+	
 
 	# 2) identify top and bot layers for adding label
 	my @signal = CamJob->GetSignalLayer( $inCAM, $masterJob );
+	
+	my @top = ();
+	my @bot = ();
 
 	foreach my $s (@signal) {
 
@@ -68,7 +70,7 @@ sub AddLabels {
 			push( @bot, $s->{"gROWname"} );
 		}
 
-		if ( $s->{"gROWname"} =~ /^v\(d+)$/ ) {
+		if ( $s->{"gROWname"} =~ /^v(\d+)$/ ) {
 			if ( $1 % 2 == 0 ) {
 				push( @top, $s->{"gROWname"} );
 			}
@@ -79,29 +81,35 @@ sub AddLabels {
 	}
 
 	# 3) Add label to signal layer of each step
+	# Identify step
+	my @steps = $self->{"poolInfo"}->GetJobNames();
+	@steps = grep { $_ !~ /^$masterJob$/i } @steps;
+	push(@steps, "o+1");
 
-	foreach my $jobName (@jobNames) {
+	foreach my $step (@steps) {
 
-		CamHelper->SetStep( $inCAM, $jobName );
+		CamHelper->SetStep( $inCAM, $step );
 
-		my %lim = CamJob->GetProfileLimits2( $inCAM, $order->{"jobName"}, "o+1", 1 );
+		my %lim = CamJob->GetProfileLimits2( $inCAM, $masterJob, $step, 1 );
 
 		my $lTop = GeneralHelper->GetGUID();
 		my $lBot = GeneralHelper->GetGUID();
+ 
+		$self->__PrepareLabel( "top", $step, $masterJob, \%lim, $lTop );
+		$self->__PrepareLabel( "bot", $step, $masterJob, \%lim, $lBot );
 
-		$self->__PrepareLabel( "top", $jobName, $masterJob, \%lim, $lTop );
-		$self->__PrepareLabel( "bot", $jobName, $masterJob, \%lim, $lBot );
-
-		my %hist = CamHistogram->GetFeatuesHistogram( $inCAM, $masterJob, $jobName, $lTop );
-		my $featuresCount = $hist->{"total"};
+		my %hist = CamHistogram->GetFeatuesHistogram( $inCAM, $masterJob, $step, $lTop );
+		my $featuresCount = $hist{"total"};
 
 		# 1) copy to top layers
-		$self->__CopyLabel( \@top, $lTop, $masterJob );
-		$self->__CopyLabel( \@bot, $lBot, $masterJob );
+		$self->__CopyLabel( \@top, $lTop, $masterJob, $featuresCount );
+		$self->__CopyLabel( \@bot, $lBot, $masterJob, $featuresCount );
 
 		$inCAM->COM( 'delete_layer', layer => $lTop );
 		$inCAM->COM( 'delete_layer', layer => $lBot );
 	}
+
+	CamLayer->ClearLayers($inCAM);
 
 	return $result;
 }
@@ -111,32 +119,41 @@ sub __CopyLabel {
 	my @top       = @{ shift(@_) };
 	my $lName     = shift;
 	my $masterJob = shift;
+	my $featuresCount = shift;
+	
+	my $inCAM = $self->{"inCAM"};
 
 	if ( scalar(@top) ) {
 		CamLayer->WorkLayer( $inCAM, $lName );
-		my $layers = join( "\;"@top );
+		my $layers = join( "\;", @top );
 		$inCAM->COM( "sel_copy_other", "dest" => "layer_name", "target_layer" => $layers );
 
+		# do check of copied labels
 		my $f = FeatureFilter->new( $inCAM, $masterJob, undef, \@top );
 		$f->SetProfile(2);
 		$f->AddIncludeAtt( ".string", "pcb_label" );
 		my $cnt = $f->Select();
 
-		if ( ( scalar(@top) * $cnt ) != $featuresCount ) {
-			die "error when copy label to lyers";
+		if ( ( scalar(@top) * $featuresCount ) != $cnt ) {
+			die "Error during inserting pcb label. Label feature count in target layers doesnt match with source layer";
+		}else{
+			
+			CamAttributes->DelFeatuesAttribute($inCAM,".string", "pcb_label");
 		}
 	}
-	
-	CamLayer->ClearLayers( $inCAM);
+
+	CamLayer->ClearLayers($inCAM);
 }
 
 sub __PrepareLabel {
 	my $self      = shift;
 	my $side      = shift;
-	my $jobName   = shift;
+	my $stepName   = shift;
 	my $masterJob = shift;
 	my $lim       = shift;
 	my $lName     = shift;
+	
+	my $inCAM = $self->{"inCAM"};
 
 	my $pcbW = abs( $lim->{"xMax"} - $lim->{"xMin"} );
 	my $pcbH = abs( $lim->{"yMax"} - $lim->{"yMin"} );
@@ -148,8 +165,14 @@ sub __PrepareLabel {
 	my $drawV            = 1;
 
 	# deside if draw horiyontal
-
-	if ( $pcbW < $standardLblWidth && $pcbH < $standardLblHeight ) {
+	if($pcbW < $standardLblWidth &&  $pcbH > $standardLblWidth ){
+		$drawH       = 0;
+	
+	}elsif($pcbW > $standardLblWidth &&  $pcbH < $standardLblWidth ){
+		$drawV       = 0;
+		
+	}
+	elsif ( $pcbW < $standardLblWidth && $pcbH < $standardLblWidth ) {
 
 		# Draw only horizontal
 		if ( $pcbW > $pcbH ) {
@@ -168,7 +191,13 @@ sub __PrepareLabel {
 
 	CamLayer->WorkLayer( $inCAM, $lName );
 
-	my $draw = SymbolDrawing->new( $inCAM, $jobId, Point->new( 0, 0 ) );
+	my $draw = SymbolDrawing->new( $inCAM, $masterJob, Point->new( 0, 0 ) );
+	
+	my $label = $stepName;
+	
+	if($stepName eq "o+1"){
+		$label = $masterJob;
+	}
 
 	if ( $side eq "top" ) {
 
@@ -178,7 +207,7 @@ sub __PrepareLabel {
 			$xPos = $lim->{"xMin"}        # in zero
 		}
 
-		my $sym = LabelSym->new( $jobName, 0, 0, $maxLblWidth );
+		my $sym = LabelSym->new( $label, 0, 0, $maxLblWidth );
 		$draw->AddSymbol( $sym, Point->new( $xPos, $lim->{"yMax"} ) ) if $drawH;
 
 		# Vertical
@@ -187,7 +216,7 @@ sub __PrepareLabel {
 			$yPos = $lim->{"yMin"}        # in zero
 		}
 
-		my $sym2 = LabelSym->new( $jobName, 0, 1, $maxLblWidth );
+		my $sym2 = LabelSym->new( $label, 0, 1, $maxLblWidth );
 		$draw->AddSymbol( $sym2, Point->new( $lim->{"xMin"}, $yPos ) ) if $drawV;
 
 	}
@@ -196,10 +225,10 @@ sub __PrepareLabel {
 		# Horizontal
 		my $xPos = $lim->{"xMax"} / 2;    # on centre
 		if ( $pcbW < $standardLblWidth * 2 ) {
-			$xPos = $lim->{"xMin"}        # in zero
+			$xPos = $lim->{"xMax"}        # in zero
 		}
 
-		my $sym = LabelSym->new( $jobName, 1, 0, $maxLblWidth );
+		my $sym = LabelSym->new( $label, 1, 0, $maxLblWidth );
 		$draw->AddSymbol( $sym, Point->new( $xPos, $lim->{"yMax"} ) ) if $drawH;
 
 		# Vertical
@@ -208,7 +237,7 @@ sub __PrepareLabel {
 			$yPos = $lim->{"yMin"}        # in zero
 		}
 
-		my $sym2 = LabelSym->new( $jobName, 1, 1, $maxLblWidth );
+		my $sym2 = LabelSym->new( $label, 1, 1, $maxLblWidth );
 		$draw->AddSymbol( $sym2, Point->new( $lim->{"xMax"}, $yPos ) ) if $drawV;
 	}
 

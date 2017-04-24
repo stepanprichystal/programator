@@ -20,6 +20,7 @@ use aliased 'Helpers::FileHelper';
 use aliased 'Packages::PoolMerge::MergeGroup::PanelCreation';
 use aliased 'Packages::PoolMerge::MergeGroup::CopySteps';
 use aliased 'Packages::PoolMerge::MergeGroup::PcbLabel';
+
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
@@ -37,8 +38,7 @@ sub new {
 	$self->{"copySteps"} = CopySteps->new( $inCAM, $poolInfo );
 	$self->{"copySteps"}->{"onItemResult"}->Add( sub { $self->_OnPoolItemResult(@_) } );
 	$self->{"panelCreation"} = PanelCreation->new( $inCAM, $poolInfo );
-	$self->{"pcbLabel"} = PcbLabel->new( $inCAM, $poolInfo );
-	 
+	$self->{"putLabels"} = PutLabels->new( $inCAM, $poolInfo );
 
 	return $self;
 }
@@ -65,15 +65,15 @@ sub Run {
 	$self->{"copySteps"}->CopySteps($masterJob);
 
 	# 3) Final check of step copy
-	my $stepCopyRes = $self->_GetNewItem("Step copy check");
-	my $mess        = "";
+	my $stepCopyCheckRes = $self->_GetNewItem("Step copy check");
+	my $mess             = "";
 
 	unless ( $self->{"copySteps"}->CopyStepFinalCheck( $masterJob, \$mess ) ) {
 
-		$stepCopyRes->AddError($mess);
+		$stepCopyCheckRes->AddError($mess);
 	}
 
-	$self->_OnPoolItemResult($stepCopyRes);
+	$self->_OnPoolItemResult($stepCopyCheckRes);
 
 	# 3) Check on empty layers of steps
 	my $emptyLayersRes = $self->_GetNewItem("Empty layers");
@@ -85,27 +85,25 @@ sub Run {
 	}
 
 	$self->_OnPoolItemResult($emptyLayersRes);
-	
-	
-	 # 3) Check on empty layers of steps
+
+	# 3) Check on empty layers of steps
 	my $createPanelRes = $self->_GetNewItem("Create panel");
 	$mess = "";
 
 	unless ( $self->{"panelCreation"}->CreatePanel( $masterJob, \$mess ) ) {
 
-		$createPanelRes->AddWarning($mess);
+		$createPanelRes->AddError($mess);
 	}
 
 	$self->_OnPoolItemResult($createPanelRes);
-	
-	
+
 	# 3) Check on empty layers of steps
 	my $addLabelsRes = $self->_GetNewItem("Add labels");
 	$mess = "";
 
-	unless ( $self->{"pcbLabel"}->AddLabels( $masterJob, \$mess ) ) {
+	unless ( $self->{"putLabels"}->AddLabels( $masterJob, \$mess ) ) {
 
-		$addLabelsRes->AddWarning($mess);
+		$addLabelsRes->AddError($mess);
 	}
 
 	$self->_OnPoolItemResult($addLabelsRes);
@@ -124,10 +122,7 @@ sub TaskItemsCount {
 	my $totalCnt = 0;
 
 	$totalCnt += scalar( $self->{"poolInfo"}->GetJobNames() ) - 1;    # copy all jobs to master (-1 master)
-	$totalCnt += 1;                                                   # final control of copy step
-	$totalCnt += 1;                                                   # check on empty layers
-	$totalCnt += 1;                                                   # panel ceration
-	$totalCnt += 1;                                                   # put labels check
+	$totalCnt += 4;                                                   # other checks..
 
 	return $totalCnt;
 

@@ -3,59 +3,54 @@
 # Description: Manager responsible for AOI files creation
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::PoolMerge::RoutGroup::RoutMngr;
-use base('Packages::PoolMerge::PoolMngrBase');
-
-use Class::Interface;
-&implements('Packages::PoolMerge::IMngr');
+package Packages::PoolMerge::RoutGroup::RoutHelper;
+use base("Packages::ItemResult::ItemEventMngr");
 
 #3th party library
+use utf8;
 use strict;
 use warnings;
+use DateTime;
 
 #local library
-use aliased 'Packages::PoolMerge::RoutGroup::RoutHelper';
+use aliased 'Connectors::HeliosConnector::HegMethods';
+use aliased 'CamHelpers::CamJob';
+use aliased 'CamHelpers::CamHelper';
+use aliased 'Packages::Routing::RoutLayer::FlattenRout::FlattenPanel::FlattenPanel';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
 
 sub new {
-	my $class    = shift;
-	my $inCAM    = shift;
-	my $poolInfo = shift;
-	my $self     = $class->SUPER::new( $poolInfo->GetInfoFile(), @_ );
+	my $class = shift;
+	my $self  = $class->SUPER::new(@_);
 	bless $self;
 
-	$self->{"inCAM"}    = $inCAM;
-	$self->{"poolInfo"} = $poolInfo;
-	
-	$self->{"routHelper"} = RoutHelper->new( $inCAM, $poolInfo );
-	$self->{"routHelper"}->{"onItemResult"}->Add( sub { $self->_OnPoolItemResult(@_) } );
- 
+	$self->{"inCAM"}    = shift;
+	$self->{"poolInfo"} = shift;
+
 	return $self;
 }
 
-sub Run {
+sub CreateFsch {
 	my $self = shift;
+	my $masterJob = shift;
+	my $mess = shift;
 
- 	my $masterJob = $self->GetValInfoFile("masterJob");
+	my $result = 1;
+
+	my $inCAM = $self->{"inCAM"};
+	
+	my $flatten = FlattenPanel->new( $inCAM, $masterJob, "panel", "f", "fsch", 1);
+
+	$flatten->{"onItemResult"}->Add( sub { $self->_OnItemResult(@_) } );
+
+	$result = $flatten->Run();
  
- 	# 1) Create fsch
- 	
- 	$self->{"routHelper"}->CreateFsch( $masterJob);
-
-	 
-
 }
 
-sub TaskItemsCount {
-	my $self = shift;
-
-	my $totalCnt = 7;    # crate fsch, 7 item results..
-	return $totalCnt;
-
-}
+ 
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

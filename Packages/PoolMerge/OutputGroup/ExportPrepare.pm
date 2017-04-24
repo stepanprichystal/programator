@@ -3,7 +3,7 @@
 # Description: Manager responsible for AOI files creation
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::PoolMerge::MergeGroup::OtherData;
+package Packages::PoolMerge::MergeGroup::OtherSettings;
 use base("Packages::ItemResult::ItemEventMngr");
 
 #3th party library

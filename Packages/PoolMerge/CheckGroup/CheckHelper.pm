@@ -102,6 +102,7 @@ sub DimensionsAreOk {
 		# tolerance 0.1mm
 
 		if ( abs( $rW - $order->{"width"} ) > 0.1 || abs( $rH - $order->{"height"} ) > 0.1 ) {
+ 
 
 			$result = 0;
 			$$mess .=
@@ -158,7 +159,7 @@ sub CheckChildJobStatus {
 
 		if ( $curStep !~ /k panelizaci/i ) {
 			$result = 0;
-			$mess .= "Objednávka \"$orderName\" nemá nastavený sloupec \"Aktualni krok\" na hodnotu \"k panelizaci\". Aktuální hodnota je \"$curStep\". Oprav to.\n";
+			$$mess .= "Objednávka \"$orderName\" nemá nastavený sloupec \"Aktualni krok\" na hodnotu \"k panelizaci\". Aktuální hodnota je \"$curStep\". Oprav to.\n";
 		}
 	}
 

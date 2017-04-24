@@ -74,7 +74,7 @@ sub CreateFromSRStep {
 	my $jobId = $self->{"jobId"};
 
 	unless ( defined $itemResult ) {
-		$itemResult = ItemResult->new("Layer flatten");
+		$itemResult = ItemResult->new("Final layer flatten");
 	}
 
 	# 1) Create structures for creating flatten layer and tool ordering

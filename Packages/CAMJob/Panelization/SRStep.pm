@@ -19,7 +19,7 @@ use warnings;
 #use aliased 'Packages::CAMJob::OutputData::LayerData::LayerDataList';
 #
 #use aliased 'CamHelpers::CamStep';
-#use aliased 'CamHelpers::CamHelper';
+use aliased 'CamHelpers::CamHelper';
 #use aliased 'CamHelpers::CamJob';
 #use aliased 'CamHelpers::CamDrilling';
 use aliased 'CamHelpers::CamStepRepeat';
@@ -89,7 +89,6 @@ sub Create {
 	
 sub AddSRStep {
 	my $self     = shift;
-	my $stepName = shift;
 	my $srName   = shift;
 	my $posX = shift;
 	my $posY = shift;
@@ -101,7 +100,7 @@ sub AddSRStep {
 	
 	my $inCAM = $self->{"inCAM"};
 	
- 	CamStepRepeat->AddStepAndRepeat($inCAM, $self->{"step"}, $stepName, $posX, $posY, $angle, $nx, $ny, $dx, $dy);
+ 	CamStepRepeat->AddStepAndRepeat($inCAM, $self->{"step"}, $srName, $posX, $posY, $angle, $nx, $ny, $dx, $dy);
 }
 
 sub AddSchema{

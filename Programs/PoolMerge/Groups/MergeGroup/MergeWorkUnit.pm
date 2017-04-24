@@ -44,7 +44,7 @@ sub Init {
  
 	my $taskData = $self->{"taskData"};
 	
-	my $mngr = MergeMngr->new($inCAM, $jobId, $taskData);
+	my $mngr = MergeMngr->new($inCAM, $taskData);
 	
 	$mngr->{"onItemResult"}->Add( sub { $self->_OnItemResultHandler(@_) } );
 	$mngr->{"onStatusResult"}->Add( sub { $self->_OnStatusResultHandler(@_) } );

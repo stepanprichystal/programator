@@ -8,18 +8,12 @@ use base('Managers::AbstractQueue::AbstractQueue::JobWorkerUnit');
 #3th party library
 use strict;
 use warnings;
+ 
 
-#use aliased 'Programs::Exporter::ExportChecker::Groups::NifExport::Model::NifGroupData';
-#use aliased 'Programs::PoolMerge::Groups::NifExport::NifGroup';
-
-#use aliased 'Programs::Exporter::ExportChecker::Groups::NifExport::Presenter::NifUnit';
-#use aliased 'Managers::MessageMngr::MessageMngr';
-
-use aliased 'Packages::Events::Event';
 use aliased 'Packages::PoolMerge::RoutGroup::RoutMngr';
 
 #-------------------------------------------------------------------------------------------#
-#  
+#  Package methods
 #-------------------------------------------------------------------------------------------#
 
 
@@ -47,11 +41,10 @@ sub Init {
 	my $self       = shift;
 	my $inCAM      = shift;
 	my $jobId      = shift;
-	
-	my $taskData = $self->{"taskData"};
  
-	 
-	my $mngr = RoutMngr->new($inCAM, $jobId);
+	my $taskData = $self->{"taskData"};
+	
+	my $mngr = RoutMngr->new($inCAM, $taskData);
 	
 	$mngr->{"onItemResult"}->Add( sub { $self->_OnItemResultHandler(@_) } );
 	$mngr->{"onStatusResult"}->Add( sub { $self->_OnStatusResultHandler(@_) } );
@@ -62,9 +55,6 @@ sub Init {
 	
  
 }
-
-
-
 
 
  

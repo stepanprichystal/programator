@@ -28,7 +28,7 @@ sub new {
 	$self = {};
 	bless $self;
 	
-	$self->{"id"} =  UnitEnums->UnitId_MERGE;
+	$self->{"id"} =  UnitEnums->UnitId_CHECK;
 	
 	return $self;
 }
