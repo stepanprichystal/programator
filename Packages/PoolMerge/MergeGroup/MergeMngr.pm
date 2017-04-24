@@ -17,7 +17,9 @@ use warnings;
 use aliased 'Managers::AbstractQueue::Enums' => "EnumsAbstrQ";
 use aliased 'Programs::PoolMerge::Enums'     => "EnumsPool";
 use aliased 'Helpers::FileHelper';
-
+use aliased 'Packages::PoolMerge::MergeGroup::PanelCreation';
+use aliased 'Packages::PoolMerge::MergeGroup::CopySteps';
+use aliased 'Packages::PoolMerge::MergeGroup::PcbLabel';
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
@@ -33,9 +35,10 @@ sub new {
 	$self->{"poolInfo"} = $poolInfo;
 
 	$self->{"copySteps"} = CopySteps->new( $inCAM, $poolInfo );
+	$self->{"copySteps"}->{"onItemResult"}->Add( sub { $self->_OnPoolItemResult(@_) } );
 	$self->{"panelCreation"} = PanelCreation->new( $inCAM, $poolInfo );
-	$self->{"panelCreation"}->{"onItemResult"}->Add( sub { $self->_OnPoolItemResult(@_) } );
 	$self->{"pcbLabel"} = PcbLabel->new( $inCAM, $poolInfo );
+	 
 
 	return $self;
 }
@@ -59,13 +62,13 @@ sub Run {
 	# 2) Copy child step to master job
 	my $copyStepsRes = $self->_GetNewItem("Mater job checks");
 
-	$self->{"panelCreation"}->CopySteps($masterJob);
+	$self->{"copySteps"}->CopySteps($masterJob);
 
 	# 3) Final check of step copy
 	my $stepCopyRes = $self->_GetNewItem("Step copy check");
 	my $mess        = "";
 
-	unless ( $self->{"panelCreation"}->CopyStepFinalCheck( $masterJob, \$mess ) ) {
+	unless ( $self->{"copySteps"}->CopyStepFinalCheck( $masterJob, \$mess ) ) {
 
 		$stepCopyRes->AddError($mess);
 	}
@@ -73,15 +76,39 @@ sub Run {
 	$self->_OnPoolItemResult($stepCopyRes);
 
 	# 3) Check on empty layers of steps
-	my $emptyLayersRes = $self->_GetNewItem("Step copy check");
+	my $emptyLayersRes = $self->_GetNewItem("Empty layers");
 	$mess = "";
 
-	unless ( $self->{"panelCreation"}->EmptyLayers( $masterJob, \$mess ) ) {
+	unless ( $self->{"copySteps"}->EmptyLayers( $masterJob, \$mess ) ) {
 
 		$emptyLayersRes->AddWarning($mess);
 	}
 
 	$self->_OnPoolItemResult($emptyLayersRes);
+	
+	
+	 # 3) Check on empty layers of steps
+	my $createPanelRes = $self->_GetNewItem("Create panel");
+	$mess = "";
+
+	unless ( $self->{"panelCreation"}->CreatePanel( $masterJob, \$mess ) ) {
+
+		$createPanelRes->AddWarning($mess);
+	}
+
+	$self->_OnPoolItemResult($createPanelRes);
+	
+	
+	# 3) Check on empty layers of steps
+	my $addLabelsRes = $self->_GetNewItem("Add labels");
+	$mess = "";
+
+	unless ( $self->{"pcbLabel"}->AddLabels( $masterJob, \$mess ) ) {
+
+		$addLabelsRes->AddWarning($mess);
+	}
+
+	$self->_OnPoolItemResult($addLabelsRes);
 
 }
 

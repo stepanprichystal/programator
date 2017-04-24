@@ -436,20 +436,6 @@ sub GetReorderPoolPcb {
 	}
 }
 
-sub UpdateConstructionClass {
-	my $self  = shift;
-	my $pcbId = shift;
-	my $class = shift;
-
-	require Connectors::HeliosConnector::HelperWriter;
-
-	print "after";
-	my $res = Connectors::HeliosConnector::HelperWriter->OnlineWrite_pcb( "F13610", "7", "konstr_trida" );
-
-	print "$res\n";
-
-}
-
 # Return string notes by pcbId for customer (Helios tab UDA)
 sub GetTpvCustomerNote {
 	my $self  = shift;
@@ -733,6 +719,31 @@ sub GetIdcustomer {
 	return $res;
 }
 
+#sub UpdateConstructionClass {
+#	my $self        = shift;
+#	my $pcbId       = shift;
+#	my $class       = shift;
+#	my $childThread = shift;
+#
+#	if ($childThread) {
+#
+#		my $result = $self->__SystemCall( "UpdateConstructionClass", $pcbId, $class );
+#
+#		return $result;
+#	}
+#	else {
+#
+#		require Connectors::HeliosConnector::HelperWriter;
+# 
+#		my $res = Connectors::HeliosConnector::HelperWriter->OnlineWrite_pcb( $pcbId, $class, "konstr_trida" );
+#		
+#		return $res;
+#	}
+#
+#	 
+#
+#}
+
 sub UpdateNCInfo {
 	my $self        = shift;
 	my $pcbId       = shift;
@@ -780,7 +791,71 @@ sub UpdatePcbOrderState {
 
 }
 
- 
+sub UpdateSilkScreen {
+	my $self        = shift;
+	my $pcbId       = shift;
+	my $side        = shift;    # top/bot
+	my $value       = shift;
+	my $childThread = shift;
+
+	if ($childThread) {
+
+		my $result = $self->__SystemCall( "UpdateSilkScreen", $pcbId, $side, $value );
+
+		return $result;
+	}
+	else {
+
+		#use Connectors::HeliosConnector::HelperWriter;
+		require Connectors::HeliosConnector::HelperWriter;
+
+		my $res = undef;
+
+		if ( $side eq "top" ) {
+
+			$res = Connectors::HeliosConnector::HelperWriter->OnlineWrite_pcb( "$pcbId", $value, "potisk" );
+		}
+		else {
+
+			$res = Connectors::HeliosConnector::HelperWriter->OnlineWrite_pcb( "$pcbId", $value, "potisk_typ" );
+		}
+
+		return $res;
+	}
+}
+
+sub UpdateSolderMask {
+	my $self        = shift;
+	my $pcbId       = shift;
+	my $side        = shift;    # top/bot
+	my $value       = shift;
+	my $childThread = shift;
+
+	if ($childThread) {
+
+		my $result = $self->__SystemCall( "UpdateSolderMask", $pcbId, $side, $value );
+
+		return $result;
+	}
+	else {
+
+		#use Connectors::HeliosConnector::HelperWriter;
+		require Connectors::HeliosConnector::HelperWriter;
+
+		my $res = undef;
+
+		if ( $side eq "top" ) {
+
+			$res = Connectors::HeliosConnector::HelperWriter->OnlineWrite_pcb( "$pcbId", $value, "maska_barva_1" );
+		}
+		else {
+
+			$res = Connectors::HeliosConnector::HelperWriter->OnlineWrite_pcb( "$pcbId", $value, "maska_barva_2" );
+		}
+
+		return $res;
+	}
+}
 
 # Return value from clolumn "stav" for pcb order
 sub GetStatusOfOrder {
@@ -800,14 +875,12 @@ sub GetStatusOfOrder {
 }
 
 # Return value from clolumn "aktualni krok" for pcb order
- 
+
 sub GetCurStepOfOrder {
-	my $self      = shift;
-	my $orderId   = shift;
-	 
+	my $self    = shift;
+	my $orderId = shift;
 
 	my @params = ( SqlParameter->new( "_OrderId", Enums->SqlDbType_VARCHAR, $orderId ) );
- 
 
 	my $cmd = "select top 1
 				 t1.aktualni_krok
@@ -891,7 +964,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	use aliased 'Connectors::HeliosConnector::HegMethods';
 
-	my $num = HegMethods->GetCurStepOfOrder("f69854-01", 1);
+	my $num = HegMethods->GetCurStepOfOrder( "f69854-01", 1 );
 
 	print $num;
 

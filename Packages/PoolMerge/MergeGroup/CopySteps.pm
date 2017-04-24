@@ -147,16 +147,7 @@ sub CopyStepFinalCheck {
 
 }
 
-sub CreatePanel {
-	my $self      = shift;
-	my $masterJob = shift;
-	my $mess      = shift;
-
-	my $result = 1;
-
-	my $inCAM = $self->{"inCAM"};
-	
-}
+ 
 
 sub EmptyLayers {
 	my $self      = shift;
