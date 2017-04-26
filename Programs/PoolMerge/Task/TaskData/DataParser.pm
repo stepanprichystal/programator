@@ -139,11 +139,14 @@ sub __GetGroupData {
 	my @orderInf = ();
 
 	foreach my $orderId (@orderIds) {
+	 
 
 		my ($jobName) = $orderId =~ /^(\w\d+)/;
 		$jobName = lc($jobName);
 
 		my @all = grep { $_->{"order_id"} eq $orderId } @order;
+		
+		my $orderId = lc($orderId);
 
 		my @pos = ();
 

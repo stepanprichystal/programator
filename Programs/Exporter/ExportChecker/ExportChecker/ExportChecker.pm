@@ -45,6 +45,7 @@ use aliased 'Helpers::GeneralHelper';
 use aliased 'Widgets::Forms::LoadingForm';
 use aliased 'CamHelpers::CamHelper';
 use aliased 'CamHelpers::CamJob';
+use aliased 'Enums::EnumsPaths';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -354,8 +355,8 @@ sub __OnResultPopupHandler {
 		 || $resultType eq Enums->PopupResult_SUCCES )
 	{
 
-		#my %unitsExportData = $self->{"units"}->GetExportData(1);
-		my $dataTransfer = DataTransfer->new( $self->{"jobId"}, EnumsTransfer->Mode_WRITE, $self->{"units"} );
+		my $pathExportFile = EnumsPaths->Client_EXPORTFILES . $self->{"jobId"};
+		my $dataTransfer = DataTransfer->new( $self->{"jobId"}, EnumsTransfer->Mode_WRITE, $self->{"units"}, undef, $pathExportFile );
 
 		my $inCAM  = $self->{"inCAM"};
 		my $client = $self->{"client"};

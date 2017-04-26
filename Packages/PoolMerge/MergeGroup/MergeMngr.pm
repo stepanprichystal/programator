@@ -17,9 +17,9 @@ use warnings;
 use aliased 'Managers::AbstractQueue::Enums' => "EnumsAbstrQ";
 use aliased 'Programs::PoolMerge::Enums'     => "EnumsPool";
 use aliased 'Helpers::FileHelper';
-use aliased 'Packages::PoolMerge::MergeGroup::PanelCreation';
-use aliased 'Packages::PoolMerge::MergeGroup::CopySteps';
-use aliased 'Packages::PoolMerge::MergeGroup::PcbLabel';
+use aliased 'Packages::PoolMerge::MergeGroup::Helper::PanelCreation';
+use aliased 'Packages::PoolMerge::MergeGroup::Helper::CopySteps';
+use aliased 'Packages::PoolMerge::MergeGroup::Helper::PutLabels';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -31,6 +31,8 @@ sub new {
 	my $poolInfo = shift;
 	my $self     = $class->SUPER::new( $poolInfo->GetInfoFile(), @_ );
 	bless $self;
+
+	$self->{"setDefautState"} = 1;
 
 	$self->{"inCAM"}    = $inCAM;
 	$self->{"poolInfo"} = $poolInfo;
@@ -48,25 +50,28 @@ sub Run {
 
 	my $masterJob = $self->GetValInfoFile("masterJob");
 
-	# Let "pool merger" know, master job was chosen
-	# Then "pool merger" open it
-	if ( defined $masterJob ) {
 
-		$self->_OnSetMasterJob($masterJob);
 
+
+	# 1) set state "slouceno"
+	my $stateRes = $self->_GetNewItem("Set state \"slouceno\"");
+	my $mess = "";
+
+	unless ( $self->{"copySteps"}->SetNewJobsState( "slouceno", \$mess ) ) {
+
+		$stateRes->AddError($mess);
 	}
-	else {
-		die "Master job is not defined";
-	}
+
+	$self->_OnPoolItemResult($stateRes);
+	
 
 	# 2) Copy child step to master job
-	my $copyStepsRes = $self->_GetNewItem("Mater job checks");
 
 	$self->{"copySteps"}->CopySteps($masterJob);
 
 	# 3) Final check of step copy
 	my $stepCopyCheckRes = $self->_GetNewItem("Step copy check");
-	my $mess             = "";
+	$mess             = "";
 
 	unless ( $self->{"copySteps"}->CopyStepFinalCheck( $masterJob, \$mess ) ) {
 
@@ -122,7 +127,7 @@ sub TaskItemsCount {
 	my $totalCnt = 0;
 
 	$totalCnt += scalar( $self->{"poolInfo"}->GetJobNames() ) - 1;    # copy all jobs to master (-1 master)
-	$totalCnt += 4;                                                   # other checks..
+	$totalCnt += 5;                                                   # other checks and etc..
 
 	return $totalCnt;
 

@@ -3,7 +3,7 @@
 # Description: Manager responsible for AOI files creation
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::PoolMerge::MergeGroup::OutputMngr;
+package Packages::PoolMerge::OutputGroup::OutputMngr;
 use base('Packages::PoolMerge::PoolMngrBase');
 
 use Class::Interface;
@@ -17,8 +17,13 @@ use warnings;
 use aliased 'Managers::AbstractQueue::Enums' => "EnumsAbstrQ";
 use aliased 'Programs::PoolMerge::Enums'     => "EnumsPool";
 use aliased 'Helpers::FileHelper';
-use aliased 'Packages::PoolMerge::MergeGroup::OtherSettings';
- 
+use aliased 'Packages::PoolMerge::OutputGroup::Helper::OtherSettings';
+use aliased 'Packages::PoolMerge::OutputGroup::Helper::ExportPrepare';
+use aliased 'Packages::PoolMerge::OutputGroup::Helper::PoolFile';
+use aliased 'Packages::PoolMerge::OutputGroup::Helper::DefaultStackup';
+use aliased 'Helpers::GeneralHelper';
+use aliased 'CamHelpers::CamJob';
+
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
@@ -33,10 +38,16 @@ sub new {
 	$self->{"inCAM"}    = $inCAM;
 	$self->{"poolInfo"} = $poolInfo;
 
-	$self->{"copySteps"} = CopySteps->new( $inCAM, $poolInfo );
-	$self->{"copySteps"}->{"onItemResult"}->Add( sub { $self->_OnPoolItemResult(@_) } );
-	$self->{"panelCreation"} = PanelCreation->new( $inCAM, $poolInfo );
-	$self->{"pcbLabel"} = PcbLabel->new( $inCAM, $poolInfo );
+	my $masterJob = $self->GetValInfoFile("masterJob");
+
+	$self->{"otherSettings"} = OtherSettings->new( $inCAM, $poolInfo );
+	$self->{"poolFile"} = PoolFile->new( $inCAM, $poolInfo );
+	$self->{"poolFile"} = PoolFile->new( $inCAM, $poolInfo );
+	$self->{"defaultStackup"} = DefaultStackup->new( $inCAM, $poolInfo );
+	
+	$self->{"exportPrepare"} = ExportPrepare->new( $inCAM, $poolInfo, $masterJob );
+	$self->{"exportPrepare"}->{"onItemResult"}->Add( sub { $self->_OnPoolItemResult(@_) } );
+
 	 
 
 	return $self;
@@ -45,75 +56,75 @@ sub new {
 sub Run {
 	my $self = shift;
 
-	my $masterJob = $self->GetValInfoFile("masterJob");
+	my $masterJob   = $self->GetValInfoFile("masterJob");
+	my $masterOrder = $self->GetValInfoFile("masterOrder");
 
-	# Let "pool merger" know, master job was chosen
-	# Then "pool merger" open it
-	if ( defined $masterJob ) {
+	# 1) Set mask, silk screens
+	my $jobHeliosAttRes = $self->_GetNewItem("Set Helios attribute");
+	my $mess            = "";
 
-		$self->_OnSetMasterJob($masterJob);
+	unless ( $self->{"otherSettings"}->SetJobHeliosAttributes( $masterJob, \$mess ) ) {
 
-	}
-	else {
-		die "Master job is not defined";
-	}
-
-	# 2) Copy child step to master job
-	my $copyStepsRes = $self->_GetNewItem("Mater job checks");
-
-	$self->{"copySteps"}->CopySteps($masterJob);
-
-	# 3) Final check of step copy
-	my $stepCopyCheckRes = $self->_GetNewItem("Step copy check");
-	my $mess        = "";
-
-	unless ( $self->{"copySteps"}->CopyStepFinalCheck( $masterJob, \$mess ) ) {
-
-		$stepCopyCheckRes->AddError($mess);
+		$jobHeliosAttRes->AddError($mess);
 	}
 
-	$self->_OnPoolItemResult($stepCopyCheckRes);
+	$self->_OnPoolItemResult($jobHeliosAttRes);
 
-	# 3) Check on empty layers of steps
-	my $emptyLayersRes = $self->_GetNewItem("Empty layers");
+	# 2) Set layer attribute, pcb class, ..
+	my $jobAttRes = $self->_GetNewItem("Set job attribute");
 	$mess = "";
 
-	unless ( $self->{"copySteps"}->EmptyLayers( $masterJob, \$mess ) ) {
+	unless ( $self->{"otherSettings"}->SetJobAttributes( $masterJob, \$mess ) ) {
 
-		$emptyLayersRes->AddWarning($mess);
+		$jobAttRes->AddError($mess);
 	}
 
-	$self->_OnPoolItemResult($emptyLayersRes);
-	
-	
-	 # 3) Check on empty layers of steps
-	my $createPanelRes = $self->_GetNewItem("Create panel");
+	$self->_OnPoolItemResult($jobAttRes);
+
+	# 3) Remove unused symbols, layers
+	my $jobCleanupRes = $self->_GetNewItem("Job cleanup");
 	$mess = "";
 
-	unless ( $self->{"panelCreation"}->CreatePanel( $masterJob, \$mess ) ) {
+	unless ( $self->{"otherSettings"}->JobCleanup( $masterJob, \$mess ) ) {
 
-		$createPanelRes->AddError($mess);
+		$jobCleanupRes->AddError($mess);
 	}
 
-	$self->_OnPoolItemResult($createPanelRes);
-	
-	
-	# 3) Check on empty layers of steps
-	my $addLabelsRes = $self->_GetNewItem("Add labels");
+	$self->_OnPoolItemResult($jobCleanupRes);
+
+	# 4) do control before creating "export file"
+	$self->{"exportPrepare"}->CheckBeforeExport($masterJob);
+
+	# 5) Export "pool file"
+
+	my $poolFileRes = $self->_GetNewItem("Export pool file");
 	$mess = "";
 
-	unless ( $self->{"pcbLabel"}->AddLabels( $masterJob, \$mess ) ) {
+	unless ( $self->{"poolFile"}->CreatePoolFile( $masterJob, $masterOrder, \$mess ) ) {
 
-		$addLabelsRes->AddError($mess);
+		$poolFileRes->AddError($mess);
 	}
 
-	$self->_OnPoolItemResult($addLabelsRes);
+	$self->_OnPoolItemResult($poolFileRes);
 
-}
+	# 6) Export default stackup
 
-sub __OnStepCopyResult {
-	my $self   = shift;
-	my $result = shift;
+	if ( CamJob->GetSignalLayerCnt( $self->{"inCAM"}, $masterJob ) > 2 ) {
+		my $stackupRes = $self->_GetNewItem("Export stackup");
+		$mess = "";
+
+		unless ( $self->{"defaultStackup"}->CreateDefaultStackup( $masterJob, \$mess ) ) {
+
+			$stackupRes->AddError($mess);
+		}
+
+		$self->_OnPoolItemResult($stackupRes);
+	}
+
+	# 7) Prepare "export file"
+	my $exportPath = GeneralHelper->GetGUID();
+	$self->SetValInfoFile( "exportFile", $exportPath );
+	$self->{"exportPrepare"}->PrepareExportFile( $masterJob, $exportPath, \$mess );
 
 }
 
@@ -122,8 +133,8 @@ sub TaskItemsCount {
 
 	my $totalCnt = 0;
 
-	$totalCnt += scalar( $self->{"poolInfo"}->GetJobNames() ) - 1;    # copy all jobs to master (-1 master)
-	$totalCnt += 4;                                                   # other checks..
+	$totalCnt += scalar( $self->{"exportPrepare"}->{"units"}->{"units"} );    # number of checked units
+	$totalCnt += 6;                                                           # other checks..
 
 	return $totalCnt;
 

@@ -243,6 +243,9 @@ sub __OnJobMessageEvtHandlerBase {
 	if ( $messType eq Enums->EventType_SPECIAL ) {
 
 		if ( $data->{"itemId"} eq Enums->EventItemType_STOP ) {
+			
+			# 1) set status "paused", to actually processed unit
+			$task->ProcessTaskStop($data);
 
 		}
 		elsif ( $data->{"itemId"} eq Enums->EventItemType_CONTINUE ) {
@@ -256,6 +259,8 @@ sub __OnJobMessageEvtHandlerBase {
 			$self->{"form"}->RefreshGroupTable($task);
 
 		}
+		
+		
 	}
 }
 

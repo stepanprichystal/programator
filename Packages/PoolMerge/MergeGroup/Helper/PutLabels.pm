@@ -3,7 +3,7 @@
 # Description: Manager responsible for AOI files creation
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::PoolMerge::MergeGroup::PutLabels;
+package Packages::PoolMerge::MergeGroup::Helper::PutLabels;
 
 #3th party library
 use utf8;
@@ -24,7 +24,7 @@ use aliased 'Packages::CAM::SymbolDrawing::Primitive::PrimitiveLine';
 use aliased 'Packages::CAM::SymbolDrawing::Point';
 use aliased 'Packages::CAM::SymbolDrawing::Primitive::PrimitiveText';
 use aliased 'CamHelpers::CamHistogram';
-use aliased 'Packages::PoolMerge::MergeGroup::LabelSym';
+use aliased 'Packages::PoolMerge::MergeGroup::Helper::LabelSym';
 use aliased 'CamHelpers::CamAttributes';
  
 

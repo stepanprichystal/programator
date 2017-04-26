@@ -3,7 +3,7 @@
 # Description: Manager responsible for AOI files creation
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::PoolMerge::MergeGroup::CopySteps;
+package Packages::PoolMerge::MergeGroup::Helper::CopySteps;
 use base("Packages::ItemResult::ItemEventMngr");
 
 #3th party library
@@ -36,6 +36,28 @@ sub new {
 
 	return $self;
 }
+
+
+sub SetNewJobsState {
+	my $self      = shift;
+	my $newState = shift;
+	my $mess      = shift;
+
+	my $result = 1;
+
+	my $inCAM = $self->{"inCAM"};
+	
+	my @orders = $self->{"poolInfo"}->GetOrderNames();
+	
+	foreach my $orderId (@orders){
+		
+		HegMethods->UpdatePcbOrderState($orderId, $newState, 1);
+	}
+ 
+	return $result;
+}
+
+
 
 sub CopySteps {
 	my $self      = shift;
@@ -176,7 +198,7 @@ sub CopyStepFinalCheck {
 		if ( int( $lim{"xMin"} ) != 0 || int( $lim{"yMin"} ) != 0 ) {
 
 			$result = 0;
-			$$mess .= "Ve stepu: $step není levý dolní roh profilu v \"nule\". Oprav to\n";
+			$$mess .= "Ve stepu: $step není­ levý dolní­ roh profilu v \"nule\". Oprav to\n";
 		}
 	}
 

@@ -20,8 +20,9 @@ use aliased 'Packages::Events::Event';
 use aliased 'Packages::ItemResult::ItemResult';
 use aliased 'Packages::ItemResult::Enums';
 use aliased 'Managers::AbstractQueue::Enums' => "EnumsAbstrQ";
-use aliased 'Programs::PoolMerge::Enums' => "EnumsPool";
+use aliased 'Programs::PoolMerge::Enums'     => "EnumsPool";
 use aliased "Enums::EnumsPaths";
+use aliased 'Connectors::HeliosConnector::HegMethods';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -36,6 +37,8 @@ sub new {
 
 	$self->{"infoFile"} = $infoFile;
 
+	$self->{"setDefautState"} = 0;    # if set, set state to all orders to default "k panelizaci" in helios
+
 	return $self;
 }
 
@@ -44,10 +47,20 @@ sub _OnPoolItemResult {
 	my $self       = shift;
 	my $itemResult = shift;
 
-	#  call standard base class method
+	# 1) if set set default state, set state of all orders to default
+	if ( $self->{"setDefautState"} ) {
+		my @orders = $self->{"poolInfo"}->GetOrderNames();
+
+		foreach my $orderId (@orders) {
+
+			#HegMethods->UpdatePcbOrderState( $orderId, "k panelizaci", 1 );
+		}
+	}
+
+	#  2) call standard base class method
 	$self->_OnItemResult($itemResult);
 
-	# plus if item esult fail, call stop taks
+	# 3 ) plus if item esult fail, call stop taks
 
 	if ( $itemResult->GetErrorCount() ) {
 		my $resSpec = $self->_GetNewItem( EnumsAbstrQ->EventItemType_STOP );
@@ -103,9 +116,9 @@ sub SetValInfoFile {
 }
 
 sub GetValInfoFile {
-	my $self  = shift;
-	my $key   = shift;
-	
+	my $self = shift;
+	my $key  = shift;
+
 	my $value = undef;
 
 	my $p = EnumsPaths->Client_INCAMTMPOTHER . $self->{"infoFile"};
@@ -120,7 +133,8 @@ sub GetValInfoFile {
 		my $str = join( "", <$f> );
 		%hashData = %{ $json->decode($str) };
 		close($f);
-	}else{
+	}
+	else {
 		die "Info file $p doesn't exist. Cant read value $key";
 	}
 

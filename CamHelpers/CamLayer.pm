@@ -179,7 +179,7 @@ sub RemoveTempLayerPlus {
 
 	$inCAM->INFO( 'entity_type' => 'matrix', 'entity_path' => "$jobId/matrix", 'data_type' => 'ROW' );
 	my $totalRows = ${ $inCAM->{doinfo}{gROWrow} }[-1];
-	for ( my $count = 0 ; $count <= $totalRows ; $count++ ) {
+	for ( my $count = 0 ; $count < $totalRows ; $count++ ) {
 		my $rowName    = ${ $inCAM->{doinfo}{gROWname} }[$count];
 		my $rowContext = ${ $inCAM->{doinfo}{gROWcontext} }[$count];
 

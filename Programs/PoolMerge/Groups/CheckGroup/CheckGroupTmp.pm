@@ -39,8 +39,6 @@ sub Run {
 	my $path = shift;
 	
 	#PARSE INPUT DATA
-
-	 
  
 	my $dataParser = DataParser->new();
 	my $taskDataAll = $dataParser->GetTaskDataByPath( $path);

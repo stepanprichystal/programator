@@ -19,6 +19,8 @@ use aliased 'Enums::EnumsPaths';
 use aliased 'CamHelpers::CamHelper';
 use aliased 'CamHelpers::CamJob';
 use aliased 'CamHelpers::CamAttributes';
+use aliased 'Helpers::GeneralHelper';
+use aliased 'Helpers::FileHelper';
 
 #my $genesis = new Genesis;
 
@@ -86,7 +88,6 @@ sub GetProfileLimits {
 	my $jobName        = shift;
 	my $stepName       = shift;
 	my $considerOrigin = shift;
- 
 
 	my %limits;
 
@@ -337,8 +338,8 @@ sub CloseJob {
 	my $self    = shift;
 	my $inCam   = shift;
 	my $jobName = shift;
-	
-	if($self->IsJobOpen($inCam, $jobName)){
+
+	if ( $self->IsJobOpen( $inCam, $jobName ) ) {
 
 		$inCam->COM( "close_job", "job" => "$jobName" );
 	}
@@ -357,18 +358,50 @@ sub SaveJob {
 # Tell if job is open
 sub IsJobOpen {
 	my $self    = shift;
-	my $inCam   = shift;
+	my $inCAM   = shift;
 	my $jobName = shift;
 
-	$inCam->COM( "is_job_open", "job" => "$jobName" );
-	my $reply = $inCam->GetReply();
+	# if 1, test if job is open cross whole site
+	# if 0, test if job is open in in current toolkit
+	my $wholeSite  = shift;
+	my $openByUser = shift;    # if job is open, set which user has opened job
 
-	if ( $reply eq "yes" ) {
-		return 1;
+	my $result = undef;
+
+	if ($wholeSite) {
+
+		my $p = EnumsPaths->Client_INCAMTMPOTHER . GeneralHelper->GetGUID();
+		$inCAM->COM( "list_open_jobs", "file" => $p );
+		my @lines = @{ FileHelper->ReadAsLines($p) };
+		unlink($p);
+
+		foreach my $l (@lines) {
+
+			my ( $job, $user ) = $l =~ /^(\w\d+)\s+(.*@.*\..*)/;
+
+			if ( $job =~ /$jobName/i ) {
+				$result       = 1;
+				chomp($user);
+				$$openByUser = $user;
+				last;
+			}
+		}
 	}
 	else {
-		return 0;
+
+		$inCAM->COM( "is_job_open", "job" => "$jobName" );
+		my $reply = $inCAM->GetReply();
+
+		if ( $reply eq "yes" ) {
+			$result = 1;
+		}
+		else {
+			$result = 0;
+		}
 	}
+
+	return $result;
+
 }
 
 # CheckIn job
@@ -377,7 +410,7 @@ sub CheckInJob {
 	my $inCam   = shift;
 	my $jobName = shift;
 
-	if($self->IsJobOpen($inCam, $jobName)){
+	if ( $self->IsJobOpen( $inCam, $jobName ) ) {
 
 		$inCam->COM( "check_inout", "job" => "$jobName", "mode" => "in", "ent_type" => "job" );
 	}
@@ -394,16 +427,34 @@ sub CheckOutJob {
 
 # Get all jobs name in job database, where is actual job
 sub GetJobList {
-	my $self    = shift;
-	my $inCAM   = shift;
+	my $self  = shift;
+	my $inCAM = shift;
 
-	$inCAM->INFO("units" => 'mm', "angle_direction" => 'ccw', "entity_type" => 'root',     "data_type" => 'JOBS_LIST');
- 
-	my @jobs =  @{ $inCAM->{doinfo}{gJOBS_LIST } };	
-	
+	$inCAM->INFO( "units" => 'mm', "angle_direction" => 'ccw', "entity_type" => 'root', "data_type" => 'JOBS_LIST' );
+
+	my @jobs = @{ $inCAM->{doinfo}{gJOBS_LIST} };
+
 	return @jobs;
 }
 
+#-------------------------------------------------------------------------------------------#
+#  Place for testing..
+#-------------------------------------------------------------------------------------------#
+my ( $package, $filename, $line ) = caller;
+if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
+	use aliased 'CamHelpers::CamJob';
+	use aliased 'Packages::InCAM::InCAM';
+
+	my $inCAM = InCAM->new();
+
+	my $jobId = "f52457";
+
+	my $user = undef;
+	my $minTool = CamJob->IsJobOpen( $inCAM, $jobId, 1, \$user );
+
+	print $user;
+
+}
 
 1;

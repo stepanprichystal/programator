@@ -14,7 +14,7 @@ use strict;
 use warnings;
 
 #local library
-use aliased 'Packages::PoolMerge::RoutGroup::RoutHelper';
+use aliased 'Packages::PoolMerge::RoutGroup::Helper::RoutHelper';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods

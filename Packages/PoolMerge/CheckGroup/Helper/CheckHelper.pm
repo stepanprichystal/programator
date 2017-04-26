@@ -3,7 +3,7 @@
 # Description: Manager responsible for AOI files creation
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::PoolMerge::CheckGroup::CheckHelper;
+package Packages::PoolMerge::CheckGroup::Helper::CheckHelper;
 
 #3th party library
 use utf8;
@@ -58,6 +58,41 @@ sub PoolJobsExist {
 	return $result;
 }
 
+sub PoolJobsClosed {
+	my $self = shift;
+
+	#my $masterJob = shift;
+	my $mess = shift;
+
+	my $result = 1;
+
+	my $inCAM = $self->{"inCAM"};
+
+	my @jobNames = $self->{"poolInfo"}->GetJobNames();
+
+	# 1) first close jobs if are opened in actual running user incam
+	foreach my $n (@jobNames) {
+		if ( CamJob->IsJobOpen( $self->{"inCAM"}, $n ) ) {
+			CamJob->CloseJob($self->{"inCAM"}, $n);
+		}
+	}
+
+	# 2) check if jobs are still opened by another user
+
+	foreach my $n (@jobNames) {
+
+		my $userName = undef;
+		if ( CamJob->IsJobOpen( $self->{"inCAM"}, $n, 1, \$userName ) ) {
+
+			$result = 0;
+			$$mess .= "Job \"" . $n . "\" is open by user \"$userName\". Please close and checkin job first.\n";
+		}
+
+	}
+
+	return $result;
+}
+
 sub JobsContainStep {
 	my $self = shift;
 	my $mess = shift;
@@ -102,7 +137,6 @@ sub DimensionsAreOk {
 		# tolerance 0.1mm
 
 		if ( abs( $rW - $order->{"width"} ) > 0.1 || abs( $rH - $order->{"height"} ) > 0.1 ) {
- 
 
 			$result = 0;
 			$$mess .=
@@ -159,7 +193,8 @@ sub CheckChildJobStatus {
 
 		if ( $curStep !~ /k panelizaci/i ) {
 			$result = 0;
-			$$mess .= "Objednávka \"$orderName\" nemá nastavený sloupec \"Aktualni krok\" na hodnotu \"k panelizaci\". Aktuální hodnota je \"$curStep\". Oprav to.\n";
+			$$mess .=
+"Objednávka \"$orderName\" nemá nastavený sloupec \"Aktualni krok\" na hodnotu \"k panelizaci\". Aktuální hodnota je \"$curStep\". Oprav to.\n";
 		}
 	}
 
@@ -171,7 +206,7 @@ sub CheckChildJobStatus {
 		if ( $curState !~ /Predvyrobni priprava/i ) {
 			$result = 0;
 			$mess .=
-			  "Objednávka \"$orderName\" nemá nastavený sloupec \"Stav\" na hodnotu \"Předvýrobní příprava\". Aktuální hodnota je \"$curState\". Oprav to.\n";
+"Objednávka \"$orderName\" nemá nastavený sloupec \"Stav\" na hodnotu \"Předvýrobní příprava\". Aktuální hodnota je \"$curState\". Oprav to.\n";
 		}
 	}
 

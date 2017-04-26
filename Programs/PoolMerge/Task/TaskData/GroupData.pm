@@ -10,10 +10,10 @@ package Programs::PoolMerge::Task::TaskData::GroupData;
 use strict;
 use warnings;
 use List::MoreUtils qw(uniq);
-
+use JSON;
 
 #local library
- 
+use aliased "Enums::EnumsPaths";
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -27,11 +27,11 @@ sub new {
 	# dim where values are in hash (keys: width, height)
 	my %dim = ();
 	$self->{"pnlDim"} = \%dim;
- 
+
 	# child job info
 	my @ordersInfo = ();
 	$self->{"ordersInfo"} = \@ordersInfo;
-	
+
 	# name of file for manager group comunication
 	$self->{"infoFile"} = undef;
 
@@ -42,7 +42,7 @@ sub GetJobNames {
 	my $self = shift;
 
 	my @names = map { $_->{"jobName"} } @{ $self->{"ordersInfo"} };
-	
+
 	@names = uniq(@names);
 
 	return @names;
@@ -95,7 +95,49 @@ sub SetOrdersInfo {
 sub GetInfoFile {
 	my $self = shift;
 
-	return  $self->{"infoFile"};
+	return $self->{"infoFile"};
+}
+
+sub GetInfoFileVal {
+	my $self = shift;
+	my $key  = shift;
+
+	my $p = EnumsPaths->Client_INCAMTMPOTHER . $self->{"infoFile"};
+
+	# Read old data
+	my %hashData = ();
+
+	my $json = JSON->new();
+
+	if ( open( my $f, "<", $p ) ) {
+
+		my $str = join( "", <$f> );
+		%hashData = %{ $json->decode($str) };
+		close($f);
+	}
+	else {
+		print STDERR "Info file $p doesn't exist. Cant read value $key";
+	}
+
+	return $hashData{$key};
+}
+
+# return single pcb count on panel, by order id
+sub GetCountOnPanel {
+	my $self    = shift;
+	my $orderId = shift;
+
+	my @orders = @{ $self->{"ordersInfo"} };
+	@orders = grep { $_->{"orderId"} eq $orderId } @orders;
+
+	my $cnt = 0;
+	foreach my $ord (@orders) {
+
+		$cnt += @{ $ord->{"pos"} };
+
+	}
+
+	return $cnt;
 }
 
 #-------------------------------------------------------------------------------------------#

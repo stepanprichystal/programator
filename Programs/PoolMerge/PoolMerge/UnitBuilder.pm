@@ -17,6 +17,7 @@ use JSON;
 
 #local library
 use aliased "Programs::PoolMerge::Task::TaskData::DataParser";
+use aliased 'Programs::PoolMerge::Groups::CheckGroup::CheckWorkUnit';
 use aliased 'Programs::PoolMerge::Groups::MergeGroup::MergeWorkUnit';
 use aliased 'Programs::PoolMerge::Groups::OutputGroup::OutputWorkUnit';
 use aliased 'Programs::PoolMerge::Groups::RoutGroup::RoutWorkUnit';
@@ -78,7 +79,12 @@ sub __GetUnitClass {
 	my $unit;
 	my $jobId = $self->{"jobId"};
 
-	if ( $unitId eq UnitEnums->UnitId_MERGE ) {
+	if ( $unitId eq UnitEnums->UnitId_CHECK ) {
+
+		$unit = CheckWorkUnit->new($unitId);
+
+	}
+	elsif ( $unitId eq UnitEnums->UnitId_MERGE ) {
 
 		$unit = MergeWorkUnit->new($unitId);
 

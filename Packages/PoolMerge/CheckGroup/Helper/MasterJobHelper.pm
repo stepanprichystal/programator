@@ -3,7 +3,7 @@
 # Description: Manager responsible for AOI files creation
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::PoolMerge::CheckGroup::MasterJobHelper;
+package Packages::PoolMerge::CheckGroup::Helper::MasterJobHelper;
 
 #3th party library
 use utf8;

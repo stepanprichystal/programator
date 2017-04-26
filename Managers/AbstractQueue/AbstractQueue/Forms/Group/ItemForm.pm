@@ -137,46 +137,46 @@ sub __OnIndicatorClick {
 		if ( $cnt > 0 ) {
 			my @mess = ();
 			push( @mess, $str );
+#
+#			# try to find exception stamp
+#			my $stamp;
+#
+#			my @lines = split /\n/, $str;
+#
+#			foreach my $l (@lines) {
+#
+#				$l =~ s/\s//;
+#
+#				if ( $l =~ /ExceptionId:([a-z0-9-]*)/i ) {
+#
+#					$stamp = $1;
+#					last;
+#				}
+#			}
 
-			# try to find exception stamp
-			my $stamp;
-
-			my @lines = split /\n/, $str;
-
-			foreach my $l (@lines) {
-
-				$l =~ s/\s//;
-
-				if ( $l =~ /ExceptionId:([a-z0-9-]*)/i ) {
-
-					$stamp = $1;
-					last;
-				}
-			}
-
-			my $log;
-
-			if ($stamp) {
-				$log = Helper->GetFormatedLogByStamp( $self->{"jobId"}, $stamp );
-			}
-
-			if ($log ne "") {
-				
-				my @btns = ( "InCam log", "Ok" );
-
-				$indicator->{"messageMngr"}->ShowModal( -1, $indicator->{"mode"}, \@mess, \@btns );
-
-				if ( $indicator->{"messageMngr"}->Result() == 0 ) {
-
-					my @messLog = ($log);
-					$indicator->{"messageMngr"}->ShowModal( -1, $indicator->{"mode"}, \@messLog );
-				}
-
-			}
-			else {
+#			my $log;
+#
+#			if ($stamp) {
+#				$log = Helper->GetFormatedLogByStamp( $self->{"jobId"}, $stamp );
+#			}
+#
+#			if ($log ne "") {
+#				
+#				my @btns = ( "InCam log", "Ok" );
+#
+#				$indicator->{"messageMngr"}->ShowModal( -1, $indicator->{"mode"}, \@mess, \@btns );
+#
+#				if ( $indicator->{"messageMngr"}->Result() == 0 ) {
+#
+#					my @messLog = ($log);
+#					$indicator->{"messageMngr"}->ShowModal( -1, $indicator->{"mode"}, \@messLog );
+#				}
+#
+#			}
+#			else {
 
 				$indicator->{"messageMngr"}->ShowModal( -1, $indicator->{"mode"}, \@mess );
-			}
+			#}
 
 		}
 	}

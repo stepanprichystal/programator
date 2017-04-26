@@ -3,7 +3,7 @@
 # Description: Manager responsible for AOI files creation
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::PoolMerge::MergeGroup::PanelCreation;
+package Packages::PoolMerge::MergeGroup::Helper::PanelCreation;
 use base("Packages::ItemResult::ItemEventMngr");
 
 #3th party library

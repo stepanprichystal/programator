@@ -37,11 +37,11 @@ sub new {
 	# only in read mode. If data should be load not from file but from string variable
 	$self->{"fileDataStr"} = shift; 
 	
-	 
+	$self->{"filePath"} = shift;
 
 	#$self->{"location"}  = shift;
 
-	$self->{"filePath"} = EnumsPaths->Client_EXPORTFILES . $self->{"jobId"};
+	#$self->{"filePath"} = EnumsPaths->Client_EXPORTFILES . $self->{"jobId"};
 
 	$self->{"data"}     = ExportData->new();    # Class with complete export data
 	$self->{"hashData"} = ();                   # "flaterned" ExportData object to hash, prepared for JSON serialization

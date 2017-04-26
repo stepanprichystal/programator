@@ -96,7 +96,7 @@ sub __RunTask {
 			# Process group
 			$self->__ProcessGroup($unitId);
 
-			if ( $self->_CheckStopThread() ) {
+			if ( $self->__CheckStopThread($unitId) ) {
 				$taskStopped = 1;
 			}
 		};
@@ -116,6 +116,7 @@ sub __RunTask {
 			}
 
 			$self->_GroupResultEvent( $unitId, ResultEnums->ItemResult_Fail, $errStr );
+ 			last;
 
 		}
 
@@ -194,7 +195,6 @@ sub __ItemSpecialEvent {
 	if ( $itemResult->ItemId() eq EnumsAbstrQ->EventItemType_STOP ) {
 
 		$self->_StopThread();
-		$self->_SpecialEvent( $unitId, $itemResult );
 
 	}
 	elsif ( $itemResult->ItemId() eq Enums->EventItemType_MASTER ) {
@@ -203,12 +203,61 @@ sub __ItemSpecialEvent {
 		${ $self->{"pcbId"} } = $itemResult->GetData();
 		$self->_SpecialEvent( $unitId, $itemResult );
 
-		unless ( $self->_OpenJob() ) {
-			die "Unable to open master job " . ${ $self->{"pcbId"} } . "\n";
-		}
-
 	}
 
+}
+
+# Check if stop variable is set, if so
+# Close job, sleep until stop variable is set to 1
+sub __CheckStopThread {
+	my $self   = shift;
+	my $unitId = shift;
+
+	my $threadStoped = 0;
+
+	if ( ${ $self->{"stopThread"} } ) {
+
+		$threadStoped = 1;
+
+		# 1) Close job
+		$self->_CloseJob(1);
+
+		# 2) Send message to gui, task is stoped
+
+		$self->_SpecialEvent( $unitId, ItemResult->new( EnumsAbstrQ->EventItemType_STOP ) );
+
+		# 2) Sleep until stop var is set to 0
+		while (1) {
+
+			sleep(1);
+			if ( ${ $self->{"stopThread"} } == 0 ) {
+				last;
+			}
+		}
+
+		# 3) Open job again
+		my $userName = undef;
+		if ( CamJob->IsJobOpen( $self->{"inCAM"}, ${ $self->{"pcbId"} }, 1, \$userName) ) {
+
+			# stop task again and send error, mother is not able to open
+			${ $self->{"stopThread"} } = 1;
+			
+			
+			my $itemErr = ItemResult->new( EnumsAbstrQ->EventItemType_CONTINUEERR);
+			$itemErr->SetData("type=masterOpen;byUser=".$userName);
+			
+			$self->_SpecialEvent( $unitId, $itemErr);
+			$self->__CheckStopThread($unitId);
+			
+		}
+		else {
+			unless ( $self->_OpenJob() ) {
+				die "Unable to open master job " . ${ $self->{"pcbId"} } . "\n";
+			}
+		}
+	}
+
+	return $threadStoped;
 }
 
 #-------------------------------------------------------------------------------------------#

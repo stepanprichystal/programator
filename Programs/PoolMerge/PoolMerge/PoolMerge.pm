@@ -167,8 +167,27 @@ sub __OnJobMessageEvtHandler {
 			$self->{"form"}->SetJobItemStatus( $taskId, "Running ..." );
 			$self->{"form"}->SetJobItemContinue($task);
 
+		}elsif ( $data->{"itemId"} eq EnumsAbstrQ->EventItemType_CONTINUEERR ) {
+
+			# 1) If error is master can be open, show message to user
+			my ($typeErr, $user) = $data->{"data"} =~ m/type=(\w+);byUser=(.*)/i; # data format: "type=masterOpen;byUser=$userName";
+			
+			 if($typeErr eq "masterOpen"){
+			 	
+			 	 my $messMngr = $self->{"form"}->{"messageMngr"};
+			 	 
+			 	 my $master = $task->GetMasterJob();
+			 	 my $panel = $task->GetJobId();
+			 	 
+			 	 my @m = ("Unable open master job \"$master\" for pool panel \"$panel\". Job is still open by user \"$user\"");
+			 	 $messMngr->Show( -1, EnumsGeneral->MessageType_ERROR, \@m );
+			 }
+ 
 		}
 		elsif ( $data->{"itemId"} eq Enums->EventItemType_MASTER ) {
+
+			# set proper jon if task 
+			$task->SetMasterJob($data->{"data"});
 
 			$self->{"form"}->SetMasterJob( $task, $data->{"data"} );
 

@@ -48,6 +48,8 @@ sub new {
 
 	$self->{"sentToExport"} = 0;    # Tell if task was sent to toExport
 	
+	$self->{"masterJob"}  = undef; # Choosen master job of pool panel
+	
 	$self->__InitUnits();
 
  
@@ -58,6 +60,18 @@ sub new {
 # Public method
 # ===================================================================
  
+sub SetMasterJob {
+	my $self = shift;
+	my $masterJob = shift;
+
+	$self->{"masterJob"} = $masterJob;
+}
+
+sub GetMasterJob {
+	my $self = shift;
+
+	return $self->{"masterJob"};
+}
 
 sub ToExportResultMngr {
 	my $self = shift;

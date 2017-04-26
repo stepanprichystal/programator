@@ -166,6 +166,9 @@ sub ProcessGroupStart {
 	# Update group status form GUI
 	$self->{"form"}->SetStatus("Processing...");
 }
+
+
+
 sub ProcessGroupEnd {
 	my $self = shift;
 
@@ -182,16 +185,20 @@ sub ProcessProgress {
 }
 
 
+sub ProcessTaskStop {
+	my $self = shift;
+
+	# Update group status form GUI
+	$self->{"form"}->SetStatus("Paused...");
+}
+
 sub ProcessTaskContinue {
 	my $self  = shift;
-	my $value = shift;
  
 	my $itemsErrorCnt = $self->{"groupData"}->{"itemsMngr"}->Clear();
 	my $groupErrorCnt = $self->{"groupData"}->{"groupMngr"}->Clear();
 	
-	$self->{"form"}->Clear();
-	
-	
+	$self->{"form"}->Clear();	
  
 }
 

@@ -83,6 +83,8 @@ sub GetJobId {
 	return $self->{"jobId"};
 }
 
+
+
 sub GetAllUnits {
 	my $self = shift;
 	return $self->{"units"}->GetUnits();
@@ -285,6 +287,17 @@ sub ProcessProgress {
 }
 
 
+sub ProcessTaskStop {
+	my $self = shift;
+	my $data = shift;
+
+	my $unitId = $data->{"unitId"};
+
+	my $unit = $self->_GetUnit($unitId);
+
+	$unit->ProcessTaskStop();
+}
+
 sub ProcessTaskContinue {
 	my $self = shift;
 	my $data = shift;
@@ -293,7 +306,7 @@ sub ProcessTaskContinue {
 	 
 	my $unit = $self->_GetUnit($unitId);
 
-	$unit->ProcessTaskContinue($unitId);
+	$unit->ProcessTaskContinue();
 }
 #-------------------------------------------------------------------------------------------#
 #  Protected method

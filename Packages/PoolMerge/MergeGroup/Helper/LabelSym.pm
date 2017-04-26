@@ -7,7 +7,7 @@
 #
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::PoolMerge::MergeGroup::LabelSym;
+package Packages::PoolMerge::MergeGroup::Helper::LabelSym;
 use base ("Packages::CAM::SymbolDrawing::Symbol::SymbolBase");
 
 use Class::Interface;

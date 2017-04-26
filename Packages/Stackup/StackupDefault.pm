@@ -41,8 +41,7 @@ sub CreateStackup {
 	my $outerCuThick = shift;
 	my $pcbClass     = shift;
 
-	my $messMngr = MessageMngr->new($pcbId);
-
+ 
 	#test input parameters
 	if ( $lCount < 4 ) {
 		print STDERR "Number of Cu has to be larger then 4";
@@ -130,25 +129,7 @@ sub CreateStackup {
 	my $stackupName = $self->__GetStackupName( $stackup, $pcbId);
 
 	$self->_CompleteNewStackup( $pcbId, $pcbThick, $stackupName );
-
-	my $stackupPdf = StackupPdf->new($pcbId);
-
-	$stackupPdf->Create();
-	my $stackTempPath = $stackupPdf->GetStackupPath();
-
-	if ( -e $stackTempPath ) {
-		my $pdfArchive = JobHelper->GetJobArchive($pcbId) . "pdf/" . $pcbId . "-cm.pdf";
-
-		unless(-e JobHelper->GetJobArchive($pcbId) . "pdf"){
-			mkdir(JobHelper->GetJobArchive($pcbId) . "pdf");
-		}
-
-		copy( $stackTempPath, $pdfArchive ) or die "Copy failed: $!";
-		my @mess2 = ( "Standardni stackup :" . $stackupName . ".xml byl automaticky vygenerovan" );
-
-		$messMngr->Show( -1, EnumsGeneral->MessageType_INFORMATION, \@mess2 );
-	}
-
+ 
 	#Tidy up temp dir
 	FileHelper->DeleteTempFiles();
 

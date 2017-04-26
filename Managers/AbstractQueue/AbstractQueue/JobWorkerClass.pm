@@ -76,13 +76,15 @@ sub _OpenJob {
 	my $step = shift;
 
 	#return 0;
+	my $inCAM = $self->{"inCAM"};
 
 	unless ( ${$self->{"pcbId"}} ) {
 		return 0;
 	}
-	my $inCAM = $self->{"inCAM"};
-
-
+ 
+	if ( CamJob->IsJobOpen( $self->{"inCAM"}, ${ $self->{"pcbId"} }) ) {
+		return 0;
+	}
 
 	my $result = 1;
 
@@ -161,13 +163,16 @@ sub _CloseJob {
 	my $save = shift;
 
 	#return 0;
+	my $inCAM = $self->{"inCAM"};
 
 	unless ( ${$self->{"pcbId"}} ) {
 		return 0;
 	}
-
-	my $inCAM = $self->{"inCAM"};
-
+	
+	unless ( CamJob->IsJobOpen( $self->{"inCAM"}, ${ $self->{"pcbId"} }) ) {
+		return 0;
+	}
+ 
 	# START HANDLE EXCEPTION IN INCAM
 	$inCAM->HandleException(1);
 
@@ -193,37 +198,7 @@ sub _CloseJob {
 	}
 }
 
-# Check if stop variable is set, if so
-# Close job, sleep until stop variable is set to 1
-sub _CheckStopThread {
-	my $self = shift;
 
-	my $threadStoped = 0;
-
-	if ( ${ $self->{"stopThread"} } ) {
-
-		$threadStoped = 1;
-
-		# 1) Close job
-		$self->_CloseJob(1);
-
-		# 2) Sleep until stop var is set to 0
-		while (1) {
-
-			sleep(1);
-			if ( ${ $self->{"stopThread"} } == 0 ) {
-				last;
-			}
-		}
-
-		# 3) Open job again
-		unless($self->_OpenJob()){
-			die "Unable open job after task continue.\n";
-		}
-	}
-
-	return $threadStoped;
-}
 
 # Set stop variable to 1
 sub _StopThread {

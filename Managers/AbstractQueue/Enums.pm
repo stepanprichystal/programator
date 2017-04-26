@@ -13,7 +13,8 @@ use constant {
 
  use constant {
 	EventItemType_STOP  => "itemTypeStop",
-	EventItemType_CONTINUE  => "itemTypeContinue" 
+	EventItemType_CONTINUE  => "itemTypeContinue",
+	EventItemType_CONTINUEERR  => "itemTypeContinueErr" 
 	 
 
 };
