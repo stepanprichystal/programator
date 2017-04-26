@@ -104,6 +104,7 @@ sub ProcessGroupResult {
 
 sub Result {
 	my $self = shift;
+	my $notWarn = shift; # do not consider warn
 
 	my $itemMngr  = $self->{"groupData"}->{"itemsMngr"};
 	my $groupMngr = $self->{"groupData"}->{"groupMngr"};
@@ -111,7 +112,7 @@ sub Result {
 	# create result value
 	my $result = EnumsGeneral->ResultType_OK;
 
-	if ( !$itemMngr->Succes() || !$groupMngr->Succes() ) {
+	if ( !$itemMngr->Succes($notWarn) || !$groupMngr->Succes($notWarn) ) {
 		$result = EnumsGeneral->ResultType_FAIL;
 	}
 

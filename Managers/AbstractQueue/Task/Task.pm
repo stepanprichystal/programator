@@ -92,6 +92,7 @@ sub GetAllUnits {
 
 sub GetTaskData {
 	my $self = shift;
+	
 	return $self->{"taskData"};
 }
 
@@ -121,20 +122,16 @@ sub GetGroupItemResultMngr {
 # Public method - GET or SET state of this task
 # ===================================================================
 
-sub GetJobAborted {
-	my $self = shift;
-
-	return $self->{"aborted"};
-}
-
 # Return task Result of whole task
 sub Result {
 	my $self = shift;
+	my $notWarn = shift;  # if thera are only warning, result is Succes
 
 	my $totalResult = EnumsGeneral->ResultType_OK;
 
 	# result from all units
-	my $unitsResult = $self->{"units"}->Result();
+	
+	my $unitsResult = $self->{"units"}->Result($notWarn);
 
 	# result - test if user abort job
 	my $taskAbortedResult = EnumsGeneral->ResultType_OK;
@@ -144,7 +141,7 @@ sub Result {
 	}
 
 	# result for task
-	my $taskResult = $self->{"taskResultMngr"}->Succes();
+	my $taskResult = $self->{"taskResultMngr"}->Succes($notWarn);
 
 	if ($taskResult) {
 		$taskResult = EnumsGeneral->ResultType_OK;
@@ -163,6 +160,16 @@ sub Result {
 
 	return $totalResult;
 }
+
+
+
+sub GetJobAborted {
+	my $self = shift;
+
+	return $self->{"aborted"};
+}
+
+
 
 sub GetProgress {
 	my $self = shift;

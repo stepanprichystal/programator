@@ -118,7 +118,13 @@ sub SetWarningCnt {
 
 	if ( $cnt > 0 ) {
 		$self->{"groupWarnInd"}->Show(1);
-		$self->__SetColor("red");
+
+		if ( $self->{"resultItemMngr"}->GetErrorsCnt() == 0 && $self->{"resultGroupMngr"}->GetErrorsCnt() == 0 ) {
+			$self->__SetColor("yellow");
+		}
+		else {
+			$self->__SetColor("red");
+		}
 
 	}
 	else {
@@ -139,21 +145,28 @@ sub SetResult {
 	}
 	elsif ( $result eq EnumsGeneral->ResultType_FAIL ) {
 
-		$self->__SetColor("red");
+		if ( $self->{"resultItemMngr"}->GetErrorsCnt() == 0 && $self->{"resultGroupMngr"}->GetErrorsCnt() == 0 ) {
+			
+			$self->__SetColor("yellow");
+		}
+		else {
+			
+			$self->__SetColor("red");
+		}
 	}
 
 	$self->{"statusTxt"}->SetLabel("");
 
 }
 
-sub Clear{
-	my $self  = shift;
-	
+sub Clear {
+	my $self = shift;
+
 	$self->__SetColor("default");
-	
+
 	$self->SetErrorCnt(0);
 	$self->SetWarningCnt(0);
-	
+
 }
 
 sub __SetColor {
@@ -169,8 +182,12 @@ sub __SetColor {
 
 		$self->SetBackgroundColour( Wx::Colour->new( 255, 204, 204 ) );    #red
 	}
+	elsif ( $color eq "yellow" ) {
+
+		$self->SetBackgroundColour( Wx::Colour->new( 255, 242, 155 ) );    #red
+	}
 	elsif ( $color eq "default" ) {
-		
+
 		$self->SetBackgroundColour( AppConf->GetColor("clrGroupStatus") );    # light gray
 	}
 

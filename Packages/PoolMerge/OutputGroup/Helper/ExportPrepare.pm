@@ -37,8 +37,7 @@ sub new {
 
 	$self->{"inCAM"}    = shift;
 	$self->{"poolInfo"} = shift;
-	my $masterJob = shift;
-
+	
 	$self->{"units"} = undef; 
 
 	return $self;
@@ -118,13 +117,10 @@ sub __PrepareUnits {
 	$groupBuilder->Build( $masterJob, $groubT );
 	my @allUnits = $groubT->GetAllUnits();
 
-	my $units = Units->new();                     # class which keep list of all defined units (composit pattern)
-	$units->Init( $inCAM, $masterJob, \@allUnits );
-	$units->InitDataMngr( $inCAM );
-	
-
-	return $units;
-
+	$self->{"units"} = Units->new();                     # class which keep list of all defined units (composit pattern)
+	$self->{"units"}->Init( $inCAM, $masterJob, \@allUnits );
+	$self->{"units"}->InitDataMngr( $inCAM );
+ 
 }
 
 #-------------------------------------------------------------------------------------------#

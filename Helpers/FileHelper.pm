@@ -256,7 +256,7 @@ sub DeleteTempFiles {
 	#my $tempPath = File::Spec->rel2abs(  dirname(dirname( __FILE__ )))."/Temp";
 
 	opendir( DIR, EnumsPaths->Client_INCAMTMPOTHER ) or die $!;
-	my $age = 10;    # 3600 seconds in a day
+	my $age = 3600;    # 3600 seconds in a day
 
 	while ( my $file = readdir(DIR) ) {
 
@@ -265,7 +265,7 @@ sub DeleteTempFiles {
 		#get file attributes
 		my @stats = stat($file);
 
-		if ( time() - $stats[9] > $age ) {
+		if ( (time() - $stats[9]) > $age ) {
 			FileHelper->DeleteFile($file);
 		}
 	}

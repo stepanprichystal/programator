@@ -38,14 +38,13 @@ sub new {
 	$self->{"inCAM"}    = $inCAM;
 	$self->{"poolInfo"} = $poolInfo;
 
-	my $masterJob = $self->GetValInfoFile("masterJob");
 
 	$self->{"otherSettings"} = OtherSettings->new( $inCAM, $poolInfo );
 	$self->{"poolFile"} = PoolFile->new( $inCAM, $poolInfo );
 	$self->{"poolFile"} = PoolFile->new( $inCAM, $poolInfo );
 	$self->{"defaultStackup"} = DefaultStackup->new( $inCAM, $poolInfo );
 	
-	$self->{"exportPrepare"} = ExportPrepare->new( $inCAM, $poolInfo, $masterJob );
+	$self->{"exportPrepare"} = ExportPrepare->new( $inCAM, $poolInfo );
 	$self->{"exportPrepare"}->{"onItemResult"}->Add( sub { $self->_OnPoolItemResult(@_) } );
 
 	 

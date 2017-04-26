@@ -13,10 +13,11 @@ use base("Managers::AbstractQueue::Task::Task");
 #3th party library
 use strict;
 use warnings;
+use File::Copy;
 
 #local library
 use aliased 'Programs::PoolMerge::UnitEnums';
-
+use aliased 'Enums::EnumsPaths';
 use aliased 'Enums::EnumsGeneral';
 #use aliased 'Programs::PoolMerge::Groups::MergeGroup::MergeUnit';
 #use aliased 'Programs::PoolMerge::Groups::RoutGroup::RoutUnit';
@@ -90,7 +91,8 @@ sub ToExportResultMngr {
 sub ResultSentToExport {
 	my $self = shift;
 
-	my $res = $self->{"toExportResultMngr"}->Succes();
+	my $notConsiderWarn = 1;
+	my $res = $self->{"toExportResultMngr"}->Succes($notConsiderWarn);
 
 	if ($res) {
 		$res = EnumsGeneral->ResultType_OK;
@@ -113,6 +115,7 @@ sub GetToExportWarningsCnt {
 
 	return $self->{"toExportResultMngr"}->GetWarningsCnt();
 }
+
 
 # ===================================================================
 # Method regardings "to toExport" issue
@@ -146,9 +149,10 @@ sub SetSentToExportResult {
 	$sentToExportMngr->Clear();
 
 	# check if task process is succes
-	if ( $self->Result() eq EnumsGeneral->ResultType_FAIL ) {
+	my $warnNotConsider = 1;
+	if ( $self->Result($warnNotConsider) eq EnumsGeneral->ResultType_FAIL ) {
 
-		my $errorStr = "Can't sent \"to toExport\",  ";
+		my $errorStr = "Can't sent \"to export\",  ";
 
 		if ( $self->GetJobAborted() ) {
 
@@ -166,6 +170,19 @@ sub SetSentToExportResult {
 		$item->AddError($errorStr);
 		$sentToExportMngr->AddItem($item);
 	}
+	
+	
+	
+	if ( $self->Result() eq EnumsGeneral->ResultType_OK && $self->{"units"}->GetWarningsCnt() > 0 ) {
+		
+		my $errorStr = "Can't sent \"to export\" automatically, because poom merging contains some warnings.\n ";
+		$errorStr .= "First check warnings, then send taks to export by button \"Export\" manually.";
+ 
+		my $item = $sentToExportMngr->GetNewItem( "Sent to toExport", EnumsGeneral->ResultType_FAIL );
+
+		$item->AddWarning($errorStr);
+		$sentToExportMngr->AddItem($item);
+	}
 
 	my @notExportUnits = ();
 	if ( !$self->{"taskStatus"}->IsTaskOk( \@notExportUnits ) ) {
@@ -173,7 +190,7 @@ sub SetSentToExportResult {
 		my @notExportUnits = map { UnitEnums->GetTitle($_) } @notExportUnits;
 		my $str = join( ", ", @notExportUnits );
 
-		my $errorStr = "Can't sent \"to toExport\", because some groups haven't been processed succesfully. \n";
+		my $errorStr = "Can't sent \"to export\", because some groups haven't been processed succesfully. \n";
 		$errorStr .= "Groups that need to be processed: <b> $str </b>\n";
 
 		$self->{"canSentToExport"} = 0;
@@ -183,38 +200,66 @@ sub SetSentToExportResult {
 		$item->AddError($errorStr);
 		$sentToExportMngr->AddItem($item);
 	}
-
+	
+   
 }
 
 sub SentToExport {
 	my $self = shift;
 
-	# set state HOTOVO-zadat
+	# Move prepared export  file to user export file location c:/Export/Exportfiles/pcb
 
-#	eval {
-#		my $orderRef = HegMethods->GetPcbOrderNumber( $self->{"jobId"} );
-#		my $orderNum = $self->{"jobId"} . "-" . $orderRef;
-#		
-#		my $succ     = HegMethods->UpdatePcbOrderState( $orderNum, "HOTOVO-zadat");
-#		
-#	 
-#		$self->{"taskStatus"}->DeleteStatusFile();
-#		$self->{"sentToExport"} = 1;
-#	};
-#
-#	if ( my $e = $@ ) {
-#
-#		 # set status hotovo-yadat fail
-#		 my $sentToExportMngr = $self->{"toExportResultMngr"};
-#		 my $item = $sentToExportMngr->GetNewItem( "Set state HOTOVO-zadat", EnumsGeneral->ResultType_FAIL );
-#
-#		$item->AddError("Set state HOTOVO-zadat failed, try it again. Detail: $e\n");
-#		$sentToExportMngr->AddItem($item);
-#
-#	}
+	eval {
+		
+		my $taskData = $self->GetTaskData();
+		
+		my $exportFile = EnumsPaths->Client_INCAMTMPOTHER . $taskData->GetInfoFileVal("exportFile");
+		my $target = EnumsPaths->Client_EXPORTFILES.$self->GetMasterJob();
+		
+		if(-e $exportFile){
+			move($exportFile, $target);
+			$self->{"taskStatus"}->DeleteStatusFile();
+			$self->{"sentToExport"} = 1;
+			$taskData->DeleteInfoFile();
+			# remove from queue
+			 
+		}else{
+			
+			#error
+		}
+
+	};
+
+	if ( my $e = $@ ) {
+
+		 # set status hotovo-yadat fail
+		 my $sentToExportMngr = $self->{"toExportResultMngr"};
+		 my $item = $sentToExportMngr->GetNewItem( "Sent to export", EnumsGeneral->ResultType_FAIL );
+
+		$item->AddError("Error during sending task \"to export. Error when \" copy \"export file\" $e\n");
+		$sentToExportMngr->AddItem($item);
+	}
 
 }
 
+
+# ===================================================================
+# Method , which procces messages from working thread
+# ===================================================================
+ 
+ sub ProcessGroupEnd {
+	my $self = shift;
+	my $data = shift;
+
+	my $unitId = $data->{"unitId"};
+
+	my $unit = $self->_GetUnit($unitId);
+
+	$unit->ProcessGroupEnd();
+
+	my $notConsiderWarn = 1;
+	$self->{"taskStatus"}->UpdateStatusFile( $unitId, $unit->Result($notConsiderWarn) );
+}
  
 #-------------------------------------------------------------------------------------------#
 #  Private method

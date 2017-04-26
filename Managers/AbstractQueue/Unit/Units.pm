@@ -161,12 +161,13 @@ sub ProcessGroupResult {
 
 sub Result {
 	my $self = shift;
+	my $notWarn = shift; # do not consider warn
 
 	my $result = EnumsGeneral->ResultType_OK;
 
 	foreach my $unit ( @{ $self->{"units"} } ) {
 
-		if ( $unit->Result() eq EnumsGeneral->ResultType_FAIL ) {
+		if ( $unit->Result($notWarn) eq EnumsGeneral->ResultType_FAIL ) {
 
 			$result = EnumsGeneral->ResultType_FAIL;
 		}

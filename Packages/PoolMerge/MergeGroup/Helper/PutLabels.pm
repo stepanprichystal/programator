@@ -51,9 +51,7 @@ sub AddLabels {
 	my $result = 1;
 
 	my $inCAM = $self->{"inCAM"};
-
-	
-
+ 
 	# 2) identify top and bot layers for adding label
 	my @signal = CamJob->GetSignalLayer( $inCAM, $masterJob );
 	

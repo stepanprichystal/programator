@@ -15,7 +15,7 @@ portStart = 3000
 
 # height of quuene in percentage, rest of height are group details
 
-queueHeight = 60
+queueHeight = 45
 
 # height and width of main window
 windowWidth = 1100

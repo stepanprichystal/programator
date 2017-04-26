@@ -95,9 +95,19 @@ sub RemoveItem{
 
 sub Succes {
 	my $self = shift;
+	my $notConsiderWarn = shift; # if set to 1, warning will not be considered
 
-	my @failed = grep { $_->{"result"} eq Enums->ItemResult_Fail } @{ $self->{"itemResults"} };
+	my @failed = ();
 
+	if($notConsiderWarn ){
+		
+		@failed = grep { $_->GetErrorCount() > 0 } @{ $self->{"itemResults"} };
+	
+	}else{
+		
+		@failed = grep { $_->Result eq Enums->ItemResult_Fail } @{ $self->{"itemResults"} };
+	}
+ 
 	unless ( scalar(@failed) ) {
 		return 1;
 	}

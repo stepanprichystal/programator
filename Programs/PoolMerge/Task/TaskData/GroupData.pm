@@ -98,6 +98,18 @@ sub GetInfoFile {
 	return $self->{"infoFile"};
 }
 
+sub DeleteInfoFile {
+	my $self = shift;
+
+	my $p = EnumsPaths->Client_INCAMTMPOTHER . $self->{"infoFile"};
+	
+	if(-e $p){
+		
+		unlink($p);
+	}
+ 
+}
+
 sub GetInfoFileVal {
 	my $self = shift;
 	my $key  = shift;

@@ -16,22 +16,9 @@ use warnings;
 
 #local library
 use aliased 'Programs::Exporter::ExportUtility::UnitEnums';
-
 use aliased 'Enums::EnumsGeneral';
- 
-
 use aliased 'Connectors::HeliosConnector::HegMethods';
 
-#use aliased 'Programs::Exporter::ExportUtility::Groups::NifExport::NifUnit';
-#use aliased 'Programs::Exporter::ExportUtility::Groups::NCExport::NCUnit';
-#use aliased 'Programs::Exporter::ExportUtility::Groups::ETExport::ETUnit';
-#use aliased 'Programs::Exporter::ExportUtility::Groups::AOIExport::AOIUnit';
-#use aliased 'Programs::Exporter::ExportUtility::Groups::PlotExport::PlotUnit';
-#use aliased 'Programs::Exporter::ExportUtility::Groups::PreExport::PreUnit';
-#use aliased 'Programs::Exporter::ExportUtility::Groups::ScoExport::ScoUnit';
-#use aliased 'Programs::Exporter::ExportUtility::Groups::GerExport::GerUnit';
-#use aliased 'Programs::Exporter::ExportUtility::Groups::PdfExport::PdfUnit';
-#use aliased 'Programs::Exporter::ExportUtility::Groups::OutExport::OutUnit';
 use aliased 'Managers::AbstractQueue::Unit::UnitBase';
 use aliased 'Managers::AbstractQueue::TaskResultMngr';
 
@@ -105,6 +92,43 @@ sub GetProduceWarningsCnt {
 	my $self = shift;
 
 	return $self->{"produceResultMngr"}->GetWarningsCnt();
+}
+
+# Return task Result of whole task
+sub Result {
+	my $self = shift;
+
+	my $totalResult = EnumsGeneral->ResultType_OK;
+
+	# result from all units
+	my $unitsResult = $self->{"units"}->Result();
+
+	# result - test if user abort job
+	my $taskAbortedResult = EnumsGeneral->ResultType_OK;
+
+	if ( $self->{"aborted"} ) {
+		$taskAbortedResult = EnumsGeneral->ResultType_FAIL;
+	}
+
+	# result for task
+	my $taskResult = $self->{"taskResultMngr"}->Succes();
+
+	if ($taskResult) {
+		$taskResult = EnumsGeneral->ResultType_OK;
+	}
+	else {
+		$taskResult = EnumsGeneral->ResultType_FAIL;
+	}
+
+	if (    $unitsResult eq EnumsGeneral->ResultType_FAIL
+		 || $taskResult eq EnumsGeneral->ResultType_FAIL
+		 || $taskAbortedResult eq EnumsGeneral->ResultType_FAIL )
+	{
+
+		$totalResult = EnumsGeneral->ResultType_FAIL;
+	}
+
+	return $totalResult;
 }
 
 # ===================================================================
