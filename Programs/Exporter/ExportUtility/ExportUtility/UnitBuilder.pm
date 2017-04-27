@@ -42,6 +42,7 @@ sub new {
 	my $json     = JSON->new();
 	my $hashData = $json->decode( $self->{"jobStrData"} );
 
+ 
 	my $dataTransfer = DataTransfer->new( $self->{"jobId"}, EnumsTransfer->Mode_READFROMSTR, undef, $hashData->{"jsonData"} );
 
 	$self->{"taskData"} = $dataTransfer->GetExportData( $hashData->{"jsonData"} );

@@ -127,8 +127,9 @@ sub SetToExportResult {
 	if ($jobSentToExport) {
 
 		$stauts = EnumsGeneral->ResultType_OK;
-		$self->SetStatus("Job was sent to toExport");
+		$self->SetStatus("Job was sent \"to Export\"");
 		$self->{"btnToExport"}->Disable();
+		$self->{"btnRestart"}->Disable();
 	}
 
 	$self->{"toExportRI"}->SetStatus($stauts);

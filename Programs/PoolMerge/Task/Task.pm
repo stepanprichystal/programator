@@ -19,14 +19,14 @@ use File::Copy;
 use aliased 'Programs::PoolMerge::UnitEnums';
 use aliased 'Enums::EnumsPaths';
 use aliased 'Enums::EnumsGeneral';
+
 #use aliased 'Programs::PoolMerge::Groups::MergeGroup::MergeUnit';
 #use aliased 'Programs::PoolMerge::Groups::RoutGroup::RoutUnit';
 #use aliased 'Programs::PoolMerge::Groups::OutputGroup::OutputUnit';
 use aliased 'Managers::AbstractQueue::Unit::UnitBase';
 
 #use aliased 'Connectors::HeliosConnector::HegMethods';
- 
- 
+
 use aliased 'Managers::AbstractQueue::TaskResultMngr';
 
 #-------------------------------------------------------------------------------------------#
@@ -35,34 +35,33 @@ use aliased 'Managers::AbstractQueue::TaskResultMngr';
 
 sub new {
 	my $class = shift;
- 
+
 	my $self = $class->SUPER::new(@_);
 	bless $self;
 
 	# Managers, contains information about results of
 	# whole task, groups, single items, etc
- 	$self->{"toExportResultMngr"} = TaskResultMngr->new();
- 
+	$self->{"toExportResultMngr"} = TaskResultMngr->new();
+
 	# Tell if job can be send to toExport,
 	# based on Export results and StatusFile
 	$self->{"canSentToExport"} = undef;
 
 	$self->{"sentToExport"} = 0;    # Tell if task was sent to toExport
-	
-	$self->{"masterJob"}  = undef; # Choosen master job of pool panel
-	
+
+	$self->{"masterJob"} = undef;   # Choosen master job of pool panel
+
 	$self->__InitUnits();
 
- 
 	return $self;
 }
 
 # ===================================================================
 # Public method
 # ===================================================================
- 
+
 sub SetMasterJob {
-	my $self = shift;
+	my $self      = shift;
 	my $masterJob = shift;
 
 	$self->{"masterJob"} = $masterJob;
@@ -79,20 +78,16 @@ sub ToExportResultMngr {
 
 	return $self->{"toExportResultMngr"};
 }
- 
 
 # ===================================================================
 # Public method - GET or SET state of this task
 # ===================================================================
 
-  
-
 # Return result, which tell if pcb can be send to toExport
 sub ResultSentToExport {
 	my $self = shift;
 
-	my $notConsiderWarn = 1;
-	my $res = $self->{"toExportResultMngr"}->Succes($notConsiderWarn);
+	my $res = $self->{"toExportResultMngr"}->Succes();
 
 	if ($res) {
 		$res = EnumsGeneral->ResultType_OK;
@@ -102,7 +97,6 @@ sub ResultSentToExport {
 	}
 	return $res;
 }
- 
 
 sub GetToExportErrorsCnt {
 	my $self = shift;
@@ -116,6 +110,11 @@ sub GetToExportWarningsCnt {
 	return $self->{"toExportResultMngr"}->GetWarningsCnt();
 }
 
+sub GetTaskWarningCnt {
+	my $self = shift;
+
+	return $self->{"units"}->GetWarningsCnt();
+}
 
 # ===================================================================
 # Method regardings "to toExport" issue
@@ -135,7 +134,6 @@ sub GetJobCanSentToExport {
 
 	return $self->{"canSentToExport"};
 }
-
 
 # Test if job can be send to toExport
 # Set results of this action to manager
@@ -170,14 +168,12 @@ sub SetSentToExportResult {
 		$item->AddError($errorStr);
 		$sentToExportMngr->AddItem($item);
 	}
-	
-	
-	
+
 	if ( $self->Result() eq EnumsGeneral->ResultType_OK && $self->{"units"}->GetWarningsCnt() > 0 ) {
-		
+
 		my $errorStr = "Can't sent \"to export\" automatically, because poom merging contains some warnings.\n ";
 		$errorStr .= "First check warnings, then send taks to export by button \"Export\" manually.";
- 
+
 		my $item = $sentToExportMngr->GetNewItem( "Sent to toExport", EnumsGeneral->ResultType_FAIL );
 
 		$item->AddWarning($errorStr);
@@ -200,8 +196,7 @@ sub SetSentToExportResult {
 		$item->AddError($errorStr);
 		$sentToExportMngr->AddItem($item);
 	}
-	
-   
+
 }
 
 sub SentToExport {
@@ -210,44 +205,53 @@ sub SentToExport {
 	# Move prepared export  file to user export file location c:/Export/Exportfiles/pcb
 
 	eval {
-		
+
 		my $taskData = $self->GetTaskData();
-		
-		my $exportFile = EnumsPaths->Client_INCAMTMPOTHER . $taskData->GetInfoFileVal("exportFile");
-		my $target = EnumsPaths->Client_EXPORTFILES.$self->GetMasterJob();
-		
-		if(-e $exportFile){
-			move($exportFile, $target);
+
+		# Get path of export file
+		# (get arbitrary unit data and read "info file", where is path od export file)
+		my %unitData = $taskData->GetAllUnitData();
+
+		my $unitId = ( keys %unitData )[0];    #take random unit id in order get unit data
+
+		my $exportFile = EnumsPaths->Client_INCAMTMPOTHER . $unitData{$unitId}->GetInfoFileVal("exportFile");
+		my $target     = EnumsPaths->Client_EXPORTFILES . $self->GetMasterJob();
+
+		if ( -e $exportFile ) {
+			move( $exportFile, $target );
 			$self->{"taskStatus"}->DeleteStatusFile();
 			$self->{"sentToExport"} = 1;
-			$taskData->DeleteInfoFile();
+			$unitData{$unitId}->DeleteInfoFile();
+
 			# remove from queue
-			 
-		}else{
-			
-			#error
+
+		}
+		else {
+
+			#errormy $sentToExportMngr = $self->{"toExportResultMngr"};
+			my $item = $self->{"toExportResultMngr"}->GetNewItem("Sent to export");
+			$item->AddError("Error during sending task \"to export.  \"Export file\" doesn't exist.\n");
+			$self->{"toExportResultMngr"}->AddItem($item);
 		}
 
 	};
 
 	if ( my $e = $@ ) {
 
-		 # set status hotovo-yadat fail
-		 my $sentToExportMngr = $self->{"toExportResultMngr"};
-		 my $item = $sentToExportMngr->GetNewItem( "Sent to export", EnumsGeneral->ResultType_FAIL );
-
+		# set status hotovo-yadat fail
+		 
+		my $item             = $self->{"toExportResultMngr"}->GetNewItem("Sent to export");
 		$item->AddError("Error during sending task \"to export. Error when \" copy \"export file\" $e\n");
-		$sentToExportMngr->AddItem($item);
+		$self->{"toExportResultMngr"}->AddItem($item);
 	}
 
 }
 
-
 # ===================================================================
 # Method , which procces messages from working thread
 # ===================================================================
- 
- sub ProcessGroupEnd {
+# overriden method!
+sub ProcessGroupEnd {
 	my $self = shift;
 	my $data = shift;
 
@@ -260,15 +264,15 @@ sub SentToExport {
 	my $notConsiderWarn = 1;
 	$self->{"taskStatus"}->UpdateStatusFile( $unitId, $unit->Result($notConsiderWarn) );
 }
- 
+
 #-------------------------------------------------------------------------------------------#
 #  Private method
 #-------------------------------------------------------------------------------------------#
- 
- sub __InitUnits {
+
+sub __InitUnits {
 	my $self = shift;
- 
-	my @keys = $self->{"taskData"}->GetOrderedUnitKeys(1);
+
+	my @keys     = $self->{"taskData"}->GetOrderedUnitKeys(1);
 	my @allUnits = ();
 
 	foreach my $key (@keys) {
@@ -277,23 +281,23 @@ sub SentToExport {
 		push( @allUnits, $unit );
 	}
 
-	$self->{"units"}->SetUnits(\@allUnits);
+	$self->{"units"}->SetUnits( \@allUnits );
 
 }
+
 # Return initialized "unit" object by unitId
 sub __GetUnitClass {
 	my $self   = shift;
 	my $unitId = shift;
- 
+
 	my $jobId = $self->{"jobId"};
-	
+
 	my $title = UnitEnums->GetTitle($unitId);
-	
-	my $unit = UnitBase->new($unitId, $jobId, $title);
-  
+
+	my $unit = UnitBase->new( $unitId, $jobId, $title );
+
 	return $unit;
 }
- 
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

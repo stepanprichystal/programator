@@ -116,22 +116,19 @@ sub __OnJobStateChanged {
 	}
 
 	if ( $taskState eq EnumsJobMngr->JobState_DONE ) {
-
-		# Send to export if
-
+ 
 		# Set values, if job can be sent to toExport
 		$task->SetSentToExportResult();
 
-		# if can eb sent to toExport without errror, send it
-		if ( $task->GetJobCanSentToExport() ) {
+		# if can be sent to export. If warning, not sent to export automatically
+		if ( $task->GetJobCanSentToExport() && $task->GetTaskWarningCnt() == 0) {
 
 			$task->SentToExport();
+			
+			# refresh GUI to toExport
+			$self->{"form"}->SetJobItemSentToExportResult($task);
 		}
-
-		# refresh GUI to toExport
-		$self->{"form"}->SetJobItemSentToExportResult($task);
-
-		$self->{"form"}->SetJobItemResult($task);
+ 
 	}
 }
 

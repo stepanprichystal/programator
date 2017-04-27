@@ -248,7 +248,8 @@ sub __CheckFilesHandler {
 
 			my $jobId = $jobFile->{"name"};
 
-			my $dataTransfer = DataTransfer->new( $jobId, EnumsTransfer->Mode_READ );
+			my $pathExportFile = EnumsPaths->Client_EXPORTFILES . $jobId;
+			my $dataTransfer = DataTransfer->new( $jobId, EnumsTransfer->Mode_READ, undef, undef, $pathExportFile );
 			my $taskData = $dataTransfer->GetExportData();
 
 			my $f          = EnumsPaths->Client_EXPORTFILES . $jobId;
