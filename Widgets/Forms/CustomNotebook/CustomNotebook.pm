@@ -72,6 +72,11 @@ sub RemovePage {
 
 	# remove physic control
 	my $page = $self->{"pages"}->{$pageId};
+	
+	unless(defined $page){
+		print STDERR "page is not defined";
+	}
+	
 	$page->Destroy();
 
 	# remove page from container

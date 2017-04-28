@@ -4,6 +4,8 @@
 # First check if some instance is not already running, if not launch exporter
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
+
+
 package Programs::Exporter::ExportUtility::RunExport::RunExportUtility;
 
 #3th party library
@@ -14,10 +16,13 @@ use Win32::Process;
 use Win32::Process::Info;
 use Win32::Process::List;
 
+
 #local library
 use aliased 'Helpers::GeneralHelper';
 use aliased 'Managers::MessageMngr::MessageMngr';
 use aliased 'Enums::EnumsGeneral';
+use aliased 'Managers::AbstractQueue::Helper';
+use aliased 'Managers::AbstractQueue::AppConf';
 
 sub new {
 	my $self = shift;
@@ -30,9 +35,10 @@ sub new {
 	if(!defined $userLaunch) {
 		$userLaunch = 1;
 	}
+ 
 
 	#run exporter
-	my $isRuning = $self->__CheckRunningInstance();
+	my $isRuning = Helper->CheckRunningInstance("RunExportUtilityScript.pl");
 
 	if ($isRuning) {
 
@@ -47,7 +53,7 @@ sub new {
 	}
 	else {
 
-		#run exporter
+ 
 		$self->__RunExportUtility();
 
 	}
@@ -55,40 +61,7 @@ sub new {
 	
 	return $self;
 }
-
-sub __CheckRunningInstance {
-	my $self = shift;
-
-	my $exist = 0;
-
-	my $procName;
-	my $args;
-	my $p    = Win32::Process::List->new();
-	my $pi   = Win32::Process::Info->new();
-	my %list = $p->GetProcesses();
-
-	foreach my $pid ( sort { $a <=> $b } keys %list ) {
-		$procName = $list{$pid};
-
-		if ( $procName =~ /^perl.exe/i ) {
-
-			my $procInfo = $pi->GetProcInfo($pid);
-			if ( defined $procInfo && scalar( @{$procInfo} ) ) {
-
-				$args = @{$procInfo}[0]->{"CommandLine"};
-
-				if ( defined $args && $args =~ /RunExportUtilityScript.pl/ ) {
-
-					$exist = 1;
-					last;
-				}
-			}
-		}
-
-	}
-
-	return $exist;
-}
+ 
 
 sub __RunExportUtility {
 	my $self = shift;
@@ -105,7 +78,7 @@ sub __RunExportUtility {
 	  || die "Failed to create ExportUtility process.\n";
 
 	
-
+	 
 
 }
 

@@ -15,7 +15,7 @@ use warnings;
 #local library
 use aliased "Packages::Events::Event";
 use aliased 'Programs::Exporter::ExportChecker::Enums';
-use aliased 'Programs::Exporter::UnitEnums';
+use aliased 'Programs::Exporter::ExportUtility::UnitEnums';
 use aliased 'Programs::Exporter::ExportChecker::ExportChecker::DefaultInfo::DefaultInfo';
 use aliased 'Programs::Exporter::ExportChecker::Groups::PreExport::Presenter::PreUnit';
 #-------------------------------------------------------------------------------------------#

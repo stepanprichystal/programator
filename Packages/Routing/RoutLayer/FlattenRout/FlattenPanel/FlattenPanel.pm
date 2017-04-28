@@ -38,8 +38,9 @@ sub new {
 	$self->{"stepName"}  = shift;
 	$self->{"layer"}     = shift;    # source layer, which is flattened
 	$self->{"flatLayer"} = shift;    # name of result flattened layer
+	$self->{"noDrawing"} = shift;    # if set, result is not drawed, when create rout is succes
 
-	$self->{"result"} = 1;      # indicate if remove final faltten layer in case of errors
+	$self->{"result"} = 1;           # indicate if remove final faltten layer in case of errors
 
 	# Test if nested steps has to be flatened, because contain SR
 	$self->{"preparedL"} = $self->{"layer"};
@@ -89,11 +90,14 @@ sub Run {
 
 	$self->__ProcessResult($resFlattenRout);
 
-	# 6) Draw start chain and foots to new layer
+	# 6) Draw start chain and foots to new layer (if drawing is not switched off)
 
-	my $draw = RoutDraw->new( $inCAM, $jobId, $self->{"stepName"}, $self->{"flatLayer"} );
+	if ( !( $self->{"noDrawing"} && $self->{"result"} ) ) {
+		
+		my $draw = RoutDraw->new( $inCAM, $jobId, $self->{"stepName"}, $self->{"flatLayer"} );
 
-	$draw->CreateResultLayer( $resFindStart->{"errStartSteps"}, $resFlattenRout->{"chainOrderIds"} );
+		$draw->CreateResultLayer( $resFindStart->{"errStartSteps"}, $resFlattenRout->{"chainOrderIds"} );
+	}
 
 	# 7) Cleaning matrix...
 
@@ -111,8 +115,8 @@ sub Run {
 			$inCAM->COM( 'delete_layer', "layer" => $self->{"flatLayer"} );
 		}
 	}
-	
-	return  $self->{"result"};
+
+	return $self->{"result"};
 }
 
 # Return 1 if nested steps contain SR too

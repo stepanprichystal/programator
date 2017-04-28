@@ -55,7 +55,33 @@ elsif ( $methodName eq "UpdatePcbOrderState" ) {
 		$result = 1;
 	}
 
-}
+}elsif ( $methodName eq "UpdateSilkScreen" ) {
+
+	$result = HegMethods->UpdateSilkScreen(@params);
+
+	if ( $result =~ /success/i ) {
+		$result = 0;
+	}
+	else {
+		$result = 1;
+	}
+
+}elsif ( $methodName eq "UpdateSolderMask" ) {
+
+	$result = HegMethods->UpdateSolderMask(@params);
+
+	if ( $result =~ /success/i ) {
+		$result = 0;
+	}
+	else {
+		$result = 1;
+	}
+	
+} 
+ 
+ 
+ 
+ 
  
 
 1;

@@ -25,7 +25,7 @@ use aliased 'Programs::Exporter::ExportChecker::Groups::GroupDataMngr';
 use aliased 'Programs::Exporter::ExportChecker::Groups::AOIExport::Model::AOICheckData';
 use aliased 'Programs::Exporter::ExportChecker::Groups::AOIExport::Model::AOIPrepareData';
 use aliased 'Programs::Exporter::ExportChecker::Groups::AOIExport::Model::AOIExportData';
-use aliased 'Programs::Exporter::UnitEnums';
+use aliased 'Programs::Exporter::ExportUtility::UnitEnums';
 use aliased 'Programs::Exporter::ExportChecker::Groups::AOIExport::View::AOIUnitForm';
 
 

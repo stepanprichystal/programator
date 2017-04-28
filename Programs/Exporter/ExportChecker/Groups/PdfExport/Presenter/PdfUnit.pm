@@ -25,7 +25,7 @@ use aliased 'Programs::Exporter::ExportChecker::Groups::GroupDataMngr';
 use aliased 'Programs::Exporter::ExportChecker::Groups::PdfExport::Model::PdfCheckData';
 use aliased 'Programs::Exporter::ExportChecker::Groups::PdfExport::Model::PdfPrepareData';
 use aliased 'Programs::Exporter::ExportChecker::Groups::PdfExport::Model::PdfExportData';
-use aliased 'Programs::Exporter::UnitEnums';
+use aliased 'Programs::Exporter::ExportUtility::UnitEnums';
 use aliased 'Programs::Exporter::ExportChecker::Groups::PdfExport::View::PdfUnitForm';
 use aliased 'Programs::Exporter::ExportChecker::Groups::PdfExport::View::PdfUnitFormEvt';
 

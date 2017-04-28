@@ -7,7 +7,7 @@ use warnings;
 
 
 # ============ INPUT LINE =================
-my $inputLine ="$f->INFO(units => 'mm', angle_direction => 'ccw', entity_type => 'step', entity_path => "f52456/mpanel", data_type => 'DATUM');";
+my $inputLine ="sr_tab_add,step=mpanel,line=0,x=0,y=0,nx=1,ny=1,dx=354.49932,dy=198.4976,angle=0,direction=ccw,flip=no,mirror=no";
 
 my $output = "\$inCAM->COM(";
 my @splitted = split( ",", $inputLine );

@@ -8,60 +8,33 @@
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Programs::Exporter::ExportUtility::Task::Task;
+use base("Managers::AbstractQueue::Task::Task");
 
 #3th party library
 use strict;
 use warnings;
 
 #local library
-use aliased 'Programs::Exporter::UnitEnums';
-
+use aliased 'Programs::Exporter::ExportUtility::UnitEnums';
 use aliased 'Enums::EnumsGeneral';
-use aliased 'Programs::Exporter::ExportUtility::Groups::NifExport::NifUnit';
-use aliased 'Programs::Exporter::ExportUtility::Groups::NCExport::NCUnit';
-
-#use aliased 'Programs::Exporter::ExportUtility::Groups::NC2Unit';
-#use aliased 'Programs::Exporter::ExportUtility::Groups::NC3Unit';
-#use aliased 'Programs::Exporter::ExportUtility::Groups::NC4Unit';
-#use aliased 'Programs::Exporter::ExportUtility::Groups::NC5Unit';
-use aliased 'Programs::Exporter::ExportUtility::Unit::Units';
-use aliased 'Programs::Exporter::ExportUtility::ExportUtility::ExportStatus::ExportStatus';
-use aliased 'Programs::Exporter::ExportUtility::ExportResultMngr';
 use aliased 'Connectors::HeliosConnector::HegMethods';
+
+use aliased 'Managers::AbstractQueue::Unit::UnitBase';
+use aliased 'Managers::AbstractQueue::TaskResultMngr';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods, requested by IUnit interface
 #-------------------------------------------------------------------------------------------#
 
 sub new {
-	my $self = shift;
-	$self = {};
+	my $class = shift;
+
+	my $self = $class->SUPER::new(@_);
 	bless $self;
-
-	$self->{"taskId"} = shift;    # unique task Id
-
-	$self->{"jobId"} = shift;     # job id, which is processed
-
-	$self->{"exportData"} = shift;    # exported data, from ExportChecker program
 
 	# Managers, contains information about results of
 	# whole task, groups, single items, etc
-
-	$self->{"produceResultMngr"} = ExportResultMngr->new();
-
-	$self->{"taskResultMngr"} = ExportResultMngr->new();
-
-	$self->{"groupResultMngr"} = ExportResultMngr->new();
-
-	$self->{"itemResultMngr"} = ExportResultMngr->new();
-
-	# Object, which keep all units objects
-	$self->{"units"} = Units->new( $self->{"jobId"} );
-
-	# Class responsible for updating StatusFile in job archive
-	$self->{"exportStatus"} = ExportStatus->new( $self->{"jobId"} );
-
-	$self->{"aborted"} = 0;    # Tell if task was aborted by user
+	$self->{"produceResultMngr"} = TaskResultMngr->new();
 
 	# Tell if job can be send to produce,
 	# based on Export results and StatusFile
@@ -69,10 +42,7 @@ sub new {
 
 	$self->{"sentToProduce"} = 0;    # Tell if task was sent to produce
 
-	$self->__InitUnit();
-
-	my @mandatoryUnits = $self->{"exportData"}->GetMandatoryUnits();
-	$self->{"exportStatus"}->CreateStatusFile( \@mandatoryUnits );
+	$self->__InitUnits();
 
 	return $self;
 }
@@ -81,62 +51,44 @@ sub new {
 # Public method
 # ===================================================================
 
-sub GetTaskId {
-	my $self = shift;
-
-	return $self->{"taskId"};
-}
-
-sub GetJobId {
-	my $self = shift;
-
-	return $self->{"jobId"};
-}
-
-sub GetAllUnits {
-	my $self = shift;
-	return @{ $self->{"units"}->{"units"} };
-}
-
-sub GetExportData {
-	my $self = shift;
-	return $self->{"exportData"};
-}
-
 sub ProduceResultMngr {
 	my $self = shift;
 
 	return $self->{"produceResultMngr"};
 }
 
-sub GetTaskResultMngr {
-	my $self = shift;
-
-	return $self->{"taskResultMngr"};
-}
-
-sub GetGroupResultMngr {
-	my $self = shift;
-	return $self->{"groupResultMngr"};
-}
-
-sub GetGroupItemResultMngr {
-	my $self = shift;
-
-	return $self->{"itemResultMngr"};
-}
-
 # ===================================================================
 # Public method - GET or SET state of this task
 # ===================================================================
 
-sub GetJobAborted {
+# Return result, which tell if pcb can be send to produce
+sub ResultToProduce {
 	my $self = shift;
 
-	return $self->{"aborted"};
+	my $res = $self->{"produceResultMngr"}->Succes();
+
+	if ($res) {
+		$res = EnumsGeneral->ResultType_OK;
+	}
+	else {
+		$res = EnumsGeneral->ResultType_FAIL;
+	}
+	return $res;
 }
 
-# Return export Result of whole task
+sub GetProduceErrorsCnt {
+	my $self = shift;
+
+	return $self->{"produceResultMngr"}->GetErrorsCnt();
+}
+
+sub GetProduceWarningsCnt {
+	my $self = shift;
+
+	return $self->{"produceResultMngr"}->GetWarningsCnt();
+}
+
+# Return task Result of whole task
 sub Result {
 	my $self = shift;
 
@@ -173,61 +125,6 @@ sub Result {
 	return $totalResult;
 }
 
-# Return result, which tell if pcb can be send to produce
-sub ResultToProduce {
-	my $self = shift;
-
-	my $res = $self->{"produceResultMngr"}->Succes();
-
-	if ($res) {
-		$res = EnumsGeneral->ResultType_OK;
-	}
-	else {
-		$res = EnumsGeneral->ResultType_FAIL;
-	}
-	return $res;
-}
-
-sub GetProgress {
-	my $self = shift;
-
-	my $totalProgress = $self->{"units"}->GetProgress();
-
-	print " =========================== Total progress per task: $totalProgress \n";
-
-	return $totalProgress;
-}
-
-sub GetErrorsCnt {
-	my $self = shift;
-
-	my $taskErrCnt  = $self->{"taskResultMngr"}->GetErrorsCnt();
-	my $unitsErrCnt = $self->{"units"}->GetErrorsCnt();
-
-	return $taskErrCnt + $unitsErrCnt;
-}
-
-sub GetWarningsCnt {
-	my $self = shift;
-
-	my $taskWarnCnt  = $self->{"taskResultMngr"}->GetWarningsCnt();
-	my $unitsWarnCnt = $self->{"units"}->GetWarningsCnt();
-
-	return $taskWarnCnt + $unitsWarnCnt;
-}
-
-sub GetProduceErrorsCnt {
-	my $self = shift;
-
-	return $self->{"produceResultMngr"}->GetErrorsCnt();
-}
-
-sub GetProduceWarningsCnt {
-	my $self = shift;
-
-	return $self->{"produceResultMngr"}->GetWarningsCnt();
-}
-
 # ===================================================================
 # Method regardings "to produce" issue
 # ===================================================================
@@ -252,7 +149,7 @@ sub GetJobCanToProduce {
 sub GetJobShouldToProduce {
 	my $self = shift;
 
-	return $self->{"exportData"}->GetToProduce();
+	return $self->{"taskData"}->GetToProduce();
 }
 
 # Test if job can be send to produce
@@ -289,7 +186,7 @@ sub SetToProduceResult {
 	}
 
 	my @notExportUnits = ();
-	if ( !$self->{"exportStatus"}->IsExportOk( \@notExportUnits ) ) {
+	if ( !$self->{"taskStatus"}->IsTaskOk( \@notExportUnits ) ) {
 
 		my @notExportUnits = map { UnitEnums->GetTitle($_) } @notExportUnits;
 		my $str = join( ", ", @notExportUnits );
@@ -309,142 +206,70 @@ sub SetToProduceResult {
 
 sub SentToProduce {
 	my $self = shift;
+	
+	my $result = 1;
 
 	# set state HOTOVO-zadat
 
 	eval {
 		my $orderRef = HegMethods->GetPcbOrderNumber( $self->{"jobId"} );
 		my $orderNum = $self->{"jobId"} . "-" . $orderRef;
-		
-		my $succ     = HegMethods->UpdatePcbOrderState( $orderNum, "HOTOVO-zadat");
-		
-	 
-		$self->{"exportStatus"}->DeleteStatusFile();
+
+		my $succ = HegMethods->UpdatePcbOrderState( $orderNum, "HOTOVO-zadat" );
+
+		$self->{"taskStatus"}->DeleteStatusFile();
 		$self->{"sentToProduce"} = 1;
 	};
 
 	if ( my $e = $@ ) {
 
-		 # set status hotovo-yadat fail
-		 my $toProduceMngr = $self->{"produceResultMngr"};
-		 my $item = $toProduceMngr->GetNewItem( "Set state HOTOVO-zadat", EnumsGeneral->ResultType_FAIL );
+		# set status hotovo-yadat fail
+		my $toProduceMngr = $self->{"produceResultMngr"};
+		my $item = $toProduceMngr->GetNewItem( "Set state HOTOVO-zadat", EnumsGeneral->ResultType_FAIL );
 
 		$item->AddError("Set state HOTOVO-zadat failed, try it again. Detail: $e\n");
 		$toProduceMngr->AddItem($item);
+		
+		$result = 0;
 
 	}
-
-}
-
-# ===================================================================
-# Method , which procces messages from working thread
-# ===================================================================
-
-sub ProcessItemResult {
-	my $self = shift;
-	my $data = shift;
-
-	$self->{"units"}->ProcessItemResult($data);
-
-	# Fill/update items result manager
-	my @allItems = $self->{"units"}->GetGroupItemResultMngr()->GetAllItems();
-
-	# update "task" item result manager, when item finish
-	$self->{"itemResultMngr"}->Clear();
-	$self->{"itemResultMngr"}->AddItems( \@allItems );
-}
-
-sub ProcessGroupResult {
-	my $self = shift;
-	my $data = shift;
-
-	$self->{"units"}->ProcessGroupResult($data);
-
-	my @allItems = $self->{"units"}->GetGroupResultMngr()->GetAllItems();
-
-	# update "task" group result manager, when group finish
-	$self->{"groupResultMngr"}->Clear();
-	$self->{"groupResultMngr"}->AddItems( \@allItems );
-
-}
-
-sub ProcessGroupStart {
-	my $self = shift;
-	my $data = shift;
-
-	my $unitId = $data->{"unitId"};
-
-	my $unit = $self->__GetUnit($unitId);
-
-	$unit->ProcessGroupStart();
-}
-
-sub ProcessGroupEnd {
-	my $self = shift;
-	my $data = shift;
-
-	my $unitId = $data->{"unitId"};
-
-	my $unit = $self->__GetUnit($unitId);
-
-	$unit->ProcessGroupEnd();
-
-	$self->{"exportStatus"}->UpdateStatusFile( $unitId, $unit->Result() );
-}
-
-sub ProcessTaskResult {
-	my $self = shift;
-	my $data = shift;
-
-	my $result     = $data->{"result"};
-	my $errorsStr  = $data->{"errors"};
-	my $warningStr = $data->{"warnings"};
-	my $id         = $self->{"jobId"};
-
-	$self->{"taskResultMngr"}->CreateExportItem( $id, $result, undef, $errorsStr, $warningStr );
-
-}
-
-sub ProcessTaskDone {
-	my $self    = shift;
-	my $aborted = shift;
-
-	$self->{"aborted"} = $aborted;
-
-}
-
-sub ProcessProgress {
-	my $self = shift;
-	my $data = shift;
-
-	my $unitId   = $data->{"unitId"};
-	my $progress = $data->{"value"};
-
-	my $unit = $self->__GetUnit($unitId);
-
-	$unit->ProcessProgress($progress);
+	
+	return $result;
 
 }
 
 #-------------------------------------------------------------------------------------------#
 #  Private method
 #-------------------------------------------------------------------------------------------#
-# Init groups by exported data
-sub __InitUnit {
+
+sub __InitUnits {
 	my $self = shift;
 
-	my @keys = $self->{"exportData"}->GetOrderedUnitKeys(1);
+	my @keys     = $self->{"taskData"}->GetOrderedUnitKeys(1);
+	my @allUnits = ();
 
-	$self->{"units"}->Init( \@keys );
+	foreach my $key (@keys) {
+
+		my $unit = $self->__GetUnitClass($key);
+		push( @allUnits, $unit );
+	}
+
+	$self->{"units"}->SetUnits( \@allUnits );
 
 }
 
-sub __GetUnit {
+# Return initialized "unit" object by unitId
+sub __GetUnitClass {
 	my $self   = shift;
 	my $unitId = shift;
 
-	return $self->{"units"}->GetUnitById($unitId);
+	my $jobId = $self->{"jobId"};
 
+	my $title = UnitEnums->GetTitle($unitId);
+
+	my $unit = UnitBase->new( $unitId, $jobId, $title );
+
+	return $unit;
 }
 
 #-------------------------------------------------------------------------------------------#

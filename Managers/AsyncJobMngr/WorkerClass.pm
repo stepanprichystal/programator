@@ -13,7 +13,7 @@ use warnings;
 
 use aliased 'Helpers::GeneralHelper';
 use aliased 'Enums::EnumsGeneral';
-use aliased 'Programs::Exporter::ExportUtility::Enums';
+ 
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -33,7 +33,8 @@ sub new {
 
 	$THREAD_PROGRESS_EVT   = ${ shift(@_) };
 	$THREAD_MESSAGE_EVT    = ${ shift(@_) };
-	$self->{"exporterFrm"} = shift;
+	$self->{"stopThread"}  = shift;
+	$self->{"abstractQueueFrm"} = shift;
 
 	return $self;
 }
@@ -65,7 +66,7 @@ sub _SendMessageEvt {
 	}
 
 	my $threvent = new Wx::PlThreadEvent( -1, $THREAD_MESSAGE_EVT, \%res );
-	Wx::PostEvent( $self->{"exporterFrm"}, $threvent );
+	Wx::PostEvent( $self->{"abstractQueueFrm"}, $threvent );
 
 }
 
@@ -92,9 +93,11 @@ sub _SendProgressEvt {
 	#%res = ( %res, %{$data} );
 
 	my $threvent = new Wx::PlThreadEvent( -1, $THREAD_PROGRESS_EVT, \%res );
-	Wx::PostEvent( $self->{"exporterFrm"}, $threvent );
+	Wx::PostEvent( $self->{"abstractQueueFrm"}, $threvent );
 
 }
+
+
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
@@ -105,7 +108,7 @@ sub _SendProgressEvt {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	#my $app = Programs::Exporter::ExporterUtility->new();
+	#my $app = Programs::AbstractQueue::AbstractQueueUtility->new();
 
 	#$app->Test();
 

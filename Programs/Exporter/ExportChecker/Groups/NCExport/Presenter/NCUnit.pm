@@ -28,7 +28,7 @@ use aliased 'Programs::Exporter::ExportChecker::Groups::NCExport::Model::NCPrepa
 use aliased 'Programs::Exporter::ExportChecker::Groups::NCExport::Model::NCExportData';
 use aliased 'Programs::Exporter::ExportChecker::Groups::NCExport::Model::NCGroupData';
 use aliased 'Packages::Events::Event';
-use aliased 'Programs::Exporter::UnitEnums';
+use aliased 'Programs::Exporter::ExportUtility::UnitEnums';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods

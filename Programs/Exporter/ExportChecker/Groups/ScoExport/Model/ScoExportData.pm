@@ -30,7 +30,7 @@ use File::Copy;
 #use aliased 'Connectors::HeliosConnector::HegMethods';
 #use aliased 'Managers::MessageMngr::MessageMngr';
 
-use aliased 'Programs::Exporter::DataTransfer::UnitsDataContracts::ScoData';
+use aliased 'Programs::Exporter::ExportUtility::DataTransfer::UnitsDataContracts::ScoData';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods

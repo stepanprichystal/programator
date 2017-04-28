@@ -81,11 +81,33 @@ sub Clear {
 
 }
 
+sub RemoveItem{
+	my $self = shift;
+	my $itemId = shift;
+	
+	for( my $i = scalar(@{$self->{"itemResults"}}) -1; $i >= 0; $i--){
+		
+		if($self->{"itemResults"}->[$i]->GetItemId() eq $itemId){
+			splice @{$self->{"itemResults"}}, $i, 1;
+		}
+	}
+}
+
 sub Succes {
 	my $self = shift;
+	my $notConsiderWarn = shift; # if set to 1, warning will not be considered
 
-	my @failed = grep { $_->{"result"} eq Enums->ItemResult_Fail } @{ $self->{"itemResults"} };
+	my @failed = ();
 
+	if($notConsiderWarn ){
+		
+		@failed = grep { $_->GetErrorCount() > 0 } @{ $self->{"itemResults"} };
+	
+	}else{
+		
+		@failed = grep { $_->Result eq Enums->ItemResult_Fail } @{ $self->{"itemResults"} };
+	}
+ 
 	unless ( scalar(@failed) ) {
 		return 1;
 	}

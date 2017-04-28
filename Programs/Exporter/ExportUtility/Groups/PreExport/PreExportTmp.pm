@@ -9,7 +9,7 @@ use aliased 'Enums::EnumsPaths';
 use aliased 'Packages::InCAM::InCAM';
 use aliased 'Helpers::GeneralHelper';
 use aliased 'Packages::Events::Event';
-use aliased 'Programs::Exporter::UnitEnums';
+use aliased 'Programs::Exporter::ExportUtility::UnitEnums';
 use aliased 'Managers::MessageMngr::MessageMngr';
 use aliased 'Enums::EnumsGeneral';
 
@@ -66,29 +66,30 @@ sub Run {
 		return 0;
 	}
 
-	my $exportData = $unit->GetExportData($inCAM);
+	my $taskData = $unit->GetTaskData($inCAM);
 
 	my $exportUnit = UnitExport->new( $self->{"id"} );
 
-	my $exportClass = $exportUnit->GetExportClass();
+	my $exportClass = $exportUnit->GetTaskClass();
 	
 	
 	# misto pro upravu exportovanych dat
 	
-	my @layers = ();
-	
-	my %lInfo = ();
-	$lInfo{"name"}     = "c";
-	$lInfo{"etchingType"}  = "pattern";
-	
-	push(@layers, \%lInfo);
+#	my @layers = ();
+#	
+#	my %lInfo = ();
+#	$lInfo{"name"}     = "c";
+#	$lInfo{"etchingType"}  = "pattern";
+#	
+#	push(@layers, \%lInfo);
 	
 	$exportData->SetSignalLayers(\@layers);
+#	$taskData->SetSignalLayers(\@layers);
 	
 	 
 	
 
-	$exportClass->Init( $inCAM, $jobId, $exportData );
+	$exportClass->Init( $inCAM, $jobId, $taskData );
 	$exportClass->{"onItemResult"}->Add( sub { Test(@_) } );
 	$exportClass->Run();
 

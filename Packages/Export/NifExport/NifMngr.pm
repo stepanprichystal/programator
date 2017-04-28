@@ -262,7 +262,7 @@ sub __ResultNifCreation {
 }
 
 
-sub ExportItemsCount{
+sub TaskItemsCount{
 
 		
 				my $self = shift;

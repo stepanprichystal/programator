@@ -14,6 +14,7 @@ use Wx;
 use Config;
 use Win32::GuiTest qw(FindWindowLike SetWindowPos ShowWindow);
 use Time::HiRes qw (sleep);
+use Thread::Queue;
 
 #use Try::Tiny;
 
@@ -22,6 +23,7 @@ use aliased 'Packages::InCAM::InCAM';
 use aliased 'Managers::AsyncJobMngr::Helper';
 use aliased 'Managers::AsyncJobMngr::Enums';
 use aliased 'Managers::AsyncJobMngr::ServerMngr::ServerInfo';
+use aliased 'Managers::AbstractQueue::AppConf';
 
 #use aliased 'Enums::EnumsGeneral';
 #-------------------------------------------------------------------------------------------#
@@ -39,19 +41,25 @@ sub new {
 
 	my @servers = ();
 
+ 
+
 	$self->{"servers"} = \@servers;
 
-	$self->{"maxCntUser"}      = -1;      # max count of server set by user
-	$self->{"maxCntTotal"}     = 9;       # max allowed number of server
+	$self->{"maxCntUser"}      = -1;                                # max count of server set by user
+	$self->{"maxCntTotal"}     = 9;                                 # max allowed number of server
 	$self->{"actualCntRuning"} = -1;
-	$self->{"startPort"}       = 1000;    # Port for ExportUtility start from 1000, Port for ExportChecker start from 2000,
+	$self->{"startPort"}       = AppConf->GetValue("portStart");    # Port for ExportUtility start from 1000, Port for ExportChecker start from 2000,
 
-	$self->{"destroyOnDemand"} = 1;       # close server only on demand, not immediately
-	$self->{"destroyDelay"}    = -1;      # destroy server after 12s of WAITING state
+	$self->{"destroyOnDemand"} = 1;                                 # close server only on demand, not immediately
+	$self->{"destroyDelay"}    = -1;                                # destroy server after 12s of WAITING state
+
+
+	my $range = $self->{"startPort"}."-".($self->{"startPort"} +999);
+	$self->__CloseZombie( undef, 0);
 
 	$self->__InitServers();
-
-	return $self;                         # Return the reference to the hash.
+ 
+	return $self;                                                   # Return the reference to the hash.
 }
 
 # ==============================================
@@ -61,13 +69,34 @@ sub new {
 sub Init {
 	my $self = shift;
 
-	$self->{"exporterFrm"} = shift;
+	$self->{"abstractQueueFrm"} = shift;
 
 	$PORT_READY_EXPORTER_EVT = ${ shift(@_) };
 
 	$PORT_READY_EVT = Wx::NewEventType;
-	Wx::Event::EVT_COMMAND( $self->{"exporterFrm"}, -1, $PORT_READY_EVT, sub { $self->__PortReadyHandler(@_) } );
+	Wx::Event::EVT_COMMAND( $self->{"abstractQueueFrm"}, -1, $PORT_READY_EVT, sub { $self->__PortReadyHandler(@_) } );
 
+}
+
+sub InitThreadPool {
+	my $self = shift;
+
+	# Maximum working threads, which start new incam
+	$self->{"MAX_THREADS"} = 3;
+
+	# Threads add their ID to this queue when they are ready for work
+	# Also, when app terminates a -1 is added to this queue
+	$self->{"IDLE_QUEUE"} = Thread::Queue->new();
+
+	# Thread work queues referenced by thread ID
+	my %work_queues;
+	$self->{"work_queues"} = \%work_queues;
+
+	# Create the thread pool
+	for ( 1 .. $self->{"MAX_THREADS"} ) {
+		$self->__AddThreadPool();
+
+	}
 }
 
 # Check if free server are available
@@ -169,7 +198,13 @@ sub PrepareServerPort {
 				#create server in separete ports
 				my $port = $s->{"port"};
 
-				my $worker = threads->create( sub { $self->__CreateServer( $port, $jobGUID ) } );
+				# Wait for an available thread
+				my $tid = $self->{"IDLE_QUEUE"}->dequeue();
+
+				# run thread
+
+				my @ary : shared = ( $port, $jobGUID );
+				$self->{"work_queues"}->{$tid}->enqueue( \@ary );
 
 				last;
 			}
@@ -200,7 +235,9 @@ sub PrepareExternalServerPort {
 			${$serverRef}[$i]->{"external"} = 1;
 
 			#test, if server is really ready. Try to connect
-			my $worker = threads->create( sub { $self->__CreateServerExternal( $serverInfo->{"port"}, $jobGUID ) } );
+			#my $worker = threads->create( sub { $self->__CreateServerExternal( $serverInfo->{"port"}, $jobGUID ) } );
+			 $self->__CreateServerExternal( $serverInfo->{"port"}, $jobGUID );
+			 
 
 			last;
 
@@ -371,32 +408,30 @@ sub DestroyServer {
 		}
 
 		my $s = @{$serverRef}[$idx];
-		
+
 		my $closedSucc = 0;
-		
+
 		#try to connect to server and close it nice
-		
+
 		my $inCAM = InCAM->new( "remote" => 'localhost', "port" => $port );
-		if( $inCAM->ServerReady()){
-			
+		if ( $inCAM->ServerReady() ) {
+
 			my $closed = $inCAM->COM("close_toolkit");
-			
-			if($closed == 0){
+
+			if ( $closed == 0 ) {
 				$closedSucc = 1;
-				
+
 				# we has to close server perl scritp, unless inCAM will be still running
 				Win32::Process::KillProcess( $s->{"pidServer"}, 0 );
 				print STDERR "\n\n close toolikt ################ \n\n";
 			}
 		}
-		
-		unless($closedSucc){	 
+
+		unless ($closedSucc) {
 
 			Win32::Process::KillProcess( $s->{"pidServer"}, 0 );
 			Win32::Process::KillProcess( $s->{"pidInCAM"},  0 );
 		}
-		
-
 
 		Helper->Print( "SERVER: PID: " . $s->{"pidServer"} . ", port:" . $s->{"port"} . "....................................was closed\n" );
 
@@ -465,6 +500,47 @@ sub GetServerStat {
 # ==============================================
 # Private method
 # ==============================================
+sub __AddThreadPool {
+	my $self = shift;
+
+	# Create a work queue for a thread
+	my $work_q = Thread::Queue->new();
+
+	# Create the thread, and give it the work queue
+	my $thr = threads->create( sub { $self->__PoolWorker($work_q) } );
+	$thr->set_thread_exit_only(1);
+
+	# Remember the thread's work queue
+	$self->{"work_queues"}->{ $thr->tid() } = $work_q;
+}
+
+sub __PoolWorker {
+	my $self = shift;
+	my ($work_q) = @_;
+
+	# This thread's ID
+	my $tid = threads->tid();
+
+	# Work loop
+	do {
+
+		# Indicate that were are ready to do work
+		printf( "Idle     -> %2d\n", $tid );
+		$self->{"IDLE_QUEUE"}->enqueue($tid);
+
+		# Wait for work from the queue
+		my $work = $work_q->dequeue();
+
+		# Do work
+
+		my $port    = $work->[0];
+		my $jobGUID = $work->[1];
+
+		$self->__CreateServer( $port, $jobGUID );
+
+		# Loop back to idle state if not told to terminate
+	} while (1);
+}
 
 # This method is called asynchronously
 # Start InCAM with "server" script and wait untill
@@ -479,7 +555,7 @@ sub __CreateServer {
 	my $pidServer;
 
 	#test on zombified server and close
-	$self->__CloseZombie($freePort);
+	$self->__CloseZombie( $freePort, 1 );
 
 	#start new server on $freePort
 
@@ -495,22 +571,29 @@ sub __CreateServer {
 
 	my $processObj;
 	my $inCAM;
-	
-	my $path =  GeneralHelper->Root() . "\\Managers\\AsyncJobMngr\\Server\\ServerExporter.pl";
+
+	my $path = GeneralHelper->Root() . "\\Managers\\AsyncJobMngr\\Server\\ServerAsyncJob.pl";
+
 	# turn all backslash - incam need this
 	$path =~ s/\\/\//g;
+
 	
-	print STDERR "\n New Incam instance launching  on $inCAMPath $path \n";
+	
+	# sometimes happen, when 2 or more INCAM servers are launeched a same time, parl fail (no reason)
+	# this is stupid solution, sleep random time
+	my $sleep = int( rand(10));
+	sleep($sleep); 
 
 	#run InCAM editor with serverscript
-	Win32::Process::Create( $processObj, $inCAMPath,
-							"InCAM.exe -s" . $path." " . $freePort,
+	Win32::Process::Create( $processObj, $inCAMPath, "InCAM.exe -s" . $path . " " . $freePort . " " . $self->{"asyncScriptName"},
 							0, THREAD_PRIORITY_NORMAL, "." )
 	  || die "$!\n";
+	  
+ 
 
 	$pidInCAM = $processObj->GetProcessID();
-
 	
+	print STDERR "\n New Incam instance PID: $pidInCAM is launching  on $inCAMPath $path \n";
 
 	#my $worker = threads->create( sub { $self->__MoveWindowOut($pidInCAM) } );
 
@@ -518,10 +601,9 @@ sub __CreateServer {
 
 	# creaate and test server connection
 	$pidServer = $self->__CreateServerConn($freePort);
-	
+
 	# Temoporary solution because -x is not working in inCAM
 	$self->__MoveWindowOut($pidInCAM);
-
 
 	#if ok, reise event port ready
 	if ($pidServer) {
@@ -536,7 +618,7 @@ sub __CreateServer {
 		$res{"pidServer"} = $pidServer;
 
 		my $threvent = new Wx::PlThreadEvent( -1, $PORT_READY_EVT, \%res );
-		Wx::PostEvent( $self->{"exporterFrm"}, $threvent );
+		Wx::PostEvent( $self->{"abstractQueueFrm"}, $threvent );
 
 	}
 	else {
@@ -574,7 +656,7 @@ sub __CreateServerExternal {
 		$res{"pidServer"} = $pidServer;
 
 		my $threvent = new Wx::PlThreadEvent( -1, $PORT_READY_EVT, \%res );
-		Wx::PostEvent( $self->{"exporterFrm"}, $threvent );
+		Wx::PostEvent( $self->{"abstractQueueFrm"}, $threvent );
 
 	}
 	else {
@@ -595,6 +677,8 @@ sub __CreateServerConn {
 	# first test of connection
 	$inCAM = InCAM->new( "remote" => 'localhost', "port" => $port );
 
+
+
 	# next tests of connecton. Wait, until server script is not ready
 	while ( !defined $inCAM || !$inCAM->{"socketOpen"} || !$inCAM->{"connected"} ) {
 		if ($inCAM) {
@@ -603,16 +687,22 @@ sub __CreateServerConn {
 
 			Helper->Print("CLIENT(parent): PID: $$  try connect to server port: $port....failed\n");
 		}
-		sleep(2);
+		sleep(1);
 
 		$inCAM = InCAM->new( "remote" => 'localhost', "port" => $port );
 	}
 
+	#print STDERR "Connected, next test if server ready\n";
+
 	#server seems ready, try send message and get server pid
 	my $pidServer = $inCAM->ServerReady();
 
+	#print STDERR "Server ready, next client finish\n";
+
 	if ($pidServer) {
 		$inCAM->ClientFinish();
+
+		#print STDERR "Client finish, end of thread\n";
 
 		return $pidServer;
 	}
@@ -628,19 +718,19 @@ sub __MoveWindowOut {
 	my $self = shift;
 	my $pid  = shift;
 
-		print STDERR "Searchin InCAM window PID $pid.\n";
+	print STDERR "Searchin InCAM window PID $pid.\n";
 
 	while (1) {
 
 		my @windows = FindWindowLike( 0, "$pid" );
 		for (@windows) {
-
+			print STDERR "windows hiden\n\n";
 			ShowWindow( $_, 0 );
 			SetWindowPos( $_, 0, -10000, -10000, 0, 0, 0 );
 
 			return 1;
 		}
-		
+
 		sleep(0.02);
 
 		#print STDERR ".";
@@ -674,15 +764,27 @@ sub __CloseZombie {
 
 	my $self = shift;
 	my $port = shift;
+	my $wait = shift;
+ 
+	# If port is not defined, kill all server with port in ranch 
+	my $range = "-"; 
+ 
+	unless ( defined $port ) {
+		$port = "-";
+		$range = $self->{"startPort"}."-".($self->{"startPort"} +999); 
+	}
 
 	my $processObj;
 	my $perl = $Config{perlpath};
 
-	Win32::Process::Create( $processObj, $perl, "perl " . GeneralHelper->Root() . "\\Managers\\AsyncJobMngr\\CloseZombie.pl -i $port",
+	Win32::Process::Create( $processObj, $perl,
+							"perl " . GeneralHelper->Root() . "\\Managers\\AsyncJobMngr\\CloseZombie.pl -i $port -r $range",
 							1, NORMAL_PRIORITY_CLASS, "." )
 	  || die "Failed to create CloseZombie process.\n";
 
-	$processObj->Wait(INFINITE);
+	if ($wait) {
+		$processObj->Wait(INFINITE);
+	}
 
 }
 
@@ -695,7 +797,7 @@ sub __PortReady {
 	$res{"pidInCAM"} = $pidInCAM;
 
 	my $threvent = new Wx::PlThreadEvent( -1, $PORT_READY_EXPORTER_EVT, \%res );
-	Wx::PostEvent( $self->{"exporterFrm"}, $threvent );
+	Wx::PostEvent( $self->{"abstractQueueFrm"}, $threvent );
 }
 
 sub __PortReadyHandler {

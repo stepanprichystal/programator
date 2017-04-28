@@ -35,7 +35,7 @@ sub new {
 sub OnlyBridges {
 	my $self = shift;
 
-	my $resultItem = ItemResult->new("Rout bridges");
+	my $resultItem = ItemResult->new("Check rout bridges");
 
 	foreach my $s ( $self->{"SRStep"}->GetNestedSteps() ) {
 
@@ -48,7 +48,7 @@ sub OnlyBridges {
 sub OutsideChains {
 	my $self = shift;
 
-	my $resultItem = ItemResult->new("Outside rout");
+	my $resultItem = ItemResult->new("Check outside rout");
 
 	foreach my $s ( $self->{"SRStep"}->GetNestedSteps() ) {
 
@@ -61,7 +61,7 @@ sub OutsideChains {
 sub LeftRoutChecks {
 	my $self = shift;
 
-	my $resultItem = ItemResult->new("Left comp. rout");
+	my $resultItem = ItemResult->new("Check left comp. rout");
 
 	foreach my $s ( $self->{"SRStep"}->GetNestedSteps() ) {
 
@@ -74,7 +74,7 @@ sub LeftRoutChecks {
 sub OutlineToolIsLast {
 	my $self = shift;
 
-	my $resultItem = ItemResult->new("Tools order");
+	my $resultItem = ItemResult->new("Check tools order");
 
 	foreach my $s ( $self->{"SRStep"}->GetNestedSteps() ) {
 
@@ -114,8 +114,8 @@ sub __OnlyBridges {
 			my $m =
 			    "Ve stepu: \""
 			  . $nestedStep->GetStepName()
-			  . "\", ve vrstvě: \"$layer\""
-			  . " není­ ani obrysová vrstva ani můstky s kompenzací­ left. Pokud je pcb na můstky nastav jim kompenzaci left.";
+			  . "\", ve vrstvÄ›: \"$layer\""
+			  . " nenĂ­Â­ ani obrysovĂˇ vrstva ani mĹŻstky s kompenzacĂ­Â­ left. Pokud je pcb na mĹŻstky nastav jim kompenzaci left.";
 
 			$resItem->AddError($m);
 		}
@@ -157,9 +157,9 @@ sub __OutsideChains {
 			my $m =
 			    "Ve stepu: \""
 			  . $nestedStep->GetStepName()
-			  . "\", ve vrstvě: \""
+			  . "\", ve vrstvÄ›: \""
 			  . $layer
-			  . "\" jsou frézy, které by měly být uvnitř obrysové frézy, ale nejsou ($str).";
+			  . "\" jsou frĂ©zy, kterĂ© by mÄ›ly bĂ˝t uvnitĹ™ obrysovĂ© frĂ©zy, ale nejsou ($str).";
 
 			$resItem->AddError($m);
 
@@ -190,9 +190,9 @@ sub __LeftRoutChecks {
 		my @info = map { $_->GetStrInfo() } @leftSeq;
 		my $str = join( "; ", @info );
 		my $m =
-		    "Ve zdrojovém stepu: \""
+		    "Ve zdrojovĂ©m stepu: \""
 		  . $nestedStep->GetStepName()
-		  . "\", ve vrstvě: \"$layer\" jsou frézy s kompenzací­ left, které mají­ nastavenou patku (.foot_down attribut) ($str). Patka však nijak neovlivní flattenovanou vrstvu.";
+		  . "\", ve vrstvÄ›: \"$layer\" jsou frĂ©zy s kompenzacĂ­Â­ left, kterĂ© majĂ­Â­ nastavenou patku (.foot_down attribut) ($str). Patka vĹˇak nijak neovlivnĂ­ flattenovanou vrstvu.";
 
 		$resItem->AddWarning($m);
 	}
@@ -210,9 +210,9 @@ sub __LeftRoutChecks {
 			my $m =
 			    "Ve stepu: \""
 			  . $nestedStep->GetStepName()
-			  . "\", ve vrstvě: \"$layer\" je fréza: "
+			  . "\", ve vrstvÄ›: \"$layer\" je frĂ©za: "
 			  . $oSeq->GetStrInfo()
-			  . ", která má více attributů \"foot_down_0deg\". Oprav to.\n";
+			  . ", kterĂˇ mĂˇ vĂ­ce attributĹŻ \"foot_down_0deg\". Oprav to.\n";
 
 			$resItem->AddError($m);
 		}
@@ -224,9 +224,9 @@ sub __LeftRoutChecks {
 			my $m =
 			    "Ve stepu: \""
 			  . $nestedStep->GetStepName()
-			  . "\", ve vrstvě: \"$layer\" je fréza: "
+			  . "\", ve vrstvÄ›: \"$layer\" je frĂ©za: "
 			  . $oSeq->GetStrInfo()
-			  . ", která má více atributů \"foot_down_270deg\". Oprav to.\n";
+			  . ", kterĂˇ mĂˇ vĂ­ce atributĹŻ \"foot_down_270deg\". Oprav to.\n";
 
 			$resItem->AddError($m);
 		}
@@ -245,9 +245,9 @@ sub __LeftRoutChecks {
 				my $m =
 				    "Ve stepu: \""
 				  . $nestedStep->GetStepName()
-				  . "\", ve vrstvě: \"$layer\" je \"feature\" ("
+				  . "\", ve vrstvÄ›: \"$layer\" je \"feature\" ("
 				  . $f->{"id"}
-				  . "), které má­ zároveň atribut \"foot_down_0deg\" i \"foot_down_270deg\". Oprav to.\n";
+				  . "), kterĂ© mĂˇÂ­ zĂˇroveĹ� atribut \"foot_down_0deg\" i \"foot_down_270deg\". Oprav to.\n";
 
 				$resItem->AddError($m);
 			}
@@ -266,10 +266,10 @@ sub __LeftRoutChecks {
 			my $m =
 			    "Ve stepu: \""
 			  . $nestedStep->GetStepName()
-			  . "\", ve vrstvě: \"$layer\" jsou jední­m nástrojem: \""
+			  . "\", ve vrstvÄ›: \"$layer\" jsou jednĂ­Â­m nĂˇstrojem: \""
 			  . $ch->GetStrInfo
-			  . "\" definovány orbysové i neobrysové frézy dohromady - nelze. "
-			  . " Každá obrysová fréza musí mít svůj vlastní \"chain\".\n";
+			  . "\" definovĂˇny orbysovĂ© i neobrysovĂ© frĂ©zy dohromady - nelze. "
+			  . " KaĹľdĂˇ obrysovĂˇ frĂ©za musĂ­ mĂ­t svĹŻj vlastnĂ­ \"chain\".\n";
 
 			$resItem->AddError($m);
 		}
@@ -287,10 +287,10 @@ sub __LeftRoutChecks {
 			my $m =
 			    "Ve stepu: \""
 			  . $nestedStep->GetStepName()
-			  . "\", ve vrstvě: \"$layer\" je jední­m nástrojem: \""
+			  . "\", ve vrstvÄ›: \"$layer\" je jednĂ­Â­m nĂˇstrojem: \""
 			  . $ch->GetStrInfo
-			  . "\" definováno více obrysových vrstev frézy dohromady - nelze. "
-			  . " Každá obrysová fréza musí mít svůj vlastní \"chain\".\n";
+			  . "\" definovĂˇno vĂ­ce obrysovĂ˝ch vrstev frĂ©zy dohromady - nelze. "
+			  . " KaĹľdĂˇ obrysovĂˇ frĂ©za musĂ­ mĂ­t svĹŻj vlastnĂ­ \"chain\".\n";
 
 			$resItem->AddError($m);
 		}
@@ -336,9 +336,9 @@ sub __OutlineToolIsLast {
 					my $m =
 					    "Ve stepu: \""
 					  . $nestedStep->GetStepName()
-					  . "\", ve vrstvě: \"$layer\" jsou špatně seřazené frézy. Fréza "
+					  . "\", ve vrstvÄ›: \"$layer\" jsou ĹˇpatnÄ› seĹ™azenĂ© frĂ©zy. FrĂ©za "
 					  . $chSeq->GetStrInfo()
-					  . " nesmí­ být za obrysovými frézami. Oprav to.\n";
+					  . " nesmĂ­Â­ bĂ˝t za obrysovĂ˝mi frĂ©zami. Oprav to.\n";
 
 					$resItem->AddError($m);
 

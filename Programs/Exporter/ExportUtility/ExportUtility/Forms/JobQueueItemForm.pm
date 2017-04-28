@@ -5,7 +5,7 @@
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Programs::Exporter::ExportUtility::ExportUtility::Forms::JobQueueItemForm;
-use base qw(Widgets::Forms::CustomQueue::MyWxCustomQueueItem);
+use base qw(Managers::AbstractQueue::AbstractQueue::Forms::JobQueueItemForm);
 
 #3th party library
 use Wx;
@@ -18,43 +18,35 @@ use aliased 'Packages::Events::Event';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'Widgets::Forms::ErrorIndicator::ErrorIndicator';
 use aliased 'Widgets::Forms::ResultIndicator::ResultIndicator';
-use aliased 'Programs::Exporter::DataTransfer::Enums' => 'EnumsTransfer';
+use aliased 'Managers::AsyncJobMngr::Enums' => 'EnumsJobMngr';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
 
 sub new {
-	my $class        = shift;
-	my $parent       = shift;
-	my $jobId        = shift;
-	my $taskId       = shift;
-	my $exportedData = shift;
-	my $produceMngr  = shift;
-	my $taskMngr     = shift;
-	my $groupMngr    = shift;
-	my $itemMngr     = shift;
+	my $class       = shift;
+	my $parent      = shift;
+	my $jobId       = shift;
+	my $taskId      = shift;
+	my $taskData    = shift;
+	my $produceMngr = shift;
+	my $taskMngr    = shift;
+	my $groupMngr   = shift;
+	my $itemMngr    = shift;
 
-	my $self = $class->SUPER::new( $parent, $taskId );
+	my $self = $class->SUPER::new( $parent, $jobId, $taskId, $taskData, $taskMngr, $groupMngr, $itemMngr );
 
 	bless($self);
 
 	# PROPERTIES
-	$self->{"jobId"}        = $jobId;
-	$self->{"taskId"}       = $taskId;
-	$self->{"exportedData"} = $exportedData;
-
 	$self->{"produceMngr"} = $produceMngr;
-	$self->{"taskMngr"}    = $taskMngr;
-	$self->{"groupMngr"}   = $groupMngr;
-	$self->{"itemMngr"}    = $itemMngr;
 
 	$self->__SetLayout();
 
 	# EVENTS
+
 	$self->{"onProduce"} = Event->new();
-	$self->{"onAbort"}   = Event->new();
-	$self->{"onRemove"}  = Event->new();
 
 	return $self;
 }
@@ -71,17 +63,25 @@ sub SetProgress {
 	$self->{"percentageTxt"}->SetLabel( $value . "%" );
 }
 
+sub SetJobItemAutoRemove {
+	my $self  = shift;
+	my $sec = shift;
+
+	$self->{"btnRemove"}->SetLabel("Remove ($sec)");	 
+}
+
+
 # Set export indicators
 
-sub SetExportResult {
-	my $self             = shift;
-	my $result           = shift;	 # tell if there was error during export
+sub SetTaskResult {
+	my $self   = shift;
+	my $result = shift;    # tell if there was error during export
 
 	my $aborted          = shift;
 	my $jobSentToProduce = shift;    # tell if job was sent to produce
 
-	my $value     = $self->{"exportedData"}->GetToProduce();
-	my $toProduce = $self->{"exportedData"}->GetToProduce();    # tell if user check sent to produce chcekbox
+	my $value     = $self->{"taskData"}->GetToProduce();
+	my $toProduce = $self->{"taskData"}->GetToProduce();    # tell if user check sent to produce chcekbox
 
 	if ( $result eq EnumsGeneral->ResultType_FAIL ) {
 
@@ -129,14 +129,14 @@ sub SetExportResult {
 	$self->{"exportRI"}->SetStatus($result);
 }
 
-sub SetExportErrorCnt {
+sub SetTaskErrorCnt {
 	my $self  = shift;
 	my $count = shift;
 
 	$self->{"exportErrInd"}->SetErrorCnt($count);
 }
 
-sub SetExportWarningCnt {
+sub SetTaskWarningCnt {
 	my $self  = shift;
 	my $count = shift;
 
@@ -183,15 +183,11 @@ sub SetStatus {
 sub SetItemOrder {
 	my $self = shift;
 
-	my $pos = ( $self->GetPosition() + 1 ) . ")";
+	my $pos = ( $self->GetPosition() + 1 );
 
 	$self->{"orderTxt"}->SetLabel($pos);
 }
 
-sub GetTaskId {
-	my $self = shift;
-	return $self->{"taskId"};
-}
 
 # ==============================================
 # ITEM QUEUE HANDLERS
@@ -202,18 +198,6 @@ sub __OnProduce {
 
 	$self->{"onProduce"}->Do( $self->{"taskId"} );
 
-}
-
-sub __OnAbort {
-	my $self = shift;
-
-	$self->{"onAbort"}->Do( $self->{"taskId"} );
-}
-
-sub __OnRemove {
-	my $self = shift;
-
-	$self->{"onRemove"}->Do( $self->{"taskId"} );
 }
 
 # ========================================================================
@@ -229,7 +213,11 @@ sub __SetLayout {
 
 	my $orderPnl = Wx::Panel->new( $self, -1, [ -1, -1 ], [ 40, 40 ] );
 	$orderPnl->SetBackgroundColour( Wx::Colour->new( 255, 200, 10 ) );
-	my $orderTxt = Wx::StaticText->new( $orderPnl, -1, "0)", [ -1, -1 ] );
+	my $orderTxt = Wx::StaticText->new( $orderPnl, -1, "0", [ -1, -1 ] );
+	
+	my $fontLblBold = Wx::Font->new( 11, &Wx::wxFONTFAMILY_DEFAULT, &Wx::wxFONTSTYLE_NORMAL, &Wx::wxFONTWEIGHT_BOLD );
+	$orderTxt->SetForegroundColour( Wx::Colour->new( 98, 75, 0 ) );    # set text color
+	$orderTxt->SetFont($fontLblBold);                                   # set text color
 
 	my $title = $self->__SetLayoutTitle();
 
@@ -244,9 +232,9 @@ sub __SetLayout {
 
 	my $result = $self->__SetLayoutResult();
 
-	my $btnProduce = Wx::Button->new( $self, -1, "Produce", &Wx::wxDefaultPosition, [ 60, 20 ] );
-	my $btnAbort   = Wx::Button->new( $self, -1, "Abort",   &Wx::wxDefaultPosition, [ 60, 20 ] );
-	my $btnRemove  = Wx::Button->new( $self, -1, "Remove",  &Wx::wxDefaultPosition, [ 60, 20 ] );
+	my $btnProduce = Wx::Button->new( $self, -1, "Produce", &Wx::wxDefaultPosition, [ 55, 20 ] );
+	my $btnAbort   = Wx::Button->new( $self, -1, "Abort",   &Wx::wxDefaultPosition, [ 55, 20 ] );
+	my $btnRemove  = Wx::Button->new( $self, -1, "Remove",  &Wx::wxDefaultPosition, [ 80, 20 ] );
 
 	$btnRemove->Disable();
 
@@ -257,14 +245,14 @@ sub __SetLayout {
 
 	# DEFINE EVENTS
 	Wx::Event::EVT_BUTTON( $btnProduce, -1, sub { $self->__OnProduce(@_) } );
-	Wx::Event::EVT_BUTTON( $btnAbort,   -1, sub { $self->__OnAbort(@_) } );
-	Wx::Event::EVT_BUTTON( $btnRemove,  -1, sub { $self->__OnRemove(@_) } );
+	Wx::Event::EVT_BUTTON( $btnAbort,   -1, sub { $self->_OnAbort(@_) } );
+	Wx::Event::EVT_BUTTON( $btnRemove,  -1, sub { $self->_OnRemove(@_) } );
 
 	# DEFINE STRUCTURE
 
 	$szMain->Add( 0, 40, 0 );
 
-	$orderSz->Add( $orderTxt, 0, &Wx::wxLEFT | &Wx::wxALIGN_CENTER_VERTICAL | &Wx::wxALIGN_CENTER, 10 );
+	$orderSz->Add( $orderTxt, 0, &Wx::wxLEFT | &Wx::wxALIGN_CENTER_VERTICAL | &Wx::wxALIGN_CENTER, 15 );
 
 	$szMain->Add( $orderPnl, 0, &Wx::wxEXPAND );
 	$szMain->Add( $title,    0, &Wx::wxEXPAND );
@@ -272,19 +260,19 @@ sub __SetLayout {
 
 	$szMain->Add( $percentageTxt, 0, &Wx::wxALIGN_CENTER_VERTICAL | &Wx::wxLEFT, 10 );
 
-	$szMain->Add( $stateTxt, 0, &Wx::wxALIGN_CENTER_VERTICAL | &Wx::wxLEFT, 6 );
+	$szMain->Add( $stateTxt, 1, &Wx::wxALIGN_CENTER_VERTICAL | &Wx::wxLEFT, 6 );
 
-	$szMain->Add( $self->__GetDelimiter(), 0, &Wx::wxEXPAND );    # add delimiter
+	$szMain->Add( $self->_GetDelimiter(), 0, &Wx::wxEXPAND );    # add delimiter
 
 	$szMain->Add( $toptions, 0, &Wx::wxEXPAND | &Wx::wxLEFT, 5 );
 
-	$szMain->Add( $self->__GetDelimiter($self), 0, &Wx::wxEXPAND );    # add delimiter
+	$szMain->Add( $self->_GetDelimiter($self), 0, &Wx::wxEXPAND );    # add delimiter
 
 	$szMain->Add( $result, 0, &Wx::wxEXPAND | &Wx::wxLEFT, 5 );
 
-	$szMain->Add( $btnProduce, 0, &Wx::wxEXPAND | &Wx::wxLEFT, 15 );
-	$szMain->Add( $btnAbort,   0, &Wx::wxEXPAND | &Wx::wxLEFT, 2 );
-	$szMain->Add( $btnRemove,  0, &Wx::wxEXPAND | &Wx::wxLEFT, 2 );
+	$szMain->Add( $btnProduce, 0, &Wx::wxEXPAND | &Wx::wxLEFT, 14 );
+	$szMain->Add( $btnAbort,   0, &Wx::wxEXPAND | &Wx::wxLEFT, 1 );
+	$szMain->Add( $btnRemove,  0, &Wx::wxEXPAND | &Wx::wxLEFT, 1 );
 
 	$orderPnl->SetSizer($orderSz);
 
@@ -344,8 +332,8 @@ sub __SetLayoutOptions {
 
 	# DEFINE CONTROLS
 
-	my $asyncChb         = Wx::CheckBox->new( $self, -1, "On background",   [ -1, -1 ], [ 130, 20 ] );
-	my $sentToProduceChb = Wx::CheckBox->new( $self, -1, "Sent to produce", [ -1, -1 ], [ 130, 20 ] );
+	my $asyncChb         = Wx::CheckBox->new( $self, -1, "On background",   [ -1, -1 ], [ 120, 20 ] );
+	my $sentToProduceChb = Wx::CheckBox->new( $self, -1, "Sent to produce", [ -1, -1 ], [ 120, 20 ] );
 
 	$asyncChb->Disable();
 	$sentToProduceChb->Disable();
@@ -430,7 +418,7 @@ sub __SetLayoutResult {
 sub __SetExportTime {
 	my $self = shift;
 
-	my $value = $self->{"exportedData"}->GetExportTime();
+	my $value = $self->{"taskData"}->GetTaskTime();
 
 	$self->{"jobTimeTxt"}->SetLabel($value);
 }
@@ -438,13 +426,13 @@ sub __SetExportTime {
 sub __SetExportMode {
 	my $self = shift;
 
-	my $value = $self->{"exportedData"}->GetExportMode();
+	my $value = $self->{"taskData"}->GetTaskMode();
 
-	if ( $value eq EnumsTransfer->ExportMode_SYNC ) {
+	if ( $value eq EnumsJobMngr->TaskMode_SYNC ) {
 
 		$value = 0;
 	}
-	elsif ( $value eq EnumsTransfer->ExportMode_ASYNC ) {
+	elsif ( $value eq EnumsJobMngr->TaskMode_ASYNC ) {
 
 		$value = 1;
 	}
@@ -454,7 +442,7 @@ sub __SetExportMode {
 
 sub __SetToProduce {
 	my $self  = shift;
-	my $value = $self->{"exportedData"}->GetToProduce();
+	my $value = $self->{"taskData"}->GetToProduce();
 
 	$self->{"sentToProduceChb"}->SetValue($value);
 }
@@ -462,21 +450,12 @@ sub __SetToProduce {
 sub __SetToProduceBtn {
 	my $self = shift;
 
-	my $value = $self->{"exportedData"}->GetToProduce();
-	if ( $self->{"exportedData"}->GetToProduce() ) {
+	my $value = $self->{"taskData"}->GetToProduce();
+	if ( $self->{"taskData"}->GetToProduce() ) {
 		$self->{"btnProduce"}->Disable();
 	}
 
 	$self->{"sentToProduceChb"}->SetValue($value);
-}
-
-sub __GetDelimiter {
-	my $self = shift;
-
-	my $pnl = Wx::Panel->new( $self, -1, [ -1, -1 ], [ 2, 2 ] );
-	$pnl->SetBackgroundColour( Wx::Colour->new( 150, 150, 150 ) );
-
-	return $pnl;
 }
 
 #-------------------------------------------------------------------------------------------#

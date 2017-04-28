@@ -25,7 +25,7 @@ use aliased 'Programs::Exporter::ExportChecker::Groups::GroupDataMngr';
 use aliased 'Programs::Exporter::ExportChecker::Groups::GerExport::Model::GerCheckData';
 use aliased 'Programs::Exporter::ExportChecker::Groups::GerExport::Model::GerPrepareData';
 use aliased 'Programs::Exporter::ExportChecker::Groups::GerExport::Model::GerExportData';
-use aliased 'Programs::Exporter::UnitEnums';
+use aliased 'Programs::Exporter::ExportUtility::UnitEnums';
 use aliased 'Programs::Exporter::ExportChecker::Groups::GerExport::View::GerUnitForm';
 use aliased 'Programs::Exporter::ExportChecker::Groups::GerExport::View::GerUnitFormEvt';
 

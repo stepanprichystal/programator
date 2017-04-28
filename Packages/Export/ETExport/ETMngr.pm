@@ -57,7 +57,7 @@ sub Run {
 	$self->{"exportIPC"}->Export();
 }
  
-sub ExportItemsCount {
+sub TaskItemsCount {
 	my $self = shift;
 
 	my $totalCnt = 0;

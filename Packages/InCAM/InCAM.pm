@@ -82,6 +82,7 @@ package Packages::InCAM::InCAM;
 use Exporter;
 use Socket;
 use Time::HiRes;
+use IO::Socket;
 
 #my library
 use aliased 'Packages::InCAM::Helper';
@@ -294,7 +295,7 @@ sub openSocket {
 
 	#print STDERR "\n\nBEFORESOCKET OPEN 2 %%%%%%%%%%%%%%%%%%  %%%%%%%%%%\n\n";
 
-	use IO::Socket;
+	
 
 	#print STDERR "\n\nBEFORESOCKET OPEN 3 %%%%%%%%%%%%%%%%%%  %%%%%%%%%%\n\n";
 
@@ -416,91 +417,91 @@ sub GetExceptionsError {
 	return \@exceptions;
 }
 
-# This function start to read log, which is created when InCAM editor is launched
-# Function open tihis log, read and pass it to another "custom" log
-# this custom log contain special "stamps", which tell where InCAM exception start (see PutStampToLog)
-sub StarLog {
-	my $self     = shift;
-	my $pidInCAM = shift;
-	my $logId    = shift;    # this id will be contained in logfile name
+## This function start to read log, which is created when InCAM editor is launched
+## Function open tihis log, read and pass it to another "custom" log
+## this custom log contain special "stamps", which tell where InCAM exception start (see PutStampToLog)
+#sub StarLog {
+#	my $self     = shift;
+#	my $pidInCAM = shift;
+#	my $logId    = shift;    # this id will be contained in logfile name
+#
+#	print STDERR "\n\n\n PUT STAMP START 1 \n\n\n\n";
+#
+#	unless ($logId) {
+#		$logId = $pidInCAM;
+#	}
+#
+#	unless ($pidInCAM) {
+#		return;
+#	}
+#
+#	print STDERR "\n\n\n PUT STAMP START 2 \n\n\n\n";
+#
+#	my $logFile = FileHelper->GetFileNameByPattern( EnumsPaths->Client_INCAMTMP, "." . $pidInCAM );
+#
+#	if ($logFile) {
+#
+#		my $customLog = EnumsPaths->Client_INCAMTMPOTHER . "incamLog." . $logId;
+#		$self->{"customLogPath"} = $customLog;
+#		if ( -e $customLog ) {
+#			unlink($customLog);
+#		}
+#
+#		my $fLog;
+#		my $fLogCustom;
+#
+#		if ( open( $fLog, '<', $logFile ) ) {
+#
+#			my @input = <$fLog>;
+#
+#			# Let fLog open ...
+#
+#			if ( open( $fLogCustom, '>', $customLog ) ) {
+#
+#				print $fLogCustom @input;
+#
+#				close($fLogCustom);
+#
+#				# Let $fLogCustom open ..
+#
+#				$self->{"fhLog"}       = $fLog;
+#				$self->{"fhLogCustom"} = $fLogCustom;
+#
+#			}
+#
+#		}
+#
+#	}
+#}
 
-	print STDERR "\n\n\n PUT STAMP START 1 \n\n\n\n";
-
-	unless ($logId) {
-		$logId = $pidInCAM;
-	}
-
-	unless ($pidInCAM) {
-		return;
-	}
-
-	print STDERR "\n\n\n PUT STAMP START 2 \n\n\n\n";
-
-	my $logFile = FileHelper->GetFileNameByPattern( EnumsPaths->Client_INCAMTMP, "." . $pidInCAM );
-
-	if ($logFile) {
-
-		my $customLog = EnumsPaths->Client_INCAMTMPOTHER . "incamLog." . $logId;
-		$self->{"customLogPath"} = $customLog;
-		if ( -e $customLog ) {
-			unlink($customLog);
-		}
-
-		my $fLog;
-		my $fLogCustom;
-
-		if ( open( $fLog, '<', $logFile ) ) {
-
-			my @input = <$fLog>;
-
-			# Let fLog open ...
-
-			if ( open( $fLogCustom, '>', $customLog ) ) {
-
-				print $fLogCustom @input;
-
-				close($fLogCustom);
-
-				# Let $fLogCustom open ..
-
-				$self->{"fhLog"}       = $fLog;
-				$self->{"fhLogCustom"} = $fLogCustom;
-
-			}
-
-		}
-
-	}
-}
-
-# Method puts "stamp", which is some unique ID to custom log
-# Later, we can explorer this and find stams and tell, which logs line
-# belongs to exception error
-sub PutStampToLog {
-	my $self  = shift;
-	my $stamp = shift;
-
-	print STDERR "\n\n\n PUT STAMP  \n\n\n\n";
-
-	if ( $self->{"fhLog"} && $self->{"fhLogCustom"} ) {
-
-		my $stampText = "ExceptionId:$stamp";
-
-		my $fLog       = $self->{"fhLog"};
-		my $fLogCustom = $self->{"fhLogCustom"};
-
-		seek $fLog, 0, 0;
-		my @new_input = <$fLog>;
-
-		if ( open( $fLogCustom, '>>', $self->{"customLogPath"} ) ) {
-
-			print $fLogCustom @new_input;
-
-			print $fLogCustom $stampText;
-			close($fLogCustom);
-		}
-	}
-}
+## Method puts "stamp", which is some unique ID to custom log
+## Later, we can explorer this and find stams and tell, which logs line
+## belongs to exception error
+#sub PutStampToLog {
+#	my $self  = shift;
+#	my $stamp = shift;
+#
+#	print STDERR "\n\n\n PUT STAMP  \n\n\n\n";
+#
+#	if ( $self->{"fhLog"} && $self->{"fhLogCustom"} ) {
+#
+#		my $stampText = "ExceptionId:$stamp";
+#
+#		my $fLog       = $self->{"fhLog"};
+#		my $fLogCustom = $self->{"fhLogCustom"};
+#
+#		seek $fLog, 0, 0;
+#		my @new_input = <$fLog>;
+#
+#		if ( open( $fLogCustom, '>>', $self->{"customLogPath"} ) ) {
+#
+#			print $fLogCustom @new_input;
+#
+#			print $fLogCustom $stampText;
+#			close($fLogCustom);
+#		}
+#	}
+#}
 
 # When InCAM error happens during COM function:
 # - if  HandleException = 0, InCAM package raise exception and die
@@ -564,7 +565,7 @@ sub __Connect {
 	#	}
 
 	if ($sOpen) {
-		my $end = Time::HiRes::gettimeofday();
+		 
 
 		#printf( "%.2f\n", $end - $start );
 		#print "YES";
@@ -631,17 +632,17 @@ sub __GetReply {
 #
 #}
 
-sub __LogExist {
-	my $self = shift;
-
-	if ( $self->{"fhLog"} && $self->{"fhLogCustom"} ) {
-		return 1;
-	}
-	else {
-		return 0;
-	}
-
-}
+#sub __LogExist {
+#	my $self = shift;
+#
+#	if ( $self->{"fhLog"} && $self->{"fhLogCustom"} ) {
+#		return 1;
+#	}
+#	else {
+#		return 0;
+#	}
+#
+#}
 
 sub __SpecialServerCmd {
 	my $self = shift;
@@ -830,11 +831,11 @@ sub COM {
 		$self->{"exception"} = $ex;
 		push( @{ $self->{"exceptions"} }, $ex );
 
-		# save exeption stam to log
-		if ( $self->__LogExist() ) {
-
-			$self->PutStampToLog( $ex->GetExceptionId() );
-		}
+#		# save exeption stam to log
+#		if ( $self->__LogExist() ) {
+#
+#			$self->PutStampToLog( $ex->GetExceptionId() );
+#		}
 
 		if ( $self->{"HandleException"} == 0 ) {
 			print STDERR "die when inCAM\n";

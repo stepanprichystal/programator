@@ -1,4 +1,4 @@
-
+#öß§²
 #-------------------------------------------------------------------------------------------#
 # Description: Job manager provide szstem for running more then one InCAM asynchronously
 # in own child thread. Is responsible for:
@@ -6,6 +6,9 @@
 # Properly Exiting after job done, exiting after Force exit by user
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
+
+our $stylePath = undef;    # global variable, which set path to configuration file
+
 package Managers::AsyncJobMngr::AsyncJobMngr;
 use base 'Wx::App';
 
@@ -30,8 +33,9 @@ use aliased 'Managers::MessageMngr::MessageMngr';
 use aliased 'Managers::AsyncJobMngr::Enums';
 use aliased 'Widgets::Forms::MyTaskBarIcon';
 use aliased 'Managers::AsyncJobMngr::SettingsHelper';
+use aliased 'Managers::AbstractQueue::AppConf';
 
-#use aliased 'Programs::Exporter::ThreadBase';
+#use aliased 'Programs::AbstractQueue::ThreadBase';
 use aliased 'Packages::Events::Event';
 
 #-------------------------------------------------------------------------------------------#
@@ -39,22 +43,22 @@ use aliased 'Packages::Events::Event';
 #-------------------------------------------------------------------------------------------#
 
 sub new {
-	my $self      = shift;
-	my $runMode   = shift;
-	my $parent    = shift;
-	my $title     = shift;
-	my $dimension = shift;
+	my $class   = shift;
+	my $runMode = shift;
+	my $parent  = shift;
 
 	# Get name of caller package
 	my ( $packageFull, $filename, $line ) = caller;
 
-	$self = {};
+	my $self = {};
 
 	unless ($parent) {
 		$self = Wx::App->new( \&OnInit );
 	}
 
 	bless($self);
+
+	$self->__SetConfPath($class);
 
 	# PROPERTIES
 
@@ -69,16 +73,18 @@ sub new {
 
 	$self->{"settingsHelper"} = SettingsHelper->new( $self->{"serverMngr"}, $packageFull );
 
+	$self->{"messageMngr"} = MessageMngr->new( AppConf->GetValue("appName") );
+
 	# EVENTS
 
 	$self->{'onJobStateChanged'} = Event->new();
 	$self->{'onJobProgressEvt'}  = Event->new();
 	$self->{'onJobMessageEvt'}   = Event->new();
 	$self->{'onRunJobWorker'}    = Event->new();
-	
-	$self->{'onJomMngrClose'}    = Event->new(); # reise right imidiatelly before destroy this app
 
-	my $mainFrm = $self->__SetLayout( $parent, $title, $dimension );
+	$self->{'onJomMngrClose'} = Event->new();    # reise right imidiatelly before destroy this app
+
+	my $mainFrm = $self->__SetLayout($parent);
 
 	$self->__RunTimers();
 
@@ -98,6 +104,7 @@ sub _AddJobToQueue {
 	my $self       = shift;
 	my $pcbId      = shift;
 	my $uniqueId   = shift;    #unique task id
+	my $jobStrData = shift;    # string data, job process is based on them
 	my $serverInfo = shift;    #server info, if external incam server is already prepared
 
 	# new job item
@@ -107,6 +114,7 @@ sub _AddJobToQueue {
 					"state"      => Enums->JobState_WAITINGQUEUE,
 					"port"       => -1,
 					"serverInfo" => $serverInfo,
+					"jobStrData" => $jobStrData
 	);
 
 	push( @{ $self->{"jobs"} }, \%jobInfo );
@@ -114,7 +122,7 @@ sub _AddJobToQueue {
 	# TODO SMAZAT
 	#$jobInfo{"port"}  = undef;
 	#$jobInfo{"state"} = Enums->JobState_RUNNING;
-	#$self->{"threadMngr"}->RunNewExport( $uniqueId, $jobInfo{"port"}, $pcbId );
+	#$self->{"threadMngr"}->RunNewtask( $uniqueId, $jobInfo{"port"}, $pcbId );
 
 	$self->{'onJobStateChanged'}->Do( $jobInfo{"jobGUID"}, $jobInfo{"state"} );
 
@@ -164,7 +172,7 @@ sub _AbortJob {
 
 	my $job = ${ $self->{"jobs"} }[$i];
 
-	if ( $job->{"state"} eq Enums->JobState_RUNNING ) {
+	if ( $job->{"state"} eq Enums->JobState_RUNNING || $job->{"state"} eq Enums->JobState_RESTARTING ) {
 
 		# first exit running thread
 		$self->{"threadMngr"}->ExitThread( $job->{"jobGUID"} );
@@ -190,6 +198,43 @@ sub _AbortJob {
 		Helper->Print( "THREAD with job id: " . $job->{"pcbId"} . " is already abortin, try abort later.......\n" );
 
 	}
+
+}
+
+# Two type of restarting
+
+# If job is not DONE do Force restart by user. How it works:
+# 1) set job stat - restarting
+# 2) do standard abort
+# 3) then after abort, end event is catched and job exit type is changed from exit FORCE to FORCERESTART
+
+# If job is already DONE, only send message gob state change to ExitType_FORCERESTART
+sub _RestartJob {
+	my $self    = shift;
+	my $jobGUID = shift;
+
+	my $jobInf = $self->__GetJobInfo($jobGUID);
+
+	if ( $jobInf->{"state"} ne Enums->JobState_DONE ) {
+
+		# 1)  set job stat - restarting
+		$self->__SetJobState( $jobGUID, Enums->JobState_RESTARTING );
+
+		# 2) do standard abort
+		$self->_AbortJob($jobGUID);
+	}
+	else {
+		#reise event
+		$self->{'onJobStateChanged'}->Do( $jobGUID, Enums->JobState_DONE, Enums->ExitType_FORCERESTART );
+	}
+}
+
+# Continue paused job, set special variable which thread periodically read for STOP/CONTINUE
+sub _ContinueJob {
+	my $self    = shift;
+	my $jobGUID = shift;
+
+	$self->{"threadMngr"}->ContinueThread($jobGUID);
 
 }
 
@@ -253,9 +298,9 @@ sub _SetThreadWorker {
 	#add handler, when new thread start
 	$self->{"threadMngr"}->{"onThreadWorker"}->Add($workerMethod);
 
+	$self->{"threadMngr"}->InitThreadPool();
+
 }
-
-
 
 #-------------------------------------------------------------------------------------------#
 #  Handlers, proccessing events from ThreadMngr, ServerMngr
@@ -274,18 +319,23 @@ sub __PortReadyHandler {
 
 		${ $self->{"jobs"} }[$i]{"port"}  = $d{"port"};
 		${ $self->{"jobs"} }[$i]{"state"} = Enums->JobState_RUNNING;
-		 
-		
-		
+
 		#${ $self->{"jobs"} }[$i]{"port"}  = $d{"port"};#
 
-		my $pcbId   = ${ $self->{"jobs"} }[$i]{"pcbId"};
-		my $jobGUID = ${ $self->{"jobs"} }[$i]{"jobGUID"};
+		my $pcbId          = ${ $self->{"jobs"} }[$i]{"pcbId"};
+		my $jobGUID        = ${ $self->{"jobs"} }[$i]{"jobGUID"};
 		my $externalServer = ${ $self->{"jobs"} }[$i]{"serverInfo"} ? 1 : 0;
+		my $jobStrData     = ${ $self->{"jobs"} }[$i]{"jobStrData"};
 
 		$self->{'onJobStateChanged'}->Do( $jobGUID, Enums->JobState_RUNNING );
 
-		$self->{"threadMngr"}->RunNewExport( $jobGUID, $d{"port"}, $pcbId, $d{"pidInCAM"}, $externalServer);
+		print STDERR "\n\n Job $pcbId IS start running PORT: " . $d{"port"} . " PIDINCAM: " . $d{"pidInCAM"} . "\n\n";
+
+		if ( !defined $d{"pidInCAM"} ) {
+			print STDERR "pidincam is not defined";
+		}
+
+		$self->{"threadMngr"}->RunNewtask( $jobGUID, $jobStrData, $d{"port"}, $pcbId, $d{"pidInCAM"}, $externalServer );
 
 	}
 
@@ -302,12 +352,21 @@ sub __ThreadDoneHandler {
 
 	my $jobInfo = $self->__GetJobInfo( $d{"jobGUID"} );
 	$self->{"serverMngr"}->ReturnServerPort( $jobInfo->{"port"} );
-	$self->__RemoveJob( $d{"jobGUID"} );
+
+	#$self->__RemoveJob( $d{"jobGUID"} );
+
+	# Send message, thread exited FORCE or FORCERESTART or SUCCES
+	# do difference between exit FORCE - by aborting bz user and exit FORCE because of restart
+	if ( $exitType eq Enums->ExitType_FORCE && $jobInfo->{"state"} eq Enums->JobState_RESTARTING ) {
+		$exitType = Enums->ExitType_FORCERESTART;
+	}
+
+	# Set new job state DONE
+	$self->__SetJobState( $jobGUID, Enums->JobState_DONE );
 
 	#reise event
 	$self->{'onJobStateChanged'}->Do( $jobGUID, Enums->JobState_DONE, $exitType );
 }
-
 
 sub __ThreadProgressHandler {
 	my ( $self, $frame, $event ) = @_;
@@ -407,28 +466,30 @@ sub __TakeFromQueueHandler {
 #-------------------------------------------------------------------------------------------#
 
 sub __SetLayout {
+	my $self   = shift;
+	my $parent = shift;
 
-	my $self      = shift;
-	my $parent    = shift;
-	my $title     = shift;
-	my @dimension = @{ shift(@_) };
-
+	my @dimension = ( AppConf->GetValue("windowWidth"), AppConf->GetValue("windowHeight") );
 
 	#main formDefain forms
 	my $mainFrm = MyWxFrame->new(
-		$parent,    # parent window
-		-1,         # ID -1 means any
-		$title,     # title
-
-		[ -1, -1 ], # window position
-		\@dimension,    # size   &Wx::wxSTAY_ON_TOP |
+		$parent,                         # parent window
+		-1,                              # ID -1 means any
+		AppConf->GetValue("appName"),    # title
+		[ -1, -1 ],                      # window position
+		\@dimension,                     # size   &Wx::wxSTAY_ON_TOP |
 		&Wx::wxSTAY_ON_TOP | &Wx::wxSYSTEM_MENU | &Wx::wxCAPTION | &Wx::wxRESIZE_BORDER | &Wx::wxMINIMIZE_BOX | &Wx::wxMAXIMIZE_BOX | &Wx::wxCLOSE_BOX
 	);
 
+	my $iconPath = GeneralHelper->Root() . "/Resources/Images/" . AppConf->GetValue("appIcon");
+
+	$mainFrm->SetCustomIcon($iconPath);
+
 	if ( $self->{"runMode"} eq Enums->RUNMODE_TRAY ) {
 
-		my $trayicon = MyTaskBarIcon->new( "Exporter", $mainFrm );
-		$trayicon->AddMenuItem( "Exit Exporter", sub { $self->__OnClose() } );
+		my $trayicon = MyTaskBarIcon->new( AppConf->GetValue("appNameTray"), $mainFrm, $iconPath );
+		$trayicon->AddMenuItem( "Exit " . AppConf->GetValue("appNameTray"), sub { $self->__OnClose() } );
+		$self->{"trayicon"} = $trayicon;
 		$mainFrm->{'onClose'}->Add( sub { $mainFrm->Hide(); } );    #Set onClose handler
 
 	}
@@ -440,6 +501,8 @@ sub __SetLayout {
 	$self->{"mainFrm"} = $mainFrm;
 
 	#EVENTS
+
+	 
 
 	my $THREAD_DONE_EVT : shared = Wx::NewEventType;
 	Wx::Event::EVT_COMMAND( $self->{"mainFrm"}, -1, $THREAD_DONE_EVT, sub { $self->__ThreadDoneHandler(@_) } );
@@ -454,13 +517,11 @@ sub __SetLayout {
 	Wx::Event::EVT_COMMAND( $self->{"mainFrm"}, -1, $PORT_READY_EVT, sub { $self->__PortReadyHandler(@_) } );
 
 	$self->{"serverMngr"}->Init( $self->{"mainFrm"}, \$PORT_READY_EVT );
+	$self->{"serverMngr"}->InitThreadPool();
 	$self->{"threadMngr"}->Init( $self->{"mainFrm"}, \$THREAD_PROGRESS_EVT, \$THREAD_MESSAGE_EVT, \$THREAD_DONE_EVT );
-
- 
 
 	return $mainFrm;
 }
-
 
 sub __CloseActiveJobs {
 	my ( $self, $frame, $event ) = @_;
@@ -483,20 +544,18 @@ sub __CloseActiveJobs {
 	# jinak cekame ay se spusti pripadne joby, co jsou ve stavu WAITINGPORT
 	if ( scalar( @{$jobsRef} ) == 0 ) {
 		$self->{"timerCloseJobs"}->Stop();
-		
+
 		print STDERR "Destroying main frame 1\n\n";
-		
+
 		$self->{'onJomMngrClose'}->Do();
-		
+
 		$frame->Destroy();
-		$self->ExitMainLoop(); # this line is necessery to console window was exited too
+		$self->ExitMainLoop();    # this line is necessery to console window was exited too
 	}
 }
 
 # Function responsible for properly close threads and servers
 sub __OnClose {
-
-	 
 
 	my ( $self, $mainFrm ) = @_;
 
@@ -505,7 +564,7 @@ sub __OnClose {
 	my $activeJobs = 0;
 
 	# Stop timers - we don't want take another jobs from queue
-	$self->{"timerExport"}->Stop();
+	$self->{"timertask"}->Stop();
 
 	my @jobsName = ();
 
@@ -541,26 +600,23 @@ sub __OnClose {
 		else {
 
 			#Cancel,  thus continue in work..
-			$self->{"timerExport"}->Start(1000);
+			$self->{"timertask"}->Start(1000);
 		}
 
 	}
 	else {
-	 
 
 		# Close or servers, which are waiting or running
 		$self->{"serverMngr"}->SetDestroyOnDemand(0);
-		
+
 		$self->{'onJomMngrClose'}->Do();
- 
+
 		$self->{"mainFrm"}->Destroy();
-		$self->ExitMainLoop(); # this line is necessery to console window was exited too
-		
+		$self->ExitMainLoop();    # this line is necessery to console window was exited too
+
 	}
 
 }
-
-
 
 sub __OnClick {
 
@@ -587,10 +643,10 @@ sub __RemoveJob {
 sub __RunTimers {
 	my $self = shift;
 
-	my $timerExport = Wx::Timer->new( $self->{"mainFrm"}, -1, );
-	Wx::Event::EVT_TIMER( $self->{"mainFrm"}, $timerExport, sub { __TakeFromQueueHandler( $self, @_ ) } );
-	$timerExport->Start(1000);
-	$self->{"timerExport"} = $timerExport;
+	my $timertask = Wx::Timer->new( $self->{"mainFrm"}, -1, );
+	Wx::Event::EVT_TIMER( $self->{"mainFrm"}, $timertask, sub { __TakeFromQueueHandler( $self, @_ ) } );
+	$timertask->Start(1000);
+	$self->{"timertask"} = $timertask;
 
 	my $timerCloseOnDemand = Wx::Timer->new( $self->{"mainFrm"}, -1, );
 	Wx::Event::EVT_TIMER( $self->{"mainFrm"}, $timerCloseOnDemand, sub { $self->{"serverMngr"}->DestroyServersOnDemand(@_) } );
@@ -635,6 +691,21 @@ sub __GetJobInfo {
 	}
 }
 
+# Set path (global variable) to app configuration file
+sub __SetConfPath {
+	my $self   = shift;
+	my $caller = shift;
+
+	# Set path of style configuration file
+	#my $className = ref $self;
+	my @arr = split( "::", $caller );
+	@arr = @arr[ 0 .. ( scalar(@arr) - 4 ) ];
+	my $packagePath = join( "\\", @arr );
+
+	$main::stylePath = GeneralHelper->Root() . "\\" . $packagePath . "\\Config\\Config.txt";
+
+}
+
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#
@@ -644,7 +715,7 @@ sub __GetJobInfo {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	#my $app = Programs::Exporter::AsyncJobMngr->new();
+	#my $app = Programs::AbstractQueue::AsyncJobMngr->new();
 
 	#$app->Test();
 

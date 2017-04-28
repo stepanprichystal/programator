@@ -4,7 +4,7 @@
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Programs::Exporter::ExportUtility::ExportUtility::Forms::JobQueueForm;
-use base qw(Widgets::Forms::CustomQueue::MyWxCustomQueue);
+use base qw(Managers::AbstractQueue::AbstractQueue::Forms::JobQueueForm);
 
 #3th party library
 use Wx;
@@ -16,6 +16,7 @@ use warnings;
 #local library
 use aliased 'Programs::Exporter::ExportUtility::ExportUtility::Forms::JobQueueItemForm';
 use aliased 'Packages::Events::Event';
+use aliased 'Managers::AbstractQueue::AppConf';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -26,38 +27,47 @@ sub new {
 	my $parent    = shift;
 	my $dimension = shift;
 
-	my $self = $class->SUPER::new( $parent, -1, [ -1, -1 ], $dimension );
+	my $self = $class->SUPER::new( $parent, $dimension );
 
 	bless($self);
 
-	# Items references
 	# PROPERTIES
 
 	$self->__SetLayout();
 
 	#EVENTS
-	$self->{"onSelectItemChange"} = Event->new();
-
+ 
+	$self->{"onProduce"}          = Event->new();
+ 
 	return $self;
 }
 
 sub AddItem {
 	my $self        = shift;
-	my $taskId      = shift;
-	my $jobId       = shift;
-	my $exportData  = shift;
-	my $produceMngr = shift;
-	my $taskMngr    = shift;
-	my $groupMngr   = shift;
-	my $itemMngr    = shift;
+	my $task		= shift;
 
-	my $item = JobQueueItemForm->new( $self->GetParentForItem(), $jobId, $taskId, $exportData, $produceMngr, $taskMngr, $groupMngr, $itemMngr );
+	my $taskId      = $task->GetTaskId();
+	my $jobId       = $task->GetJobId();;
+	my $taskData  = $task->GetTaskData();
+	my $produceMngr = $task->ProduceResultMngr();
+	my $taskMngr    = $task->GetTaskResultMngr();
+	my $groupMngr   = $task->GetGroupResultMngr();
+	my $itemMngr    = $task->GetGroupItemResultMngr();
 
-	$self->AddItemToQueue($item);
+	my $item = JobQueueItemForm->new( $self->GetParentForItem(), $jobId, $taskId, $taskData, $produceMngr, $taskMngr, $groupMngr, $itemMngr );
+	
+	$item->{"onProduce"}->Add( sub { $self->{"onProduce"}->Do(@_) } );
 
-	$self->__SetJobOrder();
+	return $self->_AddItem($item);
+}
 
-	return $item;
+sub SetJobItemResult {
+	my $self = shift;
+	my $task = shift;
+
+	my $jobItem = $self->{"jobQueue"}->GetItem( $task->GetTaskId() );
+
+	$jobItem->SetTaskResult( $task->Result(), $task->GetJobAborted(), $task->GetJobSentToProduce() );
 
 }
 
@@ -76,13 +86,28 @@ sub __SetLayout {
 
 	$self->SetItemGap(2);
 
-	$self->SetItemUnselectColor( Wx::Colour->new( 240, 240, 240 ) );
-	$self->SetItemSelectColor( Wx::Colour->new( 215, 230, 251 ) );
+	$self->SetItemUnselectColor( AppConf->GetColor("clrItemUnSelected") );
+	$self->SetItemSelectColor(  AppConf->GetColor("clrItemSelected"));
 
-	# SET EVENTS
+}
 
-	$self->{"onSelectItemChange"}->Add( sub { $self->__OnSelectItem(@_) } );
+sub __OnProduce {
+	my $self = shift;
 
+	$self->{"onProduce"}->Do( $self->{"taskId"} );
+
+}
+
+sub __OnAbort {
+	my $self = shift;
+
+	$self->{"onAbort"}->Do( $self->{"taskId"} );
+}
+
+sub __OnRemove {
+	my $self = shift;
+
+	$self->{"onRemove"}->Do( $self->{"taskId"} );
 }
 
 sub __OnSelectItem {
@@ -90,7 +115,6 @@ sub __OnSelectItem {
 	my $item = shift;
 
 }
-
 
 sub __SetJobOrder {
 	my $self = shift;
@@ -103,7 +127,6 @@ sub __SetJobOrder {
 		$queue[$i]->SetItemOrder();
 	}
 }
-
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

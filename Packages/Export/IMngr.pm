@@ -28,7 +28,7 @@ use Class::Interface;
 
 # Methods
 
-sub ExportItemsCount;
+sub TaskItemsCount;
 
 
  

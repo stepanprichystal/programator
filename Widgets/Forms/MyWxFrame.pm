@@ -36,6 +36,22 @@ sub new {
 	return $self;
 }
 
+# Set nwe BMP icon
+sub SetCustomIcon{
+	my $self = shift;
+	my $iconPath = shift;
+	
+	unless(-e $iconPath){
+		die "icon path $iconPath doesnt exist";
+	}
+ 
+	my $btmIco = Wx::Bitmap->new( $iconPath, &Wx::wxBITMAP_TYPE_BMP );
+	my $icon = Wx::Icon->new();
+	$icon->CopyFromBitmap($btmIco);
+	$self->SetIcon($icon);
+}
+
+
 sub OnClose {
 	my $self = shift;
 
