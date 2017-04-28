@@ -1,6 +1,6 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Manager responsible for AOI files creation
+# Description: Manager responsible for fsch layer
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Packages::PoolMerge::RoutGroup::Helper::RoutHelper;

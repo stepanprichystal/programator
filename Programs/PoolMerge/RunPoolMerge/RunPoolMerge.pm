@@ -33,7 +33,7 @@ sub new {
 	}
 
 	#run pool merger
-	my $isRuning = Helper->CheckRunningInstance("RunPoolMerge.pl");
+	my $isRuning = Helper->CheckRunningInstance("RunPoolMergeScript.pl");
 
 	if ($isRuning) {
 

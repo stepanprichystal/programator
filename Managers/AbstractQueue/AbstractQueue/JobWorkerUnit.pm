@@ -84,15 +84,21 @@ sub _OnItemResultHandler {
 	$self->{"onItemResult"}->Do($itemResult);
 }
 
+sub ResetProgressCounter {
+	my $self       = shift;
+
+		$self->{"processedItemsCount"} = 0;
+}
+
 sub _OnStatusResultHandler {
 	my $self       = shift;
 	my $itemResult = shift;
 	
 	# Delete items rocessed counter, because, group will be processed from begining
-	if($itemResult->{"itemId"} eq EnumsAbstrQ->EventItemType_STOP){
+	#if($itemResult->{"itemId"} eq EnumsAbstrQ->EventItemType_STOP){
 		
-		$self->{"processedItemsCount"} = 0;
-	}
+		#$self->{"processedItemsCount"} = 0;
+	#}
  
 	$self->{"onStatusResult"}->Do($itemResult);
 }

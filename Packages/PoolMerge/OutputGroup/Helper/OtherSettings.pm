@@ -1,6 +1,6 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Manager responsible for AOI files creation
+# Description: Manager responsible
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Packages::PoolMerge::OutputGroup::Helper::OtherSettings;
@@ -19,6 +19,7 @@ use aliased 'CamHelpers::CamHelper';
 use aliased 'CamHelpers::CamAttributes';
 use aliased 'CamHelpers::CamCopperArea';
 use aliased 'Packages::Stackup::StackupDefault';
+use aliased 'Packages::NifFile::NifFile';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -144,8 +145,14 @@ sub __SetPcbClass {
 	my $max = undef;
 	foreach my $jobName (@jobNames) {
 
-		my $constClass = CamAttributes->GetJobAttrByName( $inCAM, $jobName, 'pcb_class' );
+		 my $nif = NifFile->new( $jobName );
 
+		unless ( $nif->Exist() ) {
+			die "nif file doesn't exist " . $jobName;
+		}
+
+		my $constClass = $nif->GetValue("kons_trida");
+ 
 		if ( !defined $constClass || $constClass < 3 ) {
 			$result = 0;
 			$$mess .= "Missing construction class in pcb \"$jobName\". Minimal class is \"class 3\"";

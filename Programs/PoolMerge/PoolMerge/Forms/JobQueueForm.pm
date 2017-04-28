@@ -71,8 +71,7 @@ sub SetJobItemResult {
 
 }
 
-
-
+ 
 
 sub RemoveJobFromQueue {
 	my $self   = shift;

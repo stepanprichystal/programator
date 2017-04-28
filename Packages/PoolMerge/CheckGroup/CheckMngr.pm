@@ -1,6 +1,6 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Manager responsible for AOI files creation
+# Description: Manager responsible checking jobs before merging
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Packages::PoolMerge::CheckGroup::CheckMngr;
@@ -43,6 +43,7 @@ sub new {
 sub Run {
 	my $self = shift;
 
+	
 	my @ordersInfo = $self->{"poolInfo"}->GetOrdersInfo();
 
 	# 1) Choose master job
@@ -69,7 +70,7 @@ sub Run {
 	# 7) Check if nif are ok
 	my $childStatusRes = $self->_GetNewItem("Child job status");
 	$mess           = "";
-#
+
 #	unless ( $self->{"checkHelper"}->CheckChildJobStatus(  $masterOrder, \$mess ) ) {
 #
 #		$childStatusRes->AddError($mess);
@@ -100,8 +101,7 @@ sub Run {
 	$self->_OnPoolItemResult($jobsClosedRes);
 	
 	
-	
-	
+ 
 	
     # Let "pool merger" know, master job was chosen
 	# Then "pool merger" open it
@@ -172,7 +172,7 @@ sub Run {
 sub TaskItemsCount {
 	my $self = shift;
 
-	my $totalCnt = 7;    # controls
+	my $totalCnt = 8;    # controls
 	return $totalCnt;
 
 }

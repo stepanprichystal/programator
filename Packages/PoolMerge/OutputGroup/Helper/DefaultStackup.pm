@@ -1,6 +1,6 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Manager responsible for AOI files creation
+# Description: Create default stackup
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Packages::PoolMerge::OutputGroup::Helper::DefaultStackup;

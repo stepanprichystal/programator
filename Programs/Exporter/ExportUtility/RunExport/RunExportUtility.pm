@@ -4,6 +4,8 @@
 # First check if some instance is not already running, if not launch exporter
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
+
+
 package Programs::Exporter::ExportUtility::RunExport::RunExportUtility;
 
 #3th party library
@@ -14,11 +16,13 @@ use Win32::Process;
 use Win32::Process::Info;
 use Win32::Process::List;
 
+
 #local library
 use aliased 'Helpers::GeneralHelper';
 use aliased 'Managers::MessageMngr::MessageMngr';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'Managers::AbstractQueue::Helper';
+use aliased 'Managers::AbstractQueue::AppConf';
 
 sub new {
 	my $self = shift;
@@ -31,9 +35,10 @@ sub new {
 	if(!defined $userLaunch) {
 		$userLaunch = 1;
 	}
+ 
 
 	#run exporter
-	my $isRuning = Helper->CheckRunningInstance("RunExportUtility.pl");
+	my $isRuning = Helper->CheckRunningInstance("RunExportUtilityScript.pl");
 
 	if ($isRuning) {
 

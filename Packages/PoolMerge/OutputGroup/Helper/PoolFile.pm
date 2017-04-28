@@ -1,6 +1,6 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Manager responsible for AOI files creation
+# Description: Manager responsible for pool file
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Packages::PoolMerge::OutputGroup::Helper::PoolFile;

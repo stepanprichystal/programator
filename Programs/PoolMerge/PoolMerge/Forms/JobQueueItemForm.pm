@@ -64,6 +64,15 @@ sub SetProgress {
 	$self->{"percentageTxt"}->SetLabel( $value . "%" );
 }
 
+sub SetJobItemAutoRemove {
+	my $self  = shift;
+	my $sec = shift;
+
+	$self->{"btnRemove"}->SetLabel("Remove ($sec)");	 
+}
+
+
+
 # Set merge indicators
 
 sub SetTaskResult {
@@ -127,7 +136,7 @@ sub SetToExportResult {
 	if ($jobSentToExport) {
 
 		$stauts = EnumsGeneral->ResultType_OK;
-		$self->SetStatus("Job was sent \"to Export\"");
+		$self->SetStatus("Job was sent \"to export\"");
 		$self->{"btnToExport"}->Disable();
 		$self->{"btnRestart"}->Disable();
 	}

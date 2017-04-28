@@ -26,7 +26,7 @@ use aliased 'Enums::EnumsGeneral';
 use aliased 'Managers::AbstractQueue::Unit::UnitBase';
 
 #use aliased 'Connectors::HeliosConnector::HegMethods';
-
+use aliased 'Programs::Exporter::ExportUtility::RunExport::RunExportUtility';
 use aliased 'Managers::AbstractQueue::TaskResultMngr';
 
 #-------------------------------------------------------------------------------------------#
@@ -201,29 +201,29 @@ sub SetSentToExportResult {
 
 sub SentToExport {
 	my $self = shift;
+	
+	my $result = 1;
 
 	# Move prepared export  file to user export file location c:/Export/Exportfiles/pcb
 
 	eval {
 
 		my $taskData = $self->GetTaskData();
-
+		my $groupData = $taskData->GetGroupData();
 		# Get path of export file
-		# (get arbitrary unit data and read "info file", where is path od export file)
-		my %unitData = $taskData->GetAllUnitData();
-
-		my $unitId = ( keys %unitData )[0];    #take random unit id in order get unit data
-
-		my $exportFile = EnumsPaths->Client_INCAMTMPOTHER . $unitData{$unitId}->GetInfoFileVal("exportFile");
+		
+ 
+		my $exportFile = EnumsPaths->Client_INCAMTMPOTHER . $groupData->GetInfoFileVal("exportFile");
 		my $target     = EnumsPaths->Client_EXPORTFILES . $self->GetMasterJob();
 
 		if ( -e $exportFile ) {
 			move( $exportFile, $target );
 			$self->{"taskStatus"}->DeleteStatusFile();
 			$self->{"sentToExport"} = 1;
-			$unitData{$unitId}->DeleteInfoFile();
-
-			# remove from queue
+			$groupData->DeleteInfoFile();
+ 
+			# Launch export utility if hasn't launched before
+			#my $utility = RunExportUtility->new(0);
 
 		}
 		else {
@@ -232,6 +232,8 @@ sub SentToExport {
 			my $item = $self->{"toExportResultMngr"}->GetNewItem("Sent to export");
 			$item->AddError("Error during sending task \"to export.  \"Export file\" doesn't exist.\n");
 			$self->{"toExportResultMngr"}->AddItem($item);
+			
+			$result = 0;
 		}
 
 	};
@@ -243,7 +245,10 @@ sub SentToExport {
 		my $item             = $self->{"toExportResultMngr"}->GetNewItem("Sent to export");
 		$item->AddError("Error during sending task \"to export. Error when \" copy \"export file\" $e\n");
 		$self->{"toExportResultMngr"}->AddItem($item);
+		$result = 0;
 	}
+	
+	return $result;
 
 }
 

@@ -1,6 +1,6 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Manager responsible for AOI files creation
+# Description: Check controls
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Packages::PoolMerge::CheckGroup::Helper::CheckHelper;
@@ -182,7 +182,7 @@ sub CheckChildJobStatus {
 	my $mess        = shift;
 
 	my @orderNames = $self->{"poolInfo"}->GetOrderNames();
-	@orderNames = grep { $_ !~ /^$masterOrder/i } @orderNames;
+	#@orderNames = grep { $_ !~ /^$masterOrder/i } @orderNames;
 
 	my $result = 1;
 

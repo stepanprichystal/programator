@@ -1,6 +1,6 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Manager responsible for AOI files creation
+# Description: Manager responsible for creating "fsch" rout
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Packages::PoolMerge::RoutGroup::RoutMngr;

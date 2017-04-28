@@ -1,6 +1,6 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Manager responsible for AOI files creation
+# Description: Check controls
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Packages::PoolMerge::CheckGroup::Helper::MasterJobHelper;

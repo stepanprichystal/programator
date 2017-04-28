@@ -30,6 +30,7 @@ sub new {
 	$self->{"settings"}->{"poolType"}    = undef;     
 	$self->{"settings"}->{"poolSurface"}    = undef;     
 	$self->{"settings"}->{"poolExported"}    = undef;     
+	$self->{"settings"}->{"poolGroupData"}    = undef;    # copy of unit data. Each unit has same "unit data" like this
 
 	return $self;                                     
 }
@@ -56,6 +57,14 @@ sub GetPoolExported {
 	my $self = shift;
 
 	return $self->{"settings"}->{"poolExported"};
+}
+
+
+sub GetGroupData{
+	my $self = shift;
+	
+		
+	return $self->{"settings"}->{"poolGroupData"};
 }
 
 

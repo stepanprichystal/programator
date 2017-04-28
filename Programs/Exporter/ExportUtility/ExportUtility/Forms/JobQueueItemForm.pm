@@ -63,6 +63,14 @@ sub SetProgress {
 	$self->{"percentageTxt"}->SetLabel( $value . "%" );
 }
 
+sub SetJobItemAutoRemove {
+	my $self  = shift;
+	my $sec = shift;
+
+	$self->{"btnRemove"}->SetLabel("Remove ($sec)");	 
+}
+
+
 # Set export indicators
 
 sub SetTaskResult {
@@ -224,9 +232,9 @@ sub __SetLayout {
 
 	my $result = $self->__SetLayoutResult();
 
-	my $btnProduce = Wx::Button->new( $self, -1, "Produce", &Wx::wxDefaultPosition, [ 60, 20 ] );
-	my $btnAbort   = Wx::Button->new( $self, -1, "Abort",   &Wx::wxDefaultPosition, [ 60, 20 ] );
-	my $btnRemove  = Wx::Button->new( $self, -1, "Remove",  &Wx::wxDefaultPosition, [ 60, 20 ] );
+	my $btnProduce = Wx::Button->new( $self, -1, "Produce", &Wx::wxDefaultPosition, [ 55, 20 ] );
+	my $btnAbort   = Wx::Button->new( $self, -1, "Abort",   &Wx::wxDefaultPosition, [ 55, 20 ] );
+	my $btnRemove  = Wx::Button->new( $self, -1, "Remove",  &Wx::wxDefaultPosition, [ 80, 20 ] );
 
 	$btnRemove->Disable();
 
@@ -252,7 +260,7 @@ sub __SetLayout {
 
 	$szMain->Add( $percentageTxt, 0, &Wx::wxALIGN_CENTER_VERTICAL | &Wx::wxLEFT, 10 );
 
-	$szMain->Add( $stateTxt, 0, &Wx::wxALIGN_CENTER_VERTICAL | &Wx::wxLEFT, 6 );
+	$szMain->Add( $stateTxt, 1, &Wx::wxALIGN_CENTER_VERTICAL | &Wx::wxLEFT, 6 );
 
 	$szMain->Add( $self->_GetDelimiter(), 0, &Wx::wxEXPAND );    # add delimiter
 
@@ -262,9 +270,9 @@ sub __SetLayout {
 
 	$szMain->Add( $result, 0, &Wx::wxEXPAND | &Wx::wxLEFT, 5 );
 
-	$szMain->Add( $btnProduce, 0, &Wx::wxEXPAND | &Wx::wxLEFT, 15 );
-	$szMain->Add( $btnAbort,   0, &Wx::wxEXPAND | &Wx::wxLEFT, 2 );
-	$szMain->Add( $btnRemove,  0, &Wx::wxEXPAND | &Wx::wxLEFT, 2 );
+	$szMain->Add( $btnProduce, 0, &Wx::wxEXPAND | &Wx::wxLEFT, 14 );
+	$szMain->Add( $btnAbort,   0, &Wx::wxEXPAND | &Wx::wxLEFT, 1 );
+	$szMain->Add( $btnRemove,  0, &Wx::wxEXPAND | &Wx::wxLEFT, 1 );
 
 	$orderPnl->SetSizer($orderSz);
 
@@ -324,8 +332,8 @@ sub __SetLayoutOptions {
 
 	# DEFINE CONTROLS
 
-	my $asyncChb         = Wx::CheckBox->new( $self, -1, "On background",   [ -1, -1 ], [ 130, 20 ] );
-	my $sentToProduceChb = Wx::CheckBox->new( $self, -1, "Sent to produce", [ -1, -1 ], [ 130, 20 ] );
+	my $asyncChb         = Wx::CheckBox->new( $self, -1, "On background",   [ -1, -1 ], [ 120, 20 ] );
+	my $sentToProduceChb = Wx::CheckBox->new( $self, -1, "Sent to produce", [ -1, -1 ], [ 120, 20 ] );
 
 	$asyncChb->Disable();
 	$sentToProduceChb->Disable();

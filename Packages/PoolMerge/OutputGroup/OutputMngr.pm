@@ -1,6 +1,6 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Manager responsible for AOI files creation
+# Description: Manager responsible for prepare "export file", outpur stackup, pool file, etc..
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Packages::PoolMerge::OutputGroup::OutputMngr;
@@ -91,22 +91,8 @@ sub Run {
 
 	$self->_OnPoolItemResult($jobCleanupRes);
 
-	# 4) do control before creating "export file"
-	$self->{"exportPrepare"}->CheckBeforeExport($masterJob);
 
-	# 5) Export "pool file"
-
-	my $poolFileRes = $self->_GetNewItem("Export pool file");
-	$mess = "";
-
-	unless ( $self->{"poolFile"}->CreatePoolFile( $masterJob, $masterOrder, \$mess ) ) {
-
-		$poolFileRes->AddError($mess);
-	}
-
-	$self->_OnPoolItemResult($poolFileRes);
-
-	# 6) Export default stackup
+	# 4) Export default stackup
 
 	if ( CamJob->GetSignalLayerCnt( $self->{"inCAM"}, $masterJob ) > 2 ) {
 		my $stackupRes = $self->_GetNewItem("Export stackup");
@@ -120,6 +106,24 @@ sub Run {
 		$self->_OnPoolItemResult($stackupRes);
 	}
 
+
+	# 5) do control before creating "export file"
+	$self->{"exportPrepare"}->CheckBeforeExport($masterJob);
+
+	# 6) Export "pool file"
+
+	my $poolFileRes = $self->_GetNewItem("Export pool file");
+	$mess = "";
+
+	unless ( $self->{"poolFile"}->CreatePoolFile( $masterJob, $masterOrder, \$mess ) ) {
+
+		$poolFileRes->AddError($mess);
+	}
+
+	$self->_OnPoolItemResult($poolFileRes);
+
+
+
 	# 7) Prepare "export file"
 	my $exportPath = GeneralHelper->GetGUID();
 	$self->SetValInfoFile( "exportFile", $exportPath );
@@ -132,7 +136,7 @@ sub TaskItemsCount {
 
 	my $totalCnt = 0;
 
-	$totalCnt += scalar( $self->{"exportPrepare"}->{"units"}->{"units"} );    # number of checked units
+	$totalCnt +=  8;    														 # nubber of units which are checked
 	$totalCnt += 6;                                                           # other checks..
 
 	return $totalCnt;

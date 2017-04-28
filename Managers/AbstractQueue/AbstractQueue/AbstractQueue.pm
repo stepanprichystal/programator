@@ -4,8 +4,6 @@
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 
-
-
 package Managers::AbstractQueue::AbstractQueue::AbstractQueue;
 
 #3th party library
@@ -21,6 +19,7 @@ use File::Copy;
 use aliased 'Helpers::GeneralHelper';
 use aliased 'Enums::EnumsPaths';
 use aliased 'Enums::EnumsGeneral';
+
 #use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'Helpers::FileHelper';
 use aliased 'Managers::MessageMngr::MessageMngr';
@@ -47,6 +46,10 @@ sub new {
 	# Main application form
 	$self->{"form"} = shift;
 
+	# Number of second, job will be auto removed from queue,
+	# or undef - not auto remove
+	$self->{"autoRemove"} = shift;
+
 	$self->{"version"} = $self->__GetVersion();
 
 	$self->{"form"}->Init();
@@ -57,6 +60,10 @@ sub new {
 	# Keep all references of used groups/units in form
 	my @tasks = ();
 	$self->{"tasks"} = \@tasks;
+
+	# list of jobs, which are waiting on auto remove
+	my @removeJobs = ();
+	$self->{"removeJobs"} = \@removeJobs;
 
 	#set base class handlers
 
@@ -243,7 +250,7 @@ sub __OnJobMessageEvtHandlerBase {
 	if ( $messType eq Enums->EventType_SPECIAL ) {
 
 		if ( $data->{"itemId"} eq Enums->EventItemType_STOP ) {
-			
+
 			# 1) set status "paused", to actually processed unit
 			$task->ProcessTaskStop($data);
 
@@ -259,8 +266,7 @@ sub __OnJobMessageEvtHandlerBase {
 			$self->{"form"}->RefreshGroupTable($task);
 
 		}
-		
-		
+
 	}
 }
 
@@ -327,8 +333,30 @@ sub __OnCloseAbstractQueueBase {
 # Can be use e.g for refresh GUI etc..
 sub __Timer5second {
 	my $self = shift;
-
 	$self->{"form"}->RefreshSettings();
+
+	# if size of window was changed, do refresh
+	# This is necessary , because there is problem with shrink of job queue and with group table
+
+	my $mainSz = $self->{"form"}->{"mainFrm"}->GetSizer();
+	my $newS = $mainSz->GetSize();
+	if ( defined $self->{"oldSize"} ) {
+
+		my $mainSz = $self->{"form"}->{"mainFrm"}->GetSizer();
+		my $newS = $mainSz->GetSize();
+
+		if ( $newS->GetWidth() < $self->{"oldSize"}->GetWidth() ) {
+			$self->{"form"}->{"mainFrm"}->Refresh();
+ 
+#			foreach my $k (keys %{$self->{"form"}->{"notebook"}->{"pages"}}){
+#				
+#				$self->{"form"}->{"notebook"}->{"pages"}->{$k}->GetPageContent()->Layout();
+#				$self->{"form"}->{"notebook"}->{"pages"}->{$k}->GetPageContent()->FitInside();
+#			}
+		}
+	}
+
+	$self->{"oldSize"} = $newS;
 
 }
 
@@ -365,6 +393,42 @@ sub __TimerCheckVersion {
 
 }
 
+# Automatically remove jobs if was succes
+sub __AutoRemoveJobsHandler {
+	my $self = shift;
+
+	unless ( $self->{"autoRemove"} ) {
+		return 0;
+	}
+
+	# 1) control list of jsob, which should be removed from queue
+	for ( my $i = scalar( @{ $self->{"removeJobs"} } ) - 1 ; $i >= 0 ; $i-- ) {
+
+		my $taskId = $self->{"removeJobs"}->[$i]->{"taskId"};
+		my $time   = $self->{"removeJobs"}->[$i]->{"exportFinis"};
+
+		if ( defined $self->{"form"}->{"jobQueue"}->GetItem($taskId) ) {
+
+			# if 10 passed, remove job
+			if ( ( $time + $self->{"autoRemove"} ) < time() ) {
+				$self->{"form"}->RemoveJobFromQueue($taskId);
+				splice @{ $self->{"removeJobs"} }, $i, 1;
+
+			}
+			else {
+				my $secLeft = ( $time + $self->{"autoRemove"} ) - time();
+				$self->{"form"}->SetJobItemAutoRemove( $taskId, $secLeft );
+
+			}
+		}
+		else {
+			splice @{ $self->{"removeJobs"} }, $i, 1;
+		}
+
+	}
+
+}
+
 # ========================================================================================== #
 #  PROTECTED HELPER METHOD
 # ========================================================================================== #
@@ -395,7 +459,6 @@ sub _GetTaskById {
 sub _AddNewJob {
 	my $self = shift;
 	my $task = shift;
-	
 
 	push( @{ $self->{"tasks"} }, $task );
 
@@ -405,6 +468,15 @@ sub _AddNewJob {
 	# Add new task to queue
 	$self->{"form"}->AddNewTask($task);
 
+}
+
+# Add tesk on auto remove list
+sub _AddJobToAutoRemove {
+	my $self   = shift;
+	my $taskId = shift;
+
+	my %removeInf = ( "taskId" => $taskId, "exportFinis" => time() );
+	push( @{ $self->{"removeJobs"} }, \%removeInf );
 }
 
 # ========================================================================================== #
@@ -421,10 +493,8 @@ sub __SetHandlersBase {
 	$self->{"form"}->{'onJobMessageEvt'}->Add( sub   { $self->__OnJobMessageEvtHandlerBase(@_) } );
 
 	$self->{"form"}->{'onJomMngrClose'}->Add( sub { $self->__OnCloseAbstractQueueBase(@_) } );
-	
+
 	$self->{"form"}->{'onRemoveJob'}->Add( sub { $self->__OnRemoveJobClick(@_) } );
-	
-	
 
 }
 
@@ -443,6 +513,10 @@ sub __RunTimersBase {
 	Wx::Event::EVT_TIMER( $formMainFrm, $timerVersion, sub { $self->__TimerCheckVersion(@_) } );
 	$timerVersion->Start( 60000 * 5 );    # every 5 minutes
 
+	my $timer1s = Wx::Timer->new( $formMainFrm, -1, );
+	Wx::Event::EVT_TIMER( $formMainFrm, $timer1s, sub { $self->__AutoRemoveJobsHandler(@_) } );
+	$timer1s->Start(1000);
+
 }
 
 # Restart task
@@ -453,12 +527,12 @@ sub __RestartTask {
 	my $taskId = $task->GetTaskId();
 
 	# 1) job is properlz aborted + keep task
-	my $taskData  = $task->GetTaskData();
-	my $taskStrData  = $task->GetTaskStrData();
-	my $taskJobId = $task->GetJobId();
+	my $taskData    = $task->GetTaskData();
+	my $taskStrData = $task->GetTaskStrData();
+	my $taskJobId   = $task->GetJobId();
 
 	# 2) remove job from queue
-	$self->{"form"}->__OnRemoveJobClick($taskId);
+	$self->{"form"}->RemoveJobFromQueue($taskId);
 
 	# 3) start new same job
 	my $newTask = 0;

@@ -1,6 +1,6 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Manager responsible for AOI files creation
+# Description: Create panel
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Packages::PoolMerge::MergeGroup::Helper::PanelCreation;

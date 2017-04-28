@@ -63,7 +63,7 @@ sub CheckRunningInstance {
 
 				$args = @{$procInfo}[0]->{"CommandLine"};
 
-				if ( defined $args && $args =~ /RunAbstractQueueScript.pl/ ) {
+				if ( defined $args && $args =~ /$scriptName/ ) {
 
 					$exist = 1;
 					last;

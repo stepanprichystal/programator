@@ -1,9 +1,7 @@
 
 #-------------------------------------------------------------------------------------------#
 # Description: Base class for Managers, which allow create new item and reise event with
-# Class allow raise two tzpes of event:
-# 1) - standard event, which inform if task was succes/fail
-# 2) - special event, which inform if it is worth to continue, if some standar event resul is Fail
+# (Special type for managers, makeing pool merging)
 # this item
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
@@ -23,6 +21,7 @@ use aliased 'Managers::AbstractQueue::Enums' => "EnumsAbstrQ";
 use aliased 'Programs::PoolMerge::Enums'     => "EnumsPool";
 use aliased "Enums::EnumsPaths";
 use aliased 'Connectors::HeliosConnector::HegMethods';
+use aliased 'CamHelpers::CamJob';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -37,8 +36,6 @@ sub new {
 
 	$self->{"infoFile"} = $infoFile;
 
-	$self->{"setDefautState"} = 0;    # if set, set state to all orders to default "k panelizaci" in helios
-
 	return $self;
 }
 
@@ -47,22 +44,14 @@ sub _OnPoolItemResult {
 	my $self       = shift;
 	my $itemResult = shift;
 
-	# 1) if set set default state, set state of all orders to default
-	if ( $self->{"setDefautState"} ) {
-		my @orders = $self->{"poolInfo"}->GetOrderNames();
-
-		foreach my $orderId (@orders) {
-
-			#HegMethods->UpdatePcbOrderState( $orderId, "k panelizaci", 1 );
-		}
-	}
-
-	#  2) call standard base class method
+	#  1) call standard base class method
 	$self->_OnItemResult($itemResult);
 
-	# 3 ) plus if item esult fail, call stop taks
+	# 2) plus if item esult fail, call stop taks
 
 	if ( $itemResult->GetErrorCount() ) {
+ 
+		# 2) call stop task
 		my $resSpec = $self->_GetNewItem( EnumsAbstrQ->EventItemType_STOP );
 		$self->_OnStatusResult($resSpec);
 	}

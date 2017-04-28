@@ -48,7 +48,9 @@ sub new {
 	# Main application form
 	my $form = ExportUtilityForm->new( $runMode, undef );
 
-	my $self = $class->SUPER::new($form);
+	my $autoRemove = 20;    # 15 second
+
+	my $self = $class->SUPER::new( $form, $autoRemove );
 	bless $self;
 
 	my @exportFiles = ();
@@ -117,7 +119,13 @@ sub __OnJobStateChanged {
 			# if can eb sent to produce without errror, send it
 			if ( $task->GetJobCanToProduce() ) {
 
-				$task->SentToProduce();
+				my $sent = $task->SentToProduce();
+
+				# remove job automaticaly form queue if sent to export
+				if ($sent) {
+
+					$self->_AddJobToAutoRemove( $task->GetTaskId() );
+				}
 			}
 
 			# refresh GUI to produce
@@ -249,8 +257,8 @@ sub __CheckFilesHandler {
 			my $jobId = $jobFile->{"name"};
 
 			my $pathExportFile = EnumsPaths->Client_EXPORTFILES . $jobId;
-			my $dataTransfer = DataTransfer->new( $jobId, EnumsTransfer->Mode_READ, undef, undef, $pathExportFile );
-			my $taskData = $dataTransfer->GetExportData();
+			my $dataTransfer   = DataTransfer->new( $jobId, EnumsTransfer->Mode_READ, undef, undef, $pathExportFile );
+			my $taskData       = $dataTransfer->GetExportData();
 
 			my $f          = EnumsPaths->Client_EXPORTFILES . $jobId;
 			my $jsonString = FileHelper->ReadAsString($f);
@@ -258,7 +266,7 @@ sub __CheckFilesHandler {
 			copy( $f, EnumsPaths->Client_EXPORTFILES . "backup\\" . $jobId );    # do backup
 
 			# TODO odkomentovat abt to mazalo
-			#unlink($f);
+			unlink($f);
 
 			# serialize job data to strin
 			my %hashData = ();

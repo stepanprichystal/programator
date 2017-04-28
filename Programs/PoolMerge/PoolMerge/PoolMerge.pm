@@ -46,15 +46,17 @@ sub new {
 	# Tray or window mode
 	my $runMode = shift;
 
-	
 	# Main application form
 	my $form = PoolMergeForm->new( $runMode, undef );
 
-	my $self = $class->SUPER::new($form);
+	my $autoRemove = 20; # 15 second 
+
+	my $self = $class->SUPER::new($form, $autoRemove);
 	bless $self;
 
 	my @taskFiles = ();
 	$self->{"taskFiles"} = \@taskFiles;
+
 
 	#set base class handlers
 
@@ -74,19 +76,18 @@ sub new {
 #this handler run, when new job thread is created
 sub JobWorker {
 	my $self                         = shift;
-	my $pcbIdShare                        = shift;
+	my $pcbIdShare                   = shift;
 	my $taskId                       = shift;
 	my $jobStrData                   = shift;
 	my $inCAM                        = shift;
 	my $THREAD_PROGRESS_EVT : shared = ${ shift(@_) };
 	my $THREAD_MESSAGE_EVT : shared  = ${ shift(@_) };
-	my $stopVarShare                      = shift;
+	my $stopVarShare                 = shift;
 
 	#GetTaskClass
-	my $task      = $self->_GetTaskById($taskId);
- 
-	my $unitBuilder = UnitBuilder->new($inCAM, $$pcbIdShare, $jobStrData);
-	 
+	my $task = $self->_GetTaskById($taskId);
+
+	my $unitBuilder = UnitBuilder->new( $inCAM, $$pcbIdShare, $jobStrData );
 
 	my $workerClass = JobWorkerClass->new( \$THREAD_PROGRESS_EVT, \$THREAD_MESSAGE_EVT, $stopVarShare, $self->{"form"}->{"mainFrm"} );
 	$workerClass->Init( $pcbIdShare, $taskId, $unitBuilder, $inCAM, );
@@ -116,19 +117,26 @@ sub __OnJobStateChanged {
 	}
 
 	if ( $taskState eq EnumsJobMngr->JobState_DONE ) {
- 
+
 		# Set values, if job can be sent to toExport
 		$task->SetSentToExportResult();
 
 		# if can be sent to export. If warning, not sent to export automatically
-		if ( $task->GetJobCanSentToExport() && $task->GetTaskWarningCnt() == 0) {
+		if ( $task->GetJobCanSentToExport() && $task->GetTaskWarningCnt() == 0 ) {
 
-			$task->SentToExport();
-			
+			my $sent = $task->SentToExport();
+
 			# refresh GUI to toExport
 			$self->{"form"}->SetJobItemSentToExportResult($task);
+
+			# remove job automaticaly form queue if sent to export
+			if ($sent) {
+
+				$self->_AddJobToAutoRemove($task->GetTaskId());
+
+			}
 		}
- 
+
 	}
 }
 
@@ -164,27 +172,28 @@ sub __OnJobMessageEvtHandler {
 			$self->{"form"}->SetJobItemStatus( $taskId, "Running ..." );
 			$self->{"form"}->SetJobItemContinue($task);
 
-		}elsif ( $data->{"itemId"} eq EnumsAbstrQ->EventItemType_CONTINUEERR ) {
+		}
+		elsif ( $data->{"itemId"} eq EnumsAbstrQ->EventItemType_CONTINUEERR ) {
 
 			# 1) If error is master can be open, show message to user
-			my ($typeErr, $user) = $data->{"data"} =~ m/type=(\w+);byUser=(.*)/i; # data format: "type=masterOpen;byUser=$userName";
-			
-			 if($typeErr eq "masterOpen"){
-			 	
-			 	 my $messMngr = $self->{"form"}->{"messageMngr"};
-			 	 
-			 	 my $master = $task->GetMasterJob();
-			 	 my $panel = $task->GetJobId();
-			 	 
-			 	 my @m = ("Unable open master job \"$master\" for pool panel \"$panel\". Job is still open by user \"$user\"");
-			 	 $messMngr->Show( -1, EnumsGeneral->MessageType_ERROR, \@m );
-			 }
- 
+			my ( $typeErr, $user ) = $data->{"data"} =~ m/type=(\w+);byUser=(.*)/i;    # data format: "type=masterOpen;byUser=$userName";
+
+			if ( $typeErr eq "masterOpen" ) {
+
+				my $messMngr = $self->{"form"}->{"messageMngr"};
+
+				my $master = $task->GetMasterJob();
+				my $panel  = $task->GetJobId();
+
+				my @m = ("Unable open master job \"$master\" for pool panel \"$panel\". Job is still open by user \"$user\"");
+				$messMngr->Show( -1, EnumsGeneral->MessageType_ERROR, \@m );
+			}
+
 		}
 		elsif ( $data->{"itemId"} eq Enums->EventItemType_MASTER ) {
 
-			# set proper jon if task 
-			$task->SetMasterJob($data->{"data"});
+			# set proper jon if task
+			$task->SetMasterJob( $data->{"data"} );
 
 			$self->{"form"}->SetMasterJob( $task, $data->{"data"} );
 
@@ -221,7 +230,10 @@ sub __OnSentToExportClick {
 		$messMngr->ShowModal( -1, EnumsGeneral->MessageType_WARNING, \@mess, \@btns );
 
 		if ( $messMngr->Result() == 1 ) {
-			$task->SentToExport();
+
+			my $sent = $task->SentToExport();
+
+			# refresh GUI to toExport
 			$self->{"form"}->SetJobItemSentToExportResult($task);
 
 		}
@@ -230,13 +242,15 @@ sub __OnSentToExportClick {
 	# Can sent to toExport, sent directly
 	elsif ( $task->GetJobCanSentToExport() && $task->ResultSentToExport() eq EnumsGeneral->ResultType_OK ) {
 
-		$task->SentToExport();
+		my $sent = $task->SentToExport();
+
+		# refresh GUI to toExport
 		$self->{"form"}->SetJobItemSentToExportResult($task);
 
 	}
 	elsif ( !$task->GetJobCanSentToExport() ) {
 
-		push( @mess, "You CAN'T send job to product, check \"to toExport\" errors." );
+		push( @mess, "You CAN'T send job to export, check \"to toExport\" errors." );
 		my @btns = ("Ok");
 		$messMngr->ShowModal( -1, EnumsGeneral->MessageType_ERROR, \@mess, \@btns );
 	}
@@ -247,16 +261,18 @@ sub __OnSentToExportClick {
 
 # When job item is restarted, we need set task object, for creating new job item
 sub __OnSetNewTaskHandler {
-	my $self     = shift;
-	my $jobId    = shift;
-	my $taskData = shift;
+	my $self        = shift;
+	my $jobId       = shift;
+	my $taskData    = shift;
 	my $taskStrData = shift;
-	my $task     = shift;
+	my $task        = shift;
 
 	my $status = TaskStatus->new(undef);
 
 	$$task = Task->new( $jobId, $taskData, $taskStrData, $status );
 }
+
+ 
 
 #update gui
 
@@ -321,7 +337,7 @@ sub __CheckFilesHandler {
 			copy( $path, EnumsPaths->Client_EXPORTFILESPOOL . "backup\\" . $taskName );    # do backup
 
 			# TODO odkomentovat abt to mazalo
-			#unlink($f);
+			unlink($path);
 
 			# serialize job data to strin
 			my %hashData = ();
@@ -330,7 +346,7 @@ sub __CheckFilesHandler {
 
 			my $json = JSON->new();
 
-			my $taskStrData = $json->pretty->encode(\%hashData);
+			my $taskStrData = $json->pretty->encode( \%hashData );
 
 			$self->__AddNewJob( $taskData->GetPanelName(), $taskData, $taskStrData );
 
@@ -339,19 +355,21 @@ sub __CheckFilesHandler {
 
 }
 
+
+
 # ========================================================================================== #
 #  PRIVATE HELPER METHOD
 # ========================================================================================== #
 
 sub __AddNewJob {
-	my $self     = shift;
-	my $jobId    = shift;
-	my $taskData = shift;
+	my $self        = shift;
+	my $jobId       = shift;
+	my $taskData    = shift;
 	my $taskStrData = shift;
 
 	my $status = TaskStatus->new(undef);
 
-	my $task = Task->new( $jobId, $taskData, $taskStrData,  $status );
+	my $task = Task->new( $jobId, $taskData, $taskStrData, $status );
 
 	$self->_AddNewJob($task);
 }
@@ -368,6 +386,9 @@ sub __SetHandlers {
 	$self->{"form"}->{'onSentToExport'}->Add( sub { $self->__OnSentToExportClick(@_) } );
 
 	$self->{'onSetNewTask'}->Add( sub { $self->__OnSetNewTaskHandler(@_) } );
+	 
+	
+	
 
 	# Set worker method
 	$self->{"form"}->_SetThreadWorker( sub { $self->JobWorker(@_) } );
@@ -384,6 +405,8 @@ sub __RunTimers {
 	Wx::Event::EVT_TIMER( $formMainFrm, $timerFiles, sub { $self->__CheckFilesHandler(@_) } );
 	$self->{"timerFiles"} = $timerFiles;
 	$timerFiles->Start(200);
+
+
 
 }
 

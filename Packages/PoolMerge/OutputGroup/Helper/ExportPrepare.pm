@@ -1,6 +1,6 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Manager responsible for AOI files creation
+# Description: Check before export, export pool file, etc..
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Packages::PoolMerge::OutputGroup::Helper::ExportPrepare;
@@ -24,7 +24,8 @@ use aliased 'Programs::Exporter::ExportChecker::ExportChecker::GroupTable::Group
 use aliased 'Programs::Exporter::ExportUtility::DataTransfer::DataTransfer';
 use aliased 'Programs::Exporter::ExportUtility::UnitEnums';
 use aliased 'Programs::Exporter::ExportUtility::DataTransfer::Enums' => 'EnumsTransfer';
-use aliased 'Programs::Exporter::ExportChecker::Enums' => 'CheckerEnums';
+use aliased 'Programs::Exporter::ExportChecker::Enums'               => 'CheckerEnums';
+use aliased 'Packages::NifFile::NifFile';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -37,19 +38,18 @@ sub new {
 
 	$self->{"inCAM"}    = shift;
 	$self->{"poolInfo"} = shift;
-	
-	$self->{"units"} = undef; 
+
+	$self->{"units"} = undef;
 
 	return $self;
 }
-
 
 sub CheckBeforeExport {
 	my $self      = shift;
 	my $masterJob = shift;
 
 	my $inCAM = $self->{"inCAM"};
-	
+
 	$self->__PrepareUnits($masterJob);
 
 	my @activeOnUnits = grep { $_->GetGroupState() eq CheckerEnums->GroupState_ACTIVEON } @{ $self->{"units"}->{"units"} };
@@ -74,28 +74,28 @@ sub CheckBeforeExport {
 				$itemRes->AddWarning( $resultMngr->GetWarningsStr(1) );
 			}
 		}
-		
+
 		$self->_OnItemResult($itemRes);
 	}
 
 }
 
 sub PrepareExportFile {
-	my $self      = shift;
-	my $masterJob = shift;
+	my $self       = shift;
+	my $masterJob  = shift;
 	my $exportFile = shift;
-	my $mess      = shift;
- 
+	my $mess       = shift;
+
 	my $result = 1;
 
 	my $inCAM = $self->{"inCAM"};
-	
+
 	my $pathExportFile = EnumsPaths->Client_INCAMTMPOTHER . $exportFile;
- 
+
 	my $dataTransfer = DataTransfer->new( $masterJob, EnumsTransfer->Mode_WRITE, $self->{"units"}, undef, $pathExportFile );
 	$dataTransfer->SaveData( EnumsJobMngr->TaskMode_ASYNC, 1 );
-	
-	unless(-e $pathExportFile){
+
+	unless ( -e $pathExportFile ) {
 		$$mess .= "Error during preparing \"export file\" for master job";
 		$result = 0;
 	}
@@ -117,10 +117,47 @@ sub __PrepareUnits {
 	$groupBuilder->Build( $masterJob, $groubT );
 	my @allUnits = $groubT->GetAllUnits();
 
-	$self->{"units"} = Units->new();                     # class which keep list of all defined units (composit pattern)
+	$self->{"units"} = Units->new();              # class which keep list of all defined units (composit pattern)
 	$self->{"units"}->Init( $inCAM, $masterJob, \@allUnits );
-	$self->{"units"}->InitDataMngr( $inCAM );
+	$self->{"units"}->InitDataMngr($inCAM);
+
+	# If there is maska 01 on childrens, set it to mother nif
+
+	if($self->__Mask01Exist()){
+		
+		my $nifUnit   = $self->{"units"}->GetUnitById( UnitEnums->UnitId_NIF );
+		my $groupData = $nifUnit->{"dataMngr"}->GetGroupData();
+		$groupData->SetMaska01(1);	
+	}
+}
+
+
+sub __Mask01Exist {
+	my $self      = shift;
  
+	my $result = 0;
+
+	my @orders = $self->{"poolInfo"}->GetOrdersInfo();
+	 
+
+	foreach my $order (@orders) {
+
+		my $nif = NifFile->new( $order->{"jobName"} );
+
+		unless ( $nif->Exist() ) {
+			die "nif file doesn't exist " . $order->{"jobName"};
+		}
+
+		my $mask = $nif->GetValue("rel(22305,L)");
+
+		if ( $mask =~ /\+/ ) {
+			$result = 1;
+			last;
+		}
+	}
+	
+	return $result;
+
 }
 
 #-------------------------------------------------------------------------------------------#

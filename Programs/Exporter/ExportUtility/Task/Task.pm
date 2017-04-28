@@ -28,43 +28,38 @@ use aliased 'Managers::AbstractQueue::TaskResultMngr';
 
 sub new {
 	my $class = shift;
- 
+
 	my $self = $class->SUPER::new(@_);
 	bless $self;
 
 	# Managers, contains information about results of
 	# whole task, groups, single items, etc
- 	$self->{"produceResultMngr"} = TaskResultMngr->new();
- 
+	$self->{"produceResultMngr"} = TaskResultMngr->new();
+
 	# Tell if job can be send to produce,
 	# based on Export results and StatusFile
 	$self->{"canToProduce"} = undef;
 
 	$self->{"sentToProduce"} = 0;    # Tell if task was sent to produce
-	
+
 	$self->__InitUnits();
 
- 
 	return $self;
 }
 
 # ===================================================================
 # Public method
 # ===================================================================
- 
 
 sub ProduceResultMngr {
 	my $self = shift;
 
 	return $self->{"produceResultMngr"};
 }
- 
 
 # ===================================================================
 # Public method - GET or SET state of this task
 # ===================================================================
-
-  
 
 # Return result, which tell if pcb can be send to produce
 sub ResultToProduce {
@@ -80,7 +75,6 @@ sub ResultToProduce {
 	}
 	return $res;
 }
- 
 
 sub GetProduceErrorsCnt {
 	my $self = shift;
@@ -212,42 +206,46 @@ sub SetToProduceResult {
 
 sub SentToProduce {
 	my $self = shift;
+	
+	my $result = 1;
 
 	# set state HOTOVO-zadat
 
 	eval {
 		my $orderRef = HegMethods->GetPcbOrderNumber( $self->{"jobId"} );
 		my $orderNum = $self->{"jobId"} . "-" . $orderRef;
-		
-		my $succ     = HegMethods->UpdatePcbOrderState( $orderNum, "HOTOVO-zadat");
-		
-	 
+
+		my $succ = HegMethods->UpdatePcbOrderState( $orderNum, "HOTOVO-zadat" );
+
 		$self->{"taskStatus"}->DeleteStatusFile();
 		$self->{"sentToProduce"} = 1;
 	};
 
 	if ( my $e = $@ ) {
 
-		 # set status hotovo-yadat fail
-		 my $toProduceMngr = $self->{"produceResultMngr"};
-		 my $item = $toProduceMngr->GetNewItem( "Set state HOTOVO-zadat", EnumsGeneral->ResultType_FAIL );
+		# set status hotovo-yadat fail
+		my $toProduceMngr = $self->{"produceResultMngr"};
+		my $item = $toProduceMngr->GetNewItem( "Set state HOTOVO-zadat", EnumsGeneral->ResultType_FAIL );
 
 		$item->AddError("Set state HOTOVO-zadat failed, try it again. Detail: $e\n");
 		$toProduceMngr->AddItem($item);
+		
+		$result = 0;
 
 	}
+	
+	return $result;
 
 }
 
- 
 #-------------------------------------------------------------------------------------------#
 #  Private method
 #-------------------------------------------------------------------------------------------#
- 
- sub __InitUnits {
+
+sub __InitUnits {
 	my $self = shift;
- 
-	my @keys = $self->{"taskData"}->GetOrderedUnitKeys(1);
+
+	my @keys     = $self->{"taskData"}->GetOrderedUnitKeys(1);
 	my @allUnits = ();
 
 	foreach my $key (@keys) {
@@ -256,20 +254,21 @@ sub SentToProduce {
 		push( @allUnits, $unit );
 	}
 
-	$self->{"units"}->SetUnits(\@allUnits);
+	$self->{"units"}->SetUnits( \@allUnits );
 
 }
+
 # Return initialized "unit" object by unitId
 sub __GetUnitClass {
 	my $self   = shift;
 	my $unitId = shift;
- 
+
 	my $jobId = $self->{"jobId"};
-	
+
 	my $title = UnitEnums->GetTitle($unitId);
-	
-	my $unit = UnitBase->new($unitId, $jobId, $title);
-  
+
+	my $unit = UnitBase->new( $unitId, $jobId, $title );
+
 	return $unit;
 }
 

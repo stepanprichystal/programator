@@ -39,6 +39,10 @@ sub new {
 sub RunTask {
 	my $self = shift;
 
+	# Set property pcbid to undef, because this pcbid represent master job
+	# But in this taime, we dont know master job
+	${ $self->{"pcbId"} } = undef;
+
 	eval {
 		$self->__RunTask();
 
@@ -116,7 +120,7 @@ sub __RunTask {
 			}
 
 			$self->_GroupResultEvent( $unitId, ResultEnums->ItemResult_Fail, $errStr );
- 			last;
+			last;
 
 		}
 
@@ -142,10 +146,8 @@ sub __RunTask {
 
 	#close job
 
-	if ( $mode eq EnumsJobMngr->TaskMode_ASYNC ) {
+	$self->_CloseJob(1);
 
-		$self->_CloseJob();
-	}
 }
 
 sub __InitGroup {
@@ -203,6 +205,10 @@ sub __ItemSpecialEvent {
 		${ $self->{"pcbId"} } = $itemResult->GetData();
 		$self->_SpecialEvent( $unitId, $itemResult );
 
+		unless ( $self->_OpenJob() ) {
+			die "Unable to open master job " . ${ $self->{"pcbId"} } . "\n";
+		}
+
 	}
 
 }
@@ -222,6 +228,8 @@ sub __CheckStopThread {
 		# 1) Close job
 		$self->_CloseJob(1);
 
+		$self->__CloseChildJobs();
+
 		# 2) Send message to gui, task is stoped
 
 		$self->_SpecialEvent( $unitId, ItemResult->new( EnumsAbstrQ->EventItemType_STOP ) );
@@ -237,27 +245,49 @@ sub __CheckStopThread {
 
 		# 3) Open job again
 		my $userName = undef;
-		if ( CamJob->IsJobOpen( $self->{"inCAM"}, ${ $self->{"pcbId"} }, 1, \$userName) ) {
+		if ( CamJob->IsJobOpen( $self->{"inCAM"}, ${ $self->{"pcbId"} }, 1, \$userName ) ) {
 
 			# stop task again and send error, mother is not able to open
 			${ $self->{"stopThread"} } = 1;
-			
-			
-			my $itemErr = ItemResult->new( EnumsAbstrQ->EventItemType_CONTINUEERR);
-			$itemErr->SetData("type=masterOpen;byUser=".$userName);
-			
-			$self->_SpecialEvent( $unitId, $itemErr);
+
+			my $itemErr = ItemResult->new( EnumsAbstrQ->EventItemType_CONTINUEERR );
+			$itemErr->SetData( "type=masterOpen;byUser=" . $userName );
+
+			$self->_SpecialEvent( $unitId, $itemErr );
 			$self->__CheckStopThread($unitId);
-			
+
 		}
 		else {
 			unless ( $self->_OpenJob() ) {
 				die "Unable to open master job " . ${ $self->{"pcbId"} } . "\n";
 			}
 		}
+		
+		# 4) Reset counter of progress in current "work unit"
+		my $workUnit = $self->{"workerUnits"}->{$unitId};
+		$workUnit->ResetProgressCounter();
+		
 	}
 
 	return $threadStoped;
+}
+
+sub __CloseChildJobs {
+	my $self = shift;
+
+	# 1) close child jobs if are open and master is already known
+	if ( defined ${ $self->{"pcbId"} } ) {
+
+		my $masterJob = ${ $self->{"pcbId"} };
+  
+		my @jobNames = $self->{"taskData"}->GetGroupData()->GetJobNames();
+		@jobNames = grep { $_ !~ /^$masterJob$/i } @jobNames;
+
+		foreach my $job (@jobNames) {
+
+			CamJob->CloseJob($self->{"inCAM"}, $job);
+		}
+	}
 }
 
 #-------------------------------------------------------------------------------------------#

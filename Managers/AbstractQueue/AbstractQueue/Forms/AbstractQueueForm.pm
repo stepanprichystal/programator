@@ -193,6 +193,17 @@ sub SetJobItemProgress {
 	$jobItem->SetProgress($value);
 }
 
+sub SetJobItemAutoRemove {
+	my $self   = shift;
+	my $taskId = shift;
+	my $second  = shift;
+
+	my $jobItem = $self->{"jobQueue"}->GetItem($taskId);
+
+	$jobItem->SetJobItemAutoRemove($second);
+}
+
+
 sub SetJobQueueErrorCnt {
 	my $self = shift;
 	my $task = shift;
@@ -237,6 +248,13 @@ sub RefreshSettings {
 	$self->{"runningCntValSb"}->SetLabel( $stat{"running"} );
 	$self->{"waitingCntValSb"}->SetLabel( $stat{"waiting"} );
 
+}
+
+sub RemoveJobFromQueue {
+	my $self   = shift;
+	my $taskId = shift;
+ 
+	$self->__OnRemoveJobClick($taskId);
 }
 
 # ======================================================
@@ -361,8 +379,9 @@ sub __OnShowConsoleChecked {
 	if ( $val ne "1" ) {
 		$val = 0;
 	}
-
-	Helper->ShowAbstractQueueWindow( $val, "Cmd of AbstractQueueUtility PID:" . $$ );
+	
+	my $appName = AppConf->GetValue("appName");
+	Helper->ShowAbstractQueueWindow( $val, "Cmd of $appName PID:" . $$ );
 
 }
 

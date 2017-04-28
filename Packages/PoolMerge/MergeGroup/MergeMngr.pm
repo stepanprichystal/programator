@@ -1,6 +1,6 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Manager responsible for AOI files creation
+# Description: Maganger responsible for copy child jobs to master
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Packages::PoolMerge::MergeGroup::MergeMngr;
@@ -32,7 +32,7 @@ sub new {
 	my $self     = $class->SUPER::new( $poolInfo->GetInfoFile(), @_ );
 	bless $self;
 
-	$self->{"setDefautState"} = 1;
+	#$self->{"setDefautState"} = 1;
 
 	$self->{"inCAM"}    = $inCAM;
 	$self->{"poolInfo"} = $poolInfo;
@@ -64,6 +64,7 @@ sub Run {
 
 	$self->_OnPoolItemResult($stateRes);
 	
+ 
 
 	# 2) Copy child step to master job
 

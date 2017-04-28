@@ -1,6 +1,6 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Manager responsible for AOI files creation
+# Description: Put label to steps
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Packages::PoolMerge::MergeGroup::Helper::PutLabels;

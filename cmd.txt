@@ -1,1 +1,0 @@
-c:\im\convert.exe  (  -size 2605x2606 canvas:"rgb(255,255,255)"  (  (   -density 300 r:\pcb\test.pdf -flatten -shave 20x20 -trim -shave 5x5 -resize 2605  )  -background black -alpha copy -type truecolormatte -alpha copy -channel A -negate -channel a -separate +channel )   -alpha off -compose copy_opacity -composite   )    r:\pcb\test.png

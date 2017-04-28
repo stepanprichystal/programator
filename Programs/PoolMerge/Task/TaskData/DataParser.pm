@@ -80,12 +80,15 @@ sub __GetTaskData {
  
 	my ( $panelName, $type, $surface, $exportTime ) = $xmlName =~ /(pan\d+)_([\d-]+)-(\w+)_([\d-]+)/;
 
+	$surface = substr($surface, 0, 11);
+
 	$panelName =~ s/pan/panel /i;
 
 	$taskData->{"settings"}->{"panelName"}    = $panelName;
 	$taskData->{"settings"}->{"poolType"}     = $type;
 	$taskData->{"settings"}->{"poolSurface"}  = $surface;
 	$taskData->{"settings"}->{"poolExported"} = $exportTime;
+	$taskData->{"settings"}->{"poolGroupData"} = dclone($groupData);
 
 	my @mandatory = (UnitEnums->UnitId_CHECK, UnitEnums->UnitId_MERGE, UnitEnums->UnitId_ROUT, UnitEnums->UnitId_OUTPUT);
 	#my @mandatory = ( UnitEnums->UnitId_MERGE  );
