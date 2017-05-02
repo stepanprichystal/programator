@@ -114,7 +114,7 @@ sub __ExportLayers {
 		my %lim = $self->__GetLayerLimit( $l->{"gROWname"} );
 
 		# 1) Optimize levels
-		#$self->__OptimizeLevels( $l->{"gROWname"} );
+		$self->__OptimizeLevels( $l->{"gROWname"} );
 
 		# 2) insert frame 100µm width around pcb (fr frame coordinate)
 		$self->__PutFrameAorundPcb( $l->{"gROWname"}, \%lim );
@@ -317,8 +317,9 @@ sub __ExportGerberLayer {
 	my $tmpFullPath = EnumsPaths->Client_INCAMTMPOTHER . $layerName . $tmpFileId;
 
 	# 2) Add fiducial mark on the bbeginning of gerber data
-
-	my $fiducDCode = FiducMark->AddalignmentMark( $inCAM, $jobId, $layerName, 'inch', $tmpFullPath, 'cross_*', $self->{"mdiStep"} );
+  
+	my $fiducDCode = FiducMark->AddalignmentMark( $inCAM, $jobId, $layerName, 'inch', $tmpFullPath, 'cross_*', $self->{"step"} );
+	 
 
 	# 3) Copy file to mdi folder
 	my $finalName = EnumsPaths->Jobs_PCBMDI . $jobId . $layerName . "_mdi.ger";
