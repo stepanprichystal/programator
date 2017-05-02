@@ -5,10 +5,7 @@
 
 package Packages::Mdi::ExportFiles::FiducMark;
 
-
 #local library
-
-use aliased 'Packages::Polygon::Features::Features::Features';
 
 my $FIDMARK_MM   = "5.16120000";
 my $FIDMARK_INCH = "0.202815";
@@ -142,21 +139,6 @@ sub _GetCoorFiducial {
 		my $INFOFILE;
 		open( $INFOFILE, $infoFile );
 
-
-
-		my $f = Features->new();
-		$f->Parse( $genesis, $jobName, $stepName, $layer);
-		
-		my @features = $f->GetFeatures();
-
-		# get features only with attribute .pnl_place = <$searchMark>
-		@features = grep { $_->{"att"}->{".pnl_place"} && $_->{"att"}->{".pnl_place"} eq  $searchMark } @features;
-		 
-
-		for (my $i = 0; $i < scalar(@features); $i++ ){
-
-		my $feat = $features[$i];
-
 		my $count = 1;
 		while (<$INFOFILE>) {
 			if ( $_ =~ /^#P/ ) {
@@ -169,14 +151,12 @@ sub _GetCoorFiducial {
 				#																		$points[1] = $points[1] - $coorXfr;
 				#																		$points[2] = $points[2] - $coorYfr;
 				#														}
-				#					
-				my $count = $i+1;
-											};
+				#												};
 				$featCoor->{"fid$count"} = {
-											 'x' => $feat->{"x1"},
-											 'y' => $feat->{"y1"},
+											 'x' => $points[1],
+											 'y' => $points[2],
 				};
-				 
+				$count++;
 			}
 		}
 

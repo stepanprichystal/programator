@@ -205,7 +205,14 @@ sub __PrepareDrillMaps {
 	my $result = CamFilter->SelectBySingleAtt( $inCAM, $jobId, ".plated_type", "press_fit" );
 
 	$inCAM->COM("sel_reverse");
-	$inCAM->COM("sel_delete");
+	$inCAM->COM("get_select_count");
+ 
+	if( $self->{"inCAM"}->GetReply() > 0 ){
+		
+		$inCAM->COM("sel_delete");
+	}
+	
+
 
 	# 2) create drill map
 	$inCAM->COM(
@@ -280,7 +287,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId = "f13608";
+	my $jobId = "f70372";
 	my $presss = PressfitPdf->new( $inCAM, $jobId );
 	$presss->Create("panel");
 

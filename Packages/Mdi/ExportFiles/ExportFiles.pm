@@ -317,8 +317,9 @@ sub __ExportGerberLayer {
 	my $tmpFullPath = EnumsPaths->Client_INCAMTMPOTHER . $layerName . $tmpFileId;
 
 	# 2) Add fiducial mark on the bbeginning of gerber data
-  
+  	CamHelper->SetStep($inCAM, $self->{"step"});
 	my $fiducDCode = FiducMark->AddalignmentMark( $inCAM, $jobId, $layerName, 'inch', $tmpFullPath, 'cross_*', $self->{"step"} );
+	CamHelper->SetStep($inCAM, $self->{"mdiStep"});
 	 
 
 	# 3) Copy file to mdi folder

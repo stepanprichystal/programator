@@ -316,9 +316,9 @@ my ( $package, $filename, $line ) = caller;
 
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-		my $pcbId        = "f13609";
-		my $layerCnt     = 6;
-		my @innerCuUsage = ( 2,1, 30, 40 );
+		my $pcbId        = "f52457";
+		my $layerCnt     = 4;
+		my @innerCuUsage = ( 30, 40 );
 		my $outerCuThick = 18;
 		my $pcbClass     = 6;
 
