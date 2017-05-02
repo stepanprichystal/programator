@@ -127,7 +127,7 @@ sub Run {
 	# 7) Prepare "export file"
 	my $exportPath = GeneralHelper->GetGUID();
 	$self->SetValInfoFile( "exportFile", $exportPath );
-	$self->{"exportPrepare"}->PrepareExportFile( $masterJob, $exportPath, \$mess );
+	$self->{"exportPrepare"}->PrepareExportFile( $masterJob, $masterOrder, $exportPath, \$mess );
 
 }
 

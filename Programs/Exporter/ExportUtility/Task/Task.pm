@@ -206,16 +206,22 @@ sub SetToProduceResult {
 
 sub SentToProduce {
 	my $self = shift;
-	
+
 	my $result = 1;
 
 	# set state HOTOVO-zadat
 
 	eval {
-		my $orderRef = HegMethods->GetPcbOrderNumber( $self->{"jobId"} );
-		my $orderNum = $self->{"jobId"} . "-" . $orderRef;
 
-		my $succ = HegMethods->UpdatePcbOrderState( $orderNum, "HOTOVO-zadat" );
+		my $taksData = $self->GetTaskData();
+
+		foreach my $orderNum ( $taksData->GetOrders() ) {
+
+			#my $orderRef = HegMethods->GetPcbOrderNumber( $self->{"jobId"} );
+			#my $orderNum = $self->{"jobId"} . "-" . $orderRef;
+
+			my $succ = HegMethods->UpdatePcbOrderState( $orderNum, "HOTOVO-zadat" );
+		}
 
 		$self->{"taskStatus"}->DeleteStatusFile();
 		$self->{"sentToProduce"} = 1;
@@ -229,11 +235,11 @@ sub SentToProduce {
 
 		$item->AddError("Set state HOTOVO-zadat failed, try it again. Detail: $e\n");
 		$toProduceMngr->AddItem($item);
-		
+
 		$result = 0;
 
 	}
-	
+
 	return $result;
 
 }

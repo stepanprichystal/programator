@@ -645,16 +645,14 @@ sub GetPcbOrderNumber {
 	return $num;
 }
 
-# Return order number of last "order"
-# Understand this: f12345-01, in this case it return "01";
-sub GetPcbOrderNumber {
+# Return all order numbers by job name
+sub GetPcbOrderNumbers {
 	my $self  = shift;
 	my $pcbId = shift;
 
 	my @params = ( SqlParameter->new( "_PcbId", Enums->SqlDbType_VARCHAR, $pcbId ) );
 
-	my $cmd = "select TOP 1
-				  
+	my $cmd = "select 				  
 				 z.reference_subjektu
 				 
 				 from lcs.desky_22 d with (nolock)
@@ -664,11 +662,11 @@ sub GetPcbOrderNumber {
 				 where d.reference_subjektu=_PcbId and  z.cislo_poradace = 22050
 				 order by z.reference_subjektu desc";
 
-	my $res = Helper->ExecuteScalar( $cmd, \@params );
-
-	my ($num) = $res =~ m/[a-z]+[\d]+-(\d*)/i;
-
-	return $num;
+	my @res = Helper->ExecuteDataSet( $cmd, \@params );
+	
+	my @arr = map { $_->{"reference_subjektu"} } @res;
+ 
+	return @arr;
 }
 
 sub GetNumberOrder {
@@ -990,21 +988,15 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	use aliased 'Connectors::HeliosConnector::HegMethods';
 
-	my $num = HegMethods->GetCurStepOfOrder( "f69854-01", 1 );
+	#my $num = HegMethods->GetCurStepOfOrder( "f69854-01", 1 );
 
-	print $num;
+	#print $num;
 
 	# my $test = HegMethods->GetPcbName("f52456");
 
-	#	HegMethods->GetPcbOrderNumber("f52456");
-	#	my $test = HegMethods->UpdatePcbOrderState("f52456-01", "HOTOVO-123");
+	my @orders =	HegMethods->GetPcbOrderNumbers("f52456");
 
-	#	use aliased 'Connectors::HeliosConnector::HegMethods';
-	#
-	#	my $nc_info = "test";
-	#
-	#	my $test =  HegMethods->GetTpvCustomerNote("d06224");
-	#
+	print @orders;
 
 }
 

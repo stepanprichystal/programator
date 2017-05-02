@@ -83,6 +83,7 @@ sub CheckBeforeExport {
 sub PrepareExportFile {
 	my $self       = shift;
 	my $masterJob  = shift;
+	my $masterOrder  = shift;
 	my $exportFile = shift;
 	my $mess       = shift;
 
@@ -93,7 +94,8 @@ sub PrepareExportFile {
 	my $pathExportFile = EnumsPaths->Client_INCAMTMPOTHER . $exportFile;
 
 	my $dataTransfer = DataTransfer->new( $masterJob, EnumsTransfer->Mode_WRITE, $self->{"units"}, undef, $pathExportFile );
-	$dataTransfer->SaveData( EnumsJobMngr->TaskMode_ASYNC, 1 );
+	my @orders = ($masterOrder);
+	$dataTransfer->SaveData( EnumsJobMngr->TaskMode_ASYNC, 1, undef, undef, \@orders);
 
 	unless ( -e $pathExportFile ) {
 		$$mess .= "Error during preparing \"export file\" for master job";

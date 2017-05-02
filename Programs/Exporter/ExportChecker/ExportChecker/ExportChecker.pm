@@ -360,6 +360,8 @@ sub __OnResultPopupHandler {
 
 		my $inCAM  = $self->{"inCAM"};
 		my $client = $self->{"client"};
+		
+		my @orders = HegMethods->GetPcbOrderNumbers($self->{"jobId"});
 
 		if ( $exportMode eq EnumsJobMngr->TaskMode_ASYNC ) {
 
@@ -377,7 +379,7 @@ sub __OnResultPopupHandler {
 			}
 			
 			# Save exported data
-			$dataTransfer->SaveData( $exportMode, $toProduce );
+			$dataTransfer->SaveData( $exportMode, $toProduce, undef, undef, \@orders);
 
 		}
 		elsif ( $exportMode eq EnumsJobMngr->TaskMode_SYNC ) {
@@ -396,7 +398,7 @@ sub __OnResultPopupHandler {
 			my $formPos = $self->{"form"}->{"mainFrm"}->GetPosition();
 
 			# Save exported data
-			$dataTransfer->SaveData( $exportMode, $toProduce, $self->{"serverPort"}, $formPos );
+			$dataTransfer->SaveData( $exportMode, $toProduce, $self->{"serverPort"}, $formPos, \@orders );
 
 			#test if client is connected
 			#if so, disconnect, because exportUtility connect to this server (launched in InCAM toolkit)
