@@ -114,7 +114,7 @@ sub __ExportLayers {
 		my %lim = $self->__GetLayerLimit( $l->{"gROWname"} );
 
 		# 1) Optimize levels
-		$self->__OptimizeLevels( $l->{"gROWname"} );
+		#$self->__OptimizeLevels( $l->{"gROWname"} );
 
 		# 2) insert frame 100µm width around pcb (fr frame coordinate)
 		$self->__PutFrameAorundPcb( $l->{"gROWname"}, \%lim );
@@ -434,7 +434,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId    = "f65136";
+	my $jobId    = "f52457";
 	my $stepName = "panel";
 
 	my $export = ExportFiles->new( $inCAM, $jobId, $stepName );
