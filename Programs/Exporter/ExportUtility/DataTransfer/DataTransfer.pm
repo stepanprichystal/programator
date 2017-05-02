@@ -193,9 +193,11 @@ sub SaveData {
 		$self->{"hashData"}->{"settings"}->{"formPosX"} = $formPos->x();
 		$self->{"hashData"}->{"settings"}->{"formPosY"} = $formPos->y();
 	}
-
-	#$self->{"hashData"}->{"settings"}->{"serverPID"} = $serverPID;
-
+	
+	# Set orders, where export utility sets state "hotovo zadat"
+	
+	@{$self->{"settings"}->{"orders"}}
+	
 	# serialize and save
 	$self->__SerializeExportData();
 

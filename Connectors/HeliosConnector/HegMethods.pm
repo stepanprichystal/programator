@@ -645,6 +645,32 @@ sub GetPcbOrderNumber {
 	return $num;
 }
 
+# Return order number of last "order"
+# Understand this: f12345-01, in this case it return "01";
+sub GetPcbOrderNumber {
+	my $self  = shift;
+	my $pcbId = shift;
+
+	my @params = ( SqlParameter->new( "_PcbId", Enums->SqlDbType_VARCHAR, $pcbId ) );
+
+	my $cmd = "select TOP 1
+				  
+				 z.reference_subjektu
+				 
+				 from lcs.desky_22 d with (nolock)
+				 
+				 left outer join lcs.zakazky_dps_22_hlavicka z with (nolock) on z.deska=d.cislo_subjektu
+
+				 where d.reference_subjektu=_PcbId and  z.cislo_poradace = 22050
+				 order by z.reference_subjektu desc";
+
+	my $res = Helper->ExecuteScalar( $cmd, \@params );
+
+	my ($num) = $res =~ m/[a-z]+[\d]+-(\d*)/i;
+
+	return $num;
+}
+
 sub GetNumberOrder {
 	my $self  = shift;
 	my $pcbId = shift;
