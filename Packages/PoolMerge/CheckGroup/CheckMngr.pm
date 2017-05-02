@@ -71,10 +71,10 @@ sub Run {
 	my $childStatusRes = $self->_GetNewItem("Child job status");
 	$mess           = "";
 
-#	unless ( $self->{"checkHelper"}->CheckChildJobStatus(  $masterOrder, \$mess ) ) {
-#
-#		$childStatusRes->AddError($mess);
-#	}
+	unless ( $self->{"checkHelper"}->CheckChildJobStatus(  $masterOrder, \$mess ) ) {
+
+		$childStatusRes->AddError($mess);
+	}
 
 	$self->_OnPoolItemResult($childStatusRes);
 	
@@ -121,10 +121,10 @@ sub Run {
 	my $masterJobCheckRes = $self->_GetNewItem("Mater job checks");
 	$mess    = "";
 
-#	unless ( $self->{"masterHelper"}->CheckMasterJob(  $masterJob, \$mess ) ) {
-#
-#		$masterJobCheckRes->AddError($mess);
-#	}
+	unless ( $self->{"masterHelper"}->CheckMasterJob(  $masterJob, \$mess ) ) {
+
+		$masterJobCheckRes->AddError($mess);
+	}
 
 	$self->_OnPoolItemResult($masterJobCheckRes);
 
@@ -136,10 +136,10 @@ sub Run {
 	my $jobsContainStepRes = $self->_GetNewItem("Step o+1 exists");
 	$mess               = "";
 
-#	unless ( $self->{"checkHelper"}->JobsContainStep( \$mess ) ) {
-#
-#		$jobsContainStepRes->AddError($mess);
-#	}
+	unless ( $self->{"checkHelper"}->JobsContainStep( \$mess ) ) {
+
+		$jobsContainStepRes->AddError($mess);
+	}
 
 	$self->_OnPoolItemResult($jobsContainStepRes);
 

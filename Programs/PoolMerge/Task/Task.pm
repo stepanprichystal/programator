@@ -223,7 +223,7 @@ sub SentToExport {
 			$groupData->DeleteInfoFile();
  
 			# Launch export utility if hasn't launched before
-			#my $utility = RunExportUtility->new(0);
+			my $utility = RunExportUtility->new(0);
 
 		}
 		else {

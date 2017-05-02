@@ -27,6 +27,8 @@ use aliased 'CamHelpers::CamHelper';
 use aliased 'CamHelpers::CamSymbol';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'Packages::SystemCall::SystemCall';
+use aliased 'Packages::CAM::UniRTM::UniRTM::UniRTM';
+use aliased 'Packages::CAM::FeatureFilter::FeatureFilter';
 
 #-------------------------------------------------------------------------------------------#
 #  Interface
@@ -443,11 +445,37 @@ sub __PrepareNPLTTHROUGHNC {
 
 			$inCAM->COM( "merge_layers", "source_layer" => $l->{"gROWname"}, "dest_layer" => $lName );
 		}
+ 
+		
+
 
 		# There can by small remains of pcb material, which is not milled
 		# We don't want see this pieces in pdf, so delete tem from layer $lName
-		my $lTmp = GeneralHelper->GetGUID();
-		$inCAM->COM( "merge_layers", "source_layer" => $lName, "dest_layer" => $lTmp );
+		 
+		#$inCAM->COM( "merge_layers", "source_layer" => $lName, "dest_layer" => $lTmp );
+		
+		
+		my $unitRTM = UniRTM->new( $inCAM, $self->{"jobId"}, $self->{"pdfStep"}, $l->{"gROWname"} );
+		my @outline = $unitRTM->GetOutlineChains();
+		my @outFeatsId =  map {$_->{"id"}} map { $_->GetFeatures() } @outline;
+		#my $f = FeatureFilter->new( $inCAM, $self->{"jobId"}, $l->{"gROWname"} );
+		#$f->AddFeatureIndexes(\@outFeatsId);
+		#$f->Select();
+		
+		CamFilter->SelectByFeatureIndexes($inCAM, $self->{"jobId"}, \@outFeatsId);
+		
+		
+		$inCAM->COM("sel_reverse");
+		my $tmpRout = GeneralHelper->GetGUID();
+		$inCAM->COM(
+				 "sel_copy_other",
+				 "dest"         => "layer_name",
+				 "target_layer" => $tmpRout,
+				 "invert"       => "no"
+		);
+		
+		my $lTmp = CamLayer->RoutCompensation( $inCAM, $tmpRout, "document" );
+		$inCAM->COM( 'delete_layer', "layer" => $tmpRout );
 
 		# 1) do negative of prepared rout layer
 		CamLayer->NegativeLayerData( $inCAM, $lTmp, $self->{"profileLim"} );
@@ -462,7 +490,8 @@ sub __PrepareNPLTTHROUGHNC {
 		my $profileArea =
 		  abs( $self->{"profileLim"}->{"xMin"} - $self->{"profileLim"}->{"xMax"} ) *
 		  abs( $self->{"profileLim"}->{"yMin"} - $self->{"profileLim"}->{"yMax"} );
-		my $maxArea = $profileArea / 10;
+		#my $maxArea = $profileArea / 10;
+		my $maxArea = $profileArea / 2;
 
 		if ( CamFilter->BySurfaceArea( $inCAM, 0, $maxArea ) > 0 ) {
 			my @layers = ($lName);

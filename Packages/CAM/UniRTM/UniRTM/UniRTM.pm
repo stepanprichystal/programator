@@ -117,9 +117,9 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	use aliased 'Packages::Routing::RoutLayer::RoutDrawing::RoutDrawing';
 
 	my $inCAM = InCAM->new();
-	my $jobId = "f52456";
+	my $jobId = "f52457";
 
-	my $unitRTM = UniRTM->new( $inCAM, $jobId, "mpanel", "test" );
+	my $unitRTM = UniRTM->new( $inCAM, $jobId, "o+1", "f" );
 
 	my @out = $unitRTM->GetOutlineChains();
 

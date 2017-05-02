@@ -55,7 +55,7 @@ sub Create {
 	my @layers = CamJob->GetBoardLayers( $self->{"inCAM"}, $self->{"jobId"} );
 
 	# check if gold plating exist - layer c, s and set indicator gold_plating => 1 to layer
-	$self->__SetGoldPlating(\@layers );
+	$self->__SetGoldPlating( \@layers );
 
 	# add nc info to nc layers
 	my @nclayers = grep { $_->{"gROWlayer_type"} eq "rout" || $_->{"gROWlayer_type"} eq "drill" } @layers;
@@ -169,17 +169,24 @@ sub __PrepareColors {
 	elsif ( $surface =~ /^i$/i || $surface =~ /^g$/i ) {
 		$outerSurfaceClr->SetTexture( Enums->Texture_GOLD );
 	}
-	
+
 	# Gold fingers
 
 	my $goldFingerClr = LayerColor->new( Enums->Surface_TEXTURE, Enums->Texture_GOLD );
 	$clrs{ Enums->Type_GOLDFINGER } = $goldFingerClr;
-	
 
 	# Mask color
+	my $clrRGB = $self->__GetMaskColor();
+	my $maskClr = LayerColor->new( Enums->Surface_COLOR, $clrRGB );
 
-	my $maskClr = LayerColor->new( Enums->Surface_COLOR, $self->__GetMaskColor() );
-	$maskClr->SetOpaque(80);
+	# if white mask, do smaller opaque
+	if ( $clrRGB eq "250,250,250" ) {
+
+		$maskClr->SetOpaque(90);
+	}
+	else {
+		$maskClr->SetOpaque(80);
+	}
 	$clrs{ Enums->Type_MASK } = $maskClr;
 
 	# Silk color

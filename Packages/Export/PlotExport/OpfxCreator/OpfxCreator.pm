@@ -105,7 +105,7 @@ sub __PrepareLayer {
 	# 1) Find Olec marks and move them by 0.03 mm towards the nearest corner. Request by Temny
 	foreach my $plnPlace ( ( "left-top", "right-top", "right-bot", "left-bot" ) ) {
 
-		my $f = FeatureFilter->new( $inCAM, $self->{"jobId"}, $lName);
+		my $f = FeatureFilter->new( $inCAM, $self->{"jobId"}, $lName );
 		$f->AddIncludeAtt( ".geometry",  "*olec*" );
 		$f->AddIncludeAtt( ".pnl_place", "*$plnPlace*" );
 
@@ -141,6 +141,14 @@ sub __PrepareLayer {
 		CamLayer->NegativeLayerData( $inCAM, $lName, $plotLayer->{"pcbLimits"} );
 	}
 
+	# 4) Optimize lazer in order contain only one level of features
+
+	if ( $plotLayer->GetName() =~ /^c$/ || $plotLayer->GetName() =~ /^s$/ || $plotLayer->GetName() =~ /^v\d$/ ) {
+
+		CamLayer->OptimizeLevels( $self->{"inCAM"}, $lName, 1 );
+		CamLayer->WorkLayer( $self->{"inCAM"}, $lName );
+	}
+
 	# 4) Compensate layer
 	if ( $plotLayer->GetComp() != 0 ) {
 
@@ -159,7 +167,6 @@ sub __PrepareLayer {
 		CamLayer->MirrorLayerData( $inCAM, $lName, "y" );
 	}
 
-	
 }
 
 # Create special layer, which will be outputed

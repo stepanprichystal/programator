@@ -52,8 +52,6 @@ sub new {
 
 	$self->{"pcbClass"} = CamJob->GetJobPcbClass( $self->{"inCAM"}, $self->{"jobId"} );
 
-	
-
 	# Get limits of fr, profile ===============
 
 	my %frLim = $self->__GetFrLimits();
@@ -63,20 +61,19 @@ sub new {
 	$self->{"profLim"} = \%profLim;
 
 	# Other properties ========================
-	
+
 	$self->{"tifFile"} = TifSigLayers->new( $self->{"jobId"} );
-	
-	unless($self->{"tifFile"}->TifFileExist()){
+
+	unless ( $self->{"tifFile"}->TifFileExist() ) {
 		die "Dif file must exist when MDI data are exported.\n";
 	}
 
 	$self->{"mdiStep"} = "mdi_panel";
 
-	$self->{"exportXml"} = ExportXml->new( $self->{"inCAM"}, $self->{"jobId"},  $self->{"profLim"}, $self->{"layerCnt"});
+	$self->{"exportXml"} = ExportXml->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"profLim"}, $self->{"layerCnt"} );
 
 	return $self;
 }
-
 
 sub Run {
 	my $self       = shift;
@@ -116,16 +113,19 @@ sub __ExportLayers {
 		# get limits (define physic dimension) for layer
 		my %lim = $self->__GetLayerLimit( $l->{"gROWname"} );
 
-		# 1) insert frame 100µm width around pcb (fr frame coordinate)
+		# 1) Optimize levels
+		$self->__OptimizeLevels( $l->{"gROWname"} );
+
+		# 2) insert frame 100µm width around pcb (fr frame coordinate)
 		$self->__PutFrameAorundPcb( $l->{"gROWname"}, \%lim );
 
-		# 2) clip data by limits
+		# 3) clip data by limits
 		$self->__ClipAreaLayer( $l->{"gROWname"}, \%lim );
 
-		# 3) compensate layer by computed compensation
+		# 4) compensate layer by computed compensation
 		$self->__CompensateLayer( $l->{"gROWname"} );
 
-		# 4) export gerbers
+		# 5) export gerbers
 		my $fiducDCode = $self->__ExportGerberLayer( $l->{"gROWname"}, $resultItem );
 
 		$self->{"exportXml"}->Export( $l, $fiducDCode );
@@ -168,7 +168,7 @@ sub __DeleteOldFiles {
 		push( @file2del, ( @f, @f2 ) );
 
 	}
-	
+
 	if ( $layerTypes->{ Enums->Type_GOLD } ) {
 
 		my @f  = FileHelper->GetFilesNameByPattern( EnumsPaths->Jobs_MDI,    $jobId . "^gold[cs]_mdi" );
@@ -215,12 +215,12 @@ sub __GetLayers2Export {
 		my @l = grep { $_->{"gROWname"} =~ /^plg[cs]$/ } @all;
 		push( @exportLayers, @l );
 	}
-	
+
 	if ( $layerTypes->{ Enums->Type_GOLD } ) {
 
 		my @l = grep { $_->{"gROWname"} =~ /^gold[cs]$/ } @all;
 		push( @exportLayers, @l );
-	}	
+	}
 
 	return @exportLayers;
 }
@@ -235,14 +235,14 @@ sub __GetLayerLimit {
 	my %lim = ();
 
 	# if top/bot layer, clip around fr frame
-	if ($self->{"layerCnt"} > 2 && ($layerName =~ /^[goldm]*c$/ || $layerName =~ /^[goldm]*s$/) ) {
-		
-		%lim = %{ $self->{"frLim"} };	
+	if ( $self->{"layerCnt"} > 2 && ( $layerName =~ /^[goldm]*c$/ || $layerName =~ /^[goldm]*s$/ ) ) {
+
+		%lim = %{ $self->{"frLim"} };
 	}
 
 	#if inner layers, clip around profile
 	elsif ( $layerName =~ /^v\d$/ ) {
- 
+
 		%lim = %{ $self->{"profLim"} };
 
 	}
@@ -263,12 +263,11 @@ sub __GetFrLimits {
 	my %lim = ();
 
 	if ( CamHelper->LayerExists( $inCAM, $jobId, "fr" ) ) {
-		
+
 		CamHelper->SetStep( $inCAM, $self->{"step"} );
-		
-		 # compensate layer, because in genesis Fr has righ compensation, but in incam left comp... Thus coordinate of fr are different
-		my $lName = CamLayer->RoutCompensation($inCAM, "fr", "document");
-		
+
+		# compensate layer, because in genesis Fr has righ compensation, but in incam left comp... Thus coordinate of fr are different
+		my $lName = CamLayer->RoutCompensation( $inCAM, "fr", "document" );
 
 		my $route = Features->new();
 		$route->Parse( $inCAM, $jobId, $self->{"step"}, $lName );
@@ -280,7 +279,7 @@ sub __GetFrLimits {
 		$lim{"xMax"} = $lim{"xMax"} - 1;
 		$lim{"yMin"} = $lim{"yMin"} + 1;
 		$lim{"yMax"} = $lim{"yMax"} - 1;
-		
+
 		$inCAM->COM( 'delete_layer', layer => $lName );
 	}
 
@@ -288,10 +287,9 @@ sub __GetFrLimits {
 
 }
 
- 
 sub __ExportGerberLayer {
-	my $self      = shift;
-	my $layerName = shift;
+	my $self          = shift;
+	my $layerName     = shift;
 	my $resultItemGer = shift;
 
 	my $inCAM = $self->{"inCAM"};
@@ -337,7 +335,20 @@ sub __ClipAreaLayer {
 	my $layerName = shift;
 	my %lim       = %{ shift(@_) };
 
-	CamLayer->ClipLayerData( $self->{"inCAM"}, $layerName, \%lim, undef, 1);
+	CamLayer->ClipLayerData( $self->{"inCAM"}, $layerName, \%lim, undef, 1 );
+}
+
+# Optimize lazer in order contain only one level of features
+sub __OptimizeLevels {
+	my $self      = shift;
+	my $layerName = shift;
+
+	if ( $layerName =~ /^c$/ || $layerName =~ /^s$/ || $layerName =~ /^v\d$/ ) {
+
+		my $res = CamLayer->OptimizeLevels( $self->{"inCAM"}, $layerName, 1 );
+
+		CamLayer->WorkLayer( $self->{"inCAM"}, $layerName );
+	}
 }
 
 # Compensate layer by compensation
@@ -351,11 +362,11 @@ sub __CompensateLayer {
 	my $class = $self->{"pcbClass"};
 
 	my $comp = 0;
-	
+
 	if ( $layerName =~ /^c$/ || $layerName =~ /^s$/ || $layerName =~ /^v\d$/ ) {
 
 		my %sigLayers = $self->{"tifFile"}->GetSignalLayers();
-		$comp   = $sigLayers{ $layerName }->{'comp'};
+		$comp = $sigLayers{$layerName}->{'comp'};
 	}
 
 	if ( $comp != 0 ) {
@@ -411,7 +422,6 @@ sub __DeleteMdiStep {
 		$inCAM->COM( "delete_entity", "job" => $jobId, "name" => $step, "type" => "step" );
 	}
 }
- 
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
@@ -429,7 +439,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $export = ExportFiles->new( $inCAM, $jobId, $stepName );
 
-	my %type = ( Enums->Type_SIGNAL => "1",Enums->Type_MASK => "0", Enums->Type_PLUG => "0" );
+	my %type = ( Enums->Type_SIGNAL => "1", Enums->Type_MASK => "0", Enums->Type_PLUG => "0" );
 
 	$export->Run( \%type );
 

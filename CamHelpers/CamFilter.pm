@@ -23,6 +23,61 @@ use aliased 'CamHelpers::CamAttributes';
 #   Package methods
 #-------------------------------------------------------------------------------------------#
 
+# include attribute and att value to filter
+sub SelectByFeatureIndexes {
+	my $self           = shift;
+	my $inCAM          = shift;
+	my $jobId          = shift;
+	my $featureIndexes = shift;
+
+	$inCAM->COM( 'filter_reset', filter_name => 'popup' );
+
+	my @ids = @{$featureIndexes};
+
+	# if there is too much feature ids, split it and delete rout in cycle
+
+	my @idsPart = ();
+
+	# each loop delete 20 edges
+	for ( my $i = 0 ; $i < scalar(@ids) ; $i++ ) {
+
+		push( @idsPart, $ids[$i] );
+
+		if ( scalar(@idsPart) == 20 ) {
+
+			my $str = join( "\\;", @idsPart );
+			$inCAM->COM(
+						 "adv_filter_set",
+						 "filter_name" => "popup",
+						 "active"      => "yes",
+						 "indexes"     => $str,
+			);
+
+			$inCAM->COM('filter_area_strt');
+			$inCAM->COM( 'filter_area_end', filter_name => 'popup', operation => 'select' ); 
+			$inCAM->COM( 'filter_reset', filter_name => 'popup' );
+
+			@idsPart = ();
+		}
+	}
+
+	# delete rest of edges
+	if ( scalar(@idsPart) ) {
+		my $str = join( "\\;", @idsPart );
+		$inCAM->COM(
+					 "adv_filter_set",
+					 "filter_name" => "popup",
+					 "active"      => "yes",
+					 "indexes"     => $str,
+		);
+
+					$inCAM->COM('filter_area_strt');
+			$inCAM->COM( 'filter_area_end', filter_name => 'popup', operation => 'select' ); 
+		$inCAM->COM( 'filter_reset', filter_name => 'popup' );
+	}
+
+}
+
 # Select all attributes of step in hash
 # Return count of celected features
 sub SelectBySingleAtt {

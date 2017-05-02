@@ -81,9 +81,9 @@ sub __ConvertToImage {
 
 	push( @cmd, "-density 300 -background white -flatten" );
 	push( @cmd, $pdfStackup );
-	push( @cmd, "-rotate 270 -crop 1500x2000+120+500 -trim" );
+	push( @cmd, "-rotate 270 -crop 1500x3000+120+0 -trim" );
 	push( @cmd, "-bordercolor white -border 20x20" );
-	push( @cmd, "-gravity center -background white -extent 1600x1600" );
+	push( @cmd, "-gravity center -background white -extent 2000x2000" );
 	push( @cmd, $self->{"outputPath"} );
 
 	my $cmdStr = join( " ", @cmd );

@@ -32,6 +32,7 @@ use aliased 'Managers::AbstractQueue::AbstractQueue::JobWorkerClass';
 use aliased 'Managers::AbstractQueue::Enums';
 use aliased 'Packages::InCAM::InCAM';
 use aliased 'Packages::Events::Event';
+use aliased 'Managers::AbstractQueue::AppConf';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -376,7 +377,7 @@ sub __TimerCheckVersion {
 		my $messMngr = $self->{"form"}->{"messageMngr"};
 
 		my @mess1 =
-		  ( "Na serveru je nová verze programu 'AbstractQueue'. Jakmile to bude možné, ukonèi program.", "Chceš program ukonèit nyní?" );
+		  ( "Na serveru je nová verze programu \"".AppConf->GetValue("appName")."\". Jakmile to bude možné, ukonèi program.", "Chceš program ukonèit nyní?" );
 		my @btn = ( "Ano", "Ukonèím pozdìni" );
 		$messMngr->ShowModal( -1, EnumsGeneral->MessageType_INFORMATION, \@mess1, \@btn );
 
@@ -511,7 +512,7 @@ sub __RunTimersBase {
 	my $timerVersion = Wx::Timer->new( $formMainFrm, -1, );
 	$self->{"timerVersion"} = $timerVersion;
 	Wx::Event::EVT_TIMER( $formMainFrm, $timerVersion, sub { $self->__TimerCheckVersion(@_) } );
-	$timerVersion->Start( 60000 * 5 );    # every 5 minutes
+	$timerVersion->Start( 60000 * 3 );    # every 5 minutes
 
 	my $timer1s = Wx::Timer->new( $formMainFrm, -1, );
 	Wx::Event::EVT_TIMER( $formMainFrm, $timer1s, sub { $self->__AutoRemoveJobsHandler(@_) } );

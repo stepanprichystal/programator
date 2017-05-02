@@ -12,8 +12,8 @@ use aliased 'Packages::Events::Event';
 use aliased 'Programs::Exporter::ExportUtility::UnitEnums';
 use aliased 'Managers::MessageMngr::MessageMngr';
 
-use aliased "Programs::Exporter::ExportUtility::Groups::PlotExport::PlotUnit"  => "UnitExport";
-use aliased "Programs::Exporter::ExportChecker::Groups::PlotExport::Presenter::PlotUnit" => "Unit";
+use aliased "Programs::Exporter::ExportChecker::Groups::PlotExport::Presenter::PlotUnit"  => "Unit";
+use aliased "Programs::Exporter::ExportUtility::Groups::PlotExport::PlotWorkUnit" => "UnitExport";
 
 use aliased 'Programs::Exporter::ExportChecker::ExportChecker::DefaultInfo::DefaultInfo';
 use aliased 'Packages::ItemResult::ItemResultMngr';
@@ -64,11 +64,9 @@ sub Run {
 		return 0;
 	}
 
-	my $taskData = $unit->GetTaskData($inCAM);
-
-	my $exportUnit = UnitExport->new( $self->{"id"} );
-
-	my $exportClass = $exportUnit->GetTaskClass();
+	my $taskData = $unit->GetExportData($inCAM);
+	my $exportClass = UnitExport->new( $self->{"id"} );
+	$exportClass->SetTaskData($taskData);
 
 	$exportClass->Init( $inCAM, $jobId, $taskData );
 	$exportClass->{"onItemResult"}->Add( sub { Test(@_) } );

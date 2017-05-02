@@ -17,6 +17,10 @@ use aliased 'Helpers::GeneralHelper';
 use aliased 'Packages::Export::NCExport::FileHelper::Parser';
 use aliased 'Packages::Events::Event';
 
+
+use aliased "Programs::Exporter::ExportChecker::Groups::NCExport::Presenter::NCUnit"  => "Unit";
+use aliased "Programs::Exporter::ExportUtility::Groups::NCExport::NCWorkUnit" => "UnitExport";
+
 use aliased 'Programs::Exporter::ExportUtility::Groups::NCExport::NCExport';
 use aliased 'Programs::Exporter::ExportUtility::DataTransfer::UnitsDataContracts::NCData';
 use aliased 'Programs::Exporter::ExportUtility::UnitEnums';
@@ -51,16 +55,17 @@ sub Run {
 	my $stepName = "panel";
 
 	#GET INPUT NIF INFORMATION
+ 
 
-	my $taskData = NCData->new();
+	my $taskData = $unit->GetExportData($inCAM);
+	my $exportClass = UnitExport->new( $self->{"id"} );
+	$exportClass->SetTaskData($taskData);
+
+	$exportClass->Init( $inCAM, $jobId, $taskData );
+	$exportClass->{"onItemResult"}->Add( sub { Test(@_) } );
 	
-	$taskData->SetExportSingle($exportSingle);
-	$taskData->SetPltLayers($pltLayers);
-	$taskData->SetNPltLayers($npltLayers);
-	my $export = NCExport->new( UnitEnums->UnitId_NC );
-	$export->Init( $inCAM, $jobId, $taskData );
-	$export->{"onItemResult"}->Add( sub { Test(@_) } );
-	$export->Run();
+ 
+	$exportClass->Run();
 
 	print "\n========================== E X P O R T: " . UnitEnums->UnitId_NC . " ===============================\n";
 	print $resultMess;

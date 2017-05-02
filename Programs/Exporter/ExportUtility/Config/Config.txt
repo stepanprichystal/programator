@@ -20,7 +20,7 @@ queueHeight = 40
 
 # height and width of main window
 windowWidth = 1120
-windowHeight = 760
+windowHeight = 800
 
 # app icon name, stored in resouces/images
 appIcon = Icon.bmp

@@ -12,8 +12,8 @@ use aliased 'Packages::Events::Event';
 use aliased 'Programs::Exporter::ExportUtility::UnitEnums';
 use aliased 'Managers::MessageMngr::MessageMngr';
 
-use aliased "Programs::Exporter::ExportUtility::Groups::GerExport::GerUnit"  => "UnitExport";
-use aliased "Programs::Exporter::ExportChecker::Groups::GerExport::Presenter::GerUnit" => "Unit";
+use aliased "Programs::Exporter::ExportChecker::Groups::GerExport::Presenter::GerUnit"  => "Unit";
+use aliased "Programs::Exporter::ExportUtility::Groups::GerExport::GerWorkUnit" => "UnitExport";
 
 use aliased 'Programs::Exporter::ExportChecker::ExportChecker::DefaultInfo::DefaultInfo';
 use aliased 'Packages::ItemResult::ItemResultMngr';
@@ -63,20 +63,13 @@ sub Run {
 		my @mess1 = ( "Kontrola pred exportem", $str );
 		$messMngr->ShowModal( -1, EnumsGeneral->MessageType_ERROR, \@mess1 );
 
-		return 0;
+		#return 0;
 	}
 
-	my $taskData = $unit->GetTaskData($inCAM);
-
-	my $exportUnit = UnitExport->new( $self->{"id"} );
-
-	my $exportClass = $exportUnit->GetTaskClass();
-	
-	
-	 
-	
-	 
-	
+	my $taskData = $unit->GetExportData($inCAM);
+	my $exportClass = UnitExport->new( $self->{"id"} );
+	$exportClass->SetTaskData($taskData);
+ 
 
 	$exportClass->Init( $inCAM, $jobId, $taskData );
 	$exportClass->{"onItemResult"}->Add( sub { Test(@_) } );

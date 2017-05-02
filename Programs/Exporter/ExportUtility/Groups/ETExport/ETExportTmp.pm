@@ -11,7 +11,12 @@ use aliased 'Programs::Exporter::ExportChecker::Groups::NCExport::Model::NCGroup
 #use aliased 'Programs::Exporter::ExportChecker::Groups::ETExport::Presenter::ETUnit';
 use aliased 'Managers::MessageMngr::MessageMngr';
 
-use aliased 'Programs::Exporter::ExportUtility::Groups::ETExport::ETExport';
+
+
+use aliased "Programs::Exporter::ExportChecker::Groups::ETExport::Presenter::ETUnit"  => "Unit";
+use aliased "Programs::Exporter::ExportUtility::Groups::ETExport::ETWorkUnit" => "UnitExport";
+
+
 use aliased 'Programs::Exporter::ExportUtility::DataTransfer::UnitsDataContracts::ETData';
 use aliased 'Programs::Exporter::ExportUtility::UnitEnums';
 
@@ -39,15 +44,15 @@ sub Run {
 
 	#GET INPUT NIF INFORMATION
 
-	my $taskData = ETData->new();
+	my $taskData = $unit->GetExportData($inCAM);
+	my $exportClass = UnitExport->new( $self->{"id"} );
+	$exportClass->SetTaskData($taskData);
 
-$taskData->SetStepToTest($stepToTest);
- my $export = ETExport->new( UnitEnums->UnitId_ET );
-$export->Init( $inCAM, $jobId, $taskData );
-
-$export->{"onItemResult"}->Add( sub { Test(@_) } );
-
-$export->Run();
+	$exportClass->Init( $inCAM, $jobId, $taskData );
+	$exportClass->{"onItemResult"}->Add( sub { Test(@_) } );
+	
+ 
+	$exportClass->Run();
 
 	print "\n========================== E X P O R T: " . UnitEnums->UnitId_ET . " ===============================\n";
 	print $resultMess;

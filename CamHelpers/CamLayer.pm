@@ -21,7 +21,6 @@ use aliased 'CamHelpers::CamDTM';
 use aliased 'Enums::EnumsDrill';
 use aliased 'CamHelpers::CamStepRepeat';
 
-
 #-------------------------------------------------------------------------------------------#
 #   Package methods
 #-------------------------------------------------------------------------------------------#
@@ -225,13 +224,14 @@ sub SetLayerTypeLayer {
 	$inCAM->COM( "matrix_layer_type", "job" => $jobId, "matrix" => "matrix", "layer" => $layer, "type" => $type );
 
 }
+
 # Set polarity of layer
 sub SetLayerPolarityLayer {
-	my $self  = shift;
-	my $inCAM = shift;
-	my $jobId = shift;
-	my $layer = shift;
-	my $polarity  = shift;
+	my $self     = shift;
+	my $inCAM    = shift;
+	my $jobId    = shift;
+	my $layer    = shift;
+	my $polarity = shift;
 
 	$inCAM->COM( "matrix_layer_polar", "job" => $jobId, "matrix" => "matrix", "layer" => $layer, "polarity" => $polarity );
 
@@ -255,14 +255,23 @@ sub DisplayFromOtherStep {
 	my $self  = shift;
 	my $inCAM = shift;
 	my $jobId = shift;
-	my $step = shift;
+	my $step  = shift;
 	my $layer = shift;
 
-	$inCAM->COM ('display_layer_from_other_step',name => $layer,display => 'yes',oper => '',x_anchor => 0,y_anchor => 0,x_offset => 0,y_offset => 0,job => $jobId, step => $step);
+	$inCAM->COM(
+				 'display_layer_from_other_step',
+				 name     => $layer,
+				 display  => 'yes',
+				 oper     => '',
+				 x_anchor => 0,
+				 y_anchor => 0,
+				 x_offset => 0,
+				 y_offset => 0,
+				 job      => $jobId,
+				 step     => $step
+	);
 
 }
-
- 
 
 # Hide all layers and all layers are not affected
 sub ClearLayers {
@@ -387,10 +396,10 @@ sub ClipAreaByProf {
 	my $self       = shift;
 	my $inCAM      = shift;
 	my $layer      = shift;
-	my $margin 	   = shift;
+	my $margin     = shift;
 	my $inside     = shift;
 	my $counturCut = shift;
-	
+
 	my $type = "outside";
 
 	if ($inside) {
@@ -402,10 +411,9 @@ sub ClipAreaByProf {
 	if ($counturCut) {
 		$countour = "yes";
 	}
-	
-	
+
 	$self->WorkLayer( $inCAM, $layer );
-	
+
 	$inCAM->COM(
 				 "clip_area_end",
 				 "layers_mode" => "layer_name",
@@ -418,9 +426,9 @@ sub ClipAreaByProf {
 				 "feat_types"  => "line\;pad;surface;arc;text",
 				 "pol_types"   => "positive\;negative"
 	);
-	
-	$inCAM->COM( 'display_layer',name=> $layer,display=>'no',number=>'1');
-	
+
+	$inCAM->COM( 'display_layer', name => $layer, display => 'no', number => '1' );
+
 }
 
 # Rotate layer by degree
@@ -604,6 +612,36 @@ sub CopySelected {
 
 }
 
+# Do omptimiyation of levels
+# remove data from original layer and put new oprimiyed data back to ori layer
+sub OptimizeLevels {
+	my $self       = shift;
+	my $inCAM      = shift;
+	my $layer      = shift;
+	my $levelCount = shift;
+
+	unless ($levelCount) {
+		die "no level count defined";
+	}
+
+	my $lName = GeneralHelper->GetGUID();
+
+	$inCAM->COM( "optimize_levels", "layer" => $layer, "opt_layer" => $lName, "levels" => $levelCount );
+
+	$self->WorkLayer( $inCAM, $layer );
+	$inCAM->COM('sel_delete');
+	$self->WorkLayer( $inCAM, $lName );
+
+	$inCAM->COM(
+				 "sel_copy_other",
+				 "dest"         => "layer_name",
+				 "target_layer" => $layer,
+				 "invert"       => "no"
+	);
+	$inCAM->COM( 'delete_layer', layer => $lName );
+
+}
+
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#
@@ -618,7 +656,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $res = CamLayer->LayerIsBoard( $inCAM, $jobName, $layerName );
+	my $res = CamLayer->OptimizeLevels( $inCAM, "o+1", "v2", 1);
 
 	print $res;
 

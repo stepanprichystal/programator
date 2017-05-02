@@ -37,7 +37,7 @@ my $col7  = $starX + 460;
 my $col8  = $starX + 485;
 my $col9  = $starX + 490;
 my $col10 = $starX + 532;
-my $col11 = $starX + 700;
+my $col11 = $starX + 680;
 my $col12 = $starX + 770;
 
 my $row1 = 515;
@@ -46,7 +46,10 @@ my $row3 = 450;
 my $row4 = 380;
 my $row5 = 300;
 my $row6 = 235;
-my $row7 = 100;
+my $row7 = 200;
+my $row8 = 100;
+
+
 
 #variables for creating pdf
 
@@ -78,7 +81,15 @@ sub Output {
 	my $stackupName = shift;
 	my $stackup     = shift;
 
-	$self->{"startY"} = 400;       # start stackup image from coordinate 400px
+	my $lCount = $stackup->GetCuLayerCnt();
+	# determine start Y depand on Copper count
+	$self->{"startY"} = 350;       # default start stackup image from coordinate 400px (for 4 layer pcb)
+	
+	if($lCount > 4 ){
+		
+		$self->{"startY"} += (($lCount-4) * 15); 
+	}
+ 
 
 	$self->_CreatePdfStackup( $stackupName, $stackup );
 
@@ -181,13 +192,12 @@ sub _CreatePdfStackup {
 	$self->{"startY"} -= $blankGap;
 	$self->_DrawGrayBox($starX);
 
-	#draw stackup type
-	$self->_DrawStackupType($stackup);
+	
 
 	#draw lines
 
 	$self->{"page"}->set_width(2);
-	$self->{"page"}->line( $col7, $row1, $col7,  $row7 );
+	$self->{"page"}->line( $col7, $row1, $col7,  $row8 );
 	$self->{"page"}->line( $col8, $row3, $col12, $row3 );
 	$self->{"page"}->line( $col8, $row5, $col12, $row5 );
 
@@ -199,6 +209,9 @@ sub _CreatePdfStackup {
 	$self->{"page"}->string( $f1, 18, $col11, $row4, $lCount );
 	$self->{"page"}->string( $f1, 18, $col9,  $row6, "Actual thickness" );
 	$self->{"page"}->string( $f1, 18, $col11, $row6, sprintf( "%4.3f", ( $pcbThick / 1000 ) ) );
+	
+	#draw stackup type
+	$self->_DrawStackupType($stackup);
 
 	$pdf->close;
 
@@ -305,7 +318,8 @@ sub _DrawStackupType {
 	#$self->{"page"}->setrgbcolor( 71 / 255, 143 / 255, 71 / 255 );
 	#$self->{"page"}->rectangle( $col3, $self->{"startY"}, 125, $lHeight );
 	#$self->{"page"}->fill();
-	$self->{"page"}->string( $f1, 20, 100, 480, $stackup->GetStackupType() );
+	$self->{"page"}->string( $f1, 20, $col9, $row7, "Material type");
+	$self->{"page"}->string( $f1, 20, $col11, $row7, $stackup->GetStackupType() );
 
 }
 

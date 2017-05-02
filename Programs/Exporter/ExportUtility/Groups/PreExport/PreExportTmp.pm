@@ -13,8 +13,8 @@ use aliased 'Programs::Exporter::ExportUtility::UnitEnums';
 use aliased 'Managers::MessageMngr::MessageMngr';
 use aliased 'Enums::EnumsGeneral';
 
-use aliased "Programs::Exporter::ExportUtility::Groups::PreExport::PreUnit"  => "UnitExport";
-use aliased "Programs::Exporter::ExportChecker::Groups::PreExport::Presenter::PreUnit" => "Unit";
+use aliased "Programs::Exporter::ExportChecker::Groups::PreExport::Presenter::PreUnit"  => "UnitExport";
+use aliased "Programs::Exporter::ExportUtility::Groups::PreExport::PreWorkUnit" => "Unit";
 
 use aliased 'Programs::Exporter::ExportChecker::ExportChecker::DefaultInfo::DefaultInfo';
 use aliased 'Packages::ItemResult::ItemResultMngr';
@@ -66,11 +66,9 @@ sub Run {
 		return 0;
 	}
 
-	my $taskData = $unit->GetTaskData($inCAM);
-
-	my $exportUnit = UnitExport->new( $self->{"id"} );
-
-	my $exportClass = $exportUnit->GetTaskClass();
+		my $taskData = $unit->GetExportData($inCAM);
+	my $exportClass = UnitExport->new( $self->{"id"} );
+	$exportClass->SetTaskData($taskData);
 	
 	
 	# misto pro upravu exportovanych dat

@@ -138,7 +138,7 @@ sub TaskItemsCount {
 
 	$totalCnt +=  8;    														 # nubber of units which are checked
 	$totalCnt += 6;                                                           # other checks..
-
+	$totalCnt += 1;  # saving master job (doe in JobWorkerClass)
 	return $totalCnt;
 
 }

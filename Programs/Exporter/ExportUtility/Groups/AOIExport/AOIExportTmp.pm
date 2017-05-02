@@ -10,7 +10,10 @@ use aliased 'Programs::Exporter::ExportUtility::Groups::AOIExport::AOIExport';
 use aliased 'Programs::Exporter::ExportUtility::DataTransfer::UnitsDataContracts::AOIData';
 use aliased 'Programs::Exporter::ExportUtility::UnitEnums';
 
-#use aliased 'Programs::Exporter::ExportChecker::Groups::AOIExport::Presenter::AOIUnit';
+
+use aliased "Programs::Exporter::ExportChecker::Groups::AOIExport::Presenter::AOIUnit"  => "Unit";
+use aliased "rograms::Exporter::ExportUtility::Groups::AOIExport::AOIWorkUnit" => "UnitExport";
+
 use aliased 'Managers::MessageMngr::MessageMngr';
 
 #-------------------------------------------------------------------------------------------#
@@ -36,20 +39,15 @@ sub Run {
 
 	#GET INPUT NIF INFORMATION
 
-	my $taskData = AOIData->new();
+	my $taskData = $unit->GetExportData($inCAM);
+	my $exportClass = UnitExport->new( $self->{"id"} );
+	$exportClass->SetTaskData($taskData);
 
-	$taskData->SetStepToTest("panel");
-
-	my $export = AOIExport->new( UnitEnums->UnitId_AOI );
-	$export->Init( $inCAM, $jobId, $taskData );
-
-	$export->{"onItemResult"}->Add( sub { Test(@_) } );
-
-	 $inCAM->VOF();
+	$exportClass->Init( $inCAM, $jobId, $taskData );
+	$exportClass->{"onItemResult"}->Add( sub { Test(@_) } );
 	
-	$export->Run();
-	
-	$inCAM->VOF();
+ 
+	$exportClass->Run();
 
 	print "\n========================== E X P O R T: " . UnitEnums->UnitId_AOI . " ===============================\n";
 	print $resultMess;
