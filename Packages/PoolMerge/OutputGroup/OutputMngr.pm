@@ -108,7 +108,7 @@ sub Run {
 
 
 	# 5) do control before creating "export file"
-	$self->{"exportPrepare"}->CheckBeforeExport($masterJob);
+	$self->{"exportPrepare"}->CheckBeforeExport($masterJob); 
 
 	# 6) Export "pool file"
 

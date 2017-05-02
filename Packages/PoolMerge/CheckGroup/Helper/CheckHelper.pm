@@ -73,7 +73,7 @@ sub PoolJobsClosed {
 	# 1) first close jobs if are opened in actual running user incam
 	foreach my $n (@jobNames) {
 		if ( CamJob->IsJobOpen( $self->{"inCAM"}, $n ) ) {
-			CamJob->CloseJob($self->{"inCAM"}, $n);
+			CamJob->CloseJob( $self->{"inCAM"}, $n );
 		}
 	}
 
@@ -93,7 +93,7 @@ sub PoolJobsClosed {
 	return $result;
 }
 
-sub JobsContainStep {
+sub JobChecks {
 	my $self = shift;
 	my $mess = shift;
 
@@ -103,13 +103,32 @@ sub JobsContainStep {
 
 	my @jobNames = $self->{"poolInfo"}->GetJobNames();
 
+	# 1) check if exist step o+1
 	foreach my $n (@jobNames) {
 
-		# check if exist step o+1
 		unless ( CamHelper->StepExists( $inCAM, $n, "o+1" ) ) {
 
 			$result = 0;
 			$$mess .= "Job \"" . $n . "\" doesn't contain step \"o+1\". Repair job.";
+		}
+	}
+
+	# 2) Check if there is solder or silk non board layer
+	foreach my $n (@jobNames) {
+		
+		my @layers = CamJob->GetAllLayers( $inCAM, $n );
+		@layers = grep { $_->{"gROWname"} =~ /^[pm][cs]$/ } @layers;
+
+		foreach my $l (@layers) {
+
+			if ( $l->{"gROWcontext"} ne "board" ) {
+
+				$result = 0;
+				$$mess .=
+				    "V metrixu v jobu \"$n\" je vrstva: "
+				  . $l->{"gROWname"}
+				  . ", ale není nastavená jako board. Přejmenuj vrstvu nebo ji nastav jako board.";
+			}
 		}
 	}
 
@@ -182,6 +201,7 @@ sub CheckChildJobStatus {
 	my $mess        = shift;
 
 	my @orderNames = $self->{"poolInfo"}->GetOrderNames();
+
 	#@orderNames = grep { $_ !~ /^$masterOrder/i } @orderNames;
 
 	my $result = 1;

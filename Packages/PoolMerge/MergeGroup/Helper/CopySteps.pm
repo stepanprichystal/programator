@@ -180,7 +180,7 @@ sub CopyStepFinalCheck {
 		);
 	}
 
-	# Check if pcb is in zero and zero and datum point are on same position
+	# 3) Check if pcb is in zero and zero and datum point are on same position
 
 	my @stepsZero = ( @jobNames, "o+1" );
 
@@ -201,6 +201,10 @@ sub CopyStepFinalCheck {
 			$$mess .= "Ve stepu: $step není­ levý dolní­ roh profilu v \"nule\". Oprav to\n";
 		}
 	}
+	
+	# 4) Do rearrange rows
+	$inCAM->COM("matrix_auto_rows","job" => $masterJob,"matrix" => "matrix");
+
 
 	return $result;
 }

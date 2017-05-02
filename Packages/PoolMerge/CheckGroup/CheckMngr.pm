@@ -133,10 +133,10 @@ sub Run {
 
 
 	# 4) Check if jobs o+1 step exist
-	my $jobsContainStepRes = $self->_GetNewItem("Step o+1 exists");
+	my $jobsContainStepRes = $self->_GetNewItem("Step and layer checks");
 	$mess               = "";
 
-	unless ( $self->{"checkHelper"}->JobsContainStep( \$mess ) ) {
+	unless ( $self->{"checkHelper"}->JobChecks( \$mess ) ) {
 
 		$jobsContainStepRes->AddError($mess);
 	}

@@ -7,7 +7,7 @@ use warnings;
 
 
 # ============ INPUT LINE =================
-my $inputLine ="optimize_levels,layer=v2_temp,opt_layer=v2_temp2,levels=1 (0)";
+my $inputLine ="matrix_auto_rows,job=f52457,matrix=matrix";
 
 my $output = "\$inCAM->COM(";
 my @splitted = split( ",", $inputLine );

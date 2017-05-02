@@ -11,7 +11,7 @@ use warnings;
 
 #local library
 use aliased 'CamHelpers::CamHelper';
-use Genesis;
+#use Genesis;
  
 
 #-------------------------------------------------------------------------------------------#
@@ -88,7 +88,7 @@ sub GetCompensation {
 		my $valueKompenzace;
 		my $customerLine;
 		
-		my $genesis = new Genesis; #Pozor Upraveno
+		#my $genesis = new Genesis; #Pozor Upraveno
 		
 		
 					if($constrClass == 3) {

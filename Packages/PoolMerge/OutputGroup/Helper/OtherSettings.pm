@@ -45,21 +45,7 @@ sub SetJobHeliosAttributes {
 	my $result = 1;
 
 	my $inCAM = $self->{"inCAM"};
-
-	# 1) Check if there is solder or silk non board layer
-
-	my @layers = CamJob->GetAllLayers( $inCAM, $masterJob );
-	@layers = grep { $_->{"gROWname"} =~ /^[pm][cs]$/ } @layers;
-
-	foreach my $l (@layers) {
-
-		if ( $l->{"gROWcontext"} ne "board" ) {
-
-			$result = 0;
-			$$mess .= "V metrixu je vrstva: " . $l->{"gROWname"} . ", ale není nastavená jako board. Nastva vrstvu jako board, nebo ji přejmenuj.";
-
-		}
-	}
+ 
 
 	# 2) Set proper info to noris
 	my %silk   = HegMethods->GetSilkScreenColor($masterJob);
