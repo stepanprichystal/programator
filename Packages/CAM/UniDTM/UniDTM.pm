@@ -111,11 +111,11 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	use aliased 'Packages::InCAM::InCAM';
 
 	my $inCAM = InCAM->new();
-	my $jobId = "f67260";
+	my $jobId = "f70017";
 
-	my $unitDTM = UniDTM->new( $inCAM, $jobId, "o+1", "f", 1 );
+	my $unitDTM = UniDTM->new( $inCAM, $jobId, "o+1", "m", 1 );
 
-	 my $tool = $unitDTM->GetTool(2200, Enums->TypeProc_HOLE);
+	 
 
 	print "ee";
 }
