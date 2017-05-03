@@ -16,6 +16,7 @@ use DateTime;
 use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'CamHelpers::CamJob';
 use aliased 'CamHelpers::CamHelper';
+use aliased 'CamHelpers::CamAttributes';
 use aliased 'Packages::NifFile::NifFile';
 use aliased 'CamHelpers::CamHistogram';
 use aliased 'Packages::CAM::FeatureFilter::FeatureFilter';
@@ -33,6 +34,10 @@ sub new {
 
 	$self->{"inCAM"}    = shift;
 	$self->{"poolInfo"} = shift;
+	
+	$self->{"newPnl"} = undef;
+	$self->{"panelType"} = undef;
+	$self->{"panelDims"} = undef;
 
 	return $self;
 }
@@ -47,20 +52,17 @@ sub CreatePanel {
 	my $result = 1;
 
 	my $inCAM = $self->{"inCAM"};
-
-
-	
-	my $layerCnt = CamJob->GetSignalLayerCnt( $inCAM, $masterJob );
-
+ 
 	# 1) Choose panel type  Enums::EnumsProducPanel::panelsize_XXX
 	my $panelType = PanelDimension->GetPanelNameByArea( $inCAM, $masterJob, $self->{"poolInfo"}->GetPnlW(), $self->{"poolInfo"}->GetPnlH() );
-
 	my %panelDims = PanelDimension->GetDimensionPanel( $inCAM, $panelType );
+	
+	$self->{"panelType"} = $panelType;
+	$self->{"panelDims"} = \%panelDims;
 
 	# 2) Create new "panel" step
-	my $newPnl = SRStep->new( $inCAM, $masterJob, "panel" );
-
-	$newPnl->Create( $panelDims{"PanelSizeX"}, $panelDims{"PanelSizeY"}, $panelDims{"BorderTop"},
+	$self->{"newPnl"} = SRStep->new( $inCAM, $masterJob, "panel" );
+	$self->{"newPnl"}->Create( $panelDims{"PanelSizeX"}, $panelDims{"PanelSizeY"}, $panelDims{"BorderTop"},
 					 $panelDims{"BorderBot"},  $panelDims{"BorderLeft"}, $panelDims{"BorderRight"} );
 
 	# 3) add step and repeat
@@ -76,10 +78,23 @@ sub CreatePanel {
 
 		foreach my $pos ( @{ $orderInf->{"pos"} } ) {
 
-			$newPnl->AddSRStep($stepName, $pos->{"x"} + $panelDims{"BorderLeft"}, $pos->{"y"} + $panelDims{"BorderBot"}, ( $pos->{"rotated"} ? 270 : 0 ) );
+			$self->{"newPnl"}->AddSRStep($stepName, $pos->{"x"} + $panelDims{"BorderLeft"}, $pos->{"y"} + $panelDims{"BorderBot"}, ( $pos->{"rotated"} ? 270 : 0 ) );
 		}
 	}
 
+}
+
+# Add panel schema to panel
+sub AddPanelSchema {
+	my $self      = shift;
+	my $masterJob = shift;
+
+	my $result = 1;
+
+	my $inCAM = $self->{"inCAM"};
+	
+	my $layerCnt = CamJob->GetSignalLayerCnt( $inCAM, $masterJob );
+	
 	# 4) add schema
 	my $schema = undef;
 
@@ -89,7 +104,7 @@ sub CreatePanel {
 	}
 	else {
 
-		if ( $panelDims{"PanelSizeY"} == 407 ) {
+		if ( $self->{"panelDims"}->{"PanelSizeY"} == 407 ) {
 			$schema = '4v-407';
 		}
 		else {
@@ -97,11 +112,56 @@ sub CreatePanel {
 		}
 	}
 	
-	$newPnl->AddSchema($schema);
+	$self->{"newPnl"}->AddSchema($schema);
 	
 	return $result;
 }
+
+
+# Set layer attributes
+sub SetLayerAtt {
+	my $self      = shift;
+	my $masterJob = shift;
+	my $mess      = shift;
+
+	my $result = 1;
+
+	my $inCAM = $self->{"inCAM"};
+
+	my @signal = CamJob->GetSignalLayer( $inCAM, $masterJob );
  
+	foreach my $s (@signal) {
+		if ( $s->{"gROWname"} =~ /^c$/ ) {
+			$s->{"side"} = "top";
+		}
+
+		if ( $s->{"gROWname"} =~ /^s$/ ) {
+			$s->{"side"} = "bot";
+		}
+		if ( $s->{"gROWname"} =~ /^v(\d+)$/ ) {
+			if ( $1 % 2 == 0 ) {
+				$s->{"side"} = "top";
+			}
+			else {
+				$s->{"side"} = "bot";
+			}
+		}
+	}
+
+	foreach my $layer (@signal) {
+
+		# 1) set layer side attribute
+
+		CamAttributes->SetLayerAttribute( $inCAM, "layer_side", $layer->{"side"}, $masterJob, "panel", $layer->{"gROWname"} );
+
+		# 2) set cdr mirror attribute
+		my $mirror = $layer->{"side"} eq "top" ? "no" : "yes";
+		CamAttributes->SetLayerAttribute( $inCAM, ".cdr_mirror", $mirror, $masterJob, "panel", $layer->{"gROWname"} );
+
+	}
+
+	return $result;
+}
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

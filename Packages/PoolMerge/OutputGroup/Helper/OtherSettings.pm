@@ -90,11 +90,6 @@ sub SetJobAttributes {
 		$result = 0;
 	}
 
-	#2) set layer side, and mirror attribute
-	unless ( $self->__SetLayerAtt( $masterJob, $mess ) ) {
-		$result = 0;
-	}
-
 	return $result;
 }
 
@@ -157,49 +152,6 @@ sub __SetPcbClass {
 	return $result;
 }
 
-sub __SetLayerAtt {
-	my $self      = shift;
-	my $masterJob = shift;
-	my $mess      = shift;
-
-	my $result = 1;
-
-	my $inCAM = $self->{"inCAM"};
-
-	my @signal = CamJob->GetSignalLayer( $inCAM, $masterJob );
- 
-	foreach my $s (@signal) {
-		if ( $s->{"gROWname"} =~ /^c$/ ) {
-			$s->{"side"} = "top";
-		}
-
-		if ( $s->{"gROWname"} =~ /^s$/ ) {
-			$s->{"side"} = "bot";
-		}
-		if ( $s->{"gROWname"} =~ /^v(\d+)$/ ) {
-			if ( $1 % 2 == 0 ) {
-				$s->{"side"} = "top";
-			}
-			else {
-				$s->{"side"} = "bot";
-			}
-		}
-	}
-
-	foreach my $layer (@signal) {
-
-		# 1) set layer side attribute
-
-		CamAttributes->SetLayerAttribute( $inCAM, "layer_side", $layer->{"side"}, $masterJob, "panel", $layer->{"gROWname"} );
-
-		# 2) set cdr mirror attribute
-		my $mirror = $layer->{"side"} eq "top" ? "no" : "yes";
-		CamAttributes->SetLayerAttribute( $inCAM, ".cdr_mirror", $mirror, $masterJob, "panel", $layer->{"gROWname"} );
-
-	}
-
-	return $result;
-}
 
 # Set info about solder mask and silk screnn, based on layers
 sub CreateDefaultStackup {

@@ -112,10 +112,14 @@ sub CheckMasterJob {
 	# 1) check if master job contains only two steps: o+1 and iput step
 
 	my @steps = CamStep->GetAllStepNames( $inCAM, $masterjob );
+	my $str =  join( "; ", @steps );
+	
+	# Remove o+1_single step if exist, only 2 steps should left
+	@steps = grep { $_ ne "o+1_single" } @steps;
 
 	if ( scalar(@steps) > 2 ) {
-		$$mess .= "Master job (\"$masterjob\") should contain only two steps: \"original\" and \"o+1\" step.\n";
-		$$mess .= "But master job contains steps: " . join( "; ", @steps ) . ".";
+		$$mess .= "Master job (\"$masterjob\") can contain only steps: \"original\" and \"o+1\" and \"o+1_single\".\n";
+		$$mess .= "But master job contains steps: $str.";
 
 		$result = 0;
 	}

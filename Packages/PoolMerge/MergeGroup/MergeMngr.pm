@@ -36,10 +36,10 @@ sub new {
 
 	$self->{"inCAM"}    = $inCAM;
 	$self->{"poolInfo"} = $poolInfo;
-
+ 
 	$self->{"copySteps"} = CopySteps->new( $inCAM, $poolInfo );
 	$self->{"copySteps"}->{"onItemResult"}->Add( sub { $self->_OnPoolItemResult(@_) } );
-	$self->{"panelCreation"} = PanelCreation->new( $inCAM, $poolInfo );
+	$self->{"panelCreation"} = PanelCreation->new( $inCAM, $poolInfo);
 	$self->{"putLabels"} = PutLabels->new( $inCAM, $poolInfo );
 
 	return $self;
@@ -91,8 +91,8 @@ sub Run {
 	}
 
 	$self->_OnPoolItemResult($emptyLayersRes);
-
-	# 3) Check on empty layers of steps
+	
+	# 4) Check on empty layers of steps
 	my $createPanelRes = $self->_GetNewItem("Create panel");
 	$mess = "";
 
@@ -102,8 +102,35 @@ sub Run {
 	}
 
 	$self->_OnPoolItemResult($createPanelRes);
+	
+	
+	# 5) Set layer side attributes and etc...
+	my $layerAttRes = $self->_GetNewItem("Set layer attributes");
+	$mess = "";
 
-	# 3) Check on empty layers of steps
+	unless ( $self->{"panelCreation"}->SetLayerAtt( $masterJob, \$mess ) ) {
+
+		$layerAttRes->AddError($mess);
+	}
+
+	$self->_OnPoolItemResult($layerAttRes);
+	
+
+	# 6) Add schema to panel
+	my $addSchemaRes = $self->_GetNewItem("Add schema");
+	$mess = "";
+
+	unless ( $self->{"panelCreation"}->AddPanelSchema( $masterJob, \$mess ) ) {
+
+		$addSchemaRes->AddError($mess);
+	}
+
+	$self->_OnPoolItemResult($addSchemaRes);
+	
+	
+	
+
+	# 5) Check on empty layers of steps
 	my $addLabelsRes = $self->_GetNewItem("Add labels");
 	$mess = "";
 
@@ -128,7 +155,7 @@ sub TaskItemsCount {
 	my $totalCnt = 0;
 
 	$totalCnt += scalar( $self->{"poolInfo"}->GetJobNames() ) - 1;    # copy all jobs to master (-1 master)
-	$totalCnt += 5;                                                   # other checks and etc..
+	$totalCnt += 7;                                                   # other checks and etc..
 
 	return $totalCnt;
 

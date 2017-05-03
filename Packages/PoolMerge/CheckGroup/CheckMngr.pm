@@ -121,10 +121,10 @@ sub Run {
 	my $masterJobCheckRes = $self->_GetNewItem("Mater job checks");
 	$mess    = "";
 
-	#unless ( $self->{"masterHelper"}->CheckMasterJob(  $masterJob, \$mess ) ) {
+	unless ( $self->{"masterHelper"}->CheckMasterJob(  $masterJob, \$mess ) ) {
 
-	#	$masterJobCheckRes->AddError($mess);
-	#}
+		$masterJobCheckRes->AddError($mess);
+	}
 
 	$self->_OnPoolItemResult($masterJobCheckRes);
 

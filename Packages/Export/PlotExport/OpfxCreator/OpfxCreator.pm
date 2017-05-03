@@ -82,7 +82,7 @@ sub Export {
 	# Delete plot step
 	if ( CamHelper->StepExists( $inCAM, $jobId, $self->{"plotStep"} ) ) {
 
-		#$inCAM->COM( "delete_entity", "job" => $jobId, "type" => "step", "name" => $self->{"plotStep"} );
+		$inCAM->COM( "delete_entity", "job" => $jobId, "type" => "step", "name" => $self->{"plotStep"} );
 	}
 
 }
