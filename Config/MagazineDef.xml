@@ -4,7 +4,7 @@
 
 <operations>
    <operation name="PlatedDrill">
-      <magazine material="FR4">D</magazine>
+      <magazine material="FR4">D</magazine>   
       <magazine material="IS400">W1</magazine>
       <magazine material="Al">W10</magazine>
    </operation>

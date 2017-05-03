@@ -114,7 +114,7 @@ sub __ExportLayers {
 		my %lim = $self->__GetLayerLimit( $l->{"gROWname"} );
 
 		# 1) Optimize levels
-		$self->__OptimizeLevels( $l->{"gROWname"} );
+		$self->__OptimizeLayer( $l);
 
 		# 2) insert frame 100µm width around pcb (fr frame coordinate)
 		$self->__PutFrameAorundPcb( $l->{"gROWname"}, \%lim );
@@ -341,14 +341,22 @@ sub __ClipAreaLayer {
 }
 
 # Optimize lazer in order contain only one level of features
-sub __OptimizeLevels {
+# Before optimiyation, countourize data in negative layers 
+# (in other case "sliver fills" are broken during data compensation)
+sub __OptimizeLayer {
 	my $self      = shift;
-	my $layerName = shift;
+	my $l = shift;
+	
+	my $layerName = $l->{"gROWname"};
 
 	if ( $layerName =~ /^c$/ || $layerName =~ /^s$/ || $layerName =~ /^v\d$/ ) {
-
+				
+		if ( $l->{"gROWpolarity"} eq "negative" ) {
+			CamLayer->Contourize( $self->{"inCAM"}, $layerName );
+			CamLayer->WorkLayer( $self->{"inCAM"}, $layerName );
+		}
+		
 		my $res = CamLayer->OptimizeLevels( $self->{"inCAM"}, $layerName, 1 );
-
 		CamLayer->WorkLayer( $self->{"inCAM"}, $layerName );
 	}
 }
@@ -436,7 +444,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId    = "f52457";
+	my $jobId    = "f13609";
 	my $stepName = "panel";
 
 	my $export = ExportFiles->new( $inCAM, $jobId, $stepName );

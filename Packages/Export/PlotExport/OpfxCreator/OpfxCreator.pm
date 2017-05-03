@@ -82,7 +82,7 @@ sub Export {
 	# Delete plot step
 	if ( CamHelper->StepExists( $inCAM, $jobId, $self->{"plotStep"} ) ) {
 
-		$inCAM->COM( "delete_entity", "job" => $jobId, "type" => "step", "name" => $self->{"plotStep"} );
+		#$inCAM->COM( "delete_entity", "job" => $jobId, "type" => "step", "name" => $self->{"plotStep"} );
 	}
 
 }
@@ -133,26 +133,36 @@ sub __PrepareLayer {
 
 	CamLayer->ClipLayerData( $inCAM, $lName, $plotLayer->GetLimits() );
 
-	# 3) change polarity
+
+
+	# 2) Optimize lazer in order contain only one level of features
+
+	if ( $plotLayer->GetName() =~ /^c$/ || $plotLayer->GetName() =~ /^s$/ || $plotLayer->GetName() =~ /^v\d$/ ) {
+ 
+		CamLayer->OptimizeLevels( $self->{"inCAM"}, $lName, 1 );
+		CamLayer->WorkLayer( $self->{"inCAM"}, $lName );
+	}
+	# 3) Compensate layer
+	if ( $plotLayer->GetComp() != 0 ) {
+		
+		my $comp = $plotLayer->GetComp();
+		
+		# Before optimiyation, countourize data in matrix negative layers (in other case "sliver fills" are broken during data compensation)
+		# If compensation is less than 0, it means matrix layer is negative
+		if ( $comp < 0) {
+			CamLayer->Contourize( $self->{"inCAM"}, $lName );
+			CamLayer->WorkLayer( $self->{"inCAM"}, $lName );
+		}
+
+		CamLayer->CompensateLayerData( $inCAM, $lName, $plotLayer->GetComp() );
+	}
+	
+	# 4) change polarity
 
 	my $plotPolar = $plotSet->GetPolarity();
 	if ( $plotPolar eq "mixed" && $plotLayer->GetPolarity() eq "negative" ) {
 
 		CamLayer->NegativeLayerData( $inCAM, $lName, $plotLayer->{"pcbLimits"} );
-	}
-
-	# 4) Optimize lazer in order contain only one level of features
-
-	if ( $plotLayer->GetName() =~ /^c$/ || $plotLayer->GetName() =~ /^s$/ || $plotLayer->GetName() =~ /^v\d$/ ) {
-
-		CamLayer->OptimizeLevels( $self->{"inCAM"}, $lName, 1 );
-		CamLayer->WorkLayer( $self->{"inCAM"}, $lName );
-	}
-
-	# 4) Compensate layer
-	if ( $plotLayer->GetComp() != 0 ) {
-
-		CamLayer->CompensateLayerData( $inCAM, $lName, $plotLayer->GetComp() );
 	}
 
 	# 5) Rotate layer

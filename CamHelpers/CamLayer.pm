@@ -538,17 +538,25 @@ sub CompensateLayerData {
 	$inCAM->COM( "reset_filter_criteria", "filter_name" => "", "criteria" => "all" );
 	$inCAM->COM( "set_filter_polarity", "filter_name" => "", "positive" => "yes", "negative" => "no" );
 	$inCAM->COM("filter_area_strt");
-	$inCAM->COM( "filter_area_end", "filter_name" => "popup",  "operation"  => "select" );
-	$inCAM->COM( "sel_resize",      "size"        => $compVal, "corner_ctl" => "no" );
-	$inCAM->COM("sel_clear_feat");
+	$inCAM->COM( "filter_area_end", "filter_name" => "popup", "operation" => "select" );
+	$inCAM->COM('get_select_count');
+
+	if ( $inCAM->GetReply() > 0 ) {
+		$inCAM->COM( "sel_resize", "size" => $compVal, "corner_ctl" => "no" );
+		$inCAM->COM("sel_clear_feat");
+	}
 
 	# resize all negative by oposite value of comp
 	$inCAM->COM( "reset_filter_criteria", "filter_name" => "", "criteria" => "all" );
 	$inCAM->COM( "set_filter_polarity", "filter_name" => "", "positive" => "no", "negative" => "yes" );
 	$inCAM->COM("filter_area_strt");
-	$inCAM->COM( "filter_area_end", "filter_name" => "popup",           "operation"  => "select" );
-	$inCAM->COM( "sel_resize",      "size"        => ( -1 * $compVal ), "corner_ctl" => "no" );
-	$inCAM->COM("sel_clear_feat");
+	$inCAM->COM( "filter_area_end", "filter_name" => "popup", "operation" => "select" );
+	$inCAM->COM('get_select_count');
+
+	if ( $inCAM->GetReply() > 0 ) {
+		$inCAM->COM( "sel_resize", "size" => ( -1 * $compVal ), "corner_ctl" => "no" );
+		$inCAM->COM("sel_clear_feat");
+	}
 
 	$inCAM->COM( 'affected_layer', name => $layer, mode => "single", affected => "no" );
 
@@ -656,7 +664,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $res = CamLayer->OptimizeLevels( $inCAM, "o+1", "v2", 1);
+	my $res = CamLayer->OptimizeLevels( $inCAM, "o+1", "v2", 1 );
 
 	print $res;
 
