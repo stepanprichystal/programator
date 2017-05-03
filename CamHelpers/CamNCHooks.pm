@@ -1,5 +1,5 @@
 #-------------------------------------------------------------------------------------------#
-# Description: Package contains helper function for InCAM hooks such as: ncd/outfile, ncr/outfile etc.. 
+# Description: Package contains helper function for InCAM hooks such as: ncd/outfile, ncr/outfile etc..
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package CamHelpers::CamNCHooks;
@@ -206,9 +206,10 @@ sub GetSpecialToolDesc {
 # Return complete tool parameter for tool
 # format eg.: C0.10F1.8U2.0S300.0H500(W1)
 sub GetToolParam {
-	my $self = shift;
-	my $tool = shift;    # Universal tool object
-	my $par  = shift;    # arametters of given material
+	my $self       = shift;
+	my $tool       = shift;    # Universal tool object
+	my $par        = shift;    # arametters of given material
+	my $magazineOk = shift;    # set if magazine code was found
 
 	my $line = $self->__GetToolParamLine( $tool, $par );
 
@@ -219,6 +220,10 @@ sub GetToolParam {
 
 		if ( defined $magazine && $magazine ne "" ) {
 			$line .= "(" . $magazine . ")";
+		
+		}else{
+			
+			$$magazineOk = 0;
 		}
 
 		$line =~ m/(f.*)/i;
@@ -239,7 +244,7 @@ sub __GetToolParamLine {
 	unless ($par) {
 		return undef;
 	}
- 
+
 	my $toolSize     = $tool->GetDrillSize() / 1000;
 	my $magazineInfo = $tool->GetMagazineInfo();
 

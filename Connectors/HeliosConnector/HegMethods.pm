@@ -645,6 +645,30 @@ sub GetPcbOrderNumber {
 	return $num;
 }
 
+# Return all order numbers by job name
+sub GetPcbOrderNumbers {
+	my $self  = shift;
+	my $pcbId = shift;
+
+	my @params = ( SqlParameter->new( "_PcbId", Enums->SqlDbType_VARCHAR, $pcbId ) );
+
+	my $cmd = "select 				  
+				 z.reference_subjektu
+				 
+				 from lcs.desky_22 d with (nolock)
+				 
+				 left outer join lcs.zakazky_dps_22_hlavicka z with (nolock) on z.deska=d.cislo_subjektu
+
+				 where d.reference_subjektu=_PcbId and  z.cislo_poradace = 22050
+				 order by z.reference_subjektu desc";
+
+	my @res = Helper->ExecuteDataSet( $cmd, \@params );
+	
+	my @arr = map { $_->{"reference_subjektu"} } @res;
+ 
+	return @arr;
+}
+
 sub GetNumberOrder {
 	my $self  = shift;
 	my $pcbId = shift;
@@ -964,21 +988,15 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	use aliased 'Connectors::HeliosConnector::HegMethods';
 
-	my $num = HegMethods->GetCurStepOfOrder( "f69854-01", 1 );
+	#my $num = HegMethods->GetCurStepOfOrder( "f69854-01", 1 );
 
-	print $num;
+	#print $num;
 
 	# my $test = HegMethods->GetPcbName("f52456");
 
-	#	HegMethods->GetPcbOrderNumber("f52456");
-	#	my $test = HegMethods->UpdatePcbOrderState("f52456-01", "HOTOVO-123");
+	my @orders =	HegMethods->GetPcbOrderNumbers("f52456");
 
-	#	use aliased 'Connectors::HeliosConnector::HegMethods';
-	#
-	#	my $nc_info = "test";
-	#
-	#	my $test =  HegMethods->GetTpvCustomerNote("d06224");
-	#
+	print @orders;
 
 }
 

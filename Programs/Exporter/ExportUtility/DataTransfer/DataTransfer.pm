@@ -16,6 +16,7 @@ use aliased "Programs::Exporter::ExportUtility::DataTransfer::ExportData";
 use aliased "Enums::EnumsPaths";
 use aliased "Helpers::FileHelper";
 use aliased 'Programs::Exporter::ExportUtility::DataTransfer::Enums';
+use aliased 'Connectors::HeliosConnector::HegMethods';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -155,6 +156,7 @@ sub SaveData {
 	my $toProduce = shift;
 	my $port      = shift;
 	my $formPos   = shift;
+	my $orders 	   = shift; # orders, where export utility sets state "hotovo zadat"
 
 	# Prepare all data for serialiyation
 	# Save them to property "hashData"
@@ -193,9 +195,10 @@ sub SaveData {
 		$self->{"hashData"}->{"settings"}->{"formPosX"} = $formPos->x();
 		$self->{"hashData"}->{"settings"}->{"formPosY"} = $formPos->y();
 	}
-
-	#$self->{"hashData"}->{"settings"}->{"serverPID"} = $serverPID;
-
+	
+	# Set orders, where export utility sets state "hotovo zadat"
+	$self->{"hashData"}->{"settings"}->{"orders"}   = $orders;
+	
 	# serialize and save
 	$self->__SerializeExportData();
 

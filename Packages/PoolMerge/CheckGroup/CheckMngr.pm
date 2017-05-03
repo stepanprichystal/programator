@@ -71,10 +71,10 @@ sub Run {
 	my $childStatusRes = $self->_GetNewItem("Child job status");
 	$mess           = "";
 
-	unless ( $self->{"checkHelper"}->CheckChildJobStatus(  $masterOrder, \$mess ) ) {
+	#unless ( $self->{"checkHelper"}->CheckChildJobStatus(  $masterOrder, \$mess ) ) {
 
-		$childStatusRes->AddError($mess);
-	}
+		#$childStatusRes->AddError($mess);
+	#}
 
 	$self->_OnPoolItemResult($childStatusRes);
 	
@@ -121,10 +121,10 @@ sub Run {
 	my $masterJobCheckRes = $self->_GetNewItem("Mater job checks");
 	$mess    = "";
 
-	unless ( $self->{"masterHelper"}->CheckMasterJob(  $masterJob, \$mess ) ) {
+	#unless ( $self->{"masterHelper"}->CheckMasterJob(  $masterJob, \$mess ) ) {
 
-		$masterJobCheckRes->AddError($mess);
-	}
+	#	$masterJobCheckRes->AddError($mess);
+	#}
 
 	$self->_OnPoolItemResult($masterJobCheckRes);
 

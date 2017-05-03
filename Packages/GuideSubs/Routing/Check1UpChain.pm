@@ -387,10 +387,12 @@ sub TestFindStartSingle {
 	}
 
 	if ( defined $attFootName ) {
-
+		
+		
 		my $edge = ( grep { $_->{"att"}->{$attFootName} } @features )[0];
 
 		if ( defined $edge ) {
+			$rotation->RotateBack();
 			$startByAtt   = 1;
 			$footDownEdge = $edge;
 		}

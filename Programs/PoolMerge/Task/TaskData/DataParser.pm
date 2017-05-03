@@ -75,7 +75,7 @@ sub __GetTaskData {
 
 	$taskData->{"settings"}->{"time"} = $time;
 	$taskData->{"settings"}->{"mode"} = EnumsJobMngr->TaskMode_ASYNC;    # synchronousTask/ asynchronousTask
-
+ 
 	# parse file name and store info
  
 	my ( $panelName, $type, $surface, $exportTime ) = $xmlName =~ /(pan\d+)_([\d-]+)-(\w+)_([\d-]+)/;

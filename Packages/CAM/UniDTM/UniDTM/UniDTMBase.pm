@@ -330,15 +330,16 @@ sub __LoadToolsMagazine {
 
 			# if exist geven magazine info eg "6.5_90st";
 			if ($xmlTool) {
+				
+				$t->SetSpecial(1);
+				$t->SetAngle( $xmlTool->{"angle"} );
 
 				my @mArr = @{ $xmlTool->{"magazine"} };
 				my $m = ( grep { $_->{"material"} =~ /$materialName/i } @mArr )[0];
 
 				if ( defined $m ) {
-
+					
 					$t->SetMagazine( $m->{"content"} );
-					$t->SetSpecial(1);
-					$t->SetAngle( $xmlTool->{"angle"} );
 				}
 			}
 		}
