@@ -29,3 +29,6 @@ appNameTray = Pool merger
 
 # Name of app in title
 appName = Pool merger
+
+# If window should stay hideen after start app
+hideAfterStart = 1

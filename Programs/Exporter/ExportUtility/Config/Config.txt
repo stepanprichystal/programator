@@ -30,4 +30,7 @@ appNameTray = Export Utility
 
 # Name of app in title
 appName = Export Utility
+
+# If window should stay hideen after start app
+hideAfterStart = 0
  

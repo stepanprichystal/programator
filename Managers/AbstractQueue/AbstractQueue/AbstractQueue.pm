@@ -436,9 +436,16 @@ sub __AutoRemoveJobsHandler {
 
 sub _Run {
 	my $self = shift;
-	$self->{"form"}->{"mainFrm"}->Show(1);
-
+ 
 	$self->__RunTimersBase();
+	
+	if(AppConf->GetValue("hideAfterStart")){
+		
+		$self->{"form"}->{"mainFrm"}->Hide();
+		
+	}else{
+		$self->{"form"}->{"mainFrm"}->Show(1);
+	}
 
 	$self->{"form"}->MainLoop();
 
