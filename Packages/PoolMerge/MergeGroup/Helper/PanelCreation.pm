@@ -48,6 +48,7 @@ sub new {
 sub CreatePanel {
 	my $self      = shift;
 	my $masterJob = shift;
+	my $mess = shift;
 
 	my $result = 1;
 
@@ -59,7 +60,16 @@ sub CreatePanel {
 	
 	$self->{"panelType"} = $panelType;
 	$self->{"panelDims"} = \%panelDims;
-
+	
+	if(!defined $panelDims{"PanelSizeX"} || !defined  $panelDims{"PanelSizeY"}){
+		 
+		my $dim = $self->{"poolInfo"}->GetPnlW()."x".$self->{"poolInfo"}->GetPnlH();
+		$$mess .= "Wrong format of panel dimension in \"xml pool file\". Check if this is proper dimension ($dim) for this type of pcb.";
+		
+		return 0;
+		
+	}
+ 
 	# 2) Create new "panel" step
 	$self->{"newPnl"} = SRStep->new( $inCAM, $masterJob, "panel" );
 	$self->{"newPnl"}->Create( $panelDims{"PanelSizeX"}, $panelDims{"PanelSizeY"}, $panelDims{"BorderTop"},
@@ -81,6 +91,8 @@ sub CreatePanel {
 			$self->{"newPnl"}->AddSRStep($stepName, $pos->{"x"} + $panelDims{"BorderLeft"}, $pos->{"y"} + $panelDims{"BorderBot"}, ( $pos->{"rotated"} ? 270 : 0 ) );
 		}
 	}
+
+	return $result;
 
 }
 

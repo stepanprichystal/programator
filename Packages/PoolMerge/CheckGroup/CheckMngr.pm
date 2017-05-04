@@ -71,10 +71,10 @@ sub Run {
 	my $childStatusRes = $self->_GetNewItem("Child job status");
 	$mess           = "";
 
-	#unless ( $self->{"checkHelper"}->CheckChildJobStatus(  $masterOrder, \$mess ) ) {
+	unless ( $self->{"checkHelper"}->CheckChildJobStatus(  $masterOrder, \$mess ) ) {
 
-		#$childStatusRes->AddError($mess);
-	#}
+		$childStatusRes->AddError($mess);
+	}
 
 	$self->_OnPoolItemResult($childStatusRes);
 	

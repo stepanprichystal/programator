@@ -439,6 +439,8 @@ sub __TakeFromQueueHandler {
 
 					$self->__SetJobState( $jobGUID, Enums->JobState_WAITINGPORT );
 
+					print STDERR "\npreparing external port\n";
+
 					$self->{'onJobStateChanged'}->Do( $jobGUID, Enums->JobState_WAITINGPORT );
 					$self->{"serverMngr"}->PrepareExternalServerPort( $jobGUID, ${$jobsRef}[$i]{"serverInfo"} );
 
