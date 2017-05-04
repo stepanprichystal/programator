@@ -66,25 +66,27 @@ setsockopt( Server, SOL_SOCKET, SO_REUSEADDR, pack( "l", 1 ) ) || die "setsockop
 #print STDERR "\n\n\n222222222222222221111111\n\n";
 bind( Server, sockaddr_in( $serverPort, INADDR_ANY ) ) || die "bind: $!";
 
-# Tell to clients, server is ready
-my $pFIndicator = EnumsPaths->Client_INCAMTMPOTHER . $fIndicator;
+# Tell to clients, server is ready (only if exist "file" <$fIndicator>)
+if ( defined $fIndicator ) {
+ 
+	my $pFIndicator = EnumsPaths->Client_INCAMTMPOTHER . $fIndicator;
+	#my $pFIndicator = "c:\\tmp\\InCam\\scripts\\other\\" . $fIndicator;
 
-my $file = path($pFIndicator);
+	my $file = path($pFIndicator);
 
-my $data = $file->slurp_utf8;
-$data =~ s/0/1/i;
-$file->spew_utf8($data);
+	my $data = $file->slurp_utf8;
+	$data =~ s/0/1/i;
+	$file->spew_utf8($data);
+}
 
-
-
-print STDERR "\n\n\n1133333333333333333111\n\n";
+#print STDERR "\n\n\n1133333333333333333111\n\n";
 listen( Server, SOMAXCONN ) || die "listen: $!";
 
 my $waitedpid = 0;
 my $paddr;
 
 sub REAPER {
-	$SIG{CHLD} = \&REAPER;                         # loathe sysV
+	$SIG{CHLD} = \&REAPER;    # loathe sysV
 	$waitedpid = wait;
 
 	# On the first successful reap, close down

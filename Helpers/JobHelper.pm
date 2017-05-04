@@ -84,9 +84,19 @@ sub StackupExist {
 sub GetJobArchive {
 	my $self  = shift;
 	my $jobId = shift;
-
-	return EnumsPaths->Jobs_ARCHIV . substr( $jobId, 0, 3 ) . "\\" . $jobId . "\\";
-
+	
+ 	
+	# old format - D12345
+	if(length($jobId) == 6){
+		
+		return EnumsPaths->Jobs_ARCHIV . substr( $jobId, 0, 3 ) . "\\" . $jobId . "\\";
+	}
+	# new format  - D123456 
+	else{
+		
+		return EnumsPaths->Jobs_ARCHIV . substr( $jobId, 0, 4 ) . "\\" . $jobId . "\\";
+	}
+ 
 }
 
 sub GetJobOutput {
@@ -177,7 +187,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	use aliased 'Helpers::JobHelper';
 
-	print JobHelper->GetBaseCuThick("f64061", "c");
+	print JobHelper->GetJobArchive("d164061" );
 
 	#print "\n1";
 }

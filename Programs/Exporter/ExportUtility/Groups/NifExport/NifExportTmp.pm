@@ -12,7 +12,7 @@ use aliased 'Packages::Events::Event';
 use aliased 'Programs::Exporter::ExportUtility::UnitEnums';
 use aliased 'Managers::MessageMngr::MessageMngr';
 use aliased 'Enums::EnumsGeneral';
-use aliased "Programs::Exporter::ExportUtility::Groups::NifExport::NifUnit"  => "UnitExport";
+use aliased "Programs::Exporter::ExportUtility::Groups::NifExport::NifWorkUnit"  => "UnitExport";
 use aliased "Programs::Exporter::ExportChecker::Groups::NifExport::Presenter::NifUnit" => "Unit";
 
 use aliased 'Programs::Exporter::ExportChecker::ExportChecker::DefaultInfo::DefaultInfo';

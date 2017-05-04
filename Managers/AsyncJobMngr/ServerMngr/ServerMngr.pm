@@ -666,69 +666,66 @@ sub __CreateServerConn {
 	my $self       = shift;
 	my $port       = shift;
 	my $fIndicator = shift;
-	
-	# delete this test
-	if( $port >= 2000 && $port < 3000){
-		print STDERR "\nport is not 3000\n";
-	}
-	
 
-	my $pFIndicator = EnumsPaths->Client_INCAMTMPOTHER . $fIndicator;
+	# if file indicator is not defined, it means, server is prepared external and is alreadz ready in this time
+	if ( defined $fIndicator ) {
 
-	# 1 ) Create file where is stored vlue if server is ready
-	if ( open( my $f, "+>", $pFIndicator ) ) {
+		my $pFIndicator = EnumsPaths->Client_INCAMTMPOTHER . $fIndicator;
 
-		print $f 0;
-		close($f);
-	}
-	else {
-		die "unable to create file  file $pFIndicator";
-	}
+		# 1 ) Create file where is stored vlue if server is ready
+		if ( open( my $f, "+>", $pFIndicator ) ) {
 
-	# 2 ) Test in loop if server is ready (file indicator has to contain value 1)
-	while (1) {
-
-		if ( open( my $f, "<", $pFIndicator ) ) {
-
-			my $val = join( "", <$f> );
+			print $f 0;
 			close($f);
-
-			if ( $val == 1 ) {
-
-				unlink($pFIndicator);    # delete temp file
-				sleep(1); # to be shure, server is ready to "listen" clients
-				last;
-			}
 		}
 		else {
-			print STDERR "Unable to open file $pFIndicator";
+			die "unable to create file  file $pFIndicator";
 		}
-		
-		Helper->Print("CLIENT(parent): PID: $$  try connect to server port: $port....failed\n");
 
-		sleep(1);
+		# 2 ) Test in loop if server is ready (file indicator has to contain value 1)
+		while (1) {
+
+			if ( open( my $f, "<", $pFIndicator ) ) {
+
+				my $val = join( "", <$f> );
+				close($f);
+
+				if ( $val == 1 ) {
+
+					unlink($pFIndicator);    # delete temp file
+					sleep(1);                # to be sure, server is ready to "listen" clients
+					last;
+				}
+			}
+			else {
+				print STDERR "Unable to open file $pFIndicator";
+			}
+
+			Helper->Print("CLIENT(parent): PID: $$  try connect to server port: $port....failed\n");
+
+			sleep(1);
+		}
 	}
-	
-	
-#	my $inCAM;
-#
-#	# first test of connection
-#	$inCAM = InCAM->new( "remote" => 'localhost', "port" => $port );
-#
-#
-#
-#	# next tests of connecton. Wait, until server script is not ready
-#	while ( !defined $inCAM || !$inCAM->{"socketOpen"} || !$inCAM->{"connected"} ) {
-#		if ($inCAM) {
-#
-#			# print RED, "Stop!\n", RESET;
-#
-#			Helper->Print("CLIENT(parent): PID: $$  try connect to server port: $port....failed\n");
-#		}
-#		sleep(1);
-#
-#		$inCAM = InCAM->new( "remote" => 'localhost', "port" => $port );
-#	}
+
+	#	my $inCAM;
+	#
+	#	# first test of connection
+	#	$inCAM = InCAM->new( "remote" => 'localhost', "port" => $port );
+	#
+	#
+	#
+	#	# next tests of connecton. Wait, until server script is not ready
+	#	while ( !defined $inCAM || !$inCAM->{"socketOpen"} || !$inCAM->{"connected"} ) {
+	#		if ($inCAM) {
+	#
+	#			# print RED, "Stop!\n", RESET;
+	#
+	#			Helper->Print("CLIENT(parent): PID: $$  try connect to server port: $port....failed\n");
+	#		}
+	#		sleep(1);
+	#
+	#		$inCAM = InCAM->new( "remote" => 'localhost', "port" => $port );
+	#	}
 
 	# 3) Test connection with server
 
@@ -741,7 +738,7 @@ sub __CreateServerConn {
 
 	if ($pidServer) {
 		$inCAM->ClientFinish();
- 
+
 		return $pidServer;
 	}
 	else {

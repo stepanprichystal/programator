@@ -21,9 +21,7 @@ use aliased 'Programs::Exporter::ExportUtility::Groups::NifExport::NifExportTmpP
  
 
  
-my $jobId    = "f13608";
- 
-
+my $jobId    = "d143240";
  
  
 my $poznamka = "";
