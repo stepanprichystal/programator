@@ -11,6 +11,7 @@ use warnings;
 
 #local library
 use aliased 'Enums::EnumsPaths';
+use aliased 'Managers::AbstractQueue::AppConf';
 
 #-------------------------------------------------------------------------------------------#
 #   Package methods
@@ -24,8 +25,9 @@ sub new {
 	$self->{"serverMngr"} = shift;
 	my $packageFull = shift;    # name of AsyncJobMngr child. Used for log file name..
 
-	my $package = ( split '::', $packageFull )[-1];
-	$self->{"logPath"} = EnumsPaths->Client_INCAMTMPJOBMNGR . $package;
+	my $fileName = AppConf->GetValue("appName");
+	$fileName =~ s/\s/_/g;
+	$self->{"logPath"} = EnumsPaths->Client_INCAMTMPJOBMNGR . $fileName;
 
 	$self->__SetDefault();
 
@@ -43,8 +45,8 @@ sub __SetDefault {
 
 	unless ( -e $self->{"logPath"} ) {
 
-		$maxCntUser      = 5;
-		$destroyDelay    = 60;
+		$maxCntUser      = 2;
+		$destroyDelay    = 120;
 		$destroyOnDemand = 1;
 
 		open( $f, ">", $self->{"logPath"} );

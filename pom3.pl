@@ -1,18 +1,8 @@
-use Data::Dumper qw(Dumper);
- 
-my $str = "ab cd ef gh ij";
-my @words = split / /, $str, 2;
-print Dumper \@words;
-use strict;
-use warnings;
-use File::Copy;
 
-my $p = 'c:\Export\ExportFiles\pan2_4-18-1500-Imersnizlato_17-09-58.xml';
 
-for ( my $i = 0 ; $i < 20 ; $i++ ) {
 
-	my $newName = "c:\\Export\\ExportFiles\\pan" . $i . "_4-18-1500-Imersnizlato_17-09-58.xml";
+my @arr = (1, 2, 3, 4, 5, 6);
 
-	  copy( $p, $newName );
+my @arr1 = @arr[-(scalar(@arr)-1)..-1];
 
-}
+print @arr1;

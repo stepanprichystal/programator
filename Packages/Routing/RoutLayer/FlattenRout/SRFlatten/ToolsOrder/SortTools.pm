@@ -108,6 +108,7 @@ sub __SortByStartPoint {
 sub SortNotOutlineTools {
 	my $self       = shift;
 	my $toolQueues = shift;
+	my $outlineTool = shift; # if defined, consider outline tool during sorting
 
 	my @finalQueue = ();
 	my @uniTools   = $self->__GetUniqTools($toolQueues);
@@ -117,7 +118,7 @@ sub SortNotOutlineTools {
 	while ($qNotEmpty) {
 
 		# 1) Choose next current tool
-		my $currTool = $self->__ChooseNextTool( \@uniTools, $toolQueues );
+		my $currTool = $self->__ChooseNextTool( \@uniTools, $toolQueues, $outlineTool );
 
 		# 2) Move all tools from queues tops to final queue
 		$self->__PutToFinalQueue( \@finalQueue, $toolQueues, $currTool );
@@ -165,6 +166,7 @@ sub __ChooseNextTool {
 	my $self       = shift;
 	my @uniTools   = @{ shift(@_) };
 	my $toolQueues = shift;
+	my $outlineTool = shift; # if defined, consider outline tool during sorting
 
 	my $next = undef;
 
@@ -189,6 +191,12 @@ sub __ChooseNextTool {
 
 					# all tools from all queues (except tools on top of queuq)
 					my @buffTools = map  { @{ $toolQueues->{$_} }[ -( scalar( @{ $toolQueues->{$_} } ) - 1 ) .. -1 ] } keys $toolQueues;
+					
+					# consider here "outline tools" (can have same diameter too)
+					if(defined $outlineTool ){
+						push(@buffTools, $outlineTool);
+					}
+					
 					my @sameTools = grep { $_->GetChainSize() == $uniTools[$i] } @buffTools;
 
 					if ( scalar(@sameTools) == 0 ) {

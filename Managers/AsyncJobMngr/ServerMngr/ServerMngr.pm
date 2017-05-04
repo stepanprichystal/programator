@@ -79,7 +79,7 @@ sub InitThreadPool {
 	my $self = shift;
 
 	# Maximum working threads, which start new incam
-	$self->{"MAX_THREADS"} = 3;
+	$self->{"MAX_THREADS"} = 2;
 
 	# Threads add their ID to this queue when they are ready for work
 	# Also, when app terminates a -1 is added to this queue

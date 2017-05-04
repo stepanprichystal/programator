@@ -9,6 +9,7 @@ package Packages::Routing::RoutLayer::FlattenRout::SRFlatten::ToolsOrder::ToolsO
 use utf8;
 use strict;
 use warnings;
+use Storable qw(dclone);
 
 #local library
 use aliased 'Helpers::GeneralHelper';
@@ -52,15 +53,20 @@ sub SetInnerOrder {
 
 	# create tool queue
 	my %toolQueues = ();
-
+ 
 	foreach my $chGroup ( @{ $self->{"chainGroups"} } ) {
 
 		# get not outline chain tool list
 		my @chainList = $chGroup->GetGroupUniRTM()->GetChainListByOutline(0);
 		$toolQueues{ $chGroup->GetGroupId() } = \@chainList;
+		
 	}
+	
+	# check if outline tools are same diameter, 
+	# if so consider this tool in  NO outline tool sorting
+	my $outlineTool = $self->__GetOutlineTool();
 
-	my @finalOrder = SortTools->SortNotOutlineTools( \%toolQueues );
+	my @finalOrder = SortTools->SortNotOutlineTools( \%toolQueues, $outlineTool );
 
 	# renumber chains
 
@@ -233,6 +239,35 @@ sub __RenumberTools {
 
 	$inCAM->COM("sel_clear_feat");
 
+}
+
+# If all groups has same outline tool, return tool diameter
+sub __GetOutlineTool {
+	my $self = shift;
+
+	my $tool = undef;
+
+	# outline chains 
+	my @outlineTools = ();
+
+	foreach my $chGroup ( @{ $self->{"chainGroups"} } ) {
+ 
+		# check if outline tools are same diameter, 
+		# if so consider this tool in  NO outline tool sorting
+		push( @outlineTools, $chGroup->GetGroupUniRTM()->GetChainListByOutline(1));		
+	}
+	
+	if(scalar(@outlineTools)){
+		
+		# find if tools are all same
+		my @sameTools = grep { $_->GetChainSize() == $outlineTools[0]->GetChainSize()} @outlineTools;
+		
+		if(scalar(@outlineTools) == scalar(@sameTools)){
+			$tool = dclone($outlineTools[0]);
+		}
+	}
+	
+	return $tool;
 }
 
 #-------------------------------------------------------------------------------------------#
