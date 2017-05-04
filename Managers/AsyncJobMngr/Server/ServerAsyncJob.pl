@@ -32,8 +32,10 @@ my $defaultPort = 56753;
 my $serverPort;
 # try to get information from arguments
 my $arg = $ARGV[0];
+my $fName = $ARGV[1]; # File name if server is ready
 
-
+print STDERR  $arg."+".$fName;
+ 
 
 if ( defined $arg && $arg =~ /\d/ ) {
 	$serverPort = $arg;
