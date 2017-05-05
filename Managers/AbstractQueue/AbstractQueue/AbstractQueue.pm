@@ -363,6 +363,9 @@ sub __Timer5second {
 
 sub __TimerCheckVersion {
 	my $self = shift;
+	
+	#print STDERR "\nukonceni z timer check version\n";
+	#die "check version";
 
 	my $verison = $self->__GetVersion();
 
@@ -519,7 +522,7 @@ sub __RunTimersBase {
 	my $timerVersion = Wx::Timer->new( $formMainFrm, -1, );
 	$self->{"timerVersion"} = $timerVersion;
 	Wx::Event::EVT_TIMER( $formMainFrm, $timerVersion, sub { $self->__TimerCheckVersion(@_) } );
-	$timerVersion->Start( 60000 * 3 );    # every 5 minutes
+	$timerVersion->Start( 2 * 60000);    # every 5 minutes
 
 	my $timer1s = Wx::Timer->new( $formMainFrm, -1, );
 	Wx::Event::EVT_TIMER( $formMainFrm, $timer1s, sub { $self->__AutoRemoveJobsHandler(@_) } );

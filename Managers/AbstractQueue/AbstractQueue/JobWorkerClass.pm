@@ -51,17 +51,24 @@ sub Init {
 	$self->{"taskId"}      = shift;
 	$self->{"unitBuilder"} = shift;            # builder generate JobWorker units with data, based on unit string data
 	$self->{"inCAM"}       = shift;
+	my $threadOrder = shift;
 
 	# Supress all toolkit exception/error windows
 	$self->{"inCAM"}->SupressToolkitException(1);
+	
+	print STDERR "\n Thread order $threadOrder SUPRESS worker\n";
 
 	# Switch of displa actions in InCAM editor
 	$self->{"inCAM"}->COM("disp_off");
+	
+	print STDERR "\n Thread order $threadOrder DISPOFF worker\n";
 	
 	my %units = $self->{"unitBuilder"}->GetUnits();
 	$self->{"workerUnits"} = \%units;
 	
 	$self->{"taskData"} = $self->{"unitBuilder"}->GetTaskData();
+	
+		print STDERR "\n Thread order BUILDER SUPRESS worker\n";
 }
 
 sub _GetWorkUnits {

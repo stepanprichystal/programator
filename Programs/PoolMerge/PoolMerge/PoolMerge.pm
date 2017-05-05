@@ -63,6 +63,8 @@ sub new {
 	$self->__SetHandlers();
 
 	$self->__RunTimers();
+	
+ 
 
 	$self->_Run();
 
@@ -83,16 +85,27 @@ sub JobWorker {
 	my $THREAD_PROGRESS_EVT : shared = ${ shift(@_) };
 	my $THREAD_MESSAGE_EVT : shared  = ${ shift(@_) };
 	my $stopVarShare                 = shift;
+	my $threadOrder = shift;
+	
+	print STDERR "\n Thread order $threadOrder START in worker method  $taskId\n";
 
-	#GetTaskClass
-	my $task = $self->_GetTaskById($taskId);
+ 
 
 	my $unitBuilder = UnitBuilder->new( $inCAM, $$pcbIdShare, $jobStrData );
+	
+	print STDERR "\n Thread order $threadOrder BUILT\n";
 
 	my $workerClass = JobWorkerClass->new( \$THREAD_PROGRESS_EVT, \$THREAD_MESSAGE_EVT, $stopVarShare, $self->{"form"}->{"mainFrm"} );
-	$workerClass->Init( $pcbIdShare, $taskId, $unitBuilder, $inCAM, );
+	
+	print STDERR "\n Thread order $threadOrder NEW worker\n";
+	
+	$workerClass->Init( $pcbIdShare, $taskId, $unitBuilder, $inCAM, $threadOrder );
+	
+	print STDERR "\n Thread order $threadOrder INIT worker\n";
 
 	$workerClass->RunTask();
+	
+	print STDERR "\n Thread order $threadOrder END worker method  $taskId\n";
 
 }
 
@@ -337,7 +350,7 @@ sub __CheckFilesHandler {
 			copy( $path, EnumsPaths->Client_EXPORTFILESPOOL . "backup\\" . $taskName );    # do backup
 
 			# TODO odkomentovat abt to mazalo
-			unlink($path);
+			#unlink($path);
 
 			# serialize job data to strin
 			my %hashData = ();

@@ -17,6 +17,8 @@ use strict;
 use aliased 'Managers::AsyncJobMngr::Enums';
 use aliased 'Managers::AsyncJobMngr::Helper';
 use aliased 'Packages::Events::Event';
+use aliased 'Managers::AbstractQueue::Helper' => "HelperAbstrQ";
+use aliased 'Managers::AbstractQueue::AppConf';
 
 #local library
 use aliased 'Packages::InCAM::InCAM';
@@ -108,7 +110,7 @@ sub RunNewtask {
 	$self->{"thrTaskCnt"} += 1;
 
 	print STDERR "\n\n\ntask utility: THERAD ORDER IS :  " . $self->{"thrTaskCnt"} . ".\n\n\n";
-
+ 	my $threadOrder = $self->{"thrTaskCnt"};
 	# special shared variable, which child process periodically read and decide if stop or continue in task
 	my $stoppedShare = 0;
 	share($stoppedShare);
@@ -116,7 +118,7 @@ sub RunNewtask {
 	my $pcbIdShare = $pcbId;
 	share($pcbIdShare);
 
-	my $thrId = $self->__CreateThread( $jobGUID, $jobStrData, $port, \$pcbIdShare, $pidInCAM, $externalServer, \$stoppedShare );
+	my $thrId = $self->__CreateThread( $jobGUID, $jobStrData, $port, \$pcbIdShare, $pidInCAM, $externalServer, \$stoppedShare, $threadOrder );
 
 	my %thrTaskInf = (
 					   "jobGUID" => $jobGUID,
@@ -246,6 +248,7 @@ sub __CreateThread {
 	my $pidInCAM       = shift;
 	my $externalServer = shift;
 	my $stopVarShare   = shift;
+	my $threadOrder = shift;
 	
 	# check if thread pool has minimal count of pools
 	$self->__FillThreadPool();
@@ -254,9 +257,15 @@ sub __CreateThread {
 	my $tid = $self->{"IDLE_QUEUE"}->dequeue();
 
 	# Check for termination condition
+	
+	print STDERR "\n Thread is about to start ".$threadOrder."\n";
+	
+	unless(defined $jobStrData  ){
+		die "not defined";
+	}
 
 	# Pass parameters to prepared thread
-	my @ary : shared = ( $jobGUID, $jobStrData, $port, $pcbIdShare, $pidInCAM, $externalServer, $stopVarShare );
+	my @ary : shared = ( $jobGUID, $jobStrData, $port, $pcbIdShare, $pidInCAM, $externalServer, $stopVarShare, $threadOrder );
 
 	# my $pom = 1;
 	$self->{"work_queues"}->{$tid}->enqueue( \@ary );
@@ -275,10 +284,11 @@ sub __WorkerMethod {
 	my $pidInCAM       = shift;
 	my $externalServer = shift;
 	my $stopVarShare   = shift;
+	my $threadOrder = shift;
 
 	my $onThreadWorker = $self->{'onThreadWorker'};
 	if ( $onThreadWorker->Handlers() ) {
-		$onThreadWorker->Do( $pcbIdShare, $jobGUID, $jobStrData, $inCAM, \$THREAD_PROGRESS_EVT, \$THREAD_MESSAGE_EVT, $stopVarShare );
+		$onThreadWorker->Do( $pcbIdShare, $jobGUID, $jobStrData, $inCAM, \$THREAD_PROGRESS_EVT, \$THREAD_MESSAGE_EVT, $stopVarShare, $threadOrder );
 	}
 
 	print STDERR "\n thread task end PCBid: $$pcbIdShare \n";
@@ -294,6 +304,11 @@ sub __PoolWorker {
 
 	# This thread's ID
 	my $tid = threads->tid();
+ 
+#	if ( AppConf->GetValue("logingType") == 2 ) {
+#
+#		HelperAbstrQ->Logging("TaskThreads", "LogThread_$tid" );
+#	}
 
 	# Work loop
 	do {
@@ -318,8 +333,9 @@ sub __PoolWorker {
 		my $pidInCAM       = $work->[4];
 		my $externalServer = $work->[5];
 		my $stop           = $work->[6];
+		my $threadOrder = $work->[7];
 
-		print STDERR "\n Thread pool start PCB: $$pcbIdShare \n";
+		print STDERR "\n Thread pool start PCB: $$pcbIdShare order $threadOrder \n";
 
 		# TODO odkomentovat
 		my $inCAM = InCAM->new( "remote" => 'localhost', "port" => $port );
@@ -338,7 +354,7 @@ sub __PoolWorker {
 
 		};
 
-		$self->__WorkerMethod( $jobGUID, $jobStrData, $inCAM, $pcbIdShare, $pidInCAM, $externalServer, $stop );
+		$self->__WorkerMethod( $jobGUID, $jobStrData, $inCAM, $pcbIdShare, $pidInCAM, $externalServer, $stop, $threadOrder);
 
 		# Loop back to idle state if not told to terminate
 	} while (1);

@@ -331,9 +331,6 @@ sub __PortReadyHandler {
 
 		print STDERR "\n\n Job $pcbId IS start running PORT: " . $d{"port"} . " PIDINCAM: " . $d{"pidInCAM"} . "\n\n";
 
-		if ( !defined $d{"pidInCAM"} ) {
-			print STDERR "pidincam is not defined";
-		}
 
 		$self->{"threadMngr"}->RunNewtask( $jobGUID, $jobStrData, $d{"port"}, $pcbId, $d{"pidInCAM"}, $externalServer );
 

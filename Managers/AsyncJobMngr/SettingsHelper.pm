@@ -26,7 +26,7 @@ sub new {
 	my $packageFull = shift;    # name of AsyncJobMngr child. Used for log file name..
 
 	my $fileName = AppConf->GetValue("appName");
-	$fileName =~ s/\s/_/g;
+	$fileName =~ s/\s//g;
 	$self->{"logPath"} = EnumsPaths->Client_INCAMTMPJOBMNGR . $fileName;
 
 	$self->__SetDefault();

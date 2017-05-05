@@ -24,6 +24,7 @@ use aliased 'Managers::AsyncJobMngr::Helper';
 use aliased 'Managers::AsyncJobMngr::Enums';
 use aliased 'Managers::AsyncJobMngr::ServerMngr::ServerInfo';
 use aliased 'Managers::AbstractQueue::AppConf';
+use aliased 'Managers::AbstractQueue::Helper' => "HelperAbstrQ";
 
 #use aliased 'Enums::EnumsGeneral';
 #-------------------------------------------------------------------------------------------#
@@ -517,6 +518,11 @@ sub __PoolWorker {
 	# This thread's ID
 	my $tid = threads->tid();
 
+#	if ( AppConf->GetValue("logingType") == 2 ) {
+#
+#		HelperAbstrQ->Logging("ServerThreads", "LogThread_$tid" );
+#	}
+
 	# Work loop
 	do {
 
@@ -729,7 +735,8 @@ sub __CreateServerConn {
 
 	# 3) Test connection with server
 
-	my $inCAM = InCAM->new( "remote" => 'localhost', "port" => $port );
+	my $inCAM = InCAM->new( "remote" => 'localhost',
+							"port"   => $port );
 
 	#server seems ready, try send message and get server pid
 	my $pidServer = $inCAM->ServerReady();
@@ -738,11 +745,13 @@ sub __CreateServerConn {
 
 	if ($pidServer) {
 		$inCAM->ClientFinish();
+		
+		
 
 		return $pidServer;
 	}
 	else {
-
+		die "\nError connect to incam server";
 		return 0;
 	}
 }

@@ -64,7 +64,8 @@ sub __RunPoolMerge {
 	my $processObj;
 	my $perl = $Config{perlpath};
 
-	# CREATE_NEW_CONSOLE - script will run in completely new console - no interaction with old console
+	# CREATE_NEW_CONSOLE - script will run in completely new console - no interaction with old console 
+	# 2>&1 | tee c:\\Export\\test.txt
  
 
 	Win32::Process::Create( $processObj, $perl,

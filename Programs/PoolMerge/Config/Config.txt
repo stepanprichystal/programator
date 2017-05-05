@@ -32,3 +32,9 @@ appName = Pool merger
 
 # If window should stay hideen after start app
 hideAfterStart = 1
+
+# Loging type 
+0 - no log, 
+1 - log to file (console is empty)
+logingType = 0
+ 
