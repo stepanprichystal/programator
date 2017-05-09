@@ -66,7 +66,7 @@ sub new {
 	
  
 
-	$self->_Run();
+	#$self->_Run();
 
 	return $self;
 }
@@ -293,6 +293,7 @@ sub __OnSetNewTaskHandler {
 # Take every file only once, then delete it
 sub __CheckFilesHandler {
 	my ( $self, $mainFrm, $event ) = @_;
+ 
 
 	# If dir for export files doesn't exist, create it
 	unless ( -e EnumsPaths->Client_EXPORTFILESPOOL ) {
@@ -350,7 +351,7 @@ sub __CheckFilesHandler {
 			copy( $path, EnumsPaths->Client_EXPORTFILESPOOL . "backup\\" . $taskName );    # do backup
 
 			# TODO odkomentovat abt to mazalo
-			#unlink($path);
+			unlink($path);
 
 			# serialize job data to strin
 			my %hashData = ();
@@ -417,7 +418,8 @@ sub __RunTimers {
 	my $timerFiles = Wx::Timer->new( $formMainFrm, -1, );
 	Wx::Event::EVT_TIMER( $formMainFrm, $timerFiles, sub { $self->__CheckFilesHandler(@_) } );
 	$self->{"timerFiles"} = $timerFiles;
-	$timerFiles->Start(200);
+	$timerFiles->Start(1000);
+	$self->_AddTimers($timerFiles);
 
 
 

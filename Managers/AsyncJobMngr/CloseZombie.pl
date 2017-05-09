@@ -64,6 +64,8 @@ foreach my $pid ( sort { $a <=> $b } keys %list ) {
  
 				$args =~ m/pl\s(\d+)/;
 
+				print STDERR "\n Close zombie $args $1 $portFrom $portTo\n";
+
 				if ( $1 >= $portFrom && $1 <= $portTo ) {
 					
 					Win32::Process::KillProcess( $pid, 0 );

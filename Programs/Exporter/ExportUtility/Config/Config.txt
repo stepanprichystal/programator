@@ -33,4 +33,10 @@ appName = Export Utility
 
 # If window should stay hideen after start app
 hideAfterStart = 0
+
+
+# Loging type 
+0 - no log, 
+1 - log to file (console is empty)
+logingType = 1
  

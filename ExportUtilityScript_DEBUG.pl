@@ -13,7 +13,7 @@ use aliased 'Packages::InCAM::InCAM';
 
 
 my $exporter = ExportUtility->new(EnumsMngr->RUNMODE_TRAY);
-
+$exporter->Run();
  
 #Win32::OLE->new
  

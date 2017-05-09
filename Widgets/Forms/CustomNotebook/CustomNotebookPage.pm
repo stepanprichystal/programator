@@ -96,9 +96,7 @@ sub AddContent {
 	$self->{"scrollPnl"}->Layout();
 
 	my ( $width, $height ) = $self->{"containerPnl"}->GetSizeWH();
-
-	print "Total Height is : " . $height . "\n";
-
+ 
 	$self->{"scrollPnl"}->SetRowCount( $height / 10 );
 
 }

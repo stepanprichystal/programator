@@ -339,7 +339,7 @@
       <item id="7" text="2113  [ FZ 01 ]" lg="182" sf="3.3" rg="78" rd="0.079" />
       <item id="6" text="2116  [ FZ 01 ]" lg="220" sf="4.1" rg="103.8" rd="0.094" />
       <item id="9" text="2116  [ FZ 98 ]" lg="243" sf="4.7" rg="103.8" rd="0.094" />
-      <item id='8'  text='2125 [ MD 01 ]' lg='182' sf='3.5' rg='87.5'  rd='0.091'/>
+      <item id='8'  text='2125 [ FZ 01 ]' lg='182' sf='3.5' rg='87.5'  rd='0.091'/>
       <item id="12" text="7628  [ FZ 01 ]" lg="380" sf="7" rg="202.0" rd="0.173" />
       <item id="10" text="7628  [ FZ 98 ]" lg="412" sf="7.9" rg="202.0" rd="0.173" />
     </quality>

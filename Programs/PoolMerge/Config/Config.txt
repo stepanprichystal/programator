@@ -36,5 +36,5 @@ hideAfterStart = 1
 # Loging type 
 0 - no log, 
 1 - log to file (console is empty)
-logingType = 0
+logingType = 1
  

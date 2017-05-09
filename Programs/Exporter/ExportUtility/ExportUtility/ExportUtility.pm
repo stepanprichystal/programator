@@ -62,7 +62,7 @@ sub new {
 
 	$self->__RunTimers();
 
-	$self->_Run();
+	#$self->_Run();
 
 	return $self;
 }
@@ -205,6 +205,7 @@ sub __OnToProduceClick {
 }
 
 #update gui
+ 
 
 # Handler responsible for reading DIR which contain files with export settings
 # Take every file only once, then delete it
@@ -326,7 +327,10 @@ sub __RunTimers {
 	my $timerFiles = Wx::Timer->new( $formMainFrm, -1, );
 	Wx::Event::EVT_TIMER( $formMainFrm, $timerFiles, sub { $self->__CheckFilesHandler(@_) } );
 	$self->{"timerFiles"} = $timerFiles;
-	$timerFiles->Start(200);
+	$timerFiles->Start(500);
+	$self->_AddTimers($timerFiles);
+	
+ 
 
 }
 

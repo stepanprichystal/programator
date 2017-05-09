@@ -65,6 +65,10 @@ sub new {
 	# list of jobs, which are waiting on auto remove
 	my @removeJobs = ();
 	$self->{"removeJobs"} = \@removeJobs;
+	
+	# list of all timers
+	my @timers = ();
+	$self->{"timers"} = \@timers;
 
 	#set base class handlers
 
@@ -76,6 +80,39 @@ sub new {
 
 	return $self;
 }
+
+
+# ========================================================================================== #
+#  PUBLIC HELPER METHOD
+# ========================================================================================== #
+sub Run {
+	my $self = shift;
+ 
+	$self->__RunTimersBase();
+	
+	if(AppConf->GetValue("hideAfterStart")){
+		
+		$self->{"form"}->{"mainFrm"}->Hide();
+		
+	}else{
+		$self->{"form"}->{"mainFrm"}->Show(1);
+	}
+
+	$self->{"form"}->MainLoop();
+
+}
+
+
+# Stop all timers
+sub StopAllTimers{
+	my $self = shift;
+	
+	foreach my $timer (@{$self->{"timers"}}){
+		
+		$timer->Stop();
+	}
+}
+
 
 # ========================================================================================== #
 #  BASE CLASS HANDLERS
@@ -437,22 +474,7 @@ sub __AutoRemoveJobsHandler {
 #  PROTECTED HELPER METHOD
 # ========================================================================================== #
 
-sub _Run {
-	my $self = shift;
- 
-	$self->__RunTimersBase();
-	
-	if(AppConf->GetValue("hideAfterStart")){
-		
-		$self->{"form"}->{"mainFrm"}->Hide();
-		
-	}else{
-		$self->{"form"}->{"mainFrm"}->Show(1);
-	}
 
-	$self->{"form"}->MainLoop();
-
-}
 
 sub _GetTaskById {
 	my $self   = shift;
@@ -490,6 +512,15 @@ sub _AddJobToAutoRemove {
 	push( @{ $self->{"removeJobs"} }, \%removeInf );
 }
 
+# Add timers to list of all timers
+# When app fail, all timers are stopped
+sub _AddTimers{
+	my $self = shift;
+	my $timers = shift;
+	
+	push(@{$self->{"timers"}}, $timers);
+}
+
 # ========================================================================================== #
 #  PRIVATE HELPER METHOD
 # ========================================================================================== #
@@ -518,16 +549,21 @@ sub __RunTimersBase {
 	my $timer5sec = Wx::Timer->new( $formMainFrm, -1, );
 	Wx::Event::EVT_TIMER( $formMainFrm, $timer5sec, sub { $self->__Timer5second(@_) } );
 	$timer5sec->Start(1000);
+	$self->_AddTimers($timer5sec);
+	 
 
 	my $timerVersion = Wx::Timer->new( $formMainFrm, -1, );
 	$self->{"timerVersion"} = $timerVersion;
 	Wx::Event::EVT_TIMER( $formMainFrm, $timerVersion, sub { $self->__TimerCheckVersion(@_) } );
-	$timerVersion->Start( 2 * 60000);    # every 5 minutes
+	$timerVersion->Start( 3 * 60000);    # every 5 minutes
+	$self->_AddTimers($timerVersion);
+	
 
 	my $timer1s = Wx::Timer->new( $formMainFrm, -1, );
 	Wx::Event::EVT_TIMER( $formMainFrm, $timer1s, sub { $self->__AutoRemoveJobsHandler(@_) } );
 	$timer1s->Start(1000);
-
+	$self->_AddTimers($timer1s);
+ 
 }
 
 # Restart task

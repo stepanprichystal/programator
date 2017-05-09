@@ -209,7 +209,7 @@ sub __SetLayout {
 
 		}
 
-		print "pecent width: $percentWidth\n";
+		 
 		$szMain->Add( $clmSz->GetSizer(), $percentWidth );
 
 	}

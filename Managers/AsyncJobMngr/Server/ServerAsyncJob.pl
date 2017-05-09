@@ -13,10 +13,14 @@ Set up a socket so that a remote user can send commands
 Most of this has been copied from the Perl manual.
 =cut
 
+use threads;
+use threads::shared;
 use Socket;
 use Carp;
 use Sys::Hostname;
 use Path::Tiny qw(path);
+use Thread::Queue;
+use Time::HiRes qw (sleep);
 
 #use local library;
 
@@ -28,6 +32,52 @@ use PackagesLib;
 use lib qw( C:\Perl\site\lib\TpvScripts\Scripts );
 
 use aliased 'Enums::EnumsPaths';
+
+my $IDLE_QUEUE  = Thread::Queue->new();
+my %work_queues = ();
+
+# Create a work queue for a thread
+my $work_q = Thread::Queue->new();
+
+# Create the thread, and give it the work queue
+my $thr = threads->create( sub { __PoolWorker($work_q) } );
+$thr->set_thread_exit_only(1);
+
+# Remember the thread's work queue
+$work_queues{ $thr->tid() } = $work_q;
+
+sub __PoolWorker {
+	my ($work_q) = @_;
+
+	# This thread's ID
+	my $tid = threads->tid();
+
+	# Work loop
+	do {
+
+		$IDLE_QUEUE->enqueue($tid);
+
+		# Wait for work from the queue
+		my $work = $work_q->dequeue();
+
+		my $readOk = $work->[0];
+
+		print STDERR "ctu stdin\n";
+
+		my $reply = <STDIN>;
+
+		print STDERR $reply;
+
+		$reply = <STDIN>;
+
+		print STDERR $reply;
+
+		if ($reply) {
+			$$readOk = 1;
+		}
+
+	} while (1);
+}
 
 sub spawn;    # forward declaration
 sub logmsg { print "$0 $$: @_ at ", scalar localtime, "\n" }
@@ -68,8 +118,9 @@ bind( Server, sockaddr_in( $serverPort, INADDR_ANY ) ) || die "bind: $!";
 
 # Tell to clients, server is ready (only if exist "file" <$fIndicator>)
 if ( defined $fIndicator ) {
- 
+
 	my $pFIndicator = EnumsPaths->Client_INCAMTMPOTHER . $fIndicator;
+
 	#my $pFIndicator = "c:\\tmp\\InCam\\scripts\\other\\" . $fIndicator;
 
 	my $file = path($pFIndicator);
@@ -112,17 +163,81 @@ for ( $waitedpid = 0 ; ( $paddr = accept( Client, Server ) ) || $waitedpid ; $wa
 		( $text = $line ) =~ s/\@%#%\@//;
 
 		#print "===============GOT A LINE $text\n";
-
 		if ( ($command) = $line =~ /^\@%#%\@\s*(\S+)/ ) {
 
 			# If server is ready, return PID of server script
 			if ( $command =~ /SERVERREADY/ ) {
 				$line =~ m/PID:(\d*)/;
 
-				#Helper->PrintServer ("SERVER: PID: $$, port: $serverPort accept new client.................CLIENT PID:". $1."\n");
+				# otestuj, jestli incam je pripojen
 
-				send( Client, $$ . "\n", 0 );    # and send it to the client
+				my $DIR_PREFIX = '@%#%@';
 
+				#print "dd";
+				$noReplies    = $replies{$command};
+				$old_select   = select(STDOUT);
+				$flush_status = $|;                   # save the flushing status\
+				$|            = 1;                    # force flushing of the io buffer
+
+				$line = "COM get_user_name\n";
+
+				print $DIR_PREFIX, $line;             # this goes to Genesis
+
+				$| = $flush_status;                   # restore the original flush status
+				select($old_select);
+
+				print STDERR "ahoj\n";
+
+				my $tid = $IDLE_QUEUE->dequeue();
+
+				# run thread
+				my $readOk = 0;
+				share($readOk);
+				my @ary : shared = ( \$readOk );
+				$work_queues{$tid}->enqueue( \@ary );
+
+				for ( my $f = 0 ; $f < 20 ; $f++ ) {
+
+					if ( $readOk == 1 ) {
+						last;
+					}
+					print STDERR "cyklus $f\n";
+					sleep(0.1);
+				}
+
+				#
+				#				my $replyOk = undef;
+				#				my $reply  = undef;
+				#
+				#
+				#
+				#				use IO::Handle;
+				#use IO::Select;
+				#my $nb_stdin = new IO::Select( *STDIN );
+				#
+				#    			 if($nb_stdin->can_read(10)){
+				#
+				#    			 	$replyOk = <STDIN>;
+				#					$reply = <STDIN>;          # receive from Genesis
+				#
+				#    			 }
+				#
+				#				print STDERR "\ntoto je odpoved" . $reply . "\n";
+				#
+				#				#Helper->PrintServer ("SERVER: PID: $$, port: $serverPort accept new client.................CLIENT PID:". $1."\n");
+				#				if ( $replyOk == 0 ) {
+				#					send( Client, $$ . "\n", 0 );     # and send it to the client
+				#				}
+				#				else {
+				#					send( Client, 0 . "\n", 0 );      # and send it to the client
+				#				}
+
+				if ($readOk) {
+					send( Client, $$ . "\n", 0 );    # and send it to the client
+				}
+				else {
+					send( Client, 0 . "\n", 0 );     # and send it to the client
+				}
 				next;
 			}
 
@@ -180,13 +295,13 @@ for ( $waitedpid = 0 ; ( $paddr = accept( Client, Server ) ) || $waitedpid ; $wa
 			$| = $flush_status;                            # restore the original flush status
 			select($old_select);
 
-		}
+			for $i ( 1 .. $noReplies ) {
 
-		for $i ( 1 .. $noReplies ) {
+				$line = <STDIN>;                           # receive from Genesis
 
-			$line = <STDIN>;                               # receive from Genesis
+				send( Client, $line, 0 );                  # and send it to the client
+			}
 
-			send( Client, $line, 0 );                      # and send it to the client
 		}
 
 	}

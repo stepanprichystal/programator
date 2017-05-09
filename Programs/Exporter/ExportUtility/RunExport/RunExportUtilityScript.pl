@@ -46,14 +46,20 @@ if(AppConf->GetValue("logingType") == 1){
 # Catch die, then:
 # 1) show message to user;
 # 2) print it to stderr;
+
+my $exporter = undef;
+
 eval {
 
-	my $exporter = ExportUtility->new( EnumsMngr->RUNMODE_TRAY );
+	$exporter = ExportUtility->new( EnumsMngr->RUNMODE_TRAY );
+	$exporter->Run();
 
 };
 if ($@) {
 
 	print STDERR $@;
+	
+	$exporter->StopAllTimers();
 
 	my @m = ( "Doslo k neocekavanmu padu aplikace, zkontroluj co potrebujes a aplikace bude ukoncena.", $@ );
 

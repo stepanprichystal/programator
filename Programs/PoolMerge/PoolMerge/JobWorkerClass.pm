@@ -24,6 +24,7 @@ use aliased 'Managers::AbstractQueue::Enums' => "EnumsAbstrQ";
 use aliased 'Managers::AsyncJobMngr::Enums'  => 'EnumsJobMngr';
 use aliased 'Programs::PoolMerge::Enums';
 
+
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
@@ -39,10 +40,10 @@ sub new {
 sub RunTask {
 	my $self = shift;
  
-	use Time::HiRes qw (sleep);
-	sleep(0.5);
-
-	return 0;
+#	use Time::HiRes qw (sleep);
+#	sleep(1);
+#
+#	return 0;
 
 	# Set property pcbid to undef, because this pcbid represent master job
 	# But in this taime, we dont know master job

@@ -101,10 +101,11 @@ sub Logging {
  	
  	$path = $path."\\".$fileName;
  	
-
-
-	open OLDOUT, ">&STDOUT" || die "Can't duplicate STDOUT: $!";
-	open OLDERR, ">&STDERR" || die "Can't duplicate STDERR: $!";
+	my $OLDOUT;
+	my $OLDERR;
+	
+	open $OLDOUT, ">&STDOUT" || die "Can't duplicate STDOUT: $!";
+	open $OLDERR, ">&STDERR" || die "Can't duplicate STDERR: $!";
 	open( STDOUT, "+>", $path );
 	open( STDERR, ">&STDOUT" );
 

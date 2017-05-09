@@ -13,6 +13,7 @@ use aliased 'Packages::InCAM::InCAM';
 
 
 my $poolMerger = PoolMerge->new(EnumsMngr->RUNMODE_TRAY);
+$poolMerger->Run();
 
   
 #Win32::OLE->new

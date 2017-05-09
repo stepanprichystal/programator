@@ -202,7 +202,7 @@ sub DESTROY {
 	}
 
 	# send(SOCK, "${DIR_PREFIX}CLOSEDOWN \n", 0);
-	if ($s && (!defined $self->{"childThread"} || $self->{"childThread"} == 0)) {
+	if ( $s && ( !defined $self->{"childThread"} || $self->{"childThread"} == 0 ) ) {
 
 		print $s "${DIR_PREFIX}CLOSEDOWN \n";
 
@@ -295,8 +295,6 @@ sub openSocket {
 
 	#print STDERR "\n\nBEFORESOCKET OPEN 2 %%%%%%%%%%%%%%%%%%  %%%%%%%%%%\n\n";
 
-	
-
 	#print STDERR "\n\nBEFORESOCKET OPEN 3 %%%%%%%%%%%%%%%%%%  %%%%%%%%%%\n\n";
 
 	$self->{"socket"} = IO::Socket::INET->new(
@@ -348,7 +346,6 @@ sub sendCommandToPipe {
 	my $old_select   = select(STDOUT);
 	my $flush_status = $|;               # save the flushing status
 	$| = 1;                              # force flushing of the io buffer
-
 
 	print $DIR_PREFIX, "$commandType $command\n";
 	$| = $flush_status;                  # restore the original flush status
@@ -565,15 +562,17 @@ sub __Connect {
 	#	}
 
 	if ($sOpen) {
-		 
 
 		#printf( "%.2f\n", $end - $start );
 		#print "YES";
 
-		$self->{comms}      = 'socket';
-		$self->{socketOpen} = 1;
-		$self->inheritEnvironment();
-		$self->{"connected"} = 1;
+		 
+			$self->{comms}      = 'socket';
+			$self->{socketOpen} = 1;
+			$self->inheritEnvironment();
+			$self->{"connected"} = 1;
+		 
+
 	}
 
 	# Test if script run from InCAM (LOGNAME is present)
@@ -831,11 +830,11 @@ sub COM {
 		$self->{"exception"} = $ex;
 		push( @{ $self->{"exceptions"} }, $ex );
 
-#		# save exeption stam to log
-#		if ( $self->__LogExist() ) {
-#
-#			$self->PutStampToLog( $ex->GetExceptionId() );
-#		}
+		#		# save exeption stam to log
+		#		if ( $self->__LogExist() ) {
+		#
+		#			$self->PutStampToLog( $ex->GetExceptionId() );
+		#		}
 
 		if ( $self->{"HandleException"} == 0 ) {
 			print STDERR "die when inCAM\n";
@@ -942,7 +941,7 @@ sub parse {
 
 sub INFO {
 	my ($self) = shift;
-	
+
 	# before new info command, clear old responzes
 	$self->{doinfo} = ();
 
@@ -951,7 +950,8 @@ sub INFO {
 	}
 
 	my %args = @_;
-	my ( $entity_path, $data_type, $parameters, $serial_number, $options, $help, $entity_type, $angle_direction ) = ( "", "", "", "", "", "", "", "" );
+	my ( $entity_path, $data_type, $parameters, $serial_number, $options, $help, $entity_type, $angle_direction ) =
+	  ( "", "", "", "", "", "", "", "" );
 	my $i;
 	my $units = 'units = inch';
 	my $parse = 'yes';
@@ -989,8 +989,7 @@ sub INFO {
 			$parse = $i;
 		}
 	}
-	
- 
+
 	#my $info_pre = "info,out_file=\$csh_file,write_mode=replace, $units,args=";
 	my $info_pre = "info,out_file=\$csh_file,write_mode=replace,$angle_direction $units,args=";
 	my $info_com = "$info_pre $entity_type $entity_path $data_type " . "$parameters $serial_number $options $help";

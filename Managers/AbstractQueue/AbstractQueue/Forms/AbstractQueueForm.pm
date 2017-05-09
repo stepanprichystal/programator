@@ -611,11 +611,17 @@ sub __SetLayoutAbstractQueueSettings {
 	my $statBox = Wx::StaticBox->new( $parent, -1, 'AbstractQueue - settings' );
 	my $szStatBox = Wx::StaticBoxSizer->new( $statBox, &Wx::wxVERTICAL );
 
-	my $szRow1 = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
+	my $szRow1 = Wx::BoxSizer->new(&Wx::wxVERTICAL);
 
 	# DEFINE CONTROLS
 
 	my $showConsoleChb = Wx::CheckBox->new( $parent, -1, "Show console", [ -1, -1 ], [ 130, 20 ] );
+	my $writeToLogChb = Wx::CheckBox->new( $parent, -1, "Console to logfile", [ -1, -1 ], [ 130, 20 ] );
+	$writeToLogChb->Disable();
+	
+	if( AppConf->GetValue("logingType") == 1){
+		$writeToLogChb->SetValue(1);
+	} 
 
 	# DEFINE EVENTS
 
@@ -624,7 +630,9 @@ sub __SetLayoutAbstractQueueSettings {
 	# BUILD LAYOUT STRUCTURE
 
 	$szRow1->Add( $showConsoleChb, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szRow1->Add( $writeToLogChb, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 	$szStatBox->Add( $szRow1, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	
 
 	# SAVE REFERENCES
 

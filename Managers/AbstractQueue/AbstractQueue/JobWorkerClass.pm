@@ -59,6 +59,12 @@ sub Init {
 	print STDERR "\n Thread order $threadOrder SUPRESS worker\n";
 
 	# Switch of displa actions in InCAM editor
+	
+	
+	$self->{"inCAM"}->COM("get_user_name");
+	
+	 print STDERR "\n Thread order $threadOrder USERNAME worker\n";
+	
 	$self->{"inCAM"}->COM("disp_off");
 	
 	print STDERR "\n Thread order $threadOrder DISPOFF worker\n";

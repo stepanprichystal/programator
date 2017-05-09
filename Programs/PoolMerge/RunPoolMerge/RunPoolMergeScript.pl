@@ -64,11 +64,14 @@ my $merger = undef;
 eval {
 
 	$merger = PoolMerge->new( EnumsMngr->RUNMODE_TRAY );
+	$merger->Run();
 
 };
 if ($@) {
 
 	print STDERR $@;
+	
+	$merger->StopAllTimers();
 
 	my @m = ( "Doslo k neocekavanmu padu aplikace, zkontroluj co potrebujes a aplikace bude ukoncena.", $@ );
 

@@ -22,7 +22,7 @@ sub Print{
 	my $self = shift;
 	my $mess = shift;
 
-	print '====== E X P O R T ======= '.$mess;
+	print STDERR '====== E X P O R T ======= '.$mess;
 }
 
 

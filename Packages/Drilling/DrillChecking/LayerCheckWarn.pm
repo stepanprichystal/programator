@@ -78,19 +78,21 @@ sub CheckNCLayers {
 
 	}
 
-	 
-	
 	# 1) Check if tool parameters are set correctly
 	unless ( $self->CheckToolParameters( $inCAM, $jobId, $stepName, \@layers, $mess ) ) {
 
 		$result = 0;
 	}
-	
- 
+
+	# 2) Check if tool parameters are set correctly
+	unless ( $self->CheckNonBoardLayers( $inCAM, $jobId, $mess ) ) {
+
+		$result = 0;
+	}
+
 	return $result;
 
 }
- 
 
 # Check if tools are unique within while layer, check if all necessary parameters are set
 sub CheckToolParameters {
@@ -102,11 +104,11 @@ sub CheckToolParameters {
 	my $mess     = shift;
 
 	my $result = 1;
- 
+
 	foreach my $l (@layers) {
-		
+
 		# if uniDTM check fail, dont do another control
-		unless($l->{"uniDTM"}->CheckTools()){
+		unless ( $l->{"uniDTM"}->CheckTools() ) {
 			next;
 		}
 
@@ -114,37 +116,69 @@ sub CheckToolParameters {
 			$result = 0;
 			$$mess .= "\n";
 		}
-		
+
 		unless ( $l->{"uniDTM"}->GetChecks()->CheckSpecialTools($mess) ) {
 			$result = 0;
 			$$mess .= "\n";
 		}
-		
-		
+
 	}
-	
-	 # 3) Check if rout layers don't contain tool less than 500µm (exept score)
+
+	# 3) Check if rout layers don't contain tool less than 500µm (exept score)
 	foreach my $l ( grep { $_->{"gROWlayer_type"} eq "rout" } @layers ) {
-		
+
 		# if uniDTM check fail, dont do another control
-		unless($l->{"uniDTM"}->CheckTools()){
+		unless ( $l->{"uniDTM"}->CheckTools() ) {
 			next;
 		}
 
 		my @unitTools = $l->{"uniDTM"}->GetTools();
 
 		foreach my $t (@unitTools) {
-			
-			if($l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_score){
+
+			if ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_score ) {
 				next;
 			}
 
 			if ( $t->GetDrillSize() < 500 ) {
 				$result = 0;
 				$$mess .= "NC layer \"" . $l->{"gROWname"} . "\".\n";
-				$$mess .= "Routing layers should not contain tools diamaeter smaller than 500µm. Layer contains tool diameter: " . $t->GetDrillSize() . "µm.\n";
+				$$mess .=
+				    "Routing layers should not contain tools diamaeter smaller than 500µm. Layer contains tool diameter: "
+				  . $t->GetDrillSize()
+				  . "µm.\n";
 			}
 		}
+	}
+
+	return $result;
+}
+
+# Check if some layers are non board
+sub CheckNonBoardLayers {
+	my $self  = shift;
+	my $inCAM = shift;
+	my $jobId = shift;
+	my $mess  = shift;
+
+	my $result = 1;
+
+	my @layers = CamJob->GetAllLayers( $inCAM, $jobId );
+	CamDrilling->AddNCLayerType( \@layers );
+
+	# search for layer which has defined "type" but is not board
+
+	my @nonBoard = grep { defined $_->{"type"} && $_->{"gROWcontext"} ne "board" } @layers;
+	@nonBoard = grep { $_->{"gROWname"} !~ /_/ } @nonBoard;
+
+	if ( scalar(@nonBoard) ) {
+
+		@nonBoard = map { "\"".$_->{"gROWname"}."\"" } @nonBoard;
+		my $str = join( "; ", @nonBoard );
+
+		$result = 0;
+		$$mess .= "Matrix contains rout/drill layers, which are not board ($str). Is it ok? \n";
+
 	}
 
 	return $result;
@@ -158,20 +192,20 @@ sub CheckToolParameters {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	use aliased 'Packages::Drilling::DrillChecking::LayerCheckError';
+  use aliased 'Packages::Drilling::DrillChecking::LayerCheckWarn';
 
-	use aliased 'Packages::InCAM::InCAM';
+  use aliased 'Packages::InCAM::InCAM';
 
-	my $inCAM = InCAM->new();
-	my $jobId = "f52456";
+  my $inCAM = InCAM->new();
+  my $jobId = "f52456";
 
-	my $mess = "";
+  my $mess = "";
 
-	my $result = LayerCheckError->CheckNCLayers( $inCAM, $jobId, "o+1", undef, \$mess );
+  my $result = LayerCheckWarn->CheckNCLayers( $inCAM, $jobId, "o+1", undef, \$mess );
 
-	print STDERR "Result is $result \n";
+  print STDERR "Result is $result \n";
 
-	print STDERR " $mess \n";
+  print STDERR " $mess \n";
 
 }
 

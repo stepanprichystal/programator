@@ -52,6 +52,9 @@ sub new {
 	$self->{"destroyOnDemand"} = 1;                                 # close server only on demand, not immediately
 	$self->{"destroyDelay"}    = -1;                                # destroy server after 12s of WAITING state
 
+	$self->{"lastLaunch"} = undef;                                  # time when last server was launched (shared var)
+	share( $self->{"lastLaunch"} );
+
 	my $range = $self->{"startPort"} . "-" . ( $self->{"startPort"} + 999 );
 	$self->__CloseZombie( undef, 0 );
 
@@ -170,6 +173,25 @@ sub PrepareServerPort {
 
 			$s->{"state"} = Enums->State_RUNING_SERVER;
 			$freePort = $s->{"port"};
+
+			my $inCAM = InCAM->new( "remote" => 'localhost',
+									"port"   => $freePort );
+
+			#server seems ready, try send message and get server pid
+			my $pidServer = $inCAM->ServerReady();
+
+			print STDERR "\nREtesting if port ready\n";
+
+			if ($pidServer) {
+				$inCAM->ClientFinish();
+			}
+			else {
+
+				# destroy broken server and try prepare port again
+				$self->DestroyServer( $freePort, 1 );
+				$self->PrepareServerPort($jobGUID);
+				return 0;
+			}
 
 			#$prepare = 1;
 			$self->__PortReady( $freePort, $jobGUID );    #send event, port ready
@@ -391,8 +413,10 @@ sub DestroyExternalServer {
 
 # Kill InCAM server
 sub DestroyServer {
-	my $self      = shift;
-	my $port      = shift;
+	my $self         = shift;
+	my $port         = shift;
+	my $serverBroken = shift;    # if set to 1, don't try connect tot server
+
 	my $serverRef = $self->{"servers"};
 
 	my @s = @{$serverRef};
@@ -409,18 +433,20 @@ sub DestroyServer {
 		my $closedSucc = 0;
 
 		#try to connect to server and close it nice
+		unless ($serverBroken) {
 
-		my $inCAM = InCAM->new( "remote" => 'localhost', "port" => $port );
-		if ( $inCAM->ServerReady() ) {
+			my $inCAM = InCAM->new( "remote" => 'localhost', "port" => $port );
+			if ( $inCAM->ServerReady() ) {
 
-			my $closed = $inCAM->COM("close_toolkit");
+				my $closed = $inCAM->COM("close_toolkit");
 
-			if ( $closed == 0 ) {
-				$closedSucc = 1;
+				if ( $closed == 0 ) {
+					$closedSucc = 1;
 
-				# we has to close server perl scritp, unless inCAM will be still running
-				Win32::Process::KillProcess( $s->{"pidServer"}, 0 );
-				print STDERR "\n\n close toolikt ################ \n\n";
+					# we has to close server perl scritp, unless inCAM will be still running
+					Win32::Process::KillProcess( $s->{"pidServer"}, 0 );
+					print STDERR "\n\n close toolikt ################ \n\n";
+				}
 			}
 		}
 
@@ -504,7 +530,7 @@ sub __AddThreadPool {
 	my $work_q = Thread::Queue->new();
 
 	# Create the thread, and give it the work queue
-	my $thr = threads->create( sub { $self->__PoolWorker($work_q) } );
+	my $thr = threads->create( sub { $self->__PoolWorker( $work_q, \$self->{"lastLaunch"} ) } );
 	$thr->set_thread_exit_only(1);
 
 	# Remember the thread's work queue
@@ -512,22 +538,23 @@ sub __AddThreadPool {
 }
 
 sub __PoolWorker {
-	my $self = shift;
-	my ($work_q) = @_;
+	my $self       = shift;
+	my $work_q     = shift;
+	my $lastLaunch = shift;
 
 	# This thread's ID
 	my $tid = threads->tid();
 
-#	if ( AppConf->GetValue("logingType") == 2 ) {
-#
-#		HelperAbstrQ->Logging("ServerThreads", "LogThread_$tid" );
-#	}
+	#	if ( AppConf->GetValue("logingType") == 2 ) {
+	#
+	#		HelperAbstrQ->Logging("ServerThreads", "LogThread_$tid" );
+	#	}
 
 	# Work loop
 	do {
 
 		# Indicate that were are ready to do work
-		printf( "Idle     -> %2d\n", $tid );
+
 		$self->{"IDLE_QUEUE"}->enqueue($tid);
 
 		# Wait for work from the queue
@@ -538,7 +565,7 @@ sub __PoolWorker {
 		my $port    = $work->[0];
 		my $jobGUID = $work->[1];
 
-		$self->__CreateServer( $port, $jobGUID );
+		$self->__CreateServer( $port, $jobGUID, $lastLaunch );
 
 		# Loop back to idle state if not told to terminate
 	} while (1);
@@ -549,60 +576,58 @@ sub __PoolWorker {
 # server is ready (till client can connect to serer script)
 sub __CreateServer {
 
-	my $self     = shift;
-	my $freePort = shift;
-	my $jobGUID  = shift;
+	my $self       = shift;
+	my $freePort   = shift;
+	my $jobGUID    = shift;
+	my $lastLaunch = shift;
+
+	# 1) Protection, more incam doesn't launch in same time
+	my $lastTmp = $$lastLaunch;
+
+	if ( defined $lastTmp ) {
+		if ( $lastTmp + 5 > time() ) {
+
+			# this is shared variable betwens threads, so set it as soon as possible
+			# in order another income will not launch at same time (reserve this time for launch this incam)
+			$$lastLaunch = $lastTmp + 5;
+
+			#print "\nreserve time $freePort\n";
+		}
+
+		while ( $lastTmp + 15 > time() ) {
+			sleep(1);
+
+			#print "\nwait $freePort\n";
+		}
+	}
+
+	$$lastLaunch = time();
 
 	my $pidInCAM;
 	my $pidServer;
+	my $fIndicator = GeneralHelper->GetGUID();    # file name, where is value, which indicate if server is ready 1/0
 
-	#test on zombified server and close
-	$self->__CloseZombie( $freePort, 1 );
+	# create indicator file
 
-	#start new server on $freePort
+	# 2) try to create inCAM server
+	while (1) {
 
-	my $inCAMPath = GeneralHelper->GetLastInCAMVersion();
+		# launch InCAm instance + server
+		$pidInCAM = $self->__CreateInCAMInstance( $freePort, $fIndicator );
 
-	$inCAMPath .= "bin\\InCAM.exe";
+		# creaate and test server connection
+		$pidServer = $self->__CreateServerConn( $freePort, $fIndicator );
 
-	unless ( -f $inCAMPath )    # does it exist?
-	{
-		print "InCAM does not exist on path: " . $inCAMPath;
-		return 0;
+		# if pid server returned, incam server is ok
+		if ($pidServer) {
+
+			last;
+		}
+
+		Helper->Print( "CLIENT PID: " . $pidInCAM . " (InCAM)........................................launching failed\n" );
 	}
 
-	my $processObj;
-	my $inCAM;
-
-	my $path = GeneralHelper->Root() . "\\Managers\\AsyncJobMngr\\Server\\ServerAsyncJob.pl";
-
-	# turn all backslash - incam need this
-	$path =~ s/\\/\//g;
-
-	# file name, where is value, which indicate if server is ready 1/0
-	my $fIndicator = GeneralHelper->GetGUID();
-
-	# sometimes happen, when 2 or more INCAM servers are launeched a same time, parl fail (no reason)
-	# this is stupid solution, sleep random time
-	#my $sleep = int( rand(10));
-	#sleep($sleep);
-
-	#run InCAM editor with serverscript
-	Win32::Process::Create( $processObj, $inCAMPath, "InCAM.exe -s" . $path . " " . $freePort . " " . $fIndicator, 0, THREAD_PRIORITY_NORMAL, "." )
-	  || die "$!\n";
-
-	$pidInCAM = $processObj->GetProcessID();
-
-	print STDERR "\n New Incam instance PID: $pidInCAM is launching  on $inCAMPath $path \n";
-
-	#my $worker = threads->create( sub { $self->__MoveWindowOut($pidInCAM) } );
-
-	Helper->Print( "CLIENT PID: " . $pidInCAM . " (InCAM)........................................is launching\n" );
-
-	# creaate and test server connection
-	$pidServer = $self->__CreateServerConn( $freePort, $fIndicator );
-
-	# Temoporary solution because -x is not working in inCAM
+	# 3) Temoporary solution because -x is not working in inCAM
 	$self->__MoveWindowOut($pidInCAM);
 
 	#if ok, reise event port ready
@@ -668,28 +693,81 @@ sub __CreateServerExternal {
 # This helper function, wait until new incam server is ready
 # Try to conenct every 2 second
 # Called in asynchrounous thread
+sub __CreateInCAMInstance {
+	my $self       = shift;
+	my $port       = shift;
+	my $fIndicator = shift;
+
+	my $pidInCAM;
+
+	#1 )test on zombified server and close
+	$self->__CloseZombie( $port, 1 );
+
+	# 2) Create file where is stored vlue if server is ready
+	my $pFIndicator = EnumsPaths->Client_INCAMTMPOTHER . $fIndicator;
+
+	if ( open( my $f, "+>", $pFIndicator ) ) {
+
+		print $f 0;
+		close($f);
+	}
+	else {
+		die "unable to create file  file $pFIndicator";
+	}
+
+	# 3) start new server on $freePort
+
+	my $inCAMPath = GeneralHelper->GetLastInCAMVersion();
+
+	$inCAMPath .= "bin\\InCAM.exe";
+
+	unless ( -f $inCAMPath )    # does it exist?
+	{
+		print "InCAM does not exist on path: " . $inCAMPath;
+		return 0;
+	}
+
+	my $processObj;
+	my $inCAM;
+
+	my $path = GeneralHelper->Root() . "\\Managers\\AsyncJobMngr\\Server\\ServerAsyncJob.pl";
+
+	# turn all backslash - incam need this
+	$path =~ s/\\/\//g;
+
+	# sometimes happen, when 2 or more INCAM servers are launeched a same time, parl fail (no reason)
+	# this is stupid solution, sleep random time
+	#my $sleep = int( rand(10));
+	#sleep($sleep);
+
+	#run InCAM editor with serverscript
+	Win32::Process::Create( $processObj, $inCAMPath, "InCAM.exe -s" . $path . " " . $port . " " . $fIndicator, 0, THREAD_PRIORITY_NORMAL, "." )
+	  || die "$!\n";
+
+	$pidInCAM = $processObj->GetProcessID();
+
+	Helper->Print( "CLIENT PID: " . $pidInCAM . " (InCAM)........................................is launching\n" );
+
+	return $pidInCAM;
+}
+
+# This helper function, wait until new incam server is ready
+# Try to conenct every 2 second
+# Called in asynchrounous thread
 sub __CreateServerConn {
 	my $self       = shift;
 	my $port       = shift;
 	my $fIndicator = shift;
+
+	my $inCAMLaunched = 0;
 
 	# if file indicator is not defined, it means, server is prepared external and is alreadz ready in this time
 	if ( defined $fIndicator ) {
 
 		my $pFIndicator = EnumsPaths->Client_INCAMTMPOTHER . $fIndicator;
 
-		# 1 ) Create file where is stored vlue if server is ready
-		if ( open( my $f, "+>", $pFIndicator ) ) {
-
-			print $f 0;
-			close($f);
-		}
-		else {
-			die "unable to create file  file $pFIndicator";
-		}
-
 		# 2 ) Test in loop if server is ready (file indicator has to contain value 1)
-		while (1) {
+		for ( my $i = 0 ; $i < 25 ; $i++ ) {
 
 			if ( open( my $f, "<", $pFIndicator ) ) {
 
@@ -698,8 +776,9 @@ sub __CreateServerConn {
 
 				if ( $val == 1 ) {
 
-					unlink($pFIndicator);    # delete temp file
-					sleep(1);                # to be sure, server is ready to "listen" clients
+					unlink($pFIndicator);       # delete temp file
+					sleep(1);                   # to be sure, server is ready to "listen" clients
+					$inCAMLaunched = 1;
 					last;
 				}
 			}
@@ -707,10 +786,18 @@ sub __CreateServerConn {
 				print STDERR "Unable to open file $pFIndicator";
 			}
 
-			Helper->Print("CLIENT(parent): PID: $$  try connect to server port: $port....failed\n");
+			Helper->Print("CLIENT(parent): PID: $$  try connect to server port: $port, attempt: $i ....failed\n");
 
 			sleep(1);
 		}
+	}else{
+		
+		# InCam is prepared  (external sever)
+		$inCAMLaunched = 1;
+	}
+	
+	unless($inCAMLaunched){
+		return 0;
 	}
 
 	#	my $inCAM;
@@ -745,8 +832,6 @@ sub __CreateServerConn {
 
 	if ($pidServer) {
 		$inCAM->ClientFinish();
-		
-		
 
 		return $pidServer;
 	}

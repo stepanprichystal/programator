@@ -344,7 +344,10 @@ sub __PoolWorker {
 		#$inCAM->StarLog( $pidInCAM, $pcbIdShare );
 
 		#my $inCAM = undef;
-		$inCAM->ServerReady();
+		my $pidServer = $inCAM->ServerReady();
+		unless($pidServer){
+			die "Server on port $port is not ready. Fail when test server is ready";
+		}
 
 		$SIG{'KILL'} = sub {
 
