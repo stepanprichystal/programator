@@ -169,7 +169,7 @@ sub CheckNonBoardLayers {
 	# search for layer which has defined "type" but is not board
 
 	my @nonBoard = grep { defined $_->{"type"} && $_->{"gROWcontext"} ne "board" } @layers;
-	@nonBoard = grep { $_->{"gROWname"} !~ /_/ } @nonBoard;
+	@nonBoard = grep { $_->{"gROWname"} !~ /_/ && $_->{"gROWname"} !~ /v\d/ } @nonBoard;
 
 	if ( scalar(@nonBoard) ) {
 
@@ -197,7 +197,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
   use aliased 'Packages::InCAM::InCAM';
 
   my $inCAM = InCAM->new();
-  my $jobId = "f52456";
+  my $jobId = "f71555";
 
   my $mess = "";
 

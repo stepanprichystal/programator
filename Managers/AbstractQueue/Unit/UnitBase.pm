@@ -125,7 +125,7 @@ sub GetErrorsCnt {
 	my $itemsErrorCnt = $self->{"groupData"}->{"itemsMngr"}->GetErrorsCnt();
 	my $groupErrorCnt = $self->{"groupData"}->{"groupMngr"}->GetErrorsCnt();
 	
-	print STDERR "\n\n\nitems cnt:". $itemsErrorCnt." ==== Group cnt".$groupErrorCnt."\n\n\n";
+	#print STDERR "\n\n\nitems cnt:". $itemsErrorCnt." ==== Group cnt".$groupErrorCnt."\n\n\n";
 	
 	return $itemsErrorCnt + $groupErrorCnt;
 }

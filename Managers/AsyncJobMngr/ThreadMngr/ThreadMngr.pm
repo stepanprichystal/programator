@@ -80,8 +80,8 @@ sub InitThreadPool {
 	my $self = shift;
 
 	# Maximum working threads
-	$self->{"MAX_THREADS"} = 4;
-	$self->{"MIN_THREADS"} = 3;
+	$self->{"MAX_THREADS"} = 2;
+	$self->{"MIN_THREADS"} = 2;
 
 	# Threads add their ID to this queue when they are ready for work
 	$self->{"IDLE_QUEUE"} = Thread::Queue->new();

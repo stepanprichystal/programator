@@ -987,17 +987,10 @@ my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	use aliased 'Connectors::HeliosConnector::HegMethods';
+	
+	my $inf= HegMethods->GetCustomerInfo("f71566")->{"reference_subjektu"};
 
-	#my $num = HegMethods->GetCurStepOfOrder( "f69854-01", 1 );
-
-	#print $num;
-
-	# my $test = HegMethods->GetPcbName("f52456");
-
-	my @orders =	HegMethods->GetPcbOrderNumbers("f52456");
-
-	print @orders;
-
+	print $inf;
 }
 
 1;

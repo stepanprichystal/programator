@@ -25,6 +25,7 @@ use aliased 'Helpers::GeneralHelper';
 use aliased 'Managers::AbstractQueue::AppConf';
 use aliased 'Managers::MessageMngr::MessageMngr';
 use aliased 'Enums::EnumsGeneral';
+use aliased 'Enums::EnumsPaths';
 
 #use Tee;
 #use Symbol;
@@ -43,19 +44,16 @@ use aliased 'Enums::EnumsGeneral';
 $main::stylePath = GeneralHelper->Root() . "\\Programs\\PoolMerge\\Config\\Config.txt";
 my $appName = AppConf->GetValue("appName");
 
- 
 my $console = Win32::Console->new;
 
 $console->Title( "Cmd of $appName PID:" . $$ );
 Helper->ShowAbstractQueueWindow( 0, "Cmd of $appName PID:" . $$ );
 
-
 Helper->CreateDirs();
 
-if(AppConf->GetValue("logingType") == 1){
+if ( AppConf->GetValue("logingType") == 1 ) {
 	Helper->Logging();
 }
- 
 
 # Catch die, then:
 # 1) show message to user;
@@ -69,13 +67,21 @@ eval {
 };
 if ($@) {
 
+	my $appName = AppConf->GetValue("appName");
+	$appName =~ s/\s//g;
+	my $path = EnumsPaths->Client_INCAMTMPJOBMNGR . $appName . "\\Logs";
+
 	print STDERR $@;
-	
+
 	$merger->StopAllTimers();
 
-	my @m = ( "Doslo k neocekavanmu padu aplikace, zkontroluj co potrebujes a aplikace bude ukoncena.", $@ );
+	my @m = (
+		"Doslo k neocekavanmu padu aplikace",
+		"1) Pozor dulezite!! Odesli report emailem SPR (vyfot screen cele obrazovky + logfile z adresy: $path",
+		"2) zkontroluj co potrebujes a aplikace bude ukoncena.", $@
+	);
 
 	my $mngr = MessageMngr->new($appName);
-	$mngr->ShowModal( -1, EnumsGeneral->MessageType_SYSTEMERROR, \@m );    #  Script se zastavi
+	$mngr->ShowModal( -1, EnumsGeneral->MessageType_SYSTEMERROR, \@m );                                    #  Script se zastavi
 }
 
