@@ -199,8 +199,11 @@ sub SetJobItemAutoRemove {
 	my $second  = shift;
 
 	my $jobItem = $self->{"jobQueue"}->GetItem($taskId);
-
-	$jobItem->SetJobItemAutoRemove($second);
+	
+	if(defined $jobItem ){
+		$jobItem->SetJobItemAutoRemove($second);
+	}
+ 
 }
 
 

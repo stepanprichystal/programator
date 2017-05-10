@@ -60,7 +60,7 @@ if ($@) {
 
 	my $appName = AppConf->GetValue("appName");
 	$appName =~ s/\s//g;
-	my $path = EnumsPaths->Client_INCAMTMPJOBMNGR . $appName . "\\Logs";
+	my $path = EnumsPaths->Client_INCAMTMPJOBMNGR . $appName . "\\";
 
 	print STDERR $@;
 
@@ -68,7 +68,7 @@ if ($@) {
 
 	my @m = (
 		"Doslo k neocekavanmu padu aplikace",
-		"1) Pozor dulezite!! Odesli report emailem SPR (vyfot screen cele obrazovky + logfile z adresy: $path",
+		"1) Pozor dulezite!! Odesli report emailem SPR (vyfot screen cele obrazovky + soubor \"log\" z adresy: $path",
 		"2) zkontroluj co potrebujes a aplikace bude ukoncena.", $@
 	);
 

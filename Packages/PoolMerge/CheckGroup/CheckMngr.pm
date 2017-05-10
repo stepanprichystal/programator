@@ -113,9 +113,7 @@ sub Run {
 	else {
 		die "Master job is not defined";
 	}
-	
-	
-
+ 
 
 	# 2) Check master job
 	my $masterJobCheckRes = $self->_GetNewItem("Mater job checks");

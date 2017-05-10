@@ -448,7 +448,9 @@ sub __AutoRemoveJobsHandler {
 		my $taskId = $self->{"removeJobs"}->[$i]->{"taskId"};
 		my $time   = $self->{"removeJobs"}->[$i]->{"exportFinis"};
 
-		if ( defined $self->{"form"}->{"jobQueue"}->GetItem($taskId) ) {
+		my $jobItem = $self->{"form"}->{"jobQueue"}->GetItem($taskId);
+ 
+		if ( defined $jobItem && ref($jobItem)) {
 
 			# if 10 passed, remove job
 			if ( ( $time + $self->{"autoRemove"} ) < time() ) {

@@ -128,6 +128,10 @@ sub Run {
 	my $exportPath = GeneralHelper->GetGUID();
 	$self->SetValInfoFile( "exportFile", $exportPath );
 	$self->{"exportPrepare"}->PrepareExportFile( $masterJob, $masterOrder, $exportPath, \$mess );
+	
+	
+	# save master job
+	CamJob->SaveJob($self->{"inCAM"}, $masterJob);
 
 }
 

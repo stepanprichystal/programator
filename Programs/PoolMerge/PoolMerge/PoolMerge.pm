@@ -322,6 +322,9 @@ sub __CheckFilesHandler {
 		$fileName = lc($file);
 
 		$fileCreated = $stats[9];
+		
+		# if file is empty, next
+		next if($stats[7] == 0);
 
 		my $cnt = scalar( grep { $_->{"name"} eq $fileName && $_->{"created"} == $fileCreated } @actFiles );
 

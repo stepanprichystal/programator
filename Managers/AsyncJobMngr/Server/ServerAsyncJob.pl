@@ -186,7 +186,7 @@ for ( $waitedpid = 0 ; ( $paddr = accept( Client, Server ) ) || $waitedpid ; $wa
 				$| = $flush_status;                   # restore the original flush status
 				select($old_select);
 
-				print STDERR "ahoj\n";
+				#print STDERR "ahoj\n";
 
 				my $tid = $IDLE_QUEUE->dequeue();
 
