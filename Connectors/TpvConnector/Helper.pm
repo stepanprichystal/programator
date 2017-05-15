@@ -91,11 +91,11 @@ sub __PrepareCommand {
 		my $name = quotemeta $param->{"name"};
 
 		if ( $param->{"dbType"} == Enums->SqlDbType_VARCHAR ) {
-			$cmd =~ s/$name/'$param->{"value"}'/;
+			$cmd =~ s/$name/'$param->{"value"}'/g;
 
 		}
 		elsif ( $param->{"dbType"} == Enums->SqlDbType_TEXT ) {
-			$cmd =~ s/$name/$param->{"value"}/;
+			$cmd =~ s/$name/$param->{"value"}/g;
 
 		}
 		elsif (    $param->{"dbType"} == Enums->SqlDbType_DECIMAL
@@ -103,12 +103,12 @@ sub __PrepareCommand {
 				|| $param->{"dbType"} == Enums->SqlDbType_FLOAT
 				|| $param->{"dbType"} == Enums->SqlDbType_BIT )
 		{
-			$cmd =~ s/$name/$param->{"value"}/;
+			$cmd =~ s/$name/$param->{"value"}/g;
 
 		}
 		else {
 
-			$cmd =~ s/$name/'$param->{"value"}')/;
+			$cmd =~ s/$name/'$param->{"value"}')/g;
 		}
 
 	}
@@ -207,6 +207,55 @@ sub ExecuteDataSet {
 	}
 
 	return @dataset;
+}
+
+
+# Retrun one scalar value, based on select commad
+sub ExecuteScalar {
+	my $self              = shift;
+	my $commandText       = shift;
+	my $commandParameters = shift;
+	my $noDiacritic       = shift;
+
+	if ( $commandText eq "" ) { die "$commandText is empty" }
+
+	my $con = undef;
+	my $cmd = Connectors::TpvConnector::Helper->__PrepareCommand( $commandText, $commandParameters );
+
+	my @dataset = ();
+
+	$con = Connectors::TpvConnector::Helper->__OpenConnection();
+	if ($con) {
+
+		try {
+			@dataset = Connectors::TpvConnector::Helper->__Execute( $con, $cmd, 1, $noDiacritic );
+		}
+		catch {
+
+			#ErrorHandler->HeliosDatabase( EnumsErrors->LOGDBERROR . $_ );
+			die TpvDbException->new(  EnumsErrors->TPVDBERROR, $_ )
+
+		}
+		finally {
+
+			$con->disconnect();
+
+		};
+	}
+
+	if ( scalar(@dataset) > 0 ) {
+
+		my $k = ( keys %{ $dataset[0] } )[0];
+
+		if ($k) {
+			return $dataset[0]->{$k};
+		}
+
+	}
+
+	return undef;
+
+	#return @dataset;
 }
 
 1;

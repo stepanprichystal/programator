@@ -7,7 +7,7 @@
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 
-our $stylePath = undef;    # global variable, which set path to configuration file
+our $configPath = undef;    # global variable, which set path to configuration file
 
 package Managers::AsyncJobMngr::AsyncJobMngr;
 use base 'Wx::App';
@@ -33,7 +33,7 @@ use aliased 'Managers::MessageMngr::MessageMngr';
 use aliased 'Managers::AsyncJobMngr::Enums';
 use aliased 'Widgets::Forms::MyTaskBarIcon';
 use aliased 'Managers::AsyncJobMngr::SettingsHelper';
-use aliased 'Managers::AsyncJobMngr::AppConf';
+use aliased 'Packages::Other::AppConf';
 
 #use aliased 'Programs::AbstractQueue::ThreadBase';
 use aliased 'Packages::Events::Event';
@@ -83,6 +83,8 @@ sub new {
 	$self->{'onRunJobWorker'}    = Event->new();
 
 	$self->{'onJomMngrClose'} = Event->new();    # reise right imidiatelly before destroy this app
+	
+	$self->{"appLoger"} = get_logger(Enums->Logger_APP); 
 
 	my $mainFrm = $self->__SetLayout($parent);
 
@@ -371,6 +373,9 @@ sub __ThreadProgressHandler {
 	my %d       = %{ $event->GetData };
 	my $jobGUID = $d{"taskId"};
 	my $data    = $d{"data"};
+	
+	
+	$self->{"appLoger"}->debug("Receive progress event task id $jobGUID");
 
 	#reise event
 	my $onJobProgressEvt = $self->{'onJobProgressEvt'};
@@ -388,6 +393,8 @@ sub __ThreadMessageHandler {
 	my $jobGUID  = $d{"taskId"};
 	my $messType = $d{"messType"};
 	my $data     = $d{"data"};
+	
+	$self->{"appLoger"}->debug("Receive message event task id $jobGUID");
 
 	#reise event
 	my $onJobMessageEvt = $self->{'onJobMessageEvt'};
@@ -701,7 +708,7 @@ sub __SetConfPath {
 	@arr = @arr[ 0 .. ( scalar(@arr) - 4 ) ];
 	my $packagePath = join( "\\", @arr );
 
-	$main::stylePath = GeneralHelper->Root() . "\\" . $packagePath . "\\Config\\Config.txt";
+	$main::configPath = GeneralHelper->Root() . "\\" . $packagePath . "\\Config\\Config.txt";
 
 }
 

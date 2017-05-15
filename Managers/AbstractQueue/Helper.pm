@@ -20,7 +20,7 @@ use aliased 'Helpers::GeneralHelper';
 use aliased 'Managers::MessageMngr::MessageMngr';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'Enums::EnumsPaths';
-use aliased 'Managers::AsyncJobMngr::AppConf';
+use aliased 'Packages::Other::AppConf';
 use aliased 'Managers::AbstractQueue::Enums';
 
 #-------------------------------------------------------------------------------------------#

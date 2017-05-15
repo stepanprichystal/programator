@@ -24,7 +24,7 @@ use aliased 'Packages::InCAM::InCAM';
 use aliased 'Managers::AsyncJobMngr::Helper';
 use aliased 'Managers::AsyncJobMngr::Enums';
 use aliased 'Managers::AsyncJobMngr::ServerMngr::ServerInfo';
-use aliased 'Managers::AsyncJobMngr::AppConf';
+use aliased 'Packages::Other::AppConf';
 use aliased 'Managers::AbstractQueue::Helper' => "HelperAbstrQ";
 
 #use aliased 'Enums::EnumsGeneral';

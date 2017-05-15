@@ -123,9 +123,12 @@ sub GetErrLogsToProcess {
       		 AND (t1.Type = 'Error' OR t1.Type = 'Warning')
        		 AND t1.ProcessLog = 1
        		 AND (t3.MailSentCnt IS NULL OR t3.MailSentCnt < t2.SentErrMailRepeat)
-       		 AND (t3.LastSentDate IS NULL OR (t3.LastSentDate + INTERVAL t2.SentErrMailInterval MINUTE) < NOW());";
+        	 AND (t3.LastSentDate IS NULL OR (t3.LastSentDate + INTERVAL t2.SentErrMailInterval MINUTE) < NOW())
+			 AND (t1.Inserted + INTERVAL 120 MINUTE) > NOW(); # process only logs younger than 1hour";
 
 	my @result = Helper->ExecuteDataSet( $cmd, \@params );
+	
+	return @result;
 
 }
 
@@ -138,7 +141,7 @@ sub UpdateAppLogProcess {
 
 	my @params1 = ( SqlParameter->new( "_LogId", Enums->SqlDbType_INT, $logId ) );
 
-	my $cmd1 = "SELECT TOP 1
+	my $cmd1 = "SELECT
 				Id 
 				FROM app_logs_process
 				WHERE app_logs_process.LogId = _LogId;";
@@ -156,7 +159,8 @@ sub UpdateAppLogProcess {
 
 	# update ecord
 	my @params =
-	  ( SqlParameter->new( "_Id", Enums->SqlDbType_INT, $logProcId ), SqlParameter->new( "_Receiver", Enums->SqlDbType_VARCHAR, $receiver ) );
+	  ( SqlParameter->new( "_Id", Enums->SqlDbType_INT, $logProcId ), 
+	  SqlParameter->new( "_Receiver", Enums->SqlDbType_VARCHAR, $receiver ) );
 
 	my $cmd = "UPDATE app_logs_process 
 				SET

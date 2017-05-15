@@ -67,6 +67,8 @@ sub _SendMessageEvt {
 			#	${ $res{"data"} }{$k} = $val;
 		}
 	}
+	
+	$self->{"logger"}->debug("Send Message event from thread pcbid:".${$self->{"pcbId"}}. ", task id: ".$self->{"taskId"});
 
 	my $threvent = new Wx::PlThreadEvent( -1, $THREAD_MESSAGE_EVT, \%res );
 	Wx::PostEvent( $self->{"abstractQueueFrm"}, $threvent );
@@ -94,6 +96,8 @@ sub _SendProgressEvt {
 	}
 
 	#%res = ( %res, %{$data} );
+	
+	$self->{"logger"}->debug("Send Progress event from thread pcbid:".${$self->{"pcbId"}}.", Progress val: ". $data->{"value"}. ", task id: ".$self->{"taskId"});
 
 	my $threvent = new Wx::PlThreadEvent( -1, $THREAD_PROGRESS_EVT, \%res );
 	Wx::PostEvent( $self->{"abstractQueueFrm"}, $threvent );

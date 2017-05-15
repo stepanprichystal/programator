@@ -18,7 +18,7 @@ use Widgets::Style;
 use aliased 'Enums::EnumsGeneral';
 use aliased 'Helpers::GeneralHelper';
 use aliased 'Widgets::Forms::ErrorIndicator::ErrorIndicator';
-use aliased 'Managers::AsyncJobMngr::AppConf';
+use aliased 'Packages::Other::AppConf';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods

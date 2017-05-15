@@ -1,29 +1,67 @@
-<table style="height: 39px;" width="446">
+
+<style>
+  
+ 
+  
+  .infotable td{
+  
+  padding:5px;
+  color:#5e5e5e;
+  vertical-align: text-top;
+
+}
+
+  .infotabletit {
+  
+  padding:5px;
+ 
+  background-color: #F7F7F7
+
+}
+
+ .geadtable td{
+  
+  padding:5px;
+  color:#5e5e5e;
+  vertical-align: text-top;
+
+}
+
+
+ <body>
+</style>
+
+
+<table width="700" class="headtable" >
 <tbody>
 <tr>
-<td bgcolor="#EBEBEB">Exporter - error</td>
-<td bgcolor="#FF8080">error</td>
-</tr>
-</tbody>
-</table>
-<p>&nbsp;</p>
-<table style="height: 59px;" width="450">
-<tbody>
-<tr>
-<td width="120">Warning order</td>
-<td>1</td>
-</tr>
-<tr>
-<td>Pcb id</td>
-<td>F12345</td>
-</tr>
-<tr>
-<td>Message</td>
-<td>
-<p>Ffjiofjoasijfaiodf</p>
-<p>fkdopkfaopdf</p>
-<p>kfodafko</p>
+<td style="padding: 10px;" bgcolor="#EBEBEB" width="550"  >
+ <b>key__appName</b> 
 </td>
+<td style="padding: 10px;" bgcolor="key__logTypeClr">key__logType</td>
 </tr>
 </tbody>
 </table>
+ &nbsp; 
+<table  width="700" class="infotable">
+<tbody>
+<tr>
+<td class="infotabletit" style="color:black" width="120">User warning</td>
+<td><span style="color: #5e5e5e;">key__warningCnt</span></td>
+</tr>
+<tr>
+<td class="infotabletit" style="color:black">Pcb id</td>
+<td><span style="color: #5e5e5e;">key__pcbId</span></td>
+</tr>
+<tr>
+<td class="infotabletit" style="color:black">Pcb author</td>
+<td><span style="color: #5e5e5e;">key__pcbAuthor</span></td>
+</tr>
+<tr>
+<td class="infotabletit" style="color:black">Message</td>
+<td>key__message</td>
+</tr>
+</tbody>
+</table>
+
+</body>

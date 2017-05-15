@@ -19,7 +19,7 @@ use aliased 'Managers::AsyncJobMngr::Enums';
 use aliased 'Managers::AsyncJobMngr::Helper';
 use aliased 'Packages::Events::Event';
 use aliased 'Managers::AbstractQueue::Helper' => "HelperAbstrQ";
-use aliased 'Managers::AsyncJobMngr::AppConf';
+use aliased 'Packages::Other::AppConf';
 
 #local library
 use aliased 'Packages::InCAM::InCAM';

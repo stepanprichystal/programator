@@ -22,7 +22,7 @@ use aliased 'Helpers::GeneralHelper';
 use aliased 'Managers::MessageMngr::MessageMngr';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'Managers::AbstractQueue::Helper';
-use aliased 'Managers::AsyncJobMngr::AppConf';
+use aliased 'Packages::Other::AppConf';
 
 sub new {
 	my $self = shift;

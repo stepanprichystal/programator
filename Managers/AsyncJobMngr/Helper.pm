@@ -11,7 +11,7 @@ use Log::Log4perl qw(get_logger :levels);
 
 #local library
 
-use aliased 'Managers::AsyncJobMngr::AppConf';
+use aliased 'Packages::Other::AppConf';
  use aliased 'Enums::EnumsGeneral';
 use aliased 'Enums::EnumsPaths';
 use aliased 'Managers::AsyncJobMngr::Enums';

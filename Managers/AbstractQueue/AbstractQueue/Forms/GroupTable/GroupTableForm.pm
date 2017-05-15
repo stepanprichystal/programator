@@ -16,7 +16,7 @@ use Wx qw(:sizer wxDefaultPosition wxDefaultSize wxDEFAULT_DIALOG_STYLE wxRESIZE
 
 use Widgets::Style;
 use aliased 'Managers::AbstractQueue::AbstractQueue::Forms::GroupTable::GroupColumnForm';
-use aliased 'Managers::AsyncJobMngr::AppConf';
+use aliased 'Packages::Other::AppConf';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
