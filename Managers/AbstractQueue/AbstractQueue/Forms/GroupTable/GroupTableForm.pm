@@ -71,7 +71,7 @@ sub RearrangeGroups {
 		$height = $avg;
 	}
 
-	print "Height = $height, Page height is: $pageHight \n";
+	 
 
 	my $colCnt = scalar( @{ $self->{"columns"} } );
 
@@ -87,7 +87,7 @@ sub RearrangeGroups {
 
 		my $colorder = $i + 1;
 
-		print " Column " . $colorder . " :\n";
+		 
 
 		while ( $colCnt != $i + 1 && $colHeight >= $height ) {
 

@@ -57,7 +57,7 @@ sub RefreshContent {
 	my $s      = $self->{"containerSz"}->GetSize();
 	my $height = $s->GetHeight();
 
-	print "HEIGHT OF PAGE CONTENT IS: $height\n";
+	 
 
 	$self->{"scrollPnl"}->SetRowCount( $height / 10 );
 
