@@ -21,8 +21,9 @@ use lib qw( C:\Perl\site\lib\TpvScripts\Scripts );
 use aliased 'Programs::Exporter::ExportUtility::ExportUtility::ExportUtility';
 use aliased 'Managers::AsyncJobMngr::Enums' => 'EnumsMngr';
 use aliased 'Managers::AbstractQueue::Helper';
+use aliased 'Managers::AsyncJobMngr::Helper' => "AsyncJobHelber";
 use aliased 'Helpers::GeneralHelper';
-use aliased 'Managers::AbstractQueue::AppConf';
+use aliased 'Managers::AsyncJobMngr::AppConf';
 use aliased 'Managers::MessageMngr::MessageMngr';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'Enums::EnumsPaths';
@@ -37,12 +38,16 @@ $console->Title( "Cmd of $appName PID:" . $$ );
 Helper->ShowAbstractQueueWindow( 0, "Cmd of $appName PID:" . $$ );
 
 
-Helper->CreateDirs();
 
-if(AppConf->GetValue("logingType") == 1){
+# ==========================================================
+# App logging
+# ==========================================================
+
+AsyncJobHelber->SetLogging();
+
+if ( AppConf->GetValue("logingType") == 1 ) {
 	Helper->Logging();
 }
- 
 
 # Catch die, then:
 # 1) show message to user;
@@ -68,7 +73,7 @@ if ($@) {
 
 	my @m = (
 		"Doslo k neocekavanmu padu aplikace",
-		"1) Pozor dulezite!! Odesli report emailem SPR (vyfot screen cele obrazovky + soubor \"log\" z adresy: $path",
+		"1) Pozor dulezite!! Odesli report emailem SPR (vyfot screen cele obrazovky + zabal vsechny soubory z adresy: $path )",
 		"2) zkontroluj co potrebujes a aplikace bude ukoncena.", $@
 	);
 

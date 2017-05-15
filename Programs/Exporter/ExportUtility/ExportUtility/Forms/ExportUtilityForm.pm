@@ -28,7 +28,7 @@ use aliased 'Widgets::Forms::CustomNotebook::CustomNotebook';
 use aliased 'Widgets::Forms::MyWxBookCtrlPage';
  
 use aliased 'Managers::AsyncJobMngr::ServerMngr::ServerInfo';
-use aliased 'Managers::AbstractQueue::AppConf';
+use aliased 'Managers::AsyncJobMngr::AppConf';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods

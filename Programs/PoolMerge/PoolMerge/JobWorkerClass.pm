@@ -39,6 +39,8 @@ sub new {
 
 sub RunTask {
 	my $self = shift;
+	
+	$self->{"logger"}->debug("Thread start, pcb id:".${$self->{"pcbId"}});
  
 #	use Time::HiRes qw (sleep);
 #	sleep(1);
@@ -68,6 +70,8 @@ sub RunTask {
 
 		$self->_TaskResultEvent( ResultEnums->ItemResult_Fail, $errStr );
 	}
+	
+	$self->{"logger"}->debug("Thread End, pcb id:".${$self->{"pcbId"}});
 
 }
 
@@ -91,6 +95,8 @@ sub __RunTask {
 	# 2) Process groups
 
 	for ( my $i = 0 ; $i < scalar(@keys) ; $i++ ) {
+		
+		$self->{"logger"}->debug("Thread group processing: $i/".scalar(@keys).", pcb id:".${$self->{"pcbId"}});
 
 		my $taskStopped = 0;
 

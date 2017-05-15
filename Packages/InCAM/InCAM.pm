@@ -161,6 +161,9 @@ sub new {
 	# this is appended to tmp info file
 	# provide unique  file name for different perl thread
 	$self->{"incamGUID"} = GeneralHelper->GetGUID();
+	
+	# Logger instance, if denfined, COM, Errors etc, will be process by logger
+	$self->{"logger"} = undef; # instance of Log4Perl
 
 	bless $self, $class;
 
@@ -327,6 +330,8 @@ sub sendCommand {
 	my ($self)      = shift;
 	my $commandType = shift;
 	my $command     = shift;
+	
+	$self->__Log($commandType."-".$command);
 
 	$self->blankStatusResults();
 	if ( $self->{comms} eq 'pipe' ) {
@@ -541,6 +546,14 @@ sub SupressToolkitException {
 
 }
 
+# Set logger, instance Log4Perl
+sub SetLogger{
+	my $self = shift;
+	my $logger = shift;
+	
+	$self->{"logger"} = $logger;
+}
+
 # -----------------------------------------------------------------------------
 # Private methods
 # -----------------------------------------------------------------------------
@@ -676,6 +689,19 @@ sub __RunScriptFail {
 	}
 
 	#exit(0);
+}
+
+
+sub __Log{
+	my $self = shift;
+	my $mess = shift;
+	
+	$mess = "Port: ".$self->{"port"}.", ".$mess;
+	
+	if( defined $self->{"logger"}){
+		
+		$self->{"logger"}->debug($mess);
+	}
 }
 
 # -----------------------------------------------------------------------------

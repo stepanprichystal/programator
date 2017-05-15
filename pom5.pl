@@ -1,34 +1,60 @@
-use Win32::Daemon;
-    # If using a compiled perl script (eg. myPerlService.exe) then
-    # $ServicePath must be the path to the .exe as in:
-    #    $ServicePath = 'c:\CompiledPerlScripts\myPerlService.exe';
-    # Otherwise it must point to the Perl interpreter (perl.exe) which
-    # is conviently provided by the $^X variable...
-    my $ServicePath = $^X;
-    
-    # If using a compiled perl script then $ServiceParams
-    # must be the parameters to pass into your Perl service as in:
-    #    $ServiceParams = '-param1 -param2 "c:\\Param2Path"';
-    # OTHERWISE
-    # it MUST point to the perl script file that is the service such as:
-    my $ServiceParams = 'c:\Perl\site\lib\TpvScripts\Scripts\pom6.pl -param1 -param2 "c:\\Param2Path"';
-    
-    
-    my %service_info = (
-        machine =>  '',
-        name    =>  'PerlTest',
-        display =>  'Oh my GOD, Perl is a service!',
-        path    =>  $ServicePath,
-        user    =>  '',
-        pwd     =>  '',
-        description => 'Some text description of this service',
-        parameters => $ServiceParams
-    );
-    if( Win32::Daemon::CreateService( \%service_info ) )
-    {
-        print "Successfully added.\n";
-    }
-    else
-    {
-        print "Failed to add service: " . Win32::FormatMessage( Win32::Daemon::GetLastError() ) . "\n";
-    }
+
+use lib qw( C:\Perl\site\lib\TpvScripts\Scripts );
+
+######### System initialization section ###
+use Log::Log4perl qw(get_logger :levels);
+
+my $food_logger = get_logger("Groceries");
+$food_logger->level($DEBUG);
+
+# Appenders
+my $appenderFile = Log::Log4perl::Appender->new(
+												 "Log::Dispatch::File",
+												 filename => "test.log",
+												 mode     => "append",
+);
+
+my $appenderScreen = Log::Log4perl::Appender->new(
+	 
+		   'Log::Dispatch::Screen',
+		   #min_level => 'debug',
+		   stderr    => 1,
+		   newline   => 1
+		 
+);
+
+$food_logger->add_appender($appenderFile);
+$food_logger->add_appender($appenderScreen);
+
+# Layouts
+my $layout = Log::Log4perl::Layout::PatternLayout->new("%d %p> %F{1}:%L %M - %m%n");
+$appenderFile->layout($layout);
+$appenderScreen->layout($layout);
+######### Run it ##########################
+my $food = Groceries::Food->new("Sushi");
+$food->consume();
+
+######### Application section #############
+package Groceries::Food;
+
+use Log::Log4perl qw(get_logger);
+
+sub new {
+	my ( $class, $what ) = @_;
+	my $logger = get_logger("Groceries::Food");
+
+	if ( defined $what ) {
+		$logger->debug("New food: $what");
+		return bless { what => $what }, $class;
+	}
+
+	$logger->error("No food defined");
+	return undef;
+}
+
+sub consume {
+	my ($self) = @_;
+
+	my $logger = get_logger("Groceries::Food");
+	$logger->info("Eating $self->{what}");
+}

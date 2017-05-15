@@ -31,7 +31,7 @@ use aliased 'Widgets::Forms::MyWxBookCtrlPage';
 use aliased 'Managers::AsyncJobMngr::Enums' => 'EnumsJobMngr';
 use aliased 'Managers::AsyncJobMngr::ServerMngr::ServerInfo';
 use aliased 'Managers::AbstractQueue::Helper';
-use aliased 'Managers::AbstractQueue::AppConf';
+use aliased 'Managers::AsyncJobMngr::AppConf';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods

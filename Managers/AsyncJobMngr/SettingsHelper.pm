@@ -11,7 +11,7 @@ use warnings;
 
 #local library
 use aliased 'Enums::EnumsPaths';
-use aliased 'Managers::AbstractQueue::AppConf';
+use aliased 'Managers::AsyncJobMngr::AppConf';
 
 #-------------------------------------------------------------------------------------------#
 #   Package methods

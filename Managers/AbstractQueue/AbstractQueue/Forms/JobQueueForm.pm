@@ -15,7 +15,7 @@ use warnings;
 
 #local library
 use aliased 'Packages::Events::Event';
-use aliased 'Managers::AbstractQueue::AppConf';
+use aliased 'Managers::AsyncJobMngr::AppConf';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods

@@ -36,6 +36,8 @@ sub new {
 
 sub RunTask {
 	my $self = shift;
+	
+	$self->{"logger"}->debug("Thread start, pcb id:".${$self->{"pcbId"}});
 
 	eval {
 		$self->__RunTask();
@@ -56,6 +58,8 @@ sub RunTask {
 
 		$self->_TaskResultEvent( ResultEnums->ItemResult_Fail, $errStr );
 	}
+	
+	$self->{"logger"}->debug("Thread end, pcb id:".${$self->{"pcbId"}});
 
 }
 
@@ -90,6 +94,8 @@ sub __RunTask {
 		# 2) Process groups
 
 		for ( my $i = 0 ; $i < scalar(@keys) ; $i++ ) {
+			
+			$self->{"logger"}->debug("Thread group processing: $i/".scalar(@keys).", pcb id:".${$self->{"pcbId"}});
 
 			my $unitId = $keys[$i];
 
@@ -126,6 +132,7 @@ sub __RunTask {
 
 			# Event when group export end
 			$self->_GroupTaskEvent( Enums->EventType_GROUP_END, $unitId );
+ 
 		}
 
 		#close job
@@ -134,7 +141,12 @@ sub __RunTask {
 
 			$self->_CloseJob();
 		}
+		
+		
+		
 	}
+	
+	
 }
 
 sub __InitGroup {

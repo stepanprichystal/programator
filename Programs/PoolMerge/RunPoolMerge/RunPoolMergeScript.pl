@@ -9,6 +9,7 @@ use strict;
 use warnings;
 use Win32::Console;
 
+
 our $stylePath = undef;
 
 #necessary for load pall packages
@@ -21,8 +22,9 @@ use lib qw( C:\Perl\site\lib\TpvScripts\Scripts );
 use aliased 'Programs::PoolMerge::PoolMerge::PoolMerge';
 use aliased 'Managers::AsyncJobMngr::Enums' => 'EnumsMngr';
 use aliased 'Managers::AbstractQueue::Helper';
+use aliased 'Managers::AsyncJobMngr::Helper' => "AsyncJobHelber";
 use aliased 'Helpers::GeneralHelper';
-use aliased 'Managers::AbstractQueue::AppConf';
+use aliased 'Managers::AsyncJobMngr::AppConf';
 use aliased 'Managers::MessageMngr::MessageMngr';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'Enums::EnumsPaths';
@@ -40,6 +42,10 @@ use aliased 'Enums::EnumsPaths';
 #print "raw print\n";
 #print STDERR "XXXX\n";
 
+# ==========================================================
+# App settings
+# ==========================================================
+
 # set path of configuration
 $main::stylePath = GeneralHelper->Root() . "\\Programs\\PoolMerge\\Config\\Config.txt";
 my $appName = AppConf->GetValue("appName");
@@ -49,7 +55,13 @@ my $console = Win32::Console->new;
 $console->Title( "Cmd of $appName PID:" . $$ );
 Helper->ShowAbstractQueueWindow( 0, "Cmd of $appName PID:" . $$ );
 
-Helper->CreateDirs();
+
+
+# ==========================================================
+# App logging
+# ==========================================================
+
+AsyncJobHelber->SetLogging();
 
 if ( AppConf->GetValue("logingType") == 1 ) {
 	Helper->Logging();
@@ -62,26 +74,23 @@ my $merger = undef;
 eval {
 
 	$merger = PoolMerge->new( EnumsMngr->RUNMODE_TRAY );
+	 
 	$merger->Run();
 
 };
 if ($@) {
-
-	my $appName = AppConf->GetValue("appName");
-	$appName =~ s/\s//g;
-	my $path = EnumsPaths->Client_INCAMTMPJOBMNGR . $appName . "\\";
-
-	print STDERR $@;
-
+ 
+	my $path = AsyncJobHelber->GetLogDir();
+ 
 	$merger->StopAllTimers();
 
 	my @m = (
-		"Doslo k neocekavanmu padu aplikace",
-		"1) Pozor dulezite!! Odesli report emailem SPR (vyfot screen cele obrazovky + soubor \"log\" z adresy: $path",
-		"2) zkontroluj co potrebujes a aplikace bude ukoncena.", $@
+			  "Doslo k neocekavanmu padu aplikace",
+			  "1) Pozor dulezite!! Odesli report emailem SPR (vyfot screen cele obrazovky + zabal vsechny soubory z adresy: $path )",
+			  "2) zkontroluj co potrebujes a aplikace bude ukoncena.", $@
 	);
 
 	my $mngr = MessageMngr->new($appName);
-	$mngr->ShowModal( -1, EnumsGeneral->MessageType_SYSTEMERROR, \@m );                                    #  Script se zastavi
+	$mngr->ShowModal( -1, EnumsGeneral->MessageType_SYSTEMERROR, \@m );    #  Script se zastavi
 }
 
