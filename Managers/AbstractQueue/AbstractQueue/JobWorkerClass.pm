@@ -12,6 +12,7 @@ use strict;
 use warnings;
 use Try::Tiny;
 
+
 #local library
 
 use aliased 'Helpers::GeneralHelper';
@@ -21,7 +22,7 @@ use aliased 'CamHelpers::CamHelper';
 use aliased 'CamHelpers::CamStep';
 use aliased 'Packages::ItemResult::Enums' => 'ResultEnums';
 use aliased 'Managers::AbstractQueue::Enums';
-
+ 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
@@ -38,8 +39,10 @@ sub new {
 	$self->{"unitBuilder"} = undef;    # classes for task each group
 
 	my %workerUnits = ();
-	$self->{"workerUnits"} = \%workerUnits;   
-	$self->{"taskData"} = undef; # prepared task data
+	$self->{"workerUnits"} = \%workerUnits;
+	$self->{"taskData"}    = undef;           # prepared task data
+	
+	
 
 	return $self;
 }
@@ -49,32 +52,26 @@ sub Init {
 
 	$self->{"pcbId"}       = shift;
 	$self->{"taskId"}      = shift;
-	$self->{"unitBuilder"} = shift;            # builder generate JobWorker units with data, based on unit string data
+	$self->{"unitBuilder"} = shift;           # builder generate JobWorker units with data, based on unit string data
 	$self->{"inCAM"}       = shift;
 	my $threadOrder = shift;
 
 	# Supress all toolkit exception/error windows
 	$self->{"inCAM"}->SupressToolkitException(1);
-	
-	print STDERR "\n Thread order $threadOrder SUPRESS worker\n";
+	$self->{"logger"}->debug( "Thread order $threadOrder SUPRESS worker, pcbid: " . ${ $self->{"pcbId"} } . "" );
 
 	# Switch of displa actions in InCAM editor
-	
-	
-	$self->{"inCAM"}->COM("get_user_name");
-	
-	 print STDERR "\n Thread order $threadOrder USERNAME worker\n";
-	
+
 	$self->{"inCAM"}->COM("disp_off");
-	
-	print STDERR "\n Thread order $threadOrder DISPOFF worker\n";
+	$self->{"logger"}->debug( "Thread order $threadOrder DISPOFF worker, pcbid: " . ${ $self->{"pcbId"} } . "" );
 	
 	my %units = $self->{"unitBuilder"}->GetUnits();
 	$self->{"workerUnits"} = \%units;
-	
+
 	$self->{"taskData"} = $self->{"unitBuilder"}->GetTaskData();
-	
-		print STDERR "\n Thread order BUILDER SUPRESS worker\n";
+
+	$self->{"logger"}->debug( "Thread order BUILDER get task data, pcbid: " . ${ $self->{"pcbId"} } . "" );
+
 }
 
 sub _GetWorkUnits {
@@ -91,11 +88,11 @@ sub _OpenJob {
 	#return 0;
 	my $inCAM = $self->{"inCAM"};
 
-	unless ( ${$self->{"pcbId"}} ) {
+	unless ( ${ $self->{"pcbId"} } ) {
 		return 0;
 	}
- 
-	if ( CamJob->IsJobOpen( $self->{"inCAM"}, ${ $self->{"pcbId"} }) ) {
+
+	if ( CamJob->IsJobOpen( $self->{"inCAM"}, ${ $self->{"pcbId"} } ) ) {
 		return 0;
 	}
 
@@ -105,7 +102,7 @@ sub _OpenJob {
 
 	$inCAM->HandleException(1);
 
-	CamHelper->OpenJob( $self->{"inCAM"}, ${$self->{"pcbId"}} );
+	CamHelper->OpenJob( $self->{"inCAM"}, ${ $self->{"pcbId"} } );
 
 	$inCAM->HandleException(0);
 
@@ -120,15 +117,15 @@ sub _OpenJob {
 	# if set step fail, it means max number exceeded
 
 	$inCAM->HandleException(1);
-	
-	unless($result){
+
+	unless ($result) {
 		return 0;
 	}
-	
-	# choose step if not defined
-	if (!defined $step ) {
 
-		my @names = CamStep->GetAllStepNames( $inCAM, ${$self->{"pcbId"}} );
+	# choose step if not defined
+	if ( !defined $step ) {
+
+		my @names = CamStep->GetAllStepNames( $inCAM, ${ $self->{"pcbId"} } );
 		$step = $names[0];
 	}
 
@@ -142,8 +139,8 @@ sub _OpenJob {
 		$result = 0;
 		$self->_TaskResultEvent( ResultEnums->ItemResult_Fail, "Maximum licence of InCAM is exceeded" );
 	}
-	
-	unless($result){
+
+	unless ($result) {
 		return 0;
 	}
 
@@ -151,7 +148,7 @@ sub _OpenJob {
 
 	$inCAM->HandleException(1);
 
-	CamJob->CheckOutJob( $self->{"inCAM"}, ${$self->{"pcbId"}} );
+	CamJob->CheckOutJob( $self->{"inCAM"}, ${ $self->{"pcbId"} } );
 
 	$inCAM->HandleException(0);
 
@@ -178,23 +175,23 @@ sub _CloseJob {
 	#return 0;
 	my $inCAM = $self->{"inCAM"};
 
-	unless ( ${$self->{"pcbId"}} ) {
+	unless ( ${ $self->{"pcbId"} } ) {
 		return 0;
 	}
-	
-	unless ( CamJob->IsJobOpen( $self->{"inCAM"}, ${ $self->{"pcbId"} }) ) {
+
+	unless ( CamJob->IsJobOpen( $self->{"inCAM"}, ${ $self->{"pcbId"} } ) ) {
 		return 0;
 	}
- 
+
 	# START HANDLE EXCEPTION IN INCAM
 	$inCAM->HandleException(1);
 
 	if ($save) {
-		CamJob->SaveJob( $self->{"inCAM"}, ${$self->{"pcbId"}} );
+		CamJob->SaveJob( $self->{"inCAM"}, ${ $self->{"pcbId"} } );
 	}
- 
-	CamJob->CheckInJob( $self->{"inCAM"}, ${$self->{"pcbId"}} );
-	CamJob->CloseJob( $self->{"inCAM"}, ${$self->{"pcbId"}} );
+
+	CamJob->CheckInJob( $self->{"inCAM"}, ${ $self->{"pcbId"} } );
+	CamJob->CloseJob( $self->{"inCAM"}, ${ $self->{"pcbId"} } );
 
 	# STOP HANDLE EXCEPTION IN INCAM
 	$inCAM->HandleException(0);
@@ -210,8 +207,6 @@ sub _CloseJob {
 		return 1;
 	}
 }
-
-
 
 # Set stop variable to 1
 sub _StopThread {

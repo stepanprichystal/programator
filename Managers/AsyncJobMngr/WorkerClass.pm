@@ -8,12 +8,13 @@ package Managers::AsyncJobMngr::WorkerClass;
 #3th party library
 use strict;
 use warnings;
+use Log::Log4perl qw(get_logger);
 
 #local library
 
 use aliased 'Helpers::GeneralHelper';
 use aliased 'Enums::EnumsGeneral';
- 
+use aliased 'Managers::AsyncJobMngr::Enums';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -35,6 +36,8 @@ sub new {
 	$THREAD_MESSAGE_EVT    = ${ shift(@_) };
 	$self->{"stopThread"}  = shift;
 	$self->{"abstractQueueFrm"} = shift;
+	
+	$self->{"logger"} =  get_logger(Enums->Logger_TASKTH); 
 
 	return $self;
 }

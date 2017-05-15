@@ -15,6 +15,7 @@ use Config;
 use Win32::GuiTest qw(FindWindowLike SetWindowPos ShowWindow);
 use Time::HiRes qw (sleep);
 use Thread::Queue;
+use Log::Log4perl qw(get_logger);
 
 #use Try::Tiny;
 use aliased 'Enums::EnumsPaths';
@@ -23,7 +24,7 @@ use aliased 'Packages::InCAM::InCAM';
 use aliased 'Managers::AsyncJobMngr::Helper';
 use aliased 'Managers::AsyncJobMngr::Enums';
 use aliased 'Managers::AsyncJobMngr::ServerMngr::ServerInfo';
-use aliased 'Managers::AbstractQueue::AppConf';
+use aliased 'Managers::AsyncJobMngr::AppConf';
 use aliased 'Managers::AbstractQueue::Helper' => "HelperAbstrQ";
 
 #use aliased 'Enums::EnumsGeneral';
@@ -55,7 +56,9 @@ sub new {
 	$self->{"lastLaunch"} = undef;                                  # time when last server was launched (shared var)
 	share( $self->{"lastLaunch"} );
 
-	my $range = $self->{"startPort"} . "-" . ( $self->{"startPort"} + 999 );
+	$self->{"appLoger"} = get_logger(Enums->Logger_APP); 
+	$self->{"threadLoger"} = get_logger(Enums->Logger_SERVERTH); 
+	 
 	$self->__CloseZombie( undef, 0 );
 
 	$self->__InitServers();
@@ -95,6 +98,7 @@ sub InitThreadPool {
 
 	# Create the thread pool
 	for ( 1 .. $self->{"MAX_THREADS"} ) {
+		
 		$self->__AddThreadPool();
 
 	}
@@ -155,9 +159,11 @@ sub IsPortAvailable {
 sub PrepareServerPort {
 	my $self    = shift;
 	my $jobGUID = shift;
+	
+	$self->{"appLoger"}->debug("Preparing server port for JobGUID: $jobGUID");
 
 	my $serverRef = $self->{"servers"};
-
+ 
 	#lock @servers
 
 	#my $prepare  = 0;    #indicate, if prot will be prepared or there is no free port
@@ -176,16 +182,25 @@ sub PrepareServerPort {
 
 			my $inCAM = InCAM->new( "remote" => 'localhost',
 									"port"   => $freePort );
+									
+			$inCAM->SetLogger(get_logger(Enums->Logger_INCAM));
+									
+			$self->{"appLoger"}->debug("Take waiting server. Port: $freePort");
 
 			#server seems ready, try send message and get server pid
 			my $pidServer = $inCAM->ServerReady();
-
-			print STDERR "\nREtesting if port ready\n";
-
+ 
+ 
 			if ($pidServer) {
+				
 				$inCAM->ClientFinish();
+				
+				$self->{"appLoger"}->debug("Take waiting server. Server ready. Port: $freePort");
 			}
 			else {
+	
+				$self->{"appLoger"}->debug("Take waiting server. Server ready fail. Port: $freePort");
+
 
 				# destroy broken server and try prepare port again
 				$self->DestroyServer( $freePort, 1 );
@@ -212,6 +227,8 @@ sub PrepareServerPort {
 			$s = ${$serverRef}[$i];
 
 			if ( $s->{"state"} eq Enums->State_FREE_SERVER && !$s->{"external"} ) {
+				
+				$self->{"appLoger"}->debug("Free port exist, before create new incam server: $freePort");
 
 				$s->{"state"} = Enums->State_PREPARING_SERVER;
 
@@ -561,9 +578,13 @@ sub __PoolWorker {
 		my $work = $work_q->dequeue();
 
 		# Do work
+		
+		
 
 		my $port    = $work->[0];
 		my $jobGUID = $work->[1];
+		
+		$self->{"threadLoger"}->debug("Thread: $tid is creating new server for port: $port, $jobGUID: $jobGUID ");
 
 		$self->__CreateServer( $port, $jobGUID, $lastLaunch );
 
@@ -597,7 +618,7 @@ sub __CreateServer {
 		while ( $lastTmp + 15 > time() ) {
 			sleep(1);
 
-			#print "\nwait $freePort\n";
+			$self->{"threadLoger"}->debug("Wait for gap 15 second between start servers: $freePort, $jobGUID ");
 		}
 	}
 
@@ -611,6 +632,8 @@ sub __CreateServer {
 
 	# 2) try to create inCAM server
 	while (1) {
+		
+		
 
 		# launch InCAm instance + server
 		$pidInCAM = $self->__CreateInCAMInstance( $freePort, $fIndicator );
@@ -624,7 +647,7 @@ sub __CreateServer {
 			last;
 		}
 
-		Helper->Print( "CLIENT PID: " . $pidInCAM . " (InCAM)........................................launching failed\n" );
+		$self->{"threadLoger"}->debug("Launchin InCam server failed, try again: $freePort");
 	}
 
 	# 3) Temoporary solution because -x is not working in inCAM
@@ -723,7 +746,7 @@ sub __CreateInCAMInstance {
 
 	unless ( -f $inCAMPath )    # does it exist?
 	{
-		print "InCAM does not exist on path: " . $inCAMPath;
+		die "InCAM does not exist on path: " . $inCAMPath;
 		return 0;
 	}
 
@@ -745,8 +768,8 @@ sub __CreateInCAMInstance {
 	  || die "$!\n";
 
 	$pidInCAM = $processObj->GetProcessID();
-
-	Helper->Print( "CLIENT PID: " . $pidInCAM . " (InCAM)........................................is launching\n" );
+ 
+	$self->{"threadLoger"}->debug("CLIENT PID: " . $pidInCAM . " (InCAM)........................................is launching\n");
 
 	return $pidInCAM;
 }
@@ -785,8 +808,8 @@ sub __CreateServerConn {
 			else {
 				print STDERR "Unable to open file $pFIndicator";
 			}
-
-			Helper->Print("CLIENT(parent): PID: $$  try connect to server port: $port, attempt: $i ....failed\n");
+ 
+			$self->{"threadLoger"}->debug("CLIENT(parent): PID: $$  try connect to server port: $port, attempt: $i ....failed\n");
 
 			sleep(1);
 		}
@@ -824,6 +847,8 @@ sub __CreateServerConn {
 
 	my $inCAM = InCAM->new( "remote" => 'localhost',
 							"port"   => $port );
+							
+	$inCAM->SetLogger(get_logger(Enums->Logger_INCAM));
 
 	#server seems ready, try send message and get server pid
 	my $pidServer = $inCAM->ServerReady();

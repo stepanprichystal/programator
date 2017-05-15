@@ -379,7 +379,7 @@ sub IsJobOpen {
 
 			my ( $job, $user ) = $l =~ /^(\w\d+)\s+(.*@.*\..*)/;
 
-			if ( $job =~ /$jobName/i ) {
+			if (defined $job && $job =~ /$jobName/i ) {
 				$result       = 1;
 				chomp($user);
 				$$openByUser = $user;

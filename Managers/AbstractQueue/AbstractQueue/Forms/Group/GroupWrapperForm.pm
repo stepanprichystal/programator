@@ -19,7 +19,7 @@ use aliased 'Managers::AbstractQueue::AbstractQueue::Forms::Group::GroupItemForm
 use aliased 'Managers::AbstractQueue::AbstractQueue::Forms::Group::ItemForm';
 use aliased 'Managers::AbstractQueue::AbstractQueue::Forms::Group::GroupStatusForm';
 use aliased 'Packages::ItemResult::ItemResultMngr';
-use aliased 'Managers::AbstractQueue::AppConf';
+use aliased 'Managers::AsyncJobMngr::AppConf';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods

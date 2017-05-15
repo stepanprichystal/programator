@@ -32,7 +32,7 @@ use aliased 'Managers::AbstractQueue::AbstractQueue::JobWorkerClass';
 use aliased 'Managers::AbstractQueue::Enums';
 use aliased 'Packages::InCAM::InCAM';
 use aliased 'Packages::Events::Event';
-use aliased 'Managers::AbstractQueue::AppConf';
+use aliased 'Managers::AsyncJobMngr::AppConf';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods

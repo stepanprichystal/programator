@@ -36,4 +36,13 @@ use constant {
 			   TaskMode_ASYNC => "asynchronousTask"
 };
 
+
+#logger names
+
+ use constant {
+	Logger_APP  => "LoggerApp",
+	Logger_SERVERTH  => "LoggerServerThread",
+	Logger_TASKTH  => "LoggerTaskThread",
+	Logger_INCAM  => "LoggerInCAM" 
+ };
 1;

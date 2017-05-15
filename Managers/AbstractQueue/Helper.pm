@@ -14,13 +14,14 @@ use Win32::Process;
 use Win32::Process::Info;
 use Win32::Process::List;
 
+
 #local library
 use aliased 'Helpers::GeneralHelper';
 use aliased 'Managers::MessageMngr::MessageMngr';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'Enums::EnumsPaths';
-use aliased 'Managers::AbstractQueue::AppConf';
-
+use aliased 'Managers::AsyncJobMngr::AppConf';
+use aliased 'Managers::AbstractQueue::Enums';
 
 #-------------------------------------------------------------------------------------------#
 #   Package methods
@@ -79,66 +80,75 @@ sub CheckRunningInstance {
 }
 
 sub Logging {
-	my $self = shift;
-	my $dir = shift;
+	my $self     = shift;
+	my $dir      = shift;
 	my $fileName = shift;
 
 	my $appName = AppConf->GetValue("appName");
 	$appName =~ s/\s//g;
-	my $path = EnumsPaths->Client_INCAMTMPJOBMNGR.$appName."Logs";
-	
-	if($dir){
+	my $path = EnumsPaths->Client_INCAMTMPJOBMNGR . $appName . "Logs";
+
+	if ($dir) {
 		$path .= "\\$dir";
 	}
- 	
- 	unless($fileName){
- 		$fileName = "Log";
- 	}
- 	
- 	unless ( -e $path ) {
+
+	unless ($fileName) {
+		$fileName = "Log";
+	}
+
+	unless ( -e $path ) {
 		die "Logging directory $path doesn't exist";
 	}
- 	
- 	$path = $path."\\".$fileName;
- 	
+
+	$path = $path . "\\" . $fileName;
+
 	my $OLDOUT;
 	my $OLDERR;
-	
+
 	open $OLDOUT, ">&STDOUT" || die "Can't duplicate STDOUT: $!";
 	open $OLDERR, ">&STDERR" || die "Can't duplicate STDERR: $!";
 	open( STDOUT, "+>", $path );
 	open( STDERR, ">&STDOUT" );
 
 }
-
-
-
-
-
-
-sub CreateDirs{
-	my $self = shift;
- 
-	my $appName = AppConf->GetValue("appName");
-	
-	$appName =~ s/\s//g;
-	
-	my $dir = EnumsPaths->Client_INCAMTMPJOBMNGR.$appName."Logs";
-	
-	unless ( -e $dir ) {
-		mkdir( $dir ) or die "Can't create dir: " . $dir . $_;
-	}
-#	
-#	unless ( -e $dir."\\ServerThreads" ) {
-#		mkdir(  $dir."\\ServerThreads" ) or die "Can't create dir: " . $dir."\\ServerThreads" . $_;
+#
+#sub GetLogDir {
+#	my $self = shift;
+#
+#	my $appName = AppConf->GetValue("appName");
+#
+#	$appName =~ s/\s//g;
+#
+#	my $dir = EnumsPaths->Client_INCAMTMPJOBMNGR . $appName . "Logs";
+#
+#	return $dir;
+#}
+#
+#sub CreateDirs {
+#	my $self = shift;
+#
+#	my $dir = $self->GetLogDir();
+#
+#	unless ( -e $dir ) {
+#		mkdir($dir) or die "Can't create dir: " . $dir . $_;
 #	}
-#	
-#	unless ( -e $dir."\\TaskThreads" ) {
-#		mkdir(  $dir."\\TaskThreads" ) or die "Can't create dir: " . $dir."\\TaskThreads" . $_;
-#	}
-#	
-	 
-}
+#
+#	#
+#	#	unless ( -e $dir."\\ServerThreads" ) {
+#	#		mkdir(  $dir."\\ServerThreads" ) or die "Can't create dir: " . $dir."\\ServerThreads" . $_;
+#	#	}
+#	#
+#	#	unless ( -e $dir."\\TaskThreads" ) {
+#	#		mkdir(  $dir."\\TaskThreads" ) or die "Can't create dir: " . $dir."\\TaskThreads" . $_;
+#	#	}
+#	#
+#
+#}
+#
+
+
+
+
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#

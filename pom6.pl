@@ -1,29 +1,21 @@
-    use Win32::Daemon;
+    ######### System initialization section ###
+    use Log::Log4perl qw(get_logger :levels);
 
-    # Tell the OS to start processing the service...
-    Win32::Daemon::StartService();
+    my $food_logger = get_logger("Groceries::Food");
+    $food_logger->level($INFO);
 
-    # Wait until the service manager is ready for us to continue...
-    while( SERVICE_START_PENDING != Win32::Daemon::State() )
-    {
-        sleep( 1 );
-    }
+drink();
+drink("Soda");
 
-    # Now let the service manager know that we are running...
-    Win32::Daemon::State( SERVICE_RUNNING );
+sub drink {
+	my ($what) = @_;
 
+	my $logger = get_logger();
 
-
-	while(1){
-		
-		 # Okay, go ahead and process stuff...
-   		 unlink( glob( "c:\\export\\*.tmp" ) );
-		
-		
+	if ( defined $what ) {
+		$logger->info( "Drinking ", $what );
 	}
-
-
-
-
-    # Tell the OS that the service is terminating...
-    Win32::Daemon::StopService();
+	else {
+		$logger->error("No drink defined");
+	}
+}

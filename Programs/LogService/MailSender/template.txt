@@ -1,0 +1,29 @@
+<table style="height: 39px;" width="446">
+<tbody>
+<tr>
+<td bgcolor="#EBEBEB">Exporter - error</td>
+<td bgcolor="#FF8080">error</td>
+</tr>
+</tbody>
+</table>
+<p>&nbsp;</p>
+<table style="height: 59px;" width="450">
+<tbody>
+<tr>
+<td width="120">Warning order</td>
+<td>1</td>
+</tr>
+<tr>
+<td>Pcb id</td>
+<td>F12345</td>
+</tr>
+<tr>
+<td>Message</td>
+<td>
+<p>Ffjiofjoasijfaiodf</p>
+<p>fkdopkfaopdf</p>
+<p>kfodafko</p>
+</td>
+</tr>
+</tbody>
+</table>

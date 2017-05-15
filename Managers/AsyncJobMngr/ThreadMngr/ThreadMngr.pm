@@ -11,6 +11,7 @@ use threads::shared;
 use Wx;
 use Time::HiRes qw (sleep);
 use Thread::Queue;
+use Log::Log4perl qw(get_logger);
 
 #3th party library
 use strict;
@@ -18,7 +19,7 @@ use aliased 'Managers::AsyncJobMngr::Enums';
 use aliased 'Managers::AsyncJobMngr::Helper';
 use aliased 'Packages::Events::Event';
 use aliased 'Managers::AbstractQueue::Helper' => "HelperAbstrQ";
-use aliased 'Managers::AbstractQueue::AppConf';
+use aliased 'Managers::AsyncJobMngr::AppConf';
 
 #local library
 use aliased 'Packages::InCAM::InCAM';
@@ -45,6 +46,9 @@ sub new {
 
 	#raise when new thread start
 	$self->{"onThreadWorker"} = Event->new();
+	
+	$self->{"appLoger"} = get_logger(Enums->Logger_APP); 
+	$self->{"threadLoger"} = get_logger(Enums->Logger_TASKTH); 
 
 	return $self;
 }
@@ -108,8 +112,9 @@ sub RunNewtask {
 	my $externalServer = shift;
 
 	$self->{"thrTaskCnt"} += 1;
-
-	print STDERR "\n\n\ntask utility: THERAD ORDER IS :  " . $self->{"thrTaskCnt"} . ".\n\n\n";
+	
+	$self->{"appLoger"}->debug("task utility: THERAD ORDER IS :  " . $self->{"thrTaskCnt"} );
+ 
  	my $threadOrder = $self->{"thrTaskCnt"};
 	# special shared variable, which child process periodically read and decide if stop or continue in task
 	my $stoppedShare = 0;
@@ -155,9 +160,9 @@ sub ExitThread {
 				#$thrObj->detach();
 
 				$thrObj->kill('KILL');
-
-				Helper->Print( "Thread:   port:" . $thr->{"port"} . "...........................try to end thread\n" );
-
+				
+				$self->{"appLoger"}->debug("Thread:   port:" . $thr->{"port"} . "...........................try to end thread" );
+ 
 			}
 			else {
 
@@ -234,7 +239,8 @@ sub __FillThreadPool {
 
 	for(my $i = 0; $i <  ($self->{"MIN_THREADS"} - $threadPoolCnt ); $i++){
  
-		print STDERR "\n Add new thread pool. TOtal cnt: $threadPoolCnt. \n";
+ 
+		$self->{"appLoger"}->debug("Add new thread pool. TOtal cnt: $threadPoolCnt." );
 		$self->__AddThreadPool();
 	}
 }
@@ -257,8 +263,8 @@ sub __CreateThread {
 	my $tid = $self->{"IDLE_QUEUE"}->dequeue();
 
 	# Check for termination condition
-	
-	print STDERR "\n Thread is about to start ".$threadOrder."\n";
+	$self->{"appLoger"}->debug("Thread is about to start ".$threadOrder. ", JobGUID: ".$jobGUID );
+	 
 	
 	unless(defined $jobStrData  ){
 		die "not defined";
@@ -291,7 +297,8 @@ sub __WorkerMethod {
 		$onThreadWorker->Do( $pcbIdShare, $jobGUID, $jobStrData, $inCAM, \$THREAD_PROGRESS_EVT, \$THREAD_MESSAGE_EVT, $stopVarShare, $threadOrder );
 	}
 
-	print STDERR "\n thread task end PCBid: $$pcbIdShare \n";
+ 
+	$self->{"threadLoger"}->debug("thread task end PCBid: $$pcbIdShare , JobGUID: $jobGUID" );
 
 	$self->__CleanUpAndExit( $inCAM, $jobGUID, $pcbIdShare, Enums->ExitType_SUCCES );
 
@@ -334,11 +341,12 @@ sub __PoolWorker {
 		my $externalServer = $work->[5];
 		my $stop           = $work->[6];
 		my $threadOrder = $work->[7];
-
-		print STDERR "\n Thread pool start PCB: $$pcbIdShare order $threadOrder \n";
+		
+		$self->{"threadLoger"}->debug("In thread worker ".$threadOrder. ", JobGUID: $jobGUID, Port: $port" );
 
 		# TODO odkomentovat
 		my $inCAM = InCAM->new( "remote" => 'localhost', "port" => $port );
+		$inCAM->SetLogger(get_logger(Enums->Logger_INCAM));
 
 		#my $inCAM = InCAM->new();
 		#$inCAM->StarLog( $pidInCAM, $pcbIdShare );

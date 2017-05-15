@@ -663,9 +663,9 @@ sub GetPcbOrderNumbers {
 				 order by z.reference_subjektu desc";
 
 	my @res = Helper->ExecuteDataSet( $cmd, \@params );
-	
+
 	my @arr = map { $_->{"reference_subjektu"} } @res;
- 
+
 	return @arr;
 }
 
@@ -758,13 +758,13 @@ sub GetIdcustomer {
 #	else {
 #
 #		require Connectors::HeliosConnector::HelperWriter;
-# 
+#
 #		my $res = Connectors::HeliosConnector::HelperWriter->OnlineWrite_pcb( $pcbId, $class, "konstr_trida" );
-#		
+#
 #		return $res;
 #	}
 #
-#	 
+#
 #
 #}
 
@@ -955,6 +955,27 @@ sub GetTermOfOrder {
 	return $res;
 }
 
+sub GetTPVEmployee {
+	my $self  = shift;
+	my $pcbId = shift;
+
+	my @params = ();
+
+	my $numberOrder = GetNumberOrder( '', $pcbId );
+
+	my $cmd = "select katalog.nazev_subjektu,  z.prijmeni, z.jmeno, z.login_id, z.e_mail
+		from lcs.zamestnanci z
+		join lcs.vztahysubjektu vs on vs.cislo_vztahu = 6340 and vs.cislo_subjektu = z.cislo_subjektu
+		join lcs.subjekty katalog on katalog.cislo_subjektu = vs.cislo_vztaz_subjektu
+		where katalog.reference_subjektu in ('543000', '543100')
+		and z.je_zamestnanec = 'A'
+		order by 1, 2";
+
+	my @result = Helper->ExecuteDataSet( $cmd, \@params );
+
+	 return @result;
+}
+
 #-------------------------------------------------------------------------------------------#
 #  Helper method
 #-------------------------------------------------------------------------------------------#
@@ -987,10 +1008,10 @@ my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	use aliased 'Connectors::HeliosConnector::HegMethods';
-	
-	my $inf= HegMethods->GetCustomerInfo("f71566")->{"reference_subjektu"};
 
-	print $inf;
+	my @emp = HegMethods->GetTPVEmployee();
+
+	print @emp;
 }
 
 1;

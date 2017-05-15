@@ -2,7 +2,7 @@
 # Description: Can read app configuration from Config.txt files, placed in root dir of app
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Managers::AbstractQueue::AppConf;
+package Managers::AsyncJobMngr::AppConf;
 
 #3th party library
 use strict;

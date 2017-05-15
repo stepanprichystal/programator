@@ -1,0 +1,21 @@
+2017/05/11 11:30:01 INFO> pom5.pl:48 Groceries::Food::consume - Eating Sushi
+2017/05/11 11:30:03 INFO> pom5.pl:48 Groceries::Food::consume - Eating Sushi
+2017/05/11 11:30:46 DEBUG> pom5.pl:36 Groceries::Food::new - New food: Sushi
+2017/05/11 11:30:46 INFO> pom5.pl:48 Groceries::Food::consume - Eating Sushi
+2017/05/11 11:31:03 DEBUG> pom5.pl:36 Groceries::Food::new - New food: Sushi
+2017/05/11 11:31:03 INFO> pom5.pl:48 Groceries::Food::consume - Eating Sushi
+2017/05/11 11:31:28 INFO> pom5.pl:48 Groceries::Food::consume - Eating Sushi
+2017/05/11 11:31:55 DEBUG> pom5.pl:36 Groceries::Food::new - New food: Sushi
+2017/05/11 11:31:55 INFO> pom5.pl:48 Groceries::Food::consume - Eating Sushi
+2017/05/11 11:33:11 DEBUG> pom5.pl:44 Groceries::Food::new - New food: Sushi
+2017/05/11 11:33:11 DEBUG> pom5.pl:44 Groceries::Food::new - New food: Sushi
+2017/05/11 11:33:11 INFO> pom5.pl:56 Groceries::Food::consume - Eating Sushi
+2017/05/11 11:33:11 INFO> pom5.pl:56 Groceries::Food::consume - Eating Sushi
+2017/05/11 11:35:19 DEBUG> pom5.pl:47 Groceries::Food::new - New food: Sushi
+2017/05/11 11:35:19 INFO> pom5.pl:59 Groceries::Food::consume - Eating Sushi
+2017/05/11 11:35:32 DEBUG> pom5.pl:47 Groceries::Food::new - New food: Sushi
+2017/05/11 11:35:32 INFO> pom5.pl:59 Groceries::Food::consume - Eating Sushi
+2017/05/11 11:35:37 DEBUG> pom5.pl:47 Groceries::Food::new - New food: Sushi
+2017/05/11 11:35:37 INFO> pom5.pl:59 Groceries::Food::consume - Eating Sushi
+2017/05/11 13:28:17 DEBUG> pom5.pl:47 Groceries::Food::new - New food: Sushi
+2017/05/11 13:28:17 INFO> pom5.pl:59 Groceries::Food::consume - Eating Sushi
