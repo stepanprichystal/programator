@@ -25,13 +25,15 @@ my $ServicePath = $^X;
 # it MUST point to the perl script file that is the service such as:
 my $ServiceParams = GeneralHelper->Root() . "\\Programs\\LogService\\Service.pl";
 
+# Login has to be filled, for that service can attemt to o=ODBC connection
+
 my %service_info = (
 					 machine     => '',
 					 name        => 'TPVLogService',
 					 display     => 'TPV logging service',
 					 path        => $ServicePath,
-					 user        => '',
-					 pwd         => '',
+					 user        => 'tpv-server@gatema.cz',
+					 password    => 'Po123',
 					 description => 'Send log emails to tpv workers from automation',
 					 parameters  => $ServiceParams
 );

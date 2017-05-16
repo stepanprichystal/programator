@@ -243,7 +243,7 @@ sub _ItemResultEvent {
 	$data2{"unitId"} = $unitId;
 	$data2{"value"}  = $taskClass->GetProgressValue();
 
-	print " ==========Job WorkerClass Progress, UnitId:" . $unitId . " - " . $taskClass->GetProgressValue() . "\n";
+	#print " ==========Job WorkerClass Progress, UnitId:" . $unitId . " - " . $taskClass->GetProgressValue() . "\n";
 
 	$self->_SendProgressEvt( \%data2 );
 

@@ -37,8 +37,10 @@ sub new {
 	$self->{"employees"} = \@empl;
 
 	# Sender attributes
-	$self->{"smtp"} = "127.0.0.1";
+	#$self->{"smtp"} = "127.0.0.1";
+	$self->{"smtp"} = 'proxy.gatema.cz';
 	$self->{"from"} = 'tpvserver@gatema.cz';
+ 
 
 	# Each app define "stop sending mail" condition
 	# Objects are stored in hasha and contain method StopSend
@@ -97,15 +99,13 @@ sub __ProcesAppLogs {
 		next if ($stopSending);
 
 		# 2) get receiver
-
-		my $defaultReceiver = $self->__GetDefaultReceiver( $log->{"PcbId"} );
-
+ 
 		my $receiver        = undef;
 		my $receiverSentCnt = $log->{"ReceiverSentCnt"};    # number of mails which was sent to receiver
 
 		if ( !defined $log->{"Receiver"} || $log->{"Receiver"} eq "" ) {
 
-			$receiver = $defaultReceiver;
+			$receiver =  $self->__GetDefaultReceiver( $log->{"PcbId"} );;
 		}
 		else {
 
@@ -120,16 +120,25 @@ sub __ProcesAppLogs {
 		# 3) Update info about mail sendiong for this log
 		TpvMethods->UpdateAppLogProcess( $log->{"LogId"}, $receiver->{"login_id"} );
 
+		# set pcb id
+		my $pcbId = $log->{"PcbId"};
+		if ( !defined $pcbId || $pcbId eq "" ) {
+			$pcbId = "-";
+		}
+
+		# set author of pcb if exist
+		my $pcbAuthor = "-";
+		if ( $pcbId ne "-" ) {
+			my $nif = NifFile->new($pcbId);
+			if ( $nif->Exist() ) {
+				$pcbAuthor = $nif->GetValue("zpracoval");
+			}
+		}
+
 		# 4) Sent mail with log message to receiver
 		$self->__SendMail(
-						   $receiver->{"e_mail"},
-						   $appId,
-						   $log->{"TotalSentCnt"} + 1,
-						   $maxRepeat,
-						   $log->{"Type"},
-						   $receiverSentCnt + 1,
-						   $log->{"PcbId"},
-						   $defaultReceiver->{"login_id"},
+						   $receiver->{"e_mail"}, $appId,               $log->{"TotalSentCnt"} + 1, $maxRepeat,
+						   $log->{"Type"},        $receiverSentCnt + 1, $pcbId,                     $pcbAuthor,
 						   $log->{"Message"}
 		);
 	}

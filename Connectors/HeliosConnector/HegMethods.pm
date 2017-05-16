@@ -957,11 +957,9 @@ sub GetTermOfOrder {
 
 sub GetTPVEmployee {
 	my $self  = shift;
-	my $pcbId = shift;
 
 	my @params = ();
 
-	my $numberOrder = GetNumberOrder( '', $pcbId );
 
 	my $cmd = "select katalog.nazev_subjektu,  z.prijmeni, z.jmeno, z.login_id, z.e_mail
 		from lcs.zamestnanci z

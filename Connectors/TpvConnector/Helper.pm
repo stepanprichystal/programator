@@ -57,6 +57,8 @@ sub __OpenConnection {
 		
 		$con->{'mysql_enable_utf8'} = 1;
 		$con->do('set names utf8');
+		 
+		 
 	};
 	if ($@) {
 		 
@@ -155,6 +157,8 @@ sub ExecuteNonQuery {
 	my $con = undef;
 	my $cmd = Connectors::TpvConnector::Helper->__PrepareCommand( $commandText, $commandParameters );
 
+ 
+
 	$con = Connectors::TpvConnector::Helper->__OpenConnection();
 	unless ($con) {
 		return 0;
@@ -185,7 +189,7 @@ sub ExecuteDataSet {
 
 	my $con = undef;
 	my $cmd = Connectors::TpvConnector::Helper->__PrepareCommand( $commandText, $commandParameters );
-
+ 
 	my @dataset = ();
 
 	$con = Connectors::TpvConnector::Helper->__OpenConnection();
@@ -221,6 +225,7 @@ sub ExecuteScalar {
 
 	my $con = undef;
 	my $cmd = Connectors::TpvConnector::Helper->__PrepareCommand( $commandText, $commandParameters );
+ 
 
 	my @dataset = ();
 

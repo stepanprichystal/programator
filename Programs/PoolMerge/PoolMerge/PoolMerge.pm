@@ -354,7 +354,7 @@ sub __CheckFilesHandler {
 			copy( $path, EnumsPaths->Client_EXPORTFILESPOOL . "backup\\" . $taskName );    # do backup
 
 			# TODO odkomentovat abt to mazalo
-			#unlink($path);
+			unlink($path);
 
 			# serialize job data to strin
 			my %hashData = ();
