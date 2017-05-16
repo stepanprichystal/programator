@@ -25,6 +25,8 @@ sub AddalignmentMark {
 	$self->_GetCoorFiducial( $genesis, $layerName, $units, $jobName, $stepName, $searchMark );
 
 	my $maxDcode = $self->_GetHighestDcode("$pathGerber");
+	
+ 
 
 	push( @arrFiducialPosition, 'G54D' . ( $maxDcode + 1 ) . '*' );
 	for ( my $i = 1 ; $i <= 4 ; $i++ ) {
@@ -47,8 +49,11 @@ sub AddalignmentMark {
 				print $NEWFILE "$line\n";
 			}
 			$existFiduc = 1;
-		}
-		elsif ( $_ =~ /$lastDcode/ ) {
+		
+		} 
+		# when there are more dcodes OR when no anohter dcode are defined
+		elsif ( $_ =~ /$lastDcode/ || ($maxDcode == 0 && $_ =~ /MOIN/) ) {
+	 
 			print $NEWFILE "$_";
 			if ( $units eq 'mm' ) {
 				$valueDcode = $FIDMARK_MM;
@@ -182,6 +187,11 @@ sub _GetHighestDcode {
 			}
 		}
 		close $f;
+	}
+	
+	# no dcode in gerber
+	unless(defined $highestDcode){
+		$highestDcode = 0;
 	}
 
 	return ($highestDcode);

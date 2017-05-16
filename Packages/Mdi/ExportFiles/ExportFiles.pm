@@ -105,6 +105,10 @@ sub __ExportLayers {
 
 	foreach my $l (@layers) {
 
+		if($l->{"gROWname"} eq "v2"){
+			print STDERR "dd";
+		}
+
 		CamLayer->WorkLayer( $inCAM, $l->{"gROWname"} );
 
 		# new result item for lyer
@@ -124,6 +128,7 @@ sub __ExportLayers {
 
 		# 4) compensate layer by computed compensation
 		$self->__CompensateLayer( $l->{"gROWname"} );
+
 
 		# 5) export gerbers
 		my $fiducDCode = $self->__ExportGerberLayer( $l->{"gROWname"}, $resultItem );
@@ -444,7 +449,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId    = "f13609";
+	my $jobId    = "f71693";
 	my $stepName = "panel";
 
 	my $export = ExportFiles->new( $inCAM, $jobId, $stepName );
