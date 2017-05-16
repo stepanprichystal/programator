@@ -1,6 +1,6 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Interface, contain operation for creating nif file
+# Description: Interface, class must implement methoc ProcessLog
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Programs::LogService::MailSender::AppStopCond::IStopCond;
@@ -20,6 +20,7 @@ use warnings;
 use Class::Interface;
 &interface;    
 
+# return 0, if log should not be processed anymore by Log service
 sub ProcessLog;     
  
 

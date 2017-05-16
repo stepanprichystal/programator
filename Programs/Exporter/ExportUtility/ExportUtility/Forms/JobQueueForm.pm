@@ -16,7 +16,7 @@ use warnings;
 #local library
 use aliased 'Programs::Exporter::ExportUtility::ExportUtility::Forms::JobQueueItemForm';
 use aliased 'Packages::Events::Event';
-use aliased 'Managers::AsyncJobMngr::AppConf';
+use aliased 'Packages::Other::AppConf';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods

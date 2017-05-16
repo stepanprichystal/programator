@@ -1,9 +1,9 @@
 #-------------------------------------------------------------------------------------------#
-# Description: Represent Universal Drill tool manager
+# Description: Class for unarchive jobs script
 
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Programs::LogService::MailSender::AppStopCond::TestStopCond;
+package Programs::LogService::MailSender::AppStopCond::UnArchiveStopCond;
 
 
 use Class::Interface;
@@ -14,6 +14,7 @@ use strict;
 use warnings;
 
 #local library
+use aliased 'Enums::EnumsPaths';
  
 
 #-------------------------------------------------------------------------------------------#
@@ -32,7 +33,15 @@ sub ProcessLog {
 	my $self = shift;
 	my $pcbId = shift;
 	
-	return 1;
+	my $result = 1;
+	
+	my $path = EnumsPaths->InCAM_jobsdb1.$pcbId;
+	
+	unless(-e $path){
+		$result = 0;
+	} 
+	
+	return $result;
  
 }
  

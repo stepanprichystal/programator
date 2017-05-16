@@ -82,6 +82,13 @@ sub InsertAppLog {
 	my $type    = shift;
 	my $message = shift;
 	my $pcbId   = shift;
+	
+	
+	use Unicode::Normalize;
+
+ 
+ $message = NFKD( $message );
+$message =~ s/\p{NonspacingMark}//g;
 
 	my @params = (
 				   SqlParameter->new( "_AppId",   Enums->SqlDbType_VARCHAR, $appId ),
@@ -90,13 +97,12 @@ sub InsertAppLog {
 				   SqlParameter->new( "_PcbId",   Enums->SqlDbType_VARCHAR, $pcbId )
 	);
 
-	my $cmd = "INSERT INTO app_logs (AppId, Type, Message, PcbId) VALUES (_PcbId, _ChildPcbId, _ActionStep, _ActionCode, _ActionOrder, _User);";
+	my $cmd = "INSERT INTO app_logs (AppId, Type, Message, PcbId) VALUES (_AppId, _Type, _Message, _PcbId);";
 
 	my $result = Helper->ExecuteNonQuery( $cmd, \@params );
 
 	return $result;
 }
-
 
 # Get logs, which is suitable for processing (send mail to tpv users)
 sub GetErrLogsToProcess {
@@ -123,9 +129,12 @@ sub GetErrLogsToProcess {
       		 AND (t1.Type = 'Error' OR t1.Type = 'Warning')
        		 AND t1.ProcessLog = 1
        		 AND (t3.MailSentCnt IS NULL OR t3.MailSentCnt < t2.SentErrMailRepeat)
-       		 AND (t3.LastSentDate IS NULL OR (t3.LastSentDate + INTERVAL t2.SentErrMailInterval MINUTE) < NOW());";
+        	 AND (t3.LastSentDate IS NULL OR (t3.LastSentDate + INTERVAL t2.SentErrMailInterval MINUTE) < NOW())
+			 AND (t1.Inserted + INTERVAL 120 MINUTE) > NOW(); # process only logs younger than 1hour";
 
 	my @result = Helper->ExecuteDataSet( $cmd, \@params );
+
+	return @result;
 
 }
 
@@ -138,7 +147,7 @@ sub UpdateAppLogProcess {
 
 	my @params1 = ( SqlParameter->new( "_LogId", Enums->SqlDbType_INT, $logId ) );
 
-	my $cmd1 = "SELECT TOP 1
+	my $cmd1 = "SELECT
 				Id 
 				FROM app_logs_process
 				WHERE app_logs_process.LogId = _LogId;";
@@ -148,9 +157,15 @@ sub UpdateAppLogProcess {
 	# Insert new record
 	unless ($logProcId) {
 
-		my @params  = ( SqlParameter->new( "_LogId", Enums->SqlDbType_INT, $logId ) );
-		my $cmd     = "INSERT INTO app_logs_process (LogId) VALUES (_LogId);";
-		my $result1 = Helper->ExecuteNonQuery( $cmd, \@params );
+		my $cmd = "INSERT INTO app_logs_process (LogId) VALUES (_LogId);";
+		Helper->ExecuteNonQuery( $cmd, \@params1 );
+
+		my $cmd1 = "SELECT
+				Id 
+				FROM app_logs_process
+				WHERE app_logs_process.LogId = _LogId;";
+
+		$logProcId = Helper->ExecuteScalar( $cmd1, \@params1 );
 
 	}
 
@@ -170,18 +185,23 @@ sub UpdateAppLogProcess {
 
 }
 
-# Insert default record for log processing
-sub InsertAppLogProcess {
-	my $self  = shift;
-	my $logId = shift;
+# Remove app logs from table app_logs, older than 10 days
+sub ClearLogDb {
+	my $self    = shift;
+	my $appId   = shift;
+	my $type    = shift;
+	my $message = shift;
+	my $pcbId   = shift;
 
-	my @params = ( SqlParameter->new( "_LogId", Enums->SqlDbType_INT, $logId ) );
+	my @params = ();
 
-	my $cmd = "INSERT INTO app_logs_process (LogId) VALUES (_LogId);";
+	my $cmd = "DELETE FROM  app_logs_process  WHERE LastSentDate < (now() - INTERVAL 10 DAY);";
 
-	my $result = Helper->ExecuteNonQuery( $cmd, \@params );
+	Helper->ExecuteNonQuery( $cmd, \@params );
 
-	return $result;
+	$cmd = "DELETE FROM  app_logs  WHERE Inserted < (now() - INTERVAL 10 DAY);";
+
+	Helper->ExecuteNonQuery( $cmd, \@params );
 }
 
 #-------------------------------------------------------------------------------------------#
@@ -193,7 +213,11 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	use aliased 'Connectors::TpvConnector::TpvMethods';
 
-	my $info = TpvMethods->GetCustomerInfo("05626");
+	my $info = TpvMethods->InsertAppLog("testApp", "Error", 'eturns a 13-element list giving the status info for
+	 a file, either the file opened via FILEHANDLE or DIRHANDLE, or named 
+	 by EXPR. If EXPR is omitted, it stats $_ (not _ !). Returns the empty
+	  list if stat fails. Typically used as follows:', "F12345");
+	
 
 	print 1;
 

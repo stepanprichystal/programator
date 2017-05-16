@@ -10,7 +10,7 @@ use warnings;
 use Win32::Console;
 
 
-our $stylePath = undef;
+our $configPath = undef;
 
 #necessary for load pall packages
 use FindBin;
@@ -24,7 +24,7 @@ use aliased 'Managers::AsyncJobMngr::Enums' => 'EnumsMngr';
 use aliased 'Managers::AbstractQueue::Helper';
 use aliased 'Managers::AsyncJobMngr::Helper' => "AsyncJobHelber";
 use aliased 'Helpers::GeneralHelper';
-use aliased 'Managers::AsyncJobMngr::AppConf';
+use aliased 'Packages::Other::AppConf';
 use aliased 'Managers::MessageMngr::MessageMngr';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'Enums::EnumsPaths';
@@ -47,7 +47,7 @@ use aliased 'Enums::EnumsPaths';
 # ==========================================================
 
 # set path of configuration
-$main::stylePath = GeneralHelper->Root() . "\\Programs\\PoolMerge\\Config\\Config.txt";
+$main::configPath = GeneralHelper->Root() . "\\Programs\\PoolMerge\\Config\\Config.txt";
 my $appName = AppConf->GetValue("appName");
 
 my $console = Win32::Console->new;

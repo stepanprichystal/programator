@@ -2,10 +2,11 @@
 use Win32::Daemon;
 
 #necessary for load pall packages
-use FindBin;
-use lib "$FindBin::Bin/../";
-use PackagesLib;
+#use FindBin;
+#use lib "$FindBin::Bin/../";
+#use PackagesLib;
 
+use lib qw( y:\server\site_data\scripts );
 use lib qw( C:\Perl\site\lib\TpvScripts\Scripts );
 
 use aliased 'Helpers::GeneralHelper';
@@ -24,13 +25,15 @@ my $ServicePath = $^X;
 # it MUST point to the perl script file that is the service such as:
 my $ServiceParams = GeneralHelper->Root() . "\\Programs\\LogService\\Service.pl";
 
+# Login has to be filled, for that service can attemt to o=ODBC connection
+
 my %service_info = (
 					 machine     => '',
 					 name        => 'TPVLogService',
 					 display     => 'TPV logging service',
 					 path        => $ServicePath,
-					 user        => '',
-					 pwd         => '',
+					 user        => 'tpv-server@gatema.cz',
+					 password    => 'Po123',
 					 description => 'Send log emails to tpv workers from automation',
 					 parameters  => $ServiceParams
 );

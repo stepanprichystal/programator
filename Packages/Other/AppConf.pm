@@ -1,8 +1,9 @@
 #-------------------------------------------------------------------------------------------#
-# Description: Can read app configuration from Config.txt files, placed in root dir of app
+# Description: Can read app configuration from Config.txt files
+# config path is set in global variable $main::configPath
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Managers::AsyncJobMngr::AppConf;
+package Packages::Other::AppConf;
 
 #3th party library
 use strict;
@@ -56,13 +57,13 @@ sub __GetVal{
 	my $self = shift;
 	my $key  = shift;
 	
-	#print STDERR $main::stylePath;
+	#print STDERR $main::configPath;
 	
-	unless ( -e $main::stylePath ) {
+	unless ( -e $main::configPath ) {
 		die "Configuration style file doesn't exist";
 	}
 
-	my @lines = @{ FileHelper->ReadAsLines($main::stylePath) };
+	my @lines = @{ FileHelper->ReadAsLines($main::configPath) };
 	
 	@lines = grep { $_ !~ /^#/ } @lines;
  
