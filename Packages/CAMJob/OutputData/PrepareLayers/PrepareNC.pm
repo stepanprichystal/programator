@@ -59,7 +59,7 @@ sub new {
 
 	$self->{"layerCnt"} = CamJob->GetSignalLayerCnt( $self->{"inCAM"}, $self->{"jobId"} );
 
-	$self->{"plateThick"} = 100;                                          # value of plating in holes 100 µm
+	$self->{"plateThick"} = 100;    # value of plating in holes 100 µm
 
 	return $self;
 }
@@ -74,6 +74,7 @@ sub Prepare {
 	my $step  = $self->{"step"};
 
 	# Set layer info for each NC layer and filter only NC board layer
+
 	CamDrilling->AddNCLayerType( \@layers );
 	@layers = grep { $_->{"type"} && $_->{"gROWcontext"} eq "board" } @layers;
 	@layers = grep { $_->{"gROWlayer_type"} eq "rout" || $_->{"gROWlayer_type"} eq "drill" } @layers;
@@ -84,6 +85,14 @@ sub Prepare {
 
 		my %fHist = CamHistogram->GetFeatuesHistogram( $inCAM, $jobId, $step, $l->{"gROWname"} );
 		$l->{"fHist"} = \%fHist;
+	}
+
+	# Remove layers, if thay donesn't contain any features
+	for ( my $i = scalar(@layers) - 1 ; $i >= 0 ; $i-- ) {
+
+		if ( $layers[$i]->{"fHist"}->{"total"} == 0 ) {
+			splice @layers, $i, 1;
+		}
 	}
 
 	# 1) Check if all parameters are ok. Such as vysledne/vrtane, one surfae depth per layer, etc..

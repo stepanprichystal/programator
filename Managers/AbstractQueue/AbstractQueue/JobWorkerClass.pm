@@ -59,6 +59,14 @@ sub Init {
 	# Supress all toolkit exception/error windows
 	$self->{"inCAM"}->SupressToolkitException(1);
 	$self->{"logger"}->debug( "Thread order $threadOrder SUPRESS worker, pcbid: " . ${ $self->{"pcbId"} } . "" );
+	
+	# only for testing purpose, try if server is ready for sure
+	unless($self->{"inCAM"}->ServerReady()){
+		
+		$self->{"logger"}->error("Thread order $threadOrder, server is not ready, pcbid: " . ${ $self->{"pcbId"} } . "");	
+		die "Error when conenction to inCAM server, send log to spr";
+	}
+	
 
 	# Switch of displa actions in InCAM editor
 

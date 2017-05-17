@@ -18,6 +18,7 @@ use threads::shared;
 use Wx;
 use strict;
 use warnings;
+use Log::Log4perl qw(get_logger :levels);
 
 #local library
 use Widgets::Style;

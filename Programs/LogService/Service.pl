@@ -44,33 +44,13 @@ __SetLogging();
 # every 2000 milliseconds (10 seconds).
 Win32::Daemon::StartService( \%Context, 2000 );
 
-# Wait until the service manager is ready for us to continue...
-#    while( SERVICE_START_PENDING != Win32::Daemon::State() )
-#    {
-#        sleep( 1 );
-#    }
 
-# Wait until the service manager is ready for us to continue...
-#	while ( SERVICE_START_PENDING != Win32::Daemon::State() ) {
-#		sleep(1);
-#	}
 
 # Now let the service manager know that we are running...
 #Win32::Daemon::State( SERVICE_RUNNING );
 
 sub WorkerMethod {
 	my $Context = shift;
-
-	#my $logger = get_logger();
-
-	#$logger->info("worketr method");
-
-	#	if ( open( my $f, ">>", "c:\\Export\\service.txt" ) ) {
-	#
-	#		print $f "Record: " . $Context->{"start_time"} . "\n";
-	#
-	#		close($f);
-	#	}
 
 	TpvMethods->ClearLogDb();
 
@@ -115,9 +95,6 @@ sub Callback_Running {
 			Win32::Daemon::State( SERVICE_RUNNING );
 
 		}
-		
-		 
-		
 
 		#sleep(5);
 

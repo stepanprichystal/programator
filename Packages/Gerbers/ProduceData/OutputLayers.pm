@@ -15,6 +15,7 @@ use aliased 'Helpers::GeneralHelper';
 use aliased 'Enums::EnumsPaths';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'Packages::Gerbers::Export::ExportLayers';
+use aliased 'CamHelpers::CamHistogram';
 
 #-------------------------------------------------------------------------------------------#
 #  Interface
@@ -61,6 +62,13 @@ sub __Export {
 	my @hashLayers = ();
 
 	foreach my $l (@layers) {
+		
+		# do not export layer, which doesnt't contain any symbol
+		my %fHist = CamHistogram->GetFeatuesHistogram( $inCAM, $jobId, $stepName, $l->GetOutput() );
+		
+		if($fHist{"total"} == 0 ){
+			next;
+		}
 
 		my %lInfo = (
 					  "name"     => $l->GetOutput(),
