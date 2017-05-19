@@ -1,60 +1,60 @@
-#use Log::Log4perl qw(:easy);
+#-------------------------------------------------------------------------------------------#
+# Description: Simple Win service, responsible for checking error log DB and processing
+# new logs
+# Author:SPR
+
+#3th party library
+use strict;
+use warnings;
 use Log::Log4perl qw(get_logger :levels);
-#
-#Log::Log4perl->easy_init(
-#	{
-#	  level  => $DEBUG,
-#	  file   => 'test.out',        # make sure not to use stderr here!
-#	  layout => "%d %M: %m%n",
-#	}
-#);
+use Try::Tiny;
 
-my $mainLogger = get_logger("test");
-$mainLogger->level($DEBUG);
+#use lib qw( y:\server\site_data\scripts );
+use lib qw( C:\Perl\site\lib\TpvScripts\Scripts );
 
-# Appenders
-my $appenderFile = Log::Log4perl::Appender->new(
-												 'Log::Log4perl::Appender::File::FixedSize',
-												 filename => "test.out2",
-												 mode     => "append",
-												 size     => '1Kb'
-);
+use aliased 'Programs::Services::LogService::MailSender::MailSender';
+use aliased 'Helpers::GeneralHelper';
+use aliased 'Packages::Other::AppConf';
+use aliased 'Connectors::TpvConnector::TpvMethods';
+use aliased 'Programs::Services::Helper';
+use aliased 'Packages::InCAMCall::InCAMCall';
+use aliased 'Enums::EnumsPaths';
+ 
+my $paskageName = "Packages::InCAMCall::Example";
+my @par1        = ( "k" => "1" );
+my %par2        = ( "par1", "par2" );
 
-my $layout = Log::Log4perl::Layout::PatternLayout->new("%d> %m%n ");
-$appenderFile->layout($layout);
+ 
 
-$mainLogger->add_appender($appenderFile);
+my $inCAMPath = GeneralHelper->GetLastInCAMVersion();
+$inCAMPath .= "bin\\InCAM.exe";
 
-tie *STDERR, "Trapper";
-tie *STDOUT, "Trapper";
-
-print STDERR "test";
-print STDERR "test";
-print STDERR "test2";
-print STDERR "test2";
-
-########################################
-package Trapper;
-########################################
-
-#use Log::Log4perl qw(:easy);
-use Log::Log4perl qw(get_logger :levels);
-
-#use Log::Log4perl qw(:easy);
-
-sub TIEHANDLE {
-	my $class = shift;
-	bless [], $class;
-
+unless ( -f $inCAMPath )    # does it exist?
+{
+	die "InCAM does not exist on path: " . $inCAMPath;
 }
 
-sub PRINT {
-	my $self = shift;
+my $fIndicator = EnumsPaths->Client_INCAMTMPOTHER . GeneralHelper->GetGUID();
 
-	#$Log::Log4perl::caller_depth++;
-	get_logger("test")->Error(@_);
+my $script = 'c:\Perl\site\lib\TpvScripts\Scripts\pom5.pl';
 
-	#$Log::Log4perl::caller_depth--;
-}
+my $cmd = "$inCAMPath -s" . $script;
+
+ print  $cmd;
+
+#use Config;
+#my $perl = $Config{perlpath};
+
+#$inCAMPath = 'c:\opt\InCAM\3.01SP1\bin\InCAM.exe';
+use Win32::Process;
+my $processObj;
+#Win32::Process::Create( $processObj, $inCAMPath, $cmd, 0, THREAD_PRIORITY_NORMAL, "." )
+#  || die " run process $!\n";
+
+#my $pidInCAM = $processObj->GetProcessID();
+
+#$processObj->Wait(INFINITE);
+
+system($cmd);
 
 1;

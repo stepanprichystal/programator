@@ -33,7 +33,7 @@ my $outputPath  = shift;
 my $PIDFile     = shift;
 
   	my $f;
- 	open($f, '+>', "c:\\tmp\\TpvService\\test" );
+ 	open($f, '+>', "c:\\tmp\\TpvService\\test5" );
 	print $f "Su zde 1 \n";
 	close $f;
 

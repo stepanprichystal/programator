@@ -22,6 +22,7 @@ use aliased 'Packages::Other::AppConf';
 use aliased 'Connectors::TpvConnector::TpvMethods';
 use aliased 'Programs::Services::Helper';
 use aliased 'Packages::InCAMCall::InCAMCall';
+use aliased 'Enums::EnumsPaths';
 
 Win32::Daemon::RegisterCallbacks(
 	{
@@ -63,21 +64,44 @@ sub WorkerMethod {
 	my %par2      = ( "par1", "par2" );
 	
 
-		$logger->debug("test 1\n");
+	$logger->debug("test 1\n");
 
-	my $call = InCAMCall->new( $paskageName, \@par1, \%par2 );
-	
-		$logger->debug("test 2\n");
-	
-	
-	my $result = $call->Run();
-	my %result = $call->GetOutput();
-	
-	$logger->debug("test 3\n");
+	my $inCAMPath = GeneralHelper->GetLastInCAMVersion();
+	$inCAMPath .= "bin\\InCAM.exe";
 
+	unless ( -f $inCAMPath )    # does it exist?
+	{
+		die "InCAM does not exist on path: " . $inCAMPath;
+	}
 
+ 	my $fIndicator = EnumsPaths->Client_INCAMTMPOTHER . GeneralHelper->GetGUID();
+ 
+ 
+ 	my $script = 'c:\Perl\site\lib\TpvScripts\Scripts\pom5.pl';
+ 
+ 
+
+	 my $cmd = "InCAM.exe -x -s".$script;
+ 
+ 
+	# $logger->debug("test 1 $inCAMPath $cmd \n");
+	#use Config;
+	#my $perl = $Config{perlpath};
+ 
+ 	#$inCAMPath = 'c:\opt\InCAM\3.01SP1\bin\InCAM.exe';
+ 	use Win32::Process;
+	my $processObj;
+	Win32::Process::Create( $processObj, $inCAMPath, $cmd, 0, THREAD_PRIORITY_NORMAL  , "." )
+	  || die " run process $!\n";
+
+	#my $pidInCAM = $processObj->GetProcessID();
+
+	#$processObj->Wait(INFINITE);
 	
-	$logger->debug("Odpoved y incam: ". $result{"userName"});
+	#my $cmd = "$inCAMPath -x -s" . $script;
+	#system($cmd);
+	
+	$logger->debug("Odpoved y incam: ");
 	 
 
 }
