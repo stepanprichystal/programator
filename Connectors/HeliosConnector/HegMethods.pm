@@ -792,6 +792,7 @@ sub UpdateNCInfo {
 
 }
 
+# Opdate column aktualni_krok in pcb order
 sub UpdatePcbOrderState {
 	my $self        = shift;
 	my $pcbId       = shift;
@@ -955,6 +956,7 @@ sub GetTermOfOrder {
 	return $res;
 }
 
+# Return list of actual TPV workers
 sub GetTPVEmployee {
 	my $self  = shift;
 
@@ -970,6 +972,24 @@ sub GetTPVEmployee {
 		order by 1, 2";
 
 	my @result = Helper->ExecuteDataSet( $cmd, \@params );
+
+	 return @result;
+}
+
+# Get all ReOrders
+# Pcb has order number begger than -01 + are on state 'Predvyrobni priprava'
+sub GetReorders {
+	my $self  = shift;
+
+	my @params = ();
+ 
+	my $cmd = "select distinct z.reference_subjektu, z.stav, z.aktualni_krok
+				from lcs.zakazky_dps_22_hlavicka z 
+				where z.stav='2'";
+
+	my @result = Helper->ExecuteDataSet( $cmd, \@params );
+	
+	@result = grep {   $_->{"reference_subjektu"} !~ /-01/} @result;
 
 	 return @result;
 }
@@ -1007,7 +1027,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	use aliased 'Connectors::HeliosConnector::HegMethods';
 
-	my @emp = HegMethods->GetTPVEmployee();
+	my @emp = HegMethods->GetReorders();
 
 	print @emp;
 }

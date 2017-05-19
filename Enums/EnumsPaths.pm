@@ -41,8 +41,8 @@ use constant {
 
 use constant {
 
-	InCAM_serverDisc => "y:\\",
-	#InCAM_serverDisc => "\\\\incam\\InCAM\\",
+	#InCAM_serverDisc => "y:\\",
+	InCAM_serverDisc => "\\\\incam\\InCAM\\",
 
 	#InCAM_server => "y:\\server\\",
 	InCAM_server => "\\\\incam\\incam_server\\",

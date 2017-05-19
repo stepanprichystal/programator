@@ -1,0 +1,15 @@
+# REORDER CHECKLIST
+
+# ============ MANUAL ============ #
+
+1)  Check datacode in inCAM job to actual datacode
+
+2)  Check datacode in matrix layers, if is inside border1
+
+
+# =========== AUTOMATIC =========== #
+
+
+1) SCHEMA
+
+2) EXPORT

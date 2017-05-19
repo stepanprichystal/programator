@@ -1,20 +1,19 @@
 #-------------------------------------------------------------------------------------------#
-# Description: Class for unarchive jobs script
+# Description:  Class fotr testing application
 
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Programs::LogService::MailSender::AppStopCond::UnArchiveStopCond;
-
+package Programs::TpvService::ReOrder::Checks::Check_DATACODE_IS;
+use base('Programs::TpvService::ReOrder::Checks::CheckBase');
 
 use Class::Interface;
-&implements('Programs::LogService::MailSender::AppStopCond::IStopCond');
+&implements('Programs::TpvService::ReOrder::Checks::ICheck');
 
 #3th party library
 use strict;
 use warnings;
 
 #local library
-use aliased 'Enums::EnumsPaths';
  
 
 #-------------------------------------------------------------------------------------------#
@@ -22,26 +21,19 @@ use aliased 'Enums::EnumsPaths';
 #-------------------------------------------------------------------------------------------#
 
 sub new {
-	my $self = shift;
-	$self = {};
-	bless $self;
- 
+	my $class = shift;
+	my $self  = $class->SUPER::new("DATACODE_IS");
+	bless($self);
+	
+	
 	return $self;
 }
 
-sub ProcessLog {
+sub NeedChange {
 	my $self = shift;
 	my $pcbId = shift;
 	
-	my $result = 1;
-	
-	my $path = EnumsPaths->InCAM_jobsdb1.$pcbId;
-	
-	unless(-e $path){
-		$result = 0;
-	} 
-	
-	return $result;
+	return 1;
  
 }
  
@@ -52,13 +44,7 @@ sub ProcessLog {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	use aliased 'Programs::LogService::MailSender::MailSender';
-
-	#	use aliased 'Packages::InCAM::InCAM';
-	#
-
-	my $sender = MailSender->new();
-
+ 
 	print "ee";
 }
 

@@ -263,7 +263,7 @@ sub GetLastInCAMVersion {
 	my $inCAMPath = EnumsPaths->InCAM_serverDisc;
 	my @version   = ();
 
-	opendir( DIR, $inCAMPath ) or die $!;
+	opendir( DIR, $inCAMPath ) or die "cannot open $inCAMPath ".$!;
 
 	while ( my $file = readdir(DIR) ) {
 

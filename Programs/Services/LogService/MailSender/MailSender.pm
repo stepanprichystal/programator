@@ -3,7 +3,7 @@
 
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Programs::LogService::MailSender::MailSender;
+package Programs::Services::LogService::MailSender::MailSender;
 
 #3th party library
 use strict;
@@ -14,7 +14,7 @@ use Mail::Sender;
 use aliased 'Connectors::TpvConnector::TpvMethods';
 use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'Enums::EnumsApp';
-use aliased 'Programs::LogService::MailSender::AppStopCond::TestStopCond';
+use aliased 'Programs::Services::LogService::MailSender::AppStopCond::TestStopCond';
 use aliased 'Packages::NifFile::NifFile';
 use aliased 'Helpers::GeneralHelper';
 use aliased 'Helpers::FileHelper';
@@ -37,8 +37,8 @@ sub new {
 	$self->{"employees"} = \@empl;
 
 	# Sender attributes
-	#$self->{"smtp"} = "127.0.0.1";
-	$self->{"smtp"} = 'proxy.gatema.cz';
+	$self->{"smtp"} = "127.0.0.1";
+	#$self->{"smtp"} = 'proxy.gatema.cz';
 	$self->{"from"} = 'tpvserver@gatema.cz';
  
 
@@ -237,7 +237,7 @@ sub __SendMail {
 	$keysData{"key__pcbAuthor"}  = $pcbAuthor;
 	$keysData{"key__message"}    = $message;
 
-	my $htmlfile = GeneralHelper->Root() . "\\Programs\\LogService\\MailSender\\template.txt";
+	my $htmlfile = GeneralHelper->Root() . "\\Programs\\Services\\LogService\\MailSender\\template.txt";
 
 	unless ( -e $htmlfile ) {
 		die "Html template for email doesn't exist";
@@ -275,7 +275,7 @@ sub __SendMail {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	use aliased 'Programs::LogService::MailSender::MailSender';
+	use aliased 'Programs::Services::LogService::MailSender::MailSender';
 
 	#	use aliased 'Packages::InCAM::InCAM';
 	#

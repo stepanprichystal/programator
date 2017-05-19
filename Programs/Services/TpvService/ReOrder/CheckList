@@ -1,0 +1,80 @@
+# =================================================================================================================
+# List of all changes, which are checked at reorders
+# Each check has implemented own control mechanism, some controls can be based on version number
+# Priorita in automatic task is given by changes order. Top is highest priority
+
+# Entry format:
+#
+# [ <val> ] = " <val> is description, which see user list of changes, which are necessary to do. (max three words)"
+# K = "unique key, which refer to this 'change'"
+# V = "number of version, if change check if based on version control. Version are stored in 'dif' file"
+# T = "auto/man, determine, if is possible do change automatically or only manually"
+# R = "message for user (in manual type of changes), how to make changes manually"
+# =================================================================================================================
+
+
+# =========================
+# AUTOMATIC 
+# =========================
+[ Change of polarity in masks ]
+K = MASK_POLAR
+V = 
+T = auto
+R =  
+
+[ Change of polarity in masks ]
+K = MASK_POLAR
+V = 
+T = auto
+R =  
+
+[ Schema of job in matrix ]
+K = SCHEMA
+V = 0.1
+T = auto
+R =
+
+[ Rexport of pcb ]
+K = EXPORT
+V = 
+T = auto
+R =
+
+ 
+
+# =========================
+# MANUAL 
+# =========================
+
+[ Check datacode in helios ]
+K = DATACODE_IS
+V = 
+T = manual
+R = Check datacode in inCAM job to actual datacode
+
+[ Kontrola loga / pickering ]
+K = PICKERING_DATACODE
+V = 
+T = manual
+R = Check datacode in matrix layers, if is inside border1
+
+[ Check datacode in helios ]
+K = DATACODE_IS
+V = 
+T = manual
+R = Check datacode in inCAM job to actual datacode
+
+[ Check datacode in helios ]
+K = DATACODE_IS
+V = 
+T = manual
+R = Check datacode in inCAM job to actual datacode
+
+[ Check datacode in helios ]
+K = DATACODE_IS
+V = 
+T = manual
+R = Check datacode in inCAM job to actual datacode
+
+
+

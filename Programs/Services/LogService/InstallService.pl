@@ -23,7 +23,7 @@ my $ServicePath = $^X;
 #    $ServiceParams = '-param1 -param2 "c:\\Param2Path"';
 # OTHERWISE
 # it MUST point to the perl script file that is the service such as:
-my $ServiceParams = GeneralHelper->Root() . "\\Programs\\LogService\\Service.pl";
+my $ServiceParams = GeneralHelper->Root() . "\\Programs\\Services\\LogService\\Service.pl";
 
 # Login has to be filled, for that service can attemt to o=ODBC connection
 

@@ -12,13 +12,16 @@ use warnings;
 use Log::Log4perl qw(get_logger :levels);
 use Try::Tiny;
 
+
 #use lib qw( y:\server\site_data\scripts );
 use lib qw( C:\Perl\site\lib\TpvScripts\Scripts );
 
-use aliased 'Programs::LogService::MailSender::MailSender';
+use aliased 'Programs::Services::LogService::MailSender::MailSender';
 use aliased 'Helpers::GeneralHelper';
 use aliased 'Packages::Other::AppConf';
 use aliased 'Connectors::TpvConnector::TpvMethods';
+use aliased 'Programs::Services::Helper';
+use aliased 'Packages::InCAMCall::InCAMCall';
 
 Win32::Daemon::RegisterCallbacks(
 	{
@@ -36,15 +39,16 @@ my %Context = (
 );
 
 # Load configration file
-our $configPath = GeneralHelper->Root() . "\\Programs\\LogService\\Config";
-__SetLogging();
+ 
+
+our $configPath = GeneralHelper->Root() . "\\Programs\\Services\\TpvService\\Config";
+
+Helper->SetLogging(AppConf->GetValue("logFilePath"), 2);
 
 # Start the service passing in a context and
 # indicating to callback using the "Running" event
 # every 2000 milliseconds (10 seconds).
 Win32::Daemon::StartService( \%Context, 2000 );
-
-
 
 # Now let the service manager know that we are running...
 #Win32::Daemon::State( SERVICE_RUNNING );
@@ -52,18 +56,53 @@ Win32::Daemon::StartService( \%Context, 2000 );
 sub WorkerMethod {
 	my $Context = shift;
 
-	TpvMethods->ClearLogDb();
+	my $logger = get_logger("serviceLog");
+	 
+	my $paskageName = "Packages::InCAMCall::Example";
+	my @par1        = ( "k" => "1" );
+	my %par2      = ( "par1", "par2" );
+	
 
-	my $sender = MailSender->new();
+		$logger->debug("test 1\n");
 
-	$sender->Run();
+	my $call = InCAMCall->new( $paskageName, \@par1, \%par2 );
+	
+		$logger->debug("test 2\n");
+	
+	
+	my $result = $call->Run();
+	my %result = $call->GetOutput();
+	
+	$logger->debug("test 3\n");
+
+
+	
+	$logger->debug("Odpoved y incam: ". $result{"userName"});
+	 
 
 }
 
 sub Callback_Running {
 	my ( $Event, $Context ) = @_;
 
-	my $logger = get_logger();
+	my $logger = get_logger("serviceLog");
+	print STDERR "ddd";
+
+	# reduce log file
+	#my $pathstd = AppConf->GetValue("logFilePath") . "\\LogOut.txt";
+
+	#get file attributes
+	#		my @stats = stat($pathstd);
+	#
+	#		print @stats;
+	#		print STDERR "\nVelikost je ".$stats[7]." \n";
+	#
+	#		# if file is bigger than 10 mb, delete
+	#		if ( $stats[7] > 1000 ) {
+	#			#close($OLDOUT);
+	#			#close($OLDERR);
+	#			#unlink $pathstd;
+	#		}
 
 	# Note that here you want to check that the state
 	# is indeed SERVICE_RUNNING. Even though the Running
@@ -71,7 +110,7 @@ sub Callback_Running {
 	# calling the "Start" callback.
 	if ( SERVICE_RUNNING == Win32::Daemon::State() ) {
 
-		$logger->info("Loging mail service start");
+		$logger->info("Tpv service start");
 
 		#while (1) {
 
@@ -85,14 +124,14 @@ sub Callback_Running {
 		}
 
 		eval {
-	 
+
 			WorkerMethod($Context);
 
 		};
 		if ($@) {
 
 			$logger->error($@);
-			Win32::Daemon::State( SERVICE_RUNNING );
+			Win32::Daemon::State(SERVICE_RUNNING);
 
 		}
 
@@ -124,61 +163,6 @@ sub Callback_Stop {
 	Win32::Daemon::StopService();
 }
 
-sub __SetLogging {
 
-	my $path = AppConf->GetValue("logFilePath");
 
-	unless ( -e $path ) {
-		mkdir($path) or die "Can't create dir: " . $path . $_;
-	}
-
-	$path = $path . "\\log.txt";
-
-	my $mainLogger = get_logger();
-	$mainLogger->level($DEBUG);
-
-	# Appenders
-	my $appenderFile = Log::Log4perl::Appender->new(
-		'Log::Log4perl::Appender::File::FixedSize',
-		filename => $path,
-
-		#mode     => "append",
-		size => '10Mb'
-	);
-
-	my $appenderScreen = Log::Log4perl::Appender->new(
-													   'Log::Dispatch::Screen',
-													   min_level => 'debug',
-													   stderr    => 1,
-													   newline   => 1
-	);
-
-	my $layout = Log::Log4perl::Layout::PatternLayout->new("%d %p> %F{1}:%L  %M \n- %m%n \n");
-	$appenderFile->layout($layout);
-	$appenderScreen->layout($layout);
-
-	$mainLogger->add_appender($appenderFile);
-	$mainLogger->add_appender($appenderScreen);
-
-	$mainLogger->info("test");
-
-	# redirect all from stdout + stderr to file
-	my $pathstd = AppConf->GetValue("logFilePath") . "\\LogOut.txt";
-
-	#	#get file attributes
-	#	my @stats = stat($pathstd);
-	#
-	#	# if file is bigger than 10 mb, delete
-	#	if ( $stats[7] > 10000000 ) {
-	#		unlink $pathstd;
-	#	}
-
-	my $OLDOUT;
-	my $OLDERR;
-
-	open $OLDOUT, ">&STDOUT" || die "Can't duplicate STDOUT: $!";
-	open $OLDERR, ">&STDERR" || die "Can't duplicate STDERR: $!";
-	open( STDOUT, "+>", $pathstd );
-	open( STDERR, ">&STDOUT" );
-
-}
+1;
