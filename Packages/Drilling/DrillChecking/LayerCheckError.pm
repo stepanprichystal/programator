@@ -141,6 +141,12 @@ sub CheckNCLayers {
 		$result = 0;
 	}
 
+	# 9) Checkdifference between drill and finish diameter
+	unless ( $self->CheckDiamterDiff( $inCAM, $jobId, $stepName, \@layers, $mess ) ) {
+
+		$result = 0;
+	}
+
 	return $result;
 
 }
@@ -493,6 +499,52 @@ sub CheckContainNoDepth {
 
 }
 
+
+# Check if tools are unique within while layer, check if all necessary parameters are set
+sub CheckDiamterDiff {
+	my $self     = shift;
+	my $inCAM    = shift;
+	my $jobId    = shift;
+	my $stepName = shift;
+	my @layers   = @{ shift(@_) };
+	my $mess     = shift;
+
+	my $result = 1;
+
+	my @t = ();
+
+	push( @t, EnumsGeneral->LAYERTYPE_plt_nDrill );
+	push( @t, EnumsGeneral->LAYERTYPE_plt_cDrill );
+	push( @t, EnumsGeneral->LAYERTYPE_plt_nMill );
+	push( @t, EnumsGeneral->LAYERTYPE_nplt_nMill );
+	push( @t, EnumsGeneral->LAYERTYPE_nplt_rsMill );	
+	push( @t, EnumsGeneral->LAYERTYPE_nplt_lcMill );
+	push( @t, EnumsGeneral->LAYERTYPE_nplt_lsMill );
+	push( @t, EnumsGeneral->LAYERTYPE_nplt_kMill );
+
+	@layers = $self->__GetLayersByType( \@layers, \@t );
+
+
+	foreach my $l (@layers) {
+ 
+		my @tools = grep { defined $_->GetFinishSize() } $l->{"uniDTM"}->GetTools();
+		@tools = grep { ( $_->GetFinishSize() - 100) > $_->GetDrillSize() } @tools;
+		
+		if(scalar(@tools)){
+			
+			@tools = map { "DrillSize ".$_->GetDrillSize()."µm < FinishSize ".$_->GetFinishSize()."µm" } @tools;
+			my $str = join("; ",@tools);
+			$result = 0;
+			$$mess .= "NC layer \"" . $l->{"gROWname"} . "\".\n";
+			$$mess .= "\"Drill size\" diameters must be greater than \"Finish size\" diameters. Problem tools: $str \n";
+			
+		}
+ 
+	}
+ 
+	return $result;
+}
+
 sub __GetLayersByType {
 	my $self   = shift;
 	my @layers = @{ shift(@_) };
@@ -525,7 +577,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	use aliased 'Packages::InCAM::InCAM';
 
 	my $inCAM = InCAM->new();
-	my $jobId = "f64061";
+	my $jobId = "f52457";
 
 	my $mess = "";
 
