@@ -26,6 +26,12 @@ sub AddalignmentMark {
 
 	my $maxDcode = $self->_GetHighestDcode("$pathGerber");
 	
+	# if max code doesnt exist, set fake max code 9, because first dcode in gerbers start with 10
+	my $noDcode = 0;
+	unless( defined $maxDcode){
+		$noDcode = 1;
+		$maxDcode = 9;
+	}
  
 
 	push( @arrFiducialPosition, 'G54D' . ( $maxDcode + 1 ) . '*' );
@@ -52,7 +58,7 @@ sub AddalignmentMark {
 		
 		} 
 		# when there are more dcodes OR when no anohter dcode are defined
-		elsif ( $_ =~ /$lastDcode/ || ($maxDcode == 0 && $_ =~ /MOIN/) ) {
+		elsif ( $_ =~ /$lastDcode/ || ($noDcode && $_ =~ /MOIN/) ) {
 	 
 			print $NEWFILE "$_";
 			if ( $units eq 'mm' ) {
@@ -191,7 +197,7 @@ sub _GetHighestDcode {
 	
 	# no dcode in gerber
 	unless(defined $highestDcode){
-		$highestDcode = 0;
+		$highestDcode = undef;
 	}
 
 	return ($highestDcode);

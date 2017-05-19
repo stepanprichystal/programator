@@ -214,28 +214,34 @@ sub __GetProkoveni {
 	if ($sExist) {
 
 		my $mExist = CamHelper->LayerExists( $inCAM, $jobId, "m" );
-
+	 
 		if ($mExist) {
-
-			my @steps = CamStepRepeat->GetStepAndRepeat( $inCAM, $jobId, $stepName );
 			
-			foreach my $stepInner (@steps) {
-				
-				my $stepInnerName = $stepInner->{"gSRstep"};
-				
-				$inCAM->INFO(
-							  units       => 'mm',
-							  entity_type => 'layer',
-							  entity_path => "$jobId/$stepInnerName/m",
-							  data_type   => 'FEAT_HIST',
-							  options     => 'break_sr'
-				);
-
-				if ( $inCAM->{doinfo}{gFEAT_HISTtotal} > 0 ) {
-					$result = 'A';
-				}
-			}
+			$result = 'A';
+			
 		}
+		
+		# zbytek podminky yrusen 19.5.2017
+
+#			my @steps = CamStepRepeat->GetStepAndRepeat( $inCAM, $jobId, $stepName );
+#			
+#			foreach my $stepInner (@steps) {
+#				
+#				my $stepInnerName = $stepInner->{"gSRstep"};
+#				
+#				$inCAM->INFO(
+#							  units       => 'mm',
+#							  entity_type => 'layer',
+#							  entity_path => "$jobId/$stepInnerName/m",
+#							  data_type   => 'FEAT_HIST',
+#							  options     => 'break_sr'
+#				);
+#
+#				if ( $inCAM->{doinfo}{gFEAT_HISTtotal} > 0 ) {
+#					$result = 'A';
+#				}
+#			}
+#		}
 
 		my $rExist = CamDrilling->NCLayerExists( $inCAM, $jobId, EnumsGeneral->LAYERTYPE_plt_nMill );
 		if ($rExist) {
