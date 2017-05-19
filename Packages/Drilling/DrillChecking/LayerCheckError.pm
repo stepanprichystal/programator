@@ -20,6 +20,7 @@ use aliased 'CamHelpers::CamDrilling';
 use aliased 'CamHelpers::CamJob';
 use aliased 'CamHelpers::CamDTM';
 use aliased 'Enums::EnumsDrill';
+use aliased 'Packages::CAM::UniDTM::Enums';
 use aliased 'CamHelpers::CamHistogram';
 use aliased 'Packages::Polygon::Features::RouteFeatures::RouteFeatures';
 use aliased 'Packages::CAM::UniDTM::UniDTM';
@@ -527,7 +528,7 @@ sub CheckDiamterDiff {
 
 	foreach my $l (@layers) {
  
-		my @tools = grep { defined $_->GetFinishSize() } $l->{"uniDTM"}->GetTools();
+		my @tools = grep { $_->GetSource() eq Enums->Source_DTM  } $l->{"uniDTM"}->GetTools();
 		@tools = grep { ( $_->GetFinishSize() - 100) > $_->GetDrillSize() } @tools;
 		
 		if(scalar(@tools)){
