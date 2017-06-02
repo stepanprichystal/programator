@@ -38,8 +38,8 @@ sub new {
 	$self->{"employees"} = \@empl;
 
 	# Sender attributes
-	$self->{"smtp"} = "127.0.0.1";
-	#$self->{"smtp"} = 'proxy.gatema.cz';
+	#$self->{"smtp"} = "127.0.0.1";
+	$self->{"smtp"} = 'proxy.gatema.cz';
 	$self->{"from"} = 'tpvserver@gatema.cz';
  
 

@@ -23,7 +23,8 @@ my $ServicePath = $^X;
 #    $ServiceParams = '-param1 -param2 "c:\\Param2Path"';
 # OTHERWISE
 # it MUST point to the perl script file that is the service such as:
-my $ServiceParams = GeneralHelper->Root() . "\\Programs\\Services\\TpvService\\Service.pl";
+# tady nesmi byt adresa Y! ale \\incaam\incam
+my $ServiceParams = "\\\\incam\\incam\\server\\site_data\\scripts\\Programs\\Services\\TpvService\\Service.pl";
 
 # Login has to be filled, for that service can attemt to o=ODBC connection
 
@@ -32,7 +33,7 @@ my %service_info = (
 					 name        => 'TPVCustomService',
 					 display     => 'TPV custom service',
 					 path        => $ServicePath,
-					 user        => 'tpv-server@gatema.cz',
+					 user        => 'tpvserver@gatema.cz',
 					 password    => 'Po123',
 					 description => 'Run several task such as pcb reorder control..',
 					 parameters  => $ServiceParams

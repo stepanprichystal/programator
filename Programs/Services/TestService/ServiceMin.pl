@@ -13,14 +13,14 @@ use Log::Log4perl qw(get_logger :levels);
 use Try::Tiny;
 
 
-use lib qw( \\\\incam\\InCAM\\server\\site_data\\scripts);
-use lib qw( C:\Perl\site\lib\TpvScripts\Scripts );
+#use lib qw( \\\\incam\\InCAM\\server\\site_data\\scripts);
+#use lib qw( C:\Perl\site\lib\TpvScripts\Scripts );
 
-use aliased 'Programs::Services::LogService::MailSender::MailSender';
-use aliased 'Helpers::GeneralHelper';
-use aliased 'Packages::Other::AppConf';
-use aliased 'Connectors::TpvConnector::TpvMethods';
-use aliased 'Programs::Services::Helper';
+#use aliased 'Programs::Services::LogService::MailSender::MailSender';
+#use aliased 'Helpers::GeneralHelper';
+#use aliased 'Packages::Other::AppConf';
+#use aliased 'Connectors::TpvConnector::TpvMethods';
+#use aliased 'Programs::Services::Helper';
 
 Win32::Daemon::RegisterCallbacks(
 	{
@@ -39,8 +39,6 @@ my %Context = (
 
 # Load configration file
  
- 
-__SetLogging();
 
 # Start the service passing in a context and
 # indicating to callback using the "Running" event
@@ -50,21 +48,12 @@ Win32::Daemon::StartService( \%Context, 2000 );
 # Now let the service manager know that we are running...
 #Win32::Daemon::State( SERVICE_RUNNING );
 
-sub WorkerMethod {
-	my $Context = shift;
-
-	TpvMethods->ClearLogDb();
-
-	my $sender = MailSender->new();
-
-	$sender->Run();
-
-}
+ 
 
 sub Callback_Running {
 	my ( $Event, $Context ) = @_;
 
-	my $logger = get_logger("service");
+	 
  
 	# reduce log file
 	#my $pathstd = AppConf->GetValue("logFilePath") . "\\LogOut.txt";
@@ -88,7 +77,7 @@ sub Callback_Running {
 	# calling the "Start" callback.
 	if ( SERVICE_RUNNING == Win32::Daemon::State() ) {
 
-		$logger->info("Loging mail service start");
+	 
 
 		#while (1) {
 
@@ -103,12 +92,12 @@ sub Callback_Running {
 
 		eval {
 
-			WorkerMethod($Context);
+		 
 
 		};
 		if ($@) {
 
-			$logger->error($@);
+			 
 			Win32::Daemon::State(SERVICE_RUNNING);
 
 		}
@@ -141,19 +130,6 @@ sub Callback_Stop {
 	Win32::Daemon::StopService();
 }
 
-sub __SetLogging {
-	my $self = shift;
-
-	# 1) Create dir
-	my $logDirService = 'c:\tmp\InCam\scripts\logs\logService';
-	unless ( -e $logDirService ) {
-		mkdir($logDirService) or die "Can't create dir: " . $logDirService . $_;
-	}
  
-
-	Log::Log4perl->init( GeneralHelper->Root() . "\\Programs\\Services\\LogService\\Logger.conf" );
- 
-
-}
 
 1;

@@ -68,7 +68,9 @@ sub Run {
 
 	#print STDERR "\n\ncommand: $cmdStr\n\n";
 
-	my $result = system($cmdStr);
+	my $result = 1;
+	
+	system($cmdStr);
 
 	# read output
 

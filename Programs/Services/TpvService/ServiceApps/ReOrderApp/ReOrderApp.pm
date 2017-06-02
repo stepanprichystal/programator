@@ -88,8 +88,8 @@ sub Run {
 				$self->{"inCAM"} = $self->_GetInCAM();
 			}
 
-			my %hash = ( "reference_subjektu" => "f52456-01" );
-			@reorders = ( \%hash );
+			#my %hash = ( "reference_subjektu" => "f52456-01" );
+			#@reorders = ( \%hash );
 
 			foreach my $reorder (@reorders) {
 
@@ -122,8 +122,16 @@ sub __RunJob {
 
 	};
 	if ($@) {
-
-		my $err = "Aplication: " . $self->GetAppName() . ", orderid: \"$orderId\" exited with error: \n$@";
+		
+		my $eStr = $@;
+		my $e = $@;
+		
+		if (ref($e) && $e->can("Error")) {
+		
+			$eStr = $e->Error();
+		} 
+		
+		my $err = "Aplication: " . $self->GetAppName() . ", orderid: \"$orderId\" exited with error: \n $eStr";
 		$self->{"logger"}->error($err);
 		$self->{"loggerDB"}->Error( $jobId, $err );
 
@@ -158,7 +166,7 @@ sub __ProcessJob {
 
 	# open job if exist
 	if($jobExist){
-		$inCAM->COM( "open_job", job => "$jobId", "open_win" => "no" );
+		$inCAM->COM( "open_job", job => "$jobId", "open_win" => "yes" );
 		$inCAM->COM( "check_inout", "job" => "$jobId", "mode" => "out", "ent_type" => "job" );
 	}
 

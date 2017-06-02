@@ -80,7 +80,7 @@ elsif ( $methodName eq "UpdatePcbOrderState" ) {
 } 
  
  
- 
+ $output->{"result"} = $result;
  
  
 

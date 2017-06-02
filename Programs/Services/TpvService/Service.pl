@@ -12,7 +12,7 @@ use warnings;
 use Log::Log4perl qw(get_logger :levels);
 use Try::Tiny;
 
-#use lib qw( y:\server\site_data\scripts );
+use lib qw( \\\\incam\\InCAM\\server\\site_data\\scripts);
 use lib qw( C:\Perl\site\lib\TpvScripts\Scripts );
 
 use aliased 'Programs::Services::LogService::MailSender::MailSender';
@@ -70,7 +70,7 @@ __SetLogging();
 Win32::Daemon::StartService( \%Context, 2000 );
 
 # Now let the service manager know that we are running...
-#Win32::Daemon::State( SERVICE_RUNNING );
+Win32::Daemon::State( SERVICE_RUNNING );
 
 sub WorkerMethod {
 	my $Context = shift;
