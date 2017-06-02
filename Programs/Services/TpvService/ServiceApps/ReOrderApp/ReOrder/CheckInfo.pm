@@ -3,21 +3,15 @@
 
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Programs::TpvService::ReOrder::ReOrder;
+package Programs::Services::TpvService::ServiceApps::ReOrderApp::ReOrder::CheckInfo;
 
 #3th party library
 use strict;
 use warnings;
-use Mail::Sender;
+ 
 
 #local library
-use aliased 'Connectors::TpvConnector::TpvMethods';
-use aliased 'Connectors::HeliosConnector::HegMethods';
-use aliased 'Enums::EnumsApp';
-use aliased 'Programs::LogService::MailSender::AppStopCond::TestStopCond';
-use aliased 'Packages::NifFile::NifFile';
-use aliased 'Helpers::GeneralHelper';
-use aliased 'Helpers::FileHelper';
+ 
 
 #-------------------------------------------------------------------------------------------#
 #  Public method
@@ -28,35 +22,45 @@ sub new {
 	$self = {};
 	bless $self;
 
-	# All controls
-	my @controls = ();
-	$self->{"controls"} = \@controls;
-
+ 
+ 	$self->{"description"} = shift;
+ 	$self->{"key"} = shift;
+  	$self->{"ver"} = shift;
+ 	$self->{"type"} = shift;
+ 	$self->{"mess"} = shift;
  
 	return $self;
 }
 
 
-sub Run {
+sub GetDesc{
 	my $self = shift;
-
- 
+	
+	return $self->{"description"};
 }
 
-sub __DoChecks {
-	my $self         = shift;
-	 
+sub GetKey{
+	my $self = shift;
+	
+	return $self->{"key"};
 }
 
-sub __SetState {
-	my $self  = shift;
-	 
+sub GetVersion{
+	my $self = shift;
+	
+	return $self->{"ver"};
 }
 
-sub __CreateCheckFile {
-	my $self  = shift;
+sub GetType{
+	my $self = shift;
+	
+	return $self->{"type"};
+}
 
- 
+sub GetMessage{
+	my $self = shift;
+	
+	return $self->{"mess"};
 }
  
 #-------------------------------------------------------------------------------------------#
@@ -65,16 +69,7 @@ sub __CreateCheckFile {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	use aliased 'Programs::LogService::MailSender::MailSender';
-
-	#	use aliased 'Packages::InCAM::InCAM';
-	#
-
-	my $sender = MailSender->new();
-
-	$sender->Run();
-
-	print "ee";
+	 
 }
 
 1;

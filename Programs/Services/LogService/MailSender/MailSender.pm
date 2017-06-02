@@ -15,6 +15,7 @@ use aliased 'Connectors::TpvConnector::TpvMethods';
 use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'Enums::EnumsApp';
 use aliased 'Programs::Services::LogService::MailSender::AppStopCond::TestStopCond';
+use aliased 'Programs::Services::LogService::MailSender::AppStopCond::ReOrderStopCond';
 use aliased 'Packages::NifFile::NifFile';
 use aliased 'Helpers::GeneralHelper';
 use aliased 'Helpers::FileHelper';
@@ -47,6 +48,7 @@ sub new {
 
 	my %stopSend = ();
 	$stopSend{ EnumsApp->App_TEST } = TestStopCond->new();
+	$stopSend{ EnumsApp->App_REORDER } = ReOrderStopCond->new();
 
 	$self->{"stopSend"} = \%stopSend;
 
@@ -222,7 +224,7 @@ sub __SendMail {
 	# prepare email html template
 	my %keysData = ();
 
-	$keysData{"key__appName"} = $appName;
+	$keysData{"key__appName"} = "App: ".EnumsApp->GetTitle($appName);
 
 	if ( $errType eq "Error" ) {
 		$keysData{"key__logTypeClr"} = "#FF8080";
@@ -256,7 +258,7 @@ sub __SendMail {
 	$sender->Open(
 		{
 		   to      => $mail,
-		   subject => "Server logs - $appName (warning  $appTotalSentMails/$appMaxSentMails)",
+		   subject => "Server logs - ".EnumsApp->GetTitle($appName)." (warning  $appTotalSentMails/$appMaxSentMails)",
 
 		   #msg     => "I'm sending you the list you wanted.",
 		   #file    => 'filename.txt'

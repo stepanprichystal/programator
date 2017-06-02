@@ -3,9 +3,12 @@
 
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Programs::TpvService::ReOrder::Checks::CheckBase;
+package Programs::Services::LogService::MailSender::AppStopCond::ReOrderStopCond;
 
- 
+
+use Class::Interface;
+&implements('Programs::Services::LogService::MailSender::AppStopCond::IStopCond');
+
 #3th party library
 use strict;
 use warnings;
@@ -19,15 +22,13 @@ use warnings;
 
 sub new {
 	my $self = shift;
-	my $checkKey = shift;
+	$self = {};
 	bless $self;
- 
-	$self->{"key"} = $checkKey;
  
 	return $self;
 }
 
-sub GetCheckKey {
+sub ProcessLog {
 	my $self = shift;
 	my $pcbId = shift;
 	

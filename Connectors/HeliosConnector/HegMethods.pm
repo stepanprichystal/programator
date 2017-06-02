@@ -65,6 +65,7 @@ sub GetAllByPcbId {
 				 d.datacode,
 				 d.konstr_trida,
 				 d.zakaznicke_cislo,
+				 d.zlaceni,
 				 dn.kus_x n_kus_x,
 				 dn.kus_y n_kus_y,
 				 dn.panel_x n_mpanel_x,
@@ -519,7 +520,8 @@ sub GetUserInfoHelios {
 				 z.pooling POOLing,
 				 d.material_druh Material,
 				 lcs.nf_edit_style('typ_desky_22', d.material_typ) Typ_desky,
-				 z.termin Termin
+				 z.termin Termin,
+				 d.priprava_tpv_nazev
 				 from lcs.desky_22 d with (nolock)
 				 left outer join lcs.subjekty c with (nolock) on c.cislo_subjektu=d.zakaznik
 				 left outer join lcs.subjekty m with (nolock) on m.cislo_subjektu=d.material
@@ -989,6 +991,7 @@ sub GetReorders {
 
 	my @result = Helper->ExecuteDataSet( $cmd, \@params );
 	
+	@result = grep {   $_->{"reference_subjektu"} =~ /^\w\d+-\d+$/} @result;
 	@result = grep {   $_->{"reference_subjektu"} !~ /-01/} @result;
 
 	 return @result;
@@ -1027,9 +1030,9 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	use aliased 'Connectors::HeliosConnector::HegMethods';
 
-	my @emp = HegMethods->GetReorders();
+	my @reorders = HegMethods->GetReorders( );
 
-	print @emp;
+	print "ddd";
 }
 
 1;

@@ -39,10 +39,8 @@ my %Context = (
 
 # Load configration file
  
-
-our $configPath = GeneralHelper->Root() . "\\Programs\\Services\\LogService\\Config";
-
-Helper->SetLogging(AppConf->GetValue("logFilePath"), 2);
+ 
+__SetLogging();
 
 # Start the service passing in a context and
 # indicating to callback using the "Running" event
@@ -66,9 +64,8 @@ sub WorkerMethod {
 sub Callback_Running {
 	my ( $Event, $Context ) = @_;
 
-	my $logger = get_logger("serviceLog");
-	print STDERR "ddd";
-
+	my $logger = get_logger("service");
+ 
 	# reduce log file
 	#my $pathstd = AppConf->GetValue("logFilePath") . "\\LogOut.txt";
 
@@ -144,6 +141,19 @@ sub Callback_Stop {
 	Win32::Daemon::StopService();
 }
 
+sub __SetLogging {
+	my $self = shift;
 
+	# 1) Create dir
+	my $logDirService = 'c:\tmp\InCam\scripts\logs\logService';
+	unless ( -e $logDirService ) {
+		mkdir($logDirService) or die "Can't create dir: " . $logDirService . $_;
+	}
+ 
+
+	Log::Log4perl->init( GeneralHelper->Root() . "\\Programs\\Services\\LogService\\Logger.conf" );
+ 
+
+}
 
 1;

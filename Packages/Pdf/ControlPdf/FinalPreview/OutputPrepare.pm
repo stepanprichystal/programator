@@ -26,7 +26,6 @@ use aliased 'CamHelpers::CamFilter';
 use aliased 'CamHelpers::CamHelper';
 use aliased 'CamHelpers::CamSymbol';
 use aliased 'Enums::EnumsGeneral';
-use aliased 'Packages::SystemCall::SystemCall';
 use aliased 'Packages::CAM::UniRTM::UniRTM::UniRTM';
 use aliased 'Packages::CAM::FeatureFilter::FeatureFilter';
 

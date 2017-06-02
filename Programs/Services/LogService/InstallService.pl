@@ -32,8 +32,8 @@ my %service_info = (
 					 name        => 'TPVLogService',
 					 display     => 'TPV logging service',
 					 path        => $ServicePath,
-					 user        => 'tpv-server@gatema.cz',
-					 password    => 'Po123',
+					# user        => 'tpv-server@gatema.cz',
+					 #password    => 'Po123',
 					 description => 'Send log emails to tpv workers from automation',
 					 parameters  => $ServiceParams
 );

@@ -3,7 +3,7 @@
 
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Programs::TpvService::ReOrder::ReOrder;
+package Programs::Services::TpvService::ReOrder::ReOrder;
 
 #3th party library
 use strict;

@@ -219,7 +219,13 @@ sub GetToolParam {
 		my $magazine = $tool->GetMagazine();    # number of magazine
 
 		if ( defined $magazine && $magazine ne "" ) {
-			$line .= "(" . $magazine . ")";
+			
+			# if magazine is "-", replace by empty string
+			if($magazine eq "-"){
+				$magazine = "";
+			}
+			
+			$line .=  $magazine;
 		
 		}else{
 			

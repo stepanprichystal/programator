@@ -174,7 +174,7 @@ sub CopyStepFinalCheck {
 					 "area_type"   => "rectangle",
 					 "inout"       => "outside",
 					 "contour_cut" => "yes",
-					 "margin"      => "500",
+					 "margin"      => "3500",
 					 "feat_types"  => "line\;pad;surface;arc;text",
 					 "pol_types"   => "positive\;negative"
 		);

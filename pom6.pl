@@ -6,6 +6,8 @@ use warnings;
 use Win32::Process;
 
 use aliased 'Helpers::GeneralHelper';
+use aliased 'Enums::EnumsPaths';
+use aliased "Helpers::FileHelper";
  
 
 	#print STDERR "\n\ncommand: $cmdStr\n\n";
@@ -23,11 +25,22 @@ use aliased 'Helpers::GeneralHelper';
 	{
 		die "InCAM does not exist on path: " . $inCAMPath;
 	}
+	
+	my $batCmd = $inCAMPath." -s". GeneralHelper->Root() . "\\pom5.pl";
+	$batCmd = "start $batCmd";
 
-	#my $cmd = "psexec.exe ".$inCAMPath. " -s". GeneralHelper->Root() . "\\pom2.pl";
-	my $cmd = "psexec.exe y:\\3.02\\bin\\InCAM.exe -s".GeneralHelper->Root() . "\\pom5.pl";
-
+	# Create batc file (because we can provide direct incam NETWORK path starting with \\, psexec thit it is a computer name.
+	# But computer name we didnt specify, because it is local computer)
+	my $bat = EnumsPaths->Client_INCAMTMPOTHER . GeneralHelper->GetGUID().".bat";
+	FileHelper->WriteString($bat,  $batCmd);
+	print STDERR $batCmd;
+	
+	 
+	#my $cmd = "psexec.exe -u spr\@gatema.cz -p Xprich04 -accepteula \\\\spr \\\\incam\\incam\\3.02\\bin\\InCAM.exe -s".GeneralHelper->Root() . "\\pom5.pl";
+	my $cmd = "psexec.exe  -u GATEMA\tpvserver -p Po123  -h -i \\\\tpv-server \\\\incam\\incam\\3.02\\bin\\InCAM.exe -s". GeneralHelper->Root() . "\\pom5.pl"; #tot funguje kdyz prihlaseni ze vydalene plochy
 	#$cmd = $inCAMPath;
+	#my $cmd = "psexec.exe  -h -i $batCmd";
+	
 
  	#my $fIndicator = EnumsPaths->Client_INCAMTMPOTHER . GeneralHelper->GetGUID();
  
@@ -37,6 +50,7 @@ use aliased 'Helpers::GeneralHelper';
 							0, NORMAL_PRIORITY_CLASS, "." )
 	  || die "Failed to create ExportUtility process.\n";
 
+	unlink($bat);
  
 	$processObj->Wait(INFINITE);
 	
