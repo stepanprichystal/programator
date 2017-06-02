@@ -1,0 +1,1 @@
+start c:\opt\InCAM\3.01SP1\bin\InCAM.exe

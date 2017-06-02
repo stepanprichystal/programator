@@ -1,6 +1,6 @@
 #-------------------------------------------------------------------------------------------#
-# Description: Simple Win service, responsible for checking error log DB and processing
-# new logs
+# Description: Simple Win service, where are running application
+# Like Reorder app, etc,..
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 
@@ -12,7 +12,6 @@ use warnings;
 use Log::Log4perl qw(get_logger :levels);
 use Try::Tiny;
 
-
 #use lib qw( y:\server\site_data\scripts );
 use lib qw( C:\Perl\site\lib\TpvScripts\Scripts );
 
@@ -22,6 +21,11 @@ use aliased 'Packages::Other::AppConf';
 use aliased 'Connectors::TpvConnector::TpvMethods';
 use aliased 'Programs::Services::Helper';
 use aliased 'Packages::InCAMCall::InCAMCall';
+use aliased 'Enums::EnumsPaths';
+use aliased 'Enums::EnumsApp';
+
+# applications
+use aliased 'Programs::Services::TpvService::ServiceApps::ReOrderApp::ReOrderApp';
 
 Win32::Daemon::RegisterCallbacks(
 	{
@@ -33,17 +37,32 @@ Win32::Daemon::RegisterCallbacks(
 	   #continue => \&Callback_Continue,
 	}
 );
+
+my %appStarts = ();
+
 my %Context = (
 				last_state => SERVICE_STOPPED,
 				start_time => time() / 1000,
+				appStarts  => \%appStarts
 );
 
 # Load configration file
- 
 
-our $configPath = GeneralHelper->Root() . "\\Programs\\Services\\TpvService\\Config";
 
-Helper->SetLogging(AppConf->GetValue("logFilePath"), 2);
+#Helper->SetLogging( 'c:\tmp\InCam\scripts\logs\tpvService', GeneralHelper->Root() . "\\Programs\\Services\\TpvService" );
+
+my $OLDOUT;
+my $OLDERR;
+##
+open $OLDOUT, ">&STDOUT" || die "Can't duplicate STDOUT: $!";
+open $OLDERR, ">&STDERR" || die "Can't duplicate STDERR: $!";
+open( STDOUT, "+>", 'c:\tmp\InCam\scripts\logs\test2' );
+open( STDERR, ">&STDOUT" );
+
+__SetLogging();
+
+#
+#print "test";
 
 # Start the service passing in a context and
 # indicating to callback using the "Running" event
@@ -56,37 +75,72 @@ Win32::Daemon::StartService( \%Context, 2000 );
 sub WorkerMethod {
 	my $Context = shift;
 
-	my $logger = get_logger("serviceLog");
-	 
-	my $paskageName = "Packages::InCAMCall::Example";
-	my @par1        = ( "k" => "1" );
-	my %par2      = ( "par1", "par2" );
-	
+	my $logger = get_logger("service");
 
-		$logger->debug("test 1\n");
+	# ------------------------------------------------
+	# all registered app + period of launch in minutes
+	#-------------------------------------------------
 
-	my $call = InCAMCall->new( $paskageName, \@par1, \%par2 );
-	
-		$logger->debug("test 2\n");
-	
-	
-	my $result = $call->Run();
-	my %result = $call->GetOutput();
-	
-	$logger->debug("test 3\n");
+	my %regApp = ();
+	$regApp{ EnumsApp->App_REORDER } = 1;
 
+	# ------------------------------------------------
 
-	
-	$logger->debug("Odpoved y incam: ". $result{"userName"});
-	 
+	# Launch app according last launch time
+	foreach my $appName ( keys %regApp ) {
 
+		if ( !defined $Context->{"appStarts"}->{$appName}
+			 || ( $Context->{"appStarts"}->{$appName} + $regApp{$appName} * 60 ) < time() )
+		{
+
+			$logger->info("Launch app $appName");
+
+			eval {
+
+				$Context->{"appStarts"}->{$appName} = time();
+
+				$logger->info("Before launch app $appName");
+				my $app = __GetApp($appName);
+				$logger->info("After init app $appName");
+
+				$app->Run();
+
+			};
+			if ($@) {
+
+				$logger->error("Error during running app $appName. Error message: $@");
+
+			}
+
+			$logger->info("End app $appName");
+		}
+	}
+}
+
+sub __GetApp {
+	my $appName = shift;
+
+	my $app = undef;
+
+	if ( $appName eq EnumsApp->App_REORDER ) {
+
+		print STDERR "BEFORE GET";
+
+		my $logger = get_logger("service");
+		$logger->debug("get app");
+		$app = ReOrderApp->new();
+
+		print STDERR "AFTER GET";
+
+	}
+
+	return $app;
 }
 
 sub Callback_Running {
 	my ( $Event, $Context ) = @_;
 
-	my $logger = get_logger("serviceLog");
-	print STDERR "ddd";
+	my $logger = get_logger("service");
 
 	# reduce log file
 	#my $pathstd = AppConf->GetValue("logFilePath") . "\\LogOut.txt";
@@ -163,6 +217,27 @@ sub Callback_Stop {
 	Win32::Daemon::StopService();
 }
 
+sub __SetLogging {
+	my $self = shift;
 
+	# 1) Create dir
+	my $logDirService = 'c:\tmp\InCam\scripts\logs\tpvService';
+	unless ( -e $logDirService ) {
+		mkdir($logDirService) or die "Can't create dir: " . $logDirService . $_;
+	}
+
+	# 1) Create log dir
+	my $logDirReorder = 'c:\tmp\InCam\scripts\logs\reOrder';
+	unless ( -e $logDirReorder ) {
+		mkdir($logDirReorder) or die "Can't create dir: " . $logDirReorder . $_;
+	}
+
+	print STDERR "berofe init";
+
+	Log::Log4perl->init( GeneralHelper->Root() . "\\Programs\\Services\\TpvService\\Logger.conf" );
+	
+	print STDERR "after init";
+
+}
 
 1;

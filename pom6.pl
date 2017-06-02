@@ -1,60 +1,61 @@
-#use Log::Log4perl qw(:easy);
-use Log::Log4perl qw(get_logger :levels);
-#
-#Log::Log4perl->easy_init(
-#	{
-#	  level  => $DEBUG,
-#	  file   => 'test.out',        # make sure not to use stderr here!
-#	  layout => "%d %M: %m%n",
-#	}
-#);
+ 
+#3th party library
+use strict;
+use warnings;
+ use Config;
+use Win32::Process;
 
-my $mainLogger = get_logger("test");
-$mainLogger->level($DEBUG);
+use aliased 'Helpers::GeneralHelper';
+use aliased 'Enums::EnumsPaths';
+use aliased "Helpers::FileHelper";
+ 
 
-# Appenders
-my $appenderFile = Log::Log4perl::Appender->new(
-												 'Log::Log4perl::Appender::File::FixedSize',
-												 filename => "test.out2",
-												 mode     => "append",
-												 size     => '1Kb'
-);
+	#print STDERR "\n\ncommand: $cmdStr\n\n";
+	#my $result = system($cmdStr);
+ 	my $processObj;
+	#my $perl = $Config{perlpath};
 
-my $layout = Log::Log4perl::Layout::PatternLayout->new("%d> %m%n ");
-$appenderFile->layout($layout);
+	# CREATE_NEW_CONSOLE - script will run in completely new console - no interaction with old console
+ 
+ 
+ 	my $inCAMPath = GeneralHelper->GetLastInCAMVersion();
+	$inCAMPath .= "bin\\InCAM.exe";
 
-$mainLogger->add_appender($appenderFile);
+	unless ( -f $inCAMPath )    # does it exist?
+	{
+		die "InCAM does not exist on path: " . $inCAMPath;
+	}
+	
+	my $batCmd = $inCAMPath." -s". GeneralHelper->Root() . "\\pom5.pl";
+	$batCmd = "start $batCmd";
 
-tie *STDERR, "Trapper";
-tie *STDOUT, "Trapper";
+	# Create batc file (because we can provide direct incam NETWORK path starting with \\, psexec thit it is a computer name.
+	# But computer name we didnt specify, because it is local computer)
+	my $bat = EnumsPaths->Client_INCAMTMPOTHER . GeneralHelper->GetGUID().".bat";
+	FileHelper->WriteString($bat,  $batCmd);
+	print STDERR $batCmd;
+	
+	 
+	#my $cmd = "psexec.exe -u spr\@gatema.cz -p Xprich04 -accepteula \\\\spr \\\\incam\\incam\\3.02\\bin\\InCAM.exe -s".GeneralHelper->Root() . "\\pom5.pl";
+	my $cmd = "psexec.exe  -u GATEMA\tpvserver -p Po123  -h -i \\\\tpv-server \\\\incam\\incam\\3.02\\bin\\InCAM.exe -s". GeneralHelper->Root() . "\\pom5.pl"; #tot funguje kdyz prihlaseni ze vydalene plochy
+	#$cmd = $inCAMPath;
+	#my $cmd = "psexec.exe  -h -i $batCmd";
+	
 
-print STDERR "test";
-print STDERR "test";
-print STDERR "test2";
-print STDERR "test2";
+ 	#my $fIndicator = EnumsPaths->Client_INCAMTMPOTHER . GeneralHelper->GetGUID();
+ 
 
-########################################
-package Trapper;
-########################################
+	Win32::Process::Create( $processObj, "c:\\pstools\\psexec.exe",
+							$cmd,
+							0, NORMAL_PRIORITY_CLASS, "." )
+	  || die "Failed to create ExportUtility process.\n";
 
-#use Log::Log4perl qw(:easy);
-use Log::Log4perl qw(get_logger :levels);
-
-#use Log::Log4perl qw(:easy);
-
-sub TIEHANDLE {
-	my $class = shift;
-	bless [], $class;
-
-}
-
-sub PRINT {
-	my $self = shift;
-
-	#$Log::Log4perl::caller_depth++;
-	get_logger("test")->Error(@_);
-
-	#$Log::Log4perl::caller_depth--;
-}
-
+	unlink($bat);
+ 
+	$processObj->Wait(INFINITE);
+	
+	my $processErr =  Win32::GetLastError();
+	print STDERR $processErr;
+ 
 1;
+

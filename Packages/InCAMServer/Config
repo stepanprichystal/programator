@@ -1,0 +1,19 @@
+# Port number where start port of initialized incams
+portStart = 3501
+
+# maximum incam instances running together
+maxClients = 2
+
+# Default duration in minutes, before InCAM server will by automatically destroyed
+defaultTimeout = 10
+
+# # max time, client will be wating on incame before die
+attemptCnt = 200
+
+# Port of incam server
+serverPort = 3500
+
+# Host of incam server
+serverHost = localhost
+
+ 

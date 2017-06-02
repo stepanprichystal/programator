@@ -717,9 +717,7 @@ sub VON {
 # Checking is off. If a command fails, the script continues
 sub VOF {
 	my ($self) = shift;
-
-	print STDERR "zdarec 2\n";
-
+ 
 	$self->sendCommand( "VOF", "" );
 }
 

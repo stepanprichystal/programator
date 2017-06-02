@@ -71,6 +71,9 @@ sub Run {
 
  	my $fIndicator = EnumsPaths->Client_INCAMTMPOTHER . GeneralHelper->GetGUID();
  
+ 
+ 	$self->{"runScrpit"} = 'c:\Perl\site\lib\TpvScripts\Scripts\pom5.pl';
+ 
 	my @cmd = ("InCAM.exe -s".$self->{"runScrpit"});
 
 	push( @cmd, $self->{"packageName"} );
@@ -88,12 +91,14 @@ sub Run {
 	print $f "Su zde 1 $inCAMPath $cmdStr\n";
 	close $f;
 	
-	use Config;
-	my $perl = $Config{perlpath};
+	#use Config;
+	#my $perl = $Config{perlpath};
+ 
+ 	#$inCAMPath = 'c:\opt\InCAM\3.01SP1\bin\InCAM.exe';
  
 	my $processObj;
-	Win32::Process::Create( $processObj, $perl, "perl -w c:\\Perl\\site\\lib\\TpvScripts\\Scripts\\pom5.pl", 0, THREAD_PRIORITY_NORMAL, "." )
-	  || die "$!\n";
+	Win32::Process::Create( $processObj, $inCAMPath, $cmdStr, 0, THREAD_PRIORITY_NORMAL | CREATE_NEW_CONSOLE, "." )
+	  || die " run process $!\n";
 
 	my $pidInCAM = $processObj->GetProcessID();
 

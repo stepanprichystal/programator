@@ -3,10 +3,11 @@ package Programs::Exporter::ExportUtility::Groups::NCExport::NCExportTmp;
 #3th party library
 use strict;
 use warnings;
+use Wx;
 
 use PackagesLib;
 
-use aliased 'Enums::EnumsGeneral';
+ 
 use aliased 'Packages::Export::NCExport::ExportMngr';
 use aliased 'CamHelpers::CamJob';
 use aliased 'CamHelpers::CamDrilling';
@@ -21,11 +22,14 @@ use aliased 'Packages::Events::Event';
 use aliased "Programs::Exporter::ExportChecker::Groups::NCExport::Presenter::NCUnit"  => "Unit";
 use aliased "Programs::Exporter::ExportUtility::Groups::NCExport::NCWorkUnit" => "UnitExport";
 
-use aliased 'Programs::Exporter::ExportUtility::Groups::NCExport::NCExport';
+ 
 use aliased 'Programs::Exporter::ExportUtility::DataTransfer::UnitsDataContracts::NCData';
 use aliased 'Programs::Exporter::ExportUtility::UnitEnums';
 
 use aliased 'Managers::MessageMngr::MessageMngr';
+use aliased 'Programs::Exporter::ExportChecker::ExportChecker::DefaultInfo::DefaultInfo';
+use aliased 'Packages::ItemResult::ItemResultMngr';
+use aliased 'Enums::EnumsGeneral';
 
 #-------------------------------------------------------------------------------------------#
 #  NC export, all layers, all machines..
@@ -48,23 +52,38 @@ sub Run {
 	my $inCAM = shift;
 	my $jobId = shift;
 
-	my $exportSingle  = shift;
-	my $pltLayers  = shift;
-	my $npltLayers = shift;
+	$self->{"defaultInfo"} = DefaultInfo->new( $inCAM, $jobId );
 
-	my $stepName = "panel";
+	# Check data
 
-	#GET INPUT NIF INFORMATION
- 
+	my $resultMngr = ItemResultMngr->new();
+
+	my $unit = Unit->new($jobId);
+	$unit->SetDefaultInfo( $self->{"defaultInfo"} );
+	$unit->InitDataMngr($inCAM);
+	$unit->CheckBeforeExport( $inCAM, \$resultMngr );
+
+	unless ( $resultMngr->Succes() ) {
+
+		my $str = "";
+		$str .= $resultMngr->GetErrorsStr();
+		$str .= $resultMngr->GetWarningsStr();
+
+		my $messMngr = MessageMngr->new( $self->{"jobId"} );
+
+		my @mess1 = ( "Kontrola pred exportem", $str );
+		$messMngr->ShowModal( -1, EnumsGeneral->MessageType_ERROR, \@mess1 );
+
+		#return 0;
+	}
 
 	my $taskData = $unit->GetExportData($inCAM);
 	my $exportClass = UnitExport->new( $self->{"id"} );
 	$exportClass->SetTaskData($taskData);
+ 
 
 	$exportClass->Init( $inCAM, $jobId, $taskData );
 	$exportClass->{"onItemResult"}->Add( sub { Test(@_) } );
-	
- 
 	$exportClass->Run();
 
 	print "\n========================== E X P O R T: " . UnitEnums->UnitId_NC . " ===============================\n";

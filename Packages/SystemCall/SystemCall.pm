@@ -30,10 +30,10 @@ sub new {
 	my @params = ();
 	$self->{"params"} = \@params;
 
-	$self->{"scriptPath"} = shift;  # path of script which will be execute
+	$self->{"scriptPath"} = shift;    # path of script which will be execute
 
 	# all parameters, which srcipt above consum
-	while ( my $p = shift ) {    
+	while ( my $p = shift ) {
 
 		$self->_AddParameter($p);
 
@@ -74,26 +74,36 @@ sub Run {
 
 	if ( -e $self->{"output"} ) {
 
-		my $d = FileHelper->ReadAsString( $self->{"output"} );
-		$self->{"outputData"} = $d;
-		unlink( $self->{"output"} );
+		my $serializeData = FileHelper->ReadAsString( $self->{"output"} );
+
+		my $json = JSON->new();
+
+		$self->{"outputData"} = $json->decode($serializeData);
+
+	}
+	else {
+
+		$result = 0;
+	}
+
+	# Test if custom package was run properly
+	if ( $self->{"outputData"}->{"__SystemCallResult"} == 0 ) {
+		
+		print STDERR "Error during system-call: ".$self->{"outputData"}->{"__SystemCallResult"}."\n";
+		$result = 0;
 	}
 
 	#print STDERR "Result system call: $result\n\n";
 
-	if ( $result > 0 ) {
-		return 0;
-	}
-	else {
-		return 1;
-	}
+	return $result;
 
 }
 
 # Script can retun output.
 sub GetOutput {
 	my $self = shift;
-	return $self->{"outputData"};
+
+	return %{ $self->{"outputData"} };
 }
 
 sub _AddParameter {

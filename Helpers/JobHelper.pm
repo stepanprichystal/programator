@@ -96,7 +96,24 @@ sub GetJobArchive {
 		
 		return EnumsPaths->Jobs_ARCHIV . substr( $jobId, 0, 4 ) . "\\" . $jobId . "\\";
 	}
- 
+}
+
+# return path of job el test
+sub GetJobElTest {
+	my $self  = shift;
+	my $jobId = shift;
+	
+ 	
+	# old format - D12345
+	if(length($jobId) == 6){
+		
+		return EnumsPaths->Jobs_ELTESTS . substr( $jobId, 0, 3 ) . "\\" . $jobId . "t\\";
+	}
+	# new format  - D123456 
+	else{
+		
+		return EnumsPaths->Jobs_ELTESTS . substr( $jobId, 0, 4 ) . "\\" . $jobId . "t\\";
+	}
 }
 
 sub GetJobOutput {

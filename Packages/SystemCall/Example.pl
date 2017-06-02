@@ -25,14 +25,16 @@ use warnings;
 #  Script code
 #-------------------------------------------------------------------------------------------#
 
-my $output = shift(@_);    # save here output message
-my $cmds   = shift(@_);    # all parameters, which are passed to construcotr of SystemCall class
+my $output = shift(@_);    # save here output message (hash reference)
+my $cmds   = shift(@_);    # all parameters, which are passed to construcotr of SystemCall class (array reference)
 
 DoTask($cmds);
 
 sub DoTask {
 
 	my $cmds = shift;
+	
+	$output->{"myResult"} = "abc";
 
 	# do some staff..
 

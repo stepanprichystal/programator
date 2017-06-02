@@ -437,6 +437,24 @@ sub GetJobList {
 	return @jobs;
 }
 
+
+# Return if job is imported and exit in incamdb
+sub JobExist {
+	my $self  = shift;
+	my $inCAM = shift;
+	my $jobId = shift;
+	
+	my @list =$self->GetJobList($inCAM);
+	
+	my $exist = scalar( grep { $_ =~ /^$jobId$/i } @list );
+
+	if($exist > 0){
+		return 1;
+	}else{
+		return 0;
+	}
+ 
+}
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#
@@ -451,9 +469,9 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	my $jobId = "f52457";
 
 	my $user = undef;
-	my $minTool = CamJob->IsJobOpen( $inCAM, $jobId, 1, \$user );
+	my $minTool = CamJob->JobExist( $inCAM, "f54555555");
 
-	print $user;
+	print $minTool;
 
 }
 

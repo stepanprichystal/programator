@@ -3,12 +3,9 @@
 
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Programs::TpvService::ReOrder::Checks::Check_DATACODE_IS;
-use base('Programs::TpvService::ReOrder::Checks::CheckBase');
+package Programs::Services::TpvService::ServiceApps::ReOrderApp::ReOrder::Checks::CheckBase;
 
-use Class::Interface;
-&implements('Programs::TpvService::ReOrder::Checks::ICheck');
-
+ 
 #3th party library
 use strict;
 use warnings;
@@ -21,15 +18,18 @@ use warnings;
 #-------------------------------------------------------------------------------------------#
 
 sub new {
-	my $class = shift;
-	my $self  = $class->SUPER::new("DATACODE_IS");
-	bless($self);
+	my $self = shift;
+	my $checkKey = shift;
 	
-	
+	$self = {};
+	bless $self;
+ 
+	$self->{"key"} = $checkKey;
+ 
 	return $self;
 }
 
-sub NeedChange {
+sub GetCheckKey {
 	my $self = shift;
 	my $pcbId = shift;
 	

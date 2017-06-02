@@ -9,6 +9,7 @@
 use threads;
 use strict;
 use warnings;
+use JSON;
 
 #necessary for load pall packages
 use FindBin;
@@ -18,7 +19,7 @@ use PackagesLib;
 use lib qw( C:\Perl\site\lib\TpvScripts\Scripts );
 
 #local library
-use aliased 'Packages::SystemCall::Helper';
+use aliased 'Packages::SystemCall::Helper' => "SystemCallHelper";
 
 #-------------------------------------------------------------------------------------------#
 #  Script code
@@ -32,33 +33,42 @@ while ( my $p = shift ) {
 	push( @files, $p );
 }
 
-my @parsed = Helper->ParseParams( \@files );
+my @parsed = SystemCallHelper->ParseParams( \@files );
 
-my $output = undef;    # output value, message
+my %outputHash = ();    # output value, message
 my $result = 1;
 
 eval {
 
-	local @_ = (\$output, @parsed);
+	$outputHash{"__SystemCallResult"} = 0;
+
+	local @_ = (\%outputHash, @parsed);
 	require $scriptPath;
+	
+	$outputHash{"__SystemCallResult"} = 1;
 
 	$result = 0;
 
 };
 if ($@) {
 
-	$output = $_; # id exception save it as output value
+	 
+	$outputHash{"__SystemCallResult"} = $@; # id exception save it as output value
 	
 }
 
 # save result/output message
-if ( -e $outputPath || $output) {
+if ( defined $outputPath  ) {
+ 
 
 	unlink($outputPath);
 
-	my $f;
-	open( $f, '>', $outputPath );
-	print $f $output;
+	my $json = JSON->new()->allow_nonref();
+
+	my $serialized = $json->pretty->encode( \%outputHash );
+
+	open( my $f, '>', $outputPath );
+	print $f $serialized;
 	close $f;
 }
 
