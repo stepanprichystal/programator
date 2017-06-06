@@ -91,7 +91,7 @@ sub CheckNCLayers {
 
 	# 2) Check if layer is not empty
 
-	unless ( $self->CheckIsNotEmpty( \@layers, $stepName,  $mess ) ) {
+	unless ( $self->CheckIsNotEmpty( \@layers, $stepName, $mess ) ) {
 
 		$result = 0;
 	}
@@ -153,17 +153,17 @@ sub CheckNCLayers {
 }
 
 sub CheckIsNotEmpty {
-	my $self   = shift;
-	my @layers = @{ shift(@_) };
+	my $self     = shift;
+	my @layers   = @{ shift(@_) };
 	my $stepName = shift;
-	my $mess   = shift;
+	my $mess     = shift;
 
 	my $result = 1;
 
 	foreach my $l (@layers) {
-		
+
 		# if panel is not step, NC layer can be empty
-		if($stepName ne "panel" && defined $l->{"type"}){
+		if ( $stepName ne "panel" && defined $l->{"type"} ) {
 			next;
 		}
 
@@ -377,8 +377,7 @@ sub CheckDirBot2Top {
 		if ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_plt_cDrill && $dir && $dir eq "bot2top" ) {
 
 			$result = 0;
-			$$mess .=
-"Vrstva: $lName má špatně nastavený vrták v metrixu u vrtání jádra. Vrták musí mít vždy směr TOP-to-BOT.\n";
+			$$mess .= "Vrstva: $lName má špatně nastavený vrták v metrixu u vrtání jádra. Vrták musí mít vždy směr TOP-to-BOT.\n";
 
 		}
 	}
@@ -396,7 +395,7 @@ sub CheckToolParameters {
 	my $mess     = shift;
 
 	my $result = 1;
-	
+
 	my $layerCnt = CamJob->GetSignalLayerCnt( $inCAM, $jobId );
 
 	foreach my $l (@layers) {
@@ -415,18 +414,40 @@ sub CheckToolParameters {
 			$$mess .= "NC layer \"" . $l->{"gROWname"} . "\".\n";
 			$$mess .= "Layer, which contains plated routing/drilling must have set DTM type \"vrtane\" or \"vysledne\" at least in nested steps.\n";
 		}
-		
+
 		# 3) If "neplat/1 side pcb" check if DTM type is "vrtane"
-		if($layerCnt < 2 ){
-			
-			if ( $DTMType eq EnumsDrill->DTM_VYSLEDNE){
+		if ( $layerCnt < 2 ) {
+
+			if ( $DTMType eq EnumsDrill->DTM_VYSLEDNE ) {
 				$result = 0;
 				$$mess .= "NC layer \"" . $l->{"gROWname"} . "\".\n";
 				$$mess .= "Pcb which is NOT plated has to set Drill Tool Manager type: \"vrtane\" not type: \"vysledne\". \n";
-			}	
+			}
+		}
+
+		# 4) Check if rout doesn't contain tool size smaller than 500
+		if ( $l->{"gROWlayer_type"} eq "rout" ) {
+ 
+			my @unitTools = $l->{"uniDTM"}->GetTools();
+
+			foreach my $t (@unitTools) {
+
+				if ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_score ) {
+					next;
+				}
+
+				if ( $t->GetDrillSize() < 500 ) {
+					$result = 0;
+					$$mess .= "NC layer \"" . $l->{"gROWname"} . "\".\n";
+					$$mess .=
+					    "Routing layers should not contain tools diamaeter smaller than 500µm. Layer contains tool diameter: "
+					  . $t->GetDrillSize()
+					  . "µm.\n";
+				}
+			}
 		}
 	}
- 
+
 	return $result;
 }
 
@@ -500,7 +521,6 @@ sub CheckContainNoDepth {
 
 }
 
-
 # Check if tools are unique within while layer, check if all necessary parameters are set
 sub CheckDiamterDiff {
 	my $self     = shift;
@@ -518,31 +538,30 @@ sub CheckDiamterDiff {
 	push( @t, EnumsGeneral->LAYERTYPE_plt_cDrill );
 	push( @t, EnumsGeneral->LAYERTYPE_plt_nMill );
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_nMill );
-	push( @t, EnumsGeneral->LAYERTYPE_nplt_rsMill );	
+	push( @t, EnumsGeneral->LAYERTYPE_nplt_rsMill );
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_lcMill );
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_lsMill );
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_kMill );
 
 	@layers = $self->__GetLayersByType( \@layers, \@t );
 
-
 	foreach my $l (@layers) {
- 
-		my @tools = grep { $_->GetSource() eq Enums->Source_DTM  } $l->{"uniDTM"}->GetTools();
-		@tools = grep { ( $_->GetFinishSize() - 100) > $_->GetDrillSize() } @tools;
-		
-		if(scalar(@tools)){
-			
-			@tools = map { "DrillSize ".$_->GetDrillSize()."µm < FinishSize ".$_->GetFinishSize()."µm" } @tools;
-			my $str = join("; ",@tools);
+
+		my @tools = grep { $_->GetSource() eq Enums->Source_DTM } $l->{"uniDTM"}->GetTools();
+		@tools = grep { ( $_->GetFinishSize() - 100 ) > $_->GetDrillSize() } @tools;
+
+		if ( scalar(@tools) ) {
+
+			@tools = map { "DrillSize " . $_->GetDrillSize() . "µm < FinishSize " . $_->GetFinishSize() . "µm" } @tools;
+			my $str = join( "; ", @tools );
 			$result = 0;
 			$$mess .= "NC layer \"" . $l->{"gROWname"} . "\".\n";
 			$$mess .= "\"Drill size\" diameters must be greater than \"Finish size\" diameters. Problem tools: $str \n";
-			
+
 		}
- 
+
 	}
- 
+
 	return $result;
 }
 

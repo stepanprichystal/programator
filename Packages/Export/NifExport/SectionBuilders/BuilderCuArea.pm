@@ -57,7 +57,6 @@ sub Build {
 	my $stackupNC;
 	my $coreCnt;
 	my $pressCnt;
- 
 
 	if ( $self->{"layerCnt"} > 2 ) {
 		$stackup   = Stackup->new($jobId);
@@ -205,8 +204,7 @@ sub Build {
 		$imerseSurf += $val;
 		$section->AddRow( "gold_s", $val );
 	}
-	
-	
+
 	#imersni_plocha
 	if ( $self->_IsRequire("imersni_plocha") ) {
 
@@ -215,7 +213,6 @@ sub Build {
 
 		$section->AddRow( "imersni_plocha", $imerseSurf );
 	}
-	
 
 	#zlacena_plocha
 	if ( $self->_IsRequire("zlacena_plocha") ) {
@@ -233,8 +230,6 @@ sub Build {
 
 		$section->AddRow( "zlacena_plocha", $area );
 	}
-
-
 
 	# Cu area (if blind holes) during pressing
 	if ( $self->{"layerCnt"} > 2 && $pressCnt > 0 ) {
@@ -337,43 +332,61 @@ sub Build {
 		my $blindTopExist = CamDrilling->NCLayerExists( $inCAM, $jobId, EnumsGeneral->LAYERTYPE_plt_bDrillTop );
 		my $blindBotExist = CamDrilling->NCLayerExists( $inCAM, $jobId, EnumsGeneral->LAYERTYPE_plt_bDrillBot );
 		$blindDrillExist = ( $blindTopExist || $blindBotExist ) ? 1 : 0;
-		
-	}
 
+	}
 
 	#flash
 	if ( $self->_IsRequire("flash") ) {
 
 		my $prog;
-		
-		my $condMill_hal = $pltMillExist && $surface =~ /^b$/i;  # b je hal
-		my $noNcOperation = !$condMill_hal && !$rsMillExist && !$blindDrillExist;
 
-		if ( $noNcOperation || (!$noNcOperation && $cuThickness > 70 )) {
+		###=> Zruseno DS 24.5.2017 ###
+		#my $condMill_hal = $pltMillExist && $surface =~ /^b$/i;  # b je hal
+		#my $noNcOperation = !$condMill_hal && !$rsMillExist && !$blindDrillExist;
 
+		#		if ( $noNcOperation || (!$noNcOperation && $cuThickness > 70 )) {
+		#
+		#			$prog = 0;
+		#		}
+		#		else {
+		#			$prog = 1;
+		#		}
+
+		if ( !$rsMillExist && !$blindDrillExist ) {
+			
 			$prog = 0;
 		}
 		else {
+			
 			$prog = 1;
 		}
 
 		$section->AddRow( "flash", $prog );
 	}
 
-
 	#pattern
 	if ( $self->_IsRequire("pattern") ) {
 
 		my $prog;
 
-		my $condMill_hal = $pltMillExist && $surface =~ /^b$/i;
-		my $noNcOperation = !$condMill_hal && !$rsMillExist && !$blindDrillExist;
+		###=> Zruseno DS 24.5.2017 ###
+#		my $condMill_hal = $pltMillExist && $surface =~ /^b$/i;
+#		my $noNcOperation = !$condMill_hal && !$rsMillExist && !$blindDrillExist;
+#
+#		if ( $noNcOperation || ( !$noNcOperation && $cuThickness > 70 ) ) {
+#
+#			$prog = 1;
+#		}
+#		else {
+#			$prog = 3;
+#		}
 
-		if ( $noNcOperation || (!$noNcOperation && $cuThickness > 70 )) {
-
+		if ( !$rsMillExist && !$blindDrillExist ) {
+			
 			$prog = 1;
 		}
 		else {
+			
 			$prog = 3;
 		}
 
