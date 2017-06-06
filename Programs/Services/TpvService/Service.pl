@@ -51,13 +51,13 @@ my %Context = (
 
 #Helper->SetLogging( 'c:\tmp\InCam\scripts\logs\tpvService', GeneralHelper->Root() . "\\Programs\\Services\\TpvService" );
 
-my $OLDOUT;
-my $OLDERR;
+#my $OLDOUT;
+#my $OLDERR;
 ##
-open $OLDOUT, ">&STDOUT" || die "Can't duplicate STDOUT: $!";
-open $OLDERR, ">&STDERR" || die "Can't duplicate STDERR: $!";
-open( STDOUT, "+>", 'c:\tmp\InCam\scripts\logs\test2' );
-open( STDERR, ">&STDOUT" );
+#open $OLDOUT, ">&STDOUT" || die "Can't duplicate STDOUT: $!";
+#open $OLDERR, ">&STDERR" || die "Can't duplicate STDERR: $!";
+#open( STDOUT, "+>", 'c:\tmp\InCam\scripts\logs\test2' );
+#open( STDERR, ">&STDOUT" );
 
 __SetLogging();
 
