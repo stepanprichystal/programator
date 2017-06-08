@@ -23,25 +23,25 @@ my $ServicePath = $^X;
 #    $ServiceParams = '-param1 -param2 "c:\\Param2Path"';
 # OTHERWISE
 # it MUST point to the perl script file that is the service such as:
-# tady nesmi byt adresa Y! ale \\incaam\incam
-my $ServiceParams = "\\\\incam\\incam\\server\\site_data\\scripts\\Programs\\Services\\TpvService\\Service.pl";
+my $ServiceParams = GeneralHelper->Root() . "\\Programs\\Services\\TestService\\ServiceMin.pl";
 
 # Login has to be filled, for that service can attemt to o=ODBC connection
 
 my %service_info = (
 					 machine     => '',
-					 name        => 'TPVCustomService',
-					 display     => 'TPV custom service',
+					 name        => 'ServiceTest',
+					 display     => 'ServiceTest',
 					 path        => $ServicePath,
-					 user        => 'tpvserver@gatema.cz',
-					 password    => 'Po123',
-					 description => 'Run several task such as pcb reorder control..',
-					 parameters  => $ServiceParams
+					 user        => 'spr@gatema.cz',
+					 password    => 'Xprich04',
+					 description => 'Send log emails to tpv workers from automation',
+					 parameters  => $ServiceParams,
+					 start_type   => SERVICE_AUTO_START
 );
 
 
 # 1) First remove service before if exist
-if ( Win32::Daemon::DeleteService("", 'TPVCustomService') ){
+if ( Win32::Daemon::DeleteService("", 'ServiceTest') ){
 	print "Successfully removed.\n";
 }
 else {

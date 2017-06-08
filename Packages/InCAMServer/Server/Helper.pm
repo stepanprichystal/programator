@@ -10,7 +10,7 @@ use strict;
 use Log::Log4perl qw(get_logger :levels);
 use Win32::Process;
 use Config;
-
+use Win32::Console;
 use Win32::GuiTest qw(FindWindowLike SetWindowPos ShowWindow);
 use Getopt::Std;
 
@@ -59,6 +59,8 @@ sub CheckRunningApp {
 	if ( $cnt > 1 ) {
 
 		print STDERR "Attempt to run another instance of InCAMServerScript.pl. Actual cnt of instances: $cnt";
+		
+		sleep(2);
 		exit(0);
 
 	}

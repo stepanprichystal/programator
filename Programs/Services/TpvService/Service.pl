@@ -67,7 +67,7 @@ __SetLogging();
 # Start the service passing in a context and
 # indicating to callback using the "Running" event
 # every 2000 milliseconds (10 seconds).
-Win32::Daemon::StartService( \%Context, 2000 );
+Win32::Daemon::StartService( \%Context, 10000 );
 
 # Now let the service manager know that we are running...
 Win32::Daemon::State( SERVICE_RUNNING );
@@ -82,9 +82,11 @@ sub WorkerMethod {
 	#-------------------------------------------------
 
 	my %regApp = ();
-	$regApp{ EnumsApp->App_REORDER } = 1;
+	$regApp{ EnumsApp->App_REORDER } = 2;
 
 	# ------------------------------------------------
+	
+	$logger->debug("In working method");
 
 	# Launch app according last launch time
 	foreach my $appName ( keys %regApp ) {
@@ -115,6 +117,9 @@ sub WorkerMethod {
 			$logger->info("End app $appName");
 		}
 	}
+	
+	$logger->debug("Out of working method");
+	
 }
 
 sub __GetApp {
@@ -123,15 +128,10 @@ sub __GetApp {
 	my $app = undef;
 
 	if ( $appName eq EnumsApp->App_REORDER ) {
-
-		print STDERR "BEFORE GET";
-
+		
 		my $logger = get_logger("service");
 		$logger->debug("get app");
 		$app = ReOrderApp->new();
-
-		print STDERR "AFTER GET";
-
 	}
 
 	return $app;
@@ -184,7 +184,7 @@ sub Callback_Running {
 		};
 		if ($@) {
 
-			$logger->error($@);
+			$logger->error("Service fatal error in worker method:".$@);
 			Win32::Daemon::State(SERVICE_RUNNING);
 
 		}

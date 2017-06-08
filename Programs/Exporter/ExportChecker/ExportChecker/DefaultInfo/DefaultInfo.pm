@@ -62,9 +62,7 @@ sub new {
 	$self->{"costomerInfo"}  = undef;    # info about customer, name, reference, ...
 	$self->{"costomerNote"}  = undef;    # notes about customer, like export paste, info to pdf, ..
 	$self->{"pressfitExist"} = undef;    # if pressfit exist in job
-	$self->{"pcbBaseInfo"} = undef;    # contain base info about pcb from IS
-	
-	
+	$self->{"pcbBaseInfo"}   = undef;    # contain base info about pcb from IS
 
 	$self->__InitDefault();
 
@@ -213,19 +211,21 @@ sub GetEtchType {
 			}
 		}
 
-		# 3) Check on plated rout most outer layers
+		# 3) Check on plated rout most outer layers (only when surface is not hard galvanic gold)
 
 		if ( $layerName eq "c" || $layerName eq "s" ) {
 
-			if ( $self->{"platedRoutExceed"} || $self->{"rsExist"} ) {
-				$etchType = EnumsGeneral->Etching_PATTERN;
+			if ( $self->{"surface"} !~ /g/i ) {
+				
+				if ( $self->{"platedRoutExceed"} || $self->{"rsExist"} ) {
+					$etchType = EnumsGeneral->Etching_PATTERN;
+				}
 			}
-		}
 
+		}
 	}
 
 	return $etchType;
-
 }
 
 # Return if Cu layer has orientation TOP/BOT
@@ -233,8 +233,8 @@ sub GetEtchType {
 sub GetSideByLayer {
 	my $self      = shift;
 	my $layerName = shift;
- 
-	my $side = StackupOperation->GetSideByLayer($self->{"jobId"}, $layerName, $self->{"stackup"});
+
+	my $side = StackupOperation->GetSideByLayer( $self->{"jobId"}, $layerName, $self->{"stackup"} );
 
 	return $side;
 }
@@ -250,12 +250,10 @@ sub GetCompByLayer {
 
 	# when neplat, there is layer "c" but 0 comp
 	if ( $cuThick > 0 ) {
-		
+
 		# Detect if it is inner layer
 		my $inner = $layerName =~ /^v\d+$/ ? 1 : 0;
-		
-		 
-		
+
 		$comp = EtchOperation->GetCompensation( $cuThick, $class, $inner );
 	}
 	return $comp;
@@ -501,29 +499,30 @@ sub GetPressfitExist {
 	return $self->{"pressfitExist"};
 }
 
-sub GetPcbBaseInfo{
+sub GetPcbBaseInfo {
 	my $self = shift;
-	my $key = shift;
-	
-	if($key){
+	my $key  = shift;
+
+	if ($key) {
 		return $self->{"pcbBaseInfo"}->{$key};
-	}else{
+	}
+	else {
 		return $self->{"pcbBaseInfo"};
 	}
 }
 
 # Return if pressfit existbased on info from IS
-sub GetMeritPressfitIS{
+sub GetMeritPressfitIS {
 	my $self = shift;
-	my $key = shift;
-	
-	if($self->{"pcbBaseInfo"}->{"merit_presfitt"} =~ /^A$/i){
+	my $key  = shift;
+
+	if ( $self->{"pcbBaseInfo"}->{"merit_presfitt"} =~ /^A$/i ) {
 		return 1;
-	}else{
+	}
+	else {
 		return 0;
 	}
 }
-
 
 sub __InitDefault {
 	my $self = shift;
@@ -570,9 +569,9 @@ sub __InitDefault {
 	$self->{"costomerInfo"} = HegMethods->GetCustomerInfo( $self->{"jobId"} );
 
 	$self->{"costomerNote"} = CustomerNote->new( $self->{"costomerInfo"}->{"reference_subjektu"} );
-	
-	$self->{"pressfitExist"} = PressfitOperation->ExistPressfitJob($self->{"inCAM"}, $self->{"jobId"}, $self->{"step"}, 1);
-	
+
+	$self->{"pressfitExist"} = PressfitOperation->ExistPressfitJob( $self->{"inCAM"}, $self->{"jobId"}, $self->{"step"}, 1 );
+
 	$self->{"pcbBaseInfo"} = HegMethods->GetBasePcbInfo( $self->{"jobId"} );
 
 }

@@ -45,7 +45,7 @@ __SetLogging();
 # Start the service passing in a context and
 # indicating to callback using the "Running" event
 # every 2000 milliseconds (10 seconds).
-Win32::Daemon::StartService( \%Context, 2000 );
+Win32::Daemon::StartService( \%Context, 10000 );
 
 # Now let the service manager know that we are running...
 #Win32::Daemon::State( SERVICE_RUNNING );
