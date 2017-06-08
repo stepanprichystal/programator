@@ -21,6 +21,11 @@ use Sys::Hostname;
 use Path::Tiny qw(path);
 use Thread::Queue;
 use Time::HiRes qw (sleep);
+use Win32::GUI;
+
+# hide console window
+my $hw = Win32::GUI::GetPerlWindow();
+Win32::GUI::Hide($hw);
 
 #use local library;
 

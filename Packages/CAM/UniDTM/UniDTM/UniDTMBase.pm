@@ -289,8 +289,12 @@ sub __AddPilotHolesDefinition {
 		my $pilotDef = PilotDef->new( $t->GetDrillSize() );
 
 		if ( $t->GetDrillSize() > 5300 ) {
-			$pilotDef->AddPilotDiameter(2800);
-			$pilotDef->AddPilotDiameter(4600);
+			
+			$pilotDef->AddPilotDiameter(1500);
+			
+			# From 8.6.2017 pilot 1500µm
+			#$pilotDef->AddPilotDiameter(2800);
+			#$pilotDef->AddPilotDiameter(4600);
 		}
 
 		push( @{ $self->{"pilotDefs"} }, $pilotDef );

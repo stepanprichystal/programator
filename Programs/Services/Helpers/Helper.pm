@@ -2,7 +2,7 @@
 # Description: Helper
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Programs::Services::Helper;
+package Programs::Services::Helpers::Helper;
 
 #3th party library
 use strict;
@@ -20,19 +20,19 @@ use aliased 'Enums::EnumsPaths';
 #-------------------------------------------------------------------------------------------#
 # Set logging, errors are loged to file defined by config
 # All STDERR + STDOUT are printed to another log file too
-sub SetLogging {
-	my $self       = shift;
-	my $logDir     = shift;
-	my $logConfDir = shift;
-	 
-	# 1) Create dir
-	unless ( -e $logDir ) {
-		mkdir($logDir) or die "Can't create dir: " . $logDir . $_;
-	}
-
-	# 2) Log controled
-	Log::Log4perl->init( $logConfDir."\\Logger.conf" );
-  
-}
+#sub SetLogging {
+#	my $self       = shift;
+#	my $logDir     = shift;
+#	my $logConfDir = shift;
+#	 
+#	# 1) Create dir
+#	unless ( -e $logDir ) {
+#		mkdir($logDir) or die "Can't create dir: " . $logDir . $_;
+#	}
+#
+#	# 2) Log controled
+#	Log::Log4perl->init( $logConfDir."\\Logger.conf" );
+#  
+#}
 
 1;

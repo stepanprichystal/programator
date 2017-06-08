@@ -14,7 +14,7 @@ use Win32::Process;
 use Win32::Process::Info;
 use Win32::Process::List;
 use Getopt::Std;
-use Win32::Console;
+#use Win32::Console;
 
 #use Try::Tiny;
 use aliased 'Enums::EnumsPaths';

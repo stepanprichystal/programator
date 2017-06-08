@@ -224,14 +224,15 @@ sub __LoadNestedSteps {
 	foreach my $uStep (@uniqueSR) {
 
 		my %datum = CamStep->GetDatumPoint( $inCAM, $jobId, $uStep->{"stepName"}, 1 );
-
-		if ( abs( $uStep->{"lim"}->{"xmin"} - $datum{"x"} ) > 0.001 || abs( $uStep->{"lim"}->{"ymin"} - $datum{"y"} ) > 0.001 ) {
+ 
+		# tolerance minus 10µm
+		if ( ($datum{"x"}*1000 - $uStep->{"lim"}->{"xmin"}) < -10 ||  ($datum{"y"}*1000 - $uStep->{"lim"}->{"ymin"} ) < -10 ) {
 
 			$self->{"initSucc"} = 0;
 			$self->{"errorMess"} .=
 			    "Ve stepu: "
 			  . $uStep->{"stepName"}
-			  . " není datum-point umístěn v levém dolním rohu profilu. Posuň datum point do levého dolního rohu.\n";
+			  . " není datum-point umístěn v levém dolním rohu profilu nebo uvnitř profilu. Posuň datum point do levého dolního rohu.\n";
 		}
 
 		my $score = ScoreFeatures->new(1);
@@ -385,21 +386,20 @@ sub __LoadStep {
 		$self->{"errorMess"} .= "Some scorelines in step: " . $self->{"step"} . " are overlapping.";
 		$self->{"initSucc"} = 0;
 	}
-
-
-
+ 
 	my %lim = CamJob->GetProfileLimits( $inCAM, $jobId, $self->{"step"} );
 	my %datum = CamStep->GetDatumPoint( $inCAM, $jobId, $self->{"step"}, 1 );
 
-	if ( abs( $lim{"xmin"} - $datum{"x"} ) > 0.001 || abs( $lim{"ymin"} - $datum{"y"} ) > 0.001 ) {
+	# tolerance minus 10µm
+	if ( ($datum{"x"}*1000 - $lim{"xmin"}) < -10 ||  ($datum{"y"}*1000 - $lim{"ymin"} ) < -10 ) {
 
 		$self->{"initSucc"} = 0;
 		$self->{"errorMess"} .=
 		    "Ve stepu: "
 		  . $self->{"step"}
-		  . " není datum-point umístěn v levém dolním rohu profilu. Posuň datum point do levého dolního rohu.\n";
+		  . " není datum-point umístěn v levém dolním rohu profilu nebo uvnitř profilu. Posuň datum point do levého dolního rohu.\n";
 	}
-
+ 
 	# register lines to zero, if origin is not in left lower corner
 
 	foreach my $k ( keys %lim ) {

@@ -763,8 +763,11 @@ sub __CreateInCAMInstance {
 	#my $sleep = int( rand(10));
 	#sleep($sleep);
 
+#THREAD_PRIORITY_NORMAL
+#DETACHED_PROCESS
+#CREATE_NEW_CONSOLE
 	#run InCAM editor with serverscript
-	Win32::Process::Create( $processObj, $inCAMPath, "InCAM.exe -s" . $path . " " . $port . " " . $fIndicator, 0, THREAD_PRIORITY_NORMAL, "." )
+	Win32::Process::Create( $processObj, $inCAMPath, "InCAM.exe -s" . $path . " " . $port . " " . $fIndicator, 0, THREAD_PRIORITY_NORMAL | CREATE_NEW_CONSOLE, "." )
 	  || die "$!\n";
 
 	$pidInCAM = $processObj->GetProcessID();
