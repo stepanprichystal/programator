@@ -32,5 +32,4 @@ my $mess2 = "";
 my $result2 = LayerCheckWarn->CheckNCLayers( $inCAM, $jobId, "o+1", undef, \$mess2 );
 
 print STDERR "Result check warn is $result2 \n";
-
-sort ()
+ 
