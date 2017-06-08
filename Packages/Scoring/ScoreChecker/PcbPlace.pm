@@ -16,6 +16,7 @@ use Math::Geometry::Planar;
 
 #local library
 use aliased 'CamHelpers::CamJob';
+use aliased 'CamHelpers::CamStep';
 use aliased 'CamHelpers::CamStepRepeat';
 use aliased 'Packages::Polygon::Features::ScoreFeatures::ScoreFeatures';
 use aliased 'Packages::Scoring::ScoreChecker::Enums';
@@ -64,6 +65,7 @@ sub Init {
 	}
 
 }
+
 # Return, idf parsed score is traight, and not duplicate
 sub ScoreIsOk {
 	my $self = shift;
@@ -208,36 +210,49 @@ sub __LoadNestedSteps {
 
 		my %lim = CamJob->GetProfileLimits( $inCAM, $jobId, $uStep->{"stepName"} );
 
-		foreach my $k (keys %lim){
-			$lim{$k} = int($lim{$k} * 1000 +0.5);
+		foreach my $k ( keys %lim ) {
+			$lim{$k} = int( $lim{$k} * 1000 + 0.5 );
 		}
 
 		$uStep->{"lim"} = \%lim;
 
-		$uStep->{"width"}  =  abs( $lim{"xmax"} - $lim{"xmin"} ) ;
-		$uStep->{"height"} =  abs( $lim{"ymax"} - $lim{"ymin"} ) ;
+		$uStep->{"width"}  = abs( $lim{"xmax"} - $lim{"xmin"} );
+		$uStep->{"height"} = abs( $lim{"ymax"} - $lim{"ymin"} );
 
 	}
 
 	foreach my $uStep (@uniqueSR) {
+
+		my %datum = CamStep->GetDatumPoint( $inCAM, $jobId, $uStep->{"stepName"}, 1 );
+
+		if ( abs( $uStep->{"lim"}->{"xmin"} - $datum{"x"} ) > 0.001 || abs( $uStep->{"lim"}->{"ymin"} - $datum{"y"} ) > 0.001 ) {
+
+			$self->{"initSucc"} = 0;
+			$self->{"errorMess"} .=
+			    "Ve stepu: "
+			  . $uStep->{"stepName"}
+			  . " není datum-point umístěn v levém dolním rohu profilu. Posuň datum point do levého dolního rohu.\n";
+		}
 
 		my $score = ScoreFeatures->new(1);
 
 		$score->Parse( $inCAM, $jobId, $uStep->{"stepName"}, $self->{"layer"}, 1, 1 );
 
 		unless ( $score->IsStraight() ) {
-			$self->{"errorMess"} .= "Některé drážky ve stepu: " . $uStep->{"stepName"} . " nejsou zcela rovné. Nejsou striktně horzontální nebo vertikální.\n";
+			$self->{"errorMess"} .=
+			  "Některé drážky ve stepu: " . $uStep->{"stepName"} . " nejsou zcela rovné. Nejsou striktně horzontální nebo vertikální.\n";
 			$self->{"initSucc"} = 0;
 		}
 
 		if ( $score->ExistOverlap() ) {
-			$self->{"errorMess"} .= "Některé drážky ve stepu : " . $uStep->{"stepName"} ." se překrývají po své délce (leží na sobě v podélném směru).";
+			$self->{"errorMess"} .=
+			  "Některé drážky ve stepu : " . $uStep->{"stepName"} . " se překrývají po své délce (leží na sobě v podélném směru).";
 			$self->{"errorMess"} .= " Oprav ať se nepřekrývají.\n";
 			$self->{"initSucc"} = 0;
 		}
 
 		if ( $score->ExistParallelOverlap() ) {
-			$self->{"errorMess"} .= "Některé drážky ve stepu: " . $uStep->{"stepName"} ." se překrývají po své šířce. (leží na sobě)";
+			$self->{"errorMess"} .= "Některé drážky ve stepu: " . $uStep->{"stepName"} . " se překrývají po své šířce. (leží na sobě)";
 			$self->{"errorMess"} .= " Oprav ať se nepřekrývají.\n";
 			$self->{"initSucc"} = 0;
 		}
@@ -246,7 +261,7 @@ sub __LoadNestedSteps {
 
 		# register lines to zero, if origin is not in left lower corner
 
-		if ( $uStep->{"lim"}->{"xmin"} < 0 ||  $uStep->{"lim"}->{"ymin"} < 0 ) {
+		if ( $uStep->{"lim"}->{"xmin"} < 0 || $uStep->{"lim"}->{"ymin"} < 0 ) {
 
 			foreach my $l (@lines) {
 
@@ -346,7 +361,6 @@ sub __LoadNestedSteps {
 	}
 }
 
-
 # Load score lines in step, S&R is not considered
 sub __LoadStep {
 	my $self = shift;
@@ -372,14 +386,24 @@ sub __LoadStep {
 		$self->{"initSucc"} = 0;
 	}
 
-	my @lines = $score->GetFeatures();
+
+
+	my %lim = CamJob->GetProfileLimits( $inCAM, $jobId, $self->{"step"} );
+	my %datum = CamStep->GetDatumPoint( $inCAM, $jobId, $self->{"step"}, 1 );
+
+	if ( abs( $lim{"xmin"} - $datum{"x"} ) > 0.001 || abs( $lim{"ymin"} - $datum{"y"} ) > 0.001 ) {
+
+		$self->{"initSucc"} = 0;
+		$self->{"errorMess"} .=
+		    "Ve stepu: "
+		  . $self->{"step"}
+		  . " není datum-point umístěn v levém dolním rohu profilu. Posuň datum point do levého dolního rohu.\n";
+	}
 
 	# register lines to zero, if origin is not in left lower corner
 
-	my %lim = CamJob->GetProfileLimits( $inCAM, $jobId, $self->{"step"} );
-
-	foreach my $k (keys %lim){
-			$lim{$k} = int($lim{$k} * 1000 +0.5);
+	foreach my $k ( keys %lim ) {
+		$lim{$k} = int( $lim{$k} * 1000 + 0.5 );
 	}
 
 	my %origin = ( "x" => 0, "y" => 0 );
@@ -389,6 +413,8 @@ sub __LoadStep {
 	my $pcbInfo = PcbInfo->new( $self->{"step"}, \%origin, $w, $h, $self->{"accuracy"} );
 
 	# add score lines, according original score lines in step
+	my @lines = $score->GetFeatures();
+	
 	foreach my $l (@lines) {
 
 		my %startP = ( "x" => $l->{"x1"}, "y" => $l->{"y1"} );
@@ -446,11 +472,10 @@ sub __RotateAndMovePoint {
 		}
 	}
 
-	$point->{"x"} = int( $point->{"x"} + 0.5 ); # round on whole numbers
+	$point->{"x"} = int( $point->{"x"} + 0.5 );    # round on whole numbers
 	$point->{"y"} = int( $point->{"y"} + 0.5 );
 
 }
-
 
 # Return minimal gap between all pcbs in step
 sub __GetMinPcbGap {
@@ -546,7 +571,7 @@ sub __Pont2LineDist {
 sub __ToMicron {
 	my $self = shift;
 	my $num  = shift;
-	return int( $num * 1000 + 0.5 ); # 0.5, 
+	return int( $num * 1000 + 0.5 );    # 0.5,
 }
 
 #-------------------------------------------------------------------------------------------#

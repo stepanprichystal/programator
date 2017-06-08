@@ -192,13 +192,13 @@ sub CopyStepFinalCheck {
 		if ( abs( $lim{"xMin"} - $datum{"x"} ) > 0.001 || abs( $lim{"yMin"} - $datum{"y"} ) > 0.001 ) {
 
 			$result = 0;
-			$$mess .= "Ve stepu: $step není datum-point umístěn v nule. Posuň datum point do nuly!.\n";
+			$$mess .= "Ve stepu: $step není datum-point umístěn v v levém dolním rohu profilu. Posuň datum point do levého dolního rohu.\n";
 		}
 
 		if ( int( $lim{"xMin"} ) != 0 || int( $lim{"yMin"} ) != 0 ) {
 
 			$result = 0;
-			$$mess .= "Ve stepu: $step není­ levý dolní­ roh profilu v \"nule\". Oprav to\n";
+			$$mess .= "Ve stepu: $step není­ levý dolní­ roh profilu v \"nule\". Posuň levý dolní roh profilu do nuly.\n";
 		}
 	}
 	

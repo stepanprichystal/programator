@@ -15,7 +15,7 @@ use aliased 'Packages::InCAM::InCAM';
 
 
 #pcb id
-my $pcbId = "F17116";
+my $pcbId = "f17116";
 
 #init CAM
 my $inCAM = InCAM->new();
