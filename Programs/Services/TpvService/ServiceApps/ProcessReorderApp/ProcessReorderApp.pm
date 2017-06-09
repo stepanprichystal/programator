@@ -24,6 +24,7 @@ use aliased 'Helpers::GeneralHelper';
 
 use aliased 'Helpers::FileHelper';
 use aliased 'Programs::Services::TpvService::ServiceApps::ProcessReorderApp::Enums';
+use aliased 'Programs::Services::TpvService::ServiceApps::CheckReorderApp::Enums' => 'EnumsCheck';
 
 use aliased 'Helpers::JobHelper';
 use aliased 'Programs::Services::TpvService::ServiceApps::ProcessReorderApp::Reorder::CheckInfo';
@@ -42,30 +43,18 @@ sub new {
 	#my $self = {};
 	bless $self;
 
-	 
-
 	$self->__SetLogging();
 
 	$self->{"logger"}->debug("after logg");
 
 	# All controls
-	my @controls = ();
-	$self->{"controls"} = \@controls;
-
-	my @chList = ();
-	$self->{"checklist"} = \@chList;
 
 	$self->{"checks"} = undef;    # contain classes implement ICHeck
-
-	$self->{"inCAM"} = undef;
-
-	# 1) Load and check checklist
-	$self->__LoadChecklist();
-
-	# Load all check class
-	$self->__LoadCheckClasses();
+	$self->{"inCAM"}  = undef;
 
 	$self->{"logger"}->debug("reorder init");
+
+	#$self->__LoadChecks();
 
 	return $self;
 }
@@ -78,8 +67,8 @@ sub Run {
 
 	eval {
 
-		# 2) Load Reorder pcb
-		my @reorders = grep { !defined $_->{"aktualni_krok"} || $_->{"aktualni_krok"} eq "" } HegMethods->GetReorders();
+		# 2) Load orders to auto process
+		my @reorders = grep { defined $_->{"aktualni_krok"} && $_->{"aktualni_krok"} eq EnumsCheck->Step_AUTO } HegMethods->GetReorders();
 
 		if ( scalar(@reorders) ) {
 
@@ -117,20 +106,20 @@ sub __RunJob {
 	$jobId = lc($jobId);
 
 	eval {
-		 
+
 		$self->__ProcessJob($orderId)
 
 	};
 	if ($@) {
-		
+
 		my $eStr = $@;
-		my $e = $@;
-		
-		if (ref($e) && $e->can("Error")) {
-		
+		my $e    = $@;
+
+		if ( ref($e) && $e->can("Error") ) {
+
 			$eStr = $e->Error();
-		} 
-		
+		}
+
 		my $err = "Aplication: " . $self->GetAppName() . ", orderid: \"$orderId\" exited with error: \n $eStr";
 		$self->{"logger"}->error($err);
 		$self->{"loggerDB"}->Error( $jobId, $err );
@@ -152,84 +141,90 @@ sub __ProcessJob {
 	my ($jobId) = $orderId =~ /^(\w\d+)-\d+/i;
 	$jobId = lc($jobId);
 
-	# list of necesary changes
-	my @autoCh = ();
-	my @manCh  = ();
+ 
 
-	# 1) Check if pcb exist in InCAM
-	my $jobExist = $self->__AcquireJob($jobId);
+	# Check if change log file exist and read checks
+	my @changes = $self->__LoadChanges($jobId);
+
+	# 1) Open Job
 
 	my $usr = undef;
 	if ( CamJob->IsJobOpen( $self->{"inCAM"}, $jobId, 1, \$usr ) ) {
-		die "Unable to process check revision, because job $jobId is open by user: $usr";
+		die "Unable to process reorder, because job $jobId is open by user: $usr";
 	}
 
 	# open job if exist
-	if($jobExist){
+	if ($jobExist) {
 		$inCAM->COM( "open_job", job => "$jobId", "open_win" => "yes" );
 		$inCAM->COM( "check_inout", "job" => "$jobId", "mode" => "out", "ent_type" => "job" );
 	}
 
-	my $isPool = HegMethods->GetPcbIsPool($jobId);
+	# 2) Archive old files
+	
+	
+	
+	# 3) Do automatic changes
 
-	foreach my $checkInfo ( @{ $self->{"checklist"} } ) {
+	foreach my $change (@changes ) {
 
-		my $key  = $checkInfo->GetKey();
-		my $type = $checkInfo->GetType();
-
-		if ( $self->{"checks"}->{$key}->NeedChange( $inCAM, $jobId, $jobExist, $isPool ) ) {
-
-			my $str = undef;
-
-			if ( $type eq Enums->Check_AUTO ) {
-
-				$str = ( scalar(@autoCh) + 1 ) . ") " . $checkInfo->GetKey() . " - " . $checkInfo->GetDesc();
-				push( @autoCh, $str );
-
-			}
-			elsif ( $type eq Enums->Check_MANUAL ) {
-
-				$str = ( scalar(@manCh) + 1 ) . ") " . $checkInfo->GetMessage();
-				push( @manCh, $str );
-			}
-		}
+		$change->Run();
 	}
 
-	if($jobExist){
+	if ($jobExist) {
 		$inCAM->COM( "check_inout", "job" => "$jobId", "mode" => "in", "ent_type" => "job" );
 		$inCAM->COM( "close_job", "job" => "$jobId" );
 	}
-
-	# 2) create changes file to archive
-	if ( scalar(@autoCh) > 0 || scalar(@manCh) > 0 ) {
-
-		$self->__CreateChangeFile( $jobId, \@autoCh, \@manCh );
-	}
-
+ 
 	# 3) set order state
-	my $orderState = undef;
-
-	if ( scalar(@autoCh) > 0 ) {
-		$orderState = Enums->Step_AUTO;
-	}
-
-	if ( scalar(@manCh) > 0 ) {
-		$orderState = Enums->Step_MANUAL;
-	}
-
-	if ( scalar(@autoCh) == 0 && scalar(@manCh) == 0 ) {
-
-		if ($isPool) {
-			$orderState = Enums->Step_PANELIZATION;
-
-		}
-		else {
-
-			die "no changes in pcb reorder $jobId";
-		}
-	}
-
+	my $orderState =  Enums->Step_AUTOOK;
+ 
 	HegMethods->UpdatePcbOrderState( $orderId, $orderState );
+}
+
+sub __LoadChanges {
+	my $self  = shift;
+	my $jobId = shift;
+
+	my $path = JobHelper->GetJobArchive($jobId) . "Change_log.txt";
+
+	unless ( -e $path ) {
+		die "Unable to process reorder $jobId, because \"change_log\" file doesnt exist in archive at: $path.\n";
+	}
+
+	my @changes = ();
+	my @lines   = @{ FileHelper->ReadAsLines($path) };
+
+	my $autoChanges = 0;
+
+	foreach (@lines) {
+
+		unless ($autoChanges) {
+
+			if ( $_ =~ /Automatic task/i ) {
+				$autoChanges = 1;
+			}
+			else {
+				next;
+			}
+		}
+
+		if ( $_ =~ /\d\)\s*(.*)\s*-\s*(.*)/){
+			
+			my $key = $1;
+			
+			my $module = 'Programs::Services::TpvService::ServiceApps::ProcessReorderApp::ProcessReorder::Checks::' . $key;
+			eval("use  $module;");
+			
+			push(@changes, $module->new($key));
+		}
+	}
+	
+	unless(scalar(@changes)){
+		die "Unable to process reorder $jobId, because \"change_log\" file doesnt contain any automatic changes.\n";
+		
+	}
+	
+	return @changes;
 }
 
 # Try acquire job and import to inCAM
@@ -459,7 +454,13 @@ sub __SetLogging {
 	#my $appDir = dirname(__FILE__);
 	#Log::Log4perl->init("$appDir\\Logger.conf");
 
-	$self->{"logger"} = get_logger("checkReorder");
+	my $dir = EnumsPaths->Client_INCAMTMPLOGS . "processReorder";
+
+	unless ( -e $dir ) {
+		mkdir($dir) or die "Can't create dir: " . $dir . $_;
+	}
+
+	$self->{"logger"} = get_logger("processReorder");
 
 	$self->{"logger"}->debug("test of logging");
 

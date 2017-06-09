@@ -3,7 +3,7 @@
 
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Programs::Services::TpvService::ServiceApps::ProcessReorderApp::Reorder::Checks::CheckBase;
+package Programs::Services::TpvService::ServiceApps::ProcessReorderApp::Reorder::Changes::ChangeBase;
 
  
 #3th party library
@@ -29,12 +29,11 @@ sub new {
 	return $self;
 }
 
-sub GetCheckKey {
+sub GetChangeKey {
 	my $self = shift;
 	my $pcbId = shift;
 	
 	return 1;
- 
 }
  
 

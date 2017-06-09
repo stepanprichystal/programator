@@ -9,10 +9,8 @@ use constant {
  
 # steps of reorder 
 use constant {
-			   Step_ERROR   => "zpracovani - chyba",
-			   Step_AUTO   => "zpracovani - auto",
-			   Step_MANUAL   => "zpracovani - rucni",
-			   Step_PANELIZATION   => "k panelizaci"
+			   Step_AUTOERR   => "zpracovani - auto - chyba",
+			   Step_AUTOOK   => "zpracovani - auto - ok"
 };
 
 1;

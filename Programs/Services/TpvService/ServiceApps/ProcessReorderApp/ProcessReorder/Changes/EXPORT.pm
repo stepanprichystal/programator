@@ -2,11 +2,11 @@
 # Description:  Class responsible for determine pcb reorder check
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Programs::Services::TpvService::ServiceApps::ProcessReorderApp::Reorder::Checks::DATACODE_IS;
-use base('Programs::Services::TpvService::ServiceApps::ProcessReorderApp::Reorder::Checks::CheckBase');
+package Programs::Services::TpvService::ServiceApps::ProcessReorderApp::Reorder::Changes::EXPORT;
+use base('Programs::Services::TpvService::ServiceApps::ProcessReorderApp::Reorder::Changes::ChangeBase');
 
 use Class::Interface;
-&implements('Programs::Services::TpvService::ServiceApps::ProcessReorderApp::Reorder::Checks::ICheck');
+&implements('Programs::Services::TpvService::ServiceApps::ProcessReorderApp::Reorder::Changes::IChange');
 
 #3th party library
 use strict;
@@ -28,8 +28,8 @@ sub new {
 	return $self;
 }
 
-# check if datacode is in helios
-sub NeedChange {
+# Do export, only non pool pcb
+sub Run {
 	my $self = shift;
 	my $inCAM = shift;
 	my $jobId = shift; 
@@ -38,15 +38,13 @@ sub NeedChange {
 	
 	my $needChange = 0;
 	
-	# check if datacode id
-	my $datacode = HegMethods->GetDatacodeLayer($jobId);
 	
-	if(defined $datacode && $datacode ne ""){
+ 
+	unless($isPool){
 		$needChange = 1;
 	}
 	
 	return $needChange;
- 
 }
  
 
@@ -56,7 +54,8 @@ sub NeedChange {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
- 	use aliased 'Programs::Services::TpvService::ServiceApps::ProcessReorderApp::Reorder::Checks::DATACODE_IS' => "Change";
+ 
+ 	use aliased 'Programs::Services::TpvService::ServiceApps::ProcessReorderApp::Reorder::Changes::EXPORT' => "Change";
  	use aliased 'Packages::InCAM::InCAM';
 	
 	my $inCAM    = InCAM->new();
@@ -65,7 +64,6 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	my $check = Change->new();
 	
 	print "Need change: ".$check->NeedChange($inCAM, $jobId, 1);
-	
 }
 
 1;

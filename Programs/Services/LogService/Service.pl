@@ -150,8 +150,10 @@ sub __SetLogging {
 		mkdir($logDirService) or die "Can't create dir: " . $logDirService . $_;
 	}
  
-
 	Log::Log4perl->init( GeneralHelper->Root() . "\\Programs\\Services\\LogService\\Logger.conf" );
+	
+	my $logger = get_logger("service");
+	$logger->info("Service loger inited");
  
 
 }

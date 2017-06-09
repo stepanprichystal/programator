@@ -3,7 +3,7 @@
 # Description: Interface, class must implement methoc ProcessLog
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Programs::Services::TpvService::ServiceApps::ProcessReorderApp::Reorder::Checks::ICheck;
+package Programs::Services::TpvService::ServiceApps::ProcessReorderApp::Reorder::Changes::IChange;
 
 #3th party library
 use strict;
@@ -21,7 +21,7 @@ use Class::Interface;
 &interface;    
 
 # return 0, if log should not be processed anymore by Log service
-sub NeedChange;     
+sub Run;     
  
 
 

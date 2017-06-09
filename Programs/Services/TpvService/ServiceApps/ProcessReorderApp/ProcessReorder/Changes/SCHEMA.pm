@@ -2,11 +2,11 @@
 # Description:  Class responsible for determine pcb reorder check
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Programs::Services::TpvService::ServiceApps::ProcessReorderApp::Reorder::Checks::PICKERING_ORDER_NUM;
-use base('Programs::Services::TpvService::ServiceApps::ProcessReorderApp::Reorder::Checks::CheckBase');
+package Programs::Services::TpvService::ServiceApps::ProcessReorderApp::Reorder::Changes::SCHEMA;
+use base('Programs::Services::TpvService::ServiceApps::ProcessReorderApp::Reorder::Changes::ChangeBase');
 
 use Class::Interface;
-&implements('Programs::Services::TpvService::ServiceApps::ProcessReorderApp::Reorder::Checks::ICheck');
+&implements('Programs::Services::TpvService::ServiceApps::ProcessReorderApp::Reorder::Changes::IChange');
 
 #3th party library
 use strict;
@@ -23,33 +23,29 @@ sub new {
 	my $class = shift;
 	my $self  = $class->SUPER::new(@_);
 	bless($self);
-
+	
+	
 	return $self;
 }
 
-sub NeedChange {
-	my $self  = shift;
+# Put schema, only non pool pcb
+sub Run {
+	my $self = shift;
 	my $inCAM = shift;
 	my $jobId = shift;
 	my $jobExist = shift; # (in InCAM db)
 	my $isPool = shift;
-
+	
 	my $needChange = 0;
 
-	my $custInfo = HegMethods->GetCustomerInfo($jobId);
-
-	# Kadlec customer
-	if (    $custInfo->{"reference_subjektu"} eq "06544"
-		 || $custInfo->{"reference_subjektu"} eq "06545"
-		 || $custInfo->{"reference_subjektu"} eq "06546" )
-	{
-
+ 
+	unless($isPool){
 		$needChange = 1;
-
 	}
-
+	
 	return $needChange;
 }
+ 
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
@@ -57,11 +53,12 @@ sub NeedChange {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
- 	use aliased 'Programs::Services::TpvService::ServiceApps::ProcessReorderApp::Reorder::Checks::PICKERING_ORDER_NUM' => "Change";
+ 
+ 	use aliased 'Programs::Services::TpvService::ServiceApps::ProcessReorderApp::Reorder::Changes::DATACODE_IS' => "Change";
  	use aliased 'Packages::InCAM::InCAM';
 	
 	my $inCAM    = InCAM->new();
-	my $jobId = "f52457";
+	my $jobId = "f52456";
 	
 	my $check = Change->new();
 	

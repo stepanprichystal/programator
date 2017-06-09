@@ -427,7 +427,7 @@ sub __LoadCheckClasses {
 
 		my $key = $checkInfo->GetKey();
 
-		my $module = 'Programs::Services::TpvService::ServiceApps::CheckReorderApp::Reorder::Checks::' . $key;
+		my $module = 'Programs::Services::TpvService::ServiceApps::CheckReorderApp::CheckReorder::Checks::' . $key;
 		eval("use  $module;");
 		$checks{$key} = $module->new($key);
 	}
@@ -458,6 +458,12 @@ sub __SetLogging {
 	# 2) Load log4perl logger config
 	#my $appDir = dirname(__FILE__);
 	#Log::Log4perl->init("$appDir\\Logger.conf");
+	
+	my $dir = EnumsPaths->Client_INCAMTMPLOGS."checkReorder";
+	
+	unless ( -e $dir ) {
+		mkdir( $dir ) or die "Can't create dir: " . $dir . $_;
+	}
 
 	$self->{"logger"} = get_logger("checkReorder");
 

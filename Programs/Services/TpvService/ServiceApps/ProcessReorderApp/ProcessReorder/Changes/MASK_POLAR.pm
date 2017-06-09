@@ -2,19 +2,19 @@
 # Description:  Class responsible for determine pcb reorder check
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Programs::Services::TpvService::ServiceApps::ProcessReorderApp::Reorder::Checks::POOL_PATTERN;
-use base('Programs::Services::TpvService::ServiceApps::ProcessReorderApp::Reorder::Checks::CheckBase');
+package Programs::Services::TpvService::ServiceApps::ProcessReorderApp::Reorder::Changes::MASK_POLAR;
+use base('Programs::Services::TpvService::ServiceApps::ProcessReorderApp::Reorder::Changes::ChangeBase');
 
 use Class::Interface;
-&implements('Programs::Services::TpvService::ServiceApps::ProcessReorderApp::Reorder::Checks::ICheck');
+&implements('Programs::Services::TpvService::ServiceApps::ProcessReorderApp::Reorder::Changes::IChange');
 
 #3th party library
 use strict;
 use warnings;
 
 #local library
-use aliased 'Connectors::HeliosConnector::HegMethods';
-use aliased 'Packages::Routing::PlatedRoutArea';
+use aliased 'CamHelpers::CamJob';
+
 
 #-------------------------------------------------------------------------------------------#
 #  Public method
@@ -24,14 +24,13 @@ sub new {
 	my $class = shift;
 	my $self  = $class->SUPER::new(@_);
 	bless($self);
-	
-	
+
 	return $self;
 }
 
-# if pcb is pool, check if plated rout areaa is exceed for tenting
-sub NeedChange {
-	my $self = shift;
+# Check if mask is not negative in matrix
+sub Run {
+	my $self  = shift;
 	my $inCAM = shift;
 	my $jobId = shift;
 	my $jobExist = shift; # (in InCAM db)
@@ -40,20 +39,22 @@ sub NeedChange {
 	unless($jobExist){
 		return 1;
 	}
-	
+
 	my $needChange = 0;
+ 
+	my @layers = CamJob->GetBoardLayers($inCAM, $jobId);
 	
- 
- 
-	if($isPool && PlatedRoutArea->PlatedAreaExceed($inCAM, $jobId, "o+1")){
+	foreach my $l (@layers){
 		
-		$needChange = 1;
+		if($l->{"gROWname"} =~ /m[cs]/ && $l->{"gROWpolarity"} eq "negative"){
+			
+			$needChange = 1;
+			last;
+		}
 	}
-	
+
 	return $needChange;
- 
 }
- 
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
@@ -61,12 +62,11 @@ sub NeedChange {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
- 
- 	use aliased 'Programs::Services::TpvService::ServiceApps::ProcessReorderApp::Reorder::Checks::POOL_PATTERN' => "Change";
+ 	use aliased 'Programs::Services::TpvService::ServiceApps::ProcessReorderApp::Reorder::Changes::MASK_POLAR' => "Change";
  	use aliased 'Packages::InCAM::InCAM';
 	
 	my $inCAM    = InCAM->new();
-	my $jobId = "f52456";
+	my $jobId = "f52457";
 	
 	my $check = Change->new();
 	
