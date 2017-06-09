@@ -39,7 +39,7 @@ sub DoTask {
 
 	my $processObj;
 
-	Win32::Process::Create( $processObj, $inCAMPath, $parameters, 0, THREAD_PRIORITY_NORMAL | CREATE_NEW_CONSOLE, "." )
+	Win32::Process::Create( $processObj, $inCAMPath, $parameters, 1, THREAD_PRIORITY_NORMAL | CREATE_NEW_CONSOLE, "c:/tmp" )
 	  || die "$!\n";
 
 	my $pidInCAM = $processObj->GetProcessID();
