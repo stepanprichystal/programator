@@ -2,11 +2,11 @@
 # Description:  Class responsible for determine pcb reorder check
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Programs::Services::TpvService::ServiceApps::ReOrderApp::ReOrder::Checks::POOL_PATTERN;
-use base('Programs::Services::TpvService::ServiceApps::ReOrderApp::ReOrder::Checks::CheckBase');
+package Programs::Services::TpvService::ServiceApps::ProcessReorderApp::Reorder::Checks::SCHEMA;
+use base('Programs::Services::TpvService::ServiceApps::ProcessReorderApp::Reorder::Checks::CheckBase');
 
 use Class::Interface;
-&implements('Programs::Services::TpvService::ServiceApps::ReOrderApp::ReOrder::Checks::ICheck');
+&implements('Programs::Services::TpvService::ServiceApps::ProcessReorderApp::Reorder::Checks::ICheck');
 
 #3th party library
 use strict;
@@ -14,7 +14,6 @@ use warnings;
 
 #local library
 use aliased 'Connectors::HeliosConnector::HegMethods';
-use aliased 'Packages::Routing::PlatedRoutArea';
 
 #-------------------------------------------------------------------------------------------#
 #  Public method
@@ -29,7 +28,7 @@ sub new {
 	return $self;
 }
 
-# if pcb is pool, check if plated rout areaa is exceed for tenting
+# Put schema, only non pool pcb
 sub NeedChange {
 	my $self = shift;
 	my $inCAM = shift;
@@ -37,21 +36,14 @@ sub NeedChange {
 	my $jobExist = shift; # (in InCAM db)
 	my $isPool = shift;
 	
-	unless($jobExist){
-		return 1;
-	}
-	
 	my $needChange = 0;
-	
+
  
- 
-	if($isPool && PlatedRoutArea->PlatedAreaExceed($inCAM, $jobId, "o+1")){
-		
+	unless($isPool){
 		$needChange = 1;
 	}
 	
 	return $needChange;
- 
 }
  
 
@@ -62,7 +54,7 @@ my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
  
- 	use aliased 'Programs::Services::TpvService::ServiceApps::ReOrderApp::ReOrder::Checks::POOL_PATTERN' => "Change";
+ 	use aliased 'Programs::Services::TpvService::ServiceApps::ProcessReorderApp::Reorder::Checks::DATACODE_IS' => "Change";
  	use aliased 'Packages::InCAM::InCAM';
 	
 	my $inCAM    = InCAM->new();

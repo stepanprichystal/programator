@@ -2,11 +2,11 @@
 # Description:  Class responsible for determine pcb reorder check
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Programs::Services::TpvService::ServiceApps::ReOrderApp::ReOrder::Checks::ELTEST_EXIST;
-use base('Programs::Services::TpvService::ServiceApps::ReOrderApp::ReOrder::Checks::CheckBase');
+package Programs::Services::TpvService::ServiceApps::ProcessReorderApp::Reorder::Checks::INCAM_JOB;
+use base('Programs::Services::TpvService::ServiceApps::ProcessReorderApp::Reorder::Checks::CheckBase');
 
 use Class::Interface;
-&implements('Programs::Services::TpvService::ServiceApps::ReOrderApp::ReOrder::Checks::ICheck');
+&implements('Programs::Services::TpvService::ServiceApps::ProcessReorderApp::Reorder::Checks::ICheck');
 
 #3th party library
 use strict;
@@ -14,6 +14,8 @@ use warnings;
 
 #local library
 use aliased 'Helpers::JobHelper';
+use aliased 'Helpers::FileHelper';
+use aliased 'Connectors::HeliosConnector::HegMethods';
 
 #-------------------------------------------------------------------------------------------#
 #  Public method
@@ -27,43 +29,43 @@ sub new {
 	return $self;
 }
 
-# if electric test directory doesn't contain dir at least fo one machine
+# Check if exist new version of nif, if so it means it is from InCAM
 sub NeedChange {
 	my $self     = shift;
 	my $inCAM    = shift;
 	my $jobId    = shift;
-	my $jobExist = shift; # (in InCAM db)
+	my $jobExist = shift;    # (in InCAM db)
 	my $isPool = shift;
 
 	my $needChange = 0;
 
-	if($isPool){
-		return 0;
+	my $nifPath = JobHelper->GetJobArchive($jobId) . $jobId . ".nif";
+
+	 
+	# First test, if job is imported (exist) in incam db
+	unless($jobExist){
+		$needChange = 1;
 	}
 
-	my $path = JobHelper->GetJobElTest($jobId);
- 
-	if ( -e $path ) {
+	unless ($isPool) {
+		if ( -e $nifPath ) {
 
-		my @dirs = ();
-		
-		if ( opendir( DIR, $path ) ) {
-			@dirs = readdir(DIR);
-			closedir(DIR);
+			my @lines = @{ FileHelper->ReadAsLines($nifPath) };
+
+			# new nif contain = on first row
+			if ( $lines[0] !~ /=/ ) {
+
+				$needChange = 1;
+			}
+
 		}
-
-		if ( scalar( grep { $_ =~ /^A[357]_/i } @dirs ) < 1 ) {
+		else {
 
 			$needChange = 1;
 		}
+	}
 
-	}
-	else {
-		$needChange = 1;
-	}
-	
 	return $needChange;
-
 }
 
 #-------------------------------------------------------------------------------------------#
@@ -72,15 +74,15 @@ sub NeedChange {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
- 	use aliased 'Programs::Services::TpvService::ServiceApps::ReOrderApp::ReOrder::Checks::ELTEST_EXIST' => "Change";
- 	use aliased 'Packages::InCAM::InCAM';
-	
-	my $inCAM    = InCAM->new();
+	use aliased 'Programs::Services::TpvService::ServiceApps::ProcessReorderApp::Reorder::Checks::INCAM_JOB' => "Change";
+	use aliased 'Packages::InCAM::InCAM';
+
+	my $inCAM = InCAM->new();
 	my $jobId = "d10355";
-	
+
 	my $check = Change->new();
-	
-	print "Need change: ".$check->NeedChange($inCAM, $jobId, 1);
+
+	print "Need change: " . $check->NeedChange( $inCAM, $jobId, 1 );
 }
 
 1;

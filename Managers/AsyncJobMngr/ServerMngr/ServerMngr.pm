@@ -767,10 +767,26 @@ sub __CreateInCAMInstance {
 #DETACHED_PROCESS
 #CREATE_NEW_CONSOLE
 	#run InCAM editor with serverscript
-	Win32::Process::Create( $processObj, $inCAMPath, "InCAM.exe -s" . $path . " " . $port . " " . $fIndicator, 0, THREAD_PRIORITY_NORMAL | CREATE_NEW_CONSOLE, "." )
-	  || die "$!\n";
+	
+	
+	use aliased 'Packages::SystemCall::SystemCall';
+	
+	my $script = GeneralHelper->Root() . "\\Managers\\AsyncJobMngr\\ServerMngr\\CreateInCAM.pl";
+	my @cmds   = ( $inCAMPath, "InCAM.exe -s" . $path . " " . $port . " " . $fIndicator, );
 
-	$pidInCAM = $processObj->GetProcessID();
+	my $call = SystemCall->new( $script, \@cmds );
+	my $result = $call->Run();
+
+	my %output = $call->GetOutput();
+	
+	$pidInCAM = $output{"pidInCAM"};
+	
+	
+#	
+#	Win32::Process::Create( $processObj, $inCAMPath, "InCAM.exe -s" . $path . " " . $port . " " . $fIndicator, 0, THREAD_PRIORITY_NORMAL, "." )
+#	  || die "$!\n";
+#
+#	$pidInCAM = $processObj->GetProcessID();
  
 	$self->{"threadLoger"}->debug("CLIENT PID: " . $pidInCAM . " (InCAM)........................................is launching\n");
 

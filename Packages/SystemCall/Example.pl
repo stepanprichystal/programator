@@ -13,7 +13,7 @@
 #	my $call = SystemCall->new( $script, \@cmds );
 #	my $result = $call->Run();
 #	
-#	my $result = $call->GetOutput();
+#	my %output = $call->GetOutput();
 
 
 #3th party library

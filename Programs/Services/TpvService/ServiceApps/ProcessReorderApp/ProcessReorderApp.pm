@@ -2,7 +2,7 @@
 # Description: Represent Universal Drill tool manager
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Programs::Services::TpvService::ServiceApps::ReOrderApp::ReOrderApp;
+package Programs::Services::TpvService::ServiceApps::ProcessReorderApp::ProcessReorderApp;
 use base("Programs::Services::TpvService::ServiceApps::ServiceAppBase");
 
 #use Class::Interface;
@@ -11,6 +11,7 @@ use base("Programs::Services::TpvService::ServiceApps::ServiceAppBase");
 #3th party library
 use strict;
 use warnings;
+
 #use File::Spec;
 use File::Basename;
 use Log::Log4perl qw(get_logger);
@@ -20,12 +21,13 @@ use Log::Log4perl qw(get_logger);
 use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'Enums::EnumsApp';
 use aliased 'Helpers::GeneralHelper';
-#use aliased 'Helpers::FileHelper';
-use aliased 'Programs::Services::TpvService::ServiceApps::ReOrderApp::Enums';
-#use aliased 'Helpers::JobHelper';
-use aliased 'Programs::Services::TpvService::ServiceApps::ReOrderApp::ReOrder::CheckInfo';
-#use aliased 'CamHelpers::CamJob';
- 
+
+use aliased 'Helpers::FileHelper';
+use aliased 'Programs::Services::TpvService::ServiceApps::ProcessReorderApp::Enums';
+
+use aliased 'Helpers::JobHelper';
+use aliased 'Programs::Services::TpvService::ServiceApps::ProcessReorderApp::Reorder::CheckInfo';
+use aliased 'CamHelpers::CamJob';
 
 #-------------------------------------------------------------------------------------------#
 #  Public method
@@ -34,19 +36,18 @@ use aliased 'Programs::Services::TpvService::ServiceApps::ReOrderApp::ReOrder::C
 sub new {
 	my $class = shift;
 
-	my $appName = EnumsApp->App_CHECKREORDER;
-	my $self = $class->SUPER::new($appName, @_ );
+	my $appName = EnumsApp->App_PROCESSREORDER;
+	my $self = $class->SUPER::new( $appName, @_ );
+
 	#my $self = {};
 	bless $self;
 
- 
+	 
+
 	$self->__SetLogging();
-	
+
 	$self->{"logger"}->debug("after logg");
-	
 
-
-	
 	# All controls
 	my @controls = ();
 	$self->{"controls"} = \@controls;
@@ -63,12 +64,11 @@ sub new {
 
 	# Load all check class
 	$self->__LoadCheckClasses();
-	
+
 	$self->{"logger"}->debug("reorder init");
- 
+
 	return $self;
 }
-
 
 # -----------------------------------------------
 # Public method, implements interface IServiceApp
@@ -78,7 +78,28 @@ sub Run {
 
 	eval {
 
-		$self->__Run()
+		# 2) Load Reorder pcb
+		my @reorders = grep { !defined $_->{"aktualni_krok"} || $_->{"aktualni_krok"} eq "" } HegMethods->GetReorders();
+
+		if ( scalar(@reorders) ) {
+
+			# we need incam do request for incam
+			unless ( defined $self->{"inCAM"} ) {
+				$self->{"inCAM"} = $self->_GetInCAM();
+			}
+
+			#my %hash = ( "reference_subjektu" => "f52456-01" );
+			#@reorders = ( \%hash );
+
+			foreach my $reorder (@reorders) {
+
+				my $reorderId = $reorder->{"reference_subjektu"};
+
+				$self->{"logger"}->info("Process reorder: $reorderId");
+
+				$self->__RunJob($reorderId);
+			}
+		}
 
 	};
 	if ($@) {
@@ -89,20 +110,28 @@ sub Run {
 	}
 }
 
-sub RunJob {
+sub __RunJob {
 	my $self    = shift;
 	my $orderId = shift;
 	my ($jobId) = $orderId =~ /^(\w\d+)-\d+/i;
 	$jobId = lc($jobId);
 
 	eval {
-		die "dd";
-		$self->__RunJob($orderId)
+		 
+		$self->__ProcessJob($orderId)
 
 	};
 	if ($@) {
-
-		my $err = "Aplication: " . $self->GetAppName() . ", orderid: \"$orderId\" exited with error: \n$@";
+		
+		my $eStr = $@;
+		my $e = $@;
+		
+		if (ref($e) && $e->can("Error")) {
+		
+			$eStr = $e->Error();
+		} 
+		
+		my $err = "Aplication: " . $self->GetAppName() . ", orderid: \"$orderId\" exited with error: \n $eStr";
 		$self->{"logger"}->error($err);
 		$self->{"loggerDB"}->Error( $jobId, $err );
 
@@ -114,36 +143,9 @@ sub RunJob {
 ## Private method
 ##------------------------------------------------
 
-sub __Run {
-	my $self = shift;
-
-	# 2) Load Reorder pcb
-	my @reorders = grep { !defined $_->{"aktualni_krok"} || $_->{"aktualni_krok"} eq "" } HegMethods->GetReorders();
-
-	if ( scalar(@reorders) ) {
-
-		# we need incam do request for incam
-		unless(defined $self->{"inCAM"}){
-			$self->{"inCAM"} = $self->_GetInCAM();
-		}
- 
-		foreach my $reorder (@reorders) {
-			
-			my $reorderId = $reorder->{"reference_subjektu"};
- 
-			$self->{"logger"}->info("Process reorder: $reorderId");
-
-			$self->RunJob($reorderId);
-		}
-	}
-
-}
-
-sub __RunJob {
+sub __ProcessJob {
 	my $self    = shift;
 	my $orderId = shift;
-	
- 
 
 	my $inCAM = $self->{"inCAM"};
 
@@ -162,9 +164,12 @@ sub __RunJob {
 		die "Unable to process check revision, because job $jobId is open by user: $usr";
 	}
 
-	$inCAM->COM( "open_job", job => "$jobId", "open_win" => "no" );
-	$inCAM->COM( "check_inout", "job" => "$jobId", "mode" => "out", "ent_type" => "job" );
-	
+	# open job if exist
+	if($jobExist){
+		$inCAM->COM( "open_job", job => "$jobId", "open_win" => "yes" );
+		$inCAM->COM( "check_inout", "job" => "$jobId", "mode" => "out", "ent_type" => "job" );
+	}
+
 	my $isPool = HegMethods->GetPcbIsPool($jobId);
 
 	foreach my $checkInfo ( @{ $self->{"checklist"} } ) {
@@ -178,20 +183,22 @@ sub __RunJob {
 
 			if ( $type eq Enums->Check_AUTO ) {
 
-				$str = ( scalar(@autoCh) + 1 ) . ") " . $checkInfo->GetKey(). " - ".$checkInfo->GetDesc();
+				$str = ( scalar(@autoCh) + 1 ) . ") " . $checkInfo->GetKey() . " - " . $checkInfo->GetDesc();
 				push( @autoCh, $str );
 
 			}
 			elsif ( $type eq Enums->Check_MANUAL ) {
 
-				$str = ( scalar(@manCh) + 1 ) . ") " .  $checkInfo->GetMessage();
+				$str = ( scalar(@manCh) + 1 ) . ") " . $checkInfo->GetMessage();
 				push( @manCh, $str );
 			}
 		}
 	}
 
-	$inCAM->COM( "check_inout", "job" => "$jobId", "mode" => "in", "ent_type" => "job" );
-	$inCAM->COM( "close_job", "job" => "$jobId" );
+	if($jobExist){
+		$inCAM->COM( "check_inout", "job" => "$jobId", "mode" => "in", "ent_type" => "job" );
+		$inCAM->COM( "close_job", "job" => "$jobId" );
+	}
 
 	# 2) create changes file to archive
 	if ( scalar(@autoCh) > 0 || scalar(@manCh) > 0 ) {
@@ -201,7 +208,6 @@ sub __RunJob {
 
 	# 3) set order state
 	my $orderState = undef;
-	 
 
 	if ( scalar(@autoCh) > 0 ) {
 		$orderState = Enums->Step_AUTO;
@@ -223,7 +229,7 @@ sub __RunJob {
 		}
 	}
 
-	#HegMethods->UpdatePcbOrderState( $orderId, $orderState );
+	HegMethods->UpdatePcbOrderState( $orderId, $orderState );
 }
 
 # Try acquire job and import to inCAM
@@ -299,8 +305,6 @@ sub __CreateChangeFile {
 
 	my @lines = ();
 
-
-
 	push( @lines, "# REORDER CHECKLIST" );
 
 	push( @lines, "# PCB ID:  $jobId" );
@@ -312,7 +316,7 @@ sub __CreateChangeFile {
 
 	for ( my $i = 0 ; $i < scalar(@manCh) ; $i++ ) {
 
-		push( @lines,  $manCh[$i] );
+		push( @lines, $manCh[$i] );
 
 	}
 
@@ -326,7 +330,7 @@ sub __CreateChangeFile {
 
 	}
 
-	my $path = JobHelper->GetJobArchive($jobId) ."Change_log.txt";
+	my $path = JobHelper->GetJobArchive($jobId) . "Change_log.txt";
 
 	if ( -e $path ) {
 		unlink($path);
@@ -365,7 +369,7 @@ sub __LoadChecklist {
 		next if ( $l =~ /#/ );
 
 		if ( $l =~ m/\[(.*)\]/ ) {
-			
+
 			my ($desc) = $1 =~ /\s*(.*)\s*/;
 			my ($key)  = $lines[ $i + 1 ] =~ / =\s*(.*)\s*/;
 			my ($ver)  = $lines[ $i + 2 ] =~ / =\s*(.*)\s*/;
@@ -402,7 +406,7 @@ sub __LoadCheckClasses {
 	my $self = shift;
 
 	# 	# automatically "use"  all packages from dir "checks"
-	# 	my $dir = GeneralHelper->Root() . '\Programs\Services\TpvService\ServiceApps\ReOrderApp\ReOrder\Checks';
+	# 	my $dir = GeneralHelper->Root() . '\Programs\Services\TpvService\ServiceApps\ReorderApp\Reorder\Checks';
 	#	opendir( DIR, $dir ) or die $!;
 	#
 	#	while ( my $file = readdir(DIR) ) {
@@ -411,7 +415,7 @@ sub __LoadCheckClasses {
 	#
 	#		$file =~ s/\.pm//;
 	#
-	#		my $module = 'Programs::Services::TpvService::ServiceApps::ReOrderApp::ReOrder::Checks::' . $file;
+	#		my $module = 'Programs::Services::TpvService::ServiceApps::ProcessReorderApp::Reorder::Checks::' . $file;
 	#		print STDERR $module."\n";
 	#
 	#		eval("use aliased \'$module\';");
@@ -423,7 +427,7 @@ sub __LoadCheckClasses {
 
 		my $key = $checkInfo->GetKey();
 
-		my $module = 'Programs::Services::TpvService::ServiceApps::ReOrderApp::ReOrder::Checks::' . $key;
+		my $module = 'Programs::Services::TpvService::ServiceApps::ProcessReorderApp::Reorder::Checks::' . $key;
 		eval("use  $module;");
 		$checks{$key} = $module->new($key);
 	}
@@ -451,22 +455,14 @@ sub __LoadCheckClasses {
 sub __SetLogging {
 	my $self = shift;
 
-	# 1) Create log dir
-	my $logDir = 'c:\tmp\InCam\scripts\logs\reOrder';
-
-	unless ( -e $logDir ) {
-		mkdir($logDir) or die "Can't create dir: " . $logDir . $_;
-	}
-
 	# 2) Load log4perl logger config
-	my $appDir = dirname(__FILE__);
-	Log::Log4perl->init("$appDir\\Logger.conf");
+	#my $appDir = dirname(__FILE__);
+	#Log::Log4perl->init("$appDir\\Logger.conf");
 
-	$self->{"logger"} = get_logger("checkReOrder");
-	
+	$self->{"logger"} = get_logger("checkReorder");
+
 	$self->{"logger"}->debug("test of logging");
-  
-   
+
 }
 
 #-------------------------------------------------------------------------------------------#
@@ -475,7 +471,7 @@ sub __SetLogging {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	#	use aliased 'Programs::Services::TpvService::ServiceApps::ReOrderApp::ReOrderApp';
+	#	use aliased 'Programs::Services::TpvService::ServiceApps::ProcessReorderApp::ProcessReorderApp';
 	#
 	#	#	use aliased 'Packages::InCAM::InCAM';
 	#	#

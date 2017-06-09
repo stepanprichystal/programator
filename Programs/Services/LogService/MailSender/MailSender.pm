@@ -48,7 +48,7 @@ sub new {
 
 	my %stopSend = ();
 	$stopSend{ EnumsApp->App_TEST } = TestStopCond->new();
-	$stopSend{ EnumsApp->App_REORDER } = ReOrderStopCond->new();
+	$stopSend{ EnumsApp->App_CHECKREORDER } = ReOrderStopCond->new();
 
 	$self->{"stopSend"} = \%stopSend;
 

@@ -1,14 +1,14 @@
 #-------------------------------------------------------------------------------------------#
-# Description:  Class fotr testing application
+# Description: Represent Universal Drill tool manager
 
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Programs::Services::TpvService::ServiceApps::ReOrderApp::ReOrder::Checks::CheckBase;
+package Programs::Services::TpvService::ServiceApps::CheckReorderApp::Reorder::CheckInfo;
 
- 
 #3th party library
 use strict;
 use warnings;
+ 
 
 #local library
  
@@ -19,33 +19,57 @@ use warnings;
 
 sub new {
 	my $self = shift;
-	my $checkKey = shift;
-	
 	$self = {};
 	bless $self;
+
  
-	$self->{"key"} = $checkKey;
+ 	$self->{"description"} = shift;
+ 	$self->{"key"} = shift;
+  	$self->{"ver"} = shift;
+ 	$self->{"type"} = shift;
+ 	$self->{"mess"} = shift;
  
 	return $self;
 }
 
-sub GetCheckKey {
+
+sub GetDesc{
 	my $self = shift;
-	my $pcbId = shift;
 	
-	return 1;
- 
+	return $self->{"description"};
+}
+
+sub GetKey{
+	my $self = shift;
+	
+	return $self->{"key"};
+}
+
+sub GetVersion{
+	my $self = shift;
+	
+	return $self->{"ver"};
+}
+
+sub GetType{
+	my $self = shift;
+	
+	return $self->{"type"};
+}
+
+sub GetMessage{
+	my $self = shift;
+	
+	return $self->{"mess"};
 }
  
-
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
- 
-	print "ee";
+	 
 }
 
 1;

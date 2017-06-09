@@ -2,21 +2,18 @@
 # Description:  Class responsible for determine pcb reorder check
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Programs::Services::TpvService::ServiceApps::ReOrderApp::ReOrder::Checks::NIF_NAKOVENI;
-use base('Programs::Services::TpvService::ServiceApps::ReOrderApp::ReOrder::Checks::CheckBase');
+package Programs::Services::TpvService::ServiceApps::CheckReorderApp::Reorder::Checks::PICKERING_ORDER_NUM;
+use base('Programs::Services::TpvService::ServiceApps::CheckReorderApp::Reorder::Checks::CheckBase');
 
 use Class::Interface;
-&implements('Programs::Services::TpvService::ServiceApps::ReOrderApp::ReOrder::Checks::ICheck');
+&implements('Programs::Services::TpvService::ServiceApps::CheckReorderApp::Reorder::Checks::ICheck');
 
 #3th party library
 use strict;
 use warnings;
 
 #local library
-use aliased 'Packages::NifFile::NifFile';
-use aliased 'Helpers::FileHelper';
-use aliased 'Helpers::JobHelper';
- 
+use aliased 'Connectors::HeliosConnector::HegMethods';
 
 #-------------------------------------------------------------------------------------------#
 #  Public method
@@ -26,40 +23,33 @@ sub new {
 	my $class = shift;
 	my $self  = $class->SUPER::new(@_);
 	bless($self);
-	
-	
+
 	return $self;
 }
 
-# check if nif file contain "C" in  core drill. Example( f60574)
 sub NeedChange {
-	my $self = shift;
+	my $self  = shift;
 	my $inCAM = shift;
 	my $jobId = shift;
 	my $jobExist = shift; # (in InCAM db)
 	my $isPool = shift;
-	
+
 	my $needChange = 0;
-	
-	my $nifPath = JobHelper->GetJobArchive( $jobId ) . $jobId . ".nif";
-	
-	if(-e $nifPath){
-		
-		my @lines = @{FileHelper->ReadAsLines($nifPath)};
-		
-		my @nakov = grep { $_ =~ /vrtani_\d=c/i } @lines;
-		
-		if(scalar(@nakov)){
-			
-			$needChange = 1;
-		}
-		
+
+	my $custInfo = HegMethods->GetCustomerInfo($jobId);
+
+	# Kadlec customer
+	if (    $custInfo->{"reference_subjektu"} eq "06544"
+		 || $custInfo->{"reference_subjektu"} eq "06545"
+		 || $custInfo->{"reference_subjektu"} eq "06546" )
+	{
+
+		$needChange = 1;
+
 	}
-	
+
 	return $needChange;
- 
 }
- 
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
@@ -67,12 +57,11 @@ sub NeedChange {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
- 
- 	use aliased 'Programs::Services::TpvService::ServiceApps::ReOrderApp::ReOrder::Checks::NIF_NAKOVENI' => "Change";
+ 	use aliased 'Programs::Services::TpvService::ServiceApps::CheckReorderApp::Reorder::Checks::PICKERING_ORDER_NUM' => "Change";
  	use aliased 'Packages::InCAM::InCAM';
 	
 	my $inCAM    = InCAM->new();
-	my $jobId = "f73086";
+	my $jobId = "f52457";
 	
 	my $check = Change->new();
 	

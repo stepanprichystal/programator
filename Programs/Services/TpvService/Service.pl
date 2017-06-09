@@ -25,7 +25,7 @@ use aliased 'Enums::EnumsPaths';
 use aliased 'Enums::EnumsApp';
 
 # applications
-use aliased 'Programs::Services::TpvService::ServiceApps::ReOrderApp::ReOrderApp';
+use aliased 'Programs::Services::TpvService::ServiceApps::CheckReorderApp::CheckReorderApp';
 
 Win32::Daemon::RegisterCallbacks(
 	{
@@ -82,7 +82,7 @@ sub WorkerMethod {
 	#-------------------------------------------------
 
 	my %regApp = ();
-	$regApp{ EnumsApp->App_REORDER } = 2;
+	$regApp{ EnumsApp->App_CHECKREORDER } = 2;
 
 	# ------------------------------------------------
 	
@@ -127,11 +127,11 @@ sub __GetApp {
 
 	my $app = undef;
 
-	if ( $appName eq EnumsApp->App_REORDER ) {
+	if ( $appName eq EnumsApp->App_CHECKREORDER ) {
 		
 		my $logger = get_logger("service");
 		$logger->debug("get app");
-		$app = ReOrderApp->new();
+		$app = CheckReorderApp->new();
 	}
 
 	return $app;

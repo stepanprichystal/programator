@@ -4,7 +4,8 @@
 package Enums::EnumsApp;
 
 use constant {
-	App_REORDER => "reOrderApp",
+	App_CHECKREORDER => "checkReorder",
+	App_PROCESSREORDER => "processReorder",
 	#App_ARCHIVEJOBS => "archiveJobs",
 	
 	App_TEST => "testApp",
@@ -20,7 +21,7 @@ sub GetTitle{
 	
 	my $title = "Unknown app name";
 	
-	if($code eq App_REORDER){
+	if($code eq App_CHECKREORDER){
 		
 		$title = "Job reorder";
 		

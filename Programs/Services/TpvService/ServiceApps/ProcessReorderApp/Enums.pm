@@ -1,5 +1,5 @@
 
-package Programs::Services::TpvService::ServiceApps::ReOrderApp::Enums;
+package Programs::Services::TpvService::ServiceApps::ProcessReorderApp::Enums;
 
 # represent type of DTM vzsledne/vratne holes
 use constant {

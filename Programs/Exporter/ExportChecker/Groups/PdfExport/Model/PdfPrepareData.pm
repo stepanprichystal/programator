@@ -73,6 +73,12 @@ sub OnPrepareGroupData {
 	if ( $defaultInfo->IsPool() || (defined $custExportControl &&  $custExportControl == 0 )) {
 		$exportControl = 0;
 	}
+	
+	# TODO smazat
+	if ( $defaultInfo->IsPool()){
+		$exportControl = 1;
+	}
+	
 
 	# 2) define default step
 	my $defStep = undef;

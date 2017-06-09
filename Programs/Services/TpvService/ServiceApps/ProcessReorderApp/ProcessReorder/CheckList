@@ -1,0 +1,100 @@
+# =================================================================================================================
+# List of all changes, which are checked at reorders
+# Each check has implemented own control mechanism, some controls can be based on version number
+# Priorita in automatic task is given by changes order. Top is highest priority
+
+# Entry format:
+#
+# [ <val> ] = " <val> is description, which see user list of changes, which are necessary to do. (max three words)"
+# K = "unique key, which refer to this 'change'"
+# V = "number of version, if change check if based on version control. Version are stored in 'dif' file"
+# T = "auto/man, determine, if is possible do change automatically or only manually"
+# M = "message for user (in manual type of changes), how to make changes manually"
+# =================================================================================================================
+
+
+# =========================
+# AUTOMATIC 
+# =========================
+ 
+[ Change mask polarity ]
+K = MASK_POLAR
+V = 
+T = auto
+M =  
+ 
+[ Put schema ]
+K = SCHEMA
+V = 
+T = auto
+R =
+
+[ Rexport of pcb ]
+K = EXPORT
+V = 
+T = auto
+R =
+ 
+
+
+# =========================
+# MANUAL 
+# =========================
+
+[ POOL_PATTERN ]
+K = POOL_PATTERN
+V = 
+T = manual
+M = V dps je velka prokovena dira, dps musi jit samostatne patternem
+
+
+[ DATACODE_IS ]
+K = DATACODE_IS
+V = 
+T = manual
+M = Kontrola, zda dps obsahuje dynamicky datakod
+
+[ KADLEC_PANEL ]
+K = KADLEC_PANEL
+V = 
+T = manual
+M = Pozadavek zakaznika Kadlec, vse predelat na dodani v panelu
+
+[ ELTEST_EXIST ]
+K = ELTEST_EXIST
+V = 
+T = manual
+M = Elektricky test pro testery neexistuje, vytvor ho
+
+[ GOLD_CONNECTOR_LAYER ]
+K = GOLD_CONNECTOR_LAYER
+V = 
+T = manual
+M = Dps obsahuje zlaceny konektor, ale nejsou vytvorene vrstvy gold_c, gold_s
+
+[ PICKERING_ORDER_NUM ]
+K = PICKERING_ORDER_NUM
+V = 
+T = manual
+M = Zakazik Pickering si preje upravit cislo objednavek na deskach, podle OneNotu 
+
+[ NIF_NAKOVENI ]
+K = NIF_NAKOVENI
+V = 
+T = manual
+M = V nifu u vrtani jader je hodnota C - nakoveni (po exportu hodnotu znovu zapsat do nifu)
+
+[ INCAM_JOB ]
+K = INCAM_JOB
+V = 
+T = manual
+M = Job neni zpracovany v InCAMU, oprav to
+
+[ PANEL_SET ]
+K = PANEL_SET
+V = 
+T = manual
+M = V nifu je sada nebo zakaznicky panel, ale neni to uvedeno v atributech jobu, oprav to
+
+
+

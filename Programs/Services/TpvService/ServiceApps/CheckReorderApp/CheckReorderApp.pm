@@ -2,7 +2,7 @@
 # Description: Represent Universal Drill tool manager
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Programs::Services::TpvService::ServiceApps::ReOrderApp::ReOrderApp;
+package Programs::Services::TpvService::ServiceApps::CheckReorderApp::CheckReorderApp;
 use base("Programs::Services::TpvService::ServiceApps::ServiceAppBase");
 
 #use Class::Interface;
@@ -23,10 +23,10 @@ use aliased 'Enums::EnumsApp';
 use aliased 'Helpers::GeneralHelper';
 
 use aliased 'Helpers::FileHelper';
-use aliased 'Programs::Services::TpvService::ServiceApps::ReOrderApp::Enums';
+use aliased 'Programs::Services::TpvService::ServiceApps::CheckReorderApp::Enums';
 
 use aliased 'Helpers::JobHelper';
-use aliased 'Programs::Services::TpvService::ServiceApps::ReOrderApp::ReOrder::CheckInfo';
+use aliased 'Programs::Services::TpvService::ServiceApps::CheckReorderApp::Reorder::CheckInfo';
 use aliased 'CamHelpers::CamJob';
 
 #-------------------------------------------------------------------------------------------#
@@ -36,7 +36,7 @@ use aliased 'CamHelpers::CamJob';
 sub new {
 	my $class = shift;
 
-	my $appName = EnumsApp->App_REORDER;
+	my $appName = EnumsApp->App_CHECKREORDER;
 	my $self = $class->SUPER::new( $appName, @_ );
 
 	#my $self = {};
@@ -406,7 +406,7 @@ sub __LoadCheckClasses {
 	my $self = shift;
 
 	# 	# automatically "use"  all packages from dir "checks"
-	# 	my $dir = GeneralHelper->Root() . '\Programs\Services\TpvService\ServiceApps\ReOrderApp\ReOrder\Checks';
+	# 	my $dir = GeneralHelper->Root() . '\Programs\Services\TpvService\ServiceApps\ReorderApp\Reorder\Checks';
 	#	opendir( DIR, $dir ) or die $!;
 	#
 	#	while ( my $file = readdir(DIR) ) {
@@ -415,7 +415,7 @@ sub __LoadCheckClasses {
 	#
 	#		$file =~ s/\.pm//;
 	#
-	#		my $module = 'Programs::Services::TpvService::ServiceApps::ReOrderApp::ReOrder::Checks::' . $file;
+	#		my $module = 'Programs::Services::TpvService::ServiceApps::CheckReorderApp::Reorder::Checks::' . $file;
 	#		print STDERR $module."\n";
 	#
 	#		eval("use aliased \'$module\';");
@@ -427,7 +427,7 @@ sub __LoadCheckClasses {
 
 		my $key = $checkInfo->GetKey();
 
-		my $module = 'Programs::Services::TpvService::ServiceApps::ReOrderApp::ReOrder::Checks::' . $key;
+		my $module = 'Programs::Services::TpvService::ServiceApps::CheckReorderApp::Reorder::Checks::' . $key;
 		eval("use  $module;");
 		$checks{$key} = $module->new($key);
 	}
@@ -459,7 +459,7 @@ sub __SetLogging {
 	#my $appDir = dirname(__FILE__);
 	#Log::Log4perl->init("$appDir\\Logger.conf");
 
-	$self->{"logger"} = get_logger("reOrderApp");
+	$self->{"logger"} = get_logger("checkReorder");
 
 	$self->{"logger"}->debug("test of logging");
 
@@ -471,7 +471,7 @@ sub __SetLogging {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	#	use aliased 'Programs::Services::TpvService::ServiceApps::ReOrderApp::ReOrderApp';
+	#	use aliased 'Programs::Services::TpvService::ServiceApps::CheckReorderApp::CheckReorderApp';
 	#
 	#	#	use aliased 'Packages::InCAM::InCAM';
 	#	#
