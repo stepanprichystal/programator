@@ -7,7 +7,7 @@ use warnings;
 
 
 # ============ INPUT LINE =================
-my $inputLine ="matrix_auto_rows,job=f52457,matrix=matrix";
+my $inputLine ="COM autopan_delete,job=f52457,panel=panel,mode=objects_all_layers";
 
 my $output = "\$inCAM->COM(";
 my @splitted = split( ",", $inputLine );

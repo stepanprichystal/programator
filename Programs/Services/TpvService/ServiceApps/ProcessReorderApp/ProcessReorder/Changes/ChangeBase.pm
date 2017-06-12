@@ -3,7 +3,7 @@
 
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Programs::Services::TpvService::ServiceApps::ProcessReorderApp::Reorder::Changes::ChangeBase;
+package Programs::Services::TpvService::ServiceApps::ProcessReorderApp::ProcessReorder::Changes::ChangeBase;
 
  
 #3th party library
@@ -20,11 +20,15 @@ use warnings;
 sub new {
 	my $self = shift;
 	my $checkKey = shift;
+	my $inCAM = shift;
+	my $jobId = shift;
 	
 	$self = {};
 	bless $self;
  
 	$self->{"key"} = $checkKey;
+	$self->{"inCAM"} = $inCAM;
+	$self->{"jobId"} = $jobId;
  
 	return $self;
 }

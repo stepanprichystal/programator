@@ -56,6 +56,16 @@ sub PrepareGroupData {
 	else {
 		die "PrepareData.pm has to implemetn OnPrepareGroupData method.";
 	}
+
+	# Call optional method for editing group data for "Reorder" (data can be prepared from old nif file, etc,..)
+	if ( $self->{'defaultInfo'}->GetIsReorder() ) {
+
+		if ( $self->{"prepareData"}->can("OnPrepareReorderGroupData") ) {
+
+			$self->{"prepareData"}->OnPrepareReorderGroupData($self, $self->{"groupData"});
+
+		}
+	}
 }
 
 # Set default group state

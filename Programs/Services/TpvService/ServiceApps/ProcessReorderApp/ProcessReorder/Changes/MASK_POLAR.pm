@@ -2,11 +2,11 @@
 # Description:  Class responsible for determine pcb reorder check
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Programs::Services::TpvService::ServiceApps::ProcessReorderApp::Reorder::Changes::MASK_POLAR;
-use base('Programs::Services::TpvService::ServiceApps::ProcessReorderApp::Reorder::Changes::ChangeBase');
+package Programs::Services::TpvService::ServiceApps::ProcessReorderApp::ProcessReorder::Changes::MASK_POLAR;
+use base('Programs::Services::TpvService::ServiceApps::ProcessReorderApp::ProcessReorder::Changes::ChangeBase');
 
 use Class::Interface;
-&implements('Programs::Services::TpvService::ServiceApps::ProcessReorderApp::Reorder::Changes::IChange');
+&implements('Programs::Services::TpvService::ServiceApps::ProcessReorderApp::ProcessReorder::Changes::IChange');
 
 #3th party library
 use strict;
@@ -14,6 +14,7 @@ use warnings;
 
 #local library
 use aliased 'CamHelpers::CamJob';
+use aliased 'CamHelpers::CamLayer';
 
 
 #-------------------------------------------------------------------------------------------#
@@ -31,16 +32,12 @@ sub new {
 # Check if mask is not negative in matrix
 sub Run {
 	my $self  = shift;
-	my $inCAM = shift;
-	my $jobId = shift;
-	my $jobExist = shift; # (in InCAM db)
-	my $isPool = shift;
+	my $mess = shift;
 	
-	unless($jobExist){
-		return 1;
-	}
-
-	my $needChange = 0;
+	my $inCAM = $self->{"inCAM"};
+	my $jobId = $self->{"jobId"};
+	
+	my $result = 1;
  
 	my @layers = CamJob->GetBoardLayers($inCAM, $jobId);
 	
@@ -48,12 +45,11 @@ sub Run {
 		
 		if($l->{"gROWname"} =~ /m[cs]/ && $l->{"gROWpolarity"} eq "negative"){
 			
-			$needChange = 1;
-			last;
+			CamLayer->SetLayerPolarityLayer($inCAM, $jobId, $l->{"gROWname"}, "positive");
 		}
 	}
 
-	return $needChange;
+	return $result;
 }
 
 #-------------------------------------------------------------------------------------------#
@@ -62,15 +58,17 @@ sub Run {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
- 	use aliased 'Programs::Services::TpvService::ServiceApps::ProcessReorderApp::Reorder::Changes::MASK_POLAR' => "Change";
+
+ 	use aliased 'Programs::Services::TpvService::ServiceApps::ProcessReorderApp::ProcessReorder::Changes::MASK_POLAR' => "Change";
  	use aliased 'Packages::InCAM::InCAM';
 	
 	my $inCAM    = InCAM->new();
 	my $jobId = "f52457";
 	
-	my $check = Change->new();
+	my $check = Change->new("key", $inCAM, $jobId);
 	
-	print "Need change: ".$check->NeedChange($inCAM, $jobId, 1);
+	my $mess = "";
+	print "Change result: ".$check->Run(\$mess);
 }
 
 1;

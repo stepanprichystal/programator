@@ -63,6 +63,8 @@ sub new {
 	$self->{"costomerNote"}  = undef;    # notes about customer, like export paste, info to pdf, ..
 	$self->{"pressfitExist"} = undef;    # if pressfit exist in job
 	$self->{"pcbBaseInfo"}   = undef;    # contain base info about pcb from IS
+	$self->{"reorder"}   	 = undef;    # indicate id in time in export exist reorder
+	
 
 	$self->__InitDefault();
 
@@ -524,6 +526,22 @@ sub GetMeritPressfitIS {
 	}
 }
 
+# Return if any reordr exist for this job id
+sub GetIsReorder {
+	my $self = shift;
+	 
+	if( int($self->{"reorder"}) > 1){
+		
+		return 1;
+	}
+	else{
+		
+		return 0;
+	}
+}
+
+
+
 sub __InitDefault {
 	my $self = shift;
 
@@ -573,6 +591,8 @@ sub __InitDefault {
 	$self->{"pressfitExist"} = PressfitOperation->ExistPressfitJob( $self->{"inCAM"}, $self->{"jobId"}, $self->{"step"}, 1 );
 
 	$self->{"pcbBaseInfo"} = HegMethods->GetBasePcbInfo( $self->{"jobId"} );
+	
+	$self->{"reorder"} = HegMethods->GetPcbOrderNumber($self->{"jobId"});
 
 }
 

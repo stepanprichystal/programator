@@ -15,6 +15,9 @@ use warnings;
 #use File::Spec;
 use File::Basename;
 use Log::Log4perl qw(get_logger);
+use Archive::Zip qw( :ERROR_CODES :CONSTANTS );
+
+use POSIX qw(strftime);
 
 #local library
 #use aliased 'Connectors::TpvConnector::TpvMethods';
@@ -45,14 +48,10 @@ sub new {
 
 	$self->__SetLogging();
 
-	$self->{"logger"}->debug("after logg");
-
 	# All controls
 
 	$self->{"checks"} = undef;    # contain classes implement ICHeck
 	$self->{"inCAM"}  = undef;
-
-	$self->{"logger"}->debug("reorder init");
 
 	#$self->__LoadChecks();
 
@@ -141,8 +140,6 @@ sub __ProcessJob {
 	my ($jobId) = $orderId =~ /^(\w\d+)-\d+/i;
 	$jobId = lc($jobId);
 
- 
-
 	# Check if change log file exist and read checks
 	my @changes = $self->__LoadChanges($jobId);
 
@@ -158,26 +155,30 @@ sub __ProcessJob {
 		$inCAM->COM( "open_job", job => "$jobId", "open_win" => "yes" );
 		$inCAM->COM( "check_inout", "job" => "$jobId", "mode" => "out", "ent_type" => "job" );
 	}
+	else {
+
+		die "Job $jobId doesn't exist";
+	}
 
 	# 2) Archive old files
-	
-	
-	
+
+	$self->__ArchiveJob($jobId);
+
 	# 3) Do automatic changes
 
-	foreach my $change (@changes ) {
+	foreach my $change (@changes) {
 
-		$change->Run();
+		$change->Run($jobId);
 	}
 
-	if ($jobExist) {
-		$inCAM->COM( "check_inout", "job" => "$jobId", "mode" => "in", "ent_type" => "job" );
-		$inCAM->COM( "close_job", "job" => "$jobId" );
-	}
- 
-	# 3) set order state
-	my $orderState =  Enums->Step_AUTOOK;
- 
+	# 4) save jopb
+
+	$inCAM->COM( "check_inout", "job" => "$jobId", "mode" => "in", "ent_type" => "job" );
+	$inCAM->COM( "close_job", "job" => "$jobId" );
+
+	# 5) set order state
+	my $orderState = Enums->Step_AUTOOK;
+
 	HegMethods->UpdatePcbOrderState( $orderId, $orderState );
 }
 
@@ -208,242 +209,86 @@ sub __LoadChanges {
 			}
 		}
 
-		if ( $_ =~ /\d\)\s*(.*)\s*-\s*(.*)/){
-			
+		if ( $_ =~ /\d\)\s*(.*)\s*-\s*(.*)/ ) {
+
 			my $key = $1;
-			
-			my $module = 'Programs::Services::TpvService::ServiceApps::ProcessReorderApp::ProcessReorder::Checks::' . $key;
+
+			my $module = 'Programs::Services::TpvService::ServiceApps::ProcessReorderApp::ProcessReorder::Changes::' . $key;
 			eval("use  $module;");
-			
-			push(@changes, $module->new($key));
+
+			push( @changes, $module->new($key) );
 		}
 	}
-	
-	unless(scalar(@changes)){
+
+	unless ( scalar(@changes) ) {
 		die "Unable to process reorder $jobId, because \"change_log\" file doesnt contain any automatic changes.\n";
-		
+
 	}
-	
+
 	return @changes;
 }
 
-# Try acquire job and import to inCAM
-# return 1 if job is prepared in incam
-# return 0, if job in InCAM doesnt exist
-sub __AcquireJob {
+sub __ArchiveJob {
 	my $self  = shift;
 	my $jobId = shift;
 
-	my $result = 1;
+	# Script zip script files and save to backup dir
+	my $fname = "Premnozeni_" . ( strftime "%Y_%m_%d", localtime ) . ".zip";
 
-	my $inCAM = $self->{"inCAM"};
+	my $archive = JobHelper->GetJobArchive($jobId);
 
-	unless ( CamJob->JobExist( $inCAM, $jobId ) ) {
+	my $zip = Archive::Zip->new();
 
-		$result = 0;
+	my $dir;
+	if ( opendir( $dir, $archive ) ) {
 
-		# check if tgz exist
-		my $path = JobHelper->GetJobArchive($jobId) . $jobId . ".tgz";
+		my $tgz = $archive . "\\" . $jobId . ".tgz";
 
-		if ( -e $path ) {
+		if ( -e $tgz ) {
+			$zip->addFile( $tgz, $jobId . ".tgz" );
+		}
 
-			my $importSucc = 1;       # tell if job was succesfully imported
-			my $importErr  = undef;
+		my $nif = $archive . "\\" . $jobId . ".nif";
 
-			# try to import job to InCAM
+		if ( -e $nif ) {
+			$zip->addFile( $nif, $jobId . ".nif" );
+		}
 
-			$inCAM->HandleException(1);
+		my $dif = $archive . "\\" . $jobId . ".dif";
 
-			my $importOk = $inCAM->COM( 'import_job', "db" => 'incam', "path" => $path, "name" => $jobId, "analyze_surfaces" => 'no' );
+		if ( -e $dif ) {
+			$zip->addFile( $nif, $jobId . ".dif" );
+		}
 
-			$inCAM->HandleException(0);
+		my $pdf = $archive . "\\zdroje\\" . "$jobId-control.pdf";
 
-			# test if import fail
-			if ( $importOk != 0 ) {
-				$importSucc = 0;
-				$importErr  = $inCAM->GetExceptionError();
+		if ( -e $pdf ) {
+			$zip->addFile( $pdf, "$jobId-control.pdf" );
+		}
+
+		$zip->addDirectory("nc");
+
+		my $nc = $archive . "\\nc\\";
+
+		if ( opendir( $dir, $nc ) ) {
+
+			while ( ( my $f = readdir($dir) ) ) {
+
+				next unless $f =~ /^[a-z]/i;
+
+				$zip->addFile( $nc . "\\" . $f, "nc\\" . $f );
+
 			}
 
-			# import succes, try if job now exist
-			elsif ( $importOk == 0 && !CamJob->JobExist( $inCAM, $jobId ) ) {
-
-				$importSucc = 0;
-				$importErr  = "Job import was not succes\n";
-			}
-
-			# if errors,
-			if ($importSucc) {
-
-				$result = 1;    # succesfully imported, job is prepared
-
-			}
-			else {
-
-				# import was not succ, die - send log to db
-				die "Error during import job to InCAM db. $importErr";
-
-				#$self->{"loggerDB"}->Error($importErr);
-			}
-
+			close($dir);
 		}
 
+		close $dir;
 	}
 
-	return $result;
-}
-
-sub __CreateChangeFile {
-	my $self   = shift;
-	my $jobId  = shift;
-	my @autoCh = @{ shift(@_) };
-	my @manCh  = @{ shift(@_) };
-
-	my @lines = ();
-
-	push( @lines, "# REORDER CHECKLIST" );
-
-	push( @lines, "# PCB ID:  $jobId" );
-	push( @lines, "" );
-	push( @lines, "" );
-
-	push( @lines, "# ============ Manual tasks============ #" );
-	push( @lines, "" );
-
-	for ( my $i = 0 ; $i < scalar(@manCh) ; $i++ ) {
-
-		push( @lines, $manCh[$i] );
-
+	unless ( $zip->writeToFileNamed( $archive . "zdroje\\$fname" ) == AZ_OK ) {
+		die "Zip job archive failed.";
 	}
-
-	push( @lines, "" );
-	push( @lines, "# ========== Automatic tasks ========== #" );
-	push( @lines, "" );
-
-	for ( my $i = 0 ; $i < scalar(@autoCh) ; $i++ ) {
-
-		push( @lines, $autoCh[$i] );
-
-	}
-
-	my $path = JobHelper->GetJobArchive($jobId) . "Change_log.txt";
-
-	if ( -e $path ) {
-		unlink($path);
-	}
-
-	my $f;
-
-	if ( open( $f, "+>", $path ) ) {
-
-		foreach my $l (@lines) {
-
-			print $f "\n" . $l;
-		}
-
-		close($f);
-	}
-	else {
-		die "unable to crate 'Change log' file for pcbid: $jobId";
-	}
-
-}
-
-sub __LoadChecklist {
-	my $self = shift;
-
-	# Check if checklist is valid
-	my $path  = GeneralHelper->Root() . "\\Programs\\Services\\TpvService\\ServiceApps\\ReorderApp\\Reorder\\CheckList";
-	my @lines = @{ FileHelper->ReadAsLines($path) };
-
-	# Parse
-
-	for ( my $i = 0 ; $i < scalar(@lines) ; $i++ ) {
-
-		my $l = $lines[$i];
-
-		next if ( $l =~ /#/ );
-
-		if ( $l =~ m/\[(.*)\]/ ) {
-
-			my ($desc) = $1 =~ /\s*(.*)\s*/;
-			my ($key)  = $lines[ $i + 1 ] =~ / =\s*(.*)\s*/;
-			my ($ver)  = $lines[ $i + 2 ] =~ / =\s*(.*)\s*/;
-			my ($type) = $lines[ $i + 3 ] =~ / =\s*(.*)\s*/;
-			my ($mess) = $lines[ $i + 4 ] =~ / =\s*(.*)\s*/;
-
-			my $checkInf = CheckInfo->new( $desc, $key, $ver, $type, $mess );
-
-			push( @{ $self->{"checklist"} }, $checkInf );
-
-			$i += 4;
-		}
-	}
-
-	# 1) Check if all check has defined type
-	foreach my $checkInfo ( @{ $self->{"checklist"} } ) {
-
-		my $t = $checkInfo->GetType();
-		my $m = $checkInfo->GetMessage();
-
-		if ( !defined $t || $t eq "" ) {
-			die "Check " . $checkInfo->GetKey() . " has not defined type";
-		}
-
-		if ( $t eq "manual" && ( !defined $m || $m eq "" ) ) {
-
-			die "Checktype " . $checkInfo->GetKey() . " has to has defined 'R' in checklist";
-		}
-	}
-
-}
-
-sub __LoadCheckClasses {
-	my $self = shift;
-
-	# 	# automatically "use"  all packages from dir "checks"
-	# 	my $dir = GeneralHelper->Root() . '\Programs\Services\TpvService\ServiceApps\ReorderApp\Reorder\Checks';
-	#	opendir( DIR, $dir ) or die $!;
-	#
-	#	while ( my $file = readdir(DIR) ) {
-	#
-	#		next if ( $file =~ m/^\./ );
-	#
-	#		$file =~ s/\.pm//;
-	#
-	#		my $module = 'Programs::Services::TpvService::ServiceApps::ProcessReorderApp::Reorder::Checks::' . $file;
-	#		print STDERR $module."\n";
-	#
-	#		eval("use aliased \'$module\';");
-	#	}
-
-	my %checks = ();
-
-	foreach my $checkInfo ( @{ $self->{"checklist"} } ) {
-
-		my $key = $checkInfo->GetKey();
-
-		my $module = 'Programs::Services::TpvService::ServiceApps::ProcessReorderApp::Reorder::Checks::' . $key;
-		eval("use  $module;");
-		$checks{$key} = $module->new($key);
-	}
-
-	$self->{"checks"} = \%checks;
-
-	#	# auto checks
-	#	$checks{"EXPORT"}     = EXPORT->new();
-	#	$checks{"SCHEMA"}     = SCHEMA->new();
-	#	$checks{"MASK_POLAR"} = MASK_POLAR->new();
-	#
-	#	# manual checks
-	#	$checks{"DATACODE_IS"}          = DATACODE_IS->new();
-	#	$checks{"ELTEST_EXIST"}         = ELTEST_EXIST->new();
-	#	$checks{"GOLD_CONNECTOR_LAYER"} = GOLD_CONNECTOR_LAYER->new();
-	#	$checks{"INCAM_JOB"}            = INCAM_JOB->new();
-	#	$checks{"KADLEC_PANEL"}         = KADLEC_PANEL->new();
-	#	$checks{"NIF_NAKOVENI"}         = NIF_NAKOVENI->new();
-	#	$checks{"PANEL_SET"}            = PANEL_SET->new();
-	#	$checks{"PICKERING_ORDER_NUM"}  = PICKERING_ORDER_NUM->new();
-	#	$checks{"POOL_PATTERN"}         = POOL_PATTERN->new();
 
 }
 

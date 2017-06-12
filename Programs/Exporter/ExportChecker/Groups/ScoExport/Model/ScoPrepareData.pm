@@ -17,7 +17,8 @@ use aliased 'Programs::Exporter::ExportChecker::Enums';
 use aliased 'Packages::Export::ScoExport::Enums' => "ScoEnums";
 use aliased 'CamHelpers::CamHelper';
 use aliased 'Enums::EnumsGeneral';
-
+use aliased 'Helpers::JobHelper';
+use aliased 'Helpers::FileHelper';
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
@@ -94,6 +95,44 @@ sub OnPrepareGroupData {
 	$groupData->SetCustomerJump($jump);
 
 	return $groupData;
+}
+
+# Default "group data" for REORDER are prepared in this method
+sub OnPrepareReorderGroupData {
+	my $self      = shift;
+	my $dataMngr  = shift;    #instance of GroupDataMngr
+	my $groupData = shift;    # default group data
+
+	my $inCAM = $dataMngr->{"inCAM"};
+	my $jobId = $dataMngr->{"jobId"};
+
+	my $defaultInfo = $dataMngr->GetDefaultInfo();
+
+	# check if exist score file, and get core thick
+	my $path = JobHelper->GetJobArchive($jobId);
+
+	my @scoreFiles = FileHelper->GetFilesNameByPattern( $path, ".jum" );
+
+	my $coreThick = undef;
+
+	if ( scalar(@scoreFiles) > 0 ) {
+
+		my @lines = @{ FileHelper->ReadAsLines( $scoreFiles[0] ) };
+
+		foreach (@lines) {
+
+			if ( $_ =~ /core\s*:\s*(\d+.\d+)/i ) {
+				$coreThick = $1;
+				last;
+			}
+		}
+	}
+	
+	if(defined $coreThick && $coreThick > 0){
+		
+		$groupData->SetCoreThick($coreThick);
+	}
+
 }
 
 #-------------------------------------------------------------------------------------------#

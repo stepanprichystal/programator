@@ -1029,9 +1029,9 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	use aliased 'Connectors::HeliosConnector::HegMethods';
 
-	my @reorders = HegMethods->GetReorders( );
+	my $order = HegMethods->GetPcbOrderNumber("d71670");
 
-	print "ddd";
+	print $order;
 }
 
 1;

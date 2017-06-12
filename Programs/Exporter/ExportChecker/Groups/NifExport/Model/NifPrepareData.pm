@@ -20,6 +20,7 @@ use aliased 'CamHelpers::CamAttributes';
 use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'Packages::CAMJob::Dim::JobDim';
+use aliased 'Packages::NifFile::NifFile';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -128,6 +129,59 @@ sub OnPrepareGroupData {
 	$groupData->SetNasobnost( $dim{"nasobnost"} );
 
 	return $groupData;
+}
+
+# Default "group data" for REORDER are prepared in this method
+sub OnPrepareReorderGroupData {
+	my $self     = shift;
+	my $dataMngr = shift;    #instance of GroupDataMngr
+	my $groupData = shift; # default group data
+
+	my $inCAM = $dataMngr->{"inCAM"};
+	my $jobId = $dataMngr->{"jobId"};
+
+	my $defaultInfo = $dataMngr->GetDefaultInfo();
+	
+	my $nif = NifFile->new($jobId);
+	
+	return 0 unless($nif->Exist());
+	
+	# Mask 0,1
+
+	my $mask = $nif->GetValue("rel(22305,L)");
+	if ( $mask =~ /\+/ ) {
+		$groupData->SetMaska01(1);
+	}
+
+	# Datacodes
+	my $datacode = $nif->GetValue("datacode");
+	$datacode =~ s/\s//g if ( defined $datacode );    # remove spaces
+
+	if ( defined $datacode && $datacode ne "" ) {
+
+		$datacode = uc($datacode);
+		$groupData->SetDatacode($datacode);
+	}
+	
+	# UL logo
+	my $ul = $nif->GetValue("ul_logo");
+	$ul =~ s/\s//g if ( defined $ul );    # remove spaces
+
+	if ( defined $ul && $ul ne "" ) {
+
+		$ul = uc($ul);
+		$groupData->SetUlLogo($ul);
+	}
+	
+	# Note
+	my $note = $nif->GetValue("poznamka");
+	 
+	if ( defined $note && $note ne "" ) {
+		
+		$note =~ s/;/\n/g;
+		$groupData->SetNotes($note);
+	}
+ 
 }
 
 sub __IsTenting {

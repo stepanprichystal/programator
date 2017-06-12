@@ -2,18 +2,19 @@
 # Description:  Class responsible for determine pcb reorder check
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Programs::Services::TpvService::ServiceApps::ProcessReorderApp::Reorder::Changes::SCHEMA;
-use base('Programs::Services::TpvService::ServiceApps::ProcessReorderApp::Reorder::Changes::ChangeBase');
+package Programs::Services::TpvService::ServiceApps::ProcessReorderApp::ProcessReorder::Changes::SCHEMA;
+use base('Programs::Services::TpvService::ServiceApps::ProcessReorderApp::ProcessReorder::Changes::ChangeBase');
 
 use Class::Interface;
-&implements('Programs::Services::TpvService::ServiceApps::ProcessReorderApp::Reorder::Changes::IChange');
+&implements('Programs::Services::TpvService::ServiceApps::ProcessReorderApp::ProcessReorder::Changes::IChange');
 
 #3th party library
 use strict;
 use warnings;
 
 #local library
-use aliased 'Connectors::HeliosConnector::HegMethods';
+use aliased 'CamHelpers::CamJob';
+use aliased 'CamHelpers::CamStepRepeat';
 
 #-------------------------------------------------------------------------------------------#
 #  Public method
@@ -23,29 +24,48 @@ sub new {
 	my $class = shift;
 	my $self  = $class->SUPER::new(@_);
 	bless($self);
-	
-	
+
 	return $self;
 }
 
-# Put schema, only non pool pcb
+# Delete and add new schema
 sub Run {
 	my $self = shift;
-	my $inCAM = shift;
-	my $jobId = shift;
-	my $jobExist = shift; # (in InCAM db)
-	my $isPool = shift;
-	
-	my $needChange = 0;
+	my $mess = shift;
 
- 
-	unless($isPool){
-		$needChange = 1;
+	my $inCAM = $self->{"inCAM"};
+	my $jobId = $self->{"jobId"};
+
+	my $result = 1;
+
+	my $layerCnt = CamJob->GetSignalLayerCnt( $inCAM, $jobId );
+
+	 
+	my $schema = undef;
+
+	if ( $layerCnt <= 2 ) {
+
+		$schema = "1a2v";
 	}
-	
-	return $needChange;
+	else {
+
+		my %lim = CamJob->GetProfileLimits2( $inCAM, $jobId, "panel" );
+
+		if ( abs( $lim{"yMax"} - $lim{"yMin"} ) == 407 ) {
+			$schema = '4v-407';
+		}
+		else {
+			$schema = '4v-485';
+		}
+	}
+
+	my @steps = CamStepRepeat->GetUniqueStepAndRepeat( $inCAM, $jobId, "panel" );
+
+	$inCAM->COM("autopan_delete","job" => $jobId,"panel" => "panel","mode" => "objects_all_layers");
+
+	$inCAM->COM( 'autopan_run_scheme', "job" => $jobId, "panel" => "panel", "pcb" => $steps[0]->{"stepName"}, "scheme" => $schema );
+
 }
- 
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
@@ -53,16 +73,16 @@ sub Run {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
- 
- 	use aliased 'Programs::Services::TpvService::ServiceApps::ProcessReorderApp::Reorder::Changes::DATACODE_IS' => "Change";
- 	use aliased 'Packages::InCAM::InCAM';
-	
-	my $inCAM    = InCAM->new();
-	my $jobId = "f52456";
-	
-	my $check = Change->new();
-	
-	print "Need change: ".$check->NeedChange($inCAM, $jobId, 1);
+	use aliased 'Programs::Services::TpvService::ServiceApps::ProcessReorderApp::ProcessReorder::Changes::SCHEMA' => "Change";
+	use aliased 'Packages::InCAM::InCAM';
+
+	my $inCAM = InCAM->new();
+	my $jobId = "f52457";
+
+	my $check = Change->new( "key", $inCAM, $jobId );
+
+	my $mess = "";
+	print "Change result: " . $check->Run( \$mess );
 }
 
 1;
