@@ -75,6 +75,8 @@ sub new {
 #------------------------------------------------
 sub Run {
 	my $self = shift;
+	
+	$self->{"logger"}->debug("Check reorder run");
 
 	eval {
 
@@ -108,6 +110,8 @@ sub Run {
 		$self->{"logger"}->error($err);
 		$self->{"loggerDB"}->Error( undef, $err );
 	}
+	
+	$self->{"logger"}->debug("Check reorder end");
 }
 
 sub __RunJob {

@@ -30,9 +30,9 @@ my $inCAM    = InCAM->new();
 
 $app->{"inCAM"} = $inCAM;
 
-#$app->Run();
+$app->Run();
 
-$app->__RunJob($jobId);
+#$app->__RunJob($jobId);
 
 print "app inited";
 
