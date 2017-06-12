@@ -26,7 +26,7 @@ use aliased 'Helpers::FileHelper';
 use aliased 'Programs::Services::TpvService::ServiceApps::CheckReorderApp::Enums';
 
 use aliased 'Helpers::JobHelper';
-use aliased 'Programs::Services::TpvService::ServiceApps::CheckReorderApp::Reorder::CheckInfo';
+use aliased 'Programs::Services::TpvService::ServiceApps::CheckReorderApp::CheckReorder::CheckInfo';
 use aliased 'CamHelpers::CamJob';
 
 #-------------------------------------------------------------------------------------------#
@@ -415,7 +415,7 @@ sub __LoadCheckClasses {
 	#
 	#		$file =~ s/\.pm//;
 	#
-	#		my $module = 'Programs::Services::TpvService::ServiceApps::CheckReorderApp::Reorder::Checks::' . $file;
+	#		my $module = 'Programs::Services::TpvService::ServiceApps::CheckReorderApp::CheckReorder::Checks::' . $file;
 	#		print STDERR $module."\n";
 	#
 	#		eval("use aliased \'$module\';");
@@ -427,7 +427,7 @@ sub __LoadCheckClasses {
 
 		my $key = $checkInfo->GetKey();
 
-		my $module = 'Programs::Services::TpvService::ServiceApps::CheckReorderApp::Reorder::Checks::' . $key;
+		my $module = 'Programs::Services::TpvService::ServiceApps::CheckReorderApp::CheckReorder::Checks::' . $key;
 		eval("use  $module;");
 		$checks{$key} = $module->new($key);
 	}

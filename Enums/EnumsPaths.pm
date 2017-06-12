@@ -2,11 +2,11 @@
 package Enums::EnumsPaths;
 
 use constant {
-	Client_EXPORTFILES => "c:\\Export\\ExportFiles\\Pcb\\",
+	Client_EXPORTFILES     => "c:\\Export\\ExportFiles\\Pcb\\",
 	Client_EXPORTFILESPOOL => "c:\\Export\\ExportFiles\\Pool\\",
-	Client_PCBLOCAL    => "c:\\pcb\\",
-	Client_EXPORTLOCAL => "c:\\Export\\",
-	Client_ELTESTS     => "c:\\Boards\\",
+	Client_PCBLOCAL        => "c:\\pcb\\",
+	Client_EXPORTLOCAL     => "c:\\Export\\",
+	Client_ELTESTS         => "c:\\Boards\\",
 
 	#Client_MULTICALDB => "c:\\Program Files (x86)\\Multical5-1\\ml.xml",
 	Client_INCAMVERSION => "c:\\opt\\InCAM\\",
@@ -36,41 +36,72 @@ use constant {
 	Jobs_PCBMDI   => "\\\\dc2.gatema.cz\\r\\pcb\\mdi\\",
 	Jobs_MDI      => "\\\\dc2.gatema.cz\\r\\mdi\\",
 	Jobs_JETPRINT => "\\\\dc2.gatema.cz\\r\\potisk\\",
-	Jobs_ELTESTS => "\\\\dc2.gatema.cz\\EL_DATA\\"
-	
-	 
+	Jobs_ELTESTS  => "\\\\dc2.gatema.cz\\EL_DATA\\"
+
 };
 
+# sometimes script is run from windows service, thus mapped disc Y is not avalaible, use incam\imcam adress
 use constant {
+	InCAM_serverDisc => ( -e "Y:" )
+	? "y:\\"
+	: "\\\\incam\\InCAM\\",
 
-	#InCAM_serverDisc => "y:\\",
-	InCAM_serverDisc => "\\\\incam\\InCAM\\",
+	#InCAM_serverDisc => "\\\\incam\\InCAM\\",
 
-	#InCAM_server => "y:\\server\\",
-	InCAM_server => "\\\\incam\\incam_server\\",
+	InCAM_server => ( -e "Y:" )
+	? "y:\\server\\"
+	: "\\\\incam\\incam_server\\",
 
-	#InCAM_users => "y:\\server\\users\\",
-	InCAM_users => "\\\\incam\\incam_server\\",
+	#InCAM_server => "\\\\incam\\incam_server\\",
 
-	#InCAM_hooks => "y:\\server\\site_data\\hooks\\",
-	InCAM_hooks => "\\\\incam\\incam_server\\site_data\\hooks\\",
+	InCAM_users => ( -e "Y:" )
+	? "y:\\server\\users\\"
+	: "\\\\incam\\incam_server\\",
 
-	#InCAM_ncdMachines => "y:\\server\\site_data\\hooks\\ncd\\config\\machines\\",
-	InCAM_ncdMachines => "\\\\incam\\incam_server\\site_data\\hooks\\ncd\\config\\machines\\",
+	#InCAM_users => "\\\\incam\\incam_server\\",
 
-	#InCAM_ncrMachines => "y:\\server\\site_data\\hooks\\ncr\\config\\machines\\",
-	InCAM_ncrMachines => "\\\\incam\\incam_server\\site_data\\hooks\\ncr\\config\\machines\\",
+	InCAM_hooks => ( -e "Y:" )
+	? "y:\\server\\site_data\\hooks\\"
+	: "\\\\incam\\incam_server\\site_data\\hooks\\",
 
-	#InCAM_jobs => "y:\\incam_db1\\incam\\jobs\\",
-	InCAM_jobs => "\\\\incam\\incam_db\\incam\\jobs\\",
+	#InCAM_hooks => "\\\\incam\\incam_server\\site_data\\hooks\\",
 
-	#InCAM_jobsdb1 => "y:\\incam_db1\\db1\\jobs\\",
-	InCAM_jobsdb1 => "\\\\incam\\incam_db\\db1\\jobs\\",
+	InCAM_ncdMachines => ( -e "Y:" )
+	? "y:\\server\\site_data\\hooks\\ncd\\config\\machines\\"
+	: "\\\\incam\\incam_server\\site_data\\hooks\\ncd\\config\\machines\\",
 
-	#InCAM_3rdScripts => "y:\\server\\site_data\\scripts3rdParty\\",
-	InCAM_3rdScripts => "\\\\incam\\incam_server\\site_data\\scripts3rdParty\\",
+	#InCAM_ncdMachines => "\\\\incam\\incam_server\\site_data\\hooks\\ncd\\config\\machines\\",
 
+	InCAM_ncrMachines => ( -e "Y:" )
+	? "y:\\server\\site_data\\hooks\\ncr\\config\\machines\\"
+	: "\\\\incam\\incam_server\\site_data\\hooks\\ncr\\config\\machines\\",
+
+	#InCAM_ncrMachines => "\\\\incam\\incam_server\\site_data\\hooks\\ncr\\config\\machines\\",
+
+	InCAM_jobs => ( -e "Y:" )
+	? "y:\\incam_db1\\incam\\jobs\\"
+	: "\\\\incam\\incam_db\\incam\\jobs\\",
+
+	#InCAM_jobs => "\\\\incam\\incam_db\\incam\\jobs\\",
+
+	InCAM_jobsdb1 => ( -e "Y:" )
+	? "y:\\incam_db1\\db1\\jobs\\"
+	: "\\\\incam\\incam_db\\db1\\jobs\\",
+
+	#InCAM_jobsdb1 => "\\\\incam\\incam_db\\db1\\jobs\\",
+
+	InCAM_3rdScripts => ( -e "Y:" )
+	? "y:\\server\\site_data\\scripts3rdParty\\"
+	: "\\\\incam\\incam_server\\site_data\\scripts3rdParty\\",
+
+	#InCAM_3rdScripts => "\\\\incam\\incam_server\\site_data\\scripts3rdParty\\",
 };
+
+#unless(-e "Y:\\"){
+#
+#	InCAM_serverDisc => "y:\\",
+#	InCAM_serverDisc => "\\\\incam\\InCAM\\",
+#}
 
 use constant {
 	Config_NCMACHINES => "\\Config\\NCMachines.txt",

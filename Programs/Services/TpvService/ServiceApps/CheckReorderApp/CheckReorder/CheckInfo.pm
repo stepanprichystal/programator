@@ -3,7 +3,7 @@
 
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Programs::Services::TpvService::ServiceApps::CheckReorderApp::Reorder::CheckInfo;
+package Programs::Services::TpvService::ServiceApps::CheckReorderApp::CheckReorder::CheckInfo;
 
 #3th party library
 use strict;

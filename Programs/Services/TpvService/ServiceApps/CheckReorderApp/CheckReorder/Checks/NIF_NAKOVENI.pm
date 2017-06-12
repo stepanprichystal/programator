@@ -2,11 +2,11 @@
 # Description:  Class responsible for determine pcb reorder check
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Programs::Services::TpvService::ServiceApps::CheckReorderApp::Reorder::Checks::NIF_NAKOVENI;
-use base('Programs::Services::TpvService::ServiceApps::CheckReorderApp::Reorder::Checks::CheckBase');
+package Programs::Services::TpvService::ServiceApps::CheckReorderApp::CheckReorder::Checks::NIF_NAKOVENI;
+use base('Programs::Services::TpvService::ServiceApps::CheckReorderApp::CheckReorder::Checks::CheckBase');
 
 use Class::Interface;
-&implements('Programs::Services::TpvService::ServiceApps::CheckReorderApp::Reorder::Checks::ICheck');
+&implements('Programs::Services::TpvService::ServiceApps::CheckReorderApp::CheckReorder::Checks::ICheck');
 
 #3th party library
 use strict;
@@ -68,7 +68,7 @@ my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
  
- 	use aliased 'Programs::Services::TpvService::ServiceApps::CheckReorderApp::Reorder::Checks::NIF_NAKOVENI' => "Change";
+ 	use aliased 'Programs::Services::TpvService::ServiceApps::CheckReorderApp::CheckReorder::Checks::NIF_NAKOVENI' => "Change";
  	use aliased 'Packages::InCAM::InCAM';
 	
 	my $inCAM    = InCAM->new();

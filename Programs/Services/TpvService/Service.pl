@@ -227,7 +227,7 @@ sub __SetLogging {
 	}
 
 	# 1) Create log dir
-	my $logDirReorder = 'c:\tmp\InCam\scripts\logs\reOrder';
+	my $logDirReorder = 'c:\tmp\InCam\scripts\logs\checkReorder';
 	unless ( -e $logDirReorder ) {
 		mkdir($logDirReorder) or die "Can't create dir: " . $logDirReorder . $_;
 	}

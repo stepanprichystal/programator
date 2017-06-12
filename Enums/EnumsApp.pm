@@ -23,7 +23,7 @@ sub GetTitle{
 	
 	if($code eq App_CHECKREORDER){
 		
-		$title = "Job reorder";
+		$title = "Check reorder";
 		
 	} 
 	
