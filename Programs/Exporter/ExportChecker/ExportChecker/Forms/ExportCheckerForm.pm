@@ -465,10 +465,22 @@ sub __SetLayoutOther {
 	#define staticboxes
 	my $statBox = Wx::StaticBox->new( $parent, -1, 'Other options' );
 	my $szStatBox = Wx::StaticBoxSizer->new( $statBox, &Wx::wxVERTICAL );
-	my $szMain = Wx::BoxSizer->new(&Wx::wxVERTICAL);
+	my $szMain = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
+
+	my $noteTextTxt = undef;
+	my $orderNum = HegMethods->GetPcbOrderNumber($self->{"jobId"});
+
+	$noteTextTxt = Wx::StaticText->new( $statBox, -1, "REORDER", &Wx::wxDefaultPosition);
+	$noteTextTxt->SetForegroundColour(Wx::Colour->new( 255, 0, 0 )); 
+	
+	if($orderNum == 1){
+		$noteTextTxt->Hide();
+	}
+	
 
 	my $chbProduce = Wx::CheckBox->new( $statBox, -1, "Sent to produce", &Wx::wxDefaultPosition, [ 110, 22 ] );
 	$chbProduce->SetValue(1);
+	
 
 	#$chbProduce->SetTransparent(0);
 	#$chbProduce->Refresh();
@@ -479,6 +491,9 @@ sub __SetLayoutOther {
 	$chbProduce->SetBackgroundColour( Wx::Colour->new( 255, 255, 255 ) );
 	$chbProduce->Refresh();
 
+	
+	$szMain->Add( $noteTextTxt, 0, &Wx::wxEXPAND );
+	$szMain->Add( 20,20, 0, &Wx::wxEXPAND );
 	$szMain->Add( $chbProduce, 0, &Wx::wxEXPAND );
 	$szStatBox->Add( $szMain, 1, &Wx::wxEXPAND );
 

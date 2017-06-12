@@ -166,10 +166,19 @@ sub __ProcessJob {
 
 	# 3) Do automatic changes
 
+	
+	my $result = 1;
+	my $errMess = "";
 	foreach my $change (@changes) {
-
-		$change->Run($jobId);
+		
+		unless($change->Run($jobId, \$errMess)){
+			
+			$result = 0;
+			last;
+		}
 	}
+
+	
 
 	# 4) save jopb
 
@@ -177,7 +186,24 @@ sub __ProcessJob {
 	$inCAM->COM( "close_job", "job" => "$jobId" );
 
 	# 5) set order state
-	my $orderState = Enums->Step_AUTOOK;
+	my $isPool = HegMethods->GetPcbIsPool($jobId);
+ 
+	my $orderState = undef;
+	
+	if($orderState == 1){
+		
+		$orderState = Enums->Step_AUTOOK;
+		
+		if($isPool){
+			$orderState = Enums->Step_PANELIZATION;
+		}
+		
+	}
+	
+	
+	
+	
+	Step_PANELIZATION
 
 	HegMethods->UpdatePcbOrderState( $orderId, $orderState );
 }

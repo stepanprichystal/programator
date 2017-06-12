@@ -37,9 +37,7 @@ use constant {
 	Jobs_PCBMDI   => "\\\\dc2.gatema.cz\\r\\pcb\\mdi\\",
 	Jobs_MDI      => "\\\\dc2.gatema.cz\\r\\mdi\\",
 	Jobs_JETPRINT => "\\\\dc2.gatema.cz\\r\\potisk\\",
-	Jobs_ELTESTS => "\\\\dc2.gatema.cz\\EL_DATA\\"
-	
-	 
+	Jobs_ELTESTS =>  "\\\\dc2.gatema.cz\\EL_DATA\\" 
 };
 
 use constant {

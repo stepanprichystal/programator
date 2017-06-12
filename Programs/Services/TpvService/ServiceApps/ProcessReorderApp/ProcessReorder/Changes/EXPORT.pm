@@ -23,6 +23,7 @@ use aliased 'Programs::Exporter::ExportUtility::UnitEnums';
 use aliased 'Programs::Exporter::ExportUtility::DataTransfer::Enums' => 'EnumsTransfer';
 use aliased 'Programs::Exporter::ExportChecker::Enums'               => 'CheckerEnums';
 use aliased 'Packages::NifFile::NifFile';
+use aliased 'Enums::EnumsPaths';
 
 #-------------------------------------------------------------------------------------------#
 #  Public method
@@ -44,13 +45,28 @@ sub Run {
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
 
-	$self->__CheckBeforeExport();
-
 	my $result = 1;
+
+	if ( $self->__CheckBeforeExport($mess) ) {
+
+		unless ( $self->__PrepareExportFile($mess) ) {
+			$result = 0;
+		}
+	}
+	else {
+
+		$result = 0;
+	}
+
+	return $result;
+
 }
 
 sub __CheckBeforeExport {
 	my $self = shift;
+	my $mess = shift;
+
+	my $result = 1;
 
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
@@ -68,19 +84,12 @@ sub __CheckBeforeExport {
 
 		my $itemRes = $self->_GetNewItem( $title, "Check before export" );
 
-		unless ( $resultMngr->Succes() ) {
+		if ( $resultMngr->GetErrorsCnt() ) {
 
-			if ( $resultMngr->GetErrorsCnt() ) {
-
-				$itemRes->AddError( $resultMngr->GetErrorsStr(1) );
-			}
-			if ( $resultMngr->GetWarningsCnt() ) {
-
-				$itemRes->AddWarning( $resultMngr->GetWarningsStr(1) );
-			}
+			$result = 0;
+			$$mess .= $resultMngr->GetErrorsStr(1);
 		}
 
-		$self->_OnItemResult($itemRes);
 	}
 
 }
@@ -103,61 +112,27 @@ sub __PrepareUnits {
 	$self->{"units"}->Init( $inCAM, $jobId, \@allUnits );
 	$self->{"units"}->InitDataMngr($inCAM);
 
-	# Read old nif file and in order to transfer info to nif file
-
-	my $nif = NifFile->new($jobId);
-
-	my $nifUnit      = $self->{"units"}->GetUnitById( UnitEnums->UnitId_NIF );
-	my $nifGroupData = $nifUnit->{"dataMngr"}->GetGroupData();
-
-	# Mask 0,1
-
-	my $mask = $nif->GetValue("rel(22305,L)");
-	if ( $mask =~ /\+/ ) {
-		$nifGroupData->SetMaska01(1);
-	}
-
-	# Datacodes
-	my $datacode = $nif->GetValue("datacode");
-	$datacode =~ s/\s//g if ( defined $datacode );    # remove spaces
-
-	if ( defined $datacode && $datacode ne "" ) {
-
-		$datacode = uc($datacode);
-		$nifGroupData->SetDatacode($datacode);
-	}
-	
-	# UL logo
-	my $ul = $nif->GetValue("ul_logo");
-	$ul =~ s/\s//g if ( defined $ul );    # remove spaces
-
-	if ( defined $ul && $ul ne "" ) {
-
-		$ul = uc($ul);
-		$nifGroupData->SetUlLogo($ul);
-	}
-	
 }
 
-sub PrepareExportFile {
-	my $self        = shift;
-	my $masterJob   = shift;
-	my $masterOrder = shift;
-	my $exportFile  = shift;
-	my $mess        = shift;
+sub __PrepareExportFile {
+	my $self = shift;
+	my $mess = shift;
 
 	my $result = 1;
 
 	my $inCAM = $self->{"inCAM"};
+	my $jobId = $self->{"jobId"};
 
-	my $pathExportFile = EnumsPaths->Client_INCAMTMPOTHER . $exportFile;
+	my $pathExportFile = EnumsPaths->Client_EXPORTFILES . $jobId;
 
-	my $dataTransfer = DataTransfer->new( $masterJob, EnumsTransfer->Mode_WRITE, $self->{"units"}, undef, $pathExportFile );
-	my @orders = ($masterOrder);
+	my $dataTransfer = DataTransfer->new( $jobId, EnumsTransfer->Mode_WRITE, $self->{"units"}, undef, $pathExportFile );
+
+	my @orders = HegMethods->GetPcbOrderNumbers($jobId);
+
 	$dataTransfer->SaveData( EnumsJobMngr->TaskMode_ASYNC, 1, undef, undef, \@orders );
 
 	unless ( -e $pathExportFile ) {
-		$$mess .= "Error during preparing \"export file\" for master job";
+		$$mess .= "Error during preparing \"export file\" for job $jobId";
 		$result = 0;
 	}
 
