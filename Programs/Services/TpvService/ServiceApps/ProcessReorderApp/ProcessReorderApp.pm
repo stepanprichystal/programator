@@ -32,6 +32,7 @@ use aliased 'Programs::Services::TpvService::ServiceApps::CheckReorderApp::Enums
 use aliased 'Helpers::JobHelper';
 use aliased 'Programs::Services::TpvService::ServiceApps::ProcessReorderApp::Reorder::CheckInfo';
 use aliased 'CamHelpers::CamJob';
+use aliased 'Programs::Services::Helpers::AutoProcLog';
 
 #-------------------------------------------------------------------------------------------#
 #  Public method
@@ -119,11 +120,9 @@ sub __RunJob {
 			$eStr = $e->Error();
 		}
 
-		my $err = "Aplication: " . $self->GetAppName() . ", orderid: \"$orderId\" exited with error: \n $eStr";
-		$self->{"logger"}->error($err);
-		$self->{"loggerDB"}->Error( $jobId, $err );
-
-		HegMethods->UpdatePcbOrderState( $orderId, Enums->Step_ERROR );
+		my $err = "Process order id: \"$orderId\" exited with error: \n $eStr";
+ 
+		$self->__ProcessJobResult($orderId, Enums->Step_ERROR, $err);
 	}
 }
 
@@ -166,19 +165,16 @@ sub __ProcessJob {
 
 	# 3) Do automatic changes
 
-	
-	my $result = 1;
+	my $result  = 1;
 	my $errMess = "";
 	foreach my $change (@changes) {
-		
-		unless($change->Run($jobId, \$errMess)){
-			
+
+		unless ( $change->Run( $jobId, \$errMess ) ) {
+
 			$result = 0;
 			last;
 		}
 	}
-
-	
 
 	# 4) save jopb
 
@@ -187,25 +183,53 @@ sub __ProcessJob {
 
 	# 5) set order state
 	my $isPool = HegMethods->GetPcbIsPool($jobId);
- 
-	my $orderState = undef;
-	
-	if($orderState == 1){
-		
-		$orderState = Enums->Step_AUTOOK;
-		
-		if($isPool){
-			$orderState = Enums->Step_PANELIZATION;
-		}
-		
+
+	my $orderState = Enums->Step_AUTOERR;
+
+	if ( $orderState == 1 && $isPool ) {
+
+		$orderState = Enums->Step_PANELIZATION;
+
 	}
-	
-	
-	
-	
-	Step_PANELIZATION
+	elsif ( $orderState == 1 ) {
+
+		$orderState = Enums->Step_AUTOOK;
+	}
+
+	$self->__ProcessJobResult($orderId, $orderState, $errMess);
+
+}
+
+
+sub __ProcessJobResult {
+	my $self       = shift;
+	my $orderId    = shift;
+	my $orderState = shift;
+	my $errMess    = shift;
+
+	my ($jobId) = $orderId =~ /^(\w\d+)-\d+/i;
+	$jobId = lc($jobId);
+
+	# 1) if state is error, set error message
+	if ( $orderState = Enums->Step_AUTOERR ) {
+
+		# log error to file
+		$self->{"logger"}->error($err);
+
+		# sent error to log db
+		$self->{"loggerDB"}->Error( $jobId, $errMess );
+		
+		# store error to job archive
+		AutoProcLog->Create( $self->GetAppName(), $jobId, $errMess );
+	}
+	else {
+		AutoProcLog->Delete($jobId);
+	}
+
+	# 2) set state
 
 	HegMethods->UpdatePcbOrderState( $orderId, $orderState );
+
 }
 
 sub __LoadChanges {
@@ -336,6 +360,8 @@ sub __SetLogging {
 	$self->{"logger"}->debug("test of logging");
 
 }
+
+
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

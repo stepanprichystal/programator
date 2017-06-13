@@ -1,47 +1,58 @@
 #-------------------------------------------------------------------------------------------#
-# Description: Helper
+# Description: Represent Universal Drill tool manager
+
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Programs::Services::Helpers::AutoProcLog;
+package Programs::Services::TpvService::ServiceApps::CheckReorderApp::CheckReorder::ChangeFile;
 
 #3th party library
 use strict;
 use warnings;
- 
+use Log::Log4perl qw(get_logger);
+
 #local library
-
- 
-use aliased 'Enums::EnumsGeneral';
-use aliased 'Enums::EnumsPaths';
 use aliased 'Helpers::JobHelper';
+use aliased 'CamHelpers::CamJob';
 
 #-------------------------------------------------------------------------------------------#
-#   Package methods
+#  Public method
 #-------------------------------------------------------------------------------------------#
- 
-sub Create{
-	my $self = shift;
-	my $appName = shift;
-	my $jobId = shift;
-	my $message = shift;
-	
-	$appName = uc($appName);	
- 
+
+
+sub Create {
+	my $self   = shift;
+	my $jobId  = shift;
+	my @autoCh = @{ shift(@_) };
+	my @manCh  = @{ shift(@_) };
+
 	my @lines = ();
 
-	push( @lines, "# APPLICATION NAME:  $appName" );
+	push( @lines, "# REORDER CHECKLIST" );
 
 	push( @lines, "# PCB ID:  $jobId" );
 	push( @lines, "" );
 	push( @lines, "" );
 
-	push( @lines, "# ============ Message ============ #" );
+	push( @lines, "# ============ Manual tasks============ #" );
 	push( @lines, "" );
 
-	push( @lines, $message );
+	for ( my $i = 0 ; $i < scalar(@manCh) ; $i++ ) {
 
- 
-	my $path = JobHelper->GetJobArchive($jobId) . "AutoProcess_log.txt";
+		push( @lines, $manCh[$i] );
+
+	}
+
+	push( @lines, "" );
+	push( @lines, "# ========== Automatic tasks ========== #" );
+	push( @lines, "" );
+
+	for ( my $i = 0 ; $i < scalar(@autoCh) ; $i++ ) {
+
+		push( @lines, $autoCh[$i] );
+
+	}
+
+	my $path = JobHelper->GetJobArchive($jobId) . "Change_log.txt";
 
 	if ( -e $path ) {
 		unlink($path);
@@ -59,23 +70,22 @@ sub Create{
 		close($f);
 	}
 	else {
-		die "unable to crate 'Auto process log' file for pcbid: $jobId";
+		die "unable to crate 'Change log' file for pcbid: $jobId";
 	}
- 
+
 }
 
-sub Delete{
-	my $self = shift;
-	my $jobId = shift;
+sub Delete {
+	my $self   = shift;
+	my $jobId  = shift;
 	
-	my $path = JobHelper->GetJobArchive($jobId) . "AutoProcess_log.txt";
+	my $chngeLog = JobHelper->GetJobArchive($jobId) . "Change_log.txt";
 	
-	if(-e $path){
-		unlink( $path);
+	if( -e $chngeLog){
+		 unlink($chngeLog);
 	}
+	
 }
-
- 
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
@@ -83,15 +93,7 @@ sub Delete{
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-		use aliased 'Programs::Services::Helpers::AutoProcLog';
-	 
-	 
-	 	#my $log = AutoProcLog->Create("test", "F52457", "ahoj\ntest");
-	 	
-	 	AutoProcLog->Delete("F52457");
-	 	
-	 
-	 
 }
 
 1;
+

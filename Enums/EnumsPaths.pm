@@ -19,7 +19,7 @@ use constant {
 	Client_INCAMTMPOTHER   => "c:\\tmp\\InCam\\scripts\\other\\",
 	Client_INCAMTMPSCRIPTS => "c:\\tmp\\InCam\\scripts\\",
 	Client_INCAMTMPJOBMNGR => "c:\\tmp\\InCam\\scripts\\job_mngr\\",
-	Client_INCAMTMPLOGS => "c:\\tmp\\InCam\\scripts\\logs\\",
+	Client_INCAMTMPLOGS 	=> "c:\\tmp\\InCam\\scripts\\logs\\",
 	Client_INCAMTMP        => "c:\\tmp\\InCam\\",
 
 };

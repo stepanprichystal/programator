@@ -28,6 +28,10 @@ use aliased 'Programs::Services::TpvService::ServiceApps::CheckReorderApp::Enums
 use aliased 'Helpers::JobHelper';
 use aliased 'Programs::Services::TpvService::ServiceApps::CheckReorderApp::Reorder::CheckInfo';
 use aliased 'CamHelpers::CamJob';
+use aliased 'Programs::Services::Helpers::AutoProcLog';
+use aliased 'Programs::Services::TpvService::ServiceApps::CheckReorderApp::CheckReorder::AcquireJob';
+use aliased 'Programs::Services::TpvService::ServiceApps::CheckReorderApp::CheckReorder::ChangeFile';
+
 
 #-------------------------------------------------------------------------------------------#
 #  Public method
@@ -41,8 +45,6 @@ sub new {
 
 	#my $self = {};
 	bless $self;
-
-	 
 
 	$self->__SetLogging();
 
@@ -117,25 +119,23 @@ sub __RunJob {
 	$jobId = lc($jobId);
 
 	eval {
-		 
+
 		$self->__ProcessJob($orderId)
 
 	};
 	if ($@) {
-		
-		my $eStr = $@;
-		my $e = $@;
-		
-		if (ref($e) && $e->can("Error")) {
-		
-			$eStr = $e->Error();
-		} 
-		
-		my $err = "Aplication: " . $self->GetAppName() . ", orderid: \"$orderId\" exited with error: \n $eStr";
-		$self->{"logger"}->error($err);
-		$self->{"loggerDB"}->Error( $jobId, $err );
 
-		HegMethods->UpdatePcbOrderState( $orderId, Enums->Step_ERROR );
+		my $eStr = $@;
+		my $e    = $@;
+
+		if ( ref($e) && $e->can("Error") ) {
+
+			$eStr = $e->Error();
+		}
+
+		my $err = "Process order id: \"$orderId\" exited with error: \n $eStr";
+
+		$self->__ProcessJobResult( $orderId, Enums->Step_ERROR, $err );
 	}
 }
 
@@ -157,7 +157,7 @@ sub __ProcessJob {
 	my @manCh  = ();
 
 	# 1) Check if pcb exist in InCAM
-	my $jobExist = $self->__AcquireJob($jobId);
+	my $jobExist = AcquireJob->Acquire($jobId);
 
 	my $usr = undef;
 	if ( CamJob->IsJobOpen( $self->{"inCAM"}, $jobId, 1, \$usr ) ) {
@@ -165,7 +165,7 @@ sub __ProcessJob {
 	}
 
 	# open job if exist
-	if($jobExist){
+	if ($jobExist) {
 		$inCAM->COM( "open_job", job => "$jobId", "open_win" => "yes" );
 		$inCAM->COM( "check_inout", "job" => "$jobId", "mode" => "out", "ent_type" => "job" );
 	}
@@ -195,7 +195,7 @@ sub __ProcessJob {
 		}
 	}
 
-	if($jobExist){
+	if ($jobExist) {
 		$inCAM->COM( "check_inout", "job" => "$jobId", "mode" => "in", "ent_type" => "job" );
 		$inCAM->COM( "close_job", "job" => "$jobId" );
 	}
@@ -203,7 +203,7 @@ sub __ProcessJob {
 	# 2) create changes file to archive
 	if ( scalar(@autoCh) > 0 || scalar(@manCh) > 0 ) {
 
-		$self->__CreateChangeFile( $jobId, \@autoCh, \@manCh );
+		ChangeFile->Create( $jobId, \@autoCh, \@manCh );
 	}
 
 	# 3) set order state
@@ -221,7 +221,6 @@ sub __ProcessJob {
 
 		if ($isPool) {
 			$orderState = Enums->Step_PANELIZATION;
-
 		}
 		else {
 
@@ -229,130 +228,44 @@ sub __ProcessJob {
 		}
 	}
 
+	$self->__ProcessJobResult( $orderId, $orderState, undef );
+}
+
+sub __ProcessJobResult {
+	my $self       = shift;
+	my $orderId    = shift;
+	my $orderState = shift;
+	my $errMess    = shift;
+
+	my ($jobId) = $orderId =~ /^(\w\d+)-\d+/i;
+	$jobId = lc($jobId);
+
+	# 1) if state is error, set error message
+	if ( $orderState = Enums->Step_ERROR ) {
+
+		# log error to file
+		$self->{"logger"}->error($err);
+
+		# sent error to log db
+		$self->{"loggerDB"}->Error( $jobId, $errMess );
+
+		# store error to job archive
+		AutoProcLog->Create( $self->GetAppName(), $jobId, $errMess );
+	}
+	else {
+		AutoProcLog->Delete($jobId);
+		
+		ChangeFile->Delete($jobId);
+ 
+	}
+
+	# 2) set state
+
 	HegMethods->UpdatePcbOrderState( $orderId, $orderState );
 }
 
-# Try acquire job and import to inCAM
-# return 1 if job is prepared in incam
-# return 0, if job in InCAM doesnt exist
-sub __AcquireJob {
-	my $self  = shift;
-	my $jobId = shift;
 
-	my $result = 1;
-
-	my $inCAM = $self->{"inCAM"};
-
-	unless ( CamJob->JobExist( $inCAM, $jobId ) ) {
-
-		$result = 0;
-
-		# check if tgz exist
-		my $path = JobHelper->GetJobArchive($jobId) . $jobId . ".tgz";
-
-		if ( -e $path ) {
-
-			my $importSucc = 1;       # tell if job was succesfully imported
-			my $importErr  = undef;
-
-			# try to import job to InCAM
-
-			$inCAM->HandleException(1);
-
-			my $importOk = $inCAM->COM( 'import_job', "db" => 'incam', "path" => $path, "name" => $jobId, "analyze_surfaces" => 'no' );
-
-			$inCAM->HandleException(0);
-
-			# test if import fail
-			if ( $importOk != 0 ) {
-				$importSucc = 0;
-				$importErr  = $inCAM->GetExceptionError();
-			}
-
-			# import succes, try if job now exist
-			elsif ( $importOk == 0 && !CamJob->JobExist( $inCAM, $jobId ) ) {
-
-				$importSucc = 0;
-				$importErr  = "Job import was not succes\n";
-			}
-
-			# if errors,
-			if ($importSucc) {
-
-				$result = 1;    # succesfully imported, job is prepared
-
-			}
-			else {
-
-				# import was not succ, die - send log to db
-				die "Error during import job to InCAM db. $importErr";
-
-				#$self->{"loggerDB"}->Error($importErr);
-			}
-
-		}
-
-	}
-
-	return $result;
-}
-
-sub __CreateChangeFile {
-	my $self   = shift;
-	my $jobId  = shift;
-	my @autoCh = @{ shift(@_) };
-	my @manCh  = @{ shift(@_) };
-
-	my @lines = ();
-
-	push( @lines, "# REORDER CHECKLIST" );
-
-	push( @lines, "# PCB ID:  $jobId" );
-	push( @lines, "" );
-	push( @lines, "" );
-
-	push( @lines, "# ============ Manual tasks============ #" );
-	push( @lines, "" );
-
-	for ( my $i = 0 ; $i < scalar(@manCh) ; $i++ ) {
-
-		push( @lines, $manCh[$i] );
-
-	}
-
-	push( @lines, "" );
-	push( @lines, "# ========== Automatic tasks ========== #" );
-	push( @lines, "" );
-
-	for ( my $i = 0 ; $i < scalar(@autoCh) ; $i++ ) {
-
-		push( @lines, $autoCh[$i] );
-
-	}
-
-	my $path = JobHelper->GetJobArchive($jobId) . "Change_log.txt";
-
-	if ( -e $path ) {
-		unlink($path);
-	}
-
-	my $f;
-
-	if ( open( $f, "+>", $path ) ) {
-
-		foreach my $l (@lines) {
-
-			print $f "\n" . $l;
-		}
-
-		close($f);
-	}
-	else {
-		die "unable to crate 'Change log' file for pcbid: $jobId";
-	}
-
-}
-
+ 
 sub __LoadChecklist {
 	my $self = shift;
 
@@ -434,35 +347,18 @@ sub __LoadCheckClasses {
 
 	$self->{"checks"} = \%checks;
 
-	#	# auto checks
-	#	$checks{"EXPORT"}     = EXPORT->new();
-	#	$checks{"SCHEMA"}     = SCHEMA->new();
-	#	$checks{"MASK_POLAR"} = MASK_POLAR->new();
-	#
-	#	# manual checks
-	#	$checks{"DATACODE_IS"}          = DATACODE_IS->new();
-	#	$checks{"ELTEST_EXIST"}         = ELTEST_EXIST->new();
-	#	$checks{"GOLD_CONNECTOR_LAYER"} = GOLD_CONNECTOR_LAYER->new();
-	#	$checks{"INCAM_JOB"}            = INCAM_JOB->new();
-	#	$checks{"KADLEC_PANEL"}         = KADLEC_PANEL->new();
-	#	$checks{"NIF_NAKOVENI"}         = NIF_NAKOVENI->new();
-	#	$checks{"PANEL_SET"}            = PANEL_SET->new();
-	#	$checks{"PICKERING_ORDER_NUM"}  = PICKERING_ORDER_NUM->new();
-	#	$checks{"POOL_PATTERN"}         = POOL_PATTERN->new();
-
 }
 
 sub __SetLogging {
 	my $self = shift;
-
 	# 2) Load log4perl logger config
 	#my $appDir = dirname(__FILE__);
 	#Log::Log4perl->init("$appDir\\Logger.conf");
-	
-	my $dir = EnumsPaths->Client_INCAMTMPLOGS."checkReorder";
-	
+
+	my $dir = EnumsPaths->Client_INCAMTMPLOGS . "checkReorder";
+
 	unless ( -e $dir ) {
-		mkdir( $dir ) or die "Can't create dir: " . $dir . $_;
+		mkdir($dir) or die "Can't create dir: " . $dir . $_;
 	}
 
 	$self->{"logger"} = get_logger("checkReorder");

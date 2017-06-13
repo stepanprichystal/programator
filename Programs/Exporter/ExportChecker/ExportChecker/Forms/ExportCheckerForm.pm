@@ -470,7 +470,7 @@ sub __SetLayoutOther {
 	my $noteTextTxt = undef;
 	my $orderNum = HegMethods->GetPcbOrderNumber($self->{"jobId"});
 
-	$noteTextTxt = Wx::StaticText->new( $statBox, -1, "REORDER", &Wx::wxDefaultPosition);
+	$noteTextTxt = Wx::StaticText->new( $statBox, -1, "   REORDER export   ", &Wx::wxDefaultPosition, [ 110, 22 ]);
 	$noteTextTxt->SetForegroundColour(Wx::Colour->new( 255, 0, 0 )); 
 	
 	if($orderNum == 1){
@@ -492,9 +492,9 @@ sub __SetLayoutOther {
 	$chbProduce->Refresh();
 
 	
-	$szMain->Add( $noteTextTxt, 0, &Wx::wxEXPAND );
-	$szMain->Add( 20,20, 0, &Wx::wxEXPAND );
-	$szMain->Add( $chbProduce, 0, &Wx::wxEXPAND );
+	$szMain->Add( $noteTextTxt, 0 );
+	#$szMain->Add( 20,20, 0, &Wx::wxEXPAND );
+	$szMain->Add( $chbProduce, 0);
 	$szStatBox->Add( $szMain, 1, &Wx::wxEXPAND );
 
 	# SAVE REFERENCES
