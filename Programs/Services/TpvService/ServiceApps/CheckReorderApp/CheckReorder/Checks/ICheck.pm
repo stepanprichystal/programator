@@ -3,7 +3,7 @@
 # Description: Interface, class must implement methoc ProcessLog
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Programs::Services::TpvService::ServiceApps::CheckReorderApp::Reorder::Checks::ICheck;
+package Programs::Services::TpvService::ServiceApps::CheckReorderApp::CheckReorder::Checks::ICheck;
 
 #3th party library
 use strict;

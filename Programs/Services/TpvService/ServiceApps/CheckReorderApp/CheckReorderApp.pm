@@ -26,7 +26,7 @@ use aliased 'Helpers::FileHelper';
 use aliased 'Programs::Services::TpvService::ServiceApps::CheckReorderApp::Enums';
 
 use aliased 'Helpers::JobHelper';
-use aliased 'Programs::Services::TpvService::ServiceApps::CheckReorderApp::Reorder::CheckInfo';
+use aliased 'Programs::Services::TpvService::ServiceApps::CheckReorderApp::CheckReorder::CheckInfo';
 use aliased 'CamHelpers::CamJob';
 use aliased 'Programs::Services::Helpers::AutoProcLog';
 use aliased 'Programs::Services::TpvService::ServiceApps::CheckReorderApp::CheckReorder::AcquireJob';
@@ -77,6 +77,8 @@ sub new {
 #------------------------------------------------
 sub Run {
 	my $self = shift;
+	
+	$self->{"logger"}->debug("Check reorder run");
 
 	eval {
 
@@ -110,6 +112,8 @@ sub Run {
 		$self->{"logger"}->error($err);
 		$self->{"loggerDB"}->Error( undef, $err );
 	}
+	
+	$self->{"logger"}->debug("Check reorder end");
 }
 
 sub __RunJob {
@@ -328,7 +332,7 @@ sub __LoadCheckClasses {
 	#
 	#		$file =~ s/\.pm//;
 	#
-	#		my $module = 'Programs::Services::TpvService::ServiceApps::CheckReorderApp::Reorder::Checks::' . $file;
+	#		my $module = 'Programs::Services::TpvService::ServiceApps::CheckReorderApp::CheckReorder::Checks::' . $file;
 	#		print STDERR $module."\n";
 	#
 	#		eval("use aliased \'$module\';");

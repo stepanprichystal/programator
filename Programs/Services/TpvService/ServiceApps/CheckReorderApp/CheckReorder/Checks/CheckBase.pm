@@ -3,7 +3,7 @@
 
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Programs::Services::TpvService::ServiceApps::CheckReorderApp::Reorder::Checks::CheckBase;
+package Programs::Services::TpvService::ServiceApps::CheckReorderApp::CheckReorder::Checks::CheckBase;
 
  
 #3th party library

@@ -741,6 +741,8 @@ sub __CreateInCAMInstance {
 	# 3) start new server on $freePort
 
 	my $inCAMPath = GeneralHelper->GetLastInCAMVersion();
+	
+	#$inCAMPath = "y:\\3.02\\";
 
 	$inCAMPath .= "bin\\InCAM.exe";
 
@@ -769,24 +771,24 @@ sub __CreateInCAMInstance {
 	#run InCAM editor with serverscript
 	
 	
-	use aliased 'Packages::SystemCall::SystemCall';
-	
-	my $script = GeneralHelper->Root() . "\\Managers\\AsyncJobMngr\\ServerMngr\\CreateInCAM.pl";
-	my @cmds   = ( $inCAMPath, "InCAM.exe -s" . $path . " " . $port . " " . $fIndicator, );
-
-	my $call = SystemCall->new( $script, \@cmds );
-	my $result = $call->Run();
-
-	my %output = $call->GetOutput();
-	
-	$pidInCAM = $output{"pidInCAM"};
+#	use aliased 'Packages::SystemCall::SystemCall';
+#	
+#	my $script = GeneralHelper->Root() . "\\Managers\\AsyncJobMngr\\ServerMngr\\CreateInCAM.pl";
+#	my @cmds   = ( $inCAMPath, "InCAM.exe -s" . $path . " " . $port . " " . $fIndicator, );
+#
+#	my $call = SystemCall->new( $script, \@cmds );
+#	my $result = $call->Run();
+#
+#	my %output = $call->GetOutput();
+#	
+#	$pidInCAM = $output{"pidInCAM"};
 	
 	
 #	
-#	Win32::Process::Create( $processObj, $inCAMPath, "InCAM.exe -s" . $path . " " . $port . " " . $fIndicator, 0, THREAD_PRIORITY_NORMAL, "." )
-#	  || die "$!\n";
-#
-#	$pidInCAM = $processObj->GetProcessID();
+	Win32::Process::Create( $processObj, $inCAMPath, "InCAM.exe -s" . $path . " " . $port . " " . $fIndicator, 0, THREAD_PRIORITY_NORMAL, "." )
+	  || die "$!\n";
+
+	$pidInCAM = $processObj->GetProcessID();
  
 	$self->{"threadLoger"}->debug("CLIENT PID: " . $pidInCAM . " (InCAM)........................................is launching\n");
 
