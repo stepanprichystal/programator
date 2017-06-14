@@ -21,7 +21,7 @@ use Log::Log4perl qw(get_logger);
 use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'Enums::EnumsApp';
 use aliased 'Helpers::GeneralHelper';
-
+use aliased 'Enums::EnumsPaths';
 use aliased 'Helpers::FileHelper';
 use aliased 'Programs::Services::TpvService::ServiceApps::CheckReorderApp::Enums';
 
@@ -122,6 +122,11 @@ sub __RunJob {
 	my ($jobId) = $orderId =~ /^(\w\d+)-\d+/i;
 	$jobId = lc($jobId);
 
+	# DEBUG DELETE
+	#$self->__ProcessJob($orderId);
+	#return 0;
+	# DEBUG DELETE
+
 	eval {
 
 		$self->__ProcessJob($orderId)
@@ -161,7 +166,7 @@ sub __ProcessJob {
 	my @manCh  = ();
 
 	# 1) Check if pcb exist in InCAM
-	my $jobExist = AcquireJob->Acquire($jobId);
+	my $jobExist = AcquireJob->Acquire($inCAM, $jobId);
 
 	my $usr = undef;
 	if ( CamJob->IsJobOpen( $self->{"inCAM"}, $jobId, 1, \$usr ) ) {
@@ -173,7 +178,7 @@ sub __ProcessJob {
 		$inCAM->COM( "open_job", job => "$jobId", "open_win" => "yes" );
 		$inCAM->COM( "check_inout", "job" => "$jobId", "mode" => "out", "ent_type" => "job" );
 	}
-
+ 
 	my $isPool = HegMethods->GetPcbIsPool($jobId);
 
 	foreach my $checkInfo ( @{ $self->{"checklist"} } ) {
@@ -245,10 +250,10 @@ sub __ProcessJobResult {
 	$jobId = lc($jobId);
 
 	# 1) if state is error, set error message
-	if ( $orderState = Enums->Step_ERROR ) {
+	if ( $orderState eq Enums->Step_ERROR ) {
 
 		# log error to file
-		$self->{"logger"}->error($err);
+		$self->{"logger"}->error($errMess);
 
 		# sent error to log db
 		$self->{"loggerDB"}->Error( $jobId, $errMess );
@@ -258,9 +263,12 @@ sub __ProcessJobResult {
 	}
 	else {
 		AutoProcLog->Delete($jobId);
+	}
+	
+	# delete change log 
+	if($orderState ne Enums->Step_AUTO && $orderState ne Enums->Step_MANUAL){
 		
 		ChangeFile->Delete($jobId);
- 
 	}
 
 	# 2) set state
@@ -274,7 +282,7 @@ sub __LoadChecklist {
 	my $self = shift;
 
 	# Check if checklist is valid
-	my $path  = GeneralHelper->Root() . "\\Programs\\Services\\TpvService\\ServiceApps\\ReorderApp\\Reorder\\CheckList";
+	my $path  = GeneralHelper->Root() . "\\Programs\\Services\\TpvService\\ServiceApps\\CheckReorderApp\\CheckReorder\\CheckList";
 	my @lines = @{ FileHelper->ReadAsLines($path) };
 
 	# Parse

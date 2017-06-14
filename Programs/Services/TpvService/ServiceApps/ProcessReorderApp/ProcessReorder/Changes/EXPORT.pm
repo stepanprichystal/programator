@@ -80,10 +80,6 @@ sub __CheckBeforeExport {
 		my $resultMngr = -1;
 		my $succes = $unit->CheckBeforeExport( $inCAM, \$resultMngr );
 
-		my $title = UnitEnums->GetTitle( $unit->GetUnitId() );
-
-		my $itemRes = $self->_GetNewItem( $title, "Check before export" );
-
 		if ( $resultMngr->GetErrorsCnt() ) {
 
 			$result = 0;
@@ -91,7 +87,8 @@ sub __CheckBeforeExport {
 		}
 
 	}
-
+	
+	return $result;
 }
 
 sub __PrepareUnits {

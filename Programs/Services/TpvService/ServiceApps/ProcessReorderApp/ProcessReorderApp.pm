@@ -24,15 +24,14 @@ use POSIX qw(strftime);
 use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'Enums::EnumsApp';
 use aliased 'Helpers::GeneralHelper';
-
 use aliased 'Helpers::FileHelper';
 use aliased 'Programs::Services::TpvService::ServiceApps::ProcessReorderApp::Enums';
 use aliased 'Programs::Services::TpvService::ServiceApps::CheckReorderApp::Enums' => 'EnumsCheck';
-
 use aliased 'Helpers::JobHelper';
-use aliased 'Programs::Services::TpvService::ServiceApps::ProcessReorderApp::Reorder::CheckInfo';
 use aliased 'CamHelpers::CamJob';
 use aliased 'Programs::Services::Helpers::AutoProcLog';
+use aliased 'Programs::Services::TpvService::ServiceApps::CheckReorderApp::CheckReorder::ChangeFile';
+use aliased 'Enums::EnumsPaths';
 
 #-------------------------------------------------------------------------------------------#
 #  Public method
@@ -77,14 +76,18 @@ sub Run {
 				$self->{"inCAM"} = $self->_GetInCAM();
 			}
 
-			#my %hash = ( "reference_subjektu" => "f52456-01" );
+			#my %hash = ( "reference_subjektu" => "f52457-02" );
 			#@reorders = ( \%hash );
+			
+			
 
 			foreach my $reorder (@reorders) {
 
 				my $reorderId = $reorder->{"reference_subjektu"};
 
 				$self->{"logger"}->info("Process reorder: $reorderId");
+				
+ 				
 
 				$self->__RunJob($reorderId);
 			}
@@ -104,6 +107,22 @@ sub __RunJob {
 	my $orderId = shift;
 	my ($jobId) = $orderId =~ /^(\w\d+)-\d+/i;
 	$jobId = lc($jobId);
+	
+	
+	# temp cond
+ 	# if pcb is poool
+ 	my $isPool = HegMethods->GetPcbIsPool($jobId);
+ 	
+ 	unless($isPool){
+ 		return 0;
+ 	}
+ 	
+ 	
+
+	# DEBUG DELETE
+	#$self->__ProcessJob($orderId);
+	#return 0;
+	# DEBUG DELETE
 
 	eval {
 
@@ -140,7 +159,7 @@ sub __ProcessJob {
 	$jobId = lc($jobId);
 
 	# Check if change log file exist and read checks
-	my @changes = $self->__LoadChanges($jobId);
+	my @changes = $self->__LoadChanges($inCAM, $jobId);
 
 	# 1) Open Job
 
@@ -150,14 +169,10 @@ sub __ProcessJob {
 	}
 
 	# open job if exist
-	if ($jobExist) {
-		$inCAM->COM( "open_job", job => "$jobId", "open_win" => "yes" );
-		$inCAM->COM( "check_inout", "job" => "$jobId", "mode" => "out", "ent_type" => "job" );
-	}
-	else {
-
-		die "Job $jobId doesn't exist";
-	}
+	 
+	$inCAM->COM( "open_job", job => "$jobId", "open_win" => "yes" );
+	$inCAM->COM( "check_inout", "job" => "$jobId", "mode" => "out", "ent_type" => "job" );
+ 
 
 	# 2) Archive old files
 
@@ -169,15 +184,15 @@ sub __ProcessJob {
 	my $errMess = "";
 	foreach my $change (@changes) {
 
-		unless ( $change->Run( $jobId, \$errMess ) ) {
+		unless ( $change->Run(\$errMess ) ) {
 
 			$result = 0;
 			last;
 		}
 	}
 
-	# 4) save jopb
-
+	# 4) save job
+	$inCAM->COM( "save_job", "job" => "$jobId" );
 	$inCAM->COM( "check_inout", "job" => "$jobId", "mode" => "in", "ent_type" => "job" );
 	$inCAM->COM( "close_job", "job" => "$jobId" );
 
@@ -186,12 +201,12 @@ sub __ProcessJob {
 
 	my $orderState = Enums->Step_AUTOERR;
 
-	if ( $orderState == 1 && $isPool ) {
+	if ( $result == 1 && $isPool ) {
 
 		$orderState = Enums->Step_PANELIZATION;
 
 	}
-	elsif ( $orderState == 1 ) {
+	elsif ( $result == 1 ) {
 
 		$orderState = Enums->Step_AUTOOK;
 	}
@@ -211,10 +226,10 @@ sub __ProcessJobResult {
 	$jobId = lc($jobId);
 
 	# 1) if state is error, set error message
-	if ( $orderState = Enums->Step_AUTOERR ) {
+	if ( $orderState eq Enums->Step_AUTOERR ) {
 
 		# log error to file
-		$self->{"logger"}->error($err);
+		$self->{"logger"}->error($errMess);
 
 		# sent error to log db
 		$self->{"loggerDB"}->Error( $jobId, $errMess );
@@ -224,6 +239,7 @@ sub __ProcessJobResult {
 	}
 	else {
 		AutoProcLog->Delete($jobId);
+		ChangeFile->Delete($jobId);
 	}
 
 	# 2) set state
@@ -234,6 +250,7 @@ sub __ProcessJobResult {
 
 sub __LoadChanges {
 	my $self  = shift;
+	my $inCAM = shift;
 	my $jobId = shift;
 
 	my $path = JobHelper->GetJobArchive($jobId) . "Change_log.txt";
@@ -259,14 +276,15 @@ sub __LoadChanges {
 			}
 		}
 
-		if ( $_ =~ /\d\)\s*(.*)\s*-\s*(.*)/ ) {
+		if ( $_ =~ /\d\)\s*(.*)\s*-\s*(.*)/i ) {
 
 			my $key = $1;
+			 $key =~ s/\s//g;
 
 			my $module = 'Programs::Services::TpvService::ServiceApps::ProcessReorderApp::ProcessReorder::Changes::' . $key;
 			eval("use  $module;");
 
-			push( @changes, $module->new($key) );
+			push( @changes, $module->new($key, $inCAM, $jobId) );
 		}
 	}
 

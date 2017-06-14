@@ -23,13 +23,13 @@ use aliased 'CamHelpers::CamJob';
 # return 0, if job in InCAM doesnt exist
 sub Acquire {
 	my $self  = shift;
+	my $inCAM = shift;
 	my $jobId = shift;
 
 	my $result = 1;
+ 
 
-	my $inCAM = $self->{"inCAM"};
-
-	$self->{"logger"} = get_logger("checkReorder");
+	my $logger = get_logger("checkReorder");
 
 	unless ( CamJob->JobExist( $inCAM, $jobId ) ) {
 
@@ -47,7 +47,7 @@ sub Acquire {
 			my $importOk = undef;
 			foreach ( 1 .. 3 ) {
 
-				$self->{"logger"}->debug("Attem number: $_ to import job");
+				$logger->debug("Attem number: $_ to import job");
 
 				$importOk = $self->__ImportJob( $inCAM, $path, $jobId, \$importErr );
 
@@ -56,7 +56,8 @@ sub Acquire {
 					last;
 				}
 
-				$self->{"logger"}->debug("Attem number: $_ to import job FAIL");
+				$logger->debug("Attem number: $_ to import job FAIL");
+				sleep(2);
 			}
 
 			# test if import fail

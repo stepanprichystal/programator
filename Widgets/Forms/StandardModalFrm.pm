@@ -29,6 +29,11 @@ sub new {
 	my $parent    = shift;
 	my $title     = shift;
 	my $dimension = shift;
+	my $flags = shift;
+	
+	unless(defined $flags){
+		$flags = &Wx::wxSYSTEM_MENU | &Wx::wxCAPTION | &Wx::wxCLIP_CHILDREN | &Wx::wxRESIZE_BORDER | &Wx::wxMINIMIZE_BOX;
+	}
 	
 	my $self = {};
 
@@ -42,7 +47,7 @@ sub new {
 		$title,                        # title
 		&Wx::wxDefaultPosition,    # window position
 		$dimension,
-		&Wx::wxSYSTEM_MENU | &Wx::wxCAPTION | &Wx::wxCLIP_CHILDREN | &Wx::wxRESIZE_BORDER | &Wx::wxMINIMIZE_BOX    #| &Wx::wxCLOSE_BOX
+		$flags
 	);
 
 	bless($self);

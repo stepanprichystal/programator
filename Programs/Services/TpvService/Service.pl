@@ -19,6 +19,7 @@ use aliased 'Programs::Services::LogService::MailSender::MailSender';
 use aliased 'Helpers::GeneralHelper';
 use aliased 'Packages::Other::AppConf';
 use aliased 'Connectors::TpvConnector::TpvMethods';
+
 #use aliased 'Programs::Services::Helper';
 use aliased 'Packages::InCAMCall::InCAMCall';
 use aliased 'Enums::EnumsPaths';
@@ -26,6 +27,7 @@ use aliased 'Enums::EnumsApp';
 
 # applications
 use aliased 'Programs::Services::TpvService::ServiceApps::CheckReorderApp::CheckReorderApp';
+use aliased 'Programs::Services::TpvService::ServiceApps::ProcessReorderApp::ProcessReorderApp';
 
 Win32::Daemon::RegisterCallbacks(
 	{
@@ -48,7 +50,6 @@ my %Context = (
 
 # Load configration file
 
-
 #Helper->SetLogging( 'c:\tmp\InCam\scripts\logs\tpvService', GeneralHelper->Root() . "\\Programs\\Services\\TpvService" );
 
 #my $OLDOUT;
@@ -70,7 +71,7 @@ __SetLogging();
 Win32::Daemon::StartService( \%Context, 10000 );
 
 # Now let the service manager know that we are running...
-Win32::Daemon::State( SERVICE_RUNNING );
+Win32::Daemon::State(SERVICE_RUNNING);
 
 sub WorkerMethod {
 	my $Context = shift;
@@ -82,10 +83,12 @@ sub WorkerMethod {
 	#-------------------------------------------------
 
 	my %regApp = ();
+
 	$regApp{ EnumsApp->App_CHECKREORDER } = 2;
+	$regApp{ EnumsApp->App_PROCESSREORDER } = 3;
 
 	# ------------------------------------------------
-	
+
 	$logger->debug("In working method");
 
 	# Launch app according last launch time
@@ -117,9 +120,9 @@ sub WorkerMethod {
 			$logger->info("End app $appName");
 		}
 	}
-	
+
 	$logger->debug("Out of working method");
-	
+
 }
 
 sub __GetApp {
@@ -127,11 +130,17 @@ sub __GetApp {
 
 	my $app = undef;
 
+	my $logger = get_logger("service");
+	$logger->debug("get app");
+
 	if ( $appName eq EnumsApp->App_CHECKREORDER ) {
-		
-		my $logger = get_logger("service");
-		$logger->debug("get app");
+
 		$app = CheckReorderApp->new();
+
+	}
+	elsif ( $appName eq EnumsApp->App_PROCESSREORDER ) {
+
+		$app = ProcessReorderApp->new();
 	}
 
 	return $app;
@@ -184,7 +193,7 @@ sub Callback_Running {
 		};
 		if ($@) {
 
-			$logger->error("Service fatal error in worker method:".$@);
+			$logger->error( "Service fatal error in worker method:" . $@ );
 			Win32::Daemon::State(SERVICE_RUNNING);
 
 		}
@@ -220,24 +229,26 @@ sub Callback_Stop {
 sub __SetLogging {
 	my $self = shift;
 
-	# 1) Create dir
-	my $logDirService = 'c:\tmp\InCam\scripts\logs\tpvService';
-	unless ( -e $logDirService ) {
-		mkdir($logDirService) or die "Can't create dir: " . $logDirService . $_;
+	my $logConfig = GeneralHelper->Root() . "\\Programs\\Services\\TpvService\\Logger.conf";
+
+	# create log dirs for all application
+	my @dirs = ();
+	if ( open( my $f, "<", $logConfig ) ) {
+
+		while (<$f>) {
+			if ( my ($logFile) = $_ =~ /.filename\s*=\s*(.*)/ ) {
+ 
+				my ( $dir, $f ) = $logFile =~ /^(.+)\\([^\\]+)$/;
+				unless ( -e $dir ) {
+					mkdir($dir) or die "Can't create dir: " . $dir . $_;
+				}
+			}
+		}
+		close($logConfig);
 	}
 
-	# 1) Create log dir
-	my $logDirReorder = 'c:\tmp\InCam\scripts\logs\checkReorder';
-	unless ( -e $logDirReorder ) {
-		mkdir($logDirReorder) or die "Can't create dir: " . $logDirReorder . $_;
-	}
-
-	print STDERR "berofe init";
-
-	Log::Log4perl->init( GeneralHelper->Root() . "\\Programs\\Services\\TpvService\\Logger.conf" );
-	
-	print STDERR "after init";
-
+	Log::Log4perl->init($logConfig);
+ 
 }
 
 1;

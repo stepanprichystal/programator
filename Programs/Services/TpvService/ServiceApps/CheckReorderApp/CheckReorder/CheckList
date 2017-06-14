@@ -17,6 +17,12 @@
 # AUTOMATIC 
 # =========================
  
+[ Insert missing job attributes ]
+K = MISSING_JOBATTR
+V = 
+T = auto
+M =  
+ 
 [ Change mask polarity ]
 K = MASK_POLAR
 V = 

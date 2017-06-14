@@ -20,19 +20,19 @@ use lib qw( C:\Perl\site\lib\TpvScripts\Scripts );
 use aliased 'Packages::InCAM::InCAM';
 use aliased 'Programs::Services::TpvService::ServiceApps::CheckReorderApp::CheckReorderApp' => "App";
  
-my $jobId    = "f73611-02";
+my $jobId    = "f52456-01";
 
 my $app = App->new();
 
 my $inCAM    = InCAM->new();
 
-
+$inCAM->SupressToolkitException(1);
 
 $app->{"inCAM"} = $inCAM;
 
-$app->Run();
+#$app->Run();
 
-#$app->__RunJob($jobId);
+$app->__RunJob($jobId);
 
 print "app inited";
 

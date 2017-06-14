@@ -9,7 +9,7 @@ use constant {
  
 # steps of reorder 
 use constant {
-			   Step_ERROR   => "zpracovani - chyba",
+			   Step_ERROR   => "checkReorder - chyba",
 			   Step_AUTO   => "zpracovani - auto",
 			   Step_MANUAL   => "zpracovani - rucni",
 			   Step_PANELIZATION   => "k panelizaci"

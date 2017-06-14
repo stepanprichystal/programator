@@ -82,13 +82,13 @@ sub InsertAppLog {
 	my $type    = shift;
 	my $message = shift;
 	my $pcbId   = shift;
-	
-	
+
 	use Unicode::Normalize;
 
- 
- $message = NFKD( $message );
-$message =~ s/\p{NonspacingMark}//g;
+	$message = NFKD($message);
+	$message =~ s/\p{NonspacingMark}//g;
+	
+	$message = quotemeta($message); # escape all special characters
 
 	my @params = (
 				   SqlParameter->new( "_AppId",   Enums->SqlDbType_VARCHAR, $appId ),
@@ -213,11 +213,12 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	use aliased 'Connectors::TpvConnector::TpvMethods';
 
-	my $info = TpvMethods->InsertAppLog("testApp", "Error", 'eturns a 13-element list giving the status info for
+	my $info = TpvMethods->InsertAppLog(
+		"testApp", "Error", 'eturns a 13-element list giving the status info for
 	 a file, either the file opened via FILEHANDLE or DIRHANDLE, or named 
 	 by EXPR. If EXPR is omitted, it stats $_ (not _ !). Returns the empty
-	  list if stat fails. Typically used as follows:', "F12345");
-	
+	  list if stat fails. Typically used as follows:', "F12345"
+	);
 
 	print 1;
 
