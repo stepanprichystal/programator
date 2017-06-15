@@ -73,6 +73,7 @@ sub __SetLayout {
 
 	$self->AddButton( "Update \"Aktualni krok\"", sub { $self->__OkClick(@_) } );
 
+
 	$self->__OnModeChangeHandler();
 
 }

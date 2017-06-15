@@ -7,13 +7,7 @@ use constant {
 			   Check_AUTO   => "auto"
 };
  
-# steps of reorder 
-use constant {
-			   Step_ERROR   => "checkReorder - chyba",
-			   Step_AUTO   => "zpracovani - auto",
-			   Step_MANUAL   => "zpracovani - rucni",
-			   Step_PANELIZATION   => "k panelizaci"
-};
+ 
 
 1;
 

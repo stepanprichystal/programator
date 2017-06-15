@@ -84,8 +84,8 @@ sub WorkerMethod {
 
 	my %regApp = ();
 
-	$regApp{ EnumsApp->App_CHECKREORDER } = 2;
-	$regApp{ EnumsApp->App_PROCESSREORDER } = 3;
+	$regApp{ EnumsApp->App_CHECKREORDER } = 0.5;
+	$regApp{ EnumsApp->App_PROCESSREORDER } = 0.5;
 
 	# ------------------------------------------------
 
@@ -150,6 +150,8 @@ sub Callback_Running {
 	my ( $Event, $Context ) = @_;
 
 	my $logger = get_logger("service");
+	
+	$logger->debug("Call back running");
 
 	# reduce log file
 	#my $pathstd = AppConf->GetValue("logFilePath") . "\\LogOut.txt";
@@ -178,6 +180,8 @@ sub Callback_Running {
 		#while (1) {
 
 		if ( Win32::Daemon::QueryLastMessage() eq SERVICE_CONTROL_STOP ) {
+			
+			$logger->debug("Tpv service stop");
 
 			# Tell the SCM to stop this service.
 			Win32::Daemon::StopService();

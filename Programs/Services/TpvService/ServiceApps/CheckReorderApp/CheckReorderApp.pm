@@ -24,7 +24,7 @@ use aliased 'Helpers::GeneralHelper';
 use aliased 'Enums::EnumsPaths';
 use aliased 'Helpers::FileHelper';
 use aliased 'Programs::Services::TpvService::ServiceApps::CheckReorderApp::Enums';
-
+use aliased 'Enums::EnumsIS';
 use aliased 'Helpers::JobHelper';
 use aliased 'Programs::Services::TpvService::ServiceApps::CheckReorderApp::CheckReorder::CheckInfo';
 use aliased 'CamHelpers::CamJob';
@@ -82,15 +82,21 @@ sub Run {
 
 	eval {
 
+		$self->{"logger"}->debug("In eval");
+		
 		# 2) Load Reorder pcb
 		my @reorders = grep { !defined $_->{"aktualni_krok"} || $_->{"aktualni_krok"} eq "" } HegMethods->GetReorders();
 
 		if ( scalar(@reorders) ) {
 
+			$self->{"logger"}->debug("Before get InCAM");
+			
 			# we need incam do request for incam
 			unless ( defined $self->{"inCAM"} ) {
 				$self->{"inCAM"} = $self->_GetInCAM();
 			}
+			
+			$self->{"logger"}->debug("After get InCAM");
 
 			#my %hash = ( "reference_subjektu" => "f52456-01" );
 			#@reorders = ( \%hash );
@@ -144,7 +150,7 @@ sub __RunJob {
 
 		my $err = "Process order id: \"$orderId\" exited with error: \n $eStr";
 
-		$self->__ProcessJobResult( $orderId, Enums->Step_ERROR, $err );
+		$self->__ProcessJobResult( $orderId, EnumsIS->CurStep_CHECKREORDERERROR, $err );
 	}
 }
 
@@ -219,17 +225,17 @@ sub __ProcessJob {
 	my $orderState = undef;
 
 	if ( scalar(@autoCh) > 0 ) {
-		$orderState = Enums->Step_AUTO;
+		$orderState = EnumsIS->CurStep_ZPRACOVANIAUTO;
 	}
 
 	if ( scalar(@manCh) > 0 ) {
-		$orderState = Enums->Step_MANUAL;
+		$orderState = EnumsIS->CurStep_ZPRACOVANIMAN;
 	}
 
 	if ( scalar(@autoCh) == 0 && scalar(@manCh) == 0 ) {
 
 		if ($isPool) {
-			$orderState = Enums->Step_PANELIZATION;
+			$orderState = EnumsIS->CurStep_KPANELIZACI;
 		}
 		else {
 
@@ -250,7 +256,7 @@ sub __ProcessJobResult {
 	$jobId = lc($jobId);
 
 	# 1) if state is error, set error message
-	if ( $orderState eq Enums->Step_ERROR ) {
+	if ( $orderState eq EnumsIS->CurStep_CHECKREORDERERROR ) {
 
 		# log error to file
 		$self->{"logger"}->error($errMess);
@@ -266,7 +272,7 @@ sub __ProcessJobResult {
 	}
 	
 	# delete change log 
-	if($orderState ne Enums->Step_AUTO && $orderState ne Enums->Step_MANUAL){
+	if($orderState ne EnumsIS->CurStep_ZPRACOVANIAUTO && $orderState ne EnumsIS->CurStep_ZPRACOVANIMAN){
 		
 		ChangeFile->Delete($jobId);
 	}
@@ -367,11 +373,11 @@ sub __SetLogging {
 	#my $appDir = dirname(__FILE__);
 	#Log::Log4perl->init("$appDir\\Logger.conf");
 
-	my $dir = EnumsPaths->Client_INCAMTMPLOGS . "checkReorder";
-
-	unless ( -e $dir ) {
-		mkdir($dir) or die "Can't create dir: " . $dir . $_;
-	}
+#	my $dir = EnumsPaths->Client_INCAMTMPLOGS . "checkReorder";
+#
+#	unless ( -e $dir ) {
+#		mkdir($dir) or die "Can't create dir: " . $dir . $_;
+#	}
 
 	$self->{"logger"} = get_logger("checkReorder");
 

@@ -110,12 +110,13 @@ sub __OnJobStateChanged {
 
 	if ( $taskState eq EnumsJobMngr->JobState_DONE ) {
 
+		# Set values, if job can be sent to produce
+		$task->SetToProduceResult();
+		
+
 		# Setting to produce if is checked by export settings
 		if ( $task->GetJobShouldToProduce() ) {
-
-			# Set values, if job can be sent to produce
-			$task->SetToProduceResult();
-
+ 
 			# if can eb sent to produce without errror, send it
 			if ( $task->GetJobCanToProduce() ) {
 
@@ -130,6 +131,17 @@ sub __OnJobStateChanged {
 
 			# refresh GUI to produce
 			$self->{"form"}->SetJobItemToProduceResult($task);
+		}
+
+		# if task done, check if thera are errors or note
+		if ( $taskStateDetail eq EnumsJobMngr->ExitType_SUCCES ) {
+			
+			# if job cant to produce, it means, there are errors
+			# send error state
+			unless($task->GetJobCanToProduce()){
+				
+				$task->SetErrorState();		
+			}
 		}
 
 	}
@@ -205,7 +217,6 @@ sub __OnToProduceClick {
 }
 
 #update gui
- 
 
 # Handler responsible for reading DIR which contain files with export settings
 # Take every file only once, then delete it
@@ -239,9 +250,9 @@ sub __CheckFilesHandler {
 		$fileName = lc($file);
 		$fileName =~ s/\.xml//;
 		$fileCreated = $stats[9];
-		
+
 		# if file is empty, next
-		next if($stats[7] == 0);
+		next if ( $stats[7] == 0 );
 
 		my $cnt = scalar( grep { $_->{"name"} eq $fileName && $_->{"created"} == $fileCreated } @actFiles );
 
@@ -332,8 +343,6 @@ sub __RunTimers {
 	$self->{"timerFiles"} = $timerFiles;
 	$timerFiles->Start(500);
 	$self->_AddTimers($timerFiles);
-	
- 
 
 }
 

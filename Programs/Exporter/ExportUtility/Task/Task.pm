@@ -13,14 +13,19 @@ use base("Managers::AbstractQueue::Task::Task");
 #3th party library
 use strict;
 use warnings;
+use Sys::Hostname;
 
 #local library
 use aliased 'Programs::Exporter::ExportUtility::UnitEnums';
 use aliased 'Enums::EnumsGeneral';
+use aliased 'Enums::EnumsIS';
 use aliased 'Connectors::HeliosConnector::HegMethods';
-
+use aliased 'Programs::Exporter::ExportUtility::Enums';
 use aliased 'Managers::AbstractQueue::Unit::UnitBase';
 use aliased 'Managers::AbstractQueue::TaskResultMngr';
+use aliased 'Packages::Other::AppConf';
+use aliased 'Programs::Services::LogService::Logger::DBLogger';
+use aliased 'Enums::EnumsApp';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods, requested by IUnit interface
@@ -217,10 +222,15 @@ sub SentToProduce {
 
 		foreach my $orderNum ( $taksData->GetOrders() ) {
 
+			my $curStep = HegMethods->GetCurStepOfOrder($orderNum);
+
 			#my $orderRef = HegMethods->GetPcbOrderNumber( $self->{"jobId"} );
 			#my $orderNum = $self->{"jobId"} . "-" . $orderRef;
 
-			my $succ = HegMethods->UpdatePcbOrderState( $orderNum, "HOTOVO-zadat" );
+			if ( $curStep ne EnumsIS->CurStep_HOTOVOZADAT ) {
+
+				my $succ = HegMethods->UpdatePcbOrderState( $orderNum, EnumsIS->CurStep_HOTOVOZADAT );
+			}
 		}
 
 		$self->{"taskStatus"}->DeleteStatusFile();
@@ -242,6 +252,48 @@ sub SentToProduce {
 
 	return $result;
 
+}
+
+# Set error state to order + send log to db, if server version
+sub SetErrorState {
+	my $self = shift;
+
+	my $serverName = AppConf->GetValue("serverName");
+	
+	if ( hostname !~ /$serverName/i ) {
+		return 0;
+	}
+
+	my $result = 1;
+
+	# set state ExportUtility error, only if actual step si not Hotovo-zadat AND exportUtility error
+
+	eval {
+
+		my $taksData = $self->GetTaskData();
+
+		# 1) Set cruurent step
+		foreach my $orderNum ( $taksData->GetOrders() ) {
+
+			my $curStep = HegMethods->GetCurStepOfOrder($orderNum);
+
+			if ( $curStep ne EnumsIS->CurStep_HOTOVOZADAT && $curStep ne EnumsIS->CurStep_EXPORTERROR ) {
+
+				my $succ = HegMethods->UpdatePcbOrderState( $orderNum, EnumsIS->CurStep_EXPORTERROR );
+			}
+		}
+		
+		# 2) send error to log db
+		$self->{"loggerDB"} = DBLogger->new(EnumsApp->App_EXPORTUTILITY);
+		
+		$self->{"loggerDB"}->Error($self->GetJobId(), "Error during export job id: \"".$self->GetJobId()."\" on server computer. See details on server.");
+ 
+	};
+	if ( my $e = $@ ) {
+
+		print STDERR $e;
+
+	}
 }
 
 #-------------------------------------------------------------------------------------------#

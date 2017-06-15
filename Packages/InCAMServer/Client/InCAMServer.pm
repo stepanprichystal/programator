@@ -64,7 +64,7 @@ sub new {
 	 
 
 	
-	$self->{"logger"} = get_logger("inCamServer");
+	$self->{"logger"} = get_logger("inCAMServerClient");
 
 
 	return $self;
@@ -191,8 +191,12 @@ sub __GetInCAM {
 	# 1) Wait until incam server has free incam instances
 
 	foreach ( 1 .. $self->{"attemptCnt"} ) {
+		
+		$self->{"logger"}->debug("Attem to get inCAM number $_");
 
 		unless ( $self->__Connect() ) {
+			
+			$self->{"logger"}->debug("Attem to get inCAM number $_ - FAIL");
 
 			sleep(8);
 			next;
@@ -228,6 +232,8 @@ sub __GetInCAM {
 	}
 
 	# 3) Try to get port
+	$self->{"logger"}->debug("Server is ready, so ask for new port");
+	
 	my $m = "GetPort\n";
 	$self->{"socket"}->send($m);
 
@@ -243,6 +249,8 @@ sub __GetInCAM {
 			die $e;
 		}
 	}
+	
+	$self->{"logger"}->debug("New port received");
 
 	$self->{"serverUsed"} = 1;
 

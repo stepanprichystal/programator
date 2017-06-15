@@ -61,9 +61,11 @@ sub Run {
 
 	my @steps = CamStepRepeat->GetUniqueStepAndRepeat( $inCAM, $jobId, "panel" );
 
+	$inCAM->COM("set_subsystem","name"=>"Panel-Design");
+
 	$inCAM->COM("autopan_delete","job" => $jobId,"panel" => "panel","mode" => "objects_all_layers");
 
-	$inCAM->COM( 'autopan_run_scheme', "job" => $jobId, "panel" => "panel", "pcb" => $steps[0]->{"stepName"}, "scheme" => $schema );
+	$inCAM->COM('autopan_run_scheme', "job" => $jobId, "panel" => "panel", "pcb" => $steps[0]->{"stepName"}, "scheme" => $schema );
 	
 	return $result;
 

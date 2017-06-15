@@ -32,6 +32,7 @@ use aliased 'CamHelpers::CamJob';
 use aliased 'Programs::Services::Helpers::AutoProcLog';
 use aliased 'Programs::Services::TpvService::ServiceApps::CheckReorderApp::CheckReorder::ChangeFile';
 use aliased 'Enums::EnumsPaths';
+use aliased 'Enums::EnumsIS';
 
 #-------------------------------------------------------------------------------------------#
 #  Public method
@@ -67,14 +68,18 @@ sub Run {
 	eval {
 
 		# 2) Load orders to auto process
-		my @reorders = grep { defined $_->{"aktualni_krok"} && $_->{"aktualni_krok"} eq EnumsCheck->Step_AUTO } HegMethods->GetReorders();
+		my @reorders = grep { defined $_->{"aktualni_krok"} && $_->{"aktualni_krok"} eq EnumsIS->CurStep_ZPRACOVANIAUTO } HegMethods->GetReorders();
 
 		if ( scalar(@reorders) ) {
+
+			$self->{"logger"}->debug("Before get InCAM");
 
 			# we need incam do request for incam
 			unless ( defined $self->{"inCAM"} ) {
 				$self->{"inCAM"} = $self->_GetInCAM();
 			}
+			
+			$self->{"logger"}->debug("After get InCAM");
 
 			#my %hash = ( "reference_subjektu" => "f52457-02" );
 			#@reorders = ( \%hash );
@@ -141,7 +146,7 @@ sub __RunJob {
 
 		my $err = "Process order id: \"$orderId\" exited with error: \n $eStr";
  
-		$self->__ProcessJobResult($orderId, Enums->Step_ERROR, $err);
+		$self->__ProcessJobResult($orderId, EnumsIS->CurStep_PROCESSREORDERERR, $err);
 	}
 }
 
@@ -199,16 +204,16 @@ sub __ProcessJob {
 	# 5) set order state
 	my $isPool = HegMethods->GetPcbIsPool($jobId);
 
-	my $orderState = Enums->Step_AUTOERR;
+	my $orderState = EnumsIS->CurStep_PROCESSREORDERERR;
 
 	if ( $result == 1 && $isPool ) {
 
-		$orderState = Enums->Step_PANELIZATION;
+		$orderState = EnumsIS->CurStep_KPANELIZACI;
 
 	}
 	elsif ( $result == 1 ) {
 
-		$orderState = Enums->Step_AUTOOK;
+		$orderState = EnumsIS->CurStep_PROCESSREORDEROK;
 	}
 
 	$self->__ProcessJobResult($orderId, $orderState, $errMess);
@@ -226,7 +231,7 @@ sub __ProcessJobResult {
 	$jobId = lc($jobId);
 
 	# 1) if state is error, set error message
-	if ( $orderState eq Enums->Step_AUTOERR ) {
+	if ( $orderState eq EnumsIS->CurStep_PROCESSREORDERERR ) {
 
 		# log error to file
 		$self->{"logger"}->error($errMess);
