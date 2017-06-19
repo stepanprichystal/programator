@@ -342,7 +342,7 @@ sub __OutputPlotSets {
 		unless ($fileExist) {
 
 			my $stampt = GeneralHelper->GetGUID();
-			$inCAM->PutStampToLog($stampt);
+			#$inCAM->PutStampToLog($stampt);
 			$resultItemPlot->AddError(
 								 "Failed to create OPFX file: " . $archivePath . "\\" . $plotSet->GetOutputFileName() . ".\nExceptionId:" . $stampt );
 		}
