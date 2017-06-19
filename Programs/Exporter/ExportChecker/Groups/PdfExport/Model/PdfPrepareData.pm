@@ -75,9 +75,9 @@ sub OnPrepareGroupData {
 	}
 	
 	# TODO smazat
-	if ( $defaultInfo->IsPool()){
-		$exportControl = 1;
-	}
+	#if ( $defaultInfo->IsPool()){
+	#	$exportControl = 1;
+	#}
 	
 
 	# 2) define default step
