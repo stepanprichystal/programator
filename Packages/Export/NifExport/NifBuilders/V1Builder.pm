@@ -80,7 +80,6 @@ sub Build {
 
 	$nifMngr->AddSection("Rozmery", BuilderDim->new(\@req));
 	
-	
 	#Other section
 	
 	@req = ();
@@ -92,7 +91,6 @@ sub Build {
 	push(@req, "prerusovana_drazka");
 	
 	$nifMngr->AddSection("Ostatni", BuilderOther->new(\@req));
-	
 	 
 	#Cu Area section
 	@req = ();
@@ -107,6 +105,7 @@ sub Build {
 
 	#Score section
 	@req = ();
+	push(@req, "drazkovani");
 	push(@req, "delka_drazky");
 
 	$nifMngr->AddSection("Drazkovani", BuilderScore->new(\@req));

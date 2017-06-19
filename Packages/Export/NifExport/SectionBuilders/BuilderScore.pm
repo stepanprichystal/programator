@@ -10,7 +10,6 @@ use base('Packages::Export::NifExport::SectionBuilders::BuilderBase');
 use Class::Interface;
 &implements('Packages::Export::NifExport::SectionBuilders::ISectionBuilder');
 
-
 #3th party library
 use strict;
 use warnings;
@@ -18,7 +17,9 @@ use warnings;
 #local library
 
 use aliased 'CamHelpers::CamHelper';
-
+use aliased 'Packages::Scoring::ScoreChecker::ScoreChecker';
+use aliased 'Packages::Scoring::ScoreChecker::Enums' => "ScoEnums";
+use aliased 'CamHelpers::CamJob';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -26,7 +27,7 @@ use aliased 'CamHelpers::CamHelper';
 
 sub new {
 	my $class = shift;
-	my $self = $class->SUPER::new(@_);
+	my $self  = $class->SUPER::new(@_);
 	bless $self;
 
 	return $self;
@@ -37,29 +38,74 @@ sub Build {
 	my $self    = shift;
 	my $section = shift;
 
-	my $inCAM   = $self->{"inCAM"};
-	my $jobId   = $self->{"jobId"};
-	my %nifData = %{ $self->{"nifData"} };
+	my $inCAM    = $self->{"inCAM"};
+	my $jobId    = $self->{"jobId"};
+	my %nifData  = %{ $self->{"nifData"} };
 	my $stepName = "panel";
+
+	$self->{"scoreCheck"} = undef;
+
+	my $scoreExist = CamHelper->LayerExists( $inCAM, $jobId, "score" );
+
+	if ($scoreExist) {
+		$self->{"scoreCheck"} = ScoreChecker->new( $inCAM, $jobId, $stepName, "score", 1 );
+		$self->{"scoreCheck"}->Init();
+	}
+
+	#drazkovani
+	if ( $self->_IsRequire("drazkovani") ) {
+
+		my $drazkovani = "N";
+
+		if ($scoreExist) {
+
+			my $pcbPlace = $self->{"scoreCheck"}->GetPcbPlace();
+
+			my @hPos = $pcbPlace->GetScorePos( ScoEnums->Dir_HSCORE );    # horizontal mark lines
+			my @VPos = $pcbPlace->GetScorePos( ScoEnums->Dir_VSCORE );    # vertical mark lines
+
+			if(scalar(@hPos) && scalar(@VPos)){
+				
+				$drazkovani = "A";
+				
+			}elsif(scalar(@hPos) && scalar(@VPos) == 0){
+				
+				$drazkovani = "Y";
+				
+			}elsif(scalar(@hPos) == 0 && scalar(@VPos)){
+				
+				$drazkovani = "X";
+			}
+		}
+
+		$section->AddRow("drazkovani", $drazkovani );
+	}
 
 	#delka_drazky
 	if ( $self->_IsRequire("delka_drazky") ) {
+ 
+ 		my $delka_drazky = 0;
+ 
+		if ($scoreExist) {
+			
+			my %lim = CamJob->GetProfileLimits2($inCAM, $jobId, $stepName);
 		
-		my $scoreExist = CamHelper->LayerExists( $inCAM, $jobId, "score" );
-		
-		if ($scoreExist){
-			$scoreExist = 1; #it means constant score lentht 1m (the length doesn't metter)
-		}else{
-			$scoreExist = "";
-		}
-		
-		$section->AddRow( "delka_drazky", $scoreExist);
+			my $w = abs($lim{"xMin"} - $lim{"xMax"});
+			my $h = abs($lim{"yMin"} - $lim{"yMax"});
+
+			my $pcbPlace = $self->{"scoreCheck"}->GetPcbPlace();
+
+			my @hPos = $pcbPlace->GetScorePos( ScoEnums->Dir_HSCORE );    # horizontal mark lines
+			my @VPos = $pcbPlace->GetScorePos( ScoEnums->Dir_VSCORE );    # vertical mark lines
+			
+			$delka_drazky = scalar(@hPos) * $w + scalar(@VPos) * $h;
+			
+		} 
+
+		$section->AddRow( "delka_drazky", $delka_drazky );
 	}
 
-
 }
-
-
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

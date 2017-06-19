@@ -28,6 +28,8 @@ use aliased 'Packages::Technology::EtchOperation';
 use aliased 'Packages::Other::CustomerNote';
 use aliased 'Packages::Tooling::PressfitOperation';
 use aliased 'Packages::Stackup::StackupOperation';
+use aliased 'Packages::ProductionPanel::PanelDimension';
+use aliased 'Helpers::JobHelper';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -64,6 +66,9 @@ sub new {
 	$self->{"pressfitExist"} = undef;    # if pressfit exist in job
 	$self->{"pcbBaseInfo"}   = undef;    # contain base info about pcb from IS
 	$self->{"reorder"}   	 = undef;    # indicate id in time in export exist reorder
+	$self->{"panelType"} 	 = undef;	 # return type of panel from Enums::EnumsProducPanel
+	$self->{"pcbSurface"} 	 = undef;  	 # surface from IS
+	$self->{"pcbThick"} 	 = undef;  	 # total thick of pcb
 	
 
 	$self->__InitDefault();
@@ -540,6 +545,28 @@ sub GetIsReorder {
 	}
 }
 
+# Return type of "produce panel" from Enums::EnumsProducPanel
+sub GetPanelType {
+	my $self = shift;
+	 
+	return $self->{"panelType"};
+}
+
+# Return pcb surface from IS
+sub GetPcbSurface {
+	my $self = shift;
+	 
+	return $self->{"pcbSurface"};
+}
+ 
+
+# Return total pcb thick from stackup if multiaayer, else from IS (in µm)
+sub GetPcbThick {
+	my $self = shift;
+	 
+	return $self->{"pcbThick"};
+}
+ 
 
 
 sub __InitDefault {
@@ -593,7 +620,12 @@ sub __InitDefault {
 	$self->{"pcbBaseInfo"} = HegMethods->GetBasePcbInfo( $self->{"jobId"} );
 	
 	$self->{"reorder"} = HegMethods->GetPcbOrderNumber($self->{"jobId"});
-
+ 
+	$self->{"panelType"} = PanelDimension->GetPanelType(  $self->{"inCAM"}, $self->{"jobId"} );
+	
+	$self->{"pcbSurface"} = HegMethods->GetPcbSurface($self->{"jobId"} );
+	
+	$self->{"pcbThick"} = JobHelper->GetFinalPcbThick($self->{"jobId"});
 }
 
 #-------------------------------------------------------------------------------------------#

@@ -80,7 +80,7 @@ sub GetPanelName {
 
 		my $getStructure = XMLin("$fileName");
 
-		$panelSizeName = $self->GetPanelNameByArea( $inCAM, $jobName, $getStructure->{panel_width}, $getStructure->{panel_height} );
+		$panelSizeName = $self->GetPanelTypeByActiveArea( $inCAM, $jobName, $getStructure->{panel_width}, $getStructure->{panel_height} );
 
 		return ($panelSizeName);
 	}
@@ -90,15 +90,50 @@ sub GetPanelName {
 
 }
 
-sub GetPanelNameByArea {
-	my $self    = shift;
+# Return type of "produce panel" from Enums::EnumsProducPanel
+# computed
+sub GetPanelType {
+	my $self  = shift;
 	my $inCAM = shift;
+	my $jobId = shift;
+
+	my $pnlType = undef;
+	my %lim = CamJob->GetProfileLimits2( $inCAM, $jobId, "panel" );
+	my $h = abs( $lim{"yMin"} - $lim{"yMax"} );
+	my $layerCnt = CamJob->GetSignalLayerCnt( $inCAM, $jobId );
+
+	if ( $layerCnt > 2 ) {
+
+		if ( $h > 450 ) {
+			$pnlType = EnumsProducPanel->SIZE_MULTILAYER_BIG;
+		}
+		else {
+			$pnlType = EnumsProducPanel->SIZE_MULTILAYER_SMALL;
+		}
+
+	}
+	else {
+		if ( $h > 400 ) {
+			$pnlType = EnumsProducPanel->SIZE_STANDARD_SMALL;
+		}
+		else {
+			$pnlType = EnumsProducPanel->SIZE_STANDARD_BIG;
+		}
+	}
+	
+	return $pnlType;
+}
+
+# Return panel type based on active area
+sub GetPanelTypeByActiveArea {
+	my $self    = shift;
+	my $inCAM   = shift;
 	my $jobName = shift;
 	my $areaW   = shift;
 	my $areaH   = shift;
 
 	my $resultName = undef;
-	
+
 	my $layerCnt = CamJob->GetSignalLayerCnt( $inCAM, $jobName );
 
 	if ( $layerCnt > 2 ) {
@@ -118,7 +153,7 @@ sub GetPanelNameByArea {
 			last;
 		}
 	}
-	
+
 	return $resultName;
 }
 

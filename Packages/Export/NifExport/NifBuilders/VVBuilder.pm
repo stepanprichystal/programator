@@ -117,6 +117,7 @@ sub Build {
 
 	#Score section
 	@req = ();
+	push(@req, "drazkovani");
 	push(@req, "delka_drazky");
 
 	$nifMngr->AddSection("Drazkovani", BuilderScore->new(\@req));

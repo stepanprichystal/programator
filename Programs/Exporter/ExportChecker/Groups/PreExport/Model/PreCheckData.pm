@@ -7,6 +7,7 @@
 package Programs::Exporter::ExportChecker::Groups::PreExport::Model::PreCheckData;
 
 #3th party library
+use utf8;
 use strict;
 use warnings;
 use File::Copy;
@@ -17,6 +18,7 @@ use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'CamHelpers::CamHelper';
 use aliased 'CamHelpers::CamJob';
 use aliased 'CamHelpers::CamHistogram';
+use aliased 'Enums::EnumsProducPanel';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -48,11 +50,11 @@ sub OnCheckGroupData {
 
 	# 1) Check if pcb class is at lest 3
 	my $pcbClass = $defaultInfo->GetPcbClass();
-	if(!defined $pcbClass || $pcbClass < 3){
+	if ( !defined $pcbClass || $pcbClass < 3 ) {
 
-		$dataMngr->_AddErrorResult("Pcb class", "Pcb class is equal to \"$pcbClass\". Check job attribute: \"PcbClass\" and set at least value \"3\".\n");
+		$dataMngr->_AddErrorResult( "Pcb class",
+									"Pcb class is equal to \"$pcbClass\". Check job attribute: \"PcbClass\" and set at least value \"3\".\n" );
 	}
-
 
 	# 1) Check if layers has set polarity
 	my @layers = @{ $groupData->GetSignalLayers() };
@@ -110,8 +112,6 @@ sub OnCheckGroupData {
 	if ($err) {
 		$dataMngr->_AddErrorResult( "Layer check", "Order of signal layers in matrix is wrong. Fix it." );
 	}
-	
-	
 
 	# 4) Check if material and pcb thickness and base cuthickness is set
 	my $materialKind = $defaultInfo->GetMaterialKind();
@@ -200,44 +200,60 @@ sub OnCheckGroupData {
 	}
 
 	# 8) check if  if positive inner layer contains theraml pads
-	if($defaultInfo->GetLayerCnt() > 2){
-	
+	if ( $defaultInfo->GetLayerCnt() > 2 ) {
+
 		my @layers = $defaultInfo->GetSignalLayers();
-		
-		foreach my $l (@layers){
-			
-			if($l->{"gROWname"} =~ /^v\d$/){
-				
-				my %symHist = CamHistogram->GetSymHistogram($inCAM, $jobId, $stepName, $l->{"gROWname"});
-				
-				if($l->{"gROWpolarity"} eq "negative"){
+
+		foreach my $l (@layers) {
+
+			if ( $l->{"gROWname"} =~ /^v\d$/ ) {
+
+				my %symHist = CamHistogram->GetSymHistogram( $inCAM, $jobId, $stepName, $l->{"gROWname"} );
+
+				if ( $l->{"gROWpolarity"} eq "negative" ) {
 					next;
 				}
-				
-				my @thermalPads = grep { $_->{"sym"} =~ /th/ } @{$symHist{"pads"}};
-				
-				if(scalar(@thermalPads)){
-					$dataMngr->_AddErrorResult( "Inner layers",
-										"Layer : \"" . $l->{"gROWname"} . "\" contains thermal pads and is type: \"positive\". Are you sure, layer shouldn't be negative?" );
+
+				my @thermalPads = grep { $_->{"sym"} =~ /th/ } @{ $symHist{"pads"} };
+
+				if ( scalar(@thermalPads) ) {
+					$dataMngr->_AddErrorResult(
+												"Inner layers",
+												"Layer : \""
+												  . $l->{"gROWname"}
+												  . "\" contains thermal pads and is type: \"positive\". Are you sure, layer shouldn't be negative?"
+					);
 				}
-				
+
 			}
 		}
 	}
-	
-
 
 	# 9) Check if board base layers, not contain attribute .rout_chan
 
-	foreach my $l (   $defaultInfo->GetBoardBaseLayers()  ) {
+	foreach my $l ( $defaultInfo->GetBoardBaseLayers() ) {
 
 		my %attHist = CamHistogram->GetAttHistogram( $inCAM, $jobId, "panel", $l->{"gROWname"}, 1 );
 
 		if ( $attHist{".rout_chain"} || $attHist{".comp"} ) {
 
 			$dataMngr->_AddErrorResult( "Rout attributes",
-										"Layer : " . $l->{"gROWname"} . " contains rout attributes: '.rout_chain' or '.comp'. Delete them from layer." );
+									 "Layer : " . $l->{"gROWname"} . " contains rout attributes: '.rout_chain' or '.comp'. Delete them from layer." );
 		}
+	}
+
+	# 10) Check if dimension of panel are ok, depand on finish surface
+	my $surface   = $defaultInfo->GetPcbSurface($jobId);
+	my $pcbThick  = $defaultInfo->GetPcbThick($jobId);
+	my $panelType = $defaultInfo->GetPanelType();
+
+	# if HAL PB , and thisck < 1.5mm => onlz small panel
+	if (    $surface =~ /A/i 
+		 && $pcbThick < 1500
+		 && ( $panelType eq EnumsProducPanel->SIZE_MULTILAYER_BIG || $panelType eq EnumsProducPanel->SIZE_STANDARD_BIG ) )
+	{
+		$dataMngr->_AddErrorResult( "Panel dimension",
+									"Nelze použít velký rozměr panelu protože surface je olovnatý HAL a zároveň tl. desky je menší 1,5mm");
 	}
 
 }

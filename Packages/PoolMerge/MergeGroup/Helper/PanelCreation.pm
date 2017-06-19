@@ -55,7 +55,7 @@ sub CreatePanel {
 	my $inCAM = $self->{"inCAM"};
  
 	# 1) Choose panel type  Enums::EnumsProducPanel::panelsize_XXX
-	my $panelType = PanelDimension->GetPanelNameByArea( $inCAM, $masterJob, $self->{"poolInfo"}->GetPnlW(), $self->{"poolInfo"}->GetPnlH() );
+	my $panelType = PanelDimension->GetPanelTypeByActiveArea( $inCAM, $masterJob, $self->{"poolInfo"}->GetPnlW(), $self->{"poolInfo"}->GetPnlH() );
 	my %panelDims = PanelDimension->GetDimensionPanel( $inCAM, $panelType );
 	
 	$self->{"panelType"} = $panelType;

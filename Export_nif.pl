@@ -15,13 +15,10 @@ use lib qw( C:\Perl\site\lib\TpvScripts\Scripts );
 use aliased 'Packages::InCAM::InCAM';
 use aliased 'Programs::Exporter::ExportUtility::Groups::NifExport::NifExportTmp';
 
-
-
+ 
 #input parameters
  
-
- 
-my $jobId    = "f67116";
+my $jobId    = "f52457";
  
 
  
