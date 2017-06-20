@@ -209,7 +209,7 @@ sub GetToolParam {
 	my $self       = shift;
 	my $tool       = shift;    # Universal tool object
 	my $par        = shift;    # arametters of given material
-	my $magazineOk = shift;    # set if magazine code was found
+	my $magazineOk = shift;    # set 1, if magazine code was found
 
 	my $line = $self->__GetToolParamLine( $tool, $par );
 

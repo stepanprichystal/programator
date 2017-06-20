@@ -5,7 +5,8 @@
 <operations>
    <operation name="PlatedDrill">
       <magazine material="FR4">-</magazine>   
-      <magazine material="IS400">I1</magazine>  
+      <magazine material="IS400">I2</magazine>  
+      <magazine material="Al">-</magazine>
    </operation>
    <operation name="PlatedRout">
       <magazine material="FR4">-</magazine>

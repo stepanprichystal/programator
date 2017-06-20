@@ -52,7 +52,10 @@ sub Acquire {
 				$importOk = $self->__ImportJob( $inCAM, $path, $jobId, \$importErr );
 
 				# if succes ( == 0)
-				if ( $importOk == 0 ) {
+				# sometomes happen that import fail, but job is imported properly, thus test if job already exist
+				if ( $importOk == 0  || CamJob->JobExist( $inCAM, $jobId )) {
+					
+					$importOk = 0;
 					last;
 				}
 

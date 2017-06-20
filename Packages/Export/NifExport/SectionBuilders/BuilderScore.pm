@@ -98,7 +98,7 @@ sub Build {
 			my @hPos = $pcbPlace->GetScorePos( ScoEnums->Dir_HSCORE );    # horizontal mark lines
 			my @VPos = $pcbPlace->GetScorePos( ScoEnums->Dir_VSCORE );    # vertical mark lines
 			
-			$delka_drazky = scalar(@hPos) * $w + scalar(@VPos) * $h;
+			$delka_drazky = sprintf("%.2f", (scalar(@hPos) * $w + scalar(@VPos) * $h)/1000);
 			
 		} 
 
