@@ -159,8 +159,6 @@ sub GetTool {
 
 	my $mess = "";
 
-	 
-
 	my @tools = $self->GetUniqueTools();
 	@tools = grep { $_->GetDrillSize() eq $drillSize && $_->GetTypeProcess() eq $typeProcess } @tools;
 
@@ -182,24 +180,21 @@ sub GetChecks {
 	return $self->{"check"};
 }
 
-
-
 # Return object which contain pilot diameters for specified diameter
 sub GetPilots {
-	my $self        = shift;
-	my $drillSize   = shift;
-	
+	my $self      = shift;
+	my $drillSize = shift;
+
 	my @diameters = ();
-	
-	my $pDef = (grep { $_->GetDrillSize() == $drillSize } @{$self->{"pilotDefs"}})[0];	
-	
-	if($pDef){
-		 @diameters = $pDef->GetPilotDiameters();
+
+	my $pDef = ( grep { $_->GetDrillSize() == $drillSize } @{ $self->{"pilotDefs"} } )[0];
+
+	if ($pDef) {
+		@diameters = $pDef->GetPilotDiameters();
 	}
- 
+
 	return @diameters;
 }
-
 
 sub __InitUniDTM {
 	my $self = shift;
@@ -270,17 +265,17 @@ sub __InitUniDTM {
 
 # Add pilot tool definitions (2.8mm + 4.6 mm) if tools diameter is bigger than 5.3mm
 sub __AddPilotHolesDefinition {
-	my $self = shift;
+	my $self  = shift;
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
-	
+
 	# Add pilot holes only for plated
-	my $lType = CamHelper->LayerType($inCAM, $jobId, $self->{"layer"});
- 
-	if($lType ne "drill" ){
+	my $lType = CamHelper->LayerType( $inCAM, $jobId, $self->{"layer"} );
+
+	if ( $lType ne "drill" ) {
 		return 0;
 	}
- 
+
 	my @bigTools = grep { $_->GetDrillSize() > 5300 && $_->GetTypeProcess() eq Enums->TypeProc_HOLE } @{ $self->{"tools"} };
 
 	# 1) add poliot diameters to big hole
@@ -289,9 +284,9 @@ sub __AddPilotHolesDefinition {
 		my $pilotDef = PilotDef->new( $t->GetDrillSize() );
 
 		if ( $t->GetDrillSize() > 5300 ) {
-			
+
 			$pilotDef->AddPilotDiameter(1500);
-			
+
 			# From 8.6.2017 pilot 1500µm
 			#$pilotDef->AddPilotDiameter(2800);
 			#$pilotDef->AddPilotDiameter(4600);
@@ -319,11 +314,10 @@ sub __LoadToolsMagazine {
 	my $jobId = $self->{"jobId"};
 
 	my $materialName = $self->{"materialName"};
-	
 
 	foreach my $t ( @{ $self->{"tools"} } ) {
-		
-		my $operation    = $self->__GetOperationByLayer($t);
+
+		my $operation = $self->__GetOperationByLayer($t);
 
 		my $mInfo = $t->GetMagazineInfo();
 
@@ -334,16 +328,16 @@ sub __LoadToolsMagazine {
 
 			# if exist geven magazine info eg "6.5_90st";
 			if ($xmlTool) {
-				
+
 				$t->SetSpecial(1);
 				$t->SetAngle( $xmlTool->{"angle"} );
 
-				my @mArr = @{ $xmlTool->{"magazine"} };
+				my @mArr  = @{ $xmlTool->{"magazine"} };
 				my $matIs = $_->{"material"};
-				my $m = ( grep { $materialName =~ /$matIs/i || $matIs =~ /$materialName/i } @mArr )[0];
+				my $m     = ( grep { $materialName =~ /$matIs/i || $matIs =~ /$materialName/i } @mArr )[0];
 
 				if ( defined $m ) {
-					
+
 					$t->SetMagazine( $m->{"content"} );
 				}
 			}
@@ -356,13 +350,18 @@ sub __LoadToolsMagazine {
 				next;
 			}
 
-			my @mArr = @{ $self->{"magazineDef"}->{"operation"}->{$operation}->{"magazine"} };
-			my $m = ( grep { $_->{"material"} =~ /$materialName/i } @mArr )[0];
+			my $magazines = $self->{"magazineDef"}->{"operation"}->{$operation}->{"magazine"};
 
-			if ( defined $m ) {
+			if ( defined $magazines ) {
+				my @mArr = @{$magazines};
+				my $m = ( grep { $_->{"material"} =~ /$materialName/i } @mArr )[0];
 
-				$t->SetMagazine( $m->{"content"} );
+				if ( defined $m ) {
+
+					$t->SetMagazine( $m->{"content"} );
+				}
 			}
+
 		}
 	}
 }
@@ -370,7 +369,7 @@ sub __LoadToolsMagazine {
 sub __GetOperationByLayer {
 	my $self = shift;
 	my $tool = shift;
-	
+
 	my $typeProc = $tool->GetTypeProcess();
 
 	my $inCAM = $self->{"inCAM"};
@@ -385,8 +384,6 @@ sub __GetOperationByLayer {
 	$l{"gROWlayer_type"} = CamHelper->LayerType( $inCAM, $jobId, $self->{"layer"} );
 
 	my $operation = undef;
-	
-	
 
 	if ( $l{"plated"} && $typeProc eq Enums->TypeProc_HOLE ) {
 
@@ -403,7 +400,7 @@ sub __GetOperationByLayer {
 		$operation = "NPlatedDrill";
 
 	}
-	elsif ( !$l{"plated"} && $typeProc eq Enums->TypeProc_CHAIN) {
+	elsif ( !$l{"plated"} && $typeProc eq Enums->TypeProc_CHAIN ) {
 
 		$operation = "NPlatedRout";
 
@@ -426,6 +423,7 @@ sub __LoadMagazineXml {
 		$templXml1,
 
 		ForceArray => 1,
+
 		# KeepRoot   => 1
 	);
 

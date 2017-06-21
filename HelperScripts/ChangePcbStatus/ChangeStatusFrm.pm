@@ -12,14 +12,16 @@ use Wx;
 
 #local library
 use aliased 'Connectors::HeliosConnector::HegMethods';
+use aliased 'Helpers::FileHelper';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
 sub new {
 
-	my $class  = shift;
-	my $parent = shift;
+	my $class    = shift;
+	my $parent   = shift;
+	my $settFile = shift;
 
 	#my $title   = shift;    # title on head of form
 	#my $message = shift;    # message which is showed for user
@@ -32,11 +34,53 @@ sub new {
 
 	bless($self);
 
+	$self->__LoadSettings($settFile);
+
 	$self->__SetLayout();
 
 	# Properties
 
 	return $self;
+}
+
+sub __LoadSettings {
+	my $self = shift;
+	my $path = shift;
+
+	unless ( -e $path ) {
+
+		die "File $path doesn't exist\n";
+	}
+
+	my @lines = @{ FileHelper->ReadAsLines($path) };
+
+	my $advancedMode = ( split( "=", $lines[0] ) )[1];
+
+	$advancedMode =~ s/\s//g;
+
+	$self->{"advancedMode"} = $advancedMode;
+
+	my @statuses = ();
+	for ( my $i = 2 ; $i < scalar(@lines) ; $i++ ) {
+
+		my %inf = ();
+
+		my @vals = split( ";", $lines[$i] );
+		$vals[0] =~ s/^\s*(.*)\s*$/$1/g;
+		$vals[1] =~ s/^\s*(.*)\s*$/$1/g;
+
+		if ( $vals[0] eq "-" ) {
+			$vals[0] = "";
+		}
+
+		$inf{"val"}  = $vals[0];
+		$inf{"desc"} = $vals[1];
+
+		push( @statuses, \%inf );
+	}
+
+	$self->{"statuses"} = \@statuses;
+
 }
 
 sub __SetLayout {
@@ -72,7 +116,6 @@ sub __SetLayout {
 	$self->SetButtonHeight(30);
 
 	$self->AddButton( "Update \"Aktualni krok\"", sub { $self->__OkClick(@_) } );
-
 
 	$self->__OnModeChangeHandler();
 
@@ -120,13 +163,32 @@ sub __SetLayoutStep {
 	my $rbDefined = Wx::RadioButton->new( $statBox, -1, "Defined", &Wx::wxDefaultPosition, &Wx::wxDefaultSize, &Wx::wxRB_GROUP );
 	my $rbCustom = Wx::RadioButton->new( $statBox, -1, "Custom", &Wx::wxDefaultPosition, &Wx::wxDefaultSize );
 
-	# ROW 1
+	unless ( $self->{"advancedMode"} ) {
+		$rbCustom->Disable();
+	}
 
-	my $rbEmptyStep = Wx::RadioButton->new( $pnlRadio, -1, "\"\" (prázdná hodnota)", &Wx::wxDefaultPosition, &Wx::wxDefaultSize,, &Wx::wxRB_GROUP );
-	my $rbPanelStep = Wx::RadioButton->new( $pnlRadio, -1, "\"k panelizaci\"", &Wx::wxDefaultPosition, &Wx::wxDefaultSize );
-	my $rbHotovoStep = Wx::RadioButton->new( $pnlRadio, -1, "\"HOTOVO-zadat\"", &Wx::wxDefaultPosition, &Wx::wxDefaultSize );
-	my $rbZpracovaniAutoStep = Wx::RadioButton->new( $pnlRadio, -1, "\"zpracovani - auto\" (reorder bude automaticky zpracována)",
-													 &Wx::wxDefaultPosition, &Wx::wxDefaultSize );
+	# ROW 1
+	my @rbs = ();
+	$self->{"rbs"} = \@rbs;
+
+	my $first = 1;
+	foreach my $stat ( @{ $self->{"statuses"} } ) {
+
+		my $rb = Wx::RadioButton->new( $pnlRadio, -1, $stat->{"val"} . " " . $stat->{"desc"},
+									   &Wx::wxDefaultPosition, &Wx::wxDefaultSize, $first ? &Wx::wxRB_GROUP : undef );
+		$rb->{"statusValue"} = $stat->{"val"};
+
+		$szRadio->Add( $rb, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+		push( @{ $self->{"rbs"} }, $rb );
+
+		$first = 0;
+	}
+
+  #	my $rbEmptyStep = Wx::RadioButton->new( $pnlRadio, -1, "\"\" (prázdná hodnota)", &Wx::wxDefaultPosition, &Wx::wxDefaultSize,, &Wx::wxRB_GROUP );
+  #	my $rbPanelStep = Wx::RadioButton->new( $pnlRadio, -1, "\"k panelizaci\"", &Wx::wxDefaultPosition, &Wx::wxDefaultSize );
+  #	my $rbHotovoStep = Wx::RadioButton->new( $pnlRadio, -1, "\"HOTOVO-zadat\"", &Wx::wxDefaultPosition, &Wx::wxDefaultSize );
+  #	my $rbZpracovaniAutoStep = Wx::RadioButton->new( $pnlRadio, -1, "\"zpracovani - auto\" (reorder bude automaticky zpracována)",
+  #													 &Wx::wxDefaultPosition, &Wx::wxDefaultSize );
 
 	# ROW2
 
@@ -136,15 +198,13 @@ sub __SetLayoutStep {
 	Wx::Event::EVT_RADIOBUTTON( $rbDefined, -1, sub { $self->__OnModeChangeHandler(@_) } );
 	Wx::Event::EVT_RADIOBUTTON( $rbCustom,  -1, sub { $self->__OnModeChangeHandler(@_) } );
 
-	
-
 	# BUILD STRUCTURE OF LAYOUT
 
 	# ROW 1
-	$szRadio->Add( $rbEmptyStep,          0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
-	$szRadio->Add( $rbPanelStep,          0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
-	$szRadio->Add( $rbHotovoStep,         0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
-	$szRadio->Add( $rbZpracovaniAutoStep, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	#	$szRadio->Add( $rbEmptyStep,          0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	#	$szRadio->Add( $rbPanelStep,          0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	#	$szRadio->Add( $rbHotovoStep,         0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	#	$szRadio->Add( $rbZpracovaniAutoStep, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 
 	$pnlRadio->SetSizer($szRadio);
 
@@ -165,10 +225,10 @@ sub __SetLayoutStep {
 	$self->{"custom"}         = $customTextCtrl;
 	$self->{"defined"}        = $pnlRadio;
 
-	$self->{"rbEmptyStep"}          = $rbEmptyStep;
-	$self->{"rbPanelStep"}          = $rbPanelStep;
-	$self->{"rbHotovoStep"}         = $rbHotovoStep;
-	$self->{"rbZpracovaniAutoStep"} = $rbZpracovaniAutoStep;
+	#	$self->{"rbEmptyStep"}          = $rbEmptyStep;
+	#	$self->{"rbPanelStep"}          = $rbPanelStep;
+	#	$self->{"rbHotovoStep"}         = $rbHotovoStep;
+	#	$self->{"rbZpracovaniAutoStep"} = $rbZpracovaniAutoStep;
 
 	return $szStatBox;
 }
@@ -230,7 +290,7 @@ sub __SetMessage {
 		$color = Wx::Colour->new( 42, 160, 0 );
 	}
 
-	$self->{"resultTxt"}->SetForegroundColour( $color);
+	$self->{"resultTxt"}->SetForegroundColour($color);
 
 	$self->{"resultTxt"}->Refresh();
 
@@ -238,36 +298,24 @@ sub __SetMessage {
 
 sub __OkClick {
 	my $self = shift;
-	
-	
 
 	if ( $self->__OrderNumberMatch() ) {
-		
-		$self->__SetMessage( "-");
+
+		$self->__SetMessage("-");
 
 		my $orders = $self->{"ordersTxtXtrl"}->GetValue();
 
 		# get new step value
 		my $newStep = undef;
-		my $val = $self->{"rbDefined"}->GetValue();
+		my $val     = $self->{"rbDefined"}->GetValue();
 
 		if ( defined $val && $val == 1 ) {
 
-			if ( $self->{"rbEmptyStep"}->GetValue() == 1 ) {
-				$newStep = "";
-			}
-			elsif ( $self->{"rbPanelStep"}->GetValue() == 1 ) {
+			# get value of checked radio
 
-				$newStep = "k panelizaci";
-			}
-			elsif ( $self->{"rbHotovoStep"}->GetValue() == 1 ) {
+			my $rbChecked = ( grep { $_->GetValue() == 1 } @{ $self->{"rbs"} } )[0];
+			$newStep = $rbChecked->{"statusValue"};
 
-				$newStep = "HOTOVO-zadat";
-			}
-			elsif ( $self->{"rbZpracovaniAutoStep"}->GetValue() == 1 ) {
-
-				$newStep = "zpracovani-auto";
-			}
 		}
 		else {
 
@@ -275,25 +323,53 @@ sub __OkClick {
 				$newStep = $self->{"customTextCtrl"}->GetValue();
 			}
 		}
-
 		
-		if(!defined $newStep){
+		# if poslan dotaz add user name
+		if($newStep eq "poslan dotaz"){
+			
+			$newStep .= " ".getlogin();
+		}
+
+		if ( !defined $newStep ) {
 			return 0;
 		}
-		
+
 		# parse orders
-		my @orderIds = split(";", $orders);
-		
-		foreach my $id (@orderIds){
+		my @orderIds = split( ";", $orders );
+
+		# Exception, in non advanced mode you can update onlz on empty state
+		# + when before step is one ot theses steps: OBCHOD-Chybi papir; OBCHOD-Chybi data;
+		unless ( $self->{"advancedMode"} ) {
 			
+			my $errMess = "";
+			
+			foreach my $id (@orderIds) {
+
+				my $curStep = HegMethods->GetCurStepOfOrder($id);
+
+				if ( !( $curStep eq "OBCHOD-Chybi papir" || $curStep eq "OBCHOD-Chybi data" ) ) {
+					$errMess .= $id.";"
+				}
+			}
+			
+			if($errMess ne ""){
+				
+				$errMess = "Update FAIL. Objednavka musi byt v kroku: \"OBCHOD-Chybi papir\" nebo \"OBCHOD-Chybi data\"";
+				$self->__SetMessage( $errMess, "red" );
+				return 0;
+			}
+		}
+
+		foreach my $id (@orderIds) {
+
 			$id =~ s/\s//g;
 			$id = uc($id);
-			
-			my $res = HegMethods->UpdatePcbOrderState( $id, $newStep);
+
+			my $res = HegMethods->UpdatePcbOrderState( $id, $newStep );
 		}
-		
+
 		$self->__SetMessage( "$orders update SUCCESS", "green" );
- 
+
 	}
 
 }

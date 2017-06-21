@@ -89,14 +89,14 @@ sub GetExportLayerCnt{
 
 	}
 	
-	if($self->{"mdiInfo"}->{"exportMask"}){
+	if($self->{"mdiInfo"}->{"exportPlugs"}){
 		
 		my @l = grep { $_->{"gROWname"} =~ /^plg[cs]$/ } @layers;
 		$layerNumber += scalar(@l);
 
 	}
 	
-	if($self->{"mdiInfo"}->{"exportMask"}){
+	if($self->{"mdiInfo"}->{"exportGold"}){
 		
 		my @l = grep { $_->{"gROWname"} =~ /^gold[cs]$/ } @layers;
 		$layerNumber += scalar(@l);

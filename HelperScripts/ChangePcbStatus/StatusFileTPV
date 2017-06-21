@@ -1,0 +1,11 @@
+advancedMode = 1
+
+-;(prazdna hodnota)
+k panelizaci;
+HOTOVO-zadat;
+zpracovani-auto;(reorder bude automaticky zpracovana)
+OBCHOD-Chybi papir;
+OBCHOD-Chybi data;
+posle nova data;
+poslan dotaz; (+ jmeno uzivatele)
+Exportovano;

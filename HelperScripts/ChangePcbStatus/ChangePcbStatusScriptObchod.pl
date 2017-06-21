@@ -17,7 +17,7 @@ use aliased 'Helpers::GeneralHelper';
 my $result = 0;
 
 
-my $path = GeneralHelper->Root()."\\HelperScripts\\ChangePcbStatus\\StatusFileTPV";
+my $path = GeneralHelper->Root()."\\HelperScripts\\ChangePcbStatus\\StatusFileObchod";
 
 my $frm = ChangeStatusFrm->new(-1,$path);
 

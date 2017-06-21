@@ -105,7 +105,7 @@ sub __ExportLayers {
 
 	foreach my $l (@layers) {
 
-		if($l->{"gROWname"} eq "v2"){
+		if($l->{"gROWname"} eq "plgc"){
 			print STDERR "dd";
 		}
 
@@ -240,7 +240,7 @@ sub __GetLayerLimit {
 	my %lim = ();
 
 	# if top/bot layer, clip around fr frame
-	if ( $self->{"layerCnt"} > 2 && ( $layerName =~ /^[goldm]*c$/ || $layerName =~ /^[goldm]*s$/ ) ) {
+	if ( $self->{"layerCnt"} > 2 && ( $layerName =~ /^[(gold)(plg)m]*[cs]$/ ) ) {
 
 		%lim = %{ $self->{"frLim"} };
 	}
@@ -317,7 +317,7 @@ sub __ExportGerberLayer {
 
 	# 1 ) Export gerber to temp directory
 
-	ExportLayers->ExportLayers( $resultItemGer, $inCAM, $self->{"mdiStep"}, \@layers, EnumsPaths->Client_INCAMTMPOTHER, "", $suffixFunc );
+	ExportLayers->ExportLayers( $resultItemGer, $inCAM, $self->{"mdiStep"}, \@layers, EnumsPaths->Client_INCAMTMPOTHER, "", $suffixFunc, undef, 1 );
 
 	my $tmpFullPath = EnumsPaths->Client_INCAMTMPOTHER . $layerName . $tmpFileId;
 
@@ -354,7 +354,7 @@ sub __OptimizeLayer {
 	
 	my $layerName = $l->{"gROWname"};
 
-	if ( $layerName =~ /^c$/ || $layerName =~ /^s$/ || $layerName =~ /^v\d$/ ) {
+	if ( $layerName =~ /^(plg)?[cs]$/ || $layerName =~ /^v\d$/ ) {
 				
 		if ( $l->{"gROWpolarity"} eq "negative" ) {
 			CamLayer->Contourize( $self->{"inCAM"}, $layerName );
@@ -434,7 +434,7 @@ sub __DeleteMdiStep {
 
 	#delete if step already exist
 	if ( CamHelper->StepExists( $inCAM, $jobId, $step ) ) {
-		$inCAM->COM( "delete_entity", "job" => $jobId, "name" => $step, "type" => "step" );
+		#$inCAM->COM( "delete_entity", "job" => $jobId, "name" => $step, "type" => "step" );
 	}
 }
 
@@ -449,12 +449,12 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId    = "f72140";
+	my $jobId    = "f52457";
 	my $stepName = "panel";
 
 	my $export = ExportFiles->new( $inCAM, $jobId, $stepName );
 
-	my %type = ( Enums->Type_SIGNAL => "1", Enums->Type_MASK => "0", Enums->Type_PLUG => "0" );
+	my %type = ( Enums->Type_SIGNAL => "0", Enums->Type_MASK => "0", Enums->Type_PLUG => "1" );
 
 	$export->Run( \%type );
 

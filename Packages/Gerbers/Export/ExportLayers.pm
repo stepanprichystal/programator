@@ -31,8 +31,8 @@ sub ExportLayers {
 	my $step        = shift;
 	my @layers      = @{ shift(@_) };
 	my $archivePath = shift;
-	my $prefix      = shift; # string, which is put before each files
-	my $suffixFunc  = shift; # function, which return suffix, which is add behind file
+	my $prefix      = shift;            # string, which is put before each files
+	my $suffixFunc  = shift;            # function, which return suffix, which is add behind file
 	my $breakSR     = shift;
 	my $breakSymbol = shift;
 
@@ -108,7 +108,7 @@ sub ExportLayers {
 		$inCAM->COM( "output_device_select",       "type" => "format", "name" => $device );
 
 		$inCAM->HandleException(1);
-	 
+
 		my $plotResult = $inCAM->COM(
 									  "output_device",
 									  "type"                 => "format",
@@ -130,18 +130,17 @@ sub ExportLayers {
 
 			$resultItem->AddError( "Failed to create Gerber file: " . $archivePath . "\\" . $fname );
 		}
-		
-		my $fileSize =  -s $archivePath . "\\" . $fname;
-		if( $fileSize == 0 ){
-			
-			$resultItem->AddError( "Error during create Gerber file: " . $archivePath . "\\" . $fname.". File size is 0kB." );
-			
+
+		my $fileSize = -s $archivePath . "\\" . $fname;
+		if ( $fileSize == 0 ) {
+
+			$resultItem->AddError( "Error during create Gerber file: " . $archivePath . "\\" . $fname . ". File size is 0kB." );
+
 		}
 
 	}
 
 }
-
 
 # Export gerbers for each layer in @layers param
 # This function allow set final name by defining func, which return final file name
@@ -152,7 +151,7 @@ sub ExportLayers2 {
 	my $step        = shift;
 	my @layers      = @{ shift(@_) };
 	my $archivePath = shift;
-	my $nameFunc    = shift; # func which define name of final file
+	my $nameFunc    = shift;            # func which define name of final file
 	my $breakSR     = shift;
 	my $breakSymbol = shift;
 
@@ -179,7 +178,7 @@ sub ExportLayers2 {
 
 		if ( -e $file ) {
 
-			move( $file, $archivePath . "\\" . $nameFunc->($l) ); 
+			move( $file, $archivePath . "\\" . $nameFunc->($l) );
 		}
 	}
 
@@ -191,37 +190,27 @@ sub ExportLayers2 {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	#	use aliased 'Packages::Export::PlotExport::PlotMngr';
-	#
-	#	use aliased 'Packages::InCAM::InCAM';
-	#
-	#	my $inCAM = InCAM->new();
-	#
-	#	my $jobId = "f13609";
-	#
-	#	my @layers = CamJob->GetBoardBaseLayers( $inCAM, $jobId );
-	#
-	#	foreach my $l (@layers) {
-	#
-	#		$l->{"polarity"} = "positive";
-	#
-	#		if ( $l->{"gROWname"} =~ /pc/ ) {
-	#			$l->{"polarity"} = "negative";
-	#		}
-	#
-	#		$l->{"mirror"} = 0;
-	#		if ( $l->{"gROWname"} =~ /c/ ) {
-	#			$l->{"mirror"} = 1;
-	#		}
-	#
-	#		$l->{"compensation"} = 30;
-	#		$l->{"name"}         = $l->{"gROWname"};
-	#	}
-	#
-	#	@layers = grep { $_->{"name"} =~ /p[cs]/ } @layers;
-	#
-	#	my $mngr = PlotMngr->new( $inCAM, $jobId, \@layers );
-	#	$mngr->Run();
+	# function, which build output layer name
+	my $suffixFunc = sub {
+
+		my $layerName = shift;
+		return $layerName;
+	};
+
+	use Packages::Gerbers::Export::ExportLayers;
+	use aliased 'Packages::InCAM::InCAM';
+
+	my $inCAM = InCAM->new();
+
+	my $jobId = "f52457";
+
+	my @layers = ();
+
+	my %inf = ( "name" => "plgc" );
+	push( @layers, \%inf );
+
+	Packages::Gerbers::Export::ExportLayers->ExportLayers( undef, $inCAM, "mdi_panel", \@layers, "c:\\Export\\opfx", "", $suffixFunc );
+
 }
 
 1;

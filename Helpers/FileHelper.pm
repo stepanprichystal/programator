@@ -40,6 +40,7 @@ sub Open {
 	my $path  = shift;
 	my $write = shift;
 	my $encoding = shift;
+	
  
 	my $f         = undef;
 	my $operation = "<";
