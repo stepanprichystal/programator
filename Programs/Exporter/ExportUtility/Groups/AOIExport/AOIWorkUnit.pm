@@ -53,7 +53,9 @@ sub Init {
 	$self->{"jobId"}      = $jobId;
 	 
 	my $step = $taskData->GetStepToTest();
-	my $mngr = AOIMngr->new($inCAM, $jobId, $step);
+	my $layers = $taskData->GetLayers();
+	my $sendToServer = $taskData->GetSendToServer();
+	my $mngr = AOIMngr->new($inCAM, $jobId, $step, $layers, $sendToServer);
 	
 	$mngr->{"onItemResult"}->Add( sub { $self->_OnItemResultHandler(@_) } );
 	

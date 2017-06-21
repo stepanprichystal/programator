@@ -12,7 +12,7 @@ use warnings;
 
 #local library
 use aliased 'Packages::CAM::UniRTM::Enums';
-
+use aliased 'Packages::Routing::RoutLayer::RoutParser::RoutArc';
 use aliased 'Enums::EnumsRout';
 
 #-------------------------------------------------------------------------------------------#
@@ -77,6 +77,25 @@ sub GetPoints {
 
 	}
 	else {
+		
+		
+#		my @lines = ();
+#		
+#		foreach my $f ($self->GetFeatures()){
+#			
+#			if($f->{"type"} =~ /A/i){
+#				
+#				 
+#				my @linesTmp = RoutArc->FragmentArcToSegments($f, 2);
+#				push(@lines, @linesTmp);
+#				
+#			}else{
+#				
+#				push(@lines, $f);
+#			}
+#			
+#			
+#		}
 
 		push( @points, [ $features[0]->{"x1"}, $features[0]->{"y1"} ] );    # first point "x1,y1" of feature chain
 		push( @points, map { [ $_->{"x2"}, $_->{"y2"} ] } $self->GetFeatures() );    # rest of points "x2,y2"

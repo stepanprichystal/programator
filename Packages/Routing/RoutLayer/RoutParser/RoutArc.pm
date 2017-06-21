@@ -8,21 +8,18 @@ package Packages::Routing::RoutLayer::RoutParser::RoutArc;
 use strict;
 use warnings;
 use Math::Trig;
-use Math::Polygon::Calc;                 #Math-Polygon
-use Math::Geometry::Planar;              #Math-Geometry-Planar-GPC
+use Math::Polygon::Calc;       #Math-Polygon
+use Math::Geometry::Planar;    #Math-Geometry-Planar-GPC
 use POSIX 'floor';
-
 
 #local library
 use aliased 'Packages::Polygon::Features::RouteFeatures::RouteFeatures';
-use aliased 'Helpers::GeneralHelper'; 
+use aliased 'Helpers::GeneralHelper';
 use aliased 'Packages::Routing::RoutLayer::RoutParser::RoutParser';
 
 #-------------------------------------------------------------------------------------------#
 #  Public method
 #-------------------------------------------------------------------------------------------#
- 
-
 
 #Method which replace arc by more arcs
 sub FragmentArcReplace {
@@ -30,8 +27,7 @@ sub FragmentArcReplace {
 	my $self             = shift;
 	my @sorteEdges       = @{ shift(@_) };
 	my $defaultSegNumber = shift;
-	my $fragmented = shift;
- 
+	my $fragmented       = shift;
 
 	#pokud obrys obsahuje obloukz, je potreba je potreba je dostatecne aproximovat,
 	#aby jsme spolehlive spocitali zda je obrys CW nebo CCW
@@ -51,7 +47,7 @@ sub FragmentArcReplace {
 			my @arcPoints = $self->__FragmentArc( $sorteEdges[$i], $segNumber );
 
 			if ( scalar(@arcPoints) > 2 ) {
- 
+
 				$$fragmented = 1;
 
 				#insert new arc
@@ -126,15 +122,14 @@ sub __FragmentArc {
 	}
 
 	my $segCnt =
-	  floor( ( $arc->{"length"} / $arc->{"perimeter"} ) * $segNumber );   #number of segment for arc
+	  floor( ( $arc->{"length"} / $arc->{"perimeter"} ) * $segNumber );    #number of segment for arc
 
 	#oblouk se nebude delit
 	if ( $segCnt < 2 ) {
 		return 0;
 	}
 
-	$points =
-	  ArcToPoly( $segCnt, \@arrCenter, \@arrStart, \@arrEnd, ( $direction eq "CW" ) ? 1 : 0 );
+	$points = ArcToPoly( $segCnt, \@arrCenter, \@arrStart, \@arrEnd, ( $direction eq "CW" ) ? 1 : 0 );
 
 	return @{$points};
 }
@@ -155,10 +150,10 @@ sub GetArcInnerAngle {
 
 	my $angle1 =
 	  rad2deg( atan2( $arc->{"y1"} - $arc->{"ymid"}, $arc->{"x1"} - $arc->{"xmid"} ) )
-	  ;    #angle of point given by start point and x coordinate above line x
+	  ;                               #angle of point given by start point and x coordinate above line x
 	my $angle2 =
 	  rad2deg( atan2( $arc->{"y2"} - $arc->{"ymid"}, $arc->{"x2"} - $arc->{"xmid"} ) )
-	  ;    #angle of point given by end point and x coordinate under line x
+	  ;                               #angle of point given by end point and x coordinate under line x
 
 	my $alfa;
 	my $sign = 1;
@@ -195,7 +190,87 @@ sub GetArcInnerAngle {
 
 	return $alfa;
 }
+
  
+# Convert arc to lines with specific segment line
+sub FragmentArcToSegments {
+	my $self   = shift;
+	my $arc    = shift;
+	my $segLen = shift;    # line of line segment in mm
+
+	die "Spatne naimplementovana - nefunguje";
+
+	my @segments = ();
+
+	my @arrStart  = ( $arc->{"x1"},   $arc->{"y1"} );
+	my @arrEnd    = ( $arc->{"x2"},   $arc->{"y2"} );
+	my @arrCenter = ( $arc->{"xmid"}, $arc->{"ymid"} );
+	my $direction = $arc->{"newDir"} || $arc->{"oriDir"};
+ 
+	if ( $arc->{"x1"} == $arc->{"x2"} && $arc->{"y1"} == $arc->{"y2"} ) {
+		die "Not arc but circle\n";
+	}
+
+	my $segCnt = int( $arc->{"length"} / $segLen );
+
+	if ( $segCnt == 0 ) {
+
+		my %featInfo;
+
+		$featInfo{"type"} = "L";
+		$featInfo{"id"}   = GeneralHelper->GetNumUID();
+		$featInfo{"x1"}   = $arc->{"x1"};
+		$featInfo{"y1"}   = $arc->{"y1"};
+		$featInfo{"x2"}   = $arc->{"x2"};
+		$featInfo{"y2"}   = $arc->{"y2"};
+
+		RoutParser->AddGeometricAtt( \%featInfo );
+
+		push( @segments, \%featInfo );
+
+	}
+	else {
+
+		my $arcPoints = ArcToPoly( 3, \@arrCenter,  \@arrStart, \@arrEnd,  0 );
+
+		#my $arcPoints = ArcToPoly( $segCnt, \@arrCenter, \@arrStart, \@arrEnd,  0 );
+
+		for ( my $j = 0 ; $j < scalar( @{$arcPoints} ) - 1 ; $j++ ) {
+
+			my %featInfo;
+
+			$featInfo{"type"} = "L";
+			$featInfo{"id"}   = GeneralHelper->GetNumUID();
+
+			$featInfo{"x1"} = $arcPoints->[$j][0];
+			$featInfo{"y1"} = $arcPoints->[$j][1];
+
+			$featInfo{"x2"} = $arcPoints->[ $j + 1 ][0];
+			$featInfo{"y2"} = $arcPoints->[ $j + 1 ][1];
+
+			RoutParser->AddGeometricAtt( \%featInfo );
+
+			push( @segments, \%featInfo );
+		}
+	}
+
+	foreach $_ (@segments) {
+
+		print STDERR "line  = ["
+		  . sprintf( "%.1f", $_->{"x1"} ) . ", "
+		  . sprintf( "%.1f", $_->{"y1"} ) . "],  ["
+		  
+		  . sprintf( "%.1f", $_->{"x2"} ) . ", "
+		  . sprintf( "%.1f", $_->{"y2"} )
+		  . "]\n";
+
+	}
+
+	print STDERR "\n";
+
+	return @segments;
+}
+
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#

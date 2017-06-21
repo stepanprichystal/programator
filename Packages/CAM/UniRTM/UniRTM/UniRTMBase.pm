@@ -90,7 +90,6 @@ sub __InitUniRTM {
 	my $step    = $self->{"step"};
 	my $layer   = $self->{"layer"};
 	my $breakSR = $self->{"breakSR"};
-
 	
 
 	# 1) Parse features
@@ -100,16 +99,12 @@ sub __InitUniRTM {
 	# 2) Get route chain list
 	my @chainList = ChainToolParser->GetChainList(\@features);
 	$self->{"chainList"} = \@chainList;
- 
 
 	# 2) Get route chains by same .rout_tool atribute
 	my @chains = ChainParser->GetChains( \@chainList, \@features );
 	$self->{"chains"} = \@chains;
 	
-	
-	
-	
-	
+ 
 
 	# 4) Get information about mutual position of chain sequences
 	# If chain is inside another chain, save this information

@@ -530,8 +530,8 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId = "d99992";
-	my $step  = "o";
+	my $jobId = "f13608";
+	my $step  = "o+1";
 
 	# Get work layer
 	$inCAM->COM('get_work_layer');
@@ -540,9 +540,9 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $mess = "";
 
-	my $res = Check1UpChain->TestFindAndDrawStarts( $inCAM, $jobId, $step, $layer, 1, 1, $messMngr );
+	#my $res = Check1UpChain->OutsideChains( $inCAM, $jobId, $step, $layer, 1, 1, $messMngr );
 
-	#my $res = Check1UpChain->OnlyBridges( $inCAM, $jobId, $step, $layer, $messMngr );
+	my $res = Check1UpChain->OutsideChains( $inCAM, $jobId, $step, $layer, $messMngr );
 
 }
 

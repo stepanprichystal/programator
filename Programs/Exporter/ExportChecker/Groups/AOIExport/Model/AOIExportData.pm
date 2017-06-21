@@ -62,6 +62,7 @@ sub OnExportGroupData {
  
 	$exportData->SetStepToTest( $groupData->GetStepToTest() );
 	$exportData->SetLayers( $groupData->GetLayers() );
+	$exportData->SetSendToServer( $groupData->GetSendToServer() );
   
 	return $exportData;
 

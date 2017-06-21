@@ -8,17 +8,21 @@
    <tool name="d6.5a90" code="850" diameter="6.5" angle="90">
       <magazine material="FR4">I11</magazine>
       <magazine material="IS400">I11</magazine>
+      <magazine material="IS410">I11</magazine>
    </tool>
    <tool name="d6.5a120" code="850" diameter="6.5" angle="120">
       <magazine material="FR4">I12</magazine>
       <magazine material="IS400">I12</magazine>
+      <magazine material="IS410">I12</magazine>
    </tool>
    <tool name="d6.5a60" code="850" diameter="6.5" angle="60">
       <magazine material="FR4">I13</magazine>
       <magazine material="IS400">I13</magazine>
+      <magazine material="IS410">I13</magazine>
    </tool>
    <tool name="d2.0a30" code="803" diameter="2.0" angle="30">
       <magazine material="FR4">I14</magazine>
       <magazine material="IS400">I14</magazine>
+      <magazine material="IS410">I14</magazine>
    </tool> 
 </tools>

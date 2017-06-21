@@ -59,6 +59,16 @@ sub GetLayers {
 	return $self->{"data"}->{"layers"};
 } 
 
+sub SetSendToServer {
+	my $self  = shift;
+	$self->{"data"}->{"sendToServer"} = shift;
+}
+
+sub GetSendToServer {
+	my $self  = shift;
+	return $self->{"data"}->{"sendToServer"};
+} 
+
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#

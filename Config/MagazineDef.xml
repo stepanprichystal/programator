@@ -4,26 +4,19 @@
 
 <operations>
    <operation name="PlatedDrill">
-      <magazine material="FR4">-</magazine>   
+     <!-- <magazine material="FR4">-</magazine> -->  
       <magazine material="IS400">I2</magazine>  
-      <magazine material="Al">-</magazine>
+      <magazine material="IS410">I2</magazine>  
    </operation>
    <operation name="PlatedRout">
-      <magazine material="FR4">-</magazine>
-      <magazine material="IS400">-</magazine> 
    </operation>
    <operation name="NPlatedRout">
-      <magazine material="FR4">-</magazine>
-      <magazine material="IS400">-</magazine>
       <magazine material="Al">I9</magazine>
    </operation>
    <operation name="NPlatedDrill">
       <magazine material="FR4">I5</magazine>
-      <magazine material="IS400">-</magazine>
-      <magazine material="Al">-</magazine>
    </operation>
    <operation name="RoutBeforeEtch">
       <magazine material="FR4">I7</magazine>
-      <magazine material="IS400">-</magazine>
    </operation>
 </operations>

@@ -339,7 +339,8 @@ sub __LoadToolsMagazine {
 				$t->SetAngle( $xmlTool->{"angle"} );
 
 				my @mArr = @{ $xmlTool->{"magazine"} };
-				my $m = ( grep { $_->{"material"} =~ /$materialName/i } @mArr )[0];
+				my $matIs = $_->{"material"};
+				my $m = ( grep { $materialName =~ /$matIs/i || $matIs =~ /$materialName/i } @mArr )[0];
 
 				if ( defined $m ) {
 					
@@ -424,7 +425,7 @@ sub __LoadMagazineXml {
 	$self->{"magazineDef"} = XMLin(
 		$templXml1,
 
-		#ForceArray => 1,
+		ForceArray => 1,
 		# KeepRoot   => 1
 	);
 

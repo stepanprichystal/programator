@@ -109,15 +109,21 @@ sub __SetLayoutSettings {
 
 	my $stepCb = Wx::ComboBox->new( $parent, -1, $last, &Wx::wxDefaultPosition, [ 50, 25 ], \@steps, &Wx::wxCB_READONLY );
 	my $layersChlb = Wx::CheckListBox->new( $parent, -1, &Wx::wxDefaultPosition, &Wx::wxDefaultSize, $self->{"layers"} );
+	
+	my $sendToServerTxt   = Wx::StaticText->new( $parent, -1, "Send to server",   &Wx::wxDefaultPosition, [ 50, 25 ] );
+	my $sendToServerChb = Wx::CheckBox->new( $parent, -1, "", &Wx::wxDefaultPosition, [ 50, 22 ] );
 
 	# SET EVENTS
 
 	# BUILD STRUCTURE OF LAYOUT
+	$szCol1->Add( $sendToServerTxt, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 	$szCol1->Add( $stepTxt,   0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 	$szCol1->Add( $layersTxt, 1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
-
+	
+	$szCol2->Add( $sendToServerChb, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 	$szCol2->Add( $stepCb,     0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 	$szCol2->Add( $layersChlb, 1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	
 
 	$szStatBox->Add( $szCol1, 40, &Wx::wxEXPAND | &Wx::wxLEFT, 0 );
 	$szStatBox->Add( $szCol2, 60, &Wx::wxEXPAND | &Wx::wxLEFT, 0 );
@@ -125,6 +131,9 @@ sub __SetLayoutSettings {
 	# Set References
 	$self->{"stepCb"}     = $stepCb;
 	$self->{"layersChlb"} = $layersChlb;
+	$self->{"sendToServerChb"} = $sendToServerChb;
+	
+	
 
 	return $szStatBox;
 }
@@ -222,6 +231,27 @@ sub GetLayers {
 	my @arr = $self->__GetCheckedLayers();
 
 	return \@arr;
+}
+
+
+sub SetSendToServer {
+	my $self = shift;
+	my $value = shift;
+
+	$self->{"sendToServerChb"}->SetValue($value);
+}
+
+sub GetSendToServer {
+	my $self = shift;
+
+	if ( $self->{"sendToServerChb"}->IsChecked() ) {
+
+		return 1;
+	}
+	else {
+
+		return 0;
+	}
 }
 
 1;
