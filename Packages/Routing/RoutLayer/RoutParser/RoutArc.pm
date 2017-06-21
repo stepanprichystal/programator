@@ -193,12 +193,13 @@ sub GetArcInnerAngle {
 
  
 # Convert arc to lines with specific segment line
+# v nekterych pripadech fce ArcToPoly dava spatne vysledkyu
 sub FragmentArcToSegments {
 	my $self   = shift;
 	my $arc    = shift;
 	my $segLen = shift;    # line of line segment in mm
 
-	die "Spatne naimplementovana - nefunguje";
+	#die "Spatne naimplementovana - nefunguje";
 
 	my @segments = ();
 
@@ -231,7 +232,7 @@ sub FragmentArcToSegments {
 	}
 	else {
 
-		my $arcPoints = ArcToPoly( 3, \@arrCenter,  \@arrStart, \@arrEnd,  0 );
+		my $arcPoints = ArcToPoly( $segCnt, \@arrCenter,  \@arrStart, \@arrEnd,  ( $direction eq "CW" ) ? 1 : 0 );
 
 		#my $arcPoints = ArcToPoly( $segCnt, \@arrCenter, \@arrStart, \@arrEnd,  0 );
 
@@ -254,19 +255,19 @@ sub FragmentArcToSegments {
 		}
 	}
 
-	foreach $_ (@segments) {
-
-		print STDERR "line  = ["
-		  . sprintf( "%.1f", $_->{"x1"} ) . ", "
-		  . sprintf( "%.1f", $_->{"y1"} ) . "],  ["
-		  
-		  . sprintf( "%.1f", $_->{"x2"} ) . ", "
-		  . sprintf( "%.1f", $_->{"y2"} )
-		  . "]\n";
-
-	}
-
-	print STDERR "\n";
+#	foreach $_ (@segments) {
+#
+#		print STDERR "line  = ["
+#		  . sprintf( "%.1f", $_->{"x1"} ) . ", "
+#		  . sprintf( "%.1f", $_->{"y1"} ) . "],  ["
+#		  
+#		  . sprintf( "%.1f", $_->{"x2"} ) . ", "
+#		  . sprintf( "%.1f", $_->{"y2"} )
+#		  . "]\n";
+#
+#	}
+#
+#	print STDERR "\n";
 
 	return @segments;
 }

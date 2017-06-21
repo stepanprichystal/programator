@@ -79,30 +79,30 @@ sub GetPoints {
 	else {
 		
 		
-#		my @lines = ();
-#		
-#		foreach my $f ($self->GetFeatures()){
-#			
-#			if($f->{"type"} =~ /A/i){
-#				
-#				 
-#				my @linesTmp = RoutArc->FragmentArcToSegments($f, 2);
-#				push(@lines, @linesTmp);
-#				
-#			}else{
-#				
-#				push(@lines, $f);
-#			}
-#			
-#			
-#		}
+		my @lines = ();
+		
+		foreach my $f ($self->GetFeatures()){
+			
+			if($f->{"type"} =~ /A/i){
+				
+				 
+				my @linesTmp = RoutArc->FragmentArcToSegments($f, 4);
+				push(@lines, @linesTmp);
+				
+			}else{
+				
+				push(@lines, $f);
+			}	
+		}
 
-		push( @points, [ $features[0]->{"x1"}, $features[0]->{"y1"} ] );    # first point "x1,y1" of feature chain
-		push( @points, map { [ $_->{"x2"}, $_->{"y2"} ] } $self->GetFeatures() );    # rest of points "x2,y2"
+		push( @points, [ $lines[0]->{"x1"}, $lines[0]->{"y1"} ] );    # first point "x1,y1" of feature chain
+		push( @points, map { [ $_->{"x2"}, $_->{"y2"} ] } @lines );   # rest of points "x2,y2"
+
+		#push( @points, [ $features[0]->{"x1"}, $features[0]->{"y1"} ] );    # first point "x1,y1" of feature chain
+		#push( @points, map { [ $_->{"x2"}, $_->{"y2"} ] } $self->GetFeatures() );    # rest of points "x2,y2"
 	}
 
 	return @points;
-
 }
 
 sub HasFootDown {
