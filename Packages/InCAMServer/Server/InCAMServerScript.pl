@@ -214,7 +214,8 @@ sub __ClientThread {
 	# 1) prepare server
 	my %result = CreateServer->CreateServer( $clients->[$clientIdx]->{"inCAMPort"} );
 	unless ( $result{"result"} ) {
-
+		
+		$logger->debug(" Failed to create server for: (client: $clientId)");
 		__SendMessage( $sock, undef, "Failed to create server $clientMess" );
 		$clients->[$clientIdx]->{"finished"} = 1;
 		exit(0);
@@ -223,8 +224,12 @@ sub __ClientThread {
 	$clients->[$clientIdx]->{"inCAMPID"}  = $result{"inCAMPID"};
 	$clients->[$clientIdx]->{"serverPID"} = $result{"serverPID"};
 
+	$logger->debug("Before send port: ".$clients->[$clientIdx]->{"inCAMPort"}." to (client: $clientId)");
+
 	# send port to clients
 	__SendMessage( $sock, $clients->[$clientIdx]->{"inCAMPort"} );
+	
+	$logger->debug("After send port: ".$clients->[$clientIdx]->{"inCAMPort"}." to (client: $clientId)");
 
 	# 2) wait on finish client job
 	$clientMess = <$sock>;
@@ -258,10 +263,9 @@ sub __SendMessage {
 	my $err  = shift;
 	chomp($mess) if ( defined $mess );
 	chomp($err)  if ( defined $err );
-
+ 
 	my $clientMess = "Message=$mess;Error=$err\n";
-	 
-
+ 
 	$sock->send($clientMess);
 }
 

@@ -102,7 +102,7 @@ sub __CreateServer {
 	# create indicator file
 
 	# 2) try to create inCAM server
-	while (1) {
+	foreach (1..10) {
 
 		# launch InCAm instance + server
 		$pidInCAM = $self->__CreateInCAMInstance( $freePort, $fIndicator );
@@ -118,6 +118,10 @@ sub __CreateServer {
 			$result->{"serverPID"} = $pidServer;
 			last;
 		}
+	}
+	
+	unless($pidServer){
+		die "Unable to Create InCAM server after 10 attempts.\n";
 	}
 
 }
