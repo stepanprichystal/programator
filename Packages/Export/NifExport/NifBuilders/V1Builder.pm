@@ -86,7 +86,7 @@ sub Build {
 	push(@req, "poznamka");
 	push(@req, "datacode");
 	push(@req, "ul_logo");
-	push(@req, "rel(22305,L)");
+	push(@req, "2814075"); #maska 0,1mm
 	push(@req, "merit_presfitt");
 	push(@req, "prerusovana_drazka");
 	
