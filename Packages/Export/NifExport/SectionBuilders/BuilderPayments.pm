@@ -14,6 +14,8 @@ use Class::Interface;
 use strict;
 use warnings;
 use Time::localtime;
+use File::Find;
+use Archive::Any;
 
 #local library
 use aliased 'CamHelpers::CamJob';
@@ -21,6 +23,8 @@ use aliased 'CamHelpers::CamHelper';
 use aliased 'CamHelpers::CamDrilling';
 use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'Enums::EnumsGeneral';
+use aliased 'Packages::CAM::UniRTM::UniRTM::UniRTM';
+use aliased 'Enums::EnumsPaths';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -84,7 +88,7 @@ sub Build {
 
 	if ( $self->_IsRequire("4115894") ) {
 
-		$section->AddComment("Frezovani pred prokovem");
+		$section->AddComment("Drazkovani");
 
 		my $scoring = "4115894";
 
@@ -119,72 +123,244 @@ sub Build {
 
 	if ( $self->_IsRequire("4141429") ) {
 
-		$section->AddComment("Vnitrni frezovani  2VV");
+		$section->AddComment("Vnitrni frezovani 2VV");
 
 		my $inLayer = "4141429";
 
 		my $exists = 0;
 
-		if (! ($layerCnt == 2 && $extraMill)) {
-			
+		if ( !( $layerCnt == 2 && $extraMill ) ) {
+
 			$inLayer = "-" . $inLayer;
 		}
 
-		$section->AddRow( "rel(22305,L)", $inLayer);
+		$section->AddRow( "rel(22305,L)", $inLayer );
 	}
-	
+
 	# 8364285 - vnitrni freza 4vv
 
 	if ( $self->_IsRequire("8364285") ) {
 
-		$section->AddComment("Vnitrni frezovani  4VV");
+		$section->AddComment("Vnitrni frezovani 4VV");
 
 		my $inLayer = "8364285";
-		my $exists = 0;
+		my $exists  = 0;
 
-		if (! ($layerCnt == 4 && $extraMill)) {
-			
+		if ( !( $layerCnt == 4 && $extraMill ) ) {
+
 			$inLayer = "-" . $inLayer;
 		}
 
-		$section->AddRow( "rel(22305,L)", $inLayer);
+		$section->AddRow( "rel(22305,L)", $inLayer );
 	}
 
 	# 8364286 - vnitrni freza 6vv, 8vv
 
 	if ( $self->_IsRequire("8364286") ) {
 
-		$section->AddComment("Vnitrni frezovani  6VV, 8VV");
+		$section->AddComment("Vnitrni frezovani 6VV, 8VV");
 
 		my $inLayer = "8364286";
-		my $exists = 0;
+		my $exists  = 0;
 
-		if (! ($layerCnt > 4 && $extraMill)) {
-			
+		if ( !( $layerCnt > 4 && $extraMill ) ) {
+
 			$inLayer = "-" . $inLayer;
 		}
 
-		$section->AddRow( "rel(22305,L)", $inLayer);
+		$section->AddRow( "rel(22305,L)", $inLayer );
 	}
-	
+
+	# 4007227 - jiny format dat
+	my $dataAreOk = 1;
+
+	if ( $self->_IsRequire("4007227") ) {
+
+		$section->AddComment("Jiny format dat");
+
+		my $wrongFormat = "4007227";
+
+		my @gerbers = $self->__GetCustomerGer($jobId);    # get all cutomer gerbers, whic are not exported in lat 15 minutes (by tpv)
+
+		# unless exist gerber files, check if tgz exist
+
+		unless ( scalar(@gerbers) ) {
+
+			my $odbExist = $self->__ODBExist($jobId);
+
+			unless ($odbExist) {
+				$dataAreOk = 0;
+			}
+		}
+
+		if ($dataAreOk) {
+			$wrongFormat = "-" . $wrongFormat;
+		}
+
+		$section->AddRow( "rel(22305,L)", $wrongFormat );
+	}
+
 	# 4007224 - jine nazvy souboru
-	
+
 	if ( $self->_IsRequire("4007224") ) {
 
 		$section->AddComment("Jine nazvy souboru");
 
-		my $platedMill = "4007224";
+		my $wrongNames = "4007224";
 
-		my $exists = CamDrilling->NCLayerExists( $inCAM, $jobId, EnumsGeneral->LAYERTYPE_plt_nMill );
+		my @gerbers = $self->__GetCustomerGer($jobId);    # get all cutomer gerbers, whic are not exported in lat 15 minutes (by tpv)
 
-		unless ($exists) {
+		# if exist gerber files, check right format
+		# there must be 2 bot + top filne names at least
 
-			$platedMill = "-" . $platedMill;
+		my $gerbersOk = 1;
+
+		# Do check on proper gerbers only if data format is ok
+		if ( $dataAreOk && scalar(@gerbers) ) {
+
+			my $topExist = scalar( grep { $_ =~ /\.top$|top\.[(gbr)(ger)]/s } @gerbers );
+			my $botExist = scalar( grep { $_ =~ /\.bot$|bot\.[(gbr)(ger)]/s } @gerbers );
+
+			if ( !$topExist || !$botExist ) {
+				$gerbersOk = 0;
+			}
 		}
 
-		$section->AddRow( "rel(22305,L)", $platedMill );
+		if ($gerbersOk) {
+			$wrongNames = "-" . $wrongNames;
+		}
+
+		$section->AddRow( "rel(22305,L)", $wrongNames );
+	}
+}
+
+sub __GetCustomerGer {
+	my $self  = shift;
+	my $jobId = shift;
+
+	my @gerbers = ();
+
+	my $location = EnumsPaths->Client_PCBLOCAL . "\\$jobId";
+
+	unless ( -e $location ) {
+		die "Job customer doesn't exist at $location";
 	}
 
+	sub __Find {
+		my $fPath = $File::Find::name;
+		my $fname = $_;
+
+		my $gerbers = ${ $_[0] }{"gerbers"};
+
+		#get file attributes
+		my @stats = stat($fPath);
+
+		# if gerbers are younger than 15 minutes, it means TPV created this gerbers
+		# Not customer data
+		if ( ( time() - $stats[9] ) < 900 ) {
+
+			return 0;
+		}
+
+		if ( open( my $f, "<", $fPath ) ) {
+
+			while ( my $l = <$f> ) {
+
+				if ( $l =~ /%add|%lpd|%moin|g75\*/i ) {
+
+					push( @{$gerbers}, $fname );
+					last;
+				}
+
+			}
+			close($f);
+		}
+	}
+
+	find( sub { __Find( { "gerbers" => \@gerbers } ); }, $location );
+
+	return @gerbers;
+}
+
+sub __GetAllCustomerFiles {
+	my $self  = shift;
+	my $jobId = shift;
+
+	my @files = ();
+
+	my $location = EnumsPaths->Client_PCBLOCAL . "\\$jobId";
+
+	unless ( -e $location ) {
+		die "Job customer doesn't exist at $location";
+	}
+
+	sub __Find2 {
+		my $fPath = $File::Find::name;
+		my $files = ${ $_[0] }{"files"};
+
+		#get file attributes
+		my @stats = stat($fPath);
+
+		# if gerbers are younger than 15 minutes, it means TPV created this gerbers
+		# Not customer data
+		if ( ( time() - $stats[9] ) < 900 ) {
+			return 0;
+		}
+
+		push( @{$files}, $fPath );
+	}
+
+	find( sub { __Find2( { "files" => \@files } ); }, $location );
+
+	return @files;
+}
+
+sub __ODBExist {
+	my $self  = shift;
+	my $jobId = shift;
+
+	my $tgzExist = 0;
+
+	my @allFiles = $self->__GetAllCustomerFiles("f52456" );
+
+	# test if exist TGZ files
+
+	if ( scalar( grep { $_ =~ /\.tgz/i } @allFiles ) ) {
+
+		$tgzExist = 1;
+	}
+
+	# test if exist extraced tgz file
+	elsif ( scalar( grep { $_ =~ /steps\/?$/i } @allFiles ) ) {
+
+		$tgzExist = 1;
+	}
+
+	# if there is no standard tgz, find tgz in all zip or already extracted tgz
+	else {
+
+		foreach my $file (@allFiles) {
+
+			#  test if it is archive and find dir "steps" inside
+			my $archive = Archive::Any->new($file);
+
+			unless ( defined $archive ) {
+				next;
+			}
+
+			my @files = $archive->files();
+
+			my $stepsDir = scalar( grep { $_ =~ /steps\/?$/i } @files );
+
+			if ($stepsDir) {
+				$tgzExist = 1;
+				last;
+			}
+		}
+
+	}
+
+	return $tgzExist;
 }
 
 #-------------------------------------------------------------------------------------------#
