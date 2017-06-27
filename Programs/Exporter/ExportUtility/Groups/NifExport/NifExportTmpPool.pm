@@ -56,6 +56,7 @@ sub Run {
 	my $datacode  = shift;
 	my $ulLogo    = shift;
 	my $jumpScore = shift;
+	my $wrongFormat = shift;
 
 	my $stepName = "panel";
 
@@ -87,6 +88,9 @@ sub Run {
 	}
 	if ( defined $jumpScore ) {
 		$taskData->SetJumpScoring($jumpScore);
+	}
+	if ( defined $wrongFormat ) {
+		$taskData->SetWrongFormat($wrongFormat);
 	}
 
 	#mask

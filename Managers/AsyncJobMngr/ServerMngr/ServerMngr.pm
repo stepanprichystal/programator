@@ -578,8 +578,7 @@ sub __PoolWorker {
 		my $work = $work_q->dequeue();
 
 		# Do work
-		
-		
+ 
 
 		my $port    = $work->[0];
 		my $jobGUID = $work->[1];
@@ -745,6 +744,8 @@ sub __CreateInCAMInstance {
 	#$inCAMPath = "y:\\3.02\\";
 
 	$inCAMPath .= "bin\\InCAM.exe";
+	
+	$self->{"threadLoger"}->debug("Thread is creating incam from path: $inCAMPath");
 
 	unless ( -f $inCAMPath )    # does it exist?
 	{

@@ -31,6 +31,7 @@ my $maska01  = 0;
 my $datacode  = "";
 my $ullogo  = "MC";
 my $jumpScoring  = 0;
+my $wrongFormat  = 0;
 
  
 
@@ -38,4 +39,4 @@ my $inCAM = InCAM->new();
 my $export = NifExportTmpPool->new();
 
 #return 1 if OK, else 0
-$export->Run( $inCAM, $jobId, $poznamka, $tenting, $pressfit, $maska01, $datacode, $ullogo, $jumpScoring);
+$export->Run( $inCAM, $jobId, $poznamka, $tenting, $pressfit, $maska01, $datacode, $ullogo, $jumpScoring, $wrongFormat);

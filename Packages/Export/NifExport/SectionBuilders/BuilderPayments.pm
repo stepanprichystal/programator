@@ -25,6 +25,7 @@ use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'Packages::CAM::UniRTM::UniRTM::UniRTM';
 use aliased 'Enums::EnumsPaths';
+use aliased 'Helpers::JobHelper';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -45,6 +46,7 @@ sub Build {
 
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
+	my %nifData = %{ $self->{"nifData"} };
 
 	my $layerCnt = CamJob->GetSignalLayerCnt( $inCAM, $jobId );
 
@@ -172,7 +174,7 @@ sub Build {
 	}
 
 	# 4007227 - jiny format dat
-	my $dataAreOk = 1;
+	 
 
 	if ( $self->_IsRequire("4007227") ) {
 
@@ -180,20 +182,8 @@ sub Build {
 
 		my $wrongFormat = "4007227";
 
-		my @gerbers = $self->__GetCustomerGer($jobId);    # get all cutomer gerbers, whic are not exported in lat 15 minutes (by tpv)
-
-		# unless exist gerber files, check if tgz exist
-
-		unless ( scalar(@gerbers) ) {
-
-			my $odbExist = $self->__ODBExist($jobId);
-
-			unless ($odbExist) {
-				$dataAreOk = 0;
-			}
-		}
-
-		if ($dataAreOk) {
+ 
+		if (!defined $nifData{"wrongFormat"} || $nifData{"wrongFormat"} == 0) {
 			$wrongFormat = "-" . $wrongFormat;
 		}
 
@@ -216,7 +206,7 @@ sub Build {
 		my $gerbersOk = 1;
 
 		# Do check on proper gerbers only if data format is ok
-		if ( $dataAreOk && scalar(@gerbers) ) {
+		if ( (!defined $nifData{"wrongFormat"} || $nifData{"wrongFormat"} == 0) && scalar(@gerbers) ) {
 
 			my $topExist = scalar( grep { $_ =~ /\.top$|top\.[(gbr)(ger)]/s } @gerbers );
 			my $botExist = scalar( grep { $_ =~ /\.bot$|bot\.[(gbr)(ger)]/s } @gerbers );
@@ -243,7 +233,14 @@ sub __GetCustomerGer {
 	my $location = EnumsPaths->Client_PCBLOCAL . "\\$jobId";
 
 	unless ( -e $location ) {
-		die "Job customer doesn't exist at $location";
+		
+		my $prevLoc = $location;
+		$location =   JobHelper->GetJobArchive($jobId) . "zdroje\\data";
+		
+		unless (-e $location){
+			
+			die "Job customer data doesn't exist neither at $location nor at $prevLoc";
+		}
 	}
 
 	sub __Find {
@@ -257,10 +254,10 @@ sub __GetCustomerGer {
 
 		# if gerbers are younger than 15 minutes, it means TPV created this gerbers
 		# Not customer data
-		if ( ( time() - $stats[9] ) < 900 ) {
-
-			return 0;
-		}
+#		if ( ( time() - $stats[9] ) < 900 ) {
+#
+#			return 0;
+#		}
 
 		if ( open( my $f, "<", $fPath ) ) {
 
@@ -282,86 +279,86 @@ sub __GetCustomerGer {
 	return @gerbers;
 }
 
-sub __GetAllCustomerFiles {
-	my $self  = shift;
-	my $jobId = shift;
-
-	my @files = ();
-
-	my $location = EnumsPaths->Client_PCBLOCAL . "\\$jobId";
-
-	unless ( -e $location ) {
-		die "Job customer doesn't exist at $location";
-	}
-
-	sub __Find2 {
-		my $fPath = $File::Find::name;
-		my $files = ${ $_[0] }{"files"};
-
-		#get file attributes
-		my @stats = stat($fPath);
-
-		# if gerbers are younger than 15 minutes, it means TPV created this gerbers
-		# Not customer data
-		if ( ( time() - $stats[9] ) < 900 ) {
-			return 0;
-		}
-
-		push( @{$files}, $fPath );
-	}
-
-	find( sub { __Find2( { "files" => \@files } ); }, $location );
-
-	return @files;
-}
-
-sub __ODBExist {
-	my $self  = shift;
-	my $jobId = shift;
-
-	my $tgzExist = 0;
-
-	my @allFiles = $self->__GetAllCustomerFiles("f52456" );
-
-	# test if exist TGZ files
-
-	if ( scalar( grep { $_ =~ /\.tgz/i } @allFiles ) ) {
-
-		$tgzExist = 1;
-	}
-
-	# test if exist extraced tgz file
-	elsif ( scalar( grep { $_ =~ /steps\/?$/i } @allFiles ) ) {
-
-		$tgzExist = 1;
-	}
-
-	# if there is no standard tgz, find tgz in all zip or already extracted tgz
-	else {
-
-		foreach my $file (@allFiles) {
-
-			#  test if it is archive and find dir "steps" inside
-			my $archive = Archive::Any->new($file);
-
-			unless ( defined $archive ) {
-				next;
-			}
-
-			my @files = $archive->files();
-
-			my $stepsDir = scalar( grep { $_ =~ /steps\/?$/i } @files );
-
-			if ($stepsDir) {
-				$tgzExist = 1;
-				last;
-			}
-		}
-
-	}
-
-	return $tgzExist;
-}
+#sub __GetAllCustomerFiles {
+#	my $self  = shift;
+#	my $jobId = shift;
+#
+#	my @files = ();
+#
+#	my $location = EnumsPaths->Client_PCBLOCAL . "\\$jobId";
+#
+#	unless ( -e $location ) {
+#		die "Job customer doesn't exist at $location";
+#	}
+#
+#	sub __Find2 {
+#		my $fPath = $File::Find::name;
+#		my $files = ${ $_[0] }{"files"};
+#
+#		#get file attributes
+#		my @stats = stat($fPath);
+#
+#		# if gerbers are younger than 15 minutes, it means TPV created this gerbers
+#		# Not customer data
+#		if ( ( time() - $stats[9] ) < 900 ) {
+#			return 0;
+#		}
+#
+#		push( @{$files}, $fPath );
+#	}
+#
+#	find( sub { __Find2( { "files" => \@files } ); }, $location );
+#
+#	return @files;
+#}
+#
+#sub __ODBExist {
+#	my $self  = shift;
+#	my $jobId = shift;
+#
+#	my $tgzExist = 0;
+#
+#	my @allFiles = $self->__GetAllCustomerFiles($jobId);
+#
+#	# test if exist TGZ files
+#
+#	if ( scalar( grep { $_ =~ /\.tgz/i } @allFiles ) ) {
+#
+#		$tgzExist = 1;
+#	}
+#
+#	# test if exist extraced tgz file
+#	elsif ( scalar( grep { $_ =~ /steps\/?$/i } @allFiles ) ) {
+#
+#		$tgzExist = 1;
+#	}
+#
+#	# if there is no standard tgz, find tgz in all zip or already extracted tgz
+#	else {
+#
+#		foreach my $file (@allFiles) {
+#
+#			#  test if it is archive and find dir "steps" inside
+#			my $archive = Archive::Any->new($file);
+#
+#			unless ( defined $archive ) {
+#				next;
+#			}
+#
+#			my @files = $archive->files();
+#
+#			my $stepsDir = scalar( grep { $_ =~ /steps\/?$/i } @files );
+#
+#			if ($stepsDir) {
+#				$tgzExist = 1;
+#				last;
+#			}
+#		}
+#
+#	}
+#
+#	return $tgzExist;
+#}
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

@@ -254,6 +254,18 @@ sub GetJumpScoring {
 	return $self->{"data"}->{"prerusovana_drazka"};
 }
 
+#wrongFormat - wrong customer data format
+sub SetWrongFormat {
+	my $self  = shift;
+	my $value = shift;
+	$self->{"data"}->{"wrongFormat"} = $value;
+}
+
+sub GetWrongFormat {
+	my $self  = shift;
+	return $self->{"data"}->{"wrongFormat"};
+}
+
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#
