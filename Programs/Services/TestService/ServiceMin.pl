@@ -47,6 +47,8 @@ __SetLogging();
 # every 2000 milliseconds (10 seconds).
 Win32::Daemon::StartService( \%Context, 2000 );
 
+ 
+
 # Now let the service manager know that we are running...
 #Win32::Daemon::State( SERVICE_RUNNING );
 

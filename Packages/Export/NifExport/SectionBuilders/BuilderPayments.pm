@@ -239,7 +239,8 @@ sub __GetCustomerGer {
 		
 		unless (-e $location){
 			
-			die "Job customer data doesn't exist neither at $location nor at $prevLoc";
+			return @gerbers;
+			print STDERR "Job customer data doesn't exist neither at $location nor at $prevLoc";
 		}
 	}
 
