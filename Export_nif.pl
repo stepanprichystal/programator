@@ -20,13 +20,12 @@ use aliased 'Programs::Exporter::ExportUtility::Groups::NifExport::NifExportTmp'
  
 my $jobId    = "f52457";
  
-
  
  
 my $poznamka = undef;
 my $tenting  = 0;
 my $pressfit = 0;
-my $maska01  = undef;
+my $maska01  = 1;
 my $datacode  = "MC";
 my $ullogo  = "MC";
 my $jumpScoring  = undef;

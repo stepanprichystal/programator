@@ -29,12 +29,14 @@ sub new {
 	my %nifData = ();
 	$self->{"nifData"}  = \%nifData;
 	$self->{"nifExist"} = 0;
+	$self->{"nifRows"}  = undef;
 
 	if ( -e $nifPath ) {
 
 		$self->{"nifExist"} = 1;
 
 		my @lines = @{ FileHelper->ReadAsLines($nifPath) };
+		$self->{"nifRows"} = \@lines;
 
 		foreach my $l (@lines) {
 
@@ -56,6 +58,54 @@ sub Exist {
 	my $self = shift;
 
 	if ( $self->{"nifExist"} ) {
+		return 1;
+	}
+	else {
+		return 0;
+	}
+}
+
+sub GetSection {
+	my $self        = shift;
+	my $sectionName = shift;
+	my $lines       = shift;
+
+	my $read = 1;
+
+	for ( my $i = 0 ; $i < scalar( @{ $self->{"nifRows"} } ) ; $i++ ) {
+
+		my $l = $self->{"nifRows"}->[$i];
+
+		if ( $l =~ /.*\[=+\s+SEKCE ([^=]*)\s+=+\].*/i ) {
+
+			# if requested section, read unless another section begin
+			if ( $1 =~ /$sectionName/i ) {
+				push( @{$lines}, $l );
+
+				while (1) {
+					$i++;
+					my $lSection = $self->{"nifRows"}->[$i];
+
+					if ( !defined $lSection || $lSection =~ /.*\[=+\s+SEKCE ([^=]*)\s+=+\].*/i) {
+						$read = 0;
+						last;
+					}
+
+					push( @{$lines}, $lSection );
+				}
+			}
+		}
+
+		unless ($read) {
+			last;
+		}
+	}
+
+	# remove line compete = 1 if exist
+	
+	@{$lines} = grep { $_ !~ /complete/i } @{$lines};
+
+	if ( scalar( @{$lines} ) ) {
 		return 1;
 	}
 	else {
@@ -103,11 +153,14 @@ sub GetSilkScreenColor {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	#use aliased 'Helpers::JobHelper';
+	use aliased 'Packages::NifFile::NifFile';
 
-	#print JobHelper->GetBaseCuThick("F13608", "v3");
+	my $nif = NifFile->new("f52456");
 
-	#print "\n1";
+	my @lines = ();
+	if ( $nif->GetSection( "ostatni2", \@lines ) ) {
+		print @lines;
+	}
 }
 
 1;

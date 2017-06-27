@@ -9,11 +9,9 @@ use base('Packages::ItemResult::ItemEventMngr');
 use Class::Interface;
 &implements('Packages::Export::IMngr');
 
-
 #3th party library
 use strict;
 use warnings;
- 
 
 #local library
 
@@ -30,6 +28,7 @@ use aliased 'Enums::EnumsGeneral';
 use aliased 'Enums::EnumsPaths';
 use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'Helpers::FileHelper';
+use aliased 'Packages::NifFile::NifFile';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -44,8 +43,7 @@ sub new {
 	$self->{"inCAM"}   = shift;
 	$self->{"jobId"}   = shift;
 	$self->{"nifData"} = shift;
-	
-	 
+
 	my @sections = ();
 	$self->{"sections"} = \@sections;
 
@@ -54,7 +52,7 @@ sub new {
 
 	# get layer cnt
 	$self->{"layerCnt"} = CamJob->GetSignalLayerCnt( $self->{"inCAM"}, $self->{"jobId"} );
-	 
+
 	return $self;
 }
 
@@ -62,8 +60,6 @@ sub new {
 # Every builder create sligtly different NIF file
 sub Run {
 	my $self = shift;
-
-	 
 
 	#information necessary for making decision which nif builder use
 	my $typeCu   = CamHelper->GetPcbType( $self->{"inCAM"}, $self->{"jobId"} );
@@ -133,19 +129,17 @@ sub __Save {
 	my @nif      = ();
 	my $saveSucc = 0;
 
-	 
-	#join all nif section and ther rows
+	# 1) join all nif section and ther rows
 	foreach my $sec (@sections) {
 
-		my $titleLen = length($sec->GetName());
-		my $fillCnt = int( ( 60 -  $titleLen) /2); #60 is requested total title len
-		
+		my $titleLen = length( $sec->GetName() );
+		my $fillCnt = int( ( 60 - $titleLen ) / 2 );    #60 is requested total title len
+
 		my $fill = "";
-		
-		for(my $i = 0; $i < $fillCnt; $i++){
+
+		for ( my $i = 0 ; $i < $fillCnt ; $i++ ) {
 			$fill .= "=";
 		}
-		
 
 		push( @nif, "[$fill SEKCE " . $sec->GetName() . " $fill]\n" );
 
@@ -157,7 +151,23 @@ sub __Save {
 		push( @nif, "\n" );
 	}
 
+	# 2) If exist former nif contain payments section and ne nif doesn't contain this section
+	#  => copy it to new nif
+
+	my $formerNif = NifFile->new( $self->{"jobId"} );
+	if (    $formerNif->Exist()
+		 && !scalar( grep { $_->GetName() =~ /Priplatky/i } @sections ) )
+	{
+
+		my @rows = ();
+		if ( $formerNif->GetSection("Priplatky", \@rows ) ) {
+			push( @nif, @rows );
+		}
+	}
+
 	push( @nif, "complete=1\n" );
+
+	# 3) Delete fomer nif and save new nif file
 
 	my $path = JobHelper->GetJobArchive( $self->{"jobId"} );
 
@@ -167,7 +177,7 @@ sub __Save {
 		unlink($path);
 	}
 
-	my $tmp = EnumsPaths->Client_INCAMTMPOTHER.$self->{"jobId"}."nif";
+	my $tmp = EnumsPaths->Client_INCAMTMPOTHER . $self->{"jobId"} . "nif";
 
 	if ( -e $tmp ) {
 		unlink($tmp);
@@ -177,43 +187,42 @@ sub __Save {
 	if ( open( $nifFile, "+>", $tmp ) ) {
 
 		$saveSucc = 1;
-		
+
 		#use Encode;
-		
-#		my @nif2 = ();
-#		
-#		foreach my $str (@nif){
-#			print STDERR "before$str\n";
-#			my $str2 = encode("cp1250", $str );
-#			print STDERR "after$str2\n";
-#			
-#			print STDERR "before$str\n";
-#			my $str3 = encode("cp1251", $str );
-#			print STDERR "after$str3\n";
-#			
-#			
-#			$str2 = $str;
-#			
-#			push(@nif2, $str2);
-#			
-#		}
-		
+
+		#		my @nif2 = ();
+		#
+		#		foreach my $str (@nif){
+		#			print STDERR "before$str\n";
+		#			my $str2 = encode("cp1250", $str );
+		#			print STDERR "after$str2\n";
+		#
+		#			print STDERR "before$str\n";
+		#			my $str3 = encode("cp1251", $str );
+		#			print STDERR "after$str3\n";
+		#
+		#
+		#			$str2 = $str;
+		#
+		#			push(@nif2, $str2);
+		#
+		#		}
+
 		#$str = encode("cp1250", $str );
-		
-		
+
 		print $nifFile @nif;
-		
+
 		close($nifFile);
-		
-		open my $IN, "<:encoding(utf8)", $tmp or die $!;
-		open my $OUT, ">:encoding(cp1250)",$path or die $!;
+
+		open my $IN,  "<:encoding(utf8)",   $tmp  or die $!;
+		open my $OUT, ">:encoding(cp1250)", $path or die $!;
 		print $OUT $_ while <$IN>;
 		close $IN;
 		close $OUT;
-		
+
 		#my $f = FileHelper->ChangeEncoding( $path, "utf8", "cp1250" ); #change encoding because of diacritics and helios
 		#unlink($path);
-		
+
 		#FileHelper->Copy($f, $path);
 	}
 	else {
@@ -261,21 +270,17 @@ sub __ResultNifCreation {
 
 }
 
+sub TaskItemsCount {
 
-sub TaskItemsCount{
+	my $self = shift;
 
-		
-				my $self = shift;
-		
-		my $totalCnt= 0;
-		
-		$totalCnt ++; #  nc merging
-		
-		
-		
-		$totalCnt ++; # variable cnt - nc exporting
-		
-		return $totalCnt;
+	my $totalCnt = 0;
+
+	$totalCnt++;    #  nc merging
+
+	$totalCnt++;    # variable cnt - nc exporting
+
+	return $totalCnt;
 }
 
 #-------------------------------------------------------------------------------------------#

@@ -24,6 +24,7 @@ use aliased 'Packages::Export::NifExport::SectionBuilders::BuilderScore';
 use aliased 'Packages::Export::NifExport::SectionBuilders::BuilderRout';
 use aliased 'Packages::Export::NifExport::SectionBuilders::BuilderDrill';
 use aliased 'Packages::Export::NifExport::SectionBuilders::BuilderOther';
+use aliased 'Packages::Export::NifExport::SectionBuilders::BuilderPayments';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -77,7 +78,7 @@ sub Build {
 	push(@req, "poznamka");
 	push(@req, "datacode");
 	push(@req, "ul_logo");
-	push(@req, "rel(22305,L)");
+	push(@req, "2814075"); #maska 0,1mm
 	push(@req, "prerusovana_drazka");
 		
 	$nifMngr->AddSection("Ostatni", BuilderOther->new(\@req));
@@ -89,6 +90,19 @@ sub Build {
 	push(@req, "otvory");
 	
 	$nifMngr->AddSection("Vrtani", BuilderDrill->new(\@req));
+	
+	#Payments section
+	@req = ();
+	push(@req, "4007223"); #panelizace
+	push(@req, "4010802"); #frezovani pred prokovem
+	push(@req, "4115894"); #drazkovani
+	push(@req, "4141429"); #vnitrni freza 2vv
+	push(@req, "8364285"); #vnitrni freza 4vv
+	push(@req, "8364286"); #vnitrni freza 6vv, 8vv
+	push(@req, "4007227"); #jiny format dat
+	push(@req, "4007224"); #jine nazvy souboru
+	
+	$nifMngr->AddSection("Priplatky", BuilderPayments->new(\@req));
 
 
 

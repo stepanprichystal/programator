@@ -118,9 +118,11 @@ sub __RunJob {
  	# if pcb is poool
  	my $isPool = HegMethods->GetPcbIsPool($jobId);
  	
- 	unless($isPool){
- 		return 0;
- 	}
+ 	#unless($isPool){
+ 	#	return 0;
+ 	#}
+ 	
+ 	return 0;
  	
  	
 
