@@ -4,7 +4,9 @@
 use strict;
 use warnings;
 use Win32::Service;
- 
+use Config;
+use Win32::Process;
+
 use lib qw( C:\Perl\site\lib\TpvScripts\Scripts );
 
 #necessary for load pall packages
@@ -13,15 +15,25 @@ use lib "$FindBin::Bin/../";
 use PackagesLib;
 
 use aliased 'Programs::Exporter::ExportUtility::RunExport::RunExportUtility';
+use aliased 'Helpers::GeneralHelper';
 
+# ======= InCAMServer =============================================
 
-RunService("TpvLogService");  # Run tpv service
+RunInCAMServer();
+ 
+# ======= TPVCustomService =========================================
 
-RunService("TpvCustomService");	# Run log service	
+RunService("TpvLogService");    # Run tpv service
 
-my $exporter = RunExportUtility->new(0); # Run exporter
+# ======= TPVLogService =========================================
 
+RunService("TpvCustomService");    # Run log service
 
+# ======= Export utility =========================================
+
+my $exporter = RunExportUtility->new(0);    # Run exporter
+
+# Helper methods
 
 sub RunService {
 	my $name = shift;
@@ -34,5 +46,16 @@ sub RunService {
 
 		Win32::Service::StartService( "", $name );
 	}
+}
 
+sub RunInCAMServer {
+
+	my $perl = $Config{perlpath};
+	my $processObj1;
+	Win32::Process::Create( $processObj1, $perl, "perl " . GeneralHelper->Root() . "\\Packages\\InCAMServer\\Server\\InCAMServerScript.pl -h yes",
+							0, NORMAL_PRIORITY_CLASS | CREATE_NEW_CONSOLE,  "." )
+	  || die "Failed to run InCAMServerScript \n";
+ 
+	  
+ 
 }

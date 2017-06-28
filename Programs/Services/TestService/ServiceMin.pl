@@ -27,7 +27,7 @@ use aliased 'Enums::EnumsPaths';
 Win32::Daemon::RegisterCallbacks(
 	{
 	   start   => \&Callback_Start,
-	   running => \&Callback_Running,
+	   timer => \&Callback_Timer,
 	   stop    => \&Callback_Stop,
 
 	   #pause    => \&Callback_Pause,
@@ -47,13 +47,11 @@ __SetLogging();
 # every 2000 milliseconds (10 seconds).
 Win32::Daemon::StartService( \%Context, 2000 );
 
- 
-
 # Now let the service manager know that we are running...
 #Win32::Daemon::State( SERVICE_RUNNING );
 
-sub Callback_Running {
-	my ( $Event, $Context ) = @_;
+sub Callback_Timer {
+	my ( $ControlMessage, $Context ) = @_;
 
 	my $logger = get_logger("service");
 
@@ -79,7 +77,7 @@ sub Callback_Running {
 	# is indeed SERVICE_RUNNING. Even though the Running
 	# callback is called it could have done so before
 	# calling the "Start" callback.
-	if ( SERVICE_RUNNING == Win32::Daemon::State() ) {
+	if ( SERVICE_CONTROL_TIMER == $ControlMessage ) {
 
 		#while (1) {
 
@@ -88,6 +86,7 @@ sub Callback_Running {
 			# Tell the SCM to stop this service.
 			Win32::Daemon::StopService();
 			Win32::Daemon::State(SERVICE_STOPPED);
+			$logger->debug("Serivce stopped");
 
 			last;
 		}

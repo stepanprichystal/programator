@@ -32,7 +32,7 @@ use aliased 'Programs::Services::TpvService::ServiceApps::ProcessReorderApp::Pro
 Win32::Daemon::RegisterCallbacks(
 	{
 	   start   => \&Callback_Start,
-	   running => \&Callback_Running,
+	   timer => \&Callback_Timer,
 	   stop    => \&Callback_Stop,
 
 	   #pause    => \&Callback_Pause,
@@ -85,7 +85,7 @@ sub WorkerMethod {
 	my %regApp = ();
 
 	$regApp{ EnumsApp->App_CHECKREORDER } = 0.5;
-	$regApp{ EnumsApp->App_PROCESSREORDER } = 0.5;
+	$regApp{ EnumsApp->App_PROCESSREORDER } = 1;
 
 	# ------------------------------------------------
 
@@ -146,8 +146,8 @@ sub __GetApp {
 	return $app;
 }
 
-sub Callback_Running {
-	my ( $Event, $Context ) = @_;
+sub Callback_Timer {
+	my ( $ControlMessage, $Context ) = @_;
 
 	my $logger = get_logger("service");
 	
@@ -173,7 +173,7 @@ sub Callback_Running {
 	# is indeed SERVICE_RUNNING. Even though the Running
 	# callback is called it could have done so before
 	# calling the "Start" callback.
-	if ( SERVICE_RUNNING == Win32::Daemon::State() ) {
+	if ( SERVICE_CONTROL_TIMER == $ControlMessage ) {
 
 		$logger->info("Tpv service start");
 

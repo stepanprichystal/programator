@@ -274,7 +274,7 @@ sub GetLastInCAMVersion {
 		}
  
 
-		if ( $file =~ /^\d\.(\d)+(SP)?/ ) {
+		if ( $file =~ /^(\d+\.\d+)(SP(\d+))?/i ) {
 			push( @version, $file );
 		}
 	}
@@ -283,7 +283,10 @@ sub GetLastInCAMVersion {
 	my $maxNumName;
 	foreach my $file (@version) {
 
-		my ($num) = $file =~ m/(^\d\.(\d)+)/;
+		$file =~ m/^(\d+\.\d+)(SP(\d+))?/i;
+		
+		my $num = defined $3 ? $1.$3 : $1;
+ 
 		if ( $num > $maxNum ) {
 			$maxNum     = $num;
 			$maxNumName = $file;

@@ -32,7 +32,7 @@ appNameTray = Export Utility
 appName = Export Utility
 
 # If window should stay hideen after start app
-hideAfterStart = 0
+hideAfterStart = 1
 
 
 # Loging type 
@@ -41,7 +41,7 @@ hideAfterStart = 0
 logingType = 1
 
 # Server station name 
-# (server version, send err mail if export fail + set aktualni krok to err)
+# (server version, send err mail if export fail + set aktualni krok of order to err)
 serverName = TPV-SERVER
 
  
