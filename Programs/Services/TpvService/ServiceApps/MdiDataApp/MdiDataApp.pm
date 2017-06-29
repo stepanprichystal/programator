@@ -33,6 +33,7 @@ use aliased 'Enums::EnumsPaths';
 use aliased 'CamHelpers::CamHelper';
 use aliased 'Packages::Mdi::ExportFiles::ExportFiles';
 use aliased 'Packages::ItemResult::Enums' => "ItemResEnums";
+use aliased 'Packages::TifFile::TifFile::TifFile';
 
 #-------------------------------------------------------------------------------------------#
 #  Public method
@@ -69,7 +70,7 @@ sub Run {
 
 		# 1) delete mdi files of pcb which are not in produce
 		$self->__DeleteOldMDIFiles();
-  
+
 		# 2) Load jobs to export MDI files
 		my @jobs = $self->__GetPcb2Export();
 
@@ -114,6 +115,14 @@ sub __RunJob {
 	# DEBUG DELETE
 
 	eval {
+		
+		# run only if tif file exist (old jobs has not tif file)
+		my $tif = TifFile->new($jobId);
+		unless($tif->TifFileExist()){
+			print STDERR  "TIF file doesn't exist\n";
+			$self->{"logger"}->error("TIF file doesn't exist");
+			return 0;
+		}
 
 		$self->__ProcessJob($jobId)
 
@@ -131,6 +140,11 @@ sub __RunJob {
 		my $err = "Process job id: \"$jobId\" exited with error: \n $eStr";
 
 		$self->__ProcessError( $jobId, $err );
+
+		if ( CamJob->IsJobOpen( $self->{"inCAM"}, $jobId ) ) {
+			$self->{"inCAM"}->COM( "check_inout", "job" => "$jobId", "mode" => "in", "ent_type" => "job" );
+			$self->{"inCAM"}->COM( "close_job", "job" => "$jobId" );
+		}
 	}
 }
 
@@ -141,18 +155,18 @@ sub __RunJob {
 sub __ProcessJob {
 	my $self  = shift;
 	my $jobId = shift;
-	
+
 	$jobId = lc($jobId);
 
 	my $inCAM = $self->{"inCAM"};
 
 	# 1) Open Job
-	
-	unless(CamJob->JobExist( $inCAM, $jobId ) ) {
+
+	unless ( CamJob->JobExist( $inCAM, $jobId ) ) {
 		return 0;
 	}
 
-	$self->_OpenJob($jobId, 1);
+	$self->_OpenJob( $jobId, 1 );
 
 	# 2) Export mdi files
 
@@ -192,19 +206,20 @@ sub __OnExportLayer {
 
 # Return pcb which not contain gerbers or xml in MDI folders
 sub __GetPcb2Export {
-	my $self       = shift;
+	my $self = shift;
+
 	my @pcb2Export = ();
 
-	my @pcbInProduc = HegMethods->GetPcbsInProduc();
-	
+	my @pcbInProduc = $self->__GetPcbsInProduc();
+
 	# all files from MDI folder
 	my @xmlAll = FileHelper->GetFilesNameByPattern( EnumsPaths->Jobs_MDI, '.xml' );
 	my @gerAll = FileHelper->GetFilesNameByPattern( EnumsPaths->Jobs_MDI, '.ger' );
 
 	foreach my $jobId (@pcbInProduc) {
-		
-		my @xml = grep { $_ =~  /($jobId)[\w\d]+_mdi/i } @xmlAll;
-		my @ger = grep { $_ =~  /($jobId)[\w\d]+_mdi/i } @gerAll;
+
+		my @xml = grep { $_ =~ /($jobId)[\w\d]+_mdi/i } @xmlAll;
+		my @ger = grep { $_ =~ /($jobId)[\w\d]+_mdi/i } @gerAll;
 
 		#my @xml = FileHelper->GetFilesNameByPattern( EnumsPaths->Jobs_MDI, $jobId . '[\w\d]+_mdi.xml' );
 		#my @ger = FileHelper->GetFilesNameByPattern( EnumsPaths->Jobs_MDI, $jobId . '[\w\d]+_mdi.ger' );
@@ -275,7 +290,7 @@ sub __GetMDIInfo {
 sub __DeleteOldMDIFiles {
 	my $self = shift;
 
-	my @pcbInProduc = HegMethods->GetPcbsInProduc();
+	my @pcbInProduc = $self->__GetPcbsInProduc();
 
 	my $deletedFiles = 0;
 
@@ -286,8 +301,8 @@ sub __DeleteOldMDIFiles {
 			next if ( $file =~ /^\.\.$/ );
 
 			my ($fileJobId) = $file =~ m/^(\w\d+)/i;
-			
-			unless(defined $fileJobId){
+
+			unless ( defined $fileJobId ) {
 				next;
 			}
 
@@ -295,7 +310,8 @@ sub __DeleteOldMDIFiles {
 
 			unless ($inProduc) {
 				if ( $file =~ /\.(ger|xml)/i ) {
-					unlink $p . $file;
+
+					#unlink $p . $file;
 					$deletedFiles++;
 				}
 			}
@@ -307,21 +323,16 @@ sub __DeleteOldMDIFiles {
 	$self->{"logger"}->info("Number of deleted job from MDI folder: $deletedFiles");
 }
 
-
-sub __GetPcbsInProduc{
+sub __GetPcbsInProduc {
 	my $self = shift;
-	
+
 	my @pcbInProduc = HegMethods->GetPcbsInProduc();
-	
-	@pcbInProduc = grep { $_-> } @pcbInProduc
-	
-	
+
+	@pcbInProduc = grep { $_->{"material_typ"} !~ /[t0s]/ } @pcbInProduc;
+	@pcbInProduc = map  { $_->{"reference_subjektu"} } @pcbInProduc;
+
+	return @pcbInProduc;
 }
-
-
-
-material_typ => 1, reference_subjektu
-
 
 # store err to logs
 sub __ProcessError {

@@ -8,7 +8,7 @@ use constant {
 	App_PROCESSREORDER => "processReorder",
 	App_EXPORTUTILITY => "exportUtility",
 	App_MDIDATA => "mdiData",
-	App_JETPRINTDATA => "jetPrintData",
+	App_JETPRINTDATA => "jetprintData",
 	
 	#App_ARCHIVEJOBS => "archiveJobs",
 	

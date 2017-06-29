@@ -49,6 +49,7 @@ sub new {
 	my %stopSend = ();
 	$stopSend{ EnumsApp->App_TEST } = TestStopCond->new();
 	$stopSend{ EnumsApp->App_CHECKREORDER } = ReOrderStopCond->new();
+	 
 
 	$self->{"stopSend"} = \%stopSend;
 
@@ -93,7 +94,7 @@ sub __ProcesAppLogs {
 		}
 
 		# b) stop sending if is fullfil condition defined by app
-		unless ( $self->{"stopSend"}->{$appId}->ProcessLog( $log->{"PcbId"} ) ) {
+		if ( defined $self->{"stopSend"}->{$appId} &&  !$self->{"stopSend"}->{$appId}->ProcessLog( $log->{"PcbId"} ) ) {
 
 			$stopSending = 0;
 		}

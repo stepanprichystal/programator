@@ -19,7 +19,7 @@ use aliased 'CamHelpers::CamHelper';
 use aliased 'CamHelpers::CamStepRepeat';
 use aliased 'CamHelpers::CamLayer';
 use aliased 'CamHelpers::CamStep';
-
+use aliased 'Helpers::JobHelper';
 use aliased 'CamHelpers::CamSymbol';
 use aliased 'CamHelpers::CamJob';
 use aliased 'Packages::Polygon::PolygonFeatures';
@@ -32,6 +32,7 @@ use aliased 'Packages::Mdi::ExportFiles::ExportXml';
 use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'Packages::Technology::EtchOperation';
 use aliased 'Packages::TifFile::TifSigLayers';
+ 
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -380,8 +381,22 @@ sub __CompensateLayer {
 
 	if ( $layerName =~ /^c$/ || $layerName =~ /^s$/ || $layerName =~ /^v\d$/ ) {
 
-		my %sigLayers = $self->{"tifFile"}->GetSignalLayers();
-		$comp = $sigLayers{$layerName}->{'comp'};
+#		# read comp from tif file
+#		if ( $self->{"tifFile"}->TifFileExist() ) {
+			
+			my %sigLayers = $self->{"tifFile"}->GetSignalLayers();
+			$comp = $sigLayers{$layerName}->{'comp'};
+		
+#		}
+#		# read default comp (old pcb doesn't contain dif file)
+#		else{
+#			
+#			my $inner = $layerName =~ /^v\d+$/ ? 1 : 0;
+#			my $cuThick = JobHelper->GetBaseCuThick($jobId, $layerName);
+#
+#			$comp = EtchOperation->GetCompensation( $cuThick, $class, $inner );
+#		}
+	
 	}
 
 	if ( $comp != 0 ) {
