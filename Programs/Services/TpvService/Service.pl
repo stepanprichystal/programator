@@ -28,6 +28,7 @@ use aliased 'Enums::EnumsApp';
 # applications
 use aliased 'Programs::Services::TpvService::ServiceApps::CheckReorderApp::CheckReorderApp';
 use aliased 'Programs::Services::TpvService::ServiceApps::ProcessReorderApp::ProcessReorderApp';
+use aliased 'Programs::Services::TpvService::ServiceApps::MdiDataApp::MdiDataApp';
 
 Win32::Daemon::RegisterCallbacks(
 	{
@@ -84,8 +85,10 @@ sub WorkerMethod {
 
 	my %regApp = ();
 
-	$regApp{ EnumsApp->App_CHECKREORDER } = 0.5;
-	$regApp{ EnumsApp->App_PROCESSREORDER } = 1;
+	#$regApp{ EnumsApp->App_CHECKREORDER } = 0.5;
+	#$regApp{ EnumsApp->App_PROCESSREORDER } = 1;
+	$regApp{ EnumsApp->App_MDIDATA } = 0.5;
+	
 
 	# ------------------------------------------------
 
@@ -141,6 +144,10 @@ sub __GetApp {
 	elsif ( $appName eq EnumsApp->App_PROCESSREORDER ) {
 
 		$app = ProcessReorderApp->new();
+	
+	}elsif(  $appName eq EnumsApp->App_MDIDATA ){
+		
+		$app = MdiDataApp->new();
 	}
 
 	return $app;

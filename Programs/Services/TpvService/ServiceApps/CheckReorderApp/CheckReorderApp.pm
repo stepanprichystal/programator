@@ -1,5 +1,5 @@
 #-------------------------------------------------------------------------------------------#
-# Description: Represent Universal Drill tool manager
+# Description: App which unarchvoe and do revision of reorders
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Programs::Services::TpvService::ServiceApps::CheckReorderApp::CheckReorderApp;
@@ -174,16 +174,7 @@ sub __ProcessJob {
 	# 1) Check if pcb exist in InCAM
 	my $jobExist = AcquireJob->Acquire($inCAM, $jobId);
 
-	my $usr = undef;
-	if ( CamJob->IsJobOpen( $self->{"inCAM"}, $jobId, 1, \$usr ) ) {
-		die "Unable to process check revision, because job $jobId is open by user: $usr";
-	}
-
-	# open job if exist
-	if ($jobExist) {
-		$inCAM->COM( "open_job", job => "$jobId", "open_win" => "yes" );
-		$inCAM->COM( "check_inout", "job" => "$jobId", "mode" => "out", "ent_type" => "job" );
-	}
+	$self->_OpenJob($jobId);
  
 	my $isPool = HegMethods->GetPcbIsPool($jobId);
 

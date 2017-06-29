@@ -990,10 +990,32 @@ sub GetReorders {
 
 	my @result = Helper->ExecuteDataSet( $cmd, \@params );
 	
-	@result = grep {   $_->{"reference_subjektu"} =~ /^\w\d+-\d+$/} @result;
+	@result = grep {   $_->{"reference_subjektu"} =~ /^\w\d+-\d+$/} @result; # remove cores
 	@result = grep {   $_->{"reference_subjektu"} !~ /-01/} @result;
 
 	 return @result;
+}
+
+# Get all ReOrders
+# Pcb has order number begger than -01 + are on state 'Predvyrobni priprava'
+sub GetPcbsInProduc {
+	my $self  = shift;
+
+	my @params = ();
+ 
+	my $cmd = "select distinct 
+				d.reference_subjektu,
+				d.material_typ
+				from lcs.zakazky_dps_22_hlavicka z join lcs.desky_22 d on d.cislo_subjektu=z.deska 
+				left outer join lcs.vztahysubjektu vs on vs.cislo_vztahu = 23054 and vs.cislo_subjektu = z.cislo_subjektu 
+				where vs.cislo_vztaz_subjektu is null and z.stav='4'";
+
+	my @result = Helper->ExecuteDataSet( $cmd, \@params );
+	
+	@result = grep {   $_->{"reference_subjektu"} =~ /^\w\d+$/} @result; # remove cores
+	 
+ 
+	return @result;
 }
 
 #-------------------------------------------------------------------------------------------#
@@ -1028,10 +1050,11 @@ my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	use aliased 'Connectors::HeliosConnector::HegMethods';
-
-	my $order = HegMethods->GetPcbOrderNumber("d71670");
-
-	print $order;
+	use Data::Dump qw(dump);
+	my @orders = HegMethods->GetPcbsInProduc();
+	
+	dump(@orders);
+ 
 }
 
 1;

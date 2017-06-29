@@ -12,7 +12,7 @@ use warnings;
 
 #local library
 use aliased 'Helpers::GeneralHelper';
-
+use aliased 'CamHelpers::CamJob';
 use aliased 'Programs::Services::LogService::Logger::DBLogger';
 use aliased 'Packages::InCAMServer::Client::InCAMServer';
 
@@ -63,6 +63,33 @@ sub _GetInCAM{
 	
 	return $self->{"inCAMServer"}->GetInCAM();
 	
+}
+
+# Check if job is not open by another user, open job, check in job
+sub _OpenJob{
+	my $self = shift;
+	my $jobId = shift;
+	my $supressDie = shift;
+	
+	my $usr = undef;
+	if ( CamJob->IsJobOpen( $self->{"inCAM"}, $jobId, 1, \$usr ) ) {
+
+		die "Unable to process reorder, because job $jobId is open by user: $usr";
+	}
+	
+	$self->{"inCAM"}->COM( "open_job", job => "$jobId", "open_win" => "yes" );
+	$self->{"inCAM"}->COM( "check_inout", "job" => "$jobId", "mode" => "out", "ent_type" => "job" );
+	
+}
+
+# Check out, save and close job
+sub _CloseJob{
+	my $self = shift;
+	my $jobId = shift;
+	
+	$self->{"inCAM"}->COM( "save_job",    "job" => "$jobId" );
+	$self->{"inCAM"}->COM( "check_inout", "job" => "$jobId", "mode" => "in", "ent_type" => "job" );
+	$self->{"inCAM"}->COM( "close_job",   "job" => "$jobId" );
 }
 
 #-------------------------------------------------------------------------------------------#

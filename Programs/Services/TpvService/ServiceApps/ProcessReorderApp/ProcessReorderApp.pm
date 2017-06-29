@@ -1,5 +1,5 @@
 #-------------------------------------------------------------------------------------------#
-# Description: Represent Universal Drill tool manager
+# Description: App which process automatically reorders
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Programs::Services::TpvService::ServiceApps::ProcessReorderApp::ProcessReorderApp;
@@ -170,16 +170,7 @@ sub __ProcessJob {
 
 	# 1) Open Job
 
-	my $usr = undef;
-	if ( CamJob->IsJobOpen( $self->{"inCAM"}, $jobId, 1, \$usr ) ) {
-		die "Unable to process reorder, because job $jobId is open by user: $usr";
-	}
-
-	# open job if exist
-	 
-	$inCAM->COM( "open_job", job => "$jobId", "open_win" => "yes" );
-	$inCAM->COM( "check_inout", "job" => "$jobId", "mode" => "out", "ent_type" => "job" );
- 
+	$self->_OpenJob($jobId);
 
 	# 2) Archive old files
 
@@ -199,9 +190,8 @@ sub __ProcessJob {
 	}
 
 	# 4) save job
-	$inCAM->COM( "save_job", "job" => "$jobId" );
-	$inCAM->COM( "check_inout", "job" => "$jobId", "mode" => "in", "ent_type" => "job" );
-	$inCAM->COM( "close_job", "job" => "$jobId" );
+
+	$self->_CloseJob($jobId);
 
 	# 5) set order state
 	my $isPool = HegMethods->GetPcbIsPool($jobId);
