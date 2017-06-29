@@ -52,10 +52,7 @@ sub new {
 
 	# All controls
 
-	$self->{"checks"} = undef;    # contain classes implement ICHeck
 	$self->{"inCAM"}  = undef;
-
-	#$self->__LoadChecks();
 
 	return $self;
 }
@@ -73,6 +70,8 @@ sub Run {
 
 		# 2) Load jobs to export MDI files
 		my @jobs = $self->__GetPcb2Export();
+		
+	 
 
 		if ( scalar(@jobs) ) {
 
@@ -85,8 +84,6 @@ sub Run {
 
 			$self->{"logger"}->debug("After get InCAM");
 
-			#my %hash = ( "reference_subjektu" => "f52457-02" );
-			#@reorders = ( \%hash );
 
 			foreach my $jobId (@jobs) {
 
@@ -310,8 +307,8 @@ sub __DeleteOldMDIFiles {
 
 			unless ($inProduc) {
 				if ( $file =~ /\.(ger|xml)/i ) {
-
-					#unlink $p . $file;
+					
+					unlink $p . $file;
 					$deletedFiles++;
 				}
 			}
@@ -328,7 +325,7 @@ sub __GetPcbsInProduc {
 
 	my @pcbInProduc = HegMethods->GetPcbsInProduc();
 
-	@pcbInProduc = grep { $_->{"material_typ"} !~ /[t0s]/ } @pcbInProduc;
+	@pcbInProduc = grep { $_->{"material_typ"} !~ /[t0s]/i } @pcbInProduc;
 	@pcbInProduc = map  { $_->{"reference_subjektu"} } @pcbInProduc;
 
 	return @pcbInProduc;
