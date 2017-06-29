@@ -3,7 +3,7 @@
 # Description: Export data for MDI, gerbers + xml
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::Mdi::ExportFiles::ExportFiles;
+package Packages::Gerbers::Mdi::ExportFiles::ExportFiles;
 use base('Packages::ItemResult::ItemEventMngr');
 
 #3th party library
@@ -26,9 +26,9 @@ use aliased 'Packages::Polygon::PolygonFeatures';
 use aliased 'Packages::Polygon::Features::Features::Features';
 use aliased 'Packages::Gerbers::Export::ExportLayers';
 use aliased 'Packages::ItemResult::ItemResult';
-use aliased 'Packages::Mdi::ExportFiles::FiducMark';
-use aliased 'Packages::Mdi::ExportFiles::Enums';
-use aliased 'Packages::Mdi::ExportFiles::ExportXml';
+use aliased 'Packages::Gerbers::Mdi::ExportFiles::FiducMark';
+use aliased 'Packages::Gerbers::Mdi::ExportFiles::Enums';
+use aliased 'Packages::Gerbers::Mdi::ExportFiles::ExportXml';
 use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'Packages::Technology::EtchOperation';
 use aliased 'Packages::TifFile::TifSigLayers';
@@ -449,7 +449,7 @@ sub __DeleteMdiStep {
 
 	#delete if step already exist
 	if ( CamHelper->StepExists( $inCAM, $jobId, $step ) ) {
-		#$inCAM->COM( "delete_entity", "job" => $jobId, "name" => $step, "type" => "step" );
+		$inCAM->COM( "delete_entity", "job" => $jobId, "name" => $step, "type" => "step" );
 	}
 }
 
@@ -459,7 +459,7 @@ sub __DeleteMdiStep {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	use aliased 'Packages::Mdi::ExportFiles::ExportFiles';
+	use aliased 'Packages::Gerbers::Mdi::ExportFiles::ExportFiles';
 	use aliased 'Packages::InCAM::InCAM';
 
 	my $inCAM = InCAM->new();

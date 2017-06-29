@@ -26,12 +26,12 @@ use aliased 'Enums::EnumsApp';
 use aliased 'Helpers::GeneralHelper';
 use aliased 'Helpers::FileHelper';
 use aliased 'Programs::Services::TpvService::ServiceApps::MdiDataApp::Enums';
-use aliased 'Packages::Mdi::ExportFiles::Enums' => 'MdiEnums';
+use aliased 'Packages::Gerbers::Mdi::ExportFiles::Enums' => 'MdiEnums';
 use aliased 'Helpers::JobHelper';
 use aliased 'CamHelpers::CamJob';
 use aliased 'Enums::EnumsPaths';
 use aliased 'CamHelpers::CamHelper';
-use aliased 'Packages::Mdi::ExportFiles::ExportFiles';
+use aliased 'Packages::Gerbers::Mdi::ExportFiles::ExportFiles';
 use aliased 'Packages::ItemResult::Enums' => "ItemResEnums";
 use aliased 'Packages::TifFile::TifFile::TifFile';
 

@@ -1,5 +1,5 @@
 
-package Packages::Mdi::ExportFiles::Enums;
+package Packages::Gerbers::Mdi::ExportFiles::Enums;
  
 
 use constant {
