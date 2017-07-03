@@ -3,7 +3,7 @@
 # Description: Export XML files for MDI gerbers
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::Mdi::ExportFiles::ExportXml;
+package Packages::Gerbers::Mdi::ExportFiles::ExportXml;
 
 #3th party library
 use strict;
@@ -254,7 +254,7 @@ sub __ExportXml {
 sub __LoadTemplate {
 	my $self = shift;
 
-	my $templPath = GeneralHelper->Root() . "\\Packages\\Mdi\\ExportFiles\\template.xml";
+	my $templPath = GeneralHelper->Root() . "\\Packages\\Gerbers\\Mdi\\ExportFiles\\template.xml";
 	my $templXml  = FileHelper->Open($templPath);
 
 	my @thickList = ();
@@ -317,7 +317,7 @@ sub __GetThickByLayer {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	use aliased 'Packages::Mdi::ExportFiles::ExportXml';
+	use aliased 'Packages::Gerbers::Mdi::ExportFiles::ExportXml';
 
 	my $ExportXml = ExportXml->new();
 	$ExportXml->__LoadTemplate();

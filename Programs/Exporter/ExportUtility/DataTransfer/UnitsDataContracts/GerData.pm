@@ -80,6 +80,21 @@ sub GetLayers {
 	return $self->{"data"}->{"layers"};
 } 
  
+
+# Jetprint info
+ 
+sub SetJetprintInfo {
+	my $self  = shift;
+	my $value = shift;
+	$self->{"data"}->{"jetprintInfo"} = $value;
+}
+
+sub GetJetprintInfo {
+	my $self  = shift;
+	my $value = shift;
+	return $self->{"data"}->{"jetprintInfo"};
+}
+ 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#

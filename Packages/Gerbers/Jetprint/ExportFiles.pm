@@ -1,9 +1,9 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Export data for MDI, gerbers + xml
+# Description: Export data for Jetprint, gerbers
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::Mdi::ExportFiles::ExportFiles;
+package Packages::Gerbers::Jetprint::ExportFiles;
 use base('Packages::ItemResult::ItemEventMngr');
 
 #3th party library
@@ -16,23 +16,20 @@ use aliased 'Helpers::GeneralHelper';
 use aliased 'Enums::EnumsPaths';
 use aliased 'Helpers::FileHelper';
 use aliased 'CamHelpers::CamHelper';
-use aliased 'CamHelpers::CamStepRepeat';
+
 use aliased 'CamHelpers::CamLayer';
+use aliased 'Packages::CAM::FeatureFilter::Enums' => "FilterEnums";
+use aliased 'Packages::CAM::FeatureFilter::FeatureFilter';
 use aliased 'CamHelpers::CamStep';
 use aliased 'Helpers::JobHelper';
 use aliased 'CamHelpers::CamSymbol';
 use aliased 'CamHelpers::CamJob';
+use aliased 'Packages::Gerbers::Jetprint::Enums';
 use aliased 'Packages::Polygon::PolygonFeatures';
 use aliased 'Packages::Polygon::Features::Features::Features';
 use aliased 'Packages::Gerbers::Export::ExportLayers';
 use aliased 'Packages::ItemResult::ItemResult';
-use aliased 'Packages::Mdi::ExportFiles::FiducMark';
-use aliased 'Packages::Mdi::ExportFiles::Enums';
-use aliased 'Packages::Mdi::ExportFiles::ExportXml';
 use aliased 'Connectors::HeliosConnector::HegMethods';
-use aliased 'Packages::Technology::EtchOperation';
-use aliased 'Packages::TifFile::TifSigLayers';
- 
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -45,13 +42,13 @@ sub new {
 
 	$self->{"inCAM"} = shift;
 	$self->{"jobId"} = shift;
-	$self->{"step"}  = shift;
+	my $specFiduc = shift; # set, only if special fiduc marks
+
+	$self->{"step"} = "panel";
 
 	# Info about  pcb ===========================
 
 	$self->{"layerCnt"} = CamJob->GetSignalLayerCnt( $self->{"inCAM"}, $self->{"jobId"} );
-
-	$self->{"pcbClass"} = CamJob->GetJobPcbClass( $self->{"inCAM"}, $self->{"jobId"} );
 
 	# Get limits of fr, profile ===============
 
@@ -63,36 +60,47 @@ sub new {
 
 	# Other properties ========================
 
-	$self->{"tifFile"} = TifSigLayers->new( $self->{"jobId"} );
+	$self->{"jetprintStep"} = "jetprint_panel";
 
-	unless ( $self->{"tifFile"}->TifFileExist() ) {
-		die "Dif file must exist when MDI data are exported.\n";
+	# set default fiducials
+	if ( defined $specFiduc ) {
+
+		$self->{"fiducials"} = $specFiduc;
+
 	}
+	else {
+		# neplat or 1vv
+		if ( $self->{"layerCnt"} == 1 ) {
 
-	$self->{"mdiStep"} = "mdi_panel";
+			$self->{"fiducials"} = Enums->Fiducials_HOLE3P2;
+		}
+		else {
 
-	$self->{"exportXml"} = ExportXml->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"profLim"}, $self->{"layerCnt"} );
+			$self->{"fiducials"} = Enums->Fiducials_SUN;
+		}
+	}
 
 	return $self;
 }
 
 sub Run {
-	my $self       = shift;
-	my $layerTypes = shift;
+	my $self = shift;
 
-	# delete old MDI files
-	$self->__DeleteOldFiles($layerTypes);
+	my $inCAM = $self->{"inCAM"};
+	my $jobId = $self->{"jobId"};
+
+	# delete old jetprint files
+	$self->__DeleteOldFiles();
 
 	# Get all layer for export
-	my @layers = $self->__GetLayers2Export($layerTypes);
 
-	unless ( scalar(@layers) ) {
-		return 0;
-	}
+	my @layers = CamJob->GetBoardBaseLayers( $inCAM, $jobId );
 
-	$self->__CreateMDIStep();
+	@layers = grep { $_->{"gROWname"} =~ /^p[cs]$/i } @layers;
+
+	$self->__CreateJetprintStep();
 	$self->__ExportLayers( \@layers );
-	$self->__DeleteMdiStep();
+	$self->__DeleteJetprintStep();
 
 	return 1;
 }
@@ -106,10 +114,6 @@ sub __ExportLayers {
 
 	foreach my $l (@layers) {
 
-		if($l->{"gROWname"} eq "plgc"){
-			print STDERR "dd";
-		}
-
 		CamLayer->WorkLayer( $inCAM, $l->{"gROWname"} );
 
 		# new result item for lyer
@@ -118,23 +122,23 @@ sub __ExportLayers {
 		# get limits (define physic dimension) for layer
 		my %lim = $self->__GetLayerLimit( $l->{"gROWname"} );
 
-		# 1) Optimize levels
-		$self->__OptimizeLayer( $l);
+		# 1) Delete useless features
+		$self->__DeleteFeatures( $l->{"gROWname"} );
+
+		# 4) compensate "shrink" because paint is little "spilled" after print
+		$self->__CompensateLayer( $l->{"gROWname"} );
 
 		# 2) insert frame 100µm width around pcb (fr frame coordinate)
 		$self->__PutFrameAorundPcb( $l->{"gROWname"}, \%lim );
 
-		# 3) clip data by limits
-		$self->__ClipAreaLayer( $l->{"gROWname"}, \%lim );
+		# 5) prepare fiducials
+		$self->__PrepareFiducials( $l->{"gROWname"} );
 
-		# 4) compensate layer by computed compensation
-		$self->__CompensateLayer( $l->{"gROWname"} );
-
+		# 6) move data to zero point
+		$self->__MoveToZero( $l->{"gROWname"} );
 
 		# 5) export gerbers
 		my $fiducDCode = $self->__ExportGerberLayer( $l->{"gROWname"}, $resultItem );
-
-		$self->{"exportXml"}->Export( $l, $fiducDCode );
 
 		#  reise result of export
 		$self->_OnItemResult($resultItem);
@@ -148,87 +152,14 @@ sub __DeleteOldFiles {
 
 	my $jobId = $self->{"jobId"};
 
-	my @file2del = ();
+	my @ger = FileHelper->GetFilesNameByPattern( EnumsPaths->Jobs_JETPRINT, $jobId . 'p[cs]_jet\.ger' );
+	my @jdl = FileHelper->GetFilesNameByPattern( EnumsPaths->Jobs_JETPRINT, $jobId . 'p[cs]_jet\.ger.jdl' );
 
-	if ( $layerTypes->{ Enums->Type_SIGNAL } ) {
-
-		my @f  = FileHelper->GetFilesNameByPattern( EnumsPaths->Jobs_MDI,    $jobId . '^[csv]\d*_mdi' );
-		my @f2 = FileHelper->GetFilesNameByPattern( EnumsPaths->Jobs_PCBMDI, $jobId . '^[csv]\d*_mdi' );
-
-		push( @file2del, ( @f, @f2 ) );
-	}
-
-	if ( $layerTypes->{ Enums->Type_MASK } ) {
-
-		my @f  = FileHelper->GetFilesNameByPattern( EnumsPaths->Jobs_MDI,    $jobId . "^m[cs]_mdi" );
-		my @f2 = FileHelper->GetFilesNameByPattern( EnumsPaths->Jobs_PCBMDI, $jobId . "^m[cs]_mdi" );
-
-		push( @file2del, ( @f, @f2 ) );
-	}
-
-	if ( $layerTypes->{ Enums->Type_PLUG } ) {
-
-		my @f  = FileHelper->GetFilesNameByPattern( EnumsPaths->Jobs_MDI,    $jobId . "^plg[cs]_mdi" );
-		my @f2 = FileHelper->GetFilesNameByPattern( EnumsPaths->Jobs_PCBMDI, $jobId . "^plg[cs]_mdi" );
-
-		push( @file2del, ( @f, @f2 ) );
-
-	}
-
-	if ( $layerTypes->{ Enums->Type_GOLD } ) {
-
-		my @f  = FileHelper->GetFilesNameByPattern( EnumsPaths->Jobs_MDI,    $jobId . "^gold[cs]_mdi" );
-		my @f2 = FileHelper->GetFilesNameByPattern( EnumsPaths->Jobs_PCBMDI, $jobId . "^gold[cs]_mdi" );
-
-		push( @file2del, ( @f, @f2 ) );
-
-	}
-
-	foreach (@file2del) {
+	foreach ( ( @ger, @jdl ) ) {
 		unless ( unlink($_) ) {
-			die "Can not delete mdi file $_.\n";
+			die "Can not delete jetprint file $_.\n";
 		}
 	}
-
-}
-
-# Return which layers export by type
-sub __GetLayers2Export {
-	my $self       = shift;
-	my $layerTypes = shift;
-
-	my $inCAM = $self->{"inCAM"};
-	my $jobId = $self->{"jobId"};
-
-	my @exportLayers = ();
-
-	my @all = CamJob->GetBoardBaseLayers( $inCAM, $jobId );
-
-	if ( $layerTypes->{ Enums->Type_SIGNAL } ) {
-
-		my @l = grep { $_->{"gROWname"} =~ /^[csv]\d*$/ } @all;
-		push( @exportLayers, @l );
-	}
-
-	if ( $layerTypes->{ Enums->Type_MASK } ) {
-
-		my @l = grep { $_->{"gROWname"} =~ /^m[cs]$/ } @all;
-		push( @exportLayers, @l );
-	}
-
-	if ( $layerTypes->{ Enums->Type_PLUG } ) {
-
-		my @l = grep { $_->{"gROWname"} =~ /^plg[cs]$/ } @all;
-		push( @exportLayers, @l );
-	}
-
-	if ( $layerTypes->{ Enums->Type_GOLD } ) {
-
-		my @l = grep { $_->{"gROWname"} =~ /^gold[cs]$/ } @all;
-		push( @exportLayers, @l );
-	}
-
-	return @exportLayers;
 }
 
 # Get limits, by phisic dimension of pcb
@@ -313,58 +244,54 @@ sub __ExportGerberLayer {
 	#my $resultItemGer = ItemResult->new("Output layers");
 
 	# init layer
-	my %l = ( "name" => $layerName, "mirror" => 0 );
+	my %l = ( "name" => $layerName, "mirror" => $layerName eq "ps" ? 1 : 0 );
 	my @layers = ( \%l );
 
 	# 1 ) Export gerber to temp directory
 
-	ExportLayers->ExportLayers( $resultItemGer, $inCAM, $self->{"mdiStep"}, \@layers, EnumsPaths->Client_INCAMTMPOTHER, "", $suffixFunc, undef, 1 );
-
+	ExportLayers->ExportLayers( $resultItemGer, $inCAM, $self->{"jetprintStep"},
+								\@layers, EnumsPaths->Client_INCAMTMPOTHER,
+								"", $suffixFunc, undef, undef );
 	my $tmpFullPath = EnumsPaths->Client_INCAMTMPOTHER . $layerName . $tmpFileId;
 
-	# 2) Add fiducial mark on the bbeginning of gerber data
-  	CamHelper->SetStep($inCAM, $self->{"step"});
-	my $fiducDCode = FiducMark->AddalignmentMark( $inCAM, $jobId, $layerName, 'inch', $tmpFullPath, 'cross_*', $self->{"step"} );
-	CamHelper->SetStep($inCAM, $self->{"mdiStep"});
-	 
-
-	# 3) Copy file to mdi folder
-	my $finalName = EnumsPaths->Jobs_PCBMDI . $jobId . $layerName . "_mdi.ger";
-	copy( $tmpFullPath, $finalName ) or die "Unable to copy mdi gerber file from: $tmpFullPath.\n";
+	# 3) Copy file to jetprint folder
+	my $finalName = EnumsPaths->Jobs_JETPRINT . $jobId . $layerName . "_jet.ger";
+	copy( $tmpFullPath, $finalName ) or die "Unable to copy jetprint gerber file from: $tmpFullPath.\n";
 
 	unlink($tmpFullPath);
 
-	return $fiducDCode;
 }
 
-# Cut layer data, according physic dimension of pcb
-sub __ClipAreaLayer {
+sub __DeleteFeatures {
 	my $self      = shift;
 	my $layerName = shift;
-	my %lim       = %{ shift(@_) };
 
-	CamLayer->ClipLayerData( $self->{"inCAM"}, $layerName, \%lim, undef, 1 );
-}
+	my $inCAM = $self->{"inCAM"};
+	my $jobId = $self->{"jobId"};
 
-# Optimize lazer in order contain only one level of features
-# Before optimiyation, countourize data in negative layers 
-# (in other case "sliver fills" are broken during data compensation)
-sub __OptimizeLayer {
-	my $self      = shift;
-	my $l = shift;
-	
-	my $layerName = $l->{"gROWname"};
+	my $f = FeatureFilter->new( $inCAM, $jobId, $layerName );
 
-	if ( $layerName =~ /^(plg)?[cs]$/ || $layerName =~ /^v\d$/ ) {
-				
-		if ( $l->{"gROWpolarity"} eq "negative" ) {
-			CamLayer->Contourize( $self->{"inCAM"}, $layerName );
-			CamLayer->WorkLayer( $self->{"inCAM"}, $layerName );
-		}
-		
-		my $res = CamLayer->OptimizeLevels( $self->{"inCAM"}, $layerName, 1 );
-		CamLayer->WorkLayer( $self->{"inCAM"}, $layerName );
+	$f->AddIncludeAtt( ".pnl_place", "PCBF_*" );
+	$f->AddIncludeAtt( ".pnl_place", "M-IN*" );
+	$f->AddIncludeAtt( ".pnl_place", "T-User*" );
+	$f->AddIncludeAtt( ".pnl_place", "T-Time*" );
+	$f->AddIncludeAtt( ".pnl_place", "T-Date*" );
+	$f->AddIncludeAtt( ".pnl_place", "T-Day*" );
+	$f->SetIncludeAttrCond( FilterEnums->Logic_OR );
+
+	# delete standard fiducials
+	if ( $self->{"fiducials"} ne Enums->Fiducials_SUN ) {
+
+		$f->AddIncludeAtt( ".pnl_place", "SF-*" );
 	}
+
+	if ( $f->Select() ) {
+		$inCAM->COM("sel_delete");
+	}
+	else {
+		die "No useless feastures to delete\n";
+	}
+
 }
 
 # Compensate layer by compensation
@@ -377,27 +304,7 @@ sub __CompensateLayer {
 
 	my $class = $self->{"pcbClass"};
 
-	my $comp = 0;
-
-	if ( $layerName =~ /^c$/ || $layerName =~ /^s$/ || $layerName =~ /^v\d$/ ) {
-
-#		# read comp from tif file
-#		if ( $self->{"tifFile"}->TifFileExist() ) {
-			
-			my %sigLayers = $self->{"tifFile"}->GetSignalLayers();
-			$comp = $sigLayers{$layerName}->{'comp'};
-		
-#		}
-#		# read default comp (old pcb doesn't contain dif file)
-#		else{
-#			
-#			my $inner = $layerName =~ /^v\d+$/ ? 1 : 0;
-#			my $cuThick = JobHelper->GetBaseCuThick($jobId, $layerName);
-#
-#			$comp = EtchOperation->GetCompensation( $cuThick, $class, $inner );
-#		}
-	
-	}
+	my $comp = -60;    # shring by 60µm
 
 	if ( $comp != 0 ) {
 		CamLayer->CompensateLayerData( $inCAM, $layerName, $comp );
@@ -427,29 +334,72 @@ sub __PutFrameAorundPcb {
 	CamSymbol->AddPolyline( $self->{"inCAM"}, \@coord, "r100", "positive" );
 }
 
+# if non standard "sun" fiducailas, prepare them
+sub __PrepareFiducials {
+	my $self      = shift;
+	my $layerName = shift;
+
+	my $inCAM = $self->{"inCAM"};
+	my $jobId = $self->{"jobId"};
+
+	# hole 3.2 mm
+	if ( $self->{"fiducials"} eq Enums->Fiducials_HOLE3P2 ) {
+
+		# put 100µm symbols on 3.2mm hole position in "m" layer
+		my $f = Features->new();
+		$f->Parse( $inCAM, $jobId, $self->{"step"}, "m" );
+		my @holes3p2 = grep { $_->{"type"} eq "P" && $_->{"att"}->{".pnl_place"} =~ /^M-IN-(.*)-c$/ } $f->GetFeatures();
+
+		# add point
+		CamLayer->WorkLayer( $inCAM, $layerName );
+
+		foreach my $hole (@holes3p2) {
+
+			my %pos = ( "x" => $hole->{"x1"}, "y" => $hole->{"y1"} );
+
+			CamSymbol->AddPad( $inCAM, "r100", \%pos );
+		}
+	}
+
+}
+
+# if layer is multilayer, move data to zero point
+sub __MoveToZero {
+	my $self      = shift;
+	my $layerName = shift;
+
+	my $inCAM = $self->{"inCAM"};
+
+	if ( $self->{"layerCnt"} > 2 ) {
+
+		$inCAM->COM( "sel_move", "dx" => -$self->{"frLim"}->{"xMin"}, "dy" => -$self->{"frLim"}->{"yMin"} );
+	}
+}
+
 # Create special step, which IPC will be exported from
-sub __CreateMDIStep {
+sub __CreateJetprintStep {
 	my $self = shift;
 
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
 
-	CamStep->CreateFlattenStep( $inCAM, $jobId, $self->{"step"}, $self->{"mdiStep"} );
+	CamStep->CreateFlattenStep( $inCAM, $jobId, $self->{"step"}, $self->{"jetprintStep"} );
 
-	CamHelper->SetStep( $inCAM, $self->{"mdiStep"} );
+	CamHelper->SetStep( $inCAM, $self->{"jetprintStep"} );
 }
 
 # delete pdf step
-sub __DeleteMdiStep {
+sub __DeleteJetprintStep {
 	my $self = shift;
-	my $step = $self->{"mdiStep"};
+	my $step = $self->{"jetprintStep"};
 
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
 
 	#delete if step already exist
 	if ( CamHelper->StepExists( $inCAM, $jobId, $step ) ) {
-		#$inCAM->COM( "delete_entity", "job" => $jobId, "name" => $step, "type" => "step" );
+
+		$inCAM->COM( "delete_entity", "job" => $jobId, "name" => $step, "type" => "step" );
 	}
 }
 
@@ -459,7 +409,7 @@ sub __DeleteMdiStep {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	use aliased 'Packages::Mdi::ExportFiles::ExportFiles';
+	use aliased 'Packages::Gerbers::Jetprint::ExportFiles';
 	use aliased 'Packages::InCAM::InCAM';
 
 	my $inCAM = InCAM->new();
@@ -467,11 +417,9 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	my $jobId    = "f52457";
 	my $stepName = "panel";
 
-	my $export = ExportFiles->new( $inCAM, $jobId, $stepName );
+	my $export = ExportFiles->new( $inCAM, $jobId );
 
-	my %type = ( Enums->Type_SIGNAL => "0", Enums->Type_MASK => "0", Enums->Type_PLUG => "1" );
-
-	$export->Run( \%type );
+	$export->Run();
 
 }
 

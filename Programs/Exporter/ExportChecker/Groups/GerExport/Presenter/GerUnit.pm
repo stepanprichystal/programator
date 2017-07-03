@@ -20,7 +20,7 @@ use warnings;
 
 #local library
 #use aliased 'Programs::Exporter::ExportChecker::Groups::NifExport::View::NifUnitForm';
- 
+
 use aliased 'Programs::Exporter::ExportChecker::Groups::GroupDataMngr';
 use aliased 'Programs::Exporter::ExportChecker::Groups::GerExport::Model::GerCheckData';
 use aliased 'Programs::Exporter::ExportChecker::Groups::GerExport::Model::GerPrepareData';
@@ -29,14 +29,13 @@ use aliased 'Programs::Exporter::ExportUtility::UnitEnums';
 use aliased 'Programs::Exporter::ExportChecker::Groups::GerExport::View::GerUnitForm';
 use aliased 'Programs::Exporter::ExportChecker::Groups::GerExport::View::GerUnitFormEvt';
 
-
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
 
 sub new {
 	my $class = shift;
-	my $self = {};
+	my $self  = {};
 
 	$self = $class->SUPER::new(@_);
 	bless $self;
@@ -44,12 +43,11 @@ sub new {
 	#uique key within all units
 	$self->{"unitId"} = UnitEnums->UnitId_GER;
 
-	my $checkData = GerCheckData->new();
+	my $checkData   = GerCheckData->new();
 	my $prepareData = GerPrepareData->new();
-	my $exportData = GerExportData->new();
-		
-	
-	$self->{"dataMngr"} = GroupDataMngr->new( $self->{"jobId"}, $prepareData, $checkData, $exportData);
+	my $exportData  = GerExportData->new();
+
+	$self->{"dataMngr"} = GroupDataMngr->new( $self->{"jobId"}, $prepareData, $checkData, $exportData );
 
 	return $self;    # Return the reference to the hash.
 }
@@ -75,7 +73,7 @@ sub InitForm {
 	$self->{"form"} = GerUnitForm->new( $parent, $inCAM, $self->{"jobId"}, $self->{"dataMngr"}->GetDefaultInfo() );
 
 	# init base class with event class
-	$self->{"eventClass"}  = GerUnitFormEvt->new($self->{"form"});
+	$self->{"eventClass"} = GerUnitFormEvt->new( $self->{"form"} );
 
 	$self->_SetHandlers();
 
@@ -91,8 +89,8 @@ sub RefreshGUI {
 	$self->{"form"}->SetMdiInfo( $groupData->GetMdiInfo() );
 	$self->{"form"}->SetExportLayers( $groupData->GetExportLayers() );
 	$self->{"form"}->SetLayers( $groupData->GetLayers() );
-	
-
+	$self->{"form"}->SetJetprintInfo( $groupData->GetJetprintInfo() );
+ 
 	#refresh wrapper
 	$self->_RefreshWrapper();
 }
@@ -111,12 +109,13 @@ sub GetGroupData {
 	if ($frm) {
 		$groupData = $self->{"dataMngr"}->GetGroupData();
 
-
 		$groupData->SetPasteInfo( $frm->GetPasteInfo() );
 		$groupData->SetMdiInfo( $frm->GetMdiInfo() );
-		$groupData->SetExportLayers( $frm->GetExportLayers() );	
+		$groupData->SetExportLayers( $frm->GetExportLayers() );
 		$groupData->SetLayers( $frm->GetLayers() );
-	
+		$groupData->SetJetprintInfo( $frm->GetJetprintInfo() );
+ 
+
 	}
 	else {
 
@@ -125,6 +124,7 @@ sub GetGroupData {
 
 	return $groupData;
 }
+
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#

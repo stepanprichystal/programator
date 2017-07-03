@@ -13,8 +13,8 @@ use warnings;
 #local library
 use aliased 'Helpers::GeneralHelper';
 use aliased 'Enums::EnumsPaths';
-use aliased 'Packages::Mdi::ExportFiles::Enums';
-use aliased 'Packages::Mdi::ExportFiles::ExportFiles';
+use aliased 'Packages::Gerbers::Mdi::ExportFiles::Enums';
+use aliased 'Packages::Gerbers::Mdi::ExportFiles::ExportFiles';
 use aliased 'CamHelpers::CamJob';
 
 #-------------------------------------------------------------------------------------------#

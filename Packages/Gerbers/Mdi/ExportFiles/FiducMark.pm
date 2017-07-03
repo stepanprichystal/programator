@@ -3,7 +3,7 @@
 # Author:RVI
 #-------------------------------------------------------------------------------------------#
 
-package Packages::Mdi::ExportFiles::FiducMark;
+package Packages::Gerbers::Mdi::ExportFiles::FiducMark;
 
 #local library
 
