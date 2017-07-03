@@ -160,10 +160,12 @@ sub __ProcessJob {
 	# 1) Open Job
 
 	unless ( CamJob->JobExist( $inCAM, $jobId ) ) {
+		$self->{"logger"}->debug("Job doesn't exist: $jobId");
 		return 0;
 	}
 
 	$self->_OpenJob( $jobId, 1 );
+	$self->{"logger"}->debug("After open job: $jobId");
 
 	# 2) Export mdi files
 
@@ -176,6 +178,7 @@ sub __ProcessJob {
 	$self->{"errResults"} = \@result;
 
 	$export->Run( \%mdiInfo );
+	$self->{"logger"}->debug("After export mdi files: $jobId");
 
 	# 3) save job
 	$self->_CloseJob($jobId);
@@ -217,9 +220,7 @@ sub __GetPcb2Export {
 
 		my @xml = grep { $_ =~ /($jobId)[\w\d]+_mdi/i } @xmlAll;
 		my @ger = grep { $_ =~ /($jobId)[\w\d]+_mdi/i } @gerAll;
-
-		#my @xml = FileHelper->GetFilesNameByPattern( EnumsPaths->Jobs_MDI, $jobId . '[\w\d]+_mdi.xml' );
-		#my @ger = FileHelper->GetFilesNameByPattern( EnumsPaths->Jobs_MDI, $jobId . '[\w\d]+_mdi.ger' );
+ 
 
 		if ( scalar(@xml) == 0 ) {
 
@@ -287,8 +288,18 @@ sub __GetMDIInfo {
 sub __DeleteOldMDIFiles {
 	my $self = shift;
 
-	my @pcbInProduc = $self->__GetPcbsInProduc();
-
+	my @pcbInProduc = HegMethods->GetPcbsByStatus(2, 4); # get pcb "Ve vyrobe" + "Na predvyrobni priprave"
+	@pcbInProduc = map  { $_->{"reference_subjektu"} } @pcbInProduc;
+ 
+ 	if(scalar(@pcbInProduc) < 100){
+ 		
+ 		$self->{"logger"}->debug("No pcb in produc, error?");
+ 	}
+ 
+	unless(scalar(@pcbInProduc)){
+		return 0;
+	}
+ 
 	my $deletedFiles = 0;
 
 	my $p = EnumsPaths->Jobs_MDI;
@@ -323,7 +334,7 @@ sub __DeleteOldMDIFiles {
 sub __GetPcbsInProduc {
 	my $self = shift;
 
-	my @pcbInProduc = HegMethods->GetPcbsInProduc();
+	my @pcbInProduc = HegMethods->GetPcbsByStatus(4); # get pcb "Ve vyrobe"
 
 	@pcbInProduc = grep { $_->{"material_typ"} !~ /[t0s]/i } @pcbInProduc;
 	@pcbInProduc = map  { $_->{"reference_subjektu"} } @pcbInProduc;

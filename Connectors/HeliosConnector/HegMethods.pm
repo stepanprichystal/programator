@@ -1018,6 +1018,51 @@ sub GetPcbsInProduc {
 	return @result;
 }
 
+# Get all ReOrders
+# Pcb has order number begger than -01 + are on state 'Predvyrobni priprava'
+# Statusy:
+#Poøízeno na eshopu (02)
+#Zavedeno (0)
+#Na pøíjmu (1)
+#Pozastavena (12)
+#Pøedvýrobní pøíprava (2)
+#Na odsouhlasení (25)
+#Schválena (35)
+#Ve výrobì (4)
+#Vykrytí ze skladu (42)
+#V kooperaci (45)
+#Stornována (5)
+#Ukonèena (7)
+sub GetPcbsByStatus {
+	my $self  = shift;
+	my @statuses = @_;
+ 
+	unless(scalar(@statuses)){
+		die "No status defined"
+	}
+
+	@statuses = map {    "\'".$_."\'"} @statuses;
+	my $strStatus = join(",", @statuses);
+	
+	# IN (value1, value2, ...);
+
+	my @params = ();
+ 
+	my $cmd = "select distinct 
+				d.reference_subjektu,
+				d.material_typ,
+				z.stav
+				from lcs.zakazky_dps_22_hlavicka z join lcs.desky_22 d on d.cislo_subjektu=z.deska 
+				left outer join lcs.vztahysubjektu vs on vs.cislo_vztahu = 23054 and vs.cislo_subjektu = z.cislo_subjektu 
+				where vs.cislo_vztaz_subjektu is null and z.stav IN ($strStatus)";
+
+	my @result = Helper->ExecuteDataSet( $cmd, \@params );
+	
+	@result = grep {   $_->{"reference_subjektu"} =~ /^\w\d+$/} @result; # remove cores
+ 
+	return @result;
+}
+
 #-------------------------------------------------------------------------------------------#
 #  Helper method
 #-------------------------------------------------------------------------------------------#
@@ -1051,7 +1096,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	use aliased 'Connectors::HeliosConnector::HegMethods';
 	use Data::Dump qw(dump);
-	my @orders = HegMethods->GetPcbsInProduc();
+	my @orders = HegMethods->GetPcbsByStatus(4);
 	
 	dump(@orders);
  
