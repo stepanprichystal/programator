@@ -77,6 +77,14 @@ sub OnPrepareGroupData {
 	my %pasteInfo = $self->__GetPasteInfo( $inCAM, $jobId, $defaultInfo );
 
 	$groupData->SetPasteInfo( \%pasteInfo );
+	
+	# 4) Prepare jetprint settings
+	
+	my %jetInfo = $self->__GetJetprintInfo($jobId, $defaultInfo);
+	
+	$groupData->SetJetprintInfo( \%jetInfo );
+	
+	 
 
 	return $groupData;
 }
@@ -239,6 +247,27 @@ sub __GetMDIInfo {
 
 }
 
+
+sub __GetJetprintInfo {
+	my $self        = shift;
+	 
+	my $jobId       = shift;
+	my $defaultInfo = shift;
+
+	my %jetInfo = ();
+
+	if (  $defaultInfo->LayerExist("pc") || $defaultInfo->LayerExist("ps")){
+		
+		$jetInfo{"exportGerbers"} = 1;
+	}else{
+		$jetInfo{"exportGerbers"} = 0;
+	}
+ 
+ 	$jetInfo{"fiduc3p2"} = 0;
+ 
+	return %jetInfo;
+
+}
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#

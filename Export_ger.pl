@@ -14,7 +14,7 @@ use lib qw( C:\Perl\site\lib\TpvScripts\Scripts );
 use aliased 'Packages::InCAM::InCAM';
 use aliased 'Programs::Exporter::ExportUtility::Groups::GerExport::GerExportTmp';
 
-my $jobId    = "f70855";
+my $jobId    = "f52457";
 my $inCAM    = InCAM->new();
 
 

@@ -5,7 +5,6 @@
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Programs::Exporter::ExportChecker::Groups::GerExport::Model::GerExportData;
- 
 
 #3th party library
 use strict;
@@ -36,15 +35,14 @@ use aliased 'Programs::Exporter::ExportUtility::DataTransfer::UnitsDataContracts
 #  Package methods
 #-------------------------------------------------------------------------------------------#
 
-
 sub new {
 	my $class = shift;
 	my $self  = {};
 	bless $self;
 
-	return $self;    
+	return $self;
 }
- 
+
 # Export data, (from prepared group data), which will consume exporter utility
 # are prepared in this method
 sub OnExportGroupData {
@@ -59,16 +57,15 @@ sub OnExportGroupData {
 	my $stepName = "panel";
 
 	my $exportData = GerData->new();
- 
- 	$exportData->SetExportLayers( $groupData->GetExportLayers() );
+
+	$exportData->SetExportLayers( $groupData->GetExportLayers() );
 	$exportData->SetLayers( $groupData->GetLayers() );
 	$exportData->SetPasteInfo( $groupData->GetPasteInfo() );
-  	$exportData->SetMdiInfo( $groupData->GetMdiInfo() );
-  	
-	return $exportData;
+	$exportData->SetMdiInfo( $groupData->GetMdiInfo() );
+	$exportData->SetJetprintInfo( $groupData->GetJetprintInfo() ); 
 
+	return $exportData;
 }
- 
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
@@ -92,6 +89,4 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 }
 
 1;
-
-
 

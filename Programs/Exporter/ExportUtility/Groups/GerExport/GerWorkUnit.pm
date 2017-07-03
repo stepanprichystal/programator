@@ -49,8 +49,10 @@ sub Init {
 	my $layers =  $taskData->GetLayers();
 	my $pasteInfo =  $taskData->GetPasteInfo();
 	my $mdiInfo =  $taskData->GetMdiInfo();
+	my $jetprintInfo =  $taskData->GetJetprintInfo();
 	
-	my $mngr  = GerMngr->new( $inCAM, $jobId, $exportLayers, $layers, $pasteInfo, $mdiInfo);
+ 
+	my $mngr  = GerMngr->new( $inCAM, $jobId, $exportLayers, $layers, $pasteInfo, $mdiInfo, $jetprintInfo);
 	
 	$mngr->{"onItemResult"}->Add( sub { $self->_OnItemResultHandler(@_) } );
 	
