@@ -1063,6 +1063,38 @@ sub GetPcbsByStatus {
 	return @result;
 }
 
+# Return all pcb "In produce" which contain silkscreen bot or top
+sub GetPcbsInProduceSilk {
+	my $self  = shift;
+	 
+	 
+	# IN (value1, value2, ...);
+
+	my @params = ();
+ 
+	my $cmd = "select distinct 
+				d.reference_subjektu,
+				d.potisk c_silk_screen_colour,
+				d.potisk_typ s_silk_screen_colour,
+				d.material_typ,
+				z.stav
+				from lcs.zakazky_dps_22_hlavicka z join lcs.desky_22 d on d.cislo_subjektu=z.deska 
+				left outer join lcs.vztahysubjektu vs on vs.cislo_vztahu = 23054 and vs.cislo_subjektu = z.cislo_subjektu 
+				where 
+				vs.cislo_vztaz_subjektu is null and 
+				z.stav = 4 and
+				(d.potisk IS NOT NULL OR d.potisk_typ IS NOT NULL)";
+				
+ 
+
+	my @result = Helper->ExecuteDataSet( $cmd, \@params );
+	
+	@result = grep {   $_->{"reference_subjektu"} =~ /^\w\d+$/} @result; # remove cores
+ 
+	return @result;
+}
+
+ 
 #-------------------------------------------------------------------------------------------#
 #  Helper method
 #-------------------------------------------------------------------------------------------#
@@ -1096,7 +1128,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	use aliased 'Connectors::HeliosConnector::HegMethods';
 	use Data::Dump qw(dump);
-	my @orders = HegMethods->GetPcbsByStatus(4);
+	my @orders = HegMethods->GetPcbsInProduceSilk();
 	
 	dump(@orders);
  

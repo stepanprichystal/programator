@@ -289,7 +289,7 @@ sub __DeleteFeatures {
 		$inCAM->COM("sel_delete");
 	}
 	else {
-		die "No useless feastures to delete\n";
+		die "No useless feastures to delete in silkscreen. Perhaps old schema in panel step\n";
 	}
 
 }

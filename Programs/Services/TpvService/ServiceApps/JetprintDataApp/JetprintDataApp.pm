@@ -1,6 +1,6 @@
 #-------------------------------------------------------------------------------------------#
-# Description: App which automatically export mdi files of missing job
-# Second purpose is delete old files (pcb are not in produce) from MDI folder
+# Description: App which automatically export jetprint files of missing job
+# Second purpose is delete old files (pcb are not in produce) from Jetprint folder
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Programs::Services::TpvService::ServiceApps::JetprintDataApp::JetprintDataApp;
@@ -24,12 +24,11 @@ use aliased 'Enums::EnumsApp';
 use aliased 'Helpers::GeneralHelper';
 use aliased 'Helpers::FileHelper';
 use aliased 'Programs::Services::TpvService::ServiceApps::JetprintDataApp::Enums';
-use aliased 'Packages::Gerbers::Mdi::ExportFiles::Enums' => 'MdiEnums';
 use aliased 'Helpers::JobHelper';
 use aliased 'CamHelpers::CamJob';
 use aliased 'Enums::EnumsPaths';
 use aliased 'CamHelpers::CamHelper';
-use aliased 'Packages::Gerbers::Mdi::ExportFiles::ExportFiles';
+use aliased 'Packages::Gerbers::Jetprint::ExportFiles';
 use aliased 'Packages::ItemResult::Enums' => "ItemResEnums";
 use aliased 'Packages::TifFile::TifFile::TifFile';
 
@@ -50,7 +49,7 @@ sub new {
 
 	# All controls
 
-	$self->{"inCAM"}  = undef;
+	$self->{"inCAM"} = undef;
 
 	return $self;
 }
@@ -68,8 +67,6 @@ sub Run {
 
 		# 2) Load jobs to export MDI files
 		my @jobs = $self->__GetPcb2Export();
-		
-	 
 
 		if ( scalar(@jobs) ) {
 
@@ -81,7 +78,6 @@ sub Run {
 			}
 
 			$self->{"logger"}->debug("After get InCAM");
-
 
 			foreach my $jobId (@jobs) {
 
@@ -95,6 +91,7 @@ sub Run {
 	if ($@) {
 
 		my $err = "Aplication: " . $self->GetAppName() . " exited with error: \n$@";
+		print STDERR $err;
 		$self->{"logger"}->error($err);
 		$self->{"loggerDB"}->Error( undef, $err );
 	}
@@ -110,9 +107,8 @@ sub __RunJob {
 	# DEBUG DELETE
 
 	eval {
- 
-	 
-		$self->__ProcessJob($jobId)
+
+		$self->__ProcessJob($jobId);
 
 	};
 	if ($@) {
@@ -160,16 +156,15 @@ sub __ProcessJob {
 
 	# 2) Export mdi files
 
-	my %mdiInfo = $self->__GetMDIInfo($jobId);
-
-	my $export = ExportFiles->new( $inCAM, $jobId, "panel" );
+	my $export = ExportFiles->new( $inCAM, $jobId );
 	$export->{"onItemResult"}->Add( sub { $self->__OnExportLayer(@_) } );
 
 	my @result = ();
 	$self->{"errResults"} = \@result;
 
-	$export->Run( \%mdiInfo );
-	$self->{"logger"}->debug("After export mdi files: $jobId");
+	$export->Run();
+
+	$self->{"logger"}->debug("After export jetprint files: $jobId");
 
 	# 3) save job
 	$self->_CloseJob($jobId);
@@ -195,102 +190,48 @@ sub __OnExportLayer {
 	}
 }
 
-# Return pcb which not contain gerbers or xml in MDI folders
+# Return pcb which are in produce, contain silk and doesn't contain gerbers
 sub __GetPcb2Export {
 	my $self = shift;
 
 	my @pcb2Export = ();
 
-	my @pcbInProduc = $self->__GetPcbsInProduc();
+	my @pcbInProduc = HegMethods->GetPcbsInProduceSilk();    # get pcb "Ve vyrobe" with silk
+	@pcbInProduc = grep { $_->{"material_typ"} !~ /[tso]/i } @pcbInProduc;    # not sablona, služba, ostatni
+	@pcbInProduc = map  { $_->{"reference_subjektu"} } @pcbInProduc;
 
 	# all files from MDI folder
-	my @xmlAll = FileHelper->GetFilesNameByPattern( EnumsPaths->Jobs_MDI, '.xml' );
-	my @gerAll = FileHelper->GetFilesNameByPattern( EnumsPaths->Jobs_MDI, '.ger' );
+	my @gerAll = FileHelper->GetFilesNameByPattern( EnumsPaths->Jobs_JETPRINT, '.ger' );
 
 	foreach my $jobId (@pcbInProduc) {
 
-		my @xml = grep { $_ =~ /($jobId)[\w\d]+_mdi/i } @xmlAll;
-		my @ger = grep { $_ =~ /($jobId)[\w\d]+_mdi/i } @gerAll;
- 
+		my @ger = grep { $_ =~ /($jobId)[\w\d]+_jet/i } @gerAll;
 
-		if ( scalar(@xml) == 0 ) {
+		# if no gerbers, export them
+		unless ( scalar(@ger) ) {
 
 			push( @pcb2Export, $jobId );
-
-		}
-		elsif ( scalar(@xml) ) {
-
-			# check every xml, if there is gerber file of same name (if xml is order than 15 minutes)
-			foreach my $xmlFile (@xml) {
-
-				my $created = ( stat($xmlFile) )[9];
-
-				if ( $created + 15 * 60 < time() ) {
-
-					# chek if exist relevant gerber file
-					my $gerFile = $xmlFile;
-					$gerFile =~ s/\.xml/\.ger/;
-
-					unless ( -e $gerFile ) {
-						push( @pcb2Export, $jobId );
-						last;
-					}
-				}
-			}
 		}
 	}
+
 	return @pcb2Export;
-}
-
-# Get settings, which layers default export for mdi
-sub __GetMDIInfo {
-	my $self  = shift;
-	my $jobId = shift;
-
-	my $inCAM = $self->{"inCAM"};
-
-	my %mdiInfo = ();
-
-	my $signal = CamHelper->LayerExists( $inCAM, $jobId, "c" );
-
-	if ( HegMethods->GetTypeOfPcb($jobId) eq "Neplatovany" ) {
-		$signal = 0;
-	}
-
-	$mdiInfo{ MdiEnums->Type_SIGNAL } = $signal;
-
-	if ( ( CamHelper->LayerExists( $inCAM, $jobId, "mc" ) || CamHelper->LayerExists( $inCAM, $jobId, "ms" ) )
-		 && CamJob->GetJobPcbClass( $self->{"inCAM"}, $jobId ) >= 8 )
-	{
-		$mdiInfo{ MdiEnums->Type_MASK } = 1;
-	}
-	else {
-		$mdiInfo{ MdiEnums->Type_MASK } = 0;
-	}
-
-	$mdiInfo{ MdiEnums->Type_PLUG } =
-	  ( CamHelper->LayerExists( $inCAM, $jobId, "plgc" ) || CamHelper->LayerExists( $inCAM, $jobId, "plgs" ) ) ? 1 : 0;
-	$mdiInfo{ MdiEnums->Type_GOLD } =
-	  ( CamHelper->LayerExists( $inCAM, $jobId, "goldc" ) || CamHelper->LayerExists( $inCAM, $jobId, "golds" ) ) ? 1 : 0;
-
-	return %mdiInfo;
 }
 
 sub __DeleteOldJetFiles {
 	my $self = shift;
 
-	my @pcbInProduc = HegMethods->GetPcbsByStatus(2, 4, 25, 35); # get pcb "Ve vyrobe" + "Na predvyrobni priprave" + Na odsouhlaseni + Schvalena
-	@pcbInProduc = map  { $_->{"reference_subjektu"} } @pcbInProduc;
- 
- 	if(scalar(@pcbInProduc) < 100){
- 		
- 		$self->{"logger"}->debug("No pcb in produc (count : ".scalar(@pcbInProduc)."), error?");
- 	}
- 
-	unless(scalar(@pcbInProduc)){
+	my @pcbInProduc = HegMethods->GetPcbsByStatus( 2, 4, 25, 35 );    # get pcb "Ve vyrobe" + "Na predvyrobni priprave" + Na odsouhlaseni + Schvalena
+	@pcbInProduc = map { $_->{"reference_subjektu"} } @pcbInProduc;
+
+	if ( scalar(@pcbInProduc) < 100 ) {
+
+		$self->{"logger"}->debug( "No pcb in produc (count : " . scalar(@pcbInProduc) . "), error?" );
+	}
+
+	unless ( scalar(@pcbInProduc) ) {
 		return 0;
 	}
- 
+
 	my $deletedFiles = 0;
 
 	my $p = EnumsPaths->Jobs_JETPRINT;
@@ -309,7 +250,7 @@ sub __DeleteOldJetFiles {
 
 			unless ($inProduc) {
 				if ( $file =~ /\.ger/i ) {
-					
+
 					unlink $p . $file;
 					$deletedFiles++;
 				}
@@ -320,17 +261,6 @@ sub __DeleteOldJetFiles {
 	}
 
 	$self->{"logger"}->info("Number of deleted job from Jetprint folder: $deletedFiles");
-}
-
-sub __GetPcbsInProduc {
-	my $self = shift;
-
-	my @pcbInProduc = HegMethods->GetPcbsByStatus(4); # get pcb "Ve vyrobe"
-
-	@pcbInProduc = grep { $_->{"material_typ"} !~ /[t0s]/i } @pcbInProduc;
-	@pcbInProduc = map  { $_->{"reference_subjektu"} } @pcbInProduc;
-
-	return @pcbInProduc;
 }
 
 # store err to logs
