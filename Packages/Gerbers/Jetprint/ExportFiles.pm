@@ -136,6 +136,9 @@ sub __ExportLayers {
 
 		# 6) move data to zero point
 		$self->__MoveToZero( $l->{"gROWname"} );
+		
+		# 7) mirror layer in y axis if ps
+		$self->__MirrorLayer($l->{"gROWname"});
 
 		# 5) export gerbers
 		my $fiducDCode = $self->__ExportGerberLayer( $l->{"gROWname"}, $resultItem );
@@ -244,7 +247,7 @@ sub __ExportGerberLayer {
 	#my $resultItemGer = ItemResult->new("Output layers");
 
 	# init layer
-	my %l = ( "name" => $layerName, "mirror" => $layerName eq "ps" ? 1 : 0 );
+	my %l = ( "name" => $layerName, "mirror" => 0 );
 	my @layers = ( \%l );
 
 	# 1 ) Export gerber to temp directory
@@ -373,6 +376,20 @@ sub __MoveToZero {
 	if ( $self->{"layerCnt"} > 2 ) {
 
 		$inCAM->COM( "sel_move", "dx" => -$self->{"frLim"}->{"xMin"}, "dy" => -$self->{"frLim"}->{"yMin"} );
+	}
+}
+
+# if layer is multilayer, move data to zero point
+sub __MirrorLayer{
+	my $self      = shift;
+	my $layerName = shift;
+
+	my $inCAM = $self->{"inCAM"};
+
+	if ($layerName eq "ps" ) {
+
+		CamLayer->MirrorLayerData( $inCAM, $layerName, "y" );
+		$inCAM->COM( "sel_move", "dx" => abs($self->{"frLim"}->{"xMax"} - $self->{"frLim"}->{"xMin"}), "dy" => 0 );
 	}
 }
 

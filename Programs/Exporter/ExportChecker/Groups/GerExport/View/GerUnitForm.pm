@@ -337,7 +337,7 @@ sub DisableControls {
 		$self->{"signalChb"}->Disable();
 	}
 
-	unless ( $defaultInfo->LayerExist("mc") && $defaultInfo->LayerExist("ms") ) {
+	if ( !$defaultInfo->LayerExist("mc") && !$defaultInfo->LayerExist("ms") ) {
 		$self->{"maskChb"}->Disable();
 	}
 
