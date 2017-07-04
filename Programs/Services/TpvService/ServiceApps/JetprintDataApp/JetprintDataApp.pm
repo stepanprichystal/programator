@@ -3,7 +3,7 @@
 # Second purpose is delete old files (pcb are not in produce) from MDI folder
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Programs::Services::TpvService::ServiceApps::MdiDataApp::MdiDataApp;
+package Programs::Services::TpvService::ServiceApps::JetprintDataApp::JetprintDataApp;
 use base("Programs::Services::TpvService::ServiceApps::ServiceAppBase");
 
 #use Class::Interface;
@@ -16,16 +16,14 @@ use warnings;
 #use File::Spec;
 use File::Basename;
 use Log::Log4perl qw(get_logger);
-use Archive::Zip qw( :ERROR_CODES :CONSTANTS );
 use POSIX qw(strftime);
 
 #local library
-#use aliased 'Connectors::TpvConnector::TpvMethods';
 use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'Enums::EnumsApp';
 use aliased 'Helpers::GeneralHelper';
 use aliased 'Helpers::FileHelper';
-use aliased 'Programs::Services::TpvService::ServiceApps::MdiDataApp::Enums';
+use aliased 'Programs::Services::TpvService::ServiceApps::JetprintDataApp::Enums';
 use aliased 'Packages::Gerbers::Mdi::ExportFiles::Enums' => 'MdiEnums';
 use aliased 'Helpers::JobHelper';
 use aliased 'CamHelpers::CamJob';
@@ -42,7 +40,7 @@ use aliased 'Packages::TifFile::TifFile::TifFile';
 sub new {
 	my $class = shift;
 
-	my $appName = EnumsApp->App_MDIDATA;
+	my $appName = EnumsApp->App_JETPRINTDATA;
 	my $self = $class->SUPER::new( $appName, @_ );
 
 	#my $self = {};
@@ -66,7 +64,7 @@ sub Run {
 	eval {
 
 		# 1) delete mdi files of pcb which are not in produce
-		$self->__DeleteOldMDIFiles();
+		$self->__DeleteOldJetFiles();
 
 		# 2) Load jobs to export MDI files
 		my @jobs = $self->__GetPcb2Export();
@@ -112,15 +110,8 @@ sub __RunJob {
 	# DEBUG DELETE
 
 	eval {
-		
-		# run only if tif file exist (old jobs has not tif file)
-		my $tif = TifFile->new($jobId);
-		unless($tif->TifFileExist()){
-			print STDERR  "TIF file doesn't exist\n";
-			$self->{"logger"}->error("TIF file doesn't exist");
-			return 0;
-		}
-
+ 
+	 
 		$self->__ProcessJob($jobId)
 
 	};
@@ -285,7 +276,7 @@ sub __GetMDIInfo {
 	return %mdiInfo;
 }
 
-sub __DeleteOldMDIFiles {
+sub __DeleteOldJetFiles {
 	my $self = shift;
 
 	my @pcbInProduc = HegMethods->GetPcbsByStatus(2, 4, 25, 35); # get pcb "Ve vyrobe" + "Na predvyrobni priprave" + Na odsouhlaseni + Schvalena
@@ -302,7 +293,7 @@ sub __DeleteOldMDIFiles {
  
 	my $deletedFiles = 0;
 
-	my $p = EnumsPaths->Jobs_MDI;
+	my $p = EnumsPaths->Jobs_JETPRINT;
 	if ( opendir( my $dir, $p ) ) {
 		while ( my $file = readdir($dir) ) {
 			next if ( $file =~ /^\.$/ );
@@ -317,7 +308,7 @@ sub __DeleteOldMDIFiles {
 			my $inProduc = scalar( grep { $_ =~ /^$fileJobId$/i } @pcbInProduc );
 
 			unless ($inProduc) {
-				if ( $file =~ /\.(ger|xml)/i ) {
+				if ( $file =~ /\.ger/i ) {
 					
 					unlink $p . $file;
 					$deletedFiles++;
@@ -328,7 +319,7 @@ sub __DeleteOldMDIFiles {
 		closedir($dir);
 	}
 
-	$self->{"logger"}->info("Number of deleted job from MDI folder: $deletedFiles");
+	$self->{"logger"}->info("Number of deleted job from Jetprint folder: $deletedFiles");
 }
 
 sub __GetPcbsInProduc {
@@ -361,7 +352,7 @@ sub __ProcessError {
 sub __SetLogging {
 	my $self = shift;
 
-	$self->{"logger"} = get_logger("mdiData");
+	$self->{"logger"} = get_logger("jetprintData");
 
 	$self->{"logger"}->debug("test of logging");
 
@@ -373,7 +364,7 @@ sub __SetLogging {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	#	use aliased 'Programs::Services::TpvService::ServiceApps::MdiDataApp::MdiDataApp';
+	#	use aliased 'Programs::Services::TpvService::ServiceApps::JetprintDataApp::JetprintDataApp';
 	#
 	#	#	use aliased 'Packages::InCAM::InCAM';
 	#	#
