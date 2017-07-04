@@ -231,7 +231,7 @@ sub __GetMDIInfo {
 
 	$mdiInfo{"exportSignal"} = $signal;
 
-	if ( ( $defaultInfo->LayerExist("mc") || $defaultInfo->LayerExist("ms") ) && $defaultInfo->GetPcbClass() >= 8 ) {
+	if ( ( $defaultInfo->LayerExist("mc") || $defaultInfo->LayerExist("ms") ) && $defaultInfo->GetPcbClass() >= 3 ) {
 		$mdiInfo{"exportMask"} = 1;
 	}
 	else {
