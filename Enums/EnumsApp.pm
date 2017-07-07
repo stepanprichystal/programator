@@ -9,9 +9,7 @@ use constant {
 	App_EXPORTUTILITY => "exportUtility",
 	App_MDIDATA => "mdiData",
 	App_JETPRINTDATA => "jetprintData",
-	
-	#App_ARCHIVEJOBS => "archiveJobs",
-	
+	App_ARCHIVEJOBS => "archiveJobs",
 	App_TEST => "testApp",
  
 };

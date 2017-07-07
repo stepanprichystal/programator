@@ -1,6 +1,6 @@
 #-------------------------------------------------------------------------------------------#
-# Description: App which automatically export mdi files of missing job
-# Second purpose is delete old files (pcb are not in produce) from MDI folder
+# Description: App which automatically create ODB file of jobs, which are not in produce
+# Of odb is succesfully created, delete job from incam DB
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Programs::Services::TpvService::ServiceApps::ArchiveJobsApp::ArchiveJobsApp;
@@ -16,24 +16,16 @@ use warnings;
 #use File::Spec;
 use File::Basename;
 use Log::Log4perl qw(get_logger);
-use Archive::Zip qw( :ERROR_CODES :CONSTANTS );
-use POSIX qw(strftime);
 
 #local library
-#use aliased 'Connectors::TpvConnector::TpvMethods';
 use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'Enums::EnumsApp';
 use aliased 'Helpers::GeneralHelper';
 use aliased 'Helpers::FileHelper';
-use aliased 'Programs::Services::TpvService::ServiceApps::ArchiveJobsApp::Enums';
-use aliased 'Packages::Gerbers::Mdi::ExportFiles::Enums' => 'MdiEnums';
 use aliased 'Helpers::JobHelper';
 use aliased 'CamHelpers::CamJob';
 use aliased 'Enums::EnumsPaths';
 use aliased 'CamHelpers::CamHelper';
-use aliased 'Packages::Gerbers::Mdi::ExportFiles::ExportFiles';
-use aliased 'Packages::ItemResult::Enums' => "ItemResEnums";
-use aliased 'Packages::TifFile::TifFile::TifFile';
 
 #-------------------------------------------------------------------------------------------#
 #  Public method
@@ -42,7 +34,7 @@ use aliased 'Packages::TifFile::TifFile::TifFile';
 sub new {
 	my $class = shift;
 
-	my $appName = EnumsApp->App_MDIDATA;
+	my $appName = EnumsApp->App_ARCHIVEJOBS;
 	my $self = $class->SUPER::new( $appName, @_ );
 
 	#my $self = {};
@@ -52,7 +44,7 @@ sub new {
 
 	# All controls
 
-	$self->{"inCAM"}  = undef;
+	$self->{"inCAM"} = undef;
 
 	return $self;
 }
@@ -65,13 +57,8 @@ sub Run {
 
 	eval {
 
-		# 1) delete mdi files of pcb which are not in produce
-		$self->__DeleteOldMDIFiles();
-
-		# 2) Load jobs to export MDI files
-		my @jobs = $self->__GetPcb2Export();
-		
-	 
+		# 1) Get jobs to archvie
+		my @jobs = $self->__GetJob2Archive();
 
 		if ( scalar(@jobs) ) {
 
@@ -83,7 +70,6 @@ sub Run {
 			}
 
 			$self->{"logger"}->debug("After get InCAM");
-
 
 			foreach my $jobId (@jobs) {
 
@@ -106,20 +92,7 @@ sub __RunJob {
 	my $self  = shift;
 	my $jobId = shift;
 
-	# DEBUG DELETE
-	#$self->__ProcessJob($orderId);
-	#return 0;
-	# DEBUG DELETE
-
 	eval {
-		
-		# run only if tif file exist (old jobs has not tif file)
-		my $tif = TifFile->new($jobId);
-		unless($tif->TifFileExist()){
-			print STDERR  "TIF file doesn't exist\n";
-			$self->{"logger"}->error("TIF file doesn't exist");
-			return 0;
-		}
 
 		$self->__ProcessJob($jobId)
 
@@ -157,189 +130,178 @@ sub __ProcessJob {
 
 	my $inCAM = $self->{"inCAM"};
 
-	# 1) Open Job
+	# 1) Test if job is not open and not checked out by someone
 
-	unless ( CamJob->JobExist( $inCAM, $jobId ) ) {
-		$self->{"logger"}->debug("Job doesn't exist: $jobId");
+	my $errMess = "";
+	my $inUse = $self->__JobInUse( $jobId, \$errMess );
+
+	if ($inUse) {
+
+		$self->__ProcessError( $jobId, $errMess );
 		return 0;
 	}
 
-	$self->_OpenJob( $jobId, 1 );
-	$self->{"logger"}->debug("After open job: $jobId");
+	# 2) Try to create odb file
+	my $odbCreated = $self->__CreateODB($jobId);
 
-	# 2) Export mdi files
+	# 3) if ODB was created, delete job from incam db
+	if ($odbCreated) {
 
-	my %mdiInfo = $self->__GetMDIInfo($jobId);
-
-	my $export = ExportFiles->new( $inCAM, $jobId, "panel" );
-	$export->{"onItemResult"}->Add( sub { $self->__OnExportLayer(@_) } );
-
-	my @result = ();
-	$self->{"errResults"} = \@result;
-
-	$export->Run( \%mdiInfo );
-	$self->{"logger"}->debug("After export mdi files: $jobId");
-
-	# 3) save job
-	$self->_CloseJob($jobId);
-
-	# If error during export, send err log to db
-	if ( @{ $self->{"errResults"} } ) {
-
-		my $errMess = join( "\n ", @{ $self->{"errResults"} } );
-
-		$self->__ProcessError( $jobId, $errMess );
+		$self->__ClearJobDir($jobId);
+		
+		#$inCAM->COM( 'delete_entity', "job" => '', "type" => 'job', "name" => "$jobId" );
 	}
-
 }
 
-# handler for mdi export results
-sub __OnExportLayer {
+# Get if job is checked out or open by user
+sub __JobInUse {
+	my $self  = shift;
+	my $jobId = shift;
+	my $mess  = shift;
+
+	my $inCAM = $self->{"inCAM"};
+
+	my $result = 1;
+
+	$inCAM->COM( 'check_inout', "ent_type" => 'job', "job" => "$jobId", "mode" => 'test' );
+	my $checked = $inCAM->GetReply();
+
+	if ( $checked ne "no" ) {
+		$$mess .= "Unable to archive job bacause is checked out by: $checked\n";
+	}
+
+	my $usr = undef;
+	my $isOpen = CamJob->IsJobOpen( $inCAM, $jobId, 1, \$usr );
+
+	if ($isOpen) {
+		$$mess .= "Unable to archive job because is open by: $usr\n";
+	}
+
+	if ( $checked eq "no" && !$isOpen ) {
+		$result = 0;
+	}
+
+	return $result;
+}
+
+# Return all jopbs which are not "in produce"
+sub __GetJob2Archive {
 	my $self = shift;
-	my $item = shift;
 
-	if ( $item->Result() eq ItemResEnums->ItemResult_Fail ) {
+	my $inCAM = $self->{"inCAM"};
 
-		push( @{ $self->{"errResults"} }, $item->GetErrorStr() );
+	my $logger = get_logger("checkReorder");
+
+	my @job2Archive = ();
+	my @list = grep { /^[a-z]\d+$/ } CamJob->GetJobList($inCAM);
+
+	my @pcbInProduc = HegMethods->GetPcbsByStatus( 2, 4, 25, 35 ); # get pcb "Ve vyrobe" + "Na predvyrobni priprave" + "Na odsouhlaseni" + "schvalena"
+	@pcbInProduc = map { $_->{"reference_subjektu"} } @pcbInProduc;
+	$_ = lc for @pcbInProduc;
+
+	# test if @pcbInProduc is not empty, sometimes it return empty array
+	if ( scalar(@pcbInProduc) == 0 ) {
+
+		$logger->error("Helios return 0 dps in produce - error?");
+		return @job2Archive;
 	}
+
+	my %tmp;
+	@tmp{@pcbInProduc} = ();
+	@job2Archive = grep { !exists $tmp{$_} } @list;
+
+	# limit if more than 30jobs, in order don't block  another service apps
+	$logger->info( "Number of jobs to archive: " . scalar(@job2Archive) . "\n" );
+	if ( scalar(@job2Archive) > 30 ) {
+		$logger->error("Exceed max number of jobs\n");
+		@job2Archive = @job2Archive[ 0 .. 29 ];    # oricess max 30 jobs
+	}
+
+	return @job2Archive;
 }
 
-# Return pcb which not contain gerbers or xml in MDI folders
-sub __GetPcb2Export {
-	my $self = shift;
-
-	my @pcb2Export = ();
-
-	my @pcbInProduc = $self->__GetPcbsInProduc();
-
-	# all files from MDI folder
-	my @xmlAll = FileHelper->GetFilesNameByPattern( EnumsPaths->Jobs_MDI, '.xml' );
-	my @gerAll = FileHelper->GetFilesNameByPattern( EnumsPaths->Jobs_MDI, '.ger' );
-
-	foreach my $jobId (@pcbInProduc) {
-
-		my @xml = grep { $_ =~ /($jobId)[\w\d]+_mdi/i } @xmlAll;
-		my @ger = grep { $_ =~ /($jobId)[\w\d]+_mdi/i } @gerAll;
- 
-
-		if ( scalar(@xml) == 0 ) {
-
-			push( @pcb2Export, $jobId );
-
-		}
-		elsif ( scalar(@xml) ) {
-
-			# check every xml, if there is gerber file of same name (if xml is order than 15 minutes)
-			foreach my $xmlFile (@xml) {
-
-				my $created = ( stat($xmlFile) )[9];
-
-				if ( $created + 15 * 60 < time() ) {
-
-					# chek if exist relevant gerber file
-					my $gerFile = $xmlFile;
-					$gerFile =~ s/\.xml/\.ger/;
-
-					unless ( -e $gerFile ) {
-						push( @pcb2Export, $jobId );
-						last;
-					}
-				}
-			}
-		}
-	}
-	return @pcb2Export;
-}
-
-# Get settings, which layers default export for mdi
-sub __GetMDIInfo {
+sub __CreateODB {
 	my $self  = shift;
 	my $jobId = shift;
 
 	my $inCAM = $self->{"inCAM"};
 
-	my %mdiInfo = ();
+	my $result = 0;
 
-	my $signal = CamHelper->LayerExists( $inCAM, $jobId, "c" );
+	my $logger = get_logger("checkReorder");
 
-	if ( HegMethods->GetTypeOfPcb($jobId) eq "Neplatovany" ) {
-		$signal = 0;
+	# 1) Test if exist archive dir
+	my $archive = JobHelper->GetJobArchive("$jobId");
+	$archive =~ s/\\/\//g;
+
+	unless ( -e $archive ) {
+		die "Archive path $archive doesn't exist.\n";
 	}
 
-	$mdiInfo{ MdiEnums->Type_SIGNAL } = $signal;
+	# test if job phzsically exist in incam jobdb
+	my $jobDbPath = EnumsPaths->InCAM_jobs . $jobId;
 
-	if ( ( CamHelper->LayerExists( $inCAM, $jobId, "mc" ) || CamHelper->LayerExists( $inCAM, $jobId, "ms" ) )
-		 && CamJob->GetJobPcbClass( $self->{"inCAM"}, $jobId ) >= 8 )
-	{
-		$mdiInfo{ MdiEnums->Type_MASK } = 1;
-	}
-	else {
-		$mdiInfo{ MdiEnums->Type_MASK } = 0;
+	unless ( -e $jobDbPath ) {
+		die "Job source directory doesn't exist ( $jobDbPath ).\n";
 	}
 
-	$mdiInfo{ MdiEnums->Type_PLUG } =
-	  ( CamHelper->LayerExists( $inCAM, $jobId, "plgc" ) || CamHelper->LayerExists( $inCAM, $jobId, "plgs" ) ) ? 1 : 0;
-	$mdiInfo{ MdiEnums->Type_GOLD } =
-	  ( CamHelper->LayerExists( $inCAM, $jobId, "goldc" ) || CamHelper->LayerExists( $inCAM, $jobId, "golds" ) ) ? 1 : 0;
+	$inCAM->HandleException(1);
 
-	return %mdiInfo;
-}
+	my $exportResult = $inCAM->COM( 'export_job', job => "$jobId", path => "$archive", mode => 'tar_gzip', submode => 'full', overwrite => 'yes' );
 
-sub __DeleteOldMDIFiles {
-	my $self = shift;
+	$inCAM->HandleException(0);
 
-	my @pcbInProduc = HegMethods->GetPcbsByStatus(2, 4); # get pcb "Ve vyrobe" + "Na predvyrobni priprave"
-	@pcbInProduc = map  { $_->{"reference_subjektu"} } @pcbInProduc;
- 
- 	if(scalar(@pcbInProduc) < 100){
- 		
- 		$self->{"logger"}->debug("No pcb in produc, error?");
- 	}
- 
-	unless(scalar(@pcbInProduc)){
-		return 0;
-	}
- 
-	my $deletedFiles = 0;
+	# if export ok, do check if odb file really exist
+	if ( $exportResult == 0 ) {
 
-	my $p = EnumsPaths->Jobs_MDI;
-	if ( opendir( my $dir, $p ) ) {
-		while ( my $file = readdir($dir) ) {
-			next if ( $file =~ /^\.$/ );
-			next if ( $file =~ /^\.\.$/ );
-
-			my ($fileJobId) = $file =~ m/^(\w\d+)/i;
-
-			unless ( defined $fileJobId ) {
-				next;
-			}
-
-			my $inProduc = scalar( grep { $_ =~ /^$fileJobId$/i } @pcbInProduc );
-
-			unless ($inProduc) {
-				if ( $file =~ /\.(ger|xml)/i ) {
-					
-					unlink $p . $file;
-					$deletedFiles++;
-				}
-			}
+		my $odbFile = $archive . $jobId . ".tgz";
+		unless ( -e $odbFile ) {
+			die "Error during export ODB file to archive, odb file: $odbFile doesn't exist\n";
 		}
 
-		closedir($dir);
+		my $fileSize = -s $odbFile;
+		if ( $fileSize < 200 ) {
+			die "Perhaps error during export ODB file to archive, odb file: $odbFile is smaller than 200kB\n";
+		}
+
+		if ( -e $odbFile && $fileSize >= 200 ) {
+			$result = 1;
+		}
+
+	}
+	else {
+
+		die "Error during export ODB file to archive.\n " . $inCAM->GetExceptionError() . "\n";
 	}
 
-	$self->{"logger"}->info("Number of deleted job from MDI folder: $deletedFiles");
+	return $result;
 }
 
-sub __GetPcbsInProduc {
-	my $self = shift;
+sub __ClearJobDir {
+	my $self    = shift;
+	my $jobId   = shift;
+	my $archive = JobHelper->GetJobArchive($jobId);
 
-	my @pcbInProduc = HegMethods->GetPcbsByStatus(4); # get pcb "Ve vyrobe"
+	my $poolPath = FileHelper->GetFileNameByPattern( $archive, "\.pool" );
 
-	@pcbInProduc = grep { $_->{"material_typ"} !~ /[t0s]/i } @pcbInProduc;
-	@pcbInProduc = map  { $_->{"reference_subjektu"} } @pcbInProduc;
+	if ($poolPath) {
 
-	return @pcbInProduc;
+		# remove all nc files
+		my @nc = FileHelper->GetFilesNameByPattern( $archive . "nc", ".*" );
+		unlink @nc;
+
+		# remove all gerbers
+		my @ger = FileHelper->GetFilesNameByPattern( $archive . "zdroje", "\.ger" );
+		unlink @ger;
+
+		# remove all opfx
+		my @opfx = FileHelper->GetFilesNameByPattern( $archive . "zdroje", "$jobId@" );
+		unlink @opfx;
+
+		# remove all ot files
+		my @ot = FileHelper->GetFilesNameByPattern( $archive . "zdroje\\ot", ".*" );
+		unlink @ot;
+	}
 }
 
 # store err to logs
@@ -361,7 +323,7 @@ sub __ProcessError {
 sub __SetLogging {
 	my $self = shift;
 
-	$self->{"logger"} = get_logger("mdiData");
+	$self->{"logger"} = get_logger("archiveJobs");
 
 	$self->{"logger"}->debug("test of logging");
 
