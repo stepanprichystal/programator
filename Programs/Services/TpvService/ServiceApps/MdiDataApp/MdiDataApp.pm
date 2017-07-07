@@ -52,7 +52,7 @@ sub new {
 
 	# All controls
 
-	$self->{"inCAM"}  = undef;
+	$self->{"inCAM"} = undef;
 
 	return $self;
 }
@@ -70,8 +70,6 @@ sub Run {
 
 		# 2) Load jobs to export MDI files
 		my @jobs = $self->__GetPcb2Export();
-		
-	 
 
 		if ( scalar(@jobs) ) {
 
@@ -83,7 +81,6 @@ sub Run {
 			}
 
 			$self->{"logger"}->debug("After get InCAM");
-
 
 			foreach my $jobId (@jobs) {
 
@@ -112,11 +109,11 @@ sub __RunJob {
 	# DEBUG DELETE
 
 	eval {
-		
+
 		# run only if tif file exist (old jobs has not tif file)
 		my $tif = TifFile->new($jobId);
-		unless($tif->TifFileExist()){
-			print STDERR  "TIF file doesn't exist\n";
+		unless ( $tif->TifFileExist() ) {
+			print STDERR "TIF file doesn't exist\n";
 			$self->{"logger"}->error("TIF file doesn't exist");
 			return 0;
 		}
@@ -220,7 +217,6 @@ sub __GetPcb2Export {
 
 		my @xml = grep { $_ =~ /($jobId)[\w\d]+_mdi/i } @xmlAll;
 		my @ger = grep { $_ =~ /($jobId)[\w\d]+_mdi/i } @gerAll;
- 
 
 		if ( scalar(@xml) == 0 ) {
 
@@ -248,6 +244,12 @@ sub __GetPcb2Export {
 			}
 		}
 	}
+
+	# limit if more than 30jobs, in order don't block  another service apps
+	if ( scalar(@pcb2Export) > 30 ) {
+		@pcb2Export = @pcb2Export[ 0 .. 29 ];    # oricess max 30 jobs
+	}
+
 	return @pcb2Export;
 }
 
@@ -288,18 +290,18 @@ sub __GetMDIInfo {
 sub __DeleteOldMDIFiles {
 	my $self = shift;
 
-	my @pcbInProduc = HegMethods->GetPcbsByStatus(2, 4); # get pcb "Ve vyrobe" + "Na predvyrobni priprave"
-	@pcbInProduc = map  { $_->{"reference_subjektu"} } @pcbInProduc;
- 
- 	if(scalar(@pcbInProduc) < 100){
- 		
- 		$self->{"logger"}->debug("No pcb in produc, error?");
- 	}
- 
-	unless(scalar(@pcbInProduc)){
+	my @pcbInProduc = HegMethods->GetPcbsByStatus( 2, 4 );    # get pcb "Ve vyrobe" + "Na predvyrobni priprave"
+	@pcbInProduc = map { $_->{"reference_subjektu"} } @pcbInProduc;
+
+	if ( scalar(@pcbInProduc) < 100 ) {
+
+		$self->{"logger"}->debug("No pcb in produc, error?");
+	}
+
+	unless ( scalar(@pcbInProduc) ) {
 		return 0;
 	}
- 
+
 	my $deletedFiles = 0;
 
 	my $p = EnumsPaths->Jobs_MDI;
@@ -318,7 +320,7 @@ sub __DeleteOldMDIFiles {
 
 			unless ($inProduc) {
 				if ( $file =~ /\.(ger|xml)/i ) {
-					
+
 					unlink $p . $file;
 					$deletedFiles++;
 				}
@@ -334,7 +336,7 @@ sub __DeleteOldMDIFiles {
 sub __GetPcbsInProduc {
 	my $self = shift;
 
-	my @pcbInProduc = HegMethods->GetPcbsByStatus(4); # get pcb "Ve vyrobe"
+	my @pcbInProduc = HegMethods->GetPcbsByStatus(4);    # get pcb "Ve vyrobe"
 
 	@pcbInProduc = grep { $_->{"material_typ"} !~ /[t0s]/i } @pcbInProduc;
 	@pcbInProduc = map  { $_->{"reference_subjektu"} } @pcbInProduc;

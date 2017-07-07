@@ -29,12 +29,13 @@ use aliased 'Enums::EnumsApp';
 use aliased 'Programs::Services::TpvService::ServiceApps::CheckReorderApp::CheckReorderApp';
 use aliased 'Programs::Services::TpvService::ServiceApps::ProcessReorderApp::ProcessReorderApp';
 use aliased 'Programs::Services::TpvService::ServiceApps::MdiDataApp::MdiDataApp';
+use aliased 'Programs::Services::TpvService::ServiceApps::ArchiveJobsApp::ArchiveJobsApp';
 
 Win32::Daemon::RegisterCallbacks(
 	{
-	   start   => \&Callback_Start,
+	   start => \&Callback_Start,
 	   timer => \&Callback_Timer,
-	   stop    => \&Callback_Stop,
+	   stop  => \&Callback_Stop,
 
 	   #pause    => \&Callback_Pause,
 	   #continue => \&Callback_Continue,
@@ -85,11 +86,11 @@ sub WorkerMethod {
 
 	my %regApp = ();
 
-	$regApp{ EnumsApp->App_CHECKREORDER } = 0.5;
+	$regApp{ EnumsApp->App_CHECKREORDER }   = 0.5;
 	$regApp{ EnumsApp->App_PROCESSREORDER } = 1;
-	$regApp{ EnumsApp->App_MDIDATA } = 1;
+	$regApp{ EnumsApp->App_MDIDATA }        = 1;
+	$regApp{ EnumsApp->App_ARCHIVEJOBS }	= 1;
 	
-
 	# ------------------------------------------------
 
 	$logger->debug("In working method");
@@ -144,10 +145,15 @@ sub __GetApp {
 	elsif ( $appName eq EnumsApp->App_PROCESSREORDER ) {
 
 		$app = ProcessReorderApp->new();
-	
-	}elsif(  $appName eq EnumsApp->App_MDIDATA ){
-		
+
+	}
+	elsif ( $appName eq EnumsApp->App_MDIDATA ) {
+
 		$app = MdiDataApp->new();
+	}
+	elsif ( $appName eq EnumsApp->App_ARCHIVEJOBS ) {
+
+		$app = ArchiveJobsApp->new();
 	}
 
 	return $app;
@@ -157,7 +163,7 @@ sub Callback_Timer {
 	my ( $ControlMessage, $Context ) = @_;
 
 	my $logger = get_logger("service");
-	
+
 	$logger->debug("Call back running");
 
 	# reduce log file
@@ -187,7 +193,7 @@ sub Callback_Timer {
 		#while (1) {
 
 		if ( Win32::Daemon::QueryLastMessage() eq SERVICE_CONTROL_STOP ) {
-			
+
 			$logger->debug("Tpv service stop");
 
 			# Tell the SCM to stop this service.
@@ -250,7 +256,7 @@ sub __SetLogging {
 
 		while (<$f>) {
 			if ( my ($logFile) = $_ =~ /.filename\s*=\s*(.*)/ ) {
- 
+
 				my ( $dir, $f ) = $logFile =~ /^(.+)\\([^\\]+)$/;
 				unless ( -e $dir ) {
 					mkdir($dir) or die "Can't create dir: " . $dir . $_;
@@ -261,7 +267,7 @@ sub __SetLogging {
 	}
 
 	Log::Log4perl->init($logConfig);
- 
+
 }
 
 1;

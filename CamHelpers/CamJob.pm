@@ -366,7 +366,7 @@ sub IsJobOpen {
 	my $wholeSite  = shift;
 	my $openByUser = shift;    # if job is open, set which user has opened job
 
-	my $result = undef;
+	my $result = 0;
 
 	if ($wholeSite) {
 
