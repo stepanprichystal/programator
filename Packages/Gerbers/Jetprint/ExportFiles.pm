@@ -16,7 +16,7 @@ use aliased 'Helpers::GeneralHelper';
 use aliased 'Enums::EnumsPaths';
 use aliased 'Helpers::FileHelper';
 use aliased 'CamHelpers::CamHelper';
-
+use aliased 'CamHelpers::CamHistogram';
 use aliased 'CamHelpers::CamLayer';
 use aliased 'Packages::CAM::FeatureFilter::Enums' => "FilterEnums";
 use aliased 'Packages::CAM::FeatureFilter::FeatureFilter';
@@ -29,6 +29,7 @@ use aliased 'Packages::Polygon::PolygonFeatures';
 use aliased 'Packages::Polygon::Features::Features::Features';
 use aliased 'Packages::Gerbers::Export::ExportLayers';
 use aliased 'Packages::ItemResult::ItemResult';
+use aliased 'Packages::ItemResult::Enums' => 'ItemResEnums';
 use aliased 'Connectors::HeliosConnector::HegMethods';
 
 #-------------------------------------------------------------------------------------------#
@@ -126,7 +127,7 @@ sub __ExportLayers {
 		$self->__DeleteFeatures( $l->{"gROWname"} );
 
 		# 4) compensate "shrink" because paint is little "spilled" after print
-		$self->__CompensateLayer( $l->{"gROWname"} );
+		$self->__CompensateLayer( $l->{"gROWname"}, $resultItem );
 
 		# 2) insert frame 100µm width around pcb (fr frame coordinate)
 		$self->__PutFrameAorundPcb( $l->{"gROWname"}, \%lim );
@@ -234,6 +235,11 @@ sub __ExportGerberLayer {
 
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
+	
+	# Export only if no errors
+	if($resultItemGer->Result() eq ItemResEnums->ItemResult_Fail){
+		return 0;
+	}
 
 	my $tmpFileId = GeneralHelper->GetGUID();
 
@@ -301,10 +307,26 @@ sub __DeleteFeatures {
 sub __CompensateLayer {
 	my $self      = shift;
 	my $layerName = shift;
+	my $resultItemGer = shift;
 
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
-
+	
+	# 1 ) check if thera are features thinner than 120µm (necessary because after compensation -60µm result print on pcb should be wrong)
+	
+	my %hist = CamHistogram->GetSymHistogram( $inCAM, $jobId, $self->{"jetprintStep"}, $layerName );
+	
+	
+	my @syms = grep { $_->{"cnt"} > 0 } ( @{$hist{"lines"}}, @{$hist{"arcs"}} );
+	
+	 my @thinSyms = grep { $_ < 120 } map {$_->{"sym"} =~ m/\w(\d+)/} @syms;
+	 
+	 if(scalar(@thinSyms)){
+	 	$resultItemGer->AddError("Too thin features in silkscreen layer $layerName. Min thickness of feature is 130µm");
+	 }
+ 
+	
+	# 2) Compensate all features
 	my $class = $self->{"pcbClass"};
 
 	my $comp = -60;    # shring by 60µm

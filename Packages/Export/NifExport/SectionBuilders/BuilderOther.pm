@@ -62,7 +62,7 @@ sub Build {
 
 	#rel(22305,L)
 
-	if ( $self->_IsRequire("rel(22305,L)") ) {
+	if ( $self->_IsRequire("2814075") ) {
 
 		$section->AddComment("Maska 0,1");
 

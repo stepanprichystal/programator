@@ -81,7 +81,9 @@ sub GetMasterJob {
 
 	@candidateOrder = grep { $self->__MasterCandidate( $_->{"order"}->{"orderId"}, $_->{"order"}->{"jobName"} ) } @candidateOrder;
 
-	# if more candidates, take first
+	# if more candidates, take by newer pcb id 
+	# (newer pcb has bigger chance, material is filled properly in IS. IS400 vs FR4)
+	@candidateOrder = sort {$b cmp $a} @candidateOrder;
 	if ( scalar(@candidateOrder) ) {
 
 		$$masterOrder = $candidateOrder[0]->{"order"}->{"orderId"};
