@@ -84,16 +84,16 @@ sub StackupExist {
 sub GetJobArchive {
 	my $self  = shift;
 	my $jobId = shift;
-	
- 	
+
 	# old format - D12345
-	if(length($jobId) == 6){
-		
+	if ( length($jobId) == 6 ) {
+
 		return EnumsPaths->Jobs_ARCHIV . substr( $jobId, 0, 3 ) . "\\" . $jobId . "\\";
 	}
-	# new format  - D123456 
-	else{
-		
+
+	# new format  - D123456
+	else {
+
 		return EnumsPaths->Jobs_ARCHIV . substr( $jobId, 0, 4 ) . "\\" . $jobId . "\\";
 	}
 }
@@ -102,16 +102,16 @@ sub GetJobArchive {
 sub GetJobElTest {
 	my $self  = shift;
 	my $jobId = shift;
-	
- 	
+
 	# old format - D12345
-	if(length($jobId) == 6){
-		
+	if ( length($jobId) == 6 ) {
+
 		return EnumsPaths->Jobs_ELTESTS . substr( $jobId, 0, 3 ) . "\\" . $jobId . "t\\";
 	}
-	# new format  - D123456 
-	else{
-		
+
+	# new format  - D123456
+	else {
+
 		return EnumsPaths->Jobs_ELTESTS . substr( $jobId, 0, 4 ) . "\\" . $jobId . "t\\";
 	}
 }
@@ -122,6 +122,25 @@ sub GetJobOutput {
 
 	return EnumsPaths->InCAM_jobs . $jobId . "\\output\\";
 
+}
+
+# Return listo of all jobs in incam database (default)
+sub GetJobList {
+	my $self = shift;
+	my $dbName = shift;
+
+	unless ( defined $dbName ) {
+		$dbName = "incam";
+	}
+
+	my $path  = EnumsPaths->InCAM_server . "config\\joblist.xml";
+	my @lines = @{ FileHelper->ReadAsLines($path) };
+
+	@lines = grep { $_ =~ /dbName=\"$dbName\"/ } @lines;
+
+	@lines = map { m/name=\"(\w\d+)\"/ } @lines;
+
+	return @lines;
 }
 
 sub GetPcbType {
@@ -194,8 +213,6 @@ sub GetIsolationByClass {
 
 }
 
-
-
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#
@@ -204,9 +221,11 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	use aliased 'Helpers::JobHelper';
 
-	print JobHelper->GetJobArchive("d164061" );
+	my @list =  JobHelper->GetJobList( );
+use Data::Dump qw(dump);
+	 dump(@list);
 
-	#print "\n1";
+	print "\n1";
 }
 
 1;

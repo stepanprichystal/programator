@@ -12,8 +12,7 @@ use base("Programs::Services::TpvService::ServiceApps::ServiceAppBase");
 #3th party library
 use strict;
 use warnings;
-
-#use File::Spec;
+use Data::Dump qw(dump);
 use File::Basename;
 use Log::Log4perl qw(get_logger);
 
@@ -45,6 +44,8 @@ sub new {
 	# All controls
 
 	$self->{"inCAM"} = undef;
+	$self->{"processedJobs"} = 0;
+	$self->{"maxLim"} = 20;
 
 	return $self;
 }
@@ -59,7 +60,7 @@ sub Run {
 
 		# 1) Get jobs to archvie
 		my @jobs = $self->__GetJob2Archive();
-
+		
 		if ( scalar(@jobs) ) {
 
 			$self->{"logger"}->debug("Before get InCAM");
@@ -76,6 +77,13 @@ sub Run {
 				$self->{"logger"}->info("Process job: $jobId");
 
 				$self->__RunJob($jobId);
+				
+				# check max limit of processed jobs in order app doesn't run too long
+				# and block another app
+				 
+				if($self->{"processedJobs"} >= $self->{"maxLim"}){
+					last;
+				}
 			}
 		}
 
@@ -148,8 +156,10 @@ sub __ProcessJob {
 	if ($odbCreated) {
 
 		$self->__ClearJobDir($jobId);
+
+		$inCAM->COM( 'delete_entity', "job" => '', "type" => 'job', "name" => "$jobId" );
 		
-		#$inCAM->COM( 'delete_entity', "job" => '', "type" => 'job', "name" => "$jobId" );
+		$self->{"processedJobs"}++;
 	}
 }
 
@@ -188,14 +198,14 @@ sub __JobInUse {
 sub __GetJob2Archive {
 	my $self = shift;
 
-	my $inCAM = $self->{"inCAM"};
-
-	my $logger = get_logger("checkReorder");
+	my $logger = get_logger("archiveJobs");
 
 	my @job2Archive = ();
-	my @list = grep { /^[a-z]\d+$/ } CamJob->GetJobList($inCAM);
+	my @list = grep { /^[df]\d{5,6}$/ } JobHelper->GetJobList();
 
-	my @pcbInProduc = HegMethods->GetPcbsByStatus( 2, 4, 25, 35 ); # get pcb "Ve vyrobe" + "Na predvyrobni priprave" + "Na odsouhlaseni" + "schvalena"
+	@list = reverse @list;
+
+	my @pcbInProduc = HegMethods->GetPcbsByStatus( 2, 4, 12, 25, 35 ); # get pcb "Ve vyrobe" + "Na predvyrobni priprave" + Pozastavena + "Na odsouhlaseni" + "schvalena"
 	@pcbInProduc = map { $_->{"reference_subjektu"} } @pcbInProduc;
 	$_ = lc for @pcbInProduc;
 
@@ -212,10 +222,7 @@ sub __GetJob2Archive {
 
 	# limit if more than 30jobs, in order don't block  another service apps
 	$logger->info( "Number of jobs to archive: " . scalar(@job2Archive) . "\n" );
-	if ( scalar(@job2Archive) > 30 ) {
-		$logger->error("Exceed max number of jobs\n");
-		@job2Archive = @job2Archive[ 0 .. 29 ];    # oricess max 30 jobs
-	}
+ 
 
 	return @job2Archive;
 }
@@ -228,7 +235,7 @@ sub __CreateODB {
 
 	my $result = 0;
 
-	my $logger = get_logger("checkReorder");
+	my $logger = get_logger("archiveJobs");
 
 	# 1) Test if exist archive dir
 	my $archive = JobHelper->GetJobArchive("$jobId");
@@ -251,6 +258,8 @@ sub __CreateODB {
 
 	$inCAM->HandleException(0);
 
+	
+
 	# if export ok, do check if odb file really exist
 	if ( $exportResult == 0 ) {
 
@@ -271,6 +280,15 @@ sub __CreateODB {
 	}
 	else {
 
+		# if error   store to special fiel - temporary
+		# get info about user
+		use aliased 'Packages::NifFile::NifFile';
+		my $nif = NifFile->new($jobId);
+		if($nif->Exist()){
+			my $mess = "USER= ".$nif->GetValue("zpracoval").",  JOB= $jobId";
+			get_logger("archiveJobsTemp")->info($mess);
+		}
+ 
 		die "Error during export ODB file to archive.\n " . $inCAM->GetExceptionError() . "\n";
 	}
 
@@ -287,20 +305,24 @@ sub __ClearJobDir {
 	if ($poolPath) {
 
 		# remove all nc files
-		my @nc = FileHelper->GetFilesNameByPattern( $archive . "nc", ".*" );
-		unlink @nc;
+		if ( -e $archive . "nc" ) {
+			unlink FileHelper->GetFilesNameByPattern( $archive . "nc", ".*" );
+		}
 
 		# remove all gerbers
-		my @ger = FileHelper->GetFilesNameByPattern( $archive . "zdroje", "\.ger" );
-		unlink @ger;
+		if ( -e $archive . "zdroje" ) {
+			unlink FileHelper->GetFilesNameByPattern( $archive . "zdroje", "\.ger" );
+		}
 
 		# remove all opfx
-		my @opfx = FileHelper->GetFilesNameByPattern( $archive . "zdroje", "$jobId@" );
-		unlink @opfx;
+		if ( -e $archive . "zdroje" ) {
+			unlink FileHelper->GetFilesNameByPattern( $archive . "zdroje", "$jobId@" );
+		}
 
 		# remove all ot files
-		my @ot = FileHelper->GetFilesNameByPattern( $archive . "zdroje\\ot", ".*" );
-		unlink @ot;
+		if ( -e $archive . "zdroje" ) {
+			unlink FileHelper->GetFilesNameByPattern( $archive . "zdroje\\ot", ".*" );
+		}
 	}
 }
 

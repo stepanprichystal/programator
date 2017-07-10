@@ -1048,13 +1048,23 @@ sub GetPcbsByStatus {
 
 	my @params = ();
  
+#  OLD SELECET nevracel dps ktere jsou ve vzrobe, prestoye byl pozadavek na stav = 4 
+#	my $cmd = "select distinct 
+#				d.reference_subjektu,
+#				d.material_typ,
+#				z.stav
+#				from lcs.zakazky_dps_22_hlavicka z join lcs.desky_22 d on d.cislo_subjektu=z.deska 
+#				left outer join lcs.vztahysubjektu vs on vs.cislo_vztahu = 23054 and vs.cislo_subjektu = z.cislo_subjektu 
+#				where vs.cislo_vztaz_subjektu is null and z.stav ='4'";
+
+
 	my $cmd = "select distinct 
 				d.reference_subjektu,
 				d.material_typ,
 				z.stav
-				from lcs.zakazky_dps_22_hlavicka z join lcs.desky_22 d on d.cislo_subjektu=z.deska 
-				left outer join lcs.vztahysubjektu vs on vs.cislo_vztahu = 23054 and vs.cislo_subjektu = z.cislo_subjektu 
-				where vs.cislo_vztaz_subjektu is null and z.stav IN ($strStatus)";
+				from lcs.zakazky_dps_22_hlavicka z join lcs.desky_22 d on d.cislo_subjektu=z.deska
+				WHERE z.stav IN ($strStatus)";
+ 
 
 	my @result = Helper->ExecuteDataSet( $cmd, \@params );
 	
@@ -1096,10 +1106,11 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	use aliased 'Connectors::HeliosConnector::HegMethods';
 	use Data::Dump qw(dump);
-	my @orders = HegMethods->GetPcbsByStatus(4);
+	my @pcbInProduc = HegMethods->GetPcbsByStatus( 2, 4, 25, 35 );
 	
-	dump(@orders);
- 
+	my @res = grep { $_->{"reference_subjektu"} =~ /f75363/i }  @pcbInProduc;
+	
+	print @res;
 }
 
 1;

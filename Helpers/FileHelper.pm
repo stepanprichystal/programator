@@ -136,7 +136,7 @@ sub GetFilesNameByPattern {
 	unless($dirPath =~ /\\$/){
 		$dirPath .= "\\";
 	}
-
+ 
 	#get all files from path
 	opendir( DIR, $dirPath ) or die $!;
 

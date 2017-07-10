@@ -89,7 +89,7 @@ sub WorkerMethod {
 	$regApp{ EnumsApp->App_CHECKREORDER }   = 0.5;
 	$regApp{ EnumsApp->App_PROCESSREORDER } = 1;
 	$regApp{ EnumsApp->App_MDIDATA }        = 1;
-	$regApp{ EnumsApp->App_ARCHIVEJOBS }	= 1;
+	$regApp{ EnumsApp->App_ARCHIVEJOBS }	= 0.5;
 	
 	# ------------------------------------------------
 
