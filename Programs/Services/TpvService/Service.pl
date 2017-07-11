@@ -86,11 +86,18 @@ sub WorkerMethod {
 
 	my %regApp = ();
 
-	$regApp{ EnumsApp->App_CHECKREORDER }   = 0.5;
-	$regApp{ EnumsApp->App_PROCESSREORDER } = 1;
-	$regApp{ EnumsApp->App_MDIDATA }        = 1;
-	$regApp{ EnumsApp->App_ARCHIVEJOBS }	= 0.5;
+	$regApp{ EnumsApp->App_CHECKREORDER }->{"repeat"}   = 0.5;
+	$regApp{ EnumsApp->App_CHECKREORDER }->{"night"}    = 0;
 	
+	$regApp{ EnumsApp->App_PROCESSREORDER }->{"repeat"} = 1;
+	$regApp{ EnumsApp->App_PROCESSREORDER }->{"night"}  = 0;
+	
+	$regApp{ EnumsApp->App_MDIDATA }->{"repeat"}        = 1;
+	$regApp{ EnumsApp->App_MDIDATA }->{"night"}         = 0;
+	
+	$regApp{ EnumsApp->App_ARCHIVEJOBS }->{"repeat"}    = 0.5;
+	$regApp{ EnumsApp->App_ARCHIVEJOBS }->{"night"}     = 1;
+
 	# ------------------------------------------------
 
 	$logger->debug("In working method");

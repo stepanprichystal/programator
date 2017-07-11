@@ -18,6 +18,7 @@ use aliased 'Packages::Export::NCExport::OperationBuilder::MLOperationBuilder';
 use aliased 'Packages::Export::NCExport::OperationBuilder::SLOperationBuilder';
 use aliased 'Packages::Export::NCExport::OperationBuilder::SimpleOperationBuilder';
 use aliased 'Packages::Export::NCExport::FileHelper::FileEditor';
+use aliased 'Packages::Drilling::DrillChecking::LayerCheckError';
 use aliased 'Packages::Export::NCExport::OperationMngr';
 use aliased 'Packages::Export::NCExport::MergeFileMngr';
 use aliased 'Packages::Export::NCExport::ExportFileMngr';
@@ -52,8 +53,8 @@ sub new {
 	my @nplt = CamDrilling->GetNPltNCLayers( $self->{"inCAM"}, $self->{"jobId"} );
 	$self->{"npltLayers"} = \@nplt;
 
-	CamDrilling->AddHistogramValues( $self->{"inCAM"}, $self->{"jobId"},$self->{"stepName"}, $self->{"pltLayers"} );
-	CamDrilling->AddHistogramValues( $self->{"inCAM"}, $self->{"jobId"}, $self->{"stepName"},$self->{"npltLayers"} );
+	CamDrilling->AddHistogramValues( $self->{"inCAM"}, $self->{"jobId"}, $self->{"stepName"}, $self->{"pltLayers"} );
+	CamDrilling->AddHistogramValues( $self->{"inCAM"}, $self->{"jobId"}, $self->{"stepName"}, $self->{"npltLayers"} );
 
 	# Filter layers, if export single
 	if ( $self->{"exportSingle"} ) {
@@ -105,20 +106,24 @@ sub new {
 sub Run {
 	my $self = shift;
 
-	# create sequence of dps operation
-	$self->{"operationMngr"}->CreateOperations();
+	# 1) Do final check of drill/rout layer
+	if ( $self->__CheckNCLayers() ) {
 
-	# for every operation filter suitable machines
-	$self->{"machineMngr"}->AssignMachines( $self->{"operationMngr"} );
+		# 2) create sequence of dps operation
+		$self->{"operationMngr"}->CreateOperations();
 
-	# Export physical nc files
-	$self->{"exportFileMngr"}->ExportFiles( $self->{"operationMngr"} );
+		# 3) for every operation filter suitable machines
+		$self->{"machineMngr"}->AssignMachines( $self->{"operationMngr"} );
 
-	# Merge an move files to archive
-	$self->{"mergeFileMngr"}->MergeFiles( $self->{"operationMngr"} );
+		# 4) Export physical nc files
+		$self->{"exportFileMngr"}->ExportFiles( $self->{"operationMngr"} );
 
-	# Save nc info table to database
-	$self->__UpdateNCInfo();
+		# 5) Merge an move files to archive
+		$self->{"mergeFileMngr"}->MergeFiles( $self->{"operationMngr"} );
+
+		# 6) Save nc info table to database
+		$self->__UpdateNCInfo();
+	}
 
 }
 
@@ -136,12 +141,15 @@ sub TaskItemsCount {
 
 	my $totalCnt = 0;
 
-	#$totalCnt += 8;
+	if ( $self->{"exportSingle"} ) {
+		$totalCnt++;    # checking nc layer
+	}
+
 	$totalCnt += scalar( @{ $self->{"pltLayers"} } );
 	$totalCnt += scalar( @{ $self->{"npltLayers"} } );
 
-	$totalCnt++;    # nc merging
-	$totalCnt++;    # nc info save
+	$totalCnt++;        # nc merging
+	$totalCnt++;        # nc info save
 
 	return $totalCnt;
 }
@@ -150,8 +158,8 @@ sub TaskItemsCount {
 sub __UpdateNCInfo {
 	my $self = shift;
 
-	if($self->{"exportSingle"}){
-		return  0;
+	if ( $self->{"exportSingle"} ) {
+		return 0;
 	}
 
 	# Save nc info table to database
@@ -175,7 +183,7 @@ sub __FilterLayers {
 	my $requiredPlt  = shift;
 	my $requiredNPlt = shift;
 
-	my $plt = $self->{"pltLayers"};
+	my $plt  = $self->{"pltLayers"};
 	my $nplt = $self->{"npltLayers"};
 
 	for ( my $i = scalar( @{$plt} ) - 1 ; $i >= 0 ; $i-- ) {
@@ -184,20 +192,44 @@ sub __FilterLayers {
 		my $exist = scalar( grep { $_ eq $checkedLayer } @{$requiredPlt} );
 
 		unless ($exist) {
-			splice @{$plt}, $i, 1; # delete layer
+			splice @{$plt}, $i, 1;    # delete layer
 		}
 	}
-	
+
 	for ( my $i = scalar( @{$nplt} ) - 1 ; $i >= 0 ; $i-- ) {
 
 		my $checkedLayer = ${$nplt}[$i]->{"gROWname"};
 		my $exist = scalar( grep { $_ eq $checkedLayer } @{$requiredNPlt} );
 
 		unless ($exist) {
-			splice @{$nplt}, $i, 1; # delete layer
+			splice @{$nplt}, $i, 1;    # delete layer
 		}
 	}
 
+}
+
+# Do final check of drill/rout layer
+sub __CheckNCLayers {
+	my $self = shift;
+
+	my $res = 1;
+
+	if ( !$self->{"exportSingle"} ) {
+
+		my $checkRes = $self->_GetNewItem("Checking NC layers");
+
+		my $mess = "";    # errors
+
+		unless ( LayerCheckError->CheckNCLayers( $self->{"inCAM"}, $self->{"jobId"}, $self->{"stepName"}, undef, \$mess ) ) {
+
+			$checkRes->AddError($mess);
+			$res = 0;     # don't continue, because of check fail
+		}
+
+		$self->_OnItemResult($checkRes);
+	}
+
+	return $res;
 }
 
 #-------------------------------------------------------------------------------------------#

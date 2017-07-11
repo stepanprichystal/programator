@@ -43,9 +43,9 @@ sub new {
 
 	# All controls
 
-	$self->{"inCAM"} = undef;
+	$self->{"inCAM"}         = undef;
 	$self->{"processedJobs"} = 0;
-	$self->{"maxLim"} = 20;
+	$self->{"maxLim"}        = 20;
 
 	return $self;
 }
@@ -60,7 +60,7 @@ sub Run {
 
 		# 1) Get jobs to archvie
 		my @jobs = $self->__GetJob2Archive();
-		
+
 		if ( scalar(@jobs) ) {
 
 			$self->{"logger"}->debug("Before get InCAM");
@@ -77,11 +77,11 @@ sub Run {
 				$self->{"logger"}->info("Process job: $jobId");
 
 				$self->__RunJob($jobId);
-				
+
 				# check max limit of processed jobs in order app doesn't run too long
 				# and block another app
-				 
-				if($self->{"processedJobs"} >= $self->{"maxLim"}){
+
+				if ( $self->{"processedJobs"} >= $self->{"maxLim"} ) {
 					last;
 				}
 			}
@@ -157,8 +157,8 @@ sub __ProcessJob {
 
 		$self->__ClearJobDir($jobId);
 
-		$inCAM->COM( 'delete_entity', "job" => '', "type" => 'job', "name" => "$jobId" );
-		
+		$self->__DeleteJob( $jobId);
+
 		$self->{"processedJobs"}++;
 	}
 }
@@ -205,7 +205,8 @@ sub __GetJob2Archive {
 
 	@list = reverse @list;
 
-	my @pcbInProduc = HegMethods->GetPcbsByStatus( 2, 4, 12, 25, 35 ); # get pcb "Ve vyrobe" + "Na predvyrobni priprave" + Pozastavena + "Na odsouhlaseni" + "schvalena"
+	my @pcbInProduc = HegMethods->GetPcbsByStatus( 2, 4, 12, 25, 35 )
+	  ;    # get pcb "Ve vyrobe" + "Na predvyrobni priprave" + Pozastavena + "Na odsouhlaseni" + "schvalena"
 	@pcbInProduc = map { $_->{"reference_subjektu"} } @pcbInProduc;
 	$_ = lc for @pcbInProduc;
 
@@ -222,7 +223,6 @@ sub __GetJob2Archive {
 
 	# limit if more than 30jobs, in order don't block  another service apps
 	$logger->info( "Number of jobs to archive: " . scalar(@job2Archive) . "\n" );
- 
 
 	return @job2Archive;
 }
@@ -245,11 +245,23 @@ sub __CreateODB {
 		die "Archive path $archive doesn't exist.\n";
 	}
 
-	# test if job phzsically exist in incam jobdb
+	# test if job phzsically exist in incam jobdb. If not, it is "incam joblist" error
+	# Check if old tgz exist and skip creating odb
 	my $jobDbPath = EnumsPaths->InCAM_jobs . $jobId;
 
 	unless ( -e $jobDbPath ) {
-		die "Job source directory doesn't exist ( $jobDbPath ).\n";
+		
+		# if old tgz exist - solved, else die
+		if ( -e $archive . $jobId . ".tgz" ) {
+			
+			$self->{"logger"}->error("Job source directory doesn't exist, but ODB file exist");
+			
+			$result = 1;
+			return $result;
+		}else{
+		
+			die "Job source directory doesn't exist ( $jobDbPath ). Odb file in job archive doesn't exist too.\n";
+		}
 	}
 
 	$inCAM->HandleException(1);
@@ -257,8 +269,6 @@ sub __CreateODB {
 	my $exportResult = $inCAM->COM( 'export_job', job => "$jobId", path => "$archive", mode => 'tar_gzip', submode => 'full', overwrite => 'yes' );
 
 	$inCAM->HandleException(0);
-
-	
 
 	# if export ok, do check if odb file really exist
 	if ( $exportResult == 0 ) {
@@ -284,15 +294,38 @@ sub __CreateODB {
 		# get info about user
 		use aliased 'Packages::NifFile::NifFile';
 		my $nif = NifFile->new($jobId);
-		if($nif->Exist()){
-			my $mess = "USER= ".$nif->GetValue("zpracoval").",  JOB= $jobId";
+		if ( $nif->Exist() ) {
+			my $mess = "USER= " . $nif->GetValue("zpracoval") . ",  JOB= $jobId";
 			get_logger("archiveJobsTemp")->info($mess);
 		}
- 
+
 		die "Error during export ODB file to archive.\n " . $inCAM->GetExceptionError() . "\n";
 	}
 
 	return $result;
+}
+
+# Delete job
+# Sometimes there is problem, job is succesfully deleted, but stay in job list
+# Thus try 3 attemt of deletion
+sub __DeleteJob {
+	my $self  = shift;
+	my $jobId = shift;
+
+	my $inCAM = $self->{"inCAM"};
+
+	my $result = 0;
+
+	foreach ( 1 .. 3 ) {
+
+		$inCAM->COM( 'delete_entity', "job" => '', "type" => 'job', "name" => "$jobId" );
+		unless ( CamJob->JobExist( $inCAM, $jobId ) ) {
+			last;
+		}
+
+		$self->{"logger"}->error("Job still exist after delete. Attempt number: ".$_);
+		sleep(1);
+	}
 }
 
 sub __ClearJobDir {

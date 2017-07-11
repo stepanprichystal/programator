@@ -82,6 +82,13 @@ sub InsertAppLog {
 	my $type    = shift;
 	my $message = shift;
 	my $pcbId   = shift;
+	# log will be processed by service, 
+	# only if same log message in DB are older then <$age> (defualt 120 minutes)
+	my $age = shift; 
+	
+	unless(defined $age){
+		$age = 120;
+	}
 
 	use Unicode::Normalize;
 
@@ -94,10 +101,35 @@ sub InsertAppLog {
 				   SqlParameter->new( "_AppId",   Enums->SqlDbType_VARCHAR, $appId ),
 				   SqlParameter->new( "_Type",    Enums->SqlDbType_VARCHAR, $type ),
 				   SqlParameter->new( "_Message", Enums->SqlDbType_VARCHAR, $message ),
-				   SqlParameter->new( "_PcbId",   Enums->SqlDbType_VARCHAR, $pcbId )
+				   SqlParameter->new( "_PcbId",   Enums->SqlDbType_VARCHAR, $pcbId ),
+				   SqlParameter->new( "_Minutes",   Enums->SqlDbType_INT, $age )
 	);
 
-	my $cmd = "INSERT INTO app_logs (AppId, Type, Message, PcbId) VALUES (_AppId, _Type, _Message, _PcbId);";
+	my $cmd = 
+	"INSERT 
+ 	INTO app_logs ( AppId,  Type,  Message,  PcbId,  ProcessLog) 
+ 	VALUES ( _AppId,  _Type,  _Message,  _PcbId,
+		(SELECT if (
+			(SELECT t2.Inserted 
+			FROM(
+				(SELECT t1.Inserted
+				FROM app_logs AS t1
+				WHERE t1.AppId = _AppId 
+				AND t1.Type = _Type
+				AND t1.PcbId = _PcbId
+				AND t1.Message = _Message
+				AND t1.ProcessLog = 1) 
+				UNION 
+				(SELECT NOW() - INTERVAL 1000 MINUTE as Inserted) # default time, when no same log message exist
+				)
+			AS t2
+			ORDER BY t2.Inserted DESC
+			LIMIT 1
+			) + INTERVAL _Minutes MINUTE  < NOW(),
+		1, # process log
+		0  # not process, last same log is too young
+		))
+ 	);";
 
 	my $result = Helper->ExecuteNonQuery( $cmd, \@params );
 
@@ -214,10 +246,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	use aliased 'Connectors::TpvConnector::TpvMethods';
 
 	my $info = TpvMethods->InsertAppLog(
-		"testApp", "Error", 'eturns a 13-element list giving the status info for
-	 a file, either the file opened via FILEHANDLE or DIRHANDLE, or named 
-	 by EXPR. If EXPR is omitted, it stats $_ (not _ !). Returns the empty
-	  list if stat fails. Typically used as follows:', "F12345"
+		"testApp", "Error", 'Ahoj já jsem štìpán\n', "f52457"
 	);
 
 	print 1;
