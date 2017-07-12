@@ -58,7 +58,7 @@ M = V dps je velka prokovena dira, dps musi jit samostatne patternem
 K = DATACODE_IS
 V = 
 T = manual
-M = Kontrola, zda dps obsahuje dynamicky datakod
+M = Nebyl nalezeny dynamicky datakod, kontrola zda je datacode aktualni
 
 [ KADLEC_PANEL ]
 K = KADLEC_PANEL

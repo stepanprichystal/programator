@@ -2,6 +2,8 @@
 #-------------------------------------------------------------------------------------------#
 # Description: Class can parse incam layer fetures. Parsed features, contain only
 # basic info like coordinate, attrubutes etc..
+# Warning, use only for layers with small amount of features (mainly surface are problematic)
+# Otherwise parsin is quite slowly
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Packages::Polygon::Features::Features::Features;
@@ -35,8 +37,7 @@ sub new {
 	return $self;
 }
 
-#parse features layer
-
+# Parse features layer of job entity
 sub Parse {
 	my $self     = shift;
 	my $inCAM    = shift;
@@ -46,16 +47,9 @@ sub Parse {
 	my $breakSR  = shift;
 	my $selected = shift;    # parse only selected feature
 
-	my $breakSRVal = "";
-	if ($breakSR) {
-		$breakSRVal = "break_sr+";
-	}
-
-	my $selectedVal = "";
-	if ($selected) {
-		$selectedVal = "select+";
-	}
-
+	my $breakSRVal = $breakSR ? "break_sr+" : "";
+	my $selectedVal = $selected ? "select+" : "";
+ 
 	$inCAM->COM( "units", "type" => "mm" );
 
 	my $infoFile = $inCAM->INFO(
@@ -76,7 +70,35 @@ sub Parse {
 	my @features = $self->__ParseLines( \@feat );
 
 	$self->{"features"} = \@features;
+}
 
+# Parse features layer of symbol entity
+sub ParseSymbol {
+	my $self     = shift;
+	my $inCAM    = shift;
+	my $jobId    = shift;
+	my $symbol    = shift;
+	 
+	$inCAM->COM( "units", "type" => "mm" );
+
+	my $infoFile = $inCAM->INFO(
+								 units           => 'mm',
+								 angle_direction => 'ccw',
+								 entity_type     => 'symbol',
+								 entity_path     => "$jobId/$symbol",
+								 data_type       => 'FEATURES',
+								 options         => "feat_index+f0",
+								 parse           => 'no'
+	);
+	my $f;
+	open( $f, "<" . $infoFile );
+	my @feat = <$f>;
+	close($f);
+	unlink($infoFile);
+
+	my @features = $self->__ParseLines( \@feat );
+
+	$self->{"features"} = \@features;
 }
 
 sub GetFeatures {
@@ -124,18 +146,22 @@ sub __ParseLines {
 
 	my @features = ();
 
+	my $type = undef;
+	my $l = undef;
 	for ( my $i = 0 ; $i < scalar(@lines) ; $i++ ) {
 
-		my $l = $lines[$i];
+		$l = $lines[$i];
 
-		if ( $l =~ /###/ ) { next; }
+		if ( $l =~ /###|^\n$/ ) { next; }
 
 		my $featInfo = Item->new();
 
 		my @attr = ();
+		
+		 ($type) =  $l =~ m/^#\d*\s*#(\w)\s*/;
 
 		# line, arcs, pads
-		if ( $l =~ m/^#(\d*)\s*#(\w)\s*((-?[0-9]*\.?[0-9]*\s)*)\s*r([0-9]*\.?[0-9]*)\s*([\w\d\s]*);?(.*)/i ) {
+		if (   $l =~ m/^#(\d*)\s*#(\w)\s*((-?[0-9]*\.?[0-9]*\s)*)\s*r([0-9]*\.?[0-9]*)\s*([\w\d\s]*);?(.*)/i ) {
 			$featInfo->{"id"}   = $1;
 			$featInfo->{"type"} = $2;
 
@@ -169,7 +195,7 @@ sub __ParseLines {
 		}
 
 		# surfaces
-		elsif ( $l =~ m/^#(\d*)\s*#(s)\s*([\w\d\s]*);?(.*)/i ) {
+		elsif (  $l =~ m/^#(\d*)\s*#(s)\s*([\w\d\s]*);?(.*)/i ) {
 
 			$featInfo->{"id"}   = $1;
 			$featInfo->{"type"} = $2;
@@ -226,8 +252,25 @@ sub __ParseLines {
 			$featInfo->{"envelop"} = \@envelopFinalHash;
 
 			# 3) Set center point of surface
-			my $centroid = PolygonPoints->GetCentroid( \@envelopFinal );
+			#my $centroid = PolygonPoints->GetCentroid( \@envelopFinal );
 
+		}
+		# Text
+		elsif(   $l =~ m/^#(\d*)\s*#(t)\s*((-?[0-9]*\.?[0-9]*\s)*).*'(.*)'\s\w;?(.*)$/i ) {
+			$featInfo->{"id"}   = $1;
+			$featInfo->{"type"} = $2;
+
+			my @points = split( /\s/, $3 );
+ 
+			$featInfo->{"x1"} = $points[0];
+			$featInfo->{"y1"} = $points[1];
+			$featInfo->{"x2"} = undef;
+			$featInfo->{"y2"} = undef; 
+			
+			$featInfo->{"text"} = $5; 
+			
+			@attr = split( ",", $6 );
+			
 		}
 		else {
 
@@ -264,25 +307,20 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $f = Features->new();
 
-	my $jobId = "f52456";
+	my $jobId = "f52457";
 	my $inCAM = InCAM->new();
 
 	my $step  = "o+1";
-	my $layer = "f";
+	my $layer = "mc";
 
-	$f->Parse( $inCAM, $jobId, $step, $layer, 0, 1);
+	$f->Parse( $inCAM, $jobId, $step, $layer, 1, 0);
 
 	my @features = $f->GetFeatures();
 	
-	if(scalar(@features) == 1){
-		
-		print STDERR "x1=".$features[0]->{"x1"};
-		print STDERR "x1=".$features[0]->{"y1"};
-	}
+	my @textFeats = grep { $_->{"type"} eq "T" } @features;
 
-
-
-
+ 
+	print @textFeats;
 
 }
 

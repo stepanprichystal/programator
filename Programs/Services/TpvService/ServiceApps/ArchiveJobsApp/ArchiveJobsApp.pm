@@ -157,7 +157,7 @@ sub __ProcessJob {
 
 		$self->__ClearJobDir($jobId);
 
-		$self->__DeleteJob( $jobId);
+		$self->__DeleteJob($jobId);
 
 		$self->{"processedJobs"}++;
 	}
@@ -173,13 +173,6 @@ sub __JobInUse {
 
 	my $result = 1;
 
-	$inCAM->COM( 'check_inout', "ent_type" => 'job', "job" => "$jobId", "mode" => 'test' );
-	my $checked = $inCAM->GetReply();
-
-	if ( $checked ne "no" ) {
-		$$mess .= "Unable to archive job bacause is checked out by: $checked\n";
-	}
-
 	my $usr = undef;
 	my $isOpen = CamJob->IsJobOpen( $inCAM, $jobId, 1, \$usr );
 
@@ -187,10 +180,31 @@ sub __JobInUse {
 		$$mess .= "Unable to archive job because is open by: $usr\n";
 	}
 
-	if ( $checked eq "no" && !$isOpen ) {
-		$result = 0;
+	$inCAM->COM( 'check_inout', "ent_type" => 'job', "job" => "$jobId", "mode" => 'test' );
+	my $checked = $inCAM->GetReply();
+
+	my $checkinOk = 1;
+	if ( $checked ne "no" ) {
+
+		# If job is not open, try checkin job
+		if ( !$isOpen ) {
+
+			$inCAM->HandleException(1);
+			my $res = $inCAM->COM( "checkin_closed_job", "job" => "$jobId");
+			$inCAM->HandleException(0);
+
+			# if checin is not possible, error
+			if ( $res != 0 ) {
+				$$mess .= "Unable to archive job bacause is checked out by: $checked\n";
+				$checkinOk = 0;
+			}
+		}
 	}
 
+	if ( $checkinOk && !$isOpen ) {
+		$result = 0;
+	}
+	
 	return $result;
 }
 
@@ -250,16 +264,17 @@ sub __CreateODB {
 	my $jobDbPath = EnumsPaths->InCAM_jobs . $jobId;
 
 	unless ( -e $jobDbPath ) {
-		
+
 		# if old tgz exist - solved, else die
 		if ( -e $archive . $jobId . ".tgz" ) {
-			
+
 			$self->{"logger"}->error("Job source directory doesn't exist, but ODB file exist");
-			
+
 			$result = 1;
 			return $result;
-		}else{
-		
+		}
+		else {
+
 			die "Job source directory doesn't exist ( $jobDbPath ). Odb file in job archive doesn't exist too.\n";
 		}
 	}
@@ -323,7 +338,7 @@ sub __DeleteJob {
 			last;
 		}
 
-		$self->{"logger"}->error("Job still exist after delete. Attempt number: ".$_);
+		$self->{"logger"}->error( "Job still exist after delete. Attempt number: " . $_ );
 		sleep(1);
 	}
 }

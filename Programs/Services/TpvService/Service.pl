@@ -95,7 +95,7 @@ sub WorkerMethod {
 	$regApp{ EnumsApp->App_MDIDATA }->{"repeat"}        = 1;
 	$regApp{ EnumsApp->App_MDIDATA }->{"night"}         = 0;
 	
-	$regApp{ EnumsApp->App_ARCHIVEJOBS }->{"repeat"}    = 0.5;
+	$regApp{ EnumsApp->App_ARCHIVEJOBS }->{"repeat"}    = 30;
 	$regApp{ EnumsApp->App_ARCHIVEJOBS }->{"night"}     = 1;
 
 	# ------------------------------------------------
@@ -106,7 +106,7 @@ sub WorkerMethod {
 	foreach my $appName ( keys %regApp ) {
 
 		if ( !defined $Context->{"appStarts"}->{$appName}
-			 || ( $Context->{"appStarts"}->{$appName} + $regApp{$appName} * 60 ) < time() )
+			 || ( $Context->{"appStarts"}->{$appName} + $regApp{$appName}->{"repeat"} * 60 ) < time() )
 		{
 
 			$logger->info("Launch app $appName");

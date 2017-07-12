@@ -10,6 +10,7 @@ package Programs::Exporter::ExportChecker::Groups::NifExport::Model::NifPrepareD
 #3th party library
 use strict;
 use warnings;
+use List::MoreUtils qw(uniq);
 
 #local library
 use aliased 'Programs::Exporter::ExportChecker::Groups::NifExport::Model::NifGroupData';
@@ -21,6 +22,7 @@ use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'Packages::CAMJob::Dim::JobDim';
 use aliased 'Packages::NifFile::NifFile';
+use aliased 'Packages::CAMJob::Marking::Marking';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -60,15 +62,15 @@ sub OnPrepareGroupData {
 
 	# Controls when step panel not exist
 	$groupData->SetMaska01(0);
-	
+
 	# Preapre pressfit
 	my $defPressfit = 0;
 
-	if ( $defaultInfo->GetPressfitExist() || $defaultInfo->GetMeritPressfitIS()) {
+	if ( $defaultInfo->GetPressfitExist() || $defaultInfo->GetMeritPressfitIS() ) {
 
 		$defPressfit = 1;
 	}
- 
+
 	$groupData->SetPressfit($defPressfit);
 	$groupData->SetNotes("");
 
@@ -77,7 +79,9 @@ sub OnPrepareGroupData {
 	$groupData->SetQuickNotes( \@quickNotes );
 
 	# prepare datacode
-	$groupData->SetDatacode( HegMethods->GetDatacodeLayer($jobId) );
+	$groupData->SetDatacode( $self->__GetDacode($inCAM, $jobId, $defaultInfo));
+
+	# prepare ul logo
 	$groupData->SetUlLogo( HegMethods->GetUlLogoLayer($jobId) );
 
 	# Mask color
@@ -119,7 +123,7 @@ sub OnPrepareGroupData {
 	$groupData->SetJumpScoring($jump);
 
 	# Dimension
-	my %dim = JobDim->GetDimension( $inCAM, $jobId);
+	my %dim = JobDim->GetDimension( $inCAM, $jobId );
 
 	$groupData->SetSingle_x( $dim{"single_x"} );
 	$groupData->SetSingle_y( $dim{"single_y"} );
@@ -133,19 +137,19 @@ sub OnPrepareGroupData {
 
 # Default "group data" for REORDER are prepared in this method
 sub OnPrepareReorderGroupData {
-	my $self     = shift;
-	my $dataMngr = shift;    #instance of GroupDataMngr
-	my $groupData = shift; # default group data
+	my $self      = shift;
+	my $dataMngr  = shift;    #instance of GroupDataMngr
+	my $groupData = shift;    # default group data
 
 	my $inCAM = $dataMngr->{"inCAM"};
 	my $jobId = $dataMngr->{"jobId"};
 
 	my $defaultInfo = $dataMngr->GetDefaultInfo();
-	
+
 	my $nif = NifFile->new($jobId);
-	
-	return 0 unless($nif->Exist());
-	
+
+	return 0 unless ( $nif->Exist() );
+
 	# Mask 0,1
 
 	my $mask = $nif->GetValue("rel(22305,L)");
@@ -153,35 +157,35 @@ sub OnPrepareReorderGroupData {
 		$groupData->SetMaska01(1);
 	}
 
-	# Datacodes
-	my $datacode = $nif->GetValue("datacode");
-	$datacode =~ s/\s//g if ( defined $datacode );    # remove spaces
+#	# Datacodes
+#	my $datacode = $nif->GetValue("datacode");
+#	$datacode =~ s/\s//g if ( defined $datacode );    # remove spaces
+#
+#	if ( defined $datacode && $datacode ne "" ) {
+#
+#		$datacode = uc($datacode);
+#		$groupData->SetDatacode($self->__GetDacode($inCAM, $jobId, $defaultInfo));
+#	}
+#
+#	# UL logo
+#	my $ul = $nif->GetValue("ul_logo");
+#	$ul =~ s/\s//g if ( defined $ul );                # remove spaces
+#
+#	if ( defined $ul && $ul ne "" ) {
+#
+#		$ul = uc($ul);
+#		$groupData->SetUlLogo($ul);
+#	}
 
-	if ( defined $datacode && $datacode ne "" ) {
-
-		$datacode = uc($datacode);
-		$groupData->SetDatacode($datacode);
-	}
-	
-	# UL logo
-	my $ul = $nif->GetValue("ul_logo");
-	$ul =~ s/\s//g if ( defined $ul );    # remove spaces
-
-	if ( defined $ul && $ul ne "" ) {
-
-		$ul = uc($ul);
-		$groupData->SetUlLogo($ul);
-	}
-	
 	# Note
 	my $note = $nif->GetValue("poznamka");
-	 
+
 	if ( defined $note && $note ne "" ) {
-		
+
 		$note =~ s/;/\n/g;
 		$groupData->SetNotes($note);
 	}
- 
+
 }
 
 sub __IsTenting {
@@ -212,7 +216,33 @@ sub __IsTenting {
 
 	return $tenting;
 }
+
+# Merge information about datacode from IS with found datacodes in job
+sub __GetDacode {
+	my $self        = shift;
+	my $inCAM       = shift;
+	my $jobId       = shift;
+	my $defaultInfo = shift;
  
+
+	my $dataCode = HegMethods->GetDatacodeLayer($jobId);
+	$dataCode =~ s/\s//g;
+	$dataCode = lc($dataCode);
+	my @layerNames = split( ",", $dataCode );
+
+	my $step = $defaultInfo->IsPool() ? "o+1" : "panel";
+
+	my @layersJob = Marking->GetDatacodeLayers( $inCAM, $jobId, $step );
+
+	push( @layerNames, @layersJob );
+	@layerNames = uniq(@layerNames);
+
+	my $str = uc(join( ",", @layerNames ));
+
+	return $str;
+
+}
+
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#

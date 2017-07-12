@@ -182,8 +182,9 @@ sub __ProcessJob {
 
 		my $key  = $checkInfo->GetKey();
 		my $type = $checkInfo->GetType();
+		my $detail = "";
 
-		if ( $self->{"checks"}->{$key}->NeedChange( $inCAM, $jobId, $jobExist, $isPool ) ) {
+		if ( $self->{"checks"}->{$key}->NeedChange( $inCAM, $jobId, $jobExist, $isPool, \$detail ) ) {
 
 			my $str = undef;
 
@@ -195,7 +196,11 @@ sub __ProcessJob {
 			}
 			elsif ( $type eq Enums->Check_MANUAL ) {
 
-				$str = ( scalar(@manCh) + 1 ) . ") " . $checkInfo->GetMessage();
+				if(defined $detail && $detail ne ""){
+					$detail = " - ".$detail;
+				}
+
+				$str = ( scalar(@manCh) + 1 ) . ") " . $checkInfo->GetMessage(). $detail;
 				push( @manCh, $str );
 			}
 		}

@@ -23,6 +23,7 @@ use aliased 'CamHelpers::CamCopperArea';
 use aliased 'CamHelpers::CamHistogram';
 use aliased 'CamHelpers::CamDTM';
 use aliased 'Packages::Tooling::PressfitOperation';
+use aliased 'Packages::CAMJob::Marking::Marking';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -51,14 +52,19 @@ sub OnCheckGroupData {
 	my $stepName = "panel";
 
 	# 1) datacode
-	my $datacodeLayer = $self->__GetDataCode( $jobId, $groupData );
+	my $datacodeLayer = $self->__CheckDataCodeIS( $jobId, $groupData );
 
 	unless ( defined $datacodeLayer ) {
 		$dataMngr->_AddErrorResult( "Data code", "Nesedí zadaný datacode v heliosu s datacodem v exportu." );
 	}
+	
+	my @errLayers= ();
+	unless($self->__CheckDataCodeJob($inCAM, $jobId, $defaultInfo, $groupData->GetDatacode(), \@errLayers)){
+		$dataMngr->_AddWarningResult( "Data code", "V zaškrtnutých vrstvách : \'".join(", ", @errLayers)."\' nebyl nalezen dynamický datakód. Zkontroluj to.");
+	}
 
 	# 2) ul logo
-	my $ulLogoLayer = $self->__GetUlLogo( $jobId, $groupData );
+	my $ulLogoLayer = $self->__CheckUlLogoIS( $jobId, $groupData );
 
 	unless ( defined $ulLogoLayer ) {
 		$dataMngr->_AddErrorResult( "Ul logo", "Nesedí zadané Ul logo v heliosu s datacodem v exportu." );
@@ -234,7 +240,7 @@ sub OnCheckGroupData {
 }
 
 # check if datacode exist
-sub __GetDataCode {
+sub __CheckDataCodeIS {
 	my $self      = shift;
 	my $jobId     = shift;
 	my $groupData = shift;
@@ -245,8 +251,30 @@ sub __GetDataCode {
 	return $self->__CheckMarkingLayer( $layerExport, $layerIS );
 }
 
+# Check when dynamic datacode exist in job
+sub __CheckDataCodeJob {
+	my $self      = shift;
+	my $inCAM 	  = shift;
+	my $jobId     = shift;
+	my $defaultInfo = shift;
+	my $dataCodes = shift;
+	my $errLayers = shift;
+
+	my $step = $defaultInfo->IsPool() ? "o+1" : "panel";
+
+	 foreach my $layer (split(",", $dataCodes)){
+	 	
+	 		$layer = lc($layer);	 	
+	 		unless(Marking->DatacodeExists($inCAM, $jobId, $step, $layer)){
+	 			push(@{$errLayers}, $layer);
+	 		}
+	 }
+
+	return scalar(@{$errLayers}) ? 0 : 1 ;
+}
+
 # check if ul logo exist
-sub __GetUlLogo {
+sub __CheckUlLogoIS {
 	my $self      = shift;
 	my $jobId     = shift;
 	my $groupData = shift;

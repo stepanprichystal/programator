@@ -48,6 +48,9 @@ sub new {
 	$self->{"ymid"} = undef;
 
 	$self->{"oriDir"} = undef;
+	
+	# text value of type text
+	$self->{"text"} = undef;
 
 	#attributes of features
 	$self->{"att"} = undef;
