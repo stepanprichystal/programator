@@ -94,7 +94,7 @@ sub Test{
 	
 	 
 	
-	$self->{"dc"}->SetBrush( Wx::Brush->new( 'blue',&Wx::wxSOLID ) );
+	$self->{"dc"}->SetBrush( Wx::Brush->new( 'blue',&Wx::wxBRUSHSTYLE_VERTICAL_HATCH  ) );
 	
 	my @arr = (Wx::Point->new(10, 10 ), Wx::Point->new(20, 20 ), Wx::Point->new(40, 20 ), Wx::Point->new(40, -10 )); 
 	$self->{"dc"}->DrawPolygon( \@arr,  40, 40 );
@@ -116,7 +116,7 @@ sub paint {
 
  	
    $self->{"dc"} = Wx::ClientDC->new( $self->{"mainFrm"} ); 
-  #$self->{"dc"}->SetBrush( Wx::Brush->new( 'black',&Wx::wxSOLID ) );
+  $self->{"dc"}->SetBrush( Wx::Brush->new( 'gray',&Wx::wxBRUSHSTYLE_FDIAGONAL_HATCH ) );
   $self->{"dc"}->DrawRectangle( 100,100, 200,200 );
 
  
