@@ -114,10 +114,10 @@ sub GetPanelType {
 	}
 	else {
 		if ( $h > 400 ) {
-			$pnlType = EnumsProducPanel->SIZE_STANDARD_SMALL;
+			$pnlType = EnumsProducPanel->SIZE_STANDARD_BIG;
 		}
 		else {
-			$pnlType = EnumsProducPanel->SIZE_STANDARD_BIG;
+			$pnlType = EnumsProducPanel->SIZE_STANDARD_SMALL;
 		}
 	}
 	
@@ -173,4 +173,24 @@ sub _CompareTolerance {
 		return (0);
 	}
 }
+
+
+#-------------------------------------------------------------------------------------------#
+#  Place for testing..
+#-------------------------------------------------------------------------------------------#
+my ( $package, $filename, $line ) = caller;
+if ( $filename =~ /DEBUG_FILE.pl/ ) {
+
+	use aliased "Packages::ProductionPanel::PanelDimension";
+	use aliased 'Packages::InCAM::InCAM';
+ 
+
+	my $jobId = "f77339";
+	my $inCAM = InCAM->new();
+	
+	my $type = PanelDimension->GetPanelType($inCAM, $jobId);
+ 
+
+}
+
 1;

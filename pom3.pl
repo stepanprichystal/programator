@@ -1,9 +1,8 @@
-my @test = (1, 2, 3, 4, 5, 6, 7, 8, 9);
 
 
+my $str = 'KW-$$WW';
 
-if(scalar(@test) > 5){
-	@test =  @test[0..4];	
+if($str =~ /(\${2}(dd|ww|mm|yy|yyyy)\s*){1,3}$/i){
+	
+	print "test";
 }
-
-print @test;

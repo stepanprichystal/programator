@@ -424,28 +424,7 @@ sub CheckToolParameters {
 				$$mess .= "Pcb which is NOT plated has to set Drill Tool Manager type: \"vrtane\" not type: \"vysledne\". \n";
 			}
 		}
-
-		# 4) Check if rout doesn't contain tool size smaller than 500
-		if ( $l->{"gROWlayer_type"} eq "rout" ) {
  
-			my @unitTools = $l->{"uniDTM"}->GetTools();
-
-			foreach my $t (@unitTools) {
-
-				if ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_score ) {
-					next;
-				}
-
-				if ( $t->GetDrillSize() < 500 ) {
-					$result = 0;
-					$$mess .= "NC layer \"" . $l->{"gROWname"} . "\".\n";
-					$$mess .=
-					    "Routing layers should not contain tools diamaeter smaller than 500µm. Layer contains tool diameter: "
-					  . $t->GetDrillSize()
-					  . "µm.\n";
-				}
-			}
-		}
 	}
 
 	return $result;

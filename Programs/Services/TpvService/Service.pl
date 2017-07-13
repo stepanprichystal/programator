@@ -105,6 +105,12 @@ sub WorkerMethod {
 	# Launch app according last launch time
 	foreach my $appName ( keys %regApp ) {
 
+		# check if app should run over night niht is 22:00 - 6:00, when no TPV in office
+		my $curHours = (localtime())[2];
+		if($regApp{$appName}->{"night"} && ($curHours > 6 && $curHours < 22)){
+			next;
+		}
+
 		if ( !defined $Context->{"appStarts"}->{$appName}
 			 || ( $Context->{"appStarts"}->{$appName} + $regApp{$appName}->{"repeat"} * 60 ) < time() )
 		{

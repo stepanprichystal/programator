@@ -72,29 +72,35 @@ sub DatacodeExists {
 
 	my @texts = map { $_ =~ /'(.*)'/ } grep { $_ =~ /^#T.*'(.*)'/ } @feat;
 
-	my $datacodeOk = scalar(   grep { $_ =~ /^(\${2}(dd|ww|mm|yy|yyyy)\s*){2,3}$/i } @texts );
+	my $datacodeOk = scalar(   grep { $_ =~ /(\${2}(dd|ww|mm|yy|yyyy)\s*){1,3}$/i } @texts );
 
 	# Id text daacode doesn't exist, find datacode in sybols
 	unless ($datacodeOk) {
 
 		my %hist = CamHistogram->GetSymHistogram( $inCAM, $jobId, $step, $layer );
-		my @datacodes = map { $_->{"sym"} } grep { $_->{"sym"} =~ /datacode/i } @{ $hist{"pads"} };
+		my @datacodes = map { $_->{"sym"} } grep { $_->{"sym"} =~ /datacode|data|date|ul|logo/i } @{ $hist{"pads"} };
 
 		@datacodes = uniq(@datacodes);
 
 		if ( scalar(@datacodes) ) {
 
+			my $datacodesOk = 0;
 			foreach my $sym (@datacodes) {
 				my $f = Features->new();
 				$f->ParseSymbol( $inCAM, $jobId, $sym );
 
 				my @test = $f->GetFeatures();
 
-				unless ( grep { $_->{"type"} eq "T" && $_->{"text"} =~ /^(\${2}(dd|ww|mm|yy|yyyy)\s*){2,3}$/i } $f->GetFeatures() ) {
-					$exist = 0;
+				if ( grep { $_->{"type"} eq "T" && $_->{"text"} =~ /(\${2}(dd|ww|mm|yy|yyyy)\s*){1,3}$/i } $f->GetFeatures() ) {
+					$datacodesOk = 1;
 					last;
 				}
 			}
+			
+			unless($datacodesOk){
+				$exist = 0;
+			}
+			
 		}
 		else {
 
@@ -115,7 +121,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	use aliased 'Packages::InCAM::InCAM';
 
 	my $inCAM = InCAM->new();
-	my $jobId = "f66659";
+	my $jobId = "f61718";
 
 	my @layers = Marking->GetDatacodeLayers( $inCAM, $jobId, "panel" );
 
