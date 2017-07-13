@@ -301,7 +301,6 @@ sub CheckDirTop2Bot {
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_frMill );
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_jbMillTop );
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_lcMill );
-	push( @t, EnumsGeneral->LAYERTYPE_nplt_lsMill );
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_kMill );
 
 	@layers = $self->__GetLayersByType( \@layers, \@t );
@@ -356,6 +355,7 @@ sub CheckDirBot2Top {
 	push( @t, EnumsGeneral->LAYERTYPE_plt_bMillBot );
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_bMillBot );
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_jbMillBot );
+	push( @t, EnumsGeneral->LAYERTYPE_nplt_lsMill );
 
 	@layers = $self->__GetLayersByType( \@layers, \@t );
 
@@ -576,7 +576,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	use aliased 'Packages::InCAM::InCAM';
 
 	my $inCAM = InCAM->new();
-	my $jobId = "F72963";
+	my $jobId = "f77298";
 
 	my $mess = "";
 
