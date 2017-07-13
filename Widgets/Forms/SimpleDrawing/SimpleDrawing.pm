@@ -3,7 +3,7 @@
 # Description: Custom queue list. Keep items of type MyWxCustomQueueItem
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Widgets::Forms::CustomQueue::MyWxCustomQueue;
+package Widgets::Forms::SimpleDrawing::SimpleDrawing;
 use base qw(Wx::Panel);
 
 #3th party library
@@ -22,27 +22,18 @@ use aliased 'Packages::Events::Event';
 sub new {
 	my $class     = shift;
 	my $parent    = shift;
-	my $id        = shift;
 	my $position  = shift;
 	my $dimension = shift;
 
-	my $self = $class->SUPER::new( $parent, $id, $position, $dimension );
+	my $self = $class->SUPER::new( $parent, -1, $position, $dimension );
 
 	bless($self);
 
 	# Items references
-	my @jobItems = ();
-	$self->{"jobItems"} = \@jobItems;
-
-	# PROPERTIES
-
-	# gap between items in list
-	$self->{"itemGap"} = 1;
-
 	$self->__SetLayout();
 
 	#EVENTS
-	$self->{"onSelectItemChange"} = Event->new();
+	#$self->{"onSelectItemChange"} = Event->new();
 
 	return $self;
 }
