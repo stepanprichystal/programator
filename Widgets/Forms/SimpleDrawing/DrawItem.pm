@@ -1,9 +1,9 @@
-
+ 
 #-------------------------------------------------------------------------------------------#
 # Description: Custom queue list. Keep items of type MyWxCustomQueueItem
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Widgets::Forms::SimpleDrawing::DrawLayer;
+package Widgets::Forms::SimpleDrawing::DrawItem;
 
 #3th party library
 use Wx;
@@ -11,28 +11,22 @@ use strict;
 use warnings;
 
 #local library
-use aliased 'Widgets::Forms::MyWxScrollPanel';
-use aliased 'Packages::Events::Event';
-use aliased 'Widgets::Forms::SimpleDrawing::DrawItem';
+ 
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
 sub new {
 	my $class   = shift;
-	my $drawing = shift;
 	my $drawSub = shift;
+	my $subParams = shift;
+	
 	my $self    = {};
 	bless($self);
-
-	my @drawList = ();
-	$self->{"drawList"} = \@drawList;
-
-	#$self->{"DC"}      = Wx::ClientDC->new($drawing);
+ 
 	$self->{"drawSub"} = $drawSub;
-	$self->{"brush"} = undef;
-	$self->{"drawing"} = $drawing;
-
+	$self->{"subParams"} = $subParams;
+ 
 	return $self;
 }
 
@@ -53,25 +47,18 @@ sub new {
 #	$self->{"DC"}->DrawRectangle( $sX*$s, $sY*$s, $eX*$s, $eY*$s);
 #}
 
-sub SetBrush {
-	my $self  = shift;
+sub SetBrush{
+	my $self = shift;
 	my $brush = shift;
 
-	$self->{"brush"} = $brush;
+	$self->{"DC"}->SetBrush($brush);
 }
 
 sub DrawRectangle {
 	my $self = shift;
-	my $dc = shift;
-	
 
-	$dc->SetBrush($self->{"brush"});
+	$self->{"DC"}->DrawRectangle(@_);
 
-	$dc->DrawRectangle(@_);
-
-	#$self->{"DC"}->DrawRectangle(@_);
-
-	return 0;
 	if ( $self->{"drawing"}->__NeedReDraw() ) {
 		print "REdraw\n";
 	}
