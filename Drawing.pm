@@ -70,7 +70,28 @@ sub __SetLayout {
 	my $szMain = Wx::BoxSizer->new(&Wx::wxVERTICAL);
 	
 	
-	 Wx::Event::EVT_PAINT($self,\&paint);
+	#my $pnl = Wx::Panel->new( $mainFrm, -1, [50, 50],  [400, 400] );
+	#$szMain->Add($pnl,  0,  &Wx::wxALL, 0); 
+	
+	
+	
+	
+#	
+	use aliased 'Widgets::Forms::SimpleDrawing::SimpleDrawing';
+	my @dim = (400,400);
+	$self->{"drawingPnl"} = SimpleDrawing->new($mainFrm, \@dim);
+#	
+	$szMain->Add($self->{"drawingPnl"},  0,  &Wx::wxALL, 100); 
+#	
+#	
+#	
+#	my $layerTest = $d->AddLayer("test");
+#	$layerTest->SetBrush( Wx::Brush->new( 'gray',&Wx::wxBRUSHSTYLE_FDIAGONAL_HATCH ) );
+#	$layerTest->DrawRectangle( 100,100, 200,200 );
+	
+	 #Wx::Event::EVT_PAINT($self,\&paint);
+ 
+
  
 
 	$mainFrm->SetSizer($szMain);
@@ -82,6 +103,9 @@ sub __SetLayout {
  
 	
 	$self->{"mainFrm"}->Show(1);
+	
+	
+	
 
 	return $mainFrm;
 }
@@ -90,45 +114,43 @@ sub __SetLayout {
 sub Test{
 	my ( $self, $event ) = @_;
 	
-	$self->{"dc"} = Wx::ClientDC->new( $self->{"mainFrm"} );
+	my $layerTest = $self->{"drawingPnl"}->AddLayer("test");
 	
-	 
-	
-	$self->{"dc"}->SetBrush( Wx::Brush->new( 'blue',&Wx::wxBRUSHSTYLE_VERTICAL_HATCH  ) );
-	
+	$layerTest->SetBrush( Wx::Brush->new( 'green',&Wx::wxBRUSHSTYLE_VERTICAL_HATCH  ) );
 	my @arr = (Wx::Point->new(10, 10 ), Wx::Point->new(20, 20 ), Wx::Point->new(40, 20 ), Wx::Point->new(40, -10 )); 
-	$self->{"dc"}->DrawPolygon( \@arr,  40, 40 );
+	$layerTest->DrawPolygon( \@arr,  40, 40 );
 	
-	my $i = 0;
+	 my $i = 0;
 	foreach (1..1000){
 		
-		$self->{"dc"}->DrawPolygon( \@arr,  $i, $i );
+		$layerTest->DrawPolygon( \@arr,  $i, $i );
 		$i+= 5;
 	}
+
 	
 	 
 	 
 }
 
-sub paint {
-	my ( $self, $event ) = @_;
-	#my $dc = Wx::PaintDC->new( $self->{frame} );
-
- 	
-   $self->{"dc"} = Wx::ClientDC->new( $self->{"mainFrm"} ); 
-  $self->{"dc"}->SetBrush( Wx::Brush->new( 'gray',&Wx::wxBRUSHSTYLE_FDIAGONAL_HATCH ) );
-  $self->{"dc"}->DrawRectangle( 100,100, 200,200 );
-
- 
-	
-}
+#sub paint {
+#	my ( $self, $event ) = @_;
+#	#my $dc = Wx::PaintDC->new( $self->{frame} );
+#
+# 	
+#   $self->{"dc"} = Wx::ClientDC->new( $self->{"mainFrm"} ); 
+#  $self->{"dc"}->SetBrush( Wx::Brush->new( 'gray',&Wx::wxBRUSHSTYLE_FDIAGONAL_HATCH ) );
+#  $self->{"dc"}->DrawRectangle( 100,100, 200,200 );
+#
+# 
+#	
+#}
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#
 
 my $test = Drawing->new( -1, "f13610" );
-$test->Test();
+ $test->Test();
 $test->MainLoop();
 
 1;
