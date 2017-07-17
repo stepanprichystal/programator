@@ -41,7 +41,7 @@ sub new {
 	
 
 	# Load layer data, dimension etc
-	my $pasteL = grep {$_->{"gROWname"} =~ /^ } CamJob->GetAllLayers($inCAM, $jobId);
+	my $pasteL = grep {$_->{"gROWname"} =~ /^s[ab][-] } CamJob->GetAllLayers($inCAM, $jobId);
 
 
 	my $mainFrm = $self->__SetLayout($parent);
