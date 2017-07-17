@@ -66,7 +66,7 @@ sub __SetLayout {
 		&Wx::wxCAPTION | &Wx::wxCLOSE_BOX | &Wx::wxSTAY_ON_TOP |
 		  &Wx::wxMINIMIZE_BOX | &Wx::wxSYSTEM_MENU | &Wx::wxCLIP_CHILDREN | &Wx::wxRESIZE_BORDER | &Wx::wxMINIMIZE_BOX
 	);
-	 
+
 	my $szMain = Wx::BoxSizer->new(&Wx::wxVERTICAL);
 
 	#my $pnl = Wx::Panel->new( $mainFrm, -1, [50, 50],  [400, 400] );
@@ -76,8 +76,15 @@ sub __SetLayout {
 	use aliased 'Programs::Stencil::StencilDrawing';
 	my @dim = ( 400, 400 );
 	$self->{"drawingPnl"} = StencilDrawing->new( $mainFrm, \@dim );
-	$szMain->Add( $self->{"drawingPnl"}, 0, &Wx::wxALL, 100 );
 
+	my $btn = Wx::Button->new( $mainFrm, -1, "test", &Wx::wxDefaultPosition );
+
+	Wx::Event::EVT_BUTTON( $btn, -1, sub { $self->Test(@_) } );
+
+	$szMain->Add( $self->{"drawingPnl"}, 0, &Wx::wxALL, 100 );
+	$szMain->Add( $btn,                  0, &Wx::wxALL, 0 );
+
+	$self->{"cnt"} = 0;
 	#
 	#
 	#
@@ -94,16 +101,13 @@ sub __SetLayout {
 
 	$self->{"mainFrm"}->Show(1);
 
-	$self->{"drawingPnl"}->SetStencilSize( 100, 100 );
-	
-	$self->{"drawingPnl"}->SetTopPcbPos( 100, 100, 100, 200 );
-
 	return $mainFrm;
 }
 
 sub Test {
 	my ( $self, $event ) = @_;
 
+	$self->{"cnt"}++;
 	#
 	#	my $layerTest = $self->{"drawingPnl"}->AddLayer("test");
 	#
@@ -113,6 +117,11 @@ sub Test {
 
 	#my $max = $layerTest->MaxX();
 	#print $max
+	 
+	$self->{"drawingPnl"}->SetStencilSize( 100, 100 );
+
+	$self->{"drawingPnl"}->SetTopPcbPos( 100, 100, 500 + $self->{"cnt"} * 10, 200 );
+	
 
 }
 

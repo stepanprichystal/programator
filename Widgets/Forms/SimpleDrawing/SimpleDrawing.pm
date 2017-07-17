@@ -1,5 +1,4 @@
 
-
 use Wx;
 
 #-------------------------------------------------------------------------------------------#
@@ -25,10 +24,10 @@ use aliased 'Widgets::Forms::SimpleDrawing::DrawLayer';
 #-------------------------------------------------------------------------------------------#
 sub new {
 	my $class     = shift;
-	my $parent = shift;
+	my $parent    = shift;
 	my $dimension = shift;
 
-	my $self = $class->SUPER::new( $parent, -1, &Wx::wxDefaultPosition, $dimension);
+	my $self = $class->SUPER::new( $parent, -1, &Wx::wxDefaultPosition, $dimension );
 
 	bless($self);
 
@@ -40,11 +39,10 @@ sub new {
 	$self->{"scale"}  = 1;
 
 	#$self->{"backgroundDC"} = Wx::ClientDC->new($self);
-	$self->{"width"}        = (@{$dimension})[0];
-	$self->{"height"}       = (@{$dimension})[1];
- 
+	$self->{"width"}  = ( @{$dimension} )[0];
+	$self->{"height"} = ( @{$dimension} )[1];
 
-	Wx::Event::EVT_PAINT($self,\&paint);
+	Wx::Event::EVT_PAINT( $self,  sub { $self->__Paint(@_)} );
 
 	#EVENTS
 	#$self->{"onSelectItemChange"} = Event->new();
@@ -74,32 +72,39 @@ sub SetScale {
 # when whole image is supposed to by visible in drawing panel
 sub GetRealScale {
 	my $self = shift;
+	my $dc   = shift;
 
 	#$self->{"scale"}
 
 	# Get max and min X+Y coordinate from all DC layers
-	my $minX = undef;
-	my $maxX = undef;
+	#	my $minX = undef;
+	#	my $maxX = undef;
 
-	my $minY = undef;
-	my $maxY = undef;
+	#	my $minY = undef;
+	#	my $maxY = undef;
 
-	foreach ( keys %{ $self->{"layers"} } ) {
+	#	foreach ( keys %{ $self->{"layers"} } ) {
+	#
+	#		my $dc = $self->{"layers"}->{$_}->{"DC"};
+	#
+	#		my $valMinX = $dc->MinX();
+	#		my $valMaxX = $dc->MaxX();
+	#
+	#		$minX = $valMinX if ( !defined $minX || $valMinX < $minX );    # set min value
+	#		$maxX = $valMaxX if ( !defined $maxX || $valMaxX > $maxX );    # set max value
+	#
+	#		my $valMinY = $dc->MinY();
+	#		my $valMaxY = $dc->MaxY();
+	#
+	#		$minY = $valMinY if ( !defined $minY || $valMinY < $minY );    # set min value
+	#		$maxY = $valMaxY if ( !defined $maxY || $valMaxY > $maxY );    # set max value
+	#	}
 
-		my $dc = $self->{"layers"}->{$_}->{"DC"};
+	my $minX = $dc->MinX();
+	my $maxX = $dc->MaxX();
 
-		my $valMinX = $dc->MinX();
-		my $valMaxX = $dc->MaxX();
-
-		$minX = $valMinX if ( !defined $minX || $valMinX < $minX );    # set min value
-		$maxX = $valMaxX if ( !defined $maxX || $valMaxX > $maxX );    # set max value
-
-		my $valMinY = $dc->MinY();
-		my $valMaxY = $dc->MaxY();
-
-		$minY = $valMinY if ( !defined $minY || $valMinY < $minY );    # set min value
-		$maxY = $valMaxY if ( !defined $maxY || $valMaxY > $maxY );    # set max value
-	}
+	my $minY = $dc->MinY();
+	my $maxY = $dc->MaxY();
 
 	# compute real scale
 	my $wDraw = abs( min( 0, $minX ) ) + max( $self->{"width"},  $maxX );
@@ -131,16 +136,15 @@ sub GetRealScale {
 }
 
 sub AddLayer {
-	my $self = shift;
-	my $name = shift;
+	my $self    = shift;
+	my $name    = shift;
 	my $drawSub = shift;
 
 	if ( defined $self->{"layers"}->{"$name"} ) {
 		die "Layer with name: $name, aleready exists.\n";
 	}
 
-	$self->{"layers"}->{"$name"} = DrawLayer->new($self, $drawSub);
- 
+	$self->{"layers"}->{"$name"} = DrawLayer->new( $self, $drawSub );
 
 	#$self->{"layers"}->{"$name"} =  Wx::ClientDC->new( $self );
 
@@ -165,25 +169,76 @@ sub SetBackgroundBrush {
 	my $color = shift;
 	my $brush = shift;
 
-	$self->{"backgClr"} = $color;
+	$self->{"backgClr"}   = $color;
 	$self->{"backgBrush"} = $brush;
 
-	$self->SetBackgroundColour($color);    #green
+	#$self->SetBackgroundColour($color);    #green
+	                                       #$self->Refresh();
+	                                       
+	#my $dcb = Wx::WindowDC->new($self);
+	#$dcb->SetBackground(Wx::Brush->new(Wx::Colour->new( 20, 235, 235 ), &Wx::wxBRUSHSTYLE_CROSSDIAG_HATCH  ));
 
 }
 
 sub RefreshDrawing{
-	my $self  = shift;
-	my $dc = shift;
- 
+		my $self = shift;
+		
+		$self->{"autoZoom"} = 1;
+		$self->Refresh(); # By  calling refresh on panel, "Paint event is raised"
+	
+}
+
+sub __Paint {
+	my $self = shift;
+	
+	my $dc = Wx::PaintDC->new($self);
+	
+	unless( $self->{"autoZoom"}){
+		$dc->SetBrush($self->{"backgBrush"});
+			$dc->DrawRectangle(-100, -100, 1000, 1000);
+	}
+	
+	
+	if(defined  $self->{"realScale"}){
+		$dc->SetUserScale( $self->{"realScale"}, $self->{"realScale"} );
+	}
+
+	print "brush style: ".&Wx::wxBRUSHSTYLE_HORIZONTAL_HATCH;
+	
+	my $b = Wx::Brush->new('red', 115  );
+	print "Is hatch: ".$b->GetStyle();
+	
+
+	#$dc->SetBrush(Wx::Brush->new('red', &Wx::wxBRUSHSTYLE_CROSSDIAG_HATCH  ));
+	#my $dcb = Wx::ClientDC->new($self->{"drawingPnl"});
+	#$dc->SetBackground(Wx::Brush->new('red', 115  ));
+ 	#$dc->Clear();
+
 	foreach ( keys %{ $self->{"layers"} } ) {
 
 		my $sub = $self->{"layers"}->{$_}->{"drawSub"};
-		
+
 		$sub->($dc)
+
+	}
+
+	if ( $self->{"autoZoom"} ) {
+
+		$self->{"autoZoom"} = 0;
+
+		if ( $self->__NeedReDraw($dc) ) {
+			print "REdraw\n";
+		}
+		else {
+			print "NO-REdraw\n";
+		}
+
+	}else{
 		
 	}
 	
+	 
+
 }
 
 #-------------------------------------------------------------------------------------------#
@@ -196,22 +251,23 @@ sub __SetLayout {
 	#$self->SetBackgroundStyle( $brush );    #green
 
 }
- 
- 
+
 sub __NeedReDraw {
 	my $self = shift;
+	my $dc   = shift;
 
 	# Get teal scale
-	my $real = $self->GetRealScale();
+	$self->{"realScale"} = $self->GetRealScale($dc);
 
-	return 0;
+	if ( $self->{"scale"} != $self->{"realScale"} ) {
 
-	if ( $self->{"scale"} != $real ) {
-		
-		print STDERR "New scale: $real\n";
-		$self->__ZoomDrawing($real);
+		print STDERR "New scale: " . $self->{"realScale"} . "\n";
+
+		$self->Refresh();
+
+		#$self->__ZoomDrawing( $real, $dc );
 		return 1;
- 
+
 	}
 	else {
 		return 0;
@@ -222,52 +278,24 @@ sub __NeedReDraw {
 sub __ZoomDrawing {
 	my $self  = shift;
 	my $scale = shift;
+	my $dc    = shift;
 
-	
+	$dc->SetUserScale( $scale, $scale );
+	$self->Refresh();
 
-	foreach ( keys %{ $self->{"layers"} } ) {
+	#$self->Layout();
 
-		my $dc = $self->{"layers"}->{$_}->{"DC"};
-
-		$dc->SetUserScale($scale, $scale);
-		$self->Refresh();
-		$self->Layout();
-	}
+	#
+	#	foreach ( keys %{ $self->{"layers"} } ) {
+	#
+	#		my $dc = $self->{"layers"}->{$_}->{"DC"};
+	#
+	#		$dc->SetUserScale($scale, $scale);
+	#		$self->Refresh();
+	#		$self->Layout();
+	#	}
 }
- 
-sub paint {
-	my ( $self, $event ) = @_;
-	
-	my $dc = Wx::PaintDC->new( $self );
 
-
-   #	$self->{"dc"} = Wx::ClientDC->new( $self->{"mainFrm"} );
- 	# $self->{"dc"}->SetBrush( Wx::Brush->new( 'gray',&Wx::wxBRUSHSTYLE_FDIAGONAL_HATCH ) );
- 	# $self->{"dc"}->DrawRectangle( 100,100, 200,200 );
-	 
- 	#$self->{"backgroundDC"}->SetBrush( $self->{"backgBrush"} );
-	#$self->{"backgroundDC"}->DrawRectangle( -100, -100, 1000, 1000 );
-	
-	#my $dc = Wx::PaintDC->new( $self );
-	
-	#$dc->Clear();
-	
-	
-	
-	$dc->SetBrush( $self->{"backgBrush"} );
-	$dc->DrawRectangle( -100, -100, 1000, 1000 );
-	
-	 
-	
-	#print STDERR ".";
-	
-	$self->RefreshDrawing($dc);
-	
-	
-	
-
-
-} 
  
 
 #-------------------------------------------------------------------------------------------#

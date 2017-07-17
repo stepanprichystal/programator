@@ -71,13 +71,8 @@ sub DrawRectangle {
 
 	#$self->{"DC"}->DrawRectangle(@_);
 
-	return 0;
-	if ( $self->{"drawing"}->__NeedReDraw() ) {
-		print "REdraw\n";
-	}
-	else {
-		print "NO-REdraw\n";
-	}
+	 
+	
 }
 
 #-------------------------------------------------------------------------------------------#

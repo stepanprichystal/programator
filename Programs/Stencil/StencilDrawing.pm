@@ -54,8 +54,9 @@ sub SetStencilSize {
 
 	$self->{"drawData"}->{"width"}  = $width;
 	$self->{"drawData"}->{"height"} = $height;
-
-	$self->Refresh();
+	
+	
+	$self->RefreshDrawing();
 }
 
 sub SetTopPcbPos {
@@ -74,7 +75,8 @@ sub SetTopPcbPos {
 	$self->{"drawData"}->{"topPcb"}->{"endX"}   = $endX;
 	$self->{"drawData"}->{"topPcb"}->{"endY"}   = $endY;
 
-	$self->Refresh();
+	 
+	$self->RefreshDrawing();
 }
 
 #-------------------------------------------------------------------------------------------#
@@ -86,8 +88,8 @@ sub __SetLayout {
 
 	# Set drawing background
 
-	my $backgClr = Wx::Colour->new( 250, 250, 250 );
-	my $backgBrush = Wx::Brush->new( Wx::Colour->new( 200, 200, 200 ), &Wx::wxBRUSHSTYLE_CROSS_HATCH  );
+	my $backgClr = Wx::Colour->new( 252, 252, 252 );
+	my $backgBrush = Wx::Brush->new( Wx::Colour->new( 235, 235, 235 ), &Wx::wxBRUSHSTYLE_CROSS_HATCH  );
 	$self->SetBackgroundBrush( $backgClr, $backgBrush );
 
 	# Create layers
@@ -99,7 +101,8 @@ sub __SetLayout {
 	# --- Top pcb ---
 	my $topPcb = $self->AddLayer( "topPcb", sub { $self->__DrawTopPcb(@_) } );
 	$topPcb->SetBrush( Wx::Brush->new( 'red', &Wx::wxBRUSHSTYLE_BDIAGONAL_HATCH ) );
-
+	
+	
 }
 
 sub __DrawStencilDim {
