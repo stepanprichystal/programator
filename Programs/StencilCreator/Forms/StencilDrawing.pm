@@ -3,7 +3,7 @@
 # Description: Custom queue list. Keep items of type MyWxCustomQueueItem
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Programs::Stencil::StencilDrawing;
+package Programs::StencilCreator::Forms::StencilDrawing;
 use base('Widgets::Forms::SimpleDrawing::SimpleDrawing');
 
 #3th party library
