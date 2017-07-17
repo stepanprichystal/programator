@@ -193,7 +193,7 @@ sub __ExportXml {
 	$templ->{"job_params"}->[0]->{"image_position"}->[0]->{"y"} = $y_position;
 
 	if ($mirror) {
-		if ( $xPnlSize > 520 ) {
+		if ( $yPnlSize > 520 ) {
 			$templ->{"job_params"}->[0]->{"rotation"}->[0] = 3;
 		}
 		else {
