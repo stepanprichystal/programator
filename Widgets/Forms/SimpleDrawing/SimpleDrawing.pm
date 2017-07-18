@@ -18,6 +18,7 @@ use List::Util qw[min max];
 use aliased 'Widgets::Forms::MyWxScrollPanel';
 use aliased 'Packages::Events::Event';
 use aliased 'Widgets::Forms::SimpleDrawing::DrawLayer';
+use aliased 'Widgets::Forms::SimpleDrawing::Enums';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -36,13 +37,17 @@ sub new {
 
 	my %layers = ();
 	$self->{"layers"} = \%layers;
-	$self->{"scale"}  = 1;
+	$self->{"realScale"}  = 1;
 
 	#$self->{"backgroundDC"} = Wx::ClientDC->new($self);
 	$self->{"width"}  = ( @{$dimension} )[0];
 	$self->{"height"} = ( @{$dimension} )[1];
 
-	Wx::Event::EVT_PAINT( $self,  sub { $self->__Paint(@_)} );
+	$self->{"axisOrient"} = Enums->Axis_LEFTBOT;
+	my %origin = ("x" => 0, "y" => 0);
+	$self->{"origin"} = \%origin;
+
+	Wx::Event::EVT_PAINT( $self, sub { $self->__Paint(@_) } );
 
 	#EVENTS
 	#$self->{"onSelectItemChange"} = Event->new();
@@ -54,23 +59,26 @@ sub new {
 #  Public methods
 #-------------------------------------------------------------------------------------------#
 
+sub SetOrigin{
+	my $self  = shift;
+	my $x  = shift;
+	my $y = shift;
+	
+	$self->{"origin"}->{"x"} = $x;	
+	$self->{"origin"}->{"y"} = $y;
+}
+
 # Example, scale "2" means, all values are multiply by 2. Line 10px long will by drawed like 100px long
 sub SetScale {
 	my $self  = shift;
 	my $scale = shift;
 
 	$self->{"scale"} = shift;
-
-	foreach ( keys %{ $self->{"layers"} } ) {
-
-		$_->{"DC"}->SetUserScale($scale);
-	}
-
 }
 
 # Real scale is value, which all coordinate are multiply,
 # when whole image is supposed to by visible in drawing panel
-sub GetRealScale {
+sub __CompAutoZoomScale {
 	my $self = shift;
 	my $dc   = shift;
 
@@ -100,6 +108,9 @@ sub GetRealScale {
 	#		$maxY = $valMaxY if ( !defined $maxY || $valMaxY > $maxY );    # set max value
 	#	}
 
+	my $dcH         = $self->GetSize()->GetHeight();
+	my $dcW         = $self->GetSize()->GetWidth();
+
 	my $minX = $dc->MinX();
 	my $maxX = $dc->MaxX();
 
@@ -107,32 +118,33 @@ sub GetRealScale {
 	my $maxY = $dc->MaxY();
 
 	# compute real scale
-	my $wDraw = abs( min( 0, $minX ) ) + max( $self->{"width"},  $maxX );
-	my $hDraw = abs( min( 0, $minY ) ) + max( $self->{"height"}, $maxY );
+	my $wDraw = abs( min( 0, $minX ) ) + max( $dcH,  $maxX );
+	my $hDraw = abs( min( 0, $minY ) ) + max( $dcW, $maxY );
 
 	my $newScale = 1;
 
 	# ned compute new scale in order drawin will be whole visible in frame
-	if ( $wDraw > $self->{"width"} || $hDraw > $self->{"height"} ) {
+	if ( $wDraw > $dcH || $hDraw > $dcW ) {
 
 		# choose axis, which need more shrink
-		if ( $self->{"width"} / $wDraw < $self->{"height"} / $hDraw ) {
+		if ( $dcH / $wDraw < $dcW / $hDraw ) {
 
-			$newScale = $self->{"width"} / $wDraw;
+			$newScale = $dcH / $wDraw;
 		}
 		else {
-			$newScale = $self->{"height"} / $hDraw;
+			$newScale = $dcW / $hDraw;
 		}
 	}
 
-	my $realScale = $self->{"scale"};
+	# reser real scale
+	$self->{"realScale"} = 1;
 
-	# need recompute
+	# compute new real scale
 	if ( $newScale != 1 ) {
-		$realScale *= $newScale;
+		$self->{"realScale"} *= $newScale;
+		print STDERR "Auto ZOOM new scale: $newScale\n";
 	}
-
-	return $realScale;
+ 
 }
 
 sub AddLayer {
@@ -173,71 +185,100 @@ sub SetBackgroundBrush {
 	$self->{"backgBrush"} = $brush;
 
 	#$self->SetBackgroundColour($color);    #green
-	                                       #$self->Refresh();
-	                                       
+	#$self->Refresh();
+
 	#my $dcb = Wx::WindowDC->new($self);
 	#$dcb->SetBackground(Wx::Brush->new(Wx::Colour->new( 20, 235, 235 ), &Wx::wxBRUSHSTYLE_CROSSDIAG_HATCH  ));
 
 }
 
-sub RefreshDrawing{
-		my $self = shift;
-		
-		$self->{"autoZoom"} = 1;
-		$self->Refresh(); # By  calling refresh on panel, "Paint event is raised"
-	
+sub RefreshDrawing {
+	my $self = shift;
+
+	$self->{"autoZoom"} = 1;
+	$self->Refresh();    # By  calling refresh on panel, "Paint event is raised"
+
 }
 
 sub __Paint {
 	my $self = shift;
-	
+
 	my $dc = Wx::PaintDC->new($self);
 	
-	unless( $self->{"autoZoom"}){
-		$dc->SetBrush($self->{"backgBrush"});
-			$dc->DrawRectangle(-100, -100, 1000, 1000);
+	my $dcH         = $self->GetSize()->GetHeight();
+	 
+
+	if ( $self->{"axisOrient"} eq Enums->Axis_LEFTBOT ) {
+		
+		$dc->SetAxisOrientation( 1, 1 );
+		$dc->SetDeviceOrigin(0, $dcH);
+		
+		if($self->{"origin"}){
+			
+			$dc->SetDeviceOrigin($self->{"origin"}->{"x"}, $dcH - $self->{"origin"}->{"y"});	
+		}	
 	}
-	
-	
-	if(defined  $self->{"realScale"}){
+	elsif ( $self->{"axisOrient"} eq Enums->Axis_LEFTTOP ) {
+		
+		$dc->SetAxisOrientation( 1, 0 );
+		
+		if($self->{"origin"}){
+			
+			$dc->SetDeviceOrigin($self->{"origin"}->{"x"}, $self->{"origin"}->{"y"});	
+		}
+	}
+ 
+	if ( $self->{"autoZoom"} ) {
+		
+		$self->__CompAutoZoomScale($dc);
+		$self->{"autoZoom"} = 0;
+		$self->Refresh();
+
+	}else{
+		
+		
 		$dc->SetUserScale( $self->{"realScale"}, $self->{"realScale"} );
+		
+		$dc->SetBrush( $self->{"backgBrush"} );
+		$dc->DrawRectangle( -1000, -1000, 10000, 10000 );
 	}
 
-	print "brush style: ".&Wx::wxBRUSHSTYLE_HORIZONTAL_HATCH;
-	
-	my $b = Wx::Brush->new('red', 115  );
-	print "Is hatch: ".$b->GetStyle();
-	
+
+	 $dc->SetBrush( Wx::Brush->new( 'red', &Wx::wxBRUSHSTYLE_BDIAGONAL_HATCH ));
+	 $dc->DrawRectangle( 0, 0, 300, 500 );
+	 
+ 
 
 	#$dc->SetBrush(Wx::Brush->new('red', &Wx::wxBRUSHSTYLE_CROSSDIAG_HATCH  ));
 	#my $dcb = Wx::ClientDC->new($self->{"drawingPnl"});
 	#$dc->SetBackground(Wx::Brush->new('red', 115  ));
- 	#$dc->Clear();
+	#$dc->Clear();
 
-	foreach ( keys %{ $self->{"layers"} } ) {
+#	foreach ( keys %{ $self->{"layers"} } ) {
+#
+#		my $sub = $self->{"layers"}->{$_}->{"drawSub"};
+#
+#		$sub->($dc)
+#	}
 
-		my $sub = $self->{"layers"}->{$_}->{"drawSub"};
-
-		$sub->($dc)
-
-	}
-
-	if ( $self->{"autoZoom"} ) {
-
-		$self->{"autoZoom"} = 0;
-
-		if ( $self->__NeedReDraw($dc) ) {
-			print "REdraw\n";
-		}
-		else {
-			print "NO-REdraw\n";
-		}
-
-	}else{
-		
-	}
 	
 	 
+
+#	if ( $self->{"autoZoom"} ) {
+#
+#		$self->{"autoZoom"} = 0;
+#
+#		if ( $self->__NeedReDraw($dc) ) {
+#			print "REdraw\n";
+#		}
+#		else {
+#			print "NO-REdraw\n";
+#		}
+#
+#	}
+#	else {
+#
+#	}
 
 }
 
@@ -249,7 +290,33 @@ sub __SetLayout {
 	my $self = shift;
 
 	#$self->SetBackgroundStyle( $brush );    #green
+	
+	# EVENTS 
+	 
+	
+	Wx::Event::EVT_MOUSEWHEEL( $self,  sub { $self->__OnMouseWheel(@_) } );
 
+}
+
+sub __OnMouseWheel{
+	my $self = shift;
+	my $w = shift;
+	my $evt   = shift;
+	
+	print "Rotation:".$evt->GetWheelRotation()."\n";
+	print "Delta:".$evt->GetWheelDelta()."\n";
+	
+	
+	if($evt->GetWheelRotation() > 0){
+		$self->{"realScale"} *=   1.1;
+	}else{
+		$self->{"realScale"} /=   1.1;
+	}
+	
+	print STDERR "real scale:".$self->{"realScale"}."\n";
+	
+	$self->Refresh();
+ 
 }
 
 sub __NeedReDraw {
@@ -257,7 +324,7 @@ sub __NeedReDraw {
 	my $dc   = shift;
 
 	# Get teal scale
-	$self->{"realScale"} = $self->GetRealScale($dc);
+	$self->__CompRealScale($dc);
 
 	if ( $self->{"scale"} != $self->{"realScale"} ) {
 
@@ -295,8 +362,6 @@ sub __ZoomDrawing {
 	#		$self->Layout();
 	#	}
 }
-
- 
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

@@ -21,6 +21,7 @@ use aliased 'CamHelpers::CamJob';
 use aliased 'CamHelpers::CamAttributes';
 use aliased 'Helpers::GeneralHelper';
 use aliased 'Helpers::FileHelper';
+use aliased 'CamHelpers::CamStepRepeat';
 
 #my $genesis = new Genesis;
 
@@ -150,6 +151,40 @@ sub GetLayerLimits {
 	$limits{"xmax"} = ( $inCAM->{doinfo}{gLIMITSxmax} );
 	$limits{"ymin"} = ( $inCAM->{doinfo}{gLIMITSymin} );
 	$limits{"ymax"} = ( $inCAM->{doinfo}{gLIMITSymax} );
+
+	return %limits;
+}
+
+# return layer limits, consider SR features
+sub GetLayerLimits2 {
+	my $self      = shift;
+	my $inCAM     = shift;
+	my $jobId   = shift;
+	my $stepName  = shift;
+	my $layerName = shift;
+	my $breakSR   = shift;
+
+	my %limits;
+
+	my $tmp = 0;
+	my $layer = $layerName;
+	if ( CamStepRepeat->ExistStepAndRepeat( $inCAM, $jobId, $stepName ) && $breakSR ) {
+
+		$tmp = 1;
+		$layer = GeneralHelper->GetGUID();
+		$inCAM->COM( 'flatten_layer', "source_layer" => $layerName, "target_layer" => $tmp );
+	}
+
+	$inCAM->INFO( units => 'mm', entity_type => 'layer', entity_path => "$jobId/$stepName/$layer", data_type => 'LIMITS' );
+
+	$limits{"xMin"} = ( $inCAM->{doinfo}{gLIMITSxmin} );
+	$limits{"xMax"} = ( $inCAM->{doinfo}{gLIMITSxmax} );
+	$limits{"yMin"} = ( $inCAM->{doinfo}{gLIMITSymin} );
+	$limits{"yMax"} = ( $inCAM->{doinfo}{gLIMITSymax} );
+	
+	if($tmp){
+		$inCAM->COM( 'delete_layer', layer => $layer );
+	}
 
 	return %limits;
 }
@@ -379,8 +414,8 @@ sub IsJobOpen {
 
 			my ( $job, $user ) = $l =~ /^(\w\d+)\s+(.*@.*\..*)/;
 
-			if (defined $job && $job =~ /$jobName/i ) {
-				$result       = 1;
+			if ( defined $job && $job =~ /$jobName/i ) {
+				$result = 1;
 				chomp($user);
 				$$openByUser = $user;
 				last;
@@ -437,24 +472,25 @@ sub GetJobList {
 	return @jobs;
 }
 
-
 # Return if job is imported and exit in incamdb
 sub JobExist {
 	my $self  = shift;
 	my $inCAM = shift;
 	my $jobId = shift;
-	
-	my @list =$self->GetJobList($inCAM);
-	
+
+	my @list = $self->GetJobList($inCAM);
+
 	my $exist = scalar( grep { $_ =~ /^$jobId$/i } @list );
 
-	if($exist > 0){
+	if ( $exist > 0 ) {
 		return 1;
-	}else{
+	}
+	else {
 		return 0;
 	}
- 
+
 }
+
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#
@@ -469,7 +505,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	my $jobId = "f52457";
 
 	my $user = undef;
-	my $minTool = CamJob->JobExist( $inCAM, "f54555555");
+	my $minTool = CamJob->JobExist( $inCAM, "f54555555" );
 
 	print $minTool;
 

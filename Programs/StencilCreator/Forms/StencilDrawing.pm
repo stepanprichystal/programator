@@ -14,6 +14,7 @@ use List::Util qw[min max];
 
 #local library
 use aliased 'Packages::Events::Event';
+use aliased 'Widgets::Forms::SimpleDrawing::Enums';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -31,9 +32,8 @@ sub new {
 	$self->__SetLayout();
 
 	my %drawData = ();
-	$self->{"drawData"} = \%drawData;
-	
-	$self->{"drawData"}->{"topPcb"} = 0;
+	$self->{"data"} = \%drawData;
+	#$self->{"data"}->{"topPcb"} = 0;
 
 	#Wx::Event::EVT_PAINT($self,\&paint);
 
@@ -47,37 +47,33 @@ sub new {
 #  Public methods
 #-------------------------------------------------------------------------------------------#
 
-sub SetStencilSize {
+sub DataChanged {
 	my $self   = shift;
-	my $width  = shift;
-	my $height = shift;
-
-	$self->{"drawData"}->{"width"}  = $width;
-	$self->{"drawData"}->{"height"} = $height;
-	
-	
-	$self->RefreshDrawing();
-}
-
-sub SetTopPcbPos {
-	my $self   = shift;
-	my $startX = shift;
-	my $startY = shift;
-	my $endX   = shift;
-	my $endY   = shift;
-
-	my %topPcb = ();
-
-	$self->{"drawData"}->{"topPcb"} = \%topPcb;
-
-	$self->{"drawData"}->{"topPcb"}->{"startX"} = $startX;
-	$self->{"drawData"}->{"topPcb"}->{"startY"} = $startY;
-	$self->{"drawData"}->{"topPcb"}->{"endX"}   = $endX;
-	$self->{"drawData"}->{"topPcb"}->{"endY"}   = $endY;
-
+	my $newData  = shift;
 	 
+	$self->{"data"} = $newData;
+ 
 	$self->RefreshDrawing();
 }
+
+#sub SetTopPcbPos {
+#	my $self   = shift;
+#	my $startX = shift;
+#	my $startY = shift;
+#	my $endX   = shift;
+#	my $endY   = shift;
+#
+#	my %topPcb = ();
+#
+#	$self->{"data"}->{"topPcb"} = \%topPcb;
+#
+#	$self->{"data"}->{"topPcb"}->{"startX"} = $startX;
+#	$self->{"data"}->{"topPcb"}->{"startY"} = $startY;
+#	$self->{"data"}->{"topPcb"}->{"endX"}   = $endX;
+#	$self->{"data"}->{"topPcb"}->{"endY"}   = $endY;
+#
+#	$self->RefreshDrawing();
+#}
 
 #-------------------------------------------------------------------------------------------#
 #  Private methods
@@ -85,50 +81,58 @@ sub SetTopPcbPos {
 
 sub __SetLayout {
 	my $self = shift;
-
+ 
 	# Set drawing background
+	
+	$self->SetOrigin(20, 20);
 
 	my $backgClr = Wx::Colour->new( 252, 252, 252 );
-	my $backgBrush = Wx::Brush->new( Wx::Colour->new( 235, 235, 235 ), &Wx::wxBRUSHSTYLE_CROSS_HATCH  );
+	my $backgBrush = Wx::Brush->new( Wx::Colour->new( 235, 235, 235 ), &Wx::wxBRUSHSTYLE_CROSS_HATCH );
 	$self->SetBackgroundBrush( $backgClr, $backgBrush );
 
 	# Create layers
 
 	# --- Stencil dimension ---
 	my $stencilDim = $self->AddLayer( "stencilDim", sub { $self->__DrawStencilDim(@_) } );
-	$stencilDim->SetBrush( Wx::Brush->new( 'green', &Wx::wxBRUSHSTYLE_TRANSPARENT  ) );
+	$stencilDim->SetBrush( Wx::Brush->new( 'green', &Wx::wxBRUSHSTYLE_TRANSPARENT ) );
 
 	# --- Top pcb ---
 	my $topPcb = $self->AddLayer( "topPcb", sub { $self->__DrawTopPcb(@_) } );
 	$topPcb->SetBrush( Wx::Brush->new( 'red', &Wx::wxBRUSHSTYLE_BDIAGONAL_HATCH ) );
 	
 	
+
 }
 
 sub __DrawStencilDim {
 	my $self = shift;
-	my $dc = shift;
+	my $dc   = shift;
 
 	my $l = $self->GetLayer("stencilDim");
 
 	#$l->{"DC"}->Clear();
-	$l->DrawRectangle( $dc, 10, 10, $self->{"drawData"}->{"width"}, $self->{"drawData"}->{"height"} );
+ 
+	$l->DrawRectangle( $dc, 0, 0, $self->{"data"}->{"width"}, $self->{"data"}->{"height"} );
 
 }
 
 sub __DrawTopPcb {
 	my $self = shift;
-	my $dc = shift;
+	my $dc   = shift;
 
-	unless($self->{"drawData"}->{"topPcb"}){
+	my $d = $self->{"data"}->{"topPcb"};
+
+	unless ( $d->{"exists"}) {
 		return 0;
 	}
 
 	my $l = $self->GetLayer("topPcb");
-
-	#$l->{"DC"}->Clear();
-	$l->DrawRectangle($dc,  $self->{"drawData"}->{"topPcb"}->{"startX"}, $self->{"drawData"}->{"topPcb"}->{"startY"},
-					   $self->{"drawData"}->{"topPcb"}->{"endX"},   $self->{"drawData"}->{"topPcb"}->{"endY"} );
+ 
+	$l->DrawRectangle( $dc,
+					   $d->{"posX"},
+					   $d->{"posY"},
+					   $d->{"posX"} + $d->{"width"},
+					   $d->{"posY"} + $d->{"height"});
 
 }
 
