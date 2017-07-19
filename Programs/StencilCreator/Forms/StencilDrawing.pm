@@ -94,11 +94,15 @@ sub __SetLayout {
 
 	# --- Stencil dimension ---
 	my $stencilDim = $self->AddLayer( "stencilDim", sub { $self->__DrawStencilDim(@_) } );
-	$stencilDim->SetBrush( Wx::Brush->new( 'green', &Wx::wxBRUSHSTYLE_TRANSPARENT ) );
+	$stencilDim->SetBrush( Wx::Brush->new( 'black', &Wx::wxBRUSHSTYLE_TRANSPARENT ) );
 
 	# --- Top pcb ---
 	my $topPcb = $self->AddLayer( "topPcb", sub { $self->__DrawTopPcb(@_) } );
 	$topPcb->SetBrush( Wx::Brush->new( 'red', &Wx::wxBRUSHSTYLE_BDIAGONAL_HATCH ) );
+	
+	# --- Top pcb ---
+	my $botPcb = $self->AddLayer( "botPcb", sub { $self->__DrawBotPcb(@_) } );
+	$botPcb->SetBrush( Wx::Brush->new( 'green', &Wx::wxBRUSHSTYLE_BDIAGONAL_HATCH ) );
 	
 	
 
@@ -108,11 +112,15 @@ sub __DrawStencilDim {
 	my $self = shift;
 	my $dc   = shift;
 
+	if(!defined $self->{"data"}->{"w"} || !defined $self->{"data"}->{"h"}){
+		return 0;
+	}
+
 	my $l = $self->GetLayer("stencilDim");
 
 	#$l->{"DC"}->Clear();
  
-	$l->DrawRectangle( $dc, 0, 0, $self->{"data"}->{"width"}, $self->{"data"}->{"height"} );
+	$l->DrawRectangle( $dc, 0, 0, $self->{"data"}->{"w"}, $self->{"data"}->{"h"} );
 
 }
 
@@ -131,8 +139,28 @@ sub __DrawTopPcb {
 	$l->DrawRectangle( $dc,
 					   $d->{"posX"},
 					   $d->{"posY"},
-					   $d->{"posX"} + $d->{"width"},
-					   $d->{"posY"} + $d->{"height"});
+					   $d->{"w"},
+					   $d->{"h"});
+
+}
+
+sub __DrawBotPcb {
+	my $self = shift;
+	my $dc   = shift;
+
+	my $d = $self->{"data"}->{"botPcb"};
+
+	unless ( $d->{"exists"}) {
+		return 0;
+	}
+
+	my $l = $self->GetLayer("botPcb");
+ 
+	$l->DrawRectangle( $dc,
+					   $d->{"posX"},
+					   $d->{"posY"},
+				  		 $d->{"w"},
+					   $d->{"h"});
 
 }
 

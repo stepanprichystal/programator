@@ -45,7 +45,9 @@ sub OnlineWrite_order {
 	);
 
 	if ( $result =~ /FAIL/ ) {
-		die HeliosException->new( EnumsErrors->HELIOSDBWRITEERROR , "No details");
+		
+		print STDERR $result;
+		die HeliosException->new( EnumsErrors->HELIOSDBWRITEERROR , $result);
 	}
 
 	return $result;
@@ -68,6 +70,8 @@ sub OnlineWrite_pcb {
 
 	if ( $result =~ /FAIL/ )
 	{
+		
+		print STDERR $result;
 		die HeliosException->new( EnumsErrors->HELIOSDBWRITEERROR, $result );
 	}
 

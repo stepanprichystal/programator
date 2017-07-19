@@ -74,24 +74,24 @@ sub Run {
 		# 1) store step profile size
 		my %profLim = CamJob->GetProfileLimits2( $inCAM, $jobId, $stepName );
 
-		$size{"width"}  = abs( $profLim{"xMax"} - $profLim{"xMin"} );
-		$size{"height"} = abs( $profLim{"yMax"} - $profLim{"yMin"} );
+		$size{"w"}  = abs( $profLim{"xMax"} - $profLim{"xMin"} );
+		$size{"h"} = abs( $profLim{"yMax"} - $profLim{"yMin"} );
 
 		# store layer data size for sa..., sb... layers
 		if ($topLayer) {
 
 			my %layerLim = CamJob->GetLayerLimits2( $inCAM, $jobId, $stepName, $topLayer->{"gROWname"} );
 			my %layerSize = ();
-			$layerSize{"width"}  = abs( $layerLim{"xMax"} - $layerLim{"xMin"} );
-			$layerSize{"height"} = abs( $layerLim{"yMax"} - $layerLim{"yMin"} );
+			$layerSize{"w"}  = abs( $layerLim{"xMax"} - $layerLim{"xMin"} );
+			$layerSize{"h"} = abs( $layerLim{"yMax"} - $layerLim{"yMin"} );
 			$size{"top"}         = \%layerSize;
 		}
 		if ($botLayer) {
 
 			my %layerLim = CamJob->GetLayerLimits2( $inCAM, $jobId, $stepName, $botLayer->{"gROWname"} );
 			my %layerSize = ();
-			$layerSize{"width"}  = abs( $layerLim{"xMax"} - $layerLim{"xMin"} );
-			$layerSize{"height"} = abs( $layerLim{"yMax"} - $layerLim{"yMin"} );
+			$layerSize{"w"}  = abs( $layerLim{"xMax"} - $layerLim{"xMin"} );
+			$layerSize{"h"} = abs( $layerLim{"yMax"} - $layerLim{"yMin"} );
 			$size{"bot"}         = \%layerSize;
 		}
 
@@ -99,6 +99,9 @@ sub Run {
 	}
 
 	$self->{"form"}->Init( \%stepsSize, \@steps, defined $topLayer ? 1 : 0, defined $botLayer  ? 1 : 0 );
+
+
+	
 
 	$self->{"form"}->{"mainFrm"}->Show();
 

@@ -15,6 +15,7 @@ use Wx;
 
 use aliased 'Packages::InCAM::InCAM';
 use aliased 'Programs::StencilCreator::Forms::StencilDrawing';
+use aliased 'Programs::StencilCreator::Enums';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -54,6 +55,9 @@ sub Init {
 	$self->{"botExist"}  = $sbExist;
 	
 	$self->__SetLayout();
+	
+	$self->__OnDataChanged();
+ 
 }
 
 sub OnInit {
@@ -112,19 +116,19 @@ sub SetStencilType {
 sub GetStencilSize {
 	my $self = shift;
 
-	my %size = ( "width" => 0, "height" => 0 );
+	my %size = ( "w" => 0, "h" => 0 );
 
 	my $sVal = $self->{"sizeCb"}->GetValue();
 
 	if ( $sVal =~ /custom/ ) {
 
-		$size{"width"}  = $self->{"sizeXTextCtrl"};
-		$size{"height"} = $self->{"sizeYTextCtrl"};
+		$size{"w"}  = $self->{"sizeXTextCtrl"};
+		$size{"h"} = $self->{"sizeYTextCtrl"};
 
 	}
 	else {
 
-		( $size{"width"}, $size{"height"} ) = $sVal =~ /(\d+)mm\s*x\s*(\d+)mm/i;
+		( $size{"w"}, $size{"h"} ) = $sVal =~ /(\d+)mm\s*x\s*(\d+)mm/i;
 	}
 
 	return %size;
@@ -228,25 +232,25 @@ sub __PrepareDrawData {
 
 	# Size of stencil
 	my %size = $self->GetStencilSize();
-	$d{"width"}  = $size{"width"};
-	$d{"height"} = $size{"height"};
+	$d{"w"}  = $size{"w"};
+	$d{"h"} = $size{"h"};
 
 	# Step
 	$d{"step"} = $self->GetStencilStep();
 
 	# Set profile and data size TOP + BOT
 	if ( $d{"topPcb"}{"exists"} ) {
-		$d{"topPcb"}->{"w"}     = $self->{"stepsSize"}->{ $d{"step"} }->{"width"};
-		$d{"topPcb"}->{"h"}     = $self->{"stepsSize"}->{ $d{"step"} }->{"width"};
-		$d{"topPcb"}->{"wData"} = $self->{"stepsSize"}->{ $d{"step"} }->{"top"}->{"width"};
-		$d{"topPcb"}->{"hData"} = $self->{"stepsSize"}->{ $d{"step"} }->{"top"}->{"width"};
+		$d{"topPcb"}->{"w"}     = $self->{"stepsSize"}->{ $d{"step"} }->{"w"};
+		$d{"topPcb"}->{"h"}     = $self->{"stepsSize"}->{ $d{"step"} }->{"h"};
+		$d{"topPcb"}->{"wData"} = $self->{"stepsSize"}->{ $d{"step"} }->{"top"}->{"w"};
+		$d{"topPcb"}->{"hData"} = $self->{"stepsSize"}->{ $d{"step"} }->{"top"}->{"h"};
 	}
 
 	if ( $d{"botPcb"}{"exists"} ) {
-		$d{"botPcb"}->{"w"}     = $self->{"stepsSize"}->{ $d{"step"} }->{"width"};
-		$d{"botPcb"}->{"h"}     = $self->{"stepsSize"}->{ $d{"step"} }->{"width"};
-		$d{"botPcb"}->{"wData"} = $self->{"stepsSize"}->{ $d{"step"} }->{"bot"}->{"width"};
-		$d{"botPcb"}->{"hData"} = $self->{"stepsSize"}->{ $d{"step"} }->{"bot"}->{"width"};
+		$d{"botPcb"}->{"w"}     = $self->{"stepsSize"}->{ $d{"step"} }->{"w"};
+		$d{"botPcb"}->{"h"}     = $self->{"stepsSize"}->{ $d{"step"} }->{"h"};
+		$d{"botPcb"}->{"wData"} = $self->{"stepsSize"}->{ $d{"step"} }->{"bot"}->{"w"};
+		$d{"botPcb"}->{"hData"} = $self->{"stepsSize"}->{ $d{"step"} }->{"bot"}->{"h"};
 	}
 
 	# Compute positons of paste profile, siye
@@ -255,27 +259,27 @@ sub __PrepareDrawData {
  
  	# profile to profile
  	if($spacingType == 0){
- 		my $posX =  ($d{"width"} - $d{"topPcb"}->{"w"}) /2;
+ 		my $posX =  ($d{"w"} - $d{"topPcb"}->{"w"}) /2;
  
  		# compute position with actual spacing
  		if ( $typeVal eq "both") {
  
- 			$d{"topPcb"}->{"posX"} = ($d{"width"} - $d{"topPcb"}->{"w"}) /2;
- 			$d{"topPcb"}->{"posY"} = $d{"height"}/2 + $spacing/2;
- 			$d{"topPcb"}->{"posX"} = ($d{"width"} - $d{"topPcb"}->{"w"}) /2;
- 			$d{"topPcb"}->{"posY"} = $d{"height"}/2 - ($spacing/2 +$d{"botPcb"}->{"h"});
+ 			$d{"topPcb"}->{"posX"} = ($d{"w"} - $d{"topPcb"}->{"w"}) /2;
+ 			$d{"topPcb"}->{"posY"} = $d{"h"}/2 + $spacing/2;
+ 			$d{"topPcb"}->{"posX"} = ($d{"w"} - $d{"topPcb"}->{"w"}) /2;
+ 			$d{"topPcb"}->{"posY"} = $d{"h"}/2 - ($spacing/2 +$d{"botPcb"}->{"h"});
  			
  		}
  		# centre pcb vertical
  		elsif($typeVal eq "top"){
  			
- 			$d{"topPcb"}->{"posX"} = ($d{"width"} - $d{"topPcb"}->{"w"}) /2;
- 			$d{"topPcb"}->{"posY"} = $d{"height"}/2 - ($d{"topPcb"}->{"h"} /2);
+ 			$d{"topPcb"}->{"posX"} = ($d{"w"} - $d{"topPcb"}->{"w"}) /2;
+ 			$d{"topPcb"}->{"posY"} = $d{"h"}/2 - ($d{"topPcb"}->{"h"} /2);
  			
  		}elsif($typeVal eq "bot"){
  			
- 			$d{"botPcb"}->{"posX"} = ($d{"width"} - $d{"botPcb"}->{"w"}) /2;
- 			$d{"botPcb"}->{"posY"} = $d{"height"}/2 - ($d{"botPcb"}->{"h"} /2);
+ 			$d{"botPcb"}->{"posX"} = ($d{"w"} - $d{"botPcb"}->{"w"}) /2;
+ 			$d{"botPcb"}->{"posY"} = $d{"h"}/2 - ($d{"botPcb"}->{"h"} /2);
  		}
  	}
  
@@ -285,10 +289,10 @@ sub __PrepareDrawData {
 sub __PrepareClick {
 	my $self = shift;
 #
-#	if ( $size{"width"} !~ /\d+/ || $size{"width"} = 0 ) {
+#	if ( $size{"w"} !~ /\d+/ || $size{"w"} = 0 ) {
 #		die "wrong stencil X size";
 #	}
-#	if ( $size{"height"} !~ /\d+/ || $size{"height"} = 0 ) {
+#	if ( $size{"h"} !~ /\d+/ || $size{"h"} = 0 ) {
 #		die "wrong stencil Y size";
 #	}
 }
@@ -353,9 +357,9 @@ sub __SetLayoutGeneral {
 	my $typeTxt = Wx::StaticText->new( $statBox, -1, "Type", &Wx::wxDefaultPosition, [ 120, 22 ] );
 
 	my @types = ();
-	push( @types, "Top" )       if ( $self->{"topExist"} );
-	push( @types, "Bot" )       if ( $self->{"botExist"} );
-	push( @types, "Top + Bot" ) if ( $self->{"topExist"} && $self->{"botExist"} );
+	push( @types, Enums->StencilType_TOP )       if ( $self->{"topExist"} );
+	push( @types, Enums->StencilType_BOT )       if ( $self->{"botExist"} );
+	push( @types, Enums->StencilType_TOPBOT ) if ( $self->{"topExist"} && $self->{"botExist"} );
 	my $stencilTypeCb = Wx::ComboBox->new( $statBox, -1, $types[0], &Wx::wxDefaultPosition, [ 70, 22 ], \@types, &Wx::wxCB_READONLY );
 
 	my $stepTxt = Wx::StaticText->new( $statBox, -1, "Step", &Wx::wxDefaultPosition, [ 120, 22 ] );
@@ -501,7 +505,7 @@ sub __SetLayoutOther {
 	# DEFINE CONTROLS
 
 	my $spacingTypeTxt  = Wx::StaticText->new( $statBox, -1, "Spacing type", &Wx::wxDefaultPosition, [ 120, 22 ] );
-	my @types = ("Profile to profile", "Pad to pad"); 
+	my @types = (Enums->Spacing_PROF2PROF, Enums->Spacing_DATA2DATA); 
 	my $spacingTypeCb   = Wx::ComboBox->new( $statBox, -1, $types[0], &Wx::wxDefaultPosition, [ 70, 22 ], \@types, &Wx::wxCB_READONLY );
 
 	my $spacingTxt  = Wx::StaticText->new( $statBox, -1, "Spacing", &Wx::wxDefaultPosition, [ 120, 22 ] );

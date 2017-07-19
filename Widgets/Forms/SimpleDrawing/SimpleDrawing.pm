@@ -244,8 +244,8 @@ sub __Paint {
 	}
 
 
-	 $dc->SetBrush( Wx::Brush->new( 'red', &Wx::wxBRUSHSTYLE_BDIAGONAL_HATCH ));
-	 $dc->DrawRectangle( 0, 0, 300, 500 );
+	# $dc->SetBrush( Wx::Brush->new( 'red', &Wx::wxBRUSHSTYLE_BDIAGONAL_HATCH ));
+	# $dc->DrawRectangle( 0, 0, 300, 500 );
 	 
  
 
@@ -254,12 +254,12 @@ sub __Paint {
 	#$dc->SetBackground(Wx::Brush->new('red', 115  ));
 	#$dc->Clear();
 
-#	foreach ( keys %{ $self->{"layers"} } ) {
-#
-#		my $sub = $self->{"layers"}->{$_}->{"drawSub"};
-#
-#		$sub->($dc)
-#	}
+	foreach ( keys %{ $self->{"layers"} } ) {
+
+		my $sub = $self->{"layers"}->{$_}->{"drawSub"};
+
+		$sub->($dc)
+	}
 
 	
 	 
