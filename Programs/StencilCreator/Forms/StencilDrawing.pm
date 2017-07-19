@@ -14,15 +14,16 @@ use List::Util qw[min max];
 
 #local library
 use aliased 'Packages::Events::Event';
-use aliased 'Widgets::Forms::SimpleDrawing::Enums';
+use aliased 'Programs::StencilCreator::Enums';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
 sub new {
-	my $class     = shift;
-	my $parent    = shift;
-	my $dimension = shift;
+	my $class      = shift;
+	my $parent     = shift;
+	my $dimension  = shift;
+	my $layoutMngr = shift;
 
 	my $self = $class->SUPER::new( $parent, $dimension );
 
@@ -31,8 +32,8 @@ sub new {
 	# Items references
 	$self->__SetLayout();
 
-	my %drawData = ();
-	$self->{"data"} = \%drawData;
+	$self->{"layoutMngr"} = $layoutMngr;
+
 	#$self->{"data"}->{"topPcb"} = 0;
 
 	#Wx::Event::EVT_PAINT($self,\&paint);
@@ -48,11 +49,8 @@ sub new {
 #-------------------------------------------------------------------------------------------#
 
 sub DataChanged {
-	my $self   = shift;
-	my $newData  = shift;
-	 
-	$self->{"data"} = $newData;
- 
+	my $self = shift;
+
 	$self->RefreshDrawing();
 }
 
@@ -81,10 +79,10 @@ sub DataChanged {
 
 sub __SetLayout {
 	my $self = shift;
- 
+
 	# Set drawing background
-	
-	$self->SetOrigin(20, 20);
+
+	$self->SetOrigin( 20, 20 );
 
 	my $backgClr = Wx::Colour->new( 252, 252, 252 );
 	my $backgBrush = Wx::Brush->new( Wx::Colour->new( 235, 235, 235 ), &Wx::wxBRUSHSTYLE_CROSS_HATCH );
@@ -93,34 +91,28 @@ sub __SetLayout {
 	# Create layers
 
 	# --- Stencil dimension ---
-	my $stencilDim = $self->AddLayer( "stencilDim", sub { $self->__DrawStencilDim(@_) } );
-	$stencilDim->SetBrush( Wx::Brush->new( 'black', &Wx::wxBRUSHSTYLE_TRANSPARENT ) );
+	my $stencilDim = $self->AddLayer(  sub { $self->__DrawStencilDim(@_) } );
+ 
 
 	# --- Top pcb ---
-	my $topPcb = $self->AddLayer( "topPcb", sub { $self->__DrawTopPcb(@_) } );
-	$topPcb->SetBrush( Wx::Brush->new( 'red', &Wx::wxBRUSHSTYLE_BDIAGONAL_HATCH ) );
+	my $topPcb = $self->AddLayer(  sub { $self->__DrawTopPcb(@_) } );
 	
-	# --- Top pcb ---
-	my $botPcb = $self->AddLayer( "botPcb", sub { $self->__DrawBotPcb(@_) } );
-	$botPcb->SetBrush( Wx::Brush->new( 'green', &Wx::wxBRUSHSTYLE_BDIAGONAL_HATCH ) );
-	
-	
-
+	# --- Bot pcb ---
+	my $botPcb = $self->AddLayer(   sub { $self->__DrawBotPcb(@_) } );
+	 
 }
 
 sub __DrawStencilDim {
 	my $self = shift;
 	my $dc   = shift;
 
-	if(!defined $self->{"data"}->{"w"} || !defined $self->{"data"}->{"h"}){
+	if ( !defined $self->{"layoutMngr"}->GetWidth() || !defined $self->{"layoutMngr"}->GetHeight() ) {
 		return 0;
 	}
 
-	my $l = $self->GetLayer("stencilDim");
-
-	#$l->{"DC"}->Clear();
+	$dc->SetBrush( Wx::Brush->new( 'black', &Wx::wxBRUSHSTYLE_TRANSPARENT ) );
  
-	$l->DrawRectangle( $dc, 0, 0, $self->{"data"}->{"w"}, $self->{"data"}->{"h"} );
+	$dc->DrawRectangle( 0, 0, $self->{"layoutMngr"}->GetWidth(), $self->{"layoutMngr"}->GetHeight() );
 
 }
 
@@ -128,40 +120,61 @@ sub __DrawTopPcb {
 	my $self = shift;
 	my $dc   = shift;
 
-	my $d = $self->{"data"}->{"topPcb"};
+	my $st = $self->{"layoutMngr"}->GetStencilType();
 
-	unless ( $d->{"exists"}) {
+	if ( $st ne Enums->StencilType_TOP && $st ne Enums->StencilType_TOPBOT ) {
 		return 0;
 	}
+	
+	# 1) Draw profile
+	my $topProf    = $self->{"layoutMngr"}->GetTopProfile();
+	my %topProfPos = $self->{"layoutMngr"}->GetTopProfilePos();
 
-	my $l = $self->GetLayer("topPcb");
- 
-	$l->DrawRectangle( $dc,
-					   $d->{"posX"},
-					   $d->{"posY"},
-					   $d->{"w"},
-					   $d->{"h"});
-
+ 	$dc->SetBrush( Wx::Brush->new( 'red', &Wx::wxBRUSHSTYLE_BDIAGONAL_HATCH ) );
+	$dc->DrawRectangle(  $topProfPos{"x"}, $topProfPos{"y"}, $topProf->GetWidth(), $topProf->GetHeight() );
+	
+	# 2) Draf limits of paste data
+	my %pdOri = $topProf->GetPDOrigin();
+	
+	$dc->SetBrush( Wx::Brush->new( 'black',  &Wx::wxBRUSHSTYLE_TRANSPARENT ) );
+	
+	
+	$dc->SetPen(Wx::Pen->new( 'blue',  &Wx::wxPENSTYLE_SHORT_DASH ));
+	
+#	# left
+#	$dc->DrawLine($topProfPos{"x"} + $pdOri{"x"}, $topProfPos{"x"} + $pdOri{"x"}, $topProfPos{"x"} + $pdOri{"x"}, $topProf->GetPasteData()->GetHeight());
+#	
+#	# bot
+#	$dc->DrawLine($topProfPos{"x"} + $pdOri{"x"}, $topProf->GetPasteData()->GetHeight(), $topProf->GetPasteData()->GetWidth(), $topProf->GetPasteData()->GetHeight());
+#	
+#	#right
+#	$dc->DrawLine($topProf->GetPasteData()->GetWidth(), $topProf->GetPasteData()->GetHeight(), $topProf->GetPasteData()->GetWidth(), $topProfPos{"x"} + $pdOri{"x"});
+#	 
+	#$dc->DrawRectangle(  $topProfPos{"x"} + $pdOri{"x"},  $topProfPos{"x"} + $pdOri{"x"},  $topProf->GetPasteData()->GetWidth(), $topProf->GetPasteData()->GetHeight() );
 }
 
 sub __DrawBotPcb {
 	my $self = shift;
 	my $dc   = shift;
 
-	my $d = $self->{"data"}->{"botPcb"};
+	my $st = $self->{"layoutMngr"}->GetStencilType();
 
-	unless ( $d->{"exists"}) {
+	if ( $st ne Enums->StencilType_BOT && $st ne Enums->StencilType_TOPBOT ) {
 		return 0;
 	}
+	
+	# 1) Draw profile
+	my $botProf    = $self->{"layoutMngr"}->GetBotProfile();
+	my %botProfPos = $self->{"layoutMngr"}->GetBotProfilePos();
 
-	my $l = $self->GetLayer("botPcb");
- 
-	$l->DrawRectangle( $dc,
-					   $d->{"posX"},
-					   $d->{"posY"},
-				  		 $d->{"w"},
-					   $d->{"h"});
-
+ 	$dc->SetBrush( Wx::Brush->new( 'green', &Wx::wxBRUSHSTYLE_BDIAGONAL_HATCH ) );
+	$dc->DrawRectangle(  $botProfPos{"x"}, $botProfPos{"y"}, $botProf->GetWidth(), $botProf->GetHeight() );
+	
+	# 2) Draf limits of paste data
+	my %pdOri = $botProf->GetPDOrigin();
+	
+	$dc->SetBrush( Wx::Brush->new( 'black',  &Wx::wxBRUSHSTYLE_TRANSPARENT ) );
+	$dc->DrawRectangle( $botProfPos{"x"} + $pdOri{"x"},  $botProfPos{"y"} + $pdOri{"y"},  $botProf->GetPasteData()->GetWidth(), $botProf->GetPasteData()->GetHeight() );
 }
 
 #-------------------------------------------------------------------------------------------#

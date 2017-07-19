@@ -16,6 +16,9 @@ use Wx;
 use aliased 'Packages::InCAM::InCAM';
 use aliased 'Programs::StencilCreator::Forms::StencilDrawing';
 use aliased 'Programs::StencilCreator::Enums';
+use aliased 'Programs::StencilCreator::Forms::Layout::LayoutMngr';
+use aliased 'Programs::StencilCreator::Forms::Layout::PasteProfile';
+use aliased 'Programs::StencilCreator::Forms::Layout::PasteData';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -33,11 +36,12 @@ sub new {
 	bless($self);
 
 	# Properties
-	$self->{"inCAM"} = $inCAM;
-	$self->{"jobId"} = $jobId;
+	$self->{"inCAM"}      = $inCAM;
+	$self->{"jobId"}      = $jobId;
+	$self->{"layoutMngr"} = LayoutMngr->new();
 
 	# Load layer data, dimension etc
- 
+
 	return $self;
 }
 
@@ -53,11 +57,11 @@ sub Init {
 	$self->{"steps"}     = $steps;
 	$self->{"topExist"}  = $saExist;
 	$self->{"botExist"}  = $sbExist;
-	
+
 	$self->__SetLayout();
-	
+
 	$self->__OnDataChanged();
- 
+
 }
 
 sub OnInit {
@@ -74,26 +78,8 @@ sub GetStencilType {
 	my $self = shift;
 
 	my $tVal = $self->{"stencilTypeCb"}->GetValue();
-	my ( %topPcb, %botPcb ) = ( "exist" => 0 );
 
-	my $result = undef;
-
-	if ( $tVal =~ /top/i && $tVal =~ /bot/i ) {
-
-		$result = "both";
-
-	}
-	elsif ( $tVal =~ /top/i ) {
-
-		$result = "top";
-
-	}
-	elsif ( $tVal =~ /bot/i ) {
-
-		$result = "bot";
-	}
-
-	return $result;
+	return $tVal;
 }
 
 sub SetStencilType {
@@ -122,7 +108,7 @@ sub GetStencilSize {
 
 	if ( $sVal =~ /custom/ ) {
 
-		$size{"w"}  = $self->{"sizeXTextCtrl"};
+		$size{"w"} = $self->{"sizeXTextCtrl"};
 		$size{"h"} = $self->{"sizeYTextCtrl"};
 
 	}
@@ -173,30 +159,44 @@ sub GetSpacing {
 }
 
 sub SetSpacing {
-	my $self = shift;
+	my $self    = shift;
 	my $spacing = shift;
-	
+
 	$self->{"spacingCtrl"}->SetValue($spacing);
 }
 
+# Spacing between stencil type
 # 1 - profile2profile
 # 2- pad2pad
 sub GetSpacingType {
 	my $self = shift;
 
-	
-
-	return $self->{"spacingTypeCb"}->GetSelection();
+	return $self->{"spacingTypeCb"}->GetValue();
 }
-
-# 1 - profile2profile
-# 2- pad2pad
+ 
 sub SetSpacingType {
 	my $self = shift;
 	my $type = shift;
-	
-	$self->{"spacingTypeCb"}->SetSelection($type, $type);
+
+	$self->{"spacingTypeCb"}->SetValue( $type, $type );
 }
+
+# Horiyontal aligment type
+sub GetHCenterType {
+	my $self = shift;
+
+	return $self->{"hCenterTypeCb"}->GetValue();
+}
+
+ 
+sub SetHCenterType {
+	my $self = shift;
+	my $type = shift;
+
+	$self->{"hCenterTypeCb"}->SetValue( $type );
+}
+
+
 #-------------------------------------------------------------------------------------------#
 #  Private methods
 #-------------------------------------------------------------------------------------------#
@@ -204,97 +204,145 @@ sub SetSpacingType {
 sub __OnDataChanged {
 	my $self = shift;
 
-	$self->{"drawing"}->DataChanged($self->__PrepareDrawData());
-}
+	# Update Layout manager
 
-sub __PrepareDrawData {
-	my $self = shift;
+	# 1) update type of stencil
+	my $stencilType = $self->GetStencilType();
+	$self->{"layoutMngr"}->SetStencilType($stencilType);
 
-	my %d = ();
+	# 2) update profile data
+	my $stencilStep = $self->GetStencilStep();
 
-	# Type of stencil
-	my $typeVal = $self->GetStencilType();
-	my ( %topPcb, %botPcb ) = ( "exist" => 0 );
+	if ( $self->{"topExist"}) {
 
-	$d{"topPcb"} = \%topPcb;
-	$d{"botPcb"} = \%botPcb;
-
-	if ( $typeVal =~ /top/i ) {
-		$d{"topPcb"}{"exists"} = 1;
-	
-	}elsif ( $typeVal =~ /bot/i ) {
-		$d{"botPcb"}{"exist"} = 1;
-	
-	}elsif( $typeVal =~ /both/i ) {
-		$d{"topPcb"}{"exists"} = 1;
-		$d{"botPcb"}{"exists"} = 1;
+		my $pd = PasteData->new( $self->{"stepsSize"}->{$stencilStep}->{"top"}->{"w"}, $self->{"stepsSize"}->{$stencilStep}->{"top"}->{"h"} );
+		my $pp = PasteProfile->new( $self->{"stepsSize"}->{$stencilStep}->{"w"}, $self->{"stepsSize"}->{$stencilStep}->{"h"} );
+ 
+		$pp->SetPasteData($pd, $self->{"stepsSize"}->{$stencilStep}->{"top"}->{"x"}, $self->{"stepsSize"}->{$stencilStep}->{"top"}->{"y"});
+		
+		$self->{"layoutMngr"}->SetTopProfile($pp);
 	}
+	
+	if ( $self->{"botExist"}) {
 
-	# Size of stencil
+		my $pd = PasteData->new( $self->{"stepsSize"}->{$stencilStep}->{"top"}->{"w"}, $self->{"stepsSize"}->{$stencilStep}->{"top"}->{"h"} );
+		my $pp = PasteProfile->new( $self->{"stepsSize"}->{$stencilStep}->{"w"}, $self->{"stepsSize"}->{$stencilStep}->{"h"} );
+		
+		$pp->SetPasteData($pd, $self->{"stepsSize"}->{$stencilStep}->{"top"}->{"x"}, $self->{"stepsSize"}->{$stencilStep}->{"top"}->{"y"});
+		
+		$self->{"layoutMngr"}->SetTopProfile($pp);
+	}
+	
+	# 3)update stencil size
+	
 	my %size = $self->GetStencilSize();
-	$d{"w"}  = $size{"w"};
-	$d{"h"} = $size{"h"};
+	$self->{"layoutMngr"}->SetWidth($size{"w"});
+	$self->{"layoutMngr"}->SetHeight($size{"h"});
+	
+	# 4) Set spacing 
+	$self->{"layoutMngr"}->SetSpacing( $self->GetSpacing());
+	$self->{"layoutMngr"}->SetSpacingType( $self->GetSpacingType());
+	
+	# 5)Set horiyontal aligment type
+	$self->{"layoutMngr"}->SetHCenterType( $self->GetHCenterType());
+	
+ 	$self->{"layoutMngr"}->Inited();
 
-	# Step
-	$d{"step"} = $self->GetStencilStep();
-
-	# Set profile and data size TOP + BOT
-	if ( $d{"topPcb"}{"exists"} ) {
-		$d{"topPcb"}->{"w"}     = $self->{"stepsSize"}->{ $d{"step"} }->{"w"};
-		$d{"topPcb"}->{"h"}     = $self->{"stepsSize"}->{ $d{"step"} }->{"h"};
-		$d{"topPcb"}->{"wData"} = $self->{"stepsSize"}->{ $d{"step"} }->{"top"}->{"w"};
-		$d{"topPcb"}->{"hData"} = $self->{"stepsSize"}->{ $d{"step"} }->{"top"}->{"h"};
-	}
-
-	if ( $d{"botPcb"}{"exists"} ) {
-		$d{"botPcb"}->{"w"}     = $self->{"stepsSize"}->{ $d{"step"} }->{"w"};
-		$d{"botPcb"}->{"h"}     = $self->{"stepsSize"}->{ $d{"step"} }->{"h"};
-		$d{"botPcb"}->{"wData"} = $self->{"stepsSize"}->{ $d{"step"} }->{"bot"}->{"w"};
-		$d{"botPcb"}->{"hData"} = $self->{"stepsSize"}->{ $d{"step"} }->{"bot"}->{"h"};
-	}
-
-	# Compute positons of paste profile, siye
-	my $spacing = $self->GetSpacing();
-	my $spacingType = $self->GetSpacingType();
- 
- 	# profile to profile
- 	if($spacingType == 0){
- 		my $posX =  ($d{"w"} - $d{"topPcb"}->{"w"}) /2;
- 
- 		# compute position with actual spacing
- 		if ( $typeVal eq "both") {
- 
- 			$d{"topPcb"}->{"posX"} = ($d{"w"} - $d{"topPcb"}->{"w"}) /2;
- 			$d{"topPcb"}->{"posY"} = $d{"h"}/2 + $spacing/2;
- 			$d{"topPcb"}->{"posX"} = ($d{"w"} - $d{"topPcb"}->{"w"}) /2;
- 			$d{"topPcb"}->{"posY"} = $d{"h"}/2 - ($spacing/2 +$d{"botPcb"}->{"h"});
- 			
- 		}
- 		# centre pcb vertical
- 		elsif($typeVal eq "top"){
- 			
- 			$d{"topPcb"}->{"posX"} = ($d{"w"} - $d{"topPcb"}->{"w"}) /2;
- 			$d{"topPcb"}->{"posY"} = $d{"h"}/2 - ($d{"topPcb"}->{"h"} /2);
- 			
- 		}elsif($typeVal eq "bot"){
- 			
- 			$d{"botPcb"}->{"posX"} = ($d{"w"} - $d{"botPcb"}->{"w"}) /2;
- 			$d{"botPcb"}->{"posY"} = $d{"h"}/2 - ($d{"botPcb"}->{"h"} /2);
- 		}
- 	}
- 
-	 return \%d;
+	$self->{"drawing"}->DataChanged( $self->{"layoutMngr"} );
 }
+#
+#sub __PrepareDrawData {
+#	my $self = shift;
+#
+#	my %d = ();
+#
+#	# Type of stencil
+#	my $typeVal = $self->GetStencilType();
+#	my ( %topPcb, %botPcb ) = ( "exist" => 0 );
+#
+#	$d{"topPcb"} = \%topPcb;
+#	$d{"botPcb"} = \%botPcb;
+#
+#	if ( $typeVal =~ /top/i ) {
+#		$d{"topPcb"}{"exists"} = 1;
+#
+#	}
+#	elsif ( $typeVal =~ /bot/i ) {
+#		$d{"botPcb"}{"exist"} = 1;
+#
+#	}
+#	elsif ( $typeVal =~ /both/i ) {
+#		$d{"topPcb"}{"exists"} = 1;
+#		$d{"botPcb"}{"exists"} = 1;
+#	}
+#
+#	# Size of stencil
+#	my %size = $self->GetStencilSize();
+#	$d{"w"} = $size{"w"};
+#	$d{"h"} = $size{"h"};
+#
+#	# Step
+#	$d{"step"} = $self->GetStencilStep();
+#
+#	# Set profile and data size TOP + BOT
+#	if ( $d{"topPcb"}{"exists"} ) {
+#		$d{"topPcb"}->{"w"}     = $self->{"stepsSize"}->{ $d{"step"} }->{"w"};
+#		$d{"topPcb"}->{"h"}     = $self->{"stepsSize"}->{ $d{"step"} }->{"h"};
+#		$d{"topPcb"}->{"wData"} = $self->{"stepsSize"}->{ $d{"step"} }->{"top"}->{"w"};
+#		$d{"topPcb"}->{"hData"} = $self->{"stepsSize"}->{ $d{"step"} }->{"top"}->{"h"};
+#	}
+#
+#	if ( $d{"botPcb"}{"exists"} ) {
+#		$d{"botPcb"}->{"w"}     = $self->{"stepsSize"}->{ $d{"step"} }->{"w"};
+#		$d{"botPcb"}->{"h"}     = $self->{"stepsSize"}->{ $d{"step"} }->{"h"};
+#		$d{"botPcb"}->{"wData"} = $self->{"stepsSize"}->{ $d{"step"} }->{"bot"}->{"w"};
+#		$d{"botPcb"}->{"hData"} = $self->{"stepsSize"}->{ $d{"step"} }->{"bot"}->{"h"};
+#	}
+#
+#	# Compute positons of paste profile, siye
+#	my $spacing     = $self->GetSpacing();
+#	my $spacingType = $self->GetSpacingType();
+#
+#	# profile to profile
+#	if ( $spacingType == 0 ) {
+#		my $posX = ( $d{"w"} - $d{"topPcb"}->{"w"} ) / 2;
+#
+#		# compute position with actual spacing
+#		if ( $typeVal eq "both" ) {
+#
+#			$d{"topPcb"}->{"posX"} = ( $d{"w"} - $d{"topPcb"}->{"w"} ) / 2;
+#			$d{"topPcb"}->{"posY"} = $d{"h"} / 2 + $spacing / 2;
+#			$d{"topPcb"}->{"posX"} = ( $d{"w"} - $d{"topPcb"}->{"w"} ) / 2;
+#			$d{"topPcb"}->{"posY"} = $d{"h"} / 2 - ( $spacing / 2 + $d{"botPcb"}->{"h"} );
+#
+#		}
+#
+#		# centre pcb vertical
+#		elsif ( $typeVal eq "top" ) {
+#
+#			$d{"topPcb"}->{"posX"} = ( $d{"w"} - $d{"topPcb"}->{"w"} ) / 2;
+#			$d{"topPcb"}->{"posY"} = $d{"h"} / 2 - ( $d{"topPcb"}->{"h"} / 2 );
+#
+#		}
+#		elsif ( $typeVal eq "bot" ) {
+#
+#			$d{"botPcb"}->{"posX"} = ( $d{"w"} - $d{"botPcb"}->{"w"} ) / 2;
+#			$d{"botPcb"}->{"posY"} = $d{"h"} / 2 - ( $d{"botPcb"}->{"h"} / 2 );
+#		}
+#	}
+#
+#	return \%d;
+#}
 
 sub __PrepareClick {
 	my $self = shift;
-#
-#	if ( $size{"w"} !~ /\d+/ || $size{"w"} = 0 ) {
-#		die "wrong stencil X size";
-#	}
-#	if ( $size{"h"} !~ /\d+/ || $size{"h"} = 0 ) {
-#		die "wrong stencil Y size";
-#	}
+	#
+	#	if ( $size{"w"} !~ /\d+/ || $size{"w"} = 0 ) {
+	#		die "wrong stencil X size";
+	#	}
+	#	if ( $size{"h"} !~ /\d+/ || $size{"h"} = 0 ) {
+	#		die "wrong stencil Y size";
+	#	}
 }
 
 #-------------------------------------------------------------------------------------------#
@@ -302,13 +350,12 @@ sub __PrepareClick {
 #-------------------------------------------------------------------------------------------#
 
 sub __SetLayout {
-	my $self   = shift;
- 
- 
+	my $self = shift;
+
 	#define panels
 	my $pnlMain = Wx::Panel->new( $self->{"mainFrm"}, -1 );
-	my $szMain = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
-	my $szcol1 = Wx::BoxSizer->new(&Wx::wxVERTICAL);
+	my $szMain  = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
+	my $szcol1  = Wx::BoxSizer->new(&Wx::wxVERTICAL);
 
 	# DEFINE CONTROLS
 	my $general = $self->__SetLayoutGeneral($pnlMain);
@@ -327,7 +374,7 @@ sub __SetLayout {
 
 	$szMain->Add( $szcol1,  0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
 	$szMain->Add( $drawing, 1, &Wx::wxEXPAND | &Wx::wxALL, 0 );
-	
+
 	$pnlMain->SetSizer($szMain);
 
 	$self->AddContent($pnlMain);
@@ -357,8 +404,8 @@ sub __SetLayoutGeneral {
 	my $typeTxt = Wx::StaticText->new( $statBox, -1, "Type", &Wx::wxDefaultPosition, [ 120, 22 ] );
 
 	my @types = ();
-	push( @types, Enums->StencilType_TOP )       if ( $self->{"topExist"} );
-	push( @types, Enums->StencilType_BOT )       if ( $self->{"botExist"} );
+	push( @types, Enums->StencilType_TOP )    if ( $self->{"topExist"} );
+	push( @types, Enums->StencilType_BOT )    if ( $self->{"botExist"} );
 	push( @types, Enums->StencilType_TOPBOT ) if ( $self->{"topExist"} && $self->{"botExist"} );
 	my $stencilTypeCb = Wx::ComboBox->new( $statBox, -1, $types[0], &Wx::wxDefaultPosition, [ 70, 22 ], \@types, &Wx::wxCB_READONLY );
 
@@ -421,14 +468,15 @@ sub __SetLayoutSchema {
 	my $statBox = Wx::StaticBox->new( $parent, -1, 'Schema' );
 	my $szStatBox = Wx::StaticBoxSizer->new( $statBox, &Wx::wxVERTICAL );
 
-		my $szRow1 = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
+	my $szRow1 = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
+
 	#	my $szRow2 = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
 	#	my $szRow3 = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
 	#	my $szRow4 = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
 	#
 	#	# DEFINE CONTROLS
 	#
-		my $typeTxt = Wx::StaticText->new( $statBox, -1, "Type", &Wx::wxDefaultPosition, [ 120, 22 ] );
+	my $typeTxt = Wx::StaticText->new( $statBox, -1, "Type", &Wx::wxDefaultPosition, [ 120, 22 ] );
 	#
 	#	my @types = ();
 	#	push( @types, "Top" )       if ( $self->{"topExist"} );
@@ -461,7 +509,8 @@ sub __SetLayoutSchema {
 	#
 	#	# BUILD STRUCTURE OF LAYOUT
 	#
-		$szRow1->Add( $typeTxt,       0, &Wx::wxALL, 1 );
+	$szRow1->Add( $typeTxt, 0, &Wx::wxALL, 1 );
+
 	#	$szRow1->Add( $stencilTypeCb, 0, &Wx::wxALL, 1 );
 	#
 	#	$szRow2->Add( $stepTxt, 0, &Wx::wxALL, 1 );
@@ -474,7 +523,8 @@ sub __SetLayoutSchema {
 	#	$szRow4->Add( $sizeXTextCtrl, 0, &Wx::wxALL, 1 );
 	#	$szRow4->Add( $sizeYTextCtrl, 0, &Wx::wxALL, 1 );
 	#
-		$szStatBox->Add( $szRow1, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szStatBox->Add( $szRow1, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+
 	#	$szStatBox->Add( $szRow2, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 	#	$szStatBox->Add( $szRow3, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 	#	$szStatBox->Add( $szRow4, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
@@ -501,32 +551,33 @@ sub __SetLayoutOther {
 	my $szRow1 = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
 	my $szRow2 = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
 	my $szRow3 = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
-	
+
 	# DEFINE CONTROLS
 
-	my $spacingTypeTxt  = Wx::StaticText->new( $statBox, -1, "Spacing type", &Wx::wxDefaultPosition, [ 120, 22 ] );
-	my @types = (Enums->Spacing_PROF2PROF, Enums->Spacing_DATA2DATA); 
-	my $spacingTypeCb   = Wx::ComboBox->new( $statBox, -1, $types[0], &Wx::wxDefaultPosition, [ 70, 22 ], \@types, &Wx::wxCB_READONLY );
+	my $spacingTypeTxt = Wx::StaticText->new( $statBox, -1, "Spacing type", &Wx::wxDefaultPosition, [ 120, 22 ] );
+	my @types = ( Enums->Spacing_PROF2PROF, Enums->Spacing_DATA2DATA );
+	my $spacingTypeCb = Wx::ComboBox->new( $statBox, -1, $types[0], &Wx::wxDefaultPosition, [ 70, 22 ], \@types, &Wx::wxCB_READONLY );
 
-	my $spacingTxt  = Wx::StaticText->new( $statBox, -1, "Spacing", &Wx::wxDefaultPosition, [ 120, 22 ] );
-	my $spacingCtrl = Wx::TextCtrl->new( $statBox, -1, 90,        &Wx::wxDefaultPosition, [ 120, 22 ] );
+	my $spacingTxt = Wx::StaticText->new( $statBox, -1, "Spacing", &Wx::wxDefaultPosition, [ 120, 22 ] );
+	my $spacingCtrl = Wx::TextCtrl->new( $statBox, -1, 90, &Wx::wxDefaultPosition, [ 120, 22 ] );
 
 	my $centerTxt = Wx::StaticText->new( $statBox, -1, "Center data", &Wx::wxDefaultPosition, [ 120, 22 ] );
-	my $centerChb = Wx::CheckBox->new( $statBox, -1, "", &Wx::wxDefaultPosition );
+	my @typesC = ( Enums->HCenter_BYPROF, Enums->HCenter_BYDATA );
+	my $hCenterTypeCb = Wx::ComboBox->new( $statBox, -1, $typesC[0], &Wx::wxDefaultPosition, [ 70, 22 ], \@typesC, &Wx::wxCB_READONLY );
 
 	# SET EVENTS
 	Wx::Event::EVT_TEXT( $spacingCtrl, -1, sub { $self->__OnDataChanged(@_) } );
 
 	# BUILD STRUCTURE OF LAYOUT
 
-	$szRow1->Add( $spacingTypeTxt,  0, &Wx::wxALL, 1 );
-	$szRow1->Add( $spacingTypeCb, 0, &Wx::wxALL, 1 );	
-	
+	$szRow1->Add( $spacingTypeTxt, 0, &Wx::wxALL, 1 );
+	$szRow1->Add( $spacingTypeCb,  0, &Wx::wxALL, 1 );
+
 	$szRow2->Add( $spacingTxt,  0, &Wx::wxALL, 1 );
 	$szRow2->Add( $spacingCtrl, 0, &Wx::wxALL, 1 );
 
 	$szRow3->Add( $centerTxt, 0, &Wx::wxALL, 1 );
-	$szRow3->Add( $centerChb, 0, &Wx::wxALL, 1 );
+	$szRow3->Add( $hCenterTypeCb, 0, &Wx::wxALL, 1 );
 
 	$szStatBox->Add( $szRow1, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 	$szStatBox->Add( $szRow2, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
@@ -534,8 +585,8 @@ sub __SetLayoutOther {
 
 	# Set References
 	$self->{"spacingTypeCb"} = $spacingTypeCb;
-	$self->{"spacingCtrl"} = $spacingCtrl;
-	$self->{"centerChb"}   = $centerChb;
+	$self->{"spacingCtrl"}   = $spacingCtrl;
+	$self->{"hCenterTypeCb"}     = $hCenterTypeCb;
 
 	return $szStatBox;
 }
@@ -550,14 +601,14 @@ sub __SetLayoutDrawing {
 	my $szStatBox = Wx::StaticBoxSizer->new( $statBox, &Wx::wxVERTICAL );
 
 	# DEFINE CONTROLS
-	my @dim = (500, 600);
-	my $drawing = StencilDrawing->new($parent, \@dim);
+	my @dim = ( 500, 600 );
+	my $drawing = StencilDrawing->new( $parent, \@dim, $self->{"layoutMngr"} );
 
 	# SET EVENTS
 
 	# BUILD STRUCTURE OF LAYOUT
 
-	$szStatBox->Add( $drawing, 1,   &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szStatBox->Add( $drawing, 1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 
 	# Set References
 	$self->{"drawing"} = $drawing;
@@ -606,7 +657,7 @@ sub Test {
 
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
-	
+
 	my $test = Drawing->new( -1, "f13610" );
 
 	# $test->Test();
@@ -615,7 +666,4 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 }
 
 1;
-
-
- 
 

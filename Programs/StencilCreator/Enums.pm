@@ -2,8 +2,13 @@
 package Programs::StencilCreator::Enums;
 
 use constant {
-			   Spacing_PROF2PROF        => "Prof2Prof", # every row contain cehcbox, for select/unselect row
-			   Spacing_DATA2DATA        => "Data2Data" # without checkbox	   
+			   Spacing_PROF2PROF        => "Prof2Prof",  
+			   Spacing_DATA2DATA        => "Data2Data"     
+};
+
+use constant {
+			   HCenter_BYPROF        => "By profile",  
+			   HCenter_BYDATA        => "By paste data" 	   
 };
 
 

@@ -35,8 +35,8 @@ sub new {
 	# Items references
 	$self->__SetLayout();
 
-	my %layers = ();
-	$self->{"layers"} = \%layers;
+	my @layers = ();
+	$self->{"layers"} = \@layers;
 	$self->{"realScale"}  = 1;
 
 	#$self->{"backgroundDC"} = Wx::ClientDC->new($self);
@@ -149,32 +149,29 @@ sub __CompAutoZoomScale {
 
 sub AddLayer {
 	my $self    = shift;
-	my $name    = shift;
+ 
 	my $drawSub = shift;
 
-	if ( defined $self->{"layers"}->{"$name"} ) {
-		die "Layer with name: $name, aleready exists.\n";
-	}
+#	if ( defined $self->{"layers"}->{"$name"} ) {
+#		die "Layer with name: $name, aleready exists.\n";
+#	}
 
-	$self->{"layers"}->{"$name"} = DrawLayer->new( $self, $drawSub );
-
-	#$self->{"layers"}->{"$name"} =  Wx::ClientDC->new( $self );
-
-	return $self->{"layers"}->{"$name"};
+	push(@{$self->{"layers"}}, DrawLayer->new( $self, $drawSub ));
+ 
 }
-
-sub GetLayer {
-	my $self = shift;
-	my $name = shift;
-
-	my $l = $self->{"layers"}->{"$name"};
-
-	unless ( defined $l ) {
-		die "Layer with name: $l, doesn't exists.\n";
-	}
-
-	return $l;
-}
+#
+#sub GetLayer {
+#	my $self = shift;
+#	my $name = shift;
+#
+#	my $l = $self->{"layers"}->{"$name"};
+#
+#	unless ( defined $l ) {
+#		die "Layer with name: $l, doesn't exists.\n";
+#	}
+#
+#	return $l;
+#}
 
 sub SetBackgroundBrush {
 	my $self  = shift;
@@ -254,11 +251,9 @@ sub __Paint {
 	#$dc->SetBackground(Wx::Brush->new('red', 115  ));
 	#$dc->Clear();
 
-	foreach ( keys %{ $self->{"layers"} } ) {
+	foreach ( @{ $self->{"layers"} } ) {
 
-		my $sub = $self->{"layers"}->{$_}->{"drawSub"};
-
-		$sub->($dc)
+		  $_->{"drawSub"}->($dc);
 	}
 
 	

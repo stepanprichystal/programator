@@ -22,10 +22,24 @@ sub new {
 	bless $self;
 
 	$self->{"w"}   = shift;
-	$self->{"h"}  = undef;
+	$self->{"h"}  = shift;
 	$self->{"rotated"} = 0;
 
 	return $self;
+}
+
+sub GetWidth {
+	my $self = shift;
+
+	return $self->{"w"};
+
+}
+
+sub GetHeight {
+	my $self = shift;
+
+	return $self->{"h"};
+
 }
 
 # Switch width and height

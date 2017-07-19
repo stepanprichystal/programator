@@ -22,11 +22,12 @@ sub new {
 	bless $self;
 
 	$self->{"w"}       = shift;
-	$self->{"h"}       = undef;
+	$self->{"h"}       = shift;
 	$self->{"rotated"} = 0;
 
 	$self->{"pasteData"}    = undef;
-	$self->{"pasteDataOri"} = undef;
+	$self->{"pdOri"} = undef;
+	$self->{"pdSwitchOri"} = undef;
 
 	return $self;
 }
@@ -53,6 +54,11 @@ sub SwitchDim {
 		}
 	}
 }
+sub GetPasteData {
+	my $self      = shift;
+
+	return $self->{"pasteData"};
+}
 
 # Set paste data obj plus origin of paste data
 # origin inside paste data profile
@@ -70,6 +76,8 @@ sub SetPasteData {
 	my %switchOri = ( "y" => $self->{"w"} - ( $x + $pasteData->{"w"} ), "x" => $y );
 	$self->{"pdSwitchOri"} = \%switchOri;
 }
+
+
 
 sub GetWidth {
 	my $self = shift;

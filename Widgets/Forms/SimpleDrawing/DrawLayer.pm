@@ -24,14 +24,11 @@ sub new {
 	my $drawSub = shift;
 	my $self    = {};
 	bless($self);
-
-	my @drawList = ();
-	$self->{"drawList"} = \@drawList;
-
+ 
 	#$self->{"DC"}      = Wx::ClientDC->new($drawing);
 	$self->{"drawSub"} = $drawSub;
-	$self->{"brush"} = undef;
-	$self->{"drawing"} = $drawing;
+	#$self->{"brush"} = undef;
+	#$self->{"drawing"} = $drawing;
 
 	return $self;
 }
@@ -53,27 +50,27 @@ sub new {
 #	$self->{"DC"}->DrawRectangle( $sX*$s, $sY*$s, $eX*$s, $eY*$s);
 #}
 
-sub SetBrush {
-	my $self  = shift;
-	my $brush = shift;
+#sub SetBrush {
+#	my $self  = shift;
+#	my $brush = shift;
+#
+#	$self->{"brush"} = $brush;
+#}
 
-	$self->{"brush"} = $brush;
-}
-
-sub DrawRectangle {
-	my $self = shift;
-	my $dc = shift;
-	
-
-	$dc->SetBrush($self->{"brush"});
-
-	$dc->DrawRectangle(@_);
-
-	#$self->{"DC"}->DrawRectangle(@_);
-
-	 
-	
-}
+#sub DrawRectangle {
+#	my $self = shift;
+#	my $dc = shift;
+#	
+#
+#	$dc->SetBrush($self->{"brush"});
+#
+#	$dc->DrawRectangle(@_);
+#
+#	#$self->{"DC"}->DrawRectangle(@_);
+#
+#	 
+#	
+#}
 
 #-------------------------------------------------------------------------------------------#
 #  Private methods

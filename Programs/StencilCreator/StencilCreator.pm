@@ -80,19 +80,31 @@ sub Run {
 		# store layer data size for sa..., sb... layers
 		if ($topLayer) {
 
+			# limits of paste data
 			my %layerLim = CamJob->GetLayerLimits2( $inCAM, $jobId, $stepName, $topLayer->{"gROWname"} );
-			my %layerSize = ();
-			$layerSize{"w"}  = abs( $layerLim{"xMax"} - $layerLim{"xMin"} );
-			$layerSize{"h"} = abs( $layerLim{"yMax"} - $layerLim{"yMin"} );
-			$size{"top"}         = \%layerSize;
+			my %dataSize = ();
+			$dataSize{"w"}  = abs( $layerLim{"xMax"} - $layerLim{"xMin"} );
+			$dataSize{"h"} = abs( $layerLim{"yMax"} - $layerLim{"yMin"} );
+			 
+			# position of paste data within paste profile
+			$dataSize{"x"} = $layerLim{"xMin"} - $profLim{"xMin"};
+			$dataSize{"y"} = $layerLim{"yMin"} - $profLim{"yMin"};
+ 
+			$size{"top"}         = \%dataSize;
 		}
 		if ($botLayer) {
 
+			# limits of paste data
 			my %layerLim = CamJob->GetLayerLimits2( $inCAM, $jobId, $stepName, $botLayer->{"gROWname"} );
-			my %layerSize = ();
-			$layerSize{"w"}  = abs( $layerLim{"xMax"} - $layerLim{"xMin"} );
-			$layerSize{"h"} = abs( $layerLim{"yMax"} - $layerLim{"yMin"} );
-			$size{"bot"}         = \%layerSize;
+			my %dataSize = ();
+			$dataSize{"w"}  = abs( $layerLim{"xMax"} - $layerLim{"xMin"} );
+			$dataSize{"h"} = abs( $layerLim{"yMax"} - $layerLim{"yMin"} );
+			
+			# position of paste data within paste profile
+			$dataSize{"x"} = $layerLim{"xMin"} - $profLim{"xMin"};
+			$dataSize{"y"} = $layerLim{"yMin"} - $profLim{"yMin"};
+			
+			$size{"bot"}         = \%dataSize;
 		}
 
 		$stepsSize{$stepName} = \%size;
