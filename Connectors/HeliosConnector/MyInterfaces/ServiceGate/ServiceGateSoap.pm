@@ -5,12 +5,22 @@ use Class::Std::Fast::Storable;
 use Scalar::Util qw(blessed);
 use base qw(SOAP::WSDL::Client::Base);
 
+use Connectors::HeliosConnector::MyInterfaces::Data::DataSoap;
+
 # only load if it hasn't been loaded before
 require Connectors::HeliosConnector::MyTypemaps::ServiceGate
     if not Connectors::HeliosConnector::MyTypemaps::ServiceGate->can('get_class');
+    
+my $interface = Connectors::HeliosConnector::MyInterfaces::Data::DataSoap->new();
 
 sub START {
-    $_[0]->set_proxy('http://heg.gatema.cz/GatemaA1/ServiceGate.asmx') if not $_[2]->{proxy};
+	my $result = $interface->GetInfo({
+      myCode => 'GETREDIRECTINFO'
+    });
+    $result =~ m{GetInfoResult>(.*?)</GetInfoResult};
+    
+    my $pool = join '', $1, '/ServiceGate.asmx';
+    $_[0]->set_proxy($pool) if not $_[2]->{proxy};
     $_[0]->set_class_resolver('Connectors::HeliosConnector::MyTypemaps::ServiceGate')
         if not $_[2]->{class_resolver};
 

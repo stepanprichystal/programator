@@ -201,7 +201,6 @@ sub UpdateRecord {
 						 value     => $value
 	);
 
-		 
 
 	my $processXmlResult = ProcessXml( sessionToken => $sessionToken,
 									   xml          => $xml );
