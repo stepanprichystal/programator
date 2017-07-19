@@ -135,7 +135,7 @@ sub CreateXml {
 					   "REFERENCE"     => $refer,
 					   "keyAttributes" => "reference_subjektu"
 	);
-	$writer->startTag( "ATTRIBUTE", "name" => $attribute );
+	$writer->startTag( "ATTRIBUTE", "name" => $attribute, "triggerItemChangeEvents" => "true" );
 	$writer->characters($value);
 	$writer->endTag("ATTRIBUTE");
 	$writer->endTag("RECORD");
