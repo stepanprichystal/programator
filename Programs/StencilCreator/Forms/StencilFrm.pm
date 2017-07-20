@@ -108,8 +108,8 @@ sub GetStencilSize {
 
 	if ( $sVal =~ /custom/ ) {
 
-		$size{"w"} = $self->{"sizeXTextCtrl"};
-		$size{"h"} = $self->{"sizeYTextCtrl"};
+		$size{"w"} = $self->{"sizeXTextCtrl"}->GetValue();
+		$size{"h"} = $self->{"sizeYTextCtrl"}->GetValue();
 
 	}
 	else {
@@ -173,7 +173,7 @@ sub GetSpacingType {
 
 	return $self->{"spacingTypeCb"}->GetValue();
 }
- 
+
 sub SetSpacingType {
 	my $self = shift;
 	my $type = shift;
@@ -188,14 +188,12 @@ sub GetHCenterType {
 	return $self->{"hCenterTypeCb"}->GetValue();
 }
 
- 
 sub SetHCenterType {
 	my $self = shift;
 	my $type = shift;
 
-	$self->{"hCenterTypeCb"}->SetValue( $type );
+	$self->{"hCenterTypeCb"}->SetValue($type);
 }
-
 
 #-------------------------------------------------------------------------------------------#
 #  Private methods
@@ -203,6 +201,10 @@ sub SetHCenterType {
 
 sub __OnDataChanged {
 	my $self = shift;
+
+	# Update GUI
+
+	$self->__DisableControls();
 
 	# Update Layout manager
 
@@ -213,43 +215,77 @@ sub __OnDataChanged {
 	# 2) update profile data
 	my $stencilStep = $self->GetStencilStep();
 
-	if ( $self->{"topExist"}) {
+	if ( $self->{"topExist"} ) {
 
 		my $pd = PasteData->new( $self->{"stepsSize"}->{$stencilStep}->{"top"}->{"w"}, $self->{"stepsSize"}->{$stencilStep}->{"top"}->{"h"} );
 		my $pp = PasteProfile->new( $self->{"stepsSize"}->{$stencilStep}->{"w"}, $self->{"stepsSize"}->{$stencilStep}->{"h"} );
- 
-		$pp->SetPasteData($pd, $self->{"stepsSize"}->{$stencilStep}->{"top"}->{"x"}, $self->{"stepsSize"}->{$stencilStep}->{"top"}->{"y"});
-		
-		$self->{"layoutMngr"}->SetTopProfile($pp);
-	}
-	
-	if ( $self->{"botExist"}) {
 
-		my $pd = PasteData->new( $self->{"stepsSize"}->{$stencilStep}->{"top"}->{"w"}, $self->{"stepsSize"}->{$stencilStep}->{"top"}->{"h"} );
-		my $pp = PasteProfile->new( $self->{"stepsSize"}->{$stencilStep}->{"w"}, $self->{"stepsSize"}->{$stencilStep}->{"h"} );
-		
-		$pp->SetPasteData($pd, $self->{"stepsSize"}->{$stencilStep}->{"top"}->{"x"}, $self->{"stepsSize"}->{$stencilStep}->{"top"}->{"y"});
-		
+		$pp->SetPasteData( $pd, $self->{"stepsSize"}->{$stencilStep}->{"top"}->{"x"}, $self->{"stepsSize"}->{$stencilStep}->{"top"}->{"y"} );
+
 		$self->{"layoutMngr"}->SetTopProfile($pp);
 	}
-	
+
+	if ( $self->{"botExist"} ) {
+
+		my $botKye = $stencilStep eq Enums->StencilType_BOT ? "bot" : "botMirror";
+
+		my $pd = PasteData->new( $self->{"stepsSize"}->{$stencilStep}->{$botKye}->{"w"}, $self->{"stepsSize"}->{$stencilStep}->{$botKye}->{"h"} );
+		my $pp = PasteProfile->new( $self->{"stepsSize"}->{$stencilStep}->{"w"}, $self->{"stepsSize"}->{$stencilStep}->{"h"} );
+
+		$pp->SetPasteData( $pd, $self->{"stepsSize"}->{$stencilStep}->{$botKye}->{"x"}, $self->{"stepsSize"}->{$stencilStep}->{$botKye}->{"y"} );
+
+		$self->{"layoutMngr"}->SetBotProfile($pp);
+	}
+
 	# 3)update stencil size
-	
+
 	my %size = $self->GetStencilSize();
-	$self->{"layoutMngr"}->SetWidth($size{"w"});
-	$self->{"layoutMngr"}->SetHeight($size{"h"});
-	
-	# 4) Set spacing 
-	$self->{"layoutMngr"}->SetSpacing( $self->GetSpacing());
-	$self->{"layoutMngr"}->SetSpacingType( $self->GetSpacingType());
-	
+	$self->{"layoutMngr"}->SetWidth( $size{"w"} );
+	$self->{"layoutMngr"}->SetHeight( $size{"h"} );
+
+	# 4) Set spacing
+	$self->{"layoutMngr"}->SetSpacing( $self->GetSpacing() );
+	$self->{"layoutMngr"}->SetSpacingType( $self->GetSpacingType() );
+
 	# 5)Set horiyontal aligment type
-	$self->{"layoutMngr"}->SetHCenterType( $self->GetHCenterType());
-	
- 	$self->{"layoutMngr"}->Inited();
+	$self->{"layoutMngr"}->SetHCenterType( $self->GetHCenterType() );
+
+	$self->{"layoutMngr"}->Inited();
 
 	$self->{"drawing"}->DataChanged( $self->{"layoutMngr"} );
 }
+
+sub __DisableControls {
+	my $self = shift;
+
+	my $st = $self->GetStencilType();
+
+	if ( $st eq Enums->StencilType_TOPBOT ) {
+
+		$self->{"spacingTypeCb"}->Enable();
+		$self->{"spacingCtrl"}->Enable();
+	}
+	else {
+
+		$self->{"spacingTypeCb"}->Disable();
+		$self->{"spacingCtrl"}->Disable();
+
+	}
+
+	my $sVal = $self->{"sizeCb"}->GetValue();
+
+	if ( $sVal =~ /custom/ ) {
+
+		$self->{"sizeXTextCtrl"}->Enable();
+		$self->{"sizeYTextCtrl"}->Enable();
+	}
+	else {
+		$self->{"sizeXTextCtrl"}->Disable();
+		$self->{"sizeYTextCtrl"}->Disable();
+	}
+
+}
+
 #
 #sub __PrepareDrawData {
 #	my $self = shift;
@@ -368,9 +404,9 @@ sub __SetLayout {
 
 	# BUILD STRUCTURE OF LAYOUT
 
-	$szcol1->Add( $general, 0, &Wx::wxALL, 0 );
-	$szcol1->Add( $schema,  0, &Wx::wxALL, 0 );
-	$szcol1->Add( $other,   1, &Wx::wxALL, 0 );
+	$szcol1->Add( $general, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
+	$szcol1->Add( $schema,  0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
+	$szcol1->Add( $other,   1, &Wx::wxEXPAND | &Wx::wxALL, 0 );
 
 	$szMain->Add( $szcol1,  0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
 	$szMain->Add( $drawing, 1, &Wx::wxEXPAND | &Wx::wxALL, 0 );
@@ -407,25 +443,26 @@ sub __SetLayoutGeneral {
 	push( @types, Enums->StencilType_TOP )    if ( $self->{"topExist"} );
 	push( @types, Enums->StencilType_BOT )    if ( $self->{"botExist"} );
 	push( @types, Enums->StencilType_TOPBOT ) if ( $self->{"topExist"} && $self->{"botExist"} );
-	my $stencilTypeCb = Wx::ComboBox->new( $statBox, -1, $types[0], &Wx::wxDefaultPosition, [ 70, 22 ], \@types, &Wx::wxCB_READONLY );
+	my $stencilTypeCb = Wx::ComboBox->new( $statBox, -1, $types[0], &Wx::wxDefaultPosition, [ 200, 22 ], \@types, &Wx::wxCB_READONLY );
 
 	my $stepTxt = Wx::StaticText->new( $statBox, -1, "Step", &Wx::wxDefaultPosition, [ 120, 22 ] );
 
-	my $stepCb = Wx::ComboBox->new( $statBox, -1, $self->{"steps"}->[0], &Wx::wxDefaultPosition, [ 70, 22 ], $self->{"steps"}, &Wx::wxCB_READONLY );
+	my $stepCb = Wx::ComboBox->new( $statBox, -1, $self->{"steps"}->[0], &Wx::wxDefaultPosition, [ 200, 22 ], $self->{"steps"}, &Wx::wxCB_READONLY );
 
 	my $sizeTxt = Wx::StaticText->new( $statBox, -1, "Size", &Wx::wxDefaultPosition, [ 120, 22 ] );
 
 	my @sizes = ();
 	push( @sizes, "300mm x 480mm", "300mm x 520mm", "custom" );
-	my $sizeCb = Wx::ComboBox->new( $statBox, -1, $sizes[0], &Wx::wxDefaultPosition, [ 70, 22 ], \@sizes, &Wx::wxCB_READONLY );
+	my $sizeCb = Wx::ComboBox->new( $statBox, -1, $sizes[0], &Wx::wxDefaultPosition, [ 200, 22 ], \@sizes, &Wx::wxCB_READONLY );
 
-	my $customSize = Wx::StaticText->new( $statBox, -1, "Custom size", &Wx::wxDefaultPosition, [ 120, 22 ] );
+	my $customSize = Wx::StaticText->new( $statBox, -1, "Custom size [mm]", &Wx::wxDefaultPosition, [ 120, 22 ] );
 	my $sizeXTextCtrl = Wx::TextCtrl->new( $statBox, -1, "", &Wx::wxDefaultPosition );
 	my $sizeYTextCtrl = Wx::TextCtrl->new( $statBox, -1, "", &Wx::wxDefaultPosition );
 
 	# SET EVENTS
 	Wx::Event::EVT_TEXT( $stencilTypeCb, -1, sub { $self->__OnDataChanged(@_) } );
 	Wx::Event::EVT_TEXT( $stepCb,        -1, sub { $self->__OnDataChanged(@_) } );
+	Wx::Event::EVT_TEXT( $sizeCb,        -1, sub { $self->__OnDataChanged(@_) } );
 	Wx::Event::EVT_TEXT( $sizeXTextCtrl, -1, sub { $self->__OnDataChanged(@_) } );
 	Wx::Event::EVT_TEXT( $sizeYTextCtrl, -1, sub { $self->__OnDataChanged(@_) } );
 
@@ -556,14 +593,14 @@ sub __SetLayoutOther {
 
 	my $spacingTypeTxt = Wx::StaticText->new( $statBox, -1, "Spacing type", &Wx::wxDefaultPosition, [ 120, 22 ] );
 	my @types = ( Enums->Spacing_PROF2PROF, Enums->Spacing_DATA2DATA );
-	my $spacingTypeCb = Wx::ComboBox->new( $statBox, -1, $types[0], &Wx::wxDefaultPosition, [ 70, 22 ], \@types, &Wx::wxCB_READONLY );
+	my $spacingTypeCb = Wx::ComboBox->new( $statBox, -1, $types[0], &Wx::wxDefaultPosition, [ 200, 22 ], \@types, &Wx::wxCB_READONLY );
 
-	my $spacingTxt = Wx::StaticText->new( $statBox, -1, "Spacing", &Wx::wxDefaultPosition, [ 120, 22 ] );
-	my $spacingCtrl = Wx::TextCtrl->new( $statBox, -1, 90, &Wx::wxDefaultPosition, [ 120, 22 ] );
+	my $spacingTxt = Wx::StaticText->new( $statBox, -1, "Spacing [mm]", &Wx::wxDefaultPosition, [ 120, 22 ] );
+	my $spacingCtrl = Wx::SpinCtrl->new( $statBox, -1, 60, &Wx::wxDefaultPosition, [ 200, 22 ], &Wx::wxSP_ARROW_KEYS,  0, 250);
 
 	my $centerTxt = Wx::StaticText->new( $statBox, -1, "Center data", &Wx::wxDefaultPosition, [ 120, 22 ] );
 	my @typesC = ( Enums->HCenter_BYPROF, Enums->HCenter_BYDATA );
-	my $hCenterTypeCb = Wx::ComboBox->new( $statBox, -1, $typesC[0], &Wx::wxDefaultPosition, [ 70, 22 ], \@typesC, &Wx::wxCB_READONLY );
+	my $hCenterTypeCb = Wx::ComboBox->new( $statBox, -1, $typesC[0], &Wx::wxDefaultPosition, [ 200, 22 ], \@typesC, &Wx::wxCB_READONLY );
 
 	# SET EVENTS
 	Wx::Event::EVT_TEXT( $spacingCtrl, -1, sub { $self->__OnDataChanged(@_) } );
@@ -576,7 +613,7 @@ sub __SetLayoutOther {
 	$szRow2->Add( $spacingTxt,  0, &Wx::wxALL, 1 );
 	$szRow2->Add( $spacingCtrl, 0, &Wx::wxALL, 1 );
 
-	$szRow3->Add( $centerTxt, 0, &Wx::wxALL, 1 );
+	$szRow3->Add( $centerTxt,     0, &Wx::wxALL, 1 );
 	$szRow3->Add( $hCenterTypeCb, 0, &Wx::wxALL, 1 );
 
 	$szStatBox->Add( $szRow1, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
@@ -586,7 +623,7 @@ sub __SetLayoutOther {
 	# Set References
 	$self->{"spacingTypeCb"} = $spacingTypeCb;
 	$self->{"spacingCtrl"}   = $spacingCtrl;
-	$self->{"hCenterTypeCb"}     = $hCenterTypeCb;
+	$self->{"hCenterTypeCb"} = $hCenterTypeCb;
 
 	return $szStatBox;
 }

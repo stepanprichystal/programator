@@ -130,27 +130,17 @@ sub __DrawTopPcb {
 	my $topProf    = $self->{"layoutMngr"}->GetTopProfile();
 	my %topProfPos = $self->{"layoutMngr"}->GetTopProfilePos();
 
+	$dc->SetPen(Wx::Pen->new( 'red',  1, &Wx::wxPENSTYLE_SOLID ));
  	$dc->SetBrush( Wx::Brush->new( 'red', &Wx::wxBRUSHSTYLE_BDIAGONAL_HATCH ) );
 	$dc->DrawRectangle(  $topProfPos{"x"}, $topProfPos{"y"}, $topProf->GetWidth(), $topProf->GetHeight() );
 	
 	# 2) Draf limits of paste data
 	my %pdOri = $topProf->GetPDOrigin();
 	
-	$dc->SetBrush( Wx::Brush->new( 'black',  &Wx::wxBRUSHSTYLE_TRANSPARENT ) );
-	
-	
-	$dc->SetPen(Wx::Pen->new( 'blue',  &Wx::wxPENSTYLE_SHORT_DASH ));
-	
-#	# left
-#	$dc->DrawLine($topProfPos{"x"} + $pdOri{"x"}, $topProfPos{"x"} + $pdOri{"x"}, $topProfPos{"x"} + $pdOri{"x"}, $topProf->GetPasteData()->GetHeight());
-#	
-#	# bot
-#	$dc->DrawLine($topProfPos{"x"} + $pdOri{"x"}, $topProf->GetPasteData()->GetHeight(), $topProf->GetPasteData()->GetWidth(), $topProf->GetPasteData()->GetHeight());
-#	
-#	#right
-#	$dc->DrawLine($topProf->GetPasteData()->GetWidth(), $topProf->GetPasteData()->GetHeight(), $topProf->GetPasteData()->GetWidth(), $topProfPos{"x"} + $pdOri{"x"});
-#	 
-	#$dc->DrawRectangle(  $topProfPos{"x"} + $pdOri{"x"},  $topProfPos{"x"} + $pdOri{"x"},  $topProf->GetPasteData()->GetWidth(), $topProf->GetPasteData()->GetHeight() );
+	$dc->SetPen(Wx::Pen->new( 'gray',  1, &Wx::wxPENSTYLE_LONG_DASH   ));
+	$dc->SetBrush( Wx::Brush->new( 'gray',   &Wx::wxBRUSHSTYLE_TRANSPARENT  ) ); # &Wx::wxBRUSHSTYLE_TRANSPARENT
+ 
+	$dc->DrawRectangle(  $topProfPos{"x"} + $pdOri{"x"},  $topProfPos{"y"} + $pdOri{"y"},  $topProf->GetPasteData()->GetWidth(), $topProf->GetPasteData()->GetHeight() );
 }
 
 sub __DrawBotPcb {
@@ -166,14 +156,17 @@ sub __DrawBotPcb {
 	# 1) Draw profile
 	my $botProf    = $self->{"layoutMngr"}->GetBotProfile();
 	my %botProfPos = $self->{"layoutMngr"}->GetBotProfilePos();
-
- 	$dc->SetBrush( Wx::Brush->new( 'green', &Wx::wxBRUSHSTYLE_BDIAGONAL_HATCH ) );
+	
+	$dc->SetPen(Wx::Pen->new( 'blue',  1, &Wx::wxPENSTYLE_SOLID ));
+ 	$dc->SetBrush( Wx::Brush->new( 'blue', &Wx::wxBRUSHSTYLE_FDIAGONAL_HATCH  ) );
 	$dc->DrawRectangle(  $botProfPos{"x"}, $botProfPos{"y"}, $botProf->GetWidth(), $botProf->GetHeight() );
 	
 	# 2) Draf limits of paste data
 	my %pdOri = $botProf->GetPDOrigin();
 	
-	$dc->SetBrush( Wx::Brush->new( 'black',  &Wx::wxBRUSHSTYLE_TRANSPARENT ) );
+	$dc->SetPen(Wx::Pen->new( 'gray',  1, &Wx::wxPENSTYLE_LONG_DASH   ));
+	$dc->SetBrush( Wx::Brush->new( 'gray',   &Wx::wxBRUSHSTYLE_TRANSPARENT  ) ); # &Wx::wxBRUSHSTYLE_TRANSPARENT
+ 
 	$dc->DrawRectangle( $botProfPos{"x"} + $pdOri{"x"},  $botProfPos{"y"} + $pdOri{"y"},  $botProf->GetPasteData()->GetWidth(), $botProf->GetPasteData()->GetHeight() );
 }
 

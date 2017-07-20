@@ -19,6 +19,7 @@ use aliased 'CamHelpers::CamJob';
 use aliased 'CamHelpers::CamStepRepeat';
 use aliased 'Enums::EnumsPaths';
 use aliased 'Programs::StencilCreator::Forms::StencilFrm';
+use aliased 'Programs::StencilCreator::Helpers::StencilData';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -48,71 +49,7 @@ sub Run {
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
 
-	# paste layer
-	my @pasteL = grep { $_->{"gROWname"} =~ /^s[ab][-]((ori)|(made))+$/ } CamJob->GetAllLayers( $inCAM, $jobId );
-
-	my $topLayer = ( grep { $_->{"gROWname"} =~ /^sa-ori/ } @pasteL )[0];
-	unless ($topLayer) {
-		$topLayer = ( grep { $_->{"gROWname"} =~ /^sa-made/ } @pasteL )[0];
-	}
-
-	my $botLayer = ( grep { $_->{"gROWname"} =~ /^sb-ori/ } @pasteL )[0];
-	unless ($botLayer) {
-		$botLayer = ( grep { $_->{"gROWname"} =~ /^sb-made/ } @pasteL )[0];
-	}
-
-	# steps
-	my @steps =  map {$_->{"stepName"} } grep { $_->{"stepName"} } CamStepRepeat->GetUniqueStepAndRepeat( $inCAM, $jobId, "panel" );
-	 
-	# limits
-	my %stepsSize = ();
-
-	foreach my $stepName (@steps) {
-
-		my %size = ();
-
-		# 1) store step profile size
-		my %profLim = CamJob->GetProfileLimits2( $inCAM, $jobId, $stepName );
-
-		$size{"w"}  = abs( $profLim{"xMax"} - $profLim{"xMin"} );
-		$size{"h"} = abs( $profLim{"yMax"} - $profLim{"yMin"} );
-
-		# store layer data size for sa..., sb... layers
-		if ($topLayer) {
-
-			# limits of paste data
-			my %layerLim = CamJob->GetLayerLimits2( $inCAM, $jobId, $stepName, $topLayer->{"gROWname"} );
-			my %dataSize = ();
-			$dataSize{"w"}  = abs( $layerLim{"xMax"} - $layerLim{"xMin"} );
-			$dataSize{"h"} = abs( $layerLim{"yMax"} - $layerLim{"yMin"} );
-			 
-			# position of paste data within paste profile
-			$dataSize{"x"} = $layerLim{"xMin"} - $profLim{"xMin"};
-			$dataSize{"y"} = $layerLim{"yMin"} - $profLim{"yMin"};
- 
-			$size{"top"}         = \%dataSize;
-		}
-		if ($botLayer) {
-
-			# limits of paste data
-			my %layerLim = CamJob->GetLayerLimits2( $inCAM, $jobId, $stepName, $botLayer->{"gROWname"} );
-			my %dataSize = ();
-			$dataSize{"w"}  = abs( $layerLim{"xMax"} - $layerLim{"xMin"} );
-			$dataSize{"h"} = abs( $layerLim{"yMax"} - $layerLim{"yMin"} );
-			
-			# position of paste data within paste profile
-			$dataSize{"x"} = $layerLim{"xMin"} - $profLim{"xMin"};
-			$dataSize{"y"} = $layerLim{"yMin"} - $profLim{"yMin"};
-			
-			$size{"bot"}         = \%dataSize;
-		}
-
-		$stepsSize{$stepName} = \%size;
-	}
-
-	$self->{"form"}->Init( \%stepsSize, \@steps, defined $topLayer ? 1 : 0, defined $botLayer  ? 1 : 0 );
-
-
+	StencilData->SetSourceData($inCAM, $jobId, $self->{"form"});
 	
 
 	$self->{"form"}->{"mainFrm"}->Show();

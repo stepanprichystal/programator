@@ -36,15 +36,15 @@ sub new {
 	$self->__SetLayout();
 
 	my @layers = ();
-	$self->{"layers"} = \@layers;
-	$self->{"realScale"}  = 1;
+	$self->{"layers"}    = \@layers;
+	$self->{"realScale"} = 1;
 
 	#$self->{"backgroundDC"} = Wx::ClientDC->new($self);
 	$self->{"width"}  = ( @{$dimension} )[0];
 	$self->{"height"} = ( @{$dimension} )[1];
 
 	$self->{"axisOrient"} = Enums->Axis_LEFTBOT;
-	my %origin = ("x" => 0, "y" => 0);
+	my %origin = ( "x" => 0, "y" => 0 );
 	$self->{"origin"} = \%origin;
 
 	Wx::Event::EVT_PAINT( $self, sub { $self->__Paint(@_) } );
@@ -59,12 +59,12 @@ sub new {
 #  Public methods
 #-------------------------------------------------------------------------------------------#
 
-sub SetOrigin{
-	my $self  = shift;
-	my $x  = shift;
-	my $y = shift;
-	
-	$self->{"origin"}->{"x"} = $x;	
+sub SetOrigin {
+	my $self = shift;
+	my $x    = shift;
+	my $y    = shift;
+
+	$self->{"origin"}->{"x"} = $x;
 	$self->{"origin"}->{"y"} = $y;
 }
 
@@ -108,8 +108,8 @@ sub __CompAutoZoomScale {
 	#		$maxY = $valMaxY if ( !defined $maxY || $valMaxY > $maxY );    # set max value
 	#	}
 
-	my $dcH         = $self->GetSize()->GetHeight();
-	my $dcW         = $self->GetSize()->GetWidth();
+	my $canvH = $self->GetSize()->GetHeight();
+	my $canvW = $self->GetSize()->GetWidth();
 
 	my $minX = $dc->MinX();
 	my $maxX = $dc->MaxX();
@@ -118,21 +118,39 @@ sub __CompAutoZoomScale {
 	my $maxY = $dc->MaxY();
 
 	# compute real scale
-	my $wDraw = abs( min( 0, $minX ) ) + max( $dcH,  $maxX );
-	my $hDraw = abs( min( 0, $minY ) ) + max( $dcW, $maxY );
+	my $wDraw = abs( min( 0, $minX ) ) + $maxX;
+	my $hDraw = abs( min( 0, $minY ) ) + $maxY;
 
 	my $newScale = 1;
 
-	# ned compute new scale in order drawin will be whole visible in frame
-	if ( $wDraw > $dcH || $hDraw > $dcW ) {
+	# need compute new scale in order drawin will be whole visible in frame
+	if ( $wDraw > 0 && $hDraw > 0 ) {
 
-		# choose axis, which need more shrink
-		if ( $dcH / $wDraw < $dcW / $hDraw ) {
+		# Zoom out
+		if ( $wDraw > $canvW || $hDraw > $canvH ) {
 
-			$newScale = $dcH / $wDraw;
+			# choose axis, which need more shrink
+			if ( $canvW / $wDraw < $canvH / $hDraw ) {
+
+				$newScale = $canvW / $wDraw;
+			}
+			else {
+				$newScale = $canvH / $hDraw;
+			}
+
 		}
-		else {
-			$newScale = $dcW / $hDraw;
+
+		# Zoom in
+		elsif ( $wDraw < $canvW && $hDraw < $canvH ) {
+
+			# choose axis, can zoom out less
+			if ( $wDraw / $canvW > $wDraw / $canvH ) {
+
+				$newScale =  $canvW / ($wDraw*1.2) ; # 1.2 because we don't want zoom close to canvas border
+			}
+			else {
+				$newScale =  $canvH / ($hDraw*1.2) ;
+			}
 		}
 	}
 
@@ -144,20 +162,20 @@ sub __CompAutoZoomScale {
 		$self->{"realScale"} *= $newScale;
 		print STDERR "Auto ZOOM new scale: $newScale\n";
 	}
- 
+
 }
 
 sub AddLayer {
-	my $self    = shift;
- 
+	my $self = shift;
+
 	my $drawSub = shift;
 
-#	if ( defined $self->{"layers"}->{"$name"} ) {
-#		die "Layer with name: $name, aleready exists.\n";
-#	}
+	#	if ( defined $self->{"layers"}->{"$name"} ) {
+	#		die "Layer with name: $name, aleready exists.\n";
+	#	}
 
-	push(@{$self->{"layers"}}, DrawLayer->new( $self, $drawSub ));
- 
+	push( @{ $self->{"layers"} }, DrawLayer->new( $self, $drawSub ) );
+
 }
 #
 #sub GetLayer {
@@ -201,50 +219,40 @@ sub __Paint {
 	my $self = shift;
 
 	my $dc = Wx::PaintDC->new($self);
-	
-	my $dcH         = $self->GetSize()->GetHeight();
-	 
+
+	my $dcH = $self->GetSize()->GetHeight();
 
 	if ( $self->{"axisOrient"} eq Enums->Axis_LEFTBOT ) {
-		
+
 		$dc->SetAxisOrientation( 1, 1 );
-		$dc->SetDeviceOrigin(0, $dcH);
-		
-		if($self->{"origin"}){
-			
-			$dc->SetDeviceOrigin($self->{"origin"}->{"x"}, $dcH - $self->{"origin"}->{"y"});	
-		}	
-	}
-	elsif ( $self->{"axisOrient"} eq Enums->Axis_LEFTTOP ) {
-		
-		$dc->SetAxisOrientation( 1, 0 );
-		
-		if($self->{"origin"}){
-			
-			$dc->SetDeviceOrigin($self->{"origin"}->{"x"}, $self->{"origin"}->{"y"});	
+		$dc->SetDeviceOrigin( 0, $dcH );
+
+		if ( $self->{"origin"} ) {
+
+			$dc->SetDeviceOrigin( $self->{"origin"}->{"x"}, $dcH - $self->{"origin"}->{"y"} );
 		}
 	}
- 
-	if ( $self->{"autoZoom"} ) {
-		
-		$self->__CompAutoZoomScale($dc);
-		$self->{"autoZoom"} = 0;
-		$self->Refresh();
+	elsif ( $self->{"axisOrient"} eq Enums->Axis_LEFTTOP ) {
 
-	}else{
-		
-		
+		$dc->SetAxisOrientation( 1, 0 );
+
+		if ( $self->{"origin"} ) {
+
+			$dc->SetDeviceOrigin( $self->{"origin"}->{"x"}, $self->{"origin"}->{"y"} );
+		}
+	}
+
+
+	if ( !$self->{"autoZoom"} ) {
+
 		$dc->SetUserScale( $self->{"realScale"}, $self->{"realScale"} );
-		
+
 		$dc->SetBrush( $self->{"backgBrush"} );
 		$dc->DrawRectangle( -1000, -1000, 10000, 10000 );
 	}
 
-
 	# $dc->SetBrush( Wx::Brush->new( 'red', &Wx::wxBRUSHSTYLE_BDIAGONAL_HATCH ));
 	# $dc->DrawRectangle( 0, 0, 300, 500 );
-	 
- 
 
 	#$dc->SetBrush(Wx::Brush->new('red', &Wx::wxBRUSHSTYLE_CROSSDIAG_HATCH  ));
 	#my $dcb = Wx::ClientDC->new($self->{"drawingPnl"});
@@ -253,27 +261,32 @@ sub __Paint {
 
 	foreach ( @{ $self->{"layers"} } ) {
 
-		  $_->{"drawSub"}->($dc);
+		$_->{"drawSub"}->($dc);
 	}
 
-	
-	 
+	if ( $self->{"autoZoom"} ) {
 
-#	if ( $self->{"autoZoom"} ) {
-#
-#		$self->{"autoZoom"} = 0;
-#
-#		if ( $self->__NeedReDraw($dc) ) {
-#			print "REdraw\n";
-#		}
-#		else {
-#			print "NO-REdraw\n";
-#		}
-#
-#	}
-#	else {
-#
-#	}
+		$self->__CompAutoZoomScale($dc);
+		$self->{"autoZoom"} = 0;
+		$self->Refresh();
+
+	}
+
+	#	if ( $self->{"autoZoom"} ) {
+	#
+	#		$self->{"autoZoom"} = 0;
+	#
+	#		if ( $self->__NeedReDraw($dc) ) {
+	#			print "REdraw\n";
+	#		}
+	#		else {
+	#			print "NO-REdraw\n";
+	#		}
+	#
+	#	}
+	#	else {
+	#
+	#	}
 
 }
 
@@ -285,33 +298,32 @@ sub __SetLayout {
 	my $self = shift;
 
 	#$self->SetBackgroundStyle( $brush );    #green
-	
-	# EVENTS 
-	 
-	
-	Wx::Event::EVT_MOUSEWHEEL( $self,  sub { $self->__OnMouseWheel(@_) } );
+
+	# EVENTS
+
+	Wx::Event::EVT_MOUSEWHEEL( $self, sub { $self->__OnMouseWheel(@_) } );
 
 }
 
-sub __OnMouseWheel{
+sub __OnMouseWheel {
 	my $self = shift;
-	my $w = shift;
-	my $evt   = shift;
-	
-	print "Rotation:".$evt->GetWheelRotation()."\n";
-	print "Delta:".$evt->GetWheelDelta()."\n";
-	
-	
-	if($evt->GetWheelRotation() > 0){
-		$self->{"realScale"} *=   1.1;
-	}else{
-		$self->{"realScale"} /=   1.1;
+	my $w    = shift;
+	my $evt  = shift;
+
+	print "Rotation:" . $evt->GetWheelRotation() . "\n";
+	print "Delta:" . $evt->GetWheelDelta() . "\n";
+
+	if ( $evt->GetWheelRotation() > 0 ) {
+		$self->{"realScale"} *= 1.1;
 	}
-	
-	print STDERR "real scale:".$self->{"realScale"}."\n";
-	
+	else {
+		$self->{"realScale"} /= 1.1;
+	}
+
+	print STDERR "real scale:" . $self->{"realScale"} . "\n";
+
 	$self->Refresh();
- 
+
 }
 
 sub __NeedReDraw {

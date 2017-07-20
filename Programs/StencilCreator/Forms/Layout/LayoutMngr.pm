@@ -31,17 +31,17 @@ sub new {
 	$self->{"spacing"}     = undef;
 	$self->{"spacingType"} = undef;
 	$self->{"centerType"}  = undef;
-	
- 	$self->{"init"} = 0;
+
+	$self->{"init"} = 0;
 
 	return $self;
 }
 
-sub Inited{
+sub Inited {
 	my $self = shift;
-	
+
 	$self->{"init"} = 1;
-	
+
 }
 
 sub GetTopProfilePos {
@@ -118,7 +118,7 @@ sub SetTopProfile {
 
 sub GetTopProfile {
 	my $self = shift;
-	 
+
 	return $self->{"topProf"};
 }
 
@@ -126,7 +126,13 @@ sub SetBotProfile {
 	my $self = shift;
 	my $top  = shift;
 
-	$self->{"topProf"} = $top;
+	$self->{"botProf"} = $top;
+}
+
+sub GetBotProfile {
+	my $self = shift;
+
+	return $self->{"botProf"};
 }
 
 sub GetWidth {
@@ -193,14 +199,6 @@ sub GetSpacingType {
 	return $self->{"spacingType"};
 }
 
-
-
-
-
-
-
-
-
 sub SetHCenterType {
 
 	my $self = shift;
@@ -231,6 +229,8 @@ sub __GetTopProfilePosX {
 		$posX = ( $self->{"w"} - $self->{"topProf"}->GetPasteData()->GetWidth() ) / 2;
 		$posX -= $self->{"topProf"}->GetPDOrigin->{"x"};
 	}
+	
+	return $posX;
 }
 
 sub __GetTopProfilePosY {
@@ -248,18 +248,20 @@ sub __GetTopProfilePosY {
 	}
 
 	# Merged paste data
-	elsif ( $self->{"stencilType"} eq "both" ) {
+	elsif ( $self->{"stencilType"} eq Enums->StencilType_TOPBOT ) {
 
 		# profile 2 profile dim
 		if ( $spacingType eq Enums->Spacing_PROF2PROF ) {
 
-			$posY = $self->{"h"} / 2 + $spacing / 2 + $self->{"h"} / 2;
+			$posY =   $spacing / 2 + $self->{"h"} / 2;
 		}
 		elsif ( $spacingType eq Enums->Spacing_DATA2DATA ) {
 
-			$posY = $self->{"h"} / 2 + $spacing / 2 - $self->{"topProf"}->GetPDOrigin->{"y"} + $self->{"h"} / 2;
+			$posY =   $spacing / 2 - $self->{"topProf"}->GetPDOrigin->{"y"} + $self->{"h"} / 2;
 		}
 	}
+	
+	return $posY;
 }
 
 sub __GetBotProfilePosX {
@@ -279,6 +281,8 @@ sub __GetBotProfilePosX {
 		$posX = ( $self->{"w"} - $self->{"botProf"}->GetPasteData()->GetWidth() ) / 2;
 		$posX -= $self->{"botProf"}->GetPDOrigin->{"x"};
 	}
+	
+	return $posX;
 }
 
 sub __GetBotProfilePosY {
@@ -296,7 +300,7 @@ sub __GetBotProfilePosY {
 	}
 
 	# Merged paste data
-	elsif ( $self->{"stencilType"} eq "both" ) {
+	elsif ( $self->{"stencilType"} eq Enums->StencilType_TOPBOT  ) {
 
 		# profile 2 profile dim
 		if ( $spacingType eq Enums->Spacing_PROF2PROF ) {
@@ -309,28 +313,31 @@ sub __GetBotProfilePosY {
 			  $self->{"h"} / 2 - $spacing / 2 - $self->{"botProf"}->GetPasteData()->GetHeight() - $self->{"botProf"}->GetPasteData()->GetHeight();
 		}
 	}
+	
+	return $posY;
 }
 
 # Find new roattion of paste profile
 sub __RotateStencil {
 	my $self = shift;
- 
- 	unless($self->{"init"}){
- 		return 0;
- 	}
- 
+
+	unless ( $self->{"init"} ) {
+		return 0;
+	}
+
 	if ( $self->{"stencilType"} eq Enums->StencilType_TOP ) {
- 
-		my $lSide = $self->GetHeight() / 2 > $self->GetWidth() ? "h" : "w";
+
+		my $lSide = $self->GetHeight() > $self->GetWidth() ? "h" : "w";
 		my $lProfSide = $self->{"topProf"}->GetHeight() > $self->{"topProf"}->GetWidth() ? "h" : "w";
 
 		if ( $lSide ne $lProfSide ) {
 			$self->{"topProf"}->SwitchDim();
 			print STDERR "switch profile\n";
 		}
-	}elsif( $self->{"stencilType"} eq Enums->StencilType_BOT ) {
- 
-		my $lSide = $self->GetHeight() / 2 > $self->GetWidth() ? "h" : "w";
+	}
+	elsif ( $self->{"stencilType"} eq Enums->StencilType_BOT ) {
+
+		my $lSide = $self->GetHeight() > $self->GetWidth() ? "h" : "w";
 		my $lProfSide = $self->{"botProf"}->GetHeight() > $self->{"botProf"}->GetWidth() ? "h" : "w";
 
 		if ( $lSide ne $lProfSide ) {
@@ -338,22 +345,26 @@ sub __RotateStencil {
 			print STDERR "switch profile\n";
 		}
 	}
-	elsif( $self->{"stencilType"} ne Enums->StencilType_TOPBOT ) {
+	elsif ( $self->{"stencilType"} eq Enums->StencilType_TOPBOT ) {
 
 		if ( $self->{"topProf"} ) {
 
-			if ( $self->{"topProf"}->GetWidth() > $self->{"topProf"}->GetHeight() ) {
-				$self->{"topProf"}->SwitchDim();
+			my $lSide     = $self->{"topProf"}->GetWidth() > $self->{"topProf"}->GetHeight() / 2 ? "h" : "w";
+			my $lProfSide = $self->{"topProf"}->GetHeight() > $self->{"topProf"}->GetWidth()     ? "h" : "w";
 
+			if ( $lSide ne $lProfSide ) {
+				$self->{"topProf"}->SwitchDim();
 				print STDERR "switch profile\n";
 			}
 		}
 
 		if ( $self->{"botProf"} ) {
 
-			if ( $self->{"botProf"}->GetWidth() > $self->{"botProf"}->GetHeight() ) {
-				$self->{"botProf"}->SwitchDim();
+			my $lSide     = $self->{"botProf"}->GetWidth() > $self->{"botProf"}->GetHeight() / 2 ? "h" : "w";
+			my $lProfSide = $self->{"botProf"}->GetHeight() > $self->{"botProf"}->GetWidth()     ? "h" : "w";
 
+			if ( $lSide ne $lProfSide ) {
+				$self->{"botProf"}->SwitchDim();
 				print STDERR "switch profile\n";
 			}
 		}

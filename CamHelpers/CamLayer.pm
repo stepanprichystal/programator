@@ -447,7 +447,7 @@ sub RotateLayerData {
 	$inCAM->COM( 'affected_layer', name => $layer, mode => "single", affected => "no" );
 }
 
-# Mirror layer by x OR y
+# Mirror layer by x OR y axis
 # Right step must be open and set
 # Requested data must be selected
 sub MirrorLayerData {
@@ -468,6 +468,39 @@ sub MirrorLayerData {
 		$inCAM->COM( "sel_transform", "oper" => "mirror" );
 
 	}
+	$inCAM->COM( 'affected_layer', name => $layer, mode => "single", affected => "no" );
+}
+
+# Mirror data by profile center
+sub MirrorLayerByProfCenter {
+	my $self  = shift;
+	my $inCAM = shift;
+	my $jobId = shift;
+	my $step = shift;
+	my $layer = shift;
+	my $axis  = shift;
+
+	$self->WorkLayer( $inCAM, $layer );
+
+	my %lim = CamJob->GetProfileLimits2( $inCAM, $jobId, $step );
+
+	my $w = abs( $lim{"xMax"} - $lim{"xMin"} ) ;  
+	my $h = abs( $lim{"yMax"} - $lim{"yMin"} ) ;
+
+	my $centerX = $lim{"xMin"} + $w/2;
+	my $centerY = $lim{"yMin"} + $h/2;
+
+	if ( $axis eq "x" ) {
+
+		$inCAM->COM( "sel_transform", "x_anchor"=>$centerX,"y_anchor"=>$centerY, "oper" => "mirror\;rotate", "angle" => 180 );
+
+	}
+	elsif ( $axis eq "y" ) {
+
+		$inCAM->COM( "sel_transform", "x_anchor"=>$centerX,"y_anchor"=>$centerY,"oper" => "mirror" );
+
+	}
+	
 	$inCAM->COM( 'affected_layer', name => $layer, mode => "single", affected => "no" );
 }
 
@@ -664,7 +697,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $res = CamLayer->OptimizeLevels( $inCAM, "o+1", "v2", 1 );
+	my $res = CamLayer->MirrorLayerDataByProfCenter( $inCAM, "f13609", "mpanel", "rrr", "y" );
 
 	print $res;
 

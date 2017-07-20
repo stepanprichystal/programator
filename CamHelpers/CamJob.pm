@@ -169,7 +169,8 @@ sub GetLayerLimits2 {
 	my $tmp = 0;
 	my $layer = $layerName;
 	if ( CamStepRepeat->ExistStepAndRepeat( $inCAM, $jobId, $stepName ) && $breakSR ) {
-
+		
+		CamHelper->SetStep($inCAM, $stepName);
 		$tmp = 1;
 		$layer = GeneralHelper->GetGUID();
 		$inCAM->COM( 'flatten_layer', "source_layer" => $layerName, "target_layer" => $tmp );
