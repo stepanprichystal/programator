@@ -14,6 +14,7 @@ use base("Managers::AbstractQueue::Task::Task");
 use strict;
 use warnings;
 use Sys::Hostname;
+use Log::Log4perl qw(get_logger :levels);
 
 #local library
 use aliased 'Programs::Exporter::ExportUtility::UnitEnums';
@@ -26,6 +27,7 @@ use aliased 'Managers::AbstractQueue::TaskResultMngr';
 use aliased 'Packages::Other::AppConf';
 use aliased 'Programs::Services::LogService::Logger::DBLogger';
 use aliased 'Enums::EnumsApp';
+use aliased 'Managers::AsyncJobMngr::Helper' => "AsyncJobHelber";
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods, requested by IUnit interface
@@ -258,13 +260,20 @@ sub SentToProduce {
 sub SetErrorState {
 	my $self = shift;
 
-	my $serverName = AppConf->GetValue("serverName");
-	
-	if ( hostname !~ /$serverName/i ) {
-		return 0;
-	}
-
 	my $result = 1;
+
+	# Load errors
+
+	my $produceMngr = $self->ProduceResultMngr();
+	my $taskMngr    = $self->GetTaskResultMngr();
+	my $groupMngr   = $self->GetGroupResultMngr();
+	my $itemMngr    = $self->GetGroupItemResultMngr();
+
+	my $str = "";
+	$str .= $produceMngr->GetErrorsStr() . "\n";
+	$str .= $taskMngr->GetErrorsStr() . "\n";
+	$str .= $groupMngr->GetErrorsStr() . "\n";
+	$str .= $itemMngr->GetErrorsStr() . "\n";
 
 	# set state ExportUtility error, only if actual step si not Hotovo-zadat AND exportUtility error
 
@@ -282,12 +291,20 @@ sub SetErrorState {
 				my $succ = HegMethods->UpdatePcbOrderState( $orderNum, EnumsIS->CurStep_EXPORTERROR );
 			}
 		}
-		
-		# 2) send error to log db
-		$self->{"loggerDB"} = DBLogger->new(EnumsApp->App_EXPORTUTILITY);
-		
-		$self->{"loggerDB"}->Error($self->GetJobId(), "Error during export job id: \"".$self->GetJobId()."\" on server computer. See details on server.");
- 
+
+		# 2) store to log file
+		get_logger("abstractQueue")->info( "Job: " . $self->GetJobId() . " finished with errors.\n $str" );
+
+		# store to database if server version
+		if ( AsyncJobHelber->ServerVersion() ) {
+
+			$self->{"loggerDB"} = DBLogger->new( EnumsApp->App_EXPORTUTILITY );
+
+			$self->{"loggerDB"}
+			  ->Error( $self->GetJobId(),
+					   "Error during export job id: \"" . $self->GetJobId() . "\" on server computer. See details on server. \n $str" );
+
+		}
 	};
 	if ( my $e = $@ ) {
 

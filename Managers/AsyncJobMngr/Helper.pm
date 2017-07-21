@@ -1,5 +1,5 @@
 #-------------------------------------------------------------------------------------------#
-# Description: Helper 
+# Description: Helper
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Managers::AsyncJobMngr::Helper;
@@ -8,59 +8,57 @@ package Managers::AsyncJobMngr::Helper;
 use strict;
 use warnings;
 use Log::Log4perl qw(get_logger :levels);
+use Sys::Hostname;
 
 #local library
 
 use aliased 'Packages::Other::AppConf';
- use aliased 'Enums::EnumsGeneral';
+use aliased 'Enums::EnumsGeneral';
 use aliased 'Enums::EnumsPaths';
 use aliased 'Managers::AsyncJobMngr::Enums';
+use aliased 'Packages::Other::AppConf';
 
 #-------------------------------------------------------------------------------------------#
 #   Package methods
 #-------------------------------------------------------------------------------------------#
 
 #Return file name from full path
-sub Print{
+sub Print {
 
 	my $self = shift;
 	my $mess = shift;
 
-	print STDERR '====== E X P O R T ======= '.$mess;
+	print STDERR '====== E X P O R T ======= ' . $mess;
 }
-
 
 #Return file name from full path
-sub PrintServer{
+sub PrintServer {
 
 	my $self = shift;
 	my $mess = shift;
 
-	print STDERR '====== E X P O R T ======= '.$mess;
+	print STDERR '====== E X P O R T ======= ' . $mess;
 }
 
-
-
-sub SetLogging{
+sub SetLogging {
 	my $self = shift;
-	
+
 	my $dir = $self->GetLogDir();
 
 	unless ( -e $dir ) {
 		mkdir($dir) or die "Can't create dir: " . $dir . $_;
 	}
- 
-	$self->__CreateLogger(Enums->Logger_APP);
-	$self->__CreateLogger(Enums->Logger_SERVERTH);
-	$self->__CreateLogger(Enums->Logger_TASKTH);
-	$self->__CreateLogger(Enums->Logger_INCAM);
+
+	$self->__CreateLogger( Enums->Logger_APP );
+	$self->__CreateLogger( Enums->Logger_SERVERTH );
+	$self->__CreateLogger( Enums->Logger_TASKTH );
+	$self->__CreateLogger( Enums->Logger_INCAM );
 }
 
-
 sub __CreateLogger {
-	my $self = shift;
+	my $self       = shift;
 	my $loggerName = shift;
- 
+
 	my $mainLogger = get_logger($loggerName);
 	$mainLogger->level($DEBUG);
 
@@ -99,6 +97,21 @@ sub GetLogDir {
 	my $dir = EnumsPaths->Client_INCAMTMPJOBMNGR . $appName . "Logs";
 
 	return $dir;
+}
+
+# Return if actual program is running on server (server name is defined in config)
+sub ServerVersion {
+	my $self = shift;
+
+	my $serverName = AppConf->GetValue("serverName");
+
+	# If runining on server, close directly
+	if ( hostname =~ /$serverName/i ) {
+		return 1;
+	}
+	else {
+		return 0;
+	}
 }
 
 1;

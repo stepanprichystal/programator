@@ -13,6 +13,7 @@ use Wx;
 use strict;
 use warnings;
 use File::Copy;
+use Log::Log4perl qw(get_logger :levels);
 
 #local library
 

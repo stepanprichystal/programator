@@ -13,6 +13,8 @@ use Wx;
 use strict;
 use warnings;
 use File::Copy;
+use Sys::Hostname;
+use Log::Log4perl qw(get_logger :levels);
 
 #local library
 
@@ -33,6 +35,7 @@ use aliased 'Managers::AbstractQueue::Enums';
 use aliased 'Packages::InCAM::InCAM';
 use aliased 'Packages::Events::Event';
 use aliased 'Packages::Other::AppConf';
+use aliased 'Managers::AsyncJobMngr::Helper' => "AsyncJobHelber";
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -65,7 +68,7 @@ sub new {
 	# list of jobs, which are waiting on auto remove
 	my @removeJobs = ();
 	$self->{"removeJobs"} = \@removeJobs;
-	
+
 	# list of all timers
 	my @timers = ();
 	$self->{"timers"} = \@timers;
@@ -77,24 +80,26 @@ sub new {
 	# events
 
 	$self->{'onSetNewTask'} = Event->new();
+	
+	get_logger("abstractQueue")->info( "App was launched \n" );
 
 	return $self;
 }
-
 
 # ========================================================================================== #
 #  PUBLIC HELPER METHOD
 # ========================================================================================== #
 sub Run {
 	my $self = shift;
- 
+
 	$self->__RunTimersBase();
-	
-	if(AppConf->GetValue("hideAfterStart")){
-		
+
+	if ( AppConf->GetValue("hideAfterStart") ) {
+
 		$self->{"form"}->{"mainFrm"}->Hide();
-		
-	}else{
+
+	}
+	else {
 		$self->{"form"}->{"mainFrm"}->Show(1);
 	}
 
@@ -102,17 +107,15 @@ sub Run {
 
 }
 
-
 # Stop all timers
-sub StopAllTimers{
+sub StopAllTimers {
 	my $self = shift;
-	
-	foreach my $timer (@{$self->{"timers"}}){
-		
+
+	foreach my $timer ( @{ $self->{"timers"} } ) {
+
 		$timer->Stop();
 	}
 }
-
 
 # ========================================================================================== #
 #  BASE CLASS HANDLERS
@@ -181,6 +184,9 @@ sub __OnJobStateChangedBase {
 
 		$task->ProcessTaskDone($aborted);
 		$self->{"form"}->SetJobItemResult($task);
+		
+		get_logger("abstractQueue")->info( "Job ".$task->GetJobId()." is done.\n" );
+
 
 	}
 
@@ -215,9 +221,6 @@ sub __OnJobMessageEvtHandlerBase {
 	my $taskId   = shift;
 	my $messType = shift;
 	my $data     = shift;
-	
-	
-	
 
 	my $task = $self->_GetTaskById($taskId);
 
@@ -380,20 +383,20 @@ sub __Timer5second {
 	# This is necessary , because there is problem with shrink of job queue and with group table
 
 	my $mainSz = $self->{"form"}->{"mainFrm"}->GetSizer();
-	my $newS = $mainSz->GetSize();
+	my $newS   = $mainSz->GetSize();
 	if ( defined $self->{"oldSize"} ) {
 
 		my $mainSz = $self->{"form"}->{"mainFrm"}->GetSizer();
-		my $newS = $mainSz->GetSize();
+		my $newS   = $mainSz->GetSize();
 
 		if ( $newS->GetWidth() < $self->{"oldSize"}->GetWidth() ) {
 			$self->{"form"}->{"mainFrm"}->Refresh();
- 
-#			foreach my $k (keys %{$self->{"form"}->{"notebook"}->{"pages"}}){
-#				
-#				$self->{"form"}->{"notebook"}->{"pages"}->{$k}->GetPageContent()->Layout();
-#				$self->{"form"}->{"notebook"}->{"pages"}->{$k}->GetPageContent()->FitInside();
-#			}
+
+			#			foreach my $k (keys %{$self->{"form"}->{"notebook"}->{"pages"}}){
+			#
+			#				$self->{"form"}->{"notebook"}->{"pages"}->{$k}->GetPageContent()->Layout();
+			#				$self->{"form"}->{"notebook"}->{"pages"}->{$k}->GetPageContent()->FitInside();
+			#			}
 		}
 	}
 
@@ -403,7 +406,7 @@ sub __Timer5second {
 
 sub __TimerCheckVersion {
 	my $self = shift;
-	
+
 	#print STDERR "\nukonceni z timer check version\n";
 	#die "check version";
 
@@ -414,25 +417,39 @@ sub __TimerCheckVersion {
 	}
 
 	if ( $self->{"version"} < $verison ) {
+		
+		get_logger("abstractQueue")->info( "New version on server. Old = ".$self->{"version"}.", New = ".$verison."\n" );
 
 		$self->{"timerVersion"}->Stop();
+ 
+		# If runining on server, close directly
+		if ( AsyncJobHelber->ServerVersion()) {
 
-		my $messMngr = $self->{"form"}->{"messageMngr"};
+			$self->{"form"}->__OnClose(1);
+		
+		}else {
+			
+			# First ask user for close
 
-		my @mess1 =
-		  ( "Na serveru je nová verze programu \"".AppConf->GetValue("appName")."\". Jakmile to bude možné, ukonèi program.", "Chceš program ukonèit nyní?" );
-		my @btn = ( "Ano", "Ukonèím pozdìni" );
-		$messMngr->ShowModal( -1, EnumsGeneral->MessageType_INFORMATION, \@mess1, \@btn );
+			my $messMngr = $self->{"form"}->{"messageMngr"};
 
-		# close abstractQueue
-		if ( $messMngr->Result() == 0 ) {
+			my @mess1 = (
+						  "Na serveru je nová verze programu \"" . AppConf->GetValue("appName") . "\". Jakmile to bude možné, ukonèi program.",
+						  "Chceš program ukonèit nyní?"
+			);
+			my @btn = ( "Ano", "Ukonèím pozdìni" );
+			$messMngr->ShowModal( -1, EnumsGeneral->MessageType_INFORMATION, \@mess1, \@btn );
 
-			$self->{"form"}->__OnClose();
+			# close abstractQueue
+			if ( $messMngr->Result() == 0 ) {
+				
+				$self->{"form"}->__OnClose();
+			}
 		}
 
 		# once to 5 minute
 		$self->{"timerVersion"}->Start( 60000 * 5 );
-
+		 
 	}
 
 }
@@ -452,8 +469,8 @@ sub __AutoRemoveJobsHandler {
 		my $time   = $self->{"removeJobs"}->[$i]->{"exportFinis"};
 
 		my $jobItem = $self->{"form"}->{"jobQueue"}->GetItem($taskId);
- 
-		if ( defined $jobItem && ref($jobItem)) {
+
+		if ( defined $jobItem && ref($jobItem) ) {
 
 			# if 10 passed, remove job
 			if ( ( $time + $self->{"autoRemove"} ) < time() ) {
@@ -478,8 +495,6 @@ sub __AutoRemoveJobsHandler {
 # ========================================================================================== #
 #  PROTECTED HELPER METHOD
 # ========================================================================================== #
-
-
 
 sub _GetTaskById {
 	my $self   = shift;
@@ -519,11 +534,11 @@ sub _AddJobToAutoRemove {
 
 # Add timers to list of all timers
 # When app fail, all timers are stopped
-sub _AddTimers{
-	my $self = shift;
+sub _AddTimers {
+	my $self   = shift;
 	my $timers = shift;
-	
-	push(@{$self->{"timers"}}, $timers);
+
+	push( @{ $self->{"timers"} }, $timers );
 }
 
 # ========================================================================================== #
@@ -555,20 +570,18 @@ sub __RunTimersBase {
 	Wx::Event::EVT_TIMER( $formMainFrm, $timer5sec, sub { $self->__Timer5second(@_) } );
 	$timer5sec->Start(1000);
 	$self->_AddTimers($timer5sec);
-	 
 
 	my $timerVersion = Wx::Timer->new( $formMainFrm, -1, );
 	$self->{"timerVersion"} = $timerVersion;
 	Wx::Event::EVT_TIMER( $formMainFrm, $timerVersion, sub { $self->__TimerCheckVersion(@_) } );
-	$timerVersion->Start( 3 * 60000);    # every 5 minutes
+	$timerVersion->Start( 3 * 60000 );    # every 5 minutes
 	$self->_AddTimers($timerVersion);
-	
 
 	my $timer1s = Wx::Timer->new( $formMainFrm, -1, );
 	Wx::Event::EVT_TIMER( $formMainFrm, $timer1s, sub { $self->__AutoRemoveJobsHandler(@_) } );
 	$timer1s->Start(1000);
 	$self->_AddTimers($timer1s);
- 
+
 }
 
 # Restart task

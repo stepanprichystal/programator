@@ -210,7 +210,8 @@ sub GetBasePcbInfo {
 				 d.material_tloustka_medi,
 				 d.material_typ_materialu,
 				 d.merit_presfitt,
-				 z.pooling
+				 z.pooling,
+				 d.stav
 				 from lcs.desky_22 d with (nolock)
 				 left outer join lcs.subjekty c with (nolock) on c.cislo_subjektu=d.zakaznik
 				 left outer join lcs.subjekty m with (nolock) on m.cislo_subjektu=d.material
@@ -984,10 +985,11 @@ sub GetReorders {
 
 	my @params = ();
  
-	my $cmd = "select distinct z.reference_subjektu, z.stav, z.aktualni_krok
-				from lcs.zakazky_dps_22_hlavicka z 
+	my $cmd = "select distinct z.reference_subjektu, z.stav, z.aktualni_krok, d.stav AS dps_stav
+				from lcs.zakazky_dps_22_hlavicka z join lcs.desky_22 d on d.cislo_subjektu=z.deska
 				where z.stav='2'";
-
+ 
+ 
 	my @result = Helper->ExecuteDataSet( $cmd, \@params );
 	
 	@result = grep {   $_->{"reference_subjektu"} =~ /^\w\d+-\d+$/} @result; # remove cores
@@ -1106,11 +1108,22 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	use aliased 'Connectors::HeliosConnector::HegMethods';
 	use Data::Dump qw(dump);
-	my @pcbInProduc = HegMethods->GetPcbsByStatus( 2, 4, 25, 35 );
+	#my @pcbInProduc = HegMethods->GetPcbsByStatus( 2, 4, 25, 35 );
 	
-	my @res = grep { $_->{"reference_subjektu"} =~ /f75363/i }  @pcbInProduc;
+	#my @opak = HegMethods->GetReorders( );
 	
-	print @res;
+	
+	my $inf = HegMethods->GetBasePcbInfo("f52457");
+	
+	print $inf;
+	
+	#dump(@opak);
+	
+	#print scalar(@opak);
+	
+	#my @res = grep { $_->{"reference_subjektu"} =~ /f75363/i }  @pcbInProduc;
+	
+	 
 }
 
 1;
