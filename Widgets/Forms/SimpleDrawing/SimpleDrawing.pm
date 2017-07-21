@@ -185,8 +185,9 @@ sub SetBackgroundBrush {
 
 sub RefreshDrawing {
 	my $self = shift;
+	my $autoZoom = shift;
 
-	$self->{"autoZoom"} = 1;
+	$self->{"autoZoom"} = $autoZoom;
 	$self->Refresh();    # By  calling refresh on panel, "Paint event is raised"
 
 }

@@ -128,14 +128,14 @@ sub SetStencilSize {
 
 	# "300mm x 480mm", "300mm x 520mm", "custom"
 
-	if ( $width = 300 && $height = 400 ) {
-		$self->{"sizeCb"}->SetValue("300mm x 480mm");
+	if ( $width = 300 && $height = 480 ) {
+		$self->{"sizeCb"}->SetValue(Enums->StencilSize_300x480);
 	}
 	elsif ( $width = 300 && $height = 520 ) {
-		$self->{"sizeCb"}->SetValue("300mm x 520mm");
+		$self->{"sizeCb"}->SetValue(Enums->StencilSize_300x520);
 	}
 	else {
-		$self->{"sizeCb"}->SetValue("custom");
+		$self->{"sizeCb"}->SetValue(Enums->StencilSize_CUSTOM);
 		$self->{"sizeXTextCtrl"} = $width;
 		$self->{"sizeYTextCtrl"} = $height;
 	}
@@ -258,6 +258,8 @@ sub GetHoleDist2 {
 
 sub __OnDataChanged {
 	my $self = shift;
+	my $autoZoom = shift;
+	my $defaultSpacing = shift;
 
 	# Update GUI
 
@@ -301,14 +303,9 @@ sub __OnDataChanged {
 	$self->{"layoutMngr"}->SetWidth( $size{"w"} );
 	$self->{"layoutMngr"}->SetHeight( $size{"h"} );
 
-	# 4) Set spacing
-	$self->{"layoutMngr"}->SetSpacing( $self->GetSpacing() );
-	$self->{"layoutMngr"}->SetSpacingType( $self->GetSpacingType() );
 
-	# 5)Set horiyontal aligment type
-	$self->{"layoutMngr"}->SetHCenterType( $self->GetHCenterType() );
 	
-	# 6) Update schema
+	# 4) Update schema
 	
 	my $schema = Schema->new( $size{"w"},  $size{"h"});
 	
@@ -318,10 +315,31 @@ sub __OnDataChanged {
 	$schema->SetHoleDist2($self->GetHoleDist2());
  
  	$self->{"layoutMngr"}->SetSchema($schema);
+ 	
+ 	# 5) Spacing type
+ 	$self->{"layoutMngr"}->SetSpacingType( $self->GetSpacingType() );
+ 		
+	# 4) Set spacing size. Default or set by user
+	if($defaultSpacing && $self->GetSpacingType() eq Enums->Spacing_PROF2PROF){
+		
+		my $spac = $self->{"layoutMngr"}->GetDefaultSpacing();
+		$self->{"layoutMngr"}->SetSpacing( $spac);
+		
+		# set spacing to control
+		$self->SetSpacing($spac);
+		
+	}else{
+		
+		$self->{"layoutMngr"}->SetSpacing( $self->GetSpacing() );
+	}
+ 
+	# 5)Set horiyontal aligment type
+	$self->{"layoutMngr"}->SetHCenterType( $self->GetHCenterType() );
+ 
 
 	$self->{"layoutMngr"}->Inited(1);
 
-	$self->{"drawing"}->DataChanged( $self->{"layoutMngr"} );
+	$self->{"drawing"}->DataChanged($autoZoom);
 }
 
 sub __DisableControls {
@@ -521,7 +539,7 @@ sub __SetLayoutGeneral {
 	my $sizeTxt = Wx::StaticText->new( $statBox, -1, "Size", &Wx::wxDefaultPosition, [ 170, 22 ] );
 
 	my @sizes = ();
-	push( @sizes, "300mm x 480mm", "300mm x 520mm", "custom" );
+	push( @sizes, Enums->StencilSize_300x480, Enums->StencilSize_300x520, Enums->StencilSize_CUSTOM );
 	my $sizeCb = Wx::ComboBox->new( $statBox, -1, $sizes[0], &Wx::wxDefaultPosition, [ 120, 22 ], \@sizes, &Wx::wxCB_READONLY );
 
 	my $customSize = Wx::StaticText->new( $statBox, -1, "Custom size [mm]", &Wx::wxDefaultPosition, [ 170, 22 ] );
@@ -529,11 +547,11 @@ sub __SetLayoutGeneral {
 	my $sizeYTextCtrl = Wx::SpinCtrl->new( $statBox, -1, 480, &Wx::wxDefaultPosition, [ 60, 22 ], &Wx::wxSP_ARROW_KEYS, 200, 800 );
 
 	# SET EVENTS
-	Wx::Event::EVT_TEXT( $stencilTypeCb, -1, sub { $self->__OnDataChanged(@_) } );
-	Wx::Event::EVT_TEXT( $stepCb,        -1, sub { $self->__OnDataChanged(@_) } );
-	Wx::Event::EVT_TEXT( $sizeCb,        -1, sub { $self->__OnDataChanged(@_) } );
-	Wx::Event::EVT_TEXT( $sizeXTextCtrl, -1, sub { $self->__OnDataChanged(@_) } );
-	Wx::Event::EVT_TEXT( $sizeYTextCtrl, -1, sub { $self->__OnDataChanged(@_) } );
+	Wx::Event::EVT_TEXT( $stencilTypeCb, -1, sub { $self->__OnDataChanged(0,1) } );
+	Wx::Event::EVT_TEXT( $stepCb,        -1, sub { $self->__OnDataChanged(0,1) } );
+	Wx::Event::EVT_TEXT( $sizeCb,        -1, sub { $self->__OnDataChanged(1,1) } );
+	Wx::Event::EVT_TEXT( $sizeXTextCtrl, -1, sub { $self->__OnDataChanged(1,1) } );
+	Wx::Event::EVT_TEXT( $sizeYTextCtrl, -1, sub { $self->__OnDataChanged(1,1) } );
 
 	# BUILD STRUCTURE OF LAYOUT
 

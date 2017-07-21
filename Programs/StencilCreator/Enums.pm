@@ -13,6 +13,13 @@ use constant {
 
 
 use constant {
+			   StencilSize_300x480        => "300mm x 480mm", 
+			   StencilSize_300x520        => "300mm x 520mm", 
+			   StencilSize_CUSTOM        => "custom"
+		 
+};
+
+use constant {
 			   StencilType_TOP        => "Top", 
 			   StencilType_BOT        => "Bot", 
 			   StencilType_TOPBOT        => "Top + Bot"

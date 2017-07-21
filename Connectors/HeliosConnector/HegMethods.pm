@@ -38,7 +38,6 @@ sub GetAllByPcbId {
 	my $cmd = "select top 1
 				 d.nazev_subjektu board_name,
 				 c.nazev_subjektu customer,
-				 m.nazev_subjektu material,
 				 d.maska_barva_1 c_mask_colour,
 				 d.maska_barva_2 s_mask_colour,
 				 d.potisk c_silk_screen_colour,

@@ -7,6 +7,7 @@
 package Programs::StencilCreator::Helpers::StencilData;
 
 #3th party library
+use utf8;
 use strict;
 use warnings;
 
@@ -19,6 +20,7 @@ use aliased 'CamHelpers::CamJob';
 use aliased 'CamHelpers::CamStepRepeat';
 use aliased 'Enums::EnumsPaths';
 use aliased 'CamHelpers::CamLayer';
+use aliased 'Programs::StencilCreator::Enums';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -99,10 +101,9 @@ sub SetSourceData {
 			my %layerLimMir = CamJob->GetLayerLimits2( $inCAM, $jobId, $stepName, $mirr );
 			$inCAM->COM( 'delete_layer', layer => $mirr );
 
-
 			# limits of paste data
 			$dataSizeMirr{"w"} = abs( $layerLimMir{"xMax"} - $layerLimMir{"xMin"} );
-			$dataSizeMirr{"h"} = abs( $layerLimMir{ "yMax" } -$layerLimMir{"yMin"} );
+			$dataSizeMirr{"h"} = abs( $layerLimMir{"yMax"} - $layerLimMir{"yMin"} );
 
 			# position of paste data within paste profile
 			$dataSizeMirr{"x"} = $layerLimMir{"xMin"} - $profLim{"xMin"};
@@ -119,6 +120,121 @@ sub SetSourceData {
 }
 
 sub SetDefaultData {
+	my $self     = shift;
+	my $inCAM    = shift;
+	my $jobId    = shift;
+	my $form     = shift;
+	my $custNote = shift;
+	my $mess     = shift;
+
+	my $orderInfo = HegMethods->GetAllByPcbIdOffer($jobId);
+	my $pcbInfo   = (HegMethods->GetAllByPcbId($jobId))[0];
+
+	# 1) try parse type of stencil
+	my $stencilType = Enums->StencilType_TOP;
+
+	if ( $pcbInfo->{"board_name"} =~ /top/i && $pcbInfo->{"board_name"} =~ /bot/i ) {
+		$stencilType = Enums->StencilType_TOPBOT;
+
+	}
+	elsif ( $pcbInfo->{"board_name"} =~ /top/i ) {
+
+		$stencilType = Enums->StencilType_TOP;
+
+	}
+	elsif ( $pcbInfo->{"board_name"} =~ /bot/i ) {
+
+		$stencilType = Enums->StencilType_BOT;
+
+	}
+	else {
+
+		$$mess .= "Nebyl dohledán typ šablony (top, bot, top+bot) v IS. Bude nastaven defaultní typ: \"TOP\".\n";
+	}
+
+	$form->SetStencilType($stencilType);
+
+	# 2) set step
+	if ( grep { $_ =~ /mpanel/ } @{ $form->{"steps"} } ) {
+		$form->SetStencilStep("mpanel");
+	}
+
+	# 3) stencil size
+	my ( $w, $h ) = undef;
+	if ( $orderInfo->{"Poznamka_deska"} =~ /(\d+)\s*x\s*(\d*)/i ) {
+
+		if ( $1 > 0 && $2 > 0 ) {
+			$w = $1;
+			$h = $2;
+
+			if ( $w > $h ) {
+				( $w, $h ) = ( $h, $w );
+			}
+		}
+	}
+
+	if ( !defined $w || !defined $h ) {
+
+		$$mess .= "Nebyl dohledán rozměr rozměr šablony v IS. Bude nastaven defaultní rozměr 300x480mm\n";
+		$w = 300;
+		$h = 480;
+	}
+
+	$form->SetStencilSize( $w, $h );
+
+	# 4) Schema type
+	my $schemaType = Enums->Schema_STANDARD;
+	if ( $orderInfo->{"Poznamka_deska"} =~ /vlepe|rám/i ) {
+
+		$schemaType = Enums->Schema_FRAME;
+	}
+
+	$form->SetSchemaType($schemaType);
+
+	if ( $schemaType eq Enums->Schema_STANDARD ) {
+
+		# 5) Hole size
+		$form->SetHoleSize(5.1);
+
+		# 6) Hole distance x
+		if ( $custNote->HoleDistX() ) {
+			$form->SetHoleDist( $custNote->HoleDistX() );
+		}
+		else {
+			$form->SetHoleDist(15);    # default 15 mm
+		}
+
+		# 6) Hole distance y
+		if ( $custNote->HoleDistY() ) {
+
+			$form->SetHoleDist2( $custNote->HoleDistY() );
+		}
+		else {
+
+			# compute hole dist 15 mm from top/bot border
+			$form->SetHoleDist2( $h - 2 * 15 );
+		}
+
+	}
+
+	if ( $stencilType eq Enums->StencilType_TOPBOT ) {
+
+		# 7) Spacing type
+		$form->SetSpacingType( Enums->Spacing_PROF2PROF );
+
+		# 8) Set distance between profiles
+		$form->SetSpacing(0);
+
+	}
+	
+	# 9) Hole distance y
+	if ( $custNote->CenterByData() ) {
+		
+		$form->SetHCenterType(Enums->HCenter_BYDATA);
+	}else{
+		
+		$form->SetHCenterType(Enums->HCenter_BYPROF);
+	}
 
 }
 

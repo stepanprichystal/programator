@@ -27,7 +27,6 @@ use aliased 'Connectors::TpvConnector::Enums';
 sub GetCustomerInfo {
 	my $self       = shift;
 	my $customerId = shift;
-	my $childPcbId = shift;
 
 	my @params = ( SqlParameter->new( "_CustomerId", Enums->SqlDbType_VARCHAR, $customerId ) );
 
@@ -35,17 +34,26 @@ sub GetCustomerInfo {
 
 	my $cmd = "SELECT 
 
-					IF(ExportPaste = '', null , ExportPaste) as ExportPaste,
-					IF(ProfileToPaste = '', null , ProfileToPaste) as ProfileToPaste,
-					IF(SingleProfileToPaste = '', null , SingleProfileToPaste) as SingleProfileToPaste,
-					IF(FiducialsToPaste = '', null , FiducialsToPaste) as FiducialsToPaste,
-					IF(NoTpvInfoPdf = '', null , NoTpvInfoPdf) as NoTpvInfoPdf,
-					IF(ExportPdfControl = '', null , ExportPdfControl) as ExportPdfControl,
-					IF(ExportDataControl = '', null , ExportDataControl) as ExportDataControl,
-					IF(ScoreCoreThick = '', null , ScoreCoreThick) as ScoreCoreThick
+					IF(t1.ExportPaste = '', null , t1.ExportPaste) as ExportPaste,
+					IF(t1.ProfileToPaste = '', null , t1.ProfileToPaste) as ProfileToPaste,
+					IF(t1.SingleProfileToPaste = '', null , t1.SingleProfileToPaste) as SingleProfileToPaste,
+					IF(t1.FiducialsToPaste = '', null , t1.FiducialsToPaste) as FiducialsToPaste,
+					IF(t1.NoTpvInfoPdf = '', null , t1.NoTpvInfoPdf) as NoTpvInfoPdf,
+					IF(t1.ExportPdfControl = '', null , t1.ExportPdfControl) as ExportPdfControl,
+					IF(t1.ExportDataControl = '', null , t1.ExportDataControl) as ExportDataControl,
+					IF(t1.ScoreCoreThick = '', null , t1.ScoreCoreThick) as ScoreCoreThick,
 					
-    				FROM customer_note 
-    				WHERE CustomerId = _CustomerId
+					IF(t2.HoleDistX = '', null , t2.HoleDistX) as HoleDistX,
+					IF(t2.HoleDistY = '', null , t2.HoleDistY) as HoleDistY,	
+					IF(t2.OuterHoleDist = '', null , t2.OuterHoleDist) as OuterHoleDist,	
+					IF(t2.CenterByData = '', null , t2.CenterByData) as CenterByData,				
+					IF(t2.MinHoleDataDist = '', null , t2.MinHoleDataDist) as MinHoleDataDist,
+					IF(t2.NoHalfHoles = '', null , t2.NoHalfHoles) as NoHalfHoles,
+					IF(t2.NoFiducial = '', null , t2.NoFiducial) as NoFiducial
+					
+    				FROM customer_note AS t1
+    				LEFT JOIN  customer_note_stencil AS t2 ON t1.CustomerId = t2.CustomerId
+    				WHERE t1.CustomerId = _CustomerId
     				LIMIT 1";
 
 	my @result = Helper->ExecuteDataSet( $cmd, \@params );
@@ -245,9 +253,12 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	use aliased 'Connectors::TpvConnector::TpvMethods';
 
-	my $info = TpvMethods->InsertAppLog(
-		"testApp", "Error", 'Ahoj já jsem štìpán\n', "f52457"
-	);
+#	my $info = TpvMethods->InsertAppLog(
+#		"testApp", "Error", 'Ahoj já jsem štìpán\n', "f52457"
+#	);
+
+	my $inf = TpvMethods->GetCustomerInfo("07227");
+
 
 	print 1;
 

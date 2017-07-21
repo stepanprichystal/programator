@@ -18,8 +18,11 @@ use aliased 'CamHelpers::CamHelper';
 use aliased 'CamHelpers::CamJob';
 use aliased 'CamHelpers::CamStepRepeat';
 use aliased 'Enums::EnumsPaths';
+use aliased 'Enums::EnumsGeneral';
 use aliased 'Programs::StencilCreator::Forms::StencilFrm';
 use aliased 'Programs::StencilCreator::Helpers::StencilData';
+use aliased 'Packages::Other::CustomerNote';
+
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -39,6 +42,11 @@ sub new {
 
 	# Main application form
 	$self->{"form"} = StencilFrm->new( -1, $self->{"inCAM"}, $self->{"jobId"} );
+	
+	my $custInfo = HegMethods->GetCustomerInfo( $self->{"jobId"} );
+	$self->{"customerNote"} = CustomerNote->new( $custInfo->{"reference_subjektu"} );
+	
+	
 
 	return $self;
 }
@@ -50,6 +58,18 @@ sub Run {
 	my $jobId = $self->{"jobId"};
 
 	StencilData->SetSourceData($inCAM, $jobId, $self->{"form"});
+	
+	my $warnMess = "";
+	my $res = StencilData->SetDefaultData($inCAM, $jobId, $self->{"form"}, $self->{"customerNote"}, \$warnMess);
+	
+	unless($res){
+		
+		my $messMngr = $self->{"form"}->GetMessageMngr();
+		my @mess1 = ($warnMess);
+		my @btn = ("Beru na vìdomí");
+		
+		$messMngr->ShowModal( -1, EnumsGeneral->EnumsGeneral, \@mess1, \@btn );
+	}
 	
 
 	$self->{"form"}->{"mainFrm"}->Show();

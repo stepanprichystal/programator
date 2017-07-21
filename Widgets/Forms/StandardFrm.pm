@@ -16,6 +16,7 @@ use Wx;
 
 use aliased 'Widgets::Forms::MyWxFrame';
 use Widgets::Style;
+use aliased 'Managers::MessageMngr::MessageMngr';
 
 #tested form
 
@@ -40,6 +41,8 @@ sub new {
 
 	# Properties
 	$self->{"btnHeight"} = 30;
+	
+	$self->{"messMngr"} = $self->MessageMngr->new( $title);
 
 	return $self;
 }
@@ -88,7 +91,11 @@ sub AddButton {
 
 }
 
-
+sub GetMessageMngr{
+		my $self      = shift;
+		
+	return $self->{"messMngr"};
+}
 
 sub __SetLayout {
 	my $self      = shift;

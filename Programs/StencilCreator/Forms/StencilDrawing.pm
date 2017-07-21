@@ -50,8 +50,9 @@ sub new {
 
 sub DataChanged {
 	my $self = shift;
+	my $autoZoom = shift;
 
-	$self->RefreshDrawing();
+	$self->RefreshDrawing($autoZoom);
 }
 
 #sub SetTopPcbPos {
