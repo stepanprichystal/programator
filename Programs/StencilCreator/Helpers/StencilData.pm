@@ -97,16 +97,18 @@ sub SetSourceData {
 			$inCAM->COM( 'flatten_layer', "source_layer" => $botLayer->{"gROWname"}, "target_layer" => $mirr );
 			CamLayer->MirrorLayerByProfCenter( $inCAM, $jobId, $stepName, $mirr, "y" );
 			my %layerLimMir = CamJob->GetLayerLimits2( $inCAM, $jobId, $stepName, $mirr );
+			$inCAM->COM( 'delete_layer', layer => $mirr );
+
 
 			# limits of paste data
 			$dataSizeMirr{"w"} = abs( $layerLimMir{"xMax"} - $layerLimMir{"xMin"} );
 			$dataSizeMirr{"h"} = abs( $layerLimMir{ "yMax" } -$layerLimMir{"yMin"} );
 
 			# position of paste data within paste profile
-			$dataSizeMirr{"x"} = $layerLimMir{"xMin"} - $layerLimMir{"xMin"};
-			$dataSizeMirr{"y"} = $layerLimMir{"yMin"} - $layerLimMir{"yMin"};
+			$dataSizeMirr{"x"} = $layerLimMir{"xMin"} - $profLim{"xMin"};
+			$dataSizeMirr{"y"} = $layerLimMir{"yMin"} - $profLim{"yMin"};
 
-			$size{"botMirror"} = \%dataSize;
+			$size{"botMirror"} = \%dataSizeMirr;
 		}
 
 		$stepsSize{$stepName} = \%size;

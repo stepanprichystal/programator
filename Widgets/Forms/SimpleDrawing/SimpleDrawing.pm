@@ -82,34 +82,10 @@ sub __CompAutoZoomScale {
 	my $self = shift;
 	my $dc   = shift;
 
-	#$self->{"scale"}
-
-	# Get max and min X+Y coordinate from all DC layers
-	#	my $minX = undef;
-	#	my $maxX = undef;
-
-	#	my $minY = undef;
-	#	my $maxY = undef;
-
-	#	foreach ( keys %{ $self->{"layers"} } ) {
-	#
-	#		my $dc = $self->{"layers"}->{$_}->{"DC"};
-	#
-	#		my $valMinX = $dc->MinX();
-	#		my $valMaxX = $dc->MaxX();
-	#
-	#		$minX = $valMinX if ( !defined $minX || $valMinX < $minX );    # set min value
-	#		$maxX = $valMaxX if ( !defined $maxX || $valMaxX > $maxX );    # set max value
-	#
-	#		my $valMinY = $dc->MinY();
-	#		my $valMaxY = $dc->MaxY();
-	#
-	#		$minY = $valMinY if ( !defined $minY || $valMinY < $minY );    # set min value
-	#		$maxY = $valMaxY if ( !defined $maxY || $valMaxY > $maxY );    # set max value
-	#	}
-
 	my $canvH = $self->GetSize()->GetHeight();
 	my $canvW = $self->GetSize()->GetWidth();
+	
+	print STDERR "Canvas wxh: $canvW x $canvH\n";
 
 	my $minX = $dc->MinX();
 	my $maxX = $dc->MaxX();
@@ -241,6 +217,7 @@ sub __Paint {
 			$dc->SetDeviceOrigin( $self->{"origin"}->{"x"}, $self->{"origin"}->{"y"} );
 		}
 	}
+ 
 
 
 	if ( !$self->{"autoZoom"} ) {

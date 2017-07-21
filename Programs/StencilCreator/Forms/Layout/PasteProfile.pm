@@ -98,12 +98,12 @@ sub GetPDOrigin {
 
 	if ( $self->{"rotated"} ) {
 
-		return %{ $self->{"pdSwitchOri"} };
+		return  $self->{"pdSwitchOri"} ;
 
 	}
 	else {
 
-		return %{ $self->{"pdOri"} };
+		return  $self->{"pdOri"} ;
 	}
 
 }
