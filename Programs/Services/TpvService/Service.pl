@@ -29,6 +29,7 @@ use aliased 'Enums::EnumsApp';
 use aliased 'Programs::Services::TpvService::ServiceApps::CheckReorderApp::CheckReorderApp';
 use aliased 'Programs::Services::TpvService::ServiceApps::ProcessReorderApp::ProcessReorderApp';
 use aliased 'Programs::Services::TpvService::ServiceApps::MdiDataApp::MdiDataApp';
+use aliased 'Programs::Services::TpvService::ServiceApps::JetprintDataApp::JetprintDataApp';
 use aliased 'Programs::Services::TpvService::ServiceApps::ArchiveJobsApp::ArchiveJobsApp';
 
 Win32::Daemon::RegisterCallbacks(
@@ -94,6 +95,9 @@ sub WorkerMethod {
 	
 	$regApp{ EnumsApp->App_MDIDATA }->{"repeat"}        = 1;
 	$regApp{ EnumsApp->App_MDIDATA }->{"night"}         = 0;
+	
+	$regApp{ EnumsApp->App_JETPRINTDATA }->{"repeat"}    = 60;
+	$regApp{ EnumsApp->App_JETPRINTDATA }->{"night"}     = 0;
 	
 	$regApp{ EnumsApp->App_ARCHIVEJOBS }->{"repeat"}    = 15;
 	$regApp{ EnumsApp->App_ARCHIVEJOBS }->{"night"}     = 1;
@@ -168,6 +172,11 @@ sub __GetApp {
 
 		$app = ArchiveJobsApp->new();
 	}
+	elsif ( $appName eq EnumsApp->App_JETPRINTDATA ) {
+
+		$app = JetprintDataApp->new();
+	}
+ 	
 
 	return $app;
 }

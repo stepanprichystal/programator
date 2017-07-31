@@ -42,6 +42,10 @@ sub GetTitle{
 	}elsif($code eq App_JETPRINTDATA){
 		
 		$title = "Export jet print data";	
+	
+	}elsif($code eq App_ARCHIVEJOBS){
+		
+		$title = "Archive jobs";	
 	}
 	
 	return $title;
