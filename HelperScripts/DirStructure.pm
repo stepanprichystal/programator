@@ -44,6 +44,10 @@ sub Create {
 	unless ( -e EnumsPaths->Client_INCAMTMPOTHER ) {
 		mkdir( EnumsPaths->Client_INCAMTMPOTHER ) or die "Can't create dir: " . EnumsPaths->Client_INCAMTMPOTHER . $_;
 	}
+	
+	unless ( -e EnumsPaths->Client_INCAMTMPLOGS ) {
+		mkdir( EnumsPaths->Client_INCAMTMPLOGS ) or die "Can't create dir: " . EnumsPaths->Client_INCAMTMPLOGS . $_;
+	}
 
 }
 

@@ -146,6 +146,11 @@ sub GetDimension {
 	$dim{"single_y"} = sprintf( "%.1f", $dim{"single_y"} ) if ( $dim{"single_y"} );
 	$dim{"panel_x"}  = sprintf( "%.1f", $dim{"panel_x"} )  if ( $dim{"panel_x"} );
 	$dim{"panel_y"}  = sprintf( "%.1f", $dim{"panel_y"} )  if ( $dim{"panel_y"} );
+	
+	my %profilP = CamJob->GetProfileLimits( $inCAM, $jobId, "panel" );
+	
+	$dim{"vyrobni_panel_x"}  = abs( $profilP{"xmax"} - $profilP{"xmin"} );
+	$dim{"vyrobni_panel_y"}  = abs( $profilP{"ymax"} - $profilP{"ymin"} );
 
 	return %dim;
 }

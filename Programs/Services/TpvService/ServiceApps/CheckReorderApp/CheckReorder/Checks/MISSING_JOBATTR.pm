@@ -45,7 +45,7 @@ sub NeedChange {
 	
 	my $userName = CamAttributes->GetJobAttrByName( $inCAM, $jobId, "user_name" );    # zakaznicky panel
 	
-	if(!defined $userName || $userName eq ""){
+	if(!defined $userName || $userName eq "" || $userName =~ /none/i){
 		$needChange = 1;
 	}
 	

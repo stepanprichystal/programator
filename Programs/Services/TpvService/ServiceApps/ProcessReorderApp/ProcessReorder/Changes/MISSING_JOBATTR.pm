@@ -46,7 +46,7 @@ sub Run {
 	# insert user name
 	my $userName = CamAttributes->GetJobAttrByName( $inCAM, $jobId, "user_name" );     
 	
-	if(!defined $userName || $userName eq ""){
+	if(!defined $userName || $userName eq "" || $userName =~ /none/i){
 		 
 		 my $user = $nif->GetValue("zpracoval");
 		 
