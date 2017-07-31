@@ -502,7 +502,7 @@ sub __SetLayout {
 	}
 	elsif ( $self->{"runMode"} eq Enums->RUNMODE_WINDOW ) {
 
-		$mainFrm->{'onClose'}->Add( sub { $self->__OnClose(@_) } );    #Set onClose handler
+		$mainFrm->{'onClose'}->Add( sub { $self->__OnClose() } );    #Set onClose handler
 	}
 
 	$self->{"mainFrm"} = $mainFrm;
@@ -564,7 +564,7 @@ sub __CloseActiveJobs {
 # Function responsible for properly close threads and servers
 sub __OnClose {
 
-	my ( $self, $mainFrm ) = @_;
+	my ( $self, $silent ) = @_; # if silent, no ask for close running jobs. If running jobs nothing happen
 
 	my $jobsRef    = $self->{"jobs"};
 	my $str        = "";
@@ -586,7 +586,9 @@ sub __OnClose {
 
 	}
 
-	if ($activeJobs) {
+	print STDERR "Ask for close, active jobs= $activeJobs , silent = $silent \n";
+
+	if ($activeJobs && !$silent) {
 
 		#ask if exit
 
@@ -611,7 +613,7 @@ sub __OnClose {
 		}
 
 	}
-	else {
+	elsif(!$activeJobs){
 
 		# Close or servers, which are waiting or running
 		$self->{"serverMngr"}->SetDestroyOnDemand(0);

@@ -10,14 +10,14 @@ use constant {
 	CurStep_EXPORTERROR => "exportUtility-error",    # when export utility fail
 
 	# statuses of checkReorder app
-	CurStep_CHECKREORDERERROR        => "checkReorder-error",
-	CurStep_ZPRACOVANIAUTO         => "zpracovani-auto",
-	CurStep_ZPRACOVANIMAN       => "zpracovani-rucni",
-	 
+	CurStep_CHECKREORDERERROR => "checkReorder-error",
+	CurStep_ZPRACOVANIAUTO    => "zpracovani-auto",
+	CurStep_ZPRACOVANIMAN     => "zpracovani-rucni",
+	CurStep_ZPRACOVANIREV     => "zpracovani-revize",
 
-	  # statuses of processReorder app
-	  CurStep_PROCESSREORDERERR => "processReorder-error",
-	CurStep_PROCESSREORDEROK    => "processReorder-ok",
+	# statuses of processReorder app
+	CurStep_PROCESSREORDERERR => "processReorder-error",
+	CurStep_PROCESSREORDEROK  => "processReorder-ok",
 
 };
 

@@ -12,6 +12,7 @@ package Managers::AbstractQueue::Task::Task;
 #3th party library
 use strict;
 use warnings;
+use Log::Log4perl qw(get_logger :levels);
 
 #local library
  
@@ -63,6 +64,8 @@ sub new {
  
 	my @mandatoryUnits = $self->{"taskData"}->GetMandatoryUnits();
 	$self->{"taskStatus"}->CreateStatusFile( \@mandatoryUnits );
+	
+	get_logger("abstractQueue")->info( "Job: ". $self->{"jobId"} . " was add to queue" );
  
 	return $self;
 }

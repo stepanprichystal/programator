@@ -32,7 +32,6 @@ use aliased 'Programs::Services::Helpers::AutoProcLog';
 use aliased 'Programs::Services::TpvService::ServiceApps::CheckReorderApp::CheckReorder::AcquireJob';
 use aliased 'Programs::Services::TpvService::ServiceApps::CheckReorderApp::CheckReorder::ChangeFile';
 
-
 #-------------------------------------------------------------------------------------------#
 #  Public method
 #-------------------------------------------------------------------------------------------#
@@ -77,25 +76,25 @@ sub new {
 #------------------------------------------------
 sub Run {
 	my $self = shift;
-	
+
 	$self->{"logger"}->debug("Check reorder run");
 
 	eval {
 
 		$self->{"logger"}->debug("In eval");
-		
+
 		# 2) Load Reorder pcb
 		my @reorders = grep { !defined $_->{"aktualni_krok"} || $_->{"aktualni_krok"} eq "" } HegMethods->GetReorders();
 
 		if ( scalar(@reorders) ) {
 
 			$self->{"logger"}->debug("Before get InCAM");
-			
+
 			# we need incam do request for incam
 			unless ( defined $self->{"inCAM"} ) {
 				$self->{"inCAM"} = $self->_GetInCAM();
 			}
-			
+
 			$self->{"logger"}->debug("After get InCAM");
 
 			#my %hash = ( "reference_subjektu" => "f52456-01" );
@@ -118,7 +117,7 @@ sub Run {
 		$self->{"logger"}->error($err);
 		$self->{"loggerDB"}->Error( undef, $err );
 	}
-	
+
 	$self->{"logger"}->debug("Check reorder end");
 }
 
@@ -172,16 +171,24 @@ sub __ProcessJob {
 	my @manCh  = ();
 
 	# 1) Check if pcb exist in InCAM
-	my $jobExist = AcquireJob->Acquire($inCAM, $jobId);
+	my $jobExist = AcquireJob->Acquire( $inCAM, $jobId );
 
 	$self->_OpenJob($jobId);
- 
-	my $isPool = HegMethods->GetPcbIsPool($jobId);
+
+	my $isPool  = HegMethods->GetPcbIsPool($jobId);
+	my $pcbInfo = HegMethods->GetBasePcbInfo($jobId);
+
+	my $revize = $pcbInfo->{"stav"} eq 'R' ? 1 : 0;    # indicate if pcb need user-manual process before go to produce
+
+	if ($revize) {
+
+		push( @manCh, "1) Deska je ve stavu \"revize\", uprav data jobu podle požadavkù zákazníka/výroby." );
+	}
 
 	foreach my $checkInfo ( @{ $self->{"checklist"} } ) {
 
-		my $key  = $checkInfo->GetKey();
-		my $type = $checkInfo->GetType();
+		my $key    = $checkInfo->GetKey();
+		my $type   = $checkInfo->GetType();
 		my $detail = "";
 
 		if ( $self->{"checks"}->{$key}->NeedChange( $inCAM, $jobId, $jobExist, $isPool, \$detail ) ) {
@@ -196,11 +203,11 @@ sub __ProcessJob {
 			}
 			elsif ( $type eq Enums->Check_MANUAL ) {
 
-				if(defined $detail && $detail ne ""){
-					$detail = " - ".$detail;
+				if ( defined $detail && $detail ne "" ) {
+					$detail = " - " . $detail;
 				}
 
-				$str = ( scalar(@manCh) + 1 ) . ") " . $checkInfo->GetMessage(). $detail;
+				$str = ( scalar(@manCh) + 1 ) . ") " . $checkInfo->GetMessage() . $detail;
 				push( @manCh, $str );
 			}
 		}
@@ -239,6 +246,11 @@ sub __ProcessJob {
 		}
 	}
 
+	if ($revize) {
+
+		$orderState = EnumsIS->CurStep_ZPRACOVANIREV;
+	}
+
 	$self->__ProcessJobResult( $orderId, $orderState, undef );
 }
 
@@ -266,10 +278,13 @@ sub __ProcessJobResult {
 	else {
 		AutoProcLog->Delete($jobId);
 	}
-	
-	# delete change log 
-	if($orderState ne EnumsIS->CurStep_ZPRACOVANIAUTO && $orderState ne EnumsIS->CurStep_ZPRACOVANIMAN){
-		
+
+	# delete change log
+	if (    $orderState ne EnumsIS->CurStep_ZPRACOVANIAUTO
+		 && $orderState ne EnumsIS->CurStep_ZPRACOVANIMAN
+		 && $orderState ne EnumsIS->CurStep_ZPRACOVANIREV )
+	{
+
 		ChangeFile->Delete($jobId);
 	}
 
@@ -278,8 +293,6 @@ sub __ProcessJobResult {
 	HegMethods->UpdatePcbOrderState( $orderId, $orderState );
 }
 
-
- 
 sub __LoadChecklist {
 	my $self = shift;
 
@@ -365,15 +378,16 @@ sub __LoadCheckClasses {
 
 sub __SetLogging {
 	my $self = shift;
+
 	# 2) Load log4perl logger config
 	#my $appDir = dirname(__FILE__);
 	#Log::Log4perl->init("$appDir\\Logger.conf");
 
-#	my $dir = EnumsPaths->Client_INCAMTMPLOGS . "checkReorder";
-#
-#	unless ( -e $dir ) {
-#		mkdir($dir) or die "Can't create dir: " . $dir . $_;
-#	}
+	#	my $dir = EnumsPaths->Client_INCAMTMPLOGS . "checkReorder";
+	#
+	#	unless ( -e $dir ) {
+	#		mkdir($dir) or die "Can't create dir: " . $dir . $_;
+	#	}
 
 	$self->{"logger"} = get_logger("checkReorder");
 

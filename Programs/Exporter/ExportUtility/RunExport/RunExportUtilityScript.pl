@@ -10,6 +10,7 @@ our $configPath = undef;
 use strict;
 use warnings;
 use Win32::Console;
+use Log::Log4perl qw(get_logger :levels);
 
 #necessary for load pall packages
 use FindBin;
@@ -43,7 +44,12 @@ Helper->ShowAbstractQueueWindow( 0, "Cmd of $appName PID:" . $$ );
 # App logging
 # ==========================================================
 
+# Logging all
 AsyncJobHelber->SetLogging();
+
+# Loging new with Log4perl
+__SetLogging();
+
 
 if ( AppConf->GetValue("logingType") == 1 ) {
 	Helper->Logging();
@@ -79,5 +85,30 @@ if ($@) {
 
 	my $mngr = MessageMngr->new($appName);
 	$mngr->ShowModal( -1, EnumsGeneral->MessageType_SYSTEMERROR, \@m );    #  Script se zastavi
+}
+
+
+# Set logging Log4perl
+sub __SetLogging {
+
+	my $logConfig = GeneralHelper->Root() . "\\Programs\\Exporter\\ExportUtility\\Config\\Logger.conf";
+
+	# create log dirs for all application
+	my @dirs = ();
+	if ( open( my $f, "<", $logConfig ) ) {
+
+		while (<$f>) {
+			if ( my ($logFile) = $_ =~ /.filename\s*=\s*(.*)/ ) {
+
+				my ( $dir, $f ) = $logFile =~ /^(.+)\\([^\\]+)$/;
+				unless ( -e $dir ) {
+					mkdir($dir) or die "Can't create dir: " . $dir . $_;
+				}
+			}
+		}
+		close($logConfig);
+	}
+
+	Log::Log4perl->init($logConfig);
 }
 
