@@ -41,15 +41,13 @@ sub new {
 	#$self->{"smtp"} = "127.0.0.1";
 	$self->{"smtp"} = 'proxy.gatema.cz';
 	$self->{"from"} = 'tpvserver@gatema.cz';
- 
 
 	# Each app define "stop sending mail" condition
 	# Objects are stored in hasha and contain method StopSend
 
 	my %stopSend = ();
-	$stopSend{ EnumsApp->App_TEST } = TestStopCond->new();
+	$stopSend{ EnumsApp->App_TEST }         = TestStopCond->new();
 	$stopSend{ EnumsApp->App_CHECKREORDER } = ReOrderStopCond->new();
-	 
 
 	$self->{"stopSend"} = \%stopSend;
 
@@ -94,7 +92,7 @@ sub __ProcesAppLogs {
 		}
 
 		# b) stop sending if is fullfil condition defined by app
-		if ( defined $self->{"stopSend"}->{$appId} &&  !$self->{"stopSend"}->{$appId}->ProcessLog( $log->{"PcbId"} ) ) {
+		if ( defined $self->{"stopSend"}->{$appId} && !$self->{"stopSend"}->{$appId}->ProcessLog( $log->{"PcbId"} ) ) {
 
 			$stopSending = 0;
 		}
@@ -102,13 +100,13 @@ sub __ProcesAppLogs {
 		next if ($stopSending);
 
 		# 2) get receiver
- 
+
 		my $receiver        = undef;
 		my $receiverSentCnt = $log->{"ReceiverSentCnt"};    # number of mails which was sent to receiver
 
 		if ( !defined $log->{"Receiver"} || $log->{"Receiver"} eq "" ) {
 
-			$receiver =  $self->__GetDefaultReceiver( $log->{"PcbId"} );;
+			$receiver = $self->__GetDefaultReceiver( $log->{"PcbId"} );
 		}
 		else {
 
@@ -225,7 +223,7 @@ sub __SendMail {
 	# prepare email html template
 	my %keysData = ();
 
-	$keysData{"key__appName"} = "App: ".EnumsApp->GetTitle($appName);
+	$keysData{"key__appName"} = "App: " . EnumsApp->GetTitle($appName);
 
 	if ( $errType eq "Error" ) {
 		$keysData{"key__logTypeClr"} = "#FF8080";
@@ -259,12 +257,13 @@ sub __SendMail {
 	$sender->Open(
 		{
 		   to      => $mail,
-		   subject => "Server logs - ".EnumsApp->GetTitle($appName)." (warning  $appTotalSentMails/$appMaxSentMails)",
+		   subject => "Server logs - " . EnumsApp->GetTitle($appName) . " (warning  $appTotalSentMails/$appMaxSentMails)",
 
 		   #msg     => "I'm sending you the list you wanted.",
 		   #file    => 'filename.txt'
 		   ctype    => "text/html",
-		   encoding => "7bit"
+		   encoding => "7bit",
+		   bcc      => 'stepan.prichystal@gatema.cz' #TODO temporary 
 		}
 	);
 
