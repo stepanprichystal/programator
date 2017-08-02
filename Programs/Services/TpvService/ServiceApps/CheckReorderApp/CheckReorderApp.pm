@@ -30,6 +30,7 @@ use aliased 'Programs::Services::TpvService::ServiceApps::CheckReorderApp::Check
 use aliased 'CamHelpers::CamJob';
 use aliased 'Programs::Services::Helpers::AutoProcLog';
 use aliased 'Programs::Services::TpvService::ServiceApps::CheckReorderApp::CheckReorder::AcquireJob';
+use aliased 'Programs::Services::TpvService::ServiceApps::CheckReorderApp::CheckReorder::AutoChangeFile';
 use aliased 'Programs::Services::TpvService::ServiceApps::CheckReorderApp::CheckReorder::ChangeFile';
 
 #-------------------------------------------------------------------------------------------#
@@ -189,22 +190,23 @@ sub __ProcessJob {
 
 		my $key    = $checkInfo->GetKey();
 		my $type   = $checkInfo->GetType();
-		my $detail = "";
+		my $detail = "";                               # Contain specifying message about manual task
+		my %data   = ();                               # Contain detail data, for process automatic task
 
-		if ( $self->{"checks"}->{$key}->NeedChange( $inCAM, $jobId, $jobExist, $isPool, \$detail ) ) {
+		if ( $self->{"checks"}->{$key}->NeedChange( $inCAM, $jobId, $jobExist, $isPool, \$detail, \%data ) ) {
 
 			my $str = undef;
 
 			if ( $type eq Enums->Check_AUTO ) {
 
-				$str = ( scalar(@autoCh) + 1 ) . ") " . $checkInfo->GetKey() . " - " . $checkInfo->GetDesc();
-				push( @autoCh, $str );
+				my %taskInf = ( "key" => $checkInfo->GetKey(), "data" => \%data );
+				push( @autoCh, \%taskInf );
 
 			}
 			elsif ( $type eq Enums->Check_MANUAL ) {
 
 				if ( defined $detail && $detail ne "" ) {
-					$detail = " - " . $detail;
+					$detail = "\n Detail: " . $detail;
 				}
 
 				$str = ( scalar(@manCh) + 1 ) . ") " . $checkInfo->GetMessage() . $detail;
@@ -218,10 +220,20 @@ sub __ProcessJob {
 		$inCAM->COM( "close_job", "job" => "$jobId" );
 	}
 
-	# 2) create changes file to archive
-	if ( scalar(@autoCh) > 0 || scalar(@manCh) > 0 ) {
+	# 2) create changes file to archive (auto + manual changes file)
+	if ( scalar(@autoCh) > 0 ) {
 
-		ChangeFile->Create( $jobId, \@autoCh, \@manCh );
+		AutoChangeFile->Create( $jobId, \@autoCh );
+	}
+
+	if ( scalar(@manCh) > 0 ) {
+
+		ChangeFile->Create( $jobId, \@manCh );
+
+	}
+	else {
+
+		ChangeFile->Delete($jobId);
 	}
 
 	# 3) set order state
@@ -279,14 +291,18 @@ sub __ProcessJobResult {
 		AutoProcLog->Delete($jobId);
 	}
 
-	# delete change log
-	if (    $orderState ne EnumsIS->CurStep_ZPRACOVANIAUTO
-		 && $orderState ne EnumsIS->CurStep_ZPRACOVANIMAN
-		 && $orderState ne EnumsIS->CurStep_ZPRACOVANIREV )
-	{
-
-		ChangeFile->Delete($jobId);
-	}
+#	# delete change log
+#	if (    $orderState ne EnumsIS->CurStep_ZPRACOVANIMAN
+#		 && $orderState ne EnumsIS->CurStep_ZPRACOVANIREV )
+#	{
+#
+#		ChangeFile->Delete($jobId);
+#	}
+#
+#	if ( $orderState ne EnumsIS->CurStep_ZPRACOVANIAUTO ) {
+#
+#		AutoChangeFile->Delete($jobId);
+#	}
 
 	# 2) set state
 

@@ -22,7 +22,6 @@ use aliased 'CamHelpers::CamJob';
 sub Create {
 	my $self   = shift;
 	my $jobId  = shift;
-	my @autoCh = @{ shift(@_) };
 	my @manCh  = @{ shift(@_) };
 
 	my @lines = ();
@@ -33,7 +32,7 @@ sub Create {
 	push( @lines, "" );
 	push( @lines, "" );
 
-	push( @lines, "# ============ Manual tasks============ #" );
+	push( @lines, "# ============ Manual tasks ============ #" );
 	push( @lines, "" );
 
 	for ( my $i = 0 ; $i < scalar(@manCh) ; $i++ ) {
@@ -43,15 +42,7 @@ sub Create {
 	}
 
 	push( @lines, "" );
-	push( @lines, "# ========== Automatic tasks ========== #" );
-	push( @lines, "" );
-
-	for ( my $i = 0 ; $i < scalar(@autoCh) ; $i++ ) {
-
-		push( @lines, $autoCh[$i] );
-
-	}
-
+ 
 	my $path = JobHelper->GetJobArchive($jobId) . "Change_log.txt";
 
 	if ( -e $path ) {

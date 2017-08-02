@@ -36,6 +36,8 @@ sub NeedChange {
 	my $jobId = shift;
 	my $jobExist = shift; # (in InCAM db)
 	my $isPool = shift;
+	my $detail   = shift;    # reference on detail message (manual task)
+	my $data     = shift;    # reference on data for process automatic task
 	
 	unless($jobExist){
 		return 1;
@@ -43,17 +45,23 @@ sub NeedChange {
 
 	my $needChange = 0;
 	
+	my @attr = ();
+	
 	my $userName = CamAttributes->GetJobAttrByName( $inCAM, $jobId, "user_name" );    # zakaznicky panel
 	
 	if(!defined $userName || $userName eq "" || $userName =~ /none/i){
+		push(@attr, "user_name");
 		$needChange = 1;
 	}
 	
 	my $pcbClass = CamAttributes->GetJobAttrByName( $inCAM, $jobId, "pcb_class" );    # zakaznicky panel
 	
 	if(!defined $pcbClass || $pcbClass eq ""  || $pcbClass < 3 ){
+		push(@attr, "pcb_class");
 		$needChange = 1;
 	} 
+
+	$data->{"attributes"} = \@attr;
 
 	return $needChange;
 }

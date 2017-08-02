@@ -38,6 +38,7 @@ sub NeedChange {
 	my $jobExist = shift;    # (in InCAM db)
 	my $isPool   = shift;
 	my $detail   = shift;    # reference on detail message when change is needed
+	
 
 	my $needChange = 0;
 
