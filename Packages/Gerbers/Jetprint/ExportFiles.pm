@@ -101,7 +101,7 @@ sub Run {
 
 	$self->__CreateJetprintStep();
 	$self->__ExportLayers( \@layers );
-	$self->__DeleteJetprintStep();
+	#$self->__DeleteJetprintStep();
 
 	return 1;
 }
@@ -281,7 +281,7 @@ sub __DeleteFeatures {
 	my $f = FeatureFilter->new( $inCAM, $jobId, $layerName );
 
 	$f->AddIncludeAtt( ".pnl_place", "PCBF_*" );
-	$f->AddIncludeAtt( ".pnl_place", "M-IN*" );
+	$f->AddIncludeAtt( ".pnl_place", "M-*" );
 	$f->AddIncludeAtt( ".pnl_place", "T-User*" );
 	$f->AddIncludeAtt( ".pnl_place", "T-Time*" );
 	$f->AddIncludeAtt( ".pnl_place", "T-Date*" );
@@ -453,7 +453,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId    = "f52457";
+	my $jobId    = "f79016";
 	my $stepName = "panel";
 
 	my $export = ExportFiles->new( $inCAM, $jobId );
