@@ -104,7 +104,7 @@ sub WorkerMethod {
 
 	# ------------------------------------------------
 
-	$logger->debug("In working method");
+	#$logger->debug("In working method");
 
 	# Launch app according last launch time
 	foreach my $appName ( keys %regApp ) {
@@ -119,7 +119,7 @@ sub WorkerMethod {
 			 || ( $Context->{"appStarts"}->{$appName} + $regApp{$appName}->{"repeat"} * 60 ) < time() )
 		{
 
-			$logger->info("Launch app $appName");
+			$logger->info("Launch app ====== $appName ====== ");
 
 			eval {
 
@@ -142,7 +142,7 @@ sub WorkerMethod {
 		}
 	}
 
-	$logger->debug("Out of working method");
+	#$logger->debug("Out of working method");
 
 }
 
@@ -152,7 +152,7 @@ sub __GetApp {
 	my $app = undef;
 
 	my $logger = get_logger("service");
-	$logger->debug("get app");
+	#$logger->debug("get app");
 
 	if ( $appName eq EnumsApp->App_CHECKREORDER ) {
 
@@ -186,7 +186,7 @@ sub Callback_Timer {
 
 	my $logger = get_logger("service");
 
-	$logger->debug("Call back running");
+	#$logger->debug("Call back running");
 
 	# reduce log file
 	#my $pathstd = AppConf->GetValue("logFilePath") . "\\LogOut.txt";
@@ -210,7 +210,7 @@ sub Callback_Timer {
 	# calling the "Start" callback.
 	if ( SERVICE_CONTROL_TIMER == $ControlMessage ) {
 
-		$logger->info("Tpv service start");
+		#$logger->info("Tpv service start");
 
 		#while (1) {
 

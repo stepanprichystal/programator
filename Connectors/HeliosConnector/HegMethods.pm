@@ -1106,6 +1106,26 @@ sub GetPcbsInProduceSilk {
 	return @result;
 }
 
+
+# Return pcb, which MDI data has to be exported
+sub GetPcbsInProduceMDI {
+	my $self  = shift;
+ 
+	my @params = ();
+ 
+	my $cmd = "select distinct d.reference_subjektu, d.material_typ
+				from lcs.zakazky_dps_22_hlavicka z join lcs.desky_22 d on d.cislo_subjektu=z.deska 
+				left outer join lcs.vztahysubjektu vs on vs.cislo_vztahu = 23054 and vs.cislo_subjektu = z.cislo_subjektu 
+				where vs.cislo_vztaz_subjektu is null and z.stav='4'";
+ 
+	my @result = Helper->ExecuteDataSet( $cmd, \@params );
+	
+	@result = grep {   $_->{"reference_subjektu"} =~ /^\w\d+$/} @result; # remove cores
+	@result = grep { $_->{"material_typ"} !~ /[t0s]/i } @result;
+ 
+	return @result;
+}
+ 
  
 #-------------------------------------------------------------------------------------------#
 #  Helper method
@@ -1143,17 +1163,17 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
  
 	#my @pcbInProduc = HegMethods->GetPcbsByStatus( 2, 4, 25, 35 );
  
-	my @orders = HegMethods->GetPcbsInProduceSilk();
+	my @orders = HegMethods->GetPcbsInProduceMDI();
  
 	
 	#my @opak = HegMethods->GetReorders( );
 	
 	
-	my $inf = HegMethods->GetBasePcbInfo("f52457");
+	#my $inf = HegMethods->GetBasePcbInfo("f52457");
 	
-	print $inf;
+	#print $inf;
 	
-	#dump(@opak);
+	dump(@orders);
 	
 	#print scalar(@opak);
 	

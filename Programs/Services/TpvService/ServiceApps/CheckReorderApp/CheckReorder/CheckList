@@ -27,6 +27,12 @@ M =
 K = MASK_POLAR
 V = 
 T = auto
+M = 
+
+[ Repair layer names ]
+K = LAYER_NAMES
+V = 
+T = auto
 M =  
  
 [ Put schema ]

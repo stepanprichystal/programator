@@ -27,6 +27,7 @@ use aliased 'Helpers::GeneralHelper';
 use aliased 'Helpers::FileHelper';
 use aliased 'Programs::Services::TpvService::ServiceApps::MdiDataApp::Enums';
 use aliased 'Packages::Gerbers::Mdi::ExportFiles::Enums' => 'MdiEnums';
+use aliased 'Packages::Gerbers::Mdi::ExportFiles::Helper' => 'MdiHelper';
 use aliased 'Helpers::JobHelper';
 use aliased 'CamHelpers::CamJob';
 use aliased 'Enums::EnumsPaths';
@@ -166,8 +167,19 @@ sub __ProcessJob {
 
 	# 2) Export mdi files
 
-	my %mdiInfo = $self->__GetMDIInfo($jobId);
-
+	# getr dfault layer types to export
+	my %mdiInfo = MdiHelper->GetDefaultLayerTypes($inCAM, $jobId);
+	
+	# remove all job files
+	my @f  = FileHelper->GetFilesNameByPattern( EnumsPaths->Jobs_MDI, $jobId );
+	
+	foreach (@f) {
+		unless ( unlink($_) ) {
+			die "Can not delete mdi file $_.\n";
+		}
+	}
+	
+	# export
 	my $export = ExportFiles->new( $inCAM, $jobId, "panel" );
 	$export->{"onItemResult"}->Add( sub { $self->__OnExportLayer(@_) } );
 
@@ -253,39 +265,7 @@ sub __GetPcb2Export {
 	return @pcb2Export;
 }
 
-# Get settings, which layers default export for mdi
-sub __GetMDIInfo {
-	my $self  = shift;
-	my $jobId = shift;
-
-	my $inCAM = $self->{"inCAM"};
-
-	my %mdiInfo = ();
-
-	my $signal = CamHelper->LayerExists( $inCAM, $jobId, "c" );
-
-	if ( HegMethods->GetTypeOfPcb($jobId) eq "Neplatovany" ) {
-		$signal = 0;
-	}
-
-	$mdiInfo{ MdiEnums->Type_SIGNAL } = $signal;
-
-	if ( ( CamHelper->LayerExists( $inCAM, $jobId, "mc" ) || CamHelper->LayerExists( $inCAM, $jobId, "ms" ) )
-		 && CamJob->GetJobPcbClass( $self->{"inCAM"}, $jobId ) >= 8 )
-	{
-		$mdiInfo{ MdiEnums->Type_MASK } = 1;
-	}
-	else {
-		$mdiInfo{ MdiEnums->Type_MASK } = 0;
-	}
-
-	$mdiInfo{ MdiEnums->Type_PLUG } =
-	  ( CamHelper->LayerExists( $inCAM, $jobId, "plgc" ) || CamHelper->LayerExists( $inCAM, $jobId, "plgs" ) ) ? 1 : 0;
-	$mdiInfo{ MdiEnums->Type_GOLD } =
-	  ( CamHelper->LayerExists( $inCAM, $jobId, "goldc" ) || CamHelper->LayerExists( $inCAM, $jobId, "golds" ) ) ? 1 : 0;
-
-	return %mdiInfo;
-}
+ 
 
 sub __DeleteOldMDIFiles {
 	my $self = shift;
@@ -336,9 +316,8 @@ sub __DeleteOldMDIFiles {
 sub __GetPcbsInProduc {
 	my $self = shift;
 
-	my @pcbInProduc = HegMethods->GetPcbsByStatus(4);    # get pcb "Ve vyrobe"
-
-	@pcbInProduc = grep { $_->{"material_typ"} !~ /[t0s]/i } @pcbInProduc;
+	my @pcbInProduc = HegMethods->GetPcbsInProduceMDI();    # get pcb "Ve vyrobe"
+ 
 	@pcbInProduc = map  { $_->{"reference_subjektu"} } @pcbInProduc;
 
 	return @pcbInProduc;

@@ -18,6 +18,7 @@ use aliased 'Programs::Exporter::ExportChecker::Enums';
 use aliased 'CamHelpers::CamHelper';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'Connectors::HeliosConnector::HegMethods';
+use aliased 'Packages::Gerbers::Mdi::ExportFiles::Helper' => 'MdiHelper';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -70,7 +71,7 @@ sub OnPrepareGroupData {
 	}
 	
 	# 2) Prepare MDI settings
-	my %mdiInfo = $self->__GetMDIInfo( $jobId, $defaultInfo );
+	my %mdiInfo = $self->__GetMDIInfo($inCAM, $jobId);
 	$groupData->SetMdiInfo( \%mdiInfo );
 
 	# 3) Prepare paste settings
@@ -216,36 +217,53 @@ sub __GetPasteInfo {
 
 }
 
+
 sub __GetMDIInfo {
 	my $self        = shift;
-	my $jobId       = shift;
-	my $defaultInfo = shift;
-
-	my %mdiInfo = ();
-
-	my $signal = $defaultInfo->LayerExist("c");
-
-	if ( HegMethods->GetTypeOfPcb($jobId) eq "Neplatovany" ) {
-		$signal = 0;
-	}
-
-	$mdiInfo{"exportSignal"} = $signal;
-
-	if ( ( $defaultInfo->LayerExist("mc") || $defaultInfo->LayerExist("ms") ) && $defaultInfo->GetPcbClass() >= 3 ) {
-		$mdiInfo{"exportMask"} = 1;
-	}
-	else {
-		$mdiInfo{"exportMask"} = 0;
-	}
-
-	$mdiInfo{"exportPlugs"} = ( $defaultInfo->LayerExist("plgc") || $defaultInfo->LayerExist("plgs") ) ? 1 : 0;
-	
-	$mdiInfo{"exportGold"} = ( $defaultInfo->LayerExist("goldc") || $defaultInfo->LayerExist("golds") ) ? 1 : 0;
-
+	my $inCAM = shift;
+	my $jobId = shift;
  
-	return %mdiInfo;
+	my %mdiTypes = MdiHelper->GetDefaultLayerTypes($inCAM, $jobId);
 
+	my %mdi = ();
+	$mdi{"exportSignal"} = $mdiTypes{"typeSignal"};
+	$mdi{"exportMask"} = $mdiTypes{"typeMask"};
+	$mdi{"exportPlugs"} = $mdiTypes{"typePlugs"};
+	$mdi{"exportGold"} = $mdiTypes{"typeGold"};
+
+	return %mdi;
 }
+
+#sub __GetMDIInfo {
+#	my $self        = shift;
+#	my $jobId       = shift;
+#	my $defaultInfo = shift;
+#
+#	my %mdiInfo = ();
+#
+#	my $signal = $defaultInfo->LayerExist("c");
+#
+#	if ( HegMethods->GetTypeOfPcb($jobId) eq "Neplatovany" ) {
+#		$signal = 0;
+#	}
+#
+#	$mdiInfo{"exportSignal"} = $signal;
+#
+#	if ( ( $defaultInfo->LayerExist("mc") || $defaultInfo->LayerExist("ms") ) && $defaultInfo->GetPcbClass() >= 3 ) {
+#		$mdiInfo{"exportMask"} = 1;
+#	}
+#	else {
+#		$mdiInfo{"exportMask"} = 0;
+#	}
+#
+#	$mdiInfo{"exportPlugs"} = ( $defaultInfo->LayerExist("plgc") || $defaultInfo->LayerExist("plgs") ) ? 1 : 0;
+#	
+#	$mdiInfo{"exportGold"} = ( $defaultInfo->LayerExist("goldc") || $defaultInfo->LayerExist("golds") ) ? 1 : 0;
+#
+# 
+#	return %mdiInfo;
+#
+#}
 
 
 sub __GetJetprintInfo {

@@ -310,7 +310,7 @@ sub __ReadMess {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 #
-#	use aliased 'Packages::InCAMServer::Client::InCAMServer';
+	use aliased 'Packages::InCAMServer::Client::InCAMServer';
 #	use aliased 'CamHelpers::CamJob';
 #
 #	# ================================================#
@@ -318,13 +318,13 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 #
 #	while (1) {
 #
-#		my $server = InCAMServer->new();
-#		my $inCAM  = $server->GetInCAM();
+		my $server = InCAMServer->new();
+		my $inCAM  = $server->GetInCAM();
 #
-#		$inCAM->COM("get_user_name");
-#		my $rep = $inCAM->GetReply();
+		$inCAM->COM("get_user_name");
+		my $rep = $inCAM->GetReply();
 #
-#		print STDERR "\nOdpoved z InCAM - user name: " . $rep . "\n";
+		print STDERR "\nOdpoved z InCAM - user name: " . $rep . "\n";
 #		print STDERR "\nKonec pouziti InCAMu\n";
 #
 #		sleep( int( rand(20) ) );

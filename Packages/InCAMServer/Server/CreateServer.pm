@@ -20,6 +20,7 @@ use aliased 'Enums::EnumsPaths';
 use aliased 'Helpers::GeneralHelper';
 use aliased 'Packages::InCAM::InCAM';
 use aliased 'Packages::SystemCall::SystemCall';
+use aliased 'CamHelpers::CamEditor';
 
 #-------------------------------------------------------------------------------------------#
 #  Public method
@@ -29,39 +30,49 @@ sub CreateServer {
 	my $self     = shift;
 	my $freePort = shift;
 
+	my $logger = get_logger("serverLog");
+
 	my %result = ( "result" => 0 );
 
-	my $pidInCAM;
-	my $pidServer;
-	my $fIndicator = GeneralHelper->GetGUID();    # file name, where is value, which indicate if server is ready 1/0
+	eval {
+ 
+		my $pidInCAM;
+		my $pidServer;
+		my $fIndicator = GeneralHelper->GetGUID();    # file name, where is value, which indicate if server is ready 1/0
 
-	# create indicator file
+		# create indicator file
 
-	# 2) try to create inCAM server
-	while (1) {
+		# 2) try to create inCAM server. Max number of attempts 10
+		for ( 1 .. 10 ) {
 
-		# launch InCAm instance + server
-		$pidInCAM = $self->__CreateInCAMInstance( $freePort, $fIndicator );
+			$logger->debug( "Create Incam server attempt num.: " . $_ . " \n" );
+			 
+			# launch InCAm instance + server
+			$pidInCAM = $self->__CreateInCAMInstance( $freePort, $fIndicator );
 
-		# creaate and test server connection
-		$pidServer = $self->__CreateServerConn( $freePort, $fIndicator );
+			# creaate and test server connection
+			$pidServer = $self->__CreateServerConn( $freePort, $fIndicator );
 
-		# if pid server returned, incam server is ok
-		if ($pidServer) {
-
-			$result{"result"}    = 1;
-			$result{"inCAMPID"}  = $pidInCAM;
-			$result{"serverPID"} = $pidServer;
-			last;
+			# if pid server returned, incam server is ok
+			if ($pidServer) {
+ 
+				$result{"result"}    = 1;
+				$result{"inCAMPID"}  = $pidInCAM;
+				$result{"serverPID"} = $pidServer;
+				
+				# 3) Temoporary solution because -x is not working in inCAM
+				$self->__MoveWindowOut($pidInCAM);
+				
+				last;
+			}
 		}
+	};
+	if ($@) {
+		$logger->error( "Error during create InCAM server. Details: " . $@ );
 	}
-	
-	 # 3) Temoporary solution because -x is not working in inCAM
-	$self->__MoveWindowOut($pidInCAM);
 
 	return %result;
 }
-
 
 sub CloseZombie {
 	my $self     = shift;
@@ -89,7 +100,6 @@ sub CloseZombie {
 
 }
 
-
 sub __CreateServer {
 	my $self     = shift;
 	my $freePort = shift;
@@ -102,7 +112,7 @@ sub __CreateServer {
 	# create indicator file
 
 	# 2) try to create inCAM server
-	foreach (1..10) {
+	foreach ( 1 .. 10 ) {
 
 		# launch InCAm instance + server
 		$pidInCAM = $self->__CreateInCAMInstance( $freePort, $fIndicator );
@@ -119,8 +129,8 @@ sub __CreateServer {
 			last;
 		}
 	}
-	
-	unless($pidServer){
+
+	unless ($pidServer) {
 		die "Unable to Create InCAM server after 10 attempts.\n";
 	}
 
@@ -183,9 +193,6 @@ sub __CreateInCAMInstance {
 	$pidInCAM = $processObj->GetProcessID();
 
 	#$self->{"threadLoger"}->debug("CLIENT PID: " . $pidInCAM . " (InCAM)........................................is launching\n");
-
-
-
 
 	return $pidInCAM;
 }
@@ -253,9 +260,21 @@ sub __CreateServerConn {
 	#print STDERR "Server ready, next client finish\n";
 
 	if ($pidServer) {
-		$inCAM->ClientFinish();
-
-		return $pidServer;
+		
+		# test if there is a free editor
+		if(CamEditor->GetFreeEditorLicense($inCAM)){
+			
+			$inCAM->ClientFinish();
+			return $pidServer;
+		
+		}else{
+			
+			# Close created InCAM server, because there is no free editor
+			$self->CloseZombie($port);
+			return 0;
+		}
+		
+		
 	}
 	else {
 		die "\nError connect to incam server";
@@ -288,7 +307,6 @@ sub __MoveWindowOut {
 	}
 
 }
-
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

@@ -19,6 +19,6 @@ use aliased 'Packages::InCAM::InCAM';
 
 my $inCAM = InCAM->new();
 
- my $userName = CamAttributes->GetJobAttrByName( $inCAM, "d98970", "user_name" );  
+ my $res = $inCAM->COM( "license", "op" => "Usage", "out_file" => "c:/Export/lecense.txt");  
  
- print $userName;
+ 

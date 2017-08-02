@@ -38,17 +38,20 @@ sub new {
 sub Run {
 	my $self = shift;
 
-	my $specialFiduc = undef;
+	if ( $self->{"jetInfo"}->{"exportGerbers"} ) {
+		
+		my $specialFiduc = undef;
 
-	if ( defined $self->{"jetInfo"}->{"fiduc3p2"} && $self->{"jetInfo"}->{"fiduc3p2"} ) {
+		if ( defined $self->{"jetInfo"}->{"fiduc3p2"} && $self->{"jetInfo"}->{"fiduc3p2"} ) {
 
-		$specialFiduc =  Enums->Fiducials_HOLE3P2 ;
+			$specialFiduc = Enums->Fiducials_HOLE3P2;
+		}
+
+		my $export = ExportFiles->new( $self->{"inCAM"}, $self->{"jobId"}, $specialFiduc );
+		$export->{"onItemResult"}->Add( sub { $self->__OnExportLayer(@_) } );
+
+		$export->Run();
 	}
-
-	my $export = ExportFiles->new( $self->{"inCAM"}, $self->{"jobId"}, $specialFiduc );
-	$export->{"onItemResult"}->Add( sub { $self->__OnExportLayer(@_) } );
-
-	$export->Run();
 
 	return 1;
 }

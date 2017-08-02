@@ -2,7 +2,7 @@
 # Description:  Class responsible for determine pcb reorder check
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Programs::Services::TpvService::ServiceApps::CheckReorderApp::CheckReorder::Checks::ELTEST_EXIST;
+package Programs::Services::TpvService::ServiceApps::CheckReorderApp::CheckReorder::Checks::LAYER_NAMES;
 use base('Programs::Services::TpvService::ServiceApps::CheckReorderApp::CheckReorder::Checks::CheckBase');
 
 use Class::Interface;
@@ -13,9 +13,9 @@ use strict;
 use warnings;
 
 #local library
-use aliased 'Helpers::JobHelper';
-use aliased 'Packages::NifFile::NifFile';
 use aliased 'CamHelpers::CamJob';
+
+
 #-------------------------------------------------------------------------------------------#
 #  Public method
 #-------------------------------------------------------------------------------------------#
@@ -28,50 +28,31 @@ sub new {
 	return $self;
 }
 
-# if electric test directory doesn't contain dir at least fo one machine
+# Check if mask is not negative in matrix
 sub NeedChange {
-	my $self     = shift;
-	my $inCAM    = shift;
-	my $jobId    = shift;
+	my $self  = shift;
+	my $inCAM = shift;
+	my $jobId = shift;
 	my $jobExist = shift; # (in InCAM db)
 	my $isPool = shift;
+	
+	unless($jobExist){
+		return 1;
+	}
 
 	my $needChange = 0;
-
-	if($isPool){
-		return 0;
-	}
-
-	my $nif = NifFile->new($jobId);
-	 
-	# if pcb is one side + class 3, do not request test
-	if($nif->GetValue("kons_trida") <= 3 && CamJob->GetSignalLayerCnt($inCAM, $jobId) == 1){
-		return 0;
-	}
  
-	my $path = JobHelper->GetJobElTest($jobId);
- 
-	if ( -e $path ) {
-
-		my @dirs = ();
-		
-		if ( opendir( DIR, $path ) ) {
-			@dirs = readdir(DIR);
-			closedir(DIR);
-		}
-
-		if ( scalar( grep { $_ =~ /^A[357]_/i } @dirs ) < 1 ) {
-
-			$needChange = 1;
-		}
-
-	}
-	else {
+	my @layers = CamJob->GetAllLayers($inCAM, $jobId);
+	
+	# Check if there are wron layer names
+	
+	# old format of paste files sa_ori, sb_ori
+	
+	if( scalar(grep { $_->{"gROWname"} =~ /^s[ab]_(ori)|(made)$/} @layers)){
 		$needChange = 1;
 	}
-	
+	 
 	return $needChange;
-
 }
 
 #-------------------------------------------------------------------------------------------#
@@ -80,11 +61,11 @@ sub NeedChange {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
- 	use aliased 'Programs::Services::TpvService::ServiceApps::CheckReorderApp::CheckReorder::Checks::ELTEST_EXIST' => "Change";
+ 	use aliased 'Programs::Services::TpvService::ServiceApps::CheckReorderApp::CheckReorder::Checks::LAYER_NAMES' => "Change";
  	use aliased 'Packages::InCAM::InCAM';
 	
 	my $inCAM    = InCAM->new();
-	my $jobId = "d10355";
+	my $jobId = "f00873";
 	
 	my $check = Change->new();
 	

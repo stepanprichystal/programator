@@ -28,6 +28,7 @@ use aliased 'Packages::Other::AppConf';
 use aliased 'Programs::Services::LogService::Logger::DBLogger';
 use aliased 'Enums::EnumsApp';
 use aliased 'Managers::AsyncJobMngr::Helper' => "AsyncJobHelber";
+use aliased 'Programs::Services::Helpers::AutoProcLog';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods, requested by IUnit interface
@@ -234,7 +235,12 @@ sub SentToProduce {
 				my $succ = HegMethods->UpdatePcbOrderState( $orderNum, EnumsIS->CurStep_HOTOVOZADAT );
 			}
 		}
-
+		
+		# remove auto process log
+		if ( AsyncJobHelber->ServerVersion() ) {
+			AutoProcLog->Delete($self->GetJobId()); 
+		}
+		
 		$self->{"taskStatus"}->DeleteStatusFile();
 		$self->{"sentToProduce"} = 1;
 	};
@@ -300,10 +306,11 @@ sub SetErrorState {
 
 			$self->{"loggerDB"} = DBLogger->new( EnumsApp->App_EXPORTUTILITY );
 
-			$self->{"loggerDB"}
-			  ->Error( $self->GetJobId(),
-					   "Error during export job id: \"" . $self->GetJobId() . "\" on server computer. See details on server. \n $str" );
+			$self->{"loggerDB"}->Error( $self->GetJobId(),
+									 "Error during export job id: \"" . $self->GetJobId() . "\" on server computer. See details on server. \n $str" );
 
+			AutoProcLog->Create( EnumsApp->App_EXPORTUTILITY, $self->GetJobId(), "Job: " . $self->GetJobId() . " finished with errors.\n $str" );
+ 
 		}
 	};
 	if ( my $e = $@ ) {
