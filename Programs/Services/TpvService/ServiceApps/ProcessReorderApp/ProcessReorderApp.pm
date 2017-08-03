@@ -15,9 +15,7 @@ use warnings;
 #use File::Spec;
 use File::Basename;
 use Log::Log4perl qw(get_logger);
-use Archive::Zip qw( :ERROR_CODES :CONSTANTS );
 
-use POSIX qw(strftime);
 
 #local library
 #use aliased 'Connectors::TpvConnector::TpvMethods';
@@ -26,7 +24,6 @@ use aliased 'Enums::EnumsApp';
 use aliased 'Helpers::GeneralHelper';
 use aliased 'Helpers::FileHelper';
 use aliased 'Programs::Services::TpvService::ServiceApps::ProcessReorderApp::Enums';
-use aliased 'Programs::Services::TpvService::ServiceApps::CheckReorderApp::Enums' => 'EnumsCheck';
 use aliased 'Helpers::JobHelper';
 use aliased 'CamHelpers::CamJob';
 use aliased 'Programs::Services::Helpers::AutoProcLog';
@@ -34,6 +31,7 @@ use aliased 'Programs::Services::TpvService::ServiceApps::CheckReorderApp::Check
 use aliased 'Programs::Services::TpvService::ServiceApps::CheckReorderApp::CheckReorder::AutoChangeFile';
 use aliased 'Enums::EnumsPaths';
 use aliased 'Enums::EnumsIS';
+use aliased 'Packages::Reorder::ProcessReorder::ProcessReorder';
 
 #-------------------------------------------------------------------------------------------#
 #  Public method
@@ -165,30 +163,17 @@ sub __ProcessJob {
 
 	my ($jobId) = $orderId =~ /^(\w\d+)-\d+/i;
 	$jobId = lc($jobId);
-
-	# Check if change log file exist and read checks
-	my @changes = $self->__LoadChanges($inCAM, $jobId);
-
+ 
 	# 1) Open Job
 
 	$self->_OpenJob($jobId);
+ 
 
-	# 2) Archive old files
+	# 2) Do automatic changes
 
-	$self->__ArchiveJob($jobId);
-
-	# 3) Do automatic changes
-
-	my $result  = 1;
 	my $errMess = "";
-	foreach my $change (@changes) {
-
-		unless ( $change->Run(\$errMess ) ) {
-
-			$result = 0;
-			last;
-		}
-	}
+	my $processReorder = ProcessReorder->new($inCAM, $jobId);
+	my $result  = $processReorder->RunChanges(\$errMess);
 
 	# 4) save job
 
@@ -247,117 +232,9 @@ sub __ProcessJobResult {
 
 }
 
-sub __LoadChanges {
-	my $self  = shift;
-	my $inCAM = shift;
-	my $jobId = shift;
 
-	my $path = JobHelper->GetJobArchive($jobId) . "Change_log.txt";
 
-	unless ( -e $path ) {
-		die "Unable to process reorder $jobId, because \"change_log\" file doesnt exist in archive at: $path.\n";
-	}
-
-	my @changes = ();
-	my @lines   = @{ FileHelper->ReadAsLines($path) };
-
-	my $autoChanges = 0;
-
-	foreach (@lines) {
-
-		unless ($autoChanges) {
-
-			if ( $_ =~ /Automatic task/i ) {
-				$autoChanges = 1;
-			}
-			else {
-				next;
-			}
-		}
-
-		if ( $_ =~ /\d\)\s*(.*)\s*-\s*(.*)/i ) {
-
-			my $key = $1;
-			 $key =~ s/\s//g;
-
-			my $module = 'Programs::Services::TpvService::ServiceApps::ProcessReorderApp::ProcessReorder::Changes::' . $key;
-			eval("use  $module;");
-
-			push( @changes, $module->new($key, $inCAM, $jobId) );
-		}
-	}
-
-	unless ( scalar(@changes) ) {
-		die "Unable to process reorder $jobId, because \"change_log\" file doesnt contain any automatic changes.\n";
-
-	}
-
-	return @changes;
-}
-
-sub __ArchiveJob {
-	my $self  = shift;
-	my $jobId = shift;
-
-	# Script zip script files and save to backup dir
-	my $fname = "Premnozeni_" . ( strftime "%Y_%m_%d", localtime ) . ".zip";
-
-	my $archive = JobHelper->GetJobArchive($jobId);
-
-	my $zip = Archive::Zip->new();
-
-	my $dir;
-	if ( opendir( $dir, $archive ) ) {
-
-		my $tgz = $archive . "\\" . $jobId . ".tgz";
-
-		if ( -e $tgz ) {
-			$zip->addFile( $tgz, $jobId . ".tgz" );
-		}
-
-		my $nif = $archive . "\\" . $jobId . ".nif";
-
-		if ( -e $nif ) {
-			$zip->addFile( $nif, $jobId . ".nif" );
-		}
-
-		my $dif = $archive . "\\" . $jobId . ".dif";
-
-		if ( -e $dif ) {
-			$zip->addFile( $nif, $jobId . ".dif" );
-		}
-
-		my $pdf = $archive . "\\zdroje\\" . "$jobId-control.pdf";
-
-		if ( -e $pdf ) {
-			$zip->addFile( $pdf, "$jobId-control.pdf" );
-		}
-
-		$zip->addDirectory("nc");
-
-		my $nc = $archive . "\\nc\\";
-
-		if ( opendir( $dir, $nc ) ) {
-
-			while ( ( my $f = readdir($dir) ) ) {
-
-				next unless $f =~ /^[a-z]/i;
-
-				$zip->addFile( $nc . "\\" . $f, "nc\\" . $f );
-
-			}
-
-			close($dir);
-		}
-
-		close $dir;
-	}
-
-	unless ( $zip->writeToFileNamed( $archive . "zdroje\\$fname" ) == AZ_OK ) {
-		die "Zip job archive failed.";
-	}
-
-}
+ 
 
 sub __SetLogging {
 	my $self = shift;

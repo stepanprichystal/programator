@@ -23,15 +23,14 @@ use aliased 'Enums::EnumsApp';
 use aliased 'Helpers::GeneralHelper';
 use aliased 'Enums::EnumsPaths';
 use aliased 'Helpers::FileHelper';
-use aliased 'Programs::Services::TpvService::ServiceApps::CheckReorderApp::Enums';
 use aliased 'Enums::EnumsIS';
 use aliased 'Helpers::JobHelper';
-use aliased 'Programs::Services::TpvService::ServiceApps::CheckReorderApp::CheckReorder::CheckInfo';
 use aliased 'CamHelpers::CamJob';
 use aliased 'Programs::Services::Helpers::AutoProcLog';
 use aliased 'Programs::Services::TpvService::ServiceApps::CheckReorderApp::CheckReorder::AcquireJob';
 use aliased 'Programs::Services::TpvService::ServiceApps::CheckReorderApp::CheckReorder::AutoChangeFile';
 use aliased 'Programs::Services::TpvService::ServiceApps::CheckReorderApp::CheckReorder::ChangeFile';
+use aliased 'Packages::Reorder::CheckReorder::CheckReorder';
 
 #-------------------------------------------------------------------------------------------#
 #  Public method
@@ -50,22 +49,9 @@ sub new {
 
 	$self->{"logger"}->debug("after logg");
 
-	# All controls
-	my @controls = ();
-	$self->{"controls"} = \@controls;
-
-	my @chList = ();
-	$self->{"checklist"} = \@chList;
-
 	$self->{"checks"} = undef;    # contain classes implement ICHeck
 
 	$self->{"inCAM"} = undef;
-
-	# 1) Load and check checklist
-	$self->__LoadChecklist();
-
-	# Load all check class
-	$self->__LoadCheckClasses();
 
 	$self->{"logger"}->debug("reorder init");
 
@@ -168,51 +154,23 @@ sub __ProcessJob {
 	$jobId = lc($jobId);
 
 	# list of necesary changes
-	my @autoCh = ();
-	my @manCh  = ();
+	my @manCh = ();
 
 	# 1) Check if pcb exist in InCAM
 	my $jobExist = AcquireJob->Acquire( $inCAM, $jobId );
 
 	$self->_OpenJob($jobId);
 
-	my $isPool  = HegMethods->GetPcbIsPool($jobId);
+	# Do all controls and return check which are neet to be repair manualz bz tpv user
+	my $checkReorder = CheckReorder->new( $inCAM, $jobId );
+	my @manCh = $checkReorder->Run();
+
 	my $pcbInfo = HegMethods->GetBasePcbInfo($jobId);
 
 	my $revize = $pcbInfo->{"stav"} eq 'R' ? 1 : 0;    # indicate if pcb need user-manual process before go to produce
 
 	if ($revize) {
-
 		push( @manCh, "1) Deska je ve stavu \"revize\", uprav data jobu podle požadavkù zákazníka/výroby." );
-	}
-
-	foreach my $checkInfo ( @{ $self->{"checklist"} } ) {
-
-		my $key    = $checkInfo->GetKey();
-		my $type   = $checkInfo->GetType();
-		my $detail = "";                               # Contain specifying message about manual task
-		my %data   = ();                               # Contain detail data, for process automatic task
-
-		if ( $self->{"checks"}->{$key}->NeedChange( $inCAM, $jobId, $jobExist, $isPool, \$detail, \%data ) ) {
-
-			my $str = undef;
-
-			if ( $type eq Enums->Check_AUTO ) {
-
-				my %taskInf = ( "key" => $checkInfo->GetKey(), "data" => \%data );
-				push( @autoCh, \%taskInf );
-
-			}
-			elsif ( $type eq Enums->Check_MANUAL ) {
-
-				if ( defined $detail && $detail ne "" ) {
-					$detail = "\n Detail: " . $detail;
-				}
-
-				$str = ( scalar(@manCh) + 1 ) . ") " . $checkInfo->GetMessage() . $detail;
-				push( @manCh, $str );
-			}
-		}
 	}
 
 	if ($jobExist) {
@@ -221,27 +179,18 @@ sub __ProcessJob {
 	}
 
 	# 2) create changes file to archive (auto + manual changes file)
-	if ( scalar(@autoCh) > 0 ) {
-
-		AutoChangeFile->Create( $jobId, \@autoCh );
-	}
 
 	if ( scalar(@manCh) > 0 ) {
 
 		ChangeFile->Create( $jobId, \@manCh );
-
 	}
 	else {
 
 		ChangeFile->Delete($jobId);
 	}
-
 	# 3) set order state
-	my $orderState = undef;
 
-	if ( scalar(@autoCh) > 0 ) {
-		$orderState = EnumsIS->CurStep_ZPRACOVANIAUTO;
-	}
+	my $orderState = EnumsIS->CurStep_ZPRACOVANIAUTO;
 
 	if ( scalar(@manCh) > 0 ) {
 		$orderState = EnumsIS->CurStep_ZPRACOVANIMAN;
@@ -256,11 +205,6 @@ sub __ProcessJob {
 
 			die "no changes in pcb reorder $jobId";
 		}
-	}
-
-	if ($revize) {
-
-		$orderState = EnumsIS->CurStep_ZPRACOVANIREV;
 	}
 
 	$self->__ProcessJobResult( $orderId, $orderState, undef );
@@ -291,105 +235,10 @@ sub __ProcessJobResult {
 		AutoProcLog->Delete($jobId);
 	}
 
-#	# delete change log
-#	if (    $orderState ne EnumsIS->CurStep_ZPRACOVANIMAN
-#		 && $orderState ne EnumsIS->CurStep_ZPRACOVANIREV )
-#	{
-#
-#		ChangeFile->Delete($jobId);
-#	}
-#
-#	if ( $orderState ne EnumsIS->CurStep_ZPRACOVANIAUTO ) {
-#
-#		AutoChangeFile->Delete($jobId);
-#	}
 
 	# 2) set state
 
 	HegMethods->UpdatePcbOrderState( $orderId, $orderState );
-}
-
-sub __LoadChecklist {
-	my $self = shift;
-
-	# Check if checklist is valid
-	my $path  = GeneralHelper->Root() . "\\Programs\\Services\\TpvService\\ServiceApps\\CheckReorderApp\\CheckReorder\\CheckList";
-	my @lines = @{ FileHelper->ReadAsLines($path) };
-
-	# Parse
-
-	for ( my $i = 0 ; $i < scalar(@lines) ; $i++ ) {
-
-		my $l = $lines[$i];
-
-		next if ( $l =~ /#/ );
-
-		if ( $l =~ m/\[(.*)\]/ ) {
-
-			my ($desc) = $1 =~ /\s*(.*)\s*/;
-			my ($key)  = $lines[ $i + 1 ] =~ / =\s*(.*)\s*/;
-			my ($ver)  = $lines[ $i + 2 ] =~ / =\s*(.*)\s*/;
-			my ($type) = $lines[ $i + 3 ] =~ / =\s*(.*)\s*/;
-			my ($mess) = $lines[ $i + 4 ] =~ / =\s*(.*)\s*/;
-
-			my $checkInf = CheckInfo->new( $desc, $key, $ver, $type, $mess );
-
-			push( @{ $self->{"checklist"} }, $checkInf );
-
-			$i += 4;
-		}
-	}
-
-	# 1) Check if all check has defined type
-	foreach my $checkInfo ( @{ $self->{"checklist"} } ) {
-
-		my $t = $checkInfo->GetType();
-		my $m = $checkInfo->GetMessage();
-
-		if ( !defined $t || $t eq "" ) {
-			die "Check " . $checkInfo->GetKey() . " has not defined type";
-		}
-
-		if ( $t eq "manual" && ( !defined $m || $m eq "" ) ) {
-
-			die "Checktype " . $checkInfo->GetKey() . " has to has defined 'R' in checklist";
-		}
-	}
-
-}
-
-sub __LoadCheckClasses {
-	my $self = shift;
-
-	# 	# automatically "use"  all packages from dir "checks"
-	# 	my $dir = GeneralHelper->Root() . '\Programs\Services\TpvService\ServiceApps\ReorderApp\Reorder\Checks';
-	#	opendir( DIR, $dir ) or die $!;
-	#
-	#	while ( my $file = readdir(DIR) ) {
-	#
-	#		next if ( $file =~ m/^\./ );
-	#
-	#		$file =~ s/\.pm//;
-	#
-	#		my $module = 'Programs::Services::TpvService::ServiceApps::CheckReorderApp::CheckReorder::Checks::' . $file;
-	#		print STDERR $module."\n";
-	#
-	#		eval("use aliased \'$module\';");
-	#	}
-
-	my %checks = ();
-
-	foreach my $checkInfo ( @{ $self->{"checklist"} } ) {
-
-		my $key = $checkInfo->GetKey();
-
-		my $module = 'Programs::Services::TpvService::ServiceApps::CheckReorderApp::CheckReorder::Checks::' . $key;
-		eval("use  $module;");
-		$checks{$key} = $module->new($key);
-	}
-
-	$self->{"checks"} = \%checks;
-
 }
 
 sub __SetLogging {

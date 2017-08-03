@@ -13,7 +13,7 @@ use constant {
 	CurStep_CHECKREORDERERROR => "checkReorder-error",
 	CurStep_ZPRACOVANIAUTO    => "zpracovani-auto",
 	CurStep_ZPRACOVANIMAN     => "zpracovani-rucni",
-	CurStep_ZPRACOVANIREV     => "zpracovani-revize",
+
 
 	# statuses of processReorder app
 	CurStep_PROCESSREORDERERR => "processReorder-error",

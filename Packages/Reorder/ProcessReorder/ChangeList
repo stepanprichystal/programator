@@ -1,0 +1,14 @@
+# =================================================================================================================
+# List of all automatic changes, which is processsed on reorder
+# Each check has implemented own class
+# Priority in automatic task is given by check order. Top is highest priority
+  
+# === automatic changes ======  
+
+ARCHIVE_JOB  
+MISSING_JOBATTR
+MASK_POLAR
+LAYER_NAMES
+SCHEMA
+EXPORT
+
