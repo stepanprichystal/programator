@@ -655,8 +655,9 @@ sub GetPcbOrderNumbers {
 	my @params = ( SqlParameter->new( "_PcbId", Enums->SqlDbType_VARCHAR, $pcbId ) );
 
 	my $cmd = "select 				  
-				 z.reference_subjektu
-				 
+				 z.reference_subjektu,
+				 z.stav,
+				 z.aktualni_krok
 				 from lcs.desky_22 d with (nolock)
 				 
 				 left outer join lcs.zakazky_dps_22_hlavicka z with (nolock) on z.deska=d.cislo_subjektu
@@ -665,10 +666,8 @@ sub GetPcbOrderNumbers {
 				 order by z.reference_subjektu desc";
 
 	my @res = Helper->ExecuteDataSet( $cmd, \@params );
-
-	my @arr = map { $_->{"reference_subjektu"} } @res;
-
-	return @arr;
+ 
+	return @res;
 }
 
 sub GetNumberOrder {
@@ -998,6 +997,31 @@ sub GetReorders {
 	 return @result;
 }
 
+# Return all reorders by pcb id
+sub GetPcbReorders {
+	my $self  = shift;
+	my $pcbId = shift;
+
+	my @params = ( SqlParameter->new( "_PcbId", Enums->SqlDbType_VARCHAR, $pcbId ) );
+
+	my $cmd = "select 				  
+				 z.reference_subjektu,
+				 z.stav,
+				 z.aktualni_krok
+				 from lcs.desky_22 d with (nolock)
+				 
+				 left outer join lcs.zakazky_dps_22_hlavicka z with (nolock) on z.deska=d.cislo_subjektu
+
+				 where d.reference_subjektu=_PcbId and  z.cislo_poradace = 22050
+				 order by z.reference_subjektu desc";
+
+	
+	my @res = Helper->ExecuteDataSet( $cmd, \@params );
+ 	@res = grep {   $_->{"reference_subjektu"} !~ /-01/} @res;
+ 	
+	return @res;
+}
+
 # Get all ReOrders
 # Pcb has order number begger than -01 + are on state 'Predvyrobni priprava'
 sub GetPcbsInProduc {
@@ -1163,7 +1187,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
  
 	#my @pcbInProduc = HegMethods->GetPcbsByStatus( 2, 4, 25, 35 );
  
-	my @orders = HegMethods->GetPcbsInProduceMDI();
+	my @orders = HegMethods->GetPcbReorders("f52457");
  
 	
 	#my @opak = HegMethods->GetReorders( );

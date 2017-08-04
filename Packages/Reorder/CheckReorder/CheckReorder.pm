@@ -1,6 +1,6 @@
 #-------------------------------------------------------------------------------------------#
-# Description: Represent Universal Drill tool manager
-
+# Description: Do check of reorder job. Recognize changes, which has to be done manually by tpv
+# before pcb goes to production
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Packages::Reorder::CheckReorder::CheckReorder;
@@ -45,6 +45,7 @@ sub new {
 	return $self;
 }
 
+# Do all checks and return check which fail
 sub RunCheck {
 	my $self = shift;
 
@@ -78,7 +79,7 @@ sub RunCheck {
 			push( @manCh, \%inf );
 		}
 	}
-	
+
 	return @manCh;
 }
 

@@ -18,6 +18,9 @@ use aliased 'Helpers::GeneralHelper';
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
+use overload 
+    '""' => \&stringify;
+
 
 sub new {
 
@@ -52,6 +55,11 @@ sub Error{
 	my $self = shift;
 	
 	return $self->{"mess"} . "\nStack trace:\n" . $self->{"stackTrace"}. "\n ExceptionId:".$self->{"exceptionId"}."\n";
+}
+
+sub stringify {
+    my ($self) = @_;
+    return $self->Error();
 }
 
 #-------------------------------------------------------------------------------------------#

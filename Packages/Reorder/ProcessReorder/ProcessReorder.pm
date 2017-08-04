@@ -1,6 +1,6 @@
 #-------------------------------------------------------------------------------------------#
-# Description: Represent Universal Drill tool manager
-
+# Description: Identify changes which has to by done on job reorder, before it goes to production
+# Theese changes are done automatically
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Packages::Reorder::ProcessReorder::ProcessReorder;
@@ -36,6 +36,7 @@ sub new {
 	return $self;
 }
 
+# Do all automatic changes, which are necessary
 sub RunChanges {
 	my $self    = shift;
 	my $errMess = shift;
@@ -57,14 +58,34 @@ sub RunChanges {
 	return $result;
 }
 
+# Remove change from change list during run
+sub ExcludeChange {
+	my $self   = shift;
+	my $change = shift;
+
+	my $excludeOk = 0;
+
+	for ( my $i = scalar( @{ $self->{"changes"} } ) - 1 ; $i >= 0 ; $i-- ) {
+		
+		if($self->{"changes"}->[$i]->GetChangeKey() eq $change){
+			
+			splice @{ $self->{"changes"} }, $i, 1;
+			$excludeOk = 1;
+			last;
+		}
+	}
+	
+	return $excludeOk;
+}
+
 sub __LoadChanges {
 	my $self = shift;
 
-	my $inCAM = $self->{"inCAM"};
-	my $jobId = $self->{"jobId"};
+	my $inCAM  = $self->{"inCAM"};
+	my $jobId  = $self->{"jobId"};
 	my $isPool = HegMethods->GetPcbIsPool($jobId);
 
-	my $path  = GeneralHelper->Root() . "Packages\\Reorder\\ProcessReorder\\ChangeList";
+	my $path  = GeneralHelper->Root() . "\\Packages\\Reorder\\ProcessReorder\\ChangeList";
 	my @lines = @{ FileHelper->ReadAsLines($path) };
 
 	unless ( -e $path ) {
@@ -86,7 +107,7 @@ sub __LoadChanges {
 			my $module = 'Packages::Reorder::ProcessReorder::Changes::' . $key;
 			eval("use  $module;");
 
-			push( @changes, $module->new( $key, $inCAM, $jobId, $isPool) );
+			push( @changes, $module->new( $key, $inCAM, $jobId, $isPool ) );
 		}
 	}
 

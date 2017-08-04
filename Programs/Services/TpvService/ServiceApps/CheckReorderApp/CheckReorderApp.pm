@@ -153,9 +153,7 @@ sub __ProcessJob {
 	my ($jobId) = $orderId =~ /^(\w\d+)-\d+/i;
 	$jobId = lc($jobId);
 
-	# list of necesary changes
-	my @manCh = ();
-
+ 
 	# 1) Check if pcb exist in InCAM
 	my $jobExist = AcquireJob->Acquire( $inCAM, $jobId );
 
@@ -178,34 +176,24 @@ sub __ProcessJob {
 		$inCAM->COM( "close_job", "job" => "$jobId" );
 	}
 
-	# 2) create changes file to archive (auto + manual changes file)
 
-	if ( scalar(@manCh) > 0 ) {
 
-		ChangeFile->Create( $jobId, \@manCh );
-	}
-	else {
-
-		ChangeFile->Delete($jobId);
-	}
-	# 3) set order state
+	# 2) set order state
 
 	my $orderState = EnumsIS->CurStep_ZPRACOVANIAUTO;
 
 	if ( scalar(@manCh) > 0 ) {
+		
 		$orderState = EnumsIS->CurStep_ZPRACOVANIMAN;
+		
+		ChangeFile->Create( $jobId, \@manCh ); # create changes file to archive
+	
+	}else{
+		
+		ChangeFile->Delete($jobId);
 	}
 
-	if ( scalar(@autoCh) == 0 && scalar(@manCh) == 0 ) {
-
-		if ($isPool) {
-			$orderState = EnumsIS->CurStep_KPANELIZACI;
-		}
-		else {
-
-			die "no changes in pcb reorder $jobId";
-		}
-	}
+ 
 
 	$self->__ProcessJobResult( $orderId, $orderState, undef );
 }

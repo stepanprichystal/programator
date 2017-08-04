@@ -1,5 +1,5 @@
 #-------------------------------------------------------------------------------------------#
-# Description: Represent Universal Drill tool manager
+# Description: Keep name and description of  reorder ciontrols
 
 # Author:SPR
 #-------------------------------------------------------------------------------------------#

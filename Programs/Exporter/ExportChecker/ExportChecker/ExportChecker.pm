@@ -38,9 +38,9 @@ use aliased 'Programs::Exporter::ExportUtility::RunExport::RunExportUtility';
 
 use aliased 'Programs::Exporter::ExportUtility::DataTransfer::DataTransfer';
 use aliased 'Programs::Exporter::ExportChecker::Enums';
-use aliased 'Managers::AsyncJobMngr::Enums'           => 'EnumsJobMngr';
+use aliased 'Managers::AsyncJobMngr::Enums'                          => 'EnumsJobMngr';
 use aliased 'Programs::Exporter::ExportUtility::DataTransfer::Enums' => 'EnumsTransfer';
- 
+
 use aliased 'Helpers::GeneralHelper';
 use aliased 'Widgets::Forms::LoadingForm';
 use aliased 'CamHelpers::CamHelper';
@@ -69,9 +69,6 @@ sub new {
 	$self->{"serverPort"}    = shift;
 	$self->{"serverPid"}     = shift;
 	$self->{"loadingFrmPid"} = shift;
-	
-	
- 
 
 	$self->{"inCAM"} = undef;
 
@@ -96,14 +93,12 @@ sub new {
 	$self->__Connect();
 	$self->__Init();
 	$self->__Run();
-	
+
 	return $self;
 }
 
 sub __Init {
 	my $self = shift;
-
-
 
 	# 1) Initialization of whole export app
 
@@ -164,8 +159,6 @@ sub __ExportSyncFormHandler {
 	my $self   = shift;
 	my $client = $self->{"client"};
 
-	 
-
 	#if ( $client->ClientConnected() ) {
 	#
 	#		print STDERR "Close\n";
@@ -183,8 +176,6 @@ sub __ExportSyncFormHandler {
 sub __ExportASyncFormHandler {
 	my $self   = shift;
 	my $client = $self->{"client"};
-
-	 
 
 	#if ( $client->ClientConnected() ) {
 	#
@@ -263,8 +254,6 @@ sub __CleanUpAndExitForm {
 
 	$self->{"form"}->{"mainFrm"}->Destroy();
 
- 
-
 }
 
 sub __UncheckAllHandler {
@@ -329,7 +318,6 @@ sub __OnClosePopupHandler {
 
 	$self->__Connect();
 
-
 	$self->{"disableForm"} = 0;
 	$self->__RefreshForm();
 
@@ -360,12 +348,11 @@ sub __OnResultPopupHandler {
 
 		my $inCAM  = $self->{"inCAM"};
 		my $client = $self->{"client"};
-		
-		my @orders = HegMethods->GetPcbOrderNumbers($self->{"jobId"});
+
+		my @orders = HegMethods->GetPcbOrderNumbers( $self->{"jobId"} );
+		@orders = map { $_->{"reference_subjektu"} } @orders;
 
 		if ( $exportMode eq EnumsJobMngr->TaskMode_ASYNC ) {
-
-			
 
 			# Save and close job
 			$self->{"form"}->{"mainFrm"}->Hide();
@@ -377,9 +364,9 @@ sub __OnResultPopupHandler {
 			if ( $client->IsConnected() ) {
 				$inCAM->CloseServer();
 			}
-			
+
 			# Save exported data
-			$dataTransfer->SaveData( $exportMode, $toProduce, undef, undef, \@orders);
+			$dataTransfer->SaveData( $exportMode, $toProduce, undef, undef, \@orders );
 
 		}
 		elsif ( $exportMode eq EnumsJobMngr->TaskMode_SYNC ) {
@@ -389,11 +376,10 @@ sub __OnResultPopupHandler {
 			#my $portNumber = "200". int(rand(9));    #random number
 			#my $portNumber = "2001";    #random number
 			#my $serverPID  = $$;        # PID
-			
+
 			# Save and hide form
 			$self->{"form"}->{"mainFrm"}->Hide();
 			CamJob->SaveJob( $inCAM, $self->{"jobId"} );
-			
 
 			my $formPos = $self->{"form"}->{"mainFrm"}->GetPosition();
 
@@ -407,8 +393,6 @@ sub __OnResultPopupHandler {
 
 				#$client->SetConnected(0);
 			}
-			
-
 
 			# Start server in this script
 
@@ -421,8 +405,6 @@ sub __OnResultPopupHandler {
 
 		# Launch export utility if hasn't launched before
 		my $utility = RunExportUtility->new(0);
-		
-
 
 		# Exit export window
 		$self->{"form"}->{"mainFrm"}->Destroy();
@@ -470,7 +452,6 @@ sub __Connect {
 
 	my $port = $self->{"serverPort"};
 	my $pid  = $self->{"serverPid"};
- 
 
 	# Manage conenctio between client and server
 	my $client = $self->{"client"};
@@ -480,8 +461,6 @@ sub __Connect {
 
 	# try to connect to server
 	my $result = $client->Connect();
-
- 
 
 	# if test ok, connect inCAM library to server
 	if ( $self->{"inCAM"} ) {

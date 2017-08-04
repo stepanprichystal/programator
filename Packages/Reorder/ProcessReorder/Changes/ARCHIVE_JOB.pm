@@ -2,7 +2,7 @@
 # Description:  Class responsible for determine pcb reorder check
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::Reorder::ProcessReorder::Changes::MASK_POLAR;
+package Packages::Reorder::ProcessReorder::Changes::ARCHIVE_JOB;
 use base('Packages::Reorder::ProcessReorder::Changes::ChangeBase');
 
 use Class::Interface;
@@ -17,6 +17,7 @@ use POSIX qw(strftime);
 #local library
 use aliased 'CamHelpers::CamJob';
 use aliased 'CamHelpers::CamLayer';
+use aliased 'Helpers::JobHelper';
 
 #-------------------------------------------------------------------------------------------#
 #  Public method

@@ -37,7 +37,7 @@ sub GetChangeKey {
 	my $self  = shift;
 	my $pcbId = shift;
 
-	return 1;
+	return $self->{"key"};
 }
 
 #-------------------------------------------------------------------------------------------#

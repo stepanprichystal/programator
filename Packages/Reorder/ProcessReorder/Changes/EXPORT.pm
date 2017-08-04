@@ -15,9 +15,9 @@ use warnings;
 #local library
 use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'Managers::AsyncJobMngr::Enums' => "EnumsJobMngr";
-use aliased 'Programs::Exporter::ExportChecker::ExportChecker::Unit::Units';
-use aliased 'Programs::Exporter::ExportChecker::ExportChecker::GroupBuilder::StandardBuilder';
-use aliased 'Programs::Exporter::ExportChecker::ExportChecker::GroupTable::GroupTables';
+
+use aliased 'Programs::Exporter::ExportChecker::ExportChecker::Unit::Helper' => "UnitHelper";
+
 use aliased 'Programs::Exporter::ExportUtility::DataTransfer::DataTransfer';
 use aliased 'Programs::Exporter::ExportUtility::UnitEnums';
 use aliased 'Programs::Exporter::ExportUtility::DataTransfer::Enums' => 'EnumsTransfer';
@@ -75,7 +75,7 @@ sub __CheckBeforeExport {
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
 
-	$self->__PrepareUnits($jobId);
+	$self->{"units"} = UnitHelper->PrepareUnits($inCAM, $jobId);
 
 	my @activeOnUnits = grep { $_->GetGroupState() eq CheckerEnums->GroupState_ACTIVEON } @{ $self->{"units"}->{"units"} };
 
@@ -89,31 +89,11 @@ sub __CheckBeforeExport {
 			$result = 0;
 			$$mess .= $resultMngr->GetErrorsStr(1);
 		}
-
 	}
 	
 	return $result;
 }
-
-sub __PrepareUnits {
-	my $self = shift;
-
-	my $inCAM = $self->{"inCAM"};
-	my $jobId = $self->{"jobId"};
-
-	# Units
-
-	my $groubT = GroupTables->new();    # virtual table, where are stored reference of alll units
-
-	my $groupBuilder = StandardBuilder->new();    # group builder, fill table by requested units
-	$groupBuilder->Build( $jobId, $groubT );
-	my @allUnits = $groubT->GetAllUnits();
-
-	$self->{"units"} = Units->new();              # class which keep list of all defined units (composit pattern)
-	$self->{"units"}->Init( $inCAM, $jobId, \@allUnits );
-	$self->{"units"}->InitDataMngr($inCAM);
-
-}
+ 
 
 sub __PrepareExportFile {
 	my $self = shift;
