@@ -29,12 +29,13 @@ sub new {
 }
 
 # if electric test directory doesn't contain dir at least fo one machine
-sub NeedChange {
+sub Run {
 	my $self     = shift;
-	my $inCAM    = shift;
-	my $jobId    = shift;
-	my $jobExist = shift; # (in InCAM db)
-	my $isPool = shift;
+	
+	my $inCAM    = $self->{"inCAM"};
+	my $jobId    = $self->{"jobId"};
+	my $jobExist = $self->{"jobExist"};    # (in InCAM db)
+	my $isPool   = $self->{"isPool"};
 
 	my $needChange = 0;
 

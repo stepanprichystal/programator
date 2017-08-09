@@ -5,38 +5,60 @@
 #-------------------------------------------------------------------------------------------#
 package Packages::Reorder::CheckReorder::Checks::CheckBase;
 
- 
 #3th party library
 use strict;
 use warnings;
 
 #local library
- 
 
 #-------------------------------------------------------------------------------------------#
 #  Public method
 #-------------------------------------------------------------------------------------------#
 
 sub new {
-	my $self = shift;
+	my $self     = shift;
 	my $checkKey = shift;
-	
+	my $inCAM    = shift;
+	my $jobId    = shift;
+	my $jobExist = shift;
+	my $isPool   = shift;
+
 	$self = {};
 	bless $self;
- 
-	$self->{"key"} = $checkKey;
- 
+
+	my @changes = ();
+	$self->{"changes"} = \@changes;
+
+	$self->{"key"}      = $checkKey;
+	$self->{"inCAM"}    = $inCAM;
+	$self->{"jobId"}    = $jobId;
+	$self->{"jobExist"} = $jobExist;
+	$self->{"isPool"}   = $isPool;
+
 	return $self;
+}
+
+sub _AddChange {
+	my $self       = shift;
+	my $changeMess = shift;
+
+	push( @{ $self->{"changes"} }, $changeMess );
+
+}
+
+sub GetChanges {
+	my $self = shift;
+
+	return @{ $self->{"changes"} };
+
 }
 
 sub GetCheckKey {
 	my $self = shift;
-	my $pcbId = shift;
-	
-	return 1;
- 
+
+	return $self->{"key"};
+
 }
- 
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
@@ -44,7 +66,6 @@ sub GetCheckKey {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
- 
 	print "ee";
 }
 

@@ -7,7 +7,7 @@ use warnings;
 
 
 # ============ INPUT LINE =================
-my $inputLine ="COM autopan_delete,job=f52457,panel=panel,mode=objects_all_layers";
+my $inputLine ="sel_board_net_feat,operation=select,x=121.4962075,y=61.855385,tol=268.5225,use_ffilter=no";
 
 my $output = "\$inCAM->COM(";
 my @splitted = split( ",", $inputLine );

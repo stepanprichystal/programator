@@ -9,6 +9,7 @@ use Class::Interface;
 &implements('Packages::Reorder::CheckReorder::Checks::ICheck');
 
 #3th party library
+use utf8;
 use strict;
 use warnings;
 
@@ -32,18 +33,17 @@ sub new {
 
 # if nif contain info about panel, and there is no mpanel
 # It means it is customer set or customer
-sub NeedChange {
-	my $self     = shift;
-	my $inCAM    = shift;
-	my $jobId    = shift;
-	my $jobExist = shift;    # (in InCAM db)
-	my $isPool = shift;
+sub Run {
+	my $self = shift;
+
+	my $inCAM    = $self->{"inCAM"};
+	my $jobId    = $self->{"jobId"};
+	my $jobExist = $self->{"jobExist"};    # (in InCAM db)
+	my $isPool   = $self->{"isPool"};
 
 	unless ($jobExist) {
 		return 1;
 	}
-
-	my $needChange = 0;
 
 	my $nif = NifFile->new($jobId);
 
@@ -61,23 +61,23 @@ sub NeedChange {
 
 		if ( !$mpanelExist && $custPnlExist ne "yes" && $custSetExist ne "yes" ) {
 
-			$needChange = 1;
+			$self->_AddChange(
+						 "V nifu je vyplňěná \"nasobnost_panelu\", ale v jobu není nastaveno, že se jedná o \"zákaznický panel\ nebo \"sadu\""
+						   . "(respektive nejsou nastaveny atributy \"customer_panel\" nebo \"customer_set\")" );
 		}
 
-		#check if all attributes are properly set
-
-		# if real multiplicity of mpanel doesnt equal multiplicity in nif =>
+		# check if customer set is not missing, when count of pieces in panel and nif are different
 		if ( $mpanelExist && $custSetExist ne "yes" ) {
 
 			my $multiplReal = scalar( CamStepRepeat->GetRepeatStep( $inCAM, $jobId, "mpanel" ) );
 			if ( $multiplNif != $multiplReal ) {
 
-				$needChange = 1;
+				$self->_AddChange(   "Nasobnost v nifu: \"nasobnost_panelu\" nesedí s reálnou násobností v mpanelu. "
+								   . "Pravděpodobně není v jobu definovaná sada ( atribut \"customer_set\")." );
 			}
 		}
 	}
 
-	return $needChange;
 }
 
 #-------------------------------------------------------------------------------------------#

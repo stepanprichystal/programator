@@ -2,18 +2,22 @@
 # Description:  Class responsible for determine pcb reorder check
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::Reorder::CheckReorder::Checks::LAYER_NAMES;
-use base('Packages::Reorder::CheckReorder::Checks::CheckBase');
+package Packages::Reorder::CheckReorder::Checks::DATACODE;
+use base('Packages::Reorder::CheckReorder::Checks::CheckBase')
 
 use Class::Interface;
 &implements('Packages::Reorder::CheckReorder::Checks::ICheck');
 
 #3th party library
+use utf8;
 use strict;
 use warnings;
 
 #local library
-use aliased 'CamHelpers::CamJob';
+use aliased 'Connectors::HeliosConnector::HegMethods';
+use aliased 'CamHelpers::CamHelper';
+use aliased 'CamHelpers::CamStepRepeat';
+use aliased 'Packages::CAMJob::Marking::Marking';
 
 #-------------------------------------------------------------------------------------------#
 #  Public method
@@ -27,49 +31,53 @@ sub new {
 	return $self;
 }
 
-# Check if mask is not negative in matrix
-sub NeedChange {
+# check if datacode is in helios
+sub Run {
 	my $self     = shift;
-	my $inCAM    = shift;
-	my $jobId    = shift;
-	my $jobExist = shift;    # (in InCAM db)
-	my $isPool   = shift;
-	my $detail   = shift;    # reference on detail message (manual task)
-	my $data     = shift;    # reference on data for process automatic task
-
-	unless ($jobExist) {
-		return 1;
+	
+	my $inCAM    = $self->{"inCAM"};
+	my $jobId    = $self->{"jobId"};
+	my $jobExist = $self->{"jobExist"};    # (in InCAM db)
+	my $isPool   = $self->{"isPool"};
+	
+	unless($jobExist){
+		return 0;
 	}
+ 
+	# check if datacode id
+	my $datacodeL = HegMethods->GetDatacodeLayer($jobId);
 
-	my $needChange = 0;
+	if ( defined $datacodeL && $datacodeL ne "" ) {
 
-	my @layers = CamJob->GetAllLayers( $inCAM, $jobId );
+		if ($jobExist) {
 
-	# Check if there are wron layer names
+			my $step = $isPool ? "o+1" : "panel";
 
-	# old format of paste files sa_ori, sb_ori
-	if ( scalar( grep { $_->{"gROWname"} =~ /^s[ab]_(ori)|(made)$/ } @layers ) ) {
-		$needChange = 1;
+			$datacodeL = lc($datacodeL);
+			unless ( Marking->DatacodeExists( $inCAM, $jobId, $step, $datacodeL ) ) {
+				
+				 $self->_AddChange("V Heliosu je datakód (vrstva: $datacodeL), ale v jobu nebyl dohledán dynamický datakód.")
+			}
+		} 
 	}
-
-	return $needChange;
 }
-
+ 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	use aliased 'Packages::Reorder::CheckReorder::Checks::LAYER_NAMES' => "Change";
+	use aliased 'Packages::Reorder::CheckReorder::Checks::DATACODE_IS' => "Change";
 	use aliased 'Packages::InCAM::InCAM';
 
 	my $inCAM = InCAM->new();
-	my $jobId = "f00873";
+	my $jobId = "f52456";
 
 	my $check = Change->new();
 
 	print "Need change: " . $check->NeedChange( $inCAM, $jobId, 1 );
+
 }
 
 1;

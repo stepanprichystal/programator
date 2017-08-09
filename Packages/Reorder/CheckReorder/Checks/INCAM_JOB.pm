@@ -30,40 +30,39 @@ sub new {
 }
 
 # Check if exist new version of nif, if so it means it is from InCAM
-sub NeedChange {
+sub Run {
 	my $self     = shift;
-	my $inCAM    = shift;
-	my $jobId    = shift;
-	my $jobExist = shift;    # (in InCAM db)
-	my $isPool = shift;
-
-	my $needChange = 0;
-
+	
+	my $inCAM    = $self->{"inCAM"};
+	my $jobId    = $self->{"jobId"};
+	my $jobExist = $self->{"jobExist"};    # (in InCAM db)
+	my $isPool   = $self->{"isPool"};
+ 
 	my $nifPath = JobHelper->GetJobArchive($jobId) . $jobId . ".nif";
 
 	 
-	# First test, if job is imported (exist) in incam db
-	unless($jobExist){
-		$needChange = 1;
-	}
-
-	unless ($isPool) {
-		if ( -e $nifPath ) {
-
-			my @lines = @{ FileHelper->ReadAsLines($nifPath) };
-
-			# new nif contain = on first row
-			if ( $lines[0] !~ /=/ ) {
-
-				$needChange = 1;
-			}
-
-		}
-		else {
-
-			$needChange = 1;
-		}
-	}
+#	# 1) First test, if job is imported (exist) in incam db
+#	unless($jobExist){
+#		$needChange = 1;
+#	}
+#
+#	unless ($isPool) {
+#		if ( -e $nifPath ) {
+#
+#			my @lines = @{ FileHelper->ReadAsLines($nifPath) };
+#
+#			# new nif contain = on first row
+#			if ( $lines[0] !~ /=/ ) {
+#
+#				$needChange = 1;
+#			}
+#
+#		}
+#		else {
+#
+#			$needChange = 1;
+#		}
+#	}
 
 	return $needChange;
 }

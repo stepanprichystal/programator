@@ -117,4 +117,43 @@ sub GetDatumPoint {
 	return %inf;
 }
 
+
+# Get limits of active area
+sub GetActiveAreaLim {
+	my $self           = shift;
+	my $inCAM          = shift;
+	my $jobId          = shift;
+	my $stepName       = shift;
+	my $considerOrigin = shift;
+	my %limits;
+
+	unless ($considerOrigin) {
+
+		$inCAM->INFO(
+			units       => 'mm',
+			entity_type => 'step',
+			entity_path => "$jobId/$stepName",
+			data_type   => 'ACTIVE_AREA'
+
+		);
+	}
+	else {
+
+		$inCAM->INFO(
+					  units       => 'mm',
+					  entity_type => 'step',
+					  entity_path => "$jobId/$stepName",
+					  data_type   => 'ACTIVE_AREA',
+					  "options"   => "consider_origin"
+		);
+	}
+
+	$limits{"xMin"} = ( $inCAM->{doinfo}{gACTIVE_AREAxmin} );
+	$limits{"xMax"} = ( $inCAM->{doinfo}{gACTIVE_AREAxmax} );
+	$limits{"yMin"} = ( $inCAM->{doinfo}{gACTIVE_AREAymin} );
+	$limits{"yMax"} = ( $inCAM->{doinfo}{gACTIVE_AREAymax} );
+
+	return %limits;
+}
+
 1;

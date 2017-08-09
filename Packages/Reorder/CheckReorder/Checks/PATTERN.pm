@@ -2,7 +2,7 @@
 # Description:  Class responsible for determine pcb reorder check
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::Reorder::CheckReorder::Checks::NIF_NAKOVENI;
+package Packages::Reorder::CheckReorder::Checks::PATTERN;
 use base('Packages::Reorder::CheckReorder::Checks::CheckBase');
 
 use Class::Interface;
@@ -13,10 +13,8 @@ use strict;
 use warnings;
 
 #local library
-use aliased 'Packages::NifFile::NifFile';
-use aliased 'Helpers::FileHelper';
-use aliased 'Helpers::JobHelper';
- 
+use aliased 'Connectors::HeliosConnector::HegMethods';
+use aliased 'Packages::Routing::PlatedRoutArea';
 
 #-------------------------------------------------------------------------------------------#
 #  Public method
@@ -31,32 +29,22 @@ sub new {
 	return $self;
 }
 
-# check if nif file contain "C" in  core drill. Example( f60574)
-sub NeedChange {
-	my $self = shift;
-	my $inCAM = shift;
-	my $jobId = shift;
-	my $jobExist = shift; # (in InCAM db)
-	my $isPool = shift;
+# if pcb is pool, check if plated rout areaa is exceed for tenting
+sub Run {
+	my $self     = shift;
+	my $inCAM    = $self->{"inCAM"};
+	my $jobId    = $self->{"jobId"};
+	my $jobExist = $self->{"jobExist"};    # (in InCAM db)
+	my $isPool   = $self->{"isPool"};
 	
-	my $needChange = 0;
-	
-	my $nifPath = JobHelper->GetJobArchive( $jobId ) . $jobId . ".nif";
-	
-	if(-e $nifPath){
-		
-		my @lines = @{FileHelper->ReadAsLines($nifPath)};
-		
-		my @nakov = grep { $_ =~ /vrtani_\d=c/i } @lines;
-		
-		if(scalar(@nakov)){
-			
-			$needChange = 1;
-		}
-		
+	unless($jobExist){
+		return 1;
 	}
-	
-	return $needChange;
+ 
+	if($isPool && PlatedRoutArea->PlatedAreaExceed($inCAM, $jobId, "o+1")){
+		
+		$self->_AddChange("Dps musí jít do výroby patternem, kvùli velkému prokovenému otvoru.")
+	}
  
 }
  
@@ -68,11 +56,11 @@ my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
  
- 	use aliased 'Packages::Reorder::CheckReorder::Checks::NIF_NAKOVENI' => "Change";
+ 	use aliased 'Packages::Reorder::CheckReorder::Checks::POOL_PATTERN' => "Change";
  	use aliased 'Packages::InCAM::InCAM';
 	
 	my $inCAM    = InCAM->new();
-	my $jobId = "f73086";
+	my $jobId = "f52456";
 	
 	my $check = Change->new();
 	

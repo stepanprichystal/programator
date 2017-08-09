@@ -2,20 +2,22 @@
 # Description:  Class responsible for determine pcb reorder check
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::Reorder::CheckReorder::Checks::MISSING_JOBATTR;
+package Packages::Reorder::CheckReorder::Checks::NIF_ILE;
 use base('Packages::Reorder::CheckReorder::Checks::CheckBase');
 
 use Class::Interface;
 &implements('Packages::Reorder::CheckReorder::Checks::ICheck');
 
 #3th party library
+use utf8;
 use strict;
 use warnings;
 
 #local library
-use aliased 'CamHelpers::CamJob';
-use aliased 'CamHelpers::CamAttributes';
-
+use aliased 'Packages::NifFile::NifFile';
+use aliased 'Helpers::FileHelper';
+use aliased 'Helpers::JobHelper';
+ 
 
 #-------------------------------------------------------------------------------------------#
 #  Public method
@@ -25,46 +27,43 @@ sub new {
 	my $class = shift;
 	my $self  = $class->SUPER::new(@_);
 	bless($self);
-
+	
+	
 	return $self;
 }
 
-# Check if requested job attributes exist
-sub NeedChange {
-	my $self  = shift;
-	my $inCAM = shift;
-	my $jobId = shift;
-	my $jobExist = shift; # (in InCAM db)
-	my $isPool = shift;
-	my $detail   = shift;    # reference on detail message (manual task)
-	my $data     = shift;    # reference on data for process automatic task
+# check if nif file contain "C" in  core drill. Example( f60574)
+sub Run {
+	my $self     = shift;
+	my $inCAM    = $self->{"inCAM"};
+	my $jobId    = $self->{"jobId"};
+	my $jobExist = $self->{"jobExist"};    # (in InCAM db)
+	my $isPool   = $self->{"isPool"};
 	
-	unless($jobExist){
-		return 1;
-	}
-
 	my $needChange = 0;
 	
-	my @attr = ();
+	my $nifPath = JobHelper->GetJobArchive( $jobId ) . $jobId . ".nif";
 	
-	my $userName = CamAttributes->GetJobAttrByName( $inCAM, $jobId, "user_name" );    # zakaznicky panel
-	
-	if(!defined $userName || $userName eq "" || $userName =~ /none/i){
-		push(@attr, "user_name");
-		$needChange = 1;
+	# 1) Check nakoveni in nif
+	if(-e $nifPath){
+		
+		my @lines = @{FileHelper->ReadAsLines($nifPath)};
+		
+		my @nakov = grep { $_ =~ /vrtani_\d=c/i } @lines;
+		
+		if(scalar(@nakov)){
+			
+			$self->_AddChange("V nifu u vrtani jader je hodnota C - nakoveni (po exportu hodnotu znovu zapiš do nifu ruènì)");
+		}
+		
 	}
 	
-	my $pcbClass = CamAttributes->GetJobAttrByName( $inCAM, $jobId, "pcb_class" );    # zakaznicky panel
+ 
 	
-	if(!defined $pcbClass || $pcbClass eq ""  || $pcbClass < 3 ){
-		push(@attr, "pcb_class");
-		$needChange = 1;
-	} 
-
-	$data->{"attributes"} = \@attr;
-
 	return $needChange;
+ 
 }
+ 
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
@@ -72,11 +71,12 @@ sub NeedChange {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
- 	use aliased 'Packages::Reorder::CheckReorder::Checks::MASK_POLAR' => "Change";
+ 
+ 	use aliased 'Packages::Reorder::CheckReorder::Checks::NIF_NAKOVENI' => "Change";
  	use aliased 'Packages::InCAM::InCAM';
 	
 	my $inCAM    = InCAM->new();
-	my $jobId = "f52457";
+	my $jobId = "f73086";
 	
 	my $check = Change->new();
 	

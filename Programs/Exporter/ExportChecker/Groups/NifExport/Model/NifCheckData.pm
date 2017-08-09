@@ -20,6 +20,7 @@ use aliased 'Helpers::ValueConvertor';
 use aliased 'Helpers::JobHelper';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'CamHelpers::CamCopperArea';
+use aliased 'CamHelpers::CamGoldArea';
 use aliased 'CamHelpers::CamHistogram';
 use aliased 'CamHelpers::CamDTM';
 use aliased 'Packages::Tooling::PressfitOperation';
@@ -186,7 +187,7 @@ sub OnCheckGroupData {
 			my $cuThickness = $defaultInfo->GetBaseCuThick("c");
 			my $pcbThick    = JobHelper->GetFinalPcbThick($jobId);
 
-			my %result = CamCopperArea->GetGoldFingerArea( $cuThickness, $pcbThick, $inCAM, $jobId, "panel" );
+			my %result = CamGoldArea->GetGoldFingerArea( $cuThickness, $pcbThick, $inCAM, $jobId, "panel" );
 
 			if ( $result{"exist"} && $result{"area"} < 10 ) {
 

@@ -81,14 +81,7 @@ sub __OnErrIndicatorHandler {
 
 		foreach my $check ( @{ $self->{"manChanges"} } ) {
 
-			$str .= $check->{"desc"} . "\n";
-
-			if ( defined $check->{"detail"} ) {
-				$str .= "Detail:" . $check->{"detail"} . "\n\n";
-			}
-			else {
-				$str .= "\n";
-			}
+			$str .= $check."\n\n";
 
 		}
 
@@ -159,7 +152,7 @@ sub __DoChecks {
 	my $jobId = $self->{"jobId"};
 
 	my $checkReorder = CheckReorder->new( $inCAM, $jobId );
-	my @manCh = $checkReorder->RunCheck();
+	my @manCh = $checkReorder->RunChecks();
 
 	$self->{"manChanges"} = \@manCh;
 

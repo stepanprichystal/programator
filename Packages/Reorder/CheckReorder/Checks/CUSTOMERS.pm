@@ -2,17 +2,19 @@
 # Description:  Class responsible for determine pcb reorder check
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::Reorder::CheckReorder::Checks::PICKERING_ORDER_NUM;
+package Packages::Reorder::CheckReorder::Checks::CUSTOMERS;
 use base('Packages::Reorder::CheckReorder::Checks::CheckBase');
 
 use Class::Interface;
 &implements('Packages::Reorder::CheckReorder::Checks::ICheck');
 
 #3th party library
+use utf8;
 use strict;
 use warnings;
 
 #local library
+use aliased 'Packages::NifFile::NifFile';
 use aliased 'Connectors::HeliosConnector::HegMethods';
 
 #-------------------------------------------------------------------------------------------#
@@ -27,28 +29,45 @@ sub new {
 	return $self;
 }
 
-sub NeedChange {
-	my $self  = shift;
-	my $inCAM = shift;
-	my $jobId = shift;
-	my $jobExist = shift; # (in InCAM db)
-	my $isPool = shift;
+# check if pcb is
+sub Run {
+	my $self     = shift;
+	
+	my $inCAM    = $self->{"inCAM"};
+	my $jobId    = $self->{"jobId"};
+	my $jobExist = $self->{"jobExist"};    # (in InCAM db)
+	my $isPool   = $self->{"isPool"};
 
 	my $needChange = 0;
 
 	my $custInfo = HegMethods->GetCustomerInfo($jobId);
 
-	# Kadlec customer
+	# 1) Kadlec customer
+	if ( $custInfo->{"reference_subjektu"} eq "04174" || $custInfo->{"reference_subjektu"} eq "04175" ) {
+ 
+		my $nif = NifFile->new($jobId);
+
+		my $val = $nif->GetValue("nasobnost_panelu");
+
+		if ( !defined $val || $val eq "" || $val == 0 ) {
+
+			$self->_AddChange("Zákazník kadlec si přeje veškeré dps dodávat v panelu. Předělej na panel.");
+		}
+	}
+	
+	# 2)Pickering
+	
+	my $custInfo = HegMethods->GetCustomerInfo($jobId);
+ 
 	if (    $custInfo->{"reference_subjektu"} eq "06544"
 		 || $custInfo->{"reference_subjektu"} eq "06545"
 		 || $custInfo->{"reference_subjektu"} eq "06546" )
 	{
 
-		$needChange = 1;
+		$self->_AddChange("Zákazník pickering si přeje upravit číslo objednávek na deskách dle onenotu");
 
 	}
-
-	return $needChange;
+ 
 }
 
 #-------------------------------------------------------------------------------------------#
@@ -57,7 +76,7 @@ sub NeedChange {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
- 	use aliased 'Packages::Reorder::CheckReorder::Checks::PICKERING_ORDER_NUM' => "Change";
+ 	use aliased 'Packages::Reorder::CheckReorder::Checks::KADLEC_PANEL' => "Change";
  	use aliased 'Packages::InCAM::InCAM';
 	
 	my $inCAM    = InCAM->new();

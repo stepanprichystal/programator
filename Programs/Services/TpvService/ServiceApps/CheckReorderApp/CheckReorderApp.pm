@@ -161,7 +161,7 @@ sub __ProcessJob {
 
 	# Do all controls and return check which are neet to be repair manualz bz tpv user
 	my $checkReorder = CheckReorder->new( $inCAM, $jobId );
-	my @manCh = $checkReorder->Run();
+	my @manCh = $checkReorder->RunChecks();
 
 	my $pcbInfo = HegMethods->GetBasePcbInfo($jobId);
 

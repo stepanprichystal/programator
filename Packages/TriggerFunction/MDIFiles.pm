@@ -70,7 +70,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	use aliased 'Packages::TriggerFunction::MDIFiles';
 
-	my $test = MDIFiles->AddPartsNumber("f52456-01");
+	my $test = MDIFiles->AddPartsNumber("f79477-01");
 
 	print $test;
  
