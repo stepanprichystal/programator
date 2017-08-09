@@ -11,106 +11,73 @@
 use POSIX 'strftime';
 use File::Basename;
 use Try::Tiny;
+use Log::Log4perl qw(get_logger :levels);
 
 #local library
 use lib qw( \\\\incam\\InCAM\\server\\site_data\\scripts);
+#use lib qw( C:\Perl\site\lib\TpvScripts\Scripts );
 use aliased 'Packages::TriggerFunction::MDIFiles';
 use aliased 'Enums::EnumsPaths';
 use aliased 'Packages::TriggerFunction::NCFiles';
+use aliased 'Connectors::HeliosConnector::HegMethods';
 
-my $jobId     = shift;    # job for process
+my $orderId     = shift;    # job order for process
+
+
+my $logConfig = "c:\\Apache24\\htdocs\\tpv\\Logger.conf";
+Log::Log4perl->init($logConfig);
+
+my $logger = get_logger("trigger"); 
+
+$logger->debug("Trigger page run");
+
+# old way is only job id f123645
+# new way is ordefr id f12345-01
+#if old way get the biggest order id
+
+unless( $orderId =~ /^(\w\d+)-.*$/){
+	
+	my $orderNum = HegMethods->GetPcbOrderNumber($orderId);
+	$orderId .= "-".$orderNum;
+}
+ 
 my $processed = 1;
 
-# 1) change some lines in MDI xml files eval
 
+# 1) change some lines in MDI xml files eval
 eval {
 
-	MDIFiles->AddPartsNumber($jobId);
+	MDIFiles->AddPartsNumber($orderId);
 
 };
 if ($@) {
 
 	$processed = 0;
-	Log( "\n Error when processing \"MDI files\" job: $jobId.\n" . $@, 1 );
+	$logger->error( "\n Error when processing \"MDI files\" job: $orderId.\n" . $@, 1 );
 }
 
 # 2) change drilled number in NC files
 eval {
 
-	NCFiles->ChangePcbOrderNumber($jobId);
-
+	NCFiles->ChangePcbOrderNumber($orderId);
 };
 if ($@) {
 
 	$processed = 0;
-	Log( "\n Error when processing \"NC files\" job: $jobId.\n" . $@, 1 );
+	$logger->error( "\n Error when processing \"NC files\" job: $orderId.\n" . $@, 1 );
 }
 
+ 
 
 # Log
 
 if ($processed) {
 	
-	Log("Processed ");
+	$logger->info("$orderId - Processed ");
 
 }
 else {
  
-	Log("Processed with ERRORS ");
+	$logger->info("$orderId - Processed with ERRORS ");
 }
-
-sub Log {
-	my $mess = shift;
-	my $err  = shift;
-
-	my $now_string = strftime( "%Y-%m-%d %H:%M:%S", localtime );
-
-	# 3 attem to write to file
-
-	my $logPath = "c:\\Apache24\\htdocs\\tpv2\\Logs\\Log.txt";    #current dir
-
-	if ($err) {
-		$logPath = "c:\\Apache24\\htdocs\\tpv2\\Logs\\LogErr.txt";
-	}
-
-	ReduceLog($logPath);
-
-	my $att = 0;
-	my $fh;
-	my $fileOpen = open( $fh, '>>', $logPath );
-
-	while ( !$fileOpen && $att < 3 ) {
-		$att++;
-		sleep(1);
-	}
-
-	if ($fileOpen) {
-		print $fh $jobId . " - " . $mess . " at $now_string \n";
-		close($fh);
-	}
-
-}
-
-sub ReduceLog {
-	my $logPath = shift;
-
-	my $fh;
-	if ( open( $fh, '<', $logPath ) ) {
-
-		my @lines = <$fh>;
-
-		if ( scalar(@lines) > 100000 ) {
-
-			close($fh);
-
-			@lines = splice @lines, 200, scalar(@lines) - 1;
-			unlink($logPath);
-			my $fhDel;
-			if ( open( $fhDel, '>', $logPath ) ) {
-				print $fhDel @lines;
-				close($fhDel);
-			}
-		}
-	}
-
-}
+ 

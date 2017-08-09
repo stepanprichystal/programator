@@ -219,6 +219,8 @@ sub __SendMail {
 	my $pcbId             = shift;
 	my $pcbAuthor         = shift;
 	my $message           = shift;
+	
+	$message =~ s/\n/<br>/g;
 
 	# prepare email html template
 	my %keysData = ();

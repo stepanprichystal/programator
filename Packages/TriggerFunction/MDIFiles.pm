@@ -9,6 +9,7 @@ package Packages::TriggerFunction::MDIFiles;
 use strict;
 use warnings;
 use Path::Tiny qw(path);
+use Log::Log4perl qw(get_logger :levels);
 
 #loading of locale modules
 use aliased 'Connectors::HeliosConnector::HegMethods';
@@ -25,40 +26,58 @@ use aliased 'Enums::EnumsPaths';
 # Function add value of tag <parts_total>, <parts_remaining> in each mdi-xml file of requested job
 # parameter $orderId is eg: F12345-01
 sub AddPartsNumber {
-	my $self  = shift;
+	my $self    = shift;
 	my $orderId = shift;
-	
-	my $jobId =  $orderId;
+
+	my $logger = get_logger("trigger");
+
+	my $jobId = $orderId;
 	$jobId =~ s/-.*$//;
-	
-	my $reg = $jobId.".*_mdi.xml";
-	
-	my @xmlFiles  = FileHelper->GetFilesNameByPattern( EnumsPaths->Jobs_MDI,  $reg );
-	
-	unless(scalar(@xmlFiles)){
+
+	my $reg = $jobId . ".*_mdi.xml";
+
+	my @xmlFiles = FileHelper->GetFilesNameByPattern( EnumsPaths->Jobs_MDI, $reg );
+ 
+
+	unless ( scalar(@xmlFiles) ) {
+
+		$logger->debug("No xml files - $jobId found");
 		return 1;
-	} 
-	
+	}
+
 	my $info = HegMethods->GetInfoAfterStartProduce($orderId);
-	
-	if( !defined $info->{'pocet_prirezu'} ||   !defined $info->{'prirezu_navic'}){
+
+	$logger->debug( "pocet_prirezu == " . $info->{'pocet_prirezu'} . ",  prirezu_navic == " . $info->{'prirezu_navic'} );
+
+	$logger->debug("pocet_prirezu is not defined") if ( !defined $info->{'pocet_prirezu'} );
+	$logger->debug("prirezu_navic is not defined") if ( !defined $info->{'prirezu_navic'} );
+
+	if ( !defined $info->{'pocet_prirezu'} || !defined $info->{'prirezu_navic'} ) {
 		return 0;
 	}
-	  
- 	my $parts = $info->{'pocet_prirezu'} + $info->{'prirezu_navic'};
- 
-	 
+
+	my $parts = $info->{'pocet_prirezu'} + $info->{'prirezu_navic'};
+	
+	$logger->debug( "total parts =  $parts" );
+
 	foreach my $filename (@xmlFiles) {
+		
+		$logger->debug( "update file: $filename" );
 
 		my $file = path($filename);
 
 		my $data = $file->slurp_utf8;
+		
+		if($data =~  /(<parts_remaining>)(\d*)(<\/parts_remaining>)/){
+			$logger->debug("parts_remaining found ok");
+		}
+		
 		$data =~ s/(<parts_remaining>)(\d*)(<\/parts_remaining>)/$1$parts$3/i;
 		$data =~ s/(<parts_total>)(\d*)(<\/parts_total>)/$1$parts$3/i;
 		$file->spew_utf8($data);
 
 	}
-	
+
 	return 1;
 }
 
@@ -73,7 +92,6 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	my $test = MDIFiles->AddPartsNumber("f52456-01");
 
 	print $test;
- 
 
 }
 

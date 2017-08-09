@@ -84,12 +84,7 @@ sub InsertAppLog {
 	my $pcbId   = shift;
 	# log will be processed by service, 
 	# only if same log message in DB are older then <$age> (defualt 120 minutes)
-	my $age = shift; 
-	
-	unless(defined $age){
-		$age = 120;
-	}
-
+ 
 	use Unicode::Normalize;
 
 	$message = NFKD($message);
@@ -101,8 +96,8 @@ sub InsertAppLog {
 				   SqlParameter->new( "_AppId",   Enums->SqlDbType_VARCHAR, $appId ),
 				   SqlParameter->new( "_Type",    Enums->SqlDbType_VARCHAR, $type ),
 				   SqlParameter->new( "_Message", Enums->SqlDbType_VARCHAR, $message ),
-				   SqlParameter->new( "_PcbId",   Enums->SqlDbType_VARCHAR, $pcbId ),
-				   SqlParameter->new( "_Minutes",   Enums->SqlDbType_INT, $age )
+				   SqlParameter->new( "_PcbId",   Enums->SqlDbType_VARCHAR, $pcbId ) 
+				  
 	);
 
 	my $cmd = 
@@ -125,7 +120,7 @@ sub InsertAppLog {
 			AS t2
 			ORDER BY t2.Inserted DESC
 			LIMIT 1
-			) + INTERVAL _Minutes MINUTE  < NOW(),
+			) + INTERVAL (SELECT LogDuplicityInterval FROM app_info WHERE AppId = 'archiveJobs') MINUTE  < NOW(),
 		1, # process log
 		0  # not process, last same log is too young
 		))
@@ -167,6 +162,23 @@ sub GetErrLogsToProcess {
 	my @result = Helper->ExecuteDataSet( $cmd, \@params );
 
 	return @result;
+
+}
+
+# Return log by id
+sub GetLogById {
+	my $self  = shift;
+	my $logId = shift;
+
+	my @params = ( SqlParameter->new( "_LogId", Enums->SqlDbType_VARCHAR, $logId ) );
+
+	my $cmd = "SELECT * 
+				FROM app_logs
+				WHERE LogId = _LogId;";
+
+	my @result = Helper->ExecuteDataSet( $cmd, \@params );
+
+	return %{$result[0]};
 
 }
 
@@ -245,11 +257,20 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	use aliased 'Connectors::TpvConnector::TpvMethods';
 
-	my $info = TpvMethods->InsertAppLog(
-		"testApp", "Error", 'Ahoj já jsem štìpán\n', "f52457"
-	);
+	#my $info = TpvMethods->InsertAppLog(
+#		"archiveJobs", "Error", 'Ahoj jÃ¡\n jsem Å¡tÄ›pÃ¡n', "f52456"
+#	);
 
-	print 1;
+
+#	my @arr = TpvMethods->GetErrLogsToProcess("archiveJobs");
+#
+#	use Data::Dump qw(dump);
+#
+#	dump(@arr);
+
+	my %log = TpvMethods->GetLogById("25744");
+
+	print $log{"Message"};
 
 }
 

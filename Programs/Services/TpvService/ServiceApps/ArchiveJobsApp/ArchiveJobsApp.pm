@@ -144,8 +144,9 @@ sub __ProcessJob {
 	my $inUse = $self->__JobInUse( $jobId, \$errMess );
 
 	if ($inUse) {
-
-		$self->__ProcessError( $jobId, $errMess );
+		
+		# if in log error, but dont store error to db, just skip archivation
+		$self->{"logger"}->error($errMess);
 		return 0;
 	}
 

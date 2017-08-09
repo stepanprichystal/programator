@@ -16,106 +16,87 @@ use Win32::Process;
 use Config;
 use POSIX 'strftime';
 use File::Basename;
+use Log::Log4perl qw(get_logger :levels);
 
 #local library
+#use lib qw( \\\\incam\\InCAM\\server\\site_data\\scripts);
 
+my $logger = __SetLogging();
 
 # all do in try/catch, errors put in ErrLog
 eval {
-	
+
 	my $query = new CGI;
 	print $query->header("text/html");
- 
+
 	my $jobId = $query->param("jobid");
-	 
- 
+
 	# 1) Log before call TrigerPage.pl
-	Log("To produce");
+	$logger->info("$jobId to produce");
 
-	
 	# 2) Run TrigerPage.pl
-	__TriggerPage();
-
+	my $result = __TriggerPage($jobId);
 
 	# 3) Tell to helios, all ists ok
-	print "OK";
- 
-
-
-	# Run script triggerPage in new window indipendently on this web
-	sub __TriggerPage {
-		my $self = shift;
-
-		my $path = "\\\\incam\\incam_server\\site_data\\scripts\\TriggerPage.pl ";
-
-		#server pid
-		my $pid = $$;
- 
-		my $perl = $Config{perlpath};
-		my $processObj2;
-		Win32::Process::Create( $processObj2, $perl,
-							   "perl -w " . $path.$jobId,
-							   0, NORMAL_PRIORITY_CLASS | CREATE_NEW_CONSOLE, "." )
-		  || Log("Error when launch TriggerPage.pl");
- 
-
-	}
-
-	sub Log {
-		my $mess = shift;
-
-		my $now_string = strftime( "%Y-%m-%d %H:%M:%S", localtime );
-
-		# 3 attem to write to file
-
- 
-		my $logPath = ( fileparse($0) )[1]."\\Logs\\Log.txt";    #current dir
- 
-
-		ReduceLog($logPath);
-
-		my $att = 0;
-		my $fh;
-		my $fileOpen = open( $fh, '>>', $logPath );
-
-		while ( !$fileOpen && $att < 3 ) {
-			$att++;
-			sleep(1);
-		}
-
-		if ($fileOpen) {
-			print $fh $jobId . " - " . $mess . " at $now_string \n";
-			close($fh);
-		}
-
-	}
-
-	sub ReduceLog {
-		my $logPath = shift;
-
-		my $fh;
-		if ( open( $fh, '<', $logPath ) ) {
-
-			my @lines = <$fh>;
-
-			if ( scalar(@lines) > 100000 ) {
-
-				close($fh);
-
-				@lines = splice @lines, 200, scalar(@lines) - 1;
-				unlink($logPath);
-				my $fhDel;
-				if ( open( $fhDel, '>', $logPath ) ) {
-					print $fhDel @lines;
-					close($fhDel);
-				}
-			}
-		}
-	}
+	print $result;
 
 };
 if ($@) {
-
-	 Log("Error when launch TriggerPage.pl ".$@, );
+	$logger->error( "Error when launch TriggerPage.pl " . $@, );
 
 }
+
+# Run script triggerPage in new window indipendently on this web
+sub __TriggerPage {
+	my $jobId = shift;
+	
+	my $result = "OK";
+ 
+	my $path = "\\\\incam\\incam_server\\site_data\\scripts\\TriggerPage.pl";
+
+	unless ( -e $path ) {
+		my $err = "Nepodarilo se spustit script \"$path\", ktery je volan Heliosem pri zadani dps do vyroby pomoci URL:".CGI->new()->url(). " Volej TPV.";
+		$logger->error($err);
+		
+		$result = $err; 	
+	}
+
+	#server pid
+	my $pid = $$;
+
+	my $perl = $Config{perlpath};
+	my $processObj2;
+	Win32::Process::Create( $processObj2, $perl, "perl -w " . $path . " " . $jobId, 0, NORMAL_PRIORITY_CLASS | CREATE_NEW_CONSOLE, "." )
+	  || $logger->error("Error when launch TriggerPage.pl");
+	  
+	  
+	 return $result; 
+
+}
+
+sub __SetLogging {
+
+	my $logConfig = "c:\\Apache24\\htdocs\\tpv\\Logger.conf";
+
+	# create log dirs for all application
+	my @dirs = ();
+	if ( open( my $f, "<", $logConfig ) ) {
+
+		while (<$f>) {
+			if ( my ($logFile) = $_ =~ /.filename\s*=\s*(.*)/ ) {
+
+				my ( $dir, $f ) = $logFile =~ /^(.+)\\([^\\]+)$/;
+				unless ( -e $dir ) {
+					mkdir($dir) or die "Can't create dir: " . $dir . $_;
+				}
+			}
+		}
+		close($logConfig);
+	}
+
+	Log::Log4perl->init($logConfig);
+
+	return get_logger("trigger");
+
+}
+
