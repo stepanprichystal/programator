@@ -14,7 +14,7 @@ use lib qw( C:\Perl\site\lib\TpvScripts\Scripts );
 use aliased 'Packages::InCAM::InCAM';
 use aliased 'Programs::Exporter::ExportUtility::Groups::ETExport::ETExportTmp';
 
-my $jobId    = "f58746";
+my $jobId    = "f52457";
 my $inCAM    = InCAM->new();
 
 #GET INPUT NIF INFORMATION

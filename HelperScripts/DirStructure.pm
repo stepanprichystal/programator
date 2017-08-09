@@ -1,5 +1,11 @@
 #!/usr/bin/perl -w
 
+
+#-------------------------------------------------------------------------------------------#
+# Description: Create directory structure needed for runing tpv scripts
+# Author:SPR
+#-------------------------------------------------------------------------------------------#
+
 package HelperScripts::DirStructure;
 
 #3th party library

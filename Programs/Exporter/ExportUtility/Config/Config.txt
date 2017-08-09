@@ -43,5 +43,6 @@ logingType = 1
 # Server station name 
 # (server version, send err mail if export fail + set aktualni krok of order to err)
 serverName = TPV-SERVER
+#serverName = SPR
 
  
