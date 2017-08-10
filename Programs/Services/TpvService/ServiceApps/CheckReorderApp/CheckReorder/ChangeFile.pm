@@ -37,7 +37,9 @@ sub Create {
 
 	for ( my $i = 0 ; $i < scalar(@manCh) ; $i++ ) {
 
-		push( @lines, $manCh[$i] );
+		push(@lines, "# ".($i+1).")\n");
+
+		push( @lines, $manCh[$i]."\n\n" );
 
 	}
 
@@ -51,7 +53,7 @@ sub Create {
 
 	my $f;
 
-	if ( open( $f, "+>", $path ) ) {
+	if ( open( $f, "+>:utf8", $path ) ) {
 
 		foreach my $l (@lines) {
 

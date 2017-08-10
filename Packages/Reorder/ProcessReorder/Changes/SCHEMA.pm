@@ -15,6 +15,7 @@ use warnings;
 #local library
 use aliased 'CamHelpers::CamJob';
 use aliased 'CamHelpers::CamStepRepeat';
+use aliased 'CamHelpers::CamHelper';
 
 #-------------------------------------------------------------------------------------------#
 #  Public method
@@ -37,15 +38,33 @@ sub Run {
 	my $jobId = $self->{"jobId"};
 
 	my $result = 1;
-	
-	if( $self->{"isPool"}){
+
+	if ( $self->{"isPool"} ) {
 		return $result;
 	}
-	
 
 	my $layerCnt = CamJob->GetSignalLayerCnt( $inCAM, $jobId );
 
-	 
+	my @steps = CamStepRepeat->GetUniqueStepAndRepeat( $inCAM, $jobId, "panel" );
+
+	$inCAM->COM( "set_subsystem", "name" => "Panel-Design" );
+
+	# 1) Delete old schema + all from panel board layer (if autopan_delete, it doesnt delete non schema features)
+	
+	CamHelper->SetStep( $inCAM, "panel" );
+	CamLayer->ClearLayers($inCAM);
+	my @layers = CamJob->GetBoardLayers( $inCAM, $jobId );
+	
+	@layers = grep { $_->{"gROWname"} ne "fsch" } @layers; # we want keep old fsch
+	@layers = map { $_->{"gROWname"} } @layers; 
+	
+	CamLayers->AffectLayers( $inCAM, \@layers );
+	$inCAM->COM('sel_delete');
+	CamLayer->ClearLayers($inCAM);
+
+
+	# 2) Insert new schema
+	
 	my $schema = undef;
 
 	if ( $layerCnt <= 2 ) {
@@ -63,15 +82,8 @@ sub Run {
 			$schema = '4v-485';
 		}
 	}
+	$inCAM->COM( 'autopan_run_scheme', "job" => $jobId, "panel" => "panel", "pcb" => $steps[0]->{"stepName"}, "scheme" => $schema );
 
-	my @steps = CamStepRepeat->GetUniqueStepAndRepeat( $inCAM, $jobId, "panel" );
-
-	$inCAM->COM("set_subsystem","name"=>"Panel-Design");
-
-	$inCAM->COM("autopan_delete","job" => $jobId,"panel" => "panel","mode" => "objects_all_layers");
-
-	$inCAM->COM('autopan_run_scheme', "job" => $jobId, "panel" => "panel", "pcb" => $steps[0]->{"stepName"}, "scheme" => $schema );
-	
 	return $result;
 
 }

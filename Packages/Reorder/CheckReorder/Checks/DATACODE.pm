@@ -3,7 +3,7 @@
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Packages::Reorder::CheckReorder::Checks::DATACODE;
-use base('Packages::Reorder::CheckReorder::Checks::CheckBase')
+use base('Packages::Reorder::CheckReorder::Checks::CheckBase');
 
 use Class::Interface;
 &implements('Packages::Reorder::CheckReorder::Checks::ICheck');

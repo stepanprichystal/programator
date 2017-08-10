@@ -2,7 +2,7 @@
 # Description:  Class responsible for determine pcb reorder check
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::Reorder::CheckReorder::Checks::NIF_ILE;
+package Packages::Reorder::CheckReorder::Checks::NIF_FILE;
 use base('Packages::Reorder::CheckReorder::Checks::CheckBase');
 
 use Class::Interface;
@@ -53,7 +53,7 @@ sub Run {
 		
 		if(scalar(@nakov)){
 			
-			$self->_AddChange("V nifu u vrtani jader je hodnota C - nakoveni (po exportu hodnotu znovu zapiš do nifu ruènì)");
+			$self->_AddChange("V nifu u vrtani jader je hodnota C - nakoveni. Po exportu dps hodnotu znovu zapiÅ¡ do nifu ruÄnÄ›. Tohle nenÃ­ zautomatizovanÃ©!");
 		}
 		
 	}

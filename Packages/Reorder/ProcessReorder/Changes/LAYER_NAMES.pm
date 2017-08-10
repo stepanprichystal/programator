@@ -41,7 +41,7 @@ sub Run {
  
 	my @layers = CamJob->GetAllLayers($inCAM, $jobId);
 	
-	# old format of paste files sa_ori, sb_ori
+	# 1) old format of paste files sa_ori, sb_ori
 	
 	my @oldPaste = grep { $_->{"gROWname"} =~ /^s[ab]_(ori)|(made)$/} @layers;
 	
@@ -51,7 +51,15 @@ sub Run {
 		
 		$inCAM->COM("matrix_rename_layer","job"=> $jobId,"matrix"=> "matrix","layer"=>$l->{"gROWname"},"new_name"=>$newName);	
 	}
-	 
+	
+	# 2) Old format of fsch
+	my $fsch = (grep { $_->{"gROWname"} =~ /^f_sch$/} @layers)[0];
+	
+	if(defined $fsch){
+		
+		$inCAM->COM("matrix_rename_layer","job"=> $jobId,"matrix"=> "matrix","layer"=>"f_sch","new_name"=>"fsch");	
+	}
+ 
 
 	return $result;
 }

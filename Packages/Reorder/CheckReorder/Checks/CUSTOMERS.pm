@@ -51,20 +51,18 @@ sub Run {
 
 		if ( !defined $val || $val eq "" || $val == 0 ) {
 
-			$self->_AddChange("Zákazník kadlec si přeje veškeré dps dodávat v panelu. Předělej na panel.");
+			$self->_AddChange("Zákazník Kadlec si přeje veškeré dps dodávat v panelu. Předělej na panel.");
 		}
 	}
 	
 	# 2)Pickering
-	
-	my $custInfo = HegMethods->GetCustomerInfo($jobId);
  
 	if (    $custInfo->{"reference_subjektu"} eq "06544"
 		 || $custInfo->{"reference_subjektu"} eq "06545"
 		 || $custInfo->{"reference_subjektu"} eq "06546" )
 	{
 
-		$self->_AddChange("Zákazník pickering si přeje upravit číslo objednávek na deskách dle onenotu");
+		$self->_AddChange("Zákazník Pickering si přeje upravit číslo objednávek na deskách dle OneNotu");
 
 	}
  

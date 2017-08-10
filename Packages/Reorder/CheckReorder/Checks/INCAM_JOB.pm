@@ -41,30 +41,12 @@ sub Run {
 	my $nifPath = JobHelper->GetJobArchive($jobId) . $jobId . ".nif";
 
 	 
-#	# 1) First test, if job is imported (exist) in incam db
-#	unless($jobExist){
-#		$needChange = 1;
-#	}
-#
-#	unless ($isPool) {
-#		if ( -e $nifPath ) {
-#
-#			my @lines = @{ FileHelper->ReadAsLines($nifPath) };
-#
-#			# new nif contain = on first row
-#			if ( $lines[0] !~ /=/ ) {
-#
-#				$needChange = 1;
-#			}
-#
-#		}
-#		else {
-#
-#			$needChange = 1;
-#		}
-#	}
-
-	return $needChange;
+	# 1) First test, if job is imported (exist) in incam db
+	unless($jobExist){
+		
+		$self->_AddChange("Job není v InCAM databázi, zpracuj job ze starých dat (CAM 350, atd...");
+	}
+ 
 }
 
 #-------------------------------------------------------------------------------------------#

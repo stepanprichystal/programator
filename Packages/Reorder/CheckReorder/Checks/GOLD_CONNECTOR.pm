@@ -42,6 +42,8 @@ sub Run {
 	my $jobExist = $self->{"jobExist"};    # (in InCAM db)
 	my $isPool   = $self->{"isPool"};
 
+	my $stepName = "panel";
+
 	# 1) if gold connector exist, check if opfx gold exist
 	# if opfx doesn't exist, it means, thera are not prepared "gold layers" in matrix
 	my $goldFinger = 0;
@@ -53,8 +55,8 @@ sub Run {
 			$goldFinger = 1;
 
 			# Check if exist gold finger layers
-			unless ( $defaultInfo->LayerExist( "gold" . $l ) ) {
-				$self->_AddChange("Layer: \"$l\" contains gold fingers, but layer: \"gold$l\" doesn't exist. Create it.");
+			unless ( CamHelper->LayerExists( $inCAM, $jobId,"gold" . $l ) ) {
+				$self->_AddChange("Vrstva: \"$l\" obsahuje zlacený konektor, ale není vytvořená vrstva: \"gold$l\". Vytvoř ji.");
 			}
 		}
 	}
@@ -77,8 +79,9 @@ sub Run {
 				  . "Pokud ne, změn pozici SR stepu." );
 
 		}
-
 	}
+	
+	
 
 }
 

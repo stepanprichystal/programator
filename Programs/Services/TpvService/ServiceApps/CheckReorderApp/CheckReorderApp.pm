@@ -157,7 +157,7 @@ sub __ProcessJob {
 	# 1) Check if pcb exist in InCAM
 	my $jobExist = AcquireJob->Acquire( $inCAM, $jobId );
 
-	$self->_OpenJob($jobId);
+	#$self->_OpenJob($jobId);
 
 	# Do all controls and return check which are neet to be repair manualz bz tpv user
 	my $checkReorder = CheckReorder->new( $inCAM, $jobId );
@@ -171,10 +171,10 @@ sub __ProcessJob {
 		push( @manCh, "1) Deska je ve stavu \"revize\", uprav data jobu podle požadavkù zákazníka/výroby." );
 	}
 
-	if ($jobExist) {
-		$inCAM->COM( "check_inout", "job" => "$jobId", "mode" => "in", "ent_type" => "job" );
-		$inCAM->COM( "close_job", "job" => "$jobId" );
-	}
+	#if ($jobExist) {
+	#	$inCAM->COM( "check_inout", "job" => "$jobId", "mode" => "in", "ent_type" => "job" );
+	#	$inCAM->COM( "close_job", "job" => "$jobId" );
+	#}
 
 
 

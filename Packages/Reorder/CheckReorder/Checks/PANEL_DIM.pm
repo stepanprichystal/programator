@@ -2,7 +2,7 @@
 # Description:  Class responsible for determine pcb reorder check
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::Reorder::CheckReorder::Checks::ELTEST_EXIST;
+package Packages::Reorder::CheckReorder::Checks::PANEL_DIM;
 use base('Packages::Reorder::CheckReorder::Checks::CheckBase');
 
 use Class::Interface;
@@ -14,8 +14,9 @@ use warnings;
 
 #local library
 use aliased 'Helpers::JobHelper';
-use aliased 'Packages::NifFile::NifFile';
-use aliased 'CamHelpers::CamJob';
+use aliased 'Helpers::FileHelper';
+use aliased 'Connectors::HeliosConnector::HegMethods';
+
 #-------------------------------------------------------------------------------------------#
 #  Public method
 #-------------------------------------------------------------------------------------------#
@@ -28,7 +29,7 @@ sub new {
 	return $self;
 }
 
-# if electric test directory doesn't contain dir at least fo one machine
+# Check if exist new version of nif, if so it means it is from InCAM
 sub Run {
 	my $self     = shift;
 	
@@ -36,43 +37,16 @@ sub Run {
 	my $jobId    = $self->{"jobId"};
 	my $jobExist = $self->{"jobExist"};    # (in InCAM db)
 	my $isPool   = $self->{"isPool"};
+ 
+	my $nifPath = JobHelper->GetJobArchive($jobId) . $jobId . ".nif";
 
-	my $needChange = 0;
-
-	if($isPool){
-		return 0;
-	}
-
-	my $nif = NifFile->new($jobId);
 	 
-	# if pcb is one side + class 3, do not request test
-	if($nif->GetValue("kons_trida") <= 3 && CamJob->GetSignalLayerCnt($inCAM, $jobId) == 1){
-		return 0;
-	}
- 
-	my $path = JobHelper->GetJobElTest($jobId);
- 
-	if ( -e $path ) {
-
-		my @dirs = ();
+	# 1) First test, if job is imported (exist) in incam db
+	unless($jobExist){
 		
-		if ( opendir( DIR, $path ) ) {
-			@dirs = readdir(DIR);
-			closedir(DIR);
-		}
-
-		if ( scalar( grep { $_ =~ /^A[357]_/i } @dirs ) < 1 ) {
-
-			$needChange = 1;
-		}
-
+		$self->_AddChange("Job není v InCAM databázi, zpracuj job ze starých dat (CAM 350, atd...");
 	}
-	else {
-		$needChange = 1;
-	}
-	
-	return $needChange;
-
+ 
 }
 
 #-------------------------------------------------------------------------------------------#
@@ -81,15 +55,15 @@ sub Run {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
- 	use aliased 'Packages::Reorder::CheckReorder::Checks::ELTEST_EXIST' => "Change";
- 	use aliased 'Packages::InCAM::InCAM';
-	
-	my $inCAM    = InCAM->new();
+	use aliased 'Packages::Reorder::CheckReorder::Checks::INCAM_JOB' => "Change";
+	use aliased 'Packages::InCAM::InCAM';
+
+	my $inCAM = InCAM->new();
 	my $jobId = "d10355";
-	
+
 	my $check = Change->new();
-	
-	print "Need change: ".$check->NeedChange($inCAM, $jobId, 1);
+
+	print "Need change: " . $check->NeedChange( $inCAM, $jobId, 1 );
 }
 
 1;

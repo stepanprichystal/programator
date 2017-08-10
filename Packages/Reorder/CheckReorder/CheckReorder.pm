@@ -152,7 +152,7 @@ sub __LoadChecks {
 			my $module = 'Packages::Reorder::CheckReorder::Checks::' . $key;
 			eval("use  $module;");
 
-			push( @checks, $module->new( $key, $inCAM, $jobId, $isPool ) );
+			push( @checks, $module->new( $key, $inCAM, $jobId, $jobExist, $isPool ) );
 		}
 	}
 
