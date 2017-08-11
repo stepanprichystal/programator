@@ -9,6 +9,7 @@ use Class::Interface;
 &implements('Packages::Reorder::ProcessReorder::Changes::IChange');
 
 #3th party library
+use utf8;
 use strict;
 use warnings;
 
@@ -16,6 +17,9 @@ use warnings;
 use aliased 'CamHelpers::CamJob';
 use aliased 'CamHelpers::CamStepRepeat';
 use aliased 'CamHelpers::CamHelper';
+use aliased 'CamHelpers::CamStep';
+use aliased 'CamHelpers::CamLayer';
+
 
 #-------------------------------------------------------------------------------------------#
 #  Public method
@@ -43,6 +47,10 @@ sub Run {
 		return $result;
 	}
 
+	
+	
+	# 1)
+
 	my $layerCnt = CamJob->GetSignalLayerCnt( $inCAM, $jobId );
 
 	my @steps = CamStepRepeat->GetUniqueStepAndRepeat( $inCAM, $jobId, "panel" );
@@ -50,21 +58,20 @@ sub Run {
 	$inCAM->COM( "set_subsystem", "name" => "Panel-Design" );
 
 	# 1) Delete old schema + all from panel board layer (if autopan_delete, it doesnt delete non schema features)
-	
+
 	CamHelper->SetStep( $inCAM, "panel" );
 	CamLayer->ClearLayers($inCAM);
 	my @layers = CamJob->GetBoardLayers( $inCAM, $jobId );
-	
-	@layers = grep { $_->{"gROWname"} ne "fsch" } @layers; # we want keep old fsch
-	@layers = map { $_->{"gROWname"} } @layers; 
-	
-	CamLayers->AffectLayers( $inCAM, \@layers );
+
+	@layers = grep { $_->{"gROWname"} ne "fsch" } @layers;    # we want keep old fsch
+	@layers = map  { $_->{"gROWname"} } @layers;
+
+	CamLayer->AffectLayers( $inCAM, \@layers );
 	$inCAM->COM('sel_delete');
 	CamLayer->ClearLayers($inCAM);
 
-
 	# 2) Insert new schema
-	
+
 	my $schema = undef;
 
 	if ( $layerCnt <= 2 ) {

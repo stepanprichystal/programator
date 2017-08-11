@@ -7,7 +7,7 @@ use warnings;
 
 
 # ============ INPUT LINE =================
-my $inputLine ="sel_board_net_feat,operation=select,x=121.4962075,y=61.855385,tol=268.5225,use_ffilter=no";
+my $inputLine ="sr_active,top=41.6,bottom=41.6,left=21,right=21";
 
 my $output = "\$inCAM->COM(";
 my @splitted = split( ",", $inputLine );

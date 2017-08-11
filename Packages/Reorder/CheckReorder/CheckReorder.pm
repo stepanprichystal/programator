@@ -170,6 +170,20 @@ sub __LoadChecks {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
+	use aliased 'Packages::Reorder::CheckReorder::CheckReorder';
+	
+	use aliased 'Packages::InCAM::InCAM';
+	
+	use Data::Dump qw(dump);
+
+	my $inCAM = InCAM->new();
+	my $jobId = "f52457";
+	
+	my $ch = CheckReorder->new($inCAM, $jobId);
+	my @arr = $ch->RunChecks();
+	
+	dump(@arr)
+
 }
 
 1;

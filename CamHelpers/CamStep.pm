@@ -83,7 +83,7 @@ sub __FlatternPdfStep {
 	foreach my $l (@allLayers) {
 
 		if ( $treatDTM && ( $l->{"gROWlayer_type"} eq "drill" || $l->{"gROWlayer_type"} eq "rout" ) ) {
-			
+
 			CamLayer->FlatternNCLayer( $inCAM, $jobId, $stepPdf, $l->{"gROWname"} );
 		}
 		else {
@@ -97,26 +97,38 @@ sub __FlatternPdfStep {
 
 # Return name of all steps
 sub GetDatumPoint {
-	my $self  = shift;
-	my $inCAM = shift;
-	my $jobId = shift;
-	my $stepName = shift;
+	my $self           = shift;
+	my $inCAM          = shift;
+	my $jobId          = shift;
+	my $stepName       = shift;
 	my $considerOrigin = shift;
 
- 	if($considerOrigin){
- 		$inCAM->INFO("units" => 'mm', "angle_direction" => 'ccw', "entity_type" => 'step', "entity_path" => "$jobId/$stepName", "data_type" => 'DATUM', "options" => "consider_origin");
-	
- 	}else{
- 		$inCAM->INFO("units" => 'mm', "angle_direction" => 'ccw', "entity_type" => 'step', "entity_path" => "$jobId/$stepName", "data_type" => 'DATUM' );
-	
- 	}
+	if ($considerOrigin) {
+		$inCAM->INFO(
+					  "units"           => 'mm',
+					  "angle_direction" => 'ccw',
+					  "entity_type"     => 'step',
+					  "entity_path"     => "$jobId/$stepName",
+					  "data_type"       => 'DATUM',
+					  "options"         => "consider_origin"
+		);
 
-	
-	my %inf = ("x" => $inCAM->{doinfo}{gDATUMx}, "y" => $inCAM->{doinfo}{gDATUMy}); 
-	 
+	}
+	else {
+		$inCAM->INFO(
+					  "units"           => 'mm',
+					  "angle_direction" => 'ccw',
+					  "entity_type"     => 'step',
+					  "entity_path"     => "$jobId/$stepName",
+					  "data_type"       => 'DATUM'
+		);
+
+	}
+
+	my %inf = ( "x" => $inCAM->{doinfo}{gDATUMx}, "y" => $inCAM->{doinfo}{gDATUMy} );
+
 	return %inf;
 }
-
 
 # Get limits of active area
 sub GetActiveAreaLim {
@@ -156,4 +168,41 @@ sub GetActiveAreaLim {
 	return %limits;
 }
 
+# Set new active area border
+sub SetActiveAreaBorder{
+	my $self = shift;
+	my $inCAM = shift;
+	my $step = shift;
+	my $lb   = shift;
+	my $rb   = shift;
+	my $tb   = shift;
+	my $bb   = shift;
+	
+	
+	CamHelper->SetStep( $inCAM, $step );
+
+	$inCAM->COM( "sr_active", "top" => $tb, "bottom" => $bb, "left" => $lb, "right" => $rb );
+
+}
+
+#-------------------------------------------------------------------------------------------#
+#  Place for testing..
+#-------------------------------------------------------------------------------------------#
+my ( $package, $filename, $line ) = caller;
+if ( $filename =~ /DEBUG_FILE.pl/ ) {
+
+	use aliased 'CamHelpers::CamStep';
+	use aliased 'Packages::InCAM::InCAM';
+
+	my $inCAM = InCAM->new();
+	my $jobId = "f52457";
+	my $step  = "panel";
+
+	 CamStep->SetActiveAreaBorder( $inCAM, $step, 5, 5, 5, 5 );
+
+	print "ddd";
+ 
+
+}
+ 
 1;

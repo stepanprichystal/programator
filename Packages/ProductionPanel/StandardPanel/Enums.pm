@@ -3,10 +3,13 @@ package Packages::ProductionPanel::StandardPanel::Enums;
 
 # Enums of all standard including historic standard in mm
 use constant {
-			   Standard_307x407   => "standard_307x407",
-			   Standard_307x486p2 => "standard_307x486p2",
-			   Standard_295x355   => "standard_295x355",
-			   Standard_295x460   => "standard_295x460",
+	Standard_307x407   => "standard_307x407",      # small VV
+	Standard_307x486p2 => "standard_307x486p2",    # big VV
+	Standard_295x355   => "standard_295x355",      # small 1V2V
+	Standard_295x460   => "standard_295x460",      # big 1V2V
+	Standard_230x305   => "standard_230x305",      # small ALU
+	Standard_305x460   => "standard_305x460",      # big ALU
+
 };
 
 # Indicate if panel is standard, smaller than standard or bigger than standard

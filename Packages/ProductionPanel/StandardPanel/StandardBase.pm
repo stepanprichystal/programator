@@ -14,7 +14,8 @@ use aliased 'Packages::ProductionPanel::StandardPanel::Enums';
 use aliased 'CamHelpers::CamJob';
 use aliased 'CamHelpers::CamStep';
 use aliased 'Connectors::HeliosConnector::HegMethods';
-use aliased 'Packages::ProductionPanel::StandardPanel::StandardDef';
+use aliased 'Packages::ProductionPanel::StandardPanel::Standard::StandardList';
+use aliased 'Packages::ProductionPanel::StandardPanel::Standard::Standard';
 
 #-------------------------------------------------------------------------------------------#
 #  Public method
@@ -28,8 +29,9 @@ sub new {
 	$self->{"inCAM"}    = shift;
 	$self->{"jobId"}    = shift;
 	$self->{"step"}     = shift || "panel";
-	$self->{"accuracy"} = shift || 0.1;       # accoracy during dimension comparing, default +-100µ
+	$self->{"accuracy"} = shift || 0.2;       # accoracy during dimension comparing, default +-200µ
 
+ 
 	# Determine panel limits
 	my %profLim = CamJob->GetProfileLimits2( $self->{"inCAM"}, $self->{"jobId"}, $self->{"step"} );
 	my %areaLim = CamStep->GetActiveAreaLim( $self->{"inCAM"}, $self->{"jobId"}, $self->{"step"} );
@@ -58,11 +60,11 @@ sub new {
 	my $mat = HegMethods->GetMaterialKind( $self->{"jobId"} );
 	$self->{"pcbMat"} = undef;
 
-	if ( $mat =~ /FR4/i ) {
+	if ( $mat =~ /FR4|IS4/i ) {
 
 		$self->{"pcbMat"} = Enums->PcbMat_FR4;
 	}
-	elsif ( $mat =~ /ALU/i ) {
+	elsif ( $mat =~ /AL|PCL/i ) {
 
 		$self->{"pcbMat"} = Enums->PcbMat_ALU;
 	}
@@ -72,8 +74,8 @@ sub new {
 	}
 
 	# List of all standards
-	my @list   = StandardDef->GetStandards();
-	my @active = StandardDef->GetStandards(1);
+	my @list   = StandardList->GetStandards();
+	my @active = StandardList->GetStandards(1);
 
 	$self->{"list"}   = \@list;
 	$self->{"active"} = \@active;
@@ -89,10 +91,10 @@ sub IsStandardCandidate {
 	my $self = shift;
 	my $arr  = shift;    # ref to list of standard candidates
 
-	my @s = grep { $_->{"pcbType"} eq $self->{"pcbType"} && $_->{"pcbMat"} eq $self->{"pcbMat"} } @{ $self->{"active"} };
+	my @s = grep { $_->PcbType() eq $self->PcbType() && $_->PcbMat() eq $self->PcbMat() } @{ $self->{"active"} };
 
 	if ( defined $arr ) {
-		@($arr ) = @s;
+		@{$arr} = @s;
 	}
 
 	return scalar(@s) ? 1 : 0;
@@ -101,54 +103,94 @@ sub IsStandardCandidate {
 # Return if pcb is "standard candidate" and if there is active standard with:
 # same dimension as this pcb or smaller or bigger dimension
 # Return:
-# Type_NONSTANDARD 
-# Type_STANDARD 
-# Type_STANDARDNOAREA - standard but area is different 
+# Type_NONSTANDARD
+# Type_STANDARD
+# Type_STANDARDNOAREA - standard but area is different
 sub IsStandard {
-	  my $self     = shift;
-	  my $standard = shift;    # ref on standar type
+	my $self = shift;
 
-	  my @candidates = ();
+	my $s = $self->GetStandard();
 
-	  unless ( $self->IsStandardCandidate( \@candidates ) ) {
-		  die "Unable to find standard panels by dimensions, when current pcb is not \"standard candidate\".";
-	  }
+	my $result = Enums->Type_NONSTANDARD;
 
-	  my $result = Enums->Type_NONSTANDARD;
+	if ( defined $s ) {
+		$result = Enums->Type_STANDARDNOAREA;
+	}
 
-	  foreach $s (@candidates) {
+	if (    abs( $s->WArea() - $self->WArea() ) <= $self->{"accuracy"}
+		 && abs( $s->HArea() - $self->HArea() ) <= $self->{"accuracy"} )
+	{
+		$result = Enums->Type_STANDARD;
+	}
 
-		  if (    abs( $s->{"w"} - $self->{"w"} ) <= $self->{"accuracy"}
-			   && abs( $s->{"h"} - $self->{"h"} ) <= $self->{"accuracy"} )
-		  {
-
-			  $standard = $s;
-			  $result   = Enums->Type_STANDARDNOAREA;
-
-			  # test if area dim (no position) is standard too
-			  if (
-				   abs( $s->{"wArea"} - $self->{"wArea"} ) <= $self->{"accuracy"}
-				   && abs( $s->{"hArea"} - $self->{"hArea"} ) <= $self->{"accuracy"}
-				)
-			  {
-				  $result = Enums->Type_STANDARD;
-			  }
-
-			  last;
-		  }
-	  }
-
-	  return $result;
+	return $result;
 }
 
 # Return standard if exist, otherwise undef
 sub GetStandard {
-	  my $self = shift;
+	my $self = shift;
 
-	  my $standard = undef;
-	  $self->IsStandardDim($standard);
+	my $standard   = undef;
+	my @candidates = ();
 
-	  return $standard;
+	unless ( $self->IsStandardCandidate( \@candidates ) ) {
+		die "Unable to find standard panels by dimensions, when current pcb is not \"standard candidate\".";
+	}
+
+	foreach my $s (@candidates) {
+
+		if (    abs( $s->W() - $self->W() ) <= $self->{"accuracy"}
+			 && abs( $s->H() - $self->H() ) <= $self->{"accuracy"} )
+		{
+
+			$standard = $s;
+
+			last;
+		}
+	}
+	
+	return $standard;
+}
+
+
+#-------------------------------------------------------------------------------------------#
+#  GET method for current panel
+#-------------------------------------------------------------------------------------------#
+
+sub PcbType {
+	my $self = shift;
+
+	return $self->{"pcbType"};
+}
+
+sub PcbMat {
+	my $self = shift;
+
+	return $self->{"pcbMat"};
+}
+
+sub W {
+	my $self = shift;
+
+	return $self->{"w"};
+}
+
+sub H {
+	my $self = shift;
+
+	return $self->{"h"};
+}
+
+sub WArea {
+	my $self = shift;
+
+	return $self->{"wArea"};
+}
+
+sub HArea {
+	my $self = shift;
+
+	return $self->{"hArea"};
 }
 
 #-------------------------------------------------------------------------------------------#
@@ -157,13 +199,29 @@ sub GetStandard {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	  use aliased 'Packages::ProductionPanel::StandardPanel';
-	  use aliased 'Packages::InCAM::InCAM';
+	use aliased 'Packages::ProductionPanel::StandardPanel::StandardBase';
+	use aliased 'Packages::InCAM::InCAM';
+	use Data::Dump qw(dump);
 
-	  my $inCAM = InCAM->new();
-	  my $jobId = "f52456";
+	my $inCAM = InCAM->new();
+	my $jobId = "f52457";
 
-	  print "fff";
+	my $pnl = StandardBase->new( $inCAM, $jobId );
+
+	#my @arr = ();
+
+	#print $pnl->IsStandardCandidate(\@arr);
+
+	 
+	my $isS = $pnl->IsStandard(   );
+
+	print "$isS\n\n  ";
+	
+	my $s = $pnl->GetStandard(   );
+
+	#print $s;
+
+	dump($s);
 
 }
 

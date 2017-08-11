@@ -125,6 +125,22 @@ sub __LoadChanges {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
+	use aliased 'Packages::Reorder::ProcessReorder::ProcessReorder';
+	
+	use aliased 'Packages::InCAM::InCAM';
+	
+	use Data::Dump qw(dump);
+
+	my $inCAM = InCAM->new();
+	my $jobId = "f52457";
+	
+	my $ch = ProcessReorder->new($inCAM, $jobId);
+	
+	my $errMess = "";
+	my @arr = $ch->RunChanges(\$errMess);
+	print $errMess;
+ 
+
 }
 
 1;
