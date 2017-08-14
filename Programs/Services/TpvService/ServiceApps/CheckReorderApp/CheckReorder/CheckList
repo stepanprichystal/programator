@@ -90,6 +90,12 @@ V =
 T = manual
 M = Zakazik Pickering si preje upravit cislo objednavek na deskach, podle OneNotu 
 
+[ MEATEST ]
+K = MEATEST
+V = 
+T = manual
+M = Do vsech desek pridavat UL logo (14.8.2017)
+
 [ NIF_NAKOVENI ]
 K = NIF_NAKOVENI
 V = 
