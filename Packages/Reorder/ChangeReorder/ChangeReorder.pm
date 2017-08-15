@@ -3,7 +3,7 @@
 # Theese changes are done automatically
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::Reorder::ProcessReorder::ProcessReorder;
+package Packages::Reorder::ChangeReorder::ChangeReorder;
 
 #3th party library
 use strict;
@@ -37,7 +37,7 @@ sub new {
 }
 
 # Do all automatic changes, which are necessary
-sub RunTasks {
+sub RunChanges {
 	my $self    = shift;
 	my $errMess = shift;
 
@@ -85,11 +85,11 @@ sub __LoadChanges {
 	my $jobId  = $self->{"jobId"};
 	my $isPool = HegMethods->GetPcbIsPool($jobId);
 
-	my $path  = GeneralHelper->Root() . "\\Packages\\Reorder\\ProcessReorder\\TaskList";
+	my $path  = GeneralHelper->Root() . "\\Packages\\Reorder\\ChangeReorder\\ChangeList";
 	my @lines = @{ FileHelper->ReadAsLines($path) };
 
 	unless ( -e $path ) {
-		die "Unable to process reorder $jobId, because \"TaskList\" file doesnt exist.\n";
+		die "Unable to process reorder $jobId, because \"ChangeList\" file doesnt exist.\n";
 	}
 
 	my @changes = ();
@@ -104,7 +104,7 @@ sub __LoadChanges {
 
 			my $key = uc($l);
 
-			my $module = 'Packages::Reorder::ProcessReorder::Tasks::' . $key;
+			my $module = 'Packages::Reorder::ChangeReorder::Changes::' . $key;
 			eval("use  $module;");
 
 			push( @changes, $module->new( $key, $inCAM, $jobId, $isPool ) );
@@ -125,7 +125,7 @@ sub __LoadChanges {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	use aliased 'Packages::Reorder::ProcessReorder::ProcessReorder';
+	use aliased 'Packages::Reorder::ChangeReorder::ChangeReorder';
 	
 	use aliased 'Packages::InCAM::InCAM';
 	
@@ -134,7 +134,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	my $inCAM = InCAM->new();
 	my $jobId = "f52457";
 	
-	my $ch = ProcessReorder->new($inCAM, $jobId);
+	my $ch = ChangeReorder->new($inCAM, $jobId);
 	
 	my $errMess = "";
 	my @arr = $ch->RunChanges(\$errMess);

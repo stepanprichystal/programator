@@ -18,7 +18,8 @@ use aliased 'Helpers::JobHelper';
 use aliased 'Helpers::FileHelper';
 use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'Packages::ProductionPanel::StandardPanel::StandardExt';
-use aliased 'Packages::ProductionPanel::ActiveArea::ActiveArea';
+use aliased 'CamHelpers::CamStep';
+use aliased 'CamHelpers::CamStepRepeat';
 
 #-------------------------------------------------------------------------------------------#
 #  Public method
@@ -57,24 +58,21 @@ sub Run {
 							   . "Předělej desku na standard." );
 		}
 	}
+ 
+	# 2) This class can change panel dimension (in future). 
+	# Do control check if SR step are whole inside active area
+ 
+		my %limActive = CamStep->GetActiveAreaLim( $inCAM, $jobId, "panel" );
+		my %limSR = CamStepRepeat->GetStepAndRepeatLim( $inCAM, $jobId, "panel" );
 
-	# 2) check if border in panel are standard. If not check if it possible change border to standard
-	# without overlap existing steps in panel step by new area border
+		if (    $limActive{"xMin"}  > $limSR{"xMin"}
+			 || $limActive{"yMax"}  < $limSR{"yMax"}
+			 || $limActive{"xMax"}  < $limSR{"xMax"}
+			 || $limActive{"yMin"}  > $limSR{"yMin"} )
+		{
+			$self->_AddChange(   "SR stepy jsou umístěny za aktivní oblastí. Zkontroluj, zda technické okolí nezasahuje do desek v panelu." );
 
-	my $area = ActiveArea->new( $inCAM, $jobId );
-
-	unless ( $area->IsBorderStandard() ) {
-
-		my %b = $area->GetStandardBorder();
-
-		# check if active area will be bigger after change borders
-		if ( $area->BorderL() < $b{"bl"} || $area->BorderR() < $b{"br"} || $area->BorderT() < $b{"bt"} || $area->BorderB() < $b{"bb"} ) {
-
-			$self->_AddChange(   "Panel nemá standardní šířku okolí aktivní plochy. "
-							   . "Při změně na standard by se zmenšila aktivní plocha. Předělej na standard ručně a zkontroluj" );
 		}
-
-	}
 
 }
 

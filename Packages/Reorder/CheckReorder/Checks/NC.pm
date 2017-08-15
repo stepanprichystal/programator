@@ -18,6 +18,7 @@ use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'CamHelpers::CamHelper';
 use aliased 'CamHelpers::CamStepRepeat';
 use aliased 'Packages::CAMJob::Marking::Marking';
+use aliased 'Packages::Drilling::DrillChecking::LayerCheckError';
 
 #-------------------------------------------------------------------------------------------#
 #  Public method
@@ -45,7 +46,12 @@ sub Run {
 	}
  
 	 
-	# 1) check of NC layers, if layers, depths, matrich drill direction is ok 
+	# 1) check of NC layers, if layers, depths, matrix drill direction is ok 
+	my $mess = "";
+	unless ( LayerCheckError->CheckNCLayers( $inCAM, $jobId, "panel", undef, \$mess ) ) {
+		
+		$self->_AddChange($mess, 1);
+	}
 	 
 }
  

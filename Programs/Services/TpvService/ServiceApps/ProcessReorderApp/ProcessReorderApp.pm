@@ -173,7 +173,7 @@ sub __ProcessJob {
 
 	my $errMess = "";
 	my $processReorder = ProcessReorder->new($inCAM, $jobId);
-	my $result  = $processReorder->RunChanges(\$errMess);
+	my $result  = $processReorder->RunTasks(\$errMess);
 
 	# 4) save job
 

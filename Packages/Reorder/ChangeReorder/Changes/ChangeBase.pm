@@ -3,7 +3,7 @@
 
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::Reorder::CheckReorder::Checks::CheckBase;
+package Packages::Reorder::ChangeReorder::Changes::ChangeBase;
 
 #3th party library
 use strict;
@@ -20,49 +20,24 @@ sub new {
 	my $checkKey = shift;
 	my $inCAM    = shift;
 	my $jobId    = shift;
-	my $jobExist = shift;
 	my $isPool   = shift;
 
 	$self = {};
 	bless $self;
 
-	my @changes = ();
-	$self->{"changes"} = \@changes;
-
-	$self->{"key"}      = $checkKey;
-	$self->{"inCAM"}    = $inCAM;
-	$self->{"jobId"}    = $jobId;
-	$self->{"jobExist"} = $jobExist;
-	$self->{"isPool"}   = $isPool;
+	$self->{"key"}    = $checkKey;
+	$self->{"inCAM"}  = $inCAM;
+	$self->{"jobId"}  = $jobId;
+	$self->{"isPool"} = $isPool;
 
 	return $self;
 }
 
-sub _AddChange {
-	my $self       = shift;
-	my $changeMess = shift;
-	my $critical = shift || 0; # It means, reorder can be processed, until critical changes are ok
-
-	
-
-	my %inf = ("text" => $changeMess, "critical" => $critical);
-
-	push( @{ $self->{"changes"} }, \%inf );
-
-}
-
-sub GetChanges {
-	my $self = shift;
-
-	return @{ $self->{"changes"} };
-
-}
-
-sub GetCheckKey {
-	my $self = shift;
+sub GetChangeKey {
+	my $self  = shift;
+	my $pcbId = shift;
 
 	return $self->{"key"};
-
 }
 
 #-------------------------------------------------------------------------------------------#

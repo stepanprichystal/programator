@@ -39,7 +39,7 @@ sub Create {
 
 		push(@lines, "# ".($i+1).")\n");
 
-		push( @lines, $manCh[$i]."\n\n" );
+		push( @lines, $manCh[$i]->{"text"}."\n\n" );
 
 	}
 

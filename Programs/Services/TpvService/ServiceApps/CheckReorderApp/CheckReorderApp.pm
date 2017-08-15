@@ -28,8 +28,9 @@ use aliased 'Helpers::JobHelper';
 use aliased 'CamHelpers::CamJob';
 use aliased 'Programs::Services::Helpers::AutoProcLog';
 use aliased 'Programs::Services::TpvService::ServiceApps::CheckReorderApp::CheckReorder::AcquireJob';
-use aliased 'Programs::Services::TpvService::ServiceApps::CheckReorderApp::CheckReorder::AutoChangeFile';
+
 use aliased 'Programs::Services::TpvService::ServiceApps::CheckReorderApp::CheckReorder::ChangeFile';
+use aliased 'Packages::Reorder::ChangeReorder::ChangeReorder';
 use aliased 'Packages::Reorder::CheckReorder::CheckReorder';
 
 #-------------------------------------------------------------------------------------------#
@@ -137,6 +138,7 @@ sub __RunJob {
 		my $err = "Process order id: \"$orderId\" exited with error: \n $eStr";
 
 		$self->__ProcessJobResult( $orderId, EnumsIS->CurStep_CHECKREORDERERROR, $err );
+		
 	}
 }
 
@@ -153,13 +155,25 @@ sub __ProcessJob {
 	my ($jobId) = $orderId =~ /^(\w\d+)-\d+/i;
 	$jobId = lc($jobId);
 
- 
 	# 1) Check if pcb exist in InCAM
 	my $jobExist = AcquireJob->Acquire( $inCAM, $jobId );
 
-	$self->_OpenJob($jobId);
+	#$self->_OpenJob($jobId);
 
-	# Do all controls and return check which are neet to be repair manualz bz tpv user
+	# 2) Do all automatic changes
+	if ($jobExist) {
+		
+		my $changeReorder = ChangeReorder->new( $inCAM, $jobId );
+		my $errMess = "";
+		my $res =  $changeReorder->RunChanges( \$errMess );
+		$self->{"inCAM"}->COM( "save_job",    "job" => "$jobId" );
+
+		unless($res){
+			die $errMess;
+		}
+	}
+
+	# 3) Do all controls and return check which are neet to be repair manualz bz tpv user
 	my $checkReorder = CheckReorder->new( $inCAM, $jobId );
 	my @manCh = $checkReorder->RunChecks();
 
@@ -172,27 +186,25 @@ sub __ProcessJob {
 	}
 
 	if ($jobExist) {
-		$inCAM->COM( "check_inout", "job" => "$jobId", "mode" => "in", "ent_type" => "job" );
-		$inCAM->COM( "close_job", "job" => "$jobId" );
+		#$inCAM->COM( "check_inout", "job" => "$jobId", "mode" => "in", "ent_type" => "job" );
+		#$inCAM->COM( "close_job", "job" => "$jobId" );
 	}
- 
 
-	# 2) set order state
+	# 4) set order state
 
 	my $orderState = EnumsIS->CurStep_ZPRACOVANIAUTO;
 
 	if ( scalar(@manCh) > 0 ) {
-		
+
 		$orderState = EnumsIS->CurStep_ZPRACOVANIMAN;
-		
-		ChangeFile->Create( $jobId, \@manCh ); # create changes file to archive
-	
-	}else{
-		
+
+		ChangeFile->Create( $jobId, \@manCh );    # create changes file to archive
+
+	}
+	else {
+
 		ChangeFile->Delete($jobId);
 	}
-
- 
 
 	$self->__ProcessJobResult( $orderId, $orderState, undef );
 }
@@ -222,10 +234,10 @@ sub __ProcessJobResult {
 		AutoProcLog->Delete($jobId);
 	}
 
-
 	# 2) set state
 
 	HegMethods->UpdatePcbOrderState( $orderId, $orderState );
+ 
 }
 
 sub __SetLogging {

@@ -6,3 +6,4 @@ Exporter utility - 1000+
 Exporter checker - 2000
 PoolMerger - 3000+
 InCAMServer - 3500+
+AppLauncher - 2010

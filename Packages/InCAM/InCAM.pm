@@ -161,9 +161,9 @@ sub new {
 	# this is appended to tmp info file
 	# provide unique  file name for different perl thread
 	$self->{"incamGUID"} = GeneralHelper->GetGUID();
-	
+
 	# Logger instance, if denfined, COM, Errors etc, will be process by logger
-	$self->{"logger"} = undef; # instance of Log4Perl
+	$self->{"logger"} = undef;    # instance of Log4Perl
 
 	bless $self, $class;
 
@@ -224,9 +224,7 @@ sub ClientFinish {
 
 	my $result = $self->__SpecialServerCmd("CLIENTFINISH PID:$$");
 
-	if ($result) {
-
-	}
+	$self->{"connected"} = 0;
 
 	return $result;
 }
@@ -330,8 +328,8 @@ sub sendCommand {
 	my ($self)      = shift;
 	my $commandType = shift;
 	my $command     = shift;
-	
-	$self->__Log($commandType."-".$command);
+
+	$self->__Log( $commandType . "-" . $command );
 
 	$self->blankStatusResults();
 	if ( $self->{comms} eq 'pipe' ) {
@@ -417,6 +415,14 @@ sub GetExceptionsError {
 	}
 
 	return \@exceptions;
+}
+
+
+# Return if InCAM library is connected to server or to InCAM editor
+sub IsConnected {
+	my ($self) = shift;
+
+	return $self->{"connected"};
 }
 
 ## This function start to read log, which is created when InCAM editor is launched
@@ -547,10 +553,10 @@ sub SupressToolkitException {
 }
 
 # Set logger, instance Log4Perl
-sub SetLogger{
-	my $self = shift;
+sub SetLogger {
+	my $self   = shift;
 	my $logger = shift;
-	
+
 	$self->{"logger"} = $logger;
 }
 
@@ -579,12 +585,10 @@ sub __Connect {
 		#printf( "%.2f\n", $end - $start );
 		#print "YES";
 
-		 
-			$self->{comms}      = 'socket';
-			$self->{socketOpen} = 1;
-			$self->inheritEnvironment();
-			$self->{"connected"} = 1;
-		 
+		$self->{comms}      = 'socket';
+		$self->{socketOpen} = 1;
+		$self->inheritEnvironment();
+		$self->{"connected"} = 1;
 
 	}
 
@@ -691,15 +695,14 @@ sub __RunScriptFail {
 	#exit(0);
 }
 
-
-sub __Log{
+sub __Log {
 	my $self = shift;
 	my $mess = shift;
-	
-	$mess = "Port: ".$self->{"port"}.", ".$mess;
-	
-	if( defined $self->{"logger"}){
-		
+
+	$mess = "Port: " . $self->{"port"} . ", " . $mess;
+
+	if ( defined $self->{"logger"} ) {
+
 		$self->{"logger"}->debug($mess);
 	}
 }
@@ -717,7 +720,7 @@ sub VON {
 # Checking is off. If a command fails, the script continues
 sub VOF {
 	my ($self) = shift;
- 
+
 	$self->sendCommand( "VOF", "" );
 }
 

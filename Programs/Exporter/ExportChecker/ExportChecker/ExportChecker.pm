@@ -6,6 +6,10 @@
 #-------------------------------------------------------------------------------------------#
 package Programs::Exporter::ExportChecker::ExportChecker::ExportChecker;
 
+use Class::Interface;
+&implements('Packages::InCAMHelpers::AppLauncher::IAppLauncher');
+
+
 #3th party library
 use strict;
 use warnings;
@@ -27,7 +31,6 @@ use aliased 'Programs::Exporter::ExportChecker::ExportChecker::GroupBuilder::Tem
 use aliased 'Programs::Exporter::ExportChecker::ExportChecker::GroupBuilder::V0Builder';
 
 use aliased 'Programs::Exporter::ExportChecker::ExportChecker::GroupTable::GroupTables';
-use aliased 'Programs::Exporter::ExportChecker::Server::Client';
 use aliased 'Packages::InCAM::InCAM';
 
 use aliased 'Connectors::HeliosConnector::HegMethods';
@@ -67,14 +70,12 @@ sub new {
 	$self->{"jobId"} = shift;
 
 	$self->{"serverPort"}    = shift;
-	$self->{"serverPid"}     = shift;
-	$self->{"loadingFrmPid"} = shift;
 
 	$self->{"inCAM"} = undef;
-
-	# Client maage conenction between this app and server
-	$self->{"client"} = Client->new();
-
+ 
+ 	# Launcher, helper, which do connection to InCAm editor
+ 	$self->{"launcher"} = undef;
+  
 	# Main application form
 	$self->{"form"} = ExportCheckerForm->new( -1, $self->{"jobId"}, $self->{"inCAM"} );
 
@@ -90,17 +91,20 @@ sub new {
 	# Manage group date (store/load group data from/to disc)
 	$self->{"storageMngr"} = StorageMngr->new( $self->{"jobId"}, $self->{"units"} );
 
-	$self->__Connect();
-	$self->__Init();
-	$self->__Run();
-
 	return $self;
 }
 
-sub __Init {
+sub Init {
 	my $self = shift;
+	my $launcher = shift; # contain InCAM library conencted to server
+	
+	# 1) Get InCAm from Launcher
+	
+	$self->{"launcher"} = $launcher;
+	$self->{"inCAM"} = $launcher->GetInCAM();
+	
 
-	# 1) Initialization of whole export app
+	# 2) Initialization of whole export app
 
 	# Keep structure of groups
 	$self->__DefineTableGroups();
@@ -114,7 +118,7 @@ sub __Init {
 	#$groupBuilder->Build( $self->{"groupTables"}, $self->{"inCAM"} );
 	$self->{"form"}->BuildGroupTableForm( $self->{"groupTables"}, $self->{"inCAM"} );
 
-	# 2) Initialization of each single group
+	# 3) Initialization of each single group
 
 	#posloupnost volani metod
 	#1) new()
@@ -137,14 +141,14 @@ sub __Init {
 
 }
 
-sub __Run {
+sub Run {
 	my $self = shift;
 	$self->{"form"}->{"mainFrm"}->Show(1);
 
-	# When all succesinit, close waiting form
-	if ( $self->{"loadingFrmPid"} ) {
-		Win32::Process::KillProcess( $self->{"loadingFrmPid"}, 0 );
-	}
+#	# When all succesinit, close waiting form
+#	if ( $self->{"loadingFrmPid"} ) {
+#		Win32::Process::KillProcess( $self->{"loadingFrmPid"}, 0 );
+#	}
 
 	#Helper->ShowAbstractQueueWindow(0,"Loading Exporter Checker");
 
@@ -157,8 +161,7 @@ sub __Run {
 # ================================================================================
 sub __ExportSyncFormHandler {
 	my $self   = shift;
-	my $client = $self->{"client"};
-
+	 
 	#if ( $client->ClientConnected() ) {
 	#
 	#		print STDERR "Close\n";
@@ -175,7 +178,6 @@ sub __ExportSyncFormHandler {
 
 sub __ExportASyncFormHandler {
 	my $self   = shift;
-	my $client = $self->{"client"};
 
 	#if ( $client->ClientConnected() ) {
 	#
@@ -207,7 +209,7 @@ sub __CheckBeforeExport {
 	$self->{"disableForm"} = 1;
 	$self->__RefreshForm();
 
-	my $client = $self->{"client"};
+	 
 	my $inCAM  = $self->{"inCAM"};
 
 	#get all gorup data and save them to disc
@@ -215,26 +217,25 @@ sub __CheckBeforeExport {
 
 	#test if client is connected
 	#if so, disconnect, because child porcess has to connect to server itself
-	if ( $client->IsConnected() ) {
+	if ( $inCAM->IsConnected() ) {
 		$inCAM->ClientFinish();
 
 		#$client->SetConnected(0);
 	}
-	my $serverPort = $client->ServerPort();
-
+ 
 	#Win32::OLE->Uninitialize();
 
 	#init and run checking form
 	$self->{"exportPopup"}->Init( $mode, $self->{"units"}, $self->{"form"} );
-	$self->{"exportPopup"}->CheckBeforeExport($serverPort);
+	$self->{"exportPopup"}->CheckBeforeExport($self->{"launcher"}->GetServerPort());
 
 }
 
 sub __CleanUpAndExitForm {
 	my ($self) = @_;
 
-	my $client     = $self->{"client"};
-	my $serverPort = $client->ServerPort();
+	#my $client     = $self->{"client"};
+	#my $serverPort = $client->ServerPort();
 
 	print STDERR "On close\n";
 
@@ -242,13 +243,13 @@ sub __CleanUpAndExitForm {
 
 	#if ( $client->IsConnected() ) {
 
-	$self->{"inCAM"}->ClientFinish();
+	#$self->{"inCAM"}->ClientFinish();
 
-	$self->{"inCAM"} = InCAM->new( "port" => $serverPort );
+	#$self->{"inCAM"} = InCAM->new( "port" => $serverPort );
 
-	if ( $self->{"inCAM"}->ServerReady() ) {
-		$self->{"inCAM"}->CloseServer();
-	}
+	#if ( $self->{"inCAM"}->ServerReady() ) {
+	#	$self->{"inCAM"}->CloseServer();
+	#}
 
 	#}
 
@@ -316,7 +317,7 @@ sub __OnClosePopupHandler {
 	# Because checking was processed in child thread and was connected
 	# to this income server
 
-	$self->__Connect();
+	$self->{"inCAM"}->Reconnect();
 
 	$self->{"disableForm"} = 0;
 	$self->__RefreshForm();
@@ -334,7 +335,7 @@ sub __OnResultPopupHandler {
 	# Because checking was processed in child thread and was connected
 	# to this income server
 
-	$self->__Connect();
+	$self->{"inCAM"}->Reconnect();
 
 	my $active    = 1;
 	my $toProduce = $self->{"form"}->GetToProduce($active);
@@ -347,7 +348,7 @@ sub __OnResultPopupHandler {
 		my $dataTransfer = DataTransfer->new( $self->{"jobId"}, EnumsTransfer->Mode_WRITE, $self->{"units"}, undef, $pathExportFile );
 
 		my $inCAM  = $self->{"inCAM"};
-		my $client = $self->{"client"};
+		 
 
 		my @orders = HegMethods->GetPcbOrderNumbers( $self->{"jobId"} );
 		@orders = map { $_->{"reference_subjektu"} } @orders;
@@ -361,7 +362,7 @@ sub __OnResultPopupHandler {
 			CamJob->CheckInJob( $inCAM, $self->{"jobId"} );
 			CamJob->CloseJob( $inCAM, $self->{"jobId"} );
 
-			if ( $client->IsConnected() ) {
+			if ( $inCAM->IsConnected() ) {
 				$inCAM->CloseServer();
 			}
 
@@ -384,15 +385,18 @@ sub __OnResultPopupHandler {
 			my $formPos = $self->{"form"}->{"mainFrm"}->GetPosition();
 
 			# Save exported data
-			$dataTransfer->SaveData( $exportMode, $toProduce, $self->{"serverPort"}, $formPos, \@orders );
+			$dataTransfer->SaveData( $exportMode, $toProduce, $self->{"launcher"}->GetServerPort(), $formPos, \@orders );
 
 			#test if client is connected
 			#if so, disconnect, because exportUtility connect to this server (launched in InCAM toolkit)
-			if ( $client->IsConnected() ) {
+			
+			
+			if ( $inCAM->IsConnected() ) {
 				$inCAM->ClientFinish();
-
 				#$client->SetConnected(0);
 			}
+			
+			$self->{"launcher"}->SetLetServerRun();
 
 			# Start server in this script
 
@@ -446,34 +450,7 @@ sub __RefreshForm {
 	}
 
 }
-
-sub __Connect {
-	my $self = shift;
-
-	my $port = $self->{"serverPort"};
-	my $pid  = $self->{"serverPid"};
-
-	# Manage conenctio between client and server
-	my $client = $self->{"client"};
-
-	# set running server on port
-	$client->SetServer( $port, $pid );
-
-	# try to connect to server
-	my $result = $client->Connect();
-
-	# if test ok, connect inCAM library to server
-	if ( $self->{"inCAM"} ) {
-
-		$self->{"inCAM"}->Reconnect();
-	}
-	else {
-
-		$self->{"inCAM"} = InCAM->new( "port" => $port );
-	}
-
-	return $result;
-}
+ 
 
 sub __SetHandlers {
 	my $self = shift;
