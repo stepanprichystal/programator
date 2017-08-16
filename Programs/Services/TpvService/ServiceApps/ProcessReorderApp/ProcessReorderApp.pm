@@ -28,7 +28,6 @@ use aliased 'Helpers::JobHelper';
 use aliased 'CamHelpers::CamJob';
 use aliased 'Programs::Services::Helpers::AutoProcLog';
 use aliased 'Programs::Services::TpvService::ServiceApps::CheckReorderApp::CheckReorder::ChangeFile';
-use aliased 'Programs::Services::TpvService::ServiceApps::CheckReorderApp::CheckReorder::AutoChangeFile';
 use aliased 'Enums::EnumsPaths';
 use aliased 'Enums::EnumsIS';
 use aliased 'Packages::Reorder::ProcessReorder::ProcessReorder';
@@ -223,7 +222,7 @@ sub __ProcessJobResult {
 	else {
 		AutoProcLog->Delete($jobId);
 		ChangeFile->Delete($jobId);
-		AutoChangeFile->Delete($jobId);
+		 
 	}
 
 	# 2) set state

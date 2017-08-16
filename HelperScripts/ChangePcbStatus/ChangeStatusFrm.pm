@@ -27,7 +27,7 @@ sub new {
 	#my $message = shift;    # message which is showed for user
 	#my $result  = shift;    # reference of result variable, where result will be stored
 
-	my @dimension = ( 700, 400 );
+	my @dimension = ( 700, 450 );
 	my $self = $class->SUPER::new( $parent, "Change psb status",
 						 \@dimension,
 						 &Wx::wxSYSTEM_MENU | &Wx::wxCAPTION | &Wx::wxCLIP_CHILDREN | &Wx::wxRESIZE_BORDER | &Wx::wxMINIMIZE_BOX | &Wx::wxCLOSE_BOX );

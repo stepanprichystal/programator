@@ -56,7 +56,7 @@ sub Run {
 
 			# Check if exist gold finger layers
 			unless ( CamHelper->LayerExists( $inCAM, $jobId,"gold" . $l ) ) {
-				$self->_AddChange("Vrstva: \"$l\" obsahuje zlacený konektor, ale není vytvořená vrstva: \"gold$l\". Vytvoř ji.");
+				$self->_AddChange("Vrstva: \"$l\" obsahuje zlacený konektor, ale není vytvořená vrstva: \"gold$l\". Vytvoř ji.", 1);
 			}
 		}
 	}

@@ -1,5 +1,6 @@
 #-------------------------------------------------------------------------------------------#
-# Description: App which unarchvoe and do revision of reorders
+# Description: App unarchive jobs, do automatic changes and check changes, which are need 
+# to by done manually
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Programs::Services::TpvService::ServiceApps::CheckReorderApp::CheckReorderApp;
@@ -158,7 +159,7 @@ sub __ProcessJob {
 	# 1) Check if pcb exist in InCAM
 	my $jobExist = AcquireJob->Acquire( $inCAM, $jobId );
 
-	#$self->_OpenJob($jobId);
+	$self->_OpenJob($jobId);
 
 	# 2) Do all automatic changes
 	if ($jobExist) {
@@ -186,8 +187,8 @@ sub __ProcessJob {
 	}
 
 	if ($jobExist) {
-		#$inCAM->COM( "check_inout", "job" => "$jobId", "mode" => "in", "ent_type" => "job" );
-		#$inCAM->COM( "close_job", "job" => "$jobId" );
+		$inCAM->COM( "check_inout", "job" => "$jobId", "mode" => "in", "ent_type" => "job" );
+		$inCAM->COM( "close_job", "job" => "$jobId" );
 	}
 
 	# 4) set order state

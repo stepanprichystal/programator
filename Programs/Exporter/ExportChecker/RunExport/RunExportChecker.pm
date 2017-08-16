@@ -19,6 +19,8 @@ use aliased 'Packages::InCAMHelpers::AppLauncher::Enums';
 use aliased 'Helpers::GeneralHelper';
 use aliased 'Managers::MessageMngr::MessageMngr';
 use aliased 'Enums::EnumsGeneral';
+use aliased 'Connectors::HeliosConnector::HegMethods';
+use aliased 'Enums::EnumsIS';
 
 sub new {
 	my $self = shift;
@@ -38,8 +40,16 @@ sub new {
 
 		return 0;
 	}
+	
+	
+	# 2) Checks if no pcb reorders are in aktualni_krok = zpracvoani-rucni nebo checkReorder-error
+	unless( $self->__CheckReorder($self->{"jobId"})){
+		
+		return 0;
+	}
+	
 
-	# 2) Launch app
+	# 3) Launch app
 
 	my $appName = 'Programs::Exporter::ExportChecker::ExportChecker::ExportChecker';    # has to implement IAppLauncher
 
@@ -71,7 +81,34 @@ sub __IsJobOpen {
 	}
 
 	return 1;
+}
 
+# Checks if no pcb reorders are in aktualni_krok = zpracvoani-rucni nebo checkReorder-error
+sub __CheckReorder {
+	my $self  = shift;
+	my $jobId = shift;
+	
+	my $result = 1;
+	
+	my @orders = HegMethods->GetPcbReorders($jobId);
+
+	# filter only order zpracovani-rucni or checkReorder-error
+	@orders =
+	  grep { $_->{"aktualni_krok"} eq EnumsIS->CurStep_ZPRACOVANIMAN || $_->{"aktualni_krok"} eq EnumsIS->CurStep_CHECKREORDERERROR } @orders;
+
+	if ( scalar(@orders) ) {
+		
+		my $messMngr = MessageMngr->new("Exporter utility");
+ 
+		my @mess1 = ("Unable to run \"Check reorder application\":", 
+		"There are re-orders for pcbid \"$jobId\" where \"Aktualni krok\" is \"zpracovani-rucni\" OR \"checkReorder-error\" in Helios.",
+		"First process job by \"Reorder script\" at: ".'Packages\Reorder\ReorderApp\RunReorder\RunReorderApp.pl' );
+		$messMngr->ShowModal( -1, EnumsGeneral->MessageType_SYSTEMERROR, \@mess1 );
+
+		$result = 0;
+	}
+	
+	return $result;
 }
 
 #-------------------------------------------------------------------------------------------#

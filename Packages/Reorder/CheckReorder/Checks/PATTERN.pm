@@ -43,7 +43,7 @@ sub Run {
  
 	if($isPool && PlatedRoutArea->PlatedAreaExceed($inCAM, $jobId, "o+1")){
 		
-		$self->_AddChange("Dps je pool a musí jít do výroby patternem, kvùli velkému prokovenému otvoru.")
+		$self->_AddChange("Dps je pool a musí jít do výroby patternem, kvùli velkému prokovenému otvoru.", 1)
 	}
  
 }

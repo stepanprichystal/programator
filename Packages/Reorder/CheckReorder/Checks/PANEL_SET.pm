@@ -62,8 +62,8 @@ sub Run {
 		if ( !$mpanelExist && $custPnlExist ne "yes" && $custSetExist ne "yes" ) {
 
 			$self->_AddChange(
-						 "V nifu je vyplňěná \"nasobnost_panelu\", ale v jobu není nastaveno, že se jedná o \"zákaznický panel\ nebo \"sadu\""
-						   . "(respektive nejsou nastaveny atributy \"customer_panel\" nebo \"customer_set\")" );
+						 "V nifu je vyplněná \"nasobnost_panelu\", ale v jobu není nastaveno, že se jedná o \"zákaznický panel\ nebo \"sadu\""
+						   . "(respektive nejsou nastaveny atributy \"customer_panel\" nebo \"customer_set\")", 1 );
 		}
 
 		# check if customer set is not missing, when count of pieces in panel and nif are different
@@ -73,7 +73,7 @@ sub Run {
 			if ( $multiplNif != $multiplReal ) {
 
 				$self->_AddChange(   "Nasobnost v nifu: \"nasobnost_panelu\" nesedí s reálnou násobností v mpanelu. "
-								   . "Pravděpodobně není v jobu definovaná sada ( atribut \"customer_set\")." );
+								   . "Pravděpodobně není v jobu definovaná sada ( atribut \"customer_set\").", 1 );
 			}
 		}
 	}

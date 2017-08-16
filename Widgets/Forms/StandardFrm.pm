@@ -42,7 +42,7 @@ sub new {
 	# Properties
 	$self->{"btnHeight"} = 30;
 	
-	$self->{"messMngr"} = MessageMngr->new($title); # standard message mngr
+	$self->{"messMngr"} = MessageMngr->new($title, $mainFrm); # standard message mngr
 
 	return $self;
 }

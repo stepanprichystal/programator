@@ -40,7 +40,7 @@ sub Run {
 	my $jobId = $self->{"jobId"};
 
 	my $result = 1;
-
+ 
 	# Script zip script files and save to backup dir
 	my $fname = "Premnozeni_" . ( strftime "%Y_%m_%d", localtime ) . ".zip";
 

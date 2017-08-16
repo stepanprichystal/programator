@@ -55,7 +55,7 @@ sub Run {
 		if ( $pnl->SmallerThanStandard( \$smallest ) ) {
 
 			$self->_AddChange(   "Dps má parametry standardu, ale přířez je menší než náš aktuálně nejmenší standard ($smallest). "
-							   . "Předělej desku na standard." );
+							   . "Předělej desku na standard.", 1 );
 		}
 	}
  
@@ -70,7 +70,7 @@ sub Run {
 			 || $limActive{"xMax"}  < $limSR{"xMax"}
 			 || $limActive{"yMin"}  > $limSR{"yMin"} )
 		{
-			$self->_AddChange(   "SR stepy jsou umístěny za aktivní oblastí. Zkontroluj, zda technické okolí nezasahuje do desek v panelu." );
+			$self->_AddChange(  "SR stepy jsou umístěny za aktivní oblastí. Zkontroluj, zda technické okolí nezasahuje do desek v panelu." );
 
 		}
 

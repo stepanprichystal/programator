@@ -11,7 +11,6 @@ package Packages::Reorder::ReorderApp::ReorderPopup;
 use warnings;
 use threads;
 use threads::shared;
-use Wx;
 use Try::Tiny;
 
 #use strict;
@@ -33,36 +32,43 @@ use aliased 'Programs::Exporter::ExportChecker::Enums'                       => 
 #  Package methods
 #-------------------------------------------------------------------------------------------#
 
+my $PROCESS_EVT : shared;        #evt reise when process progress
+my $PROCESS_END_EVT : shared;    # evt raise when processing reorder is done
+
 sub new {
 	my $class = shift;
 	my $self  = {};
 	bless $self;
 
-	$self->{"inCAM"} = shift;
-	$self->{"jobId"} = shift;
+	$self->{"jobId"}     = shift;
+	$self->{"parentFrm"} = shift;
+	$self->{"orders"}    = shift;
+
+	$self->{"inCAM"} = undef;
+
+	$self->{"processErr"} = [];
 
 	#Events
 	#$self->{"onResultEvt"} = Event->new();
 	$self->{'onClose'} = Event->new();
 
-	$self->{"checkErrMess"}  = "";
-	$self->{"checkWarnMess"} = "";
-	$self->{"procErrMess"} = "";
-
 	$self->{"type"} = undef;    # type of process job locally/on server
 
-	$self->{"isPool"} = HegMethods->GetPcbIsPool($self->{"jobId"});
+	$self->{"isPool"} = HegMethods->GetPcbIsPool( $self->{"jobId"} );
 
 	return $self;
 }
 
 sub Init {
 	my $self = shift;
+	$self->{"type"}     = shift;
+	$self->{"launcher"} = shift;
 
-	my $parentFrm = shift;
+	$self->{"inCAM"} = $self->{"launcher"}->GetInCAM();
 
 	# Main application form
-	$self->{"form"} = ReorderPopupFrm->new( $parentFrm->{"mainFrm"}, $self->{"jobId"} );
+	$self->{"form"} = ReorderPopupFrm->new( $self->{"parentFrm"}->{"mainFrm"}, $self->{"jobId"}, $self->{"type"} );
+	$self->{"form"}->{"mainFrm"}->Show(1);
 
 	$self->__SetHandlers();
 
@@ -71,157 +77,71 @@ sub Init {
 sub Run {
 	my $self = shift;
 
-	$self->{"type"} = shift;
+	$self->{"inCAM"}->ClientFinish();
 
-	my $inCAM = $self->{"inCAM"};
-	$self->{"form"}->ShowPopup();
-
-	if ( $self->__DoCheckReorder() ) {
-
-		$self->__DoProcessReorder();
-	}
+	#start new process, where check job before export
+	my $worker = threads->create( sub { $self->__ProcessAsyncWorker( $self->{"jobId"}, $self->{"type"}, $self->{"launcher"}->GetServerPort() ) } );
+	$worker->set_thread_exit_only(1);
+	$self->{"threadId"} = $worker->tid();
 
 }
 
 # ================================================================================
-# PRIVATE METHODS
+# PRIVATE WORKER (child thread) METHODS
 # ================================================================================
 
-sub __DoCheckReorder {
-	my $self = shift;
+sub __ProcessAsyncWorker {
+	my $self        = shift;
+	my $jobId       = shift;
+	my $processType = shift;
+	my $serverPort  = shift;
 
-	my $inCAM = $self->{"inCAM"};
-	my $jobId = $self->{"jobId"};
+	$self->{"inCAM"} = InCAM->new( "remote" => 'localhost', "port" => $serverPort );
 
-	my $errCnt  = 0;
-	my $warnCnt = 0;
+	$self->{"inCAM"}->ServerReady();
 
-	my $result = 1;
-
-	# Check if type is "on server"
-	if ( $self->{"type"} eq Enums->Process_SERVER ) {
-
-		if ( $self->{"isPool"} ) {
-
-		}
-		else {
-
-			$self->{"checkErrMess"} = "";
-
-			my $units = UnitHelper->PrepareUnits( $inCAM, $jobId );
-
-			my @activeOnUnits = grep { $_->GetGroupState() eq CheckerEnums->GroupState_ACTIVEON } @{ $units->{"units"} };
-
-			foreach my $unit (@activeOnUnits) {
-
-				my $resultMngr = -1;
-				my $succes = $unit->CheckBeforeExport( $inCAM, \$resultMngr );
-
-				if ( $resultMngr->GetErrorsCnt() ) {
-
-					$errCnt += $resultMngr->GetErrorsCnt();
-					$result = 0;
-					$self->{"checkErrMess"} .= $resultMngr->GetErrorsStr(1);
-				}
-
-				if ( $resultMngr->GetWarningsCnt() ) {
-
-					$warnCnt += $resultMngr->GetWarningsCnt();
-					$result = 0;
-					$self->{"checkWarnMess"} .= $resultMngr->GetWarningsStr(1);
-				}
-			}
-		}
-	}
-
-	$self->{"form"}->CheckReorderEnd( $errCnt, $warnCnt );
-
-	unless ($result) {
-
-		my $messMngr = $self->{"form"}->_GetMessageMngr();
-		my @mess = ( "There are errors that need to be repaired.", $self->{"checkErrMess"}, $self->{"checkWarnMess"} );
-		$messMngr->ShowModal( -1, EnumsGeneral->MessageType_ERROR, \@mess );
-
-	}
-
-	if ( $errCnt > 0 ) {
-
-		$self->{"form"}->SetResult( EnumsGeneral->ResultType_FAIL, 0, 1 );
-
-	}
-	elsif ( $errCnt == 0 && $warnCnt > 0 ) {
-
-		$self->{"form"}->SetResult( EnumsGeneral->ResultType_FAIL, 1, 1 );
-	}
-
-	return $result;
-}
-
-sub __DoProcessReorder {
-	my $self = shift;
-
-	my $inCAM = $self->{"inCAM"};
-	my $jobId = $self->{"jobId"};
-
-	my $result = 1;
-
-	my $messMngr = $self->{"form"}->_GetMessageMngr();
-
-	$self->{"form"}->ProcessReorderStart();
-
-	# Need to exception during process job
 	eval {
 
-		# 3) Process job
 		if ( $self->{"type"} eq Enums->Process_LOCALLY ) {
 
-			$result = $self->__ProcessLocally();
+			$self->__ProcessLocally()
 
 		}
 		elsif ( $self->{"type"} eq Enums->Process_SERVER ) {
 
-			$result = $self->__ProcessServer();
+			$self->__ProcessServer();
 		}
-
 	};
 	if ($@) {
-
-		my $err = $@;
-
-		$self->{"procErrMess"} = $err;
-
-		my @mess = ( "Error during process reorder. Detail: " . $err );
-		$messMngr->ShowModal( -1, EnumsGeneral->MessageType_ERROR, \@mess );
-
-		$result = 0;
+		
+		my %res1 : shared = ();
+		$res1{"progress"}  = 0;
+		$res1{"succes"}    = 0;
+		$res1{"errorMess"} = "Unexpected error: " . $@ ;
+		
+		$self->__ThreadEvt( \%res1 );
+		 
 	}
 
-	$self->{"form"}->ProcessReorderEnd( $result ? 0 : 1 );
+  
+	$self->{"inCAM"}->ClientFinish();
+	
+	my %res : shared = ();
 
-	if ($result) {
-		$self->{"form"}->SetResult( EnumsGeneral->ResultType_OK, 0, 1 );
-	}
-	else {
-		$self->{"form"}->SetResult( EnumsGeneral->ResultType_FAIL, 0, 1 );
-	}
+	my $threvent = new Wx::PlThreadEvent( -1, $PROCESS_END_EVT, \%res );
+	Wx::PostEvent( $self->{"form"}->{"mainFrm"}, $threvent );
 
-	# Show warning to export pcb manualy
-	if ( $self->{"type"} eq Enums->Process_LOCALLY && !$self->{"isPool"} && $result ) {
-
-		my @mess = ("Nezapomen nyni job jeste vyexportovat.");
-		$messMngr->ShowModal( -1, EnumsGeneral->MessageType_INFORMATION, \@mess );
-
-	}
-	return $result;
 }
 
+# Process reorder locally
 sub __ProcessLocally {
 	my $self = shift;
 
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
 
-	my $errMess = "";
+	# Init Process reorder class
+
 	my $processReorder = ProcessReorder->new( $inCAM, $jobId );
 
 	unless ( $self->{"isPool"} ) {
@@ -230,96 +150,213 @@ sub __ProcessLocally {
 		}
 	}
 
-	my $result = $processReorder->RunChanges( \$errMess );
+	# 1) Task: Process job reorder
 
-	if ($result) {
+	my $errMess = "";
+	my $result  = $processReorder->RunTasks( \$errMess );
 
-		# 2) Set state
-
-		my $orderState = EnumsIS->CurStep_PROCESSREORDEROK;
-
-		if ( $self->{"isPool"} ) {
-
-			$orderState = EnumsIS->CurStep_KPANELIZACI;
-
-		}
-
-		my @orders = HegMethods->GetPcbReorders($jobId);
-		@orders = grep { $_->{"aktualni_krok"} eq EnumsIS->CurStep_ZPRACOVANIMAN } @orders;    # filter only order zpracovani-rucni
-
-		foreach (@orders) {
-
-			HegMethods->UpdatePcbOrderState( $_->{"reference_subjektu"}, $orderState );
-		}
-	}
+	my %res1 : shared = ();
+	$res1{"progress"}  = 50;
+	$res1{"succes"}    = 1;
+	$res1{"errorMess"} = $errMess;
 
 	unless ($result) {
-
-		die $errMess;
+		$res1{"succes"}    = 0;
+		$res1{"errorMess"} = $errMess;
 	}
 
-	return 1;
+	$self->__ThreadEvt( \%res1 );
 
+	# 2) Task: Set orders state
+
+	my %res2 : shared = ();
+	$res2{"progress"}  = 100;
+	$res2{"succes"}    = 1;
+	$res2{"errorMess"} = "";
+
+	if ($result) {
+		eval {
+
+			# 2) Set state
+			my $orderState = EnumsIS->CurStep_PROCESSREORDEROK;
+
+			if ( $self->{"isPool"} ) {
+
+				$orderState = EnumsIS->CurStep_KPANELIZACI;
+			}
+
+			foreach ( @{ $self->{"orders"} } ) {
+
+				HegMethods->UpdatePcbOrderState( $_->{"reference_subjektu"}, $orderState, 1 );
+			}
+		};
+		if ($@) {
+
+			my $err = "" . $@;
+
+			$res2{"succes"}    = 0;
+			$res2{"errorMess"} = $err;
+		}
+	}
+
+	$self->__ThreadEvt( \%res2 );
 }
 
+# Process reorder on server
 sub __ProcessServer {
 	my $self = shift;
 
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
+ 
+	# 1) Task: If no Pool, do check before export
 
-	# 1) Close job
+	my %res1 : shared = ();
+	$res1{"progress"}  = 35;
+	$res1{"succes"}    = 1;
+	$res1{"errorMess"} = "";
+
+	unless ( $self->{"isPool"} ) {
+
+		my $units = UnitHelper->PrepareUnits( $inCAM, $jobId );
+
+		my @activeOnUnits = grep { $_->GetGroupState() eq CheckerEnums->GroupState_ACTIVEON } @{ $units->{"units"} };
+
+		foreach my $unit (@activeOnUnits) {
+
+			my $resultMngr = -1;
+			my $succes = $unit->CheckBeforeExport( $inCAM, \$resultMngr );
+
+			if ( $resultMngr->GetErrorsCnt() ) {
+
+				$res1{"succes"} = 0;
+				$res1{"errorMess"} .= $resultMngr->GetErrorsStr(1);
+			}
+		}
+	}
+
+	$self->__ThreadEvt( \%res1 );
+
+	unless ( $res1{"succes"} ) {
+		return 0;
+	}
+
+	# 2) Task: Close job
+
+	my %res2 : shared = ();
+	$res2{"progress"}  = 75;
+	$res2{"succes"}    = 1;
+	$res2{"errorMess"} = "";
 
 	$self->{"inCAM"}->COM( "save_job",    "job" => "$jobId" );
 	$self->{"inCAM"}->COM( "check_inout", "job" => "$jobId", "mode" => "in", "ent_type" => "job" );
 	$self->{"inCAM"}->COM( "close_job",   "job" => "$jobId" );
 
-	# 2) Set IS state
+	$self->__ThreadEvt( \%res2 );
 
-	my @orders = HegMethods->GetPcbReorders( $self->{"jobId"} );
-	@orders = grep { $_->{"aktualni_krok"} eq EnumsIS->CurStep_ZPRACOVANIMAN } @orders;    # filter only order zpracovani-rucni
+	# 3) Task: Set orders state
 
-	foreach (@orders) {
+	my %res3 : shared = ();
+	$res3{"progress"}  = 100;
+	$res3{"succes"}    = 1;
+	$res3{"errorMess"} = "";
 
-		HegMethods->UpdatePcbOrderState( $_->{"reference_subjektu"}, EnumsIS->CurStep_ZPRACOVANIAUTO );
+	eval {
+		
+		foreach ( @{ $self->{"orders"} } ) {
+
+			HegMethods->UpdatePcbOrderState( $_->{"reference_subjektu"}, EnumsIS->CurStep_ZPRACOVANIAUTO, 1 );
+		}
+	};
+	if ($@) {
+
+		my $err = "" . $@;
+
+		$res3{"succes"}    = 0;
+		$res3{"errorMess"} = $err;
+
 	}
+
+	$self->__ThreadEvt( \%res3 );
 
 	return 1;
 
 }
 
+sub __ThreadEvt {
+	my $self = shift;
+	my $res  = shift;
+
+	my $threvent = new Wx::PlThreadEvent( -1, $PROCESS_EVT, $res );
+	Wx::PostEvent( $self->{"form"}->{"mainFrm"}, $threvent );
+}
+
 sub __SetHandlers {
 	my $self = shift;
 
-	$self->{"form"}->{"checkIndicatorClick"}->Add( sub { $self->__OnCheckIndicatorClick(@_) } );
-	$self->{"form"}->{'procIndicatorClick'}->Add( sub  { $self->__OnProcIndicatorClick(@_) } );
-	$self->{"form"}->{'continueClick'}->Add( sub       { $self->__OnContinueClick(@_) } );
-	$self->{"form"}->{'okClick'}->Add( sub             { $self->__OnOkClick(@_) } );
+	$PROCESS_EVT = Wx::NewEventType;
+	Wx::Event::EVT_COMMAND( $self->{"form"}->{"mainFrm"}, -1, $PROCESS_EVT, sub { $self->__ProcessHandler(@_) } );
+
+	$PROCESS_END_EVT = Wx::NewEventType;
+	Wx::Event::EVT_COMMAND( $self->{"form"}->{"mainFrm"}, -1, $PROCESS_END_EVT, sub { $self->__ProcessEndHandler(@_) } );
+
+	$self->{"form"}->{'procIndicatorClick'}->Add( sub { $self->__OnProcIndicatorClick(@_) } );
+	$self->{"form"}->{'okClick'}->Add( sub            { $self->{'onClose'}->Do(@_) } );
+}
+
+# ================================================================================
+# Private methods
+# ================================================================================
+
+sub __ProcessHandler {
+	my ( $self, $frame, $event ) = @_;
+
+	my %d = %{ $event->GetData };
+
+	# 1) Data from worker thread
+
+	unless ( $d{"succes"} ) {
+
+		push( @{ $self->{"processErr"} }, $d{"errorMess"} );
+	}
+
+	# 2) Update GUI
+	$self->{"form"}->SetErrIndicator( scalar( @{ $self->{"processErr"} } ) );
+
+	$self->{"form"}->SetGaugeVal( $d{"progress"} );
+
+}
+
+sub __ProcessEndHandler {
+	my $self = shift;
+
+	# Reconnect again InCAM, after  was used by child thread
+	$self->{"inCAM"}->Reconnect();
+
+	# Set progress bar
+	$self->{"form"}->SetGaugeVal(100);
+
+	my $result = scalar( @{ $self->{"processErr"} } ) ? 0 : 1;
+
+	$self->{"form"}->SetResult($result);
+
+	# if export locall + pcb is not pool + process succes
+	# Display information message about export
+
+	if (    $self->{"type"} eq Enums->Process_LOCALLY
+		 && scalar( @{ $self->{"processErr"} } ) == 0
+		 && !$self->{"isPool"} )
+	{
+		my $messMngr = $self->{"form"}->_GetMessageMngr();
+		my @mess     = ("Don't forget export job now.");
+		$messMngr->ShowModal( -1, EnumsGeneral->MessageType_INFORMATION, \@mess );
+	}
+
 }
 
 # ================================================================================
 # FORM HANDLERS
 # ================================================================================
-
-sub __OnCheckIndicatorClick {
-	my $self = shift;
-	my $type = shift;
-
-	my $messMngr = $self->{"form"}->_GetMessageMngr();
-
-	if ( $type eq EnumsGeneral->MessageType_ERROR ) {
-
-		my @mess = ( $self->{"checkErrMess"} );
-		$messMngr->ShowModal( -1, EnumsGeneral->MessageType_ERROR, \@mess );
-
-	}
-	elsif ( $type eq EnumsGeneral->MessageType_WARNING ) {
-
-		my @mess = ( $self->{"checkWarnMess"} );
-		$messMngr->ShowModal( -1, EnumsGeneral->MessageType_WARNING, \@mess );
-
-	}
-}
 
 sub __OnProcIndicatorClick {
 	my $self = shift;
@@ -327,22 +364,10 @@ sub __OnProcIndicatorClick {
 
 	my $messMngr = $self->{"form"}->_GetMessageMngr();
 
-	my @mess = ( $self->{"procErrMess"} );
-	$messMngr->ShowModal( -1, EnumsGeneral->MessageType_ERROR, \@mess );
+	#my @mess = ( @{$self->{"procErrMess"}} );
+	my @mess = ("test");
+	$messMngr->ShowModal( -1, EnumsGeneral->MessageType_ERROR, $self->{"processErr"} );
 
-}
-
-sub __OnContinueClick {
-	my $self = shift;
-
-	$self->__DoProcessReorder();
-
-}
-
-sub __OnOkClick {
-	my $self = shift;
-
-	$self->{"form"}->{"mainFrm"}->Hide();
 }
 
 #-------------------------------------------------------------------------------------------#

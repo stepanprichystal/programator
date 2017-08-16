@@ -4,6 +4,7 @@
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Packages::Reorder::CheckReorder::CheckReorder;
+use base('Packages::ItemResult::ItemEventMngr');
 
 #3th party library
 use strict;
@@ -22,8 +23,8 @@ use aliased 'Packages::Reorder::CheckReorder::CheckInfo';
 #-------------------------------------------------------------------------------------------#
 
 sub new {
-	my $self = shift;
-	$self = {};
+	my $class = shift;
+	my $self  = $class->SUPER::new(@_);
 	bless $self;
 
 	$self->{"inCAM"} = shift;
@@ -61,66 +62,24 @@ sub RunChecks {
 		
 		if(scalar(@changes)){
 			push( @manCh, @changes );
-		}	 
+		}
+		
+		
+		my $resultItem = $self->_GetNewItem($check->GetCheckKey());
+		$resultItem->SetData(\@changes);
+		$self->_OnItemResult($resultItem);
+		 
 	}
 
 	return @manCh;
 }
 
-#sub __LoadChecklist {
-#	my $self = shift;
-#
-#	# Check if checklist is valid
-#	my $path  = GeneralHelper->Root() . "\\Packages\\Reorder\\CheckReorder\\CheckList";
-#	my @lines = @{ FileHelper->ReadAsLines($path) };
-#
-#	# Parse
-#
-#	for ( my $i = 0 ; $i < scalar(@lines) ; $i++ ) {
-#
-#		my $l = $lines[$i];
-#
-#		next if ( $l =~ /#/ );
-#
-#		if ( $l =~ m/\[(.*)\]/ ) {
-#
-#			my ($desc) = $1 =~ /\s*(.*)\s*/;
-#			my ($key)  = $lines[ $i + 1 ] =~ / =\s*(.*)\s*/;
-#			my ($mess) = $lines[ $i + 2 ] =~ / =\s*(.*)\s*/;
-#
-#			my $checkInf = CheckInfo->new( $desc, $key, $mess );
-#
-#			push( @{ $self->{"checklist"} }, $checkInf );
-#
-#			$i += 2;
-#		}
-#	}
-#
-#}
-#
-#sub __LoadCheckClasses {
-#	my $self = shift;
-#
-#	my $inCAM = $self->{"inCAM"};
-#	my $jobId = $self->{"jobId"};
-#
-#	my $jobExist = CamJob->JobExist( $inCAM, $jobId );
-#	my $isPool = HegMethods->GetPcbIsPool($jobId);
-#
-#	my %checks = ();
-#
-#	foreach my $checkInfo ( @{ $self->{"checklist"} } ) {
-#
-#		my $key = $checkInfo->GetKey();
-#
-#		my $module = 'Packages::Reorder::CheckReorder::Checks::' . $key;
-#		eval("use  $module;");
-#		$checks{$key} = $module->new($key, $inCAM, $jobId, $jobExist, $isPool);
-#	}
-#
-#	$self->{"checks"} = \%checks;
-#
-#}
+# Return total number of checked aitems
+sub GetItemCnt{
+	my $self = shift;
+	
+	return scalar(@{ $self->{"checks"} });
+}
 
 sub __LoadChecks {
 	my $self = shift;

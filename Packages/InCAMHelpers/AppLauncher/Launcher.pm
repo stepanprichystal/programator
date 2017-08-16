@@ -75,7 +75,7 @@ sub SetLetServerRun{
 sub GetLetServerRun{
 	my $self = shift;
 	
-	return $self->{"letServerRun"} = 1;
+	return $self->{"letServerRun"};
 }
 
 sub CloseWaitFrm {

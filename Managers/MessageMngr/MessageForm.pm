@@ -393,7 +393,7 @@ sub __OnClick {
 	#$parent->{"result"} = $button->{"order"};
 	#$self->Destroy();
 
-	print STDERR "\nClick\n";
+	 
 
 	my $onExit = $self->{"onExit"};
 

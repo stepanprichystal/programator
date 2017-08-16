@@ -125,8 +125,11 @@ if ($@) {
 sub __CleanUp {
 	my $launcher = shift;
 
-	unless ( $launcher->GetLetServerRun() ) {
+	$logger->debug("Cleanup");
 
+	unless ( $launcher->GetLetServerRun() ) {
+ 
+ 
 		my $inCAM = $launcher->GetInCAM();
 
 		unless ( $inCAM->IsConnected() ) {
@@ -134,6 +137,8 @@ sub __CleanUp {
 		}
 
 		$inCAM->CloseServer();
+		
+		$logger->debug("Cleanup - Do, server pid $serverPid");
 
 		# For sure kill pid
 		Win32::Process::KillProcess( $serverPid, 0 );    # kill server script
