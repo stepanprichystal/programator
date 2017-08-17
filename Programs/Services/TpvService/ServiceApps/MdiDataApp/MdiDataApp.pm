@@ -18,6 +18,7 @@ use File::Basename;
 use Log::Log4perl qw(get_logger);
 use Archive::Zip qw( :ERROR_CODES :CONSTANTS );
 use POSIX qw(strftime);
+use List::MoreUtils qw(uniq);
 
 #local library
 #use aliased 'Connectors::TpvConnector::TpvMethods';
@@ -26,7 +27,7 @@ use aliased 'Enums::EnumsApp';
 use aliased 'Helpers::GeneralHelper';
 use aliased 'Helpers::FileHelper';
 use aliased 'Programs::Services::TpvService::ServiceApps::MdiDataApp::Enums';
-use aliased 'Packages::Gerbers::Mdi::ExportFiles::Enums' => 'MdiEnums';
+use aliased 'Packages::Gerbers::Mdi::ExportFiles::Enums'  => 'MdiEnums';
 use aliased 'Packages::Gerbers::Mdi::ExportFiles::Helper' => 'MdiHelper';
 use aliased 'Helpers::JobHelper';
 use aliased 'CamHelpers::CamJob';
@@ -168,17 +169,17 @@ sub __ProcessJob {
 	# 2) Export mdi files
 
 	# getr dfault layer types to export
-	my %mdiInfo = MdiHelper->GetDefaultLayerTypes($inCAM, $jobId);
-	
+	my %mdiInfo = MdiHelper->GetDefaultLayerTypes( $inCAM, $jobId );
+
 	# remove all job files
-	my @f  = FileHelper->GetFilesNameByPattern( EnumsPaths->Jobs_MDI, $jobId );
-	
+	my @f = FileHelper->GetFilesNameByPattern( EnumsPaths->Jobs_MDI, $jobId );
+
 	foreach (@f) {
 		unless ( unlink($_) ) {
 			die "Can not delete mdi file $_.\n";
 		}
 	}
-	
+
 	# export
 	my $export = ExportFiles->new( $inCAM, $jobId, "panel" );
 	$export->{"onItemResult"}->Add( sub { $self->__OnExportLayer(@_) } );
@@ -265,24 +266,23 @@ sub __GetPcb2Export {
 	return @pcb2Export;
 }
 
- 
-
 sub __DeleteOldMDIFiles {
 	my $self = shift;
 
-	my @pcbInProduc = HegMethods->GetPcbsByStatus(2, 4, 25, 35); # get pcb "Ve vyrobe" + "Na predvyrobni priprave" + Na odsouhlaseni + Schvalena
-	@pcbInProduc = map  { $_->{"reference_subjektu"} } @pcbInProduc;
- 
- 	if(scalar(@pcbInProduc) < 100){
- 		
- 		$self->{"logger"}->debug("No pcb in produc (count : ".scalar(@pcbInProduc)."), error?");
- 	}
- 
-	unless(scalar(@pcbInProduc)){
+	my @pcbInProduc = HegMethods->GetPcbsByStatus( 2, 4, 25, 35 );    # get pcb "Ve vyrobe" + "Na predvyrobni priprave" + Na odsouhlaseni + Schvalena
+	@pcbInProduc = map { $_->{"reference_subjektu"} } @pcbInProduc;
+
+	if ( scalar(@pcbInProduc) < 100 ) {
+
+		$self->{"logger"}->debug( "No pcb in produc (count : " . scalar(@pcbInProduc) . "), error?" );
+	}
+
+	unless ( scalar(@pcbInProduc) ) {
 		return 0;
 	}
 
 	my $deletedFiles = 0;
+	my @deletedJobs  = ();
 
 	my $p = EnumsPaths->Jobs_MDI;
 	if ( opendir( my $dir, $p ) ) {
@@ -299,6 +299,9 @@ sub __DeleteOldMDIFiles {
 			my $inProduc = scalar( grep { $_ =~ /^$fileJobId$/i } @pcbInProduc );
 
 			unless ($inProduc) {
+
+				push( @deletedJobs, $fileJobId );
+
 				if ( $file =~ /\.(ger|xml)/i ) {
 
 					unlink $p . $file;
@@ -310,15 +313,22 @@ sub __DeleteOldMDIFiles {
 		closedir($dir);
 	}
 
+	# Log deleted files
+	foreach my $pcbId ( uniq(@deletedJobs) ) {
+
+		my $state = HegMethods->GetStatusOfOrder( $pcbId."-".HegMethods->GetPcbOrderNumber($pcbId) );
+		$self->{"logger"}->debug("Deleted: $pcbId - $state");
+	}
+
 	$self->{"logger"}->info("Number of deleted job from MDI folder: $deletedFiles");
 }
 
 sub __GetPcbsInProduc {
 	my $self = shift;
 
-	my @pcbInProduc = HegMethods->GetPcbsInProduceMDI();    # get pcb "Ve vyrobe"
- 
-	@pcbInProduc = map  { $_->{"reference_subjektu"} } @pcbInProduc;
+	my @pcbInProduc = HegMethods->GetPcbsInProduceMDI();        # get pcb "Ve vyrobe"
+
+	@pcbInProduc = map { $_->{"reference_subjektu"} } @pcbInProduc;
 
 	return @pcbInProduc;
 }
@@ -354,14 +364,7 @@ sub __SetLogging {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	#	use aliased 'Programs::Services::TpvService::ServiceApps::MdiDataApp::MdiDataApp';
-	#
-	#	#	use aliased 'Packages::InCAM::InCAM';
-	#	#
-	#
-	#	my $sender = MailSender->new();
-	#
-	#	$sender->Run();
+	 
 	#
 	#	print "ee";
 }

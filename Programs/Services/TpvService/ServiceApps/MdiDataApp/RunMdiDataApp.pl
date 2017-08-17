@@ -30,9 +30,11 @@ $inCAM->SupressToolkitException(1);
 
 $app->{"inCAM"} = $inCAM;
 
-$app->Run();
+#$app->Run();
 
 #$app->__RunJob($jobId);
+
+$app->__DeleteOldMDIFiles();
 
 print "app inited";
 

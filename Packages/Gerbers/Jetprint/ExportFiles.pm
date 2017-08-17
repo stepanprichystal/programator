@@ -43,7 +43,7 @@ sub new {
 
 	$self->{"inCAM"} = shift;
 	$self->{"jobId"} = shift;
-	my $specFiduc = shift; # set, only if special fiduc marks
+	my $specFiduc = shift;    # set, only if special fiduc marks
 
 	$self->{"step"} = "panel";
 
@@ -59,6 +59,11 @@ sub new {
 	my %profLim = CamJob->GetProfileLimits2( $self->{"inCAM"}, $self->{"jobId"}, $self->{"step"} );
 	$self->{"profLim"} = \%profLim;
 
+	# silkscreen layers for export
+
+	my @l = grep { $_->{"gROWname"} =~ /^p[cs]$/i } CamJob->GetBoardBaseLayers( $self->{"inCAM"}, $self->{"jobId"} );
+	$self->{"layers"} = \@l;
+
 	# Other properties ========================
 
 	$self->{"jetprintStep"} = "jetprint_panel";
@@ -70,8 +75,13 @@ sub new {
 
 	}
 	else {
-		# neplat or 1vv
-		if ( $self->{"layerCnt"} == 1 ) {
+
+		my $pcbType = HegMethods->GetTypeOfPcb( $self->{"jobId"} );
+
+		# If no copper OR 1V with bottom silcscreen, use 3.2 holes
+		if ( $pcbType eq 'Neplatovany'
+			 || ( $pcbType eq 'Jednostranny' && scalar( grep { $_->{"gROWname"} =~ /^p[s]$/i } @l ) ) )
+		{
 
 			$self->{"fiducials"} = Enums->Fiducials_HOLE3P2;
 		}
@@ -95,20 +105,17 @@ sub Run {
 
 	# Get all layer for export
 
-	my @layers = CamJob->GetBoardBaseLayers( $inCAM, $jobId );
-
-	@layers = grep { $_->{"gROWname"} =~ /^p[cs]$/i } @layers;
-
 	$self->__CreateJetprintStep();
-	$self->__ExportLayers( \@layers );
-	#$self->__DeleteJetprintStep();
+	$self->__ExportLayers();
+	$self->__DeleteJetprintStep();
 
 	return 1;
 }
 
 sub __ExportLayers {
-	my $self   = shift;
-	my @layers = @{ shift(@_) };
+	my $self = shift;
+
+	my @layers = @{ $self->{"layers"} };
 
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
@@ -137,9 +144,9 @@ sub __ExportLayers {
 
 		# 6) move data to zero point
 		$self->__MoveToZero( $l->{"gROWname"} );
-		
+
 		# 7) mirror layer in y axis if ps
-		$self->__MirrorLayer($l->{"gROWname"});
+		$self->__MirrorLayer( $l->{"gROWname"} );
 
 		# 5) export gerbers
 		my $fiducDCode = $self->__ExportGerberLayer( $l->{"gROWname"}, $resultItem );
@@ -235,9 +242,9 @@ sub __ExportGerberLayer {
 
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
-	
+
 	# Export only if no errors
-	if($resultItemGer->Result() eq ItemResEnums->ItemResult_Fail){
+	if ( $resultItemGer->Result() eq ItemResEnums->ItemResult_Fail ) {
 		return 0;
 	}
 
@@ -305,27 +312,25 @@ sub __DeleteFeatures {
 
 # Compensate layer by compensation
 sub __CompensateLayer {
-	my $self      = shift;
-	my $layerName = shift;
+	my $self          = shift;
+	my $layerName     = shift;
 	my $resultItemGer = shift;
 
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
-	
+
 	# 1 ) check if thera are features thinner than 120µm (necessary because after compensation -60µm result print on pcb should be wrong)
-	
+
 	my %hist = CamHistogram->GetSymHistogram( $inCAM, $jobId, $self->{"jetprintStep"}, $layerName );
-	
-	
-	my @syms = grep { $_->{"cnt"} > 0 } ( @{$hist{"lines"}}, @{$hist{"arcs"}} );
-	
-	 my @thinSyms = grep { $_ < 120 } map {$_->{"sym"} =~ m/\w(\d+)/} @syms;
-	 
-	 if(scalar(@thinSyms)){
-	 	$resultItemGer->AddError("Too thin features in silkscreen layer $layerName. Min thickness of feature is 130µm");
-	 }
- 
-	
+
+	my @syms = grep { $_->{"cnt"} > 0 } ( @{ $hist{"lines"} }, @{ $hist{"arcs"} } );
+
+	my @thinSyms = grep { $_ < 120 } map { $_->{"sym"} =~ m/\w(\d+)/ } @syms;
+
+	if ( scalar(@thinSyms) ) {
+		$resultItemGer->AddError("Too thin features in silkscreen layer $layerName. Min thickness of feature is 130µm");
+	}
+
 	# 2) Compensate all features
 	my $class = $self->{"pcbClass"};
 
@@ -373,7 +378,7 @@ sub __PrepareFiducials {
 		# put 100µm symbols on 3.2mm hole position in "m" layer
 		my $f = Features->new();
 		$f->Parse( $inCAM, $jobId, $self->{"step"}, "m" );
-		my @holes3p2 = grep { $_->{"type"} eq "P" && $_->{"att"}->{".pnl_place"} =~ /^M-IN-(.*)-c$/ } $f->GetFeatures();
+		my @holes3p2 = grep { $_->{"type"} eq "P" && $_->{"att"}->{".pnl_place"} =~ /^M-(.*)-c$/ } $f->GetFeatures();
 
 		# add point
 		CamLayer->WorkLayer( $inCAM, $layerName );
@@ -402,16 +407,16 @@ sub __MoveToZero {
 }
 
 # if layer is multilayer, move data to zero point
-sub __MirrorLayer{
+sub __MirrorLayer {
 	my $self      = shift;
 	my $layerName = shift;
 
 	my $inCAM = $self->{"inCAM"};
 
-	if ($layerName eq "ps" ) {
+	if ( $layerName eq "ps" ) {
 
 		CamLayer->MirrorLayerData( $inCAM, $layerName, "y" );
-		$inCAM->COM( "sel_move", "dx" => abs($self->{"frLim"}->{"xMax"} - $self->{"frLim"}->{"xMin"}), "dy" => 0 );
+		$inCAM->COM( "sel_move", "dx" => abs( $self->{"frLim"}->{"xMax"} - $self->{"frLim"}->{"xMin"} ), "dy" => 0 );
 	}
 }
 
@@ -453,10 +458,10 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId    = "f79016";
+	my $jobId    = "f80085";
 	my $stepName = "panel";
 
-	my $export = ExportFiles->new( $inCAM, $jobId );
+	my $export = ExportFiles->new( $inCAM, $jobId, Enums->Fiducials_HOLE3P2 );
 
 	$export->Run();
 
