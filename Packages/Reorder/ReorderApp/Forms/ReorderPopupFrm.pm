@@ -133,7 +133,7 @@ sub __SetLayoutInfo {
 
 	#define staticboxes
 
-	my $txt = $self->{"processType"} eq Enums->Process_LOCALLY ? "Processing reorder locally" : "Preparing to proces on server";
+	my $txt = $self->{"processType"} eq Enums->Process_LOCALLY ? "Processing reorder LOCALLY" : "Preparing to proces on SERVER";
 
 	my $statBox = Wx::StaticBox->new( $parent, -1, $txt );
 	my $szStatBox = Wx::StaticBoxSizer->new( $statBox, &Wx::wxVERTICAL );
@@ -168,7 +168,7 @@ sub __SetLayoutProgress {
 
 	# DEFINE CONTROLS
 
-	my $resultTxt = Wx::StaticText->new( $parent, -1, "Result ", &Wx::wxDefaultPosition, [ 210, 30 ] );
+	my $resultTxt = Wx::StaticText->new( $parent, -1, "Result: ", &Wx::wxDefaultPosition, [ 210, 30 ] );
 	my $resultInd = ResultIndicator->new( $parent, 20 );
 
 	#my $progressNameTxt = Wx::StaticText->new( $parent, -1, "In progress: ", &Wx::wxDefaultPosition, [ 210, 30 ] );

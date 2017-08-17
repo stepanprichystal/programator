@@ -165,8 +165,12 @@ sub __OnProcessReorderEvent {
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
  
-
-	# 3) show reorder popup
+	# 1) disable buttons
+	$self->{"form"}->EnableBtnServer(0);
+	$self->{"form"}->EnableBtnLocall(0);
+	
+	
+	# 2) show reorder popup 
 
 	$self->{"reorderPopup"}->Init( $type, $self->{"launcher"} );
 	$self->{"reorderPopup"}->Run();
