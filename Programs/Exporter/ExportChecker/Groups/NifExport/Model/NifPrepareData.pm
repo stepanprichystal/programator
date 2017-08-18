@@ -153,7 +153,7 @@ sub OnPrepareReorderGroupData {
 	# Mask 0,1
 
 	my $mask = $nif->GetValue("rel(22305,L)");
-	if ( $mask !~ /\-/ ) {
+	if ( defined $mask && $mask !~ /\-/ ) {
 		$groupData->SetMaska01(1);
 	}
 

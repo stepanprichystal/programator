@@ -655,7 +655,8 @@ sub GetPcbOrderNumbers {
 	my @params = ( SqlParameter->new( "_PcbId", Enums->SqlDbType_VARCHAR, $pcbId ) );
 
 	my $cmd = "select 				  
-				 z.reference_subjektu
+				 z.reference_subjektu,
+				 z.stav
 				 
 				 from lcs.desky_22 d with (nolock)
 				 
@@ -665,10 +666,20 @@ sub GetPcbOrderNumbers {
 				 order by z.reference_subjektu desc";
 
 	my @res = Helper->ExecuteDataSet( $cmd, \@params );
+ 
+	return @res;
+}
 
-	my @arr = map { $_->{"reference_subjektu"} } @res;
+sub GetOrdersByState {
+	my $self  = shift;
+	my $pcbId = shift;
+	my $state = shift;
 
-	return @arr;
+	my @orders = $self->GetPcbOrderNumbers($pcbId);
+	
+	@orders = grep { $_->{"stav"} == $state } @orders;
+ 
+	return @orders;
 }
 
 sub GetNumberOrder {
@@ -1161,23 +1172,15 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	use aliased 'Connectors::HeliosConnector::HegMethods';
 	use Data::Dump qw(dump);
  
-	#my @pcbInProduc = HegMethods->GetPcbsByStatus( 2, 4, 25, 35 );
- 
-	my @orders = HegMethods->GetPcbsInProduceMDI();
+	my @pcbInProduc = HegMethods->GetOrdersByState("d64150",2 );
  
 	
-	#my @opak = HegMethods->GetReorders( );
 	
-	
-	#my $inf = HegMethods->GetBasePcbInfo("f52457");
-	
-	#print $inf;
-	
-	dump(@orders);
+	dump(@pcbInProduc);
 	
 	#print scalar(@opak);
 	
-	#my @res = grep { $_->{"reference_subjektu"} =~ /f75363/i }  @pcbInProduc;
+	
 	
 	 
 }

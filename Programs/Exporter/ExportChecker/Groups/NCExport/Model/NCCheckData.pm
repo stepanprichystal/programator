@@ -21,6 +21,7 @@ use aliased 'Programs::Exporter::ExportChecker::Groups::NifExport::Presenter::Ni
 use aliased 'Packages::Drilling::DrillChecking::LayerCheckError';
 use aliased 'Packages::Drilling::DrillChecking::LayerCheckWarn';
 use aliased 'Packages::Routing::RoutLayer::RoutChecks::RoutCheckTools';
+use aliased 'Packages::CAM::UniRTM::UniRTM::UniRTM';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -127,20 +128,21 @@ sub OnCheckGroupData {
 	if ( $defaultInfo->LayerExist("fsch") ) {
 		$routLayer = "fsch";
 	}
+ 
+	my $rtm = UniRTM->new($inCAM, $jobId, "panel", $routLayer, 1);
+	
+	my @outline = $rtm->GetOutlineChains();
 
-	my %hist = CamHistogram->GetAttCountHistogram( $inCAM, $jobId, "panel", $routLayer );
+	my %hist = CamHistogram->GetAttCountHistogram( $inCAM, $jobId, "panel", $routLayer, 1 );
 
 	my $footCnt = 0;
 	if ( defined $hist{".foot_down"}{""} ) {
 		$footCnt = $hist{".foot_down"}{""};
 	}
-
-	my @steps = CamStepRepeat->GetRepeatStep( $inCAM, $jobId, "panel" );
-	my $stepCnt = scalar(@steps);
-
-	if ( $stepCnt != $footCnt ) {
+	
+	if ( $footCnt != scalar(@outline) ) {
 		$dataMngr->_AddWarningResult( "Checking foots",
-									  "Number of 'foot_down' ($footCnt) doesn't match with number of steps ($stepCnt) in layer: $routLayer" );
+									  "Number of 'foot_down' ($footCnt) doesn't match with number of outline routs (".scalar(@outline).") in layer: $routLayer" );
 	}
 
 	# 7) Check, when ALU material, if all plated holes aer in "f" layer

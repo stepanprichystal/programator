@@ -251,7 +251,7 @@ sub SentToProduce {
 		my $toProduceMngr = $self->{"produceResultMngr"};
 		my $item = $toProduceMngr->GetNewItem( "Set state HOTOVO-zadat", EnumsGeneral->ResultType_FAIL );
 
-		$item->AddError("Set state HOTOVO-zadat failed, try it again. Detail: $e\n");
+		$item->AddError("Set state HOTOVO-zadat failed, try it again. Detail: ".$@."\n");
 		$toProduceMngr->AddItem($item);
 
 		$result = 0;

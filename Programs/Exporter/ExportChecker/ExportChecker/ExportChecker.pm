@@ -361,8 +361,8 @@ sub __OnResultPopupHandler {
 		my $inCAM  = $self->{"inCAM"};
 		my $client = $self->{"client"};
 		
-		my @orders = HegMethods->GetPcbOrderNumbers($self->{"jobId"});
-
+		my @orders = map { $_->{"reference_subjektu"} } HegMethods->GetOrdersByState($self->{"jobId"}, 2); # Orders on Predvzrobni priprava
+ 
 		if ( $exportMode eq EnumsJobMngr->TaskMode_ASYNC ) {
 
 			
