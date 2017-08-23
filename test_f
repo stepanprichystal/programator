@@ -1,0 +1,23 @@
+### Layer - f features data ###
+#S P 0;.comp=left,.rout_pocket_direction=standard,.rout_pocket_mode=concentric,.rout_type=pocket,.pressure_foot=none,.feed=0,.rout_chain=1,.rout_flag=0,.rout_pocket_feed=0,.speed=0,.infeed_speed=0,.retract_speed=0,.rout_pocket_overlap=0.019685,.rout_tool=0.078740,.rout_tool2=0.078740,.depth=0.000000,.add_pilot_mode=plunge,.rout_repeat=0
+#OB 69.9985725 110.25228 I
+#OS 69.0003525 110.25228
+#OC 69.0003525 112.85248 69.0003525 111.55238 Y
+#OS 69.9985725 112.85248
+#OC 71.2986725 111.55238 69.9985725 111.55238 Y
+#OC 69.9985725 110.25228 69.9985725 111.55238 Y
+#OE
+
+#S P 0;.comp=left,.rout_pocket_direction=standard,.rout_pocket_mode=concentric,.rout_type=pocket,.pressure_foot=none,.feed=0,.rout_chain=1,.rout_flag=0,.rout_pocket_feed=0,.speed=0,.infeed_speed=0,.retract_speed=0,.rout_pocket_overlap=0.019685,.rout_tool=0.078740,.rout_tool2=0.078740,.depth=0.000000,.add_pilot_mode=plunge,.rout_repeat=0
+#OB 143.1992125 111.55238 I
+#OC 143.1992125 111.55238 144.4993125 111.55238 Y
+#OE
+
+#P 43.5 235.85 r3050 P 2 0 N
+#P 263.5 235.85 r3050 P 2 0 N
+#P 263.5 88.85 r3050 P 2 0 N
+#L 38.5 240.85 268.5 240.85 r2000 P 1 ;.comp=left,.pressure_foot=none,.feed=0,.rout_chain=1,.rout_flag=0,.speed=0,.infeed_speed=0,.retract_speed=0,.depth=0.000000,.add_pilot_mode=plunge,.rout_repeat=0
+#L 268.5 240.85 268.5 73.85 r2000 P 1 ;.comp=left,.pressure_foot=none,.feed=0,.rout_chain=1,.rout_flag=0,.speed=0,.infeed_speed=0,.retract_speed=0,.depth=0.000000,.add_pilot_mode=plunge,.rout_repeat=0
+#L 268.5 73.85 38.5 73.85 r2000 P 1 ;.comp=left,.pressure_foot=none,.feed=0,.rout_chain=1,.rout_flag=0,.speed=0,.infeed_speed=0,.retract_speed=0,.depth=0.000000,.add_pilot_mode=plunge,.rout_repeat=0
+#L 38.5 73.85 38.5 240.85 r2000 P 1 ;.foot_down,.comp=left,.pressure_foot=none,.feed=0,.rout_chain=1,.rout_flag=0,.speed=0,.infeed_speed=0,.retract_speed=0,.depth=0.000000,.add_pilot_mode=plunge,.rout_repeat=0
+#P 38.5 241.85 r2000 P 3 0 N;.pilot_hole=1

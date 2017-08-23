@@ -22,6 +22,7 @@ use aliased 'Packages::Drilling::DrillChecking::LayerCheckError';
 use aliased 'Packages::Drilling::DrillChecking::LayerCheckWarn';
 use aliased 'Packages::Routing::RoutLayer::RoutChecks::RoutCheckTools';
 use aliased 'Packages::CAM::UniRTM::UniRTM::UniRTM';
+use aliased 'Helpers::GeneralHelper';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -124,9 +125,16 @@ sub OnCheckGroupData {
 
 	# 6) Check foot down attributes
 	my $routLayer = "f";
+	my $tmpLayer = undef;
 
 	if ( $defaultInfo->LayerExist("fsch") ) {
 		$routLayer = "fsch";
+	}else{
+		
+		# need faltten before check outline chains
+		$tmpLayer = GeneralHelper->GetGUID();
+		$inCAM->COM('flatten_layer', "source_layer" => $routLayer, "target_layer" => $tmpLayer );
+		$routLayer = $tmpLayer;
 	}
  
 	my $rtm = UniRTM->new($inCAM, $jobId, "panel", $routLayer, 1);
@@ -144,6 +152,11 @@ sub OnCheckGroupData {
 		$dataMngr->_AddWarningResult( "Checking foots",
 									  "Number of 'foot_down' ($footCnt) doesn't match with number of outline routs (".scalar(@outline).") in layer: $routLayer" );
 	}
+	
+	if($tmpLayer){
+		$inCAM->COM('delete_layer', layer => $tmpLayer );
+	}
+	
 
 	# 7) Check, when ALU material, if all plated holes aer in "f" layer
 
