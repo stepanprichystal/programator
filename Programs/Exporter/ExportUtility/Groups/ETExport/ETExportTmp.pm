@@ -16,9 +16,10 @@ use aliased 'Managers::MessageMngr::MessageMngr';
 use aliased "Programs::Exporter::ExportChecker::Groups::ETExport::Presenter::ETUnit"  => "Unit";
 use aliased "Programs::Exporter::ExportUtility::Groups::ETExport::ETWorkUnit" => "UnitExport";
 
-
-use aliased 'Programs::Exporter::ExportUtility::DataTransfer::UnitsDataContracts::ETData';
-use aliased 'Programs::Exporter::ExportUtility::UnitEnums';
+use aliased 'Programs::Exporter::ExportChecker::ExportChecker::DefaultInfo::DefaultInfo';
+use aliased 'Packages::ItemResult::ItemResultMngr';
+use aliased 'Enums::EnumsGeneral';
+use aliased 'Connectors::HeliosConnector::HegMethods';
 
 #-------------------------------------------------------------------------------------------#
 #  NC export, all layers, all machines..
@@ -39,19 +40,39 @@ sub Run {
 	my $self  = shift;
 	my $inCAM = shift;
 	my $jobId = shift;
-	my $stepToTest = shift;
 
+	$self->{"defaultInfo"} = DefaultInfo->new( $inCAM, $jobId );
 
-	#GET INPUT NIF INFORMATION
+	# Check data
+
+	my $resultMngr = ItemResultMngr->new();
+
+	my $unit = Unit->new($jobId);
+	$unit->SetDefaultInfo( $self->{"defaultInfo"} );
+	$unit->InitDataMngr($inCAM);
+	$unit->CheckBeforeExport( $inCAM, \$resultMngr );
+
+	unless ( $resultMngr->Succes() ) {
+
+		my $str = "";
+		$str .= $resultMngr->GetErrorsStr();
+		$str .= $resultMngr->GetWarningsStr();
+
+		my $messMngr = MessageMngr->new( $self->{"jobId"} );
+
+		my @mess1 = ( "Kontrola pred exportem", $str );
+		$messMngr->ShowModal( -1, EnumsGeneral->MessageType_ERROR, \@mess1 );
+
+		#return 0;
+	}
 
 	my $taskData = $unit->GetExportData($inCAM);
 	my $exportClass = UnitExport->new( $self->{"id"} );
 	$exportClass->SetTaskData($taskData);
+ 
 
 	$exportClass->Init( $inCAM, $jobId, $taskData );
 	$exportClass->{"onItemResult"}->Add( sub { Test(@_) } );
-	
- 
 	$exportClass->Run();
 
 	print "\n========================== E X P O R T: " . UnitEnums->UnitId_ET . " ===============================\n";

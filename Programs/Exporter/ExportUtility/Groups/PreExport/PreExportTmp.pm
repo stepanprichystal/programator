@@ -13,8 +13,8 @@ use aliased 'Programs::Exporter::ExportUtility::UnitEnums';
 use aliased 'Managers::MessageMngr::MessageMngr';
 use aliased 'Enums::EnumsGeneral';
 
-use aliased "Programs::Exporter::ExportChecker::Groups::PreExport::Presenter::PreUnit"  => "UnitExport";
-use aliased "Programs::Exporter::ExportUtility::Groups::PreExport::PreWorkUnit" => "Unit";
+use aliased "Programs::Exporter::ExportChecker::Groups::PreExport::Presenter::PreUnit" => "Unit";
+use aliased "Programs::Exporter::ExportUtility::Groups::PreExport::PreWorkUnit"        => "UnitExport";
 
 use aliased 'Programs::Exporter::ExportChecker::ExportChecker::DefaultInfo::DefaultInfo';
 use aliased 'Packages::ItemResult::ItemResultMngr';
@@ -25,14 +25,15 @@ use aliased 'Packages::ItemResult::ItemResultMngr';
 
 my $resultMess = "";
 my $succes     = 1;
+
 sub new {
 
 	my $self = shift;
 	$self = {};
 	bless $self;
-	
-	$self->{"id"} =  UnitEnums->UnitId_PRE;
-	
+
+	$self->{"id"} = UnitEnums->UnitId_PRE;
+
 	return $self;
 }
 
@@ -66,26 +67,23 @@ sub Run {
 		return 0;
 	}
 
-		my $taskData = $unit->GetExportData($inCAM);
+	my $taskData    = $unit->GetExportData($inCAM);
 	my $exportClass = UnitExport->new( $self->{"id"} );
 	$exportClass->SetTaskData($taskData);
-	
-	
+
 	# misto pro upravu exportovanych dat
-	
-#	my @layers = ();
-#	
-#	my %lInfo = ();
-#	$lInfo{"name"}     = "c";
-#	$lInfo{"etchingType"}  = "pattern";
-#	
-#	push(@layers, \%lInfo);
-	
-	$exportData->SetSignalLayers(\@layers);
-#	$taskData->SetSignalLayers(\@layers);
-	
-	 
-	
+
+	#	my @layers = ();
+	#
+	#	my %lInfo = ();
+	#	$lInfo{"name"}     = "c";
+	#	$lInfo{"etchingType"}  = "pattern";
+	#
+	#	push(@layers, \%lInfo);
+
+	#$exportData->SetSignalLayers( \@layers );
+
+	#	$taskData->SetSignalLayers(\@layers);
 
 	$exportClass->Init( $inCAM, $jobId, $taskData );
 	$exportClass->{"onItemResult"}->Add( sub { Test(@_) } );
@@ -132,15 +130,13 @@ sub Run {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-#	use aliased 'Programs::Exporter::ExportUtility::Groups::PlotExport::PlotExportTmp';
-#	my $checkOk  = 1;
-#	my $jobId    = "f13610";
-#	my $stepName = "panel";
-#	my $inCAM    = InCAM->new();
+	#	use aliased 'Programs::Exporter::ExportUtility::Groups::PlotExport::PlotExportTmp';
+	#	my $checkOk  = 1;
+	#	my $jobId    = "f13610";
+	#	my $stepName = "panel";
+	#	my $inCAM    = InCAM->new();
 
 	#GET INPUT NIF INFORMATION
-
-	 
 
 }
 

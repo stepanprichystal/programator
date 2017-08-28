@@ -15,87 +15,16 @@ use aliased 'Enums::EnumsPaths';
 use aliased 'Packages::InCAM::InCAM';
 use aliased 'CamHelpers::CamJob';
 use aliased 'CamHelpers::CamHelper';
+use aliased 'CamHelpers::CamLayer';
 use aliased 'Helpers::GeneralHelper';
+use aliased 'Packages::Polygon::Features::Features::Features';
+use aliased 'CamHelpers::CamStepRepeat';
 
 #-------------------------------------------------------------------------------------------#
 #   Package methods
 #-------------------------------------------------------------------------------------------#
 
-# return area of gold fingers, if exist
-# area is in mm^2
-sub GetGoldFingerArea {
-	my $self        = shift;
-	my $cuThickness = shift;
-	my $pcbThick    = shift;
-	my $inCAM       = shift;
-	my $jobId       = shift;
-	my $stepName    = shift;
-
-	my $layerCnt = CamJob->GetSignalLayerCnt( $inCAM, $jobId );
-
-	my %area = ( "area" => 0, "percentage" => 0, "exist" => 0 );
-	my @layers = ();
-
-	push( @layers, "c" ) if ( CamHelper->LayerExists( $inCAM, $jobId, "c" ) );
-	push( @layers, "s" ) if ( CamHelper->LayerExists( $inCAM, $jobId, "s" ) );
-
-	CamHelper->OpenStep( $inCAM, $jobId, $stepName );
-
-	foreach my $l (@layers) {
-
-		CamHelper->ClearEditor( $inCAM, $jobId);
-
-		$inCAM->COM( 'flatten_layer', source_layer => $l, target_layer => $l . "__gold__" );
-		$inCAM->COM( 'affected_layer', name => $l . "__gold__", mode => "single", affected => "yes" );
-		$inCAM->COM( 'filter_reset', filter_name => "popup" );
-		$inCAM->COM( 'filter_atr_set', filter_name => 'popup', condition => 'yes', attribute => '.gold_plating' );
-		$inCAM->COM('filter_area_strt');
-		$inCAM->COM(
-					 'filter_area_end',
-					 layer          => '',
-					 filter_name    => 'popup',
-					 operation      => 'select',
-					 area_type      => 'none',
-					 inside_area    => 'no',
-					 intersect_area => 'yes',
-					 lines_only     => 'no',
-					 ovals_only     => 'no',
-					 min_len        => 0,
-					 max_len        => 0,
-					 min_angle      => 0,
-					 max_angle      => 0
-		);
-
-		$inCAM->COM('get_select_count');
-
-		if ( $inCAM->GetReply() > 0 ) {
-			$inCAM->COM('sel_reverse');
-			$inCAM->COM('sel_delete');
-
-			my %areaTmp;
-
-			if ( $l eq "c" ) {
-				%areaTmp = $self->GetCuAreaMask( $cuThickness, $pcbThick, $inCAM, $jobId, $stepName, $l . "__gold__", undef, "m" . $l, undef);
-			}
-			elsif ( $l eq "s" ) {
-				%areaTmp = $self->GetCuAreaMask( $cuThickness, $pcbThick, $inCAM, $jobId, $stepName, undef, $l . "__gold__", undef, "m" . $l );
-			}
-
-			$area{"area"}       += $areaTmp{"area"};
-			$area{"percentage"} += $areaTmp{"percentage"};
-
-		}
-		$inCAM->COM( 'affected_layer', name => $l . "__gold__", mode => "single", affected => "no" );
-		$inCAM->COM( 'delete_layer', layer => $l . "__gold__" );
-	}
-
-	if ( $area{"area"} > 0 ) {
-		$area{"exist"} = 1;
-	}
-
-	return %area;
-}
-
+ 
 # Return hash of two values
 # "area"
 # "percentage"
@@ -442,15 +371,15 @@ sub GetProfileArea {
 				 "layer"         => $lName,
 				 "stop_at_steps" => ""
 	);
- 
-	my %area = $self->__GetCuArea( 1, 1, 0,$inCAM, $jobId, $stepName, $lName, "" );
 
-	 
+	my %area = $self->__GetCuArea( 1, 1, 0, $inCAM, $jobId, $stepName, $lName, "" );
+
 	$inCAM->COM( 'delete_layer', layer => $lName );
 
-	return $area{"area"}*100;
+	return $area{"area"} * 100;
 
 }
+ 
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
@@ -458,27 +387,34 @@ sub GetProfileArea {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	#my $self             = shift;
-	#	my $inCAM            = shift;
-	#	my $jobName          = shift;
-	#	my $stepName         = shift;
-	#	my $layerNameTop     = shift;
-	#	my $layerNameBot     = shift;
-	#
-	#	my $considerHole     = shift;
-	#	my $considerEdge     = shift;
+	use aliased 'CamHelpers::CamCopperArea';
+	use aliased 'Packages::InCAM::InCAM';
 
-	#my $cuThickness = JobHelper->GetBaseCuThick( "f13610", "c" );
-	#my $pcbThick = JobHelper->GetFinalPcbThick("f13610");
-#
-#	use aliased 'CamHelpers::CamCopperArea';
-#
-#	my $inCAM = InCAM->new();
-#
-#
-#	my $test = CamCopperArea->GetProfileArea($inCAM, "f13610", "o+1");
-#	
-#	print $test."\n";
+	my $inCAM = InCAM->new();
+
+	my $jobName = "f13610";
+
+	my $layerNameTop = shift;
+	my $layerNameBot = shift;
+
+	my $considerHole = shift;
+	my $considerEdge = shift;
+
+	my $mess = "";
+
+	my $result = CamCopperArea->GoldFingersConnected( $inCAM, $jobName, \$mess );
+
+	print $result. " - $mess";
+
+	#
+	#	use aliased 'CamHelpers::CamCopperArea';
+	#
+	#	my $inCAM = InCAM->new();
+	#
+	#
+	#	my $test = CamCopperArea->GetProfileArea($inCAM, "f13610", "o+1");
+	#
+	#	print $test."\n";
 
 	#my %test = CamHelpers::CamCopperArea->GetCuArea( $cuThickness, $pcbThick, $inCAM, "f13610", "panel", "c", "s", 1, 1 );
 
@@ -515,4 +451,3 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 1;
 
- 

@@ -656,8 +656,8 @@ sub GetPcbOrderNumbers {
 
 	my $cmd = "select 				  
 				 z.reference_subjektu,
-				 z.stav
-				 
+				 z.stav,
+				 z.aktualni_krok
 				 from lcs.desky_22 d with (nolock)
 				 
 				 left outer join lcs.zakazky_dps_22_hlavicka z with (nolock) on z.deska=d.cislo_subjektu
@@ -666,7 +666,7 @@ sub GetPcbOrderNumbers {
 				 order by z.reference_subjektu desc";
 
 	my @res = Helper->ExecuteDataSet( $cmd, \@params );
- 
+
 	return @res;
 }
 
@@ -676,9 +676,9 @@ sub GetOrdersByState {
 	my $state = shift;
 
 	my @orders = $self->GetPcbOrderNumbers($pcbId);
-	
+
 	@orders = grep { $_->{"stav"} == $state } @orders;
- 
+
 	return @orders;
 }
 
@@ -971,10 +971,9 @@ sub GetTermOfOrder {
 
 # Return list of actual TPV workers
 sub GetTPVEmployee {
-	my $self  = shift;
+	my $self = shift;
 
 	my @params = ();
-
 
 	my $cmd = "select katalog.nazev_subjektu,  z.prijmeni, z.jmeno, z.login_id, z.e_mail
 		from lcs.zamestnanci z
@@ -986,36 +985,35 @@ sub GetTPVEmployee {
 
 	my @result = Helper->ExecuteDataSet( $cmd, \@params );
 
-	 return @result;
+	return @result;
 }
 
 # Get all ReOrders
 # Pcb has order number begger than -01 + are on state 'Predvyrobni priprava'
 sub GetReorders {
-	my $self  = shift;
+	my $self = shift;
 
 	my @params = ();
- 
+
 	my $cmd = "select distinct z.reference_subjektu, z.stav, z.aktualni_krok, d.stav AS dps_stav
 				from lcs.zakazky_dps_22_hlavicka z join lcs.desky_22 d on d.cislo_subjektu=z.deska
 				where z.stav='2'";
- 
- 
-	my @result = Helper->ExecuteDataSet( $cmd, \@params );
-	
-	@result = grep {   $_->{"reference_subjektu"} =~ /^\w\d+-\d+$/} @result; # remove cores
-	@result = grep {   $_->{"reference_subjektu"} !~ /-01/} @result;
 
-	 return @result;
+	my @result = Helper->ExecuteDataSet( $cmd, \@params );
+
+	@result = grep { $_->{"reference_subjektu"} =~ /^\w\d+-\d+$/ } @result;    # remove cores
+	@result = grep { $_->{"reference_subjektu"} !~ /-01/ } @result;
+
+	return @result;
 }
 
 # Get all ReOrders
 # Pcb has order number begger than -01 + are on state 'Predvyrobni priprava'
 sub GetPcbsInProduc {
-	my $self  = shift;
+	my $self = shift;
 
 	my @params = ();
- 
+
 	my $cmd = "select distinct 
 				d.reference_subjektu,
 				d.material_typ
@@ -1024,10 +1022,9 @@ sub GetPcbsInProduc {
 				where vs.cislo_vztaz_subjektu is null and z.stav='4'";
 
 	my @result = Helper->ExecuteDataSet( $cmd, \@params );
-	
-	@result = grep {   $_->{"reference_subjektu"} =~ /^\w\d+$/} @result; # remove cores
-	 
- 
+
+	@result = grep { $_->{"reference_subjektu"} =~ /^\w\d+$/ } @result;    # remove cores
+
 	return @result;
 }
 
@@ -1047,29 +1044,28 @@ sub GetPcbsInProduc {
 #Stornována (5)
 #Ukonèena (7)
 sub GetPcbsByStatus {
-	my $self  = shift;
+	my $self     = shift;
 	my @statuses = @_;
- 
-	unless(scalar(@statuses)){
-		die "No status defined"
+
+	unless ( scalar(@statuses) ) {
+		die "No status defined";
 	}
 
-	@statuses = map {    "\'".$_."\'"} @statuses;
-	my $strStatus = join(",", @statuses);
-	
+	@statuses = map { "\'" . $_ . "\'" } @statuses;
+	my $strStatus = join( ",", @statuses );
+
 	# IN (value1, value2, ...);
 
 	my @params = ();
- 
-#  OLD SELECET nevracel dps ktere jsou ve vzrobe, prestoye byl pozadavek na stav = 4 
-#	my $cmd = "select distinct 
-#				d.reference_subjektu,
-#				d.material_typ,
-#				z.stav
-#				from lcs.zakazky_dps_22_hlavicka z join lcs.desky_22 d on d.cislo_subjektu=z.deska 
-#				left outer join lcs.vztahysubjektu vs on vs.cislo_vztahu = 23054 and vs.cislo_subjektu = z.cislo_subjektu 
-#				where vs.cislo_vztaz_subjektu is null and z.stav ='4'";
 
+	#  OLD SELECET nevracel dps ktere jsou ve vzrobe, prestoye byl pozadavek na stav = 4
+	#	my $cmd = "select distinct
+	#				d.reference_subjektu,
+	#				d.material_typ,
+	#				z.stav
+	#				from lcs.zakazky_dps_22_hlavicka z join lcs.desky_22 d on d.cislo_subjektu=z.deska
+	#				left outer join lcs.vztahysubjektu vs on vs.cislo_vztahu = 23054 and vs.cislo_subjektu = z.cislo_subjektu
+	#				where vs.cislo_vztaz_subjektu is null and z.stav ='4'";
 
 	my $cmd = "select distinct 
 				d.reference_subjektu,
@@ -1077,24 +1073,22 @@ sub GetPcbsByStatus {
 				z.stav
 				from lcs.zakazky_dps_22_hlavicka z join lcs.desky_22 d on d.cislo_subjektu=z.deska
 				WHERE z.stav IN ($strStatus)";
- 
 
 	my @result = Helper->ExecuteDataSet( $cmd, \@params );
-	
-	@result = grep {   $_->{"reference_subjektu"} =~ /^\w\d+$/} @result; # remove cores
- 
+
+	@result = grep { $_->{"reference_subjektu"} =~ /^\w\d+$/ } @result;    # remove cores
+
 	return @result;
 }
 
 # Return all pcb "In produce" which contain silkscreen bot or top
 sub GetPcbsInProduceSilk {
-	my $self  = shift;
-	 
-	 
+	my $self = shift;
+
 	# IN (value1, value2, ...);
 
 	my @params = ();
- 
+
 	my $cmd = "select distinct 
 				d.reference_subjektu,
 				d.potisk c_silk_screen_colour,
@@ -1107,37 +1101,33 @@ sub GetPcbsInProduceSilk {
 				vs.cislo_vztaz_subjektu is null and 
 				z.stav = 4 and
 				(d.potisk IS NOT NULL OR d.potisk_typ IS NOT NULL)";
-				
- 
 
 	my @result = Helper->ExecuteDataSet( $cmd, \@params );
-	
-	@result = grep {   $_->{"reference_subjektu"} =~ /^\w\d+$/} @result; # remove cores
- 
+
+	@result = grep { $_->{"reference_subjektu"} =~ /^\w\d+$/ } @result;    # remove cores
+
 	return @result;
 }
 
-
 # Return pcb, which MDI data has to be exported
 sub GetPcbsInProduceMDI {
-	my $self  = shift;
- 
+	my $self = shift;
+
 	my @params = ();
- 
+
 	my $cmd = "select distinct d.reference_subjektu, d.material_typ
 				from lcs.zakazky_dps_22_hlavicka z join lcs.desky_22 d on d.cislo_subjektu=z.deska 
 				left outer join lcs.vztahysubjektu vs on vs.cislo_vztahu = 23054 and vs.cislo_subjektu = z.cislo_subjektu 
 				where vs.cislo_vztaz_subjektu is null and z.stav='4'";
- 
+
 	my @result = Helper->ExecuteDataSet( $cmd, \@params );
-	
-	@result = grep {   $_->{"reference_subjektu"} =~ /^\w\d+$/} @result; # remove cores
+
+	@result = grep { $_->{"reference_subjektu"} =~ /^\w\d+$/ } @result;    # remove cores
 	@result = grep { $_->{"material_typ"} !~ /[t0s]/i } @result;
- 
+
 	return @result;
 }
- 
- 
+
 #-------------------------------------------------------------------------------------------#
 #  Helper method
 #-------------------------------------------------------------------------------------------#
@@ -1171,18 +1161,13 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	use aliased 'Connectors::HeliosConnector::HegMethods';
 	use Data::Dump qw(dump);
- 
-	my @pcbInProduc = HegMethods->GetOrdersByState("d64150",2 );
- 
-	
-	
+
+	my @pcbInProduc = HegMethods->GetOrdersByState( "d64150", 2 );
+
 	dump(@pcbInProduc);
-	
+
 	#print scalar(@opak);
-	
-	
-	
-	 
+
 }
 
 1;

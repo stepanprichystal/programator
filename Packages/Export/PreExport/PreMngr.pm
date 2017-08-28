@@ -17,8 +17,11 @@ use warnings;
 use aliased 'CamHelpers::CamJob';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'Packages::Export::PreExport::LayerInvert';
+use aliased 'Packages::Export::PreExport::LayerFrame';
 use aliased 'CamHelpers::CamHelper';
 use aliased 'Packages::TifFile::TifSigLayers';
+use aliased 'Packages::Export::PreExport::Enums';
+use aliased 'CamHelpers::CamGoldArea';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -34,7 +37,8 @@ sub new {
 	$self->{"jobId"}  = shift;
 	$self->{"layers"} = shift;
 
-	$self->{"helper"} = LayerInvert->new( $self->{"inCAM"}, $self->{"jobId"} );
+	$self->{"layerFrame"} = LayerFrame->new( $self->{"inCAM"}, $self->{"jobId"} );
+	$self->{"layerInvert"} = LayerInvert->new( $self->{"inCAM"}, $self->{"jobId"} );
 
 	$self->{"layerCnt"} = CamJob->GetSignalLayerCnt( $self->{"inCAM"}, $self->{"jobId"} );
 
@@ -44,53 +48,23 @@ sub new {
 sub Run {
 	my $self = shift;
 
-	my $helper = $self->{"helper"};
-	my $inCAM  = $self->{"inCAM"};
+	my $inCAM = $self->{"inCAM"};
 
 	my $isChanged = 0;    # tell if something was changed in pcb
 
 	CamHelper->SetStep( $inCAM, "panel" );
 
-	my $patternSch;
+	my $resultItemFrames = $self->_GetNewItem("Add schemas");
 
-	# choose pattern schema. Add pattern frame from surface fill to layer, whci has attribut add_schema = yes
-	if ( $self->{"layerCnt"} > 2 ) {
-		$patternSch = 'pattern-vv';
+	# Insert pattern frame
+	$self->__PatternFrame( \$isChanged );
 
-	}
-	elsif ( $self->{"layerCnt"} == 2 ) {
-		$patternSch = 'pattern-2v';
-	}
+	# Inser gold frame
+	$self->__GoldFrame( \$isChanged, $resultItemFrames );
 
-	foreach my $l ( @{ $self->{"layers"} } ) {
+	$self->_OnItemResult($resultItemFrames);
 
-		if ( $l->{"etchingType"} eq EnumsGeneral->Etching_TENTING ) {
-
-			if ( $helper->ExistPatternFrame( $l->{"name"} ) ) {
-
-				$isChanged = 1;
-
-				$helper->ChangeMarkPolarity( $l->{"name"} );
-
-				$helper->DelPatternFrame( $l->{"name"}, $patternSch );
-			}
-
-		}
-		elsif ( $l->{"etchingType"} eq EnumsGeneral->Etching_PATTERN ) {
-
-			unless ( $helper->ExistPatternFrame( $l->{"name"} ) ) {
-
-				$isChanged = 1;
-
-				$helper->ChangeMarkPolarity( $l->{"name"} );
-
-				$helper->AddPatternFrame( $l->{"name"}, $patternSch );
-			}
-
-		}
-	}
-
-	my $resultItem = $self->_GetNewItem("Add/del frames");
+	my $resultItem = $self->_GetNewItem("Save job");
 	$self->_OnItemResult($resultItem);
 
 	# if job is changed, save it
@@ -108,32 +82,125 @@ sub Run {
 		$self->_OnItemResult($resultItemSave);
 	}
 
-
-
 	# 2) Save info to tif file
-	my $file = TifSigLayers->new($self->{"jobId"});
-	
+	my $file = TifSigLayers->new( $self->{"jobId"} );
+
 	# Load old values
 	my %layers = $file->GetSignalLayers();
-	
+
 	# add new layers or change old
-	foreach my $l (@{$self->{"layers"}}){
- 
-		$layers{$l->{"name"}} = $l;
-		
+	foreach my $l ( @{ $self->{"layers"} } ) {
+
+		$layers{ $l->{"name"} } = $l;
+
 		# dif contain information about physis mirror
 		# but layer info contain mirror which consider emulsion on films
-		
-		if($l->{"mirror"}){
-			$layers{$l->{"name"}}->{"mirror"} = 0;
-		}else{
-			$layers{$l->{"name"}}->{"mirror"} = 1;
+
+		if ( $l->{"mirror"} ) {
+			$layers{ $l->{"name"} }->{"mirror"} = 0;
 		}
- 
-		
+		else {
+			$layers{ $l->{"name"} }->{"mirror"} = 1;
+		}
+
 	}
- 
+
 	$file->SetSignalLayers( \%layers );
+
+}
+
+sub __PatternFrame {
+	my $self      = shift;
+	my $isChanged = shift;
+
+	my $patternSch;
+
+	# choose pattern schema. Add pattern frame from surface fill to layer, whci has attribut add_schema = yes
+	if ( $self->{"layerCnt"} > 2 ) {
+		$patternSch = 'pattern-vv';
+
+	}
+	elsif ( $self->{"layerCnt"} == 2 ) {
+		$patternSch = 'pattern-2v';
+	}
+
+	foreach my $l ( @{ $self->{"layers"} } ) {
+
+		if ( $l->{"etchingType"} eq EnumsGeneral->Etching_TENTING ) {
+
+			if ( $self->{"layerFrame"}->ExistFrame( $l->{"name"}, Enums->Frame_PATTERN ) ) {
+
+				$$isChanged = 1;
+
+				$self->{"layerInvert"}->ChangeMarkPolarity( $l->{"name"} );
+
+				$self->{"layerFrame"}->DeleteFrame( $l->{"name"}, Enums->Frame_PATTERN );
+			}
+
+		}
+		elsif ( $l->{"etchingType"} eq EnumsGeneral->Etching_PATTERN ) {
+
+			unless ( $self->{"layerFrame"}->ExistFrame( $l->{"name"}, Enums->Frame_PATTERN ) ) {
+
+				$$isChanged = 1;
+
+				$self->{"layerInvert"}->ChangeMarkPolarity( $l->{"name"} );
+
+				$self->{"layerFrame"}->AddFrame( $l->{"name"}, Enums->Frame_PATTERN, $patternSch );
+			}
+
+		}
+	}
+
+}
+
+sub __GoldFrame {
+	my $self      = shift;
+	my $isChanged = shift;
+	my $itemRes   = shift;
+
+	my $inCAM = $self->{"inCAM"};
+	my $jobId = $self->{"jobId"};
+
+	my @layers = ();
+	push( @layers, "c" ) if ( CamHelper->LayerExists( $inCAM, $jobId, "c" ) );
+	push( @layers, "s" ) if ( CamHelper->LayerExists( $inCAM, $jobId, "s" ) );
+
+	my $schema = "gold-2v";
+
+	if ( $self->{"layerCnt"} > 2 ) {
+		$schema = 'gold-vv';
+	}
+
+	foreach my $l (@layers) {
+
+		my $frameExist = $self->{"layerFrame"}->ExistFrame( $l, Enums->Frame_GOLDFINGER );
+
+		if ( CamGoldArea->GoldFingersExist( $inCAM, $jobId, "panel", $l ) ) {
+
+			# 1) Add frame
+			if ($frameExist) {
+				$self->{"layerFrame"}->DeleteFrame( $l, Enums->Frame_GOLDFINGER );
+			}
+			
+			$self->{"layerFrame"}->AddFrame( $l, Enums->Frame_GOLDFINGER, $schema );
+			$$isChanged = 1;
+
+			# 2) Do check if old gold finger are connected
+			my $mess = "";
+			unless ( CamGoldArea->GoldFingersConnected( $inCAM, $jobId, \$mess ) ) {
+
+				$itemRes->AddError("Error during insert \"gold connector frame\": $mess");
+			}
+		}
+		else {
+
+			if ($frameExist) {
+				$self->{"layerFrame"}->DeleteFrame( $l, Enums->Frame_GOLDFINGER );
+				$$isChanged = 1;
+			}
+		}
+	}
 
 }
 
@@ -142,7 +209,7 @@ sub TaskItemsCount {
 
 	my $totalCnt = 0;
 
-	$totalCnt += scalar( @{ $self->{"layers"} } );    #export each layer
+	$totalCnt += 2;    # check pattern frames + save job
 
 	return $totalCnt;
 
@@ -154,37 +221,38 @@ sub TaskItemsCount {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	#	use aliased 'Packages::Export::PlotExport::PlotMngr';
-	#
-	#	use aliased 'Packages::InCAM::InCAM';
-	#
-	#	my $inCAM = InCAM->new();
-	#
-	#	my $jobId = "f13609";
-	#
-	#	my @layers = CamJob->GetBoardBaseLayers( $inCAM, $jobId );
-	#
-	#	foreach my $l (@layers) {
-	#
-	#		$l->{"polarity"} = "positive";
-	#
-	#		if ( $l->{"gROWname"} =~ /pc/ ) {
-	#			$l->{"polarity"} = "negative";
-	#		}
-	#
-	#		$l->{"mirror"} = 0;
-	#		if ( $l->{"gROWname"} =~ /c/ ) {
-	#			$l->{"mirror"} = 1;
-	#		}
-	#
-	#		$l->{"compensation"} = 30;
-	#		$l->{"name"}         = $l->{"gROWname"};
-	#	}
-	#
-	#	@layers = grep { $_->{"name"} =~ /p[cs]/ } @layers;
-	#
-	#	my $mngr = PlotMngr->new( $inCAM, $jobId, \@layers );
-	#	$mngr->Run();
+	use aliased 'Packages::Export::PlotExport::PlotMngr';
+
+	use aliased 'Packages::InCAM::InCAM';
+
+	my $inCAM = InCAM->new();
+
+	my $jobId = "f13610";
+
+	my @layers = CamJob->GetBoardBaseLayers( $inCAM, $jobId );
+
+	foreach my $l (@layers) {
+
+		$l->{"polarity"} = "positive";
+
+		if ( $l->{"gROWname"} =~ /pc/ ) {
+			$l->{"polarity"} = "negative";
+		}
+
+		$l->{"mirror"} = 0;
+		if ( $l->{"gROWname"} =~ /c/ ) {
+			$l->{"mirror"}      = 1;
+			$l->{"etchingType"} = EnumsGeneral->Etching_PATTERN;
+		}
+
+		$l->{"compensation"} = 30;
+		$l->{"name"}         = $l->{"gROWname"};
+	}
+
+	@layers = grep { $_->{"name"} =~ /p[cs]/ } @layers;
+
+	my $mngr = PlotMngr->new( $inCAM, $jobId, \@layers );
+	$mngr->Run();
 }
 
 1;

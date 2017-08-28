@@ -1,0 +1,9 @@
+# =================================================================================================================
+# List of all task processed on reorder
+# Each check has implemented own class
+# Priority in automatic task is given by order order. Top is highest priority
+  
+# === tasks ======  
+
+ARCHIVE_JOB
+EXPORT

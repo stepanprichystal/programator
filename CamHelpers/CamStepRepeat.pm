@@ -73,8 +73,6 @@ sub __ExploreStepDepth {
 	$exploreStep->{"depth"} = $depth;
 
 	push( @{$uniqueSteps}, $exploreStep );
-	
-	
 
 }
 
@@ -269,25 +267,76 @@ sub AddStepAndRepeat {
 	my $inCAM    = shift;
 	my $stepName = shift;
 	my $srName   = shift;
-	my $posX = shift;
-	my $posY = shift;
-	
+	my $posX     = shift;
+	my $posY     = shift;
+
 	my $angle = shift;
-	my $nx = shift;
-	my $ny = shift;
-	my $dx = shift;
-	my $dy = shift;
-	
-	$nx = 1 if (!defined $nx);
-	$ny = 1 if (!defined $ny);
-	$dx = 0 if (!defined $dx);
-	$dy = 0 if (!defined $dy);
-	
-	$angle = 0 if (!defined defined $angle);
-	 
-	CamHelper->SetStep($inCAM, $stepName);
-	
-	$inCAM->COM("sr_tab_add","step" => $srName, "x" => $posX,"y" => $posY,"nx" => $nx,"ny" => $ny,"dx" => $dx,"dy" => $dy,"angle" => $angle,"direction" => "ccw","flip" => "no","mirror" => "no");
+	my $nx    = shift;
+	my $ny    = shift;
+	my $dx    = shift;
+	my $dy    = shift;
+
+	$nx = 1 if ( !defined $nx );
+	$ny = 1 if ( !defined $ny );
+	$dx = 0 if ( !defined $dx );
+	$dy = 0 if ( !defined $dy );
+
+	$angle = 0 if ( !defined defined $angle );
+
+	CamHelper->SetStep( $inCAM, $stepName );
+
+	$inCAM->COM(
+				 "sr_tab_add",
+				 "step"      => $srName,
+				 "x"         => $posX,
+				 "y"         => $posY,
+				 "nx"        => $nx,
+				 "ny"        => $ny,
+				 "dx"        => $dx,
+				 "dy"        => $dy,
+				 "angle"     => $angle,
+				 "direction" => "ccw",
+				 "flip"      => "no",
+				 "mirror"    => "no"
+	);
+}
+
+# Return limits of all step and repeat
+sub GetStepAndRepeatLim {
+	my $self           = shift;
+	my $inCAM          = shift;
+	my $jobId          = shift;
+	my $stepName       = shift;
+	my $considerOrigin = shift;
+	my %limits;
+
+	unless ($considerOrigin) {
+
+		$inCAM->INFO(
+			units       => 'mm',
+			entity_type => 'step',
+			entity_path => "$jobId/$stepName",
+			data_type   => 'SR_LIMITS'
+
+		);
+	}
+	else {
+
+		$inCAM->INFO(
+					  units       => 'mm',
+					  entity_type => 'step',
+					  entity_path => "$jobId/$stepName",
+					  data_type   => 'SR_LIMITS',
+					  "options"   => "consider_origin"
+		);
+	}
+
+	$limits{"xMin"} = ( $inCAM->{doinfo}{gSR_LIMITSxmin} );
+	$limits{"xMax"} = ( $inCAM->{doinfo}{gSR_LIMITSxmax} );
+	$limits{"yMin"} = ( $inCAM->{doinfo}{gSR_LIMITSymin} );
+	$limits{"yMax"} = ( $inCAM->{doinfo}{gSR_LIMITSymax} );
+
+	return %limits;
 }
 
 #-------------------------------------------------------------------------------------------#

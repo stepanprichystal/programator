@@ -13,53 +13,62 @@ package Programs::Exporter::ExportChecker::RunExport::RunExportChecker;
 use warnings;
 
 #local library
+
+use aliased 'Packages::InCAMHelpers::AppLauncher::AppLauncher';
+use aliased 'Packages::InCAMHelpers::AppLauncher::Enums';
 use aliased 'Helpers::GeneralHelper';
 use aliased 'Managers::MessageMngr::MessageMngr';
 use aliased 'Enums::EnumsGeneral';
-
-
-use Config;
-use Win32::Process;
+use aliased 'Connectors::HeliosConnector::HegMethods';
+use aliased 'Enums::EnumsIS';
 
 sub new {
 	my $self = shift;
 	$self = {};
 	bless($self);
 
-	#$self->{"client"} = Client->new();
-	$self->{"jobId"} = $ENV{"JOB"};
+	# 1) Check job
+
+	my $jobId = $ENV{"JOB"};
 
 	unless ( $self->{"jobId"} ) {
 
 		$self->{"jobId"} = shift;
 	}
 
+	unless ( $self->__IsJobOpen( $self->{"jobId"} ) ) {
 
-	unless($self->__IsJobOpen($self->{"jobId"})){
+		return 0;
+	}
+	
+	
+	# 2) Checks if no pcb reorders are in aktualni_krok = zpracvoani-rucni nebo checkReorder-error
+	unless( $self->__CheckReorder($self->{"jobId"})){
 		
 		return 0;
 	}
+	
 
+	# 3) Launch app
 
-	# generate radom port between 2000-4000
-	$self->{"port"} = 2000 + int( rand(999) );
+	my $appName = 'Programs::Exporter::ExportChecker::ExportChecker::ExportChecker';    # has to implement IAppLauncher
+
+	my $launcher = AppLauncher->new( $appName, $jobId );
+
+	$launcher->SetWaitingFrm( "Exporter checker - $jobId", "Loading Exporter checker ...", Enums->WaitFrm_CLOSEAUTO );
+
+	my $logPath = GeneralHelper->Root() . "\\Programs\\Exporter\\ExportChecker\\Config\\Logger.conf";
+
+	$launcher->SetLogConfig($logPath);
+
+	$launcher->Run();
+
 	 
-
-	#run exporter
-	$self->__RunExportChecker( $self->{"jobId"}, $self->{"port"} );
-
-	#run server
-	$self->__RunServer( $self->{"port"} );
-
-
-	return $self;
 }
 
-
 sub __IsJobOpen {
-	my $self = shift;
+	my $self  = shift;
 	my $jobId = shift;
-	 
 
 	unless ($jobId) {
 
@@ -68,71 +77,39 @@ sub __IsJobOpen {
 		$messMngr->ShowModal( -1, EnumsGeneral->MessageType_ERROR, \@mess1 );
 
 		return 0;
- 
-	}
-	
-	return 1;
 
+	}
+
+	return 1;
 }
 
-
-
-sub __RunExportChecker {
+# Checks if no pcb reorders are in aktualni_krok = zpracvoani-rucni nebo checkReorder-error
+sub __CheckReorder {
 	my $self  = shift;
 	my $jobId = shift;
+	
+	my $result = 1;
+	
+	my @orders = HegMethods->GetPcbReorders($jobId);
 
-	#server port
-	my $port = shift;
+	# filter only order zpracovani-rucni or checkReorder-error
+	@orders =
+	  grep { $_->{"aktualni_krok"} eq EnumsIS->CurStep_ZPRACOVANIMAN || $_->{"aktualni_krok"} eq EnumsIS->CurStep_CHECKREORDERERROR } @orders;
 
-	#server pid
-	my $pid = $$;
+	if ( scalar(@orders) ) {
+		
+		my $messMngr = MessageMngr->new("Exporter utility");
+ 
+		my @mess1 = ("Unable to run \"Check reorder application\":", 
+		"There are re-orders for pcbid \"$jobId\" where \"Aktualni krok\" is \"zpracovani-rucni\" OR \"checkReorder-error\" in Helios.",
+		"First process job by \"Reorder script\" at: ".'Packages\Reorder\ReorderApp\RunReorder\RunReorderApp.pl' );
+		$messMngr->ShowModal( -1, EnumsGeneral->MessageType_SYSTEMERROR, \@mess1 );
 
-	#my $processObj;
-	my $perl = $Config{perlpath};
-	my $processObj2;
-	Win32::Process::Create( $processObj2, $perl, "perl " . GeneralHelper->Root() . "\\Programs\\Exporter\\ExportChecker\\RunExport\\RunWaitingForm.pl ",
-							1, NORMAL_PRIORITY_CLASS, "." )
-	  || die "Failed to create CloseZombie process.\n";
-
-	my $loadingFrmId = $processObj2->GetProcessID();
-	my $processObj;
-	Win32::Process::Create( $processObj, $perl, "perl " . GeneralHelper->Root() . "\\Programs\\Exporter\\ExportChecker\\RunExport\\ExportCheckerFormScript.pl $jobId $port $pid $loadingFrmId",
-							1, NORMAL_PRIORITY_CLASS, "." )
-	  || die "Failed to create CloseZombie process.\n";
+		$result = 0;
+	}
+	
+	return $result;
 }
-
-sub __RunServer {
-	my $self = shift;
-	my $port = shift;
-
-	#$self->__CloseZombie($port);
-
-	#run server on specific port
-	{
-
-		#@_ = ($port);
-		local @ARGV = ($port);
-
-		require "Programs\\Exporter\\ExportChecker\\Server\\Server.pl";
-
-	};
-}
-
-#sub __CloseZombie {
-#
-#	my $self = shift;
-#	my $port = shift;
-#
-#	my $processObj;
-#	my $perl = $Config{perlpath};
-#
-#	Win32::Process::Create( $processObj, $perl, "perl " . GeneralHelper->Root() . "\\Programs\\Exporter\\ExportChecker\\Server\\CloseZombie.pl -i $port",
-#							1, NORMAL_PRIORITY_CLASS, "." )
-#	  || die "Failed to create CloseZombie process.\n";
-#
-#	$processObj->Wait(INFINITE);
-#
-#}
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
@@ -150,25 +127,4 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	#$app->MainLoop;
 
 }
-
-#my $app = MyApp2->new();
-
-#my $worker = threads->create( \&work );
-#print $worker->tid();
-
-#
-#sub work {
-#	sleep(5);
-#	print "METODA==========\n";
-#
-#	#!!! I would like send array OR hash insted of scalar here: my %result = ("key1" => 1, "key2" => 2 );
-#	# !!! How to do that?
-#
-#}
-#
-#sub OnCreateThread {
-#	my ( $self, $event ) = @_;
-#	@_ = ();
-#}
-
 1;

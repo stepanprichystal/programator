@@ -36,6 +36,7 @@ sub new {
 	# PROPERTIES
 
 	$self->{"title"} = shift;
+	$self->{"text"} = shift;
 
 	#$self->{"groupBuilder"} = GroupBuilder->new($self);
 
@@ -62,7 +63,7 @@ sub __SetLayout {
 	my $mainFrm = MyWxFrame->new(
 		$parent,                   # parent window
 		-1,                        # ID -1 means any
-		"Exporter checker",        # title
+		$self->{"title"},        # title
 		&Wx::wxDefaultPosition,    # window position
 		[ 300, 100 ],              # size
 		&Wx::wxSTAY_ON_TOP | &Wx::wxSYSTEM_MENU | &Wx::wxCAPTION |    &Wx::wxCLOSE_BOX
@@ -85,7 +86,7 @@ sub __SetLayout {
 
 	# DEFINE CONTROLS
 
-	my $titleTxt = Wx::StaticText->new( $mainFrm, -1, $self->{"title"} );
+	my $titleTxt = Wx::StaticText->new( $mainFrm, -1, $self->{"text"} );
 	my $gauge = Wx::Gauge->new( $mainFrm, -1, 100, [ -1, -1 ], [ 200, 20 ], &Wx::wxGA_HORIZONTAL );
 	$gauge->SetValue(100);
 	$gauge->Pulse();

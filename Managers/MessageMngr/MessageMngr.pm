@@ -9,8 +9,8 @@ package Managers::MessageMngr::MessageMngr;
 #3th party libraryMethods
 use strict;
 use warnings;
-	use threads;
-	use threads::shared;
+use threads;
+use threads::shared;
 
 #local library
 use aliased 'Enums::EnumsGeneral';
@@ -21,12 +21,14 @@ use aliased 'Packages::Events::Event';
 
 sub new {
 	my $self = shift;
+	my $pcbId = shift; 	# title of message windows
+	my $parent = shift; # default parent (Wx:window) of all mesages. Possible to specify different when call Show/ShowModal
+	 
 	$self = {};
 	bless($self);
 	
-	#unless($self->{"childPcbId"}){
-	#	$self->{"childPcbId"} = 1;
-	#}
+ 
+	# PROPERTIES
 
 	#actual Message
 	$self->{result}      = -1;         #contain's reference on result scalar variable
@@ -34,14 +36,16 @@ sub new {
 	
 	$self->{'onMessage'} =  Event->new();      #event when message
 	
-	
-	
-	
-	$self->{"pcbId"} = shift;
+ 
+	$self->{"pcbId"} = $pcbId;
+ 
 	if(!$self->{"pcbId"}){
 		$self->{"pcbId"} = -1;
 	}
 	$self->{"childPcbId"} = -1;
+
+	$self->{"parent"} = $parent;
+
 
 	my @messQueue = ();
 	$self->{messQueue} = \@messQueue;    #contain's reference on result scalar variable
@@ -122,6 +126,8 @@ sub __AddToQueue {
 	my %info = ();
 	$info{"modal"}    = shift;
 	$info{"parent"}   = shift;
+ 
+	
 	$info{"type"}     = shift;
 	$info{"messages"} = shift;
 	$info{"buttons"}  = shift;
@@ -173,8 +179,12 @@ sub __ShowMessages {
 	}
 	elsif ( $mess{status} eq Enums->StatusType_NOTSHOWED ) {
 
-
-		my $messFrm = MessageForm->new( $mess{"parent"}, $self->{"pcbId"}, $mess{"type"}, $mess{"messages"}, $mess{"buttons"}, $mess{"caller"},
+		my $parent = $mess{"parent"};
+		if((!defined $parent || $parent ==-1) && defined $self->{"parent"}){
+			$parent = $self->{"parent"};
+		}
+ 
+		my $messFrm = MessageForm->new( $parent, $self->{"pcbId"}, $mess{"type"}, $mess{"messages"}, $mess{"buttons"}, $mess{"caller"},
 										sub { __OnExitMessFrm( $self, @_ ) } );
 										
 		$messFrm->Centre(&Wx::wxVERTICAL);
@@ -235,7 +245,7 @@ sub __OnExitMessFrm {
 			$onMessage->Do( $self->{"pcbId"}, $self->{"childPcbId"}, $self->__GetMessagesTxt( $exitMess{"messages"} ), $exitMess{"type"}, $resultTxt );
 		}
 
-		print $resultTxt. "\n";
+		 
 		
 		#$messFrmObj->Destroy();
 

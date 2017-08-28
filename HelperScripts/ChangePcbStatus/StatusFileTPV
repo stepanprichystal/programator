@@ -8,4 +8,6 @@ poslan dotaz; (+ jmeno uzivatele)
 k panelizaci;
 HOTOVO-zadat;
 Exportovano;
-zpracovani-auto;(reorder bude automaticky zpracovana)
+zpracovani-auto;(NEPOUZIVAT pouze pro testovani)
+zpracovani-rucni;(NEPOUZIVAT pouze pro testovani)
+checkReorder-error;(NEPOUZIVAT pouze pro testovani)

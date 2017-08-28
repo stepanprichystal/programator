@@ -14,7 +14,7 @@ use warnings;
 use aliased 'Helpers::GeneralHelper';
 use aliased 'CamHelpers::CamJob';
 use aliased 'Programs::Services::LogService::Logger::DBLogger';
-use aliased 'Packages::InCAMServer::Client::InCAMServer';
+use aliased 'Packages::InCAMHelpers::InCAMServer::Client::InCAMServer';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods

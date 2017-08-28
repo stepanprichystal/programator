@@ -237,6 +237,18 @@ sub SetLayerPolarityLayer {
 
 }
 
+# Set Context of layer
+sub SetLayerContextLayer {
+	my $self    = shift;
+	my $inCAM   = shift;
+	my $jobId   = shift;
+	my $layer   = shift;
+	my $context = shift;
+
+	$inCAM->COM( "matrix_layer_context", "job" => $jobId, "matrix" => "matrix", "layer" => $layer, "context" => $context );
+
+}
+
 # Display single layer and set as work layer
 sub WorkLayer {
 	my $self  = shift;

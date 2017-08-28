@@ -26,6 +26,7 @@ use aliased 'Programs::Exporter::ExportUtility::UnitEnums';
 use aliased 'Programs::Exporter::ExportUtility::DataTransfer::Enums' => 'EnumsTransfer';
 use aliased 'Programs::Exporter::ExportChecker::Enums'               => 'CheckerEnums';
 use aliased 'Packages::NifFile::NifFile';
+use aliased 'Programs::Exporter::ExportChecker::ExportChecker::Unit::Helper' => "UnitHelper";
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -50,7 +51,7 @@ sub CheckBeforeExport {
 
 	my $inCAM = $self->{"inCAM"};
 
-	$self->__PrepareUnits($masterJob);
+	$self->{"units"} = UnitHelper->PrepareUnits($inCAM, $masterJob);
 
 	my @activeOnUnits = grep { $_->GetGroupState() eq CheckerEnums->GroupState_ACTIVEON } @{ $self->{"units"}->{"units"} };
 
@@ -105,33 +106,7 @@ sub PrepareExportFile {
 	return $result;
 }
 
-sub __PrepareUnits {
-	my $self      = shift;
-	my $masterJob = shift;
-
-	my $inCAM = $self->{"inCAM"};
-
-	# Units
-
-	my $groubT = GroupTables->new();    # virtual table, where are stored reference of alll units
-
-	my $groupBuilder = StandardBuilder->new();    # group builder, fill table by requested units
-	$groupBuilder->Build( $masterJob, $groubT );
-	my @allUnits = $groubT->GetAllUnits();
-
-	$self->{"units"} = Units->new();              # class which keep list of all defined units (composit pattern)
-	$self->{"units"}->Init( $inCAM, $masterJob, \@allUnits );
-	$self->{"units"}->InitDataMngr($inCAM);
-
-	# If there is maska 01 on childrens, set it to mother nif
-
-	if($self->__Mask01Exist()){
-		
-		my $nifUnit   = $self->{"units"}->GetUnitById( UnitEnums->UnitId_NIF );
-		my $groupData = $nifUnit->{"dataMngr"}->GetGroupData();
-		$groupData->SetMaska01(1);	
-	}
-}
+ 
 
 
 sub __Mask01Exist {
@@ -168,17 +143,16 @@ sub __Mask01Exist {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	#	use aliased 'Packages::Export::AOIExport::AOIMngr';
-	#	use aliased 'Packages::InCAM::InCAM';
+		use aliased 'Packages::PoolMerge::OutputGroup::Helper::ExportPrepare';
+		use aliased 'Packages::InCAM::InCAM';
+	
+		my $inCAM = InCAM->new();
+	
+		my $jobName   = "f52457";
+	
 	#
-	#	my $inCAM = InCAM->new();
-	#
-	#	my $jobName   = "f13610";
-	#	my $stepName  = "panel";
-	#	my $layerName = "c";
-	#
-	#	my $mngr = AOIMngr->new( $inCAM, $jobName, $stepName, $layerName );
-	#	$mngr->Run();
+		my $mngr = ExportPrepare->new( $inCAM);
+		$mngr->CheckBeforeExport($jobName);
 }
 
 1;

@@ -14,11 +14,14 @@ use File::Copy;
 
 #local library
 use aliased 'CamHelpers::CamLayer';
+use aliased 'CamHelpers::CamStep';
 use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'CamHelpers::CamHelper';
 use aliased 'CamHelpers::CamJob';
 use aliased 'CamHelpers::CamHistogram';
 use aliased 'Enums::EnumsProducPanel';
+use aliased 'CamHelpers::CamGoldArea';
+use aliased 'CamHelpers::CamStepRepeat';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -248,12 +251,54 @@ sub OnCheckGroupData {
 	my $panelType = $defaultInfo->GetPanelType();
 
 	# if HAL PB , and thisck < 1.5mm => onlz small panel
-	if (    $surface =~ /A/i 
+	if (    $surface =~ /A/i
 		 && $pcbThick < 1500
 		 && ( $panelType eq EnumsProducPanel->SIZE_MULTILAYER_BIG || $panelType eq EnumsProducPanel->SIZE_STANDARD_BIG ) )
 	{
 		$dataMngr->_AddErrorResult( "Panel dimension",
-									"Nelze použít velký rozměr panelu protože surface je olovnatý HAL a zároveň tl. desky je menší 1,5mm");
+									"Nelze použít velký rozměr panelu protože surface je olovnatý HAL a zároveň tl. desky je menší 1,5mm" );
+	}
+
+	# 11) Check gold finger layers (goldc, golds)
+	my $goldFinger = 0;
+
+	foreach my $l ( ( "c", "s" ) ) {
+		if (    CamHelper->LayerExists( $inCAM, $jobId, $l )
+			 && CamGoldArea->GoldFingersExist( $inCAM, $jobId, $stepName, $l ) )
+		{
+			$goldFinger = 1;
+
+			# Check if exist gold finger layers
+			unless ( $defaultInfo->LayerExist( "gold" . $l ) ) {
+				$dataMngr->_AddErrorResult( "Gold layers", "Layer: \"$l\" contains gold fingers, but layer: \"gold$l\" doesn't exist. Create it." );
+			}
+		}
+	}
+
+	# 12) Check if there is minimal connection of goldfinger with gold holder
+	# (check if pcb is whole in active area, shinked by 1mm from eached side) note - Gold frame extends 1mm behing active area
+	if ($goldFinger) {
+
+		my $isInside = 1;
+
+		my %limActive = CamStep->GetActiveAreaLim( $inCAM, $jobId, $stepName );
+		my %limSR = CamStepRepeat->GetStepAndRepeatLim( $inCAM, $jobId, $stepName );
+
+		if (    $limActive{"xMin"} + 1 > $limSR{"xMin"}
+			 || $limActive{"yMax"} - 1 < $limSR{"yMax"}
+			 || $limActive{"xMax"} - 1 < $limSR{"xMax"}
+			 || $limActive{"yMin"} + 1 > $limSR{"yMin"} )
+		{
+
+			$dataMngr->_AddWarningResult(
+				"Gold layers",
+				"Job obsahuje zlacený konektor, ale SR stepy jsou umístěny příliš blízko nebo až za aktivní oblastí. "
+				  . "Zkontroluj, jestli bude propojení konektorů s ploškou v technickém okolí dostatečně silné (2mm). "
+				  . "Pokud ne, změn pozici SR stepu."
+			);
+
+		}
+
 	}
 
 }

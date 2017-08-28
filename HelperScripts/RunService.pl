@@ -52,7 +52,7 @@ sub RunInCAMServer {
 
 	my $perl = $Config{perlpath};
 	my $processObj1;
-	Win32::Process::Create( $processObj1, $perl, "perl " . GeneralHelper->Root() . "\\Packages\\InCAMServer\\Server\\InCAMServerScript.pl -h yes",
+	Win32::Process::Create( $processObj1, $perl, "perl " . GeneralHelper->Root() . "\\Packages\\InCAMHelpers\\InCAMServer\\Server\\InCAMServerScript.pl -h yes",
 							0, NORMAL_PRIORITY_CLASS | CREATE_NEW_CONSOLE,  "." )
 	  || die "Failed to run InCAMServerScript \n";
  

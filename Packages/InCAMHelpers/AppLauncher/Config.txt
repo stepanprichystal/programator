@@ -1,0 +1,7 @@
+
+# port which is used by Launcher app
+
+serverPort = 2010
+
+
+ 

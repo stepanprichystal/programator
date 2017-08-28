@@ -1,0 +1,16 @@
+# =================================================================================================================
+# List of all checks, which is processsed on reorder
+# Each check has implemented own class
+# Priority of checking is given by check order. Top is highest priority
+  
+# === automatic changes ======  
+
+INCAM_JOB
+CUSTOMERS  
+DATACODE
+GOLD_CONNECTOR
+NIF_FILE
+PANEL_SET
+PATTERN
+PANEL_DIM
+NC

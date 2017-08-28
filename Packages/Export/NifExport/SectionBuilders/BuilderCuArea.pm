@@ -19,6 +19,7 @@ use aliased 'CamHelpers::CamDrilling';
 use aliased 'CamHelpers::CamJob';
 use aliased 'CamHelpers::CamHelper';
 use aliased 'CamHelpers::CamCopperArea';
+use aliased 'CamHelpers::CamGoldArea';
 use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'Helpers::JobHelper';
 use aliased 'Enums::EnumsGeneral';
@@ -217,7 +218,7 @@ sub Build {
 	#zlacena_plocha
 	if ( $self->_IsRequire("zlacena_plocha") ) {
 
-		my %result = CamCopperArea->GetGoldFingerArea( $cuThickness, $pcbThick, $inCAM, $jobId, "panel" );
+		my %result = CamGoldArea->GetGoldFingerArea( $cuThickness, $pcbThick, $inCAM, $jobId, "panel" );
 
 		my $area = 0;
 
