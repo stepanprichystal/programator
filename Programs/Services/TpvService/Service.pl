@@ -84,7 +84,7 @@ sub WorkerMethod {
 
 	my %regApp = ();
 
-	$regApp{ EnumsApp->App_CHECKREORDER }->{"repeat"}   = 5;
+	$regApp{ EnumsApp->App_CHECKREORDER }->{"repeat"}   = 0.5;
 	$regApp{ EnumsApp->App_CHECKREORDER }->{"night"}    = 0;
 	
 	$regApp{ EnumsApp->App_PROCESSREORDER }->{"repeat"} = 1;

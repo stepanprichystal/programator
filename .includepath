@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <includepath>
   <includepathentry path="C:\Perl\site\lib\TpvScripts\Scripts" />
-
+  <includepathentry path="C:\Perl\site\lib\TpvScripts\Scripts\Helpers" />
 </includepath>
 

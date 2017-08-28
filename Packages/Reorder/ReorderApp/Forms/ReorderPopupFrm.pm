@@ -30,8 +30,10 @@ sub new {
 	my @dimension = ( 430, 240 );
 
 	my $title = "Process reorder ($jobId)";
+	
+	my $flags = &Wx::wxSTAY_ON_TOP | &Wx::wxSYSTEM_MENU | &Wx::wxCAPTION  | &Wx::wxMINIMIZE_BOX | &Wx::wxMAXIMIZE_BOX | &Wx::wxCLOSE_BOX;
 
-	my $self = $class->SUPER::new( $parent, $title, \@dimension );
+	my $self = $class->SUPER::new( $parent, $title, \@dimension, $flags );
 
 	bless($self);
 	

@@ -42,6 +42,7 @@ sub OnCheckGroupData {
 	my $customerNote = $defaultInfo->GetCustomerNote();
 
 	my $pasteInfo = $groupData->GetPasteInfo();
+	my $mpanelExist = $defaultInfo->StepExist( "mpanel" );
 
 	# 1) check if customer request paste files
 
@@ -81,7 +82,7 @@ sub OnCheckGroupData {
 		}
 
 		# check customer request to single profile
-		if ( defined $customerNote->SingleProfileToPaste() ) {
+		if ( defined $mpanelExist && defined $customerNote->SingleProfileToPaste() ) {
 
 			if ( $pasteInfo->{"addSingleProfile"} != $customerNote->SingleProfileToPaste() ) {
 				$dataMngr->_AddErrorResult(
@@ -94,7 +95,7 @@ sub OnCheckGroupData {
 		}
 
 		# check customer request add fiduc
-		if ( defined $customerNote->FiducialToPaste() ) {
+		if ( defined $mpanelExist && defined $customerNote->FiducialToPaste() ) {
 
 			if ( $pasteInfo->{"addFiducial"} != $customerNote->FiducialToPaste() ) {
 				$dataMngr->_AddErrorResult(

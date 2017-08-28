@@ -107,8 +107,8 @@ sub __PrepareExportFile {
 	my $pathExportFile = EnumsPaths->Client_EXPORTFILES . $jobId;
 
 	my $dataTransfer = DataTransfer->new( $jobId, EnumsTransfer->Mode_WRITE, $self->{"units"}, undef, $pathExportFile );
-
-	my @orders = HegMethods->GetPcbOrderNumbers($jobId);
+ 
+	my @orders = map { $_->{"reference_subjektu"} } HegMethods->GetOrdersByState($self->{"jobId"}, 2); # Orders on Predvzrobni priprava
 
 	$dataTransfer->SaveData( EnumsJobMngr->TaskMode_ASYNC, 1, undef, undef, \@orders );
 

@@ -41,6 +41,14 @@ sub Run {
 	
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
+	my $isPool   = $self->{"isPool"};
+	
+	# Check only standard orders
+	if($isPool){
+		return 1;
+	}
+	
+	
 	my $stepName = "panel";
 	
 	my $result = 1;

@@ -51,7 +51,11 @@ sub new {
 
 	# Affected orders
 	my @orders = HegMethods->GetPcbReorders( $self->{"jobId"} );
-	@orders = grep { $_->{"aktualni_krok"} eq EnumsIS->CurStep_ZPRACOVANIMAN || $_->{"aktualni_krok"} eq EnumsIS->CurStep_CHECKREORDERERROR } @orders;
+	@orders = grep {
+		     $_->{"aktualni_krok"} eq EnumsIS->CurStep_ZPRACOVANIMAN
+		  || $_->{"aktualni_krok"} eq EnumsIS->CurStep_PROCESSREORDERERR
+		  || $_->{"aktualni_krok"} eq EnumsIS->CurStep_CHECKREORDERERROR
+	} @orders;
 	$self->{"orders"} = \@orders;
 
 	# Main form of app
@@ -112,7 +116,7 @@ sub __OnErrIndicatorHandler {
 
 		for ( my $i = 0 ; $i < scalar( @{ $self->{"manChanges"} } ) ; $i++ ) {
 
-			$str .=  ($i+1).")\n".$self->{"manChanges"}->[$i] . "\n\n";
+			$str .= ( $i + 1 ) . ")\n" . $self->{"manChanges"}->[$i] . "\n\n";
 
 		}
 
@@ -146,10 +150,9 @@ sub __OnErrCriticIndicatorHandler {
 
 		for ( my $i = 0 ; $i < scalar( @{ $self->{"manChangesCritic"} } ) ; $i++ ) {
 
-			$str .=  ($i+1).")\n".$self->{"manChangesCritic"}->[$i] . "\n\n";
+			$str .= ( $i + 1 ) . ")\n" . $self->{"manChangesCritic"}->[$i] . "\n\n";
 
 		}
-
 
 		my @mess = ($str);
 
@@ -164,13 +167,12 @@ sub __OnProcessReorderEvent {
 
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
- 
+
 	# 1) disable buttons
 	$self->{"form"}->EnableBtnServer(0);
 	$self->{"form"}->EnableBtnLocall(0);
-	
-	
-	# 2) show reorder popup 
+
+	# 2) show reorder popup
 
 	$self->{"reorderPopup"}->Init( $type, $self->{"launcher"} );
 	$self->{"reorderPopup"}->Run();
@@ -204,7 +206,6 @@ sub __DoChecks {
 
 }
 
-
 sub __SetHandlers {
 	my $self = shift;
 
@@ -223,7 +224,6 @@ sub __SetHandlers {
 	$self->{"reorderPopup"}->{'onClose'}->Add( sub { $self->__OnClosePopupHandler(@_) } )
 
 }
-
 
 sub __CheckHandler {
 	my ( $self, $frame, $event ) = @_;

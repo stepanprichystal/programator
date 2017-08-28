@@ -45,6 +45,11 @@ sub Run {
 
 		return 0;
 	}
+	
+	# Check only standard orders
+	if($isPool){
+		return 1;
+	}
 
 	# 1) if job exist, recognize if pcb has standard panel parameters.
 	# If so, check if dimenison are smaller than actual smallest standard for given type of pcb and material

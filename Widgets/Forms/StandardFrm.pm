@@ -29,6 +29,12 @@ sub new {
 	my $parent    = shift;
 	my $title     = shift;
 	my $dimension = shift;
+	my $flags = shift;
+	
+	unless(defined $flags){
+		$flags = &Wx::wxSYSTEM_MENU | &Wx::wxCAPTION | &Wx::wxCLIP_CHILDREN | &Wx::wxRESIZE_BORDER | &Wx::wxMINIMIZE_BOX;
+	}
+	
 	$self = {};
 
 	if ( !defined $parent || $parent == -1 ) {
@@ -37,7 +43,7 @@ sub new {
 
 	bless($self);
 
-	my $mainFrm = $self->__SetLayout( $parent, $title, $dimension );
+	my $mainFrm = $self->__SetLayout( $parent, $title, $dimension, $flags );
 
 	# Properties
 	$self->{"btnHeight"} = 30;
@@ -105,6 +111,7 @@ sub __SetLayout {
 	my $parent    = shift;
 	my $title     = shift;
 	my $dimension = shift;
+	my $flags = shift;
 
 	#main formDefain forms
 	my $mainFrm = MyWxFrame->new(
@@ -113,6 +120,7 @@ sub __SetLayout {
 								  $title,                    # title
 								  &Wx::wxDefaultPosition,    # window position
 								  $dimension,                # size
+								  $flags
 	);
 
 	$mainFrm->CentreOnParent(&Wx::wxBOTH);

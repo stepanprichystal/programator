@@ -201,14 +201,36 @@ sub OnCheckGroupData {
 	# 9) Control if exist customer panel and customer set in a same time
 
 	my $custPnlExist = $defaultInfo->GetJobAttrByName("customer_panel");
-	if ( $custPnlExist eq "yes" ) {
-		my $custSetExist = $defaultInfo->GetJobAttrByName("customer_set");
-
-		if ( $custSetExist eq "yes" ) {
+	my $custSetExist = $defaultInfo->GetJobAttrByName("customer_set");
+	if ( $custPnlExist eq "yes" &&  $custSetExist eq "yes" ) {
+ 
 			$dataMngr->_AddErrorResult( "Panelisation",
 								  "V atributech jobu je aktivní 'zákaznický panel' i 'zákaznické sady'. Zvol pouze jednu možnost panelizace." );
+	}
+	
+	# Check all necessary attributes when customer panel
+	if($custPnlExist eq "yes"){
+		
+		my $custPnlX = $defaultInfo->GetJobAttrByName("cust_pnl_singlex");
+		my $custPnlY = $defaultInfo->GetJobAttrByName("cust_pnl_singley");
+		
+		if( !defined $custPnlX || !defined $custPnlY || $custPnlX == 0 || $custPnlY == 0 ){
+			$dataMngr->_AddErrorResult( "Panelisation",
+								  "V atributech jobu je aktivní 'zákaznický panel', ale informace není kompletní (atributy jobu: \"cust_pnl_singlex\", \"cust_pnl_singley\")");
 		}
 	}
+	
+	# Check all necessary attributes when customer set
+	if($custSetExist eq "yes"){
+		
+		my $multipl = $defaultInfo->GetJobAttrByName("cust_set_multipl");
+		
+		if( !defined $multipl || $multipl == 0 ){
+			$dataMngr->_AddErrorResult( "Panelisation",
+								  "V atributech jobu je aktivní 'zákaznická sada', ale informace není kompletní (atribut jobu: \"cust_set_multipl\")");
+		}
+	}
+	
 
 	# 10) Check if exist pressfit, if is checked in nif
 	if ( $defaultInfo->GetPressfitExist() && !$groupData->GetPressfit() ) {

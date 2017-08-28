@@ -44,6 +44,11 @@ sub Run {
 	unless ($jobExist) {
 		return 1;
 	}
+	
+	# Check only standard orders
+	if($isPool){
+		return 1;
+	}
 
 	my $nif = NifFile->new($jobId);
 

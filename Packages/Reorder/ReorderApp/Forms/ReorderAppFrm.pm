@@ -29,7 +29,9 @@ sub new {
 	my $orders = shift;
 	
 	my @dimension = ( 510, 370 );
-	my $self      = $class->SUPER::new( $parent, "Reorder app - $jobId", \@dimension );
+	my $flags = &Wx::wxSTAY_ON_TOP | &Wx::wxSYSTEM_MENU | &Wx::wxCAPTION  | &Wx::wxMINIMIZE_BOX | &Wx::wxMAXIMIZE_BOX | &Wx::wxCLOSE_BOX;
+	
+	my $self      = $class->SUPER::new( $parent, "Reorder app - $jobId", \@dimension, $flags );
 
 	bless($self);
 

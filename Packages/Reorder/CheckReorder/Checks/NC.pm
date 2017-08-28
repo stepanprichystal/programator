@@ -44,11 +44,18 @@ sub Run {
 	unless($jobExist){
 		return 0;
 	}
+	
+	
+	my $step = "panel";
+	
+	if($isPool){
+		$step = "o+1";
+	}
  
 	 
 	# 1) check of NC layers, if layers, depths, matrix drill direction is ok 
 	my $mess = "";
-	unless ( LayerCheckError->CheckNCLayers( $inCAM, $jobId, "panel", undef, \$mess ) ) {
+	unless ( LayerCheckError->CheckNCLayers( $inCAM, $jobId, $step, undef, \$mess ) ) {
 		
 		$self->_AddChange($mess, 1);
 	}

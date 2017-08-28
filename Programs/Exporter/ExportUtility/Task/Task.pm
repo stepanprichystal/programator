@@ -292,7 +292,7 @@ sub SetErrorState {
 
 			my $curStep = HegMethods->GetCurStepOfOrder($orderNum);
 
-			if ( $curStep ne EnumsIS->CurStep_HOTOVOZADAT && $curStep ne EnumsIS->CurStep_EXPORTERROR ) {
+			if ( AsyncJobHelber->ServerVersion() && $curStep ne EnumsIS->CurStep_EXPORTERROR ) {
 
 				my $succ = HegMethods->UpdatePcbOrderState( $orderNum, EnumsIS->CurStep_EXPORTERROR );
 			}

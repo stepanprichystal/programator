@@ -988,23 +988,51 @@ sub GetTPVEmployee {
 	return @result;
 }
 
+ 
+
 # Get all ReOrders
 # Pcb has order number begger than -01 + are on state 'Predvyrobni priprava'
 sub GetReorders {
-	my $self = shift;
+	my $self  = shift;
 
 	my @params = ();
-
+ 
 	my $cmd = "select distinct z.reference_subjektu, z.stav, z.aktualni_krok, d.stav AS dps_stav
 				from lcs.zakazky_dps_22_hlavicka z join lcs.desky_22 d on d.cislo_subjektu=z.deska
 				where z.stav='2'";
-
+ 
+ 
 	my @result = Helper->ExecuteDataSet( $cmd, \@params );
+	
+	@result = grep {   $_->{"reference_subjektu"} =~ /^\w\d+-\d+$/} @result; # remove cores
+	@result = grep {   $_->{"reference_subjektu"} !~ /-01/} @result;
 
-	@result = grep { $_->{"reference_subjektu"} =~ /^\w\d+-\d+$/ } @result;    # remove cores
-	@result = grep { $_->{"reference_subjektu"} !~ /-01/ } @result;
+	 return @result;
+}
 
-	return @result;
+# Return all reorders by pcb id
+sub GetPcbReorders {
+	my $self  = shift;
+	my $pcbId = shift;
+
+	my @params = ( SqlParameter->new( "_PcbId", Enums->SqlDbType_VARCHAR, $pcbId ) );
+
+	my $cmd = "select 				  
+				 z.reference_subjektu,
+				 z.stav,
+				 z.aktualni_krok
+				 from lcs.desky_22 d with (nolock)
+				 
+				 left outer join lcs.zakazky_dps_22_hlavicka z with (nolock) on z.deska=d.cislo_subjektu
+
+				 where d.reference_subjektu=_PcbId and  z.cislo_poradace = 22050
+				 order by z.reference_subjektu desc";
+
+	
+	my @res = Helper->ExecuteDataSet( $cmd, \@params );
+ 	@res = grep {   $_->{"reference_subjektu"} !~ /-01/} @res;
+ 	
+	return @res;
 }
 
 # Get all ReOrders

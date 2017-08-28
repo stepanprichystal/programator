@@ -142,7 +142,7 @@ sub __GetPasteInfo {
 	my $sb_ori  = $defaultInfo->LayerExist("sb-ori");
 	my $sa_made = $defaultInfo->LayerExist("sa-made");
 	my $sb_made = $defaultInfo->LayerExist("sb-made");
-	my $mpanelExist = CamHelper->StepExists( $inCAM, $jobId, "mpanel" );
+	my $mpanelExist = $defaultInfo->StepExist( "mpanel" );
 
 	#my @layers     = ();
 	my $pasteExist = 1;
@@ -192,7 +192,7 @@ sub __GetPasteInfo {
 	}
 	
 	 # default is don't add single profile
-	if(defined $customerNote->ProfileToPaste()){
+	if($mpanelExist && defined $customerNote->ProfileToPaste()){
 		$pasteInfo{"addSingleProfile"} = $customerNote->SingleProfileToPaste();
 		
 	}else{
@@ -202,7 +202,7 @@ sub __GetPasteInfo {
 
 	 
 	# default is don't add fiducials to paste
-	if(defined $customerNote->FiducialToPaste()){
+	if($mpanelExist && defined $customerNote->FiducialToPaste()){
 		$pasteInfo{"addFiducial"} = $customerNote->FiducialToPaste();
 		
 	}else{

@@ -9,6 +9,7 @@ use Class::Interface;
 &implements('Packages::Reorder::CheckReorder::Checks::ICheck');
 
 #3th party library
+use utf8;
 use strict;
 use warnings;
 
@@ -43,7 +44,7 @@ sub Run {
  
 	if($isPool && PlatedRoutArea->PlatedAreaExceed($inCAM, $jobId, "o+1")){
 		
-		$self->_AddChange("Dps je pool a musÌ jÌt do v˝roby patternem, kv˘li velkÈmu prokovenÈmu otvoru.", 1)
+		$self->_AddChange("Dps je pool a mus√≠ j√≠t do v√Ωroby patternem, kv≈Øli velk√©mu prokoven√©mu otvoru.", 1)
 	}
  
 }

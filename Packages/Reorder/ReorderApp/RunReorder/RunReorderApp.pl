@@ -62,7 +62,9 @@ sub __CheckBeforeRun {
 
 	# filter only order zpracovani-rucni or checkReorder-error
 	@orders =
-	  grep { $_->{"aktualni_krok"} eq EnumsIS->CurStep_ZPRACOVANIMAN || $_->{"aktualni_krok"} eq EnumsIS->CurStep_CHECKREORDERERROR } @orders;
+	  grep { $_->{"aktualni_krok"} eq EnumsIS->CurStep_ZPRACOVANIMAN ||
+	  	$_->{"aktualni_krok"} eq EnumsIS->CurStep_PROCESSREORDERERR ||
+	  	 $_->{"aktualni_krok"} eq EnumsIS->CurStep_CHECKREORDERERROR } @orders;
 
 	unless ( scalar(@orders) ) {
 		my @mess1 = ("Run \"Reorder application\" is not possible:", "No re-orders in Helios for pcbid \"$jobId\" where \"Aktualni krok\" is \"zpracovani-rucni\" OR \"checkReorder-error\".");

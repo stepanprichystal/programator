@@ -41,6 +41,11 @@ sub Run {
 	my $jobId    = $self->{"jobId"};
 	my $jobExist = $self->{"jobExist"};    # (in InCAM db)
 	my $isPool   = $self->{"isPool"};
+	
+	# Check only standard orders
+	if($isPool){
+		return 1;
+	}
 
 	my $stepName = "panel";
 

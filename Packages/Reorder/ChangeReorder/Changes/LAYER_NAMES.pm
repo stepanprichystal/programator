@@ -58,6 +58,9 @@ sub Run {
 	if(defined $fsch){
 		
 		$inCAM->COM("matrix_rename_layer","job"=> $jobId,"matrix"=> "matrix","layer"=>"f_sch","new_name"=>"fsch");	
+		
+		# set fsch as board layer
+		CamLayer->SetLayerContextLayer($inCAM, $jobId, "fsch", "board");
 	}
  
 

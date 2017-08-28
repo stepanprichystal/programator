@@ -293,8 +293,9 @@ sub __OnStepChange {
 
 	my $stepName = $self->{"stepCb"}->GetValue();
 	my $srExist = CamStepRepeat->ExistStepAndRepeats( $inCAM, $jobId, $stepName );
-
-	unless ($srExist) {
+	my $mpanelExist = $self->{"defaultInfo"}->StepExist("mpanel");
+	
+	unless ($srExist && $mpanelExist) {
 		$self->{"singleProfileChb"}->Disable();
 		$self->{"singleProfileChb"}->SetValue(0);
 		$self->{"addFiducialChb"}->Disable();
@@ -332,6 +333,8 @@ sub PlotRowSettChanged {
 sub DisableControls {
 	my $self = shift;
 
+	# MDI gerbers
+
 	my $defaultInfo = $self->{"defaultInfo"};
 	if ( !$defaultInfo->LayerExist("c") || $defaultInfo->GetTypeOfPcb( $self->{"jobId"} ) eq "Neplatovany" ) {
 		$self->{"signalChb"}->Disable();
@@ -349,9 +352,19 @@ sub DisableControls {
 		$self->{"goldChb"}->Disable();
 	}
 	
+	# JETPRINT Gerbers
+	
 	if ( !$defaultInfo->LayerExist("pc") && !$defaultInfo->LayerExist("ps") ) {
 		$self->{"exportJetprintChb"}->Disable();
 		$self->{"fiduc3p2Chb"}->Disable(); 
+	}
+	
+	# PASTE FILES
+	my $mpanelExist = $defaultInfo->StepExist("mpanel");
+	
+	unless($mpanelExist){
+		$self->{"singleProfileChb"}->Disable();
+		$self->{"addFiducialChb"}->Disable();
 	}
  
 }

@@ -25,6 +25,12 @@ use aliased 'Enums::EnumsPaths';
 
 sub Move {
 
+	# Random move - move only with 40% chance.
+	# This should prevent one tpv user has to process all el.tests of reorders
+	if(rand(100) > 40){
+		return 0;
+	}
+
 	my @files = FileHelper->GetFilesNameByPattern( EnumsPaths->Jobs_ELTESTSIPC, "\.*" );
 
 	@files = grep { $_ =~ /\w\d+t\.ipc/i } @files;
