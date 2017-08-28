@@ -124,24 +124,27 @@ sub OnCheckGroupData {
 	}
 
 	# 6) Check foot down attributes
+	
 	my $routLayer = "f";
 	my $tmpLayer = undef;
+	my $checkL = undef;
 
 	if ( $defaultInfo->LayerExist("fsch") ) {
 		$routLayer = "fsch";
+		$checkL = $routLayer;
 	}else{
 		
 		# need faltten before check outline chains
 		$tmpLayer = GeneralHelper->GetGUID();
 		$inCAM->COM('flatten_layer', "source_layer" => $routLayer, "target_layer" => $tmpLayer );
-		$routLayer = $tmpLayer;
+		$checkL = $tmpLayer;
 	}
  
-	my $rtm = UniRTM->new($inCAM, $jobId, "panel", $routLayer, 1);
+	my $rtm = UniRTM->new($inCAM, $jobId, "panel", $checkL, 1);
 	
 	my @outline = $rtm->GetOutlineChains();
 
-	my %hist = CamHistogram->GetAttCountHistogram( $inCAM, $jobId, "panel", $routLayer, 1 );
+	my %hist = CamHistogram->GetAttCountHistogram( $inCAM, $jobId, "panel", $checkL, 1 );
 
 	my $footCnt = 0;
 	if ( defined $hist{".foot_down"}{""} ) {
