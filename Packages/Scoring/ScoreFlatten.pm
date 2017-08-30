@@ -21,32 +21,38 @@ use aliased 'Packages::Scoring::ScoreChecker::ScoreChecker';
 use aliased 'Packages::Polygon::Features::ScoreFeatures::ScoreFeatures';
 use aliased 'Packages::Scoring::Optimalization::Enums';
 use aliased 'Packages::Scoring::Optimalization::Helper';
-use aliased 'Managers::MessageMngr::MessageMngr';
+
 
 #-------------------------------------------------------------------------------------------#
 #  Script methods
 #-------------------------------------------------------------------------------------------#
 
-# Flatten score in given step and delete score data from nested steps
-sub FlattenNestedScore {
-	my $self     = shift;
-	my $inCAM    = shift;
-	my $jobId    = shift;
-	my $stepName = shift;
+sub new {
+	my $self = shift;
+	$self = {};
+	bless $self;
 
-	unless ( CamHelper->StepExists( $inCAM, $jobId, $stepName ) ) {
+	$self->{"inCAM"} = shift;
+	$self->{"jobId"} = shift;
+	$self->{"step"}  = shift;
+
+	return $self;
+
+}
+
+sub NeedFlatten {
+	my $self    = shift;
+	my $scoreSR = shift;    # nested steps where is scoring
+
+	my $inCAM    = $self->{"inCAM"};
+	my $jobId    = $self->{"jobId"};
+	my $stepName = $self->{"step"};
+
+	if ( !CamHelper->StepExists( $inCAM, $jobId, $stepName ) || !CamHelper->LayerExists( $inCAM, $jobId, "score" ) ) {
 		return 0;
 	}
 
-	unless ( CamHelper->LayerExists( $inCAM, $jobId, "score" ) ) {
-		return 1;
-	}
-
-	my $messMngr = MessageMngr->new($jobId);
-
 	CamHelper->SetStep( $inCAM, $stepName );
-
-	my @scoreSteps = ();    # nested steps where is scoring
 
 	# test if exist nested steps
 	my @sr = CamStepRepeat->GetStepAndRepeat( $inCAM, $jobId, $stepName );
@@ -67,61 +73,67 @@ sub FlattenNestedScore {
 
 		if ( $self->__ScoreExist( $inCAM, $jobId, $name ) ) {
 
-			push( @scoreSteps, $name );
+			if ( defined $scoreSR ) {
+				push( @{$scoreSR}, $name );
+			}
 
 			$scoreExist = 1;
+		}
+	}
 
-			# test if jumpscoring
-			my $checker = ScoreChecker->new( $inCAM, $jobId, $name, "score", 0 );
-			$checker->Init();
-			if ( $checker->CustomerJumpScoring() ) {
+	return $scoreExist;
+}
 
-				$customerJum = 1;
-				push( @customerJumSteps, $name );
+sub JumpScoringExist {
+	my $self             = shift;
+	my $customerJumSteps = shift;
+
+	my $inCAM    = $self->{"inCAM"};
+	my $jobId    = $self->{"jobId"};
+	my $stepName = $self->{"step"};
+
+	my $customerJum = 0;
+
+	my @scoreStep = ();
+
+	$self->NeedFlatten( \@scoreStep );
+
+	foreach my $s (@scoreStep) {
+
+		# test if jumpscoring
+		my $checker = ScoreChecker->new( $inCAM, $jobId, $s, "score", 0 );
+		$checker->Init();
+		if ( $checker->CustomerJumpScoring() ) {
+
+			$customerJum = 1;
+
+			if ( defined $customerJumSteps ) {
+
+				push( @{$customerJumSteps}, $s );
 			}
 		}
 	}
 
-	# if jumscoring, no flatten
-	unless ($scoreExist) {
+	return $customerJum;
+}
+
+# Flatten score in given step and delete score data from nested steps
+sub FlattenNestedScore {
+	my $self     = shift;
+	my $repairScore = shift;
+	
+	my $inCAM    = $self->{"inCAM"};
+	my $jobId    = $self->{"jobId"};
+	my $stepName = $self->{"step"};
+	
+	my @scoreSteps = ();
+
+	unless($self->NeedFlatten( \@scoreSteps )){
+	
 		return 0;
 	}
 
-	# if customer jumscoring, no flatten
-
-	my $repairScore = 1;
-
-	if ($customerJum) {
-
-		@customerJumSteps = uniq(@customerJumSteps);
-		my $strStep = join( ", ", @customerJumSteps );
-
-		my $resultJump = 2;
-		while ( $resultJump == 2 ) {
-			my @mess = (
-						"Problém při přesunu drážky do stepu '$stepName'. Vypadá to, že ve vnořeném stepu ($strStep) má zákazník jump-scoring.",
-						"Je to opravdu uživatelský jump-scoring?"
-			);
-
-			my @btn = ( "Ano", "Ne", "Zkontrolovat drážku" );
-
-			$messMngr->ShowModal( -1, EnumsGeneral->MessageType_INFORMATION, \@mess, \@btn );
-
-			$resultJump = $messMngr->Result();
-
-			if ( $resultJump == 2 ) {
-				$inCAM->PAUSE("Zkontroluj, zda stepy uvnitr stepu '$stepName' obsahuji uzivatelsky jump-scoring");
-			}
-			else {
-				last;
-			}
-		}
-
-		if ( $resultJump == 0 ) {
-			$repairScore = 0;
-		}
-	}
-
+ 
 	# Flatten score layer
 	CamLayer->FlatternLayer( $inCAM, $jobId, $stepName, "score" );
 
@@ -132,10 +144,9 @@ sub FlattenNestedScore {
 	#$checker->Init();
 	#unless ( $checker->CustomerJumpScoring() ) {
 
-	if($repairScore){
-		$self->__ScoreRepair( $inCAM, $jobId, $stepName );	
+	if ($repairScore) {
+		$self->__ScoreRepair( $inCAM, $jobId, $stepName );
 	}
- 
 
 	my @uniqSteps = uniq(@scoreSteps);
 
@@ -148,15 +159,7 @@ sub FlattenNestedScore {
 	}
 
 	CamHelper->SetStep( $inCAM, $stepName );
-
-	# show inforamtion window
-	my @mess =
-	  (   "Drážky ze stepu: "
-		. join( ", ", @uniqSteps )
-		. " byly přesunuty do stepu: '$stepName'. Zkontroluj jestli je drážkování ve stepu '$stepName' v pořádku." );
-
-	$messMngr->ShowModal( -1, EnumsGeneral->MessageType_INFORMATION, \@mess );
-
+ 
 }
 
 sub __ScoreRepair {

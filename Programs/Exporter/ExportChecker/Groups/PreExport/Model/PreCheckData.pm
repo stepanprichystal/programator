@@ -291,12 +291,32 @@ sub OnCheckGroupData {
 		{
 
 			$dataMngr->_AddWarningResult(
-				"Gold layers",
-				"Job obsahuje zlacený konektor, ale SR stepy jsou umístěny příliš blízko nebo až za aktivní oblastí. "
-				  . "Zkontroluj, jestli bude propojení konektorů s ploškou v technickém okolí dostatečně silné (2mm). "
-				  . "Pokud ne, změn pozici SR stepu."
+									  "Gold layers",
+									  "Job obsahuje zlacený konektor, ale SR stepy jsou umístěny příliš blízko nebo až za aktivní oblastí. "
+										. "Zkontroluj, jestli bude propojení konektorů s ploškou v technickém okolí dostatečně silné (2mm). "
+										. "Pokud ne, změn pozici SR stepu."
 			);
 
+		}
+
+	}
+
+	# 13) Check if goldfinge exist or galvanic surface if panel equal to standard small dimension
+	if ( $surface =~ /G/i || $goldFinger ) {
+
+		# height: small standard VV - 407, small standard VV - 355
+
+		my %profLim = CamJob->GetProfileLimits2( $inCAM, $jobId, "panel" );
+
+		my $h = abs( $profLim{"yMax"} - $profLim{"yMin"} );
+
+		if ( $h > 408 ) {
+
+			$dataMngr->_AddErrorResult(
+				"Panel dimension",
+				"Příliš velký panel. \nPokud job obsahuje zlacený konektor nebo povrch je galvanické zlato,"
+				  . " panel musí mýt maximálně tak velký jako malý standardní panel."
+			);
 		}
 
 	}

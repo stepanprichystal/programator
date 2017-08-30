@@ -969,6 +969,24 @@ sub GetTermOfOrder {
 	return $res;
 }
 
+
+# Return value of term order
+sub GetStartTermOfOrder {
+	my $self    = shift;
+	my $orderId = shift;
+
+	my @params = ( SqlParameter->new( "_OrderId", Enums->SqlDbType_VARCHAR, $orderId ) );
+
+	my $cmd = "SELECT top 1
+				datum_zahajeni
+				from lcs.zakazky_dps_22_hlavicka 
+				WHERE reference_subjektu = _OrderId";
+
+	my $res = Helper->ExecuteScalar( $cmd, \@params, 1 );
+
+	return $res;
+}
+
 # Return list of actual TPV workers
 sub GetTPVEmployee {
 	my $self = shift;

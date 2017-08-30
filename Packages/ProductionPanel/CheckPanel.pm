@@ -16,10 +16,17 @@ use lib "$FindBin::Bin/../";
 use PackagesLib;
 
 use aliased 'Connectors::HeliosConnector::HegMethods';
+
 use aliased 'Managers::MessageMngr::MessageMngr';
+
 use aliased 'Enums::EnumsGeneral';
+
 use aliased 'CamHelpers::CamAttributes';
 use aliased 'CamHelpers::CamJob';
+use aliased 'CamHelpers::CamCopperArea';
+use aliased 'CamHelpers::CamGoldArea';
+
+
 use aliased 'Packages::CAMJob::Dim::JobDim';
 use aliased 'Packages::InCAM::InCAM';
 use aliased 'Packages::Stackup::StackupOperation';
@@ -36,7 +43,8 @@ sub RunCheckOfPanel {
 
 	push @errorList, _CheckCountOfPcb( $inCAM, $jobId );
 	push @errorList, _CheckPolarityInnerLayer( $inCAM, $jobId );
-	push @errorList,_CheckDimDepensMaterial( $inCAM, $jobId );
+	push @errorList, _CheckDimDepensMaterial( $inCAM, $jobId );
+	push @errorList, _CheckDimGalvanicGold( $inCAM, $jobId );
 
 	#push @errorList, _CheckBlindAndGalvGold($inCAM, $jobId);
 
@@ -47,6 +55,23 @@ sub RunCheckOfPanel {
 }
 
 
+# Warning when you have panel more then 407 for galvanic gold.
+sub _CheckDimGalvanicGold {
+	my $inCAM = shift;
+	my $jobId = shift;
+	my $info;
+	
+	my %dim = JobDim->GetDimension( $inCAM, $jobId );
+	my %result = CamGoldArea->GetGoldFingerArea(18, 1.50, $inCAM, $jobId, 'panel');	# If exist attr .gold_plating
+	my $surface = HegMethods->GetPcbSurface($jobId);									# If exist surface 'plosne galvanicke zlaceni'
+
+		if ($result{"exist"} == 1 or $surface eq 'G') {
+				if ($dim{"vyrobni_panel_y"} > 407 ) {
+						$info ='- Pozor, panel vetsi nez 407 nelze pouzit pro zlaceni! Uprav velikost panelu!';
+				}
+		}
+	return ($info);
+}
 
 # Warning that your panel has width 305 but not AL_core
 sub _CheckDimDepensMaterial {

@@ -41,20 +41,20 @@ sub OnCheckGroupData {
 	my $defaultInfo  = $dataMngr->GetDefaultInfo();
 	my $customerNote = $defaultInfo->GetCustomerNote();
 
-	my $pasteInfo = $groupData->GetPasteInfo();
-	my $mpanelExist = $defaultInfo->StepExist( "mpanel" );
+	my $pasteInfo   = $groupData->GetPasteInfo();
+	my $mpanelExist = $defaultInfo->StepExist("mpanel");
 
 	# 1) check if customer request paste files
 
-	if ( defined $customerNote->ExportPaste() && !$defaultInfo->IsPool()) {
+	if ( defined $customerNote->ExportPaste() && !$defaultInfo->IsPool() ) {
 
 		if ( $pasteInfo->{"export"} != $customerNote->ExportPaste() ) {
 
-			$dataMngr->_AddErrorResult(
-										"Export paste",
-										"Zákazník si "
-										  . ( $customerNote->ExportPaste() ? "přeje" : "nepřeje" )
-										  . " exportovat paste files. Zaškrtni volbu 'Export'.\n"
+			$dataMngr->_AddWarningResult(
+										  "Export paste",
+										  "Zákazník si "
+											. ( $customerNote->ExportPaste() ? "přeje" : "nepřeje" )
+											. " exportovat paste files. Zaškrtni volbu 'Export'.\n"
 			);
 		}
 	}
@@ -82,7 +82,7 @@ sub OnCheckGroupData {
 		}
 
 		# check customer request to single profile
-		if ( defined $mpanelExist && defined $customerNote->SingleProfileToPaste() ) {
+		if ( $mpanelExist && defined $customerNote->SingleProfileToPaste() ) {
 
 			if ( $pasteInfo->{"addSingleProfile"} != $customerNote->SingleProfileToPaste() ) {
 				$dataMngr->_AddErrorResult(
@@ -95,7 +95,7 @@ sub OnCheckGroupData {
 		}
 
 		# check customer request add fiduc
-		if ( defined $mpanelExist && defined $customerNote->FiducialToPaste() ) {
+		if ( $mpanelExist && defined $customerNote->FiducialToPaste() ) {
 
 			if ( $pasteInfo->{"addFiducial"} != $customerNote->FiducialToPaste() ) {
 				$dataMngr->_AddErrorResult(
@@ -144,6 +144,23 @@ sub OnCheckGroupData {
 
 		$dataMngr->_AddWarningResult( "Paste data",
 			  "Byl nalezen starý formát názvu pasty s podtržítkem ($str). Pokud chceš pastu vyexportovat použij nový název s pomlčkou.\n" );
+	}
+
+	# 5) Check if some layers are not empty
+	if ( $pasteInfo->{"export"} && !$defaultInfo->IsPool() ) {
+
+		foreach my $l ( ( "sa-ori", "sb-ori", "sa-made", "sb-made" ) ) {
+
+			if ( $defaultInfo->LayerExist($l) ) {
+
+				my %fHist = CamHistogram->GetFeatuesHistogram( $inCAM, $jobId, $pasteInfo->{"step"}, $l );
+
+				if ( $fHist{"total"} == 0 ) {
+					$dataMngr->_AddWarningResult( "Paste data",
+												  "Vrstva pasty: \"$l\" je prázdná, zkontroluj, jestli v ní nechybí data, jinak ji smaž.\n" );
+				}
+			}
+		}
 	}
 
 }

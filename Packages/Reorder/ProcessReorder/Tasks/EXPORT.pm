@@ -103,8 +103,14 @@ sub __PrepareExportFile {
 
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
+	
+	my $exportDir = EnumsPaths->Client_INCAMTMPOTHER."processReorder\\";
+	
+	unless ( -e $exportDir ) {
+		mkdir( $exportDir ) or die "Can't create dir: " . $exportDir . $_;
+	}
 
-	my $pathExportFile = EnumsPaths->Client_EXPORTFILES . $jobId;
+	my $pathExportFile = $exportDir . $jobId;
 
 	my $dataTransfer = DataTransfer->new( $jobId, EnumsTransfer->Mode_WRITE, $self->{"units"}, undef, $pathExportFile );
  

@@ -40,14 +40,12 @@ sub new {
 
 		return 0;
 	}
-	
-	
+
 	# 2) Checks if no pcb reorders are in aktualni_krok = zpracvoani-rucni nebo checkReorder-error
-	unless( $self->__CheckReorder($self->{"jobId"})){
-		
+	unless ( $self->__CheckReorder( $self->{"jobId"} ) ) {
+
 		return 0;
 	}
-	
 
 	# 3) Launch app
 
@@ -63,7 +61,6 @@ sub new {
 
 	$launcher->Run();
 
-	 
 }
 
 sub __IsJobOpen {
@@ -87,44 +84,49 @@ sub __IsJobOpen {
 sub __CheckReorder {
 	my $self  = shift;
 	my $jobId = shift;
-	
+
 	my $result = 1;
-	
+
 	my @orders = HegMethods->GetPcbReorders($jobId);
 
 	# filter only order zpracovani-rucni or checkReorder-error
 	@orders =
-	  grep { $_->{"aktualni_krok"} eq EnumsIS->CurStep_ZPRACOVANIMAN || $_->{"aktualni_krok"} eq EnumsIS->CurStep_CHECKREORDERERROR } @orders;
+	  grep {
+		     $_->{"aktualni_krok"} eq EnumsIS->CurStep_ZPRACOVANIMAN
+		  || $_->{"aktualni_krok"} eq EnumsIS->CurStep_CHECKREORDERERROR
+		  || $_->{"aktualni_krok"} eq EnumsIS->CurStep_PROCESSREORDERERR
+	  } @orders;
 
 	if ( scalar(@orders) ) {
-		
+
 		my $messMngr = MessageMngr->new("Exporter utility");
- 
-		my @mess1 = ("Unable to run \"Check reorder application\":", 
-		"There are re-orders for pcbid \"$jobId\" where \"Aktualni krok\" is \"zpracovani-rucni\" OR \"checkReorder-error\" in Helios.",
-		"First process job by \"Reorder script\" at: ".'Packages\Reorder\ReorderApp\RunReorder\RunReorderApp.pl' );
-		$messMngr->ShowModal( -1, EnumsGeneral->MessageType_SYSTEMERROR, \@mess1 );
 
-		$result = 0;
+		my @mess1 = (
+			"Unable to run \"Check reorder application\":",
+			"There are re-orders for pcbid \"$jobId\" where \"Aktualni krok\" is one of: \"zpracovani-rucni\", \"checkReorder-error\", \"processReorder-error\" in Helios.",
+			"First process job by \"Reorder script\" (Packages\\Reorder\\ReorderApp\\RunReorder\\RunReorderApp.pl)");
+			$messMngr->ShowModal( -1, EnumsGeneral->MessageType_SYSTEMERROR, \@mess1 );
+
+			$result = 0;
+		}
+
+		return $result;
 	}
-	
-	return $result;
-}
 
-#-------------------------------------------------------------------------------------------#
-#  Place for testing..
-#-------------------------------------------------------------------------------------------#
+	#-------------------------------------------------------------------------------------------#
+	#  Place for testing..
+	#-------------------------------------------------------------------------------------------#
 
-#print @INC;
+	#print @INC;
 
-my ( $package, $filename, $line ) = caller;
-if ( $filename =~ /DEBUG_FILE.pl/ ) {
+	my ( $package, $filename, $line ) = caller;
+	if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	#my $app = Programs::Exporter::AsyncJobMngr->new();
+		#my $app = Programs::Exporter::AsyncJobMngr->new();
 
-	#$app->Test();
+		#$app->Test();
 
-	#$app->MainLoop;
+		#$app->MainLoop;
 
-}
-1;
+	}
+	1;

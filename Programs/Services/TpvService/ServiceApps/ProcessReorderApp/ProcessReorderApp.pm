@@ -11,11 +11,11 @@ use base("Programs::Services::TpvService::ServiceApps::ServiceAppBase");
 #3th party library
 use strict;
 use warnings;
+use File::Copy;
 
 #use File::Spec;
 use File::Basename;
 use Log::Log4perl qw(get_logger);
-
 
 #local library
 #use aliased 'Connectors::TpvConnector::TpvMethods';
@@ -76,21 +76,17 @@ sub Run {
 			unless ( defined $self->{"inCAM"} ) {
 				$self->{"inCAM"} = $self->_GetInCAM();
 			}
-			
+
 			$self->{"logger"}->debug("After get InCAM");
 
 			#my %hash = ( "reference_subjektu" => "f52457-02" );
 			#@reorders = ( \%hash );
-			
-			
 
 			foreach my $reorder (@reorders) {
 
 				my $reorderId = $reorder->{"reference_subjektu"};
 
 				$self->{"logger"}->info("Process reorder: $reorderId");
-				
- 				
 
 				$self->__RunJob($reorderId);
 			}
@@ -110,19 +106,16 @@ sub __RunJob {
 	my $orderId = shift;
 	my ($jobId) = $orderId =~ /^(\w\d+)-\d+/i;
 	$jobId = lc($jobId);
-	
-	
+
 	# temp cond
- 	# if pcb is poool
- 	#my $isPool = HegMethods->GetPcbIsPool($jobId);
- 	
- 	#unless($isPool){
- 	#	return 0;
- 	#}
- 	
- 	#return 0;
- 	
- 	
+	# if pcb is poool
+	#my $isPool = HegMethods->GetPcbIsPool($jobId);
+
+	#unless($isPool){
+	#	return 0;
+	#}
+
+	#return 0;
 
 	# DEBUG DELETE
 	#$self->__ProcessJob($orderId);
@@ -145,8 +138,8 @@ sub __RunJob {
 		}
 
 		my $err = "Process order id: \"$orderId\" exited with error: \n $eStr";
- 
-		$self->__ProcessJobResult($orderId, EnumsIS->CurStep_PROCESSREORDERERR, $err);
+
+		$self->__ProcessJobResult( $orderId, EnumsIS->CurStep_PROCESSREORDERERR, $err );
 	}
 }
 
@@ -162,23 +155,32 @@ sub __ProcessJob {
 
 	my ($jobId) = $orderId =~ /^(\w\d+)-\d+/i;
 	$jobId = lc($jobId);
- 
+
 	# 1) Open Job
 
 	$self->_OpenJob($jobId);
- 
 
 	# 2) Do automatic changes
 
-	my $errMess = "";
-	my $processReorder = ProcessReorder->new($inCAM, $jobId);
-	my $result  = $processReorder->RunTasks(\$errMess);
+	my $errMess        = "";
+	my $processReorder = ProcessReorder->new( $inCAM, $jobId );
+	my $result         = $processReorder->RunTasks( \$errMess );
 
 	# 4) save job
 
 	$self->_CloseJob($jobId);
 
-	# 5) set order state
+	# 5) After close job
+	# If pcb is standard, move prepared "export file" to dir checked by "ExportUtility"
+	my $exportFile = EnumsPaths->Client_INCAMTMPOTHER . "processReorder\\$jobId";
+
+	if ( -e $exportFile ) {
+		unless ( move( $exportFile, EnumsPaths->Client_EXPORTFILES . "$jobId" ) ) {
+			die "Unable to move export file $exportFile\n";
+		}
+	}
+
+	# 6) set order state
 	my $isPool = HegMethods->GetPcbIsPool($jobId);
 
 	my $orderState = EnumsIS->CurStep_PROCESSREORDERERR;
@@ -193,10 +195,9 @@ sub __ProcessJob {
 		$orderState = EnumsIS->CurStep_PROCESSREORDEROK;
 	}
 
-	$self->__ProcessJobResult($orderId, $orderState, $errMess);
+	$self->__ProcessJobResult( $orderId, $orderState, $errMess );
 
 }
-
 
 sub __ProcessJobResult {
 	my $self       = shift;
@@ -215,14 +216,14 @@ sub __ProcessJobResult {
 
 		# sent error to log db
 		$self->{"loggerDB"}->Error( $jobId, $errMess );
-		
+
 		# store error to job archive
 		AutoProcLog->Create( $self->GetAppName(), $jobId, $errMess );
 	}
 	else {
 		AutoProcLog->Delete($jobId);
 		ChangeFile->Delete($jobId);
-		 
+
 	}
 
 	# 2) set state
@@ -230,10 +231,6 @@ sub __ProcessJobResult {
 	HegMethods->UpdatePcbOrderState( $orderId, $orderState );
 
 }
-
-
-
- 
 
 sub __SetLogging {
 	my $self = shift;
@@ -253,8 +250,6 @@ sub __SetLogging {
 	$self->{"logger"}->debug("test of logging");
 
 }
-
-
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

@@ -183,7 +183,10 @@ sub __ProcessJob {
 	my $revize = $pcbInfo->{"stav"} eq 'R' ? 1 : 0;    # indicate if pcb need user-manual process before go to produce
 
 	if ($revize) {
-		push( @manCh, "1) Deska je ve stavu \"revize\", uprav data jobu podle požadavkù zákazníka/výroby." );
+		
+		my %inf = ("text" => "Deska je ve stavu \"revize\", uprav data jobu podle požadavkù zákazníka nebo výroby.", "critical" => 0);
+		
+		push( @manCh, \%inf);
 	}
 
 	if ($jobExist) {

@@ -124,15 +124,23 @@ sub __Export {
 	my $addFiducial      = $self->{"pasteInfo"}->{"addFiducial"};
 	my @layers           = $self->__GetPasteLayers();
 
+	my $inCAM = $self->{"inCAM"};
+	my $jobId = $self->{"jobId"};
+
 	if ( scalar(@layers) == 0 ) {
 		die "No paste layers for export.\n";
 	}
 
-	my $inCAM = $self->{"inCAM"};
-	my $jobId = $self->{"jobId"};
-	
-	CamHelper->SetStep( $inCAM, $step );
+	# Remove empty layers (do not export)
+	for ( my $i = scalar(@layers) - 1 ; $i >= 0 ; $i-- ) {
+		
+		my %h = CamHistogram->GetFeatuesHistogram( $inCAM, $jobId, $step, $layers[$i] );
+		if ( $h{"total"} == 0 ) {
+			splice @layers, $i, 1;
+		}
+	}
 
+	CamHelper->SetStep( $inCAM, $step );
 
 	# 1) add profile from  to step
 	if ($addProfile) {
@@ -194,10 +202,10 @@ sub __Export {
 			foreach my $l (@layers) {
 
 				CamLayer->WorkLayer( $inCAM, $l );
-				if(CamFilter->SelectBySingleAtt( $inCAM, $jobId, ".fiducial_name", "*" )){
+				if ( CamFilter->SelectBySingleAtt( $inCAM, $jobId, ".fiducial_name", "*" ) ) {
 					$inCAM->COM("sel_delete");
-				};
-				
+				}
+
 			}
 
 			# put diduc to paste
@@ -296,18 +304,18 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my %pasteInfo = ();
 
-	$pasteInfo{"notOriginal"} = 0;
-	$pasteInfo{"step"} = "mpanel";
-	$pasteInfo{"export"} = 1;
-	$pasteInfo{"addProfile"} = 1;
+	$pasteInfo{"notOriginal"}      = 0;
+	$pasteInfo{"step"}             = "mpanel";
+	$pasteInfo{"export"}           = 1;
+	$pasteInfo{"addProfile"}       = 1;
 	$pasteInfo{"addSingleProfile"} = 1;
-	$pasteInfo{"addFiducial"} = 1;
-	$pasteInfo{"zipFile"} = 1;
+	$pasteInfo{"addFiducial"}      = 1;
+	$pasteInfo{"zipFile"}          = 1;
 
-	my $export = ExportPasteMngr->new($inCAM, $jobId, \%pasteInfo);
+	my $export = ExportPasteMngr->new( $inCAM, $jobId, \%pasteInfo );
 	$export->Run();
 
-	  #print $test;
+	#print $test;
 
 }
 

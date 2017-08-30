@@ -11,16 +11,14 @@ use PackagesLib;
 
 use lib qw( C:\Perl\site\lib\TpvScripts\Scripts );
 
-use aliased 'Packages::Scoring::ScoreFlatten';
+use aliased 'Packages::GuideSubs::Scoring::DoFlattenScore';
 use aliased 'Packages::InCAM::InCAM';
 
 
 
 my $jobId = $ENV{"JOB"};
 my $inCAM = InCAM->new();
-
-my $step = "mpanel";
  
-
-my $max = ScoreFlatten->FlattenNestedScore( $inCAM, $jobId, $step );
+ 
+  DoFlattenScore->FlattenMpanelScore( $inCAM, $jobId );
 

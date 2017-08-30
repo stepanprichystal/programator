@@ -67,7 +67,7 @@ sub __CheckBeforeRun {
 	  	 $_->{"aktualni_krok"} eq EnumsIS->CurStep_CHECKREORDERERROR } @orders;
 
 	unless ( scalar(@orders) ) {
-		my @mess1 = ("Run \"Reorder application\" is not possible:", "No re-orders in Helios for pcbid \"$jobId\" where \"Aktualni krok\" is \"zpracovani-rucni\" OR \"checkReorder-error\".");
+		my @mess1 = ("Run \"Reorder application\" is not possible:", "No re-orders in Helios for pcbid \"$jobId\" where \"Aktualni krok\" is one of: \"zpracovani-rucni\", \"checkReorder-error\", \"processReorder-error\".");
 		$messMngr->ShowModal( -1, EnumsGeneral->MessageType_SYSTEMERROR, \@mess1 );
 
 		return 0;
