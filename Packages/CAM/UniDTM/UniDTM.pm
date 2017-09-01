@@ -113,7 +113,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	my $inCAM = InCAM->new();
 	my $jobId = "f13610";
 
-	my $unitDTM = UniDTM->new( $inCAM, $jobId, "panel", "m", 1 );
+	my $unitDTM = UniDTM->new( $inCAM, $jobId, "panel", "f", 1 );
 	
 	 
 

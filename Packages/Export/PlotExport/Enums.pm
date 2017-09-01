@@ -15,6 +15,8 @@ use constant {
 	LType_SIGINNER => "signalInner",
 
 	LType_GOLDFINGER => "goldfinger",
+	
+	LType_PEELABLE => "peelableMask",
  
 	LType_ALL => "allTypes"
 };

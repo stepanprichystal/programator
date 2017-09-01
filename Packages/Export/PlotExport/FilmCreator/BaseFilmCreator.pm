@@ -26,8 +26,8 @@ sub new {
 	my $self  = {};
 	bless $self;
 
-	$self->{"inCAM"} = shift; #board layers
-	$self->{"jobId"} =  shift; #board layers
+	$self->{"inCAM"}  = shift;    #board layers
+	$self->{"jobId"}  = shift;    #board layers
 	$self->{"layers"} = shift;
 
 	my @rules = ();
@@ -35,19 +35,20 @@ sub new {
 
 	my @resultRules = ();
 	$self->{"resultRules"} = \@resultRules;
-	
+
 	$self->{"layerCnt"} = CamJob->GetSignalLayerCnt( $self->{"inCAM"}, $self->{"jobId"} );
 
 	$self->__AddLayerTypes();
+
 	#$self->__AddLayerSize();
 
 	return $self;
 }
 
 sub _AddRule {
-	my $self = shift;
+	my $self        = shift;
 	my $orientation = shift;
-	my $rule = Rule->new($orientation);
+	my $rule        = Rule->new($orientation);
 
 	push( @{ $self->{"rules"} }, $rule );
 
@@ -214,23 +215,30 @@ sub __AddLayerTypes {
 		elsif ( $l->{"name"} =~ /^v\d$/ ) {
 
 			$l->{"plotType"} = Enums->LType_SIGINNER;
- 
-		}elsif ( $l->{"name"} =~ /^gold[cs]$/i ) {
+
+		}
+		elsif ( $l->{"name"} =~ /^gold[cs]$/i ) {
 
 			$l->{"plotType"} = Enums->LType_GOLDFINGER;
- 
-		} 
+
+		}
+		elsif ( $l->{"name"} =~ /^l[cs]$/i ) {
+
+			$l->{"plotType"} = Enums->LType_PEELABLE;
+
+		}
+		else {
+
+			$l->{"plotType"} = Enums->LType_ALL;
+		}
 
 	}
-	
+
 	# if layer has no type, it is unknown for rules, which combine layers into film
 	# Thus remove it from list
-	
-	@{ $self->{"layers"} } = grep { defined $_->{"plotType"}} @{ $self->{"layers"} };
+
+	@{ $self->{"layers"} } = grep { defined $_->{"plotType"} } @{ $self->{"layers"} };
 }
-
-
- 
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

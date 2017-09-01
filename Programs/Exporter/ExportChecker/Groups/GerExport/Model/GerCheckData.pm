@@ -41,8 +41,9 @@ sub OnCheckGroupData {
 	my $defaultInfo  = $dataMngr->GetDefaultInfo();
 	my $customerNote = $defaultInfo->GetCustomerNote();
 
-	my $pasteInfo   = $groupData->GetPasteInfo();
-	my $mpanelExist = $defaultInfo->StepExist("mpanel");
+	my $pasteInfo    = $groupData->GetPasteInfo();
+	my $jetprintInfo = $groupData->GetJetprintInfo();
+	my $mpanelExist  = $defaultInfo->StepExist("mpanel");
 
 	# 1) check if customer request paste files
 
@@ -163,6 +164,26 @@ sub OnCheckGroupData {
 		}
 	}
 
+	# 6) Jet print, check if featues are no to thin
+	if ( $jetprintInfo->{"exportGerbers"} ) {
+
+		my @lSilk = grep { $_->{"gROWname"} =~ /^p[cs]$/i } $defaultInfo->GetBoardBaseLayers();
+
+		foreach my $l (@lSilk) {
+
+			my %hist = CamHistogram->GetSymHistogram( $inCAM, $jobId, "panel", $l->{"gROWname"}, 1 );
+
+			my @syms = grep { $_->{"cnt"} > 0 } ( @{ $hist{"lines"} }, @{ $hist{"arcs"} } );
+
+			my @thinSyms = grep { $_ < 120 } map { $_->{"sym"} =~ m/\w(\d+)/ } @syms;
+
+			if ( scalar(@thinSyms) ) {
+				$dataMngr->_AddErrorResult( "Jetprint data",
+											"Too thin features in silkscreen layer \"" . $l->{"gROWname"} . "\". Min thickness of feature is 130µm" );
+			}
+		}
+	}
+	
 }
 
 sub __PasteLayersExist {

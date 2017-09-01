@@ -188,7 +188,9 @@ sub __GoldFrame {
 
 			# 2) Do check if old gold finger are connected
 			my $mess = "";
-			unless ( CamGoldArea->GoldFingersConnected( $inCAM, $jobId, \$mess ) ) {
+			my @layers = ($l);
+			
+			unless ( CamGoldArea->GoldFingersConnected( $inCAM, $jobId, \@layers, \$mess ) ) {
 
 				$itemRes->AddError("Error during insert \"gold connector frame\": $mess");
 			}

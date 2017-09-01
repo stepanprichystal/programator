@@ -19,7 +19,7 @@ use aliased 'CamHelpers::CamStepRepeat';
 use aliased 'CamHelpers::CamHelper';
 use aliased 'CamHelpers::CamStep';
 use aliased 'CamHelpers::CamLayer';
-
+use aliased 'CamHelpers::CamStep';
 
 #-------------------------------------------------------------------------------------------#
 #  Public method
@@ -38,32 +38,35 @@ sub Run {
 	my $self = shift;
 	my $mess = shift;
 
-	my $inCAM = $self->{"inCAM"};
-	my $jobId = $self->{"jobId"};
-	my $isPool   = $self->{"isPool"};
+	my $inCAM  = $self->{"inCAM"};
+	my $jobId  = $self->{"jobId"};
+	my $isPool = $self->{"isPool"};
 
 	# Check only standard orders
-	if($isPool){
+	if ( $isPool ) {
 		return 1;
 	}
 
 	my $result = 1;
 
-	if ( $self->{"isPool"} ) {
-		return $result;
+	# 1) Delete coupons (test coupons were be put to pcb panel previously, today not)
+	
+	my @couponSteps = grep { $_ =~ /coupon_\d+vv/i } CamStep->GetAllStepNames($inCAM, $jobId);
+ 
+	foreach my $s (@couponSteps) {
+
+		if ( CamHelper->StepExists( $inCAM, $jobId, $s ) ) {
+			$inCAM->COM( "delete_entity", "job" => $jobId, "name" => $s, "type" => "step" );
+		}
 	}
 
-	
-	
-	# 1)
+	# 2) Delete old schema + all from panel board layer (if autopan_delete, it doesnt delete non schema features)
 
 	my $layerCnt = CamJob->GetSignalLayerCnt( $inCAM, $jobId );
 
 	my @steps = CamStepRepeat->GetUniqueStepAndRepeat( $inCAM, $jobId, "panel" );
 
 	$inCAM->COM( "set_subsystem", "name" => "Panel-Design" );
-
-	# 1) Delete old schema + all from panel board layer (if autopan_delete, it doesnt delete non schema features)
 
 	CamHelper->SetStep( $inCAM, "panel" );
 	CamLayer->ClearLayers($inCAM);
@@ -76,7 +79,7 @@ sub Run {
 	$inCAM->COM('sel_delete');
 	CamLayer->ClearLayers($inCAM);
 
-	# 2) Insert new schema
+	# 3) Insert new schema
 
 	my $schema = undef;
 

@@ -402,9 +402,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $mess = "";
 
-	my $result = CamCopperArea->GoldFingersConnected( $inCAM, $jobName, \$mess );
-
-	print $result. " - $mess";
+ 
 
 	#
 	#	use aliased 'CamHelpers::CamCopperArea';

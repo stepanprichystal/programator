@@ -90,6 +90,13 @@ sub __BuildRules {
 	$rule = $self->_AddRule( Enums->Ori_HORIZONTAL );
 	$rule->AddSingleTypes( Enums->LType_GOLDFINGER );	
 	
+	# add other layers only  if is not already used in result set created by "multiCreator"
+	unless ( $self->__PlotTypeUsed( \@ruleSetMulti, Enums->LType_PEELABLE )) {
+		
+		$rule = $self->_AddRule( Enums->Ori_HORIZONTAL );
+		$rule->AddSingleTypes( Enums->LType_PEELABLE );
+	}	
+	
 }
 
 # Tell if plot type is already used in rulesets created by "multi creator"

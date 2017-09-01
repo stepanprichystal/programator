@@ -132,9 +132,17 @@ sub __ExportLayers {
 
 
 		# 5) export gerbers
-		my $fiducDCode = $self->__ExportGerberLayer( $l->{"gROWname"}, $resultItem );
-
+		my $fiducDCode = undef;
+		my $tmpFile = $self->__ExportGerberLayer( $l->{"gROWname"}, \$fiducDCode, $resultItem );
+		
+		# 6) export xml
 		$self->{"exportXml"}->Export( $l, $fiducDCode );
+		
+		# 7) Copy file to mdi folder after exportig xml template
+		my $finalName = EnumsPaths->Jobs_PCBMDI . $jobId . $l->{"gROWname"} . "_mdi.ger";
+		copy( $tmpFile, $finalName ) or die "Unable to copy mdi gerber file from: $tmpFile.\n";
+		unlink($tmpFile);
+		
 
 		#  reise result of export
 		$self->_OnItemResult($resultItem);
@@ -296,6 +304,7 @@ sub __GetFrLimits {
 sub __ExportGerberLayer {
 	my $self          = shift;
 	my $layerName     = shift;
+	my $fiducDCode = shift;
 	my $resultItemGer = shift;
 
 	my $inCAM = $self->{"inCAM"};
@@ -324,17 +333,10 @@ sub __ExportGerberLayer {
 
 	# 2) Add fiducial mark on the bbeginning of gerber data
   	CamHelper->SetStep($inCAM, $self->{"step"});
-	my $fiducDCode = FiducMark->AddalignmentMark( $inCAM, $jobId, $layerName, 'inch', $tmpFullPath, 'cross_*', $self->{"step"} );
+	$$fiducDCode = FiducMark->AddalignmentMark( $inCAM, $jobId, $layerName, 'inch', $tmpFullPath, 'cross_*', $self->{"step"} );
 	CamHelper->SetStep($inCAM, $self->{"mdiStep"});
-	 
 
-	# 3) Copy file to mdi folder
-	my $finalName = EnumsPaths->Jobs_PCBMDI . $jobId . $layerName . "_mdi.ger";
-	copy( $tmpFullPath, $finalName ) or die "Unable to copy mdi gerber file from: $tmpFullPath.\n";
-
-	unlink($tmpFullPath);
-
-	return $fiducDCode;
+	return $tmpFullPath;
 }
 
 # Cut layer data, according physic dimension of pcb

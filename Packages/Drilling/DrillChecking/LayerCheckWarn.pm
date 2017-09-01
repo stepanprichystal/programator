@@ -63,6 +63,10 @@ sub CheckNCLayers {
 
 		my %attHist = CamHistogram->GetAttHistogram( $inCAM, $jobId, $stepName, $l->{"gROWname"} );
 		$l->{"attHist"} = \%attHist;
+		
+		my %symHist = CamHistogram->GetSymHistogram( $inCAM, $jobId, $stepName, $l->{"gROWname"} );
+		$l->{"symHist"} = \%symHist;
+
 
 		if ( $l->{"gROWlayer_type"} eq "rout" ) {
 
@@ -86,6 +90,12 @@ sub CheckNCLayers {
 
 	# 2) Check if tool parameters are set correctly
 	unless ( $self->CheckNonBoardLayers( $inCAM, $jobId, $mess ) ) {
+
+		$result = 0;
+	}
+
+	# 1) Check floating point diameters
+	unless ( $self->CheckFloatDiemeters( $inCAM, $jobId, $stepName, \@layers, $mess ) ) {
 
 		$result = 0;
 	}
@@ -121,10 +131,10 @@ sub CheckToolParameters {
 			$result = 0;
 			$$mess .= "\n";
 		}
-		
+
 		# 4) Check if rout doesn't contain tool size smaller than 500
 		if ( $l->{"gROWlayer_type"} eq "rout" ) {
- 
+
 			my @unitTools = $l->{"uniDTM"}->GetTools();
 
 			foreach my $t (@unitTools) {
@@ -145,8 +155,6 @@ sub CheckToolParameters {
 		}
 
 	}
-
-	
 
 	return $result;
 }
@@ -170,7 +178,7 @@ sub CheckNonBoardLayers {
 
 	if ( scalar(@nonBoard) ) {
 
-		@nonBoard = map { "\"".$_->{"gROWname"}."\"" } @nonBoard;
+		@nonBoard = map { "\"" . $_->{"gROWname"} . "\"" } @nonBoard;
 		my $str = join( "; ", @nonBoard );
 
 		$result = 0;
@@ -180,7 +188,65 @@ sub CheckNonBoardLayers {
 
 	return $result;
 }
+
+# Check if diameters are integer numbers, not float.
+# Only layer LAYERTYPE_plt_nMill, because holes with various diameters are inserted automatically into this layer
+#  (during final route creation eg)
+sub CheckFloatDiemeters {
+	my $self   = shift;
+	my $inCAM  = shift;
+	my $jobId  = shift;
+	my $step   = shift;
+	my @layers = @{ shift(@_) };
+	my $mess   = shift;
+
+	my $result = 1;
+
+	my @t = ();
+
+	push( @t, EnumsGeneral->LAYERTYPE_nplt_nMill );
+	@layers = $self->__GetLayersByType( \@layers, \@t );
+
+	foreach my $l (@layers) {
+
+			my %hist = %{$l->{"symHist"}};
+			my @syms =  ( @{ $hist{"lines"} }, @{ $hist{"arcs"} }, @{ $hist{"pads"}} );
+
+			my @floatDim = map {$_->{"sym"} } grep { $_->{"sym"} =~ /^\w\d+\.\d+$/ } @syms;
+ 			@floatDim = uniq(@floatDim) ;
  
+ 			if(scalar(@floatDim)){
+ 				
+ 				my $str = join(", ", @floatDim);
+ 				
+ 				$result = 0;
+				$$mess .= "Layer \"".$l->{"gROWname"}."\" contains tools, whose diameters contain decimal point: $str. Is it ok? \n";
+ 			}
+	}
+	
+	return $result;
+
+}
+
+sub __GetLayersByType {
+	my $self   = shift;
+	my @layers = @{ shift(@_) };
+	my @t      = @{ shift(@_) };
+
+	my @matchL = ();
+
+	foreach my $l (@layers) {
+
+		my $match = scalar( grep { $_ eq $l->{"type"} } @t );
+
+		if ($match) {
+
+			push( @matchL, $l );
+		}
+
+	}
+	return @matchL;
+}
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
@@ -189,20 +255,20 @@ sub CheckNonBoardLayers {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-  use aliased 'Packages::Drilling::DrillChecking::LayerCheckWarn';
+	use aliased 'Packages::Drilling::DrillChecking::LayerCheckWarn';
 
-  use aliased 'Packages::InCAM::InCAM';
+	use aliased 'Packages::InCAM::InCAM';
 
-  my $inCAM = InCAM->new();
-  my $jobId = "f71555";
+	my $inCAM = InCAM->new();
+	my $jobId = "f52457";
 
-  my $mess = "";
+	my $mess = "";
 
-  my $result = LayerCheckWarn->CheckNCLayers( $inCAM, $jobId, "o+1", undef, \$mess );
+	my $result = LayerCheckWarn->CheckNCLayers( $inCAM, $jobId, "panel", undef, \$mess );
 
-  print STDERR "Result is $result \n";
+	print STDERR "Result is $result \n";
 
-  print STDERR " $mess \n";
+	print STDERR " $mess \n";
 
 }
 

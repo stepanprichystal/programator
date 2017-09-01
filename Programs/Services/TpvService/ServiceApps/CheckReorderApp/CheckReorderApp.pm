@@ -177,17 +177,7 @@ sub __ProcessJob {
 	# 3) Do all controls and return check which are neet to be repair manualz bz tpv user
 	my $checkReorder = CheckReorder->new( $inCAM, $jobId );
 	my @manCh = $checkReorder->RunChecks();
-
-	my $pcbInfo = HegMethods->GetBasePcbInfo($jobId);
-
-	my $revize = $pcbInfo->{"stav"} eq 'R' ? 1 : 0;    # indicate if pcb need user-manual process before go to produce
-
-	if ($revize) {
-		
-		my %inf = ("text" => "Deska je ve stavu \"revize\", uprav data jobu podle požadavkù zákazníka nebo výroby.", "critical" => 0);
-		
-		push( @manCh, \%inf);
-	}
+ 
 
 	if ($jobExist) {
 		$inCAM->COM( "check_inout", "job" => "$jobId", "mode" => "in", "ent_type" => "job" );

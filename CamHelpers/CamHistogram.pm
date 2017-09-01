@@ -31,7 +31,7 @@ sub GetAttHistogram {
 	my $jobId     = shift;
 	my $stepName  = shift;
 	my $layerName = shift;
-	my $breakSR   = shift;
+	my $breakSR   = shift; # Default is SR
 	my $selected  = shift;
 
 	my $sr = "break_sr+";
@@ -172,7 +172,7 @@ sub GetFeatuesHistogram {
 	my $jobId     = shift;
 	my $stepName  = shift;
 	my $layerName = shift;
-	my $breakSR   = shift;
+	my $breakSR   = shift; # default is with SR
 
 	my $sr = "break_sr";
 	if ( defined $breakSR && $breakSR == 0 ) {

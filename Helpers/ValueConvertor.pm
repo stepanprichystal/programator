@@ -62,6 +62,7 @@ sub GetJobLayerTitle {
 		$en{"ls"} = "Peelable mask (bot)";
 		$en{"gc"} = "Carbon paste (top)";
 		$en{"gs"} = "Carbon paste (bot)";
+		
 
 		my %czl = ();
 		$czl{"pc"} = "Potisk top";

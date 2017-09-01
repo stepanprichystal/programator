@@ -90,11 +90,13 @@ sub __BuildRules {
 		$rule->AddSingleTypes( Enums->LType_SIGOUTER, Enums->LType_SIGOUTER );
 
 	}
-
-	# 
-
+ 
 	$rule = $self->_AddRule( Enums->Ori_VERTICAL );
 	$rule->AddSingleTypes( Enums->LType_GOLDFINGER, Enums->LType_GOLDFINGER );
+	
+	
+	$rule = $self->_AddRule( Enums->Ori_VERTICAL );
+	$rule->AddSingleTypes( Enums->LType_PEELABLE, Enums->LType_PEELABLE );
 
 }
 

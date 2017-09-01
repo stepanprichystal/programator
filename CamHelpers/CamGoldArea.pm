@@ -158,16 +158,14 @@ sub GoldFingersConnected {
 	my $self  = shift;
 	my $inCAM = shift;
 	my $jobId = shift;
+	my @layers = @{shift(@_)};
 	my $mess  = shift;
 
+
 	my $stepName = "panel";
-
-	my @layers = ();
-
+ 
 	my @goldLayer = ();
-
-	push( @layers, "c" ) if ( CamHelper->LayerExists( $inCAM, $jobId, "c" ) );
-	push( @layers, "s" ) if ( CamHelper->LayerExists( $inCAM, $jobId, "s" ) );
+ 
 
 	CamHelper->SetStep( $inCAM, $stepName );
 

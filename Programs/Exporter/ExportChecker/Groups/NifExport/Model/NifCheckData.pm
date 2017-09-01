@@ -231,6 +231,16 @@ sub OnCheckGroupData {
 		}
 	}
 	
+	# 11) Check if when exist customer panel, mpanel doesn't exist
+	if ( $custPnlExist eq "yes" && $defaultInfo->StepExist("mpanel") ) {
+
+		$dataMngr->_AddErrorResult(
+							  "Customer set",
+							  "Pokud je v jobu nastaven zákaznický panel (atribut job:  customer_panel=yes), job nesmí obsahovat step \"mpanel\". "
+								. "Flatennuj step \"mpanel\" do \"o+1\""
+		);
+	}
+	
 
 	# 10) Check if exist pressfit, if is checked in nif
 	if ( $defaultInfo->GetPressfitExist() && !$groupData->GetPressfit() ) {

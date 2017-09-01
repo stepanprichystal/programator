@@ -300,7 +300,7 @@ sub __DoChecksAsyncWorker {
 	$self->{"processed"} = 0;
 
 	$ch->{"onItemResult"}->Add( sub { $self->__OnCheckHandler( @_, ); } );
-
+ 
 	my @arr = $ch->RunChecks();
 
 	my %res : shared = ();
@@ -316,7 +316,7 @@ sub __DoChecksAsyncWorker {
 sub __OnCheckHandler {
 	my $self     = shift;
 	my $itemRes  = shift;
-	my $progress = shift;    # start/end
+
 
 	$self->{"processed"}++;
 

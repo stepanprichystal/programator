@@ -9,6 +9,7 @@ use base('Packages::ItemResult::ItemEventMngr');
 #3th party library
 use strict;
 use warnings;
+use Log::Log4perl qw(get_logger :levels);
 
 #local library
 use aliased 'Helpers::GeneralHelper';
@@ -74,13 +75,27 @@ sub __ExportNcSet {
 	my $inCAM    = $self->{"inCAM"};
 	my $stepName = $self->{"stepName"};
 
-	my $setName = GeneralHelper->GetGUID();
+	
 
 	$inCAM->COM( 'set_step', "name" => $stepName );
 
 	$inCAM->COM( "open_sets_manager", "test_current" => "no" );
 
-	$inCAM->COM( 'nc_create', "ncset" => $setName, "device" => $machine, "lyrs" => $layerName, "thickness" => 0 );
+	my $setName = undef;
+
+	# This command sometimes fail - Illegal entity name. Put here three attempts
+	foreach (1..3){
+		
+		$setName = GeneralHelper->GetGUID();	
+		
+		$inCAM->HandleException(1);
+		$inCAM->COM( 'nc_create', "ncset" => $setName, "device" => $machine, "lyrs" => $layerName, "thickness" => 0 );
+		$inCAM->HandleException(0);
+		
+		last if( $inCAM->GetStatus() == 0);	
+		
+		get_logger("abstractQueue")->error( "Error during command nc_create\n ". $inCAM->GetExceptionError() );
+	}
 
 	$inCAM->COM( "nc_set_advanced_params", "layer" => $layerName, "ncset" => $setName, "parameters" => "(iol_sm_g84_radius=no)" );
 

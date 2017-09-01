@@ -316,10 +316,10 @@ my ( $package, $filename, $line ) = caller;
 
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-		my $pcbId        = "f71279";
+		my $pcbId        = "f81679";
 		my $layerCnt     = 6;
-		my @innerCuUsage = ( 30, 30, 30, 40 );
-		my $outerCuThick = 18;
+		my @innerCuUsage = ( 58, 15, 12, 44 );
+		my $outerCuThick = 35;
 		my $pcbClass     = 6;
 
 		use aliased 'Packages::Stackup::StackupDefault';

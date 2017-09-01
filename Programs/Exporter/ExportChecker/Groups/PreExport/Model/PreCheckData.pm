@@ -22,6 +22,7 @@ use aliased 'CamHelpers::CamHistogram';
 use aliased 'Enums::EnumsProducPanel';
 use aliased 'CamHelpers::CamGoldArea';
 use aliased 'CamHelpers::CamStepRepeat';
+use aliased 'CamHelpers::CamAttributes';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -313,14 +314,15 @@ sub OnCheckGroupData {
 		if ( $h > 408 ) {
 
 			$dataMngr->_AddErrorResult(
-				"Panel dimension",
-				"Příliš velký panel. \nPokud job obsahuje zlacený konektor nebo povrch je galvanické zlato,"
-				  . " panel musí mýt maximálně tak velký jako malý standardní panel."
+										"Panel dimension",
+										"Příliš velký panel. \nPokud job obsahuje zlacený konektor nebo povrch je galvanické zlato,"
+										  . " panel musí mýt maximálně tak velký jako malý standardní panel."
 			);
 		}
 
 	}
 
+	
 }
 
 #-------------------------------------------------------------------------------------------#

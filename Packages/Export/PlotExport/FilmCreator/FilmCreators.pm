@@ -96,21 +96,36 @@ sub GetRuleSets {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	#my $self             = shift;
-	#	my $inCAM            = shift;
-#	use aliased 'Packages::InCAM::InCAM';
+
+	use aliased 'Packages::InCAM::InCAM';
+	use aliased 'Packages::Export::PlotExport::FilmCreator::FilmCreators';
 #	use aliased 'Packages::Export::PlotExport::FilmCreator::MultiFilmCreator';
+	use aliased 'CamHelpers::CamJob';
+#	use aliased 'Packages::Export::PlotExport::FilmCreator::SingleFilmCreator'
+	use aliased 'Packages::Export::PlotExport::FilmCreator::Helper';
+	
+	my $inCAM = InCAM->new();
 #
-#	use aliased 'CamHelpers::CamJob';
-#	my $inCAM = InCAM->new();
-#
-#	my $jobId = "f13609";
+	my $jobId = "f81829";
 #
 #	my @layers = CamJob->GetBoardBaseLayers( $inCAM, $jobId );
 #
 #	my $creator = MultiFilmCreator->new( $inCAM, $jobId, \@layers );
 
 	#$creator->GetPlotterSets();
+	
+	my %smallLim = ();
+	my %bigLim   = ();
+	my @layers = CamJob->GetBoardBaseLayers($inCAM, $jobId );
+	
+	my $fc = FilmCreators->new( $inCAM, $jobId );
+	
+	my $result = Helper->GetPcbLimits( $inCAM, $jobId, \%smallLim, \%bigLim );
+	$fc->Init( \@layers, \%smallLim, \%bigLim );
+	
+	my @rs = $fc->GetRuleSets();
+	
+	print "test";
 
 }
 
