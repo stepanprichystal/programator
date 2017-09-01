@@ -220,7 +220,7 @@ sub CheckFloatDiemeters {
  				my $str = join(", ", @floatDim);
  				
  				$result = 0;
-				$$mess .= "Layer \"".$l->{"gROWname"}."\" contains tools, whose diameters contain decimal point: $str. Is it ok? \n";
+				$$mess .= "Layer \"".$l->{"gROWname"}."\" contains tools, where diameters contain decimal point: $str. Is it ok? \n";
  			}
 	}
 	

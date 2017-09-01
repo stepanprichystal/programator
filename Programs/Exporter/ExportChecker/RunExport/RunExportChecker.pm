@@ -102,7 +102,7 @@ sub __CheckReorder {
 		my $messMngr = MessageMngr->new("Exporter utility");
 
 		my @mess1 = (
-			"Unable to run \"Check reorder application\":",
+			"Unable to run \"Exporter checker\":",
 			"There are re-orders for pcbid \"$jobId\" where \"Aktualni krok\" is one of: \"zpracovani-rucni\", \"checkReorder-error\", \"processReorder-error\" in Helios.",
 			"First process job by \"Reorder script\" (Packages\\Reorder\\ReorderApp\\RunReorder\\RunReorderApp.pl)");
 			$messMngr->ShowModal( -1, EnumsGeneral->MessageType_SYSTEMERROR, \@mess1 );
