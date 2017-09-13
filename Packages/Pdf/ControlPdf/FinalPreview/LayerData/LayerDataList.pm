@@ -50,6 +50,7 @@ sub __InitLayers {
 	push( @{ $self->{"layers"} }, LayerData->new( Enums->Type_PLTTHROUGHNC ) );
 	push( @{ $self->{"layers"} }, LayerData->new( Enums->Type_NPLTTHROUGHNC ) );
 	push( @{ $self->{"layers"} }, LayerData->new( Enums->Type_GOLDFINGER ) );
+	push( @{ $self->{"layers"} }, LayerData->new( Enums->Type_PEELABLE ) );
 }
 
 sub GetLayers {
@@ -100,6 +101,10 @@ sub SetLayers {
 			elsif ( $l->{"gROWname"} =~ /^pc$/ ) {
 
 				$self->__AddToLayerData( $l, Enums->Type_SILK );
+
+			}elsif ( $l->{"gROWname"} =~ /^lc$/ ) {
+
+				$self->__AddToLayerData( $l, Enums->Type_PEELABLE );
 
 			}
 			elsif ( $l->{"type"}

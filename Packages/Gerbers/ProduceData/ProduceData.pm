@@ -19,6 +19,7 @@ use aliased 'Helpers::GeneralHelper';
 use aliased 'Packages::Gerbers::ProduceData::LayerData::LayerDataList';
 use aliased 'Packages::Gerbers::ProduceData::OutputLayers';
 use aliased 'Packages::Gerbers::ProduceData::OutputInfo';
+use aliased 'Packages::Gerbers::ProduceData::OutputPdf';
 use aliased 'Packages::Gerbers::ProduceData::Enums';
 use aliased 'CamHelpers::CamStep';
 use aliased 'CamHelpers::CamHelper';
@@ -47,6 +48,8 @@ sub new {
 	$self->{"layerList"}    = LayerDataList->new( $self->{"jobId"} );
 	$self->{"outputLayers"} = OutputLayers->new( $self->{"inCAM"}, $self->{"jobId"}, $filesDir );
 	$self->{"outputInfo"}   = OutputInfo->new( $self->{"inCAM"}, $self->{"jobId"}, $filesDir );
+	$self->{"outputPdf"}   = OutputPdf->new( $self->{"inCAM"}, $self->{"jobId"}, $filesDir );
+	
 
 	$self->{"outputLayers"}->{"onItemResult"}->Add( sub { $self->__OnLayersResult(@_) } );
 
@@ -84,6 +87,9 @@ sub Create {
 
 	# Prepare info file readme.txt
 	$self->{"outputInfo"}->Output( $self->{"layerList"} );
+	
+	# Prepare stackup pdf
+	$self->{"outputPdf"}->Output( $self->{"layerList"} );
 
 	$self->__ZipFiles();
 

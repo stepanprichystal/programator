@@ -19,6 +19,7 @@ use aliased 'Helpers::FileHelper';
 use aliased 'Enums::EnumsPaths';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'Packages::CAMJob::OutputData::Enums' => "EnumsOutput";
+use aliased 'CamHelpers::CamJob';
 
 #-------------------------------------------------------------------------------------------#
 #  Interface
@@ -32,6 +33,8 @@ sub new {
 	$self->{"inCAM"}    = shift;
 	$self->{"jobId"}    = shift;
 	$self->{"filesDir"} = shift;
+	
+	$self->{"layerCnt"} = CamJob->GetSignalLayerCnt( $self->{"inCAM"}, $self->{"jobId"} );
 
 	return $self;
 }
@@ -103,7 +106,7 @@ sub Output {
 
 	push( @lines, "" );
 
-	push( @lines, " Other layers:" );
+	push( @lines, " Other files:" );
 	push( @lines, "" );
 
 	foreach my $l ( ( $layerList->GetLayersByType( EnumsOutput->Type_OUTLINE ), $layerList->GetLayersByType( EnumsOutput->Type_DRILLMAP ) ) ) {
@@ -111,6 +114,12 @@ sub Output {
 		push( @lines, $self->__CompleteLine( " - " . $l->GetName() . ".ger", $l->GetTitle() . $self->__GetInfo($l) ) );
 
 	}
+	
+	# Add info about extra files (stackup etc)
+	if ( $self->{"layerCnt"} > 2 ) {
+		push( @lines, $self->__CompleteLine( " - ".$self->{"jobId"}."stackup.pdf", "Pcb stackup"));
+	}
+	
 
 	push( @lines, "" );
 

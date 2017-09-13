@@ -73,6 +73,7 @@ sub __PrepareLayers {
 	$self->__PrepareOUTERCU( $layerList->GetLayerByType( Enums->Type_OUTERCU ) );
 	$self->__PrepareOUTERSURFACE( $layerList->GetLayerByType( Enums->Type_OUTERSURFACE ) );
 	$self->__PrepareGOLDFINGER( $layerList->GetLayerByType( Enums->Type_GOLDFINGER ) );
+	$self->__PreparePEELABLE( $layerList->GetLayerByType( Enums->Type_PEELABLE ) );
 	$self->__PrepareMASK( $layerList->GetLayerByType( Enums->Type_MASK ) );
 	$self->__PrepareSILK( $layerList->GetLayerByType( Enums->Type_SILK ) );
 	$self->__PreparePLTDEPTHNC( $layerList->GetLayerByType( Enums->Type_PLTDEPTHNC ) );
@@ -204,6 +205,28 @@ sub __PrepareGOLDFINGER {
 		
 		$layer->SetOutputLayer($resultL);
 
+	}
+}
+
+# Prepare Peelable mask
+sub __PreparePEELABLE {
+	my $self  = shift;
+	my $layer = shift;
+
+	unless ( $layer->HasLayers() ) {
+		return 0;
+	}
+ 
+	my $inCAM  = $self->{"inCAM"};
+	my @layers = $layer->GetSingleLayers();
+
+	if ( $layers[0] ) {
+
+		my $lName = GeneralHelper->GetGUID();
+
+		$inCAM->COM( "merge_layers", "source_layer" => $layers[0]->{"gROWname"}, "dest_layer" => $lName );
+
+		$layer->SetOutputLayer($lName);
 	}
 }
 
