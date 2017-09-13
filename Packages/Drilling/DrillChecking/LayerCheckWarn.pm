@@ -208,11 +208,10 @@ sub CheckFloatDiemeters {
 	@layers = $self->__GetLayersByType( \@layers, \@t );
 
 	foreach my $l (@layers) {
-
-			my %hist = %{$l->{"symHist"}};
-			my @syms =  ( @{ $hist{"lines"} }, @{ $hist{"arcs"} }, @{ $hist{"pads"}} );
-
-			my @floatDim = map {$_->{"sym"} } grep { $_->{"sym"} =~ /^\w\d+\.\d+$/ } @syms;
+		
+			my @tools = $l->{"uniDTM"}->GetTools();
+ 
+			my @floatDim = map {$_->GetDrillSize()."µm" } grep { $_->GetDrillSize() =~ /^\w\d+\.\d+$/ } @tools;
  			@floatDim = uniq(@floatDim) ;
  
  			if(scalar(@floatDim)){
@@ -220,7 +219,7 @@ sub CheckFloatDiemeters {
  				my $str = join(", ", @floatDim);
  				
  				$result = 0;
-				$$mess .= "Layer \"".$l->{"gROWname"}."\" contains tools, where diameters contain decimal point: $str. Is it ok? \n";
+				$$mess .= "Layer \"".$l->{"gROWname"}."\" contains tools, where drill diameters contain decimal point: $str. Is it ok? \n";
  			}
 	}
 	
