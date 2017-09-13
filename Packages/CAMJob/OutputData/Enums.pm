@@ -10,6 +10,7 @@ use constant {
 	Type_OUTLINE => "typeOutline",
 	Type_DOCUMENT => "typeDocument",
 	Type_DRILLMAP => "typeDrillMap",
+	Type_SPECIALSURF => "typeSpecialSurf",
 };
  
  use constant {

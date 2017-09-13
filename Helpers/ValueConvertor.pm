@@ -49,32 +49,35 @@ sub GetJobLayerTitle {
 	}
 
 	# board base layer
-	elsif ( $l->{"gROWname"} =~ /^[pmlg]?[cs]$/i ) {
+	elsif ( $l->{"gROWname"} =~ /^([pmlg]|gold)?[cs]$/i ) {
 
 		my %en = ();
-		$en{"pc"} = "Silk screen top";
-		$en{"ps"} = "Silk screen bot";
-		$en{"mc"} = "Solder mask top";
-		$en{"ms"} = "Solder mask bot";
+		$en{"pc"} = "Silk screen (top)";
+		$en{"ps"} = "Silk screen (bot)";
+		$en{"mc"} = "Solder mask (top)";
+		$en{"ms"} = "Solder mask (bot)";
 		$en{"c"}  = "Component layer (top)";
 		$en{"s"}  = "Solder layer (bot)";
 		$en{"lc"} = "Peelable mask (top)";
 		$en{"ls"} = "Peelable mask (bot)";
 		$en{"gc"} = "Carbon paste (top)";
 		$en{"gs"} = "Carbon paste (bot)";
-		
+		$en{"goldc"} = "Gold fingers (top)";
+		$en{"golds"} = "Gold fingers (bot)";
 
 		my %czl = ();
-		$czl{"pc"} = "Potisk top";
-		$czl{"ps"} = "Potisk bot";
-		$czl{"mc"} = "Nepájivá maska top";
-		$czl{"ms"} = "Nepájivá maska bot";
+		$czl{"pc"} = "Potisk (top)";
+		$czl{"ps"} = "Potisk (bot)";
+		$czl{"mc"} = "Nepájivá maska (top)";
+		$czl{"ms"} = "Nepájivá maska (bot)";
 		$czl{"c"}  = "Strana součástek (top)";
 		$czl{"s"}  = "Strana spojů (bot)";
 		$czl{"lc"} = "Snímací lak (top)";
 		$czl{"ls"} = "Snímací lak (bot)";
 		$czl{"gc"} = "Grafit (top)";
 		$czl{"gs"} = "Grafit (bot)";
+		$czl{"goldc"} = "Zlacený konektor (top)";
+		$czl{"golds"} = "Zlacený konektor (bot)";		
 
 		$title = $en{ $l->{"gROWname"} };
 		if ($cz) {
@@ -418,7 +421,7 @@ sub GetFileNameByLayer {
 	}
 
 	# board base layer
-	elsif ( $l->{"gROWname"} =~ /^[pmlg]?[cs]$/i ) {
+	elsif ( $l->{"gROWname"} =~ /^([pmlg]|gold)?[cs]$/i ) {
 
 		my %en = ();
 		$en{"pc"} = "plt";
@@ -431,6 +434,8 @@ sub GetFileNameByLayer {
 		$en{"ls"} = "ls";
 		$en{"gc"} = "gc";
 		$en{"gs"} = "gs";
+		$en{"goldc"} = "goldfingerst";
+		$en{"golds"} = "goldfingersb";
 
 		$name = $en{ $l->{"gROWname"} };
 

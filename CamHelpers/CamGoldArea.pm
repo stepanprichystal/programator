@@ -20,6 +20,7 @@ use aliased 'Helpers::GeneralHelper';
 use aliased 'Packages::Polygon::Features::Features::Features';
 use aliased 'CamHelpers::CamStepRepeat';
 use aliased 'CamHelpers::CamCopperArea';
+
 #-------------------------------------------------------------------------------------------#
 #   Package methods
 #-------------------------------------------------------------------------------------------#
@@ -34,7 +35,7 @@ sub GoldFingersExist {
 	my $layer = shift;
 
 	my $result = 0;
- 
+
 	my @layers = ();
 
 	if ( defined $layer ) {
@@ -74,7 +75,7 @@ sub GoldFingersExist {
 			last;
 		}
 	}
-	
+
 	return $result;
 }
 
@@ -132,10 +133,12 @@ sub GetGoldFingerArea {
 			my %areaTmp;
 
 			if ( $l eq "c" ) {
-				%areaTmp = CamCopperArea->GetCuAreaMask( $cuThickness, $pcbThick, $inCAM, $jobId, $stepName, $l . "__gold__", undef, "m" . $l, undef );
+				%areaTmp =
+				  CamCopperArea->GetCuAreaMask( $cuThickness, $pcbThick, $inCAM, $jobId, $stepName, $l . "__gold__", undef, "m" . $l, undef );
 			}
 			elsif ( $l eq "s" ) {
-				%areaTmp = CamCopperArea->GetCuAreaMask( $cuThickness, $pcbThick, $inCAM, $jobId, $stepName, undef, $l . "__gold__", undef, "m" . $l );
+				%areaTmp =
+				  CamCopperArea->GetCuAreaMask( $cuThickness, $pcbThick, $inCAM, $jobId, $stepName, undef, $l . "__gold__", undef, "m" . $l );
 			}
 
 			$area{"area"}       += $areaTmp{"area"};
@@ -155,17 +158,15 @@ sub GetGoldFingerArea {
 
 # Return if all gold fingers are connected to panel frame pad
 sub GoldFingersConnected {
-	my $self  = shift;
-	my $inCAM = shift;
-	my $jobId = shift;
-	my @layers = @{shift(@_)};
-	my $mess  = shift;
-
+	my $self   = shift;
+	my $inCAM  = shift;
+	my $jobId  = shift;
+	my @layers = @{ shift(@_) };
+	my $mess   = shift;
 
 	my $stepName = "panel";
- 
+
 	my @goldLayer = ();
- 
 
 	CamHelper->SetStep( $inCAM, $stepName );
 
@@ -232,10 +233,44 @@ sub GoldFingersConnected {
 
 	if ( scalar(@wrongL) ) {
 		$result = 0;
-		$$mess .= "No conduct connection between some gold fingers and \"gold holder\" at layers: \"" . join( "; ", @wrongL )."\"";
+		$$mess .= "No conduct connection between some gold fingers and \"gold holder\" at layers: \"" . join( "; ", @wrongL ) . "\"";
 	}
 
 	return $result;
+}
+
+# Return goldfinger count
+# (count is computed from all features, which has .gold_plated attribut)
+sub GetGoldFingerCount {
+	my $self  = shift;
+	my $inCAM = shift;
+	my $jobId = shift;
+	my $step  = shift;
+	my $layer = shift;
+
+	my $count = 0;
+
+	my $infoFile = $inCAM->INFO(
+								 units           => 'mm',
+								 angle_direction => 'ccw',
+								 entity_type     => 'layer',
+								 entity_path     => "$jobId/$step/$layer",
+								 data_type       => 'FEATURES',
+								 options         => 'break_sr+',
+								 parse           => 'no'
+	);
+
+	my @feat = ();
+
+	if ( open( my $f, "<" . $infoFile ) ) {
+		@feat = <$f>;
+		close($f);
+		unlink($infoFile);
+	}
+
+	my @platedFeats = grep { $_ =~ /\.gold_plating/ } @feat;
+
+	return scalar(@platedFeats);
 }
 
 #-------------------------------------------------------------------------------------------#
@@ -259,11 +294,9 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $mess = "";
 
-	my $result =  CamGoldArea->GoldFingersExist( $inCAM, $jobName, "o+1" );
+	my $result = CamGoldArea->GetGoldFingerCount( $inCAM, $jobName, "panel", "s" );
 
 	print $result. " - $mess";
-
-  
 
 }
 
