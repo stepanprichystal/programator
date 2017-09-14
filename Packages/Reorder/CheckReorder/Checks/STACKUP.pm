@@ -83,7 +83,7 @@ sub Run {
 				$self->_AddChange(
 								   "Vypadá to, že se jedná o staré defaultní složení FR4 s jádrem 900µm. "
 									 . "Pokud je to pravda (není to vyložený požadavek zákazníka!), "
-									 . "předělej na nové standardní složení IS410.",
+									 . "předělej na nové standardní složení IS400.",
 								   0
 				);
 			}
