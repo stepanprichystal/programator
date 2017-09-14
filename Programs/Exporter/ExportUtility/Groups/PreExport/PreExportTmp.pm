@@ -64,7 +64,7 @@ sub Run {
 		my @mess1 = ( "Kontrola pred exportem", $str );
 		$messMngr->ShowModal( -1, EnumsGeneral->MessageType_ERROR, \@mess1 );
 
-		return 0;
+		#return 0;
 	}
 
 	my $taskData    = $unit->GetExportData($inCAM);

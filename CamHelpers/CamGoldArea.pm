@@ -190,8 +190,8 @@ sub GoldFingersConnected {
 			unlink($infoFile);
 		}
 
-		my @platedFeats = grep { $_ =~ /\.gold_plating/ } @feat;
-		if ( scalar(@platedFeats) ) {
+		#my @platedFeats = grep { $_ =~ /\.gold_plating/ } @feat;
+		if ( scalar( grep { $_ =~ /\.gold_plating/ } @feat ) ) {
 
 			my $goldHolder = ( grep { $_ =~ /gold-pad/ } @feat )[0];
 
@@ -214,10 +214,24 @@ sub GoldFingersConnected {
 			$inCAM->COM( "sel_board_net_feat", "operation" => "select", "x" => $x, "y" => $y, "tol" => 0, "use_ffilter" => "no" );
 			$inCAM->COM("sel_delete");    # delete all selected and check if some gold finger left
 
-			my $features = Features->new();
-			$features->Parse( $inCAM, $jobId, $stepName, $lName );
+			my $infoFile = $inCAM->INFO(
+										 units           => 'mm',
+										 angle_direction => 'ccw',
+										 entity_type     => 'layer',
+										 entity_path     => "$jobId/$stepName/$lName",
+										 data_type       => 'FEATURES',
+										 parse           => 'no'
+			);
 
-			if ( scalar( grep { defined $_->{"att"}->{".gold_plating"} } $features->GetFeatures() ) ) {
+			my @featLeft = ();
+
+			if ( open( my $f, "<" . $infoFile ) ) {
+				@featLeft = <$f>;
+				close($f);
+				unlink($infoFile);
+			}
+
+			if ( scalar( grep { $_ =~ /\.gold_plating/ } @featLeft ) ) {
 
 				# some gold finger left, thus are not connected
 				$inf{"result"} = 0;

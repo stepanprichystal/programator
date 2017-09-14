@@ -203,7 +203,7 @@ sub __PrepareGOLDFINGER {
 			die "Reference layer $goldL doesn't exist.";
 		}
 
-		my $resultL = Helper->FeaturesByRefLayer( $inCAM, $jobId, $layers[0]->{"gROWname"}, $goldL, $maskL, $self->{"profileLim"} );
+		my $resultL = Helper->FeaturesByRefLayer( $inCAM, $jobId, $baseCuL, $goldL, $maskL, $self->{"profileLim"} );
 		
 		$layer->SetOutputLayer($resultL);
 
@@ -240,7 +240,7 @@ sub __PrepareGRAFIT {
 			die "Reference layer $refL doesn't exist.";
 		}
 
-		my $resultL = Helper->FeaturesByRefLayer( $inCAM, $jobId, $layers[0]->{"gROWname"}, $refL, $maskL, $self->{"profileLim"} );
+		my $resultL = Helper->FeaturesByRefLayer( $inCAM, $jobId, $baseCuL, $refL, $maskL, $self->{"profileLim"} );
 		
 		$layer->SetOutputLayer($resultL);
 
