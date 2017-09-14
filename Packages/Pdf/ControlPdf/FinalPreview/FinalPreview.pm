@@ -155,6 +155,7 @@ sub __PrepareColors {
 	
 
 	$clrs{ Enums->Type_OUTERCU } = $outerCuClr;
+	$outerCuClr->Set3DEdges(1);
 
 	# Outer surface
 
@@ -170,17 +171,25 @@ sub __PrepareColors {
 	elsif ( $surface =~ /^i$/i || $surface =~ /^g$/i ) {
 		$outerSurfaceClr->SetTexture( Enums->Texture_GOLD );
 	}
+ 
 
 	# Gold fingers
 
 	my $goldFingerClr = LayerColor->new( Enums->Surface_TEXTURE, Enums->Texture_GOLD );
 	$clrs{ Enums->Type_GOLDFINGER } = $goldFingerClr;
+	 
 	
 	# Peelable mask
 	
 	my $peelableClr = LayerColor->new( Enums->Surface_TEXTURE, Enums->Texture_PEELABLE );
 	$clrs{ Enums->Type_PEELABLE } = $peelableClr; 
-	$peelableClr->Set3DEdges(1);
+	$peelableClr->Set3DEdges(5);
+	
+	# Grafit paste
+	
+	my $grafitClr = LayerColor->new( Enums->Surface_TEXTURE, Enums->Texture_GRAFIT );
+	$clrs{ Enums->Type_GRAFIT } = $grafitClr; 
+	 
 	
 
 	# Mask color

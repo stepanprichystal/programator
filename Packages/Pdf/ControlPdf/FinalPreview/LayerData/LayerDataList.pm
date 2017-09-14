@@ -51,6 +51,7 @@ sub __InitLayers {
 	push( @{ $self->{"layers"} }, LayerData->new( Enums->Type_NPLTTHROUGHNC ) );
 	push( @{ $self->{"layers"} }, LayerData->new( Enums->Type_GOLDFINGER ) );
 	push( @{ $self->{"layers"} }, LayerData->new( Enums->Type_PEELABLE ) );
+	push( @{ $self->{"layers"} }, LayerData->new( Enums->Type_GRAFIT ) );
 }
 
 sub GetLayers {
@@ -89,9 +90,6 @@ sub SetLayers {
 				$self->__AddToLayerData( $l, Enums->Type_OUTERCU );
 				$self->__AddToLayerData( $l, Enums->Type_OUTERSURFACE );
 
-				if ( $l->{".gold_plating"} ) {
-					$self->__AddToLayerData( $l, Enums->Type_GOLDFINGER );
-				}
 			}
 			elsif ( $l->{"gROWname"} =~ /^mc$/ ) {
 
@@ -102,9 +100,17 @@ sub SetLayers {
 
 				$self->__AddToLayerData( $l, Enums->Type_SILK );
 
+			}elsif ( $l->{"gROWname"} =~ /^goldc$/ ) {
+
+				$self->__AddToLayerData( $l, Enums->Type_GOLDFINGER );
+
 			}elsif ( $l->{"gROWname"} =~ /^lc$/ ) {
 
 				$self->__AddToLayerData( $l, Enums->Type_PEELABLE );
+
+			}elsif ( $l->{"gROWname"} =~ /^gc$/ ) {
+
+				$self->__AddToLayerData( $l, Enums->Type_GRAFIT );
 
 			}
 			elsif ( $l->{"type"}
@@ -158,11 +164,7 @@ sub SetLayers {
 
 				$self->__AddToLayerData( $l, Enums->Type_OUTERCU );
 				$self->__AddToLayerData( $l, Enums->Type_OUTERSURFACE );
-
-				if ( $l->{".gold_plating"} ) {
-					$self->__AddToLayerData( $l, Enums->Type_GOLDFINGER );
-				}
-
+ 
 			}
 			elsif ( $l->{"gROWname"} =~ /^ms$/ ) {
 
@@ -172,6 +174,18 @@ sub SetLayers {
 			elsif ( $l->{"gROWname"} =~ /^ps$/ ) {
 
 				$self->__AddToLayerData( $l, Enums->Type_SILK );
+
+			}elsif ( $l->{"gROWname"} =~ /^golds$/ ) {
+
+				$self->__AddToLayerData( $l, Enums->Type_GOLDFINGER );
+
+			}elsif ( $l->{"gROWname"} =~ /^ls$/ ) {
+
+				$self->__AddToLayerData( $l, Enums->Type_PEELABLE );
+
+			}elsif ( $l->{"gROWname"} =~ /^gs$/ ) {
+
+				$self->__AddToLayerData( $l, Enums->Type_GRAFIT );
 
 			}
 			elsif ( $l->{"type"}

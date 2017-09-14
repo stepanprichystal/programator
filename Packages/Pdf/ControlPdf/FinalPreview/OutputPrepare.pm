@@ -73,6 +73,7 @@ sub __PrepareLayers {
 	$self->__PrepareOUTERCU( $layerList->GetLayerByType( Enums->Type_OUTERCU ) );
 	$self->__PrepareOUTERSURFACE( $layerList->GetLayerByType( Enums->Type_OUTERSURFACE ) );
 	$self->__PrepareGOLDFINGER( $layerList->GetLayerByType( Enums->Type_GOLDFINGER ) );
+	$self->__PrepareGRAFIT( $layerList->GetLayerByType( Enums->Type_GRAFIT ) );
 	$self->__PreparePEELABLE( $layerList->GetLayerByType( Enums->Type_PEELABLE ) );
 	$self->__PrepareMASK( $layerList->GetLayerByType( Enums->Type_MASK ) );
 	$self->__PrepareSILK( $layerList->GetLayerByType( Enums->Type_SILK ) );
@@ -190,9 +191,10 @@ sub __PrepareGOLDFINGER {
 
 		# Prepare reference layer (gold + mask), which specifies area, where is hard gold
 
-		my $goldL = "gold" . $layers[0]->{"gROWname"};
-		my $maskL = "m" . $layers[0]->{"gROWname"};
-		
+		my $goldL    = $layers[0]->{"gROWname"};
+		my $baseCuL = ( $goldL =~ m/^gold([cs])$/ )[0];
+		my $maskL   = "m" . $baseCuL;
+ 
 		unless(CamHelper->LayerExists($inCAM, $jobId, $maskL)){
 			$maskL = 0;
 		}
@@ -202,6 +204,43 @@ sub __PrepareGOLDFINGER {
 		}
 
 		my $resultL = Helper->FeaturesByRefLayer( $inCAM, $jobId, $layers[0]->{"gROWname"}, $goldL, $maskL, $self->{"profileLim"} );
+		
+		$layer->SetOutputLayer($resultL);
+
+	}
+}
+
+# grafit layer
+sub __PrepareGRAFIT {
+	my $self  = shift;
+	my $layer = shift;
+
+	unless ( $layer->HasLayers() ) {
+		return 0;
+	}
+
+	my $inCAM = $self->{"inCAM"};
+	my $jobId = $self->{"jobId"};
+
+	my @layers = $layer->GetSingleLayers();
+
+	if ( $layers[0] ) {
+
+		# Prepare reference layer (gold + mask), which specifies area, where is hard gold
+
+		my $refL    = $layers[0]->{"gROWname"};
+		my $baseCuL = ( $refL =~ m/^g([cs])$/ )[0];
+		my $maskL   = "m" . $baseCuL;
+ 
+		unless(CamHelper->LayerExists($inCAM, $jobId, $maskL)){
+			$maskL = 0;
+		}
+		
+		unless(CamHelper->LayerExists($inCAM, $jobId, $refL)){
+			die "Reference layer $refL doesn't exist.";
+		}
+
+		my $resultL = Helper->FeaturesByRefLayer( $inCAM, $jobId, $layers[0]->{"gROWname"}, $refL, $maskL, $self->{"profileLim"} );
 		
 		$layer->SetOutputLayer($resultL);
 
@@ -225,6 +264,10 @@ sub __PreparePEELABLE {
 		my $lName = GeneralHelper->GetGUID();
 
 		$inCAM->COM( "merge_layers", "source_layer" => $layers[0]->{"gROWname"}, "dest_layer" => $lName );
+		
+		CamLayer->WorkLayer($inCAM, $lName);
+		$inCAM->COM("sel_fill","type" => "predefined_pattern","cut_prims" => "no","outline_draw" => "no","outline_width" => "0","outline_invert" => "no","predefined_pattern_type" => "lines","indentation" => "even","lines_angle" => "45","lines_witdh" => "1300","lines_dist" => "660");
+		
 
 		$layer->SetOutputLayer($lName);
 	}

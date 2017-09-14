@@ -142,7 +142,7 @@ sub __PrepareSPECIALSURF {
 		my $czInf = ValueConvertor->GetJobLayerInfo( $l, 1 );
 
 		my $refL    = $l->{"gROWname"};
-		my $baseCuL = ( "goldc" =~ m/^([pmlg]|gold)?([cs])$/ )[1];
+		my $baseCuL = ( $refL =~ m/^([pmlg]|gold)?([cs])$/ )[1];
 		my $maskL   = "m" . $baseCuL;
 
 		unless ( CamHelper->LayerExists( $inCAM, $jobId, $maskL ) ) {

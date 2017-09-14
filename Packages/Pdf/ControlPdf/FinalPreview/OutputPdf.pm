@@ -341,8 +341,8 @@ sub __CreatePng {
 		if ( $layerSurf->Get3DEdges() ) {
 
 			$edges3d .= " ( +clone -channel A -separate +channel -negate ";
-			$edges3d .= " -background black -virtual-pixel background -blur 0x2 -shade 90x21.78 -contrast ";
-			$edges3d .= " -stretch 0% +sigmoidal-contrast 7x50%  -fill grey50 -colorize 10% +clone +swap  ";
+			$edges3d .= " -background black -virtual-pixel background -blur 0x".$layerSurf->Get3DEdges()." -shade 0x21.78 -contrast-stretch ";
+			$edges3d .= "  0% +sigmoidal-contrast 7x50%  -fill grey50 -colorize 10% +clone +swap  ";
 			$edges3d .= " -compose overlay -composite  ) -compose In -composite   ";
 		}
 

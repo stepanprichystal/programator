@@ -118,8 +118,11 @@ sub Get3DEdges {
 	return $self->{"3DEdges"};
 }
 
+# passed value
+# 0 - no edges
+# > 0 - value of blur ("sharbness of edge" 1-9)
 sub Set3DEdges {
-	my $self = shift;
+	my $self = shift; 
 
 	$self->{"3DEdges"} = shift;
 }
