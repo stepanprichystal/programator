@@ -11,7 +11,9 @@ use constant {
 	Type_NPLTDEPTHNC => "typeNPltDepthNc",
 	Type_PLTTHROUGHNC => "typePltThroughNc",
 	Type_NPLTTHROUGHNC => "typeNPltThroughNc",
-	Type_GOLDFINGER => "typeGoldFinger"
+	Type_GOLDFINGER => "typeGoldFinger",
+	Type_PEELABLE => "typePeelableMask",
+	Type_GRAFIT => "typeGrafitPaste"
 };
 
  
@@ -31,7 +33,9 @@ use constant {
 	Texture_GOLD => "gold",
 	Texture_CHEMTINALU => "chemtin_alu",
 	Texture_CU => "cu",
-	Texture_HAL => "hal"
+	Texture_HAL => "hal",
+	Texture_PEELABLE => "peelable",
+	Texture_GRAFIT => "grafit"
 }; 
 
 1;

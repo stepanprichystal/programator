@@ -98,8 +98,8 @@ sub __OutputPdf {
 				 "x_spacing"       => '0',
 				 "y_spacing"       => '0'
 	);
-	
-	unless(-e $multiPdf){
+
+	unless ( -e $multiPdf ) {
 		die "Nepodarilo se vytvorit PDF, asi chyba \"CAT.exe\" nic s jobem nedelej a volej SPR";
 	}
 
@@ -310,10 +310,9 @@ sub __CreatePng {
 		my @cmds4 = ();
 
 		# run 'convert' console application
-		
-		 
-		
-		push( @cmds4, EnumsPaths->Client_IMAGEMAGICK."convert.exe" );
+
+		push( @cmds4, EnumsPaths->Client_IMAGEMAGICK . "convert.exe" );
+
 		#push( @cmds4, "convert" );
 
 		push( @cmds4, " ( " );
@@ -324,20 +323,37 @@ sub __CreatePng {
 		my $opaque = "";
 
 		if ( $layerSurf->GetOpaque() < 100 ) {
-			$opaque =
-			    "-fuzz 20% -matte -fill "
-			  . $self->__ConvertColor( $layerSurf->GetColor(), $layerSurf->GetOpaque() )
-			  . " -opaque "
-			  . $self->__ConvertColor( $layerSurf->GetColor() );
+
+			if ( $layerSurf->GetType() eq Enums->Surface_TEXTURE ) {
+
+			}
+			else {
+
+				$opaque =
+				    "-fuzz 20% -matte -fill "
+				  . $self->__ConvertColor( $layerSurf->GetColor(), $layerSurf->GetOpaque() )
+				  . " -opaque "
+				  . $self->__ConvertColor( $layerSurf->GetColor() );
+			}
+		}
+
+		my $edges3d = "";
+		if ( $layerSurf->Get3DEdges() ) {
+
+			$edges3d .= " ( +clone -channel A -separate +channel -negate ";
+			$edges3d .= " -background black -virtual-pixel background -blur 0x".$layerSurf->Get3DEdges()." -shade 0x21.78 -contrast-stretch ";
+			$edges3d .= "  0% +sigmoidal-contrast 7x50%  -fill grey50 -colorize 10% +clone +swap  ";
+			$edges3d .= " -compose overlay -composite  ) -compose In -composite   ";
 		}
 
 		push( @cmds4, $brightness );
 		push( @cmds4, $opaque );
-		
+		push( @cmds4, $edges3d );
+
 		# if surfeace is texture, this line convert all transparent color to solid color and back to transparnt
 		# This cauze smaller size of final image (because most of area is transparent) and faster creation
 		if ( $layerSurf->GetType() eq Enums->Surface_TEXTURE ) {
-			
+
 			push( @cmds4, " -fill blue -opaque none -fill none -opaque blue" );
 		}
 
@@ -347,7 +363,7 @@ sub __CreatePng {
 
 		push( @allCmds, $cmds4Str );
 
-		print $cmds4Str."\n\n\n";
+		print $cmds4Str. "\n\n\n";
 
 	}
 
@@ -380,18 +396,17 @@ sub __MergePng {
 	my $outputTmp = EnumsPaths->Client_INCAMTMPOTHER . GeneralHelper->GetGUID() . ".jpg";
 
 	# 1) Flatten all images/layers together
-	my @cmd = ( EnumsPaths->Client_IMAGEMAGICK."convert.exe" );
+	my @cmd = ( EnumsPaths->Client_IMAGEMAGICK . "convert.exe" );
 	push( @cmd, $layerStr2 );
 
 	push( @cmd, "-background " . $self->__ConvertColor( $layerList->GetBackground() ) );
 	push( @cmd, "-flatten" );
 	push( @cmd, "-trim" );
-	
-	 #if background image is not white, add little border around whole image
+
+	#if background image is not white, add little border around whole image
 	if ( $layerList->GetBackground() ne "255,255,255" ) {
 		push( @cmd, "-bordercolor " . $self->__ConvertColor( $layerList->GetBackground() ) . " -border 20x20" );
 	}
-	
 
 	#push( @cmd, "-blur 0.2x0.2" );
 	push( @cmd, "-quality 82%" );
@@ -438,9 +453,9 @@ sub __MergePng {
 
 	}
 
-	my @cmd2 = (EnumsPaths->Client_IMAGEMAGICK."convert.exe" );
+	my @cmd2 = ( EnumsPaths->Client_IMAGEMAGICK . "convert.exe" );
 	push( @cmd2, $outputTmp );
-	
+
 	if ($rotate) {
 		push( @cmd2, "-rotate 90" );
 	}

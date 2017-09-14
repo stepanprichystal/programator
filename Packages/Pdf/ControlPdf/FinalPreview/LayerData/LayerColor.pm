@@ -44,6 +44,12 @@ sub new {
 	unless ( defined $self->{"opaque"} ) {
 		$self->{"opaque"} = 100;
 	}
+	
+	$self->{"3DEdges"} = shift;
+
+	unless ( defined $self->{"3DEdges"} ) {
+		$self->{"3DEdges"} = 0;
+	}	
 
 	return $self;
 }
@@ -104,6 +110,21 @@ sub SetOpaque {
 	my $self = shift;
 
 	$self->{"opaque"} = shift;
+}
+
+sub Get3DEdges {
+	my $self = shift;
+
+	return $self->{"3DEdges"};
+}
+
+# passed value
+# 0 - no edges
+# > 0 - value of blur ("sharbness of edge" 1-9)
+sub Set3DEdges {
+	my $self = shift; 
+
+	$self->{"3DEdges"} = shift;
 }
 
 #-------------------------------------------------------------------------------------------#

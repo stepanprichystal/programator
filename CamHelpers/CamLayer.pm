@@ -483,6 +483,37 @@ sub MirrorLayerData {
 	$inCAM->COM( 'affected_layer', name => $layer, mode => "single", affected => "no" );
 }
 
+# Do intersection between layers and return temp layer with result
+sub LayerIntersection {
+	my $self   = shift;
+	my $inCAM  = shift;
+	my $layer1 = shift;
+	my $layer2 = shift;
+	my $lim    = shift;    # area which is processed and result is only fro this area
+
+	my $lTmp1 = GeneralHelper->GetGUID();
+	my $lTmp2 = GeneralHelper->GetGUID();
+
+	# prepare 1st layer
+	$inCAM->COM( "merge_layers", "source_layer" => $layer1, "dest_layer" => $lTmp1 );
+	
+	$self->WorkLayer( $inCAM, $lTmp1 );
+	$self->NegativeLayerData( $inCAM, $lTmp1, $lim );
+	$self->Contourize( $inCAM, $lTmp1 );
+
+	# copy 2nd layer
+	$inCAM->COM( "merge_layers", "source_layer" => $layer2, "dest_layer" => $lTmp2 );
+
+	# copy mask temp negati to cu temp
+	$inCAM->COM( "merge_layers", "source_layer" => $lTmp1, "dest_layer" => $lTmp2, "invert" => "yes" );
+	$inCAM->COM( "delete_layer", "layer" => $lTmp1 );
+	
+	$self->ClipLayerData($inCAM, $lTmp2, $lim);
+ 
+	return $lTmp2;
+
+}
+
 # Move layer data. Snapp point is left down
 # Right step must be open and set
 sub MoveLayerData {
@@ -672,11 +703,15 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	my $layerName = "fsch";
 
 	use aliased 'CamHelpers::CamLayer';
+	 
 	use aliased 'Packages::InCAM::InCAM';
 
 	my $inCAM = InCAM->new();
+	my $jobId = "f13610";
 
-	my $res = CamLayer->OptimizeLevels( $inCAM, "o+1", "v2", 1 );
+	my %lim = CamJob->GetProfileLimits2($inCAM, $jobId, "o+1");
+
+	my $res = CamLayer->LayerIntersection( $inCAM, "goldc", "c", \%lim );
 
 	print $res;
 

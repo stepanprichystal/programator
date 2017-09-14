@@ -28,6 +28,7 @@ use aliased 'CamHelpers::CamSymbol';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'Packages::CAM::UniRTM::UniRTM::UniRTM';
 use aliased 'Packages::CAM::FeatureFilter::FeatureFilter';
+use aliased 'Packages::CAMJob::OutputData::Helper';
 
 #-------------------------------------------------------------------------------------------#
 #  Interface
@@ -72,6 +73,8 @@ sub __PrepareLayers {
 	$self->__PrepareOUTERCU( $layerList->GetLayerByType( Enums->Type_OUTERCU ) );
 	$self->__PrepareOUTERSURFACE( $layerList->GetLayerByType( Enums->Type_OUTERSURFACE ) );
 	$self->__PrepareGOLDFINGER( $layerList->GetLayerByType( Enums->Type_GOLDFINGER ) );
+	$self->__PrepareGRAFIT( $layerList->GetLayerByType( Enums->Type_GRAFIT ) );
+	$self->__PreparePEELABLE( $layerList->GetLayerByType( Enums->Type_PEELABLE ) );
 	$self->__PrepareMASK( $layerList->GetLayerByType( Enums->Type_MASK ) );
 	$self->__PrepareSILK( $layerList->GetLayerByType( Enums->Type_SILK ) );
 	$self->__PreparePLTDEPTHNC( $layerList->GetLayerByType( Enums->Type_PLTDEPTHNC ) );
@@ -186,52 +189,90 @@ sub __PrepareGOLDFINGER {
 
 	if ( $layers[0] ) {
 
-		my $lNameCu = GeneralHelper->GetGUID();
+		# Prepare reference layer (gold + mask), which specifies area, where is hard gold
 
-		my $mask = "m" . $layers[0]->{"gROWname"};
-
-		# If mask exist,
-		# 1) copy mask, where gold plating pads are placed in cu
-		# 2) do negative from this mask, contourize
-		# 3) copy cu layer to temp
-		# 4) Merge this temp mask (negative) with tem cu
-		if ( CamHelper->LayerExists( $inCAM, $jobId, $mask ) ) {
-
-			my $lNameMask = GeneralHelper->GetGUID();
-
-			 
-			my $result = CamFilter->SelectByReferenece( $inCAM, $jobId, "touch", $mask, undef, undef, "positive", $layers[0]->{"gROWname"},
-														".gold_plating", "", undef );
-	 									 
-			if ( $result > 0 ) {
-
-				my @l = ($lNameMask);
-				CamLayer->CopySelected( $inCAM, \@l, 0 );
-				CamLayer->WorkLayer( $inCAM, $lNameMask );
-				CamLayer->NegativeLayerData( $inCAM, $lNameMask, $self->{"profileLim"} );
-				CamLayer->Contourize( $inCAM, $lNameMask );
-				
-				 
-
-				# copy copper to temp layer
-				$inCAM->COM( "merge_layers", "source_layer" => $layers[0]->{"gROWname"}, "dest_layer" => $lNameCu );
-
-				# copy mask temp negati to cu temp
-				$inCAM->COM( "merge_layers", "source_layer" => $lNameMask, "dest_layer" => $lNameCu, "invert" => "yes" );
-				$inCAM->COM( "delete_layer", "layer" => $lNameMask );
-				
-				 
-			}
-
+		my $goldL    = $layers[0]->{"gROWname"};
+		my $baseCuL = ( $goldL =~ m/^gold([cs])$/ )[0];
+		my $maskL   = "m" . $baseCuL;
+ 
+		unless(CamHelper->LayerExists($inCAM, $jobId, $maskL)){
+			$maskL = 0;
 		}
-		else {
-
-			$inCAM->COM( "merge_layers", "source_layer" => $layers[0]->{"gROWname"}, "dest_layer" => $lNameCu );
+		
+		unless(CamHelper->LayerExists($inCAM, $jobId, $goldL)){
+			die "Reference layer $goldL doesn't exist.";
 		}
 
-		$layer->SetOutputLayer($lNameCu);
+		my $resultL = Helper->FeaturesByRefLayer( $inCAM, $jobId, $baseCuL, $goldL, $maskL, $self->{"profileLim"} );
+		
+		$layer->SetOutputLayer($resultL);
+
 	}
 }
+
+# grafit layer
+sub __PrepareGRAFIT {
+	my $self  = shift;
+	my $layer = shift;
+
+	unless ( $layer->HasLayers() ) {
+		return 0;
+	}
+
+	my $inCAM = $self->{"inCAM"};
+	my $jobId = $self->{"jobId"};
+
+	my @layers = $layer->GetSingleLayers();
+
+	if ( $layers[0] ) {
+
+		# Prepare reference layer (gold + mask), which specifies area, where is hard gold
+
+		my $refL    = $layers[0]->{"gROWname"};
+		my $baseCuL = ( $refL =~ m/^g([cs])$/ )[0];
+		my $maskL   = "m" . $baseCuL;
+ 
+		unless(CamHelper->LayerExists($inCAM, $jobId, $maskL)){
+			$maskL = 0;
+		}
+		
+		unless(CamHelper->LayerExists($inCAM, $jobId, $refL)){
+			die "Reference layer $refL doesn't exist.";
+		}
+
+		my $resultL = Helper->FeaturesByRefLayer( $inCAM, $jobId, $baseCuL, $refL, $maskL, $self->{"profileLim"} );
+		
+		$layer->SetOutputLayer($resultL);
+
+	}
+}
+
+# Prepare Peelable mask
+sub __PreparePEELABLE {
+	my $self  = shift;
+	my $layer = shift;
+
+	unless ( $layer->HasLayers() ) {
+		return 0;
+	}
+ 
+	my $inCAM  = $self->{"inCAM"};
+	my @layers = $layer->GetSingleLayers();
+
+	if ( $layers[0] ) {
+
+		my $lName = GeneralHelper->GetGUID();
+
+		$inCAM->COM( "merge_layers", "source_layer" => $layers[0]->{"gROWname"}, "dest_layer" => $lName );
+		
+		CamLayer->WorkLayer($inCAM, $lName);
+		$inCAM->COM("sel_fill","type" => "predefined_pattern","cut_prims" => "no","outline_draw" => "no","outline_width" => "0","outline_invert" => "no","predefined_pattern_type" => "lines","indentation" => "even","lines_angle" => "45","lines_witdh" => "1300","lines_dist" => "660");
+		
+
+		$layer->SetOutputLayer($lName);
+	}
+}
+
 
 # Invert solder mask
 sub __PrepareMASK {

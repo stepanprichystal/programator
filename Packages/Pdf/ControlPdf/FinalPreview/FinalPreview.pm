@@ -107,7 +107,7 @@ sub __ConvertPdfToPng {
 }
 
 # Each pcb layer is represent bz color/texture
-# this method is responsible for choose this color/texture
+# this method is responsible for choose this color/texture, transparency, 3d effects, etc..
 sub __PrepareColors {
 	my $self = shift;
 	my %clrs = ();
@@ -152,8 +152,10 @@ sub __PrepareColors {
 
 		$outerCuClr = LayerColor->new( Enums->Surface_COLOR, "232,141,77" );
 	}
+	
 
 	$clrs{ Enums->Type_OUTERCU } = $outerCuClr;
+	$outerCuClr->Set3DEdges(1);
 
 	# Outer surface
 
@@ -169,11 +171,26 @@ sub __PrepareColors {
 	elsif ( $surface =~ /^i$/i || $surface =~ /^g$/i ) {
 		$outerSurfaceClr->SetTexture( Enums->Texture_GOLD );
 	}
+ 
 
 	# Gold fingers
 
 	my $goldFingerClr = LayerColor->new( Enums->Surface_TEXTURE, Enums->Texture_GOLD );
 	$clrs{ Enums->Type_GOLDFINGER } = $goldFingerClr;
+	 
+	
+	# Peelable mask
+	
+	my $peelableClr = LayerColor->new( Enums->Surface_TEXTURE, Enums->Texture_PEELABLE );
+	$clrs{ Enums->Type_PEELABLE } = $peelableClr; 
+	$peelableClr->Set3DEdges(5);
+	
+	# Grafit paste
+	
+	my $grafitClr = LayerColor->new( Enums->Surface_TEXTURE, Enums->Texture_GRAFIT );
+	$clrs{ Enums->Type_GRAFIT } = $grafitClr; 
+	 
+	
 
 	# Mask color
 	my $clrRGB = $self->__GetMaskColor();
@@ -187,7 +204,10 @@ sub __PrepareColors {
 	else {
 		$maskClr->SetOpaque(80);
 	}
+	
+		
 	$clrs{ Enums->Type_MASK } = $maskClr;
+	
 
 	# Silk color
 
