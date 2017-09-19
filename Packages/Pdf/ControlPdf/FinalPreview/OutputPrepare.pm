@@ -265,6 +265,8 @@ sub __PreparePEELABLE {
 
 		$inCAM->COM( "merge_layers", "source_layer" => $layers[0]->{"gROWname"}, "dest_layer" => $lName );
 		
+		
+		CamLayer->Contourize( $inCAM, $lName );
 		CamLayer->WorkLayer($inCAM, $lName);
 		$inCAM->COM("sel_fill","type" => "predefined_pattern","cut_prims" => "no","outline_draw" => "no","outline_width" => "0","outline_invert" => "no","predefined_pattern_type" => "lines","indentation" => "even","lines_angle" => "45","lines_witdh" => "1300","lines_dist" => "660");
 		

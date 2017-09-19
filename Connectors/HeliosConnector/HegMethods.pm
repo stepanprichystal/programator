@@ -1174,6 +1174,25 @@ sub GetPcbsInProduceMDI {
 	return @result;
 }
 
+sub GetItemsCNCStore {
+	my $self = shift;
+
+	my @params = ();
+
+	my $cmd = "SELECT 
+	TabGS_1_1.reference_subjektu AS kmenova_karta_skladu_reference_subjektu, 
+	TabGS_1_1.nazev_subjektu AS kmenova_karta_skladu_nazev_subjektu, 
+	lcs.stav_sk.pocet_stav AS stav_sk_pocet_stav 
+	FROM lcs.stav_sk 
+	LEFT OUTER JOIN lcs.kmenova_karta_skladu TabGS_1_1 /*139;l;*/ ON lcs.stav_sk.zdroj=TabGS_1_1.cislo_subjektu ";
+	
+	
+	my @result = Helper->ExecuteDataSet( $cmd, \@params );
+	
+	return @result;
+
+}
+
 #-------------------------------------------------------------------------------------------#
 #  Helper method
 #-------------------------------------------------------------------------------------------#
@@ -1208,7 +1227,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	use aliased 'Connectors::HeliosConnector::HegMethods';
 	use Data::Dump qw(dump);
 
-	my @pcbInProduc = HegMethods->GetOrdersByState( "d64150", 2 );
+	my @pcbInProduc = HegMethods->GetItemsCNCStore(   );
 
 	dump(@pcbInProduc);
 

@@ -13,6 +13,7 @@ use Class::Interface;
 use strict;
 use warnings;
 use File::Copy;
+use Log::Log4perl qw(get_logger :levels);
 
 #local library
 
@@ -102,14 +103,20 @@ sub __CopyIPCTemp{
 		$elTestExist = 0;
 	}
 	
+	
+	get_logger("abstractQueue")->error( "Et test $jobId exist: $elTestExist\n ". $inCAM->GetExceptionError() );
+	
 	# copy test to special ipc test folder
 	if( AsyncHelper->ServerVersion() && $orderNum > 1 && $elTestExist ==0){
 	
+		
 		my $ipcPath = EnumsPaths->Client_ELTESTS.$jobId."t\\".$jobId."t.ipc";
 		if(-e $ipcPath){
 		
 			copy($ipcPath, EnumsPaths->Jobs_ELTESTSIPC.$jobId."t.ipc" );	
 		}
+		
+		get_logger("abstractQueue")->error( "Et test $jobId copy from path $ipcPath\n ". $inCAM->GetExceptionError() );
 	}
 } 
  

@@ -332,10 +332,18 @@ sub __LoadToolsMagazine {
 				$t->SetSpecial(1);
 				$t->SetAngle( $xmlTool->{"angle"} );
 
-				my @mArr  = @{ $xmlTool->{"magazine"} };
-				my $matIs = $_->{"material"};
-				my $m     = ( grep { $materialName =~ /$matIs/i || $matIs =~ /$materialName/i } @mArr )[0];
-
+				# search magazine by materal of pcb
+				my $m  = undef;
+				foreach my $magInfo (@{ $xmlTool->{"magazine"} }){
+					
+					my $magMat = $magInfo->{"material"};
+					
+					if($magMat =~ /$materialName/i || $materialName =~ /$magMat/i){
+						$m =$magInfo;
+						last;
+					}
+				}
+				
 				if ( defined $m ) {
 
 					$t->SetMagazine( $m->{"content"} );

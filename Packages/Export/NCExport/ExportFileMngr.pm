@@ -18,6 +18,7 @@ use aliased 'Enums::EnumsPaths';
 use aliased 'Helpers::JobHelper';
 use aliased 'Helpers::FileHelper';
 use aliased 'CamHelpers::CamHelper';
+use aliased 'CamHelpers::CamJob';
 use aliased 'CamHelpers::CamStepRepeat';
 
 #-------------------------------------------------------------------------------------------#
@@ -61,7 +62,6 @@ sub ExportFiles {
 
 		$self->__ResultExportLayer( $c->{"layer"}, $result );
 	}
-	
 
 }
 
@@ -75,7 +75,13 @@ sub __ExportNcSet {
 	my $inCAM    = $self->{"inCAM"};
 	my $stepName = $self->{"stepName"};
 
-	
+	# Check if Null point is in left down corner of profile
+	my %lim = CamJob->GetProfileLimits2( $inCAM, $jobId, $stepName, 1 );
+
+	if ( int( $lim{"xMin"} ) != 0 || int( $lim{"yMin"} ) != 0 ) {
+
+		die "Left-down profile corner is not placed in \"zero point\".\n";
+	}
 
 	$inCAM->COM( 'set_step', "name" => $stepName );
 
@@ -84,17 +90,17 @@ sub __ExportNcSet {
 	my $setName = undef;
 
 	# This command sometimes fail - Illegal entity name. Put here three attempts
-	foreach (1..3){
-		
-		$setName = GeneralHelper->GetGUID();	
-		
+	foreach ( 1 .. 3 ) {
+
+		$setName = GeneralHelper->GetGUID();
+
 		$inCAM->HandleException(1);
 		$inCAM->COM( 'nc_create', "ncset" => $setName, "device" => $machine, "lyrs" => $layerName, "thickness" => 0 );
 		$inCAM->HandleException(0);
-		
-		last if( $inCAM->GetStatus() == 0);	
-		
-		get_logger("abstractQueue")->error( "Error during command nc_create\n ". $inCAM->GetExceptionError() );
+
+		last if ( $inCAM->GetStatus() == 0 );
+
+		get_logger("abstractQueue")->error( "Error during command nc_create\n " . $inCAM->GetExceptionError() );
 	}
 
 	$inCAM->COM( "nc_set_advanced_params", "layer" => $layerName, "ncset" => $setName, "parameters" => "(iol_sm_g84_radius=no)" );
@@ -113,7 +119,7 @@ sub __ExportNcSet {
 			my $mpanelExist = CamStepRepeat->ExistStepAndRepeat( $inCAM, $jobId, $stepName, "mpanel" );
 
 			if ($mpanelExist) {
-				
+
 				# first, order each mpanel steps
 				$inCAM->COM( "sredit_set_step_nest", "lines" => "1", "nx" => "1", "ny" => "1", "clear_selection" => "yes" );
 				$inCAM->COM(
@@ -126,7 +132,7 @@ sub __ExportNcSet {
 							 "snake"   => "no",
 							 "scope"   => "parent"
 				);
-				
+
 				# then, order all o+1 steps in mpanel scope
 				$inCAM->COM( "sredit_set_step_nest", "lines" => "1\;1", "nx" => "1\;1", "ny" => "1\;1", "clear_selection" => "yes" );
 				$inCAM->COM(
@@ -139,7 +145,7 @@ sub __ExportNcSet {
 							 "snake"   => "no",
 							 "scope"   => "parent"
 				);
-				
+
 				# result is -> first are drilled all o+1 mpanel by mapanel
 				# second are drilled mpanels
 
@@ -162,7 +168,7 @@ sub __ExportNcSet {
 		}
 	}
 
-	#$inCAM->COM("nc_order","full" =>"0", "serial" => "1","sr_line" => "1","sr_nx" => "1","sr_ny" => "1","mode" => "btrl","snake" => "no","scope" => "full");
+#$inCAM->COM("nc_order","full" =>"0", "serial" => "1","sr_line" => "1","sr_nx" => "1","sr_ny" => "1","mode" => "btrl","snake" => "no","scope" => "full");
 
 	#if ( $inCAM->GetStatus() > 1 ) {
 	#	$methodRes->AddError( $inCAM->GetExceptionError() );
@@ -177,7 +183,7 @@ sub __ExportNcSet {
 	$inCAM->HandleException(0);
 
 	$methodRes->AddError( $inCAM->GetExceptionError() );
-	 
+
 	#if ( $inCAM->GetStatus() > 1 ) {
 	#	$methodRes->AddError( $inCAM->GetExceptionError() );
 	#}
@@ -192,7 +198,7 @@ sub __ExportNcSet {
 	if ($tmpExist) {
 		$inCAM->COM( 'delete_layer', "layer" => $tmpName );
 	}
-	
+
 	# Clear step selection (some steps can)
 	$self->{"inCAM"}->COM("sredit_sel_clear");
 
@@ -275,16 +281,16 @@ sub __DeleteOldFiles {
 
 		closedir($dir);
 	}
-	
+
 	# Check if exist some "old format" drilling, if so delete. Old format are .ros, .rou, .mes
 	my $archivePath = JobHelper->GetJobArchive( $self->{"jobId"} );
- 	
+
 	my @mes = FileHelper->GetFilesNameByPattern( $archivePath, ".mes" );
 	my @meg = FileHelper->GetFilesNameByPattern( $archivePath, ".meg" );
 	my @ros = FileHelper->GetFilesNameByPattern( $archivePath, ".ros" );
 	my @rou = FileHelper->GetFilesNameByPattern( $archivePath, ".rou" );
- 
-	foreach my $f ( (@mes, @meg, @ros, @rou) ) {
+
+	foreach my $f ( ( @mes, @meg, @ros, @rou ) ) {
 		unlink $f;
 	}
 }

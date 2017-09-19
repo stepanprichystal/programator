@@ -16,6 +16,8 @@ use aliased 'Helpers::GeneralHelper';
 use aliased 'Enums::EnumsPaths';
 use aliased 'Helpers::FileHelper';
 use aliased 'CamHelpers::CamJob';
+use aliased 'CamHelpers::CamStep';
+use aliased 'CamHelpers::CamHelper';
 use aliased 'Packages::Reorder::CheckReorder::CheckInfo';
 
 #-------------------------------------------------------------------------------------------#
@@ -29,6 +31,8 @@ sub new {
 
 	$self->{"inCAM"} = shift;
 	$self->{"jobId"} = shift;
+
+	$self->{"isPool"} = HegMethods->GetPcbIsPool( $self->{"jobId"} );
 
 	# All controls
 	#my @controls = ();
@@ -52,33 +56,48 @@ sub RunChecks {
 
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
- 
+
 	my @manCh = ();
 
-	foreach my $check ( @{ $self->{"checks"} } ) {
- 
-		$check->Run();
-		my @changes = $check->GetChanges();
+	my $isPool = HegMethods->GetPcbIsPool($jobId);
+	my $pnlExist = CamHelper->StepExists( $inCAM, $jobId, "panel" );
+
+	if ( !$isPool && !$pnlExist ) {
+
+		my %inf = ( "text" => "Pcb is former POOL, now it is standard. Prepare step \"panel\".", "critical" => 1 );
+		my @changes = (\%inf);
+		push( @manCh, @changes );
 		
-		if(scalar(@changes)){
-			push( @manCh, @changes );
-		}
-		
-		
-		my $resultItem = $self->_GetNewItem($check->GetCheckKey());
-		$resultItem->SetData(\@changes);
+		my $resultItem = $self->_GetNewItem( "-" );
+		$resultItem->SetData( \@changes );
 		$self->_OnItemResult($resultItem);
-		 
+
+	}
+	else {
+
+		foreach my $check ( @{ $self->{"checks"} } ) {
+
+			$check->Run();
+			my @changes = $check->GetChanges();
+
+			if ( scalar(@changes) ) {
+				push( @manCh, @changes );
+			}
+
+			my $resultItem = $self->_GetNewItem( $check->GetCheckKey() );
+			$resultItem->SetData( \@changes );
+			$self->_OnItemResult($resultItem);
+		}
 	}
 
 	return @manCh;
 }
 
 # Return total number of checked aitems
-sub GetItemCnt{
+sub GetItemCnt {
 	my $self = shift;
-	
-	return scalar(@{ $self->{"checks"} });
+
+	return scalar( @{ $self->{"checks"} } );
 }
 
 sub __LoadChecks {
@@ -86,7 +105,8 @@ sub __LoadChecks {
 
 	my $inCAM  = $self->{"inCAM"};
 	my $jobId  = $self->{"jobId"};
-	my $isPool = HegMethods->GetPcbIsPool($jobId);
+	my $isPool = $self->{"isPool"};
+
 	my $jobExist = CamJob->JobExist( $inCAM, $jobId );
 
 	my $path  = GeneralHelper->Root() . "\\Packages\\Reorder\\CheckReorder\\CheckList";
@@ -130,17 +150,17 @@ my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	use aliased 'Packages::Reorder::CheckReorder::CheckReorder';
-	
+
 	use aliased 'Packages::InCAM::InCAM';
-	
+
 	use Data::Dump qw(dump);
 
 	my $inCAM = InCAM->new();
-	my $jobId = "f52457";
-	
-	my $ch = CheckReorder->new($inCAM, $jobId);
+	my $jobId = "f17819";
+
+	my $ch = CheckReorder->new( $inCAM, $jobId );
 	my @arr = $ch->RunChecks();
-	
+
 	dump(@arr)
 
 }

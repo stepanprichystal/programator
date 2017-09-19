@@ -75,7 +75,7 @@ sub Run {
 			 || $limActive{"xMax"}  < $limSR{"xMax"}
 			 || $limActive{"yMin"}  > $limSR{"yMin"} )
 		{
-			$self->_AddChange(  "SR stepy jsou umístěny za aktivní oblastí. Zkontroluj, zda technické okolí nezasahuje do desek v panelu." );
+			$self->_AddChange(  "SR stepy jsou umístěny za aktivní oblastí. Zkontroluj, zda technické okolí (frézovací otvor, naváděcí značky atd.) nezasahuje do desek v panelu." );
 
 		}
 

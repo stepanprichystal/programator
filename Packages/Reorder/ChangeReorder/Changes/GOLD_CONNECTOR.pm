@@ -2,7 +2,7 @@
 # Description:  Class responsible for determine pcb reorder check
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::Reorder::ChangeReorder::Changes::PANEL_DIM;
+package Packages::Reorder::ChangeReorder::Changes::GOLD_CONNECTOR;
 use base('Packages::Reorder::ChangeReorder::Changes::ChangeBase');
 
 use Class::Interface;
@@ -15,11 +15,8 @@ use warnings;
 #local library
 use aliased 'CamHelpers::CamJob';
 use aliased 'CamHelpers::CamLayer';
-use aliased 'Packages::ProductionPanel::StandardPanel::StandardExt';
-use aliased 'Packages::ProductionPanel::StandardPanel::Enums';
-use aliased 'CamHelpers::CamStep';
-use aliased 'CamHelpers::CamStepRepeat';
-use aliased 'Packages::ProductionPanel::ActiveArea::ActiveArea';
+use aliased 'CamHelpers::CamGoldArea';
+use aliased 'CamHelpers::CamAttributes';
 
 
 #-------------------------------------------------------------------------------------------#
@@ -36,9 +33,9 @@ sub new {
 
 # Check if mask is not negative in matrix
 sub Run {
-	my $self  = shift;
+	my $self = shift;
 	my $mess = shift;
-	
+
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
 	my $isPool   = $self->{"isPool"};
@@ -47,33 +44,21 @@ sub Run {
 	if($isPool){
 		return 1;
 	}
-	
-	
-	my $stepName = "panel";
-	
+
 	my $result = 1;
+
+	# 1) if gold connector exist, check if job attribute gold_holder is set to yes
+
+	my $goldFinger = CamGoldArea->GoldFingersExist( $inCAM, $jobId, "panel" );
+
+	my $goldHolder = CamAttributes->GetJobAttrByName( $inCAM, $jobId, "goldholder" );    # zakaznicky panel
  
-	 # 1) Adjust active area borders to actual
-	my $area = ActiveArea->new( $inCAM, $jobId );
-
-	unless ( $area->IsBorderStandard() ) {
-
-		my %b = $area->GetStandardBorder();
-
-#		# check if active area will be bigger after change borders
-#		if ( $area->BorderL() < $b{"bl"} || $area->BorderR() < $b{"br"} || $area->BorderT() < $b{"bt"} || $area->BorderB() < $b{"bb"} ) {
-#
-#			$$mess .= "Panel doesn't have standard width of active area border. "
-#			  . "";
-#			  
-#			  $result =  0;
-#		}
-#		else {
-
-			CamStep->SetActiveAreaBorder( $inCAM, "panel", $b{"bl"}, $b{"br"}, $b{"bt"}, $b{"bb"});
-#		}
+ 	# set attribute gold holder
+	if ($goldFinger && ( !defined $goldHolder || $goldHolder ne "yes" )) {
+		
+			CamAttributes->SetJobAttribute($inCAM, $jobId, "goldholder", "yes");
 	}
- 
+
 	return $result;
 }
 
@@ -83,17 +68,16 @@ sub Run {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
+	use aliased 'Packages::Reorder::ChangeReorder::Changes::LAYER_NAMES' => "Change";
+	use aliased 'Packages::InCAM::InCAM';
 
- 	use aliased 'Packages::Reorder::ChangeReorder::Changes::MASK_POLAR' => "Change";
- 	use aliased 'Packages::InCAM::InCAM';
-	
-	my $inCAM    = InCAM->new();
-	my $jobId = "f52457";
-	
-	my $check = Change->new("key", $inCAM, $jobId);
-	
+	my $inCAM = InCAM->new();
+	my $jobId = "f00873";
+
+	my $check = Change->new( "key", $inCAM, $jobId );
+
 	my $mess = "";
-	print "Change result: ".$check->Run(\$mess);
+	print "Change result: " . $check->Run( \$mess );
 }
 
 1;

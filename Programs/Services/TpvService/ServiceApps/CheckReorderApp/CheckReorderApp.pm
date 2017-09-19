@@ -1,5 +1,5 @@
 #-------------------------------------------------------------------------------------------#
-# Description: App unarchive jobs, do automatic changes and check changes, which are need 
+# Description: App unarchive jobs, do automatic changes and check changes, which are need
 # to by done manually
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
@@ -27,6 +27,7 @@ use aliased 'Helpers::FileHelper';
 use aliased 'Enums::EnumsIS';
 use aliased 'Helpers::JobHelper';
 use aliased 'CamHelpers::CamJob';
+use aliased 'CamHelpers::CamHelper';
 use aliased 'Programs::Services::Helpers::AutoProcLog';
 use aliased 'Programs::Services::TpvService::ServiceApps::CheckReorderApp::CheckReorder::AcquireJob';
 
@@ -139,7 +140,7 @@ sub __RunJob {
 		my $err = "Process order id: \"$orderId\" exited with error: \n $eStr";
 
 		$self->__ProcessJobResult( $orderId, EnumsIS->CurStep_CHECKREORDERERROR, $err );
-		
+
 	}
 }
 
@@ -161,23 +162,31 @@ sub __ProcessJob {
 
 	$self->_OpenJob($jobId);
 
-	# 2) Do all automatic changes
-	if ($jobExist) {
-		
-		my $changeReorder = ChangeReorder->new( $inCAM, $jobId );
-		my $errMess = "";
-		my $res =  $changeReorder->RunChanges( \$errMess );
-		$self->{"inCAM"}->COM( "save_job",    "job" => "$jobId" );
+	my @manCh = ();
 
-		unless($res){
-			die $errMess;
+	# 2) Check if job is former pool and now is standard
+	my $isPool = HegMethods->GetPcbIsPool($jobId);
+	my $pnlExist = CamHelper->StepExists( $inCAM, $jobId, "panel" );
+	
+	if ( !( !$isPool && !$pnlExist ) ) {
+
+		#  Do all automatic changes
+		if ($jobExist) {
+
+			my $changeReorder = ChangeReorder->new( $inCAM, $jobId );
+			my $errMess       = "";
+			my $res           = $changeReorder->RunChanges( \$errMess );
+			$self->{"inCAM"}->COM( "save_job", "job" => "$jobId" );
+
+			unless ($res) {
+				die $errMess;
+			}
 		}
 	}
 
 	# 3) Do all controls and return check which are neet to be repair manualz bz tpv user
 	my $checkReorder = CheckReorder->new( $inCAM, $jobId );
-	my @manCh = $checkReorder->RunChecks();
- 
+	@manCh = $checkReorder->RunChecks();
 
 	if ($jobExist) {
 		$inCAM->COM( "check_inout", "job" => "$jobId", "mode" => "in", "ent_type" => "job" );
@@ -231,7 +240,7 @@ sub __ProcessJobResult {
 	# 2) set state
 
 	HegMethods->UpdatePcbOrderState( $orderId, $orderState );
- 
+
 }
 
 sub __SetLogging {

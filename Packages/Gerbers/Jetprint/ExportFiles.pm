@@ -10,6 +10,7 @@ use base('Packages::ItemResult::ItemEventMngr');
 use strict;
 use warnings;
 use File::Copy;
+use List::MoreUtils qw(uniq);
 
 #local library
 use aliased 'Helpers::GeneralHelper';
@@ -321,20 +322,40 @@ sub __CompensateLayer {
 
 	# 1 ) check if thera are features thinner than 120µm (necessary because after compensation -60µm result print on pcb should be wrong)
 
-	my %hist = CamHistogram->GetSymHistogram( $inCAM, $jobId, $self->{"jetprintStep"}, $layerName );
+	my $infoFile = $inCAM->INFO(
+								 units           => 'mm',
+								 angle_direction => 'ccw',
+								 entity_type     => 'layer',
+								 entity_path     => "$jobId/".$self->{"step"}."/" . $layerName,
+								 data_type       => 'FEATURES',
+								 options         => 'break_sr+',
+								 parse           => 'no'
+	);
 
-	my @syms = grep { $_->{"cnt"} > 0 } ( @{ $hist{"lines"} }, @{ $hist{"arcs"} } );
+	my @feat = ();
 
-	my @thinSyms = grep { $_ < 120 } map { $_->{"sym"} =~ m/\w(\d+)/ } @syms;
+	if ( open( my $f, "<" . $infoFile ) ) {
+		@feat = <$f>;
+		close($f);
+		unlink($infoFile);
+	}
 
-	if ( scalar(@thinSyms) ) {
-		$resultItemGer->AddError("Too thin features in silkscreen layer $layerName. Min thickness of feature is 130µm");
+	@feat = grep { $_ =~ /[LA].*[rs](\d+)\.?\d*\sP/i && $1 < 120 } @feat;    # check positive lines+arc thinner tahn 120µm
+
+	if ( scalar(@feat) ) {
+
+		my @thinSyms = uniq( map { ( $_ =~ /[LA].*([rs]\d+)\.?\d*\sP/i )[0] . "µm" } @feat );
+		my $str = join( ", ", @thinSyms );
+
+		if ( scalar(@thinSyms) ) {
+			die "Too thin features ($str) in silkscreen layer \" $layerName \". Min thickness of feature is 130µm";
+		}
 	}
 
 	# 2) Compensate all features
 	my $class = $self->{"pcbClass"};
 
-	my $comp = -60;    # shring by 60µm
+	my $comp = -60;                                                          # shring by 60µm
 
 	if ( $comp != 0 ) {
 		CamLayer->CompensateLayerData( $inCAM, $layerName, $comp );

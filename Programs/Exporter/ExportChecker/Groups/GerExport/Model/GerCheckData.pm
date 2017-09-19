@@ -11,6 +11,7 @@ use utf8;
 use strict;
 use warnings;
 use File::Copy;
+use List::MoreUtils qw(uniq);
 
 #local library
 use aliased 'CamHelpers::CamLayer';
@@ -171,19 +172,39 @@ sub OnCheckGroupData {
 
 		foreach my $l (@lSilk) {
 
-			my %hist = CamHistogram->GetSymHistogram( $inCAM, $jobId, "panel", $l->{"gROWname"}, 1 );
+			my $infoFile = $inCAM->INFO(
+										 units           => 'mm',
+										 angle_direction => 'ccw',
+										 entity_type     => 'layer',
+										 entity_path     => "$jobId/panel/" . $l->{"gROWname"},
+										 data_type       => 'FEATURES',
+										 options         => 'break_sr+',
+										 parse           => 'no'
+			);
 
-			my @syms = grep { $_->{"cnt"} > 0 } ( @{ $hist{"lines"} }, @{ $hist{"arcs"} } );
+			my @feat = ();
 
-			my @thinSyms = grep { $_ < 120 } map { $_->{"sym"} =~ m/\w(\d+)/ } @syms;
+			if ( open( my $f, "<" . $infoFile ) ) {
+				@feat = <$f>;
+				close($f);
+				unlink($infoFile);
+			}
 
-			if ( scalar(@thinSyms) ) {
-				$dataMngr->_AddErrorResult( "Jetprint data",
-											"Too thin features in silkscreen layer \"" . $l->{"gROWname"} . "\". Min thickness of feature is 130µm" );
+			@feat = grep { $_ =~ /[LA].*[rs](\d+)\.?\d*\sP/i && $1 < 120 } @feat; # check positive lines+arc thinner tahn 120µm
+
+			if ( scalar(@feat) ) {
+
+				my @thinSyms = uniq( map { ( $_ =~ /[LA].*([rs]\d+)\.?\d*\sP/i )[0]."µm" } @feat);
+				my $str = join( ", ",@thinSyms);
+
+				if ( scalar(@thinSyms) ) {
+					$dataMngr->_AddErrorResult( "Jetprint data",
+										   "Too thin features ($str) in silkscreen layer \"" . $l->{"gROWname"} . "\". Min thickness of feature is 130µm" );
+				}
 			}
 		}
+
 	}
-	
 }
 
 sub __PasteLayersExist {
