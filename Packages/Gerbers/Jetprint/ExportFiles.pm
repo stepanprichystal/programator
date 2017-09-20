@@ -147,7 +147,7 @@ sub __ExportLayers {
 		$self->__MoveToZero( $l->{"gROWname"} );
 
 		# 7) mirror layer in y axis if ps
-		$self->__MirrorLayer( $l->{"gROWname"} );
+		$self->__MirrorLayer( $l->{"gROWname"}, \%lim);
 
 		# 5) export gerbers
 		my $fiducDCode = $self->__ExportGerberLayer( $l->{"gROWname"}, $resultItem );
@@ -431,13 +431,15 @@ sub __MoveToZero {
 sub __MirrorLayer {
 	my $self      = shift;
 	my $layerName = shift;
+	my $lim = shift;
 
 	my $inCAM = $self->{"inCAM"};
 
 	if ( $layerName eq "ps" ) {
 
 		CamLayer->MirrorLayerData( $inCAM, $layerName, "y" );
-		$inCAM->COM( "sel_move", "dx" => abs( $self->{"frLim"}->{"xMax"} - $self->{"frLim"}->{"xMin"} ), "dy" => 0 );
+ 
+		$inCAM->COM( "sel_move", "dx" => abs( $lim->{"xMax"} - $lim->{"xMin"} ), "dy" => 0 );
 	}
 }
 

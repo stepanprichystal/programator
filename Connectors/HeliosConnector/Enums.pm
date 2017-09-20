@@ -9,6 +9,7 @@ use constant {
 	SqlDbType_DECIMAL  => 3,
 	SqlDbType_INT      => 4,
 	SqlDbType_VARCHAR  => 5,
+	SqlDbType_TEXT => 6,
 
 };
 

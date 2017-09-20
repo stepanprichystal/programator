@@ -969,7 +969,6 @@ sub GetTermOfOrder {
 	return $res;
 }
 
-
 # Return value of term order
 sub GetStartTermOfOrder {
 	my $self    = shift;
@@ -1006,26 +1005,23 @@ sub GetTPVEmployee {
 	return @result;
 }
 
- 
-
 # Get all ReOrders
 # Pcb has order number begger than -01 + are on state 'Predvyrobni priprava'
 sub GetReorders {
-	my $self  = shift;
+	my $self = shift;
 
 	my @params = ();
- 
+
 	my $cmd = "select distinct z.reference_subjektu, z.stav, z.aktualni_krok, d.stav AS dps_stav
 				from lcs.zakazky_dps_22_hlavicka z join lcs.desky_22 d on d.cislo_subjektu=z.deska
 				where z.stav='2'";
- 
- 
-	my @result = Helper->ExecuteDataSet( $cmd, \@params );
-	
-	@result = grep {   $_->{"reference_subjektu"} =~ /^\w\d+-\d+$/} @result; # remove cores
-	@result = grep {   $_->{"reference_subjektu"} !~ /-01/} @result;
 
-	 return @result;
+	my @result = Helper->ExecuteDataSet( $cmd, \@params );
+
+	@result = grep { $_->{"reference_subjektu"} =~ /^\w\d+-\d+$/ } @result;    # remove cores
+	@result = grep { $_->{"reference_subjektu"} !~ /-01/ } @result;
+
+	return @result;
 }
 
 # Return all reorders by pcb id
@@ -1046,10 +1042,9 @@ sub GetPcbReorders {
 				 where d.reference_subjektu=_PcbId and  z.cislo_poradace = 22050
 				 order by z.reference_subjektu desc";
 
-	
 	my @res = Helper->ExecuteDataSet( $cmd, \@params );
- 	@res = grep {   $_->{"reference_subjektu"} !~ /-01/} @res;
- 	
+	@res = grep { $_->{"reference_subjektu"} !~ /-01/ } @res;
+
 	return @res;
 }
 
@@ -1174,21 +1169,38 @@ sub GetPcbsInProduceMDI {
 	return @result;
 }
 
-sub GetItemsCNCStore {
+sub GetMatStoreInfo {
 	my $self = shift;
+	my $qId  = shift;
+	my $id   = shift;
+	my $id2  = shift;
 
-	my @params = ();
+	my @params = (
+				   SqlParameter->new( "__qId", Enums->SqlDbType_INT, $qId ),
+				   SqlParameter->new( "__id",  Enums->SqlDbType_INT, $id ),
+				   SqlParameter->new( "__id2", Enums->SqlDbType_INT, $id2 )
+	);
 
-	my $cmd = "SELECT 
-	TabGS_1_1.reference_subjektu AS kmenova_karta_skladu_reference_subjektu, 
-	TabGS_1_1.nazev_subjektu AS kmenova_karta_skladu_nazev_subjektu, 
-	lcs.stav_sk.pocet_stav AS stav_sk_pocet_stav 
-	FROM lcs.stav_sk 
-	LEFT OUTER JOIN lcs.kmenova_karta_skladu TabGS_1_1 /*139;l;*/ ON lcs.stav_sk.zdroj=TabGS_1_1.cislo_subjektu ";
-	
-	
+	my $cmd = "SELECT kks.reference_subjektu, 
+					kks.nazev_subjektu, 
+					sklad.reference_subjektu, 
+					sklad.nazev_subjektu, 
+					ss.pocet_disp, 
+					uda.dps_id, 
+					uda.dps_id2, 
+					uda.dps_qid
+				FROM lcs.kmenova_karta_skladu kks
+					join lcs.stav_sk ss on ss.zdroj = kks.cislo_subjektu
+					join lcs.subjekty sklad on sklad.cislo_subjektu= ss.sklad
+					join lcs.uda_kmenova_karta_skladu uda on uda.cislo_subjektu= kks.cislo_subjektu
+				WHERE kks.usporadaci_znak = 'DPS'
+					and ss.pocet_disp > 0 
+					and uda.dps_id = __id 
+					and uda.dps_id2 = __id2 
+					and uda.dps_qid = __qId";
+ 
 	my @result = Helper->ExecuteDataSet( $cmd, \@params );
-	
+
 	return @result;
 
 }
@@ -1227,7 +1239,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	use aliased 'Connectors::HeliosConnector::HegMethods';
 	use Data::Dump qw(dump);
 
-	my @pcbInProduc = HegMethods->GetItemsCNCStore(   );
+	my @pcbInProduc = HegMethods->GetMatStoreInfo(1, 15, 8);
 
 	dump(@pcbInProduc);
 
