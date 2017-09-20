@@ -1195,9 +1195,9 @@ sub GetMatStoreInfo {
 					join lcs.uda_kmenova_karta_skladu uda on uda.cislo_subjektu= kks.cislo_subjektu
 				WHERE kks.usporadaci_znak = 'DPS'
 					and ss.pocet_disp > 0 
-					and uda.dps_id = __id 
-					and uda.dps_id2 = __id2 
-					and uda.dps_qid = __qId";
+					and uda.dps_id = 15 
+					and uda.dps_id2 = 8 
+					and uda.dps_qid = 1";
  
 	my @result = Helper->ExecuteDataSet( $cmd, \@params );
 
