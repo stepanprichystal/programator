@@ -10,16 +10,13 @@ use base 'Widgets::Forms::StandardFrm';
 use strict;
 use warnings;
 use Wx;
+use aliased 'Packages::Events::Event';
 
 #local library
 
 use aliased 'Packages::InCAM::InCAM';
 use aliased 'Programs::StencilCreator::Forms::StencilDrawing';
 use aliased 'Programs::StencilCreator::Enums';
-use aliased 'Programs::StencilCreator::Forms::Layout::LayoutMngr';
-use aliased 'Programs::StencilCreator::Forms::Layout::PasteProfile';
-use aliased 'Programs::StencilCreator::Forms::Layout::PasteData';
-use aliased 'Programs::StencilCreator::Forms::Layout::Schema';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -37,11 +34,11 @@ sub new {
 	bless($self);
 
 	# Properties
-	$self->{"inCAM"}      = $inCAM;
-	$self->{"jobId"}      = $jobId;
-	$self->{"layoutMngr"} = LayoutMngr->new();
+	$self->{"inCAM"} = $inCAM;
+	$self->{"jobId"} = $jobId;
 
-	# Load layer data, dimension etc
+	# Events
+	$self->{"fmrDataChanged"} = Event->new();
 
 	return $self;
 }
@@ -60,8 +57,6 @@ sub Init {
 	$self->{"botExist"}  = $sbExist;
 
 	$self->__SetLayout();
-
-	$self->__OnDataChanged();
 
 }
 
@@ -86,36 +81,31 @@ sub GetStencilType {
 sub SetStencilType {
 	my $self = shift;
 	my $type = shift;
-	if ( $type eq "top" ) {
 
-		$self->{"stencilTypeCb"}->SetValue("Top");
-	}
-	elsif ( $type eq "bot" ) {
+	$self->{"stencilTypeCb"}->SetValue($type);
 
-		$self->{"stencilTypeCb"}->SetValue("Bot");
-	}
-	elsif ( $type eq "Top + Bot" ) {
+	$self->__DisableControls();
 
-		$self->{"stencilTypeCb"}->SetValue("Bot");
-	}
 }
 
 sub GetStencilSize {
 	my $self = shift;
 
-	my %size = ( "w" => 0, "h" => 0 );
+	my %size = ( "w" => 0, "h" => 0, "custom" => 0 );
 
 	my $sVal = $self->{"sizeCb"}->GetValue();
 
 	if ( $sVal =~ /custom/ ) {
 
-		$size{"w"} = $self->{"sizeXTextCtrl"}->GetValue();
-		$size{"h"} = $self->{"sizeYTextCtrl"}->GetValue();
+		$size{"w"}            = $self->{"sizeXTextCtrl"}->GetValue();
+		$size{"h"}            = $self->{"sizeYTextCtrl"}->GetValue();
+		$self->{"customSize"} = 1;
 
 	}
 	else {
 
 		( $size{"w"}, $size{"h"} ) = $sVal =~ /(\d+)mm\s*x\s*(\d+)mm/i;
+		$self->{"customSize"} = 0;
 	}
 
 	return %size;
@@ -127,17 +117,21 @@ sub SetStencilSize {
 	my $height = shift;
 
 	# "300mm x 480mm", "300mm x 520mm", "custom"
-
-	if ( $width = 300 && $height = 480 ) {
-		$self->{"sizeCb"}->SetValue(Enums->StencilSize_300x480);
-	}
-	elsif ( $width = 300 && $height = 520 ) {
-		$self->{"sizeCb"}->SetValue(Enums->StencilSize_300x520);
+	if ( $self->{"customSize"} == 1 ) {
+		$self->{"sizeCb"}->SetValue( Enums->StencilSize_CUSTOM );
+		$self->{"sizeXTextCtrl"}->SetValue($width);
+		$self->{"sizeYTextCtrl"}->SetValue($height);
 	}
 	else {
-		$self->{"sizeCb"}->SetValue(Enums->StencilSize_CUSTOM);
-		$self->{"sizeXTextCtrl"} = $width;
-		$self->{"sizeYTextCtrl"} = $height;
+
+		if ( $width == 300 && $height == 480 ) {
+			$self->{"sizeCb"}->SetValue( Enums->StencilSize_300x480 );
+		}
+		elsif ( $width == 300 && $height == 520 ) {
+			$self->{"sizeCb"}->SetValue( Enums->StencilSize_300x520 );
+		}
+
+		$self->__DisableControls();
 	}
 }
 
@@ -151,6 +145,8 @@ sub SetStencilStep {
 	my $self = shift;
 	my $step = shift;
 	$self->{"stepCb"}->SetValue($step);
+
+	$self->__DisableControls();
 }
 
 sub GetSpacing {
@@ -164,6 +160,8 @@ sub SetSpacing {
 	my $spacing = shift;
 
 	$self->{"spacingCtrl"}->SetValue($spacing);
+
+	$self->__DisableControls();
 }
 
 # Spacing between stencil type
@@ -179,7 +177,9 @@ sub SetSpacingType {
 	my $self = shift;
 	my $type = shift;
 
-	$self->{"spacingTypeCb"}->SetValue( $type, $type );
+	$self->{"spacingTypeCb"}->SetValue($type);
+
+	$self->__DisableControls();
 }
 
 # Horiyontal aligment type
@@ -194,28 +194,32 @@ sub SetHCenterType {
 	my $type = shift;
 
 	$self->{"hCenterTypeCb"}->SetValue($type);
-}
 
+	$self->__DisableControls();
+}
 
 sub SetSchemaType {
 	my $self = shift;
 	my $val  = shift;
 
 	$self->{"schemaCb"}->SetValue($val);
+
+	$self->__DisableControls();
 }
 
 sub GetSchemaType {
 	my $self = shift;
- 
+
 	return $self->{"schemaCb"}->GetValue();
 }
-
 
 sub SetHoleSize {
 	my $self = shift;
 	my $val  = shift;
 
 	$self->{"holeSizeSpin"}->SetValue($val);
+
+	$self->__DisableControls();
 }
 
 sub GetHoleSize {
@@ -225,12 +229,13 @@ sub GetHoleSize {
 	return $self->{"holeSizeSpin"}->GetValue();
 }
 
-
 sub SetHoleDist {
 	my $self = shift;
 	my $val  = shift;
 
 	$self->{"holeSpaceSpin"}->SetValue($val);
+
+	$self->__DisableControls();
 }
 
 sub GetHoleDist {
@@ -239,12 +244,13 @@ sub GetHoleDist {
 	return $self->{"holeSpaceSpin"}->GetValue();
 }
 
-
 sub SetHoleDist2 {
 	my $self = shift;
 	my $val  = shift;
 
 	$self->{"holeDist2Spin"}->SetValue($val);
+
+	$self->__DisableControls();
 }
 
 sub GetHoleDist2 {
@@ -252,94 +258,107 @@ sub GetHoleDist2 {
 	return $self->{"holeDist2Spin"}->GetValue();
 }
 
+sub UpdateDrawing {
+	my $self       = shift;
+	my $layoutMngr = shift;
+	my $autoZoom   = shift;
+
+	$self->{"drawing"}->StencilDataChanged( $layoutMngr, $autoZoom );
+}
+
 #-------------------------------------------------------------------------------------------#
 #  Private methods
 #-------------------------------------------------------------------------------------------#
 
-sub __OnDataChanged {
-	my $self = shift;
-	my $autoZoom = shift;
+sub __OnControlDataChanged {
+	my $self           = shift;
+	my $autoZoom       = shift;
 	my $defaultSpacing = shift;
 
-	# Update GUI
+	if ( $self->{"raiseEvt"} ) {
 
-	$self->__DisableControls();
-
-	# Update Layout manager
-	$self->{"layoutMngr"}->Inited(0);
-
-	# 1) update type of stencil
-	my $stencilType = $self->GetStencilType();
-	$self->{"layoutMngr"}->SetStencilType($stencilType);
-
-	# 2) update profile data
-	my $stencilStep = $self->GetStencilStep();
-
-	if ( $self->{"topExist"} ) {
-
-		my $pd = PasteData->new( $self->{"stepsSize"}->{$stencilStep}->{"top"}->{"w"}, $self->{"stepsSize"}->{$stencilStep}->{"top"}->{"h"} );
-		my $pp = PasteProfile->new( $self->{"stepsSize"}->{$stencilStep}->{"w"}, $self->{"stepsSize"}->{$stencilStep}->{"h"} );
-
-		$pp->SetPasteData( $pd, $self->{"stepsSize"}->{$stencilStep}->{"top"}->{"x"}, $self->{"stepsSize"}->{$stencilStep}->{"top"}->{"y"} );
-
-		$self->{"layoutMngr"}->SetTopProfile($pp);
+		$self->{"fmrDataChanged"}->Do($self);
 	}
 
-	if ( $self->{"botExist"} ) {
-
-		my $botKye = $stencilType eq Enums->StencilType_BOT ? "bot" : "botMirror";
-
-		my $pd = PasteData->new( $self->{"stepsSize"}->{$stencilStep}->{$botKye}->{"w"}, $self->{"stepsSize"}->{$stencilStep}->{$botKye}->{"h"} );
-		my $pp = PasteProfile->new( $self->{"stepsSize"}->{$stencilStep}->{"w"}, $self->{"stepsSize"}->{$stencilStep}->{"h"} );
-
-		$pp->SetPasteData( $pd, $self->{"stepsSize"}->{$stencilStep}->{$botKye}->{"x"}, $self->{"stepsSize"}->{$stencilStep}->{$botKye}->{"y"} );
-
-		$self->{"layoutMngr"}->SetBotProfile($pp);
-	}
-
-	# 3)update stencil size
-
-	my %size = $self->GetStencilSize();
-	$self->{"layoutMngr"}->SetWidth( $size{"w"} );
-	$self->{"layoutMngr"}->SetHeight( $size{"h"} );
-
-
-	
-	# 4) Update schema
-	
-	my $schema = Schema->new( $size{"w"},  $size{"h"});
-	
-	$schema->SetSchemaType($self->GetSchemaType());
-	$schema->SetHoleSize($self->GetHoleSize());
-	$schema->SetHoleDist($self->GetHoleDist());
-	$schema->SetHoleDist2($self->GetHoleDist2());
- 
- 	$self->{"layoutMngr"}->SetSchema($schema);
- 	
- 	# 5) Spacing type
- 	$self->{"layoutMngr"}->SetSpacingType( $self->GetSpacingType() );
- 		
-	# 4) Set spacing size. Default or set by user
-	if($defaultSpacing && $self->GetSpacingType() eq Enums->Spacing_PROF2PROF){
-		
-		my $spac = $self->{"layoutMngr"}->GetDefaultSpacing();
-		$self->{"layoutMngr"}->SetSpacing( $spac);
-		
-		# set spacing to control
-		$self->SetSpacing($spac);
-		
-	}else{
-		
-		$self->{"layoutMngr"}->SetSpacing( $self->GetSpacing() );
-	}
- 
-	# 5)Set horiyontal aligment type
-	$self->{"layoutMngr"}->SetHCenterType( $self->GetHCenterType() );
- 
-
-	$self->{"layoutMngr"}->Inited(1);
-
-	$self->{"drawing"}->DataChanged($autoZoom);
+	#	# Update GUI
+	#
+	#	$self->__DisableControls();
+	#
+	#	# Update Layout manager
+	#	$self->{"layoutMngr"}->Inited(0);
+	#
+	#	# 1) update type of stencil
+	#	my $stencilType = $self->GetStencilType();
+	#	$self->{"layoutMngr"}->SetStencilType($stencilType);
+	#
+	#	# 2) update profile data
+	#	my $stencilStep = $self->GetStencilStep();
+	#
+	#	if ( $self->{"topExist"} ) {
+	#
+	#		my $pd = PasteData->new( $self->{"stepsSize"}->{$stencilStep}->{"top"}->{"w"}, $self->{"stepsSize"}->{$stencilStep}->{"top"}->{"h"} );
+	#		my $pp = PasteProfile->new( $self->{"stepsSize"}->{$stencilStep}->{"w"}, $self->{"stepsSize"}->{$stencilStep}->{"h"} );
+	#
+	#		$pp->SetPasteData( $pd, $self->{"stepsSize"}->{$stencilStep}->{"top"}->{"x"}, $self->{"stepsSize"}->{$stencilStep}->{"top"}->{"y"} );
+	#
+	#		$self->{"layoutMngr"}->SetTopProfile($pp);
+	#	}
+	#
+	#	if ( $self->{"botExist"} ) {
+	#
+	#		my $botKye = $stencilType eq Enums->StencilType_BOT ? "bot" : "botMirror";
+	#
+	#		my $pd = PasteData->new( $self->{"stepsSize"}->{$stencilStep}->{$botKye}->{"w"}, $self->{"stepsSize"}->{$stencilStep}->{$botKye}->{"h"} );
+	#		my $pp = PasteProfile->new( $self->{"stepsSize"}->{$stencilStep}->{"w"}, $self->{"stepsSize"}->{$stencilStep}->{"h"} );
+	#
+	#		$pp->SetPasteData( $pd, $self->{"stepsSize"}->{$stencilStep}->{$botKye}->{"x"}, $self->{"stepsSize"}->{$stencilStep}->{$botKye}->{"y"} );
+	#
+	#		$self->{"layoutMngr"}->SetBotProfile($pp);
+	#	}
+	#
+	#	# 3)update stencil size
+	#
+	#	my %size = $self->GetStencilSize();
+	#	$self->{"layoutMngr"}->SetWidth( $size{"w"} );
+	#	$self->{"layoutMngr"}->SetHeight( $size{"h"} );
+	#
+	#
+	#
+	#	# 4) Update schema
+	#
+	#	my $schema = Schema->new( $size{"w"},  $size{"h"});
+	#
+	#	$schema->SetSchemaType($self->GetSchemaType());
+	#	$schema->SetHoleSize($self->GetHoleSize());
+	#	$schema->SetHoleDist($self->GetHoleDist());
+	#	$schema->SetHoleDist2($self->GetHoleDist2());
+	#
+	# 	$self->{"layoutMngr"}->SetSchema($schema);
+	#
+	# 	# 5) Spacing type
+	# 	$self->{"layoutMngr"}->SetSpacingType( $self->GetSpacingType() );
+	#
+	#	# 4) Set spacing size. Default or set by user
+	#	if($defaultSpacing && $self->GetSpacingType() eq Enums->Spacing_PROF2PROF){
+	#
+	#		my $spac = $self->{"layoutMngr"}->GetDefaultSpacing();
+	#		$self->{"layoutMngr"}->SetSpacing( $spac);
+	#
+	#		# set spacing to control
+	#		#$self->SetSpacing($spac);
+	#
+	#	}else{
+	#
+	#		$self->{"layoutMngr"}->SetSpacing( $self->GetSpacing() );
+	#	}
+	#
+	#	# 5)Set horiyontal aligment type
+	#	$self->{"layoutMngr"}->SetHCenterType( $self->GetHCenterType() );
+	#
+	#
+	#	$self->{"layoutMngr"}->Inited(1);
+	#
+	#	$self->{"drawing"}->DataChanged($autoZoom);
 }
 
 sub __DisableControls {
@@ -369,6 +388,24 @@ sub __DisableControls {
 	else {
 		$self->{"sizeXTextCtrl"}->Disable();
 		$self->{"sizeYTextCtrl"}->Disable();
+	}
+
+	my $schType = $self->{"schemaCb"}->GetValue();
+
+	$self->{"pnlSchStandard"}->Hide();
+	$self->{"pnlSchVlepeni"}->Hide();
+	$self->{"pnlSchIncluded"}->Hide();
+
+	if ( $schType eq Enums->Schema_STANDARD ) {
+
+		$self->{"pnlSchStandard"}->Show();
+
+	}
+	elsif ( $schType eq Enums->Schema_FRAME ) {
+
+	}
+	elsif ( $schType eq Enums->Schema_INCLUDED ) {
+
 	}
 
 }
@@ -506,6 +543,8 @@ sub __SetLayout {
 
 	$self->AddButton( "Prepare stencil", sub { $self->__PrepareClick(@_) } );
 
+	$self->__DisableControls();
+
 }
 
 # Set layout general group
@@ -534,7 +573,8 @@ sub __SetLayoutGeneral {
 
 	my $stepTxt = Wx::StaticText->new( $statBox, -1, "Step", &Wx::wxDefaultPosition, [ 170, 22 ] );
 
-	my $stepCb = Wx::ComboBox->new( $statBox, -1, $self->{"steps"}->[0], &Wx::wxDefaultPosition, [ 120, 22 ], $self->{"steps"}, &Wx::wxCB_READONLY );
+	my $stepCb =
+	  Wx::ComboBox->new( $statBox, -1, $self->{"steps"}->[0], &Wx::wxDefaultPosition, [ 120, 22 ], $self->{"steps"}, &Wx::wxCB_READONLY );
 
 	my $sizeTxt = Wx::StaticText->new( $statBox, -1, "Size", &Wx::wxDefaultPosition, [ 170, 22 ] );
 
@@ -547,11 +587,11 @@ sub __SetLayoutGeneral {
 	my $sizeYTextCtrl = Wx::SpinCtrl->new( $statBox, -1, 480, &Wx::wxDefaultPosition, [ 60, 22 ], &Wx::wxSP_ARROW_KEYS, 200, 800 );
 
 	# SET EVENTS
-	Wx::Event::EVT_TEXT( $stencilTypeCb, -1, sub { $self->__OnDataChanged(0,1) } );
-	Wx::Event::EVT_TEXT( $stepCb,        -1, sub { $self->__OnDataChanged(0,1) } );
-	Wx::Event::EVT_TEXT( $sizeCb,        -1, sub { $self->__OnDataChanged(1,1) } );
-	Wx::Event::EVT_TEXT( $sizeXTextCtrl, -1, sub { $self->__OnDataChanged(1,1) } );
-	Wx::Event::EVT_TEXT( $sizeYTextCtrl, -1, sub { $self->__OnDataChanged(1,1) } );
+	Wx::Event::EVT_TEXT( $stencilTypeCb, -1, sub { $self->__OnControlDataChanged( 0, 1 ) } );
+	Wx::Event::EVT_TEXT( $stepCb,        -1, sub { $self->__OnControlDataChanged( 0, 1 ) } );
+	Wx::Event::EVT_TEXT( $sizeCb,        -1, sub { $self->__OnControlDataChanged( 1, 1 ) } );
+	Wx::Event::EVT_TEXT( $sizeXTextCtrl, -1, sub { $self->__OnControlDataChanged( 1, 1 ) } );
+	Wx::Event::EVT_TEXT( $sizeYTextCtrl, -1, sub { $self->__OnControlDataChanged( 1, 1 ) } );
 
 	# BUILD STRUCTURE OF LAYOUT
 
@@ -594,59 +634,78 @@ sub __SetLayoutSchema {
 
 	my $szRow1 = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
 
-	my $szRow2 = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
-	my $szRow3 = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
-	my $szRow4 = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
+	my $pnlSchStandard = Wx::Panel->new($statBox);
+	my $pnlSchVlepeni  = Wx::Panel->new($statBox);
+	my $pnlSchIncluded = Wx::Panel->new($statBox);
+
+	my $szSchStandard = Wx::BoxSizer->new(&Wx::wxVERTICAL);
+	my $szSchVlepeni  = Wx::BoxSizer->new(&Wx::wxVERTICAL);
+	my $szSchIncluded = Wx::BoxSizer->new(&Wx::wxVERTICAL);
+
+	my $szSchStandardRow1 = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
+	my $szSchStandardRow2 = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
+	my $szSchStandardRow3 = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
+
 	#
 	#	# DEFINE CONTROLS
 	#
 	my $schemaTxt = Wx::StaticText->new( $statBox, -1, "Type", &Wx::wxDefaultPosition, [ 170, 22 ] );
-	my @types = ( Enums->Schema_STANDARD, Enums->Schema_FRAME );
+	my @types = ( Enums->Schema_STANDARD, Enums->Schema_FRAME, Enums->Schema_INCLUDED );
 	my $schemaCb = Wx::ComboBox->new( $statBox, -1, $types[0], &Wx::wxDefaultPosition, [ 120, 22 ], \@types, &Wx::wxCB_READONLY );
 
-	my $holeSizeTxt = Wx::StaticText->new( $statBox, -1, "Hole size [mm]", &Wx::wxDefaultPosition, [ 170, 22 ] );
-	my $holeSizeSpin = Wx::TextCtrl->new( $statBox, -1, 5.1, &Wx::wxDefaultPosition, [ 120, 22 ]);
+	# Type - standard
 
-	my $holeSpaceTxt = Wx::StaticText->new( $statBox, -1, "Hole distance X [mm]", &Wx::wxDefaultPosition, [ 170, 22 ] );
-	my $holeSpaceSpin = Wx::TextCtrl->new( $statBox, -1, 15, &Wx::wxDefaultPosition, [ 120, 22 ]);
+	my $holeSizeTxt = Wx::StaticText->new( $pnlSchStandard, -1, "Hole size [mm]", &Wx::wxDefaultPosition, [ 170, 22 ] );
+	my $holeSizeSpin = Wx::TextCtrl->new( $pnlSchStandard, -1, 5.1, &Wx::wxDefaultPosition, [ 120, 22 ] );
 
-	my $holeDist2Txt = Wx::StaticText->new( $statBox, -1, "Hole distance Y [mm]", &Wx::wxDefaultPosition, [ 170, 22 ] );
-	my $holeDist2Spin = Wx::TextCtrl->new( $statBox, -1, 15, &Wx::wxDefaultPosition, [ 120, 22 ]);
+	my $holeSpaceTxt = Wx::StaticText->new( $pnlSchStandard, -1, "Hole distance X [mm]", &Wx::wxDefaultPosition, [ 170, 22 ] );
+	my $holeSpaceSpin = Wx::TextCtrl->new( $pnlSchStandard, -1, 15, &Wx::wxDefaultPosition, [ 120, 22 ] );
+
+	my $holeDist2Txt = Wx::StaticText->new( $pnlSchStandard, -1, "Hole distance Y [mm]", &Wx::wxDefaultPosition, [ 170, 22 ] );
+	my $holeDist2Spin = Wx::TextCtrl->new( $pnlSchStandard, -1, 15, &Wx::wxDefaultPosition, [ 120, 22 ] );
 
 	# SET EVENTS
-	Wx::Event::EVT_TEXT( $schemaCb,      -1, sub { $self->__OnDataChanged(@_) } );
-	Wx::Event::EVT_TEXT( $holeSizeSpin,  -1, sub { $self->__OnDataChanged(@_) } );
-	Wx::Event::EVT_TEXT( $holeSpaceSpin, -1, sub { $self->__OnDataChanged(@_) } );
-	Wx::Event::EVT_TEXT( $holeDist2Spin, -1, sub { $self->__OnDataChanged(@_) } );
-	 
-	
-	
-	
+	Wx::Event::EVT_TEXT( $schemaCb,      -1, sub { $self->__OnControlDataChanged(@_) } );
+	Wx::Event::EVT_TEXT( $holeSizeSpin,  -1, sub { $self->__OnControlDataChanged(@_) } );
+	Wx::Event::EVT_TEXT( $holeSpaceSpin, -1, sub { $self->__OnControlDataChanged(@_) } );
+	Wx::Event::EVT_TEXT( $holeDist2Spin, -1, sub { $self->__OnControlDataChanged(@_) } );
 
 	#	# BUILD STRUCTURE OF LAYOUT
 
 	$szRow1->Add( $schemaTxt, 0, &Wx::wxALL, 1 );
 	$szRow1->Add( $schemaCb,  0, &Wx::wxALL, 1 );
 
-	$szRow2->Add( $holeSizeTxt,  0, &Wx::wxALL, 1 );
-	$szRow2->Add( $holeSizeSpin, 0, &Wx::wxALL, 1 );
+	$szSchStandardRow1->Add( $holeSizeTxt,  0, &Wx::wxALL, 1 );
+	$szSchStandardRow1->Add( $holeSizeSpin, 0, &Wx::wxALL, 1 );
 
-	$szRow3->Add( $holeSpaceTxt,  0, &Wx::wxALL, 1 );
-	$szRow3->Add( $holeSpaceSpin, 0, &Wx::wxALL, 1 );
+	$szSchStandardRow2->Add( $holeSpaceTxt,  0, &Wx::wxALL, 1 );
+	$szSchStandardRow2->Add( $holeSpaceSpin, 0, &Wx::wxALL, 1 );
 
-	$szRow4->Add( $holeDist2Txt,  0, &Wx::wxALL, 1 );
-	$szRow4->Add( $holeDist2Spin, 0, &Wx::wxALL, 1 );
+	$szSchStandardRow3->Add( $holeDist2Txt,  0, &Wx::wxALL, 1 );
+	$szSchStandardRow3->Add( $holeDist2Spin, 0, &Wx::wxALL, 1 );
 
-	$szStatBox->Add( $szRow1, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
-	$szStatBox->Add( $szRow2, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
-	$szStatBox->Add( $szRow3, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
-	$szStatBox->Add( $szRow4, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szSchStandard->Add( $szSchStandardRow1, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szSchStandard->Add( $szSchStandardRow2, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szSchStandard->Add( $szSchStandardRow3, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+
+	$pnlSchStandard->SetSizer($szSchStandard);
+	$pnlSchVlepeni->SetSizer($szSchVlepeni);
+	$pnlSchIncluded->SetSizer($szSchIncluded);
+
+	$szStatBox->Add( $szRow1,         0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szStatBox->Add( $pnlSchStandard, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szStatBox->Add( $pnlSchVlepeni,  0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szStatBox->Add( $pnlSchIncluded, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 
 	#	# Set References
 	$self->{"schemaCb"}      = $schemaCb;
 	$self->{"holeSizeSpin"}  = $holeSizeSpin;
 	$self->{"holeSpaceSpin"} = $holeSpaceSpin;
 	$self->{"holeDist2Spin"} = $holeDist2Spin;
+
+	$self->{"pnlSchStandard"} = $pnlSchStandard;
+	$self->{"pnlSchVlepeni"}  = $pnlSchVlepeni;
+	$self->{"pnlSchIncluded"} = $pnlSchIncluded;
 
 	return $szStatBox;
 }
@@ -678,9 +737,9 @@ sub __SetLayoutOther {
 	my $hCenterTypeCb = Wx::ComboBox->new( $statBox, -1, $typesC[0], &Wx::wxDefaultPosition, [ 120, 22 ], \@typesC, &Wx::wxCB_READONLY );
 
 	# SET EVENTS
-	Wx::Event::EVT_TEXT( $spacingCtrl,   -1, sub { $self->__OnDataChanged(@_) } );
-	Wx::Event::EVT_TEXT( $spacingTypeCb, -1, sub { $self->__OnDataChanged(@_) } );
-	Wx::Event::EVT_TEXT( $hCenterTypeCb, -1, sub { $self->__OnDataChanged(@_) } );
+	Wx::Event::EVT_TEXT( $spacingCtrl,   -1, sub { $self->__OnControlDataChanged(@_) } );
+	Wx::Event::EVT_TEXT( $spacingTypeCb, -1, sub { $self->__OnControlDataChanged(@_) } );
+	Wx::Event::EVT_TEXT( $hCenterTypeCb, -1, sub { $self->__OnControlDataChanged(@_) } );
 
 	# BUILD STRUCTURE OF LAYOUT
 

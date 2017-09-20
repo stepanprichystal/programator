@@ -27,7 +27,9 @@ use constant {
 
 use constant {
 			   Schema_STANDARD        => "Standard",  
-			   Schema_FRAME        => "Vlepeni do ramu" 	   
+			   Schema_FRAME        => "Vlepeni do ramu",
+			    Schema_INCLUDED        => "Included in data",
+			   	   
 };
  	 
 

@@ -32,7 +32,7 @@ sub new {
 	# Items references
 	$self->__SetLayout();
 
-	$self->{"layoutMngr"} = $layoutMngr;
+	
 
 	#$self->{"data"}->{"topPcb"} = 0;
 
@@ -48,9 +48,12 @@ sub new {
 #  Public methods
 #-------------------------------------------------------------------------------------------#
 
-sub DataChanged {
+sub StencilDataChanged {
 	my $self = shift;
+	my $layoutMngr = shift;
 	my $autoZoom = shift;
+
+	$self->{"layoutMngr"} = $layoutMngr;
 
 	$self->RefreshDrawing($autoZoom);
 }

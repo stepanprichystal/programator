@@ -4,7 +4,7 @@
 # Amd Which layer merge
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Programs::StencilCreator::Forms::Layout::PasteProfile;
+package Programs::StencilCreator::DataMngr::StencilDataMngr::PasteProfile;
 
 #3th party library
 use strict;

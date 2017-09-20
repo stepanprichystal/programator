@@ -1,10 +1,9 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Base class for BIF builders. Nif Builder is responsible for
-# creation nif file depend on pcb type
+# Description:
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Programs::StencilCreator::Helpers::StencilData;
+package Programs::StencilCreator::Helpers::DataHelper;
 
 #3th party library
 use utf8;
@@ -30,7 +29,7 @@ sub SetSourceData {
 	my $self  = shift;
 	my $inCAM = shift;
 	my $jobId = shift;
-	my $form  = shift;
+	my $dataMngr  = shift;
 
 	# paste layer
 	my @pasteL = grep { $_->{"gROWname"} =~ /^s[ab][-]((ori)|(made))+$/ } CamJob->GetAllLayers( $inCAM, $jobId );
@@ -115,7 +114,7 @@ sub SetSourceData {
 		$stepsSize{$stepName} = \%size;
 	}
 
-	$form->Init( \%stepsSize, \@steps, defined $topLayer ? 1 : 0, defined $botLayer ? 1 : 0 );
+	$dataMngr->Init( \%stepsSize, \@steps, defined $topLayer ? 1 : 0, defined $botLayer ? 1 : 0 );
 
 }
 
@@ -123,7 +122,7 @@ sub SetDefaultData {
 	my $self     = shift;
 	my $inCAM    = shift;
 	my $jobId    = shift;
-	my $form     = shift;
+	my $dataMngr     = shift;
 	my $custNote = shift;
 	my $mess     = shift;
 
@@ -152,11 +151,11 @@ sub SetDefaultData {
 		$$mess .= "Nebyl dohledán typ šablony (top, bot, top+bot) v IS. Bude nastaven defaultní typ: \"TOP\".\n";
 	}
 
-	$form->SetStencilType($stencilType);
+	$dataMngr->SetStencilType($stencilType);
 
 	# 2) set step
-	if ( grep { $_ =~ /mpanel/ } @{ $form->{"steps"} } ) {
-		$form->SetStencilStep("mpanel");
+	if ( grep { $_ =~ /mpanel/ } @{ $dataMngr->{"steps"} } ) {
+		$dataMngr->SetStencilStep("mpanel");
 	}
 
 	# 3) stencil size
@@ -180,7 +179,8 @@ sub SetDefaultData {
 		$h = 480;
 	}
 
-	$form->SetStencilSize( $w, $h );
+	$dataMngr->SetStencilSizeX( $w );
+	$dataMngr->SetStencilSizeY( $h );
 
 	# 4) Schema type
 	my $schemaType = Enums->Schema_STANDARD;
@@ -189,30 +189,30 @@ sub SetDefaultData {
 		$schemaType = Enums->Schema_FRAME;
 	}
 
-	$form->SetSchemaType($schemaType);
+	$dataMngr->SetSchemaType($schemaType);
 
 	if ( $schemaType eq Enums->Schema_STANDARD ) {
 
 		# 5) Hole size
-		$form->SetHoleSize(5.1);
+		$dataMngr->SetHoleSize(5.1);
 
 		# 6) Hole distance x
 		if ( $custNote->HoleDistX() ) {
-			$form->SetHoleDist( $custNote->HoleDistX() );
+			$dataMngr->SetHoleDist( $custNote->HoleDistX() );
 		}
 		else {
-			$form->SetHoleDist(15);    # default 15 mm
+			$dataMngr->SetHoleDist(15);    # default 15 mm
 		}
 
 		# 6) Hole distance y
 		if ( $custNote->HoleDistY() ) {
 
-			$form->SetHoleDist2( $custNote->HoleDistY() );
+			$dataMngr->SetHoleDist2( $custNote->HoleDistY() );
 		}
 		else {
 
 			# compute hole dist 15 mm from top/bot border
-			$form->SetHoleDist2( $h - 2 * 15 );
+			$dataMngr->SetHoleDist2( $h - 2 * 15 );
 		}
 
 	}
@@ -220,20 +220,20 @@ sub SetDefaultData {
 	if ( $stencilType eq Enums->StencilType_TOPBOT ) {
 
 		# 7) Spacing type
-		$form->SetSpacingType( Enums->Spacing_PROF2PROF );
+		$dataMngr->SetSpacingType( Enums->Spacing_PROF2PROF );
 
 		# 8) Set distance between profiles
-		$form->SetSpacing(0);
+		$dataMngr->SetSpacing(0);
 
 	}
 	
 	# 9) Hole distance y
 	if ( $custNote->CenterByData() ) {
 		
-		$form->SetHCenterType(Enums->HCenter_BYDATA);
+		$dataMngr->SetHCenterType(Enums->HCenter_BYDATA);
 	}else{
 		
-		$form->SetHCenterType(Enums->HCenter_BYPROF);
+		$dataMngr->SetHCenterType(Enums->HCenter_BYPROF);
 	}
 
 }

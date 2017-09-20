@@ -4,7 +4,7 @@
 # Amd Which layer merge
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Programs::StencilCreator::Forms::Layout::Schema;
+package Programs::StencilCreator::DataMngr::StencilDataMngr::Schema;
 
 #3th party library
 use strict;
