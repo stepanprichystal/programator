@@ -100,11 +100,18 @@ sub GetDefaultSpacing{
 	my $spacing = 0;
 	# rotate stencils in order compute properlz default spacing
 	if ( $self->{"stencilType"} eq Enums->StencilType_TOPBOT ) {
-	
-		$self->__RotateStencil();
-		
+ 
 		my $sch = $self->GetSchema();
-		$spacing = ($sch->GetHoleDist2() - $self->GetTopProfile()->GetHeight() -  $self->GetBotProfile()->GetHeight())/3;
+		
+		if($sch->GetSchemaType() eq Enums->Schema_STANDARD){
+			$spacing = ($sch->GetHoleDist2() - $self->GetTopProfile()->GetHeight() -  $self->GetBotProfile()->GetHeight())/3;
+		
+		
+		}else{
+			
+			$spacing = ($sch->GetHeight() - $self->GetTopProfile()->GetHeight() -  $self->GetBotProfile()->GetHeight())/3;
+		}
+		
 	} 
 	
 	return $spacing;

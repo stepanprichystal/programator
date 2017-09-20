@@ -155,21 +155,32 @@ sub __UpdateDataMngr {
 	# set specific default value
 		 	
 	# compute default spacing
-	if($self->{"dataMngr"}->GetStencilType() eq Enums->StencilType_TOPBOT){
-		
-		 my $stencilMngr = $self->{"dataMngr"}->GetStencilDataMngr();
-		
-			$stencilMngr->
-		
-		 my $spacing = 
-	}
+#	if($self->{"dataMngr"}->GetStencilType() eq Enums->StencilType_TOPBOT){
+#		
+#		 my $stencilMngr = $self->{"dataMngr"}->GetStencilDataMngr();
+#		
+#			if ( $defaultSpacing && $dataMngr->GetSpacingType() eq Enums->Spacing_PROF2PROF ) {
+#
+#		my $spac = $stencilMngr->GetDefaultSpacing();
+#		$stencilMngr->SetSpacing($spac);
+#
+#		# set spacing to control
+#		#$dataMngr->SetSpacing($spac);
+#
+#	}
+#	else {
+#		
+#			my $h = $stencilMngr->GetTopProfile()->GetHeight();
+#		
+#		 my $spacing = 
+#	}
 	 
 }
 
 sub __UpdateStencilDataMngr {
 	my $self           = shift;
 	my $autoZoom       = shift;
-	my $defaultSpacing = shift;
+	
 
 	my $dataMngr    = $self->{"dataMngr"};
 	my $stencilMngr = $self->{"dataMngr"}->GetStencilDataMngr();
@@ -226,20 +237,10 @@ sub __UpdateStencilDataMngr {
 	# 5) Spacing type
 	$stencilMngr->SetSpacingType( $dataMngr->GetSpacingType() );
 
-	# 4) Set spacing size. Default or set by user
-	if ( $defaultSpacing && $dataMngr->GetSpacingType() eq Enums->Spacing_PROF2PROF ) {
+	# 4) Set spacing size
 
-		my $spac = $stencilMngr->GetDefaultSpacing();
-		$stencilMngr->SetSpacing($spac);
-
-		# set spacing to control
-		#$dataMngr->SetSpacing($spac);
-
-	}
-	else {
-
-		$stencilMngr->SetSpacing( $dataMngr->GetSpacing() );
-	}
+	$stencilMngr->SetSpacing( $dataMngr->GetSpacing() );
+	 
 
 	# 5)Set horiyontal aligment type
 	$stencilMngr->SetHCenterType( $dataMngr->GetHCenterType() );
