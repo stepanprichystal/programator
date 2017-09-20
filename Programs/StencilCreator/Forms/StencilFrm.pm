@@ -272,12 +272,13 @@ sub UpdateDrawing {
 
 sub __OnControlDataChanged {
 	my $self           = shift;
+	my $controlName = shift;
+	my $newValue = shift;
 	my $autoZoom       = shift;
-	my $defaultSpacing = shift;
-
+ 
 	if ( $self->{"raiseEvt"} ) {
 
-		$self->{"fmrDataChanged"}->Do($self);
+		$self->{"fmrDataChanged"}->Do($controlName, $newValue);
 	}
 
 	#	# Update GUI
@@ -587,11 +588,11 @@ sub __SetLayoutGeneral {
 	my $sizeYTextCtrl = Wx::SpinCtrl->new( $statBox, -1, 480, &Wx::wxDefaultPosition, [ 60, 22 ], &Wx::wxSP_ARROW_KEYS, 200, 800 );
 
 	# SET EVENTS
-	Wx::Event::EVT_TEXT( $stencilTypeCb, -1, sub { $self->__OnControlDataChanged( 0, 1 ) } );
-	Wx::Event::EVT_TEXT( $stepCb,        -1, sub { $self->__OnControlDataChanged( 0, 1 ) } );
-	Wx::Event::EVT_TEXT( $sizeCb,        -1, sub { $self->__OnControlDataChanged( 1, 1 ) } );
-	Wx::Event::EVT_TEXT( $sizeXTextCtrl, -1, sub { $self->__OnControlDataChanged( 1, 1 ) } );
-	Wx::Event::EVT_TEXT( $sizeYTextCtrl, -1, sub { $self->__OnControlDataChanged( 1, 1 ) } );
+	Wx::Event::EVT_TEXT( $stencilTypeCb, -1, sub { $self->__OnControlDataChanged( "stencilType", $self->GetStencilType() ) } );
+	Wx::Event::EVT_TEXT( $stepCb,        -1, sub { $self->__OnControlDataChanged( "step", $self->GetStencilStep()) } );
+	Wx::Event::EVT_TEXT( $sizeCb,        -1, sub { $self->__OnControlDataChanged( "size", $self->GetStencilSize() ) } );
+	Wx::Event::EVT_TEXT( $sizeXTextCtrl, -1, sub { $self->__OnControlDataChanged( "sizeX", $self->GetStencilSize() ) } );
+	Wx::Event::EVT_TEXT( $sizeYTextCtrl, -1, sub { $self->__OnControlDataChanged( "sizeY", $self->GetStencilSize() ) } );
 
 	# BUILD STRUCTURE OF LAYOUT
 
@@ -732,14 +733,14 @@ sub __SetLayoutOther {
 	my $spacingTxt = Wx::StaticText->new( $statBox, -1, "Spacing [mm]", &Wx::wxDefaultPosition, [ 170, 22 ] );
 	my $spacingCtrl = Wx::SpinCtrl->new( $statBox, -1, 60, &Wx::wxDefaultPosition, [ 120, 22 ], &Wx::wxSP_ARROW_KEYS, 0, 250 );
 
-	my $centerTxt = Wx::StaticText->new( $statBox, -1, "Center data", &Wx::wxDefaultPosition, [ 170, 22 ] );
+	my $centerTxt = Wx::StaticText->new( $statBox, -1, "Horizontal center data", &Wx::wxDefaultPosition, [ 170, 22 ] );
 	my @typesC = ( Enums->HCenter_BYPROF, Enums->HCenter_BYDATA );
 	my $hCenterTypeCb = Wx::ComboBox->new( $statBox, -1, $typesC[0], &Wx::wxDefaultPosition, [ 120, 22 ], \@typesC, &Wx::wxCB_READONLY );
 
 	# SET EVENTS
-	Wx::Event::EVT_TEXT( $spacingCtrl,   -1, sub { $self->__OnControlDataChanged(@_) } );
-	Wx::Event::EVT_TEXT( $spacingTypeCb, -1, sub { $self->__OnControlDataChanged(@_) } );
-	Wx::Event::EVT_TEXT( $hCenterTypeCb, -1, sub { $self->__OnControlDataChanged(@_) } );
+	Wx::Event::EVT_TEXT( $spacingCtrl,   -1, sub { $self->__OnControlDataChanged("spacing", $self->GetSpacing()) } );
+	Wx::Event::EVT_TEXT( $spacingTypeCb, -1, sub { $self->__OnControlDataChanged("spacingType", $self->GetSpacingType()) } );
+	Wx::Event::EVT_TEXT( $hCenterTypeCb, -1, sub { $self->__OnControlDataChanged("hCenterType", $self->GetHCenterType()) } );
 
 	# BUILD STRUCTURE OF LAYOUT
 

@@ -47,7 +47,7 @@ sub new {
 
 	# Main application form
 	$self->{"form"} = StencilFrm->new( -1, $self->{"inCAM"}, $self->{"jobId"} );
-	$self->{"form"}->{"fmrDataChanged"}->Add( sub { $self->__OnFrmDataChanged() } );
+	$self->{"form"}->{"fmrDataChanged"}->Add( sub { $self->__OnFrmDataChanged(@_) } );
 
 	# Data where are stored stencil position, deimensions etc
 	$self->{"dataMngr"} = DataMngr->new();
@@ -101,9 +101,11 @@ sub Run {
 sub __OnFrmDataChanged {
 	my $self = shift;
 	my $form = shift;
+	my $controlName = shift;
+	my $newValue = shift;
 
 	# 2) update actual stored form data
-	$self->__UpdateDataMngr($form);
+	$self->__UpdateDataMngr($form, $controlName, $newValue);
  
 
 	$self->__RefreshForm();
@@ -116,6 +118,8 @@ sub __OnFrmDataChanged {
 sub __UpdateDataMngr {
 	my $self = shift;
 	my $form = shift;
+	my $controlName = shift;
+	my $newValue = shift;
 
 	# set default data
 
@@ -127,6 +131,7 @@ sub __UpdateDataMngr {
 	$self->{"dataMngr"}->SetStencilSizeY( $size{"h"} );
 
 	$self->{"dataMngr"}->SetStencilStep( $self->{"form"}->GetStencilStep() );
+  
 
 	$self->{"dataMngr"}->SetSpacing( $self->{"form"}->GetSpacing() );
 
@@ -145,6 +150,20 @@ sub __UpdateDataMngr {
 	$self->{"dataMngr"}->SetHoleDist2( $self->{"form"}->GetHoleDist2() );
 	
 	$self->__UpdateStencilDataMngr();
+	
+	
+	# set specific default value
+		 	
+	# compute default spacing
+	if($self->{"dataMngr"}->GetStencilType() eq Enums->StencilType_TOPBOT){
+		
+		 my $stencilMngr = $self->{"dataMngr"}->GetStencilDataMngr();
+		
+			$stencilMngr->
+		
+		 my $spacing = 
+	}
+	 
 }
 
 sub __UpdateStencilDataMngr {
