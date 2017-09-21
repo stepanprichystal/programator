@@ -31,7 +31,7 @@ sub new {
 	$self->{"spacing"}     = undef;
 	$self->{"spacingType"} = undef;
 	$self->{"centerType"}  = undef;
-	$self->{"schema"} = undef;
+	$self->{"schema"}      = undef;
 
 	$self->{"init"} = 0;
 
@@ -94,29 +94,29 @@ sub GetBotDataPos {
 	return \%pos;
 }
 
-sub GetDefaultSpacing{
+sub GetDefaultSpacing {
 	my $self = shift;
-	
+
 	my $spacing = 0;
+
 	# rotate stencils in order compute properlz default spacing
 	if ( $self->{"stencilType"} eq Enums->StencilType_TOPBOT ) {
- 
+
 		my $sch = $self->GetSchema();
-		
-		if($sch->GetSchemaType() eq Enums->Schema_STANDARD){
-			$spacing = ($sch->GetHoleDist2() - $self->GetTopProfile()->GetHeight() -  $self->GetBotProfile()->GetHeight())/3;
-		
-		
-		}else{
-			
-			$spacing = ($sch->GetHeight() - $self->GetTopProfile()->GetHeight() -  $self->GetBotProfile()->GetHeight())/3;
+
+		if ( $sch->GetSchemaType() eq Enums->Schema_STANDARD ) {
+			$spacing = ( $sch->GetHoleDist2() - $self->GetTopProfile()->GetHeight() - $self->GetBotProfile()->GetHeight() ) / 3;
+
 		}
-		
-	} 
-	
+		else {
+			# 30 is 15 mm from top + 15 mm from bot
+			$spacing = ( $sch->GetHeight() - 30 - $self->GetTopProfile()->GetHeight() - $self->GetBotProfile()->GetHeight() ) / 3;
+		}
+
+	}
+
 	return $spacing;
 }
-
 
 #-------------------------------------------------------------------------------------------#
 #  Set Layout properties
@@ -231,7 +231,6 @@ sub SetHCenterType {
 
 }
 
-
 sub GetSchema {
 	my $self = shift;
 
@@ -240,11 +239,12 @@ sub GetSchema {
 
 sub SetSchema {
 	my $self = shift;
-	my $val = shift;
+	my $val  = shift;
 
 	$self->{"schema"} = $val;
 
 }
+
 #-------------------------------------------------------------------------------------------#
 #  Private methods
 #-------------------------------------------------------------------------------------------#
@@ -281,7 +281,17 @@ sub __GetTopProfilePosY {
 	# Single paste data
 	if ( $self->{"stencilType"} ne Enums->StencilType_TOPBOT ) {
 
-		$posY = ( $self->{"h"} - $self->{"topProf"}->GetHeight() ) / 2;
+		# Center by profile
+		if ( $self->{"centerType"} eq Enums->HCenter_BYPROF ) {
+
+			$posY = ( $self->{"h"} - $self->{"topProf"}->GetHeight() ) / 2;
+
+		}
+		# Center by data
+		elsif ( $self->{"centerType"} eq Enums->HCenter_BYDATA ) {
+			
+			$posY = ( $self->{"h"} - $self->{"topProf"}->GetPasteData()->GetHeight() ) / 2 - $self->{"topProf"}->GetPDOrigin->{"y"} ;
+		}
 	}
 
 	# Merged paste data
@@ -332,8 +342,18 @@ sub __GetBotProfilePosY {
 
 	# Single paste data
 	if ( $self->{"stencilType"} ne Enums->StencilType_TOPBOT ) {
+ 
+		# Center by profile
+		if ( $self->{"centerType"} eq Enums->HCenter_BYPROF ) {
 
-		$posY = ( $self->{"h"} - $self->{"botProf"}->GetHeight() ) / 2;
+			$posY = ( $self->{"h"} - $self->{"botProf"}->GetHeight() ) / 2;
+
+		}
+		# Center by data
+		elsif ( $self->{"centerType"} eq Enums->HCenter_BYDATA ) {
+			
+			$posY = ( $self->{"h"} - $self->{"botProf"}->GetPasteData()->GetHeight() ) / 2 - $self->{"botProf"}->GetPDOrigin->{"y"} ;
+		}
 	}
 
 	# Merged paste data
@@ -391,8 +411,8 @@ sub __RotateStencil {
 
 		if ( $self->{"topProf"} ) {
 
-			my $lSide     = $self->GetHeight()/2 > $self->GetWidth() ? "h" : "w";
-			my $lProfSide = $self->{"topProf"}->GetHeight() > $self->{"topProf"}->GetWidth()     ? "h" : "w";
+			my $lSide = $self->GetHeight() / 2 > $self->GetWidth() ? "h" : "w";
+			my $lProfSide = $self->{"topProf"}->GetHeight() > $self->{"topProf"}->GetWidth() ? "h" : "w";
 
 			if ( $lSide ne $lProfSide && $diffTop > 0.1 ) {
 				$self->{"topProf"}->SwitchDim();
@@ -402,8 +422,8 @@ sub __RotateStencil {
 
 		if ( $self->{"botProf"} ) {
 
-			my $lSide     = $self->GetHeight()/2 > $self->GetWidth() ? "h" : "w";
-			my $lProfSide = $self->{"botProf"}->GetHeight() > $self->{"botProf"}->GetWidth()     ? "h" : "w";
+			my $lSide = $self->GetHeight() / 2 > $self->GetWidth() ? "h" : "w";
+			my $lProfSide = $self->{"botProf"}->GetHeight() > $self->{"botProf"}->GetWidth() ? "h" : "w";
 
 			if ( $lSide ne $lProfSide && $diffBot > 0.1 ) {
 				$self->{"botProf"}->SwitchDim();

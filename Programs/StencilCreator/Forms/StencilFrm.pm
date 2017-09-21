@@ -369,12 +369,12 @@ sub __DisableControls {
 
 	if ( $st eq Enums->StencilType_TOPBOT ) {
 
-		$self->{"spacingTypeCb"}->Enable();
+		 
 		$self->{"spacingCtrl"}->Enable();
 	}
 	else {
 
-		$self->{"spacingTypeCb"}->Disable();
+		 
 		$self->{"spacingCtrl"}->Disable();
 
 	}
@@ -407,6 +407,16 @@ sub __DisableControls {
 	}
 	elsif ( $schType eq Enums->Schema_INCLUDED ) {
 
+	}
+	
+	# if center by profile, spacing type only prof2prof
+	if($self->{"hCenterTypeCb"}->GetValue() eq Enums->HCenter_BYPROF){
+		
+		$self->{"spacingTypeCb"}->SetValue(Enums->Spacing_PROF2PROF);
+		
+	}elsif($self->{"hCenterTypeCb"}->GetValue() eq Enums->HCenter_BYDATA){
+		
+		$self->{"spacingTypeCb"}->SetValue(Enums->Spacing_DATA2DATA);
 	}
 
 }
@@ -732,8 +742,10 @@ sub __SetLayoutOther {
 
 	my $spacingTxt = Wx::StaticText->new( $statBox, -1, "Spacing [mm]", &Wx::wxDefaultPosition, [ 170, 22 ] );
 	my $spacingCtrl = Wx::SpinCtrl->new( $statBox, -1, 60, &Wx::wxDefaultPosition, [ 120, 22 ], &Wx::wxSP_ARROW_KEYS, 0, 250 );
+	$spacingCtrl->Disable();
 
-	my $centerTxt = Wx::StaticText->new( $statBox, -1, "Horizontal center data", &Wx::wxDefaultPosition, [ 170, 22 ] );
+
+	my $centerTxt = Wx::StaticText->new( $statBox, -1, "Center pcb data", &Wx::wxDefaultPosition, [ 170, 22 ] );
 	my @typesC = ( Enums->HCenter_BYPROF, Enums->HCenter_BYDATA );
 	my $hCenterTypeCb = Wx::ComboBox->new( $statBox, -1, $typesC[0], &Wx::wxDefaultPosition, [ 120, 22 ], \@typesC, &Wx::wxCB_READONLY );
 
@@ -744,15 +756,16 @@ sub __SetLayoutOther {
 
 	# BUILD STRUCTURE OF LAYOUT
 
-	$szRow1->Add( $spacingTypeTxt, 0, &Wx::wxALL, 1 );
-	$szRow1->Add( $spacingTypeCb,  0, &Wx::wxALL, 1 );
+	$szRow1->Add( $centerTxt,     0, &Wx::wxALL, 1 );
+	$szRow1->Add( $hCenterTypeCb, 0, &Wx::wxALL, 1 );
 
-	$szRow2->Add( $spacingTxt,  0, &Wx::wxALL, 1 );
-	$szRow2->Add( $spacingCtrl, 0, &Wx::wxALL, 1 );
+	$szRow2->Add( $spacingTypeTxt, 0, &Wx::wxALL, 1 );
+	$szRow2->Add( $spacingTypeCb,  0, &Wx::wxALL, 1 );
 
-	$szRow3->Add( $centerTxt,     0, &Wx::wxALL, 1 );
-	$szRow3->Add( $hCenterTypeCb, 0, &Wx::wxALL, 1 );
+	$szRow3->Add( $spacingTxt,  0, &Wx::wxALL, 1 );
+	$szRow3->Add( $spacingCtrl, 0, &Wx::wxALL, 1 );
 
+ 
 	$szStatBox->Add( $szRow1, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 	$szStatBox->Add( $szRow2, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 	$szStatBox->Add( $szRow3, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
