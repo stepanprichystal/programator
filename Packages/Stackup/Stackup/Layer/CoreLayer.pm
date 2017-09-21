@@ -32,6 +32,10 @@ sub new {
 	# reference of bot copper layer
 	$self->{"botCopperLayer"}    = undef;  
 	
+	# Identification of material by Multicall ml.xml
+		
+	$self->{"qId"}     = undef;  # quality of material
+		
 	return $self;  
 }
 
@@ -52,6 +56,14 @@ sub GetCoreNumber{
 	my $self = shift;
 	return $self->{"coreNumber"};
 }
+
+sub GetQId{
+	my $self = shift;
+	
+	return $self->{"qId"};
+}
+
+
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

@@ -29,6 +29,10 @@ sub new {
 	
 	$self->{"parent"} = 0;
 	
+	# Identification of material by Multicall ml.xml
+		
+	$self->{"qId"}     = undef;  # quality of material
+	
 	return $self;  
 }
 
@@ -44,6 +48,11 @@ sub GetAllPrepregs{
 	my $self= shift;
 	
 	return @{$self->{"prepregs"}};
+}
+
+sub GetQId{
+	my $self = shift;
+	return $self->{"qId"};
 }
 
  

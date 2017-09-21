@@ -20,6 +20,7 @@ use Try::Tiny;
 use aliased 'Connectors::HeliosConnector::Helper';
 use aliased 'Connectors::SqlParameter';
 use aliased 'Connectors::HeliosConnector::Enums';
+use aliased 'Enums::EnumsIS';
 use aliased 'Helpers::GeneralHelper';
 use aliased 'Packages::SystemCall::SystemCall';
 use aliased 'Connectors::EnumsErrors';
@@ -1169,40 +1170,92 @@ sub GetPcbsInProduceMDI {
 	return @result;
 }
 
+# Return store information about prepreg defined by multical ids
+sub GetCopperStoreInfo {
+	my $self = shift;
+	my $id   = shift; # prepreg thick id
+	
+	return $self->GetMatStoreInfo(EnumsIS->MatType_COPPER, undef, $id);
+
+}
+
+# Return store information about prepreg defined by multical ids
+sub GetPrepregStoreInfo {
+	my $self = shift;
+	my $qId  = shift; # quality id (DR4, IS400, ..)
+	my $id   = shift; # prepreg thick id
+	
+	return $self->GetMatStoreInfo(EnumsIS->MatType_PREPREG, $qId, $id);
+
+}
+
+# Return store information about core defined by multical ids
+sub GetCoreStoreInfo {
+	my $self = shift;
+	my $qId  = shift; # quality id (DR4, IS400, ..)
+	my $id   = shift; # core thick id
+	my $id2   = shift; # copper thick id
+	
+	return $self->GetMatStoreInfo(EnumsIS->MatType_CORE, $qId, $id, $id2);
+}
+
+
+# Return infro from actual store from CNC store about material (copper, core, prepreg types only)
+# qId, Id, Id2 are from UDA table and are refer to Multicall file "ml.xml", 
+# where are defined materials and qid
 sub GetMatStoreInfo {
 	my $self = shift;
+	my $matType = shift;
 	my $qId  = shift;
 	my $id   = shift;
 	my $id2  = shift;
 
-	my @params = (
+	my @params = ( SqlParameter->new( "_matType", Enums->SqlDbType_VARCHAR, $matType), 
 				   SqlParameter->new( "__qId", Enums->SqlDbType_INT, $qId ),
 				   SqlParameter->new( "__id",  Enums->SqlDbType_INT, $id ),
 				   SqlParameter->new( "__id2", Enums->SqlDbType_INT, $id2 )
 	);
+	
+	my $where = "";
+	if($matType eq EnumsIS->MatType_PREPREG){
+		
+		$where .= "and uda.dps_qid = __qId"
+	
+	}elsif($matType eq EnumsIS->MatType_CORE){
+		
+		$where .= "and uda.dps_qid = __qId and uda.dps_id2 = __id2"
+	}
 
 	my $cmd = "SELECT kks.reference_subjektu, 
-					kks.nazev_subjektu, 
+					
+					kks.nazev_subjektu as nazev_mat,
 					sklad.reference_subjektu, 
 					sklad.nazev_subjektu, 
-					ss.pocet_disp, 
+					ss.pocet_disp as stav_skladu, 
 					uda.dps_id, 
 					uda.dps_id2, 
 					uda.dps_qid
+					
 				FROM lcs.kmenova_karta_skladu kks
 					join lcs.stav_sk ss on ss.zdroj = kks.cislo_subjektu
 					join lcs.subjekty sklad on sklad.cislo_subjektu= ss.sklad
 					join lcs.uda_kmenova_karta_skladu uda on uda.cislo_subjektu= kks.cislo_subjektu
 				WHERE kks.usporadaci_znak = 'DPS'
-					and ss.pocet_disp > 0 
-					and uda.dps_id = 15 
-					and uda.dps_id2 = 8 
-					and uda.dps_qid = 1";
+					and ss.pocet_disp >= 0
+					and sklad.nazev_subjektu LIKE '%cnc%'
+					and uda.dps_type = _matType
+					and uda.dps_id = __id
+					$where";
+
  
 	my @result = Helper->ExecuteDataSet( $cmd, \@params );
+	
+	if(scalar(@result)){
+	 
+		return $result[0];
+	}
 
-	return @result;
-
+	return 0;
 }
 
 #-------------------------------------------------------------------------------------------#
@@ -1239,9 +1292,9 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	use aliased 'Connectors::HeliosConnector::HegMethods';
 	use Data::Dump qw(dump);
 
-	my @pcbInProduc = HegMethods->GetMatStoreInfo(1, 15, 8);
+	my $pcbInProduc = HegMethods->GetCopperStoreInfo( 5);
 
-	dump(@pcbInProduc);
+	dump($pcbInProduc);
 
 	#print scalar(@opak);
 

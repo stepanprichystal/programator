@@ -252,6 +252,8 @@ sub __GetStackupLayerInfo {
 			$layerInfo->{"text"}         = $info->{text};
 			$layerInfo->{"typetext"}     = $info->{typetext};
 			$layerInfo->{"copperNumber"} = $copperCnt;
+			$layerInfo->{"id"} = 			$element->{id};
+			
 
 			push( @thickList, $layerInfo );
 
@@ -265,6 +267,8 @@ sub __GetStackupLayerInfo {
 			$layerInfo->{"thick"}    = $info->{d};
 			$layerInfo->{"text"}     = $info->{text};
 			$layerInfo->{"typetext"} = $info->{typetext};
+			$layerInfo->{"id"} = 			$element->{id};
+			$layerInfo->{"qId"} = 			$element->{qId};
 
 			push( @thickList, $layerInfo );
 
@@ -282,6 +286,9 @@ sub __GetStackupLayerInfo {
 			$layerInfo->{"text"}       = $info->{text};
 			$layerInfo->{"typetext"}   = $info->{typetext};
 			$layerInfo->{"coreNumber"} = $coreCnt;
+			$layerInfo->{"id"} = 			$element->{id};
+			$layerInfo->{"qId"} = 			$element->{qId};
+			
 			push( @thickList, $layerInfo );
 		}
 

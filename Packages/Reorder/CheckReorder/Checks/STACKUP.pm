@@ -22,6 +22,7 @@ use aliased 'CamHelpers::CamJob';
 use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'Packages::Stackup::Stackup::Stackup';
 use aliased 'Packages::ProductionPanel::StandardPanel::StandardExt';
+use aliased 'Packages::Stackup::StackupOperation';
 
 #-------------------------------------------------------------------------------------------#
 #  Public method
@@ -49,10 +50,15 @@ sub Run {
 	}
 
 	my $layerCnt = CamJob->GetSignalLayerCnt( $inCAM, $jobId );
+
+	unless ( $layerCnt > 2 ) {
+		return 0;
+	}
+
 	my $materialKind = HegMethods->GetMaterialKind($jobId);
 
 	# If multilayer
-	if ( !$isPool && $layerCnt > 2 && $materialKind ) {
+	if ( !$isPool && $materialKind ) {
 
 		my $stackup = Stackup->new($jobId);
 
@@ -89,7 +95,18 @@ sub Run {
 			}
 		}
 
+		# 3) Test if stackup material is on stock
+
+		my $errMes = "";
+
+		my $matOk = StackupOperation->StackupMatInStock( $jobId, $stackup, \$errMes );
+
+		unless($matOk){
+			$self->_AddChange( "Materiál, který je obsažen ve složení nelze použít. Detail chyby: $errMes", 1 );
+		}
+
 	}
+
 }
 
 #-------------------------------------------------------------------------------------------#

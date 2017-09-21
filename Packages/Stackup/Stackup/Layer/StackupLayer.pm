@@ -34,6 +34,11 @@ sub new {
 	# type of material eg FR4, IS410 
 	$self->{"typetext"} = undef;
 	
+	# Identification of material by Multicall ml.xml
+
+	
+	$self->{"id"}     = undef;  # id of material
+	
 
 	return $self;  
 }
@@ -64,6 +69,10 @@ sub GetTextType{
 	return $self->{"typetext"};
 }
 
+sub GetId{
+	my $self = shift;
+	return $self->{"id"};
+}
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

@@ -21,4 +21,12 @@ use constant {
 
 };
 
+# material types from  uda_kmenova_karta_skladu.dps_type
+use constant {
+	MatType_COPPER => "Copper",
+	MatType_CORE => "Core",
+	MatType_PREPREG => "Prepreg"
+};
+ 
+
 1;

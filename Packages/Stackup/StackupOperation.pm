@@ -13,12 +13,11 @@ use aliased 'Enums::EnumsGeneral';
 use aliased 'Packages::Stackup::Enums';
 use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'Packages::Stackup::Stackup::Stackup';
+use aliased 'Enums::EnumsIS';
 
 #-------------------------------------------------------------------------------------------#
 #  Script methods
 #-------------------------------------------------------------------------------------------#
-
-
 
 #Return final thickness of pcb base on Cu layer number
 sub GetThickByLayer {
@@ -33,10 +32,10 @@ sub GetThickByLayer {
 
 		my $stackup = Stackup->new($pcbId);
 
-		$thick = $stackup->GetThickByLayerName($layer );
-		
+		$thick = $stackup->GetThickByLayerName($layer);
+
 		my $cuLayer = $stackup->GetCuLayer($layer);
-		
+
 		#test by Mira, add 80um (except cores)
 		if ( $cuLayer->GetType() eq EnumsGeneral->Layers_TOP || $cuLayer->GetType() eq EnumsGeneral->Layers_BOT ) {
 			$thick += 0.080;
@@ -46,13 +45,10 @@ sub GetThickByLayer {
 	else {
 
 		$thick = HegMethods->GetPcbMaterialThick($pcbId);
-		
+
 		#test by Mira, add 80um (except cores)
 		$thick += 0.080;
 	}
-
-
-	
 
 	#there are two resist from top and bottom. Top resis 40um + bottom 20um
 	if ( !$noResist ) {
@@ -68,11 +64,11 @@ sub GetThickByLayer {
 # Return string "top" or "bot"
 sub GetSideByLayer {
 	my $self      = shift;
-	my $jobId = shift;
+	my $jobId     = shift;
 	my $layerName = shift;
-	my $stackup = shift;
-	
-	unless(defined $stackup){
+	my $stackup   = shift;
+
+	unless ( defined $stackup ) {
 		$stackup = Stackup->new($jobId);
 	}
 
@@ -120,39 +116,95 @@ sub GetSideByLayer {
 	return $side;
 }
 
-
 # If stackup contains core topmost or very bottom (Cu-core-cu-prepreg-Cu-core-cu)
 # Return 1, else 0
 sub OuterCore {
-	my $self     = shift;
-	my $pcbId    = shift;    #pcb id
-	 
- 	my $result = 0;
- 
+	my $self  = shift;
+	my $pcbId = shift;    #pcb id
+
+	my $result = 0;
+
 	if ( HegMethods->GetTypeOfPcb($pcbId) eq 'Vicevrstvy' ) {
 
 		my $stackup = Stackup->new($pcbId);
-		my @cores = $stackup->GetAllCores();
-		
+		my @cores   = $stackup->GetAllCores();
+
 		my $firstC = $cores[0];
-		my $lastC = $cores[scalar(@cores) -1];
-		
-		my $topCopper = $firstC->GetTopCopperLayer()->GetCopperName() ;
-		
+		my $lastC  = $cores[ scalar(@cores) - 1 ];
+
+		my $topCopper = $firstC->GetTopCopperLayer()->GetCopperName();
+
 		my $botCopper = $lastC->GetBotCopperLayer()->GetCopperName();
-		
-		if($topCopper  eq "c" ||  $botCopper  eq "s"){
-			
+
+		if ( $topCopper eq "c" || $botCopper eq "s" ) {
+
 			$result = 1;
 		}
-		
+
 	}
-	
+
 	return $result;
 }
 
+# Check if material for multilayer pcb is actually on the store
+sub StackupMatInStock {
+	my $self    = shift;
+	my $pcbId   = shift;    #pcb id
+	my $stackup = shift;    # if not defined, stackup will e loaded
+	my $errMess = shift;    # if err, missin materials in stock
 
+	my $result = 1;
 
+	unless ($stackup) {
+		$stackup = Stackup->new($pcbId);
+	}
+
+	# 1) check cores
+	my @prepregs = map {$_->GetAllPrepregs() } grep {  $_->GetType() eq Enums->MaterialType_PREPREG} $stackup->GetAllLayers() ;
+ 
+ 
+	foreach my $m ( $stackup->GetAllCores() ) {
+
+		my  $sInfo = HegMethods->GetCoreStoreInfo( $m->GetQId(), $m->GetId(), $m->GetTopCopperLayer()->GetId() );
+ 
+		if ( $sInfo == 0 ) {
+
+			$result = 0;
+			$$errMess .=
+			  "- Material: " . $m->GetType() . " - "  . $m->GetTextType() . "," . $m->GetText() ." - ".$m->GetTopCopperLayer()->GetText(). " is not in  IS stock evidence\n";
+
+		}
+		elsif ( $sInfo->{"stav_skladu"} == 0 ) {
+
+			$result = 0;
+			$$errMess .= "- Material quantity of " . $sInfo->{"nazev_mat"} . "  is 0m2 in IS stock\n";
+
+		}
+	}
+
+	
+	foreach my $m ( map {$_->GetAllPrepregs() } grep {  $_->GetType() eq Enums->MaterialType_PREPREG} $stackup->GetAllLayers() ) {
+
+		my $sInfo = HegMethods->GetPrepregStoreInfo( $m->GetQId(), $m->GetId() );
+ 
+		if ( $sInfo == 0 ) {
+
+			$result = 0;
+			$$errMess .=
+			  "- Material: " . $m->GetType() . " - "  . $m->GetTextType() . "," . $m->GetText() . " is not in  IS stock evidence\n";
+
+		}
+		elsif ( $sInfo->{"stav_skladu"} == 0 ) {
+
+			$result = 0;
+			$$errMess .= "- Material quantity of " . $sInfo->{"nazev_mat"} . "  is 0m2 in IS stock\n";
+
+		}
+	}
+	
+
+	return $result;
+}
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
@@ -161,12 +213,13 @@ sub OuterCore {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-
 	use aliased 'Packages::Stackup::StackupOperation';
 
-	my $test = StackupOperation->GetSideByLayer("f52456", "v3");
+	my $mes = "";
 
-	 
+	my $test = StackupOperation->StackupMatInStock("d94258", undef, \$mes);
+	
+	print $mes;
 
 	print $test;
 
