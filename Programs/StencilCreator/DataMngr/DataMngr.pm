@@ -47,6 +47,8 @@ sub new {
 	$self->{"holeDist"}  = undef;
 	$self->{"holeDist2"} = undef;
 	
+	$self->{"addPcbNumber"} = 1;
+	
 	# positions of stencils, rotation etc
 	$self->{"stencilDataMngr"} = StencilDataMngr->new();
 	
@@ -220,6 +222,18 @@ sub SetHoleDist2 {
 sub GetHoleDist2 {
 	my $self = shift;
 	return $self->{"holeDist2"};
+}
+
+sub SetAddPcbNumber {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->{"addPcbNumber"} = $val;
+}
+
+sub GetAddPcbNumber {
+	my $self = shift;
+	return $self->{"addPcbNumber"};
 }
 
 sub GetStencilDataMngr {

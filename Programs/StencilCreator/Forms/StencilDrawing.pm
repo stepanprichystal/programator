@@ -23,16 +23,20 @@ sub new {
 	my $class      = shift;
 	my $parent     = shift;
 	my $dimension  = shift;
+	my $dataMngr = shift;
 	my $layoutMngr = shift;
+	
 
 	my $self = $class->SUPER::new( $parent, $dimension );
 
 	bless($self);
 
+	$self->{"layoutMngr"} = $layoutMngr;
+	$self->{"dataMngr"} = $dataMngr;
+
+
 	# Items references
 	$self->__SetLayout();
-
-	
 
 	#$self->{"data"}->{"topPcb"} = 0;
 
@@ -49,11 +53,9 @@ sub new {
 #-------------------------------------------------------------------------------------------#
 
 sub StencilDataChanged {
-	my $self = shift;
-	my $layoutMngr = shift;
-	my $autoZoom = shift;
+	my $self       = shift; 
+	my $autoZoom   = shift;
 
-	$self->{"layoutMngr"} = $layoutMngr;
 
 	$self->RefreshDrawing($autoZoom);
 }
@@ -129,20 +131,23 @@ sub __DrawJobId {
 	my $self = shift;
 	my $dc   = shift;
 
-	$dc->SetBrush( Wx::Brush->new( 'black', &Wx::wxBRUSHSTYLE_TRANSPARENT ) );
+	if ( $self->{"dataMngr"}->GetAddPcbNumber() ) {
+		
+		$dc->SetBrush( Wx::Brush->new( 'black', &Wx::wxBRUSHSTYLE_TRANSPARENT ) );
 
-	$dc->SetFont( Wx::Font->new( 7, &Wx::wxFONTFAMILY_DEFAULT, &Wx::wxFONTSTYLE_NORMAL, &Wx::wxFONTWEIGHT_NORMAL ) );
+		$dc->SetFont( Wx::Font->new( 7, &Wx::wxFONTFAMILY_DEFAULT, &Wx::wxFONTSTYLE_NORMAL, &Wx::wxFONTWEIGHT_NORMAL ) );
 
-	my $text = "";
-	my $st   = $self->{"layoutMngr"}->GetStencilType();
+		my $text = "";
+		my $st   = $self->{"dataMngr"}->GetStencilType();
 
-	if ( $st eq Enums->StencilType_TOP || $st eq Enums->StencilType_TOPBOT ) {
+		if ( $st eq Enums->StencilType_TOP || $st eq Enums->StencilType_TOPBOT ) {
 
-		$dc->DrawText( "X00000", 15, 12 );
-	}
-	elsif ( $st eq Enums->StencilType_BOT ) {
+			$dc->DrawText( "X00000", 15, 12 );
+		}
+		elsif ( $st eq Enums->StencilType_BOT ) {
 
-		$dc->DrawText( "00000X", $self->{"layoutMngr"}->GetWidth() - 40, 12 );
+			$dc->DrawText( "00000X", $self->{"layoutMngr"}->GetWidth() - 40, 12 );
+		}
 	}
 
 }
@@ -151,7 +156,7 @@ sub __DrawTopPcb {
 	my $self = shift;
 	my $dc   = shift;
 
-	my $st = $self->{"layoutMngr"}->GetStencilType();
+	my $st = $self->{"dataMngr"}->GetStencilType();
 
 	if ( $st ne Enums->StencilType_TOP && $st ne Enums->StencilType_TOPBOT ) {
 		return 0;
@@ -179,7 +184,7 @@ sub __DrawBotPcb {
 	my $self = shift;
 	my $dc   = shift;
 
-	my $st = $self->{"layoutMngr"}->GetStencilType();
+	my $st = $self->{"dataMngr"}->GetStencilType();
 
 	if ( $st ne Enums->StencilType_BOT && $st ne Enums->StencilType_TOPBOT ) {
 		return 0;
@@ -206,23 +211,60 @@ sub __DrawBotPcb {
 sub __DrawSchema {
 	my $self = shift;
 	my $dc   = shift;
+ 
+	if ( $self->{"dataMngr"}->GetSchemaType() eq Enums->Schema_STANDARD ) {
+
+		$self->__DrawSchemaStandard($dc);
+	}
+	elsif ( $self->{"dataMngr"}->GetSchemaType() eq Enums->Schema_FRAME ) {
+
+		$self->__DrawSchemaFrame($dc);
+	}
+
+}
+
+sub __DrawSchemaStandard {
+	my $self = shift;
+	my $dc   = shift;
 
 	my $sch = $self->{"layoutMngr"}->GetSchema();
 
-	if ( $sch->GetSchemaType() ne Enums->Schema_STANDARD ) {
-		return 0;
-	}
- 
 	$dc->SetPen( Wx::Pen->new( 'black', 1, &Wx::wxPENSTYLE_SOLID ) );
 	$dc->SetBrush( Wx::Brush->new( 'black', &Wx::wxBRUSHSTYLE_TRANSPARENT ) );    # &Wx::wxBRUSHSTYLE_TRANSPARENT
- 
-	my $d = $sch->GetHoleSize();
+
+	my $d = $self->{"dataMngr"}->GetHoleSize();
 
 	foreach ( $sch->GetHolePositions() ) {
 
 		$dc->DrawCircle( $_->{"x"}, $_->{"y"}, $d / 2 );
 	}
 
+}
+
+sub __DrawSchemaFrame {
+	my $self = shift;
+	my $dc   = shift;
+
+	my %size     = $self->{"layoutMngr"}->GetStencilActiveArea();
+	my $stencilH = $self->{"layoutMngr"}->GetHeight();
+	my $stencilW = $self->{"layoutMngr"}->GetWidth();
+
+	$dc->SetPen( Wx::Pen->new( 'black', 1, &Wx::wxPENSTYLE_SOLID ) );
+	$dc->SetBrush( Wx::Brush->new( 'black', &Wx::wxBRUSHSTYLE_FDIAGONAL_HATCH ) );
+
+	# left
+	$dc->DrawRectangle( ( $stencilW - $size{"w"} ) / 2, ( $stencilH - $size{"h"} ) / 2, -13, $size{"h"} );
+
+	# top
+
+	$dc->DrawRectangle( ( $stencilW - $size{"w"} ) / 2, ( ( $stencilH - $size{"h"} ) / 2 ) + $size{"h"}, $size{"w"}, 13 );
+
+	# right
+	$dc->DrawRectangle( ( ( $stencilW - $size{"w"} ) / 2 ) + $size{"w"}, ( $stencilH - $size{"h"} ) / 2, 13, $size{"h"} );
+
+	# bot
+
+	$dc->DrawRectangle( ( $stencilW - $size{"w"} ) / 2, ( $stencilH - $size{"h"} ) / 2, $size{"w"}, -13 );
 }
 
 #-------------------------------------------------------------------------------------------#

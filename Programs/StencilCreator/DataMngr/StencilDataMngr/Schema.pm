@@ -21,15 +21,13 @@ sub new {
 	my $self = shift;
 	$self = {};
 	bless $self;
-
-	$self->{"w"} = shift;
-	$self->{"h"} = shift;
-
-	$self->{"type"}           = undef;
-	$self->{"holeSize"}       = undef;
-	$self->{"holeSpace"}      = undef;
-	$self->{"holeDist2"} = undef;
-
+	
+	$self->{"dataMngr"} = shift;
+	$self->{"type"}           = shift;
+ 
+	$self->{"w"} = $self->{"dataMngr"}->GetStencilSizeX();
+	$self->{"h"} = $self->{"dataMngr"}->GetStencilSizeY();
+  
 	return $self;
 }
 
@@ -39,9 +37,9 @@ sub GetHolePositions {
 	# 1) Get x positions of holes
 	my @xPos = ();
 
-	if ( $self->{"type"} eq Enums->Schema_STANDARD ) {
+	if ( $self->{"dataMngr"}->GetSchemaType() eq Enums->Schema_STANDARD ) {
 
-		my $holeCnt = int($self->{"w"} / $self->{"holeSpace"});
+		my $holeCnt = int($self->{"w"} / $self->{"dataMngr"}->GetHoleDist());
 		
 		print STDERR "Hole count $holeCnt\n";
 
@@ -51,8 +49,8 @@ sub GetHolePositions {
 		# center of stencil no hole
 		if ( $holeCnt % 2 == 0 ) {
 
-			$curDistL = $self->{"w"} / 2 + $self->{"holeSpace"} / 2;
-			$curDistR = $self->{"w"} / 2 - $self->{"holeSpace"} / 2;
+			$curDistL = $self->{"w"} / 2 + $self->{"dataMngr"}->GetHoleDist() / 2;
+			$curDistR = $self->{"w"} / 2 - $self->{"dataMngr"}->GetHoleDist() / 2;
 			
 		}
 		else {
@@ -63,20 +61,20 @@ sub GetHolePositions {
 		}
 		
 		my $noHole = 1;
-		while ( ( $curDistR - $self->{"holeSize"} / 2 ) < $self->{"w"}  ) {
+		while ( ( $curDistR - $self->{"dataMngr"}->GetHoleSize() / 2 ) < $self->{"w"}  ) {
  
  			if($noHole){
  				$noHole = 0;
- 				$curDistL -= $self->{"holeSpace"};
- 				$curDistR += $self->{"holeSpace"};
+ 				$curDistL -= $self->{"dataMngr"}->GetHoleDist();
+ 				$curDistR += $self->{"dataMngr"}->GetHoleDist();
  				next;
  			}
  
 			push( @xPos, $curDistL );                       # points from center to rigth
 			push( @xPos, $curDistR );    # points from center to left
 			
-			$curDistL -= $self->{"holeSpace"};
-			$curDistR += $self->{"holeSpace"};
+			$curDistL -= $self->{"dataMngr"}->GetHoleDist();
+			$curDistR += $self->{"dataMngr"}->GetHoleDist();
  
 		}
 	}
@@ -91,8 +89,8 @@ sub GetHolePositions {
  
 	foreach my $x (@xPos){
 		
-		my %top = ("x" => $x, "y" => $self->{"h"} - ($self->{"h"} - $self->GetHoleDist2())/2 );
-		my %bot = ("x" => $x, "y" => ($self->{"h"} - $self->GetHoleDist2())/2   );
+		my %top = ("x" => $x, "y" => $self->{"h"} - ($self->{"h"} - $self->{"dataMngr"}->GetHoleDist2())/2 );
+		my %bot = ("x" => $x, "y" => ($self->{"h"} - $self->{"dataMngr"}->GetHoleDist2())/2   );
 		
 		push(@holes, (\%top, \%bot));
 	}
@@ -100,58 +98,7 @@ sub GetHolePositions {
 	
 	return @holes;
 }
-
-sub SetSchemaType {
-	my $self = shift;
-	my $val  = shift;
-
-	$self->{"type"} = $val;
-}
-
-sub GetSchemaType {
-	my $self = shift;
-
-	return $self->{"type"};
-}
-
-sub SetHoleSize {
-	my $self = shift;
-	my $val  = shift;
-
-	$self->{"holeSize"} = $val;
-}
-
-sub GetHoleSize {
-	my $self = shift;
-
-	return $self->{"holeSize"};
-}
-
-sub SetHoleDist {
-	my $self = shift;
-	my $val  = shift;
-
-	$self->{"holeSpace"} = $val;
-}
-
-sub GetHoleDist {
-	my $self = shift;
-
-	return $self->{"holeSpace"};
-}
-
-sub SetHoleDist2 {
-	my $self = shift;
-	my $val  = shift;
-
-	$self->{"holeDist2"} = $val;
-}
-
-sub GetHoleDist2 {
-	my $self = shift;
-	
-	return $self->{"holeDist2"};
-}
+ 
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

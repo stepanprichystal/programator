@@ -24,9 +24,6 @@ use aliased 'Programs::StencilCreator::Helpers::DataHelper';
 use aliased 'Packages::Other::CustomerNote';
 use aliased 'Programs::StencilCreator::DataMngr::DataMngr';
 use aliased 'Programs::StencilCreator::DataMngr::StencilDataMngr::StencilDataMngr';
-use aliased 'Programs::StencilCreator::DataMngr::StencilDataMngr::PasteProfile';
-use aliased 'Programs::StencilCreator::DataMngr::StencilDataMngr::PasteData';
-use aliased 'Programs::StencilCreator::DataMngr::StencilDataMngr::Schema';
 use aliased 'Programs::StencilCreator::Enums';
 
 #-------------------------------------------------------------------------------------------#
@@ -50,7 +47,8 @@ sub new {
 	$self->{"form"}->{"fmrDataChanged"}->Add( sub { $self->__OnFrmDataChanged(@_) } );
 
 	# Data where are stored stencil position, deimensions etc
-	$self->{"dataMngr"} = DataMngr->new();
+	$self->{"dataMngr"}        = DataMngr->new();
+	$self->{"stencilDataMngr"} = StencilDataMngr->new( $self->{"dataMngr"} );
 
 	my $custInfo = HegMethods->GetCustomerInfo( $self->{"jobId"} );
 	$self->{"customerNote"} = CustomerNote->new( $custInfo->{"reference_subjektu"} );
@@ -64,15 +62,16 @@ sub Run {
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
 
-	# Set source data to DataMngr
+	# 1) Set source data to DataMngr
 	DataHelper->SetSourceData( $inCAM, $jobId, $self->{"dataMngr"} );
+	
+	# 2) Set default values
+	$self->__DefaultValDataMngr(undef, undef, 1 );
 
-	# Set default data to DataMngr
+	# 3) Set default customer values
 	my $warnMess = "";
 	my $res = DataHelper->SetDefaultData( $inCAM, $jobId, $self->{"dataMngr"}, $self->{"customerNote"}, \$warnMess );
-
-	$self->__UpdateStencilDataMngr();
-
+ 
 	unless ($res) {
 
 		my $messMngr = $self->{"form"}->GetMessageMngr();
@@ -81,13 +80,14 @@ sub Run {
 
 		$messMngr->ShowModal( -1, EnumsGeneral->MessageType_WARNING, \@mess1, \@btn );
 	}
+	
+	$self->{"stencilDataMngr"}->Update();
 
 	# Init form by source data in DataMngr
-	$self->{"form"}->Init( $self->{"dataMngr"}->{"stepsSize"}, $self->{"dataMngr"}->{"steps"},
-						   $self->{"dataMngr"}->{"topExist"},  $self->{"dataMngr"}->{"botExist"} );
+	$self->{"form"}->Init( $self->{"dataMngr"}, $self->{"stencilDataMngr"} );
 
 	# Refresh form according actual data in DataMngr
-	$self->__RefreshForm();
+	$self->__RefreshForm(1);
 
 	$self->{"form"}->{"mainFrm"}->Show();
 
@@ -105,7 +105,9 @@ sub __OnFrmDataChanged {
 	my $newValue    = shift;
 
 	# 2) update actual stored form data
-	$self->__UpdateDataMngr( $form, $controlName, $newValue );
+	$self->__UpdateDataMngr();
+
+	$self->__DefaultValDataMngr( $controlName, $newValue );
 
 	$self->__RefreshForm();
 }
@@ -115,169 +117,48 @@ sub __OnFrmDataChanged {
 # ================================================================================
 
 sub __UpdateDataMngr {
-	my $self        = shift;
-	my $form        = shift;
-	my $controlName = shift;
-	my $newValue    = shift;
+	my $self = shift;
 
 	# set default data
 
-	$self->{"dataMngr"}->SetStencilType( $self->{"form"}->GetStencilType() );
+	my $dataMngr    = $self->{"dataMngr"};
+	my $stencilMngr = $self->{"stencilDataMngr"};
+
+	$dataMngr->SetStencilType( $self->{"form"}->GetStencilType() );
 
 	my %size = $self->{"form"}->GetStencilSize();
 
-	$self->{"dataMngr"}->SetStencilSizeX( $size{"w"} );
-	$self->{"dataMngr"}->SetStencilSizeY( $size{"h"} );
+	$dataMngr->SetStencilSizeX( $size{"w"} );
+	$dataMngr->SetStencilSizeY( $size{"h"} );
 
-	$self->{"dataMngr"}->SetStencilStep( $self->{"form"}->GetStencilStep() );
+	$dataMngr->SetStencilStep( $self->{"form"}->GetStencilStep() );
 
-	$self->{"dataMngr"}->SetSpacing( $self->{"form"}->GetSpacing() );
+	$dataMngr->SetSpacing( $self->{"form"}->GetSpacing() );
 
-	$self->{"dataMngr"}->SetSpacingType( $self->{"form"}->GetSpacingType() );
+	$dataMngr->SetSpacingType( $self->{"form"}->GetSpacingType() );
 
-	$self->{"dataMngr"}->SetHCenterType( $self->{"form"}->GetHCenterType() );
+	$dataMngr->SetHCenterType( $self->{"form"}->GetHCenterType() );
 
-	$self->{"dataMngr"}->SetSchemaType( $self->{"form"}->GetSchemaType() );
+	$dataMngr->SetSchemaType( $self->{"form"}->GetSchemaType() );
 
-	$self->{"dataMngr"}->SetHoleSize( $self->{"form"}->GetHoleSize() );
+	$dataMngr->SetHoleSize( $self->{"form"}->GetHoleSize() );
 
-	$self->{"dataMngr"}->SetHoleDist( $self->{"form"}->GetHoleDist() );
+	$dataMngr->SetHoleDist( $self->{"form"}->GetHoleDist() );
 
-	$self->{"dataMngr"}->SetHoleDist2( $self->{"form"}->GetHoleDist2() );
+	$dataMngr->SetHoleDist2( $self->{"form"}->GetHoleDist2() );
 
-	$self->{"dataMngr"}->SetHoleDist2( $self->{"form"}->GetHoleDist2() );
+	$dataMngr->SetHoleDist2( $self->{"form"}->GetHoleDist2() );
 
-	$self->__UpdateStencilDataMngr();
+	$dataMngr->SetAddPcbNumber( $self->{"form"}->GetAddPcbNumber() );
 
-	# set specific default value
-
-	my $dataMngr    = $self->{"dataMngr"};
-	my $stencilMngr = $self->{"dataMngr"}->GetStencilDataMngr();
-
-	# If Top + Bot compute default vertical spacing between pcb
-
-	if ( grep { $_ eq $controlName } ( "stencilType", "step", "size", "sizeY", "spacingType", "hCenterType" ) ) {
-
-		if ( $self->{"dataMngr"}->GetStencilType() eq Enums->StencilType_TOPBOT ) {
-
-			my $spacing = 0;
-
-			if ( $self->{"dataMngr"}->GetHCenterType() eq Enums->HCenter_BYPROF ) {
-
-				# case 1) center by profile + spacing type by profile
-				if ( $dataMngr->GetSpacingType() eq Enums->Spacing_PROF2PROF ) {
-
-					my $holeFromEdge = $self->{"dataMngr"}->{"h"} - $self->{"dataMngr"}->GetSchema()->GetHoleDist2();
-
-					$spacing =
-					  ( $self->{"h"} - $holeFromEdge - $stencilMngr->GetTopProfile()->GetHeight() - $stencilMngr->GetBotProfile()->GetHeight() ) / 3;
-				}
-				
-				# case 2) center by profile + spacing type by profile
-				if ( $dataMngr->GetSpacingType() eq Enums->Spacing_PROF2PROF ) {
-
-					my $holeFromEdge = $self->{"dataMngr"}->{"h"} - $self->{"dataMngr"}->GetSchema()->GetHoleDist2();
-
-					$spacing =
-					  ( $self->{"h"} - $holeFromEdge - $stencilMngr->GetTopProfile()->GetHeight() - $stencilMngr->GetBotProfile()->GetHeight() ) / 3;
-				}
-
-			}
-
-		}
-	}
-
-	#
-	#		 my $stencilMngr = $self->{"dataMngr"}->GetStencilDataMngr();
-	#
-	#			if ( $defaultSpacing && $dataMngr->GetSpacingType() eq Enums->Spacing_PROF2PROF ) {
-	#
-	#		my $spac = $stencilMngr->GetDefaultSpacing();
-	#		$stencilMngr->SetSpacing($spac);
-	#
-	#		# set spacing to control
-	#		#$dataMngr->SetSpacing($spac);
-	#
-	#	}
-	#	else {
-	#
-	#			my $h = $stencilMngr->GetTopProfile()->GetHeight();
-	#
-	#		 my $spacing =
-	#	}
+	$stencilMngr->Update();
 
 }
 
-sub __UpdateStencilDataMngr {
-	my $self     = shift;
-	my $autoZoom = shift;
-
-	my $dataMngr    = $self->{"dataMngr"};
-	my $stencilMngr = $self->{"dataMngr"}->GetStencilDataMngr();
-
-	# 1) update type of stencil
-	my $stencilType = $dataMngr->GetStencilType();
-	$stencilMngr->SetStencilType($stencilType);
-
-	# 2) update profile data
-	my $stencilStep = $dataMngr->GetStencilStep();
-
-	if ( $dataMngr->{"topExist"} ) {
-
-		my $pd =
-		  PasteData->new( $dataMngr->{"stepsSize"}->{$stencilStep}->{"top"}->{"w"}, $dataMngr->{"stepsSize"}->{$stencilStep}->{"top"}->{"h"} );
-		my $pp = PasteProfile->new( $dataMngr->{"stepsSize"}->{$stencilStep}->{"w"}, $dataMngr->{"stepsSize"}->{$stencilStep}->{"h"} );
-
-		$pp->SetPasteData( $pd, $dataMngr->{"stepsSize"}->{$stencilStep}->{"top"}->{"x"}, $dataMngr->{"stepsSize"}->{$stencilStep}->{"top"}->{"y"} );
-
-		$stencilMngr->SetTopProfile($pp);
-	}
-
-	if ( $dataMngr->{"botExist"} ) {
-
-		my $botKye = $stencilType eq Enums->StencilType_BOT ? "bot" : "botMirror";
-
-		my $pd =
-		  PasteData->new( $dataMngr->{"stepsSize"}->{$stencilStep}->{$botKye}->{"w"}, $dataMngr->{"stepsSize"}->{$stencilStep}->{$botKye}->{"h"} );
-		my $pp = PasteProfile->new( $dataMngr->{"stepsSize"}->{$stencilStep}->{"w"}, $dataMngr->{"stepsSize"}->{$stencilStep}->{"h"} );
-
-		$pp->SetPasteData( $pd,
-						   $dataMngr->{"stepsSize"}->{$stencilStep}->{$botKye}->{"x"},
-						   $dataMngr->{"stepsSize"}->{$stencilStep}->{$botKye}->{"y"} );
-
-		$stencilMngr->SetBotProfile($pp);
-	}
-
-	# 3)update stencil size
-
-	$stencilMngr->SetWidth( $dataMngr->GetStencilSizeX() );
-	$stencilMngr->SetHeight( $dataMngr->GetStencilSizeY() );
-
-	# 4) Update schema
-
-	my $schema = Schema->new( $dataMngr->GetStencilSizeX(), $dataMngr->GetStencilSizeY() );
-
-	$schema->SetSchemaType( $dataMngr->GetSchemaType() );
-	$schema->SetHoleSize( $dataMngr->GetHoleSize() );
-	$schema->SetHoleDist( $dataMngr->GetHoleDist() );
-	$schema->SetHoleDist2( $dataMngr->GetHoleDist2() );
-
-	$stencilMngr->SetSchema($schema);
-
-	# 5) Spacing type
-	$stencilMngr->SetSpacingType( $dataMngr->GetSpacingType() );
-
-	# 4) Set spacing size
-
-	$stencilMngr->SetSpacing( $dataMngr->GetSpacing() );
-
-	# 5)Set horiyontal aligment type
-	$stencilMngr->SetHCenterType( $dataMngr->GetHCenterType() );
-
-}
 
 sub __RefreshForm {
 	my $self = shift;
+	my $autoZoom = shift;
 
 	# 2) refresh form controls
 	$self->{"form"}->{"raiseEvt"} = 0;
@@ -304,12 +185,121 @@ sub __RefreshForm {
 
 	$self->{"form"}->SetHoleDist2( $self->{"dataMngr"}->GetHoleDist2() );
 
+	$self->{"form"}->SetAddPcbNumber( $self->{"dataMngr"}->GetAddPcbNumber() );
+
 	$self->{"form"}->{"raiseEvt"} = 1;
 
 	# 3) refresh form drawing
-	$self->{"form"}->UpdateDrawing( $self->{"dataMngr"}->GetStencilDataMngr() );
+	$self->{"form"}->UpdateDrawing($autoZoom);
 
 }
+
+# ================================================================================
+# METHODS WHICH SET DEFAULT DATA VALUES
+# ================================================================================
+
+sub __DefaultValDataMngr {
+	my $self        = shift;
+	my $controlName = shift;
+	my $newValue    = shift;
+	my $force = shift;
+
+	# set specific default value
+
+	my $dataMngr    = $self->{"dataMngr"};
+	my $stencilMngr = $self->{"stencilDataMngr"};
+
+	# 1) Set default hole distance, if dimension or schema type is changed
+	if ( $force || grep { $_ eq $controlName } ( "size", "sizeX", "sizeY", "schemaType" ) ) {
+
+		$self->__DefaultHoleDist();
+
+	}
+
+	# 2) Set spacing type according center type
+	if ( $force || ($controlName eq "hCenterType" && $dataMngr->GetStencilType() eq Enums->StencilType_TOPBOT) ) {
+
+		$self->__DefaultSpacingType();
+	}
+
+	# 3) If Top + Bot compute default vertical spacing between pcb
+
+	if ( $force || grep { $_ eq $controlName } ( "stencilType", "step", "size", "sizeY", "spacingType", "hCenterType", "schemaType", "holeDist2" ) ) {
+
+		$self->__DefaultSpacing();
+
+	}
+
+}
+
+sub __DefaultHoleDist {
+	my $self = shift;
+
+	my $dataMngr    = $self->{"dataMngr"};
+	my $stencilMngr = $self->{"stencilDataMngr"};
+
+	if ( $dataMngr->GetSchemaType() eq Enums->Schema_STANDARD ) {
+
+		my $holeDist2 = $dataMngr->GetStencilSizeY() - 2 * 12;    # 12 mm is standard distance from top/bot edge of stencil, where holes are placed
+		$dataMngr->SetHoleDist2($holeDist2);
+
+		$stencilMngr->Update();
+	}
+
+}
+
+sub __DefaultSpacingType {
+	my $self = shift;
+
+	my $dataMngr    = $self->{"dataMngr"};
+	my $stencilMngr = $self->{"stencilDataMngr"};
+
+	if ( $dataMngr->GetHCenterType() eq Enums->HCenter_BYPROF ) {
+
+		$dataMngr->SetSpacingType( Enums->Spacing_PROF2PROF );
+
+	}
+	elsif ( $dataMngr->GetHCenterType() eq Enums->HCenter_BYDATA ) {
+
+		$dataMngr->SetSpacingType( Enums->Spacing_DATA2DATA );
+	}
+
+	$stencilMngr->Update();
+
+}
+
+sub __DefaultSpacing {
+	my $self = shift;
+
+	my $dataMngr    = $self->{"dataMngr"};
+	my $stencilMngr = $self->{"stencilDataMngr"};
+
+	if ( $dataMngr->GetStencilType() eq Enums->StencilType_TOPBOT ) {
+
+		my $spacing    = 0;
+		my %activeArea = $stencilMngr->GetStencilActiveArea();
+
+		if ( $dataMngr->GetHCenterType() eq Enums->HCenter_BYPROF ) {
+
+			$spacing = ( $activeArea{"h"} - $stencilMngr->GetTopProfile()->GetHeight() - $stencilMngr->GetBotProfile()->GetHeight() ) / 3;
+
+		}
+		elsif ( $dataMngr->GetHCenterType() eq Enums->HCenter_BYDATA ) {
+
+			$spacing =
+			  ( $activeArea{"h"} -
+				$stencilMngr->GetTopProfile()->GetPasteData()->GetHeight() -
+				$stencilMngr->GetBotProfile()->GetPasteData()->GetHeight() ) / 3;
+
+		}
+
+		$dataMngr->SetSpacing( sprintf( "%.1f", $spacing ) );
+
+		$stencilMngr->Update();
+	}
+}
+
+
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

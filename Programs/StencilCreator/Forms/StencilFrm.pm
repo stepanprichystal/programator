@@ -29,7 +29,7 @@ sub new {
 	my $jobId  = shift;
 
 	my @dimension = ( 800, 800 );
-	my $self = $class->SUPER::new( $parent, "Quick notes", \@dimension );
+	my $self = $class->SUPER::new( $parent, "Stencil creator", \@dimension );
 
 	bless($self);
 
@@ -46,15 +46,16 @@ sub new {
 # Set data necessary for proper GUI loading
 sub Init {
 	my $self      = shift;
-	my $stepsSize = shift;
-	my $steps     = shift;
-	my $saExist   = shift;
-	my $sbExist   = shift;
-
-	$self->{"stepsSize"} = $stepsSize;
-	$self->{"steps"}     = $steps;
-	$self->{"topExist"}  = $saExist;
-	$self->{"botExist"}  = $sbExist;
+ 
+	
+	
+	$self->{"dataMngr"} = shift;
+	$self->{"layoutMngr"} = shift;
+	
+	$self->{"stepsSize"} = $self->{"dataMngr"}->{"stepsSize"};
+	$self->{"steps"}     = $self->{"dataMngr"}->{"steps"};
+	$self->{"topExist"}  = $self->{"dataMngr"}->{"topExist"};
+	$self->{"botExist"}  = $self->{"dataMngr"}->{"botExist"};
 
 	$self->__SetLayout();
 
@@ -258,12 +259,33 @@ sub GetHoleDist2 {
 	return $self->{"holeDist2Spin"}->GetValue();
 }
 
+
+sub SetAddPcbNumber {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->{"addNumberChb"}->SetValue($val);
+
+	$self->__DisableControls();
+}
+
+sub GetAddPcbNumber {
+	my $self = shift;
+	
+	my $val = $self->{"addNumberChb"}->GetValue();
+	
+	if($val != 1){
+		$val =0;
+	}
+	return $val;
+}
+
+
 sub UpdateDrawing {
 	my $self       = shift;
-	my $layoutMngr = shift;
 	my $autoZoom   = shift;
 
-	$self->{"drawing"}->StencilDataChanged( $layoutMngr, $autoZoom );
+	$self->{"drawing"}->StencilDataChanged($autoZoom );
 }
 
 #-------------------------------------------------------------------------------------------#
@@ -271,14 +293,14 @@ sub UpdateDrawing {
 #-------------------------------------------------------------------------------------------#
 
 sub __OnControlDataChanged {
-	my $self           = shift;
+	my $self        = shift;
 	my $controlName = shift;
-	my $newValue = shift;
-	my $autoZoom       = shift;
- 
+	my $newValue    = shift;
+	my $autoZoom    = shift;
+
 	if ( $self->{"raiseEvt"} ) {
 
-		$self->{"fmrDataChanged"}->Do($controlName, $newValue);
+		$self->{"fmrDataChanged"}->Do($self, $controlName, $newValue );
 	}
 
 	#	# Update GUI
@@ -369,16 +391,14 @@ sub __DisableControls {
 
 	if ( $st eq Enums->StencilType_TOPBOT ) {
 
-		 
-		$self->{"spacingCtrl"}->Enable();
+		 $self->{"pnlSpacing"}->Show();
 	}
 	else {
 
-		 
-		$self->{"spacingCtrl"}->Disable();
+		  $self->{"pnlSpacing"}->Hide();
 
 	}
-
+ 
 	my $sVal = $self->{"sizeCb"}->GetValue();
 
 	if ( $sVal =~ /custom/ ) {
@@ -408,16 +428,20 @@ sub __DisableControls {
 	elsif ( $schType eq Enums->Schema_INCLUDED ) {
 
 	}
-	
+
 	# if center by profile, spacing type only prof2prof
-	if($self->{"hCenterTypeCb"}->GetValue() eq Enums->HCenter_BYPROF){
-		
-		$self->{"spacingTypeCb"}->SetValue(Enums->Spacing_PROF2PROF);
-		
-	}elsif($self->{"hCenterTypeCb"}->GetValue() eq Enums->HCenter_BYDATA){
-		
-		$self->{"spacingTypeCb"}->SetValue(Enums->Spacing_DATA2DATA);
+	if ( $self->{"hCenterTypeCb"}->GetValue() eq Enums->HCenter_BYPROF ) {
+
+		$self->{"spacingTypeCb"}->SetValue( Enums->Spacing_PROF2PROF );
+
 	}
+	elsif ( $self->{"hCenterTypeCb"}->GetValue() eq Enums->HCenter_BYDATA ) {
+
+		$self->{"spacingTypeCb"}->SetValue( Enums->Spacing_DATA2DATA );
+	}
+
+	$self->{"szMain"}->Layout();
+	$self->{"mainFrm"}->Refresh();
 
 }
 
@@ -554,7 +578,11 @@ sub __SetLayout {
 
 	$self->AddButton( "Prepare stencil", sub { $self->__PrepareClick(@_) } );
 
+	$self->{"szMain"} = $szMain;
+
 	$self->__DisableControls();
+	
+	
 
 }
 
@@ -594,15 +622,16 @@ sub __SetLayoutGeneral {
 	my $sizeCb = Wx::ComboBox->new( $statBox, -1, $sizes[0], &Wx::wxDefaultPosition, [ 120, 22 ], \@sizes, &Wx::wxCB_READONLY );
 
 	my $customSize = Wx::StaticText->new( $statBox, -1, "Custom size [mm]", &Wx::wxDefaultPosition, [ 170, 22 ] );
-	my $sizeXTextCtrl = Wx::SpinCtrl->new( $statBox, -1, 300, &Wx::wxDefaultPosition, [ 60, 22 ], &Wx::wxSP_ARROW_KEYS, 200, 600 );
-	my $sizeYTextCtrl = Wx::SpinCtrl->new( $statBox, -1, 480, &Wx::wxDefaultPosition, [ 60, 22 ], &Wx::wxSP_ARROW_KEYS, 200, 800 );
+	 
+	my $sizeXTextCtrl = Wx::TextCtrl->new( $statBox, -1, 300, &Wx::wxDefaultPosition, [ 60, 22 ] );
+	my $sizeYTextCtrl = Wx::TextCtrl->new( $statBox, -1, 480, &Wx::wxDefaultPosition, [ 60, 22 ] );
 
 	# SET EVENTS
 	Wx::Event::EVT_TEXT( $stencilTypeCb, -1, sub { $self->__OnControlDataChanged( "stencilType", $self->GetStencilType() ) } );
-	Wx::Event::EVT_TEXT( $stepCb,        -1, sub { $self->__OnControlDataChanged( "step", $self->GetStencilStep()) } );
-	Wx::Event::EVT_TEXT( $sizeCb,        -1, sub { $self->__OnControlDataChanged( "size", $self->GetStencilSize() ) } );
-	Wx::Event::EVT_TEXT( $sizeXTextCtrl, -1, sub { $self->__OnControlDataChanged( "sizeX", $self->GetStencilSize() ) } );
-	Wx::Event::EVT_TEXT( $sizeYTextCtrl, -1, sub { $self->__OnControlDataChanged( "sizeY", $self->GetStencilSize() ) } );
+	Wx::Event::EVT_TEXT( $stepCb,        -1, sub { $self->__OnControlDataChanged( "step",        $self->GetStencilStep() ) } );
+	Wx::Event::EVT_TEXT( $sizeCb,        -1, sub { $self->__OnControlDataChanged( "size",        $self->GetStencilSize() ) } );
+	Wx::Event::EVT_TEXT( $sizeXTextCtrl, -1, sub { $self->__OnControlDataChanged( "sizeX",       $self->GetStencilSize() ) } );
+	Wx::Event::EVT_TEXT( $sizeYTextCtrl, -1, sub { $self->__OnControlDataChanged( "sizeY",       $self->GetStencilSize() ) } );
 
 	# BUILD STRUCTURE OF LAYOUT
 
@@ -676,10 +705,10 @@ sub __SetLayoutSchema {
 	my $holeDist2Spin = Wx::TextCtrl->new( $pnlSchStandard, -1, 15, &Wx::wxDefaultPosition, [ 120, 22 ] );
 
 	# SET EVENTS
-	Wx::Event::EVT_TEXT( $schemaCb,      -1, sub { $self->__OnControlDataChanged(@_) } );
-	Wx::Event::EVT_TEXT( $holeSizeSpin,  -1, sub { $self->__OnControlDataChanged(@_) } );
-	Wx::Event::EVT_TEXT( $holeSpaceSpin, -1, sub { $self->__OnControlDataChanged(@_) } );
-	Wx::Event::EVT_TEXT( $holeDist2Spin, -1, sub { $self->__OnControlDataChanged(@_) } );
+	Wx::Event::EVT_TEXT( $schemaCb,      -1, sub { $self->__OnControlDataChanged("schemaType",     $self->GetSchemaType()  ) } );
+	Wx::Event::EVT_TEXT( $holeSizeSpin,  -1, sub { $self->__OnControlDataChanged("holeSize",     $self->GetHoleSize()  ) } );
+	Wx::Event::EVT_TEXT( $holeSpaceSpin, -1, sub { $self->__OnControlDataChanged("holeDist",     $self->GetHoleDist()  ) } );
+	Wx::Event::EVT_TEXT( $holeDist2Spin, -1, sub { $self->__OnControlDataChanged("holeDist2",     $self->GetHoleDist2()  ) } );
 
 	#	# BUILD STRUCTURE OF LAYOUT
 
@@ -731,49 +760,70 @@ sub __SetLayoutOther {
 	my $szStatBox = Wx::StaticBoxSizer->new( $statBox, &Wx::wxVERTICAL );
 
 	my $szRow1 = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
-	my $szRow2 = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
-	my $szRow3 = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
+
+	my $szSpacing   = Wx::BoxSizer->new(&Wx::wxVERTICAL);
+	my $szSpacingR1 = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
+	my $szSpacingR2 = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
+	
+	my $szRowPcbNum = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
+
+	my $pnlSpacing = Wx::Panel->new($statBox);
 
 	# DEFINE CONTROLS
-
-	my $spacingTypeTxt = Wx::StaticText->new( $statBox, -1, "Spacing type", &Wx::wxDefaultPosition, [ 170, 22 ] );
-	my @types = ( Enums->Spacing_PROF2PROF, Enums->Spacing_DATA2DATA );
-	my $spacingTypeCb = Wx::ComboBox->new( $statBox, -1, $types[0], &Wx::wxDefaultPosition, [ 120, 22 ], \@types, &Wx::wxCB_READONLY );
-
-	my $spacingTxt = Wx::StaticText->new( $statBox, -1, "Spacing [mm]", &Wx::wxDefaultPosition, [ 170, 22 ] );
-	my $spacingCtrl = Wx::SpinCtrl->new( $statBox, -1, 60, &Wx::wxDefaultPosition, [ 120, 22 ], &Wx::wxSP_ARROW_KEYS, 0, 250 );
-	$spacingCtrl->Disable();
-
 
 	my $centerTxt = Wx::StaticText->new( $statBox, -1, "Center pcb data", &Wx::wxDefaultPosition, [ 170, 22 ] );
 	my @typesC = ( Enums->HCenter_BYPROF, Enums->HCenter_BYDATA );
 	my $hCenterTypeCb = Wx::ComboBox->new( $statBox, -1, $typesC[0], &Wx::wxDefaultPosition, [ 120, 22 ], \@typesC, &Wx::wxCB_READONLY );
 
-	# SET EVENTS
-	Wx::Event::EVT_TEXT( $spacingCtrl,   -1, sub { $self->__OnControlDataChanged("spacing", $self->GetSpacing()) } );
-	Wx::Event::EVT_TEXT( $spacingTypeCb, -1, sub { $self->__OnControlDataChanged("spacingType", $self->GetSpacingType()) } );
-	Wx::Event::EVT_TEXT( $hCenterTypeCb, -1, sub { $self->__OnControlDataChanged("hCenterType", $self->GetHCenterType()) } );
+	my $spacingTypeTxt = Wx::StaticText->new( $pnlSpacing, -1, "Spacing type", &Wx::wxDefaultPosition, [ 170, 22 ] );
+	my @types = ( Enums->Spacing_PROF2PROF, Enums->Spacing_DATA2DATA );
+	my $spacingTypeCb = Wx::ComboBox->new( $pnlSpacing, -1, $types[0], &Wx::wxDefaultPosition, [ 120, 22 ], \@types, &Wx::wxCB_READONLY );
+	$spacingTypeCb->Disable();
 
+	my $spacingTxt = Wx::StaticText->new( $pnlSpacing, -1, "Spacing between pcb [mm]", &Wx::wxDefaultPosition, [ 170, 22 ] );
+	my $spacingCtrl = Wx::TextCtrl->new( $pnlSpacing, -1, 15, &Wx::wxDefaultPosition, [ 120, 22 ] );
+	
+	my $addNumberTxt = Wx::StaticText->new( $statBox, -1, "Add pcb number", &Wx::wxDefaultPosition, [ 170, 22 ] );
+	my $addNumberChb = Wx::CheckBox->new( $statBox, -1, "", [ -1, -1 ], [ -1, -1 ] );
+	
+
+	# SET EVENTS
+	Wx::Event::EVT_TEXT( $spacingCtrl,   -1, sub { $self->__OnControlDataChanged( "spacing",     $self->GetSpacing() ) } );
+	Wx::Event::EVT_TEXT( $spacingTypeCb, -1, sub { $self->__OnControlDataChanged( "spacingType", $self->GetSpacingType() ) } );
+	Wx::Event::EVT_TEXT( $hCenterTypeCb, -1, sub { $self->__OnControlDataChanged( "hCenterType", $self->GetHCenterType() ) } );
+	Wx::Event::EVT_CHECKBOX( $addNumberChb, -1, sub { $self->__OnControlDataChanged( "addPcbNumber", $self->GetAddPcbNumber() ) } );
+	
 	# BUILD STRUCTURE OF LAYOUT
 
 	$szRow1->Add( $centerTxt,     0, &Wx::wxALL, 1 );
 	$szRow1->Add( $hCenterTypeCb, 0, &Wx::wxALL, 1 );
 
-	$szRow2->Add( $spacingTypeTxt, 0, &Wx::wxALL, 1 );
-	$szRow2->Add( $spacingTypeCb,  0, &Wx::wxALL, 1 );
+	$szSpacingR1->Add( $spacingTypeTxt, 0, &Wx::wxALL, 1 );
+	$szSpacingR1->Add( $spacingTypeCb,  0, &Wx::wxALL, 1 );
 
-	$szRow3->Add( $spacingTxt,  0, &Wx::wxALL, 1 );
-	$szRow3->Add( $spacingCtrl, 0, &Wx::wxALL, 1 );
+	$szSpacingR2->Add( $spacingTxt,  0, &Wx::wxALL, 1 );
+	$szSpacingR2->Add( $spacingCtrl, 0, &Wx::wxALL, 1 );
+	
+	$szRowPcbNum->Add( $addNumberTxt,     0, &Wx::wxALL, 1 );
+	$szRowPcbNum->Add( $addNumberChb, 0, &Wx::wxALL, 1 );	
 
- 
-	$szStatBox->Add( $szRow1, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
-	$szStatBox->Add( $szRow2, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
-	$szStatBox->Add( $szRow3, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$pnlSpacing->SetSizer($szSpacing);
+	$szSpacing->Add( $szSpacingR1, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szSpacing->Add( $szSpacingR2, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+
+	$szStatBox->Add( $szRow1,     0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szStatBox->Add( $pnlSpacing, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szStatBox->Add( $szRowPcbNum, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	
+	
 
 	# Set References
 	$self->{"spacingTypeCb"} = $spacingTypeCb;
 	$self->{"spacingCtrl"}   = $spacingCtrl;
 	$self->{"hCenterTypeCb"} = $hCenterTypeCb;
+	$self->{"pnlSpacing"} = $pnlSpacing;
+	$self->{"addNumberChb"} = $addNumberChb;
+	
 
 	return $szStatBox;
 }
@@ -789,7 +839,7 @@ sub __SetLayoutDrawing {
 
 	# DEFINE CONTROLS
 	my @dim = ( 500, 600 );
-	my $drawing = StencilDrawing->new( $parent, \@dim, $self->{"layoutMngr"} );
+	my $drawing = StencilDrawing->new( $parent, \@dim, $self->{"dataMngr"}, $self->{"layoutMngr"} );
 
 	# SET EVENTS
 
