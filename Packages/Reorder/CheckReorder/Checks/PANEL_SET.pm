@@ -19,6 +19,7 @@ use aliased 'CamHelpers::CamHelper';
 use aliased 'CamHelpers::CamStepRepeat';
 use aliased 'CamHelpers::CamAttributes';
 
+
 #-------------------------------------------------------------------------------------------#
 #  Public method
 #-------------------------------------------------------------------------------------------#
@@ -50,15 +51,16 @@ sub Run {
 		return 1;
 	}
 
-	my $nif = NifFile->new($jobId);
+	
 
+	my $nif = NifFile->new($jobId);
 	my $multiplNif = $nif->GetValue("nasobnost_panelu");
 
-	# Check only when nasobnost_panelu is set, thus potentional missing of job attributes
+	# 1) Check only when nasobnost_panelu is set, thus potentional missing of job attributes
 	if ( defined $multiplNif && $multiplNif ne "" && $multiplNif != 0 ) {
 
 		my $mpanelExist = CamHelper->StepExists( $inCAM, $jobId, "mpanel" );
-
+		
 		my $custPnlExist = CamAttributes->GetJobAttrByName( $inCAM, $jobId, "customer_panel" );    # zakaznicky panel
 		my $custSetExist = CamAttributes->GetJobAttrByName( $inCAM, $jobId, "customer_set" );      # zakaznicke sady
 
@@ -81,6 +83,23 @@ sub Run {
 								   . "Pravděpodobně není v jobu definovaná sada ( atribut \"customer_set\").", 1 );
 			}
 		}
+	}
+	
+	# 2) Check if "nasobnost_panelu" is not set and real number of step is in panel is not equal to "nasobnost" in nif
+	if(!defined $multiplNif || $multiplNif eq "" || $multiplNif == 0){
+		
+		my $multiplReal = scalar( CamStepRepeat->GetRepeatStep( $inCAM, $jobId, "panel" ) );
+		my $multiplPnlNif = $nif->GetValue("nasobnost");
+		
+		if($multiplReal != $multiplPnlNif){
+			
+			$self->_AddChange(  "Pravděpodobně není v jobu definovaná sada nebo zákaznický panel,".
+								" protože reálná násobnost panelu ($multiplReal) nesedí s násobností panelu v nifu ($multiplNif).", 1); 
+		}
+		
+		
+		 
+		
 	}
 
 }
