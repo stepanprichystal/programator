@@ -1292,9 +1292,9 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	use aliased 'Connectors::HeliosConnector::HegMethods';
 	use Data::Dump qw(dump);
 
-	my $pcbInProduc = HegMethods->GetCopperStoreInfo( 5);
+	my @orders = map { $_->{"reference_subjektu"} } HegMethods->GetOrdersByState("d00292", 2);
 
-	dump($pcbInProduc);
+	dump(@orders);
 
 	#print scalar(@opak);
 

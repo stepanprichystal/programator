@@ -345,7 +345,7 @@ sub __OnResultPopupHandler {
 	# After close popup window is necessery Re-connect to income server
 	# Because checking was processed in child thread and was connected
 	# to this income server
-
+ 
 	$self->__Connect();
 
 	my $active    = 1;
@@ -362,6 +362,7 @@ sub __OnResultPopupHandler {
 		my $client = $self->{"client"};
 		
 		my @orders = map { $_->{"reference_subjektu"} } HegMethods->GetOrdersByState($self->{"jobId"}, 2); # Orders on Predvzrobni priprava
+ 
  
 		if ( $exportMode eq EnumsJobMngr->TaskMode_ASYNC ) {
 
