@@ -32,5 +32,12 @@ use constant {
 			   	   
 };
  	 
+ 	 
+use constant {
+			   Stencil_LAYER        => "ds",  
+			   Stencil_LAYERDRILL        => "fs"
+			   	   
+}; 	 
+ 	 
 
 1;

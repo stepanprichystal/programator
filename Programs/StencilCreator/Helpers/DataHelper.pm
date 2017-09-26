@@ -32,17 +32,9 @@ sub SetSourceData {
 	my $dataMngr  = shift;
 
 	# paste layer
-	my @pasteL = grep { $_->{"gROWname"} =~ /^s[ab][-]((ori)|(made))+$/ } CamJob->GetAllLayers( $inCAM, $jobId );
 
-	my $topLayer = ( grep { $_->{"gROWname"} =~ /^sa-ori/ } @pasteL )[0];
-	unless ($topLayer) {
-		$topLayer = ( grep { $_->{"gROWname"} =~ /^sa-made/ } @pasteL )[0];
-	}
-
-	my $botLayer = ( grep { $_->{"gROWname"} =~ /^sb-ori/ } @pasteL )[0];
-	unless ($botLayer) {
-		$botLayer = ( grep { $_->{"gROWname"} =~ /^sb-made/ } @pasteL )[0];
-	}
+	my $topLayer = $self->GetStencilOriLayer($inCAM, $jobId, "top");
+	my $botLayer = $self->GetStencilOriLayer($inCAM, $jobId, "bot");
 
 	# steps
 	my @steps = map { $_->{"stepName"} } grep { $_->{"stepName"} } CamStepRepeat->GetUniqueNestedStepAndRepeat( $inCAM, $jobId, "panel" );
@@ -241,15 +233,27 @@ sub SetDefaultData {
 sub CheckStencilData {
 
 }
+ 
+ 
+sub GetStencilOriLayer{
+	my $self     = shift;
+	my $inCAM    = shift;
+	my $jobId    = shift;
+	my $side = shift; # top/bot
+	
+	my @pasteL = grep { $_->{"gROWname"} =~ /^s[ab][-]((ori)|(made))+$/ } CamJob->GetAllLayers( $inCAM, $jobId );
 
-# ================================================================================
-# FORM HANDLERS
-# ================================================================================
-
-# ================================================================================
-# PRIVATE METHODS
-# ================================================================================
-
+	my $name = "sa";
+	if($side eq "bop"){
+		$name = "sb";
+	} 
+ 
+	my $layer = ( grep { $_->{"gROWname"} =~ /^$name-ori/ } @pasteL )[0];
+	unless ($layer) {
+		$layer = ( grep { $_->{"gROWname"} =~ /^$name-made/ } @pasteL )[0];
+	}
+} 
+ 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#
