@@ -98,7 +98,8 @@ sub GetAllByPcbId {
 				 z.aktualni_krok,
 				 lcs.nf_edit_style('typ_el_test_22', d.eltest) testing,
 				 z.reference_subjektu reference_zakazky,
-				 d.archiv + d.reference_subjektu archiv
+				 d.archiv + d.reference_subjektu archiv,
+				 d.sablona_typ
 				 from lcs.desky_22 d with (nolock)
 				 left outer join lcs.subjekty c with (nolock) on c.cislo_subjektu=d.zakaznik
 				 left outer join lcs.subjekty m with (nolock) on m.cislo_subjektu=d.material

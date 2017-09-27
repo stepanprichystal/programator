@@ -32,7 +32,7 @@ sub GetCustomerInfo {
 
 	# if some value is empty, we want return null, we say by this, customer has no request for this attribut
 
-	my $cmd = "SELECT 
+	my $cmdPcb = "SELECT 
 
 					IF(t1.ExportPaste = '', null , t1.ExportPaste) as ExportPaste,
 					IF(t1.ProfileToPaste = '', null , t1.ProfileToPaste) as ProfileToPaste,
@@ -41,33 +41,50 @@ sub GetCustomerInfo {
 					IF(t1.NoTpvInfoPdf = '', null , t1.NoTpvInfoPdf) as NoTpvInfoPdf,
 					IF(t1.ExportPdfControl = '', null , t1.ExportPdfControl) as ExportPdfControl,
 					IF(t1.ExportDataControl = '', null , t1.ExportDataControl) as ExportDataControl,
-					IF(t1.ScoreCoreThick = '', null , t1.ScoreCoreThick) as ScoreCoreThick,
-					
-					IF(t2.HoleDistX = '', null , t2.HoleDistX) as HoleDistX,
-					IF(t2.HoleDistY = '', null , t2.HoleDistY) as HoleDistY,	
-					IF(t2.OuterHoleDist = '', null , t2.OuterHoleDist) as OuterHoleDist,	
-					IF(t2.CenterByData = '', null , t2.CenterByData) as CenterByData,				
-					IF(t2.MinHoleDataDist = '', null , t2.MinHoleDataDist) as MinHoleDataDist,
-					IF(t2.NoHalfHoles = '', null , t2.NoHalfHoles) as NoHalfHoles,
-					IF(t2.NoFiducial = '', null , t2.NoFiducial) as NoFiducial
-					
+					IF(t1.ScoreCoreThick = '', null , t1.ScoreCoreThick) as ScoreCoreThick
+	
     				FROM customer_note AS t1
-    				LEFT JOIN  customer_note_stencil AS t2 ON t1.CustomerId = t2.CustomerId
+
     				WHERE t1.CustomerId = _CustomerId
     				LIMIT 1";
 
-	my @result = Helper->ExecuteDataSet( $cmd, \@params );
+	my $cmdStencil = "SELECT 
 
-	if ( scalar(@result) ) {
+					
+					IF(t1.HoleDistX = '', null , t1.HoleDistX) as HoleDistX,
+					IF(t1.HoleDistY = '', null , t1.HoleDistY) as HoleDistY,	
+					IF(t1.OuterHoleDist = '', null , t1.OuterHoleDist) as OuterHoleDist,	
+					IF(t1.CenterByData = '', null , t1.CenterByData) as CenterByData,				
+					IF(t1.MinHoleDataDist = '', null , t1.MinHoleDataDist) as MinHoleDataDist,
+					IF(t1.NoHalfHoles = '', null , t1.NoHalfHoles) as NoHalfHoles,
+					IF(t1.NoFiducial = '', null , t1.NoFiducial) as NoFiducial
+					
+    				FROM customer_note_stencil AS t1
+    				WHERE t1.CustomerId = _CustomerId
+    				LIMIT 1";
 
-		return $result[0];
+	my @resultPcb     = Helper->ExecuteDataSet( $cmdPcb,     \@params );
+	my @resultStencil = Helper->ExecuteDataSet( $cmdStencil, \@params );
 
+	my %notes = ();
+
+	if ( scalar(@resultPcb) ) {
+
+		%notes = %{ $resultPcb[0] };
+	}
+
+	if ( scalar(@resultStencil) ) {
+
+		%notes = ( %notes, %{ $resultStencil[0] } );
+	}
+
+	if (%notes) {
+		return \%notes;
 	}
 	else {
 		return 0;
 	}
 
-	return @result;
 }
 
 # Return info about all automaticlz running application on TPV server
@@ -90,11 +107,12 @@ sub InsertAppLog {
 	my $type    = shift;
 	my $message = shift;
 	my $pcbId   = shift;
-	# log will be processed by service, 
+
+	# log will be processed by service,
 	# only if same log message in DB are older then <$age> (defualt 120 minutes)
-	my $age = shift; 
-	
-	unless(defined $age){
+	my $age = shift;
+
+	unless ( defined $age ) {
 		$age = 120;
 	}
 
@@ -102,19 +120,18 @@ sub InsertAppLog {
 
 	$message = NFKD($message);
 	$message =~ s/\p{NonspacingMark}//g;
-	
-	$message = quotemeta($message); # escape all special characters
+
+	$message = quotemeta($message);    # escape all special characters
 
 	my @params = (
 				   SqlParameter->new( "_AppId",   Enums->SqlDbType_VARCHAR, $appId ),
 				   SqlParameter->new( "_Type",    Enums->SqlDbType_VARCHAR, $type ),
 				   SqlParameter->new( "_Message", Enums->SqlDbType_VARCHAR, $message ),
 				   SqlParameter->new( "_PcbId",   Enums->SqlDbType_VARCHAR, $pcbId ),
-				   SqlParameter->new( "_Minutes",   Enums->SqlDbType_INT, $age )
+				   SqlParameter->new( "_Minutes", Enums->SqlDbType_INT,     $age )
 	);
 
-	my $cmd = 
-	"INSERT 
+	my $cmd = "INSERT 
  	INTO app_logs ( AppId,  Type,  Message,  PcbId,  ProcessLog) 
  	VALUES ( _AppId,  _Type,  _Message,  _PcbId,
 		(SELECT if (
@@ -253,12 +270,11 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	use aliased 'Connectors::TpvConnector::TpvMethods';
 
-#	my $info = TpvMethods->InsertAppLog(
-#		"testApp", "Error", 'Ahoj já jsem štìpán\n', "f52457"
-#	);
+	#	my $info = TpvMethods->InsertAppLog(
+	#		"testApp", "Error", 'Ahoj jï¿½ jsem ï¿½tï¿½pï¿½n\n', "f52457"
+	#	);
 
 	my $inf = TpvMethods->GetCustomerInfo("07227");
-
 
 	print 1;
 

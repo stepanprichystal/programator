@@ -434,15 +434,23 @@ sub ClipAreaByProf {
 # Rotate layer by degree
 # Right step must be open and set
 # Requested data must be selected
+# Default rotaion ic CW
 sub RotateLayerData {
 	my $self   = shift;
 	my $inCAM  = shift;
 	my $layer  = shift;
 	my $degree = shift;
+	my $ccw = shift;
+	
+	my $dir = "cw";
+	
+	if($ccw){
+		$dir = "ccw";
+	}
 
 	$self->WorkLayer( $inCAM, $layer );
 
-	$inCAM->COM( "sel_transform", "oper" => "rotate", "angle" => $degree );
+	$inCAM->COM( "sel_transform", "oper" => "rotate", "angle" => $degree, "direction" => $dir);
 
 	$inCAM->COM( 'affected_layer', name => $layer, mode => "single", affected => "no" );
 }

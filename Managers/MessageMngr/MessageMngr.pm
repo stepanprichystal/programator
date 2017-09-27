@@ -235,7 +235,7 @@ sub __OnExitMessFrm {
 			$onMessage->Do( $self->{"pcbId"}, $self->{"childPcbId"}, $self->__GetMessagesTxt( $exitMess{"messages"} ), $exitMess{"type"}, $resultTxt );
 		}
 
-		print $resultTxt. "\n";
+		 
 		
 		#$messFrmObj->Destroy();
 

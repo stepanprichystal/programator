@@ -25,6 +25,7 @@ use aliased 'Packages::Other::CustomerNote';
 use aliased 'Programs::StencilCreator::DataMngr::DataMngr';
 use aliased 'Programs::StencilCreator::DataMngr::StencilDataMngr::StencilDataMngr';
 use aliased 'Programs::StencilCreator::Enums';
+use aliased 'Programs::StencilCreator::Helpers::Output';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -42,16 +43,21 @@ sub new {
 	$self->{"inCAM"} = shift;
 	$self->{"jobId"} = shift;
 
+	$self->{"stencilSrc"} = shift;    # existing job or customer data
+	$self->{"jobIdSrc"}   = shift;    # if source job, contain job id
+
 	# Main application form
 	$self->{"form"} = StencilFrm->new( -1, $self->{"inCAM"}, $self->{"jobId"} );
-	$self->{"form"}->{"fmrDataChanged"}->Add( sub { $self->__OnFrmDataChanged(@_) } );
 
 	# Data where are stored stencil position, deimensions etc
 	$self->{"dataMngr"}        = DataMngr->new();
 	$self->{"stencilDataMngr"} = StencilDataMngr->new( $self->{"dataMngr"} );
 
-	my $custInfo = HegMethods->GetCustomerInfo( $self->{"jobId"} );
-	$self->{"customerNote"} = CustomerNote->new( $custInfo->{"reference_subjektu"} );
+	$self->{"output"} = Output->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"dataMngr"}, $self->{"stencilDataMngr"} );
+	$self->{"dataHelper"} = DataHelper->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"dataMngr"}, $self->{"stencilDataMngr"},
+											 $self->{"stencilSrc"}, $self->{"jobIdSrc"} );
+
+	$self->__SetHandlers();
 
 	return $self;
 }
@@ -63,15 +69,12 @@ sub Run {
 	my $jobId = $self->{"jobId"};
 
 	# 1) Set source data to DataMngr
-	DataHelper->SetSourceData( $inCAM, $jobId, $self->{"dataMngr"} );
-	
-	# 2) Set default values
-	$self->__DefaultValDataMngr(undef, undef, 1 );
+	$self->{"dataHelper"}->SetSourceData();
 
-	# 3) Set default customer values
+	# 2) Set default settings by IS
 	my $warnMess = "";
-	my $res = DataHelper->SetDefaultData( $inCAM, $jobId, $self->{"dataMngr"}, $self->{"customerNote"}, \$warnMess );
- 
+	my $res      = $self->{"dataHelper"}->SetDefaultByIS( \$warnMess );
+
 	unless ($res) {
 
 		my $messMngr = $self->{"form"}->GetMessageMngr();
@@ -80,8 +83,12 @@ sub Run {
 
 		$messMngr->ShowModal( -1, EnumsGeneral->MessageType_WARNING, \@mess1, \@btn );
 	}
-	
-	$self->{"stencilDataMngr"}->Update();
+ 
+
+	# 3) Set default settings by Customer notes
+	my $custWarnMess = "";
+	my $custRes      = $self->{"dataHelper"}->SetDefaultByCustomer( \$custWarnMess );
+ 
 
 	# Init form by source data in DataMngr
 	$self->{"form"}->Init( $self->{"dataMngr"}, $self->{"stencilDataMngr"} );
@@ -98,6 +105,15 @@ sub Run {
 # FORM HANDLERS
 # ================================================================================
 
+sub __SetHandlers {
+	my $self = shift;
+
+	$self->{"form"}->{"fmrDataChanged"}->Add( sub { $self->__OnFrmDataChanged(@_) } );
+
+	$self->{"form"}->{"prepareClick"}->Add( sub { $self->__OnPrepareClick(@_) } );
+
+}
+
 sub __OnFrmDataChanged {
 	my $self        = shift;
 	my $form        = shift;
@@ -107,9 +123,33 @@ sub __OnFrmDataChanged {
 	# 2) update actual stored form data
 	$self->__UpdateDataMngr();
 
-	$self->__DefaultValDataMngr( $controlName, $newValue );
+	$self->__DefaultCompValues( $controlName, $newValue );
 
 	$self->__RefreshForm();
+}
+
+sub __OnPrepareClick {
+	my $self = shift;
+
+	# Do check before prepare
+	my $mess = "";
+	my $res  = $self->{"dataHelper"}->CheckBeforeOutput( \$mess );
+
+	unless ($res) {
+
+		my $messMngr = $self->{"form"}->GetMessageMngr();
+		my @mess1    = ($mess);
+		my @btn      = ( "Prepare force", "Cancel" );
+
+		$messMngr->ShowModal( -1, EnumsGeneral->MessageType_WARNING, \@mess1, \@btn );
+		if ( $messMngr->Result() == 1 ) {
+			return 0;
+		}
+	}
+
+	# Prepare final layer
+	$self->{"output"}->PrepareLayer();
+
 }
 
 # ================================================================================
@@ -137,7 +177,7 @@ sub __UpdateDataMngr {
 
 	$dataMngr->SetSpacingType( $self->{"form"}->GetSpacingType() );
 
-	$dataMngr->SetHCenterType( $self->{"form"}->GetHCenterType() );
+	$dataMngr->SetCenterType( $self->{"form"}->GetCenterType() );
 
 	$dataMngr->SetSchemaType( $self->{"form"}->GetSchemaType() );
 
@@ -155,9 +195,8 @@ sub __UpdateDataMngr {
 
 }
 
-
 sub __RefreshForm {
-	my $self = shift;
+	my $self     = shift;
 	my $autoZoom = shift;
 
 	# 2) refresh form controls
@@ -173,7 +212,7 @@ sub __RefreshForm {
 
 	$self->{"form"}->SetSpacingType( $self->{"dataMngr"}->GetSpacingType() );
 
-	$self->{"form"}->SetHCenterType( $self->{"dataMngr"}->GetHCenterType() );
+	$self->{"form"}->SetCenterType( $self->{"dataMngr"}->GetCenterType() );
 
 	$self->{"form"}->SetSchemaType( $self->{"dataMngr"}->GetSchemaType() );
 
@@ -190,6 +229,8 @@ sub __RefreshForm {
 	$self->{"form"}->{"raiseEvt"} = 1;
 
 	# 3) refresh form drawing
+	$self->{"stencilDataMngr"}->Update();
+	
 	$self->{"form"}->UpdateDrawing($autoZoom);
 
 }
@@ -198,11 +239,12 @@ sub __RefreshForm {
 # METHODS WHICH SET DEFAULT DATA VALUES
 # ================================================================================
 
-sub __DefaultValDataMngr {
+# Compute default values, which are depand on another stencil settings
+sub __DefaultCompValues {
 	my $self        = shift;
 	my $controlName = shift;
 	my $newValue    = shift;
-	my $force = shift;
+	my $force       = shift;
 
 	# set specific default value
 
@@ -212,91 +254,26 @@ sub __DefaultValDataMngr {
 	# 1) Set default hole distance, if dimension or schema type is changed
 	if ( $force || grep { $_ eq $controlName } ( "size", "sizeX", "sizeY", "schemaType" ) ) {
 
-		$self->__DefaultHoleDist();
+		$dataMngr->DefaultHoleDist();
 
 	}
 
 	# 2) Set spacing type according center type
-	if ( $force || ($controlName eq "hCenterType" && $dataMngr->GetStencilType() eq Enums->StencilType_TOPBOT) ) {
+	if ( $force || ( $controlName eq "hCenterType" && $dataMngr->GetStencilType() eq Enums->StencilType_TOPBOT ) ) {
 
-		$self->__DefaultSpacingType();
+		$dataMngr->DefaultSpacingType();
 	}
 
 	# 3) If Top + Bot compute default vertical spacing between pcb
 
 	if ( $force || grep { $_ eq $controlName } ( "stencilType", "step", "size", "sizeY", "spacingType", "hCenterType", "schemaType", "holeDist2" ) ) {
 
-		$self->__DefaultSpacing();
+		$dataMngr->DefaultSpacing($stencilMngr);
 
 	}
-
-}
-
-sub __DefaultHoleDist {
-	my $self = shift;
-
-	my $dataMngr    = $self->{"dataMngr"};
-	my $stencilMngr = $self->{"stencilDataMngr"};
-
-	if ( $dataMngr->GetSchemaType() eq Enums->Schema_STANDARD ) {
-
-		my $holeDist2 = $dataMngr->GetStencilSizeY() - 2 * 12;    # 12 mm is standard distance from top/bot edge of stencil, where holes are placed
-		$dataMngr->SetHoleDist2($holeDist2);
-
-		$stencilMngr->Update();
-	}
-
-}
-
-sub __DefaultSpacingType {
-	my $self = shift;
-
-	my $dataMngr    = $self->{"dataMngr"};
-	my $stencilMngr = $self->{"stencilDataMngr"};
-
-	if ( $dataMngr->GetHCenterType() eq Enums->HCenter_BYPROF ) {
-
-		$dataMngr->SetSpacingType( Enums->Spacing_PROF2PROF );
-
-	}
-	elsif ( $dataMngr->GetHCenterType() eq Enums->HCenter_BYDATA ) {
-
-		$dataMngr->SetSpacingType( Enums->Spacing_DATA2DATA );
-	}
-
+	
 	$stencilMngr->Update();
 
-}
-
-sub __DefaultSpacing {
-	my $self = shift;
-
-	my $dataMngr    = $self->{"dataMngr"};
-	my $stencilMngr = $self->{"stencilDataMngr"};
-
-	if ( $dataMngr->GetStencilType() eq Enums->StencilType_TOPBOT ) {
-
-		my $spacing    = 0;
-		my %activeArea = $stencilMngr->GetStencilActiveArea();
-
-		if ( $dataMngr->GetHCenterType() eq Enums->HCenter_BYPROF ) {
-
-			$spacing = ( $activeArea{"h"} - $stencilMngr->GetTopProfile()->GetHeight() - $stencilMngr->GetBotProfile()->GetHeight() ) / 3;
-
-		}
-		elsif ( $dataMngr->GetHCenterType() eq Enums->HCenter_BYDATA ) {
-
-			$spacing =
-			  ( $activeArea{"h"} -
-				$stencilMngr->GetTopProfile()->GetPasteData()->GetHeight() -
-				$stencilMngr->GetBotProfile()->GetPasteData()->GetHeight() ) / 3;
-
-		}
-
-		$dataMngr->SetSpacing( sprintf( "%.1f", $spacing ) );
-
-		$stencilMngr->Update();
-	}
 }
 
 
@@ -313,7 +290,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	my $inCAM = InCAM->new();
 	my $jobId = "f13609";
 
-	my $creator = StencilCreator->new( $inCAM, $jobId );
+	my $creator = StencilCreator->new( $inCAM, $jobId, Enums->StencilSource_JOB, "f13610" );
 	$creator->Run();
 
 }

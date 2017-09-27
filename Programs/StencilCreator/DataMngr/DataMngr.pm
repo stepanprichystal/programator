@@ -35,16 +35,16 @@ sub new {
 	$self->{"stencilType"} = undef;
 	$self->{"sizeX"}       = 300;
 	$self->{"sizeY"}       = 480;
-	$self->{"step"}        = "o+1";
+	$self->{"step"}        = undef;
 	$self->{"spacing"}     = 0;
 
 	$self->{"spacingType"} = Enums->Spacing_PROF2PROF;
 
-	$self->{"hCenterType"} = Enums->HCenter_BYPROF;
+	$self->{"hCenterType"} = Enums->Center_BYPROF;
 	$self->{"holeSize"}    = 5.1;
 	$self->{"schema"}      = Enums->Schema_STANDARD;
 
-	$self->{"holeDist"}  = undef;
+	$self->{"holeDist"}  = 12.5;
 	$self->{"holeDist2"} = undef;
 	
 	$self->{"addPcbNumber"} = 1;
@@ -64,6 +64,8 @@ sub Init{
 	$self->{"steps"}     = shift;
 	$self->{"topExist"}  = shift;
 	$self->{"botExist"}  = shift;
+	
+ 
 	
 }
 
@@ -157,13 +159,13 @@ sub SetSpacingType {
 }
 
 # Horiyontal aligment type
-sub GetHCenterType {
+sub GetCenterType {
 	my $self = shift;
 
 	return $self->{"hCenterType"};
 }
 
-sub SetHCenterType {
+sub SetCenterType {
 	my $self = shift;
 	my $type = shift;
 
@@ -234,6 +236,70 @@ sub GetAddPcbNumber {
 	return $self->{"addPcbNumber"};
 }
 
+
+ 
+
+sub DefaultHoleDist {
+	my $self = shift;
+ 
+	if ( $self->GetSchemaType() eq Enums->Schema_STANDARD ) {
+
+		my $holeDist2 = $self->GetStencilSizeY() - 2 * 12;    # 12 mm is standard distance from top/bot edge of stencil, where holes are placed
+		$self->SetHoleDist2($holeDist2);
+
+ 
+	}
+
+}
+
+sub DefaultSpacingType {
+	my $self = shift;
+ 
+
+	if ( $self->GetCenterType() eq Enums->Center_BYPROF ) {
+
+		$self->SetSpacingType( Enums->Spacing_PROF2PROF );
+
+	}
+	elsif ( $self->GetCenterType() eq Enums->Center_BYDATA ) {
+
+		$self->SetSpacingType( Enums->Spacing_DATA2DATA );
+	}
+
+	 
+
+}
+
+sub DefaultSpacing {
+	my $self = shift;
+	my $stencilMngr =  shift;
+	
+	$stencilMngr->Update(); # we use stencilMngr, we needed it updated
+ 
+	if ( $self->GetStencilType() eq Enums->StencilType_TOPBOT ) {
+
+		my $spacing    = 0;
+		my %activeArea = $stencilMngr->GetStencilActiveArea();
+
+		if ( $self->GetCenterType() eq Enums->Center_BYPROF ) {
+
+			$spacing = ( $activeArea{"h"} - $stencilMngr->GetTopProfile()->GetHeight() - $stencilMngr->GetBotProfile()->GetHeight() ) / 3;
+
+		}
+		elsif ( $self->GetCenterType() eq Enums->Center_BYDATA ) {
+
+			$spacing =
+			  ( $activeArea{"h"} -
+				$stencilMngr->GetTopProfile()->GetPasteData()->GetHeight() -
+				$stencilMngr->GetBotProfile()->GetPasteData()->GetHeight() ) / 3;
+
+		}
+
+		$self->SetSpacing( sprintf( "%.1f", $spacing ) );
+
+		 
+	}
+}
 
 
 #-------------------------------------------------------------------------------------------#

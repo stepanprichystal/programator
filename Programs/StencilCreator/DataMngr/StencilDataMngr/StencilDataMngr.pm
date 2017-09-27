@@ -40,15 +40,13 @@ sub new {
 	return $self;
 }
 
+# Recompute positions of data, ortate data, etc.
 sub Update {
 	my $self = shift;
 	my $val  = shift;
 
 	$self->__Update();
-	
-	
-	 
-
+ 
 }
 
 sub GetTopProfilePos {
@@ -87,7 +85,7 @@ sub GetTopDataPos {
 sub GetBotDataPos {
 	my $self = shift;
 
-	my %pos = $self->GetTopProfilePos();
+	my %pos = $self->GetBotProfilePos();
 
 	$pos{"x"} += $self->{"botProf"}->GetPDOrigin->{"x"};
 	$pos{"y"} += $self->{"botProf"}->GetPDOrigin->{"y"};
@@ -117,7 +115,7 @@ sub GetStencilActiveArea {
 	elsif ( $schT eq Enums->Schema_FRAME ) {
 
 		$size{"h"} = $self->GetHeight() - 50;
-		$size{"w"} = $self->GetWidth() - 50;
+		$size{"w"} = $self->GetWidth() - 40;
 
 	}
 	elsif ( $schT eq Enums->Schema_INCLUDED ) {
@@ -235,12 +233,12 @@ sub __GetTopProfilePosX {
 
 	# profile to profile
 
-	if ( $self->{"dataMngr"}->GetHCenterType() eq Enums->HCenter_BYPROF ) {
+	if ( $self->{"dataMngr"}->GetCenterType() eq Enums->Center_BYPROF ) {
 
 		$posX = ( $self->{"w"} - $self->{"topProf"}->GetWidth() ) / 2;
 
 	}
-	elsif ( $self->{"dataMngr"}->GetHCenterType() eq Enums->HCenter_BYDATA ) {
+	elsif ( $self->{"dataMngr"}->GetCenterType() eq Enums->Center_BYDATA ) {
 
 		$posX = ( $self->{"w"} - $self->{"topProf"}->GetPasteData()->GetWidth() ) / 2;
 		$posX -= $self->{"topProf"}->GetPDOrigin()->{"x"};
@@ -261,14 +259,14 @@ sub __GetTopProfilePosY {
 	if ( $self->{"dataMngr"}->GetStencilType() ne Enums->StencilType_TOPBOT ) {
 
 		# Center by profile
-		if ( $self->{"dataMngr"}->GetHCenterType() eq Enums->HCenter_BYPROF ) {
+		if ( $self->{"dataMngr"}->GetCenterType() eq Enums->Center_BYPROF ) {
 
 			$posY = ( $self->{"h"} - $self->{"topProf"}->GetHeight() ) / 2;
 
 		}
 
 		# Center by data
-		elsif ( $self->{"dataMngr"}->GetHCenterType() eq Enums->HCenter_BYDATA ) {
+		elsif ( $self->{"dataMngr"}->GetCenterType() eq Enums->Center_BYDATA ) {
 
 			$posY = ( $self->{"h"} - $self->{"topProf"}->GetPasteData()->GetHeight() ) / 2 - $self->{"topProf"}->GetPDOrigin->{"y"};
 		}
@@ -298,12 +296,12 @@ sub __GetBotProfilePosX {
 
 	# profile to profile
 
-	if ( $self->{"dataMngr"}->GetHCenterType() eq Enums->HCenter_BYPROF ) {
+	if ( $self->{"dataMngr"}->GetCenterType() eq Enums->Center_BYPROF ) {
 
 		$posX = ( $self->{"w"} - $self->{"botProf"}->GetWidth() ) / 2;
 
 	}
-	elsif ( $self->{"dataMngr"}->GetHCenterType() eq Enums->HCenter_BYDATA ) {
+	elsif ( $self->{"dataMngr"}->GetCenterType() eq Enums->Center_BYDATA ) {
 
 		$posX = ( $self->{"w"} - $self->{"botProf"}->GetPasteData()->GetWidth() ) / 2;
 		$posX -= $self->{"botProf"}->GetPDOrigin->{"x"};
@@ -324,14 +322,14 @@ sub __GetBotProfilePosY {
 	if ( $self->{"dataMngr"}->GetStencilType() ne Enums->StencilType_TOPBOT ) {
 
 		# Center by profile
-		if ( $self->{"dataMngr"}->GetHCenterType() eq Enums->HCenter_BYPROF ) {
+		if ( $self->{"dataMngr"}->GetCenterType() eq Enums->Center_BYPROF ) {
 
 			$posY = ( $self->{"h"} - $self->{"botProf"}->GetHeight() ) / 2;
 
 		}
 
 		# Center by data
-		elsif ( $self->{"dataMngr"}->GetHCenterType() eq Enums->HCenter_BYDATA ) {
+		elsif ( $self->{"dataMngr"}->GetCenterType() eq Enums->Center_BYDATA ) {
 
 			$posY = ( $self->{"h"} - $self->{"botProf"}->GetPasteData()->GetHeight() ) / 2 - $self->{"botProf"}->GetPDOrigin->{"y"};
 		}

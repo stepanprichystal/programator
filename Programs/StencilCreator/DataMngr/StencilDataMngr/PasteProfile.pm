@@ -111,7 +111,7 @@ sub GetPDOrigin {
 sub GetIsRotated {
 	my $self = shift;
 
-	return $self->{"h"};
+	return $self->{"rotated"};
 
 }
 
