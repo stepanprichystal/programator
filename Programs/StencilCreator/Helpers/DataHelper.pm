@@ -66,7 +66,7 @@ sub SetSourceData {
 	my $botLayer = Helper->GetStencilOriLayer( $inCAM, $jobId, "bot" );
 
 	# steps
-	my @steps = grep { $_ =~ /^ori_/i } CamStep->GetAllStepNames( $inCAM, $jobId );
+	my @steps = Helper->GetStencilSourceSteps( $inCAM, $jobId );
 
 	# limits
 	my %stepsSize = ();
@@ -173,8 +173,8 @@ sub SetDefaultByIS {
 	my $result = 1;
 
 	my %stencilInfo = Helper->GetStencilInfo($jobId);
-	my $orderInfo   = HegMethods->GetAllByPcbIdOffer($jobId);
-	my $pcbInfo     = ( HegMethods->GetAllByPcbId($jobId) )[0];
+
+	my $pcbInfo = ( HegMethods->GetAllByPcbId($jobId) )[0];
 
 	# Set drilled number
 	# Do not add pcb number if pool, or vrtana sablona or customer source data
@@ -189,7 +189,7 @@ sub SetDefaultByIS {
 	# Set stencil type
 	unless ( defined $stencilInfo{"type"} ) {
 
-		$$mess .= "Nebyl dohledán typ šablony (top, bot, top+bot) v IS. Bude nastaven defaultní typ: \"TOP\".\n";
+		$$mess .= "Nebyl dohledĂˇn typ Ĺˇablony (top, bot, top+bot) v IS. Bude nastaven defaultnĂ­ typ: \"TOP\".\n";
 		$result = 0;
 	}
 
@@ -201,7 +201,7 @@ sub SetDefaultByIS {
 
 	if ( !defined $w || !defined $h ) {
 
-		$$mess .= "Nebyl dohledán rozměr rozměr šablony v IS. Bude nastaven defaultní rozměr 300x480mm\n";
+		$$mess .= "Nebyl dohledĂˇn rozmÄ›r rozmÄ›r Ĺˇablony v IS. Bude nastaven defaultnĂ­ rozmÄ›r 300x480mm\n";
 		$w      = 300;
 		$h      = 480;
 		$result = 0;
@@ -222,12 +222,17 @@ sub SetDefaultByIS {
 
 	# 4) Schema type
 	my $schemaType = Enums->Schema_STANDARD;
-	if ( $orderInfo->{"Poznamka_deska"} =~ /vlepe|rám/i ) {
+	if ( $stencilInfo{"schema"} eq Enums->Schema_FRAME ) {
 
 		$schemaType = Enums->Schema_FRAME;
 	}
 
 	if ( $self->{"stencilSrc"} eq Enums->StencilSource_JOB && $self->{"isPool"} ) {
+
+		$schemaType = Enums->Schema_INCLUDED;
+	}
+
+	if ( $self->{"stencilSrc"} eq Enums->StencilSource_CUSTDATA ) {
 
 		$schemaType = Enums->Schema_INCLUDED;
 	}
@@ -308,8 +313,9 @@ sub CheckBeforeOutput {
 
 	my $result = 1;
 
-	my $inCAM = $self->{"inCAM"};
-	my $jobId = $self->{"jobId"};
+	my $inCAM       = $self->{"inCAM"};
+	my $jobId       = $self->{"jobId"};
+	my %stencilInfo = Helper->GetStencilInfo($jobId);
 
 	# Check according customer notes
 
@@ -341,7 +347,7 @@ sub CheckBeforeOutput {
 
 			if ( abs( $topPasteLim - $areaTop ) < $minDist ) {
 				$distOk = 0;
-				$wrongDist .= "- Vzdálenost data/horní otvory = " . abs( $topPasteLim - $areaTop ) . "mm\n";
+				$wrongDist .= "- Vzdálenost data/horní­ otvory = " . abs( $topPasteLim - $areaTop ) . "mm\n";
 			}
 		}
 
@@ -351,14 +357,15 @@ sub CheckBeforeOutput {
 
 			if ( abs( $botPasteLim - $areaBot ) < $minDist ) {
 				$distOk = 0;
-				$wrongDist .= "- Vzdálenost data/dolní otvory = " . abs( $botPasteLim - $areaBot ) . "mm\n";
+				$wrongDist .= "- Vzdálensot data/dolní otvory = " . abs( $botPasteLim - $areaBot ) . "mm\n";
 			}
 		}
 
 		unless ($distOk) {
 
 			$result = 0;
-			$$mess .= "Zákazník si přeje aby minimální vzdálenost plošky na šabloně byla alespoň " . $minDist . "mm\n$wrongDist";
+			$$mess .=
+			  "Zákazník si přeje aby minimální vzdálenost plošky na šabloně od opínacích otvorů byla " . $minDist . "mm\n$wrongDist";
 		}
 	}
 
@@ -372,7 +379,7 @@ sub CheckBeforeOutput {
 
 			$result = 0;
 			$$mess .=
-			    "Zákazník si přeje aby vertikální vzdálenost mezi upínacími otvory byla "
+			    "Zákazník si přeje, aby vertikální vzdálensot mezi upínacími otvory byla "
 			  . $holeDistY
 			  . "mm (aktuální je "
 			  . abs( min(@holesY) - max(@holesY) ) . "mm)";
@@ -391,10 +398,126 @@ sub CheckBeforeOutput {
 		if ( abs( $holesX[0] - $holesX[1] ) != $holeDistX ) {
 			$result = 0;
 			$$mess .=
-			    "Zákazník si přeje aby horizontální vzdálenost mezi upínacími otvory byla "
+			    "Zákazník si přeje, aby horizontální vzdálensot mezi upínacími otvory byla "
 			  . $holeDistX
 			  . "mm (aktuální je "
 			  . abs( $holesX[0] - $holesX[1] ) . "mm)";
+		}
+
+	}
+
+	# check halfholes in standard schema type
+	my $noHalfHoles = $self->{"customerNote"}->NoHalfHoles();
+	if ( defined $noHalfHoles && $noHalfHoles == 1 && $self->{"dataMngr"}->GetSchemaType() eq Enums->Schema_STANDARD ) {
+
+		my @holesX = sort { $a <=> $b } uniq( map { $_->{"x"} } $self->{"stencilMngr"}->GetSchema()->GetHolePositions() );
+
+		# Check if some hole lay on "stencil edge"
+		my $r = $self->{"dataMngr"}->GetHoleSize() / 2;
+
+		my $lEdge = 0;
+		my $rEdge = $self->{"dataMngr"}->GetStencilSizeX();
+		my @holes = grep { ( $_ - $r < $lEdge && $_ + $r > $lEdge ) || ( $_ - $r < $rEdge && $_ + $r > $rEdge ) } @holesX;
+
+		if (@holes) {
+
+			@holes = map { sprintf( "%.2fmm", $_ ) } @holes;
+			$result = 0;
+			$$mess .= "Zákazník si nepřeje mít upínací otvory na hranách desky " . "(otvory na pozicích: " . join( ", ", @holes ) . ")";
+
+		}
+	}
+
+	# Other checks
+
+	# Check properly inserted pcb number into stencil
+
+	if (
+		 $self->{"dataMngr"}->GetAddPcbNumber()
+		 && (    $stencilInfo{"tech"} eq Enums->Technology_DRILL
+			  || $self->{"stencilSrc"} eq Enums->StencilSource_CUSTDATA
+			  || ( $self->{"stencilSrc"} eq Enums->StencilSource_JOB && $self->{"isPool"} ) )
+	  )
+	{
+
+		$result = 0;
+		$$mess .=
+		    "Číslo pcb by nemělo být na šabloně vložené, pokud:\n"
+		  . "- šablona je vrtaná\n"
+		  . "- šablona je vytvořená ze zákaznických dat (ne z jobu)\n"
+		  . "- se jedná o šablonu typu POOL\n";
+
+	}
+
+	# Check if schema is not inserted
+	if (
+		 $self->{"dataMngr"}->GetSchemaType() ne Enums->Schema_INCLUDED
+		 && ( $self->{"stencilSrc"} eq Enums->StencilSource_CUSTDATA
+			  || ( $self->{"stencilSrc"} eq Enums->StencilSource_JOB && $self->{"isPool"} ) )
+	  )
+	{
+
+		$result = 0;
+		$$mess .=
+		    "Do šablony by se nemělo vkládat okolí, pokud:\n"
+		  . "- je vytvořená ze zákaznických dat, které již okolí obsahují\n"
+		  . "- se jedná o šablonu typu POOL\n";
+
+	}
+
+	# Check if schema is inserted
+	if (    $self->{"dataMngr"}->GetSchemaType() eq Enums->Schema_INCLUDED
+		 && $self->{"stencilSrc"} eq Enums->StencilSource_JOB
+		 && !$self->{"isPool"} )
+	{
+
+		$result = 0;
+		$$mess .= "V šabloně chybí okolí\n";
+
+	}
+
+	# Check vlepeni do ramu
+	if ( $stencilInfo{"schema"} eq Enums->Schema_FRAME && $self->{"dataMngr"}->GetSchemaType() ne Enums->Schema_FRAME ) {
+
+		$result = 0;
+		$$mess .= "V IS je požadavek na vlepení šablony do rámu. Okolí ale není typ \"vlepení do rámu\"\n";
+
+	}
+
+	# Check dimenison in IS and currently set
+	if (    $stencilInfo{"width"} != $self->{"dataMngr"}->GetStencilSizeX()
+		 || $stencilInfo{"height"} != $self->{"dataMngr"}->GetStencilSizeY() )
+	{
+
+		$result = 0;
+		$$mess .=
+		    "Nesouhlasí požadované rozměry v IS ("
+		  . $stencilInfo{"width"} . "x"
+		  . $stencilInfo{"height"}
+		  . "mm) s nastavenými rozměry ("
+		  . $self->{"dataMngr"}->GetStencilSizeX() . "x"
+		  . $self->{"dataMngr"}->GetStencilSizeY() . "mm)\n";
+
+	}
+
+	# Check type of stencil
+	if ( $stencilInfo{"type"} ne $self->{"dataMngr"}->GetStencilType() ) {
+
+		$result = 0;
+		$$mess .=
+		  "Nesouhlasí typ šablony v IS (" . $stencilInfo{"type"} . ") s nastavenými typem (" . $self->{"dataMngr"}->GetStencilType() . ")\n";
+
+	}
+
+	# Check if pcb are not to close (< 50 mm)
+	if ( $self->{"dataMngr"}->GetStencilType() eq Enums->StencilType_TOPBOT ) {
+
+		 my $dist = $self->{"stencilMngr"}->GetCurrentSpacing();
+
+		if ( $dist < 50 ) {
+
+			$result = 0;
+			$$mess .= "Šablony TOP a BOT jsou u sebe příliš blízko ($dist mm). Je to v pořádku?\n";
 		}
 
 	}

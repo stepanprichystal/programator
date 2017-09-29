@@ -17,6 +17,8 @@ use aliased 'Packages::Events::Event';
 use aliased 'Packages::InCAM::InCAM';
 use aliased 'Programs::StencilCreator::Forms::StencilDrawing';
 use aliased 'Programs::StencilCreator::Enums';
+use aliased 'Connectors::HeliosConnector::HegMethods';
+use aliased 'Packages::Other::CustomerNote';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -125,11 +127,8 @@ sub SetStencilSize {
 	else {
 
 		my @t = (
-			Enums->StencilSize_150x200,
-			Enums->StencilSize_200x300,
-			Enums->StencilSize_300x300, 
-			Enums->StencilSize_300x480,
-			Enums->StencilSize_300x520
+				  Enums->StencilSize_150x200, Enums->StencilSize_200x300, Enums->StencilSize_300x300, Enums->StencilSize_300x480,
+				  Enums->StencilSize_300x520
 		);
 
 		my $selType = undef;
@@ -142,14 +141,14 @@ sub SetStencilSize {
 				last;
 			}
 		}
-		
-		unless(defined $selType){
-			
+
+		unless ( defined $selType ) {
+
 			$self->{"customSize"} = 1;
 			$self->{"sizeCb"}->SetValue( Enums->StencilSize_CUSTOM );
 			$self->{"sizeXTextCtrl"}->SetValue($width);
 			$self->{"sizeYTextCtrl"}->SetValue($height);
-			
+
 		}
 
 		$self->{"sizeCb"}->SetValue($selType);
@@ -562,9 +561,10 @@ sub __SetLayout {
 	my $szcol1  = Wx::BoxSizer->new(&Wx::wxVERTICAL);
 
 	# DEFINE CONTROLS
-	my $general = $self->__SetLayoutGeneral($pnlMain);
-	my $schema  = $self->__SetLayoutSchema($pnlMain);
-	my $other   = $self->__SetLayoutOther($pnlMain);
+	my $general  = $self->__SetLayoutGeneral($pnlMain);
+	my $schema   = $self->__SetLayoutSchema($pnlMain);
+	my $other    = $self->__SetLayoutOther($pnlMain);
+	my $custInfo = $self->__SetLayoutCustomerInfo($pnlMain);
 
 	my $drawing = $self->__SetLayoutDrawing($pnlMain);
 
@@ -575,6 +575,7 @@ sub __SetLayout {
 	$szcol1->Add( $general, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
 	$szcol1->Add( $schema,  0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
 	$szcol1->Add( $other,   1, &Wx::wxEXPAND | &Wx::wxALL, 0 );
+	$szcol1->Add( $custInfo,   1, &Wx::wxEXPAND | &Wx::wxALL, 0 );
 
 	$szMain->Add( $szcol1,  0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
 	$szMain->Add( $drawing, 1, &Wx::wxEXPAND | &Wx::wxALL, 0 );
@@ -829,6 +830,63 @@ sub __SetLayoutOther {
 	$self->{"hCenterTypeCb"} = $hCenterTypeCb;
 	$self->{"pnlSpacing"}    = $pnlSpacing;
 	$self->{"addNumberChb"}  = $addNumberChb;
+
+	return $szStatBox;
+}
+
+# Set layout general group
+sub __SetLayoutCustomerInfo {
+	my $self   = shift;
+	my $parent = shift;
+
+	my $custInfo = HegMethods->GetCustomerInfo( $self->{"jobId"} );
+	my $custNote = CustomerNote->new( $custInfo->{"reference_subjektu"} );
+
+	#define staticboxes
+	my $statBox = Wx::StaticBox->new( $parent, -1, "Requests - " . $custInfo->{"customer"} );
+	my $szStatBox = Wx::StaticBoxSizer->new( $statBox, &Wx::wxVERTICAL );
+
+	# build array of customer request
+
+	my @request = ();
+
+	if ( defined $custNote->HoleDistX() ) {
+
+		push( @request, "- Vertical distance between hole: " . $custNote->HoleDistX() . "mm" );
+	}
+	if ( defined $custNote->HoleDistY() ) {
+
+		push( @request, "- Horizontal distance between hole: " . $custNote->HoleDistY() . "mm" );
+	}
+	if ( defined $custNote->OuterHoleDist() ) {
+
+		push( @request, "- Outer hole distance (vertical): " . $custNote->OuterHoleDist() . "mm" );
+	}
+	if ( defined $custNote->CenterByData() ) {
+
+		push( @request, "- Center pcb by data (not by profile)" );
+	}
+	if ( defined $custNote->MinHoleDataDist() ) {
+
+		push( @request, "- Minimal distance of paste data to holes: " . $custNote->MinHoleDataDist() . "mm" );
+	}
+	if ( defined $custNote->NoHalfHoles() ) {
+
+		push( @request, "- No holes on edges of stencil (no halfholes)" );
+	}
+	if ( defined $custNote->NoFiducial() ) {
+
+		push( @request, "- No fiducial mark in stencil" );
+	}
+
+	foreach my $r (@request) {
+
+		my $rTxt = Wx::StaticText->new( $statBox, -1, $r, &Wx::wxDefaultPosition, [ 170, 22 ] );
+		$szStatBox->Add( $rTxt, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+
+	}
+
+	# Set References
 
 	return $szStatBox;
 }

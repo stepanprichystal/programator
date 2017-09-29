@@ -290,7 +290,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	my $inCAM = InCAM->new();
 	my $jobId = "f13609";
 
-	my $creator = StencilCreator->new( $inCAM, $jobId, Enums->StencilSource_JOB, "f13610" );
+	my $creator = StencilCreator->new( $inCAM, $jobId, Enums->StencilSource_JOB,   "f13609");
 	$creator->Run();
 
 }

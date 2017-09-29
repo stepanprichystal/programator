@@ -125,6 +125,19 @@ sub GetStencilOriLayer {
 	unless ($layer) {
 		$layer = ( grep { $_->{"gROWname"} =~ /^$name-made/ } @pasteL )[0];
 	}
+	
+	return $layer;
+}
+
+# Return steps, which data paste are taken from
+sub GetStencilSourceSteps {
+	my $self  = shift;
+	my $inCAM = shift;
+	my $jobId = shift;
+	
+	my @steps = grep { $_ =~ /^ori_/i } CamStep->GetAllStepNames( $inCAM, $jobId );
+ 
+	return @steps;
 }
 
 #-------------------------------------------------------------------------------------------#

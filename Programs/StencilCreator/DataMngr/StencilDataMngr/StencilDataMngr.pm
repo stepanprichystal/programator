@@ -28,12 +28,11 @@ sub new {
 
 	$self->{"dataMngr"} = shift;
 
-	$self->{"w"} = undef;
-	$self->{"h"} = undef;
-	$self->{"topProf"}     = undef;
-	$self->{"botProf"}     = undef;
-	$self->{"schema"}      = undef;
- 
+	$self->{"w"}       = undef;
+	$self->{"h"}       = undef;
+	$self->{"topProf"} = undef;
+	$self->{"botProf"} = undef;
+	$self->{"schema"}  = undef;
 
 	$self->{"init"} = 0;
 
@@ -46,7 +45,7 @@ sub Update {
 	my $val  = shift;
 
 	$self->__Update();
- 
+
 }
 
 sub GetTopProfilePos {
@@ -92,7 +91,7 @@ sub GetBotDataPos {
 
 	return \%pos;
 }
- 
+
 # Return width and height of stencil active area
 # Active area depand on choosed schema
 # if standard - area limited by holes
@@ -124,24 +123,50 @@ sub GetStencilActiveArea {
 		$size{"w"} = $self->GetWidth();
 
 	}
-	
+
 	return %size;
+
+}
+
+# Return curent spacing between pcb
+# Space can be returned either between paste data or between profile
+sub GetCurrentSpacing {
+	my $self = shift;
+	my $type = shift;    #profile/data
+
+	my $tProf = $self->GetTopProfile();
+	my $bProf = $self->GetBotProfile();
+
+	my %tProfPos = $self->GetTopProfilePos();
+	my %bProfPos = $self->GetBotProfilePos();
+	
+	my %tDataPos = $self->GetTopDataPos();
+	my %bDataPos = $self->GetBotDataPos();
+
+	my $dist = 0;
+	
+	if($type eq "profile"){
+
+		$dist = $tProfPos{"y"} - ( $bProfPos{"y"} + $bProf->GetHeight() );
+	
+	}else{
+		
+		$dist = $tDataPos{"y"} - ( $bDataPos{"y"} + $bProf->GetPasteData()->GetHeight() );
+	}
+
+	return $dist;
 
 }
 
 #-------------------------------------------------------------------------------------------#
 #  Set Layout properties
 #-------------------------------------------------------------------------------------------#
- 
- 
- 
 
 sub GetTopProfile {
 	my $self = shift;
 
 	return $self->{"topProf"};
 }
- 
 
 sub GetBotProfile {
 	my $self = shift;
@@ -154,7 +179,6 @@ sub GetWidth {
 
 	return $self->{"w"};
 }
- 
 
 sub GetHeight {
 	my $self = shift;
@@ -162,23 +186,21 @@ sub GetHeight {
 	return $self->{"h"};
 }
 
- 
 sub GetSchema {
 	my $self = shift;
 
 	return $self->{"schema"};
 }
- 
 
 #-------------------------------------------------------------------------------------------#
 #  Private methods
 #-------------------------------------------------------------------------------------------#
 
 sub __Update {
-	my $self     = shift;
- 
-	my $dataMngr    = $self->{"dataMngr"};
- 
+	my $self = shift;
+
+	my $dataMngr = $self->{"dataMngr"};
+
 	my $stencilType = $dataMngr->GetStencilType();
 
 	# 2) update profile data
@@ -212,19 +234,18 @@ sub __Update {
 
 	# 3)update stencil size
 
-	$self->{"w"} =  $dataMngr->GetStencilSizeX();
-	$self->{"h"} =  $dataMngr->GetStencilSizeY() ;
+	$self->{"w"} = $dataMngr->GetStencilSizeX();
+	$self->{"h"} = $dataMngr->GetStencilSizeY();
 
 	# 4) Update schema
 
-	my $schema = Schema->new( $dataMngr, $dataMngr->GetSchemaType());
- 
-	$self->{"schema"} = $schema;
- 
-	$self->__RotateStencil();
-  
-}
+	my $schema = Schema->new( $dataMngr, $dataMngr->GetSchemaType() );
 
+	$self->{"schema"} = $schema;
+
+	$self->__RotateStencil();
+
+}
 
 sub __GetTopProfilePosX {
 	my $self = shift;
@@ -252,8 +273,8 @@ sub __GetTopProfilePosY {
 
 	my $posY = undef;
 
-	my $spacing     =  $self->{"dataMngr"}->GetSpacing();
-	my $spacingType =  $self->{"dataMngr"}->GetSpacingType();
+	my $spacing     = $self->{"dataMngr"}->GetSpacing();
+	my $spacingType = $self->{"dataMngr"}->GetSpacingType();
 
 	# Single paste data
 	if ( $self->{"dataMngr"}->GetStencilType() ne Enums->StencilType_TOPBOT ) {
@@ -356,7 +377,6 @@ sub __GetBotProfilePosY {
 # Find new roattion of paste profile
 sub __RotateStencil {
 	my $self = shift;
- 
 
 	# difference of length in percentage between profile height and width
 	my $diffTop = abs( $self->{"topProf"}->GetHeight() - $self->{"topProf"}->GetWidth() ) / $self->{"topProf"}->GetHeight();
