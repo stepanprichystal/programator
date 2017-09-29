@@ -58,10 +58,11 @@ sub OnCheckGroupData {
 	unless ( defined $datacodeLayer ) {
 		$dataMngr->_AddErrorResult( "Data code", "Nesedí zadaný datacode v heliosu s datacodem v exportu." );
 	}
-	
-	my @errLayers= ();
-	unless($self->__CheckDataCodeJob($inCAM, $jobId, $defaultInfo, $groupData->GetDatacode(), \@errLayers)){
-		$dataMngr->_AddWarningResult( "Data code", "V zaškrtnutých vrstvách : \'".join(", ", @errLayers)."\' nebyl nalezen dynamický datakód. Zkontroluj to.");
+
+	my @errLayers = ();
+	unless ( $self->__CheckDataCodeJob( $inCAM, $jobId, $defaultInfo, $groupData->GetDatacode(), \@errLayers ) ) {
+		$dataMngr->_AddWarningResult( "Data code",
+							  "V zaškrtnutých vrstvách : \'" . join( ", ", @errLayers ) . "\' nebyl nalezen dynamický datakód. Zkontroluj to." );
 	}
 
 	# 2) ul logo
@@ -202,35 +203,39 @@ sub OnCheckGroupData {
 
 	my $custPnlExist = $defaultInfo->GetJobAttrByName("customer_panel");
 	my $custSetExist = $defaultInfo->GetJobAttrByName("customer_set");
-	if ( $custPnlExist eq "yes" &&  $custSetExist eq "yes" ) {
- 
-			$dataMngr->_AddErrorResult( "Panelisation",
+	if ( $custPnlExist eq "yes" && $custSetExist eq "yes" ) {
+
+		$dataMngr->_AddErrorResult( "Panelisation",
 								  "V atributech jobu je aktivní 'zákaznický panel' i 'zákaznické sady'. Zvol pouze jednu možnost panelizace." );
 	}
-	
+
 	# Check all necessary attributes when customer panel
-	if($custPnlExist eq "yes"){
-		
-		my $custPnlX = $defaultInfo->GetJobAttrByName("cust_pnl_singlex");
-		my $custPnlY = $defaultInfo->GetJobAttrByName("cust_pnl_singley");
-		
-		if( !defined $custPnlX || !defined $custPnlY || $custPnlX == 0 || $custPnlY == 0 ){
-			$dataMngr->_AddErrorResult( "Panelisation",
-								  "V atributech jobu je aktivní 'zákaznický panel', ale informace není kompletní (atributy jobu: \"cust_pnl_singlex\", \"cust_pnl_singley\")");
+	if ( $custPnlExist eq "yes" ) {
+
+		my $custPnlX    = $defaultInfo->GetJobAttrByName("cust_pnl_singlex");
+		my $custPnlY    = $defaultInfo->GetJobAttrByName("cust_pnl_singley");
+		my $custPnlMult = $defaultInfo->GetJobAttrByName("cust_pnl_multipl");
+
+		if ( !defined $custPnlX || !defined $custPnlY || !defined $custPnlMult || $custPnlX == 0 || $custPnlY == 0 || $custPnlMult == 0 ) {
+			$dataMngr->_AddErrorResult(
+										"Panelisation",
+										"V atributech jobu je aktivní 'zákaznický panel', ale informace není kompletní"
+										  . " (atributy jobu: \"cust_pnl_singlex\", \"cust_pnl_singley\", \"cust_pnl_multipl\")"
+			);
 		}
 	}
-	
+
 	# Check all necessary attributes when customer set
-	if($custSetExist eq "yes"){
-		
+	if ( $custSetExist eq "yes" ) {
+
 		my $multipl = $defaultInfo->GetJobAttrByName("cust_set_multipl");
-		
-		if( !defined $multipl || $multipl == 0 ){
+
+		if ( !defined $multipl || $multipl == 0 ) {
 			$dataMngr->_AddErrorResult( "Panelisation",
-								  "V atributech jobu je aktivní 'zákaznická sada', ale informace není kompletní (atribut jobu: \"cust_set_multipl\")");
+						   "V atributech jobu je aktivní 'zákaznická sada', ale informace není kompletní (atribut jobu: \"cust_set_multipl\")" );
 		}
 	}
-	
+
 	# 11) Check if when exist customer panel, mpanel doesn't exist
 	if ( $custPnlExist eq "yes" && $defaultInfo->StepExist("mpanel") ) {
 
@@ -240,15 +245,14 @@ sub OnCheckGroupData {
 								. "Flatennuj step \"mpanel\" do \"o+1\""
 		);
 	}
-	
 
 	# 10) Check if exist pressfit, if is checked in nif
 	if ( $defaultInfo->GetPressfitExist() && !$groupData->GetPressfit() ) {
 
 		$dataMngr->_AddErrorResult( "Pressfit", "Nìkteré nástroje v dps jsou typu 'pressfit', možnost 'Pressfit' by mìla být použita." );
 	}
-	
-	 # 11) Check if exist pressfit, if is checked in nif
+
+	# 11) Check if exist pressfit, if is checked in nif
 	if ( $defaultInfo->GetMeritPressfitIS() && !$groupData->GetPressfit() ) {
 
 		$dataMngr->_AddErrorResult( "Pressfit", "V IS je u dps požadavek na 'pressfit', volba 'Pressfit' by mìla být použita." );
@@ -258,12 +262,12 @@ sub OnCheckGroupData {
 	if ( !$defaultInfo->GetPressfitExist() && $groupData->GetPressfit() ) {
 
 		$dataMngr->_AddErrorResult(
-			"Pressfit",
-			"Volba 'Pressfit' je použita, ale žádné otvory typu pressfit nebyly nalezeny."
-			  . " Prosím zruš volbu nebo pøidej pressfit otvory (ppomocí Drill Tool Manageru)."
+									"Pressfit",
+									"Volba 'Pressfit' je použita, ale žádné otvory typu pressfit nebyly nalezeny."
+									  . " Prosím zruš volbu nebo pøidej pressfit otvory (ppomocí Drill Tool Manageru)."
 		);
 	}
- 
+
 	# 13) If exist pressfit, check if finsh size and tolerances are set
 	if ( $groupData->GetPressfit() ) {
 
@@ -286,24 +290,24 @@ sub __CheckDataCodeIS {
 
 # Check when dynamic datacode exist in job
 sub __CheckDataCodeJob {
-	my $self      = shift;
-	my $inCAM 	  = shift;
-	my $jobId     = shift;
+	my $self        = shift;
+	my $inCAM       = shift;
+	my $jobId       = shift;
 	my $defaultInfo = shift;
-	my $dataCodes = shift;
-	my $errLayers = shift;
+	my $dataCodes   = shift;
+	my $errLayers   = shift;
 
 	my $step = $defaultInfo->IsPool() ? "o+1" : "panel";
 
-	 foreach my $layer (split(",", $dataCodes)){
-	 	
-	 		$layer = lc($layer);	 	
-	 		unless(Marking->DatacodeExists($inCAM, $jobId, $step, $layer)){
-	 			push(@{$errLayers}, $layer);
-	 		}
-	 }
+	foreach my $layer ( split( ",", $dataCodes ) ) {
 
-	return scalar(@{$errLayers}) ? 0 : 1 ;
+		$layer = lc($layer);
+		unless ( Marking->DatacodeExists( $inCAM, $jobId, $step, $layer ) ) {
+			push( @{$errLayers}, $layer );
+		}
+	}
+
+	return scalar( @{$errLayers} ) ? 0 : 1;
 }
 
 # check if ul logo exist
@@ -329,7 +333,7 @@ sub __CheckMarkingLayer {
 
 	# remove whitespaces
 	$layerExport =~ s/\s//g;
-	$layerIS     =~ s/\s//g;
+	$layerIS =~ s/\s//g;
 
 	my $res = "";
 
@@ -423,13 +427,14 @@ sub __CheckPressfitTools {
 				 || $t->{"gTOOLfinish_size"} eq ""
 				 || $t->{"gTOOLfinish_size"} eq "?" )
 			{
-				$dataMngr->_AddErrorResult( "Pressfit", "Tool: " . $t->{"gTOOLdrill_size"} . "µm has no finish size (layer: '" . $l . "'). Complete it.\n" );
+				$dataMngr->_AddErrorResult( "Pressfit",
+											"Tool: " . $t->{"gTOOLdrill_size"} . "µm has no finish size (layer: '" . $l . "'). Complete it.\n" );
 			}
 
 			if ( $t->{"gTOOLmin_tol"} == 0 && $t->{"gTOOLmax_tol"} == 0 ) {
 
 				$dataMngr->_AddErrorResult( "Pressfit",
-											"Tool: " . $t->{"gTOOLdrill_size"} . "µm hasn't defined tolerance (layer: '" . $l . "'). Complete it.\n" );
+										  "Tool: " . $t->{"gTOOLdrill_size"} . "µm hasn't defined tolerance (layer: '" . $l . "'). Complete it.\n" );
 			}
 		}
 	}

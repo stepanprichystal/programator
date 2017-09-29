@@ -46,17 +46,17 @@ sub OnCheckGroupData {
 
 		# Check if layers has set polarity
 		unless ( defined $lInfo->{"polarity"} ) {
-			$dataMngr->_AddErrorResult( "Layer " . $lInfo->{"name"} . " doesn't have set polarity." );
+			$dataMngr->_AddErrorResult( "Board layer", "Layer " . $lInfo->{"name"} . " doesn't have set polarity." );
 		}
 
 		# Check if layers has set mirror
 		unless ( defined $lInfo->{"mirror"} ) {
-			$dataMngr->_AddErrorResult( "Layer " . $lInfo->{"name"} . " doesn't have set mirror." );
+			$dataMngr->_AddErrorResult( "Board layer", "Layer " . $lInfo->{"name"} . " doesn't have set mirror." );
 		}
 
 		# Check if layers has set compensation
 		unless ( defined $lInfo->{"comp"} ) {
-			$dataMngr->_AddErrorResult( "Layer " . $lInfo->{"name"} . " doesn't have set comp." );
+			$dataMngr->_AddErrorResult( "Board layer","Layer " . $lInfo->{"name"} . " doesn't have set comp." );
 		}
 
 	}
