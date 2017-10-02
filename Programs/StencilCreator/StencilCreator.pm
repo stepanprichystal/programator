@@ -26,6 +26,7 @@ use aliased 'Programs::StencilCreator::DataMngr::DataMngr';
 use aliased 'Programs::StencilCreator::DataMngr::StencilDataMngr::StencilDataMngr';
 use aliased 'Programs::StencilCreator::Enums';
 use aliased 'Programs::StencilCreator::Helpers::Output';
+use aliased 'Programs::StencilCreator::StencilPopup';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -40,11 +41,12 @@ sub new {
 	my $self  = {};
 	bless $self;
 
-	$self->{"inCAM"} = shift;
 	$self->{"jobId"} = shift;
 
 	$self->{"stencilSrc"} = shift;    # existing job or customer data
 	$self->{"jobIdSrc"}   = shift;    # if source job, contain job id
+
+	$self->{"inCAM"} = undef;
 
 	# Main application form
 	$self->{"form"} = StencilFrm->new( -1, $self->{"inCAM"}, $self->{"jobId"} );
@@ -53,13 +55,26 @@ sub new {
 	$self->{"dataMngr"}        = DataMngr->new();
 	$self->{"stencilDataMngr"} = StencilDataMngr->new( $self->{"dataMngr"} );
 
+	$self->{"stencilPopup"} = StencilPopup->new( $self->{"jobId"}, $self->{"form"}, $self->{"dataMngr"}, $self->{"stencilDataMngr"},
+												 $self->{"stencilSrc"}, $self->{"jobIdSrc"} );
+
 	$self->{"output"} = Output->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"dataMngr"}, $self->{"stencilDataMngr"} );
 	$self->{"dataHelper"} = DataHelper->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"dataMngr"}, $self->{"stencilDataMngr"},
 											 $self->{"stencilSrc"}, $self->{"jobIdSrc"} );
 
+	return $self;
+}
+
+sub Init {
+	my $self     = shift;
+	my $launcher = shift;
+
+	$self->{"launcher"} = $launcher;
+	$self->{"inCAM"}    = $launcher->GetInCAM();
+
+	#set handlers for main app form
 	$self->__SetHandlers();
 
-	return $self;
 }
 
 sub Run {
@@ -83,12 +98,10 @@ sub Run {
 
 		$messMngr->ShowModal( -1, EnumsGeneral->MessageType_WARNING, \@mess1, \@btn );
 	}
- 
 
 	# 3) Set default settings by Customer notes
 	my $custWarnMess = "";
 	my $custRes      = $self->{"dataHelper"}->SetDefaultByCustomer( \$custWarnMess );
- 
 
 	# Init form by source data in DataMngr
 	$self->{"form"}->Init( $self->{"dataMngr"}, $self->{"stencilDataMngr"} );
@@ -132,23 +145,27 @@ sub __OnPrepareClick {
 	my $self = shift;
 
 	# Do check before prepare
-	my $mess = "";
-	my $res  = $self->{"dataHelper"}->CheckBeforeOutput( \$mess );
 
-	unless ($res) {
+	$self->{"stencilPopup"}->Init(  $self->{"launcher"} );
+	$self->{"stencilPopup"}->Run();
 
-		my $messMngr = $self->{"form"}->GetMessageMngr();
-		my @mess1    = ($mess);
-		my @btn      = ( "Prepare force", "Cancel" );
-
-		$messMngr->ShowModal( -1, EnumsGeneral->MessageType_WARNING, \@mess1, \@btn );
-		if ( $messMngr->Result() == 1 ) {
-			return 0;
-		}
-	}
+#	my $mess = "";
+#	my $res  = $self->{"dataHelper"}->CheckBeforeOutput( \$mess );
+#
+#	unless ($res) {
+#
+#		my $messMngr = $self->{"form"}->GetMessageMngr();
+#		my @mess1    = ($mess);
+#		my @btn      = ( "Prepare force", "Cancel" );
+#
+#		$messMngr->ShowModal( -1, EnumsGeneral->MessageType_WARNING, \@mess1, \@btn );
+#		if ( $messMngr->Result() == 1 ) {
+#			return 0;
+#		}
+#	}
 
 	# Prepare final layer
-	$self->{"output"}->PrepareLayer();
+	#$self->{"output"}->PrepareLayer();
 
 }
 
@@ -230,7 +247,7 @@ sub __RefreshForm {
 
 	# 3) refresh form drawing
 	$self->{"stencilDataMngr"}->Update();
-	
+
 	$self->{"form"}->UpdateDrawing($autoZoom);
 
 }
@@ -271,12 +288,10 @@ sub __DefaultCompValues {
 		$dataMngr->DefaultSpacing($stencilMngr);
 
 	}
-	
+
 	$stencilMngr->Update();
 
 }
-
-
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
@@ -290,7 +305,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	my $inCAM = InCAM->new();
 	my $jobId = "f13609";
 
-	my $creator = StencilCreator->new( $inCAM, $jobId, Enums->StencilSource_JOB,   "f13609");
+	my $creator = StencilCreator->new( $inCAM, $jobId, Enums->StencilSource_JOB, "f13609" );
 	$creator->Run();
 
 }

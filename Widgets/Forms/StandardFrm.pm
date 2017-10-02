@@ -88,6 +88,8 @@ sub AddButton {
 	$self->{"szBtnsChild"}->Add( $btn, 0, &Wx::wxALL, 2 );
 
 	$self->{"mainFrm"}->Layout();
+	
+	return $btn;
 
 }
 
