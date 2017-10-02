@@ -23,7 +23,11 @@ my $pidLoadFrm = shift;
 
 unless($jobId){
  
+<<<<<<< HEAD
 	$jobId = "d00292";
+=======
+	$jobId = "f77137";
+>>>>>>> refs/heads/sablony
  
 }
 

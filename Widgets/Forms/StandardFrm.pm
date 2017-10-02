@@ -47,8 +47,9 @@ sub new {
 
 	# Properties
 	$self->{"btnHeight"} = 30;
-	
+
 	$self->{"messMngr"} = MessageMngr->new($title, $mainFrm); # standard message mngr
+
 
 	return $self;
 }
@@ -99,11 +100,13 @@ sub AddButton {
 
 }
 
+
 sub _GetMessageMngr{
 	my $self      = shift;
 	
 	return $self->{"messMngr"};
 }
+
 
 
 sub __SetLayout {

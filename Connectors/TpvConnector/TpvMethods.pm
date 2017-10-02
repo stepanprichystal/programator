@@ -27,40 +27,66 @@ use aliased 'Connectors::TpvConnector::Enums';
 sub GetCustomerInfo {
 	my $self       = shift;
 	my $customerId = shift;
-	my $childPcbId = shift;
 
 	my @params = ( SqlParameter->new( "_CustomerId", Enums->SqlDbType_VARCHAR, $customerId ) );
 
 	# if some value is empty, we want return null, we say by this, customer has no request for this attribut
 
-	my $cmd = "SELECT 
+	my $cmdPcb = "SELECT 
 
-					IF(ExportPaste = '', null , ExportPaste) as ExportPaste,
-					IF(ProfileToPaste = '', null , ProfileToPaste) as ProfileToPaste,
-					IF(SingleProfileToPaste = '', null , SingleProfileToPaste) as SingleProfileToPaste,
-					IF(FiducialsToPaste = '', null , FiducialsToPaste) as FiducialsToPaste,
-					IF(NoTpvInfoPdf = '', null , NoTpvInfoPdf) as NoTpvInfoPdf,
-					IF(ExportPdfControl = '', null , ExportPdfControl) as ExportPdfControl,
-					IF(ExportDataControl = '', null , ExportDataControl) as ExportDataControl,
-					IF(ScoreCoreThick = '', null , ScoreCoreThick) as ScoreCoreThick
-					
-    				FROM customer_note 
-    				WHERE CustomerId = _CustomerId
+					IF(t1.ExportPaste = '', null , t1.ExportPaste) as ExportPaste,
+					IF(t1.ProfileToPaste = '', null , t1.ProfileToPaste) as ProfileToPaste,
+					IF(t1.SingleProfileToPaste = '', null , t1.SingleProfileToPaste) as SingleProfileToPaste,
+					IF(t1.FiducialsToPaste = '', null , t1.FiducialsToPaste) as FiducialsToPaste,
+					IF(t1.NoTpvInfoPdf = '', null , t1.NoTpvInfoPdf) as NoTpvInfoPdf,
+					IF(t1.ExportPdfControl = '', null , t1.ExportPdfControl) as ExportPdfControl,
+					IF(t1.ExportDataControl = '', null , t1.ExportDataControl) as ExportDataControl,
+					IF(t1.ScoreCoreThick = '', null , t1.ScoreCoreThick) as ScoreCoreThick
+	
+    				FROM customer_note AS t1
+
+    				WHERE t1.CustomerId = _CustomerId
     				LIMIT 1";
 
-	my @result = Helper->ExecuteDataSet( $cmd, \@params );
+	my $cmdStencil = "SELECT 
 
-	if ( scalar(@result) ) {
+					
+					IF(t1.HoleDistX = '', null , t1.HoleDistX) as HoleDistX,
+					IF(t1.HoleDistY = '', null , t1.HoleDistY) as HoleDistY,	
+					IF(t1.OuterHoleDist = '', null , t1.OuterHoleDist) as OuterHoleDist,	
+					IF(t1.CenterByData = '', null , t1.CenterByData) as CenterByData,				
+					IF(t1.MinHoleDataDist = '', null , t1.MinHoleDataDist) as MinHoleDataDist,
+					IF(t1.NoHalfHoles = '', null , t1.NoHalfHoles) as NoHalfHoles,
+					IF(t1.NoFiducial = '', null , t1.NoFiducial) as NoFiducial
+					
+    				FROM customer_note_stencil AS t1
+    				WHERE t1.CustomerId = _CustomerId
+    				LIMIT 1";
 
-		return $result[0];
+	my @resultPcb     = Helper->ExecuteDataSet( $cmdPcb,     \@params );
+	my @resultStencil = Helper->ExecuteDataSet( $cmdStencil, \@params );
 
+	my %notes = ();
+
+	if ( scalar(@resultPcb) ) {
+
+		%notes = %{ $resultPcb[0] };
+	}
+
+	if ( scalar(@resultStencil) ) {
+
+		%notes = ( %notes, %{ $resultStencil[0] } );
+	}
+
+	if (%notes) {
+		return \%notes;
 	}
 	else {
 		return 0;
 	}
 
-	return @result;
 }
+
 
 # Return info about all automaticlz running application on TPV server
 sub GetAppInfo {

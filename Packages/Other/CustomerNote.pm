@@ -139,6 +139,79 @@ sub ScoreCoreThick {
 
 }
 
+# ======== Stencil notes ============
+
+sub HoleDistX {
+	my $self = shift;
+  
+	if(!$self->Exist()){
+		return undef;
+	}
+  
+	return $self->{"notes"}->{"HoleDistX"};
+}
+
+sub HoleDistY {
+	my $self = shift;
+  
+	if(!$self->Exist()){
+		return undef;
+	}
+  
+	return $self->{"notes"}->{"HoleDistY"};
+}
+
+sub OuterHoleDist {
+	my $self = shift;
+  
+	if(!$self->Exist()){
+		return undef;
+	}
+  
+	return $self->{"notes"}->{"OuterHoleDist"};
+}
+
+sub CenterByData {
+	my $self = shift;
+  
+	if(!$self->Exist()){
+		return undef;
+	}
+  
+	return $self->{"notes"}->{"CenterByData"};
+}
+
+sub MinHoleDataDist {
+	my $self = shift;
+  
+	if(!$self->Exist()){
+		return undef;
+	}
+  
+	return $self->{"notes"}->{"MinHoleDataDist"};
+}
+
+sub NoHalfHoles {
+	my $self = shift;
+  
+	if(!$self->Exist()){
+		return undef;
+	}
+  
+	return $self->{"notes"}->{"NoHalfHoles"};
+}
+
+sub NoFiducial {
+	my $self = shift;
+  
+	if(!$self->Exist()){
+		return undef;
+	}
+  
+	return $self->{"notes"}->{"NoFiducial"};
+}
+ 
+
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#
