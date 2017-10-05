@@ -12,6 +12,7 @@ use warnings;
 use threads;
 use threads::shared;
 use Try::Tiny;
+use Time::HiRes qw (sleep);
 
 #use strict;
 
@@ -50,7 +51,8 @@ sub new {
 	$self->{"checkWarn"} = [];
 
 	#Events
-	$self->{'onClose'} = Event->new();
+	$self->{'onClose'}          = Event->new();
+	$self->{'stencilOutputEvt'} = Event->new();
 
 	return $self;
 }
@@ -60,6 +62,9 @@ sub Init {
 	$self->{"launcher"} = shift;
 
 	$self->{"inCAM"} = $self->{"launcher"}->GetInCAM();
+
+	$self->{"checkErr"}  = [];
+	$self->{"checkWarn"} = [];
 
 	# Main application form
 	$self->{"form"} = StencilPopupFrm->new( $self->{"parentFrm"}->{"mainFrm"}, $self->{"jobId"} );
@@ -103,15 +108,16 @@ sub __ProcessAsyncWorker {
 	if ($@) {
 
 		my %res1 : shared = ();
-		$res1{"succes"}    = 0;
-		$res1{"errorMess"} = "Unexpected error: " . $@;
+		$res1{"type"} = EnumsGeneral->MessageType_SYSTEMERROR;
+		$res1{"mess"} = "Unexpected error: " . $@;
+
+		print STDERR "Chyba:" . $res1{"mess"};
 
 		$self->__ThreadEvt( \%res1 );
 
 	}
 
 	$self->{"inCAM"}->ClientFinish();
-
 	my %res : shared = ();
 
 	my $threvent = new Wx::PlThreadEvent( -1, $PROCESS_END_EVT, \%res );
@@ -126,85 +132,40 @@ sub __DoChecks {
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
 
+	sleep(0.2);    #test delete this line
+
 	# Init Process reorder class
 
 	my $outputCheck = OutputCheck->new( $inCAM, $jobId, $self->{"dataMngr"}, $self->{"stencilDataMngr"}, $self->{"stencilSrc"}, $self->{"jobIdSrc"} );
- 	$outputCheck->{"onItemResult"}->Add( sub { $self->__OnCheckError(@_) } );
+	$outputCheck->{"onItemResult"}->Add( sub { $self->__OnCheckError(@_) } );
 
-	# 1) Task: Process job reorder
+	# 1) Do checks
 
-	my $errMess = "";
-	my $result  = $processReorder->RunTasks( \$errMess );
+	$outputCheck->Check();
 
-	my %res1 : shared = ();
-	$res1{"progress"}  = 50;
-	$res1{"succes"}    = 1;
-	$res1{"errorMess"} = $errMess;
-
-	unless ($result) {
-		$res1{"succes"}    = 0;
-		$res1{"errorMess"} = $errMess;
-	}
-
-	$self->__ThreadEvt( \%res1 );
-
-	# 2) Task: Set orders state
-
-	my %res2 : shared = ();
-	$res2{"progress"}  = 100;
-	$res2{"succes"}    = 1;
-	$res2{"errorMess"} = "";
-
-	if ($result) {
-		eval {
-
-			# 2) Set state
-			my $orderState = EnumsIS->CurStep_PROCESSREORDEROK;
-
-			if ( $self->{"isPool"} ) {
-
-				$orderState = EnumsIS->CurStep_KPANELIZACI;
-			}
-
-			foreach ( @{ $self->{"orders"} } ) {
-
-				HegMethods->UpdatePcbOrderState( $_->{"reference_subjektu"}, $orderState, 1 );
-			}
-		};
-		if ($@) {
-
-			my $err = "" . $@;
-
-			$res2{"succes"}    = 0;
-			$res2{"errorMess"} = $err;
-		}
-	}
-
-	$self->__ThreadEvt( \%res2 );
 }
 
-sub __OnCheckError{
-	my $self = shift;
+sub __OnCheckError {
+	my $self       = shift;
 	my $itemResult = shift;
- 	
- 	my %res2 : shared = ();
- 
-	if($itemResult->GetWarningCount()){
-		
+
+	my %res2 : shared = ();
+
+	if ( $itemResult->GetWarningCount() ) {
+
 		$res2{"type"} = EnumsGeneral->MessageType_WARNING;
 		$res2{"mess"} = $itemResult->GetWarningStr();
 	}
-	
-	if($itemResult->GetErrorCount()){
-		
+
+	if ( $itemResult->GetErrorCount() ) {
+
 		$res2{"type"} = EnumsGeneral->MessageType_ERROR;
 		$res2{"mess"} = $itemResult->GetErrorStr();
 	}
-	
-	$self->__ThreadEvt( \%res2 );
- 	
-}
 
+	$self->__ThreadEvt( \%res2 );
+
+}
 
 sub __ThreadEvt {
 	my $self = shift;
@@ -218,18 +179,23 @@ sub __SetHandlers {
 	my $self = shift;
 
 	$PROCESS_EVT = Wx::NewEventType;
-	Wx::Event::EVT_COMMAND( $self->{"form"}->{"mainFrm"}, -1, $PROCESS_EVT, sub { $self->__ProcessHandler(@_) } );
+	Wx::Event::EVT_COMMAND( $self->{"form"}->{"mainFrm"}, -1, $PROCESS_EVT, sub { $self->__CheckErrHandler(@_) } );
 
 	$PROCESS_END_EVT = Wx::NewEventType;
-	Wx::Event::EVT_COMMAND( $self->{"form"}->{"mainFrm"}, -1, $PROCESS_END_EVT, sub { $self->__ProcessEndHandler(@_) } );
+	Wx::Event::EVT_COMMAND( $self->{"form"}->{"mainFrm"}, -1, $PROCESS_END_EVT, sub { $self->__CheckEndHandler(@_) } );
 
 	$self->{"form"}->{'warnIndClickEvent'}->Add( sub { $self->__OnWarnIndicatorClick(@_) } );
 	$self->{"form"}->{'errIndClickEvent'}->Add( sub  { $self->__OnErrIndicatorClick(@_) } );
 
-	$self->{"form"}->$self->{"outputForceClick"}->Add( sub { $self->__OnOutputForceClick(@_) } );
-	$self->{"form"}->{'cancelClick'}->Add( sub             { $self->{'onClose'}->Do(@_) } );
+	$self->{"form"}->{"outputForceClick"}->Add(
+		sub {
+			$self->{"form"}->{"mainFrm"}->Hide();
+			$self->{'stencilOutputEvt'}->Do(@_);
+		}
+	);
+	$self->{"form"}->{'cancelClick'}->Add( sub { $self->{"form"}->{"mainFrm"}->Hide() } );
 
-	$self->{"form"}->$self->{"cancelClick"}->Add( sub { $self->__OnProcIndicatorClick(@_) } );
+	$self->{"form"}->{"cancelClick"}->Add( sub { $self->{"form"}->{"mainFrm"}->Hide() } );
 
 }
 
@@ -237,8 +203,10 @@ sub __SetHandlers {
 # Private methods
 # ================================================================================
 
-sub __ProcessHandler {
+sub __CheckErrHandler {
 	my ( $self, $frame, $event ) = @_;
+
+	print STDERR "TEST";
 
 	my %d = %{ $event->GetData };
 
@@ -247,40 +215,43 @@ sub __ProcessHandler {
 	if ( $d{"type"} eq EnumsGeneral->MessageType_WARNING ) {
 
 		push( @{ $self->{"checkWarn"} }, $d{"mess"} );
-		$self->{"form"}->SetErrIndicator( scalar( @{ $self->{"checkWarn"} } ) );
+		$self->{"form"}->SetWarnIndicator( scalar( @{ $self->{"checkWarn"} } ) );
 	}
-	
+
 	if ( $d{"type"} eq EnumsGeneral->MessageType_ERROR ) {
 
 		push( @{ $self->{"checkErr"} }, $d{"mess"} );
-		$self->{"form"}->SetWarnIndicator( scalar( @{ $self->{"checkErr"} } ) );
-	}	
- 
+		$self->{"form"}->SetErrIndicator( scalar( @{ $self->{"checkErr"} } ) );
+	}
+
+	if ( $d{"type"} eq EnumsGeneral->MessageType_SYSTEMERROR ) {
+
+		my $messMngr = $self->{"form"}->_GetMessageMngr();
+
+		my @m = ( $d{"mess"} );
+		$messMngr->ShowModal( -1, EnumsGeneral->MessageType_SYSTEMERROR, \@m );
+
+	}
+
 }
 
-sub __ProcessEndHandler {
+sub __CheckEndHandler {
 	my $self = shift;
 
 	# Reconnect again InCAM, after  was used by child thread
 	$self->{"inCAM"}->Reconnect();
 
 	# Set progress bar
-	$self->{"form"}->SetGaugeVal(100);
+	$self->{"form"}->HideGauge();
 
-	my $result = scalar( @{ $self->{"processErr"} } ) ? 0 : 1;
+	# Visible buttons if no errors
+	$self->{"form"}->EnableCancelBtn(1);
 
-	$self->{"form"}->SetResult($result);
+	if ( scalar( @{ $self->{"checkErr"} } ) == 0 && scalar( @{ $self->{"checkWarn"} } ) == 0 ) {
 
-	# if export locall + pcb is not pool + process succes
-	# Display information message about export
+		$self->{"form"}->{"mainFrm"}->Hide();
+		$self->{'stencilOutputEvt'}->Do();
 
-	if (    $self->{"type"} eq Enums->Process_LOCALLY
-		 && scalar( @{ $self->{"processErr"} } ) == 0
-		 && !$self->{"isPool"} )
-	{
-		my $messMngr = $self->{"form"}->_GetMessageMngr();
-		my @mess     = ("Don't forget export job now.");
-		$messMngr->ShowModal( -1, EnumsGeneral->MessageType_INFORMATION, \@mess );
 	}
 
 }
@@ -288,7 +259,7 @@ sub __ProcessEndHandler {
 # ================================================================================
 # FORM HANDLERS
 # ================================================================================
- 
+
 sub __OnWarnIndicatorClick {
 	my $self = shift;
 	my $type = shift;
@@ -296,6 +267,8 @@ sub __OnWarnIndicatorClick {
 	my $messMngr = $self->{"form"}->_GetMessageMngr();
 
 	$messMngr->ShowModal( -1, EnumsGeneral->MessageType_WARNING, $self->{"checkWarn"} );
+
+	$self->{"warnViewed"} = 1;
 }
 
 sub __OnErrIndicatorClick {
@@ -305,6 +278,32 @@ sub __OnErrIndicatorClick {
 	my $messMngr = $self->{"form"}->_GetMessageMngr();
 
 	$messMngr->ShowModal( -1, EnumsGeneral->MessageType_ERROR, $self->{"checkErr"} );
+
+	$self->{"errViewed"} = 1;
+
+	$self->{"form"}->EnableForceBtn(1);
+}
+
+sub __EnableForceBtn {
+	my $self = shift;
+
+	my $enable = 1;
+
+	if ( scalar( @{ $self->{"checkWarn"} } ) && !$self->{"warnViewed"} ) {
+
+		$enable = 0;
+	}
+
+	if ( scalar( @{ $self->{"checkErr"} } ) && !$self->{"errViewed"} ) {
+
+		$enable = 0;
+	}
+
+	if ($enable) {
+
+		$self->{"form"}->EnableForceBtn(1);
+	}
+
 }
 
 #-------------------------------------------------------------------------------------------#

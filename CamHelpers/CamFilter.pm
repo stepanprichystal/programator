@@ -54,7 +54,7 @@ sub SelectByFeatureIndexes {
 			);
 
 			$inCAM->COM('filter_area_strt');
-			$inCAM->COM( 'filter_area_end', filter_name => 'popup', operation => 'select' ); 
+			$inCAM->COM( 'filter_area_end', filter_name => 'popup', operation => 'select' );
 			$inCAM->COM( 'filter_reset', filter_name => 'popup' );
 
 			@idsPart = ();
@@ -71,8 +71,8 @@ sub SelectByFeatureIndexes {
 					 "indexes"     => $str,
 		);
 
-					$inCAM->COM('filter_area_strt');
-			$inCAM->COM( 'filter_area_end', filter_name => 'popup', operation => 'select' ); 
+		$inCAM->COM('filter_area_strt');
+		$inCAM->COM( 'filter_area_end', filter_name => 'popup', operation => 'select' );
 		$inCAM->COM( 'filter_reset', filter_name => 'popup' );
 	}
 
@@ -259,6 +259,45 @@ sub BySurfaceArea {
 
 }
 
+# Select all features which are inside boundbox
+# Select all features which are smaller than square with edge = $maxWidth ande bigger than square edge = $minWidth
+sub ByBoundBox {
+	my $self     = shift;
+	my $inCAM    = shift;
+	my $minWidth = shift;
+	my $maxWidth = shift;
+
+	$inCAM->COM( "set_filter_type", "filter_name" => "", "lines" => "yes", "pads" => "yes", "surfaces" => "yes", "arcs" => "yes", "text" => "yes" );
+	$inCAM->COM( "set_filter_polarity", "filter_name" => "", "positive" => "yes", "negative" => "yes" );
+
+	$inCAM->COM('adv_filter_reset');
+	$inCAM->COM('filter_area_strt');
+
+	$inCAM->COM(
+				 'adv_filter_set',
+				 "filter_name"  => 'popup',
+				 "update_popup" => 'yes',
+				 "bound_box"    => 'yes',
+				 "min_width"    => "$minWidth",
+				 "max_width"    => "$maxWidth",
+				 "min_length"   => '0',
+				 "max_length"   => '0'
+	);
+
+	$inCAM->COM(
+				 'filter_area_end',
+				 "layer"          => '',
+				 "filter_name"    => 'popup',
+				 "operation"      => 'select',
+				 "area_type"      => 'none',
+				 "inside_area"    => 'no',
+				 "intersect_area" => 'no'
+	);
+
+	return $inCAM->GetReply();
+
+}
+
 # Select features, based on reference layer
 # Is possible do condition by feature attribute (both - layer and reference layer symbols)
 sub SelectByReferenece {
@@ -324,7 +363,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	#my $step  = "mpanel_10up";
 
-	my $result = CamFilter->SelectBySingleAtt( $inCAM, $jobId, ".plated_type", "press_fit" );
+	my $result = CamFilter->ByBoundBox( $inCAM,  0, 0);
 
 	#my $self             = shift;
 

@@ -9,6 +9,9 @@ package Programs::StencilCreator::StencilCreator;
 #3th party library
 use strict;
 use warnings;
+use threads;
+use threads::shared;
+
 
 #local library
 
@@ -49,7 +52,7 @@ sub new {
 	$self->{"inCAM"} = undef;
 
 	# Main application form
-	$self->{"form"} = StencilFrm->new( -1, $self->{"inCAM"}, $self->{"jobId"} );
+	$self->{"form"} = StencilFrm->new( -1,  $self->{"jobId"} );
 
 	# Data where are stored stencil position, deimensions etc
 	$self->{"dataMngr"}        = DataMngr->new();
@@ -58,9 +61,8 @@ sub new {
 	$self->{"stencilPopup"} = StencilPopup->new( $self->{"jobId"}, $self->{"form"}, $self->{"dataMngr"}, $self->{"stencilDataMngr"},
 												 $self->{"stencilSrc"}, $self->{"jobIdSrc"} );
 
-	$self->{"output"} = Output->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"dataMngr"}, $self->{"stencilDataMngr"} );
-	$self->{"dataHelper"} = DataHelper->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"dataMngr"}, $self->{"stencilDataMngr"},
-											 $self->{"stencilSrc"}, $self->{"jobIdSrc"} );
+	$self->{"output"} = undef;
+	$self->{"dataHelper"} = undef;
 
 	return $self;
 }
@@ -71,6 +73,13 @@ sub Init {
 
 	$self->{"launcher"} = $launcher;
 	$self->{"inCAM"}    = $launcher->GetInCAM();
+	
+	$self->{"output"} = Output->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"dataMngr"}, $self->{"stencilDataMngr"} );
+	$self->{"dataHelper"} = DataHelper->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"dataMngr"}, $self->{"stencilDataMngr"},
+											 $self->{"stencilSrc"}, $self->{"jobIdSrc"} );
+											 
+	# 1) Set source data to DataMngr
+	$self->{"dataHelper"}->SetSourceData();										 
 
 	#set handlers for main app form
 	$self->__SetHandlers();
@@ -83,16 +92,14 @@ sub Run {
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
 
-	# 1) Set source data to DataMngr
-	$self->{"dataHelper"}->SetSourceData();
-
+ 
 	# 2) Set default settings by IS
 	my $warnMess = "";
 	my $res      = $self->{"dataHelper"}->SetDefaultByIS( \$warnMess );
 
 	unless ($res) {
 
-		my $messMngr = $self->{"form"}->GetMessageMngr();
+		my $messMngr = $self->{"form"}->_GetMessageMngr();
 		my @mess1    = ($warnMess);
 		my @btn      = ("Beru na vìdomí");
 
@@ -104,7 +111,7 @@ sub Run {
 	my $custRes      = $self->{"dataHelper"}->SetDefaultByCustomer( \$custWarnMess );
 
 	# Init form by source data in DataMngr
-	$self->{"form"}->Init( $self->{"dataMngr"}, $self->{"stencilDataMngr"} );
+	$self->{"form"}->Init( $inCAM, $self->{"dataMngr"}, $self->{"stencilDataMngr"} );
 
 	# Refresh form according actual data in DataMngr
 	$self->__RefreshForm(1);
@@ -124,6 +131,8 @@ sub __SetHandlers {
 	$self->{"form"}->{"fmrDataChanged"}->Add( sub { $self->__OnFrmDataChanged(@_) } );
 
 	$self->{"form"}->{"prepareClick"}->Add( sub { $self->__OnPrepareClick(@_) } );
+	
+	$self->{"stencilPopup"}->{'stencilOutputEvt'}->Add(  sub {$self->__OutputStencil(@_)});
 
 }
 
@@ -148,6 +157,8 @@ sub __OnPrepareClick {
 
 	$self->{"stencilPopup"}->Init(  $self->{"launcher"} );
 	$self->{"stencilPopup"}->Run();
+	
+	
 
 #	my $mess = "";
 #	my $res  = $self->{"dataHelper"}->CheckBeforeOutput( \$mess );
@@ -164,8 +175,7 @@ sub __OnPrepareClick {
 #		}
 #	}
 
-	# Prepare final layer
-	#$self->{"output"}->PrepareLayer();
+	
 
 }
 
@@ -252,6 +262,15 @@ sub __RefreshForm {
 
 }
 
+# Prepare final layer
+sub __OutputStencil {
+	my $self = shift;
+
+	$self->{"output"}->PrepareLayer();
+	
+	$self->{"form"}->{"mainFrm"}->Close();
+}
+
 # ================================================================================
 # METHODS WHICH SET DEFAULT DATA VALUES
 # ================================================================================
@@ -305,7 +324,11 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	my $inCAM = InCAM->new();
 	my $jobId = "f13609";
 
-	my $creator = StencilCreator->new( $inCAM, $jobId, Enums->StencilSource_JOB, "f13609" );
+	#my $creator = StencilCreator->new( $inCAM, $jobId, Enums->StencilSource_JOB, "f13609" );
+	my $creator = StencilCreator->new( $inCAM, $jobId, Enums->StencilSource_CUSTDATA);
+	
+	
+	
 	$creator->Run();
 
 }

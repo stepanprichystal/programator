@@ -101,10 +101,6 @@ sub Prepare {
 	# 2) Remove attributes chain from surface, resize if plated surface
 	$self->__AdjustSurfaces( \@layers );
 
-	# 3) If step is originally flattened with nested steps, use DTM type vzsledne/vratne form child
-	# step, if is not set
-	#$self->__SetDTMType( \@layers, \@childSteps );
-
 	# 3) Set all NC layers to finish sizes (consider type of DTM vysledne/vrtane)
 	$self->__SetFinishSizes( \@layers );
 
@@ -205,34 +201,7 @@ sub __AdjustSurfaces {
 	}
 }
 
-sub __SetDTMType {
-	my $self       = shift;
-	my @layers     = @{ shift(@_) };
-	my @childSteps = @{ shift(@_) };
 
-	unless ( scalar(@childSteps) ) {
-		return 0;
-	}
-
-	my $inCAM = $self->{"inCAM"};
-	my $jobId = $self->{"jobId"};
-
-	foreach my $l (@layers) {
-
-		my $lName = $l->{"gROWname"};
-		my $DTMType = CamDTM->GetDTMType( $inCAM, $jobId, $self->{"step"}, $lName );
-
-		# if DTM type not set, set default DTM type
-		if ( $DTMType ne EnumsDrill->DTM_VRTANE && $DTMType ne EnumsDrill->DTM_VYSLEDNE ) {
-
-			$DTMType = CamDTM->GetDTMDefaultType( $inCAM, $jobId, $self->{"step"}, $lName, 1 );
-
-			if ( $DTMType eq EnumsDrill->DTM_VRTANE || $DTMType eq EnumsDrill->DTM_VYSLEDNE ) {
-				CamDTM->SetDTMTable( $inCAM, $jobId, $self->{"step"}, $lName, $DTMType );
-			}
-		}
-	}
-}
 
 # Set all NC layers to finish sizes (consider type of DTM vysledne/vrtane)
 sub __SetFinishSizes {

@@ -35,7 +35,7 @@ use constant {
 };
 
 use constant {
-			   Schema_STANDARD        => "Standard",  
+			   Schema_STANDARD        => "Standard holes",  
 			   Schema_FRAME        => "Vlepeni do ramu",
 			    Schema_INCLUDED        => "Included in data",
 			   	   

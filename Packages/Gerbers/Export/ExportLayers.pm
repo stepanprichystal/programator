@@ -75,6 +75,16 @@ sub ExportLayers {
 		else {
 			$mirror = "no";
 		}
+		
+		my $angle;
+
+		if ( $l->{"angle"} ) {
+			$angle = $l->{"angle"};
+		}
+		else {
+			$angle = 0;
+		}
+		
 
 		# Reset settings of device
 		$inCAM->COM( "output_reload_device", "type" => "format", "name" => $device );
@@ -100,7 +110,7 @@ sub ExportLayers {
 					 "type"     => "format",
 					 "name"     => $device,
 					 "layer"    => $l->{"name"},
-					 "angle"    => "0",
+					 "angle"    => $angle,
 					 "x_mirror" => $mirror
 		);
 

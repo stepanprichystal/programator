@@ -753,7 +753,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	my %lim = CamJob->GetProfileLimits2($inCAM, $jobId, "o+1");
 
 	my $res = CamLayer->LayerIntersection( $inCAM, "goldc", "c", \%lim );
-	my $res = CamLayer->MirrorLayerDataByProfCenter( $inCAM, "f13609", "mpanel", "rrr", "y" );
+	 
 
 	print $res;
 

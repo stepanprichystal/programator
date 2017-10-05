@@ -75,8 +75,8 @@ sub GetTopDataPos {
 
 	my %pos = $self->GetTopProfilePos();
 
-	$pos{"x"} += $self->{"topProf"}->GetPDOrigin->{"x"};
-	$pos{"y"} += $self->{"topProf"}->GetPDOrigin->{"y"};
+	$pos{"x"} += $self->{"topProf"}->GetPDOrigin()->{"x"};
+	$pos{"y"} += $self->{"topProf"}->GetPDOrigin()->{"y"};
 
 	return \%pos;
 }
@@ -86,8 +86,8 @@ sub GetBotDataPos {
 
 	my %pos = $self->GetBotProfilePos();
 
-	$pos{"x"} += $self->{"botProf"}->GetPDOrigin->{"x"};
-	$pos{"y"} += $self->{"botProf"}->GetPDOrigin->{"y"};
+	$pos{"x"} += $self->{"botProf"}->GetPDOrigin()->{"x"};
+	$pos{"y"} += $self->{"botProf"}->GetPDOrigin()->{"y"};
 
 	return \%pos;
 }
@@ -133,15 +133,15 @@ sub GetStencilActiveArea {
 sub GetCurrentSpacing {
 	my $self = shift;
 	my $type = shift;    #profile/data
-
+ 
 	my $tProf = $self->GetTopProfile();
 	my $bProf = $self->GetBotProfile();
 
 	my %tProfPos = $self->GetTopProfilePos();
 	my %bProfPos = $self->GetBotProfilePos();
 	
-	my %tDataPos = $self->GetTopDataPos();
-	my %bDataPos = $self->GetBotDataPos();
+	my %tDataPos = %{$self->GetTopDataPos()};
+	my %bDataPos = %{$self->GetBotDataPos()};
 
 	my $dist = 0;
 	
@@ -378,13 +378,14 @@ sub __GetBotProfilePosY {
 sub __RotateStencil {
 	my $self = shift;
 
-	# difference of length in percentage between profile height and width
-	my $diffTop = abs( $self->{"topProf"}->GetHeight() - $self->{"topProf"}->GetWidth() ) / $self->{"topProf"}->GetHeight();
 
-	# difference of length in percentage between profile height and width
-	my $diffBot = abs( $self->{"botProf"}->GetHeight() - $self->{"botProf"}->GetWidth() ) / $self->{"botProf"}->GetHeight();
+
+	
 
 	if ( $self->{"dataMngr"}->GetStencilType() eq Enums->StencilType_TOP ) {
+		
+		# difference of length in percentage between profile height and width
+		my $diffTop = abs( $self->{"topProf"}->GetHeight() - $self->{"topProf"}->GetWidth() ) / $self->{"topProf"}->GetHeight();
 
 		my $lSide = $self->GetHeight() > $self->GetWidth() ? "h" : "w";
 		my $lProfSide = $self->{"topProf"}->GetHeight() > $self->{"topProf"}->GetWidth() ? "h" : "w";
@@ -394,6 +395,9 @@ sub __RotateStencil {
 		}
 	}
 	elsif ( $self->{"dataMngr"}->GetStencilType() eq Enums->StencilType_BOT ) {
+		
+		# difference of length in percentage between profile height and width
+		my $diffBot = abs( $self->{"botProf"}->GetHeight() - $self->{"botProf"}->GetWidth() ) / $self->{"botProf"}->GetHeight();
 
 		my $lSide = $self->GetHeight() > $self->GetWidth() ? "h" : "w";
 		my $lProfSide = $self->{"botProf"}->GetHeight() > $self->{"botProf"}->GetWidth() ? "h" : "w";
@@ -406,6 +410,9 @@ sub __RotateStencil {
 	elsif ( $self->{"dataMngr"}->GetStencilType() eq Enums->StencilType_TOPBOT ) {
 
 		if ( $self->{"topProf"} ) {
+			
+			# difference of length in percentage between profile height and width
+			my $diffTop = abs( $self->{"topProf"}->GetHeight() - $self->{"topProf"}->GetWidth() ) / $self->{"topProf"}->GetHeight();
 
 			my $lSide = $self->GetHeight() / 2 > $self->GetWidth() ? "h" : "w";
 			my $lProfSide = $self->{"topProf"}->GetHeight() > $self->{"topProf"}->GetWidth() ? "h" : "w";
@@ -417,6 +424,9 @@ sub __RotateStencil {
 		}
 
 		if ( $self->{"botProf"} ) {
+			
+			# difference of length in percentage between profile height and width
+			my $diffBot = abs( $self->{"botProf"}->GetHeight() - $self->{"botProf"}->GetWidth() ) / $self->{"botProf"}->GetHeight();
 
 			my $lSide = $self->GetHeight() / 2 > $self->GetWidth() ? "h" : "w";
 			my $lProfSide = $self->{"botProf"}->GetHeight() > $self->{"botProf"}->GetWidth() ? "h" : "w";

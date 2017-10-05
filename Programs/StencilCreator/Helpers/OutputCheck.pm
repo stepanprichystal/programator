@@ -55,7 +55,6 @@ sub new {
 
 	return $self;
 }
- 
 
 sub Check {
 	my $self = shift;
@@ -72,8 +71,8 @@ sub Check {
 	# Check center by data
 	if ( $self->{"customerNote"}->CenterByData() && $self->{"dataMngr"}->GetCenterType() ne Enums->Center_BYDATA ) {
 
-		$result = 0;
-		$$mess .= "Zákazník si přeje vycentrovat data na střed podle skutečných dat a ne podle profilu.";
+		$self->__AddError("Zákazník si přeje vycentrovat data na střed podle skutečných dat a ne podle profilu.");
+
 	}
 
 	# Check distance paste-holes in standard frame
@@ -113,9 +112,8 @@ sub Check {
 
 		unless ($distOk) {
 
-			$result = 0;
-			$$mess .=
-			  "Zákazník si přeje aby minimální vzdálenost plošky na šabloně od opínacích otvorů byla " . $minDist . "mm\n$wrongDist";
+			$self->__AddError(
+				 "Zákazník si přeje aby minimální vzdálenost plošky na šabloně od opínacích otvorů byla " . $minDist . "mm\n$wrongDist" );
 		}
 	}
 
@@ -127,12 +125,11 @@ sub Check {
 
 		if ( abs( min(@holesY) - max(@holesY) ) != $holeDistY ) {
 
-			$result = 0;
-			$$mess .=
-			    "Zákazník si přeje, aby vertikální vzdálensot mezi upínacími otvory byla "
-			  . $holeDistY
-			  . "mm (aktuální je "
-			  . abs( min(@holesY) - max(@holesY) ) . "mm)";
+			$self->__AddError(   "Zákazník si přeje, aby vertikální vzdálensot mezi upínacími otvory byla "
+							   . $holeDistY
+							   . "mm (aktuální je "
+							   . abs( min(@holesY) - max(@holesY) )
+							   . "mm)" );
 		}
 
 	}
@@ -146,12 +143,11 @@ sub Check {
 		# take fist two holes, if sitance is as costomer request
 
 		if ( abs( $holesX[0] - $holesX[1] ) != $holeDistX ) {
-			$result = 0;
-			$$mess .=
-			    "Zákazník si přeje, aby horizontální vzdálensot mezi upínacími otvory byla "
-			  . $holeDistX
-			  . "mm (aktuální je "
-			  . abs( $holesX[0] - $holesX[1] ) . "mm)";
+			$self->__AddError(   "Zákazník si přeje, aby horizontální vzdálensot mezi upínacími otvory byla "
+							   . $holeDistX
+							   . "mm (aktuální je "
+							   . abs( $holesX[0] - $holesX[1] )
+							   . "mm)" );
 		}
 
 	}
@@ -172,8 +168,9 @@ sub Check {
 		if (@holes) {
 
 			@holes = map { sprintf( "%.2fmm", $_ ) } @holes;
-			$result = 0;
-			$$mess .= "Zákazník si nepřeje mít upínací otvory na hranách desky " . "(otvory na pozicích: " . join( ", ", @holes ) . ")";
+
+			$self->__AddError(
+						  "Zákazník si nepřeje mít upínací otvory na hranách desky " . "(otvory na pozicích: " . join( ", ", @holes ) . ")" );
 
 		}
 	}
@@ -183,19 +180,16 @@ sub Check {
 	# Check properly inserted pcb number into stencil
 
 	if (
-		 $self->{"dataMngr"}->GetAddPcbNumber()
-		 && (    $stencilInfo{"tech"} eq Enums->Technology_DRILL
-			  || $self->{"stencilSrc"} eq Enums->StencilSource_CUSTDATA
-			  || ( $self->{"stencilSrc"} eq Enums->StencilSource_JOB && $self->{"isPool"} ) )
+		$self->{"dataMngr"}->GetAddPcbNumber() && (    $stencilInfo{"tech"} eq Enums->Technology_DRILL
+													|| $self->{"stencilSrc"} eq Enums->StencilSource_CUSTDATA
+													|| ( $self->{"stencilSrc"} eq Enums->StencilSource_JOB && $self->{"isPool"} ) )
 	  )
 	{
 
-		$result = 0;
-		$$mess .=
-		    "Číslo pcb by nemělo být na šabloně vložené, pokud:\n"
-		  . "- šablona je vrtaná\n"
-		  . "- šablona je vytvořená ze zákaznických dat (ne z jobu)\n"
-		  . "- se jedná o šablonu typu POOL\n";
+		$self->__AddError(   "Číslo pcb by nemělo být na šabloně vložené, pokud:\n"
+						   . "- šablona je vrtaná\n"
+						   . "- šablona je vytvořená ze zákaznických dat (ne z jobu)\n"
+						   . "- se jedná o šablonu typu POOL\n" );
 
 	}
 
@@ -207,11 +201,9 @@ sub Check {
 	  )
 	{
 
-		$result = 0;
-		$$mess .=
-		    "Do šablony by se nemělo vkládat okolí, pokud:\n"
-		  . "- je vytvořená ze zákaznických dat, které již okolí obsahují\n"
-		  . "- se jedná o šablonu typu POOL\n";
+		$self->__AddError(   "Do šablony by se nemělo vkládat okolí, pokud:\n"
+						   . "- je vytvořená ze zákaznických dat, které již okolí obsahují\n"
+						   . "- se jedná o šablonu typu POOL\n" );
 
 	}
 
@@ -221,16 +213,14 @@ sub Check {
 		 && !$self->{"isPool"} )
 	{
 
-		$result = 0;
-		$$mess .= "V šabloně chybí okolí\n";
+		$self->__AddError("V šabloně chybí okolí\n");
 
 	}
 
 	# Check vlepeni do ramu
 	if ( $stencilInfo{"schema"} eq Enums->Schema_FRAME && $self->{"dataMngr"}->GetSchemaType() ne Enums->Schema_FRAME ) {
 
-		$result = 0;
-		$$mess .= "V IS je požadavek na vlepení šablony do rámu. Okolí ale není typ \"vlepení do rámu\"\n";
+		$self->__AddError("V IS je požadavek na vlepení šablony do rámu. Okolí ale není typ \"vlepení do rámu\"\n");
 
 	}
 
@@ -239,35 +229,32 @@ sub Check {
 		 || $stencilInfo{"height"} != $self->{"dataMngr"}->GetStencilSizeY() )
 	{
 
-		$result = 0;
-		$$mess .=
-		    "Nesouhlasí požadované rozměry v IS ("
-		  . $stencilInfo{"width"} . "x"
-		  . $stencilInfo{"height"}
-		  . "mm) s nastavenými rozměry ("
-		  . $self->{"dataMngr"}->GetStencilSizeX() . "x"
-		  . $self->{"dataMngr"}->GetStencilSizeY() . "mm)\n";
+		$self->__AddError(   "Nesouhlasí požadované rozměry v IS ("
+						   . $stencilInfo{"width"} . "x"
+						   . $stencilInfo{"height"}
+						   . "mm) s nastavenými rozměry ("
+						   . $self->{"dataMngr"}->GetStencilSizeX() . "x"
+						   . $self->{"dataMngr"}->GetStencilSizeY()
+						   . "mm)\n" );
 
 	}
 
 	# Check type of stencil
 	if ( $stencilInfo{"type"} ne $self->{"dataMngr"}->GetStencilType() ) {
 
-		$result = 0;
-		$$mess .=
-		  "Nesouhlasí typ šablony v IS (" . $stencilInfo{"type"} . ") s nastavenými typem (" . $self->{"dataMngr"}->GetStencilType() . ")\n";
+		$self->__AddError(
+			  "Nesouhlasí typ šablony v IS (" . $stencilInfo{"type"} . ") s nastavenými typem (" . $self->{"dataMngr"}->GetStencilType() . ")\n" );
 
 	}
 
 	# Check if pcb are not to close (< 50 mm)
 	if ( $self->{"dataMngr"}->GetStencilType() eq Enums->StencilType_TOPBOT ) {
 
-		 my $dist = $self->{"stencilMngr"}->GetCurrentSpacing();
+		my $dist = $self->{"stencilMngr"}->GetCurrentSpacing("data");
 
 		if ( $dist < 50 ) {
 
-			$result = 0;
-			$$mess .= "Šablony TOP a BOT jsou u sebe příliš blízko ($dist mm). Je to v pořádku?\n";
+			$self->__AddError("Šablony TOP a BOT jsou u sebe příliš blízko ($dist mm). Je to v pořádku?\n");
 		}
 
 	}
@@ -275,23 +262,25 @@ sub Check {
 	return $result;
 }
 
-sub __AddError{
+sub __AddError {
 	my $self = shift;
-	my $type = shift; # error/warning
 	my $mess = shift;
-	
-	
-	 my $checkRes = $self->_GetNewItem("-");
-	 
-	 if($type eq EnumsGeneral->MessageType_WARNING){
- 
- 		$checkRes->AddError($mess);
- 	
-	 }elsif($type eq EnumsGeneral->MessageType_ERROR){
-	 	
-	 	$checkRes->AddWarning($mess);
-	 }
-	 
+
+	my $checkRes = $self->_GetNewItem("-");
+
+	$checkRes->AddError($mess);
+
+	$self->_OnItemResult($checkRes);
+}
+
+sub __AddWarning {
+	my $self = shift;
+	my $mess = shift;
+
+	my $checkRes = $self->_GetNewItem("-");
+
+	$checkRes->AddWarning($mess);
+
 	$self->_OnItemResult($checkRes);
 }
 
@@ -300,15 +289,6 @@ sub __AddError{
 #-------------------------------------------------------------------------------------------#
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
-
-	use aliased 'Programs::StencilCreator::StencilCreator';
-	use aliased 'Packages::InCAM::InCAM';
-
-	my $inCAM = InCAM->new();
-	my $jobId = "f13609";
-
-	my $creator = StencilCreator->new( $inCAM, $jobId );
-	$creator->Run();
 
 }
 

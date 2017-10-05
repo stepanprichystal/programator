@@ -94,8 +94,8 @@ sub __CompAutoZoomScale {
 	my $maxY = $dc->MaxY();
 
 	# compute real scale
-	my $wDraw = abs( min( 0, $minX ) ) + $maxX;
-	my $hDraw = abs( min( 0, $minY ) ) + $maxY;
+	my $wDraw = abs( min( 0, $minX ) ) + $maxX + $self->{"origin"}->{"x"};
+	my $hDraw = abs( min( 0, $minY ) ) + $maxY + $self->{"origin"}->{"y"};
 
 	my $newScale = 1;
 
@@ -108,10 +108,10 @@ sub __CompAutoZoomScale {
 			# choose axis, which need more shrink
 			if ( $canvW / $wDraw < $canvH / $hDraw ) {
 
-				$newScale = $canvW / $wDraw;
+				$newScale = $canvW /($wDraw*1.1);
 			}
 			else {
-				$newScale = $canvH / $hDraw;
+				$newScale = $canvH / ($hDraw*1.1);
 			}
 
 		}
@@ -122,10 +122,10 @@ sub __CompAutoZoomScale {
 			# choose axis, can zoom out less
 			if ( $wDraw / $canvW > $wDraw / $canvH ) {
 
-				$newScale =  $canvW / ($wDraw*1.2) ; # 1.2 because we don't want zoom close to canvas border
+				$newScale =  $canvW / ($wDraw*1.1) ; # 1.2 because we don't want zoom close to canvas border
 			}
 			else {
-				$newScale =  $canvH / ($hDraw*1.2) ;
+				$newScale =  $canvH / ($hDraw*1.1) ;
 			}
 		}
 	}

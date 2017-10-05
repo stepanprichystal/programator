@@ -9,6 +9,7 @@ use base 'Widgets::Forms::StandardFrm';
 #3th party librarysss
 use strict;
 use warnings;
+ 
 use Wx;
 use aliased 'Packages::Events::Event';
 
@@ -27,7 +28,6 @@ sub new {
 
 	my $class  = shift;
 	my $parent = shift;
-	my $inCAM  = shift;
 	my $jobId  = shift;
 
 	my @dimension = ( 800, 800 );
@@ -36,7 +36,7 @@ sub new {
 	bless($self);
 
 	# Properties
-	$self->{"inCAM"} = $inCAM;
+	$self->{"inCAM"} = undef;
 	$self->{"jobId"} = $jobId;
 
 	# Events
@@ -49,6 +49,7 @@ sub new {
 # Set data necessary for proper GUI loading
 sub Init {
 	my $self = shift;
+	$self->{"inCAM"} = shift;
 
 	$self->{"dataMngr"}   = shift;
 	$self->{"layoutMngr"} = shift;
@@ -883,7 +884,10 @@ sub __SetLayoutCustomerInfo {
 
 		my $rTxt = Wx::StaticText->new( $statBox, -1, $r, &Wx::wxDefaultPosition, [ 170, 22 ] );
 		$szStatBox->Add( $rTxt, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	}
 
+	if(scalar(@request) == 0){
+			$szStatBox->Add( 10, 10); # add blank, because when is empty statBox is not placed on the right place
 	}
 
 	# Set References

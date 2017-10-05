@@ -23,6 +23,9 @@ use aliased 'CamHelpers::CamLayer';
 use aliased 'CamHelpers::CamJob';
 use aliased 'Programs::StencilCreator::Helpers::Helper';
 use aliased 'CamHelpers::CamStepRepeat';
+use aliased 'CamHelpers::CamDTM';
+use aliased 'Enums::EnumsDrill';
+
 #-------------------------------------------------------------------------------------------#
 #  Interface
 #-------------------------------------------------------------------------------------------#
@@ -42,7 +45,7 @@ sub new {
 
 	# PROPERTIES
 	$self->{"stencilStep"} = "o+1";
-	$self->{"finalLayer"} = $self->{"stencilInfo"}->{"tech"} eq Enums->Technology_DRILL ? "fs" : "ds";
+	$self->{"finalLayer"} = $self->{"stencilInfo"}->{"tech"} eq Enums->Technology_DRILL ? "f" : "ds";
 
 	return $self;
 }
@@ -146,7 +149,7 @@ sub __PrepareOriLayers {
 
 		# 4) Rotate data 90° CW
 		if ( $pcbProf->GetIsRotated() ) {
- 
+
 			CamLayer->RotateLayerData( $inCAM, $prepared, 90 );    # rotated about left-down corner CCW
 			my %source = ( "x" => 0, "y" => 0 );
 			my %target = ( "x" => 0, "y" => $pcbProf->GetHeight() );    # move to zero again
@@ -200,7 +203,7 @@ sub __PrepareFinalSteps {
 
 }
 
-# Create final stencil layer intended for export
+# Create final stencil layer intended for export ("ds" or "f")
 sub __PrepareFinalLayer {
 	my $self   = shift;
 	my %layers = %{ shift(@_) };
@@ -216,12 +219,12 @@ sub __PrepareFinalLayer {
 	if ( $self->{"stencilInfo"}->{"tech"} eq Enums->Technology_DRILL ) {
 		$type = "rout";
 	}
-	
+
 	if ( CamHelper->LayerExists( $inCAM, $jobId, $self->{"finalLayer"} ) ) {
 
 		$inCAM->COM( 'delete_layer', "layer" => $self->{"finalLayer"} );
 	}
-	
+
 	$inCAM->COM( 'create_layer', layer => $self->{"finalLayer"}, context => 'board', type => $type, polarity => 'positive', ins_layer => '' );
 
 	# 2) copy prepared data to layer
@@ -230,8 +233,8 @@ sub __PrepareFinalLayer {
 		my $oriLayer = $layers{$lType}->{"ori"};
 		my $prepared = $layers{$lType}->{"prepared"};
 
-		# copy to final step 
-		
+		# copy to final step
+
 		$inCAM->COM(
 			"copy_layer",
 			"dest"         => "layer_name",
@@ -258,10 +261,16 @@ sub __PrepareFinalLayer {
 			"dy"           => $dataPos{"y"},
 
 		);
-		
+
 		$inCAM->COM( 'delete_layer', layer => $prepared );
 
+		#if type is drilled, set DTM type "vrtane"
+		if ( $self->{"stencilInfo"}->{"tech"} eq Enums->Technology_DRILL ) {
+	 
+			CamDTM->SetDTMTable( $inCAM, $jobId, $self->{"stencilStep"}, $self->{"finalLayer"}, EnumsDrill->DTM_VRTANE );
+		}
 	}
+
 }
 
 sub __PrepareSchema {
@@ -282,7 +291,7 @@ sub __PrepareSchema {
 
 		foreach ( $stencilMngr->GetSchema()->GetHolePositions() ) {
 
-			CamSymbol->AddPad( $inCAM, "r" . $d*1000, $_ );
+			CamSymbol->AddPad( $inCAM, "r" . $d * 1000, $_ );
 		}
 
 	}
@@ -311,6 +320,7 @@ sub __PrepareSchema {
 		);
 
 	}
+
 	# do not add anything
 	elsif ( $schType eq Enums->Schema_INCLUDED ) {
 
@@ -339,8 +349,11 @@ sub __PreparePcbNumber {
 			$pos{"x"} = $dataMngr->GetStencilSizeX() - 20;    # 30 is length of mirrored pcbid text
 		}
 
-		$jobId = uc($jobId);
-		CamSymbol->AddText( $inCAM, $jobId, \%pos, 5.08, 2, $mirror );
+		CamSymbol->AddCurAttribute( $inCAM, $jobId, ".string", "pcbid" );
+
+		CamSymbol->AddText( $inCAM, uc($jobId), \%pos, 5.08, 2, $mirror );
+
+		CamSymbol->ResetCurAttributes($inCAM);
 
 	}
 }
