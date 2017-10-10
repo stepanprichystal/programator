@@ -147,7 +147,7 @@ sub FlatternNCLayer {
 
 	CamHelper->SetStep( $inCAM, $stepName );
 
-	# 2)  if rout layer, change to drill, in other hand user column will not be considered (InCAM BUG)
+	# 2)  if rout layer, change to drill before flatten, in other case "user column" will not be considered (InCAM BUG)
 	my $chahngedToDrill = 0;
 	my $layerType = CamHelper->LayerType( $inCAM, $jobId, $layerName );
 
