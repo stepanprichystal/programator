@@ -276,12 +276,20 @@ sub AddStepAndRepeat {
 	my $dx    = shift;
 	my $dy    = shift;
 
+	my $direction = shift;
+	my $flip      = shift;
+	my $mirror    = shift;
+
 	$nx = 1 if ( !defined $nx );
 	$ny = 1 if ( !defined $ny );
 	$dx = 0 if ( !defined $dx );
 	$dy = 0 if ( !defined $dy );
 
-	$angle = 0 if ( !defined defined $angle );
+	$angle = 0 if ( !defined $angle );
+
+	$direction = "ccw" if ( !defined $direction );
+	$flip      = "no"  if ( !defined $flip );
+	$mirror    = "no"  if ( !defined $mirror );
 
 	CamHelper->SetStep( $inCAM, $stepName );
 
@@ -295,6 +303,38 @@ sub AddStepAndRepeat {
 				 "dx"        => $dx,
 				 "dy"        => $dy,
 				 "angle"     => $angle,
+				 "direction" => "ccw",
+				 "flip"      => "no",
+				 "mirror"    => "no"
+	);
+}
+
+# Change step and repeat
+sub SubstituteStepSRTable {
+	my $self      = shift;
+	my $inCAM     = shift;
+	my $jobId     = shift;
+	my $step      = shift;    # name of parent step
+	my $srNameOld = shift;
+	my $srNameNew = shift;
+
+	CamHelper->SetStep( $inCAM, $stepName );
+
+	for my $sr ( $self->GetStepAndRepeat( $inCAM, $jobId, $step ) ) {
+
+	}
+
+	$inCAM->COM(
+				 "sr_tab_change",
+				 "step"      => "o",
+				 "line"      => "1",
+				 "x"         => "0",
+				 "y"         => "0",
+				 "nx"        => "2",
+				 "ny"        => "2",
+				 "dx"        => "46.99992",
+				 "dy"        => "45.00094",
+				 "angle"     => "0",
 				 "direction" => "ccw",
 				 "flip"      => "no",
 				 "mirror"    => "no"

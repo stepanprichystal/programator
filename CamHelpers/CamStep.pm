@@ -185,6 +185,20 @@ sub SetActiveAreaBorder{
 
 }
 
+# Create profile by rectangle
+sub CreateProfileRect{
+	my $self = shift;
+	my $inCAM = shift;
+	my $step = shift;
+	my $p1 = shift;
+	my $p2 = shift;
+	
+	CamHelper->SetStep( $inCAM, $stepPdf );
+	
+	$inCAM->COM("profile_rect","x1" => $p1->{"x"},"y1" => $p1->{"y"},"x2" => $p2->{"x"},"y2" => $p2->{"y"});
+	
+}
+
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#
