@@ -25,6 +25,7 @@ use aliased 'CamHelpers::CamStepRepeat';
 use aliased 'CamHelpers::CamAttributes';
 use aliased 'Packages::Stackup::StackupOperation';
 
+
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
@@ -323,7 +324,7 @@ sub OnCheckGroupData {
 
 	}
 
-	# 3) Test if stackup material is on stock
+	# 14) Test if stackup material is on stock
 	if ( $layerCnt > 2 ) {
 
 		# a) test id material in helios, match material in stackup
@@ -337,6 +338,7 @@ sub OnCheckGroupData {
 			$dataMngr->_AddErrorResult( "Stackup material", "Materiál, který je obsažen ve složení nelze použít. Detail chyby: $errMes" );
 		}
 	}
+ 
 
 }
 

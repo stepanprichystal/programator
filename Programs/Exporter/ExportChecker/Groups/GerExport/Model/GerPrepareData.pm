@@ -228,7 +228,7 @@ sub __GetMDIInfo {
 	my %mdi = ();
 	$mdi{"exportSignal"} = $mdiTypes{"typeSignal"};
 	$mdi{"exportMask"} = $mdiTypes{"typeMask"};
-	$mdi{"exportPlugs"} = $mdiTypes{"typePlugs"};
+	$mdi{"exportPlugs"} = $mdiTypes{"typePlug"};
 	$mdi{"exportGold"} = $mdiTypes{"typeGold"};
 
 	return %mdi;

@@ -22,6 +22,7 @@ use aliased 'Enums::EnumsGeneral';
 use aliased 'CamHelpers::CamCopperArea';
 use aliased 'CamHelpers::CamGoldArea';
 use aliased 'CamHelpers::CamHistogram';
+use aliased 'CamHelpers::CamStepRepeat';
 use aliased 'CamHelpers::CamDTM';
 use aliased 'Packages::Tooling::PressfitOperation';
 use aliased 'Packages::CAMJob::Marking::Marking';
@@ -59,10 +60,9 @@ sub OnCheckGroupData {
 		$dataMngr->_AddErrorResult( "Data code", "Nesedí zadaný datacode v heliosu s datacodem v exportu." );
 	}
 
-	my @errLayers = ();
-	unless ( $self->__CheckDataCodeJob( $inCAM, $jobId, $defaultInfo, $groupData->GetDatacode(), \@errLayers ) ) {
-		$dataMngr->_AddWarningResult( "Data code",
-							  "V zaškrtnutých vrstvách : \'" . join( ", ", @errLayers ) . "\' nebyl nalezen dynamický datakód. Zkontroluj to." );
+	my $errMess = "";
+	unless ( $self->__CheckDataCodeJob( $inCAM, $jobId, $defaultInfo, $groupData->GetDatacode(), \$errMess ) ) {
+		$dataMngr->_AddErrorResult( "Data code", $errMess);
 	}
 
 	# 2) ul logo
@@ -288,26 +288,50 @@ sub __CheckDataCodeIS {
 	return $self->__CheckMarkingLayer( $layerExport, $layerIS );
 }
 
-# Check when dynamic datacode exist in job
+# Check if datacodes are ok (dynamic, right mirror)
 sub __CheckDataCodeJob {
 	my $self        = shift;
 	my $inCAM       = shift;
 	my $jobId       = shift;
 	my $defaultInfo = shift;
 	my $dataCodes   = shift;
-	my $errLayers   = shift;
+	my $mess        = shift;
 
-	my $step = $defaultInfo->IsPool() ? "o+1" : "panel";
+	my $result = 1;
 
-	foreach my $layer ( split( ",", $dataCodes ) ) {
+	my @steps = ("o+1");    #if pool
 
-		$layer = lc($layer);
-		unless ( Marking->DatacodeExists( $inCAM, $jobId, $step, $layer ) ) {
-			push( @{$errLayers}, $layer );
+	unless ( $defaultInfo->IsPool() ) {
+
+		@steps = map { $_->{"stepName"} } CamStepRepeat->GetUniqueStepAndRepeat( $inCAM, $jobId, "panel" );
+	}
+
+	foreach my $step (@steps) {
+
+		foreach my $layer ( split( ",", $dataCodes ) ) {
+
+			$layer = lc($layer);
+			my @dtCodes = Marking->GetDatacodesInfo( $inCAM, $jobId, $step, $layer );
+
+			# check if mirror datacode is ok
+			if (@dtCodes) {
+
+				my @dtCodesWrong = grep { $_->{"wrongMirror"} } @dtCodes;
+				if (@dtCodesWrong) {
+
+					my $str = join( "; ", map { $_->{"text"} } @dtCodesWrong );
+					$$mess .= "Ve stepu: \"$step\", vrstvì: \"$layer\" jsou nesprávnì zrcadlené datakódy ($str).\n";
+					$result = 0;
+				}
+			}
+			else {
+				$$mess .= "Ve stepu: \"$step\", vrstvì: \"$layer\" nebyl dohledán dynamický datakód.\n";
+				$result = 0;
+			}
 		}
 	}
 
-	return scalar( @{$errLayers} ) ? 0 : 1;
+	return $result;
 }
 
 # check if ul logo exist
