@@ -46,6 +46,7 @@ sub Parse {
 	my $layer    = shift;
 	my $breakSR  = shift;
 	my $selected = shift;    # parse only selected feature
+	my $featFilter = shift;  # parse only given feat id
 
 	my $breakSRVal = $breakSR ? "break_sr+" : "";
 	my $selectedVal = $selected ? "select+" : "";
@@ -66,6 +67,13 @@ sub Parse {
 	my @feat = <$f>;
 	close($f);
 	unlink($infoFile);
+	
+	# if filter specify feats
+	if($featFilter){
+		my %tmp;
+		@tmp{ @{$featFilter} } = ();
+		@feat = grep { exists $tmp{ ($_ =~ m/^#(\d*)/i)[0] } } @feat;
+	} 
 
 	my @features = $self->__ParseLines( \@feat );
 
@@ -160,8 +168,18 @@ sub __ParseLines {
 		
 		 ($type) =  $l =~ m/^#\d*\s*#(\w)\s*/;
 
-		# line, arcs, pads
-		if (   $l =~ m/^#(\d*)\s*#(\w)\s*((-?[0-9]*\.?[0-9]*\s)*)\s*r([0-9]*\.?[0-9]*)\s*([\w\d\s]*);?(.*)/i ) {
+		# line,  pads
+		if (   $l =~ m{^\#
+						(\d*)\s*					 # feati id
+						\#([pl])\s*					 # type
+						((-?[0-9]*\.?[0-9]*\s)*)\s*	 # coordinate
+						(\w+[0-9]*\.?[0-9]*)\s*		 # symbol name
+						([pn])\s*					 # positive/negative
+						(\d+)\s*					 # d-code
+						(\d+)?\s*					 # angle
+						([ny])?						 # mirror
+						;?(.*)						 # attributes
+					}xi ) {
 			$featInfo->{"id"}   = $1;
 			$featInfo->{"type"} = $2;
 
@@ -173,25 +191,54 @@ sub __ParseLines {
 			$featInfo->{"y1"} = $points[1];
 			$featInfo->{"x2"} = $points[2];
 			$featInfo->{"y2"} = $points[3];
+			
+			$featInfo->{"symbol"} = $5;
+ 
+			$featInfo->{"polarity"} = $6;
+			$featInfo->{"angle"} = $8;
+			$featInfo->{"mirror"} = $9;
+			
 
-			$featInfo->{"thick"} = $5;
-
-			if ( $featInfo->{"type"} eq "A" ) {
-
-				#$featInfo->{"xmid"} = sprintf( "%.3f", $points[4] );
-				#$featInfo->{"ymid"} = sprintf( "%.3f", $points[5] );
-				$featInfo->{"xmid"} = $points[4];
-				$featInfo->{"ymid"} = $points[5];
-
-				my $dir = $6;
-				$dir =~ m/([YN])/;
-				
-				$featInfo->{"oriDir"} = $1 eq "Y" ? "CW" : "CCW";
-				
+			@attr = split( ",", $10 );
+			
+			if($featInfo->{"symbol"} =~ /^[rs]([0-9]*\.?[0-9]*)$/){
+				$featInfo->{"thick"} = $1;
 			}
 
-			@attr = split( ",", $7 );
+		}# arc
+		elsif (   $l =~ m{^\#
+						(\d*)\s*					 # feati id
+						\#(a)\s*					 # type
+						((-?[0-9]*\.?[0-9]*\s)*)\s*	 # coordinate
+						(\w+[0-9]*\.?[0-9]*)\s*		 # symbol name
+						([pn])\s*					 # positive/negative
+						(\d+)\s*					 # d-code
+						([ny])						 # cw/ccw
+						;?(.*)						 # attributes
+					}xi ) {
+			$featInfo->{"id"}   = $1;
+			$featInfo->{"type"} = $2;
 
+			my @points = split( /\s/, $3 );
+
+			#remove sign from zero value, when after rounding there minus left
+
+			$featInfo->{"x1"} = $points[0];
+			$featInfo->{"y1"} = $points[1];
+			$featInfo->{"x2"} = $points[2];
+			$featInfo->{"y2"} = $points[3];
+			$featInfo->{"xmid"} = $points[4];
+			$featInfo->{"ymid"} = $points[5];
+	
+			$featInfo->{"symbol"} = $5;
+			$featInfo->{"polarity"} = $6;
+			$featInfo->{"oriDir"} = $8 eq "Y" ? "CW" : "CCW";
+ 
+			@attr = split( ",", $9 );
+			
+			if($featInfo->{"symbol"} =~ /^[rs]([0-9]*\.?[0-9]*)$/){
+				$featInfo->{"thick"} = $1;
+			}
 		}
 
 		# surfaces
@@ -256,7 +303,17 @@ sub __ParseLines {
 
 		}
 		# Text
-		elsif(   $l =~ m/^#(\d*)\s*#(t)\s*((-?[0-9]*\.?[0-9]*\s)*).*'(.*)'\s\w;?(.*)$/i ) {
+		elsif(   $l =~ m{^\#
+							(\d*)\s*  					# feat id
+							\#(t)\s*	 				# type - T
+							((-?[0-9]*\.?[0-9]*\s)*).* 	# position
+							([pn])\s 					# positive/negative
+							(\d+)\s 					# rotation angle
+							([ny]).* 					# mirror
+							'(.*)'\s\w 					# text
+							;?(.*) 						# atribites
+						$}ix ) {
+							
 			$featInfo->{"id"}   = $1;
 			$featInfo->{"type"} = $2;
 
@@ -267,9 +324,13 @@ sub __ParseLines {
 			$featInfo->{"x2"} = undef;
 			$featInfo->{"y2"} = undef; 
 			
-			$featInfo->{"text"} = $5; 
+			$featInfo->{"polarity"} = $5;
+			$featInfo->{"angle"} = $6;
+			$featInfo->{"mirror"} = $7;
 			
-			@attr = split( ",", $6 );
+			$featInfo->{"text"} = $8; 
+			
+			@attr = split( ",", $9 );
 			
 		}
 		else {
@@ -313,7 +374,8 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	my $step  = "o+1";
 	my $layer = "mc";
 
-	$f->Parse( $inCAM, $jobId, $step, $layer, 1, 0);
+	my @feat = (1388);
+	$f->Parse( $inCAM, $jobId, $step, $layer, 1, 0   );
 
 	my @features = $f->GetFeatures();
 	

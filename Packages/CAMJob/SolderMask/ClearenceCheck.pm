@@ -22,21 +22,20 @@ use aliased 'CamHelpers::CamHistogram';
 use aliased 'CamHelpers::CamFilter';
 use aliased 'CamHelpers::CamStepRepeat';
 
-
 #-------------------------------------------------------------------------------------------#
 #  Script methods
 #-------------------------------------------------------------------------------------------#
 # Return 1/0 if rout clearence is ok or not
 # Min clearance is 80µm
-# Rout rs and r are checked behind profile too 
+# Rout rs and r are checked behind profile too
 sub RoutClearenceCheck {
 	my $self        = shift;
 	my $inCAM       = shift;
 	my $jobId       = shift;
 	my $step        = shift;
-	my $layerFilter = shift; # array layers
-	my $result      = shift; # array of results hash: name => layer name, mask => "top/bot"
-	
+	my $layerFilter = shift;    # array layers
+	my $result      = shift;    # array of results hash: name => layer name, mask => "top/bot"
+
 	my $srExist = CamStepRepeat->ExistStepAndRepeats( $inCAM, $jobId, $step );
 
 	my @layers = CamJob->GetLayerByType( $inCAM, $jobId, "rout" );
@@ -48,21 +47,6 @@ sub RoutClearenceCheck {
 	@layers = grep { exists $tmp{ $_->{"gROWname"} } } @layers;
 
 	CamDrilling->AddNCLayerType( \@layers );
-
-	my @drillTop =
-	  grep { $_->{"type"} eq EnumsGeneral->LAYERTYPE_plt_bMillTop || $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_bMillTop } @layers;
-
-	my @drillBot =
-	  grep { $_->{"type"} eq EnumsGeneral->LAYERTYPE_plt_bMillBot || $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_bMillBot } @layers;
-
-	my @drillThru = grep {
-		     $_->{"type"} eq EnumsGeneral->LAYERTYPE_plt_nMill
-		  || $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_nMill
-		  || $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_rsMill
-		  || $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_kMill
-	} @layers;
-
-	my @t = ();
 
 	foreach my $l (@layers) {
 
@@ -87,7 +71,8 @@ sub RoutClearenceCheck {
 		elsif (    $l->{"type"} eq EnumsGeneral->LAYERTYPE_plt_nMill
 				|| $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_nMill
 				|| $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_rsMill
-				|| $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_kMill )
+				|| $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_kMill
+				|| $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_score )
 		{
 
 			# check clearance form top and bot too
@@ -115,12 +100,12 @@ sub RoutClearenceCheck {
 }
 
 sub __IsClearanceOk {
-	my $self  = shift;
-	my $inCAM = shift;
-	my $jobId = shift;
-	my $step  = shift;
-	my $l     = shift;
-	my $side  = shift;
+	my $self    = shift;
+	my $inCAM   = shift;
+	my $jobId   = shift;
+	my $step    = shift;
+	my $l       = shift;
+	my $side    = shift;
 	my $srExist = shift;
 
 	my $result = 1;
@@ -130,23 +115,23 @@ sub __IsClearanceOk {
 	if ( CamHelper->LayerExists( $inCAM, $jobId, $maskLayer ) ) {
 
 		my $minComp = 75;    #min clearence of mask
-		
+
 		my $lTmp = undef;
-		
+
 		# flatten if SR exist
-		if($srExist){
-			
+		if ($srExist) {
+
 			my $tmpLayer = GeneralHelper->GetGUID();
 			$inCAM->COM( 'flatten_layer', "source_layer" => $l->{"gROWname"}, "target_layer" => $tmpLayer );
 			$lTmp = CamLayer->RoutCompensation( $inCAM, $tmpLayer, "document" );
 			$inCAM->COM( 'delete_layer', layer => $tmpLayer );
-		
-		}else{
-			
+
+		}
+		else {
+
 			$lTmp = CamLayer->RoutCompensation( $inCAM, $l->{"gROWname"}, "document" );
 		}
-		
-		
+
 		# clip around profile, because behind profile clearance is not necesary
 		if (    $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_nMill
 			 || $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_kMill )
@@ -155,15 +140,16 @@ sub __IsClearanceOk {
 		}
 
 		# flatten if SR exist
- 
-		if($srExist){
+
+		if ($srExist) {
 			my $tmpLayer = GeneralHelper->GetGUID();
 			$inCAM->COM( 'flatten_layer', "source_layer" => $maskLayer, "target_layer" => $tmpLayer );
- 			$maskLayer = $tmpLayer;
+			$maskLayer = $tmpLayer;
 		}
 
 		CamLayer->WorkLayer( $inCAM, $maskLayer );
 
+		# copy mask to rout
 		if ( CamFilter->SelectByReferenece( $inCAM, $jobId, "touch", $maskLayer, undef, undef, undef, $lTmp ) ) {
 
 			$inCAM->COM(
@@ -171,25 +157,26 @@ sub __IsClearanceOk {
 						 "dest"         => "layer_name",
 						 "target_layer" => $lTmp,
 						 "invert"       => "yes",
-						 "size"         => $minComp
+						 "size"         => -$minComp
 			);
 
 			CamLayer->Contourize( $inCAM, $lTmp );
 
-			my %fHist = CamHistogram->GetFeatuesHistogram( $inCAM, $jobId, $step, $lTmp );
+		}
 
-			if ( $fHist{"total"} > 0 ) {
+		my %fHist = CamHistogram->GetFeatuesHistogram( $inCAM, $jobId, $step, $lTmp );
 
-				$result = 0;
-			}
-			
-			#CamLayer->WorkLayer( $inCAM, $lTmp );
-			
-			$inCAM->COM( 'delete_layer', layer => $lTmp );
-			if($srExist){
-				$inCAM->COM( 'delete_layer', layer => $maskLayer );
-				
-			}
+		if ( $fHist{"total"} > 0 ) {
+
+			$result = 0;
+		}
+
+		CamLayer->WorkLayer( $inCAM, $lTmp );
+
+		$inCAM->COM( 'delete_layer', layer => $lTmp );
+		if ($srExist) {
+			$inCAM->COM( 'delete_layer', layer => $maskLayer );
+
 		}
 
 	}
@@ -213,9 +200,9 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $mess = "";
 
-	my @res    = ();
-	 
-	my $result = ClearenceCheck->RoutClearenceCheck( $inCAM, $jobId, "o+1", ["f"], \@res );
+	my @res = ();
+
+	my $result = ClearenceCheck->RoutClearenceCheck( $inCAM, $jobId, "o+1", ["score"], \@res );
 
 	print STDERR "Result is $result \n";
 

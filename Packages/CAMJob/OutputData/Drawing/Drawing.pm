@@ -268,7 +268,8 @@ sub __CreateDetailZaxis {
 	my $depth      = shift;
 
 	if ( $depth >= $self->{"pcbThick"} ) {
-		die "Tool depth $depth is bigger than pcb thick " . $self->{"pcbThick"} . ".\n";
+		die "Tool depth $depth is bigger than pcb thick " . $self->{"pcbThick"} . ".\n"; 
+		#return 0;
 	}
 
 	my @surfPoints = ();
@@ -329,6 +330,7 @@ sub __CreateDetailZaxisSurf {
 
 	if ( $depth >= $self->{"pcbThick"} ) {
 		die "Tool depth $depth is bigger than pcb thick " . $self->{"pcbThick"} . ".\n";
+		#return 0;
 	}
 
 	my @surfPoints = ();

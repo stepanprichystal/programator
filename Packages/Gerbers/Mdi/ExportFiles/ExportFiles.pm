@@ -249,12 +249,12 @@ sub __GetLayerLimit {
 	my %lim = ();
 
 	# if top/bot layer, clip around fr frame
-	if ( $self->{"layerCnt"} > 2 && ( $layerName =~ /^[(gold)(plg)m]*[cs]$/ ) ) {
+	if ( $self->{"layerCnt"} > 2 && ( $layerName =~ /^[(gold)m]*[cs]$/ ) ) {
 
 		%lim = %{ $self->{"frLim"} };
 	}
 
-	#if inner layers, clip around profile
+	#if inner layers, plg(c/s) layers clip around profile
 	elsif ( $layerName =~ /^v\d$/ ) {
 
 		%lim = %{ $self->{"profLim"} };

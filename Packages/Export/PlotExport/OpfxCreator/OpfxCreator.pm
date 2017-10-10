@@ -133,30 +133,29 @@ sub __PrepareLayer {
 
 	CamLayer->ClipLayerData( $inCAM, $lName, $plotLayer->GetLimits() );
 
-
-
 	# 2) Optimize lazer in order contain only one level of features
 
 	if ( $plotLayer->GetName() =~ /^c$/ || $plotLayer->GetName() =~ /^s$/ || $plotLayer->GetName() =~ /^v\d$/ ) {
- 
+
 		CamLayer->OptimizeLevels( $self->{"inCAM"}, $lName, 1 );
 		CamLayer->WorkLayer( $self->{"inCAM"}, $lName );
 	}
+
 	# 3) Compensate layer
 	if ( $plotLayer->GetComp() != 0 ) {
-		
+
 		my $comp = $plotLayer->GetComp();
-		
+
 		# Before optimiyation, countourize data in matrix negative layers (in other case "sliver fills" are broken during data compensation)
 		# If compensation is less than 0, it means matrix layer is negative
-		if ( $comp < 0) {
+		if ( $comp < 0 ) {
 			CamLayer->Contourize( $self->{"inCAM"}, $lName );
 			CamLayer->WorkLayer( $self->{"inCAM"}, $lName );
 		}
 
 		CamLayer->CompensateLayerData( $inCAM, $lName, $plotLayer->GetComp() );
 	}
-	
+
 	# 4) change polarity
 
 	my $plotPolar = $plotSet->GetPolarity();
@@ -274,6 +273,14 @@ sub __OutputPlotSets {
 		my $outputL       = $plotSet->GetOutputLayerName();
 		my $sendToPlotter = $self->{"sendToPlotter"} ? "yes" : "no";
 
+		# Compute pripority in queue, get highest
+		my $priority = 5;
+
+		my @cores = grep { $_->GetName() =~ /^v\d+$/ } $plotSet->GetLayers();
+		if ( scalar(@cores) ) {
+			$priority = 4;
+		}
+
 		# Reset settings of device
 		$inCAM->COM( "output_reload_device", "type" => "format", "name" => "LP7008" );
 
@@ -285,7 +292,7 @@ sub __OutputPlotSets {
 			"dir_path"      => $archivePath,
 			"format_params" => "(film_size=$filmSize)(break_sr=yes)(break_symbols=yes)(send_to_plotter="
 			  . $sendToPlotter
-			  . ")(local_copy=yes)(iol_opfx_allow_out_limits=yes)(iol_opfx_use_profile_limits=no)(iol_surface_check=yes)"
+			  . ")(local_copy=yes)(iol_opfx_allow_out_limits=yes)(iol_opfx_use_profile_limits=no)(iol_surface_check=yes)(entry_num=$priority)"
 
 		);
 
@@ -342,6 +349,7 @@ sub __OutputPlotSets {
 		unless ($fileExist) {
 
 			my $stampt = GeneralHelper->GetGUID();
+
 			#$inCAM->PutStampToLog($stampt);
 			$resultItemPlot->AddError(
 								 "Failed to create OPFX file: " . $archivePath . "\\" . $plotSet->GetOutputFileName() . ".\nExceptionId:" . $stampt );
