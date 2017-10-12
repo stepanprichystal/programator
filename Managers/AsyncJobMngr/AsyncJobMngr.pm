@@ -570,8 +570,10 @@ sub __OnClose {
 	my $str        = "";
 	my $activeJobs = 0;
 
-	# Stop timers - we don't want take another jobs from queue
-	$self->{"timertask"}->Stop();
+	# If closing is not silent(server version) Stop timers - we don't want take another jobs from queue
+	if(!$silent){
+		$self->{"timertask"}->Stop();
+	}
 
 	my @jobsName = ();
 
