@@ -72,7 +72,7 @@ sub Parse {
 	if($featFilter){
 		my %tmp;
 		@tmp{ @{$featFilter} } = ();
-		@feat = grep { exists $tmp{ ($_ =~ m/^#(\d*)/i)[0] } } @feat;
+		@feat = grep { exists $tmp{ ($_ =~ /^#(\d+)/i)[0] } } @feat;
 	} 
 
 	my @features = $self->__ParseLines( \@feat );
@@ -173,7 +173,7 @@ sub __ParseLines {
 						(\d*)\s*					 # feati id
 						\#([pl])\s*					 # type
 						((-?[0-9]*\.?[0-9]*\s)*)\s*	 # coordinate
-						(\w+[0-9]*\.?[0-9]*)\s*		 # symbol name
+						([^\s]+)\s*		 # symbol name
 						([pn])\s*					 # positive/negative
 						(\d+)\s*					 # d-code
 						(\d+)?\s*					 # angle

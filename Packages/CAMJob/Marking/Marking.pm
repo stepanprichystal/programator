@@ -224,9 +224,9 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	use aliased 'Packages::InCAM::InCAM';
 
 	my $inCAM = InCAM->new();
-	my $jobId = "f52457";
+	my $jobId = "f85917";
 
-	my @layers = Marking->GetDatacodesInfo( $inCAM, $jobId, "o+1", "ms" );
+	my @layers = Marking->GetDatacodesInfo( $inCAM, $jobId, "o+1", "pc" );
 
 	print @layers;
 }
