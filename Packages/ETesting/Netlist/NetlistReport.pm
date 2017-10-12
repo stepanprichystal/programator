@@ -1,6 +1,6 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Represent netlist report
+# Description: Keep information about Netlist compare result
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Packages::ETesting::Netlist::NetlistReport;
@@ -24,17 +24,16 @@ sub new {
 	bless $self;
 
 	$self->{"reportPath"} = shift;
- 
 
-	$self->{"jobId"}     = undef;
+	$self->{"jobId"}    = undef;
 	$self->{"jobIdRef"} = undef;
+
 	#$self->{"time"}      = undef;
 
-	$self->{"step"}     = undef;
+	$self->{"step"}    = undef;
 	$self->{"stepRef"} = undef;    #
-	$self->{"brokens"}  = 0;
-	$self->{"shorts"}   = 0;
- 
+	$self->{"brokens"} = 0;
+	$self->{"shorts"}  = 0;
 
 	$self->__ParseReport();
 
@@ -56,46 +55,50 @@ sub Result {
 
 }
 
-sub GetJobId{
+sub GetJobId {
 	my $self = shift;
-	
+
 	return $self->{"jobId"};
-	
+
 }
 
-
-sub GetJobIdRef{
+sub GetJobIdRef {
 	my $self = shift;
-	
+
 	return $self->{"jobIdRef"};
-	
+
 }
 
-sub GetStep{
+sub GetStep {
 	my $self = shift;
-	
+
 	return $self->{"step"};
-	
+
 }
 
-sub GetStepRef{
+sub GetStepRef {
 	my $self = shift;
-	
+
 	return $self->{"stepRef"};
 }
 
-sub GetBrokens{
+sub GetBrokens {
 	my $self = shift;
-	
+
 	return $self->{"brokens"};
 }
 
-sub GetShorts{
+sub GetShorts {
 	my $self = shift;
-	
+
 	return $self->{"shorts"};
 }
 
+sub GetReportPath{
+	my $self = shift;
+	
+	return $self->{"reportPath"};
+}
 
 sub __ParseReport {
 	my $self = shift;
@@ -109,24 +112,24 @@ sub __ParseReport {
 	for ( my $i = 0 ; $i < scalar(@lines) ; $i++ ) {
 
 		my $l = $lines[$i];
-		
-		next if($l =~ /^[\t\s]$/);
+
+		next if ( $l =~ /^[\t\s]$/ );
 
 		if ( $l =~ m/Job\s*:\s*(\w\d+)\s*Job\s*:\s*(\w\d+)/i ) {
 
-			$self->{"jobId"}     = $1;
+			$self->{"jobId"}    = $1;
 			$self->{"jobIdRef"} = $2;
 			next;
 		}
 
 		if ( $l =~ m/Step\s*:\s*(.*)\s*Step\s*:\s*(.*)/i ) {
 
-			$self->{"step"}     = $1;
+			$self->{"step"}    = $1;
 			$self->{"stepRef"} = $2;
-			
+
 			$self->{"step"} =~ s/\s//g;
 			$self->{"stepRef"} =~ s/\s//g;
-			
+
 			next;
 		}
 
@@ -141,7 +144,7 @@ sub __ParseReport {
 				}
 			}
 		}
-		
+
 		if ( $l =~ /Mismatch Type: Shorts/i ) {
 
 			for ( ; $i < scalar(@lines) ; $i++ ) {
@@ -149,7 +152,7 @@ sub __ParseReport {
 				if ( $l =~ /Total\s*:\s*(\d+)/i ) {
 
 					$self->{"shorts"} = $1;
-							last;
+					last;
 				}
 			}
 		}
@@ -167,8 +170,7 @@ sub __ParseReport {
 #-------------------------------------------------------------------------------------------#
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
-	
- 
+
 	use aliased 'Packages::ETesting::Netlist::NetlistReport';
 	use aliased 'Packages::InCAM::InCAM';
 
@@ -176,13 +178,9 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $jobId = "f52456";
 
-	my $nr = NetlistReport->new('c:/Export/netlist');	
-	
-	print $nr; 
+	my $nr = NetlistReport->new('c:/Export/netlist');
 
-	 
-	
-	
+	print $nr;
 
 }
 

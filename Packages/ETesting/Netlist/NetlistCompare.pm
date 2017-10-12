@@ -45,6 +45,8 @@ sub new {
 	return $self;
 }
 
+# Compare step without Step and repeat, return netlist report
+# Reference step is choosed automatically, according TPV "step name rules"
 sub Compare1Up {
 	my $self     = shift;
 	my $editStep = shift;
@@ -52,6 +54,8 @@ sub Compare1Up {
 
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
+
+	$self->{"inCAM"}->COM("disp_off");
 
 	my $stepRef = undef;
 
@@ -91,16 +95,22 @@ sub Compare1Up {
 
 	my $r = $self->__CompareNetlist( $editStep, $stepRef );
 
+	$self->{"inCAM"}->COM("disp_on");
+
 	return $r;
 
 }
 
+# Compare step with Step and repeat, return netlist report
+# "Help reference panel" is automatically created from given panel step
 sub ComparePanel {
 	my $self     = shift;
 	my $editStep = shift;
 
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
+
+	$self->{"inCAM"}->COM("disp_off");
 
 	my $stepRef = undef;    # if step ref not defined, create own step with original data
 
@@ -115,10 +125,14 @@ sub ComparePanel {
 	CamStep->CreateFlattenStep( $inCAM, $jobId, $editStep, $editPnlFlat, 0 );
 	my $r = $self->__CompareNetlist( $editPnlFlat, $refPnlFlat );
 
+	$self->{"inCAM"}->COM("disp_on");
+
 	return $r;
 
 }
 
+# Return all reports, which were done in past.
+# Reports are stored in job "Output/Netlist folder" in InCAM db
 sub GetStoredReports {
 	my $self = shift;
 
@@ -129,7 +143,7 @@ sub GetStoredReports {
 
 	while ( my $file = readdir($dir) ) {
 
-		next unless $file =~ /^Edit(\w\d+)/i;
+		next unless $file =~ /_X_/i;
 
 		my $filePath = $self->{"reportPaths"} . $file;
 
@@ -145,7 +159,7 @@ sub GetStoredReports {
 
 # Create reference, flateneed step, based on given "panel step"
 # Assume SR steps inside contains "edited"
-# steps (which will be automatically replaced with reference/orifinal steps)
+# steps (which will be automatically replaced with reference/original steps)
 sub __CreateRefStep {
 	my $self    = shift;
 	my $pnlStep = shift;
@@ -175,7 +189,7 @@ sub __CreateRefStep {
 		$mapRef{ $s->{"gSRstep"} } = $ref;
 	}
 
-	# 1) Create "reference" panel from exist panel
+	# 3) Create "reference" panel from exist panel
 
 	my $panelRef = $pnlStep . "_ref";
 
@@ -258,23 +272,25 @@ sub __CreateRefStep {
 
 	}
 
-	# Flatten both "panel" and "panel ref" in order do compare netlist
+	# Flatten created $panelRef
 
 	my $refPnlFlat = $panelRef . "_netlist";
 
 	CamStep->CreateFlattenStep( $inCAM, $jobId, $panelRef, $refPnlFlat, 0 );
 
-	CamStep->DeleteStep( $inCAM, $jobId, $panelRef ); # delete panel ref
-	
+	CamStep->DeleteStep( $inCAM, $jobId, $panelRef );    # delete panel ref
+
 	foreach my $step ( keys %mapRefTmp ) {
-	
-			CamStep->DeleteStep( $inCAM, $jobId, $mapRefTmp{$step} ); # delete clipepd ref steps
+
+		CamStep->DeleteStep( $inCAM, $jobId, $mapRefTmp{$step} );    # delete clipepd ref steps
 	}
 
 	return $refPnlFlat;
 
 }
 
+# Compare two steps and theirs netlists
+# Rerturn report (NetlistReport.pm)
 sub __CompareNetlist {
 	my $self     = shift;
 	my $editStep = shift;
@@ -298,9 +314,18 @@ sub __CompareNetlist {
 		die "Can't compare steps: $editStep, $refStep because step dimensions are diferent.";
 	}
 
+	# compare left bot profile
+
+	if ( abs( $limEdit{"xMin"} - $limRef{"xMin"} ) > 0.01 || abs( $limEdit{"yMin"} - $limRef{"yMin"} ) > 0.01 ) {
+
+		die "Can't compare steps: $editStep, $refStep because left profile corners have different positions.";
+	}
+
 	$inCAM->COM( 'set_subsystem', "name" => '1-Up-Edit' );
+	$inCAM->COM( 'show_tab',      "tab"  => "1-Up Parameters Page", "show" => 'yes' );
+	$inCAM->COM( 'top_tab',       "tab"  => "1-Up Parameters Page" );
+
 	CamHelper->SetStep( $inCAM, $editStep );
-	$inCAM->COM( 'rv_tab_empty', report => 'netlist_compare', is_empty => 'yes' );
 
 	$inCAM->COM(
 				 'netlist_compare',
@@ -318,7 +343,7 @@ sub __CompareNetlist {
 				 "max_highlight_shapes" => '5000'
 	);
 
-	$inCAM->COM( 'rv_tab_view_results_enabled', "report" => 'netlist_compare', "is_enabled" => 'yes', "serial_num" => '-1', "all_count" => '-1' );
+	$inCAM->COM( 'rv_tab_empty', report => 'netlist_compare', is_empty => 'no' );
 	$inCAM->COM(
 		'netlist_compare_results_show',
 		"action"            => 'netlist_compare',
@@ -343,7 +368,7 @@ sub __StoreResult {
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
 
-	my $file = $self->{"reportPaths"} . $jobId . "_" . $editStep . "_" . $jobId . "_" . $stepRef;
+	my $file = $self->{"reportPaths"} .  $editStep . "_X_" .  $stepRef;
 	$inCAM->COM( "netlist_save_compare_results", "output" => "file", "out_file" => $file );
 
 	my $r = NetlistReport->new($file);
