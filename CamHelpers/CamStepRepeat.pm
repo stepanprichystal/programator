@@ -156,7 +156,7 @@ sub GetStepAndRepeat {
 
 	my @arr = ();
 
-	$inCAM->INFO( entity_type => 'step', angle_direction => 'ccw', entity_path => "$jobId/$stepName", data_type => 'SR' );
+	$inCAM->INFO("units"=> "mm", entity_type => 'step', angle_direction => 'ccw', entity_path => "$jobId/$stepName", data_type => 'SR' );
 
 	for ( my $i = 0 ; $i < scalar( @{ $inCAM->{doinfo}{gSRstep} } ) ; $i++ ) {
 		my %info = ();
@@ -165,6 +165,16 @@ sub GetStepAndRepeat {
 		$info{"gSRya"}   = ${ $inCAM->{doinfo}{gSRya} }[$i];
 		$info{"gSRdx"}   = ${ $inCAM->{doinfo}{gSRdx} }[$i];
 		$info{"gSRdy"}   = ${ $inCAM->{doinfo}{gSRdy} }[$i];
+
+		$info{"gSRnx"}     = ${ $inCAM->{doinfo}{gSRnx} }[$i];
+		$info{"gSRny"}     = ${ $inCAM->{doinfo}{gSRny} }[$i];
+		$info{"gSRangle"}  = ${ $inCAM->{doinfo}{gSRangle} }[$i];
+		$info{"gSRmirror"} = ${ $inCAM->{doinfo}{gSRmirror} }[$i];
+		$info{"gSRflip"}   = ${ $inCAM->{doinfo}{gSRflip} }[$i];
+		$info{"gSRxmin"}   = ${ $inCAM->{doinfo}{gSRxmin} }[$i];
+		$info{"gSRymin"}   = ${ $inCAM->{doinfo}{gSRymin} }[$i];
+		$info{"gSRxmax"}   = ${ $inCAM->{doinfo}{gSRxmax} }[$i];
+		$info{"gSRymax"}   = ${ $inCAM->{doinfo}{gSRymax} }[$i];
 
 		push( @arr, \%info );
 
@@ -276,12 +286,20 @@ sub AddStepAndRepeat {
 	my $dx    = shift;
 	my $dy    = shift;
 
+	my $direction = shift;
+	my $flip      = shift;
+	my $mirror    = shift;
+
 	$nx = 1 if ( !defined $nx );
 	$ny = 1 if ( !defined $ny );
 	$dx = 0 if ( !defined $dx );
 	$dy = 0 if ( !defined $dy );
 
-	$angle = 0 if ( !defined defined $angle );
+	$angle = 0 if ( !defined $angle );
+
+	$direction = "ccw" if ( !defined $direction );
+	$flip      = "no"  if ( !defined $flip );
+	$mirror    = "no"  if ( !defined $mirror );
 
 	CamHelper->SetStep( $inCAM, $stepName );
 
@@ -298,6 +316,46 @@ sub AddStepAndRepeat {
 				 "direction" => "ccw",
 				 "flip"      => "no",
 				 "mirror"    => "no"
+	);
+}
+
+## Change step and repeat table (one specific row)
+sub ChangeStepAndRepeat {
+	my $self      = shift;
+	my $inCAM     = shift;
+	my $jobId     = shift;
+	my $stepName  = shift;
+	my $srLineNum = shift;    # line umber in SR table
+	my $step      = shift;    # name of parent step
+	my $xa        = shift;
+	my $ya        = shift;
+	my $dx        = shift;
+	my $dy        = shift;
+	my $nx        = shift;
+	my $ny        = shift;
+	my $angle     = shift;
+	my $direction = shift;
+	my $mirror    = shift;
+	my $flip      = shift;
+
+	$direction = "ccw" if ( !defined $direction );
+
+	CamHelper->SetStep( $inCAM, $stepName );
+
+	$inCAM->COM(
+				 "sr_tab_change",
+				 "step"      => $step,
+				 "line"      => $srLineNum,
+				 "x"         => $xa,
+				 "y"         => $ya,
+				 "nx"        => $nx,
+				 "ny"        => $ny,
+				 "dx"        => $dx,
+				 "dy"        => $dy,
+				 "angle"     => $angle,
+				 "direction" => $direction,
+				 "flip"      => $flip,
+				 "mirror"    => $mirror
 	);
 }
 

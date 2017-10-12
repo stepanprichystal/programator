@@ -24,6 +24,7 @@ use aliased 'CamHelpers::CamGoldArea';
 use aliased 'CamHelpers::CamStepRepeat';
 use aliased 'CamHelpers::CamAttributes';
 use aliased 'Packages::Stackup::StackupOperation';
+use aliased 'Packages::ETesting::Netlist::NetlistCompare';
 
 
 #-------------------------------------------------------------------------------------------#
@@ -337,6 +338,32 @@ sub OnCheckGroupData {
 			
 			$dataMngr->_AddErrorResult( "Stackup material", "Materiál, který je obsažen ve složení nelze použít. Detail chyby: $errMes" );
 		}
+	}
+	
+	# 15) Check if all netlist control was succes in past
+	my @reports = NetlistCompare->new($inCAM, $jobId)->GetStoredReports();
+	
+	@reports = grep { !$_->Result() } @reports;
+	
+	if(scalar(@reports)){
+		
+		my $m = "Byly nalezeny Netlist reporty, které skončily neúspěšně. Zjisti proč, popř. proveď novou kontrolu netlistů. Reporty:";
+		
+		foreach my $r (@reports){
+				
+				$m .= "\n- report: "
+				  . $r->GetShorts()
+				  . " shorts, "
+				  . $r->GetBrokens()
+				  . " brokens, "
+				  . "Stepy: \""
+				  . $r->GetStep() . "\", \""
+				  . $r->GetStepRef()
+				  ."\", Adresa: ". $r->GetReportPath();				
+		}
+		
+		$dataMngr->_AddErrorResult( "Netlist kontrola", $m );
+		
 	}
  
 

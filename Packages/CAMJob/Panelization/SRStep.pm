@@ -11,17 +11,8 @@ use warnings;
 
 #local library
 
-#use aliased 'Enums::EnumsPaths';
-#use aliased 'Helpers::GeneralHelper';
-#
-#use aliased 'Packages::CAMJob::OutputData::PrepareLayers::PrepareBase';
-#use aliased 'Packages::CAMJob::OutputData::PrepareLayers::PrepareNC';
-#use aliased 'Packages::CAMJob::OutputData::LayerData::LayerDataList';
-#
-#use aliased 'CamHelpers::CamStep';
+use aliased 'CamHelpers::CamStep';
 use aliased 'CamHelpers::CamHelper';
-#use aliased 'CamHelpers::CamJob';
-#use aliased 'CamHelpers::CamDrilling';
 use aliased 'CamHelpers::CamStepRepeat';
 
 #-------------------------------------------------------------------------------------------#
@@ -50,6 +41,14 @@ sub Create {
 	my $margBot    = shift;
 	my $margLeft   = shift;
 	my $margRight  = shift;
+	my $profPos    = shift; 	# position of left bottom profile corner
+	
+	# Set default position of left bottom corner of profile
+	unless(defined $profPos){
+		
+		my %zero = ("x"=> 0, "y" => 0);
+		$profPos = \%zero; # profile_rect
+	}
 
 
 	
@@ -72,9 +71,13 @@ sub Create {
 	);
 
 	CamHelper->SetStep( $inCAM, $stepName );
-
-	$inCAM->COM( 'panel_size', "width" => $stepWidth, "height" => $stepHeight );
-
+	
+	
+	my %lb = ("x" => $profPos->{"x"}, "y" => $profPos->{"y"});
+	my %rt = ("x" => $stepWidth + $profPos->{"x"}, "y" => $stepHeight + $profPos->{"y"});
+	
+	CamStep->CreateProfileRect($inCAM, $stepName, \%lb, \%rt);
+ 
 	$inCAM->COM(
 		'sr_active',
 		"top"    => $margTop,
@@ -134,9 +137,12 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 #
 #	my $mess = "";
 #
-	my $control = SRStep->new( $inCAM, $jobId, "test" );
-	my %p = ("x"=> -10, "y" => -20);
-	$control->Create( 300, 400, 10,10,10,10, \%p );
+#	my $control = SRStep->new( $inCAM, $jobId, "test" );
+#	my %p = ("x"=> -10, "y" => -20);
+#	$control->Create( 300, 400, 10,10,10,10, \%p );
+#	my $control = SRStep->new( $inCAM, $jobId, "test" );
+#	my %p = ("x"=> 10, "y" => +10);
+#	$control->Create( 300, 400, 10,10,10,10, \%p   );
 
 }
 

@@ -35,7 +35,7 @@ sub GetAllStepNames {
 	return @{ $inCAM->{doinfo}{gSTEPS_LIST} };
 }
 
-# create special step, which IPC will be exported from
+# Flatten step, to new step
 sub CreateFlattenStep {
 	my $self       = shift;
 	my $inCAM      = shift;
@@ -169,20 +169,147 @@ sub GetActiveAreaLim {
 }
 
 # Set new active area border
-sub SetActiveAreaBorder{
-	my $self = shift;
+sub SetActiveAreaBorder {
+	my $self  = shift;
 	my $inCAM = shift;
-	my $step = shift;
-	my $lb   = shift;
-	my $rb   = shift;
-	my $tb   = shift;
-	my $bb   = shift;
-	
-	
+	my $step  = shift;
+	my $lb    = shift;
+	my $rb    = shift;
+	my $tb    = shift;
+	my $bb    = shift;
+
 	CamHelper->SetStep( $inCAM, $step );
 
 	$inCAM->COM( "sr_active", "top" => $tb, "bottom" => $bb, "left" => $lb, "right" => $rb );
 
+}
+
+# Create profile by rectangle
+sub CreateProfileRect {
+	my $self  = shift;
+	my $inCAM = shift;
+	my $step  = shift;
+	my $p1    = shift;
+	my $p2    = shift;
+
+	CamHelper->SetStep( $inCAM, $step );
+
+	$inCAM->COM( "profile_rect", "x1" => $p1->{"x"}, "y1" => $p1->{"y"}, "x2" => $p2->{"x"}, "y2" => $p2->{"y"} );
+
+}
+
+# If layer contain countour data, profile is created from them
+sub CreateProfileByLayer {
+	my $self  = shift;
+	my $inCAM = shift;
+	my $step      = shift;
+	my $layer = shift;
+
+	CamHelper->SetStep( $inCAM, $step );
+	CamLayer->WorkLayer( $inCAM, $layer );
+
+	$inCAM->COM("sel_all_feat");
+	$inCAM->COM( "sel_create_profile", "create_profile_with_holes" => "yes" );
+}
+
+# Create countur from profile in specific layer
+# Note: if lazer doesn't exist, layer type will be rout
+sub ProfileToLayer {
+	my $self      = shift;
+	my $inCAM     = shift;
+	my $step      = shift;
+	my $layer     = shift;    # layer where profile will be copied
+	my $lineWidth = shift;    # line width of profile countour
+
+	CamHelper->SetStep( $inCAM, $step );
+
+	$inCAM->COM( "profile_to_rout", "layer" => $layer, "width" => $lineWidth );
+}
+
+# Return "reference" step for given step
+# Reference means original step of step edited by tpv
+# Eg.: input, o, pcb (reference) => o+1 (edited)
+sub GetReferenceStep {
+	my $self     = shift;
+	my $inCAM    = shift;
+	my $jobId    = shift;
+	my $editStep = shift;
+
+	my $refStep = undef;
+
+	if ( $editStep eq "o+1" || $editStep eq "o+1_single" ) {
+
+		foreach my $input ( "o", "input", "pcb" ) {
+			if ( CamHelper->StepExists( $inCAM, $jobId, $input ) ) {
+				$refStep = $input;
+				last;
+			}
+		}
+	}
+	else {
+
+		my $refTest = $editStep;
+		$refTest =~ s/\+1//;
+
+		if ( CamHelper->StepExists( $inCAM, $jobId, $refTest ) ) {
+
+			$refStep = $refTest;
+		}
+	}
+
+	return $refStep;
+}
+
+# If step exist, delete it and return 1
+sub DeleteStep {
+	my $self  = shift;
+	my $inCAM = shift;
+	my $jobId = shift;
+	my $step  = shift;
+
+	if ( CamHelper->StepExists( $inCAM, $jobId, $step ) ) {
+		$inCAM->COM( "delete_entity", "job" => $jobId, "name" => $step, "type" => "step" );
+
+		return 1;
+	}
+	else {
+		return 0;
+	}
+
+}
+
+# Move step data including profile
+# All data layers are moved from source point to target point
+sub MoveStepData {
+	my $self        = shift;
+	my $inCAM       = shift;
+	my $jobId       = shift;
+	my $step        = shift;
+	my $sourcePoint = shift;
+	my $targetPoint = shift;
+
+	my $x = -1 * $sourcePoint->{"x"} + $targetPoint->{"x"};
+	my $y = -1 * $sourcePoint->{"y"} + $targetPoint->{"y"};
+
+	CamHelper->SetStep( $inCAM, $step );
+
+	my $lName = GeneralHelper->GetGUID();
+ 	$self->ProfileToLayer($inCAM, $step, $lName, 200);
+	
+	# 1) move all layers data
+	my @layers = map { $_->{"gROWname"} } CamJob->GetAllLayers( $inCAM, $jobId );
+
+	CamLayer->ClearLayers($inCAM);
+	CamLayer->AffectLayers( $inCAM, \@layers );
+
+	$inCAM->COM( "sel_move", "dx" => $x, "dy" => $y );
+
+	CamLayer->ClearLayers($inCAM);
+
+	# 2) create new profile
+ 	
+	$self->CreateProfileByLayer($inCAM, $step, $lName);
+	$inCAM->COM( 'delete_layer', layer => $lName );
 }
 
 #-------------------------------------------------------------------------------------------#
@@ -198,11 +325,10 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	my $jobId = "f52457";
 	my $step  = "panel";
 
-	 CamStep->SetActiveAreaBorder( $inCAM, $step, 5, 5, 5, 5 );
+	CamStep->SetActiveAreaBorder( $inCAM, $step, 5, 5, 5, 5 );
 
 	print "ddd";
- 
 
 }
- 
+
 1;
