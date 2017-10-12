@@ -24,6 +24,7 @@ sub new {
 	bless $self;
 
 	$self->{"reportPath"} = shift;
+ 
 
 	$self->{"jobId"}     = undef;
 	$self->{"jobIdRef"} = undef;
@@ -33,6 +34,7 @@ sub new {
 	$self->{"stepRef"} = undef;    #
 	$self->{"brokens"}  = 0;
 	$self->{"shorts"}   = 0;
+ 
 
 	$self->__ParseReport();
 
@@ -40,7 +42,7 @@ sub new {
 }
 
 # if no shorts and brokens, return 1, else 0
-sub IsCompareOk {
+sub Result {
 	my $self = shift;
 
 	if ( $self->{"brokens"} + $self->{"shorts"} > 0 ) {

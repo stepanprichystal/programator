@@ -74,9 +74,9 @@ sub Create {
 	
 	
 	my %lb = ("x" => $profPos->{"x"}, "y" => $profPos->{"y"});
-	my %rb = ("x" => $stepWidth, "y" => $stepHeight);
+	my %rt = ("x" => $stepWidth + $profPos->{"x"}, "y" => $stepHeight + $profPos->{"y"});
 	
-	CamStep->CreateProfileRect($inCAM, $jobId, $stepName, \%lb);
+	CamStep->CreateProfileRect($inCAM, $stepName, \%lb, \%rt);
  
 	$inCAM->COM(
 		'sr_active',
@@ -127,18 +127,19 @@ sub AddSchema{
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-#	use aliased 'Packages::CAMJob::OutputData::OutputData';
+	use aliased 'Packages::CAMJob::Panelization::SRStep';
 #
-#	use aliased 'Packages::InCAM::InCAM';
+	use aliased 'Packages::InCAM::InCAM';
 #
-#	my $inCAM = InCAM->new();
+	my $inCAM = InCAM->new();
 #
-#	my $jobId = "f52456";
+	my $jobId = "f52456";
 #
 #	my $mess = "";
 #
-#	my $control = OutputData->new( $inCAM, $jobId, "o+1" );
-#	$control->Create( \$mess );
+	my $control = SRStep->new( $inCAM, $jobId, "test" );
+	my %p = ("x"=> 10, "y" => +10);
+	$control->Create( 300, 400, 10,10,10,10, \%p   );
 
 }
 
