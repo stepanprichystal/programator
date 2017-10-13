@@ -97,6 +97,8 @@ sub __ExportNcSet {
 		$inCAM->HandleException(1);
 		$inCAM->COM( 'nc_create', "ncset" => $setName, "device" => $machine, "lyrs" => $layerName, "thickness" => 0 );
 		$inCAM->HandleException(0);
+		
+		get_logger("abstractQueue")->error( "Finding  $jobId BUG stop during export 1\n ");
 
 		last if ( $inCAM->GetStatus() == 0 );
 
@@ -173,14 +175,20 @@ sub __ExportNcSet {
 	#if ( $inCAM->GetStatus() > 1 ) {
 	#	$methodRes->AddError( $inCAM->GetExceptionError() );
 	#}
+	
+			
+	get_logger("abstractQueue")->error( "Finding  $jobId BUG stop during export 2\n ");
+	
 
 	# START HANDLE EXCEPTION IN INCAM
 	$inCAM->HandleException(1);
-
+ 
 	$inCAM->COM( "nc_cre_output", "layer" => $layerName, "ncset" => $setName );
 
 	# STOP HANDLE EXCEPTION IN INCAM
 	$inCAM->HandleException(0);
+	
+	get_logger("abstractQueue")->error( "Finding  $jobId BUG stop during export 3\n ");
 
 	$methodRes->AddError( $inCAM->GetExceptionError() );
 
