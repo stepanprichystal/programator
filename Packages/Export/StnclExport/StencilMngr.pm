@@ -3,7 +3,7 @@
 # Description: Manager responsible for AOI files creation
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::Export::PreExport::PreMngr;
+package Packages::Export::StnclExport::StnclMngr;
 use base('Packages::ItemResult::ItemEventMngr');
 
 use Class::Interface;

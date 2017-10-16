@@ -3,7 +3,7 @@
 # Description: Export of etched stencil
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::Export::StencilExport::GerOutput::ExportLaser;
+package Packages::Export::StnclExport::DataOutput::ExportLaser;
 use base('Packages::ItemResult::ItemEventMngr');
 
 #3th party library
@@ -136,7 +136,7 @@ sub __CreatePads {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	use aliased 'Packages::Export::StencilExport::GerOutput::ExportLaser';
+	use aliased 'Packages::Export::StnclExport::DataOutput::ExportLaser';
 
 	use aliased 'Packages::InCAM::InCAM';
 

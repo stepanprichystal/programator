@@ -6,6 +6,7 @@ use constant {
 			   PcbTyp_ONELAYER   => "oneLayer",
 			   PcbTyp_TWOLAYER   => "twoLayer",
 			   PcbTyp_MULTILAYER => "multiLayer",
+			   PcbTyp_STENCIL => "stencil"
 };
 
 use constant {

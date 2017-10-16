@@ -3,7 +3,7 @@
 # Description: Export of etched stencil
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::Export::StencilExport::GerOutput::ExportDril;
+package Packages::Export::StnclExport::DataOutput::ExportEtch;
 use base('Packages::ItemResult::ItemEventMngr');
 
 #3th party library
@@ -231,7 +231,7 @@ sub __DoComp {
 	# Get compensation
 	my @comp = ();
 
-	my @lines = @{ FileHelper->ReadAsLines( GeneralHelper->Root() . "\\Packages\\Export\\StencilExport\\GerOutput\\Comp" ) };
+	my @lines = @{ FileHelper->ReadAsLines( GeneralHelper->Root() . "\\Packages\\Export\\StnclExport\\GerOutput\\Comp" ) };
 	@lines = grep { $_ !~ /^\s*$/ } @lines;    # remove blank
 
 	my $thick = $self->{"thick"};
@@ -422,7 +422,7 @@ sub __AddSchema {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	use aliased 'Packages::Export::StencilExport::GerOutput::ExportEtch';
+	use aliased 'Packages::Export::StnclExport::DataOutput::ExportEtch';
 
 	use aliased 'Packages::InCAM::InCAM';
 

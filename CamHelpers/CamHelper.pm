@@ -242,8 +242,13 @@ sub GetPcbType {
 	if ( HegMethods->GetTypeOfPcb($jobId) eq 'Neplatovany' ) {
 
 		$type = EnumsGeneral->PcbTyp_NOCOPPER;
+	
+	}elsif(HegMethods->GetTypeOfPcb($jobId) eq 'Sablona'){
+		
+		$type = EnumsGeneral->PcbTyp_STENCIL
 	}
 	else {
+		
 		if ( $layerCnt == 1 ) {
 
 			$type = EnumsGeneral->PcbTyp_ONELAYER;

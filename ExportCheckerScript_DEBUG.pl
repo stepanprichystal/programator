@@ -21,31 +21,17 @@ my $pid = shift;
 # pid of loading form
 my $pidLoadFrm = shift;
 
-unless($jobId){
- 
-<<<<<<< HEAD
-	$jobId = "d00292";
-=======
-	$jobId = "f77137";
->>>>>>> refs/heads/sablony
- 
+unless ($jobId) {
+
+	$jobId = "f13610";
+
 }
 
+my $form = ExportChecker->new( $jobId, $port, $pid, $pidLoadFrm );
 
-my $form = ExportChecker->new($jobId, $port, $pid, $pidLoadFrm);
-
-my $launcher = Launcher->new( 56753 );
+my $launcher = Launcher->new(56753);
 
 $form->Init($launcher);
 
 $form->Run();
-
- 
- 
- 
- 
- 
-
-
-
 

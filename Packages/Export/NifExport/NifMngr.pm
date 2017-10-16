@@ -21,6 +21,7 @@ use aliased 'Packages::Export::NifExport::NifBuilders::V1Builder';
 use aliased 'Packages::Export::NifExport::NifBuilders::V2Builder';
 use aliased 'Packages::Export::NifExport::NifBuilders::VVBuilder';
 use aliased 'Packages::Export::NifExport::NifBuilders::PoolBuilder';
+use aliased 'Packages::Export::NifExport::NifBuilders::StencilBuilder';
 use aliased 'Helpers::JobHelper';
 use aliased 'CamHelpers::CamJob';
 use aliased 'CamHelpers::CamHelper';
@@ -74,6 +75,9 @@ sub Run {
 
 		$self->{"nifBuilder"} = V0Builder->new();
 
+	}elsif ( $typeCu eq EnumsGeneral->PcbTyp_STENCIL ) {
+
+		$self->{"nifBuilder"} = StencilBuilder->new();
 	}
 	elsif ( $typeCu eq EnumsGeneral->PcbTyp_ONELAYER ) {
 

@@ -1057,9 +1057,7 @@ sub __DefineTableGroups {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	use aliased 'Programs::Exporter::ExportChecker::ExportChecker::ExportChecker';
-
-	my $form = ExportChecker->new();
+	 
 
 }
 
