@@ -5,7 +5,7 @@
 #		  "Edit step" - means step which is created from Reference step (eg.: o+1, mpanel)
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::ETesting::Netlist::NetlistCompare;
+package Packages::CAM::Netlist::NetlistCompare;
 
 #3th party library
 use strict;
@@ -20,7 +20,7 @@ use aliased 'CamHelpers::CamHelper';
 use aliased 'CamHelpers::CamJob';
 use aliased 'CamHelpers::CamStepRepeat';
 use aliased 'CamHelpers::CamLayer';
-use aliased 'Packages::ETesting::Netlist::NetlistReport';
+use aliased 'Packages::CAM::Netlist::NetlistReport';
 use aliased 'Packages::CAMJob::Panelization::SRStep';
 use aliased 'CamHelpers::CamStep';
 
@@ -382,7 +382,7 @@ sub __StoreResult {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	use aliased 'Packages::ETesting::Netlist::NetlistCompare';
+	use aliased 'Packages::CAM::Netlist::NetlistCompare';
 	use aliased 'Packages::InCAM::InCAM';
 
 	my $inCAM = InCAM->new();

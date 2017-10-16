@@ -30,7 +30,7 @@ use aliased 'CamHelpers::CamDrilling';
 use aliased 'CamHelpers::CamAttributes';
 use aliased 'CamHelpers::CamSymbol';
 use aliased 'CamHelpers::CamHistogram';
-use aliased 'Packages::Drilling::DrillChecking::LayerCheckError';
+use aliased 'Packages::CAMJob::Drilling::DrillChecking::LayerCheckError';
 use aliased 'Packages::CAM::FeatureFilter::FeatureFilter';
 use aliased 'Enums::EnumsDrill';
 

@@ -17,8 +17,8 @@ use aliased 'CamHelpers::CamHelper';
 use aliased 'CamHelpers::CamStep';
 use aliased 'CamHelpers::CamStepRepeat';
 use aliased 'CamHelpers::CamJob';
-
-use aliased 'Packages::ETesting::Netlist::NetlistCompare';
+use aliased 'Helpers::JobHelper';
+use aliased 'Packages::CAM::Netlist::NetlistCompare';
 
 #-------------------------------------------------------------------------------------------#
 #  Public method
@@ -83,14 +83,14 @@ sub DoControl {
 			$result = 0;
 
 			my @mess = (
-				    "Dps neprošla kontrolou netlistů ("
-				  . $report->GetShorts()
-				  . " shorts, "
-				  . $report->GetBrokens()
-				  . " brokens). Kontrolované stepy: "
-				  . $report->GetStep() . ", "
-				  . $report->GetStepRef(),
-				"Pro informaci o způsobu kontroly netlistů => OneNote - Netlist kontrola"
+						 "Dps neprošla kontrolou netlistů ("
+						   . $report->GetShorts()
+						   . " shorts, "
+						   . $report->GetBrokens()
+						   . " brokens). Kontrolované stepy: "
+						   . $report->GetStep() . ", "
+						   . $report->GetStepRef(),
+						 "Pro informaci o způsobu kontroly netlistů => OneNote - Netlist kontrola"
 			);
 
 			$messMngr->ShowModal( -1, EnumsGeneral->MessageType_ERROR, \@mess );
@@ -100,6 +100,23 @@ sub DoControl {
 			$inCAM->PAUSE( "Pokraracovat v kontrole netlistů pro další step: " . $steps[ $i + 1 ] );
 		}
 
+	}
+	
+	# test if exist helper netlist steps
+	# If so, delete after user check compare netlist result
+	my @netlistSteps = JobHelper->GetNetlistStepNames();
+	for(my $i = scalar (@netlistSteps)-1; $i >= 0; $i--){
+		my $s = $netlistSteps[$i];
+		
+		if(! CamHelper->StepExists(  $inCAM, $jobId, $s) ){
+			
+			splice @netlistSteps, $i, 1;
+		}	
+	}
+	
+	if(@netlistSteps){
+		$inCAM->PAUSE( "Smazat pomocne netlist stepy: " . join(",", @netlistSteps) );
+		$self->__RemoveNetlistSteps( $inCAM, $jobId);
 	}
 
 	return $result;
@@ -144,6 +161,17 @@ sub __CheckO1Panel {
 	}
 
 	return 1;
+}
+
+sub __RemoveNetlistSteps {
+	my $self = shift;
+	my $inCAM = shift;
+	my $jobId = shift;
+
+	foreach my $step ( JobHelper->GetNetlistStepNames() ) {
+
+		CamStep->DeleteStep( $inCAM, $jobId, $step );
+	}
 }
 
 #-------------------------------------------------------------------------------------------#

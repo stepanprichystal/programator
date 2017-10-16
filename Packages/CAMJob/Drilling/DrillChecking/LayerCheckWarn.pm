@@ -3,7 +3,7 @@
 # when some warning occur, NC export is still possible
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::Drilling::DrillChecking::LayerCheckWarn;
+package Packages::CAMJob::Drilling::DrillChecking::LayerCheckWarn;
 
 #3th party library
 use utf8;
@@ -254,7 +254,7 @@ sub __GetLayersByType {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	use aliased 'Packages::Drilling::DrillChecking::LayerCheckWarn';
+	use aliased 'Packages::CAMJob::Drilling::DrillChecking::LayerCheckWarn';
 
 	use aliased 'Packages::InCAM::InCAM';
 

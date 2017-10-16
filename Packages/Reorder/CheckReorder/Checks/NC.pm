@@ -18,7 +18,7 @@ use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'CamHelpers::CamHelper';
 use aliased 'CamHelpers::CamStepRepeat';
 use aliased 'Packages::CAMJob::Marking::Marking';
-use aliased 'Packages::Drilling::DrillChecking::LayerCheckError';
+use aliased 'Packages::CAMJob::Drilling::DrillChecking::LayerCheckError';
 
 #-------------------------------------------------------------------------------------------#
 #  Public method

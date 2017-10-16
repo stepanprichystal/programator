@@ -18,11 +18,13 @@ use aliased 'CamHelpers::CamHelper';
 use aliased 'CamHelpers::CamStepRepeat';
 use aliased 'CamHelpers::CamHistogram';
 use aliased 'Programs::Exporter::ExportChecker::Groups::NifExport::Presenter::NifHelper';
-use aliased 'Packages::Drilling::DrillChecking::LayerCheckError';
-use aliased 'Packages::Drilling::DrillChecking::LayerCheckWarn';
+use aliased 'Packages::CAMJob::Drilling::DrillChecking::LayerCheckError';
+use aliased 'Packages::CAMJob::Drilling::DrillChecking::LayerCheckWarn';
 use aliased 'Packages::Routing::RoutLayer::RoutChecks::RoutCheckTools';
 use aliased 'Packages::CAM::UniRTM::UniRTM::UniRTM';
 use aliased 'Helpers::GeneralHelper';
+use aliased 'Packages::CAMJob::Drilling::CheckAspectRatio';
+use aliased 'Packages::CAMJob::Drilling::CheckHolePads';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -124,24 +126,25 @@ sub OnCheckGroupData {
 	}
 
 	# 6) Check foot down attributes
-	
+
 	my $routLayer = "f";
-	my $tmpLayer = undef;
-	my $checkL = undef;
+	my $tmpLayer  = undef;
+	my $checkL    = undef;
 
 	if ( $defaultInfo->LayerExist("fsch") ) {
 		$routLayer = "fsch";
-		$checkL = $routLayer;
-	}else{
-		
+		$checkL    = $routLayer;
+	}
+	else {
+
 		# need faltten before check outline chains
 		$tmpLayer = GeneralHelper->GetGUID();
-		$inCAM->COM('flatten_layer', "source_layer" => $routLayer, "target_layer" => $tmpLayer );
+		$inCAM->COM( 'flatten_layer', "source_layer" => $routLayer, "target_layer" => $tmpLayer );
 		$checkL = $tmpLayer;
 	}
- 
-	my $rtm = UniRTM->new($inCAM, $jobId, "panel", $checkL, 1);
-	
+
+	my $rtm = UniRTM->new( $inCAM, $jobId, "panel", $checkL, 1 );
+
 	my @outline = $rtm->GetOutlineChains();
 
 	my %hist = CamHistogram->GetAttCountHistogram( $inCAM, $jobId, "panel", $checkL, 1 );
@@ -150,16 +153,15 @@ sub OnCheckGroupData {
 	if ( defined $hist{".foot_down"}{""} ) {
 		$footCnt = $hist{".foot_down"}{""};
 	}
-	
+
 	if ( $footCnt != scalar(@outline) ) {
 		$dataMngr->_AddWarningResult( "Checking foots",
-									  "Number of 'foot_down' ($footCnt) doesn't match with number of outline routs (".scalar(@outline).") in layer: $routLayer" );
+					  "Number of 'foot_down' ($footCnt) doesn't match with number of outline routs (" . scalar(@outline) . ") in layer: $routLayer" );
 	}
-	
-	if($tmpLayer){
-		$inCAM->COM('delete_layer', layer => $tmpLayer );
+
+	if ($tmpLayer) {
+		$inCAM->COM( 'delete_layer', layer => $tmpLayer );
 	}
-	
 
 	# 7) Check, when ALU material, if all plated holes aer in "f" layer
 
@@ -226,6 +228,84 @@ sub OnCheckGroupData {
 				}
 			}
 
+		}
+	}
+
+	# 9) Check if aspect ratio of plated layers is ok
+	my @steps = map { $_->{"stepName"} } CamStepRepeat->GetUniqueStepAndRepeat( $inCAM, $jobId, "panel" );
+
+	foreach my $s (@steps) {
+
+		my %res = ();
+		unless ( CheckAspectRatio->CheckWrongARAllLayers( $inCAM, $jobId, $s, \%res ) ) {
+
+			my $mess = "";
+			if ( @{ $res{"max10.0"} } ) {
+
+				$mess .= "\nMax aspect ratio has to be \"10.0\" for through holes:";
+				foreach my $inf ( @{ $res{"max10.0"} } ) {
+
+					my @t = map {
+						"\n- Size: "
+						  . $_->GetDrillSize()
+						  . "µm, aspect ratio: "
+						  . sprintf( "%.2f", $_->{"aspectRatio"} )
+						  . ", Layer: "
+						  . $inf->{"layer"}
+					} @{ $inf->{"tools"} };
+					$mess .= join( "", @t );
+				}
+			}
+
+			if ( @{ $res{"max1.0"} } ) {
+
+				$mess .= "\nMax aspect ratio has to be \"1.0\" for blind holes:";
+				foreach my $inf ( @{ $res{"max1.0"} } ) {
+
+					my @t = map {
+						"\n- Size: "
+						  . $_->GetDrillSize()
+						  . "µm, aspect ratio: "
+						  . sprintf( "%.2f", $_->{"aspectRatio"} )
+						  . ", Layer: "
+						  . $inf->{"layer"}
+					} @{ $inf->{"tools"} };
+					$mess .= join( "", @t );
+				}
+			}
+
+			$dataMngr->_AddErrorResult( "Aspect ratio - step $s", $mess );
+		}
+	}
+	
+	# 10) Check if all blind and core drilling pads has pads in signal layers
+	
+	my @childs  = map { $_->{"stepName"} } CamStepRepeat->GetUniqueDeepestSR( $inCAM, $jobId, "panel" );
+
+	my %allLayers = ();
+
+	foreach my $step (@childs) {
+		
+		my $mess = "";
+
+		my %pads = ();
+		unless ( CheckHolePads->CheckMissingPadsAllLayers( $inCAM, $jobId, $step , \%pads ) ) {
+
+			foreach my $l ( keys %pads ) {
+
+				if ( @{ $pads{$l} } ) {
+
+					$mess .= "\nMissing pads for drilling in layer: \"$l\", holes:";
+
+					my @pads =
+					  map { "\n- Pad id: \"" . $_->{"featId"} . "\", missing pads in signal layers: \"" . join( ", ", @{ $_->{"missing"} } ) . "\"" }
+					  @{ $pads{$l} };
+
+					$mess .=  join("", @pads);	
+				}
+			}
+			
+			$dataMngr->_AddErrorResult( "Missing pads - step $step", $mess );
 		}
 	}
 }

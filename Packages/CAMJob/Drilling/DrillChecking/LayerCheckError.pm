@@ -3,7 +3,7 @@
 # when some errors occur, NC export is not possible
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::Drilling::DrillChecking::LayerCheckError;
+package Packages::CAMJob::Drilling::DrillChecking::LayerCheckError;
 
 #3th party library
 use utf8;
@@ -571,7 +571,7 @@ sub __GetLayersByType {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	use aliased 'Packages::Drilling::DrillChecking::LayerCheckError';
+	use aliased 'Packages::CAMJob::Drilling::DrillChecking::LayerCheckError';
 
 	use aliased 'Packages::InCAM::InCAM';
 

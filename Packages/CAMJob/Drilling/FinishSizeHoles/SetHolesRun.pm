@@ -2,7 +2,7 @@
 # Description: K nastaveni vrtanych nebo vyslednych otvoru uzivatelem
 # Author:RVI
 #-------------------------------------------------------------------------------------------#
-package Packages::Drilling::FinishSizeHoles::SetHolesRun;
+package Packages::CAMJob::Drilling::FinishSizeHoles::SetHolesRun;
 
 
 use warnings;

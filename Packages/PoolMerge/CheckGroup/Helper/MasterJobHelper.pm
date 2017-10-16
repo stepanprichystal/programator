@@ -15,6 +15,7 @@ use DateTime;
 use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'CamHelpers::CamHelper';
 use aliased 'CamHelpers::CamStep';
+use aliased 'Helpers::JobHelper';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -81,9 +82,9 @@ sub GetMasterJob {
 
 	@candidateOrder = grep { $self->__MasterCandidate( $_->{"order"}->{"orderId"}, $_->{"order"}->{"jobName"} ) } @candidateOrder;
 
-	# if more candidates, take by newer pcb id 
+	# if more candidates, take by newer pcb id
 	# (newer pcb has bigger chance, material is filled properly in IS. IS400 vs FR4)
-	@candidateOrder = sort {$b cmp $a} @candidateOrder;
+	@candidateOrder = sort { $b cmp $a } @candidateOrder;
 	if ( scalar(@candidateOrder) ) {
 
 		$$masterOrder = $candidateOrder[0]->{"order"}->{"orderId"};
@@ -106,7 +107,7 @@ sub CheckMasterJob {
 	my $self      = shift;
 	my $masterjob = shift;
 	my $mess      = shift;
-	
+
 	my $result = 1;
 
 	my $inCAM = $self->{"inCAM"};
@@ -114,13 +115,20 @@ sub CheckMasterJob {
 	# 1) check if master job contains only two steps: o+1 and iput step
 
 	my @steps = CamStep->GetAllStepNames( $inCAM, $masterjob );
-	my $str =  join( "; ", @steps );
-	
-	# Remove o+1_single step if exist, only 2 steps should left
-	@steps = grep { $_ ne "o+1_single" } @steps;
+	my $str = join( "; ", @steps );
 
-	if ( scalar(@steps) > 2 ) {
-		$$mess .= "Master job (\"$masterjob\") can contain only steps: \"original\" and \"o+1\" and \"o+1_single\".\n";
+	# Remove o+1_single step if exist, only 2 steps should left
+
+	# all alowed master steps
+	my @allowed = ( CamStep->GetReferenceStep( $inCAM, $masterjob, "o+1" ), "o+1", JobHelper->GetNetlistStepNames() );
+	my %tmp;
+	@tmp{@allowed} = ();
+	@steps = grep { !exists $tmp{$_} } @steps;
+ 
+	if ( scalar(@steps) > 0 ) {
+		my $str = join(", ", @steps);
+		my $allow = join(", ", @allowed);
+		$$mess .= "Master job (\"$masterjob\") can contain only  steps: $allow.\n";
 		$$mess .= "But master job contains steps: $str.";
 
 		$result = 0;
@@ -172,17 +180,22 @@ sub __MasterCandidate {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	#	use aliased 'Packages::Export::AOIExport::AOIMngr';
-	#	use aliased 'Packages::InCAM::InCAM';
-	#
-	#	my $inCAM = InCAM->new();
-	#
-	#	my $jobName   = "f13610";
-	#	my $stepName  = "panel";
-	#	my $layerName = "c";
-	#
-	#	my $mngr = AOIMngr->new( $inCAM, $jobName, $stepName, $layerName );
-	#	$mngr->Run();
+		use aliased 'Packages::PoolMerge::CheckGroup::Helper::MasterJobHelper';
+		use aliased 'Packages::InCAM::InCAM';
+	
+		my $inCAM = InCAM->new();
+	
+		my $jobName   = "f52456";
+		my $stepName  = "panel";
+		my $layerName = "c";
+	
+		my $mess = "";
+	
+		my $mngr = MasterJobHelper->new( $inCAM );
+		$mngr->CheckMasterJob($jobName, \$mess);
+		
+		print $mess;
+		
 }
 
 1;

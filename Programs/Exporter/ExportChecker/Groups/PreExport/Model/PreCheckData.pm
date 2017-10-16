@@ -24,7 +24,7 @@ use aliased 'CamHelpers::CamGoldArea';
 use aliased 'CamHelpers::CamStepRepeat';
 use aliased 'CamHelpers::CamAttributes';
 use aliased 'Packages::Stackup::StackupOperation';
-use aliased 'Packages::ETesting::Netlist::NetlistCompare';
+use aliased 'Packages::CAM::Netlist::NetlistCompare';
 
 
 #-------------------------------------------------------------------------------------------#

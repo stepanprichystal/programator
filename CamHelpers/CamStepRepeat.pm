@@ -95,6 +95,33 @@ sub GetUniqueNestedStepAndRepeat {
 	return @uniqueSteps;
 }
 
+# Return information about deepest nested steps, which doesn't contain another SR
+sub GetUniqueDeepestSR {
+	my $self     = shift;
+	my $inCAM    = shift;
+	my $jobId    = shift;
+	my $stepName = shift;
+
+	my @uniqueSteps = ();
+
+	my %step = ( "stepName" => $stepName );
+
+	$self->__ExploreStep( $inCAM, $jobId, \%step, \@uniqueSteps );
+
+	# Remove inspected step, we want only nested
+	@uniqueSteps = grep { $_->{"stepName"} ne $stepName } @uniqueSteps;
+
+	my @deepest = ();
+	foreach my $s (@uniqueSteps) {
+
+		unless ( $self->ExistStepAndRepeats( $inCAM, $jobId, $s->{"stepName"} ) ) {
+			push( @deepest, $s );
+		}
+	}
+
+	return @deepest;
+}
+
 sub __ExploreStep {
 	my $self        = shift;
 	my $inCAM       = shift;
@@ -156,7 +183,7 @@ sub GetStepAndRepeat {
 
 	my @arr = ();
 
-	$inCAM->INFO("units"=> "mm", entity_type => 'step', angle_direction => 'ccw', entity_path => "$jobId/$stepName", data_type => 'SR' );
+	$inCAM->INFO( "units" => "mm", entity_type => 'step', angle_direction => 'ccw', entity_path => "$jobId/$stepName", data_type => 'SR' );
 
 	for ( my $i = 0 ; $i < scalar( @{ $inCAM->{doinfo}{gSRstep} } ) ; $i++ ) {
 		my %info = ();

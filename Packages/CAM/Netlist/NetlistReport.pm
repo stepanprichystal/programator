@@ -3,7 +3,7 @@
 # Description: Keep information about Netlist compare result
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::ETesting::Netlist::NetlistReport;
+package Packages::CAM::Netlist::NetlistReport;
 
 #3th party library
 use strict;
@@ -171,7 +171,7 @@ sub __ParseReport {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	use aliased 'Packages::ETesting::Netlist::NetlistReport';
+	use aliased 'Packages::CAM::Netlist::NetlistReport';
 	use aliased 'Packages::InCAM::InCAM';
 
 	my $inCAM = InCAM->new();

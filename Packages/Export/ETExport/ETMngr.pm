@@ -19,6 +19,7 @@ use Log::Log4perl qw(get_logger :levels);
 
 use aliased 'Helpers::JobHelper';
 use aliased 'CamHelpers::CamJob';
+use aliased 'CamHelpers::CamStep';
 use aliased 'CamHelpers::CamHelper';
 use aliased 'CamHelpers::CamLayer';
 use aliased 'CamHelpers::CamStepRepeat';
@@ -60,12 +61,28 @@ sub Run {
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
 	
+	# Remove "nestlist helper" steps
+	$self->__RemoveNetlistSteps();
+	
 	$self->{"exportIPC"}->Export();
 	
 	# Temporary solution
 	$self->__CopyIPCTemp();
 	
 }
+ 
+# Remove "nestlist helper" steps
+sub __RemoveNetlistSteps{
+	my $self = shift;
+	
+	my $inCAM = $self->{"inCAM"};
+	my $jobId = $self->{"jobId"};
+	
+	foreach my $step (JobHelper->GetNetlistStepNames()){
+		
+		CamStep->DeleteStep( $inCAM, $jobId, $step );
+	}
+} 
  
  
  # If exist reoreder on Na priprave and export is server version AND et test not exist, copy opc to special folder

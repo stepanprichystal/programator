@@ -116,6 +116,17 @@ sub GetJobElTest {
 	}
 }
 
+# Return step names, which are special helper steps for compare netlists. (steplist are generated and can be deleted)
+# o+1_panel_ref_netlist
+# mpanel_netlist
+# mpanel_ref_netlist
+sub GetNetlistStepNames {
+	my $self     = shift;
+
+	my @s = ("o+1_panel", "panel_ref_netlist", "mpanel_netlist", "mpanel_ref_netlist");
+	return @s;
+}
+
 sub GetJobOutput {
 	my $self  = shift;
 	my $jobId = shift;
