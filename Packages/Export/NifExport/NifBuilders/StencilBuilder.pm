@@ -19,6 +19,7 @@ use aliased 'CamHelpers::CamJob';
 use aliased 'CamHelpers::CamHelper';
 use aliased 'Packages::Export::NifExport::SectionBuilders::BuilderPcb';
 use aliased 'Packages::Export::NifExport::SectionBuilders::BuilderDim';
+use aliased 'Packages::Export::NifExport::SectionBuilders::BuilderStencil';
 
 
 #-------------------------------------------------------------------------------------------#
@@ -49,7 +50,7 @@ sub Build {
 	push(@req, "typ_dps");
 	push(@req, "datum_pripravy");
 	
-	$nifMngr->AddSection("DPS", BuilderPcb->new(\@req));
+	$nifMngr->AddSection("Obecne", BuilderPcb->new(\@req));
 	
 	#Dimension section
 	@req = ();
@@ -58,9 +59,14 @@ sub Build {
 	push(@req, "nasobnost");
 	push(@req, "rozmer_x");
 	push(@req, "rozmer_y");
-	push(@req, "tloustka");
 
 	$nifMngr->AddSection("Rozmery", BuilderDim->new(\@req));
+	
+	#Stencil section
+ 	@req = ();
+	push(@req, "tloustka");
+
+	$nifMngr->AddSection("Sablona", BuilderStencil->new(\@req));
 
  
 
