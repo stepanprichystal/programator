@@ -1,4 +1,4 @@
-package Programs::Exporter::ExportUtility::Groups::ScoExport::ScoExportTmp;
+package Programs::Exporter::ExportUtility::Groups::StnclExport::StnclExportTmp;
 
 #3th party library
 use strict;
@@ -13,8 +13,8 @@ use aliased 'Packages::Events::Event';
 use aliased 'Programs::Exporter::ExportUtility::UnitEnums';
 use aliased 'Managers::MessageMngr::MessageMngr';
 
-use aliased "Programs::Exporter::ExportChecker::Groups::ScoExport::Presenter::ScoUnit"  => "Unit";
-use aliased "Programs::Exporter::ExportUtility::Groups::ScoExport::ScoWorkUnit" => "UnitExport";
+use aliased "Programs::Exporter::ExportChecker::Groups::StnclExport::Presenter::StnclUnit"  => "Unit";
+use aliased "Programs::Exporter::ExportUtility::Groups::StnclExport::StnclWorkUnit" => "UnitExport";
 
 use aliased 'Programs::Exporter::ExportChecker::ExportChecker::DefaultInfo::DefaultInfo';
 use aliased 'Packages::ItemResult::ItemResultMngr';
@@ -31,7 +31,7 @@ sub new {
 	$self = {};
 	bless $self;
 	
-	$self->{"id"} =  UnitEnums->UnitId_SCO;
+	$self->{"id"} =  UnitEnums->UnitId_STNCL;
 	
 	return $self;
 }

@@ -43,12 +43,15 @@ sub OnExportGroupData {
 
 	my $stepName = "panel";
  
-	my $exportData = ScoData->new();
+	my $exportData = StnclData->new();
  
  	$exportData->SetThickness( $groupData->GetThickness() );
 	$exportData->SetExportNif( $groupData->GetExportNif() );
 	$exportData->SetExportData( $groupData->GetExportData() );
-    $exportData->SetPdfFiles( $groupData->GetPdfFiles() );
+    $exportData->SetExportPdf( $groupData->GetExportPdf() );
+    $exportData->SetFiducialInfo( $groupData->GetFiducialInfo() );
+    
+    
   
 	return $exportData;
 

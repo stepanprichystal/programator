@@ -91,7 +91,8 @@ sub RefreshGUI {
 	$self->{"form"}->SetThickness( $groupData->GetThickness() );
 	$self->{"form"}->SetExportNif( $groupData->GetExportNif() );
 	$self->{"form"}->SetExportData( $groupData->GetExportData() );
-    $self->{"form"}->SetPdfFiles( $groupData->GetPdfFiles() );
+    $self->{"form"}->SetExportPdf( $groupData->GetExportPdf() );
+    $self->{"form"}->SetFiducialInfo( $groupData->GetFiducialInfo() );
 
 	#refresh wrapper
 	$self->_RefreshWrapper();
@@ -114,7 +115,8 @@ sub GetGroupData {
 		$groupData->SetThickness( $frm->GetThickness() );
 		$groupData->SetExportNif( $frm->GetExportNif() );	
 		$groupData->SetExportData( $frm->GetExportData() );
-		$groupData->SetPdfFiles( $frm->GetPdfFiles() );
+		$groupData->SetExportPdf( $frm->GetExportPdf() );
+		$groupData->SetFiducialInfo( $frm->GetFiducialInfo() );
 
 	}
 	else {

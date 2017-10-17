@@ -14,11 +14,9 @@ use lib qw( C:\Perl\site\lib\TpvScripts\Scripts );
 use aliased 'Packages::InCAM::InCAM';
 use aliased 'Programs::Exporter::ExportUtility::Groups::StnclExport::StnclExportTmp';
 
-my $jobId    = "f33085";
+my $jobId    = "f13610";
 my $inCAM    = InCAM->new();
 
-#GET INPUT NIF INFORMATION
-my $stepToTest = "panel";
 
 my $export = StnclExportTmp->new();
-$export->Run( $inCAM, $jobId, $stepToTest );
+$export->Run( $inCAM, $jobId );

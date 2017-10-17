@@ -1,6 +1,6 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Export of etched stencil
+# Description: Export NC programs for drilled stencil
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Packages::Export::StnclExport::DataOutput::ExportDrill;
@@ -13,16 +13,7 @@ use warnings;
 #local library
 use aliased 'Helpers::GeneralHelper';
 use aliased 'Packages::ItemResult::ItemResult';
-#use aliased 'Enums::EnumsPaths';
-#use aliased 'Helpers::JobHelper';
-#use aliased 'Helpers::FileHelper';
-#use aliased 'CamHelpers::CamHelper';
-#use aliased 'CamHelpers::CamLayer';
-#use aliased 'CamHelpers::CamSymbol';
-#use aliased 'CamHelpers::CamJob';
-#use aliased 'CamHelpers::CamHistogram';
-#use aliased 'CamHelpers::CamFilter';
-#use aliased 'Packages::Gerbers::Export::ExportLayers' => 'Helper';
+use aliased 'CamHelpers::CamJob';
 use aliased 'Packages::Export::NCExport::ExportMngr';
 
 #-------------------------------------------------------------------------------------------#
@@ -40,7 +31,6 @@ sub new {
 	$self->{"jobId"} = shift;
 	 
 	$self->{"step"} = "panel"; # step which stnecil data are exported from
-	$self->{"workLayer"} = "f";
 	$self->{"ncExport"} = ExportMngr->new($self->{"inCAM"}, $self->{"jobId"}, $self->{"step"});
 	$self->{"ncExport"}->{"onItemResult"}->Add( sub { $self->__OnExportResult(@_) } );
 	 
@@ -52,10 +42,25 @@ sub new {
 # Prepare gerber files
 sub Output {
 	my $self = shift;
-
+	
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
-	my $step  = $self->{"step"};
+ 
+	# Check when more NC layers except "flc"
+	my @allLayers = ( CamJob->GetLayerByType( $inCAM, $jobId, "drill" ), CamJob->GetLayerByType( $inCAM, $jobId, "rout" ) );
+	
+	my @layers = grep {$_->{"gROWname"} eq "flc"} @allLayers;
+	
+	if(scalar(@layers) == 0){
+		
+		die "Layer flc, doesn't exist";
+	}
+	
+	if(scalar(@allLayers) > 1){
+		
+		die "There is more NC layers in job. Only NC board layer can be flc";
+	}
+
  
 	$self->{"ncExport"}->Run();
  
@@ -70,7 +75,6 @@ sub __OnExportResult {
 	my $self = shift;
 	my $item = shift;
 
-	#$item->SetGroup("Cooperation ET");
 
 	$self->_OnItemResult($item);
 }

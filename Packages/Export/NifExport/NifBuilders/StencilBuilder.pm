@@ -64,12 +64,10 @@ sub Build {
 	
 	#Stencil section
  	@req = ();
-	push(@req, "tloustka");
+	push(@req, "sablona_tloustka");
 
 	$nifMngr->AddSection("Sablona", BuilderStencil->new(\@req));
-
  
-
 }
 
 #-------------------------------------------------------------------------------------------#

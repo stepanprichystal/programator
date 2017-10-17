@@ -18,6 +18,7 @@ use aliased 'CamHelpers::CamHelper';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'Helpers::JobHelper';
 use aliased 'Helpers::FileHelper';
+use aliased 'Programs::StencilCreator::Helpers::Helper';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -57,6 +58,13 @@ sub OnPrepareGroupData {
 
 	my $defaultInfo  = $dataMngr->GetDefaultInfo();
 	my $customerNote = $defaultInfo->GetCustomerNote();
+	
+	my %stencilInfo = Helper->GetStencilInfo($jobId);
+	
+	$groupData->SetExportNif(1);
+	$groupData->SetExportData(1);
+	$groupData->SetExportPdf(1);
+	$groupData->SetThickness($stencilInfo{"thick"});
 
 	return $groupData;
 }

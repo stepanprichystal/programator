@@ -44,7 +44,7 @@ sub Build {
 
 		# add quick notes too
  
-		$section->AddRow( "sablona_tloustka",  $nifData{"thickness"});
+		$section->AddRow( "sablona_tloustka",  $nifData{"stencilThick"});
 	}
 }
  

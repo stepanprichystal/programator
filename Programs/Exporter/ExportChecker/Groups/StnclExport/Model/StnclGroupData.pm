@@ -71,16 +71,30 @@ sub GetExportData {
 }
 
 # Export pdf file
-sub SetPdfFiles {
+sub SetExportPdf {
 	my $self  = shift;
 	 
 	$self->{"data"}->{"exportPdf"} = shift;
 }
 
-sub GetPdfFiles {
+sub GetExportPdf {
 	my $self = shift;
 
 	return $self->{"data"}->{"exportPdf"};
+}
+
+
+# Fiducial info
+sub SetFiducialInfo {
+	my $self  = shift;
+	 
+	$self->{"data"}->{"fiducialInfo"} = shift;
+}
+
+sub GetFiducialInfo {
+	my $self = shift;
+
+	return $self->{"data"}->{"fiducialInfo"};
 }
 
 

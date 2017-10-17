@@ -162,6 +162,22 @@ sub GetAttCountHistogram {
 			}
 		}
 	}
+	
+	
+	# compute total count from all atribute values
+	foreach my $k (keys %attHist){
+		
+		my $att = $attHist{$k};
+		
+		my $total = 0;
+ 
+		foreach my $attVal (keys %{$att}){
+			
+			$total += $att->{$attVal};
+		}
+		$attHist{$k}->{"_totalCnt"} = $total;
+	}
+	
 	return %attHist;
 }
 

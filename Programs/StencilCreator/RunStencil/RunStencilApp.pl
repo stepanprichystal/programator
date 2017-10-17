@@ -25,53 +25,53 @@ my $jobId = $ENV{"JOB"};
 # 1) Check before run
 unless(__CheckBeforeRun()){
 	
-	exit(0);
+	#exit(0);
 }
 
 
 # 2) Launch app
 
-my $appName = 'Packages::Reorder::ReorderApp::ReorderApp';    # has to implement IAppLauncher
+my $appName = 'Programs::StencilCreator::StencilCreator';    # has to implement IAppLauncher
 
 my $launcher = AppLauncher->new( $appName, $jobId );
-$launcher->SetWaitingFrm( "Reorder - $jobId", "Loading Reorder app ...", Enums->WaitFrm_CLOSEAUTO );
+$launcher->SetWaitingFrm( "Stencil creator - $jobId", "Loading application ...", Enums->WaitFrm_CLOSEAUTO );
 
-my $logPath = GeneralHelper->Root() . "\\Packages\\Reorder\\ReorderApp\\Config\\Logger.conf";
+#my $logPath = GeneralHelper->Root() . "\\Packages\\Reorder\\ReorderApp\\Config\\Logger.conf";
 
-$launcher->SetLogConfig($logPath);
+#$launcher->SetLogConfig($logPath);
 
 $launcher->Run();
 
 # Check before run app
 sub __CheckBeforeRun {
 
-	my $messMngr = MessageMngr->new($jobId);
-
-	# 1) Check if run in open job
-	if ( !defined $jobId || $jobId eq "" ) {
-
-		my @mess1 = ("Run script in editor with open job!\n");
-		$messMngr->ShowModal( -1, EnumsGeneral->MessageType_SYSTEMERROR, \@mess1 );
-
-		return 0;
-	}
-
-	# 2) Check if exist order in step "zpracovani-rucni"
-
-	my @orders = HegMethods->GetPcbReorders($jobId);
-
-	# filter only order zpracovani-rucni or checkReorder-error
-	@orders =
-	  grep { $_->{"aktualni_krok"} eq EnumsIS->CurStep_ZPRACOVANIMAN ||
-	  	$_->{"aktualni_krok"} eq EnumsIS->CurStep_PROCESSREORDERERR ||
-	  	 $_->{"aktualni_krok"} eq EnumsIS->CurStep_CHECKREORDERERROR } @orders;
-
-	unless ( scalar(@orders) ) {
-		my @mess1 = ("Run \"Reorder application\" is not possible:", "No re-orders in Helios for pcbid \"$jobId\" where \"Aktualni krok\" is one of: \"zpracovani-rucni\", \"checkReorder-error\", \"processReorder-error\".");
-		$messMngr->ShowModal( -1, EnumsGeneral->MessageType_SYSTEMERROR, \@mess1 );
-
-		return 0;
-	}
+#	my $messMngr = MessageMngr->new($jobId);
+#
+#	# 1) Check if run in open job
+#	if ( !defined $jobId || $jobId eq "" ) {
+#
+#		my @mess1 = ("Run script in editor with open job!\n");
+#		$messMngr->ShowModal( -1, EnumsGeneral->MessageType_SYSTEMERROR, \@mess1 );
+#
+#		return 0;
+#	}
+#
+#	# 2) Check if exist order in step "zpracovani-rucni"
+#
+#	my @orders = HegMethods->GetPcbReorders($jobId);
+#
+#	# filter only order zpracovani-rucni or checkReorder-error
+#	@orders =
+#	  grep { $_->{"aktualni_krok"} eq EnumsIS->CurStep_ZPRACOVANIMAN ||
+#	  	$_->{"aktualni_krok"} eq EnumsIS->CurStep_PROCESSREORDERERR ||
+#	  	 $_->{"aktualni_krok"} eq EnumsIS->CurStep_CHECKREORDERERROR } @orders;
+#
+#	unless ( scalar(@orders) ) {
+#		my @mess1 = ("Run \"Reorder application\" is not possible:", "No re-orders in Helios for pcbid \"$jobId\" where \"Aktualni krok\" is one of: \"zpracovani-rucni\", \"checkReorder-error\", \"processReorder-error\".");
+#		$messMngr->ShowModal( -1, EnumsGeneral->MessageType_SYSTEMERROR, \@mess1 );
+#
+#		return 0;
+#	}
 
 }
 

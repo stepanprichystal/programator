@@ -1,6 +1,6 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Export of etched stencil
+# Description: Export of laser stencil
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Packages::Export::StnclExport::DataOutput::ExportLaser;

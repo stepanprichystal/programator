@@ -258,10 +258,15 @@ sub __GetTypDps {
  
 	my $jobId    = $self->{"jobId"};
 	my $isPool = HegMethods->GetPcbIsPool($jobId);
+	my $isType = HegMethods->GetTypeOfPcb($jobId);
 
 	my $res = "";	
+
+	if ( $isType eq 'Sablona' ) {
+		$res = "sablona";
 	
-	if($isPool){
+	}elsif($isPool){
+		
 		$res = "pool";
 	}
 

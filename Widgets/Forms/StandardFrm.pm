@@ -32,7 +32,7 @@ sub new {
 	my $flags = shift;
 	
 	unless(defined $flags){
-		$flags = &Wx::wxSYSTEM_MENU | &Wx::wxCAPTION | &Wx::wxCLIP_CHILDREN | &Wx::wxRESIZE_BORDER | &Wx::wxMINIMIZE_BOX;
+		$flags = &Wx::wxSYSTEM_MENU | &Wx::wxCAPTION | &Wx::wxCLIP_CHILDREN | &Wx::wxRESIZE_BORDER | &Wx::wxMINIMIZE_BOX |  &Wx::wxCLOSE_BOX;
 	}
 	
 	$self = {};

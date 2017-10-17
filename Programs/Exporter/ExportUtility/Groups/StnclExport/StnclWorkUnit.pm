@@ -47,9 +47,10 @@ sub Init {
 	my $data =  $taskData->GetExportData();
 	my $pdf =  $taskData->GetExportPdf();
 	my $thickness =  $taskData->GetThickness();
+	my $fiducInfo =  $taskData->GetFiducialInfo();
 	 
 	
-	my $mngr  = StnclMngr->new( $inCAM, $jobId, $nif, $data, $pdf, $thickness);
+	my $mngr  = StnclMngr->new( $inCAM, $jobId, $nif, $data, $pdf, $thickness, $fiducInfo);
 	
 	$mngr->{"onItemResult"}->Add( sub { $self->_OnItemResultHandler(@_) } );
 	

@@ -43,7 +43,7 @@ sub Build {
 	my $stnclUnit = StnclUnit->new( $self->{"jobId"} );
 
 	my $row1Tab1 = $tableTab1->AddRow();
-	$row1Tab1->AddCell( $stnclUnit, Enums->Width_25 );
+	$row1Tab1->AddCell( $stnclUnit, Enums->Width_50 );
 
 }
 
