@@ -174,21 +174,22 @@ sub __SetLayout {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-#	use aliased "Widgets::Forms::StandardFrm";
-#
-#	my @dimension = ( 500, 800 );
-#
-#	my $test = StandardFrm->new( -1, "Title", \@dimension );
-#
-#	my $pnl = Wx::Panel->new( $test->{"mainFrm"}, -1, [ -1, -1 ], [ 100, 100 ] );
-#	$pnl->SetBackgroundColour($Widgets::Style::clrLightRed);
-#	$test->AddContent($pnl);
-#
-#	$test->SetButtonHeight(20);
-#
-#	$test->AddButton( "Set", sub { Test(@_) } );
-#	$test->AddButton( "EE",  sub { Test(@_) } );
-#	$test->MainLoop();
+	use aliased "Widgets::Forms::StandardFrm";
+
+	my @dimension = ( 500, 800 );
+
+	my $test = StandardFrm->new( -1, "Title", \@dimension );
+
+	my $pnl = Wx::Panel->new( $test->{"mainFrm"}, -1, [ -1, -1 ], [ 100, 100 ] );
+	$pnl->SetBackgroundColour($Widgets::Style::clrLightRed);
+	$test->AddContent($pnl);
+
+	$test->SetButtonHeight(20);
+
+	$test->AddButton( "Set", sub { Test(@_) } );
+	$test->AddButton( "EE",  sub { Test(@_) } );
+	$test->{"mainFrm"}->Show();
+	$test->MainLoop();
 }
 
 #sub Test {

@@ -2,7 +2,7 @@
 # Description: Form, which allow set nif quick notes
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Programs::StencilCreator::Forms::StencilPopupFrm;
+package Programs::Stencil::StencilCreator::Forms::StencilPopupFrm;
 use base 'Widgets::Forms::StandardFrm';
 
 #3th party librarysss
@@ -212,7 +212,7 @@ sub __SetLayoutChecks {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	#	use aliased 'Programs::StencilCreator::Forms::StencilPopupFrm';
+	#	use aliased 'Programs::Stencil::StencilCreator::Forms::StencilPopupFrm';
 	#
 	#	my $form = StencilPopupFrm->new();
 	#	$form->{"mainFrm"}->Show();

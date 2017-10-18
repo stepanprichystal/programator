@@ -3,7 +3,7 @@
 # Description:
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Programs::StencilCreator::Helpers::OutputCheck;
+package Programs::Stencil::StencilCreator::Helpers::OutputCheck;
 use base('Packages::ItemResult::ItemEventMngr');
 
 #3th party library
@@ -23,9 +23,9 @@ use aliased 'CamHelpers::CamStepRepeat';
 use aliased 'Enums::EnumsPaths';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'CamHelpers::CamLayer';
-use aliased 'Programs::StencilCreator::Enums';
+use aliased 'Programs::Stencil::StencilCreator::Enums';
 use aliased 'CamHelpers::CamStep';
-use aliased 'Programs::StencilCreator::Helpers::Helper';
+use aliased 'Programs::Stencil::StencilCreator::Helpers::Helper';
 use aliased 'Packages::Other::CustomerNote';
 use aliased 'CamHelpers::CamStepRepeat';
 

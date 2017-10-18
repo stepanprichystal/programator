@@ -4,18 +4,18 @@
 # Amd Which layer merge
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Programs::StencilCreator::DataMngr::StencilDataMngr::StencilDataMngr;
+package Programs::Stencil::StencilCreator::DataMngr::StencilDataMngr::StencilDataMngr;
 
 #3th party library
 use strict;
 use warnings;
 
 #local library
-use aliased 'Programs::StencilCreator::Enums';
+use aliased 'Programs::Stencil::StencilCreator::Enums';
 
-use aliased 'Programs::StencilCreator::DataMngr::StencilDataMngr::PasteProfile';
-use aliased 'Programs::StencilCreator::DataMngr::StencilDataMngr::PasteData';
-use aliased 'Programs::StencilCreator::DataMngr::StencilDataMngr::Schema';
+use aliased 'Programs::Stencil::StencilCreator::DataMngr::StencilDataMngr::PasteProfile';
+use aliased 'Programs::Stencil::StencilCreator::DataMngr::StencilDataMngr::PasteData';
+use aliased 'Programs::Stencil::StencilCreator::DataMngr::StencilDataMngr::Schema';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods

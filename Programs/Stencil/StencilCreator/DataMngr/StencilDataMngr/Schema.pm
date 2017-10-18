@@ -4,14 +4,14 @@
 # Amd Which layer merge
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Programs::StencilCreator::DataMngr::StencilDataMngr::Schema;
+package Programs::Stencil::StencilCreator::DataMngr::StencilDataMngr::Schema;
 
 #3th party library
 use strict;
 use warnings;
 
 #local library
-use aliased 'Programs::StencilCreator::Enums';
+use aliased 'Programs::Stencil::StencilCreator::Enums';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods

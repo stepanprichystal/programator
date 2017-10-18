@@ -159,19 +159,19 @@ sub GetLayerLimits {
 sub GetLayerLimits2 {
 	my $self      = shift;
 	my $inCAM     = shift;
-	my $jobId   = shift;
+	my $jobId     = shift;
 	my $stepName  = shift;
 	my $layerName = shift;
 	my $breakSR   = shift;
 
 	my %limits;
 
-	my $tmp = 0;
+	my $tmp   = 0;
 	my $layer = $layerName;
 	if ( CamStepRepeat->ExistStepAndRepeat( $inCAM, $jobId, $stepName ) && $breakSR ) {
-		
-		CamHelper->SetStep($inCAM, $stepName);
-		$tmp = 1;
+
+		CamHelper->SetStep( $inCAM, $stepName );
+		$tmp   = 1;
 		$layer = GeneralHelper->GetGUID();
 		$inCAM->COM( 'flatten_layer', "source_layer" => $layerName, "target_layer" => $tmp );
 	}
@@ -182,8 +182,8 @@ sub GetLayerLimits2 {
 	$limits{"xMax"} = ( $inCAM->{doinfo}{gLIMITSxmax} );
 	$limits{"yMin"} = ( $inCAM->{doinfo}{gLIMITSymin} );
 	$limits{"yMax"} = ( $inCAM->{doinfo}{gLIMITSymax} );
-	
-	if($tmp){
+
+	if ($tmp) {
 		$inCAM->COM( 'delete_layer', layer => $layer );
 	}
 
@@ -491,6 +491,23 @@ sub JobExist {
 	}
 
 }
+
+# Delete job
+sub DeleteJob {
+	my $self  = shift;
+	my $inCAM = shift;
+	my $jobId = shift;
+
+	if ( $self->JobExist( $inCAM, $jobId ) ) {
+		$inCAM->COM( "delete_entity", "job" => $jobId, "name" => $jobId, "type" => "job" );
+		return 1;
+	}
+	else {
+		return 0;
+	}
+}
+
+
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

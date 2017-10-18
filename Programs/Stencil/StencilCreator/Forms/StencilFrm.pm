@@ -3,7 +3,7 @@
 # Allow terminate thread, which does checking
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Programs::StencilCreator::Forms::StencilFrm;
+package Programs::Stencil::StencilCreator::Forms::StencilFrm;
 use base 'Widgets::Forms::StandardFrm';
 
 #3th party librarysss
@@ -16,8 +16,8 @@ use aliased 'Packages::Events::Event';
 #local library
 
 use aliased 'Packages::InCAM::InCAM';
-use aliased 'Programs::StencilCreator::Forms::StencilDrawing';
-use aliased 'Programs::StencilCreator::Enums';
+use aliased 'Programs::Stencil::StencilCreator::Forms::StencilDrawing';
+use aliased 'Programs::Stencil::StencilCreator::Enums';
 use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'Packages::Other::CustomerNote';
 

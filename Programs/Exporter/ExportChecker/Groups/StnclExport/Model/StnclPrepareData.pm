@@ -18,7 +18,7 @@ use aliased 'CamHelpers::CamHelper';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'Helpers::JobHelper';
 use aliased 'Helpers::FileHelper';
-use aliased 'Programs::StencilCreator::Helpers::Helper';
+use aliased 'Programs::Stencil::StencilCreator::Helpers::Helper';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods

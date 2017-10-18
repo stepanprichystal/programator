@@ -3,7 +3,7 @@
 # Description:
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Programs::StencilCreator::Helpers::Helper;
+package Programs::Stencil::StencilCreator::Helpers::Helper;
 
 #3th party library
 use utf8;
@@ -19,7 +19,7 @@ use aliased 'CamHelpers::CamJob';
 use aliased 'CamHelpers::CamStepRepeat';
 use aliased 'Enums::EnumsPaths';
 use aliased 'CamHelpers::CamLayer';
-use aliased 'Programs::StencilCreator::Enums';
+use aliased 'Programs::Stencil::StencilCreator::Enums';
 use aliased 'CamHelpers::CamStep';
 
 #-------------------------------------------------------------------------------------------#
@@ -146,7 +146,7 @@ sub GetStencilSourceSteps {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	use aliased 'Programs::StencilCreator::StencilCreator';
+	use aliased 'Programs::Stencil::StencilCreator::StencilCreator';
 	use aliased 'Packages::InCAM::InCAM';
 
 	my $inCAM = InCAM->new();

@@ -1,5 +1,5 @@
 
-package Programs::StencilCreator::Enums;
+package Programs::Stencil::StencilCreator::Enums;
 
 use constant {
 			   StencilSource_JOB       => "sourceJob",  

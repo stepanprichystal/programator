@@ -4,7 +4,7 @@
 # creation nif file depend on pcb type
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Programs::StencilCreator::StencilCreator;
+package Programs::Stencil::StencilCreator::StencilCreator;
 
 #3th party library
 use strict;
@@ -22,14 +22,14 @@ use aliased 'CamHelpers::CamJob';
 use aliased 'CamHelpers::CamStepRepeat';
 use aliased 'Enums::EnumsPaths';
 use aliased 'Enums::EnumsGeneral';
-use aliased 'Programs::StencilCreator::Forms::StencilFrm';
-use aliased 'Programs::StencilCreator::Helpers::DataHelper';
+use aliased 'Programs::Stencil::StencilCreator::Forms::StencilFrm';
+use aliased 'Programs::Stencil::StencilCreator::Helpers::DataHelper';
 use aliased 'Packages::Other::CustomerNote';
-use aliased 'Programs::StencilCreator::DataMngr::DataMngr';
-use aliased 'Programs::StencilCreator::DataMngr::StencilDataMngr::StencilDataMngr';
-use aliased 'Programs::StencilCreator::Enums';
-use aliased 'Programs::StencilCreator::Helpers::Output';
-use aliased 'Programs::StencilCreator::StencilPopup';
+use aliased 'Programs::Stencil::StencilCreator::DataMngr::DataMngr';
+use aliased 'Programs::Stencil::StencilCreator::DataMngr::StencilDataMngr::StencilDataMngr';
+use aliased 'Programs::Stencil::StencilCreator::Enums';
+use aliased 'Programs::Stencil::StencilCreator::Helpers::Output';
+use aliased 'Programs::Stencil::StencilCreator::StencilPopup';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -318,7 +318,7 @@ sub __DefaultCompValues {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	use aliased 'Programs::StencilCreator::StencilCreator';
+	use aliased 'Programs::Stencil::StencilCreator::StencilCreator';
 	use aliased 'Packages::InCAM::InCAM';
 
 	my $inCAM = InCAM->new();

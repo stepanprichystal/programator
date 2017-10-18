@@ -10,13 +10,13 @@ use lib "$FindBin::Bin/../";
 use PackagesLib;
 
 use lib qw( C:\Perl\site\lib\TpvScripts\Scripts );
-use aliased 'Programs::StencilCreator::StencilCreator';
+use aliased 'Programs::Stencil::StencilCreator::StencilCreator';
 use aliased 'Packages::InCAM::InCAM';
 use aliased 'Packages::InCAMHelpers::AppLauncher::Launcher';
-use aliased 'Programs::StencilCreator::Enums';
+use aliased 'Programs::Stencil::StencilCreator::Enums';
  
  
-my $jobId = "f13610";
+my $jobId = "f123456";
 
 my $app = StencilCreator->new($jobId,  Enums->StencilSource_CUSTDATA);
 

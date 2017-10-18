@@ -4,7 +4,7 @@
 # Logic for poup form
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Programs::StencilCreator::StencilPopup;
+package Programs::Stencil::StencilCreator::StencilPopup;
 
 #3th party library
 #use strict;
@@ -18,12 +18,12 @@ use Time::HiRes qw (sleep);
 
 #local library
 
-use aliased 'Programs::StencilCreator::Forms::StencilPopupFrm';
+use aliased 'Programs::Stencil::StencilCreator::Forms::StencilPopupFrm';
 use aliased 'Packages::InCAM::InCAM';
 use aliased 'Packages::Events::Event';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'Connectors::HeliosConnector::HegMethods';
-use aliased 'Programs::StencilCreator::Helpers::OutputCheck';
+use aliased 'Programs::Stencil::StencilCreator::Helpers::OutputCheck';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods

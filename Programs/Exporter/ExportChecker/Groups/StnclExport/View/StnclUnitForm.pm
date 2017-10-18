@@ -18,8 +18,8 @@ use Wx;
 use Widgets::Style;
 use aliased 'Packages::Events::Event';
 use aliased 'CamHelpers::CamStep';
-use aliased 'Programs::StencilCreator::Helpers::Helper';
-use aliased 'Programs::StencilCreator::Enums' => 'StnclEnums';
+use aliased 'Programs::Stencil::StencilCreator::Helpers::Helper';
+use aliased 'Programs::Stencil::StencilCreator::Enums' => 'StnclEnums';
 
 #use aliased 'CamHelpers::CamJob';
 

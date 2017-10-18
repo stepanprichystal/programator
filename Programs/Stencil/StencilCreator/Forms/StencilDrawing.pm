@@ -3,7 +3,7 @@
 # Description: Custom queue list. Keep items of type MyWxCustomQueueItem
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Programs::StencilCreator::Forms::StencilDrawing;
+package Programs::Stencil::StencilCreator::Forms::StencilDrawing;
 use base('Widgets::Forms::SimpleDrawing::SimpleDrawing');
 
 #3th party library
@@ -14,7 +14,7 @@ use List::Util qw[min max];
 
 #local library
 use aliased 'Packages::Events::Event';
-use aliased 'Programs::StencilCreator::Enums';
+use aliased 'Programs::Stencil::StencilCreator::Enums';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods

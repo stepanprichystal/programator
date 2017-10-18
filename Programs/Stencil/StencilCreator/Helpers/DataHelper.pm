@@ -3,7 +3,7 @@
 # Description:
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Programs::StencilCreator::Helpers::DataHelper;
+package Programs::Stencil::StencilCreator::Helpers::DataHelper;
 
 #3th party library
 use utf8;
@@ -21,9 +21,9 @@ use aliased 'CamHelpers::CamJob';
 use aliased 'CamHelpers::CamStepRepeat';
 use aliased 'Enums::EnumsPaths';
 use aliased 'CamHelpers::CamLayer';
-use aliased 'Programs::StencilCreator::Enums';
+use aliased 'Programs::Stencil::StencilCreator::Enums';
 use aliased 'CamHelpers::CamStep';
-use aliased 'Programs::StencilCreator::Helpers::Helper';
+use aliased 'Programs::Stencil::StencilCreator::Helpers::Helper';
 use aliased 'Packages::Other::CustomerNote';
 use aliased 'CamHelpers::CamStepRepeat';
 
@@ -187,13 +187,15 @@ sub SetDefaultByIS {
 	}
 
 	# Set stencil type
-	unless ( defined $stencilInfo{"type"} ) {
+	my $stencilType = $stencilInfo{"type"};
+	unless ( defined $stencilType ) {
 
-		$$mess .= "Nebyl dohledĂˇn typ Ĺˇablony (top, bot, top+bot) v IS. Bude nastaven defaultnĂ­ typ: \"TOP\".\n";
+		$$mess .= "Nebyl dohledán typ šablony (top, bot, top+bot) v IS. Bude nastaven defaultní typ: \"TOP\".\n";
 		$result = 0;
+		$stencilType = Enums->StencilType_TOP;
 	}
 
-	$self->{"dataMngr"}->SetStencilType( $stencilInfo{"type"} );
+	$self->{"dataMngr"}->SetStencilType( $stencilType );
 
 	# Set stencil size
 	my $w = $stencilInfo{"width"};
@@ -201,7 +203,7 @@ sub SetDefaultByIS {
 
 	if ( !defined $w || !defined $h ) {
 
-		$$mess .= "Nebyl dohledĂˇn rozmÄ›r rozmÄ›r Ĺˇablony v IS. Bude nastaven defaultnĂ­ rozmÄ›r 300x480mm\n";
+		$$mess .= "Nebyl dohledán rozměr šablony v IS. Bude nastaven defaultní rozměr 300x480mm\n";
 		$w      = 300;
 		$h      = 480;
 		$result = 0;
@@ -313,7 +315,7 @@ sub SetDefaultByCustomer {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	use aliased 'Programs::StencilCreator::StencilCreator';
+	use aliased 'Programs::Stencil::StencilCreator::StencilCreator';
 	use aliased 'Packages::InCAM::InCAM';
 
 	my $inCAM = InCAM->new();

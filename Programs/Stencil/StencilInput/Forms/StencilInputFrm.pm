@@ -1,0 +1,503 @@
+#-------------------------------------------------------------------------------------------#
+# Description:Programs::Stencil::StencilDrawing Popup, which shows result from export checking
+# Allow terminate thread, which does checking
+# Author:SPR
+#-------------------------------------------------------------------------------------------#
+package Programs::Stencil::StencilInput::Forms::StencilInputFrm;
+use base 'Widgets::Forms::StandardFrm';
+
+#3th party librarysss
+use utf8;
+use strict;
+use warnings;
+use File::Copy::Recursive qw(fcopy rcopy dircopy fmove rmove dirmove);
+use Wx;
+use aliased 'Packages::Events::Event';
+
+#local library
+use aliased 'Enums::EnumsGeneral';
+use aliased 'Packages::InCAM::InCAM';
+use aliased 'Connectors::HeliosConnector::HegMethods';
+use aliased 'Packages::Other::CustomerNote';
+use aliased 'CamHelpers::CamJob';
+use aliased 'CamHelpers::CamStep';
+use aliased 'CamHelpers::CamHelper';
+use aliased 'Helpers::GeneralHelper';
+use aliased 'CamHelpers::CamStepRepeat';
+use aliased 'CamHelpers::CamAttributes';
+ 
+
+#-------------------------------------------------------------------------------------------#
+#  Package methods
+#-------------------------------------------------------------------------------------------#
+sub new {
+
+	my $class  = shift;
+	my $parent = shift;
+	my $inCAM  = shift;
+	my $jobId  = shift;
+
+	my @dimension = ( 400, 300 );
+	my $self = $class->SUPER::new( $parent, "Stencil input", \@dimension );
+
+	bless($self);
+
+	# Properties
+	$self->{"inCAM"} = $inCAM;
+	$self->{"jobId"} = $jobId;
+
+	# Events
+
+	$self->__SetLayout();
+
+	$self->{"mainFrm"}->Show(1);
+
+	return $self;
+}
+
+sub OnInit {
+	my $self = shift;
+
+	return 1;
+}
+
+#-------------------------------------------------------------------------------------------#
+#  Public methods
+#-------------------------------------------------------------------------------------------#
+
+#-------------------------------------------------------------------------------------------#
+#  Private methods
+#-------------------------------------------------------------------------------------------#
+sub __InputExistingJob {
+	my $self = shift;
+	my $path = shift;
+
+	my $inCAM = $self->{"inCAM"};
+
+	my $sourceJobId = $self->{"sourceJobIdValTxt"}->GetValue();
+	my $jobId       = $self->{"jobIdValTxt"}->GetValue();
+
+	# validity of job
+	if ( $sourceJobId !~ /\w\d+/i ) {
+
+		$self->{"messMngr"}->ShowModal( -1, EnumsGeneral->MessageType_ERROR, ["Jméno zdrojového jobu není validní -  $sourceJobId"] );
+		return 0;
+	}
+
+	# test if exist source job
+	if ( !CamJob->JobExist( $inCAM, $sourceJobId ) ) {
+
+		$self->{"messMngr"}->ShowModal( -1, EnumsGeneral->MessageType_WARNING, ["Job neexistuje v databázi, musíš ho nejprve odarchivovat."] );
+		return 0;
+	}
+	
+	
+
+	# validity of stencil job
+	if ( $jobId !~ /\w\d+/i ) {
+
+		$self->{"messMngr"}->ShowModal( -1, EnumsGeneral->MessageType_ERROR, ["Jméno stencil jobu není validní -  $jobId"] );
+		return 0;
+	}
+	
+	# test if  stencil job is type of stencil
+	 
+  	if(HegMethods->GetTypeOfPcb($jobId) ne 'Sablona'){
+
+		$self->{"messMngr"}->ShowModal( -1, EnumsGeneral->MessageType_ERROR, ["Job šablony $jobId není v IS veden jako typ dps - šablona."] );
+		return 0;
+	}
+
+	# Check if job already exist
+	if ( CamJob->JobExist( $inCAM, $jobId ) ) {
+
+		$self->{"messMngr"}
+		  ->ShowModal( -1, EnumsGeneral->MessageType_WARNING, ["Job šablony $jobId již existuje, cheš ho přemazat?"], [ "Ano", "Ne" ] );
+		if ( $self->{"messMngr"}->Result() == 1 ) {
+			return 0;
+		}
+
+		CamJob->DeleteJob( $inCAM, $jobId );
+	}
+
+	$self->{"mainFrm"}->Hide();
+
+	# create new job
+	$self->__CreateJob($jobId);
+
+	#  Copy suitable steps from source job
+	my @steps = ();
+
+	if ( HegMethods->GetPcbIsPool($sourceJobId) ) {
+		@steps = ("o+1");
+
+	}
+	else {
+
+		@steps = map { $_->{"stepName"} } CamStepRepeat->GetUniqueStepAndRepeat( $inCAM, $sourceJobId, "panel" );
+	}
+
+	foreach my $step (@steps) {
+
+		CamStep->CopyStep( $inCAM, $sourceJobId, $step, $jobId, "ori_" . $step );
+	}
+
+	# remove all useless layers, keep only sa-ori, sb-ori, o
+	my @del = grep { $_->{"gROWname"} !~ /(s[ab]-ori)|(o)/ } CamJob->GetAllLayers( $inCAM, $jobId );
+	 
+	foreach my $l (@del) {
+		$inCAM->COM( 'delete_layer', layer => $l->{"gROWname"} );
+	}
+	
+	while ( !scalar( grep { $_->{"gROWname"} =~ /s[ab]-ori/ } CamJob->GetAllLayers( $inCAM, $jobId ) ) ) {
+
+		$self->{"messMngr"}->ShowModal( -1, EnumsGeneral->MessageType_INFORMATION, ["Nebyly nalezeny vrstvy sa-ori nebo sb-ori"], ["Pořeším to", "Ukončit script"] );
+		
+		if($self->{"messMngr"}->Result() == 1){
+			$self->{"mainFrm"}->Destroy();
+		}
+		
+		$inCAM->PAUSE("Vytvor vrstvy sa-ori nebo sb-ori...");
+	}
+ 
+	$inCAM->COM( "delete_entity", "job" => $jobId, "name" => "o", "type" => "step" );
+	$inCAM->COM( "set_subsystem","name"=>"1-Up-Edit");
+	$self->__RunStencilCreator($jobId);
+
+}
+
+sub __InputCustomerData {
+	my $self = shift;
+	my $path = shift;
+
+	my $inCAM = $self->{"inCAM"};
+
+	$path = lc($path);
+
+	# Recognise if path is r/pcb or c/pcb
+
+	# get root dir (jobid name) of path
+
+	my ( $oriRoot, $disc, $jobId ) = $path =~ m/(([\w]):.?pcb.?(\w\d+)).?/i;
+
+	# if no job folder choosed
+	if ( $jobId !~ /\w\d+/i ) {
+
+		$self->{"messMngr"}->ShowModal( -1, EnumsGeneral->MessageType_ERROR, ["Nebyl vybrán adresář se jménem jobu: $path"] );
+		return 0;
+	}
+
+	$self->{"mainFrm"}->Hide();
+
+	my $root = $oriRoot;
+	$root =~ s/^r:/c:/i;
+
+	# move to c/pcb
+	if ( $disc =~ /r/i ) {
+
+		my $copyCnt = dirmove( $oriRoot, $root );
+	}
+
+	# Check if job already exist
+	if ( CamJob->JobExist( $inCAM, $jobId ) ) {
+
+		$self->{"messMngr"}->ShowModal( -1, EnumsGeneral->MessageType_WARNING, ["Job $jobId již existuje, cheš ho přemazat?"], [ "Ano", "Ne" ] );
+		if ( $self->{"messMngr"}->Result() == 1 ) {
+			return 0;
+		}
+
+		CamJob->DeleteJob( $inCAM, $jobId );
+	}
+
+	# Input new data
+
+	my $oriStep = "ori_data";
+
+	$self->__CreateJob($jobId);
+	
+	CamHelper->SetStep( $inCAM, "o" );
+	$inCAM->COM( "rename_entity", "job" => $jobId, "name" => "o", "new_name" => $oriStep, "is_fw" => "no", "type" => "step", "fw_type" => "form" );
+	$inCAM->COM( "input_create",   "path" => "$root" );
+	$inCAM->COM( "input_identify", "job"  => $jobId );
+
+	my @mess = ( "Načti správně data do výchozího stepu \"$oriStep\".", " - šablona pro TOP => sa-ori", " - šablona pro BOT => sb-ori" );
+
+	$self->{"messMngr"}->ShowModal( -1, EnumsGeneral->MessageType_INFORMATION, \@mess );
+
+	$inCAM->PAUSE("Nacti spravne data, a pokracuj..");
+
+	# test if sa-ori or sb-ori exist
+	#my @layers = grep {$_->{"gROWname"} =~ /s[ab]-ori/ } CamJob->GetAllLayers($inCAM, $jobId);
+
+	while ( !scalar( grep { $_->{"gROWname"} =~ /s[ab]-ori/ } CamJob->GetAllLayers( $inCAM, $jobId ) ) ) {
+
+		$self->{"messMngr"}->ShowModal( -1, EnumsGeneral->MessageType_INFORMATION, ["Nebyly nalezeny vrstvy sa-ori nebo sb-ori"] );
+
+		$inCAM->PAUSE("Vytvor vrstvy sa-ori nebo sb-ori...");
+	}
+
+	# Create profile
+
+	my $profExist = sub {
+		my %lim = CamJob->GetProfileLimits2( $inCAM, $jobId, $oriStep );
+		if ( $lim{"xMin"} == 0 && $lim{"xMax"} == 0 ) {
+			return 0;
+		}
+		else {
+			return 1;
+		}
+	};
+
+	while ( !$profExist->() ) {
+
+		$self->{"messMngr"}->ShowModal( -1, EnumsGeneral->MessageType_INFORMATION, ["Nebyl nalezen profil, vytvoř ho."] );
+
+		$inCAM->PAUSE("Vytvor profil...");
+	}
+
+	$self->__RunStencilCreator($jobId);
+}
+
+sub __RunStencilCreator {
+	my $self  = shift;
+	my $jobId = shift;
+ 
+	eval {
+
+		local @_ = ($jobId);
+		require( GeneralHelper->Root() . '\Programs\Stencil\StencilCreator\RunStencil\RunStencilApp.pl' );
+
+	};
+	if ($@) {
+		$self->{"messMngr"}->ShowModal( -1, EnumsGeneral->MessageType_ERROR, [ "Error during launch stencil creator app." . $@ ] );
+
+	}
+}
+
+sub __CreateJob{
+	my $self  = shift;
+	my $jobId = shift;
+	
+	
+	my $inCAM = $self->{"inCAM"};
+	
+	$inCAM->COM( "new_job", "name" => $jobId, "db" => "incam", "customer" => "", "disp_name" => "", "notes" => "", "attributes" => "" );
+	$inCAM->COM( "check_inout", "mode" => "out", "type" => "job", "job" => $jobId );
+	$inCAM->COM( "open_job", "job" => $jobId, "open_win" => "yes" );
+	
+	my $userName = $ENV{"LOGNAME"};
+	CamAttributes->SetJobAttribute($inCAM, $jobId, "user_name", $userName);
+}
+
+#-------------------------------------------------------------------------------------------#
+#  Layout methods
+#-------------------------------------------------------------------------------------------#
+
+sub __SetLayout {
+	my $self = shift;
+
+	#define panels
+	my $pnlMain = Wx::Panel->new( $self->{"mainFrm"}, -1 );
+	my $szMain = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
+
+	# DEFINE CONTROLS
+	my $general = $self->__SetLayoutGeneral($pnlMain);
+
+	# SET EVENTS
+
+	# BUILD STRUCTURE OF LAYOUT
+
+	$szMain->Add( $general, 1, &Wx::wxALL, 1 );
+
+	$pnlMain->SetSizer($szMain);
+
+	$self->AddContent($pnlMain);
+
+	$self->SetButtonHeight(30);
+
+	$self->AddButton( "Ok", sub { $self->__InputExistingJob(@_) } );
+
+	$self->{"szMain"} = $szMain;
+
+}
+
+# Set layout general group
+sub __SetLayoutGeneral {
+	my $self   = shift;
+	my $parent = shift;
+
+	#define staticboxes
+	my $statBox = Wx::StaticBox->new( $parent, -1, 'General' );
+	my $szStatBox = Wx::StaticBoxSizer->new( $statBox, &Wx::wxVERTICAL );
+
+	my $szRow1 = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
+	my $szRow2 = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
+	my $szRow3 = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
+	my $szRow4 = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
+
+	# DEFINE CONTROLS
+
+	my $typeTxt = Wx::StaticText->new( $statBox, -1, "Source", &Wx::wxDefaultPosition, [ 170, 22 ] );
+
+	my @types = ();
+	push( @types, "Existing job" );
+	push( @types, "Customer data" );
+
+	my $typeCb = Wx::ComboBox->new( $statBox, -1, $types[0], &Wx::wxDefaultPosition, [ 120, 25 ], \@types, &Wx::wxCB_READONLY );
+
+	my $sourceJobIdTxt = Wx::StaticText->new( $statBox, -1, "Source job id", &Wx::wxDefaultPosition, [ 170, 22 ] );
+	my $sourceJobIdValTxt = Wx::TextCtrl->new( $statBox, -1, "", &Wx::wxDefaultPosition, [ 60, 22 ] );
+
+	my $jobIdTxt = Wx::StaticText->new( $statBox, -1, "Stencil job id", &Wx::wxDefaultPosition, [ 170, 22 ] );
+	my $jobIdValTxt = Wx::TextCtrl->new( $statBox, -1, "", &Wx::wxDefaultPosition, [ 60, 22 ] );
+
+	my $openFileTxt = Wx::StaticText->new( $statBox, -1, "Choose file", &Wx::wxDefaultPosition, [ 170, 22 ] );
+	my $btnR = Wx::Button->new( $statBox, -1, "R:pcb", &Wx::wxDefaultPosition, [ 60, 25 ] );
+	my $btnC = Wx::Button->new( $statBox, -1, "C:pcb", &Wx::wxDefaultPosition, [ 60, 25 ] );
+
+	#    if( $dialog->ShowModal == wxID_CANCEL ) {
+	#        Wx::LogMessage( "User cancelled the dialog" );
+	#    } else {
+	#        Wx::LogMessage( "Wildcard: %s", $dialog->GetWildcard);
+	#        my @paths = $dialog->GetPaths;
+	#
+	#        if( @paths > 0 ) {
+	#            Wx::LogMessage( "File: $_" ) foreach @paths;
+	#        } else {
+	#            Wx::LogMessage( "No files" );
+	#        }
+	#
+	#        $self->previous_directory( $dialog->GetDirectory );
+
+	# SET EVENTS
+	Wx::Event::EVT_TEXT( $typeCb, -1, sub { $self->__OnSourceChanged(@_) } );
+	Wx::Event::EVT_BUTTON( $btnR, -1, sub { $self->__OnChooseDir("r") } );
+	Wx::Event::EVT_BUTTON( $btnC, -1, sub { $self->__OnChooseDir("c") } );
+
+	# BUILD STRUCTURE OF LAYOUT
+
+	$szRow1->Add( $typeTxt, 50, &Wx::wxALL, 1 );
+	$szRow1->Add( $typeCb,  50, &Wx::wxALL, 1 );
+
+	$szRow2->Add( $sourceJobIdTxt,    50, &Wx::wxALL, 1 );
+	$szRow2->Add( $sourceJobIdValTxt, 50, &Wx::wxALL, 1 );
+
+	$szRow3->Add( $jobIdTxt,    50, &Wx::wxALL, 1 );
+	$szRow3->Add( $jobIdValTxt, 50, &Wx::wxALL, 1 );
+
+	$szRow4->Add( $openFileTxt, 50, &Wx::wxALL, 1 );
+	$szRow4->Add( $btnR,        25, &Wx::wxALL, 1 );
+	$szRow4->Add( $btnC,        25, &Wx::wxALL, 1 );
+
+	$szStatBox->Add( $szRow1, 0,  &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szStatBox->Add( 10,      10, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szStatBox->Add( $szRow2, 0,  &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szStatBox->Add( $szRow3, 0,  &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szStatBox->Add( $szRow4, 0,  &Wx::wxEXPAND | &Wx::wxALL, 1 );
+
+	# Set References
+	$self->{"stencilTypeCb"} = $typeCb;
+
+	$self->{"jobIdTxt"}    = $jobIdTxt;
+	$self->{"jobIdValTxt"} = $jobIdValTxt;
+
+	$self->{"sourceJobIdTxt"}    = $sourceJobIdTxt;
+	$self->{"sourceJobIdValTxt"} = $sourceJobIdValTxt;
+
+	$self->{"openFileTxt"} = $openFileTxt;
+
+	$self->{"btnR"}   = $btnR;
+	$self->{"btnC"}   = $btnC;
+	$self->{"szRow2"} = $szRow2;
+
+	$self->__DisableControls();
+
+	return $szStatBox;
+}
+
+sub __OnSourceChanged {
+	my $self = shift;
+
+	$self->__DisableControls();
+}
+
+sub __OnChooseDir {
+	my $self  = shift;
+	my $place = shift;    #c/r
+
+	my $dirDialog = undef;
+
+	if ( $place eq "r" ) {
+
+		$dirDialog = Wx::FileDialog->new( $self->{"mainFrm"}, "Select directory with data", "r:/pcb" );
+
+	}
+	elsif ( $place eq "c" ) {
+
+		$dirDialog = Wx::FileDialog->new( $self->{"mainFrm"}, "Select directory with data", "c:/pcb" );
+
+	}
+
+	if ( $dirDialog->ShowModal() != &Wx::wxID_CANCEL ) {
+
+		my @paths = $dirDialog->GetPaths;
+
+		$self->__InputCustomerData( $paths[0] );
+	}
+
+}
+
+sub __DisableControls {
+	my $self = shift;
+
+	if ( $self->{"stencilTypeCb"}->GetSelection() == 0 ) {
+
+		$self->{"jobIdValTxt"}->Show();
+		$self->{"jobIdTxt"}->Show();
+		$self->{"sourceJobIdTxt"}->Show();
+		$self->{"sourceJobIdValTxt"}->Show();
+
+		$self->{"openFileTxt"}->Hide();
+		$self->{"btnR"}->Hide();
+		$self->{"btnC"}->Hide();
+
+	}
+	else {
+
+		$self->{"jobIdValTxt"}->Hide();
+		$self->{"jobIdTxt"}->Hide();
+		$self->{"sourceJobIdTxt"}->Hide();
+		$self->{"sourceJobIdValTxt"}->Hide();
+		$self->{"openFileTxt"}->Show();
+		$self->{"btnR"}->Show();
+		$self->{"btnC"}->Show();
+
+	}
+
+	$self->{"mainFrm"}->Layout();
+
+}
+
+#-------------------------------------------------------------------------------------------#
+#  Place for testing..
+#-------------------------------------------------------------------------------------------#
+
+#print @INC;
+
+my ( $package, $filename, $line ) = caller;
+if ( $filename =~ /DEBUG_FILE.pl/ ) {
+
+	use aliased 'Programs::Stencil::StencilInput::Forms::StencilInputFrm';
+	use aliased 'Packages::InCAM::InCAM';
+
+	my $inCAM = InCAM->new();
+
+	my $test = StencilInputFrm->new( -1, $inCAM, );
+
+	# $test->Test();
+	$test->MainLoop();
+
+}
+
+1;
+

@@ -3,7 +3,7 @@
 # Description: Prepare stencil layer
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Programs::StencilCreator::Helpers::Output;
+package Programs::Stencil::StencilCreator::Helpers::Output;
 
 #3th party library
 use threads;
@@ -13,15 +13,15 @@ use warnings;
 #local library
 use aliased 'Helpers::GeneralHelper';
 use aliased 'Enums::EnumsPaths';
-use aliased 'Programs::StencilCreator::Helpers::DataHelper';
-use aliased 'Programs::StencilCreator::Enums';
+use aliased 'Programs::Stencil::StencilCreator::Helpers::DataHelper';
+use aliased 'Programs::Stencil::StencilCreator::Enums';
 use aliased 'CamHelpers::CamHelper';
 use aliased 'CamHelpers::CamStepRepeat';
 use aliased 'Packages::CAMJob::Panelization::SRStep';
 use aliased 'CamHelpers::CamSymbol';
 use aliased 'CamHelpers::CamLayer';
 use aliased 'CamHelpers::CamJob';
-use aliased 'Programs::StencilCreator::Helpers::Helper';
+use aliased 'Programs::Stencil::StencilCreator::Helpers::Helper';
 use aliased 'CamHelpers::CamStepRepeat';
 use aliased 'CamHelpers::CamDTM';
 use aliased 'Enums::EnumsDrill';
