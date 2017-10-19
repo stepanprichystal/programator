@@ -46,7 +46,7 @@ sub HideConsole {
 sub CheckRunningApp {
 	my $self = shift;
 
-	my $script = GeneralHelper->Root() . "\\Packages\\InCAMServer\\Server\\HelperScripts\\CheckInstances.pl";
+	my $script = GeneralHelper->Root() . "\\Packages\\InCAMHelpers\\InCAMServer\\Server\\HelperScripts\\CheckInstances.pl";
 	my @cmds   = ( );
 
 	my $call = SystemCall->new( $script, \@cmds );
