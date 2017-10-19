@@ -120,7 +120,7 @@ sub CheckMasterJob {
 	# Remove o+1_single step if exist, only 2 steps should left
 
 	# all alowed master steps
-	my @allowed = ( CamStep->GetReferenceStep( $inCAM, $masterjob, "o+1" ), "o+1", JobHelper->GetNetlistStepNames() );
+	my @allowed = ( CamStep->GetReferenceStep( $inCAM, $masterjob, "o+1" ), "o+1", "o+1_single", JobHelper->GetNetlistStepNames() );
 	my %tmp;
 	@tmp{@allowed} = ();
 	@steps = grep { !exists $tmp{$_} } @steps;
