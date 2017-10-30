@@ -43,13 +43,23 @@ use constant {
 #	Jobs_ELTESTSIPC =>  "\\\\dc2.gatema.cz\\r\\El_tests\\",
 #	
 	
-	Jobs_ARCHIV   => "\\\\gatema.cz\\fs\\r\\Archiv\\",
-	Jobs_STACKUPS => "\\\\gatema.cz\\fs\\r\\PCB\\pcb\\VV_slozeni\\",
-	Jobs_PCBMDI   => "\\\\gatema.cz\\fs\\r\\pcb\\mdi\\",
-	Jobs_MDI      => "\\\\gatema.cz\\fs\\r\\mdi\\",
-	Jobs_JETPRINT => "\\\\gatema.cz\\fs\\r\\potisk\\",
-	Jobs_ELTESTS =>  "\\\\gatema.cz\\fs\\EL_DATA\\",
-	Jobs_ELTESTSIPC =>  "\\\\gatema.cz\\fs\\r\\El_tests\\"
+#	Jobs_ARCHIV   => "\\\\gatema.cz\\fs\\r\\Archiv\\",
+#	Jobs_STACKUPS => "\\\\gatema.cz\\fs\\r\\PCB\\pcb\\VV_slozeni\\",
+#	Jobs_PCBMDI   => "\\\\gatema.cz\\fs\\r\\pcb\\mdi\\",
+#	Jobs_MDI      => "\\\\gatema.cz\\fs\\r\\mdi\\",
+#	Jobs_JETPRINT => "\\\\gatema.cz\\fs\\r\\potisk\\",
+#	Jobs_ELTESTS =>  "\\\\gatema.cz\\fs\\EL_DATA\\",
+#	Jobs_ELTESTSIPC =>  "\\\\gatema.cz\\fs\\r\\El_tests\\"
+	
+	# docana zmena
+	Jobs_ARCHIV   => "\\\\fs1.gatema.cz\\ps_data\\r\\Archiv\\",
+	Jobs_STACKUPS => "\\\\fs1.gatema.cz\\ps_data\\r\\PCB\\pcb\\VV_slozeni\\",
+	Jobs_PCBMDI   => "\\\\fs1.gatema.cz\\ps_data\\r\\pcb\\mdi\\",
+	Jobs_MDI      => "\\\\fs1.gatema.cz\\ps_data\\r\\mdi\\",
+	Jobs_JETPRINT => "\\\\fs1.gatema.cz\\ps_data\\r\\potisk\\",
+	Jobs_ELTESTS =>  "\\\\fs1.gatema.cz\\EL_DATA\\",
+	Jobs_ELTESTSIPC =>  "\\\\fs1.gatema.cz\\ps_data\\r\\El_tests\\"	
+	
 };
 
 # Other paths

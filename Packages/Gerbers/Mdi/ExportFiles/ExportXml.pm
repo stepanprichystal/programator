@@ -139,7 +139,31 @@ sub __ExportXml {
 		}
 	}
 	elsif ( $layerName eq 'mc' or $layerName eq 'ms' ) {
-		$power      = 230;
+
+		# set power by mask color
+		my %mask = HegMethods->GetSolderMaskColor($jobId);
+
+		my $clr = $mask{ $layerName eq 'mc' ? "top" : "bot" };
+
+		if ( $clr =~ /Z/i ) {
+			$power = 230;        # green
+		}
+		elsif ( $clr =~ /B/i ) {
+			$power = 240;        # black
+		}
+		elsif ( $clr =~ /M/i ) {
+			$power = 240;        # blue
+		}
+		elsif ( $clr =~ /W/i ) {
+			$power = 220;        # white
+		}
+		elsif ( $clr =~ /R/i ) {
+			$power = 240;        # red
+		}
+		else {
+			$power = 230;        # other
+		}
+
 		$diameter   = 2.85;
 		$brightness = 3;
 		$upperlimit = 0.08;
@@ -168,20 +192,20 @@ sub __ExportXml {
 
 	# Fill xml
 
-	$templ->{"job_params"}->[0]->{"job_name"}->[0]        = $jobId . $layerName . "_mdi";
-	
+	$templ->{"job_params"}->[0]->{"job_name"}->[0] = $jobId . $layerName . "_mdi";
+
 	my $orderNum = HegMethods->GetPcbOrderNumber($jobId);
-	my $info = HegMethods->GetInfoAfterStartProduce($jobId."-".$orderNum);
-	my $parts = 0;
-	
-	if( defined $info->{'pocet_prirezu'} &&   $info->{'pocet_prirezu'} > 0) {
- 		$parts+= $info->{'pocet_prirezu'};
+	my $info     = HegMethods->GetInfoAfterStartProduce( $jobId . "-" . $orderNum );
+	my $parts    = 0;
+
+	if ( defined $info->{'pocet_prirezu'} && $info->{'pocet_prirezu'} > 0 ) {
+		$parts += $info->{'pocet_prirezu'};
 	}
-	
-	if( defined $info->{'prirezu_navic'} &&   $info->{'prirezu_navic'} > 0) {
- 		$parts+= $info->{'prirezu_navic'};
+
+	if ( defined $info->{'prirezu_navic'} && $info->{'prirezu_navic'} > 0 ) {
+		$parts += $info->{'prirezu_navic'};
 	}
- 
+
 	$templ->{"job_params"}->[0]->{"parts_total"}->[0]     = $parts;
 	$templ->{"job_params"}->[0]->{"parts_remaining"}->[0] = $parts;
 
@@ -244,11 +268,11 @@ sub __ExportXml {
 
 	my $finalFile = EnumsPaths->Jobs_MDI . $self->{"jobId"} . $layerName . "_mdi.xml";
 
-	FileHelper->WriteString($finalFile , $xmlString );
-	
-	unless(-e $finalFile){
+	FileHelper->WriteString( $finalFile, $xmlString );
+
+	unless ( -e $finalFile ) {
 		die "Xml file for MDI gerber ($finalFile) doesn't exist.\n";
-	}	
+	}
 }
 
 sub __LoadTemplate {
@@ -296,19 +320,19 @@ sub __GetThickByLayer {
 	else {
 		$thick = HegMethods->GetPcbMaterialThick( $self->{"jobId"} );
 	}
-	
+
 	# if not core, add plating 35µm
-	if($layer !~ /^v\d$/){
-				
+	if ( $layer !~ /^v\d$/ ) {
+
 		$thick += 0.035;
 	}
-	
+
 	# add value of resist 38 + 19 µm
 	$thick += 0.057;
-	
-	$thick = sprintf ("%.3f", $thick );
 
-	return  $thick;
+	$thick = sprintf( "%.3f", $thick );
+
+	return $thick;
 }
 
 #-------------------------------------------------------------------------------------------#
