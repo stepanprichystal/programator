@@ -32,7 +32,7 @@ sub new {
 	my $flags = shift;
 	
 	unless(defined $flags){
-		$flags = &Wx::wxSYSTEM_MENU | &Wx::wxCAPTION | &Wx::wxCLIP_CHILDREN | &Wx::wxRESIZE_BORDER | &Wx::wxMINIMIZE_BOX;
+		$flags = &Wx::wxSYSTEM_MENU | &Wx::wxCAPTION | &Wx::wxCLIP_CHILDREN | &Wx::wxRESIZE_BORDER | &Wx::wxMINIMIZE_BOX |  &Wx::wxCLOSE_BOX;
 	}
 	
 	$self = {};
@@ -47,8 +47,9 @@ sub new {
 
 	# Properties
 	$self->{"btnHeight"} = 30;
-	
+
 	$self->{"messMngr"} = MessageMngr->new($title, $mainFrm); # standard message mngr
+
 
 	return $self;
 }
@@ -99,11 +100,13 @@ sub AddButton {
 
 }
 
+
 sub _GetMessageMngr{
 	my $self      = shift;
 	
 	return $self->{"messMngr"};
 }
+
 
 
 sub __SetLayout {
@@ -171,21 +174,22 @@ sub __SetLayout {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-#	use aliased "Widgets::Forms::StandardFrm";
-#
-#	my @dimension = ( 500, 800 );
-#
-#	my $test = StandardFrm->new( -1, "Title", \@dimension );
-#
-#	my $pnl = Wx::Panel->new( $test->{"mainFrm"}, -1, [ -1, -1 ], [ 100, 100 ] );
-#	$pnl->SetBackgroundColour($Widgets::Style::clrLightRed);
-#	$test->AddContent($pnl);
-#
-#	$test->SetButtonHeight(20);
-#
-#	$test->AddButton( "Set", sub { Test(@_) } );
-#	$test->AddButton( "EE",  sub { Test(@_) } );
-#	$test->MainLoop();
+	use aliased "Widgets::Forms::StandardFrm";
+
+	my @dimension = ( 500, 800 );
+
+	my $test = StandardFrm->new( -1, "Title", \@dimension );
+
+	my $pnl = Wx::Panel->new( $test->{"mainFrm"}, -1, [ -1, -1 ], [ 100, 100 ] );
+	$pnl->SetBackgroundColour($Widgets::Style::clrLightRed);
+	$test->AddContent($pnl);
+
+	$test->SetButtonHeight(20);
+
+	$test->AddButton( "Set", sub { Test(@_) } );
+	$test->AddButton( "EE",  sub { Test(@_) } );
+	$test->{"mainFrm"}->Show();
+	$test->MainLoop();
 }
 
 #sub Test {

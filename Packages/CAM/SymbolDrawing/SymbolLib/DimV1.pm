@@ -85,7 +85,7 @@ sub __DefineSymbol {
 
 	# 1. arrow
 	my $arrw1LeftLine = PrimitiveLine->new( Point->new( $self->{"x"}, $self->{"y2"} ),
-										   Point->new( $self->{"x"} - $arrwSize, $self->{"y2"} + $arrwSize ),
+										   Point->new( $self->{"x"} - $arrwSize/2, $self->{"y2"} + $arrwSize ),
 										   $self->{"symbol"} );
 	my $arrw1RightLine = $arrw1LeftLine->Copy();
 	$arrw1RightLine->MirrorY();
@@ -96,7 +96,7 @@ sub __DefineSymbol {
 	# 2. arrow
 
 	my $arrw2LeftLine = PrimitiveLine->new( Point->new( $self->{"x"}, $self->{"y3"} ),
-										   Point->new( $self->{"x"} - $arrwSize, $self->{"y3"} - $arrwSize ),
+										   Point->new( $self->{"x"} - $arrwSize/2, $self->{"y3"} - $arrwSize ),
 										   $self->{"symbol"} );
 	my $arrw2RightLine = $arrw2LeftLine->Copy();
 	$arrw2RightLine->MirrorY();
@@ -110,6 +110,7 @@ sub __DefineSymbol {
 					  PrimitiveLine->new( Point->new( $self->{"x"}, $self->{"y1"} ), Point->new( $self->{"x"}, $self->{"y4"} ), $self->{"symbol"} ) );
 
 	# add text value
+
 
 	my $textPos = Point->new( $self->{"x"} + 2 , $self->{"y4"});
 

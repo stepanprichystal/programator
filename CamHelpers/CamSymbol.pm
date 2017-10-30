@@ -62,7 +62,8 @@ sub AddText {
 				 "mirror"    => $mirror,
 				 "angle"     => $angle,
 				 "direction" => "ccw",
-				 "w_factor"  => $lineWidth
+				 "w_factor"  => $lineWidth,
+				 attributes => 'yes'
 	);
 }
 
@@ -121,6 +122,7 @@ sub AddLine {
 				   "polarity" => $polarity
 	  );
 }
+ 
 
 sub AddPad {
 	my $self     = shift;

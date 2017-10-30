@@ -1,0 +1,25 @@
+tl = 0.1
+min = 0.169; max = 0.22; res = -30
+min = 0.22; max = 50; res = -50
+
+tl = 0.125 
+min = 0.18; max = 0.241; res = -30
+min = 0.242; max = 50; res = -60
+ 
+tl = 0.15 
+min = 0.219; max = 0.261; res = -30
+min = 0.261; max = 50; res = -75
+
+
+tl = 0.175 
+min = 0; max = 0; res = -87.5
+		 
+tl = 0.20 
+min = 0; max = 0; res = -100
+	 
+tl = 0.25 
+min = 0; max = 0; res = -125
+	 
+tl = 0.30 
+min = 0; max = 0; res = -150
+		 

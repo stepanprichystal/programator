@@ -33,7 +33,7 @@ use constant {
 	#    Jobs_PCBMDI => "r:\\pcb\\mdi\\",
 	#    Jobs_MDI => "r:\\mdi\\",
 	#    Jobs_JETPRINT => "r:\\potisk\\",
-
+ 
 #	Jobs_ARCHIV   => "\\\\dc2.gatema.cz\\r\\Archiv\\",
 #	Jobs_STACKUPS => "\\\\dc2.gatema.cz\\r\\PCB\\pcb\\VV_slozeni\\",
 #	Jobs_PCBMDI   => "\\\\dc2.gatema.cz\\r\\pcb\\mdi\\",
@@ -41,7 +41,8 @@ use constant {
 #	Jobs_JETPRINT => "\\\\dc2.gatema.cz\\r\\potisk\\",
 #	Jobs_ELTESTS =>  "\\\\dc2.gatema.cz\\EL_DATA\\",
 #	Jobs_ELTESTSIPC =>  "\\\\dc2.gatema.cz\\r\\El_tests\\",
-
+#	
+	
 	Jobs_ARCHIV   => "\\\\gatema.cz\\fs\\r\\Archiv\\",
 	Jobs_STACKUPS => "\\\\gatema.cz\\fs\\r\\PCB\\pcb\\VV_slozeni\\",
 	Jobs_PCBMDI   => "\\\\gatema.cz\\fs\\r\\pcb\\mdi\\",

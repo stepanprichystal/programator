@@ -422,7 +422,13 @@ sub SetDTMTable {
 	my $layer   = shift;
 	my $DTMType = shift;    # vysledne, vrtane
 
-	$inCAM->COM( 'tools_set', layer => $layer, thickness => '0', user_params => $DTMType );
+	CamHelper->SetStep( $inCAM, $step );
+	CamLayer->WorkLayer( $inCAM, $layer);
+
+	$inCAM->COM('tools_show', "layer" => $layer );
+	$inCAM->COM('tools_set', layer => $layer, thickness => '0', user_params => $DTMType );
+	$inCAM->COM('tools_recalc');
+	$inCAM->COM('tools_close');
 
 }
 

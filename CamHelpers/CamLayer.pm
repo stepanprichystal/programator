@@ -446,20 +446,28 @@ sub ClipAreaByProf {
 # Rotate layer by degree
 # Right step must be open and set
 # Requested data must be selected
+# Default rotaion ic CW
 sub RotateLayerData {
 	my $self   = shift;
 	my $inCAM  = shift;
 	my $layer  = shift;
 	my $degree = shift;
+	my $ccw = shift;
+	
+	my $dir = "cw";
+	
+	if($ccw){
+		$dir = "ccw";
+	}
 
 	$self->WorkLayer( $inCAM, $layer );
 
-	$inCAM->COM( "sel_transform", "oper" => "rotate", "angle" => $degree );
+	$inCAM->COM( "sel_transform", "oper" => "rotate", "angle" => $degree, "direction" => $dir);
 
 	$inCAM->COM( 'affected_layer', name => $layer, mode => "single", affected => "no" );
 }
 
-# Mirror layer by x OR y
+# Mirror layer by x OR y axis
 # Right step must be open and set
 # Requested data must be selected
 sub MirrorLayerData {
@@ -512,6 +520,39 @@ sub LayerIntersection {
  
 	return $lTmp2;
 
+}
+
+# Mirror data by profile center
+sub MirrorLayerByProfCenter {
+	my $self  = shift;
+	my $inCAM = shift;
+	my $jobId = shift;
+	my $step = shift;
+	my $layer = shift;
+	my $axis  = shift;
+
+	$self->WorkLayer( $inCAM, $layer );
+
+	my %lim = CamJob->GetProfileLimits2( $inCAM, $jobId, $step );
+
+	my $w = abs( $lim{"xMax"} - $lim{"xMin"} ) ;  
+	my $h = abs( $lim{"yMax"} - $lim{"yMin"} ) ;
+
+	my $centerX = $lim{"xMin"} + $w/2;
+	my $centerY = $lim{"yMin"} + $h/2;
+
+	if ( $axis eq "x" ) {
+
+		$inCAM->COM( "sel_transform", "x_anchor"=>$centerX,"y_anchor"=>$centerY, "oper" => "mirror\;rotate", "angle" => 180 );
+
+	}
+	elsif ( $axis eq "y" ) {
+
+		$inCAM->COM( "sel_transform", "x_anchor"=>$centerX,"y_anchor"=>$centerY,"oper" => "mirror" );
+
+	}
+	
+	$inCAM->COM( 'affected_layer', name => $layer, mode => "single", affected => "no" );
 }
 
 # Move layer data. Snapp point is left down
@@ -712,6 +753,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	my %lim = CamJob->GetProfileLimits2($inCAM, $jobId, "o+1");
 
 	my $res = CamLayer->LayerIntersection( $inCAM, "goldc", "c", \%lim );
+	 
 
 	print $res;
 

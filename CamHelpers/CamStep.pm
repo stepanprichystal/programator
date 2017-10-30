@@ -314,6 +314,27 @@ sub MoveStepData {
 	$inCAM->COM( 'delete_layer', layer => $lName );
 }
 
+# Copy step
+sub CopyStep {
+	my $self        = shift;
+	my $inCAM       = shift;
+	my $sourcejobId = shift;
+	my $sourceStep  = shift;
+	my $targetJob  = shift;
+	my $targetStep  = shift;
+	
+	$inCAM->COM(
+				 "copy_entity",
+				 "type"           => "step",
+				 "source_job"     => $sourcejobId,
+				 "source_name"    => $sourceStep,
+				 "dest_job"       => $targetJob,
+				 "dest_name"      => $targetStep,
+				 "dest_database"  => "",
+				 "remove_from_sr" => "yes"
+	);
+}
+
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#

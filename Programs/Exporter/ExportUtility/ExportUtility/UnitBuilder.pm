@@ -28,6 +28,7 @@ use aliased 'Programs::Exporter::ExportUtility::Groups::ScoExport::ScoWorkUnit';
 use aliased 'Programs::Exporter::ExportUtility::Groups::GerExport::GerWorkUnit';
 use aliased 'Programs::Exporter::ExportUtility::Groups::PdfExport::PdfWorkUnit';
 use aliased 'Programs::Exporter::ExportUtility::Groups::OutExport::OutWorkUnit';
+use aliased 'Programs::Exporter::ExportUtility::Groups::StnclExport::StnclWorkUnit';
 use aliased 'Programs::Exporter::ExportUtility::UnitEnums';
 
 #-------------------------------------------------------------------------------------------#
@@ -137,7 +138,13 @@ sub __GetUnitClass {
 
 		$unit = OutWorkUnit->new($unitId);
 
+	}elsif ( $unitId eq UnitEnums->UnitId_STNCL ) {
+
+		$unit = StnclWorkUnit->new($unitId);
+
 	}
+
+
 
 	return $unit;
 }
