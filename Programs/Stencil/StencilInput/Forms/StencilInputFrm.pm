@@ -1,6 +1,5 @@
 #-------------------------------------------------------------------------------------------#
-# Description:Programs::Stencil::StencilDrawing Popup, which shows result from export checking
-# Allow terminate thread, which does checking
+# Description: Form,  which create stencil job either from customer data or from existing job
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Programs::Stencil::StencilInput::Forms::StencilInputFrm;
@@ -25,7 +24,6 @@ use aliased 'CamHelpers::CamHelper';
 use aliased 'Helpers::GeneralHelper';
 use aliased 'CamHelpers::CamStepRepeat';
 use aliased 'CamHelpers::CamAttributes';
- 
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -87,11 +85,10 @@ sub __InputExistingJob {
 	# test if exist source job
 	if ( !CamJob->JobExist( $inCAM, $sourceJobId ) ) {
 
-		$self->{"messMngr"}->ShowModal( -1, EnumsGeneral->MessageType_WARNING, ["Job neexistuje v databázi, musíš ho nejprve odarchivovat."] );
+		$self->{"messMngr"}
+		  ->ShowModal( -1, EnumsGeneral->MessageType_WARNING, ["Job neexistuje v databázi, musíš ho nejprve odarchivovat."] );
 		return 0;
 	}
-	
-	
 
 	# validity of stencil job
 	if ( $jobId !~ /\w\d+/i ) {
@@ -99,12 +96,13 @@ sub __InputExistingJob {
 		$self->{"messMngr"}->ShowModal( -1, EnumsGeneral->MessageType_ERROR, ["Jméno stencil jobu není validní -  $jobId"] );
 		return 0;
 	}
-	
-	# test if  stencil job is type of stencil
-	 
-  	if(HegMethods->GetTypeOfPcb($jobId) ne 'Sablona'){
 
-		$self->{"messMngr"}->ShowModal( -1, EnumsGeneral->MessageType_ERROR, ["Job šablony $jobId není v IS veden jako typ dps - šablona."] );
+	# test if  stencil job is type of stencil
+
+	if ( HegMethods->GetTypeOfPcb($jobId) ne 'Sablona' ) {
+
+		$self->{"messMngr"}
+		  ->ShowModal( -1, EnumsGeneral->MessageType_ERROR, ["Job šablony $jobId není v IS veden jako typ dps - šablona."] );
 		return 0;
 	}
 
@@ -117,7 +115,12 @@ sub __InputExistingJob {
 			return 0;
 		}
 
-		CamJob->DeleteJob( $inCAM, $jobId );
+		unless ( $self->__DeleteJob($jobId) ) {
+
+			$self->{"mainFrm"}->Show();
+			return 0;
+
+		}
 	}
 
 	$self->{"mainFrm"}->Hide();
@@ -137,31 +140,49 @@ sub __InputExistingJob {
 		@steps = map { $_->{"stepName"} } CamStepRepeat->GetUniqueStepAndRepeat( $inCAM, $sourceJobId, "panel" );
 	}
 
+	# open source job
+	my $closeJob = 0;
+	unless ( CamJob->IsJobOpen( $inCAM, $sourceJobId ) ) {
+
+		$closeJob = 1;
+		$inCAM->COM( "open_job", job => "$sourceJobId", "open_win" => "no" );
+
+	}
+
 	foreach my $step (@steps) {
 
-		CamStep->CopyStep( $inCAM, $sourceJobId, $step, $jobId, "ori_" . $step );
+		CamStep->CopyStep( $inCAM, $sourceJobId, $step, $jobId, "ori_" . $sourceJobId . "_" . $step );
 	}
+
+	if ($closeJob) {
+		CamJob->CloseJob( $inCAM, $sourceJobId );
+	}
+	
+	$inCAM->COM( "open_job", job => "$jobId", "open_win" => "yes" );
 
 	# remove all useless layers, keep only sa-ori, sb-ori, o
 	my @del = grep { $_->{"gROWname"} !~ /(s[ab]-ori)|(o)/ } CamJob->GetAllLayers( $inCAM, $jobId );
-	 
+
 	foreach my $l (@del) {
 		$inCAM->COM( 'delete_layer', layer => $l->{"gROWname"} );
 	}
-	
+
 	while ( !scalar( grep { $_->{"gROWname"} =~ /s[ab]-ori/ } CamJob->GetAllLayers( $inCAM, $jobId ) ) ) {
 
-		$self->{"messMngr"}->ShowModal( -1, EnumsGeneral->MessageType_INFORMATION, ["Nebyly nalezeny vrstvy sa-ori nebo sb-ori"], ["Pořeším to", "Ukončit script"] );
-		
-		if($self->{"messMngr"}->Result() == 1){
+		$self->{"messMngr"}->ShowModal( -1,
+										EnumsGeneral->MessageType_INFORMATION,
+										["Nebyly nalezeny vrstvy sa-ori nebo sb-ori"],
+										[ "Pořeším to", "Ukončit script" ] );
+
+		if ( $self->{"messMngr"}->Result() == 1 ) {
 			$self->{"mainFrm"}->Destroy();
 		}
-		
+
 		$inCAM->PAUSE("Vytvor vrstvy sa-ori nebo sb-ori...");
 	}
- 
+
 	$inCAM->COM( "delete_entity", "job" => $jobId, "name" => "o", "type" => "step" );
-	$inCAM->COM( "set_subsystem","name"=>"1-Up-Edit");
+	$inCAM->COM( "set_subsystem", "name" => "1-Up-Edit" );
 	$self->__RunStencilCreator($jobId);
 
 }
@@ -201,12 +222,19 @@ sub __InputCustomerData {
 	# Check if job already exist
 	if ( CamJob->JobExist( $inCAM, $jobId ) ) {
 
-		$self->{"messMngr"}->ShowModal( -1, EnumsGeneral->MessageType_WARNING, ["Job $jobId již existuje, cheš ho přemazat?"], [ "Ano", "Ne" ] );
+		$self->{"messMngr"}
+		  ->ShowModal( -1, EnumsGeneral->MessageType_WARNING, ["Job $jobId již existuje, cheš ho přemazat?"], [ "Ano", "Ne" ] );
 		if ( $self->{"messMngr"}->Result() == 1 ) {
+			$self->{"mainFrm"}->Show();
 			return 0;
 		}
 
-		CamJob->DeleteJob( $inCAM, $jobId );
+		unless ( $self->__DeleteJob($jobId) ) {
+
+			$self->{"mainFrm"}->Show();
+			return 0;
+
+		}
 	}
 
 	# Input new data
@@ -214,13 +242,22 @@ sub __InputCustomerData {
 	my $oriStep = "ori_data";
 
 	$self->__CreateJob($jobId);
-	
+
 	CamHelper->SetStep( $inCAM, "o" );
-	$inCAM->COM( "rename_entity", "job" => $jobId, "name" => "o", "new_name" => $oriStep, "is_fw" => "no", "type" => "step", "fw_type" => "form" );
+	$inCAM->COM(
+				 "rename_entity",
+				 "job"      => $jobId,
+				 "name"     => "o",
+				 "new_name" => $oriStep,
+				 "is_fw"    => "no",
+				 "type"     => "step",
+				 "fw_type"  => "form"
+	);
 	$inCAM->COM( "input_create",   "path" => "$root" );
 	$inCAM->COM( "input_identify", "job"  => $jobId );
 
-	my @mess = ( "Načti správně data do výchozího stepu \"$oriStep\".", " - šablona pro TOP => sa-ori", " - šablona pro BOT => sb-ori" );
+	my @mess =
+	  ( "Načti správně data do výchozího stepu \"$oriStep\".", " - šablona pro TOP => sa-ori", " - šablona pro BOT => sb-ori" );
 
 	$self->{"messMngr"}->ShowModal( -1, EnumsGeneral->MessageType_INFORMATION, \@mess );
 
@@ -261,32 +298,75 @@ sub __InputCustomerData {
 sub __RunStencilCreator {
 	my $self  = shift;
 	my $jobId = shift;
- 
+
+	my $inCAM = $self->{"inCAM"};
+
 	eval {
 
-		local @_ = ($jobId);
-		require( GeneralHelper->Root() . '\Programs\Stencil\StencilCreator\RunStencil\RunStencilApp.pl' );
+		while (1) {
+
+			system( 'perl ' . GeneralHelper->Root() . '\Programs\Stencil\StencilCreator\RunStencil\RunStencilApp.pl ' . $jobId );
+
+			my $o1Exist  = CamHelper->StepExists( $inCAM, $jobId, "o+1" );
+			my $pnlExist = CamHelper->StepExists( $inCAM, $jobId, "panel" );
+
+			# If o+1 and panel exist, stencil creator was succes
+			if ( $o1Exist && $pnlExist ) {
+
+				last;
+			}
+			else {
+
+				$inCAM->PAUSE("Oprav chybu a pokra�uj...");
+			}
+
+		}
 
 	};
 	if ($@) {
 		$self->{"messMngr"}->ShowModal( -1, EnumsGeneral->MessageType_ERROR, [ "Error during launch stencil creator app." . $@ ] );
 
 	}
+
+	$self->{"mainFrm"}->Destroy();
+
 }
 
-sub __CreateJob{
+sub __DeleteJob {
 	my $self  = shift;
 	my $jobId = shift;
-	
-	
+
 	my $inCAM = $self->{"inCAM"};
-	
+
+	$inCAM->HandleException(1);
+
+	CamJob->DeleteJob( $inCAM, $jobId );
+
+	my $err = $inCAM->GetExceptionError();
+
+	$inCAM->HandleException(0);
+
+	if ($err) {
+
+		$self->{"messMngr"}->ShowModal( -1, EnumsGeneral->MessageType_ERROR, ["Error during delete job: $err"] );
+		return 0;
+	}
+
+	return 1;
+}
+
+sub __CreateJob {
+	my $self  = shift;
+	my $jobId = shift;
+
+	my $inCAM = $self->{"inCAM"};
+
 	$inCAM->COM( "new_job", "name" => $jobId, "db" => "incam", "customer" => "", "disp_name" => "", "notes" => "", "attributes" => "" );
 	$inCAM->COM( "check_inout", "mode" => "out", "type" => "job", "job" => $jobId );
 	$inCAM->COM( "open_job", "job" => $jobId, "open_win" => "yes" );
-	
+
 	my $userName = $ENV{"LOGNAME"};
-	CamAttributes->SetJobAttribute($inCAM, $jobId, "user_name", $userName);
+	CamAttributes->SetJobAttribute( $inCAM, $jobId, "user_name", $userName );
 }
 
 #-------------------------------------------------------------------------------------------#

@@ -89,7 +89,7 @@ sub __DefineSymbol {
 
 	# 1. arrow
 	my $arrw1BotLine = PrimitiveLine->new( Point->new( $self->{"x2"}, $self->{"y"} ),
-										   Point->new( $self->{"x2"} - $arrwSize, $self->{"y"} - $arrwSize ),
+										   Point->new( $self->{"x2"} - $arrwSize, $self->{"y"} - $arrwSize/2 ),
 										   $self->{"symbol"} );
 	my $arrw1TopLine = $arrw1BotLine->Copy();
 	$arrw1TopLine->MirrorX();
@@ -100,7 +100,7 @@ sub __DefineSymbol {
 	# 2. arrow
 
 	my $arrw2BotLine = PrimitiveLine->new( Point->new( $self->{"x3"}, $self->{"y"} ),
-										   Point->new( $self->{"x3"} + $arrwSize, $self->{"y"} - $arrwSize ),
+										   Point->new( $self->{"x3"} + $arrwSize, $self->{"y"} - $arrwSize/2 ),
 										   $self->{"symbol"} );
 	my $arrw2TopLine = $arrw2BotLine->Copy();
 	$arrw2TopLine->MirrorX();

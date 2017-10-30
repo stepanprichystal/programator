@@ -1,6 +1,9 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description:
+# Description: Helper for stencil creator:
+# - load stencil info from IS
+# - prepare default values for GUI
+# - prepare default values by specific cudtomer
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Programs::Stencil::StencilCreator::Helpers::DataHelper;

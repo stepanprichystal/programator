@@ -1,5 +1,5 @@
 #-------------------------------------------------------------------------------------------#
-# Description: Form, which allow set nif quick notes
+# Description: GUI of stencil creator
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Programs::Stencil::StencilCreator::Forms::StencilPopupFrm;

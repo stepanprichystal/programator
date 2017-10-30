@@ -1,6 +1,6 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Manager responsible for AOI files creation
+# Description: Manager responsible for export data for stencil production
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Packages::Export::StnclExport::StnclMngr;
@@ -10,10 +10,14 @@ use Class::Interface;
 &implements('Packages::Export::IMngr');
 
 #3th party library
+use utf8;
 use strict;
 use warnings;
+use File::Copy;
 
 #local library
+
+use aliased 'Helpers::JobHelper';
 use aliased 'CamHelpers::CamJob';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'Packages::Export::NifExport::NifMngr';
@@ -23,6 +27,10 @@ use aliased 'Programs::Stencil::StencilCreator::Enums'           => 'StnclEnums'
 use aliased 'Packages::Export::StnclExport::DataOutput::ExportDrill';
 use aliased 'Packages::Export::StnclExport::DataOutput::ExportEtch';
 use aliased 'Packages::Export::StnclExport::DataOutput::ExportLaser';
+use aliased 'Programs::Stencil::StencilSerializer::StencilSerializer';
+use aliased 'Packages::Pdf::ControlPdf::StencilControlPdf::ControlPdf';
+use aliased 'Connectors::HeliosConnector::HegMethods';
+use aliased 'Packages::Other::CustomerNote';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -40,10 +48,11 @@ sub new {
 	$self->{"exportData"}   = shift;
 	$self->{"exportPdf"}    = shift;
 	$self->{"stencilThick"} = shift;
+	$self->{"fiducInfo"}    = shift;
 
 	# PROPERTIES
 
-	my %stencilInfo = StencilHelper->GetStencilInfo($self->{"jobId"} );
+	my %stencilInfo = StencilHelper->GetStencilInfo( $self->{"jobId"} );
 
 	$self->{"stencilInfo"} = \%stencilInfo;
 
@@ -55,6 +64,13 @@ sub Run {
 
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
+
+	# Store info about fiducials to stencil parameter file
+	my $ser = StencilSerializer->new($jobId);
+	my $par = $ser->LoadStenciLParams();
+
+	$par->SetFiducial( $self->{"fiducInfo"} );
+	$ser->SaveStencilParams($par);
 
 	# Export nif
 	if ( $self->{"exportNif"} ) {
@@ -81,7 +97,7 @@ sub Run {
 
 		if ( $self->{"stencilInfo"}->{"tech"} eq StnclEnums->Technology_ETCH ) {
 
-			$export = ExportEtch->new( $inCAM, $jobId, $self->{"stencilThick"} );
+			$export = ExportEtch->new( $inCAM, $jobId, $self->{"stencilThick"}, $self->{"fiducInfo"} );
 
 		}
 		elsif ( $self->{"stencilInfo"}->{"tech"} eq StnclEnums->Technology_LASER ) {
@@ -98,6 +114,71 @@ sub Run {
 		$export->{"onItemResult"}->Add( sub { $self->__OnDataExport(@_) } );
 
 		$export->Output();
+
+	}
+
+	# Export pdf
+	if ( $self->{"exportPdf"} ) {
+
+		# choose language
+		my $defLang = "en";
+
+		my %inf = %{ HegMethods->GetCustomerInfo($jobId) };
+ 		
+ 		# 25 is CZ
+		if ( $inf{"zeme"} eq 25 ) {
+			$defLang = "cz";
+		}
+		
+		# Decide if ptv user info to pdf
+		my $note = CustomerNote->new( $inf{"reference_subjektu"} );
+		my $userInfo = 1;
+ 
+		if ($note->NoInfoToPdf()) {
+			$userInfo = 0;
+		}
+
+		my $pdf = ControlPdf->new( $inCAM, $jobId, "o+1", $defLang, $userInfo );
+		$pdf->Create();
+
+		my $result1 = $self->_GetNewItem( "Preview image", "Export pdf" );
+		my $mess1 = "";
+		unless ( $pdf->CreatePreview( \$mess1 ) ) {
+			$result1->AddError($mess1);
+		}
+		$self->_OnItemResult($result1);
+
+		my $result2 = $self->_GetNewItem( "Produce data", "Export pdf" );
+		my $mess2 = "";
+		unless ( $pdf->CreatePreviewSingle( \$mess2 ) ) {
+			$result2->AddError($mess2);
+		}
+		$self->_OnItemResult($result2);
+
+		my $result3 = $self->_GetNewItem( "Finalisation", "Export pdf" );
+		my $mess3 = "";
+		unless ( $pdf->GeneratePdf( \$mess3 ) ) {
+			$result2->AddError($mess3);
+		}
+		$self->_OnItemResult($result3);
+
+		# copy  pdf control to archive
+		my $outputPdf = $pdf->GetOutputPath();
+
+		unless ( -e $outputPdf ) {
+			die "Output pdf control doesnt exist. Failed to create control pdf.\n";
+		}
+
+		my $archivePath = JobHelper->GetJobArchive($jobId) . "zdroje\\" . $self->{"jobId"} . "-control.pdf";
+
+		if ( -e $archivePath ) {
+			unless ( unlink($archivePath) ) {
+				die "Can not delete old pdf control file (" . $archivePath . "). Maybe file is still open.\n";
+			}
+		}
+
+		copy( $outputPdf, $archivePath );
+		unlink($outputPdf);
 
 	}
 
@@ -139,14 +220,14 @@ sub TaskItemsCount {
 	if ( $self->{"exportNif"} ) {
 		$totalCnt += 2;    # nif export contain 2 items
 	}
-	
+
 	if ( $self->{"exportData"} ) {
 
 		$totalCnt += 3;    # NC export OR gerbers
 	}
 
 	if ( $self->{"exportPdf"} ) {
-		die "define item count";
+		$totalCnt += 3;    # pdf export
 	}
 
 	return $totalCnt;

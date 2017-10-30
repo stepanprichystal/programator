@@ -1,7 +1,7 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Base class for BIF builders. Nif Builder is responsible for
-# creation nif file depend on pcb type
+# Description: Stencil creator prepare stencil lazer for export
+# Provides stencil panelization and GUI
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Programs::Stencil::StencilCreator::StencilCreator;
@@ -30,6 +30,7 @@ use aliased 'Programs::Stencil::StencilCreator::DataMngr::StencilDataMngr::Stenc
 use aliased 'Programs::Stencil::StencilCreator::Enums';
 use aliased 'Programs::Stencil::StencilCreator::Helpers::Output';
 use aliased 'Programs::Stencil::StencilCreator::StencilPopup';
+use aliased 'Programs::Stencil::StencilLayer::StencilLayer';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -265,8 +266,14 @@ sub __RefreshForm {
 # Prepare final layer
 sub __OutputStencil {
 	my $self = shift;
-
-	$self->{"output"}->PrepareLayer();
+	
+	my $inCAM = $self->{"inCAM"};
+	my $jobId = $self->{"jobId"};
+ 
+	my $par = $self->{"output"}->SaveStencilParams($self->{"stencilSrc"}, $self->{"jobIdSrc"});
+	
+	my $stencilL = StencilLayer->new($inCAM, $jobId, $par);
+	$stencilL->PrepareLayer();
 	
 	$self->{"form"}->{"mainFrm"}->Close();
 }

@@ -10,6 +10,7 @@ use base('Packages::ItemResult::ItemEventMngr');
 use strict;
 use warnings;
 use Archive::Zip qw( :ERROR_CODES :CONSTANTS );
+use File::Copy;
 
 #local library
 use aliased 'Helpers::GeneralHelper';
@@ -95,7 +96,7 @@ sub __PrepareLayer {
 	my %layer    = ( "name" => $self->{"workLayer"}, "polarity" => "positive", "comp" => 0, "mirror" => 0, "angle" => 0 );
 	my @layers   = ( \%layer );
 
-	my $resultItemGer = $self->_GetNewItem("Layer measure");
+	my $resultItemGer = $self->_GetNewItem("Produce data");
 
 	Helper->ExportLayers2( $resultItemGer, $inCAM, $step, \@layers, $path, sub { return $fileName }, 0, 1 );
 

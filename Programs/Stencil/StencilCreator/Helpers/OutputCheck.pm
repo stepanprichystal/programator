@@ -1,6 +1,6 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description:
+# Description: Check stencil paremeters before export
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Programs::Stencil::StencilCreator::Helpers::OutputCheck;

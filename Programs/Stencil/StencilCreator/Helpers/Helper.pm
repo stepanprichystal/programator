@@ -1,6 +1,6 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description:
+# Description: Basic helper for stencils
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Programs::Stencil::StencilCreator::Helpers::Helper;

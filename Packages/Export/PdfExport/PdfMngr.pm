@@ -20,7 +20,7 @@ use aliased 'Enums::EnumsGeneral';
 use aliased 'Helpers::JobHelper';
 use aliased 'CamHelpers::CamHelper';
 use aliased 'Packages::Pdf::StackupPdf::StackupPdf';
-use aliased 'Packages::Pdf::ControlPdf::ControlPdf';
+use aliased 'Packages::Pdf::ControlPdf::PcbControlPdf::ControlPdf';
 use aliased 'Packages::Pdf::PressfitPdf::PressfitPdf';
 
 #-------------------------------------------------------------------------------------------#

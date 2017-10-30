@@ -13,8 +13,8 @@ use aliased 'Packages::Events::Event';
 use aliased 'Programs::Exporter::ExportUtility::UnitEnums';
 use aliased 'Managers::MessageMngr::MessageMngr';
 
-use aliased "Programs::Exporter::ExportChecker::Groups::StnclExport::Presenter::StnclUnit"  => "Unit";
-use aliased "Programs::Exporter::ExportUtility::Groups::StnclExport::StnclWorkUnit" => "UnitExport";
+use aliased "Programs::Exporter::ExportChecker::Groups::StnclExport::Presenter::StnclUnit" => "Unit";
+use aliased "Programs::Exporter::ExportUtility::Groups::StnclExport::StnclWorkUnit"        => "UnitExport";
 
 use aliased 'Programs::Exporter::ExportChecker::ExportChecker::DefaultInfo::DefaultInfo';
 use aliased 'Packages::ItemResult::ItemResultMngr';
@@ -25,14 +25,15 @@ use aliased 'Packages::ItemResult::ItemResultMngr';
 
 my $resultMess = "";
 my $succes     = 1;
+
 sub new {
 
 	my $self = shift;
 	$self = {};
 	bless $self;
-	
-	$self->{"id"} =  UnitEnums->UnitId_STNCL;
-	
+
+	$self->{"id"} = UnitEnums->UnitId_STNCL;
+
 	return $self;
 }
 
@@ -67,9 +68,13 @@ sub Run {
 	}
 
 	my $taskData = $unit->GetExportData($inCAM);
+	
+	# TEST
+	my %fiduc = ( "halfFiducials" => 1, "fiducSide" => "nonreadable" );
+	$taskData->SetFiducialInfo( \%fiduc );
+
 	my $exportClass = UnitExport->new( $self->{"id"} );
 	$exportClass->SetTaskData($taskData);
- 
 
 	$exportClass->Init( $inCAM, $jobId, $taskData );
 	$exportClass->{"onItemResult"}->Add( sub { Test(@_) } );
@@ -116,15 +121,13 @@ sub Run {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-#	use aliased 'Programs::Exporter::ExportUtility::Groups::PlotExport::PlotExportTmp';
-#	my $checkOk  = 1;
-#	my $jobId    = "f13610";
-#	my $stepName = "panel";
-#	my $inCAM    = InCAM->new();
+	#	use aliased 'Programs::Exporter::ExportUtility::Groups::PlotExport::PlotExportTmp';
+	#	my $checkOk  = 1;
+	#	my $jobId    = "f13610";
+	#	my $stepName = "panel";
+	#	my $inCAM    = InCAM->new();
 
 	#GET INPUT NIF INFORMATION
-
-	 
 
 }
 

@@ -1,6 +1,6 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Application logic of checking and processing reorder
+# Description: Application logic of checking stencil before echport
 # Logic for poup form
 # Author:SPR
 #-------------------------------------------------------------------------------------------#

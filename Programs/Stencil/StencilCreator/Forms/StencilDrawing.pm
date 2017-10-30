@@ -1,6 +1,6 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Custom queue list. Keep items of type MyWxCustomQueueItem
+# Description: Contain drawing canvas for draw preview of stencil
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Programs::Stencil::StencilCreator::Forms::StencilDrawing;

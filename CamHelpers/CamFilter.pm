@@ -99,6 +99,8 @@ sub SelectBySingleAtt {
 	$inCAM->COM( 'filter_area_end', filter_name => 'popup', operation => 'select' );
 
 	$inCAM->COM( 'filter_reset', filter_name => 'popup' );
+	
+ 
 
 	$inCAM->COM('get_select_count');
 
@@ -266,13 +268,15 @@ sub ByBoundBox {
 	my $inCAM    = shift;
 	my $minWidth = shift;
 	my $maxWidth = shift;
-
-	$inCAM->COM( "set_filter_type", "filter_name" => "", "lines" => "yes", "pads" => "yes", "surfaces" => "yes", "arcs" => "yes", "text" => "yes" );
-	$inCAM->COM( "set_filter_polarity", "filter_name" => "", "positive" => "yes", "negative" => "yes" );
-
+	
+ 	$inCAM->COM( 'filter_reset', filter_name => 'popup' );
+ 	$inCAM->COM("reset_filter_criteria","filter_name"=>"","criteria"=>"all");
+ 	$inCAM->COM( "set_filter_type", "filter_name" => "", "lines" => "yes", "pads" => "yes", "surfaces" => "yes", "arcs" => "yes", "text" => "yes" );
+ 	$inCAM->COM( "set_filter_polarity", "filter_name" => "", "positive" => "yes", "negative" => "yes" );
+	
+ 	
+	
 	$inCAM->COM('adv_filter_reset');
-	$inCAM->COM('filter_area_strt');
-
 	$inCAM->COM(
 				 'adv_filter_set',
 				 "filter_name"  => 'popup',
@@ -283,15 +287,14 @@ sub ByBoundBox {
 				 "min_length"   => '0',
 				 "max_length"   => '0'
 	);
+	
+	$inCAM->COM('filter_area_strt');
 
 	$inCAM->COM(
 				 'filter_area_end',
 				 "layer"          => '',
 				 "filter_name"    => 'popup',
-				 "operation"      => 'select',
-				 "area_type"      => 'none',
-				 "inside_area"    => 'no',
-				 "intersect_area" => 'no'
+				 "operation"      => 'select' 
 	);
 
 	return $inCAM->GetReply();
