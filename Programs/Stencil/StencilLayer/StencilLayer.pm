@@ -21,6 +21,7 @@ use aliased 'Packages::CAMJob::Panelization::SRStep';
 use aliased 'CamHelpers::CamSymbol';
 use aliased 'CamHelpers::CamLayer';
 use aliased 'CamHelpers::CamJob';
+use aliased 'CamHelpers::CamHistogram';
 use aliased 'Programs::Stencil::StencilCreator::Helpers::Helper';
 use aliased 'CamHelpers::CamStepRepeat';
 use aliased 'CamHelpers::CamDTM';
@@ -272,6 +273,9 @@ sub __PrepareFinalLayer {
 			CamDTM->SetDTMTable( $inCAM, $jobId, $self->{"stencilStep"}, $self->{"finalLayer"}, EnumsDrill->DTM_VRTANE );
 		}
 	}
+	
+	
+	$self->__CreatePads($self->{"finalLayer"});
 
 }
 
@@ -354,8 +358,38 @@ sub __PreparePcbNumber {
 		CamSymbol->AddText( $inCAM, uc($jobId), \%pos, 5.08, 2, $mirror );
 
 		CamSymbol->ResetCurAttributes($inCAM);
-
 	}
+}
+
+# If some pad is surface or line, create pad from him
+sub __CreatePads {
+	my $self  = shift;
+	my $lName = shift;
+
+	my $inCAM = $self->{"inCAM"};
+	my $jobId = $self->{"jobId"};
+	my $step  = $self->{"stencilStep"};
+	
+	CamLayer->WorkLayer( $inCAM, $lName);
+ 	$inCAM->COM( 'sel_break');
+	$inCAM->COM( 'sel_contourize', "accuracy"  => '6.35', "break_to_islands" => 'yes', "clean_hole_size" => '60',  "clean_hole_mode" => 'x_and_y' );
+	$inCAM->COM( 'sel_cont2pad',   "match_tol" => '25.4', "restriction"      => '',    "min_size"        => '127', "max_size"        => '12000' );
+	
+
+	# test on  lines presence
+	my %fHist = CamHistogram->GetFeatuesHistogram( $inCAM, $jobId, $step, $lName );
+	if ( $fHist{"line"} > 0 || $fHist{"arc"} > 0 ) {
+
+		die "Error during convert featrues to apds. Layer ("
+		  . $self->{"workLayer"}
+		  . ") can't contain line and arcs. Only pad and surfaces are alowed.";
+	}
+	
+	# check error on surfaces
+	if ( $fHist{"surf"} == 1 && $fHist{"pad"} == 0) {
+		die "Error during creating pads in stencil";
+	}
+
 }
 
 
