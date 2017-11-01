@@ -295,10 +295,10 @@ sub OnCheckGroupData {
 
 				if ( @{ $pads{$l} } ) {
 
-					$mess .= "\nMissing pads for drilling in layer: \"$l\", holes:";
+					$mess .= "\nMissing pads for drilling in signal layer: \"$l\", holes:";
 
 					my @pads =
-					  map { "\n- Pad id: \"" . $_->{"featId"} . "\", missing pads in signal layers: \"" . join( ", ", @{ $_->{"missing"} } ) . "\"" }
+					  map { "\n- Drill hole (pad id: \"" . $_->{"featId"} . "\"), missing pads in signal layers: \"" . join( ", ", @{ $_->{"missing"} } ) . "\"" }
 					  @{ $pads{$l} };
 
 					$mess .=  join("", @pads);	

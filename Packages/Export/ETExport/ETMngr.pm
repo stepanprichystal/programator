@@ -30,6 +30,7 @@ use aliased 'Packages::ETesting::ExportIPC::ExportIPC';
 use aliased 'Managers::AsyncJobMngr::Helper' => 'AsyncHelper';
 use aliased 'Enums::EnumsPaths';
 use aliased 'Connectors::HeliosConnector::HegMethods';
+use aliased 'CamHelpers::CamNetlist';
 
 
 #-------------------------------------------------------------------------------------------#
@@ -62,7 +63,7 @@ sub Run {
 	my $jobId = $self->{"jobId"};
 	
 	# Remove "nestlist helper" steps
-	$self->__RemoveNetlistSteps();
+	CamNetlist->RemoveNetlistSteps($inCAM, $jobId);
 	
 	$self->{"exportIPC"}->Export();
 	
@@ -71,18 +72,7 @@ sub Run {
 	
 }
  
-# Remove "nestlist helper" steps
-sub __RemoveNetlistSteps{
-	my $self = shift;
-	
-	my $inCAM = $self->{"inCAM"};
-	my $jobId = $self->{"jobId"};
-	
-	foreach my $step (JobHelper->GetNetlistStepNames()){
-		
-		CamStep->DeleteStep( $inCAM, $jobId, $step );
-	}
-} 
+  
  
  
  # If exist reoreder on Na priprave and export is server version AND et test not exist, copy opc to special folder

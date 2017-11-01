@@ -125,7 +125,7 @@ sub __MissingPadsExsit {
 
 	CamLayer->WorkLayer( $inCAM, $ncLayer );
 
-	CamFilter->SelectByReferenece( $inCAM, $jobId, "cover", $ncLayer, undef, undef, undef, $sigLayer );
+	CamFilter->SelectByReferenece( $inCAM, $jobId, "multi_cover", $ncLayer, undef, undef, undef, $sigLayer );
 
 	$inCAM->COM('sel_reverse');
 
@@ -154,7 +154,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	use aliased 'Packages::InCAM::InCAM';
 
 	my $inCAM = InCAM->new();
-	my $jobId = "f52456";
+	my $jobId = "d34092";
 	my $step  = "o+1";
 
 	my @childs = CamStepRepeat->GetUniqueDeepestSR( $inCAM, $jobId, "panel" );

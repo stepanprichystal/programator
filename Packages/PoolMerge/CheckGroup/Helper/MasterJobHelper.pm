@@ -16,6 +16,7 @@ use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'CamHelpers::CamHelper';
 use aliased 'CamHelpers::CamStep';
 use aliased 'Helpers::JobHelper';
+use aliased 'CamHelpers::CamNetlist';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -115,21 +116,28 @@ sub CheckMasterJob {
 	# 1) check if master job contains only two steps: o+1 and iput step
 
 	my @steps = CamStep->GetAllStepNames( $inCAM, $masterjob );
-	my $str = join( "; ", @steps );
+	my $strAll = join( "; ", @steps );
 
 	# Remove o+1_single step if exist, only 2 steps should left
 
 	# all alowed master steps
-	my @allowed = ( CamStep->GetReferenceStep( $inCAM, $masterjob, "o+1" ), "o+1", "o+1_single", JobHelper->GetNetlistStepNames() );
+	my @allowed =
+	  ( CamStep->GetReferenceStep( $inCAM, $masterjob, "o+1" ), 
+	  "o+1", 
+	  "o+1_single", 
+	  "o+1_panel", 
+	  CamNetlist->GetNetlistSteps( $inCAM, $masterjob ) );
+	  
 	my %tmp;
 	@tmp{@allowed} = ();
 	@steps = grep { !exists $tmp{$_} } @steps;
- 
+
 	if ( scalar(@steps) > 0 ) {
-		my $str = join(", ", @steps);
-		my $allow = join(", ", @allowed);
-		$$mess .= "Master job (\"$masterjob\") can contain only  steps: $allow.\n";
-		$$mess .= "But master job contains steps: $str.";
+		my $str   = join( "; ", @steps );
+		 
+		
+		$$mess .= "Master job \"$masterjob\" can't contain steps: $str.\n";
+		$$mess .= "Current master job steps: $strAll.\n";
 
 		$result = 0;
 	}
@@ -180,22 +188,22 @@ sub __MasterCandidate {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-		use aliased 'Packages::PoolMerge::CheckGroup::Helper::MasterJobHelper';
-		use aliased 'Packages::InCAM::InCAM';
-	
-		my $inCAM = InCAM->new();
-	
-		my $jobName   = "f52456";
-		my $stepName  = "panel";
-		my $layerName = "c";
-	
-		my $mess = "";
-	
-		my $mngr = MasterJobHelper->new( $inCAM );
-		$mngr->CheckMasterJob($jobName, \$mess);
-		
-		print $mess;
-		
+	use aliased 'Packages::PoolMerge::CheckGroup::Helper::MasterJobHelper';
+	use aliased 'Packages::InCAM::InCAM';
+
+	my $inCAM = InCAM->new();
+
+	my $jobName   = "f52457";
+	my $stepName  = "panel";
+ 
+
+	my $mess = "";
+
+	my $mngr = MasterJobHelper->new($inCAM);
+	$mngr->CheckMasterJob( $jobName, \$mess );
+
+	print $mess;
+
 }
 
 1;

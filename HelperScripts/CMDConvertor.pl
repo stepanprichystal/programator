@@ -7,8 +7,7 @@ use warnings;
 
 
 # ============ INPUT LINE =================
-my $inputLine ="profile_rect,x1=-9.3743775,y1=42.59963,x2=11.2259975,y2=59.6292725";
-
+my $inputLine ="COM chklist_single,show=yes,action=valor_cleanup_auto_subst";
  
 
 my $output = "\$inCAM->COM(";

@@ -42,6 +42,9 @@ sub new {
 		mkdir( $self->{"reportPaths"} ) or die "Can't create dir: " . $self->{"reportPaths"} . $_;
 	}
 
+	$self->{"refNetlistName"}  = "ori_netlist_";     # Name of netlist step, which contain referenc steps - ori_netlist_<name of edited step>
+	$self->{"editNetlistName"} = "edit_netlist_";    # Name of netlist step, which contain edited steps - edit_netlist_<name of edited step>
+
 	return $self;
 }
 
@@ -54,27 +57,26 @@ sub Compare1Up {
 
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
+ 
 
-	$self->{"inCAM"}->COM("disp_off");
-
-	my $stepRef = undef;
-
+	my $refStepNet = $self->{"refNetlistName"} .$editStep; #  ori_netlist_<name of edited step>
+ 
 	if ($pnlBased) {
 
 		# Reference step is flattened step based on panel step $pnlBased
 
-		$stepRef = $self->__CreateRefStep($pnlBased);
+		$self->__CreateRefPanelStep($pnlBased, $refStepNet);
 
 		# Move pcb to zero point
 		my %limEdit = CamJob->GetProfileLimits2( $inCAM, $jobId, $editStep );
-		my %limRef  = CamJob->GetProfileLimits2( $inCAM, $jobId, $stepRef );
+		my %limRef  = CamJob->GetProfileLimits2( $inCAM, $jobId, $refStepNet );
 
 		if ( abs( $limEdit{"xMin"} - $limRef{"xMin"} ) > 0.01 || abs( $limEdit{"yMin"} - $limRef{"yMin"} ) > 0.01 ) {
 
 			my %source = ( "x" => $limRef{"xMin"},  "y" => $limRef{"yMin"} );
 			my %target = ( "x" => $limEdit{"xMin"}, "y" => $limEdit{"yMin"} );
 
-			CamStep->MoveStepData( $inCAM, $jobId, $stepRef, \%source, \%target );
+			CamStep->MoveStepData( $inCAM, $jobId, $refStepNet, \%source, \%target );
 		}
 
 	}
@@ -87,18 +89,33 @@ sub Compare1Up {
 			die "Can't compare \"$editStep\" netlist by function \"NetlistCompare::Compare1Up\", because there are Step and Repeat steps.";
 		}
 
-		$stepRef = CamStep->GetReferenceStep( $inCAM, $jobId, $editStep );
+		my $stepRef = CamStep->GetReferenceStep( $inCAM, $jobId, $editStep );
 		unless ( defined $stepRef ) {
 			die "Reference (original) step doesn't exist for: " . $editStep;
 		}
+
+		# 2) copy "input" step in order create pads
+		CamStep->DeleteStep( $inCAM, $jobId, $refStepNet );
+
+		$inCAM->COM(
+					 'copy_entity',
+					 "type"           => 'step',
+					 "source_job"     => $jobId,
+					 "source_name"    => $stepRef,
+					 "dest_job"       => $jobId,
+					 "dest_name"      => $refStepNet,
+					 "dest_database"  => "",
+					 "remove_from_sr" => "yes"
+		);
+
 	}
 
-	my $r = $self->__CompareNetlist( $editStep, $stepRef );
+	# Create pads on reference step
+	$self->__CreatePads($refStepNet);
 
-	$self->{"inCAM"}->COM("disp_on");
-
+	my $r = $self->__CompareNetlist( $editStep, $refStepNet );
+ 
 	return $r;
-
 }
 
 # Compare step with Step and repeat, return netlist report
@@ -110,22 +127,26 @@ sub ComparePanel {
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
 
-	$self->{"inCAM"}->COM("disp_off");
 
-	my $stepRef = undef;    # if step ref not defined, create own step with original data
+	my $refStepNet = $self->{"refNetlistName"} .$editStep; #  ori_netlist_<name of edited step>
+	my $editStepNet = $self->{"editNetlistName"} .$editStep; #  ori_netlist_<name of edited step>
 
 	# 1) test if panel contain SR steps
 	unless ( CamStepRepeat->ExistStepAndRepeats( $inCAM, $jobId, $editStep ) ) {
 		die "Can't compare \"$editStep\" netlist by  function \"NetlistCompare::ComparePanel\", because there is no Step and Repeat inside.";
 	}
+ 
+	$self->__CreateRefPanelStep($editStep, $refStepNet);
+	
+	# Create pads on reference step
+	$self->__CreatePads($refStepNet);
 
-	my $editPnlFlat = $editStep . "_netlist";
-	my $refPnlFlat  = $self->__CreateRefStep($editStep);
+	CamStep->CreateFlattenStep( $inCAM, $jobId, $editStep, $editStepNet, 0 );
+	
+	
+	my $r = $self->__CompareNetlist( $editStepNet, $refStepNet );
 
-	CamStep->CreateFlattenStep( $inCAM, $jobId, $editStep, $editPnlFlat, 0 );
-	my $r = $self->__CompareNetlist( $editPnlFlat, $refPnlFlat );
-
-	$self->{"inCAM"}->COM("disp_on");
+	 
 
 	return $r;
 
@@ -160,9 +181,10 @@ sub GetStoredReports {
 # Create reference, flateneed step, based on given "panel step"
 # Assume SR steps inside contains "edited"
 # steps (which will be automatically replaced with reference/original steps)
-sub __CreateRefStep {
+sub __CreateRefPanelStep {
 	my $self    = shift;
 	my $pnlStep = shift;
+	my $refStepName = shift; # final name of ref step: ori_netlist_<name of edited step>
 
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
@@ -269,14 +291,22 @@ sub __CreateRefStep {
 											$srRow->{"gSRxa"},                 $srRow->{"gSRxa"},
 											$srRow->{"gSRxa"},
 		  )
-
 	}
+
+	# Remove rout and drill layer from ref panel
+	my @nclayers =
+	  map { $_->{"gROWname"} }
+	  grep { $_->{"gROWlayer_type"} eq "rout" || $_->{"gROWlayer_type"} eq "drill" } CamJob->GetBoardLayers( $inCAM, $jobId );
+	  
+	CamHelper->SetStep( $inCAM, $panelRef );
+	CamLayer->ClearLayers($inCAM);
+	CamLayer->AffectLayers( $inCAM, \@nclayers );
+	$inCAM->COM('sel_delete');
+	CamLayer->ClearLayers($inCAM);
 
 	# Flatten created $panelRef
 
-	my $refPnlFlat = $panelRef . "_netlist";
-
-	CamStep->CreateFlattenStep( $inCAM, $jobId, $panelRef, $refPnlFlat, 0 );
+	CamStep->CreateFlattenStep( $inCAM, $jobId, $panelRef, $refStepName, 0 );
 
 	CamStep->DeleteStep( $inCAM, $jobId, $panelRef );    # delete panel ref
 
@@ -284,8 +314,6 @@ sub __CreateRefStep {
 
 		CamStep->DeleteStep( $inCAM, $jobId, $mapRefTmp{$step} );    # delete clipepd ref steps
 	}
-
-	return $refPnlFlat;
 
 }
 
@@ -360,6 +388,40 @@ sub __CompareNetlist {
 	return $r;
 }
 
+# Create pads on all signal layers
+sub __CreatePads {
+	my $self  = shift;
+	my $step  = shift;
+	 
+	
+	my $inCAM = $self->{"inCAM"};
+	my $jobId = $self->{"jobId"};
+
+	CamHelper->SetStep( $inCAM, $step );
+	my $signal = join( ";", CamJob->GetSignalLayerNames( $inCAM, $jobId ) );
+
+	$inCAM->COM("chklist_single","show" => "yes","action" => "valor_cleanup_auto_subst");
+
+	$inCAM->COM(
+		"chklist_cupd",
+		"chklist" => "valor_cleanup_auto_subst",
+		"nact"    => "1",
+		"params"  => "((pp_layer=$signal)(pp_auto_ref=Auto Ref.))",
+		"mode"    => "regular"
+	);
+
+	$inCAM->COM(
+				 "chklist_set_hdr",
+				 "chklist"    => "valor_cleanup_auto_subst",
+				 "run"        => "activated",
+				 "area"       => "global",
+				 "mask"       => "None",
+				 "mask_usage" => "include"
+	);
+
+	$inCAM->COM( "chklist_run", "chklist" => "valor_cleanup_auto_subst", "nact" => "1" );
+}
+
 sub __StoreResult {
 	my $self     = shift;
 	my $editStep = shift;
@@ -368,7 +430,7 @@ sub __StoreResult {
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
 
-	my $file = $self->{"reportPaths"} .  $editStep . "_X_" .  $stepRef;
+	my $file = $self->{"reportPaths"} . $editStep . "_X_" . $stepRef;
 	$inCAM->COM( "netlist_save_compare_results", "output" => "file", "out_file" => $file );
 
 	my $r = NetlistReport->new($file);
@@ -387,11 +449,12 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId = "f52457";
+	my $jobId = "f52456";
 
 	my $nc = NetlistCompare->new( $inCAM, $jobId );
 
 	#my $report = $nc->ComparePanel("mpanel");
+
 	my $report = $nc->Compare1Up( "o+1", "o+1_panel" );
 
 	print $report->Result();

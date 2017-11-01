@@ -19,6 +19,7 @@ use aliased 'CamHelpers::CamStepRepeat';
 use aliased 'CamHelpers::CamJob';
 use aliased 'Helpers::JobHelper';
 use aliased 'Packages::CAM::Netlist::NetlistCompare';
+use aliased 'CamHelpers::CamNetlist';
 
 #-------------------------------------------------------------------------------------------#
 #  Public method
@@ -30,6 +31,8 @@ sub DoControl {
 	my $jobId = shift;
 
 	my $result = 1;
+	
+ 
 
 	my $messMngr = MessageMngr->new($jobId);
 
@@ -78,51 +81,39 @@ sub DoControl {
 			}
 		}
 
-		unless ( $report->Result() ) {
+
+		if( $report->Result()){
+			
+			 my @mess = ( "Netlistová kontrola stepu: \"$s\" proběhla <b>ÚSPĚŠNĚ</b>.", 
+			 ,  " - kontrolované stepy:  ". $report->GetStepRef() . " (originál) vs "  . $report->GetStep()." (upravený)");
+		 	$messMngr->ShowModal( -1, EnumsGeneral->MessageType_INFORMATION, \@mess );
+		 	
+		 	CamHelper->SetStep($inCAM, $s);
+		 	
+		 	CamNetlist->RemoveNetlistSteps( $inCAM, $jobId, $s);
+ 		 	 
+		}else {
 
 			$result = 0;
 
 			my @mess = (
-						 "Dps neprošla kontrolou netlistů ("
-						   . $report->GetShorts()
+						 "Dps <b>NEPROŠLA</b> netlistovou kontrolou pro step: \"$s\"!",
+						   " - ".$report->GetShorts()
 						   . " shorts, "
 						   . $report->GetBrokens()
-						   . " brokens). Kontrolované stepy: "
-						   . $report->GetStep() . ", "
-						   . $report->GetStepRef(),
-						 "Pro informaci o způsobu kontroly netlistů => OneNote - Netlist kontrola"
+						   . " brokens",
+						  ,  " - kontrolované stepy:  ". $report->GetStepRef() . " (originál) vs "  . $report->GetStep()." (upravený)",
+						 " - Pro informaci o způsobu kontroly netlistů => OneNote - Netlist kontrola"
 			);
 
 			$messMngr->ShowModal( -1, EnumsGeneral->MessageType_ERROR, \@mess );
 		}
-
-		if ( $i + 1 != scalar(@steps) ) {
-			$inCAM->PAUSE( "Pokraracovat v kontrole netlistů pro další step: " . $steps[ $i + 1 ] );
-		}
-
 	}
-	
-	# test if exist helper netlist steps
-	# If so, delete after user check compare netlist result
-	my @netlistSteps = JobHelper->GetNetlistStepNames();
-	for(my $i = scalar (@netlistSteps)-1; $i >= 0; $i--){
-		my $s = $netlistSteps[$i];
-		
-		if(! CamHelper->StepExists(  $inCAM, $jobId, $s) ){
-			
-			splice @netlistSteps, $i, 1;
-		}	
-	}
-	
-	if(@netlistSteps){
-		$inCAM->PAUSE( "Smazat pomocne netlist stepy: " . join(",", @netlistSteps) );
-		$self->__RemoveNetlistSteps( $inCAM, $jobId);
-	}
-
+ 
 	return $result;
 }
 
-# check if
+# check if exist helper panel "o+1_panel"
 sub __CheckO1Panel {
 	my $self     = shift;
 	my $inCAM    = shift;
@@ -149,8 +140,8 @@ sub __CheckO1Panel {
 		unless ($$pnlExist) {
 
 			my @mess =
-			  (   "Step \"o+1\" nemá stejné rozměry jako \"$ref\", tedy \"o+1\" je flatennovaný panel.\n"
-				. "Pomocný panel \"o+1_panel\ ale neexistuje, nelze porovnat netlisty. Vytvoř ho nebo porovnej alespoň  \"o+1_single\" s \"$ref\""
+			  (   "Step \"o+1\" namá stejné rozměry jako \"$ref\", tedy \"o+1\" je flatennovaný panel.\n"
+				. "Pomocný panel \"o+1_panel\ ale neexistuje, nelze porovnat netlisty. Vytvoř ho nebo porovnej alespoň \"o+1_single\" s \"$ref\""
 			  );
 
 			$messMngr->ShowModal( -1, EnumsGeneral->MessageType_ERROR, \@mess );
@@ -186,7 +177,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId = "f52456";
+	my $jobId = "f52457";
 
 	my $res = NetlistControl->DoControl( $inCAM, $jobId );
 
