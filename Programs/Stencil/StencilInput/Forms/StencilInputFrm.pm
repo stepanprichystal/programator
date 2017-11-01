@@ -150,8 +150,29 @@ sub __InputExistingJob {
 	}
 
 	foreach my $step (@steps) {
-
-		CamStep->CopyStep( $inCAM, $sourceJobId, $step, $jobId, "ori_" . $sourceJobId . "_" . $step );
+		
+		# check if step is not already exist
+		my $oriStepName = "ori_" . $sourceJobId . "_" .  $step; 
+		
+		if(CamHelper->StepExists($inCAM, $jobId, $oriStepName)){
+			next;
+		}
+ 
+		CamStep->CopyStep( $inCAM, $sourceJobId, $step, $jobId, $oriStepName );
+		
+		# when we copy step with S&R from other job, all steps are copied to
+		# so rename nested step in order to avoid name conflicts
+		if( CamStepRepeat->ExistStepAndRepeats( $inCAM, $sourceJobId, $step )){
+			
+			my @sr = CamStepRepeat->GetUniqueNestedStepAndRepeat( $inCAM, $sourceJobId, $step );
+			
+			# rename all nested steps in panel to ori_<job id>_<original nested name>
+			foreach my $sr (@sr){
+				
+				 my $newName = "ori_" . $sourceJobId . "_" .  $sr->{"stepName"}; 
+				 CamStep->RenameStep( $inCAM, $jobId, $sr->{"stepName"}, $newName);
+			}
+		}
 	}
 
 	if ($closeJob) {
@@ -161,7 +182,7 @@ sub __InputExistingJob {
 	$inCAM->COM( "open_job", job => "$jobId", "open_win" => "yes" );
 
 	# remove all useless layers, keep only sa-ori, sb-ori, o
-	my @del = grep { $_->{"gROWname"} !~ /(s[ab]-ori)|(o)/ } CamJob->GetAllLayers( $inCAM, $jobId );
+	my @del = grep { $_->{"gROWname"} !~ /^(s[ab]-ori)|(o)$/ } CamJob->GetAllLayers( $inCAM, $jobId );
 
 	foreach my $l (@del) {
 		$inCAM->COM( 'delete_layer', layer => $l->{"gROWname"} );
@@ -290,6 +311,7 @@ sub __InputCustomerData {
 		$self->{"messMngr"}->ShowModal( -1, EnumsGeneral->MessageType_INFORMATION, ["Nebyl nalezen profil, vytvoř ho."] );
 
 		$inCAM->PAUSE("Vytvor profil...");
+		
 	}
 
 	$self->__RunStencilCreator($jobId);
@@ -317,7 +339,11 @@ sub __RunStencilCreator {
 			}
 			else {
 
-				$inCAM->PAUSE("Oprav chybu a pokra�uj...");
+				if($inCAM->PAUSE("Oprav chybu a pokračuj...") ne "OK"){
+					
+					last;
+				}
+ 
 			}
 
 		}

@@ -202,7 +202,7 @@ sub CreateProfileRect {
 sub CreateProfileByLayer {
 	my $self  = shift;
 	my $inCAM = shift;
-	my $step      = shift;
+	my $step  = shift;
 	my $layer = shift;
 
 	CamHelper->SetStep( $inCAM, $step );
@@ -260,8 +260,6 @@ sub GetReferenceStep {
 	return $refStep;
 }
 
-
-
 # If step exist, delete it and return 1
 sub DeleteStep {
 	my $self  = shift;
@@ -296,8 +294,8 @@ sub MoveStepData {
 	CamHelper->SetStep( $inCAM, $step );
 
 	my $lName = GeneralHelper->GetGUID();
- 	$self->ProfileToLayer($inCAM, $step, $lName, 200);
-	
+	$self->ProfileToLayer( $inCAM, $step, $lName, 200 );
+
 	# 1) move all layers data
 	my @layers = map { $_->{"gROWname"} } CamJob->GetAllLayers( $inCAM, $jobId );
 
@@ -309,8 +307,8 @@ sub MoveStepData {
 	CamLayer->ClearLayers($inCAM);
 
 	# 2) create new profile
- 	
-	$self->CreateProfileByLayer($inCAM, $step, $lName);
+
+	$self->CreateProfileByLayer( $inCAM, $step, $lName );
 	$inCAM->COM( 'delete_layer', layer => $lName );
 }
 
@@ -320,9 +318,9 @@ sub CopyStep {
 	my $inCAM       = shift;
 	my $sourcejobId = shift;
 	my $sourceStep  = shift;
-	my $targetJob  = shift;
+	my $targetJob   = shift;
 	my $targetStep  = shift;
-	
+
 	$inCAM->COM(
 				 "copy_entity",
 				 "type"           => "step",
@@ -332,6 +330,24 @@ sub CopyStep {
 				 "dest_name"      => $targetStep,
 				 "dest_database"  => "",
 				 "remove_from_sr" => "yes"
+	);
+}
+# Rename step
+sub RenameStep {
+	my $self        = shift;
+	my $inCAM       = shift;
+	my $jobId = shift;
+	my $oldName = shift;
+	my $newName  = shift;
+ 
+	$inCAM->COM(
+				 "rename_entity",
+				 "job"      => $jobId,
+				 "name"     => $oldName,
+				 "new_name" => $newName,
+				 "is_fw"    => "no",
+				 "type"     => "step",
+				 "fw_type"  => "form"
 	);
 }
 

@@ -174,7 +174,7 @@ sub __PrepareTopBotLayer {
 		$self->__RemovePcbId($lData);
 	}
 
-	$self->__CreatePads($lData);
+	$self->__CheckPads($lData);
 
 	$self->__DoComp($lData);
 
@@ -253,7 +253,7 @@ sub __PrepareMeasureLayer {
 }
 
 # If some pad is surface or line, create pad from him
-sub __CreatePads {
+sub __CheckPads {
 	my $self  = shift;
 	my $lName = shift;
 

@@ -90,10 +90,13 @@ sub __PrepareLayer {
 	my $step  = $self->{"step"};
 
 	# 1) Export layer
+	my $lName = GeneralHelper->GetGUID();
+	$inCAM->COM( "merge_layers", "source_layer" => $self->{"workLayer"}, "dest_layer" => $lName );
+	$inCAM->COM( "profile_to_rout", "layer" => $lName, "width" => "300" );
 
 	my $fileName = GeneralHelper->GetGUID();
 	my $path     = EnumsPaths->Client_INCAMTMPOTHER;
-	my %layer    = ( "name" => $self->{"workLayer"}, "polarity" => "positive", "comp" => 0, "mirror" => 0, "angle" => 0 );
+	my %layer    = ( "name" => $lName, "polarity" => "positive", "comp" => 0, "mirror" => 0, "angle" => 0 );
 	my @layers   = ( \%layer );
 
 	my $resultItemGer = $self->_GetNewItem("Produce data");
@@ -101,6 +104,8 @@ sub __PrepareLayer {
 	Helper->ExportLayers2( $resultItemGer, $inCAM, $step, \@layers, $path, sub { return $fileName }, 0, 1 );
 
 	$self->_OnItemResult($resultItemGer);
+	
+	$inCAM->COM( 'delete_layer', layer => $lName );
 
 	my %info = ( "name" => "_t.ger", "path" => $path . $fileName );
 
@@ -108,28 +113,7 @@ sub __PrepareLayer {
 
 }
 
-# If some pad is surface or line, create pad from him
-sub __CreatePads {
-	my $self  = shift;
-	my $lName = shift;
-
-	my $inCAM = $self->{"inCAM"};
-	my $jobId = $self->{"jobId"};
-	my $step  = $self->{"step"};
-
-	$inCAM->COM( 'sel_contourize', "accuracy"  => '6.35', "break_to_islands" => 'yes', "clean_hole_size" => '60',  "clean_hole_mode" => 'x_and_y' );
-	$inCAM->COM( 'sel_cont2pad',   "match_tol" => '25.4', "restriction"      => '',    "min_size"        => '127', "max_size"        => '12000' );
-
-	# test on lines
-	my %fHist = CamHistogram->GetFeatuesHistogram( $inCAM, $jobId, $step, $lName );
-	if ( $fHist{"line"} > 0 || $fHist{"arc"} > 0 ) {
-
-		die "Error during convert featrues to apds. Layer ("
-		  . $self->{"workLayer"}
-		  . ") can't contain line and arcs. Only pad and surfaces are alowed.";
-	}
-
-}
+ 
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

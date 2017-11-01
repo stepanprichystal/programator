@@ -753,6 +753,8 @@ sub PAUSE {
 	$self->{STATUS}  = $self->__GetReply();
 	$self->{READANS} = $self->__GetReply();
 	$self->{PAUSANS} = $self->__GetReply();
+	
+	return $self->{PAUSANS};
 }
 
 # Get the mouse position

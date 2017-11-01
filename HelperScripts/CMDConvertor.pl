@@ -7,7 +7,7 @@ use warnings;
 
 
 # ============ INPUT LINE =================
-my $inputLine ="netlist_delete,job=f52457,step=o+1,type=cur,layers_list=";
+my $inputLine ="rename_entity,job=f52456,name=o+1_panelee,new_name=o+1_paneleeq,is_fw=no,type=step,fw_type=form";
  
 
 my $output = "\$inCAM->COM(";
