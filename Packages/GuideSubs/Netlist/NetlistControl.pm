@@ -90,6 +90,7 @@ sub DoControl {
 		 	
 		 	CamHelper->SetStep($inCAM, $s);
 		 	
+		 	$inCAM->COM( 'rv_tab_empty', report => 'netlist_compare', is_empty => 'yes' );
 		 	CamNetlist->RemoveNetlistSteps( $inCAM, $jobId, $s);
  		 	 
 		}else {

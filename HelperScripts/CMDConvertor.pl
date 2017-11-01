@@ -7,7 +7,7 @@ use warnings;
 
 
 # ============ INPUT LINE =================
-my $inputLine ="COM chklist_single,show=yes,action=valor_cleanup_auto_subst";
+my $inputLine ="netlist_delete,job=f52457,step=o+1,type=cur,layers_list=";
  
 
 my $output = "\$inCAM->COM(";
