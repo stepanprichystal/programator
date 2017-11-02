@@ -14,11 +14,10 @@ use lib qw( C:\Perl\site\lib\TpvScripts\Scripts );
 use aliased 'Packages::InCAM::InCAM';
 use aliased 'Programs::Exporter::ExportUtility::Groups::PlotExport::PlotExportTmp';
 
-<<<<<<< HEAD
-my $jobId    = "f13610";
-=======
-my $jobId    = "f52457";
->>>>>>> refs/heads/sablony
+ 
+my $jobId    = "f87929";
+ 
+ 
 my $inCAM    = InCAM->new();
 
 

@@ -28,7 +28,7 @@ use warnings;
   	$self->{"mirror"} = shift;
  	$self->{"compensation"} = shift;
  	$self->{"pcbSize"} = shift;
-  	$self->{"pcbLimits"} = shift;
+  	$self->{"pcbLimits"} = shift; # limits by frmames (big/small) taken from layer c
  	# Helper propery, when create opfx
  	
  	$self->{"outputLayer"} = undef;  #name of final output layer, contain rotated, mirrored, comp data

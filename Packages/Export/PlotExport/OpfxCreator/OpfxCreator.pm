@@ -96,13 +96,45 @@ sub __PrepareLayer {
 	my $plotLayer = shift;
 
 	my $inCAM = $self->{"inCAM"};
+	my $jobId = $self->{"jobId"};
 
 	my $lName = GeneralHelper->GetGUID();
 	$plotLayer->{"outputLayer"} = $lName;
 
 	$inCAM->COM( 'flatten_layer', "source_layer" => $plotLayer->GetName(), "target_layer" => $lName );
 
-	# 1) Find Olec marks and move them by 0.03 mm towards the nearest corner. Request by Temny
+	# Select pom layer as work
+	CamLayer->WorkLayer( $inCAM, $lName );
+
+	# 1) Do solid file, from profile to "layer limits" (limits are given by small or big frame)
+	# Only mask layer
+	if ( $plotLayer->GetName() =~ /m[cs]$/ ) {
+
+		# Compute margin of filling from pcb profile
+		my %pLim = CamJob->GetProfileLimits2( $inCAM, $jobId, $self->{"plotStep"} );
+		my $pW   = abs( $pLim{"xMax"} - $pLim{"xMin"} );
+		my $pH   = abs( $pLim{"yMax"} - $pLim{"yMin"} );
+
+		my $marginX = abs( $pW - $plotLayer->GetWidth() );
+		my $marginY = abs( $pH - $plotLayer->GetHeight() );
+
+		# Do fill
+		$inCAM->COM(
+					 "sr_fill",
+					 "type"            => "solid",
+					 "solid_type"      => "surface",
+					 "step_margin_x"   => -$marginX,
+					 "step_margin_y"   => -$marginY,
+					 "step_max_dist_x" => 0,
+					 "step_max_dist_y" => 0,
+					 "consider_feat"   => "yes",
+					 "feat_margin"     => "0",
+					 "dest"            => "layer_name",
+					 "layer"           => $lName
+		);
+	}
+
+	# 2) Find Olec marks and move them by 0.03 mm towards the nearest corner. Request by Temny
 	foreach my $plnPlace ( ( "left-top", "right-top", "right-bot", "left-bot" ) ) {
 
 		my $f = FeatureFilter->new( $inCAM, $self->{"jobId"}, $lName );
@@ -126,14 +158,11 @@ sub __PrepareLayer {
 		}
 	}
 
-	# Select pom layer as work
-	CamLayer->WorkLayer( $inCAM, $lName );
-
-	# 2) Remove frame
+	# 3) Remove frame
 
 	CamLayer->ClipLayerData( $inCAM, $lName, $plotLayer->GetLimits() );
 
-	# 2) Optimize lazer in order contain only one level of features
+	# 4) Optimize lazer in order contain only one level of features
 
 	if ( $plotLayer->GetName() =~ /^c$/ || $plotLayer->GetName() =~ /^s$/ || $plotLayer->GetName() =~ /^v\d$/ ) {
 
@@ -141,7 +170,7 @@ sub __PrepareLayer {
 		CamLayer->WorkLayer( $self->{"inCAM"}, $lName );
 	}
 
-	# 3) Compensate layer
+	# 5) Compensate layer
 	if ( $plotLayer->GetComp() != 0 ) {
 
 		my $comp = $plotLayer->GetComp();
@@ -156,7 +185,7 @@ sub __PrepareLayer {
 		CamLayer->CompensateLayerData( $inCAM, $lName, $plotLayer->GetComp() );
 	}
 
-	# 4) change polarity
+	# 6) change polarity
 
 	my $plotPolar = $plotSet->GetPolarity();
 	if ( $plotPolar eq "mixed" && $plotLayer->GetPolarity() eq "negative" ) {
@@ -164,13 +193,13 @@ sub __PrepareLayer {
 		CamLayer->NegativeLayerData( $inCAM, $lName, $plotLayer->{"pcbLimits"} );
 	}
 
-	# 5) Rotate layer
+	# 7) Rotate layer
 	if ( $plotSet->GetOrientation() eq Enums->Ori_HORIZONTAL ) {
 
 		CamLayer->RotateLayerData( $inCAM, $lName, 270 );
 	}
 
-	# 6) Mirror layer
+	# 8) Mirror layer
 	if ( $plotLayer->Mirror() ) {
 
 		CamLayer->MirrorLayerData( $inCAM, $lName, "y" );
