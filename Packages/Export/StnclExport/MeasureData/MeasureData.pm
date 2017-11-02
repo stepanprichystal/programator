@@ -48,16 +48,59 @@ sub Output {
 
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
+	
+	my $stencilLayer = undef;
+	
+	if(CamHelper->LayerExists($inCAM,$jobId, "ds" )){
+		
+		$stencilLayer = "ds";
+		
+	}elsif(CamHelper->LayerExists($inCAM,$jobId, "flc" )){
+		
+		$stencilLayer = "flc";
+		
+	}else{
+		
+		die "No stencil layer";
+	}
+	
+	my @feats = $self->__GetPadFeats($stencilLayer);
+	
+	unless(scalar(@feats)){
+		die "No stencil pads found";
+	}
+	
+	
+	
+	my ($x, $y) = $feats[0]->{"symbol"} =~ /(\d+\.?\d*)x(\d+\.?\d*)/i;
 
-	my $la
+	if(!defined $x || !defined $y){
+		
+		die "Can't parse dimension of smallest pad"
+	}
+ 
+	my $title = $jobId. " - ".sprintf("%.1fµm", $x)."x".sprintf("%.1fµm", $y);
 
+	
+	my $pdf = MeasureDataPdf->new($inCAM, $jobId);
+	
+	 my @ids = map {$_->{"id"} } @feats;
+	$pdf->Create($self->{"step"}, $stencilLayer, \@ids, \$title)
+	
+	 {
+	my $self         = shift;
+	my $step         = shift;
+	my $stencilLayer = shift;
+	my $feats        = shift;                                                                        # array of feat id
+	my $title        = shift;   
+	 
 }
 
 #-------------------------------------------------------------------------------------------#
 # Private methods
 #-------------------------------------------------------------------------------------------#
 
-sub __GetPadFeatIds {
+sub __GetPadFeats {
 	my $self  = shift;
 	my $layer = shift;
 
@@ -66,7 +109,7 @@ sub __GetPadFeatIds {
 
 	my $f = Features->new();
 
-	my @featIds = ();
+	my @feats = ();
 
 	for ( my $i = 0.1 ; $i < 25 ; $i += 0.1 ) {
 
@@ -75,17 +118,13 @@ sub __GetPadFeatIds {
 			my @feat = (1388);
 			$f->Parse( $inCAM, $jobId, $self->{"step"}, $layer, 0, 1 );
 
-			my @features = $f->GetFeatures();
-			
-			 
-
+			@feats = $f->GetFeatures();
+ 
 			last;
-
-			my @layers = ($lName);
-			CamLayer->CopySelected( $inCAM, \@layers, 0, 100 );
 		}
-
 	}
+	
+	return @feats;
 
 }
 
