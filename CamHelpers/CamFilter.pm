@@ -76,6 +76,10 @@ sub SelectByFeatureIndexes {
 		$inCAM->COM( 'filter_reset', filter_name => 'popup' );
 	}
 
+	$inCAM->COM('get_select_count');
+
+	return $inCAM->GetReply();
+
 }
 
 # Select all attributes of step in hash
