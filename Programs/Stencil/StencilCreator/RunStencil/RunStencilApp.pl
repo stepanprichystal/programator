@@ -78,12 +78,11 @@ sub __CheckBeforeRun {
 		return 0;
 	}
 
-	unless ( defined $stencilInfo{"type"} ) {
-
-		$$mess .= "Nebyl dohledán typ šablony (TOP, BOT, TOP+BOT). Zapište typ do poznámky v IS.";
-		return 0;
-	}
-
+#	unless ( defined $stencilInfo{"type"} ) {
+#
+#		$$mess .= "Nebyl dohledán typ šablony (TOP, BOT, TOP+BOT). Zapište typ do poznámky v IS.";
+#		return 0;
+#	}
 	
 	my @layers  = CamJob->GetAllLayers( $inCAM, $jobId );
 	my $saExist = scalar( grep { $_->{"gROWname"} =~ /sa-ori/ } @layers );

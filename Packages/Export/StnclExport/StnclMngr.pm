@@ -65,12 +65,7 @@ sub Run {
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
 
-	# Store info about fiducials to stencil parameter file
-	my $ser = StencilSerializer->new($jobId);
-	my $par = $ser->LoadStenciLParams();
 
-	$par->SetFiducial( $self->{"fiducInfo"} );
-	$ser->SaveStencilParams($par);
 
 	# Export nif
 	if ( $self->{"exportNif"} ) {

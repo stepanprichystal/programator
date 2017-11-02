@@ -16,6 +16,7 @@ use File::Copy;
  
 
 use aliased 'Programs::Exporter::ExportUtility::DataTransfer::UnitsDataContracts::StnclData';
+use aliased 'Programs::Stencil::StencilSerializer::StencilSerializer';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -42,6 +43,20 @@ sub OnExportGroupData {
 	my $jobId = $dataMngr->{"jobId"};
 
 	my $stepName = "panel";
+ 
+ 
+ 	# Store info from export to stencil params file
+ 	
+	my $ser = StencilSerializer->new($jobId);
+	my $par = $ser->LoadStenciLParams();
+
+	# Fiducials 
+	$par->SetFiducial( $groupData->GetFiducialInfo() );
+	
+	# Stencil thickness
+	$par->SetThickness( $groupData->GetThickness() );
+	
+	$ser->SaveStencilParams($par);
  
 	my $exportData = StnclData->new();
  

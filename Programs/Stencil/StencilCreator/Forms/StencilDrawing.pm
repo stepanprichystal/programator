@@ -135,18 +135,18 @@ sub __DrawJobId {
 		
 		$dc->SetBrush( Wx::Brush->new( 'black', &Wx::wxBRUSHSTYLE_TRANSPARENT ) );
 
-		$dc->SetFont( Wx::Font->new( 7, &Wx::wxFONTFAMILY_DEFAULT, &Wx::wxFONTSTYLE_NORMAL, &Wx::wxFONTWEIGHT_NORMAL ) );
+		$dc->SetFont( Wx::Font->new( 6, &Wx::wxFONTFAMILY_DEFAULT, &Wx::wxFONTSTYLE_NORMAL, &Wx::wxFONTWEIGHT_NORMAL ) );
 
 		my $text = "";
 		my $st   = $self->{"dataMngr"}->GetStencilType();
 
 		if ( $st eq Enums->StencilType_TOP || $st eq Enums->StencilType_TOPBOT ) {
 
-			$dc->DrawText( "X00000", 15, 12 );
+			$dc->DrawText( "X00000", 15, 10.5 );
 		}
 		elsif ( $st eq Enums->StencilType_BOT ) {
 
-			$dc->DrawText( "00000X", $self->{"layoutMngr"}->GetWidth() - 40, 12 );
+			$dc->DrawText( "00000X", $self->{"layoutMngr"}->GetWidth() - 40, 10.5);
 		}
 	}
 

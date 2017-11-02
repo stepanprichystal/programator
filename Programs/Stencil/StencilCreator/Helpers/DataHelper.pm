@@ -193,9 +193,22 @@ sub SetDefaultByIS {
 	my $stencilType = $stencilInfo{"type"};
 	unless ( defined $stencilType ) {
 
-		$$mess .= "Nebyl dohledán typ šablony (top, bot, top+bot) v IS. Bude nastaven defaultní typ: \"TOP\".\n";
+		# check if exist sa-ori
+		my $topLayer = Helper->GetStencilOriLayer( $inCAM, $jobId, "top" );
+		my $botLayer = Helper->GetStencilOriLayer( $inCAM, $jobId, "bot" );
+
+		if($topLayer){
+			
+			$$mess .= "Nebyl dohledán typ šablony (top, bot, top+bot) v IS. Bude nastaven typ: \"TOP\" podle vrstvy sa-ori.\n";
+			$stencilType = Enums->StencilType_TOP;
+		
+		}elsif($botLayer){
+			
+			$$mess .= "Nebyl dohledán typ šablony (top, bot, top+bot) v IS. Bude nastaven typ: \"BOT\" podle vrstvy sb-ori.\n";
+			$stencilType = Enums->StencilType_BOT;
+		}
+ 
 		$result = 0;
-		$stencilType = Enums->StencilType_TOP;
 	}
 
 	$self->{"dataMngr"}->SetStencilType( $stencilType );

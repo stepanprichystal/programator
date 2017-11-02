@@ -246,7 +246,7 @@ sub GetSchema {
 }
 
 # ----------------------------------------------------
-# Fiducial information
+# Extra information - not from Stencil creator, but from ExportChecker settings
 # ---------------------------------------------------- 
   # contain hash reference with info
 # "halfFiducials" => 1/0
@@ -263,6 +263,22 @@ sub GetFiducial {
 	
 	return $self->{"data"}->{"fiducials"};
 }
+ 
+ 
+# Stencil thickness
+ sub SetThickness {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->{"data"}->{"thickness"} = $val;
+}
+
+sub GetThickness {
+	my $self = shift;
+	
+	return $self->{"data"}->{"thickness"};
+}
+
  
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

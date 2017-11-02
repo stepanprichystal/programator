@@ -93,7 +93,7 @@ sub GetStencilInfo {
 	}
 
 	# parse thick
-	if ( $inf =~ /\d+x\d+x(\d+.?\d*)/i ) {
+	if ( $inf =~ /\d+x\d+x(\d+[\.,]?\d*)/i ) {
 		$stencilInf{"thick"} = $1;
 	}
 	elsif ( $inf =~ /tl.*(\d+[\.,]\d+)/i ) {
@@ -103,6 +103,8 @@ sub GetStencilInfo {
 
 		$stencilInf{"thick"} = sprintf( "%.3f", $1 / 100 );
 	}
+	
+	$stencilInf{"thick"} =~ s/,/\./;
 
 	return %stencilInf;
 
@@ -146,14 +148,16 @@ sub GetStencilSourceSteps {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	use aliased 'Programs::Stencil::StencilCreator::StencilCreator';
+	use aliased 'Programs::Stencil::StencilCreator::Helpers::Helper';
 	use aliased 'Packages::InCAM::InCAM';
 
 	my $inCAM = InCAM->new();
-	my $jobId = "f13609";
+	my $jobId = "f13610";
 
-	my $creator = StencilCreator->new( $inCAM, $jobId );
-	$creator->Run();
+	my %inf = Helper->GetStencilInfo( $jobId );
+	
+	print "test";
+	 
 
 }
 

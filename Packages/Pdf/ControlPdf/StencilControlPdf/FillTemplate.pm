@@ -96,7 +96,7 @@ sub Fill {
 	my $dim =
 	    sprintf( "%0.1f mm", $params->GetStencilSizeX() ) . " x "
 	  . sprintf( "%0.1f mm", $params->GetStencilSizeY() ) . " x "
-	  . sprintf( "%0.3f mm", $inf{"thick"} );
+	  . sprintf( "%0.3f mm", $params->GetThickness() );
 	$template->SetKey( "DimensionVal", $dim );
 
 	$template->SetKey( "PutIntoFrame", "Stick into frame", "Vlepit do rámu" );

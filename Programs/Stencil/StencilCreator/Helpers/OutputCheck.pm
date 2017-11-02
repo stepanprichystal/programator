@@ -258,6 +258,22 @@ sub Check {
 		}
 
 	}
+	
+	# Check standard schema dont touch with pcb drilled number
+	if ( $self->{"dataMngr"}->GetAddPcbNumber() && $self->{"dataMngr"}->GetSchemaType() eq Enums->Schema_STANDARD ) {
+
+		 my %area = $self->{"stencilMngr"}->GetStencilActiveArea();
+
+		my $areaBot = ( $self->{"stencilMngr"}->GetHeight() - $area{"h"} ) / 2;
+		$areaBot -= $self->{"dataMngr"}->GetHoleSize()/2;
+
+		# if there is less space then 8mm for pcb number (from stencil bot edge to schema holes)
+		if ($areaBot < 8 ) {
+
+			$self->__AddError("Pozor upínací otvory zasahují do \"čísla šablony\". Zmenší nebo posuň toto číslo ve vrstvě ds/flc.\n");
+		}
+
+	}	
 
 	return $result;
 }
