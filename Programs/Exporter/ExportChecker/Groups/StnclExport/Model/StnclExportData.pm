@@ -49,6 +49,7 @@ sub OnExportGroupData {
 	$exportData->SetExportNif( $groupData->GetExportNif() );
 	$exportData->SetExportData( $groupData->GetExportData() );
     $exportData->SetExportPdf( $groupData->GetExportPdf() );
+    $exportData->SetExportMeasureData( $groupData->GetExportMeasureData() );
     $exportData->SetFiducialInfo( $groupData->GetFiducialInfo() );
     
     

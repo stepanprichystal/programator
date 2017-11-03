@@ -42,14 +42,16 @@ use constant {
 #	Jobs_ELTESTS =>  "\\\\dc2.gatema.cz\\EL_DATA\\",
 #	Jobs_ELTESTSIPC =>  "\\\\dc2.gatema.cz\\r\\El_tests\\",
 #	
-	
+		
 	Jobs_ARCHIV   => "\\\\gatema.cz\\fs\\r\\Archiv\\",
 	Jobs_STACKUPS => "\\\\gatema.cz\\fs\\r\\PCB\\pcb\\VV_slozeni\\",
 	Jobs_PCBMDI   => "\\\\gatema.cz\\fs\\r\\pcb\\mdi\\",
 	Jobs_MDI      => "\\\\gatema.cz\\fs\\r\\mdi\\",
 	Jobs_JETPRINT => "\\\\gatema.cz\\fs\\r\\potisk\\",
 	Jobs_ELTESTS =>  "\\\\gatema.cz\\fs\\EL_DATA\\",
-	Jobs_ELTESTSIPC =>  "\\\\gatema.cz\\fs\\r\\El_tests\\"
+	Jobs_ELTESTSIPC =>  "\\\\gatema.cz\\fs\\r\\El_tests\\",
+	Jobs_STENCILDATA   => "\\\\gatema.cz\\fs\\r\\Kooperace_sablony\\",
+	Jobs_COOPERDRILL   => "\\\\gatema.cz\\fs\\r\\Kooperace_drillMap\\",
 	
 	# docana zmena
 #	Jobs_ARCHIV   => "\\\\fs1.gatema.cz\\ps_data\\r\\Archiv\\",

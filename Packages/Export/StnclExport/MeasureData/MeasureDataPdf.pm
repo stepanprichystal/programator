@@ -18,6 +18,7 @@ use aliased 'CamHelpers::CamHelper';
 use aliased 'CamHelpers::CamLayer';
 use aliased 'Enums::EnumsPaths';
 use aliased 'CamHelpers::CamJob';
+use aliased 'CamHelpers::CamFilter';
 use aliased 'CamHelpers::CamSymbol';
 
 #-------------------------------------------------------------------------------------------#
@@ -59,7 +60,10 @@ sub Create {
 	my $dataLayer = $self->__PrepareDataLayer($stencilLayer);
 	my $padLayer = $self->__PreparePadLayer( $step, $stencilLayer, $feats, $title );
 	$self->__OutputPdf( $step, $dataLayer, $padLayer );
-
+	
+	#$inCAM->COM( 'delete_layer', layer => $dataLayer );
+	#$inCAM->COM( 'delete_layer', layer => $padLayer );
+	
 	return 1;
 }
 
@@ -115,9 +119,10 @@ sub __PreparePadLayer {
 	}
 
 	# prepare title
+	CamLayer->WorkLayer( $inCAM, $lName );
 	my %lim = CamJob->GetProfileLimits2( $inCAM, $jobId, $step );
 
-	CamSymbol->AddText( $inCAM, $title, { "x" => $lim{"xMin"}, "y" => $lim{"yMax"} }, 6, 1 );
+	CamSymbol->AddText( $inCAM, $title, { "x" => $lim{"xMin"}, "y" => $lim{"yMax"} +2 }, 6, 2 );
 
 	return $lName;
 }
@@ -157,7 +162,7 @@ sub __OutputPdf {
 				 right_margin      => '0',
 				 "x_spacing"       => '0',
 				 "y_spacing"       => '0',
-				 "color1"          => '909090',
+				 "color1"          => '707070',
 				 "color2"          => '990000'
 	);
 

@@ -22,6 +22,7 @@ use aliased 'Enums::EnumsPaths';
 use aliased 'Packages::Gerbers::ProduceData::ProduceData';
 use aliased 'Helpers::JobHelper';
 use aliased 'Packages::ETesting::ExportIPC::ExportIPC';
+use aliased 'Packages::Export::OutExport::MeasureData';
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
@@ -42,6 +43,7 @@ sub new {
 	
 	$self->{"exportIPC"} = ExportIPC->new($self->{"inCAM"}, $self->{"jobId"}, $self->{"cooperStep"}, 1  );	
 	$self->{"exportIPC"}->{"onItemResult"}->Add( sub { $self->__OnCooperETResult(@_) } );
+	$self->{"measureData"} = MeasureData->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"cooperStep"} );
 
 	return $self;
 }
@@ -75,7 +77,12 @@ sub __ExportCooperation {
 	my $jobId = $self->{"jobId"};
 
 
-	# 1) Export cooperation data
+	# 1) export pdf for measurement
+	
+	$self->{"measureData"}->Output();
+
+
+	# 2) Export cooperation data
 	my $produceData = ProduceData->new( $inCAM, $jobId, $self->{"cooperStep"} );
 
 	$produceData->{"onItemResult"}->Add( sub { $self->__OnCooperGerResult(@_) } );
@@ -91,6 +98,8 @@ sub __ExportCooperation {
 	}
 
 	move( $sourcePath, $archivPath . $jobId . "_data.zip" ) or die "Can't move file to : " . $archivPath . $jobId . "_data.zip" . $_;
+	
+	
  
 }
 

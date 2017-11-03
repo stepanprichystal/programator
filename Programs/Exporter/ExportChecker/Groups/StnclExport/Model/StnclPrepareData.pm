@@ -64,6 +64,7 @@ sub OnPrepareGroupData {
 	$groupData->SetExportNif(1);
 	$groupData->SetExportData(1);
 	$groupData->SetExportPdf(1);
+	$groupData->SetExportMeasureData(1);
 	$groupData->SetThickness($stencilInfo{"thick"});
 
 	return $groupData;
