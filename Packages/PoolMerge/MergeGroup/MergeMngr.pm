@@ -63,12 +63,10 @@ sub Run {
 	}
 
 	$self->_OnPoolItemResult($stateRes);
-	
- 
 
 	# 2) Copy child step to master job
 
-	$self->{"copySteps"}->CopySteps($masterJob);
+	$self->{"copySteps"}->CopyChildSteps($masterJob);
 
 	# 3) Final check of step copy
 	my $stepCopyCheckRes = $self->_GetNewItem("Step copy check");

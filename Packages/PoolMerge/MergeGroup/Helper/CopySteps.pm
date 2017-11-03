@@ -59,7 +59,7 @@ sub SetNewJobsState {
 
 
 
-sub CopySteps {
+sub CopyChildSteps {
 	my $self      = shift;
 	my $masterJob = shift;
 
