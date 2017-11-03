@@ -206,8 +206,9 @@ sub OnCheckGroupData {
 		}
 	}
 
-	# 8) check if  if positive inner layer contains theraml pads
-	if ( $defaultInfo->GetLayerCnt() > 2 ) {
+	# 8) check if  if positive inner layer contains theraml pads 
+	# (only standard orders, because nagative layers are converted to positive when pool )
+	if ( $defaultInfo->GetLayerCnt() > 2 && !$defaultInfo->IsPool()) {
 
 		my @layers = $defaultInfo->GetSignalLayers();
 

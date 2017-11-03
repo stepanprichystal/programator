@@ -51,7 +51,7 @@ sub new {
 	$self->{"jobId"}    = shift;
 	$self->{"pdfStep"}  = shift;
 
-	$self->{"profileLim"} = undef;    # limits of pdf step
+	$self->{"profileLim"} = undef; # limts of pdf step
 
 	# Load deserialiyed stencil parameters
 	my $ser = StencilSerializer->new( $self->{"jobId"} );
@@ -59,10 +59,15 @@ sub new {
 
 	# If only bot stencil, whole psb will be mirrored
 	$self->{"mirror"}       = $self->{"params"}->GetStencilType() eq StnclEnums->StencilType_BOT ? 1 : 0;
+	
+
+	# size of dimension and dim text and width of dim lines
+	# when stencil is standard 480mm height
 	$self->{"codeSize"}     = 6;
-	$self->{"codeWidth"}    = "r400";
+	$self->{"codeWidth"}    = 400; # r400
 	$self->{"codeTxtThick"} = 1.4;
 	$self->{"codeTxtSize"}  = 4.4;
+	
 	return $self;
 }
 
@@ -70,7 +75,6 @@ sub PrepareLayers {
 	my $self      = shift;
 	my $layerList = shift;
 
-	# get limits of step
 	my %lim = CamJob->GetProfileLimits2( $self->{"inCAM"}, $self->{"jobId"}, $self->{"pdfStep"}, 1 );
 	$self->{"profileLim"} = \%lim;
 
@@ -85,6 +89,17 @@ sub PrepareLayers {
 sub __PrepareLayers {
 	my $self      = shift;
 	my $layerList = shift;
+	
+	
+	# recompute code parameters by stencil height (default settings is for 480 mm height)
+		 
+	my $ratio =   ( $self->{"profileLim"}->{"yMax"} -  $self->{"profileLim"}->{"yMin"}) / 480;
+		 
+	$self->{"codeSize"}     *= $ratio;
+	$self->{"codeWidth"}    = "r".int($self->{"codeWidth"} *$ratio);
+	$self->{"codeTxtThick"}  *= $ratio;
+	$self->{"codeTxtSize"}  *= $ratio;
+	
 
 	$self->__PrepareSTNCLMAT( $layerList->GetLayerByType( Enums->Type_STNCLMAT ) );
 	$self->__PrepareSTNCLMAT( $layerList->GetLayerByType( Enums->Type_COVER ) );
