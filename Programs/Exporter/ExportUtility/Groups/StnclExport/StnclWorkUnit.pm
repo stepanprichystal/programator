@@ -46,11 +46,13 @@ sub Init {
 	my $nif =  $taskData->GetExportNif();
 	my $data =  $taskData->GetExportData();
 	my $pdf =  $taskData->GetExportPdf();
+	my $measure = $taskData->GetExportMeasureData();
 	my $thickness =  $taskData->GetThickness();
 	my $fiducInfo =  $taskData->GetFiducialInfo();
+	
 	 
 	
-	my $mngr  = StnclMngr->new( $inCAM, $jobId, $nif, $data, $pdf, $thickness, $fiducInfo);
+	my $mngr  = StnclMngr->new( $inCAM, $jobId, $nif, $data, $pdf, $measure,  $thickness, $fiducInfo);
 	
 	$mngr->{"onItemResult"}->Add( sub { $self->_OnItemResultHandler(@_) } );
 	

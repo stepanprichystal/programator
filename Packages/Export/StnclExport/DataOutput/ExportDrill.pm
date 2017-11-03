@@ -12,9 +12,7 @@ use warnings;
 
 #local library
 use aliased 'Helpers::GeneralHelper';
-use aliased 'Packages::ItemResult::ItemResult';
-use aliased 'CamHelpers::CamJob';
-use aliased 'Packages::Export::NCExport::ExportMngr';
+ 
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -29,10 +27,7 @@ sub new {
 
 	$self->{"inCAM"} = shift;
 	$self->{"jobId"} = shift;
-	 
-	$self->{"step"} = "panel"; # step which stnecil data are exported from
-	$self->{"ncExport"} = ExportMngr->new($self->{"inCAM"}, $self->{"jobId"}, $self->{"step"});
-	$self->{"ncExport"}->{"onItemResult"}->Add( sub { $self->__OnExportResult(@_) } );
+ 
 	 
  
 
@@ -46,23 +41,7 @@ sub Output {
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
  
-	# Check when more NC layers except "flc"
-	my @allLayers = ( CamJob->GetLayerByType( $inCAM, $jobId, "drill" ), CamJob->GetLayerByType( $inCAM, $jobId, "rout" ) );
-	
-	my @layers = grep {$_->{"gROWname"} eq "flc"} @allLayers;
-	
-	if(scalar(@layers) == 0){
-		
-		die "Layer flc, doesn't exist";
-	}
-	
-	if(scalar(@allLayers) > 1){
-		
-		die "There is more NC layers in job. Only NC board layer can be flc";
-	}
-
- 
-	$self->{"ncExport"}->Run();
+	 
  
 }
  
@@ -71,13 +50,7 @@ sub Output {
 # Private methods
 #-------------------------------------------------------------------------------------------#
 
-sub __OnExportResult {
-	my $self = shift;
-	my $item = shift;
-
-
-	$self->_OnItemResult($item);
-}
+ 
 
  
 #-------------------------------------------------------------------------------------------#

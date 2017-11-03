@@ -92,6 +92,7 @@ sub __SetLayoutSettings {
 	my $szRow3 = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
 	my $szRow4 = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
 	my $szRow5 = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
+	my $szRow6 = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
 
 	#my $szRowDetail2 = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
 
@@ -116,6 +117,9 @@ sub __SetLayoutSettings {
 
 	my $pdfTxt = Wx::StaticText->new( $statBox, -1, "Export pdf", &Wx::wxDefaultPosition, [ 120, 20 ] );
 	my $pdfChb = Wx::CheckBox->new( $statBox, -1, "", &Wx::wxDefaultPosition, [ 90, 22 ] );
+	
+	my $measureDataTxt = Wx::StaticText->new( $statBox, -1, "Export \"pad info\"", &Wx::wxDefaultPosition, [ 120, 20 ] );
+	my $measureDataChb = Wx::CheckBox->new( $statBox, -1, "", &Wx::wxDefaultPosition, [ 90, 22 ] );
 
 	my $thickTxt = Wx::StaticText->new( $statBox, -1, "Thickness [mm]", &Wx::wxDefaultPosition, [ 120, 20 ] );
 	my $thickValTxt = my @inCamDelay = ( 0.2, 0.5, 1, 2, 5, 10, 20, 40 );
@@ -137,21 +141,26 @@ sub __SetLayoutSettings {
 
 	$szRow4->Add( $pdfTxt, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 	$szRow4->Add( $pdfChb, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	
+	$szRow5->Add( $measureDataTxt, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szRow5->Add( $measureDataChb, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 
-	$szRow5->Add( $thickTxt,   0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
-	$szRow5->Add( $thickValCb, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szRow6->Add( $thickTxt,   0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szRow6->Add( $thickValCb, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 
 	$szStatBox->Add( $szRow1, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
 	$szStatBox->Add( $szRow2, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
 	$szStatBox->Add( $szRow3, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
 	$szStatBox->Add( $szRow4, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
 	$szStatBox->Add( $szRow5, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
+	$szStatBox->Add( $szRow6, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
 
 	# Set References
 	$self->{"typeValTxt"} = $typeValTxt;
 	$self->{"nifChb"}     = $nifChb;
 	$self->{"dataChb"}    = $dataChb;
 	$self->{"pdfChb"}     = $pdfChb;
+	$self->{"measureDataChb"}     = $measureDataChb;
 	$self->{"thickValCb"} = $thickValCb;
 
 	return $szStatBox;
@@ -322,6 +331,27 @@ sub GetExportPdf {
 	my $self = shift;
 
 	if ( $self->{"pdfChb"}->IsChecked() ) {
+
+		return 1;
+	}
+	else {
+
+		return 0;
+	}
+}
+
+# Export measure data file
+sub SetExportMeasureData {
+	my $self  = shift;
+	my $value = shift;
+
+	$self->{"measureDataChb"}->SetValue($value);
+}
+
+sub GetExportMeasureData {
+	my $self = shift;
+
+	if ( $self->{"measureDataChb"}->IsChecked() ) {
 
 		return 1;
 	}

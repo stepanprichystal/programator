@@ -81,6 +81,20 @@ sub GetExportPdf {
 	return $self->{"data"}->{"exportPdf"};
 }
 
+
+# Export measure data
+sub SetExportMeasureData {
+	my $self  = shift;
+	 
+	$self->{"data"}->{"exportMeasureData"} = shift;
+}
+
+sub GetExportMeasureData {
+	my $self = shift;
+
+	return $self->{"data"}->{"exportMeasureData"};
+}
+
 # Fiducial info
 sub SetFiducialInfo {
 	my $self  = shift;

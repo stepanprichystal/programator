@@ -31,6 +31,7 @@ use aliased 'Programs::Stencil::StencilSerializer::StencilSerializer';
 use aliased 'Packages::Pdf::ControlPdf::StencilControlPdf::ControlPdf';
 use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'Packages::Other::CustomerNote';
+use aliased 'Packages::Export::StnclExport::MeasureData::MeasureData';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -47,6 +48,7 @@ sub new {
 	$self->{"exportNif"}    = shift;
 	$self->{"exportData"}   = shift;
 	$self->{"exportPdf"}    = shift;
+	$self->{"exportMeasure"}    = shift;
 	$self->{"stencilThick"} = shift;
 	$self->{"fiducInfo"}    = shift;
 
@@ -176,6 +178,25 @@ sub Run {
 		unlink($outputPdf);
 
 	}
+	
+	# Export measure data
+	if ( $self->{"exportMeasure"} ) {
+		
+		
+		my $resultItemData = $self->_GetNewItem("Export \"pad info\" pdf");
+		
+		my $export = MeasureData->new( $inCAM, $jobId );
+		
+		my $mess = "";
+		my $result = $export->Output(\$mess);
+		
+		unless($result){
+			
+			$resultItemData->AddError($mess);
+		}
+		
+		$self->_OnItemResult($resultItemData);
+	}
 
 }
 
@@ -224,6 +245,11 @@ sub TaskItemsCount {
 	if ( $self->{"exportPdf"} ) {
 		$totalCnt += 3;    # pdf export
 	}
+	
+	if ( $self->{"exportMeasure"} ) {
+		$totalCnt += 1;    # measure data export
+	}
+	 
 
 	return $totalCnt;
 

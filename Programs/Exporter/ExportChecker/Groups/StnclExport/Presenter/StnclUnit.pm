@@ -92,6 +92,7 @@ sub RefreshGUI {
 	$self->{"form"}->SetExportNif( $groupData->GetExportNif() );
 	$self->{"form"}->SetExportData( $groupData->GetExportData() );
     $self->{"form"}->SetExportPdf( $groupData->GetExportPdf() );
+    $self->{"form"}->SetExportMeasureData( $groupData->GetExportMeasureData() );
     $self->{"form"}->SetFiducialInfo( $groupData->GetFiducialInfo() );
 
 	#refresh wrapper
@@ -116,6 +117,7 @@ sub GetGroupData {
 		$groupData->SetExportNif( $frm->GetExportNif() );	
 		$groupData->SetExportData( $frm->GetExportData() );
 		$groupData->SetExportPdf( $frm->GetExportPdf() );
+		$groupData->SetExportMeasureData( $frm->GetExportMeasureData() );
 		$groupData->SetFiducialInfo( $frm->GetFiducialInfo() );
 
 	}
