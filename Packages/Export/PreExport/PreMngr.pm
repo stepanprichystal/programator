@@ -22,6 +22,7 @@ use aliased 'CamHelpers::CamHelper';
 use aliased 'Packages::TifFile::TifSigLayers';
 use aliased 'Packages::Export::PreExport::Enums';
 use aliased 'CamHelpers::CamGoldArea';
+use aliased 'Packages::CAMJob::GoldFingers::GoldFingersCheck';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -190,7 +191,7 @@ sub __GoldFrame {
 			my $mess = "";
 			my @layers = ($l);
 			
-			unless ( CamGoldArea->GoldFingersConnected( $inCAM, $jobId, \@layers, \$mess ) ) {
+			unless ( GoldFingersCheck->GoldFingersConnected( $inCAM, $jobId, \@layers, \$mess ) ) {
 
 				$itemRes->AddError("Error during insert \"gold connector frame\": $mess");
 			}
