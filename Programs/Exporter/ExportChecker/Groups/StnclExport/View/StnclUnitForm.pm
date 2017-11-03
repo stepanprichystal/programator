@@ -124,7 +124,7 @@ sub __SetLayoutSettings {
 	my $thickTxt = Wx::StaticText->new( $statBox, -1, "Thickness [mm]", &Wx::wxDefaultPosition, [ 120, 20 ] );
 	my $thickValTxt = my @inCamDelay = ( 0.2, 0.5, 1, 2, 5, 10, 20, 40 );
 
-	my @thick = ( 0.10, 0.125, 0.150, 0.175, 2.0, 2.5 );
+	my @thick = ( 0.10, 0.120, 0.125, 0.150, 0.175, 2.0, 2.5 );
 	my $thickValCb = Wx::ComboBox->new( $statBox, -1, "0", &Wx::wxDefaultPosition, [ 120, 22 ], \@thick, &Wx::wxCB_READONLY );
 
 	# SET EVENTS
