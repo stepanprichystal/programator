@@ -158,14 +158,16 @@ sub CopyStepFinalCheck {
 	}
 
 	# 2) Delete all after profile
-	my @signal = map { $_->{"gROWname"} } CamJob->GetSignalLayer( $inCAM, $masterJob );
+	
+	# base layers
+	my @boardBase = map { $_->{"gROWname"} } CamJob->GetBoardBaseLayers( $inCAM, $masterJob );
 
 	my @stepClip = ( @jobNames, "o+1" );
 
 	foreach my $step (@stepClip) {
 
 		CamHelper->SetStep( $inCAM, $step );
-		CamLayer->AffectLayers( $inCAM, \@signal );
+		CamLayer->AffectLayers( $inCAM, \@boardBase );
 
 		$inCAM->COM(
 					 "clip_area_end",
@@ -179,6 +181,29 @@ sub CopyStepFinalCheck {
 					 "pol_types"   => "positive\;negative"
 		);
 	}
+	
+	# nc layers (pads only)
+	my @ncLayers = map { $_->{"gROWname"} } CamJob->GetNCLayers( $inCAM, $masterJob );
+ 
+	foreach my $step (@stepClip) {
+
+		CamHelper->SetStep( $inCAM, $step );
+		CamLayer->AffectLayers( $inCAM, \@ncLayers );
+
+		$inCAM->COM(
+					 "clip_area_end",
+					 "layers_mode" => "affected_layers",
+					 "area"        => "profile",
+					 "area_type"   => "rectangle",
+					 "inout"       => "outside",
+					 "contour_cut" => "no",
+					 "margin"      => "3500",
+					 "feat_types"  => "pad",
+					 "pol_types"   => "positive\;negative"
+		);
+	}
+
+	CamLayer->ClearLayers($inCAM);
 
 	# 3) Check if pcb is in zero and zero and datum point are on same position
 
@@ -252,17 +277,31 @@ sub EmptyLayers {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	#	use aliased 'Packages::Export::AOIExport::AOIMngr';
-	#	use aliased 'Packages::InCAM::InCAM';
-	#
-	#	my $inCAM = InCAM->new();
-	#
-	#	my $jobName   = "f13610";
-	#	my $stepName  = "panel";
-	#	my $layerName = "c";
-	#
-	#	my $mngr = AOIMngr->new( $inCAM, $jobName, $stepName, $layerName );
-	#	$mngr->Run();
+		use aliased 'Packages::PoolMerge::MergeGroup::Helper::CopySteps';
+		use aliased 'Programs::PoolMerge::Task::TaskData::GroupData';
+		use aliased 'Packages::InCAM::InCAM';
+	
+		my $inCAM = InCAM->new();
+ 
+		my $jobName   = "f52456";
+		my $stepName  = "panel";
+		my $layerName = "c";
+		
+		my $group = GroupData->new();
+		
+		my @orders = ( );
+		
+		$group->{"ordersInfo"}  = \@orders;
+		
+	 
+		
+		my $ch = CopySteps->new($inCAM, $group);
+	
+		
+	 
+	
+		my $mngr = $ch->CopyStepFinalCheck( $jobName );
+	 
 }
 
 1;

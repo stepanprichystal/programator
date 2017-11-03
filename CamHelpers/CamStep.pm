@@ -37,12 +37,22 @@ sub GetAllStepNames {
 
 # Flatten step, to new step
 sub CreateFlattenStep {
-	my $self       = shift;
-	my $inCAM      = shift;
-	my $jobId      = shift;
-	my $sourceStep = shift;
-	my $targetStep = shift;
-	my $treatDTM   = shift;    # when 1, dtm user columns will be flattened too
+	my $self        = shift;
+	my $inCAM       = shift;
+	my $jobId       = shift;
+	my $sourceStep  = shift;
+	my $targetStep  = shift;
+	my $treatDTM    = shift;    # when 1, dtm user columns will be flattened too
+	my $layerFilter = shift;    # array of requested layer names
+
+	my @allLayers = CamJob->GetBoardLayers( $inCAM, $jobId );
+	my @layers = @allLayers;
+
+	if ($layerFilter) {
+		my %tmp;
+		@tmp{ @{$layerFilter} } = ();
+		@layers = grep { exists $tmp{ $_->{"gROWname"} } } @layers;
+	}
 
 	#delete if step already exist
 	if ( CamHelper->StepExists( $inCAM, $jobId, $targetStep ) ) {
@@ -64,23 +74,35 @@ sub CreateFlattenStep {
 	my $srExist = CamStepRepeat->ExistStepAndRepeats( $inCAM, $jobId, $targetStep );
 
 	if ($srExist) {
-		$self->__FlatternPdfStep( $inCAM, $jobId, $targetStep, $treatDTM );
+		$self->__FlatternStep( $inCAM, $jobId, \@layers, $targetStep, $treatDTM );
+	}
+
+	# delete layers which are not requested to be flatenned
+
+	my %tmp2;
+	@tmp2{ map { $_->{"gROWname"} } @layers } = ();
+	my @layersDel = map { $_->{"gROWname"} } grep { !exists $tmp2{ $_->{"gROWname"} } } @allLayers;
+
+	if (@layersDel) {
+		CamLayer->ClearLayers($inCAM);
+		CamLayer->AffectLayers( $inCAM, \@layersDel );
+		$inCAM->COM('sel_delete');
+		CamLayer->ClearLayers($inCAM);
 	}
 
 }
 
-sub __FlatternPdfStep {
+sub __FlatternStep {
 	my $self     = shift;
 	my $inCAM    = shift;
 	my $jobId    = shift;
+	my @layers   = @{ shift(@_) };
 	my $stepPdf  = shift;
 	my $treatDTM = shift;
 
 	CamHelper->SetStep( $inCAM, $stepPdf );
 
-	my @allLayers = CamJob->GetBoardLayers( $inCAM, $jobId );
-
-	foreach my $l (@allLayers) {
+	foreach my $l (@layers) {
 
 		if ( $treatDTM && ( $l->{"gROWlayer_type"} eq "drill" || $l->{"gROWlayer_type"} eq "rout" ) ) {
 
@@ -332,14 +354,15 @@ sub CopyStep {
 				 "remove_from_sr" => "yes"
 	);
 }
+
 # Rename step
 sub RenameStep {
-	my $self        = shift;
-	my $inCAM       = shift;
-	my $jobId = shift;
+	my $self    = shift;
+	my $inCAM   = shift;
+	my $jobId   = shift;
 	my $oldName = shift;
-	my $newName  = shift;
- 
+	my $newName = shift;
+
 	$inCAM->COM(
 				 "rename_entity",
 				 "job"      => $jobId,
@@ -361,10 +384,10 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	use aliased 'Packages::InCAM::InCAM';
 
 	my $inCAM = InCAM->new();
-	my $jobId = "f52457";
+	my $jobId = "d78045";
 	my $step  = "panel";
 
-	CamStep->SetActiveAreaBorder( $inCAM, $step, 5, 5, 5, 5 );
+	CamStep->CreateFlattenStep( $inCAM, $jobId, $step, "test", 0, [ "c", "m", "v1" ] );
 
 	print "ddd";
 
