@@ -78,16 +78,17 @@ sub CreateFlattenStep {
 	}
 
 	# delete layers which are not requested to be flatenned
-	
 
 	my %tmp2;
-	@tmp2{map { $_->{"gROWname"} } @layers} = ();
+	@tmp2{ map { $_->{"gROWname"} } @layers } = ();
 	my @layersDel = map { $_->{"gROWname"} } grep { !exists $tmp2{ $_->{"gROWname"} } } @allLayers;
 
-	CamLayer->ClearLayers($inCAM);
-	CamLayer->AffectLayers( $inCAM, \@layersDel );
-	$inCAM->COM('sel_delete');
-	CamLayer->ClearLayers($inCAM);
+	if (@layersDel) {
+		CamLayer->ClearLayers($inCAM);
+		CamLayer->AffectLayers( $inCAM, \@layersDel );
+		$inCAM->COM('sel_delete');
+		CamLayer->ClearLayers($inCAM);
+	}
 
 }
 
@@ -386,7 +387,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	my $jobId = "d78045";
 	my $step  = "panel";
 
-	CamStep->CreateFlattenStep( $inCAM, $jobId, $step, "test", 0, ["c", "m", "v1"] );
+	CamStep->CreateFlattenStep( $inCAM, $jobId, $step, "test", 0, [ "c", "m", "v1" ] );
 
 	print "ddd";
 

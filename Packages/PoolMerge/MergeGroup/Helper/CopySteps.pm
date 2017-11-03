@@ -196,12 +196,14 @@ sub CopyStepFinalCheck {
 					 "area"        => "profile",
 					 "area_type"   => "rectangle",
 					 "inout"       => "outside",
-					 "contour_cut" => "yes",
+					 "contour_cut" => "no",
 					 "margin"      => "3500",
 					 "feat_types"  => "pad",
 					 "pol_types"   => "positive\;negative"
 		);
 	}
+
+	CamLayer->ClearLayers($inCAM);
 
 	# 3) Check if pcb is in zero and zero and datum point are on same position
 
@@ -281,15 +283,22 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	
 		my $inCAM = InCAM->new();
  
-		my $jobName   = "f13610";
+		my $jobName   = "f52456";
 		my $stepName  = "panel";
 		my $layerName = "c";
 		
-		my $ch = CopySteps->new($inCAM, $jobName);
+		my $group = GroupData->new();
+		
+		my @orders = ( );
+		
+		$group->{"ordersInfo"}  = \@orders;
+		
+	 
+		
+		my $ch = CopySteps->new($inCAM, $group);
 	
-		GroupData
-	
-		$ch->{"poolInfo"}
+		
+	 
 	
 		my $mngr = $ch->CopyStepFinalCheck( $jobName );
 	 
