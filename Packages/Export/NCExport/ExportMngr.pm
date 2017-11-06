@@ -110,11 +110,17 @@ sub Run {
 	# 1) Do final check of drill/rout layer
 	if ( $self->__CheckNCLayers() ) {
  
+ 		get_logger("abstractQueue")->error( "Finding  ".$self->{"jobId"}." BUG ExportMngr 1\n ");
+ 
 		# 2) create sequence of dps operation
 		$self->{"operationMngr"}->CreateOperations();
+		
+		get_logger("abstractQueue")->error( "Finding  ".$self->{"jobId"}." BUG ExportMngr 2\n ");
  
 		# 3) for every operation filter suitable machines
 		$self->{"machineMngr"}->AssignMachines( $self->{"operationMngr"} );
+		
+		get_logger("abstractQueue")->error( "Finding  ".$self->{"jobId"}." BUG ExportMngr 3\n ");
 
 		# 4) Export physical nc files
 		$self->{"exportFileMngr"}->ExportFiles( $self->{"operationMngr"} );

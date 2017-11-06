@@ -220,7 +220,7 @@ sub __PrepareTopBotLayer {
 
 	$inCAM->COM( 'delete_layer', "layer" => $lName );
 
-	my %info = ( "name" => $type eq "top" ? "_t.ger" : "_b.ger", "path" => $path . $fileName );
+	my %info = ( "name" => $type eq "top" ? $jobId."_t.ger" : $jobId."_b.ger", "path" => $path . $fileName );
 
 	return \%info;
 }
@@ -246,7 +246,7 @@ sub __PrepareMeasureLayer {
 
 	$self->_OnItemResult($resultItemGer);
 
-	my %info = ( "name" => "_m.ger", "path" => $path . $fileName );
+	my %info = ( "name" => $jobId."_m.ger", "path" => $path . $fileName );
 
 	return \%info;
 

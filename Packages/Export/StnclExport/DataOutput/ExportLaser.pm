@@ -23,6 +23,8 @@ use aliased 'CamHelpers::CamLayer';
 use aliased 'CamHelpers::CamJob';
 use aliased 'CamHelpers::CamHistogram';
 use aliased 'Packages::Gerbers::Export::ExportLayers' => 'Helper';
+use aliased 'Programs::Stencil::StencilSerializer::StencilSerializer';
+use aliased 'Programs::Stencil::StencilCreator::Enums'           => 'StnclEnums';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -41,6 +43,9 @@ sub new {
 	$self->{"step"} = "o+1";    # step which stnecil data are exported from
 
 	$self->{"workLayer"} = "ds";
+	
+	my $ser    = StencilSerializer->new( $self->{"jobId"} );
+	$self->{"params"} = $ser->LoadStenciLParams();
 
 	return $self;
 }
@@ -107,7 +112,14 @@ sub __PrepareLayer {
 	
 	$inCAM->COM( 'delete_layer', layer => $lName );
 
-	my %info = ( "name" => "_t.ger", "path" => $path . $fileName );
+	my $gerName = $jobId."_t.ger";
+	
+	if($self->{"params"}->GetStencilType() eq StnclEnums->StencilType_BOT){
+		
+		$gerName = $jobId."_b.ger";
+	}
+
+	my %info = ( "name" => $gerName, "path" => $path . $fileName );
 
 	return \%info;
 
