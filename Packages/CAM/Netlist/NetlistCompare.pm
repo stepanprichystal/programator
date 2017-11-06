@@ -78,6 +78,9 @@ sub Compare1Up {
 
 			CamStep->MoveStepData( $inCAM, $jobId, $refStepNet, \%source, \%target );
 		}
+		
+		# Create pads on reference step
+		$self->__CreatePads($refStepNet);
 
 	}
 	else {
@@ -109,9 +112,7 @@ sub Compare1Up {
 		);
 
 	}
-
-	# Create pads on reference step
-	$self->__CreatePads($refStepNet);
+ 
 
 	my $r = $self->__CompareNetlist( $editStep, $refStepNet );
  
@@ -137,9 +138,6 @@ sub ComparePanel {
 	}
  
 	$self->__CreateRefPanelStep($editStep, $refStepNet);
-	
-	# Create pads on reference step
-	$self->__CreatePads($refStepNet);
 
 	CamStep->CreateFlattenStep( $inCAM, $jobId, $editStep, $editStepNet, 0 );
 	
@@ -269,6 +267,33 @@ sub __CreateRefPanelStep {
 					 "feat_types"  => "line\;pad\;surface\;arc\;text",
 					 "pol_types"   => "positive\;negative"
 		);
+		
+
+		
+		# 3) check if zero points are on the same position
+		my %limEdit = CamJob->GetProfileLimits2( $inCAM, $jobId, $step,1 );
+		my %limRef  = CamJob->GetProfileLimits2( $inCAM, $jobId, $refStepTmp,1 );
+		
+		if($limEdit{"xMin"} != $limRef{"xMin"} || $limEdit{"yMin"} != $limRef{"yMin"}){
+			die "Zero point position of \"edit step\": $step and \"original step\": $refStep are not equal.";
+		}
+		
+		# 4) adjsut datumpoint according "edited" step
+
+		my %dPointEdit = CamStep->GetDatumPoint( $inCAM, $jobId, $step, 1 ); # datum point edited step
+		my %dPointTmp = CamStep->GetDatumPoint( $inCAM, $jobId, $refStepTmp, 1 ); # datum point reference tmp step
+		
+		if($dPointEdit{"x"} != $dPointTmp{"x"} || $dPointEdit{"y"} != $dPointTmp{"y"}){
+			
+			# adjsut datum point in reference step	
+			
+			CamStep->SetDatumPoint($inCAM, $refStepTmp, $dPointEdit{"x"}, $dPointEdit{"y"})
+			
+		}
+		
+		# 5) construct pads
+		$self->__CreatePads($refStepTmp);
+		
 
 		CamLayer->ClearLayers($inCAM);
 
@@ -449,17 +474,17 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId = "f52456";
+	my $jobId = "f84934";
 
 	my $nc = NetlistCompare->new( $inCAM, $jobId );
 
-	#my $report = $nc->ComparePanel("mpanel");
+	my $report = $nc->ComparePanel("mpanel");
 
-	my $report = $nc->Compare1Up( "o+1", "o+1_panel" );
+	#my $report = $nc->Compare1Up( "o+1", "o+1_panel" );
 
 	print $report->Result();
 
-	print $nc;
+	 
 
 }
 

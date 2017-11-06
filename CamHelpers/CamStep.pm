@@ -152,6 +152,21 @@ sub GetDatumPoint {
 	return %inf;
 }
 
+# Set new datum point of step
+sub SetDatumPoint {
+	my $self           = shift;
+	my $inCAM          = shift;
+	my $stepName       = shift;
+	my $x = shift;
+	my $y = shift;
+
+	CamHelper->SetStep($inCAM, $stepName);
+
+	$inCAM->COM( "datum" , "x" => $x, "y"=> $y );
+
+}
+ 
+
 # Get limits of active area
 sub GetActiveAreaLim {
 	my $self           = shift;
