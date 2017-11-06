@@ -18,6 +18,7 @@ use aliased 'CamHelpers::CamLayer';
 use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'CamHelpers::CamHelper';
 use aliased 'CamHelpers::CamHistogram';
+use aliased 'Packages::CAMJob::SilkScreen::SilkScreenCheck';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -168,43 +169,14 @@ sub OnCheckGroupData {
 	# 6) Jet print, check if featues are no to thin
 	if ( $jetprintInfo->{"exportGerbers"} ) {
 
-		my @lSilk = grep { $_->{"gROWname"} =~ /^p[cs]$/i } $defaultInfo->GetBoardBaseLayers();
+		my $mess = "";
+		unless ( SilkScreenCheck->FeatsWidthOkAllLayers( $inCAM, $jobId, "panel", \$mess ) ) {
 
-		foreach my $l (@lSilk) {
-
-			my $infoFile = $inCAM->INFO(
-										 units           => 'mm',
-										 angle_direction => 'ccw',
-										 entity_type     => 'layer',
-										 entity_path     => "$jobId/panel/" . $l->{"gROWname"},
-										 data_type       => 'FEATURES',
-										 options         => 'break_sr+',
-										 parse           => 'no'
-			);
-
-			my @feat = ();
-
-			if ( open( my $f, "<" . $infoFile ) ) {
-				@feat = <$f>;
-				close($f);
-				unlink($infoFile);
-			}
-
-			@feat = grep { $_ =~ /[LA].*[rs](\d+)\.?\d*\sP/i && $1 < 120 } @feat; # check positive lines+arc thinner tahn 120µm
-
-			if ( scalar(@feat) ) {
-
-				my @thinSyms = uniq( map { ( $_ =~ /[LA].*([rs]\d+)\.?\d*\sP/i )[0]."µm" } @feat);
-				my $str = join( ", ",@thinSyms);
-
-				if ( scalar(@thinSyms) ) {
-					$dataMngr->_AddErrorResult( "Jetprint data",
-										   "Too thin features ($str) in silkscreen layer \"" . $l->{"gROWname"} . "\". Min thickness of feature is 130µm" );
-				}
-			}
+			$dataMngr->_AddErrorResult( "Jetprint data", $mess );
 		}
-
 	}
+	
+	
 }
 
 sub __PasteLayersExist {
