@@ -227,14 +227,7 @@ sub SetDefaultByIS {
 
 	$self->{"dataMngr"}->SetStencilSizeX($w);
 	$self->{"dataMngr"}->SetStencilSizeY($h);
-
-	# if pool, choose apropriate size bz pcb size
-	if ( $self->{"stencilSrc"} eq Enums->StencilSource_JOB && $self->{"isPool"} ) {
-
-		$self->{"dataMngr"}->SetStencilSizeX(300);
-		$self->{"dataMngr"}->SetStencilSizeY(300);
-
-	}
+ 
 
 	$self->{"dataMngr"}->DefaultHoleDist();    # Compute default vertical distance according size
 

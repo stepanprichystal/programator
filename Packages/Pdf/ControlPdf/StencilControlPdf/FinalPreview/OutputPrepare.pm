@@ -92,13 +92,15 @@ sub __PrepareLayers {
 	
 	
 	# recompute code parameters by stencil height (default settings is for 480 mm height)
+	my $h = abs($self->{"profileLim"}->{"yMax"} -  $self->{"profileLim"}->{"yMin"});
+	my $w = abs($self->{"profileLim"}->{"yMax"} -  $self->{"profileLim"}->{"yMin"});
+	
+	$self->{"ratio"} =   max( $h,$w)  / 480;
 		 
-	my $ratio =   ( $self->{"profileLim"}->{"yMax"} -  $self->{"profileLim"}->{"yMin"}) / 480;
-		 
-	$self->{"codeSize"}     *= $ratio;
-	$self->{"codeWidth"}    = "r".int($self->{"codeWidth"} *$ratio);
-	$self->{"codeTxtThick"}  *= $ratio;
-	$self->{"codeTxtSize"}  *= $ratio;
+	$self->{"codeSize"}     *= $self->{"ratio"};
+	$self->{"codeWidth"}    = "r".int($self->{"codeWidth"} *$self->{"ratio"});
+	$self->{"codeTxtThick"}  *= $self->{"ratio"};
+	$self->{"codeTxtSize"}  *= $self->{"ratio"};
 	
 
 	$self->__PrepareSTNCLMAT( $layerList->GetLayerByType( Enums->Type_STNCLMAT ) );
@@ -525,7 +527,7 @@ sub __PreparePROFILE {
 		push( @coord, { "x" => $tpPos->{"x"} + $topProfile->{"w"}, "y" => $tpPos->{"y"} + $topProfile->{"h"} } );    #p3
 		push( @coord, { "x" => $tpPos->{"x"} + $topProfile->{"w"}, "y" => $tpPos->{"y"} } );                         #p4
 
-		$self->__DrawDashedRect( 600, 6000, \@coord );
+		$self->__DrawDashedRect( 600*$self->{"ratio"}, 6000*$self->{"ratio"}, \@coord );
 	}
 
 	if ($botProfile) {
@@ -538,7 +540,7 @@ sub __PreparePROFILE {
 		push( @coord, { "x" => $bpPos->{"x"} + $botProfile->{"w"}, "y" => $bpPos->{"y"} + $botProfile->{"h"} } );    #p3
 		push( @coord, { "x" => $bpPos->{"x"} + $botProfile->{"w"}, "y" => $bpPos->{"y"} } );                         #p4
 
-		$self->__DrawDashedRect( 600, 6000, \@coord );
+		$self->__DrawDashedRect( 600*$self->{"ratio"}, 6000*$self->{"ratio"}, \@coord );
 	}
 
 	$layer->SetOutputLayer($lName);
@@ -583,7 +585,7 @@ sub __PrepareDATAPROFILE {
 		push( @coord, { "x" => $posX + $tdData->{"w"}, "y" => $posY + $tdData->{"h"} } );    #p3
 		push( @coord, { "x" => $posX + $tdData->{"w"}, "y" => $posY } );                     #p4
 
-		$self->__DrawDashedRect( 200, 2000, \@coord );
+		$self->__DrawDashedRect( 200*$self->{"ratio"}, 2000*$self->{"ratio"}, \@coord );
 	}
 
 	if ($botProf) {
@@ -600,7 +602,7 @@ sub __PrepareDATAPROFILE {
 		push( @coord, { "x" => $posX + $tdData->{"w"}, "y" => $posY + $tdData->{"h"} } );    #p3
 		push( @coord, { "x" => $posX + $tdData->{"w"}, "y" => $posY } );                     #p4
 
-		$self->__DrawDashedRect( 200, 2000, \@coord );
+		$self->__DrawDashedRect( 200*$self->{"ratio"}, 2000*$self->{"ratio"}, \@coord );
 	}
 
 	$layer->SetOutputLayer($lName);
