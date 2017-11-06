@@ -19,9 +19,6 @@ use constant {
 
 
 use constant {
-				StencilSize_150x200        => "150 x 200mm (pool)", 
-				StencilSize_200x300        => "200 x 300mm (pool)", 
-				StencilSize_300x300        => "300 x 300mm (pool)", 
 			   StencilSize_300x480        => "300 x 480mm", 
 			   StencilSize_300x520        => "300 x 520mm", 
 			   StencilSize_CUSTOM        => "custom"

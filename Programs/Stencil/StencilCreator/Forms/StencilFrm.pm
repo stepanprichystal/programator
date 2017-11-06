@@ -128,7 +128,7 @@ sub SetStencilSize {
 	else {
 
 		my @t = (
-				  Enums->StencilSize_150x200, Enums->StencilSize_200x300, Enums->StencilSize_300x300, Enums->StencilSize_300x480,
+				  Enums->StencilSize_300x480,
 				  Enums->StencilSize_300x520
 		);
 
@@ -627,9 +627,7 @@ sub __SetLayoutGeneral {
 	my $sizeTxt = Wx::StaticText->new( $statBox, -1, "Size", &Wx::wxDefaultPosition, [ 170, 22 ] );
 
 	my @sizes = ();
-	push( @sizes,
-		  Enums->StencilSize_150x200, Enums->StencilSize_200x300, Enums->StencilSize_300x300,
-		  Enums->StencilSize_300x480, Enums->StencilSize_300x520, Enums->StencilSize_CUSTOM );
+	push( @sizes, Enums->StencilSize_300x480, Enums->StencilSize_300x520, Enums->StencilSize_CUSTOM );
 	my $sizeCb = Wx::ComboBox->new( $statBox, -1, $sizes[0], &Wx::wxDefaultPosition, [ 120, 22 ], \@sizes, &Wx::wxCB_READONLY );
 
 	my $customSize = Wx::StaticText->new( $statBox, -1, "Custom size [mm]", &Wx::wxDefaultPosition, [ 170, 22 ] );

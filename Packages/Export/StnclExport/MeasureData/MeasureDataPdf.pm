@@ -122,7 +122,7 @@ sub __PreparePadLayer {
 	CamLayer->WorkLayer( $inCAM, $lName );
 	my %lim = CamJob->GetProfileLimits2( $inCAM, $jobId, $step );
 
-	CamSymbol->AddText( $inCAM, $title, { "x" => $lim{"xMin"}, "y" => $lim{"yMax"} +2 }, 6, 2 );
+	CamSymbol->AddText( $inCAM, $title, { "x" => $lim{"xMin"}, "y" => $lim{"yMax"} +2 }, 4, 1.5 );
 
 	return $lName;
 }
