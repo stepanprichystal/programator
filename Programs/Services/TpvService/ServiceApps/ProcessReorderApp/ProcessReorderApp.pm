@@ -26,6 +26,7 @@ use aliased 'Helpers::FileHelper';
 use aliased 'Programs::Services::TpvService::ServiceApps::ProcessReorderApp::Enums';
 use aliased 'Helpers::JobHelper';
 use aliased 'CamHelpers::CamJob';
+use aliased 'CamHelpers::CamHelper';
 use aliased 'Programs::Services::Helpers::AutoProcLog';
 use aliased 'Programs::Services::TpvService::ServiceApps::CheckReorderApp::CheckReorder::ChangeFile';
 use aliased 'Enums::EnumsPaths';
@@ -185,7 +186,7 @@ sub __ProcessJob {
 
 	my $orderState = EnumsIS->CurStep_PROCESSREORDERERR;
 
-	if ( $result == 1 && $isPool ) {
+	if ( $result == 1 && $isPool) {
 
 		$orderState = EnumsIS->CurStep_KPANELIZACI;
 

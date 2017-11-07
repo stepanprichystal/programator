@@ -27,6 +27,8 @@ use aliased 'Enums::EnumsIS';
 use aliased 'Packages::Reorder::ProcessReorder::ProcessReorder';
 use aliased 'Programs::Exporter::ExportChecker::ExportChecker::Unit::Helper' => "UnitHelper";
 use aliased 'Programs::Exporter::ExportChecker::Enums'                       => 'CheckerEnums';
+use aliased 'CamHelpers::CamHelper';
+ 
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -113,19 +115,18 @@ sub __ProcessAsyncWorker {
 		}
 	};
 	if ($@) {
-		
+
 		my %res1 : shared = ();
 		$res1{"progress"}  = 0;
 		$res1{"succes"}    = 0;
-		$res1{"errorMess"} = "Unexpected error: " . $@ ;
-		
+		$res1{"errorMess"} = "Unexpected error: " . $@;
+
 		$self->__ThreadEvt( \%res1 );
-		 
+
 	}
 
-  
 	$self->{"inCAM"}->ClientFinish();
-	
+
 	my %res : shared = ();
 
 	my $threvent = new Wx::PlThreadEvent( -1, $PROCESS_END_EVT, \%res );
@@ -208,7 +209,7 @@ sub __ProcessServer {
 
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
- 
+
 	# 1) Task: If no Pool, do check before export
 
 	my %res1 : shared = ();
@@ -216,24 +217,24 @@ sub __ProcessServer {
 	$res1{"succes"}    = 1;
 	$res1{"errorMess"} = "";
 
-	unless ( $self->{"isPool"} ) {
-
-		my $units = UnitHelper->PrepareUnits( $inCAM, $jobId );
-
-		my @activeOnUnits = grep { $_->GetGroupState() eq CheckerEnums->GroupState_ACTIVEON } @{ $units->{"units"} };
-
-		foreach my $unit (@activeOnUnits) {
-
-			my $resultMngr = -1;
-			my $succes = $unit->CheckBeforeExport( $inCAM, \$resultMngr );
-
-			if ( $resultMngr->GetErrorsCnt() ) {
-
-				$res1{"succes"} = 0;
-				$res1{"errorMess"} .= $resultMngr->GetErrorsStr(1);
-			}
-		}
-	}
+#	unless ( $self->{"isPool"} ) {
+#
+#		my $units = UnitHelper->PrepareUnits( $inCAM, $jobId );
+#
+#		my @activeOnUnits = grep { $_->GetGroupState() eq CheckerEnums->GroupState_ACTIVEON } @{ $units->{"units"} };
+#
+#		foreach my $unit (@activeOnUnits) {
+#
+#			my $resultMngr = -1;
+#			my $succes = $unit->CheckBeforeExport( $inCAM, \$resultMngr );
+#
+#			if ( $resultMngr->GetErrorsCnt() ) {
+#
+#				$res1{"succes"} = 0;
+#				$res1{"errorMess"} .= $resultMngr->GetErrorsStr(1);
+#			}
+#		}
+#	}
 
 	$self->__ThreadEvt( \%res1 );
 
@@ -262,7 +263,7 @@ sub __ProcessServer {
 	$res3{"errorMess"} = "";
 
 	eval {
-		
+
 		foreach ( @{ $self->{"orders"} } ) {
 
 			HegMethods->UpdatePcbOrderState( $_->{"reference_subjektu"}, EnumsIS->CurStep_ZPRACOVANIAUTO, 1 );
@@ -342,10 +343,11 @@ sub __ProcessEndHandler {
 
 	# if export locall + pcb is not pool + process succes
 	# Display information message about export
+	my $pnlExist = CamHelper->StepExists( $self->{"inCAM"}, $self->{"jobId"}, "panel" );
 
 	if (    $self->{"type"} eq Enums->Process_LOCALLY
 		 && scalar( @{ $self->{"processErr"} } ) == 0
-		 && !$self->{"isPool"} )
+		 && (!$self->{"isPool"} || ($self->{"isPool"} && $pnlExist) )  )
 	{
 		my $messMngr = $self->{"form"}->_GetMessageMngr();
 		my @mess     = ("Don't forget export job now.");

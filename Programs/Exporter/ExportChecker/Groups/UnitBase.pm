@@ -132,10 +132,7 @@ sub SetGroupState {
 sub GetExportData {
 	my $self  = shift;
 	
-
-
 	return $self->{"dataMngr"}->ExportGroupData();
-
 }
 
 sub GetUnitId {

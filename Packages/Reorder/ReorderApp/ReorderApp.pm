@@ -67,7 +67,8 @@ sub new {
 	# if no order has aktualni_krok zpracovani-rucni, it means all has checkReorder-error.
 	# Thus allow only proces locally
 
-	$self->{"onlyLocally"} = scalar( grep { $_->{"aktualni_krok"} eq EnumsIS->CurStep_CHECKREORDERERROR } @orders ) ? 1 : 0;
+	$self->{"onlyLocally"} = scalar( grep { $_->{"aktualni_krok"} eq EnumsIS->CurStep_CHECKREORDERERROR 
+										||  $_->{"aktualni_krok"} eq  EnumsIS->CurStep_PROCESSREORDERERR } @orders ) ? 1 : 0;
 
 	$self->{"manChanges"} = [];    # not processed manual changes
 
@@ -112,11 +113,11 @@ sub __OnErrIndicatorHandler {
 
 	if ( scalar( @{ $self->{"manChanges"} } ) ) {
 
-		my $str = "";
+		my $str = " ";
 
 		for ( my $i = 0 ; $i < scalar( @{ $self->{"manChanges"} } ) ; $i++ ) {
 
-			$str .= ( $i + 1 ) . ")\n" . $self->{"manChanges"}->[$i] . "\n\n";
+			$str .=  "<b>".( $i + 1 ) . ")"."</b>". "\n" . $self->{"manChanges"}->[$i] . "\n\n";
 
 		}
 
@@ -146,11 +147,11 @@ sub __OnErrCriticIndicatorHandler {
 
 	if ( scalar( @{ $self->{"manChangesCritic"} } ) ) {
 
-		my $str = "";
+		my $str = " ";
 
 		for ( my $i = 0 ; $i < scalar( @{ $self->{"manChangesCritic"} } ) ; $i++ ) {
 
-			$str .= ( $i + 1 ) . ")\n" . $self->{"manChangesCritic"}->[$i] . "\n\n";
+			$str .=  "<b>".( $i + 1 ) . ")"."</b>". "\n" . $self->{"manChangesCritic"}->[$i] . "\n\n";
 
 		}
 
@@ -301,7 +302,9 @@ sub __DoChecksAsyncWorker {
 
 	$ch->{"onItemResult"}->Add( sub { $self->__OnCheckHandler( @_, ); } );
  
+ 	$inCAM->SetDisplay(0);
 	my @arr = $ch->RunChecks();
+	$inCAM->SetDisplay(1);
 
 	my %res : shared = ();
 

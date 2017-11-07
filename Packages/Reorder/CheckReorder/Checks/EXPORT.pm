@@ -2,7 +2,7 @@
 # Description:  Class responsible for determine pcb reorder check
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::Reorder::CheckReorder::Checks::PATTERN;
+package Packages::Reorder::CheckReorder::Checks::EXPORT;
 use base('Packages::Reorder::CheckReorder::Checks::CheckBase');
 
 use Class::Interface;
@@ -12,11 +12,16 @@ use Class::Interface;
 use utf8;
 use strict;
 use warnings;
+use List::MoreUtils qw(uniq);
 
 #local library
-use aliased 'Connectors::HeliosConnector::HegMethods';
-use aliased 'Packages::Routing::PlatedRoutArea';
+use aliased 'Enums::EnumsGeneral';
+use aliased 'CamHelpers::CamJob';
 use aliased 'CamHelpers::CamHelper';
+use aliased 'Connectors::HeliosConnector::HegMethods';
+use aliased 'Programs::Exporter::ExportUtility::UnitEnums';
+use aliased 'Programs::Exporter::ExportChecker::ExportChecker::Unit::Helper' => "UnitHelper";
+use aliased 'Programs::Exporter::ExportChecker::Enums'                       => 'CheckerEnums';
 
 #-------------------------------------------------------------------------------------------#
 #  Public method
@@ -26,32 +31,47 @@ sub new {
 	my $class = shift;
 	my $self  = $class->SUPER::new(@_);
 	bless($self);
-	
-	
+
 	return $self;
 }
 
-# if pcb is pool, check if plated rout areaa is exceed for tenting
+# Check if exist new version of nif, if so it means it is from InCAM
 sub Run {
-	my $self     = shift;
+	my $self = shift;
+
 	my $inCAM    = $self->{"inCAM"};
 	my $jobId    = $self->{"jobId"};
 	my $jobExist = $self->{"jobExist"};    # (in InCAM db)
 	my $isPool   = $self->{"isPool"};
-	
-	unless($jobExist){
-		return 1;
+
+	unless ($jobExist) {
+		return 0;
 	}
-	
+
 	my $pnlExist = CamHelper->StepExists( $inCAM, $jobId, "panel" );
- 
-	if($isPool && !$pnlExist && PlatedRoutArea->PlatedAreaExceed($inCAM, $jobId, "o+1")){
-		
-		$self->_AddChange("Dps je pool a musí jít do výroby patternem, kvůli velkému prokovenému otvoru. Vytvoř step panel (napanelizuj dps)", 1)
+
+	if ( $isPool && !$pnlExist ) {
+		return 0;
 	}
- 
+
+	my $units = UnitHelper->PrepareUnits( $inCAM, $jobId );
+
+	my @activeOnUnits = grep { $_->GetGroupState() eq CheckerEnums->GroupState_ACTIVEON } @{ $units->{"units"} };
+
+	foreach my $unit (@activeOnUnits) {
+
+		my $resultMngr = -1;
+		my $succes = $unit->CheckBeforeExport( $inCAM, \$resultMngr );
+
+		if ( $resultMngr->GetErrorsCnt() ) {
+
+			my $txt = "Kontrola před exportem - " . UnitEnums->GetTitle( $unit->GetUnitId() ) . "\n";
+			$txt .= $resultMngr->GetErrorsStr(1);
+			$self->_AddChange( $txt, 0 );
+		}
+	}
+
 }
- 
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
@@ -59,16 +79,6 @@ sub Run {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
- 
- 	use aliased 'Packages::Reorder::CheckReorder::Checks::POOL_PATTERN' => "Change";
- 	use aliased 'Packages::InCAM::InCAM';
-	
-	my $inCAM    = InCAM->new();
-	my $jobId = "f52456";
-	
-	my $check = Change->new();
-	
-	print "Need change: ".$check->NeedChange($inCAM, $jobId, 1);
 }
 
 1;
