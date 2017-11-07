@@ -185,7 +185,7 @@ sub __ExportNcSet {
 	#}
 	
 			
-	get_logger("abstractQueue")->error( "Finding  $jobId BUG stop during export 2\n ");
+	get_logger("abstractQueue")->error( "Finding  $jobId layer: $layerName, machine: $machine, BUG stop during export 2\n ");
 	
 
 	# START HANDLE EXCEPTION IN INCAM
@@ -196,16 +196,20 @@ sub __ExportNcSet {
 	# STOP HANDLE EXCEPTION IN INCAM
 	$inCAM->HandleException(0);
 	
-	get_logger("abstractQueue")->error( "Finding  $jobId BUG stop during export 3\n ");
+	get_logger("abstractQueue")->error( "Finding  $jobId layer: $layerName, machine: $machine, BUG stop during export 3\n ");
 
 	$methodRes->AddError( $inCAM->GetExceptionError() );
+	
+	get_logger("abstractQueue")->error( "Finding  $jobId layer: $layerName, machine: $machine, BUG stop during export 4\n ");
 
 	#if ( $inCAM->GetStatus() > 1 ) {
 	#	$methodRes->AddError( $inCAM->GetExceptionError() );
 	#}
-
+	get_logger("abstractQueue")->error( "Finding  $jobId layer: $layerName, machine: $machine, BUG stop during export 5\n ");
 	#delete nc set
 	$inCAM->COM( "nc_delete", "layer" => $layerName, "ncset" => $setName );
+	
+	get_logger("abstractQueue")->error( "Finding  $jobId layer: $layerName, machine: $machine, BUG stop during export 6\n ");
 
 	#delete temporary files, which was created
 	my $tmpName = "_" . $setName . "_out_";
@@ -214,9 +218,13 @@ sub __ExportNcSet {
 	if ($tmpExist) {
 		$inCAM->COM( 'delete_layer', "layer" => $tmpName );
 	}
+	
+	get_logger("abstractQueue")->error( "Finding  $jobId layer: $layerName, machine: $machine, BUG stop during export 7\n ");
 
 	# Clear step selection (some steps can)
 	$self->{"inCAM"}->COM("sredit_sel_clear");
+	
+	get_logger("abstractQueue")->error( "Finding  $jobId layer: $layerName, machine: $machine, BUG stop during export 8\n ");
 
 }
 
