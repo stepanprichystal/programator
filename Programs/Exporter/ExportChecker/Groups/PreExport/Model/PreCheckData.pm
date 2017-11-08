@@ -25,6 +25,7 @@ use aliased 'CamHelpers::CamStepRepeat';
 use aliased 'CamHelpers::CamAttributes';
 use aliased 'Packages::Stackup::StackupOperation';
 use aliased 'Packages::CAM::Netlist::NetlistCompare';
+use aliased 'Packages::CAMJob::Scheme::CustSchemeCheck';
 
 
 #-------------------------------------------------------------------------------------------#
@@ -364,7 +365,15 @@ sub OnCheckGroupData {
 		}
 		
 		$dataMngr->_AddErrorResult( "Netlist kontrola", $m );
+	}
+	
+	# 16) If customer has required scheme, check if scheme in mpanel is ok
+	my $usedScheme = undef;
+	unless(CustSchemeCheck->CustSchemeOk($inCAM, $jobId,\$usedScheme, $defaultInfo->GetCustomerNote())){
 		
+		my $custSchema = $defaultInfo->GetCustomerNote()->RequiredSchema();
+		
+		$dataMngr->_AddWarningResult( "Customer schema", "Zákazník požaduje vlastní schéma: \"$custSchema\", ale je vloženo schéma: $usedScheme." );
 	}
  
 
