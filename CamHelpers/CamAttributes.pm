@@ -136,6 +136,22 @@ sub GetStepAttr {
 	return %info;
 }
 
+
+#return value of step attribute by name
+sub GetStepAttrByName {
+	my $self     = shift;
+	my $inCAM    = shift;
+	my $jobId    = shift;
+	my $stepName = shift;
+	my $attName = shift;
+
+	my %att = $self->GetStepAttr($inCAM,$jobId, $stepName);
+ 	
+ 	return $att{$attName};
+ 	
+}
+
+
 #return all layer attributes
 sub GetLayerAttr {
 

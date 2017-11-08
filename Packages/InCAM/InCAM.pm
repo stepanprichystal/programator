@@ -417,7 +417,6 @@ sub GetExceptionsError {
 	return \@exceptions;
 }
 
-
 # Return if InCAM library is connected to server or to InCAM editor
 sub IsConnected {
 	my ($self) = shift;
@@ -558,6 +557,21 @@ sub SetLogger {
 	my $logger = shift;
 
 	$self->{"logger"} = $logger;
+}
+
+# Set if command will be displayed in InCAM editor
+sub SetDisplay {
+	my $self    = shift;
+	my $display = shift;    # 1 - display, 0 - freeze editor during incam command
+
+	if ($display) {
+
+		$self->COM("disp_on");
+	
+	}else {
+
+		$self->COM("disp_off");
+	}
 }
 
 # -----------------------------------------------------------------------------
@@ -753,7 +767,7 @@ sub PAUSE {
 	$self->{STATUS}  = $self->__GetReply();
 	$self->{READANS} = $self->__GetReply();
 	$self->{PAUSANS} = $self->__GetReply();
-	
+
 	return $self->{PAUSANS};
 }
 

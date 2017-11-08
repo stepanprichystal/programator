@@ -83,7 +83,7 @@ sub __LoadChanges {
 
 	my $inCAM  = $self->{"inCAM"};
 	my $jobId  = $self->{"jobId"};
-	my $isPool = HegMethods->GetPcbIsPool($jobId);
+	
 
 	my $path  = GeneralHelper->Root() . "\\Packages\\Reorder\\ChangeReorder\\ChangeList";
 	my @lines = @{ FileHelper->ReadAsLines($path) };
@@ -107,7 +107,7 @@ sub __LoadChanges {
 			my $module = 'Packages::Reorder::ChangeReorder::Changes::' . $key;
 			eval("use  $module;");
 
-			push( @changes, $module->new( $key, $inCAM, $jobId, $isPool ) );
+			push( @changes, $module->new( $key, $inCAM, $jobId ) );
 		}
 	}
 

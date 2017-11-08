@@ -17,6 +17,7 @@ use aliased 'CamHelpers::CamJob';
 use aliased 'CamHelpers::CamLayer';
 use aliased 'CamHelpers::CamGoldArea';
 use aliased 'CamHelpers::CamAttributes';
+use aliased 'Connectors::HeliosConnector::HegMethods';
 
 
 #-------------------------------------------------------------------------------------------#
@@ -38,7 +39,7 @@ sub Run {
 
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
-	my $isPool   = $self->{"isPool"};
+	my $isPool    = HegMethods->GetPcbIsPool($jobId);
 	
 	# Check only standard orders
 	if($isPool){

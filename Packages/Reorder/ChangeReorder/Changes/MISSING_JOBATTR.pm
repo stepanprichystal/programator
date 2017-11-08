@@ -17,6 +17,7 @@ use aliased 'CamHelpers::CamJob';
 use aliased 'CamHelpers::CamLayer';
 use aliased 'Packages::NifFile::NifFile';
 use aliased 'CamHelpers::CamAttributes';
+use aliased 'Connectors::HeliosConnector::HegMethods';
 
 
 #-------------------------------------------------------------------------------------------#

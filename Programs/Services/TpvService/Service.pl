@@ -108,7 +108,7 @@ sub WorkerMethod {
 
 		# check if app should run over night niht is 22:00 - 6:00, when no TPV in office
 		my $curHours = (localtime())[2];
-		if($regApp{$appName}->{"night"} && ($curHours > 6 && $curHours < 22)){
+		if($regApp{$appName}->{"night"} && ($curHours >= 6 && $curHours < 22)){
 			next;
 		}
 

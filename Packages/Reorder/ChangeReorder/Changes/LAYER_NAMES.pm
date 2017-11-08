@@ -15,6 +15,7 @@ use warnings;
 #local library
 use aliased 'CamHelpers::CamJob';
 use aliased 'CamHelpers::CamLayer';
+use aliased 'Connectors::HeliosConnector::HegMethods';
 
 
 #-------------------------------------------------------------------------------------------#
