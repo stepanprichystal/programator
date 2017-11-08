@@ -82,6 +82,8 @@ sub __ExportNcSet {
 	my $jobId    = $self->{"jobId"};
 	my $inCAM    = $self->{"inCAM"};
 	my $stepName = $self->{"stepName"};
+	
+	get_logger("abstractQueue")->error( "Finding  $jobId layer: $layerName, machine: $machine, __ExportNcSet 1\n ");
 
 	# Check if Null point is in left down corner of profile
 	my %lim = CamJob->GetProfileLimits2( $inCAM, $jobId, $stepName, 1 );
@@ -92,8 +94,12 @@ sub __ExportNcSet {
 	}
 
 	$inCAM->COM( 'set_step', "name" => $stepName );
+	
+	get_logger("abstractQueue")->error( "Finding  $jobId layer: $layerName, machine: $machine, __ExportNcSet 2\n ");
 
 	$inCAM->COM( "open_sets_manager", "test_current" => "no" );
+	
+	get_logger("abstractQueue")->error( "Finding  $jobId layer: $layerName, machine: $machine, __ExportNcSet 3\n ");
 
 	my $setName = undef;
 
@@ -352,10 +358,14 @@ sub __ResultExportLayer {
 	my $self       = shift;
 	my $layer      = shift;
 	my $resultItem = shift;
+	
+	get_logger("abstractQueue")->error( "Finding  ".$self->{"jobId"}."   __ResultExportLayer 1 \n ");
 
 	#load other possible errors
 	$self->__GetErrorsFromHook( $layer, $resultItem );
 	$self->_OnItemResult($resultItem);
+	
+	get_logger("abstractQueue")->error( "Finding  ".$self->{"jobId"}."   __ResultExportLayer 2\n ");
 }
 
 # Search errors in log, genereeted by hooks, outfile, nc_create, etc..
@@ -390,6 +400,8 @@ sub __GetErrorsFromHook {
 			$itemResult->AddError($mess);
 		}
 	}
+	
+	get_logger("abstractQueue")->error( "Finding  ".$self->{"jobId"}."   __GetErrorsFromHook\n ");
 }
 
 #-------------------------------------------------------------------------------------------#
