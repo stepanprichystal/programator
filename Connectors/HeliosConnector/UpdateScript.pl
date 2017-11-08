@@ -43,6 +43,17 @@ if ( $methodName eq "UpdateNCInfo" ) {
 		$result = 1;
 	}
 
+}elsif ( $methodName eq "UpdatePooling" ) {
+
+	$result = HegMethods->UpdatePooling(@params);
+
+	if ( $result =~ /success/i ) {
+		$result = 0;
+	}
+	else {
+		$result = 1;
+	}
+
 }
 elsif ( $methodName eq "UpdatePcbOrderState" ) {
 

@@ -18,6 +18,7 @@ use List::MoreUtils qw(uniq);
 use aliased 'Packages::Scoring::ScoreFlatten';
 use aliased 'Managers::MessageMngr::MessageMngr';
 use aliased 'Enums::EnumsGeneral';
+use aliased 'Connectors::HeliosConnector::HegMethods';
 
 #-------------------------------------------------------------------------------------------#
 #  Public method
@@ -38,7 +39,7 @@ sub Run {
 
 	my $inCAM  = $self->{"inCAM"};
 	my $jobId  = $self->{"jobId"};
-	my $isPool = $self->{"isPool"};
+	my $isPool    = HegMethods->GetPcbIsPool($jobId);
 
 	# Check only standard orders
 	if ($isPool) {

@@ -86,7 +86,7 @@ sub GetSection {
 					$i++;
 					my $lSection = $self->{"nifRows"}->[$i];
 
-					if ( !defined $lSection || $lSection =~ /.*\[=+\s+SEKCE ([^=]*)\s+=+\].*/i) {
+					if ( !defined $lSection || $lSection =~ /.*\[=+\s+SEKCE ([^=]*)\s+=+\].*/i ) {
 						$read = 0;
 						last;
 					}
@@ -102,7 +102,7 @@ sub GetSection {
 	}
 
 	# remove line compete = 1 if exist
-	
+
 	@{$lines} = grep { $_ !~ /complete/i } @{$lines};
 
 	if ( scalar( @{$lines} ) ) {
@@ -145,6 +145,24 @@ sub GetSilkScreenColor {
 
 	return %silk;
 
+}
+
+# Return:
+# - 0 - if payments is not in nif or if is in inf and contains "-"
+# - 1 - if payments contains "+"
+sub GetPayment {
+	my $self      = shift;
+	my $paymentId = shift;
+
+	my $payement = 0;
+
+	my $row = ( grep { $_ =~ /$paymentId/i } @{ $self->{"nifRows"} } )[0];
+
+	if ( $row && $row !~ /\-/ ) {
+		$payement = 1;
+	}
+
+	return $payement;
 }
 
 #-------------------------------------------------------------------------------------------#

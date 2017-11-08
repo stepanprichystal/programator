@@ -20,7 +20,7 @@ sub new {
 	my $checkKey = shift;
 	my $inCAM    = shift;
 	my $jobId    = shift;
-	my $isPool   = shift;
+	 
 
 	$self = {};
 	bless $self;
@@ -28,7 +28,7 @@ sub new {
 	$self->{"key"}    = $checkKey;
 	$self->{"inCAM"}  = $inCAM;
 	$self->{"jobId"}  = $jobId;
-	$self->{"isPool"} = $isPool;
+	 
 
 	return $self;
 }

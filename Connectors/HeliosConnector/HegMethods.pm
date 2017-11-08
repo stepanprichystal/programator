@@ -806,6 +806,33 @@ sub UpdateNCInfo {
 
 }
 
+# update column pooling in pcb order
+sub UpdatePooling {
+	my $self        = shift;
+	my $order       = shift;
+	my $isPool      = shift;
+	my $childThread = shift;
+
+	$isPool = $isPool ? "A" : "N";
+	
+	if ($childThread) {
+
+		my $result = $self->__SystemCall( "UpdatePooling", $order, $isPool );
+
+		return $result;
+	}
+	else {
+
+		#use Connectors::HeliosConnector::HelperWriter;
+		require Connectors::HeliosConnector::HelperWriter;
+
+		my $res = Connectors::HeliosConnector::HelperWriter->OnlineWrite_order( "$order", $isPool, "pooling" );
+
+		return $res;
+	}
+
+}
+
 # Opdate column aktualni_krok in pcb order
 sub UpdatePcbOrderState {
 	my $self        = shift;
@@ -1173,57 +1200,58 @@ sub GetPcbsInProduceMDI {
 # Return store information about prepreg defined by multical ids
 sub GetCopperStoreInfo {
 	my $self = shift;
-	my $id   = shift; # prepreg thick id
-	
-	return $self->GetMatStoreInfo(EnumsIS->MatType_COPPER, undef, $id);
+	my $id   = shift;                                                      # prepreg thick id
+
+	return $self->GetMatStoreInfo( EnumsIS->MatType_COPPER, undef, $id );
 
 }
 
 # Return store information about prepreg defined by multical ids
 sub GetPrepregStoreInfo {
 	my $self = shift;
-	my $qId  = shift; # quality id (DR4, IS400, ..)
-	my $id   = shift; # prepreg thick id
-	
-	return $self->GetMatStoreInfo(EnumsIS->MatType_PREPREG, $qId, $id);
+	my $qId  = shift;                                                      # quality id (DR4, IS400, ..)
+	my $id   = shift;                                                      # prepreg thick id
+
+	return $self->GetMatStoreInfo( EnumsIS->MatType_PREPREG, $qId, $id );
 
 }
 
 # Return store information about core defined by multical ids
 sub GetCoreStoreInfo {
 	my $self = shift;
-	my $qId  = shift; # quality id (DR4, IS400, ..)
-	my $id   = shift; # core thick id
-	my $id2   = shift; # copper thick id
-	
-	return $self->GetMatStoreInfo(EnumsIS->MatType_CORE, $qId, $id, $id2);
+	my $qId  = shift;                                                      # quality id (DR4, IS400, ..)
+	my $id   = shift;                                                      # core thick id
+	my $id2  = shift;                                                      # copper thick id
+
+	return $self->GetMatStoreInfo( EnumsIS->MatType_CORE, $qId, $id, $id2 );
 }
 
-
 # Return infro from actual store from CNC store about material (copper, core, prepreg types only)
-# qId, Id, Id2 are from UDA table and are refer to Multicall file "ml.xml", 
+# qId, Id, Id2 are from UDA table and are refer to Multicall file "ml.xml",
 # where are defined materials and qid
 sub GetMatStoreInfo {
-	my $self = shift;
+	my $self    = shift;
 	my $matType = shift;
-	my $qId  = shift;
-	my $id   = shift;
-	my $id2  = shift;
+	my $qId     = shift;
+	my $id      = shift;
+	my $id2     = shift;
 
-	my @params = ( SqlParameter->new( "_matType", Enums->SqlDbType_VARCHAR, $matType), 
-				   SqlParameter->new( "__qId", Enums->SqlDbType_INT, $qId ),
-				   SqlParameter->new( "__id",  Enums->SqlDbType_INT, $id ),
-				   SqlParameter->new( "__id2", Enums->SqlDbType_INT, $id2 )
+	my @params = (
+				   SqlParameter->new( "_matType", Enums->SqlDbType_VARCHAR, $matType ),
+				   SqlParameter->new( "__qId",    Enums->SqlDbType_INT,     $qId ),
+				   SqlParameter->new( "__id",     Enums->SqlDbType_INT,     $id ),
+				   SqlParameter->new( "__id2",    Enums->SqlDbType_INT,     $id2 )
 	);
-	
+
 	my $where = "";
-	if($matType eq EnumsIS->MatType_PREPREG){
-		
+	if ( $matType eq EnumsIS->MatType_PREPREG ) {
+
 		$where .= "and uda.dps_qid = __qId"
-	
-	}elsif($matType eq EnumsIS->MatType_CORE){
-		
-		$where .= "and uda.dps_qid = __qId and uda.dps_id2 = __id2"
+
+	}
+	elsif ( $matType eq EnumsIS->MatType_CORE ) {
+
+		$where .= "and uda.dps_qid = __qId and uda.dps_id2 = __id2";
 	}
 
 	my $cmd = "SELECT kks.reference_subjektu, 
@@ -1247,11 +1275,10 @@ sub GetMatStoreInfo {
 					and uda.dps_id = __id
 					$where";
 
- 
 	my @result = Helper->ExecuteDataSet( $cmd, \@params );
-	
-	if(scalar(@result)){
-	 
+
+	if ( scalar(@result) ) {
+
 		return $result[0];
 	}
 
@@ -1291,10 +1318,14 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	use aliased 'Connectors::HeliosConnector::HegMethods';
 	use Data::Dump qw(dump);
+ 
+	my $res = HegMethods->UpdatePooling( "f52457-03", 1 );
+	
+	print $res;
+	
+	print HegMethods->GetPcbIsPool("f52457");
 
-	my @orders = map { $_->{"reference_subjektu"} } HegMethods->GetOrdersByState("d00292", 2);
-
-	dump(@orders);
+	
 
 	#print scalar(@opak);
 

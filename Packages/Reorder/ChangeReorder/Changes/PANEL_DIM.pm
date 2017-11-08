@@ -20,6 +20,7 @@ use aliased 'Packages::ProductionPanel::StandardPanel::Enums';
 use aliased 'CamHelpers::CamStep';
 use aliased 'CamHelpers::CamStepRepeat';
 use aliased 'Packages::ProductionPanel::ActiveArea::ActiveArea';
+use aliased 'Connectors::HeliosConnector::HegMethods';
 
 
 #-------------------------------------------------------------------------------------------#
@@ -41,7 +42,7 @@ sub Run {
 	
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
-	my $isPool   = $self->{"isPool"};
+	my $isPool    = HegMethods->GetPcbIsPool($jobId);
 	
 	# Check only standard orders
 	if($isPool){

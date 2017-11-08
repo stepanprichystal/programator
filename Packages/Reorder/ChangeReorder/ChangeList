@@ -5,7 +5,9 @@
   
 # === automatic changes ======  
  
+ 
 MISSING_JOBATTR
+POOL
 MASK_POLAR
 LAYER_NAMES
 SCORING
