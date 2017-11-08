@@ -37,8 +37,6 @@ sub new {
 
 	$self->{"inCAM"}      = undef;
 	$self->{"jobId"}      = undef;
-	
-	
  
 
 	# EVENTS

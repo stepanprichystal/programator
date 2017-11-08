@@ -386,8 +386,18 @@ sub __GetErrorsFromHook {
 
 			$l =~ m/=\s*[01]+;(.*)/i;
 			my $mess = "Exporting on machine: $machine. " . $1;
+ 
+			# parse error type
+			my ($errorType) =  $l =~ m/$key\/.*\/(.*)\s*=/;
+			
+			if($errorType =~ /[(rout)(drill)](tool)?parameters/i){
+				
+				$itemResult->AddWarning($mess);
+			}else{
+				
+				$itemResult->AddError($mess);
+			}
 
-			$itemResult->AddError($mess);
 		}
 	}
 }
