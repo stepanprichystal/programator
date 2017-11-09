@@ -119,7 +119,7 @@ sub __OnJobStateChanged {
 		if ( $task->GetJobShouldToProduce() ) {
  
 			# if can eb sent to produce without errror, send it
-			if ( $task->GetJobCanToProduce() ) {
+			if ( $task->GetJobCanToProduce() && $task->GetTaskWarningCnt() == 0 ) {
 
 				my $sent = $task->SentToProduce();
 
