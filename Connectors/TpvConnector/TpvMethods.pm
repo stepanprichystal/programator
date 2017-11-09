@@ -41,7 +41,8 @@ sub GetCustomerInfo {
 					IF(t1.NoTpvInfoPdf = '', null , t1.NoTpvInfoPdf) as NoTpvInfoPdf,
 					IF(t1.ExportPdfControl = '', null , t1.ExportPdfControl) as ExportPdfControl,
 					IF(t1.ExportDataControl = '', null , t1.ExportDataControl) as ExportDataControl,
-					IF(t1.ScoreCoreThick = '', null , t1.ScoreCoreThick) as ScoreCoreThick
+					IF(t1.ScoreCoreThick = '', null , t1.ScoreCoreThick) as ScoreCoreThick,
+					IF(t1.RequiredSchema = '', null , t1.RequiredSchema) as RequiredSchema
 	
     				FROM customer_note AS t1
 

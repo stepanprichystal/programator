@@ -139,6 +139,18 @@ sub ScoreCoreThick {
 
 }
 
+sub RequiredSchema {
+	my $self = shift;
+  
+	if(!$self->Exist()){
+		return undef;
+	}
+  
+	return $self->{"notes"}->{"RequiredSchema"};
+}
+
+
+
 # ======== Stencil notes ============
 
 sub HoleDistX {
