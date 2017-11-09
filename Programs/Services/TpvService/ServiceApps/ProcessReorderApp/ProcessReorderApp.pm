@@ -141,6 +141,14 @@ sub __RunJob {
 		my $err = "Process order id: \"$orderId\" exited with error: \n $eStr";
 
 		$self->__ProcessJobResult( $orderId, EnumsIS->CurStep_PROCESSREORDERERR, $err );
+		
+		# if job is open by server, close and checkin job after error (other server block job)
+		 
+		if(CamJob->IsJobOpen($self->{"inCAM"}, $jobId)){
+			
+			$self->{"inCAM"}->COM( "check_inout", "job" => "$jobId", "mode" => "in", "ent_type" => "job" );
+			$self->{"inCAM"}->COM( "close_job", "job" => "$jobId" );
+		}
 	}
 }
 
