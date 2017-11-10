@@ -384,6 +384,7 @@ sub __GetErrorsFromHook {
 	}
 
 	my $key = $self->{"jobId"} . "/" . $self->{"stepName"} . "/" . $layer;
+	
 
 	for ( my $i = 0 ; $i < scalar(@lines) ; $i++ ) {
 
@@ -391,13 +392,21 @@ sub __GetErrorsFromHook {
 
 		my @splitted = split( "/", $l );
 		my $machine = $splitted[3];
-
+		my ($errType) =  $l =~ /$key\/.*\/(.*)\s*=/i;
+		$errType =~ s/\s//;
+	 
 		if ( $l =~ /$key/i ) {
 
 			$l =~ m/=\s*[01]+;(.*)/i;
 			my $mess = "Exporting on machine: $machine. " . $1;
 
-			$itemResult->AddError($mess);
+			if($errType =~ /[(drill)|(rout)](tool)?parameters/){
+				$itemResult->AddWarning($mess);
+			}else{
+				$itemResult->AddError($mess);
+			}
+
+			
 		}
 	}
 	

@@ -95,44 +95,7 @@ sub GetProduceWarningsCnt {
 
 	return $self->{"produceResultMngr"}->GetWarningsCnt();
 }
-
-# Return task Result of whole task
-sub Result {
-	my $self = shift;
-
-	my $totalResult = EnumsGeneral->ResultType_OK;
-
-	# result from all units
-	my $unitsResult = $self->{"units"}->Result();
-
-	# result - test if user abort job
-	my $taskAbortedResult = EnumsGeneral->ResultType_OK;
-
-	if ( $self->{"aborted"} ) {
-		$taskAbortedResult = EnumsGeneral->ResultType_FAIL;
-	}
-
-	# result for task
-	my $taskResult = $self->{"taskResultMngr"}->Succes();
-
-	if ($taskResult) {
-		$taskResult = EnumsGeneral->ResultType_OK;
-	}
-	else {
-		$taskResult = EnumsGeneral->ResultType_FAIL;
-	}
-
-	if (    $unitsResult eq EnumsGeneral->ResultType_FAIL
-		 || $taskResult eq EnumsGeneral->ResultType_FAIL
-		 || $taskAbortedResult eq EnumsGeneral->ResultType_FAIL )
-	{
-
-		$totalResult = EnumsGeneral->ResultType_FAIL;
-	}
-
-	return $totalResult;
-}
-
+ 
 # ===================================================================
 # Method regardings "to produce" issue
 # ===================================================================
@@ -318,6 +281,21 @@ sub SetErrorState {
 		print STDERR $e;
 
 	}
+}
+
+# overriden method!
+sub ProcessGroupEnd {
+	my $self = shift;
+	my $data = shift;
+
+	my $unitId = $data->{"unitId"};
+
+	my $unit = $self->_GetUnit($unitId);
+
+	$unit->ProcessGroupEnd();
+
+	my $notConsiderWarn = 1;
+	$self->{"taskStatus"}->UpdateStatusFile( $unitId, $unit->Result($notConsiderWarn) );
 }
 
 #-------------------------------------------------------------------------------------------#

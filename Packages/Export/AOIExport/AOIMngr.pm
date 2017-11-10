@@ -49,7 +49,7 @@ sub new {
 	$self->{"stepToTest"}   = shift;    # step, which will be tested
 	$self->{"layerNames"}   = shift;    # step, which will be tested
 	$self->{"sendToServer"} = shift;    # if AOI data shoul be send to server from ot folder
-	$self->{"attemptCnt"}   = 30;       # max count of attempt
+	$self->{"attemptCnt"}   = 50;       # max count of attempt
 
 	$self->{"layerCnt"} = CamJob->GetSignalLayerCnt( $self->{"inCAM"}, $self->{"jobId"} );
 

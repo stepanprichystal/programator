@@ -43,67 +43,67 @@ sub new {
 sub Run {
 	my $self = shift;
 
-	
 	my @ordersInfo = $self->{"poolInfo"}->GetOrdersInfo();
 
 	# 1) Choose master job
 	my $masterJobRes = $self->_GetNewItem("Find master job");
 	my $masterOrder  = undef;
-	my $masterJob  = undef;
+	my $masterJob    = undef;
 	my $mess         = "";
 
-	unless ( $self->{"masterHelper"}->GetMasterJob(  \$masterOrder, \$masterJob, \$mess ) ) {
+	unless ( $self->{"masterHelper"}->GetMasterJob( \$masterOrder, \$masterJob, \$mess ) ) {
 
 		$masterJobRes->AddError($mess);
 	}
 	else {
 
 		$self->SetValInfoFile( "masterOrder", $masterOrder );
-		$self->SetValInfoFile( "masterJob", $masterJob );
-		
+		$self->SetValInfoFile( "masterJob",   $masterJob );
+
 	}
 
 	$self->_OnPoolItemResult($masterJobRes);
-	
-	
-	
+
 	# 7) Check if nif are ok
 	my $childStatusRes = $self->_GetNewItem("Child job status");
-	$mess           = "";
+	$mess = "";
 
-	unless ( $self->{"checkHelper"}->CheckChildJobStatus(  $masterOrder, \$mess ) ) {
+	unless ( $self->{"checkHelper"}->CheckChildJobStatus( $masterOrder, \$mess ) ) {
 
-		#$childStatusRes->AddError($mess);
+		if ( $main::DEBUG && $main::disableChecks ) {
+			# no control if DEBUG mode
+		}
+		else {
+			$childStatusRes->AddError($mess);
+		}
+
 	}
 
 	$self->_OnPoolItemResult($childStatusRes);
-	
-		# 3) Check if jobs exist
+
+	# 3) Check if jobs exist
 	my $jobsExistRes = $self->_GetNewItem("Pool jobs exist");
-	$mess         = "";
+	$mess = "";
 
 	unless ( $self->{"checkHelper"}->PoolJobsExist( \$mess ) ) {
 
 		$jobsExistRes->AddError($mess);
 	}
-	
+
 	$self->_OnPoolItemResult($jobsExistRes);
-	
+
 	# 3) Check if jobs exist
 	my $jobsClosedRes = $self->_GetNewItem("Pool jobs closed");
-	$mess         = "";
+	$mess = "";
 
 	unless ( $self->{"checkHelper"}->PoolJobsClosed( \$mess ) ) {
 
 		$jobsClosedRes->AddError($mess);
 	}
-	
+
 	$self->_OnPoolItemResult($jobsClosedRes);
-	
-	
- 
-	
-    # Let "pool merger" know, master job was chosen
+
+	# Let "pool merger" know, master job was chosen
 	# Then "pool merger" open it
 	if ( defined $masterJob ) {
 
@@ -113,26 +113,26 @@ sub Run {
 	else {
 		die "Master job is not defined";
 	}
- 
 
 	# 2) Check master job
 	my $masterJobCheckRes = $self->_GetNewItem("Mater job checks");
-	$mess    = "";
+	$mess = "";
 
-	unless ( $self->{"masterHelper"}->CheckMasterJob(  $masterJob, \$mess ) ) {
+	unless ( $self->{"masterHelper"}->CheckMasterJob( $masterJob, \$mess ) ) {
 
-		$masterJobCheckRes->AddError($mess);
+		if ( $main::DEBUG && $main::disableChecks ) {
+			# no control if DEBUG mode
+		}
+		else {
+			$masterJobCheckRes->AddError($mess);
+		}
 	}
 
 	$self->_OnPoolItemResult($masterJobCheckRes);
 
- 
-
-
-
 	# 4) Check if jobs o+1 step exist
 	my $jobsContainStepRes = $self->_GetNewItem("Step and layer checks");
-	$mess               = "";
+	$mess = "";
 
 	unless ( $self->{"checkHelper"}->JobChecks( \$mess ) ) {
 
@@ -143,7 +143,7 @@ sub Run {
 
 	# 5) Check pcb dimension are ok
 	my $dimensionsRes = $self->_GetNewItem("Pcb dimensions");
-	$mess          = "";
+	$mess = "";
 
 	unless ( $self->{"checkHelper"}->DimensionsAreOk( \$mess ) ) {
 
@@ -154,7 +154,7 @@ sub Run {
 
 	# 6) Check if nif are ok
 	my $nifAreOkRes = $self->_GetNewItem("Nif control");
-	$mess        = "";
+	$mess = "";
 
 	unless ( $self->{"checkHelper"}->CheckNifAreOk( \$mess ) ) {
 
@@ -162,8 +162,6 @@ sub Run {
 	}
 
 	$self->_OnPoolItemResult($nifAreOkRes);
-
-
 
 }
 

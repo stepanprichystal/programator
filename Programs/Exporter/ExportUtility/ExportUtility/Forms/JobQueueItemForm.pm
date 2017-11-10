@@ -146,8 +146,13 @@ sub SetTaskWarningCnt {
 # Set "sent to produce" indicators
 sub SetProduceResult {
 	my $self             = shift;
-	my $stauts           = shift;
+	my $stauts           = shift; # to produce result
 	my $jobSentToProduce = shift;
+
+	if($stauts eq EnumsGeneral->ResultType_FAIL){
+		
+		$self->{"btnProduce"}->Disable();
+	}
 
 	if ($jobSentToProduce) {
 

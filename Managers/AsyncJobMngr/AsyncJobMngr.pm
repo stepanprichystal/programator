@@ -84,8 +84,8 @@ sub new {
 	$self->{'onRunJobWorker'}    = Event->new();
 
 	$self->{'onJomMngrClose'} = Event->new();    # reise right imidiatelly before destroy this app
-	
-	$self->{"appLoger"} = get_logger(Enums->Logger_APP); 
+
+	$self->{"appLoger"} = get_logger( Enums->Logger_APP );
 
 	my $mainFrm = $self->__SetLayout($parent);
 
@@ -122,12 +122,31 @@ sub _AddJobToQueue {
 
 	push( @{ $self->{"jobs"} }, \%jobInfo );
 
-	# TODO SMAZAT
-	#$jobInfo{"port"}  = undef;
-	#$jobInfo{"state"} = Enums->JobState_RUNNING;
-	#$self->{"threadMngr"}->RunNewtask( $uniqueId, $jobInfo{"port"}, $pcbId );
+	# Check if DEBUG mode (if test server already prepared)
+	# launch task in with fake server
+	if ( $main::DEBUG && $main::debugPortServer ) {
 
-	$self->{'onJobStateChanged'}->Do( $jobInfo{"jobGUID"}, $jobInfo{"state"} );
+		my @j = @{ $self->{"jobs"} };
+		my $i = ( grep { $j[$_]->{"jobGUID"} eq $uniqueId } 0 .. $#j )[0];
+
+		${ $self->{"jobs"} }[$i]{"port"}  = $main::debugPortServer;
+		${ $self->{"jobs"} }[$i]{"state"} = Enums->JobState_RUNNING;
+ 
+		my $pcbId          = ${ $self->{"jobs"} }[$i]{"pcbId"};
+		my $jobGUID        = ${ $self->{"jobs"} }[$i]{"jobGUID"};
+		my $externalServer = ${ $self->{"jobs"} }[$i]{"serverInfo"} ? 1 : 0;
+		my $jobStrData     = ${ $self->{"jobs"} }[$i]{"jobStrData"};
+
+		$self->{'onJobStateChanged'}->Do( $jobGUID, Enums->JobState_RUNNING );
+
+		$self->{"threadMngr"}->RunNewtask( $jobGUID, $jobStrData, $main::debugPortServer, $pcbId, undef, 1 );
+
+	}else{
+		
+		
+		$self->{'onJobStateChanged'}->Do( $jobInfo{"jobGUID"}, $jobInfo{"state"} );
+	}
+ 
 
 	return $jobInfo{"jobGUID"};
 
@@ -334,7 +353,6 @@ sub __PortReadyHandler {
 
 		print STDERR "\n\n Job $pcbId IS start running PORT: " . $d{"port"} . " PIDINCAM: " . $d{"pidInCAM"} . "\n\n";
 
-
 		$self->{"threadMngr"}->RunNewtask( $jobGUID, $jobStrData, $d{"port"}, $pcbId, $d{"pidInCAM"}, $externalServer );
 
 	}
@@ -374,8 +392,7 @@ sub __ThreadProgressHandler {
 	my %d       = %{ $event->GetData };
 	my $jobGUID = $d{"taskId"};
 	my $data    = $d{"data"};
-	
-	
+
 	$self->{"appLoger"}->debug("Receive progress event task id $jobGUID");
 
 	#reise event
@@ -394,7 +411,7 @@ sub __ThreadMessageHandler {
 	my $jobGUID  = $d{"taskId"};
 	my $messType = $d{"messType"};
 	my $data     = $d{"data"};
-	
+
 	$self->{"appLoger"}->debug("Receive message event task id $jobGUID");
 
 	#reise event
@@ -509,8 +526,6 @@ sub __SetLayout {
 
 	#EVENTS
 
-	 
-
 	my $THREAD_DONE_EVT : shared = Wx::NewEventType;
 	Wx::Event::EVT_COMMAND( $self->{"mainFrm"}, -1, $THREAD_DONE_EVT, sub { $self->__ThreadDoneHandler(@_) } );
 
@@ -564,14 +579,14 @@ sub __CloseActiveJobs {
 # Function responsible for properly close threads and servers
 sub __OnClose {
 
-	my ( $self, $silent ) = @_; # if silent, no ask for close running jobs. If running jobs nothing happen
+	my ( $self, $silent ) = @_;    # if silent, no ask for close running jobs. If running jobs nothing happen
 
 	my $jobsRef    = $self->{"jobs"};
 	my $str        = "";
 	my $activeJobs = 0;
 
 	# If closing is not silent(server version) Stop timers - we don't want take another jobs from queue
-	if(!$silent){
+	if ( !$silent ) {
 		$self->{"timertask"}->Stop();
 	}
 
@@ -590,7 +605,7 @@ sub __OnClose {
 
 	print STDERR "Ask for close, active jobs= $activeJobs , silent = $silent \n";
 
-	if ($activeJobs && !$silent) {
+	if ( $activeJobs && !$silent ) {
 
 		#ask if exit
 
@@ -615,7 +630,7 @@ sub __OnClose {
 		}
 
 	}
-	elsif(!$activeJobs){
+	elsif ( !$activeJobs ) {
 
 		# Close or servers, which are waiting or running
 		$self->{"serverMngr"}->SetDestroyOnDemand(0);

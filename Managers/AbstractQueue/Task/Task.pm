@@ -45,8 +45,13 @@ sub new {
 
 	$self->{"taskStatus"} = shift;  # Class responsible for updating StatusFile in job archive
 	
+	# when some group finish only with warning (no error), whole taks result is:
+	# ignoreWarn = 1 => succes
+	# ignoreWarn = 0 => failed
+	$self->{"ignoreWarn"} = shift; 
+	
 	# Object, which keep all units objects
-	$self->{"units"} = Units->new( $self->{"jobId"} );
+	$self->{"units"} = Units->new( $self->{"jobId"}, $self->{"ignoreWarn"} );
 
 	$self->{"taskId"} = GeneralHelper->GetGUID();    # unique id per each task
 
@@ -128,13 +133,12 @@ sub GetGroupItemResultMngr {
 # Return task Result of whole task
 sub Result {
 	my $self = shift;
-	my $notWarn = shift;  # if thera are only warning, result is Succes
 
 	my $totalResult = EnumsGeneral->ResultType_OK;
 
 	# result from all units
 	
-	my $unitsResult = $self->{"units"}->Result($notWarn);
+	my $unitsResult = $self->{"units"}->Result($self->{"ignoreWarn"});
 
 	# result - test if user abort job
 	my $taskAbortedResult = EnumsGeneral->ResultType_OK;
@@ -144,7 +148,7 @@ sub Result {
 	}
 
 	# result for task
-	my $taskResult = $self->{"taskResultMngr"}->Succes($notWarn);
+	my $taskResult = $self->{"taskResultMngr"}->Succes($self->{"ignoreWarn"});
 
 	if ($taskResult) {
 		$taskResult = EnumsGeneral->ResultType_OK;
@@ -259,7 +263,7 @@ sub ProcessGroupEnd {
 
 	$unit->ProcessGroupEnd();
 
-	$self->{"taskStatus"}->UpdateStatusFile( $unitId, $unit->Result() );
+	$self->{"taskStatus"}->UpdateStatusFile( $unitId, $unit->Result($self->{"ignoreWarn"}) );
 }
 
 sub ProcessTaskResult {
