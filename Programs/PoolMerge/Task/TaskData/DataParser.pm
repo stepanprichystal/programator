@@ -90,7 +90,17 @@ sub __GetTaskData {
 	$taskData->{"settings"}->{"poolExported"} = $exportTime;
 	$taskData->{"settings"}->{"poolGroupData"} = dclone($groupData);
 
+	# define all units for task
 	my @mandatory = (UnitEnums->UnitId_CHECK, UnitEnums->UnitId_MERGE, UnitEnums->UnitId_ROUT, UnitEnums->UnitId_OUTPUT);
+	
+	# When DEBUG mode, load groups from global variable
+	if($main::DEBUG && @main::mandatory){
+		
+		@mandatory = @main::mandatory;
+	}
+
+
+	
 	#my @mandatory = ( UnitEnums->UnitId_MERGE  );
 	$taskData->{"settings"}->{"mandatoryUnits"} = \@mandatory;              # units, which has to be processed
 

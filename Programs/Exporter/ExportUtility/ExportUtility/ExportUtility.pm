@@ -312,7 +312,7 @@ sub __AddNewJob {
 
 	my $status = TaskStatus->new($path);
 
-	my $task = Task->new( $jobId, $taskData, $taskStrData, $status );
+	my $task = Task->new( $jobId, $taskData, $taskStrData, $status, 1 );
 
 	$self->_AddNewJob($task);
 }

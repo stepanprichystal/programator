@@ -73,7 +73,7 @@ sub Run {
 
 	unless ( $self->{"checkHelper"}->CheckChildJobStatus(  $masterOrder, \$mess ) ) {
 
-		#$childStatusRes->AddError($mess);
+		$childStatusRes->AddError($mess);
 	}
 
 	$self->_OnPoolItemResult($childStatusRes);

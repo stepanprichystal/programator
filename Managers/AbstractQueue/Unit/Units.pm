@@ -30,6 +30,11 @@ sub new {
 	bless $self;
 
 	$self->{"jobId"} = shift;
+	
+	# 1- when some group finish only with warning (no error), whole units result is:
+	# ignoreWarn = 1 => succes
+	# ignoreWarn = 0 => failed
+	$self->{"ignoreWarn"} = shift; 
 
 	$self->{"units"} = undef;
 	
@@ -161,13 +166,12 @@ sub ProcessGroupResult {
 
 sub Result {
 	my $self = shift;
-	my $notWarn = shift; # do not consider warn
-
+ 
 	my $result = EnumsGeneral->ResultType_OK;
 
 	foreach my $unit ( @{ $self->{"units"} } ) {
 
-		if ( $unit->Result($notWarn) eq EnumsGeneral->ResultType_FAIL ) {
+		if ( $unit->Result($self->{"ignoreWarn"}) eq EnumsGeneral->ResultType_FAIL ) {
 
 			$result = EnumsGeneral->ResultType_FAIL;
 		}

@@ -147,8 +147,7 @@ sub SetSentToExportResult {
 	$sentToExportMngr->Clear();
 
 	# check if task process is succes
-	my $warnNotConsider = 1;
-	if ( $self->Result($warnNotConsider) eq EnumsGeneral->ResultType_FAIL ) {
+	if ( $self->Result() eq EnumsGeneral->ResultType_FAIL ) {
 
 		my $errorStr = "Can't sent \"to export\",  ";
 

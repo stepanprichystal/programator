@@ -85,7 +85,7 @@ sub SetJobItemResult {
 
 	my $jobItem = $self->{"jobQueue"}->GetItem( $task->GetTaskId() );
 
-	$jobItem->SetTaskResult( $task->Result(1), $task->GetJobAborted(), $task->GetJobSentToExport() );
+	$jobItem->SetTaskResult( $task->Result(), $task->GetJobAborted(), $task->GetJobSentToExport() );
 
 }
 

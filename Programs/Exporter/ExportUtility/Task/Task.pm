@@ -135,8 +135,7 @@ sub SetToProduceResult {
 	$toProduceMngr->Clear();
 
 	# check if export is succes
-	my $warnNotConsider = 1;
-	if ( $self->Result($warnNotConsider) eq EnumsGeneral->ResultType_FAIL ) {
+	if ( $self->Result() eq EnumsGeneral->ResultType_FAIL ) {
 
 		my $errorStr = "Can't sent \"to produce\",  ";
 
@@ -282,6 +281,21 @@ sub SetErrorState {
 		print STDERR $e;
 
 	}
+}
+
+# overriden method!
+sub ProcessGroupEnd {
+	my $self = shift;
+	my $data = shift;
+
+	my $unitId = $data->{"unitId"};
+
+	my $unit = $self->_GetUnit($unitId);
+
+	$unit->ProcessGroupEnd();
+
+	my $notConsiderWarn = 1;
+	$self->{"taskStatus"}->UpdateStatusFile( $unitId, $unit->Result($notConsiderWarn) );
 }
 
 #-------------------------------------------------------------------------------------------#
