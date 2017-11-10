@@ -175,19 +175,19 @@ sub AddNCLayerType {
 			$l->{"plated"} = 1;
 
 		}
-		elsif ( $l->{"gROWname"} =~ /^sc[0-9]+/ ) {
+		elsif ( $l->{"gROWname"} =~ /^sc[0-9]+$/ ) {
 
 			$l->{"type"}   = EnumsGeneral->LAYERTYPE_plt_bDrillTop;
 			$l->{"plated"} = 1;
 
 		}
-		elsif ( $l->{"gROWname"} =~ /^ss[0-9]+/ ) {
+		elsif ( $l->{"gROWname"} =~ /^ss[0-9]+$/ ) {
 
 			$l->{"type"}   = EnumsGeneral->LAYERTYPE_plt_bDrillBot;
 			$l->{"plated"} = 1;
 
 		}
-		elsif ( $l->{"gROWname"} =~ /^j[0-9]+/ ) {
+		elsif ( $l->{"gROWname"} =~ /^j[0-9]+$/ ) {
 
 			$l->{"type"}   = EnumsGeneral->LAYERTYPE_plt_cDrill;
 			$l->{"plated"} = 1;
@@ -199,25 +199,25 @@ sub AddNCLayerType {
 			$l->{"plated"} = 1;
 
 		}
-		elsif ( $l->{"gROWname"} =~ /^rzc[0-9]*/ ) {
+		elsif ( $l->{"gROWname"} =~ /^rzc[0-9]*$/ ) {
 
 			$l->{"type"}   = EnumsGeneral->LAYERTYPE_plt_bMillTop;
 			$l->{"plated"} = 1;
 
 		}
-		elsif ( $l->{"gROWname"} =~ /^rzs[0-9]*/ ) {
+		elsif ( $l->{"gROWname"} =~ /^rzs[0-9]*$/ ) {
 
 			$l->{"type"}   = EnumsGeneral->LAYERTYPE_plt_bMillBot;
 			$l->{"plated"} = 1;
 
 		}
-		elsif ( $l->{"gROWname"} =~ /^v[0-9]+/ ) {
+		elsif ( $l->{"gROWname"} =~ /^v[0-9]+$/ ) {
 
 			$l->{"type"}   = EnumsGeneral->LAYERTYPE_plt_fDrill;
 			$l->{"plated"} = 1;
 
 		}
-		elsif ( $l->{"gROWname"} =~ /^dc/ ) {
+		elsif ( $l->{"gROWname"} =~ /^dc$/ ) {
 
 			$l->{"type"}   = EnumsGeneral->LAYERTYPE_plt_dcDrill;
 			$l->{"plated"} = 1;
@@ -230,25 +230,25 @@ sub AddNCLayerType {
 			$l->{"plated"} = 0;
 
 		}
-		elsif ( $l->{"gROWname"} =~ /^fzc[0-9]*/ ) {
+		elsif ( $l->{"gROWname"} =~ /^fzc[0-9]*$/ ) {
 
 			$l->{"type"}   = EnumsGeneral->LAYERTYPE_nplt_bMillTop;
 			$l->{"plated"} = 0;
 
 		}
-		elsif ( $l->{"gROWname"} =~ /^fzs[0-9]*/ ) {
+		elsif ( $l->{"gROWname"} =~ /^fzs[0-9]*$/ ) {
 
 			$l->{"type"}   = EnumsGeneral->LAYERTYPE_nplt_bMillBot;
 			$l->{"plated"} = 0;
 
 		}
-		elsif ( $l->{"gROWname"} =~ /^rs[0-9]*/ ) {
+		elsif ( $l->{"gROWname"} =~ /^rs[0-9]*$/ ) {
 
 			$l->{"type"}   = EnumsGeneral->LAYERTYPE_nplt_rsMill;
 			$l->{"plated"} = 0;
 
 		}
-		elsif ( $l->{"gROWname"} =~ /^fr[0-9]*/ ) {
+		elsif ( $l->{"gROWname"} =~ /^fr[0-9]*$/ ) {
 
 			$l->{"type"}   = EnumsGeneral->LAYERTYPE_nplt_frMill;
 			$l->{"plated"} = 0;

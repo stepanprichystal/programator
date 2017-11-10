@@ -111,9 +111,9 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	use aliased 'Packages::InCAM::InCAM';
 
 	my $inCAM = InCAM->new();
-	my $jobId = "f82353";
+	my $jobId = "f52456";
 
-	my $unitDTM = UniDTM->new( $inCAM, $jobId, "panel", "fzc", 1 );
+	my $unitDTM = UniDTM->new( $inCAM, $jobId, "o+1", "m", 1 );
 	
 	
 	

@@ -263,7 +263,7 @@ sub __InitUniDTM {
 
 }
 
-# Add pilot tool definitions (2.8mm + 4.6 mm) if tools diameter is bigger than 5.3mm
+# Add pilot tool definitions 
 sub __AddPilotHolesDefinition {
 	my $self  = shift;
 	my $inCAM = $self->{"inCAM"};
@@ -276,24 +276,47 @@ sub __AddPilotHolesDefinition {
 		return 0;
 	}
 
-	my @bigTools = grep { $_->GetDrillSize() > 5300 && $_->GetTypeProcess() eq Enums->TypeProc_HOLE } @{ $self->{"tools"} };
-
 	# 1) add poliot diameters to big hole
-	foreach my $t (@bigTools) {
+	
+	# New version of pilot holes	10.11.2017
+	# hole 4-5,4 add pilot hole 0.5
+	# hole 5.5-6.5 add pilot hole 0.5
+	my @tools1 = grep { $_->GetDrillSize() >= 4000 && $_->GetDrillSize() <= 5400 && $_->GetTypeProcess() eq Enums->TypeProc_HOLE } @{ $self->{"tools"} };
+	my @tools2 = grep { $_->GetDrillSize() >= 5500 && $_->GetDrillSize() <= 6500 && $_->GetTypeProcess() eq Enums->TypeProc_HOLE } @{ $self->{"tools"} };
+	
+	foreach my $t (@tools1) {
 
 		my $pilotDef = PilotDef->new( $t->GetDrillSize() );
-
-		if ( $t->GetDrillSize() > 5300 ) {
-
-			$pilotDef->AddPilotDiameter(1500);
-
-			# From 8.6.2017 pilot 1500µm
-			#$pilotDef->AddPilotDiameter(2800);
-			#$pilotDef->AddPilotDiameter(4600);
-		}
-
+		$pilotDef->AddPilotDiameter(500);
 		push( @{ $self->{"pilotDefs"} }, $pilotDef );
 	}
+	
+	foreach my $t (@tools2) {
+
+		my $pilotDef = PilotDef->new( $t->GetDrillSize() );
+		$pilotDef->AddPilotDiameter(600);
+		push( @{ $self->{"pilotDefs"} }, $pilotDef );
+	}
+ 
+	
+	
+# Old version of pilot holes (2.8mm + 4.6 mm) if tools diameter is bigger than 5.3mm
+# my @bigTools = grep { $_->GetDrillSize() > 5300 && $_->GetTypeProcess() eq Enums->TypeProc_HOLE } @{ $self->{"tools"} };
+#	foreach my $t (@bigTools) {
+#
+#		my $pilotDef = PilotDef->new( $t->GetDrillSize() );
+#
+#		if ( $t->GetDrillSize() > 5300 ) {
+#
+#			$pilotDef->AddPilotDiameter(1500);
+#
+#			# From 8.6.2017 pilot 1500µm
+#			#$pilotDef->AddPilotDiameter(2800);
+#			#$pilotDef->AddPilotDiameter(4600);
+#		}
+#
+#		push( @{ $self->{"pilotDefs"} }, $pilotDef );
+#	}
 
 	# 2) Go throught pilot holes and add their tool definition
 
