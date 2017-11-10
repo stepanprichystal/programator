@@ -13,20 +13,19 @@ use constant {
 	CurStep_CHECKREORDERERROR => "checkReorder-error",
 	CurStep_ZPRACOVANIAUTO    => "zpracovani-auto",
 	CurStep_ZPRACOVANIMAN     => "zpracovani-rucni",
-
+	CurStep_EMPTY             => "",
 
 	# statuses of processReorder app
 	CurStep_PROCESSREORDERERR => "processReorder-error",
-	CurStep_PROCESSREORDEROK  => "processReorder-ok",
+	CurStep_PROCESSREORDEROK  => "processReorder-ok"
 
 };
 
 # material types from  uda_kmenova_karta_skladu.dps_type
 use constant {
-	MatType_COPPER => "Copper",
-	MatType_CORE => "Core",
-	MatType_PREPREG => "Prepreg"
+			   MatType_COPPER  => "Copper",
+			   MatType_CORE    => "Core",
+			   MatType_PREPREG => "Prepreg"
 };
- 
 
 1;

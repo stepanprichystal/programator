@@ -185,7 +185,7 @@ sub SetJobItemStopped {
 
 	# set buttons
 	$self->{"btnToExport"}->Disable();
-	$self->{"btnAbort"}->Disable();
+	$self->{"btnAbort"}->Enable();
 	$self->{"btnRemove"}->Disable();
 	$self->{"btnContinue"}->Enable();
 	$self->{"btnRestart"}->Enable();

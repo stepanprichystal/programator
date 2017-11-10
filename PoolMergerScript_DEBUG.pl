@@ -29,8 +29,8 @@ $main::DEBUG = 1;
 #NonStandartUnits();
 CreateFakePoolFile(0);
 #CreateFakePoolFile(1);
-NotCreateServer();
-
+#NotCreateServer();
+NoChecks();
 # ----------------------------------------------
 
 
@@ -60,6 +60,14 @@ sub NotCreateServer{
 	$main::debugPortServer = 56753;	
 }
 
+# disable some checks in pool merger
+sub NoChecks{
+	
+	
+	$main::disableChecks = 1;
+	
+}
+
 # mother f13608-01 (f88466) 44 66
 # child	 f13609-01 (f57100) 140 83.6
 sub CreateFakePoolFile {
@@ -76,8 +84,8 @@ sub CreateFakePoolFile {
 	HegMethods->UpdatePooling( "f13608-01", 1 );
 	HegMethods->UpdatePooling( "f13609-01", 1 );
 	
-	HegMethods->UpdatePcbOrderState($motherOrder, "k panelizaci");
-	HegMethods->UpdatePcbOrderState($childOrder, "k panelizaci");
+#	HegMethods->UpdatePcbOrderState($motherOrder, "k panelizaci");
+#	HegMethods->UpdatePcbOrderState($childOrder, "k panelizaci");
 
 	
 

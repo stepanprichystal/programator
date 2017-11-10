@@ -164,6 +164,14 @@ sub __ProcessJob {
 
 	my ($jobId) = $orderId =~ /^(\w\d+)-\d+/i;
 	$jobId = lc($jobId);
+	
+	# Unless job exist, give to order "empty" status again. Than Order will be properly processed by CheckReorderApp
+	unless(CamJob->JobExist($inCAM, $jobId)){
+		
+		$self->{"logger"}->info("Job doesn't exist: $jobId");
+		$self->__ProcessJobResult( $orderId, EnumsIS->CurStep_EMPTY);
+		return 0;
+	}
 
 	# 1) Open Job
 
