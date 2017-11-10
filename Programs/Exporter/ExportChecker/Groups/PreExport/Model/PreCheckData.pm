@@ -373,7 +373,7 @@ sub OnCheckGroupData {
 		
 		my $custSchema = $defaultInfo->GetCustomerNote()->RequiredSchema();
 		
-		$dataMngr->_AddWarningResult( "Customer schema", "Zákazník požaduje vlastní schéma: \"$custSchema\", ale je vloženo schéma: $usedScheme." );
+		$dataMngr->_AddWarningResult( "Customer schema", "Zákazník požaduje ve stepu: \"mpanel\" vlastní schéma: \"$custSchema\", ale je vloženo schéma: \"$usedScheme\"." );
 	}
  
 
