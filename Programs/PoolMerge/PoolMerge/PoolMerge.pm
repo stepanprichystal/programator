@@ -35,6 +35,8 @@ use aliased 'Programs::PoolMerge::PoolMerge::JobWorkerClass';
 use aliased 'Programs::PoolMerge::Enums';
 use aliased 'Programs::PoolMerge::PoolMerge::UnitBuilder';
 use aliased 'Packages::InCAM::InCAM';
+use aliased 'Connectors::HeliosConnector::HegMethods';
+use aliased 'Enums::EnumsIS';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -49,22 +51,19 @@ sub new {
 	# Main application form
 	my $form = PoolMergeForm->new( $runMode, undef );
 
-	my $autoRemove = 20; # 15 second 
+	my $autoRemove = 20;    # 15 second
 
-	my $self = $class->SUPER::new($form, $autoRemove);
+	my $self = $class->SUPER::new( $form, $autoRemove );
 	bless $self;
 
 	my @taskFiles = ();
 	$self->{"taskFiles"} = \@taskFiles;
-
 
 	#set base class handlers
 
 	$self->__SetHandlers();
 
 	$self->__RunTimers();
-	
- 
 
 	#$self->_Run();
 
@@ -85,26 +84,24 @@ sub JobWorker {
 	my $THREAD_PROGRESS_EVT : shared = ${ shift(@_) };
 	my $THREAD_MESSAGE_EVT : shared  = ${ shift(@_) };
 	my $stopVarShare                 = shift;
-	my $threadOrder = shift;
-	
+	my $threadOrder                  = shift;
+
 	print STDERR "\n Thread order $threadOrder START in worker method  $taskId\n";
 
- 
-
 	my $unitBuilder = UnitBuilder->new( $inCAM, $$pcbIdShare, $jobStrData );
-	
+
 	print STDERR "\n Thread order $threadOrder BUILT\n";
 
 	my $workerClass = JobWorkerClass->new( \$THREAD_PROGRESS_EVT, \$THREAD_MESSAGE_EVT, $stopVarShare, $self->{"form"}->{"mainFrm"} );
-	
+
 	print STDERR "\n Thread order $threadOrder NEW worker\n";
-	
+
 	$workerClass->Init( $pcbIdShare, $taskId, $unitBuilder, $inCAM, $threadOrder );
-	
+
 	print STDERR "\n Thread order $threadOrder INIT worker\n";
 
 	$workerClass->RunTask();
-	
+
 	print STDERR "\n Thread order $threadOrder END worker method  $taskId\n";
 
 }
@@ -123,10 +120,54 @@ sub __OnJobStateChanged {
 	my $task     = $self->_GetTaskById($taskId);
 	my $taskData = $task->GetTaskData();
 
-	if ( defined $taskStateDetail
-		 && ( $taskStateDetail eq EnumsJobMngr->ExitType_FORCE || $taskStateDetail eq EnumsJobMngr->ExitType_FORCERESTART ) )
-	{
+	if ( defined $taskStateDetail && $taskStateDetail eq EnumsJobMngr->ExitType_FORCERESTART ) {
+
 		return;
+	}
+
+	if ( defined $taskStateDetail && $taskStateDetail eq EnumsJobMngr->ExitType_FORCE ) {
+
+		# check if thera are orders which has not state "k panelizaci"
+		my $groupData = $task->GetTaskData()->GetGroupData();
+		my @orders    = $groupData->GetOrderNames();
+
+		my @ordWronStata = grep { HegMethods->GetCurStepOfOrder($_) ne EnumsIS->CurStep_KPANELIZACI } @orders;
+
+		# ask for get back status of childs and mother job "k panelizaci"
+		if (@ordWronStata) {
+
+			my $messMngr = $self->{"form"}->{"messageMngr"};
+
+			my $str = "Do you want return state of pool orders to previous state: \"k panelizaci\"?";
+			$messMngr->ShowModal( -1, EnumsGeneral->MessageType_INFORMATION, [ $str, "- " . join( "\n- ", @ordWronStata ) ], [ "Yes", "No" ] );
+
+			if ( $messMngr->Result() == 0 ) {
+
+				eval {
+
+					foreach my $orderNum (@ordWronStata) {
+
+						my $curStep = HegMethods->GetCurStepOfOrder($orderNum);
+
+						if ( $curStep ne EnumsIS->CurStep_KPANELIZACI ) {
+							my $succ = HegMethods->UpdatePcbOrderState( $orderNum, EnumsIS->CurStep_KPANELIZACI );
+						}
+					}
+				};
+
+				if ( my $e = $@ ) {
+					$messMngr->ShowModal( -1,
+										  EnumsGeneral->MessageType_ERROR,
+										  [ "Errror during set state: \"k panelizaci\" in orders. Detail: " . $e ],
+										  [ "Yes", "No" ] );
+				}
+				else {
+					$messMngr->ShowModal( -1,
+										  EnumsGeneral->MessageType_INFORMATION,
+										  [ "New state: \"k panelizaci\" was succesfully set in orders: ", "- " . join( "\n- ", @ordWronStata ) ] );
+				}
+			}
+		}
 	}
 
 	if ( $taskState eq EnumsJobMngr->JobState_DONE ) {
@@ -145,7 +186,7 @@ sub __OnJobStateChanged {
 			# remove job automaticaly form queue if sent to export
 			if ($sent) {
 
-				$self->_AddJobToAutoRemove($task->GetTaskId());
+				$self->_AddJobToAutoRemove( $task->GetTaskId() );
 
 			}
 		}
@@ -285,15 +326,12 @@ sub __OnSetNewTaskHandler {
 	$$task = Task->new( $jobId, $taskData, $taskStrData, $status );
 }
 
- 
-
 #update gui
 
 # Handler responsible for reading DIR which contain files with export settings
 # Take every file only once, then delete it
 sub __CheckFilesHandler {
 	my ( $self, $mainFrm, $event ) = @_;
- 
 
 	# If dir for export files doesn't exist, create it
 	unless ( -e EnumsPaths->Client_EXPORTFILESPOOL ) {
@@ -322,9 +360,9 @@ sub __CheckFilesHandler {
 		$fileName = lc($file);
 
 		$fileCreated = $stats[9];
-		
+
 		# if file is empty, next
-		next if($stats[7] == 0);
+		next if ( $stats[7] == 0 );
 
 		my $cnt = scalar( grep { $_->{"name"} eq $fileName && $_->{"created"} == $fileCreated } @actFiles );
 
@@ -354,10 +392,8 @@ sub __CheckFilesHandler {
 			copy( $path, EnumsPaths->Client_EXPORTFILESPOOL . "backup\\" . $taskName );    # do backup
 
 			# TODO odkomentovat abt to mazalo
-		 
-			 unlink($path);
-			 
- 
+
+			unlink($path);
 
 			# serialize job data to strin
 			my %hashData = ();
@@ -374,8 +410,6 @@ sub __CheckFilesHandler {
 	}
 
 }
-
-
 
 # ========================================================================================== #
 #  PRIVATE HELPER METHOD
@@ -406,9 +440,6 @@ sub __SetHandlers {
 	$self->{"form"}->{'onSentToExport'}->Add( sub { $self->__OnSentToExportClick(@_) } );
 
 	$self->{'onSetNewTask'}->Add( sub { $self->__OnSetNewTaskHandler(@_) } );
-	 
-	
-	
 
 	# Set worker method
 	$self->{"form"}->_SetThreadWorker( sub { $self->JobWorker(@_) } );
@@ -426,8 +457,6 @@ sub __RunTimers {
 	$self->{"timerFiles"} = $timerFiles;
 	$timerFiles->Start(1000);
 	$self->_AddTimers($timerFiles);
-
-
 
 }
 

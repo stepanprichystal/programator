@@ -26,7 +26,7 @@ sub new {
  
 
 	# EXPORT PROPERTIES
-	 $self->{"settings"}->{"panelName"}    = undef;     
+	$self->{"settings"}->{"panelName"}    = undef;     
 	$self->{"settings"}->{"poolType"}    = undef;     
 	$self->{"settings"}->{"poolSurface"}    = undef;     
 	$self->{"settings"}->{"poolExported"}    = undef;     
