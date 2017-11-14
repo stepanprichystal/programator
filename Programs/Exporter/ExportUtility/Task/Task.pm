@@ -95,6 +95,12 @@ sub GetProduceWarningsCnt {
 
 	return $self->{"produceResultMngr"}->GetWarningsCnt();
 }
+
+sub GetTaskWarningCnt {
+	my $self = shift;
+
+	return $self->{"units"}->GetWarningsCnt();
+}
  
 # ===================================================================
 # Method regardings "to produce" issue

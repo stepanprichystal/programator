@@ -22,6 +22,21 @@ use aliased 'Packages::Polygon::Features::Features::Features';
 #   Package methods
 #-------------------------------------------------------------------------------------------#
 
+# Definition of regural expression for text datacodes like:
+# $$WW
+# $$WW$$YY
+# KW $$WW $$YY
+# KW $$WW $$YYYY
+# KW $$WW-$$YY
+# etc..
+my $dataCodeReg = qr{
+				\w*\s* 						  # match some wordfs on begining like KW
+					(
+						(\${2}(dd|ww|mm|yy|yyyy)) # match dynamic text \$\$WW, \$\$YY, etc
+						[-\s\/]*				  # char behind dynamic text
+					){1,3}						  # all can repeat 1-3 times
+				}xi;
+
 # Return layer name, where dynamic datacode was found
 sub GetDatacodeLayers {
 	my $self  = shift;
@@ -72,7 +87,8 @@ sub DatacodeExists {
 
 	my @texts = map { $_ =~ /'(.*)'/ } grep { $_ =~ /^#T.*'(.*)'/ } @feat;
 
-	my $datacodeOk = scalar( grep { $_ =~ /(\${2}(dd|ww|mm|yy|yyyy)\s*){1,3}$/i } @texts );
+ 
+	my $datacodeOk = scalar( grep { $_ =~ /$dataCodeReg/i } @texts );
 
 	# Id text daacode doesn't exist, find datacode in sybols
 	unless ($datacodeOk) {
@@ -91,7 +107,7 @@ sub DatacodeExists {
 
 				my @test = $f->GetFeatures();
 
-				if ( grep { $_->{"type"} eq "T" && $_->{"text"} =~ /(\${2}(dd|ww|mm|yy|yyyy)\s*){1,3}$/i } $f->GetFeatures() ) {
+				if ( grep { $_->{"type"} eq "T" && $_->{"text"} =~ /$dataCodeReg/i } $f->GetFeatures() ) {
 					$datacodesOk = 1;
 					last;
 				}
@@ -142,12 +158,14 @@ sub GetDatacodesInfo {
 		close($f);
 		unlink($infoFile);
 	}
-
-	my @featsId = map { $_ =~ /^#(\d*)/i } grep { $_ =~ /^#(\d*)\s*#T.*'((\${2}(dd|ww|mm|yy|yyyy)\s*){1,3})'/i } @feat;
+	 
+	my @featsId = map { $_ =~ /^#(\d*)/i } grep { $_ =~ m/^#(\d*)\s*#T.*'$dataCodeReg'/i } @feat;
 	my $f = Features->new();
 	$f->Parse( $inCAM, $jobId, $step, $layer, 1, 0, \@featsId );
 
-	foreach my $f ( $f->GetFeatures() ) {
+	
+	# again filter, because if step is SR, there can by more feattures with same id
+	foreach my $f ( grep{ $_->{"text"} =~ /^$dataCodeReg$/ } $f->GetFeatures() ) {
 
 		my %inf = ("source" => "feat", "text" =>$f->{"text"},  "mirror" => $f->{"mirror"} =~ /y/i ? 1 : 0 );
 		push( @datacodes, \%inf );
@@ -167,7 +185,7 @@ sub GetDatacodesInfo {
 		my $fSym = Features->new();
 		$fSym->ParseSymbol( $inCAM, $jobId, $name );
 
-		my @textFeat =  grep { $_->{"type"} eq "T" && $_->{"text"} =~ /(\${2}(dd|ww|mm|yy|yyyy)\s*){1,3}$/i } $fSym->GetFeatures();
+		my @textFeat =  grep { $_->{"type"} eq "T" && $_->{"text"} =~ /$dataCodeReg/i } $fSym->GetFeatures();
 		
 		if(scalar(@textFeat)){
 			
@@ -224,11 +242,15 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	use aliased 'Packages::InCAM::InCAM';
 
 	my $inCAM = InCAM->new();
-	my $jobId = "f85917";
+	my $jobId = "f88875";
 
-	my @layers = Marking->GetDatacodesInfo( $inCAM, $jobId, "o+1", "pc" );
+	#my @res = Marking->GetDatacodesInfo( $inCAM, $jobId, "mpanel", "ms" );
 
-	print @layers;
+	#print STDERR @res;
+	
+	my $res = Marking->DatacodeExists( $inCAM, $jobId, "mpanel	", "ms" );
+
+	print STDERR $res;
 }
 
 1;
