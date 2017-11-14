@@ -6,6 +6,7 @@ package Enums::EnumsIS;
 # possible values of column 'Aktualni krok' in order
 use constant {
 	CurStep_HOTOVOZADAT => "HOTOVO-zadat",
+	CurStep_ZADANO => "ZADANO",
 	CurStep_KPANELIZACI => "k panelizaci",
 	CurStep_EXPORTERROR => "exportUtility-error",    # when export utility fail
 

@@ -398,6 +398,10 @@ sub GetMaterialParams {
 		elsif ( $materialName =~ /G200/i ) {
 
 			$materialFile = "G200";
+			
+		}elsif ( $materialName =~ /PCL370HR/i ) {
+
+			$materialFile = "PCL370HR";
 		}
 
 		print STDERR "\n\n$materialName - $ncPath - $materialFile\n\n";
@@ -459,5 +463,34 @@ sub GetMaterialParams {
 
 	return %params;
 }
+
+#-------------------------------------------------------------------------------------------#
+#  Place for testing..
+#-------------------------------------------------------------------------------------------#
+my ( $package, $filename, $line ) = caller;
+if ( $filename =~ /DEBUG_FILE.pl/ ) {
+
+#		use aliased 'CamHelpers::CamNCHooks';
+#		use aliased 'Packages::InCAM::InCAM';
+#	
+#		my $inCAM = InCAM->new();
+#	
+#		my $jobId     = "f50251";
+#		my $stepName  = "panel";
+#		
+#		my $materialName = "PCL370HR"; 
+#		my $machine = "machine_a";
+#		my $path = "\\\\incam\\incam_server\\site_data\\hooks\\ncd\\";
+#		
+#		
+#		my %toolParams = CamNCHooks->GetMaterialParams( $materialName, $machine, $path );
+#	
+#		my $parameters = CamNCHooks->GetToolParam( $uniTool, \%toolParams, \$magazineOk );
+#	
+#		print 1;
+
+}
+
+
 
 1;

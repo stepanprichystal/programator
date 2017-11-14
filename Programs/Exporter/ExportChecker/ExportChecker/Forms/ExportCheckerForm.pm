@@ -23,6 +23,7 @@ use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'Packages::Events::Event';
 use aliased 'Widgets::Forms::MyWxBookCtrlPage';
 use aliased 'Programs::Exporter::ExportChecker::ExportChecker::Forms::GroupTableForm';
+use aliased 'Enums::EnumsIS';
 
 use Widgets::Style;
 
@@ -291,20 +292,16 @@ sub __SetLayout {
 	$szBtns->Add( $szBtnsChild, 0, &Wx::wxALIGN_RIGHT | &Wx::wxALL );
 	$pnlBtns->SetSizer($szBtns);
 
-
-	 
 	$szRow1->Add( $customerNote, 1, &Wx::wxEXPAND );
 	$szRow1->Add( $otherOptions, 0, &Wx::wxEXPAND );
 	$szRow1->Add( $quickOptions, 0, &Wx::wxEXPAND );
 
 	$szSecStatBox->Add( $nb, 1, &Wx::wxEXPAND );
 
-
-
 	$szMain->Add( $szRow1,       0, &Wx::wxEXPAND | &Wx::wxALL, 4 );
 	$szMain->Add( $szSecStatBox, 1, &Wx::wxEXPAND | &Wx::wxALL, 4 );
 	$szMain->Add( $pnlBtns,      0, &Wx::wxEXPAND );
-	 
+
 	$mainPnl->SetSizer($szMain);
 
 	$szMainParent->Add( $mainPnl, 1, &Wx::wxEXPAND );
@@ -337,7 +334,7 @@ sub __SetLayoutCustomerNote {
 	my $szMain = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
 	my $szRow1 = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
 
-	my $note      = HegMethods->GetTpvCustomerNote($self->{"jobId"});
+	my $note      = HegMethods->GetTpvCustomerNote( $self->{"jobId"} );
 	my $noteFinal = "";
 
 	if ($note) {
@@ -358,11 +355,9 @@ sub __SetLayoutCustomerNote {
 
 	}
 
-	my $noteTxt = Wx::TextCtrl->new(
-		$statBox, -1, $noteFinal, &Wx::wxDefaultPosition,
-		[ -1, -1 ],
-		&Wx::wxTE_MULTILINE   | &Wx::wxBORDER_NONE | &Wx::wxTE_NO_VSCROLL
-	);
+	my $noteTxt = Wx::TextCtrl->new( $statBox, -1, $noteFinal, &Wx::wxDefaultPosition,
+									 [ -1, -1 ],
+									 &Wx::wxTE_MULTILINE | &Wx::wxBORDER_NONE | &Wx::wxTE_NO_VSCROLL );
 
 	# REGISTER EVENTS
 
@@ -468,19 +463,40 @@ sub __SetLayoutOther {
 	my $szMain = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
 
 	my $noteTextTxt = undef;
-	my $orderNum = HegMethods->GetPcbOrderNumber($self->{"jobId"});
 
-	$noteTextTxt = Wx::StaticText->new( $statBox, -1, "   REORDER export   ", &Wx::wxDefaultPosition, [ 110, 22 ]);
-	$noteTextTxt->SetForegroundColour(Wx::Colour->new( 255, 0, 0 )); 
-	
-	if($orderNum == 1){
+	#my $orderNum = HegMethods->GetPcbOrderNumber($self->{"jobId"});
+	my @affectOrder = ();
+
+	push( @affectOrder, HegMethods->GetOrdersByState( $self->{"jobId"}, 2 ) );    # Orders on Predvzrobni priprava
+	push( @affectOrder, HegMethods->GetOrdersByState( $self->{"jobId"}, 4 ) );    # Orders on Ve vyrobe
+
+	my @affectOrderNum = sort{ $a<=>$b } map { $_->{"reference_subjektu"} =~ /-(\d+)/ } @affectOrder;
+
+	$noteTextTxt = Wx::StaticText->new( $statBox, -1, "   REORDER (" . join( "; ", @affectOrderNum ) . ")   ", &Wx::wxDefaultPosition, [ 110, 22 ] );
+	$noteTextTxt->SetForegroundColour( Wx::Colour->new( 255, 0, 0 ) );
+
+	my $firstOrder = grep { $_ == 1 } @affectOrderNum;
+
+	if ($firstOrder) {
 		$noteTextTxt->Hide();
 	}
-	
+
+	my $sentToProduce = 1;
+
+	# if affected orders are all reorders and has state "Hotovo-zadat" or "Zadano"
+	# Uncheck sent to produce
+
+	my @exported = grep {
+		$_->{"aktualni_krok"} eq EnumsIS->CurStep_HOTOVOZADAT
+		  || $_->{"aktualni_krok"} eq EnumsIS->CurStep_ZADANO
+	} @affectOrder;
+
+	if ( scalar(@exported) == scalar(@affectOrder) ) {
+		$sentToProduce = 0;
+	}
 
 	my $chbProduce = Wx::CheckBox->new( $statBox, -1, "Sent to produce", &Wx::wxDefaultPosition, [ 110, 22 ] );
-	$chbProduce->SetValue(1);
-	
+	$chbProduce->SetValue($sentToProduce);
 
 	#$chbProduce->SetTransparent(0);
 	#$chbProduce->Refresh();
@@ -491,10 +507,10 @@ sub __SetLayoutOther {
 	$chbProduce->SetBackgroundColour( Wx::Colour->new( 255, 255, 255 ) );
 	$chbProduce->Refresh();
 
-	
 	$szMain->Add( $noteTextTxt, 0 );
+
 	#$szMain->Add( 20,20, 0, &Wx::wxEXPAND );
-	$szMain->Add( $chbProduce, 0);
+	$szMain->Add( $chbProduce, 0 );
 	$szStatBox->Add( $szMain, 1, &Wx::wxEXPAND );
 
 	# SAVE REFERENCES

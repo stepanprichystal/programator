@@ -97,7 +97,7 @@ sub GetMinTool {
 			$minToolD = $t->GetDrillSize();
 		}
 	}
-	
+
 	return $minTool;
 }
 
@@ -111,13 +111,26 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	use aliased 'Packages::InCAM::InCAM';
 
 	my $inCAM = InCAM->new();
-	my $jobId = "f52456";
 
-	my $unitDTM = UniDTM->new( $inCAM, $jobId, "o+1", "m", 1 );
-	
-	
-	
-	print "test";
+	my $jobId    = "f88914";
+	my $stepName = "panel";
+	my $unitDTM  = UniDTM->new( $inCAM, $jobId, "o+1", "m", 1 );
+
+	use aliased 'CamHelpers::CamNCHooks';
+	use aliased 'Packages::InCAM::InCAM';
+
+	my $materialName = "PCL370HR";
+	my $machine      = "machine_a";
+	my $path         = "\\\\incam\\incam_server\\site_data\\hooks\\ncd\\";
+
+	my %toolParams = CamNCHooks->GetMaterialParams( $materialName, $machine, $path );
+
+	my $uniTool = $unitDTM->GetTool(1100);
+
+	my $magOk = 0;
+	my $parameters = CamNCHooks->GetToolParam( $uniTool, \%toolParams, \$magOk );
+
+	print $parameters ."\n".$magOk;
 
 }
 
