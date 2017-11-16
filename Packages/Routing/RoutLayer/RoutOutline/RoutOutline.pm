@@ -53,7 +53,6 @@ sub CheckNarrowPlaces {
 	my %lineCoord;
 	my @middle = ( 0, 0 );
 
-	#@sorteEdgesCopy = RoutArc->FragmentArcReplace( \@sorteEdgesCopy, 20 );  Nevim proc je tatdz ten radek ????
 	my @poly = map { [ $_->{"x1"}, $_->{"y1"} ] } @sorteEdgesCopy;
 
 	#push( @poly, $poly[0] ); #make polygon cyclic

@@ -12,6 +12,8 @@ use warnings;
 #local library
 use aliased 'Packages::Polygon::Enums';
 use aliased 'Math::Geometry::Planar';
+use aliased 'Packages::Polygon::Polygon::PolygonArc';
+use aliased 'Packages::Polygon::Polygon::PolygonAttr';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -102,8 +104,55 @@ sub GetLimByRectangle {
 	return %dim;
 }
 
+# Return points which create surface envelop
+# If there are arc in surface, do aproximation
+sub GetSurfaceEnvelop {
+	my $self     = shift;
+	my $feature  = shift;    # surface feature
+	my $accuracy = shift;
 
+	my @envelop = ();
 
+	for ( my $i = 0 ; $i < scalar( @{ $feature->{"points"} } ) - 1 ; $i++ ) {
+
+		my $pInfPrev =   $i > 0   ? $feature->{"points"}->[$i - 1] : undef;
+		my $pInf = ${ $feature->{"points"} }[$i];
+
+		# if circle, do aproximation
+		if ( $pInf->{"type"} eq "c" ) {
+
+			unless ($pInfPrev) {
+				die "start point of surface arc is not defined";
+			}
+
+			# arc structure
+			my %arc = (
+						"x1"   => $pInfPrev->{"x"},
+						"y1"   => $pInfPrev->{"y"},
+						"x2"   => $pInf->{"x"},
+						"y2"   => $pInf->{"y"},
+						"xmid" => $pInf->{"xmid"},
+						"ymid" => $pInf->{"ymid"},
+						"dir"  => "CW"
+			);
+
+			PolygonAttr->AddArcAtt( \%arc );
+
+			my $segNumber = $arc{"length"} / 2;    #everz to mm one segment
+
+			my @points = PolygonArc->GetFragmentArc( \%arc, $segNumber );
+
+		}
+		else {
+
+			my %p = ( "x" => $pInf->{"x"}, "y" => $pInf->{"y"} );
+
+			push( @envelop, \%p );
+		}
+
+	}
+
+}
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
@@ -112,16 +161,22 @@ my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	use aliased "Packages::Polygon::PolygonFeatures";
+	use aliased 'Packages::Polygon::Features::Features::Features';
+	use aliased 'Packages::InCAM::InCAM';
 
-	my @points2 = ( [0,0], [0,5], [5,5], [5,0] );
-	
-	my @points = ( [1,1], [1,4], [4,4], [4,1], [4,4], [2,2] );
+	my $f = Features->new();
 
-	#print PolygonFeatures->GetPoly2PolyIntersect( \@points, \@points2);
-	
-	my @p = PolygonFeatures->GetConvexHull( \@points);
+	my $jobId = "f52456";
+	my $inCAM = InCAM->new();
 
+	my $step  = "o+1";
+	my $layer = "f";
 
+	$f->Parse( $inCAM, $jobId, $step, $layer, 1, 1 );
+
+	my @features = $f->GetFeatures();
+
+	PolygonFeatures->GetSurfaceEnvelop( $features[0] );
 
 	print "ddd";
 

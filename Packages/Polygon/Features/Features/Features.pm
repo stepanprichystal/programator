@@ -248,55 +248,103 @@ sub __ParseLines {
 			$featInfo->{"type"} = $2;
 			@attr = split( ",", $4 );
 
-			my $l = $lines[$i];
-
 			$i++;
-			my @envelop = ();
-			while ( $lines[$i] =~ m/^#\s*#o[besc]\s*((-?[0-9]*\.?[0-9]*\s)*)/i ) {
 
-				my $lll  = $lines[$i];
-				my $lll2 = $1;
+			my @surfPoints = ();
+			 
+			while ( 1) {
+				
+				my $lIn = $lines[$i];
 
-				my @points = split( /\s/, $1 );
+				my %inf = ();
 
-				for ( my $ip = 0 ; $ip < scalar(@points) ; $ip += 2 ) {
+				if($lIn =~ /^#\s*#o([besc])\s*((?:-?[0-9]+\.?[0-9]*\s*){2,4})\s*([YIH]?)/i){
+ 
+ 					# B - begin 
+ 					# E - end
+ 					# S - standard point
+ 					# C - point defined by circle
+					$inf{"type"} = lc($1); 
+					
+					my @points = split(" ", $2);
+					s/\s+$// for @points;
 
-					my @p = ( sprintf( "%.2f", $points[$ip] ), sprintf( "%.2f", $points[ $ip + 1 ] ) );    # x and y
-					push( @envelop, \@p );
+					$inf{"x"} =  $points[0];
+					$inf{"y"} =  $points[1];
+					
+					# Decide if surface is iland or hole
+					if($inf{"type"} eq "b"){
+						
+						$inf{"hole"} =  $3 =~ /H/i ? 1 : 0;
+					}
+					
+					# C - point defined by circle, store center point of circle
+					if($inf{"type"} eq "c"){
+						
+						$inf{"xmid"} =  $points[2];
+						$inf{"ymid"} =  $points[3];
+
+					}
+					
+					push(@surfPoints, \%inf);
+					
+					$i++;
+		 
+				}else{
+					
+					$surfPoints[scalar(@surfPoints)-1]->{"type"};
+					
+					$featInfo->{"points"} = \@surfPoints;
+					last;
 				}
-
-				$i++;
 			}
-
-			$i--;
-
-			# 1) Reduce same point from surface
-			my @envReduced = ();
-			foreach my $e (@envelop) {
-
-				unless ( grep { @{$_}[0] == @{$e}[0] && @{$_}[1] == @{$e}[1] } @envReduced ) {
-
-					push( @envReduced, $e );
-				}
-			}
-
-			# 2 ) If points cnt is smaller than 3, do not envelop
-			my @envelopFinal = ();
-			if ( scalar(@envReduced) < 3 ) {
-				push( @envelopFinal, $envReduced[0] );
-			}
-			else {
-				@envelopFinal = PolygonPoints->GetConvexHull( \@envelop );
-
-			}
-
-			my @envelopFinalHash = ();
-			foreach my $p (@envelopFinal) {
-				my %pInf = ( "x" => @{$p}[0], "y" => @{$p}[1] );
-				push( @envelopFinalHash, \%pInf );
-			}
-
-			$featInfo->{"envelop"} = \@envelopFinalHash;
+#			
+#			my @envelop = ();
+#			while ( $lines[$i] =~ m/^#\s*#o[besc]\s*((-?[0-9]*\.?[0-9]*\s)*)/i ) {
+#
+#				my $lll  = $lines[$i];
+#				my $lll2 = $1;
+#
+#				my @points = split( /\s/, $1 );
+#
+#				for ( my $ip = 0 ; $ip < scalar(@points) ; $ip += 2 ) {
+#
+#					my @p = ( sprintf( "%.2f", $points[$ip] ), sprintf( "%.2f", $points[ $ip + 1 ] ) );    # x and y
+#					push( @envelop, \@p );
+#				}
+#
+#				$i++;
+#			}
+#
+#			$i--;
+#
+#			# 1) Reduce same point from surface
+#			my @envReduced = ();
+#			foreach my $e (@envelop) {
+#
+#				unless ( grep { @{$_}[0] == @{$e}[0] && @{$_}[1] == @{$e}[1] } @envReduced ) {
+#
+#					push( @envReduced, $e );
+#				}
+#			}
+#
+#			# 2 ) If points cnt is smaller than 3, do not envelop
+#			my @envelopFinal = ();
+#			if ( scalar(@envReduced) < 3 ) {
+#				push( @envelopFinal, $envReduced[0] );
+#			}
+#			else {
+#				@envelopFinal = PolygonPoints->GetConvexHull( \@envelop );
+#
+#			}
+#
+#			my @envelopFinalHash = ();
+#			foreach my $p (@envelopFinal) {
+#				my %pInf = ( "x" => @{$p}[0], "y" => @{$p}[1] );
+#				push( @envelopFinalHash, \%pInf );
+#			}
+#
+#			$featInfo->{"envelop"} = \@envelopFinalHash;
 
 			# 3) Set center point of surface
 			#my $centroid = PolygonPoints->GetCentroid( \@envelopFinal );
