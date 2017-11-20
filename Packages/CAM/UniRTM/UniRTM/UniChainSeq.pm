@@ -14,6 +14,8 @@ use warnings;
 use aliased 'Packages::CAM::UniRTM::Enums';
 use aliased 'Packages::Routing::RoutLayer::RoutParser::RoutArc';
 use aliased 'Enums::EnumsRout';
+use aliased "Packages::Polygon::PolygonFeatures";
+use aliased 'Packages::Polygon::Polygon::PolygonPoints';
 
 #-------------------------------------------------------------------------------------------#
 #  Public method
@@ -33,8 +35,6 @@ sub new {
 	my @foots = ();
 	$self->{"footsDown"} = \@foots;    # features, which cintain foot_down attribute
 
-
-
 	$self->{"isInside"} = 0;           # if is inside another chain sequence (inside mean fully inside or at lesast partly)
 
 	my @outsideChainSeq = ();
@@ -43,12 +43,11 @@ sub new {
 	my @features = ();
 	$self->{"features"}    = \@features;               # features, wchich chain sequnece is created from
 	$self->{"featureType"} = undef;                    # tell type of features, wchich chain is created from. FeatType_SURF/FeatType_LINEARC
-	
-	
+
 	# ==== Property set, only if rout is cyclic ====
-	
-	$self->{"modified"} = 0;    # only when seq is cyclic. If modified = 1, sequence was modified during parsing (arc fragment, edge point switching etc..)
-	
+
+	$self->{"modified"} =
+	  0;    # only when seq is cyclic. If modified = 1, sequence was modified during parsing (arc fragment, edge point switching etc..)
 
 	return $self;
 }
@@ -71,28 +70,61 @@ sub GetPoints {
 
 	if ( $self->GetFeatureType eq Enums->FeatType_SURF ) {
 
-		my @envPoints = map { @{ $_->{"envelop"} } } $self->GetFeatures();
+		# Chain sequnce created form surface contain only one surface feature
+		my $singleIsland    = 1;
+		my @surfaceEnvelops = ();
 
-		push( @points, map { [ $_->{"x"}, $_->{"y"} ] } @envPoints );
+		# if more surfaces ore more islands in one surface, do convex hull for all surfaces
+		if ( scalar(@features) > 1 ) {
+			$singleIsland = 0;
+		}
+
+		foreach my $surfFeat (@features) {
+
+			my @envelops = PolygonFeatures->GetSurfaceEnvelops( $surfFeat, 0.2 );
+
+			if ( scalar(@envelops) > 1 ) {
+				$singleIsland = 0;
+			}
+
+			foreach my $e (@envelops) {
+				push( @surfaceEnvelops, @{$e} );
+			}
+		}
+
+		@surfaceEnvelops = map { [ $_->{"x"}, $_->{"y"} ] } @surfaceEnvelops;
+
+		# Do convex hull from all surface envelop points
+		if ($singleIsland) {
+			#@surfaceEnvelops = map { [ $_->{"x"}, $_->{"y"} ] } @surfaceEnvelops;
+		}else{
+			
+			@surfaceEnvelops = PolygonPoints->GetConvexHull( \@surfaceEnvelops );
+		}
+
+		@points = @surfaceEnvelops;
+
+		#		my @envPoints = map { @{ $_->{"envelop"} } } $self->GetFeatures();
+		#
+		#		push( @points, map { [ $_->{"x"}, $_->{"y"} ] } @envPoints );
 
 	}
 	else {
-		
-		
+
 		my @lines = ();
-		
-		foreach my $f ($self->GetFeatures()){
-			
-			if($f->{"type"} =~ /A/i){
-				
-				 
-				my @linesTmp = RoutArc->FragmentArcToSegments($f, 4);
-				push(@lines, @linesTmp);
-				
-			}else{
-				
-				push(@lines, $f);
-			}	
+
+		foreach my $f ( $self->GetFeatures() ) {
+
+			if ( $f->{"type"} =~ /A/i ) {
+
+				my @linesTmp = RoutArc->FragmentArcToSegments( $f, 4 );
+				push( @lines, @linesTmp );
+
+			}
+			else {
+
+				push( @lines, $f );
+			}
 		}
 
 		push( @points, [ $lines[0]->{"x1"}, $lines[0]->{"y1"} ] );    # first point "x1,y1" of feature chain
@@ -262,7 +294,7 @@ sub SetModified {
 sub GetModified {
 	my $self = shift;
 
-	return  $self->{"modified"} ;
+	return $self->{"modified"};
 
 }
 
@@ -279,7 +311,6 @@ sub GetDirection {
 	return $self->{"direction"};
 }
 
-
 sub SetStartEdge {
 	my $self = shift;
 	my $dir  = shift;
@@ -292,6 +323,7 @@ sub GetStartEdge {
 
 	return $self->{"startEdge"};
 }
+
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#

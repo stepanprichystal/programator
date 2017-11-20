@@ -69,7 +69,7 @@ sub AddArcAtt {
 	#compute length of arc
 	$edge->{"innerangle"} = PolygonArc->GetArcInnerAngle($edge);
 	$edge->{"length"} =
-	  deg2rad( $edge->{"innerangle"} ) * $edge->{"radius"};    #compute length of arc
+	  deg2rad( $edge->{"innerangle"}, 1 ) * $edge->{"radius"};    #compute length of arc, 1 means - when 360 circle it returns 2Pi
 }
 
 #-------------------------------------------------------------------------------------------#

@@ -62,19 +62,21 @@ sub RotateRout {
 		# surf
 		if ( $f->{"type"} =~ /s/i ) {
 
-			my @envelopNew = ();
- 
-			for ( my $i = 0 ; $i < scalar( @{ $f->{"envelop"} } ) ; $i++ ) {
- 
-				my %p1 = ( "x" => $f->{"envelop"}->[$i]->{"x"} * 1000, "y" => $f->{"envelop"}->[$i]->{"y"}  * 1000);
+			die "surface rotation is not implemented\n";
 
-				my %newP = PointsTransform->RotatePoint( \%p1, $angle );
- 
- 				$p1{"x"} /= 1000;
- 				$p1{"y"} /= 1000;
- 
-				$f->{"envelop"}->[$i] = \%newP;
-			}
+#			my @envelopNew = ();
+# 
+#			for ( my $i = 0 ; $i < scalar( @{ $f->{"envelop"} } ) ; $i++ ) {
+# 
+#				my %p1 = ( "x" => $f->{"envelop"}->[$i]->{"x"} * 1000, "y" => $f->{"envelop"}->[$i]->{"y"}  * 1000);
+#
+#				my %newP = PointsTransform->RotatePoint( \%p1, $angle );
+# 
+# 				$p1{"x"} /= 1000;
+# 				$p1{"y"} /= 1000;
+# 
+#				$f->{"envelop"}->[$i] = \%newP;
+#			}
 		}
 	}
 }
@@ -109,11 +111,13 @@ sub MoveRout {
 		# surf
 		if ( $f->{"type"} =~ /s/i ) {
 
-			for ( my $i = 0 ; $i < scalar( @{ $f->{"envelop"} } ) ; $i++ ) {
+			die "Surface move is not implemented";
 
-				@{ $f->{"envelop"} }[$i]->{"x"} += $xSize;
-				@{ $f->{"envelop"} }[$i]->{"y"} += $ySize;
-			}
+#			for ( my $i = 0 ; $i < scalar( @{ $f->{"envelop"} } ) ; $i++ ) {
+#
+#				@{ $f->{"envelop"} }[$i]->{"x"} += $xSize;
+#				@{ $f->{"envelop"} }[$i]->{"y"} += $ySize;
+#			}
 		}
 	}
 }

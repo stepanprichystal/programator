@@ -117,10 +117,10 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	use aliased 'Packages::Routing::RoutLayer::RoutDrawing::RoutDrawing';
 
 	my $inCAM = InCAM->new();
-	my $jobId = "f13609";
+	my $jobId = "f52456";
   
   
-  	my $rtm = UniRTM->new($inCAM, $jobId, "panel", "f", 1);
+  	my $rtm = UniRTM->new($inCAM, $jobId, "o+1", "f", 1);
   
 	my @outline = $rtm->GetOutlineChains();
 
@@ -129,10 +129,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 }
 
-sub Line {
-	my @features = @{ shift(@_) };
-
-}
+ 
 
 1;
 

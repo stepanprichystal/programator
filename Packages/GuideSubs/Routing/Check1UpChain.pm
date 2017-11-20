@@ -67,14 +67,19 @@ sub OutsideChains {
 				  . "\" jsou frézy, které by měly být uvnitř obrysové frézy, ale nejsou ($str). Pravděpodobně kromě desek na patku jsou ve stepu i dps na můstky",
 				"Je to pravda?"
 			);
-			my @b = ( "Ano, step obsahuje i dps na můstky", "Není to tak, opravím to" );
+			my @b = ( "Ano, step obsahuje i dps na můstky", "Ne neobsahuje, opravím to", "Ne neobsahuje, ale obsahuje pomocnou frézu za obrysem dps");
 			$messMngr->ShowModal( -1, EnumsGeneral->MessageType_WARNING, \@m, \@b );    #  Script se zastavi
-			if ( $messMngr->Result() == 1 ) {
-				$result = 0;
-			}
-			else {
+			
+			if ( $messMngr->Result() == 0 ) {
 				# set pcb is rout on bridges
 				CamAttributes->SetStepAttribute( $inCAM, $jobId, $step, "rout_on_bridges", "yes" );
+				
+			}
+			elsif($messMngr->Result() == 1) {
+				$result = 0;
+			}
+			elsif($messMngr->Result() == 0) {
+				
 			}
 
 		}
@@ -530,7 +535,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId = "f13608";
+	my $jobId = "f52456";
 	my $step  = "o+1";
 
 	# Get work layer

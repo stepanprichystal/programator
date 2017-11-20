@@ -16,7 +16,7 @@ use aliased 'Packages::Polygon::PolygonHelper';
 use aliased 'Packages::Polygon::Enums' => "PolyEnums";
 use aliased 'Packages::CAM::UniRTM::UniRTM::Parser::RoutParser';
 use aliased 'Packages::CAM::UniRTM::UniRTM::Parser::ChainParser';
-use aliased 'Packages::Polygon::PolygonPoints';
+use aliased 'Packages::Polygon::Polygon::PolygonPoints';
 use aliased 'Packages::CAM::UniRTM::UniRTM::Parser::ChainToolParser';
 
 #-------------------------------------------------------------------------------------------#

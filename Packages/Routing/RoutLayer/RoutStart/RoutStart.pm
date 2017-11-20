@@ -18,7 +18,7 @@ use aliased 'Packages::Routing::RoutLayer::RoutParser::RoutParser';
 use aliased 'Packages::Polygon::PolygonFeatures';
 use aliased 'Packages::Routing::RoutLayer::RoutMath::RoutMath';
 use aliased 'Packages::Polygon::PointsTransform';
-use aliased "Packages::Polygon::PolygonPoints";
+use aliased "Packages::Polygon::Polygon::PolygonPoints";
 use aliased 'Helpers::GeneralHelper';
 
 #-------------------------------------------------------------------------------------------#

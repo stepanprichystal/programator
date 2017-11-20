@@ -106,52 +106,91 @@ sub GetLimByRectangle {
 
 # Return points which create surface envelop
 # If there are arc in surface, do aproximation
-sub GetSurfaceEnvelop {
+sub GetSurfaceEnvelops {
 	my $self     = shift;
 	my $feature  = shift;    # surface feature
-	my $accuracy = shift;
+	my $accuracy = shift;    # Accuracz in mm. Default arc to line accuracz is 0.5mm
 
-	my @envelop = ();
+	unless ( defined $accuracy ) {
 
-	for ( my $i = 0 ; $i < scalar( @{ $feature->{"points"} } ) - 1 ; $i++ ) {
+		$accuracy = 0.5;
+	}
 
-		my $pInfPrev =   $i > 0   ? $feature->{"points"}->[$i - 1] : undef;
-		my $pInf = ${ $feature->{"points"} }[$i];
+	if ( $feature->{"type"} !~ /s/i ) {
+		die "Unable to create surface envelop, becauseit feature is not a type surface.";
+	}
 
-		# if circle, do aproximation
-		if ( $pInf->{"type"} eq "c" ) {
+	my @envelops = ();
 
-			unless ($pInfPrev) {
-				die "start point of surface arc is not defined";
+	# go through all surfaces
+	for ( my $i = 0 ; $i < scalar( @{ $feature->{"surfaces"} } ) ; $i++ ) {
+
+		my $surface = $feature->{"surfaces"}->[$i];
+
+		my @envelop = ();
+
+		# parse surface island
+		for ( my $j = 0 ; $j < scalar( @{ $surface->{"island"} } ) ; $j++ ) {
+
+			my $pInfPrev = $j > 0 ? $surface->{"island"}->[ $j - 1 ] : undef;
+			my $pInf = ${ $surface->{"island"} }[$j];
+
+			# if circle, do aproximation
+			if ( $pInf->{"type"} eq "c" ) {
+
+				unless ($pInfPrev) {
+					die "start point of surface arc is not defined";
+				}
+
+				# arc structure
+				my %arc = (
+							"x1"   => $pInfPrev->{"x"},
+							"y1"   => $pInfPrev->{"y"},
+							"x2"   => $pInf->{"x"},
+							"y2"   => $pInf->{"y"},
+							"xmid" => $pInf->{"xmid"},
+							"ymid" => $pInf->{"ymid"},
+							"dir"  => "CW"
+				);
+
+				PolygonAttr->AddArcAtt( \%arc );
+
+				#my $segLength = PolygonArc->GetSegmentLength( $arc{"radius"}, $accuracy );    #accurate 1mm
+				#my $segNumber = int( $arc{"length"} / $segLength );
+
+				my $result = undef;
+				my @points = PolygonArc->GetFragmentArc( \%arc, $accuracy, \$result );
+
+				if ($result) {
+
+					my @testP = ();
+					foreach my $p ( @points[ ( $surface->{"circle"} ? 0 : 1 ) .. $#points ] ) {
+
+						push( @envelop, { "x" => $p->[0], "y" => $p->[1] } );
+					}
+
+				}
+				else {
+
+					push( @envelop, { "x" => $pInf->{"x"}, "y" => $pInf->{"y"} } );
+
+				}
+
+			}
+			else {
+				unless ( $surface->{"circle"} ) {
+					my %p = ( "x" => $pInf->{"x"}, "y" => $pInf->{"y"} );
+
+					push( @envelop, \%p );
+				}
 			}
 
-			# arc structure
-			my %arc = (
-						"x1"   => $pInfPrev->{"x"},
-						"y1"   => $pInfPrev->{"y"},
-						"x2"   => $pInf->{"x"},
-						"y2"   => $pInf->{"y"},
-						"xmid" => $pInf->{"xmid"},
-						"ymid" => $pInf->{"ymid"},
-						"dir"  => "CW"
-			);
-
-			PolygonAttr->AddArcAtt( \%arc );
-
-			my $segNumber = $arc{"length"} / 2;    #everz to mm one segment
-
-			my @points = PolygonArc->GetFragmentArc( \%arc, $segNumber );
-
 		}
-		else {
-
-			my %p = ( "x" => $pInf->{"x"}, "y" => $pInf->{"y"} );
-
-			push( @envelop, \%p );
-		}
+		push( @envelops, \@envelop );
 
 	}
 
+	return @envelops;
 }
 
 #-------------------------------------------------------------------------------------------#
@@ -163,6 +202,8 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	use aliased "Packages::Polygon::PolygonFeatures";
 	use aliased 'Packages::Polygon::Features::Features::Features';
 	use aliased 'Packages::InCAM::InCAM';
+	use aliased "CamHelpers::CamSymbol";
+	use aliased "CamHelpers::CamLayer";
 
 	my $f = Features->new();
 
@@ -176,9 +217,19 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my @features = $f->GetFeatures();
 
-	PolygonFeatures->GetSurfaceEnvelop( $features[0] );
+	CamLayer->WorkLayer( $inCAM, "test" );
+	$inCAM->COM('sel_delete');
 
-	print "ddd";
+	foreach my $feat (@features) {
+
+		my @surfaces = PolygonFeatures->GetSurfaceEnvelops( $feat, 0.1 );
+
+		foreach my $surf (@surfaces) {
+
+			CamSymbol->AddPolyline( $inCAM, $surf, "r300", "positive" );
+
+		}
+	}
 
 }
 

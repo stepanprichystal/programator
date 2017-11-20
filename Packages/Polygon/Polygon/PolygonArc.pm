@@ -14,6 +14,7 @@ use Math::Geometry::Planar;              #Math-Geometry-Planar-GPC
 use Math::Trig;
 use Math::Trig ':pi';
 use Math::Polygon;
+use POSIX 'floor';
 
 #local library
 use aliased 'Packages::Polygon::Enums';
@@ -36,11 +37,19 @@ use aliased 'Packages::Polygon::Enums';
 sub GetFragmentArc {
 	my $self      = shift;
 	my $arc       = shift(@_);
-	my $segNumber = shift; # number of segments
+	my $accuracy = shift; # number of segments
+	my $result =shift;
 	
+	$$result = 1;
 	my $points;
-
-	#oblouk ma mensi polomer jak 10
+	
+	# compute sehment count by accuracy
+	my $segLength = $self->GetSegmentLength( $arc->{"radius"}, $accuracy );   
+	
+	my $segCntCircle = floor( $arc->{"perimeter"} / $segLength);
+	my $segCntArc = floor( $arc->{"length"} / $arc->{"perimeter"} * $segCntCircle );
+	 
+ 
  
 	my @arrStart  = ( $arc->{"x1"},   $arc->{"y1"} );
 	my @arrEnd    = ( $arc->{"x2"},   $arc->{"y2"} );
@@ -49,7 +58,7 @@ sub GetFragmentArc {
 
 	if ( $arc->{"x1"} == $arc->{"x2"} && $arc->{"y1"} == $arc->{"y2"} ) {
 
-		$points = CircleToPoly( $segNumber, \@arrCenter, \@arrStart );
+		$points = CircleToPoly( $segCntCircle, \@arrCenter, \@arrStart );
 
 		my @arr = @{ $points->{"points"} };
 		push( @arr, $arr[0] );
@@ -62,15 +71,16 @@ sub GetFragmentArc {
 		return @arr;
 	}
 
-	my $segCnt =
-	  floor( ( $arc->{"length"} / $arc->{"perimeter"} ) * $segNumber );    #number of segment for arc
+#	my $segCnt =
+#	  floor( ( $arc->{"length"} / $arc->{"perimeter"} ) * $segNumber );    #number of segment for arc
 
 	#oblouk se nebude delit
-	if ( $segCnt < 2 ) {
+	if ( $segCntArc < 2 ) {
+		$$result = 0;
 		return 0;
 	}
 
-	$points = ArcToPoly( $segCnt, \@arrCenter, \@arrStart, \@arrEnd, ( $direction eq "CW" ) ? 1 : 0 );
+	$points = ArcToPoly( $segCntArc, \@arrCenter, \@arrStart, \@arrEnd, ( $direction eq "CW" ) ? 1 : 0 );
 
 	return @{$points};
 }
@@ -144,6 +154,35 @@ sub GetArcInnerAngle {
 }
  
 
+# If circle/arc aproximation is needed, function return length of segment
+# depand on given "accurate"
+# Eg.: if accurate is 1mm, line approximation distance won't be more than 1mm from arc/circle
+sub GetSegmentLength {
+	my $self = shift;
+	my $r = shift;
+	my $accurate = shift;
+ 
+	my $x1 = -$r;
+	my $y1 = $r-$accurate;
+
+	my $x2 = +$r;
+	my $y2 = $r-$accurate;;
+ 
+
+	my $dx = $x2 - $x1;
+	my $dy = $y2 - $y1;
+
+	my $dr = sqrt( $dx * $dx + $dy * $dy );
+
+	my $D = $x1 * $y1 - $x2 * $y2;
+ 
+	my $xRes1 = ( $D * $dy - ( $dy < 0 ? -1 : 1 ) * $dx * sqrt( $r * $r * $dr * $dr - $D * $D ) ) / ( $dr * $dr );
+	my $xRes2 = ( $D * $dy + ( $dy < 0 ? -1 : 1 ) * $dx * sqrt( $r * $r * $dr * $dr - $D * $D ) ) / ( $dr * $dr );
+
+	my $segLen = abs( $xRes2 - $xRes1 );
+
+	return $segLen;
+}
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
@@ -151,7 +190,7 @@ sub GetArcInnerAngle {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-#	use aliased "Packages::Polygon::PolygonPoints";
+#	use aliased "Packages::Polygon::Polygon::PolygonPoints";
 #
 #	my @points1 = ( [0,0], [0,5], [5,5], [5,0] );
 #	

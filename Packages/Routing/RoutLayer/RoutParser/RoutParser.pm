@@ -13,7 +13,7 @@ use Math::Trig;
 use aliased 'Packages::Polygon::Features::RouteFeatures::RouteFeatures';
 use aliased 'Packages::Routing::RoutLayer::RoutMath::RoutMath';
 use aliased 'Packages::Routing::RoutLayer::RoutParser::RoutArc';
-use aliased 'Packages::Polygon::PolygonPoints';
+use aliased 'Packages::Polygon::Polygon::PolygonPoints';
 
 #-------------------------------------------------------------------------------------------#
 #  Public method

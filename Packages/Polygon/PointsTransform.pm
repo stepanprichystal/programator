@@ -113,7 +113,7 @@ sub GetLimByPoints {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	use aliased "Packages::Polygon::PolygonPoints";
+	use aliased "Packages::Polygon::Polygon::PolygonPoints";
 
 	my @points2 = ( [0,0], [0,5], [5,5], [5,0] );
 	
@@ -121,12 +121,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	#print PolygonHelper->GetPoly2PolyIntersect( \@points, \@points2);
 	
-	my @p = PolygonPoints->GetConvexHull( \@points);
-
-
-
-	print "ddd";
-	
+	 
 	#     #OB 4.50644 69.2869675 I
 #     #OC 5.08195 69.4691725 5.08195 68.4691725 Y
 #     #OS 11.42517 69.4691725

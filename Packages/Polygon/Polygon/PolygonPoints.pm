@@ -3,7 +3,7 @@
 # Description: Contain helper function for polzgon created from list of points
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::Polygon::PolygonPoints;
+package Packages::Polygon::Polygon::PolygonPoints;
 
 #3th party library
 use strict;
@@ -137,7 +137,7 @@ sub GetConvexHull {
 	return @{$hull_array_ref};
 }
 
-# Return envelop "convex hull" for points
+# Return center of polygon
 sub GetCentroid {
 	my $self  = shift;
 	my @points = @{ shift(@_) };
@@ -176,7 +176,7 @@ sub GetPolygonArea {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	use aliased "Packages::Polygon::PolygonPoints";
+	use aliased "Packages::Polygon::Polygon::PolygonPoints";
 
 	my @points1 = ( [0,0], [0,5], [5,5], [5,0] );
 	

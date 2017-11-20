@@ -72,7 +72,7 @@ sub Check {
 		}
 	}
 
-	if ( $self->{"isPool"} ) {
+	#if ( $self->{"isPool"} ) {
 
 		my $resOnlyBridges = 0;
 		while ( !$resOnlyBridges ) {
@@ -83,9 +83,9 @@ sub Check {
 				$inCAM->PAUSE("Oprav chybu a pokracuj...");
 			}
 		}
-	}
+	#}
 
-	if ( $self->{"isPool"} ) {
+	#if ( $self->{"isPool"} ) {
 		my $resOutsideChains = 0;
 		while ( !$resOutsideChains ) {
 
@@ -96,7 +96,7 @@ sub Check {
 			}
 
 		}
-	}
+	#}
 
 	my $resLeftRout = 0;
 	while ( !$resLeftRout ) {
@@ -172,7 +172,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId = "f70384";
+	my $jobId = "f52456";
 
 	my $check = CheckRout->new( $inCAM, $jobId, "o+1", "f" );
 	$check->Check();
