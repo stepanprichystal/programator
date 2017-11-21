@@ -17,8 +17,9 @@ use warnings;
 
 #local library
 
-use aliased 'Packages::CAM::UniDTM::Enums';
+use aliased 'Packages::CAM::UniRTM::Enums';
 use aliased 'Enums::EnumsRout';
+use aliased 'Packages::Polygon::Polygon::PolygonAttr';
 
 #-------------------------------------------------------------------------------------------#
 #  Public method
@@ -48,10 +49,11 @@ sub GetMaxChainNumber {
 	my $self = shift;
 
 	my @chainList = $self->GetChainList();
-	
-	if(scalar(@chainList)){
-		return $chainList[scalar(@chainList)-1]->GetChainOrder();
-	}else{
+
+	if ( scalar(@chainList) ) {
+		return $chainList[ scalar(@chainList) - 1 ]->GetChainOrder();
+	}
+	else {
 		return 0;
 	}
 
@@ -87,7 +89,7 @@ sub GetChainListByOutline {
 		}
 
 	}
-	
+
 	return @chainList;
 }
 
@@ -101,8 +103,72 @@ sub GetChainByChainTool {
 	return $ch;
 }
 
+# return all chan sequences, which are cycle
+# If chain seq is type of:
+# - FeatType_SURF: Chain seq contain on surface feature which is circle
+# - FeatType_LINEARC: Chain seq contain only arc and is cyclic
+sub GetCircleChainSeq {
+	my $self     = shift;
+	my $chanType = shift;    # FeatType_SURF, FeatType_LINEARC
 
- 
+	my @circleChainSeq = ();
+
+	if ( $chanType eq Enums->FeatType_SURF ) {
+
+		my @chainSeq = grep { $_->GetFeatureType eq Enums->FeatType_SURF } $self->GetChainSequences();
+
+		my @radiuses = ();
+
+		my @cyclChains = grep {
+			     scalar( $_->GetFeatures() ) == 1
+			  && scalar( @{ ( $_->GetFeatures() )[0]->{"surfaces"} } ) == 1
+			  && ( $_->GetFeatures() )[0]->{"surfaces"}->[0]->{"circle"}
+		} @chainSeq;
+
+		# add radius property to all chain
+
+		foreach my $chanSeq (@cyclChains) {
+
+			my $points = ( $chanSeq->GetFeatures() )[0]->{"surfaces"}->[0]->{"island"};
+
+			$chanSeq->{"radius"} = abs( $points->[0]->{"x"} - $points->[1]->{"xmid"} );
+
+			push( @circleChainSeq, $chanSeq );
+		}
+	}
+
+	if ( $chanType eq Enums->FeatType_LINEARC ) {
+
+		my @cyclChains = grep { $_->GetFeatureType() eq Enums->FeatType_LINEARC && $_->GetCyclic() } $self->GetChainSequences();
+
+		# only arcs
+		for ( my $i = scalar(@cyclChains) - 1 ; $i >= 0 ; $i-- ) {
+
+			my $chain = $cyclChains[$i];
+			my @notArc = grep { $_->{"type"} !~ /^a$/i } $chain->GetFeatures();
+			if (@notArc) {
+
+				splice @cyclChains, $i, 1;
+			}
+		}
+
+		# add radius property to all chain
+
+		foreach my $chanSeq (@cyclChains) {
+
+			my $arc = ( $chanSeq->GetFeatures() )[0];
+			$arc->{"dir"} = $arc->{"newDir"};    # GetFragmentArc assume propertt "dir"
+			PolygonAttr->AddArcAtt($arc);
+
+			$chanSeq->{"radius"} = $arc->{"radius"};
+		}
+
+		push( @circleChainSeq, @cyclChains );
+
+	}
+
+	return @circleChainSeq;
+}
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
@@ -118,18 +184,14 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 	my $jobId = "f52456";
-  
-  
-  	my $rtm = UniRTM->new($inCAM, $jobId, "o+1", "f", 1);
-  
-	my @outline = $rtm->GetOutlineChains();
 
- 
-	print scalar(@outline)."fff";
+	my $rtm = UniRTM->new( $inCAM, $jobId, "o+1", "f", 1 );
+
+	my @outline = $rtm->GetCircleChainSeq( Enums->FeatType_LINEARC );
+
+	print scalar(@outline) . "fff";
 
 }
-
- 
 
 1;
 

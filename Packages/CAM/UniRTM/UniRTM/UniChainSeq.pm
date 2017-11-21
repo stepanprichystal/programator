@@ -9,6 +9,7 @@ package Packages::CAM::UniRTM::UniRTM::UniChainSeq;
 #3th party library
 use strict;
 use warnings;
+use List::MoreUtils qw(uniq);
 
 #local library
 use aliased 'Packages::CAM::UniRTM::Enums';
@@ -16,6 +17,8 @@ use aliased 'Packages::Routing::RoutLayer::RoutParser::RoutArc';
 use aliased 'Enums::EnumsRout';
 use aliased "Packages::Polygon::PolygonFeatures";
 use aliased 'Packages::Polygon::Polygon::PolygonPoints';
+use aliased 'Packages::Polygon::Polygon::PolygonArc';
+use aliased 'Packages::Polygon::Polygon::PolygonAttr';
 
 #-------------------------------------------------------------------------------------------#
 #  Public method
@@ -40,8 +43,12 @@ sub new {
 	my @outsideChainSeq = ();
 	$self->{"outsideChainSeq"} = \@outsideChainSeq;    # chain seq ref, which is this chain sequence inside
 
-	my @features = ();
-	$self->{"features"}    = \@features;               # features, wchich chain sequnece is created from
+	# Features, wchich chain sequnece is created from. 
+	$self->{"oriFeatures"}    = [];  
+	
+	# Features, wchich chain sequnece is created from. 
+	# These features can by modified during UniRTM initialization (arc/circles are fragmented, direction is changed to CW etc)
+	$self->{"features"}    = [];               
 	$self->{"featureType"} = undef;                    # tell type of features, wchich chain is created from. FeatType_SURF/FeatType_LINEARC
 
 	# ==== Property set, only if rout is cyclic ====
@@ -54,7 +61,7 @@ sub new {
 
 # Helper methods -------------------------------------
 
-# Reeturn points, which crate given chain
+# Reeturn points, which crate given chain. Points are used to detect mutual position of chainsequences
 # For Line, Arc (arc is fragmented on small arcs) return list of points
 # - ecah points are not duplicated
 # - for cycle chains, return sorted points CW (start and and are not equal)
@@ -63,6 +70,8 @@ sub new {
 
 sub GetPoints {
 	my $self = shift;
+
+	my $accuracy = 0.2; # radius tolerance, when convert arc to points
 
 	my @points = ();
 
@@ -81,7 +90,7 @@ sub GetPoints {
 
 		foreach my $surfFeat (@features) {
 
-			my @envelops = PolygonFeatures->GetSurfaceEnvelops( $surfFeat, 0.2 );
+			my @envelops = PolygonFeatures->GetSurfaceEnvelops( $surfFeat, $accuracy );
 
 			if ( scalar(@envelops) > 1 ) {
 				$singleIsland = 0;
@@ -96,9 +105,11 @@ sub GetPoints {
 
 		# Do convex hull from all surface envelop points
 		if ($singleIsland) {
+
 			#@surfaceEnvelops = map { [ $_->{"x"}, $_->{"y"} ] } @surfaceEnvelops;
-		}else{
-			
+		}
+		else {
+
 			@surfaceEnvelops = PolygonPoints->GetConvexHull( \@surfaceEnvelops );
 		}
 
@@ -111,27 +122,48 @@ sub GetPoints {
 	}
 	else {
 
-		my @lines = ();
+		my @pointsPom = ();
 
-		foreach my $f ( $self->GetFeatures() ) {
+		
+		for(my $i = 0; $i <scalar(@features); $i++ ) {
+
+			my $f = $features[$i];
+			my $lastPoint = undef;
 
 			if ( $f->{"type"} =~ /A/i ) {
 
-				my @linesTmp = RoutArc->FragmentArcToSegments( $f, 4 );
-				push( @lines, @linesTmp );
+				my $result = undef;
+ 				
+ 				$f->{"dir"} = $f->{"newDir"}; # GetFragmentArc assume propertt "dir"
+				my @p = PolygonArc->GetFragmentArc( $f, $accuracy, \$result );
+
+				if ($result) {
+
+					push( @pointsPom, @p );
+				
+				}else{
+					# takke start + end point of arc/circle
+					push( @pointsPom, [ $f->{"x1"}, $f->{"y1"} ] );
+
+				  }
 
 			}
-			else {
+			elsif ( $f->{"type"} =~ /l/i ) {
 
-				push( @lines, $f );
+				push( @pointsPom, [ $f->{"x1"},  $f->{"y1"} ] );
+				
+			}
+			
+			$lastPoint = [ $f->{"x2"}, $f->{"y2"} ];
+			
+			if($i == scalar(@features) -1){
+				push( @points,   $lastPoint );
 			}
 		}
 
-		push( @points, [ $lines[0]->{"x1"}, $lines[0]->{"y1"} ] );    # first point "x1,y1" of feature chain
-		push( @points, map { [ $_->{"x2"}, $_->{"y2"} ] } @lines );   # rest of points "x2,y2"
 
-		#push( @points, [ $features[0]->{"x1"}, $features[0]->{"y1"} ] );    # first point "x1,y1" of feature chain
-		#push( @points, map { [ $_->{"x2"}, $_->{"y2"} ] } $self->GetFeatures() );    # rest of points "x2,y2"
+		push( @points,   @pointsPom );    
+
 	}
 
 	return @points;
@@ -169,7 +201,7 @@ sub IsOutline {
 sub GetStrInfo {
 	my $self = shift;
 
-	my @features = @{ $self->{"features"} };
+	my @features = @{ $self->{"oriFeatures"} };
 	my @ids      = map { $_->{"id"} } @features;
 	my $idStr    = join( ";", @ids );
 
@@ -185,6 +217,28 @@ sub GetFeatures {
 
 }
 
+sub SetFeatures {
+	my $self     = shift;
+	my $features = shift;
+
+	$self->{"features"} = $features;
+}
+
+
+sub GetOriFeatures {
+	my $self = shift;
+
+	return @{ $self->{"oriFeatures"} };
+
+}
+
+sub SetOriFeatures {
+	my $self     = shift;
+	my $features = shift;
+
+	$self->{"oriFeatures"} = $features;
+}
+
 sub AddFeature {
 	my $self    = shift;
 	my $feature = shift;
@@ -193,13 +247,6 @@ sub AddFeature {
 
 }
 
-sub SetFeatures {
-	my $self     = shift;
-	my $features = shift;
-
-	$self->{"features"} = $features;
-
-}
 
 sub SetFeatureType {
 	my $self = shift;

@@ -7,6 +7,7 @@ package Packages::CAM::UniRTM::UniRTM::Parser::ChainParser;
 #3th party library
 use strict;
 use warnings;
+use Storable qw(dclone);
 
 #local library
 use aliased 'CamHelpers::CamDTM';
@@ -51,6 +52,7 @@ sub GetChains {
 
 			my $chSeq = UniChainSeq->new($uniChain);
 
+			$chSeq->SetOriFeatures(dclone($seqPoints));
 			$chSeq->SetFeatures($seqPoints);
 			$self->__SetChainSeqProperties($chSeq);
 
