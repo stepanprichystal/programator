@@ -7,7 +7,7 @@ use warnings;
 
 
 # ============ INPUT LINE =================
-my $inputLine ="copy_entity,type=job,source_job=f57100,source_name=f57100,dest_job=f13609,dest_name=f13609,dest_database=incam,remove_from_sr=yes (-1)";
+my $inputLine ="add_arc,symbol=r254,polarity=positive,attributes=no,direction=cw,xs=-24.2302325,ys=64.8158,xe=-24.2302325,ye=64.8158,xc=-36.414335,yc=64.8158";
  
 
 my $output = "\$inCAM->COM(";

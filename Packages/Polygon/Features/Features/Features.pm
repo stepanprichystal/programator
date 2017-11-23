@@ -272,7 +272,7 @@ sub __ParseLines {
 					if ( exists $surfInf{"island"} ) {
 
 						# determine if surface is circle
-						if ( scalar( @{ $surfInf{"island"} } ) == 2 && $surfInf{"island"}->[1]->{"type"} eq "c" ) {
+						if ( scalar( @{ $surfInf{"island"}} ) == 2 && $surfInf{"island"}->[1]->{"type"} eq "c" ) {
 							$surfInf{"circle"} = 1;
 						}
 

@@ -734,6 +734,14 @@ sub OptimizeLevels {
 
 }
 
+# Delete selected feature, if no selected, delete all
+sub DeleteFeatures{
+	my $self       = shift;
+	my $inCAM      = shift;
+	
+	$inCAM->COM("sel_delete");
+}
+
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#

@@ -34,7 +34,8 @@ sub new {
 	$self->{"layer"} = shift;
 
 	$self->{"breakSR"} = shift;
-	$self->{"flatten"} = shift;
+	$self->{"uniDTM"} = shift; # if passed, UniDTMTools def will be assign to UniDTMTools def
+	
 
 	my @features = ();
 	$self->{"features"} = \@features;
@@ -97,7 +98,7 @@ sub __InitUniRTM {
 	$self->{"features"} = \@features;
 	
 	# 2) Get route chain list
-	my @chainList = ChainToolParser->GetChainList(\@features);
+	my @chainList = ChainToolParser->GetChainList(\@features, $self->{"uniDTM"});
 	$self->{"chainList"} = \@chainList;
 
 	# 2) Get route chains by same .rout_tool atribute

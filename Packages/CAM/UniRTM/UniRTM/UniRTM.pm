@@ -107,6 +107,9 @@ sub GetChainByChainTool {
 # If chain seq is type of:
 # - FeatType_SURF: Chain seq contain on surface feature which is circle
 # - FeatType_LINEARC: Chain seq contain only arc and is cyclic
+# Chain has new property "radius"
+# - FeatType_SURF: (diameter of whole surface) / 2
+# - FeatType_LINEARC: (diameter given by outer edge of rout compensation) / 2
 sub GetCircleChainSeq {
 	my $self     = shift;
 	my $chanType = shift;    # FeatType_SURF, FeatType_LINEARC
@@ -153,14 +156,33 @@ sub GetCircleChainSeq {
 		}
 
 		# add radius property to all chain
+		
 
 		foreach my $chanSeq (@cyclChains) {
-
+			
+			my $chainSize = $chanSeq->GetChain()->GetChainSize()/1000; # in mm
+ 
 			my $arc = ( $chanSeq->GetFeatures() )[0];
 			$arc->{"dir"} = $arc->{"newDir"};    # GetFragmentArc assume propertt "dir"
 			PolygonAttr->AddArcAtt($arc);
 
-			$chanSeq->{"radius"} = $arc->{"radius"};
+			my $radius = $arc->{"radius"};
+
+			my $comp = $arc->{"att"}->{".comp"};
+
+			# comp is in center of arc
+			if ( $comp eq EnumsRout->Comp_NONE ) {
+
+				$radius += $chainSize/2;
+			}
+			# comp is out of circle
+			elsif (    ( $comp eq EnumsRout->Comp_LEFT && $arc->{"newDir"} eq EnumsRout->Dir_CW )
+					|| ( $comp eq EnumsRout->Comp_RIGHT && $arc->{"newDir"} eq EnumsRout->Dir_CCW ) )
+			{
+					$radius += $chainSize;
+			}
+
+			$chanSeq->{"radius"} = $radius;
 		}
 
 		push( @circleChainSeq, @cyclChains );
@@ -177,19 +199,30 @@ my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	use aliased 'Packages::CAM::UniRTM::UniRTM::UniRTM';
+	use aliased 'Packages::CAM::UniDTM::UniDTM';
 	use aliased 'Packages::InCAM::InCAM';
 	use aliased 'Packages::Routing::RoutLayer::RoutStart::RoutStart';
 	use aliased 'Packages::Routing::RoutLayer::RoutStart::RoutRotation';
 	use aliased 'Packages::Routing::RoutLayer::RoutDrawing::RoutDrawing';
+	use aliased 'Packages::CAM::UniDTM::Enums' => "DTMEnums";
 
 	my $inCAM = InCAM->new();
 	my $jobId = "f52456";
 
-	my $rtm = UniRTM->new( $inCAM, $jobId, "o+1", "f", 1 );
+	my $dtm = UniDTM->new( $inCAM, $jobId, "o+1", "f", 1 );
 
-	my @outline = $rtm->GetCircleChainSeq( Enums->FeatType_LINEARC );
+	my $rtm = UniRTM->new( $inCAM, $jobId, "o+1", "f", 1, $dtm );
 
-	print scalar(@outline) . "fff";
+#	foreach my $item ( $rtm->GetChainList() ) {
+#
+#		my $dtmTool = $item->GetUniDTMTool();
+#		print "test";
+#
+#	}
+
+	my @outline = $rtm->GetCircleChainSeq( Enums->FeatType_SURF );
+
+	print "test";
 
 }
 
