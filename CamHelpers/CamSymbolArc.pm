@@ -47,35 +47,7 @@ sub AddArcStartCenterEnd {
 
 }
 
-sub AddArcStartCenterEnd {
-	my $self      = shift;
-	my $inCAM     = shift;
-	my $startP    = shift;
-	my $centerP   = shift;
-	my $endP      = shift;
-	my $direction = shift;
-	my $symbol    = shift;    #hash x, y
-	my $polarity  = shift;    #
-
-	$polarity  = defined $polarity  ? $polarity  : 'positive';
-	$direction = defined $direction ? $direction : 'cw';
-
-	return
-	  $inCAM->COM(
-				   "add_arc",
-				   "symbol"     => $symbol,
-				   "polarity"   => $polarity,
-				   "attributes" => "yes",
-				   "direction"  => $direction,
-				   "xs"         => $startP->{"x"},
-				   "ys"         => $startP->{"y"},
-				   "xe"         => $endP->{"x"},
-				   "ye"         => $endP->{"y"},
-				   "xc"         => $centerP->{"x"},
-				   "yc"         => $centerP->{"y"}
-	  );
-
-}
+ 
 
 # add circle by radius an center
 sub AddCircleRadiusCenter {
@@ -88,7 +60,7 @@ sub AddCircleRadiusCenter {
 	my $polarity  = shift;    #
 	
 	
-	my $startP    = { "x" =>  $centerP->{"x"} - $radius, "y" =>  $centerP->{"y"} - $radius };
+	my $startP    = { "x" =>  $centerP->{"x"} - $radius, "y" =>  $centerP->{"y"} };
 	my $endP      = $startP;
 
 	$self->AddArcStartCenterEnd($inCAM, $startP, $centerP, $endP, $direction, $symbol, $polarity);

@@ -28,7 +28,6 @@ sub GetSlotRadiusByToolDepth {
 	my $toolAngle    = shift;
 	my $toolDepth    = shift;
 
-	print tan( deg2rad( $toolAngle / 2 ) ) * $toolDepth . "\n";
 
 	my $rRadius = $slotRadius - ( $toolDiameter / 2 - ( tan( deg2rad( $toolAngle / 2 ) ) * $toolDepth ) );
 
@@ -70,9 +69,10 @@ sub GetExtraDepthIfPlated {
 
 	my $platinThick = 50;    #µm
 
-	my $dDepth = $platinThick / sin( deg2rad( $toolAngle / 2 ) );
+	# DO NOT CONSIDER ANGLE OF DRILL, USE ONLY CONSTANT 50µm for simplicity
+	#my $dDepth = $platinThick / sin( deg2rad( $toolAngle / 2 ) ); 
 
-	return $dDepth;
+	return $platinThick;
 }
 
 # All in µm

@@ -94,28 +94,31 @@ sub AddSurfAtt {
 
 	die "surfaces key is not defined in hash" unless ( defined $surf->{"surfaces"} );
 
-	if ( $surf->{"type"} eq "circle" ) {
+	foreach my $surfIsland ( @{ $surf->{"surfaces"} } ) {
 
-		my $sP1 = $surf->{"surfaces"}->[0]->{"island"}->[0];
-		my $sP2 = $surf->{"surfaces"}->[0]->{"island"}->[1];
+		if ( $surfIsland->{"circle"} ) {
 
-		$surf->{"xmid"} = $sP2->{"xmid"};
-		$surf->{"ymid"} = $sP2->{"ymid"};
+			my $sP1 = $surfIsland->{"island"}->[0];
+			my $sP2 = $surfIsland->{"island"}->[1];
 
-		# create arc structure to get surface radius
-		my %arc = (
-					"x1"   => $sP1->{"x"},
-					"y1"   => $sP1->{"y"},
-					"x2"   => $sP1->{"x"},
-					"y2"   => $sP1->{"y"},
-					"xmid" => $sP2->{"xmid"},
-					"ymid" => $sP2->{"ymid"},
-					"dir"  => "CW"
-		);
+			$surfIsland->{"xmid"} = $sP2->{"xmid"};
+			$surfIsland->{"ymid"} = $sP2->{"ymid"};
 
-		$self->AddArcAtt( \%arc );
-		$surf->{"radius"} = $arc{"radius"};
+			# create arc structure to get surface radius
+			my %arc = (
+						"x1"   => $sP1->{"x"},
+						"y1"   => $sP1->{"y"},
+						"x2"   => $sP1->{"x"},
+						"y2"   => $sP1->{"y"},
+						"xmid" => $sP2->{"xmid"},
+						"ymid" => $sP2->{"ymid"},
+						"dir"  => "CW"
+			);
 
+			$self->AddArcAtt( \%arc );
+			$surfIsland->{"radius"} = $arc{"radius"};
+
+		}
 	}
 }
 

@@ -22,7 +22,8 @@ use aliased 'Packages::CAMJob::OutputData::LayerData::LayerData';
 use aliased 'Helpers::ValueConvertor';
 use aliased 'CamHelpers::CamFilter';
 use aliased 'CamHelpers::CamDTM';
-
+use aliased 'Packages::CAM::UniDTM::UniDTM';
+use aliased 'Packages::CAM::UniRTM::UniRTM::UniRTM';
 use aliased 'Packages::CAMJob::OutputData::PrepareLayers::PrepareNCDrawing';
 use aliased 'Packages::CAMJob::OutputData::PrepareLayers::PrepareNCStandard';
 use aliased 'CamHelpers::CamHelper';
@@ -97,14 +98,14 @@ sub Prepare {
 
 	# 1) Check if all parameters are ok. Such as vysledne/vrtane, one surfae depth per layer, etc..
 	$self->__CheckNCLayers( \@layers );
-
+ 
 	# 2) Remove attributes chain from surface, resize if plated surface
-	$self->__AdjustSurfaces( \@layers );
+	#$self->__AdjustSurfaces( \@layers );
 
 	# 3) Set all NC layers to finish sizes (consider type of DTM vysledne/vrtane)
-	$self->__SetFinishSizes( \@layers );
-
-	# 4) Load histograms about layer features and their attribues
+	#$self->__SetFinishSizes( \@layers );
+	
+	# 2) Load histograms about layer features and their attribues
 	foreach my $l (@layers) {
 
 		# a) feature attributes histogram
@@ -123,6 +124,7 @@ sub Prepare {
 		}
 		$sHist{"lines_arcs"} = \%line_arcs;
 		$l->{"symHist"} = \%sHist;
+  
 
 	}
 
@@ -200,8 +202,6 @@ sub __AdjustSurfaces {
 		}
 	}
 }
-
-
 
 # Set all NC layers to finish sizes (consider type of DTM vysledne/vrtane)
 sub __SetFinishSizes {

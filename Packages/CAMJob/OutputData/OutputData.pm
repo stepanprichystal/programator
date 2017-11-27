@@ -72,7 +72,7 @@ sub Create {
 	my @layers = $self->__GetLayersForExport($layerFilter);
 
 	# Prepare layers for export
-	$self->{"prepareBase"}->Prepare( \@layers );
+	#$self->{"prepareBase"}->Prepare( \@layers );
 	$self->{"prepareNC"}->Prepare( \@layers, \@childSteps );
 
 	return 1;
@@ -157,11 +157,11 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId = "f66842";
+	my $jobId = "f52456";
 
 	my $mess = "";
 
-	my $control = OutputData->new( $inCAM, $jobId, "mpanel" );
+	my $control = OutputData->new( $inCAM, $jobId, "o+1" );
 	$control->Create( \$mess );
 
 }
