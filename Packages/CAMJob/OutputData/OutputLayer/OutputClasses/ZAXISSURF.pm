@@ -86,7 +86,7 @@ sub __Prepare {
 		# get id of all features in chain
 		my @featsId = map { $_->{'id'} } map { $_->GetOriFeatures() } @matchCh;
 
-		my $drawLayer = $self->_SeparateFeaturesByIds( \@featsId );
+		my $drawLayer = $self->_SeparateFeatsByIdNC( \@featsId );
 
 		# Warning, conturization is necessary here in order properly feature resize.
 		# Only for case, when rout is "cyclic" and compensation is "inside" (CW and Right)

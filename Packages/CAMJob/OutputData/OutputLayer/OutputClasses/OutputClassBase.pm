@@ -52,21 +52,30 @@ sub _SeparateFeatsByIdNC {
 	my $features = shift;
 	my $notUpdateDTM = shift;
 	my $notUpdateRTM = shift;
+	
+	my $inCAM = $self->{"inCAM"};
+	my $jobId = $self->{"jobId"};
+	my $step = $self->{"step"};
 		
 	my $l = $self->{"layer"};	
 		
-	$self->_SeparateFeatsById($features);
+	my $layer = $self->_SeparateFeatsById($features);
 	
 	unless($notUpdateDTM){
 		
 		if(defined $l->{"uniDTM"}){
 			
-			
+			$l->{"uniDTM"} = UniDTM->new( $inCAM, $jobId, $step, $l->{"gROWname"}, 0 );
 		}
 		
+		if(defined $l->{"uniRTM"}){
+			
+			$l->{"uniRTM"} = UniRTM->new( $inCAM, $jobId, $step, $l->{"gROWname"}, 0, $l->{"uniDTM"} );
+		}
+
 	}
 		
-	
+	return $layer;
 }
 
 

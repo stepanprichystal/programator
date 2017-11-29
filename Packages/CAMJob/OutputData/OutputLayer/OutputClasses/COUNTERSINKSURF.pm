@@ -84,6 +84,9 @@ sub __Prepare {
 			push( @radiuses, $r );
 		}
 	}
+	
+	# Only radius smaller than 7
+	@chainSeq =  grep { $_->{"radius"} <= 7 }  @chainSeq;
 
 	my @toolSizes = uniq( map { $_->GetChain()->GetChainSize() } @chainSeq );
 
@@ -112,7 +115,7 @@ sub __Prepare {
 			# get id of all features in chain
 			my @featsId = map { $_->{'id'} } map { $_->GetOriFeatures() } @matchCh;
 
-			my $drawLayer = $self->_SeparateFeaturesByIds( \@featsId );
+			my $drawLayer = $self->_SeparateFeatsByIdNC( \@featsId );
 
 			# 1) Set prepared layer name
 			$outputLayer->SetLayer($drawLayer);    # Attention! layer contain original sizes of feature, not finish/real sizes

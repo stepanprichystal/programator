@@ -68,9 +68,11 @@ sub __Prepare {
 
 	return 0 unless (@chainSeq);
 
-	# only special tools with angle
+	# only special tools with angle, radius max 5mm
 	@chainSeq =
-	  grep { $_->GetChain()->GetChainTool()->GetUniDTMTool()->GetSpecial() && $_->GetChain()->GetChainTool()->GetUniDTMTool()->GetAngle() > 0 }
+	  grep { $_->GetChain()->GetChainTool()->GetUniDTMTool()->GetSpecial() 
+	  		&& $_->GetChain()->GetChainTool()->GetUniDTMTool()->GetAngle() > 0
+	  		  }
 	  @chainSeq;
 
 	#compute radiuses for surface
@@ -104,6 +106,9 @@ sub __Prepare {
 
 		$chanSeq->{"radius"} = $radius;
 	}
+	
+	# Only radius smaller than 7
+	@chainSeq =  grep { $_->{"radius"} <= 7 }  @chainSeq;
 
 	my @radiuses = ();    # radiuses of whole surface, not
 
@@ -143,7 +148,7 @@ sub __Prepare {
 			# get id of all features in chain
 			my @featsId = map { $_->{'id'} } map { $_->GetOriFeatures() } @matchCh;
 
-			my $drawLayer = $self->_SeparateFeaturesByIds( \@featsId );
+			my $drawLayer = $self->_SeparateFeatsByIdNC( \@featsId );
 
 			# 1) Set prepared layer name
 			$outputLayer->SetLayer($drawLayer); # Attention! lazer contain original sizes of feature, not finish/real sizes

@@ -31,6 +31,7 @@ use aliased 'Packages::CAM::SymbolDrawing::SymbolLib::DimH1';
 use aliased 'Packages::CAM::SymbolDrawing::SymbolLib::DimV1';
 use aliased 'Packages::CAM::SymbolDrawing::SymbolLib::DimAngle1';
 use aliased 'Packages::CAMJob::OutputData::OutputLayer::Enums' => 'OutEnums';
+
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
@@ -84,9 +85,8 @@ sub new {
 
 sub Create {
 	my $self = shift;
- 
+
 	my $layerType = shift;    # type
- 
 
 	#	CreateDetailCountersink
 
@@ -130,60 +130,46 @@ sub __CreateDraw {
 	# 1) Add pcb surface primitive
 	$self->__CreateDetailDraw( $type, $symbolType, $diameter, $depth, $angle );
 
-	# 2) Add pcb thick dimension
-
-	my $w     = $self->{"drawWidth"};
-	my $drawH = $self->{"pcbThick"} * $self->{"scale"};    # mm
-
-	my $dimThick = DimV1->new( "bot", ( $w * 0.01 ),
-							   $drawH,
-							   ( $w * 0.2 ),
-							   $self->{"dimLineWidth"},
-							   sprintf( "%.2f", $self->{"pcbThick"} ) . "mm (pcb thick)",
-							   $self->{"dimTextHeight"},
-							   $self->{"dimTextWidth"},
-							   $self->{"dimTextMirror"},
-							   $self->{"dimTextAngle"} );
-	$self->{"drawing"}->AddSymbol( $dimThick, Point->new( ( $w * 0.9 ), 0 ) );
-
 	# 3) draw picture to layer
 	CamLayer->WorkLayer( $self->{"inCAM"}, $self->{"layer"} );
 	$self->{"drawing"}->Draw();
 
 }
 
-sub __CreateTexts {
-	my $self       = shift;
-	my $type       = shift;    # countersink z-axis
-	my $symbolType = shift;    # slot/hole/surface
+sub __AddTitleTexts {
+	my $self = shift;
+	my $text = shift;    # countersink z-axis
 
 	my $title = "";
 
-	if ( $self->{"plated"} ) {
-		$title .= "Plated ";
-	}
-	else {
-		$title .= "Non plated ";
-	}
-
-	if ( $type eq Enums->Depth_ZAXIS ) {
-
-		$title .= "Z-axis milling from " . uc( $self->{"side"} ) . ". Type - ";
-	}
-	elsif ( $type eq Enums->Depth_COUNTERSINK ) {
-
-		$title .= "Countersink from " . uc( $self->{"side"} ) . ". Type - ";
-	}
-
-	if ( $symbolType eq Enums->Symbol_SLOT ) {
-		$title .= "slot";
-	}
-	elsif ( $symbolType eq Enums->Symbol_HOLE ) {
-		$title .= "hole";
-	}
-	elsif ( $symbolType eq Enums->Symbol_SURFACE ) {
-		$title .= "surface";
-	}
+		if ( $self->{"plated"} ) {
+			$title .= "Plated ";
+		}
+		else {
+			$title .= "Non plated ";
+		}
+		
+	$title .= $text;
+		
+	#
+	#	if ( $type eq Enums->Depth_ZAXIS ) {
+	#
+	#		$title .= "Z-axis milling from " . uc( $self->{"side"} ) . ". Type - ";
+	#	}
+	#	elsif ( $type eq Enums->Depth_COUNTERSINK ) {
+	#
+	#		$title .= "Countersink from " . uc( $self->{"side"} ) . ". Type - ";
+	#	}
+	#
+	#	if ( $symbolType eq Enums->Symbol_SLOT ) {
+	#		$title .= "slot";
+	#	}
+	#	elsif ( $symbolType eq Enums->Symbol_HOLE ) {
+	#		$title .= "hole";
+	#	}
+	#	elsif ( $symbolType eq Enums->Symbol_SURFACE ) {
+	#		$title .= "surface";
+	#	}
 
 	$self->{"drawingTitle"}->AddPrimitive( PrimitiveText->new( $title, Point->new(), $self->{"titleTextHeight"}, $self->{"titleTextLineWidth"} ) );
 
@@ -202,7 +188,7 @@ sub __CreateTexts {
 }
 
 # Measure is 1: 10, thus pcb thisk 1.5 mm will be draw as thicj 15mm
-sub __GetPcbDrawSide {
+sub __AddPcbDrawSide {
 	my $self       = shift;
 	my $surfPoints = shift;
 	my $side       = shift;
@@ -248,10 +234,30 @@ sub __GetPcbDrawSide {
 
 }
 
+sub __AddPcbThickDim {
+	my $self = shift;
+
+	# 2) Add pcb thick dimension
+
+	my $w     = $self->{"drawWidth"};
+	my $drawH = $self->{"pcbThick"} * $self->{"scale"};    # mm
+
+	my $dimThick = DimV1->new( "bot", ( $w * 0.02 ),
+							   $drawH,
+							   ( $w * 0.2 ),
+							   $self->{"dimLineWidth"},
+							   sprintf( "%.2f", $self->{"pcbThick"} ) . "mm (pcb thick)",
+							   $self->{"dimTextHeight"},
+							   $self->{"dimTextWidth"},
+							   $self->{"dimTextMirror"},
+							   $self->{"dimTextAngle"} );
+	$self->{"drawing"}->AddSymbol( $dimThick, Point->new( ( $w * 0.9 ), 0 ) );
+}
+
 sub __CreateDetailDraw {
 	my $self       = shift;
 	my $type       = shift;
-	my $symbolType = shift;                            # slot/hole/surface                             # countersink z-axis
+	my $symbolType = shift;    # slot/hole/surface                             # countersink z-axis
 	my $diameter   = shift;
 	my $depth      = shift;
 	my $angle      = shift;
@@ -299,10 +305,10 @@ sub __CreateDetailZaxis {
 	my @surfPoints = ();
 
 	# 1) Add right side of draw
-	$self->__GetPcbDrawSide( \@surfPoints, "right" );
+	$self->__AddPcbDrawSide( \@surfPoints, "right" );
 
 	# 2) Add left side of draw
-	$self->__GetPcbDrawSide( \@surfPoints, "left" );
+	$self->__AddPcbDrawSide( \@surfPoints, "left" );
 
 	# 3) create detail part of surface
 	my $drawW        = $self->{"drawWidth"};
@@ -361,10 +367,10 @@ sub __CreateDetailZaxisSurf {
 	my @surfPoints = ();
 
 	# 1) Add right side of draw
-	$self->__GetPcbDrawSide( \@surfPoints, "right" );
+	$self->__AddPcbDrawSide( \@surfPoints, "right" );
 
 	# 2) Add left side of draw
-	$self->__GetPcbDrawSide( \@surfPoints, "left" );
+	$self->__AddPcbDrawSide( \@surfPoints, "left" );
 
 	# 3) create detail part of surface
 	my $drawW     = $self->{"drawWidth"};
@@ -399,11 +405,11 @@ sub __CreateDetailZaxisSurf {
 }
 
 sub CreateDetailCountersink {
-	my $self       = shift;
-	my $radius = shift; # in mm
-	my $depth = shift; # in mm
-	my $angle = shift; #  
-	 
+	my $self   = shift;
+	my $radius = shift;    # in mm
+	my $depth  = shift;    # in mm
+	my $angle  = shift;    #
+	my $type   = shift;    # slot/hole
 
 	# compute diameter of tool by angle and depth
 	my $diameter = $radius * 2;
@@ -427,10 +433,10 @@ sub CreateDetailCountersink {
 		my @surfPoints = ();
 
 		# 1) Add right side of draw
-		$self->__GetPcbDrawSide( \@surfPoints, "right" );
+		$self->__AddPcbDrawSide( \@surfPoints, "right" );
 
 		# 2) Add left side of draw
-		$self->__GetPcbDrawSide( \@surfPoints, "left" );
+		$self->__AddPcbDrawSide( \@surfPoints, "left" );
 
 		push( @surfPoints, Point->new( $x1, 0 ) );
 		push( @surfPoints, Point->new( $x2, -$depthReal ) );
@@ -451,13 +457,13 @@ sub CreateDetailCountersink {
 
 		push( @surfPoints1, Point->new( $xTmp + $x1, -$drawH ) );
 
-		$self->__GetPcbDrawSide( \@surfPoints1, "left" );
+		$self->__AddPcbDrawSide( \@surfPoints1, "left" );
 		$self->__AddDetailDraw( \@surfPoints1 );
 
 		# right surface
 		my @surfPoints2 = ();
 
-		$self->__GetPcbDrawSide( \@surfPoints2, "right" );
+		$self->__AddPcbDrawSide( \@surfPoints2, "right" );
 
 		push( @surfPoints2, Point->new( $x3 - $xTmp, -$drawH ) );
 
@@ -466,12 +472,15 @@ sub CreateDetailCountersink {
 
 	}
 
+	# 1) add pcb thick dim
+	$self->__AddPcbThickDim();
+
 	# 2) create dimension draw for tool
 	my $w = $self->{"drawWidth"};
 
 	my $dimTool = DimH1Lines->new(
 								   "bot", "left",
-								   ( $w * 0.2 ), ( $w * 0.01 ),
+								   ( $w * 0.2 ), ( $w * 0.02 ),
 								   $diameterReal, ( $w * 0.2 ),
 								   "both", $self->{"dimLineWidth"},
 								   "D " . sprintf( "%.2f", $diameter ) . "mm", $self->{"dimTextHeight"},
@@ -483,7 +492,7 @@ sub CreateDetailCountersink {
 	# 3) create dimension draw for depth
 	my $dimDepth = DimV1Lines->new(
 									"right", "bot",
-									abs( $x3 - $x2 ), ( $w * 0.01 ),
+									abs( $x3 - $x2 ), ( $w * 0.02 ),
 									$depthReal, ( $w * 0.2 ),
 									"second", $self->{"dimLineWidth"},
 									sprintf( "%.2f", $depth ) . "mm (depth)", $self->{"dimTextHeight"},
@@ -493,15 +502,57 @@ sub CreateDetailCountersink {
 	$self->{"drawing"}->AddSymbol( $dimDepth, Point->new( $x2, 0 ) );
 
 	# 4) create dimension draw for angle
-	my $dimAngle = DimAngle1->new( $angle,
-								   int( $w * 0.20 ),
-								   $self->{"dimLineWidth"},
-								   $angle . " deg.",
-								   $self->{"dimTextHeight"},
-								   $self->{"dimTextWidth"},
-								   $self->{"dimTextMirror"},
-								   $self->{"dimTextAngle"} );
+	my $dimAngle = DimAngle1->new(
+						$angle, int( sqrt( $depthReal * $depthReal + ( $diameterReal / 2 ) * ( $diameterReal / 2 ) ) + $w * 0.1 ),
+						( $w * 0.02 ),           $self->{"dimLineWidth"},
+						$angle . " deg.",        $self->{"dimTextHeight"},
+						$self->{"dimTextWidth"}, $self->{"dimTextMirror"},
+						$self->{"dimTextAngle"}
+	);
 	$self->{"drawing"}->AddSymbol( $dimAngle, Point->new( $x2, -$depthReal ) );
+
+	# 3) draw picture to layer
+	CamLayer->WorkLayer( $self->{"inCAM"}, $self->{"layer"} );
+	$self->{"drawing"}->Draw();
+
+	my $txt = "";
+	
+	if ( $type eq "hole" ) {
+
+		$txt = "countersink from " . uc( $self->{"side"} );
+	
+	}elsif($type eq "slot"){
+		
+		$txt = "chamfer from " . uc( $self->{"side"} ) ;
+	}
+
+	$self->__AddTitleTexts($txt);
+
+	#	if ( $self->{"plated"} ) {
+	#		$title .= "Plated ";
+	#	}
+	#	else {
+	#		$title .= "Non plated ";
+	#	}
+	#
+	#	if ( $type eq Enums->Depth_ZAXIS ) {
+	#
+	#		$title .= "Z-axis milling from " . uc( $self->{"side"} ) . ". Type - ";
+	#	}
+	#	elsif ( $type eq Enums->Depth_COUNTERSINK ) {
+	#
+	#		$title .= "Countersink from " . uc( $self->{"side"} ) . ". Type - ";
+	#	}
+	#
+	#	if ( $symbolType eq Enums->Symbol_SLOT ) {
+	#		$title .= "slot";
+	#	}
+	#	elsif ( $symbolType eq Enums->Symbol_HOLE ) {
+	#		$title .= "hole";
+	#	}
+	#	elsif ( $symbolType eq Enums->Symbol_SURFACE ) {
+	#		$title .= "surface";
+	#	}
 
 }
 

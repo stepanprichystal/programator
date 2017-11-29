@@ -94,7 +94,7 @@ sub __Prepare {
 
 		# During identification, surface are "compensate" to lines.
 		# Asume tool go along border only (do one circle around whole suface)
-		my $drawLayer = $self->_SeparateFeaturesByIds( \@featsId ); 
+		my $drawLayer = $self->_SeparateFeatsByIdNC( \@featsId ); 
  
 		my $radiusReal = CountersinkHelper->GetHoleRadiusByToolDepth( $toolDrillSize, $toolAngle, $toolDepth * 1000 ) / 1000;
 

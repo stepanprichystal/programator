@@ -291,7 +291,7 @@ sub __ProcessDrawing {
 
 			my $imgToolDepth = cotan( deg2rad( ( $imgToolAngle / 2 ) ) ) * $layerRes->{"radiusReal"};
 
-			$draw->CreateDetailCountersink(  $layerRes->{"radiusReal"}, $imgToolDepth, $imgToolAngle );
+			$draw->CreateDetailCountersink(  $layerRes->{"radiusReal"}, $imgToolDepth, $imgToolAngle, "hole" );
 
 		}
 		elsif ( $classRes->GetType() eq OutEnums->Type_COUNTERSINKPAD ) {
@@ -311,7 +311,7 @@ sub __ProcessDrawing {
 				$imgToolDepth -= 0.05;
 			}
 
-			$draw->Create( Enums->Depth_COUNTERSINK, Enums->Symbol_HOLE, $layerRes->{"radiusReal"}, $imgToolDepth, $imgToolAngle );
+			$draw->CreateDetailCountersink(  $layerRes->{"radiusReal"}, $imgToolDepth, $imgToolAngle, "hole" );
 
 		}
 		elsif ( $classRes->GetType() eq OutEnums->Type_ZAXISSLOTCHAMFER ) {

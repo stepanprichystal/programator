@@ -92,7 +92,7 @@ sub __Prepare {
 		# get id of all features in chain
 		my @featsId = map { $_->{'id'} } map { $_->GetOriFeatures() } @matchCh;
 
-		my $drawLayer = $self->_SeparateFeaturesByIds( \@featsId );
+		my $drawLayer = $self->_SeparateFeatsByIdNC( \@featsId );
  
 		my $radiusReal = CountersinkHelper->GetHoleRadiusByToolDepth( $toolDrillSize, $toolAngle, $toolDepth * 1000 ) / 1000;
 

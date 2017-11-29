@@ -94,7 +94,7 @@ sub __Prepare {
 		# get id of all features in chain
 		my @featsId = map { $_->{'id'} } @pads;
 
-		my $drawLayer = $self->_SeparateFeaturesByIds( \@featsId );
+		my $drawLayer = $self->_SeparateFeatsByIdNC( \@featsId );
 
 		# 1) Set prepared layer name
 		$outputLayer->SetLayer($drawLayer);
