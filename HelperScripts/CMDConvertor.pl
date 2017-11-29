@@ -7,7 +7,7 @@ use warnings;
 
 
 # ============ INPUT LINE =================
-my $inputLine ="add_arc,symbol=r254,polarity=positive,attributes=no,direction=cw,xs=-24.2302325,ys=64.8158,xe=-24.2302325,ye=64.8158,xc=-36.414335,yc=64.8158";
+my $inputLine ="dd_surf_poly_crv,xc=23.278175,yc=52.9727425,xe=24.2011775,ye=52.9727425";
  
 
 my $output = "\$inCAM->COM(";

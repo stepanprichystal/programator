@@ -18,6 +18,8 @@ use aliased 'Packages::CAMJob::OutputData::OutputLayer::OutputResult::OutputClas
 use aliased 'Packages::CAM::FeatureFilter::FeatureFilter';
 use aliased 'Helpers::GeneralHelper';
 use aliased 'CamHelpers::CamLayer';
+use aliased 'Packages::CAM::UniDTM::UniDTM';
+use aliased 'Packages::CAM::UniRTM::UniRTM::UniRTM';
 
 #-------------------------------------------------------------------------------------------#
 #  Interface
@@ -43,7 +45,32 @@ sub new {
 #-------------------------------------------------------------------------------------------#
 #  Protected methods
 #-------------------------------------------------------------------------------------------#
-sub _IdentifyFeaturesByIds {
+
+# This function is prete same, but by default update UniDTM and UniRTM if exist
+sub _SeparateFeatsByIdNC {
+	my $self       = shift;
+	my $features = shift;
+	my $notUpdateDTM = shift;
+	my $notUpdateRTM = shift;
+		
+	my $l = $self->{"layer"};	
+		
+	$self->_SeparateFeatsById($features);
+	
+	unless($notUpdateDTM){
+		
+		if(defined $l->{"uniDTM"}){
+			
+			
+		}
+		
+	}
+		
+	
+}
+
+
+sub _SeparateFeatsById {
 	my $self       = shift;
 	my $featuresId = shift;    # by feature ids
 

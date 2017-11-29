@@ -41,7 +41,7 @@ use aliased 'Packages::Polygon::Features::Features::Features';
 sub new {
 	my $class = shift;
 
-	my $self = $class->SUPER::new( @_, Enums->Type_COUNTERSINKARC );
+	my $self = $class->SUPER::new( @_, Enums->Type_COUNTERSINKPAD );
 	bless $self;
 	return $self;
 }
@@ -72,46 +72,47 @@ sub __Prepare {
 
 	# Get all radiuses
 
-	my @radiuses = map { $_->GetDrillSize() } @tools;
+	my @radiuses = uniq(map { $_->GetDrillSize() / 2 } @tools);
 
 	foreach my $r (@radiuses) {
+
+		my $outputLayer = OutputLayer->new();    # layer process result
+
+		my $tool          = ( grep { $_->GetDrillSize()/2 == $r } @tools )[0];
+		my $toolDepth     = $tool->GetDepth();
+		my $toolDrillSize = $tool->GetDrillSize();
+		my $toolAngle     = $tool->GetAngle();
 
 		# get all pads with this radius
 		my $f = Features->new();
 		$f->Parse( $inCAM, $jobId, $self->{"step"}, $lName );
 		my @features = $f->GetFeatures();
 
-		# get all chain seq by radius, by tool diameter (same tool diameters must have same angle)
-		my @matchCh =
-		  grep { ( $_->{"radius"} - 0.01 ) < $r && ( $_->{"radius"} + 0.01 ) > $r && $_->GetChain()->GetChainSize() == $tool } @chainSeq;
+		my @pads = grep { $_->{"type"} =~ /^p$/i && $_->{"thick"} / 2 == $r } @features;
 
-		next unless (@matchCh);
+		# get id of all features in chain
+		my @featsId = map { $_->{'id'} } @pads;
 
-		my $toolDepth = $matchCh[0]->GetChain()->GetChainTool()->GetUniDTMTool()->GetDepth();    # angle of tool
-		my $toolAngle = $matchCh[0]->GetChain()->GetChainTool()->GetUniDTMTool()->GetAngle();    # angle of tool
+		my $drawLayer = $self->_SeparateFeaturesByIds( \@featsId );
 
-		my $radiusNoDepth = $matchCh[0]->{"radius"};
-		my $radiusReal = CountersinkHelper->GetSlotRadiusByToolDepth( $radiusNoDepth * 1000, $tool, $toolAngle, $toolDepth * 1000 ) / 1000;
+		# 1) Set prepared layer name
+		$outputLayer->SetLayer($drawLayer);
+
+		# 2 Add another extra info to output layer
+
+		my $radiusReal = CountersinkHelper->GetHoleRadiusByToolDepth( $toolDrillSize, $toolAngle, $toolDepth*1000 ) / 1000;
 
 		if ( $l->{"plated"} ) {
 			$radiusReal -= 0.05;
 		}
 
-		# get id of all features in chain
-		my @featsId = map { $_->{'id'} } map { $_->GetOriFeatures() } @matchCh;
-
-		my $drawLayer = $self->_IdentifyFeaturesByIds( \@featsId );
-
-		my $outputLayer = OutputLayer->new($drawLayer);
-
-		# add another extra info to output layer
-
-		$outputLayer->{"radiusReal"} = $radiusReal;    # real compted radius of features in layer
-		$outputLayer->{"chainSeq"}   = \@matchCh;      # All chain seq, which was processed in ori layer in this class
+		$outputLayer->{"radiusReal"}  = $radiusReal;    # real computed radius of features in layer
+		$outputLayer->{"padFeatures"} = \@pads;         # All pads, which was processed in ori layer in this class
+		$outputLayer->{"DTMTool"} = $tool;				# DTM tool, which is used for this pads
 
 		$self->{"result"}->AddLayer($outputLayer);
 	}
-}
+
 }
 
 #-------------------------------------------------------------------------------------------#

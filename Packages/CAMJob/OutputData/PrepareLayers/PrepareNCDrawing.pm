@@ -39,6 +39,7 @@ use aliased 'CamHelpers::CamSymbolArc';
 use aliased 'Packages::Polygon::Polygon::PolygonAttr';
 use aliased 'Packages::CAMJob::OutputData::OutputLayer::OutputNCLayer';
 use aliased 'Packages::CAMJob::OutputData::OutputLayer::Enums' => 'OutEnums';
+use aliased 'CamHelpers::CamSymbolSurf';
 
 #use aliased 'Packages::SystemCall::SystemCall';
 
@@ -61,7 +62,7 @@ sub new {
 	$self->{"platingThick"} = 0.05;   # plating constant is 50µm thick of Cu
 
 	$self->{"pcbThick"}    = JobHelper->GetFinalPcbThick( $self->{"jobId"} ) / 1000;    # in mm
-	$self->{"dataOutline"} = "r200";                                                    # symbol def, which is used for outline
+	$self->{"dataOutline"} = "200";                                                     # symbol def, which is used for outline
 
 	$self->{"outputNClayer"} = OutputNCLayer->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"step"} );
 
@@ -116,8 +117,6 @@ sub __ProcessNClayer {
 	my $jobId = $self->{"jobId"};
 	my $step  = $self->{"step"};
 
-	my @allTools = $l->{"uniDTM"}->GetTools();
-
 	my $enTit = ValueConvertor->GetJobLayerTitle($l);
 	my $czTit = ValueConvertor->GetJobLayerTitle( $l, 1 );
 	my $enInf = ValueConvertor->GetJobLayerInfo($l);
@@ -137,210 +136,17 @@ sub __ProcessNClayer {
 
 		my $t = $classRes->GetType();
 
-		if ( $t eq OutEnums->Type_COUNTERSINKSURF ) {
-
-			$self->__ProcessCountersinkSurfAndArc( $classRes, $l, $side, $drawingPos, RTMEnums->FeatType_SURF );
-
-		}
-		elsif ( $t eq OutEnums->Type_COUNTERSINKARC ) {
-
-			$self->__ProcessCountersinkSurfAndArc( $classRes, $l, $side, $drawingPos, RTMEnums->FeatType_LINEARC );
-		}
+		$self->__ProcessLayerData( $classRes, $l, );
+		$self->__ProcessDrawing( $classRes, $l, $side, $drawingPos, $t );
 
 	}
-
-	#$self->__ProcessCountersinkSurfAndArc( $l, $side, $drawingPos, RTMEnums->FeatType_SURF );
-
-	#$self->__ProcessCountersinkSurfAndArc( $l, $side, $drawingPos, RTMEnums->FeatType_LINEARC );
-
-	# ================================
-	# 1) Process countersink Surfaces
-
-	#	# get all diameter of surface countersink
-	#
-	#	my @chainSeq = $l->{"uniRTM"}->GetCircleChainSeq( RTMEnums->FeatType_SURF );
-	#
-	#	# only special tools with angle
-	#	@chainSeq =
-	#	  grep { $_->GetChain()->GetChainTool()->GetUniDTMTool()->GetSpecial() && $_->GetChain()->GetChainTool()->GetUniDTMTool()->GetAngle() > 0 }
-	#	  @chainSeq;
-	#
-	#	my @radiuses = ();
-	#
-	#	for ( my $i = 0 ; < scalar(@chainSeq) ; $i++ ) {
-	#
-	#		my $r = @chainSeq->[$i]->{"radius"};
-	#
-	#		unless ( grep { ( $_ - 0.01 ) < $r && ( $_ + 0.01 ) > $r } @radiuses ) {
-	#			push( @radiuses, $r );
-	#		}
-	#	}
-	#
-	#	my @angles = uniq( map { $_->GetChain()->GetChainTool()->GetUniDTMTool()->GetAngle() } @chainSeq );
-	#
-	#	foreach my $r (@radiuses) {
-	#
-	#		# get all chain seq by radius
-	#		my @rChainSeq = grep { ( $_->{"radius"} - 0.01 ) < $r && ( $_->{"radius"} + 0.01 ) > $r } @chainSeq;
-	#
-	#		# get all possible angles for this radius
-	#		my @angles = ();
-	#
-	#		# get id of all features in chain
-	#		my @featsId = map { $_->{'id'} } map { $_->GetOriFeatures() } @rChainSeq;
-	#
-	#	}
-	#
-	#	# ================================
-	#	# 1) Process countersink arcs
-	#
-	#	# get all diameter of arcs countersink
-	#
-	#	my @chainSeq = grep { $_->GetFeatureType eq RTMEnums->FeatType_LINEARC } $l->{"uniRTM"}->GetChainSequences();
-	#
-	#	my @lines_arcs = grep { $_->GetTypeProcess() eq DTMEnums->TypeProc_CHAIN && $_->GetSource() eq DTMEnums->Source_DTM } @allTools;
-	#
-	#	foreach my $t (@lines_arcs) {
-	#
-	#		my $depth = $t->GetDepth();
-	#		my $lName = $self->__SeparateSymbol( $l, $t );
-	#
-	#		# if features was selected, continue next
-	#		unless ($lName) {
-	#			next;
-	#		}
-	#
-	#		my $draw = Drawing->new( $inCAM, $jobId, $lName, $drawingPos, $self->{"pcbThick"}, $side, $l->{"plated"} );
-	#
-	#		my $toolSize = $t->GetDrillSize();
-	#
-	#		# Test on special countersink tool
-	#		if ( $t->GetSpecial() && defined $t->GetAngle() && $t->GetAngle() > 0 ) {
-	#
-	#			# if slot/hole is plated, finial depth will be smaller -100µm
-	#			if ( $l->{"plated"} ) {
-	#				$depth -= 0.1;
-	#			}
-	#
-	#			#compute real milled hole/line diameter
-	#			my $angle      = $t->GetAngle();
-	#			my $newDiamter = ( tan( deg2rad( $angle / 2 ) ) * $depth * 2 ) * 1000;
-	#
-	#			# change all symbols in layer to this new diameter
-	#			CamLayer->WorkLayer( $inCAM, $lName );
-	#			$inCAM->COM( "sel_change_sym", "symbol" => "r" . $newDiamter, "reset_angle" => "no" );
-	#
-	#			$draw->Create( Enums->Depth_COUNTERSINK, Enums->Symbol_SLOT, $toolSize / 1000, $depth, $angle );
-	#
-	#		}
-	#		else {
-	#			$draw->Create( Enums->Depth_ZAXIS, Enums->Symbol_SLOT, $toolSize / 1000, $depth );
-	#		}
-	#
-	#		# Add anew layerData to datalist
-	#
-	#		my $lData = LayerData->new( $type, $l, $enTit, $czTit, $enInf, $czInf, $lName );
-	#		$self->{"layerList"}->AddLayer($lData);
-	#
-	#	}
-	#
-	#	# 2) Proces holes ( pads )
-	#
-	#	my @pads = grep { $_->GetTypeProcess() eq DTMEnums->TypeProc_HOLE && $_->GetSource() eq DTMEnums->Source_DTM } @allTools;
-	#
-	#	foreach my $t (@pads) {
-	#
-	#		my $toolSize = $t->GetDrillSize();
-	#
-	#		my $depth = $t->GetDepth();
-	#		my $lName = $self->__SeparateSymbol( $l, $t );
-	#
-	#		# if features was selected, continue next
-	#		unless ($lName) {
-	#			next;
-	#		}
-	#
-	#		my $draw = Drawing->new( $inCAM, $jobId, $lName, $drawingPos, $self->{"pcbThick"}, $side, $l->{"plated"} );
-	#
-	#		# Test on special countersink tool
-	#		if ( $t->GetSpecial() && defined $t->GetAngle() && $t->GetAngle() > 0 ) {
-	#
-	#			# if slot/hole is plated, finial depth will be smaller -100µm
-	#			if ( $l->{"plated"} ) {
-	#				$depth -= 0.1;
-	#			}
-	#
-	#			#compute real milled hole/line diameter
-	#			my $angle      = $t->GetAngle();
-	#			my $newDiamter = ( tan( deg2rad( $angle / 2 ) ) * $depth * 2 ) * 1000;
-	#
-	#			# change all symbols in layer to this new diameter
-	#			CamLayer->WorkLayer( $inCAM, $lName );
-	#			$inCAM->COM( "sel_change_sym", "symbol" => "r" . $newDiamter, "reset_angle" => "no" );
-	#
-	#			$draw->Create( Enums->Depth_COUNTERSINK, Enums->Symbol_HOLE, $toolSize / 1000, $depth, $angle );
-	#
-	#		}
-	#		else {
-	#			$draw->Create( Enums->Depth_ZAXIS, Enums->Symbol_HOLE, $toolSize / 1000, $depth );
-	#		}
-	#
-	#		# Add anew layerData to datalist
-	#
-	#		my $lData = LayerData->new( $type, $l, $enTit, $czTit, $enInf, $czInf, $lName );
-	#		$self->{"layerList"}->AddLayer($lData);
-	#
-	#	}
-	#
-	#	# 3) Process surfaces
-	#
-	#	my @surfaces = grep { $_->GetTypeProcess() eq DTMEnums->TypeProc_CHAIN && $_->GetSource() eq DTMEnums->Source_DTMSURF } @allTools;
-	#
-	#	foreach my $t (@surfaces) {
-	#
-	#		my $toolSize = $t->GetDrillSize();
-	#
-	#		my $depth = $t->GetDepth();
-	#		my $lName = $self->__SeparateSymbol( $l, $t );
-	#
-	#		# if features was selected, continue next
-	#		unless ($lName) {
-	#			next;
-	#		}
-	#
-	#		# if surface is plated, finial depth will be smaller -100µm
-	#		if ( $l->{"plated"} ) {
-	#			$depth -= 0.1;
-	#		}
-	#
-	#		my $draw = Drawing->new( $inCAM, $jobId, $lName, $drawingPos, $self->{"pcbThick"}, $side, $l->{"plated"} );
-	#		$draw->Create( Enums->Depth_ZAXIS, Enums->Symbol_SURFACE, undef, $depth );
-	#
-	#		# Add anew layerData to datalist
-	#
-	#		my $lData = LayerData->new( $type, $l, $enTit, $czTit, $enInf, $czInf, $lName );
-	#		$self->{"layerList"}->AddLayer($lData);
-	#
-	#	}
-
-	# Do control, if prcesssed layer is empty. All symbols hsould be moved
-
-	my %hist = CamHistogram->GetFeatuesHistogram( $inCAM, $jobId, $step, $l->{"gROWname"} );
-	if ( $hist{"total"} > 0 ) {
-
-		die "Some featuers was no processed and left in layer " . $l->{"gROWname"} . "\n.";
-	}
-
 }
 
 # Process countersink Surfaces
-sub __ProcessCountersinkSurfAndArc {
-	my $self       = shift;
-	my $classRes   = shift;
-	my $l          = shift;
-	my $side       = shift;
-	my $drawingPos = shift;
-	my $type       = shift;    # RTMEnums->FeatType_SURF OR RTMEnums->FeatType_LINEARC
+sub __ProcessLayerData {
+	my $self     = shift;
+	my $classRes = shift;
+	my $l        = shift;
 
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
@@ -348,482 +154,173 @@ sub __ProcessCountersinkSurfAndArc {
 
 	foreach my $layerRes ( $classRes->GetLayers() ) {
 
-		# Parsed data from "parser class result"
-		my $drawLayer  = $layerRes->GetLayer();
-		my @chains     = @{ $layerRes->{"chainSeq"} };
-		my $radiusReal = $layerRes->{"radiusReal"};
-
-		#my $lName    = $l->{"gROWname"};
-
+		# ----------------------------------------------------------------
 		# 1) adjust copied feature data. Create outlilne from each feature
-		CamLayer->WorkLayer( $inCAM, $drawLayer );
-		CamLayer->DeleteFeatures($inCAM);
+		# ----------------------------------------------------------------
 
-		foreach my $chainS (@chains) {
+		if (    $classRes->GetType() eq OutEnums->Type_COUNTERSINKSURF
+			 || $classRes->GetType() eq OutEnums->Type_COUNTERSINKARC )
+		{
+			# Parsed data from "parser class result"
+			my $drawLayer = $layerRes->GetLayer();
+			my @chains    = @{ $layerRes->{"chainSeq"} };
 
-			my $centerX = undef;
-			my $centerY = undef;
+			my $radiusReal = $layerRes->{"radiusReal"};
 
-			if ( $type eq RTMEnums->FeatType_LINEARC ) {
+			#my $lName    = $l->{"gROWname"};
 
-				# get centr point of chain
-				$centerX = ( $chainS->GetOriFeatures() )[0]->{"xmid"};
-				$centerY = ( $chainS->GetOriFeatures() )[0]->{"ymid"};
+			CamLayer->WorkLayer( $inCAM, $drawLayer );
+			CamLayer->DeleteFeatures($inCAM);
+
+			foreach my $chainS (@chains) {
+
+				my $centerX = undef;
+				my $centerY = undef;
+
+				if ( $classRes->GetType() eq OutEnums->Type_COUNTERSINKARC ) {
+
+					# get centr point of chain
+					$centerX = ( $chainS->GetOriFeatures() )[0]->{"xmid"};
+					$centerY = ( $chainS->GetOriFeatures() )[0]->{"ymid"};
+
+				}
+				elsif ( $classRes->GetType() eq OutEnums->Type_COUNTERSINKSURF ) {
+
+					my $surf = ( $chainS->GetOriFeatures() )[0];
+					PolygonAttr->AddSurfAtt($surf);
+					$centerX = $surf->{"surfaces"}->[0]->{"xmid"};
+					$centerY = $surf->{"surfaces"}->[0]->{"ymid"};
+				}
+
+				#CamSymbolSurf->SurfaceLinePattern( $inCAM, 0, 1, $self->{"dataOutline"}, 45, 0, 20, 1000, 1 );
+
+				#CamSymbolSurf->AddSurfaceCircle( $inCAM, $radiusReal, { "x" => $centerX, "y" => $centerY }, 1);
+
+				CamSymbolArc->AddCircleRadiusCenter( $inCAM, $radiusReal, { "x" => $centerX, "y" => $centerY }, undef, "r" . $self->{"dataOutline"} );
+			}
+
+		}
+		elsif (    $classRes->GetType() eq OutEnums->Type_COUNTERSINKPAD
+				|| $classRes->GetType() eq OutEnums->Type_ZAXISPAD )
+		{
+
+			# Parsed data from "parser class result"
+			my $drawLayer  = $layerRes->GetLayer();
+			my @pads       = @{ $layerRes->{"padFeatures"} };
+			my $radiusReal = undef;
+
+			if ( $classRes->GetType() eq OutEnums->Type_COUNTERSINKPAD ) {
+
+				$radiusReal = $layerRes->{"radiusReal"};
 
 			}
-			elsif ( $type eq RTMEnums->FeatType_SURF ) {
+			elsif ( $classRes->GetType() eq OutEnums->Type_ZAXISPAD ) {
 
-				my $surf = ( $chainS->GetOriFeatures() )[0];
-				PolygonAttr->AddSurfAtt($surf);
-				$centerX = $surf->{"surfaces"}->[0]->{"xmid"};
-				$centerY = $surf->{"surfaces"}->[0]->{"ymid"};
+				$radiusReal = $layerRes->{"DTMTool"}->GetDrillSize() / 1000;    # convert to mm
 			}
 
-			CamSymbolArc->AddCircleRadiusCenter( $inCAM, $radiusReal, { "x" => $centerX, "y" => $centerY }, undef, $self->{"dataOutline"} );
+			# 1) adjust copied feature data. Create outlilne from each feature
+			CamLayer->WorkLayer( $inCAM, $drawLayer );
+			CamLayer->DeleteFeatures($inCAM);
+
+			foreach my $pad (@pads) {
+
+				CamSymbolArc->AddCircleRadiusCenter( $inCAM, $radiusReal, { "x" => $pad->{"x1"}, "y" => $pad->{"y1"} },
+													 undef, "r" . $self->{"dataOutline"} );
+			}
+		}
+		elsif (    $classRes->GetType() eq OutEnums->Type_ZAXISSLOTCHAMFER
+				|| $classRes->GetType() eq OutEnums->Type_ZAXISSURFCHAMFER
+				|| $classRes->GetType() eq OutEnums->Type_ZAXISSURF
+				|| $classRes->GetType() eq OutEnums->Type_ZAXISSLOT )
+		{
+
+			# Parsed data from "parser class result"
+			my $drawLayer  = $layerRes->GetLayer();
+			my $radiusReal = $layerRes->{"radiusReal"};
+
+			# Adjust copied feature data. Create outlilne from each feature
+
+			if ( $classRes->GetType() eq OutEnums->Type_ZAXISSURF ) {
+				CamLayer->Contourize( $inCAM, $drawLayer, "area", "1000" );
+			}
+
+			CamLayer->WorkLayer( $inCAM, $drawLayer );
+
+			#CamSymbolSurf->SetSurfaceLinePattern( $inCAM, 1, $self->{"dataOutline"}, 45, 0, 20, 1000, 1 );
+
+			$inCAM->COM( "sel_feat2outline", "width" => $self->{"dataOutline"}, "location" => "on_edge" );
+
 		}
 
+	}
+}
+
+# Process countersink Surfaces
+sub __ProcessDrawing {
+	my $self       = shift;
+	my $classRes   = shift;
+	my $l          = shift;
+	my $side       = shift;
+	my $drawingPos = shift;
+
+	my $inCAM = $self->{"inCAM"};
+	my $jobId = $self->{"jobId"};
+	my $step  = $self->{"step"};
+
+	foreach my $layerRes ( $classRes->GetLayers() ) {
+
+		# ----------------------------------------------------------------
 		# 2) Create countersink drawing
+		# ----------------------------------------------------------------
+		my $draw = Drawing->new( $inCAM, $jobId, $layerRes->GetLayer(), $drawingPos, $self->{"pcbThick"}, $side, $l->{"plated"} );
 
-		# Compute depth of "imagine drill tool"
-		# If countersink is done by surface, edge of drill tool goes around according "surface border"
-		# Image for this case will show "image tool", where center of tool is same as center of surface, thus "image tool"
-		# not go around surface bordr but just like normal drill tool, which drill hole
+		if (    $classRes->GetType() eq OutEnums->Type_COUNTERSINKSURF
+			 || $classRes->GetType() eq OutEnums->Type_COUNTERSINKARC )
+		{
 
-		my $toolDepth = $chains[0]->GetChain()->GetChainTool()->GetUniDTMTool()->GetDepth();    # angle of tool
-		my $toolAngle = $chains[0]->GetChain()->GetChainTool()->GetUniDTMTool()->GetAngle();    # angle of tool
+			# Compute depth of "imagine drill tool"
+			# If countersink is done by surface, edge of drill tool goes around according "surface border"
+			# Image for this case will show "image tool", where center of tool is same as center of surface, thus "image tool"
+			# not go around surface bordr but just like normal drill tool, which drill hole
 
-		my $depthImgTool = cotan( deg2rad( ( $toolAngle / 2 ) ) ) * $radiusReal;
+			my @chains = @{ $layerRes->{"chainSeq"} };
 
-		# consider plating
-		#			if ( $l->{"plated"} ) {
-		#				$depthImgTool -= $dDepth;
-		#
-		#			}
+			#$toolDepth    = $chains[0]->GetChain()->GetChainTool()->GetUniDTMTool()->GetDepth();    # angle of tool
+			my $imgToolAngle = $chains[0]->GetChain()->GetChainTool()->GetUniDTMTool()->GetAngle();    # angle of tool
+
+			my $imgToolDepth = cotan( deg2rad( ( $imgToolAngle / 2 ) ) ) * $layerRes->{"radiusReal"};
+
+			$draw->CreateDetailCountersink(  $layerRes->{"radiusReal"}, $imgToolDepth, $imgToolAngle );
+
+		}
+		elsif ( $classRes->GetType() eq OutEnums->Type_COUNTERSINKPAD ) {
+
+			# Compute depth of "imagine drill tool"
+			# If countersink is done by surface, edge of drill tool goes around according "surface border"
+			# Image for this case will show "image tool", where center of tool is same as center of surface, thus "image tool"
+			# not go around surface bordr but just like normal drill tool, which drill hole
+			my $dtmTool = $layerRes->{"DTMTool"};
+
+			#$toolDepth    = $dtmTool->GetDepth();                                                   # angle of tool
+			my $imgToolAngle = $dtmTool->GetAngle();    # angle of tool
+
+			my $imgToolDepth = cotan( deg2rad( ( $imgToolAngle / 2 ) ) ) * $layerRes->{"radiusReal"};
+
+			if ( $l->{"plated"} ) {
+				$imgToolDepth -= 0.05;
+			}
+
+			$draw->Create( Enums->Depth_COUNTERSINK, Enums->Symbol_HOLE, $layerRes->{"radiusReal"}, $imgToolDepth, $imgToolAngle );
+
+		}
+		elsif ( $classRes->GetType() eq OutEnums->Type_ZAXISSLOTCHAMFER ) {
+
+			die "test";
+		}
 
 		# Draw picture
-		my $draw = Drawing->new( $inCAM, $jobId, $drawLayer, $drawingPos, $self->{"pcbThick"}, $side, $l->{"plated"} );
-		$draw->Create( Enums->Depth_COUNTERSINK, Enums->Symbol_HOLE, $radiusReal, $depthImgTool, $toolAngle );
-	}
-}
 
-## MEthod do necessary stuff for each layer by type
-## like resizing, copying, change polarity, merging, ...
-#sub __ProcessNClayer {
-#	my $self = shift;
-#	my $l    = shift;
-#	my $type = shift;
-#
-#	my $inCAM = $self->{"inCAM"};
-#	my $jobId = $self->{"jobId"};
-#	my $step  = $self->{"step"};
-#
-#	my @allTools = $l->{"uniDTM"}->GetTools();
-#
-#	my $enTit = ValueConvertor->GetJobLayerTitle($l);
-#	my $czTit = ValueConvertor->GetJobLayerTitle( $l, 1 );
-#	my $enInf = ValueConvertor->GetJobLayerInfo($l);
-#	my $czInf = ValueConvertor->GetJobLayerInfo( $l, 1 );
-#
-#	my $drawingPos = Point->new( 0, abs( $self->{"profileLim"}->{"yMax"} - $self->{"profileLim"}->{"yMin"} ) + 50 );    # starts 150
-#
-#	#my %lines_arcs = %{ $l->{"symHist"}->{"lines_arcs"} };
-#	#my %pads       = %{ $l->{"symHist"}->{"pads"} };
-#
-#	# Get if NC operation is from top/bot
-#	my $side = $l->{"gROWname"} =~ /c/ ? "top" : "bot";
-#
-#	# 1) Proces slots (lines + arcs)
-#
-#	my @lines_arcs = grep { $_->GetTypeProcess() eq DTMEnums->TypeProc_CHAIN && $_->GetSource() eq DTMEnums->Source_DTM } @allTools;
-#
-#	foreach my $t (@lines_arcs) {
-#
-#		my $depth = $t->GetDepth();
-#		my $lName = $self->__SeparateSymbol( $l, $t );
-#
-#		# if features was selected, continue next
-#		unless ($lName) {
-#			next;
-#		}
-#
-#		my $draw = Drawing->new( $inCAM, $jobId, $lName, $drawingPos, $self->{"pcbThick"}, $side, $l->{"plated"} );
-#
-#		my $toolSize = $t->GetDrillSize();
-#
-#		# Test on special countersink tool
-#		if (  $t->GetSpecial() && defined $t->GetAngle() && $t->GetAngle() > 0 ) {
-#
-#			# if slot/hole is plated, finial depth will be smaller -100µm
-#			if ( $l->{"plated"} ) {
-#				$depth -= 0.1;
-#			}
-#
-#			#compute real milled hole/line diameter
-#			my $angle      = $t->GetAngle();
-#			my $newDiamter = ( tan( deg2rad( $angle / 2 ) ) * $depth * 2 ) * 1000;
-#
-#			# change all symbols in layer to this new diameter
-#			CamLayer->WorkLayer( $inCAM, $lName );
-#			$inCAM->COM( "sel_change_sym", "symbol" => "r" . $newDiamter, "reset_angle" => "no" );
-#
-#			$draw->Create( Enums->Depth_COUNTERSINK, Enums->Symbol_SLOT, $toolSize / 1000, $depth, $angle );
-#
-#		}
-#		else {
-#			$draw->Create( Enums->Depth_ZAXIS, Enums->Symbol_SLOT, $toolSize / 1000, $depth );
-#		}
-#
-#		# Add anew layerData to datalist
-#
-#		my $lData = LayerData->new( $type, $l, $enTit, $czTit, $enInf, $czInf, $lName );
-#		$self->{"layerList"}->AddLayer($lData);
-#
-#	}
-#
-#	# 2) Proces holes ( pads )
-#
-#	my @pads = grep { $_->GetTypeProcess() eq DTMEnums->TypeProc_HOLE && $_->GetSource() eq DTMEnums->Source_DTM } @allTools;
-#
-#	foreach my $t ( @pads ) {
-#
-#		my $toolSize = $t->GetDrillSize();
-#
-#		my $depth = $t->GetDepth();
-#		my $lName = $self->__SeparateSymbol( $l, $t );
-#
-#		# if features was selected, continue next
-#		unless ($lName) {
-#			next;
-#		}
-#
-#		my $draw = Drawing->new( $inCAM, $jobId, $lName, $drawingPos, $self->{"pcbThick"}, $side, $l->{"plated"} );
-#
-#		# Test on special countersink tool
-#		if (  $t->GetSpecial() && defined $t->GetAngle() && $t->GetAngle() > 0 ) {
-#
-#			# if slot/hole is plated, finial depth will be smaller -100µm
-#			if ( $l->{"plated"} ) {
-#				$depth -= 0.1;
-#			}
-#
-#			#compute real milled hole/line diameter
-#			my $angle      = $t->GetAngle();
-#			my $newDiamter = ( tan( deg2rad( $angle / 2 ) ) * $depth * 2 ) * 1000;
-#
-#			# change all symbols in layer to this new diameter
-#			CamLayer->WorkLayer( $inCAM, $lName );
-#			$inCAM->COM( "sel_change_sym", "symbol" => "r" . $newDiamter, "reset_angle" => "no" );
-#
-#			$draw->Create( Enums->Depth_COUNTERSINK, Enums->Symbol_HOLE, $toolSize / 1000, $depth, $angle );
-#
-#		}
-#		else {
-#			$draw->Create( Enums->Depth_ZAXIS, Enums->Symbol_HOLE, $toolSize / 1000, $depth );
-#		}
-#
-#		# Add anew layerData to datalist
-#
-#		my $lData = LayerData->new( $type, $l, $enTit, $czTit, $enInf, $czInf, $lName );
-#		$self->{"layerList"}->AddLayer($lData);
-#
-#	}
-#
-#	# 3) Process surfaces
-#
-#	my @surfaces = grep { $_->GetTypeProcess() eq DTMEnums->TypeProc_CHAIN && $_->GetSource() eq DTMEnums->Source_DTMSURF } @allTools;
-#
-#	foreach my $t ( @surfaces ) {
-#
-#		my $toolSize = $t->GetDrillSize();
-#
-#		my $depth = $t->GetDepth();
-#		my $lName = $self->__SeparateSymbol( $l, $t );
-#
-#		# if features was selected, continue next
-#		unless ($lName) {
-#			next;
-#		}
-#
-#		# if surface is plated, finial depth will be smaller -100µm
-#		if ( $l->{"plated"} ) {
-#			$depth -= 0.1;
-#		}
-#
-#		my $draw = Drawing->new( $inCAM, $jobId, $lName, $drawingPos, $self->{"pcbThick"}, $side, $l->{"plated"} );
-#		$draw->Create( Enums->Depth_ZAXIS, Enums->Symbol_SURFACE, undef, $depth );
-#
-#		# Add anew layerData to datalist
-#
-#		my $lData = LayerData->new( $type, $l, $enTit, $czTit, $enInf, $czInf, $lName );
-#		$self->{"layerList"}->AddLayer($lData);
-#
-#	}
-#
-#	# Do control, if prcesssed layer is empty. All symbols hsould be moved
-#
-#	my %hist = CamHistogram->GetFeatuesHistogram( $inCAM, $jobId, $step, $l->{"gROWname"} );
-#	if ( $hist{"total"} > 0 ) {
-#
-#		die "Some featuers was no processed and left in layer " . $l->{"gROWname"} . "\n.";
-#	}
-#
-#}
-
-sub __IdentifyFeaturesByIds {
-	my $self       = shift;
-	my $sourceL    = shift;
-	my $featuresId = shift;    # by feature ids
-
-	my $inCAM = $self->{"inCAM"};
-	my $jobId = $self->{"jobId"};
-
-	# 1) copy source layer to
-
-	my $lName = GeneralHelper->GetNumUID();
-	my $f = FeatureFilter->new( $inCAM, $jobId, $sourceL->{"gROWname"} );
-	$f->AddFeatureIndexes($featuresId);
-
-	if ( $f->Select() > 0 ) {
-
-		$inCAM->COM(
-			"sel_copy_other",
-
-			# "dest"         => "layer_name",
-			"target_layer" => $lName
-		);
-
-		CamLayer->WorkLayer( $inCAM, $lName );
-		my $lComp = CamLayer->RoutCompensation( $inCAM, $lName, "document" );
-
-		CamLayer->WorkLayer( $inCAM, $lName );
-		$inCAM->COM("sel_delete");
-
-		$inCAM->COM( "merge_layers", "source_layer" => $lComp, "dest_layer" => $lName );
-		$inCAM->COM( "delete_layer", "layer" => $lComp );
-
-		return $lName;
-	}
-	else {
-
-		return 0;
-	}
-
-}
-
-# Copy features from original layer to new layer intended for drawing
-# type of symbols to new layer and return layer name
-#sub __IdentifyFeaturesByIds {
-#	my $self       = shift;
-#	my $sourceL    = shift;
-#	my $featuresId = shift;    # by feature ids
-#	my $tool       = shift;    # by  DTM tool
-#
-#	my $inCAM = $self->{"inCAM"};
-#	my $jobId = $self->{"jobId"};
-#
-#	# 1) copy source layer to
-#
-#	my $lName = GeneralHelper->GetNumUID();
-#
-#	my $f = FeatureFilter->new( $inCAM, $jobId, $sourceL->{"gROWname"} );
-#
-#	if ( $tool->GetTypeProcess() eq DTMEnums->TypeProc_HOLE ) {
-#
-#		my @types = ("pad");
-#		$f->SetTypes( \@types );
-#
-#		my @syms = ( "r" . $tool->GetDrillSize() );
-#		$f->AddIncludeSymbols( \@syms );
-#
-#	}
-#	elsif ( $tool->GetTypeProcess() eq DTMEnums->TypeProc_CHAIN ) {
-#
-#		if ( $tool->GetSource() eq DTMEnums->Source_DTM ) {
-#
-#			my @types = ( "line", "arc" );
-#			$f->SetTypes( \@types );
-#
-#			my @syms = ( "r" . $tool->GetDrillSize() );
-#			$f->AddIncludeSymbols( \@syms );
-#
-#		}
-#		elsif ( $tool->GetSource() eq DTMEnums->Source_DTMSURF ) {
-#
-#			my @types = ("surface");
-#			$f->SetTypes( \@types );
-#
-#			# TODO chzba incam,  je v inch misto mm
-#			my %num = ( "min" => $tool->GetDrillSize() / 1000 / 25.4, "max" => $tool->GetDrillSize() / 1000 / 25.4 );
-#			$f->AddIncludeAtt( ".rout_tool", \%num );
-#		}
-#	}
-#
-#	unless ( $f->Select() > 0 ) {
-#		return 0;
-#	}
-#	else {
-#
-#		$inCAM->COM(
-#			"sel_move_other",
-#
-#			# "dest"         => "layer_name",
-#			"target_layer" => $lName
-#		);
-#
-#		# if slot or surface, do compensation
-#		if ( $tool->GetTypeProcess() eq DTMEnums->TypeProc_CHAIN ) {
-#
-#			CamLayer->WorkLayer( $inCAM, $lName );
-#			my $lComp = CamLayer->RoutCompensation( $inCAM, $lName, "document" );
-#
-#			CamLayer->WorkLayer( $inCAM, $lName );
-#			$inCAM->COM("sel_delete");
-#
-#			$inCAM->COM( "merge_layers", "source_layer" => $lComp, "dest_layer" => $lName );
-#			$inCAM->COM( "delete_layer", "layer" => $lComp );
-#		}
-#
-#	}
-#
-#	return $lName;
-#}
-
-# Copy type of symbols to new layer and return layer name
-sub __GetSymbolDepth {
-	my $self     = shift;
-	my $sourceL  = shift;
-	my $symbol   = shift;
-	my $toolType = shift;
-
-	my $inCAM = $self->{"inCAM"};
-	my $jobId = $self->{"jobId"};
-
-	my ($toolSize) = $symbol =~ /^\w(\d*)/;
-
-	my $depth = $sourceL->{"uniDTM"}->GetToolDepth( $toolSize, $toolType );
-
-	if ( !defined $depth || $depth == 0 ) {
-		die "Depth is not defined for tool $symbol in layer " . $sourceL->{"gROWname"} . ".\n";
-	}
-
-	return $depth;
-}
-#
-## Return depth of surafaces in given layer
-## Layer shoul contain same depth for all surfaces
-#sub __GetSurfaceDepth {
-#	my $self   = shift;
-#	my $l      = shift;
-#	my $symbol = shift;
-#
-#	my $inCAM = $self->{"inCAM"};
-#	my $jobId = $self->{"jobId"};
-#
-#	my %attHist = CamHistogram->GetAttHistogram( $inCAM, $jobId, $self->{"step"}, $l->{"gROWname"} );
-#
-#	unless ( defined $attHist{".rout_tool"} ) {
-#		die "No .rout_tool attribute is defined in surface. \n";
-#	}
-#
-#	# TODO chzba incam, hloubka je v inch misto mm
-#	my $toolSize = sprintf( "%.1f", $attHist{".rout_tool"} * 25.4 );
-#
-#	my $depth = $sourceL->{"uniDTM"}->GetToolDepth( $toolSize, DTMEnums->TypeProc_CHAIN );
-#
-#	if ( !defined $depth || $depth == 0 ) {
-#		die "Depth is not defined for tool $symbol in layer " . $sourceL->{"gROWname"} . ".\n";
-#	}
-#
-#	return $d;
-#}
-
-# Create layer and fill profile - simulate pcb material
-sub __PrepareNCDEPTHMILL {
-	my $self   = shift;
-	my @layers = @{ shift(@_) };
-	my $type   = shift;
-
-	@layers = grep { $_->{"type"} && $_->{"gROWcontext"} eq "board" } @layers;
-
-	my $inCAM = $self->{"inCAM"};
-	my $jobId = $self->{"jobId"};
-
-	# all depth nc layers
-
-	@layers = grep {
-		     $_->{"type"} eq EnumsGeneral->LAYERTYPE_plt_bMillTop
-		  || $_->{"type"} eq EnumsGeneral->LAYERTYPE_plt_bMillBot
-		  || $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_bMillTop
-		  || $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_bMillBot
-		  || $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_jbMillTop
-		  || $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_jbMillBot
-	} @layers;
-
-	foreach my $l (@layers) {
-
-		my $tit = ValueConvertor->GetJobLayerTitle($l);
-		my $inf = ValueConvertor->GetJobLayerInfo($l);
-
-		my $lName = GeneralHelper->GetGUID();
-
-		$inCAM->COM(
-					 "copy_layer",
-					 "source_job"   => $jobId,
-					 "source_step"  => $self->{"step"},
-					 "source_layer" => $l->{"gROWname"},
-					 "dest"         => "layer_name",
-					 "dest_step"    => $self->{"step"},
-					 "dest_layer"   => $lName,
-					 "mode"         => "append"
-		);
-
-		$self->__ComputeNewDTMTools( $lName, $l->{"plated"} );
-
-		# add table with depth information
-		$self->__InsertDepthTable($lName);
-
-		my $lData = LayerData->new( $type, ValueConvertor->GetFileNameByLayer($l), $tit, $inf, $lName );
-
-		$self->{"layerList"}->AddLayer($lData);
-	}
-
-}
-
-sub __PrepareOUTLINE {
-	my $self   = shift;
-	my @layers = @{ shift(@_) };
-	my $type   = shift;
-
-	my $inCAM = $self->{"inCAM"};
-
-	my $lName = GeneralHelper->GetGUID();
-	$inCAM->COM(
-				 'create_layer',
-				 layer     => $lName,
-				 context   => 'misc',
-				 type      => 'document',
-				 polarity  => 'positive',
-				 ins_layer => ''
-	);
-
-	CamLayer->WorkLayer( $inCAM, $lName );
-
-	$inCAM->COM(
-				 "profile_to_rout",
-				 "layer" => $lName,
-				 "width" => "200"
-	);
-
-	@layers = grep { $_->{"gROWcontext"} eq "board" && $_->{"gROWlayer_type"} ne "drill" && $_->{"gROWlayer_type"} ne "rout" } @layers;
-
-	foreach my $l (@layers) {
-
-		my $tit = "Outline layer";
-		my $inf = "";
-
-		my $lData = LayerData->new( $type, "dim", $tit, $inf, $lName );
-
-		$self->{"layerList"}->AddLayer($lData);
 	}
 }
 

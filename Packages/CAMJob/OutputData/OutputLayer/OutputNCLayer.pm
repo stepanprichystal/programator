@@ -31,6 +31,7 @@ use aliased 'Packages::CAM::UniRTM::UniRTM::UniRTM';
 #use aliased 'CamHelpers::CamHelper';
 use aliased 'CamHelpers::CamDrilling';
 use aliased 'CamHelpers::CamHistogram';
+
 #use aliased 'CamHelpers::CamAttributes';
 #use aliased 'CamHelpers::CamSymbol';
 #use aliased 'CamHelpers::CamHistogram';
@@ -46,6 +47,13 @@ use aliased 'Enums::EnumsGeneral';
 
 use aliased 'Packages::CAMJob::OutputData::OutputLayer::OutputClasses::COUNTERSINKSURF';
 use aliased 'Packages::CAMJob::OutputData::OutputLayer::OutputClasses::COUNTERSINKARC';
+use aliased 'Packages::CAMJob::OutputData::OutputLayer::OutputClasses::COUNTERSINKPAD';
+use aliased 'Packages::CAMJob::OutputData::OutputLayer::OutputClasses::ZAXISSLOTCHAMFER';
+use aliased 'Packages::CAMJob::OutputData::OutputLayer::OutputClasses::ZAXISSURFCHAMFER';
+use aliased 'Packages::CAMJob::OutputData::OutputLayer::OutputClasses::ZAXISSURF';
+use aliased 'Packages::CAMJob::OutputData::OutputLayer::OutputClasses::ZAXISSLOT';
+use aliased 'Packages::CAMJob::OutputData::OutputLayer::OutputClasses::ZAXISPAD';
+
 #-------------------------------------------------------------------------------------------#
 #  Interface
 #-------------------------------------------------------------------------------------------#
@@ -126,8 +134,15 @@ sub __GetParser {
 			|| $NCType eq EnumsGeneral->LAYERTYPE_nplt_jbMillTop
 			|| $NCType eq EnumsGeneral->LAYERTYPE_nplt_jbMillBot )
 	{
-		$parser->AddClass(COUNTERSINKSURF->new( $inCAM, $jobId, $step, $l ));
-		$parser->AddClass(COUNTERSINKARC->new( $inCAM, $jobId, $step, $l ));
+		$parser->AddClass( COUNTERSINKSURF->new( $inCAM, $jobId, $step, $l ) );
+		$parser->AddClass( COUNTERSINKARC->new( $inCAM, $jobId, $step, $l ) );
+		$parser->AddClass( COUNTERSINKPAD->new( $inCAM, $jobId, $step, $l ) );
+		$parser->AddClass( ZAXISSLOTCHAMFER->new( $inCAM, $jobId, $step, $l ) );
+		$parser->AddClass( ZAXISSURFCHAMFER->new( $inCAM, $jobId, $step, $l ) );
+		$parser->AddClass( ZAXISSURF->new( $inCAM, $jobId, $step, $l ) );
+		$parser->AddClass( ZAXISSLOT->new( $inCAM, $jobId, $step, $l ) );
+		$parser->AddClass( ZAXISPAD->new( $inCAM, $jobId, $step, $l ) );
+	 	
 	}
 	else {
 		die "No parser class for this NC type: $NCType";
@@ -190,7 +205,7 @@ sub _FinalCheck {
 					 "mode"         => 'replace',
 					 "invert"       => 'no'
 		);
-		
+
 		CamMatrix->DeleteLayer( $inCAM, $jobId, $backupLayer );
 
 		return 1;

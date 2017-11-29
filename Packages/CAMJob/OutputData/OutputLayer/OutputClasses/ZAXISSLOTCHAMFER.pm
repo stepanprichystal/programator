@@ -3,7 +3,7 @@
 # Description: Parse Surface countersink from layer
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::CAMJob::OutputData::OutputLayer::OutputClasses::COUNTERSINKSURF;
+package Packages::CAMJob::OutputData::OutputLayer::OutputClasses::ZAXISSLOTCHAMFER;
 use base('Packages::CAMJob::OutputData::OutputLayer::OutputClasses::OutputClassBase');
 
 use Class::Interface;
@@ -30,6 +30,9 @@ use aliased 'Packages::CAM::FeatureFilter::FeatureFilter';
 use aliased 'Enums::EnumsDrill';
 use aliased 'Packages::Tooling::CountersinkHelper';
 use aliased 'Packages::CAMJob::OutputData::OutputLayer::OutputResult::OutputLayer';
+use aliased 'Packages::Polygon::Polygon::PolygonAttr';
+use aliased 'Enums::EnumsRout';
+use aliased 'CamHelpers::CamLayer';
 
 #-------------------------------------------------------------------------------------------#
 #  Interface
@@ -38,7 +41,7 @@ use aliased 'Packages::CAMJob::OutputData::OutputLayer::OutputResult::OutputLaye
 sub new {
 	my $class = shift;
 
-	my $self = $class->SUPER::new( @_, Enums->Type_COUNTERSINKSURF );
+	my $self = $class->SUPER::new( @_, Enums->Type_ZAXISSLOTCHAMFER );
 	bless $self;
 	return $self;
 }
@@ -61,8 +64,8 @@ sub __Prepare {
 	my $jobId = $self->{"jobId"};
 	my $step  = $self->{"step"};
 
-	my $lName    = $l->{"gROWname"};
-	my @chainSeq = $l->{"uniRTM"}->GetCircleChainSeq( RTMEnums->FeatType_SURF );
+	my $lName = $l->{"gROWname"};
+	my @chainSeq = grep { $_->GetFeatureType() eq RTMEnums->FeatType_LINEARC } $l->{"uniRTM"}->GetChainSequences();
 
 	return 0 unless (@chainSeq);
 
@@ -71,59 +74,51 @@ sub __Prepare {
 	  grep { $_->GetChain()->GetChainTool()->GetUniDTMTool()->GetSpecial() && $_->GetChain()->GetChainTool()->GetUniDTMTool()->GetAngle() > 0 }
 	  @chainSeq;
 
-	#compute radiuses for surface
-	# Chain has new property "radius":  (diameter given by outer edge of rout compensation) / 2
-
-	my @radiuses = ();    # radiuses of whole surface, not
-
-	for ( my $i = 0 ; $i < scalar(@chainSeq) ; $i++ ) {
-
-		my $r = $chainSeq[$i]->{"radius"};
-
-		unless ( grep { ( $_ - 0.01 ) < $r && ( $_ + 0.01 ) > $r } @radiuses ) {
-			push( @radiuses, $r );
-		}
-	}
-
 	my @toolSizes = uniq( map { $_->GetChain()->GetChainSize() } @chainSeq );
 
-	foreach my $r (@radiuses) {
+	foreach my $tool (@toolSizes) {
 
-		foreach my $tool (@toolSizes) {
+		my $outputLayer   = OutputLayer->new();                                              # layer process result
+		my $tool          = ( $chainSeq[0] )->GetChain()->GetChainTool()->GetUniDTMTool();
+		my $toolDepth     = $tool->GetDepth();
+		my $toolDrillSize = $tool->GetDrillSize();
+		my $toolAngle     = $tool->GetAngle();
 
-			my $outputLayer = OutputLayer->new();    # layer process result
+		# get all chain seq by radius, by tool diameter (same tool diameters must have same angle)
+		my @matchCh = grep { $_->GetChain()->GetChainSize() == $toolDrillSize } @chainSeq;
 
-			# get all chain seq by radius, by tool diameter (same tool diameters must have same angle)
-			my @matchCh =
-			  grep { ( $_->{"radius"} - 0.01 ) < $r && ( $_->{"radius"} + 0.01 ) > $r && $_->GetChain()->GetChainSize() == $tool } @chainSeq;
+		next unless (@matchCh);
 
-			next unless (@matchCh);
+		# get id of all features in chain
+		my @featsId = map { $_->{'id'} } map { $_->GetOriFeatures() } @matchCh;
 
-			my $toolDepth = $matchCh[0]->GetChain()->GetChainTool()->GetUniDTMTool()->GetDepth();    # angle of tool
-			my $toolAngle = $matchCh[0]->GetChain()->GetChainTool()->GetUniDTMTool()->GetAngle();    # angle of tool
+		my $drawLayer = $self->_SeparateFeaturesByIds( \@featsId );
+ 
+		my $radiusReal = CountersinkHelper->GetHoleRadiusByToolDepth( $toolDrillSize, $toolAngle, $toolDepth * 1000 ) / 1000;
 
-			my $radiusNoDepth = $matchCh[0]->{"radius"};
-			my $radiusReal = CountersinkHelper->GetSlotRadiusByToolDepth( $radiusNoDepth * 1000, $tool, $toolAngle, $toolDepth * 1000 ) / 1000;
-
-			if ( $l->{"plated"} ) {
-				$radiusReal -= 0.05;
-			}
-
-			# get id of all features in chain
-			my @featsId = map { $_->{'id'} } map { $_->GetOriFeatures() } @matchCh;
-
-			my $drawLayer = $self->_SeparateFeaturesByIds( \@featsId );
-
-			# 1) Set prepared layer name
-			$outputLayer->SetLayer($drawLayer);    # Attention! layer contain original sizes of feature, not finish/real sizes
-
-			# 2 Add another extra info to output layer
-
-			$outputLayer->{"radiusReal"} = $radiusReal;    # real compted radius of features in layer
-			$outputLayer->{"chainSeq"}   = \@matchCh;      # All chain seq, which was processed in ori layer in this class
-
-			$self->{"result"}->AddLayer($outputLayer);
+		if ( $l->{"plated"} ) {
+			$radiusReal -= 0.05;
 		}
+
+		# resize all line/arc in drawLayer. Difference of (ToolDiameter/2 - $radiusReal)*2
+
+		my $resize = ( $toolDrillSize / 2 - $radiusReal*1000 ) * 2;
+	 
+		# Warning, conturization is necessary here in order properly feature resize.
+		# Only for case, when rout is "cyclic" and compensation is "inside" (CW and Right)
+		CamLayer->Contourize( $inCAM, $drawLayer );
+		CamLayer->WorkLayer( $inCAM, $drawLayer );
+		CamLayer->ResizeFeatures( $inCAM, -$resize );
+
+		# 1) Set prepared layer name
+		$outputLayer->SetLayer($drawLayer);    # Attention! lazer contain original sizes of feature, not finish/real sizes
+
+		# 2 Add another extra info to output layer
+
+		$outputLayer->{"radiusReal"} = $radiusReal;    # real compted radius of line arc
+		$outputLayer->{"chainSeq"}   = \@matchCh;      # All chain seq, which was processed in ori layer in this class
+
+		$self->{"result"}->AddLayer($outputLayer);
 	}
 }
 

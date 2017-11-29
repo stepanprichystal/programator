@@ -30,7 +30,7 @@ use aliased 'Packages::CAM::SymbolDrawing::SymbolLib::DimH1Lines';
 use aliased 'Packages::CAM::SymbolDrawing::SymbolLib::DimH1';
 use aliased 'Packages::CAM::SymbolDrawing::SymbolLib::DimV1';
 use aliased 'Packages::CAM::SymbolDrawing::SymbolLib::DimAngle1';
-
+use aliased 'Packages::CAMJob::OutputData::OutputLayer::Enums' => 'OutEnums';
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
@@ -69,8 +69,8 @@ sub new {
 		$self->{"position"}->Move( 0, -$self->{"pcbThick"} * $self->{"scale"} );
 	}
 
-	$self->{"drawing"}      = SymbolDrawing->new( $self->{"inCAM"}, $self->{"jobId"},  $self->{"position"} );
-	$self->{"drawingTitle"} = SymbolDrawing->new( $self->{"inCAM"},$self->{"jobId"},  $self->{"titlePosition"} );
+	$self->{"drawing"}      = SymbolDrawing->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"position"} );
+	$self->{"drawingTitle"} = SymbolDrawing->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"titlePosition"} );
 
 	# mirror drawing
 	if ( $self->{"side"} eq "bot" ) {
@@ -84,6 +84,29 @@ sub new {
 
 sub Create {
 	my $self = shift;
+ 
+	my $layerType = shift;    # type
+ 
+
+	#	CreateDetailCountersink
+
+	#	Type_COUNTERSINKSURF => "countersinkSurf",
+	#	Type_COUNTERSINKPAD => "countersinkPad",
+	#	Type_COUNTERSINKARC => "countersinkArc",
+
+	#	CreateDetailCountersink
+
+	#	Type_ZAXISSURFCHAMFER => "zaxisSurfChamfer",
+	#	Type_ZAXISSLOTCHAMFER => "zaxisSlotChamfer",
+
+	#   CreateDetailZaxix
+
+	#	Type_ZAXISSLOT => "zaxisSlot",
+	#	Type_ZAXISPAD => "zaxisPad",
+
+	#   CreateDetailZaxixSurf
+
+	#	Type_ZAXISSURF => "zaxisSurf",
 
 	my $type       = shift;    # countersink z-axis
 	my $symbolType = shift;    # slot/hole/surface
@@ -268,7 +291,8 @@ sub __CreateDetailZaxis {
 	my $depth      = shift;
 
 	if ( $depth >= $self->{"pcbThick"} ) {
-		die "Tool depth $depth is bigger than pcb thick " . $self->{"pcbThick"} . ".\n"; 
+		die "Tool depth $depth is bigger than pcb thick " . $self->{"pcbThick"} . ".\n";
+
 		#return 0;
 	}
 
@@ -330,6 +354,7 @@ sub __CreateDetailZaxisSurf {
 
 	if ( $depth >= $self->{"pcbThick"} ) {
 		die "Tool depth $depth is bigger than pcb thick " . $self->{"pcbThick"} . ".\n";
+
 		#return 0;
 	}
 
@@ -373,15 +398,15 @@ sub __CreateDetailZaxisSurf {
 
 }
 
-sub __CreateDetailCountersink {
+sub CreateDetailCountersink {
 	my $self       = shift;
-	my $symbolType = shift;    # slot/hole/surface
-
-	my $depth = shift;
-	my $angle = shift;
+	my $radius = shift; # in mm
+	my $depth = shift; # in mm
+	my $angle = shift; #  
+	 
 
 	# compute diameter of tool by angle and depth
-	my $diameter = tan( deg2rad( $angle / 2 ) ) * $depth * 2;
+	my $diameter = $radius * 2;
 
 	# 1) create detail part of surface
 

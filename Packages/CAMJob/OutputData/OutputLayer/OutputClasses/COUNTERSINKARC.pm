@@ -122,6 +122,8 @@ sub __Prepare {
 
 		foreach my $tool (@toolSizes) {
 
+			my $outputLayer = OutputLayer->new();    # layer process result
+
 			# get all chain seq by radius, by tool diameter (same tool diameters must have same angle)
 			my @matchCh =
 			  grep { ( $_->{"radius"} - 0.01 ) < $r && ( $_->{"radius"} + 0.01 ) > $r && $_->GetChain()->GetChainSize() == $tool } @chainSeq;
@@ -141,14 +143,14 @@ sub __Prepare {
 			# get id of all features in chain
 			my @featsId = map { $_->{'id'} } map { $_->GetOriFeatures() } @matchCh;
 
-			my $drawLayer = $self->_IdentifyFeaturesByIds( \@featsId );
+			my $drawLayer = $self->_SeparateFeaturesByIds( \@featsId );
 
-			my $outputLayer = OutputLayer->new($drawLayer);
+			# 1) Set prepared layer name
+			$outputLayer->SetLayer($drawLayer); # Attention! lazer contain original sizes of feature, not finish/real sizes
 
-			# add another extra info to output layer
-			
-			$outputLayer->{"radiusReal"} = $radiusReal; # real compted radius of features in layer
-			$outputLayer->{"chainSeq"} = \@matchCh; # All chain seq, which was processed in ori layer in this class
+			# 2 Add another extra info to output layer
+			$outputLayer->{"radiusReal"} = $radiusReal;    # real compted radius of features in layer
+			$outputLayer->{"chainSeq"}   = \@matchCh;      # All chain seq, which was processed in ori layer in this class
 
 			$self->{"result"}->AddLayer($outputLayer);
 		}

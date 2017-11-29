@@ -27,6 +27,14 @@ sub new {
 
 	return $self;
 }
+
+sub SetLayer{
+	my $self = shift;
+	my $layer = shift;
+	
+	$self->{"layer"} = $layer;
+}
+
 sub GetLayer {
 	my $self = shift;
 
