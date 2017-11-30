@@ -291,7 +291,7 @@ sub __ProcessDrawing {
 
 			my $imgToolDepth = cotan( deg2rad( ( $imgToolAngle / 2 ) ) ) * $layerRes->{"radiusReal"};
 
-			$draw->CreateDetailCountersink(  $layerRes->{"radiusReal"}, $imgToolDepth, $imgToolAngle, "hole" );
+			$draw->CreateDetailCountersink( $layerRes->{"radiusReal"}, $imgToolDepth, $imgToolAngle, "hole" );
 
 		}
 		elsif ( $classRes->GetType() eq OutEnums->Type_COUNTERSINKPAD ) {
@@ -311,15 +311,40 @@ sub __ProcessDrawing {
 				$imgToolDepth -= 0.05;
 			}
 
-			$draw->CreateDetailCountersink(  $layerRes->{"radiusReal"}, $imgToolDepth, $imgToolAngle, "hole" );
+			$draw->CreateDetailCountersink( $layerRes->{"radiusReal"}, $imgToolDepth, $imgToolAngle, "hole" );
 
 		}
-		elsif ( $classRes->GetType() eq OutEnums->Type_ZAXISSLOTCHAMFER ) {
+		elsif (    $classRes->GetType() eq OutEnums->Type_ZAXISSLOTCHAMFER
+				|| $classRes->GetType() eq OutEnums->Type_ZAXISSURFCHAMFER )
+		{
+			
+			my @chains = @{ $layerRes->{"chainSeq"} };
+			
+			my $imgToolDepth = $chains[0]->GetChain()->GetChainTool()->GetUniDTMTool()->GetDepth();    # depth of tool
+			my $imgToolAngle = $chains[0]->GetChain()->GetChainTool()->GetUniDTMTool()->GetAngle();    # angle of tool
 
-			die "test";
+			if ( $l->{"plated"} ) {
+				$imgToolDepth -= 0.05;
+			}
+
+			$draw->CreateDetailCountersink( $layerRes->{"radiusReal"}, $imgToolDepth, $imgToolAngle, "slot" );
+		
 		}
+		elsif (    $classRes->GetType() eq OutEnums->Type_ZAXISSLOT
+				|| $classRes->GetType() eq OutEnums->Type_ZAXISSURF )
+		{
+			
+			my @chains = @{ $layerRes->{"chainSeq"} };
+			
+			my $imgToolDepth = $chains[0]->GetChain()->GetChainTool()->GetUniDTMTool()->GetDepth();    # depth of tool
+			my $imgToolAngle = $chains[0]->GetChain()->GetChainTool()->GetUniDTMTool()->GetAngle();    # angle of tool
 
-		# Draw picture
+			if ( $l->{"plated"} ) {
+				$imgToolDepth -= 0.05;
+			}
+
+			$draw->CreateDetailCountersink( $layerRes->{"radiusReal"}, $imgToolDepth, $imgToolAngle, "slot" );
+		}
 
 	}
 }

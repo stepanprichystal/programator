@@ -123,7 +123,7 @@ sub GetCircleChainSeq {
 			  && ( $_->GetFeatures() )[0]->{"surfaces"}->[0]->{"circle"}
 		} @chainSeq;
 
-		# add radius property to all chain
+		push( @circleChainSeq, @cyclChains );
 
 	}
 
@@ -142,10 +142,8 @@ sub GetCircleChainSeq {
 			}
 		}
 
-
-
 		push( @circleChainSeq, @cyclChains );
-
+		
 	}
 
 	return @circleChainSeq;

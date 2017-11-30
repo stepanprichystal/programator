@@ -72,9 +72,15 @@ sub __Prepare {
 	  @chainSeq;
 
 	#compute radiuses for surface
+	foreach my $ch (@chainSeq) {
+
+		my $points = ( $ch->GetFeatures() )[0]->{"surfaces"}->[0]->{"island"};
+		$ch->{"radius"} = abs( $points->[0]->{"x"} - $points->[1]->{"xmid"} );
+	}
+
 	# Chain has new property "radius":  (diameter given by outer edge of rout compensation) / 2
 
-	my @radiuses = ();    # radiuses of whole surface, not
+	my @radiuses = ();                                                            # radiuses of whole surface, not
 
 	for ( my $i = 0 ; $i < scalar(@chainSeq) ; $i++ ) {
 
@@ -84,9 +90,9 @@ sub __Prepare {
 			push( @radiuses, $r );
 		}
 	}
-	
-	# Only radius smaller than 7
-	@chainSeq =  grep { $_->{"radius"} <= 7 }  @chainSeq;
+
+	# Only radius smaller than 8
+	@chainSeq = grep { $_->{"radius"} <= 8 } @chainSeq;
 
 	my @toolSizes = uniq( map { $_->GetChain()->GetChainSize() } @chainSeq );
 

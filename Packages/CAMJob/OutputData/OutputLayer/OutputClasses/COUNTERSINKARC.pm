@@ -107,8 +107,8 @@ sub __Prepare {
 		$chanSeq->{"radius"} = $radius;
 	}
 	
-	# Only radius smaller than 7
-	@chainSeq =  grep { $_->{"radius"} <= 7 }  @chainSeq;
+	# Only radius smaller than 8
+	@chainSeq =  grep { $_->{"radius"} <= 8 }  @chainSeq;
 
 	my @radiuses = ();    # radiuses of whole surface, not
 

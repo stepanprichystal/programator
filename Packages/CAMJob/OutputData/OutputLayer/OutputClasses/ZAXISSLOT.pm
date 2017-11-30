@@ -65,7 +65,7 @@ sub __Prepare {
 	my $step  = $self->{"step"};
 
 	my $lName = $l->{"gROWname"};
-	my @chainSeq = grep { $_->GetFeatureType() eq RTMEnums->FeatType_LINEARC && !$_->GetChain()->GetUniDTMTool()->GetSpecial() }
+	my @chainSeq = grep { $_->GetFeatureType() eq RTMEnums->FeatType_LINEARC && !$_->GetChain()->GetChainTool()->GetUniDTMTool()->GetSpecial() }
 	  $l->{"uniRTM"}->GetChainSequences();
 
 	return 0 unless (@chainSeq);
@@ -104,6 +104,7 @@ sub __Prepare {
 		# 2 Add another extra info to output layer
 
 		$outputLayer->{"chainSeq"} = \@matchCh;    # All chain seq, which was processed in ori layer in this class
+		$outputLayer->{"DTMTool"} = $tool;    	# All chain seq, which was processed in ori layer in this class
 
 		$self->{"result"}->AddLayer($outputLayer);
 	}

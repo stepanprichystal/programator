@@ -142,15 +142,15 @@ sub __AddTitleTexts {
 
 	my $title = "";
 
-		if ( $self->{"plated"} ) {
-			$title .= "Plated ";
-		}
-		else {
-			$title .= "Non plated ";
-		}
-		
+	if ( $self->{"plated"} ) {
+		$title .= "Plated ";
+	}
+	else {
+		$title .= "Non plated ";
+	}
+
 	$title .= $text;
-		
+
 	#
 	#	if ( $type eq Enums->Depth_ZAXIS ) {
 	#
@@ -490,16 +490,18 @@ sub CreateDetailCountersink {
 	$self->{"drawing"}->AddSymbol( $dimTool, Point->new( $x3, 0 ) );
 
 	# 3) create dimension draw for depth
-	my $dimDepth = DimV1Lines->new(
-									"right", "bot",
-									abs( $x3 - $x2 ), ( $w * 0.02 ),
-									$depthReal, ( $w * 0.2 ),
-									"second", $self->{"dimLineWidth"},
-									sprintf( "%.2f", $depth ) . "mm (depth)", $self->{"dimTextHeight"},
-									$self->{"dimTextWidth"}, $self->{"dimTextMirror"},
-									$self->{"dimTextAngle"}
-	);
-	$self->{"drawing"}->AddSymbol( $dimDepth, Point->new( $x2, 0 ) );
+	if ( $type eq "slot" ) {
+		my $dimDepth = DimV1Lines->new(
+										"right", "bot",
+										abs( $x3 - $x2 ), ( $w * 0.02 ),
+										$depthReal, ( $w * 0.2 ),
+										"second", $self->{"dimLineWidth"},
+										sprintf( "%.2f", $depth ) . "mm (depth)", $self->{"dimTextHeight"},
+										$self->{"dimTextWidth"}, $self->{"dimTextMirror"},
+										$self->{"dimTextAngle"}
+		);
+		$self->{"drawing"}->AddSymbol( $dimDepth, Point->new( $x2, 0 ) );
+	}
 
 	# 4) create dimension draw for angle
 	my $dimAngle = DimAngle1->new(
@@ -516,14 +518,15 @@ sub CreateDetailCountersink {
 	$self->{"drawing"}->Draw();
 
 	my $txt = "";
-	
+
 	if ( $type eq "hole" ) {
 
 		$txt = "countersink from " . uc( $self->{"side"} );
-	
-	}elsif($type eq "slot"){
-		
-		$txt = "chamfer from " . uc( $self->{"side"} ) ;
+
+	}
+	elsif ( $type eq "slot" ) {
+
+		$txt = "chamfer from " . uc( $self->{"side"} );
 	}
 
 	$self->__AddTitleTexts($txt);
