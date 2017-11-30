@@ -402,6 +402,10 @@ sub GetMaterialParams {
 		}elsif ( $materialName =~ /PCL370HR/i ) {
 
 			$materialFile = "PCL370HR";
+		
+		}elsif ( $materialName =~ /DUROID/i ) {
+
+			$materialFile = "R58X0-DUROID";
 		}
 
 		print STDERR "\n\n$materialName - $ncPath - $materialFile\n\n";
