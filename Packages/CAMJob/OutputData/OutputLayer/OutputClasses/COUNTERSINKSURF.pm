@@ -139,41 +139,7 @@ sub __Prepare {
 #-------------------------------------------------------------------------------------------#
 #  Protected methods
 #-------------------------------------------------------------------------------------------#
-
-# Remove all layers used in result
-sub _FinalCheck {
-	my $self   = shift;
-	my $result = shift;
-
-	my $inCAM = $self->{"inCAM"};
-	my $jobId = $self->{"jobId"};
-	my $step  = $self->{"step"};
-
-	my %hist = CamHistogram->GetFeatuesHistogram( $inCAM, $jobId, $step, $result->GetOriLayer() );
-	if ( $hist{"total"} > 0 ) {
-
-		return 0;
-	}
-	else {
-
-		return 1;
-	}
-}
-
-# Remove all layers used in result
-sub _Clear {
-	my $self   = shift;
-	my $result = shift;
-
-	my $inCAM = $self->{"inCAM"};
-	my $jobId = $self->{"jobId"};
-	my $step  = $self->{"step"};
-
-	foreach my $lName ( $result->GetLayers() ) {
-
-		CamMatrix->DeleteLayer( $inCAM, $jobId, $lName );
-	}
-}
+ 
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

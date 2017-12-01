@@ -30,9 +30,9 @@ sub new {
 	my $self  = {};
 	bless $self;
 
-	$self->{"inCAM"}     = shift;
-	$self->{"jobId"}     = shift;
-	$self->{"step"}      = shift;
+	$self->{"inCAM"} = shift;
+	$self->{"jobId"} = shift;
+	$self->{"step"}  = shift;
 	$self->{"layer"} = shift;
 
 	my $classType = shift;
@@ -45,47 +45,89 @@ sub new {
 #-------------------------------------------------------------------------------------------#
 #  Protected methods
 #-------------------------------------------------------------------------------------------#
+# this keep original DTM values in created layer
+sub _SeparateFeatsBySymbolsNC {
+	my $self         = shift;
+	my $symbols      = shift; # surface", "pad", "line", "arc"
+	my $notUpdateDTM = shift;
+	my $notUpdateRTM = shift;
+
+	my $inCAM = $self->{"inCAM"};
+	my $jobId = $self->{"jobId"};
+	my $step  = $self->{"step"};
+
+	my $l = $self->{"layer"};
+
+	my $lName = GeneralHelper->GetNumUID();
+
+	# copy fuul original lazer in order keep DTM values
+	$inCAM->COM(
+				 'copy_layer',
+				 "source_job"   => $jobId,
+				 "source_step"  => $step,
+				 "source_layer" => $l->{"gROWname"},
+				 "dest"         => 'layer_name',
+				 "dest_layer"   => $lName,
+				 "mode"         => 'replace',
+				 "invert"       => 'no'
+	);
+
+	# remove features, symbol type don't match which symbols (from new layer)
+
+	my $f = FeatureFilter->new( $inCAM, $jobId, $lName );
+	$f->AddExcludeSymbols($symbols);
+
+	if ( $f->Select() > 0 ) {
+
+		CamLayer->DeleteFeatures($inCAM);
+	}
+
+	# remove symbols from original layer
+
+	my $f2 = FeatureFilter->new( $inCAM, $jobId, $l->{"gROWname"} );
+	$f2->AddIncludeSymbols($symbols);
+
+	if ( $f2->Select() > 0 ) {
+
+		CamLayer->DeleteFeatures($inCAM);
+
+	}
+	else {
+
+		die "Failed when select features with symbols (" . join( ";", @{$symbols} ) . ") from  layer ";
+	}
+
+	$self->__UpdateDTM( $notUpdateDTM, $notUpdateRTM );
+
+}
 
 # This function is prete same, but by default update UniDTM and UniRTM if exist
 sub _SeparateFeatsByIdNC {
-	my $self       = shift;
-	my $features = shift;
+	my $self         = shift;
+	my $features     = shift;
 	my $notUpdateDTM = shift;
 	my $notUpdateRTM = shift;
-	
+
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
-	my $step = $self->{"step"};
-		
-	my $l = $self->{"layer"};	
-		
-	my $layer = $self->_SeparateFeatsById($features);
-	
-	unless($notUpdateDTM){
-		
-		if(defined $l->{"uniDTM"}){
-			
-			$l->{"uniDTM"} = UniDTM->new( $inCAM, $jobId, $step, $l->{"gROWname"}, 0 );
-		}
-		
-		if(defined $l->{"uniRTM"}){
-			
-			$l->{"uniRTM"} = UniRTM->new( $inCAM, $jobId, $step, $l->{"gROWname"}, 0, $l->{"uniDTM"} );
-		}
+	my $step  = $self->{"step"};
 
-	}
-		
+	my $l = $self->{"layer"};
+
+	my $layer = $self->_SeparateFeatsById($features);
+
+	$self->__UpdateDTM( $notUpdateDTM, $notUpdateRTM );
+
 	return $layer;
 }
-
 
 sub _SeparateFeatsById {
 	my $self       = shift;
 	my $featuresId = shift;    # by feature ids
 
-	my $inCAM     = $self->{"inCAM"};
-	my $jobId     = $self->{"jobId"};
-	my $l = $self->{"layer"};
+	my $inCAM = $self->{"inCAM"};
+	my $jobId = $self->{"jobId"};
+	my $l     = $self->{"layer"};
 
 	# 1) copy source layer to
 
@@ -117,6 +159,32 @@ sub _SeparateFeatsById {
 
 		die "Failed when select features (" . join( ";", @{$featuresId} ) . ") from  layer ";
 
+	}
+
+}
+
+sub __UpdateDTM {
+	my $self         = shift;
+	my $notUpdateDTM = shift;
+	my $notUpdateRTM = shift;
+
+	my $inCAM = $self->{"inCAM"};
+	my $jobId = $self->{"jobId"};
+	my $step  = $self->{"step"};
+
+	my $l = $self->{"layer"};
+
+	unless ($notUpdateDTM) {
+
+		if ( defined $l->{"uniDTM"} ) {
+
+			$l->{"uniDTM"} = UniDTM->new( $inCAM, $jobId, $step, $l->{"gROWname"}, 0 );
+		}
+
+		if ( defined $l->{"uniRTM"} ) {
+
+			$l->{"uniRTM"} = UniRTM->new( $inCAM, $jobId, $step, $l->{"gROWname"}, 0, $l->{"uniDTM"} );
+		}
 	}
 
 }

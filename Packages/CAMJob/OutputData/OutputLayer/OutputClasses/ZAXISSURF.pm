@@ -1,6 +1,6 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Parse Surface countersink from layer
+# Description: Parse surf zaxis  from layer
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Packages::CAMJob::OutputData::OutputLayer::OutputClasses::ZAXISSURF;
@@ -65,7 +65,7 @@ sub __Prepare {
 	my $step  = $self->{"step"};
 
 	my $lName = $l->{"gROWname"};
-	my @chainSeq = grep { $_->GetFeatureType() eq RTMEnums->FeatType_SURF && !$_->GetChain()->GetUniDTMTool()->GetSpecial() } $l->{"uniRTM"}->GetChainSequences();
+	my @chainSeq = grep { $_->GetFeatureType() eq RTMEnums->FeatType_SURF && !$_->GetChain()->GetChainTool()->GetUniDTMTool()->GetSpecial() } $l->{"uniRTM"}->GetChainSequences();
 
 	return 0 unless (@chainSeq);
 
@@ -103,6 +103,8 @@ sub __Prepare {
 		# 2 Add another extra info to output layer
 
 		$outputLayer->{"chainSeq"} = \@matchCh;    # All chain seq, which was processed in ori layer in this class
+		
+		$outputLayer->{"DTMTool"} = $tool;
 
 		$self->{"result"}->AddLayer($outputLayer);
 	}
@@ -111,41 +113,7 @@ sub __Prepare {
 #-------------------------------------------------------------------------------------------#
 #  Protected methods
 #-------------------------------------------------------------------------------------------#
-
-# Remove all layers used in result
-sub _FinalCheck {
-	my $self   = shift;
-	my $result = shift;
-
-	my $inCAM = $self->{"inCAM"};
-	my $jobId = $self->{"jobId"};
-	my $step  = $self->{"step"};
-
-	my %hist = CamHistogram->GetFeatuesHistogram( $inCAM, $jobId, $step, $result->GetOriLayer() );
-	if ( $hist{"total"} > 0 ) {
-
-		return 0;
-	}
-	else {
-
-		return 1;
-	}
-}
-
-# Remove all layers used in result
-sub _Clear {
-	my $self   = shift;
-	my $result = shift;
-
-	my $inCAM = $self->{"inCAM"};
-	my $jobId = $self->{"jobId"};
-	my $step  = $self->{"step"};
-
-	foreach my $lName ( $result->GetLayers() ) {
-
-		CamMatrix->DeleteLayer( $inCAM, $jobId, $lName );
-	}
-}
+ 
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

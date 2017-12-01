@@ -1,6 +1,6 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Parse Surface countersink from layer
+# Description: Parse pad zaxis  from layer
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Packages::CAMJob::OutputData::OutputLayer::OutputClasses::ZAXISPAD;
@@ -95,6 +95,13 @@ sub __Prepare {
 		my @featsId = map { $_->{'id'} } @pads;
 
 		my $drawLayer = $self->_SeparateFeatsByIdNC( \@featsId );
+		
+		my $radiusReal = $tool->GetDrillSize()/2;
+
+		if ( $l->{"plated"} ) {
+			CamLayer->ResizeFeatures( $inCAM, -2 * Enums->Plating_THICK );
+			$radiusReal -= Enums->Plating_THICK;
+		}
 
 		# 1) Set prepared layer name
 		$outputLayer->SetLayer($drawLayer);
@@ -103,6 +110,7 @@ sub __Prepare {
  
 		$outputLayer->{"padFeatures"} = \@pads;         # All pads, which was processed in ori layer in this class
 		$outputLayer->{"DTMTool"} = $tool;				# DTM tool, which is used for this pads
+		$outputLayer->{"radiusReal"} = $radiusReal/1000;
 
 		$self->{"result"}->AddLayer($outputLayer);
 	}
@@ -112,42 +120,7 @@ sub __Prepare {
 #-------------------------------------------------------------------------------------------#
 #  Protected methods
 #-------------------------------------------------------------------------------------------#
-
-# Remove all layers used in result
-sub _FinalCheck {
-	my $self   = shift;
-	my $result = shift;
-
-	my $inCAM = $self->{"inCAM"};
-	my $jobId = $self->{"jobId"};
-	my $step  = $self->{"step"};
-
-	my %hist = CamHistogram->GetFeatuesHistogram( $inCAM, $jobId, $step, $result->GetOriLayer() );
-	if ( $hist{"total"} > 0 ) {
-
-		return 0;
-	}
-	else {
-
-		return 1;
-	}
-}
-
-# Remove all layers used in result
-sub _Clear {
-	my $self   = shift;
-	my $result = shift;
-
-	my $inCAM = $self->{"inCAM"};
-	my $jobId = $self->{"jobId"};
-	my $step  = $self->{"step"};
-
-	foreach my $lName ( $result->GetLayers() ) {
-
-		CamMatrix->DeleteLayer( $inCAM, $jobId, $lName );
-	}
-}
-
+ 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#

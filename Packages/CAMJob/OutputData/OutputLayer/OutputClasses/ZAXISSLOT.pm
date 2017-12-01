@@ -1,6 +1,6 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Parse Surface countersink from layer
+# Description: Parse slot zaxis  from layer
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Packages::CAMJob::OutputData::OutputLayer::OutputClasses::ZAXISSLOT;
@@ -94,9 +94,13 @@ sub __Prepare {
 		CamLayer->Contourize( $inCAM, $drawLayer );
 		CamLayer->WorkLayer( $inCAM, $drawLayer );
 
+		my $radiusReal = $tool->GetDrillSize()/2;
+
 		if ( $l->{"plated"} ) {
 			CamLayer->ResizeFeatures( $inCAM, -2 * Enums->Plating_THICK );
+			$radiusReal -= Enums->Plating_THICK;
 		}
+ 
 
 		# 1) Set prepared layer name
 		$outputLayer->SetLayer($drawLayer);    # Attention! lazer contain original sizes of feature, not finish/real sizes
@@ -105,7 +109,8 @@ sub __Prepare {
 
 		$outputLayer->{"chainSeq"} = \@matchCh;    # All chain seq, which was processed in ori layer in this class
 		$outputLayer->{"DTMTool"} = $tool;    	# All chain seq, which was processed in ori layer in this class
-
+		$outputLayer->{"radiusReal"} = $radiusReal/1000;
+		
 		$self->{"result"}->AddLayer($outputLayer);
 	}
 }
@@ -113,41 +118,7 @@ sub __Prepare {
 #-------------------------------------------------------------------------------------------#
 #  Protected methods
 #-------------------------------------------------------------------------------------------#
-
-# Remove all layers used in result
-sub _FinalCheck {
-	my $self   = shift;
-	my $result = shift;
-
-	my $inCAM = $self->{"inCAM"};
-	my $jobId = $self->{"jobId"};
-	my $step  = $self->{"step"};
-
-	my %hist = CamHistogram->GetFeatuesHistogram( $inCAM, $jobId, $step, $result->GetOriLayer() );
-	if ( $hist{"total"} > 0 ) {
-
-		return 0;
-	}
-	else {
-
-		return 1;
-	}
-}
-
-# Remove all layers used in result
-sub _Clear {
-	my $self   = shift;
-	my $result = shift;
-
-	my $inCAM = $self->{"inCAM"};
-	my $jobId = $self->{"jobId"};
-	my $step  = $self->{"step"};
-
-	foreach my $lName ( $result->GetLayers() ) {
-
-		CamMatrix->DeleteLayer( $inCAM, $jobId, $lName );
-	}
-}
+ 
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

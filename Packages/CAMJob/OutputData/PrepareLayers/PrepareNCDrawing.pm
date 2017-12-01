@@ -58,9 +58,7 @@ sub new {
 	$self->{"layerList"} = shift;
 
 	$self->{"profileLim"} = shift;    # limits of pdf step
-
-	$self->{"platingThick"} = 0.05;   # plating constant is 50µm thick of Cu
-
+ 
 	$self->{"pcbThick"}    = JobHelper->GetFinalPcbThick( $self->{"jobId"} ) / 1000;    # in mm
 	$self->{"dataOutline"} = "200";                                                     # symbol def, which is used for outline
 
@@ -88,18 +86,7 @@ sub Prepare {
 	} @layers;
 
 	foreach my $l (@layers) {
-
-		#		# load UniDTM for layer
-		#		$l->{"uniDTM"} = UniDTM->new( $inCAM, $jobId, $step, $l->{"gROWname"}, 1 );
-		#
-		#		# check if depths are ok
-		#		my $mess = "";
-		#		unless ( $l->{"uniDTM"}->GetChecks()->CheckToolDepthSet( \$mess ) ) {
-		#			die $mess;
-		#		}
-		#
-		#		$l->{"uniRTM"} = UniRTM->new( $inCAM, $jobId, $step, $l->{"gROWname"}, 1, $l->{"uniDTM"} );
-
+ 
 		$self->__ProcessNClayer( $l, $type );
 
 	}
@@ -123,10 +110,7 @@ sub __ProcessNClayer {
 	my $czInf = ValueConvertor->GetJobLayerInfo( $l, 1 );
 
 	my $drawingPos = Point->new( 0, abs( $self->{"profileLim"}->{"yMax"} - $self->{"profileLim"}->{"yMin"} ) + 50 );    # starts 150
-
-	#my %lines_arcs = %{ $l->{"symHist"}->{"lines_arcs"} };
-	#my %pads       = %{ $l->{"symHist"}->{"pads"} };
-
+  
 	# Get if NC operation is from top/bot
 	my $side = $l->{"gROWname"} =~ /c/ ? "top" : "bot";
 
@@ -142,7 +126,7 @@ sub __ProcessNClayer {
 	}
 }
 
-# Process countersink Surfaces
+# Prpare layer data
 sub __ProcessLayerData {
 	my $self     = shift;
 	my $classRes = shift;
@@ -216,7 +200,7 @@ sub __ProcessLayerData {
 			}
 			elsif ( $classRes->GetType() eq OutEnums->Type_ZAXISPAD ) {
 
-				$radiusReal = $layerRes->{"DTMTool"}->GetDrillSize() / 1000;    # convert to mm
+				$radiusReal = $layerRes->{"radiusReal"};
 			}
 
 			# 1) adjust copied feature data. Create outlilne from each feature
@@ -256,7 +240,7 @@ sub __ProcessLayerData {
 	}
 }
 
-# Process countersink Surfaces
+# Prepare image
 sub __ProcessDrawing {
 	my $self       = shift;
 	my $classRes   = shift;
@@ -317,9 +301,9 @@ sub __ProcessDrawing {
 		elsif (    $classRes->GetType() eq OutEnums->Type_ZAXISSLOTCHAMFER
 				|| $classRes->GetType() eq OutEnums->Type_ZAXISSURFCHAMFER )
 		{
-			
+
 			my @chains = @{ $layerRes->{"chainSeq"} };
-			
+
 			my $imgToolDepth = $chains[0]->GetChain()->GetChainTool()->GetUniDTMTool()->GetDepth();    # depth of tool
 			my $imgToolAngle = $chains[0]->GetChain()->GetChainTool()->GetUniDTMTool()->GetAngle();    # angle of tool
 
@@ -328,22 +312,43 @@ sub __ProcessDrawing {
 			}
 
 			$draw->CreateDetailCountersink( $layerRes->{"radiusReal"}, $imgToolDepth, $imgToolAngle, "slot" );
-		
+
 		}
 		elsif (    $classRes->GetType() eq OutEnums->Type_ZAXISSLOT
-				|| $classRes->GetType() eq OutEnums->Type_ZAXISSURF )
+				|| $classRes->GetType() eq OutEnums->Type_ZAXISPAD )
 		{
-			
-			my @chains = @{ $layerRes->{"chainSeq"} };
-			
-			my $imgToolDepth = $chains[0]->GetChain()->GetChainTool()->GetUniDTMTool()->GetDepth();    # depth of tool
-			my $imgToolAngle = $chains[0]->GetChain()->GetChainTool()->GetUniDTMTool()->GetAngle();    # angle of tool
+
+			my $dtmTool = $layerRes->{"DTMTool"};
+
+			my $imgToolDepth = $dtmTool->GetDepth();    # depth of tool
 
 			if ( $l->{"plated"} ) {
 				$imgToolDepth -= 0.05;
 			}
 
-			$draw->CreateDetailCountersink( $layerRes->{"radiusReal"}, $imgToolDepth, $imgToolAngle, "slot" );
+			if ( $classRes->GetType() eq OutEnums->Type_ZAXISSLOT ) {
+
+				$draw->CreateDetailZaxis( $layerRes->{"radiusReal"}, $imgToolDepth, "slot" );
+
+			}
+			elsif ( $classRes->GetType() eq OutEnums->Type_ZAXISPAD ) {
+
+				$draw->CreateDetailZaxis( $layerRes->{"radiusReal"}, $imgToolDepth, "hole" );
+			}
+
+		}
+		elsif ( $classRes->GetType() eq OutEnums->Type_ZAXISSURF ) {
+
+			my $dtmTool = $layerRes->{"DTMTool"};
+
+			my $imgToolDepth = $dtmTool->GetDepth(); # depth of tool
+
+			if ( $l->{"plated"} ) {
+				$imgToolDepth -= 0.05;
+			}
+
+			$draw->CreateDetailZaxisSurf($imgToolDepth);
+
 		}
 
 	}
