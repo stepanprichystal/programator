@@ -161,6 +161,10 @@ sub GetSegmentLength {
 	my $self = shift;
 	my $r = shift;
 	my $accurate = shift;
+	
+	if($r<$accurate ){
+		return $r;
+	}
  
 	my $x1 = -$r;
 	my $y1 = $r-$accurate;
