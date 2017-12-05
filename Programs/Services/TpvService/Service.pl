@@ -100,7 +100,7 @@ sub WorkerMethod {
 	$regApp{ EnumsApp->App_ARCHIVEJOBS }->{"repeat"}    = 15;
 	$regApp{ EnumsApp->App_ARCHIVEJOBS }->{"night"}     = 1;
 	
-	$regApp{ EnumsApp->App_TEST }->{"repeat"}    = 0.5;
+	$regApp{ EnumsApp->App_TEST }->{"repeat"}    = 60;
 	$regApp{ EnumsApp->App_TEST }->{"night"}     = 0;
 	
 	
