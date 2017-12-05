@@ -53,7 +53,8 @@ use aliased 'Packages::CAMJob::OutputData::OutputLayer::OutputClasses::ZAXISSURF
 use aliased 'Packages::CAMJob::OutputData::OutputLayer::OutputClasses::ZAXISSURF';
 use aliased 'Packages::CAMJob::OutputData::OutputLayer::OutputClasses::ZAXISSLOT';
 use aliased 'Packages::CAMJob::OutputData::OutputLayer::OutputClasses::ZAXISPAD';
-
+use aliased 'Packages::CAMJob::OutputData::OutputLayer::OutputClasses::DRILL';
+use aliased 'Packages::CAMJob::OutputData::OutputLayer::OutputClasses::ROUT';
 #-------------------------------------------------------------------------------------------#
 #  Interface
 #-------------------------------------------------------------------------------------------#
@@ -118,14 +119,20 @@ sub __GetParser {
 		 || $NCType eq EnumsGeneral->LAYERTYPE_plt_bDrillBot
 		 || $NCType eq EnumsGeneral->LAYERTYPE_plt_cDrill )
 	{
-
+		$parser->AddClass( DRILL->new( $inCAM, $jobId, $step, $l ) );
 	}
 	elsif (    $NCType eq EnumsGeneral->LAYERTYPE_plt_nMill
-			|| $NCType eq EnumsGeneral->LAYERTYPE_nplt_nMill
-			|| $NCType eq EnumsGeneral->LAYERTYPE_nplt_rsMill
+			|| $NCType eq EnumsGeneral->LAYERTYPE_nplt_nMill )
+	{
+		$parser->AddClass( DRILL->new( $inCAM, $jobId, $step, $l ) );
+		$parser->AddClass( ROUT->new( $inCAM, $jobId, $step, $l ) );
+	}
+	elsif (    $NCType eq EnumsGeneral->LAYERTYPE_nplt_rsMill
 			|| $NCType eq EnumsGeneral->LAYERTYPE_nplt_kMill )
 	{
 
+		$parser->AddClass( ROUT->new( $inCAM, $jobId, $step, $l ) );
+ 
 	}
 	elsif (    $NCType eq EnumsGeneral->LAYERTYPE_plt_bMillTop
 			|| $NCType eq EnumsGeneral->LAYERTYPE_plt_bMillBot
@@ -142,7 +149,7 @@ sub __GetParser {
 		$parser->AddClass( ZAXISSURF->new( $inCAM, $jobId, $step, $l ) );
 		$parser->AddClass( ZAXISSLOT->new( $inCAM, $jobId, $step, $l ) );
 		$parser->AddClass( ZAXISPAD->new( $inCAM, $jobId, $step, $l ) );
-	 	
+
 	}
 	else {
 		die "No parser class for this NC type: $NCType";

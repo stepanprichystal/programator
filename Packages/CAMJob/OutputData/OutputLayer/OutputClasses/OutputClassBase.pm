@@ -20,6 +20,9 @@ use aliased 'Helpers::GeneralHelper';
 use aliased 'CamHelpers::CamLayer';
 use aliased 'Packages::CAM::UniDTM::UniDTM';
 use aliased 'Packages::CAM::UniRTM::UniRTM::UniRTM';
+use aliased 'CamHelpers::CamJob';
+use aliased 'CamHelpers::CamDTM';
+use aliased 'Enums::EnumsDrill';
 
 #-------------------------------------------------------------------------------------------#
 #  Interface
@@ -48,9 +51,15 @@ sub new {
 # this keep original DTM values in created layer
 sub _SeparateFeatsBySymbolsNC {
 	my $self         = shift;
-	my $symbols      = shift; # surface", "pad", "line", "arc"
+	my $symbols      = shift;    # surfaces", "pads", "lines", "arcs", "text"
 	my $notUpdateDTM = shift;
 	my $notUpdateRTM = shift;
+
+	my $lines    = defined( ( grep { $_ eq "lines" } @{$symbols} )[0] )    ? 1 : 0;
+	my $pads     = defined( ( grep { $_ eq "pads" } @{$symbols} )[0] )     ? 1 : 0;
+	my $surfaces = defined( ( grep { $_ eq "surfaces" } @{$symbols} )[0] ) ? 1 : 0;
+	my $arcs     = defined( ( grep { $_ eq "arcs" } @{$symbols} )[0] )     ? 1 : 0;
+	my $text     = defined( ( grep { $_ eq "text" } @{$symbols} )[0] )     ? 1 : 0;
 
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
@@ -75,7 +84,8 @@ sub _SeparateFeatsBySymbolsNC {
 	# remove features, symbol type don't match which symbols (from new layer)
 
 	my $f = FeatureFilter->new( $inCAM, $jobId, $lName );
-	$f->AddExcludeSymbols($symbols);
+
+	$f->SetFilterType( "lines" => !$lines, "pads" => !$pads, "surfaces" => !$surfaces, "arcs" => !$arcs, "text" => !$text );
 
 	if ( $f->Select() > 0 ) {
 
@@ -85,7 +95,7 @@ sub _SeparateFeatsBySymbolsNC {
 	# remove symbols from original layer
 
 	my $f2 = FeatureFilter->new( $inCAM, $jobId, $l->{"gROWname"} );
-	$f2->AddIncludeSymbols($symbols);
+	$f->SetFilterType( "lines" => $lines, "pads" => $pads, "surfaces" => $surfaces, "arcs" => $arcs, "text" => $text );
 
 	if ( $f2->Select() > 0 ) {
 
@@ -99,6 +109,7 @@ sub _SeparateFeatsBySymbolsNC {
 
 	$self->__UpdateDTM( $notUpdateDTM, $notUpdateRTM );
 
+	return $lName;
 }
 
 # This function is prete same, but by default update UniDTM and UniRTM if exist
@@ -162,6 +173,94 @@ sub _SeparateFeatsById {
 	}
 
 }
+
+# Set all NC layers to finish sizes (consider type of DTM vysledne/vrtane)
+sub _SetDTMFinishSizes {
+	my $self     = shift;
+	my $lName    = shift;
+	
+	my $oriLayer = $self->{"layer"};
+
+	my $inCAM = $self->{"inCAM"};
+	my $jobId = $self->{"jobId"};
+	my $step  = $self->{"step"};
+	
+	my $layerCnt = CamJob->GetSignalLayerCnt( $self->{"inCAM"}, $self->{"jobId"} );
+
+	# Prepare tool table for drill map and final sizes of data (depand on column DSize in DTM)
+
+	my @tools = CamDTM->GetDTMTools( $inCAM, $jobId, $self->{"step"}, $lName );
+
+	my $DTMType = CamDTM->GetDTMType( $inCAM, $jobId, $self->{"step"}, $lName );
+
+	# if DTM type not set, set default DTM type
+	if ( $DTMType ne EnumsDrill->DTM_VRTANE && $DTMType ne EnumsDrill->DTM_VYSLEDNE ) {
+
+		$DTMType = CamDTM->GetDTMDefaultType( $inCAM, $jobId, $self->{"step"}, $lName, 1 );
+	}
+
+	if ( $DTMType ne EnumsDrill->DTM_VRTANE && $DTMType ne EnumsDrill->DTM_VYSLEDNE ) {
+		die "Typ v Drill tool manageru (vysledne/vrtane) neni nastaven u vrstvy: '" . $lName . "' ";
+	}
+
+	# check if dest size are defined
+	my @badSize = grep { !defined $_->{"gTOOLdrill_size"} || $_->{"gTOOLdrill_size"} == 0 || $_->{"gTOOLdrill_size"} eq "" } @tools;
+
+	if (@badSize) {
+		@badSize = map { $_->{"gTOOLfinish_size"} } @badSize;
+		my $toolStr = join( ", ", @badSize );
+		die "Tools: $toolStr, has not set drill size.\n";
+	}
+
+	# 1) If some tool has not finish size, correct it by putting there drill size (if vysledne resize -100µm)
+
+	foreach my $t (@tools) {
+
+		if ( !defined $t->{"gTOOLfinish_size"} || $t->{"gTOOLfinish_size"} == 0 || $t->{"gTOOLfinish_size"} eq "" ) {
+
+			if ( $DTMType eq EnumsDrill->DTM_VYSLEDNE ) {
+
+				$t->{"gTOOLfinish_size"} = $t->{"gTOOLdrill_size"} - (2 * Enums->Plating_THICK);    # 100µm - this is size of plating
+
+			}
+			elsif ( $DTMType eq EnumsDrill->DTM_VRTANE ) {
+				$t->{"gTOOLfinish_size"} = $t->{"gTOOLdrill_size"};
+			}
+
+		}
+	}
+
+	# 2) Copy 'finish' value to 'drill size' value.
+	# Drill size has to contain value of finih size, because all pads, lines has size depand on this column
+	# And we want diameters size after plating
+
+	foreach my $t (@tools) {
+
+		# if DTM is vrtane + layer is plated + it is plated through dps (layer cnt >= 2)
+		if ( $DTMType eq EnumsDrill->DTM_VRTANE && $oriLayer->{"plated"} && $layerCnt >= 2 ) {
+			$t->{"gTOOLdrill_size"} = $t->{"gTOOLfinish_size"} - (2 * Enums->Plating_THICK);
+		}
+		else {
+			$t->{"gTOOLdrill_size"} = $t->{"gTOOLfinish_size"};
+		}
+	}
+
+	# 3) Set new values to DTM
+	CamDTM->SetDTMTools( $inCAM, $jobId, $self->{"step"}, $lName, \@tools );
+
+	$inCAM->INFO(
+				  units           => 'mm',
+				  angle_direction => 'ccw',
+				  entity_type     => 'layer',
+				  entity_path     => "$jobId/" . $self->{"step"} . "/$lName",
+				  data_type       => 'TOOL',
+				  options         => "break_sr"
+	);
+
+	# 4) If some tools same, merge it
+	$inCAM->COM( "tools_merge", "layer" => $lName );
+}
+
 
 sub __UpdateDTM {
 	my $self         = shift;

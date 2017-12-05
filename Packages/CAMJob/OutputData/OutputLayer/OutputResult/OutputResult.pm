@@ -10,6 +10,7 @@ use strict;
 use warnings;
 
 #local library
+use aliased 'Packages::CAMJob::OutputData::OutputLayer::Enums';
 
 #use aliased 'Packages::SystemCall::SystemCall';
 
@@ -21,13 +22,14 @@ sub new {
 	my $self = shift;
 	$self = {};
 	bless $self;
- 
+
 	$self->{"sourceLayer"} = shift;
 	$self->{"result"}      = shift;
-	$self->{"clasResults"}      = shift;
+	$self->{"clasResults"} = shift;
 
 	return $self;
 }
+
 sub GetResult {
 	my $self = shift;
 
@@ -40,16 +42,31 @@ sub GetType {
 	return $self->{"type"};
 }
 
-sub GetClassResults {
-	my $self = shift;
+sub GetClassResult {
+	my $self       = shift;
+	my $classType  = shift;
 	my $succedOnly = shift;
-	
+
+	my @res = grep { $_->GetType() eq $classType && $_ } @{ $self->{"clasResults"} };
+
+	if ($succedOnly) {
+
+		@res = grep { $_->Result() } @res;
+	}
+
+	return $res[0];
+}
+
+sub GetClassResults {
+	my $self       = shift;
+	my $succedOnly = shift;
+
 	my @res = @{ $self->{"clasResults"} };
-	
-	if($succedOnly){
-		
-		@res = grep {$_->Result() } @res; 
-	} 
+
+	if ($succedOnly) {
+
+		@res = grep { $_->Result() } @res;
+	}
 
 	return @res;
 }
@@ -59,6 +76,25 @@ sub GetSourceLayer {
 
 	return $self->{"sourceLayer"};
 
+}
+
+# Merge all layers in each class result
+sub MergeLayers {
+	my $self  = shift;
+	my $inCAM = shift;
+
+	my $lName = GeneralHelper->GetGUID();
+	$inCAM->COM( 'create_layer', "layer" => $lName, "context" => 'misc', "type" => 'document', "polarity" => 'positive', "ins_layer" => '' );
+
+	foreach my $classResult ( $self->GetClassResults() ) {
+
+		foreach my $l ( $classResult->GetLayers() ) {
+
+			$inCAM->COM( "merge_layers", "source_layer" => $l->GetLayerName(), "dest_layer" => $lName );
+		}
+	}
+
+	return $lName;
 }
 
 #-------------------------------------------------------------------------------------------#

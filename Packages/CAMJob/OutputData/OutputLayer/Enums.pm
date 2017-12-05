@@ -13,7 +13,7 @@ use constant {
 	Type_ZAXISSLOT => "zaxisSlot",
 	Type_ZAXISPAD => "zaxisPad",
 	Type_DRILL => "drill",
-	Type_DRILLROUT => "drillRout",
+	Type_ROUT => "rout",
 	Type_SCORE => "drillRout",
 };
 

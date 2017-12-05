@@ -10,6 +10,7 @@ use strict;
 use warnings;
 
 #local library
+use aliased 'Helpers::GeneralHelper';
 
 #use aliased 'Packages::SystemCall::SystemCall';
 
@@ -22,19 +23,19 @@ sub new {
 	$self = {};
 	bless $self;
 
-	$self->{"type"}        = shift;
-	$self->{"layers"}      = [];
-	$self->{"result"} = 0; # 0 - no layers was added, 1 - at least 1 layer was added
+	$self->{"type"}   = shift;
+	$self->{"layers"} = [];
+	$self->{"result"} = 0;       # 0 - no layers was added, 1 - at least 1 layer was added
 
 	return $self;
 }
 
-sub Result{
+sub Result {
 	my $self = shift;
-	
+
 	return $self->{"result"};
 }
- 
+
 sub GetType {
 	my $self = shift;
 
@@ -47,17 +48,45 @@ sub GetLayers {
 	return @{ $self->{"layers"} };
 }
 
-sub AddLayer{
+# some classes has onlz one result layer
+sub GetSingleLayer {
 	my $self = shift;
-	my $outputLayer = shift;
 	
-	$self->{"result"} = 1;
+	if(scalar(@{$self->{"layers"}})> 1){
+		
+		die "Class result contain multiple layer result"
+	}
 	
-	push(@{$self->{"layers"}}, $outputLayer);
 	
+
+	return ${ $self->{"layers"} }[0];
 }
 
- 
+sub AddLayer {
+	my $self        = shift;
+	my $outputLayer = shift;
+
+	$self->{"result"} = 1;
+
+	push( @{ $self->{"layers"} }, $outputLayer );
+
+}
+
+# Merge all layers in each OutputLayer class to one
+sub MergeLayers {
+	my $self  = shift;
+	my $inCAM = shift;
+
+	my $lName = GeneralHelper->GetGUID();
+	$inCAM->COM( 'create_layer', "layer" => $lName, "context" => 'misc', "type" => 'document', "polarity" => 'positive', "ins_layer" => '' );
+
+	foreach my $l ( $self->GetLayers() ) {
+
+		$inCAM->COM( "merge_layers", "source_layer" => $l->GetLayerName(), "dest_layer" => $lName );
+	}
+	
+	return $lName;
+}
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
