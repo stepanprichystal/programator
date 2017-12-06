@@ -165,7 +165,7 @@ sub Run {
 
 			if ( scalar(@aoiFile) ) {
 
-				my $dest = EnumsPaths->Jobs_AOITESTS . ( fileparse( $aoiFile[0] ) )[0];
+				my $dest = EnumsPaths->Jobs_AOITESTSFUSION . ( fileparse( $aoiFile[0] ) )[0];
 
 				unless ( copy( $aoiFile[0], $dest ) ) {
 					die "Unable to copy AOI test $aoiFile[0] to server\n";
