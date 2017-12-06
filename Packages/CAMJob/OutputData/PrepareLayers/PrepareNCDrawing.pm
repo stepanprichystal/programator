@@ -18,6 +18,7 @@ use aliased 'Enums::EnumsPaths';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'Packages::CAMJob::OutputData::Enums';
 use aliased 'CamHelpers::CamLayer';
+use aliased 'CamHelpers::CamMatrix';
 use aliased 'CamHelpers::CamJob';
 use aliased 'Packages::CAMJob::OutputData::LayerData::LayerData';
 use aliased 'Helpers::ValueConvertor';
@@ -58,11 +59,12 @@ sub new {
 	$self->{"layerList"} = shift;
 
 	$self->{"profileLim"} = shift;    # limits of pdf step
- 
+	
+	$self->{"outputNClayer"} = shift;
+
 	$self->{"pcbThick"}    = JobHelper->GetFinalPcbThick( $self->{"jobId"} ) / 1000;    # in mm
 	$self->{"dataOutline"} = "200";                                                     # symbol def, which is used for outline
 
-	$self->{"outputNClayer"} = OutputNCLayer->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"step"} );
 
 	return $self;
 }
@@ -86,12 +88,14 @@ sub Prepare {
 	} @layers;
 
 	foreach my $l (@layers) {
- 
+
 		$self->__ProcessNClayer( $l, $type );
 
 	}
 
 }
+
+ 
 
 # MEthod do necessary stuff for each layer by type
 # like resizing, copying, change polarity, merging, ...
@@ -109,8 +113,8 @@ sub __ProcessNClayer {
 	my $enInf = ValueConvertor->GetJobLayerInfo($l);
 	my $czInf = ValueConvertor->GetJobLayerInfo( $l, 1 );
 
-	my $drawingPos = Point->new( 0, abs( $self->{"profileLim"}->{"yMax"} - $self->{"profileLim"}->{"yMin"} ) + 50 );    # starts 150
-  
+	#my $drawingPos = Point->new( 0, abs( $self->{"profileLim"}->{"yMax"} - $self->{"profileLim"}->{"yMin"} ) + 50 );    # starts 150
+
 	# Get if NC operation is from top/bot
 	my $side = $l->{"gROWname"} =~ /c/ ? "top" : "bot";
 
@@ -121,7 +125,7 @@ sub __ProcessNClayer {
 		my $t = $classRes->GetType();
 
 		$self->__ProcessLayerData( $classRes, $l, );
-		$self->__ProcessDrawing( $classRes, $l, $side, $drawingPos, $t );
+		$self->__ProcessDrawing( $classRes, $l, $side, $t );
 
 	}
 }
@@ -146,7 +150,7 @@ sub __ProcessLayerData {
 			 || $classRes->GetType() eq OutEnums->Type_COUNTERSINKARC )
 		{
 			# Parsed data from "parser class result"
-			my $drawLayer = $layerRes->GetLayer();
+			my $drawLayer = $layerRes->GetLayerName();
 			my @chains    = @{ $layerRes->{"chainSeq"} };
 
 			my $radiusReal = $layerRes->{"radiusReal"};
@@ -246,7 +250,7 @@ sub __ProcessDrawing {
 	my $classRes   = shift;
 	my $l          = shift;
 	my $side       = shift;
-	my $drawingPos = shift;
+ 
 
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
@@ -257,7 +261,11 @@ sub __ProcessDrawing {
 		# ----------------------------------------------------------------
 		# 2) Create countersink drawing
 		# ----------------------------------------------------------------
-		my $draw = Drawing->new( $inCAM, $jobId, $layerRes->GetLayer(), $drawingPos, $self->{"pcbThick"}, $side, $l->{"plated"} );
+		my $lTmp = GeneralHelper->GetGUID();
+		$inCAM->COM( 'create_layer', layer => $lTmp );
+
+		 
+		my $draw = Drawing->new( $inCAM, $jobId, $lTmp, Point->new( 0,0), $self->{"pcbThick"}, $side, $l->{"plated"} );
 
 		if (    $classRes->GetType() eq OutEnums->Type_COUNTERSINKSURF
 			 || $classRes->GetType() eq OutEnums->Type_COUNTERSINKARC )
@@ -341,7 +349,7 @@ sub __ProcessDrawing {
 
 			my $dtmTool = $layerRes->{"DTMTool"};
 
-			my $imgToolDepth = $dtmTool->GetDepth(); # depth of tool
+			my $imgToolDepth = $dtmTool->GetDepth();    # depth of tool
 
 			if ( $l->{"plated"} ) {
 				$imgToolDepth -= 0.05;
@@ -350,6 +358,16 @@ sub __ProcessDrawing {
 			$draw->CreateDetailZaxisSurf($imgToolDepth);
 
 		}
+
+		# get limits of drawing and place it above layer data
+		CamLayer->WorkLayer( $inCAM, $lTmp );
+		my %lim = CamJob->GetLayerLimits2( $inCAM, $jobId, $step, $lTmp );
+
+		$inCAM->COM( "sel_move", "dx" => 0, "dy" => $self->{"profileLim"}->{"yMax"} - $lim{"yMin"} + 10 ); # drawing 10 mm above profile data
+ 
+		CamLayer->WorkLayer( $inCAM, $lTmp );
+		CamLayer->CopySelected( $inCAM, [ $layerRes->GetLayerName ] );
+		CamMatrix->DeleteLayer( $inCAM, $jobId, $lTmp );
 
 	}
 }

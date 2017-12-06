@@ -96,7 +96,7 @@ sub __Prepare {
 		my $drawLayer = $self->_SeparateFeatsByIdNC( \@featsId );
 
 		# 1) Set prepared layer name
-		$outputLayer->SetLayer($drawLayer);
+		$outputLayer->SetLayerName($drawLayer);
 
 		# 2 Add another extra info to output layer
 

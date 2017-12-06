@@ -11,7 +11,7 @@ use warnings;
 
 #local library
 use aliased 'Packages::CAMJob::OutputData::OutputLayer::Enums';
-
+use aliased 'Helpers::GeneralHelper';
 #use aliased 'Packages::SystemCall::SystemCall';
 
 #-------------------------------------------------------------------------------------------#
@@ -22,6 +22,10 @@ sub new {
 	my $self = shift;
 	$self = {};
 	bless $self;
+	
+	$self->{"inCAM"} = shift;
+	$self->{"jobId"} = shift;
+	$self->{"step"}  = shift;
 
 	$self->{"sourceLayer"} = shift;
 	$self->{"result"}      = shift;
@@ -81,9 +85,10 @@ sub GetSourceLayer {
 # Merge all layers in each class result
 sub MergeLayers {
 	my $self  = shift;
-	my $inCAM = shift;
+	
+	my $inCAM = $self->{"inCAM"};
 
-	my $lName = GeneralHelper->GetGUID();
+	my $lName = GeneralHelper->GetNumUID();
 	$inCAM->COM( 'create_layer', "layer" => $lName, "context" => 'misc', "type" => 'document', "polarity" => 'positive', "ins_layer" => '' );
 
 	foreach my $classResult ( $self->GetClassResults() ) {
@@ -97,6 +102,23 @@ sub MergeLayers {
 	return $lName;
 }
 
+
+sub Clear{
+	my $self  = shift;
+	
+	my $inCAM = $self->{"inCAM"};
+	my $jobId = $self->{"jobId"};
+
+	my $lName = GeneralHelper->GetNumUID();
+	 
+	foreach my $classResult ( $self->GetClassResults() ) {
+		
+		$classResult->Clear();
+ 
+	}
+	
+	return $lName;
+}
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#

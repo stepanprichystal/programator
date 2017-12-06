@@ -111,7 +111,7 @@ sub __Prepare {
 		CamLayer->ResizeFeatures( $inCAM, -$resize );
 
 		# 1) Set prepared layer name
-		$outputLayer->SetLayer($drawLayer);    # Attention! lazer contain original sizes of feature, not finish/real sizes
+		$outputLayer->SetLayerName($drawLayer);    # Attention! lazer contain original sizes of feature, not finish/real sizes
 
 		# 2 Add another extra info to output layer
 

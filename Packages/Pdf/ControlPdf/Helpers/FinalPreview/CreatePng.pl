@@ -24,7 +24,7 @@ unless ($cmds) {
 }
  
 
-my $MAX_THREADS = 3; # max 3x convert.exe is running
+my $MAX_THREADS = 4; # max 3x convert.exe is running
 
 # Threads add their ID to this queue when they are ready for work
 # Also, when app terminates a -1 is added to this queue

@@ -144,6 +144,10 @@ sub __Clear {
 	if ( CamHelper->StepExists( $inCAM, $jobId, $self->{"data_step"} ) ) {
 		$inCAM->COM( "delete_entity", "job" => $jobId, "name" => $self->{"data_step"}, "type" => "step" );
 	}
+	
+	$self->{"prepareNC"}->Clear();
+	
+	
 }
 
 #-------------------------------------------------------------------------------------------#

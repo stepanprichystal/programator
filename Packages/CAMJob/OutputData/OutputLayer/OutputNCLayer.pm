@@ -55,6 +55,8 @@ use aliased 'Packages::CAMJob::OutputData::OutputLayer::OutputClasses::ZAXISSLOT
 use aliased 'Packages::CAMJob::OutputData::OutputLayer::OutputClasses::ZAXISPAD';
 use aliased 'Packages::CAMJob::OutputData::OutputLayer::OutputClasses::DRILL';
 use aliased 'Packages::CAMJob::OutputData::OutputLayer::OutputClasses::ROUT';
+use aliased 'Packages::CAMJob::OutputData::OutputLayer::OutputClasses::SCORE';
+
 #-------------------------------------------------------------------------------------------#
 #  Interface
 #-------------------------------------------------------------------------------------------#
@@ -67,6 +69,8 @@ sub new {
 	$self->{"inCAM"} = shift;
 	$self->{"jobId"} = shift;
 	$self->{"step"}  = shift;
+	
+	$self->{"results"} = [];
 
 	return $self;
 }
@@ -74,6 +78,10 @@ sub new {
 sub Prepare {
 	my $self  = shift;
 	my $layer = shift;    # hash reference
+
+	my $inCAM = $self->{"inCAM"};
+	my $jobId = $self->{"jobId"};
+	my $step  = $self->{"step"};
 
 	CamDrilling->AddNCLayerType( [$layer] );
 
@@ -83,10 +91,13 @@ sub Prepare {
 	my @results = $parser->Parse();
 
 	unless ( $self->_FinalCheck( $layer, $backUp ) ) {
-		die "Layer was not fully parsed";
+		die "NC output data - Layer was not fully parsed: ".$layer->{"gROWname"};
 	}
 
-	my $result = OutputResult->new( $layer, 1, \@results );
+	my $result = OutputResult->new( $inCAM, $jobId, $step, $layer, 1, \@results );
+
+	# store reuslt
+	push(@{$self->{"results"}}, $result);
 
 	return $result;
 }
@@ -109,7 +120,9 @@ sub __GetParser {
 	if ( $l->{"gROWlayer_type"} eq "rout" ) {
 
 		# load UniRTM
-		$l->{"uniRTM"} = UniRTM->new( $inCAM, $jobId, $step, $l->{"gROWname"}, 0, $l->{"uniDTM"} );
+		if ( $NCType ne EnumsGeneral->LAYERTYPE_nplt_score ) {
+			$l->{"uniRTM"} = UniRTM->new( $inCAM, $jobId, $step, $l->{"gROWname"}, 0, $l->{"uniDTM"} );
+		}
 	}
 
 	my $parser = OutputParser->new();
@@ -130,9 +143,9 @@ sub __GetParser {
 	elsif (    $NCType eq EnumsGeneral->LAYERTYPE_nplt_rsMill
 			|| $NCType eq EnumsGeneral->LAYERTYPE_nplt_kMill )
 	{
-
+		$parser->AddClass( DRILL->new( $inCAM, $jobId, $step, $l ) );
 		$parser->AddClass( ROUT->new( $inCAM, $jobId, $step, $l ) );
- 
+
 	}
 	elsif (    $NCType eq EnumsGeneral->LAYERTYPE_plt_bMillTop
 			|| $NCType eq EnumsGeneral->LAYERTYPE_plt_bMillBot
@@ -150,6 +163,10 @@ sub __GetParser {
 		$parser->AddClass( ZAXISSLOT->new( $inCAM, $jobId, $step, $l ) );
 		$parser->AddClass( ZAXISPAD->new( $inCAM, $jobId, $step, $l ) );
 
+	}
+	elsif ( $NCType eq EnumsGeneral->LAYERTYPE_nplt_score ) {
+
+		$parser->AddClass( SCORE->new( $inCAM, $jobId, $step, $l ) );
 	}
 	else {
 		die "No parser class for this NC type: $NCType";
@@ -224,7 +241,7 @@ sub _FinalCheck {
 }
 
 # Remove all layers used in result
-sub _Clear {
+sub Clear {
 	my $self   = shift;
 	my $result = shift;
 
@@ -232,9 +249,10 @@ sub _Clear {
 	my $jobId = $self->{"jobId"};
 	my $step  = $self->{"step"};
 
-	foreach my $lName ( $result->GetLayers() ) {
-
-		CamMatrix->DeleteLayer( $inCAM, $jobId, $lName );
+	foreach my $resultL ( @{ $self->{"results"} } ) {
+ 
+			$resultL->Clear();
+	 
 	}
 }
 
@@ -256,9 +274,11 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $control = OutputNCLayer->new( $inCAM, $jobId, "data_o+1" );
 
-	my %lInfo = ( "gROWname" => "fzc", "gROWlayer_type" => "rout" );
+	my %lInfo = ( "gROWname" => "f", "gROWlayer_type" => "rout" );
 
 	my $result = $control->Prepare( \%lInfo );
+	
+	$control->Clear();
 
 }
 

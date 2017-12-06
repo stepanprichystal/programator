@@ -107,12 +107,16 @@ sub Clear {
 			$inCAM->COM( "delete_layer", "layer" => $lName );
 		}
 
-		#delete if step  exist
-		if ( CamHelper->StepExists( $inCAM, $jobId, $self->{"data_step"} ) ) {
-			$inCAM->COM( "delete_entity", "job" => $jobId, "name" => $self->{"data_step"}, "type" => "step" );
-		}
-
 	}
+
+	#delete if step  exist
+	if ( CamHelper->StepExists( $inCAM, $jobId, $self->{"data_step"} ) ) {
+
+			#$inCAM->COM( "delete_entity", "job" => $jobId, "name" => $self->{"data_step"}, "type" => "step" );
+	}
+
+	# delete helper layers
+	$self->{"prepareNC"}->Clear();
 }
 
 sub __GetLayersForExport {
@@ -135,13 +139,13 @@ sub __GetLayersForExport {
 	}
 
 	# 2) Filter internal layers, which are unable to export
-	
-	my @internal = ( "fr", "v1", "fsch");
-	
+
+	my @internal = ( "fr", "v1", "fsch" );
+
 	my %tmp;
-	@tmp{ @internal } = ();
+	@tmp{@internal} = ();
 	@layers = grep { !exists $tmp{ $_->{"gROWname"} } } @layers;
- 
+
 	return @layers;
 }
 
@@ -157,12 +161,14 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId = "f52456";
+	my $jobId = "f52457";
 
 	my $mess = "";
 
 	my $control = OutputData->new( $inCAM, $jobId, "o+1" );
 	$control->Create( \$mess );
+
+	$control->Clear();
 
 }
 

@@ -12,7 +12,7 @@ use warnings;
 use XML::Simple;
 
 #local library
-use aliased 'Packages::Polygon::PolygonHelper';
+ 
 use aliased 'Packages::Polygon::Enums' => "PolyEnums";
 use aliased 'Packages::CAM::UniRTM::UniRTM::Parser::RoutParser';
 use aliased 'Packages::CAM::UniRTM::UniRTM::Parser::ChainParser';

@@ -151,7 +151,7 @@ sub __Prepare {
 			my $drawLayer = $self->_SeparateFeatsByIdNC( \@featsId );
 
 			# 1) Set prepared layer name
-			$outputLayer->SetLayer($drawLayer); # Attention! lazer contain original sizes of feature, not finish/real sizes
+			$outputLayer->SetLayerName($drawLayer); # Attention! lazer contain original sizes of feature, not finish/real sizes
 
 			# 2 Add another extra info to output layer
 			$outputLayer->{"radiusReal"} = $radiusReal;    # real compted radius of features in layer

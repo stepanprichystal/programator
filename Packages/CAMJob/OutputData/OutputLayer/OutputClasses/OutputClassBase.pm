@@ -40,7 +40,7 @@ sub new {
 
 	my $classType = shift;
 
-	$self->{"result"} = OutputClassResult->new($classType);
+	$self->{"result"} = OutputClassResult->new($classType, $self->{"inCAM"}, $self->{"jobId"}, $self->{"step"}, $self->{"layer"});
 
 	return $self;
 }

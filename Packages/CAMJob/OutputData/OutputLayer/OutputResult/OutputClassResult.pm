@@ -11,6 +11,7 @@ use warnings;
 
 #local library
 use aliased 'Helpers::GeneralHelper';
+use aliased 'CamHelpers::CamMatrix';
 
 #use aliased 'Packages::SystemCall::SystemCall';
 
@@ -24,6 +25,11 @@ sub new {
 	bless $self;
 
 	$self->{"type"}   = shift;
+	$self->{"inCAM"} = shift;
+	$self->{"jobId"} = shift;
+	$self->{"step"}  = shift;
+	$self->{"layer"} = shift;
+	
 	$self->{"layers"} = [];
 	$self->{"result"} = 0;       # 0 - no layers was added, 1 - at least 1 layer was added
 
@@ -75,14 +81,32 @@ sub AddLayer {
 # Merge all layers in each OutputLayer class to one
 sub MergeLayers {
 	my $self  = shift;
-	my $inCAM = shift;
+	
+	my $inCAM = $self->{"inCAM"};
 
-	my $lName = GeneralHelper->GetGUID();
+	my $lName = GeneralHelper->GetNumUID();
 	$inCAM->COM( 'create_layer', "layer" => $lName, "context" => 'misc', "type" => 'document', "polarity" => 'positive', "ins_layer" => '' );
 
 	foreach my $l ( $self->GetLayers() ) {
 
 		$inCAM->COM( "merge_layers", "source_layer" => $l->GetLayerName(), "dest_layer" => $lName );
+	}
+	
+	return $lName;
+}
+
+sub Clear{
+	my $self  = shift;
+	
+	my $inCAM = $self->{"inCAM"};
+	my $jobId = $self->{"jobId"};
+
+	my $lName = GeneralHelper->GetNumUID();
+	 
+	foreach my $l ( $self->GetLayers() ) {
+		
+		CamMatrix->DeleteLayer( $inCAM, $jobId, $l->GetLayerName() );
+ 
 	}
 	
 	return $lName;

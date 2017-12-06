@@ -14,7 +14,7 @@ use constant {
 	Type_ZAXISPAD => "zaxisPad",
 	Type_DRILL => "drill",
 	Type_ROUT => "rout",
-	Type_SCORE => "drillRout",
+	Type_SCORE => "score",
 };
 
 

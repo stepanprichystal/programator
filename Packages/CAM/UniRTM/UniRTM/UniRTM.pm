@@ -166,18 +166,10 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	my $inCAM = InCAM->new();
 	my $jobId = "f52456";
 
-	my $dtm = UniDTM->new( $inCAM, $jobId, "o+1", "f", 1 );
+	my $dtm = UniDTM->new( $inCAM, $jobId, "o+1", "score", 1 );
 
-	my $rtm = UniRTM->new( $inCAM, $jobId, "o+1", "f", 1, $dtm );
-
-	#	foreach my $item ( $rtm->GetChainList() ) {
-	#
-	#		my $dtmTool = $item->GetUniDTMTool();
-	#		print "test";
-	#
-	#	}
-
-	my @outline = $rtm->GetCircleChainSeq( Enums->FeatType_SURF );
+	my $rtm = UniRTM->new( $inCAM, $jobId, "o+1", "score", 1, $dtm );
+ 
 
 	print "test";
 

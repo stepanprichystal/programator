@@ -34,6 +34,7 @@ use aliased 'Packages::Polygon::Polygon::PolygonAttr';
 use aliased 'Enums::EnumsRout';
 use aliased 'CamHelpers::CamLayer';
 use aliased 'CamHelpers::CamJob';
+use aliased 'CamHelpers::CamMatrix';
 use aliased 'Packages::Polygon::Features::Features::Features';
 
 #-------------------------------------------------------------------------------------------#
@@ -43,7 +44,7 @@ use aliased 'Packages::Polygon::Features::Features::Features';
 sub new {
 	my $class = shift;
 
-	my $self = $class->SUPER::new( @_, Enums->Type_DRILL );
+	my $self = $class->SUPER::new( @_, Enums->Type_ROUT );
 	bless $self;
 
 	return $self;
@@ -85,6 +86,8 @@ sub __Prepare {
 		$inCAM->COM( "sel_resize", "size" => -( 2 * Enums->Plating_THICK ), "corner_ctl" => "no" );
 
 	}
+	
+	CamMatrix->DeleteLayer($inCAM, $jobId, $lTmp);
   
 	# 1) Set prepared layer name
 	$outputLayer->SetLayerName($drawLayer);
