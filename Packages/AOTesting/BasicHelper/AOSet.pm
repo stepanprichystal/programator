@@ -165,6 +165,7 @@ sub OutputOpfx {
 	my $inCAM        = shift;
 	my $jobId        = shift;
 	my $layerName    = shift;
+	my $machineName = shift;
 	my $incamResult  = shift;
 	my $reportResult = shift;
 
@@ -200,7 +201,7 @@ sub OutputOpfx {
 								 "anchor_y"           => "0",
 								 "min_brush"          => "25.4",
 								 "path"               => $exportPath,
-								 "multi_trg_machines" => "discovery",
+								 "multi_trg_machines" => $machineName,
 								 "report_file"        => $report
 	);
 

@@ -7,7 +7,7 @@ use warnings;
 
 
 # ============ INPUT LINE =================
-my $inputLine ="copy_entity,type=job,source_job=f57100,source_name=f57100,dest_job=f13609,dest_name=f13609,dest_database=incam,remove_from_sr=yes (-1)";
+my $inputLine ="cdr_lyr_params,lyr_type=inner,pattern=signal,polarity=pos,target_db=DiscoveryDB,rule_file=DISCOVERY-6";
  
 
 my $output = "\$inCAM->COM(";
