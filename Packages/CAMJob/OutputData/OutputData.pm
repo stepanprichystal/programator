@@ -72,7 +72,7 @@ sub Create {
 	my @layers = $self->__GetLayersForExport($layerFilter);
 
 	# Prepare layers for export
-	#$self->{"prepareBase"}->Prepare( \@layers );
+	$self->{"prepareBase"}->Prepare( \@layers );
 	$self->{"prepareNC"}->Prepare( \@layers, \@childSteps );
 
 	return 1;
@@ -112,7 +112,7 @@ sub Clear {
 	#delete if step  exist
 	if ( CamHelper->StepExists( $inCAM, $jobId, $self->{"data_step"} ) ) {
 
-			#$inCAM->COM( "delete_entity", "job" => $jobId, "name" => $self->{"data_step"}, "type" => "step" );
+			$inCAM->COM( "delete_entity", "job" => $jobId, "name" => $self->{"data_step"}, "type" => "step" );
 	}
 
 	# delete helper layers
@@ -168,7 +168,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	my $control = OutputData->new( $inCAM, $jobId, "o+1" );
 	$control->Create( \$mess );
 
-	$control->Clear();
+	#$control->Clear();
 
 }
 

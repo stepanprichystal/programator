@@ -126,6 +126,14 @@ sub __ProcessNClayer {
 
 		$self->__ProcessLayerData( $classRes, $l, );
 		$self->__ProcessDrawing( $classRes, $l, $side, $t );
+		
+		
+		foreach my $layerRes ( $classRes->GetLayers() ) {
+			
+			my $lData = LayerData->new( $type, $l, $enTit, $czTit, $enInf, $czInf, $layerRes->GetLayerName() );
+			$self->{"layerList"}->AddLayer($lData);
+			
+		} 
 
 	}
 }
@@ -193,7 +201,7 @@ sub __ProcessLayerData {
 		{
 
 			# Parsed data from "parser class result"
-			my $drawLayer  = $layerRes->GetLayer();
+			my $drawLayer  = $layerRes->GetLayerName();
 			my @pads       = @{ $layerRes->{"padFeatures"} };
 			my $radiusReal = undef;
 
@@ -224,7 +232,7 @@ sub __ProcessLayerData {
 		{
 
 			# Parsed data from "parser class result"
-			my $drawLayer  = $layerRes->GetLayer();
+			my $drawLayer  = $layerRes->GetLayerName();
 			my $radiusReal = $layerRes->{"radiusReal"};
 
 			# Adjust copied feature data. Create outlilne from each feature
@@ -300,7 +308,7 @@ sub __ProcessDrawing {
 			my $imgToolDepth = cotan( deg2rad( ( $imgToolAngle / 2 ) ) ) * $layerRes->{"radiusReal"};
 
 			if ( $l->{"plated"} ) {
-				$imgToolDepth -= 0.05;
+				$imgToolDepth -= OutEnums->Plating_THICKMM;
 			}
 
 			$draw->CreateDetailCountersink( $layerRes->{"radiusReal"}, $imgToolDepth, $imgToolAngle, "hole" );
@@ -316,7 +324,7 @@ sub __ProcessDrawing {
 			my $imgToolAngle = $chains[0]->GetChain()->GetChainTool()->GetUniDTMTool()->GetAngle();    # angle of tool
 
 			if ( $l->{"plated"} ) {
-				$imgToolDepth -= 0.05;
+				$imgToolDepth -= OutEnums->Plating_THICKMM;
 			}
 
 			$draw->CreateDetailCountersink( $layerRes->{"radiusReal"}, $imgToolDepth, $imgToolAngle, "slot" );
@@ -331,7 +339,7 @@ sub __ProcessDrawing {
 			my $imgToolDepth = $dtmTool->GetDepth();    # depth of tool
 
 			if ( $l->{"plated"} ) {
-				$imgToolDepth -= 0.05;
+				$imgToolDepth -= OutEnums->Plating_THICKMM;
 			}
 
 			if ( $classRes->GetType() eq OutEnums->Type_ZAXISSLOT ) {
@@ -352,7 +360,7 @@ sub __ProcessDrawing {
 			my $imgToolDepth = $dtmTool->GetDepth();    # depth of tool
 
 			if ( $l->{"plated"} ) {
-				$imgToolDepth -= 0.05;
+				$imgToolDepth -= OutEnums->Plating_THICKMM;
 			}
 
 			$draw->CreateDetailZaxisSurf($imgToolDepth);
@@ -366,7 +374,7 @@ sub __ProcessDrawing {
 		$inCAM->COM( "sel_move", "dx" => 0, "dy" => $self->{"profileLim"}->{"yMax"} - $lim{"yMin"} + 10 ); # drawing 10 mm above profile data
  
 		CamLayer->WorkLayer( $inCAM, $lTmp );
-		CamLayer->CopySelected( $inCAM, [ $layerRes->GetLayerName ] );
+		CamLayer->CopySelected( $inCAM, [ $layerRes->GetLayerName() ] );
 		CamMatrix->DeleteLayer( $inCAM, $jobId, $lTmp );
 
 	}

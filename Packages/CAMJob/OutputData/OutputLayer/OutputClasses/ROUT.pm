@@ -82,9 +82,10 @@ sub __Prepare {
 	# if rout layer is plated, convert all to surface and resize properly
 	if ( $l->{"plated"} ) {
 
-		CamLayer->Contourize( $inCAM, $drawLayer, "area", "1000" );
+		CamLayer->Contourize( $inCAM, $drawLayer, "area", "25000" );
+		CamLayer->WorkLayer($inCAM,  $drawLayer);
 		$inCAM->COM( "sel_resize", "size" => -( 2 * Enums->Plating_THICK ), "corner_ctl" => "no" );
-
+		 
 	}
 	
 	CamMatrix->DeleteLayer($inCAM, $jobId, $lTmp);

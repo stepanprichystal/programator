@@ -168,8 +168,12 @@ sub GetArcInnerAngle {
 # Eg.: if accurate is 1mm, line approximation distance won't be more than 1mm from arc/circle
 sub GetSegmentLength {
 	my $self     = shift;
-	my $r        = shift;
+	my $r = shift;
 	my $accurate = shift;
+	
+	if($r<$accurate ){
+		return $r;
+	}
 
 	my $x1 = -$r;
 	my $y1 = $r - $accurate;
