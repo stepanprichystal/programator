@@ -49,7 +49,7 @@ sub Run {
 	my $self = shift;
 
 	my $masterJob = $self->GetValInfoFile("masterJob");
-
+	my $masterOrder = $self->GetValInfoFile("masterOrder");
 
 
 
@@ -57,7 +57,7 @@ sub Run {
 	my $stateRes = $self->_GetNewItem("Set state \"slouceno\"");
 	my $mess = "";
 
-	unless ( $self->{"copySteps"}->SetNewJobsState( "slouceno", \$mess ) ) {
+	unless ( $self->{"copySteps"}->SetNewJobsState($masterOrder, \$mess ) ) {
 
 		$stateRes->AddError($mess);
 	}

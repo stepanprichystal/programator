@@ -58,8 +58,11 @@ sub PlatedAreaExceed {
 	unless ($areaExceed) {
 
 		my @rLayers = CamDrilling->GetNCLayersByType( $inCAM, $jobId, EnumsGeneral->LAYERTYPE_plt_nMill );
+		# do not consider depth and tool angle at rzc and rzs layers
+		my @rzcLayers = CamDrilling->GetNCLayersByType( $inCAM, $jobId, EnumsGeneral->LAYERTYPE_plt_bMillTop ); 
+		my @rzsLayers = CamDrilling->GetNCLayersByType( $inCAM, $jobId, EnumsGeneral->LAYERTYPE_plt_bMillBot );
 
-		foreach my $r (@rLayers) {
+		foreach my $r ((@rLayers, @rzcLayers, @rzsLayers)) {
 
 			my $lName = $r->{"gROWname"};
 
@@ -222,7 +225,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	use aliased 'Packages::Routing::PlatedRoutArea';
 	use aliased 'Packages::InCAM::InCAM';
 
-	my $jobId = "f52456";
+	my $jobId = "f52457";
 	my $inCAM = InCAM->new();
 
 	my $step = "o+1";

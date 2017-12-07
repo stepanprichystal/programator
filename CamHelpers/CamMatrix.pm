@@ -46,6 +46,26 @@ sub AddSideType {
 	}
 }
 
+# create new empty layer
+sub CreateLayer{
+	my $self  = shift;
+	my $inCAM = shift;
+	my $jobId = shift;
+	my $layerName = shift;
+	my $layerType = shift;
+	my $polarity = shift;
+	my $board = shift;
+
+	$layerType = "document" unless(defined $layerType );
+	
+	$polarity = "positive" unless(defined $polarity );
+
+	$board = defined $board && $board == 1 ? "board" : "misc";
+	
+	$inCAM->COM( 'create_layer', "layer" => $layerName, "context" => $board, "type" => $layerType, "polarity" => $polarity, "ins_layer" => '' );
+	
+}
+
 # Delete Layer if exist
 sub DeleteLayer {
 	my $self  = shift;

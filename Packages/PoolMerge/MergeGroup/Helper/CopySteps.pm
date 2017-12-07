@@ -40,18 +40,23 @@ sub new {
 
 sub SetNewJobsState {
 	my $self      = shift;
-	my $newState = shift;
+	my $masterOrder = shift;
 	my $mess      = shift;
 
 	my $result = 1;
 
 	my $inCAM = $self->{"inCAM"};
+ 
+	my $newState = shift;
+ 
+	HegMethods->UpdatePcbOrderState($masterOrder, "slouceno-master", 1);
 	
-	my @orders = $self->{"poolInfo"}->GetOrderNames();
+	my @childOrders = $self->{"poolInfo"}->GetOrderNames();
+	@childOrders = grep { $_ !~ /^$masterOrder$/i } @childOrders;
 	
-	foreach my $orderId (@orders){
+	foreach my $orderId (@childOrders){
 		
-		HegMethods->UpdatePcbOrderState($orderId, $newState, 1);
+		HegMethods->UpdatePcbOrderState($orderId, "slouceno", 1);
 	}
  
 	return $result;

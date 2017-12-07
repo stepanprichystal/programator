@@ -539,9 +539,9 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	my $jobId = "f52457";
 
 	my $user = undef;
-	my $minTool = CamJob->JobExist( $inCAM, "f54555555" );
+	my $isOpen = CamJob->IsJobOpen( $inCAM, "f52456", 1,\$user  );
 
-	print $minTool;
+	print $isOpen ." by ". $user ;
 
 }
 
