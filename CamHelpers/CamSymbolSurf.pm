@@ -17,7 +17,35 @@ use aliased 'Enums::EnumsPaths';
 #-------------------------------------------------------------------------------------------#
 #   Package methods
 #-------------------------------------------------------------------------------------------#
- 
+
+sub AddSurfaceCircle {
+	my $self    = shift;
+	my $inCAM   = shift;
+	my $radius  = shift;
+	my $centerP = shift;
+	my $pattern = shift;
+	my $polarity = shift;  
+
+	# if pattern is not defined, use solid pattern
+	unless ($pattern) {
+		$self->AddSurfaceSolidPattern($inCAM);
+	}
+
+	$polarity = defined $polarity ? $polarity : 'positive';
+
+	$inCAM->COM( "add_surf_strt", "surf_type" => "feature" );
+	
+	$inCAM->COM( "add_surf_poly_strt", "x" =>$centerP->{"x"} + $radius, "y" => $centerP->{"y"} );
+
+	$inCAM->COM( "add_surf_poly_crv", "xc" => $centerP->{"x"}, "yc" => $centerP->{"y"}, "xe" => $centerP->{"x"} + $radius, "ye" => $centerP->{"y"} );
+
+	 
+	$inCAM->COM("add_surf_poly_end");
+	$inCAM->COM( "add_surf_end", "polarity" => $polarity, "attributes" => "no" );
+
+	
+
+}
 
 sub AddSurfacePolyline {
 	my $self     = shift;
@@ -58,11 +86,10 @@ sub AddSurfacePolyline {
 sub AddSurfaceSolidPattern {
 	my $self           = shift;
 	my $inCAM          = shift;
-	my $outline_draw    = shift;
+	my $outline_draw   = shift;
 	my $outline_width  = shift;    # outline width in µm
 	my $outline_invert = shift;
 
- 
 	$outline_draw = $outline_draw ? "yes" : 'no';
 
 	unless ( defined $outline_width ) {
@@ -70,7 +97,6 @@ sub AddSurfaceSolidPattern {
 	}
 
 	$outline_invert = $outline_invert ? "yes" : 'no';
-	 
 
 	$inCAM->COM(
 				 "add_surf_fill",
@@ -86,7 +112,7 @@ sub AddSurfaceSolidPattern {
 sub AddSurfaceLinePattern {
 	my $self           = shift;
 	my $inCAM          = shift;
-	my $outline_draw    = shift;
+	my $outline_draw   = shift;
 	my $outline_width  = shift;    # outline width in µm
 	my $lines_angle    = shift;
 	my $outline_invert = shift;
@@ -115,7 +141,50 @@ sub AddSurfaceLinePattern {
 				 "lines_dist"              => $lines_dist
 	);
 }
- 
+
+# surface cross_hatch pattern
+# $setToExisting:
+# - 1 - set surface pattern to existing selected surface
+# - 0 - activate surface pattern, when new surface will be created
+sub SurfaceCrossHatchPattern {
+	my $self              = shift;
+	my $inCAM             = shift;
+	my $setToExisting     = shift;
+	my $outline_draw      = shift;
+	my $outline_width     = shift;    # outline width in µm
+	my $cross_hatch_angle = shift;
+	my $outline_invert    = shift;
+	my $cross_hatch_width = shift;
+	my $cross_hatch_dist  = shift;
+	my $cut_prims         = shift;
+
+	$outline_draw = $outline_draw ? "yes" : 'no';
+
+	unless ( defined $outline_width ) {
+		$outline_width = 0;
+	}
+
+	$outline_invert = $outline_invert ? "yes" : 'no';
+
+	$cut_prims = $cut_prims ? "yes" : 'no';
+
+	my $mode = $setToExisting ? "sel_fill" : "add_surf_fill";
+
+	$inCAM->COM(
+				 $mode,
+				 "type"                    => "predefined_pattern",
+				 "cut_prims"               => $cut_prims,
+				 "outline_draw"            => $outline_draw,
+				 "outline_width"           => $outline_width,
+				 "outline_invert"          => $outline_invert,
+				 "predefined_pattern_type" => "cross_hatch",
+				 "indentation"             => "even",
+				 "cross_hatch_angle"       => $cross_hatch_angle,
+				 "cross_hatch_witdh"       => $cross_hatch_width,
+				 "cross_hatch_dist"        => $cross_hatch_dist
+	);
+}
+
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#
@@ -153,7 +222,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	@points = ( \%point1, \%point2, \%point3, \%point4 );
 
-	CamSymbolSurf->AddSurfaceLinePattern( $inCAM, 1, 100, undef, 45, 50, 1000);
+	CamSymbolSurf->AddSurfaceLinePattern( $inCAM, 1, 100, undef, 45, 50, 1000 );
 
 	CamSymbolSurf->AddSurfacePolyline( $inCAM, \@points, 1 )
 

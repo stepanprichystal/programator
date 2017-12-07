@@ -192,85 +192,85 @@ sub GetArcInnerAngle {
 }
 
  
-# Convert arc to lines with specific segment line
-# v nekterych pripadech fce ArcToPoly dava spatne vysledkyu
-sub FragmentArcToSegments {
-	my $self   = shift;
-	my $arc    = shift;
-	my $segLen = shift;    # line of line segment in mm
-
-	#die "Spatne naimplementovana - nefunguje";
-
-	my @segments = ();
-
-	my @arrStart  = ( $arc->{"x1"},   $arc->{"y1"} );
-	my @arrEnd    = ( $arc->{"x2"},   $arc->{"y2"} );
-	my @arrCenter = ( $arc->{"xmid"}, $arc->{"ymid"} );
-	my $direction = $arc->{"newDir"} || $arc->{"oriDir"};
- 
-	if ( $arc->{"x1"} == $arc->{"x2"} && $arc->{"y1"} == $arc->{"y2"} ) {
-		die "Not arc but circle\n";
-	}
-
-	my $segCnt = int( $arc->{"length"} / $segLen );
-
-	if ( $segCnt == 0 ) {
-
-		my %featInfo;
-
-		$featInfo{"type"} = "L";
-		$featInfo{"id"}   = GeneralHelper->GetNumUID();
-		$featInfo{"x1"}   = $arc->{"x1"};
-		$featInfo{"y1"}   = $arc->{"y1"};
-		$featInfo{"x2"}   = $arc->{"x2"};
-		$featInfo{"y2"}   = $arc->{"y2"};
-
-		RoutParser->AddGeometricAtt( \%featInfo );
-
-		push( @segments, \%featInfo );
-
-	}
-	else {
-
-		my $arcPoints = ArcToPoly( $segCnt, \@arrCenter,  \@arrStart, \@arrEnd,  ( $direction eq "CW" ) ? 1 : 0 );
-
-		#my $arcPoints = ArcToPoly( $segCnt, \@arrCenter, \@arrStart, \@arrEnd,  0 );
-
-		for ( my $j = 0 ; $j < scalar( @{$arcPoints} ) - 1 ; $j++ ) {
-
-			my %featInfo;
-
-			$featInfo{"type"} = "L";
-			$featInfo{"id"}   = GeneralHelper->GetNumUID();
-
-			$featInfo{"x1"} = $arcPoints->[$j][0];
-			$featInfo{"y1"} = $arcPoints->[$j][1];
-
-			$featInfo{"x2"} = $arcPoints->[ $j + 1 ][0];
-			$featInfo{"y2"} = $arcPoints->[ $j + 1 ][1];
-
-			RoutParser->AddGeometricAtt( \%featInfo );
-
-			push( @segments, \%featInfo );
-		}
-	}
-
-#	foreach $_ (@segments) {
+## Convert arc to lines with specific segment line
+## v nekterych pripadech fce ArcToPoly dava spatne vysledkyu
+#sub FragmentArcToSegments {
+#	my $self   = shift;
+#	my $arc    = shift;
+#	my $segLen = shift;    # line of line segment in mm
 #
-#		print STDERR "line  = ["
-#		  . sprintf( "%.1f", $_->{"x1"} ) . ", "
-#		  . sprintf( "%.1f", $_->{"y1"} ) . "],  ["
-#		  
-#		  . sprintf( "%.1f", $_->{"x2"} ) . ", "
-#		  . sprintf( "%.1f", $_->{"y2"} )
-#		  . "]\n";
+#	#die "Spatne naimplementovana - nefunguje";
 #
+#	my @segments = ();
+#
+#	my @arrStart  = ( $arc->{"x1"},   $arc->{"y1"} );
+#	my @arrEnd    = ( $arc->{"x2"},   $arc->{"y2"} );
+#	my @arrCenter = ( $arc->{"xmid"}, $arc->{"ymid"} );
+#	my $direction = $arc->{"newDir"} || $arc->{"oriDir"};
+# 
+#	if ( $arc->{"x1"} == $arc->{"x2"} && $arc->{"y1"} == $arc->{"y2"} ) {
+#		die "Not arc but circle\n";
 #	}
 #
-#	print STDERR "\n";
-
-	return @segments;
-}
+#	my $segCnt = int( $arc->{"length"} / $segLen );
+#
+#	if ( $segCnt == 0 ) {
+#
+#		my %featInfo;
+#
+#		$featInfo{"type"} = "L";
+#		$featInfo{"id"}   = GeneralHelper->GetNumUID();
+#		$featInfo{"x1"}   = $arc->{"x1"};
+#		$featInfo{"y1"}   = $arc->{"y1"};
+#		$featInfo{"x2"}   = $arc->{"x2"};
+#		$featInfo{"y2"}   = $arc->{"y2"};
+#
+#		RoutParser->AddGeometricAtt( \%featInfo );
+#
+#		push( @segments, \%featInfo );
+#
+#	}
+#	else {
+#
+#		my $arcPoints = ArcToPoly( $segCnt, \@arrCenter,  \@arrStart, \@arrEnd,  ( $direction eq "CW" ) ? 1 : 0 );
+#
+#		#my $arcPoints = ArcToPoly( $segCnt, \@arrCenter, \@arrStart, \@arrEnd,  0 );
+#
+#		for ( my $j = 0 ; $j < scalar( @{$arcPoints} ) - 1 ; $j++ ) {
+#
+#			my %featInfo;
+#
+#			$featInfo{"type"} = "L";
+#			$featInfo{"id"}   = GeneralHelper->GetNumUID();
+#
+#			$featInfo{"x1"} = $arcPoints->[$j][0];
+#			$featInfo{"y1"} = $arcPoints->[$j][1];
+#
+#			$featInfo{"x2"} = $arcPoints->[ $j + 1 ][0];
+#			$featInfo{"y2"} = $arcPoints->[ $j + 1 ][1];
+#
+#			RoutParser->AddGeometricAtt( \%featInfo );
+#
+#			push( @segments, \%featInfo );
+#		}
+#	}
+#
+##	foreach $_ (@segments) {
+##
+##		print STDERR "line  = ["
+##		  . sprintf( "%.1f", $_->{"x1"} ) . ", "
+##		  . sprintf( "%.1f", $_->{"y1"} ) . "],  ["
+##		  
+##		  . sprintf( "%.1f", $_->{"x2"} ) . ", "
+##		  . sprintf( "%.1f", $_->{"y2"} )
+##		  . "]\n";
+##
+##	}
+##
+##	print STDERR "\n";
+#
+#	return @segments;
+#}
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

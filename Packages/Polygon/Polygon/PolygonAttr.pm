@@ -31,7 +31,11 @@ use aliased 'Packages::Polygon::Polygon::PolygonArc';
 sub AddLineAtt {
 	my $self = shift;
 	my $edge = shift;
- 
+
+	die "x1 key is not defined in line hash" unless ( defined $edge->{"x1"} );
+	die "x2 key is not defined in line hash" unless ( defined $edge->{"x2"} );
+	die "y1 key is not defined in line hash" unless ( defined $edge->{"y1"} );
+	die "y2 key is not defined in line hash" unless ( defined $edge->{"y2"} );
 
 	#distance between points at line
 
@@ -51,25 +55,71 @@ sub AddLineAtt {
 # dir => CW/CCW
 sub AddArcAtt {
 	my $self = shift;
-	my $edge = shift;
+	my $arc  = shift;
+
+	die "x1 key is not defined in arc hash"   unless ( defined $arc->{"x1"} );
+	die "x2 key is not defined in arc hash"   unless ( defined $arc->{"x2"} );
+	die "y1 key is not defined in arc hash"   unless ( defined $arc->{"y1"} );
+	die "y2 key is not defined in arc hash"   unless ( defined $arc->{"y2"} );
+	die "xmid key is not defined in arc hash" unless ( defined $arc->{"xmid"} );
+	die "ymid key is not defined in arc hash" unless ( defined $arc->{"ymid"} );
+	die "dir key is not defined in arc hash"  unless ( defined $arc->{"dir"} );
 
 	#distance of start/end point
-	$edge->{"distance"} =
-	  sqrt( ( $edge->{"x1"} - $edge->{"x2"} )**2 + ( $edge->{"y2"} - $edge->{"y1"} )**2 );
+	$arc->{"distance"} =
+	  sqrt( ( $arc->{"x1"} - $arc->{"x2"} )**2 + ( $arc->{"y2"} - $arc->{"y1"} )**2 );
 
 	#size of diameter
-	$edge->{"diameter"} = 2 * sqrt( ( $edge->{"xmid"} - $edge->{"x2"} )**2 + ( $edge->{"y2"} - $edge->{"ymid"} )**2 );
+	$arc->{"diameter"} = 2 * sqrt( ( $arc->{"xmid"} - $arc->{"x2"} )**2 + ( $arc->{"y2"} - $arc->{"ymid"} )**2 );
 
-	$edge->{"radius"}    = $edge->{"diameter"} / 2;
-	$edge->{"perimeter"} = 2 * pi * $edge->{"radius"};
+	$arc->{"radius"}    = $arc->{"diameter"} / 2;
+	$arc->{"perimeter"} = 2 * pi * $arc->{"radius"};
 
 	#test if center point of arc lay on right or left from line (position = sign( (Bx-Ax)*(Y-Ay) - (By-Ay)*(X-Ax) ))
 	# when positive = lay on left, when negative = lay on right
 
 	#compute length of arc
-	$edge->{"innerangle"} = PolygonArc->GetArcInnerAngle($edge);
-	$edge->{"length"} =
-	  deg2rad( $edge->{"innerangle"}, 1 ) * $edge->{"radius"};    #compute length of arc, 1 means - when 360 circle it returns 2Pi
+	$arc->{"innerangle"} = PolygonArc->GetArcInnerAngle($arc);
+	$arc->{"length"} =
+	  deg2rad( $arc->{"innerangle"}, 1 ) * $arc->{"radius"};    #compute length of arc, 1 means - when 360 circle it returns 2Pi
+}
+
+# Add geometric attributes to line
+# param $edge is hash ref:
+# surfaces => array of surfaces (same structure like when Features.pm class is used)
+# circle => 1/0
+sub AddSurfAtt {
+	my $self = shift;
+	my $surf = shift;
+
+	die "surfaces key is not defined in hash" unless ( defined $surf->{"surfaces"} );
+
+	foreach my $surfIsland ( @{ $surf->{"surfaces"} } ) {
+
+		if ( $surfIsland->{"circle"} ) {
+
+			my $sP1 = $surfIsland->{"island"}->[0];
+			my $sP2 = $surfIsland->{"island"}->[1];
+
+			$surfIsland->{"xmid"} = $sP2->{"xmid"};
+			$surfIsland->{"ymid"} = $sP2->{"ymid"};
+
+			# create arc structure to get surface radius
+			my %arc = (
+						"x1"   => $sP1->{"x"},
+						"y1"   => $sP1->{"y"},
+						"x2"   => $sP1->{"x"},
+						"y2"   => $sP1->{"y"},
+						"xmid" => $sP2->{"xmid"},
+						"ymid" => $sP2->{"ymid"},
+						"dir"  => "CW"
+			);
+
+			$self->AddArcAtt( \%arc );
+			$surfIsland->{"radius"} = $arc{"radius"};
+
+		}
+	}
 }
 
 #-------------------------------------------------------------------------------------------#

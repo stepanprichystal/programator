@@ -8,6 +8,7 @@ use warnings;
 
 # ============ INPUT LINE =================
 my $inputLine ="cdr_lyr_params,lyr_type=inner,pattern=signal,polarity=pos,target_db=DiscoveryDB,rule_file=DISCOVERY-6";
+
  
 
 my $output = "\$inCAM->COM(";

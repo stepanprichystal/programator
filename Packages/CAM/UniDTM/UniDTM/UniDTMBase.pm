@@ -147,7 +147,9 @@ sub GetUniqueTools {
 #	return @tools;
 #}
 
-# Return unique tool by drillsize and type chain/hole
+# Return UNIQUE tool by drillsize and type chain/hole
+# Note 1: Unique tool is unique by pair: drill size + process type
+# Note 2: All tools which are surface tool are considered as process type: TypeProc_CHAIN
 sub GetTool {
 	my $self        = shift;
 	my $drillSize   = shift;

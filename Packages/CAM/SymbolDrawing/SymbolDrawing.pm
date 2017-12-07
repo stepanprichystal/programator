@@ -341,7 +341,6 @@ sub __GetPrimitives {
 
 			$self->__GetPrimitives( $s, $p, $primitives );
 		}
-
 	}
 
 	my @primitives = $symbol->GetPrimitives();

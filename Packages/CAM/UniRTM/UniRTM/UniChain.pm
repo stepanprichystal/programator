@@ -184,12 +184,17 @@ sub GetOutsideChain {
 
 }
  
- 
 
 sub GetChainSize {
 	my $self = shift;
 
 	return $self->{"chainTool"}->{"chainSize"};
+}
+
+sub GetChainTool{
+	my $self = shift;
+
+	return $self->{"chainTool"};
 }
 
 sub GetStrInfo {

@@ -452,17 +452,17 @@ sub RotateLayerData {
 	my $inCAM  = shift;
 	my $layer  = shift;
 	my $degree = shift;
-	my $ccw = shift;
-	
+	my $ccw    = shift;
+
 	my $dir = "cw";
-	
-	if($ccw){
+
+	if ($ccw) {
 		$dir = "ccw";
 	}
 
 	$self->WorkLayer( $inCAM, $layer );
 
-	$inCAM->COM( "sel_transform", "oper" => "rotate", "angle" => $degree, "direction" => $dir);
+	$inCAM->COM( "sel_transform", "oper" => "rotate", "angle" => $degree, "direction" => $dir );
 
 	$inCAM->COM( 'affected_layer', name => $layer, mode => "single", affected => "no" );
 }
@@ -504,7 +504,7 @@ sub LayerIntersection {
 
 	# prepare 1st layer
 	$inCAM->COM( "merge_layers", "source_layer" => $layer1, "dest_layer" => $lTmp1 );
-	
+
 	$self->WorkLayer( $inCAM, $lTmp1 );
 	$self->NegativeLayerData( $inCAM, $lTmp1, $lim );
 	$self->Contourize( $inCAM, $lTmp1 );
@@ -515,9 +515,9 @@ sub LayerIntersection {
 	# copy mask temp negati to cu temp
 	$inCAM->COM( "merge_layers", "source_layer" => $lTmp1, "dest_layer" => $lTmp2, "invert" => "yes" );
 	$inCAM->COM( "delete_layer", "layer" => $lTmp1 );
-	
-	$self->ClipLayerData($inCAM, $lTmp2, $lim);
- 
+
+	$self->ClipLayerData( $inCAM, $lTmp2, $lim );
+
 	return $lTmp2;
 
 }
@@ -527,7 +527,7 @@ sub MirrorLayerByProfCenter {
 	my $self  = shift;
 	my $inCAM = shift;
 	my $jobId = shift;
-	my $step = shift;
+	my $step  = shift;
 	my $layer = shift;
 	my $axis  = shift;
 
@@ -535,23 +535,23 @@ sub MirrorLayerByProfCenter {
 
 	my %lim = CamJob->GetProfileLimits2( $inCAM, $jobId, $step );
 
-	my $w = abs( $lim{"xMax"} - $lim{"xMin"} ) ;  
-	my $h = abs( $lim{"yMax"} - $lim{"yMin"} ) ;
+	my $w = abs( $lim{"xMax"} - $lim{"xMin"} );
+	my $h = abs( $lim{"yMax"} - $lim{"yMin"} );
 
-	my $centerX = $lim{"xMin"} + $w/2;
-	my $centerY = $lim{"yMin"} + $h/2;
+	my $centerX = $lim{"xMin"} + $w / 2;
+	my $centerY = $lim{"yMin"} + $h / 2;
 
 	if ( $axis eq "x" ) {
 
-		$inCAM->COM( "sel_transform", "x_anchor"=>$centerX,"y_anchor"=>$centerY, "oper" => "mirror\;rotate", "angle" => 180 );
+		$inCAM->COM( "sel_transform", "x_anchor" => $centerX, "y_anchor" => $centerY, "oper" => "mirror\;rotate", "angle" => 180 );
 
 	}
 	elsif ( $axis eq "y" ) {
 
-		$inCAM->COM( "sel_transform", "x_anchor"=>$centerX,"y_anchor"=>$centerY,"oper" => "mirror" );
+		$inCAM->COM( "sel_transform", "x_anchor" => $centerX, "y_anchor" => $centerY, "oper" => "mirror" );
 
 	}
-	
+
 	$inCAM->COM( 'affected_layer', name => $layer, mode => "single", affected => "no" );
 }
 
@@ -669,13 +669,23 @@ sub RoutCompensation {
 
 # Countourize given layer
 sub Contourize {
-	my $self  = shift;
-	my $inCAM = shift;
-	my $layer = shift;
+	my $self            = shift;
+	my $inCAM           = shift;
+	my $layer           = shift;
+	my $clean_hole_mode = shift; # "x_or_y", "area", "x_and_y"
+	my $clean_hole_size = shift;
+
+	unless ( defined $clean_hole_mode ) {
+		$clean_hole_mode = "x_or_y";
+	}
+
+	unless ( defined $clean_hole_size ) {
+		$clean_hole_size = "76.2";
+	}
 
 	$self->WorkLayer( $inCAM, $layer );
 
-	$inCAM->COM( "sel_contourize", "accuracy" => "6.35", "break_to_islands" => "yes", "clean_hole_size" => "76.2", "clean_hole_mode" => "x_or_y" );
+	$inCAM->COM( "sel_contourize", "accuracy" => "6.35", "break_to_islands" => "yes", "clean_hole_size" => $clean_hole_size, "clean_hole_mode" => $clean_hole_mode );
 
 	$self->ClearLayers($inCAM);
 }
@@ -734,6 +744,23 @@ sub OptimizeLevels {
 
 }
 
+# Delete selected feature, if no selected, delete all
+sub DeleteFeatures {
+	my $self  = shift;
+	my $inCAM = shift;
+
+	$inCAM->COM("sel_delete");
+}
+
+# Do simple resize of selected/all(if not selected any) features
+sub ResizeFeatures {
+	my $self  = shift;
+	my $inCAM = shift;
+	my $val   = shift;
+
+	$inCAM->COM( "sel_resize", "size" => $val, "corner_ctl" => "no" );
+}
+
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#
@@ -744,16 +771,15 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	my $layerName = "fsch";
 
 	use aliased 'CamHelpers::CamLayer';
-	 
+
 	use aliased 'Packages::InCAM::InCAM';
 
 	my $inCAM = InCAM->new();
 	my $jobId = "f13610";
 
-	my %lim = CamJob->GetProfileLimits2($inCAM, $jobId, "o+1");
+	my %lim = CamJob->GetProfileLimits2( $inCAM, $jobId, "o+1" );
 
 	my $res = CamLayer->LayerIntersection( $inCAM, "goldc", "c", \%lim );
-	 
 
 	print $res;
 

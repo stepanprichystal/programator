@@ -35,6 +35,7 @@ sub ExportLayers {
 	my $suffixFunc  = shift;            # function, which return suffix, which is add behind file
 	my $breakSR     = shift;
 	my $breakSymbol = shift;
+	my $breakArc = shift;
 
 	# Set default break step and repeat
 	my $brSR = "no";
@@ -49,7 +50,14 @@ sub ExportLayers {
 	if ($breakSymbol) {
 		$brSym = "yes";
 	}
+	
+	# Set default break arc
+	my $brArc = "no";
 
+	if ($breakArc) {
+		$brArc = "yes";
+	}
+ 
 	my $device = "Gerber274x";
 
 	# if last char is slash, remove becaues
@@ -97,7 +105,7 @@ sub ExportLayers {
 			"dir_path"      => $archivePath,
 			"prefix"        => $prefix,
 			"suffix"        => $suffix,
-			"format_params" => "(break_sr=$brSR)(break_symbols=$brSym)"
+			"format_params" => "(break_sr=$brSR)(break_symbols=$brSym)(break_arc=$brArc)"
 
 		);
 
@@ -164,6 +172,7 @@ sub ExportLayers2 {
 	my $nameFunc    = shift;            # func which define name of final file
 	my $breakSR     = shift;
 	my $breakSymbol = shift;
+	my $breakArc = shift;
 
 	my $filesDir = EnumsPaths->Client_INCAMTMPOTHER . GeneralHelper->GetGUID() . "\\";
 
@@ -179,7 +188,7 @@ sub ExportLayers2 {
 	}
 
 	# 1) export to TMP directory
-	$self->ExportLayers( $resultItem, $inCAM, $step, \@layers, EnumsPaths->Client_INCAMTMPOTHER, "", $suffixFunc, $breakSR, $breakSymbol );
+	$self->ExportLayers( $resultItem, $inCAM, $step, \@layers, EnumsPaths->Client_INCAMTMPOTHER, "", $suffixFunc, $breakSR, $breakSymbol, $breakArc );
 
 	# 2) move to finish dir and rename
 	foreach my $l (@layers) {

@@ -35,22 +35,28 @@ use aliased 'Packages::Polygon::Enums';
 # dir => CW/CCW
 # suppose arc have all attributes get by function PolygonAtr::AddArcAtt
 sub GetFragmentArc {
-	my $self      = shift;
-	my $arc       = shift(@_);
-	my $accuracy = shift; # number of segments
-	my $result =shift;
-	
+	my $self     = shift;
+	my $arc      = shift(@_);
+	my $accuracy = shift;       # number of segments
+	my $result   = shift;
+
+	die "x1 key is not defined in arc hash"   unless ( defined $arc->{"x1"} );
+	die "x2 key is not defined in arc hash"   unless ( defined $arc->{"x2"} );
+	die "y1 key is not defined in arc hash"   unless ( defined $arc->{"y1"} );
+	die "y2 key is not defined in arc hash"   unless ( defined $arc->{"y2"} );
+	die "xmid key is not defined in arc hash" unless ( defined $arc->{"xmid"} );
+	die "ymid key is not defined in arc hash" unless ( defined $arc->{"ymid"} );
+	die "dir key is not defined in arc hash"  unless ( defined $arc->{"dir"} );
+
 	$$result = 1;
 	my $points;
-	
+
 	# compute sehment count by accuracy
-	my $segLength = $self->GetSegmentLength( $arc->{"radius"}, $accuracy );   
-	
-	my $segCntCircle = floor( $arc->{"perimeter"} / $segLength);
-	my $segCntArc = floor( $arc->{"length"} / $arc->{"perimeter"} * $segCntCircle );
-	 
- 
- 
+	my $segLength = $self->GetSegmentLength( $arc->{"radius"}, $accuracy );
+
+	my $segCntCircle = floor( $arc->{"perimeter"} / $segLength );
+	my $segCntArc    = floor( $arc->{"length"} / $arc->{"perimeter"} * $segCntCircle );
+
 	my @arrStart  = ( $arc->{"x1"},   $arc->{"y1"} );
 	my @arrEnd    = ( $arc->{"x2"},   $arc->{"y2"} );
 	my @arrCenter = ( $arc->{"xmid"}, $arc->{"ymid"} );
@@ -71,8 +77,8 @@ sub GetFragmentArc {
 		return @arr;
 	}
 
-#	my $segCnt =
-#	  floor( ( $arc->{"length"} / $arc->{"perimeter"} ) * $segNumber );    #number of segment for arc
+	#	my $segCnt =
+	#	  floor( ( $arc->{"length"} / $arc->{"perimeter"} ) * $segNumber );    #number of segment for arc
 
 	#oblouk se nebude delit
 	if ( $segCntArc < 2 ) {
@@ -84,8 +90,6 @@ sub GetFragmentArc {
 
 	return @{$points};
 }
- 
-
 
 # Compute inner agle of arc
 # param $arc is hash ref:
@@ -100,11 +104,19 @@ sub GetFragmentArc {
 sub GetArcInnerAngle {
 	my $self = shift;
 	my $arc  = shift(@_);
+	
+	die "x1 key is not defined in arc hash"   unless ( defined $arc->{"x1"} );
+	die "x2 key is not defined in arc hash"   unless ( defined $arc->{"x2"} );
+	die "y1 key is not defined in arc hash"   unless ( defined $arc->{"y1"} );
+	die "y2 key is not defined in arc hash"   unless ( defined $arc->{"y2"} );
+	die "xmid key is not defined in arc hash" unless ( defined $arc->{"xmid"} );
+	die "ymid key is not defined in arc hash" unless ( defined $arc->{"ymid"} );
+	die "dir key is not defined in arc hash"  unless ( defined $arc->{"dir"} );
 
 	my @arrStart  = ( $arc->{"x1"},   $arc->{"y1"} );
 	my @arrEnd    = ( $arc->{"x2"},   $arc->{"y2"} );
 	my @arrCenter = ( $arc->{"xmid"}, $arc->{"ymid"} );
-	my $direction =   $arc->{"dir"};
+	my $direction = $arc->{"dir"};
 
 	my $r = $arc->{"diameter"} / 2;
 	my $o = 2 * pi * $r;              #perimeter of  whole circle
@@ -152,13 +164,12 @@ sub GetArcInnerAngle {
 
 	return $alfa;
 }
- 
 
 # If circle/arc aproximation is needed, function return length of segment
 # depand on given "accurate"
 # Eg.: if accurate is 1mm, line approximation distance won't be more than 1mm from arc/circle
 sub GetSegmentLength {
-	my $self = shift;
+	my $self     = shift;
 	my $r = shift;
 	my $accurate = shift;
 	
@@ -166,12 +177,12 @@ sub GetSegmentLength {
 		return $r;
 	}
  
+
 	my $x1 = -$r;
-	my $y1 = $r-$accurate;
+	my $y1 = $r - $accurate;
 
 	my $x2 = +$r;
-	my $y2 = $r-$accurate;;
- 
+	my $y2 = $r - $accurate;
 
 	my $dx = $x2 - $x1;
 	my $dy = $y2 - $y1;
@@ -179,7 +190,7 @@ sub GetSegmentLength {
 	my $dr = sqrt( $dx * $dx + $dy * $dy );
 
 	my $D = $x1 * $y1 - $x2 * $y2;
- 
+
 	my $xRes1 = ( $D * $dy - ( $dy < 0 ? -1 : 1 ) * $dx * sqrt( $r * $r * $dr * $dr - $D * $D ) ) / ( $dr * $dr );
 	my $xRes2 = ( $D * $dy + ( $dy < 0 ? -1 : 1 ) * $dx * sqrt( $r * $r * $dr * $dr - $D * $D ) ) / ( $dr * $dr );
 
@@ -194,34 +205,34 @@ sub GetSegmentLength {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-#	use aliased "Packages::Polygon::Polygon::PolygonPoints";
-#
-#	my @points1 = ( [0,0], [0,5], [5,5], [5,0] );
-#	
-#	my @points2 = ( [0,0], [0.2,2], [0,5], [5,5], [5,0] );
-#
-#	#print PolygonHelper->GetPoly2PolyIntersect( \@points, \@points2);
-#	
-#	my $p = PolygonPoints->PolygonAreEqual( \@points1, \@points2);
-# 
-#	print "ddd";
-#	
+	#	use aliased "Packages::Polygon::Polygon::PolygonPoints";
+	#
+	#	my @points1 = ( [0,0], [0,5], [5,5], [5,0] );
+	#
+	#	my @points2 = ( [0,0], [0.2,2], [0,5], [5,5], [5,0] );
+	#
+	#	#print PolygonHelper->GetPoly2PolyIntersect( \@points, \@points2);
+	#
+	#	my $p = PolygonPoints->PolygonAreEqual( \@points1, \@points2);
+	#
+	#	print "ddd";
+	#
 	#     #OB 4.50644 69.2869675 I
-#     #OC 5.08195 69.4691725 5.08195 68.4691725 Y
-#     #OS 11.42517 69.4691725
-#     #OC 12.42517 68.4691725 11.42517 68.4691725 Y
-#     #OS 12.42517 62.4371725
-#     #OC 11.42517 61.4371725 11.42517 62.4371725 Y
-#     #OS 4.7708175 61.4371725
-#     #OC 3.7708175 62.4371725 4.7708175 62.4371725 Y
-#     #OS 3.7708175 68.3225475
-#     #OC 4.50644 69.2869675 4.7708175 68.3225475 Y
-#     #OE
-#     #OB 5.7708175 63.4371725 H
-#     #OS 10.42517 63.4371725
-#     #OS 10.42517 67.4691725
-#     #OS 5.7708175 67.4691725
-#     #OS 5.7708175 63.4371725
+	#     #OC 5.08195 69.4691725 5.08195 68.4691725 Y
+	#     #OS 11.42517 69.4691725
+	#     #OC 12.42517 68.4691725 11.42517 68.4691725 Y
+	#     #OS 12.42517 62.4371725
+	#     #OC 11.42517 61.4371725 11.42517 62.4371725 Y
+	#     #OS 4.7708175 61.4371725
+	#     #OC 3.7708175 62.4371725 4.7708175 62.4371725 Y
+	#     #OS 3.7708175 68.3225475
+	#     #OC 4.50644 69.2869675 4.7708175 68.3225475 Y
+	#     #OE
+	#     #OB 5.7708175 63.4371725 H
+	#     #OS 10.42517 63.4371725
+	#     #OS 10.42517 67.4691725
+	#     #OS 5.7708175 67.4691725
+	#     #OS 5.7708175 63.4371725
 
 }
 

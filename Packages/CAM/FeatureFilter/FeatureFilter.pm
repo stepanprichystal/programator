@@ -41,6 +41,37 @@ sub new {
 	return $self;
 }
 
+sub SetFilterType {
+	my $self = shift;
+	my %args = (
+		"lines"    => 0,
+		"pads"     => 0,
+		"surfaces" => 0,
+		"arcs"     => 0,
+		"text"     => 0,
+		@_,    # argument pair list goes here
+	);
+
+	my $inCAM = $self->{"inCAM"};
+
+	my $lines    = $args{"lines"}    ? "yes" : "no";
+	my $pads     = $args{"pads"}     ? "yes" : "no";
+	my $surfaces = $args{"surfaces"} ? "yes" : "no";
+	my $arcs     = $args{"arcs"}     ? "yes" : "no";
+	my $text     = $args{"text"}     ? "yes" : "no";
+
+	$inCAM->COM(
+				 "set_filter_type",
+				 "filter_name" => "",
+				 "lines"       => $lines,
+				 "pads"        => $pads,
+				 "surfaces"    => $surfaces,
+				 "arcs"        => $arcs,
+				 "text"        => $text
+	);
+
+}
+
 sub Select {
 	my $self = shift;
 
@@ -98,7 +129,6 @@ sub Unselect {
 
 }
 
-
 # Tell where use filter in layer
 # Mode:
 #0 - ignore the profile
@@ -113,10 +143,9 @@ sub SetProfile {
 	$inCAM->COM( 'set_filter_profile', 'mode' => $mode );
 }
 
-
 sub SetPolarity {
 	my $self     = shift;
-	my $polarity = shift;                                    #  both\positive\negative
+	my $polarity = shift;    #  both\positive\negative
 
 	my $inCAM = $self->{"inCAM"};
 

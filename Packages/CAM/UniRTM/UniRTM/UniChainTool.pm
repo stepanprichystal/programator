@@ -10,6 +10,7 @@ package Packages::CAM::UniRTM::UniRTM::UniChainTool;
 use strict;
 use warnings;
 use XML::Simple;
+use overload '""' => \&stringify;
 
 #local library
 use aliased 'Packages::CAM::UniRTM::Enums';
@@ -28,6 +29,7 @@ sub new {
 	$self->{"chainOrder"} = shift;
 	$self->{"chainSize"}  = shift;    # size of tool in µm
 	$self->{"comp"}       = shift;
+	$self->{"uniDTMTool"} = shift;
 	
 	 
  
@@ -60,6 +62,25 @@ sub GetChainSize {
 
 	return $self->{"chainSize"};
 }
+ 
+
+sub GetUniDTMTool{
+	my $self = shift;
+
+	unless(defined $self->{"uniDTMTool"}){
+		die "UniDTMTool was not initialized for this Chain tool: ".$self;
+	}
+
+	return $self->{"uniDTMTool"};
+}
+
+
+
+sub stringify {
+    my ($self) = @_;
+    return "UniChainTool - ChainOrder: ".$self->GetChainOrder().", ChainComp: ".$self->GetComp().", ChainSize: ".$self->GetChainSize();
+}
+
 
  
 #-------------------------------------------------------------------------------------------#

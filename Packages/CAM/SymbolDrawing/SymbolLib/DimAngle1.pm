@@ -36,6 +36,7 @@ sub new {
 	my $class  = shift;
 	my $angle  = shift;    # angle in degree
 	my $length = shift;    # length of left+right line
+	my $arrowLen = shift;	# length of arrows
 	my $symbol = shift;    # symbol of dim lines
 
 	my $textValue     = shift;    # text of dimension
@@ -52,6 +53,8 @@ sub new {
 
 	$self->{"angle"}  = $angle;
 	$self->{"length"} = $length;
+	$self->{"arrowLen"} = $arrowLen;
+	
 	$self->{"symbol"} = $symbol;
 
 	$self->{"textValue"}     = $textValue;
@@ -98,7 +101,7 @@ sub __DefineSymbol {
 	$self->AddPrimitive($rightLine);
 
 	# Add Arrows
-	my $arrowLength = $self->{"length"} * 0.05;
+	my $arrowLength = $self->{"arrowLen"};
 
 	# define arrow point on zero
 	my $lTopArrPoint = Point->new( $arrowLength, $arrowLength );
@@ -108,11 +111,11 @@ sub __DefineSymbol {
 	my $rBotArrPoint = Point->new( -$arrowLength, -$arrowLength );
 
 	# a) rotate arrows point
-	$lTopArrPoint->Rotate( $self->{"angle"} / 2 );
-	$lBotArrPoint->Rotate( $self->{"angle"} / 2 );
+	$lTopArrPoint->Rotate( $self->{"angle"} / 3 );
+	$lBotArrPoint->Rotate( $self->{"angle"} * 0.7 );
 
-	$rTopArrPoint->Rotate( $self->{"angle"} / 2, 1 );
-	$rBotArrPoint->Rotate( $self->{"angle"} / 2, 1 );
+	$rTopArrPoint->Rotate( $self->{"angle"} /3, 1 );
+	$rBotArrPoint->Rotate( $self->{"angle"} * 0.7, 1 );
 
 	# b) move point, to final position
 	$lTopArrPoint->Move( $startArcXPos, $startArcYPos );
