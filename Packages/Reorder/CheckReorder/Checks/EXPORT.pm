@@ -43,6 +43,7 @@ sub Run {
 	my $jobId    = $self->{"jobId"};
 	my $jobExist = $self->{"jobExist"};    # (in InCAM db)
 	my $isPool   = $self->{"isPool"};
+ 
 
 	unless ($jobExist) {
 		return 0;

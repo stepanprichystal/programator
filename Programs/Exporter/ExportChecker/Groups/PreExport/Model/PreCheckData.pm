@@ -26,6 +26,7 @@ use aliased 'CamHelpers::CamAttributes';
 use aliased 'Packages::Stackup::StackupOperation';
 use aliased 'Packages::CAM::Netlist::NetlistCompare';
 use aliased 'Packages::CAMJob::Scheme::CustSchemeCheck';
+use aliased 'Packages::CAMJob::Matrix::LayerNamesCheck';
 
 
 #-------------------------------------------------------------------------------------------#
@@ -374,6 +375,16 @@ sub OnCheckGroupData {
 		my $custSchema = $defaultInfo->GetCustomerNote()->RequiredSchema();
 		
 		$dataMngr->_AddWarningResult( "Customer schema", "Zákazník požaduje ve stepu: \"mpanel\" vlastní schéma: \"$custSchema\", ale je vloženo schéma: \"$usedScheme\"." );
+	}
+	
+	# 17) Check if all our "board" layers are realy board
+	my @nonBoard = ();
+	
+	unless(LayerNamesCheck->CheckNonBoardBaseLayers($inCAM, $jobId, \@nonBoard)){
+		
+		my $str = join("; ", map { $_->{"gROWname"} } @nonBoard ) ;
+		
+		$dataMngr->_AddWarningResult( "Matrix", "V matrixu jsou \"misc\" vrstvy, které by měly být \"board\": $str " );
 	}
  
 
