@@ -10,7 +10,7 @@ package Packages::CAM::UniRTM::UniRTM::UniChainTool;
 use strict;
 use warnings;
 use XML::Simple;
-use overload '""' => \&stringify;
+use overload   '""' => \&stringify;
 
 #local library
 use aliased 'Packages::CAM::UniRTM::Enums';

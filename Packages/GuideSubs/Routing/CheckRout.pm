@@ -72,7 +72,7 @@ sub Check {
 		}
 	}
 
-	#if ( $self->{"isPool"} ) {
+	if ( $self->{"isPool"} ) {
 
 		my $resOnlyBridges = 0;
 		while ( !$resOnlyBridges ) {
@@ -83,9 +83,9 @@ sub Check {
 				$inCAM->PAUSE("Oprav chybu a pokracuj...");
 			}
 		}
-	#}
+	}
 
-	#if ( $self->{"isPool"} ) {
+	if ( $self->{"isPool"} ) {
 		my $resOutsideChains = 0;
 		while ( !$resOutsideChains ) {
 
@@ -96,7 +96,7 @@ sub Check {
 			}
 
 		}
-	#}
+	}
 
 	my $resLeftRout = 0;
 	while ( !$resLeftRout ) {
