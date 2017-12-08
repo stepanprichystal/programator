@@ -133,8 +133,8 @@ sub GetPoints {
 			if ( $f->{"type"} =~ /A/i ) {
 
 				my $result = undef;
- 				
- 				$f->{"dir"} = $f->{"newDir"}; # GetFragmentArc assume propertt "dir"
+  
+ 				$f->{"dir"} = $f->{"newDir"} ?  $f->{"newDir"} :  $f->{"oriDir"}; # GetFragmentArc assume propertt "dir"
 				my @p = PolygonArc->GetFragmentArc( $f, $accuracy, \$result );
 
 				if ($result) {

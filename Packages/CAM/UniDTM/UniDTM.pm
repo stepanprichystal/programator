@@ -112,25 +112,27 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId    = "f88914";
+	my $jobId    = "f10266";
 	my $stepName = "panel";
-	my $unitDTM  = UniDTM->new( $inCAM, $jobId, "o+1", "m", 1 );
+	my $unitDTM  = UniDTM->new( $inCAM, $jobId, "o+1", "f", 1 );
+	
+	die;
 
-	use aliased 'CamHelpers::CamNCHooks';
-	use aliased 'Packages::InCAM::InCAM';
-
-	my $materialName = "PCL370HR";
-	my $machine      = "machine_a";
-	my $path         = "\\\\incam\\incam_server\\site_data\\hooks\\ncd\\";
-
-	my %toolParams = CamNCHooks->GetMaterialParams( $materialName, $machine, $path );
-
-	my $uniTool = $unitDTM->GetTool(1100);
-
-	my $magOk = 0;
-	my $parameters = CamNCHooks->GetToolParam( $uniTool, \%toolParams, \$magOk );
-
-	print $parameters ."\n".$magOk;
+#	use aliased 'CamHelpers::CamNCHooks';
+#	use aliased 'Packages::InCAM::InCAM';
+#
+#	my $materialName = "PCL370HR";
+#	my $machine      = "machine_a";
+#	my $path         = "\\\\incam\\incam_server\\site_data\\hooks\\ncd\\";
+#
+#	my %toolParams = CamNCHooks->GetMaterialParams( $materialName, $machine, $path );
+#
+#	my $uniTool = $unitDTM->GetTool(1100);
+#
+#	my $magOk = 0;
+#	my $parameters = CamNCHooks->GetToolParam( $uniTool, \%toolParams, \$magOk );
+#
+#	print $parameters ."\n".$magOk;
 
 }
 

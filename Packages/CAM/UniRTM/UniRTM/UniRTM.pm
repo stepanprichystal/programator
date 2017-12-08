@@ -100,82 +100,84 @@ sub GetChainByChainTool {
 		grep {
 			     $_->{"chainTool"}->GetChainOrder() == $chainTool->GetChainOrder()
 			  && $_->{"chainTool"}->GetComp() eq $chainTool->GetComp()
-			  && $_->{"chainTool"}->GetChainSize() eq $chainTool->GetChainSize() } @chains )[0];
+			  && $_->{"chainTool"}->GetChainSize() eq $chainTool->GetChainSize()
+		} @chains
+	)[0];
 
 	return $ch;
-			  
+
 }
 
-	# return all chan sequences, which are cycle
-	# If chain seq is type of:
-	# - FeatType_SURF: Chain seq contain on surface feature which is circle
-	# - FeatType_LINEARC: Chain seq contain only arc and is cyclic
-	sub GetCircleChainSeq {
-		my $self     = shift;
-		my $chanType = shift;    # FeatType_SURF, FeatType_LINEARC
+# return all chan sequences, which are cycle
+# If chain seq is type of:
+# - FeatType_SURF: Chain seq contain on surface feature which is circle
+# - FeatType_LINEARC: Chain seq contain only arc and is cyclic
+sub GetCircleChainSeq {
+	my $self     = shift;
+	my $chanType = shift;    # FeatType_SURF, FeatType_LINEARC
 
-		my @circleChainSeq = ();
+	my @circleChainSeq = ();
 
-		if ( $chanType eq Enums->FeatType_SURF ) {
+	if ( $chanType eq Enums->FeatType_SURF ) {
 
-			my @chainSeq = grep { $_->GetFeatureType eq Enums->FeatType_SURF } $self->GetChainSequences();
+		my @chainSeq = grep { $_->GetFeatureType eq Enums->FeatType_SURF } $self->GetChainSequences();
 
-			my @cyclChains = grep {
-				     scalar( $_->GetFeatures() ) == 1
-				  && scalar( @{ ( $_->GetFeatures() )[0]->{"surfaces"} } ) == 1
-				  && ( $_->GetFeatures() )[0]->{"surfaces"}->[0]->{"circle"}
-			} @chainSeq;
+		my @cyclChains = grep {
+			     scalar( $_->GetFeatures() ) == 1
+			  && scalar( @{ ( $_->GetFeatures() )[0]->{"surfaces"} } ) == 1
+			  && ( $_->GetFeatures() )[0]->{"surfaces"}->[0]->{"circle"}
+		} @chainSeq;
 
-			push( @circleChainSeq, @cyclChains );
+		push( @circleChainSeq, @cyclChains );
 
-		}
+	}
 
-		if ( $chanType eq Enums->FeatType_LINEARC ) {
+	if ( $chanType eq Enums->FeatType_LINEARC ) {
 
-			my @cyclChains = grep { $_->GetFeatureType() eq Enums->FeatType_LINEARC && $_->GetCyclic() } $self->GetChainSequences();
+		my @cyclChains = grep { $_->GetFeatureType() eq Enums->FeatType_LINEARC && $_->GetCyclic() } $self->GetChainSequences();
 
-			# only arcs
-			for ( my $i = scalar(@cyclChains) - 1 ; $i >= 0 ; $i-- ) {
+		# only arcs
+		for ( my $i = scalar(@cyclChains) - 1 ; $i >= 0 ; $i-- ) {
 
-				my $chain = $cyclChains[$i];
-				my @notArc = grep { $_->{"type"} !~ /^a$/i } $chain->GetFeatures();
-				if (@notArc) {
+			my $chain = $cyclChains[$i];
+			my @notArc = grep { $_->{"type"} !~ /^a$/i } $chain->GetFeatures();
+			if (@notArc) {
 
-					splice @cyclChains, $i, 1;
-				}
+				splice @cyclChains, $i, 1;
 			}
-
-			push( @circleChainSeq, @cyclChains );
-
 		}
 
-		return @circleChainSeq;
-	}
-
-	#-------------------------------------------------------------------------------------------#
-	#  Place for testing..
-	#-------------------------------------------------------------------------------------------#
-	my ( $package, $filename, $line ) = caller;
-	if ( $filename =~ /DEBUG_FILE.pl/ ) {
-
-		use aliased 'Packages::CAM::UniRTM::UniRTM::UniRTM';
-		use aliased 'Packages::CAM::UniDTM::UniDTM';
-		use aliased 'Packages::InCAM::InCAM';
-		use aliased 'Packages::Routing::RoutLayer::RoutStart::RoutStart';
-		use aliased 'Packages::Routing::RoutLayer::RoutStart::RoutRotation';
-		use aliased 'Packages::Routing::RoutLayer::RoutDrawing::RoutDrawing';
-		use aliased 'Packages::CAM::UniDTM::Enums' => "DTMEnums";
-
-		my $inCAM = InCAM->new();
-		my $jobId = "f90576";
-
-		my $dtm = UniDTM->new( $inCAM, $jobId, "o+1", "score", 1 );
-
-		my $rtm = UniRTM->new( $inCAM, $jobId, "o+1", "score", 1, $dtm );
-
-		print "test";
+		push( @circleChainSeq, @cyclChains );
 
 	}
 
-	1;
+	return @circleChainSeq;
+}
+
+#-------------------------------------------------------------------------------------------#
+#  Place for testing..
+#-------------------------------------------------------------------------------------------#
+my ( $package, $filename, $line ) = caller;
+if ( $filename =~ /DEBUG_FILE.pl/ ) {
+
+	use aliased 'Packages::CAM::UniRTM::UniRTM::UniRTM';
+	use aliased 'Packages::CAM::UniDTM::UniDTM';
+	use aliased 'Packages::InCAM::InCAM';
+	use aliased 'Packages::Routing::RoutLayer::RoutStart::RoutStart';
+	use aliased 'Packages::Routing::RoutLayer::RoutStart::RoutRotation';
+	use aliased 'Packages::Routing::RoutLayer::RoutDrawing::RoutDrawing';
+	use aliased 'Packages::CAM::UniDTM::Enums' => "DTMEnums";
+
+	my $inCAM = InCAM->new();
+	my $jobId = "f10266";
+
+	my $dtm = UniDTM->new( $inCAM, $jobId, "o+1", "f", 1 );
+
+	my $rtm = UniRTM->new( $inCAM, $jobId, "o+1", "f", 1, $dtm);
+
+	print "test";
+
+}
+
+1;
 
