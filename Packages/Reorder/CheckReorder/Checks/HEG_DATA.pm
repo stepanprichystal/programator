@@ -2,7 +2,7 @@
 # Description:  Class responsible for determine pcb reorder check
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::Reorder::CheckReorder::Checks::NIF_FILE;
+package Packages::Reorder::CheckReorder::Checks::HEG_DATA;
 use base('Packages::Reorder::CheckReorder::Checks::CheckBase');
 
 use Class::Interface;
@@ -17,7 +17,9 @@ use warnings;
 use aliased 'Packages::NifFile::NifFile';
 use aliased 'Helpers::FileHelper';
 use aliased 'Helpers::JobHelper';
- 
+use aliased 'CamHelpers::CamJob';
+use aliased 'Packages::Stackup::Stackup::Stackup';
+use aliased 'Connectors::HeliosConnector::HegMethods';
 
 #-------------------------------------------------------------------------------------------#
 #  Public method
@@ -27,8 +29,7 @@ sub new {
 	my $class = shift;
 	my $self  = $class->SUPER::new(@_);
 	bless($self);
-	
-	
+
 	return $self;
 }
 
@@ -39,31 +40,31 @@ sub Run {
 	my $jobId    = $self->{"jobId"};
 	my $jobExist = $self->{"jobExist"};    # (in InCAM db)
 	my $isPool   = $self->{"isPool"};
-	
+
 	my $needChange = 0;
-	
-	my $nifPath = JobHelper->GetJobArchive( $jobId ) . $jobId . ".nif";
-	
-	# 1) Check nakoveni in nif
-	if(-e $nifPath){
-		
-		my @lines = @{FileHelper->ReadAsLines($nifPath)};
-		
-		my @nakov = grep { $_ =~ /vrtani_\d=c/i } @lines;
-		
-		if(scalar(@nakov)){
+
+	my $layerCnt = CamJob->GetSignalLayerCnt( $inCAM, $jobId );
+
+	# 1) Check nakoveni in cores
+	if ( $layerCnt > 2 ) {
+
+		my $stackup = Stackup->new($jobId);
+ 
+			my @nakov = grep {$_->{"vrtani"} =~ /C/i}  HegMethods->GetAllCoresInfo($jobId);
+		 
+		if ( scalar(@nakov) ) {
 			
-			$self->_AddChange("V nifu u vrtani jader je hodnota C - nakoveni. Po exportu dps hodnotu znovu zapiš do nifu ručně. Tohle není zautomatizované!");
+			my $str = join( ";", map { $_->{"core_num"}} @nakov);
+
+			$self->_AddChange(
+			"V Hegu u vrtani jader ($str) je hodnota C - nakoveni. Po exportu dps hodnotu znovu zapiš do nifu ručně. Tohle není zautomatizované!" );
 		}
-		
+
 	}
-	
- 
-	
+
 	return $needChange;
- 
+
 }
- 
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
@@ -71,16 +72,15 @@ sub Run {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
- 
- 	use aliased 'Packages::Reorder::CheckReorder::Checks::NIF_NAKOVENI' => "Change";
- 	use aliased 'Packages::InCAM::InCAM';
-	
-	my $inCAM    = InCAM->new();
+	use aliased 'Packages::Reorder::CheckReorder::Checks::NIF_NAKOVENI' => "Change";
+	use aliased 'Packages::InCAM::InCAM';
+
+	my $inCAM = InCAM->new();
 	my $jobId = "f73086";
-	
+
 	my $check = Change->new();
-	
-	print "Need change: ".$check->NeedChange($inCAM, $jobId, 1);
+
+	print "Need change: " . $check->NeedChange( $inCAM, $jobId, 1 );
 }
 
 1;

@@ -289,15 +289,12 @@ sub UpdateNCInfo {
 	my $errorMess = shift;
 
 	my $result = 1;
-
-	print STDERR "Update NC info 1.\n";
-
+ 
 	my $infoStr = $self->__BuildNcInfo( \@info );
-
-	print STDERR "Update NC info 2.\n";
+ 
 
 	eval {
-		print STDERR "Update NC info 3.\n";
+	 
 
 		# TODO this is temporary solution
 		#		my $path = GeneralHelper->Root() . "\\Connectors\\HeliosConnector\\UpdateScript.pl";
@@ -317,9 +314,7 @@ sub UpdateNCInfo {
 
 			$$errorMess = "Failed to update NC-info.";
 		}
-
-		#HegMethods->UpdateNCInfo( $jobId, $infoStr );
-		print STDERR "Update NC info 4.\n";
+ 
 	};
 	if ( my $e = $@ ) {
 

@@ -15,7 +15,6 @@ use File::Spec;
 use aliased 'Helpers::GeneralHelper';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'Enums::EnumsPaths';
-use aliased 'Helpers::FileHelper';
 
 #-------------------------------------------------------------------------------------------#
 #   Package methods
@@ -36,12 +35,11 @@ sub GetFileName {
 
 sub Open {
 
-	my $self  = shift;
-	my $path  = shift;
-	my $write = shift;
+	my $self     = shift;
+	my $path     = shift;
+	my $write    = shift;
 	my $encoding = shift;
-	
- 
+
 	my $f         = undef;
 	my $operation = "<";
 
@@ -49,8 +47,8 @@ sub Open {
 	{
 		$operation = "+>";
 	}
-	
-	if($encoding){
+
+	if ($encoding) {
 		$operation .= ":encoding($encoding)";
 	}
 
@@ -122,21 +120,20 @@ sub ExistsByPattern {
 #	}
 #}
 
-
 #Return full path + file name by pattern contain in file name
 sub GetFilesNameByPattern {
 	my $self = shift;
 
 	my $dirPath  = shift;
 	my $partName = shift;
-	my @files = ();
+	my @files    = ();
 
 	my $filePath = 0;
-	
-	unless($dirPath =~ /\\$/){
+
+	unless ( $dirPath =~ /\\$/ ) {
 		$dirPath .= "\\";
 	}
- 
+
 	#get all files from path
 	opendir( DIR, $dirPath ) or die $!;
 
@@ -146,8 +143,8 @@ sub GetFilesNameByPattern {
 
 		if ( $file =~ /$partName/i ) {
 
-			$filePath = $dirPath . $file;	
-			push(@files, $filePath);
+			$filePath = $dirPath . $file;
+			push( @files, $filePath );
 		}
 	}
 
@@ -183,22 +180,22 @@ sub GetFileNameByPattern() {
 
 #Return file content as string
 sub ReadAsString {
-	my $self = shift;
-	my $path = shift;
+	my $self     = shift;
+	my $path     = shift;
 	my $encoding = shift;
-	
+
 	my $str = undef;
-	
-	unless(-e $path){
+
+	unless ( -e $path ) {
 		return $str;
 	}
 
-	my $f = FileHelper->Open($path, 0, $encoding);
+	my $f = $self->Open( $path, 0, $encoding );
 	$str = join( "", <$f> );
-	
-	 $str =~ s/^\xEF\xBB\xBF//; # remove utf BOM from start of file
-	
-	FileHelper->Close($f);
+
+	$str =~ s/^\xEF\xBB\xBF//;    # remove utf BOM from start of file
+
+	$self->Close($f);
 
 	return $str;
 }
@@ -209,10 +206,10 @@ sub ReadAsLines {
 	my $path = shift;
 
 	my $l     = undef;
-	my $f     = FileHelper->Open($path);
+	my $f     = $self->Open($path);
 	my @lines = <$f>;
 
-	FileHelper->Close($f);
+	$self->Close($f);
 
 	return \@lines;
 }
@@ -223,11 +220,11 @@ sub WriteLines {
 	my $path  = shift;
 	my @lines = @{ shift(@_) };
 
-	my $f = FileHelper->Open( $path, 1 );
+	my $f = $self->Open( $path, 1 );
 
 	print $f @lines;
 
-	FileHelper->Close($f);
+	$self->Close($f);
 }
 
 #Write string to begining of file
@@ -236,11 +233,11 @@ sub WriteString {
 	my $path = shift;
 	my $str  = shift;
 
-	my $f = FileHelper->Open( $path, 1 );
+	my $f = $self->Open( $path, 1 );
 
 	print $f $str;
 
-	FileHelper->Close($f);
+	$self->Close($f);
 }
 
 #Delete file
@@ -253,6 +250,7 @@ sub DeleteFile {
 
 #Delete temp files from Temp directory
 sub DeleteTempFiles {
+	my $self = shift;
 
 	#my $tempPath = File::Spec->rel2abs(  dirname(dirname( __FILE__ )))."/Temp";
 
@@ -266,8 +264,8 @@ sub DeleteTempFiles {
 		#get file attributes
 		my @stats = stat($file);
 
-		if ( (time() - $stats[9]) > $age ) {
-			FileHelper->DeleteFile($file);
+		if ( ( time() - $stats[9] ) > $age ) {
+			$self->DeleteFile($file);
 		}
 	}
 }
@@ -307,7 +305,7 @@ sub DeleteTempFilesFrom {
 			my @stats = stat($file);
 
 			if ( time() - $stats[9] > $age ) {
-				FileHelper->DeleteFile($file);
+				$self->DeleteFile($file);
 			}
 		}
 	}
@@ -319,9 +317,9 @@ sub ClearFile {
 	my $self = shift;
 	my $path = shift;
 
-	FileHelper->DeleteFile($path);
-	my $f = FileHelper->Open( $path, 1 );
-	FileHelper->Close($f);
+	$self->DeleteFile($path);
+	my $f = $self->Open( $path, 1 );
+	$self->Close($f);
 }
 
 #Remove non/printable char from file
@@ -358,16 +356,16 @@ sub IsXMLValid {
 	eval {
 
 		#try {
-		$f = FileHelper->Open($p);
+		$f = $self->Open($p);
 		XMLin($f);
-		FileHelper->Close($f);
+		$self->Close($f);
 		return 1;
 	};
 
 	#catch {
 	if ($@) {
 		print STDERR "XML file: " . $p . " isn't probably valid.\n";
-		FileHelper->Close($f);
+		$self->Close($f);
 		return 0;
 	}
 
@@ -405,7 +403,7 @@ sub CreateBackup {
 
 	my $bckName = GeneralHelper->GetGUID();
 	my $newPath = EnumsPaths->Client_INCAMTMPOTHER . $bckName;
-	if ( FileHelper->Copy( $pSource, $newPath ) ) {
+	if ( $self->Copy( $pSource, $newPath ) ) {
 		return $bckName;
 	}
 	else {
@@ -426,7 +424,7 @@ sub Copy {
 
 	my $fData1;
 	my $fData2;
-	
+
 	open( $fData1, "<$pSource" );
 	open( $fData2, ">$pDest" );
 

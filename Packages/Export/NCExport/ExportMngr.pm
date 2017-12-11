@@ -174,8 +174,17 @@ sub __UpdateNCInfo {
 
 	my @info       = $self->GetNCInfo();
 	my $resultMess = "";
-	my $result     = NCHelper->UpdateNCInfo( $self->{"jobId"}, \@info, \$resultMess );
-
+	
+	# 3 attempt to write to HEG (can do problems during heg bil load)
+	my $result = 0;
+	foreach my $attempt  (1..3){
+	
+		$result = NCHelper->UpdateNCInfo( $self->{"jobId"}, \@info, \$resultMess );
+		
+		last if( $result);
+		sleep(5);
+	}
+ 
 	unless ($result) {
 		$resultItem->AddError($resultMess);
 	}

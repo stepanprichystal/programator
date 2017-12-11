@@ -85,17 +85,37 @@ sub GetJobArchive {
 	my $self  = shift;
 	my $jobId = shift;
 
-	# old format - D12345
-	if ( length($jobId) == 6 ) {
+	return EnumsPaths->Jobs_ARCHIV . substr( $jobId, 0,  - 3 ) . "\\" . $jobId . "\\";
+}
 
-		return EnumsPaths->Jobs_ARCHIV . substr( $jobId, 0, 3 ) . "\\" . $jobId . "\\";
+sub FormerPcbId {
+	my $self      = shift;
+	my $jobId     = shift;
+	my $oldArchiv = shift;    # ref, where old job archiv will be stored
+	my $oldJobId = shift;    # ref, where old pcb id will be stored
+ 
+
+	my $isFormer = 0;
+
+	my $name = substr( $jobId, 0, 1 );
+	my $num  = substr( $jobId, 1, length($jobId) - 1 );
+
+	if ( length($jobId) == 7 &&  $name =~ /D/i && $num < 200000 ) {
+
+		$isFormer = 1;
+
+		# New D0..... => Former "D00000-D99999"
+		# New D1..... => Former "F00000-F99999"
+	 
+		my $nameOld = substr( $jobId, 1, 1 ) eq "0" ? "D" : "F";
+
+		$$oldJobId = $nameOld . substr( $jobId, 2, length($jobId) - 2 );
+
+		$$oldArchiv = EnumsPaths->Jobs_ARCHIVOLD . substr( $$oldJobId, 0,   - 3 ) . "\\" . $$oldJobId . "\\";
+
 	}
 
-	# new format  - D123456
-	else {
-
-		return EnumsPaths->Jobs_ARCHIV . substr( $jobId, 0, 4 ) . "\\" . $jobId . "\\";
-	}
+	return $isFormer;
 }
 
 # return path of job el test
@@ -121,13 +141,11 @@ sub GetJobElTest {
 # mpanel_netlist
 # mpanel_ref_netlist
 sub GetNetlistStepNames {
-	my $self     = shift;
+	my $self = shift;
 
-	my @s = ("o+1_panel", "panel_ref_netlist", "mpanel_netlist", "mpanel_ref_netlist");
+	my @s = ( "o+1_panel", "panel_ref_netlist", "mpanel_netlist", "mpanel_ref_netlist" );
 	return @s;
 }
-
-
 
 sub GetJobOutput {
 	my $self  = shift;
@@ -139,7 +157,7 @@ sub GetJobOutput {
 
 # Return listo of all jobs in incam database (default)
 sub GetJobList {
-	my $self = shift;
+	my $self   = shift;
 	my $dbName = shift;
 
 	unless ( defined $dbName ) {
@@ -232,13 +250,6 @@ sub GetIsolationByClass {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	use aliased 'Helpers::JobHelper';
-
-	my @list =  JobHelper->GetJobList( );
-use Data::Dump qw(dump);
-	 dump(@list);
-
-	print "\n1";
 }
 
 1;

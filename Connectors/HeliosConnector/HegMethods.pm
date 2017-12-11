@@ -152,6 +152,31 @@ sub GetInfoAfterStartProduce {
 	}
 }
 
+# Return info abou pcb dimensions 
+sub GetInfoDimensions {
+	my $self  = shift;
+	my $pcbId = shift;
+
+	my @params = ( SqlParameter->new( "_PcbId", Enums->SqlDbType_VARCHAR, $pcbId ) );
+
+	my $cmd = "select top 1
+				 d.nasobnost_panelu,
+				 d.nasobnost
+				 
+				 from lcs.desky_22 d with (nolock)
+				 left outer join lcs.zakazky_dps_22_hlavicka z with (nolock) on z.deska=d.cislo_subjektu
+				 where d.reference_subjektu=_PcbId and  z.cislo_poradace = 22050";
+
+	my @result = Helper->ExecuteDataSet( $cmd, \@params );
+
+	if (@result) {
+		return $result[0];
+	}
+	else {
+		die "no record for $pcbId";
+	}
+}
+
 sub GetPcbName {
 	my $self  = shift;
 	my $pcbId = shift;
@@ -814,7 +839,7 @@ sub UpdatePooling {
 	my $childThread = shift;
 
 	$isPool = $isPool ? "A" : "N";
-	
+
 	if ($childThread) {
 
 		my $result = $self->__SystemCall( "UpdatePooling", $order, $isPool );
@@ -1285,6 +1310,68 @@ sub GetMatStoreInfo {
 	return 0;
 }
 
+# Return number of cores in pcb
+sub GetCoreCnt {
+	my $self  = shift;
+	my $pcbId = shift;
+
+	my @params = ( SqlParameter->new( "_PcbId", Enums->SqlDbType_VARCHAR, $pcbId ) );
+
+	my $cmd = "select top 1
+				 d.pocet_jader
+				 from lcs.desky_22 d with (nolock)
+				  left outer join lcs.zakazky_dps_22_hlavicka z with (nolock) on z.deska=d.cislo_subjektu
+				 where d.reference_subjektu=_PcbId and  z.cislo_poradace = 22050";
+
+	return Helper->ExecuteScalar( $cmd, \@params );
+}
+
+# Return info about all cores
+# Each hash has key "core_num", which is number of core 1..n
+sub GetCoreInfo {
+	my $self    = shift;
+	my $pcbId   = shift;
+	my $coreNum = shift;
+
+	my $coresCnt = $self->GetCoreCnt($pcbId);
+
+	my @params = ( SqlParameter->new( "_PcbId", Enums->SqlDbType_VARCHAR, $pcbId ) );
+
+	my $cmd = "select top 1
+				$coreNum core_num,
+				 d.vrtani_$coreNum vrtani
+				 from lcs.desky_22 d with (nolock)
+				  left outer join lcs.zakazky_dps_22_hlavicka z with (nolock) on z.deska=d.cislo_subjektu
+				 where d.reference_subjektu=_PcbId and  z.cislo_poradace = 22050";
+
+	my @result = Helper->ExecuteDataSet( $cmd, \@params );
+
+	if ( scalar(@result) ) {
+
+		return $result[0];
+	}
+
+	return 0;
+}
+
+# Return info about all cores
+# Each hash has key "core_num", which is number of core 1..n
+sub GetAllCoresInfo {
+	my $self  = shift;
+	my $pcbId = shift;
+
+	my $coresCnt = $self->GetCoreCnt($pcbId);
+
+	my @coreInfo = ();
+
+	foreach my $coreNum ( 1 .. $coresCnt ) {
+
+		push( @coreInfo, $self->GetCoreInfo( $pcbId, $coreNum ) );
+	}
+
+	return @coreInfo;
+}
+
 #-------------------------------------------------------------------------------------------#
 #  Helper method
 #-------------------------------------------------------------------------------------------#
@@ -1318,16 +1405,10 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	use aliased 'Connectors::HeliosConnector::HegMethods';
 	use Data::Dump qw(dump);
- 
-	my $res = HegMethods->UpdatePooling( "f52457-03", 1 );
-	
-	print $res;
-	
-	print HegMethods->GetPcbIsPool("f52457");
 
-	
+	my @cores = HegMethods->GetAllCoresInfo("f52457");
 
-	#print scalar(@opak);
+	print @cores;
 
 }
 

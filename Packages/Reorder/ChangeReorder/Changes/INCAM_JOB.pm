@@ -55,6 +55,13 @@ sub Run {
 		CamMatrix->CreateLayer( $inCAM, $jobId, "c", "signal", "positive", 1 );
 		$inCAM->COM("matrix_auto_rows","job" => $jobId,"matrix" => "matrix");
 	}
+	
+	# 2) check if layer "f" is not missing. (layer has to exist even at noncopper pcb)
+	unless ( CamHelper->LayerExists( $inCAM, $jobId, "f" ) ) {
+
+		CamMatrix->CreateLayer( $inCAM, $jobId, "f", "rout", "positive", 1 );
+		$inCAM->COM("matrix_auto_rows","job" => $jobId,"matrix" => "matrix");
+	}
  
 	return $result;
 

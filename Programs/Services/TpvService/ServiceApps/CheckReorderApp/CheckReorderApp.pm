@@ -169,6 +169,7 @@ sub __ProcessJob {
 
 	# 1) Check if pcb exist in InCAM
 	my $jobExist = AcquireJob->Acquire( $inCAM, $jobId );
+ 
 
 	$self->_OpenJob($jobId);
  

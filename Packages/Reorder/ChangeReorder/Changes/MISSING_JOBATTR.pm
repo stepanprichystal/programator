@@ -19,7 +19,6 @@ use aliased 'Packages::NifFile::NifFile';
 use aliased 'CamHelpers::CamAttributes';
 use aliased 'Connectors::HeliosConnector::HegMethods';
 
-
 #-------------------------------------------------------------------------------------------#
 #  Public method
 #-------------------------------------------------------------------------------------------#
@@ -34,44 +33,55 @@ sub new {
 
 # Check if mask is not negative in matrix
 sub Run {
-	my $self  = shift;
+	my $self = shift;
 	my $mess = shift;
-	
+
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
-	
+
 	my $result = 1;
-	
+
 	my $nif = NifFile->new($jobId);
-	
+
 	# insert user name
-	my $userName = CamAttributes->GetJobAttrByName( $inCAM, $jobId, "user_name" );     
-	
-	if(!defined $userName || $userName eq "" || $userName =~ /none/i){
-		 
-		 my $user = $nif->GetValue("zpracoval");
-		 
-		 if(!defined $user || $user eq ""){
-		 	die "User is not defined in nif";
-		 }
-		 
-		 CamAttributes->SetJobAttribute( $inCAM, $jobId, "user_name", $user );     
+	my $userName = CamAttributes->GetJobAttrByName( $inCAM, $jobId, "user_name" );
+
+	if ( !defined $userName || $userName eq "" || $userName =~ /none/i ) {
+
+		my $user = $nif->GetValue("zpracoval");
+
+		if ( !defined $user || $user eq "" ) {
+			die "User is not defined in nif";
+		}
+
+		CamAttributes->SetJobAttribute( $inCAM, $jobId, "user_name", $user );
 	}
-	
+
 	# insert pcb class
-	my $pcbClass = CamAttributes->GetJobAttrByName( $inCAM, $jobId, "pcb_class" );    
-	
-	if(!defined $pcbClass || $pcbClass eq ""  || $pcbClass < 3 ){
+	my $pcbClass = CamAttributes->GetJobAttrByName( $inCAM, $jobId, "pcb_class" );
+
+	if ( !defined $pcbClass || $pcbClass eq "" || $pcbClass < 3 ) {
+
+		my $class = $nif->GetValue("kons_trida");
+
+		if ( !defined $class || $class < 3 ) {
+			die "Pcb class is not defined in nif";
+		}
+
+		CamAttributes->SetJobAttribute( $inCAM, $jobId, "pcb_class", $class );
+	}
+
+	# Add gold holder attribut when galvanic gold
+	if ( HegMethods->GetPcbSurface( $self->{"jobId"} ) =~ /g/i ) {
 		
-		 my $class = $nif->GetValue("kons_trida");
-		 
-		 if(!defined $class || $class < 3){
-		 	die "Pcb class is not defined in nif";
-		 }
-		 
-		 CamAttributes->SetJobAttribute( $inCAM, $jobId, "pcb_class", $class );     
-	} 
- 
+		my $goldHolder = CamAttributes->GetJobAttrByName( $inCAM, $jobId, "goldholder" );    # zakaznicky panel
+
+		# set attribute gold holder
+		if (  !defined $goldHolder || $goldHolder ne "yes" ) {
+
+			CamAttributes->SetJobAttribute( $inCAM, $jobId, "goldholder", "yes" );
+		}
+	}
 
 	return $result;
 }
@@ -82,17 +92,16 @@ sub Run {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
+	use aliased 'Packages::Reorder::ChangeReorder::Changes::MASK_POLAR' => "Change";
+	use aliased 'Packages::InCAM::InCAM';
 
- 	use aliased 'Packages::Reorder::ChangeReorder::Changes::MASK_POLAR' => "Change";
- 	use aliased 'Packages::InCAM::InCAM';
-	
-	my $inCAM    = InCAM->new();
+	my $inCAM = InCAM->new();
 	my $jobId = "f52457";
-	
-	my $check = Change->new("key", $inCAM, $jobId);
-	
+
+	my $check = Change->new( "key", $inCAM, $jobId );
+
 	my $mess = "";
-	print "Change result: ".$check->Run(\$mess);
+	print "Change result: " . $check->Run( \$mess );
 }
 
 1;

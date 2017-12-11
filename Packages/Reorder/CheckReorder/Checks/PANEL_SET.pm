@@ -18,6 +18,7 @@ use aliased 'Packages::NifFile::NifFile';
 use aliased 'CamHelpers::CamHelper';
 use aliased 'CamHelpers::CamStepRepeat';
 use aliased 'CamHelpers::CamAttributes';
+use aliased 'Connectors::HeliosConnector::HegMethods';
 
 #-------------------------------------------------------------------------------------------#
 #  Public method
@@ -53,11 +54,11 @@ sub Run {
 	my $custPnlExist = CamAttributes->GetJobAttrByName( $inCAM, $jobId, "customer_panel" );    # zakaznicky panel
 	my $custSetExist = CamAttributes->GetJobAttrByName( $inCAM, $jobId, "customer_set" );      # zakaznicke sady
 
-	my $nif        = NifFile->new($jobId);
-	my $multiplNif = $nif->GetValue("nasobnost_panelu");
+	 
+	my $multiplHeg = HegMethods->GetInfoDimensions($jobId)->{"nasobnost_panelu"};
 
 	# 1) Check only when nasobnost_panelu is set, thus potentional missing of job attributes
-	if ( defined $multiplNif && $multiplNif ne "" && $multiplNif != 0 ) {
+	if ( defined $multiplHeg && $multiplHeg ne "" && $multiplHeg != 0 ) {
 
 		my $mpanelExist = CamHelper->StepExists( $inCAM, $jobId, "mpanel" );
 
@@ -66,7 +67,7 @@ sub Run {
 		if ( !$mpanelExist && $custPnlExist ne "yes" && $custSetExist ne "yes" ) {
 
 			$self->_AddChange(
-						  "V nifu je vyplněná \"nasobnost_panelu\", ale v jobu není nastaveno, že se jedná o \"zákaznický panel\ nebo \"sadu\""
+						  "V HEGu je vyplněná \"nasobnost_panelu\", ale v jobu není nastaveno, že se jedná o \"zákaznický panel\ nebo \"sadu\""
 							. "(respektive nejsou nastaveny atributy \"customer_panel\" nebo \"customer_set\")",
 						  1
 			);
@@ -76,10 +77,10 @@ sub Run {
 		if ( $mpanelExist && $custSetExist ne "yes" ) {
 
 			my $multiplReal = scalar( CamStepRepeat->GetRepeatStep( $inCAM, $jobId, "mpanel" ) );
-			if ( $multiplNif != $multiplReal ) {
+			if ( $multiplHeg != $multiplReal ) {
 
 				$self->_AddChange(
-								   "Nasobnost v nifu: \"nasobnost_panelu\" nesedí s reálnou násobností v mpanelu. "
+								   "Nasobnost v HEGu: \"nasobnost_panelu\" nesedí s reálnou násobností v mpanelu. "
 									 . "Pravděpodobně není v jobu definovaná sada ( atribut \"customer_set\").",
 								   1
 				);
@@ -88,16 +89,16 @@ sub Run {
 	}
 
 	# 2) Check if "nasobnost_panelu" is not set and real number of step is in panel is not equal to "nasobnost" in nif
-	if ( !defined $multiplNif || $multiplNif eq "" || $multiplNif == 0 ) {
+	if ( !defined $multiplHeg || $multiplHeg eq "" || $multiplHeg == 0 ) {
 
 		my $multiplReal = scalar( CamStepRepeat->GetRepeatStep( $inCAM, $jobId, "panel" ) );
-		my $multiplPnlNif = $nif->GetValue("nasobnost");
+		my $multiplPnlHeg = HegMethods->GetInfoDimensions($jobId)->{"nasobnost"};
 
-		if ( $multiplReal != $multiplPnlNif ) {
+		if ( $multiplReal != $multiplPnlHeg ) {
 
 			$self->_AddChange(
 							   "Pravděpodobně není v jobu definovaná sada nebo zákaznický panel,"
-								 . " protože reálná násobnost panelu ($multiplReal) nesedí s násobností panelu v nifu ($multiplNif).",
+								 . " protože reálná násobnost panelu ($multiplReal) nesedí s násobností panelu v HEGu ($multiplHeg).",
 							   1
 			);
 		}

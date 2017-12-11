@@ -14,6 +14,10 @@ use warnings;
 use aliased 'Packages::ItemResult::ItemResult';
 use aliased 'Packages::CAM::UniRTM::UniRTM::UniRTM';
 use aliased 'Enums::EnumsRout';
+use aliased 'Packages::Polygon::PointsTransform';
+use aliased 'Packages::Polygon::Enums' => "PolyEnums";
+use aliased 'Packages::Polygon::Polygon::PolygonPoints';
+ 
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -151,17 +155,50 @@ sub __OutsideChains {
 
 		if ( scalar(@notInside) && !$nestedStep->GetUserRoutOnBridges() ) {
 
-			my @info = map { $_->GetStrInfo() } @notInside;
-			my $str = join( "; ", @info );
+			# chain sequences, which are not inside limits
+			# Limits are limits of outline sequence resyed by 6mm on all sides
+			# (6, because steps on panel has minimal spacing 6 mm)
 
-			my $m =
-			    "Ve stepu: \""
-			  . $nestedStep->GetStepName()
-			  . "\", ve vrstvě: \""
-			  . $layer
-			  . "\" jsou frézy, které by měly být uvnitř obrysové frézy, ale nejsou ($str).";
+			for(my $i= scalar(@notInside) -1; $i >= 0 ; $i--){
+				 
+				my $outside = $notInside[$i];
+		 
+				my @outsidePoint = $outside->GetPoints();
 
-			$resItem->AddError($m);
+				foreach my $outline (@lefts) {
+
+					my @points = map { { "x" => $_->[0], "y" => $_->[1] } } $outline->GetPoints();
+					my %lim = PointsTransform->GetLimByPoints( \@points );
+					$lim{"xMin"} -= 6;
+					$lim{"xMax"} += 6;
+					$lim{"yMin"} -= 6;
+					$lim{"yMax"} += 6;
+					my @resizedOutline = ();
+					push( @resizedOutline, [ $lim{"xMin"}, $lim{"yMin"} ] );
+					push( @resizedOutline, [ $lim{"xMin"}, $lim{"yMax"} ] );
+					push( @resizedOutline, [ $lim{"xMax"}, $lim{"yMax"} ] );
+					push( @resizedOutline, [ $lim{"xMax"}, $lim{"yMin"} ] );
+
+					if ( PolygonPoints->GetPoints2PolygonPosition( \@outsidePoint, \@resizedOutline ) eq PolyEnums->Pos_INSIDE ) {
+						 splice @notInside, $i, 1;
+						 last; 
+					}
+				}
+			}
+
+			if (@notInside) {
+				my @info = map { $_->GetStrInfo() } @notInside;
+				my $str = join( "; ", @info );
+
+				my $m =
+				    "Ve stepu: \""
+				  . $nestedStep->GetStepName()
+				  . "\", ve vrstvě: \""
+				  . $layer
+				  . "\" jsou frézy, které by měly být uvnitř obrysové frézy, ale nejsou ($str).";
+
+				$resItem->AddError($m);
+			}
 
 		}
 	}

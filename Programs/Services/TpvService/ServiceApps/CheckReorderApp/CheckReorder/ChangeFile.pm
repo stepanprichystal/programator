@@ -63,7 +63,7 @@ sub Create {
 		close($f);
 	}
 	else {
-		die "unable to crate 'Change log' file for pcbid: $jobId";
+		die "unable to crate 'Change log' file ($path) for pcbid: $jobId";
 	}
 
 }

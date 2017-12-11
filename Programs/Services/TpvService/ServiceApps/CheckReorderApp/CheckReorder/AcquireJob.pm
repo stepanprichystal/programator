@@ -9,6 +9,7 @@ package Programs::Services::TpvService::ServiceApps::CheckReorderApp::CheckReord
 use strict;
 use warnings;
 use Log::Log4perl qw(get_logger);
+use File::Copy::Recursive qw(fcopy rcopy dircopy fmove rmove dirmove);
 
 #local library
 use aliased 'Helpers::JobHelper';
@@ -27,7 +28,6 @@ sub Acquire {
 	my $jobId = shift;
 
 	my $result = 1;
- 
 
 	my $logger = get_logger("checkReorder");
 
@@ -37,6 +37,16 @@ sub Acquire {
 
 		# check if tgz exist
 		my $path = JobHelper->GetJobArchive($jobId) . $jobId . ".tgz";
+
+		# Check if it is former job from old archive. If so get path to old archive
+		my $oldPath  = undef;
+		my $oldPcbId = undef;
+
+		if ( JobHelper->FormerPcbId( $jobId, \$oldPath, \$oldPcbId ) && !( -e $path ) ) {
+			$path = $oldPath . $oldPcbId . ".tgz";
+			
+			$self->MoveOldArchive($jobId); # move old archive data to new and rename
+		}
 
 		if ( -e $path ) {
 
@@ -53,8 +63,8 @@ sub Acquire {
 
 				# if succes ( == 0)
 				# sometomes happen that import fail, but job is imported properly, thus test if job already exist
-				if ( $importOk == 0  || CamJob->JobExist( $inCAM, $jobId )) {
-					
+				if ( $importOk == 0 || CamJob->JobExist( $inCAM, $jobId ) ) {
+
 					$importOk = 0;
 					last;
 				}
@@ -91,6 +101,11 @@ sub Acquire {
 			}
 
 		}
+		else {
+
+			die "Error during import job to InCAM db. TGZ file doesn't exist at $path "
+			  . ( defined $oldPcbId ? "(PcbId: $jobId => former Pcbid: $oldPcbId)" : "" );
+		}
 	}
 
 	return $result;
@@ -119,11 +134,70 @@ sub __ImportJob {
 
 }
 
+# Move old archive of job (for  5-digit pcbi id )to new archive (for  6-digit pcbid)
+# Rename all files (replace old pcbid to new)
+sub MoveOldArchive {
+	my $self     = shift;
+	my $newPcbId = shift;
+
+	my $newPath  = JobHelper->GetJobArchive($newPcbId);
+	my $oldPath  = undef;
+	my $oldPcbId = undef;
+
+	if ( !JobHelper->FormerPcbId( $newPcbId, \$oldPath, \$oldPcbId ) ) {
+		die "PcbId: $newPcbId is not \"former\" pcb id";
+	}
+
+	my $copyCnt = dircopy( $oldPath, $newPath );
+
+	if ($copyCnt) {
+	
+		# rename folis in new archiv - old pcbid to new pcb id
+		RenameFiles( $newPath, $oldPcbId, $newPcbId );
+	}
+
+}
+
+sub RenameFiles {
+	my $path    = shift;
+	my $oldName = shift;
+	my $newName = shift;
+
+	opendir( DIR, $path );
+	my @list_of_files = readdir(DIR);
+	foreach (@list_of_files) {
+
+		if ( $_ ne "." && $_ ne ".." ) {
+
+			if ( -d "$path/$_" ) {
+				RenameFiles( "$path/$_", $oldName, $newName );
+			}
+			else {
+ 
+				next if ( $_ !~ /$oldName/i );
+
+				my $fName    = $_;
+				my $fNameNew = $_;
+
+				$fNameNew =~ s/^$oldName/$newName/i;
+				rename "$path/$_", "$path/" . "$fNameNew";
+			}
+		}
+	}
+}
+
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
+	
+	use aliased 'Programs::Services::TpvService::ServiceApps::CheckReorderApp::CheckReorder::AcquireJob';
+	
+	
+	# 1) # zkontroluje jestli jib existuje v InCAM, pokud ne odarchivuje a nahraje do InCAM
+	# 2) # pokud se jedna o job ze stareho archivu, tak nahraje job do InCAMu z neho
+	my $result = AcquireJob->Acquire("D152456"); 
 
 }
 

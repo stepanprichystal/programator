@@ -20,7 +20,7 @@ use lib qw( C:\Perl\site\lib\TpvScripts\Scripts );
 use aliased 'Packages::InCAM::InCAM';
 use aliased 'Programs::Services::TpvService::ServiceApps::ArchiveJobsApp::ArchiveJobsApp' => "App";
  
-my $jobId    = "f61718";
+my $jobId    = "d143241";
 
 my $app = App->new();
 
@@ -32,7 +32,8 @@ $app->{"inCAM"} = $inCAM;
 
 #$app->Run();
 
-$app->__RunJob($jobId);
+#$app->__RunJob($jobId);
+$app->__ProcessJob($jobId);
 
 print "app inited";
 
