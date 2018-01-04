@@ -46,7 +46,7 @@ sub Run {
 	my $layerCnt = CamJob->GetSignalLayerCnt( $inCAM, $jobId );
 
 	# 1) Check nakoveni in cores
-	if ( $layerCnt > 2 ) {
+	if ( !$isPool && $layerCnt > 2 ) {
 
 		my $stackup = Stackup->new($jobId);
  

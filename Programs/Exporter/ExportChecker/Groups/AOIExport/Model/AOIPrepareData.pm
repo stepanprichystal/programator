@@ -62,7 +62,7 @@ sub OnPrepareGroupData {
 	$groupData->SetStepToTest("panel");
 	$groupData->SetLayers( \@layers );
 	
-	$groupData->SetSendToServer( 0 );
+	$groupData->SetSendToServer( 1 );
 	
 	
 	return $groupData;

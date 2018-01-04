@@ -7,6 +7,7 @@ package Helpers::JobHelper;
 #3th party library
 use strict;
 use warnings;
+use XML::Simple;
 
 #local library
 use aliased 'Enums::EnumsPaths';
@@ -85,37 +86,91 @@ sub GetJobArchive {
 	my $self  = shift;
 	my $jobId = shift;
 
-	return EnumsPaths->Jobs_ARCHIV . substr( $jobId, 0,  - 3 ) . "\\" . $jobId . "\\";
+	return EnumsPaths->Jobs_ARCHIV . substr( $jobId, 0, -3 ) . "\\" . $jobId . "\\";
 }
 
+# Return if job id is in old format /[df]{5}/i
+# If so, prepare new format  /d{6}/i
+# If so, prepare old job id  /d{6}/i
 sub FormerPcbId {
 	my $self      = shift;
 	my $jobId     = shift;
 	my $oldArchiv = shift;    # ref, where old job archiv will be stored
-	my $oldJobId = shift;    # ref, where old pcb id will be stored
- 
+	my $oldJobId  = shift;    # ref, where old pcb id will be stored
 
 	my $isFormer = 0;
 
 	my $name = substr( $jobId, 0, 1 );
 	my $num  = substr( $jobId, 1, length($jobId) - 1 );
 
-	if ( length($jobId) == 7 &&  $name =~ /D/i && $num < 200000 ) {
+	if ( length($jobId) == 7 && $name =~ /D/i && $num < 200000 ) {
 
 		$isFormer = 1;
 
 		# New D0..... => Former "D00000-D99999"
 		# New D1..... => Former "F00000-F99999"
-	 
-		my $nameOld = substr( $jobId, 1, 1 ) eq "0" ? "D" : "F";
 
-		$$oldJobId = $nameOld . substr( $jobId, 2, length($jobId) - 2 );
+		$$oldJobId = $self->ConvertJobIdNew2Old($jobId);
 
-		$$oldArchiv = EnumsPaths->Jobs_ARCHIVOLD . substr( $$oldJobId, 0,   - 3 ) . "\\" . $$oldJobId . "\\";
-
+		my $oldJobIdUC = lc($$oldJobId);
+		$$oldArchiv = EnumsPaths->Jobs_ARCHIVOLD . substr( $oldJobIdUC, 0, -3 ) . "\\" . $oldJobIdUC . "\\";
 	}
 
 	return $isFormer;
+}
+
+sub ConvertJobIdOld2New {
+	my $self  = shift;
+	my $jobId = shift;
+
+	my $newJobId = "d";
+
+	# convert
+	if ( $jobId !~ /^[df]\d{5}$/i ) {
+		die "Jobid ($jobId) is not old formated.";
+	}
+
+	my $name = substr( $jobId, 0, 1 );
+	my $num  = substr( $jobId, 1, length($jobId) - 1 );
+
+	if ( $name =~ /d/i ) {
+		$newJobId .= "0" . $num;
+	}
+	elsif ( $name =~ /f/i ) {
+		$newJobId .= "1" . $num;
+	}
+
+	return $newJobId;
+}
+
+sub ConvertJobIdNew2Old {
+	my $self  = shift;
+	my $jobId = shift;
+
+	my $oldJobId = undef;
+
+	# convert
+	if ( $jobId !~ /^d\d{6}$/i ) {
+
+		die "Jobid ($jobId) is not in new format DXXXXXX.";
+	}
+
+	my $name = substr( $jobId, 0, 1 );
+	my $num  = substr( $jobId, 1, length($jobId) - 1 );
+
+	if ( $num >= 200000 ) {
+
+		die "Jobid ($jobId) is in new format, but old format doesn't exist for numbers > D200000.";
+	}
+
+	# New D0..... => Former "D00000-D99999"
+	# New D1..... => Former "F00000-F99999"
+
+	my $nameOld = substr( $jobId, 1, 1 ) eq "0" ? "d" : "f";
+
+	$oldJobId = $nameOld . substr( $jobId, 2, length($jobId) - 2 );
+
+	return $oldJobId;
 }
 
 # return path of job el test
@@ -160,18 +215,38 @@ sub GetJobList {
 	my $self   = shift;
 	my $dbName = shift;
 
+	my @jobList = $self->GetJobListAll($dbName);
+	 
+	@jobList = grep { $_->{"name"} =~ /^d\d{6}$/ } @jobList;
+
+	return @jobList;
+}
+
+# Return listo of all jobs in incam database (default)
+sub GetJobListAll {
+	my $self   = shift;
+	my $dbName = shift;
+
 	unless ( defined $dbName ) {
 		$dbName = "incam";
 	}
 
-	my $path  = EnumsPaths->InCAM_server . "config\\joblist.xml";
-	my @lines = @{ FileHelper->ReadAsLines($path) };
+	my $path = EnumsPaths->InCAM_server . "config\\joblist.xml";
 
-	@lines = grep { $_ =~ /dbName=\"$dbName\"/ } @lines;
+	my $xmlString = FileHelper->ReadAsString($path);
 
-	@lines = map { m/name=\"(\w\d+)\"/ } @lines;
+	my $xml = XMLin(
+		$xmlString,
 
-	return @lines;
+		ForceArray => undef,
+		KeyAttr    => undef,
+	);
+
+	my @jobList = @{ $xml->{"job"} };
+
+	@jobList = grep { $_->{"dbName"} eq $dbName } @jobList;
+ 
+	return @jobList;
 }
 
 sub GetPcbType {

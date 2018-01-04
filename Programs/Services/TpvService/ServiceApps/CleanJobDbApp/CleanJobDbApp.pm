@@ -1,9 +1,9 @@
 #-------------------------------------------------------------------------------------------#
-# Description: App which automatically create ODB file of jobs, which are not in produce
-# Of odb is succesfully created, delete job from incam DB
+# Description: App which automatically create ODB file of jobs, which are not in format DXXXXXX
+# Store it to special archive folder
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Programs::Services::TpvService::ServiceApps::ArchiveJobsApp::ArchiveJobsApp;
+package Programs::Services::TpvService::ServiceApps::CleanJobDbApp::CleanJobDbApp;
 use base("Programs::Services::TpvService::ServiceApps::ServiceAppBase");
 
 #use Class::Interface;
@@ -34,7 +34,7 @@ use aliased 'CamHelpers::CamHelper';
 sub new {
 	my $class = shift;
 
-	my $appName = EnumsApp->App_ARCHIVEJOBS;
+	my $appName = EnumsApp->App_CLEANJOBDB;
 	my $self = $class->SUPER::new( $appName, @_ );
 
 	#my $self = {};
@@ -47,6 +47,7 @@ sub new {
 	$self->{"inCAM"}         = undef;
 	$self->{"processedJobs"} = 0;
 	$self->{"maxLim"}        = 20;
+	$self->{"notEditedDays"}        = 30; # archive jobs which are not edited more than X days
 
 	return $self;
 }
@@ -151,19 +152,14 @@ sub __ProcessJob {
 		return 0;
 	}
 	
-	# test if jobId is in proper format
-	if ( $jobId !~ /^d\d{6}$/i ) {
-		die "Jobid ($jobId) is not in proper format DXXXXXX.";
-	}
+ 
 
 	# 2) Try to create odb file
 	my $odbCreated = $self->__CreateODB($jobId);
 
 	# 3) if ODB was created, delete job from incam db
 	if ($odbCreated) {
-
-		$self->__ClearJobDir($jobId);
-
+ 
 		$self->__DeleteJob($jobId);
 
 		$self->{"processedJobs"}++;
@@ -221,30 +217,17 @@ sub __GetJob2Archive {
 
 	my $logger = get_logger("archiveJobs");
 
-	my @job2Archive = ();
-	my @list = map { $_->{"name"} } JobHelper->GetJobList();
+	 
+	my @job2Archive =  grep { $_->{"name"} !~ /^d\d{6}$/ } JobHelper->GetJobListAll();
 
-	@list = reverse @list;
+	# archive jobs which are edited before more than 3 weeks
+	my $s = $self->{"notEditedDays"} *3600 * 24;
 
-	# get pcb "Ve vyrobe" + "Na predvyrobni priprave" + Pozastavena + "Na odsouhlaseni" + "schvalena"
-	my @pcbInProduc = HegMethods->GetPcbsByStatus( 2, 4, 12, 25, 35 );   
+	@job2Archive = map { $_->{"name"} } grep { (time() -  $_->{"updated"}) > $s } @job2Archive;
+	
  
-	@pcbInProduc = map { $_->{"reference_subjektu"} } @pcbInProduc;
-	$_ = lc for @pcbInProduc;
-
-	# test if @pcbInProduc is not empty, sometimes it return empty array
-	if ( scalar(@pcbInProduc) == 0 ) {
-
-		$logger->error("Helios return 0 dps in produce - error?");
-		return @job2Archive;
-	}
-
-	my %tmp;
-	@tmp{@pcbInProduc} = ();
-	@job2Archive = grep { !exists $tmp{$_} } @list;
-
 	# limit if more than 30jobs, in order don't block  another service apps
-	$logger->info( "Number of jobs to archive: " . scalar(@job2Archive) . "\n" );
+	$logger->info( "Number of jobs to archive edited before more than ".$self->{"notEditedDays"}."  days: " . scalar(@job2Archive) . "\n" );
 
 	return @job2Archive;
 }
@@ -260,7 +243,7 @@ sub __CreateODB {
 	my $logger = get_logger("archiveJobs");
 
 	# 1) Get archive path by JobId format:
-	my $archive = JobHelper->GetJobArchive("$jobId");
+	my $archive = EnumsPaths->Jobs_ARCHIVREMOVED;
  
 	$archive =~ s/\\/\//g;
 
@@ -313,16 +296,7 @@ sub __CreateODB {
 
 	}
 	else {
-
-		# if error   store to special fiel - temporary
-		# get info about user
-		use aliased 'Packages::NifFile::NifFile';
-		my $nif = NifFile->new($jobId);
-		if ( $nif->Exist() ) {
-			my $mess = "USER= " . $nif->GetValue("zpracoval") . ",  JOB= $jobId";
-			get_logger("archiveJobsTemp")->info($mess);
-		}
-
+ 
 		die "Error during export ODB file to archive.\n " . $inCAM->GetExceptionError() . "\n";
 	}
 
@@ -351,37 +325,7 @@ sub __DeleteJob {
 		sleep(1);
 	}
 }
-
-sub __ClearJobDir {
-	my $self    = shift;
-	my $jobId   = shift;
-	my $archive = JobHelper->GetJobArchive($jobId);
-
-	my $poolPath = FileHelper->GetFileNameByPattern( $archive, "\.pool" );
-
-	if ($poolPath) {
-
-		# remove all nc files
-		if ( -e $archive . "nc" ) {
-			unlink FileHelper->GetFilesNameByPattern( $archive . "nc", ".*" );
-		}
-
-		# remove all gerbers
-		if ( -e $archive . "zdroje" ) {
-			unlink FileHelper->GetFilesNameByPattern( $archive . "zdroje", "\.ger" );
-		}
-
-		# remove all opfx
-		if ( -e $archive . "zdroje" ) {
-			unlink FileHelper->GetFilesNameByPattern( $archive . "zdroje", "$jobId@" );
-		}
-
-		# remove all ot files
-		if ( -e $archive . "zdroje\\ot" ) {
-			unlink FileHelper->GetFilesNameByPattern( $archive . "zdroje\\ot", ".*" );
-		}
-	}
-}
+ 
 
 # store err to logs
 sub __ProcessError {

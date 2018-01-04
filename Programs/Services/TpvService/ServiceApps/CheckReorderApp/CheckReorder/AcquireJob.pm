@@ -1,6 +1,6 @@
 #-------------------------------------------------------------------------------------------#
-# Description: Represent Universal Drill tool manager
-
+# Description: Load job to incam db
+#
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Programs::Services::TpvService::ServiceApps::CheckReorderApp::CheckReorder::AcquireJob;
@@ -10,6 +10,7 @@ use strict;
 use warnings;
 use Log::Log4perl qw(get_logger);
 use File::Copy::Recursive qw(fcopy rcopy dircopy fmove rmove dirmove);
+ use File::Path qw(make_path);
 
 #local library
 use aliased 'Helpers::JobHelper';
@@ -19,15 +20,23 @@ use aliased 'CamHelpers::CamJob';
 #  Public method
 #-------------------------------------------------------------------------------------------#
 
+
+
+
 # Try acquire job and import to inCAM
 # return 1 if job is prepared in incam
 # return 0, if job in InCAM doesnt exist
+# Note.: Works only for job id in format: Dxxxxxx (6-number id)
 sub Acquire {
 	my $self  = shift;
 	my $inCAM = shift;
 	my $jobId = shift;
 
 	my $result = 1;
+	
+	if($jobId !~ /^D\d{6}$/i){
+		die "Jobid ($jobId) is invalid."
+	}
 
 	my $logger = get_logger("checkReorder");
 
@@ -42,10 +51,12 @@ sub Acquire {
 		my $oldPath  = undef;
 		my $oldPcbId = undef;
 
+		my $moveOldArchive = 0;
+
 		if ( JobHelper->FormerPcbId( $jobId, \$oldPath, \$oldPcbId ) && !( -e $path ) ) {
 			$path = $oldPath . $oldPcbId . ".tgz";
-			
-			$self->MoveOldArchive($jobId); # move old archive data to new and rename
+ 			
+ 			$moveOldArchive = 1;
 		}
 
 		if ( -e $path ) {
@@ -90,6 +101,10 @@ sub Acquire {
 			if ($importSucc) {
 
 				$result = 1;    # succesfully imported, job is prepared
+				
+				if($moveOldArchive){
+					$self->MoveOldArchive($jobId); # move old archive data to new and rename
+				}
 
 			}
 			else {
@@ -109,6 +124,30 @@ sub Acquire {
 	}
 
 	return $result;
+}
+
+
+# Try acquire job and import to inCAM
+# return 1 if job is prepared in incam
+# return 0, if job in InCAM doesnt exist
+# Note.: Works for job id in new format: Dxxxxxx (6-number id) and old format Dxxxxx (5-number id)
+# Job is loaded to incam always in new format
+sub Acquire2 {
+	my $self  = shift;
+	my $inCAM = shift;
+	my $jobId = shift;
+
+	if($jobId =~ /^[df]\d{5}$/i){
+		
+		$jobId = JobHelper->ConvertJobIdOld2New($jobId);
+	}
+	 
+	# Supress all toolkit exception/error windows
+	$inCAM->SupressToolkitException(1);
+	my $result = $self->Acquire($inCAM, $jobId);
+	$inCAM->SupressToolkitException(0);
+	
+	return $result
 }
 
 sub __ImportJob {
@@ -146,6 +185,13 @@ sub MoveOldArchive {
 
 	if ( !JobHelper->FormerPcbId( $newPcbId, \$oldPath, \$oldPcbId ) ) {
 		die "PcbId: $newPcbId is not \"former\" pcb id";
+	}
+ 
+ 
+	unless ( -e $newPath ) {
+
+		$newPath = uc($newPath);
+		 make_path($newPath);
 	}
 
 	my $copyCnt = dircopy( $oldPath, $newPath );
@@ -193,12 +239,16 @@ my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	
 	use aliased 'Programs::Services::TpvService::ServiceApps::CheckReorderApp::CheckReorder::AcquireJob';
-	
+	use aliased 'Packages::InCAM::InCAM';
+
+	my $inCAM = InCAM->new();
 	
 	# 1) # zkontroluje jestli jib existuje v InCAM, pokud ne odarchivuje a nahraje do InCAM
 	# 2) # pokud se jedna o job ze stareho archivu, tak nahraje job do InCAMu z neho
-	my $result = AcquireJob->Acquire("D152456"); 
+	#my $result = AcquireJob->Acquire($inCAM,"d142003"); 
 
+
+	AcquireJob->MoveOldArchive("d142003");
 }
 
 1;

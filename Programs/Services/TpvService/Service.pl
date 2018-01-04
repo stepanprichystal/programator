@@ -11,6 +11,7 @@ use strict;
 use warnings;
 use Log::Log4perl qw(get_logger :levels);
 use Try::Tiny;
+use XML::Simple;
 
 use lib qw( \\\\incam\\InCAM\\server\\site_data\\scripts);
 use lib qw( C:\Perl\site\lib\TpvScripts\Scripts );
@@ -21,6 +22,7 @@ use aliased 'Packages::Other::AppConf';
 use aliased 'Connectors::TpvConnector::TpvMethods';
 use aliased 'Enums::EnumsPaths';
 use aliased 'Enums::EnumsApp';
+use aliased 'Helpers::FileHelper';
 
 # applications
 use aliased 'Programs::Services::TpvService::ServiceApps::CheckReorderApp::CheckReorderApp';
@@ -80,30 +82,17 @@ sub WorkerMethod {
 	my $logger = get_logger("service");
 
 	# ------------------------------------------------
-	# all registered app + period of launch in minutes
+	# load all registered app + period of launch in minutes
 	#-------------------------------------------------
 
-	my %regApp = ();
+	my $path      = GeneralHelper->Root() . "\\Programs\\Services\\TpvService\\ServiceList.xml";
+	my $xmlString = FileHelper->ReadAsString($path);
 
-	$regApp{ EnumsApp->App_CHECKREORDER }->{"repeat"}   = 0.5;
-	$regApp{ EnumsApp->App_CHECKREORDER }->{"night"}    = 0;
-	
-	$regApp{ EnumsApp->App_PROCESSREORDER }->{"repeat"} = 1;
-	$regApp{ EnumsApp->App_PROCESSREORDER }->{"night"}  = 0;
-	
-	$regApp{ EnumsApp->App_MDIDATA }->{"repeat"}        = 1;
-	$regApp{ EnumsApp->App_MDIDATA }->{"night"}         = 0;
-	
-	$regApp{ EnumsApp->App_JETPRINTDATA }->{"repeat"}    = 60;
-	$regApp{ EnumsApp->App_JETPRINTDATA }->{"night"}     = 0;
-	
-	$regApp{ EnumsApp->App_ARCHIVEJOBS }->{"repeat"}    = 15;
-	$regApp{ EnumsApp->App_ARCHIVEJOBS }->{"night"}     = 1;
-	
-#	$regApp{ EnumsApp->App_TEST }->{"repeat"}    = 60;
-#	$regApp{ EnumsApp->App_TEST }->{"night"}     = 0;
-	
-	
+	my $xml = XMLin(
+		$xmlString,
+	);
+
+	my %regApp = %{ $xml->{"app"} };
 
 	# ------------------------------------------------
 
@@ -111,10 +100,14 @@ sub WorkerMethod {
 
 	# Launch app according last launch time
 	foreach my $appName ( keys %regApp ) {
+		
+		if ( $regApp{$appName}->{"active"} == 0){
+			next;
+		}
 
 		# check if app should run over night niht is 22:00 - 6:00, when no TPV in office
-		my $curHours = (localtime())[2];
-		if($regApp{$appName}->{"night"} && ($curHours >= 6 && $curHours < 22)){
+		my $curHours = ( localtime() )[2];
+		if ( $regApp{$appName}->{"night"} && ( $curHours >= 6 && $curHours < 22 ) ) {
 			next;
 		}
 
@@ -155,6 +148,7 @@ sub __GetApp {
 	my $app = undef;
 
 	my $logger = get_logger("service");
+
 	#$logger->debug("get app");
 
 	if ( $appName eq EnumsApp->App_CHECKREORDER ) {
@@ -182,8 +176,11 @@ sub __GetApp {
 	elsif ( $appName eq EnumsApp->App_TEST ) {
 
 		$app = TmpApp->new();
+	
+	}else{
+ 
+		die "App class for app name: $appName is not implemented.";
 	}
- 	
 
 	return $app;
 }

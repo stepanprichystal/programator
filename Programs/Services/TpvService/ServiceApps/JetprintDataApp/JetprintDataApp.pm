@@ -45,7 +45,7 @@ sub new {
 	#my $self = {};
 	bless $self;
 
-	$self->__SetLogging();
+	$self->_SetLogging();
 
 	# All controls
 
@@ -279,14 +279,7 @@ sub __ProcessError {
 
 }
 
-sub __SetLogging {
-	my $self = shift;
-
-	$self->{"logger"} = get_logger("jetprintData");
-
-	$self->{"logger"}->debug("test of logging");
-
-}
+ 
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

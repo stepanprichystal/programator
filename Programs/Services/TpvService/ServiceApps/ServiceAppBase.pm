@@ -9,6 +9,7 @@ package Programs::Services::TpvService::ServiceApps::ServiceAppBase;
 #3th party library
 use strict;
 use warnings;
+use Log::Log4perl qw(get_logger);
 
 #local library
 use aliased 'Helpers::GeneralHelper';
@@ -92,6 +93,16 @@ sub _CloseJob{
 	$self->{"inCAM"}->COM( "close_job",   "job" => "$jobId" );
 }
 
+
+
+sub _SetLogging {
+	my $self = shift;
+
+	$self->{"logger"} = get_logger($self->{"appName"});
+
+	$self->{"logger"}->debug("test of logging");
+
+}
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#

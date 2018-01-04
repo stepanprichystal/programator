@@ -495,7 +495,7 @@ sub JobExist {
 	my $inCAM = shift;
 	my $jobId = shift;
 
-	my @list = $self->GetJobList($inCAM);
+	my @list =  $self->GetJobList($inCAM);
 
 	my $exist = scalar( grep { $_ =~ /^$jobId$/i } @list );
 

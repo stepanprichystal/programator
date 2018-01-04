@@ -10,8 +10,8 @@ use constant {
 	App_MDIDATA => "mdiData",
 	App_JETPRINTDATA => "jetprintData",
 	App_ARCHIVEJOBS => "archiveJobs",
-	App_TEST => "testApp",
- 
+	App_CLEANJOBDB => "cleanJobDb",
+	App_TEST => "testService"
 };
 
 

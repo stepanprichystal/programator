@@ -46,7 +46,7 @@ sub new {
 	#my $self = {};
 	bless $self;
 
-	$self->__SetLogging();
+	$self->_SetLogging();
 
 	# All controls
 
@@ -249,24 +249,7 @@ sub __ProcessJobResult {
 
 }
 
-sub __SetLogging {
-	my $self = shift;
-
-	# 2) Load log4perl logger config
-	#my $appDir = dirname(__FILE__);
-	#Log::Log4perl->init("$appDir\\Logger.conf");
-
-	my $dir = EnumsPaths->Client_INCAMTMPLOGS . "processReorder";
-
-	unless ( -e $dir ) {
-		mkdir($dir) or die "Can't create dir: " . $dir . $_;
-	}
-
-	$self->{"logger"} = get_logger("processReorder");
-
-	$self->{"logger"}->debug("test of logging");
-
-}
+ 
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

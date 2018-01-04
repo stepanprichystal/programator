@@ -53,7 +53,7 @@ sub new {
 
 	$self->{"inCAM"}         = undef;
 	$self->{"processedJobs"} = 0;
-	$self->{"maxLim"}        = 15;
+	$self->{"maxLim"}        = 100;
 
 	return $self;
 }
@@ -71,24 +71,36 @@ sub Run {
 		$self->{"logger"}->debug("In eval");
 
 		# 2) Load Reorder pcb
-		my @pcbInProduc = HegMethods->GetPcbsInProduc();        # get pcb "Ve vyrobe"
-
+		my @pcbInProduc = HegMethods->GetPcbsByStatus(4);
+	 
 		@pcbInProduc = map { $_->{"reference_subjektu"} } @pcbInProduc;
 		
-		my @pcb = ();
+		my @pool = ();
 		foreach my $jobId (@pcbInProduc) {
 			
-			my $tmp = lc($jobId);
-			my $archive = JobHelper->GetJobArchive($tmp);
-			unless( -e $archive){
-				push(@pcb, $jobId);
-			}
-			
-		}
-		
-		$self->{"logger"}->debug("Pcb to unarchove:" . scalar(@pcb));
+			$jobId = lc($jobId);
+ 
+			if ( HegMethods->GetPcbIsPool($jobId) ) {
+				
+				my $master = JobHelper->GetJobArchive($jobId) . "\\$jobId.pool";
+ 
+				if ( -e $master ) {
 
-		if ( scalar(@pcb) ) {
+					my $nc    = JobHelper->GetJobArchive($jobId) . "\\nc";
+					my @files = <$nc/*>;
+
+					if ( scalar(@files) == 0 ) {
+
+						push( @pool, $jobId );
+					}
+				}
+
+			}
+		}
+
+		$self->{"logger"}->debug( "Jobs to process: " . scalar(@pool) );
+
+		if ( scalar(@pool) ) {
 
 			$self->{"logger"}->debug("Before get InCAM");
 
@@ -99,21 +111,12 @@ sub Run {
 
 			$self->{"logger"}->debug("After get InCAM");
 
-			#my %hash = ( "reference_subjektu" => "f52456-01" );
-			#@reorders = ( \%hash );
+			foreach my $order (@pool) {
 
-			foreach my $jobId (@pcb) {
-				
-				my $tmp = lc($jobId);
-				
-			 
-					
-					$self->{"logger"}->info("Process reorder: $jobId");
+				$self->{"logger"}->info("Process reorder: $order");
 
-					$self->__RunJob($jobId);
-				}
- 	
-			 
+				$self->__RunJob($order);
+			}
 		}
 
 	};
@@ -130,12 +133,8 @@ sub Run {
 sub __RunJob {
 	my $self    = shift;
 	my $jobId = shift;
-	#my ($jobId) = $orderId =~ /^(\w\d+)-\d+/i;
-	$jobId = lc($jobId);
-	
-	if(!defined $jobId ||  $jobId eq ""){
-		die;
-	}
+
+ 
 
 	# DEBUG DELETE
 	#$self->__ProcessJob($orderId);
@@ -159,16 +158,15 @@ sub __RunJob {
 
 		my $err = "Process order id: \"$jobId\" exited with error: \n $eStr";
 
-	 
 		# if job is open by server, close and checkin job after error (other server block job)
-		 
-		if(CamJob->IsJobOpen($self->{"inCAM"}, $jobId)){
-			
-			$self->{"inCAM"}->COM( "save_job", "job" => "$jobId" );
+
+		if ( CamJob->IsJobOpen( $self->{"inCAM"}, $jobId ) ) {
+
+			$self->{"inCAM"}->COM( "save_job",    "job" => "$jobId" );
 			$self->{"inCAM"}->COM( "check_inout", "job" => "$jobId", "mode" => "in", "ent_type" => "job" );
-			$self->{"inCAM"}->COM( "close_job", "job" => "$jobId" );
+			$self->{"inCAM"}->COM( "close_job",   "job" => "$jobId" );
 		}
- 
+
 	}
 }
 
@@ -177,33 +175,22 @@ sub __RunJob {
 ##------------------------------------------------
 
 sub __ProcessJob {
-	my $self    = shift;
+	my $self  = shift;
 	my $jobId = shift;
 
 	my $inCAM = $self->{"inCAM"};
 
- 
 	$jobId = lc($jobId);
- 
-
-	# 1) Check if pcb exist in InCAM
-	my $jobExist = AcquireJob->Acquire( $inCAM, $jobId );
- 
 
 	$self->_OpenJob($jobId);
- 
 
- 
-	if ($jobExist) {
-		$inCAM->COM( "check_inout", "job" => "$jobId", "mode" => "in", "ent_type" => "job" );
-		$inCAM->COM( "close_job", "job" => "$jobId" );
-	}
+	#use aliased 'Packages::Reorder::ProcessReorder::Tasks::EXPORT';
 
- 
+	#my $export = EXPORT->new( "EXPORT", $inCAM, $jobId, 0 );
+
+	  $self->_CloseJob($jobId);
+
 }
- 
-
- 
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
