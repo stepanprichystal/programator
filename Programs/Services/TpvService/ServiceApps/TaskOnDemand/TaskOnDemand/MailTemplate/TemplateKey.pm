@@ -3,7 +3,7 @@
 # Description: Inherit class, which help save keys and values to template
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::Pdf::ControlPdf::StencilControlPdf::HtmlTemplate::TemplateKey;
+package Programs::Services::TpvService::ServiceApps::TaskOnDemand::TaskOnDemand::MailTemplate::TemplateKey;
 use base("Packages::Other::HtmlTemplate::TemplateKeyBase");
 
 
@@ -39,35 +39,40 @@ sub SetKey{
 	$self->_SaveKeyData($key, $en, $cz);
 }
  
+sub SetAppName{
+	my $self      = shift;
+	my $en      = shift;
+	my $cz      = shift;
+	
+	$self->_SaveKeyData("AppName", $en, $cz);
+} 
 
+ 
+sub SetMessageType{
+	my $self      = shift;
+	my $en      = shift;
+	my $cz      = shift;
+	
+	$self->_SaveKeyData("MessageType", $en, $cz);
+} 
 
+sub SetMessageTypeClr{
+	my $self      = shift;
+	my $en      = shift;
+	my $cz      = shift;
+	
+	$self->_SaveKeyData("MessageTypeClr", $en, $cz);
+} 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+ 
+ 
+sub SetTaskType{
+	my $self      = shift;
+	my $en      = shift;
+	my $cz      = shift;
+	
+	$self->_SaveKeyData("TaskType", $en, $cz);
+}
 
 sub SetJobId{
 	my $self      = shift;
@@ -77,29 +82,24 @@ sub SetJobId{
 	$self->_SaveKeyData("JobId", $en, $cz);
 }
 
-sub SetPreviewTop{
+
+sub SetJobAuthor{
 	my $self      = shift;
 	my $en      = shift;
 	my $cz      = shift;
 	
-	$self->_SaveKeyData("PreviewTop", $en, $cz);
+	$self->_SaveKeyData("JobAuthor", $en, $cz);
 }
 
-sub SetPreviewBot{
+sub SetMessage{
 	my $self      = shift;
 	my $en      = shift;
 	my $cz      = shift;
 	
-	$self->_SaveKeyData("PreviewBot", $en, $cz);
+	$self->_SaveKeyData("Message", $en, $cz);
 }
 
-sub SetPreviewStackup{
-	my $self      = shift;
-	my $en      = shift;
-	my $cz      = shift;
-	
-	$self->_SaveKeyData("PreviewStackup", $en, $cz);
-}
+ 
  
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

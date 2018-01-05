@@ -4,11 +4,11 @@
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Packages::Pdf::ControlPdf::PcbControlPdf::HtmlTemplate::TemplateKey;
-use base("Packages::Pdf::Template2Pdf::TemplateKeyBase");
+use base("Packages::Other::HtmlTemplate::TemplateKeyBase");
 
 
 use Class::Interface;
-&implements('Packages::Pdf::Template2Pdf::ITemplateKey');
+&implements('Packages::Other::HtmlTemplate::ITemplateKey');
 
 #3th party library
 use strict;

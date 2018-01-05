@@ -11,6 +11,7 @@ use constant {
 	App_JETPRINTDATA => "jetprintData",
 	App_ARCHIVEJOBS => "archiveJobs",
 	App_CLEANJOBDB => "cleanJobDb",
+	App_TASKONDEMAND => "taskOnDemand",
 	App_TEST => "testService"
 };
 
@@ -46,6 +47,10 @@ sub GetTitle{
 	}elsif($code eq App_ARCHIVEJOBS){
 		
 		$title = "Archive jobs";	
+		
+	}elsif($code eq App_TASKONDEMAND){
+		
+		$title = "Task on demand";	
 	}
 	
 	return $title;

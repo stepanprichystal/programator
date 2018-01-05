@@ -22,7 +22,7 @@ use aliased 'CamHelpers::CamStep';
 use aliased 'Helpers::JobHelper';
 use aliased 'Enums::EnumsPaths';
 use aliased 'CamHelpers::CamStepRepeat';
-use aliased 'Packages::Pdf::Template2Pdf::Template2Pdf';
+use aliased 'Packages::Other::HtmlTemplate::HtmlTemplate';
 use aliased 'Packages::Pdf::ControlPdf::StencilControlPdf::HtmlTemplate::TemplateKey';
 use aliased 'Packages::Pdf::ControlPdf::StencilControlPdf::FinalPreview::FinalPreview';
 use aliased 'Packages::Pdf::ControlPdf::StencilControlPdf::FinalPreview::Enums' => "EnumsFinal";
@@ -54,7 +54,7 @@ sub new {
 	$self->{"outputPdf"} = OutputFinalPdf->new( $self->{"lang"} );
 	$self->{"fillTemplate"} = FillTemplate->new( $self->{"inCAM"}, $self->{"jobId"} );
 
-	$self->{"template"}      = Template2Pdf->new( $self->{"lang"} );
+	$self->{"template"}      = HtmlTemplate->new( $self->{"lang"} );
 	$self->{"previewTop"}    = FinalPreview->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"pdfStep"}, EnumsFinal->View_FROMTOP );
 	$self->{"previewSingle"} = SinglePreview->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"step"}, $self->{"lang"} );
 
@@ -140,7 +140,7 @@ sub __ProcessTemplate {
 
 	$self->{"fillTemplate"}->Fill( $templData, $previewTopPath,  $self->{"infoToPdf"} );
 
-	my $result = $self->{"template"}->Convert( $tempPath, $templData );
+	my $result = $self->{"template"}->ProcessTemplatePdf( $tempPath, $templData );
 
 	unlink($previewTopPath);
 }
