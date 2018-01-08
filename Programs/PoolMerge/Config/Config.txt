@@ -33,6 +33,12 @@ appName = Pool merger
 # If window should stay hideen after start app
 hideAfterStart = 1
 
+# Number of second, succesfull finished job will be auto removed from queue
+autoRemove = 20
+
+# Name of windows env variable, which set if PoolMerger is server version
+serverEnvVar = TPV_PoolServerVersion
+
 # Loging type 
 0 - no log, 
 1 - log to file (console is empty)

@@ -2,6 +2,7 @@
 
 #-------------------------------------------------------------------------------------------#
 # Description: This script only run exporter utility in tray mode
+# Export utility can be "server" version. If exist envirmental var TPV_ExportServerVersion = 1
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 

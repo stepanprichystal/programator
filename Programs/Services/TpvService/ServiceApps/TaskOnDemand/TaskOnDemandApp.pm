@@ -16,9 +16,9 @@ use Data::Dump qw(dump);
 use File::Basename;
 use Log::Log4perl qw(get_logger);
 
-
 #local library
 use aliased 'Connectors::HeliosConnector::HegMethods';
+use aliased 'Connectors::TpvConnector::TaskOndemMethods';
 use aliased 'Enums::EnumsApp';
 use aliased 'Helpers::GeneralHelper';
 use aliased 'Helpers::FileHelper';
@@ -26,6 +26,9 @@ use aliased 'Helpers::JobHelper';
 use aliased 'CamHelpers::CamJob';
 use aliased 'Enums::EnumsPaths';
 use aliased 'CamHelpers::CamHelper';
+use aliased 'Programs::Services::TpvService::ServiceApps::CheckReorderApp::CheckReorder::AcquireJob';
+use aliased 'Programs::Services::TpvService::ServiceApps::TaskOnDemand::Enums' => 'TaskEnums';
+use aliased 'Programs::Services::TpvService::ServiceApps::TaskOnDemand::TaskOnDemand::ControlData';
 
 #-------------------------------------------------------------------------------------------#
 #  Public method
@@ -46,7 +49,7 @@ sub new {
 
 	$self->{"inCAM"}         = undef;
 	$self->{"processedJobs"} = 0;
-	$self->{"maxLim"}        = 20;
+	$self->{"maxLim"}        = 4;
 
 	return $self;
 }
@@ -60,7 +63,7 @@ sub Run {
 	eval {
 
 		# 1) Get jobs to archvie
-		my @jobs = $self->__GetJob2Archive();
+		my @jobs = TaskOndemMethods->GetAllTasks();
 
 		if ( scalar(@jobs) ) {
 
@@ -73,11 +76,12 @@ sub Run {
 
 			$self->{"logger"}->debug("After get InCAM");
 
-			foreach my $jobId (@jobs) {
+			foreach my $jobInf (@jobs) {
 
-				$self->{"logger"}->info("Process job: $jobId");
+				$self->{"logger"}->info(
+						"Process task, jobId: " . $jobInf->{"JobId"} . " orderId: " . $jobInf->{"OrderId"} . " task type: " . $jobInf->{"TaskType"} );
 
-				$self->__RunJob($jobId);
+				$self->__RunJob( $jobInf->{"JobId"}, $jobInf->{"OrderId"}, $jobInf->{"TaskType"} );
 
 				# check max limit of processed jobs in order app doesn't run too long
 				# and block another app
@@ -98,12 +102,14 @@ sub Run {
 }
 
 sub __RunJob {
-	my $self  = shift;
-	my $jobId = shift;
+	my $self     = shift;
+	my $jobId    = shift;
+	my $orderId  = shift;
+	my $taskType = shift;
 
 	eval {
 
-		$self->__ProcessJob($jobId)
+		$self->__ProcessJob( $jobId, $orderId, $taskType );
 
 	};
 	if ($@) {
@@ -118,7 +124,7 @@ sub __RunJob {
 
 		my $err = "Process job id: \"$jobId\" exited with error: \n $eStr";
 
-		$self->__ProcessError( $jobId, $err );
+		$self->__ProcessError( $jobId, $orderId, $taskType, $err );
 
 		if ( CamJob->IsJobOpen( $self->{"inCAM"}, $jobId ) ) {
 			$self->{"inCAM"}->COM( "check_inout", "job" => "$jobId", "mode" => "in", "ent_type" => "job" );
@@ -132,262 +138,56 @@ sub __RunJob {
 ##------------------------------------------------
 
 sub __ProcessJob {
-	my $self  = shift;
-	my $jobId = shift;
+	my $self     = shift;
+	my $jobId    = shift;
+	my $orderId  = shift;
+	my $taskType = shift;
 
 	$jobId = lc($jobId);
 
 	my $inCAM = $self->{"inCAM"};
 
-	# 1) Test if job is not open and not checked out by someone
+	# 1) Check if pcb exist in InCAM and open it
+	my $jobExist = AcquireJob->Acquire( $inCAM, $jobId );
 
-	my $errMess = "";
-	my $inUse = $self->__JobInUse( $jobId, \$errMess );
+	$self->_OpenJob($jobId);
 
-	if ($inUse) {
+	# process task
+	if ( $taskType eq TaskEnums->Data_COOPERATION ) {
 
-		# if in log error, but dont store error to db, just skip archivation
-		$self->{"logger"}->error($errMess);
-		return 0;
+		my $data = ControlData->new( $inCAM, $jobId );
+		my $errMess = "";
+		$data->Run( \$errMess, TaskEnums->Data_COOPERATION );
 	}
-	
-	# test if jobId is in proper format
-	if ( $jobId !~ /^d\d{6}$/i ) {
-		die "Jobid ($jobId) is not in proper format DXXXXXX.";
-	}
+	elsif ( $taskType eq TaskEnums->Data_CONTROL ) {
 
-	# 2) Try to create odb file
-	my $odbCreated = $self->__CreateODB($jobId);
-
-	# 3) if ODB was created, delete job from incam db
-	if ($odbCreated) {
-
-		$self->__ClearJobDir($jobId);
-
-		$self->__DeleteJob($jobId);
-
-		$self->{"processedJobs"}++;
-	}
-}
-
-# Get if job is checked out or open by user
-sub __JobInUse {
-	my $self  = shift;
-	my $jobId = shift;
-	my $mess  = shift;
-
-	my $inCAM = $self->{"inCAM"};
-
-	my $result = 1;
-
-	my $usr = undef;
-	my $isOpen = CamJob->IsJobOpen( $inCAM, $jobId, 1, \$usr );
-
-	if ($isOpen) {
-		$$mess .= "Unable to archive job because is open by: $usr\n";
-	}
-
-	$inCAM->COM( 'check_inout', "ent_type" => 'job', "job" => "$jobId", "mode" => 'test' );
-	my $checked = $inCAM->GetReply();
-
-	my $checkinOk = 1;
-	if ( $checked ne "no" ) {
-
-		# If job is not open, try checkin job
-		if ( !$isOpen ) {
-
-			$inCAM->HandleException(1);
-			my $res = $inCAM->COM( "checkin_closed_job", "job" => "$jobId" );
-			$inCAM->HandleException(0);
-
-			# if checin is not possible, error
-			if ( $res != 0 ) {
-				$$mess .= "Unable to archive job bacause is checked out by: $checked\n";
-				$checkinOk = 0;
-			}
-		}
-	}
-
-	if ( $checkinOk && !$isOpen ) {
-		$result = 0;
-	}
-
-	return $result;
-}
-
-# Return all jopbs which are not "in produce"
-sub __GetJob2Archive {
-	my $self = shift;
-
-	my $logger = get_logger("archiveJobs");
-
-	my @job2Archive = ();
-	my @list = map { $_->{"name"} } JobHelper->GetJobList();
-
-	@list = reverse @list;
-
-	# get pcb "Ve vyrobe" + "Na predvyrobni priprave" + Pozastavena + "Na odsouhlaseni" + "schvalena"
-	my @pcbInProduc = HegMethods->GetPcbsByStatus( 2, 4, 12, 25, 35 );   
- 
-	@pcbInProduc = map { $_->{"reference_subjektu"} } @pcbInProduc;
-	$_ = lc for @pcbInProduc;
-
-	# test if @pcbInProduc is not empty, sometimes it return empty array
-	if ( scalar(@pcbInProduc) == 0 ) {
-
-		$logger->error("Helios return 0 dps in produce - error?");
-		return @job2Archive;
-	}
-
-	my %tmp;
-	@tmp{@pcbInProduc} = ();
-	@job2Archive = grep { !exists $tmp{$_} } @list;
-
-	# limit if more than 30jobs, in order don't block  another service apps
-	$logger->info( "Number of jobs to archive: " . scalar(@job2Archive) . "\n" );
-
-	return @job2Archive;
-}
-
-sub __CreateODB {
-	my $self  = shift;
-	my $jobId = shift;
-
-	my $inCAM = $self->{"inCAM"};
-
-	my $result = 0;
-
-	my $logger = get_logger("archiveJobs");
-
-	# 1) Get archive path by JobId format:
-	my $archive = JobHelper->GetJobArchive("$jobId");
- 
-	$archive =~ s/\\/\//g;
-
-	unless ( -e $archive ) {
-		die "Archive path $archive doesn't exist.\n";
-	}
-
-	# test if job phzsically exist in incam jobdb. If not, it is "incam joblist" error
-	# Check if old tgz exist and skip creating odb
-	my $jobDbPath = EnumsPaths->InCAM_jobs . $jobId;
-
-	unless ( -e $jobDbPath ) {
-
-		# if old tgz exist - solved, else die
-		if ( -e $archive . $jobId . ".tgz" ) {
-
-			$self->{"logger"}->error("Job source directory doesn't exist, but ODB file exist");
-
-			$result = 1;
-			return $result;
-		}
-		else {
-
-			die "Job source directory doesn't exist ( $jobDbPath ). Odb file in job archive doesn't exist too.\n";
-		}
-	}
-
-	$inCAM->HandleException(1);
-
-	my $exportResult = $inCAM->COM( 'export_job', job => "$jobId", path => "$archive", mode => 'tar_gzip', submode => 'full', overwrite => 'yes' );
-
-	$inCAM->HandleException(0);
-
-	# if export ok, do check if odb file really exist
-	if ( $exportResult == 0 ) {
-
-		my $odbFile = $archive . $jobId . ".tgz";
-		unless ( -e $odbFile ) {
-			die "Error during export ODB file to archive, odb file: $odbFile doesn't exist\n";
-		}
-
-		my $fileSize = -s $odbFile;
-		if ( $fileSize < 200 ) {
-			die "Perhaps error during export ODB file to archive, odb file: $odbFile is smaller than 200kB\n";
-		}
-
-		if ( -e $odbFile && $fileSize >= 200 ) {
-			$result = 1;
-		}
-
+		my $data = ControlData->new( $inCAM, $jobId );
+		my $errMess = "";
+		$data->Run( \$errMess, TaskEnums->Data_CONTROL );
 	}
 	else {
 
-		# if error   store to special fiel - temporary
-		# get info about user
-		use aliased 'Packages::NifFile::NifFile';
-		my $nif = NifFile->new($jobId);
-		if ( $nif->Exist() ) {
-			my $mess = "USER= " . $nif->GetValue("zpracoval") . ",  JOB= $jobId";
-			get_logger("archiveJobsTemp")->info($mess);
-		}
-
-		die "Error during export ODB file to archive.\n " . $inCAM->GetExceptionError() . "\n";
+		die "Not implemented type: $taskType"
 	}
 
-	return $result;
-}
+	# 3) if ODB was created, delete job from incam db
 
-# Delete job
-# Sometimes there is problem, job is succesfully deleted, but stay in job list
-# Thus try 3 attemt of deletion
-sub __DeleteJob {
-	my $self  = shift;
-	my $jobId = shift;
-
-	my $inCAM = $self->{"inCAM"};
-
-	my $result = 0;
-
-	foreach ( 1 .. 3 ) {
-
-		$inCAM->COM( 'delete_entity', "job" => '', "type" => 'job', "name" => "$jobId" );
-		unless ( CamJob->JobExist( $inCAM, $jobId ) ) {
-			last;
-		}
-
-		$self->{"logger"}->error( "Job still exist after delete. Attempt number: " . $_ );
-		sleep(1);
+	if ($jobExist) {
+		$inCAM->COM( "check_inout", "job" => "$jobId", "mode" => "in", "ent_type" => "job" );
+		$inCAM->COM( "close_job", "job" => "$jobId" );
 	}
-}
 
-sub __ClearJobDir {
-	my $self    = shift;
-	my $jobId   = shift;
-	my $archive = JobHelper->GetJobArchive($jobId);
+	TaskOndemMethods->DeleteTaskPcb( $jobId, $taskType );
 
-	my $poolPath = FileHelper->GetFileNameByPattern( $archive, "\.pool" );
-
-	if ($poolPath) {
-
-		# remove all nc files
-		if ( -e $archive . "nc" ) {
-			unlink FileHelper->GetFilesNameByPattern( $archive . "nc", ".*" );
-		}
-
-		# remove all gerbers
-		if ( -e $archive . "zdroje" ) {
-			unlink FileHelper->GetFilesNameByPattern( $archive . "zdroje", "\.ger" );
-		}
-
-		# remove all opfx
-		if ( -e $archive . "zdroje" ) {
-			unlink FileHelper->GetFilesNameByPattern( $archive . "zdroje", "$jobId@" );
-		}
-
-		# remove all ot files
-		if ( -e $archive . "zdroje\\ot" ) {
-			unlink FileHelper->GetFilesNameByPattern( $archive . "zdroje\\ot", ".*" );
-		}
-	}
 }
 
 # store err to logs
 sub __ProcessError {
-	my $self    = shift;
-	my $jobId   = shift;
-	my $errMess = shift;
+	my $self     = shift;
+	my $jobId    = shift;
+	my $orderId  = shift;
+	my $taskType = shift;
+	my $errMess  = shift;
 
 	print STDERR $errMess;
 
@@ -395,10 +195,18 @@ sub __ProcessError {
 	$self->{"logger"}->error($errMess);
 
 	# sent error to log db
-	$self->{"loggerDB"}->Error( $jobId, $errMess );
+	#$self->{"loggerDB"}->Error( $jobId, $errMess );
+
+	# remove task from db
+	if ($orderId) {
+
+		# delete order id task
+	}
+	else {
+		TaskOndemMethods->DeleteTaskPcb( $jobId, $taskType );
+	}
 
 }
-
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

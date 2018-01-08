@@ -23,6 +23,7 @@ use aliased 'Packages::Gerbers::ProduceData::ProduceData';
 use aliased 'Helpers::JobHelper';
 use aliased 'Packages::ETesting::ExportIPC::ExportIPC';
 use aliased 'Packages::Export::OutExport::MeasureData';
+
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
@@ -40,8 +41,8 @@ sub new {
 	$self->{"exportEt"}      = shift;
 	$self->{"exportControl"} = shift;
 	$self->{"controlStep"}   = shift;
-	
-	$self->{"exportIPC"} = ExportIPC->new($self->{"inCAM"}, $self->{"jobId"}, $self->{"cooperStep"}, 1  );	
+
+	$self->{"exportIPC"} = ExportIPC->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"cooperStep"}, 1 );
 	$self->{"exportIPC"}->{"onItemResult"}->Add( sub { $self->__OnCooperETResult(@_) } );
 	$self->{"measureData"} = MeasureData->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"cooperStep"} );
 
@@ -66,7 +67,6 @@ sub Run {
 		$self->__ExportControl();
 
 	}
- 
 
 }
 
@@ -76,11 +76,9 @@ sub __ExportCooperation {
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
 
-
 	# 1) export pdf for measurement
-	
-	$self->{"measureData"}->Output();
 
+	$self->{"measureData"}->Output();
 
 	# 2) Export cooperation data
 	my $produceData = ProduceData->new( $inCAM, $jobId, $self->{"cooperStep"} );
@@ -98,9 +96,7 @@ sub __ExportCooperation {
 	}
 
 	move( $sourcePath, $archivPath . $jobId . "_data.zip" ) or die "Can't move file to : " . $archivPath . $jobId . "_data.zip" . $_;
-	
-	
- 
+
 }
 
 sub __ExportCooperationET {
@@ -109,12 +105,22 @@ sub __ExportCooperationET {
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
 
- 
 	# 1) Export electric test
-	
-	if($self->{"exportEt"}){
-		
+
+	if ( $self->{"exportEt"} ) {
+
 		$self->{"exportIPC"}->Export("kooperace");
+
+		# if script run on server, move el test to r:/El_tests
+		if ( GeneralHelper->IsTPVServer() ) {
+
+			my $ipcPath = EnumsPaths->Client_ELTESTS . $jobId . "_kooperace\\" . $jobId . "_kooperace.ipc";
+			if ( -e $ipcPath ) {
+
+				copy( $ipcPath, EnumsPaths->Jobs_ELTESTSIPC . $jobId . "_kooperace.ipc" );
+			}
+
+		}
 	}
 }
 
@@ -151,7 +157,7 @@ sub __ExportControl {
 	my $sourcePath = $produceData->GetOutput();
 
 	my $archivPath = JobHelper->GetJobArchive($jobId) . "\\Zdroje\\";
- 
+
 	move( $sourcePath, $archivPath . $jobId . "_data_control.zip" ) or die "Can't move file to : " . $archivPath . $jobId . "_data_control.zip" . $_;
 }
 
@@ -175,22 +181,20 @@ sub __DeleteOldFiles {
 		my $archivPath = JobHelper->GetJobArchive($jobId) . "\\Zdroje\\kooperace\\";
 
 		if ( -e $archivPath ) {
-			rmtree($archivPath) or die "Cannot rmtree ".$archivPath." : $!";
+			rmtree($archivPath) or die "Cannot rmtree " . $archivPath . " : $!";
 		}
 	}
-	
+
 	if ( $self->{"exportControl"} ) {
-		
+
 		my $archivPath = JobHelper->GetJobArchive($jobId) . "\\Zdroje\\";
- 
-		if(-e $archivPath . $jobId . "_data_control.zip"){
-			
-			unlink($archivPath . $jobId . "_data_control.zip") or die "Unable to delete ".$archivPath . $jobId . "_data_control.zip";
+
+		if ( -e $archivPath . $jobId . "_data_control.zip" ) {
+
+			unlink( $archivPath . $jobId . "_data_control.zip" ) or die "Unable to delete " . $archivPath . $jobId . "_data_control.zip";
 		}
 	}
 
-
- 
 }
 
 sub TaskItemsCount {
@@ -199,7 +203,7 @@ sub TaskItemsCount {
 	my $totalCnt = 0;
 
 	$totalCnt += $self->{"exportCooper"}  ? 1 : 0;    # cooperation
-	$totalCnt += $self->{"exportEt"}  ? 3 : 0;    # cooperation et
+	$totalCnt += $self->{"exportEt"}      ? 3 : 0;    # cooperation et
 	$totalCnt += $self->{"exportControl"} ? 1 : 0;    # control data
 
 	return $totalCnt;
@@ -211,17 +215,17 @@ sub TaskItemsCount {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-		use aliased 'Packages::Export::OutExport::OutMngr';
-	
-		use aliased 'Packages::InCAM::InCAM';
-	
-		my $inCAM = InCAM->new();
-	
-		my $jobId = "f52457";
-	
-		my $out = OutMngr->new( $inCAM, $jobId, 1, "o+1");
-	
-		$out->Run();
+	use aliased 'Packages::Export::OutExport::OutMngr';
+
+	use aliased 'Packages::InCAM::InCAM';
+
+	my $inCAM = InCAM->new();
+
+	my $jobId = "f52457";
+
+	my $out = OutMngr->new( $inCAM, $jobId, 1, "o+1" );
+
+	$out->Run();
 }
 
 1;

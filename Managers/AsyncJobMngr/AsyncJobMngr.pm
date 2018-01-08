@@ -1,4 +1,3 @@
-#öß§²
 #-------------------------------------------------------------------------------------------#
 # Description: Job manager provide szstem for running more then one InCAM asynchronously
 # in own child thread. Is responsible for:

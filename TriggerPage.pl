@@ -15,69 +15,143 @@ use Log::Log4perl qw(get_logger :levels);
 
 #local library
 use lib qw( \\\\incam\\InCAM\\server\\site_data\\scripts);
+
+use lib qw( C:\Perl\site\lib\TpvScripts\Scripts );
+
+#necessary for load pall packages
+use FindBin;
+use lib "$FindBin::Bin/../";
+use PackagesLib;
+
 #use lib qw( C:\Perl\site\lib\TpvScripts\Scripts );
 use aliased 'Packages::TriggerFunction::MDIFiles';
 use aliased 'Enums::EnumsPaths';
 use aliased 'Packages::TriggerFunction::NCFiles';
 use aliased 'Connectors::HeliosConnector::HegMethods';
+use aliased 'Programs::Services::TpvService::ServiceApps::TaskOnDemand::Enums' => 'TaskEnums';
+use aliased 'Connectors::TpvConnector::TaskOndemMethods';
 
-my $orderId     = shift;    # job order for process
+my $orderId  = shift;    # job order for process
+my $taskType = shift;    # type of task to process
 
+#$orderId = "d152456-01";
+#$taskType = TaskEnums->Data_CONTROL;
 
 my $logConfig = "c:\\Apache24\\htdocs\\tpv\\Logger.conf";
 Log::Log4perl->init($logConfig);
 
-my $logger = get_logger("trigger"); 
+my $logger = get_logger("trigger");
 
 $logger->debug("Trigger page run");
 
-# old way is only job id f123645
-# new way is ordefr id f12345-01
-#if old way get the biggest order id
 
-unless( $orderId =~ /^(\w\d+)-.*$/){
-	
-	my $orderNum = HegMethods->GetPcbOrderNumber($orderId);
-	$orderId .= "-".$orderNum;
-}
+$logger->debug("Params before set default values. Order id: $orderId, Task type: $taskType");
+
+
+# Set default values for params
  
+if (  $taskType eq "not_defined" ) {
+
+	$taskType = TaskEnums->PCB_TOPRODUCE;
+}
+
+$logger->debug("Params after set default values. Order id: $orderId, Task type: $taskType");
+
 my $processed = 1;
 
+if ( $taskType eq TaskEnums->PCB_TOPRODUCE ) {
 
-# 1) change some lines in MDI xml files eval
-eval {
+	__PcbToProduce();
 
-	MDIFiles->AddPartsNumber($orderId);
-
-};
-if ($@) {
-
-	$processed = 0;
-	$logger->error( "\n Error when processing \"MDI files\" job: $orderId.\n" . $@, 1 );
 }
+elsif ( $taskType eq TaskEnums->Data_COOPERATION ) {
 
-# 2) change drilled number in NC files
-eval {
+	__DataCooperation();
 
-	NCFiles->ChangePcbOrderNumber($orderId);
-};
-if ($@) {
-
-	$processed = 0;
-	$logger->error( "\n Error when processing \"NC files\" job: $orderId.\n" . $@, 1 );
 }
+elsif ( $taskType eq TaskEnums->Data_CONTROL ) {
 
- 
+	__DataControl();
+
+}
 
 # Log
 
 if ($processed) {
-	
+
 	$logger->info("$orderId - Processed ");
 
 }
 else {
- 
+
 	$logger->info("$orderId - Processed with ERRORS ");
 }
- 
+
+#-------------------------------------------------------------------------------------------#
+# Func to process requsted tasks
+#-------------------------------------------------------------------------------------------#
+
+sub __PcbToProduce {
+
+	# 1) change some lines in MDI xml files eval
+	eval {
+
+		MDIFiles->AddPartsNumber($orderId);
+
+	};
+	if ($@) {
+
+		$processed = 0;
+		$logger->error( "\n Error when processing \"MDI files\" job: $orderId.\n" . $@, 1 );
+	}
+
+	# 2) change drilled number in NC files
+	eval {
+
+		NCFiles->ChangePcbOrderNumber($orderId);
+	};
+	if ($@) {
+
+		$processed = 0;
+		$logger->error( "\n Error when processing \"NC files\" job: $orderId.\n" . $@, 1 );
+	}
+}
+
+sub __DataCooperation {
+
+	my ($jobId) = $orderId =~ /^(\w\d+)-\d+/i;
+	$jobId = lc($jobId);
+
+	# Insert new request to tpv database. Window services process theses request
+	eval {
+
+		TaskOndemMethods->InsertTaskPcb( $jobId, TaskEnums->Data_COOPERATION );
+
+	};
+	if ($@) {
+
+		$processed = 0;
+		$logger->error( "\n Error when processing task: " . TaskEnums->Data_COOPERATION . " for job: $orderId.\n" . $@, 1 );
+	}
+
+}
+
+sub __DataControl {
+
+	my ($jobId) = $orderId =~ /^(\w\d+)-\d+/i;
+	$jobId = lc($jobId);
+
+	# Insert new request to tpv database. Window services process theses request
+	eval {
+
+		TaskOndemMethods->InsertTaskPcb( $jobId, TaskEnums->Data_CONTROL );
+
+	};
+	if ($@) {
+
+		$processed = 0;
+		$logger->error( "\n Error when processing task: " . TaskEnums->Data_CONTROL . " for job: $orderId.\n" . $@, 1 );
+	}
+
+}
+

@@ -1,5 +1,5 @@
 #-------------------------------------------------------------------------------------------#
-# Description: Prepare paste data
+# Description: Prepare control/cooperation data
 #
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
@@ -61,40 +61,60 @@ sub Run {
 	my $errorStr = shift;    # ref on error string, where error message is stored
 	my $type     = shift;    # Data_COOPERATION, Data_CONTROL
 
-	my $inCAM = $self->{"inCAM"};
-	my $jobId = $self->{"jobId"};
-
 	my $result = 1;
 
-	$self->{"defaultInfo"} = DefaultInfo->new( $inCAM, $jobId );
+	eval {
 
-	# Check data - Group PRE (if we export some group,
-	# always check PRE group too, because thera are important controls)
+		$self->__Run( \$result, $errorStr, $type );
 
-	$self->CheckPREGroup( \$result, $errorStr );
-	my $unit = $self->CheckOUTGroup( \$result, $errorStr, $type );
+	};
+	if ($@) {
 
-	# if check are ok, prepare data
-	#	if ($result) {
-	#
-	#		my $taskData    = $unit->GetExportData();
-	#		my $exportClass = UnitExport->new( UnitEnums->UnitId_OUT );
-	#		$exportClass->SetTaskData($taskData);
-	#
-	#		$exportClass->Init( $inCAM, $jobId, $taskData );
-	#		$exportClass->{"onItemResult"}->Add( sub { $self->ItemResultHandler( \$result, $errorStr, @_ ) } );
-	#		$exportClass->Run();
-	#
-	#	}
-	
- 
+		my $eStr = $@;
+		$$errorStr .= "\n\n" . $eStr;
+		$result = 0;
+
+	}
 
 	$self->SendMail( $result, $errorStr, $type );
 
 	return $result;
 }
 
-sub CheckPREGroup {
+# Export control data
+sub __Run {
+	my $self     = shift;
+	my $result   = shift;
+	my $errorStr = shift;    # ref on error string, where error message is stored
+	my $type     = shift;    # Data_COOPERATION, Data_CONTROL
+
+	my $inCAM = $self->{"inCAM"};
+	my $jobId = $self->{"jobId"};
+
+	$self->{"defaultInfo"} = DefaultInfo->new( $inCAM, $jobId );
+
+	# Check data - Group PRE (if we export some group,
+	# always check PRE group too, because thera are important controls)
+
+	$self->__CheckPREGroup( $result, $errorStr );
+	my $unit = $self->__CheckOUTGroup( $result, $errorStr, $type );
+
+	# if check are ok, prepare data
+	if ($$result) {
+
+		my $taskData    = $unit->GetExportData();
+		my $exportClass = UnitExport->new( UnitEnums->UnitId_OUT );
+		$exportClass->SetTaskData($taskData);
+
+		$exportClass->Init( $inCAM, $jobId, $taskData );
+		$exportClass->{"onItemResult"}->Add( sub { $self->ItemResultHandler( $result, $errorStr, @_ ) } );
+		$exportClass->Run();
+
+	}
+
+}
+
+sub __CheckPREGroup {
 	my $self     = shift;
 	my $result   = shift;
 	my $errorStr = shift;
@@ -120,7 +140,7 @@ sub CheckPREGroup {
 	}
 }
 
-sub CheckOUTGroup {
+sub __CheckOUTGroup {
 	my $self     = shift;
 	my $result   = shift;
 	my $errorStr = shift;
@@ -205,8 +225,8 @@ sub SendMail {
 	}
 
 	$templKey->SetAppName( EnumsApp->GetTitle( EnumsApp->App_TASKONDEMAND ) );
-	$templKey->SetMessageType( $result    ? "SUCCES" : "FAILED" );
-	$templKey->SetMessageTypeClr( $result ? "#BFE89B"     : "#FF8080" );
+	$templKey->SetMessageType( $result    ? "SUCCES"  : "FAILED" );
+	$templKey->SetMessageTypeClr( $result ? "#BFE89B" : "#FF8080" );
 	$templKey->SetTaskType($t);
 	$templKey->SetJobId($jobId);
 	$templKey->SetJobAuthor( CamAttributes->GetJobAttrByName( $inCAM, $jobId, "user_name" ) );
@@ -214,13 +234,15 @@ sub SendMail {
 	my $str = "<br/>";
 
 	if ($result) {
-		my $url = JobHelper->GetJobArchive($jobId) ."Zdroje";
-		$str .= "Archiv: <a ". "href=\"".$url. "\" >".$url."</a>";
+		my $url = JobHelper->GetJobArchive($jobId) . "Zdroje";
+		$str .= "Archiv: <a " . "href=\"" . $url . "\" >" . $url . "</a>";
 	}
 	else {
 
-		$str .= "Please contact TPV<br/><br/> Error detail:<br/>" . $$errorStr;
+		$str .= "Please contact TPV\n\n Error detail:\n" . $$errorStr;
 	}
+	
+	$str =~ s/\n/<br>/g;
 
 	$templKey->SetMessage($str);
 
@@ -235,7 +257,7 @@ sub SendMail {
 
 		# send email
 
-		my $htmlFile = $htmlTempl->GetOutFile();
+		my $htmlFile    = $htmlTempl->GetOutFile();
 		my $htmlFileStr = FileHelper->ReadAsString($htmlFile);
 		unlink($htmlFile);
 
@@ -244,14 +266,14 @@ sub SendMail {
 		$sender->Open(
 			{
 			   to      => 'stepan.prichystal@gatema.cz',
-			   subject => "Task on demand - " . $t. " ($jobId)",
+			   subject => "Task on demand - " . $t . " ($jobId)",
 
 			   #msg     => "I'm sending you the list you wanted.",
 			   #file    => 'filename.txt'
 			   ctype    => "text/html",
 			   encoding => "7bit",
-			  
-			   bcc      => (!$result ? 'stepan.prichystal@gatema.cz' : undef)    #TODO temporary
+
+			   bcc => ( !$result ? 'stepan.prichystal@gatema.cz' : undef )    #TODO temporary
 			}
 		);
 

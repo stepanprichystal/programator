@@ -3,12 +3,22 @@
 <!-- This file specified launch period of apps in TPV windows service -->
 
 <apps>
+
+  <!-- Running in day --> 
+
    <app name="checkReorder" 	active="1" repeat="0.5" night="0" />
    <app name="processReorder" 	active="1" repeat="1" night="0" />
    <app name="mdiData" 			active="1" repeat="1" night="0" />
    <app name="jetprintData" 	active="1" repeat="60" night="0" />
+   <app name="taskOnDemand" 	active="0" repeat="0.5" night="0" />
+   
+  <!-- Running in night --> 
+   
    <app name="archiveJobs" 		active="1" repeat="15" night="1" />
    <app name="cleanJobDb" 		active="1" repeat="120" night="1" />
-
+   
+  <!-- Temporary apps --> 
+   
    <app name="testService" 		active="0" repeat="1" night="0" />
+   
 </apps>

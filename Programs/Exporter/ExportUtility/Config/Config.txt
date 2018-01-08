@@ -34,15 +34,17 @@ appName = Export Utility
 # If window should stay hideen after start app
 hideAfterStart = 1
 
+# Number of second, succesfull finished job will be auto removed from queue
+autoRemove = 20
+
 
 # Loging type 
 # 0 - no log, 
 # 1 - log to file (console is empty)
 logingType = 0
 
-# Server station name 
-# (server version, send err mail if export fail + set aktualni krok of order to err)
-serverName = TPV-SERVER
-#serverName = SPR
+# Name of windows env variable, which set if ExporterUtility is server version
+serverEnvVar = TPV_ExportServerVersion
+ 
 
  

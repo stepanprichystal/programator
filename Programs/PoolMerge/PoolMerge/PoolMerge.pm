@@ -51,9 +51,8 @@ sub new {
 	# Main application form
 	my $form = PoolMergeForm->new( $runMode, undef );
 
-	my $autoRemove = 20;    # 15 second
-
-	my $self = $class->SUPER::new( $form, $autoRemove );
+	my $self = $class->SUPER::new( $form );
+	
 	bless $self;
 
 	my @taskFiles = ();
