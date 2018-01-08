@@ -1,48 +1,26 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Special structure which keep couple key-value
+# Description: Interface, which each template class must implement
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::Pdf::Template2Pdf::KeyItem;
+package Packages::Other::HtmlTemplate::ITemplateKey;
 
 #3th party library
 use strict;
 use warnings;
 
+#use File::Copy;
+
 #local library
 
 #-------------------------------------------------------------------------------------------#
-#  Package methods
+#  Interface
 #-------------------------------------------------------------------------------------------#
 
-sub new {
-	my $self = shift;
-	$self = {};
-	bless $self;
-	
-	$self->{"key"} = shift;
-	$self->{"en"}  = shift;
-	$self->{"cz"}  = shift;
+use Class::Interface;
+&interface;
 
-	return $self;
-}
-
-sub GetText {
-	my $self = shift;
-	my $lang = shift;
-
-	if ( $lang eq "cz" ) {
-
-		return $self->{"cz"};
-
-	}
-	elsif ( $lang eq "en" ) {
-
-		return $self->{"en"};
-	}
-
-	return $self->{"title"};
-}
+sub GetKeyData;
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

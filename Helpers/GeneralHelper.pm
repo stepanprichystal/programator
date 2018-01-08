@@ -305,6 +305,22 @@ sub GetLastInCAMVersion {
 	}
 }
 
+
+# Return if script is running on TPV server
+# TPV server is computer, which has set ENV variable TPV_ServerVersion
+sub IsTPVServer{
+	my $self     = shift;
+ 
+	my $serverComp = $ENV{'TPV_ServerComputer'};
+	
+	unless($serverComp){
+		return 0;
+	}else{
+		return 1;
+	}
+	
+}
+
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#

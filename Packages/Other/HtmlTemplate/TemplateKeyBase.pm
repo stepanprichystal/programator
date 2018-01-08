@@ -1,26 +1,55 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Interface, which each template class must implement
+# Description: This is template class
+# Allow add and keep keys and values for html template
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::Pdf::Template2Pdf::ITemplateKey;
+package Packages::Other::HtmlTemplate::TemplateKeyBase;
 
 #3th party library
 use strict;
 use warnings;
 
-#use File::Copy;
-
 #local library
+use aliased 'Packages::Other::HtmlTemplate::KeyItem';
 
 #-------------------------------------------------------------------------------------------#
-#  Interface
+#  Package methods
 #-------------------------------------------------------------------------------------------#
 
-use Class::Interface;
-&interface;
+sub new {
+	my $self = shift;
+	$self = {};
+	bless $self;
 
-sub GetKeyData;
+	my %keys = ();
+	$self->{'keys'} = \%keys;
+
+	return $self;    # Return the reference to the hash.
+}
+
+sub GetKeyData {
+	my $self = shift;
+
+	return %{ $self->{'keys'} };
+}
+
+sub _SaveKeyData {
+	my $self   = shift;
+	my $key    = shift;
+	my $enText = shift;
+	my $czText = shift;
+
+	if ( !defined $czText || $czText eq "" ) {
+
+		$czText = $enText;
+	}
+
+	$key = "key_" . $key;
+
+	$self->{'keys'}->{$key} = KeyItem->new( $key, $enText, $czText );
+
+}
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

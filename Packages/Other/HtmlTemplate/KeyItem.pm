@@ -1,17 +1,15 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: This is template class
-# Allow add and keep keys and values for html template
+# Description: Special structure which keep couple key-value
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::Pdf::Template2Pdf::TemplateKeyBase;
+package Packages::Other::HtmlTemplate::KeyItem;
 
 #3th party library
 use strict;
 use warnings;
 
 #local library
-use aliased 'Packages::Pdf::Template2Pdf::KeyItem';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -21,34 +19,29 @@ sub new {
 	my $self = shift;
 	$self = {};
 	bless $self;
+	
+	$self->{"key"} = shift;
+	$self->{"en"}  = shift;
+	$self->{"cz"}  = shift;
 
-	my %keys = ();
-	$self->{'keys'} = \%keys;
-
-	return $self;    # Return the reference to the hash.
+	return $self;
 }
 
-sub GetKeyData {
+sub GetText {
 	my $self = shift;
+	my $lang = shift;
 
-	return %{ $self->{'keys'} };
-}
+	if ( $lang eq "cz" ) {
 
-sub _SaveKeyData {
-	my $self   = shift;
-	my $key    = shift;
-	my $enText = shift;
-	my $czText = shift;
+		return $self->{"cz"};
 
-	if ( !defined $czText || $czText eq "" ) {
+	}
+	elsif ( $lang eq "en" ) {
 
-		$czText = $enText;
+		return $self->{"en"};
 	}
 
-	$key = "key_" . $key;
-
-	$self->{'keys'}->{$key} = KeyItem->new( $key, $enText, $czText );
-
+	return $self->{"title"};
 }
 
 #-------------------------------------------------------------------------------------------#

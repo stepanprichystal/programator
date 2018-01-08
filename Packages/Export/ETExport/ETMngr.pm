@@ -17,6 +17,7 @@ use Log::Log4perl qw(get_logger :levels);
 
 #local library
 
+use aliased 'Helpers::GeneralHelper';
 use aliased 'Helpers::JobHelper';
 use aliased 'CamHelpers::CamJob';
 use aliased 'CamHelpers::CamStep';
@@ -76,14 +77,15 @@ sub Run {
  
  
  # If exist reoreder on Na priprave and export is server version AND et test not exist, copy opc to special folder
+ # Tests are taken from this folder by TPV
 sub __CopyIPCTemp{
 	my $self = shift;
 	
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
+	my $step = $self->{"stepToTest"};
 	
-
- 	
+ 
 	# reorder
 	my $orderNum = HegMethods->GetPcbOrderNumber($self->{"jobId"}); 
 	 
@@ -114,7 +116,7 @@ sub __CopyIPCTemp{
 	get_logger("abstractQueue")->error( "Et test $jobId exist: $elTestExist\n ". $inCAM->GetExceptionError() );
 	
 	# copy test to special ipc test folder
-	if( AsyncHelper->ServerVersion() && $orderNum > 1 && $elTestExist ==0){
+	if( GeneralHelper->IsTPVServer() && $orderNum > 1 && $elTestExist ==0){
 	
 		
 		my $ipcPath = EnumsPaths->Client_ELTESTS.$jobId."t\\".$jobId."t.ipc";

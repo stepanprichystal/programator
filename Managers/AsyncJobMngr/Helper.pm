@@ -103,15 +103,16 @@ sub GetLogDir {
 sub ServerVersion {
 	my $self = shift;
 
-	my $serverName = AppConf->GetValue("serverName");
-
-	# If runining on server, close directly
-	if ( hostname =~ /$serverName/i ) {
+	my $serverEnvVar = AppConf->GetValue("serverEnvVar");
+	
+	my $serverVersion = $ENV{$serverEnvVar};
+	
+	unless($serverVersion){
+		return 0;
+	}else{
 		return 1;
 	}
-	else {
-		return 0;
-	}
+ 
 }
 
 1;

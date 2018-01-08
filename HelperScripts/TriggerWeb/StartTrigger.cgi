@@ -29,13 +29,18 @@ eval {
 	my $query = new CGI;
 	print $query->header("text/html");
 
-	my $jobId = $query->param("jobid");
+	my $jobId    = $query->param("jobid");
+	my $taskType = $query->param("request");
+ 
+	if ( !defined $taskType || $taskType eq "" ) {
+		$taskType = 'not_defined';
+	}
 
 	# 1) Log before call TrigerPage.pl
-	$logger->info("$jobId to produce");
+	$logger->info("Params of request: jobId = $jobId, task = $taskType");
 
 	# 2) Run TrigerPage.pl
-	my $result = __TriggerPage($jobId);
+	my $result = __TriggerPage($jobId, $taskType);
 
 	# 3) Tell to helios, all ists ok
 	print $result;
@@ -49,16 +54,19 @@ if ($@) {
 # Run script triggerPage in new window indipendently on this web
 sub __TriggerPage {
 	my $jobId = shift;
-	
+	my $taskType = shift;
+
 	my $result = "OK";
- 
-	my $path = "\\\\incam\\incam_server\\site_data\\scripts\\TriggerPage.pl";
+
+	#my $path = "\\\\incam\\incam_server\\site_data\\scripts\\TriggerPage.pl";
+	my $path = 'c:\Perl\site\lib\TpvScripts\Scripts\TriggerPage.pl';
 
 	unless ( -e $path ) {
-		my $err = "Nepodarilo se spustit script \"$path\", ktery je volan Heliosem pri zadani dps do vyroby pomoci URL:".CGI->new()->url(). " Volej TPV.";
+		my $err =
+		  "Nepodarilo se spustit script \"$path\", ktery je volan Heliosem pri zadani dps do vyroby pomoci URL:" . CGI->new()->url() . " Volej TPV.";
 		$logger->error($err);
-		
-		$result = $err; 	
+
+		$result = $err;
 	}
 
 	#server pid
@@ -66,11 +74,10 @@ sub __TriggerPage {
 
 	my $perl = $Config{perlpath};
 	my $processObj2;
-	Win32::Process::Create( $processObj2, $perl, "perl -w " . $path . " " . $jobId, 0, NORMAL_PRIORITY_CLASS | CREATE_NEW_CONSOLE, "." )
+	Win32::Process::Create( $processObj2, $perl, "perl -w " . $path . " " . $jobId. " " . $taskType, 0, NORMAL_PRIORITY_CLASS | CREATE_NEW_CONSOLE, "." )
 	  || $logger->error("Error when launch TriggerPage.pl");
-	  
-	  
-	 return $result; 
+
+	return $result;
 
 }
 

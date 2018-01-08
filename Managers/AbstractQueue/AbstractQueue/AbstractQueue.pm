@@ -49,11 +49,7 @@ sub new {
 
 	# Main application form
 	$self->{"form"} = shift;
-
-	# Number of second, job will be auto removed from queue,
-	# or undef - not auto remove
-	$self->{"autoRemove"} = shift;
-
+ 
 	$self->{"version"} = $self->__GetVersion();
 
 	$self->{"form"}->Init();
@@ -458,7 +454,9 @@ sub __TimerCheckVersion {
 sub __AutoRemoveJobsHandler {
 	my $self = shift;
 
-	unless ( $self->{"autoRemove"} ) {
+	my $autoRemove = AppConf->GetValue("autoRemove");
+
+	unless ( $autoRemove ) {
 		return 0;
 	}
 
@@ -473,13 +471,13 @@ sub __AutoRemoveJobsHandler {
 		if ( defined $jobItem && ref($jobItem) ) {
 
 			# if 10 passed, remove job
-			if ( ( $time + $self->{"autoRemove"} ) < time() ) {
+			if ( ( $time + $autoRemove ) < time() ) {
 				$self->{"form"}->RemoveJobFromQueue($taskId);
 				splice @{ $self->{"removeJobs"} }, $i, 1;
 
 			}
 			else {
-				my $secLeft = ( $time + $self->{"autoRemove"} ) - time();
+				my $secLeft = ( $time + $autoRemove ) - time();
 				$self->{"form"}->SetJobItemAutoRemove( $taskId, $secLeft );
 
 			}
