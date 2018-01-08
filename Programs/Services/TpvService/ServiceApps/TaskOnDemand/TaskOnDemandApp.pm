@@ -81,7 +81,7 @@ sub Run {
 				$self->{"logger"}->info(
 						"Process task, jobId: " . $jobInf->{"JobId"} . " orderId: " . $jobInf->{"OrderId"} . " task type: " . $jobInf->{"TaskType"} );
 
-				$self->__RunJob( $jobInf->{"JobId"}, $jobInf->{"OrderId"}, $jobInf->{"TaskType"} );
+				$self->__RunJob( $jobInf->{"JobId"}, $jobInf->{"OrderId"}, $jobInf->{"TaskType"}, $jobInf->{"Inserted"} );
 
 				# check max limit of processed jobs in order app doesn't run too long
 				# and block another app
@@ -106,10 +106,11 @@ sub __RunJob {
 	my $jobId    = shift;
 	my $orderId  = shift;
 	my $taskType = shift;
+	my $inserted = shift;
 
 	eval {
 
-		$self->__ProcessJob( $jobId, $orderId, $taskType );
+		$self->__ProcessJob( $jobId, $orderId, $taskType, $inserted );
 
 	};
 	if ($@) {
@@ -142,37 +143,47 @@ sub __ProcessJob {
 	my $jobId    = shift;
 	my $orderId  = shift;
 	my $taskType = shift;
+	my $inserted = shift;
 
 	$jobId = lc($jobId);
 
 	my $inCAM = $self->{"inCAM"};
 
-	# 1) Check if pcb exist in InCAM and open it
+	# 1) Check if pcb exist in InCAM and import t InCAM
 	my $jobExist = AcquireJob->Acquire( $inCAM, $jobId );
-
-	$self->_OpenJob($jobId);
-
+	
+	my $errMess = "";
+	my $result = undef;
+ 
 	# process task
 	if ( $taskType eq TaskEnums->Data_COOPERATION ) {
 
-		my $data = ControlData->new( $inCAM, $jobId );
-		my $errMess = "";
-		$data->Run( \$errMess, TaskEnums->Data_COOPERATION );
+		my $data = ControlData->new($self, $inCAM, $jobId );
+		$result = $data->Run( \$errMess, TaskEnums->Data_COOPERATION, $inserted );
+		
+		 
 	}
 	elsif ( $taskType eq TaskEnums->Data_CONTROL ) {
 
-		my $data = ControlData->new( $inCAM, $jobId );
-		my $errMess = "";
-		$data->Run( \$errMess, TaskEnums->Data_CONTROL );
+		my $data = ControlData->new($self, $inCAM, $jobId );
+		$result = $data->Run( \$errMess, TaskEnums->Data_CONTROL, $inserted );
 	}
 	else {
 
 		die "Not implemented type: $taskType"
 	}
+	
+	if($result){
+		
+		$self->{"logger"}->info("Task $taskType - $jobId finish SUCCESFULL");
+		
+	}else{
+		
+		$self->{"logger"}->info("Task $taskType - $jobId FAILURE, error: $errMess");
+	}
 
-	# 3) if ODB was created, delete job from incam db
-
-	if ($jobExist) {
+ 
+	if ($jobExist && CamJob->IsJobOpen($inCAM, $jobId)) {
 		$inCAM->COM( "check_inout", "job" => "$jobId", "mode" => "in", "ent_type" => "job" );
 		$inCAM->COM( "close_job", "job" => "$jobId" );
 	}

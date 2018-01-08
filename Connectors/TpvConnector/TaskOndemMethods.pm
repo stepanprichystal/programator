@@ -34,6 +34,7 @@ sub GetAllTasks {
 						JobId,
 						OrderId,
 						TaskType,
+						Inserted,
 						IF(OrderId is not null, 'order' , 'pcb') as OrderType 
 				FROM task_ondemand;";
 
@@ -105,9 +106,9 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	use aliased 'Connectors::TpvConnector::TaskOndemMethods'; 
 
-	TaskOndemMethods->InsertTaskPcb( "d152457", TaskEnums->Data_CONTROL );
+	#TaskOndemMethods->InsertTaskPcb( "d152457", TaskEnums->Data_CONTROL );
 	
-	#my @l = TaskOndemMethods->GetAllTasks();
+	my @l = TaskOndemMethods->GetAllTasks();
 	
 	die;
 

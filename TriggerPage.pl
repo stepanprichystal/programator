@@ -125,6 +125,7 @@ sub __DataCooperation {
 	# Insert new request to tpv database. Window services process theses request
 	eval {
 
+		$logger->info("Data cooperation $jobId.");
 		TaskOndemMethods->InsertTaskPcb( $jobId, TaskEnums->Data_COOPERATION );
 
 	};
@@ -144,6 +145,7 @@ sub __DataControl {
 	# Insert new request to tpv database. Window services process theses request
 	eval {
 
+		$logger->info("Data control $jobId.");
 		TaskOndemMethods->InsertTaskPcb( $jobId, TaskEnums->Data_CONTROL );
 
 	};

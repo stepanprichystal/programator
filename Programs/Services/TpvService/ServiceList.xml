@@ -6,16 +6,16 @@
 
   <!-- Running in day --> 
 
-   <app name="checkReorder" 	active="1" repeat="0.5" night="0" />
-   <app name="processReorder" 	active="1" repeat="1" night="0" />
-   <app name="mdiData" 			active="1" repeat="1" night="0" />
-   <app name="jetprintData" 	active="1" repeat="60" night="0" />
-   <app name="taskOnDemand" 	active="0" repeat="0.5" night="0" />
+   <app name="checkReorder" 	active="0" repeat="0.5" night="0" />
+   <app name="processReorder" 	active="0" repeat="1" night="0" />
+   <app name="mdiData" 			active="0" repeat="1" night="0" />
+   <app name="jetprintData" 	active="0" repeat="60" night="0" />
+   <app name="taskOnDemand" 	active="1" repeat="0.5" night="0" />
    
   <!-- Running in night --> 
    
-   <app name="archiveJobs" 		active="1" repeat="15" night="1" />
-   <app name="cleanJobDb" 		active="1" repeat="120" night="1" />
+   <app name="archiveJobs" 		active="0" repeat="15" night="1" />
+   <app name="cleanJobDb" 		active="0" repeat="120" night="1" />
    
   <!-- Temporary apps --> 
    

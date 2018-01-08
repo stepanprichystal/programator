@@ -33,6 +33,7 @@ use aliased 'Enums::EnumsGeneral';
 use aliased 'Programs::Services::TpvService::ServiceApps::TaskOnDemand::Enums';
 use aliased 'Programs::Services::TpvService::ServiceApps::TaskOnDemand::TaskOnDemand::MailTemplate::TemplateKey';
 use aliased 'Packages::Other::HtmlTemplate::HtmlTemplate';
+use aliased 'Packages::NifFile::NifFile';
 
 #-------------------------------------------------------------------------------------------#
 #  Public method
@@ -43,13 +44,14 @@ sub new {
 	my $self  = {};
 	bless $self;
 
-	$self->{"inCAM"} = shift;
-	$self->{"jobId"} = shift;
+	$self->{"taskDataApp"} = shift;
+	$self->{"inCAM"}       = shift;
+	$self->{"jobId"}       = shift;
 
 	# Sender attributes
-	$self->{"smtp"} = "127.0.0.1";
+	#$self->{"smtp"} = "127.0.0.1";
 
-	#$self->{"smtp"} = 'proxy.gatema.cz';
+	$self->{"smtp"} = 'proxy.gatema.cz';
 	$self->{"from"} = 'tpvserver@gatema.cz';
 
 	return $self;
@@ -60,6 +62,7 @@ sub Run {
 	my $self     = shift;
 	my $errorStr = shift;    # ref on error string, where error message is stored
 	my $type     = shift;    # Data_COOPERATION, Data_CONTROL
+	my $inserted = shift;    # time of inserting request
 
 	my $result = 1;
 
@@ -76,7 +79,7 @@ sub Run {
 
 	}
 
-	$self->SendMail( $result, $errorStr, $type );
+	$self->SendMail( $result, $errorStr, $type, $inserted );
 
 	return $result;
 }
@@ -87,9 +90,13 @@ sub __Run {
 	my $result   = shift;
 	my $errorStr = shift;    # ref on error string, where error message is stored
 	my $type     = shift;    # Data_COOPERATION, Data_CONTROL
+	$self->{"taskDataApp"}->{"logger"}->debug("HERE");
 
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
+
+	# Open job
+	$self->{"taskDataApp"}->_OpenJob($jobId);
 
 	$self->{"defaultInfo"} = DefaultInfo->new( $inCAM, $jobId );
 
@@ -111,6 +118,8 @@ sub __Run {
 		$exportClass->Run();
 
 	}
+
+	# Close job
 
 }
 
@@ -205,8 +214,11 @@ sub SendMail {
 	my $result   = shift;
 	my $errorStr = shift;
 	my $type     = shift;
+	my $inserted = shift;
 
-	my $inCAM = $self->{"inCAM"};
+	$self->{"taskDataApp"}->{"logger"}->debug("send mail result $result, $errorStr, $inserted");
+
+	#my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
 
 	# fill templkey with data
@@ -227,9 +239,15 @@ sub SendMail {
 	$templKey->SetAppName( EnumsApp->GetTitle( EnumsApp->App_TASKONDEMAND ) );
 	$templKey->SetMessageType( $result    ? "SUCCES"  : "FAILED" );
 	$templKey->SetMessageTypeClr( $result ? "#BFE89B" : "#FF8080" );
-	$templKey->SetTaskType($t);
+	$templKey->SetTaskType( $t . " (requested at $inserted)" );
 	$templKey->SetJobId($jobId);
-	$templKey->SetJobAuthor( CamAttributes->GetJobAttrByName( $inCAM, $jobId, "user_name" ) );
+	
+	my $author = "";
+	my $nif    = NifFile->new( $self->{"jobId"} );
+	if ( $nif->Exist() ) {
+		$author = $nif->GetPcbAuthor();
+	}
+	$templKey->SetJobAuthor( $author);
 
 	my $str = "<br/>";
 
@@ -241,7 +259,7 @@ sub SendMail {
 
 		$str .= "Please contact TPV\n\n Error detail:\n" . $$errorStr;
 	}
-	
+
 	$str =~ s/\n/<br>/g;
 
 	$templKey->SetMessage($str);

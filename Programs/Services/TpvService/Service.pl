@@ -30,6 +30,8 @@ use aliased 'Programs::Services::TpvService::ServiceApps::ProcessReorderApp::Pro
 use aliased 'Programs::Services::TpvService::ServiceApps::MdiDataApp::MdiDataApp';
 use aliased 'Programs::Services::TpvService::ServiceApps::JetprintDataApp::JetprintDataApp';
 use aliased 'Programs::Services::TpvService::ServiceApps::ArchiveJobsApp::ArchiveJobsApp';
+use aliased 'Programs::Services::TpvService::ServiceApps::CleanJobDbApp::CleanJobDbApp';
+use aliased 'Programs::Services::TpvService::ServiceApps::TaskOnDemand::TaskOnDemandApp';
 use aliased 'Programs::Services::TpvService::ServiceApps::TmpApp::TmpApp';
 
 Win32::Daemon::RegisterCallbacks(
@@ -173,11 +175,20 @@ sub __GetApp {
 
 		$app = JetprintDataApp->new();
 	}
+	elsif ( $appName eq EnumsApp->App_CLEANJOBDB ) {
+
+		$app = CleanJobDbApp->new();
+	}
+	elsif ( $appName eq EnumsApp->App_TASKONDEMAND ) {
+
+		$app = TaskOnDemandApp->new();
+	}
 	elsif ( $appName eq EnumsApp->App_TEST ) {
 
 		$app = TmpApp->new();
 	
-	}else{
+	}
+	else{
  
 		die "App class for app name: $appName is not implemented.";
 	}

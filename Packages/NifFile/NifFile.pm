@@ -122,6 +122,14 @@ sub GetValue {
 	return $self->{"nifData"}->{$attribute};
 }
 
+# Return author of pcb
+sub GetPcbAuthor {
+	my $self = shift;
+
+	return $self->GetValue("zpracoval");
+
+}
+
 #Return color of mask in hash for top and bot side
 sub GetSolderMaskColor {
 	my $self = shift;
