@@ -21,51 +21,42 @@ use aliased 'Enums::EnumsPaths';
 use aliased 'Packages::InCAM::InCAM';
 use aliased 'Packages::Other::AppConf';
 
- 
 #-------------------------------------------------------------------------------------------#
 #  Public method
 #-------------------------------------------------------------------------------------------#
 
 sub new {
 	my $class = shift;    # name
-	
-	my $appConf = AppConf->new(GeneralHelper->Root() . "\\Packages\\InCAMHelpers\\InCAMServer\\Config");
-	
+
+	my $appConf = AppConf->new( GeneralHelper->Root() . "\\Packages\\InCAMHelpers\\InCAMServer\\Config" );
+
 	my %args = (
 		"timeout"          => $appConf->GetValue("defaultTimeout"),    # default is 10 minutes
 		"host"             => $appConf->GetValue("serverHost"),        # default is localhost
 		"port"             => $appConf->GetValue("serverPort"),        # defaul is 3500
-		"supressException" => 0,                                      # defaul is 3500
+		"supressException" => 0,                                       # defaul is 3500
 		@_,
 	);
 
 	my $self = {};
 	bless $self;
-	
-	
 
-	$self->{"timeout"}          = $args{"timeout"};                   # time (in minutes) when inCAm server will be close automatically
-	$self->{"host"}             = $args{"host"};                      # default host where is incam server running
-	$self->{"port"}             = $args{"port"};                      # default port where is incam server running
+	$self->{"timeout"}          = $args{"timeout"};                    # time (in minutes) when inCAm server will be close automatically
+	$self->{"host"}             = $args{"host"};                       # default host where is incam server running
+	$self->{"port"}             = $args{"port"};                       # default port where is incam server running
 	$self->{"supressException"} = $args{"supressException"};
 	$self->{"attemptCnt"}       = $appConf->GetValue("attemptCnt");    # max number of attmets, client will be try get free server (each 3 sec)
 
-	$self->{"requested"}       = 0;                                   # tell if was already run method GetInCAM,
-	$self->{"serverUsed"}      = 0;                                   # tell if was already run method GetInCAM,
-	$self->{"getIncamFailCnt"} = 0;                                   # indicate, actual count of fail, during run method GetInCAM, 2 fails allowed
+	$self->{"requested"}       = 0;                                    # tell if was already run method GetInCAM,
+	$self->{"serverUsed"}      = 0;                                    # tell if was already run method GetInCAM,
+	$self->{"getIncamFailCnt"} = 0;                                    # indicate, actual count of fail, during run method GetInCAM, 2 fails allowed
 
 	$self->{"socket"} = undef;
 	$self->{"inCAM"}  = undef;
-	
-	 
 
 	#Log::Log4perl->init( "c:\\Perl\\site\\lib\\TpvScripts\\Scripts\\Packages\\InCAMServer\\Client\\Logger.conf" );
 
-	 
-
-	
 	$self->{"logger"} = get_logger("inCAMServerClient");
-
 
 	return $self;
 }
@@ -191,11 +182,11 @@ sub __GetInCAM {
 	# 1) Wait until incam server has free incam instances
 
 	foreach ( 1 .. $self->{"attemptCnt"} ) {
-		
+
 		$self->{"logger"}->debug("Attem to get inCAM number $_");
 
 		unless ( $self->__Connect() ) {
-			
+
 			$self->{"logger"}->debug("Attem to get inCAM number $_ - FAIL");
 
 			sleep(8);
@@ -233,7 +224,7 @@ sub __GetInCAM {
 
 	# 3) Try to get port
 	$self->{"logger"}->debug("Server is ready, so ask for new port");
-	
+
 	my $m = "GetPort\n";
 	$self->{"socket"}->send($m);
 
@@ -249,7 +240,7 @@ sub __GetInCAM {
 			die $e;
 		}
 	}
-	
+
 	$self->{"logger"}->debug("New port received");
 
 	$self->{"serverUsed"} = 1;
@@ -309,31 +300,33 @@ sub __ReadMess {
 #-------------------------------------------------------------------------------------------#
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
-#
+	#
 	use aliased 'Packages::InCAMHelpers::InCAMServer::Client::InCAMServer';
-#	use aliased 'CamHelpers::CamJob';
-#
-#	# ================================================#
-#	# ================================================#
-#
-#	while (1) {
-#
-		my $server = InCAMServer->new();
-		my $inCAM  = $server->GetInCAM();
-#
-		$inCAM->COM("get_user_name");
-		my $rep = $inCAM->GetReply();
-#
-		print STDERR "\nOdpoved z InCAM - user name: " . $rep . "\n";
-#		print STDERR "\nKonec pouziti InCAMu\n";
-#
-#		sleep( int( rand(20) ) );
-#
-#		$server->JobDone();
-#
-#		sleep( int( rand(50) ) );
-#
-#	}
+
+	#	use aliased 'CamHelpers::CamJob';
+	#
+	#	# ================================================#
+	#	# ================================================#
+	#
+	#	while (1) {
+	#
+	my $server = InCAMServer->new();
+	my $inCAM  = $server->GetInCAM();
+	#
+	$inCAM->COM("get_user_name");
+	my $rep = $inCAM->GetReply();
+	#
+	print STDERR "\nOdpoved z InCAM - user name: " . $rep . "\n";
+
+	#		print STDERR "\nKonec pouziti InCAMu\n";
+	#
+	#		sleep( int( rand(20) ) );
+	#
+	#		$server->JobDone();
+	#
+	#		sleep( int( rand(50) ) );
+	#
+	#	}
 
 	# ================================================#
 	# ================================================#

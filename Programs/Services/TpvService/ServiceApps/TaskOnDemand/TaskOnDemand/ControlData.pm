@@ -49,7 +49,7 @@ sub new {
 	$self->{"jobId"}       = shift;
 
 	# Sender attributes
-	#$self->{"smtp"} = "127.0.0.1";
+	#$self->{"smtp"} = "127.0.0.1"; #testing server paper-cut
 
 	$self->{"smtp"} = 'proxy.gatema.cz';
 	$self->{"from"} = 'tpvserver@gatema.cz';

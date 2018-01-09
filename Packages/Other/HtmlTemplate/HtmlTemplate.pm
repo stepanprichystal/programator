@@ -68,8 +68,8 @@ sub ProcessTemplatePdf {
 	}
 
 	# create html template
-	my $htmlOutFile = $outFile = EnumsPaths->Client_INCAMTMPOTHER . GeneralHelper->GetGUID() . ".html";
-	$self->__ProcessTemplate( $htmlOutFile, $keyData, $outFile );
+	my $htmlOutFile =  EnumsPaths->Client_INCAMTMPOTHER . GeneralHelper->GetGUID() . ".html";
+	$self->__ProcessTemplate( $htmlTemplPath, $keyData, $htmlOutFile );
 
 	# convert template to pdf
 

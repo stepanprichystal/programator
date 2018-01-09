@@ -58,8 +58,8 @@ sub __TriggerPage {
 
 	my $result = "OK";
 
-	#my $path = "\\\\incam\\incam_server\\site_data\\scripts\\TriggerPage.pl";
-	my $path = 'c:\Perl\site\lib\TpvScripts\Scripts\TriggerPage.pl';
+	my $path = "\\\\incam\\incam_server\\site_data\\scripts\\TriggerPage.pl";
+	#my $path = 'c:\Perl\site\lib\TpvScripts\Scripts\TriggerPage.pl';
 
 	unless ( -e $path ) {
 		my $err =
