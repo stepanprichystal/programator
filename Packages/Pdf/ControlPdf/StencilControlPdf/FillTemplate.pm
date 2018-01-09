@@ -200,9 +200,26 @@ sub SetDataSource {
  
 	# =================== Table views ============================
  
-	$template->SetKey( "LegendProfile", " pcb profile", " profil dps" );
-	$template->SetKey( "LegendData", " stencil data limits", " ohraničení plošek šablony" );
+ 	my $legendProfEn = "";
+ 	my $legendProfCz = "";
+ 
+ 	if($params->GetDataSource()->{"sourceType"} eq StnclEnums->StencilSource_JOB){
+		$legendProfEn = '<img  height="15" src="'.GeneralHelper->Root().'\Packages\Pdf\ControlPdf\StencilControlPdf\HtmlTemplate\Img\profile.png" /> pcb profile';
+		$legendProfCz = '<img  height="15" src="'.GeneralHelper->Root().'\Packages\Pdf\ControlPdf\StencilControlPdf\HtmlTemplate\Img\profile.png" /> profil dps';
+ 	}
+ 	
+	$template->SetKey( "LegendProfile", $legendProfEn, $legendProfCz );
 	
+	my $legendDataEn = "";
+ 	my $legendDataCz = "";
+	
+	if($params->GetDataSource()->{"sourceType"} eq StnclEnums->StencilSource_JOB){
+	 	$legendDataEn = '<img  height="15" src="'.GeneralHelper->Root().'\Packages\Pdf\ControlPdf\StencilControlPdf\HtmlTemplate\Img\data.png" /> stencil data limits';
+		$legendDataCz = '<img  height="15" src="'.GeneralHelper->Root().'\Packages\Pdf\ControlPdf\StencilControlPdf\HtmlTemplate\Img\data.png" /> ohraničení plošek šablony';
+	}
+	
+	$template->SetKey( "LegendData", $legendDataEn, $legendDataCz );	
+ 
 	my $legendFiducEn = '';
  	my $legendFiducCz = '';
  

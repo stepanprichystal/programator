@@ -181,25 +181,25 @@ sub __InputExistingJob {
 	
 	$inCAM->COM( "open_job", job => "$jobId", "open_win" => "yes" );
 
-	# remove all useless layers, keep only sa-ori, sb-ori, o
-	my @del = grep { $_->{"gROWname"} !~ /^(s[ab]-ori)|(o)$/ } CamJob->GetAllLayers( $inCAM, $jobId );
+	# remove all useless layers, keep only sa-ori, sb-ori, or sa-made, sb-made
+	my @del = grep { $_->{"gROWname"} !~ /^(s[ab]-(ori|made))|(o)$/ } CamJob->GetAllLayers( $inCAM, $jobId );
 
 	foreach my $l (@del) {
 		$inCAM->COM( 'delete_layer', layer => $l->{"gROWname"} );
 	}
 
-	while ( !scalar( grep { $_->{"gROWname"} =~ /s[ab]-ori/ } CamJob->GetAllLayers( $inCAM, $jobId ) ) ) {
+	while ( !scalar( grep { $_->{"gROWname"} =~ /s[ab]-(ori|made)/ } CamJob->GetAllLayers( $inCAM, $jobId ) ) ) {
 
 		$self->{"messMngr"}->ShowModal( -1,
 										EnumsGeneral->MessageType_INFORMATION,
-										["Nebyly nalezeny vrstvy sa-ori nebo sb-ori"],
+										["Nebyly nalezeny vrstvy sa-ori, sb-ori nebo sa-made, sb-made"],
 										[ "Pořeším to", "Ukončit script" ] );
 
 		if ( $self->{"messMngr"}->Result() == 1 ) {
 			$self->{"mainFrm"}->Destroy();
 		}
 
-		$inCAM->PAUSE("Vytvor vrstvy sa-ori nebo sb-ori...");
+		$inCAM->PAUSE("Vytvor vrstvy sa-ori, sb-ori nebo sa-made, sb-made...");
 	}
 
 	$inCAM->COM( "delete_entity", "job" => $jobId, "name" => "o", "type" => "step" );

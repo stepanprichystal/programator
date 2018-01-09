@@ -85,17 +85,17 @@ sub __CheckBeforeRun {
 #	}
 	
 	my @layers  = CamJob->GetAllLayers( $inCAM, $jobId );
-	my $saExist = scalar( grep { $_->{"gROWname"} =~ /sa-ori/ } @layers );
-	my $sbExist = scalar( grep { $_->{"gROWname"} =~ /sb-ori/ } @layers );
+	my $saExist = scalar( grep { $_->{"gROWname"} =~ /sa-(ori|made)/ } @layers );
+	my $sbExist = scalar( grep { $_->{"gROWname"} =~ /sb-(ori|made)/ } @layers );
 
 	if ( $stencilInfo{"type"} eq StnclEnums->StencilType_TOP && !$saExist ) {
 
-		$$mess .= "Šablona je typ TOP, ale v metrixu chybí vrstva sa-ori.";
+		$$mess .= "Šablona je typ TOP, ale v metrixu chybí vrstva sa-ori nebo sb-made.";
 		return 0;
 	}
 	elsif ( $stencilInfo{"type"} eq StnclEnums->StencilType_BOT && !$sbExist ) {
 
-		$$mess .= "Šablona je typ BOT, ale v metrixu chybí vrstva sb-ori.";
+		$$mess .= "Šablona je typ BOT, ale v metrixu chybí vrstva sb-ori nebo sb-made.";
 		return 0;
 
 	}
