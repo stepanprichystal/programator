@@ -14,11 +14,13 @@ use strict;
 use warnings;
 use File::Copy;
 use File::Path 'rmtree';
+use Log::Log4perl qw(get_logger :levels);
 
 #local library
 use aliased 'CamHelpers::CamJob';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'Enums::EnumsPaths';
+use aliased 'Helpers::GeneralHelper';
 use aliased 'Packages::Gerbers::ProduceData::ProduceData';
 use aliased 'Helpers::JobHelper';
 use aliased 'Packages::ETesting::ExportIPC::ExportIPC';
@@ -112,10 +114,18 @@ sub __ExportCooperationET {
 		$self->{"exportIPC"}->Export("kooperace");
 
 		# if script run on server, move el test to r:/El_tests
+		
+		get_logger("abstractQueue")->debug( "Is tpv server: ". GeneralHelper->IsTPVServer() );
+		
 		if ( GeneralHelper->IsTPVServer() ) {
 
 			my $ipcPath = EnumsPaths->Client_ELTESTS . $jobId . "_kooperace\\" . $jobId . "_kooperace.ipc";
+			
+			get_logger("abstractQueue")->debug( "path $ipcPath");
+			
 			if ( -e $ipcPath ) {
+				
+				get_logger("abstractQueue")->debug( "copy");
 
 				copy( $ipcPath, EnumsPaths->Jobs_ELTESTSIPC . $jobId . "_kooperace.ipc" );
 			}

@@ -237,7 +237,7 @@ sub SendMail {
 	}
 
 	$templKey->SetAppName( EnumsApp->GetTitle( EnumsApp->App_TASKONDEMAND ) );
-	$templKey->SetMessageType( $result    ? "SUCCES"  : "FAILED" );
+	$templKey->SetMessageType( $result    ? "SUCCESS"  : "FAILED" );
 	$templKey->SetMessageTypeClr( $result ? "#BFE89B" : "#FF8080" );
 	$templKey->SetTaskType( $t . " (requested at $inserted)" );
 	$templKey->SetJobId($jobId);
@@ -283,7 +283,7 @@ sub SendMail {
 
 		$sender->Open(
 			{
-			   to      => 'stepan.prichystal@gatema.cz',
+			   to      => 'pcb@gatema.cz',
 			   subject => "Task on demand - " . $t . " ($jobId)",
 
 			   #msg     => "I'm sending you the list you wanted.",
@@ -291,7 +291,8 @@ sub SendMail {
 			   ctype    => "text/html",
 			   encoding => "7bit",
 
-			   bcc => ( !$result ? 'stepan.prichystal@gatema.cz' : undef )    #TODO temporary
+			  # bcc => ( !$result ? 'stepan.prichystal@gatema.cz' : undef )    #TODO temporary
+			  bcc =>  'stepan.prichystal@gatema.cz'   #TODO temporary
 			}
 		);
 
