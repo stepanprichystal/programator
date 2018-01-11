@@ -33,6 +33,11 @@ sub GoldFingersExist {
 	my $jobId = shift;
 	my $step  = shift;
 	my $layer = shift;
+	
+	# specify attribut, which is used for signal area, where is gold platin
+	# default attribute: is .gold_plating
+	my $goldAtt = shift // ".gold_plating"; 
+ 
 
 	my $result = 0;
 
@@ -67,8 +72,8 @@ sub GoldFingersExist {
 			close($f);
 			unlink($infoFile);
 		}
-
-		my @platedFeats = grep { $_ =~ /\.gold_plating/ } @feat;
+ 
+		my @platedFeats = grep { $_ =~ /$goldAtt/ } @feat;
 		if ( scalar(@platedFeats) ) {
 
 			$result = 1;
@@ -203,7 +208,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobName = "f13610";
+	my $jobName = "d152456";
 
 	my $layerNameTop = shift;
 	my $layerNameBot = shift;
@@ -213,7 +218,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $mess = "";
 
-	my $result = CamGoldArea->GetGoldFingerCount( $inCAM, $jobName, "panel", "s" );
+	my $result = CamGoldArea->GoldFingersExist( $inCAM, $jobName, "panel", "c",    ".gold_finger");
 
 	print $result. " - $mess";
 

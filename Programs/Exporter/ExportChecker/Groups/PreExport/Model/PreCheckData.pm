@@ -28,7 +28,6 @@ use aliased 'Packages::CAM::Netlist::NetlistCompare';
 use aliased 'Packages::CAMJob::Scheme::CustSchemeCheck';
 use aliased 'Packages::CAMJob::Matrix::LayerNamesCheck';
 
-
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
@@ -208,9 +207,9 @@ sub OnCheckGroupData {
 		}
 	}
 
-	# 8) check if  if positive inner layer contains theraml pads 
+	# 8) check if  if positive inner layer contains theraml pads
 	# (only standard orders, because nagative layers are converted to positive when pool )
-	if ( $defaultInfo->GetLayerCnt() > 2 && !$defaultInfo->IsPool()) {
+	if ( $defaultInfo->GetLayerCnt() > 2 && !$defaultInfo->IsPool() ) {
 
 		my @layers = $defaultInfo->GetSignalLayers();
 
@@ -320,12 +319,20 @@ sub OnCheckGroupData {
 		if ( $h > 408 ) {
 
 			$dataMngr->_AddErrorResult(
-										"Panel dimension",
-										"Příliš velký panel. \nPokud job obsahuje zlacený konektor nebo povrch je galvanické zlato,"
-										  . " panel musí mýt maximálně tak velký jako malý standardní panel."
+				"Panel dimension",
+				"Příliš velký panel. \nPokud job obsahuje zlacený konektor nebo povrch je galvanické zlato,"
+				  . " panel musí mýt maximálně tak velký jako malý standardní panel."
 			);
 		}
 
+	}
+
+	# Check if goldfinger doesn't exist, if is used wrong attribute ".gold_fineg" instead of ".gold_plating"
+
+	if ( CamGoldArea->GoldFingersExist( $inCAM, $jobId, $stepName, undef, ".gold_finger" ) ) {
+
+		$dataMngr->_AddErrorResult( "Gold finger",
+									"Je použit špatný atribut pro konektorové zlato: \".gold_finger\". Zmněň atribut na \".gold_plating\"." );
 	}
 
 	# 14) Test if stackup material is on stock
@@ -338,55 +345,58 @@ sub OnCheckGroupData {
 		my $matOk = StackupOperation->StackupMatInStock( $jobId, $defaultInfo->GetStackup(), \$errMes );
 
 		unless ($matOk) {
-			
+
 			$dataMngr->_AddErrorResult( "Stackup material", "Materiál, který je obsažen ve složení nelze použít. Detail chyby: $errMes" );
 		}
 	}
-	
+
 	# 15) Check if all netlist control was succes in past
-	my @reports = NetlistCompare->new($inCAM, $jobId)->GetStoredReports();
-	
+	my @reports = NetlistCompare->new( $inCAM, $jobId )->GetStoredReports();
+
 	@reports = grep { !$_->Result() } @reports;
-	
-	if(scalar(@reports)){
-		
+
+	if ( scalar(@reports) ) {
+
 		my $m = "Byly nalezeny Netlist reporty, které skončily neúspěšně. Zjisti proč, popř. proveď novou kontrolu netlistů. Reporty:";
-		
-		foreach my $r (@reports){
-				
-				$m .= "\n- report: "
-				  . $r->GetShorts()
-				  . " shorts, "
-				  . $r->GetBrokens()
-				  . " brokens, "
-				  . "Stepy: \""
-				  . $r->GetStep() . "\", \""
-				  . $r->GetStepRef()
-				  ."\", Adresa: ". $r->GetReportPath();				
+
+		foreach my $r (@reports) {
+
+			$m .=
+			    "\n- report: "
+			  . $r->GetShorts()
+			  . " shorts, "
+			  . $r->GetBrokens()
+			  . " brokens, "
+			  . "Stepy: \""
+			  . $r->GetStep()
+			  . "\", \""
+			  . $r->GetStepRef()
+			  . "\", Adresa: "
+			  . $r->GetReportPath();
 		}
-		
+
 		$dataMngr->_AddErrorResult( "Netlist kontrola", $m );
 	}
-	
+
 	# 16) If customer has required scheme, check if scheme in mpanel is ok
 	my $usedScheme = undef;
-	unless(CustSchemeCheck->CustSchemeOk($inCAM, $jobId,\$usedScheme, $defaultInfo->GetCustomerNote())){
-		
+	unless ( CustSchemeCheck->CustSchemeOk( $inCAM, $jobId, \$usedScheme, $defaultInfo->GetCustomerNote() ) ) {
+
 		my $custSchema = $defaultInfo->GetCustomerNote()->RequiredSchema();
-		
-		$dataMngr->_AddWarningResult( "Customer schema", "Zákazník požaduje ve stepu: \"mpanel\" vlastní schéma: \"$custSchema\", ale je vloženo schéma: \"$usedScheme\"." );
+
+		$dataMngr->_AddWarningResult( "Customer schema",
+						   "Zákazník požaduje ve stepu: \"mpanel\" vlastní schéma: \"$custSchema\", ale je vloženo schéma: \"$usedScheme\"." );
 	}
-	
+
 	# 17) Check if all our "board" layers are realy board
 	my @nonBoard = ();
-	
-	unless(LayerNamesCheck->CheckNonBoardBaseLayers($inCAM, $jobId, \@nonBoard)){
-		
-		my $str = join("; ", map { $_->{"gROWname"} } @nonBoard ) ;
-		
+
+	unless ( LayerNamesCheck->CheckNonBoardBaseLayers( $inCAM, $jobId, \@nonBoard ) ) {
+
+		my $str = join( "; ", map { $_->{"gROWname"} } @nonBoard );
+
 		$dataMngr->_AddWarningResult( "Matrix", "V matrixu jsou \"misc\" vrstvy, které by měly být \"board\": $str " );
 	}
- 
 
 }
 
