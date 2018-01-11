@@ -51,23 +51,22 @@ sub new {
 	$self->{"jobId"}    = shift;
 	$self->{"pdfStep"}  = shift;
 
-	$self->{"profileLim"} = undef; # limts of pdf step
+	$self->{"profileLim"} = undef;    # limts of pdf step
 
 	# Load deserialiyed stencil parameters
 	my $ser = StencilSerializer->new( $self->{"jobId"} );
 	$self->{"params"} = $ser->LoadStenciLParams();
 
 	# If only bot stencil, whole psb will be mirrored
-	$self->{"mirror"}       = $self->{"params"}->GetStencilType() eq StnclEnums->StencilType_BOT ? 1 : 0;
-	
+	$self->{"mirror"} = $self->{"params"}->GetStencilType() eq StnclEnums->StencilType_BOT ? 1 : 0;
 
 	# size of dimension and dim text and width of dim lines
 	# when stencil is standard 480mm height
 	$self->{"codeSize"}     = 6;
-	$self->{"codeWidth"}    = 400; # r400
+	$self->{"codeWidth"}    = 400;    # r400
 	$self->{"codeTxtThick"} = 1.4;
 	$self->{"codeTxtSize"}  = 4.4;
-	
+
 	return $self;
 }
 
@@ -89,19 +88,17 @@ sub PrepareLayers {
 sub __PrepareLayers {
 	my $self      = shift;
 	my $layerList = shift;
-	
-	
+
 	# recompute code parameters by stencil height (default settings is for 480 mm height)
-	my $h = abs($self->{"profileLim"}->{"yMax"} -  $self->{"profileLim"}->{"yMin"});
-	my $w = abs($self->{"profileLim"}->{"yMax"} -  $self->{"profileLim"}->{"yMin"});
-	
-	$self->{"ratio"} =   max( $h,$w)  / 480;
-		 
-	$self->{"codeSize"}     *= $self->{"ratio"};
-	$self->{"codeWidth"}    = "r".int($self->{"codeWidth"} *$self->{"ratio"});
-	$self->{"codeTxtThick"}  *= $self->{"ratio"};
+	my $h = abs( $self->{"profileLim"}->{"yMax"} - $self->{"profileLim"}->{"yMin"} );
+	my $w = abs( $self->{"profileLim"}->{"yMax"} - $self->{"profileLim"}->{"yMin"} );
+
+	$self->{"ratio"} = max( $h, $w ) / 480;
+
+	$self->{"codeSize"} *= $self->{"ratio"};
+	$self->{"codeWidth"} = "r" . int( $self->{"codeWidth"} * $self->{"ratio"} );
+	$self->{"codeTxtThick"} *= $self->{"ratio"};
 	$self->{"codeTxtSize"}  *= $self->{"ratio"};
-	
 
 	$self->__PrepareSTNCLMAT( $layerList->GetLayerByType( Enums->Type_STNCLMAT ) );
 	$self->__PrepareSTNCLMAT( $layerList->GetLayerByType( Enums->Type_COVER ) );
@@ -202,9 +199,9 @@ sub __PrepareHOLES {
 	# Remove fiduc marks, if exist  half lasered fiduc
 	my $fiduc = $self->{"params"}->GetFiducial();
 	if ( $fiduc->{"halfFiducials"} ) {
-		
+
 		CamLayer->WorkLayer( $inCAM, $lName );
-		
+
 		if ( CamFilter->SelectBySingleAtt( $inCAM, $jobId, ".fiducial_name", "*" ) ) {
 			$inCAM->COM("sel_delete");
 		}
@@ -238,6 +235,11 @@ sub __PrepareProfCODES {
 	my $self  = shift;
 	my $layer = shift;
 	my $lName = shift;
+	
+	# Do not draw profile codes, if source is customer data, because pcb profile is same size as stencil size
+	if ( $self->{"params"}->GetDataSource()->{"sourceType"} eq StnclEnums->StencilSource_CUSTDATA ) {
+		return 0;
+	}
 
 	my $draw = SymbolDrawing->new( $self->{"inCAM"}, $self->{"jobId"} );
 
@@ -323,6 +325,11 @@ sub __PrepareDataCODES {
 	my $self  = shift;
 	my $layer = shift;
 	my $lName = shift;
+	
+	# Do not draw profiles, if source is customer data, because pcb profile is same size as stencil size
+	if ( $self->{"params"}->GetDataSource()->{"sourceType"} eq StnclEnums->StencilSource_CUSTDATA ) {
+		return 0;
+	}
 
 	my $draw = SymbolDrawing->new( $self->{"inCAM"}, $self->{"jobId"} );
 
@@ -503,11 +510,10 @@ sub __PreparePROFILE {
 
 	my $schema = $self->{"params"}->GetSchema();
 
-	# Do not draw profiles, because profile has same size as stencil
-	#	if ( $schema->{"type"} eq StnclEnums->Schema_INCLUDED ) {
-	#		return 0;
-	#	}
-
+	# Do not draw profiles, if source is customer data, because pcb profile is same size as stencil size
+	if ( $self->{"params"}->GetDataSource()->{"sourceType"} eq StnclEnums->StencilSource_CUSTDATA ) {
+		return 0;
+	}
 	# New layer
 	my $lName = GeneralHelper->GetGUID();
 	$inCAM->COM( 'create_layer', layer => $lName, context => 'misc', type => 'document', polarity => 'positive', ins_layer => '' );
@@ -527,7 +533,7 @@ sub __PreparePROFILE {
 		push( @coord, { "x" => $tpPos->{"x"} + $topProfile->{"w"}, "y" => $tpPos->{"y"} + $topProfile->{"h"} } );    #p3
 		push( @coord, { "x" => $tpPos->{"x"} + $topProfile->{"w"}, "y" => $tpPos->{"y"} } );                         #p4
 
-		$self->__DrawDashedRect( 600*$self->{"ratio"}, 6000*$self->{"ratio"}, \@coord );
+		$self->__DrawDashedRect( 600 * $self->{"ratio"}, 6000 * $self->{"ratio"}, \@coord );
 	}
 
 	if ($botProfile) {
@@ -540,7 +546,7 @@ sub __PreparePROFILE {
 		push( @coord, { "x" => $bpPos->{"x"} + $botProfile->{"w"}, "y" => $bpPos->{"y"} + $botProfile->{"h"} } );    #p3
 		push( @coord, { "x" => $bpPos->{"x"} + $botProfile->{"w"}, "y" => $bpPos->{"y"} } );                         #p4
 
-		$self->__DrawDashedRect( 600*$self->{"ratio"}, 6000*$self->{"ratio"}, \@coord );
+		$self->__DrawDashedRect( 600 * $self->{"ratio"}, 6000 * $self->{"ratio"}, \@coord );
 	}
 
 	$layer->SetOutputLayer($lName);
@@ -557,10 +563,10 @@ sub __PrepareDATAPROFILE {
 
 	my $schema = $self->{"params"}->GetSchema();
 
-	# Do not draw profiles, because profile has same size as stencil
-	#	if ( $schema->{"type"} eq StnclEnums->Schema_INCLUDED ) {
-	#		return 0;
-	#	}
+	# Do not draw profiles, if source is customer data, because pcb profile is same size as stencil size
+	if ( $self->{"params"}->GetDataSource()->{"sourceType"} eq StnclEnums->StencilSource_CUSTDATA ) {
+		return 0;
+	}
 
 	# New layer
 	my $lName = GeneralHelper->GetGUID();
@@ -585,7 +591,7 @@ sub __PrepareDATAPROFILE {
 		push( @coord, { "x" => $posX + $tdData->{"w"}, "y" => $posY + $tdData->{"h"} } );    #p3
 		push( @coord, { "x" => $posX + $tdData->{"w"}, "y" => $posY } );                     #p4
 
-		$self->__DrawDashedRect( 200*$self->{"ratio"}, 2000*$self->{"ratio"}, \@coord );
+		$self->__DrawDashedRect( 200 * $self->{"ratio"}, 2000 * $self->{"ratio"}, \@coord );
 	}
 
 	if ($botProf) {
@@ -602,7 +608,7 @@ sub __PrepareDATAPROFILE {
 		push( @coord, { "x" => $posX + $tdData->{"w"}, "y" => $posY + $tdData->{"h"} } );    #p3
 		push( @coord, { "x" => $posX + $tdData->{"w"}, "y" => $posY } );                     #p4
 
-		$self->__DrawDashedRect( 200*$self->{"ratio"}, 2000*$self->{"ratio"}, \@coord );
+		$self->__DrawDashedRect( 200 * $self->{"ratio"}, 2000 * $self->{"ratio"}, \@coord );
 	}
 
 	$layer->SetOutputLayer($lName);
@@ -847,7 +853,7 @@ sub __DrawDashedLine {
 		$curX   += ( $segmentLen + $gapLen );
 		$curLen += ( $segmentLen + $gapLen );
 	}
-	
+
 	# add last segment
 	CamSymbol->AddLine( $inCAM, { "x" => $curX, "y" => $p1->{"y"} }, { "x" => $curX + $segmentLen, "y" => $p1->{"y"} }, $lineWidth );
 }

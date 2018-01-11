@@ -93,9 +93,10 @@ sub __Prepare {
 	# 1) Set prepared layer name
 	$outputLayer->SetLayerName($drawLayer);
 
-	# 2 Add another extra info to output layer
+	# 2) Add another extra info to output layer
 
 	$self->{"result"}->AddLayer($outputLayer);
+	 
 }
 
 #-------------------------------------------------------------------------------------------#

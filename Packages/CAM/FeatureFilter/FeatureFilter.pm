@@ -76,9 +76,56 @@ sub Select {
 	my $self = shift;
 
 	my $inCAM = $self->{"inCAM"};
+ 
+	# if filter indexes are set, do select in loop (max 20 index in one loop)
+	# Reason: cmd adv_filter_set, is posiible process only 200chars in parameter "indexes"
+	if ( scalar( @{ $self->{"featureIndexes"} } ) ) {
+		my @ids = @{ $self->{"featureIndexes"} };
+		my @idsPart = ();
 
-	$inCAM->COM('filter_area_strt');
-	$inCAM->COM( 'filter_area_end', filter_name => 'popup', operation => 'select' );
+		# each loop select 20 features
+		for ( my $i = 0 ; $i < scalar(@ids) ; $i++ ) {
+
+			push( @idsPart, $ids[$i] );
+
+			if ( scalar(@idsPart) == 20 ) {
+
+				my $str = join( "\\;", @idsPart );
+				$inCAM->COM(
+							 "adv_filter_set",
+							 "filter_name" => "popup",
+							 "active"      => "yes",
+							 "indexes"     => $str,
+				);
+
+				$inCAM->COM('filter_area_strt');
+				$inCAM->COM( 'filter_area_end', filter_name => 'popup', operation => 'select' );
+ 
+				@idsPart = ();
+			}
+		}
+		
+		# select rest of features
+	if ( scalar(@idsPart) ) {
+		my $str = join( "\\;", @idsPart );
+		$inCAM->COM(
+					 "adv_filter_set",
+					 "filter_name" => "popup",
+					 "active"      => "yes",
+					 "indexes"     => $str,
+		);
+
+		$inCAM->COM('filter_area_strt');
+		$inCAM->COM( 'filter_area_end', filter_name => 'popup', operation => 'select' );
+		$inCAM->COM( 'filter_reset', filter_name => 'popup' );
+	}
+	}
+	else {
+
+		$inCAM->COM('filter_area_strt');
+		$inCAM->COM( 'filter_area_end', filter_name => 'popup', operation => 'select' );
+
+	}
 
 	$self->{"inCAM"}->COM('get_select_count');
 
@@ -284,17 +331,17 @@ sub AddFeatureIndexes {
 
 	push( @{ $self->{"featureIndexes"} }, @{$featureIndexes} );
 
-	my $str = join( "\\;", @{ $self->{"featureIndexes"} } );
-
-	my $inCAM = $self->{"inCAM"};
-
-	$inCAM->COM(
-		"adv_filter_set",
-		"filter_name" => "popup",
-		"active"      => "yes",
-		"indexes"     => $str,
-
-	);
+	#	my $str = join( "\\;", @{ $self->{"featureIndexes"} } );
+	#
+	#	my $inCAM = $self->{"inCAM"};
+	#
+	#	$inCAM->COM(
+	#		"adv_filter_set",
+	#		"filter_name" => "popup",
+	#		"active"      => "yes",
+	#		"indexes"     => $str,
+	#
+	#	);
 
 }
 

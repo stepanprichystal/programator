@@ -50,13 +50,7 @@ use constant {
 			   Layers_V16 => "v16"
 };
 
-#A few material types used in Hellios IS
-use constant {
-			   Mat_FR4   => 'FR4',
-			   Mat_IS410 => 'IS410',
-			   Mat_Al    => 'Al',
-			   Mat_G200  => 'G200'
-};
+ 
 
 # Define type of NC layers, as we defined for opur purposes
 use constant {

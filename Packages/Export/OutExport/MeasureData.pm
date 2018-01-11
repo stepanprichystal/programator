@@ -23,6 +23,7 @@ use aliased 'Enums::EnumsPaths';
 use aliased 'CamHelpers::CamJob';
 use aliased 'CamHelpers::CamStep';
 use aliased 'CamHelpers::CamStepRepeat';
+use aliased 'CamHelpers::CamSymbol';
 use aliased 'Packages::CAMJob::OutputData::PrepareLayers::PrepareNC';
 use aliased 'Packages::CAMJob::OutputData::LayerData::LayerDataList';
 
@@ -73,6 +74,18 @@ sub Output {
 	$self->{"prepareNC"}->Prepare( \@layers, \@childSteps );
 	
 	my @layersOut = map { $_->GetOutput() } $self->{"layerList"}->GetLayers();
+	
+	# draw pcb number to layer
+	foreach my $l (@layersOut){
+		
+		my %profileLim = CamJob->GetProfileLimits2( $self->{"inCAM"}, $self->{"jobId"}, $self->{"data_step"}, 1 );
+ 
+		my %positionInf = ( "x" => 2, "y" => $profileLim{"yMax"} +2 );
+		
+		CamLayer->WorkLayer( $inCAM, $l );
+		
+		CamSymbol->AddText( $inCAM, "Pcb id: $jobId", \%positionInf, 2, 0.5 );
+	}
  
 	$self->__OutputPdf(\@layersOut);
 	
@@ -219,9 +232,9 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId = "f52457";
+	my $jobId = "d152456";
 
-	my $export = MeasureData->new( $inCAM, $jobId, "mpanel" );
+	my $export = MeasureData->new( $inCAM, $jobId, "o+1" );
 	$export->Output();
 
 }
