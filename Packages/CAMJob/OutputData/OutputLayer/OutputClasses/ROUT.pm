@@ -96,29 +96,7 @@ sub __Prepare {
 	# 2) Add another extra info to output layer
 
 	$self->{"result"}->AddLayer($outputLayer);
-	
-	
-	# Rout layer can contain pads "r0" - bridges, delete theses pads
-	# If we do not delete theses pads, finel layer check on emty lazer fail (Outut parser, final check)
-	
-	my $f = FeatureFilter->new( $inCAM, $jobId, $lName );
-	$f->AddFeatureIndexes($featuresId);
-
-	if ( $f->Select() > 0 ) {
-
-		$inCAM->COM(
-			"sel_move_other",
-
-			# "dest"         => "layer_name",
-			"target_layer" => $lName
-		);
-
-		CamLayer->WorkLayer( $inCAM, $lName );
-		my $lComp = CamLayer->RoutCompensation( $inCAM, $lName, "document" );
-
-		CamLayer->WorkLayer( $inCAM, $lName );
-		$inCAM->COM("sel_delete");
-	
+	 
 }
 
 #-------------------------------------------------------------------------------------------#

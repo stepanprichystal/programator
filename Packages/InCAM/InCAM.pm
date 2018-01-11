@@ -345,7 +345,7 @@ sub sendCommandToPipe {
 	my ($self)      = shift;
 	my $commandType = shift;
 	my $command     = shift;
-
+ 
 	my $old_select   = select(STDOUT);
 	my $flush_status = $|;               # save the flushing status
 	$| = 1;                              # force flushing of the io buffer

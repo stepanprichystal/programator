@@ -1408,9 +1408,9 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	use aliased 'Connectors::HeliosConnector::HegMethods';
 	use Data::Dump qw(dump);
 
-	my @cores = HegMethods->GetAllCoresInfo("f52457");
+	my $mat = HegMethods->GetMaterialKind("d113608", 1);
 
-	print @cores;
+	print $mat;
 
 }
 

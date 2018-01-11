@@ -303,59 +303,6 @@ sub __GetToolParamLine {
 	return $line;
 }
 
-##Return description of tool, how is defined on NC department
-## table is defined for each special tool:
-## - Material,
-## - tool size,
-## - flag
-#sub GetSpecialToolByFlag {
-#	my $self     = shift;
-#	my $material = shift;
-#	my $toolSize = shift;    #as float number
-#	my $magazine = shift;
-#
-#	my $res = 0;
-#
-#	my %table = ();
-#
-#	$table{ EnumsGeneral->Mat_FR4 }{6.5}{"1"} = "IW1";
-#	$table{ EnumsGeneral->Mat_FR4 }{6.5}{"2"} = "IW2";
-#
-#	$res = $table{$material}{$toolSize}{$magazine};
-#
-#	unless ($res) {
-#		return 0;
-#	}
-#
-#	return $res;
-#}
-
-#sub GetSpecialToolFlag {
-#	my $self     = shift;
-#	my $material = shift;
-#	my $toolSize = shift;    #as float number
-#	my $magazine     = shift;
-#	my $code     = shift;
-#	my $desc     = shift;
-#
-#	my $res = 0;
-#
-#	my %table = ();
-#
-#	$table{ EnumsGeneral->Mat_FR4 }{6.5}{"1"}{"code"} = "IW1";
-#	$table{ EnumsGeneral->Mat_FR4 }{6.5}{"1"}{"desc"} = "6.5 90st";
-#	$table{ EnumsGeneral->Mat_FR4 }{6.5}{"2"}{"code"} = "IW2";
-#	$table{ EnumsGeneral->Mat_FR4 }{6.5}{"2"}{"desc"} = "6.5 120st";
-#
-#	$$code = $table{$material}{$toolSize}{$magazine}{"code"};
-#	$$desc = $table{$material}{$toolSize}{$magazine}{"desc"};
-#
-#	if ($code && $desc) {
-#		$res = 1;
-#	}
-#
-#	return $res;
-#}
 
 #return array with tool parameters for drilling according material
 sub GetMaterialParams {
@@ -372,64 +319,64 @@ sub GetMaterialParams {
 
 	my %params = ( "drill" => \@d, "rout" => \@r, "special" => \@s, "ok" => 1 );
 
-	#load parameters only when material exist
-	if ($materialName) {
+#	#load parameters only when material exist
+#	if ($materialName) {
+#
+#		if ( $materialName =~ /FR4/i ) {
+#
+#			$materialFile = "FR4";
+#
+#		}
+#		elsif ( $materialName =~ /IS410/i ) {
+#
+#			$materialFile = "IS410";
+#
+#		}
+#		elsif ( $materialName =~ /IS400/i ) {
+#
+#			$materialFile = "IS400";
+#
+#		}
+#		elsif ( $materialName =~ /Al/i ) {
+#
+#			$materialFile = "AL";
+#
+#		}
+#		elsif ( $materialName =~ /G200/i ) {
+#
+#			$materialFile = "G200";
+#			
+#		}elsif ( $materialName =~ /PCL370HR/i ) {
+#
+#			$materialFile = "PCL370HR";
+#		
+#		}elsif ( $materialName =~ /DUROID/i ) {
+#
+#			$materialFile = "R58X0-DUROID";
+#		}
+#
+#		print STDERR "\n\n$materialName - $ncPath - $materialFile\n\n";
+#	}
+#
+#	#IS420
+#	#G200
+#	#RO4
+#	#RO3
+#	#AL_CORE
+#	#CU_CORE
+#	#P96
+#	#P97
+#	#LAMBDA450
+#	#FOSFORBRONZ
+#	#ALPAKA
+#	#NEREZ
+#	#NEREZOVA_OCEL
+#
+#	unless ($materialFile) {
+#		$params{"ok"} = 0;
+#	}
 
-		if ( $materialName =~ /FR4/i ) {
-
-			$materialFile = "FR4";
-
-		}
-		elsif ( $materialName =~ /IS410/i ) {
-
-			$materialFile = "IS410";
-
-		}
-		elsif ( $materialName =~ /IS400/i ) {
-
-			$materialFile = "IS400";
-
-		}
-		elsif ( $materialName =~ /Al/i ) {
-
-			$materialFile = "AL";
-
-		}
-		elsif ( $materialName =~ /G200/i ) {
-
-			$materialFile = "G200";
-			
-		}elsif ( $materialName =~ /PCL370HR/i ) {
-
-			$materialFile = "PCL370HR";
-		
-		}elsif ( $materialName =~ /DUROID/i ) {
-
-			$materialFile = "R58X0-DUROID";
-		}
-
-		print STDERR "\n\n$materialName - $ncPath - $materialFile\n\n";
-	}
-
-	#IS420
-	#G200
-	#RO4
-	#RO3
-	#AL_CORE
-	#CU_CORE
-	#P96
-	#P97
-	#LAMBDA450
-	#FOSFORBRONZ
-	#ALPAKA
-	#NEREZ
-	#NEREZOVA_OCEL
-
-	unless ($materialFile) {
-		$params{"ok"} = 0;
-	}
-
-	$materialFile = $ncPath . "parametersFile\\" . $machine . "\\" . $materialFile;
+	$materialFile = $ncPath . "parametersFile\\" . $machine . "\\" . $materialName;
 
 	if ( open( my $fMat, "$materialFile" ) ) {
 

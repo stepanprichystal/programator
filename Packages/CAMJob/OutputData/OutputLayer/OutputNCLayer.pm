@@ -214,10 +214,21 @@ sub _FinalCheck {
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
 	my $step  = $self->{"step"};
-
+	
 	my %hist = CamHistogram->GetFeatuesHistogram( $inCAM, $jobId, $step, $layer->{"gROWname"} );
-	if ( $hist{"total"} == 0 ) {
-
+	my %symHist = CamHistogram->GetSymHistogram( $inCAM, $jobId, $step, $layer->{"gROWname"}, 1, 1 );
+	
+	my $featsLeftCnt = $hist{"total"};
+	
+	# all feats cnt - r0 pads cnt
+	if(defined $symHist{"pads"}->{"r0"} && $layer->{"gROWlayer_type"} eq "rout"){
+		
+		$featsLeftCnt -= $symHist{"pads"}->{"r0"};
+	}
+	
+	
+	if ( $featsLeftCnt == 0 ) {
+ 
 		# Restore backup layer
 		$inCAM->COM(
 					 'copy_layer',

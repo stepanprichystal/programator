@@ -576,11 +576,11 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	use aliased 'Packages::InCAM::InCAM';
 
 	my $inCAM = InCAM->new();
-	my $jobId = "f52456";
+	my $jobId = "d041857";
 
 	my $mess = "";
 
-	my $result = LayerCheckError->CheckNCLayers( $inCAM, $jobId, "o+1", undef, \$mess );
+	my $result = LayerCheckError->CheckNCLayers( $inCAM, $jobId, "mpanel", undef, \$mess );
 
 	print STDERR "Result is $result \n";
 
