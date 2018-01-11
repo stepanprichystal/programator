@@ -3,18 +3,21 @@ package Programs::Exporter::ExportUtility::Groups::AOIExport::AOIExportTmp;
 #3th party library
 use strict;
 use warnings;
+use Wx;
 
+use aliased 'Enums::EnumsPaths';
+use aliased 'Packages::InCAM::InCAM';
+use aliased 'Helpers::GeneralHelper';
+use aliased 'Packages::Events::Event';
+use aliased 'Programs::Exporter::ExportUtility::UnitEnums';
+use aliased 'Managers::MessageMngr::MessageMngr';
 use aliased 'Enums::EnumsGeneral';
 
-use aliased 'Programs::Exporter::ExportUtility::Groups::AOIExport::AOIExport';
-use aliased 'Programs::Exporter::ExportUtility::DataTransfer::UnitsDataContracts::AOIData';
-use aliased 'Programs::Exporter::ExportUtility::UnitEnums';
+use aliased "Programs::Exporter::ExportChecker::Groups::AOIExport::Presenter::AOIUnit" => "Unit";
+use aliased "Programs::Exporter::ExportUtility::Groups::AOIExport::AOIWorkUnit"        => "UnitExport";
 
-
-use aliased "Programs::Exporter::ExportChecker::Groups::AOIExport::Presenter::AOIUnit"  => "Unit";
-use aliased "rograms::Exporter::ExportUtility::Groups::AOIExport::AOIWorkUnit" => "UnitExport";
-
-use aliased 'Managers::MessageMngr::MessageMngr';
+use aliased 'Programs::Exporter::ExportChecker::ExportChecker::DefaultInfo::DefaultInfo';
+use aliased 'Packages::ItemResult::ItemResultMngr';
 
 #-------------------------------------------------------------------------------------------#
 #  NC export, all layers, all machines..
@@ -28,31 +31,68 @@ sub new {
 	my $self = shift;
 	$self = {};
 	bless $self;
+
+	$self->{"id"} = UnitEnums->UnitId_AOI;
+
 	return $self;
 }
 
 sub Run {
-	my $self       = shift;
-	my $inCAM      = shift;
-	my $jobId      = shift;
-	my $stepToTest = shift;
+	my $self  = shift;
+	my $inCAM = shift;
+	my $jobId = shift;
 
-	#GET INPUT NIF INFORMATION
+	$self->{"defaultInfo"} = DefaultInfo->new( $inCAM, $jobId );
 
-	my $taskData = $unit->GetExportData($inCAM);
+	# Check data
+
+	my $resultMngr = ItemResultMngr->new();
+
+	my $unit = Unit->new($jobId);
+	$unit->SetDefaultInfo( $self->{"defaultInfo"} );
+	$unit->InitDataMngr($inCAM);
+	$unit->CheckBeforeExport( $inCAM, \$resultMngr );
+
+	unless ( $resultMngr->Succes() ) {
+
+		my $str = "";
+		$str .= $resultMngr->GetErrorsStr();
+		$str .= $resultMngr->GetWarningsStr();
+
+		my $messMngr = MessageMngr->new( $self->{"jobId"} );
+
+		my @mess1 = ( "Kontrola pred exportem", $str );
+		$messMngr->ShowModal( -1, EnumsGeneral->MessageType_ERROR, \@mess1 );
+
+		#return 0;
+	}
+
+	my $taskData    = $unit->GetExportData($inCAM);
 	my $exportClass = UnitExport->new( $self->{"id"} );
 	$exportClass->SetTaskData($taskData);
 
+	# misto pro upravu exportovanych dat
+
+	#	my @layers = ();
+	#
+	#	my %lInfo = ();
+	#	$lInfo{"name"}     = "c";
+	#	$lInfo{"etchingType"}  = "pattern";
+	#
+	#	push(@layers, \%lInfo);
+
+	#$exportData->SetSignalLayers( \@layers );
+
+	#	$taskData->SetSignalLayers(\@layers);
+
 	$exportClass->Init( $inCAM, $jobId, $taskData );
 	$exportClass->{"onItemResult"}->Add( sub { Test(@_) } );
-	
- 
 	$exportClass->Run();
 
-	print "\n========================== E X P O R T: " . UnitEnums->UnitId_AOI . " ===============================\n";
+	print "\n========================== E X P O R T: " . $self->{"id"} . " ===============================\n";
 	print $resultMess;
 	print "\n========================== E X P O R T: "
-	  . UnitEnums->UnitId_AOI
+	  . $self->{"id"}
 	  . " - F I N I S H: "
 	  . ( $succes ? "SUCCES" : "FAILURE" )
 	  . " ===============================\n";
@@ -69,18 +109,19 @@ sub Run {
 		$resultMess .= "Task result: " . $itemResult->Result() . "\n";
 		$resultMess .= "Task errors: \n" . $itemResult->GetErrorStr() . "\n";
 		$resultMess .= "Task warnings: \n" . $itemResult->GetWarningStr() . "\n";
+
 	}
 
 	unless ($succes) {
 		my $messMngr = MessageMngr->new($jobId);
-		my @mess1    = ( "== EXPORT FAILURE === GROUP:  " . UnitEnums->UnitId_AOI . "\n" . $resultMess );
+
+		my @mess1 = ( "== EXPORT FAILURE === GROUP:  " . $self->{"id"} . "\n" . $resultMess );
 		$messMngr->ShowModal( -1, EnumsGeneral->MessageType_ERROR, \@mess1 );
 	}
 
 	return $succes;
-}
 
-1;
+}
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
@@ -89,14 +130,13 @@ sub Run {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	use aliased 'Programs::Exporter::ExportUtility::Groups::ETExport::ETExportTmp';
-
-	my $jobId    = "f13610";
-	my $stepName = "panel";
-	my $inCAM    = InCAM->new();
+	#	use aliased 'Programs::Exporter::ExportUtility::Groups::PlotExport::PlotExportTmp';
+	#	my $checkOk  = 1;
+	#	my $jobId    = "f13610";
+	#	my $stepName = "panel";
+	#	my $inCAM    = InCAM->new();
 
 	#GET INPUT NIF INFORMATION
-	my $stepToTest = "panel";
 
 }
 

@@ -12,6 +12,7 @@ use warnings;
 #loading of locale modules
 use aliased 'Helpers::GeneralHelper';
 use aliased 'Enums::EnumsPaths';
+use aliased 'Enums::EnumsGeneral';
 use aliased 'CamHelpers::CamJob';
 use aliased 'Helpers::JobHelper';
 use aliased 'CamHelpers::CamDrilling';
@@ -43,6 +44,7 @@ sub SetStage {
 	my $layerCnt = CamJob->GetSignalLayerCnt( $inCAM, $jobId );
 
 	my @pltLayer = CamDrilling->GetPltNCLayers( $inCAM, $jobId );
+	push(@pltLayer,  CamDrilling->GetNCLayersByType( $inCAM, $jobId, EnumsGeneral->LAYERTYPE_nplt_rsMill ) );  # add rs layer, because it is done before AOI testing too
 	CamDrilling->AddLayerStartStop( $inCAM, $jobId, \@pltLayer );
 
 	# get plated drill layers, which goes from <$layerName>
