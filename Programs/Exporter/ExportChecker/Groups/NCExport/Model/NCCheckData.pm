@@ -25,6 +25,7 @@ use aliased 'Packages::CAM::UniRTM::UniRTM::UniRTM';
 use aliased 'Helpers::GeneralHelper';
 use aliased 'Packages::CAMJob::Drilling::CheckAspectRatio';
 use aliased 'Packages::CAMJob::Drilling::CheckHolePads';
+use aliased 'Packages::CAMJob::Routing::CheckRoutPocket';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -105,7 +106,7 @@ sub OnCheckGroupData {
 	my $checkLayer = "f";
 
 	if ( $defaultInfo->LayerExist($checkLayer) ) {
-		
+
 		my @checkSteps = ();
 
 		if ( $defaultInfo->LayerExist("fsch") ) {
@@ -320,6 +321,32 @@ sub OnCheckGroupData {
 			$dataMngr->_AddErrorResult( "Missing pads - step $step", $mess );
 		}
 	}
+
+	# 12) Check if rout pocket has right direction
+
+	foreach my $stepName (@steps) {
+
+		my @layerInf = ();
+
+		unless ( CheckRoutPocket->CheckRoutPocketDirAllLayers( $inCAM, $jobId, $stepName, 1, \@layerInf ) ) {
+
+			my $str = join("\n",
+				 map {
+					    "- Layer: ".$_->{"layer"}
+					  . " has right dir: "
+					  . $_->{"rightDir"}
+					  . ",  wrong dir: "
+					  . $_->{"wrongDir"}
+					  . ". Wrong surface ids: "
+					  . join( "; ", map { $_->{"id"} } @{ $_->{"surfaces"} } )
+				} @layerInf
+			);
+			
+			$dataMngr->_AddErrorResult( "Pocket direction", "There is a wrong pocket direction in rout layers (step $stepName) :\n" . $str."\n Repair attribute .rout_pocket_direction in surfaces." );
+		}
+
+	}
+
 }
 
 #-------------------------------------------------------------------------------------------#

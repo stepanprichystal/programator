@@ -161,11 +161,11 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId = "d041857";
+	my $jobId = "d152456";
 
 	my $mess = "";
 
-	my $control = OutputData->new( $inCAM, $jobId, "mpanel" );
+	my $control = OutputData->new( $inCAM, $jobId, "o+1" );
 	$control->Create( \$mess );
 
 	#$control->Clear();

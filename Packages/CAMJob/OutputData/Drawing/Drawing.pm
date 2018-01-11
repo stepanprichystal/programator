@@ -107,17 +107,38 @@ sub CreateDetailZaxis {
 	$self->__AddPcbDrawSide( \@surfPoints, "left" );
 
 	# create detail part of surface
+
 	my $drawW        = $self->{"drawWidth"};
 	my $diameterReal = $radius * 2 * $self->{"scale"};
 	my $depthReal    = $depth * $self->{"scale"};
 
 	my $x1 = ( ( $drawW - $diameterReal ) / 2 );
-	my $x2 = ( ( $drawW - $diameterReal ) / 2 + $diameterReal );
 
-	push( @surfPoints, Point->new( $x1, 0 ) );
-	push( @surfPoints, Point->new( $x1, -$depthReal ) );
-	push( @surfPoints, Point->new( $x2, -$depthReal ) );
-	push( @surfPoints, Point->new( $x2, 0 ) );
+	if ( $type eq "slot" ) {
+
+		my $x2 = ( ( $drawW - $diameterReal ) / 2 + $diameterReal );
+
+		push( @surfPoints, Point->new( $x1, 0 ) );
+		push( @surfPoints, Point->new( $x1, -$depthReal ) );
+		push( @surfPoints, Point->new( $x2, -$depthReal ) );
+		push( @surfPoints, Point->new( $x2, 0 ) );
+
+	}
+
+	# standard drill tool has angle of pike 130deg
+	elsif ( $type eq "hole" ) {
+
+		my $x2 = ( ( $drawW - $diameterReal ) / 2 + $diameterReal / 2 );
+		my $x3 = ( ( $drawW - $diameterReal ) / 2 + $diameterReal );
+
+		my $y1 = -$depthReal +tan( deg2rad( 25 ) ) * $radius;
+
+		push( @surfPoints, Point->new( $x1, 0 ) );
+		push( @surfPoints, Point->new( $x1, $y1 ) );
+		push( @surfPoints, Point->new( $x2, -$depthReal ) );
+		push( @surfPoints, Point->new( $x3, $y1 ) );
+		push( @surfPoints, Point->new( $x3, 0 ) );
+	}
 
 	$self->__AddDetailDraw( \@surfPoints );
 
@@ -212,7 +233,7 @@ sub CreateDetailZaxisSurf {
 
 	# 2) Add dimensions
 	# ----------------------------------
-	
+
 	$self->__AddPcbThickDim();
 
 	# Create dimension draw for depth
@@ -239,7 +260,7 @@ sub CreateDetailZaxisSurf {
 	# ----------------------------------
 
 	my $txt = "z-axis from " . uc( $self->{"side"} );
- 
+
 	$self->__AddTitleTexts($txt);
 
 }
@@ -326,7 +347,7 @@ sub CreateDetailCountersink {
 								   ( $w * 0.2 ), ( $w * 0.02 ),
 								   $diameterReal, ( $w * 0.2 ),
 								   "both", $self->{"dimLineWidth"},
-								   "D " . sprintf( "%.2f", $diameter ) . "mm".( $type eq "slot"? "(tool)" : ""), $self->{"dimTextHeight"},
+								   "D " . sprintf( "%.2f", $diameter ) . "mm" . ( $type eq "slot" ? "(tool)" : "" ), $self->{"dimTextHeight"},
 								   $self->{"dimTextWidth"}, $self->{"dimTextMirror"},
 								   $self->{"dimTextAngle"}
 	);
@@ -377,8 +398,6 @@ sub CreateDetailCountersink {
 
 	$self->__AddTitleTexts($txt);
 
- 
-
 }
 
 sub __AddTitleTexts {
@@ -395,8 +414,6 @@ sub __AddTitleTexts {
 	}
 
 	$title .= $text;
-
-	 
 
 	$self->{"drawingTitle"}->AddPrimitive( PrimitiveText->new( $title, Point->new(), $self->{"titleTextHeight"}, $self->{"titleTextLineWidth"} ) );
 
