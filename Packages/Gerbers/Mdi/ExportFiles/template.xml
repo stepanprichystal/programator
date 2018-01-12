@@ -18,7 +18,7 @@
   <scaling_mode>1</scaling_mode>
   <marker_mode>0</marker_mode>
   <exposure_area_reduction x="0" y="0" z="0" />
-  <fiducials />
+  <fiducials count="0" />
   <image_object_default>
     <image_object>
       <version>2.1</version>
