@@ -25,25 +25,39 @@ use aliased 'Managers::MessageMngr::MessageMngr';
 #-------------------------------------------------------------------------------------------#
 sub new {
 
-	my $self      = shift;
+	my $class      = shift;
 	my $parent    = shift;
 	my $title     = shift;
 	my $dimension = shift;
 	my $flags = shift;
+	my $position = shift;
+	 
 	
 	unless(defined $flags){
 		$flags = &Wx::wxSYSTEM_MENU | &Wx::wxCAPTION | &Wx::wxCLIP_CHILDREN | &Wx::wxRESIZE_BORDER | &Wx::wxMINIMIZE_BOX |  &Wx::wxCLOSE_BOX;
 	}
 	
-	$self = {};
+	unless(defined $position){
+		$position = &Wx::wxDefaultPosition;
+	}
+	
+	my $self = {};
 
-	if ( !defined $parent || $parent == -1 ) {
+
+	# $parent:1 means there exist already Wx:App (caller), but don't use its parent frame
+	if($parent == 1){
+		
+		$parent = undef;
+	}
+	# if no parent, we have to create new Wx::App
+	elsif ( !defined $parent || $parent == -1) {
+		
 		$self = Wx::App->new( \&OnInit );
 	}
 
 	bless($self);
 
-	my $mainFrm = $self->__SetLayout( $parent, $title, $dimension, $flags );
+	my $mainFrm = $self->__SetLayout( $parent, $title, $dimension, $flags, $position );
 
 	# Properties
 	$self->{"btnHeight"} = 30;
@@ -71,8 +85,11 @@ sub SetButtonHeight {
 sub AddContent {
 	my $self    = shift;
 	my $content = shift;
+	my $margin = shift // 4; # default margin 4 px 
+	
+ 
 
-	$self->{"szContainer"}->Add( $content, 1, &Wx::wxEXPAND | &Wx::wxALL, 4 );
+	$self->{"szContainer"}->Add( $content, 1, &Wx::wxEXPAND | &Wx::wxALL, $margin );
 }
 
 sub AddButton {
@@ -92,7 +109,7 @@ sub AddButton {
 
 	Wx::Event::EVT_BUTTON( $btn, -1, sub { $handler->(@_) } );
 
-	$self->{"szBtnsChild"}->Add( $btn, 0, &Wx::wxALL, 2 );
+	$self->{"szBtnsChild"}->Add( $btn, 0, &Wx::wxALL, 1 );
 
 	$self->{"mainFrm"}->Layout();
 	
@@ -115,18 +132,24 @@ sub __SetLayout {
 	my $title     = shift;
 	my $dimension = shift;
 	my $flags = shift;
+	my $position = shift;
+	
 
 	#main formDefain forms
 	my $mainFrm = MyWxFrame->new(
 								  $parent,                   # parent window
 								  -1,                        # ID -1 means any
 								  $title,                    # title
-								  &Wx::wxDefaultPosition,    # window position
+								  $position,    # window position
 								  $dimension,                # size
 								  $flags
 	);
 
-	$mainFrm->CentreOnParent(&Wx::wxBOTH);
+	if($position eq &Wx::wxDefaultPosition){
+
+		$mainFrm->CentreOnParent(&Wx::wxBOTH);
+	
+	}
 
 	# DEFINE SIZERS
 
@@ -146,7 +169,7 @@ sub __SetLayout {
 
 	# DEFINE LAYOUT STRUCTURE
 
-	$szBtns->Add( 10, 10, 1, &Wx::wxGROW );
+	$szBtns->Add( 10, 0, 1, &Wx::wxGROW );
 	$szBtns->Add( $szBtnsChild, 0, &Wx::wxALIGN_RIGHT | &Wx::wxALL );
 	$pnlBtns->SetSizer($szBtns);
 

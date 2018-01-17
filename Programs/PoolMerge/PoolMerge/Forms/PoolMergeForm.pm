@@ -26,7 +26,7 @@ use aliased 'Programs::PoolMerge::PoolMerge::Forms::JobQueueForm';
 use aliased 'Managers::MessageMngr::MessageMngr';
 use aliased 'Widgets::Forms::CustomNotebook::CustomNotebook';
 use aliased 'Widgets::Forms::MyWxBookCtrlPage';
- 
+use aliased 'Programs::PoolMerge::PoolMerge::NotifyMngr';
 use aliased 'Managers::AsyncJobMngr::ServerMngr::ServerInfo';
 use aliased 'Packages::Other::AppConf';
 
@@ -37,14 +37,12 @@ use aliased 'Packages::Other::AppConf';
 sub new {
 	my $class = shift;
 
-	 
-	 
-
 	my $self = $class->SUPER::new( @_  );
 
 	bless($self);
 
 	# Properties
+	$self->{"notifyMngr"} = NotifyMngr->new( $self );
 
 	# Events
 

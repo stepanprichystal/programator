@@ -137,7 +137,7 @@ sub __OnJobStateChangedBase {
 	elsif ( $taskState eq EnumsJobMngr->JobState_WAITINGPORT ) {
 
 		$status = "Waiting on InCAM port.";
-		$self->{"form"}->ActivateForm( 1, $taskData->GetFormPosition() );
+		#$self->{"form"}->ActivateForm( 1, $taskData->GetFormPosition() );
 
 	}
 	elsif ( $taskState eq EnumsJobMngr->JobState_RUNNING ) {
@@ -344,6 +344,13 @@ sub __OnRemoveJobClick {
 		# hide abstractQueue
 		$self->{"form"}->ActivateForm(0);
 	}
+	
+	
+	# Close properly window of notify mngr
+	if(defined $self->{"form"}->GetNotifyMngr()){
+		
+		$self->{"form"}->GetNotifyMngr()->DestroyNotifiesByTaskId($taskId);
+	}
 
 }
 
@@ -363,6 +370,12 @@ sub __OnCloseAbstractQueueBase {
 
 			$self->__OnRemoveJobClick( $task->GetTaskId() );
 		}
+	}
+	
+	# Close properly window of notify mngr
+	if(defined $self->{"form"}->GetNotifyMngr()){
+		
+		$self->{"form"}->GetNotifyMngr()->CleanUp();
 	}
 
 }

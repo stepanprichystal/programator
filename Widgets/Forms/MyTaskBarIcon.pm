@@ -8,6 +8,14 @@ package Widgets::Forms::MyTaskBarIcon;
 
 #3th party library
 use Wx;
+ 
+
+#local library
+use aliased 'Packages::Events::Event';
+use aliased 'Managers::AbstractQueue::NotifyMngr::Forms::NotifyFrm';
+use aliased 'Managers::AbstractQueue::NotifyMngr::Notify';
+use aliased 'Packages::Other::AppConf';
+ 
 
 #use Wx::TaskBarIcon;
 use strict;
@@ -29,7 +37,7 @@ sub new {
 
 	$self->{"taskBarIcon"} = Wx::TaskBarIcon->new();
 
-	my $btmIco = Wx::Bitmap->new( $iconPath , &Wx::wxBITMAP_TYPE_BMP );
+	my $btmIco = Wx::Bitmap->new( $iconPath, &Wx::wxBITMAP_TYPE_BMP );
 	my $icon = Wx::Icon->new();
 	$icon->CopyFromBitmap($btmIco);
 
@@ -54,11 +62,11 @@ sub new {
 	return $self;
 }
 
-sub DESTROY{
+sub DESTROY {
 	my $self = shift;
-	
+
 	$self->{"taskBarIcon"}->RemoveIcon();
-	
+
 }
 
 sub AddMenuItem {
@@ -77,25 +85,25 @@ sub AddMenuItem {
 sub __OnLeftClick {
 	my $self = shift;
 
-	print "LEFT click\n";
-
-	#$self->{"formShowed"} = !$self->{"formShowed"};
-
-	#print "isShown".$self->{"form"}->IsShown()."\n" ;
-	#print "IsShownOnScreen".$self->{"form"}->IsShownOnScreen()."\n" ;
 	my $showed = $self->{"form"}->IsShown();
 
 	if ( !$showed ) {
-		$self->{"form"}->Show();
-		$self->{"form"}->Iconize(0);
+		$self->{"form"}->Show();        # show form
+		$self->{"form"}->Iconize(0);    # if form is minimalised, restore
+		$self->{"form"}->Raise();		# bring to front
+ 
 
+	}
+	elsif ( $showed && $self->{"form"}->IsIconized() ) {
+		$self->{"form"}->Iconize(0);
+		$self->{"form"}->Raise();
 	}
 	else {
 
 		#$self->{"form"}->Iconize(1);
 		$self->{"form"}->Hide();
-
 	}
+ 
 
 }
 
@@ -127,7 +135,6 @@ sub __OnMenuItemClick {
 	}
 
 }
- 
 
 1;
 
@@ -138,19 +145,19 @@ sub __OnMenuItemClick {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-#	use aliased 'Widgets::Forms::MyTaskBarIcon';
-#
-#	my $form;
-#
-#	my $trayicon = MyTaskBarIcon->new( "Exporter", $form );
-#
-#	$trayicon->IsOk() || die;
-#
-#	my $menu = Wx::Menu->new();
-#	$menu->Append( -1, "menu 1" );
-#	$menu->Append( -1, "menu 2" );
-#
-#	$trayicon->PopupMenu($menu);
+	#	use aliased 'Widgets::Forms::MyTaskBarIcon';
+	#
+	#	my $form;
+	#
+	#	my $trayicon = MyTaskBarIcon->new( "Exporter", $form );
+	#
+	#	$trayicon->IsOk() || die;
+	#
+	#	my $menu = Wx::Menu->new();
+	#	$menu->Append( -1, "menu 1" );
+	#	$menu->Append( -1, "menu 2" );
+	#
+	#	$trayicon->PopupMenu($menu);
 
 }
 

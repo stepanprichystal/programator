@@ -34,8 +34,8 @@ use aliased 'Connectors::TpvConnector::TaskOndemMethods';
 my $orderId  = shift;    # job order for process
 my $taskType = shift;    # type of task to process
 
-#$orderId = "d152456-01";
-#$taskType = TaskEnums->Data_CONTROL;
+$orderId = "d152456-01";
+$taskType = TaskEnums->PCB_TOPRODUCE;
 
 my $logConfig = "c:\\Apache24\\htdocs\\tpv\\Logger.conf";
 Log::Log4perl->init($logConfig);
@@ -96,7 +96,9 @@ sub __PcbToProduce {
 	# 1) change some lines in MDI xml files eval
 	eval {
 
+		$logger->debug("Before process MDI files --".$orderId."--");
 		MDIFiles->AddPartsNumber($orderId);
+		$logger->debug("After process MDI files --".$orderId."--");
 
 	};
 	if ($@) {

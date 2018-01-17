@@ -37,6 +37,9 @@ hideAfterStart = 1
 # Number of second, succesfull finished job will be auto removed from queue
 autoRemove = 20
 
+ 
+ 
+ 
 
 # Loging type 
 # 0 - no log, 

@@ -191,6 +191,9 @@ sub __OnJobStateChanged {
 		}
 
 	}
+	
+	
+	$self->{"form"}->GetNotifyMngr()->JobStateChanged($task, $taskState, $taskStateDetail);
 }
 
 # First is called this function in base class, then is called this handler
@@ -218,12 +221,16 @@ sub __OnJobMessageEvtHandler {
 
 			$self->{"form"}->SetJobItemStatus( $taskId, "Pool merging is paused ..." );
 			$self->{"form"}->SetJobItemStopped($task);
+			
+			$self->{"form"}->GetNotifyMngr()->JobPaused($task);
 
 		}
 		elsif ( $data->{"itemId"} eq EnumsAbstrQ->EventItemType_CONTINUE ) {
 
 			$self->{"form"}->SetJobItemStatus( $taskId, "Running ..." );
 			$self->{"form"}->SetJobItemContinue($task);
+			
+			$self->{"form"}->GetNotifyMngr()->DestroyNotifiesByTaskId($taskId);
 
 		}
 		elsif ( $data->{"itemId"} eq EnumsAbstrQ->EventItemType_CONTINUEERR ) {

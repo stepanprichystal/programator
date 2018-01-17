@@ -501,7 +501,7 @@ sub __SetLayout {
 		AppConf->GetValue("appName"),    # title
 		[ -1, -1 ],                      # window position
 		\@dimension,                     # size   &Wx::wxSTAY_ON_TOP |
-		&Wx::wxSTAY_ON_TOP | &Wx::wxSYSTEM_MENU | &Wx::wxCAPTION | &Wx::wxRESIZE_BORDER | &Wx::wxMINIMIZE_BOX | &Wx::wxMAXIMIZE_BOX | &Wx::wxCLOSE_BOX
+		  &Wx::wxSYSTEM_MENU | &Wx::wxCAPTION | &Wx::wxRESIZE_BORDER | &Wx::wxMINIMIZE_BOX | &Wx::wxMAXIMIZE_BOX | &Wx::wxCLOSE_BOX
 	);
 
 	my $iconPath = GeneralHelper->Root() . "/Resources/Images/" . AppConf->GetValue("appIcon");

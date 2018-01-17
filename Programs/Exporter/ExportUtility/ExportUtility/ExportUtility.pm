@@ -145,6 +145,10 @@ sub __OnJobStateChanged {
 		}
 
 	}
+ 
+ 
+	$self->{"form"}->GetNotifyMngr()->JobStateChanged($task, $taskState, $taskStateDetail);
+ 
 }
 
 # First is called this function in base class, then is called this handler

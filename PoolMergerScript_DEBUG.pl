@@ -29,7 +29,7 @@ $main::DEBUG = 1;
 #NonStandartUnits();
 CreateFakePoolFile(0);
 #CreateFakePoolFile(1);
-NotCreateServer();
+#NotCreateServer();
 NoChecks();
 # ----------------------------------------------
 
@@ -73,16 +73,16 @@ sub NoChecks{
 sub CreateFakePoolFile {
 	my $createJobs = shift;
 	
-	my $motherOri   = "f88466";
-	my $mother      = "f13608";
-	my $motherOrder = "f13608-01";
+	my $motherOri   = "d188466";
+	my $mother      = "d113608";
+	my $motherOrder = "d113608-01";
 
-	my $childOri   = "f57100";
-	my $child      = "f13609";
-	my $childOrder = "f13609-01";
+	my $childOri   = "d157100";
+	my $child      = "d113609";
+	my $childOrder = "d113609-01";
 
-	HegMethods->UpdatePooling( "f13608-01", 1 );
-	HegMethods->UpdatePooling( "f13609-01", 1 );
+	HegMethods->UpdatePooling( "d113608-01", 1 );
+	HegMethods->UpdatePooling( "d113609-01", 1 );
 	
 #	HegMethods->UpdatePcbOrderState($motherOrder, "k panelizaci");
 #	HegMethods->UpdatePcbOrderState($childOrder, "k panelizaci");

@@ -33,6 +33,7 @@ use aliased 'Managers::AsyncJobMngr::ServerMngr::ServerInfo';
 use aliased 'Managers::AbstractQueue::Helper';
 use aliased 'Packages::Other::AppConf';
 
+
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
@@ -50,6 +51,7 @@ sub new {
 	bless($self);
 
 	# Properties
+	
  
 	# Events
 
@@ -169,6 +171,28 @@ sub ActivateForm {
 	}
 }
 
+# return reference to notifz mngr if exist
+sub GetNotifyMngr{
+	my $self   = shift;
+	
+	unless(defined $self->{"notifyMngr"}){
+		
+		die "Notify Mngr is not set";
+	}
+	
+	return $self->{"notifyMngr"};
+}
+
+# select job item in queue by
+sub SelectJobItem {
+	my $self         = shift;
+	my $taskId	 = shift;
+	
+	my $jobQueueItem =  $self->{"jobQueue"}->GetItem($taskId);
+	
+	$jobQueueItem->{"onItemClick"}->Do($jobQueueItem); # simulate queue item click
+
+}
 # ============================================================
 # Mehtods for update job queue items
 # ============================================================

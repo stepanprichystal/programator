@@ -26,7 +26,7 @@ use aliased 'Programs::Exporter::ExportUtility::ExportUtility::Forms::JobQueueFo
 use aliased 'Managers::MessageMngr::MessageMngr';
 use aliased 'Widgets::Forms::CustomNotebook::CustomNotebook';
 use aliased 'Widgets::Forms::MyWxBookCtrlPage';
- 
+use aliased 'Programs::Exporter::ExportUtility::ExportUtility::NotifyMngr';
 use aliased 'Managers::AsyncJobMngr::ServerMngr::ServerInfo';
 use aliased 'Packages::Other::AppConf';
 
@@ -41,6 +41,8 @@ sub new {
 	bless($self);
 
 	# Properties
+	$self->{"notifyMngr"} = NotifyMngr->new( $self );
+	
 
 	# Events
 
