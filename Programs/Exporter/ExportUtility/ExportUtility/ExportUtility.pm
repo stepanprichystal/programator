@@ -108,8 +108,10 @@ sub __OnJobStateChanged {
 	my $task     = $self->_GetTaskById($taskId);
 	my $taskData = $task->GetTaskData();
 
-	if ( $taskState eq EnumsJobMngr->JobState_DONE ) {
+	
 
+	if ( $taskState eq EnumsJobMngr->JobState_DONE ) {
+		
 		# Set values, if job can be sent to produce
 		$task->SetToProduceResult();
 		

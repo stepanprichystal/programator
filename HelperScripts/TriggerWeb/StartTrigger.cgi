@@ -38,6 +38,7 @@ eval {
 
 	# 1) Log before call TrigerPage.pl
 	$logger->info("Params of request: jobId = $jobId, task = $taskType");
+ 
 
 	# 2) Run TrigerPage.pl
 	my $result = __TriggerPage($jobId, $taskType);

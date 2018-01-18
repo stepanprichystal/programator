@@ -361,6 +361,8 @@ sub __PortReadyHandler {
 # Run after job finish its working mehod
 sub __ThreadDoneHandler {
 	my ( $self, $frame, $event ) = @_;
+	
+	 
 
 	my %d = %{ $event->GetData };
 
@@ -380,9 +382,12 @@ sub __ThreadDoneHandler {
 
 	# Set new job state DONE
 	$self->__SetJobState( $jobGUID, Enums->JobState_DONE );
+	
+	
 
 	#reise event
 	$self->{'onJobStateChanged'}->Do( $jobGUID, Enums->JobState_DONE, $exitType );
+	
 }
 
 sub __ThreadProgressHandler {

@@ -35,10 +35,9 @@ sub AddPartsNumber {
 	$jobId =~ s/-.*$//;
 
 	my $reg = $jobId . ".*_mdi.xml";
-
+ 
 	my @xmlFiles = FileHelper->GetFilesNameByPattern( EnumsPaths->Jobs_MDI, $reg );
  
-
 	unless ( scalar(@xmlFiles) ) {
 
 		$logger->debug("No xml files - $jobId found");

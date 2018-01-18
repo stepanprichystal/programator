@@ -123,6 +123,8 @@ sub __OnJobStateChangedBase {
 	my $taskId          = shift;
 	my $taskState       = shift;
 	my $taskStateDetail = shift;
+	
+
 
 	my $task     = $self->_GetTaskById($taskId);
 	my $taskData = $task->GetTaskData();
@@ -151,7 +153,9 @@ sub __OnJobStateChangedBase {
 
 	}
 	elsif ( $taskState eq EnumsJobMngr->JobState_DONE ) {
-
+		
+		
+  
 		# Refresh GUI - job queue
 
 		#	 ExitType_SUCCES => 'Succes',
@@ -182,6 +186,8 @@ sub __OnJobStateChangedBase {
 		$self->{"form"}->SetJobItemResult($task);
 		
 		get_logger("abstractQueue")->info( "Job ".$task->GetJobId()." is done.\n" );
+		
+		
 
 
 	}

@@ -32,6 +32,7 @@ sub JobStateChanged {
 	my $taskState       = shift;
 	my $taskStateDetail = shift;
  
+ 
 	# show only if form is in tray or if is iconized
 	my $parentFrm = $self->{"abstractQueue"}->{"mainFrm"};
 	
@@ -62,6 +63,7 @@ sub JobStateChanged {
 
 	}
 	elsif ( $taskState eq EnumsJobMngr->JobState_DONE ) {
+		
 
 		my $totalResult           = 1;
 		my $toProduceResultStatus = EnumsGeneral->ResultType_NA;

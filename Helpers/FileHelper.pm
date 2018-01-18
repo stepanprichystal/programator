@@ -135,6 +135,7 @@ sub GetFilesNameByPattern {
 	}
 
 	#get all files from path
+	
 	opendir( DIR, $dirPath ) or die $!;
 
 	while ( my $file = readdir(DIR) ) {
