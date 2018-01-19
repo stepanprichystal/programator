@@ -78,23 +78,23 @@ sub __PrepareStencilDataLayer {
 		if ( $self->{"params"}->GetStencilType() eq StnclEnums->StencilType_TOP ) {
 
 			$enTit = "Production stencil data for TOP pcb side";
-			$czTit = "Výrobní data pro vrchní stranu dps";
+			$czTit = "Výrobní data pro vrchní TOP stranu dps";
 
 		}
 		elsif ( $self->{"params"}->GetStencilType() eq StnclEnums->StencilType_BOT ) {
 
 			$enTit = "Production stencil data for BOT pcb side";
-			$czTit = "Výrobní data pro spodní stranu dps";
+			$czTit = "Výrobní data pro spodní BOT stranu dps";
 
 		}
 		elsif ( $self->{"params"}->GetStencilType() eq StnclEnums->StencilType_TOPBOT ) {
 
 			$enTit = "Production stencil data for TOP + BOTTOM pcb side";
-			$czTit = "Výrobní data pro vrchní a spodní stranu dps";
+			$czTit = "Výrobní data pro vrchní TOP a spodní BOT stranu dps";
 		}
 
-		my $enInf = "Production data are shown as viewed from the top.";
-		my $czInf = "Výrobní data jsou zobrazena při pohledu z vrchu.";
+		my $enInf = "Production data are shown as viewed from the top of pcb.";
+		my $czInf = "Výrobní data jsou zobrazena při pohledu z vrchu dps.";
 		$inCAM->COM( "merge_layers", "source_layer" => $layer->{"gROWname"}, "dest_layer" => $lName );
 
 		my $lData = LayerData->new( "", $layer, $enTit, $czTit, $enInf, $czInf, $lName );

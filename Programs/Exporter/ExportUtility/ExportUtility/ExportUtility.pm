@@ -133,6 +133,14 @@ sub __OnJobStateChanged {
 
 			# refresh GUI to produce
 			$self->{"form"}->SetJobItemToProduceResult($task);
+		
+		
+		}else{
+			
+			if($task->Result() eq EnumsGeneral->ResultType_OK){
+			
+				$self->_AddJobToAutoRemove( $task->GetTaskId() );
+			}
 		}
 
 		# if task done, check if thera are errors or note
@@ -145,6 +153,9 @@ sub __OnJobStateChanged {
 				$task->SetErrorState();		
 			}
 		}
+		
+		
+		
 
 	}
  

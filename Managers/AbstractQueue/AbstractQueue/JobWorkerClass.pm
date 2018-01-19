@@ -13,6 +13,7 @@ use warnings;
 use Try::Tiny;
 
 
+
 #local library
 
 use aliased 'Helpers::GeneralHelper';
@@ -199,6 +200,7 @@ sub _CloseJob {
 	}
 
 	CamJob->CheckInJob( $self->{"inCAM"}, ${ $self->{"pcbId"} } );
+ 	
 	CamJob->CloseJob( $self->{"inCAM"}, ${ $self->{"pcbId"} } );
 
 	# STOP HANDLE EXCEPTION IN INCAM

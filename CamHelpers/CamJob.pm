@@ -336,11 +336,10 @@ sub GetNCLayers {
 
 	my @layers = $self->GetAllLayers(@_);
 
-	@layers = grep { $_->{"gROWcontext"} eq "board" && ($_->{"gROWlayer_type"} eq "rout" || $_->{"gROWlayer_type"} eq "drill") } @layers;
+	@layers = grep { $_->{"gROWcontext"} eq "board" && ( $_->{"gROWlayer_type"} eq "rout" || $_->{"gROWlayer_type"} eq "drill" ) } @layers;
 
 	return @layers;
 }
-
 
 #Return layer names by layer type
 sub GetLayerByType {
@@ -482,7 +481,22 @@ sub GetJobList {
 	my $self  = shift;
 	my $inCAM = shift;
 
-	$inCAM->INFO( "units" => 'mm', "angle_direction" => 'ccw', "entity_type" => 'root', "data_type" => 'JOBS_LIST' );
+	# TODO - smazat log
+	use Log::Log4perl qw(get_logger);
+	my $logger = get_logger("testService");
+
+	for my $i ( 1 .. 10 ) {
+
+		$inCAM->INFO( "units" => 'mm', "angle_direction" => 'ccw', "entity_type" => 'root', "data_type" => 'JOBS_LIST' );
+
+		if ( !defined $inCAM->{doinfo}{gJOBS_LIST} ) {
+			$logger->error("Joblist not defined $i");
+			sleep(1);
+		}
+		else {
+			last;
+		}
+	}
 
 	my @jobs = @{ $inCAM->{doinfo}{gJOBS_LIST} };
 
@@ -495,7 +509,7 @@ sub JobExist {
 	my $inCAM = shift;
 	my $jobId = shift;
 
-	my @list =  $self->GetJobList($inCAM);
+	my @list = $self->GetJobList($inCAM);
 
 	my $exist = scalar( grep { $_ =~ /^$jobId$/i } @list );
 
@@ -523,8 +537,6 @@ sub DeleteJob {
 	}
 }
 
-
-
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#
@@ -539,9 +551,13 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	my $jobId = "f52457";
 
 	my $user = undef;
-	my $isOpen = CamJob->IsJobOpen( $inCAM, "f52456", 1,\$user  );
+	
+	while(1){
+	my @list = CamJob->GetJobList($inCAM);
 
-	print $isOpen ." by ". $user ;
+	print @list."\n";
+	
+	}
 
 }
 

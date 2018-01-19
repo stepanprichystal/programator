@@ -11,6 +11,7 @@ use base("Managers::AbstractQueue::AbstractQueue::JobWorkerClass");
 use strict;
 use warnings;
 use Try::Tiny;
+use Win32::GuiTest qw(SetForegroundWindow GetForegroundWindow );
 
 #local library
 
@@ -36,8 +37,8 @@ sub new {
 
 sub RunTask {
 	my $self = shift;
-	
-	$self->{"logger"}->debug("Thread start, pcb id:".${$self->{"pcbId"}});
+
+	$self->{"logger"}->debug( "Thread start, pcb id:" . ${ $self->{"pcbId"} } );
 
 	eval {
 		$self->__RunTask();
@@ -58,8 +59,8 @@ sub RunTask {
 
 		$self->_TaskResultEvent( ResultEnums->ItemResult_Fail, $errStr );
 	}
-	
-	$self->{"logger"}->debug("Thread end, pcb id:".${$self->{"pcbId"}});
+
+	$self->{"logger"}->debug( "Thread end, pcb id:" . ${ $self->{"pcbId"} } );
 
 }
 
@@ -94,8 +95,8 @@ sub __RunTask {
 		# 2) Process groups
 
 		for ( my $i = 0 ; $i < scalar(@keys) ; $i++ ) {
-			
-			$self->{"logger"}->debug("Thread group processing: $i/".scalar(@keys).", pcb id:".${$self->{"pcbId"}});
+
+			$self->{"logger"}->debug( "Thread group processing: $i/" . scalar(@keys) . ", pcb id:" . ${ $self->{"pcbId"} } );
 
 			my $unitId = $keys[$i];
 
@@ -132,21 +133,22 @@ sub __RunTask {
 
 			# Event when group export end
 			$self->_GroupTaskEvent( Enums->EventType_GROUP_END, $unitId );
- 
+
 		}
 
 		#close job
 
 		if ( $mode eq EnumsJobMngr->TaskMode_ASYNC ) {
 
+			#my $hwndCurWin = GetForegroundWindow(); # Incamsteal focus from another window when close job
+
 			$self->_CloseJob();
+
+			#SetForegroundWindow($hwndCurWin); # return focus to former window
 		}
-		
-		
-		
+
 	}
-	
-	
+
 }
 
 sub __InitGroup {

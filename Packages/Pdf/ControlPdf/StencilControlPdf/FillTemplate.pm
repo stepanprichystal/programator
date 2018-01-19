@@ -156,14 +156,14 @@ sub Fill {
 	my $typeCz = "";
 	if($params->GetStencilType() eq StnclEnums->StencilType_TOP){
 		$typeEn = "For TOP pcb side";
-		$typeCz = "Pro vrchní stranu dps";
+		$typeCz = "Pro vrchní TOP stranu dps";
 	
 	}elsif($params->GetStencilType() eq StnclEnums->StencilType_BOT){
 		$typeEn = "For BOTTOM pcb side";
-		$typeCz = "Pro spodní stranu pcb";
+		$typeCz = "Pro spodní BOT stranu pcb ";
 	}elsif($params->GetStencilType() eq StnclEnums->StencilType_TOPBOT){
 		$typeEn = "For TOP+BOTTOM pcb side";
-		$typeCz = "Pro vrchní + spodní stranu dps";
+		$typeCz = "Pro vrchní TOP + spodní BOT stranu dps";
 	}
 	
 	
@@ -242,7 +242,7 @@ sub SetDataSource {
  	}
  
 	$template->SetKey( "LegendFiduc", $legendFiducEn, $legendFiducCz );
-	$template->SetKey( "TopView", "View from readable side", "Pohled z čitelné strany" );
+	$template->SetKey( "TopView", "View from readable side (squeegee side)", "Pohled z čitelné strany (strana stěrky)" );
 	$template->SetKey( "TopViewImg", $previewTopPath );
  
 	return 1;
