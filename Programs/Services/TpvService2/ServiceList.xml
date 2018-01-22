@@ -1,0 +1,19 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- This file specified launch period of apps in TPV windows service -->
+
+<apps>
+
+  <!-- Running in day --> 
+
+
+   <app name="taskOnDemand" 	active="1" repeat="0.2" night="0" />
+   
+  <!-- Running in night --> 
+
+   
+  <!-- Temporary apps --> 
+   
+   <app name="testService" 		active="0" repeat="1" night="0" />
+   
+</apps>

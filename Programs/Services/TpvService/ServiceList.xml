@@ -10,7 +10,7 @@
    <app name="processReorder" 	active="1" repeat="1" night="0" />
    <app name="mdiData" 			active="1" repeat="5" night="0" />
    <app name="jetprintData" 	active="1" repeat="60" night="0" />
-   <app name="taskOnDemand" 	active="1" repeat="1" night="0" />
+
    
   <!-- Running in night --> 
    

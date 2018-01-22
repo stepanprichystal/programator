@@ -1,14 +1,13 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Interface, class must implement methoc ProcessLog
+# Description: Inteface, which  define  operation for feature parser
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::Reorder::ProcessReorder::Tasks::ITask;
+package Programs::Services::TpvService2::ServiceApps::IServiceApp;
 
 #3th party library
 use strict;
 use warnings;
-#use File::Copy;
 
 #local library
 
@@ -18,14 +17,18 @@ use warnings;
 #-------------------------------------------------------------------------------------------#
 
 use Class::Interface;
-&interface;    
+&interface;     
 
-# return 0, if log should not be processed anymore by Log service
+# this method is called bt service, one parameter InCAM
 sub Run;     
- 
 
+# this is called manualy, outside of services, for testing, params, jobId, inCAM
+#sub RunJob;   
 
- 
+# return App name
+sub GetAppName;
+
+1;
  
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

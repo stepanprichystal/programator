@@ -25,14 +25,8 @@ use aliased 'Enums::EnumsApp';
 use aliased 'Helpers::FileHelper';
 
 # applications
-use aliased 'Programs::Services::TpvService::ServiceApps::CheckReorderApp::CheckReorderApp';
-use aliased 'Programs::Services::TpvService::ServiceApps::ProcessReorderApp::ProcessReorderApp';
-use aliased 'Programs::Services::TpvService::ServiceApps::MdiDataApp::MdiDataApp';
-use aliased 'Programs::Services::TpvService::ServiceApps::JetprintDataApp::JetprintDataApp';
-use aliased 'Programs::Services::TpvService::ServiceApps::ArchiveJobsApp::ArchiveJobsApp';
-use aliased 'Programs::Services::TpvService::ServiceApps::CleanJobDbApp::CleanJobDbApp';
-
-use aliased 'Programs::Services::TpvService::ServiceApps::TmpApp::TmpApp';
+use aliased 'Programs::Services::TpvService2::ServiceApps::TaskOnDemand::TaskOnDemandApp';
+use aliased 'Programs::Services::TpvService2::ServiceApps::TmpApp::TmpApp';
 
 Win32::Daemon::RegisterCallbacks(
 	{
@@ -57,13 +51,13 @@ my %Context = (
 
 #Helper->SetLogging( 'c:\tmp\InCam\scripts\logs\tpvService', GeneralHelper->Root() . "\\Programs\\Services\\TpvService" );
 
-my $OLDOUT;
-my $OLDERR;
-##
-open $OLDOUT, ">&STDOUT" || die "Can't duplicate STDOUT: $!";
-open $OLDERR, ">&STDERR" || die "Can't duplicate STDERR: $!";
-open( STDOUT, "+>", 'c:\tmp\InCam\scripts\logs\test2' );
-open( STDERR, ">&STDOUT" );
+#my $OLDOUT;
+#my $OLDERR;
+###
+#open $OLDOUT, ">&STDOUT" || die "Can't duplicate STDOUT: $!";
+#open $OLDERR, ">&STDERR" || die "Can't duplicate STDERR: $!";
+#open( STDOUT, "+>", 'c:\tmp\InCam\scripts\logs\test2' );
+#open( STDERR, ">&STDOUT" );
 
 __SetLogging();
 
@@ -87,7 +81,7 @@ sub WorkerMethod {
 	# load all registered app + period of launch in minutes
 	#-------------------------------------------------
 
-	my $path      = GeneralHelper->Root() . "\\Programs\\Services\\TpvService\\ServiceList.xml";
+	my $path      = GeneralHelper->Root() . "\\Programs\\Services\\TpvService2\\ServiceList.xml";
 	my $xmlString = FileHelper->ReadAsString($path);
 
 	my $xml = XMLin(
@@ -153,31 +147,9 @@ sub __GetApp {
 
 	#$logger->debug("get app");
 
-	if ( $appName eq EnumsApp->App_CHECKREORDER ) {
+	if ( $appName eq EnumsApp->App_TASKONDEMAND ) {
 
-		$app = CheckReorderApp->new();
-
-	}
-	elsif ( $appName eq EnumsApp->App_PROCESSREORDER ) {
-
-		$app = ProcessReorderApp->new();
-
-	}
-	elsif ( $appName eq EnumsApp->App_MDIDATA ) {
-
-		$app = MdiDataApp->new();
-	}
-	elsif ( $appName eq EnumsApp->App_ARCHIVEJOBS ) {
-
-		$app = ArchiveJobsApp->new();
-	}
-	elsif ( $appName eq EnumsApp->App_JETPRINTDATA ) {
-
-		$app = JetprintDataApp->new();
-	}
-	elsif ( $appName eq EnumsApp->App_CLEANJOBDB ) {
-
-		$app = CleanJobDbApp->new();
+		$app = TaskOnDemandApp->new();
 	}
 	elsif ( $appName eq EnumsApp->App_TEST ) {
 

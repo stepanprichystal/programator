@@ -269,7 +269,7 @@ sub __GetPcb2Export {
 sub __DeleteOldMDIFiles {
 	my $self = shift;
 
-	my @pcbInProduc = HegMethods->GetPcbsByStatus( 2, 4, 25, 35 );    # get pcb "Ve vyrobe" + "Na predvyrobni priprave" + Na odsouhlaseni + Schvalena
+	my @pcbInProduc = HegMethods->GetPcbsByStatus( 2, 4, 12,  25, 35 );    # get pcb "Ve vyrobe" + "Na predvyrobni priprave" + Na odsouhlaseni + Schvalena + Pozastavena
 	@pcbInProduc = map { $_->{"reference_subjektu"} } @pcbInProduc;
 
 	if ( scalar(@pcbInProduc) < 100 ) {

@@ -6,7 +6,7 @@ package Packages::Reorder::ProcessReorder::Tasks::ARCHIVE_JOB;
 use base('Packages::Reorder::ProcessReorder::Tasks::ChangeBase');
 
 use Class::Interface;
-&implements('Packages::Reorder::ProcessReorder::Tasks::ITasks');
+&implements('Packages::Reorder::ProcessReorder::Tasks::ITask');
 
 #3th party library
 use strict;
@@ -75,13 +75,14 @@ sub Run {
 			$zip->addFile( $pdf, "$jobId-control.pdf" );
 		}
 
+		# add nc directory
 		$zip->addDirectory("nc");
 
 		my $nc = $archive . "\\nc\\";
+		my $dir2;
+		if ( opendir( $dir2, $nc ) ) {
 
-		if ( opendir( $dir, $nc ) ) {
-
-			while ( ( my $f = readdir($dir) ) ) {
+			while ( ( my $f = readdir($dir2) ) ) {
 
 				next unless $f =~ /^[a-z]/i;
 
@@ -89,7 +90,26 @@ sub Run {
 
 			}
 
-			close($dir);
+			close($dir2);
+		}
+		
+		# add old gerber files
+		$zip->addDirectory("zdroje");
+
+		my $dirZdroje = $archive . "\\zdroje\\";
+		my $dir3;
+
+		if ( opendir( $dir3, $dirZdroje ) ) {
+
+			while ( ( my $f = readdir($dir3) ) ) {
+
+				next unless $f =~ /\.ger$/i;
+
+				$zip->addFile( $dirZdroje . "\\" . $f, "zdroje\\" . $f );
+
+			}
+
+			close($dir3);
 		}
 
 		close $dir;
@@ -108,13 +128,13 @@ sub Run {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	use aliased 'Packages::Reorder::ProcessReorder::Tasks::MASK_POLAR' => "Change";
+	use aliased 'Packages::Reorder::ProcessReorder::Tasks::ARCHIVE_JOB';
 	use aliased 'Packages::InCAM::InCAM';
 
 	my $inCAM = InCAM->new();
-	my $jobId = "f52457";
+	my $jobId = "d152457";
 
-	my $check = Change->new( "key", $inCAM, $jobId );
+	my $check = ARCHIVE_JOB->new( "key", $inCAM, $jobId );
 
 	my $mess = "";
 	print "Change result: " . $check->Run( \$mess );

@@ -111,7 +111,10 @@ sub OnPrepareReorderGroupData {
 	# check if exist score file, and get core thick
 	my $path = JobHelper->GetJobArchive($jobId);
 
-	my @scoreFiles = FileHelper->GetFilesNameByPattern( $path, ".jum" );
+	my @scoreFilesJum = FileHelper->GetFilesNameByPattern( $path, ".jum" );
+	my @scoreFilesCut = FileHelper->GetFilesNameByPattern( $path, ".cut" ); #old format of score file
+
+	my @scoreFiles = (@scoreFilesJum, @scoreFilesCut);
 
 	my $coreThick = undef;
 

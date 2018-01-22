@@ -6,7 +6,7 @@ package Packages::Reorder::ProcessReorder::Tasks::EXPORT;
 use base('Packages::Reorder::ProcessReorder::Tasks::ChangeBase');
 
 use Class::Interface;
-&implements('Packages::Reorder::ProcessReorder::Tasks::ITasks');
+&implements('Packages::Reorder::ProcessReorder::Tasks::ITask');
 
 #3th party library
 use strict;

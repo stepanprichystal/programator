@@ -3,7 +3,7 @@
 # Description: Inherit class, which help save keys and values to template
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Programs::Services::TpvService::ServiceApps::TaskOnDemand::TaskOnDemand::MailTemplate::TemplateKey;
+package Programs::Services::TpvService2::ServiceApps::TaskOnDemand::TaskOnDemand::MailTemplate::TemplateKey;
 use base("Packages::Other::HtmlTemplate::TemplateKeyBase");
 
 

@@ -3,11 +3,11 @@
 # Of odb is succesfully created, delete job from incam DB
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Programs::Services::TpvService::ServiceApps::TaskOnDemand::TaskOnDemandApp;
-use base("Programs::Services::TpvService::ServiceApps::ServiceAppBase");
+package Programs::Services::TpvService2::ServiceApps::TaskOnDemand::TaskOnDemandApp;
+use base("Programs::Services::TpvService2::ServiceApps::ServiceAppBase");
 
 #use Class::Interface;
-#&implements('Programs::Services::TpvService::ServiceApps::IServiceApp');
+#&implements('Programs::Services::TpvService2::ServiceApps::IServiceApp');
 
 #3th party library
 use strict;
@@ -27,8 +27,8 @@ use aliased 'CamHelpers::CamJob';
 use aliased 'Enums::EnumsPaths';
 use aliased 'CamHelpers::CamHelper';
 use aliased 'Programs::Services::TpvService::ServiceApps::CheckReorderApp::CheckReorder::AcquireJob';
-use aliased 'Programs::Services::TpvService::ServiceApps::TaskOnDemand::Enums' => 'TaskEnums';
-use aliased 'Programs::Services::TpvService::ServiceApps::TaskOnDemand::TaskOnDemand::ControlData';
+use aliased 'Programs::Services::TpvService2::ServiceApps::TaskOnDemand::Enums' => 'TaskEnums';
+use aliased 'Programs::Services::TpvService2::ServiceApps::TaskOnDemand::TaskOnDemand::ControlData';
 
 #-------------------------------------------------------------------------------------------#
 #  Public method
@@ -225,7 +225,7 @@ sub __ProcessError {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	#	use aliased 'Programs::Services::TpvService::ServiceApps::ArchiveJobsApp::ArchiveJobsApp';
+	#	use aliased 'Programs::Services::TpvService2::ServiceApps::ArchiveJobsApp::ArchiveJobsApp';
 	#
 	#	#	use aliased 'Packages::InCAM::InCAM';
 	#	#
