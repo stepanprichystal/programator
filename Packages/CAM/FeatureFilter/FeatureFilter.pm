@@ -348,7 +348,7 @@ sub AddFeatureIndexes {
 # Set logic between include attributes
 sub SetIncludeAttrCond {
 	my $self = shift;
-	my $cond = shift;
+	my $cond = shift; #FilterEnums->Logic_OR, FilterEnums->Logic_AND
 
 	my $inCAM = $self->{"inCAM"};
 

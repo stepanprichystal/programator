@@ -10,6 +10,7 @@ use strict;
 use threads;
 use threads::shared;
 use Win32::Process;
+
 #use IO::Socket;
 #use Thread::Queue;
 #use IO::Select;
@@ -60,6 +61,16 @@ unless ( -e $logDir ) {
 Log::Log4perl->init( GeneralHelper->Root() . "\\Packages\\InCAMHelpers\\InCAMServer\\Server\\Logger.conf" );
 my $logger = get_logger("serverLog");
 
+
+# redirect all sdtou + stderr to file
+my $OLDOUT;
+my $OLDERR;
+
+open $OLDOUT, ">&STDOUT" || die "Can't duplicate STDOUT: $!";
+open $OLDERR, ">&STDERR" || die "Can't duplicate STDERR: $!";
+open( STDOUT, "+>", $logDir."\\stdout.txt" );
+open( STDERR, ">&STDOUT" );
+
 # global variables #
 
 my @clients : shared = ();                                 # info about running incam and  client which use it
@@ -82,8 +93,6 @@ my $main_socket = new IO::Socket::INET(
 die "Could not connect: $!" unless $main_socket;
 
 my $cnt = 0;
-
- 
 
 $SIG{CHLD} = sub { wait() };
 
@@ -147,10 +156,10 @@ sub __ClientThread {
 	};
 
 	my $clientIdx = ( grep { $clients[$_]->{"clientId"} eq $clientId } 0 .. $#clients )[0];
- 
+
 	# variable init
 	my $clientMess;
-  
+
 	$logger->debug("Thread created for (client: $clientId)");
 
 	# 1) receive only request for new InCAM server "server ready message"
@@ -197,7 +206,7 @@ sub __ClientThread {
 	$clients->[$clientIdx]->{"state"}     = Enums->Client_ACCEPT;
 
 	$logger->debug( "Free port is " . $clients->[$clientIdx]->{"inCAMPort"} . ".(client: $clientId)" );
- 
+
 	$clientMess = <$sock>;
 	chomp($clientMess);
 
@@ -214,7 +223,7 @@ sub __ClientThread {
 	# 1) prepare server
 	my %result = CreateServer->CreateServer( $clients->[$clientIdx]->{"inCAMPort"} );
 	unless ( $result{"result"} ) {
-		
+
 		$logger->debug(" Failed to create server for: (client: $clientId)");
 		__SendMessage( $sock, undef, "Failed to create server $clientMess" );
 		$clients->[$clientIdx]->{"finished"} = 1;
@@ -224,12 +233,12 @@ sub __ClientThread {
 	$clients->[$clientIdx]->{"inCAMPID"}  = $result{"inCAMPID"};
 	$clients->[$clientIdx]->{"serverPID"} = $result{"serverPID"};
 
-	$logger->debug("Before send port: ".$clients->[$clientIdx]->{"inCAMPort"}." to (client: $clientId)");
+	$logger->debug( "Before send port: " . $clients->[$clientIdx]->{"inCAMPort"} . " to (client: $clientId)" );
 
 	# send port to clients
 	__SendMessage( $sock, $clients->[$clientIdx]->{"inCAMPort"} );
-	
-	$logger->debug("After send port: ".$clients->[$clientIdx]->{"inCAMPort"}." to (client: $clientId)");
+
+	$logger->debug( "After send port: " . $clients->[$clientIdx]->{"inCAMPort"} . " to (client: $clientId)" );
 
 	# 2) wait on finish client job
 	$clientMess = <$sock>;
@@ -250,11 +259,10 @@ sub __ClientThread {
 					. ", server pid: "
 					. $clients->[$clientIdx]->{"serverPID"} );
 
-	
-	close($sock); # close socket
+	close($sock);    # close socket
 
 	$clients->[$clientIdx]->{"finished"} = 1;
- 
+
 }
 
 sub __SendMessage {
@@ -263,9 +271,9 @@ sub __SendMessage {
 	my $err  = shift;
 	chomp($mess) if ( defined $mess );
 	chomp($err)  if ( defined $err );
- 
+
 	my $clientMess = "Message=$mess;Error=$err\n";
- 
+
 	$sock->send($clientMess);
 }
 

@@ -30,7 +30,7 @@ use aliased 'Packages::Polygon::Features::Features::Features';
 # KW $$WW-$$YY
 # etc..
 my $dataCodeReg = qr{
-				\w*\s* 						  # match some wordfs on begining like KW
+				[\w-]*\s* 						  # match some wordfs on begining like KW and dash -
 					(
 						(\${2}(dd|ww|mm|yy|yyyy)) # match dynamic text \$\$WW, \$\$YY, etc
 						[-\s\/]*				  # char behind dynamic text
@@ -158,7 +158,7 @@ sub GetDatacodesInfo {
 		close($f);
 		unlink($infoFile);
 	}
-	 
+	 															 
 	my @featsId = map { $_ =~ /^#(\d*)/i } grep { $_ =~ m/^#(\d*)\s*#T.*'$dataCodeReg'/i } @feat;
 	my $f = Features->new();
 	$f->Parse( $inCAM, $jobId, $step, $layer, 1, 0, \@featsId );
@@ -242,15 +242,13 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	use aliased 'Packages::InCAM::InCAM';
 
 	my $inCAM = InCAM->new();
-	my $jobId = "f88875";
+	my $jobId = "d200929";
 
-	#my @res = Marking->GetDatacodesInfo( $inCAM, $jobId, "mpanel", "ms" );
+	my @res = Marking->GetDatacodesInfo( $inCAM, $jobId, "o+1", "ms" );
 
-	#print STDERR @res;
+	print STDERR @res;
 	
-	my $res = Marking->DatacodeExists( $inCAM, $jobId, "mpanel	", "ms" );
-
-	print STDERR $res;
+ 
 }
 
 1;

@@ -18,8 +18,9 @@ use aliased 'CamHelpers::CamHelper';
 use aliased 'Helpers::GeneralHelper';
 use aliased 'CamHelpers::CamJob';
 use aliased 'Packages::CAM::FeatureFilter::FeatureFilter';
-
+use aliased 'Packages::CAM::FeatureFilter::Enums' => "FilterEnums";
 use aliased 'Helpers::FileHelper';
+use aliased 'CamHelpers::CamMatrix';
 
 #-------------------------------------------------------------------------------------------#
 #   Package methods
@@ -106,7 +107,7 @@ sub __PrepareLayer {
 	# Select pom layer as work
 	CamLayer->WorkLayer( $inCAM, $lName );
 
-	# 1) Do solid file, from profile to "layer limits" (limits are given by small or big frame)
+	# 1) Do solid line, from profile to "layer limits" (limits are given by small or big frame)
 	# Only mask layer
 	if ( $plotLayer->GetName() =~ /m[cs]$/ ) {
 
@@ -158,11 +159,24 @@ sub __PrepareLayer {
 		}
 	}
 
-	# 3) Remove frame
+	# 3) Copy all "camera" marks to separate layer. We want to avoid resizing
+	my $marksSeparated = 0;    # if marks separated, store layer name
+
+	my $f = FeatureFilter->new( $inCAM, $self->{"jobId"}, $lName );
+	$f->AddIncludeAtt( ".geometry", "*olec*" );
+	$f->AddIncludeAtt( ".geometry", "*centre-moire*" );
+	$f->SetIncludeAttrCond( FilterEnums->Logic_OR );
+
+	if ( $plotLayer->GetComp() != 0 && $f->Select() ) {
+		$marksSeparated = GeneralHelper->GetGUID();
+		CamLayer->MoveSelected( $inCAM, $marksSeparated );
+	}
+
+	# 4) Remove frame
 
 	CamLayer->ClipLayerData( $inCAM, $lName, $plotLayer->GetLimits() );
 
-	# 4) Optimize lazer in order contain only one level of features
+	# 5) Optimize lazer in order contain only one level of features
 
 	if ( $plotLayer->GetName() =~ /^c$/ || $plotLayer->GetName() =~ /^s$/ || $plotLayer->GetName() =~ /^v\d$/ ) {
 
@@ -170,7 +184,7 @@ sub __PrepareLayer {
 		CamLayer->WorkLayer( $self->{"inCAM"}, $lName );
 	}
 
-	# 5) Compensate layer
+	# 6) Compensate layer
 	if ( $plotLayer->GetComp() != 0 ) {
 
 		my $comp = $plotLayer->GetComp();
@@ -184,8 +198,18 @@ sub __PrepareLayer {
 
 		CamLayer->CompensateLayerData( $inCAM, $lName, $plotLayer->GetComp() );
 	}
+	
+	# return back markings
+	if ( $marksSeparated ) {
+		
+		CamLayer->WorkLayer( $inCAM, $marksSeparated );
+		CamLayer->MoveSelected( $inCAM, $lName );
+		CamMatrix->DeleteLayer($inCAM, $jobId,$marksSeparated);
+		CamLayer->WorkLayer( $inCAM, $lName );
+	}
+	
 
-	# 6) change polarity
+	# 7) change polarity
 
 	my $plotPolar = $plotSet->GetPolarity();
 	if ( $plotPolar eq "mixed" && $plotLayer->GetPolarity() eq "negative" ) {

@@ -70,23 +70,19 @@ sub Build {
 	$row2Tab1->AddCell($scoUnit1, Enums->Width_25);
 	$row2Tab1->AddCell($gerUnit1, Enums->Width_25);
 	$row2Tab1->AddCell($pdfUnit1, Enums->Width_25);
+	
 
 	# Table 2
 	
-	#my $tableTab2 = $groupTables->AddTable("Other groups");
+	my $tableTab2 = $groupTables->AddTable("Other groups");
 	
 	# Units
 	
-	#my $outUnit1 = AOIUnit->new( $self->{"jobId"} );
-#	my $etUnit1 = ETUnit->new( $self->{"jobId"} );
-#
-	#my $row1Tab2 = $tableTab2->AddRow();
-	#$row1Tab2->AddCell($outUnit1, Enums->Width_25);
-#	$row1Tab2->AddCell($etUnit1, Enums->Width_25);
- 
+	my $outUnit1 = OutUnit->new( $self->{"jobId"} );
 
-	#$groupTables->AddTable($tableTab1);
-	#$groupTables->AddTable($tableTab2);
+	my $row1Tab2 = $tableTab2->AddRow();
+	$row1Tab2->AddCell($outUnit1, Enums->Width_25);
+
 }
  
 

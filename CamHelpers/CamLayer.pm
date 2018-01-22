@@ -672,7 +672,7 @@ sub Contourize {
 	my $self            = shift;
 	my $inCAM           = shift;
 	my $layer           = shift;
-	my $clean_hole_mode = shift; # "x_or_y", "area", "x_and_y"
+	my $clean_hole_mode = shift;    # "x_or_y", "area", "x_and_y"
 	my $clean_hole_size = shift;
 
 	unless ( defined $clean_hole_mode ) {
@@ -685,7 +685,13 @@ sub Contourize {
 
 	$self->WorkLayer( $inCAM, $layer );
 
-	$inCAM->COM( "sel_contourize", "accuracy" => "6.35", "break_to_islands" => "yes", "clean_hole_size" => $clean_hole_size, "clean_hole_mode" => $clean_hole_mode );
+	$inCAM->COM(
+				 "sel_contourize",
+				 "accuracy"         => "6.35",
+				 "break_to_islands" => "yes",
+				 "clean_hole_size"  => $clean_hole_size,
+				 "clean_hole_mode"  => $clean_hole_mode
+	);
 
 	$self->ClearLayers($inCAM);
 }
@@ -704,6 +710,27 @@ sub CopySelected {
 				 "sel_copy_other",
 				 "dest"         => "layer_name",
 				 "target_layer" => $layerStr,
+				 "invert"       => $invert ? "yes" : "no",
+				 "dx"           => "0",
+				 "dy"           => "0",
+				 "size"         => $resize ? $resize : 0,
+				 "x_anchor"     => "0",
+				 "y_anchor"     => "0 "
+	);
+
+}
+
+# Move selected features to other layer
+sub MoveSelected {
+	my $self   = shift;
+	my $inCAM  = shift;
+	my $layer  = shift;
+	my $invert = shift;
+	my $resize = shift;
+	
+	$inCAM->COM(
+				 "sel_move_other",
+				 "target_layer" => $layer,
 				 "invert"       => $invert ? "yes" : "no",
 				 "dx"           => "0",
 				 "dy"           => "0",

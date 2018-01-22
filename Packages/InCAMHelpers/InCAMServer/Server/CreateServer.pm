@@ -187,7 +187,7 @@ sub __CreateInCAMInstance {
 	#sleep($sleep);
 
 	#run InCAM editor with serverscript
-	Win32::Process::Create( $processObj, $inCAMPath, "InCAM.exe -s" . $path . " " . $port . " " . $fIndicator, 0, THREAD_PRIORITY_NORMAL, "." )
+	Win32::Process::Create( $processObj, $inCAMPath, "InCAM.exe -s" . $path . " " . $port . " " . $fIndicator. ' >c:\Export\test\test1.txt', 0, THREAD_PRIORITY_NORMAL, "." )
 	  || die "$!\n";
 
 	$pidInCAM = $processObj->GetProcessID();

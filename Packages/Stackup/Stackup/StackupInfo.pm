@@ -49,7 +49,7 @@ sub __LoadInfoFiles {
 	
  
  	# File ml.xml has to be in  8utf8
-	my $multicalDb = GeneralHelper->Root()."\\Resources\\ml.xml";
+	my $multicalDb = EnumsPaths->InCAM_TPVApp."\\Multical6-1\\ml.xml";
 	my $strfMultical = FileHelper->ReadAsString( $multicalDb);
  
 

@@ -130,6 +130,12 @@ use constant {
 	: "\\\\incam\\incam_server\\site_data\\scripts3rdParty\\",
 
 	#InCAM_3rdScripts => "\\\\incam\\incam_server\\site_data\\scripts3rdParty\\",
+	
+	InCAM_TPVApp => ( -e "Y:" )
+	? "y:\\tpvApp"
+	: "\\\\incam\\InCAM\\tpvApp",
+
+	#InCAM_server => "\\\\incam\\incam_server\\tpvApp",
 };
 
 use constant {

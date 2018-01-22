@@ -46,11 +46,11 @@ sub new {
 	$self->{"inCAM"} = shift;
 	$self->{"jobId"} = shift;
 
-	$self->{"stepToTest"}   = shift;    # step, which will be tested
-	$self->{"layerNames"}   = shift;    # step, which will be tested
-	$self->{"sendToServer"} = shift;    # if AOI data shoul be send to server from ot folder
-	$self->{"attemptCnt"}   = 50;       # max count of attempt
-	$self->{"machineName"} = "fusion";
+	$self->{"stepToTest"}   = shift;      # step, which will be tested
+	$self->{"layerNames"}   = shift;      # step, which will be tested
+	$self->{"sendToServer"} = shift;      # if AOI data shoul be send to server from ot folder
+	$self->{"attemptCnt"}   = 50;         # max count of attempt
+	$self->{"machineName"}  = "fusion";
 
 	$self->{"layerCnt"} = CamJob->GetSignalLayerCnt( $self->{"inCAM"}, $self->{"jobId"} );
 
@@ -65,8 +65,7 @@ sub Run {
 	my $stepToTest = $self->{"stepToTest"};
 	my $layerName  = $self->{"layer"};
 
-	my @signalLayers = @{$self->{"layerNames"}};
-
+	my @signalLayers = @{ $self->{"layerNames"} };
 
 	if ( $self->{"layerCnt"} > 2 ) {
 		$self->{"stackup"} = Stackup->new($jobId);
@@ -131,12 +130,12 @@ sub Run {
 	$inCAM->COM(
 				 "cdr_create_configuration",
 				 "set_name" => "",
-				 "cfg_name" => $self->{"machineName"}."DefaultConfiguration",
+				 "cfg_name" => $self->{"machineName"} . "DefaultConfiguration",
 				 "cfg_path" => "//incam/incam_server/site_data/hooks/cdr",
 				 "sub_dir"  => $self->{"machineName"}
 	);
-	
-	$inCAM->COM( "cdr_set_machine", "machine" => $self->{"machineName"}, "cfg_name" => $self->{"machineName"}."DefaultConfiguration" );
+
+	$inCAM->COM( "cdr_set_machine", "machine" => $self->{"machineName"}, "cfg_name" => $self->{"machineName"} . "DefaultConfiguration" );
 	$inCAM->COM( "cdr_set_table", "set_name" => "", "name" => "30X30", "x_dim" => "762", "y_dim" => "762" );
 
 	# un affected all layer
@@ -147,12 +146,41 @@ sub Run {
 
 	}
 
+	# Set solder mask layer as non board and document
+	# It gives better result on AOI 19.1.2018
+ 	my $mc = ( grep { $_->{"gROWname"} eq "mc" } CamJob->GetBoardBaseLayers( $inCAM, $jobId ) )[0];
+	if ($mc) {
+
+		CamLayer->SetLayerTypeLayer( $inCAM, $jobId, "mc", "document" );
+		#CamLayer->SetLayerContextLayer( $inCAM, $jobId, "mc", "misc" );
+	}
+	
+	my $ms = ( grep { $_->{"gROWname"} eq "ms" } CamJob->GetBoardBaseLayers( $inCAM, $jobId ) )[0];
+	if ($ms) {
+
+		CamLayer->SetLayerTypeLayer( $inCAM, $jobId, "ms", "document" );
+		#CamLayer->SetLayerContextLayer( $inCAM, $jobId, "ms", "misc" );
+	}
+
 	# For each layer export AOI
 	foreach my $layer (@signalLayers) {
 
 		# For each layer export AOI
 		$self->__ExportAOI( $layer, $setName );
 	}
+ 
+	if ($mc) {
+
+		CamLayer->SetLayerTypeLayer( $inCAM, $jobId, "mc", "solder_mask" );
+		#CamLayer->SetLayerContextLayer( $inCAM, $jobId, "mc", "board" );
+	}
+	
+	if ($ms) {
+
+		CamLayer->SetLayerTypeLayer( $inCAM, $jobId, "ms", "solder_mask" );
+		#CamLayer->SetLayerContextLayer( $inCAM, $jobId, "ms", "board" );
+	}
+	
 
 	# send to server
 	if ( $self->{"sendToServer"} ) {
@@ -204,7 +232,7 @@ sub __OpenAOISession {
 				 "set_name"  => $setName,
 				 "interface" => $self->{"machineName"},
 				 "cfg_type"  => "user_defined_cfg",
-				 "cfg_name"  => $self->{"machineName"}."DefaultConfiguration",
+				 "cfg_name"  => $self->{"machineName"} . "DefaultConfiguration",
 				 "cfg_path"  => "//incam/incam_server/site_data/hooks/cdr",
 				 "sub_dir"   => $self->{"machineName"}
 	);
@@ -236,8 +264,6 @@ sub __ExportAOI {
 
 	#$inCAM->COM( "work_layer", "name" => $layerName );
 	$inCAM->COM( "cdr_work_layer", "layer" => $layerName );
-	
-	
 
 	# Param set driils
 	AOSet->SetStage( $inCAM, $jobId, $stepToTest, $layerName, $self->{"stackup"} );
@@ -294,7 +320,7 @@ sub __ExportAOI {
 	my $resultItemAOIOutput = $self->_GetNewItem($layerName);
 	$resultItemAOIOutput->SetGroup("Layers");
 
-	my $result = AOSet->OutputOpfx( $inCAM, $jobId, $layerName,$self->{"machineName"}, \$incamResult, \$reportResult );
+	my $result = AOSet->OutputOpfx( $inCAM, $jobId, $layerName, $self->{"machineName"}, \$incamResult, \$reportResult );
 
 	# STOP HANDLE EXCEPTION IN INCAM
 	$inCAM->HandleException(0);
@@ -391,7 +417,7 @@ sub __DeleteOutputFiles {
 				}
 			}
 		}
-		
+
 		closedir($dir);
 	}
 }
@@ -414,17 +440,17 @@ sub TaskItemsCount {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-		use aliased 'Packages::Export::AOIExport::AOIMngr';
-		use aliased 'Packages::InCAM::InCAM';
-	
-		my $inCAM = InCAM->new();
-	
-		my $jobName   = "f52457";
-		my $stepName  = "panel";
-		my $layerName = "c";
-	
-		my $mngr = AOIMngr->new( $inCAM, $jobName, $stepName, ["c"] );
-		$mngr->Run();
+	use aliased 'Packages::Export::AOIExport::AOIMngr';
+	use aliased 'Packages::InCAM::InCAM';
+
+	my $inCAM = InCAM->new();
+
+	my $jobName   = "f52457";
+	my $stepName  = "panel";
+	my $layerName = "c";
+
+	my $mngr = AOIMngr->new( $inCAM, $jobName, $stepName, ["c"] );
+	$mngr->Run();
 }
 
 1;
