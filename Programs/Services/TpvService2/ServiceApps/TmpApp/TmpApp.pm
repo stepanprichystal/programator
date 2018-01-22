@@ -24,7 +24,7 @@ use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'Enums::EnumsApp';
 use aliased 'Helpers::GeneralHelper';
 use aliased 'Helpers::FileHelper';
-use aliased 'Programs::Services::TpvService2::ServiceApps::JetprintDataApp::Enums';
+use aliased 'Programs::Services::TpvService::ServiceApps::JetprintDataApp::Enums';
 use aliased 'Helpers::JobHelper';
 use aliased 'CamHelpers::CamJob';
 use aliased 'Enums::EnumsPaths';
@@ -32,7 +32,7 @@ use aliased 'CamHelpers::CamHelper';
 use aliased 'Packages::Gerbers::Jetprint::ExportFiles';
 use aliased 'Packages::ItemResult::Enums' => "ItemResEnums";
 use aliased 'Packages::TifFile::TifFile::TifFile';
-use aliased 'Programs::Services::TpvService2::ServiceApps::CheckReorderApp::CheckReorder::AcquireJob';
+use aliased 'Programs::Services::TpvService::ServiceApps::CheckReorderApp::CheckReorder::AcquireJob';
 
 #-------------------------------------------------------------------------------------------#
 #  Public method

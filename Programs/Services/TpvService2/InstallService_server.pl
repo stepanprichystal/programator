@@ -11,6 +11,8 @@ use lib qw( C:\Perl\site\lib\TpvScripts\Scripts );
 
 use aliased 'Helpers::GeneralHelper';
 
+# POZOR, spoustet jako spravce!!
+
 # If using a compiled perl script (eg. myPerlService.exe) then
 # $ServicePath must be the path to the .exe as in:
 #    $ServicePath = 'c:\CompiledPerlScripts\myPerlService.exe';

@@ -253,7 +253,7 @@ sub Callback_Stop {
 sub __SetLogging {
 	my $self = shift;
 
-	my $logConfig = GeneralHelper->Root() . "\\Programs\\Services\\TpvService\\Logger.conf";
+	my $logConfig = GeneralHelper->Root() . "\\Programs\\Services\\TpvService2\\Logger.conf";
 
 	# create log dirs for all application
 	my @dirs = ();

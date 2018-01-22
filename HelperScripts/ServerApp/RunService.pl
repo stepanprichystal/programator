@@ -43,6 +43,8 @@ RunInCAMServer();
 
 RunService( "TpvCustomService", EnumsPaths->Client_INCAMTMPLOGS . "tpvService\\logAll.txt" );    # Run tpv service
 
+RunService( "TpvCustomService2", EnumsPaths->Client_INCAMTMPLOGS . "tpvService2\\logAll.txt" );    # Run tpv service
+
 # ======= Export utility =========================================
 
 my $exporter = RunExportUtility->new(0);                                                         # Run exporter
