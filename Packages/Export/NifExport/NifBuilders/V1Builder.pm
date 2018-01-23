@@ -104,11 +104,11 @@ sub Build {
 	$nifMngr->AddSection("PlochaCu", BuilderCuArea->new(\@req));
 
 	#Score section
-	@req = ();
-	push(@req, "drazkovani");
-	push(@req, "delka_drazky");
+	#@req = ();
+	#push(@req, "drazkovani");
+	#push(@req, "delka_drazky");
 
-	$nifMngr->AddSection("Drazkovani", BuilderScore->new(\@req));
+	#$nifMngr->AddSection("Drazkovani", BuilderScore->new(\@req));
 
 	#Rout section
 	@req = ();

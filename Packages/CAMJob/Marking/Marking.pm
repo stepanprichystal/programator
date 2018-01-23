@@ -30,10 +30,10 @@ use aliased 'Packages::Polygon::Features::Features::Features';
 # KW $$WW-$$YY
 # etc..
 my $dataCodeReg = qr{
-				[\w-]*\s* 						  # match some wordfs on begining like KW and dash -
+				[\w\s-]* 						  # match some wordfs on begining like KW and dash -
 					(
 						(\${2}(dd|ww|mm|yy|yyyy)) # match dynamic text \$\$WW, \$\$YY, etc
-						[-\s\/]*				  # char behind dynamic text
+						[-\s\/]*				  # char behind dynamic text - /
 					){1,3}						  # all can repeat 1-3 times
 				}xi;
 
@@ -242,9 +242,13 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	use aliased 'Packages::InCAM::InCAM';
 
 	my $inCAM = InCAM->new();
-	my $jobId = "d200929";
+	my $jobId = "d202062";
+	
+	
 
-	my @res = Marking->GetDatacodesInfo( $inCAM, $jobId, "o+1", "ms" );
+	my @layers = Marking->GetDatacodeLayers( $inCAM, $jobId, "o+1" );
+
+	my @res = Marking->GetDatacodesInfo( $inCAM, $jobId, "o+1", "pc" );
 
 	print STDERR @res;
 	

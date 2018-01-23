@@ -10,6 +10,7 @@ use strict;
 use warnings;
 use English;
 
+
 #local library
 use aliased 'Helpers::GeneralHelper';
 use aliased 'Packages::Pdf::StackupPdf::OutputPdf';
@@ -17,6 +18,7 @@ use aliased 'Packages::Stackup::Stackup::Stackup';
 use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'Helpers::FileHelper';
 use aliased 'Enums::EnumsPaths';
+
 
 
 #-------------------------------------------------------------------------------------------#
@@ -38,7 +40,12 @@ sub new {
 
 sub Create {
 	my $self = shift;
- 	 
+	my $addMatQuality = shift // 0;    # defaul no (IS 400, IS410,..)
+	my $addMatTG      = shift // 0;    # defaul no (IS 400, IS410,..)
+	my $addPressThick = shift // 0;    # defaul no (Thickness after each pressing)   
+	
+	
+	
 	
 	# test if exist XML file
 	my $stcFile = FileHelper->GetFileNameByPattern( EnumsPaths->Jobs_STACKUPS, $self->{"jobId"} );
@@ -51,7 +58,7 @@ sub Create {
 	my $stackup = Stackup->new($self->{"jobId"});
 	my $stackupName = $self->__GetStackupName($stackup);
 
-	$self->{"outputPdf"}->Output($stackupName, $stackup);
+	$self->{"outputPdf"}->Output($stackupName, $stackup, $addMatQuality,$addMatTG, $addPressThick);
  
 	return 1;
 }
@@ -103,10 +110,9 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 use aliased 'Packages::Pdf::StackupPdf::StackupPdf';
 
-my $stackup      = StackupPdf->new("f52457");
-my $resultCreate = $stackup->Create();
-  $resultCreate = $stackup->Create();
-
+my $stackup      = StackupPdf->new("d152456");
+my $resultCreate = $stackup->Create(1,1,0);
+ 
 }
 
 1;

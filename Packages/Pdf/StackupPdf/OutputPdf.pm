@@ -16,7 +16,7 @@ use aliased 'Helpers::GeneralHelper';
 use aliased 'Helpers::JobHelper';
 use aliased 'Enums::EnumsPaths';
 use aliased 'Packages::Stackup::Enums';
-
+use aliased 'Connectors::HeliosConnector::HegMethods';
 #-------------------------------------------------------------------------------------------#
 #   GLOBAL variables
 #-------------------------------------------------------------------------------------------#
@@ -47,9 +47,8 @@ my $row4 = 380;
 my $row5 = 300;
 my $row6 = 235;
 my $row7 = 200;
-my $row8 = 100;
-
-
+my $row8 = 165;
+my $row9 = 100;
 
 #variables for creating pdf
 
@@ -77,21 +76,24 @@ sub new {
 }
 
 sub Output {
-	my $self        = shift;
-	my $stackupName = shift;
-	my $stackup     = shift;
+	my $self          = shift;
+	my $stackupName   = shift;
+	my $stackup       = shift;
+	my $addMatQuality = shift;    # defaul no (IS 400, IS410,..)
+	my $addMatTG      = shift;    # defaul no (IS 400, IS410,..)
+	my $addPressThick = shift;    # defaul no (Thickness after each pressing)                                                                 # defaul yes (Thickness after each pressing)
 
 	my $lCount = $stackup->GetCuLayerCnt();
-	# determine start Y depand on Copper count
-	$self->{"startY"} = 350;       # default start stackup image from coordinate 400px (for 4 layer pcb)
-	
-	if($lCount > 4 ){
-		
-		$self->{"startY"} += (($lCount-4) * 15); 
-	}
- 
 
-	$self->_CreatePdfStackup( $stackupName, $stackup );
+	# determine start Y depand on Copper count
+	$self->{"startY"} = 350;    # default start stackup image from coordinate 400px (for 4 layer pcb)
+
+	if ( $lCount > 4 ) {
+
+		$self->{"startY"} += ( ( $lCount - 4 ) * 15 );
+	}
+
+	$self->_CreatePdfStackup( $stackupName, $stackup, $addMatQuality,$addMatTG, $addPressThick );
 
 	return 1;
 }
@@ -104,9 +106,12 @@ sub GetOutput {
 
 #create stackup in PDF similar to MultiCall stackup
 sub _CreatePdfStackup {
-	my $self        = shift;
-	my $stackupName = shift;
-	my $stackup     = shift;
+	my $self          = shift;
+	my $stackupName   = shift;
+	my $stackup       = shift;
+	my $addMatQuality = shift;    # defaul no (IS 400, IS410,..)
+	my $addMatTG      = shift;    # defaul no (IS 400, IS410,..)
+	my $addPressThick = shift;    # defaul no (Thickness after each pressing)
 
 	my $lCount = $stackup->GetCuLayerCnt();
 
@@ -192,12 +197,10 @@ sub _CreatePdfStackup {
 	$self->{"startY"} -= $blankGap;
 	$self->_DrawGrayBox($starX);
 
-	
-
 	#draw lines
 
 	$self->{"page"}->set_width(2);
-	$self->{"page"}->line( $col7, $row1, $col7,  $row8 );
+	$self->{"page"}->line( $col7, $row1, $col7,  $row9 );
 	$self->{"page"}->line( $col8, $row3, $col12, $row3 );
 	$self->{"page"}->line( $col8, $row5, $col12, $row5 );
 
@@ -208,10 +211,21 @@ sub _CreatePdfStackup {
 	$self->{"page"}->string( $f1, 18, $col9,  $row4, "Number of Cu layers" );
 	$self->{"page"}->string( $f1, 18, $col11, $row4, $lCount );
 	$self->{"page"}->string( $f1, 18, $col9,  $row6, "Actual thickness" );
-	$self->{"page"}->string( $f1, 18, $col11, $row6, sprintf( "%4.3f", ( $pcbThick / 1000 ) ) );
-	
+	$self->{"page"}->string( $f1, 18, $col11, $row6, sprintf( "%4.3f", ( $pcbThick / 1000 ) )." mm" );
+
 	#draw stackup type
-	$self->_DrawStackupType($stackup);
+	if ($addMatQuality) {
+		$self->_DrawStackupType($stackup);
+	}
+
+	if ($addMatTG) {
+		$self->_DrawStackupTG($stackup);
+	}
+
+	# Add press thickness
+	if ($addPressThick) {
+		$self->_DrawPressThickness($stackup);
+	}
 
 	$pdf->close;
 
@@ -291,7 +305,7 @@ sub _DrawCore {
 
 	$self->_DrawText( $col0, $self->{"startY"}, $txtSize, $layer->GetThick() . " µm" );    #draw thicks on left
 	$self->_DrawText( $col5, $self->{"startY"}, $txtSize, $layer->GetText() );              #draw type of material
-	$self->_DrawText( $col6, $self->{"startY"}, $txtSize, $layer->GetTextType() );          #draw type of  material quality
+	       #$self->_DrawText( $col6, $self->{"startY"}, $txtSize, $layer->GetTextType() );          #draw type of  material quality
 }
 
 sub _DrawPrepreg {
@@ -308,7 +322,7 @@ sub _DrawPrepreg {
 
 	$self->_DrawText( $col0, $self->{"startY"}, $txtSize, sprintf( "%4.0f", $layer->GetThick() ) . " µm" );    #draw thicks on left
 	$self->_DrawText( $col5, $self->{"startY"}, $txtSize, $layer->GetText() );                                  #draw type of material
-	$self->_DrawText( $col6, $self->{"startY"}, $txtSize, $layer->GetTextType() );                              #draw type of  material quality
+	      #$self->_DrawText( $col6, $self->{"startY"}, $txtSize, $layer->GetTextType() );                              #draw type of  material quality
 }
 
 sub _DrawStackupType {
@@ -318,9 +332,53 @@ sub _DrawStackupType {
 	#$self->{"page"}->setrgbcolor( 71 / 255, 143 / 255, 71 / 255 );
 	#$self->{"page"}->rectangle( $col3, $self->{"startY"}, 125, $lHeight );
 	#$self->{"page"}->fill();
-	$self->{"page"}->string( $f1, 20, $col9, $row7, "Material type");
+	$self->{"page"}->string( $f1, 20, $col9,  $row7, "Material type" );
 	$self->{"page"}->string( $f1, 20, $col11, $row7, $stackup->GetStackupType() );
+}
 
+sub _DrawStackupTG {
+	my $self    = shift;
+	my $stackup = shift;
+
+	my $mat = HegMethods->GetMaterialKind( $self->{"jobId"}, 1 );
+	my ($TG) = $mat =~ /\((.*)\)/i;
+	
+	$TG =~ s/tg//i;
+
+	if ( defined $TG && $TG ne "" ) {
+		
+		
+		$self->{"page"}->string( $f1, 20, $col9,  $row8, "Material TG" );
+		$self->{"page"}->string( $f1, 20, $col11, $row8, $TG. "°");
+	}
+}
+
+sub _DrawPressThickness {
+	my $self    = shift;
+	my $stackup = shift;
+
+	if ( $stackup->ProgressLamination() ) {
+
+		my %press = $stackup->GetPressInfo();
+
+		my $y = $row1;
+		
+		$self->{"page"}->string( $f1, 16, $col0, $y, "Press thickness:" );
+
+		for my $pressNum ( 1 .. $stackup->GetPressCount() ) {
+			
+			$y -= 20;
+
+			my $thick = $stackup->GetThickByLayerName( $press{$pressNum}->GetTopCopperLayer() );
+
+			my $txt = "$pressNum. press = " . sprintf("%.2f",$thick) . "mm\n";
+
+			$self->{"page"}->string( $f1, 16, $col0, $y, $txt );
+
+			
+
+		}
+	}
 }
 
 #-------------------------------------------------------------------------------------------#

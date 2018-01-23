@@ -182,7 +182,7 @@ sub __ExportStackup {
 	my $jobId = $self->{"jobId"};
 
 	my $stackup      = StackupPdf->new( $self->{"jobId"} );
-	my $resultCreate = $stackup->Create();
+	my $resultCreate = $stackup->Create(1, 1, 1);
 
 	my $tmpPath = $stackup->GetStackupPath();
 	my $pdfPath = JobHelper->GetJobArchive($jobId) . "pdf/" . $jobId . "-cm.pdf";

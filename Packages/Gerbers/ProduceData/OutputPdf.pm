@@ -55,7 +55,7 @@ sub __PrepareStackup {
 	if ( $self->{"layerCnt"} > 2 ) {
 
 		my $stackup      = StackupPdf->new( $self->{"jobId"} );
-		my $resultCreate = $stackup->Create();
+		my $resultCreate = $stackup->Create(0,1,0);
 
 		my $path = $stackup->GetStackupPath();
 		move( $path, $self->{"filesDir"} . "\\" . $self->{"jobId"} . "stackup.pdf" );

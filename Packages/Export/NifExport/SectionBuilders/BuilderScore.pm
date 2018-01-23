@@ -41,14 +41,21 @@ sub Build {
 	my $inCAM    = $self->{"inCAM"};
 	my $jobId    = $self->{"jobId"};
 	my %nifData  = %{ $self->{"nifData"} };
-	my $stepName = "panel";
+	my $stepName = "panel"; 
+	my $sr = 1;
+	
+	# if panel doesnt exist, set o+1 (pool)
+	if(!CamHelper->StepExists($inCAM,$jobId, $stepName)){
+		$stepName = "o+1";
+		$sr = 0;
+	}
 
 	$self->{"scoreCheck"} = undef;
 
 	my $scoreExist = CamHelper->LayerExists( $inCAM, $jobId, "score" );
 
 	if ($scoreExist) {
-		$self->{"scoreCheck"} = ScoreChecker->new( $inCAM, $jobId, $stepName, "score", 1 );
+		$self->{"scoreCheck"} = ScoreChecker->new( $inCAM, $jobId, $stepName, "score", $sr );
 		$self->{"scoreCheck"}->Init();
 	}
 

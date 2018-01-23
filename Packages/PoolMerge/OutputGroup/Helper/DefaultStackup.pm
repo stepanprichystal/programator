@@ -95,7 +95,7 @@ sub CreateDefaultStackup {
 	# Create pdf with stackup	
 	my $stackupPdf = StackupPdf->new($masterJob);
 
-	$stackupPdf->Create();
+	$stackupPdf->Create(1, 1, 1);
 	my $stackTempPath = $stackupPdf->GetStackupPath();
 
 	if ( -e $stackTempPath ) {

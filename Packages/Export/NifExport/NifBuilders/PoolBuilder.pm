@@ -82,6 +82,19 @@ sub Build {
 	push(@req, "prerusovana_drazka");
 		
 	$nifMngr->AddSection("Ostatni", BuilderOther->new(\@req));
+	
+	#Score section
+	@req = ();
+	push(@req, "drazkovani");
+
+	$nifMngr->AddSection("Drazkovani", BuilderScore->new(\@req));
+
+
+	#Rout section
+	@req = ();
+	push(@req, "frezovani_pred");
+	
+	$nifMngr->AddSection("Frezovani", BuilderRout->new(\@req));
 
 	
 	 
