@@ -252,21 +252,10 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	use aliased 'Packages::Stackup::Stackup::Stackup';
 
-	my $stackup = Stackup->new("d59836");
+	my $stackup = Stackup->new("d201893");
  
 	
-	print "\n Final thick: ".$stackup->GetFinalThick()."\n";
- 
-	if( $stackup->GetCuLayerCnt() == 4 && $stackup->GetStackupType() =~ /DE 104/i ){
-		
-		my @cores = $stackup->GetAllCores();
-		
-		if($cores[0]->GetText() =~ /900\s*µm/i){
-			
-			print $cores[0]->GetText()
-		}
-	}
-
+	 my @layers = $stackup->GetAllLayers();
 		 
 	
 	#my $stackup = Stackup->new("d99991");

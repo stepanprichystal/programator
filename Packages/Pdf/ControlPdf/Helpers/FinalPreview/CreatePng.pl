@@ -12,6 +12,17 @@ use warnings;
 use Time::HiRes;
 use Thread::Queue;
 
+
+#necessary for load pall packages
+use FindBin;
+use lib "$FindBin::Bin/../";
+use PackagesLib;
+
+use lib qw( C:\Perl\site\lib\TpvScripts\Scripts );
+
+#use local library;
+use aliased 'Helpers::GeneralHelper';
+
 #-------------------------------------------------------------------------------------------#
 #  Script code
 #-------------------------------------------------------------------------------------------#
@@ -25,6 +36,11 @@ unless ($cmds) {
  
 
 my $MAX_THREADS = 4; # max 3x convert.exe is running
+
+# if server version, create one thread
+if(GeneralHelper->IsTPVServer()){
+	$MAX_THREADS = 1;
+}
 
 # Threads add their ID to this queue when they are ready for work
 # Also, when app terminates a -1 is added to this queue

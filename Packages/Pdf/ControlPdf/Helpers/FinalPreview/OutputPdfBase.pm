@@ -7,7 +7,6 @@
 package Packages::Pdf::ControlPdf::Helpers::FinalPreview::OutputPdfBase;
 
 #3th party library
-use threads;
 use strict;
 use warnings;
 use PDF::API2;
