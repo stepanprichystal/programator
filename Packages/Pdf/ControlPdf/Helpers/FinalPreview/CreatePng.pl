@@ -36,11 +36,7 @@ unless ($cmds) {
  
 
 my $MAX_THREADS = 4; # max 3x convert.exe is running
-
-# if server version, create one thread
-if(GeneralHelper->IsTPVServer()){
-	$MAX_THREADS = 1;
-}
+ 
 
 # Threads add their ID to this queue when they are ready for work
 # Also, when app terminates a -1 is added to this queue

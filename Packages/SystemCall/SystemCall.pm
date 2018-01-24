@@ -11,6 +11,8 @@ package Packages::SystemCall::SystemCall;
 use strict;
 use warnings;
 use JSON;
+use Win32::Process;
+use Config;
 
 #local library
 use aliased 'Helpers::JobHelper';
@@ -48,7 +50,10 @@ sub new {
 
 # Execute perl script and return 0/1 depand if script fail(script died)/succes
 sub Run {
-	my $self = shift;
+	my $self       = shift;
+	my $newConsole = shift;    # if yes, script will run in new perl console, instead of current console window
+
+	my $result = 1;
 
 	unless ( -e $self->{"scriptPath"} ) {
 
@@ -57,20 +62,34 @@ sub Run {
 
 	my $filesStr = join( " ", @{ $self->{"params"} } );
 
+	my $processObj;
+	my $perl = $Config{perlpath};
+
 	my @cmd = ("perl");
 	push( @cmd, $self->{"runScrpit"} );
-
 	push( @cmd, $self->{"scriptPath"} );
 	push( @cmd, $self->{"output"} );
 	push( @cmd, $filesStr );
 
 	my $cmdStr = join( " ", @cmd );
 
-	#print STDERR "\n\ncommand: $cmdStr\n\n";
+	Win32::Process::Create( $processObj, $perl, $cmdStr, 0, ( $newConsole ? CREATE_NO_WINDOW : THREAD_PRIORITY_NORMAL ), "." )
+	  || die "$!\n";
 
-	my $result = 1;
+	$processObj->Wait(INFINITE);
 	
-	system($cmdStr);
+#	#	my @cmd = ("perl");
+#	#	push( @cmd, $self->{"runScrpit"} );
+#	#
+#	#	push( @cmd, $self->{"scriptPath"} );
+#	#	push( @cmd, $self->{"output"} );
+#	#	push( @cmd, $filesStr );
+#	#
+#	#	my $cmdStr = join( " ", @cmd );
+#
+#	#print STDERR "\n\ncommand: $cmdStr\n\n";
+#
+#	#system($cmdStr);
 
 	# read output
 
@@ -90,8 +109,8 @@ sub Run {
 
 	# Test if custom package was run properly
 	if ( $self->{"outputData"}->{"__SystemCallResult"} == 0 ) {
-		
-		print STDERR "Error during system-call: ".$self->{"outputData"}->{"__SystemCallResult"}."\n";
+
+		print STDERR "Error during system-call: " . $self->{"outputData"}->{"__SystemCallResult"} . "\n";
 		$result = 0;
 	}
 

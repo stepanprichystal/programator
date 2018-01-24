@@ -371,7 +371,7 @@ sub __CreatePng {
 	my $script = GeneralHelper->Root() . "\\Packages\\Pdf\\ControlPdf\\Helpers\\FinalPreview\\CreatePng.pl";
 
 	my $createPngCall = SystemCall->new( $script, \@allCmds );
-	unless ( $createPngCall->Run() ) {
+	unless ( $createPngCall->Run(1) ) {
 
 		die "Error when convert pdf to png.\n";
 	}

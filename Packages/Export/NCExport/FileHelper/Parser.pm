@@ -66,7 +66,8 @@ sub MergeTwoFiles {
 	my $self        = shift;
 	my %sourceFile  = %{ shift(@_) };
 	my %targetFile  = %{ shift(@_) };
-	my $pasteBefore = shift;            #when 1, body of source file is paste before target body
+	my $pasteBefore = shift;            # when 1, body of source file is paste before target body
+	my $holeFirst = shift;				# if 1, all holes
 
 	my @lines = ();
 	my $line;
