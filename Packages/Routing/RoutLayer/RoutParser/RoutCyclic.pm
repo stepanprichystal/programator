@@ -15,6 +15,7 @@ use Math::Geometry::Planar;    #Math-Geometry-Planar-GPC
 use aliased 'CamHelpers::CamDTM';
 use aliased 'CamHelpers::CamDTMSurf';
 use aliased 'Packages::Routing::RoutLayer::RoutParser::RoutArc';
+
 use aliased 'Packages::CAM::UniDTM::Enums';
 use aliased 'Enums::EnumsRout';
 use List::MoreUtils qw(uniq);
@@ -28,6 +29,7 @@ use aliased 'Packages::Polygon::Polygon::PolygonPoints';
 sub IsCyclic {
 	my $self        = shift;
 	my @sortedFeats = @{ shift(@_) };
+	my $openPoint   = shift;            # if rout is not cyclyc, return point where is rout open
 
 	my $cyclic = 1;
 
@@ -48,6 +50,11 @@ sub IsCyclic {
 		  )
 		{
 			$cyclic = 0;
+
+			if ( defined $openPoint ) {
+				$openPoint->{"x"} = $next->{"x1"};
+				$openPoint->{"y"} = $next->{"y1"};
+			}
 			last;
 
 		}
@@ -316,16 +323,27 @@ sub GetSortedRout {
 			#something is wrong, probably sortedEdges contain line/arc, which are not part of route
 
 			if ( $isFind == 0 ) {
-				$sorted = 1;
+
 				$isOpen = 1;
 				my %inf = ( "x" => $x, "y" => $y );
 				$result{"openPoint"} = \%inf;
 
-				last;
+				last;    # exit from loop
 			}
 
 			if ( scalar(@edges) == 0 ) {
-				$sorted = 1;
+
+				# now edges are sorted. Start/end points of edges are connected each other
+				# Final test on cyclyc shape, if points not lie in one line etc
+
+				if ( $self->IsCyclic( \@sorteEdges, $result{"openPoint"} ) ) {
+					$sorted = 1;
+				}
+				else {
+
+					$isOpen = 1;
+					last;                                                         # exit from loop
+				}
 			}
 		}
 
