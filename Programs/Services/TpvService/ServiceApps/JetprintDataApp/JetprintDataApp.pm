@@ -17,6 +17,7 @@ use warnings;
 use File::Basename;
 use Log::Log4perl qw(get_logger);
 use POSIX qw(strftime);
+use File::Path 'rmtree';
 
 #local library
 use aliased 'Connectors::HeliosConnector::HegMethods';
@@ -232,6 +233,7 @@ sub __DeleteOldJetFiles {
 		return 0;
 	}
 
+	# delete files from EnumsPaths->Jobs_JETPRINT
 	my $deletedFiles = 0;
 
 	my $p = EnumsPaths->Jobs_JETPRINT;
@@ -260,7 +262,37 @@ sub __DeleteOldJetFiles {
 		closedir($dir);
 	}
 
-	$self->{"logger"}->info("Number of deleted job from Jetprint folder: $deletedFiles");
+	$self->{"logger"}->info("Number of deleted job from Jetprint folder $p: $deletedFiles");
+	
+	# Delete working folders from jetprint machine folder Jobs_JETPRINTMACHINE
+	
+	my $deletedFolders = 0;
+
+	my $p2 = EnumsPaths->Jobs_JETPRINTMACHINE;
+	if ( opendir( my $dir, $p2 ) ) {
+		while ( my $workDir = readdir($dir) ) {
+			next if ( $workDir =~ /^\.$/ );
+			next if ( $workDir =~ /^\.\.$/ );
+
+			my ($folderJobId) = $workDir =~ m/^(\w\d+)\w+_jet$/i;
+
+			unless ( defined $folderJobId ) {
+				next;
+			}
+		 
+			my $inProduc = scalar( grep { $_ =~ /^$folderJobId$/i } @pcbInProduc );
+
+			unless ($inProduc) {
+				
+				rmtree( $p2.$workDir) or die "Cannot rmtree ". $p2.$workDir." : $!";
+				$deletedFolders++;
+			}
+		}
+
+		closedir($dir);
+	}
+
+	$self->{"logger"}->info("Number of deleted jobs from Jetprint machine folder $p2: $deletedFolders");
 }
 
 # store err to logs

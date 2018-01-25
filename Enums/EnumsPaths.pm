@@ -73,6 +73,7 @@ use constant {
 	Jobs_AOITESTS =>  "\\\\192.168.2.66\\spool\\pci\\",
 	Jobs_AOITESTSFUSION =>  "\\\\192.168.2.60\\spool\\pci\\",
 	Jobs_AOITESTSFUSIONDB =>  "\\\\192.168.2.60\\job_db\\",
+	Jobs_JETPRINTMACHINE => "\\\\printer-pc\\jobs\\"
 };
 
 # sometimes script is run from windows service, thus mapped disc Y is not avalaible, use incam\imcam adress
