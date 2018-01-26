@@ -135,6 +135,12 @@ sub GetJobLayerTitle {
 		}
 
 	}
+	elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_nDrill ) {
+		$title = "Non-plated drilling";
+		if ($cz) {
+			$title = "Neprokovené vrtání";
+		}
+	}
 	elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_nMill ) {
 		$title = "Non-plated milling";
 		if ($cz) {
@@ -471,9 +477,13 @@ sub GetFileNameByLayer {
 		$name = "mill_pth_bot";
 
 	}
+	elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_nDrill ) {
+		$name = "npth";
+		
+	}
 	elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_nMill ) {
 		$name = "mill";
-
+		
 	}
 	elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_bMillTop ) {
 		$name = "mill_top";

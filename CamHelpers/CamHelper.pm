@@ -161,7 +161,6 @@ sub ClearEditor {
 
 #Return if layer exists
 sub LayerExists {
-
 	my $self    = shift;
 	my $inCAM   = shift;
 	my $jobName = shift;

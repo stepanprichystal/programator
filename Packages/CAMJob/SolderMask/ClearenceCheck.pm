@@ -69,6 +69,7 @@ sub RoutClearenceCheck {
 
 		}
 		elsif (    $l->{"type"} eq EnumsGeneral->LAYERTYPE_plt_nMill
+				|| $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_nDrill
 				|| $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_nMill
 				|| $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_rsMill
 				|| $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_kMill

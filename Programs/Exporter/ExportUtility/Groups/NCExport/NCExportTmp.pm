@@ -51,6 +51,9 @@ sub Run {
 	my $self  = shift;
 	my $inCAM = shift;
 	my $jobId = shift;
+	my $exportSingle = shift;
+	my $plt = shift;
+	my $nplt = shift;
 
 	$self->{"defaultInfo"} = DefaultInfo->new( $inCAM, $jobId );
 

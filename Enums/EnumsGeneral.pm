@@ -6,7 +6,7 @@ use constant {
 			   PcbTyp_ONELAYER   => "oneLayer",
 			   PcbTyp_TWOLAYER   => "twoLayer",
 			   PcbTyp_MULTILAYER => "multiLayer",
-			   PcbTyp_STENCIL => "stencil"
+			   PcbTyp_STENCIL    => "stencil"
 };
 
 use constant {
@@ -50,8 +50,6 @@ use constant {
 			   Layers_V16 => "v16"
 };
 
- 
-
 # Define type of NC layers, as we defined for opur purposes
 use constant {
 	LAYERTYPE_plt_nDrill     => "plt_nDrill",        # normall through holes plated
@@ -63,6 +61,7 @@ use constant {
 	LAYERTYPE_plt_bMillBot   => "plt_bMillBot",      # z-axis mill slits bot
 	LAYERTYPE_plt_dcDrill    => "plt_dcDrill",       # drill crosses
 	LAYERTYPE_plt_fDrill     => "plt_fDrill",        # frame drilling "v1"
+	LAYERTYPE_nplt_nDrill    => "nplt_nDril",        # normall drill without slots
 	LAYERTYPE_nplt_nMill     => "nplt_nMill",        # normall mill slits
 	LAYERTYPE_nplt_bMillTop  => "nplt_bMillTop",     # z-axis mill top
 	LAYERTYPE_nplt_bMillBot  => "nplt_bMillBot",     # z-axis mill bot
@@ -72,8 +71,8 @@ use constant {
 	LAYERTYPE_nplt_jbMillTop => "nplt_jbMillTop",    #z-axis mill top of core
 	LAYERTYPE_nplt_jbMillBot => "nplt_jbMillBot",    #z-axis mill bot of core
 	LAYERTYPE_nplt_kMill     => "nplt_kmill",        #milling of gold connector
-	LAYERTYPE_nplt_lcMill  => "nplt_lcMill",     #milling of template for c side (snimaci lak)
-	LAYERTYPE_nplt_lsMill  => "nplt_lsMill",     #milling of template for s side (snimaci lak)
+	LAYERTYPE_nplt_lcMill    => "nplt_lcMill",       #milling of template for c side (snimaci lak)
+	LAYERTYPE_nplt_lsMill    => "nplt_lsMill",       #milling of template for s side (snimaci lak)
 	LAYERTYPE_nplt_fMillSpec => "nplt_fMillSpec",    #special milling (ramecek, dovrtani apod)
 
 };

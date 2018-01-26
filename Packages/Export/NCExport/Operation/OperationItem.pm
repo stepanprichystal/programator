@@ -11,7 +11,7 @@ use strict;
 use warnings;
 
 #local library
-use aliased 'Packages::Export::NCExport::NCHelper';
+use aliased 'Packages::Export::NCExport::Helpers::NCHelper';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods

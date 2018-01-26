@@ -3,7 +3,7 @@
 # Description: Cover merging, spliting and checking before exporting NC files
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::Export::NCExport::NCHelper;
+package Packages::Export::NCExport::Helpers::NCHelper;
 
 #3th party library
 use strict;
@@ -42,19 +42,20 @@ sub SortLayersByRules {
 	$priority{ EnumsGeneral->LAYERTYPE_plt_dcDrill }   = 1010;
 	$priority{ EnumsGeneral->LAYERTYPE_plt_bDrillTop } = 1020;
 	$priority{ EnumsGeneral->LAYERTYPE_plt_bDrillBot } = 1030;
-	$priority{ EnumsGeneral->LAYERTYPE_plt_bMillTop }  = 1040;
-	$priority{ EnumsGeneral->LAYERTYPE_plt_bMillBot }  = 1050;
-	$priority{ EnumsGeneral->LAYERTYPE_plt_nMill }     = 1060;
-	$priority{ EnumsGeneral->LAYERTYPE_plt_nDrill }    = 1070;
+	$priority{ EnumsGeneral->LAYERTYPE_plt_nDrill }    = 1040;
+	$priority{ EnumsGeneral->LAYERTYPE_plt_bMillTop }  = 1050;
+	$priority{ EnumsGeneral->LAYERTYPE_plt_bMillBot }  = 1060;
+	$priority{ EnumsGeneral->LAYERTYPE_plt_nMill }     = 1070;
 	$priority{ EnumsGeneral->LAYERTYPE_plt_cDrill }    = 1080;
 	$priority{ EnumsGeneral->LAYERTYPE_plt_fDrill }    = 1090;
 
 	# nplted layer are merged together
-	$priority{ EnumsGeneral->LAYERTYPE_nplt_bMillTop } = 2010;
-	$priority{ EnumsGeneral->LAYERTYPE_nplt_bMillBot } = 2020;
-	$priority{ EnumsGeneral->LAYERTYPE_nplt_nMill }    = 2030;
-	$priority{ EnumsGeneral->LAYERTYPE_nplt_rsMill }   = 2040;
-	$priority{ EnumsGeneral->LAYERTYPE_nplt_frMill }   = 2050;
+	$priority{ EnumsGeneral->LAYERTYPE_nplt_nDrill }   = 2010;
+	$priority{ EnumsGeneral->LAYERTYPE_nplt_bMillTop } = 2020;
+	$priority{ EnumsGeneral->LAYERTYPE_nplt_bMillBot } = 2030;
+	$priority{ EnumsGeneral->LAYERTYPE_nplt_nMill }    = 2040;
+	$priority{ EnumsGeneral->LAYERTYPE_nplt_rsMill }   = 2050;
+	$priority{ EnumsGeneral->LAYERTYPE_nplt_frMill }   = 2060;
 
 	#1) sort by priority bz tep of layer
 
@@ -143,6 +144,7 @@ sub GetHeaderLayer {
 	$priority{ EnumsGeneral->LAYERTYPE_plt_fDrill }    = 1090;
 
 	# nplated layer are merged together
+	$priority{ EnumsGeneral->LAYERTYPE_nplt_nDrill }   = 2060;
 	$priority{ EnumsGeneral->LAYERTYPE_nplt_bMillTop } = 2020;
 	$priority{ EnumsGeneral->LAYERTYPE_nplt_bMillBot } = 2030;
 	$priority{ EnumsGeneral->LAYERTYPE_nplt_nMill }    = 2010;

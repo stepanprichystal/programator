@@ -244,6 +244,7 @@ sub CheckInvalidSymbols {
 	push( @t, EnumsGeneral->LAYERTYPE_plt_cDrill );
 	push( @t, EnumsGeneral->LAYERTYPE_plt_dcDrill );
 	push( @t, EnumsGeneral->LAYERTYPE_plt_fDrill );
+	push( @t, EnumsGeneral->LAYERTYPE_nplt_nDrill );
 
 	@layers = $self->__GetLayersByType( \@layers, \@t );
 
@@ -302,6 +303,7 @@ sub CheckDirTop2Bot {
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_jbMillTop );
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_lcMill );
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_kMill );
+ 
 
 	@layers = $self->__GetLayersByType( \@layers, \@t );
 
@@ -480,6 +482,7 @@ sub CheckContainNoDepth {
 	push( @t, EnumsGeneral->LAYERTYPE_plt_nMill );
 	push( @t, EnumsGeneral->LAYERTYPE_plt_dcDrill );
 	push( @t, EnumsGeneral->LAYERTYPE_plt_fDrill );
+	push( @t, EnumsGeneral->LAYERTYPE_nplt_nDrill );
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_nMill );
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_rsMill );
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_frMill );
@@ -516,6 +519,7 @@ sub CheckDiamterDiff {
 	push( @t, EnumsGeneral->LAYERTYPE_plt_nDrill );
 	push( @t, EnumsGeneral->LAYERTYPE_plt_cDrill );
 	push( @t, EnumsGeneral->LAYERTYPE_plt_nMill );
+	push( @t, EnumsGeneral->LAYERTYPE_nplt_nDrill );
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_nMill );
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_rsMill );
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_lcMill );

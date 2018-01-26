@@ -150,6 +150,7 @@ sub GetNPltNCLayerInfo {
 	#	}
 
 	#sort this layers by type
+	my @nplt_nDrill    = ();    #normall npl drill
 	my @nplt_nMill     = ();    #normall mill slits
 	my @nplt_bMillTop  = ();    #z-axis top mill
 	my @nplt_bMillBot  = ();    #z-axis bot mill
@@ -171,7 +172,10 @@ sub GetNPltNCLayerInfo {
 			next;
 		}
 
-		if ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_nMill ) {
+		if ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_nDrill ) {
+			push( @nplt_nDrill, $l );
+		}
+		elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_nMill ) {
 			push( @nplt_nMill, $l );
 		}
 		elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_bMillTop ) {
@@ -208,6 +212,8 @@ sub GetNPltNCLayerInfo {
 
 	}
 
+
+	$info{ EnumsGeneral->LAYERTYPE_nplt_nDrill }     = \@nplt_nDrill;
 	$info{ EnumsGeneral->LAYERTYPE_nplt_nMill }     = \@nplt_nMill;
 	$info{ EnumsGeneral->LAYERTYPE_nplt_bMillTop }  = \@nplt_bMillTop;
 	$info{ EnumsGeneral->LAYERTYPE_nplt_bMillBot }  = \@nplt_bMillBot;

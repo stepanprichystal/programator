@@ -26,6 +26,7 @@ use aliased 'Helpers::GeneralHelper';
 use aliased 'Packages::CAMJob::Drilling::CheckAspectRatio';
 use aliased 'Packages::CAMJob::Drilling::CheckHolePads';
 use aliased 'Packages::CAMJob::Routing::CheckRoutPocket';
+#use aliased 'Packages::CAMJob::Drilling::NCLayerDirCheck';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -330,9 +331,11 @@ sub OnCheckGroupData {
 
 		unless ( CheckRoutPocket->CheckRoutPocketDirAllLayers( $inCAM, $jobId, $stepName, 1, \@layerInf ) ) {
 
-			my $str = join("\n",
-				 map {
-					    "- Layer: ".$_->{"layer"}
+			my $str = join(
+				"\n",
+				map {
+					    "- Layer: "
+					  . $_->{"layer"}
 					  . " has right dir: "
 					  . $_->{"rightDir"}
 					  . ",  wrong dir: "
@@ -341,12 +344,18 @@ sub OnCheckGroupData {
 					  . join( "; ", map { $_->{"id"} } @{ $_->{"surfaces"} } )
 				} @layerInf
 			);
-			
-			$dataMngr->_AddErrorResult( "Pocket direction", "There is a wrong pocket direction in rout layers (step $stepName) :\n" . $str."\n Repair attribute .rout_pocket_direction in surfaces." );
+
+			$dataMngr->_AddErrorResult(
+										"Pocket direction",
+										"There is a wrong pocket direction in rout layers (step $stepName) :\n"
+										  . $str
+										  . "\n Repair attribute .rout_pocket_direction in surfaces."
+			);
 		}
 
 	}
 
+ 
 }
 
 #-------------------------------------------------------------------------------------------#

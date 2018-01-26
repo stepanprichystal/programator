@@ -84,4 +84,16 @@ sub DeleteLayer {
 
 }
 
+# Set layer direction
+sub SetLayerDirection {
+	my $self  = shift;
+	my $inCAM = shift;
+	my $jobId = shift;
+	my $layer = shift;
+	my $dir = shift; # bottom_to_top, top_to_bottom
+
+	$inCAM->COM("matrix_layer_direction","job" => "$jobId","matrix" => "matrix","layer" => "$layer","direction" => $dir);
+	
+}
+
 1;

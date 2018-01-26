@@ -222,8 +222,13 @@ sub AddNCLayerType {
 			$l->{"type"}   = EnumsGeneral->LAYERTYPE_plt_dcDrill;
 			$l->{"plated"} = 1;
 		}
-
 		# Non plated NC layers
+		elsif ( $l->{"gROWname"} =~ /^d[0-9]*$/ ) {
+
+			$l->{"type"}   = EnumsGeneral->LAYERTYPE_nplt_nDrill;
+			$l->{"plated"} = 0;
+
+		}
 		elsif ( $l->{"gROWname"} =~ /^f[0-9]*$/ || $l->{"gROWname"} =~ /^f(sch)?(lm)?$/ ) {
 
 			$l->{"type"}   = EnumsGeneral->LAYERTYPE_nplt_nMill;

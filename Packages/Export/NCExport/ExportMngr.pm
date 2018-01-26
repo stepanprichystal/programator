@@ -25,9 +25,10 @@ use aliased 'Packages::Export::NCExport::MergeFileMngr';
 use aliased 'Packages::Export::NCExport::ExportFileMngr';
 use aliased 'Packages::Export::NCExport::MachineMngr';
 use aliased 'Connectors::HeliosConnector::HegMethods';
-use aliased 'Packages::Export::NCExport::NCHelper';
+use aliased 'Packages::Export::NCExport::Helpers::NCHelper';
 use aliased 'CamHelpers::CamDrilling';
 use aliased 'CamHelpers::CamJob';
+use aliased 'Packages::Export::NCExport::Helpers::NpltDrillHelper';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -43,8 +44,59 @@ sub new {
 	$self->{"stepName"}     = shift;
 	$self->{"exportSingle"} = shift;
 
-	my $requiredPlt  = shift;
-	my $requiredNPlt = shift;
+	$self->{"requiredPlt"}  = shift;
+	$self->{"requiredNPlt"} = shift;
+
+	return $self;
+}
+
+sub Run {
+	my $self = shift;
+
+	# move nptp hole from f and fsch to layer "d"
+	# "d" is standard NC layer, but so far we work with merged chains and holes in one layer
+	my $cnt = undef;
+	if ( !$self->{"exportSingle"} ) {
+		$cnt = NpltDrillHelper->SeparateNpltDrill( $self->{"inCAM"}, $self->{"jobId"} );
+	}
+
+	$self->__Init();
+
+	$self->__Run();
+
+	# move nptp holes back
+	if ( !$self->{"exportSingle"} ) {
+		NpltDrillHelper->RestoreNpltDrill( $self->{"inCAM"}, $self->{"jobId"}, $cnt );
+	}
+
+}
+
+#Get information about nc files for  technical procedure
+sub GetNCInfo {
+	my $self = shift;
+
+	my @infoTable = $self->{"operationMngr"}->GetInfoTable();
+
+	return @infoTable;
+}
+
+sub TaskItemsCount {
+	my $self = shift;
+
+	my $totalCnt = 0;
+ 
+
+	$totalCnt += scalar( CamDrilling->GetPltNCLayers( $self->{"inCAM"}, $self->{"jobId"} ) );
+	$totalCnt += scalar( CamDrilling->GetNPltNCLayers( $self->{"inCAM"}, $self->{"jobId"} ) );
+
+	$totalCnt++;                                                                                 # nc merging
+	$totalCnt++;                                                                                 # nc info save
+
+	return $totalCnt;
+}
+
+sub __Init {
+	my $self = shift;
 
 	# Load all NC layers
 
@@ -60,7 +112,7 @@ sub new {
 	# Filter layers, if export single
 	if ( $self->{"exportSingle"} ) {
 
-		$self->__FilterLayers( $requiredPlt, $requiredNPlt );
+		$self->__FilterLayers( $self->{"requiredPlt"}, $self->{"requiredNPlt"} );
 
 	}
 
@@ -101,26 +153,25 @@ sub new {
 	$self->{"operationMngr"}->{"operationBuilder"}
 	  ->Init( $self->{"inCAM"}, $self->{"jobId"}, $self->{"stepName"}, $self->{"pltLayers"}, $self->{"npltLayers"} );
 
-	return $self;
 }
 
-sub Run {
+sub __Run {
 	my $self = shift;
 
 	# 1) Do final check of drill/rout layer
 	if ( $self->__CheckNCLayers() ) {
- 
- 		get_logger("abstractQueue")->error( "Finding  ".$self->{"jobId"}." BUG ExportMngr 1\n ");
- 
+
+		get_logger("abstractQueue")->error( "Finding  " . $self->{"jobId"} . " BUG ExportMngr 1\n " );
+
 		# 2) create sequence of dps operation
 		$self->{"operationMngr"}->CreateOperations();
-		
-		get_logger("abstractQueue")->error( "Finding  ".$self->{"jobId"}." BUG ExportMngr 2\n ");
- 
+
+		get_logger("abstractQueue")->error( "Finding  " . $self->{"jobId"} . " BUG ExportMngr 2\n " );
+
 		# 3) for every operation filter suitable machines
 		$self->{"machineMngr"}->AssignMachines( $self->{"operationMngr"} );
-		
-		get_logger("abstractQueue")->error( "Finding  ".$self->{"jobId"}." BUG ExportMngr 3\n ");
+
+		get_logger("abstractQueue")->error( "Finding  " . $self->{"jobId"} . " BUG ExportMngr 3\n " );
 
 		# 4) Export physical nc files
 		$self->{"exportFileMngr"}->ExportFiles( $self->{"operationMngr"} );
@@ -132,33 +183,6 @@ sub Run {
 		$self->__UpdateNCInfo();
 	}
 
-}
-
-#Get information about nc files for  technical procedure
-sub GetNCInfo {
-	my $self = shift;
-
-	my @infoTable = $self->{"operationMngr"}->GetInfoTable();
-
-	return @infoTable;
-}
-
-sub TaskItemsCount {
-	my $self = shift;
-
-	my $totalCnt = 0;
-
-	if ( $self->{"exportSingle"} ) {
-		$totalCnt++;    # checking nc layer
-	}
-
-	$totalCnt += scalar( @{ $self->{"pltLayers"} } );
-	$totalCnt += scalar( @{ $self->{"npltLayers"} } );
-
-	$totalCnt++;        # nc merging
-	$totalCnt++;        # nc info save
-
-	return $totalCnt;
 }
 
 #Get information about nc files for  technical procedure
@@ -174,17 +198,17 @@ sub __UpdateNCInfo {
 
 	my @info       = $self->GetNCInfo();
 	my $resultMess = "";
-	
+
 	# 3 attempt to write to HEG (can do problems during heg bil load)
 	my $result = 0;
-	foreach my $attempt  (1..3){
-	
+	foreach my $attempt ( 1 .. 3 ) {
+
 		$result = NCHelper->UpdateNCInfo( $self->{"jobId"}, \@info, \$resultMess );
-		
-		last if( $result);
+
+		last if ($result);
 		sleep(5);
 	}
- 
+
 	unless ($result) {
 		$resultItem->AddError($resultMess);
 	}
@@ -254,9 +278,28 @@ sub __CheckNCLayers {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	#use aliased 'Packages::Export::NCExport::NCExportGroup';
+	use aliased 'Packages::Export::NCExport::ExportMngr';
 
-	#print $test;
+	use aliased 'Packages::InCAM::InCAM';
+
+	my $jobId = "d152456";
+	my $step  = "panel";
+	my $inCAM = InCAM->new();
+
+	# Exportovat jednotlive vrstvy nebo vsechno
+	my $exportSingle = 0;
+
+	# Vrstvy k exportovani, nema vliv pokud $exportSingle == 0
+	my @pltLayers = ();
+
+	#my @npltLayers = ();
+
+	# Pokud se bude exportovat jednotlive po vrstvach, tak vrstvz dotahnout nejaktakhle:
+	#@pltLayers = CamDrilling->GetPltNCLayers( $inCAM, $jobId );
+	my @npltLayers = ( "d", "d2" );
+
+	my $export = ExportMngr->new( $inCAM, $jobId, $step, $exportSingle, \@pltLayers, \@npltLayers );
+	$export->Run( $inCAM, $jobId, $exportSingle, \@pltLayers, \@npltLayers );
 
 }
 

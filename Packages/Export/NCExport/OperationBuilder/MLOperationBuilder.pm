@@ -367,6 +367,7 @@ sub __DefineNPlatedOperations {
 	my $stackupNC = StackupNC->new( $self->{"inCAM"}, $stackup );
 
 	#non plated
+	my @nplt_nDrill    = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_nDrill } };       #normall nplt drill
 	my @nplt_nMill     = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_nMill } };        #normall mill slits
 	my @nplt_bMillTop  = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_bMillTop } };     #z-axis top mill
 	my @nplt_bMillBot  = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_bMillBot } };     #z-axis bot mill
@@ -382,6 +383,7 @@ sub __DefineNPlatedOperations {
 
 	# 1) Operation name = fzc<press order>, can contain layer
 	# - @nplt_bMillTop
+	# - @nplt_nDrill
 
 	foreach my $pressOrder ( keys $stackup->{"press"} ) {
 
@@ -401,6 +403,7 @@ sub __DefineNPlatedOperations {
 
 	# 2) Operation name = fzs<press order>, can contain layer
 	# - @nplt_bMillBot
+	# - @nplt_nDrill
 
 	foreach my $pressOrder ( keys $stackup->{"press"} ) {
 
@@ -414,6 +417,10 @@ sub __DefineNPlatedOperations {
 		#blind milling start from top in layer <$drillStartTop>
 		my @blindBot = grep { $_->{"gROWdrl_start"} == $startBot } @nplt_bMillBot;
 		push( @layers, @blindBot );
+
+		# add all @nplt_nDrill which has dir from bot2top
+		my @nplt_nDrill_b2t = grep { $_->{"gROWdrl_dir"} eq "bot2top" && $_->{"gROWdrl_start"} == $startBot } @nplt_nDrill;
+		push( @layers, @blindBot, @nplt_nDrill_b2t );
 
 		$opManager->AddOperationDef( $outFile, \@layers, $pressOrder );
 	}
@@ -468,7 +475,11 @@ sub __DefineNPlatedOperations {
 		@nplt_nMill = grep { $_->{"gROWname"} !~ /^f[0-9]*$/i } @nplt_nMill;
 	}
 
-	$opManager->AddOperationDef( "fc" . $stackup->GetPressCount(), \@nplt_nMill, $stackup->GetPressCount() );
+	# add all @nplt_nDrill which has dir from top2bot
+	my @nplt_nDrill_t2b = grep { $_->{"gROWdrl_dir"} ne "bot2top"} @nplt_nDrill;
+	my @layers = ( @nplt_nMill, @nplt_nDrill_t2b );
+
+	$opManager->AddOperationDef( "fc" . $stackup->GetPressCount(), \@layers, $stackup->GetPressCount() );
 
 	# 7) Operation name = rs - can contain layer
 	# - @nplt_rsMill
@@ -481,7 +492,7 @@ sub __DefineNPlatedOperations {
 	# 9) Operation name = k - can contain layer
 	# - @nplt_kMill
 	$opManager->AddOperationDef( "fk", \@nplt_kMill, $stackup->GetPressCount() );
-	
+
 	# 10) Operation name = flc - can contain layer
 	# - @nplt_lcMill
 	$opManager->AddOperationDef( "flc", \@nplt_lcMill, -1 );
