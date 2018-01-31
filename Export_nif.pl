@@ -18,7 +18,7 @@ use aliased 'Programs::Exporter::ExportUtility::Groups::NifExport::NifExportTmp'
  
 #input parameters
  
-my $jobId    = "f52457";
+my $jobId    = "d036701";
  
  
  
@@ -26,8 +26,8 @@ my $poznamka = undef;
 my $tenting  = 0;
 my $pressfit = 0;
 my $maska01  = 1;
-my $datacode  = "MC";
-my $ullogo  = "MC";
+my $datacode  = "";
+my $ullogo  = "";
 my $jumpScoring  = undef;
 
  

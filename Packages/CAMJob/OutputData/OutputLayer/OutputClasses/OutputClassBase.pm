@@ -40,7 +40,7 @@ sub new {
 
 	my $classType = shift;
 
-	$self->{"result"} = OutputClassResult->new($classType, $self->{"inCAM"}, $self->{"jobId"}, $self->{"step"}, $self->{"layer"});
+	$self->{"result"} = OutputClassResult->new( $classType, $self->{"inCAM"}, $self->{"jobId"}, $self->{"step"}, $self->{"layer"} );
 
 	return $self;
 }
@@ -176,15 +176,15 @@ sub _SeparateFeatsById {
 
 # Set all NC layers to finish sizes (consider type of DTM vysledne/vrtane)
 sub _SetDTMFinishSizes {
-	my $self     = shift;
-	my $lName    = shift;
-	
+	my $self  = shift;
+	my $lName = shift;
+
 	my $oriLayer = $self->{"layer"};
 
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
 	my $step  = $self->{"step"};
-	
+
 	my $layerCnt = CamJob->GetSignalLayerCnt( $self->{"inCAM"}, $self->{"jobId"} );
 
 	# Prepare tool table for drill map and final sizes of data (depand on column DSize in DTM)
@@ -214,21 +214,21 @@ sub _SetDTMFinishSizes {
 
 	# 1) If some tool has not finish size, correct it by putting there drill size (if vysledne resize -100µm)
 
-#	foreach my $t (@tools) {
-#
-#		if ( !defined $t->{"gTOOLfinish_size"} || $t->{"gTOOLfinish_size"} == 0 || $t->{"gTOOLfinish_size"} eq "" ) {
-#
-#			if ( $DTMType eq EnumsDrill->DTM_VYSLEDNE ) {
-#
-#				$t->{"gTOOLfinish_size"} = $t->{"gTOOLdrill_size"} - (2 * Enums->Plating_THICK);    # 100µm - this is size of plating
-#
-#			}
-#			elsif ( $DTMType eq EnumsDrill->DTM_VRTANE ) {
-#				$t->{"gTOOLfinish_size"} = $t->{"gTOOLdrill_size"};
-#			}
-#
-#		}
-#	}
+	foreach my $t (@tools) {
+
+		if ( !defined $t->{"gTOOLfinish_size"} || $t->{"gTOOLfinish_size"} == 0 || $t->{"gTOOLfinish_size"} eq "" ) {
+
+			if ( $DTMType eq EnumsDrill->DTM_VYSLEDNE ) {
+
+				$t->{"gTOOLfinish_size"} = $t->{"gTOOLdrill_size"} - ( 2 * Enums->Plating_THICK );    # 100µm - this is size of plating
+
+			}
+			elsif ( $DTMType eq EnumsDrill->DTM_VRTANE ) {
+				$t->{"gTOOLfinish_size"} = $t->{"gTOOLdrill_size"};
+			}
+
+		}
+	}
 
 	# 2) Copy 'finish' value to 'drill size' value.
 	# Drill size has to contain value of finih size, because all pads, lines has size depand on this column
@@ -236,10 +236,13 @@ sub _SetDTMFinishSizes {
 
 	foreach my $t (@tools) {
 
-		# if DTM  layer is plated + it is plated through dps (layer cnt >= 2) (singla layer pcb - no plating)
-		if ( $oriLayer->{"plated"} && $layerCnt >= 2 ) {
-			$t->{"gTOOLdrill_size"} -= (2 * Enums->Plating_THICK);
-		} 
+		# if DTM is vrtane + layer is plated + it is plated through dps (layer cnt >= 2)
+		if ( $DTMType eq EnumsDrill->DTM_VRTANE && $oriLayer->{"plated"} && $layerCnt >= 2 ) {
+			$t->{"gTOOLdrill_size"} = $t->{"gTOOLfinish_size"} - ( 2 * Enums->Plating_THICK );
+		}
+		else {
+			$t->{"gTOOLdrill_size"} = $t->{"gTOOLfinish_size"};
+		}
 	}
 
 	# 3) Set new values to DTM
@@ -257,7 +260,6 @@ sub _SetDTMFinishSizes {
 	# 4) If some tools same, merge it
 	$inCAM->COM( "tools_merge", "layer" => $lName );
 }
-
 
 sub __UpdateDTM {
 	my $self         = shift;
