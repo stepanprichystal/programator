@@ -71,14 +71,7 @@ sub Run {
 
 }
 
-#Get information about nc files for  technical procedure
-sub GetNCInfo {
-	my $self = shift;
 
-	my @infoTable = $self->{"operationMngr"}->GetInfoTable();
-
-	return @infoTable;
-}
 
 sub TaskItemsCount {
 	my $self = shift;
@@ -196,7 +189,7 @@ sub __UpdateNCInfo {
 	# Save nc info table to database
 	my $resultItem = $self->_GetNewItem("Save NC info");
 
-	my @info       = $self->GetNCInfo();
+	my @info       = $self->__GetNCInfo();
 	my $resultMess = "";
 
 	# 3 attempt to write to HEG (can do problems during heg bil load)
@@ -270,6 +263,15 @@ sub __CheckNCLayers {
 	}
 
 	return $res;
+}
+
+#Get information about nc files for  technical procedure
+sub __GetNCInfo {
+	my $self = shift;
+
+	my @infoTable = $self->{"operationMngr"}->GetInfoTable();
+
+	return @infoTable;
 }
 
 #-------------------------------------------------------------------------------------------#
