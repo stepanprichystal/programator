@@ -4,8 +4,6 @@
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 
-
-
 package Managers::AbstractQueue::AbstractQueue::Forms::AbstractQueueForm;
 use base 'Managers::AsyncJobMngr::AsyncJobMngr';
 
@@ -33,26 +31,25 @@ use aliased 'Managers::AsyncJobMngr::ServerMngr::ServerInfo';
 use aliased 'Managers::AbstractQueue::Helper';
 use aliased 'Packages::Other::AppConf';
 
-
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
 
 sub new {
-	my $class     = shift;
-	my $runMode   = shift;
-	my $parent    = shift;
- 
+	my $class   = shift;
+	my $runMode = shift;
+	my $parent  = shift;
+
 	if ( defined $parent && $parent == -1 ) {
 		$parent = undef;
 	}
 
-	my $self = $class->SUPER::new( $runMode, $parent  );
+	my $self = $class->SUPER::new( $runMode, $parent );
 	bless($self);
 
 	# Properties
 	
- 
+
 	# Events
 
 	$self->{"onClick"}       = Event->new();
@@ -116,7 +113,7 @@ sub AddNewTaskGUI {
 sub AddNewTask {
 	my $self = shift;
 	my $task = shift;
- 
+
 	my $taskData = $task->GetTaskData();
 
 	my $mode = $taskData->GetTaskMode();
@@ -128,7 +125,7 @@ sub AddNewTask {
 		my $serverInfo = ServerInfo->new();
 		$serverInfo->{"port"} = $port;
 
-		$self->_AddJobToQueue( $task->GetJobId(), $task->GetTaskId(), $task->GetTaskStrData(),  $serverInfo );
+		$self->_AddJobToQueue( $task->GetJobId(), $task->GetTaskId(), $task->GetTaskStrData(), $serverInfo );
 	}
 	elsif ( $mode eq EnumsJobMngr->TaskMode_ASYNC ) {
 
@@ -172,27 +169,28 @@ sub ActivateForm {
 }
 
 # return reference to notifz mngr if exist
-sub GetNotifyMngr{
-	my $self   = shift;
-	
-	unless(defined $self->{"notifyMngr"}){
-		
+sub GetNotifyMngr {
+	my $self = shift;
+
+	unless ( defined $self->{"notifyMngr"} ) {
+
 		die "Notify Mngr is not set";
 	}
-	
+
 	return $self->{"notifyMngr"};
 }
 
 # select job item in queue by
 sub SelectJobItem {
-	my $self         = shift;
-	my $taskId	 = shift;
-	
-	my $jobQueueItem =  $self->{"jobQueue"}->GetItem($taskId);
-	
-	$jobQueueItem->{"onItemClick"}->Do($jobQueueItem); # simulate queue item click
+	my $self   = shift;
+	my $taskId = shift;
+
+	my $jobQueueItem = $self->{"jobQueue"}->GetItem($taskId);
+
+	$jobQueueItem->{"onItemClick"}->Do($jobQueueItem);    # simulate queue item click
 
 }
+
 # ============================================================
 # Mehtods for update job queue items
 # ============================================================
@@ -220,16 +218,15 @@ sub SetJobItemProgress {
 sub SetJobItemAutoRemove {
 	my $self   = shift;
 	my $taskId = shift;
-	my $second  = shift;
+	my $second = shift;
 
 	my $jobItem = $self->{"jobQueue"}->GetItem($taskId);
-	
-	if(defined $jobItem ){
+
+	if ( defined $jobItem ) {
 		$jobItem->SetJobItemAutoRemove($second);
 	}
- 
-}
 
+}
 
 sub SetJobQueueErrorCnt {
 	my $self = shift;
@@ -275,12 +272,24 @@ sub RefreshSettings {
 	$self->{"runningCntValSb"}->SetLabel( $stat{"running"} );
 	$self->{"waitingCntValSb"}->SetLabel( $stat{"waiting"} );
 
+	# refresh abstract queu stat
+	my %statApp = $self->_GetStatistics();
+
+	# refresh time of running
+	my $sec = time() - $statApp{"startsRun"};
+	my $t = sprintf( "%d days %d hours %d min %sec", int( $sec / ( 24 * 60 * 60 ) ), ( $sec / ( 60 * 60 ) ) % 24, ( $sec / 60 ) % 60, $sec % 60 );
+	$self->{"timeValTxt"}->SetLabel($t);
+
+	# refresh task cnt
+
+	$self->{"taskCntValTxt"}->SetLabel($statApp{"taskCnt"});
+
 }
 
 sub RemoveJobFromQueue {
 	my $self   = shift;
 	my $taskId = shift;
- 
+
 	$self->__OnRemoveJobClick($taskId);
 }
 
@@ -327,7 +336,6 @@ sub __OnContinueJobClick {
 	$self->_ContinueJob($taskId);
 
 }
-
 
 # Two type of restarting
 # 1) job is not DONE (job is stoped). Need abort job first, tahn restart
@@ -406,7 +414,7 @@ sub __OnShowConsoleChecked {
 	if ( $val ne "1" ) {
 		$val = 0;
 	}
-	
+
 	my $appName = AppConf->GetValue("appName");
 	Helper->ShowAbstractQueueWindow( $val, "Cmd of $appName PID:" . $$ );
 
@@ -416,16 +424,12 @@ sub __OnShowConsoleChecked {
 #  PRIVATE HELPER METHODS
 # ========================================================================================== #
 
-
-
 # ========================================================================================== #
 #  BUILD GUI SECTION
 # ========================================================================================== #
 
 sub __SetLayout {
 	my $self = shift;
-
-
 
 	my $mainFrm = $self->{"mainFrm"};
 
@@ -468,6 +472,7 @@ sub __SetLayout {
 
 	my $settingsStatBox     = $self->__SetLayoutInCAMSettings($page2);
 	my $taskSettingsStatBox = $self->__SetLayoutAbstractQueueSettings($page2);
+	my $taskStatsStatBox    = $self->__SetLayoutAbstractQueueStat($page2);
 
 	my $groupsStatBox = $self->__SetLayoutGroups($page1);
 
@@ -486,12 +491,13 @@ sub __SetLayout {
 	#$szRow1->Add( $settingsStatBox,  20, &Wx::wxEXPAND );
 
 	$szRow2->Add( $groupsStatBox, 1, &Wx::wxEXPAND );
- 
-	$szPage1->Add( $szRow1, AppConf->GetValue("queueHeight"), &Wx::wxEXPAND | &Wx::wxALL, 1 );
+
+	$szPage1->Add( $szRow1, AppConf->GetValue("queueHeight"),       &Wx::wxEXPAND | &Wx::wxALL, 1 );
 	$szPage1->Add( $szRow2, 100 - AppConf->GetValue("queueHeight"), &Wx::wxEXPAND | &Wx::wxALL, 1 );
 
 	$szPage2->Add( $settingsStatBox,     1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 	$szPage2->Add( $taskSettingsStatBox, 1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szPage2->Add( $taskStatsStatBox,    1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 
 	$szMain->Add( $nb,      1, &Wx::wxEXPAND );
 	$szMain->Add( $pnlBtns, 0, &Wx::wxEXPAND );
@@ -570,8 +576,9 @@ sub __SetLayoutInCAMSettings {
 	my $waitingCntValSb = Wx::StaticText->new( $parent, -1, "0", [ -1, -1 ] );
 
 	my @inCamCount = ( 0, 1, 2 );
+
 	# new possibility is only max two incams
-	if($sett{"maxCntUser"} > 2){
+	if ( $sett{"maxCntUser"} > 2 ) {
 		$sett{"maxCntUser"} = 2;
 	}
 	my $maxCountCb = Wx::ComboBox->new( $parent, -1, $sett{"maxCntUser"}, [ -1, -1 ], [ 200, 22 ], \@inCamCount, &Wx::wxCB_READONLY );
@@ -642,13 +649,13 @@ sub __SetLayoutAbstractQueueSettings {
 
 	# DEFINE CONTROLS
 
-	my $showConsoleChb = Wx::CheckBox->new( $parent, -1, "Show console", [ -1, -1 ], [ 130, 20 ] );
-	my $writeToLogChb = Wx::CheckBox->new( $parent, -1, "Console to logfile", [ -1, -1 ], [ 130, 20 ] );
+	my $showConsoleChb = Wx::CheckBox->new( $parent, -1, "Show console",       [ -1, -1 ], [ 130, 20 ] );
+	my $writeToLogChb  = Wx::CheckBox->new( $parent, -1, "Console to logfile", [ -1, -1 ], [ 130, 20 ] );
 	$writeToLogChb->Disable();
-	
-	if( AppConf->GetValue("logingType") == 1){
+
+	if ( AppConf->GetValue("logingType") == 1 ) {
 		$writeToLogChb->SetValue(1);
-	} 
+	}
 
 	# DEFINE EVENTS
 
@@ -657,11 +664,52 @@ sub __SetLayoutAbstractQueueSettings {
 	# BUILD LAYOUT STRUCTURE
 
 	$szRow1->Add( $showConsoleChb, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
-	$szRow1->Add( $writeToLogChb, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szRow1->Add( $writeToLogChb,  0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 	$szStatBox->Add( $szRow1, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
-	
 
 	# SAVE REFERENCES
+
+	return $szStatBox;
+}
+
+# Set layout for statistic
+sub __SetLayoutAbstractQueueStat {
+	my $self   = shift;
+	my $parent = shift;
+
+	# Load data
+	my %sett = $self->_GetServerSettings();
+
+	#define staticboxes
+	my $statBox = Wx::StaticBox->new( $parent, -1, 'AbstractQueue - statistic' );
+	my $szStatBox = Wx::StaticBoxSizer->new( $statBox, &Wx::wxVERTICAL );
+
+	my $szRow1 = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
+	my $szRow2 = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
+
+	# DEFINE CONTROLS
+
+	my $timeTxt = Wx::StaticText->new( $parent, -1, "Time of running", [ -1, -1 ], [ 250, 25 ] );
+	my $timeValTxt = Wx::StaticText->new( $parent, -1, "0", [ -1, -1 ], [ 250, 25 ] );
+
+	my $taskCntTxt    = Wx::StaticText->new( $parent, -1, "Task count", [ -1, -1 ], [ 250, 25 ] );
+	my $taskCntValTxt = Wx::StaticText->new( $parent, -1, "0",          [ -1, -1 ], [ 250, 25 ] );
+
+	# DEFINE EVENTS
+
+	# BUILD LAYOUT STRUCTURE
+
+	$szRow1->Add( $timeTxt,       0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szRow1->Add( $timeValTxt,    0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szRow2->Add( $taskCntTxt,    0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szRow2->Add( $taskCntValTxt, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+
+	$szStatBox->Add( $szRow1, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szStatBox->Add( $szRow2, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+
+	# SAVE REFERENCES
+	$self->{"timeValTxt"}    = $timeValTxt;
+	$self->{"taskCntValTxt"} = $taskCntValTxt;
 
 	return $szStatBox;
 }

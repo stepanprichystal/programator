@@ -75,6 +75,10 @@ sub new {
 
 	$self->{"messageMngr"} = MessageMngr->new( AppConf->GetValue("appName") );
 
+	$self->{"startsRun"} = time(); # time of start app
+
+	$self->{"taskCnt"} = 0; # total cnt of task added to queue
+
 	# EVENTS
 
 	$self->{'onJobStateChanged'} = Event->new();
@@ -130,7 +134,7 @@ sub _AddJobToQueue {
 
 		${ $self->{"jobs"} }[$i]{"port"}  = $main::debugPortServer;
 		${ $self->{"jobs"} }[$i]{"state"} = Enums->JobState_RUNNING;
- 
+
 		my $pcbId          = ${ $self->{"jobs"} }[$i]{"pcbId"};
 		my $jobGUID        = ${ $self->{"jobs"} }[$i]{"jobGUID"};
 		my $externalServer = ${ $self->{"jobs"} }[$i]{"serverInfo"} ? 1 : 0;
@@ -140,12 +144,13 @@ sub _AddJobToQueue {
 
 		$self->{"threadMngr"}->RunNewtask( $jobGUID, $jobStrData, $main::debugPortServer, $pcbId, undef, 1 );
 
-	}else{
-		
-		
+	}
+	else {
+
 		$self->{'onJobStateChanged'}->Do( $jobInfo{"jobGUID"}, $jobInfo{"state"} );
 	}
- 
+
+	$self->{"taskCnt"}++;
 
 	return $jobInfo{"jobGUID"};
 
@@ -298,6 +303,18 @@ sub _GetServerStat {
 	return $self->{"serverMngr"}->GetServerStat();
 }
 
+# get abstract queue statistic
+sub _GetStatistics {
+	my $self = shift;
+
+	my %stats = ();
+
+	$stats{"startsRun"} = $self->{"startsRun"};    # time of start app
+	$stats{"taskCnt"}   = $self->{"taskCnt"};      # total count of task added to queue
+
+	return %stats;
+}
+
 sub _DestroyExternalServer {
 	my $self = shift;
 	my $port = shift;
@@ -361,8 +378,6 @@ sub __PortReadyHandler {
 # Run after job finish its working mehod
 sub __ThreadDoneHandler {
 	my ( $self, $frame, $event ) = @_;
-	
-	 
 
 	my %d = %{ $event->GetData };
 
@@ -382,12 +397,10 @@ sub __ThreadDoneHandler {
 
 	# Set new job state DONE
 	$self->__SetJobState( $jobGUID, Enums->JobState_DONE );
-	
-	
 
 	#reise event
 	$self->{'onJobStateChanged'}->Do( $jobGUID, Enums->JobState_DONE, $exitType );
-	
+
 }
 
 sub __ThreadProgressHandler {
@@ -506,7 +519,7 @@ sub __SetLayout {
 		AppConf->GetValue("appName"),    # title
 		[ -1, -1 ],                      # window position
 		\@dimension,                     # size   &Wx::wxSTAY_ON_TOP |
-		  &Wx::wxSYSTEM_MENU | &Wx::wxCAPTION | &Wx::wxRESIZE_BORDER | &Wx::wxMINIMIZE_BOX | &Wx::wxMAXIMIZE_BOX | &Wx::wxCLOSE_BOX
+		&Wx::wxSYSTEM_MENU | &Wx::wxCAPTION | &Wx::wxRESIZE_BORDER | &Wx::wxMINIMIZE_BOX | &Wx::wxMAXIMIZE_BOX | &Wx::wxCLOSE_BOX
 	);
 
 	my $iconPath = GeneralHelper->Root() . "/Resources/Images/" . AppConf->GetValue("appIcon");
