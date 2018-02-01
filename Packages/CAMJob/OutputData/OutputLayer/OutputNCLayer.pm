@@ -45,17 +45,17 @@ use aliased 'CamHelpers::CamMatrix';
 use aliased 'Packages::CAMJob::OutputData::OutputLayer::OutputParser';
 use aliased 'Enums::EnumsGeneral';
 
-use aliased 'Packages::CAMJob::OutputData::OutputLayer::OutputClasses::COUNTERSINKSURFBase';
-use aliased 'Packages::CAMJob::OutputData::OutputLayer::OutputClasses::COUNTERSINKARCBase';
+use aliased 'Packages::CAMJob::OutputData::OutputLayer::OutputClasses::COUNTERSINKSURF';
+use aliased 'Packages::CAMJob::OutputData::OutputLayer::OutputClasses::COUNTERSINKARC';
 use aliased 'Packages::CAMJob::OutputData::OutputLayer::OutputClasses::COUNTERSINKPAD';
-use aliased 'Packages::CAMJob::OutputData::OutputLayer::OutputClasses::ZAXISSLOTCHAMFERBase';
-use aliased 'Packages::CAMJob::OutputData::OutputLayer::OutputClasses::ZAXISSURFCHAMFERBase';
-use aliased 'Packages::CAMJob::OutputData::OutputLayer::OutputClasses::ZAXISSURFBase';
-use aliased 'Packages::CAMJob::OutputData::OutputLayer::OutputClasses::ZAXISSLOTBase';
-use aliased 'Packages::CAMJob::OutputData::OutputLayer::OutputClasses::ZAXISPADBase';
-use aliased 'Packages::CAMJob::OutputData::OutputLayer::OutputClasses::DRILLBase';
-use aliased 'Packages::CAMJob::OutputData::OutputLayer::OutputClasses::ROUTBase';
-use aliased 'Packages::CAMJob::OutputData::OutputLayer::OutputClasses::SCOREBase';
+use aliased 'Packages::CAMJob::OutputData::OutputLayer::OutputClasses::ZAXISSLOTCHAMFER';
+use aliased 'Packages::CAMJob::OutputData::OutputLayer::OutputClasses::ZAXISSURFCHAMFER';
+use aliased 'Packages::CAMJob::OutputData::OutputLayer::OutputClasses::ZAXISSURF';
+use aliased 'Packages::CAMJob::OutputData::OutputLayer::OutputClasses::ZAXISSLOT';
+use aliased 'Packages::CAMJob::OutputData::OutputLayer::OutputClasses::ZAXISPAD';
+use aliased 'Packages::CAMJob::OutputData::OutputLayer::OutputClasses::DRILL';
+use aliased 'Packages::CAMJob::OutputData::OutputLayer::OutputClasses::ROUT';
+use aliased 'Packages::CAMJob::OutputData::OutputLayer::OutputClasses::SCORE';
 
 #-------------------------------------------------------------------------------------------#
 #  Interface
@@ -132,19 +132,19 @@ sub __GetParser {
 		 || $NCType eq EnumsGeneral->LAYERTYPE_plt_bDrillBot
 		 || $NCType eq EnumsGeneral->LAYERTYPE_plt_cDrill )
 	{
-		$parser->AddClass( DRILLBase->new( $inCAM, $jobId, $step, $l ) );
+		$parser->AddClass( DRILL->new( $inCAM, $jobId, $step, $l ) );
 	}
 	elsif (    $NCType eq EnumsGeneral->LAYERTYPE_plt_nMill
 			|| $NCType eq EnumsGeneral->LAYERTYPE_nplt_nMill )
 	{
-		$parser->AddClass( DRILLBase->new( $inCAM, $jobId, $step, $l ) );
-		$parser->AddClass( ROUTBase->new( $inCAM, $jobId, $step, $l ) );
+		$parser->AddClass( DRILL->new( $inCAM, $jobId, $step, $l ) );
+		$parser->AddClass( ROUT->new( $inCAM, $jobId, $step, $l ) );
 	}
 	elsif (    $NCType eq EnumsGeneral->LAYERTYPE_nplt_rsMill
 			|| $NCType eq EnumsGeneral->LAYERTYPE_nplt_kMill )
 	{
-		$parser->AddClass( DRILLBase->new( $inCAM, $jobId, $step, $l ) );
-		$parser->AddClass( ROUTBase->new( $inCAM, $jobId, $step, $l ) );
+		$parser->AddClass( DRILL->new( $inCAM, $jobId, $step, $l ) );
+		$parser->AddClass( ROUT->new( $inCAM, $jobId, $step, $l ) );
 
 	}
 	elsif (    $NCType eq EnumsGeneral->LAYERTYPE_plt_bMillTop
@@ -154,19 +154,19 @@ sub __GetParser {
 			|| $NCType eq EnumsGeneral->LAYERTYPE_nplt_jbMillTop
 			|| $NCType eq EnumsGeneral->LAYERTYPE_nplt_jbMillBot )
 	{
-		$parser->AddClass( COUNTERSINKSURFBase->new( $inCAM, $jobId, $step, $l ) );
-		$parser->AddClass( COUNTERSINKARCBase->new( $inCAM, $jobId, $step, $l ) );
+		$parser->AddClass( COUNTERSINKSURF->new( $inCAM, $jobId, $step, $l ) );
+		$parser->AddClass( COUNTERSINKARC->new( $inCAM, $jobId, $step, $l ) );
 		$parser->AddClass( COUNTERSINKPAD->new( $inCAM, $jobId, $step, $l ) );
-		$parser->AddClass( ZAXISSLOTCHAMFERBase->new( $inCAM, $jobId, $step, $l ) );
-		$parser->AddClass( ZAXISSURFCHAMFERBase->new( $inCAM, $jobId, $step, $l ) );
-		$parser->AddClass( ZAXISSURFBase->new( $inCAM, $jobId, $step, $l ) );
-		$parser->AddClass( ZAXISSLOTBase->new( $inCAM, $jobId, $step, $l ) );
-		$parser->AddClass( ZAXISPADBase->new( $inCAM, $jobId, $step, $l ) );
+		$parser->AddClass( ZAXISSLOTCHAMFER->new( $inCAM, $jobId, $step, $l ) );
+		$parser->AddClass( ZAXISSURFCHAMFER->new( $inCAM, $jobId, $step, $l ) );
+		$parser->AddClass( ZAXISSURF->new( $inCAM, $jobId, $step, $l ) );
+		$parser->AddClass( ZAXISSLOT->new( $inCAM, $jobId, $step, $l ) );
+		$parser->AddClass( ZAXISPAD->new( $inCAM, $jobId, $step, $l ) );
 
 	}
 	elsif ( $NCType eq EnumsGeneral->LAYERTYPE_nplt_score ) {
 
-		$parser->AddClass( SCOREBase->new( $inCAM, $jobId, $step, $l ) );
+		$parser->AddClass( SCORE->new( $inCAM, $jobId, $step, $l ) );
 	}
 	else {
 		die "No parser class for this NC type: $NCType";
