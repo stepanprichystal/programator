@@ -1,9 +1,9 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Parse surf zaxis  from layer
+# Description: Parse rout data from layer
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::CAMJob::OutputData::OutputLayer::OutputClasses::ZAXISSURF;
+package Packages::CAMJob::OutputData::OutputLayer::OutputClasses::ROUTBase;
 use base('Packages::CAMJob::OutputData::OutputLayer::OutputClasses::OutputClassBase');
 
 use Class::Interface;
@@ -21,7 +21,7 @@ use Math::Geometry::Planar;
 
 use aliased 'Packages::CAMJob::OutputData::OutputLayer::Enums';
 use aliased 'Packages::CAMJob::OutputData::OutputLayer::OutputResult::OutputClassResult';
-
+use aliased 'CamHelpers::CamDTM';
 use aliased 'Helpers::GeneralHelper';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'Packages::CAM::UniDTM::Enums' => "DTMEnums";
@@ -33,6 +33,9 @@ use aliased 'Packages::CAMJob::OutputData::OutputLayer::OutputResult::OutputLaye
 use aliased 'Packages::Polygon::Polygon::PolygonAttr';
 use aliased 'Enums::EnumsRout';
 use aliased 'CamHelpers::CamLayer';
+use aliased 'CamHelpers::CamJob';
+use aliased 'CamHelpers::CamMatrix';
+use aliased 'Packages::Polygon::Features::Features::Features';
 
 #-------------------------------------------------------------------------------------------#
 #  Interface
@@ -41,21 +44,21 @@ use aliased 'CamHelpers::CamLayer';
 sub new {
 	my $class = shift;
 
-	my $self = $class->SUPER::new( @_, Enums->Type_ZAXISSURF );
+	my $self = $class->SUPER::new( @_, Enums->Type_ROUTBase );
 	bless $self;
+
 	return $self;
 }
 
 sub Prepare {
 	my $self = shift;
 
-	$self->__Prepare();
+	$self->_Prepare();
 
 	return $self->{"result"};
-
 }
 
-sub __Prepare {
+sub _Prepare {
 	my $self = shift;
 
 	my $l = $self->{"layer"};
@@ -65,55 +68,40 @@ sub __Prepare {
 	my $step  = $self->{"step"};
 
 	my $lName = $l->{"gROWname"};
-	my @chainSeq = grep { $_->GetFeatureType() eq RTMEnums->FeatType_SURF && !$_->GetChain()->GetChainTool()->GetUniDTMTool()->GetSpecial() } $l->{"uniRTM"}->GetChainSequences();
 
-	return 0 unless (@chainSeq);
+	return 0 unless ( grep {$_->GetTypeProcess() eq DTMEnums->TypeProc_CHAIN} $l->{"uniDTM"}->GetTools() );
 
-	my @toolSizes = uniq( map { $_->GetChain()->GetChainSize() } @chainSeq );
+	# Get all radiuses
 
-	foreach my $tool (@toolSizes) {
+	my $outputLayer = OutputLayer->new();    # layer process result
 
-		my $outputLayer = OutputLayer->new();    # layer process result
-		my $tool          = ( grep { $_->GetChain()->GetChainSize() == $tool } @chainSeq )[0]->GetChain()->GetChainTool()->GetUniDTMTool();
-		my $toolDepth     = $tool->GetDepth();
-		my $toolDrillSize = $tool->GetDrillSize();
+	my $lTmp = $self->_SeparateFeatsBySymbolsNC( [ "surfaces", "lines", "arcs", "text" ] );
 
-		# get all chain seq by radius, by tool diameter (same tool diameters must have same angle)
-		my @matchCh = grep { $_->GetChain()->GetChainSize() == $toolDrillSize } @chainSeq;
+	my $drawLayer = CamLayer->RoutCompensation( $inCAM, $lTmp, "document" );
 
-		next unless (@matchCh);
+	# if rout layer is plated, convert all to surface and resize properly
+	if ( $l->{"plated"} ) {
 
-		# get id of all features in chain
-		my @featsId = map { $_->{'id'} } map { $_->GetOriFeatures() } @matchCh;
-
-		my $drawLayer = $self->_SeparateFeatsByIdNC( \@featsId );
-
-		# Warning, conturization is necessary here in order properly feature resize.
-		# Only for case, when rout is "cyclic" and compensation is "inside" (CW and Right)
-		CamLayer->Contourize( $inCAM, $drawLayer );
-		CamLayer->WorkLayer( $inCAM, $drawLayer );
-
-		if ( $l->{"plated"} ) {
-			CamLayer->ResizeFeatures( $inCAM, -2 * Enums->Plating_THICK );
-		}
-
-		# 1) Set prepared layer name
-		$outputLayer->SetLayerName($drawLayer);    # Attention! lazer contain original sizes of feature, not finish/real sizes
-
-		# 2 Add another extra info to output layer
-
-		$outputLayer->{"chainSeq"} = \@matchCh;    # All chain seq, which was processed in ori layer in this class
-		
-		$outputLayer->{"DTMTool"} = $tool;
-
-		$self->{"result"}->AddLayer($outputLayer);
+		CamLayer->Contourize( $inCAM, $drawLayer, "area", "25000" );
+		CamLayer->WorkLayer($inCAM,  $drawLayer);
+		$inCAM->COM( "sel_resize", "size" => -( 2 * Enums->Plating_THICK ), "corner_ctl" => "no" );
+		 
 	}
+	
+	CamMatrix->DeleteLayer($inCAM, $jobId, $lTmp);
+  
+	# 1) Set prepared layer name
+	$outputLayer->SetLayerName($drawLayer);
+
+	# 2) Add another extra info to output layer
+
+	$self->{"result"}->AddLayer($outputLayer);
+	 
 }
 
 #-------------------------------------------------------------------------------------------#
 #  Protected methods
 #-------------------------------------------------------------------------------------------#
- 
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

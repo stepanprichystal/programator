@@ -3,7 +3,7 @@
 # Description: Parse rout data from layer
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::CAMJob::OutputData::OutputLayer::OutputClasses::SCORE;
+package Packages::CAMJob::OutputData::OutputLayer::OutputClasses::SCOREBase;
 use base('Packages::CAMJob::OutputData::OutputLayer::OutputClasses::OutputClassBase');
 
 use Class::Interface;
@@ -43,7 +43,7 @@ use aliased 'Packages::Polygon::Features::Features::Features';
 sub new {
 	my $class = shift;
 
-	my $self = $class->SUPER::new( @_, Enums->Type_SCORE );
+	my $self = $class->SUPER::new( @_, Enums->Type_SCOREBase );
 	bless $self;
 
 	return $self;
@@ -52,12 +52,12 @@ sub new {
 sub Prepare {
 	my $self = shift;
 
-	$self->__Prepare();
+	$self->_Prepare();
 
 	return $self->{"result"};
 }
 
-sub __Prepare {
+sub _Prepare {
 	my $self = shift;
 
 	my $l = $self->{"layer"};

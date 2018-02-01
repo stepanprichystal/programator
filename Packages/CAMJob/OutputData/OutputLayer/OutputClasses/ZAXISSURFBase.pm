@@ -1,9 +1,9 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Parse pad zaxis  from layer
+# Description: Parse surf zaxis  from layer
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::CAMJob::OutputData::OutputLayer::OutputClasses::ZAXISPAD;
+package Packages::CAMJob::OutputData::OutputLayer::OutputClasses::ZAXISSURFBase;
 use base('Packages::CAMJob::OutputData::OutputLayer::OutputClasses::OutputClassBase');
 
 use Class::Interface;
@@ -33,7 +33,6 @@ use aliased 'Packages::CAMJob::OutputData::OutputLayer::OutputResult::OutputLaye
 use aliased 'Packages::Polygon::Polygon::PolygonAttr';
 use aliased 'Enums::EnumsRout';
 use aliased 'CamHelpers::CamLayer';
-use aliased 'Packages::Polygon::Features::Features::Features';
 
 #-------------------------------------------------------------------------------------------#
 #  Interface
@@ -42,7 +41,7 @@ use aliased 'Packages::Polygon::Features::Features::Features';
 sub new {
 	my $class = shift;
 
-	my $self = $class->SUPER::new( @_, Enums->Type_ZAXISPAD );
+	my $self = $class->SUPER::new( @_, Enums->Type_ZAXISSURFBase );
 	bless $self;
 	return $self;
 }
@@ -50,13 +49,13 @@ sub new {
 sub Prepare {
 	my $self = shift;
 
-	$self->__Prepare();
+	$self->_Prepare();
 
 	return $self->{"result"};
+
 }
 
-
-sub __Prepare {
+sub _Prepare {
 	my $self = shift;
 
 	my $l = $self->{"layer"};
@@ -66,61 +65,56 @@ sub __Prepare {
 	my $step  = $self->{"step"};
 
 	my $lName = $l->{"gROWname"};
-	my @tools =
-	  grep { $_->GetTypeProcess() eq DTMEnums->TypeProc_HOLE && !$_->GetSpecial() } $l->{"uniDTM"}->GetUniqueTools();
+	my @chainSeq = grep { $_->GetFeatureType() eq RTMEnums->FeatType_SURF && !$_->GetChain()->GetChainTool()->GetUniDTMTool()->GetSpecial() } $l->{"uniRTM"}->GetChainSequences();
 
-	return 0 unless (@tools);
+	return 0 unless (@chainSeq);
 
-	# Get all radiuses
+	my @toolSizes = uniq( map { $_->GetChain()->GetChainSize() } @chainSeq );
 
-	my @radiuses = uniq(map { $_->GetDrillSize() / 2 } @tools);
-
-	foreach my $r (@radiuses) {
+	foreach my $tool (@toolSizes) {
 
 		my $outputLayer = OutputLayer->new();    # layer process result
-
-		my $tool          = ( grep { $_->GetDrillSize()/2 == $r } @tools )[0];
+		my $tool          = ( grep { $_->GetChain()->GetChainSize() == $tool } @chainSeq )[0]->GetChain()->GetChainTool()->GetUniDTMTool();
 		my $toolDepth     = $tool->GetDepth();
 		my $toolDrillSize = $tool->GetDrillSize();
- 
 
-		# get all pads with this radius
-		my $f = Features->new();
-		$f->Parse( $inCAM, $jobId, $self->{"step"}, $lName );
-		my @features = $f->GetFeatures();
+		# get all chain seq by radius, by tool diameter (same tool diameters must have same angle)
+		my @matchCh = grep { $_->GetChain()->GetChainSize() == $toolDrillSize } @chainSeq;
 
-		my @pads = grep { $_->{"type"} =~ /^p$/i && $_->{"thick"} / 2 == $r } @features;
+		next unless (@matchCh);
 
 		# get id of all features in chain
-		my @featsId = map { $_->{'id'} } @pads;
+		my @featsId = map { $_->{'id'} } map { $_->GetOriFeatures() } @matchCh;
 
 		my $drawLayer = $self->_SeparateFeatsByIdNC( \@featsId );
-		
-		my $radiusReal = $tool->GetDrillSize()/2;
+
+		# Warning, conturization is necessary here in order properly feature resize.
+		# Only for case, when rout is "cyclic" and compensation is "inside" (CW and Right)
+		CamLayer->Contourize( $inCAM, $drawLayer );
+		CamLayer->WorkLayer( $inCAM, $drawLayer );
 
 		if ( $l->{"plated"} ) {
 			CamLayer->ResizeFeatures( $inCAM, -2 * Enums->Plating_THICK );
-			$radiusReal -= Enums->Plating_THICK;
 		}
 
 		# 1) Set prepared layer name
-		$outputLayer->SetLayerName($drawLayer);
+		$outputLayer->SetLayerName($drawLayer);    # Attention! lazer contain original sizes of feature, not finish/real sizes
 
 		# 2 Add another extra info to output layer
- 
-		$outputLayer->{"padFeatures"} = \@pads;         # All pads, which was processed in ori layer in this class
-		$outputLayer->{"DTMTool"} = $tool;				# DTM tool, which is used for this pads
-		$outputLayer->{"radiusReal"} = $radiusReal/1000;
+
+		$outputLayer->{"chainSeq"} = \@matchCh;    # All chain seq, which was processed in ori layer in this class
+		
+		$outputLayer->{"DTMTool"} = $tool;
 
 		$self->{"result"}->AddLayer($outputLayer);
 	}
 }
 
-
 #-------------------------------------------------------------------------------------------#
 #  Protected methods
 #-------------------------------------------------------------------------------------------#
  
+
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#

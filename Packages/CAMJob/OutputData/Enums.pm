@@ -9,7 +9,7 @@ use constant {
 	Type_NCDEPTHLAYERS => "typeNCDepthLayers",
 	Type_OUTLINE => "typeOutline",
 	Type_DOCUMENT => "typeDocument",
-	Type_DRILLMAP => "typeDrillMap",
+	Type_DRILLBaseMAP => "typeDrillMap",
 	Type_SPECIALSURF => "typeSpecialSurf",
 };
  

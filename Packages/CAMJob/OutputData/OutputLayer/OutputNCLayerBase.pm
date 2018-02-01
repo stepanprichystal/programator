@@ -3,7 +3,7 @@
 # Description: Prepare NC layers to finla output
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::CAMJob::OutputData::OutputLayer::OutputNCLayer;
+package Packages::CAMJob::OutputData::OutputLayer::OutputNCLayerBase;
 
 #3th party library
 use strict;
@@ -47,7 +47,7 @@ use aliased 'Enums::EnumsGeneral';
 
 use aliased 'Packages::CAMJob::OutputData::OutputLayer::OutputClasses::COUNTERSINKSURFBase';
 use aliased 'Packages::CAMJob::OutputData::OutputLayer::OutputClasses::COUNTERSINKARCBase';
-use aliased 'Packages::CAMJob::OutputData::OutputLayer::OutputClasses::COUNTERSINKPAD';
+use aliased 'Packages::CAMJob::OutputData::OutputLayer::OutputClasses::COUNTERSINKPADBase';
 use aliased 'Packages::CAMJob::OutputData::OutputLayer::OutputClasses::ZAXISSLOTCHAMFERBase';
 use aliased 'Packages::CAMJob::OutputData::OutputLayer::OutputClasses::ZAXISSURFCHAMFERBase';
 use aliased 'Packages::CAMJob::OutputData::OutputLayer::OutputClasses::ZAXISSURFBase';
@@ -126,51 +126,7 @@ sub __GetParser {
 	}
 
 	my $parser = OutputParser->new();
-
-	if (    $NCType eq EnumsGeneral->LAYERTYPE_plt_nDrill
-		 || $NCType eq EnumsGeneral->LAYERTYPE_plt_bDrillTop
-		 || $NCType eq EnumsGeneral->LAYERTYPE_plt_bDrillBot
-		 || $NCType eq EnumsGeneral->LAYERTYPE_plt_cDrill )
-	{
-		$parser->AddClass( DRILLBase->new( $inCAM, $jobId, $step, $l ) );
-	}
-	elsif (    $NCType eq EnumsGeneral->LAYERTYPE_plt_nMill
-			|| $NCType eq EnumsGeneral->LAYERTYPE_nplt_nMill )
-	{
-		$parser->AddClass( DRILLBase->new( $inCAM, $jobId, $step, $l ) );
-		$parser->AddClass( ROUTBase->new( $inCAM, $jobId, $step, $l ) );
-	}
-	elsif (    $NCType eq EnumsGeneral->LAYERTYPE_nplt_rsMill
-			|| $NCType eq EnumsGeneral->LAYERTYPE_nplt_kMill )
-	{
-		$parser->AddClass( DRILLBase->new( $inCAM, $jobId, $step, $l ) );
-		$parser->AddClass( ROUTBase->new( $inCAM, $jobId, $step, $l ) );
-
-	}
-	elsif (    $NCType eq EnumsGeneral->LAYERTYPE_plt_bMillTop
-			|| $NCType eq EnumsGeneral->LAYERTYPE_plt_bMillBot
-			|| $NCType eq EnumsGeneral->LAYERTYPE_nplt_bMillTop
-			|| $NCType eq EnumsGeneral->LAYERTYPE_nplt_bMillBot
-			|| $NCType eq EnumsGeneral->LAYERTYPE_nplt_jbMillTop
-			|| $NCType eq EnumsGeneral->LAYERTYPE_nplt_jbMillBot )
-	{
-		$parser->AddClass( COUNTERSINKSURFBase->new( $inCAM, $jobId, $step, $l ) );
-		$parser->AddClass( COUNTERSINKARCBase->new( $inCAM, $jobId, $step, $l ) );
-		$parser->AddClass( COUNTERSINKPAD->new( $inCAM, $jobId, $step, $l ) );
-		$parser->AddClass( ZAXISSLOTCHAMFERBase->new( $inCAM, $jobId, $step, $l ) );
-		$parser->AddClass( ZAXISSURFCHAMFERBase->new( $inCAM, $jobId, $step, $l ) );
-		$parser->AddClass( ZAXISSURFBase->new( $inCAM, $jobId, $step, $l ) );
-		$parser->AddClass( ZAXISSLOTBase->new( $inCAM, $jobId, $step, $l ) );
-		$parser->AddClass( ZAXISPADBase->new( $inCAM, $jobId, $step, $l ) );
-
-	}
-	elsif ( $NCType eq EnumsGeneral->LAYERTYPE_nplt_score ) {
-
-		$parser->AddClass( SCOREBase->new( $inCAM, $jobId, $step, $l ) );
-	}
-	else {
-		die "No parser class for this NC type: $NCType";
-	}
+ 
 
 	return $parser;
 

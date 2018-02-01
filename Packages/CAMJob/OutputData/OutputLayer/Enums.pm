@@ -4,17 +4,17 @@ package Packages::CAMJob::OutputData::OutputLayer::Enums;
  
 
 use constant {
-	Type_COUNTERSINKSURF => "countersinkSurf",
+	Type_COUNTERSINKSURFBase => "countersinkSurf",
 	Type_COUNTERSINKPAD => "countersinkPad",
-	Type_COUNTERSINKARC => "countersinkArc",
-	Type_ZAXISSURFCHAMFER => "zaxisSurfChamfer",
-	Type_ZAXISSLOTCHAMFER => "zaxisSlotChamfer",
-	Type_ZAXISSURF => "zaxisSurf",
-	Type_ZAXISSLOT => "zaxisSlot",
-	Type_ZAXISPAD => "zaxisPad",
-	Type_DRILL => "drill",
-	Type_ROUT => "rout",
-	Type_SCORE => "score",
+	Type_COUNTERSINKARCBase => "countersinkArc",
+	Type_ZAXISSURFCHAMFERBase => "zaxisSurfChamfer",
+	Type_ZAXISSLOTCHAMFERBase => "zaxisSlotChamfer",
+	Type_ZAXISSURFBase => "zaxisSurf",
+	Type_ZAXISSLOTBase => "zaxisSlot",
+	Type_ZAXISPADBase => "zaxisPad",
+	Type_DRILLBase => "drill",
+	Type_ROUTBase => "rout",
+	Type_SCOREBase => "score",
 };
 
 

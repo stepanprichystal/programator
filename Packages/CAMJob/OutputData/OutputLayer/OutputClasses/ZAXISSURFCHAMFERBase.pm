@@ -1,9 +1,9 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Parse slot chamfer  from layer (angle tool)
+# Description: Parse surf chamfer  from layer (angle tool)
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::CAMJob::OutputData::OutputLayer::OutputClasses::ZAXISSLOTCHAMFER;
+package Packages::CAMJob::OutputData::OutputLayer::OutputClasses::ZAXISSURFCHAMFERBase;
 use base('Packages::CAMJob::OutputData::OutputLayer::OutputClasses::OutputClassBase');
 
 use Class::Interface;
@@ -41,7 +41,7 @@ use aliased 'CamHelpers::CamLayer';
 sub new {
 	my $class = shift;
 
-	my $self = $class->SUPER::new( @_, Enums->Type_ZAXISSLOTCHAMFER );
+	my $self = $class->SUPER::new( @_, Enums->Type_ZAXISSURFCHAMFERBase );
 	bless $self;
 	return $self;
 }
@@ -49,13 +49,13 @@ sub new {
 sub Prepare {
 	my $self = shift;
 
-	$self->__Prepare();
+	$self->_Prepare();
 
 	return $self->{"result"};
 
 }
 
-sub __Prepare {
+sub _Prepare {
 	my $self = shift;
 
 	my $l = $self->{"layer"};
@@ -65,7 +65,7 @@ sub __Prepare {
 	my $step  = $self->{"step"};
 
 	my $lName = $l->{"gROWname"};
-	my @chainSeq = grep { $_->GetFeatureType() eq RTMEnums->FeatType_LINEARC } $l->{"uniRTM"}->GetChainSequences();
+	my @chainSeq = grep { $_->GetFeatureType() eq RTMEnums->FeatType_SURF } $l->{"uniRTM"}->GetChainSequences();
 
 	return 0 unless (@chainSeq);
 
@@ -92,7 +92,9 @@ sub __Prepare {
 		# get id of all features in chain
 		my @featsId = map { $_->{'id'} } map { $_->GetOriFeatures() } @matchCh;
 
-		my $drawLayer = $self->_SeparateFeatsByIdNC( \@featsId );
+		# During identification, surface are "compensate" to lines.
+		# Asume tool go along border only (do one circle around whole suface)
+		my $drawLayer = $self->_SeparateFeatsByIdNC( \@featsId ); 
  
 		my $radiusReal = CountersinkHelper->GetHoleRadiusByToolDepth( $toolDrillSize, $toolAngle, $toolDepth * 1000 ) / 1000;
 
@@ -125,7 +127,7 @@ sub __Prepare {
 #-------------------------------------------------------------------------------------------#
 #  Protected methods
 #-------------------------------------------------------------------------------------------#
- 
+
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#

@@ -1,9 +1,9 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Parse surf chamfer  from layer (angle tool)
+# Description: Parse slot zaxis  from layer
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::CAMJob::OutputData::OutputLayer::OutputClasses::ZAXISSURFCHAMFER;
+package Packages::CAMJob::OutputData::OutputLayer::OutputClasses::ZAXISSLOTBase;
 use base('Packages::CAMJob::OutputData::OutputLayer::OutputClasses::OutputClassBase');
 
 use Class::Interface;
@@ -41,7 +41,7 @@ use aliased 'CamHelpers::CamLayer';
 sub new {
 	my $class = shift;
 
-	my $self = $class->SUPER::new( @_, Enums->Type_ZAXISSURFCHAMFER );
+	my $self = $class->SUPER::new( @_, Enums->Type_ZAXISSLOTBase );
 	bless $self;
 	return $self;
 }
@@ -49,13 +49,13 @@ sub new {
 sub Prepare {
 	my $self = shift;
 
-	$self->__Prepare();
+	$self->_Prepare();
 
 	return $self->{"result"};
 
 }
 
-sub __Prepare {
+sub _Prepare {
 	my $self = shift;
 
 	my $l = $self->{"layer"};
@@ -65,24 +65,19 @@ sub __Prepare {
 	my $step  = $self->{"step"};
 
 	my $lName = $l->{"gROWname"};
-	my @chainSeq = grep { $_->GetFeatureType() eq RTMEnums->FeatType_SURF } $l->{"uniRTM"}->GetChainSequences();
+	my @chainSeq = grep { $_->GetFeatureType() eq RTMEnums->FeatType_LINEARC && !$_->GetChain()->GetChainTool()->GetUniDTMTool()->GetSpecial() }
+	  $l->{"uniRTM"}->GetChainSequences();
 
 	return 0 unless (@chainSeq);
-
-	# only special tools with angle
-	@chainSeq =
-	  grep { $_->GetChain()->GetChainTool()->GetUniDTMTool()->GetSpecial() && $_->GetChain()->GetChainTool()->GetUniDTMTool()->GetAngle() > 0 }
-	  @chainSeq;
 
 	my @toolSizes = uniq( map { $_->GetChain()->GetChainSize() } @chainSeq );
 
 	foreach my $tool (@toolSizes) {
 
-		my $outputLayer   = OutputLayer->new();                                              # layer process result
-		my $tool          = ( $chainSeq[0] )->GetChain()->GetChainTool()->GetUniDTMTool();
+		my $outputLayer = OutputLayer->new();    # layer process result
+		my $tool          = ( grep { $_->GetChain()->GetChainSize() == $tool } @chainSeq )[0]->GetChain()->GetChainTool()->GetUniDTMTool();
 		my $toolDepth     = $tool->GetDepth();
 		my $toolDrillSize = $tool->GetDrillSize();
-		my $toolAngle     = $tool->GetAngle();
 
 		# get all chain seq by radius, by tool diameter (same tool diameters must have same angle)
 		my @matchCh = grep { $_->GetChain()->GetChainSize() == $toolDrillSize } @chainSeq;
@@ -92,34 +87,30 @@ sub __Prepare {
 		# get id of all features in chain
 		my @featsId = map { $_->{'id'} } map { $_->GetOriFeatures() } @matchCh;
 
-		# During identification, surface are "compensate" to lines.
-		# Asume tool go along border only (do one circle around whole suface)
-		my $drawLayer = $self->_SeparateFeatsByIdNC( \@featsId ); 
- 
-		my $radiusReal = CountersinkHelper->GetHoleRadiusByToolDepth( $toolDrillSize, $toolAngle, $toolDepth * 1000 ) / 1000;
+		my $drawLayer = $self->_SeparateFeatsByIdNC( \@featsId );
 
-		if ( $l->{"plated"} ) {
-			$radiusReal -= 0.05;
-		}
-
-		# resize all line/arc in drawLayer. Difference of (ToolDiameter/2 - $radiusReal)*2
-
-		my $resize = ( $toolDrillSize / 2 - $radiusReal*1000 ) * 2;
-	 
 		# Warning, conturization is necessary here in order properly feature resize.
 		# Only for case, when rout is "cyclic" and compensation is "inside" (CW and Right)
 		CamLayer->Contourize( $inCAM, $drawLayer );
 		CamLayer->WorkLayer( $inCAM, $drawLayer );
-		CamLayer->ResizeFeatures( $inCAM, -$resize );
+
+		my $radiusReal = $tool->GetDrillSize()/2;
+
+		if ( $l->{"plated"} ) {
+			CamLayer->ResizeFeatures( $inCAM, -2 * Enums->Plating_THICK );
+			$radiusReal -= Enums->Plating_THICK;
+		}
+ 
 
 		# 1) Set prepared layer name
 		$outputLayer->SetLayerName($drawLayer);    # Attention! lazer contain original sizes of feature, not finish/real sizes
 
 		# 2 Add another extra info to output layer
 
-		$outputLayer->{"radiusReal"} = $radiusReal;    # real compted radius of line arc
-		$outputLayer->{"chainSeq"}   = \@matchCh;      # All chain seq, which was processed in ori layer in this class
-
+		$outputLayer->{"chainSeq"} = \@matchCh;    # All chain seq, which was processed in ori layer in this class
+		$outputLayer->{"DTMTool"} = $tool;    	# All chain seq, which was processed in ori layer in this class
+		$outputLayer->{"radiusReal"} = $radiusReal/1000;
+		
 		$self->{"result"}->AddLayer($outputLayer);
 	}
 }
@@ -127,6 +118,7 @@ sub __Prepare {
 #-------------------------------------------------------------------------------------------#
 #  Protected methods
 #-------------------------------------------------------------------------------------------#
+ 
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

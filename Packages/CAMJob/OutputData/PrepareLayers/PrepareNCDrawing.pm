@@ -154,8 +154,8 @@ sub __ProcessLayerData {
 		# 1) adjust copied feature data. Create outlilne from each feature
 		# ----------------------------------------------------------------
 
-		if (    $classRes->GetType() eq OutEnums->Type_COUNTERSINKSURF
-			 || $classRes->GetType() eq OutEnums->Type_COUNTERSINKARC )
+		if (    $classRes->GetType() eq OutEnums->Type_COUNTERSINKSURFBase
+			 || $classRes->GetType() eq OutEnums->Type_COUNTERSINKARCBase )
 		{
 			# Parsed data from "parser class result"
 			my $drawLayer = $layerRes->GetLayerName();
@@ -173,14 +173,14 @@ sub __ProcessLayerData {
 				my $centerX = undef;
 				my $centerY = undef;
 
-				if ( $classRes->GetType() eq OutEnums->Type_COUNTERSINKARC ) {
+				if ( $classRes->GetType() eq OutEnums->Type_COUNTERSINKARCBase ) {
 
 					# get centr point of chain
 					$centerX = ( $chainS->GetOriFeatures() )[0]->{"xmid"};
 					$centerY = ( $chainS->GetOriFeatures() )[0]->{"ymid"};
 
 				}
-				elsif ( $classRes->GetType() eq OutEnums->Type_COUNTERSINKSURF ) {
+				elsif ( $classRes->GetType() eq OutEnums->Type_COUNTERSINKSURFBase ) {
 
 					my $surf = ( $chainS->GetOriFeatures() )[0];
 					PolygonAttr->AddSurfAtt($surf);
@@ -197,7 +197,7 @@ sub __ProcessLayerData {
 
 		}
 		elsif (    $classRes->GetType() eq OutEnums->Type_COUNTERSINKPAD
-				|| $classRes->GetType() eq OutEnums->Type_ZAXISPAD )
+				|| $classRes->GetType() eq OutEnums->Type_ZAXISPADBase )
 		{
 
 			# Parsed data from "parser class result"
@@ -210,7 +210,7 @@ sub __ProcessLayerData {
 				$radiusReal = $layerRes->{"radiusReal"};
 
 			}
-			elsif ( $classRes->GetType() eq OutEnums->Type_ZAXISPAD ) {
+			elsif ( $classRes->GetType() eq OutEnums->Type_ZAXISPADBase ) {
 
 				$radiusReal = $layerRes->{"radiusReal"};
 			}
@@ -225,10 +225,10 @@ sub __ProcessLayerData {
 													 undef, "r" . $self->{"dataOutline"} );
 			}
 		}
-		elsif (    $classRes->GetType() eq OutEnums->Type_ZAXISSLOTCHAMFER
-				|| $classRes->GetType() eq OutEnums->Type_ZAXISSURFCHAMFER
-				|| $classRes->GetType() eq OutEnums->Type_ZAXISSURF
-				|| $classRes->GetType() eq OutEnums->Type_ZAXISSLOT )
+		elsif (    $classRes->GetType() eq OutEnums->Type_ZAXISSLOTCHAMFERBase
+				|| $classRes->GetType() eq OutEnums->Type_ZAXISSURFCHAMFERBase
+				|| $classRes->GetType() eq OutEnums->Type_ZAXISSURFBase
+				|| $classRes->GetType() eq OutEnums->Type_ZAXISSLOTBase )
 		{
 
 			# Parsed data from "parser class result"
@@ -237,7 +237,7 @@ sub __ProcessLayerData {
 
 			# Adjust copied feature data. Create outlilne from each feature
 
-			if ( $classRes->GetType() eq OutEnums->Type_ZAXISSURF ) {
+			if ( $classRes->GetType() eq OutEnums->Type_ZAXISSURFBase ) {
 				CamLayer->Contourize( $inCAM, $drawLayer, "area", "1000" );
 			}
 
@@ -275,8 +275,8 @@ sub __ProcessDrawing {
 		 
 		my $draw = Drawing->new( $inCAM, $jobId, $lTmp, Point->new( 0,0), $self->{"pcbThick"}, $side, $l->{"plated"} );
 
-		if (    $classRes->GetType() eq OutEnums->Type_COUNTERSINKSURF
-			 || $classRes->GetType() eq OutEnums->Type_COUNTERSINKARC )
+		if (    $classRes->GetType() eq OutEnums->Type_COUNTERSINKSURFBase
+			 || $classRes->GetType() eq OutEnums->Type_COUNTERSINKARCBase )
 		{
 
 			# Compute depth of "imagine drill tool"
@@ -314,8 +314,8 @@ sub __ProcessDrawing {
 			$draw->CreateDetailCountersink( $layerRes->{"radiusReal"}, $imgToolDepth, $imgToolAngle, "hole" );
 
 		}
-		elsif (    $classRes->GetType() eq OutEnums->Type_ZAXISSLOTCHAMFER
-				|| $classRes->GetType() eq OutEnums->Type_ZAXISSURFCHAMFER )
+		elsif (    $classRes->GetType() eq OutEnums->Type_ZAXISSLOTCHAMFERBase
+				|| $classRes->GetType() eq OutEnums->Type_ZAXISSURFCHAMFERBase )
 		{
 
 			my @chains = @{ $layerRes->{"chainSeq"} };
@@ -330,8 +330,8 @@ sub __ProcessDrawing {
 			$draw->CreateDetailCountersink( $layerRes->{"radiusReal"}, $imgToolDepth, $imgToolAngle, "slot" );
 
 		}
-		elsif (    $classRes->GetType() eq OutEnums->Type_ZAXISSLOT
-				|| $classRes->GetType() eq OutEnums->Type_ZAXISPAD )
+		elsif (    $classRes->GetType() eq OutEnums->Type_ZAXISSLOTBase
+				|| $classRes->GetType() eq OutEnums->Type_ZAXISPADBase )
 		{
 
 			my $dtmTool = $layerRes->{"DTMTool"};
@@ -342,18 +342,18 @@ sub __ProcessDrawing {
 				$imgToolDepth -= OutEnums->Plating_THICKMM;
 			}
 
-			if ( $classRes->GetType() eq OutEnums->Type_ZAXISSLOT ) {
+			if ( $classRes->GetType() eq OutEnums->Type_ZAXISSLOTBase ) {
 
 				$draw->CreateDetailZaxis( $layerRes->{"radiusReal"}, $imgToolDepth, "slot" );
 
 			}
-			elsif ( $classRes->GetType() eq OutEnums->Type_ZAXISPAD ) {
+			elsif ( $classRes->GetType() eq OutEnums->Type_ZAXISPADBase ) {
 
 				$draw->CreateDetailZaxis( $layerRes->{"radiusReal"}, $imgToolDepth, "hole" );
 			}
 
 		}
-		elsif ( $classRes->GetType() eq OutEnums->Type_ZAXISSURF ) {
+		elsif ( $classRes->GetType() eq OutEnums->Type_ZAXISSURFBase ) {
 
 			my $dtmTool = $layerRes->{"DTMTool"};
 

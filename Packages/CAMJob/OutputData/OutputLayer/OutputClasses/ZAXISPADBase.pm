@@ -1,9 +1,9 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Parse rout data from layer
+# Description: Parse pad zaxis  from layer
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::CAMJob::OutputData::OutputLayer::OutputClasses::ROUT;
+package Packages::CAMJob::OutputData::OutputLayer::OutputClasses::ZAXISPADBase;
 use base('Packages::CAMJob::OutputData::OutputLayer::OutputClasses::OutputClassBase');
 
 use Class::Interface;
@@ -21,7 +21,7 @@ use Math::Geometry::Planar;
 
 use aliased 'Packages::CAMJob::OutputData::OutputLayer::Enums';
 use aliased 'Packages::CAMJob::OutputData::OutputLayer::OutputResult::OutputClassResult';
-use aliased 'CamHelpers::CamDTM';
+
 use aliased 'Helpers::GeneralHelper';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'Packages::CAM::UniDTM::Enums' => "DTMEnums";
@@ -33,8 +33,6 @@ use aliased 'Packages::CAMJob::OutputData::OutputLayer::OutputResult::OutputLaye
 use aliased 'Packages::Polygon::Polygon::PolygonAttr';
 use aliased 'Enums::EnumsRout';
 use aliased 'CamHelpers::CamLayer';
-use aliased 'CamHelpers::CamJob';
-use aliased 'CamHelpers::CamMatrix';
 use aliased 'Packages::Polygon::Features::Features::Features';
 
 #-------------------------------------------------------------------------------------------#
@@ -44,21 +42,21 @@ use aliased 'Packages::Polygon::Features::Features::Features';
 sub new {
 	my $class = shift;
 
-	my $self = $class->SUPER::new( @_, Enums->Type_ROUT );
+	my $self = $class->SUPER::new( @_, Enums->Type_ZAXISPADBase );
 	bless $self;
-
 	return $self;
 }
 
 sub Prepare {
 	my $self = shift;
 
-	$self->__Prepare();
+	$self->_Prepare();
 
 	return $self->{"result"};
 }
 
-sub __Prepare {
+
+sub _Prepare {
 	my $self = shift;
 
 	my $l = $self->{"layer"};
@@ -68,41 +66,61 @@ sub __Prepare {
 	my $step  = $self->{"step"};
 
 	my $lName = $l->{"gROWname"};
+	my @tools =
+	  grep { $_->GetTypeProcess() eq DTMEnums->TypeProc_HOLE && !$_->GetSpecial() } $l->{"uniDTM"}->GetUniqueTools();
 
-	return 0 unless ( grep {$_->GetTypeProcess() eq DTMEnums->TypeProc_CHAIN} $l->{"uniDTM"}->GetTools() );
+	return 0 unless (@tools);
 
 	# Get all radiuses
 
-	my $outputLayer = OutputLayer->new();    # layer process result
+	my @radiuses = uniq(map { $_->GetDrillSize() / 2 } @tools);
 
-	my $lTmp = $self->_SeparateFeatsBySymbolsNC( [ "surfaces", "lines", "arcs", "text" ] );
+	foreach my $r (@radiuses) {
 
-	my $drawLayer = CamLayer->RoutCompensation( $inCAM, $lTmp, "document" );
+		my $outputLayer = OutputLayer->new();    # layer process result
 
-	# if rout layer is plated, convert all to surface and resize properly
-	if ( $l->{"plated"} ) {
+		my $tool          = ( grep { $_->GetDrillSize()/2 == $r } @tools )[0];
+		my $toolDepth     = $tool->GetDepth();
+		my $toolDrillSize = $tool->GetDrillSize();
+ 
 
-		CamLayer->Contourize( $inCAM, $drawLayer, "area", "25000" );
-		CamLayer->WorkLayer($inCAM,  $drawLayer);
-		$inCAM->COM( "sel_resize", "size" => -( 2 * Enums->Plating_THICK ), "corner_ctl" => "no" );
-		 
+		# get all pads with this radius
+		my $f = Features->new();
+		$f->Parse( $inCAM, $jobId, $self->{"step"}, $lName );
+		my @features = $f->GetFeatures();
+
+		my @pads = grep { $_->{"type"} =~ /^p$/i && $_->{"thick"} / 2 == $r } @features;
+
+		# get id of all features in chain
+		my @featsId = map { $_->{'id'} } @pads;
+
+		my $drawLayer = $self->_SeparateFeatsByIdNC( \@featsId );
+		
+		my $radiusReal = $tool->GetDrillSize()/2;
+
+		if ( $l->{"plated"} ) {
+			CamLayer->ResizeFeatures( $inCAM, -2 * Enums->Plating_THICK );
+			$radiusReal -= Enums->Plating_THICK;
+		}
+
+		# 1) Set prepared layer name
+		$outputLayer->SetLayerName($drawLayer);
+
+		# 2 Add another extra info to output layer
+ 
+		$outputLayer->{"padFeatures"} = \@pads;         # All pads, which was processed in ori layer in this class
+		$outputLayer->{"DTMTool"} = $tool;				# DTM tool, which is used for this pads
+		$outputLayer->{"radiusReal"} = $radiusReal/1000;
+
+		$self->{"result"}->AddLayer($outputLayer);
 	}
-	
-	CamMatrix->DeleteLayer($inCAM, $jobId, $lTmp);
-  
-	# 1) Set prepared layer name
-	$outputLayer->SetLayerName($drawLayer);
-
-	# 2) Add another extra info to output layer
-
-	$self->{"result"}->AddLayer($outputLayer);
-	 
 }
+
 
 #-------------------------------------------------------------------------------------------#
 #  Protected methods
 #-------------------------------------------------------------------------------------------#
-
+ 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#

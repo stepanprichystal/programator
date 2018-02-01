@@ -30,7 +30,7 @@ sub new {
 
 	$self->{"output"} = shift;      # name of prepared layer in matrix
 
-	# Property for type Type_DRILLMAP
+	# Property for type Type_DRILLBaseMAP
 
 	$self->{"parent"} = undef;      # layer, which drill map is based on
 

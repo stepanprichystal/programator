@@ -1,9 +1,9 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Parse drill data from layer
+# Description: Parse pad countersink from layer
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::CAMJob::OutputData::OutputLayer::OutputClasses::DRILL;
+package Packages::CAMJob::OutputData::OutputLayer::OutputClasses::COUNTERSINKPADBase;
 use base('Packages::CAMJob::OutputData::OutputLayer::OutputClasses::OutputClassBase');
 
 use Class::Interface;
@@ -27,12 +27,11 @@ use aliased 'Enums::EnumsGeneral';
 use aliased 'Packages::CAM::UniDTM::Enums' => "DTMEnums";
 use aliased 'Packages::CAM::UniRTM::Enums' => "RTMEnums";
 use aliased 'Packages::CAM::FeatureFilter::FeatureFilter';
+use aliased 'Enums::EnumsDrill';
 use aliased 'Packages::Tooling::CountersinkHelper';
 use aliased 'Packages::CAMJob::OutputData::OutputLayer::OutputResult::OutputLayer';
 use aliased 'Packages::Polygon::Polygon::PolygonAttr';
 use aliased 'Enums::EnumsRout';
-use aliased 'CamHelpers::CamLayer';
-
 use aliased 'Packages::Polygon::Features::Features::Features';
 
 #-------------------------------------------------------------------------------------------#
@@ -42,23 +41,21 @@ use aliased 'Packages::Polygon::Features::Features::Features';
 sub new {
 	my $class = shift;
 
-	my $self = $class->SUPER::new( @_, Enums->Type_DRILL );
+	my $self = $class->SUPER::new( @_, Enums->Type_COUNTERSINKPADBase );
 	bless $self;
-	
-	 
-	
 	return $self;
 }
 
 sub Prepare {
 	my $self = shift;
 
-	$self->__Prepare();
+	$self->_Prepare();
 
 	return $self->{"result"};
+
 }
 
-sub __Prepare {
+sub _Prepare {
 	my $self = shift;
 
 	my $l = $self->{"layer"};
@@ -68,32 +65,60 @@ sub __Prepare {
 	my $step  = $self->{"step"};
 
 	my $lName = $l->{"gROWname"};
+	my @tools =
+	  grep { $_->GetTypeProcess() eq DTMEnums->TypeProc_HOLE && $_->GetSpecial() && $_->GetAngle() > 0 } $l->{"uniDTM"}->GetUniqueTools();
 
-	return 0 unless ( grep {$_->GetTypeProcess() eq DTMEnums->TypeProc_HOLE} $l->{"uniDTM"}->GetTools() );
+	return 0 unless (@tools);
 
 	# Get all radiuses
 
-	my $outputLayer = OutputLayer->new();    # layer process result
- 
+	my @radiuses = uniq(map { $_->GetDrillSize() / 2 } @tools);
 
-	my $drawLayer = $self->_SeparateFeatsBySymbolsNC( ["pads"] );
- 
- 
-	# adjust DTM to finish size
-	$self->_SetDTMFinishSizes($drawLayer);
+	foreach my $r (@radiuses) {
 
-	# 1) Set prepared layer name
-	$outputLayer->SetLayerName($drawLayer);
+		my $outputLayer = OutputLayer->new();    # layer process result
 
-	# 2 Add another extra info to output layer
+		my $tool          = ( grep { $_->GetDrillSize()/2 == $r } @tools )[0];
+		my $toolDepth     = $tool->GetDepth();
+		my $toolDrillSize = $tool->GetDrillSize();
+		my $toolAngle     = $tool->GetAngle();
 
-	$self->{"result"}->AddLayer($outputLayer);
+		# get all pads with this radius
+		my $f = Features->new();
+		$f->Parse( $inCAM, $jobId, $self->{"step"}, $lName );
+		my @features = $f->GetFeatures();
+
+		my @pads = grep { $_->{"type"} =~ /^p$/i && $_->{"thick"} / 2 == $r } @features;
+
+		# get id of all features in chain
+		my @featsId = map { $_->{'id'} } @pads;
+
+		my $drawLayer = $self->_SeparateFeatsByIdNC( \@featsId );
+
+		# 1) Set prepared layer name
+		$outputLayer->SetLayerName($drawLayer);
+
+		# 2 Add another extra info to output layer
+
+		my $radiusReal = CountersinkHelper->GetHoleRadiusByToolDepth( $toolDrillSize, $toolAngle, $toolDepth*1000 ) / 1000;
+
+		if ( $l->{"plated"} ) {
+			$radiusReal -= 0.05;
+		}
+
+		$outputLayer->{"radiusReal"}  = $radiusReal;    # real computed radius of features in layer
+		$outputLayer->{"padFeatures"} = \@pads;         # All pads, which was processed in ori layer in this class
+		$outputLayer->{"DTMTool"} = $tool;				# DTM tool, which is used for this pads
+
+		$self->{"result"}->AddLayer($outputLayer);
+	}
+
 }
-
 
 #-------------------------------------------------------------------------------------------#
 #  Protected methods
 #-------------------------------------------------------------------------------------------#
+ 
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
