@@ -57,10 +57,9 @@ sub Run {
 
 	# 2)Pickering
 
-	if ( $custInfo->{"reference_subjektu"} eq "06544"
+	if (    $custInfo->{"reference_subjektu"} eq "06544"
 		 || $custInfo->{"reference_subjektu"} eq "06545"
-		 || $custInfo->{"reference_subjektu"} eq "06546"
-	  )
+		 || $custInfo->{"reference_subjektu"} eq "06546" )
 	{
 
 		$self->_AddChange("Zákazník Pickering si přeje upravit číslo objednávek na deskách dle OneNotu");
@@ -71,7 +70,14 @@ sub Run {
 
 	if ( $custInfo->{"reference_subjektu"} eq "05052" ) {
 
-		$self->_AddChange("Zákazník si přeje vkládat do všech desek UL logo (14.8.2017)");
+		#test if no UL in Heg
+		my $ul = HegMethods->GetUlLogoLayer($jobId);
+
+		if ( !defined $ul || $ul eq "" ) {
+
+			$self->_AddChange("Zákazník si přeje vkládat do všech desek UL logo (14.8.2017)");
+
+		}
 
 	}
 

@@ -124,6 +124,8 @@ sub __GetParser {
 			$l->{"uniRTM"} = UniRTM->new( $inCAM, $jobId, $step, $l->{"gROWname"}, 0, $l->{"uniDTM"} );
 		}
 	}
+	
+	$inCAM->COM( 'tools_show', "layer" => $l->{"gROWname"} );
 
 	my $parser = OutputParser->new();
 
