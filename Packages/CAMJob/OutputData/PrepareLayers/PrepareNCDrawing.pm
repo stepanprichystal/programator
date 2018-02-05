@@ -38,7 +38,7 @@ use aliased 'CamHelpers::CamSymbol';
 use aliased 'Packages::Tooling::CountersinkHelper';
 use aliased 'CamHelpers::CamSymbolArc';
 use aliased 'Packages::Polygon::Polygon::PolygonAttr';
-use aliased 'Packages::CAMJob::OutputData::OutputLayer::OutputNCLayer';
+use aliased 'Packages::CAMJob::OutputParser::OutputParserNC::OutputParserNC';
 use aliased 'Packages::CAMJob::OutputData::OutputLayer::Enums' => 'OutEnums';
 use aliased 'CamHelpers::CamSymbolSurf';
 

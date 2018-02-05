@@ -3,15 +3,16 @@
 # Description: Prepare NC layers to finla output
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::CAMJob::OutputData::OutputLayer::OutputResult::OutputResult;
+package Packages::CAMJob::OutputParser::OutputParserBase::OutputResult::OutputClassResult;
 
 #3th party library
 use strict;
 use warnings;
 
 #local library
-use aliased 'Packages::CAMJob::OutputData::OutputLayer::Enums';
 use aliased 'Helpers::GeneralHelper';
+use aliased 'CamHelpers::CamMatrix';
+
 #use aliased 'Packages::SystemCall::SystemCall';
 
 #-------------------------------------------------------------------------------------------#
@@ -22,19 +23,20 @@ sub new {
 	my $self = shift;
 	$self = {};
 	bless $self;
-	
+
+	$self->{"type"}   = shift;
 	$self->{"inCAM"} = shift;
 	$self->{"jobId"} = shift;
 	$self->{"step"}  = shift;
-
-	$self->{"sourceLayer"} = shift;
-	$self->{"result"}      = shift;
-	$self->{"clasResults"} = shift;
+	$self->{"layer"} = shift;
+	
+	$self->{"layers"} = [];
+	$self->{"result"} = 0;       # 0 - no layers was added, 1 - at least 1 layer was added
 
 	return $self;
 }
 
-sub GetResult {
+sub Result {
 	my $self = shift;
 
 	return $self->{"result"};
@@ -46,43 +48,37 @@ sub GetType {
 	return $self->{"type"};
 }
 
-sub GetClassResult {
-	my $self       = shift;
-	my $classType  = shift;
-	my $succedOnly = shift;
-
-	my @res = grep { $_->GetType() eq $classType && $_ } @{ $self->{"clasResults"} };
-
-	if ($succedOnly) {
-
-		@res = grep { $_->Result() } @res;
-	}
-
-	return $res[0];
-}
-
-sub GetClassResults {
-	my $self       = shift;
-	my $succedOnly = shift;
-
-	my @res = @{ $self->{"clasResults"} };
-
-	if ($succedOnly) {
-
-		@res = grep { $_->Result() } @res;
-	}
-
-	return @res;
-}
-
-sub GetSourceLayer {
+sub GetLayers {
 	my $self = shift;
 
-	return $self->{"sourceLayer"};
+	return @{ $self->{"layers"} };
+}
+
+# some classes has onlz one result layer
+sub GetSingleLayer {
+	my $self = shift;
+	
+	if(scalar(@{$self->{"layers"}})> 1){
+		
+		die "Class result contain multiple layer result"
+	}
+	
+	
+
+	return ${ $self->{"layers"} }[0];
+}
+
+sub AddLayer {
+	my $self        = shift;
+	my $outputLayer = shift;
+
+	$self->{"result"} = 1;
+
+	push( @{ $self->{"layers"} }, $outputLayer );
 
 }
 
-# Merge all layers in each class result
+# Merge all layers in each OutputLayer class to one
 sub MergeLayers {
 	my $self  = shift;
 	
@@ -91,17 +87,13 @@ sub MergeLayers {
 	my $lName = GeneralHelper->GetNumUID();
 	$inCAM->COM( 'create_layer', "layer" => $lName, "context" => 'misc', "type" => 'document', "polarity" => 'positive', "ins_layer" => '' );
 
-	foreach my $classResult ( $self->GetClassResults() ) {
+	foreach my $l ( $self->GetLayers() ) {
 
-		foreach my $l ( $classResult->GetLayers() ) {
-
-			$inCAM->COM( "merge_layers", "source_layer" => $l->GetLayerName(), "dest_layer" => $lName );
-		}
+		$inCAM->COM( "merge_layers", "source_layer" => $l->GetLayerName(), "dest_layer" => $lName );
 	}
-
+	
 	return $lName;
 }
-
 
 sub Clear{
 	my $self  = shift;
@@ -111,14 +103,15 @@ sub Clear{
 
 	my $lName = GeneralHelper->GetNumUID();
 	 
-	foreach my $classResult ( $self->GetClassResults() ) {
+	foreach my $l ( $self->GetLayers() ) {
 		
-		$classResult->Clear();
+		CamMatrix->DeleteLayer( $inCAM, $jobId, $l->GetLayerName() );
  
 	}
 	
 	return $lName;
 }
+
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#

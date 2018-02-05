@@ -3,15 +3,18 @@
 # Description: Prepare NC layers to finla output
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::CAMJob::OutputData::OutputLayer::OutputResult::OutputLayer;
+package Packages::CAMJob::OutputParser::OutputParserBase::OutputParser;
 
 #3th party library
 use strict;
 use warnings;
+use List::Util qw[max min];
+use Math::Trig;
 
 #local library
 
-#use aliased 'Packages::SystemCall::SystemCall';
+ 
+use aliased 'Packages::CAMJob::OutputParser::OutputParserBase::OutputResult::OutputClassResult';
 
 #-------------------------------------------------------------------------------------------#
 #  Interface
@@ -21,26 +24,43 @@ sub new {
 	my $self = shift;
 	$self = {};
 	bless $self;
- 
-	$self->{"layer"} = shift; #layer name
-	 
+
+	$self->{"inCAM"} = shift;
+	$self->{"jobId"} = shift;
+	$self->{"step"}  = shift;
+
+	$self->{"classes"} = [];
+
+	#$self->{"classResult"} = OutputClassResult->new();
 
 	return $self;
 }
 
-sub SetLayerName{
-	my $self = shift;
-	my $layer = shift;
-	
-	$self->{"layer"} = $layer;
-}
-
-sub GetLayerName {
+sub Parse {
 	my $self = shift;
 
-	return $self->{"layer"};
+	my @results = ();
+
+	foreach my $class ( @{ $self->{"classes"} } ) {
+
+		my $classResult = $class->Prepare();
+
+		push( @results, $classResult );
+
+	}
+
+	return @results;
 }
- 
+
+sub AddClass {
+	my $self  = shift;
+	my $class = shift;
+
+	push( @{ $self->{"classes"} }, $class );
+
+}
+
+
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#

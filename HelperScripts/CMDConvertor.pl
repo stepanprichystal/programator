@@ -7,7 +7,7 @@ use warnings;
 
 
 # ============ INPUT LINE =================
-my $inputLine ="matrix_layer_direction,job=d152457,matrix=matrix,layer=d,direction=bottom_to_top";
+my $inputLine ="sel_single_feat,operation=select,x=14.790905,y=11.5544075,tol=703.3675,cyclic=no,clear_prev=yes";
 
  
 

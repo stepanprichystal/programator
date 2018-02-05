@@ -1,13 +1,13 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Parse drill data from layer
+# Description: Parse rout data from layer
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::CAMJob::OutputData::OutputLayer::OutputClasses::DRILLBase;
-use base('Packages::CAMJob::OutputData::OutputLayer::OutputClasses::OutputClassBase');
+package Packages::CAMJob::OutputParser::OutputParserNC::OutputClasses::SCORE;
+use base('Packages::CAMJob::OutputParser::OutputParserBase::OutputClasses::OutputClassBase');
 
 use Class::Interface;
-&implements('Packages::CAMJob::OutputData::OutputLayer::OutputClasses::IOutputClass');
+&implements('Packages::CAMJob::OutputParser::OutputParserBase::OutputClasses::IOutputClass');
 
 #3th party library
 use strict;
@@ -19,20 +19,21 @@ use Math::Geometry::Planar;
 
 #local library
 
-use aliased 'Packages::CAMJob::OutputData::OutputLayer::Enums';
-use aliased 'Packages::CAMJob::OutputData::OutputLayer::OutputResult::OutputClassResult';
-
+use aliased 'Packages::CAMJob::OutputParser::OutputParserNC::Enums';
+use aliased 'Packages::CAMJob::OutputParser::OutputParserBase::OutputResult::OutputClassResult';
+use aliased 'CamHelpers::CamDTM';
 use aliased 'Helpers::GeneralHelper';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'Packages::CAM::UniDTM::Enums' => "DTMEnums";
 use aliased 'Packages::CAM::UniRTM::Enums' => "RTMEnums";
 use aliased 'Packages::CAM::FeatureFilter::FeatureFilter';
+use aliased 'Enums::EnumsDrill';
 use aliased 'Packages::Tooling::CountersinkHelper';
-use aliased 'Packages::CAMJob::OutputData::OutputLayer::OutputResult::OutputLayer';
+use aliased 'Packages::CAMJob::OutputParser::OutputParserBase::OutputResult::OutputLayer';
 use aliased 'Packages::Polygon::Polygon::PolygonAttr';
 use aliased 'Enums::EnumsRout';
 use aliased 'CamHelpers::CamLayer';
-
+use aliased 'CamHelpers::CamJob';
 use aliased 'Packages::Polygon::Features::Features::Features';
 
 #-------------------------------------------------------------------------------------------#
@@ -42,11 +43,9 @@ use aliased 'Packages::Polygon::Features::Features::Features';
 sub new {
 	my $class = shift;
 
-	my $self = $class->SUPER::new( @_, Enums->Type_DRILLBase );
+	my $self = $class->SUPER::new( @_, Enums->Type_SCORE );
 	bless $self;
-	
-	 
-	
+
 	return $self;
 }
 
@@ -69,19 +68,14 @@ sub _Prepare {
 
 	my $lName = $l->{"gROWname"};
 
-	return 0 unless ( grep {$_->GetTypeProcess() eq DTMEnums->TypeProc_HOLE} $l->{"uniDTM"}->GetTools() );
+	return 0 unless ( grep {$_->GetTypeProcess() eq DTMEnums->TypeProc_CHAIN} $l->{"uniDTM"}->GetTools() );
 
 	# Get all radiuses
 
 	my $outputLayer = OutputLayer->new();    # layer process result
- 
 
-	my $drawLayer = $self->_SeparateFeatsBySymbolsNC( ["pads"] );
+	my $drawLayer = $self->_SeparateFeatsBySymbolsNC( [ "lines" ] );
  
- 
-	# adjust DTM to finish size
-	$self->_SetDTMFinishSizes($drawLayer);
-
 	# 1) Set prepared layer name
 	$outputLayer->SetLayerName($drawLayer);
 
@@ -89,7 +83,6 @@ sub _Prepare {
 
 	$self->{"result"}->AddLayer($outputLayer);
 }
-
 
 #-------------------------------------------------------------------------------------------#
 #  Protected methods

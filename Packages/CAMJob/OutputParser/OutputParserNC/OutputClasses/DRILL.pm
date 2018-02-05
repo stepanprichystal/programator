@@ -1,13 +1,13 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Parse rout data from layer
+# Description: Parse drill data from layer
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::CAMJob::OutputData::OutputLayer::OutputClasses::ROUTBase;
-use base('Packages::CAMJob::OutputData::OutputLayer::OutputClasses::OutputClassBase');
+package Packages::CAMJob::OutputParser::OutputParserNC::OutputClasses::DRILL;
+use base('Packages::CAMJob::OutputParser::OutputParserBase::OutputClasses::OutputClassBase');
 
 use Class::Interface;
-&implements('Packages::CAMJob::OutputData::OutputLayer::OutputClasses::IOutputClass');
+&implements('Packages::CAMJob::OutputParser::OutputParserBase::OutputClasses::IOutputClass');
 
 #3th party library
 use strict;
@@ -19,22 +19,20 @@ use Math::Geometry::Planar;
 
 #local library
 
-use aliased 'Packages::CAMJob::OutputData::OutputLayer::Enums';
-use aliased 'Packages::CAMJob::OutputData::OutputLayer::OutputResult::OutputClassResult';
-use aliased 'CamHelpers::CamDTM';
+use aliased 'Packages::CAMJob::OutputParser::OutputParserNC::Enums';
+use aliased 'Packages::CAMJob::OutputParser::OutputParserBase::OutputResult::OutputClassResult';
+
 use aliased 'Helpers::GeneralHelper';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'Packages::CAM::UniDTM::Enums' => "DTMEnums";
 use aliased 'Packages::CAM::UniRTM::Enums' => "RTMEnums";
 use aliased 'Packages::CAM::FeatureFilter::FeatureFilter';
-use aliased 'Enums::EnumsDrill';
 use aliased 'Packages::Tooling::CountersinkHelper';
-use aliased 'Packages::CAMJob::OutputData::OutputLayer::OutputResult::OutputLayer';
+use aliased 'Packages::CAMJob::OutputParser::OutputParserBase::OutputResult::OutputLayer';
 use aliased 'Packages::Polygon::Polygon::PolygonAttr';
 use aliased 'Enums::EnumsRout';
 use aliased 'CamHelpers::CamLayer';
-use aliased 'CamHelpers::CamJob';
-use aliased 'CamHelpers::CamMatrix';
+
 use aliased 'Packages::Polygon::Features::Features::Features';
 
 #-------------------------------------------------------------------------------------------#
@@ -44,9 +42,11 @@ use aliased 'Packages::Polygon::Features::Features::Features';
 sub new {
 	my $class = shift;
 
-	my $self = $class->SUPER::new( @_, Enums->Type_ROUTBase );
+	my $self = $class->SUPER::new( @_, Enums->Type_DRILL );
 	bless $self;
-
+	
+	 
+	
 	return $self;
 }
 
@@ -69,35 +69,27 @@ sub _Prepare {
 
 	my $lName = $l->{"gROWname"};
 
-	return 0 unless ( grep {$_->GetTypeProcess() eq DTMEnums->TypeProc_CHAIN} $l->{"uniDTM"}->GetTools() );
+	return 0 unless ( grep {$_->GetTypeProcess() eq DTMEnums->TypeProc_HOLE} $l->{"uniDTM"}->GetTools() );
 
 	# Get all radiuses
 
 	my $outputLayer = OutputLayer->new();    # layer process result
+ 
 
-	my $lTmp = $self->_SeparateFeatsBySymbolsNC( [ "surfaces", "lines", "arcs", "text" ] );
+	my $drawLayer = $self->_SeparateFeatsBySymbolsNC( ["pads"] );
+ 
+ 
+	# adjust DTM to finish size
+	$self->_SetDTMFinishSizes($drawLayer);
 
-	my $drawLayer = CamLayer->RoutCompensation( $inCAM, $lTmp, "document" );
-
-	# if rout layer is plated, convert all to surface and resize properly
-	if ( $l->{"plated"} ) {
-
-		CamLayer->Contourize( $inCAM, $drawLayer, "area", "25000" );
-		CamLayer->WorkLayer($inCAM,  $drawLayer);
-		$inCAM->COM( "sel_resize", "size" => -( 2 * Enums->Plating_THICK ), "corner_ctl" => "no" );
-		 
-	}
-	
-	CamMatrix->DeleteLayer($inCAM, $jobId, $lTmp);
-  
 	# 1) Set prepared layer name
 	$outputLayer->SetLayerName($drawLayer);
 
-	# 2) Add another extra info to output layer
+	# 2 Add another extra info to output layer
 
 	$self->{"result"}->AddLayer($outputLayer);
-	 
 }
+
 
 #-------------------------------------------------------------------------------------------#
 #  Protected methods

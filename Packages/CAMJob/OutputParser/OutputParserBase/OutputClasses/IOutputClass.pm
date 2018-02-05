@@ -3,7 +3,7 @@
 # Description: Interface, allow build nif section
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::CAMJob::OutputData::OutputLayer::OutputClasses::IOutputClass;
+package Packages::CAMJob::OutputParser::OutputParserBase::OutputClasses::IOutputClass;
 
 #3th party library
 use strict;

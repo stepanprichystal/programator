@@ -1,13 +1,13 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Parse Surface countersink from layer
+# Description: Parse arc countersink from layer
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::CAMJob::OutputData::OutputLayer::OutputClasses::COUNTERSINKSURFBase;
-use base('Packages::CAMJob::OutputData::OutputLayer::OutputClasses::OutputClassBase');
+package Packages::CAMJob::OutputParser::OutputParserNC::OutputClasses::COUNTERSINKARC;
+use base('Packages::CAMJob::OutputParser::OutputParserBase::OutputClasses::OutputClassBase');
 
 use Class::Interface;
-&implements('Packages::CAMJob::OutputData::OutputLayer::OutputClasses::IOutputClass');
+&implements('Packages::CAMJob::OutputParser::OutputParserBase::OutputClasses::IOutputClass');
 
 #3th party library
 use strict;
@@ -19,8 +19,8 @@ use Math::Geometry::Planar;
 
 #local library
 
-use aliased 'Packages::CAMJob::OutputData::OutputLayer::Enums';
-use aliased 'Packages::CAMJob::OutputData::OutputLayer::OutputResult::OutputClassResult';
+use aliased 'Packages::CAMJob::OutputParser::OutputParserNC::Enums';
+use aliased 'Packages::CAMJob::OutputParser::OutputParserBase::OutputResult::OutputClassResult';
 
 use aliased 'Helpers::GeneralHelper';
 use aliased 'Enums::EnumsGeneral';
@@ -29,7 +29,9 @@ use aliased 'Packages::CAM::UniRTM::Enums' => "RTMEnums";
 use aliased 'Packages::CAM::FeatureFilter::FeatureFilter';
 use aliased 'Enums::EnumsDrill';
 use aliased 'Packages::Tooling::CountersinkHelper';
-use aliased 'Packages::CAMJob::OutputData::OutputLayer::OutputResult::OutputLayer';
+use aliased 'Packages::CAMJob::OutputParser::OutputParserBase::OutputResult::OutputLayer';
+use aliased 'Packages::Polygon::Polygon::PolygonAttr';
+use aliased 'Enums::EnumsRout';
 
 #-------------------------------------------------------------------------------------------#
 #  Interface
@@ -38,7 +40,7 @@ use aliased 'Packages::CAMJob::OutputData::OutputLayer::OutputResult::OutputLaye
 sub new {
 	my $class = shift;
 
-	my $self = $class->SUPER::new( @_, Enums->Type_COUNTERSINKSURFBase );
+	my $self = $class->SUPER::new( @_, Enums->Type_COUNTERSINKARC );
 	bless $self;
 	return $self;
 }
@@ -62,25 +64,53 @@ sub _Prepare {
 	my $step  = $self->{"step"};
 
 	my $lName    = $l->{"gROWname"};
-	my @chainSeq = $l->{"uniRTM"}->GetCircleChainSeq( RTMEnums->FeatType_SURF );
+	my @chainSeq = $l->{"uniRTM"}->GetCircleChainSeq( RTMEnums->FeatType_LINEARC );
 
 	return 0 unless (@chainSeq);
 
-	# only special tools with angle
+	# only special tools with angle, radius max 5mm
 	@chainSeq =
-	  grep { $_->GetChain()->GetChainTool()->GetUniDTMTool()->GetSpecial() && $_->GetChain()->GetChainTool()->GetUniDTMTool()->GetAngle() > 0 }
+	  grep { $_->GetChain()->GetChainTool()->GetUniDTMTool()->GetSpecial() 
+	  		&& $_->GetChain()->GetChainTool()->GetUniDTMTool()->GetAngle() > 0
+	  		  }
 	  @chainSeq;
 
 	#compute radiuses for surface
-	foreach my $ch (@chainSeq) {
+	# Chain has new property "radius":  (diameter of whole surface) / 2
 
-		my $points = ( $ch->GetFeatures() )[0]->{"surfaces"}->[0]->{"island"};
-		$ch->{"radius"} = abs( $points->[0]->{"x"} - $points->[1]->{"xmid"} );
+	# add radius property to all chain
+
+	foreach my $chanSeq (@chainSeq) {
+
+		my $chainSize = $chanSeq->GetChain()->GetChainSize() / 1000;    # in mm
+
+		my $arc = ( $chanSeq->GetFeatures() )[0];
+		$arc->{"dir"} = $arc->{"newDir"};                               # GetFragmentArc assume propertt "dir"
+		PolygonAttr->AddArcAtt($arc);
+
+		my $radius = $arc->{"radius"};
+
+		my $comp = $arc->{"att"}->{".comp"};
+
+		# comp is in center of arc
+		if ( $comp eq EnumsRout->Comp_NONE ) {
+			$radius += $chainSize / 2;
+		}
+
+		# comp is out of circle
+		elsif (    ( $comp eq EnumsRout->Comp_LEFT && $arc->{"newDir"} eq EnumsRout->Dir_CW )
+				|| ( $comp eq EnumsRout->Comp_RIGHT && $arc->{"newDir"} eq EnumsRout->Dir_CCW ) )
+		{
+			$radius += $chainSize;
+		}
+
+		$chanSeq->{"radius"} = $radius;
 	}
+	
+	# Only radius smaller than 8
+	@chainSeq =  grep { $_->{"radius"} <= 8 }  @chainSeq;
 
-	# Chain has new property "radius":  (diameter given by outer edge of rout compensation) / 2
-
-	my @radiuses = ();                                                            # radiuses of whole surface, not
+	my @radiuses = ();    # radiuses of whole surface, not
 
 	for ( my $i = 0 ; $i < scalar(@chainSeq) ; $i++ ) {
 
@@ -90,9 +120,6 @@ sub _Prepare {
 			push( @radiuses, $r );
 		}
 	}
-
-	# Only radius smaller than 8
-	@chainSeq = grep { $_->{"radius"} <= 8 } @chainSeq;
 
 	my @toolSizes = uniq( map { $_->GetChain()->GetChainSize() } @chainSeq );
 
@@ -124,10 +151,9 @@ sub _Prepare {
 			my $drawLayer = $self->_SeparateFeatsByIdNC( \@featsId );
 
 			# 1) Set prepared layer name
-			$outputLayer->SetLayerName($drawLayer);    # Attention! layer contain original sizes of feature, not finish/real sizes
+			$outputLayer->SetLayerName($drawLayer); # Attention! lazer contain original sizes of feature, not finish/real sizes
 
 			# 2 Add another extra info to output layer
-
 			$outputLayer->{"radiusReal"} = $radiusReal;    # real compted radius of features in layer
 			$outputLayer->{"chainSeq"}   = \@matchCh;      # All chain seq, which was processed in ori layer in this class
 
@@ -140,7 +166,6 @@ sub _Prepare {
 #  Protected methods
 #-------------------------------------------------------------------------------------------#
  
-
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#

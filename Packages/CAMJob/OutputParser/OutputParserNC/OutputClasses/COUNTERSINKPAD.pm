@@ -3,11 +3,11 @@
 # Description: Parse pad countersink from layer
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::CAMJob::OutputData::OutputLayer::OutputClasses::COUNTERSINKPADBase;
-use base('Packages::CAMJob::OutputData::OutputLayer::OutputClasses::OutputClassBase');
+package Packages::CAMJob::OutputParser::OutputParserNC::OutputClasses::COUNTERSINKPAD;
+use base('Packages::CAMJob::OutputParser::OutputParserBase::OutputClasses::OutputClassBase');
 
 use Class::Interface;
-&implements('Packages::CAMJob::OutputData::OutputLayer::OutputClasses::IOutputClass');
+&implements('Packages::CAMJob::OutputParser::OutputParserBase::OutputClasses::IOutputClass');
 
 #3th party library
 use strict;
@@ -19,8 +19,8 @@ use Math::Geometry::Planar;
 
 #local library
 
-use aliased 'Packages::CAMJob::OutputData::OutputLayer::Enums';
-use aliased 'Packages::CAMJob::OutputData::OutputLayer::OutputResult::OutputClassResult';
+use aliased 'Packages::CAMJob::OutputParser::OutputParserNC::Enums';
+use aliased 'Packages::CAMJob::OutputParser::OutputParserBase::OutputResult::OutputClassResult';
 
 use aliased 'Helpers::GeneralHelper';
 use aliased 'Enums::EnumsGeneral';
@@ -29,7 +29,7 @@ use aliased 'Packages::CAM::UniRTM::Enums' => "RTMEnums";
 use aliased 'Packages::CAM::FeatureFilter::FeatureFilter';
 use aliased 'Enums::EnumsDrill';
 use aliased 'Packages::Tooling::CountersinkHelper';
-use aliased 'Packages::CAMJob::OutputData::OutputLayer::OutputResult::OutputLayer';
+use aliased 'Packages::CAMJob::OutputParser::OutputParserBase::OutputResult::OutputLayer';
 use aliased 'Packages::Polygon::Polygon::PolygonAttr';
 use aliased 'Enums::EnumsRout';
 use aliased 'Packages::Polygon::Features::Features::Features';
@@ -41,7 +41,7 @@ use aliased 'Packages::Polygon::Features::Features::Features';
 sub new {
 	my $class = shift;
 
-	my $self = $class->SUPER::new( @_, Enums->Type_COUNTERSINKPADBase );
+	my $self = $class->SUPER::new( @_, Enums->Type_COUNTERSINKPAD );
 	bless $self;
 	return $self;
 }

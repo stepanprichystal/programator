@@ -1,13 +1,10 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Parse rout data from layer
+# Description: Parse pad countersink from layer
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::CAMJob::OutputData::OutputLayer::OutputClasses::SCOREBase;
-use base('Packages::CAMJob::OutputData::OutputLayer::OutputClasses::OutputClassBase');
-
-use Class::Interface;
-&implements('Packages::CAMJob::OutputData::OutputLayer::OutputClasses::IOutputClass');
+package Packages::CAMJob::OutputParser::OutputParserCountersink::OutputParserCountersink;
+use base('Packages::CAMJob::OutputParser::OutputParserBase::OutputParserBase');
 
 #3th party library
 use strict;
@@ -19,9 +16,6 @@ use Math::Geometry::Planar;
 
 #local library
 
-use aliased 'Packages::CAMJob::OutputData::OutputLayer::Enums';
-use aliased 'Packages::CAMJob::OutputData::OutputLayer::OutputResult::OutputClassResult';
-use aliased 'CamHelpers::CamDTM';
 use aliased 'Helpers::GeneralHelper';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'Packages::CAM::UniDTM::Enums' => "DTMEnums";
@@ -29,12 +23,12 @@ use aliased 'Packages::CAM::UniRTM::Enums' => "RTMEnums";
 use aliased 'Packages::CAM::FeatureFilter::FeatureFilter';
 use aliased 'Enums::EnumsDrill';
 use aliased 'Packages::Tooling::CountersinkHelper';
-use aliased 'Packages::CAMJob::OutputData::OutputLayer::OutputResult::OutputLayer';
+
 use aliased 'Packages::Polygon::Polygon::PolygonAttr';
 use aliased 'Enums::EnumsRout';
-use aliased 'CamHelpers::CamLayer';
-use aliased 'CamHelpers::CamJob';
 use aliased 'Packages::Polygon::Features::Features::Features';
+
+use aliased 'Packages::CAMJob::OutputParser::OutputParserCountersink::OutputClasses::COUNTERSINKPAD';
 
 #-------------------------------------------------------------------------------------------#
 #  Interface
@@ -43,45 +37,36 @@ use aliased 'Packages::Polygon::Features::Features::Features';
 sub new {
 	my $class = shift;
 
-	my $self = $class->SUPER::new( @_, Enums->Type_SCOREBase );
+	my $self = $class->SUPER::new(@_);
 	bless $self;
-
 	return $self;
 }
 
-sub Prepare {
-	my $self = shift;
+sub InitParser {
+	my $self   = shift;
+	my $l      = shift;
+	my $parser = shift;
 
-	$self->_Prepare();
-
-	return $self->{"result"};
-}
-
-sub _Prepare {
-	my $self = shift;
-
-	my $l = $self->{"layer"};
+	my $NCType = $l->{"type"};
 
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
 	my $step  = $self->{"step"};
 
-	my $lName = $l->{"gROWname"};
+	# Init layer with some info
 
-	return 0 unless ( grep {$_->GetTypeProcess() eq DTMEnums->TypeProc_CHAIN} $l->{"uniDTM"}->GetTools() );
+	if (    $NCType eq EnumsGeneral->LAYERTYPE_plt_bMillTop
+		 || $NCType eq EnumsGeneral->LAYERTYPE_plt_bMillBot
+		 || $NCType eq EnumsGeneral->LAYERTYPE_nplt_bMillTop
+		 || $NCType eq EnumsGeneral->LAYERTYPE_nplt_bMillBot )
+	{
+		$parser->AddClass( COUNTERSINKPAD->new( $inCAM, $jobId, $step, $l ) );
 
-	# Get all radiuses
+	}
+	else {
+		die "No parser class for this NC type: $NCType";
+	}
 
-	my $outputLayer = OutputLayer->new();    # layer process result
-
-	my $drawLayer = $self->_SeparateFeatsBySymbolsNC( [ "lines" ] );
- 
-	# 1) Set prepared layer name
-	$outputLayer->SetLayerName($drawLayer);
-
-	# 2 Add another extra info to output layer
-
-	$self->{"result"}->AddLayer($outputLayer);
 }
 
 #-------------------------------------------------------------------------------------------#
@@ -93,6 +78,30 @@ sub _Prepare {
 #-------------------------------------------------------------------------------------------#
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
+
+	use aliased 'Packages::CAMJob::OutputParser::OutputParserCountersink::OutputParserCountersink';
+
+	use aliased 'Packages::InCAM::InCAM';
+	use aliased 'CamHelpers::CamStep';
+	use aliased 'CamHelpers::CamHelper';
+
+	my $inCAM = InCAM->new();
+
+	my $jobId = "d152457";
+
+	my $mess = "";
+
+	CamStep->CreateFlattenStep( $inCAM, $jobId, "o+1", "flat", 1, [ "fzc", "f" ] );
+
+	CamHelper->SetStep( $inCAM, "flat" );
+
+	my $control = OutputParserCountersink->new( $inCAM, $jobId, "flat" );
+
+	my %lInfo = ( "gROWname" => "fzc", "gROWlayer_type" => "rout" );
+
+	my $result = $control->Prepare( \%lInfo );
+
+	#$control->Clear();
 
 }
 

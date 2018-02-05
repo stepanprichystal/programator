@@ -25,7 +25,7 @@ use aliased 'CamHelpers::CamHistogram';
 use aliased 'CamHelpers::CamHelper';
 use aliased 'CamHelpers::CamSymbol';
 use aliased 'Packages::CAM::FeatureFilter::FeatureFilter';
-use aliased 'Packages::CAMJob::OutputData::OutputLayer::OutputNCLayer';
+use aliased 'Packages::CAMJob::OutputParser::OutputParserNC::OutputParserNC';
 use aliased 'Packages::CAMJob::OutputData::OutputLayer::Enums' => 'OutEnums';
 
 #use aliased 'Packages::SystemCall::SystemCall';
