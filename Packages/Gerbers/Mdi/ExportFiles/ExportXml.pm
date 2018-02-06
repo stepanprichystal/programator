@@ -146,7 +146,7 @@ sub __ExportXml {
 		my $clr = $mask{ $layerName eq 'mc' ? "top" : "bot" };
 
 		if ( $clr =~ /Z/i ) {
-			$power = 230;        # green
+			$power = 350;        # green
 		}
 		elsif ( $clr =~ /B/i ) {
 			$power = 240;        # black

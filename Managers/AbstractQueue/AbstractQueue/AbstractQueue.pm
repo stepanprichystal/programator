@@ -49,7 +49,7 @@ sub new {
 
 	# Main application form
 	$self->{"form"} = shift;
- 
+
 	$self->{"version"} = $self->__GetVersion();
 
 	$self->{"form"}->Init();
@@ -76,8 +76,8 @@ sub new {
 	# events
 
 	$self->{'onSetNewTask'} = Event->new();
-	
-	get_logger("abstractQueue")->info( "App was launched \n" );
+
+	get_logger("abstractQueue")->info("App was launched \n");
 
 	return $self;
 }
@@ -123,8 +123,6 @@ sub __OnJobStateChangedBase {
 	my $taskId          = shift;
 	my $taskState       = shift;
 	my $taskStateDetail = shift;
-	
-
 
 	my $task     = $self->_GetTaskById($taskId);
 	my $taskData = $task->GetTaskData();
@@ -139,6 +137,7 @@ sub __OnJobStateChangedBase {
 	elsif ( $taskState eq EnumsJobMngr->JobState_WAITINGPORT ) {
 
 		$status = "Waiting on InCAM port.";
+
 		#$self->{"form"}->ActivateForm( 1, $taskData->GetFormPosition() );
 
 	}
@@ -153,9 +152,7 @@ sub __OnJobStateChangedBase {
 
 	}
 	elsif ( $taskState eq EnumsJobMngr->JobState_DONE ) {
-		
-		
-  
+
 		# Refresh GUI - job queue
 
 		#	 ExitType_SUCCES => 'Succes',
@@ -184,11 +181,8 @@ sub __OnJobStateChangedBase {
 
 		$task->ProcessTaskDone($aborted);
 		$self->{"form"}->SetJobItemResult($task);
-		
-		get_logger("abstractQueue")->info( "Job ".$task->GetJobId()." is done.\n" );
-		
-		
 
+		get_logger("abstractQueue")->info( "Job " . $task->GetJobId() . " is done.\n" );
 
 	}
 
@@ -350,11 +344,10 @@ sub __OnRemoveJobClick {
 		# hide abstractQueue
 		$self->{"form"}->ActivateForm(0);
 	}
-	
-	
+
 	# Close properly window of notify mngr
-	if(defined $self->{"form"}->GetNotifyMngr()){
-		
+	if ( defined $self->{"form"}->GetNotifyMngr() ) {
+
 		$self->{"form"}->GetNotifyMngr()->DestroyNotifiesByTaskId($taskId);
 	}
 
@@ -377,10 +370,10 @@ sub __OnCloseAbstractQueueBase {
 			$self->__OnRemoveJobClick( $task->GetTaskId() );
 		}
 	}
-	
+
 	# Close properly window of notify mngr
-	if(defined $self->{"form"}->GetNotifyMngr()){
-		
+	if ( defined $self->{"form"}->GetNotifyMngr() ) {
+
 		$self->{"form"}->GetNotifyMngr()->CleanUp();
 	}
 
@@ -432,18 +425,19 @@ sub __TimerCheckVersion {
 	}
 
 	if ( $self->{"version"} < $verison ) {
-		
-		get_logger("abstractQueue")->info( "New version on server. Old = ".$self->{"version"}.", New = ".$verison."\n" );
+
+		get_logger("abstractQueue")->info( "New version on server. Old = " . $self->{"version"} . ", New = " . $verison . "\n" );
 
 		$self->{"timerVersion"}->Stop();
- 
+
 		# If runining on server, close directly
-		if ( AsyncJobHelber->ServerVersion()) {
+		if ( AsyncJobHelber->ServerVersion() ) {
 
 			$self->{"form"}->__OnClose(1);
-		
-		}else {
-			
+
+		}
+		else {
+
 			# First ask user for close
 
 			my $messMngr = $self->{"form"}->{"messageMngr"};
@@ -457,14 +451,14 @@ sub __TimerCheckVersion {
 
 			# close abstractQueue
 			if ( $messMngr->Result() == 0 ) {
-				
+
 				$self->{"form"}->__OnClose();
 			}
 		}
 
 		# once to 5 minute
 		$self->{"timerVersion"}->Start( 60000 * 5 );
-		 
+
 	}
 
 }
@@ -475,7 +469,7 @@ sub __AutoRemoveJobsHandler {
 
 	my $autoRemove = AppConf->GetValue("autoRemove");
 
-	unless ( $autoRemove ) {
+	unless ($autoRemove) {
 		return 0;
 	}
 
@@ -546,7 +540,13 @@ sub _AddJobToAutoRemove {
 	my $taskId = shift;
 
 	my %removeInf = ( "taskId" => $taskId, "exportFinis" => time() );
-	push( @{ $self->{"removeJobs"} }, \%removeInf );
+
+	# add only if is not already added
+	unless ( scalar( grep { $_->{"taskId"} eq $taskId } @{ $self->{"removeJobs"} } ) ) {
+ 
+		push( @{ $self->{"removeJobs"} }, \%removeInf );
+	}
+
 }
 
 # Add timers to list of all timers

@@ -28,7 +28,7 @@ use aliased 'Managers::AbstractQueue::Task::TaskStatus::TaskStatus';
 use aliased 'Programs::Exporter::ExportUtility::Task::Task';
 use aliased 'Programs::Exporter::ExportUtility::ExportUtility::Forms::ExportUtilityForm';
 use aliased 'Programs::Exporter::ExportUtility::DataTransfer::DataTransfer';
-
+use aliased 'Managers::AsyncJobMngr::Helper'                         => "AsyncJobHelber";
 use aliased 'Programs::Exporter::ExportUtility::DataTransfer::Enums' => 'EnumsTransfer';
 use aliased 'Managers::AsyncJobMngr::Enums'                          => 'EnumsJobMngr';
 use aliased 'Programs::Exporter::ExportUtility::ExportUtility::JobWorkerClass';
@@ -49,8 +49,7 @@ sub new {
 	# Main application form
 	my $form = ExportUtilityForm->new( $runMode, undef );
 
-
-	my $self = $class->SUPER::new( $form );
+	my $self = $class->SUPER::new($form);
 	bless $self;
 
 	my @exportFiles = ();
@@ -108,17 +107,14 @@ sub __OnJobStateChanged {
 	my $task     = $self->_GetTaskById($taskId);
 	my $taskData = $task->GetTaskData();
 
-	
-
 	if ( $taskState eq EnumsJobMngr->JobState_DONE ) {
-		
+
 		# Set values, if job can be sent to produce
 		$task->SetToProduceResult();
-		
 
 		# Setting to produce if is checked by export settings
 		if ( $task->GetJobShouldToProduce() ) {
- 
+
 			# if can eb sent to produce without errror, send it
 			if ( $task->GetJobCanToProduce() && $task->GetTaskWarningCnt() == 0 ) {
 
@@ -133,35 +129,36 @@ sub __OnJobStateChanged {
 
 			# refresh GUI to produce
 			$self->{"form"}->SetJobItemToProduceResult($task);
-		
-		
-		}else{
-			
-			if($task->Result() eq EnumsGeneral->ResultType_OK){
-			
+
+		}
+		else {
+
+			if ( $task->Result() eq EnumsGeneral->ResultType_OK ) {
+
 				$self->_AddJobToAutoRemove( $task->GetTaskId() );
 			}
 		}
 
 		# if task done, check if thera are errors or note
 		if ( $taskStateDetail eq EnumsJobMngr->ExitType_SUCCES ) {
-			
+
 			# if job cant to produce, it means, there are errors
 			# send error state
-			unless($task->GetJobCanToProduce()){
-				
-				$task->SetErrorState();		
+			unless ( $task->GetJobCanToProduce() ) {
+
+				$task->SetErrorState();
 			}
 		}
-		
-		
-		
 
+		# if export is ruiunning on server and export is background, remove from queue always
+		if ( AsyncJobHelber->ServerVersion() && $task->GetTaskData()->GetTaskMode() eq EnumsJobMngr->TaskMode_ASYNC ) {
+
+			$self->_AddJobToAutoRemove( $task->GetTaskId() );
+		}
 	}
- 
- 
-	$self->{"form"}->GetNotifyMngr()->JobStateChanged($task, $taskState, $taskStateDetail);
- 
+
+	$self->{"form"}->GetNotifyMngr()->JobStateChanged( $task, $taskState, $taskStateDetail );
+
 }
 
 # First is called this function in base class, then is called this handler

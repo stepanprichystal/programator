@@ -26,13 +26,12 @@ use aliased 'CamHelpers::CamNetlist';
 #-------------------------------------------------------------------------------------------#
 
 sub DoControl {
-	my $self  = shift;
-	my $inCAM = shift;
-	my $jobId = shift;
+	my $self     = shift;
+	my $inCAM    = shift;
+	my $jobId    = shift;
+	my $notClose = shift;
 
 	my $result = 1;
-	
- 
 
 	my $messMngr = MessageMngr->new($jobId);
 
@@ -81,36 +80,41 @@ sub DoControl {
 			}
 		}
 
+		if ( $report->Result() ) {
 
-		if( $report->Result()){
-			
-			 my @mess = ( "Netlistová kontrola stepu: \"$s\" proběhla <b>ÚSPĚŠNĚ</b>.", 
-			 ,  " - kontrolované stepy:  ". $report->GetStepRef() . " (originál) vs "  . $report->GetStep()." (upravený)");
-		 	$messMngr->ShowModal( -1, EnumsGeneral->MessageType_INFORMATION, \@mess );
-		 	
-		 	CamHelper->SetStep($inCAM, $s);
-		 	
-		 	$inCAM->COM( 'rv_tab_empty', report => 'netlist_compare', is_empty => 'yes' );
-		 	CamNetlist->RemoveNetlistSteps( $inCAM, $jobId, $s);
- 		 	 
-		}else {
+			my @mess = (
+						 "Netlistová kontrola stepu: \"$s\" proběhla <b>ÚSPĚŠNĚ</b>.",
+						 , " - kontrolované stepy:  " . $report->GetStepRef() . " (originál) vs " . $report->GetStep() . " (upravený)"
+			);
+			$messMngr->ShowModal( -1, EnumsGeneral->MessageType_INFORMATION, \@mess, [ "Nezavírat job", "Ok" ] );
+
+			if ( defined $$notClose ) {
+
+				$$notClose = $messMngr->Result() == 0 ? 1 : 0;
+			}
+
+			CamHelper->SetStep( $inCAM, $s );
+
+			$inCAM->COM( 'rv_tab_empty', report => 'netlist_compare', is_empty => 'yes' );
+			CamNetlist->RemoveNetlistSteps( $inCAM, $jobId, $s );
+
+		}
+		else {
 
 			$result = 0;
 
 			my @mess = (
 						 "Dps <b>NEPROŠLA</b> netlistovou kontrolou pro step: \"$s\"!",
-						   " - ".$report->GetShorts()
-						   . " shorts, "
-						   . $report->GetBrokens()
-						   . " brokens",
-						  ,  " - kontrolované stepy:  ". $report->GetStepRef() . " (originál) vs "  . $report->GetStep()." (upravený)",
+						 " - " . $report->GetShorts() . " shorts, " . $report->GetBrokens() . " brokens",
+						 ,
+						 " - kontrolované stepy:  " . $report->GetStepRef() . " (originál) vs " . $report->GetStep() . " (upravený)",
 						 " - Pro informaci o způsobu kontroly netlistů => OneNote - Netlist kontrola"
 			);
 
 			$messMngr->ShowModal( -1, EnumsGeneral->MessageType_ERROR, \@mess );
 		}
 	}
- 
+
 	return $result;
 }
 
@@ -156,7 +160,7 @@ sub __CheckO1Panel {
 }
 
 sub __RemoveNetlistSteps {
-	my $self = shift;
+	my $self  = shift;
 	my $inCAM = shift;
 	my $jobId = shift;
 
@@ -178,9 +182,11 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId = "f52457";
+	my $jobId = "d152457";
 
-	my $res = NetlistControl->DoControl( $inCAM, $jobId );
+	my $notClose = 0;
+
+	my $res = NetlistControl->DoControl( $inCAM, $jobId, \$notClose );
 
 }
 

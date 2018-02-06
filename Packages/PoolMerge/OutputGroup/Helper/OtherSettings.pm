@@ -103,7 +103,7 @@ sub JobCleanup {
 	my $inCAM = $self->{"inCAM"};
 
 	# 1) remove unused symbosl from job
-	$inCAM->COM( 'delete_unused_sym', "job" => $masterJob );
+	#$inCAM->COM( 'delete_unused_sym', "job" => $masterJob );
 
 	# 2) remove layers which contain "+"
 	CamLayer->RemoveTempLayerPlus( $inCAM, $masterJob );

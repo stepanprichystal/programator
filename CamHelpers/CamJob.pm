@@ -492,6 +492,11 @@ sub GetJobList {
 		if ( !defined $inCAM->{doinfo}{gJOBS_LIST} ) {
 			$logger->error("Joblist not defined $i");
 			sleep(1);
+			
+			# try do some query to INcAM, maybe JOBS_LIST will work than
+			$inCAM->COM("get_user_name");
+			$logger->error("Test inCAM call: User is:".$inCAM->GetReply());
+			
 		}
 		else {
 			last;

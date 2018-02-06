@@ -89,6 +89,7 @@ sub GetAllByPcbId {
 				 n.poznamka n_poznamka_zak,
 				 z.kusy_pozadavek pocet,
 				 z.pooling,
+				 z.poznamka poznamka_zakazka,
 				 z.stav,
 				 d.material_druh,
 				 lcs.nf_edit_style('ddlb_22_hal', dn.hal) n_surface,
@@ -807,6 +808,31 @@ sub GetIdcustomer {
 #
 #}
 
+# Update notes in the last order
+sub UpdateOrderNotes {
+	my $self        = shift;
+	my $pcbId       = shift;
+	my $notes      = shift;
+	my $res = 0;
+
+		my $lastOrder = $self->GetPcbOrderNumber($pcbId); 
+
+		my @allItems = $self->GetAllByPcbId($pcbId);
+		my $curNotes = $allItems[0]{'poznamka_zakazka'};
+
+
+		unless ($curNotes=~ /$notes/) {
+
+				require Connectors::HeliosConnector::HelperWriter;
+		
+				my $allNotes = $notes . "\n" . $curNotes;
+				$res = Connectors::HeliosConnector::HelperWriter->OnlineWrite_order( "$pcbId" . "-" . $lastOrder, $allNotes, "poznamka" );
+		}
+
+		return $res;
+}
+
+
 sub UpdateNCInfo {
 	my $self        = shift;
 	my $pcbId       = shift;
@@ -1175,8 +1201,6 @@ sub GetPcbsByStatus {
 	return @result;
 }
 
-
-
 # Return all pcb "In produce" which contain silkscreen bot or top
 sub GetPcbsInProduceSilk {
 	my $self = shift;
@@ -1408,9 +1432,9 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	use aliased 'Connectors::HeliosConnector::HegMethods';
 	use Data::Dump qw(dump);
 
-	my $mat = HegMethods->GetMaterialKind("d113608", 1);
+	my @cores = HegMethods->GetAllCoresInfo("f52457");
 
-	print $mat;
+	print @cores;
 
 }
 
