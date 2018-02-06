@@ -499,7 +499,7 @@ sub __PrepareNPLTTHROUGHNC {
 		
 		my $unitRTM = UniRTM->new( $inCAM, $self->{"jobId"}, $self->{"pdfStep"}, $l->{"gROWname"} );
 		my @outline = $unitRTM->GetOutlineChains();
-		my @outFeatsId =  map {$_->{"id"}} map { $_->GetFeatures() } @outline;
+		my @outFeatsId =  map {$_->{"id"}} map { $_->GetOriFeatures() } @outline;
 		#my $f = FeatureFilter->new( $inCAM, $self->{"jobId"}, $l->{"gROWname"} );
 		#$f->AddFeatureIndexes(\@outFeatsId);
 		#$f->Select();
