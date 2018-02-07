@@ -70,9 +70,7 @@ sub _Prepare {
 
 	# only special tools with angle, radius max 5mm
 	@chainSeq =
-	  grep { $_->GetChain()->GetChainTool()->GetUniDTMTool()->GetSpecial() 
-	  		&& $_->GetChain()->GetChainTool()->GetUniDTMTool()->GetAngle() > 0
-	  		  }
+	  grep { $_->GetChain()->GetChainTool()->GetUniDTMTool()->GetSpecial() && $_->GetChain()->GetChainTool()->GetUniDTMTool()->GetAngle() > 0 }
 	  @chainSeq;
 
 	#compute radiuses for surface
@@ -106,9 +104,9 @@ sub _Prepare {
 
 		$chanSeq->{"radius"} = $radius;
 	}
-	
+
 	# Only radius smaller than 8
-	@chainSeq =  grep { $_->{"radius"} <= 8 }  @chainSeq;
+	@chainSeq = grep { $_->{"radius"} <= 8 } @chainSeq;
 
 	my @radiuses = ();    # radiuses of whole surface, not
 
@@ -151,11 +149,14 @@ sub _Prepare {
 			my $drawLayer = $self->_SeparateFeatsByIdNC( \@featsId );
 
 			# 1) Set prepared layer name
-			$outputLayer->SetLayerName($drawLayer); # Attention! lazer contain original sizes of feature, not finish/real sizes
+			$outputLayer->SetLayerName($drawLayer);    # Attention! lazer contain original sizes of feature, not finish/real sizes
 
 			# 2 Add another extra info to output layer
-			$outputLayer->{"radiusReal"} = $radiusReal;    # real compted radius of features in layer
-			$outputLayer->{"chainSeq"}   = \@matchCh;      # All chain seq, which was processed in ori layer in this class
+			if ( $l->{"plated"} ) {
+				$outputLayer->{"radiusBeforePlt"} = $radiusReal += 0.05;    # real compted radius of features in layer before plated
+			}
+			$outputLayer->{"radiusReal"} = $radiusReal;                     # real compted radius of features in layer
+			$outputLayer->{"chainSeq"}   = \@matchCh;                       # All chain seq, which was processed in ori layer in this class
 
 			$self->{"result"}->AddLayer($outputLayer);
 		}
@@ -165,7 +166,7 @@ sub _Prepare {
 #-------------------------------------------------------------------------------------------#
 #  Protected methods
 #-------------------------------------------------------------------------------------------#
- 
+
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#

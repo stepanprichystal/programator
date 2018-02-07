@@ -248,6 +248,44 @@ sub __ExportPressfit {
 
 }
 
+sub __ExportSpecialNC {
+	my $self = shift;
+
+	my $inCAM = $self->{"inCAM"};
+	my $jobId = $self->{"jobId"};
+
+	my $pressfit = PressfitPdf->new( $inCAM, $jobId );
+	my $resultCreate = $pressfit->Create("panel");
+
+	my @tmpPahs = $pressfit->GetPressfitPaths();
+
+	my $pdfPath = JobHelper->GetJobArchive($jobId) . "pdf\\" . $jobId . "_pressfit_";
+
+	for ( my $i = 0 ; $i < scalar(@tmpPahs) ; $i++ ) {
+
+		my $f = $pdfPath . ( $i + 1 ) . ".pdf";
+
+		if ( -e $f ) {
+			unless ( unlink($f) ) {
+				die "Can not delete old pdf pressfit file (" . $f . "). Maybe file is still open.\n";
+			}
+		}
+
+		copy( $tmpPahs[$i], $f ) or die "Copy failed: $!";
+		unlink($tmpPahs[$i]);
+
+	}
+
+	my $resultPressfit = $self->_GetNewItem("Pressfit pdf");
+
+	unless ($resultCreate) {
+		$resultPressfit->AddError("Failed to create pdf pressfit");
+	}
+
+	$self->_OnItemResult($resultPressfit);
+
+}
+
 sub TaskItemsCount {
 	my $self = shift;
 

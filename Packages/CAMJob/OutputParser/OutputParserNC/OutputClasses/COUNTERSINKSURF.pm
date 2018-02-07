@@ -80,7 +80,7 @@ sub _Prepare {
 
 	# Chain has new property "radius":  (diameter given by outer edge of rout compensation) / 2
 
-	my @radiuses = ();                                                            # radiuses of whole surface, not
+	my @radiuses = ();    # radiuses of whole surface, not
 
 	for ( my $i = 0 ; $i < scalar(@chainSeq) ; $i++ ) {
 
@@ -128,6 +128,9 @@ sub _Prepare {
 
 			# 2 Add another extra info to output layer
 
+			if ( $l->{"plated"} ) {
+				$outputLayer->{"radiusBeforePlt"} = $radiusReal += 0.05;    # real compted radius of features in layer before plated
+			}
 			$outputLayer->{"radiusReal"} = $radiusReal;    # real compted radius of features in layer
 			$outputLayer->{"chainSeq"}   = \@matchCh;      # All chain seq, which was processed in ori layer in this class
 
@@ -139,7 +142,6 @@ sub _Prepare {
 #-------------------------------------------------------------------------------------------#
 #  Protected methods
 #-------------------------------------------------------------------------------------------#
- 
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

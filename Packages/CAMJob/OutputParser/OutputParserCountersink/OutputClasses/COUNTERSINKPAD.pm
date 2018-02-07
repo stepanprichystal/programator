@@ -35,6 +35,7 @@ use aliased 'Enums::EnumsRout';
 use aliased 'Packages::Polygon::Features::Features::Features';
 use aliased 'CamHelpers::CamDrilling';
 use aliased 'CamHelpers::CamLayer';
+use aliased 'CamHelpers::CamMatrix';
 
 #-------------------------------------------------------------------------------------------#
 #  Interface
@@ -75,17 +76,28 @@ sub __PrepareCountersink {
 	$self->{"result"} = OutputClassResult->new( Enums->Type_COUNTERSINKPADTHR, $inCAM, $jobId, $step, $l );
 
 	# get layer, where through hole can be
-	my @npltDrill = ();
-	push( @npltDrill, CamDrilling->GetNCLayersByType( $inCAM, $jobId, EnumsGeneral->LAYERTYPE_nplt_nMill ) );
-	push( @npltDrill, CamDrilling->GetNCLayersByType( $inCAM, $jobId, EnumsGeneral->LAYERTYPE_nplt_nDrill ) );
 
-	@npltDrill = map { $_->{"gROWname"} } @npltDrill;
-	my $npltDrill = GeneralHelper->GetGUID();
+	my @thrghDrill = ();
 
-	if ( scalar(@npltDrill) ) {
-		CamLayer->AffectLayers( $inCAM, \@npltDrill );
-		CamLayer->CopySelected( $inCAM, [$npltDrill] );
-		CamLayer->WorkLayer( $inCAM, $npltDrill );
+	#decide between plated/nplated layers
+	if ( $l->{"plated"} ) {
+
+		push( @thrghDrill, CamDrilling->GetNCLayersByType( $inCAM, $jobId, EnumsGeneral->LAYERTYPE_plt_nMill ) );
+		push( @thrghDrill, CamDrilling->GetNCLayersByType( $inCAM, $jobId, EnumsGeneral->LAYERTYPE_plt_nDrill ) );
+	}
+	else {
+
+		push( @thrghDrill, CamDrilling->GetNCLayersByType( $inCAM, $jobId, EnumsGeneral->LAYERTYPE_nplt_nMill ) );
+		push( @thrghDrill, CamDrilling->GetNCLayersByType( $inCAM, $jobId, EnumsGeneral->LAYERTYPE_nplt_nDrill ) );
+	}
+
+	@thrghDrill = map { $_->{"gROWname"} } @thrghDrill;
+	my $thrghDrill = GeneralHelper->GetGUID();
+
+	if ( scalar(@thrghDrill) ) {
+		CamLayer->AffectLayers( $inCAM, \@thrghDrill );
+		CamLayer->CopySelected( $inCAM, [$thrghDrill] );
+		CamLayer->WorkLayer( $inCAM, $thrghDrill );
 	}
 
 	foreach my $lRes (@layers) {
@@ -99,7 +111,7 @@ sub __PrepareCountersink {
 
 			# if exist nplt drill layer, try to select through drill (pad) according countersink position
 			my $padsCnt = 0;
-			if ( scalar(@npltDrill) ) {
+			if ( scalar(@thrghDrill) ) {
 
 				$inCAM->COM(
 							 "sel_single_feat",
@@ -118,7 +130,7 @@ sub __PrepareCountersink {
 			if ($padsCnt) {
 
 				my $f = Features->new();
-				$f->Parse( $inCAM, $jobId, $step, $npltDrill, 0, 1 );
+				$f->Parse( $inCAM, $jobId, $step, $thrghDrill, 0, 1 );
 				my @tools = map { $_->{"thick"} } grep { $_->{"type"} eq "P" } $f->GetFeatures();
 				$curDrillTool = max(@tools);
 
@@ -135,21 +147,29 @@ sub __PrepareCountersink {
 
 		}
 
-		foreach my $drillTool ( keys %drillTools  ) {
+		foreach my $drillTool ( keys %drillTools ) {
 			my $outputLayer = OutputLayer->new();    # layer process result
-			$outputLayer->{"positions"}  = $drillTools{$curDrillTool};
+
+			my $drawLayer = GeneralHelper->GetGUID();
+			CamMatrix->CreateLayer( $inCAM, $jobId, $drawLayer, "document", "positive", 0 );
+			$outputLayer->SetLayerName($drawLayer);    # empty layer
+
+			$outputLayer->{"positions"}  = $drillTools{$drillTool};
 			$outputLayer->{"radiusReal"} = $lRes->{"radiusReal"};
 			$outputLayer->{"DTMTool"}    = $lRes->{"DTMTool"};
-			$outputLayer->{"drillTool"}  = $curDrillTool;                #tool size of through drill
+			
+			my $dt = undef;
+			if($drillTool ne "noHole"){
+				$dt =$drillTool /1000;	# convert to mm
+			}
+			
+			$outputLayer->{"drillTool"}  = $dt;                #tool size of through drill
 
 			$self->{"result"}->AddLayer($outputLayer);
 		}
 
- 
 	}
  
-	die;
-
 }
 
 #-------------------------------------------------------------------------------------------#

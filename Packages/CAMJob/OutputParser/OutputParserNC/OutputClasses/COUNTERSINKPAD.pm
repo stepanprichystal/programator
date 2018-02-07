@@ -72,13 +72,13 @@ sub _Prepare {
 
 	# Get all radiuses
 
-	my @radiuses = uniq(map { $_->GetDrillSize() / 2 } @tools);
+	my @radiuses = uniq( map { $_->GetDrillSize() / 2 } @tools );
 
 	foreach my $r (@radiuses) {
 
 		my $outputLayer = OutputLayer->new();    # layer process result
 
-		my $tool          = ( grep { $_->GetDrillSize()/2 == $r } @tools )[0];
+		my $tool          = ( grep { $_->GetDrillSize() / 2 == $r } @tools )[0];
 		my $toolDepth     = $tool->GetDepth();
 		my $toolDrillSize = $tool->GetDrillSize();
 		my $toolAngle     = $tool->GetAngle();
@@ -100,15 +100,18 @@ sub _Prepare {
 
 		# 2 Add another extra info to output layer
 
-		my $radiusReal = CountersinkHelper->GetHoleRadiusByToolDepth( $toolDrillSize, $toolAngle, $toolDepth*1000 ) / 1000;
+		my $radiusReal = CountersinkHelper->GetHoleRadiusByToolDepth( $toolDrillSize, $toolAngle, $toolDepth * 1000 ) / 1000;
 
 		if ( $l->{"plated"} ) {
 			$radiusReal -= 0.05;
 		}
 
+		if ( $l->{"plated"} ) {
+			$outputLayer->{"radiusBeforePlt"} = $radiusReal += 0.05;    # real compted radius of features in layer before plated
+		}
 		$outputLayer->{"radiusReal"}  = $radiusReal;    # real computed radius of features in layer
 		$outputLayer->{"padFeatures"} = \@pads;         # All pads, which was processed in ori layer in this class
-		$outputLayer->{"DTMTool"} = $tool;				# DTM tool, which is used for this pads
+		$outputLayer->{"DTMTool"}     = $tool;          # DTM tool, which is used for this pads
 
 		$self->{"result"}->AddLayer($outputLayer);
 	}
@@ -118,7 +121,6 @@ sub _Prepare {
 #-------------------------------------------------------------------------------------------#
 #  Protected methods
 #-------------------------------------------------------------------------------------------#
- 
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
