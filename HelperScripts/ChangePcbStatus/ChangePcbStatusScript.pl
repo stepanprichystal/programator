@@ -8,6 +8,13 @@ use Win32::Process::Info;
 use Win32::Process::List;
 
 #local library
+
+#necessary for load pall packages
+use FindBin;
+use lib "$FindBin::Bin/../";
+use PackagesLib;
+ 
+
 use aliased 'Helpers::GeneralHelper';
 use aliased 'Managers::MessageMngr::MessageMngr';
 use aliased 'Enums::EnumsGeneral';
