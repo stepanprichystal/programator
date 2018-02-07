@@ -122,12 +122,17 @@ sub __SetLayoutSettings {
 	my $measureDataChb = Wx::CheckBox->new( $statBox, -1, "", &Wx::wxDefaultPosition, [ 90, 22 ] );
 
 	my $thickTxt = Wx::StaticText->new( $statBox, -1, "Thickness [mm]", &Wx::wxDefaultPosition, [ 120, 20 ] );
-	my $thickValTxt = my @inCamDelay = ( 0.2, 0.5, 1, 2, 5, 10, 20, 40 );
-
+ 
 	my @thick = ( 0.10, 0.120, 0.125, 0.150, 0.175, 2.0, 2.5 );
+	
+	if( $self->{"stencilInfo"}->{"tech"} eq StnclEnums->Technology_LASER){
+		@thick =  ( 0.10, 0.120, 0.130, 0.150, 0.180, 2.0, 2.50 );
+	}
+	
 	my $thickValCb = Wx::ComboBox->new( $statBox, -1, "0", &Wx::wxDefaultPosition, [ 120, 22 ], \@thick, &Wx::wxCB_READONLY );
 
 	# SET EVENTS
+ 
 
 	# BUILD STRUCTURE OF LAYOUT
 	$szRow1->Add( $typeTxt,    0, &Wx::wxEXPAND | &Wx::wxALL, 1 );

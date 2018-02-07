@@ -102,6 +102,7 @@ sub __OnLeftClick {
 
 		#$self->{"form"}->Iconize(1);
 		$self->{"form"}->Hide();
+		
 	}
  
 

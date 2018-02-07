@@ -3,7 +3,7 @@
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package HelperScripts::ChangePcbStatus::ChangeStatusFrm;
-use base 'Widgets::Forms::StandardModalFrm';
+use base 'Widgets::Forms::StandardFrm';
 
 #3th party librarysss
 use strict;
@@ -13,6 +13,10 @@ use Wx;
 #local library
 use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'Helpers::FileHelper';
+use aliased 'Widgets::Forms::MyTaskBarIcon';
+use aliased 'Helpers::GeneralHelper';
+
+my $APPNAME = "Change pcb status";
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -28,9 +32,11 @@ sub new {
 	#my $result  = shift;    # reference of result variable, where result will be stored
 
 	my @dimension = ( 700, 450 );
-	my $self = $class->SUPER::new( $parent, "Change psb status",
-						 \@dimension,
-						 &Wx::wxSYSTEM_MENU | &Wx::wxCAPTION | &Wx::wxCLIP_CHILDREN | &Wx::wxRESIZE_BORDER | &Wx::wxMINIMIZE_BOX | &Wx::wxCLOSE_BOX );
+	my $self = $class->SUPER::new(
+								   $parent, $APPNAME,
+								   \@dimension,
+								   &Wx::wxSYSTEM_MENU | &Wx::wxCAPTION | &Wx::wxCLIP_CHILDREN | &Wx::wxRESIZE_BORDER | &Wx::wxMINIMIZE_BOX | &Wx::wxCLOSE_BOX
+	);
 
 	bless($self);
 
@@ -91,7 +97,7 @@ sub __SetLayout {
 	#define staticboxes
 
 	my $szMain = Wx::BoxSizer->new(&Wx::wxVERTICAL);
-	my $pnlMain = Wx::Panel->new( $self, -1 );
+	my $pnlMain = Wx::Panel->new( $self->{"mainFrm"}, -1 );
 
 	my $szRowDetail1 = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
 	my $szRowDetail2 = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
@@ -117,7 +123,15 @@ sub __SetLayout {
 
 	$self->AddButton( "Update \"Aktualni krok\"", sub { $self->__OkClick(@_) } );
 
-	$self->__OnModeChangeHandler();
+	my $iconPath = GeneralHelper->Root() . "/Resources/Images/Icon_green.bmp";
+	my $trayicon = MyTaskBarIcon->new( $APPNAME, $self->{"mainFrm"}, $iconPath );
+
+	$trayicon->AddMenuItem( "Exit " . $APPNAME, sub { $self->{"mainFrm"}->Destroy(); $self->ExitMainLoop() } );
+	$self->{"trayicon"} = $trayicon;
+
+	$self->{"mainFrm"}->{'onClose'}->Add( sub { $self->{"mainFrm"}->Hide(); } );
+
+	$self->{"mainFrm"}->SetCustomIcon($iconPath);
 
 }
 
@@ -323,11 +337,11 @@ sub __OkClick {
 				$newStep = $self->{"customTextCtrl"}->GetValue();
 			}
 		}
-		
+
 		# if poslan dotaz add user name
-		if($newStep eq "poslan dotaz"){
-			
-			$newStep .= " ".getlogin();
+		if ( $newStep eq "poslan dotaz" ) {
+
+			$newStep .= " " . getlogin();
 		}
 
 		if ( !defined $newStep ) {
@@ -340,20 +354,20 @@ sub __OkClick {
 		# Exception, in non advanced mode you can update onlz on empty state
 		# + when before step is one ot theses steps: OBCHOD-Chybi papir; OBCHOD-Chybi data;
 		unless ( $self->{"advancedMode"} ) {
-			
+
 			my $errMess = "";
-			
+
 			foreach my $id (@orderIds) {
 
 				my $curStep = HegMethods->GetCurStepOfOrder($id);
 
 				if ( !( $curStep eq "OBCHOD-Chybi papir" || $curStep eq "OBCHOD-Chybi data" ) ) {
-					$errMess .= $id.";"
+					$errMess .= $id . ";";
 				}
 			}
-			
-			if($errMess ne ""){
-				
+
+			if ( $errMess ne "" ) {
+
 				$errMess = "Update FAIL. Objednavka musi byt v kroku: \"OBCHOD-Chybi papir\" nebo \"OBCHOD-Chybi data\"";
 				$self->__SetMessage( $errMess, "red" );
 				return 0;

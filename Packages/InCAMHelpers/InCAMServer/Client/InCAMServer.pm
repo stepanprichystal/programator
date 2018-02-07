@@ -73,7 +73,7 @@ sub GetInCAM {
 
 	$self->{"logger"}->info("Request for InCAM server");
 
-	$self->__GetInCAMAttempt();
+	return $self->__GetInCAMAttempt();
 
 }
 
@@ -111,15 +111,7 @@ sub __GetInCAMAttempt {
 		}
 
 	}
-
-	# Test if server ready and connect tu running InCAM
-	$self->{"inCAM"} = InCAM->new( "port" => $port, "remote" => $self->{"host"} );
-	if ( $self->{"inCAM"}->ServerReady() ) {
-
-		$self->{"inCAM"}->SupressToolkitException(1);
-
-	}
-
+ 
 	$self->{"logger"}->info("InCAM received at port: $port");
 
 	return $self->{"inCAM"};
@@ -242,6 +234,22 @@ sub __GetInCAM {
 	}
 
 	$self->{"logger"}->debug("New port received");
+	
+	
+	# 4) Test if server ready and connect tu running InCAM
+	
+	$self->{"inCAM"} = InCAM->new( "port" => $port, "remote" => $self->{"host"} );
+	if ( $self->{"inCAM"}->ServerReady() ) {
+
+		$self->{"inCAM"}->SupressToolkitException(1);
+
+	}else{
+		
+		$self->{"logger"}->debug("InCAM created but not connected!!!!");
+		die "InCAM server is not ready, port = $port";
+	}
+	
+	
 
 	$self->{"serverUsed"} = 1;
 
