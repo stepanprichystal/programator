@@ -221,7 +221,8 @@ sub __GetPcb2Export {
 sub __DeleteOldJetFiles {
 	my $self = shift;
 
-	my @pcbInProduc = HegMethods->GetPcbsByStatus( 2, 4, 12, 25, 35 );    # get pcb "Ve vyrobe" + "Na predvyrobni priprave" + Na odsouhlaseni + Schvalena + Pozastavena
+	my @pcbInProduc =
+	  HegMethods->GetPcbsByStatus( 2, 4, 12, 25, 35 );   # get pcb "Ve vyrobe" + "Na predvyrobni priprave" + Na odsouhlaseni + Schvalena + Pozastavena
 	@pcbInProduc = map { $_->{"reference_subjektu"} } @pcbInProduc;
 
 	if ( scalar(@pcbInProduc) < 100 ) {
@@ -263,9 +264,9 @@ sub __DeleteOldJetFiles {
 	}
 
 	$self->{"logger"}->info("Number of deleted job from Jetprint folder $p: $deletedFiles");
-	
+
 	# Delete working folders from jetprint machine folder Jobs_JETPRINTMACHINE
-	
+
 	my $deletedFolders = 0;
 
 	my $p2 = EnumsPaths->Jobs_JETPRINTMACHINE;
@@ -279,13 +280,18 @@ sub __DeleteOldJetFiles {
 			unless ( defined $folderJobId ) {
 				next;
 			}
-		 
+
 			my $inProduc = scalar( grep { $_ =~ /^$folderJobId$/i } @pcbInProduc );
 
 			unless ($inProduc) {
-				
-				rmtree( $p2.$workDir) or die "Cannot rmtree ". $p2.$workDir." : $!";
-				$deletedFolders++;
+
+				if ( rmtree( $p2 . $workDir ) ) {
+					$deletedFolders++;
+				}
+				else {
+
+					$self->{"logger"}->error( "Cannot rmtree ". $p2.$workDir );
+				}
 			}
 		}
 
@@ -310,8 +316,6 @@ sub __ProcessError {
 	$self->{"loggerDB"}->Error( $jobId, $errMess );
 
 }
-
- 
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
