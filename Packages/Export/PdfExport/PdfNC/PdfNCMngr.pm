@@ -3,7 +3,7 @@
 # Description: Export pdf with special NC operation
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::Export::PdfExport::PdfSpecNCMngr;
+package Packages::Export::PdfExport::PdfNC::PdfNCMngr;
 use base('Packages::ItemResult::ItemEventMngr');
 
 #3th party library
@@ -25,8 +25,9 @@ use aliased 'CamHelpers::CamDrilling';
 use aliased 'CamHelpers::CamSymbol';
 use aliased 'CamHelpers::CamLayer';
 use aliased 'CamHelpers::CamMatrix';
-use aliased 'Packages::CAMJob::OutputData::Drawing::Drawing';
+use aliased 'Packages::Export::PdfExport::PdfNC::Drawing';
 use aliased 'Packages::CAM::SymbolDrawing::Point';
+use aliased 'Packages::Export::NCExport::ExportMngr';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -52,6 +53,10 @@ sub new {
 	$self->{"stepFlat"} = $step . "_ncpdf";
 	$self->{"step"}     = $step;
 	$self->{"pcbThick"} = JobHelper->GetFinalPcbThick( $self->{"jobId"} ) / 1000;    # in mm
+	
+	
+	
+	
 
 	return $self;
 }
@@ -61,6 +66,9 @@ sub Run {
 
 	my $jobId = $self->{"jobId"};
 	my $inCAM = $self->{"inCAM"};
+	
+	my $export = ExportMngr->new($self->{"inCAM"}, $self->{"jobId"}, "panel");
+	 $self->{"operationMngr"} = $export->GetOperationMngr();
 
 	# 1) flatten step in order parse countersink layers
 
@@ -88,14 +96,18 @@ sub Run {
 
 	foreach my $l ( CamDrilling->GetNCLayersByTypes( $inCAM, $jobId, \@counterSinkTypes ) ) {
 		
+		my $operationName = $self->__GetOperationByLayer($l);
+		
 		my $side = $l->{"gROWname"} =~ /c/ ? "top" : "bot";
 
 		my $result = $control->Prepare($l);
 
 		foreach my $classRes ( $result->GetClassResults(1) ) {
 
+			# get NC operation
+
 			$self->__ProcessLayerData( $classRes, $l );
-			$self->__ProcessDrawing( $classRes, $l, $side );
+			$self->__ProcessDrawing( $classRes, $l, $side, $operationName );
 
 		}
 
@@ -142,6 +154,7 @@ sub __ProcessDrawing {
 	my $classRes = shift;
 	my $l        = shift;
 	my $side     = shift;
+	my $operationName = shift;
 
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
@@ -152,10 +165,18 @@ sub __ProcessDrawing {
 		# ----------------------------------------------------------------
 		# 2) Create countersink drawing
 		# ----------------------------------------------------------------
+		my %lim = CamJob->GetLayerLimits2( $inCAM, $jobId, $step, $layerRes->GetLayerName()  ); # limits of pcb outline
+		
 		my $lTmp = GeneralHelper->GetGUID();
 		$inCAM->COM( 'create_layer', layer => $lTmp );
 
-		my $draw = Drawing->new( $inCAM, $jobId, $lTmp, Point->new( 0, 0 ), $self->{"pcbThick"}, $side, $l->{"plated"} );
+		# compute scale of drawing
+		# width of drawing should be 3x bigger than pcb profile width
+		my $drawingWidth = 120;
+		my $scale = 5*$lim{"xMax"}/$drawingWidth;
+		
+
+		my $draw = Drawing->new( $inCAM, $jobId, $lTmp, Point->new( 0, 0 ), $self->{"pcbThick"}, $side, $l->{"plated"}, 5 );
 
 		# Compute depth of "imagine drill tool"
 		# If countersink is done by surface, edge of drill tool goes around according "surface border"
@@ -173,13 +194,12 @@ sub __ProcessDrawing {
 
 		my $imgToolDepth = cotan( deg2rad( ( $imgToolAngle / 2 ) ) ) * $rCounterSink;
  
-		$draw->CreateDetailCountersinkDrilled( $rCounterSink, $layerRes->{"drillTool"} , $imgToolDepth, $imgToolAngle, "hole" );
+		$draw->CreateDetailCountersinkDrilled( $rCounterSink, $layerRes->{"drillTool"} , $imgToolDepth, $imgToolAngle, "hole", $operationName );
 
-		# get limits of drawing and place it above layer data
-		CamLayer->WorkLayer( $inCAM, $lTmp );
-		my %lim = CamJob->GetLayerLimits2( $inCAM, $jobId, $step, $lTmp );
+ 
 
-		$inCAM->COM( "sel_move", "dx" => 0, "dy" => $self->{"profileLim"}->{"yMax"} - $lim{"yMin"} + 10 );    # drawing 10 mm above profile data
+		#CamLayer->WorkLayer( $inCAM, $lTmp );
+		$inCAM->COM( "sel_move", "dx" => $lim{"xMax"} + 10, "dy" => 0 );    # drawing 10 mm above profile data
 
 		CamLayer->WorkLayer( $inCAM, $lTmp );
 		CamLayer->CopySelected( $inCAM, [ $layerRes->GetLayerName() ] );
@@ -188,13 +208,54 @@ sub __ProcessDrawing {
 	}
 }
 
+
+sub __GetOperationByLayer{
+	my $self = shift;
+	my $l = shift;
+	
+	
+	my $operation = undef;
+	my @operations = ();
+	
+	my @operItems =  $self->{"operationMngr"}->GetOperationItems();
+	
+	foreach my $item  (@operItems){
+	
+		my @layers = $item->GetSortedLayers();
+		
+		if(scalar(grep {$_->{"gROWname"} eq $l->{"gROWname"} } $item->GetSortedLayers())){
+
+			push(@operations, $item)
+		}
+	}
+	
+	# reduce operations, if exist in some group
+	
+	my @groups = grep {$_->{"group"} } $self->{"operationMngr"}->GetInfoTable();
+	
+	for(my $i = scalar(@operations) -1; $i>= 0; $i-- ){
+		
+		my $opName = $operations[$i]->{'name'};
+		
+		foreach my $g  (@groups){
+ 
+			 if($g->{"data"}->[0]->{"name"} =~ /$opName/i && $opName ne $g->{"data"}->[0]->{"groupName"} ){
+			 	
+			 	splice @operations, $i, 1;
+			 }
+		}
+	}
+ 
+	return @operations->[0]->{"name"};
+	
+}
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	use aliased 'Packages::Export::PdfExport::PdfSpecNCMngr';
+	use aliased 'Packages::Export::PdfExport::PdfNC::PdfNCMngr';
 
 	use aliased 'Packages::InCAM::InCAM';
 	use aliased 'CamHelpers::CamStep';
@@ -204,11 +265,10 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $jobId = "d152457";
 
-	my $pdf = PdfSpecNCMngr->new( $inCAM, $jobId );
+	my $pdf = PdfNCMngr->new( $inCAM, $jobId );
 
 	$pdf->Run();
-
-	die;
+ 
 
 }
 

@@ -23,11 +23,7 @@ use aliased 'CamHelpers::CamJob';
 use aliased 'Packages::CAMJob::OutputData::LayerData::LayerData';
 use aliased 'Helpers::ValueConvertor';
 use aliased 'CamHelpers::CamFilter';
-use aliased 'CamHelpers::CamDTM';
-use aliased 'Packages::CAM::UniDTM::UniDTM';
-use aliased 'Packages::CAM::UniRTM::UniRTM::UniRTM';
-use aliased 'Packages::CAM::UniDTM::Enums' => "DTMEnums";
-use aliased 'Packages::CAM::UniRTM::Enums' => "RTMEnums";
+
 use aliased 'Packages::CAM::FeatureFilter::FeatureFilter';
 use aliased 'Packages::CAMJob::OutputData::Drawing::Drawing';
 use aliased 'Packages::CAM::SymbolDrawing::Point';
@@ -38,8 +34,7 @@ use aliased 'CamHelpers::CamSymbol';
 use aliased 'Packages::Tooling::CountersinkHelper';
 use aliased 'CamHelpers::CamSymbolArc';
 use aliased 'Packages::Polygon::Polygon::PolygonAttr';
-use aliased 'Packages::CAMJob::OutputParser::OutputParserNC::OutputParserNC';
-use aliased 'Packages::CAMJob::OutputData::OutputLayer::Enums' => 'OutEnums';
+
 use aliased 'CamHelpers::CamSymbolSurf';
 
 #use aliased 'Packages::SystemCall::SystemCall';

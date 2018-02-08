@@ -29,6 +29,8 @@ use aliased 'Enums::EnumsRout';
 use aliased 'Packages::Polygon::Features::Features::Features';
 
 use aliased 'Packages::CAMJob::OutputParser::OutputParserCountersink::OutputClasses::COUNTERSINKPAD';
+use aliased 'Packages::CAMJob::OutputParser::OutputParserCountersink::OutputClasses::COUNTERSINKARC';
+use aliased 'Packages::CAMJob::OutputParser::OutputParserCountersink::OutputClasses::COUNTERSINKSURF';
 
 #-------------------------------------------------------------------------------------------#
 #  Interface
@@ -61,6 +63,8 @@ sub InitParser {
 		 || $NCType eq EnumsGeneral->LAYERTYPE_nplt_bMillBot )
 	{
 		$parser->AddClass( COUNTERSINKPAD->new( $inCAM, $jobId, $step, $l ) );
+		$parser->AddClass( COUNTERSINKARC->new( $inCAM, $jobId, $step, $l ) );
+		$parser->AddClass( COUNTERSINKSURF->new( $inCAM, $jobId, $step, $l ) );
 
 	}
 	else {

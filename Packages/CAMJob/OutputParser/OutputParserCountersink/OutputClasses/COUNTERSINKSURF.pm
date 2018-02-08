@@ -3,8 +3,8 @@
 # Description: Parse pad countersink from layer
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::CAMJob::OutputParser::OutputParserCountersink::OutputClasses::COUNTERSINKPAD;
-use base('Packages::CAMJob::OutputParser::OutputParserNC::OutputClasses::COUNTERSINKPAD');
+package Packages::CAMJob::OutputParser::OutputParserCountersink::OutputClasses::COUNTERSINKSURF;
+use base('Packages::CAMJob::OutputParser::OutputParserNC::OutputClasses::COUNTERSINKSURF');
 
 use Class::Interface;
 &implements('Packages::CAMJob::OutputParser::OutputParserBase::OutputClasses::IOutputClass');
@@ -44,7 +44,7 @@ use aliased 'CamHelpers::CamMatrix';
 sub new {
 	my $class = shift;
 
-	my $self = $class->SUPER::new( @_, Enums->Type_COUNTERSINKPADTHR );
+	my $self = $class->SUPER::new( @_, Enums->Type_COUNTERSINKSURFTHR );
 	bless $self;
 	return $self;
 }
@@ -72,7 +72,7 @@ sub __PrepareCountersink {
 	my @layers = $self->{"result"}->GetLayers();
 
 	# init new class result
-	$self->{"result"} = OutputClassResult->new( Enums->Type_COUNTERSINKPADTHR, $inCAM, $jobId, $step, $l );
+	$self->{"result"} = OutputClassResult->new( Enums->Type_COUNTERSINKSURFTHR, $inCAM, $jobId, $step, $l );
 
 	# get layer, where through hole can be
 
@@ -104,9 +104,12 @@ sub __PrepareCountersink {
 		my %drillTools   = ();
 		my $curDrillTool = undef;
 
-		foreach my $csPad ( @{ $lRes->{"padFeatures"} } ) {
+		foreach my $chainSeq ( @{ $lRes->{"chainSeq"} } ) {
 
-			my %pos = ( "x" => $csPad->{"x1"}, "y" => $csPad->{"y1"} );
+			my $island = ( ( $chainSeq->GetFeatures() )[0]->{"surfaces"} )->[0]->{"island"};
+			my $center = ( grep { $_->{"type"} eq "c" } @{$island} )[0];
+
+			my %pos = ( "x" => $center->{"xmid"}, "y" => $center->{"ymid"} );
 
 			# if exist nplt drill layer, try to select through drill (pad) according countersink position
 			my $padsCnt = 0;
@@ -155,8 +158,7 @@ sub __PrepareCountersink {
 
 			$outputLayer->{"positions"}  = $drillTools{$drillTool};
 			$outputLayer->{"radiusReal"} = $lRes->{"radiusReal"};
-			$outputLayer->{"DTMTool"}    = $lRes->{"DTMTool"};
-
+			$outputLayer->{"DTMTool"}    = $lRes->{"chainSeq"}->[0]->GetChain()->GetChainTool()->GetUniDTMTool();
 			my $dt = undef;
 			if ( $drillTool ne "noHole" ) {
 				$dt = $drillTool / 1000 / 2;           # convert to mm and get radius

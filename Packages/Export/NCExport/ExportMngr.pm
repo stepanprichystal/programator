@@ -71,6 +71,17 @@ sub Run {
 
 }
 
+# Return info about NC operations
+sub GetOperationMngr {
+	my $self = shift;
+	
+	$self->__Init();
+	
+	$self->{"operationMngr"}->CreateOperations();
+ 
+	return $self->{"operationMngr"};
+}
+
 
 
 sub TaskItemsCount {

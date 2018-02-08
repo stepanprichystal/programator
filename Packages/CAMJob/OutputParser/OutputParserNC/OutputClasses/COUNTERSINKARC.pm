@@ -157,7 +157,7 @@ sub _Prepare {
 			}
 			$outputLayer->{"radiusReal"} = $radiusReal;                     # real compted radius of features in layer
 			$outputLayer->{"chainSeq"}   = \@matchCh;                       # All chain seq, which was processed in ori layer in this class
-
+ 
 			$self->{"result"}->AddLayer($outputLayer);
 		}
 	}
