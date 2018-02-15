@@ -267,9 +267,9 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId = "f13610";
+	my $jobId = "d204104";
 
-	my $mngr = StnclMngr->new( $inCAM, $jobId, 1, 1, 0, 0.125 );
+	my $mngr = StnclMngr->new( $inCAM, $jobId, 1, 1, 1, 0.125 );
 	$mngr->Run();
 }
 
