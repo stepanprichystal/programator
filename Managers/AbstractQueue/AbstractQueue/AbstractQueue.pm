@@ -310,6 +310,9 @@ sub __OnJobMessageEvtHandlerBase {
 		}
 
 	}
+	
+	
+	get_logger("abstractQueue")->info( "Job " . $task->GetJobId() . " message received, type:".$messType.", group id:".$data );
 }
 
 # First is called this function in base class, then is called handler in inherit class
