@@ -187,6 +187,8 @@ sub __OnJobStateChangedBase {
 	}
 
 	$self->{"form"}->SetJobItemStatus( $taskId, $status );
+	
+	get_logger("abstractQueue")->info( "Job " . $task->GetJobId() . " status changed:".$status );
 
 }
 

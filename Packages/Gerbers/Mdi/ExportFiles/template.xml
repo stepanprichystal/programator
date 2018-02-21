@@ -18,6 +18,12 @@
   <scaling_mode>1</scaling_mode>
   <marker_mode>0</marker_mode>
   <exposure_area_reduction x="0" y="0" z="0" />
+  <expose_area_reduction x="0" y="0" z="0" />
+  <energy_ratio_LED1>0</energy_ratio_LED1>
+  <energy_ratio_LED2>0</energy_ratio_LED2>
+  <energy_ratio_LED3>0</energy_ratio_LED3>
+  <energy_ratio_LED4>0</energy_ratio_LED4>
+  <fiducial_layer>0</fiducial_layer>
   <fiducials count="0" />
   <image_object_default>
     <image_object>

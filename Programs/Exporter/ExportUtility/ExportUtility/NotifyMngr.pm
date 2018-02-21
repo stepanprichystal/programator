@@ -13,6 +13,7 @@ use warnings;
 use aliased 'Managers::AsyncJobMngr::Enums' => 'EnumsJobMngr';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'Widgets::Forms::ResultIndicator::ResultIndicator';
+use aliased 'Managers::AsyncJobMngr::Helper'                         => "AsyncJobHelber";
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -31,6 +32,11 @@ sub JobStateChanged {
 	my $task            = shift;
 	my $taskState       = shift;
 	my $taskStateDetail = shift;
+	
+	# do not show if server version
+	if(AsyncJobHelber->ServerVersion()){
+		return 0;
+	}
  
  
 	# show only if form is in tray or if is iconized
