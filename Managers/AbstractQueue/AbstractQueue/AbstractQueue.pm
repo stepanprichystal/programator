@@ -308,11 +308,13 @@ sub __OnJobMessageEvtHandlerBase {
 			$self->{"form"}->RefreshGroupTable($task);
 
 		}
-
 	}
+ 
+	my $dataStr = "Unit Id: ".$data->{"unitId"}."\n";
+	$dataStr .= "Data Id: ".$data->{"itemId"}."\n";
 	
 	
-	get_logger("abstractQueue")->info( "Job " . $task->GetJobId() . " message received, type:".$messType.", group id:".$data );
+	get_logger("abstractQueue")->info( "Job " . $task->GetJobId() . " message received, type:".$messType.", group data:".$dataStr );
 }
 
 # First is called this function in base class, then is called handler in inherit class
