@@ -35,7 +35,7 @@ sub PoolStepPlace {
 											 			if ($item ne "") {
 											 				unless($item eq "\n") {
 																	unless ($item eq ",") {
-																			if ($item =~ /([DdFf]\d{5})\-\d{2}/) {
+																			if ($item =~ /([Dd]\d{6,})\-\d{2}/) {
 																					$item = lc$1;
 																					$kontakt{$pocetJobs}{$handleCSV[$indexIN]} = $item;
 																					$hashOnlyOneJobs{$item} = 1;
@@ -87,7 +87,7 @@ sub PoolStepPlaceXML {
 				my $countOfItem = (scalar @{$getStructure->{order}}) - 1;
 
 				for (my $count = 0; $count <= $countOfItem; $count++) {
-								my $job	= lc substr($getStructure->{order}->[$count]->{order_id}, 0, 6);
+								my $job	= lc substr($getStructure->{order}->[$count]->{order_id}, 0, 7);
 									if($job eq $pcbId) {
 											$job = 'o+1';
 									}

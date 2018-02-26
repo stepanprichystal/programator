@@ -82,7 +82,7 @@ sub _XMLfile {
 		  ->{ lc $getStructure->{order}->[$count]->{order_id} } += 1;
 
 		$getXmlHashtmp{'pcb'}
-		  ->{ lc substr( $getStructure->{order}->[$count]->{order_id}, 0, 6 ) }
+		  ->{ lc substr( $getStructure->{order}->[$count]->{order_id}, 0, 7 ) }
 		  += 1;
 	}
 	return (%getXmlHashtmp);
@@ -99,7 +99,7 @@ sub _CSVfile {
 			my $jobItem = $1;
 			$getCSVHashtmp{'order'}->{ lc $jobItem } += 1;
 
-			my $jobId = lc substr $jobItem, 0, 6;
+			my $jobId = lc substr $jobItem, 0, 7;
 			$getCSVHashtmp{'pcb'}->{$jobId} += 1;
 		}
 	}
