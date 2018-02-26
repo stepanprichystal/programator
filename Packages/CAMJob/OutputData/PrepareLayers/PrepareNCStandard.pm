@@ -26,7 +26,7 @@ use aliased 'CamHelpers::CamHelper';
 use aliased 'CamHelpers::CamSymbol';
 use aliased 'Packages::CAM::FeatureFilter::FeatureFilter';
 use aliased 'Packages::CAMJob::OutputParser::OutputParserNC::OutputParserNC';
-use aliased 'Packages::CAMJob::OutputData::Enums' => 'OutEnums';
+use aliased 'Packages::CAMJob::OutputParser::OutputParserNC::Enums' => 'OutEnums';
 
 #use aliased 'Packages::SystemCall::SystemCall';
 
@@ -99,12 +99,12 @@ sub __PrepareNCDRILLBase {
 
 		# Add Drill map
 
-		if ( $result->GetClassResult( OutEnums->Type_DRILLBase, 1 ) ) {
+		if ( $result->GetClassResult( OutEnums->Type_DRILL, 1 ) ) {
 
-			my $drillResult = $result->GetClassResult( OutEnums->Type_DRILLBase, 1 );
+			my $drillResult = $result->GetClassResult( OutEnums->Type_DRILL, 1 );
 
 			my $drillMap =
-			  $self->__CreateDrillMaps( $l, $drillResult->GetSingleLayer()->GetLayerName(), Enums->Type_DRILLBaseMAP, $enTit, $czTit, $enInf, $czInf );
+			  $self->__CreateDrillMaps( $l, $drillResult->GetSingleLayer()->GetLayerName(), Enums->Type_DRILLMAP, $enTit, $czTit, $enInf, $czInf );
 
 			if ($drillMap) {
 				$drillMap->SetParent($lData);
@@ -148,13 +148,13 @@ sub __PrepareNCMILL {
 
 		# Add Drill map, if exist holes in layer
 
-		if ( $result->GetClassResult( OutEnums->Type_DRILLBase, 1 ) ) {
+		if ( $result->GetClassResult( OutEnums->Type_DRILL, 1 ) ) {
 
-			my $drillResult = $result->GetClassResult( OutEnums->Type_DRILLBase, 1 );
+			my $drillResult = $result->GetClassResult( OutEnums->Type_DRILL, 1 );
 
 			if ($drillResult) {
 				my $drillMap =
-				  $self->__CreateDrillMaps( $l, $drillResult->GetSingleLayer()->GetLayerName(), Enums->Type_DRILLBaseMAP, $enTit, $czTit, $enInf,
+				  $self->__CreateDrillMaps( $l, $drillResult->GetSingleLayer()->GetLayerName(), Enums->Type_DRILLMAP, $enTit, $czTit, $enInf,
 											$czInf );
 
 				if ($drillMap) {
@@ -209,9 +209,9 @@ sub __PrepareNCMILL {
 
 			$inCAM->COM( "delete_layer", "layer" => $lDrillRout );
 
-			if ( $result->GetClassResult( OutEnums->Type_DRILLBase, 1 ) ) {
+			if ( $result->GetClassResult( OutEnums->Type_DRILL, 1 ) ) {
 
-				my $drillResult = $result->GetClassResult( OutEnums->Type_DRILLBase, 1 );
+				my $drillResult = $result->GetClassResult( OutEnums->Type_DRILL, 1 );
 
 				if ($drillResult) {
 					$inCAM->COM(
@@ -238,7 +238,7 @@ sub __PrepareNCMILL {
 			# After merging layers, merge tools in DTM
 			$inCAM->COM( "tools_merge", "layer" => $lNameDrillMap );
 
-			my $drillMap = $self->__CreateDrillMaps( $lMain, $lNameDrillMap, Enums->Type_DRILLBaseMAP, $enTit, $czTit, $enInf, $czInf );
+			my $drillMap = $self->__CreateDrillMaps( $lMain, $lNameDrillMap, Enums->Type_DRILLMAP, $enTit, $czTit, $enInf, $czInf );
 
 			if ($drillMap) {
 				$drillMap->SetParent($lData);

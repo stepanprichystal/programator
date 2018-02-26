@@ -54,7 +54,7 @@ sub CreateDetailZaxis {
 	my $depth  = shift;    # in mm
 	my $type   = shift;    # slot/hole
 
- 	$self->_CreateDetailZaxisf($radius, $depth, $type);
+ 	$self->_CreateDetailZaxis($radius, $depth, $type);
 
 	# 3) Add drawing title
 	# ----------------------------------

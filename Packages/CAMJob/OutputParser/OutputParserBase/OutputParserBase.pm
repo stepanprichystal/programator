@@ -85,10 +85,10 @@ sub Prepare {
 
 		die "NC output data - Layer was not fully parsed: " . $layer->{"gROWname"};
 	}
-	else {
+	 
 
-		$self->_RestoreBackupLayer( $layer, $backUp );
-	}
+	$self->_RestoreBackupLayer( $layer, $backUp );
+	 
 
 	my $result = OutputResult->new( $inCAM, $jobId, $step, $layer, 1, \@results );
 

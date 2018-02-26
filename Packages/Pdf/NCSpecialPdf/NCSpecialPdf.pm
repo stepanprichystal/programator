@@ -50,8 +50,8 @@ sub new {
 		$step = "mpanel";
 	}
 
-	$self->{"stepFlat"} = $step . "_ncpdf";
 	$self->{"step"}     = $step;
+	$self->{"stepFlat"} = $step . "_ncpdf";
 	$self->{"pcbThick"} = JobHelper->GetFinalPcbThick( $self->{"jobId"} ) / 1000;    # in mm
 	
 	$self->{"drawingCnt"} = 0; # total drawing count prepared from data
@@ -121,6 +121,8 @@ sub Create {
 	$self->__OutputPdf( \@preparedLayers );
 
 	$control->Clear();
+	
+	CamStep->DeleteStep($inCAM, $jobId, $self->{"stepFlat"});
 
 }
 
@@ -352,7 +354,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId = "d203968";
+	my $jobId = "d152457";
 
 	my $pdf = NCSpecialPdf->new( $inCAM, $jobId );
 

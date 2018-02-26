@@ -43,22 +43,14 @@ sub CreateFlattenStep {
 	my $sourceStep  = shift;
 	my $targetStep  = shift;
 	my $treatDTM    = shift;    # when 1, dtm user columns will be flattened too
-	my $layerFilter = shift;    # array of requested layer names
-
-	my @allLayers = CamJob->GetBoardLayers( $inCAM, $jobId );
-	my @layers = @allLayers;
-
-	if ($layerFilter) {
-		my %tmp;
-		@tmp{ @{$layerFilter} } = ();
-		@layers = grep { exists $tmp{ $_->{"gROWname"} } } @layers;
-	}
+	my $layerFilter = shift;    # array of requested layer names. If SR flaten only requested layer for quick result
 
 	#delete if step already exist
 	if ( CamHelper->StepExists( $inCAM, $jobId, $targetStep ) ) {
 		$inCAM->COM( "delete_entity", "job" => $jobId, "name" => $targetStep, "type" => "step" );
 	}
 
+	# simple copy whole step (copz step wtih all no SR features)
 	$inCAM->COM(
 				 'copy_entity',
 				 type             => 'step',
@@ -70,24 +62,36 @@ sub CreateFlattenStep {
 				 "remove_from_sr" => "yes"
 	);
 
-	#check if SR exists in etStep, if so, flattern whole step
+	#check if SR exists in etStep, if so, flattern layer by layer
 	my $srExist = CamStepRepeat->ExistStepAndRepeats( $inCAM, $jobId, $targetStep );
 
 	if ($srExist) {
+
+		# 1) filter only requested layers
+		my @allLayers = CamJob->GetBoardLayers( $inCAM, $jobId );
+		my @layers = @allLayers;
+
+		if ($layerFilter) {
+			my %tmp;
+			@tmp{ @{$layerFilter} } = ();
+			@layers = grep { exists $tmp{ $_->{"gROWname"} } } @layers;
+		}
+
+		# 2) flatten
 		$self->__FlatternStep( $inCAM, $jobId, \@layers, $targetStep, $treatDTM );
-	}
 
-	# delete layers which are not requested to be flatenned
+		# 3) delete layers which are not requested to be flatenned
 
-	my %tmp2;
-	@tmp2{ map { $_->{"gROWname"} } @layers } = ();
-	my @layersDel = map { $_->{"gROWname"} } grep { !exists $tmp2{ $_->{"gROWname"} } } @allLayers;
+		my %tmp2;
+		@tmp2{ map { $_->{"gROWname"} } @layers } = ();
+		my @layersDel = map { $_->{"gROWname"} } grep { !exists $tmp2{ $_->{"gROWname"} } } @allLayers;
 
-	if (@layersDel) {
-		CamLayer->ClearLayers($inCAM);
-		CamLayer->AffectLayers( $inCAM, \@layersDel );
-		$inCAM->COM('sel_delete');
-		CamLayer->ClearLayers($inCAM);
+		if (@layersDel) {
+			CamLayer->ClearLayers($inCAM);
+			CamLayer->AffectLayers( $inCAM, \@layersDel );
+			$inCAM->COM('sel_delete');
+			CamLayer->ClearLayers($inCAM);
+		}
 	}
 
 }
@@ -154,18 +158,17 @@ sub GetDatumPoint {
 
 # Set new datum point of step
 sub SetDatumPoint {
-	my $self           = shift;
-	my $inCAM          = shift;
-	my $stepName       = shift;
-	my $x = shift;
-	my $y = shift;
+	my $self     = shift;
+	my $inCAM    = shift;
+	my $stepName = shift;
+	my $x        = shift;
+	my $y        = shift;
 
-	CamHelper->SetStep($inCAM, $stepName);
+	CamHelper->SetStep( $inCAM, $stepName );
 
-	$inCAM->COM( "datum" , "x" => $x, "y"=> $y );
+	$inCAM->COM( "datum", "x" => $x, "y" => $y );
 
 }
- 
 
 # Get limits of active area
 sub GetActiveAreaLim {
