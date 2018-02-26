@@ -33,17 +33,17 @@ sub Move {
 
 	my @files = FileHelper->GetFilesNameByPattern( EnumsPaths->Jobs_ELTESTSIPC, "\.*" );
 
-	@files = grep { $_ =~ /\w\d+t\.ipc/i } @files;
+	@files = grep { $_ =~ /\\(\w\d+.*)\.ipc$/i } @files;
 	if ( scalar(@files) ) {
 
 		my $file = $files[0];
-		my ($jobId) = $file =~ m/(\w\d+)t\.ipc/;
-		my $dir = EnumsPaths->Client_ELTESTS .  $jobId . "t";
+		my ($testName) = $file =~ m/\\(\w\d+.*)\.ipc$/;
+		my $dir = EnumsPaths->Client_ELTESTS .  $testName;
 
 		unless ( -e $dir ) {
 
 			mkdir($dir);
-			move( $file, $dir . "\\$jobId" . "t.ipc" );
+			move( $file, $dir . "\\$testName.ipc" );
 		}
 	}
 }
