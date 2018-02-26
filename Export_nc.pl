@@ -23,7 +23,7 @@ my $export = NCExportTmp->new();
 #input parameters
  
  
-my $jobId = "f52456";
+my $jobId = "d152457";
  
  
  
@@ -33,11 +33,11 @@ my $exportSingle = 0;
 
 # Vrstvy k exportovani, nema vliv pokud $exportSingle == 0
 my @pltLayers  = ();
-my @npltLayers = ();
+#my @npltLayers = ();
 
 # Pokud se bude exportovat jednotlive po vrstvach, tak vrstvz dotahnout nejaktakhle:
 #@pltLayers = CamDrilling->GetPltNCLayers( $inCAM, $jobId );
-#@npltLayers = CamDrilling->GetNPltNCLayers( $inCAM, $jobId );
+my @npltLayers = ("d", "d2");
 
 #return 1 if OK, else 0
 $export->Run( $inCAM, $jobId, $exportSingle, \@pltLayers, \@npltLayers );

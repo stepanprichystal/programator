@@ -136,6 +136,7 @@ sub GetInfoTable {
 		}
 
 		$info{"name"} = join( ", ", @names );
+		$info{"groupName"} = $g->{"name"};
 		my $opItemTmp = $self->__GetOperationItem( $g->{"name"}, 1 );
 
 		my @mach = map { $_->{"suffix"} } @{ $opItemTmp->{"machines"} };

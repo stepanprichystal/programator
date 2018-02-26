@@ -152,6 +152,27 @@ sub GetNCLayersByType {
 	return @res;
 }
 
+#Return all layer by given types
+sub GetNCLayersByTypes {
+	my $self    = shift;
+	my $inCAM   = shift;
+	my $jobName = shift;
+	my $types   = shift;
+
+	my @layers = CamJob->GetBoardLayers( $inCAM, $jobName );
+
+	@layers = grep { $_->{"gROWlayer_type"} eq "rout" || $_->{"gROWlayer_type"} eq "drill" } @layers;
+
+	$self->AddNCLayerType( \@layers );
+
+	my %tmp;
+	@tmp{ @{$types} } = ();
+
+	@layers = grep { exists $tmp{ $_->{"type"} } } @layers;
+
+	return @layers;
+}
+
 # Add  to every hash in array new value: type
 # Type is assign by our rules, which ve use wehen proscess pcb
 # Plated tells, if holes/slots in layer are plated or not
@@ -224,6 +245,12 @@ sub AddNCLayerType {
 		}
 
 		# Non plated NC layers
+		elsif ( $l->{"gROWname"} =~ /^d[0-9]*$/ ) {
+
+			$l->{"type"}   = EnumsGeneral->LAYERTYPE_nplt_nDrill;
+			$l->{"plated"} = 0;
+
+		}
 		elsif ( $l->{"gROWname"} =~ /^f[0-9]*$/ || $l->{"gROWname"} =~ /^f(sch)?(lm)?$/ ) {
 
 			$l->{"type"}   = EnumsGeneral->LAYERTYPE_nplt_nMill;
@@ -270,23 +297,27 @@ sub AddNCLayerType {
 
 			$l->{"type"}   = EnumsGeneral->LAYERTYPE_nplt_jbMillBot;
 			$l->{"plated"} = 0;
-			
-		}elsif ( $l->{"gROWname"} =~ /^fk$/ ) {
+
+		}
+		elsif ( $l->{"gROWname"} =~ /^fk$/ ) {
 
 			$l->{"type"}   = EnumsGeneral->LAYERTYPE_nplt_kMill;
 			$l->{"plated"} = 0;
-			
-		}elsif ( $l->{"gROWname"} =~ /^flc$/ ) {
+
+		}
+		elsif ( $l->{"gROWname"} =~ /^flc$/ ) {
 
 			$l->{"type"}   = EnumsGeneral->LAYERTYPE_nplt_lcMill;
 			$l->{"plated"} = 0;
-			
-		}elsif ( $l->{"gROWname"} =~ /^fls$/ ) {
+
+		}
+		elsif ( $l->{"gROWname"} =~ /^fls$/ ) {
 
 			$l->{"type"}   = EnumsGeneral->LAYERTYPE_nplt_lsMill;
 			$l->{"plated"} = 0;
-			
-		}elsif ( $l->{"gROWname"} =~ /^f_.*/ ) {
+
+		}
+		elsif ( $l->{"gROWname"} =~ /^f_.*/ ) {
 
 			$l->{"type"}   = EnumsGeneral->LAYERTYPE_nplt_fMillSpec;
 			$l->{"plated"} = 0;
@@ -306,7 +337,7 @@ sub GetPltNCLayers {
 	my @layers = ( CamJob->GetLayerByType( $inCAM, $jobId, "drill" ), CamJob->GetLayerByType( $inCAM, $jobId, "rout" ) );
 	$self->AddNCLayerType( \@layers );
 
-	my @pltLayers = grep { $_->{"plated"} && $_->{"type"}} @layers;
+	my @pltLayers = grep { $_->{"plated"} && $_->{"type"} } @layers;
 
 	return @pltLayers;
 
@@ -323,7 +354,6 @@ sub GetNPltNCLayers {
 	$self->AddNCLayerType( \@layers );
 
 	my @npltLayers = grep { !$_->{"plated"} && $_->{"type"} } @layers;
-	 
 
 	return @npltLayers;
 
@@ -406,7 +436,7 @@ sub AddLayerStartStop {
 		#Necessary, for old genesis bot drilling. Because all drilling direction
 		#were from TOP to BOT. But InCAM allows make Bot blind with direction
 		#from Bot to TOP
-		if ( ${ $inCAM->{doinfo}{gROWname} }[$idx] =~ /s[0-9]+s/ ) {           #if blind BOT drilling, check
+		if ( ${ $inCAM->{doinfo}{gROWname} }[$idx] =~ /s[0-9]+s/ ) {    #if blind BOT drilling, check
 
 			if ( $order{$start} < $order{$end} ) {
 				$layer->{"gROWdrl_start_name"} = $alias{$end};
@@ -476,7 +506,7 @@ sub AddHistogramValues {
 	my $self   = shift;
 	my $inCAM  = shift;
 	my $jobId  = shift;
-	my $step  = shift;
+	my $step   = shift;
 	my $layers = shift;    #specify layers
 
 	for ( my $i = 0 ; $i < scalar( @{$layers} ) ; $i++ ) {
@@ -500,8 +530,8 @@ sub AddHistogramValues {
 		foreach my $s (@symbols) {
 
 			my ($val) = $s =~ m/(\d+)/;
-			
-			unless($val){
+
+			unless ($val) {
 				next;
 			}
 

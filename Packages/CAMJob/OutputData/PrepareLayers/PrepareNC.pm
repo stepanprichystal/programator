@@ -34,7 +34,7 @@ use aliased 'CamHelpers::CamHistogram';
 use aliased 'Packages::CAMJob::Drilling::DrillChecking::LayerCheckError';
 use aliased 'Packages::CAM::FeatureFilter::FeatureFilter';
 use aliased 'Enums::EnumsDrill';
-use aliased 'Packages::CAMJob::OutputData::OutputLayer::OutputNCLayer';
+use aliased 'Packages::CAMJob::OutputParser::OutputParserNC::OutputParserNC';
 
 #use aliased 'Packages::SystemCall::SystemCall';
 
@@ -54,7 +54,7 @@ sub new {
 	$self->{"layerList"}  = shift;
 	$self->{"profileLim"} = shift;
 	
-	 $self->{"outputNClayer"} = OutputNCLayer->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"step"} );
+	 $self->{"outputNClayer"} = OutputParserNC->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"step"} );
 	
 
 	$self->{"prepareNCStandard"} =

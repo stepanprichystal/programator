@@ -48,14 +48,10 @@ sub ExportFiles {
 	get_logger("abstractQueue")->error( "Finding  ".$self->{"jobId"}." BUG stop ExportFiles sub - 1 \n ");
 
 	$self->__DeleteLogs();           #delete log information about job
-	get_logger("abstractQueue")->error( "Finding  ".$self->{"jobId"}." BUG stop ExportFiles sub - 2 \n ");
-	
+
 	$self->__DeleteOldFiles();       #delete old files in archive
-	get_logger("abstractQueue")->error( "Finding  ".$self->{"jobId"}." BUG stop ExportFiles sub - 3 \n ");
-	
+
 	$self->__DeleteOutputFiles();    #delete job output files before start export
-	
-	get_logger("abstractQueue")->error( "Finding  ".$self->{"jobId"}." BUG stop ExportFiles sub - 4 \n ");
 
 	my @exportFiles = $self->__GetExportCombination($opManager);
 

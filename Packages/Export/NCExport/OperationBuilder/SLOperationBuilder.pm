@@ -148,6 +148,7 @@ sub __DefineNPlatedOperations {
 	my %npltDrillInfo = %{ $self->{"npltDrillInfo"} };    #contain array of hashes of all NC layers with info (start/stop drill layer)
 
 	#non plated
+	my @nplt_nDrill   = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_nDrill } };    	 #normall nplt drill
 	my @nplt_nMill    = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_nMill } };       #normall mill slits
 	my @nplt_bMillTop = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_bMillTop } };    #z-axis top mill
 	my @nplt_bMillBot = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_bMillBot } };    #z-axis bot mill
@@ -159,7 +160,8 @@ sub __DefineNPlatedOperations {
 	
 	#Define operation:
 
-	# 1) Operation name = f - can contain layer
+	# 1) Operation name = fc - can contain layer
+	# - @nplt_nDrill
 	# - @nplt_nMill
 
 	# Exception, if "fsch" layer is created. Thus remove "f" and use instead onlz "fch" layer
@@ -169,8 +171,12 @@ sub __DefineNPlatedOperations {
 	if ( scalar(@fsch) > 0 ) {
 		@nplt_nMill = grep { $_->{"gROWname"} !~ /^f[0-9]*$/i } @nplt_nMill;
 	}
+	# add all @nplt_nDrill which has dir from top2bot
+	my @nplt_nDrill_t2b = grep { $_->{"gROWdrl_dir"} ne "bot2top"} @nplt_nDrill;
+	
+	my @layers1 = (@nplt_nMill, @nplt_nDrill_t2b); 
 
-	$opManager->AddOperationDef( "fc", \@nplt_nMill, -1 );
+	$opManager->AddOperationDef( "fc", \@layers1, -1 );
 
 	# 2) Operation name = fzc - can contain layer
 	# - @nplt_bMillTop
@@ -178,7 +184,13 @@ sub __DefineNPlatedOperations {
 
 	# 3) Operation name = fzs - can contain layer
 	# - @nplt_bMillBot
-	$opManager->AddOperationDef( "fzs", \@nplt_bMillBot, -1 );
+	# - @nplt_nDrill
+	
+	# add all @nplt_nDrill which has dir from bot2top
+	my @nplt_nDrill_b2t = grep { $_->{"gROWdrl_dir"} eq "bot2top"} @nplt_nDrill;
+	my @layers2 = (@nplt_bMillBot, @nplt_nDrill_b2t); 
+	
+	$opManager->AddOperationDef( "fzs", \@layers2, -1 );
 
 	# 4) Operation name = rs - can contain layer
 	# - @nplt_rsMill

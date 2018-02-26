@@ -22,6 +22,7 @@ use aliased 'CamHelpers::CamHelper';
 use aliased 'Packages::Pdf::StackupPdf::StackupPdf';
 use aliased 'Packages::Pdf::ControlPdf::PcbControlPdf::ControlPdf';
 use aliased 'Packages::Pdf::PressfitPdf::PressfitPdf';
+use aliased 'Packages::Pdf::NCSpecialPdf::NCSpecialPdf';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -33,14 +34,15 @@ sub new {
 	my $self      = $class->SUPER::new( $packageId, @_ );
 	bless $self;
 
-	$self->{"inCAM"}          = shift;
-	$self->{"jobId"}          = shift;
-	$self->{"exportControl"}  = shift;    # if export pdf data contro
-	$self->{"controlStep"}    = shift;    # which step export
-	$self->{"controlLang"}    = shift;    # which language use
-	$self->{"infoToPdf"}      = shift;    # put info about operator to pdf
-	$self->{"exportStackup"}  = shift;    # if export stackup pdf to job's archive
-	$self->{"exportPressfit"} = shift;    # if export pressfit pdf
+	$self->{"inCAM"}           = shift;
+	$self->{"jobId"}           = shift;
+	$self->{"exportControl"}   = shift;    # if export pdf data contro
+	$self->{"controlStep"}     = shift;    # which step export
+	$self->{"controlLang"}     = shift;    # which language use
+	$self->{"infoToPdf"}       = shift;    # put info about operator to pdf
+	$self->{"exportStackup"}   = shift;    # if export stackup pdf to job's archive
+	$self->{"exportPressfit"}  = shift;    # if export pressfit pdf
+	$self->{"exportNCSpecial"} = shift;    # if export NC special pdf
 
 	$self->{"layerCnt"} = CamJob->GetSignalLayerCnt( $self->{'inCAM'}, $self->{'jobId'} );
 
@@ -67,6 +69,10 @@ sub Run {
 
 	if ( $self->{"exportPressfit"} ) {
 		$self->__ExportPressfit();
+	}
+
+	if ( $self->{"exportNCSpecial"} ) {
+		$self->__ExportNCSpecial();
 	}
 
 }
@@ -181,8 +187,8 @@ sub __ExportStackup {
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
 
-	my $stackup      = StackupPdf->new( $self->{"jobId"} );
-	my $resultCreate = $stackup->Create(1, 1, 1);
+	my $stackup = StackupPdf->new( $self->{"jobId"} );
+	my $resultCreate = $stackup->Create( 1, 1, 1 );
 
 	my $tmpPath = $stackup->GetStackupPath();
 	my $pdfPath = JobHelper->GetJobArchive($jobId) . "pdf/" . $jobId . "-cm.pdf";
@@ -234,7 +240,7 @@ sub __ExportPressfit {
 		}
 
 		copy( $tmpPahs[$i], $f ) or die "Copy failed: $!";
-		unlink($tmpPahs[$i]);
+		unlink( $tmpPahs[$i] );
 
 	}
 
@@ -245,6 +251,38 @@ sub __ExportPressfit {
 	}
 
 	$self->_OnItemResult($resultPressfit);
+
+}
+
+sub __ExportNCSpecial {
+	my $self = shift;
+
+	my $inCAM = $self->{"inCAM"};
+	my $jobId = $self->{"jobId"};
+
+	my $pdf = NCSpecialPdf->new( $inCAM, $jobId );
+	my $resultCreate = $pdf->Create();
+
+	my $tmpPath = $pdf->GetOutputPath();
+
+	my $pdfPath = JobHelper->GetJobArchive($jobId) . "pdf\\" . $jobId . "_NCCountersink.pdf";
+
+	if ( -e $pdfPath ) {
+		unless ( unlink($pdfPath) ) {
+			die "Can not delete old countersink pdf file (" . $pdfPath . "). Maybe file is still open.\n";
+		}
+	}
+
+	copy( $tmpPath, $pdfPath ) or die "Copy failed: $!";
+	unlink($tmpPath);
+
+	my $resultNCSpecial = $self->_GetNewItem("NC countersink pdf");
+
+	unless ($resultNCSpecial) {
+		$resultNCSpecial->AddError("Failed to create pdf NC countersink");
+	}
+
+	$self->_OnItemResult($resultNCSpecial);
 
 }
 
@@ -267,10 +305,14 @@ sub TaskItemsCount {
 	if ( $self->{"exportStackup"} ) {
 		$totalCnt += 1;        # output stackup pdf
 	}
-	
+
 	if ( $self->{"exportPressfit"} ) {
 		$totalCnt += 1;        # output pressfit pdf
-	}	
+	}
+
+	if ( $self->{"exportNCSpecial"} ) {
+		$totalCnt += 1;        # output nc special pdf
+	}
 
 	return $totalCnt;
 

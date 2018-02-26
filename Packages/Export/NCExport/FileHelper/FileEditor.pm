@@ -16,7 +16,7 @@ use warnings;
 
 #local library
 
-use aliased 'Packages::Export::NCExport::NCHelper';
+use aliased 'Packages::Export::NCExport::Helpers::NCHelper';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'Packages::ProductionPanel::Helper';
 use aliased 'Packages::Stackup::Stackup::Stackup';
