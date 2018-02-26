@@ -29,7 +29,7 @@ my $jobId = "d152457";
  
 
 # Exportovat jednotlive vrstvy nebo vsechno
-my $exportSingle = 1;
+my $exportSingle = 0;
 
 # Vrstvy k exportovani, nema vliv pokud $exportSingle == 0
 my @pltLayers  = ();

@@ -60,41 +60,49 @@ sub Run {
 		$cnt = NpltDrillHelper->SeparateNpltDrill( $self->{"inCAM"}, $self->{"jobId"} );
 	}
 
-	$self->__Init();
+	my $err = undef;
+	eval {
+ 
+		$self->__Init();
 
-	$self->__Run();
+		$self->__Run();
+
+	};
+	if ($@) {
+		
+		$err = $@;
+	}
 
 	# move nptp holes back
 	if ( !$self->{"exportSingle"} ) {
 		NpltDrillHelper->RestoreNpltDrill( $self->{"inCAM"}, $self->{"jobId"}, $cnt );
 	}
+	
+	die $err if($err);
 
 }
 
 # Return info about NC operations
 sub GetOperationMngr {
 	my $self = shift;
-	
+
 	$self->__Init();
-	
+
 	$self->{"operationMngr"}->CreateOperations();
- 
+
 	return $self->{"operationMngr"};
 }
-
-
 
 sub TaskItemsCount {
 	my $self = shift;
 
 	my $totalCnt = 0;
- 
 
 	$totalCnt += scalar( CamDrilling->GetPltNCLayers( $self->{"inCAM"}, $self->{"jobId"} ) );
 	$totalCnt += scalar( CamDrilling->GetNPltNCLayers( $self->{"inCAM"}, $self->{"jobId"} ) );
 
-	$totalCnt++;                                                                                 # nc merging
-	$totalCnt++;                                                                                 # nc info save
+	$totalCnt++;    # nc merging
+	$totalCnt++;    # nc info save
 
 	return $totalCnt;
 }

@@ -154,9 +154,9 @@ sub __ProcessLayerData {
 		{
 			# Parsed data from "parser class result"
 			my $drawLayer = $layerRes->GetLayerName();
-			my @chains    = @{ $layerRes->{"chainSeq"} };
+			my @chains    = @{ $layerRes->GetDataVal("chainSeq") };
 
-			my $radiusReal = $layerRes->{"radiusReal"};
+			my $radiusReal = $layerRes->GetDataVal("radiusReal");
 
 			#my $lName    = $l->{"gROWname"};
 
@@ -197,17 +197,17 @@ sub __ProcessLayerData {
 
 			# Parsed data from "parser class result"
 			my $drawLayer  = $layerRes->GetLayerName();
-			my @pads       = @{ $layerRes->{"padFeatures"} };
+			my @pads       = @{ $layerRes->GetDataVal("padFeatures") };
 			my $radiusReal = undef;
 
 			if ( $classRes->GetType() eq OutEnums->Type_COUNTERSINKPAD ) {
 
-				$radiusReal = $layerRes->{"radiusReal"};
+				$radiusReal = $layerRes->GetDataVal("radiusReal");
 
 			}
 			elsif ( $classRes->GetType() eq OutEnums->Type_ZAXISPADBase ) {
 
-				$radiusReal = $layerRes->{"radiusReal"};
+				$radiusReal = $layerRes->GetDataVal("radiusReal");
 			}
 
 			# 1) adjust copied feature data. Create outlilne from each feature
@@ -228,7 +228,7 @@ sub __ProcessLayerData {
 
 			# Parsed data from "parser class result"
 			my $drawLayer  = $layerRes->GetLayerName();
-			my $radiusReal = $layerRes->{"radiusReal"};
+			my $radiusReal = $layerRes->GetDataVal("radiusReal");
 
 			# Adjust copied feature data. Create outlilne from each feature
 
@@ -279,14 +279,14 @@ sub __ProcessDrawing {
 			# Image for this case will show "image tool", where center of tool is same as center of surface, thus "image tool"
 			# not go around surface bordr but just like normal drill tool, which drill hole
 
-			my @chains = @{ $layerRes->{"chainSeq"} };
+			my @chains = @{ $layerRes->GetDataVal("chainSeq") };
 
 			#$toolDepth    = $chains[0]->GetChain()->GetChainTool()->GetUniDTMTool()->GetDepth();    # angle of tool
 			my $imgToolAngle = $chains[0]->GetChain()->GetChainTool()->GetUniDTMTool()->GetAngle();    # angle of tool
 
-			my $imgToolDepth = cotan( deg2rad( ( $imgToolAngle / 2 ) ) ) * $layerRes->{"radiusReal"};
+			my $imgToolDepth = cotan( deg2rad( ( $imgToolAngle / 2 ) ) ) * $layerRes->GetDataVal("radiusReal");
 
-			$draw->CreateDetailCountersink( $layerRes->{"radiusReal"}, $imgToolDepth, $imgToolAngle, "hole" );
+			$draw->CreateDetailCountersink( $layerRes->GetDataVal("radiusReal"), $imgToolDepth, $imgToolAngle, "hole" );
 
 		}
 		elsif ( $classRes->GetType() eq OutEnums->Type_COUNTERSINKPAD ) {
@@ -295,25 +295,25 @@ sub __ProcessDrawing {
 			# If countersink is done by surface, edge of drill tool goes around according "surface border"
 			# Image for this case will show "image tool", where center of tool is same as center of surface, thus "image tool"
 			# not go around surface bordr but just like normal drill tool, which drill hole
-			my $dtmTool = $layerRes->{"DTMTool"};
+			my $dtmTool = $layerRes->GetDataVal("DTMTool");
 
 			#$toolDepth    = $dtmTool->GetDepth();                                                   # angle of tool
 			my $imgToolAngle = $dtmTool->GetAngle();    # angle of tool
 
-			my $imgToolDepth = cotan( deg2rad( ( $imgToolAngle / 2 ) ) ) * $layerRes->{"radiusReal"};
+			my $imgToolDepth = cotan( deg2rad( ( $imgToolAngle / 2 ) ) ) * $layerRes->GetDataVal("radiusReal");
 
 			if ( $l->{"plated"} ) {
 				$imgToolDepth -= OutEnums->Plating_THICKMM;
 			}
 
-			$draw->CreateDetailCountersink( $layerRes->{"radiusReal"}, $imgToolDepth, $imgToolAngle, "hole" );
+			$draw->CreateDetailCountersink( $layerRes->GetDataVal("radiusReal"), $imgToolDepth, $imgToolAngle, "hole" );
 
 		}
 		elsif (    $classRes->GetType() eq OutEnums->Type_ZAXISSLOTCHAMFERBase
 				|| $classRes->GetType() eq OutEnums->Type_ZAXISSURFCHAMFERBase )
 		{
 
-			my @chains = @{ $layerRes->{"chainSeq"} };
+			my @chains = @{ $layerRes->GetDataVal("chainSeq") };
 
 			my $imgToolDepth = $chains[0]->GetChain()->GetChainTool()->GetUniDTMTool()->GetDepth();    # depth of tool
 			my $imgToolAngle = $chains[0]->GetChain()->GetChainTool()->GetUniDTMTool()->GetAngle();    # angle of tool
@@ -322,14 +322,14 @@ sub __ProcessDrawing {
 				$imgToolDepth -= OutEnums->Plating_THICKMM;
 			}
 
-			$draw->CreateDetailCountersink( $layerRes->{"radiusReal"}, $imgToolDepth, $imgToolAngle, "slot" );
+			$draw->CreateDetailCountersink( $layerRes->GetDataVal("radiusReal"), $imgToolDepth, $imgToolAngle, "slot" );
 
 		}
 		elsif (    $classRes->GetType() eq OutEnums->Type_ZAXISSLOTBase
 				|| $classRes->GetType() eq OutEnums->Type_ZAXISPADBase )
 		{
 
-			my $dtmTool = $layerRes->{"DTMTool"};
+			my $dtmTool = $layerRes->GetDataVal("DTMTool");
 
 			my $imgToolDepth = $dtmTool->GetDepth();    # depth of tool
 
@@ -339,18 +339,18 @@ sub __ProcessDrawing {
 
 			if ( $classRes->GetType() eq OutEnums->Type_ZAXISSLOTBase ) {
 
-				$draw->CreateDetailZaxis( $layerRes->{"radiusReal"}, $imgToolDepth, "slot" );
+				$draw->CreateDetailZaxis( $layerRes->GetDataVal("radiusReal"), $imgToolDepth, "slot" );
 
 			}
 			elsif ( $classRes->GetType() eq OutEnums->Type_ZAXISPADBase ) {
 
-				$draw->CreateDetailZaxis( $layerRes->{"radiusReal"}, $imgToolDepth, "hole" );
+				$draw->CreateDetailZaxis( $layerRes->GetDataVal("radiusReal"), $imgToolDepth, "hole" );
 			}
 
 		}
 		elsif ( $classRes->GetType() eq OutEnums->Type_ZAXISSURFBase ) {
 
-			my $dtmTool = $layerRes->{"DTMTool"};
+			my $dtmTool = $layerRes->GetDataVal("DTMTool");
 
 			my $imgToolDepth = $dtmTool->GetDepth();    # depth of tool
 

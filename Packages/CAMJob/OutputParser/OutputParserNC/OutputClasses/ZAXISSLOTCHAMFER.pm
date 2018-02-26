@@ -93,7 +93,7 @@ sub _Prepare {
 		my @featsId = map { $_->{'id'} } map { $_->GetOriFeatures() } @matchCh;
 
 		my $drawLayer = $self->_SeparateFeatsByIdNC( \@featsId );
- 
+
 		my $radiusReal = CountersinkHelper->GetHoleRadiusByToolDepth( $toolDrillSize, $toolAngle, $toolDepth * 1000 ) / 1000;
 
 		if ( $l->{"plated"} ) {
@@ -102,8 +102,8 @@ sub _Prepare {
 
 		# resize all line/arc in drawLayer. Difference of (ToolDiameter/2 - $radiusReal)*2
 
-		my $resize = ( $toolDrillSize / 2 - $radiusReal*1000 ) * 2;
-	 
+		my $resize = ( $toolDrillSize / 2 - $radiusReal * 1000 ) * 2;
+
 		# Warning, conturization is necessary here in order properly feature resize.
 		# Only for case, when rout is "cyclic" and compensation is "inside" (CW and Right)
 		CamLayer->Contourize( $inCAM, $drawLayer );
@@ -115,8 +115,8 @@ sub _Prepare {
 
 		# 2 Add another extra info to output layer
 
-		$outputLayer->{"radiusReal"} = $radiusReal;    # real compted radius of line arc
-		$outputLayer->{"chainSeq"}   = \@matchCh;      # All chain seq, which was processed in ori layer in this class
+		$outputLayer->SetDataVal( "radiusReal", $radiusReal );    # real compted radius of line arc
+		$outputLayer->SetDataVal( "chainSeq",   \@matchCh );      # All chain seq, which was processed in ori layer in this class
 
 		$self->{"result"}->AddLayer($outputLayer);
 	}
@@ -125,7 +125,7 @@ sub _Prepare {
 #-------------------------------------------------------------------------------------------#
 #  Protected methods
 #-------------------------------------------------------------------------------------------#
- 
+
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#

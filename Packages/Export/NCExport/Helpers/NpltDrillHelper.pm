@@ -28,8 +28,10 @@ use aliased 'Helpers::GeneralHelper';
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
+ 
+
 sub SeparateNpltDrill {
-	my $self = shift;
+	my $self  = shift;
 	my $inCAM = shift;
 	my $jobId = shift;
 
@@ -50,7 +52,7 @@ sub SeparateNpltDrill {
 }
 
 sub RestoreNpltDrill {
-	my $self = shift;
+	my $self      = shift;
 	my $inCAM     = shift;
 	my $jobId     = shift;
 	my $movedPads = shift;
@@ -67,7 +69,7 @@ sub RestoreNpltDrill {
 }
 
 sub __CreateNpltDrill {
-	my $self = shift;
+	my $self        = shift;
 	my $inCAM       = shift;
 	my $jobId       = shift;
 	my $from        = shift;
@@ -107,7 +109,7 @@ sub __CreateNpltDrill {
 }
 
 sub __RemoveNpltDrill {
-	my $self = shift;
+	my $self        = shift;
 	my $inCAM       = shift;
 	my $jobId       = shift;
 	my $from        = shift;
@@ -126,7 +128,7 @@ sub __RemoveNpltDrill {
 }
 
 sub __MovePads {
-	my $self = shift;
+	my $self        = shift;
 	my $inCAM       = shift;
 	my $jobId       = shift;
 	my $layerName   = shift;

@@ -55,7 +55,6 @@ sub Prepare {
 	return $self->{"result"};
 }
 
-
 sub _Prepare {
 	my $self = shift;
 
@@ -73,16 +72,15 @@ sub _Prepare {
 
 	# Get all radiuses
 
-	my @radiuses = uniq(map { $_->GetDrillSize() / 2 } @tools);
+	my @radiuses = uniq( map { $_->GetDrillSize() / 2 } @tools );
 
 	foreach my $r (@radiuses) {
 
 		my $outputLayer = OutputLayer->new();    # layer process result
 
-		my $tool          = ( grep { $_->GetDrillSize()/2 == $r } @tools )[0];
+		my $tool          = ( grep { $_->GetDrillSize() / 2 == $r } @tools )[0];
 		my $toolDepth     = $tool->GetDepth();
 		my $toolDrillSize = $tool->GetDrillSize();
- 
 
 		# get all pads with this radius
 		my $f = Features->new();
@@ -95,8 +93,8 @@ sub _Prepare {
 		my @featsId = map { $_->{'id'} } @pads;
 
 		my $drawLayer = $self->_SeparateFeatsByIdNC( \@featsId );
-		
-		my $radiusReal = $tool->GetDrillSize()/2;
+
+		my $radiusReal = $tool->GetDrillSize() / 2;
 
 		if ( $l->{"plated"} ) {
 			CamLayer->ResizeFeatures( $inCAM, -2 * Enums->Plating_THICK );
@@ -107,20 +105,19 @@ sub _Prepare {
 		$outputLayer->SetLayerName($drawLayer);
 
 		# 2 Add another extra info to output layer
- 
-		$outputLayer->{"padFeatures"} = \@pads;         # All pads, which was processed in ori layer in this class
-		$outputLayer->{"DTMTool"} = $tool;				# DTM tool, which is used for this pads
-		$outputLayer->{"radiusReal"} = $radiusReal/1000;
+
+		$outputLayer->SetDataVal( "padFeatures", \@pads );                # All pads, which was processed in ori layer in this class
+		$outputLayer->SetDataVal( "DTMTool",     $tool );                 # DTM tool, which is used for this pads
+		$outputLayer->SetDataVal( "radiusReal",  $radiusReal / 1000 );
 
 		$self->{"result"}->AddLayer($outputLayer);
 	}
 }
 
-
 #-------------------------------------------------------------------------------------------#
 #  Protected methods
 #-------------------------------------------------------------------------------------------#
- 
+
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#

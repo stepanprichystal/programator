@@ -17,6 +17,7 @@ use aliased 'Programs::Exporter::ExportChecker::Enums';
 use aliased 'CamHelpers::CamHelper';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'Connectors::HeliosConnector::HegMethods';
+use aliased 'Packages::CAMJob::Drilling::CheckCountersink';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -124,6 +125,14 @@ sub OnPrepareGroupData {
 		$defPressfit = 1;
 	}
 	
+	# 7) default NC special export
+	my $defNCSpec = 0;
+
+	if (  CheckCountersink->ExistCountersink( $inCAM, $jobId )) {
+
+		$defNCSpec = 1;
+	}
+	
 
 	$groupData->SetExportControl($exportControl);
 	$groupData->SetControlStep($defStep);
@@ -131,7 +140,8 @@ sub OnPrepareGroupData {
 	$groupData->SetInfoToPdf($defInfoToPdf);
 	$groupData->SetExportStackup($defStackup);
 	$groupData->SetExportPressfit($defPressfit);
-
+	$groupData->SetExportNCSpecial($defNCSpec);
+	
 	return $groupData;
 }
 

@@ -129,10 +129,11 @@ sub _Prepare {
 			# 2 Add another extra info to output layer
 
 			if ( $l->{"plated"} ) {
-				$outputLayer->{"radiusBeforePlt"} = $radiusReal += 0.05;    # real compted radius of features in layer before plated
+				$outputLayer->SetDataVal( "radiusBeforePlt", $radiusReal + 0.05 );    # real compted radius of features in layer before plated
 			}
-			$outputLayer->{"radiusReal"} = $radiusReal;    # real compted radius of features in layer
-			$outputLayer->{"chainSeq"}   = \@matchCh;      # All chain seq, which was processed in ori layer in this class
+
+			$outputLayer->SetDataVal( "radiusReal", $radiusReal );    # real compted radius of features in layer
+			$outputLayer->SetDataVal( "chainSeq",   \@matchCh );      # All chain seq, which was processed in ori layer in this class
 
 			$self->{"result"}->AddLayer($outputLayer);
 		}

@@ -1,6 +1,6 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Parse pad countersink from layer
+# Description: Parse pad countersink with through drill  
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Packages::CAMJob::OutputParser::OutputParserCountersink::OutputParserCountersink;

@@ -21,7 +21,7 @@ use aliased 'Packages::Events::Event';
 #use aliased 'CamHelpers::CamLayer';
 #use aliased 'CamHelpers::CamDrilling';
 use aliased 'CamHelpers::CamStep';
-
+use aliased 'Packages::CAMJob::Drilling::CheckCountersink';
 use aliased 'CamHelpers::CamJob';
 
 #-------------------------------------------------------------------------------------------#
@@ -66,17 +66,19 @@ sub __SetLayout {
 	my $control = $self->__SetLayoutControl($self);
 	my $stackup = $self->__SetLayoutStackup($self);
 	my $pressfit = $self->__SetLayoutPressfit($self);
-	
+	my $ncSpecial = $self->__SetLayoutNCSpecial($self);
 	
 	# SET EVENTS
 
 	# BUILD STRUCTURE OF LAYOUT
 
 	$szMain->Add( $control, 0, &Wx::wxEXPAND );
-	$szMain->Add( 5, 5, 0, &Wx::wxEXPAND );
+	#$szMain->Add( 2, 2, 0, &Wx::wxEXPAND );
 	$szMain->Add( $stackup, 0, &Wx::wxEXPAND );
-	$szMain->Add( 5, 5, 0, &Wx::wxEXPAND );
+	#$szMain->Add( 2, 2, 0, &Wx::wxEXPAND );
 	$szMain->Add( $pressfit, 0, &Wx::wxEXPAND );
+	#$szMain->Add( 2, 2, 0, &Wx::wxEXPAND );
+	$szMain->Add( $ncSpecial, 0, &Wx::wxEXPAND );
 	
 	$self->SetSizer($szMain);
 
@@ -105,9 +107,9 @@ sub __SetLayoutControl {
 	# DEFINE CONTROLS
 	my $exportControlChb = Wx::CheckBox->new( $statBox, -1, "Export", &Wx::wxDefaultPosition );
 
-	my $stepTxt = Wx::StaticText->new( $statBox, -1, "Step", &Wx::wxDefaultPosition, [ 120, 22 ] );
-	my $langTxt = Wx::StaticText->new( $statBox, -1, "Language", &Wx::wxDefaultPosition, [ 120, 22 ] );
-	my $operatorTxt = Wx::StaticText->new( $statBox, -1, "Operator info", &Wx::wxDefaultPosition, [ 120, 22 ] );
+	my $stepTxt = Wx::StaticText->new( $statBox, -1, "Step", &Wx::wxDefaultPosition, [ 120, 20 ] );
+	my $langTxt = Wx::StaticText->new( $statBox, -1, "Language", &Wx::wxDefaultPosition, [ 120, 20 ] );
+	my $operatorTxt = Wx::StaticText->new( $statBox, -1, "Operator info", &Wx::wxDefaultPosition, [ 120, 20 ] );
 
 	my @steps = CamStep->GetAllStepNames( $self->{"inCAM"}, $self->{"jobId"} );
 	my $last = $steps[ scalar(@steps) - 1 ];
@@ -128,20 +130,21 @@ sub __SetLayoutControl {
 
 	$szRowDetail1->Add( $exportControlChb, 0, &Wx::wxALL, 0 );
 
-	$szRowDetail2->Add( $stepTxt, 0, &Wx::wxALL, 1 );
-	$szRowDetail2->Add( $stepCb,  0, &Wx::wxALL, 1 );
+	$szRowDetail2->Add( $stepTxt, 0, &Wx::wxALL, 0 );
+	$szRowDetail2->Add( $stepCb,  0, &Wx::wxALL, 0 );
 
-	$szRowDetail3->Add( $langTxt, 0, &Wx::wxALL, 1 );
-	$szRowDetail3->Add( $langCb,  0, &Wx::wxALL, 1 );
+	$szRowDetail3->Add( $langTxt, 0, &Wx::wxALL, 0 );
+	$szRowDetail3->Add( $langCb,  0, &Wx::wxALL, 0 );
 	
-	$szRowDetail4->Add( $operatorTxt, 0, &Wx::wxALL, 1 );
-	$szRowDetail4->Add( $operatorChb,  0, &Wx::wxALL, 1 );
+	$szRowDetail4->Add( $operatorTxt, 0, &Wx::wxALL, 0 );
+	$szRowDetail4->Add( $operatorChb,  0, &Wx::wxALL, 0 );
 
 	$szStatBox->Add( $szRowDetail1, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
-	$szStatBox->Add( 8,             8, 0,                          &Wx::wxEXPAND );
+	#$szStatBox->Add( 0,             0, 0,                          &Wx::wxEXPAND );
 	$szStatBox->Add( $szRowDetail2, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 	$szStatBox->Add( $szRowDetail3, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 	$szStatBox->Add( $szRowDetail4, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+ 
 
 	# Set References
 	$self->{"exportControlChb"} = $exportControlChb;
@@ -208,6 +211,32 @@ sub __SetLayoutPressfit {
 }
 
 
+# Set layout for Quick set box
+sub __SetLayoutNCSpecial {
+	my $self   = shift;
+	my $parent = shift;
+
+	#define staticboxes
+	my $statBox = Wx::StaticBox->new( $parent, -1, 'NC countersink' );
+	my $szStatBox = Wx::StaticBoxSizer->new( $statBox, &Wx::wxHORIZONTAL );
+
+	# DEFINE CONTROLS
+
+	my $exportNCChb = Wx::CheckBox->new( $statBox, -1, "Export", &Wx::wxDefaultPosition );
+ 
+
+	# SET EVENTS
+
+	# BUILD STRUCTURE OF LAYOUT
+
+	$szStatBox->Add( $exportNCChb, 1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+
+	# Set References
+	$self->{"exportNCSpecialChb"} = $exportNCChb;
+
+	return $szStatBox;
+}
+
 sub __OnExportControlChange {
 	my $self = shift;
 
@@ -235,14 +264,26 @@ sub DisableControls{
 	my $self = shift;
 	
 	unless($self->{"defaultInfo"}->GetPressfitExist()){
-
+		
 		$self->{"exportPressfitChb"}->SetValue(0);
 		$self->{"exportPressfitChb"}->Disable();
+		
 	}else{
+		
 		$self->{"exportPressfitChb"}->Enable();
 	}
-
-}
+	
+	
+	if( CheckCountersink->ExistCountersink( $self->{"inCAM"}, $self->{"jobId"}  )){
+		
+		$self->{"exportNCSpecialChb"}->Enable();
+		
+	}else{
+		
+		$self->{"exportNCSpecialChb"}->Disable();
+	}	
+ 
+} 
 
 
 # =====================================================================
@@ -346,6 +387,25 @@ sub GetExportPressfit {
 	my $self = shift;
 
 	if ( $self->{"exportPressfitChb"}->IsChecked() ) {
+
+		return 1;
+	}
+	else {
+		return 0;
+	}
+}
+
+sub SetExportNCSpecial {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->{"exportNCSpecialChb"}->SetValue($val);
+}
+
+sub GetExportNCSpecial {
+	my $self = shift;
+
+	if ( $self->{"exportNCSpecialChb"}->IsChecked() ) {
 
 		return 1;
 	}

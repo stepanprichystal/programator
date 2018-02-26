@@ -1,6 +1,6 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Parse pad countersink from layer
+# Description: Parse pad countersink with through drill
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Packages::CAMJob::OutputParser::OutputParserCountersink::OutputClasses::COUNTERSINKPAD;
@@ -70,25 +70,28 @@ sub __PrepareCountersink {
 
 	# keep old results
 	my @layers = $self->{"result"}->GetLayers();
+	$self->{"result"}->Clear();
 
 	# init new class result
 	$self->{"result"} = OutputClassResult->new( Enums->Type_COUNTERSINKPADTHR, $inCAM, $jobId, $step, $l );
+
+	return 0 unless (@layers);
 
 	# get layer, where through hole can be
 
 	my @thrghDrill = ();
 
 	#decide between plated/nplated layers
-	if ( $l->{"plated"} ) {
+	#if ( $l->{"plated"} ) {
 
 		push( @thrghDrill, CamDrilling->GetNCLayersByType( $inCAM, $jobId, EnumsGeneral->LAYERTYPE_plt_nMill ) );
 		push( @thrghDrill, CamDrilling->GetNCLayersByType( $inCAM, $jobId, EnumsGeneral->LAYERTYPE_plt_nDrill ) );
-	}
-	else {
+	#}
+	#else {
 
 		push( @thrghDrill, CamDrilling->GetNCLayersByType( $inCAM, $jobId, EnumsGeneral->LAYERTYPE_nplt_nMill ) );
 		push( @thrghDrill, CamDrilling->GetNCLayersByType( $inCAM, $jobId, EnumsGeneral->LAYERTYPE_nplt_nDrill ) );
-	}
+	#}
 
 	@thrghDrill = map { $_->{"gROWname"} } @thrghDrill;
 	my $thrghDrill = GeneralHelper->GetGUID();
@@ -104,7 +107,7 @@ sub __PrepareCountersink {
 		my %drillTools   = ();
 		my $curDrillTool = undef;
 
-		foreach my $csPad ( @{ $lRes->{"padFeatures"} } ) {
+		foreach my $csPad ( @{ $lRes->GetDataVal("padFeatures") } ) {
 
 			my %pos = ( "x" => $csPad->{"x1"}, "y" => $csPad->{"y1"} );
 
@@ -151,23 +154,26 @@ sub __PrepareCountersink {
 
 			my $drawLayer = GeneralHelper->GetGUID();
 			CamMatrix->CreateLayer( $inCAM, $jobId, $drawLayer, "document", "positive", 0 );
+
 			$outputLayer->SetLayerName($drawLayer);    # empty layer
 
-			$outputLayer->{"positions"}  = $drillTools{$drillTool};
-			$outputLayer->{"radiusReal"} = $lRes->{"radiusReal"};
-			$outputLayer->{"DTMTool"}    = $lRes->{"DTMTool"};
+			$outputLayer->SetDataVal( "positions",  $drillTools{$drillTool} );    # positions of countersing center point
+			$outputLayer->SetDataVal( "radiusReal", $lRes->GetDataVal("radiusReal") );      # radius of countersink
+			$outputLayer->SetDataVal( "radiusBeforePlt", $lRes->GetDataVal("radiusBeforePlt") );      # radius of countersink before plating
+			$outputLayer->SetDataVal( "DTMTool",    $lRes->GetDataVal("DTMTool") );         # tool which do countersink
 
 			my $dt = undef;
 			if ( $drillTool ne "noHole" ) {
-				$dt = $drillTool / 1000 / 2;           # convert to mm and get radius
+				$dt = $drillTool / 1000 / 2;                                      # convert to mm and get radius
 			}
-
-			$outputLayer->{"drillTool"} = $dt;         #tool size of through drill
+			$outputLayer->SetDataVal( "drillTool", $dt );                         # radius of through drilling tool
 
 			$self->{"result"}->AddLayer($outputLayer);
 		}
 
 	}
+	
+	CamMatrix->DeleteLayer($inCAM, $jobId, $thrghDrill);
 
 }
 

@@ -51,9 +51,10 @@ sub Init {
 	my $infoToPdf = $taskData->GetInfoToPdf();
 	my $exportStackup = $taskData->GetExportStackup();
 	my $exportPressfit = $taskData->GetExportPressfit();
+	my $exportNCSpecial = $taskData->GetExportNCSpecial();
 	
 
-	my $mngr = PdfMngr->new( $inCAM, $jobId, $exportControl, $controlStep, $controlLang, $infoToPdf, $exportStackup, $exportPressfit );
+	my $mngr = PdfMngr->new( $inCAM, $jobId, $exportControl, $controlStep, $controlLang, $infoToPdf, $exportStackup, $exportPressfit, $exportNCSpecial );
 
 	$mngr->{"onItemResult"}->Add( sub { $self->_OnItemResultHandler(@_) } );
 

@@ -22,7 +22,9 @@ sub new {
 	$self = {};
 	bless $self;
  
-	$self->{"layer"} = shift; #layer name
+	$self->{"layer"} = shift; #layer name with prepared features
+	
+	$self->{"parseData"} = (); # hash contain information about parsed features in layer
 	 
 
 	return $self;
@@ -39,6 +41,30 @@ sub GetLayerName {
 	my $self = shift;
 
 	return $self->{"layer"};
+}
+
+
+sub SetDataVal{
+	my $self = shift;
+	my $key = shift;
+	my $val = shift;
+	
+	$self->{"parseData"}->{$key} = $val;
+	
+}
+
+sub GetDataVal{
+	my $self = shift;
+	my $key = shift;
+	 
+	
+	return $self->{"parseData"}->{$key};
+}
+
+sub GetData{
+	my $self = shift;
+	
+	return %{$self->{"parseData"}};
 }
  
 #-------------------------------------------------------------------------------------------#

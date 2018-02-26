@@ -94,23 +94,22 @@ sub _Prepare {
 		CamLayer->Contourize( $inCAM, $drawLayer );
 		CamLayer->WorkLayer( $inCAM, $drawLayer );
 
-		my $radiusReal = $tool->GetDrillSize()/2;
+		my $radiusReal = $tool->GetDrillSize() / 2;
 
 		if ( $l->{"plated"} ) {
 			CamLayer->ResizeFeatures( $inCAM, -2 * Enums->Plating_THICK );
 			$radiusReal -= Enums->Plating_THICK;
 		}
- 
 
 		# 1) Set prepared layer name
 		$outputLayer->SetLayerName($drawLayer);    # Attention! lazer contain original sizes of feature, not finish/real sizes
 
 		# 2 Add another extra info to output layer
 
-		$outputLayer->{"chainSeq"} = \@matchCh;    # All chain seq, which was processed in ori layer in this class
-		$outputLayer->{"DTMTool"} = $tool;    	# All chain seq, which was processed in ori layer in this class
-		$outputLayer->{"radiusReal"} = $radiusReal/1000;
-		
+		$outputLayer->SetDataVal( "chainSeq",   \@matchCh );             # All chain seq, which was processed in ori layer in this class
+		$outputLayer->SetDataVal( "DTMTool",    $tool );                 # All chain seq, which was processed in ori layer in this class
+		$outputLayer->SetDataVal( "radiusReal", $radiusReal / 1000 );
+
 		$self->{"result"}->AddLayer($outputLayer);
 	}
 }
@@ -118,7 +117,6 @@ sub _Prepare {
 #-------------------------------------------------------------------------------------------#
 #  Protected methods
 #-------------------------------------------------------------------------------------------#
- 
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

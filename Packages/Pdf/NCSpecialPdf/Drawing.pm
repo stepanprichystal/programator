@@ -3,10 +3,10 @@
 # Description: Drawing special NC operation
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::Export::PdfExport::PdfNC::Drawing;
+package Packages::Pdf::NCSpecialPDF::Drawing;
 use base('Packages::CAMJob::OutputData::Drawing::Drawing');
 
-#3th party library
+#3th party libraryPackages::Pdf::
 use strict;
 use warnings;
 use Math::Trig;
@@ -54,24 +54,15 @@ sub CreateDetailCountersinkDrilled {
 	my $depth      = shift;    # in mm
 	my $angle      = shift;    #
 	my $type       = shift;    # slot/hole
-	my $operationName = shift;
+
  
 	$self->_CreateDetailCountersinkDrilled($radius, $radiusHole, $depth, $angle, $type);
 
-	$self->__AddTitleTexts($operationName);
+	 
 
 }
  
  
-sub __AddTitleTexts{
-	my $self       = shift;
-	my $operationName = shift;
-	
-	my $txt = "Operace na postupu: $operationName";
-	
-	$self->_AddTitleTexts($txt);
-}
-
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#

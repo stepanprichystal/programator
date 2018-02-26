@@ -50,6 +50,7 @@ sub OnExportGroupData {
 	$exportData->SetControlLang( $groupData->GetControlLang() );
 	$exportData->SetExportStackup( $groupData->GetExportStackup() );
 	$exportData->SetExportPressfit( $groupData->GetExportPressfit() );
+	$exportData->SetExportNCSpecial( $groupData->GetExportNCSpecial() );
 	$exportData->SetInfoToPdf( $groupData->GetInfoToPdf() );
 	
 	 

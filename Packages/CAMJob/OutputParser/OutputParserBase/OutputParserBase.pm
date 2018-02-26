@@ -13,6 +13,7 @@ use Math::Trig;
 
 #local library
 use aliased 'CamHelpers::CamHelper';
+use aliased 'CamHelpers::CamLayer';
 use aliased 'Helpers::GeneralHelper';
 use aliased 'Packages::CAM::UniDTM::UniDTM';
 use aliased 'Packages::CAM::UniRTM::UniRTM::UniRTM';
@@ -44,13 +45,14 @@ sub new {
 sub Prepare {
 	my $self  = shift;
 	my $layer = shift;    # hash reference
+	my $doFinalCheck = shift // 1; # if 0 - final check not run (check if all features in layer was parsed)
 
 	my $inCAM  = $self->{"inCAM"};
 	my $jobId  = $self->{"jobId"};
 	my $step   = $self->{"step"};
 	my $parser = OutputParser->new();
-	
-	CamHelper->SetStep($inCAM, $step);
+
+	CamHelper->SetStep( $inCAM, $step );
 
 	# 1) init Layer
 
@@ -69,6 +71,7 @@ sub Prepare {
 			$layer->{"uniRTM"} = UniRTM->new( $inCAM, $jobId, $step, $layer->{"gROWname"}, 0, $layer->{"uniDTM"} );
 		}
 	}
+
 	# 2) Backup ori layer
 	my $backUp = $self->_BackupLayer( $layer->{"gROWname"} );
 
@@ -78,8 +81,13 @@ sub Prepare {
 	my @results = $parser->Parse();
 
 	# 4) Final check
-	unless ( $self->_FinalCheck( $layer, $backUp ) ) {
+	if ( $doFinalCheck && !$self->_FinalCheck($layer) ) {
+
 		die "NC output data - Layer was not fully parsed: " . $layer->{"gROWname"};
+	}
+	else {
+
+		$self->_RestoreBackupLayer( $layer, $backUp );
 	}
 
 	my $result = OutputResult->new( $inCAM, $jobId, $step, $layer, 1, \@results );
@@ -128,6 +136,35 @@ sub _BackupLayer {
 
 }
 
+sub _RestoreBackupLayer {
+	my $self        = shift;
+	my $layer       = shift;
+	my $backupLayer = shift;
+
+	my $inCAM = $self->{"inCAM"};
+	my $jobId = $self->{"jobId"};
+	my $step  = $self->{"step"};
+
+	# clear ori layer before restoring
+	CamLayer->WorkLayer( $inCAM, $layer->{"gROWname"} );
+	CamLayer->DeleteFeatures($inCAM);
+
+	# Restore backup layer
+	$inCAM->COM(
+				 'copy_layer',
+				 "source_job"   => $jobId,
+				 "source_step"  => $step,
+				 "source_layer" => $backupLayer,
+				 "dest"         => 'layer_name',
+				 "dest_layer"   => $layer->{"gROWname"},
+				 "mode"         => 'replace',
+				 "invert"       => 'no'
+	);
+
+	CamMatrix->DeleteLayer( $inCAM, $jobId, $backupLayer );
+
+}
+
 # Remove all layers used in result
 sub _FinalCheck {
 	my $self        = shift;
@@ -150,20 +187,6 @@ sub _FinalCheck {
 	}
 
 	if ( $featsLeftCnt == 0 ) {
-
-		# Restore backup layer
-		$inCAM->COM(
-					 'copy_layer',
-					 "source_job"   => $jobId,
-					 "source_step"  => $step,
-					 "source_layer" => $backupLayer,
-					 "dest"         => 'layer_name',
-					 "dest_layer"   => $layer->{"gROWname"},
-					 "mode"         => 'replace',
-					 "invert"       => 'no'
-		);
-
-		CamMatrix->DeleteLayer( $inCAM, $jobId, $backupLayer );
 
 		return 1;
 	}
@@ -195,23 +218,23 @@ sub Clear {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-#	use aliased 'Packages::CAMJob::OutputParser::OutputParserNC::OutputParserNC';
-#
-#	use aliased 'Packages::InCAM::InCAM';
-#
-#	my $inCAM = InCAM->new();
-#
-#	my $jobId = "f52456";
-#
-#	my $mess = "";
-#
-#	my $control = OutputParserNC->new( $inCAM, $jobId, "data_o+1" );
-#
-#	my %lInfo = ( "gROWname" => "f", "gROWlayer_type" => "rout" );
-#
-#	my $result = $control->Prepare( \%lInfo );
-#
-#	$control->Clear();
+	#	use aliased 'Packages::CAMJob::OutputParser::OutputParserNC::OutputParserNC';
+	#
+	#	use aliased 'Packages::InCAM::InCAM';
+	#
+	#	my $inCAM = InCAM->new();
+	#
+	#	my $jobId = "f52456";
+	#
+	#	my $mess = "";
+	#
+	#	my $control = OutputParserNC->new( $inCAM, $jobId, "data_o+1" );
+	#
+	#	my %lInfo = ( "gROWname" => "f", "gROWlayer_type" => "rout" );
+	#
+	#	my $result = $control->Prepare( \%lInfo );
+	#
+	#	$control->Clear();
 
 }
 

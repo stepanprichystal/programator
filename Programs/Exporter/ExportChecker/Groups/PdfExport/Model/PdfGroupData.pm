@@ -109,6 +109,18 @@ sub GetExportPressfit {
 	return $self->{"data"}->{"exportPressfit"};
 }
 
+sub SetExportNCSpecial {
+	my $self  = shift;
+	my $value = shift;
+	$self->{"data"}->{"exportNCSpecial"} = $value;
+}
+
+sub GetExportNCSpecial {
+	my $self  = shift;
+	my $value = shift;
+	return $self->{"data"}->{"exportNCSpecial"};
+}
+
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#
