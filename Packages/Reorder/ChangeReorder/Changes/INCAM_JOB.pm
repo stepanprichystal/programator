@@ -124,7 +124,7 @@ sub __UpdateDTMColumns {
 
 					if (@obsolete) {
 
-						die "Job contains obsolete user columns (" . join( ";", @obsolete ) . "), check it";
+						die "Job contains obsolete DTM user columns (" . join( ";", @obsolete ) . "), check it";
 					}
 
 					# 2) Check if there are all current used colums
