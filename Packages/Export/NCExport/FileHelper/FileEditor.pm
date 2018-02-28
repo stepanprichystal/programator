@@ -54,7 +54,7 @@ sub EditAfterOpen {
 
 		if ( $opItem->{"name"} =~ /c[0-9]+/ ) {
 
-			$m47Mess = "\nM47, Vrtani okoli po " . $opItem->GetPressOrder() . ". lisovani.\n";
+			$m47Mess = "\nM47, Vrtani okoli po " . $opItem->GetPressOrder() . ". lisovani.";
 		}
 		elsif ( $opItem->{"name"} =~ /v1/ || $opItem->{"name"} =~ /j([0-9]+)/ ) {
 
@@ -62,7 +62,7 @@ sub EditAfterOpen {
 			$m47Mess = "\nM47, Vrtani okoli jadra.";
 
 			# Delete "focus header", because it is not needed. (first drilling to empty laminate)
-			@{ $parseFile->{"header"} } = ('%%3000');
+			@{ $parseFile->{"header"} } = ("%%3000\n");
 		}
 
 		my %i = ();

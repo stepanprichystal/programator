@@ -82,7 +82,8 @@ sub __CreateNpltDrill {
 
 	if ( CamHelper->LayerExists( $inCAM, $jobId, $to ) ) {
 
-		CamMatrix->DeleteLayer( $inCAM, $jobId, $to );
+		die "Something is wrong, layer \"$to\" shouldn't exist, but exists";
+		#CamMatrix->DeleteLayer( $inCAM, $jobId, $to );
 	}
 
 	CamMatrix->CreateLayer( $inCAM, $jobId, $to, "drill", "positive", ( $nonStandard ? 0 : 1 ) );

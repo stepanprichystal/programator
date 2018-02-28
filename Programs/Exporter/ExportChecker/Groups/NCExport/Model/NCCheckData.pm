@@ -7,6 +7,7 @@
 package Programs::Exporter::ExportChecker::Groups::NCExport::Model::NCCheckData;
 
 #3th party library
+use utf8;
 use strict;
 use warnings;
 use File::Copy;
@@ -258,7 +259,7 @@ sub OnCheckGroupData {
 					my @t = map {
 						    "\n- Size: "
 						  . $_->GetDrillSize()
-						  . "�m, aspect ratio: "
+						  . "µm, aspect ratio: "
 						  . sprintf( "%.2f", $_->{"aspectRatio"} )
 						  . ", Layer: "
 						  . $inf->{"layer"}
@@ -275,7 +276,7 @@ sub OnCheckGroupData {
 					my @t = map {
 						    "\n- Size: "
 						  . $_->GetDrillSize()
-						  . "�m, aspect ratio: "
+						  . "µm, aspect ratio: "
 						  . sprintf( "%.2f", $_->{"aspectRatio"} )
 						  . ", Layer: "
 						  . $inf->{"layer"}
@@ -354,7 +355,15 @@ sub OnCheckGroupData {
 		}
 
 	}
-
+	
+	# 13) Check if exist layer D. This layer is permited so far (but will be probablz alowed in feature) 27.2.2018
+	if($defaultInfo->LayerExist("d")){
+		$dataMngr->_AddErrorResult(
+										"NC vrstva D",
+										"Něco se rozbilo. V matrixu je NC vrstva D. ".
+										"Tato vrstva pravděpodobně obsahuje neprokovené otvory z vrstvy f. ".
+										"Zkontroluj a vrať otovory v každého stepu do vrstvy f a smaž vrstvu d. Volej k tomu SPR." );
+	}
  
 }
 
