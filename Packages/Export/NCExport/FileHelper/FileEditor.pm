@@ -54,12 +54,12 @@ sub EditAfterOpen {
 
 		if ( $opItem->{"name"} =~ /c[0-9]+/ ) {
 
-			$m47Mess = "\nM47, Vrtani okoli po " . $opItem->GetPressOrder() . ". lisovani.";
+			$m47Mess = "\n(M47, Vrtani okoli po " . $opItem->GetPressOrder() . ". lisovani.)";
 		}
 		elsif ( $opItem->{"name"} =~ /v1/ || $opItem->{"name"} =~ /j([0-9]+)/ ) {
 
 			# Add message to file
-			$m47Mess = "\nM47, Vrtani okoli jadra.";
+			$m47Mess = "\n(M47, Vrtani okoli jadra.)";
 
 			# Delete "focus header", because it is not needed. (first drilling to empty laminate)
 			@{ $parseFile->{"header"} } = ("%%3000\n");
@@ -110,7 +110,7 @@ sub EditAfterOpen {
 
 					my $press     = $pressInfo{ $opItem->GetPressOrder() };
 					my $topCuName = $press->{"top"};
-					$cuThick   = $stackup->GetCuLayer($topCuName)->GetThick();
+					$cuThick = $stackup->GetCuLayer($topCuName)->GetThick();
 				}
 
 			}
@@ -120,7 +120,7 @@ sub EditAfterOpen {
 
 				#take first cu on first core
 
-				my @cores   = $stackup->GetAllCores();
+				my @cores = $stackup->GetAllCores();
 				$cuThick = $cores[0]->GetTopCopperLayer()->GetThick();
 
 			}
@@ -128,19 +128,18 @@ sub EditAfterOpen {
 			# case  burried (core drilling)
 			if ( $opItem->{"name"} =~ /j[0-9]+/ ) {
 
-
 				# add J<number of core> if opItem is core behind pcb
 				if ( $opItem->{"name"} =~ m/j([0-9]+)/ ) {
-					
+
 					my $coreNum = $1;
-					
-					if($coreNum > 0){
-						
-						my @cores   = $stackup->GetAllCores();
-						$cuThick = $cores[$coreNum-1]->GetTopCopperLayer()->GetThick();
-						
+
+					if ( $coreNum > 0 ) {
+
+						my @cores = $stackup->GetAllCores();
+						$cuThick = $cores[ $coreNum - 1 ]->GetTopCopperLayer()->GetThick();
+
 						$coreMark = "J" . $coreNum;
-						
+
 					}
 				}
 			}
@@ -159,7 +158,69 @@ sub EditBeforeSave {
 	my $parseFile = shift;    #parsed file in hash
 	my $opItem    = shift;    #operation item reference
 
-}    #first argument OperationMangr
+	# ================================================================
+	# 1) EDIT: if operation item contains only layers type of:
+	# LAYERTYPE_nplt_nMill
+	# LAYERTYPE_nplt_nDrill
+	# Put M47, Frezovani po prokovu (2nd mess in program) into brackets (M47 stop machine, brackets no)
+
+	my @l =
+	  grep { $_->{"type"} ne EnumsGeneral->LAYERTYPE_nplt_nMill && $_->{"type"} ne EnumsGeneral->LAYERTYPE_nplt_nDrill } $opItem->GetSortedLayers();
+
+	unless ( scalar(@l) ) {
+
+		# put M47, Message to brackets
+		my $messageCnt = 0;
+		for ( my $i = 0 ; $i < scalar( @{ $parseFile->{"body"} } ) ; $i++ ) {
+
+			if ( $parseFile->{"body"}->[$i]->{"line"} =~ /m47/i ) {
+
+				$messageCnt++;
+
+				if ( $messageCnt == 2 ) {
+					$parseFile->{"body"}->[$i]->{"line"} =~ s/\n//;
+					$parseFile->{"body"}->[$i]->{"line"} = "(" . $parseFile->{"body"}->[$i]->{"line"} . ")\n";
+					last;
+				}
+				
+				
+			}
+
+		}
+	}
+	
+	# ================================================================
+	# 2) EDIT: if operation item contains only layers type of:
+	# LAYERTYPE_plt_nDrill
+	# LAYERTYPE_plt_nMill
+	# Put M47, Frezovani pred prokovem (2nd mess in program) into brackets (M47 stop machine, brackets no)
+
+	my @l2 =
+	  grep { $_->{"type"} ne EnumsGeneral->LAYERTYPE_plt_nDrill && $_->{"type"} ne EnumsGeneral->LAYERTYPE_plt_nMill } $opItem->GetSortedLayers();
+
+	unless ( scalar(@l2) ) {
+
+		# put M47, Message to brackets
+		my $messageCnt = 0;
+		for ( my $i = 0 ; $i < scalar( @{ $parseFile->{"body"} } ) ; $i++ ) {
+
+			if ( $parseFile->{"body"}->[$i]->{"line"} =~ /m47/i ) {
+
+				$messageCnt++;
+
+				if ( $messageCnt == 2 ) {
+					$parseFile->{"body"}->[$i]->{"line"} =~ s/\n//;
+					$parseFile->{"body"}->[$i]->{"line"} = "(" . $parseFile->{"body"}->[$i]->{"line"} . ")\n";
+					last;
+				}
+				
+				
+			}
+
+		}
+	}
+	
+}
 
 1;
 

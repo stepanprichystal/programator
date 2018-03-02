@@ -33,7 +33,6 @@ use aliased 'Enums::EnumsPaths';
 use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'CamHelpers::CamNetlist';
 
-
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
@@ -49,10 +48,9 @@ sub new {
 
 	$self->{"stepToTest"}   = shift;    #step, which will be tested
 	$self->{"createEtStep"} = shift;    #step, which will be tested
-	
-	$self->{"exportIPC"} = ExportIPC->new($self->{"inCAM"}, $self->{"jobId"}, $self->{"stepToTest"}, $self->{"createEtStep"}  );	
+
+	$self->{"exportIPC"} = ExportIPC->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"stepToTest"}, $self->{"createEtStep"} );
 	$self->{"exportIPC"}->{"onItemResult"}->Add( sub { $self->_OnItemResult(@_) } );
-	 
 
 	return $self;
 }
@@ -62,41 +60,47 @@ sub Run {
 
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
-	
+
 	# Remove "nestlist helper" steps
-	CamNetlist->RemoveNetlistSteps($inCAM, $jobId);
-	
+	CamNetlist->RemoveNetlistSteps( $inCAM, $jobId );
+
 	$self->{"exportIPC"}->Export();
-	
+
+	# DELETE onlz testing
+	# send to log if ipc exist 
+	my $ipcPath = EnumsPaths->Client_ELTESTS . $jobId . "t\\" . $jobId . "t.ipc";
+	if ( -e $ipcPath ) {
+		get_logger("abstractQueue")->error("Et test for $jobId exist: $ipcPath\n ");
+	}
+	else {
+		get_logger("abstractQueue")->error("Et test for $jobId NOT exist: $ipcPath\n ");
+	}
+
 	# Temporary solution
 	$self->__CopyIPCTemp();
-	
+
 }
- 
-  
- 
- 
- # If exist reoreder on Na priprave and export is server version AND et test not exist, copy opc to special folder
- # Tests are taken from this folder by TPV
-sub __CopyIPCTemp{
+
+# If exist reoreder on Na priprave and export is server version AND et test not exist, copy opc to special folder
+# Tests are taken from this folder by TPV
+sub __CopyIPCTemp {
 	my $self = shift;
-	
+
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
-	my $step = $self->{"stepToTest"};
-	
- 
+	my $step  = $self->{"stepToTest"};
+
 	# reorder
-	my $orderNum = HegMethods->GetPcbOrderNumber($self->{"jobId"}); 
-	 
- 	# Test if el test exist
+	my $orderNum = HegMethods->GetPcbOrderNumber( $self->{"jobId"} );
+
+	# Test if el test exist
 	my $path = JobHelper->GetJobElTest($jobId);
- 
- 	my $elTestExist = 1;
+
+	my $elTestExist = 1;
 	if ( -e $path ) {
 
 		my @dirs = ();
-		
+
 		if ( opendir( DIR, $path ) ) {
 			@dirs = readdir(DIR);
 			closedir(DIR);
@@ -111,24 +115,22 @@ sub __CopyIPCTemp{
 	else {
 		$elTestExist = 0;
 	}
-	
-	
-	get_logger("abstractQueue")->error( "Et test $jobId exist: $elTestExist\n ". $inCAM->GetExceptionError() );
-	
+
+	get_logger("abstractQueue")->error( "Et test $jobId exist: $elTestExist\n " . $inCAM->GetExceptionError() );
+
 	# copy test to special ipc test folder
-	if( GeneralHelper->IsTPVServer() && $orderNum > 1 && $elTestExist ==0){
-	
-		
-		my $ipcPath = EnumsPaths->Client_ELTESTS.$jobId."t\\".$jobId."t.ipc";
-		if(-e $ipcPath){
-		
-			copy($ipcPath, EnumsPaths->Jobs_ELTESTSIPC.$jobId."t.ipc" );	
+	if ( GeneralHelper->IsTPVServer() && $orderNum > 1 && $elTestExist == 0 ) {
+
+		my $ipcPath = EnumsPaths->Client_ELTESTS . $jobId . "t\\" . $jobId . "t.ipc";
+		if ( -e $ipcPath ) {
+
+			copy( $ipcPath, EnumsPaths->Jobs_ELTESTSIPC . $jobId . "t.ipc" );
 		}
-		
-		get_logger("abstractQueue")->error( "Et test $jobId copy from path $ipcPath\n ". $inCAM->GetExceptionError() );
+
+		get_logger("abstractQueue")->error( "Et test $jobId copy from path $ipcPath\n " . $inCAM->GetExceptionError() );
 	}
-} 
- 
+}
+
 sub TaskItemsCount {
 	my $self = shift;
 

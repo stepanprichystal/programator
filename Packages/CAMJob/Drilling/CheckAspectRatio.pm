@@ -38,10 +38,30 @@ sub GetToolsARatio {
 	unless ($breakSr) {
 		$breakSr = 0;
 	}
+	
+	
+	my $pcbThick;
+	my $stackup = undef;
 
-	my $pcbThick = JobHelper->GetFinalPcbThick($jobId);
+	my $layerCnt = CamJob->GetSignalLayerCnt($inCAM, $jobId);
+
+	if ( $layerCnt > 2 ) {
+
+		$stackup = Stackup->new($jobId);
+
+		$pcbThick = $stackup->GetFinalThick();
+	}
+	else {
+
+		$pcbThick = HegMethods->GetPcbMaterialThick($jobId);
+		$pcbThick = $pcbThick * 1000;
+	}
+ 
+ 
 
 	my @layers = CamDrilling->GetNCLayersByType( $inCAM, $jobId, $ncLayerType );
+	CamDrilling->AddLayerStartStop($inCAM, $jobId, \@layers);
+	
 	foreach my $l (@layers) {
 		
 		unless(CamHelper->LayerExists( $inCAM, $jobId, $l->{"gROWname"})){
@@ -53,10 +73,20 @@ sub GetToolsARatio {
 
 		foreach my $t (@tools) {
 
-			# if tool has do depth, it means tool is through pcb
+			# if tool has do depth, we have to get thickness of whole pcb, actual press, core etc,..
 			if ( $t->GetDepth() == 0 ) {
-
-				$t->{"aspectRatio"} =  $pcbThick / $t->GetDrillSize();
+				
+				my $thickReal = undef;
+				
+				if($layerCnt > 2){
+					
+					$thickReal = $stackup->GetThickByLayerName($l->{"gROWdrl_start_name"})*1000;
+				}else{
+					
+					$thickReal = $pcbThick;
+				}
+	 
+				$t->{"aspectRatio"} =  $thickReal / $t->GetDrillSize();
 
 			}
 			else {
@@ -137,8 +167,8 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	use aliased 'Packages::InCAM::InCAM';
 
 	my $inCAM = InCAM->new();
-	my $jobId = "f52456";
-	my $step  = "mpanel";
+	my $jobId = "d152457";
+	my $step  = "o+1";
 
 	my %res = ();
 	my $r = CheckAspectRatio->CheckWrongARAllLayers( $inCAM, $jobId, $step, \%res );
