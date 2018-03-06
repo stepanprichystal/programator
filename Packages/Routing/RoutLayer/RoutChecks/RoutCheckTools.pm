@@ -26,6 +26,8 @@ sub OutlineToolIsLast {
 	my $mess  = shift;
 
 	my $result = 1;
+	
+ 
 
 	my $unitRTM = UniRTM->new( $inCAM, $jobId, $step, $layer );
 	my @chains = $unitRTM->GetChains();

@@ -109,6 +109,7 @@ sub __InitUniRTM {
 
 	# 4) Get information about mutual position of chain sequences
 	# If chain is inside another chain, save this information
+ 
 
 	my @seqs = map { $_->GetChainSequences() } @chains;    # all chain sequences
 

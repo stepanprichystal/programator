@@ -1049,6 +1049,25 @@ sub GetTermOfOrder {
 }
 
 # Return value of term order
+sub GetOrderInfo {
+	my $self    = shift;
+	my $orderId = shift;
+
+	my @params = ( SqlParameter->new( "_OrderId", Enums->SqlDbType_VARCHAR, $orderId ) );
+
+	my $cmd = "SELECT top 1
+				termin,
+				pocet_prirezu,
+				prirezu_navic
+				from lcs.zakazky_dps_22_hlavicka 
+				WHERE reference_subjektu = _OrderId";
+
+	my @result = Helper->ExecuteDataSet( $cmd, \@params );
+
+	return %{$result[0]};
+}
+
+# Return value of term order
 sub GetStartTermOfOrder {
 	my $self    = shift;
 	my $orderId = shift;

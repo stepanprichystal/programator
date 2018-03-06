@@ -38,6 +38,8 @@ sub CheckNCLayers {
 	my $mess        = shift;
 
 	my $result = 1;
+	
+ 
 
 	# Get all layers
 	my @allLayers = ( CamJob->GetLayerByType( $inCAM, $jobId, "drill" ), CamJob->GetLayerByType( $inCAM, $jobId, "rout" ) );

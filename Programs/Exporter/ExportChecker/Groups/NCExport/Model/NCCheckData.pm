@@ -46,7 +46,7 @@ sub new {
 sub OnCheckGroupData {
 	my $self     = shift;
 	my $dataMngr = shift;    #instance of GroupDataMngr
-
+ 
 	my $defaultInfo = $dataMngr->GetDefaultInfo();
 
 	my $groupData = $dataMngr->GetGroupData();
