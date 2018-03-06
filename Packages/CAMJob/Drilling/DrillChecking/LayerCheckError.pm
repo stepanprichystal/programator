@@ -69,6 +69,9 @@ sub CheckNCLayers {
 
 		my %attHist = CamHistogram->GetAttHistogram( $inCAM, $jobId, $stepName, $l->{"gROWname"} );
 		$l->{"attHist"} = \%attHist;
+		
+		my %sHist = CamHistogram->GetSymHistogram( $inCAM, $jobId, $stepName, $l->{"gROWname"} );
+		$l->{"symHist"} = \%sHist;
 
 		if ( $l->{"gROWlayer_type"} eq "rout" ) {
 
@@ -238,6 +241,8 @@ sub CheckInvalidSymbols {
 
 	my $result = 1;
 
+	# check drill layers
+
 	my @t = ();
 
 	push( @t, EnumsGeneral->LAYERTYPE_plt_nDrill );
@@ -257,10 +262,37 @@ sub CheckInvalidSymbols {
 			$$mess .= "NC layer: " . $l->{"gROWname"} . " contains illegal symbol (surface, line, arc or text). Layer can contains only pads.\n";
 		}
 	}
+	
+	
+	# check rout layers
+	
+	my @t2 = ();
+
+	push( @t, EnumsGeneral->LAYERTYPE_plt_nDrill );
+	push( @t, EnumsGeneral->LAYERTYPE_plt_bDrillTop );
+	push( @t, EnumsGeneral->LAYERTYPE_plt_bDrillBot );
+	push( @t, EnumsGeneral->LAYERTYPE_plt_cDrill );
+	push( @t, EnumsGeneral->LAYERTYPE_plt_dcDrill );
+	push( @t, EnumsGeneral->LAYERTYPE_plt_fDrill );
+	push( @t, EnumsGeneral->LAYERTYPE_nplt_nDrill );
+
+	@layers = $self->__GetLayersByType( \@layers, \@t );
+
+	foreach my $l (@layers) {
+
+		if ( $l->{"fHist"}->{"surf"} > 0 || $l->{"fHist"}->{"arc"} > 0 || $l->{"fHist"}->{"line"} > 0 || $l->{"fHist"}->{"text"} > 0 ) {
+			$result = 0;
+			$$mess .= "NC layer: " . $l->{"gROWname"} . " contains illegal symbol (surface, line, arc or text). Layer can contains only pads.\n";
+		}
+	}
+	
+	$l->{"symHist"}
 
 	return $result;
 
 }
+
+
 
 sub CheckWrongNames {
 	my $self   = shift;
