@@ -23,7 +23,7 @@ my $export = NCExportTmp->new();
 #input parameters
  
  
-my $jobId = "d206764";
+my $jobId = "d152457";
  
  
  

@@ -420,7 +420,7 @@ sub __DefineNPlatedOperations {
 
 		# add all @nplt_nDrill which has dir from bot2top
 		my @nplt_nDrill_b2t = grep { $_->{"gROWdrl_dir"} eq "bot2top" && $_->{"gROWdrl_start"} == $startBot } @nplt_nDrill;
-		push( @layers, @blindBot, @nplt_nDrill_b2t );
+		push( @layers, @nplt_nDrill_b2t );
 
 		$opManager->AddOperationDef( $outFile, \@layers, $pressOrder );
 	}
