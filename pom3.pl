@@ -16,3 +16,6 @@ my $p = 'c:/pcb/f76142/f76143';
 my $scr = 'c:/export/test/test.txt';
 
 $inCAM->COM("input_identify","path" => $p,"job" => $job,"script_path" => $scr);
+
+
+drill_size.tab

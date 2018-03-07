@@ -10,6 +10,7 @@ use utf8;
 use strict;
 use warnings;
 use List::MoreUtils qw(uniq);
+use List::Util qw[max min];
 
 #local library
 
@@ -38,8 +39,6 @@ sub CheckNCLayers {
 	my $mess        = shift;
 
 	my $result = 1;
-	
- 
 
 	# Get all layers
 	my @allLayers = ( CamJob->GetLayerByType( $inCAM, $jobId, "drill" ), CamJob->GetLayerByType( $inCAM, $jobId, "rout" ) );
@@ -69,7 +68,7 @@ sub CheckNCLayers {
 
 		my %attHist = CamHistogram->GetAttHistogram( $inCAM, $jobId, $stepName, $l->{"gROWname"} );
 		$l->{"attHist"} = \%attHist;
-		
+
 		my %sHist = CamHistogram->GetSymHistogram( $inCAM, $jobId, $stepName, $l->{"gROWname"} );
 		$l->{"symHist"} = \%sHist;
 
@@ -110,7 +109,7 @@ sub CheckNCLayers {
 
 	# 4) Check if drill layers not contain invalid symbols..
 
-	unless ( $self->CheckInvalidSymbols( \@layers, $mess ) ) {
+	unless ( $self->CheckInvalidSymbols(\@layers, $mess ) ) {
 
 		$result = 0;
 	}
@@ -146,8 +145,15 @@ sub CheckNCLayers {
 
 		$result = 0;
 	}
+	
+	# 9) Check if all tools in job have correct size
+	unless ( $self->CheckToolDiameter( $inCAM, \@layers, $mess ) ) {
 
-	# 9) Checkdifference between drill and finish diameter
+		$result = 0;
+	}
+	
+
+	# 10) Checkdifference between drill and finish diameter
 	unless ( $self->CheckDiamterDiff( $inCAM, $jobId, $stepName, \@layers, $mess ) ) {
 
 		$result = 0;
@@ -253,46 +259,52 @@ sub CheckInvalidSymbols {
 	push( @t, EnumsGeneral->LAYERTYPE_plt_fDrill );
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_nDrill );
 
-	@layers = $self->__GetLayersByType( \@layers, \@t );
+	my @layersDrill = $self->__GetLayersByType( \@layers, \@t );
 
-	foreach my $l (@layers) {
+	foreach my $l (@layersDrill) {
 
 		if ( $l->{"fHist"}->{"surf"} > 0 || $l->{"fHist"}->{"arc"} > 0 || $l->{"fHist"}->{"line"} > 0 || $l->{"fHist"}->{"text"} > 0 ) {
 			$result = 0;
 			$$mess .= "NC layer: " . $l->{"gROWname"} . " contains illegal symbol (surface, line, arc or text). Layer can contains only pads.\n";
 		}
 	}
-	
-	
+
 	# check rout layers
-	
+
 	my @t2 = ();
 
-	push( @t, EnumsGeneral->LAYERTYPE_plt_nDrill );
-	push( @t, EnumsGeneral->LAYERTYPE_plt_bDrillTop );
-	push( @t, EnumsGeneral->LAYERTYPE_plt_bDrillBot );
-	push( @t, EnumsGeneral->LAYERTYPE_plt_cDrill );
-	push( @t, EnumsGeneral->LAYERTYPE_plt_dcDrill );
-	push( @t, EnumsGeneral->LAYERTYPE_plt_fDrill );
-	push( @t, EnumsGeneral->LAYERTYPE_nplt_nDrill );
+	push( @t2, EnumsGeneral->LAYERTYPE_plt_nMill );
+	push( @t2, EnumsGeneral->LAYERTYPE_plt_bMillTop );
+	push( @t2, EnumsGeneral->LAYERTYPE_plt_bMillBot );
+	push( @t2, EnumsGeneral->LAYERTYPE_nplt_kMill );
+	push( @t2, EnumsGeneral->LAYERTYPE_nplt_bMillTop );
+	push( @t2, EnumsGeneral->LAYERTYPE_nplt_bMillBot );
+	push( @t2, EnumsGeneral->LAYERTYPE_nplt_rsMill );
+	push( @t2, EnumsGeneral->LAYERTYPE_nplt_frMill );
+	push( @t2, EnumsGeneral->LAYERTYPE_nplt_jbMillTop );
+	push( @t2, EnumsGeneral->LAYERTYPE_nplt_jbMillBot );
+	push( @t2, EnumsGeneral->LAYERTYPE_nplt_nMill );
 
-	@layers = $self->__GetLayersByType( \@layers, \@t );
+	# check all nc layers on wrong shaped pads. Pads has to by only r<number>
 
-	foreach my $l (@layers) {
+	my @layersAll = $self->__GetLayersByType( \@layers, [ @t, @t2 ] );
 
-		if ( $l->{"fHist"}->{"surf"} > 0 || $l->{"fHist"}->{"arc"} > 0 || $l->{"fHist"}->{"line"} > 0 || $l->{"fHist"}->{"text"} > 0 ) {
+	foreach my $l (@layersAll) {
+
+		my @wrongPads = grep { $_->{"sym"} !~ /^r/i } @{ $l->{"symHist"}->{"pads"} };
+
+		if ( scalar(@wrongPads) ) {
+
 			$result = 0;
-			$$mess .= "NC layer: " . $l->{"gROWname"} . " contains illegal symbol (surface, line, arc or text). Layer can contains only pads.\n";
+			$$mess .=
+			  "NC layer: " . $l->{"gROWname"} . " contains illegal symbol pad shapes: " . join( ";", map { $_->{"sym"} } @wrongPads ) . " .\n";
 		}
 	}
-	
-	$l->{"symHist"}
+
+	 
 
 	return $result;
-
 }
-
-
 
 sub CheckWrongNames {
 	my $self   = shift;
@@ -337,7 +349,6 @@ sub CheckDirTop2Bot {
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_jbMillTop );
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_lcMill );
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_kMill );
- 
 
 	@layers = $self->__GetLayersByType( \@layers, \@t );
 
@@ -413,7 +424,8 @@ sub CheckDirBot2Top {
 		if ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_plt_cDrill && $dir && $dir eq "bot2top" ) {
 
 			$result = 0;
-			$$mess .= "Vrstva: $lName má špatně nastavený vrták v metrixu u vrtání jádra. Vrták musí mít vždy směr TOP-to-BOT.\n";
+			$$mess .=
+"Vrstva: $lName má špatně nastavený vrták v metrixu u vrtání jádra. Vrták musí mít vždy směr TOP-to-BOT.\n";
 
 		}
 	}
@@ -460,7 +472,7 @@ sub CheckToolParameters {
 				$$mess .= "Pcb which is NOT plated has to set Drill Tool Manager type: \"vrtane\" not type: \"vysledne\". \n";
 			}
 		}
- 
+
 	}
 
 	return $result;
@@ -536,6 +548,89 @@ sub CheckContainNoDepth {
 	return $result;
 
 }
+
+
+# Check if all tools in job are available in our CNC department (drill_size.tab, rout_size.tab )
+sub CheckToolDiameter {
+	my $self   = shift;
+	my $inCAM  = shift;
+	my @layers = @{ shift(@_) };
+	my $mess   = shift;
+
+	my $result = 1;
+
+	# check drill layers
+
+	my @t = ();
+
+	push( @t, EnumsGeneral->LAYERTYPE_plt_nDrill );
+	push( @t, EnumsGeneral->LAYERTYPE_plt_bDrillTop );
+	push( @t, EnumsGeneral->LAYERTYPE_plt_bDrillBot );
+	push( @t, EnumsGeneral->LAYERTYPE_plt_cDrill );
+	push( @t, EnumsGeneral->LAYERTYPE_plt_dcDrill );
+	push( @t, EnumsGeneral->LAYERTYPE_plt_fDrill );
+	push( @t, EnumsGeneral->LAYERTYPE_nplt_nDrill );
+
+	my @layersDrill = $self->__GetLayersByType( \@layers, \@t );
+ 
+
+	my @t2 = ();
+
+	push( @t2, EnumsGeneral->LAYERTYPE_plt_nMill );
+	push( @t2, EnumsGeneral->LAYERTYPE_plt_bMillTop );
+	push( @t2, EnumsGeneral->LAYERTYPE_plt_bMillBot );
+	push( @t2, EnumsGeneral->LAYERTYPE_nplt_kMill );
+	push( @t2, EnumsGeneral->LAYERTYPE_nplt_bMillTop );
+	push( @t2, EnumsGeneral->LAYERTYPE_nplt_bMillBot );
+	push( @t2, EnumsGeneral->LAYERTYPE_nplt_rsMill );
+	push( @t2, EnumsGeneral->LAYERTYPE_nplt_frMill );
+	push( @t2, EnumsGeneral->LAYERTYPE_nplt_jbMillTop );
+	push( @t2, EnumsGeneral->LAYERTYPE_nplt_jbMillBot );
+	push( @t2, EnumsGeneral->LAYERTYPE_nplt_nMill );
+
+	# check all nc layers on wrong shaped pads. Pads has to by only r<number>
+
+	my @layersAll = $self->__GetLayersByType( \@layers, [ @t, @t2 ] );
+ 
+
+	# check all nc layers on max available drill tool
+	my @tool    = CamDTM->GetToolTable( $inCAM, 'drill' );
+	my $maxTool = max(@tool)*1000; # in �m
+	my $minTool = min(@tool)*1000; # in �m
+
+	foreach my $l (@layersAll) {
+
+		my @maxTools = grep { ( $_->{"sym"} =~ m/^r(\d+\.?\d*)$/ )[0] > $maxTool } @{ $l->{"symHist"}->{"pads"} };
+
+		if ( scalar(@maxTools) ) {
+
+			$result = 0;
+			$$mess .=
+			    "NC layer: "
+			  . $l->{"gROWname"}
+			  . " contains drilled holes ("
+			  . join( ";", map { $_->{"sym"} } @maxTools )
+			  . ") larger than our max tool ($maxTool mm)\n";
+		}
+
+		my @minTools = grep { ( $_->{"sym"} =~ m/^r(\d+\.?\d*)$/ )[0] < $minTool } @{ $l->{"symHist"}->{"pads"} };
+
+		if ( scalar(@minTools) ) {
+
+			$result = 0;
+			$$mess .=
+			    "NC layer: "
+			  . $l->{"gROWname"}
+			  . " contains drilled holes ("
+			  . join( ";", map { $_->{"sym"} } @minTools )
+			  . ") smaller than our min tool ($minTool mm)\n";
+		}
+
+	}
+
+	return $result;
+}
+
 
 # Check if tools are unique within while layer, check if all necessary parameters are set
 sub CheckDiamterDiff {
@@ -614,11 +709,11 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	use aliased 'Packages::InCAM::InCAM';
 
 	my $inCAM = InCAM->new();
-	my $jobId = "d041857";
+	my $jobId = "d152457";
 
 	my $mess = "";
 
-	my $result = LayerCheckError->CheckNCLayers( $inCAM, $jobId, "mpanel", undef, \$mess );
+	my $result = LayerCheckError->CheckNCLayers( $inCAM, $jobId, "panel", undef, \$mess );
 
 	print STDERR "Result is $result \n";
 

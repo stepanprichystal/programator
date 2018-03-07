@@ -14,6 +14,8 @@ use File::Copy;
 
 #local library
 use aliased 'CamHelpers::CamLayer';
+use aliased 'CamHelpers::CamJob';
+use aliased 'CamHelpers::CamDrilling';
 use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'CamHelpers::CamHelper';
 use aliased 'CamHelpers::CamStepRepeat';
@@ -23,10 +25,12 @@ use aliased 'Packages::CAMJob::Drilling::DrillChecking::LayerCheckError';
 use aliased 'Packages::CAMJob::Drilling::DrillChecking::LayerCheckWarn';
 use aliased 'Packages::Routing::RoutLayer::RoutChecks::RoutCheckTools';
 use aliased 'Packages::CAM::UniRTM::UniRTM::UniRTM';
+use aliased 'Packages::CAM::UniDTM::UniDTM';
 use aliased 'Helpers::GeneralHelper';
 use aliased 'Packages::CAMJob::Drilling::CheckAspectRatio';
 use aliased 'Packages::CAMJob::Drilling::CheckHolePads';
 use aliased 'Packages::CAMJob::Routing::CheckRoutPocket';
+use aliased 'Enums::EnumsGeneral';
 #use aliased 'Packages::CAMJob::Drilling::NCLayerDirCheck';
 
 #-------------------------------------------------------------------------------------------#
@@ -46,7 +50,7 @@ sub new {
 sub OnCheckGroupData {
 	my $self     = shift;
 	my $dataMngr = shift;    #instance of GroupDataMngr
- 
+
 	my $defaultInfo = $dataMngr->GetDefaultInfo();
 
 	my $groupData = $dataMngr->GetGroupData();
@@ -197,6 +201,39 @@ sub OnCheckGroupData {
 
 		}
 
+	}
+
+	# 7) Check, when ALU material, if all rout diameters are ok
+	# Check only LAYERTYPE_nplt_nMill
+	# Available tools for Al: 1; 1,5; 2; 3; mm
+
+	if ( $defaultInfo->GetMaterialKind() =~ /al/i ) {
+
+		my @aluTool = ( 1, 1.5, 2, 3 );    #all alu rout tools
+
+		my @routLayers = CamDrilling->GetNCLayersByTypes( $inCAM, $jobId, [ EnumsGeneral->LAYERTYPE_nplt_nMill ] );
+
+		foreach my $l (@routLayers) {
+
+			my $unitDTM = UniDTM->new( $inCAM, $jobId, "panel", $l->{"gROWname"}, 1 );
+			my @tools = map { $_->GetDrillSize() / 1000 } $unitDTM->GetUniqueTools();
+
+			foreach my $t (@tools) {
+
+				unless ( scalar( grep { $_ == $t } @aluTool ) ) {
+					$dataMngr->_AddErrorResult(
+						"Routing", 
+						"Vrstva: \""
+						  . $l->{"gROWname"}
+						  . "\"  obsahuje otovry ("
+						  . $t
+						  . "mm) pro které nemáme frézovací nástroje pro ALU materiál."
+						  . " Dostupné frézovací nástroje: "
+						  . join( ";", @aluTool ) . "mm"
+					);
+				}
+			}
+		}
 	}
 
 	# 8) Check if fsch exist, and if "f" was changed if "fsch" was changed too
@@ -355,16 +392,17 @@ sub OnCheckGroupData {
 		}
 
 	}
-	
+
 	# 13) Check if exist layer D. This layer is permited so far (but will be probablz alowed in feature) 27.2.2018
-	if($defaultInfo->LayerExist("d")){
+	if ( $defaultInfo->LayerExist("d") ) {
 		$dataMngr->_AddErrorResult(
-										"NC vrstva D",
-										"Něco se rozbilo. V matrixu je NC vrstva D. ".
-										"Tato vrstva pravděpodobně obsahuje neprokovené otvory z vrstvy f. ".
-										"Zkontroluj a vrať otovory v každého stepu do vrstvy f a smaž vrstvu d. Volej k tomu SPR." );
+									"NC vrstva D",
+									"Něco se rozbilo. V matrixu je NC vrstva D. "
+									  . "Tato vrstva pravděpodobně obsahuje neprokovené otvory z vrstvy f. "
+									  . "Zkontroluj a vrať otovory v každého stepu do vrstvy f a smaž vrstvu d. Volej k tomu SPR."
+		);
 	}
- 
+
 }
 
 #-------------------------------------------------------------------------------------------#

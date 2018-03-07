@@ -17,6 +17,7 @@ use aliased 'Enums::EnumsDrill';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'CamHelpers::CamStepRepeat';
 use aliased 'CamHelpers::CamDrilling';
+use aliased 'Helpers::FileHelper';
 
 #-------------------------------------------------------------------------------------------#
 #   Package methods
@@ -423,13 +424,42 @@ sub SetDTMTable {
 	my $DTMType = shift;    # vysledne, vrtane
 
 	CamHelper->SetStep( $inCAM, $step );
-	CamLayer->WorkLayer( $inCAM, $layer);
+	CamLayer->WorkLayer( $inCAM, $layer );
 
-	$inCAM->COM('tools_show', "layer" => $layer );
-	$inCAM->COM('tools_set', layer => $layer, thickness => '0', user_params => $DTMType );
+	$inCAM->COM( 'tools_show', "layer" => $layer );
+	$inCAM->COM( 'tools_set', layer => $layer, thickness => '0', user_params => $DTMType );
 	$inCAM->COM('tools_recalc');
 	$inCAM->COM('tools_close');
 
+}
+
+# Return sorted array with all available drill tools
+# tools are sorted ASC
+sub GetToolTable {
+	my $self  = shift;
+	my $inCAM = shift;
+	my $type  = shift;    #drill/rout
+
+	die "No tool type defined" unless ($type);
+	
+	my $usrName = CamHelper->GetUserName($inCAM);
+
+	# roout tools
+	my @tools = ();
+
+	#determine if take user or site file drill_size.tab
+	my $toolTable = EnumsPaths->InCAM_users . $usrName . "\\hooks\\".$type."_size.tab";
+
+	unless ( -e $toolTable ) {
+		$toolTable = EnumsPaths->InCAM_hooks . $type."_size.tab";
+	}
+
+	@tools = @{ FileHelper->ReadAsLines($toolTable) };
+	s/\s+$// for (@tools);
+	
+	@tools = sort { $a <=> $b } @tools;
+
+	return @tools;
 }
 
 #-------------------------------------------------------------------------------------------#
@@ -440,15 +470,18 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	use aliased 'CamHelpers::CamDTM';
 	use aliased 'Packages::InCAM::InCAM';
+	
+	use Data::Dump qw(dump);
 
 	my $inCAM = InCAM->new();
 	my $jobId = "f13608";
 
 	#my $step  = "mpanel_10up";
 
-	my @result = CamDTM->GetDTMTools( $inCAM, $jobId, "o+1", "m" );
-	@result = CamDTM->GetDTMToolsByType( $inCAM, $jobId, "o+1", "m", "press_fit" );
-
+	my @result = CamDTM->GetToolTable( $inCAM, 'rout' );
+	
+	dump(@result);
+	
 	#my $self             = shift;
 
 	print 1;

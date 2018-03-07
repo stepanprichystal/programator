@@ -20,6 +20,7 @@ use aliased 'Packages::Polygon::Features::RouteFeatures::RouteFeatures';
 use aliased 'Enums::EnumsPaths';
 use aliased 'CamHelpers::CamLayer';
 use aliased 'CamHelpers::CamJob';
+use aliased 'CamHelpers::CamDTM';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'CamHelpers::CamDrilling';
 use aliased 'CamHelpers::CamStepRepeat';
@@ -42,17 +43,8 @@ sub AddPilotHole {
 	my $usrName = CamHelper->GetUserName($inCAM);
 
 	# roout tools
-	my @tools = ();
-
-	#determine if take user or site file drill_size.tab
-	my $toolTable = EnumsPaths->InCAM_users . $usrName . "\\hooks\\drill_size.tab";
-
-	unless ( -e $toolTable ) {
-		$toolTable = EnumsPaths->InCAM_hooks . "drill_size.tab";
-	}
-
-	@tools = @{ FileHelper->ReadAsLines($toolTable) };
-	@tools = sort { $a <=> $b } @tools;
+	my @tools = CamDTM->GetToolTable($inCAM, "drill");
+ 
 
 	# Get information about all chains
 	my $route = RouteFeatures->new();
@@ -118,7 +110,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	use aliased 'Packages::Routing::PilotHole';
 	use aliased 'Packages::InCAM::InCAM';
 
-	my $jobId = "f13610";
+	my $jobId = "d152457";
 	my $inCAM = InCAM->new();
 
 	my $step = "o+1";
