@@ -7,7 +7,7 @@ use warnings;
 
 
 # ============ INPUT LINE =================
-my $inputLine ="sel_single_feat,operation=select,x=14.790905,y=11.5544075,tol=703.3675,cyclic=no,clear_prev=yes";
+my $inputLine ="input_identify,path=,job=d152457,script_path=,gbr_ext=no,drl_ext=no,gbr_units=auto,drl_units=auto,unify=yes,break_sr=yes,gbr_wtp_filter=*,drl_wtp_filter=*,gbr_wtp_units=auto,drl_wtp_units=auto,wtp_dir=,have_wheels=yes,wheel=,gbr_consider_headlines=yes,drl_consider_headlines=yes,board_size_x=0,board_size_y=0 (1)";
 
  
 

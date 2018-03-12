@@ -29,8 +29,8 @@ $main::DEBUG = 1;
 #NonStandartUnits();
 CreateFakePoolFile(0);
 #CreateFakePoolFile(1);
-#NotCreateServer();
-#NoChecks();
+NotCreateServer();
+NoChecks();
 # ----------------------------------------------
 
 

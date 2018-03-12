@@ -93,7 +93,7 @@ sub __InitNestedStep {
 	my %lim = CamJob->GetProfileLimits2( $inCAM, $jobId, $nestedStep->GetStepName(), 1 );
 	my %datum = CamStep->GetDatumPoint( $inCAM, $jobId, $nestedStep->GetStepName(), 1 );
 
-	if ( abs($lim{"xMin"} - $datum{"x"}) > 0.001 || abs($lim{"yMin"} - $datum{"y"}) > 0.001 ) {
+	if ( abs($lim{"xMin"} - $datum{"x"}) > 0.01 || abs($lim{"yMin"} - $datum{"y"}) > 0.01 ) {
 		die "Step: \""
 		  . $nestedStep->GetStepName()
 		  . "\" . Left down corner of profile is not equal to datum point. Move datump point to left down corner of step profile!.\n";

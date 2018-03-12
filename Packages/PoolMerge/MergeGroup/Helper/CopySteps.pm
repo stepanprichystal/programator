@@ -37,32 +37,29 @@ sub new {
 	return $self;
 }
 
-
 sub SetNewJobsState {
-	my $self      = shift;
+	my $self        = shift;
 	my $masterOrder = shift;
-	my $mess      = shift;
+	my $mess        = shift;
 
 	my $result = 1;
 
 	my $inCAM = $self->{"inCAM"};
- 
+
 	my $newState = shift;
- 
-	HegMethods->UpdatePcbOrderState($masterOrder, "slouceno-master", 1);
-	
+
+	HegMethods->UpdatePcbOrderState( $masterOrder, "slouceno-master", 1 );
+
 	my @childOrders = $self->{"poolInfo"}->GetOrderNames();
 	@childOrders = grep { $_ !~ /^$masterOrder$/i } @childOrders;
-	
-	foreach my $orderId (@childOrders){
-		
-		HegMethods->UpdatePcbOrderState($orderId, "slouceno", 1);
+
+	foreach my $orderId (@childOrders) {
+
+		HegMethods->UpdatePcbOrderState( $orderId, "slouceno", 1 );
 	}
- 
+
 	return $result;
 }
-
-
 
 sub CopyChildSteps {
 	my $self      = shift;
@@ -163,7 +160,7 @@ sub CopyStepFinalCheck {
 	}
 
 	# 2) Delete all after profile
-	
+
 	# base layers
 	my @boardBase = map { $_->{"gROWname"} } CamJob->GetBoardBaseLayers( $inCAM, $masterJob );
 
@@ -186,10 +183,10 @@ sub CopyStepFinalCheck {
 					 "pol_types"   => "positive\;negative"
 		);
 	}
-	
+
 	# nc layers (pads only)
 	my @ncLayers = map { $_->{"gROWname"} } CamJob->GetNCLayers( $inCAM, $masterJob );
- 
+
 	foreach my $step (@stepClip) {
 
 		CamHelper->SetStep( $inCAM, $step );
@@ -215,26 +212,40 @@ sub CopyStepFinalCheck {
 	my @stepsZero = ( @jobNames, "o+1" );
 
 	foreach my $step (@stepsZero) {
+		
 
 		my %lim = CamJob->GetProfileLimits2( $inCAM, $masterJob, $step, 1 );
-		my %datum = CamStep->GetDatumPoint( $inCAM, $masterJob, $step, 1 );
+		my %datum = CamStep->GetDatumPoint( $inCAM, $masterJob, $step );
+		
+		# check if zero point was not moved. If was (by InCAM Origin function), CamJob->GetProfileLimits return wrong results
+		my %limOri = CamJob->GetProfileLimits2( $inCAM, $masterJob, $step, 0 );
+		if (    ( int( $lim{"xMin"} ) == 0 && int( $limOri{"xMin"} ) != 0 )
+			 || ( int( $lim{"yMin"} ) == 0 && int( $limOri{"yMin"} ) != 0 ) )
+		{
+			$result = 0;
+			$$mess .= "Ve stepu: $step byla pravděpodobně přesunuta \"nula\" do pozice: [".$limOri{"xMin"}.",".$limOri{"yMin"}."] pomocí InCAM funkce \"Step/Origin\". " .
+						"Vrať nulu do původní pozice (\"Step/Origin/Previous Origin\")\n";
+		}
+		
 
-		if ( abs( $lim{"xMin"} - $datum{"x"} ) > 0.001 || abs( $lim{"yMin"} - $datum{"y"} ) > 0.001 ) {
+		if ( $datum{"x"} != 0 || $datum{"y"}  != 0 ) {
 
 			$result = 0;
-			$$mess .= "Ve stepu: $step není datum-point umístěn v v levém dolním rohu profilu. Posuň datum point do levého dolního rohu.\n";
+			$$mess .= "Ve stepu: $step není datum-point umístěn v nule. Posuň datum point do nuly.\n";
 		}
 
-		if ( int( $lim{"xMin"} ) != 0 || int( $lim{"yMin"} ) != 0 ) {
+		if ( abs( $lim{"xMin"} ) > 0.01  || abs( $lim{"yMin"} ) > 0.01 ) {
 
 			$result = 0;
-			$$mess .= "Ve stepu: $step není­ levý dolní­ roh profilu v \"nule\". Posuň levý dolní roh profilu do nuly.\n";
+			$$mess .= "Ve stepu: $step není­ levý dolní roh profilu v \"nule\". Posuň levý dolní roh profilu do nuly.\n";
 		}
+
+		
+
 	}
-	
-	# 4) Do rearrange rows
-	$inCAM->COM("matrix_auto_rows","job" => $masterJob,"matrix" => "matrix");
 
+	# 4) Do rearrange rows
+	$inCAM->COM( "matrix_auto_rows", "job" => $masterJob, "matrix" => "matrix" );
 
 	return $result;
 }
@@ -282,31 +293,26 @@ sub EmptyLayers {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-		use aliased 'Packages::PoolMerge::MergeGroup::Helper::CopySteps';
-		use aliased 'Programs::PoolMerge::Task::TaskData::GroupData';
-		use aliased 'Packages::InCAM::InCAM';
-	
-		my $inCAM = InCAM->new();
- 
-		my $jobName   = "f52456";
-		my $stepName  = "panel";
-		my $layerName = "c";
-		
-		my $group = GroupData->new();
-		
-		my @orders = ( );
-		
-		$group->{"ordersInfo"}  = \@orders;
-		
-	 
-		
-		my $ch = CopySteps->new($inCAM, $group);
-	
-		
-	 
-	
-		my $mngr = $ch->CopyStepFinalCheck( $jobName );
-	 
+	use aliased 'Packages::PoolMerge::MergeGroup::Helper::CopySteps';
+	use aliased 'Programs::PoolMerge::Task::TaskData::GroupData';
+	use aliased 'Packages::InCAM::InCAM';
+
+	my $inCAM = InCAM->new();
+
+	my $jobName   = "f52456";
+	my $stepName  = "panel";
+	my $layerName = "c";
+
+	my $group = GroupData->new();
+
+	my @orders = ();
+
+	$group->{"ordersInfo"} = \@orders;
+
+	my $ch = CopySteps->new( $inCAM, $group );
+
+	my $mngr = $ch->CopyStepFinalCheck($jobName);
+
 }
 
 1;
