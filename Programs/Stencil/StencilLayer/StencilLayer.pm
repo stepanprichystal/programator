@@ -38,10 +38,10 @@ sub new {
 	$self = {};
 	bless $self;
 
-	$self->{"inCAM"}       = shift;
-	$self->{"jobId"}       = shift;
-	$self->{"stencilParams"}    = shift; # stencil params
- 
+	$self->{"inCAM"}         = shift;
+	$self->{"jobId"}         = shift;
+	$self->{"stencilParams"} = shift;    # stencil params
+
 	my %inf = Helper->GetStencilInfo( $self->{"jobId"} );
 	$self->{"stencilInfo"} = \%inf;
 
@@ -51,11 +51,10 @@ sub new {
 
 	return $self;
 }
- 
 
 sub PrepareLayer {
 	my $self = shift;
- 
+
 	my %layers = $self->__PrepareOriLayers();
 
 	$self->__PrepareFinalSteps();
@@ -69,10 +68,9 @@ sub PrepareLayer {
 sub __PrepareOriLayers {
 	my $self = shift;
 
-	my $inCAM       = $self->{"inCAM"};
-	my $jobId       = $self->{"jobId"};
-	my $par 		= $self->{"stencilParams"};
-	 
+	my $inCAM = $self->{"inCAM"};
+	my $jobId = $self->{"jobId"};
+	my $par   = $self->{"stencilParams"};
 
 	my $step = $par->GetStencilStep();
 	CamHelper->SetStep( $self->{"inCAM"}, $step );
@@ -151,11 +149,11 @@ sub __PrepareOriLayers {
 		}
 
 		# 4) Rotate data 90° CW
-		if ( $pcbProf->{"isRotated"}) {
+		if ( $pcbProf->{"isRotated"} ) {
 
 			CamLayer->RotateLayerData( $inCAM, $prepared, 90 );    # rotated about left-down corner CCW
 			my %source = ( "x" => 0, "y" => 0 );
-			my %target = ( "x" => 0, "y" => $pcbProf->{"h"} );    # move to zero again
+			my %target = ( "x" => 0, "y" => $pcbProf->{"h"} );     # move to zero again
 			CamLayer->MoveLayerData( $inCAM, $prepared, \%source, \%target );
 		}
 
@@ -169,9 +167,9 @@ sub __PrepareOriLayers {
 sub __PrepareFinalSteps {
 	my $self = shift;
 
-	my $inCAM    = $self->{"inCAM"};
-	my $jobId    = $self->{"jobId"};
-	my $par 		= $self->{"stencilParams"};
+	my $inCAM = $self->{"inCAM"};
+	my $jobId = $self->{"jobId"};
+	my $par   = $self->{"stencilParams"};
 
 	# 1) Create steps  o+1
 
@@ -211,11 +209,10 @@ sub __PrepareFinalLayer {
 	my $self   = shift;
 	my %layers = %{ shift(@_) };
 
-	my $inCAM       = $self->{"inCAM"};
-	my $jobId       = $self->{"jobId"};
-	my $par 		= $self->{"stencilParams"};
-	my $step        = $par->GetStencilStep();
-
+	my $inCAM = $self->{"inCAM"};
+	my $jobId = $self->{"jobId"};
+	my $par   = $self->{"stencilParams"};
+	my $step  = $par->GetStencilStep();
 
 	# 1) Create final layer
 	my $type = 'document';
@@ -266,28 +263,26 @@ sub __PrepareFinalLayer {
 		);
 
 		$inCAM->COM( 'delete_layer', layer => $prepared );
-
-		#if type is drilled, set DTM type "vrtane"
-		if ( $self->{"stencilInfo"}->{"tech"} eq Enums->Technology_DRILL ) {
-
-			CamDTM->SetDTMTable( $inCAM, $jobId, $self->{"stencilStep"}, $self->{"finalLayer"}, EnumsDrill->DTM_VRTANE );
-		}
+ 
 	}
-	
-	
-	$self->__CreatePads($self->{"finalLayer"});
+
+	$self->__CreatePads( $self->{"finalLayer"} );
+
+	# if drilled stencil, recompute drill tools
+	if ( $self->{"stencilInfo"}->{"tech"} eq Enums->Technology_DRILL ) {
+		$self->__RecomputeTools();
+	}
 
 }
 
 sub __PrepareSchema {
 	my $self = shift;
 
-	my $inCAM       = $self->{"inCAM"};
-	my $jobId       = $self->{"jobId"};
-	my $par 		= $self->{"stencilParams"};
-	my $schema = $par->GetSchema();
-	my $schType     = $schema->{"type"};
-	
+	my $inCAM   = $self->{"inCAM"};
+	my $jobId   = $self->{"jobId"};
+	my $par     = $self->{"stencilParams"};
+	my $schema  = $par->GetSchema();
+	my $schType = $schema->{"type"};
 
 	CamLayer->WorkLayer( $inCAM, $self->{"finalLayer"} );
 
@@ -296,7 +291,7 @@ sub __PrepareSchema {
 
 		my $d = $schema->{"holeSize"};
 
-		foreach ( @{$schema->{"holePositions"}} ) {
+		foreach ( @{ $schema->{"holePositions"} } ) {
 
 			CamSymbol->AddPad( $inCAM, "r" . $d * 1000, $_ );
 		}
@@ -335,10 +330,10 @@ sub __PrepareSchema {
 }
 
 sub __PreparePcbNumber {
-	my $self = shift;
-	my $inCAM       = $self->{"inCAM"};
-	my $jobId       = $self->{"jobId"};
- 	my $par 		= $self->{"stencilParams"};
+	my $self  = shift;
+	my $inCAM = $self->{"inCAM"};
+	my $jobId = $self->{"jobId"};
+	my $par   = $self->{"stencilParams"};
 
 	if ( $par->GetAddPcbNumber() ) {
 
@@ -369,12 +364,11 @@ sub __CreatePads {
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
 	my $step  = $self->{"stencilStep"};
-	
-	CamLayer->WorkLayer( $inCAM, $lName);
- 	$inCAM->COM( 'sel_break');
+
+	CamLayer->WorkLayer( $inCAM, $lName );
+	$inCAM->COM('sel_break');
 	$inCAM->COM( 'sel_contourize', "accuracy"  => '6.35', "break_to_islands" => 'yes', "clean_hole_size" => '60',  "clean_hole_mode" => 'x_and_y' );
 	$inCAM->COM( 'sel_cont2pad',   "match_tol" => '25.4', "restriction"      => '',    "min_size"        => '127', "max_size"        => '12000' );
-	
 
 	# test on  lines presence
 	my %fHist = CamHistogram->GetFeatuesHistogram( $inCAM, $jobId, $step, $lName );
@@ -384,14 +378,35 @@ sub __CreatePads {
 		  . $self->{"workLayer"}
 		  . ") can't contain line and arcs. Only pad and surfaces are alowed.";
 	}
-	
+
 	# check error on surfaces
-	if ( $fHist{"surf"} == 1 && $fHist{"pad"} == 0) {
+	if ( $fHist{"surf"} == 1 && $fHist{"pad"} == 0 ) {
 		die "Error during creating pads in stencil";
 	}
 
 }
 
+sub __RecomputeTools {
+	my $self = shift;
+
+	my $inCAM = $self->{"inCAM"};
+	my $jobId = $self->{"jobId"};
+	my $step  = $self->{"stencilStep"};
+	my $lName = $self->{"finalLayer"};
+
+	my @tools = CamDTM->GetDTMTools( $inCAM, $jobId, $step, $lName );
+
+	my $DTMType = CamDTM->GetDTMType( $inCAM, $jobId, $step, $lName );
+
+	foreach my $t (@tools) {
+ 
+		$t->{"gTOOLfinish_size"} = $t->{"gTOOLdrill_size"};
+	}
+
+	# 3) Set new values to DTM
+	CamDTM->SetDTMTools( $inCAM, $jobId, $step, $lName, \@tools );
+	CamDTM->SetDTMTable( $inCAM, $jobId, $step, $lName, EnumsDrill->DTM_VRTANE );
+}
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

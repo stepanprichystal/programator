@@ -226,23 +226,10 @@ sub __PrepareGRAFIT {
 
 	if ( $layers[0] ) {
 
-		# Prepare reference layer (gold + mask), which specifies area, where is hard gold
+		my $lName = GeneralHelper->GetGUID();
+		$inCAM->COM( "merge_layers", "source_layer" => $layers[0]->{"gROWname"}, "dest_layer" => $lName );
 
-		my $refL    = $layers[0]->{"gROWname"};
-		my $baseCuL = ( $refL =~ m/^g([cs])$/ )[0];
-		my $maskL   = "m" . $baseCuL;
- 
-		unless(CamHelper->LayerExists($inCAM, $jobId, $maskL)){
-			$maskL = 0;
-		}
-		
-		unless(CamHelper->LayerExists($inCAM, $jobId, $refL)){
-			die "Reference layer $refL doesn't exist.";
-		}
-
-		my $resultL = Helper->FeaturesByRefLayer( $inCAM, $jobId, $baseCuL, $refL, $maskL, $self->{"profileLim"} );
-		
-		$layer->SetOutputLayer($resultL);
+		$layer->SetOutputLayer($lName);
 
 	}
 }

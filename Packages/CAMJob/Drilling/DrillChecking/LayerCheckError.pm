@@ -613,18 +613,18 @@ sub CheckToolDiameter {
 			  . ") larger than our max tool ($maxTool mm)\n";
 		}
 
-		my @minTools = grep { ( $_->{"sym"} =~ m/^r(\d+\.?\d*)$/ )[0] < $minTool } @{ $l->{"symHist"}->{"pads"} };
-
-		if ( scalar(@minTools) ) {
-
-			$result = 0;
-			$$mess .=
-			    "NC layer: "
-			  . $l->{"gROWname"}
-			  . " contains drilled holes ("
-			  . join( ";", map { $_->{"sym"} } @minTools )
-			  . ") smaller than our min tool ($minTool mm)\n";
-		}
+#		my @minTools = grep { ( $_->{"sym"} =~ m/^r(\d+\.?\d*)$/ )[0] < $minTool } @{ $l->{"symHist"}->{"pads"} };
+#
+#		if ( scalar(@minTools) ) {
+#
+#			$result = 0;
+#			$$mess .=
+#			    "NC layer: "
+#			  . $l->{"gROWname"}
+#			  . " contains drilled holes ("
+#			  . join( ";", map { $_->{"sym"} } @minTools )
+#			  . ") smaller than our min tool ($minTool mm)\n";
+#		}
 
 	}
 
