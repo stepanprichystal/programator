@@ -368,6 +368,12 @@ sub __CreatePads {
 	CamLayer->WorkLayer( $inCAM, $lName );
 	$inCAM->COM('sel_break');
 	$inCAM->COM( 'sel_contourize', "accuracy"  => '6.35', "break_to_islands" => 'yes', "clean_hole_size" => '60',  "clean_hole_mode" => 'x_and_y' );
+	
+	# due to InCAM Bug do break and counturization again - workaround from Orbotech
+	# (sometimes InCAM create one big surface - no island)
+	$inCAM->COM( 'sel_contourize', "accuracy"  => '6.35', "break_to_islands" => 'yes', "clean_hole_size" => '60',  "clean_hole_mode" => 'x_and_y' );
+	$inCAM->COM('sel_decompose',"overlap"=> "no");
+	
 	$inCAM->COM( 'sel_cont2pad',   "match_tol" => '25.4', "restriction"      => '',    "min_size"        => '127', "max_size"        => '12000' );
 
 	# test on  lines presence

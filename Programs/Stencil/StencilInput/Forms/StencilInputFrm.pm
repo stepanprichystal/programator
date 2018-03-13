@@ -14,6 +14,7 @@ use Wx;
 use aliased 'Packages::Events::Event';
 
 #local library
+use aliased 'Helpers::JobHelper';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'Packages::InCAM::InCAM';
 use aliased 'Connectors::HeliosConnector::HegMethods';
@@ -345,6 +346,14 @@ sub __InputCustomerData {
 	foreach my $l (  grep { $_->{"gROWname"} =~ /s[ab]-ori/ }  CamJob->GetAllLayers( $inCAM, $jobId ) ){
 		CamLayer->SetLayerTypeLayer( $inCAM, $jobId, $l->{"gROWname"}, "document" );
 	}
+	
+	# move customer data to archive
+	my $p = JobHelper->GetJobArchive($jobId)."\\Zdroje\\data";
+	unless ( -e $p ) {
+		mkdir( $p) or die "Can't create dir: " . $p . $_;
+	}
+	
+	my $copyCnt = dirmove( $root, $p );
 	
 
 	$self->__RunStencilCreator($jobId);
