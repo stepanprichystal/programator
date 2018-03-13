@@ -328,7 +328,7 @@ sub SetDTMTools {
 	my $step    = shift;
 	my $layer   = shift;
 	my @tools   = @{ shift(@_) };
-	my $DTMType = shift;            # vysledne, vrtane
+	my $DTMType = shift;            # vysledne, vrtane (do not do DTM recalculate. Use SetDTMTable)
 
 	my @userClmns = CamHelpers::CamDTM->GetDTMUserColNames($inCAM);    # User column name
 
@@ -421,7 +421,7 @@ sub SetDTMTable {
 	my $jobId   = shift;
 	my $step    = shift;
 	my $layer   = shift;
-	my $DTMType = shift;    # vysledne, vrtane
+	my $DTMType = shift;    # vysledne, vrtane 
 
 	CamHelper->SetStep( $inCAM, $step );
 	CamLayer->WorkLayer( $inCAM, $layer );

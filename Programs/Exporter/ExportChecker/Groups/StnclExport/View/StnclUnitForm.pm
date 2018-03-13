@@ -243,12 +243,15 @@ sub DisableControls {
 
 	if ( $self->{"stencilInfo"}->{"tech"} eq StnclEnums->Technology_DRILL ) {
 
+		$self->{"measureDataChb"}->Disable();
 		$self->{"halfFiducChb"}->Disable();
 
 	}
 	else {
 
+		$self->{"measureDataChb"}->Enable();
 		$self->{"halfFiducChb"}->Enable();
+		
 
 		if ( $self->{"halfFiducChb"}->GetValue() == 1 ) {
 

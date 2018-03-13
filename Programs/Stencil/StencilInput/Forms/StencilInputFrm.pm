@@ -14,16 +14,19 @@ use Wx;
 use aliased 'Packages::Events::Event';
 
 #local library
+use aliased 'Helpers::JobHelper';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'Packages::InCAM::InCAM';
 use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'Packages::Other::CustomerNote';
 use aliased 'CamHelpers::CamJob';
+use aliased 'CamHelpers::CamLayer';
 use aliased 'CamHelpers::CamStep';
 use aliased 'CamHelpers::CamHelper';
 use aliased 'Helpers::GeneralHelper';
 use aliased 'CamHelpers::CamStepRepeat';
 use aliased 'CamHelpers::CamAttributes';
+use aliased 'CamHelpers::CamHistogram';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -85,8 +88,7 @@ sub __InputExistingJob {
 	# test if exist source job
 	if ( !CamJob->JobExist( $inCAM, $sourceJobId ) ) {
 
-		$self->{"messMngr"}
-		  ->ShowModal( -1, EnumsGeneral->MessageType_WARNING, ["Job neexistuje v databázi, musíš ho nejprve odarchivovat."] );
+		$self->{"messMngr"}->ShowModal( -1, EnumsGeneral->MessageType_WARNING, ["Job neexistuje v databázi, musíš ho nejprve odarchivovat."] );
 		return 0;
 	}
 
@@ -101,8 +103,7 @@ sub __InputExistingJob {
 
 	if ( HegMethods->GetTypeOfPcb($jobId) ne 'Sablona' ) {
 
-		$self->{"messMngr"}
-		  ->ShowModal( -1, EnumsGeneral->MessageType_ERROR, ["Job šablony $jobId není v IS veden jako typ dps - šablona."] );
+		$self->{"messMngr"}->ShowModal( -1, EnumsGeneral->MessageType_ERROR, ["Job šablony $jobId není v IS veden jako typ dps - šablona."] );
 		return 0;
 	}
 
@@ -150,27 +151,27 @@ sub __InputExistingJob {
 	}
 
 	foreach my $step (@steps) {
-		
+
 		# check if step is not already exist
-		my $oriStepName = "ori_" . $sourceJobId . "_" .  $step; 
-		
-		if(CamHelper->StepExists($inCAM, $jobId, $oriStepName)){
+		my $oriStepName = "ori_" . $sourceJobId . "_" . $step;
+
+		if ( CamHelper->StepExists( $inCAM, $jobId, $oriStepName ) ) {
 			next;
 		}
- 
+
 		CamStep->CopyStep( $inCAM, $sourceJobId, $step, $jobId, $oriStepName );
-		
+
 		# when we copy step with S&R from other job, all steps are copied to
 		# so rename nested step in order to avoid name conflicts
-		if( CamStepRepeat->ExistStepAndRepeats( $inCAM, $sourceJobId, $step )){
-			
+		if ( CamStepRepeat->ExistStepAndRepeats( $inCAM, $sourceJobId, $step ) ) {
+
 			my @sr = CamStepRepeat->GetUniqueNestedStepAndRepeat( $inCAM, $sourceJobId, $step );
-			
+
 			# rename all nested steps in panel to ori_<job id>_<original nested name>
-			foreach my $sr (@sr){
-				
-				 my $newName = "ori_" . $sourceJobId . "_" .  $sr->{"stepName"}; 
-				 CamStep->RenameStep( $inCAM, $jobId, $sr->{"stepName"}, $newName);
+			foreach my $sr (@sr) {
+
+				my $newName = "ori_" . $sourceJobId . "_" . $sr->{"stepName"};
+				CamStep->RenameStep( $inCAM, $jobId, $sr->{"stepName"}, $newName );
 			}
 		}
 	}
@@ -178,7 +179,7 @@ sub __InputExistingJob {
 	if ($closeJob) {
 		CamJob->CloseJob( $inCAM, $sourceJobId );
 	}
-	
+
 	$inCAM->COM( "open_job", job => "$jobId", "open_win" => "yes" );
 
 	# remove all useless layers, keep only sa-ori, sb-ori, or sa-made, sb-made
@@ -243,8 +244,7 @@ sub __InputCustomerData {
 	# Check if job already exist
 	if ( CamJob->JobExist( $inCAM, $jobId ) ) {
 
-		$self->{"messMngr"}
-		  ->ShowModal( -1, EnumsGeneral->MessageType_WARNING, ["Job $jobId již existuje, cheš ho přemazat?"], [ "Ano", "Ne" ] );
+		$self->{"messMngr"}->ShowModal( -1, EnumsGeneral->MessageType_WARNING, ["Job $jobId již existuje, cheš ho přemazat?"], [ "Ano", "Ne" ] );
 		if ( $self->{"messMngr"}->Result() == 1 ) {
 			$self->{"mainFrm"}->Show();
 			return 0;
@@ -277,8 +277,12 @@ sub __InputCustomerData {
 	$inCAM->COM( "input_create",   "path" => "$root" );
 	$inCAM->COM( "input_identify", "job"  => $jobId );
 
-	my @mess =
-	  ( "Načti správně data do výchozího stepu \"$oriStep\".", " - šablona pro TOP => sa-ori", " - šablona pro BOT => sb-ori" );
+	my @mess = (
+				 "Načti správně data do výchozího stepu \"$oriStep\".",
+				 " - šablona pro TOP => sa-ori",
+				 " - šablona pro BOT => sb-ori",
+				 " - profil šablony => o"
+	);
 
 	$self->{"messMngr"}->ShowModal( -1, EnumsGeneral->MessageType_INFORMATION, \@mess );
 
@@ -294,25 +298,63 @@ sub __InputCustomerData {
 		$inCAM->PAUSE("Vytvor vrstvy sa-ori nebo sb-ori...");
 	}
 
+
 	# Create profile
 
 	my $profExist = sub {
+
+		# test if profile already exist
 		my %lim = CamJob->GetProfileLimits2( $inCAM, $jobId, $oriStep );
-		if ( $lim{"xMin"} == 0 && $lim{"xMax"} == 0 ) {
-			return 0;
-		}
-		else {
+		if ( $lim{"xMax"} != 0 && $lim{"yMax"} != 0 ) {
 			return 1;
 		}
+
+		my $profL = "o";
+
+		return 0 unless ( CamHelper->LayerExists( $inCAM, $jobId, $profL ) );
+		
+		 my %fHist = CamHistogram->GetFeatuesHistogram( $inCAM, $jobId, $oriStep, $profL);
+		 return 0 if($fHist{"line"} != 4);
+
+		# try to create profile
+		$inCAM->SupressToolkitException(1);
+		$inCAM->HandleException(1);
+		
+		CamStep->CreateProfileByLayer( $inCAM, $oriStep, $profL );
+
+		my $err = $inCAM->GetExceptionError();
+
+		if ($err) {
+			return 0;
+		}
+
+		$inCAM->HandleException(0);
+		$inCAM->SupressToolkitException(0);
+ 
+		return 1;
 	};
 
 	while ( !$profExist->() ) {
 
-		$self->{"messMngr"}->ShowModal( -1, EnumsGeneral->MessageType_INFORMATION, ["Nebyl nalezen profil, vytvoř ho."] );
+		$self->{"messMngr"}->ShowModal( -1, EnumsGeneral->MessageType_INFORMATION, ["Nepodařilo se vytvořit profil.", "Vytvoř vrstvu \"o\" s obrysem šablony nebo udělej profil ručně"] );
 
 		$inCAM->PAUSE("Vytvor profil...");
-		
+
 	}
+	
+	# set sa-ori and sb-ori as type document
+	foreach my $l (  grep { $_->{"gROWname"} =~ /s[ab]-ori/ }  CamJob->GetAllLayers( $inCAM, $jobId ) ){
+		CamLayer->SetLayerTypeLayer( $inCAM, $jobId, $l->{"gROWname"}, "document" );
+	}
+	
+	# move customer data to archive
+	my $p = JobHelper->GetJobArchive($jobId)."\\Zdroje\\data";
+	unless ( -e $p ) {
+		mkdir( $p) or die "Can't create dir: " . $p . $_;
+	}
+	
+	my $copyCnt = dirmove( $root, $p );
+	
 
 	$self->__RunStencilCreator($jobId);
 }
@@ -339,11 +381,11 @@ sub __RunStencilCreator {
 			}
 			else {
 
-				if($inCAM->PAUSE("Oprav chybu a pokračuj...") ne "OK"){
-					
+				if ( $inCAM->PAUSE("Oprav chybu a pokračuj...") ne "OK" ) {
+
 					last;
 				}
- 
+
 			}
 
 		}

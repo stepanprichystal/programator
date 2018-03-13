@@ -19,6 +19,7 @@ use aliased 'Enums::EnumsGeneral';
 use aliased 'Helpers::JobHelper';
 use aliased 'Helpers::FileHelper';
 use aliased 'Programs::Stencil::StencilCreator::Helpers::Helper';
+use aliased 'Programs::Stencil::StencilCreator::Enums' => 'StnclEnums';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -64,7 +65,13 @@ sub OnPrepareGroupData {
 	$groupData->SetExportNif(1);
 	$groupData->SetExportData(1);
 	$groupData->SetExportPdf(1);
-	$groupData->SetExportMeasureData(1);
+	
+	if($stencilInfo{"tech"} eq StnclEnums->Technology_DRILL){
+		$groupData->SetExportMeasureData(0);
+	}else{
+		$groupData->SetExportMeasureData(1);
+	}
+
 	$groupData->SetThickness($stencilInfo{"thick"});
 
 	return $groupData;
