@@ -15,7 +15,7 @@
   <!-- Running in night --> 
    
    <app name="archiveJobs" 		active="1" repeat="15" night="1" />
-   <app name="cleanJobDb" 		active="0" repeat="120" night="1" />
+   <app name="cleanJobDb" 		active="1" repeat="120" night="1" />
    
   <!-- Temporary apps --> 
    
