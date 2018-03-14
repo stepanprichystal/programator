@@ -31,7 +31,9 @@ use aliased 'Packages::CAMJob::Drilling::CheckAspectRatio';
 use aliased 'Packages::CAMJob::Drilling::CheckHolePads';
 use aliased 'Packages::CAMJob::Routing::CheckRoutPocket';
 use aliased 'Enums::EnumsGeneral';
-#use aliased 'Packages::CAMJob::Drilling::NCLayerDirCheck';
+use aliased 'Packages::CAMJob::Routing::CheckRoutDepth';
+use aliased 'Packages::CAM::UniDTM::Enums' => 'DTMEnums';
+
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -216,7 +218,7 @@ sub OnCheckGroupData {
 		foreach my $l (@routLayers) {
 
 			my $unitDTM = UniDTM->new( $inCAM, $jobId, "panel", $l->{"gROWname"}, 1 );
-			my @tools = map { $_->GetDrillSize() / 1000 } $unitDTM->GetUniqueTools();
+			my @tools = map { $_->GetDrillSize() / 1000 } grep { $_->GetTypeProcess() eq DTMEnums->TypeProc_CHAIN} $unitDTM->GetUniqueTools();
 
 			foreach my $t (@tools) {
 
@@ -225,7 +227,7 @@ sub OnCheckGroupData {
 						"Routing", 
 						"Vrstva: \""
 						  . $l->{"gROWname"}
-						  . "\"  obsahuje otovry ("
+						  . "\"  obsahuje sloty ("
 						  . $t
 						  . "mm) pro které nemáme frézovací nástroje pro ALU materiál."
 						  . " Dostupné frézovací nástroje: "
@@ -403,6 +405,13 @@ sub OnCheckGroupData {
 		);
 	}
 
+	# 14) Check there aro not merged chains with same tool diameter (only depth milling)
+	# (it is better when chains are merged, because of smaller amnount G82 command in NC programs)
+	my $messRD = "";
+	unless(CheckRoutDepth->CheckDepthChainMerge( $inCAM, $jobId, \$messRD  )){
+		$dataMngr->_AddErrorResult(
+									"Merge chains", $messRD );
+	}
 }
 
 #-------------------------------------------------------------------------------------------#

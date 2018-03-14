@@ -169,11 +169,43 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	use aliased 'Packages::CAM::UniDTM::Enums' => "DTMEnums";
 
 	my $inCAM = InCAM->new();
-	my $jobId = "f10266";
+	my $jobId = "d152456";
 
-	my $dtm = UniDTM->new( $inCAM, $jobId, "o+1", "f", 1 );
+	my $rtm = UniRTM->new( $inCAM, $jobId, "o+1", "rzc", 1 );
+	my @chList = $rtm->GetChainList();
 
-	my $rtm = UniRTM->new( $inCAM, $jobId, "o+1", "f", 1, $dtm);
+	my %tools = ();
+
+	for ( my $i = 0 ; $i < scalar(@chList) ; $i++ ) {
+
+		$tools{$chList[$i]->GetChainSize()} = [$chList[$i]];
+
+		for ( my $j = 0 ; $j < scalar(@chList) ; $j++ ) {
+
+			next if ( $j == $i );
+			
+			if($chList[$j]->GetChainSize() == $chList[$i]->GetChainSize()){
+				
+				push( @{$tools{$chList[$i]->GetChainSize()}}, $chList[$j])
+			}
+		}
+	}
+	
+	my $strErr = "";
+ 
+	foreach my $t (keys %tools){
+		
+		if(scalar(@{$tools{$t}}) > 1 ){
+		 
+			$strErr .= "Více \"Chains\" (". join(";", map { $_->GetChainOrder() } @{$tools{$t}}).") mají stejný prùmìr nástroje: ".$tools{$t}->[0]->GetChainSize(). "mm\n"; 
+			
+		}
+	}
+	
+	if($strErr){
+		
+		print "$strErr \nPokud je to možné, sluè tyto \"Chains\" do jedné\n";
+	}
 
 	print "test";
 

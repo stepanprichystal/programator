@@ -220,6 +220,15 @@ sub EditBeforeSave {
 		}
 	}
 	
+	# =============================================================
+	# 3) EDIT: Renumber tool numbers ASC if program is merged from more layers
+ 
+ 	if(scalar($opItem->GetSortedLayers()) > 1){
+ 
+		NCHelper->RenumberToolASC($parseFile);
+ 	}
+	
+	
 }
 
 1;

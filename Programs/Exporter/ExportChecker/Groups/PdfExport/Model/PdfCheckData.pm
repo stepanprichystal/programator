@@ -41,7 +41,10 @@ sub OnCheckGroupData {
 	my $customerNote = $defaultInfo->GetCustomerNote();
 
 	# 1) Warning, when pcb is not pool and pdf control is not checked
-	if ( !$defaultInfo->IsPool() && !$groupData->GetExportControl() ) {
+	
+	my $custExport = $customerNote->ExportPdfControl();
+	
+	if ( !$defaultInfo->IsPool() && !$groupData->GetExportControl() && (!defined $custExport ||  $custExport )) {
 
 		$dataMngr->_AddWarningResult( "Export pdf control", "Dps není v poolu, kontrolní pdf by mělo být vyexportováno." );
 

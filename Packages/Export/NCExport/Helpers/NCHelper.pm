@@ -182,18 +182,19 @@ sub PutMessRightPlace {
 		my $l = @{ $file->{"body"} }[$i];
 		if ( $l->{"tool"} ) {
 			my $m = shift(@mess);
-			
+
 			my $lVal = quotemeta $m->{"line"};
+
 			# if message is same as previous message, do not add message
 			if ( !( defined $messPrev && $messPrev->{"line"} =~ $lVal ) ) {
-				
+
 				$m->{"line"} = "\n" . $m->{"line"} . "\n";
 				splice @{ $file->{"body"} }, $i, 0, $m;
 				$i++;    #skip right added line
 			}
-			
+
 			$messPrev = $m;
- 
+
 			unless ( scalar(@mess) ) {
 				last;
 			}
@@ -253,6 +254,75 @@ sub AddG83WhereMissing {
 	}
 }
 
+# Helper function renumber TOOLs in whole program
+# First tool in program => T01, next T02, etc...
+# Sort program footer tool definitions ASC T01, T02, etc
+sub RenumberToolASC {
+	my $self = shift;
+	my $file = shift;
+
+	my %t      = ();      #translate table
+	my $prefix = "@%";    # helper substitute symbol for renumbering tool
+
+	# 1) Build translate table
+	for ( my $i = 0 ; $i < scalar( @{ $file->{"body"} } ) ; $i++ ) {
+
+		my $l = @{ $file->{"body"} }[$i];
+
+		if ( $l->{"tool"} && !exists $t{ $l->{"tool"} } ) {
+
+			my $tNew = scalar( keys %t ) + 1;
+			$t{ $l->{"tool"} } = $tNew;
+		}
+	}
+
+	# 2) Renumber tools in "body" and "footer"
+
+	for ( my $i = 0 ; $i < scalar( @{ $file->{"body"} } ) ; $i++ ) {
+
+		if ( $file->{"body"}->[$i]->{"tool"} ) {
+
+			my $old = sprintf( "%02d", $file->{"body"}->[$i]->{"tool"} );
+			my $new = sprintf( "%02d", $t{ $file->{"body"}->[$i]->{"tool"} } );
+
+			$file->{"body"}->[$i]->{"line"} =~ s/T$old/$prefix$new/;
+
+			# update tool in parsed file
+			$file->{"body"}->[$i]->{"tool"} = $t{ $file->{"body"}->[$i]->{"tool"} };
+		}
+	}
+
+	for ( my $i = 0 ; $i < scalar( @{ $file->{"footer"} } ) ; $i++ ) {
+
+		my $old = sprintf( "%02d", $file->{"footer"}->[$i]->{"tool"} );
+		my $new = sprintf( "%02d", $t{ $file->{"footer"}->[$i]->{"tool"} } );
+
+		$file->{"footer"}->[$i]->{"line"} =~ s/T$old/$prefix$new/;
+
+		# update tool in parsed file
+		$file->{"footer"}->[$i]->{"tool"} = $t{ $file->{"footer"}->[$i]->{"tool"}} ;
+	}
+
+	#  sustitute prefix with "T"
+
+	for ( my $i = 0 ; $i < scalar( @{ $file->{"body"} } ) ; $i++ ) {
+
+		$file->{"body"}->[$i]->{"line"} =~ s/$prefix/T/ if ( $file->{"body"}->[$i]->{"tool"} );
+
+	}
+
+	for ( my $i = 0 ; $i < scalar( @{ $file->{"footer"} } ) ; $i++ ) {
+
+		$file->{"footer"}->[$i]->{"line"} =~ s/$prefix/T/;
+	}
+
+	# Sort footer tools
+	my @sorted = sort { $a->{"tool"} <=> $b->{"tool"} } @{ $file->{"footer"} };
+
+	$file->{"footer"} = \@sorted;
+
+}
+
 # search drilled number in file and change:
 # - Cu thickness mark
 # - Add core mark, if exist
@@ -291,12 +361,10 @@ sub UpdateNCInfo {
 	my $errorMess = shift;
 
 	my $result = 1;
- 
+
 	my $infoStr = $self->__BuildNcInfo( \@info );
- 
 
 	eval {
-	 
 
 		# TODO this is temporary solution
 		#		my $path = GeneralHelper->Root() . "\\Connectors\\HeliosConnector\\UpdateScript.pl";
@@ -316,7 +384,7 @@ sub UpdateNCInfo {
 
 			$$errorMess = "Failed to update NC-info.";
 		}
- 
+
 	};
 	if ( my $e = $@ ) {
 
