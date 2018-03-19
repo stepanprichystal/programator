@@ -144,15 +144,15 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId = "f52456";
+	my $jobId = "d206764";
 	my $step  = "o+1";
 	my $layer = "f";
 
 	my $mess = "";
 
-	my $res = Check1UpChainTool->ToolsAreOrdered( $inCAM, $jobId, $step, $layer, $messMngr );
+	#my $res = Check1UpChainTool->ToolsAreOrdered( $inCAM, $jobId, $step, $layer, $messMngr );
 	
-	#my $res = Check1UpChainTool->OutlineToolIsLast( $inCAM, $jobId, $step, $layer, \$mess );
+	my $res = Check1UpChainTool->OutlineToolIsLast( $inCAM, $jobId, $step, $layer, \$mess );
 
 	print $mess;
 

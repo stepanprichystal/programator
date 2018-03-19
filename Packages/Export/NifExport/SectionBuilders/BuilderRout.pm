@@ -21,6 +21,10 @@ use aliased 'CamHelpers::CamJob';
 use aliased 'CamHelpers::CamHelper';
 use aliased 'CamHelpers::CamDrilling';
 use aliased 'CamHelpers::CamRouting';
+use aliased 'CamHelpers::CamHistogram';
+use aliased 'CamHelpers::CamMatrix';
+use aliased 'CamHelpers::CamStepRepeat';
+use aliased 'Packages::CAM::UniRTM::UniRTM::UniRTM';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -256,11 +260,9 @@ sub __GetRoutDistance {
 	my $total = undef;
 
 	my @res = CamDrilling->GetNCLayersByType( $inCAM, $jobId, $layerType );
-	
-	
+
 	# If Exist fsch, then compute only f length, not f + fsch
-	@res = grep { $_->{"gROWname"} ne "fsch"} @res;
-	
+	@res = grep { $_->{"gROWname"} ne "fsch" } @res;
 
 	# if there is no rout return
 	unless ( scalar(@res) ) {
@@ -270,32 +272,12 @@ sub __GetRoutDistance {
 	}
 
 	foreach my $layer (@res) {
-
-		my $tmpL = GeneralHelper->GetGUID();
-
-		CamHelper->SetStep( $inCAM, $stepName );
-
-		#$inCAM->COM( 'tools_reload');
-		#$inCAM->COM( 'tools_tab_reset');
-		$inCAM->COM( 'compensate_layer', source_layer => $layer->{"gROWname"}, dest_layer => $tmpL, dest_layer_type => 'rout' );
-		$inCAM->COM( 'tools_set', layer => $tmpL, thickness => '0', user_params => ' ', slots => 'by_length' );
-		$inCAM->INFO( units => 'mm', entity_type => 'layer', entity_path => "$jobId/$stepName/$tmpL", data_type => 'TOOL' );
-		my @length = @{ $inCAM->{doinfo}{gTOOLslot_len} };
-		my @count  = @{ $inCAM->{doinfo}{gTOOLcount} };
-
-		if ( scalar(@length) && !defined $total ) {
-			$total = 0;
-		}
-
-		for ( my $i = 0 ; $i < scalar(@length) ; $i++ ) {
-			$total += ( $count[$i] * $length[$i] );
-		}
-
-		$inCAM->COM( 'delete_layer', layer => $tmpL );
+		$total = 0;
+		$self->__GetStepRoutLen( $inCAM, $jobId, $stepName, $layer->{"gROWname"}, \$total );
 	}
 
 	if ($total) {
-		$total = sprintf "%.2f", ( $total / 1000 );
+		$total = sprintf( "%.2f", $total );
 
 		if ( $total == 0 ) {
 			$total = "";
@@ -303,6 +285,116 @@ sub __GetRoutDistance {
 	}
 
 	return $total;
+}
+
+sub __GetStepRoutLen {
+	my $self        = shift;
+	my $inCAM       = shift;
+	my $jobId       = shift;
+	my $exploreStep = shift;
+	my $layer       = shift;
+	my $totalLen    = shift;
+
+	my @sr = CamStepRepeat->GetStepAndRepeat( $inCAM, $jobId, $exploreStep );
+	my @childs = CamStepRepeat->GetUniqueStepAndRepeat( $inCAM, $jobId, $exploreStep );
+
+	die "Step $exploreStep doesn't contain Step and Repeat" unless ( scalar(@sr) );
+
+	if ( scalar(@childs) ) {
+
+		# recusive search another nested steps
+		foreach my $ch (@childs) {
+
+			my $childLen = 0;
+
+			if ( CamStepRepeat->ExistStepAndRepeats( $inCAM, $jobId, $ch->{"stepName"} ) ) {
+
+				$self->__GetStepRoutLen( $inCAM, $jobId, $ch->{"stepName"}, $layer, \$childLen );
+
+				my @chStepsInfo = grep { $_->{"gSRstep"} eq $ch->{"stepName"} } @sr;
+				foreach my $chStepInfo (@chStepsInfo) {
+					$$totalLen += $chStepInfo->{"gSRnx"} * $chStepInfo->{"gSRny"} * $childLen;
+				}
+			}
+			else {
+
+				# child rout layer
+				my $chRoutLen = $self->__GetRoutLen( $inCAM, $jobId, $ch->{"stepName"}, $layer );
+
+				# get number of this child in theses parent step
+				my @chStepsInfo = grep { $_->{"gSRstep"} eq $ch->{"stepName"} } @sr;
+
+				foreach my $chStepInfo (@chStepsInfo) {
+					$$totalLen += $chStepInfo->{"gSRnx"} * $chStepInfo->{"gSRny"} * $chRoutLen;
+				}
+			}
+		}
+
+		# compute rout len in this step
+		$$totalLen += $self->__GetRoutLen( $inCAM, $jobId, $exploreStep, $layer );
+
+	}
+}
+
+sub __GetRoutLen {
+	my $self     = shift;
+	my $inCAM    = shift;
+	my $jobId    = shift;
+	my $stepName = shift;
+	my $layer    = shift;
+
+	# if layer contain surfaces, do compensate
+	my $comp  = 0;
+	my $routL = $layer;
+
+	my %fHist = CamHistogram->GetFeatuesHistogram( $inCAM, $jobId, $stepName, $layer, 0 );
+
+	if ( $fHist{"surf"} > 0 ) {
+
+		$comp = 1;
+
+	}
+
+	# if layer contain SR, copy data to other layer first
+	if ( $fHist{"surf"} > 0 ) {
+
+		$comp = 1;
+		CamHelper->SetStep( $inCAM, $stepName );
+
+		if ( CamStepRepeat->ExistStepAndRepeats( $inCAM, $jobId, $stepName ) ) {
+
+			my $tmp = GeneralHelper->GetGUID();
+			$inCAM->COM( "merge_layers", "source_layer" => $layer, "dest_layer" => $tmp );
+			$routL = GeneralHelper->GetGUID();
+			$inCAM->COM( 'compensate_layer', "source_layer" => $tmp, "dest_layer" => $routL, "dest_layer_type" => 'rout' );
+			CamMatrix->DeleteLayer( $inCAM, $jobId, $tmp );
+		}
+		else {
+
+			CamHelper->SetStep( $inCAM, $stepName );
+			$routL = GeneralHelper->GetGUID();
+			$inCAM->COM( 'compensate_layer', "source_layer" => $layer, "dest_layer" => $routL, "dest_layer_type" => 'rout' );
+		}
+
+	}
+
+	my $rtm = UniRTM->new( $inCAM, $jobId, $stepName, $routL );
+
+	CamMatrix->DeleteLayer( $inCAM, $jobId, $routL ) if ($comp);
+
+	# compute length of one step
+	my $chTotal = 0;
+
+	foreach my $seq ( $rtm->GetChainSequences() ) {
+		foreach my $f ( $seq->GetFeatures() ) {
+
+			die "No length defined for rout feature" unless ( defined $f->{"length"} );
+
+			$chTotal += $f->{"length"};
+		}
+	}
+
+	return $chTotal;
 }
 
 #sub __ExistNpthHoles {
