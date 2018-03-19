@@ -31,7 +31,7 @@ sub GetAttHistogram {
 	my $jobId     = shift;
 	my $stepName  = shift;
 	my $layerName = shift;
-	my $breakSR   = shift; # Default is SR
+	my $breakSR   = shift;    # Default is SR
 	my $selected  = shift;
 
 	my $sr = "break_sr+";
@@ -162,22 +162,21 @@ sub GetAttCountHistogram {
 			}
 		}
 	}
-	
-	
+
 	# compute total count from all atribute values
-	foreach my $k (keys %attHist){
-		
+	foreach my $k ( keys %attHist ) {
+
 		my $att = $attHist{$k};
-		
+
 		my $total = 0;
- 
-		foreach my $attVal (keys %{$att}){
-			
+
+		foreach my $attVal ( keys %{$att} ) {
+
 			$total += $att->{$attVal};
 		}
 		$attHist{$k}->{"_totalCnt"} = $total;
 	}
-	
+
 	return %attHist;
 }
 
@@ -188,7 +187,7 @@ sub GetFeatuesHistogram {
 	my $jobId     = shift;
 	my $stepName  = shift;
 	my $layerName = shift;
-	my $breakSR   = shift; # default is with SR
+	my $breakSR   = shift;    # default is with SR
 
 	my $sr = "break_sr";
 	if ( defined $breakSR && $breakSR == 0 ) {
@@ -196,13 +195,13 @@ sub GetFeatuesHistogram {
 	}
 
 	$inCAM->INFO(
-				  units             => 'mm',
-				  "angle_direction" => 'ccw',
-				  "entity_type"     => 'layer',
-				  "entity_path"     => "$jobId/$stepName/$layerName",
-				  "data_type"       => 'FEAT_HIST',
-				  "parameters"      => "arc+line+pad+surf+text+total",
-				  "options"         => $sr
+		units             => 'mm',
+		"angle_direction" => 'ccw',
+		"entity_type"     => 'layer',
+		"entity_path"     => "$jobId/$stepName/$layerName",
+		"data_type"       => 'FEAT_HIST',
+		"parameters"      => "arc+line+pad+surf+text+total",
+		( $sr  ? ( "options" => $sr ) : undef )
 	);
 
 	my %info = ();
@@ -284,7 +283,7 @@ sub GetSymHistogram {
 
 	return %result;
 }
- 
+
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#
@@ -299,27 +298,25 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	my $jobId    = "f13608";
 	my $stepName = "panel";
 
-
 	my %hist = CamHistogram->GetSymHistogram( $inCAM, $jobId, "o+1", "m", 1, 1 );
- 
- 	my %line_arcs = ();
- 	
- 	foreach my $k (keys %{$hist{"lines"}}){
- 		
- 		 my $lCnt = $hist{"lines"}->{$k};
- 		 my $aCnt = $hist{"arcs"}->{$k};
- 		 
- 		 my $t = 0;
- 		 
- 		 $t += $lCnt if(defined $lCnt);
- 		 $t += $aCnt if(defined $aCnt);
- 		 
- 		 $line_arcs{$k} = $t;
- 	}
- 
- 	$hist{"lines_arcs"} = \%line_arcs;
- 
-	 
+
+	my %line_arcs = ();
+
+	foreach my $k ( keys %{ $hist{"lines"} } ) {
+
+		my $lCnt = $hist{"lines"}->{$k};
+		my $aCnt = $hist{"arcs"}->{$k};
+
+		my $t = 0;
+
+		$t += $lCnt if ( defined $lCnt );
+		$t += $aCnt if ( defined $aCnt );
+
+		$line_arcs{$k} = $t;
+	}
+
+	$hist{"lines_arcs"} = \%line_arcs;
+
 	print STDERR "test";
 
 }

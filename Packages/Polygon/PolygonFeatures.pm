@@ -8,12 +8,16 @@ package Packages::Polygon::PolygonFeatures;
 #3th party library
 use strict;
 use warnings;
+use List::Util qw[max min];
 
 #local library
 use aliased 'Packages::Polygon::Enums';
 use aliased 'Math::Geometry::Planar';
 use aliased 'Packages::Polygon::Polygon::PolygonArc';
 use aliased 'Packages::Polygon::Polygon::PolygonAttr';
+use aliased 'Packages::Polygon::PointsTransform';
+
+
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -192,7 +196,109 @@ sub GetSurfaceEnvelops {
 
 	return @envelops;
 }
- 
+
+# works only for pad, lines arc
+# Return 2D hash, where each cell contain array of features, which are placed on cell coordination
+# Each feture contain key with hash ref:
+# - cellS - contain cell position of feature start point
+# - cellE - contain cell position of feature start point if exist
+sub GetFeatureMatrix {
+	my $self     = shift;
+	my @features = @{ shift(@_) };
+	my $cellCnt  = shift;            # square cnt in one axis (x and y has same number of square)
+	my $report   = shift;
+
+	my $maxIdx = $cellCnt - 1;
+
+	# 1) get limits of feature points
+	my @points = ();
+	foreach my $e (@features) {
+
+		my %p1 = ( "x" => $e->{"x1"}, "y" => $e->{"y1"} );
+		my %p2 = ( "x" => $e->{"x2"}, "y" => $e->{"y2"} );
+		push( @points, ( \%p1, \%p2 ) );
+	}
+
+	my %lim = PointsTransform->GetLimByPoints( \@points );
+
+	$$report .= "=================== MATRIX  ===================\n";
+	$$report .= "- size [" . abs( $lim{"xMax"} - $lim{"xMin"} ) . "," . abs( $lim{"yMax"} - $lim{"yMin"} ) . "]";
+
+	my $xCellSize = max(1, int( abs( $lim{"xMax"} - $lim{"xMin"} ) / $cellCnt )); #min size of cell is 1mm
+	my $yCellSize = max(1, int( abs( $lim{"yMax"} - $lim{"yMin"} ) / $cellCnt )); #min size of cell is 1mm
+
+	$$report .= "- step sizes- X: $xCellSize, Y: $yCellSize\n\n";
+
+	# 2) init matrix
+	my %lt = ();
+	for ( my $i = 0 ; $i < scalar($cellCnt) ; $i++ ) {
+		for ( my $j = 0 ; $j < scalar($cellCnt) ; $j++ ) {
+			$lt{$i}{$j} = [];
+		}
+	}
+
+	# id min limits are negative, add to all feats
+	my $xComp = ( $lim{"xMin"} < 0 ) ? abs( $lim{"xMin"} ) : 0;
+	my $yComp = ( $lim{"yMin"} < 0 ) ? abs( $lim{"yMin"} ) : 0;
+
+	# 3) put features to matrix
+	foreach my $f (@features) {
+
+		# start point
+		#$$report .= "Features id: " . $f->{"id"} . ", start P [" . $f->{"x1"} . "," . $f->{"y1"} . "]\n";
+
+		my $xId = int( int( $f->{"x1"} + $xComp ) / $xCellSize );
+		my $yId = int( int( $f->{"y1"} + $yComp ) / $yCellSize );
+
+		#$$report .= "- X Cell: " . $xId . ", after min: " . min( $maxIdx, $xId ) . "\n";
+		#$$report .= "- Y Cell: " . $yId . ", after min: " . min( $maxIdx, $yId ) . "\n\n";
+
+		# start point
+		$f->{"cellS"} = {
+						  "x" => min( $maxIdx, int( int( $f->{"x1"} + $xComp ) / $xCellSize ) ),
+						  "y" => min( $maxIdx, int( int( $f->{"y1"} + $yComp ) / $yCellSize ) )
+		};
+
+		push( @{ $lt{ $f->{"cellS"}->{"x"} }{ $f->{"cellS"}->{"y"} } }, $f );
+
+		# end point
+		if ( defined $f->{"x2"} && defined $f->{"y2"} ) {
+
+			$f->{"cellE"} = {
+							  "x" => min( $maxIdx, int( int( $f->{"x2"} + $xComp ) / $xCellSize ) ),
+							  "y" => min( $maxIdx, int( int( $f->{"y2"} + $yComp ) / $yCellSize ) )
+			};
+
+			push( @{ $lt{ $f->{"cellE"}->{"x"} }{ $f->{"cellE"}->{"y"} } }, $f );
+		}
+
+	}
+
+	$$report .= "\n================= Quantity per cell =================\n\n ";
+	my $total = 0;
+
+	for ( my $i = $cellCnt - 1 ; $i >= 0 ; $i-- ) {
+
+		for ( my $j = 0 ; $j < $cellCnt ; $j++ ) {
+
+			my $cnt = scalar( @{ $lt{$j}{$i} } );
+			$total += $cnt;
+
+			$$report .= sprintf( "%04d", $cnt ) . " ";
+
+		}
+		$$report .= "\n ";
+	}
+
+	$$report .= "\nTotal = $total\n\n";
+
+	$$report .= "Final check - Not processed points = " . ( $total / 2 - scalar(@features) ) . "\n";
+	$$report .= "Number of processed features: = " . scalar(@features) . "\n";
+
+	return %lt;
+
+}
+
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#
@@ -207,29 +313,36 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $f = Features->new();
 
-	my $jobId = "f52456";
+	my $jobId = "d152456";
 	my $inCAM = InCAM->new();
 
-	my $step  = "o+1";
+	my $step  = "o+1_";
 	my $layer = "f";
 
-	$f->Parse( $inCAM, $jobId, $step, $layer, 1, 1 );
+	$f->Parse( $inCAM, $jobId, $step, $layer );
 
 	my @features = $f->GetFeatures();
 
-	CamLayer->WorkLayer( $inCAM, "test" );
-	$inCAM->COM('sel_delete');
+	#	CamLayer->WorkLayer( $inCAM, "test" );
+	#	$inCAM->COM('sel_delete');
+	#
+	#	foreach my $feat (@features) {
+	#
+	#		my @surfaces = PolygonFeatures->GetSurfaceEnvelops( $feat, 0.1 );
+	#
+	#		foreach my $surf (@surfaces) {
+	#
+	#			CamSymbol->AddPolyline( $inCAM, $surf, "r300", "positive" );
+	#
+	#		}
+	#	}
 
-	foreach my $feat (@features) {
+	@features = grep { $_->{"type"} =~ /[la]/i } $f->GetFeatures();
 
-		my @surfaces = PolygonFeatures->GetSurfaceEnvelops( $feat, 0.1 );
+	my $report = "";
+	my %lt = PolygonFeatures->GetFeatureMatrix( \@features, 10, \$report );
 
-		foreach my $surf (@surfaces) {
-
-			CamSymbol->AddPolyline( $inCAM, $surf, "r300", "positive" );
-
-		}
-	}
+	print $report;
 
 }
 

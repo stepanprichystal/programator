@@ -168,7 +168,7 @@ sub GetLayerLimits2 {
 
 	my $tmp   = 0;
 	my $layer = $layerName;
-	if ( CamStepRepeat->ExistStepAndRepeat( $inCAM, $jobId, $stepName ) && $breakSR ) {
+	if ( $breakSR && CamStepRepeat->ExistStepAndRepeats( $inCAM, $jobId, $stepName )  ) {
 
 		CamHelper->SetStep( $inCAM, $stepName );
 		$tmp   = 1;

@@ -20,6 +20,7 @@ use aliased 'Packages::CAM::UniDTM::Enums';
 use aliased 'Enums::EnumsRout';
 use List::MoreUtils qw(uniq);
 use aliased 'Packages::Polygon::Polygon::PolygonPoints';
+use aliased 'Packages::Polygon::PolygonFeatures';
 
 #-------------------------------------------------------------------------------------------#
 #  Public method
@@ -44,11 +45,7 @@ sub IsCyclic {
 			$next = $sortedFeats[ $i + 1 ];
 		}
 
-		if (
-			 !(    sprintf( "%.3f", $sortedFeats[$i]->{"x2"} ) == sprintf( "%.3f", $next->{"x1"} )
-				&& sprintf( "%.3f", $sortedFeats[$i]->{"y2"} ) == sprintf( "%.3f", $next->{"y1"} ) )
-		  )
-		{
+		if ( !( abs( $sortedFeats[$i]->{"x2"} - $next->{"x1"} ) < 0.001 && abs( $sortedFeats[$i]->{"y2"} - $next->{"y1"} ) < 0.001 ) ) {
 			$cyclic = 0;
 
 			if ( defined $openPoint ) {
@@ -163,66 +160,102 @@ sub GetRoutSequences {
 	# 2) filter all non arc and line features
 	@edges = grep { $_->{"type"} =~ /l/i || $_->{"type"} =~ /a/i } @edges;
 
-	my $searchDone = scalar(@edges) ? 0 : 1;
+	unless ( scalar(@edges) ) {
+		return @sequences;
+	}
 
-	my @seq = ();
+	# 3) create feature matrix for fast searching of joined edegs
+	my $report = "";
+	my %m = PolygonFeatures->GetFeatureMatrix( \@edges, 10, \$report );
+	#print STDERR $report;
+
+	my $buildSeqDone = scalar(@edges) ? 0 : 1;
+
+	my $usedCnt = 0;
+	my @seq     = ();
 
 	# 3) search sequences, until all edges are not used in some sequence
-	while ( !$searchDone ) {
+	while ( !$buildSeqDone ) {
 
 		if ( scalar(@seq) == 0 ) {
-			push( @seq, $edges[0] );
-			splice @edges, 0, 1;    # remove from edges
+
+			for ( my $i = 0 ; $i < scalar(@edges) ; $i++ ) {
+				if ( !$edges[$i]->{"used"} ) {
+
+					$edges[$i]->{"used"} = 1;
+					$usedCnt += 1;
+					push( @seq, $edges[$i] );
+					last;
+				}
+			}
 		}
 
 		#find next part of chain
-		my $isFind = 0;             # if some edges from @edge array was find
+		my $isFind = 0;    # if some edges from @edge array was find
 
 		for ( my $i = 0 ; $i < scalar(@seq) ; $i++ ) {
 
-			my $x1seq = sprintf( "%.3f", $seq[$i]->{"x1"} );
-			my $y1seq = sprintf( "%.3f", $seq[$i]->{"y1"} );
-			my $x2seq = sprintf( "%.3f", $seq[$i]->{"x2"} );
-			my $y2seq = sprintf( "%.3f", $seq[$i]->{"y2"} );
+			if ( !$seq[$i]->{"processed"} ) {
 
-			for ( my $j = 0 ; $j < scalar(@edges) ; $j++ ) {
+				$seq[$i]->{"processed"} = 1;
 
-				my $x1edge = sprintf( "%.3f", $edges[$j]->{"x1"} );
-				my $y1edge = sprintf( "%.3f", $edges[$j]->{"y1"} );
-				my $x2edge = sprintf( "%.3f", $edges[$j]->{"x2"} );
-				my $y2edge = sprintf( "%.3f", $edges[$j]->{"y2"} );
+				# identidfy which cells are features point located in
+				my $sCell = $m{ $seq[$i]->{"cellS"}->{"x"} }{ $seq[$i]->{"cellS"}->{"y"} };
+				my $eCell = $m{ $seq[$i]->{"cellE"}->{"x"} }{ $seq[$i]->{"cellE"}->{"y"} };
 
-				if (    ( $x1seq == $x1edge && $y1seq == $y1edge )
-					 || ( $x1seq == $x2edge && $y1seq == $y2edge )
-					 || ( $x2seq == $x1edge && $y2seq == $y1edge )
-					 || ( $x2seq == $x2edge && $y2seq == $y2edge ) )
-				{
+				my @set = grep { !$_->{"used"} } ( @{$sCell}, @{$eCell} );    # search joined feature in these cells
+
+				# only unique features, remove duplicities
+				my %seen;
+				@set = grep { !$seen{ $_->{"id"} }++ } @set;
+
+				my @joined = grep {
+					$_->{"id"} != $seq[$i]->{"id"}
+					  && (    ( abs( $_->{"x1"} - $seq[$i]->{"x1"} ) < 0.001 && abs( $_->{"y1"} - $seq[$i]->{"y1"} ) < 0.001 )
+						   || ( abs( $_->{"x1"} - $seq[$i]->{"x2"} ) < 0.001 && abs( $_->{"y1"} - $seq[$i]->{"y2"} ) < 0.001 )
+						   || ( abs( $_->{"x2"} - $seq[$i]->{"x1"} ) < 0.001 && abs( $_->{"y2"} - $seq[$i]->{"y1"} ) < 0.001 )
+						   || ( abs( $_->{"x2"} - $seq[$i]->{"x2"} ) < 0.001 && abs( $_->{"y2"} - $seq[$i]->{"y2"} ) < 0.001 ) )
+				} @set;
+
+				if ( scalar(@set) ) {
+
+					splice @seq, $i + 1, 0, @joined;    # move edges to curr sequence
+
+					# mark used edges
+					foreach (@joined) {
+						$_->{"used"} = 1;
+					}
+
+					$usedCnt += scalar(@joined);
 
 					$isFind = 1;
-					push( @seq, $edges[$j] );
-					splice @edges, $j, 1;    # remove from edges
-					last;
+					last;                               # exit from loop and start search again
 
 				}
-
-			}
-
-			if ($isFind) {
-				last;
 			}
 		}
 
-		if ( !$isFind || scalar(@edges) == 0 ) {
+		if ( !$isFind || $usedCnt == scalar(@edges) ) {
 
 			my @seqTmp = @seq;
 			push( @sequences, \@seqTmp );
 			@seq = ();
+
+			if ( $usedCnt == scalar(@edges) ) {
+
+				$buildSeqDone = 1;
+			}
 		}
 
-		if ( scalar(@edges) == 0 ) {
+	}
 
-			$searchDone = 1;
-		}
+	# do final check. Compute numbers of feature in sequences and comape with number of sorce edges
+	my $fSeqCnt = 0;
+	$fSeqCnt += @$_ for @sequences;
+
+	if ( $fSeqCnt != scalar(@edges) ) {
+
+		die "Feat number in sequences not equal  source  feat number";
 	}
 
 	return @sequences;
@@ -264,8 +297,8 @@ sub GetSortedRout {
 				%actEdge = %{ $edges[0] };
 			}
 
-			$x = sprintf( "%.3f", $actEdge{"x2"} );
-			$y = sprintf( "%.3f", $actEdge{"y2"} );
+			$x = $actEdge{"x2"};
+			$y = $actEdge{"y2"};
 
 			my $isFind = 0;
 
@@ -280,8 +313,8 @@ sub GetSortedRout {
 				$isFind = 0;
 				my %e = %{ $edges[$i] };
 
-				if (    ( $x == sprintf( "%.3f", $e{"x1"} ) && $y == sprintf( "%.3f", $e{"y1"} ) )
-					 || ( $x == sprintf( "%.3f", $e{"x2"} ) && $y == sprintf( "%.3f", $e{"y2"} ) ) )
+				if (    ( abs( $x - $e{"x1"} ) < 0.001 && abs( $y - $e{"y1"} ) < 0.001 )
+					 || ( abs( $x - $e{"x2"} ) < 0.001 && abs( $y - $e{"y2"} ) < 0.001 ) )
 				{
 					$isFind = 1;
 
@@ -290,7 +323,7 @@ sub GetSortedRout {
 					}
 
 					#switch edge points for achieve same-oriented polygon
-					if ( ( $x == sprintf( "%.3f", $e{"x2"} ) && $y == sprintf( "%.3f", $e{"y2"} ) ) ) {
+					if ( abs( $x - $e{"x2"} ) < 0.001 && abs( $y - $e{"y2"} ) < 0.001 ) {
 
 						my $pX = $e{"x2"};
 						my $pY = $e{"y2"};
@@ -342,7 +375,7 @@ sub GetSortedRout {
 				else {
 
 					$isOpen = 1;
-					last;                                                         # exit from loop
+					last;    # exit from loop
 				}
 			}
 		}

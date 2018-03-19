@@ -17,6 +17,7 @@ use warnings;
 #local library
 
 use aliased 'Packages::Polygon::Features::Features::Features';
+use aliased 'Packages::Routing::RoutLayer::RoutParser::RoutCyclic';
 
 #-------------------------------------------------------------------------------------------#
 #  Interface
@@ -70,7 +71,24 @@ sub __GetLineFeatures {
 sub GetPolygonsPoints {
 	my $self = shift;
 
-	my @polygons = $self->GetClosedPolyLines();
+	my @lines     = $self->__GetLineFeatures();
+	my @sequences = RoutCyclic->GetRoutSequences( \@lines );
+
+	my @polygons = ();
+
+	foreach my $seq (@sequences) {
+
+		my %result = RoutCyclic->GetSortedRout($seq);
+
+		if ( $result{"result"} ) {
+			push(@polygons, $result{"edges"});
+		}
+		else {
+
+			die "Plated rout outline is not cyclic";
+		}
+
+	}
 
 	my @polygonsPoints = ();
 
@@ -78,15 +96,14 @@ sub GetPolygonsPoints {
 
 		my @polygonPoints = ();
 
-	 
-		for ( my $i = 0 ; $i < scalar(@{$polygon}); $i++ ) {	
+		for ( my $i = 0 ; $i < scalar( @{$polygon} ) ; $i++ ) {
 
 			my $line = ${$polygon}[$i];
 
 			my @arr = ( $line->{"x1"}, $line->{"y1"} );
 			push( @polygonPoints, \@arr );
-			
-			if ($i ==  scalar(@{$polygon}) -1 ) {
+
+			if ( $i == scalar( @{$polygon} ) - 1 ) {
 
 				$line = ${$polygon}[0];
 				my @arrEnd = ( $line->{"x1"}, $line->{"y1"} );
@@ -222,21 +239,19 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	my @features = $route->GetFeatures();
 	my @chains   = $route->GetClosedPolyLines();
 	my @points   = $route->GetPolygonsPoints();
-	
+
 	use Math::Polygon;
-	
+
 	my @areas = ();
-	
-	foreach my $p (@points){
-		
-		my $p = Math::Polygon->new(@{$p});
-		my $area   = $p->area;
-		
-		push (@areas, $area);
-		
+
+	foreach my $p (@points) {
+
+		my $p    = Math::Polygon->new( @{$p} );
+		my $area = $p->area;
+
+		push( @areas, $area );
+
 	}
-	
-	 
 
 	#print 1;
 

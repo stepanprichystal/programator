@@ -92,7 +92,6 @@ sub __InitUniRTM {
 	my $layer   = $self->{"layer"};
 	my $breakSR = $self->{"breakSR"};
 	
-
 	# 1) Parse features
 	my @features = RoutParser->GetFeatures( $inCAM, $jobId, $step, $layer, $breakSR );
 	$self->{"features"} = \@features;
@@ -105,14 +104,14 @@ sub __InitUniRTM {
 	my @chains = ChainParser->GetChains( \@chainList, \@features );
 	$self->{"chains"} = \@chains;
 	
- 
-
 	# 4) Get information about mutual position of chain sequences
 	# If chain is inside another chain, save this information
  
 
 	my @seqs = map { $_->GetChainSequences() } @chains;    # all chain sequences
-
+	
+	 
+ 
 	for ( my $i = 0 ; $i < scalar(@seqs) ; $i++ ) {
 
 		for ( my $j = 0 ; $j < scalar(@seqs) ; $j++ ) {
@@ -120,6 +119,8 @@ sub __InitUniRTM {
 			if ( $i == $j ) {
 				next;
 			}
+			
+			#print STDERR "$i-$j\n";
 
 			my $seqIn  = $seqs[$i];
 			my $seqOut = $seqs[$j];

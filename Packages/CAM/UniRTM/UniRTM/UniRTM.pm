@@ -19,6 +19,7 @@ use warnings;
 
 use aliased 'Packages::CAM::UniRTM::Enums';
 
+
 #-------------------------------------------------------------------------------------------#
 #  Public method
 #-------------------------------------------------------------------------------------------#
@@ -163,52 +164,15 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	use aliased 'Packages::CAM::UniRTM::UniRTM::UniRTM';
 	use aliased 'Packages::CAM::UniDTM::UniDTM';
 	use aliased 'Packages::InCAM::InCAM';
-	use aliased 'Packages::Routing::RoutLayer::RoutStart::RoutStart';
-	use aliased 'Packages::Routing::RoutLayer::RoutStart::RoutRotation';
-	use aliased 'Packages::Routing::RoutLayer::RoutDrawing::RoutDrawing';
-	use aliased 'Packages::CAM::UniDTM::Enums' => "DTMEnums";
-
-	my $inCAM = InCAM->new();
-	my $jobId = "d152456";
-
-	my $rtm = UniRTM->new( $inCAM, $jobId, "o+1", "rzc", 1 );
-	my @chList = $rtm->GetChainList();
-
-	my %tools = ();
-
-	for ( my $i = 0 ; $i < scalar(@chList) ; $i++ ) {
-
-		$tools{$chList[$i]->GetChainSize()} = [$chList[$i]];
-
-		for ( my $j = 0 ; $j < scalar(@chList) ; $j++ ) {
-
-			next if ( $j == $i );
-			
-			if($chList[$j]->GetChainSize() == $chList[$i]->GetChainSize()){
-				
-				push( @{$tools{$chList[$i]->GetChainSize()}}, $chList[$j])
-			}
-		}
-	}
-	
-	my $strErr = "";
  
-	foreach my $t (keys %tools){
-		
-		if(scalar(@{$tools{$t}}) > 1 ){
-		 
-			$strErr .= "Více \"Chains\" (". join(";", map { $_->GetChainOrder() } @{$tools{$t}}).") mají stejný prùmìr nástroje: ".$tools{$t}->[0]->GetChainSize(). "mm\n"; 
-			
-		}
-	}
-	
-	if($strErr){
-		
-		print "$strErr \nPokud je to možné, sluè tyto \"Chains\" do jedné\n";
-	}
-
-	print "test";
-
+ 
+	my $inCAM = InCAM->new();
+	my $jobId = "d208586";
+	my $step  = "o+1";
+	my $layer = 'f';
+  
+  my $rtm = UniRTM->new($inCAM, $jobId, $step, $layer);
+  die;
 }
 
 1;
