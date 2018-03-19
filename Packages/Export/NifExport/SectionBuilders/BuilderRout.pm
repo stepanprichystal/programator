@@ -250,6 +250,7 @@ sub __RoutExists {
 	return $existRout;
 }
 
+ 
 sub __GetRoutDistance {
 	my $self      = shift;
 	my $stepName  = shift;
@@ -396,75 +397,7 @@ sub __GetRoutLen {
 
 	return $chTotal;
 }
-
-#sub __ExistNpthHoles {
-#	my $self      = shift;
-#	my $stepName  = shift;
-#	my $layerType = shift;
-#	my $inCAM     = $self->{"inCAM"};
-#	my $jobId     = $self->{"jobId"};
-#
-#	my $exist = 0;
-#
-#	my @fLayers = CamDrilling->GetNCLayersByType( $inCAM, $jobId, $layerType );
-#
-#	foreach my $layer (@fLayers) {
-#
-#		$inCAM->INFO(
-#					  units       => 'mm',
-#					  entity_type => 'layer',
-#					  entity_path => "$jobId/$stepName/".$layer->{"gROWname"},
-#					  data_type   => 'FEAT_HIST',
-#					  options     => "break_sr"
-#		);
-#		if ( $inCAM->{doinfo}{gFEAT_HISTpad} > 0 )
-#		{
-#			$exist = 1;
-#			last;
-#		}
-#	}
-#
-#	if ($exist) {
-#		return "A";
-#	}
-#	else {
-#		return "N";
-#	}
-#}
-#
-#
-#
-#sub __GetDepthMillExist {
-#	my $self         = shift;
-#	my $stepName     = shift;
-#	my $layerTypeTop = shift;
-#	my $layerTypeBot = shift;
-#
-#	my $inCAM = $self->{"inCAM"};
-#	my $jobId = $self->{"jobId"};
-#
-#	my $res;
-#
-#	my $existTop = CamDrilling->NCLayerExists( $inCAM, $jobId, $layerTypeTop );
-#	my $existBot = CamDrilling->NCLayerExists( $inCAM, $jobId, $layerTypeTop );
-#
-#	if ( $existTop && $existBot ) {
-#		$res = "2";
-#	}
-#	elsif ($existTop) {
-#		$res = "C";
-#	}
-#	elsif($existBot) {
-#		$res = "S";
-#
-#	}else{
-#		$res = "";
-#	}
-#
-#	return $res;
-#}
-#
-#
+ 
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
