@@ -67,7 +67,7 @@ sub Run {
 		$inCAM->COM( "matrix_auto_rows", "job" => $jobId, "matrix" => "matrix" );
 	}
 
-	# check if DTM user columns are up to date in job
+	# 2) Check if DTM user columns are up to date in job
 	$self->__UpdateDTMColumns();
 
 	return $result;
@@ -107,57 +107,83 @@ sub __UpdateDTMColumns {
 
 				my $data = $file->slurp_utf8;
 
-				my $curUserDes = "USER_DES_NAMES=$clmnStr";
-
 				my ($clmns) = $data =~ /USER_DES_NAMES=(.*)/i;
+				my @clmns = ();
+				if(defined $clmns){
+					@clmns = map { uc($_) } split( ";", $clmns );
+				}
+				
 
-				if ( defined $clmns ) {
+				if ( scalar(@clmns) ) {
 
-					my @clmns = map { uc($_) } split( ";", $clmns );
+					my $updateClms = 0;
 
-					# 1) Check if there is not obsolete user column
-
+					# Obsolete columns
 					my @obsolete = ();
 					foreach my $clmn (@clmns) {
 						push( @obsolete, $clmn ) unless ( grep { $_ eq $clmn } @curClmns );
 					}
 
-					if (@obsolete) {
-
-						die "Job contains obsolete DTM user columns (" . join( ";", @obsolete ) . "), check it";
-					}
-
-					# 2) Check if there are all current used colums
-
+					# Missing columns
 					my @missing = ();
 					foreach my $clmn (@curClmns) {
 						push( @missing, $clmn ) unless ( grep { $_ eq $clmn } @clmns );
 					}
+					 
 
-					# if no user columsn defined in job, InCAM do update automatically
-					if ( @missing && scalar(@clmns) > 0 ) {
+					# if exist only one user clmn and no TOOL has defined obsolete column value => ignore
+
+					if ( scalar(@obsolete) && scalar(@clmns) == 1 ) {
+						
+						$updateClms = 1;
+
+						# check all tool
+						my $existValue = 0;
+						my @lines = split( "\n", $data );
+						foreach my $l (@lines) {
+
+							if ( $l =~ /USER_DES=(.*)/i ) {
+								my $vals = $1;
+								if ( scalar( grep { $_ ne "" } split( ";", $vals ) ) ) {
+									$existValue = 1;
+								}
+							}
+						}
+
+						$updateClms = 0 if ($existValue);
+
+					}
+					elsif ( scalar(@missing) && scalar(@obsolete) == 0 ) {
+
+						$updateClms = 1;
 
 						# check if we can add column (only if order of old column not will be changed)
 						for ( my $i = 0 ; $i < scalar(@clmns) ; $i++ ) {
 
 							if ( $clmns[$i] ne $curClmns[$i] ) {
 
-								die "Order of job user column (" . $clmns[$i] . ") is different from order of theses columns on server site";
+								$updateClms = 0;
 							}
 						}
-						
-						
+
+					}
+
+					# update only if:
+					# - no obsolete column exist
+					# - if user DTM columns are defined in file
+					# - if exist only some current user DTM columns
+					if ($updateClms) {
+
 						my $logger = get_logger("testService");
-						
+
 						$logger->debug("Set user DTM columns job:$jobId, old clmns:$clmns, new clmns:$clmnStr");
 
 						# set actual user column
+						my $curUserDes = "USER_DES_NAMES=$clmnStr";
 						$data =~ s/USER_DES_NAMES=.*/$curUserDes/;
 						$file->spew_utf8($data);
-
 					}
 				}
-
 			}
 		}
 	}

@@ -21,7 +21,7 @@ use Class::Interface;
 &interface;    
 
 # return 0, if log should not be processed anymore by Log service
-sub NeedChange;     
+sub Run;     
  
 
 
