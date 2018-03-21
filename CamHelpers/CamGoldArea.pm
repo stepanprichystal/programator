@@ -20,6 +20,8 @@ use aliased 'Helpers::GeneralHelper';
 use aliased 'Packages::Polygon::Features::Features::Features';
 use aliased 'CamHelpers::CamStepRepeat';
 use aliased 'CamHelpers::CamCopperArea';
+use aliased 'Packages::CAMJob::OutputData::Helper';
+use aliased 'Packages::ProductionPanel::ActiveArea::ActiveArea';
 
 #-------------------------------------------------------------------------------------------#
 #   Package methods
@@ -33,11 +35,10 @@ sub GoldFingersExist {
 	my $jobId = shift;
 	my $step  = shift;
 	my $layer = shift;
-	
+
 	# specify attribut, which is used for signal area, where is gold platin
 	# default attribute: is .gold_plating
-	my $goldAtt = shift // ".gold_plating"; 
- 
+	my $goldAtt = shift // ".gold_plating";
 
 	my $result = 0;
 
@@ -72,7 +73,7 @@ sub GoldFingersExist {
 			close($f);
 			unlink($infoFile);
 		}
- 
+
 		my @platedFeats = grep { $_ =~ /$goldAtt/ } @feat;
 		if ( scalar(@platedFeats) ) {
 
@@ -85,11 +86,13 @@ sub GoldFingersExist {
 }
 
 # return area of gold fingers, if exist
-# area is in mm^2
+# Return hash of two values
+# "area" [cm^2]
+# "percentage"
 sub GetGoldFingerArea {
 	my $self        = shift;
-	my $cuThickness = shift;
-	my $pcbThick    = shift;
+	my $cuThickness = shift;    # µm
+	my $pcbThick    = shift;    # µm
 	my $inCAM       = shift;
 	my $jobId       = shift;
 	my $stepName    = shift;
@@ -102,56 +105,52 @@ sub GetGoldFingerArea {
 	push( @layers, "c" ) if ( CamHelper->LayerExists( $inCAM, $jobId, "c" ) );
 	push( @layers, "s" ) if ( CamHelper->LayerExists( $inCAM, $jobId, "s" ) );
 
-	CamHelper->OpenStep( $inCAM, $jobId, $stepName );
+	@layers = grep { $self->GoldFingersExist( $inCAM, $jobId, $stepName, $_ ) } @layers;
+
+	my %lim = CamJob->GetProfileLimits2( $inCAM, $jobId, $stepName );
+
+	#Set limits which are exposed (panel is put to bath until 20mm distance of top edge)
+ 
+	my %limBathExposed = CamJob->GetProfileLimits( $inCAM, $jobId, $stepName );
+	$limBathExposed{"ymax"} -= ActiveArea->new( $inCAM, $jobId )->BorderT();
+
+	CamHelper->SetStep( $inCAM, $stepName );
 
 	foreach my $l (@layers) {
 
-		CamHelper->ClearEditor( $inCAM, $jobId );
+		#CamHelper->ClearEditor( $inCAM, $jobId );
 
-		$inCAM->COM( 'flatten_layer', source_layer => $l, target_layer => $l . "__gold__" );
-		$inCAM->COM( 'affected_layer', name => $l . "__gold__", mode => "single", affected => "yes" );
-		$inCAM->COM( 'filter_reset', filter_name => "popup" );
-		$inCAM->COM( 'filter_atr_set', filter_name => 'popup', condition => 'yes', attribute => '.gold_plating' );
-		$inCAM->COM('filter_area_strt');
-		$inCAM->COM(
-					 'filter_area_end',
-					 layer          => '',
-					 filter_name    => 'popup',
-					 operation      => 'select',
-					 area_type      => 'none',
-					 inside_area    => 'no',
-					 intersect_area => 'yes',
-					 lines_only     => 'no',
-					 ovals_only     => 'no',
-					 min_len        => 0,
-					 max_len        => 0,
-					 min_angle      => 0,
-					 max_angle      => 0
-		);
+		my @refLayers = ();
 
-		$inCAM->COM('get_select_count');
+		if ( CamHelper->LayerExists( $inCAM, $jobId, "gold$l" ) ) {
 
-		if ( $inCAM->GetReply() > 0 ) {
-			$inCAM->COM('sel_reverse');
-			$inCAM->COM('sel_delete');
-
-			my %areaTmp;
-
-			if ( $l eq "c" ) {
-				%areaTmp =
-				  CamCopperArea->GetCuAreaMask( $cuThickness, $pcbThick, $inCAM, $jobId, $stepName, $l . "__gold__", undef, "m" . $l, undef );
-			}
-			elsif ( $l eq "s" ) {
-				%areaTmp =
-				  CamCopperArea->GetCuAreaMask( $cuThickness, $pcbThick, $inCAM, $jobId, $stepName, undef, $l . "__gold__", undef, "m" . $l );
-			}
-
-			$area{"area"}       += $areaTmp{"area"};
-			$area{"percentage"} += $areaTmp{"percentage"};
-
+			push( @refLayers, "gold$l" );
 		}
-		$inCAM->COM( 'affected_layer', name => $l . "__gold__", mode => "single", affected => "no" );
-		$inCAM->COM( 'delete_layer', layer => $l . "__gold__" );
+		else {
+			die "Layer: gold$l, doesn't exist";
+		}
+
+		if ( CamHelper->LayerExists( $inCAM, $jobId, "m$l" ) ) {
+			push( @refLayers, "m$l" );
+		}
+
+		my %areaTmp;
+
+		if ( $l eq "c" ) {
+			%areaTmp = CamCopperArea->GetCuAreaMaskByBox(
+														  $cuThickness, $pcbThick, $inCAM, $jobId,
+														  $stepName, $l, undef, \@refLayers,
+														  undef, \%limBathExposed, 0 
+			);
+		}
+		elsif ( $l eq "s" ) {
+			%areaTmp = CamCopperArea->GetCuAreaMaskByBox( $cuThickness, $pcbThick, $inCAM, $jobId, $stepName, undef, $l, undef, \@refLayers, \%limBathExposed, 0
+														    );
+		}
+
+		$area{"area"}       += $areaTmp{"area"};
+		$area{"percentage"} += $areaTmp{"percentage"};
+
 	}
 
 	if ( $area{"area"} > 0 ) {
@@ -160,7 +159,6 @@ sub GetGoldFingerArea {
 
 	return %area;
 }
-
 
 
 # Return goldfinger count
@@ -208,7 +206,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobName = "d152456";
+	my $jobName = "d025028";
 
 	my $layerNameTop = shift;
 	my $layerNameBot = shift;
@@ -218,9 +216,9 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $mess = "";
 
-	my $result = CamGoldArea->GoldFingersExist( $inCAM, $jobName, "panel", "c",    ".gold_finger");
+	my %area = CamGoldArea->GetGoldFingerArea( 18, 1500, $inCAM, $jobName, "panel" );
 
-	print $result. " - $mess";
+	print $area{"area"};
 
 }
 

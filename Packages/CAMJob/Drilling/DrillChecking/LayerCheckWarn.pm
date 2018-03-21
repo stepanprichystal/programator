@@ -63,10 +63,9 @@ sub CheckNCLayers {
 
 		my %attHist = CamHistogram->GetAttHistogram( $inCAM, $jobId, $stepName, $l->{"gROWname"} );
 		$l->{"attHist"} = \%attHist;
-		
+
 		my %symHist = CamHistogram->GetSymHistogram( $inCAM, $jobId, $stepName, $l->{"gROWname"} );
 		$l->{"symHist"} = \%symHist;
-
 
 		if ( $l->{"gROWlayer_type"} eq "rout" ) {
 
@@ -122,17 +121,13 @@ sub CheckToolParameters {
 			next;
 		}
 
+		# Check magazeine
 		unless ( $l->{"uniDTM"}->GetChecks()->CheckMagazine($mess) ) {
 			$result = 0;
 			$$mess .= "\n";
 		}
 
-		unless ( $l->{"uniDTM"}->GetChecks()->CheckSpecialTools($mess) ) {
-			$result = 0;
-			$$mess .= "\n";
-		}
-
-		# 4) Check if rout doesn't contain tool size smaller than 500
+		# Check if rout doesn't contain tool size smaller than 500
 		if ( $l->{"gROWlayer_type"} eq "rout" ) {
 
 			my @unitTools = $l->{"uniDTM"}->GetTools();
@@ -154,6 +149,23 @@ sub CheckToolParameters {
 			}
 		}
 
+	}
+
+	# Check if some tools are same diameter as special tools and
+	# theses tools has missing magazine info
+	my @t = ();
+	push( @t, EnumsGeneral->LAYERTYPE_nplt_bMillTop );
+	push( @t, EnumsGeneral->LAYERTYPE_nplt_bMillBot );
+	push( @t, EnumsGeneral->LAYERTYPE_plt_bMillTop );
+	push( @t, EnumsGeneral->LAYERTYPE_plt_bMillBot );
+
+	my @layersST = $self->__GetLayersByType( \@layers, \@t );
+
+	foreach my $l (@layersST) {
+		unless ( $l->{"uniDTM"}->GetChecks()->CheckSpecialTools($mess) ) {
+			$result = 0;
+			$$mess .= "\n";
+		}
 	}
 
 	return $result;
@@ -208,21 +220,21 @@ sub CheckFloatDiemeters {
 	@layers = $self->__GetLayersByType( \@layers, \@t );
 
 	foreach my $l (@layers) {
-		
-			my @tools = $l->{"uniDTM"}->GetTools();
- 
-			my @floatDim = map {$_->GetDrillSize()."µm" } grep { $_->GetDrillSize() =~ /^\w\d+\.\d+$/ } @tools;
- 			@floatDim = uniq(@floatDim) ;
- 
- 			if(scalar(@floatDim)){
- 				
- 				my $str = join(", ", @floatDim);
- 				
- 				$result = 0;
-				$$mess .= "Layer \"".$l->{"gROWname"}."\" contains tools, where drill diameters contain decimal point: $str. Is it ok? \n";
- 			}
+
+		my @tools = $l->{"uniDTM"}->GetTools();
+
+		my @floatDim = map { $_->GetDrillSize() . "µm" } grep { $_->GetDrillSize() =~ /^\w\d+\.\d+$/ } @tools;
+		@floatDim = uniq(@floatDim);
+
+		if ( scalar(@floatDim) ) {
+
+			my $str = join( ", ", @floatDim );
+
+			$result = 0;
+			$$mess .= "Layer \"" . $l->{"gROWname"} . "\" contains tools, where drill diameters contain decimal point: $str. Is it ok? \n";
+		}
 	}
-	
+
 	return $result;
 
 }

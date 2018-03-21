@@ -137,12 +137,12 @@ sub Build {
 			if ($mcExist) {
 				if ( $self->{"layerCnt"} > 2 ) {
 
-					%result = CamCopperArea->GetCuAreaMaskByBox( $cuThickness, $pcbThick, $inCAM, $jobId, "panel", "c", undef, "mc", undef, \%frLim );
+					%result = CamCopperArea->GetCuAreaMaskByBox( $cuThickness, $pcbThick, $inCAM, $jobId, "panel", "c", undef, ["mc"], undef, \%frLim );
 
 				}
 				else {
 
-					%result = CamCopperArea->GetCuAreaMask( $cuThickness, $pcbThick, $inCAM, $jobId, "panel", "c", undef, "mc" );
+					%result = CamCopperArea->GetCuAreaMask( $cuThickness, $pcbThick, $inCAM, $jobId, "panel", "c", undef, ["mc"] );
 				}
 			}
 
@@ -178,12 +178,12 @@ sub Build {
 			if ($msExist) {
 				if ( $self->{"layerCnt"} > 2 ) {
 
-					%result = CamCopperArea->GetCuAreaMaskByBox( $cuThickness, $pcbThick, $inCAM, $jobId, "panel", undef, "s", undef, "ms", \%frLim );
+					%result = CamCopperArea->GetCuAreaMaskByBox( $cuThickness, $pcbThick, $inCAM, $jobId, "panel", undef, "s", undef, ["ms"], \%frLim );
 
 				}
 				else {
 
-					%result = CamCopperArea->GetCuAreaMask( $cuThickness, $pcbThick, $inCAM, $jobId, "panel", undef, "s", undef, "ms" );
+					%result = CamCopperArea->GetCuAreaMask( $cuThickness, $pcbThick, $inCAM, $jobId, "panel", undef, "s", undef, ["ms"] );
 				}
 			}
 

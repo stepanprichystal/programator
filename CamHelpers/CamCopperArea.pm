@@ -92,22 +92,22 @@ sub GetCuAreaMask {
 	my $stepName    = shift;
 	my $topLayer    = shift;    #first layer
 	my $botLayer    = shift;    #second layer
-	my $topMask     = shift;    #first mask
-	my $botMask     = shift;    #second mask
+	my $topMasks     = shift;    #first mask
+	my $botMasks     = shift;    #second mask
 
 	my $considerHole = shift;   #default is yes (include plated holes)
 	my $considerEdge = shift;   #default is no  (inclusde area of panel edges)
 
 	my %result = $self->__GetCuArea(
 									 $cuThickness, $pcbThick, 1,        $inCAM,   $jobName, $stepName,
-									 $topLayer,    $botLayer, $topMask, $botMask, undef,    $considerHole,
+									 $topLayer,    $botLayer, $topMasks, $botMasks, undef,    $considerHole,
 									 $considerEdge
 	);
 	return %result;
 }
 
 # Return hash of two values
-# "area"
+# "area" [cm^2]
 # "percentage"
 # Area is computed from given coordinates, only oncovered area is computed
 # If only one layer is measured AND edges are measured too, method take only half of pcb edge thickness
@@ -120,19 +120,21 @@ sub GetCuAreaMaskByBox {
 	my $stepName    = shift;
 	my $topLayer    = shift;    #first layer
 	my $botLayer    = shift;    #second layer
-	my $topMask     = shift;    #first mask
-	my $botMask     = shift;    #second mask
+	my $topMasks     = shift;    #first mask
+	my $botMasks     = shift;    #second mask
 	my $areaTmp     = shift;    #area, given in hash with key: xmin, xmax, ymin, ymax
 
 	my $considerHole = shift;   #default is yes (include plated holes)
 	my $considerEdge = shift;   #default is no  (inclusde area of panel edges)
 
 	my %result = $self->__GetCuArea( $cuThickness, $pcbThick, 1,        $inCAM,   $jobName,      $stepName, $topLayer,
-									 $botLayer,    $topMask,  $botMask, $areaTmp, $considerHole, $considerEdge );
+									 $botLayer,    $topMasks,  $botMasks, $areaTmp, $considerHole, $considerEdge );
 	return %result;
 }
 
-#Open job and step in genesis
+# Return hash of two values
+# "area" [cm^2]
+# "percentage"
 sub __GetCuArea {
 
 	my $self         = shift;
@@ -144,8 +146,8 @@ sub __GetCuArea {
 	my $stepName     = shift;
 	my $topLayer     = shift;
 	my $botLayer     = shift;
-	my $topMask      = shift;
-	my $botMask      = shift;
+	my $topMasks      = shift;
+	my $botMasks      = shift;
 	my $areaTmp      = shift;
 	my $considerHole = shift;
 	my $considerEdge = shift;
@@ -188,16 +190,16 @@ sub __GetCuArea {
 		$topLayer = "";
 	}
 
-	unless ($topMask) {
-		$topMask = "";
+	unless ($topMasks) {
+		$topMasks = [];
 	}
 
 	unless ($botLayer) {
 		$botLayer = "";
 	}
 
-	unless ($botMask) {
-		$botMask = "";
+	unless ($botMasks) {
+		$botMasks = [];
 	}
 
 	my %area = ();
@@ -232,7 +234,7 @@ sub __GetCuArea {
 	CamHelper->SetStep( $inCAM, $stepName );
 
 	if ($mask) {
-		$self->__GetCuAreaMask( $inCAM,        $topLayer,    $botLayer, $topMask, $botMask, $considerHole,
+		$self->__GetCuAreaMask( $inCAM,        $topLayer,    $botLayer, $topMasks, $botMasks, $considerHole,
 								$considerEdge, $cuThickness, $pcbThick, \%area,   $outFile );
 	}
 	else {
@@ -260,6 +262,9 @@ sub __GetCuArea {
 	return %res;
 }
 
+# Return hash of two values
+# "area" [cm^2]
+# "percentage"
 sub __GetCuAreaNoMask {
 	my $self         = shift;
 	my $inCAM        = shift;
@@ -301,27 +306,35 @@ sub __GetCuAreaNoMask {
 	);
 }
 
+# Return hash of two values
+# "area" [cm^2]
+# "percentage"
 sub __GetCuAreaMask {
 	my $self         = shift;
 	my $inCAM        = shift;
 	my $topLayer     = shift;
 	my $botLayer     = shift;
-	my $topMask      = shift;
-	my $botMask      = shift;
+	my $topMasks      = shift;
+	my $botMasks      = shift;
 	my $considerHole = shift;
 	my $considerEdge = shift;
 	my $cuThickness  = shift;
 	my $pcbThick     = shift;
 	my %area         = %{ shift(@_) };
 	my $outFile      = shift;
-
+	
+ 
+	my $topMasksStr = scalar(@{$topMasks}) ? join("\\;", @{$topMasks}) : "";
+	my $botMasksStr = scalar(@{$botMasks}) ? join("\\;", @{$botMasks}) : "";
+ 
 	$inCAM->COM(
 		"exposed_area",
 		"area"              => "yes",
 		"layer1"            => $topLayer,
 		"layer2"            => $botLayer,
-		"mask1"             => $topMask,
-		"mask2"             => $botMask,
+		"mask1"             => $topMasksStr,
+		"mask2"             => $botMasksStr,
+		"mask_mode"			=> "and",
 		"drills"            => $considerHole,
 		"drills_source"     => "matrix",
 		"drills_list"       => "",
@@ -404,44 +417,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
  
 
-	#
-	#	use aliased 'CamHelpers::CamCopperArea';
-	#
-	#	my $inCAM = InCAM->new();
-	#
-	#
-	#	my $test = CamCopperArea->GetProfileArea($inCAM, "f13610", "o+1");
-	#
-	#	print $test."\n";
-
-	#my %test = CamHelpers::CamCopperArea->GetCuArea( $cuThickness, $pcbThick, $inCAM, "f13610", "panel", "c", "s", 1, 1 );
-
-	#my %test1 = CamHelpers::CamCopperArea->GetCuArea( $cuThickness, $pcbThick, $inCAM, "F13608", "panel", "c" );
-
-	#my %lim = CamJob->GetLayerLimits( $inCAM, "F13608", "panel", "fr" );
-
-	#my %test1 = CamHelpers::CamCopperArea->GetCuAreaByBox($cuThickness, $pcbThick, $inCAM, "F13608", "panel", "c", "s", \%lim );
-	#$inCAM->COM("get_message_bar");
-	#print STDERR "TEXT BAR: " . $inCAM->GetReply();
-
-	#my %test2 = CamHelpers::CamCopperArea->GetCuAreaMask($cuThickness, $pcbThick, $inCAM, "F13608", "panel", "c", "s", "mc", "ms" );
-	#
-	#	print $test2{"area"};
-	#	print "\n";
-	#	print $test2{"percentage"};
-	#
-	#	my %test3 = CamHelpers::CopperArea->GetCuAreaMaskByBox( $inCAM, "F13608", "panel", "c", "s", "mc", "ms", \%lim );
-
-	#print $test3{"area"};
-	#print "\n";
-	#print $test3{"percentage"};
-	#my %test3 = CamHelpers::CopperArea->GetCuAreaMask( $inCAM, "F13608", "panel", "c", undef, "mc");
-
-	#	my %test2 = CamHelpers::CopperArea->GetGoldFingerArea($cuThickness, $pcbThick, $inCAM, "F13608", "panel");
-
-	#print $test2{"area"};
-	#print "\n";
-	#print $test2{"percentage"};
+	 
 
 	print 1;
 

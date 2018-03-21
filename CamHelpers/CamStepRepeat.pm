@@ -441,51 +441,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	print STDERR $depth;
 
-	#my $self             = shift;
-	#	my $inCAM            = shift;
-	#	my $jobName          = shift;
-	#	my $stepName         = shift;
-	#	my $layerNameTop     = shift;
-	#	my $layerNameBot     = shift;
-	#
-	#	my $considerHole     = shift;
-	#	my $considerEdge     = shift;
-	#
-	#	my $cuThickness = JobHelper->GetBaseCuThick( "f13610", "c" );
-	#	my $pcbThick = JobHelper->GetFinalPcbThick("f13610");
-	#
-	#	my $inCAM = InCAM->new();
-	#
-	#	my %test = CamHelpers::CamCopperArea->GetCuArea( $cuThickness, $pcbThick, $inCAM, "f13610", "panel", "c", "s", 1, 1 );
-
-	#my %test1 = CamHelpers::CamCopperArea->GetCuArea( $cuThickness, $pcbThick, $inCAM, "F13608", "panel", "c" );
-
-	#my %lim = CamJob->GetLayerLimits( $inCAM, "F13608", "panel", "fr" );
-
-	#my %test1 = CamHelpers::CamCopperArea->GetCuAreaByBox($cuThickness, $pcbThick, $inCAM, "F13608", "panel", "c", "s", \%lim );
-	#$inCAM->COM("get_message_bar");
-	#print STDERR "TEXT BAR: " . $inCAM->GetReply();
-
-	#my %test2 = CamHelpers::CamCopperArea->GetCuAreaMask($cuThickness, $pcbThick, $inCAM, "F13608", "panel", "c", "s", "mc", "ms" );
-	#
-	#	print $test2{"area"};
-	#	print "\n";
-	#	print $test2{"percentage"};
-	#
-	#	my %test3 = CamHelpers::CopperArea->GetCuAreaMaskByBox( $inCAM, "F13608", "panel", "c", "s", "mc", "ms", \%lim );
-
-	#print $test3{"area"};
-	#print "\n";
-	#print $test3{"percentage"};
-	#my %test3 = CamHelpers::CopperArea->GetCuAreaMask( $inCAM, "F13608", "panel", "c", undef, "mc");
-
-	#	my %test2 = CamHelpers::CopperArea->GetGoldFingerArea($cuThickness, $pcbThick, $inCAM, "F13608", "panel");
-
-	#print $test2{"area"};
-	#print "\n";
-	#print $test2{"percentage"};
-
-	#print 1;
+	 
 
 }
 
