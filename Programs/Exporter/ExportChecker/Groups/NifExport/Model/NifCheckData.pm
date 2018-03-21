@@ -172,18 +172,33 @@ sub OnCheckGroupData {
 		$dataMngr->_AddWarningResult( "Pattern", "Dps by mìla jít do výroby jako pattern, ale ve formuláši máš zaškrknutý tenting." );
 	}
 
+
 	# 8) Check if goldfinger exist, if area is greater than 10mm^2
 
 	if ( $defaultInfo->LayerExist("c") && $defaultInfo->GetTypeOfPcb() ne "Neplatovany" ) {
 
-		my %histC = CamHistogram->GetAttHistogram( $inCAM, $jobId, "panel", "c" );
-		my %histS = ();
-
+		my $goldCExist = CamGoldArea->GoldFingersExist($inCAM, $jobId, $stepName, "c");
+		my $goldSExist = 0;
+		
 		if ( $defaultInfo->LayerExist("s") ) {
-			%histS = CamHistogram->GetAttHistogram( $inCAM, $jobId, "panel", "s" );
+			$goldSExist = CamGoldArea->GoldFingersExist($inCAM, $jobId, $stepName, "s");
 		}
-
-		if ( $histC{".gold_plating"} || $histS{".gold_plating"} ) {
+ 
+ 		my $refLayerExist = 1;
+ 
+		# Check if goldc layer exist
+		if($goldCExist && !$defaultInfo->LayerExist("goldc")){
+				
+				$refLayerExist = 0;
+		}
+		
+		# Check if gold s exist
+		if($goldSExist && !$defaultInfo->LayerExist("golds")){
+				
+				$refLayerExist = 0;
+		}
+		
+		if ( ($goldCExist || $goldSExist) && $refLayerExist ) {
 
 			my $cuThickness = $defaultInfo->GetBaseCuThick("c");
 			my $pcbThick    = JobHelper->GetFinalPcbThick($jobId);

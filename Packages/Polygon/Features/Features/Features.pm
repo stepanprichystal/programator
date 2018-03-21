@@ -70,7 +70,7 @@ sub Parse {
 	unlink($infoFile);
 
 	# if filter specify feats
-	if ($featFilter) {
+	if ($featFilter && scalar(@{$featFilter})) {
 		my %tmp;
 		@tmp{ @{$featFilter} } = ();
 		@feat = grep { exists $tmp{ ( $_ =~ /^#(\d+)/i )[0] } } @feat;
@@ -429,20 +429,20 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $f = Features->new();
 
-	my $jobId = "f52457";
+	my $jobId = "d208968";
 	my $inCAM = InCAM->new();
 
 	my $step  = "o+1";
 	my $layer = "mc";
 
-	my @feat = (1388);
-	$f->Parse( $inCAM, $jobId, $step, $layer, 1, 0 );
+	my @feat = (293);
+	$f->Parse( $inCAM, $jobId, $step, $layer, 1, 0, \@feat );
 
 	my @features = $f->GetFeatures();
 
-	my @textFeats = grep { $_->{"type"} eq "T" } @features;
+ 
 
-	print @textFeats;
+ die;
 
 }
 
