@@ -131,9 +131,9 @@ sub __UpdateDTMColumns {
 					}
 					 
 
-					# if exist only one user clmn and no TOOL has defined obsolete column value => ignore
+					# if exist any obsolete user DTM column and USER_DES values are not set => update 
 
-					if ( scalar(@obsolete) && scalar(@clmns) == 1 ) {
+					if ( scalar(@obsolete) ) {
 						
 						$updateClms = 1;
 

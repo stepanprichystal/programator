@@ -131,7 +131,7 @@ sub __FindStart {
 
 					my @delete = grep { $_->{"id"} > 0 } @features;
 
-					$draw->DeleteRoute( \@delete );
+					$draw->DeleteRoute( [$outline->GetOriFeatures()] ); # dlete ori features
 
 					$draw->DrawRoute( \@features, 2000, EnumsRout->Comp_LEFT, $startResult{"edge"}, 1 );    # draw new
 

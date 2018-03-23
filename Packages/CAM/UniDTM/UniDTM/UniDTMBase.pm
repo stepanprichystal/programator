@@ -222,7 +222,7 @@ sub __InitUniDTM {
 
 		$uniT->SetDepth( $t->{"userColumns"}->{ EnumsDrill->DTMclmn_DEPTH } );
 		$uniT->SetMagazineInfo( $t->{"userColumns"}->{ EnumsDrill->DTMclmn_MAGINFO } );
-		$uniT->SetTolPlus( $t->{"gTOOLmin_tol"} );
+		$uniT->SetTolMinus( $t->{"gTOOLmin_tol"} );
 		$uniT->SetTolPlus( $t->{"gTOOLmax_tol"} );
 
 		# special standard DTM property

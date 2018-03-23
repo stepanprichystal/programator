@@ -15,6 +15,7 @@ use Try::Tiny;
 #local library
 use aliased 'CamHelpers::CamHelper';
 use aliased 'CamHelpers::CamJob';
+use aliased 'CamHelpers::CamDTM';
 use aliased 'CamHelpers::CamMatrix';
 use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'Enums::EnumsGeneral';
@@ -24,11 +25,12 @@ use aliased 'CamHelpers::CamStepRepeat';
 use aliased 'CamHelpers::CamFilter';
 use aliased 'CamHelpers::CamLayer';
 use aliased 'Helpers::GeneralHelper';
+use aliased 'Packages::CAM::UniDTM::UniDTM';
+use aliased 'Packages::CAM::UniDTM::Enums' => 'EnumsDTM';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
- 
 
 sub SeparateNpltDrill {
 	my $self  = shift;
@@ -83,6 +85,7 @@ sub __CreateNpltDrill {
 	if ( CamHelper->LayerExists( $inCAM, $jobId, $to ) ) {
 
 		die "Something is wrong, layer \"$to\" shouldn't exist, but exists";
+
 		#CamMatrix->DeleteLayer( $inCAM, $jobId, $to );
 	}
 
@@ -154,12 +157,41 @@ sub __MovePads {
 		CamHelper->SetStep( $inCAM, $s );
 		CamLayer->WorkLayer( $inCAM, $layerName );
 
+		my $unitDTM = UniDTM->new( $inCAM, $jobId, $s, $layerName, 1 );
+		my $mess = "";
+		unless ( $unitDTM->GetChecks()->CheckTools( \$mess ) ) {
+
+			die "Tools definition in layer: " . $self->{"layer"} . " is wrong.\n $mess";
+		}
+		my @uniDTMTools = $unitDTM->GetTools();
+
 		my $sel = CamFilter->ByTypes( $inCAM, ["pad"] );
 
 		if ($sel) {
 
 			$movedCnt += $sel;
 			CamLayer->MoveSelected( $inCAM, $targetLayer );
+
+			# if some holes have pressfit, set DTM
+			my @pressfit = grep { $_->GetTypeUse() =~ /press_fit/ &&  $_->GetTypeProcess() eq EnumsDTM->TypeProc_HOLE} @uniDTMTools;
+
+			if (@pressfit) {
+
+				my @toolsTarget = CamDTM->GetDTMTools( $inCAM, $jobId, $s, $targetLayer, 0 );
+
+				foreach my $uniDTMTool (@pressfit) {
+
+					foreach my $t ( grep { $_->{"gTOOLdrill_size"} eq $uniDTMTool->GetDrillSize() && $_->{"gTOOLshape"} eq "hole" } @toolsTarget ) {
+
+						$t->{"gTOOLmin_tol"} = $uniDTMTool->GetTolMinus();
+						$t->{"gTOOLmax_tol"} = $uniDTMTool->GetTolPlus();
+					}
+				}
+
+				CamDTM->SetDTMTools( $inCAM, $jobId, $s, $targetLayer, \@toolsTarget );
+
+			}
+
 		}
 	}
 
