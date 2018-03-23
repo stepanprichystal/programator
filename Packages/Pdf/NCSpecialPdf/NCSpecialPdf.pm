@@ -63,6 +63,8 @@ sub new {
 
 sub Create {
 	my $self = shift;
+	
+	my $result = 0;
 
 	my $jobId = $self->{"jobId"};
 	my $inCAM = $self->{"inCAM"};
@@ -118,11 +120,19 @@ sub Create {
 
 	}
 
-	$self->__OutputPdf( \@preparedLayers );
+	if(scalar(@preparedLayers)){
+		$result = 1;
+		
+		$self->__OutputPdf( \@preparedLayers );
+	}
+
+	
 
 	$control->Clear();
 	
 	CamStep->DeleteStep($inCAM, $jobId, $self->{"stepFlat"});
+	
+	return $result;
 
 }
 

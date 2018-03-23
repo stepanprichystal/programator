@@ -163,7 +163,7 @@ sub __MovePads {
 
 			die "Tools definition in layer: " . $self->{"layer"} . " is wrong.\n $mess";
 		}
-		my @uniDTMTools = $unitDTM->GetTools();
+		my @uniDTMTools = grep { $_->GetSource() eq EnumsDTM->Source_DTM} $unitDTM->GetTools();
 
 		my $sel = CamFilter->ByTypes( $inCAM, ["pad"] );
 

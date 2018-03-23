@@ -89,8 +89,13 @@ sub ExistCountersinkByLayer {
 	unless ($csExist) {
 
 		# test if exist countersink as surface or arc
-		my @chainSeqArc  = $rtm->GetCircleChainSeq( RTMEnums->FeatType_LINEARC );
-		my @chainSeqSurf = $rtm->GetCircleChainSeq( RTMEnums->FeatType_SURF );
+		my @chainSeqArc = grep {
+			defined $_->GetChain()->GetChainTool()->GetUniDTMTool()->GetAngle() && $_->GetChain()->GetChainTool()->GetUniDTMTool()->GetAngle() > 0
+		} $rtm->GetCircleChainSeq( RTMEnums->FeatType_LINEARC );
+		
+		my @chainSeqSurf = grep {
+			defined $_->GetChain()->GetChainTool()->GetUniDTMTool()->GetAngle() && $_->GetChain()->GetChainTool()->GetUniDTMTool()->GetAngle() > 0
+		} $rtm->GetCircleChainSeq( RTMEnums->FeatType_SURF );
 
 		if ( scalar(@chainSeqArc) || scalar(@chainSeqSurf) ) {
 			$csExist = 1;
@@ -113,7 +118,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	use aliased 'Packages::InCAM::InCAM';
 
 	my $inCAM = InCAM->new();
-	my $jobId = "d203968";
+	my $jobId = "d152457";
 
 	my %res = ();
 	my $r = CheckCountersink->ExistCountersink( $inCAM, $jobId );

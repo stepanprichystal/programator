@@ -261,28 +261,30 @@ sub __ExportNCSpecial {
 	my $jobId = $self->{"jobId"};
 
 	my $pdf = NCSpecialPdf->new( $inCAM, $jobId );
-	my $resultCreate = $pdf->Create();
 
-	my $tmpPath = $pdf->GetOutputPath();
+	if ( $pdf->Create() ) {
 
-	my $pdfPath = JobHelper->GetJobArchive($jobId) . "pdf\\" . $jobId . "_NCCountersink.pdf";
+		my $tmpPath = $pdf->GetOutputPath();
 
-	if ( -e $pdfPath ) {
-		unless ( unlink($pdfPath) ) {
-			die "Can not delete old countersink pdf file (" . $pdfPath . "). Maybe file is still open.\n";
+		my $pdfPath = JobHelper->GetJobArchive($jobId) . "pdf\\" . $jobId . "_NCCountersink.pdf";
+
+		if ( -e $pdfPath ) {
+			unless ( unlink($pdfPath) ) {
+				die "Can not delete old countersink pdf file (" . $pdfPath . "). Maybe file is still open.\n";
+			}
 		}
+
+		copy( $tmpPath, $pdfPath ) or die "Copy failed: $!";
+		unlink($tmpPath);
+
+		my $resultNCSpecial = $self->_GetNewItem("NC countersink pdf");
+
+		unless ($resultNCSpecial) {
+			$resultNCSpecial->AddError("Failed to create pdf NC countersink");
+		}
+
+		$self->_OnItemResult($resultNCSpecial);
 	}
-
-	copy( $tmpPath, $pdfPath ) or die "Copy failed: $!";
-	unlink($tmpPath);
-
-	my $resultNCSpecial = $self->_GetNewItem("NC countersink pdf");
-
-	unless ($resultNCSpecial) {
-		$resultNCSpecial->AddError("Failed to create pdf NC countersink");
-	}
-
-	$self->_OnItemResult($resultNCSpecial);
 
 }
 
