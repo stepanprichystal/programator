@@ -431,7 +431,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	#
 	#	$ncgroup->Run();
 
-	#print $test;
+	#print $test; pressfit
 
 }
 

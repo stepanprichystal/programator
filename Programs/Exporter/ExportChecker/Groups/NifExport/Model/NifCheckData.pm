@@ -20,6 +20,7 @@ use aliased 'Helpers::ValueConvertor';
 use aliased 'Helpers::JobHelper';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'CamHelpers::CamCopperArea';
+use aliased 'CamHelpers::CamDrilling';
 use aliased 'CamHelpers::CamGoldArea';
 use aliased 'CamHelpers::CamHistogram';
 use aliased 'CamHelpers::CamStepRepeat';
@@ -62,7 +63,7 @@ sub OnCheckGroupData {
 
 	my $errMess = "";
 	unless ( $self->__CheckDataCodeJob( $inCAM, $jobId, $defaultInfo, $groupData->GetDatacode(), \$errMess ) ) {
-		$dataMngr->_AddErrorResult( "Data code", $errMess);
+		$dataMngr->_AddErrorResult( "Data code", $errMess );
 	}
 
 	# 2) ul logo
@@ -172,33 +173,32 @@ sub OnCheckGroupData {
 		$dataMngr->_AddWarningResult( "Pattern", "Dps by mìla jít do výroby jako pattern, ale ve formuláši máš zaškrknutý tenting." );
 	}
 
-
 	# 8) Check if goldfinger exist, if area is greater than 10mm^2
 
 	if ( $defaultInfo->LayerExist("c") && $defaultInfo->GetTypeOfPcb() ne "Neplatovany" ) {
 
-		my $goldCExist = CamGoldArea->GoldFingersExist($inCAM, $jobId, $stepName, "c");
+		my $goldCExist = CamGoldArea->GoldFingersExist( $inCAM, $jobId, $stepName, "c" );
 		my $goldSExist = 0;
-		
+
 		if ( $defaultInfo->LayerExist("s") ) {
-			$goldSExist = CamGoldArea->GoldFingersExist($inCAM, $jobId, $stepName, "s");
+			$goldSExist = CamGoldArea->GoldFingersExist( $inCAM, $jobId, $stepName, "s" );
 		}
- 
- 		my $refLayerExist = 1;
- 
+
+		my $refLayerExist = 1;
+
 		# Check if goldc layer exist
-		if($goldCExist && !$defaultInfo->LayerExist("goldc")){
-				
-				$refLayerExist = 0;
+		if ( $goldCExist && !$defaultInfo->LayerExist("goldc") ) {
+
+			$refLayerExist = 0;
 		}
-		
+
 		# Check if gold s exist
-		if($goldSExist && !$defaultInfo->LayerExist("golds")){
-				
-				$refLayerExist = 0;
+		if ( $goldSExist && !$defaultInfo->LayerExist("golds") ) {
+
+			$refLayerExist = 0;
 		}
-		
-		if ( ($goldCExist || $goldSExist) && $refLayerExist ) {
+
+		if ( ( $goldCExist || $goldSExist ) && $refLayerExist ) {
 
 			my $cuThickness = $defaultInfo->GetBaseCuThick("c");
 			my $pcbThick    = JobHelper->GetFinalPcbThick($jobId);
@@ -284,10 +284,8 @@ sub OnCheckGroupData {
 	}
 
 	# 13) If exist pressfit, check if finsh size and tolerances are set
-	if ( $groupData->GetPressfit() ) {
 
-		$self->__CheckPressfitTools($dataMngr);
-	}
+	$self->__CheckPressfitTools($dataMngr);
 
 }
 
@@ -456,6 +454,7 @@ sub __CheckPressfitTools {
 
 	foreach my $l (@layers) {
 
+		# check pressfit tools
 		my @tools = CamDTM->GetDTMToolsByType( $inCAM, $jobId, "panel", $l, "press_fit", 1 );
 
 		foreach my $t (@tools) {
@@ -477,6 +476,29 @@ sub __CheckPressfitTools {
 			}
 		}
 	}
+
+	foreach my $l ( CamDrilling->GetNCLayersByTypes( $inCAM, $jobId, [ EnumsGeneral->LAYERTYPE_nplt_nMill, EnumsGeneral->LAYERTYPE_plt_nMill ] ) ) {
+
+		# check non pressfit tools, if tolerances are not set
+		my @toolsNoPressfit = grep { $_->{"gTOOLtype2"} ne "press_fit" } CamDTM->GetDTMTools( $inCAM, $jobId, "panel", $l->{"gROWname"}, 1 );
+
+		foreach my $t (@toolsNoPressfit) {
+
+			if ( $t->{"gTOOLmin_tol"} != 0 || $t->{"gTOOLmax_tol"} != 0 ) {
+
+				$dataMngr->_AddErrorResult(
+											"Pressfit",
+											"Tool: "
+											  . $t->{"gTOOLdrill_size"}
+											  . "µm has set tolerances ("
+											  . $t->{"gTOOLmin_tol"} . ", "
+											  . $t->{"gTOOLmax_tol"}
+											  . " ), but tool type is not \"pressfit\". Set proper tool type in DTM"
+				);
+			}
+		}
+	}
+
 }
 
 #-------------------------------------------------------------------------------------------#
