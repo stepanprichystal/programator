@@ -177,9 +177,10 @@ sub ConvertJobIdNew2Old {
 sub GetJobElTest {
 	my $self  = shift;
 	my $jobId = shift;
+	my $oldStructure = shift // 0; # old sfolder sturcture for storing el test
 
 	# old format - D12345
-	if ( length($jobId) == 6 ) {
+	if ( length($jobId) == 6 || $oldStructure) {
 
 		return EnumsPaths->Jobs_ELTESTS . substr( $jobId, 0, 3 ) . "\\" . $jobId . "t\\";
 	}

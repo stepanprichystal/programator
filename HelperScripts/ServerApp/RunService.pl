@@ -35,11 +35,11 @@ my $logger = get_logger("serverLog");
 
 RunInCAMServer();
 
-# ======= TPVCustomService =========================================
-
-#RunService("TpvLogService", EnumsPaths->Client_INCAMTMPLOGS ."logService\\logAll.txt");    # Run log service
-
 # ======= TPVLogService =========================================
+
+RunService("TpvLogService", EnumsPaths->Client_INCAMTMPLOGS ."logService\\logAll.txt");    # Run log service
+
+# ======= TPVCustomService =========================================
 
 RunService( "TpvCustomService", EnumsPaths->Client_INCAMTMPLOGS . "tpvService\\logAll.txt" );    # Run tpv service
 

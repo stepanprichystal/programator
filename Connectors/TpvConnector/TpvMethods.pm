@@ -142,12 +142,12 @@ sub InsertAppLog {
 				AND t1.Message = _Message
 				AND t1.ProcessLog = 1) 
 				UNION 
-				(SELECT NOW() - INTERVAL 1000 MINUTE as Inserted) # default time, when no same log message exist
+				(SELECT NOW() - INTERVAL 1000 YEAR as Inserted) # default time, when no same log message exist
 				)
 			AS t2
 			ORDER BY t2.Inserted DESC
 			LIMIT 1
-			) + INTERVAL (SELECT LogDuplicityInterval FROM app_info WHERE AppId = 'archiveJobs') MINUTE  < NOW(),
+			) + INTERVAL (SELECT LogDuplicityInterval FROM app_info WHERE AppId = _AppId) MINUTE  < NOW(),
 		1, # process log
 		0  # not process, last same log is too young
 		))
@@ -295,9 +295,9 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 #
 #	dump(@arr);
 
-	my %log = TpvMethods->GetLogById("25744");
+	my @logs = TpvMethods->GetErrLogsToProcess("checkElTests");
 
-	print $log{"Message"};
+	print @logs;
 
 }
 

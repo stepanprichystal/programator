@@ -54,7 +54,7 @@ foreach my $orderId (@lines) {
 		next;
 	}
 	
-	my %orderInfo = HegMethods->GetOrderInfo( $orderId);
+	my %orderInfo = HegMethods->GetAllByOrderId( $orderId);
 	
 
 	my $formerNif = NifFile->new($jobId);

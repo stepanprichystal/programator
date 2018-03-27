@@ -44,7 +44,7 @@ sub Warning {
 	my $jobId = shift;
 	my $mess  = shift;
 
-	$self->__Log($jobId, "Error", $mess);
+	$self->__Log($jobId, "Warning", $mess);
 }
 
 sub __Log{

@@ -300,7 +300,7 @@ sub GetElTest {
 
 	my $val = Helper->ExecuteScalar( $cmd, \@params );
 
-	if ( $val =~ /^f$/i ) {
+	if ( defined $val && $val =~ /^f$/i ) {
 		return 1;
 	}
 	else {
@@ -1049,7 +1049,7 @@ sub GetTermOfOrder {
 }
 
 # Return value of term order
-sub GetOrderInfo {
+sub GetAllByOrderId {
 	my $self    = shift;
 	my $orderId = shift;
 
@@ -1057,6 +1057,7 @@ sub GetOrderInfo {
 
 	my $cmd = "SELECT top 1
 				termin,
+				datum_zahajeni,
 				pocet_prirezu,
 				prirezu_navic
 				from lcs.zakazky_dps_22_hlavicka 
@@ -1167,8 +1168,7 @@ sub GetPcbsInProduc {
 	return @result;
 }
 
-# Get all ReOrders
-# Pcb has order number begger than -01 + are on state 'Predvyrobni priprava'
+# Get pcb by status (return desky not zakazky)
 # Statusy:
 #Poøízeno na eshopu (02)
 #Zavedeno (0)
@@ -1219,6 +1219,51 @@ sub GetPcbsByStatus {
 
 	return @result;
 }
+
+# Get orders by status (return zakazky, not desky)
+# Statusy:
+#Poøízeno na eshopu (02)
+#Zavedeno (0)
+#Na pøíjmu (1)
+#Pozastavena (12)
+#Pøedvýrobní pøíprava (2)
+#Na odsouhlasení (25)
+#Schválena (35)
+#Ve výrobì (4)
+#Vykrytí ze skladu (42)
+#V kooperaci (45)
+#Stornována (5)
+#Ukonèena (7)
+sub GetOrdersByStatus {
+ 	my $self     = shift;
+	my @statuses = @_;
+
+	unless ( scalar(@statuses) ) {
+		die "No status defined";
+	}
+
+	@statuses = map { "\'" . $_ . "\'" } @statuses;
+	my $strStatus = join( ",", @statuses );
+
+	# IN (value1, value2, ...);
+
+	my @params = ();
+ 
+	my $cmd = "select   
+ 				z.stav,
+				z.deska,
+				z.reference_subjektu,
+				z.aktualni_krok
+				from lcs.zakazky_dps_22_hlavicka z join lcs.desky_22 d on d.cislo_subjektu=z.deska
+				WHERE z.stav IN ($strStatus)";
+
+	my @result = Helper->ExecuteDataSet( $cmd, \@params );
+
+	 @result = grep { $_->{"reference_subjektu"} =~ /^\w\d+-\d+$/ } @result;    # remove cores
+
+	return @result;
+}
+
 
 # Return all pcb "In produce" which contain silkscreen bot or top
 sub GetPcbsInProduceSilk {
@@ -1451,9 +1496,9 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	use aliased 'Connectors::HeliosConnector::HegMethods';
 	use Data::Dump qw(dump);
 
-	my @cores = HegMethods->GetAllCoresInfo("f52457");
+	my @orders = HegMethods->GetOrdersByStatus(4);
 
-	print @cores;
+ 	 print scalar(@orders);
 
 }
 

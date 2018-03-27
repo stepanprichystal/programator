@@ -52,6 +52,9 @@ Win32::Daemon::StartService( \%Context, 10000 );
 
 sub WorkerMethod {
 	my $Context = shift;
+	
+	my $logger = get_logger("service");
+	$logger->info("Working method");
 
 	TpvMethods->ClearLogDb();
 
@@ -108,8 +111,10 @@ sub Callback_Timer {
 		};
 		if ($@) {
 
-			$logger->error($@);
-			Win32::Daemon::State(SERVICE_RUNNING);
+			print STDERR "error tpvLogService\n";
+			$logger->error( "Service fatal error in worker method:" . $@ );
+			Win32::Daemon::StopService();
+			Win32::Daemon::State(SERVICE_STOPPED);
 
 		}
 

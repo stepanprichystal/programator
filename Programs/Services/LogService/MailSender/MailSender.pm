@@ -9,6 +9,7 @@ package Programs::Services::LogService::MailSender::MailSender;
 use strict;
 use warnings;
 use Mail::Sender;
+use Log::Log4perl qw(get_logger :levels);
 
 #local library
 use aliased 'Connectors::TpvConnector::TpvMethods';
@@ -16,6 +17,7 @@ use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'Enums::EnumsApp';
 use aliased 'Programs::Services::LogService::MailSender::AppStopCond::TestStopCond';
 use aliased 'Programs::Services::LogService::MailSender::AppStopCond::ReOrderStopCond';
+use aliased 'Programs::Services::LogService::MailSender::AppStopCond::ElTestStopCond';
 use aliased 'Packages::NifFile::NifFile';
 use aliased 'Helpers::GeneralHelper';
 use aliased 'Helpers::FileHelper';
@@ -39,6 +41,7 @@ sub new {
 
 	# Sender attributes
 	#$self->{"smtp"} = "127.0.0.1";
+
 	$self->{"smtp"} = 'proxy.gatema.cz';
 	$self->{"from"} = 'tpvserver@gatema.cz';
 
@@ -47,7 +50,7 @@ sub new {
 
 	my %stopSend = ();
 	$stopSend{ EnumsApp->App_TEST }         = TestStopCond->new();
-	$stopSend{ EnumsApp->App_CHECKREORDER } = ReOrderStopCond->new();
+	$stopSend{ EnumsApp->App_CHECKELTESTS } = ElTestStopCond->new();
 
 	$self->{"stopSend"} = \%stopSend;
 
@@ -61,7 +64,7 @@ sub Run {
 	my @app2Proces = grep { $_->{"SentErrMail"} } @{ $self->{"appsInfo"} };
 
 	foreach my $app (@app2Proces) {
-
+ 
 		$self->__ProcesAppLogs( $app->{"AppId"}, $app->{"SentErrMailRepeat"}, $app->{"SentErrMailUserRepeat"}, $app->{"SentErrMailInterval"} )
 
 	}
@@ -74,13 +77,13 @@ sub __ProcesAppLogs {
 	my $maxRepeat    = shift;
 	my $maxUsrRepeat = shift;
 	my $interval     = shift;
-
+ 
 	# check if log has been processed, if not insert default process record
 
 	my @logs = TpvMethods->GetErrLogsToProcess($appId);
-
+ 
 	foreach my $log (@logs) {
-
+ 
 		my $stopSending = 0;
 
 		# 1) decide if stop log sending emails
@@ -219,7 +222,7 @@ sub __SendMail {
 	my $pcbId             = shift;
 	my $pcbAuthor         = shift;
 	my $message           = shift;
-	
+
 	$message =~ s/\n/<br>/g;
 
 	# prepare email html template
@@ -258,14 +261,14 @@ sub __SendMail {
 
 	$sender->Open(
 		{
-		   to      => $mail,
-		   subject => "Server logs - " . EnumsApp->GetTitle($appName) . " (warning  $appTotalSentMails/$appMaxSentMails)",
+		   to      => 'stepan.prichystal@gatema.cz',
+		   subject => "Server logs - " . EnumsApp->GetTitle($appName) . " (warning  $appTotalSentMails/$appMaxSentMails) => $mail",
 
 		   #msg     => "I'm sending you the list you wanted.",
 		   #file    => 'filename.txt'
 		   ctype    => "text/html",
 		   encoding => "7bit",
-		   bcc      => 'stepan.prichystal@gatema.cz' #TODO temporary 
+		   #bcc      => 'stepan.prichystal@gatema.cz'    #TODO temporary
 		}
 	);
 
