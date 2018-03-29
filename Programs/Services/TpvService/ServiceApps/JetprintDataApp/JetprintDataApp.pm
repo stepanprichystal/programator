@@ -63,8 +63,7 @@ sub Run {
 
 	eval {
 
-		# 1) delete mdi files of pcb which are not in produce
-		$self->__DeleteOldJetFiles();
+
 
 		# 2) Load jobs to export MDI files
 		my @jobs = $self->__GetPcb2Export();
@@ -218,88 +217,7 @@ sub __GetPcb2Export {
 	return @pcb2Export;
 }
 
-sub __DeleteOldJetFiles {
-	my $self = shift;
 
-	my @pcbInProduc =
-	  HegMethods->GetPcbsByStatus( 2, 4, 12, 25, 35 );   # get pcb "Ve vyrobe" + "Na predvyrobni priprave" + Na odsouhlaseni + Schvalena + Pozastavena
-	@pcbInProduc = map { $_->{"reference_subjektu"} } @pcbInProduc;
-
-	if ( scalar(@pcbInProduc) < 100 ) {
-
-		$self->{"logger"}->debug( "No pcb in produc (count : " . scalar(@pcbInProduc) . "), error?" );
-	}
-
-	unless ( scalar(@pcbInProduc) ) {
-		return 0;
-	}
-
-	# delete files from EnumsPaths->Jobs_JETPRINT
-	my $deletedFiles = 0;
-
-	my $p = EnumsPaths->Jobs_JETPRINT;
-	if ( opendir( my $dir, $p ) ) {
-		while ( my $file = readdir($dir) ) {
-			next if ( $file =~ /^\.$/ );
-			next if ( $file =~ /^\.\.$/ );
-
-			my ($fileJobId) = $file =~ m/^(\w\d+)/i;
-
-			unless ( defined $fileJobId ) {
-				next;
-			}
-
-			my $inProduc = scalar( grep { $_ =~ /^$fileJobId$/i } @pcbInProduc );
-
-			unless ($inProduc) {
-				if ( $file =~ /\.ger/i ) {
-
-					unlink $p . $file;
-					$deletedFiles++;
-				}
-			}
-		}
-
-		closedir($dir);
-	}
-
-	$self->{"logger"}->info("Number of deleted job from Jetprint folder $p: $deletedFiles");
-
-	# Delete working folders from jetprint machine folder Jobs_JETPRINTMACHINE
-
-	my $deletedFolders = 0;
-
-	my $p2 = EnumsPaths->Jobs_JETPRINTMACHINE;
-	if ( opendir( my $dir, $p2 ) ) {
-		while ( my $workDir = readdir($dir) ) {
-			next if ( $workDir =~ /^\.$/ );
-			next if ( $workDir =~ /^\.\.$/ );
-
-			my ($folderJobId) = $workDir =~ m/^(\w\d+)\w+_jet$/i;
-
-			unless ( defined $folderJobId ) {
-				next;
-			}
-
-			my $inProduc = scalar( grep { $_ =~ /^$folderJobId$/i } @pcbInProduc );
-
-			unless ($inProduc) {
-
-				if ( rmtree( $p2 . $workDir ) ) {
-					$deletedFolders++;
-				}
-				else {
-
-					$self->{"logger"}->error( "Cannot rmtree ". $p2.$workDir );
-				}
-			}
-		}
-
-		closedir($dir);
-	}
-
-	$self->{"logger"}->info("Number of deleted jobs from Jetprint machine folder $p2: $deletedFolders");
-}
 
 # store err to logs
 sub __ProcessError {

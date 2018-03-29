@@ -56,6 +56,10 @@ sub GetTitle{
 	}elsif($code eq App_CHECKELTESTS){
 		
 		$title = "Check electrical test";	
+	
+	}elsif($code eq App_CLEANJOBDB){
+		
+		$title = "Cleanup InCAM job DB";	
 	}
 	
 	

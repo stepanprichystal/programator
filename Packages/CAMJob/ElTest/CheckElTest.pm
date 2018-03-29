@@ -33,8 +33,8 @@ sub ElTestRequested {
 
 	# Load nif info
 	my $nif = NifFile->new($jobId);
-	$nif->GetValue("pocet_vrstev");
-	$nif->GetValue("kons_trida");
+ 
+ 
 
 	if ( !defined $nif->GetValue("pocet_vrstev") || !defined $nif->GetValue("kons_trida") ) {
 		die "Information from nif file is not complete (rows: pocet_vrstev; kons_trida )";
@@ -50,7 +50,7 @@ sub ElTestRequested {
 	}
 	else {
 
-		if ( $nif->GetValue("kons_trida") <= 3 && $nif->GetValue("pocet_vrstev") == 1 ) {
+		if ( $nif->GetValue("pocet_vrstev") == 0 || ($nif->GetValue("kons_trida") <= 3 && $nif->GetValue("pocet_vrstev") == 1) ) {
 
 			$testRequested = 0;
 		}
@@ -59,11 +59,7 @@ sub ElTestRequested {
 			$testRequested = 1;
 		}
 	}
-
-	unless ($testRequested) {
-		return 1;
-	}
-
+ 
 }
 
 # Return if job el test exists
@@ -102,15 +98,15 @@ sub ElTestExists {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	use aliased 'Packages::CAMJob::Routing::CheckRoutDepth';
+	use aliased 'Packages::CAMJob::ElTest::CheckElTest';
 	use aliased 'Packages::InCAM::InCAM';
 
 	my $inCAM = InCAM->new();
-	my $jobId = "d152456";
+	my $jobId = "d167723";
 	my $step  = "o+1";
 
 	my $mess = "";
-	my $res = CheckRoutDepth->CheckDepthChainMerge( $inCAM, $jobId, \$mess );
+	my $res = CheckElTest->ElTestRequested($jobId );
 
 	print "$res - $mess";
 

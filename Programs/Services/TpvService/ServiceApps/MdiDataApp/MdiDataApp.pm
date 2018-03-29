@@ -67,8 +67,7 @@ sub Run {
 
 	eval {
 
-		# 1) delete mdi files of pcb which are not in produce
-		$self->__DeleteOldMDIFiles();
+
 
 		# 2) Load jobs to export MDI files
 		my @jobs = $self->__GetPcb2Export();
@@ -266,62 +265,6 @@ sub __GetPcb2Export {
 	return @pcb2Export;
 }
 
-sub __DeleteOldMDIFiles {
-	my $self = shift;
-
-	my @pcbInProduc = HegMethods->GetPcbsByStatus( 2, 4, 12,  25, 35 );    # get pcb "Ve vyrobe" + "Na predvyrobni priprave" + Na odsouhlaseni + Schvalena + Pozastavena
-	@pcbInProduc = map { $_->{"reference_subjektu"} } @pcbInProduc;
-
-	if ( scalar(@pcbInProduc) < 100 ) {
-
-		$self->{"logger"}->debug( "No pcb in produc (count : " . scalar(@pcbInProduc) . "), error?" );
-	}
-
-	unless ( scalar(@pcbInProduc) ) {
-		return 0;
-	}
-
-	my $deletedFiles = 0;
-	my @deletedJobs  = ();
-
-	my $p = EnumsPaths->Jobs_MDI;
-	if ( opendir( my $dir, $p ) ) {
-		while ( my $file = readdir($dir) ) {
-			next if ( $file =~ /^\.$/ );
-			next if ( $file =~ /^\.\.$/ );
-
-			my ($fileJobId) = $file =~ m/^(\w\d+)/i;
-
-			unless ( defined $fileJobId ) {
-				next;
-			}
-
-			my $inProduc = scalar( grep { $_ =~ /^$fileJobId$/i } @pcbInProduc );
-
-			unless ($inProduc) {
-
-				push( @deletedJobs, $fileJobId );
-
-				if ( $file =~ /\.(ger|xml)/i ) {
-
-					unlink $p . $file;
-					$deletedFiles++;
-				}
-			}
-		}
-
-		closedir($dir);
-	}
-
-	# Log deleted files
-	foreach my $pcbId ( uniq(@deletedJobs) ) {
-
-		my $state = HegMethods->GetStatusOfOrder( $pcbId."-".HegMethods->GetPcbOrderNumber($pcbId) );
-		$self->{"logger"}->debug("Deleted: $pcbId - $state");
-	}
-
-	$self->{"logger"}->info("Number of deleted job from MDI folder: $deletedFiles");
-}
 
 sub __GetPcbsInProduc {
 	my $self = shift;

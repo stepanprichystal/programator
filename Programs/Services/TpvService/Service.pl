@@ -31,6 +31,7 @@ use aliased 'Programs::Services::TpvService::ServiceApps::MdiDataApp::MdiDataApp
 use aliased 'Programs::Services::TpvService::ServiceApps::JetprintDataApp::JetprintDataApp';
 use aliased 'Programs::Services::TpvService::ServiceApps::ArchiveJobsApp::ArchiveJobsApp';
 use aliased 'Programs::Services::TpvService::ServiceApps::CleanJobDbApp::CleanJobDbApp';
+use aliased 'Programs::Services::TpvService::ServiceApps::CheckElTestsApp::CheckElTestsApp';
 
 use aliased 'Programs::Services::TpvService::ServiceApps::TmpApp::TmpApp';
 
@@ -80,8 +81,21 @@ Win32::Daemon::State(SERVICE_RUNNING);
 
 sub WorkerMethod {
 	my $Context = shift;
-
+	
+	unless(defined $Context->{"test"}){
+		
+		$Context->{"test"} = 0;
+	}
+	
+	$Context->{"test"}++;
+	
 	my $logger = get_logger("service");
+	
+	 $logger->error("Context = $Context, ".$Context->{"test"});
+	 
+	 return 0;
+
+	
 
 	# ------------------------------------------------
 	# load all registered app + period of launch in minutes
@@ -178,6 +192,10 @@ sub __GetApp {
 	elsif ( $appName eq EnumsApp->App_CLEANJOBDB ) {
 
 		$app = CleanJobDbApp->new();
+	}
+	elsif ( $appName eq EnumsApp->App_CHECKELTESTS ) {
+
+		$app = CheckElTestsApp->new();
 	}
 	elsif ( $appName eq EnumsApp->App_TEST ) {
 

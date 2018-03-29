@@ -139,7 +139,7 @@ sub InsertAppLog {
 				WHERE t1.AppId = _AppId 
 				AND t1.Type = _Type
 				AND t1.PcbId = _PcbId
-				AND t1.Message = _Message
+				
 				AND t1.ProcessLog = 1) 
 				UNION 
 				(SELECT NOW() - INTERVAL 1000 YEAR as Inserted) # default time, when no same log message exist

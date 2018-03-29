@@ -15,6 +15,8 @@ use warnings;
 use Data::Dump qw(dump);
 use File::Basename;
 use Log::Log4perl qw(get_logger);
+use List::MoreUtils qw(uniq);
+use File::Path 'rmtree';
 
 
 #local library
@@ -46,7 +48,7 @@ sub new {
 
 	$self->{"inCAM"}         = undef;
 	$self->{"processedJobs"} = 0;
-	$self->{"maxLim"}        = 20;
+	$self->{"maxLim"}        = 5;
 	$self->{"notEditedDays"}        = 30; # archive jobs which are not edited more than X days
 
 	return $self;
@@ -59,6 +61,12 @@ sub Run {
 	my $self = shift;
 
 	eval {
+
+		# 1) delete mdi files of pcb which are not in produce
+		$self->__DeleteOldMDIFiles();
+		
+		# 2) delete mdi files of pcb which are not in produce
+		$self->__DeleteOldJetFiles();
 
 		# 1) Get jobs to archvie
 		my @jobs = $self->__GetJob2Archive();
@@ -325,7 +333,150 @@ sub __DeleteJob {
 		sleep(1);
 	}
 }
+
+
+
+sub __DeleteOldMDIFiles {
+	my $self = shift;
+
+	my @pcbInProduc = HegMethods->GetPcbsByStatus( 2, 4, 12,  25, 35 );    # get pcb "Ve vyrobe" + "Na predvyrobni priprave" + Na odsouhlaseni + Schvalena + Pozastavena
+	@pcbInProduc = map { $_->{"reference_subjektu"} } @pcbInProduc;
+
+	if ( scalar(@pcbInProduc) < 100 ) {
+
+		$self->{"logger"}->debug( "No pcb in produc (count : " . scalar(@pcbInProduc) . "), error?" );
+	}
+
+	unless ( scalar(@pcbInProduc) ) {
+		return 0;
+	}
+
+	my $deletedFiles = 0;
+	my @deletedJobs  = ();
+
+	my $p = EnumsPaths->Jobs_MDI;
+	if ( opendir( my $dir, $p ) ) {
+		while ( my $file = readdir($dir) ) {
+			next if ( $file =~ /^\.$/ );
+			next if ( $file =~ /^\.\.$/ );
+
+			my ($fileJobId) = $file =~ m/^(\w\d+)/i;
+
+			unless ( defined $fileJobId ) {
+				next;
+			}
+
+			my $inProduc = scalar( grep { $_ =~ /^$fileJobId$/i } @pcbInProduc );
+
+			unless ($inProduc) {
+
+				push( @deletedJobs, $fileJobId );
+
+				if ( $file =~ /\.(ger|xml)/i ) {
+
+					unlink $p . $file;
+					$deletedFiles++;
+				}
+			}
+		}
+
+		closedir($dir);
+	}
+
+	# Log deleted files
+	foreach my $pcbId ( uniq(@deletedJobs) ) {
+
+		my $state = HegMethods->GetStatusOfOrder( $pcbId."-".HegMethods->GetPcbOrderNumber($pcbId) );
+		$self->{"logger"}->debug("Deleted: $pcbId - $state");
+	}
+
+	$self->{"logger"}->info("Number of deleted job from MDI folder: $deletedFiles");
+}
  
+ 
+ 
+sub __DeleteOldJetFiles {
+	my $self = shift;
+
+	my @pcbInProduc =
+	  HegMethods->GetPcbsByStatus( 2, 4, 12, 25, 35 );   # get pcb "Ve vyrobe" + "Na predvyrobni priprave" + Na odsouhlaseni + Schvalena + Pozastavena
+	@pcbInProduc = map { $_->{"reference_subjektu"} } @pcbInProduc;
+
+	if ( scalar(@pcbInProduc) < 100 ) {
+
+		$self->{"logger"}->debug( "No pcb in produc (count : " . scalar(@pcbInProduc) . "), error?" );
+	}
+
+	unless ( scalar(@pcbInProduc) ) {
+		return 0;
+	}
+
+	# delete files from EnumsPaths->Jobs_JETPRINT
+	my $deletedFiles = 0;
+
+	my $p = EnumsPaths->Jobs_JETPRINT;
+	if ( opendir( my $dir, $p ) ) {
+		while ( my $file = readdir($dir) ) {
+			next if ( $file =~ /^\.$/ );
+			next if ( $file =~ /^\.\.$/ );
+
+			my ($fileJobId) = $file =~ m/^(\w\d+)/i;
+
+			unless ( defined $fileJobId ) {
+				next;
+			}
+
+			my $inProduc = scalar( grep { $_ =~ /^$fileJobId$/i } @pcbInProduc );
+
+			unless ($inProduc) {
+				if ( $file =~ /\.ger/i ) {
+
+					unlink $p . $file;
+					$deletedFiles++;
+				}
+			}
+		}
+
+		closedir($dir);
+	}
+
+	$self->{"logger"}->info("Number of deleted job from Jetprint folder $p: $deletedFiles");
+
+	# Delete working folders from jetprint machine folder Jobs_JETPRINTMACHINE
+
+	my $deletedFolders = 0;
+
+	my $p2 = EnumsPaths->Jobs_JETPRINTMACHINE;
+	if ( opendir( my $dir, $p2 ) ) {
+		while ( my $workDir = readdir($dir) ) {
+			next if ( $workDir =~ /^\.$/ );
+			next if ( $workDir =~ /^\.\.$/ );
+
+			my ($folderJobId) = $workDir =~ m/^(\w\d+)\w+_jet$/i;
+
+			unless ( defined $folderJobId ) {
+				next;
+			}
+
+			my $inProduc = scalar( grep { $_ =~ /^$folderJobId$/i } @pcbInProduc );
+
+			unless ($inProduc) {
+
+				if ( rmtree( $p2 . $workDir ) ) {
+					$deletedFolders++;
+				}
+				else {
+
+					$self->{"logger"}->error( "Cannot rmtree ". $p2.$workDir );
+				}
+			}
+		}
+
+		closedir($dir);
+	}
+
+	$self->{"logger"}->info("Number of deleted jobs from Jetprint machine folder $p2: $deletedFolders");
+} 
 
 # store err to logs
 sub __ProcessError {

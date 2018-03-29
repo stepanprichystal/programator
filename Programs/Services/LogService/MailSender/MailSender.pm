@@ -91,13 +91,13 @@ sub __ProcesAppLogs {
 		# a) stop sending if max email cnt was exceed
 		if ( ( $log->{"TotalSentCnt"} + 1 ) > $maxRepeat ) {
 
-			$stopSending = 0;
+			$stopSending = 1;
 		}
 
 		# b) stop sending if is fullfil condition defined by app
 		if ( defined $self->{"stopSend"}->{$appId} && !$self->{"stopSend"}->{$appId}->ProcessLog( $log->{"PcbId"} ) ) {
 
-			$stopSending = 0;
+			$stopSending = 1;
 		}
 
 		next if ($stopSending);

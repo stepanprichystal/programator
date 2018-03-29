@@ -9,6 +9,7 @@
       <magazine material="FR4">I11</magazine>
       <magazine material="IS400">I11</magazine>
       <magazine material="IS410">I11</magazine>
+      <magazine material="AL_CORE">I11</magazine>
    </tool>
    <tool name="d6.0a120" code="850" diameter="6.0" angle="120">
       <magazine material="FR4">I12</magazine>

@@ -252,10 +252,10 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	use aliased 'Packages::Stackup::Stackup::Stackup';
 
-	my $stackup = Stackup->new("d201893");
+	my $stackup = Stackup->new("d208483");
  
 	
-	 my @layers = $stackup->GetAllLayers();
+	 my $mir = $stackup->GetFinalThick();
 		 
 	
 	#my $stackup = Stackup->new("d99991");

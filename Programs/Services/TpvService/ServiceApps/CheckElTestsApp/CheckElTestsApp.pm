@@ -5,8 +5,8 @@
 package Programs::Services::TpvService::ServiceApps::CheckElTestsApp::CheckElTestsApp;
 use base("Programs::Services::TpvService::ServiceApps::ServiceAppBase");
 
-use Class::Interface;
-&implements('Programs::Services::TpvService::ServiceApps::IServiceApp');
+#use Class::Interface;
+#&implements('Programs::Services::TpvService::ServiceApps::IServiceApp'); Thole musi byt zakomentovane jinak to nejede na serveru
 
 #3th party library
 use utf8;
@@ -134,7 +134,7 @@ sub __ProcessJob {
 	my $orderId = shift;
 	my $jobId   = shift;
 
-	#$jobId = "d209467";
+	$jobId = "d093276";
 
 	#my $inCAM = $self->{"inCAM"};
 
