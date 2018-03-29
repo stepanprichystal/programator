@@ -82,21 +82,9 @@ Win32::Daemon::State(SERVICE_RUNNING);
 sub WorkerMethod {
 	my $Context = shift;
 	
-	unless(defined $Context->{"test"}){
-		
-		$Context->{"test"} = 0;
-	}
-	
-	$Context->{"test"}++;
-	
+ 
 	my $logger = get_logger("service");
-	
-	 $logger->error("Context = $Context, ".$Context->{"test"});
-	 
-	 return 0;
-
-	
-
+ 
 	# ------------------------------------------------
 	# load all registered app + period of launch in minutes
 	#-------------------------------------------------
