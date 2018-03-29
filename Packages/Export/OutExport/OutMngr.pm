@@ -80,7 +80,7 @@ sub __ExportCooperation {
 
 	# 1) export pdf for measurement
 
-	$self->{"measureData"}->Output();
+	#$self->{"measureData"}->Output();
 
 	# 2) Export cooperation data
 	my $produceData = ProduceData->new( $inCAM, $jobId, $self->{"cooperStep"} );

@@ -17,7 +17,7 @@ use File::Basename;
 use Log::Log4perl qw(get_logger);
 use List::MoreUtils qw(uniq);
 use File::Path 'rmtree';
-
+use Win32::Process;
 
 #local library
 use aliased 'Connectors::HeliosConnector::HegMethods';
@@ -49,7 +49,7 @@ sub new {
 	$self->{"inCAM"}         = undef;
 	$self->{"processedJobs"} = 0;
 	$self->{"maxLim"}        = 5;
-	$self->{"notEditedDays"}        = 30; # archive jobs which are not edited more than X days
+	$self->{"notEditedDays"} = 30;      # archive jobs which are not edited more than X days
 
 	return $self;
 }
@@ -64,9 +64,12 @@ sub Run {
 
 		# 1) delete mdi files of pcb which are not in produce
 		$self->__DeleteOldMDIFiles();
-		
+
 		# 2) delete mdi files of pcb which are not in produce
 		$self->__DeleteOldJetFiles();
+
+		# 3) cleanup InCAM databases
+		$self->__RunDBUtil();
 
 		# 1) Get jobs to archvie
 		my @jobs = $self->__GetJob2Archive();
@@ -159,15 +162,13 @@ sub __ProcessJob {
 		$self->{"logger"}->error($errMess);
 		return 0;
 	}
-	
- 
 
 	# 2) Try to create odb file
 	my $odbCreated = $self->__CreateODB($jobId);
 
 	# 3) if ODB was created, delete job from incam db
 	if ($odbCreated) {
- 
+
 		$self->__DeleteJob($jobId);
 
 		$self->{"processedJobs"}++;
@@ -225,17 +226,15 @@ sub __GetJob2Archive {
 
 	my $logger = get_logger("archiveJobs");
 
-	 
-	my @job2Archive =  grep { $_->{"name"} !~ /^d\d{6}$/ } JobHelper->GetJobListAll();
+	my @job2Archive = grep { $_->{"name"} !~ /^d\d{6}$/ } JobHelper->GetJobListAll();
 
 	# archive jobs which are edited before more than 3 weeks
-	my $s = $self->{"notEditedDays"} *3600 * 24;
+	my $s = $self->{"notEditedDays"} * 3600 * 24;
 
-	@job2Archive = map { $_->{"name"} } grep { (time() -  $_->{"updated"}) > $s } @job2Archive;
-	
- 
+	@job2Archive = map { $_->{"name"} } grep { ( time() - $_->{"updated"} ) > $s } @job2Archive;
+
 	# limit if more than 30jobs, in order don't block  another service apps
-	$logger->info( "Number of jobs to archive edited before more than ".$self->{"notEditedDays"}."  days: " . scalar(@job2Archive) . "\n" );
+	$logger->info( "Number of jobs to archive edited before more than " . $self->{"notEditedDays"} . "  days: " . scalar(@job2Archive) . "\n" );
 
 	return @job2Archive;
 }
@@ -252,7 +251,7 @@ sub __CreateODB {
 
 	# 1) Get archive path by JobId format:
 	my $archive = EnumsPaths->Jobs_ARCHIVREMOVED;
- 
+
 	$archive =~ s/\\/\//g;
 
 	unless ( -e $archive ) {
@@ -304,7 +303,7 @@ sub __CreateODB {
 
 	}
 	else {
- 
+
 		die "Error during export ODB file to archive.\n " . $inCAM->GetExceptionError() . "\n";
 	}
 
@@ -334,12 +333,11 @@ sub __DeleteJob {
 	}
 }
 
-
-
 sub __DeleteOldMDIFiles {
 	my $self = shift;
 
-	my @pcbInProduc = HegMethods->GetPcbsByStatus( 2, 4, 12,  25, 35 );    # get pcb "Ve vyrobe" + "Na predvyrobni priprave" + Na odsouhlaseni + Schvalena + Pozastavena
+	my @pcbInProduc =
+	  HegMethods->GetPcbsByStatus( 2, 4, 12, 25, 35 );   # get pcb "Ve vyrobe" + "Na predvyrobni priprave" + Na odsouhlaseni + Schvalena + Pozastavena
 	@pcbInProduc = map { $_->{"reference_subjektu"} } @pcbInProduc;
 
 	if ( scalar(@pcbInProduc) < 100 ) {
@@ -386,15 +384,13 @@ sub __DeleteOldMDIFiles {
 	# Log deleted files
 	foreach my $pcbId ( uniq(@deletedJobs) ) {
 
-		my $state = HegMethods->GetStatusOfOrder( $pcbId."-".HegMethods->GetPcbOrderNumber($pcbId) );
+		my $state = HegMethods->GetStatusOfOrder( $pcbId . "-" . HegMethods->GetPcbOrderNumber($pcbId) );
 		$self->{"logger"}->debug("Deleted: $pcbId - $state");
 	}
 
 	$self->{"logger"}->info("Number of deleted job from MDI folder: $deletedFiles");
 }
- 
- 
- 
+
 sub __DeleteOldJetFiles {
 	my $self = shift;
 
@@ -467,7 +463,7 @@ sub __DeleteOldJetFiles {
 				}
 				else {
 
-					$self->{"logger"}->error( "Cannot rmtree ". $p2.$workDir );
+					$self->{"logger"}->error( "Cannot rmtree " . $p2 . $workDir );
 				}
 			}
 		}
@@ -476,7 +472,44 @@ sub __DeleteOldJetFiles {
 	}
 
 	$self->{"logger"}->info("Number of deleted jobs from Jetprint machine folder $p2: $deletedFolders");
-} 
+}
+
+sub __RunDBUtil {
+	my $self = shift;
+
+	my $DBUtilPath = GeneralHelper->GetLastInCAMVersion();
+
+	$DBUtilPath .= "bin\\dbutil.exe";
+
+	if ( -f $DBUtilPath )    # does it exist?
+	{
+
+		my $log = EnumsPaths->Client_INCAMTMPOTHER . GeneralHelper->GetGUID();
+
+		$self->{"logger"}->info("Run dbutil.exe from: $DBUtilPath ");
+		
+		system($DBUtilPath." check y 2>$log");
+		
+#		my $processObj;
+#		Win32::Process::Create( $processObj, $DBUtilPath, "dbutil.exe check y 2>$log", 0, THREAD_PRIORITY_NORMAL, "." )
+#		  || die "$!\n";
+#		$processObj->Wait(INFINITE);
+
+		
+		if(-f $log){
+			
+			my $str = FileHelper->ReadAsString($log);
+			unlink($log);
+			
+			$self->{"logger"}->info("DBUTIL error message:\n\n $str");
+			
+		}		
+	}
+	else {
+
+		$self->{"logger"}->error(" DButil at path: $DBUtilPath doesn't exist");
+	}
+}
 
 # store err to logs
 sub __ProcessError {
@@ -493,7 +526,6 @@ sub __ProcessError {
 	$self->{"loggerDB"}->Error( $jobId, $errMess );
 
 }
-
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

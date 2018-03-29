@@ -18,6 +18,8 @@ use aliased 'Enums::EnumsGeneral';
 use aliased 'Packages::CAM::UniRTM::UniRTM::UniRTM';
 use aliased 'Enums::EnumsRout';
 use aliased 'CamHelpers::CamAttributes';
+use aliased 'CamHelpers::CamDrilling';
+use aliased 'Packages::CAM::UniDTM::UniDTM';
 
 #-------------------------------------------------------------------------------------------#
 #  Public method
@@ -56,12 +58,47 @@ sub Run {
 
 		# If not exist outline rout, check if pcb is on bridges
 		if ( !scalar(@outlines) && $onBridges eq "no" ) {
-			
-			$self->_AddChange("VypadÃ¡ to, Å¾e dps mÃ¡ frÃ©zu na mÅ¯stky, ale nenÃ­ nastaven atribut stepu o+1: \"Rout on bridges\" - \"yes\"\n".
-							"OvÄ›Å™ to a nastav atribut nebo oprav obrysovou frÃ©zu.", 1);
+
+			$self->_AddChange(
+							   "Vypadá to, že dps má frézu na mùstky, ale není nastaven atribut stepu o+1: \"Rout on bridges\" - \"yes\"\n"
+								 . "Ovìø to a nastav atribut nebo oprav obrysovou frézu.",
+							   1
+			);
+		}
+	}
+
+	# check all plt+nplt blind rout/drill if we have still all special tools
+	my @types = (
+				  EnumsGeneral->LAYERTYPE_nplt_bMillTop, EnumsGeneral->LAYERTYPE_nplt_bMillBot,
+				  EnumsGeneral->LAYERTYPE_plt_bMillTop,  EnumsGeneral->LAYERTYPE_plt_bMillBot
+	);
+
+	foreach my $l ( CamDrilling->GetNCLayersByTypes( $inCAM, $jobId, \@types ) ) {
+
+		my $unitDTM = UniDTM->new( $inCAM, $jobId, "panel", $l->{"gROWname"}, 1 );
+
+		my @tools = grep { $_->GetDrillSize() > 6000 } $unitDTM->GetUniqueTools();
+
+		if (@tools) {
+
+			my $str = join( ";", map { $_->GetDrillSize() } @tools );
+
+			$self->_AddChange( "Vrstva: \""
+						 . $l->{"gROWname"}
+						 . "\" obsahuje speciální nástroje ($str) vìtší jak 6.5mm, které již nemáme."
+						 . " Pokud nástroj frézuje \"countersink\", použij jiný prùmìr.\n"
+						 . "Dej pozor, jestli nový nástroj bude staèit na prùmìr \"countersinku\", jestli ne tak pøedìlej na pojezd/surface" );
+
+			if ( grep { !defined $_->GetMagazine() } $unitDTM->GetUniqueTools() ) {
+
+				$self->_AddChange(
+						"Vrstva: \"" . $l->{"gROWname"} . "\" obsahuje speciální nástroje ($str), které nemají definovaný magazín" );
+			}
+
 		}
 
 	}
+
 }
 
 #-------------------------------------------------------------------------------------------#
@@ -70,7 +107,6 @@ sub Run {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	 
 }
 
 1;

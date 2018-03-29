@@ -258,8 +258,8 @@ sub __ProcessOther {
 
 		CamLayer->WorkLayer( $inCAM, $layerRes->GetLayerName() );
 
-		my $txt = "Vykres ".$self->{"drawingCnt"}.". Operace \"$operationName\" ";
-		$txt .= " - zahloubeni z " . uc($side) . " " . ( $l->{"plated"} ? "pred prokovem" : "po prokovu" );
+		my $txt = uc($jobId)." - vykres ".$self->{"drawingCnt"}.". Operace \"$operationName\" ";
+		$txt .= " (zahloubeni z " . uc($side) . " " . ( $l->{"plated"} ? "pred prokovem" : "po prokovu".")" );
 
 		CamSymbol->AddLine( $inCAM, Point->new( 0, $yPos - 3 ), Point->new( length($txt) * 3, $yPos - 3 ), "r300" );
 		CamSymbol->AddLine( $inCAM, Point->new( 0, $yPos - 4 ), Point->new( length($txt) * 3, $yPos - 4 ), "r300" );
