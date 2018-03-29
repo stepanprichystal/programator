@@ -20,6 +20,8 @@ use aliased 'Enums::EnumsPaths';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'Packages::CAMJob::OutputData::Enums' => "EnumsOutput";
 use aliased 'CamHelpers::CamJob';
+use aliased 'CamHelpers::CamGoldArea';
+use aliased 'CamHelpers::CamHelper';
 
 #-------------------------------------------------------------------------------------------#
 #  Interface
@@ -32,8 +34,9 @@ sub new {
 
 	$self->{"inCAM"}    = shift;
 	$self->{"jobId"}    = shift;
+	$self->{"step"}    = shift;
 	$self->{"filesDir"} = shift;
-	
+
 	$self->{"layerCnt"} = CamJob->GetSignalLayerCnt( $self->{"inCAM"}, $self->{"jobId"} );
 
 	return $self;
@@ -42,6 +45,10 @@ sub new {
 sub Output {
 	my $self      = shift;
 	my $layerList = shift;
+
+	my $inCAM = $self->{"inCAM"};
+	my $jobId = $self->{"jobId"};
+	my $step  = $self->{"step"};
 
 	my @lines = ();
 
@@ -90,7 +97,7 @@ sub Output {
 	my @specSurf = $layerList->GetLayersByType( EnumsOutput->Type_SPECIALSURF );
 
 	if ( scalar(@specSurf) ) {
-		
+
 		push( @lines, "" );
 
 		push( @lines, " Special surface layers:" );
@@ -114,12 +121,11 @@ sub Output {
 		push( @lines, $self->__CompleteLine( " - " . $l->GetName() . ".ger", $l->GetTitle() . $self->__GetInfo($l) ) );
 
 	}
-	
+
 	# Add info about extra files (stackup etc)
 	if ( $self->{"layerCnt"} > 2 ) {
-		push( @lines, $self->__CompleteLine( " - ".$self->{"jobId"}."stackup.pdf", "Pcb stackup"));
+		push( @lines, $self->__CompleteLine( " - " . $self->{"jobId"} . "stackup.pdf", "Pcb stackup" ) );
 	}
-	
 
 	push( @lines, "" );
 
@@ -130,9 +136,16 @@ sub Output {
 	push( @lines, "" );
 
 	push( @lines, " - All diameters in data are finish diameters!" );
+
+	if ( CamHelper->LayerExists( $inCAM, $jobId, "c" ) && CamGoldArea->GoldFingersExist( $inCAM, $jobId, $step, "c" ) ) {
+		my $cnt = CamGoldArea->GetGoldFingerCount( $inCAM, $jobId, $step, "c" );
+		push( @lines, " - Gold finger from TOP (count: $cnt)" );
+	}
 	
-	
-	 
+	if ( CamHelper->LayerExists( $inCAM, $jobId, "s" ) && CamGoldArea->GoldFingersExist( $inCAM, $jobId, $step, "s" ) ) {
+		my $cnt = CamGoldArea->GetGoldFingerCount( $inCAM, $jobId, $step, "s" );
+		push( @lines, " - Gold finger from BOT (count: $cnt)" );
+	}
 
 	my $path = $self->{"filesDir"} . "ReadMe.txt";
 

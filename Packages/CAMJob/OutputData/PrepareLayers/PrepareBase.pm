@@ -162,6 +162,10 @@ sub __PrepareSPECIALSURF {
 			my $cnt = CamGoldArea->GetGoldFingerCount( $inCAM, $jobId, $step, $1 );
 			$enInf .= "gold finger count: $cnt";
 			$czInf .= "poèet zlacených plošek: $cnt";
+			
+			if($cnt == 0){
+				next;
+			}
 		}
 
 		my $lData = LayerData->new( $type, $l, $enTit, $czTit, $enInf, $czInf, $lName );
