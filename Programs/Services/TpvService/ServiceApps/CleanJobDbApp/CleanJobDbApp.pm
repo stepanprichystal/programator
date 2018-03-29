@@ -69,7 +69,7 @@ sub Run {
 		$self->__DeleteOldJetFiles();
 
 		# 3) cleanup InCAM databases
-		$self->__RunDBUtil();
+		#$self->__RunDBUtil();
 
 		# 1) Get jobs to archvie
 		my @jobs = $self->__GetJob2Archive();
@@ -474,42 +474,38 @@ sub __DeleteOldJetFiles {
 	$self->{"logger"}->info("Number of deleted jobs from Jetprint machine folder $p2: $deletedFolders");
 }
 
-sub __RunDBUtil {
-	my $self = shift;
+#sub __RunDBUtil {
+#	my $self = shift;
+#
+#	my $DBUtilPath = GeneralHelper->GetLastInCAMVersion();
+#
+#	$DBUtilPath .= "bin\\dbutil.exe";
+#
+#	if ( -f $DBUtilPath )    # does it exist?
+#	{
+#
+#		my $log = EnumsPaths->Client_INCAMTMPOTHER . GeneralHelper->GetGUID();
+#
+#		$self->{"logger"}->info("Run dbutil.exe from: $DBUtilPath ");
+#		
+#		system($DBUtilPath." check y 2>$log");
+#		
 
-	my $DBUtilPath = GeneralHelper->GetLastInCAMVersion();
-
-	$DBUtilPath .= "bin\\dbutil.exe";
-
-	if ( -f $DBUtilPath )    # does it exist?
-	{
-
-		my $log = EnumsPaths->Client_INCAMTMPOTHER . GeneralHelper->GetGUID();
-
-		$self->{"logger"}->info("Run dbutil.exe from: $DBUtilPath ");
-		
-		system($DBUtilPath." check y 2>$log");
-		
-#		my $processObj;
-#		Win32::Process::Create( $processObj, $DBUtilPath, "dbutil.exe check y 2>$log", 0, THREAD_PRIORITY_NORMAL, "." )
-#		  || die "$!\n";
-#		$processObj->Wait(INFINITE);
-
-		
-		if(-f $log){
-			
-			my $str = FileHelper->ReadAsString($log);
-			unlink($log);
-			
-			$self->{"logger"}->info("DBUTIL error message:\n\n $str");
-			
-		}		
-	}
-	else {
-
-		$self->{"logger"}->error(" DButil at path: $DBUtilPath doesn't exist");
-	}
-}
+#		
+#		if(-f $log){
+#			
+#			my $str = FileHelper->ReadAsString($log);
+#			unlink($log);
+#			
+#			$self->{"logger"}->info("DBUTIL error message:\n\n $str");
+#			
+#		}		
+#	}
+#	else {
+#
+#		$self->{"logger"}->error(" DButil at path: $DBUtilPath doesn't exist");
+#	}
+#}
 
 # store err to logs
 sub __ProcessError {
