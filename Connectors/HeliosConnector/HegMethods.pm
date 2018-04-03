@@ -1462,6 +1462,51 @@ sub GetAllCoresInfo {
 	return @coreInfo;
 }
 
+
+# Return sales specification from HEG for viewer F6
+sub GetSalesSpec {
+            my $self  = shift;
+            my $pcbId = shift;
+
+            my @params = ( SqlParameter->new( "_PcbId", Enums->SqlDbType_VARCHAR, $pcbId ) );
+
+            my $cmd = "select top 1
+                                               lcs.nf_edit_style('typ_ano_ne', d.rizena_impedance) Rizena_impedance,
+                                               lcs.nf_edit_style('datacode_typ', d.datacode_typ) Typ_DataCodu,
+                                               lcs.nf_edit_style('ul_logo_typ', d.ul_logo_typ) Typ_ULlogo,
+                                               d.zaplneni_otvoru_text Zaplneni_otvoru,
+                                               lcs.nf_edit_style('typ_ano_ne', d.pohrbene_otvory) Pohrbene_otvory,
+                                               lcs.nf_edit_style('typ_vrstvy_22', d.slepe_otvory) Slepe_otvory,
+                                               lcs.nf_edit_style('zpusob_vytvoreni_panelu_22', d.zpusob_vytvoreni_panelu) Zpusob_vytvoreni_panelu,
+                                               lcs.nf_edit_style('typ_okoli_dps', d.typ_tech_okoli) Typ_tech_okoli,
+                                               lcs.nf_edit_style('pool_format_dodanych_dat_22', d.pool_format_dodanych_dat) Pool_format_dodanych_dat,
+                                               d.mezera_mezi_kusy Mezera_mezi_kusy,
+                                               d.sirka_tech_okoli Sirka_tech_okoli,
+                                               d.nasobnost_pool_panelu_x Nasobnost_pool_panelu_x,
+                                               d.nasobnost_pool_panelu_y Nasobnost_pool_panelu_y
+                                               from lcs.desky_22 d with (nolock)
+                                               left outer join lcs.subjekty c with (nolock) on c.cislo_subjektu=d.zakaznik
+                                               left outer join lcs.subjekty m with (nolock) on m.cislo_subjektu=d.material
+                                               left outer join lcs.zakazky_dps_22_hlavicka z with (nolock) on z.deska=d.cislo_subjektu
+                                               left outer join lcs.vztahysubjektu vs with (nolock) on vs.cislo_subjektu=z.cislo_subjektu and vs.cislo_vztahu=22175
+                                               left outer join lcs.zakazky_dps_22_hlavicka n with (nolock) on vs.cislo_vztaz_subjektu=n.cislo_subjektu
+                                               left outer join lcs.subjekty prijal with (nolock) on prijal.cislo_subjektu=n.prijal
+                                               left outer join lcs.desky_22 dn with (nolock) on n.deska=dn.cislo_subjektu
+                                               left outer join lcs.subjekty mn with (nolock) on mn.cislo_subjektu=dn.material
+                                               where d.reference_subjektu=_PcbId and  z.cislo_poradace = 22050
+                                               order by z.reference_subjektu desc,n.cislo_subjektu desc,z.cislo_subjektu desc";
+
+            my @result = Helper->ExecuteDataSet( $cmd, \@params );
+
+            if (@result) {
+                        return @result;
+            }
+            else {
+                        return undef;
+            }
+}
+
+
 #-------------------------------------------------------------------------------------------#
 #  Helper method
 #-------------------------------------------------------------------------------------------#
