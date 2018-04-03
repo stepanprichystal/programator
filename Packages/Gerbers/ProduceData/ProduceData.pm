@@ -47,7 +47,7 @@ sub new {
 
 	$self->{"layerList"}    = LayerDataList->new( $self->{"jobId"} );
 	$self->{"outputLayers"} = OutputLayers->new( $self->{"inCAM"}, $self->{"jobId"}, $filesDir );
-	$self->{"outputInfo"}   = OutputInfo->new( $self->{"inCAM"}, $self->{"jobId"}, $filesDir );
+	$self->{"outputInfo"}   = OutputInfo->new( $self->{"inCAM"}, $self->{"jobId"},$self->{"step"}, $filesDir );
 	$self->{"outputPdf"}   = OutputPdf->new( $self->{"inCAM"}, $self->{"jobId"}, $filesDir );
 	
 
@@ -162,11 +162,11 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId = "d209866";
+	my $jobId = "d152457";
 
 	my $mess = "";
 
-	my $control = ProduceData->new( $inCAM, $jobId, "mpanel" );
+	my $control = ProduceData->new( $inCAM, $jobId, "o+1" );
 	$control->Create();
 
 }

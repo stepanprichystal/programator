@@ -14,8 +14,8 @@ my $fname = strftime "%Y_%m_%d", localtime;
 use Archive::Zip qw( :ERROR_CODES :CONSTANTS );
 use File::Path 'rmtree';
 
-my $sourceDir = "y:\\server\\site_data\\scripts\\";
-my $backupDir = "z:\\sys\\Scripts_backup\\Site_Scripts\\" . $fname;
+my $sourceDir = "\\\\incam\\incam\\server\\site_data\\scripts\\";
+my $backupDir = "\\\\192.168.2.65\\genesis_e99\\sys\\Scripts_backup\\Site_Scripts\\" . $fname;
 
 my $i           = 1;
 my $basckupPath = $backupDir. ".zip";
