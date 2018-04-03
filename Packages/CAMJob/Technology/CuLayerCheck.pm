@@ -13,7 +13,7 @@ use warnings;
 use aliased 'Helpers::GeneralHelper';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'Helpers::FileHelper';
-
+use aliased 'Helpers::JobHelper';
 #-------------------------------------------------------------------------------------------#
 #  Script methods
 #-------------------------------------------------------------------------------------------#
@@ -21,17 +21,29 @@ use aliased 'Helpers::FileHelper';
 # Return maximal value of cu layer by pcb class
 sub GetMaxCuByClass {
 	my $self  = shift;
-	my $inCAM = shift;
-	my $jobId = shift;
+	my $class = shift;
+	
+	my $isolation = JobHelper->GetIsolationByClass($class);
 
 	my $p = GeneralHelper->Root() . "\\Resources\\CuClassRel";
 
-	if ( -e $p ) {
+	die "Table definiton: $p doesn't exist" unless ( -e $p );
 
-		my @lines = grep { $_ ~= /^#/ } @{ FileHelper->ReadAsLines($p) };
- 
+	my @lines = grep { $_ =~ /^\d+\s*=/ } @{ FileHelper->ReadAsLines($p) };
+	
+	
+	my %h = ();
+	
+	foreach my $l  (@lines){
+		my ($isolation, $cuThickness) = $l =~ /(\d+)\s*=\s*(\d+)/i;
+		$h{$isolation} = $cuThickness;
 	}
-
+	
+	my $maxCu = $h{$isolation};
+	
+	die "Max Cu thiockness is not defined" if(!defined $maxCu || $maxCu eq "" || $maxCu == 0);
+	
+	return $maxCu;
 }
 
 #-------------------------------------------------------------------------------------------#
@@ -43,7 +55,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	#use Data::Dump qw(dump);
 
-	use aliased 'Packages::CAMJob::SilkScreen::SilkScreenCheck';
+	use aliased 'Packages::CAMJob::Technology::CuLayerCheck';
 	use aliased 'Packages::InCAM::InCAM';
 
 	my $inCAM = InCAM->new();
@@ -51,9 +63,9 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $mess = "";
 
-	my $result = SilkScreenCheck->FeatsWidthOkAllLayers( $inCAM, $jobId, "o+1", \$mess );
+	my $result = CuLayerCheck->GetMaxCuByClass( 9 );
 
-	print STDERR "Result is: $result, error message: $mess\n";
+	print STDERR "Result is: $result";
 
 }
 

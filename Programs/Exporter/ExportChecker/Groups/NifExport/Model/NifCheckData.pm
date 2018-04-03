@@ -27,6 +27,7 @@ use aliased 'CamHelpers::CamStepRepeat';
 use aliased 'CamHelpers::CamDTM';
 use aliased 'Packages::Tooling::PressfitOperation';
 use aliased 'Packages::CAMJob::Marking::Marking';
+use aliased 'Packages::CAMJob::Technology::CuLayerCheck';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -286,6 +287,24 @@ sub OnCheckGroupData {
 	# 13) If exist pressfit, check if finsh size and tolerances are set
 
 	$self->__CheckPressfitTools($dataMngr);
+
+	# 14) Check max cu thickness by pcb class
+
+	if ( $defaultInfo->GetTypeOfPcb() ne "Neplatovany" ) {
+
+		my $maxCuThick = CuLayerCheck->GetMaxCuByClass( $defaultInfo->GetPcbClass() );
+
+		if ( $defaultInfo->GetBaseCuThick() > $maxCuThick ) {
+			$dataMngr->_AddErrorResult(
+				"Max Cu thickness",
+				"Maximal Cu thickness for pcbclass: "
+				  . $defaultInfo->GetPcbClass()
+				  . " is: $maxCuThick µm. Current job Cu thickness is: "
+				  . $defaultInfo->GetBaseCuThick()."µm"
+			);
+		}
+
+	}
 
 }
 
