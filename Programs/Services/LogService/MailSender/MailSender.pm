@@ -261,14 +261,14 @@ sub __SendMail {
 
 	$sender->Open(
 		{
-		   to      => 'stepan.prichystal@gatema.cz',
-		   subject => "Server logs - " . EnumsApp->GetTitle($appName) . " (warning  $appTotalSentMails/$appMaxSentMails) => $mail",
+		   to      => $mail,
+		   subject => "Server logs - " . EnumsApp->GetTitle($appName) . " (warning  $appTotalSentMails/$appMaxSentMails)",
 
 		   #msg     => "I'm sending you the list you wanted.",
 		   #file    => 'filename.txt'
 		   ctype    => "text/html",
 		   encoding => "7bit",
-		   #bcc      => 'stepan.prichystal@gatema.cz'    #TODO temporary
+		   bcc      => 'stepan.prichystal@gatema.cz'    #TODO temporary
 		}
 	);
 
