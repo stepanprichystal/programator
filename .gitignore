@@ -1,2 +1,6 @@
 /pom.pl
 /pom2.pl
+/DEBUG_FILE.pl
+/.settings
+/.gitignore
+/.project
