@@ -265,7 +265,7 @@ sub __InitUniDTM {
 
 }
 
-# Add pilot tool definitions 
+# Add pilot tool definitions
 sub __AddPilotHolesDefinition {
 	my $self  = shift;
 	my $inCAM = $self->{"inCAM"};
@@ -279,48 +279,31 @@ sub __AddPilotHolesDefinition {
 	}
 
 	# 1) add poliot diameters to big hole
-	
-	# New version of pilot holes	10.11.2017
-	# hole 4-5,4 add pilot hole 0.5
-	# hole 5.5-6.5 add pilot hole 0.5
-	my @tools1 = grep { $_->GetDrillSize() >= 4000 && $_->GetDrillSize() <= 5400 && $_->GetTypeProcess() eq Enums->TypeProc_HOLE } @{ $self->{"tools"} };
-	my @tools2 = grep { $_->GetDrillSize() >= 5500 && $_->GetDrillSize() <= 6500 && $_->GetTypeProcess() eq Enums->TypeProc_HOLE } @{ $self->{"tools"} };
-	
-	foreach my $t (@tools1) {
+	my $materialName = $self->{"materialName"};
 
-		my $pilotDef = PilotDef->new( $t->GetDrillSize() );
-		$pilotDef->AddPilotDiameter(500);
-		push( @{ $self->{"pilotDefs"} }, $pilotDef );
+	if ( $materialName =~ /AL_CORE|CU_CORE/i ) {
+
+		# hole 4-6.5 add pilot hole 0.8
+		my @tools1 =
+		  grep { $_->GetDrillSize() >= 4000 && $_->GetDrillSize() <= 6500 && $_->GetTypeProcess() eq Enums->TypeProc_HOLE } @{ $self->{"tools"} };
+		$self->__AddPilotHoles( \@tools1, 800 );
 	}
-	
-	foreach my $t (@tools2) {
+	else {
 
-		my $pilotDef = PilotDef->new( $t->GetDrillSize() );
-		$pilotDef->AddPilotDiameter(600);
-		push( @{ $self->{"pilotDefs"} }, $pilotDef );
+		# New version of pilot holes	10.11.2017
+		# hole 4-5,4 add pilot hole 0.5
+		# hole 5.5-6.5 add pilot hole 0.5
+		my @tools1 =
+		  grep { $_->GetDrillSize() >= 4000 && $_->GetDrillSize() <= 5400 && $_->GetTypeProcess() eq Enums->TypeProc_HOLE } @{ $self->{"tools"} };
+		$self->__AddPilotHoles( \@tools1, 500 );
+
+		my @tools2 =
+		  grep { $_->GetDrillSize() >= 5500 && $_->GetDrillSize() <= 6500 && $_->GetTypeProcess() eq Enums->TypeProc_HOLE } @{ $self->{"tools"} };
+		$self->__AddPilotHoles( \@tools2, 600 );
+
 	}
- 
-	
-	
-# Old version of pilot holes (2.8mm + 4.6 mm) if tools diameter is bigger than 5.3mm
-# my @bigTools = grep { $_->GetDrillSize() > 5300 && $_->GetTypeProcess() eq Enums->TypeProc_HOLE } @{ $self->{"tools"} };
-#	foreach my $t (@bigTools) {
-#
-#		my $pilotDef = PilotDef->new( $t->GetDrillSize() );
-#
-#		if ( $t->GetDrillSize() > 5300 ) {
-#
-#			$pilotDef->AddPilotDiameter(1500);
-#
-#			# From 8.6.2017 pilot 1500µm
-#			#$pilotDef->AddPilotDiameter(2800);
-#			#$pilotDef->AddPilotDiameter(4600);
-#		}
-#
-#		push( @{ $self->{"pilotDefs"} }, $pilotDef );
-#	}
 
-	# 2) Go throught pilot holes and add their tool definition
+	# 2) Go throught pilot holes and create their tool definition
 
 	foreach my $pDef ( @{ $self->{"pilotDefs"} } ) {
 
@@ -330,6 +313,20 @@ sub __AddPilotHolesDefinition {
 
 			push( @{ $self->{"tools"} }, $uniT );
 		}
+	}
+}
+
+# Add pilot hole to tool definitions
+sub __AddPilotHoles {
+	my $self      = shift;
+	my @tools     = @{ shift(@_) };
+	my $pilotHole = shift;
+
+	foreach my $t (@tools) {
+
+		my $pilotDef = PilotDef->new( $t->GetDrillSize() );
+		$pilotDef->AddPilotDiameter($pilotHole);
+		push( @{ $self->{"pilotDefs"} }, $pilotDef );
 	}
 }
 
@@ -358,17 +355,17 @@ sub __LoadToolsMagazine {
 				$t->SetAngle( $xmlTool->{"angle"} );
 
 				# search magazine by materal of pcb
-				my $m  = undef;
-				foreach my $magInfo (@{ $xmlTool->{"magazine"} }){
-					
+				my $m = undef;
+				foreach my $magInfo ( @{ $xmlTool->{"magazine"} } ) {
+
 					my $magMat = $magInfo->{"material"};
-					
-					if($magMat =~ /$materialName/i || $materialName =~ /$magMat/i){
-						$m =$magInfo;
+
+					if ( $magMat =~ /$materialName/i || $materialName =~ /$magMat/i ) {
+						$m = $magInfo;
 						last;
 					}
 				}
-				
+
 				if ( defined $m ) {
 
 					$t->SetMagazine( $m->{"content"} );

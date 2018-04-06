@@ -17,7 +17,7 @@ use aliased 'Packages::InCAM::InCAM';
 
 my $inCAM    = InCAM->new();
 
-my $job = "d152456";
+my $job = "d152457";
 
 my $p = 'c:/pcb/d152457';
 my $scr = 'c:/export/test/auto_identify.txt';
