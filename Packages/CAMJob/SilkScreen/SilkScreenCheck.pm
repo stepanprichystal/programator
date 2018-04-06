@@ -84,11 +84,11 @@ sub FeatsWidthOk {
 		unlink($infoFile);
 	}
 
-	@feat = grep { $_ =~ /[LA].*[rs](\d+)\.?\d*\sP/i && $1 < 120 } @feat;    # check positive lines+arc thinner tahn 120µm
+	@feat = grep { $_ =~ /^#[LA]\s*(\d\.?\d*\s*)+[rs](\d+)\.?\d*\sP/i && $2 < 120 } @feat;    # check positive lines+arc thinner tahn 120µm
 
 	if ( scalar(@feat) ) {
 
-		my @thinSyms = uniq( map { ( $_ =~ /[LA].*([rs]\d+)\.?\d*\sP/i )[0] . "µm" } @feat );
+		my @thinSyms = uniq( map { ( $_ =~ /^#[LA]\s*(\d\.?\d*\s*)+[rs](\d+)\.?\d*\sP/i )[1] . "µm" } @feat );
 		my $str = join( ", ", @thinSyms );
 
 		if ( scalar(@thinSyms) ) {
@@ -117,7 +117,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	use aliased 'Packages::InCAM::InCAM';
 
 	my $inCAM = InCAM->new();
-	my $jobId = "f52456";
+	my $jobId = "d210206";
 
 	my $mess = "";
  
