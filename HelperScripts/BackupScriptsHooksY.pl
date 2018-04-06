@@ -13,7 +13,7 @@ use Archive::Zip qw( :ERROR_CODES :CONSTANTS );
 use File::Path 'rmtree';
 
 my $sourceDir = "\\\\incam\\incam\\server\\site_data\\hooks\\";
-my $backupDir = "\\\\192.168.2.65\\genesis_e99\\sys\\Scripts_backup\\Site_Hooks\\" . $fname;
+my $backupDir = "r:\\pcb\\pcb\\Scripts_backup\\Site_Hooks\\" . $fname;
 
 my $i           = 1;
 my $basckupPath = $backupDir . ".zip";

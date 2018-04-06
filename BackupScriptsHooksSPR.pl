@@ -15,7 +15,7 @@ use Archive::Zip qw( :ERROR_CODES :CONSTANTS );
 use File::Path 'rmtree';
 
 my $sourceDir = "y:\\server\\users\\stepan\\hooks\\";
-my $backupDir = "z:\\sys\\Scripts_backup\\SPR_Hooks\\" . $fname;
+my $backupDir = "r:\\pcb\\pcb\\Scripts_backup\\SPR_Hooks\\" . $fname;
 
 my $i           = 1;
 my $basckupPath = $backupDir. ".zip";
