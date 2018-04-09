@@ -67,7 +67,7 @@ sub ElTestExists {
 	my $self  = shift;
 	my $jobId = shift;
 
-	my $path = JobHelper->GetJobElTest( $jobId, 1 );
+	my $path = JobHelper->GetJobElTest( $jobId);
 
 	my $elTestExist = 1;
 	if ( -e $path ) {
