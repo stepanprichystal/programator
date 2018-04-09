@@ -596,6 +596,28 @@ sub GetPcbIsPool {
 	}
 }
 
+# Return if specific order is type Pool
+sub GetOrderIsPool {
+	my $self  = shift;
+	my $orderId = shift;
+
+	my @params = ( SqlParameter->new( "_OrderId", Enums->SqlDbType_VARCHAR, $orderId ) );
+
+	my $cmd = "select
+				 z.pooling
+				 from  lcs.zakazky_dps_22_hlavicka z with (nolock) 
+				 where z.reference_subjektu=_OrderId and z.cislo_poradace = 22050";
+
+	my $res = Helper->ExecuteScalar( $cmd, \@params );
+
+	if ( $res && $res eq "A" ) {
+		return 1;
+	}
+	else {
+		return 0;
+	}
+}
+
 #Return name of layer, where datacode is present
 sub GetDatacodeLayer {
 	my $self  = shift;
@@ -1507,6 +1529,25 @@ sub GetSalesSpec {
 }
 
 
+
+sub GetPcbAncestor {
+	my $self    = shift;
+	my $pcbId = shift;
+
+	my @params = ( SqlParameter->new( "__PcbId", Enums->SqlDbType_VARCHAR, $pcbId ) );
+
+	my $cmd = "SELECT * ,
+			vs1.cislo_subjektu
+		FROM lcs.desky_22 d with (nolock)
+		LEFT OUTER JOIN lcs.vztahysubjektu vs1 ON vs1.cislo_vztahu = 23291 and vs1.cislo_subjektu = d.cislo_subjektu
+		
+		WHERE d.reference_subjektu = __PcbId";
+
+	my @res = Helper->ExecuteDataSet( $cmd, \@params );
+
+	return @res;
+}
+
 #-------------------------------------------------------------------------------------------#
 #  Helper method
 #-------------------------------------------------------------------------------------------#
@@ -1541,9 +1582,9 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	use aliased 'Connectors::HeliosConnector::HegMethods';
 	use Data::Dump qw(dump);
 
-	my @orders = HegMethods->GetOrdersByStatus(4);
+	my $res = HegMethods->GetOrderIsPool('d152457-03');
 
- 	 print scalar(@orders);
+ 	 print $res;
 
 }
 

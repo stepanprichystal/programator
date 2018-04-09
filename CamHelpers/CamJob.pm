@@ -168,7 +168,7 @@ sub GetLayerLimits2 {
 
 	my $tmp   = 0;
 	my $layer = $layerName;
-	if ( $breakSR && CamStepRepeat->ExistStepAndRepeats( $inCAM, $jobId, $stepName )  ) {
+	if ( $breakSR && CamStepRepeat->ExistStepAndRepeats( $inCAM, $jobId, $stepName ) ) {
 
 		CamHelper->SetStep( $inCAM, $stepName );
 		$tmp   = 1;
@@ -492,11 +492,11 @@ sub GetJobList {
 		if ( !defined $inCAM->{doinfo}{gJOBS_LIST} ) {
 			$logger->error("Joblist not defined $i");
 			sleep(1);
-			
+
 			# try do some query to INcAM, maybe JOBS_LIST will work than
 			$inCAM->COM("get_user_name");
-			$logger->error("Test inCAM call: User is:".$inCAM->GetReply());
-			
+			$logger->error( "Test inCAM call: User is:" . $inCAM->GetReply() );
+
 		}
 		else {
 			last;
@@ -542,6 +542,26 @@ sub DeleteJob {
 	}
 }
 
+# Copy job
+sub CopyJob {
+	my $self        = shift;
+	my $inCAM       = shift;
+	my $sourceJobId = shift;
+	my $targetJobId = shift;
+	my $dbName      = shift // "incam";
+
+	$inCAM->COM(
+				 "copy_entity",
+				 "type"           => "job",
+				 "source_job"     => $sourceJobId,
+				 "source_name"    => $sourceJobId,
+				 "dest_job"       => $targetJobId,
+				 "dest_name"      => $targetJobId,
+				 "dest_database"  => $dbName,
+				 "remove_from_sr" => "yes"
+	);
+}
+
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#
@@ -556,12 +576,12 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	my $jobId = "f52457";
 
 	my $user = undef;
-	
-	while(1){
-	my @list = CamJob->GetJobList($inCAM);
 
-	print @list."\n";
-	
+	while (1) {
+		my @list = CamJob->GetJobList($inCAM);
+
+		print @list . "\n";
+
 	}
 
 }

@@ -140,16 +140,16 @@ sub __RunJob {
 		my $err = "Process order id: \"$orderId\" exited with error: \n $eStr";
 
 		$self->__ProcessJobResult( $orderId, EnumsIS->CurStep_CHECKREORDERERROR, $err );
-		
+
 		# if job is open by server, close and checkin job after error (other server block job)
-		 
-		if(CamJob->IsJobOpen($self->{"inCAM"}, $jobId)){
-			
-			$self->{"inCAM"}->COM( "save_job", "job" => "$jobId" );
+
+		if ( CamJob->IsJobOpen( $self->{"inCAM"}, $jobId ) ) {
+
+			$self->{"inCAM"}->COM( "save_job",    "job" => "$jobId" );
 			$self->{"inCAM"}->COM( "check_inout", "job" => "$jobId", "mode" => "in", "ent_type" => "job" );
-			$self->{"inCAM"}->COM( "close_job", "job" => "$jobId" );
+			$self->{"inCAM"}->COM( "close_job",   "job" => "$jobId" );
 		}
- 
+
 	}
 }
 
@@ -165,21 +165,21 @@ sub __ProcessJob {
 
 	my ($jobId) = $orderId =~ /^(\w\d+)-\d+/i;
 	$jobId = lc($jobId);
- 
 
 	# 1) Check if pcb exist in InCAM
+	 
+	$self->__CheckAncestor($jobId, $orderId);
+
 	my $jobExist = AcquireJob->Acquire( $inCAM, $jobId );
- 
 
 	$self->_OpenJob($jobId);
- 
 
 	my @manCh = ();
 
 	# 2) Check if job is former pool and now is standard
 	my $isPool = HegMethods->GetPcbIsPool($jobId);
 	my $pnlExist = CamHelper->StepExists( $inCAM, $jobId, "panel" );
-	
+
 	if ( !( !$isPool && !$pnlExist ) ) {
 
 		#  Do all automatic changes
@@ -224,6 +224,43 @@ sub __ProcessJob {
 	$self->__ProcessJobResult( $orderId, $orderState, undef );
 }
 
+
+#
+sub __CheckAncestor {
+	my $self  = shift;
+	my $jobId = shift;
+	my $orderId = shift;
+
+	my $process = 1;
+
+	my $inCAM = $self->{"inCAM"};
+
+	# if reorder is -01 number and contain ancestor , Acquire ancestor first and copz to new JobId
+	my $ancestor = "";
+
+	if ($ancestor ) {
+
+		if ( HegMethods->GetInfMasterSlave( HegMethods->GetPcbOrderNumber($ancestor) ) eq "M" ) {
+
+			if ( AcquireJob->Acquire( $inCAM, $ancestor ) ) {
+				CamJob->CopyJob( $ancestor, $jobId );
+			}
+			else {
+				die "Unable Acquire ancestor job: $ancestor";
+			}
+		}
+		else {
+
+			die "Reorder $orderId contains \"ancestor\" which is not mother pcb";
+		}
+	}else{
+		
+		$process = 0;
+	}
+	
+	return $process
+}
+
 sub __ProcessJobResult {
 	my $self       = shift;
 	my $orderId    = shift;
@@ -254,7 +291,6 @@ sub __ProcessJobResult {
 	HegMethods->UpdatePcbOrderState( $orderId, $orderState );
 
 }
- 
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
