@@ -33,7 +33,7 @@ use aliased 'Packages::CAMJob::Routing::CheckRoutPocket';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'Packages::CAMJob::Routing::CheckRoutDepth';
 use aliased 'Packages::CAM::UniDTM::Enums' => 'DTMEnums';
-
+use aliased 'CamHelpers::CamDTM';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -218,20 +218,20 @@ sub OnCheckGroupData {
 		foreach my $l (@routLayers) {
 
 			my $unitDTM = UniDTM->new( $inCAM, $jobId, "panel", $l->{"gROWname"}, 1 );
-			my @tools = map { $_->GetDrillSize() / 1000 } grep { $_->GetTypeProcess() eq DTMEnums->TypeProc_CHAIN} $unitDTM->GetUniqueTools();
+			my @tools = map { $_->GetDrillSize() / 1000 } grep { $_->GetTypeProcess() eq DTMEnums->TypeProc_CHAIN } $unitDTM->GetUniqueTools();
 
 			foreach my $t (@tools) {
 
 				unless ( scalar( grep { $_ == $t } @aluTool ) ) {
 					$dataMngr->_AddErrorResult(
-						"Routing", 
-						"Vrstva: \""
-						  . $l->{"gROWname"}
-						  . "\"  obsahuje sloty ("
-						  . $t
-						  . "mm) pro které nemáme frézovací nástroje pro ALU materiál."
-						  . " Dostupné frézovací nástroje: "
-						  . join( ";", @aluTool ) . "mm"
+												"Routing",
+												"Vrstva: \""
+												  . $l->{"gROWname"}
+												  . "\"  obsahuje sloty ("
+												  . $t
+												  . "mm) pro které nemáme frézovací nástroje pro ALU materiál."
+												  . " Dostupné frézovací nástroje: "
+												  . join( ";", @aluTool ) . "mm"
 					);
 				}
 			}
@@ -408,10 +408,34 @@ sub OnCheckGroupData {
 	# 14) Check there aro not merged chains with same tool diameter (only depth milling)
 	# (it is better when chains are merged, because of smaller amnount G82 command in NC programs)
 	my $messRD = "";
-	unless(CheckRoutDepth->CheckDepthChainMerge( $inCAM, $jobId, \$messRD  )){
-		$dataMngr->_AddErrorResult(
-									"Merge chains", $messRD );
+	unless ( CheckRoutDepth->CheckDepthChainMerge( $inCAM, $jobId, \$messRD ) ) {
+		$dataMngr->_AddErrorResult( "Merge chains", $messRD );
 	}
+
+	# 15) Check vysledne/vtane otvory
+	if ( $defaultInfo->GetLayerCnt() > 1 && $defaultInfo->LayerExist("m") ) {
+
+		my $usrHolesType = $defaultInfo->GetCustomerNote()->PlatedHolesType();
+		if ( defined $usrHolesType ) {
+
+			foreach my $s ( CamStepRepeat->GetUniqueNestedStepAndRepeat( $inCAM, $jobId, $stepName ) ) {
+
+				my $childDTMType = CamDTM->GetDTMType( $inCAM, $jobId, $s->{"stepName"}, "m" );
+
+				if ( $childDTMType ne $usrHolesType ) {
+
+					$dataMngr->_AddErrorResult(
+											   "DTM type",
+											   "Zákazník vyžaduje otvory typu: \"$usrHolesType\" ale jsou nastaveny otvory typu: \"$childDTMType\""
+												 . " Step: "
+												 . $s->{"stepName"}
+												 . ", vrstva \"m\""
+					);
+				}
+			}
+		}
+	}
+	
 }
 
 #-------------------------------------------------------------------------------------------#
