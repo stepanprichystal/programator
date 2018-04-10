@@ -66,24 +66,46 @@ sub Run {
 
 	$self->{"exportIPC"}->Export();
 
-	# DELETE onlz testing
-	# send to log if ipc exist 
-	my $ipcPath = EnumsPaths->Client_ELTESTS . $jobId . "t\\" . $jobId . "t.ipc";
-	if ( -e $ipcPath ) {
-		get_logger("abstractQueue")->error("Et test for $jobId exist: $ipcPath\n ");
-	}
-	else {
-		get_logger("abstractQueue")->error("Et test for $jobId NOT exist: $ipcPath\n ");
-	}
+	# Copy created IPC to server where are ipc stored
+	$self->__CopyIPCToETServer();
 
-	# Temporary solution
-	$self->__CopyIPCTemp();
+	# Copy IPC to R: where IPC will be taken by random TPV user to processing (temporary solution for reorders)
+	$self->__CopyIPCToServer();
 
+}
+
+# Copy created IPC to server where are prepared electrical test for machines
+# Usefull when ET program is not already prepared and operator has to prepare program itself.
+sub __CopyIPCToETServer {
+	my $self = shift;
+
+	my $inCAM = $self->{"inCAM"};
+	my $jobId = $self->{"jobId"};
+	my $step  = $self->{"stepToTest"};
+
+	# reorder
+	my $orderNum = HegMethods->GetPcbOrderNumber( $self->{"jobId"} );
+
+	# Test if el test exist
+	my $path = JobHelper->GetJobElTest($jobId) . "\\" . $jobId . "t.ipc";
+
+	my $elTestExist = 1;
+	unless ( -e $path ) {
+
+		unless ( -e JobHelper->GetJobElTest($jobId) ) {
+			mkdir( JobHelper->GetJobElTest($jobId) ) or die "Can't create dir: " . JobHelper->GetJobElTest($jobId) . $_;
+		}
+
+		my $ipcPath = EnumsPaths->Client_ELTESTS . $jobId . "t\\" . $jobId . "t.ipc";
+
+		copy( $ipcPath, $path );
+
+	}
 }
 
 # If exist reoreder on Na priprave and export is server version AND et test not exist, copy opc to special folder
 # Tests are taken from this folder by TPV
-sub __CopyIPCTemp {
+sub __CopyIPCToServer {
 	my $self = shift;
 
 	my $inCAM = $self->{"inCAM"};
