@@ -5,7 +5,7 @@ portStart = 3501
 maxClients = 2
 
 # Default duration in minutes, before InCAM server will by automatically destroyed
-defaultTimeout = 10
+defaultTimeout = 60
 
 # # max time, client will be wating on incame before die
 attemptCnt = 200

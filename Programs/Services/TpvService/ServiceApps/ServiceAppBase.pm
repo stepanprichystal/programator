@@ -24,6 +24,7 @@ use aliased 'Packages::InCAMHelpers::InCAMServer::Client::InCAMServer';
 sub new {
 	my $class = shift;
 	my $appName = shift;
+	my $serverTimeout = shift // 60; # default server timeout before destroing is 60 minutes
 	my $self  = {};
 	bless $self;
  
@@ -34,7 +35,7 @@ sub new {
 	$self->{"loggerDB"} = DBLogger->new($appName); # logger which send log to tpv db
 
 	
-	$self->{"inCAMServer"} = InCAMServer->new();
+	$self->{"inCAMServer"} = InCAMServer->new("timeout" => $serverTimeout);
 
 
 	return $self;
