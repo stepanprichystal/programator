@@ -434,12 +434,26 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	use aliased 'Packages::InCAM::InCAM';
 
 	my $inCAM = InCAM->new();
-	my $jobId = "f52456";
-	my $step  = "o+1";
+	my $jobId = "d152457";
+	my $step  = "panel";
 
-	my $depth = CamStepRepeat->GetStepAndRepeatDepth( $inCAM, $jobId, $step );
+	my @sr = CamStepRepeat->GetStepAndRepeat( $inCAM, $jobId, $step );
+	
+#	my $l = undef;
+#	
+#	for(my $i= 0;  $i < scalar(@sr); $i++){
+# 
+#		if(  $srg[$i]->{"SRstep"} eq "mpanel"){	
+#			$l = $i+1;
+#			last;
+#		}
+#	}
+#	
+#	
+#	
+#	 
 
-	print STDERR $depth;
+	 
 
 	 
 

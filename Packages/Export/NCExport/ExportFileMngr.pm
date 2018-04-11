@@ -45,13 +45,13 @@ sub ExportFiles {
 	my $self      = shift;
 	my $opManager = shift;
 
-	get_logger("abstractQueue")->error( "Finding  ".$self->{"jobId"}." BUG stop ExportFiles sub - 1 \n ");
+	get_logger("abstractQueue")->error( "Finding  " . $self->{"jobId"} . " BUG stop ExportFiles sub - 1 \n " );
 
-	$self->__DeleteLogs();           #delete log information about job
+	$self->__DeleteLogs();    #delete log information about job
 
-	$self->__DeleteOldFiles();       #delete old files in archive
+	$self->__DeleteOldFiles();    #delete old files in archive
 
-	$self->__DeleteOutputFiles();    #delete job output files before start export
+	$self->__DeleteOutputFiles(); #delete job output files before start export
 
 	my @exportFiles = $self->__GetExportCombination($opManager);
 
@@ -78,8 +78,8 @@ sub __ExportNcSet {
 	my $jobId    = $self->{"jobId"};
 	my $inCAM    = $self->{"inCAM"};
 	my $stepName = $self->{"stepName"};
-	
-	get_logger("abstractQueue")->error( "Finding  $jobId layer: $layerName, machine: $machine, __ExportNcSet 1\n ");
+
+	get_logger("abstractQueue")->error("Finding  $jobId layer: $layerName, machine: $machine, __ExportNcSet 1\n ");
 
 	# Check if Null point is in left down corner of profile
 	my %lim = CamJob->GetProfileLimits2( $inCAM, $jobId, $stepName, 1 );
@@ -90,12 +90,12 @@ sub __ExportNcSet {
 	}
 
 	$inCAM->COM( 'set_step', "name" => $stepName );
-	
-	get_logger("abstractQueue")->error( "Finding  $jobId layer: $layerName, machine: $machine, __ExportNcSet 2\n ");
+
+	get_logger("abstractQueue")->error("Finding  $jobId layer: $layerName, machine: $machine, __ExportNcSet 2\n ");
 
 	$inCAM->COM( "open_sets_manager", "test_current" => "no" );
-	
-	get_logger("abstractQueue")->error( "Finding  $jobId layer: $layerName, machine: $machine, __ExportNcSet 3\n ");
+
+	get_logger("abstractQueue")->error("Finding  $jobId layer: $layerName, machine: $machine, __ExportNcSet 3\n ");
 
 	my $setName = undef;
 
@@ -107,8 +107,8 @@ sub __ExportNcSet {
 		$inCAM->HandleException(1);
 		$inCAM->COM( 'nc_create', "ncset" => $setName, "device" => $machine, "lyrs" => $layerName, "thickness" => 0 );
 		$inCAM->HandleException(0);
-		
-		get_logger("abstractQueue")->error( "Finding  $jobId BUG stop during export 1\n ");
+
+		get_logger("abstractQueue")->error("Finding  $jobId BUG stop during export 1\n ");
 
 		last if ( $inCAM->GetStatus() == 0 );
 
@@ -132,8 +132,21 @@ sub __ExportNcSet {
 
 			if ($mpanelExist) {
 
+				# find line number with first occurence of mpanel in SR table
+				my @sr = CamStepRepeat->GetStepAndRepeat( $inCAM, $jobId, $stepName );
+
+				my $lNum = undef;
+
+				for ( my $i = 0 ; $i < scalar(@sr) ; $i++ ) {
+
+					if ( $sr[$i]->{"gSRstep"} eq "mpanel" ) {
+						$lNum = $i + 1;
+						last;
+					}
+				}
+
 				# first, order each mpanel steps
-				$inCAM->COM( "sredit_set_step_nest", "lines" => "1", "nx" => "1", "ny" => "1", "clear_selection" => "yes" );
+				$inCAM->COM( "sredit_set_step_nest", "lines" => $lNum, "nx" => "1", "ny" => "1", "clear_selection" => "yes" );
 				$inCAM->COM(
 							 "nc_order",
 							 "serial"  => "1",
@@ -145,12 +158,12 @@ sub __ExportNcSet {
 							 "scope"   => "parent"
 				);
 
-#				# then, order all o+1 steps in mpanel scope
-				$inCAM->COM( "sredit_set_step_nest", "lines" => "1\;1", "nx" => "1\;1", "ny" => "1\;1", "clear_selection" => "yes" );
+				# then, order all o+1 steps in mpanel scope
+				$inCAM->COM( "sredit_set_step_nest", "lines" => "$lNum\;1", "nx" => "1\;1", "ny" => "1\;1", "clear_selection" => "yes" );
 				$inCAM->COM(
 							 "nc_order",
 							 "serial"  => "1",
-							 "sr_line" => "1\;1",
+							 "sr_line" => "$lNum\;1",
 							 "sr_nx"   => "1\;1",
 							 "sr_ny"   => "1\;1",
 							 "mode"    => "btrl",
@@ -185,33 +198,32 @@ sub __ExportNcSet {
 	#if ( $inCAM->GetStatus() > 1 ) {
 	#	$methodRes->AddError( $inCAM->GetExceptionError() );
 	#}
-	
-			
-	get_logger("abstractQueue")->error( "Finding  $jobId layer: $layerName, machine: $machine, BUG stop during export 2\n ");
-	
+
+	get_logger("abstractQueue")->error("Finding  $jobId layer: $layerName, machine: $machine, BUG stop during export 2\n ");
 
 	# START HANDLE EXCEPTION IN INCAM
 	$inCAM->HandleException(1);
- 
+
 	$inCAM->COM( "nc_cre_output", "layer" => $layerName, "ncset" => $setName );
 
 	# STOP HANDLE EXCEPTION IN INCAM
 	$inCAM->HandleException(0);
-	
-	get_logger("abstractQueue")->error( "Finding  $jobId layer: $layerName, machine: $machine, BUG stop during export 3\n ");
+
+	get_logger("abstractQueue")->error("Finding  $jobId layer: $layerName, machine: $machine, BUG stop during export 3\n ");
 
 	$methodRes->AddError( $inCAM->GetExceptionError() );
-	
-	get_logger("abstractQueue")->error( "Finding  $jobId layer: $layerName, machine: $machine, BUG stop during export 4\n ");
+
+	get_logger("abstractQueue")->error("Finding  $jobId layer: $layerName, machine: $machine, BUG stop during export 4\n ");
 
 	#if ( $inCAM->GetStatus() > 1 ) {
 	#	$methodRes->AddError( $inCAM->GetExceptionError() );
 	#}
-	get_logger("abstractQueue")->error( "Finding  $jobId layer: $layerName, machine: $machine, BUG stop during export 5\n ");
+	get_logger("abstractQueue")->error("Finding  $jobId layer: $layerName, machine: $machine, BUG stop during export 5\n ");
+
 	#delete nc set
 	$inCAM->COM( "nc_delete", "layer" => $layerName, "ncset" => $setName );
-	
-	get_logger("abstractQueue")->error( "Finding  $jobId layer: $layerName, machine: $machine, BUG stop during export 6\n ");
+
+	get_logger("abstractQueue")->error("Finding  $jobId layer: $layerName, machine: $machine, BUG stop during export 6\n ");
 
 	#delete temporary files, which was created
 	my $tmpName = "_" . $setName . "_out_";
@@ -220,13 +232,13 @@ sub __ExportNcSet {
 	if ($tmpExist) {
 		$inCAM->COM( 'delete_layer', "layer" => $tmpName );
 	}
-	
-	get_logger("abstractQueue")->error( "Finding  $jobId layer: $layerName, machine: $machine, BUG stop during export 7\n ");
+
+	get_logger("abstractQueue")->error("Finding  $jobId layer: $layerName, machine: $machine, BUG stop during export 7\n ");
 
 	# Clear step selection (some steps can)
 	$self->{"inCAM"}->COM("sredit_sel_clear");
-	
-	get_logger("abstractQueue")->error( "Finding  $jobId layer: $layerName, machine: $machine, BUG stop during export 8\n ");
+
+	get_logger("abstractQueue")->error("Finding  $jobId layer: $layerName, machine: $machine, BUG stop during export 8\n ");
 
 }
 
@@ -354,14 +366,14 @@ sub __ResultExportLayer {
 	my $self       = shift;
 	my $layer      = shift;
 	my $resultItem = shift;
-	
-	get_logger("abstractQueue")->error( "Finding  ".$self->{"jobId"}."   __ResultExportLayer 1 \n ");
+
+	get_logger("abstractQueue")->error( "Finding  " . $self->{"jobId"} . "   __ResultExportLayer 1 \n " );
 
 	#load other possible errors
 	$self->__GetErrorsFromHook( $layer, $resultItem );
 	$self->_OnItemResult($resultItem);
-	
-	get_logger("abstractQueue")->error( "Finding  ".$self->{"jobId"}."   __ResultExportLayer 2\n ");
+
+	get_logger("abstractQueue")->error( "Finding  " . $self->{"jobId"} . "   __ResultExportLayer 2\n " );
 }
 
 # Search errors in log, genereeted by hooks, outfile, nc_create, etc..
@@ -380,33 +392,32 @@ sub __GetErrorsFromHook {
 	}
 
 	my $key = $self->{"jobId"} . "/" . $self->{"stepName"} . "/" . $layer;
-	
 
 	for ( my $i = 0 ; $i < scalar(@lines) ; $i++ ) {
 
 		my $l = $lines[$i];
 
-		my @splitted = split( "/", $l );
-		my $machine = $splitted[3];
-		my ($errType) =  $l =~ /$key\/.*\/(.*)\s*=/i;
+		my @splitted  = split( "/", $l );
+		my $machine   = $splitted[3];
+		my ($errType) = $l =~ /$key\/.*\/(.*)\s*=/i;
 		$errType =~ s/\s//;
-	 
+
 		if ( $l =~ /$key/i ) {
 
 			$l =~ m/=\s*[01]+;(.*)/i;
 			my $mess = "Exporting on machine: $machine. " . $1;
 
-			if($errType =~ /[(drill)|(rout)](tool)?parameters/){
+			if ( $errType =~ /[(drill)|(rout)](tool)?parameters/ ) {
 				$itemResult->AddWarning($mess);
-			}else{
+			}
+			else {
 				$itemResult->AddError($mess);
 			}
 
-			
 		}
 	}
-	
-	get_logger("abstractQueue")->error( "Finding  ".$self->{"jobId"}."   __GetErrorsFromHook\n ");
+
+	get_logger("abstractQueue")->error( "Finding  " . $self->{"jobId"} . "   __GetErrorsFromHook\n " );
 }
 
 #-------------------------------------------------------------------------------------------#
