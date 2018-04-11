@@ -242,15 +242,17 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	use aliased 'Packages::InCAM::InCAM';
 
 	my $inCAM = InCAM->new();
-	my $jobId = "d208968";
+	my $jobId = "d141249";
 	
 	
 
-	my @layers = Marking->GetDatacodeLayers( $inCAM, $jobId, "o+1" );
+	my $exist = Marking->DatacodeExists( $inCAM, $jobId, "o+1", "mc" );
+	
+	print STDERR $exist;
 
-	my @res = Marking->GetDatacodesInfo( $inCAM, $jobId, "o+1", "pc" );
+	 
 
-	print STDERR @res;
+	die;
 	
  
 }

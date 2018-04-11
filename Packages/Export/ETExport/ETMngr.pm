@@ -92,15 +92,18 @@ sub __CopyIPCToETServer {
 	my $elTestExist = 1;
 	unless ( -e $path ) {
 
-		unless ( -e JobHelper->GetJobElTest($jobId) ) {
-			mkdir( JobHelper->GetJobElTest($jobId) ) or die "Can't create dir: " . JobHelper->GetJobElTest($jobId) . $_;
+		my $p = EnumsPaths->Jobs_ELTESTS . substr( uc($jobId), 0, 4 );
+
+		unless ( -e $p ) {
+			mkdir($p) or die "Can't create dir: $p" . $_;
 		}
 
-		my $ipcPath = EnumsPaths->Client_ELTESTS . $jobId . "t\\" . $jobId . "t.ipc";
-
-		copy( $ipcPath, $path );
-
+		mkdir( JobHelper->GetJobElTest($jobId) ) or die "Can't create dir: " . JobHelper->GetJobElTest($jobId) . $_;
 	}
+
+	my $ipcPath = EnumsPaths->Client_ELTESTS . $jobId . "t\\" . $jobId . "t.ipc";
+
+	copy( $ipcPath, $path );
 }
 
 # If exist reoreder on Na priprave and export is server version AND et test not exist, copy opc to special folder
