@@ -474,17 +474,15 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	use Data::Dump qw(dump);
 
 	my $inCAM = InCAM->new();
-	my $jobId = "f13608";
+	my $jobId = "d210959";
 
 	#my $step  = "mpanel_10up";
 
-	my @result = CamDTM->GetToolTable( $inCAM, 'rout' );
+	my $dtm = CamDTM->GetDTMType( $inCAM, $jobId, "mpanel", "m" );
 	
-	dump(@result);
+	die;
 	
-	#my $self             = shift;
-
-	print 1;
+	 
 
 }
 

@@ -422,7 +422,7 @@ sub OnCheckGroupData {
 
 				my $childDTMType = CamDTM->GetDTMType( $inCAM, $jobId, $s->{"stepName"}, "m" );
 
-				if ( $childDTMType ne $usrHolesType ) {
+				if ( defined $childDTMType && $childDTMType ne "" && $childDTMType ne $usrHolesType ) {
 
 					$dataMngr->_AddErrorResult(
 											   "DTM type",
