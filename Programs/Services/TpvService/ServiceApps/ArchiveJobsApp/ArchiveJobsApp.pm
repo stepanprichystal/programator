@@ -35,7 +35,8 @@ sub new {
 	my $class = shift;
 
 	my $appName = EnumsApp->App_ARCHIVEJOBS;
-	my $self = $class->SUPER::new( $appName, @_ );
+	my $serverTimeout = 240; # 4 hours
+	my $self = $class->SUPER::new( $appName, $serverTimeout, @_ );
 
 	#my $self = {};
 	bless $self;

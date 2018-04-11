@@ -61,15 +61,14 @@ unless ( -e $logDir ) {
 Log::Log4perl->init( GeneralHelper->Root() . "\\Packages\\InCAMHelpers\\InCAMServer\\Server\\Logger.conf" );
 my $logger = get_logger("serverLog");
 
-
 # redirect all sdtou + stderr to file
-my $OLDOUT;
-my $OLDERR;
-
-open $OLDOUT, ">&STDOUT" || die "Can't duplicate STDOUT: $!";
-open $OLDERR, ">&STDERR" || die "Can't duplicate STDERR: $!";
-open( STDOUT, "+>", $logDir."\\stdout.txt" );
-open( STDERR, ">&STDOUT" );
+#my $OLDOUT;
+#my $OLDERR;
+#
+#open $OLDOUT, ">&STDOUT" || die "Can't duplicate STDOUT: $!";
+#open $OLDERR, ">&STDERR" || die "Can't duplicate STDERR: $!";
+#open( STDOUT, "+>", $logDir."\\stdout.txt" );
+#open( STDERR, ">&STDOUT" );
 
 # global variables #
 
@@ -96,6 +95,11 @@ my $cnt = 0;
 
 $SIG{CHLD} = sub { wait() };
 
+# Create Cleanup thread
+my $thrCleanUp = threads->create( sub { __KillOldServers() } );
+$thrCleanUp->set_thread_exit_only(1);
+$thrCleanUp->detach();
+
 die "Socket could not be created. Reason: $!\n" unless ($main_socket);
 while ( my $new_sock = $main_socket->accept() ) {
 
@@ -103,7 +107,7 @@ while ( my $new_sock = $main_socket->accept() ) {
 	$logger->debug("new client accepted. Client id: $clientId");
 
 	# 1) Kill old incams
-	__KillOldServers();
+	#__KillOldServers();
 
 	# 2) Determine if there are free servers
 	my $acceptClient = 1;
@@ -277,55 +281,72 @@ sub __SendMessage {
 	$sock->send($clientMess);
 }
 
+
+# Clean up old servers
 sub __KillOldServers {
 
-	foreach my $client (@clients) {
+	while (1) {
 
-		#		print STDERR "Client "
-		#		  . $client->{"clientId"}
-		#		  . " launched: "
-		#		  . $client->{"launched"}
-		#		  . ", client duration:"
-		#		  . $client->{"duration"}
-		#		  . " client launch + dur: "
-		#		  . ( $client->{"launched"} + ( $client->{"duration"} * 60 ) )
-		#		  . ", time:"
-		#		  . time() . " \n";
+		$logger->debug("=== Cleanup ===\n");
 
-		if ( $client->{"cleanUp"} ) {
-			next;
-		}
+		foreach my $client (@clients) {
 
-		# duration is in minutes
-		if ( ( $client->{"duration"} > -1 && ( $client->{"launched"} + ( $client->{"duration"} * 60 ) ) < time() )
-			 || $client->{"finished"} )
-		{
-
-			unless ( defined $client->{"launched"} ) {
-				$logger->error("undef val");
+			if ( $client->{"cleanUp"} ) {
+				next;
 			}
 
-			__CleanUpClient( $client->{"clientId"} );
+			$logger->debug("Cleint ID:" . $client->{"clientId"} . "\n");
+			$logger->debug("Cleint ID Duration:" . $client->{"duration"} . "\n");
+			$logger->debug("Cleint ID Launched:" . $client->{"launched"} . "\n");
+			$logger->debug("              Time:" . time() . "\n");
+
+			# duration is in minutes
+			if ( ( $client->{"duration"} > -1 && ( $client->{"launched"} + ( $client->{"duration"} * 60 ) ) < time() )
+				 || $client->{"finished"} )
+			{
+
+				# Log reason of finish client
+				if ( ( $client->{"duration"} > -1 && ( $client->{"launched"} + ( $client->{"duration"} * 60 ) ) < time() ) ) {
+					 
+					$logger->debug( "Cleint ID:" . $client->{"clientId"} . " finished because of duration: " . $client->{"duration"} );
+				}
+
+				if ( $client->{"finished"} ) {
+
+					$logger->debug( "Cleint ID:" . $client->{"clientId"} . " finished because of real finish" );
+				}
+
+				__CleanUpClient( $client->{"clientId"} );
+			}
 		}
+
+		# prin actual status of cloents
+		my $str = "\n ================ Actual status of clients ===============\n";
+
+		my $start = scalar(@clients) - 10;
+		if ( $start < 0 ) {
+			$start = 0;
+		}
+
+		for ( my $i = $start ; $i < scalar(@clients) ; $i++ ) {
+
+			next if ( $i < 0 );
+
+			$str .=
+			    "client: "
+			  . $clients[$i]->{"clientId"}
+			  . ", state: "
+			  . $clients[$i]->{"state"}
+			  . ", client finish: "
+			  . $clients[$i]->{"finished"} . "\n";
+		}
+
+		$logger->info($str);
+		
+		sleep(10);    # Do celanup every 5 minutes
 	}
 
-	# prin actual status of cloents
-	my $str = "\n ================ Actual status of clients ===============\n";
-
-	my $start = scalar(@clients) - 10;
-	if ( $start < 0 ) {
-		$start = 0;
-	}
-
-	for ( my $i = $start ; $i < scalar(@clients) ; $i++ ) {
-
-		next if ( $i < 0 );
-
-		$str .=
-		  "client: " . $clients[$i]->{"clientId"} . ", state: " . $clients[$i]->{"state"} . ", client finish: " . $clients[$i]->{"finished"} . "\n";
-	}
-
-	$logger->info($str);
+	
 
 }
 
