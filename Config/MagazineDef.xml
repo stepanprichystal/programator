@@ -6,7 +6,8 @@
    <operation name="PlatedDrill">
      <!-- <magazine material="FR4">-</magazine> -->  
       <magazine material="IS400">I2</magazine>  
-      <magazine material="IS410">I2</magazine>  
+      <magazine material="IS410">I2</magazine>
+      <magazine material="PCL370HR">I2</magazine>  
    </operation>
    <operation name="PlatedRout">
    </operation>
@@ -16,7 +17,7 @@
    <operation name="NPlatedDrill">
       <magazine material="FR4">I5</magazine>
       <magazine material="IS400">I5</magazine>
-      <magazine material="IS410">I5</magazine>
+      <magazine material="PCL370HR">I5</magazine>
    </operation>
    <operation name="RoutBeforeEtch">
       <magazine material="FR4">I7</magazine>

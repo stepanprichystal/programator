@@ -145,7 +145,7 @@ sub __ExportNcSet {
 							 "scope"   => "parent"
 				);
 
-				# then, order all o+1 steps in mpanel scope
+#				# then, order all o+1 steps in mpanel scope
 				$inCAM->COM( "sredit_set_step_nest", "lines" => "1\;1", "nx" => "1\;1", "ny" => "1\;1", "clear_selection" => "yes" );
 				$inCAM->COM(
 							 "nc_order",
