@@ -343,7 +343,7 @@ sub __KillOldServers {
 
 		$logger->info($str);
 		
-		sleep(10);    # Do celanup every 5 minutes
+		sleep(120);    # Do celanup every 2 minutes
 	}
 
 	
