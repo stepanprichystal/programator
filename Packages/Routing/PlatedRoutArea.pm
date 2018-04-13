@@ -19,6 +19,7 @@ use aliased 'Helpers::FileHelper';
 use aliased 'Enums::EnumsPaths';
 use aliased 'CamHelpers::CamLayer';
 use aliased 'CamHelpers::CamJob';
+use aliased 'CamHelpers::CamSymbol';
 use aliased 'Packages::Polygon::Features::PolyLineFeatures::PolyLineFeatures';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'CamHelpers::CamDrilling';
@@ -45,7 +46,7 @@ sub PlatedAreaExceed {
 		my %layer = ( "gROWname" => "m" );
 		my @layers = ( \%layer );
 
-		CamDrilling->AddHistogramValues( $inCAM, $jobId,$stepName, \@layers );
+		CamDrilling->AddHistogramValues( $inCAM, $jobId, $stepName, \@layers );
 
 		if ( $layer{"maxTool"} && $layer{"maxTool"} > 5000 ) {
 
@@ -58,11 +59,12 @@ sub PlatedAreaExceed {
 	unless ($areaExceed) {
 
 		my @rLayers = CamDrilling->GetNCLayersByType( $inCAM, $jobId, EnumsGeneral->LAYERTYPE_plt_nMill );
+
 		# do not consider depth and tool angle at rzc and rzs layers
-		my @rzcLayers = CamDrilling->GetNCLayersByType( $inCAM, $jobId, EnumsGeneral->LAYERTYPE_plt_bMillTop ); 
+		my @rzcLayers = CamDrilling->GetNCLayersByType( $inCAM, $jobId, EnumsGeneral->LAYERTYPE_plt_bMillTop );
 		my @rzsLayers = CamDrilling->GetNCLayersByType( $inCAM, $jobId, EnumsGeneral->LAYERTYPE_plt_bMillBot );
 
-		foreach my $r ((@rLayers, @rzcLayers, @rzsLayers)) {
+		foreach my $r ( ( @rLayers, @rzcLayers, @rzsLayers ) ) {
 
 			my $lName = $r->{"gROWname"};
 
@@ -130,12 +132,14 @@ sub GetAreasOfRout {
 	my %limits = CamJob->GetProfileLimits2( $inCAM, $jobId, $stepName );
 
 	# plus 3 mm to each side, because pcb can contain sideplating on edge of pcb, thus count this milling too
-	$limits{"xMin"} -= 3;
-	$limits{"xMax"} += 3;
-	$limits{"yMin"} -= 3;
-	$limits{"yMax"} += 3;
+	$limits{"xMin"} = int( $limits{"xMin"} - 3 );
+	$limits{"xMax"} = int( $limits{"xMax"} + 3 );
+	$limits{"yMin"} = int( $limits{"yMin"} - 3 );
+	$limits{"yMax"} = int( $limits{"yMax"} + 3 );
 
 	my $profileArea = abs( $limits{"xMin"} - $limits{"xMax"} ) * abs( $limits{"yMin"} - $limits{"yMax"} );
+
+	# 1) delete small pieces (not routed) in milling
 
 	CamLayer->NegativeLayerData( $inCAM, $compL, \%limits );
 
@@ -149,7 +153,7 @@ sub GetAreasOfRout {
 	$inCAM->COM('adv_filter_reset');
 	$inCAM->COM('filter_area_strt');
 
-	my $maxArea = $profileArea / 2;
+	my $maxArea = $profileArea / 2;    # delete pieces smaller than half of pcb area
 
 	$inCAM->COM(
 				 "adv_filter_set",
@@ -178,7 +182,19 @@ sub GetAreasOfRout {
 
 	CamLayer->NegativeLayerData( $inCAM, $compL, \%limits );
 
+	# 2) sometimes there remain thin border after negative layer soo cover this border with negative lines
+
 	CamLayer->WorkLayer( $inCAM, $compL );
+
+	my @coord = ();
+	push( @coord, { "x" => $limits{"xMin"}, "y" => $limits{"yMin"} } );
+	push( @coord, { "x" => $limits{"xMin"}, "y" => $limits{"yMax"} } );
+	push( @coord, { "x" => $limits{"xMax"}, "y" => $limits{"yMax"} } );
+	push( @coord, { "x" => $limits{"xMax"}, "y" => $limits{"yMin"} } );
+
+	CamSymbol->AddPolyline( $inCAM, \@coord, "r300", "negative" );
+
+	# 3) Do countours from milling
 
 	$inCAM->COM( "sel_contourize", "accuracy" => "6.35", "break_to_islands" => "yes", "clean_hole_size" => "76.2", "clean_hole_mode" => "x_or_y" );
 
@@ -191,7 +207,15 @@ sub GetAreasOfRout {
 				 "keep_original" => "no",
 				 "text2limit"    => "no"
 	);
-	$inCAM->COM( "arc2lines", "arc_line_tol" => 25 );
+	
+	$inCAM->COM(
+				 'sel_design2rout',
+				 det_tol => '100',
+				 con_tol => '100',
+				 rad_tol => '52'
+	);
+	$inCAM->COM( "arc2lines", "arc_line_tol" => 70 );
+	
 
 	my $polyLine = PolyLineFeatures->new();
 	$polyLine->Parse( $inCAM, $jobId, $stepName, $compL );
@@ -225,7 +249,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	use aliased 'Packages::Routing::PlatedRoutArea';
 	use aliased 'Packages::InCAM::InCAM';
 
-	my $jobId = "d152456";
+	my $jobId = "d152457";
 	my $inCAM = InCAM->new();
 
 	my $step = "o+1";

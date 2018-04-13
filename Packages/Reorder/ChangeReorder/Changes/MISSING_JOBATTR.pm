@@ -57,6 +57,20 @@ sub Run {
 		CamAttributes->SetJobAttribute( $inCAM, $jobId, "user_name", $user );
 	}
 
+	# Check if tpv user is still in IS
+	# (some user is necessary, because are listed in control pdf etc)
+	if ( defined $userName && $userName ne "" ) {
+
+		unless ( defined HegMethods->GetEmployyInfo($userName) ) {
+
+			my @tpvUsers = HegMethods->GetTPVEmployee();
+
+			my $randomLogin = $tpvUsers[ int( rand( scalar(@tpvUsers) ) ) ]->{"login_id"};
+
+			CamAttributes->SetJobAttribute( $inCAM, $jobId, "user_name", $randomLogin );
+		}
+	}
+
 	# insert pcb class
 	my $pcbClass = CamAttributes->GetJobAttrByName( $inCAM, $jobId, "pcb_class" );
 
@@ -73,11 +87,11 @@ sub Run {
 
 	# Add gold holder attribut when galvanic gold
 	if ( HegMethods->GetPcbSurface( $self->{"jobId"} ) =~ /g/i ) {
-		
+
 		my $goldHolder = CamAttributes->GetJobAttrByName( $inCAM, $jobId, "goldholder" );    # zakaznicky panel
 
 		# set attribute gold holder
-		if (  !defined $goldHolder || $goldHolder ne "yes" ) {
+		if ( !defined $goldHolder || $goldHolder ne "yes" ) {
 
 			CamAttributes->SetJobAttribute( $inCAM, $jobId, "goldholder", "yes" );
 		}
@@ -92,11 +106,11 @@ sub Run {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	use aliased 'Packages::Reorder::ChangeReorder::Changes::MASK_POLAR' => "Change";
+	use aliased 'Packages::Reorder::ChangeReorder::Changes::MISSING_JOBATTR' => "Change";
 	use aliased 'Packages::InCAM::InCAM';
 
 	my $inCAM = InCAM->new();
-	my $jobId = "f52457";
+	my $jobId = "d152457";
 
 	my $check = Change->new( "key", $inCAM, $jobId );
 
