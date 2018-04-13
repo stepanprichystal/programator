@@ -255,7 +255,7 @@ sub GetCompByLayer {
 	my $comp = 0;
 
 	# when neplat, there is layer "c" but return 0 comp
-	if ( $self->GetTypeOfPcb() ne 'Neplatovany' ) {
+	if ( $self->GetTypeOfPcb() eq 'Neplatovany' ) {
 		return 0;
 	}
 	
