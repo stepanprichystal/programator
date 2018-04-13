@@ -67,7 +67,7 @@ sub Run {
 	eval {
 
 		# 2) Load orders to auto process
-		my @reorders = grep { defined $_->{"aktualni_krok"} && $_->{"aktualni_krok"} eq EnumsIS->CurStep_ZPRACOVANIAUTO } HegMethods->GetReorders();
+		my @reorders = $self->__GetReorders();
 
 		if ( scalar(@reorders) ) {
 
@@ -215,6 +215,43 @@ sub __ProcessJob {
 	$self->__ProcessJobResult( $orderId, $orderState, $errMess );
 
 }
+
+# Return all reorders to process
+sub __GetReorders {
+	my $self = shift;
+
+	my @reorders = ();
+
+	# 1) reorders are orders which has number larger than 1
+
+	push( @reorders,  HegMethods->GetReorders() );
+
+	# 2) Reorders are orders with number -01, which has ancestor POOL mother
+
+	my @res = HegMethods->GetOrdersWithAncestor( [2] );    # orders on predvzrobni priprava
+	@res = grep { $_->{"reference_subjektu"} =~ /-01/ && $_->{"pooling"} eq 'A' } @res;    # only -01 numbers and type pool
+
+	my @formerPoolMother = ();
+
+	# only ancestor which their last order was pool-mother
+	foreach my $order (@res) {
+
+		my $ancestorNumber = HegMethods->GetPcbOrderNumber( $order->{"ancestor_pcb"} );
+		my $ancestorOrder  = $order->{"ancestor_pcb"} . "-" . $ancestorNumber;
+
+		if ( HegMethods->GetInfMasterSlave($ancestorOrder) eq "M" ) {
+
+			push( @reorders, $order );
+		}
+	}
+
+	# olny zpracovani-auto
+ 	@reorders = grep { defined $_->{"aktualni_krok"} && $_->{"aktualni_krok"} eq EnumsIS->CurStep_ZPRACOVANIAUTO } @reorders;
+
+	return @reorders;
+}
+
+
 
 sub __ProcessJobResult {
 	my $self       = shift;

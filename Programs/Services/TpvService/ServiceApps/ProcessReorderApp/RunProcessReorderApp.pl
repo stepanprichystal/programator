@@ -30,10 +30,10 @@ $inCAM->SupressToolkitException(1);
 
 $app->{"inCAM"} = $inCAM;
 
-#app->Run();
+$app->Run();
 
 #$app->__RunJob($jobId);
-$app->__ProcessJob($jobId);
+#$app->__ProcessJob($jobId);
 
 print "app inited";
 

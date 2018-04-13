@@ -153,7 +153,7 @@ sub GetInfoAfterStartProduce {
 	}
 }
 
-# Return info abou pcb dimensions 
+# Return info abou pcb dimensions
 sub GetInfoDimensions {
 	my $self  = shift;
 	my $pcbId = shift;
@@ -596,6 +596,28 @@ sub GetPcbIsPool {
 	}
 }
 
+# Return if specific order is type Pool
+sub GetOrderIsPool {
+	my $self    = shift;
+	my $orderId = shift;
+
+	my @params = ( SqlParameter->new( "_OrderId", Enums->SqlDbType_VARCHAR, $orderId ) );
+
+	my $cmd = "select
+				 z.pooling
+				 from  lcs.zakazky_dps_22_hlavicka z with (nolock) 
+				 where z.reference_subjektu=_OrderId and z.cislo_poradace = 22050";
+
+	my $res = Helper->ExecuteScalar( $cmd, \@params );
+
+	if ( $res && $res eq "A" ) {
+		return 1;
+	}
+	else {
+		return 0;
+	}
+}
+
 #Return name of layer, where datacode is present
 sub GetDatacodeLayer {
 	my $self  = shift;
@@ -810,28 +832,26 @@ sub GetIdcustomer {
 
 # Update notes in the last order
 sub UpdateOrderNotes {
-	my $self        = shift;
-	my $pcbId       = shift;
-	my $notes      = shift;
-	my $res = 0;
+	my $self  = shift;
+	my $pcbId = shift;
+	my $notes = shift;
+	my $res   = 0;
 
-		my $lastOrder = $self->GetPcbOrderNumber($pcbId); 
+	my $lastOrder = $self->GetPcbOrderNumber($pcbId);
 
-		my @allItems = $self->GetAllByPcbId($pcbId);
-		my $curNotes = $allItems[0]{'poznamka_zakazka'};
+	my @allItems = $self->GetAllByPcbId($pcbId);
+	my $curNotes = $allItems[0]{'poznamka_zakazka'};
 
+	unless ( $curNotes =~ /$notes/ ) {
 
-		unless ($curNotes=~ /$notes/) {
+		require Connectors::HeliosConnector::HelperWriter;
 
-				require Connectors::HeliosConnector::HelperWriter;
-		
-				my $allNotes = $notes . "\n" . $curNotes;
-				$res = Connectors::HeliosConnector::HelperWriter->OnlineWrite_order( "$pcbId" . "-" . $lastOrder, $allNotes, "poznamka" );
-		}
+		my $allNotes = $notes . "\n" . $curNotes;
+		$res = Connectors::HeliosConnector::HelperWriter->OnlineWrite_order( "$pcbId" . "-" . $lastOrder, $allNotes, "poznamka" );
+	}
 
-		return $res;
+	return $res;
 }
-
 
 sub UpdateNCInfo {
 	my $self        = shift;
@@ -1065,7 +1085,7 @@ sub GetAllByOrderId {
 
 	my @result = Helper->ExecuteDataSet( $cmd, \@params );
 
-	return %{$result[0]};
+	return %{ $result[0] };
 }
 
 # Return value of term order
@@ -1121,6 +1141,38 @@ sub GetReorders {
 	@result = grep { $_->{"reference_subjektu"} !~ /-01/ } @result;
 
 	return @result;
+}
+
+# Return orders with ancestor in pcb
+# Option  is status
+sub GetOrdersWithAncestor {
+	my $self  = shift;
+	my $statuses = shift;
+
+	my @params = ( );
+
+	my $cmd = "SELECT z.reference_subjektu, 
+					  z.pooling,
+					  z.aktualni_krok,
+					  p.reference_subjektu as ancestor_pcb
+					  
+				FROM lcs.zakazky_dps_22_hlavicka z
+				JOIN lcs.vztahysubjektu vs ON vs.cislo_vztahu = 23291 and vs.cislo_subjektu = z.deska
+				JOIN lcs.desky_22 p ON p.cislo_subjektu = vs.cislo_vztaz_subjektu";
+				
+	if(defined $statuses){
+		
+		my @statuses = map { "\'" . $_ . "\'" } @{$statuses};
+		my $strStatus = join( ",", @statuses );
+		
+		$cmd .= " WHERE z.stav IN ($strStatus)"
+	}			
+			 
+
+	my @res = Helper->ExecuteDataSet( $cmd, \@params );
+	
+	return @res;
+
 }
 
 # Return all reorders by pcb id
@@ -1235,7 +1287,7 @@ sub GetPcbsByStatus {
 #Stornována (5)
 #Ukonèena (7)
 sub GetOrdersByStatus {
- 	my $self     = shift;
+	my $self     = shift;
 	my @statuses = @_;
 
 	unless ( scalar(@statuses) ) {
@@ -1248,7 +1300,7 @@ sub GetOrdersByStatus {
 	# IN (value1, value2, ...);
 
 	my @params = ();
- 
+
 	my $cmd = "select   
  				z.stav,
 				z.deska,
@@ -1259,11 +1311,10 @@ sub GetOrdersByStatus {
 
 	my @result = Helper->ExecuteDataSet( $cmd, \@params );
 
-	 @result = grep { $_->{"reference_subjektu"} =~ /^\w\d+-\d+$/ } @result;    # remove cores
+	@result = grep { $_->{"reference_subjektu"} =~ /^\w\d+-\d+$/ } @result;    # remove cores
 
 	return @result;
 }
-
 
 # Return all pcb "In produce" which contain silkscreen bot or top
 sub GetPcbsInProduceSilk {
@@ -1462,15 +1513,14 @@ sub GetAllCoresInfo {
 	return @coreInfo;
 }
 
-
 # Return sales specification from HEG for viewer F6
 sub GetSalesSpec {
-            my $self  = shift;
-            my $pcbId = shift;
+	my $self  = shift;
+	my $pcbId = shift;
 
-            my @params = ( SqlParameter->new( "_PcbId", Enums->SqlDbType_VARCHAR, $pcbId ) );
+	my @params = ( SqlParameter->new( "_PcbId", Enums->SqlDbType_VARCHAR, $pcbId ) );
 
-            my $cmd = "select top 1
+	my $cmd = "select top 1
                                                lcs.nf_edit_style('typ_ano_ne', d.rizena_impedance) Rizena_impedance,
                                                lcs.nf_edit_style('datacode_typ', d.datacode_typ) Typ_DataCodu,
                                                lcs.nf_edit_style('ul_logo_typ', d.ul_logo_typ) Typ_ULlogo,
@@ -1496,15 +1546,41 @@ sub GetSalesSpec {
                                                where d.reference_subjektu=_PcbId and  z.cislo_poradace = 22050
                                                order by z.reference_subjektu desc,n.cislo_subjektu desc,z.cislo_subjektu desc";
 
-            my @result = Helper->ExecuteDataSet( $cmd, \@params );
+	my @result = Helper->ExecuteDataSet( $cmd, \@params );
 
-            if (@result) {
-                        return @result;
-            }
-            else {
-                        return undef;
-            }
+	if (@result) {
+		return @result;
+	}
+	else {
+		return undef;
+	}
 }
+
+sub GetPcbAncestor {
+	my $self  = shift;
+	my $pcbId = shift;
+
+	my @params = ( SqlParameter->new( "__PcbId", Enums->SqlDbType_VARCHAR, $pcbId ) );
+
+	my $cmd = "SELECT p.reference_subjektu
+				FROM lcs.desky_22 d
+				JOIN lcs.vztahysubjektu vs ON vs.cislo_vztahu = 23291 and vs.cislo_subjektu = d.cislo_subjektu
+				JOIN lcs.desky_22 p ON p.cislo_subjektu = vs.cislo_vztaz_subjektu
+				WHERE d.reference_subjektu = __PcbId";
+
+	my @res = Helper->ExecuteDataSet( $cmd, \@params );
+
+	if ( scalar(@res) ) {
+
+		return $res[0];
+		
+	}else{
+		
+		return undef;
+	}
+
+}
+
 
 
 #-------------------------------------------------------------------------------------------#
@@ -1541,9 +1617,11 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	use aliased 'Connectors::HeliosConnector::HegMethods';
 	use Data::Dump qw(dump);
 
-	my @orders = HegMethods->GetOrdersByStatus(4);
+	my @res = HegMethods->GetOrdersByAncestor([2]);
+	
+	@res = grep { $_->{"reference_subjektu"} =~ /-01/ } @res;
 
- 	 print scalar(@orders);
+	dump(@res);
 
 }
 
