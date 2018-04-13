@@ -280,6 +280,9 @@ sub __GetReorders {
 		}
 	}
 
+	# olny zpracovani-auto
+ 	@reorders = grep {  !defined $_->{"aktualni_krok"} || $_->{"aktualni_krok"} eq "" } @reorders;
+
 	return @reorders;
 }
 
