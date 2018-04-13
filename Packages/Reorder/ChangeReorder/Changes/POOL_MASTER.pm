@@ -17,6 +17,8 @@ use aliased 'CamHelpers::CamStep';
 use aliased 'CamHelpers::CamJob';
 use aliased 'CamHelpers::CamLayer';
 use aliased 'CamHelpers::CamHelper';
+use aliased 'CamHelpers::CamHistogram';
+use aliased 'CamHelpers::CamMatrix';
 use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'Packages::Routing::PlatedRoutArea';
 use aliased 'Packages::Export::NifExport::NifMngr';
@@ -49,39 +51,36 @@ sub Run {
 
 	# 1) Chceck If pcb has ancestor.
 	# if ancestor is former mother pcb, delete child steps and empty layers
-	my $ancestor = "d203719"
 
-	  if ( $ancestor && $isPool ) {
+	# First order but reorder with ancestor
+	if ( HegMethods->GetPcbOrderNumber($jobId) == 1 ) {
 
-		# First order but reorder with ancestor
-		if ( HegMethods->GetPcbOrderNumber($jobId) == 1 ) {
+		# 1) Remove all steps except input and o+1
+		my @allowed = ( CamStep->GetReferenceStep( $inCAM, $jobId, "o+1" ), "o+1", "o+1_single", "o+1_panel" );
 
-			# 1) Remove all steps except input and o+1
-			my @allowed = ( CamStep->GetReferenceStep( $inCAM, $ancestor, "o+1" ), "o+1", "o+1_single", "o+1_panel" );
-			
-			foreach my $step  (CamStep->GetAllStepNames($inCAM, $jobId)){
-			
-				unless( grep { $_ eq $step } @allowed){
-					
-					CamStep->DeleteStep($inCAM, $jobId, $step);
-				}
-			
-			} 
-			
-			# 2) Delete empty layers according o+1 step
-			foreach my $layer  (CamJob->GetAllLayers($inCAM, $jobId)){
-			
-			
-				my %fHist = CamHistogram->GetFeatuesHistogram( $inCAM, $jobId, "o+1", $layer->{"gROWname"} );
+		foreach my $step ( CamStep->GetAllStepNames( $inCAM, $jobId ) ) {
+
+			unless ( grep { $_ eq $step } @allowed ) {
+
+				CamStep->DeleteStep( $inCAM, $jobId, $step );
 			}
-			
 
 		}
+
+		# 2) Delete empty layers according o+1 step
+		foreach my $layer ( CamJob->GetAllLayers( $inCAM, $jobId ) ) {
+
+			my %fHist = CamHistogram->GetFeatuesHistogram( $inCAM, $jobId, "o+1", $layer->{"gROWname"} );
+			
+			if($fHist{"total"} == 0){
+				
+				CamMatrix->DeleteLayer($inCAM, $jobId, $layer->{"gROWname"});
+			}
+		}
+
 	}
-
-}
-
-return $result;
+	
+	return $result;
 }
 
 #-------------------------------------------------------------------------------------------#
@@ -90,16 +89,16 @@ return $result;
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-  use aliased 'Packages::Reorder::ChangeReorder::Changes::LAYER_NAMES' => "Change";
-  use aliased 'Packages::InCAM::InCAM';
+	use aliased 'Packages::Reorder::ChangeReorder::Changes::POOL_MASTER' => "Change";
+	use aliased 'Packages::InCAM::InCAM';
 
-  my $inCAM = InCAM->new();
-  my $jobId = "f00873";
+	my $inCAM = InCAM->new();
+	my $jobId = "d210975";
 
-  my $check = Change->new( "key", $inCAM, $jobId );
+	my $check = Change->new( "key", $inCAM, $jobId );
 
-  my $mess = "";
-  print "Change result: " . $check->Run( \$mess );
+	my $mess = "";
+	print "Change result: " . $check->Run( \$mess );
 }
 
 1;

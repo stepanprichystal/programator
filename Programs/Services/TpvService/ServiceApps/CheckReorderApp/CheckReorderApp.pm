@@ -74,7 +74,7 @@ sub Run {
 		$self->{"logger"}->debug("In eval");
 
 		# 2) Load Reorder pcb
-		my @reorders = grep { !defined $_->{"aktualni_krok"} || $_->{"aktualni_krok"} eq "" } HegMethods->GetReorders();
+		my @reorders = $self->__GetReorders();
 
 		if ( scalar(@reorders) ) {
 
@@ -167,8 +167,8 @@ sub __ProcessJob {
 	$jobId = lc($jobId);
 
 	# 1) Check if pcb exist in InCAM
-	 
-	$self->__CheckAncestor($jobId, $orderId);
+
+	$self->__CheckAncestor( $jobId, $orderId );
 
 	my $jobExist = AcquireJob->Acquire( $inCAM, $jobId );
 
@@ -224,41 +224,63 @@ sub __ProcessJob {
 	$self->__ProcessJobResult( $orderId, $orderState, undef );
 }
 
-
-#
+# Copy pool mother pcb
 sub __CheckAncestor {
-	my $self  = shift;
-	my $jobId = shift;
+	my $self    = shift;
+	my $jobId   = shift;
 	my $orderId = shift;
-
-	my $process = 1;
 
 	my $inCAM = $self->{"inCAM"};
 
-	# if reorder is -01 number and contain ancestor , Acquire ancestor first and copz to new JobId
-	my $ancestor = "";
+	# if reorder is -01  it means pcb has pool-mother ancestor. Copy pool mother job
 
-	if ($ancestor ) {
+	if ( $orderId =~ /-01/ ) {
 
-		if ( HegMethods->GetInfMasterSlave( HegMethods->GetPcbOrderNumber($ancestor) ) eq "M" ) {
+		my $ancestor = HegMethods->GetPcbAncestor($jobId)->{"reference_subjektu"};
 
-			if ( AcquireJob->Acquire( $inCAM, $ancestor ) ) {
-				CamJob->CopyJob( $ancestor, $jobId );
-			}
-			else {
-				die "Unable Acquire ancestor job: $ancestor";
-			}
+		die "Ancestor pool-mother has to be defined" unless ( defined $ancestor );
+		$ancestor = lc($ancestor);
+
+		if ( !CamJob->JobExist( $inCAM, $jobId ) ) {
+
+			die "Unable Acquire ancestor job: $ancestor" unless ( AcquireJob->Acquire( $inCAM, $ancestor ) );
+			
+			CamJob->CopyJob( $inCAM, $ancestor, $jobId );
+			CamJob->CloseJob($inCAM, $ancestor);
 		}
-		else {
-
-			die "Reorder $orderId contains \"ancestor\" which is not mother pcb";
-		}
-	}else{
-		
-		$process = 0;
 	}
-	
-	return $process
+}
+
+# Return all reorders to process
+sub __GetReorders {
+	my $self = shift;
+
+	my @reorders = ();
+
+	# 1) reorders are orders which has number larger than 1
+
+	push( @reorders, grep { !defined $_->{"aktualni_krok"} || $_->{"aktualni_krok"} eq "" } HegMethods->GetReorders() );
+
+	# 2) Reorders are orders with number -01, which has ancestor POOL mother
+
+	my @res = HegMethods->GetOrdersWithAncestor( [2] );    # orders on predvzrobni priprava
+	@res = grep { $_->{"reference_subjektu"} =~ /-01/ && $_->{"pooling"} eq 'A' } @res;    # only -01 numbers and type pool
+
+	my @formerPoolMother = ();
+
+	# only ancestor which their last order was pool-mother
+	foreach my $order (@res) {
+
+		my $ancestorNumber = HegMethods->GetPcbOrderNumber( $order->{"ancestor_pcb"} );
+		my $ancestorOrder  = $order->{"ancestor_pcb"} . "-" . $ancestorNumber;
+
+		if ( HegMethods->GetInfMasterSlave($ancestorOrder) eq "M" ) {
+
+			push( @reorders, $order );
+		}
+	}
+
+	return @reorders;
 }
 
 sub __ProcessJobResult {

@@ -6,6 +6,7 @@
 # === automatic changes ======  
  
 INCAM_JOB
+POOL_MASTER
 MISSING_JOBATTR
 POOL
 MASK_POLAR
