@@ -40,26 +40,7 @@ sub GetMasterJob {
 	my $masterJob   = shift;
 	my $mess        = shift;
 
-	my @ordersAll = $self->{"poolInfo"}->GetOrdersInfo();
-	my @orders    = ();
-
-	# TODO temporary solution, choose only MULTI mother pcb, and move term if necessary
-	my $checkTerm   = 0;
-	my @multiOrders = ();
-	foreach my $order (@ordersAll) {
-		if ( HegMethods->GetIdcustomer( $order->{"jobName"} ) == 05626 ) {
-
-			push( @multiOrders, $order );
-		}
-	}
-
-	if ( scalar(@multiOrders) > 0 ) {
-		$checkTerm = 1;              # find only in multi orders, potencionally we will have to move term
-		@orders    = @multiOrders;
-	}
-	else {
-		@orders = @ordersAll;
-	}
+	my @orders = $self->{"poolInfo"}->GetOrdersInfo();
 
 	my $result = 1;
 
@@ -94,7 +75,7 @@ sub GetMasterJob {
 
 	# 3) consider only orders with the most early date
 
-	my $smallerDate = $orderDeliver[0]->{"date"};
+	#my $smallerDate = $orderDeliver[0]->{"date"};
 
 	#my @candidateOrder = grep { DateTime->compare( $_->{"date"}, $smallerDate ) == 0 } @orderDeliver;
 	#my $candidatesStr  = join( ";", map { $_->{"order"}->{"jobName"} } @candidateOrder );
@@ -105,152 +86,149 @@ sub GetMasterJob {
 
 	if ( scalar(@orderDeliver) ) {
 
-		# find multi PCB
+		# TODO temporary - find multi PCB
 		my $find = -1;
 		for ( my $i = 0 ; $i < scalar(@orderDeliver) ; $i++ ) {
 
-			my $o = $orderDeliver[$i];
+			my $o = $orderDeliver[$i]->{"order"};
 
-			if ( HegMethods->GetIdcustomer( $o->{"jobName"} ) == 05626 ) {
+			# 05626 = multi pcb
+			if ( HegMethods->GetIdcustomer( $o->{"jobName"} ) eq '05626' ) {
 				$find = $i;
 				last;
 			}
 		}
-		
+
 		# earliest term is not multi pcb
-		if($find > 0 && ){
-			
-			# // update term and choose us mother pcb
-			
-			# check if there is more pcb with same date
-			my $smallerDate = $orderDeliver[0]->{"date"};
-			if(DateTime->compare( $orderDeliver[$find]->{"date"}, $smallerDate ) == 0){
-				
-				
+		if ( $find > 0 ) {
+
+			# check if smallest date is smaller than choosed day
+
+			if ( DateTime->compare( $orderDeliver[0]->{"date"}, $orderDeliver[$find]->{"date"} ) == -1 ) {
+
+				my $smallestDate = $orderDeliver[0]->{"date"}->ymd . " " . $orderDeliver[0]->{"date"}->hms;
+				HegMethods->UpdateOrderTerm( $orderDeliver[$find]->{"order"}->{"orderId"}, $smallestDate, 1 );
+
+				$result = 2; # warning -> change term of order
+				$$mess .= "Pozor, u Multi PCB objednávky (".$orderDeliver[$find]->{"order"}->{"orderId"}.") byl snížen termín na: $smallestDate, aby mohla být vybrána jako matka (nechceme jiné matky než Multi PCB).\n";
 			}
-			
-		}
-
-			$$masterOrder = $orderDeliver[$find]->{"order"}->{"orderId"};
-			$$masterJob   = $orderDeliver[$find]->{"order"}->{"jobName"};
-
-			# TODO - temporary solution- multi master
-
 		}
 		else {
+			$find = 0; # all orders are not multi, take first with smallest term
 
-			$$mess .= "Not found a suitable \"master job\" for this pool panel.\n";
-			$$mess .=
-			    "The job ("
-			  . $candidatesStr
-			  . ") with earliest \"deliver date\" ("
-			  . $smallerDate->dmy()
-			  . ") is already in produce like \"master job\"";
-			$result = 0;
 		}
 
-		return $result;
+		$$masterOrder = $orderDeliver[$find]->{"order"}->{"orderId"};
+		$$masterJob   = $orderDeliver[$find]->{"order"}->{"jobName"};
 
 	}
+	else {
 
-	sub CheckMasterJob {
-		my $self      = shift;
-		my $masterjob = shift;
-		my $mess      = shift;
-
-		my $result = 1;
-
-		my $inCAM = $self->{"inCAM"};
-
-		# 1) check if master job contains only two steps: o+1 and iput step
-
-		my @steps = CamStep->GetAllStepNames( $inCAM, $masterjob );
-		my $strAll = join( "; ", @steps );
-
-		# Remove o+1_single step if exist, only 2 steps should left
-
-		# all alowed master steps
-		my @allowed = (
-						CamStep->GetReferenceStep( $inCAM, $masterjob, "o+1" ), "o+1",
-						"o+1_single", "o+1_panel",
-						CamNetlist->GetNetlistSteps( $inCAM, $masterjob )
-		);
-
-		my %tmp;
-		@tmp{@allowed} = ();
-		@steps = grep { !exists $tmp{$_} } @steps;
-
-		if ( scalar(@steps) > 0 ) {
-			my $str = join( "; ", @steps );
-
-			$$mess .= "Master job \"$masterjob\" can't contain steps: $str.\n";
-			$$mess .= "Current master job steps: $strAll.\n";
-
-			$result = 0;
-		}
-
-		# 2) check if exist some child jobs
-		my @orderNames = $self->{"poolInfo"}->GetOrderNames();
-		my @childOrders = grep { $_ !~ /^$masterjob/i } @orderNames;
-
-		unless ( scalar(@childOrders) ) {
-			$$mess .= "Pool soubor obsahuje pouze jednu objednávku. Pusť desku do výroby samostatně.\n";
-
-			$result = 0;
-		}
-
-		return $result;
+		$$mess .= "Not found a suitable \"master job\" for this pool panel.\n";
+		$$mess .=
+		  "All jobs (" . join( ";", join( ";", map { $_->{"order"}->{"jobName"} } @orderDeliver ) ) . ")  are already in produce like \"master job\"";
+		$result = 0;
 	}
 
-	# Check if pcb is not in produce as master
-	sub __MasterCandidate {
-		my $self      = shift;
-		my $orderId   = shift;
-		my $orderName = shift;
+	return $result;
 
-		my $res = 1;
+}
 
-		my $lastOrderNum = HegMethods->GetNumberOrder($orderName);
+sub CheckMasterJob {
+	my $self      = shift;
+	my $masterjob = shift;
+	my $mess      = shift;
 
-		my ($sufixNum) = $lastOrderNum =~ /-(\d+)/;
+	my $result = 1;
 
-		for ( my $i = 1 ; $i <= int($sufixNum) ; $i++ ) {
+	my $inCAM = $self->{"inCAM"};
 
-			my $orderNameTmp = $orderName . '-' . sprintf( "%02d", $i );
+	# 1) check if master job contains only two steps: o+1 and iput step
 
-			if ( HegMethods->GetStatusOfOrder($orderNameTmp) eq 'Ve vyrobe' ) {
-				if ( HegMethods->GetInfMasterSlave($orderNameTmp) eq 'M' ) {
-					$res = 0;
-					last;
-				}
+	my @steps = CamStep->GetAllStepNames( $inCAM, $masterjob );
+	my $strAll = join( "; ", @steps );
+
+	# Remove o+1_single step if exist, only 2 steps should left
+
+	# all alowed master steps
+	my @allowed =
+	  ( CamStep->GetReferenceStep( $inCAM, $masterjob, "o+1" ), "o+1", "o+1_single", "o+1_panel", CamNetlist->GetNetlistSteps( $inCAM, $masterjob ) );
+
+	my %tmp;
+	@tmp{@allowed} = ();
+	@steps = grep { !exists $tmp{$_} } @steps;
+
+	if ( scalar(@steps) > 0 ) {
+		my $str = join( "; ", @steps );
+
+		$$mess .= "Master job \"$masterjob\" can't contain steps: $str.\n";
+		$$mess .= "Current master job steps: $strAll.\n";
+
+		$result = 0;
+	}
+
+	# 2) check if exist some child jobs
+	my @orderNames = $self->{"poolInfo"}->GetOrderNames();
+	my @childOrders = grep { $_ !~ /^$masterjob/i } @orderNames;
+
+	unless ( scalar(@childOrders) ) {
+		$$mess .= "Pool soubor obsahuje pouze jednu objednávku. Pusť desku do výroby samostatně.\n";
+
+		$result = 0;
+	}
+
+	return $result;
+}
+
+# Check if pcb is not in produce as master
+sub __MasterCandidate {
+	my $self      = shift;
+	my $orderId   = shift;
+	my $orderName = shift;
+
+	my $res = 1;
+
+	my $lastOrderNum = HegMethods->GetNumberOrder($orderName);
+
+	my ($sufixNum) = $lastOrderNum =~ /-(\d+)/;
+
+	for ( my $i = 1 ; $i <= int($sufixNum) ; $i++ ) {
+
+		my $orderNameTmp = $orderName . '-' . sprintf( "%02d", $i );
+
+		if ( HegMethods->GetStatusOfOrder($orderNameTmp) eq 'Ve vyrobe' ) {
+			if ( HegMethods->GetInfMasterSlave($orderNameTmp) eq 'M' ) {
+				$res = 0;
+				last;
 			}
 		}
-
-		return $res;
 	}
 
-	#-------------------------------------------------------------------------------------------#
-	#  Place for testing..
-	#-------------------------------------------------------------------------------------------#
-	my ( $package, $filename, $line ) = caller;
-	if ( $filename =~ /DEBUG_FILE.pl/ ) {
+	return $res;
+}
 
-		use aliased 'Packages::PoolMerge::CheckGroup::Helper::MasterJobHelper';
-		use aliased 'Packages::InCAM::InCAM';
+#-------------------------------------------------------------------------------------------#
+#  Place for testing..
+#-------------------------------------------------------------------------------------------#
+my ( $package, $filename, $line ) = caller;
+if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-		my $inCAM = InCAM->new();
+	use aliased 'Packages::PoolMerge::CheckGroup::Helper::MasterJobHelper';
+	use aliased 'Packages::InCAM::InCAM';
 
-		my $jobName  = "f52457";
-		my $stepName = "panel";
+	my $inCAM = InCAM->new();
 
-		my $mess = "";
+	my $jobName  = "f52457";
+	my $stepName = "panel";
 
-		my $mngr = MasterJobHelper->new($inCAM);
-		$mngr->CheckMasterJob( $jobName, \$mess );
+	my $mess = "";
 
-		print $mess;
+	my $mngr = MasterJobHelper->new($inCAM);
+	$mngr->CheckMasterJob( $jobName, \$mess );
 
-	}
+	print $mess;
 
-	1;
+}
+
+1;
 
