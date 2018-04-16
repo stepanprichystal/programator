@@ -51,11 +51,18 @@ sub Run {
 	my $masterJob    = undef;
 	my $mess         = "";
 
-	unless ( $self->{"masterHelper"}->GetMasterJob( \$masterOrder, \$masterJob, \$mess ) ) {
+	my $res = $self->{"masterHelper"}->GetMasterJob( \$masterOrder, \$masterJob, \$mess );
+
+	if ( $res == 0) {
 
 		$masterJobRes->AddError($mess);
 	}
 	else {
+		
+		if($res == 2){
+			
+			$masterJobRes->AddWarning($mess);
+		}
 
 		$self->SetValInfoFile( "masterOrder", $masterOrder );
 		$self->SetValInfoFile( "masterJob",   $masterJob );

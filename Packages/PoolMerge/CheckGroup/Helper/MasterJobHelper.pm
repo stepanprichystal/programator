@@ -75,28 +75,58 @@ sub GetMasterJob {
 
 	# 3) consider only orders with the most early date
 
-	my $smallerDate    = $orderDeliver[0]->{"date"};
-	my @candidateOrder = grep { DateTime->compare( $_->{"date"}, $smallerDate ) == 0 } @orderDeliver;
-	my $candidatesStr  = join( ";", map { $_->{"order"}->{"jobName"} } @candidateOrder );
+	#my $smallerDate = $orderDeliver[0]->{"date"};
+
+	#my @candidateOrder = grep { DateTime->compare( $_->{"date"}, $smallerDate ) == 0 } @orderDeliver;
+	#my $candidatesStr  = join( ";", map { $_->{"order"}->{"jobName"} } @candidateOrder );
 
 	# 4) check if orders is not in production as mmother
 
-	@candidateOrder = grep { $self->__MasterCandidate( $_->{"order"}->{"orderId"}, $_->{"order"}->{"jobName"} ) } @candidateOrder;
+	@orderDeliver = grep { $self->__MasterCandidate( $_->{"order"}->{"orderId"}, $_->{"order"}->{"jobName"} ) } @orderDeliver;
 
-	# if more candidates, take by newer pcb id
-	# (newer pcb has bigger chance, material is filled properly in IS. IS400 vs FR4)
-	@candidateOrder = sort { $b cmp $a } @candidateOrder;
-	if ( scalar(@candidateOrder) ) {
+	if ( scalar(@orderDeliver) ) {
 
-		$$masterOrder = $candidateOrder[0]->{"order"}->{"orderId"};
-		$$masterJob   = $candidateOrder[0]->{"order"}->{"jobName"};
+		# TODO temporary - find multi PCB
+		my $find = -1;
+		for ( my $i = 0 ; $i < scalar(@orderDeliver) ; $i++ ) {
+
+			my $o = $orderDeliver[$i]->{"order"};
+
+			# 05626 = multi pcb
+			if ( HegMethods->GetIdcustomer( $o->{"jobName"} ) eq '05626' ) {
+				$find = $i;
+				last;
+			}
+		}
+
+		# earliest term is not multi pcb
+		if ( $find > 0 ) {
+
+			# check if smallest date is smaller than choosed day
+
+			if ( DateTime->compare( $orderDeliver[0]->{"date"}, $orderDeliver[$find]->{"date"} ) == -1 ) {
+
+				my $smallestDate = $orderDeliver[0]->{"date"}->ymd . " " . $orderDeliver[0]->{"date"}->hms;
+				HegMethods->UpdateOrderTerm( $orderDeliver[$find]->{"order"}->{"orderId"}, $smallestDate, 1 );
+
+				$result = 2; # warning -> change term of order
+				$$mess .= "Pozor, u Multi PCB objednávky (".$orderDeliver[$find]->{"order"}->{"orderId"}.") byl snížen termín na: $smallestDate, aby mohla být vybrána jako matka (nechceme jiné matky než Multi PCB).\n";
+			}
+		}
+		else {
+			$find = 0; # all orders are not multi, take first with smallest term
+
+		}
+
+		$$masterOrder = $orderDeliver[$find]->{"order"}->{"orderId"};
+		$$masterJob   = $orderDeliver[$find]->{"order"}->{"jobName"};
 
 	}
 	else {
 
 		$$mess .= "Not found a suitable \"master job\" for this pool panel.\n";
 		$$mess .=
-		  "The job (" . $candidatesStr . ") with earliest \"deliver date\" (" . $smallerDate->dmy() . ") is already in produce like \"master job\"";
+		  "All jobs (" . join( ";", join( ";", map { $_->{"order"}->{"jobName"} } @orderDeliver ) ) . ")  are already in produce like \"master job\"";
 		$result = 0;
 	}
 
@@ -122,20 +152,15 @@ sub CheckMasterJob {
 
 	# all alowed master steps
 	my @allowed =
-	  ( CamStep->GetReferenceStep( $inCAM, $masterjob, "o+1" ), 
-	  "o+1", 
-	  "o+1_single", 
-	  "o+1_panel", 
-	  CamNetlist->GetNetlistSteps( $inCAM, $masterjob ) );
-	  
+	  ( CamStep->GetReferenceStep( $inCAM, $masterjob, "o+1" ), "o+1", "o+1_single", "o+1_panel", CamNetlist->GetNetlistSteps( $inCAM, $masterjob ) );
+
 	my %tmp;
 	@tmp{@allowed} = ();
 	@steps = grep { !exists $tmp{$_} } @steps;
 
 	if ( scalar(@steps) > 0 ) {
-		my $str   = join( "; ", @steps );
-		 
-		
+		my $str = join( "; ", @steps );
+
 		$$mess .= "Master job \"$masterjob\" can't contain steps: $str.\n";
 		$$mess .= "Current master job steps: $strAll.\n";
 
@@ -193,9 +218,8 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobName   = "f52457";
-	my $stepName  = "panel";
- 
+	my $jobName  = "f52457";
+	my $stepName = "panel";
 
 	my $mess = "";
 

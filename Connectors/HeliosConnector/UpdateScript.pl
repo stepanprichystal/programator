@@ -20,80 +20,87 @@ use aliased 'Helpers::FileHelper';
 
 print STDERR "Su yze3e";
 
-my $output = shift(@_); # save here output message
+my $output     = shift(@_);    # save here output message
 my $methodName = shift(@_);
 
 my @params = ();
 while ( my $p = shift(@_) ) {
 
 	push( @params, $p );
-	print STDERR $p."\n";
+	print STDERR $p . "\n";
 }
 
 my $result = 1;
 
-if ( $methodName eq "UpdateNCInfo" ) {
+$result = HegMethods->$methodName(@params);
 
-	$result = HegMethods->UpdateNCInfo(@params);
-
-	if ( $result =~ /success/i ) {
-		$result = 0;
-	}
-	else {
-		$result = 1;
-	}
-
-}elsif ( $methodName eq "UpdatePooling" ) {
-
-	$result = HegMethods->UpdatePooling(@params);
-
-	if ( $result =~ /success/i ) {
-		$result = 0;
-	}
-	else {
-		$result = 1;
-	}
-
+if ( $result =~ /success/i ) {
+	$result = 0;
 }
-elsif ( $methodName eq "UpdatePcbOrderState" ) {
+else {
+	$result = 1;
+}
 
-	$result = HegMethods->UpdatePcbOrderState(@params);
+#
+#if ( $methodName eq "UpdateNCInfo" ) {
+#
+#	$result = HegMethods->UpdateNCInfo(@params);
+#
+#	if ( $result =~ /success/i ) {
+#		$result = 0;
+#	}
+#	else {
+#		$result = 1;
+#	}
+#
+#}elsif ( $methodName eq "UpdatePooling" ) {
+#
+#	$result = HegMethods->UpdatePooling(@params);
+#
+#	if ( $result =~ /success/i ) {
+#		$result = 0;
+#	}
+#	else {
+#		$result = 1;
+#	}
+#
+#}
+#elsif ( $methodName eq "UpdatePcbOrderState" ) {
+#
+#	$result = HegMethods->UpdatePcbOrderState(@params);
+#
+#	if ( $result =~ /success/i ) {
+#		$result = 0;
+#	}
+#	else {
+#		$result = 1;
+#	}
+#
+#}elsif ( $methodName eq "UpdateSilkScreen" ) {
+#
+#	$result = HegMethods->UpdateSilkScreen(@params);
+#
+#	if ( $result =~ /success/i ) {
+#		$result = 0;
+#	}
+#	else {
+#		$result = 1;
+#	}
+#
+#}elsif ( $methodName eq "UpdateSolderMask" ) {
+#
+#	$result = HegMethods->UpdateSolderMask(@params);
+#
+#	if ( $result =~ /success/i ) {
+#		$result = 0;
+#	}
+#	else {
+#		$result = 1;
+#	}
+#
+#}
 
-	if ( $result =~ /success/i ) {
-		$result = 0;
-	}
-	else {
-		$result = 1;
-	}
-
-}elsif ( $methodName eq "UpdateSilkScreen" ) {
-
-	$result = HegMethods->UpdateSilkScreen(@params);
-
-	if ( $result =~ /success/i ) {
-		$result = 0;
-	}
-	else {
-		$result = 1;
-	}
-
-}elsif ( $methodName eq "UpdateSolderMask" ) {
-
-	$result = HegMethods->UpdateSolderMask(@params);
-
-	if ( $result =~ /success/i ) {
-		$result = 0;
-	}
-	else {
-		$result = 1;
-	}
-	
-} 
- 
- 
- $output->{"result"} = $result;
- 
- 
+$output->{"result"} = $result;
 
 1;
 
