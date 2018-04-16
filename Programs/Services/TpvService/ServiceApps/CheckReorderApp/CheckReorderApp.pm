@@ -247,6 +247,8 @@ sub __CheckAncestor {
 			
 			CamJob->CopyJob( $inCAM, $ancestor, $jobId );
 			CamJob->CloseJob($inCAM, $ancestor);
+			
+			$self->{"logger"}->debug("Reorder with ancestor: $ancestor => $orderId");
 		}
 	}
 }
