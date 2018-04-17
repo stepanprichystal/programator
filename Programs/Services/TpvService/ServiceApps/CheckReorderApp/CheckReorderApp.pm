@@ -246,6 +246,7 @@ sub __CheckAncestor {
 			die "Unable Acquire ancestor job: $ancestor" unless ( AcquireJob->Acquire( $inCAM, $ancestor ) );
 			
 			CamJob->CopyJob( $inCAM, $ancestor, $jobId );
+			CamJob->CheckInJob($inCAM, $ancestor);
 			CamJob->CloseJob($inCAM, $ancestor);
 			
 			$self->{"logger"}->debug("Reorder with ancestor: $ancestor => $orderId");

@@ -60,8 +60,8 @@ sub Run {
 		if ( !scalar(@outlines) && $onBridges eq "no" ) {
 
 			$self->_AddChange(
-							   "Vypad· to, ûe dps m· frÈzu na m˘stky, ale nenÌ nastaven atribut stepu o+1: \"Rout on bridges\" - \"yes\"\n"
-								 . "OvÏ¯ to a nastav atribut nebo oprav obrysovou frÈzu.",
+							   "Vypad√° to, ≈æe dps m√° fr√©zu na m≈Østky, ale nen√≠ nastaven atribut stepu o+1: \"Rout on bridges\" - \"yes\"\n"
+								 . "Ovƒõ≈ô to a nastav atribut nebo oprav obrysovou fr√©zu.",
 							   1
 			);
 		}
@@ -85,14 +85,14 @@ sub Run {
 
 			$self->_AddChange( "Vrstva: \""
 						 . $l->{"gROWname"}
-						 . "\" obsahuje speci·lnÌ n·stroje ($str) vÏtöÌ jak 6.5mm, kterÈ jiû nem·me."
-						 . " Pokud n·stroj frÈzuje \"countersink\", pouûij jin˝ pr˘mÏr.\n"
-						 . "Dej pozor, jestli nov˝ n·stroj bude staËit na pr˘mÏr \"countersinku\", jestli ne tak p¯edÏlej na pojezd/surface" );
+						 . "\" obsahuje speci√°ln√≠ n√°stroje ($str) vƒõt≈°√≠ jak 6.5mm, kter√© ji≈æ nem√°me."
+						 . " Pokud n√°stroj fr√©zuje \"countersink\", pou≈æij jin√Ω pr≈Ømƒõr.\n"
+						 . "Dej pozor, jestli nov√Ω n√°stroj bude staƒçit na pr≈Ømƒõr \"countersinku\", jestli ne tak p≈ôedƒõlej na pojezd/surface" );
 
 			if ( grep { !defined $_->GetMagazine() } $unitDTM->GetUniqueTools() ) {
 
 				$self->_AddChange(
-						"Vrstva: \"" . $l->{"gROWname"} . "\" obsahuje speci·lnÌ n·stroje ($str), kterÈ nemajÌ definovan˝ magazÌn" );
+						"Vrstva: \"" . $l->{"gROWname"} . "\" obsahuje speci√°ln√≠ n√°stroje ($str), kter√© nemaj√≠ definovan√Ω magaz√≠n" );
 			}
 
 		}
