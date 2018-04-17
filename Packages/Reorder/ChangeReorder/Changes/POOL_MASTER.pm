@@ -110,10 +110,10 @@ sub Run {
 	$solder{"top"} =  CamHelper->LayerExists( $inCAM, $jobId, "mc" ) ? "Z" : "";
 	$solder{"bot"} =  CamHelper->LayerExists( $inCAM, $jobId, "ms" ) ? "Z" : "";
 
-	HegMethods->UpdateSilkScreen( $jobId, "top", $silk{"top"}, 1 );
-	HegMethods->UpdateSilkScreen( $jobId, "bot", $silk{"bot"}, 1 );
-	HegMethods->UpdateSolderMask( $jobId, "top", $solder{"top"}, 1 );
-	HegMethods->UpdateSolderMask( $jobId, "bot", $solder{"bot"}, 1 );
+	HegMethods->UpdateSilkScreen( $jobId, "top", $silk{"top"} );
+	HegMethods->UpdateSilkScreen( $jobId, "bot", $silk{"bot"} );
+	HegMethods->UpdateSolderMask( $jobId, "top", $solder{"top"} );
+	HegMethods->UpdateSolderMask( $jobId, "bot", $solder{"bot"} );
 	
 	# 5) Create nif file
 	# Prepare NIF  data
@@ -195,7 +195,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	use aliased 'Packages::InCAM::InCAM';
 
 	my $inCAM = InCAM->new();
-	my $jobId = "d152456";
+	my $jobId = "d211583";
 
 	my $check = Change->new( "key", $inCAM, $jobId );
 
