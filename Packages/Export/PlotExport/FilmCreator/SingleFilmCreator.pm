@@ -90,12 +90,19 @@ sub __BuildRules {
 	$rule = $self->_AddRule( Enums->Ori_HORIZONTAL );
 	$rule->AddSingleTypes( Enums->LType_GOLDFINGER );	
 	
-	# add other layers only  if is not already used in result set created by "multiCreator"
+	# add PEELABLE layers only  if is not already used in result set created by "multiCreator"
 	unless ( $self->__PlotTypeUsed( \@ruleSetMulti, Enums->LType_PEELABLE )) {
 		
 		$rule = $self->_AddRule( Enums->Ori_HORIZONTAL );
 		$rule->AddSingleTypes( Enums->LType_PEELABLE );
-	}	
+	}
+	
+	# add other layers only  if is not already used in result set created by "multiCreator"
+	unless ( $self->__PlotTypeUsed( \@ruleSetMulti, Enums->LType_ALL )) {
+	
+		$rule = $self->_AddRule( Enums->Ori_HORIZONTAL );
+		$rule->AddSingleTypes( Enums->LType_ALL );		
+	}
 	
 }
 

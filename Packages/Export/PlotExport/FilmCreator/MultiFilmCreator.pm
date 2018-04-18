@@ -97,6 +97,9 @@ sub __BuildRules {
 	
 	$rule = $self->_AddRule( Enums->Ori_VERTICAL );
 	$rule->AddSingleTypes( Enums->LType_PEELABLE, Enums->LType_PEELABLE );
+	
+	$rule = $self->_AddRule( Enums->Ori_VERTICAL );
+	$rule->AddSingleTypes( Enums->LType_ALL, Enums->LType_ALL );
 
 }
 
