@@ -50,16 +50,18 @@ sub Run {
 
 		my $stackup = Stackup->new($jobId);
  
-			my @nakov = grep {$_->{"vrtani"} =~ /C/i}  HegMethods->GetAllCoresInfo($jobId);
-		 
-		if ( scalar(@nakov) ) {
-			
-			my $str = join( ";", map { $_->{"core_num"}} @nakov);
+		foreach my $coreIS ( HegMethods->GetAllCoresInfo($jobId) ) {
 
-			$self->_AddChange(
-			"V Hegu u vrtani jader ($str) je hodnota C - nakoveni. Po exportu dps hodnotu znovu zapiš do nifu ručně. Tohle není zautomatizované!" );
+			my $coreStackup = $stackup->GetCore( $coreIS->{"core_num"} );
+
+			if ( $coreIS->{"vrtani"} =~ /C/i && !$coreStackup->GetPlatingExists() ) {
+ 
+				$self->_AddChange("Pozor jádro (číslo: "
+											  . $coreStackup->GetCoreNumber()
+											  . " ) má v IS vrtání = \"C\" -  \"nakovení\", ale není nastaveno ve složení. "
+											  . "Uprav složení, aby obsahovalo nakovení (nahraď Cu jader => Cu +25µm nakovení )." );
+			}		 
 		}
-
 	}
 
 	return $needChange;
@@ -72,15 +74,21 @@ sub Run {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	use aliased 'Packages::Reorder::CheckReorder::Checks::NIF_NAKOVENI' => "Change";
+ 
+use aliased 'Packages::Reorder::CheckReorder::Checks::HEG_DATA' => "Check";
 	use aliased 'Packages::InCAM::InCAM';
 
+	use Data::Dump qw(dump);
+
 	my $inCAM = InCAM->new();
-	my $jobId = "f73086";
+	my $jobId = "d089735";
 
-	my $check = Change->new();
+	my $check = Check->new( "key", $inCAM, $jobId );
 
-	print "Need change: " . $check->NeedChange( $inCAM, $jobId, 1 );
+	my $mess = "";
+	print "Change result: " . $check->Run( \$mess );
+	
+ 	dump($check->GetChanges());
 }
 
 1;

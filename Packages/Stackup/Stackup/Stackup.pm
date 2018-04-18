@@ -207,6 +207,14 @@ sub GetCoreByCopperLayer {
 
 }
 
+# Get core by core number
+sub GetCore{
+	my $self = shift;
+	my $coreNum = shift;
+	
+	return (grep {$_->GetCoreNumber() eq $coreNum } $self->GetAllCores())[0];
+}
+
 # Return all layers type of core
 sub GetAllCores {
 	my $self = shift;

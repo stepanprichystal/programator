@@ -286,7 +286,19 @@ sub _DrawCopper {
 
 	#draw type  and usage of Cu
 	my $usage = ( $layer->GetUssage() * 100 ) . " %";
-	$self->_DrawText( $col4, $self->{"startY"}, $txtSize, $layer->GetText() . "  " . $usage );
+	
+	my $text = $layer->GetText();
+	
+	if($text =~ m/\s*\+\s*(\d+)/){
+		
+		my $plating = $1;
+		
+		$text =~ m/(\d+)\s*\+/;
+		$text = $1."µm (+".$plating."µm plating)"
+	}
+	
+	
+	$self->_DrawText( $col4, $self->{"startY"}, $txtSize, $text . "  " . $usage );
 
 }
 

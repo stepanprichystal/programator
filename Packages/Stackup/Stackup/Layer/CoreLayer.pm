@@ -63,6 +63,23 @@ sub GetQId{
 	return $self->{"qId"};
 }
 
+# Return plating value (if no requested combination Cu + core material on stock, cores has to be plated by 25um)
+sub GetPlatingExists {
+	my $self = shift;
+
+	# check if plating exist on both side
+	my $plating = 0;
+ 
+	# if Copper Id is negative it means plating 25um
+	if ( $self->{"topCopperLayer"}->GetId() < 0 ) {
+
+		$plating = 1;
+	}
+
+	return $plating;
+
+}
+
 
 
 #-------------------------------------------------------------------------------------------#

@@ -7,6 +7,7 @@
 package Programs::Exporter::ExportChecker::Groups::NifExport::Model::NifCheckData;
 
 #3th party library
+use utf8;
 use strict;
 use warnings;
 use File::Copy;
@@ -59,7 +60,7 @@ sub OnCheckGroupData {
 	my $datacodeLayer = $self->__CheckDataCodeIS( $jobId, $groupData );
 
 	unless ( defined $datacodeLayer ) {
-		$dataMngr->_AddErrorResult( "Data code", "Nesedí zadaný datacode v heliosu s datacodem v exportu." );
+		$dataMngr->_AddErrorResult( "Data code", "NesedÃ­ zadanÃ½ datacode v heliosu s datacodem v exportu." );
 	}
 
 	my $errMess = "";
@@ -71,7 +72,7 @@ sub OnCheckGroupData {
 	my $ulLogoLayer = $self->__CheckUlLogoIS( $jobId, $groupData );
 
 	unless ( defined $ulLogoLayer ) {
-		$dataMngr->_AddErrorResult( "Ul logo", "Nesedí zadané Ul logo v heliosu s datacodem v exportu." );
+		$dataMngr->_AddErrorResult( "Ul logo", "NesedÃ­ zadanÃ© Ul logo v heliosu s datacodem v exportu." );
 	}
 
 	# 3) mask control
@@ -82,11 +83,11 @@ sub OnCheckGroupData {
 	# Control mask existence
 	if ( $masks{"top"} != $topMaskExist ) {
 
-		$dataMngr->_AddErrorResult( "Maska TOP", "Nesedí maska top v metrixu jobu a ve formuláøi Heliosu" );
+		$dataMngr->_AddErrorResult( "Maska TOP", "NesedÃ­ maska top v metrixu jobu a ve formulÃ¡Å™i Heliosu" );
 	}
 	if ( $masks{"bot"} != $botMaskExist ) {
 
-		$dataMngr->_AddErrorResult( "Maska BOT", "Nesedí maska bot v metrixu jobu a ve formuláøi Heliosu" );
+		$dataMngr->_AddErrorResult( "Maska BOT", "NesedÃ­ maska bot v metrixu jobu a ve formulÃ¡Å™i Heliosu" );
 	}
 
 	# 4) Control mask colour
@@ -98,7 +99,7 @@ sub OnCheckGroupData {
 
 		$dataMngr->_AddErrorResult(
 									"Maska TOP",
-									"Nesedí barva masky top. Export =>"
+									"NesedÃ­ barva masky top. Export =>"
 									  . ValueConvertor->GetMaskCodeToColor($masksColorTopExport)
 									  . ", Helios => "
 									  . ValueConvertor->GetMaskCodeToColor( $masksColorIS{"top"} ) . "."
@@ -108,7 +109,7 @@ sub OnCheckGroupData {
 
 		$dataMngr->_AddErrorResult(
 									"Maska BOT",
-									"Nesedí barva masky bot. Export =>"
+									"NesedÃ­ barva masky bot. Export =>"
 									  . ValueConvertor->GetMaskCodeToColor($masksColorBotExport)
 									  . ", Helios => "
 									  . ValueConvertor->GetMaskCodeToColor( $masksColorIS{"bot"} ) . "."
@@ -123,11 +124,11 @@ sub OnCheckGroupData {
 	# Control silk existence
 	if ( $silk{"top"} != $topSilkExist ) {
 
-		$dataMngr->_AddErrorResult( "Potisk TOP", "Nesedí potisk top v metrixu jobu a ve formuláøi Heliosu" );
+		$dataMngr->_AddErrorResult( "Potisk TOP", "NesedÃ­ potisk top v metrixu jobu a ve formulÃ¡Å™i Heliosu" );
 	}
 	if ( $silk{"bot"} != $botSilkExist ) {
 
-		$dataMngr->_AddErrorResult( "Potisk BOT", "Nesedí potisk bot v metrixu jobu a ve formuláøi Heliosu" );
+		$dataMngr->_AddErrorResult( "Potisk BOT", "NesedÃ­ potisk bot v metrixu jobu a ve formulÃ¡Å™i Heliosu" );
 	}
 
 	# 6) Control silk colour
@@ -147,7 +148,7 @@ sub OnCheckGroupData {
 
 		$dataMngr->_AddErrorResult(
 									"Potisk TOP",
-									"Nesedí barva potisku top. Export =>"
+									"NesedÃ­ barva potisku top. Export =>"
 									  . ValueConvertor->GetSilkCodeToColor($silkColorTopExport)
 									  . ", Helios => "
 									  . ValueConvertor->GetSilkCodeToColor( $silkColorIS{"top"} ) . "."
@@ -157,7 +158,7 @@ sub OnCheckGroupData {
 
 		$dataMngr->_AddErrorResult(
 									"Potisk BOT",
-									"Nesedí barva potisku bot. Export =>"
+									"NesedÃ­ barva potisku bot. Export =>"
 									  . ValueConvertor->GetSilkCodeToColor($silkColorBotExport)
 									  . ", Helios => "
 									  . ValueConvertor->GetSilkCodeToColor( $silkColorIS{"bot"} ) . "."
@@ -171,7 +172,7 @@ sub OnCheckGroupData {
 
 	if ( !$tenting && $tentingForm ) {
 
-		$dataMngr->_AddWarningResult( "Pattern", "Dps by mìla jít do výroby jako pattern, ale ve formuláši máš zaškrknutý tenting." );
+		$dataMngr->_AddWarningResult( "Pattern", "Dps by mÄ›la jÃ­t do vÃ½roby jako pattern, ale ve formulÃ¡Å¡i mÃ¡Å¡ zaÅ¡krknutÃ½ tenting." );
 	}
 
 	# 8) Check if goldfinger exist, if area is greater than 10mm^2
@@ -222,7 +223,7 @@ sub OnCheckGroupData {
 	if ( $custPnlExist eq "yes" && $custSetExist eq "yes" ) {
 
 		$dataMngr->_AddErrorResult( "Panelisation",
-								  "V atributech jobu je aktivní 'zákaznický panel' i 'zákaznické sady'. Zvol pouze jednu možnost panelizace." );
+								  "V atributech jobu je aktivnÃ­ 'zÃ¡kaznickÃ½ panel' i 'zÃ¡kaznickÃ© sady'. Zvol pouze jednu moÅ¾nost panelizace." );
 	}
 
 	# Check all necessary attributes when customer panel
@@ -235,7 +236,7 @@ sub OnCheckGroupData {
 		if ( !defined $custPnlX || !defined $custPnlY || !defined $custPnlMult || $custPnlX == 0 || $custPnlY == 0 || $custPnlMult == 0 ) {
 			$dataMngr->_AddErrorResult(
 										"Panelisation",
-										"V atributech jobu je aktivní 'zákaznický panel', ale informace není kompletní"
+										"V atributech jobu je aktivnÃ­ 'zÃ¡kaznickÃ½ panel', ale informace nenÃ­ kompletnÃ­"
 										  . " (atributy jobu: \"cust_pnl_singlex\", \"cust_pnl_singley\", \"cust_pnl_multipl\")"
 			);
 		}
@@ -248,7 +249,7 @@ sub OnCheckGroupData {
 
 		if ( !defined $multipl || $multipl == 0 ) {
 			$dataMngr->_AddErrorResult( "Panelisation",
-						   "V atributech jobu je aktivní 'zákaznická sada', ale informace není kompletní (atribut jobu: \"cust_set_multipl\")" );
+						   "V atributech jobu je aktivnÃ­ 'zÃ¡kaznickÃ¡ sada', ale informace nenÃ­ kompletnÃ­ (atribut jobu: \"cust_set_multipl\")" );
 		}
 	}
 
@@ -257,7 +258,7 @@ sub OnCheckGroupData {
 
 		$dataMngr->_AddErrorResult(
 							  "Customer set",
-							  "Pokud je v jobu nastaven zákaznický panel (atribut job:  customer_panel=yes), job nesmí obsahovat step \"mpanel\". "
+							  "Pokud je v jobu nastaven zÃ¡kaznickÃ½ panel (atribut job:  customer_panel=yes), job nesmÃ­ obsahovat step \"mpanel\". "
 								. "Flatennuj step \"mpanel\" do \"o+1\""
 		);
 	}
@@ -265,13 +266,13 @@ sub OnCheckGroupData {
 	# 10) Check if exist pressfit, if is checked in nif
 	if ( $defaultInfo->GetPressfitExist() && !$groupData->GetPressfit() ) {
 
-		$dataMngr->_AddErrorResult( "Pressfit", "Nìkteré nástroje v dps jsou typu 'pressfit', možnost 'Pressfit' by mìla být použita." );
+		$dataMngr->_AddErrorResult( "Pressfit", "NÄ›kterÃ© nÃ¡stroje v dps jsou typu 'pressfit', moÅ¾nost 'Pressfit' by mÄ›la bÃ½t pouÅ¾ita." );
 	}
 
 	# 11) Check if exist pressfit, if is checked in nif
 	if ( $defaultInfo->GetMeritPressfitIS() && !$groupData->GetPressfit() ) {
 
-		$dataMngr->_AddErrorResult( "Pressfit", "V IS je u dps požadavek na 'pressfit', volba 'Pressfit' by mìla být použita." );
+		$dataMngr->_AddErrorResult( "Pressfit", "V IS je u dps poÅ¾adavek na 'pressfit', volba 'Pressfit' by mÄ›la bÃ½t pouÅ¾ita." );
 	}
 
 	# 12) if pressfit is checked, but is not in data
@@ -279,8 +280,8 @@ sub OnCheckGroupData {
 
 		$dataMngr->_AddErrorResult(
 									"Pressfit",
-									"Volba 'Pressfit' je použita, ale žádné otvory typu pressfit nebyly nalezeny."
-									  . " Prosím zruš volbu nebo pøidej pressfit otvory (ppomocí Drill Tool Manageru)."
+									"Volba 'Pressfit' je pouÅ¾ita, ale Å¾Ã¡dnÃ© otvory typu pressfit nebyly nalezeny."
+									  . " ProsÃ­m zruÅ¡ volbu nebo pÅ™idej pressfit otvory (ppomocÃ­ Drill Tool Manageru)."
 		);
 	}
 
@@ -296,14 +297,51 @@ sub OnCheckGroupData {
 
 		if ( $defaultInfo->GetBaseCuThick() > $maxCuThick ) {
 			$dataMngr->_AddErrorResult(
-				"Max Cu thickness",
-				"Maximal Cu thickness for pcbclass: "
-				  . $defaultInfo->GetPcbClass()
-				  . " is: $maxCuThick µm. Current job Cu thickness is: "
-				  . $defaultInfo->GetBaseCuThick()."µm"
+										"Max Cu thickness",
+										"Maximal Cu thickness for pcbclass: "
+										  . $defaultInfo->GetPcbClass()
+										  . " is: $maxCuThick Âµm. Current job Cu thickness is: "
+										  . $defaultInfo->GetBaseCuThick() . "Âµm"
 			);
 		}
 
+	}
+
+	# Check if HEG or NIF contain 'nakoveni jader', but stackup xml no
+	if ( $defaultInfo->GetSignalLayers() > 2 ) {
+
+		my $stackup = $defaultInfo->GetStackup();
+
+		# Check if exist plating on cores, if plating is on both sided
+		foreach my $core ( $stackup->GetAllCores() ) {
+
+			if (    ( $core->GetTopCopperLayer()->GetPlatingExists() && !$core->GetBotCopperLayer()->GetPlatingExists() )
+				 || ( !$core->GetTopCopperLayer()->GetPlatingExists() && $core->GetBotCopperLayer()->GetPlatingExists() ) )
+			{
+				$dataMngr->_AddErrorResult(
+											"NakovenÃ­ jader",
+											"NakovenÃ­ jÃ¡dra (ÄÃ­slo: "
+											  . $core->GetCoreNumber()
+											  . " ) musÃ­ bÃ½t z obou stran TOP i BOT, nynÃ­ je jen z jednÃ©. Oprav XML sloÅ¾enÃ­"
+				);
+			}
+		}
+
+		# Check when is plating in HEG if plating is in stackup
+		foreach my $coreIS ( HegMethods->GetAllCoresInfo($jobId) ) {
+
+			my $coreStackup = $stackup->GetCore( $coreIS->{"core_num"} );
+
+			if ( $coreIS->{"vrtani"} =~ /C/i && !$coreStackup->GetPlatingExists() ) {
+
+				$dataMngr->_AddErrorResult(
+											"NakovenÃ­ jader",
+											"Pozor jÃ¡dro (ÄÃ­slo: "
+											  . $coreStackup->GetCoreNumber()
+											  . " ) mÃ¡ v IS vrtÃ¡nÃ­ = \"C\" -  \"nakovenÃ­\", ale nenÃ­ nastaveno ve sloÅ¾enÃ­. "
+											  . "Uprav sloÅ¾enÃ­, aby obsahovalo nakovenÃ­." );
+			}
+		}
 	}
 
 }
@@ -352,12 +390,12 @@ sub __CheckDataCodeJob {
 				if (@dtCodesWrong) {
 
 					my $str = join( "; ", map { $_->{"text"} } @dtCodesWrong );
-					$$mess .= "Ve stepu: \"$step\", vrstvì: \"$layer\" jsou nesprávnì zrcadlené datakódy ($str).\n";
+					$$mess .= "Ve stepu: \"$step\", vrstvÄ›: \"$layer\" jsou nesprÃ¡vnÄ› zrcadlenÃ© datakÃ³dy ($str).\n";
 					$result = 0;
 				}
 			}
 			else {
-				$$mess .= "Ve stepu: \"$step\", vrstvì: \"$layer\" nebyl dohledán dynamický datakód.\n";
+				$$mess .= "Ve stepu: \"$step\", vrstvÄ›: \"$layer\" nebyl dohledÃ¡n dynamickÃ½ datakÃ³d.\n";
 				$result = 0;
 			}
 		}
@@ -485,13 +523,13 @@ sub __CheckPressfitTools {
 				 || $t->{"gTOOLfinish_size"} eq "?" )
 			{
 				$dataMngr->_AddErrorResult( "Pressfit",
-											"Tool: " . $t->{"gTOOLdrill_size"} . "µm has no finish size (layer: '" . $l . "'). Complete it.\n" );
+											"Tool: " . $t->{"gTOOLdrill_size"} . "Âµm has no finish size (layer: '" . $l . "'). Complete it.\n" );
 			}
 
 			if ( $t->{"gTOOLmin_tol"} == 0 && $t->{"gTOOLmax_tol"} == 0 ) {
 
 				$dataMngr->_AddErrorResult( "Pressfit",
-										  "Tool: " . $t->{"gTOOLdrill_size"} . "µm hasn't defined tolerance (layer: '" . $l . "'). Complete it.\n" );
+										  "Tool: " . $t->{"gTOOLdrill_size"} . "Âµm hasn't defined tolerance (layer: '" . $l . "'). Complete it.\n" );
 			}
 		}
 	}
@@ -509,7 +547,7 @@ sub __CheckPressfitTools {
 											"Pressfit",
 											"Tool: "
 											  . $t->{"gTOOLdrill_size"}
-											  . "µm has set tolerances ("
+											  . "Âµm has set tolerances ("
 											  . $t->{"gTOOLmin_tol"} . ", "
 											  . $t->{"gTOOLmax_tol"}
 											  . " ), but tool type is not \"pressfit\". Set proper tool type in DTM"

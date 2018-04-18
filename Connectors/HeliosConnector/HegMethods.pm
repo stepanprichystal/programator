@@ -1643,23 +1643,27 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	use aliased 'Connectors::HeliosConnector::HegMethods';
 	use Data::Dump qw(dump);
 	
-	my %inf = HegMethods->GetAllByOrderId("d152457-03");
-	
-	use DateTime;
-	
-	my $dt   = DateTime->now;   # Stores current date and time as datetime object
-my $date = $dt->ymd;   # Retrieves date as a string in 'yyyy-mm-dd' format
-my $time = $dt->hms;   # Retrieves time as a string in 'hh:mm:ss' format
-
-my $wanted = "$date $time";   # creates 'yyyy-mm-dd hh:mm:ss' string
-print $wanted;
-	
-
-	 HegMethods->UpdateOrderTerm("d152457-02", $inf{"termin"});
-	
-#	@res = grep { $_->{"reference_subjektu"} =~ /-01/ } @res;
+#	my %inf = HegMethods->GetAllByOrderId("d152457-03");
+#	
+#	use DateTime;
+#	
+#	my $dt   = DateTime->now;   # Stores current date and time as datetime object
+#my $date = $dt->ymd;   # Retrieves date as a string in 'yyyy-mm-dd' format
+#my $time = $dt->hms;   # Retrieves time as a string in 'hh:mm:ss' format
 #
-#	dump(@res);
+#my $wanted = "$date $time";   # creates 'yyyy-mm-dd hh:mm:ss' string
+#print $wanted;
+#	
+#
+#	 HegMethods->UpdateOrderTerm("d152457-02", $inf{"termin"});
+#	
+##	@res = grep { $_->{"reference_subjektu"} =~ /-01/ } @res;
+##
+##	dump(@res);
+
+	my $jobId = "d152456";
+
+	my @cores = HegMethods->GetAllCoresInfo($jobId);
 
 die;
 
