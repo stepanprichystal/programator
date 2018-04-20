@@ -156,6 +156,22 @@ sub GetCoreCnt {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
+	use aliased 'Packages::Stackup::StackupNC::StackupNC';
+	use aliased 'Packages::Stackup::Stackup::Stackup';
+	use aliased 'Packages::InCAM::InCAM';
+	
+	my $inCAM  = InCAM->new();
+
+	my $stackup = Stackup->new("d152456");
+	my $stackupNC = StackupNC->new($inCAM, $stackup);
+	
+	my $coreStack = $stackup->GetCore(2);
+	my $coreStackNC = $stackupNC->GetCore(1);
+	
+	print $coreStack->GetPlatingExists();
+	
+	die;
+
 }
 
 1;

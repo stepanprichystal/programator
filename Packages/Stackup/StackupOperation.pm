@@ -165,7 +165,8 @@ sub StackupMatInStock {
  
 	foreach my $m ( $stackup->GetAllCores() ) {
 
-		my  $sInfo = HegMethods->GetCoreStoreInfo( $m->GetQId(), $m->GetId(), $m->GetTopCopperLayer()->GetId() );
+		# abs - because copper id can be negative (plated core)
+		my  $sInfo = HegMethods->GetCoreStoreInfo( $m->GetQId(), $m->GetId(), abs($m->GetTopCopperLayer()->GetId()) ); 
  
 		if ( $sInfo == 0 ) {
 
@@ -217,7 +218,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $mes = "";
 
-	my $test = StackupOperation->StackupMatInStock("d94258", undef, \$mes);
+	my $test = StackupOperation->StackupMatInStock("d152456", undef, \$mes);
 	
 	print $mes;
 

@@ -58,31 +58,25 @@ sub Build {
 		# comment
 		$section->AddComment(" Vrtani Jadra ".$coreNum);
 
-		my $core = $stackupNC->GetCore($coreNum);
+		my $coreNC = $stackupNC->GetCore($coreNum); 
+		my $core = $stackup->GetCore($coreNum);
+ 
+		my $drillVal = $coreNC->ExistNCLayers( Enums->SignalLayer_TOP, EnumsGeneral->LAYERTYPE_plt_cDrill )? "A" : "N";
+		
+		if(  $core->GetPlatingExists){
+			$drillVal = "C"; # C means plating
+		}
+		
+		$section->AddRow( "vrtani_" . $coreNum, $drillVal);
 
-		my $existDrill = $core->ExistNCLayers( Enums->SignalLayer_TOP, EnumsGeneral->LAYERTYPE_plt_cDrill );
+		my $stagesCnt = $coreNC->GetStageCnt( Enums->SignalLayer_TOP, EnumsGeneral->LAYERTYPE_plt_cDrill );
+		$section->AddRow( "stages_vrtani_" . $coreNum, $stagesCnt );
 
-		#if ( $self->_IsRequire( "vrtani_" . $coreNum ) ) {
-			$section->AddRow( "vrtani_" . $coreNum, $existDrill  ? "A" : "N");
-		#}
+		my $minTool = $coreNC->GetMinHoleTool( Enums->SignalLayer_TOP, EnumsGeneral->LAYERTYPE_plt_cDrill );
+		$section->AddRow( "min_vrtak_" . $coreNum, $self->__FormatTool($minTool) );
 
-		my $stagesCnt = $core->GetStageCnt( Enums->SignalLayer_TOP, EnumsGeneral->LAYERTYPE_plt_cDrill );
-
-		#if ( $self->_IsRequire( "stages_vrtani_" . $coreNum ) ) {
-			$section->AddRow( "stages_vrtani_" . $coreNum, $stagesCnt );
-		#}
-
-		my $minTool = $core->GetMinHoleTool( Enums->SignalLayer_TOP, EnumsGeneral->LAYERTYPE_plt_cDrill );
-
-		#if ( $self->_IsRequire( "min_vrtak_" . $coreNum ) ) {
-			$section->AddRow( "min_vrtak_" . $coreNum, $self->__FormatTool($minTool) );
-		#}
-
-		my $maxAspectRatio = $core->GetMaxAspectRatio(Enums->SignalLayer_TOP, EnumsGeneral->LAYERTYPE_plt_cDrill );
-
-		#if ( $self->_IsRequire( "min_vrtak_pomer_" . $coreNum ) ) {
-			$section->AddRow( "min_vrtak_pomer_" . $coreNum, $maxAspectRatio );
-		#	}
+		my $maxAspectRatio = $coreNC->GetMaxAspectRatio(Enums->SignalLayer_TOP, EnumsGeneral->LAYERTYPE_plt_cDrill );
+		$section->AddRow( "min_vrtak_pomer_" . $coreNum, $maxAspectRatio );
 
 		#TODO - doplnit poznamku pro jadra
 

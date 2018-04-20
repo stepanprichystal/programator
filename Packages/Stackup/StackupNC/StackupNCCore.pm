@@ -7,6 +7,7 @@ package Packages::Stackup::StackupNC::StackupNCCore;
 use base(Packages::Stackup::StackupNC::StackupNCItemBase);
 
 #3th party library
+use utf8;
 use strict;
 use warnings;
 
@@ -36,6 +37,8 @@ sub GetCoreNumber {
 
 	return $self->{"coreNumber"};
 }
+
+
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
