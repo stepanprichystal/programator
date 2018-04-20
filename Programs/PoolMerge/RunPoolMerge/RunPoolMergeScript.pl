@@ -61,11 +61,15 @@ Helper->ShowAbstractQueueWindow( 0, "Cmd of $appName PID:" . $$ );
 # App logging
 # ==========================================================
 
-AsyncJobHelber->SetLogging();
 
+# Loging new with Log4perl
+__SetLogging();
+ 
+# Logging which redirest STDOUT + STDERR to file
 if ( AppConf->GetValue("logingType") == 1 ) {
-	Helper->Logging();
+	Helper->Logging(  EnumsPaths->Client_INCAMTMPLOGS . "poolMerge");
 }
+ 
 
 # Catch die, then:
 # 1) show message to user;
@@ -92,5 +96,32 @@ if ($@) {
 
 	my $mngr = MessageMngr->new($appName);
 	$mngr->ShowModal( -1, EnumsGeneral->MessageType_SYSTEMERROR, \@m );    #  Script se zastavi
+}
+
+
+
+
+# Set logging Log4perl
+sub __SetLogging {
+
+	my $logConfig = GeneralHelper->Root() . "\\Programs\\PoolMerge\\Config\\Logger.conf";
+
+	# create log dirs for all application
+	my @dirs = ();
+	if ( open( my $f, "<", $logConfig ) ) {
+
+		while (<$f>) {
+			if ( my ($logFile) = $_ =~ /.filename\s*=\s*(.*)/ ) {
+
+				my ( $dir, $f ) = $logFile =~ /^(.+)\\([^\\]+)$/;
+				unless ( -e $dir ) {
+					mkdir($dir) or die "Can't create dir: " . $dir . $_;
+				}
+			}
+		}
+		close($logConfig);
+	}
+
+	Log::Log4perl->init($logConfig);
 }
 

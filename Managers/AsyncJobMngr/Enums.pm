@@ -43,6 +43,7 @@ use constant {
 	Logger_APP  => "LoggerApp",
 	Logger_SERVERTH  => "LoggerServerThread",
 	Logger_TASKTH  => "LoggerTaskThread",
-	Logger_INCAM  => "LoggerInCAM" 
+	Logger_INCAM  => "LoggerInCAM",
+	Logger_APPSTATE  => "LoggerAppState",
  };
 1;

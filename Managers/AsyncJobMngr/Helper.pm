@@ -39,53 +39,57 @@ sub PrintServer {
 
 	print STDERR '====== E X P O R T ======= ' . $mess;
 }
-
-sub SetLogging {
-	my $self = shift;
-
-	my $dir = $self->GetLogDir();
-
-	unless ( -e $dir ) {
-		mkdir($dir) or die "Can't create dir: " . $dir . $_;
-	}
-
-	$self->__CreateLogger( Enums->Logger_APP );
-	$self->__CreateLogger( Enums->Logger_SERVERTH );
-	$self->__CreateLogger( Enums->Logger_TASKTH );
-	$self->__CreateLogger( Enums->Logger_INCAM );
-}
-
-sub __CreateLogger {
-	my $self       = shift;
-	my $loggerName = shift;
-
-	my $mainLogger = get_logger($loggerName);
-	$mainLogger->level($DEBUG);
-
-	my $path = $self->GetLogDir() . "\\$loggerName";
-
-	# Appenders
-	my $appenderFile = Log::Log4perl::Appender->new(
-													 'Log::Dispatch::File',
-													 filename => $path,
-													 mode     => "write"
-	);
-
-	my $appenderScreen = Log::Log4perl::Appender->new(
-													   'Log::Dispatch::Screen',
-													   min_level => 'debug',
-													   stderr    => 1,
-													   newline   => 1
-	);
-
-	my $layout = Log::Log4perl::Layout::PatternLayout->new("%d %p> %F{1}:%L  %M \n- %m%n \n");
-	$appenderFile->layout($layout);
-	$appenderScreen->layout($layout);
-
-	$mainLogger->add_appender($appenderFile);
-	$mainLogger->add_appender($appenderScreen);
-
-}
+#
+#sub SetLogging {
+#	my $self = shift;
+#
+#	my $dir = $self->GetLogDir();
+#
+#	unless ( -e $dir ) {
+#		mkdir($dir) or die "Can't create dir: " . $dir . $_;
+#	}
+#
+#	$self->__CreateLogger( Enums->Logger_APP );
+#	$self->__CreateLogger( Enums->Logger_SERVERTH );
+#	$self->__CreateLogger( Enums->Logger_TASKTH );
+#	$self->__CreateLogger( Enums->Logger_INCAM );
+#	$self->__CreateLogger( Enums->Logger_APPSTATE );
+#	
+#	 
+#	
+#}
+#
+#sub __CreateLogger {
+#	my $self       = shift;
+#	my $loggerName = shift;
+#
+#	my $mainLogger = get_logger($loggerName);
+#	$mainLogger->level($DEBUG);
+#
+#	my $path = $self->GetLogDir() . "\\$loggerName";
+#
+#	# Appenders
+#	my $appenderFile = Log::Log4perl::Appender->new(
+#													 'Log::Dispatch::File',
+#													 filename => $path,
+#													 mode     => "write"
+#	);
+#
+#	my $appenderScreen = Log::Log4perl::Appender->new(
+#													   'Log::Dispatch::Screen',
+#													   min_level => 'debug',
+#													   stderr    => 1,
+#													   newline   => 1
+#	);
+#
+#	my $layout = Log::Log4perl::Layout::PatternLayout->new("%d %p> %F{1}:%L  %M \n- %m%n \n");
+#	$appenderFile->layout($layout);
+#	$appenderScreen->layout($layout);
+#
+#	$mainLogger->add_appender($appenderFile);
+#	$mainLogger->add_appender($appenderScreen);
+#
+#}
 
 sub GetLogDir {
 	my $self = shift;

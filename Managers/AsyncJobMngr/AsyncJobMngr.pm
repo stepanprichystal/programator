@@ -18,6 +18,7 @@ use Wx;
 use strict;
 use warnings;
 use Log::Log4perl qw(get_logger :levels);
+use DateTime;
 
 #local library
 use Widgets::Style;
@@ -93,6 +94,7 @@ sub new {
 	my $mainFrm = $self->__SetLayout($parent);
 
 	$self->__RunTimers();
+
 
 	return $self;
 }
@@ -500,6 +502,16 @@ sub __TakeFromQueueHandler {
 
 		}
 	}
+	
+	
+	# Each time when thic function is update app log file
+	# Thic file determines, application is active and not freeze
+	# Another help app can get "state" of this app
+	my $loggerState =  get_logger( Enums->Logger_APPSTATE );
+	$loggerState->debug();
+
+
+	
 }
 
 #-------------------------------------------------------------------------------------------#
