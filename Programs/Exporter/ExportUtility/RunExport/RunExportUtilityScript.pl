@@ -44,17 +44,21 @@ Helper->ShowAbstractQueueWindow( 0, "Cmd of $appName PID:" . $$ );
 # ==========================================================
 # App logging
 # ==========================================================
+ 
 
-# Logging all
-AsyncJobHelber->SetLogging();
 
 # Loging new with Log4perl
 __SetLogging();
-
-
+ 
+# Logging which redirest STDOUT + STDERR to file
 if ( AppConf->GetValue("logingType") == 1 ) {
-	Helper->Logging();
+	Helper->Logging(EnumsPaths->Client_INCAMTMPLOGS . "exportUtility");
 }
+ 
+
+
+ 
+ 
 
 # Catch die, then:
 # 1) show message to user;
@@ -112,4 +116,5 @@ sub __SetLogging {
 
 	Log::Log4perl->init($logConfig);
 }
+
 

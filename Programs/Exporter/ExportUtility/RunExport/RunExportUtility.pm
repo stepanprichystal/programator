@@ -57,6 +57,10 @@ sub new {
 		$self->__RunExportUtility();
 
 	}
+	
+	
+	 # Run app for checking status of some application
+ 	$self->__RunAppChecker();
  
 	
 	return $self;
@@ -76,11 +80,27 @@ sub __RunExportUtility {
 							"perl " . GeneralHelper->Root() . "\\Programs\\Exporter\\ExportUtility\\RunExport\\RunExportUtilityScript.pl ",
 							0, NORMAL_PRIORITY_CLASS | CREATE_NEW_CONSOLE, "." )
 	  || die "Failed to create ExportUtility process.\n";
-
-	
-	 
-
+ 
 }
+
+
+sub __RunAppChecker {
+	 my $self = shift;
+	 
+	my $processObj;
+	my $perl = $Config{perlpath};
+
+	# CREATE_NEW_CONSOLE - script will run in completely new console - no interaction with old console
+ 
+
+	Win32::Process::Create( $processObj, $perl,
+							"perl " . GeneralHelper->Root() . "\\Programs\\AppChecker\\RunAppChecker.pl",
+							0, NORMAL_PRIORITY_CLASS | CREATE_NEW_CONSOLE, "." )
+	  || die "Failed to create ExportUtility process.\n";
+ 
+}	
+
+
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

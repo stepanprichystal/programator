@@ -68,6 +68,10 @@ sub Run {
 
 		# 2) delete mdi files of pcb which are not in produce
 		$self->__DeleteOldJetFiles();
+		
+		# 3) delete app logs, where are stored logs from failed app
+		$self->__DeleteAppLogs();
+		
 
 		# 3) cleanup InCAM databases
 		#$self->__RunDBUtil();
@@ -473,6 +477,38 @@ sub __DeleteOldJetFiles {
 	}
 
 	$self->{"logger"}->info("Number of deleted jobs from Jetprint machine folder $p2: $deletedFolders");
+}
+
+# Remove old app logs from applogs path
+sub __DeleteAppLogs{
+	my $self = shift;
+	
+	my $appLog = EnumsPaths->Jobs_APPLOGS;
+	opendir( DIR, $appLog ) or die $!;
+	
+	my $totalLogDeleted = 0;
+
+	while ( my $dir = readdir(DIR) ) {
+ 
+		next if ( $dir =~ /^\.$/ );
+		next if ( $dir =~ /^\.\.$/ );
+
+		my $dir = $appLog.$dir;
+		
+		my @stats = stat($dir);
+		
+		# remove older than 3 months
+		if( -d $dir && (time() - $stats[10] ) > 3*60*60*24*30){
+			
+			$totalLogDeleted++;
+ 			
+			rmdir($dir);
+		}
+	}
+	
+	$self->{"logger"}->info("Number of deleted log DIRs from: $appLog is: $totalLogDeleted");
+
+	close(DIR);
 }
 
 #sub __RunDBUtil {

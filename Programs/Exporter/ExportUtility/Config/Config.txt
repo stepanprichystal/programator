@@ -44,7 +44,7 @@ autoRemove = 20
 # Loging type 
 # 0 - no log, 
 # 1 - log to file (console is empty)
-logingType = 0
+logingType = 1
 
 # Name of windows env variable, which set if ExporterUtility is server version
 serverEnvVar = TPV_ExportServerVersion
