@@ -2,7 +2,7 @@
 # Description: Script slouzi pro vypocet hlubky vybrusu pri navadeni na vrtackach.
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::Other::AppChecker::Helper;
+package Programs::AppChecker::Helper;
 
 #3th party library
 use strict;
@@ -27,9 +27,8 @@ use aliased 'Enums::EnumsPaths';
 sub CheckRunningInstance {
 	my $self       = shift;
 	my $scriptName = shift;    # name of running script
-
-	my $pidApp = 0;
-
+	my $pids = shift // []; # arr reference withi pids of running app 
+ 
 	my $procName;
 	my $args;
 	my $p    = Win32::Process::List->new();
@@ -47,16 +46,20 @@ sub CheckRunningInstance {
 				$args = @{$procInfo}[0]->{"CommandLine"};
 
 				if ( defined $args && $args =~ /$scriptName/ ) {
-
-					$pidApp = $pid;
-					last;
+						
+						push(@{$pids}, $pid);
 				}
 			}
 		}
 
 	}
 
-	return $pidApp;
+	if(scalar(@{$pids})){
+		return 1;
+	}else{
+		return 0;
+	}
+ 
 }
  
  

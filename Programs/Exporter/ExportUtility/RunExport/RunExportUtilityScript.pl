@@ -56,6 +56,10 @@ if ( AppConf->GetValue("logingType") == 1 ) {
 }
  
 
+
+ 
+ 
+
 # Catch die, then:
 # 1) show message to user;
 # 2) print it to stderr;
@@ -112,4 +116,5 @@ sub __SetLogging {
 
 	Log::Log4perl->init($logConfig);
 }
+
 

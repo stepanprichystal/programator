@@ -7,13 +7,15 @@ use constant {
 	App_CHECKREORDER => "checkReorder",
 	App_PROCESSREORDER => "processReorder",
 	App_EXPORTUTILITY => "exportUtility",
+	App_POOLMERGE => "poolMerge",
 	App_MDIDATA => "mdiData",
 	App_JETPRINTDATA => "jetprintData",
 	App_ARCHIVEJOBS => "archiveJobs",
 	App_CLEANJOBDB => "cleanJobDb",
 	App_TASKONDEMAND => "taskOnDemand",
 	App_TEST => "testService",
-	App_CHECKELTESTS => "checkElTests"
+	App_CHECKELTESTS => "checkElTests",
+	App_APPCHECKER => "appChecker"
 };
 
 

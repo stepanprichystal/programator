@@ -4,7 +4,7 @@
 # If Condition is fulfiled, special action is launched
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::Other::AppChecker::AppChecker;
+package Programs::AppChecker::AppChecker;
 
 #3th party library
 use strict;
@@ -16,7 +16,7 @@ use aliased 'Helpers::GeneralHelper';
 use aliased 'Helpers::JobHelper';
 use aliased 'Helpers::FileHelper';
 use aliased 'Enums::EnumsPaths';
-use aliased 'Packages::Other::AppChecker::Helper';
+use aliased 'Programs::AppChecker::Helper';
 
 #-------------------------------------------------------------------------------------------#
 #  Public method
@@ -29,6 +29,7 @@ sub new {
 
 	$self->{"apps"}    = [];
 	$self->{"logPath"} = "\\\\gatema.cz\\fs\\r\\pcb\\pcb\\appLogs\\";
+	$self->{"period"}    = 2; # period which appa are checked
 
 	unless ( -e $self->{"logPath"} ) {
 		mkdir( $self->{"logPath"} ) or die "Can't create dir: " . $self->{"logPath"};
@@ -43,11 +44,13 @@ sub AddApp {
 	my $appName      = shift;
 	my $appCondition = shift;
 	my $appAction    = shift;
+	my $appData = shift; # helper data for app
 
 	my %appInf = ();
 	$appInf{"appName"}   = $appName;
 	$appInf{"appCond"}   = $appCondition;
 	$appInf{"appAction"} = $appAction;
+	$appInf{"appData"} = $appData;
 
 	push( @{ $self->{"apps"} }, \%appInf );
 
@@ -55,14 +58,19 @@ sub AddApp {
 
 sub Run {
 	my $self = shift;
+	
+	# check if another app is not running 
+	
+	
+	
 
-	while (1) {
+	while ($self->{"period"}) {
 
 		foreach my $app ( @{ $self->{"apps"} } ) {
 
-			if ( $app->{"appCond"}->( $self, $app ) ) {
+			if ( $app->{"appCond"}->( $self, $app   ) ) {
 
-				$app->{"appAction"}->( $self, $app );
+				$app->{"appAction"}->( $self, $app  );
 
 			}
 
