@@ -18,7 +18,11 @@ use List::MoreUtils qw(uniq);
 use aliased 'Packages::Routing::PilotHole';
 use aliased 'CamHelpers::CamStepRepeat';
 use aliased 'CamHelpers::CamDrilling';
+use aliased 'CamHelpers::CamLayer';
+use aliased 'CamHelpers::CamHelper';
+use aliased 'CamHelpers::CamJob';
 use aliased 'CamHelpers::CamHistogram';
+use aliased 'CamHelpers::CamAttributes';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'Connectors::HeliosConnector::HegMethods';
 
@@ -39,7 +43,7 @@ sub Run {
 	my $self = shift;
 	my $mess = shift;
 
-	my $inCAM  = $self->{"inCAM"};
+	my $inCAM  = $self->{"inCAM"}; 
 	my $jobId  = $self->{"jobId"};
 	my $isPool = HegMethods->GetPcbIsPool($jobId);
 
@@ -51,7 +55,7 @@ sub Run {
 
 	unless ($isPool) {
 
-		@steps = map { $_->{"stepName"} } CamStepRepeat->GetUniqueStepAndRepeat( $inCAM, $jobId, 'panel' );
+		@steps = map { $_->{"stepName"} } CamStepRepeat->GetUniqueNestedStepAndRepeat( $inCAM, $jobId, 'panel' );
 	}
 
 	my @layers = CamDrilling->GetNCLayersByType( $inCAM, $jobId, EnumsGeneral->LAYERTYPE_nplt_nMill );
@@ -69,6 +73,21 @@ sub Run {
 		}
 	}
 
+	# Remove .feed atribut if exists
+	my @routLayers = CamJob->GetLayerByType( $inCAM, $jobId, "rout" );
+
+	foreach my $step (@steps) {
+
+		CamHelper->SetStep( $inCAM, $step );
+
+		foreach my $l (@layers) {
+
+			CamLayer->WorkLayer( $inCAM, $l->{"gROWname"} );
+
+			CamAttributes->DelFeatuesAttribute( $inCAM, ".feed", "" );
+		}
+	}
+
 	return $result;
 
 }
@@ -83,7 +102,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	use aliased 'Packages::InCAM::InCAM';
 
 	my $inCAM = InCAM->new();
-	my $jobId = "d152456";
+	my $jobId = "d210856";
 
 	my $check = Change->new( "key", $inCAM, $jobId );
 
