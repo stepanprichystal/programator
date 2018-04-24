@@ -504,13 +504,23 @@ sub __TakeFromQueueHandler {
 	}
 	
 	
+
+ 	
+}
+
+# Timer caal this method every seond
+# Here put usefull code, which is neede to process every second
+sub __Timer1sHandler {
+	my ( $self, $frame, $event ) = @_;
+	
 	# Each time when thic function is update app log file
 	# Thic file determines, application is active and not freeze
 	# Another help app can get "state" of this app
 	my $loggerState =  get_logger( Enums->Logger_APPSTATE );
 	$loggerState->debug();
- 	
+
 }
+
 
 #-------------------------------------------------------------------------------------------#
 #  Private methods
@@ -695,6 +705,12 @@ sub __RemoveJob {
 # Times are in milisecond
 sub __RunTimers {
 	my $self = shift;
+
+	my $timer1s = Wx::Timer->new( $self->{"mainFrm"}, -1, );
+	Wx::Event::EVT_TIMER( $self->{"mainFrm"}, $timer1s, sub { __Timer1sHandler( $self, @_ ) } );
+	$timer1s->Start(1000);
+	$self->{"$timer1s"} = $timer1s;
+
 
 	my $timertask = Wx::Timer->new( $self->{"mainFrm"}, -1, );
 	Wx::Event::EVT_TIMER( $self->{"mainFrm"}, $timertask, sub { __TakeFromQueueHandler( $self, @_ ) } );
