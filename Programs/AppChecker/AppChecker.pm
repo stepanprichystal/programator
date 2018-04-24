@@ -27,9 +27,10 @@ sub new {
 	$self = {};
 	bless $self;
 
-	$self->{"apps"}    = [];
-	$self->{"logPath"} = "\\\\gatema.cz\\fs\\r\\pcb\\pcb\\appLogs\\";
-	$self->{"period"}    = 2; # period which appa are checked
+	$self->{"apps"}      = [];
+	$self->{"logPath"}   = "\\\\gatema.cz\\fs\\r\\pcb\\pcb\\appLogs\\";
+	$self->{"maxLogCnt"} = 100;                                           # period which appa are checked
+	$self->{"period"}    = 2;                                             # period which appa are checked
 
 	unless ( -e $self->{"logPath"} ) {
 		mkdir( $self->{"logPath"} ) or die "Can't create dir: " . $self->{"logPath"};
@@ -44,13 +45,13 @@ sub AddApp {
 	my $appName      = shift;
 	my $appCondition = shift;
 	my $appAction    = shift;
-	my $appData = shift; # helper data for app
+	my $appData      = shift;    # helper data for app
 
 	my %appInf = ();
 	$appInf{"appName"}   = $appName;
 	$appInf{"appCond"}   = $appCondition;
 	$appInf{"appAction"} = $appAction;
-	$appInf{"appData"} = $appData;
+	$appInf{"appData"}   = $appData;
 
 	push( @{ $self->{"apps"} }, \%appInf );
 
@@ -58,24 +59,31 @@ sub AddApp {
 
 sub Run {
 	my $self = shift;
-	
-	# check if another app is not running 
-	
-	
-	
 
-	while ($self->{"period"}) {
+	# check if another app is not running
+
+	my $dir   = $self->{"logPath"};
+	my @files = <$dir/*>;
+	my $count = @files;
+
+	if ( $count > $self->{"maxLogCnt"} ) {
+		return 0;
+	}
+
+	while ( $self->{"period"} ) {
+
+		# test if many logs
+
+		# Test if there is too many logs
+		# If more than 100,
 
 		foreach my $app ( @{ $self->{"apps"} } ) {
 
-			if ( $app->{"appCond"}->( $self, $app   ) ) {
+			if ( $app->{"appCond"}->( $self, $app ) ) {
 
-				$app->{"appAction"}->( $self, $app  );
-
+				$app->{"appAction"}->( $self, $app );
 			}
-
 		}
-
 	}
 
 }
@@ -86,15 +94,15 @@ sub CreateLogPath {
 
 	$appName =~ s/\s//g;
 	my $logname = $ENV{USERNAME};
-	
+
 	my $d = DateTime->now;
- 
-	my $p = $self->{"logPath"} . $appName . "_" . $d->ymd('-')."_".$d->hms('-') . "_" . $logname;
+
+	my $p = $self->{"logPath"} . $appName . "_" . $d->ymd('-') . "_" . $d->hms('-') . "_" . $logname;
 
 	unless ( -e $p ) {
 		mkdir($p) or die "Can't create dir: " . $p;
 	}
-  
+
 	return $p;
 }
 

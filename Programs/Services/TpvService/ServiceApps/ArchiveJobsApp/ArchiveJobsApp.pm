@@ -47,6 +47,7 @@ sub new {
 
 	$self->{"inCAM"}         = undef;
 	$self->{"processedJobs"} = 0;
+	$self->{"processedJobsIds"} = [];
 	$self->{"maxLim"}        = 20;
 
 	return $self;
@@ -84,6 +85,11 @@ sub Run {
 				# and block another app
 
 				if ( $self->{"processedJobs"} >= $self->{"maxLim"} ) {
+					
+					$self->{"logger"}->info("Max lim exceeded:". $self->{"processedJobs"});
+					
+					$self->{"logger"}->info("Processed jobs: ".join("\n", @{$self->{"processedJobsIds"}}));
+ 
 					last;
 				}
 			}
@@ -168,6 +174,7 @@ sub __ProcessJob {
 		$self->__DeleteJob($jobId);
 
 		$self->{"processedJobs"}++;
+		push(@{$self->{"processedJobsIds"}}, $jobId);
 	}
 }
 

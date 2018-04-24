@@ -52,6 +52,9 @@ if ( Helper->CheckRunningInstance( "RunAppChecker", \@pids ) ) {
 
 # Hide app
 __HideConsole() unless($noHide);
+
+
+
  
 
 # If app is launched, but is not active more than 5 ssecond, copz logs
