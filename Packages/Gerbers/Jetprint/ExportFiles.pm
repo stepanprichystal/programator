@@ -32,6 +32,7 @@ use aliased 'Packages::Gerbers::Export::ExportLayers';
 use aliased 'Packages::ItemResult::ItemResult';
 use aliased 'Packages::ItemResult::Enums' => 'ItemResEnums';
 use aliased 'Connectors::HeliosConnector::HegMethods';
+use aliased 'Packages::CAMJob::SilkScreen::SilkScreenCheck';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -147,7 +148,7 @@ sub __ExportLayers {
 		$self->__MoveToZero( $l->{"gROWname"} );
 
 		# 7) mirror layer in y axis if ps
-		$self->__MirrorLayer( $l->{"gROWname"}, \%lim);
+		$self->__MirrorLayer( $l->{"gROWname"}, \%lim );
 
 		# 5) export gerbers
 		my $fiducDCode = $self->__ExportGerberLayer( $l->{"gROWname"}, $resultItem );
@@ -321,41 +322,18 @@ sub __CompensateLayer {
 	my $jobId = $self->{"jobId"};
 
 	# 1 ) check if thera are features thinner than 120µm (necessary because after compensation -60µm result print on pcb should be wrong)
+	my @wrongFeat = ();
+	unless ( SilkScreenCheck->FeatsWidthOk( $inCAM, $jobId, $self->{"step"}, $layerName, \@wrongFeat ) ) {
 
-	my $infoFile = $inCAM->INFO(
-								 units           => 'mm',
-								 angle_direction => 'ccw',
-								 entity_type     => 'layer',
-								 entity_path     => "$jobId/".$self->{"step"}."/" . $layerName,
-								 data_type       => 'FEATURES',
-								 options         => 'break_sr+',
-								 parse           => 'no'
-	);
+		my $str = join( ", ", @wrongFeat );
 
-	my @feat = ();
-
-	if ( open( my $f, "<" . $infoFile ) ) {
-		@feat = <$f>;
-		close($f);
-		unlink($infoFile);
+		die "Too thin features ($str) in silkscreen layer \"$layerName\". Min thickness of feature is 130µm";
 	}
-
-	@feat = grep { $_ =~ /[LA].*[rs](\d+)\.?\d*\sP/i && $1 < 120 } @feat;    # check positive lines+arc thinner tahn 120µm
-
-	if ( scalar(@feat) ) {
-
-		my @thinSyms = uniq( map { ( $_ =~ /[LA].*([rs]\d+)\.?\d*\sP/i )[0] . "µm" } @feat );
-		my $str = join( ", ", @thinSyms );
-
-		if ( scalar(@thinSyms) ) {
-			die "Too thin features ($str) in silkscreen layer \" $layerName \". Min thickness of feature is 130µm";
-		}
-	}
-
+ 
 	# 2) Compensate all features
 	my $class = $self->{"pcbClass"};
 
-	my $comp = -60;                                                          # shring by 60µm
+	my $comp = -60;    # shring by 60µm
 
 	if ( $comp != 0 ) {
 		CamLayer->CompensateLayerData( $inCAM, $layerName, $comp );
@@ -431,14 +409,14 @@ sub __MoveToZero {
 sub __MirrorLayer {
 	my $self      = shift;
 	my $layerName = shift;
-	my $lim = shift;
+	my $lim       = shift;
 
 	my $inCAM = $self->{"inCAM"};
 
 	if ( $layerName eq "ps" ) {
 
 		CamLayer->MirrorLayerData( $inCAM, $layerName, "y" );
- 
+
 		$inCAM->COM( "sel_move", "dx" => abs( $lim->{"xMax"} - $lim->{"xMin"} ), "dy" => 0 );
 	}
 }
@@ -481,10 +459,10 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId    = "f80085";
+	my $jobId    = "d152457";
 	my $stepName = "panel";
 
-	my $export = ExportFiles->new( $inCAM, $jobId, Enums->Fiducials_HOLE3P2 );
+	my $export = ExportFiles->new( $inCAM, $jobId );
 
 	$export->Run();
 
