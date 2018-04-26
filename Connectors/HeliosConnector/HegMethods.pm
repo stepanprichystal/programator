@@ -86,6 +86,7 @@ sub GetAllByPcbId {
 				 dn.frezovani_po n_milling_after,
 				 dn.poznamka n_poznamka_dps,
 				 dn.poznamka_zakaznik n_poznamka_web,
+				 d.poznamka_zakaznik poznamka_web,
 				 n.poznamka n_poznamka_zak,
 				 z.kusy_pozadavek pocet,
 				 z.pooling,
@@ -498,13 +499,10 @@ sub GetAllByPcbIdOffer {
  				 dn.rozmer_y Rozmer_panel_Y,
  				 prijal.nazev_subjektu Nabidku_zpracoval,
  				 mn.nazev_subjektu Material,
- 				 dn.strihani Vysledne_formatovani,
+ 				 lcs.nf_edit_style('ddlb_22_vysledne_formatovani', dn.strihani) Vysledne_formatovani,
  				 dn.drazkovani Drazkovani,
  				 dn.frezovani_pred Frezovani_pred,
  				 dn.frezovani_po Frezovani_po,
- 				 dn.poznamka Poznamka_deska,
- 				 dn.poznamka_zakaznik Poznamka_web,
- 				 n.poznamka Poznamka_zakazka,
  				 dn.material_druh Material_druh,
  				 lcs.nf_edit_style('ddlb_22_hal', dn.hal) Povrchova_uprava,
  				 lcs.nf_edit_style('typ_desky_22', dn.material_typ) Typ_desky
@@ -530,7 +528,7 @@ sub GetAllByPcbIdOffer {
 	}
 }
 
-# ?? popis, pro jaky ucel se pouziva
+# Specific select for kontrola.pl
 sub GetUserInfoHelios {
 	my $self  = shift;
 	my $pcbId = shift;
@@ -539,7 +537,7 @@ sub GetUserInfoHelios {
 
 	my $cmd = "select top 1
 				 c.nazev_subjektu Zakaznik,
-				 d.hal Povrchova_uprava,
+				 lcs.nf_edit_style('ddlb_22_hal', d.hal) Povrchova_uprava,
 				 d.material_tloustka Tloustka,
 				 d.material_tloustka_medi Tloustka_medi,
 				 d.poznamka Poznamka,
