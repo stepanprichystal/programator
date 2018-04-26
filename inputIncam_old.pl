@@ -31,8 +31,6 @@ use PackagesLib;
 
 use aliased 'HelperScripts::DirStructure';
 
-use aliased 'Enums::EnumsPaths';
-use aliased 'Enums::EnumsGeneral';
 use aliased 'Packages::CAMJob::Drilling::FinishSizeHoles::SetHolesRun';
 use aliased 'Packages::InCAM::InCAM';
 use aliased 'Packages::ETesting::MoveElTests';
@@ -43,8 +41,6 @@ use aliased 'CamHelpers::CamCopperArea';
 use aliased 'CamHelpers::CamLayer';
 use aliased 'CamHelpers::CamJob'; 
 use aliased 'CamHelpers::CamHelper';
-
-use aliased 'Managers::MessageMngr::MessageMngr';
 
 
 my $inCAM    = InCAM->new();
@@ -251,25 +247,9 @@ my ($prefixDiskName, $bodyPath, $fileName, $suffixName, $jobName, $localFolder) 
 		_NewJobCreate($jobName);
 	
 	
-	my $warPathRep = EnumsPaths->Client_INCAMTMP . $jobName . '_auto_report.txt';
-	my $identPathRep = EnumsPaths->Client_INCAMTMP . $jobName . '_auto_identify.txt';
-	my $translPathRep = EnumsPaths->Client_INCAMTMP . $jobName . '_auto_translate.txt';
 	
+	$inCAM -> COM ('input_auto',path=>"$localFolder/$jobName",job=>"$jobName",step=>'o');
 	
-	$inCAM -> COM ('input_auto',path=>"$localFolder/$jobName",job=>"$jobName", ident_script_path => $identPathRep , trans_script_path => $translPathRep , report_path=> $warPathRep , step=>'o');
-
-	_SearchResultInReport($jobName, $warPathRep);
-	
-	if (-e $warPathRep) {
-			unlink ($warPathRep);
-	}
-	if (-e $identPathRep) {
-			unlink ($identPathRep);
-	}
-	if (-e $translPathRep) {
-			unlink ($translPathRep);
-	}
-
 	$inCAM -> COM ('open_entity',job=>"$jobName",type=>'step',name=>"o",iconic=>'no');
 	$inCAM -> AUX ('set_group',group => $inCAM->{COMANS});
 	
@@ -277,7 +257,6 @@ my ($prefixDiskName, $bodyPath, $fileName, $suffixName, $jobName, $localFolder) 
 	$inCAM->COM('set_subsystem',name=>'1-Up-Edit');
 	$inCAM->COM('zoom_home');
 	
-	$inputWindow->destroy;
 	
    	$inCAM->PAUSE("Pozor musis nacist data znovu manualne, pak pokracuj!");
    					
@@ -1203,27 +1182,7 @@ sub _CheckREDresult {
 	return ($res);
 }
 
-sub _SearchResultInReport {
-		my $pcbId = shift;
-		my $reportPath = shift;
-		my $searchedItem = 'Arc not on single quadrant';
-		my $res = 0;
-		
-				open (REPORTFILE,$reportPath);
-							while(<REPORTFILE>) {
-									if ($_ =~ /$searchedItem/) {
-											$res = 1;
-									}
-							}
-				close REPORTFILE;
-		
-	 		if ($res) {
-	 				my @errorList =	("POZOR - pri importu vrstev byla nalezena zavazna chyba (#Warning! Arc not on single quadrant. See parameter Enable arc when start/end on same axis in single quadrant mode). <b>Pro vice informaci vyhledej chybu ve OneNotu.</b>");
-     	
-	 				my $messMngr = MessageMngr->new($pcbId);
-	 				$messMngr->ShowModal( -1, EnumsGeneral->MessageType_WARNING, \@errorList ); 
-	 		}
-}
+
 
 
 

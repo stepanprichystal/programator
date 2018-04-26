@@ -1,0 +1,4 @@
+#!/bin/csh
+COM save_job,job=$JOB,override=no,skip_upgrade=no
+COM copy_entity,type=step,source_job=$JOB,source_name=o,dest_job=$JOB,dest_name=o+15,dest_database=,remove_from_sr=yes
+COM open_entity,job=$JOB,type=step,name=o+15,iconic=no

@@ -21,7 +21,9 @@ use aliased 'Programs::Exporter::ExportUtility::Groups::NifExport::NifExportTmpP
  
 
  
-my $jobId    = "d152457";
+my $jobId    = "f67744";
+ 
+
  
  
 my $poznamka = "";
@@ -29,9 +31,8 @@ my $tenting  = 1;
 my $pressfit = 0;
 my $maska01  = 0;
 my $datacode  = "";
-my $ullogo  = "MC";
+my $ullogo  = "";
 my $jumpScoring  = 0;
-my $wrongFormat  = 0;
 
  
 
@@ -39,4 +40,4 @@ my $inCAM = InCAM->new();
 my $export = NifExportTmpPool->new();
 
 #return 1 if OK, else 0
-$export->Run( $inCAM, $jobId, $poznamka, $tenting, $pressfit, $maska01, $datacode, $ullogo, $jumpScoring, $wrongFormat);
+$export->Run( $inCAM, $jobId, $poznamka, $tenting, $pressfit, $maska01, $datacode, $ullogo, $jumpScoring);

@@ -1,6 +1,5 @@
 #!/usr/bin/perl
 
-
 use warnings;
 
 use Tk;
@@ -27,15 +26,16 @@ use aliased 'Packages::Routing::PlatedRoutAtt';
 use aliased 'CamHelpers::CamCopperArea';
 use aliased 'Packages::InCAM::InCAM';
 
-my $inCAM    = InCAM->new();
 
 unless ($ENV{JOB}) {
 	$jobName = shift;
-   $StepName = shift;
+	$StepName = shift;
 }else{
 	$jobName = "$ENV{JOB}";
 	$StepName = "$ENV{STEP}";
 }
+
+my $inCAM    = InCAM->new();
 
 
 $inCAM->COM('script_run',name=>"y:/server/site_data/scripts/ScoreRepairScript.pl",dirmode=>'global',params=>"$jobName $StepName");
@@ -53,24 +53,24 @@ my @errorMessageArr = ();
 
 my $main = MainWindow->new;
 $main->title('Informace o DPS');
-			my $mainFrame= $main->Frame(-width=>100, -height=>150)->pack(-side=>'top', -fill=>'x');
-				my $topFrame = $mainFrame->Frame(-width=>100, -height=>150)->pack(-side=>'top');
-						my $topFrameLeftLeft = $topFrame->Frame(
+			$mainFrame= $main->Frame(-width=>100, -height=>150)->pack(-side=>'top', -fill=>'x');
+				$topFrame = $mainFrame->Frame(-width=>100, -height=>150)->pack(-side=>'top');
+						$topFrameLeftLeft = $topFrame->Frame(
 												-width=>100, 
 												-height=>150)
 												->pack(-side=>'left',-fill=>'both');
-										my $topFrameLeftLeftTop = $topFrameLeftLeft->LabFrame(
-																	-label=>"Obchodni specifikace/konfigurator",
+										$topFrameLeftLeftTop = $topFrameLeftLeft->LabFrame(
+																	-label=>"Informace DATA",
 																	-width=>100, 
 																	-height=>150)
 																	->pack(-side=>'top',																
 																	-fill=>'both',
 																	-expand => "True");
-						my $topFrameLeft = $topFrame->Frame(
+						$topFrameLeft = $topFrame->Frame(
 												-width=>100, 
 												-height=>150)
 												->pack(-side=>'left',-fill=>'both');
-										my $topFrameLeftTop = $topFrameLeft->LabFrame(
+										$topFrameLeftTop = $topFrameLeft->LabFrame(
 																	-label=>"Informace Helios",
 																	-width=>100, 
 																	-height=>150)
@@ -92,11 +92,11 @@ $main->title('Informace o DPS');
 															}
 											}
 									if ($xmlExist == 1){							
-													my $topFrameMiddle = $topFrame->Frame(
+													$topFrameMiddle = $topFrame->Frame(
 																					-width=>100, 
 																					-height=>150)
 																					->pack(-side=>'left',-fill=>'y');
-																			my $topFrameMiddleTop = $topFrameMiddle->LabFrame(
+																			$topFrameMiddleTop = $topFrameMiddle->LabFrame(
 																										-label=>"Objednavka XML",
 																										-width=>100, 
 																										-height=>150)
@@ -107,13 +107,13 @@ $main->title('Informace o DPS');
 									}
 																										
 																										
-							my @infoPcbOfferN = HegMethods->GetAllByPcbIdOffer($jobName);
-							if ($infoPcbOfferN[0]{'Nabidku_zpracoval'}) {
-									my $topFrameRight = $topFrame->Frame(
+							my @infoPcbOffer = HegMethods->GetAllByPcbIdOffer($jobName);
+							if ($infoPcbOffer[0]{'Nabidku_zpracoval'}) {
+									$topFrameRight = $topFrame->Frame(
 															-width=>100, 
 															-height=>150)
 															->pack(-side=>'left',-fill=>'y');
-													my $topFrameRightTop = $topFrameRight->LabFrame(
+													$topFrameRightTop = $topFrameRight->LabFrame(
 																				-label=>"Nabidka",
 																				-width=>100, 
 																				-height=>150)
@@ -130,8 +130,8 @@ $main->title('Informace o DPS');
 
 								
                			
-				my $middleFrame1 = $mainFrame->Frame(-width=>100, -height=>150)->pack(-side=>'top',-fill=>'both');
-											my $mypodframe = $middleFrame1->LabFrame(
+				$middleFrame1 = $mainFrame->Frame(-width=>100, -height=>150)->pack(-side=>'top',-fill=>'both');
+											$mypodframe = $middleFrame1->LabFrame(
 																	-width=>'100', 
 																	-height=>'70',
 																	-label=>"Pozmanky k zakaznikovi",
@@ -142,8 +142,8 @@ $main->title('Informace o DPS');
 																	->pack(-fill=>'both',-side=>'top',-expand => "True");
 																	
 											$mypodframe ->Label(-textvariable=>\HegMethods->GetTpvCustomerNote($jobName), -fg=>"blue")->pack(-side=>'top',-fill=>'both');
-				my $middleFrame2 = $mainFrame->Frame(-width=>100, -height=>150)->pack(-side=>'top',-fill=>'both');
-											my $middleFrame2Top = $middleFrame2->LabFrame(
+				$middleFrame2 = $mainFrame->Frame(-width=>100, -height=>150)->pack(-side=>'top',-fill=>'both');
+											$middleFrame2Top = $middleFrame2->LabFrame(
 																	-label=>"Zjistene chyby",
 																	-width=>100, 
 																	-height=>50)
@@ -159,13 +159,13 @@ $main->title('Informace o DPS');
 											_CheckStatusPriprava($jobName);
 											_CheckLimitWithTabs($jobName);
 											
-											my $tmpFrameInfo = $middleFrame2Top->Frame(-width=>100, -height=>10)->grid(-column=>0,-row=>0,-columnspan=>2,-sticky=>"news");
+											$tmpFrameInfo = $middleFrame2Top->Frame(-width=>100, -height=>10)->grid(-column=>0,-row=>0,-columnspan=>2,-sticky=>"news");
 											foreach my $item (@errorMessageArr) {
 																	$tmpFrameInfo ->Label(-textvariable=>\$item, -fg=>"red", -font=>"ARIAL 12")->grid(-column=>1,-row=>"$rowStart",-columnspan=>2,-sticky=>"w");
 																	$rowStart++;
 											}
-				my $botFrame = $mainFrame->Frame(-width=>100, -height=>150)->pack(-side=>'bottom');
-				my $tl_no=$botFrame->Button(-width=>'120',-text => "POKRACOVAT",-command=> \sub {$main->destroy},-bg=>'grey')->pack(-fill=>'both',-padx => 1, -pady => 1,-side=>'right');
+				$botFrame = $mainFrame->Frame(-width=>100, -height=>150)->pack(-side=>'bottom');
+				$tl_no=$botFrame->Button(-width=>'120',-text => "POKRACOVAT",-command=> \sub {$main->destroy},-bg=>'grey')->pack(-fill=>'both',-padx => 1, -pady => 1,-side=>'right');
 				
 $main->MainLoop;
 
@@ -204,8 +204,6 @@ sub _PutXMLorder {
 
 		if (%hashXML) {																# kontrola jestli nejake xml existuje
 				my @tmpPole = (sort {$b<=>$a} keys %hashXML);						# setridi time souboru dle velisti
-				my $framegrid = 0;
-				
 				__GetValueXML($hashXML{$tmpPole[0]}, $outputDir, $articleid);
 									if (%hashXML) {	
 										
@@ -223,7 +221,6 @@ sub _PutXMLorder {
 													my $viewInfo1 = 0;
 													my $viewInfo2 = 0;
 													my $viewInfo3 = 0;
-													my $viewInfo4 = 0;
 													
 													unless($hashINFO{size_x} < ($pcbXsize + 1) and $hashINFO{size_x} > ($pcbXsize - 1)) {
 															$viewInfo = 1;
@@ -410,7 +407,7 @@ sub _PutXMLorder {
 													$rowStart++;
 													$framegrid->Label(-text=>"Poznamka",-font=>'arial 9 {bold}',-fg=>'DimGray')->grid(-column=>0,-row=>"$rowStart",-columnspan=>1,-sticky=>"w");
 													my $u = $rowStart + 1;
-													my $pole = $framegrid->Text(-width=>30, -height=>"$heightTest")->grid(-column=>0,-row=>"$u",-columnspan=>2,-sticky=>"w",-padx=>1);
+													$pole = $framegrid->Text(-width=>30, -height=>"$heightTest")->grid(-column=>0,-row=>"$u",-columnspan=>2,-sticky=>"w",-padx=>1);
 													$pole->insert("end", "$hashINFO{poznamky}");
 													
 													
@@ -418,10 +415,16 @@ sub _PutXMLorder {
 															HegMethods->UpdateOrderNotes($jobName, 'PRESNY POCET KUSU');
 													}
 																	
-									}	
+									}else{
+													$framegrid = $frameright->Frame(-width=>100, -height=>150)->grid(-column=>0,-row=>0,-columnspan=>3);
+													$framegrid->Label(-text=>"                            NENASEL JSEM XML",-font=>'arial 10',-fg=>'blue')->grid(-column=>0,-row=>1);
+									}
+				
+				
 		}
+	
+	
 }
-
 sub __GetValueXML {
 	my $xmlFile = shift;
 	my $outputDir = shift;
@@ -512,64 +515,27 @@ sub __GetValueXML {
 sub _PutDataInfo {
 		my $heliosFrame = shift;
 		my ($xDPSsize, $yDPSsize) =_GetDimPCB();
-		my $colorText1 = 0;
-		my $colorText2 = 0;
 		
-							my @infoPcbHelios = HegMethods->GetSalesSpec($jobName);
-							
-							$infoPcbHelios[0]->{' Reference desky'} = $jobName;
-							$infoPcbHelios[0]->{' Rozmer desky'} = $xDPSsize . ' x ' . $yDPSsize;
-							
+							my @infoPcbHelios = {'Reference desky',$jobName,
+												 'Rozmer desky', $xDPSsize . ' x ' . $yDPSsize,
+													};
 							my $i=0;
 									foreach my $item (sort keys $infoPcbHelios[0]) {
 													#set color 
-													unless ($infoPcbHelios[0]->{$item} eq 'Ne') {
-															$colorText1 = 'black';
-															$colorText2 = 'red';
-													}else{
-															$colorText1 = 'black';
-															$colorText2 = 'black';
-													}
-													if ($infoPcbHelios[0]->{$item} eq 'Jeden kus') {
-                        										$infoPcbHelios[0]->{$item} = '';
-                        							}
-                        										
+													my $colorText1 = 'black';
+													my $colorText2 = 'black';
+													
+                        		
 													my $putTextInfo1 = $item . "=";
 													my $putTextInfo2 = $infoPcbHelios[0]->{$item};
 													chomp $putTextInfo2;
-													my @tmpFrameH = ();
 													$tmpFrameH[$i] = $heliosFrame ->Frame(-width=>100, -height=>10)->pack(-side=>'top',-fill=>'x');
 													$tmpFrameH[$i] ->Label(-textvariable=>\$putTextInfo1, -fg=>"$colorText1")->pack(-side=>'left');
-													$tmpFrameH[$i] ->Label(-textvariable=>\$putTextInfo2, -fg=>"$colorText2",-font=> 'ARIAL 9 {bold}')->pack(-side=>'left');		
+													$tmpFrameH[$i] ->Label(-textvariable=>\$putTextInfo2, -fg=>"$colorText2",-font=> 'ARIAL 9 {bold}')->pack(-side=>'left');
+													
+												
 									$i++;
 									}
-													my @tmpInfoHelios = HegMethods->GetAllByPcbId($jobName);	
-													my $poznamkaTpv = $tmpInfoHelios[0]->{'poznamka_web'};
-													my $heightTest;
-													my $delkapath =  length($poznamkaTpv);
-													if ($delkapath < 60) {
-														$heightTest = 5;
-													}elsif($delkapath < 90){
-														$heightTest = 8;
-													}elsif($delkapath < 120){
-														$heightTest = 10;
-													}elsif($delkapath < 150){
-														$heightTest = 12;
-													}else{
-														$heightTest = 10;
-													}
-													
-													my $colorTpv = 'DimGray';
-													if ($poznamkaTpv) {
-															$colorTpv = 'red';
-													}
-													my @tmpFrameH = ();
-													$tmpFrameH[$i] = $heliosFrame ->Frame(-width=>100, -height=>10)->pack(-side=>'top',-fill=>'x');
-													$tmpFrameH[$i]->Label(-text=>"Poznamka od Zakaznika",-font=>'arial 9 {bold}',-fg=>"$colorTpv")->grid(-column=>0,-row=>"$i",-columnspan=>1,-sticky=>"w");
-													my $u = $i + 1;
-													my $pole = $tmpFrameH[$i]->Text(-width=>30, -height=>"$heightTest")->grid(-column=>0,-row=>"$u",-columnspan=>2,-sticky=>"w",-padx=>1);
-													$pole->insert("end", "$poznamkaTpv");
-									
 }
 sub _GetDimPCB {
 		$inCAM->INFO(units=>'mm',entity_type => 'step',entity_path => "$jobName/$StepName",data_type => 'PROF_LIMITS');
@@ -609,7 +575,7 @@ sub _PutHeliosInfo {
 																	$colorText2 = 'red';
 															}
 													}
-													my @tmpFrameH = ();
+
 													$tmpFrameH[$i] = $heliosFrame ->Frame(-width=>100, -height=>10)->pack(-side=>'top',-fill=>'x');
 													$tmpFrameH[$i] ->Label(-textvariable=>\$putTextInfo1, -fg=>"$colorText1")->pack(-side=>'left');
 													$tmpFrameH[$i] ->Label(-textvariable=>\$putTextInfo2, -fg=>"$colorText2")->pack(-side=>'left');
@@ -635,11 +601,10 @@ sub _PutHeliosInfo {
 													if ($poznamkaTpv) {
 															$colorTpv = 'red';
 													}
-													my @tmpFrameH = ();
 													$tmpFrameH[$i] = $heliosFrame ->Frame(-width=>100, -height=>10)->pack(-side=>'top',-fill=>'x');
 													$tmpFrameH[$i]->Label(-text=>"Poznamka pro TPV",-font=>'arial 9 {bold}',-fg=>"$colorTpv")->grid(-column=>0,-row=>"$i",-columnspan=>1,-sticky=>"w");
 													my $u = $i + 1;
-													my $pole = $tmpFrameH[$i]->Text(-width=>30, -height=>"$heightTest")->grid(-column=>0,-row=>"$u",-columnspan=>2,-sticky=>"w",-padx=>1);
+													$pole = $tmpFrameH[$i]->Text(-width=>30, -height=>"$heightTest")->grid(-column=>0,-row=>"$u",-columnspan=>2,-sticky=>"w",-padx=>1);
 													$pole->insert("end", "$poznamkaTpv");
 													
 }
@@ -665,7 +630,6 @@ sub _PutOfferToGui {
                         		
 													my $putTextInfo1 = $item . "=";
 													my $putTextInfo2 = $infoPcbOffer[0]->{$item};
-													my @tmpFrame = ();
 													$tmpFrame[$i] = $OfferFrame->Frame(-width=>100, -height=>10)->pack(-side=>'top',-fill=>'x');
 													$tmpFrame[$i] ->Label(-textvariable=>\$putTextInfo1, -fg=>"$colorText1")->pack(-side=>'left');
 													$tmpFrame[$i] ->Label(-textvariable=>\$putTextInfo2, -fg=>"$colorText2")->pack(-side=>'left');
@@ -682,9 +646,9 @@ sub _CheckTableRout {
   				$inCAM->INFO(entity_type=>'layer',entity_path=>"$jobName/$StepName/f",data_type=>'exists');
   			 	if ($inCAM->{doinfo}{gEXISTS} eq "yes") {
   								$inCAM->INFO(units=>'mm',entity_type => 'layer',entity_path => "$jobName/$StepName/f",data_type => 'TOOL');
-  								my @hodnotyFrez = @{$inCAM->{doinfo}{gTOOLfinish_size}};
+  								@hodnotyFrez = @{$inCAM->{doinfo}{gTOOLfinish_size}};
   								@hodnotyFrez = sort ({$a<=>$b} @hodnotyFrez);
-  								my $minFrez = $hodnotyFrez[0];
+  								$minFrez = $hodnotyFrez[0];
   								$minFrez = sprintf "%0.0f",($minFrez);
   			
   								$inCAM->INFO(units=>'mm',entity_type => 'layer',entity_path => "$jobName/$StepName/f",data_type => 'TOOL');
@@ -700,13 +664,13 @@ sub _CheckTableRout {
 }
 sub _CheckTableDrill {
 			$inCAM->INFO(units=>'mm',entity_type => 'layer',entity_path => "$jobName/$StepName/m",data_type => 'TOOL');
-			my @hodnotyVrtaku = @{$inCAM->{doinfo}{gTOOLfinish_size}};
+			@hodnotyVrtaku = @{$inCAM->{doinfo}{gTOOLfinish_size}};
 			@hodnotyVrtaku = sort ({$a<=>$b} @hodnotyVrtaku);
-			my $minVrtak = $hodnotyVrtaku[0];
+			$minVrtak = @hodnotyVrtaku[0];
 			$minVrtak = sprintf "%0.0f",($minVrtak);
 			
 			$inCAM->INFO(units=>'mm',entity_type => 'layer',entity_path => "$jobName/$StepName/m",data_type => 'TOOL');
-			my @hodnotyDrill = @{$inCAM->{doinfo}{gTOOLbit}};
+			@hodnotyDrill = @{$inCAM->{doinfo}{gTOOLbit}};
 			
 			foreach my $oneDrill (@hodnotyDrill) {
 				if ($oneDrill == 0) {
@@ -716,26 +680,24 @@ sub _CheckTableDrill {
 }
 
 sub _CheckTermoPoint {
-	my @seznamVrstev = ();
-	my $layerCount = 0;
 	
 	$inCAM->INFO('entity_type'=>'matrix','entity_path'=>"$jobName/matrix",'data_type'=>'ROW');
    	 my $totalRows = ${$inCAM->{doinfo}{gROWrow}}[-1];
-   	 for (my $count=0;$count<=$totalRows;$count++) {
+   	 for ($count=0;$count<=$totalRows;$count++) {
 				my $rowPolarity = ${$inCAM->{doinfo}{gROWpolarity}}[$count];
 				my $rowName = ${$inCAM->{doinfo}{gROWname}}[$count];
 				my $rowContext = ${$inCAM->{doinfo}{gROWcontext}}[$count];
 				my $rowType = ${$inCAM->{doinfo}{gROWlayer_type}}[$count];
-					if ($rowContext eq "board" && ($rowType eq "signal" || $rowType eq "mixed" || $rowType eq "power_ground")) {
+					if ($rowFilled ne "empty" && $rowContext eq "board" && ($rowType eq "signal" || $rowType eq "mixed" || $rowType eq "power_ground")) {
 				            $layerCount ++;
 				            push(@seznamVrstev,$rowName,$rowPolarity);
 					}
 		}
-	my %hashSeznamVrstev = @seznamVrstev;
+	%hashSeznamVrstev = @seznamVrstev;
 
 
 	if ($layerCount > 2) {
-		foreach my $oneLay (keys %hashSeznamVrstev) {
+		foreach $oneLay (keys %hashSeznamVrstev) {
 		my $padTermalCount = 0;
 		my $infoFile = $inCAM->INFO(entity_type=>'layer',entity_path=>"$jobName/$StepName/$oneLay",data_type=>'FEATURES',options=>'break_sr',parse=>'no');
 				my $padCount = 0;
@@ -748,11 +710,11 @@ sub _CheckTermoPoint {
 					}
 				}
 				if ($padTermalCount > 0) {
-					my @errorLayers = ();
-					my $valueHash = $hashSeznamVrstev{$oneLay};
+					$valueHash = $hashSeznamVrstev{$oneLay};
 						unless ($valueHash eq "negative") {
 							push(@errorLayers,$oneLay);
 								push @errorMessageArr, "- Zavazna chyba, vrstva @errorLayers obsahuje termobody a je nastavena jako $valueHash, skript konci - nejprve oprav.";
+							$quickExist = 1;
 						} 
 				}
 				close INFOFILE;
@@ -788,12 +750,12 @@ sub _CheckStatusPriprava {
 			$res = 0;
 			last;
 		}
-		
 	}
 
 		if ($res) {
 			push @errorMessageArr , '- Pozor, zakazka neni ve stavu "Predvyrobni priprava" !';
 		}
+
 
 	return ();
 }
@@ -865,11 +827,12 @@ sub _MoveToServer {
 	 	 my $cestaArchivEL = 0;
 	 	 my $jobFolder = 0;
 	 	 			
-	 	$jobFolder = uc substr($jobName,0,4);
+	 	 			
+	 	$jobFolder = substr($jobName,0,3);
 					
 					#$archivePath = '\\\\gatema.cz/fs/EL_DATA';
 					
-					my $archivePath = EnumsPaths->Jobs_ELTESTS;
+					$archivePath = EnumsPaths->Jobs_ELTESTS;
 				
 						$cestaArchivEL  = "$archivePath/$jobFolder";
 							unless (-e "$cestaArchivEL") {
