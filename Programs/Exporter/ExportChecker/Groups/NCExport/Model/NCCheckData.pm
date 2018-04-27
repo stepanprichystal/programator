@@ -35,6 +35,7 @@ use aliased 'Packages::CAMJob::Routing::RoutDepthCheck';
 use aliased 'Packages::CAM::UniDTM::Enums' => 'DTMEnums';
 use aliased 'CamHelpers::CamDTM';
 use aliased 'Packages::CAMJob::Drilling::BlindDrill::BlindDrillInfo';
+use aliased 'Packages::CAMJob::Drilling::CountersinkCheck';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -444,19 +445,43 @@ sub OnCheckGroupData {
 
 		foreach my $s ( CamStepRepeat->GetUniqueNestedStepAndRepeat( $inCAM, $jobId, $stepName ) ) {
 
-			foreach my $l ( @blindL ) {
+			foreach my $l (@blindL) {
 				my $errStrStep = "";
 				unless ( BlindDrillInfo->BlindDrillChecks( $inCAM, $jobId, $s->{"stepName"}, $l, \$errStrStep ) ) {
 
-					$dataMngr->_AddErrorResult(
-								  "Blind layers",
-								  "Chybné slepé otvory (step: \"" . $s->{"stepName"} . "\", layer: \"" . $l->{"gROWname"} . "\"):\n $errStrStep\n\n"
-					);
+					$dataMngr->_AddErrorResult( "Blind layers",
+							   "Chybné slepé otvory (step: \"" . $s->{"stepName"} . "\", layer: \"" . $l->{"gROWname"} . "\"):\n $errStrStep\n\n" );
 				}
 			}
 		}
 
 	}
+
+	# 17) Check if tool with angle and depth, has set depth biggar than tool peak len
+	# Muye to zpusobit "zoubek" v otvoru
+
+	my @wrongDepths = ();
+	unless ( CountersinkCheck->WrongDepthForCSinkTool( $inCAM, $jobId, \@wrongDepths ) ) {
+
+		my $str = join(
+			"; ", map {
+				    $_->GetDrillSize ()
+				  . "µm: úhel: "
+				  . $_->GetAngle()
+				  . ", hloubka: "
+				  . ($_->GetDepth() * 1000). "µm, délka špičky: "
+				  . $_->{"peakLen"}."µm"
+			} @wrongDepths
+		);
+
+		$dataMngr->_AddWarningResult(
+			"Countersink tool",
+"V jobu jsou použité nástroje s úhlem, které mají větší hloubku než je délka \"špičky frézy\". V otovoru může být nežádoucí \"zobáček\"\n"
+			  . "Otvory: $str"
+					);
+		
+	}
+
 
 }
 
@@ -468,8 +493,8 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	#	use aliased 'Packages::Export::NCExport::NCExportGroup';
 	#
-	#	my $jobId    = "F13608";
-	#	my $stepName = "panel";
+	#	my $jobId    = " F13608 ";
+	#	my $stepName = " panel ";
 	#
 	#	my $inCAM = InCAM->new();
 	#

@@ -58,8 +58,19 @@ sub OnCheckGroupData {
 		unless ( defined $lInfo->{"comp"} ) {
 			$dataMngr->_AddErrorResult( "Board layer","Layer " . $lInfo->{"name"} . " doesn't have set comp." );
 		}
-
+		
 	}
+	
+	# Test if some compensation are not a number
+	my @wrongComp = grep {$_->{"comp"} !~ (/^-?\d+$/) } @layers;
+	if(@wrongComp){
+		
+		my $str = join("; ", map { "\"".$_->{"name"}."\" = ".$_->{"comp"} } @wrongComp);
+		
+		$dataMngr->_AddErrorResult( "Layer compensation", "Some layers has wrong compensation: $str");
+	}
+	
+	 
  
 }
  

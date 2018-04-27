@@ -20,6 +20,7 @@ use aliased 'Programs::Exporter::ExportChecker::Groups::NifExport::Presenter::Ni
 use aliased 'Helpers::ValueConvertor';
 use aliased 'Helpers::JobHelper';
 use aliased 'Enums::EnumsGeneral';
+use aliased 'Packages::Stackup::Enums' => 'StackEnums';
 use aliased 'CamHelpers::CamCopperArea';
 use aliased 'CamHelpers::CamDrilling';
 use aliased 'CamHelpers::CamGoldArea';
@@ -28,7 +29,7 @@ use aliased 'CamHelpers::CamStepRepeat';
 use aliased 'CamHelpers::CamDTM';
 use aliased 'Packages::Tooling::PressfitOperation';
 use aliased 'Packages::CAMJob::Marking::Marking';
-use aliased 'Packages::CAMJob::Technology::CuLayerCheck';
+use aliased 'Packages::CAMJob::Technology::CuLayer';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -293,17 +294,40 @@ sub OnCheckGroupData {
 
 	if ( $defaultInfo->GetTypeOfPcb() ne "Neplatovany" ) {
 
-		my $maxCuThick = CuLayerCheck->GetMaxCuByClass( $defaultInfo->GetPcbClass() );
+		my $maxCuThick = CuLayer->GetMaxCuByClass( $defaultInfo->GetPcbClass() );
 
 		if ( $defaultInfo->GetBaseCuThick() > $maxCuThick ) {
 			$dataMngr->_AddErrorResult(
-										"Max Cu thickness",
-										"Maximal Cu thickness for pcbclass: "
+										"Max Cu thickness outer layer",
+										"Maximal Cu thickness of outer layers for pcbclass: "
 										  . $defaultInfo->GetPcbClass()
 										  . " is: $maxCuThick µm. Current job Cu thickness is: "
 										  . $defaultInfo->GetBaseCuThick() . "µm"
 			);
 		}
+
+		if ( $defaultInfo->GetLayerCnt() > 2 ) {
+
+			foreach my $cu ( grep { $_->GetType() eq StackEnums->MaterialType_COPPER && $_->GetCopperName() =~ /v\d+/ }
+							 $defaultInfo->GetStackup()->GetAllLayers() )
+			{
+
+				my $maxCuThick = CuLayer->GetMaxCuByClass( $defaultInfo->GetPcbClassInner() );
+
+				if ( $cu->GetThick() > $maxCuThick ) {
+
+					$dataMngr->_AddErrorResult(
+						"Max Cu thickness inner layer",
+						"Maximal Cu thickness of inner layer: ".$cu->GetCopperName()." for pcbclass: "
+						  . $defaultInfo->GetPcbClassInner()
+						  . " is: $maxCuThick µm. Current job Cu thickness is: "
+						  . $cu->GetThick()
+						  . "µm"
+					);
+				}
+			}
+
+		} 
 
 	}
 
@@ -339,7 +363,8 @@ sub OnCheckGroupData {
 											"Pozor jádro (číslo: "
 											  . $coreStackup->GetCoreNumber()
 											  . " ) má v IS vrtání = \"C\" -  \"nakovení\", ale není nastaveno ve složení. "
-											  . "Uprav složení, aby obsahovalo nakovení." );
+											  . "Uprav složení, aby obsahovalo nakovení."
+				);
 			}
 		}
 	}

@@ -111,7 +111,7 @@ sub SetBlindDrills {
 
 				my $typWarn = BlindEnums->GetMethodName($blindType);
 				if($blindType eq BlindEnums->BLINDTYPE_SPECIAL){
-					$typWarn = "<r>$typWarn</r>";
+					$typWarn = "<r>$typWarn - pozor nepoužívat na napojované!</r>";
 				}
 
 				$tReport .=
@@ -162,7 +162,7 @@ sub SetBlindDrills {
 
 		$messMngr->ShowModal( -1, $messType,
 							  [ "Výpočet hlopubky slepých otvorů (step: \"$step\", layer: \"$layer\"):\n", 
-							   "-------------------------------------------------------------------------\n",$tReport, "\nCo chete udělat?" ],
+							   "-------------------------------------------------------------------------\n",$tReport, "\nCo chcete udělat?" ],
 							  \@b );
 
 		if ( $messMngr->Result() == 0 ) {

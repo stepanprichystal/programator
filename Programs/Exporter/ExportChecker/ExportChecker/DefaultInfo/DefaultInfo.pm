@@ -69,6 +69,8 @@ sub new {
 	$self->{"panelType"}     = undef;    # return type of panel from Enums::EnumsProducPanel
 	$self->{"pcbSurface"}    = undef;    # surface from IS
 	$self->{"pcbThick"}      = undef;    # total thick of pcb
+	$self->{"pcbClass"}      = undef;    # pcb class of outer layer
+	$self->{"pcbClassInner"} = undef;    # pcb class of inner layer
 
 	$self->__InitDefault();
 
@@ -91,6 +93,17 @@ sub GetPcbClass {
 	my $self = shift;
 
 	return $self->{"pcbClass"};
+}
+
+sub GetPcbClassInner {
+	my $self = shift;
+
+	# take class from "outer" if not defined
+	if(!defined $self->{"pcbClassInner"} || $self->{"pcbClassInner"} == 0 ){
+		return $self->GetPcbClass();
+	}
+
+	return $self->{"pcbClassInner"};
 }
 
 sub GetLayerCnt {
@@ -258,12 +271,12 @@ sub GetCompByLayer {
 	if ( $self->GetTypeOfPcb() eq 'Neplatovany' ) {
 		return 0;
 	}
-	
+
 	# Detect if it is inner layer
 	my $inner = $layerName =~ /^v\d+$/ ? 1 : 0;
-
+	
 	return EtchOperation->GetCompensation( $cuThick, $class, $inner );
- 
+
 }
 
 sub GetScoreChecker {
@@ -431,8 +444,12 @@ sub SetDefaultLayersSettings {
 			$l->{"comp"} = $self->GetCompByLayer( $l->{"gROWname"} );
 
 			# If layer is negative, set negative compensation
-			if ( $l->{"gROWpolarity"} eq "negative" ) {
+			if ( defined $l->{"comp"} && $l->{"gROWpolarity"} eq "negative" ) {
 				$l->{"comp"} = -$l->{"comp"};
+			}
+			
+			unless(defined $l->{"comp"}){
+				$l->{"comp"} = "NaN";
 			}
 
 		}
@@ -575,6 +592,9 @@ sub __InitDefault {
 	$self->{"signalLayers"} = \@signalLayers;
 
 	$self->{"pcbClass"} = CamJob->GetJobPcbClass( $self->{"inCAM"}, $self->{"jobId"} );
+	
+	$self->{"pcbClassInner"} = CamJob->GetJobPcbClassInner( $self->{"inCAM"}, $self->{"jobId"} );
+	
 
 	$self->{"layerCnt"} = CamJob->GetSignalLayerCnt( $self->{"inCAM"}, $self->{"jobId"} );
 
