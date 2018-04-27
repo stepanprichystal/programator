@@ -235,12 +235,14 @@ sub __WriteMessages() {
 	my $self    = shift;
 	my $richTxt = shift;
 	my $mess;
-
+	 
+ 
 	$richTxt->Freeze();
 
 	$richTxt->BeginFontSize(10.5);
 
 	my @messages = @{ $self->{messages} };
+	my $index = -1;
 
 	for ( my $i = 0 ; $i < scalar(@messages) ; $i++ ) {
 
@@ -258,7 +260,7 @@ sub __WriteMessages() {
 		#foreach my $l (split //,$mess) {
 
 		my $messPom     = "";    # here is stored char bz char message and tested on <r> atd
-		my $messRealLen = 0;
+		
 
 		my $openTag  = "";
 		my $closeTag = "";
@@ -268,7 +270,7 @@ sub __WriteMessages() {
 			$messPom .= $ch;
 
 			$richTxt->WriteText($ch);
-			$messRealLen++;
+			$index++;
 
 			$openTag  = substr $messPom, -3;
 			$closeTag = substr $messPom, -4;
@@ -276,15 +278,18 @@ sub __WriteMessages() {
 			if ( $openTag =~ /<(\w)>/ ) {
 
 				if ( $1 eq "r" ) {
-					$richTxt->BeginTextColour( Wx::Colour->new( 255, 0, 0 ) );
+					$richTxt->BeginTextColour( Wx::Colour->new( 230, 0, 0 ) );
+				}
+				elsif ( $1 eq "g" ) {
+					$richTxt->BeginTextColour( Wx::Colour->new( 40, 200, 0 ) );
 				}
 				elsif ( $1 eq "b" ) {
 					$richTxt->BeginBold();
 				}
-
-				$richTxt->Remove( $messRealLen  - 3, $messRealLen +1 );
-				$messRealLen -= 3;
-
+				$richTxt->Remove( $richTxt->GetLastPosition()-1, $richTxt->GetLastPosition() ); # tohle tady musi byt jinak nejde odmazat posleddni znak
+				$richTxt->Remove( $richTxt->GetLastPosition()-3, $richTxt->GetLastPosition() );
+				 
+			 
 			}
 			elsif ( $closeTag =~ /<\/(\w)>/ ) {
 
@@ -294,9 +299,9 @@ sub __WriteMessages() {
 				else {
 					$richTxt->EndTextColour();
 				}
-
-				$richTxt->Remove( $messRealLen - 4, $messRealLen + 1  );
-				$messRealLen -= 4;
+				$richTxt->Remove( $richTxt->GetLastPosition()-1, $richTxt->GetLastPosition() ); # tohle tady musi byt jinak nejde odmazat posleddni znak
+				$richTxt->Remove( $richTxt->GetLastPosition()-4, $richTxt->GetLastPosition() );
+				$index -= 4;
 			}
 
 		}
@@ -305,8 +310,10 @@ sub __WriteMessages() {
 
 		if ( $i + 1 != scalar(@messages) ) {
 			$richTxt->BeginFontSize(1);
-			$richTxt->Newline;
-			$richTxt->Newline;
+#			$richTxt->WriteText('\n');
+#			$richTxt->WriteText('\n');
+#			$index++;
+#			$index++;
 			$richTxt->BeginFontSize(10.5);
 		}
 

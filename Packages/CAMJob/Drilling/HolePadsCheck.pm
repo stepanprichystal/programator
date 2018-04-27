@@ -2,7 +2,7 @@
 # Description: Function for checking pad in signal layer of holes
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::CAMJob::Drilling::CheckHolePads;
+package Packages::CAMJob::Drilling::HolePadsCheck;
 
 #3th party library
 use strict;
@@ -150,7 +150,7 @@ sub __MissingPadsExsit {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	use aliased 'Packages::CAMJob::Drilling::CheckHolePads';
+	use aliased 'Packages::CAMJob::Drilling::HolePadsCheck';
 	use aliased 'Packages::InCAM::InCAM';
 
 	my $inCAM = InCAM->new();
@@ -166,7 +166,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 		my $mess = "";
 
 		my %pads = ();
-		unless ( CheckHolePads->CheckMissingPadsAllLayers( $inCAM, $jobId, $step->{"stepName"}, \%pads ) ) {
+		unless ( HolePadsCheck->CheckMissingPadsAllLayers( $inCAM, $jobId, $step->{"stepName"}, \%pads ) ) {
 
 			foreach my $l ( keys %pads ) {
 

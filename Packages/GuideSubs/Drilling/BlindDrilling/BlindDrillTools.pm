@@ -1,5 +1,5 @@
 #-------------------------------------------------------------------------------------------#
-# Description: Checking rout layer during processing pcb
+# Description: Set blind drill depths
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Packages::GuideSubs::Drilling::BlindDrilling::BlindDrillTools;
@@ -28,8 +28,8 @@ use aliased 'Packages::CAMJob::Drilling::BlindDrill::Enums' => 'BlindEnums';
 #-------------------------------------------------------------------------------------------#
 #  Public method
 #-------------------------------------------------------------------------------------------#
-
-sub SetBlindDrillTools {
+# Set blind drill depths form holes where is not defined depth yet
+sub SetBlindDrills {
 	my $self     = shift;
 	my $inCAM    = shift;
 	my $jobId    = shift;
@@ -61,7 +61,7 @@ sub SetBlindDrillTools {
 
 			my $drillSize = $t->{"gTOOLdrill_size"};
 
-			$tReport .= "- Otvor: " . $drillSize . "µm:";
+			$tReport .= "<b>• Otvor: " . $drillSize . "µm</b>:";
 
 			my %resType = ();
 			my $blindType = BlindDrill->GetDrillType( $stackup, $drillSize, \%lInfo, \%resType );
@@ -70,17 +70,17 @@ sub SetBlindDrillTools {
 
 				my $t1 = $resType{ BlindEnums->BLINDTYPE_STANDARD };
 				my $t2 = $resType{ BlindEnums->BLINDTYPE_SPECIAL };
-				$tReport .= " FAIL: Nelze vyrobit slepý otvor pomocí žádné metody výpočtu hloubky:\n";
+				$tReport .= " <r>FAIL</r>: Nelze vyrobit slepý otvor pomocí žádné metody výpočtu hloubky:\n";
 				$tReport .= "	" . BlindEnums->GetMethodName( BlindEnums->BLINDTYPE_STANDARD ) . ":\n";
 				$tReport .=
 				    "	- Aspect ratio otvoru: "
-				  . ( $t1->{"arOk"} ? "OK" : "FAIL" )
+				  . ( $t1->{"arOk"} ? "<g>OK</g>" : "<r>FAIL</r>" )
 				  . " (požadované: max 1.0, aktuální: "
 				  . sprintf( "%.2f", $t1->{"ar"} ) . ") \n";
 				$tReport .=
 				    "	- Minimální izolace špičky vrtáku od Cu ("
 				  . $t1->{"requestedIsolCuLayer"} . "): "
-				  . ( $t1->{"isolOk"} ? "OK" : "FAIL" )
+				  . ( $t1->{"isolOk"} ? "<g>OK</g>" : "<r>FAIL</r>" )
 				  . " (požadovaná: "
 				  . int( $t1->{"requestedIsolThick"} )
 				  . " µm, aktuální: "
@@ -89,13 +89,13 @@ sub SetBlindDrillTools {
 				$tReport .= "	" . BlindEnums->GetMethodName( BlindEnums->BLINDTYPE_SPECIAL ) . ":\n";
 				$tReport .=
 				    "	- Aspect ratio otvoru: "
-				  . ( $t2->{"arOk"} ? "OK" : "FAIL" )
+				  . ( $t2->{"arOk"} ? "<g>OK</g>" : "<r>FAIL</r>" )
 				  . " (požadované: max 1.0, aktuální: "
 				  . sprintf( "%.2f", $t2->{"ar"} ) . ") \n";
 				$tReport .=
 				    "	- Minimální izolace špičky vrtáku od Cu ("
 				  . $t1->{"requestedIsolCuLayer"} . "): "
-				  . ( $t2->{"isolOk"} ? "OK" : "FAIL" )
+				  . ( $t2->{"isolOk"} ? "<g>OK</g>" : "<r>FAIL</r>" )
 				  . " (požadovaná: "
 				  . int( $t2->{"requestedIsolThick"} )
 				  . " µm, aktuální: "
@@ -109,39 +109,44 @@ sub SetBlindDrillTools {
 				my $depth = BlindDrill->ComputeDrillDepth( $stackup, $drillSize, \%lInfo, $blindType );
 				$t->{"userColumns"}->{ EnumsDrill->DTMclmn_DEPTH } = $depth / 1000;
 
+				my $typWarn = BlindEnums->GetMethodName($blindType);
+				if($blindType eq BlindEnums->BLINDTYPE_SPECIAL){
+					$typWarn = "<r>$typWarn</r>";
+				}
+
 				$tReport .=
-				    "OK:\n"
+				    " <g>OK</g> Metoda výpočtu - $typWarn:\n"
 				  . "	- Vypočítaná hloubka:  "
 				  . sprintf("%.2f", $depth)
 				  . "µm \n"
 				  . "	- Aspect ratio otvoru: "
-				  . ( $resType{$blindType}->{"arOk"} ? "OK" : "FAIL" )
-				  . " (požadované: min1.0, vypočítané: "
+				  . ( $resType{$blindType}->{"arOk"} ? "<g>OK</g>" : "<r>FAIL</r>" )
+				  . " (požadované: <=1.0, vypočítané: "
 				  . sprintf( "%.2f", $resType{$blindType}->{"ar"} ) . ") \n";
 				$tReport .=
 				    "	- Minimální izolace špičky vrtáku od Cu ("
 				  . $resType{$blindType}->{"requestedIsolCuLayer"} . "): "
-				  . ( $resType{$blindType}->{"isolOk"} ? "OK" : "FAIL" )
+				  . ( $resType{$blindType}->{"isolOk"} ? "<g>OK</g>" : "<r>FAIL</r>" )
 				  . " (požadovaná: "
 				  . int( $resType{$blindType}->{"requestedIsolThick"} )
 				  . " µm, vypočítané: "
 				  . int( $resType{$blindType}->{"currentIsolThick"} )
-				  . " µm) \n";
+				  . " µm) \n\n";
 
 			}
 
 		}
 
 		# 2) Process tools already with depths
-		$tReport .= "\n2) Otvory s vyplněnou hloubkou vrtání (script již hloubku nepřepíše):\n";
+		$tReport .= "2) Otvory s vyplněnou hloubkou vrtání (script již hloubku nepřepíše):\n";
 
 		foreach my $t (@toolSet) {
 			my $drillSize = $t->{"gTOOLdrill_size"};
 
-			$tReport .= "- Otvor:  " . $drillSize . "µm  \n";
+			$tReport .= "<b>• Otvor:  " . $drillSize . "µm</b>  \n";
 		}
 
-		# set tools
+		# 3) Set tools
 		my @b        = ("Nic nedělat");
 		my $messType = EnumsGeneral->MessageType_QUESTION;
 		if ( $result && scalar(@toolUnset) ) {
@@ -156,7 +161,8 @@ sub SetBlindDrillTools {
 		}
 
 		$messMngr->ShowModal( -1, $messType,
-							  [ "Výpočet hlopubky slepých otvorů (step: \"$step\", layer: \"$layer\"):\n", $tReport, "\nCo chete udělat?" ],
+							  [ "Výpočet hlopubky slepých otvorů (step: \"$step\", layer: \"$layer\"):\n", 
+							   "-------------------------------------------------------------------------\n",$tReport, "\nCo chete udělat?" ],
 							  \@b );
 
 		if ( $messMngr->Result() == 0 ) {
@@ -178,7 +184,8 @@ sub SetBlindDrillTools {
 	return $result;
 }
 
-sub SetBlindDrillToolsAll {
+# Set blind drills to all layers all steps
+sub SetBlindDrillsAllSteps {
 	my $self     = shift;
 	my $inCAM    = shift;
 	my $jobId    = shift;
@@ -202,7 +209,7 @@ sub SetBlindDrillToolsAll {
 				next;
 			}
 
-			unless ( $self->SetBlindDrillTools( $inCAM, $jobId, $s->{"stepName"}, $l->{"gROWname"}, $messMngr ) ) {
+			unless ( $self->SetBlindDrills( $inCAM, $jobId, $s->{"stepName"}, $l->{"gROWname"}, $messMngr ) ) {
 
 				$result = 0;
 			}
@@ -231,7 +238,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $mess = "";
 
-	my $res = BlindDrillTools->SetBlindDrillToolsAll( $inCAM, $jobId, $messMngr );
+	my $res = BlindDrillTools->SetBlindDrillsAllSteps( $inCAM, $jobId, $messMngr );
 
 }
 

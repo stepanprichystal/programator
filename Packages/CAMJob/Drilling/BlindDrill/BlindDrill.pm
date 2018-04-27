@@ -1,5 +1,5 @@
 #-------------------------------------------------------------------------------------------#
-# Description: Function for checking aspect ratio
+# Description: Function compute blind drill depth
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Packages::CAMJob::Drilling::BlindDrill::BlindDrill;
@@ -17,24 +17,18 @@ use aliased 'Helpers::GeneralHelper';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'Enums::EnumsDrill';
 use aliased 'Packages::CAMJob::Drilling::BlindDrill::Enums';
-
-#use aliased 'CamHelpers::CamHelper';
-#use aliased 'CamHelpers::CamDrilling';
-#use aliased 'CamHelpers::CamJob';
-#use aliased 'Helpers::FileHelper';
-#use aliased 'Helpers::JobHelper';
-#use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'Packages::Stackup::Stackup::Stackup';
 use aliased 'Packages::Stackup::Enums' => 'StackEnums';
-
-#use aliased 'Packages::CAM::UniDTM::UniDTM';
 use aliased 'Packages::CAMJob::Drilling::BlindDrill::BlindDrillCheck';
 
 #-------------------------------------------------------------------------------------------#
 #  Script methods
 #-------------------------------------------------------------------------------------------#
 
-# Return
+# Return type of calculation method for drill types
+# Exist two types:
+# - BLINDTYPE_STANDARD - Cylindrical part of tool ends at the middle of landing Cu (TYPE 1)
+# - BLINDTYPE_SPECIAL - Concical part of tool is half way through the landing Cu (TYPE 2)
 sub GetDrillType {
 	my $self      = shift;
 	my $stackup   = shift;
@@ -59,9 +53,9 @@ sub GetDrillType {
 														 $resData->{ Enums->BLINDTYPE_SPECIAL } );
 
 	# compute a for type 1 and 2
-	my $t1AROk = BlindDrillCheck->AspectRatioCheckn( $drillSize, $drillDepthT1, $resData->{ Enums->BLINDTYPE_STANDARD } );
+	my $t1AROk = BlindDrillCheck->AspectRatioCheck( $drillSize, $drillDepthT1, $resData->{ Enums->BLINDTYPE_STANDARD } );
 
-	my $t2AROk = BlindDrillCheck->AspectRatioCheckn( $drillSize, $drillDepthT2, $resData->{ Enums->BLINDTYPE_SPECIAL } );
+	my $t2AROk = BlindDrillCheck->AspectRatioCheck( $drillSize, $drillDepthT2, $resData->{ Enums->BLINDTYPE_SPECIAL } );
 
 	# Check if STANDARD type is possible
 	if ( $t1IsolOk && $t1AROk ) {
@@ -86,6 +80,8 @@ sub GetDrillType {
 	return $drillType;
 }
 
+
+# Compute blind drill depth
 sub ComputeDrillDepth {
 	my $self      = shift;
 	my $stackup   = shift;

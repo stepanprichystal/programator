@@ -341,7 +341,7 @@ sub __PreparePLTDEPTHNC {
 			my $lComp = CamLayer->RoutCompensation( $inCAM, $l->{"gROWname"}, "document" );
 
 			# check for special rout 6.5mm with depth
-			$self->__CheckCountersink( $l, $lComp );
+			$self->__CountersinkCheck( $l, $lComp );
 
 			$inCAM->COM( "merge_layers", "source_layer" => $lComp, "dest_layer" => $lName );
 			$inCAM->COM( 'delete_layer', "layer" => $lComp );
@@ -385,7 +385,7 @@ sub __PrepareNPLTDEPTHNC {
 			my $lComp = CamLayer->RoutCompensation( $inCAM, $l->{"gROWname"}, "document" );
 
 			# check for special rout 6.5mm with depth
-			$self->__CheckCountersink( $l, $lComp );
+			$self->__CountersinkCheck( $l, $lComp );
 
 			$inCAM->COM( "merge_layers", "source_layer" => $lComp, "dest_layer" => $lName );
 			$inCAM->COM( 'delete_layer', "layer" => $lComp );
@@ -533,7 +533,7 @@ sub __PrepareNPLTTHROUGHNC {
 	$layer->SetOutputLayer($lName);
 }
 
-sub __CheckCountersink {
+sub __CountersinkCheck {
 	my $self      = shift;
 	my $layer     = shift;
 	my $layerComp = shift;

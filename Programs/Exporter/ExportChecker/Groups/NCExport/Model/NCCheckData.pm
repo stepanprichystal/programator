@@ -21,19 +21,20 @@ use aliased 'CamHelpers::CamHelper';
 use aliased 'CamHelpers::CamStepRepeat';
 use aliased 'CamHelpers::CamHistogram';
 use aliased 'Programs::Exporter::ExportChecker::Groups::NifExport::Presenter::NifHelper';
-use aliased 'Packages::CAMJob::Drilling::DrillChecking::LayerCheckError';
-use aliased 'Packages::CAMJob::Drilling::DrillChecking::LayerCheckWarn';
+use aliased 'Packages::CAMJob::Drilling::DrillChecking::LayerErrorInfo';
+use aliased 'Packages::CAMJob::Drilling::DrillChecking::LayerWarnInfo';
 use aliased 'Packages::Routing::RoutLayer::RoutChecks::RoutCheckTools';
 use aliased 'Packages::CAM::UniRTM::UniRTM::UniRTM';
 use aliased 'Packages::CAM::UniDTM::UniDTM';
 use aliased 'Helpers::GeneralHelper';
-use aliased 'Packages::CAMJob::Drilling::CheckAspectRatio';
-use aliased 'Packages::CAMJob::Drilling::CheckHolePads';
-use aliased 'Packages::CAMJob::Routing::CheckRoutPocket';
+use aliased 'Packages::CAMJob::Drilling::AspectRatioCheck';
+use aliased 'Packages::CAMJob::Drilling::HolePadsCheck';
+use aliased 'Packages::CAMJob::Routing::RoutPocketCheck';
 use aliased 'Enums::EnumsGeneral';
-use aliased 'Packages::CAMJob::Routing::CheckRoutDepth';
+use aliased 'Packages::CAMJob::Routing::RoutDepthCheck';
 use aliased 'Packages::CAM::UniDTM::Enums' => 'DTMEnums';
 use aliased 'CamHelpers::CamDTM';
+use aliased 'Packages::CAMJob::Drilling::BlindDrill::BlindDrillInfo';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -76,13 +77,13 @@ sub OnCheckGroupData {
 	# 2) Checking NC layers
 	my $mess = "";    # errors
 
-	unless ( LayerCheckError->CheckNCLayers( $inCAM, $jobId, $stepName, undef, \$mess ) ) {
+	unless ( LayerErrorInfo->CheckNCLayers( $inCAM, $jobId, $stepName, undef, \$mess ) ) {
 		$dataMngr->_AddErrorResult( "Checking NC layer", $mess );
 	}
 
 	my $mess2 = "";    # warnings
 
-	unless ( LayerCheckWarn->CheckNCLayers( $inCAM, $jobId, $stepName, undef, \$mess2 ) ) {
+	unless ( LayerWarnInfo->CheckNCLayers( $inCAM, $jobId, $stepName, undef, \$mess2 ) ) {
 		$dataMngr->_AddWarningResult( "Checking NC layer", $mess2 );
 	}
 
@@ -287,7 +288,7 @@ sub OnCheckGroupData {
 	foreach my $s (@steps) {
 
 		my %res = ();
-		unless ( CheckAspectRatio->CheckWrongARAllLayers( $inCAM, $jobId, $s, \%res ) ) {
+		unless ( AspectRatioCheck->CheckWrongARAllLayers( $inCAM, $jobId, $s, \%res ) ) {
 
 			my $mess = "";
 			if ( @{ $res{"max10.0"} } ) {
@@ -339,7 +340,7 @@ sub OnCheckGroupData {
 		my $mess = "";
 
 		my %pads = ();
-		unless ( CheckHolePads->CheckMissingPadsAllLayers( $inCAM, $jobId, $step, \%pads ) ) {
+		unless ( HolePadsCheck->CheckMissingPadsAllLayers( $inCAM, $jobId, $step, \%pads ) ) {
 
 			foreach my $l ( keys %pads ) {
 
@@ -369,7 +370,7 @@ sub OnCheckGroupData {
 
 		my @layerInf = ();
 
-		unless ( CheckRoutPocket->CheckRoutPocketDirAllLayers( $inCAM, $jobId, $stepName, 1, \@layerInf ) ) {
+		unless ( RoutPocketCheck->RoutPocketCheckDirAllLayers( $inCAM, $jobId, $stepName, 1, \@layerInf ) ) {
 
 			my $str = join(
 				"\n",
@@ -408,7 +409,7 @@ sub OnCheckGroupData {
 	# 14) Check there aro not merged chains with same tool diameter (only depth milling)
 	# (it is better when chains are merged, because of smaller amnount G82 command in NC programs)
 	my $messRD = "";
-	unless ( CheckRoutDepth->CheckDepthChainMerge( $inCAM, $jobId, \$messRD ) ) {
+	unless ( RoutDepthCheck->CheckDepthChainMerge( $inCAM, $jobId, \$messRD ) ) {
 		$dataMngr->_AddErrorResult( "Merge chains", $messRD );
 	}
 
@@ -435,7 +436,28 @@ sub OnCheckGroupData {
 			}
 		}
 	}
-	
+
+	# 16)Check blind holes, depths, aspet ratio, isolation
+	my @blindL = CamDrilling->GetNCLayersByTypes( $inCAM, $jobId, [ EnumsGeneral->LAYERTYPE_plt_bDrillTop, EnumsGeneral->LAYERTYPE_plt_bDrillBot ] );
+
+	if ( scalar(@blindL) ) {
+
+		foreach my $s ( CamStepRepeat->GetUniqueNestedStepAndRepeat( $inCAM, $jobId, $stepName ) ) {
+
+			foreach my $l ( @blindL ) {
+				my $errStrStep = "";
+				unless ( BlindDrillInfo->BlindDrillChecks( $inCAM, $jobId, $s->{"stepName"}, $l, \$errStrStep ) ) {
+
+					$dataMngr->_AddErrorResult(
+								  "Blind layers",
+								  "Chybné slepé otvory (step: \"" . $s->{"stepName"} . "\", layer: \"" . $l->{"gROWname"} . "\"):\n $errStrStep\n\n"
+					);
+				}
+			}
+		}
+
+	}
+
 }
 
 #-------------------------------------------------------------------------------------------#

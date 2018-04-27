@@ -3,7 +3,7 @@
 # when some warning occur, NC export is still possible
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::CAMJob::Drilling::DrillChecking::LayerCheckWarn;
+package Packages::CAMJob::Drilling::DrillChecking::LayerWarnInfo;
 
 #3th party library
 use utf8;
@@ -266,7 +266,7 @@ sub __GetLayersByType {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	use aliased 'Packages::CAMJob::Drilling::DrillChecking::LayerCheckWarn';
+	use aliased 'Packages::CAMJob::Drilling::DrillChecking::LayerWarnInfo';
 
 	use aliased 'Packages::InCAM::InCAM';
 
@@ -275,7 +275,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $mess = "";
 
-	my $result = LayerCheckWarn->CheckNCLayers( $inCAM, $jobId, "panel", undef, \$mess );
+	my $result = LayerWarnInfo->CheckNCLayers( $inCAM, $jobId, "panel", undef, \$mess );
 
 	print STDERR "Result is $result \n";
 

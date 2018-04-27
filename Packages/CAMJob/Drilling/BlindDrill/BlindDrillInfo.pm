@@ -1,5 +1,5 @@
 #-------------------------------------------------------------------------------------------#
-# Description: Function for checking aspect ratio
+# Description: Return human readable report of blind drills, if depths are ok
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Packages::CAMJob::Drilling::BlindDrill::BlindDrillInfo;
@@ -114,7 +114,7 @@ sub BlindDrillChecks {
 #
 #			# Check Aspect ratio
 #			my %resultAR = ();
-#			unless ( BlindDrillCheck->AspectRatioCheckn( $tool->GetDrillSize(), $tool->GetDepth() * 1000, \%resultAR ) ) {
+#			unless ( BlindDrillCheck->AspectRatioCheck( $tool->GetDrillSize(), $tool->GetDepth() * 1000, \%resultAR ) ) {
 #
 #				$toolOk = 0;
 #				$ettStr .= "- Nevyhovující Aspect Ratio otvoru (" . $resultAR{"ar"} . ")\n";

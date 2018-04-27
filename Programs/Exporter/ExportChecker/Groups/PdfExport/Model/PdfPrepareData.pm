@@ -17,7 +17,7 @@ use aliased 'Programs::Exporter::ExportChecker::Enums';
 use aliased 'CamHelpers::CamHelper';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'Connectors::HeliosConnector::HegMethods';
-use aliased 'Packages::CAMJob::Drilling::CheckCountersink';
+use aliased 'Packages::CAMJob::Drilling::CountersinkCheck';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -128,7 +128,7 @@ sub OnPrepareGroupData {
 	# 7) default NC special export
 	my $defNCSpec = 0;
 
-	if (  CheckCountersink->ExistCountersink( $inCAM, $jobId )) {
+	if (  CountersinkCheck->ExistCountersink( $inCAM, $jobId )) {
 
 		$defNCSpec = 1;
 	}

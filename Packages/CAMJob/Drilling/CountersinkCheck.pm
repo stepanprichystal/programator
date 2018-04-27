@@ -2,7 +2,7 @@
 # Description: Function for checking countersink
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::CAMJob::Drilling::CheckCountersink;
+package Packages::CAMJob::Drilling::CountersinkCheck;
 
 #3th party library
 use strict;
@@ -114,14 +114,14 @@ sub ExistCountersinkByLayer {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	use aliased 'Packages::CAMJob::Drilling::CheckCountersink';
+	use aliased 'Packages::CAMJob::Drilling::CountersinkCheck';
 	use aliased 'Packages::InCAM::InCAM';
 
 	my $inCAM = InCAM->new();
 	my $jobId = "d152457";
 
 	my %res = ();
-	my $r = CheckCountersink->ExistCountersink( $inCAM, $jobId );
+	my $r = CountersinkCheck->ExistCountersink( $inCAM, $jobId );
 
 	print $r;
 

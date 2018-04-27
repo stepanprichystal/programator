@@ -2,7 +2,7 @@
 # Description: Function for checking rout pocket
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::CAMJob::Routing::CheckRoutPocket;
+package Packages::CAMJob::Routing::RoutPocketCheck;
 
 #3th party library
 use strict;
@@ -29,7 +29,7 @@ use aliased 'Packages::Polygon::Features::Features::Features';
 #-------------------------------------------------------------------------------------------#
 
 # Check if rout pocket dierction is routed from inside to outside
-sub CheckRoutPocketDir {
+sub RoutPocketCheckDir {
 	my $self        = shift;
 	my $inCAM       = shift;
 	my $jobId       = shift;
@@ -88,7 +88,7 @@ sub CheckRoutPocketDir {
 
 # Check if rout pocket dierction is routed from inside to outside
 # Check all zaxis routing from top/bot
-sub CheckRoutPocketDirAllLayers {
+sub RoutPocketCheckDirAllLayers {
 	my $self    = shift;
 	my $inCAM   = shift;
 	my $jobId   = shift;
@@ -105,7 +105,7 @@ sub CheckRoutPocketDirAllLayers {
 
 	foreach my $t (@types) {
 
-		unless ( $self->CheckRoutPocketDir( $inCAM, $jobId, $step, $t, $breakSR, $errInfo ) ) {
+		unless ( $self->RoutPocketCheckDir( $inCAM, $jobId, $step, $t, $breakSR, $errInfo ) ) {
 
 			$result = 0;
 		}
@@ -121,7 +121,7 @@ sub CheckRoutPocketDirAllLayers {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	use aliased 'Packages::CAMJob::Routing::CheckRoutPocket';
+	use aliased 'Packages::CAMJob::Routing::RoutPocketCheck';
 	use aliased 'Packages::InCAM::InCAM';
 
 	my $inCAM = InCAM->new();
@@ -129,7 +129,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	my $step  = "o+1";
 
 	my @pole = ();
-	my $res = CheckRoutPocket->CheckRoutPocketDirAllLayers( $inCAM, $jobId, $step, 1, \@pole);
+	my $res = RoutPocketCheck->RoutPocketCheckDirAllLayers( $inCAM, $jobId, $step, 1, \@pole);
 
 	 
 

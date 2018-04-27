@@ -3,7 +3,7 @@
 # when some errors occur, NC export is not possible
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::CAMJob::Drilling::DrillChecking::LayerCheckError;
+package Packages::CAMJob::Drilling::DrillChecking::LayerErrorInfo;
 
 #3th party library
 use utf8;
@@ -704,7 +704,7 @@ sub __GetLayersByType {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	use aliased 'Packages::CAMJob::Drilling::DrillChecking::LayerCheckError';
+	use aliased 'Packages::CAMJob::Drilling::DrillChecking::LayerErrorInfo';
 
 	use aliased 'Packages::InCAM::InCAM';
 
@@ -713,7 +713,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $mess = "";
 
-	my $result = LayerCheckError->CheckNCLayers( $inCAM, $jobId, "panel", undef, \$mess );
+	my $result = LayerErrorInfo->CheckNCLayers( $inCAM, $jobId, "panel", undef, \$mess );
 
 	print STDERR "Result is $result \n";
 

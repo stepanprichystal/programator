@@ -1,5 +1,5 @@
 #-------------------------------------------------------------------------------------------#
-# Description: Function for checking aspect ratio
+# Description: Function for checking aspect ratio, isolation
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Packages::CAMJob::Drilling::BlindDrill::BlindDrillCheck;
@@ -14,16 +14,7 @@ use Math::Trig ':pi';
 
 use aliased 'Helpers::GeneralHelper';
 use aliased 'Enums::EnumsGeneral';
-
-#use aliased 'CamHelpers::CamHelper';
 use aliased 'CamHelpers::CamDrilling';
-
-#use aliased 'CamHelpers::CamJob';
-#use aliased 'Helpers::FileHelper';
-#use aliased 'Helpers::JobHelper';
-#use aliased 'Connectors::HeliosConnector::HegMethods';
-#use aliased 'Packages::Stackup::Stackup::Stackup';
-#use aliased 'Packages::CAM::UniDTM::UniDTM';
 use aliased 'Enums::EnumsDrill';
 use aliased 'Packages::Stackup::Enums' => 'StackEnums';
 use aliased 'Packages::CAMJob::Drilling::BlindDrill::Enums';
@@ -33,6 +24,7 @@ use aliased 'Packages::CAMJob::Drilling::BlindDrill::BlindDrill';
 #  Script methods
 #-------------------------------------------------------------------------------------------#
 
+# Check if real depth is in tolerance +-10µm with computed depth
 sub CheckDrillDepth {
 	my $self       = shift;
 	my $stackup    = shift;
@@ -40,7 +32,7 @@ sub CheckDrillDepth {
 	my $drillDepth = shift;          # DTM uni tool
 	my $ncLayer    = shift;          # NC Layer with start/stop properties
 	my $resultData = shift // {};    # result data wehen check fail
- 
+
 	my $result = 1;
 
 	# GetDrillType
@@ -50,12 +42,12 @@ sub CheckDrillDepth {
 
 		my $depthComputed = BlindDrill->ComputeDrillDepth( $stackup, $drillSize, $ncLayer, $type );
 
-		  # tolerance 10µm
-		  if ( abs( $depthComputed - $drillSize ) > 10 ) {
+		# tolerance 10µm
+		if ( abs( $depthComputed - $drillSize ) > 10 ) {
 			$result = 0;
-			
+
 		}
-		
+
 		$resultData->{"computedDepth"} = $depthComputed;
 
 	}
@@ -65,6 +57,7 @@ sub CheckDrillDepth {
 
 }
 
+# Cehck if isolatiopn from peak to nexct Cu layer is equal or bigger than requested isolation
 sub CheckDrillIsolation {
 	my $self       = shift;
 	my $stackup    = shift;
@@ -104,31 +97,33 @@ sub CheckDrillIsolation {
 	if ( $drillType eq Enums->BLINDTYPE_STANDARD ) {
 
 		$reqIsol = Enums->MIN_ISOLATION + Enums->DRILL_TOLERANCE + $peakLen - $endCuThick / 2;
-		
+
 		print STDERR "Type 1: Isolation: $reqIsol\n";
 
 	}
 	elsif ( $drillType eq Enums->BLINDTYPE_SPECIAL ) {
 
-		$reqIsol = Enums->MIN_ISOLATION + Enums->DRILL_TOLERANCE + (( $peakLen / 2 - $endCuThick / 2 ) < 0 ? 0 : ( $peakLen / 2 - $endCuThick / 2 ));
+		$reqIsol =
+		  Enums->MIN_ISOLATION + Enums->DRILL_TOLERANCE + ( ( $peakLen / 2 - $endCuThick / 2 ) < 0 ? 0 : ( $peakLen / 2 - $endCuThick / 2 ) );
 		print STDERR "Type 2: Isolation: $reqIsol\n";
 	}
 
 	if ( $realIsol < $reqIsol ) {
 
-		$result                             = 0;
- 
+		$result = 0;
+
 	}
-	
+
 	$resultData->{"requestedIsolThick"}   = $reqIsol;
-		$resultData->{"currentIsolThick"}   = $realIsol;
-		$resultData->{"requestedIsolCuLayer"} = $reqIsolFromCu;
+	$resultData->{"currentIsolThick"}     = $realIsol;
+	$resultData->{"requestedIsolCuLayer"} = $reqIsolFromCu;
 
 	return $result;
 
 }
 
-sub AspectRatioCheckn {
+# Check aspect ratio for blind holes
+sub AspectRatioCheck {
 	my $self       = shift;
 	my $drillSize  = shift;          # µm DTM uni tool with depth
 	my $drillDepth = shift;          # µm
@@ -142,13 +137,12 @@ sub AspectRatioCheckn {
 		$result = 1;
 	}
 	else {
-		
+
 		$result = 0;
 	}
-	
+
 	$resultData->{"ar"} = $ar;
- 
- 
+
 	return $result;
 
 }

@@ -15,6 +15,7 @@ use constant {
 };
 
 
+# return human readable name for blind drill computation methods
 sub GetMethodName{
 	my $self = shift;
 	my $code = shift;

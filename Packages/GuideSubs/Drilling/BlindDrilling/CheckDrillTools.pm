@@ -1,5 +1,5 @@
 #-------------------------------------------------------------------------------------------#
-# Description: Checking rout layer during processing pcb
+# Description: Checking if blind drill are properlz set (depths, diameter, ..)
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Packages::GuideSubs::Drilling::BlindDrilling::CheckDrillTools;
@@ -23,7 +23,7 @@ use aliased 'CamHelpers::CamDrilling';
 #-------------------------------------------------------------------------------------------#
 #  Public method
 #-------------------------------------------------------------------------------------------#
-
+# Check all steps and layers with blind drills
 sub BlindDrillCheckAllSteps {
 	my $self     = shift;
 	my $inCAM    = shift;
