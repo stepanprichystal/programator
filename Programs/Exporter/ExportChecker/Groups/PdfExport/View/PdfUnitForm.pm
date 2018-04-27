@@ -21,7 +21,7 @@ use aliased 'Packages::Events::Event';
 #use aliased 'CamHelpers::CamLayer';
 #use aliased 'CamHelpers::CamDrilling';
 use aliased 'CamHelpers::CamStep';
-use aliased 'Packages::CAMJob::Drilling::CheckCountersink';
+use aliased 'Packages::CAMJob::Drilling::CountersinkCheck';
 use aliased 'CamHelpers::CamJob';
 
 #-------------------------------------------------------------------------------------------#
@@ -274,7 +274,7 @@ sub DisableControls{
 	}
 	
 	
-	if( CheckCountersink->ExistCountersink( $self->{"inCAM"}, $self->{"jobId"}  )){
+	if( CountersinkCheck->ExistCountersink( $self->{"inCAM"}, $self->{"jobId"}  )){
 		
 		$self->{"exportNCSpecialChb"}->Enable();
 		

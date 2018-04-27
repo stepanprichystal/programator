@@ -19,7 +19,7 @@ use aliased 'Packages::Export::NCExport::OperationBuilder::MLOperationBuilder';
 use aliased 'Packages::Export::NCExport::OperationBuilder::SLOperationBuilder';
 use aliased 'Packages::Export::NCExport::OperationBuilder::SimpleOperationBuilder';
 use aliased 'Packages::Export::NCExport::FileHelper::FileEditor';
-use aliased 'Packages::CAMJob::Drilling::DrillChecking::LayerCheckError';
+use aliased 'Packages::CAMJob::Drilling::DrillChecking::LayerErrorInfo';
 use aliased 'Packages::Export::NCExport::OperationMngr';
 use aliased 'Packages::Export::NCExport::MergeFileMngr';
 use aliased 'Packages::Export::NCExport::ExportFileMngr';
@@ -272,7 +272,7 @@ sub __CheckNCLayers {
 
 		my $mess = "";    # errors
 
-		unless ( LayerCheckError->CheckNCLayers( $self->{"inCAM"}, $self->{"jobId"}, $self->{"stepName"}, undef, \$mess ) ) {
+		unless ( LayerErrorInfo->CheckNCLayers( $self->{"inCAM"}, $self->{"jobId"}, $self->{"stepName"}, undef, \$mess ) ) {
 
 			$checkRes->AddError($mess);
 			$res = 0;     # don't continue, because of check fail

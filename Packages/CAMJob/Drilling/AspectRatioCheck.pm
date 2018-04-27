@@ -2,7 +2,7 @@
 # Description: Function for checking aspect ratio
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::CAMJob::Drilling::CheckAspectRatio;
+package Packages::CAMJob::Drilling::AspectRatioCheck;
 
 #3th party library
 use strict;
@@ -38,12 +38,11 @@ sub GetToolsARatio {
 	unless ($breakSr) {
 		$breakSr = 0;
 	}
-	
-	
+
 	my $pcbThick;
 	my $stackup = undef;
 
-	my $layerCnt = CamJob->GetSignalLayerCnt($inCAM, $jobId);
+	my $layerCnt = CamJob->GetSignalLayerCnt( $inCAM, $jobId );
 
 	if ( $layerCnt > 2 ) {
 
@@ -56,15 +55,13 @@ sub GetToolsARatio {
 		$pcbThick = HegMethods->GetPcbMaterialThick($jobId);
 		$pcbThick = $pcbThick * 1000;
 	}
- 
- 
 
 	my @layers = CamDrilling->GetNCLayersByType( $inCAM, $jobId, $ncLayerType );
-	CamDrilling->AddLayerStartStop($inCAM, $jobId, \@layers);
-	
+	CamDrilling->AddLayerStartStop( $inCAM, $jobId, \@layers );
+
 	foreach my $l (@layers) {
-		
-		unless(CamHelper->LayerExists( $inCAM, $jobId, $l->{"gROWname"})){
+
+		unless ( CamHelper->LayerExists( $inCAM, $jobId, $l->{"gROWname"} ) ) {
 			next;
 		}
 
@@ -75,23 +72,24 @@ sub GetToolsARatio {
 
 			# if tool has do depth, we have to get thickness of whole pcb, actual press, core etc,..
 			if ( $t->GetDepth() == 0 ) {
-				
+
 				my $thickReal = undef;
-				
-				if($layerCnt > 2){
-					
-					$thickReal = $stackup->GetThickByLayerName($l->{"gROWdrl_start_name"})*1000;
-				}else{
-					
+
+				if ( $layerCnt > 2 ) {
+
+					$thickReal = $stackup->GetThickByLayerName( $l->{"gROWdrl_start_name"} ) * 1000;
+				}
+				else {
+
 					$thickReal = $pcbThick;
 				}
-	 
-				$t->{"aspectRatio"} =  $thickReal / $t->GetDrillSize();
+
+				$t->{"aspectRatio"} = $thickReal / $t->GetDrillSize();
 
 			}
 			else {
 
-				$t->{"aspectRatio"} = ( $t->GetDepth() * 1000 ) /$t->GetDrillSize()  ;
+				$t->{"aspectRatio"} = ( $t->GetDepth() * 1000 ) / $t->GetDrillSize();
 			}
 
 		}
@@ -117,39 +115,23 @@ sub CheckWrongARAllLayers {
 	my $result = 1;
 
 	$wrongAr->{"max10.0"} = [];
-	$wrongAr->{"max1.0"} = [];
+	$wrongAr->{"max1.0"}  = [];
 
 	my @toolAR = ();
 
-	my @types = (
-				  EnumsGeneral->LAYERTYPE_plt_nDrill,    EnumsGeneral->LAYERTYPE_plt_bDrillTop,
-				  EnumsGeneral->LAYERTYPE_plt_bDrillBot, EnumsGeneral->LAYERTYPE_plt_cDrill
-	);
+	my @types = ( EnumsGeneral->LAYERTYPE_plt_nDrill, EnumsGeneral->LAYERTYPE_plt_cDrill );
 
 	foreach my $t (@types) {
 
 		foreach my $l ( $self->GetToolsARatio( $inCAM, $jobId, $step, 1, $t ) ) {
+			my @tools = grep { $_->{"aspectRatio"} > 10 } @{ $l->{"tools"} };
 
-			if ( $t eq EnumsGeneral->LAYERTYPE_plt_nDrill || $t eq EnumsGeneral->LAYERTYPE_plt_cDrill ) {
-
-				my @tools = grep { $_->{"aspectRatio"} > 10 } @{ $l->{"tools"} };
-
-				if (@tools) {
-					my %inf = ( "layer" => $l->{"layer"}, "tools" => \@tools );
-					push( @{ $wrongAr->{"max10.0"} }, \%inf );
-					$result = 0;
-				}
-
+			if (@tools) {
+				my %inf = ( "layer" => $l->{"layer"}, "tools" => \@tools );
+				push( @{ $wrongAr->{"max10.0"} }, \%inf );
+				$result = 0;
 			}
-			else {
 
-				my @tools = grep { $_->{"aspectRatio"} > 1 } @{ $l->{"tools"} };
-				if (@tools) {
-					my %inf = ( "layer" => $l->{"layer"}, "tools" => \@tools );
-					push( @{ $wrongAr->{"max1.0"} }, \%inf );
-					$result = 0;
-				}
-			}
 		}
 	}
 
@@ -163,7 +145,7 @@ sub CheckWrongARAllLayers {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	use aliased 'Packages::CAMJob::Drilling::CheckAspectRatio';
+	use aliased 'Packages::CAMJob::Drilling::AspectRatioCheck';
 	use aliased 'Packages::InCAM::InCAM';
 
 	my $inCAM = InCAM->new();
@@ -171,8 +153,8 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	my $step  = "o+1";
 
 	my %res = ();
-	my $r = CheckAspectRatio->CheckWrongARAllLayers( $inCAM, $jobId, $step, \%res );
-	
+	my $r = AspectRatioCheck->CheckWrongARAllLayers( $inCAM, $jobId, $step, \%res );
+
 	print $r;
 
 }

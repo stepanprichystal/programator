@@ -2,7 +2,7 @@
 # Description: Function for checking layers with rout depth
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::CAMJob::Routing::CheckRoutDepth;
+package Packages::CAMJob::Routing::RoutDepthCheck;
 
 #3th party library
 use utf8;
@@ -111,7 +111,7 @@ sub CheckDepthChainMerge {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	use aliased 'Packages::CAMJob::Routing::CheckRoutDepth';
+	use aliased 'Packages::CAMJob::Routing::RoutDepthCheck';
 	use aliased 'Packages::InCAM::InCAM';
 
 	my $inCAM = InCAM->new();
@@ -119,7 +119,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	my $step  = "o+1";
 
 	my $mess = "";
-	my $res = CheckRoutDepth->CheckDepthChainMerge( $inCAM, $jobId, \$mess  );
+	my $res = RoutDepthCheck->CheckDepthChainMerge( $inCAM, $jobId, \$mess  );
 
 	print "$res - $mess";
 

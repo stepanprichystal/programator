@@ -7,6 +7,7 @@ use utf8;
 package Managers::MessageMngr::MessageMngr;
 
 #3th party libraryMethods
+use utf8;
 use strict;
 use warnings;
 use threads;
@@ -286,7 +287,9 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	# MessageType_QUESTION
 	# MessageType_INFORMATION
 
-	my @mess1 = ("ahoj <b>toto je tucne </b>ahoj.\n");
+	my $str = 'Druha <r>FAIL</r> TEST <g>GREEN</g> konec ';
+
+	my @mess1 = ( "Prvni zprava", $str );
 	my @btn = ( "tl1", "tl2" );
 
 	my $messMngr = MessageMngr->new("D3333");
