@@ -7,6 +7,7 @@ package Packages::CAMJob::Drilling::CountersinkCheck;
 #3th party library
 use strict;
 use warnings;
+use Math::Trig;
 
 #local library
 
@@ -90,11 +91,13 @@ sub ExistCountersinkByLayer {
 
 		# test if exist countersink as surface or arc
 		my @chainSeqArc = grep {
-			defined $_->GetChain()->GetChainTool()->GetUniDTMTool()->GetAngle() && $_->GetChain()->GetChainTool()->GetUniDTMTool()->GetAngle() > 0
+			defined $_->GetChain()->GetChainTool()->GetUniDTMTool()->GetAngle()
+			  && $_->GetChain()->GetChainTool()->GetUniDTMTool()->GetAngle() > 0
 		} $rtm->GetCircleChainSeq( RTMEnums->FeatType_LINEARC );
-		
+
 		my @chainSeqSurf = grep {
-			defined $_->GetChain()->GetChainTool()->GetUniDTMTool()->GetAngle() && $_->GetChain()->GetChainTool()->GetUniDTMTool()->GetAngle() > 0
+			defined $_->GetChain()->GetChainTool()->GetUniDTMTool()->GetAngle()
+			  && $_->GetChain()->GetChainTool()->GetUniDTMTool()->GetAngle() > 0
 		} $rtm->GetCircleChainSeq( RTMEnums->FeatType_SURF );
 
 		if ( scalar(@chainSeqArc) || scalar(@chainSeqSurf) ) {
@@ -105,6 +108,59 @@ sub ExistCountersinkByLayer {
 
 	return $csExist;
 
+}
+
+# Return 0 if thera are tools with angle and depths, where depths is larger than tool peak len
+sub WrongDepthForCSinkTool {
+	my $self      = shift;
+	my $inCAM     = shift;
+	my $jobId     = shift;
+	my $wrongTool = shift // [];    # reference to array. Here will be stored UniDTMTools with wrong depth (with value of peak length)
+
+	my $result = 1;
+
+	my @steps = ("o+1");
+
+	if ( CamHelper->StepExists( $inCAM, $jobId, "panel" ) ) {
+
+		@steps = map { $_->{"stepName"} } CamStepRepeat->GetUniqueNestedStepAndRepeat( $inCAM, $jobId, "panel" );
+	}
+
+	my @types = (
+				  EnumsGeneral->LAYERTYPE_nplt_bMillTop, EnumsGeneral->LAYERTYPE_nplt_bMillBot,
+				  EnumsGeneral->LAYERTYPE_plt_bMillTop,  EnumsGeneral->LAYERTYPE_plt_bMillBot
+	);
+
+	my @angleTool = ();
+
+	foreach my $step (@steps) {
+
+		foreach my $layer ( CamDrilling->GetNCLayersByTypes( $inCAM, $jobId, \@types ) ) {
+
+			CamDrilling->AddNCLayerType( [$layer] );
+
+			# load UniDTM for layer
+			my $dtm = UniDTM->new( $inCAM, $jobId, $step, $layer->{"gROWname"}, 0 );
+
+			# test if exist countersink as pad
+			push( @angleTool, grep { $_->GetDepth() > 0 && $_->GetAngle() } $dtm->GetUniqueTools() );
+
+		}
+	}
+
+	foreach my $t (@angleTool) {
+
+		$t->{"peakLen"} = ( $t->GetDrillSize() / 2 ) / tan( deg2rad( $t->GetAngle() / 2 ) );
+		if ( $t->GetDepth() * 1000 > $t->{"peakLen"} ) {
+			push( @{$wrongTool}, $t );
+		}
+	}
+	
+	if ( scalar( @{$wrongTool} ) ) {
+		$result = 0;
+	}
+
+	return $result;
 }
 
 #-------------------------------------------------------------------------------------------#
@@ -118,10 +174,10 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	use aliased 'Packages::InCAM::InCAM';
 
 	my $inCAM = InCAM->new();
-	my $jobId = "d152457";
+	my $jobId = "d152456";
 
 	my %res = ();
-	my $r = CountersinkCheck->ExistCountersink( $inCAM, $jobId );
+	my $r = CountersinkCheck->WrongDepthForCSinkTool( $inCAM, $jobId );
 
 	print $r;
 

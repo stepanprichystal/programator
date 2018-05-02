@@ -201,6 +201,17 @@ sub GetJobPcbClass {
 
 }
 
+#Return class of pcb step, which is saved as job attribute PcbClass
+sub GetJobPcbClassInner {
+
+	my $self = shift;
+
+	my %info = CamAttributes->GetJobAttr(@_);
+
+	return $info{"pcb_class_inner"};
+
+}
+
 #Create layer
 sub CreateLayer {
 

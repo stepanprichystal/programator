@@ -2,7 +2,7 @@
 # Description: Silkscreen checks
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::CAMJob::Technology::CuLayerCheck;
+package Packages::CAMJob::Technology::CuLayer;
 
 #3th party library
 use utf8;
@@ -55,7 +55,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	#use Data::Dump qw(dump);
 
-	use aliased 'Packages::CAMJob::Technology::CuLayerCheck';
+	use aliased 'Packages::CAMJob::Technology::CuLayer';
 	use aliased 'Packages::InCAM::InCAM';
 
 	my $inCAM = InCAM->new();
@@ -63,7 +63,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $mess = "";
 
-	my $result = CuLayerCheck->GetMaxCuByClass( 9 );
+	my $result = CuLayer->GetMaxCuByClass( 6 );
 
 	print STDERR "Result is: $result";
 
