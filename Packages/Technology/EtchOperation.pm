@@ -142,7 +142,7 @@ sub GetCompensation {
 		
 		
 		unless ($valueKompenzace){
-			$valueKompenzace = 'undef';
+			$valueKompenzace = undef;
 		}else{
 			$valueKompenzace = sprintf "%.0f",($valueKompenzace);
 		}
