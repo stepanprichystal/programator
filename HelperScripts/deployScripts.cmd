@@ -4,8 +4,8 @@ ECHO Hello World!
 
 SET sourcerepopath=y:\server\site_data\scriptsCentral
 SET sourcerepo=y:\server\site_data\scriptsCentral\.git
-SET deploypath=y:\server\site_data\scriptsDeploy\
-SET deploy=y:\server\site_data\scriptsDeploy\.git
+SET deploypath=y:\server\site_data\scripts\
+SET deploy=y:\server\site_data\scripts\.git
 
 
 if not exist %deploy% (
