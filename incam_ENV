@@ -1,0 +1,12 @@
+#!/bin/csh
+set echo
+env | grep INCAM
+
+#Script message: INCAM_CUSTOMER_DIR=//incam/incam_server/customers/Metra
+#Script message: INCAM_LOCAL_DIR=//incam/incam_server/local/RVI
+#Script message: INCAM_PRODUCT=C:/opt/InCAM/2.31SP2
+#Script message: INCAM_SERVER=//incam/incam_server
+#Script message: INCAM_SITE_DATA_DIR=//incam/incam_server/site_data
+#Script message: INCAM_TMP=C:/tmp/incam
+#Script message: INCAM_USER=radim
+#Script message: INCAM_USER_DIR=//incam/incam_server/users/radim

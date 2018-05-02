@@ -29,7 +29,7 @@ Log::Log4perl->init($logConfig);
 
 my $logger = get_logger("trigger"); 
 
-$logger->debug("Trigger page run");
+$logger->debug("run");
 
 # old way is only job id f123645
 # new way is ordefr id f12345-01

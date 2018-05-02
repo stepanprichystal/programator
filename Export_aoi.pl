@@ -4,17 +4,17 @@
 use strict;
 use warnings;
 
-use lib qw( C:\Perl\site\lib\TpvScripts\Scripts );
+#use lib qw( C:\Perl\site\lib\TpvScripts\Scripts );
 
 #necessary for load pall packages
-#use FindBin;
-#use lib "$FindBin::Bin/../";
-#use PackagesLib;
+use FindBin;
+use lib "$FindBin::Bin/../";
+use PackagesLib;
 
 use aliased 'Packages::InCAM::InCAM';
 use aliased 'Programs::Exporter::ExportUtility::Groups::AOIExport::AOIExportTmp';
 
-my $jobId    = "d152457";
+my $jobId    = "f77120";
 my $inCAM    = InCAM->new();
 
 

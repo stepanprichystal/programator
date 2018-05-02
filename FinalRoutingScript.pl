@@ -13,12 +13,12 @@ use Time::HiRes qw (sleep);
 
 #local library
 
-use lib qw( C:\Perl\site\lib\TpvScripts\Scripts );
+#use lib qw( C:\Perl\site\lib\TpvScripts\Scripts );
 
 #necessary for load pall packages
-#use FindBin;
-#use lib "$FindBin::Bin/../";
-#use PackagesLib;
+use FindBin;
+use lib "$FindBin::Bin/../";
+use PackagesLib;
 
 use aliased 'Packages::InCAM::InCAM';
 use aliased 'CamHelpers::CamJob';
@@ -77,7 +77,7 @@ if ( scalar(@chainFeatures) ) {
 	else {
 
 		# errror
-		my @m = ( "Obrysov fréza je příliš tenká: " . $chainFeatures[0]->{"thick"} . "µm. Minimální tloušťka musí být alespoň 200µm." );
+		my @m = ( "Obrysová fréza je příliš tenká: " . $chainFeatures[0]->{"thick"} . "µm. Minimální tloušťka musí být alespoň 200µm." );
 		$messMngr->ShowModal( -1, EnumsGeneral->MessageType_ERROR, \@m );
 		exit(0);
 	}
