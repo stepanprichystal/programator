@@ -85,7 +85,7 @@ sub RunService {
 
 		my $diff = ( time() - ( stat($serviceLog) )[9] ) /60;    # diff  in minute
 
-		if ( $status{"CurrentState"} == 4 && $diff > 60 ) {
+		if ( $status{"CurrentState"} == 4 && $diff > 5*60 ) {
 
 			Win32::Service::StopService( "", $name );
 			$logger->debug("Service \"$name\" status: STOP SERVICE");

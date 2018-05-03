@@ -100,7 +100,7 @@ sub Run {
 
 		my $err = "Aplication: " . $self->GetAppName() . " exited with error: \n$@";
 		$self->{"logger"}->error($err);
-		$self->{"loggerDB"}->Error( undef, $err );
+		#$self->{"loggerDB"}->Error( undef, $err );
 	}
 }
 
@@ -403,7 +403,7 @@ sub __ProcessError {
 	$self->{"logger"}->error($errMess);
 
 	# sent error to log db
-	$self->{"loggerDB"}->Error( $jobId, $errMess );
+	#$self->{"loggerDB"}->Error( $jobId, $errMess );
 
 }
 
