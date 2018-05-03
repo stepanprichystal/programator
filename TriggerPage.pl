@@ -35,7 +35,7 @@ my $orderId  = shift;    # job order for process
 my $taskType = shift;    # type of task to process
 
 #$orderId = "d152456-01";
-#$taskType = TaskEnums->PCB_TOPRODUCE;
+#$taskType = TaskEnums->Data_CONTROL;
 
 my $logConfig = "c:\\Apache24\\htdocs\\tpv\\Logger.conf";
 Log::Log4perl->init($logConfig);
