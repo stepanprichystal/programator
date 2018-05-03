@@ -1,11 +1,10 @@
 # Table define actual max Cu thickness by construction class
 
-# Consturction class | Cu thicness 
+# Consturction class = Cu thicness outer ; Cu thickness inner
 
-100 = 9
-100 = 18
-125 = 18
-150 = 35
-200 = 70
-300 = 105
-400 = 105
+100 = 18  ; 35
+125 = 18  ; 35
+150 = 35  ; 35
+200 = 70  ; 70
+300 = 105 ; 105
+400 = 105 ; 105 

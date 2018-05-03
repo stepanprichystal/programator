@@ -22,8 +22,10 @@ use aliased 'Helpers::JobHelper';
 sub GetMaxCuByClass {
 	my $self  = shift;
 	my $class = shift;
-	
+	my $inner = shift;
+ 	
 	my $isolation = JobHelper->GetIsolationByClass($class);
+	 
 
 	my $p = GeneralHelper->Root() . "\\Resources\\CuClassRel";
 
@@ -33,14 +35,22 @@ sub GetMaxCuByClass {
 	
 	
 	my %h = ();
+	my %hInner = ();
 	
 	foreach my $l  (@lines){
-		my ($isolation, $cuThickness) = $l =~ /(\d+)\s*=\s*(\d+)/i;
-		$h{$isolation} = $cuThickness;
+		my ($isol, $cuThickness, $cuThicknessInner) = $l =~ /(\d+)\s*=\s*(\d+)\s*;\s*(\d+)/i;
+		$h{$isol} = $cuThickness;
+		$hInner{$isol} = $cuThicknessInner;
 	}
 	
-	my $maxCu = $h{$isolation};
+	my $maxCu = undef;
 	
+	if($inner){
+		$maxCu = $hInner{$isolation};
+	}else{
+		$maxCu = $h{$isolation};
+	}
+ 
 	die "Max Cu thiockness is not defined" if(!defined $maxCu || $maxCu eq "" || $maxCu == 0);
 	
 	return $maxCu;
@@ -63,7 +73,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $mess = "";
 
-	my $result = CuLayer->GetMaxCuByClass( 6 );
+	my $result = CuLayer->GetMaxCuByClass( 5, 1 );
 
 	print STDERR "Result is: $result";
 
