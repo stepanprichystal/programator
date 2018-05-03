@@ -24,8 +24,8 @@ use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'Connectors::HeliosConnector::HelperWriter';
 
 use aliased 'Packages::CAMJob::SilkScreen::SilkScreenCheck';
-use aliased 'Packages::CAMJob::Drilling::DrillChecking::LayerCheckError';
-use aliased 'Packages::CAMJob::Drilling::DrillChecking::LayerCheckWarn';
+use aliased 'Packages::CAMJob::Drilling::DrillChecking::LayerErrorInfo';
+use aliased 'Packages::CAMJob::Drilling::DrillChecking::LayerWarnInfo';
 use aliased 'Packages::Input::HelperInput';
 use aliased 'Packages::GuideSubs::Netlist::NetlistControl';
 
@@ -417,14 +417,14 @@ sub _GUIpanelizace {
 											_CheckTableDrill($jobName);
 											_CheckTableRout($jobName);
 											_CheckBigestHole($jobName);
-										   #_CheckminimalToolRout($jobName); Now this error is checked in LayerCheckWarn
+										   #_CheckminimalToolRout($jobName); Now this error is checked in LayerWarnInfo
 											_CheckMpanelExistPool($jobName);
 											_CheckPlgcPlgs($jobName);
 											
 											
 											
 											my $messWarn = "";
-											my $resultWarn = LayerCheckWarn->CheckNCLayers( $inCAM, $jobName, "o+1", undef, \$messWarn );
+											my $resultWarn = LayerWarnInfo->CheckNCLayers( $inCAM, $jobName, "o+1", undef, \$messWarn );
 											if ($resultWarn == 0) {
 													push @warnMessageArr, $messWarn;
 											}
@@ -433,7 +433,7 @@ sub _GUIpanelizace {
 											my $mess = "";
 											#
 											## Return 0 = errors, 1 = no error
-											my $result = LayerCheckError->CheckNCLayers( $inCAM, $jobName, "o+1", undef, \$mess );
+											my $result = LayerErrorInfo->CheckNCLayers( $inCAM, $jobName, "o+1", undef, \$mess );
 											if ($result == 0) {
 													push @errorMessageArr, $mess;
 											}

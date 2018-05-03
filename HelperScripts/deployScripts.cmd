@@ -18,7 +18,10 @@ if not exist %deploy% (
 y:
 cd %deploypath%
 git checkout master 
-git pull 
+
+git fetch --all
+git reset --hard origin/master
+
 
 
 set /p DUMMY=See results and press ENTER to continue...

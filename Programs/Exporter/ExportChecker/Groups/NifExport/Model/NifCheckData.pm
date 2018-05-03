@@ -312,7 +312,7 @@ sub OnCheckGroupData {
 							 $defaultInfo->GetStackup()->GetAllLayers() )
 			{
 
-				my $maxCuThick = CuLayer->GetMaxCuByClass( $defaultInfo->GetPcbClassInner() );
+				my $maxCuThick = CuLayer->GetMaxCuByClass( $defaultInfo->GetPcbClassInner(), 1 );
 
 				if ( $cu->GetThick() > $maxCuThick ) {
 
