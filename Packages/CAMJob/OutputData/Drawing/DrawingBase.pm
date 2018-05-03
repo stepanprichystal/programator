@@ -46,7 +46,7 @@ sub new {
 	$self->{"pcbThick"} = shift;         # pcbthick in mm
 	$self->{"side"}     = shift;         # top/bot
 	$self->{"plated"}   = shift;         # 1/0
-	$self->{"scale"}    = shift // 1;	 # default scale is 1
+	$self->{"scale"}    = shift // 1;    # default scale is 1
 
 	$self->{"drawWidth"}        = 120;
 	$self->{"drawOutlineWidth"} = "400";
@@ -240,12 +240,19 @@ sub _CreateDetailZaxisSurf {
 
 }
 
+# Countersink shape looks like  this
+# ___     ___
+#   |     |   - countersink head depth (where are streight "hole walls")
+#    \   /    - countersink depth (where are beveled "hole walls")
+# ____\ /____    
 sub _CreateDetailCountersink {
-	my $self   = shift;
-	my $radius = shift;    # in mm
-	my $depth  = shift;    # in mm
-	my $angle  = shift;    #
-	my $type   = shift;    # slot/hole
+	my $self        = shift;
+	my $radius      = shift;    # in mm
+	my $csDepth     = shift;   # depth of countersink in mm
+	my $csHeadDepth = shift;   # depth of countersink head if exists in mm
+	my $angle       = shift;    #
+	my $type        = shift;    # slot/hole
+	
 
 	# compute diameter of tool by angle and depth
 	my $diameter = $radius * 2;
@@ -256,7 +263,9 @@ sub _CreateDetailCountersink {
 	my $drawW        = $self->{"drawWidth"};
 	my $drawH        = $self->{"pcbThick"} * $self->{"scale"};    # mm
 	my $diameterReal = $diameter * $self->{"scale"};
-	my $depthReal    = $depth * $self->{"scale"};
+	my $depthReal    = $csDepth * $self->{"scale"};
+	my $csHeadDepthReal = $csHeadDepth * $self->{"scale"};
+ 
 
 	my @points = ();
 
@@ -265,7 +274,7 @@ sub _CreateDetailCountersink {
 	my $x3 = ( $drawW - $diameterReal ) / 2 + $diameterReal;
 
 	# if depth of tool is smaller than pcb thick, do drawing from one surface
-	if ( $depth < $self->{"pcbThick"} ) {
+	if ( ( $csDepth + $csHeadDepth ) < $self->{"pcbThick"} ) {
 
 		my @surfPoints = ();
 
@@ -276,7 +285,17 @@ sub _CreateDetailCountersink {
 		$self->_AddPcbDrawSide( \@surfPoints, "left" );
 
 		push( @surfPoints, Point->new( $x1, 0 ) );
-		push( @surfPoints, Point->new( $x2, -$depthReal ) );
+
+		if ($csHeadDepth) {
+			push( @surfPoints, Point->new( $x1, -$csHeadDepthReal ) );
+		}
+
+		push( @surfPoints, Point->new( $x2, -( $depthReal + $csHeadDepthReal ) ) );
+
+		if ($csHeadDepth) {
+			push( @surfPoints, Point->new( $x3, -$csHeadDepthReal ) );
+		}
+
 		push( @surfPoints, Point->new( $x3, 0 ) );
 
 		$self->_AddDetailDraw( \@surfPoints );
@@ -285,14 +304,18 @@ sub _CreateDetailCountersink {
 	# do drawing rfom two separate surfaces
 	else {
 
-		my $xTmp = $drawH / tan( deg2rad( 90 - ( $angle / 2 ) ) );
+		my $xTmp = ( $drawH - $csHeadDepthReal ) / tan( deg2rad( 90 - ( $angle / 2 ) ) );
 
 		# left survace
 		my @surfPoints1 = ();
 
 		push( @surfPoints1, Point->new( $x1, 0 ) );
 
-		push( @surfPoints1, Point->new( $xTmp + $x1, -$drawH ) );
+		if ($csHeadDepth) {
+			push( @surfPoints1, Point->new( $x1, -$csHeadDepthReal ) );
+		}
+
+		push( @surfPoints1, Point->new( $xTmp + $x1, -($drawH) ) );
 
 		$self->_AddPcbDrawSide( \@surfPoints1, "left" );
 		$self->_AddDetailDraw( \@surfPoints1 );
@@ -302,7 +325,11 @@ sub _CreateDetailCountersink {
 
 		$self->_AddPcbDrawSide( \@surfPoints2, "right" );
 
-		push( @surfPoints2, Point->new( $x3 - $xTmp, -$drawH ) );
+		push( @surfPoints2, Point->new( $x3 - $xTmp, -($drawH) ) );
+
+		if ($csHeadDepth) {
+			push( @surfPoints2, Point->new( $x3, -$csHeadDepthReal ) );
+		}
 
 		push( @surfPoints2, Point->new( $x3, 0 ) );
 		$self->_AddDetailDraw( \@surfPoints2 );
@@ -333,9 +360,9 @@ sub _CreateDetailCountersink {
 		my $dimDepth = DimV1Lines->new(
 										"right", "bot",
 										abs( $x3 - $x2 ), ( $w * 0.02 ),
-										$depthReal, ( $w * 0.2 ),
+										$depthReal + $csHeadDepthReal, ( $w * 0.2 ),
 										"second", $self->{"dimLineWidth"},
-										sprintf( "%.2f", $depth ) . "mm (depth)", $self->{"dimTextHeight"},
+										sprintf( "%.2f", $csDepth + $csHeadDepth ) . "mm (depth)", $self->{"dimTextHeight"},
 										$self->{"dimTextWidth"}, $self->{"dimTextMirror"},
 										$self->{"dimTextAngle"}
 		);
@@ -350,7 +377,21 @@ sub _CreateDetailCountersink {
 						$self->{"dimTextWidth"}, $self->{"dimTextMirror"},
 						$self->{"dimTextAngle"}
 	);
-	$self->{"drawing"}->AddSymbol( $dimAngle, Point->new( $x2, -$depthReal ) );
+	$self->{"drawing"}->AddSymbol( $dimAngle, Point->new( $x2, -( $depthReal + $csHeadDepthReal ) ) );
+
+	# Create dimension of "countersink head"
+	if ($csHeadDepth) {
+		my $dimDepth = DimV1Lines->new(
+										"right", "bot",
+										abs( $x3 - $x2 ) / 2, ( $w * 0.02 ),
+										$csHeadDepthReal, ( $w * 0.2 ),
+										"second", $self->{"dimLineWidth"},
+										sprintf( "%.2f", $csHeadDepth ) . "mm", $self->{"dimTextHeight"},
+										$self->{"dimTextWidth"}, $self->{"dimTextMirror"},
+										$self->{"dimTextAngle"}
+		);
+		$self->{"drawing"}->AddSymbol( $dimDepth, Point->new( $x3, 0 ) );
+	}
 
 	# Draw picture to layer
 	CamLayer->WorkLayer( $self->{"inCAM"}, $self->{"layer"} );
@@ -359,11 +400,18 @@ sub _CreateDetailCountersink {
 }
 
 # Cuntersink with drilled hole
+# Countersink shape looks like  this
+# ___     ___
+#   |     |   - countersink head depth (where are streight "hole walls")
+#    \   /    - countersink depth (where are beveled "hole walls")
+# ____| |____ - drilled hole
+#  
 sub _CreateDetailCountersinkDrilled {
 	my $self       = shift;
 	my $radius     = shift;    # in mm
 	my $radiusHole = shift;    # in mm
-	my $depth      = shift;    # in mm
+	my $csDepth     = shift;   # depth of countersink in mm
+	my $csHeadDepth = shift;   # depth of countersink head if exists in mm
 	my $angle      = shift;    #
 	my $type       = shift;    # slot/hole
 	my $text       = shift;
@@ -378,7 +426,8 @@ sub _CreateDetailCountersinkDrilled {
 	my $drawW          = $self->{"drawWidth"};
 	my $drawH          = $self->{"pcbThick"} * $self->{"scale"};                         # mm
 	my $diameterReal   = $diameter * $self->{"scale"};
-	my $depthReal      = $depth * $self->{"scale"};
+	my $csDepthReal      = $csDepth * $self->{"scale"};
+	my $csHeadDepthReal = $csHeadDepth * $self->{"scale"};
 	my $radiusReal     = $radius * $self->{"scale"};
 	my $radiusHoleReal = defined $radiusHole ? $radiusHole * $self->{"scale"} : undef;
 
@@ -392,7 +441,7 @@ sub _CreateDetailCountersinkDrilled {
 	my $oneSurf = 0;
 
 	# if depth of tool is smaller than pcb thick, do drawing from one surface
-	if ( $depth < $self->{"pcbThick"} && !defined $radiusHole ) {
+	if ( ( $csDepth + $csHeadDepth )  < $self->{"pcbThick"} && !defined $radiusHole ) {
 
 		$oneSurf = 1;
 
@@ -405,7 +454,17 @@ sub _CreateDetailCountersinkDrilled {
 		$self->_AddPcbDrawSide( \@surfPoints, "left" );
 
 		push( @surfPoints, Point->new( $x1, 0 ) );
-		push( @surfPoints, Point->new( $x3, -$depthReal ) );
+
+		if ($csHeadDepth) {
+			push( @surfPoints, Point->new( $x1, -$csHeadDepthReal ) );
+		}
+
+		push( @surfPoints, Point->new( $x3, -$csDepthReal ) );
+
+		if ($csHeadDepth) {
+			push( @surfPoints, Point->new( $x3, -$csHeadDepthReal ) );
+		}
+
 		push( @surfPoints, Point->new( $x4, 0 ) );
 
 		$self->_AddDetailDraw( \@surfPoints );
@@ -430,8 +489,15 @@ sub _CreateDetailCountersinkDrilled {
 			my @surfPoints1 = ();
 
 			push( @surfPoints1, Point->new( $x1, 0 ) );
+			
+			
+		if ($csHeadDepth) {
+			push( @surfPoints1, Point->new( $x1, -$csHeadDepthReal ) );
+		}
 
-			push( @surfPoints1, Point->new( $x1 + $x2, -$yTmp ) );
+			
+
+			push( @surfPoints1, Point->new( $x1 + $x2, -($yTmp + $csHeadDepthReal) ) );
 
 			push( @surfPoints1, Point->new( $x1 + $x2, -$drawH ) );
 
@@ -444,8 +510,13 @@ sub _CreateDetailCountersinkDrilled {
 			$self->_AddPcbDrawSide( \@surfPoints2, "right" );
 
 			push( @surfPoints2, Point->new( $drawW - ( $x1 + $x2 ), -$drawH ) );
+	 
 
-			push( @surfPoints2, Point->new( $drawW - ( $x1 + $x2 ), -$yTmp ) );
+			push( @surfPoints2, Point->new( $drawW - ( $x1 + $x2 ), -($yTmp + $csHeadDepthReal) ) );
+			
+			if ($csHeadDepth) {
+			push( @surfPoints2, Point->new( $drawW - $x1, -$csHeadDepthReal ) );
+		}
 
 			push( @surfPoints2, Point->new( $drawW - $x1, 0 ) );
 
@@ -518,13 +589,27 @@ sub _CreateDetailCountersinkDrilled {
 
 	# Create dimension draw for angle
 	my $dimAngle = DimAngle1->new(
-						$angle, int( sqrt( $depthReal * $depthReal + ( $diameterReal / 2 ) * ( $diameterReal / 2 ) ) + $w * 0.1 ),
+						$angle, int( sqrt( $csDepthReal * $csDepthReal + ( $diameterReal / 2 ) * ( $diameterReal / 2 ) ) + $w * 0.1 ),
 						( $w * 0.02 ),           $self->{"dimLineWidth"},
 						$angle . " deg.",        $self->{"dimTextHeight"},
 						$self->{"dimTextWidth"}, $self->{"dimTextMirror"},
 						$self->{"dimTextAngle"}
 	);
-	$self->{"drawing"}->AddSymbol( $dimAngle, Point->new( $x3, -$depthReal ) );
+	$self->{"drawing"}->AddSymbol( $dimAngle, Point->new( $x3, -( $csDepthReal + $csHeadDepthReal ) ) );
+	
+	# Create dimension of "countersink head"
+	if ($csHeadDepth) {
+		my $dimDepth = DimV1Lines->new(
+										"right", "bot",
+										abs( $x4 - $x3 ) / 2, ( $w * 0.02 ),
+										$csHeadDepthReal, ( $w * 0.2 ),
+										"second", $self->{"dimLineWidth"},
+										sprintf( "%.2f", $csHeadDepth ) . "mm", $self->{"dimTextHeight"},
+										$self->{"dimTextWidth"}, $self->{"dimTextMirror"},
+										$self->{"dimTextAngle"}
+		);
+		$self->{"drawing"}->AddSymbol( $dimDepth, Point->new( $x4, 0 ) );
+	}
 
 	# Draw picture to layer
 	CamLayer->WorkLayer( $self->{"inCAM"}, $self->{"layer"} );

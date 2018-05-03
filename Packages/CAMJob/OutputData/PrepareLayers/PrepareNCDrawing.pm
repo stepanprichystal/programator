@@ -283,10 +283,9 @@ sub __ProcessDrawing {
 
 			#$toolDepth    = $chains[0]->GetChain()->GetChainTool()->GetUniDTMTool()->GetDepth();    # angle of tool
 			my $imgToolAngle = $chains[0]->GetChain()->GetChainTool()->GetUniDTMTool()->GetAngle();    # angle of tool
-
 			my $imgToolDepth = cotan( deg2rad( ( $imgToolAngle / 2 ) ) ) * $layerRes->GetDataVal("radiusReal");
-
-			$draw->CreateDetailCountersink( $layerRes->GetDataVal("radiusReal"), $imgToolDepth, $imgToolAngle, "hole" );
+	 
+			$draw->CreateDetailCountersink( $layerRes->GetDataVal("radiusReal"), $imgToolDepth, $layerRes->GetDataVal("exceededDepth"), $imgToolAngle, "hole" );
 
 		}
 		elsif ( $classRes->GetType() eq OutEnums->Type_COUNTERSINKPAD ) {
@@ -302,11 +301,11 @@ sub __ProcessDrawing {
 
 			my $imgToolDepth = cotan( deg2rad( ( $imgToolAngle / 2 ) ) ) * $layerRes->GetDataVal("radiusReal");
 
-			if ( $l->{"plated"} ) {
-				$imgToolDepth -= OutEnums->Plating_THICKMM;
-			}
+#			if ( $l->{"plated"} ) {
+#				$imgToolDepth -= OutEnums->Plating_THICKMM;
+#			}
 
-			$draw->CreateDetailCountersink( $layerRes->GetDataVal("radiusReal"), $imgToolDepth, $imgToolAngle, "hole" );
+			$draw->CreateDetailCountersink( $layerRes->GetDataVal("radiusReal"), $imgToolDepth, $layerRes->GetDataVal("exceededDepth"), $imgToolAngle, "hole" );
 
 		}
 		elsif (    $classRes->GetType() eq OutEnums->Type_ZAXISSLOTCHAMFER
@@ -315,14 +314,14 @@ sub __ProcessDrawing {
 
 			my @chains = @{ $layerRes->GetDataVal("chainSeq") };
 
-			my $imgToolDepth = $chains[0]->GetChain()->GetChainTool()->GetUniDTMTool()->GetDepth();    # depth of tool
 			my $imgToolAngle = $chains[0]->GetChain()->GetChainTool()->GetUniDTMTool()->GetAngle();    # angle of tool
+			my $imgToolDepth = cotan( deg2rad( ( $imgToolAngle / 2 ) ) ) * $layerRes->GetDataVal("radiusReal");
+			
+#			if ( $l->{"plated"} ) {
+#				$imgToolDepth -= OutEnums->Plating_THICKMM;
+#			}
 
-			if ( $l->{"plated"} ) {
-				$imgToolDepth -= OutEnums->Plating_THICKMM;
-			}
-
-			$draw->CreateDetailCountersink( $layerRes->GetDataVal("radiusReal"), $imgToolDepth, $imgToolAngle, "slot" );
+			$draw->CreateDetailCountersink( $layerRes->GetDataVal("radiusReal"), $imgToolDepth, $layerRes->GetDataVal("exceededDepth"), $imgToolAngle, "slot" );
 
 		}
 		elsif (    $classRes->GetType() eq OutEnums->Type_ZAXISSLOT

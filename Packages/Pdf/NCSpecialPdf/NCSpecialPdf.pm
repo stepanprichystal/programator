@@ -91,8 +91,10 @@ sub Create {
 	push( @types, @counterSinkTypes );
 
 	my @layers = CamDrilling->GetNCLayersByTypes( $inCAM, $jobId, \@types );
-
-	CamStep->CreateFlattenStep( $inCAM, $jobId, $self->{"step"}, $self->{"stepFlat"}, 1, [ map { $_->{"gROWname"} } @layers ] );
+	
+	
+	# ''
+	CamStep->CreateFlattenStep( $inCAM, $jobId, $self->{"step"}, $self->{"stepFlat"}, 1, [ map { $_->{"gROWname"} } @layers ], "c" );
 
 	CamHelper->SetStep( $inCAM, $self->{"stepFlat"} );
 
@@ -127,7 +129,6 @@ sub Create {
 	}
 
 	
-
 	$control->Clear();
 	
 	CamStep->DeleteStep($inCAM, $jobId, $self->{"stepFlat"});
@@ -221,7 +222,7 @@ sub __ProcessDrawing {
 
 		my $imgToolDepth = cotan( deg2rad( ( $imgToolAngle / 2 ) ) ) * $rCounterSink;
 
-		$draw->CreateDetailCountersinkDrilled( $rCounterSink, $layerRes->GetDataVal("drillTool"), $imgToolDepth, $imgToolAngle, "hole" );
+		$draw->CreateDetailCountersinkDrilled( $rCounterSink, $layerRes->GetDataVal("drillTool"), $imgToolDepth, $layerRes->GetDataVal("exceededDepth"), $imgToolAngle, "hole" );
 
 		#CamLayer->WorkLayer( $inCAM, $lTmp );
 		my %limDraw = CamJob->GetLayerLimits2( $inCAM, $jobId, $step, $lTmp);    # limits of pcb outline
@@ -364,7 +365,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId = "d152457";
+	my $jobId = "d152456";
 
 	my $pdf = NCSpecialPdf->new( $inCAM, $jobId );
 

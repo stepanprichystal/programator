@@ -39,11 +39,9 @@ sub new {
 	my $class = shift;
 
 	my $scale = 5;
-	my $self = $class->SUPER::new(@_,$scale);
+	my $self = $class->SUPER::new( @_, $scale );
 	bless $self;
 	return $self;
- 
- 
 
 	return $self;
 }
@@ -54,7 +52,7 @@ sub CreateDetailZaxis {
 	my $depth  = shift;    # in mm
 	my $type   = shift;    # slot/hole
 
- 	$self->_CreateDetailZaxis($radius, $depth, $type);
+	$self->_CreateDetailZaxis( $radius, $depth, $type );
 
 	# 3) Add drawing title
 	# ----------------------------------
@@ -79,7 +77,7 @@ sub CreateDetailZaxisSurf {
 	my $self  = shift;
 	my $depth = shift;
 
- 	$self->_CreateDetailZaxisSurf($depth);
+	$self->_CreateDetailZaxisSurf($depth);
 
 	# 3) Add drawing title
 	# ----------------------------------
@@ -91,13 +89,15 @@ sub CreateDetailZaxisSurf {
 }
 
 sub CreateDetailCountersink {
-	my $self   = shift;
-	my $radius = shift;    # in mm
-	my $depth  = shift;    # in mm
-	my $angle  = shift;    #
-	my $type   = shift;    # slot/hole
+	my $self       = shift;
+	my $radius     = shift;    # in mm
+	my $csDepth     = shift;   # depth of countersink in mm
+	my $csHeadDepth = shift;   # depth of countersink head if exists in mm
+	my $angle      = shift;    #
+	my $type       = shift;    # slot/hole
+	my $toolRadius = shift;	 	
 
- 	$self->_CreateDetailCountersink($radius, $depth, $angle, $type);
+	$self->_CreateDetailCountersink( $radius, $csDepth, $csHeadDepth,  $angle, $type );
 
 	my $txt = "";
 
@@ -115,10 +115,9 @@ sub CreateDetailCountersink {
 
 }
 
-
 sub __AddTitleTexts {
 	my $self = shift;
-	my $text = shift;    # countersink z-axis
+	my $text = shift;          # countersink z-axis
 
 	my $title = "";
 

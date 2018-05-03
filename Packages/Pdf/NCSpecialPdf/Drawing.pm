@@ -51,12 +51,13 @@ sub CreateDetailCountersinkDrilled {
 	my $self       = shift;
 	my $radius     = shift;    # in mm
 	my $radiusHole = shift;    # in mm
-	my $depth      = shift;    # in mm
+	my $csDepth     = shift;   # depth of countersink in mm
+	my $csHeadDepth = shift;   # depth of countersink head if exists in mm
 	my $angle      = shift;    #
 	my $type       = shift;    # slot/hole
 
  
-	$self->_CreateDetailCountersinkDrilled($radius, $radiusHole, $depth, $angle, $type);
+	$self->_CreateDetailCountersinkDrilled($radius, $radiusHole, $csDepth,$csHeadDepth, $angle, $type);
 
 	 
 

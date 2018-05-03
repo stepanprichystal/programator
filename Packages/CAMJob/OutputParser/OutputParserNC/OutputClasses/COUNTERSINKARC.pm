@@ -138,6 +138,7 @@ sub _Prepare {
 
 			my $radiusNoDepth = $matchCh[0]->{"radius"};
 			my $radiusReal = CountersinkHelper->GetSlotRadiusByToolDepth( $radiusNoDepth * 1000, $tool, $toolAngle, $toolDepth * 1000 ) / 1000;
+			my $exceededDepth = CountersinkHelper->GetToolExceededDepth(   $tool, $toolAngle, $toolDepth * 1000 ) / 1000;
 
 			if ( $l->{"plated"} ) {
 				$radiusReal -= 0.05;
@@ -156,6 +157,7 @@ sub _Prepare {
 				$outputLayer->SetDataVal("radiusBeforePlt", $radiusReal + 0.05 );    # real compted radius of features in layer before plated
 			}
 			$outputLayer->SetDataVal( "radiusReal", $radiusReal );    # real compted radius of features in layer
+			$outputLayer->SetDataVal( "exceededDepth", $exceededDepth );  # exceeded depth of tool if exist (if depth ot tool is bigger than size of tool peak)
 			$outputLayer->SetDataVal( "chainSeq",   \@matchCh );      # All chain seq, which was processed in ori layer in this class
 
 			$self->{"result"}->AddLayer($outputLayer);

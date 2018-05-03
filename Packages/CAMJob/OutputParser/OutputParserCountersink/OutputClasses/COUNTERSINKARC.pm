@@ -156,8 +156,9 @@ sub __PrepareCountersink {
 			CamMatrix->CreateLayer( $inCAM, $jobId, $drawLayer, "document", "positive", 0 );
 			$outputLayer->SetLayerName($drawLayer);    # empty layer
 
-			$outputLayer->SetDataVal( "positions",  $drillTools{$drillTool} );    # positions of countersing center point
+			$outputLayer->SetDataVal( "positions",  $drillTools{$drillTool} );    		# positions of countersing center point
 			$outputLayer->SetDataVal( "radiusReal", $lRes->GetDataVal("radiusReal") );      # radius of countersink
+			$outputLayer->SetDataVal( "exceededDepth", $lRes->GetDataVal("exceededDepth") );      # exceeded depth of tool if exist (if depth ot tool is bigger than size of tool peak)
 			$outputLayer->SetDataVal( "radiusBeforePlt", $lRes->GetDataVal("radiusBeforePlt") );      # radius of countersink before plating
 			$outputLayer->SetDataVal( "DTMTool", $lRes->GetDataVal("chainSeq")->[0]->GetChain()->GetChainTool()->GetUniDTMTool() );    # tool which do countersink
 
