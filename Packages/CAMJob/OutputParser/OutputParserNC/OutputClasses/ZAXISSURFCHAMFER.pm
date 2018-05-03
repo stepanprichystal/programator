@@ -97,6 +97,7 @@ sub _Prepare {
 		my $drawLayer = $self->_SeparateFeatsByIdNC( \@featsId );
 
 		my $radiusReal = CountersinkHelper->GetHoleRadiusByToolDepth( $toolDrillSize, $toolAngle, $toolDepth * 1000 ) / 1000;
+		my $exceededDepth = CountersinkHelper->GetToolExceededDepth(   $toolDrillSize, $toolAngle, $toolDepth * 1000 ) / 1000;
 
 		if ( $l->{"plated"} ) {
 			$radiusReal -= 0.05;
@@ -118,6 +119,7 @@ sub _Prepare {
 		# 2 Add another extra info to output layer
 
 		$outputLayer->SetDataVal( "radiusReal", $radiusReal );    # real compted radius of line arc
+		$outputLayer->SetDataVal( "exceededDepth", $exceededDepth );  				  # exceeded depth of tool if exist (if depth ot tool is bigger than size of tool peak)
 		$outputLayer->SetDataVal( "chainSeq",   \@matchCh );      # All chain seq, which was processed in ori layer in this class
 
 		$self->{"result"}->AddLayer($outputLayer);

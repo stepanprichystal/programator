@@ -101,7 +101,8 @@ sub _Prepare {
 		# 2 Add another extra info to output layer
 
 		my $radiusReal = CountersinkHelper->GetHoleRadiusByToolDepth( $toolDrillSize, $toolAngle, $toolDepth * 1000 ) / 1000;
-
+		my $exceededDepth = CountersinkHelper->GetToolExceededDepth(   $toolDrillSize, $toolAngle, $toolDepth * 1000 ) / 1000;
+ 
 		if ( $l->{"plated"} ) {
 			$radiusReal -= 0.05;
 		}
@@ -110,6 +111,7 @@ sub _Prepare {
 			$outputLayer->SetDataVal( "radiusBeforePlt", $radiusReal + 0.05 );    # real compted radius of features in layer before plated
 		}
 		$outputLayer->SetDataVal( "radiusReal",  $radiusReal );                   # real computed radius of features in layer
+		$outputLayer->SetDataVal( "exceededDepth", $exceededDepth );  				  # exceeded depth of tool if exist (if depth ot tool is bigger than size of tool peak)
 		$outputLayer->SetDataVal( "padFeatures", \@pads );                        # All pads, which was processed in ori layer in this class
 		$outputLayer->SetDataVal( "DTMTool",     $tool );                         # DTM tool, which is used for this pads
 

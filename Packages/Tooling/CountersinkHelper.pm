@@ -28,13 +28,11 @@ sub GetSlotRadiusByToolDepth {
 	my $toolAngle    = shift;
 	my $toolDepth    = shift;
 
-
 	my $rRadius = $slotRadius - ( $toolDiameter / 2 - ( tan( deg2rad( $toolAngle / 2 ) ) * $toolDepth ) );
 
 	if ( $rRadius > $slotRadius ) {
-		die
-"Real radius: $rRadius after z-axis ($toolDepth µm) can't be larger than \"max radius\" ( when tool goes throug whole pcb): $slotRadius µm. "
-		  . "Too big depth: $toolDepth µm for tool diameter: $toolDiameter µm and tool angle: $toolAngle.";
+
+		return $slotRadius;
 	}
 
 	return $rRadius;
@@ -53,9 +51,7 @@ sub GetHoleRadiusByToolDepth {
 	my $rRadius = tan( deg2rad( $toolAngle / 2 ) ) * $toolDepth;
 
 	if ( $rRadius * 2 > $toolDiameter ) {
-		die "Real radius: $rRadius after z-axis ($toolDepth µm) can't be larger than \"max radius\" ( when tool goes throug whole pcb):"
-		  . ( $toolDiameter / 2 )
-		  . "µm. Too big depth: $toolDepth for tool diameter: $toolDiameter.";
+		return $toolDiameter/2;
 	}
 
 	return $rRadius;
@@ -70,71 +66,94 @@ sub GetExtraDepthIfPlated {
 	my $platinThick = 50;    #µm
 
 	# DO NOT CONSIDER ANGLE OF DRILL, USE ONLY CONSTANT 50µm for simplicity
-	#my $dDepth = $platinThick / sin( deg2rad( $toolAngle / 2 ) ); 
+	#my $dDepth = $platinThick / sin( deg2rad( $toolAngle / 2 ) );
 
 	return $platinThick;
 }
 
-# All in µm
-sub GetDepthSlotCounterSink {
+## All in µm
+#sub GetDepthSlotCounterSink {
+#	my $self         = shift;
+#	my $finalRadius  = shift;
+#	my $toolDiameter = shift;
+#	my $toolAngle    = shift;
+#	my $plating      = shift;
+#	my $platedRadius = shift;
+#
+#	my $depth = ( $toolDiameter / 2 ) / tan( deg2rad( $toolAngle / 2 ) );
+#
+#	# Compute new slot radius
+#	# we can't do bigger depth, but we have to do larger slot radius
+#	if ($plating) {
+#
+#		my $tmpDepth = $self->GetExtraDepthIfPlated($toolAngle);
+#
+#		my $a = tan( deg2rad( $toolAngle / 2 ) ) * ( $depth + $tmpDepth );
+#
+#		$$platedRadius = $finalRadius + tan( deg2rad( $toolAngle / 2 ) ) * ( $depth + $tmpDepth ) - ( $toolDiameter / 2 );
+#	}
+#
+#	# do chack if depth is no so bif for given toolDiameter
+#	my $drillPointLen = ( $toolDiameter / 2 ) / tan( deg2rad( $toolAngle / 2 ) );
+#	if ( $depth > $drillPointLen ) {
+#
+#		die "Too big final radius: $finalRadius, for given tool diameter: $toolDiameter and tool angle: $toolAngle \n"
+#		  . "\"Tool point lenght\" is: $drillPointLen, but computed depth is bigger: $depth";
+#	}
+#
+#	return $depth;
+#}
+#
+## All in µm
+#sub GetDepthHoleCounterSink {
+#	my $self         = shift;
+#	my $finalRadius  = shift;
+#	my $toolDiameter = shift;
+#	my $toolAngle    = shift;
+#	my $plating      = shift;
+#
+#	my $depth = ($finalRadius) / tan( deg2rad( $toolAngle / 2 ) );
+#
+#	if ($plating) {
+#
+#		$depth += $self->GetExtraDepthIfPlated($toolAngle);
+#
+#	}
+#
+#	# do chack if depth is no so bif for given toolDiameter
+#	my $drillPointLen = ( $toolDiameter / 2 ) / tan( deg2rad( $toolAngle / 2 ) );
+#	if ( $depth > $drillPointLen ) {
+#
+#		die "Too big final radius: $finalRadius, for given tool diameter: $toolDiameter and tool angle: $toolAngle \n"
+#		  . "\"Tool point lenght\" is: $drillPointLen, but computed depth is bigger: $depth";
+#	}
+#
+#	return $depth;
+#
+#}
+
+
+# Return exceeded depth o tool if exist (if depth ot tool is bigger than size of tool peak)
+# Exceeded shape   looks like this:
+# |     |  - depth of drill where are streight "hole walls" (exceeded depth)
+#  \   /
+#	| |
+# (if  depth is smaller than 10µm return 0 (Round error during compute tool peak length))
+sub GetToolExceededDepth {
 	my $self         = shift;
-	my $finalRadius  = shift;
-	my $toolDiameter = shift;
-	my $toolAngle    = shift;
-	my $plating      = shift;
-	my $platedRadius = shift;
-
-	my $depth = ( $toolDiameter / 2 )  / tan( deg2rad( $toolAngle / 2 ) );
-
-	# Compute new slot radius
-	# we can't do bigger depth, but we have to do larger slot radius
-	if ($plating) {
-
-		my $tmpDepth = $self->GetExtraDepthIfPlated($toolAngle); 
-
-		my $a = tan( deg2rad( $toolAngle / 2 ) ) * ($depth + $tmpDepth);
-		
-
-		$$platedRadius = $finalRadius + tan( deg2rad( $toolAngle / 2 ) ) * ($depth + $tmpDepth) - ( $toolDiameter / 2 ) ;
+	my $toolDiameter   = shift; # µm
+	my $toolAngle    = shift; 
+	my $toolDepth    = shift; # µm
+ 
+	my $csHeadDepth = ( $toolDepth - ($toolDiameter/2) / tan( deg2rad( ( $toolAngle / 2 ) ) ) );
+	if ( abs($csHeadDepth) > 10 ) {
+		$csHeadDepth = sprintf( "%.2f", $csHeadDepth );
+	}
+	else {
+		$csHeadDepth = 0;
 	}
 
-	# do chack if depth is no so bif for given toolDiameter
-	my $drillPointLen = ( $toolDiameter / 2 ) / tan( deg2rad( $toolAngle / 2 ) ) ;
-	if ( $depth > $drillPointLen ) {
-
-		die "Too big final radius: $finalRadius, for given tool diameter: $toolDiameter and tool angle: $toolAngle \n"
-		  . "\"Tool point lenght\" is: $drillPointLen, but computed depth is bigger: $depth";
-	}
-
-	return $depth;
-}
-
-# All in µm
-sub GetDepthHoleCounterSink {
-	my $self         = shift;
-	my $finalRadius  = shift;
-	my $toolDiameter = shift;
-	my $toolAngle    = shift;
-	my $plating      = shift;
-
-	my $depth = ( $finalRadius  )  / tan( deg2rad( $toolAngle / 2 ) );
-
-	if ($plating) {
-
-		$depth += $self->GetExtraDepthIfPlated($toolAngle);
-
-	}
-
-	# do chack if depth is no so bif for given toolDiameter
-		my $drillPointLen = ( $toolDiameter / 2 ) / tan( deg2rad( $toolAngle / 2 ) ) ;
-	if ( $depth > $drillPointLen ) {
-
-		die "Too big final radius: $finalRadius, for given tool diameter: $toolDiameter and tool angle: $toolAngle \n"
-		  . "\"Tool point lenght\" is: $drillPointLen, but computed depth is bigger: $depth";
-	}
-
-	return $depth;
-
+	return $csHeadDepth;
 }
 
 #-------------------------------------------------------------------------------------------#
@@ -149,11 +168,9 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	#print CountersinkHelper->GetSlotRadiusByToolDepth( 10, 6, 120, 1.5 );
 
 	#print CountersinkHelper->GetHoleRadiusByToolDepth( 6000, 60, 3000 );
-	
+
 	#my $newRadius = undef;
 	#print CountersinkHelper->GetDepthHoleCounterSink( 3000, 6000, 90, 1);
-	
-	 
 
 }
 
