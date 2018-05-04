@@ -1,9 +1,9 @@
+package Packages::CAMJob::Drilling::DrillChecking::LayerErrorInfo;
 #-------------------------------------------------------------------------------------------#
 # Description: Class is responsible for checking drilling errors
 # when some errors occur, NC export is not possible
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::CAMJob::Drilling::DrillChecking::LayerErrorInfo;
 
 #3th party library
 use utf8;
