@@ -107,7 +107,7 @@ sub SetBlindDrills {
 			else {
 
 				my $depth = BlindDrill->ComputeDrillDepth( $stackup, $drillSize, \%lInfo, $blindType );
-				$t->{"userColumns"}->{ EnumsDrill->DTMclmn_DEPTH } = $depth / 1000;
+				$t->{"userColumns"}->{ EnumsDrill->DTMclmn_DEPTH } =  sprintf("%.2f", ($depth / 1000));
 
 				my $typWarn = BlindEnums->GetMethodName($blindType);
 				if($blindType eq BlindEnums->BLINDTYPE_SPECIAL){
@@ -168,7 +168,7 @@ sub SetBlindDrills {
 		if ( $messMngr->Result() == 0 ) {
 			last;
 		}
-		elsif ( $result && scalar(@toolSet) && $messMngr->Result() == 1 ) {
+		elsif ( $result && scalar(@toolUnset) && $messMngr->Result() == 1 ) {
 
 			# Set depths
 			CamDTM->SetDTMTools( $inCAM, $jobId, $step, $lInfo{"gROWname"}, \@DTMTools );
@@ -232,7 +232,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId = "d152457";
+	my $jobId = "d213081";
 	my $step  = "o+1";
 
 
