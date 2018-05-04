@@ -262,7 +262,17 @@ sub GetCompByLayer {
 	my $self      = shift;
 	my $layerName = shift;
 
-	my $class   = $self->GetPcbClass();
+	# Detect if it is inner layer
+	my $inner = $layerName =~ /^v\d+$/ ? 1 : 0;
+
+	my $class   = undef;
+	
+	if($inner){
+		$class = $self->GetPcbClassInner();
+	}else{
+		$class = $self->GetPcbClass();
+	}
+	
 	my $cuThick = $self->GetBaseCuThick($layerName);
 
 	my $comp = 0;
@@ -272,8 +282,7 @@ sub GetCompByLayer {
 		return 0;
 	}
 
-	# Detect if it is inner layer
-	my $inner = $layerName =~ /^v\d+$/ ? 1 : 0;
+	
 	
 	return EtchOperation->GetCompensation( $cuThick, $class, $inner );
 
