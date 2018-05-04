@@ -54,6 +54,8 @@ use aliased 'Packages::Stackup::StackupDefault';
 use aliased 'Packages::GuideSubs::Routing::CheckRout';
 use aliased 'Packages::Compare::Layers::CompareLayers';
 use aliased 'Packages::CAMJob::SolderMask::PreparationLayout';
+use aliased 'Packages::GuideSubs::Drilling::BlindDrilling::BlindDrillTools';
+use aliased 'Packages::GuideSubs::Drilling::BlindDrilling::CheckDrillTools';
 
 use aliased 'Widgets::Forms::SimpleInput::SimpleInputFrm';
 
@@ -166,18 +168,22 @@ unless ($panelSizeCheck == 0) {
 
 sub _GUIpanelizace {
 		$main = MainWindow->new;
-		$main->title('Panelizace');
+		$main->title('Panelizace - ' . $jobName);
 			unless ($constClass) {
-						($constClass, $wroteChackList) = _GetExistkonClass($jobName);
+						($constClass, $wroteChackList, $constClass_inner, $wroteChackList_inner) = _GetExistkonClass($jobName);
 			}
 			
 			$mainFrame= $main->Frame(-width=>300, -height=>200)->pack(-side=>'top',-fill=>'both');
 				$topFrame = $mainFrame->Frame(-width=>100, -height=>70)->pack(-side=>'top',-fill=>'both');
 						$topFrameLeft = $topFrame->Frame(-width=>100, -height=>70)->pack(-side=>'left',-fill=>'both',-expand => "True");
 									
-									$topFrameLeft->Label(-text=>"Reference desky : $jobName",-font=>"Arial 10")->pack(-padx => 3, -pady => 3,-side=>'top');
+									$topFrameLeft_L = $topFrameLeft->Frame(-width=>100, -height=>70,-borderwidth=>10)->pack(-side=>'left',-fill=>'both',-expand => "True");
+									$topFrameLeft_R = $topFrameLeft->Frame(-width=>100, -height=>70,-borderwidth=>10)->pack(-side=>'right',-fill=>'both',-expand => "True");
+									
+									
+									#$topFrameLeft->Label(-text=>"Reference desky : $jobName",-font=>"Arial 10")->pack(-padx => 3, -pady => 3,-side=>'top');
 
-									$construct_class_entry = $topFrameLeft->BrowseEntry(
+									$construct_class_entry = $topFrameLeft_L->BrowseEntry(
 														-label=>"Konstrukcni trida",
 														-variable=>\$constClass,
 														-listcmd=>\&_fill_const_list,
@@ -186,10 +192,25 @@ sub _GUIpanelizace {
 														-width=>10, 
 														-font=>"Arial 10",
 														-fg=>'red')
-														->pack(-padx=>3,-pady=>3,-side=>'top',-fill=>'both');
-														
+														->pack(-padx=>3,-pady=>15,-side=>'top',-fill=>'both');
+									
+									$topFrameLeft_L->Label(-text=>"Zkontrolovano v......" . _GetConstrClass($jobName , 'o+1') . $wroteChackList ,-font=>"Arial 10")->pack(-padx => 3, -pady => 3,-side=>'bottom');
+									
+					if (HegMethods->GetTypeOfPcb($jobName) eq 'Vicevrstvy') {
+									
+									$construct_class_entry_inner = $topFrameLeft_R->BrowseEntry(
+														-label=>"Konstrukcni trida INNER",
+														-variable=>\$constClass_inner,
+														-listcmd=>\&_fill_const_list_inner,
+														-state=>"readonly",
+														-listwidth=>50,
+														-width=>10, 
+														-font=>"Arial 10",
+														-fg=>'orange')
+														->pack(-padx=>3,-pady=>15,-side=>'top',-fill=>'both');
 													
-									$topFrameLeft->Label(-text=>"Zkontrolovano v......" . _GetConstrClass($jobName , 'o+1') . $wroteChackList ,-font=>"Arial 10")->pack(-padx => 3, -pady => 3,-side=>'top');
+									$topFrameLeft_R->Label(-text=>"Zkontrolovano v......" . _GetConstrClass_inner($jobName , 'o+1') . $wroteChackList_inner ,-font=>"Arial 10")->pack(-padx => 3, -pady => 3,-side=>'bottom');
+					}
 														
 						$topFrameRight = $topFrame->Frame(-width=>100, -height=>70)->pack(-side=>'right',-fill=>'both',-expand => "True");
 											if ($runCSV eq 'csv') {
@@ -417,7 +438,7 @@ sub _GUIpanelizace {
 											_CheckTableDrill($jobName);
 											_CheckTableRout($jobName);
 											_CheckBigestHole($jobName);
-										   #_CheckminimalToolRout($jobName); Now this error is checked in LayerWarnInfo
+										   #_CheckminimalToolRout($jobName); Now this error is checked in LayerCheckWarn
 											_CheckMpanelExistPool($jobName);
 											_CheckPlgcPlgs($jobName);
 											
@@ -425,6 +446,7 @@ sub _GUIpanelizace {
 											
 											my $messWarn = "";
 											my $resultWarn = LayerWarnInfo->CheckNCLayers( $inCAM, $jobName, "o+1", undef, \$messWarn );
+											
 											if ($resultWarn == 0) {
 													push @warnMessageArr, $messWarn;
 											}
@@ -521,6 +543,12 @@ sub _fill_const_list {
         $construct_class_entry->insert('end',"$className");
     }
 }
+sub _fill_const_list_inner {
+    $construct_class_entry_inner->delete(0,'end');
+    foreach my $className (qw /3 4 5 6 7 8/) {
+        $construct_class_entry_inner->insert('end',"$className");
+    }
+}
 sub _CheckPool{
 			my $jobId = shift;
 			
@@ -534,6 +562,9 @@ sub _CheckPool{
  						# Set attribut construction class
  						CamJob->SetJobAttribute($inCAM, 'pcb_class', $constClass, $jobId);
  						
+ 						if (HegMethods->GetTypeOfPcb($jobId) eq 'Vicevrstvy') {
+ 								CamJob->SetJobAttribute($inCAM, 'pcb_class_inner', $constClass_inner, $jobId);
+ 						}
  						# Set user name to attribute
  						_SetAttrUser($jobId);
  						
@@ -868,6 +899,10 @@ sub _Panelize {
 			# Set construction class to the attribute of job
 			CamJob->SetJobAttribute($inCAM, 'pcb_class', $constClass, $jobName);
 			
+			if (HegMethods->GetTypeOfPcb($jobName) eq 'Vicevrstvy') {
+ 					CamJob->SetJobAttribute($inCAM, 'pcb_class_inner', $constClass_inner, $jobName);
+ 			}
+			
 			# Here is set attribut in job Gold_fingers
 			_SetAttrGoldHolder("$jobName");
 			
@@ -936,6 +971,26 @@ sub _Panelize {
 			# Check if panel is ready for production
 			CheckPanel->RunCheckOfPanel($inCAM, $jobName);
 			
+			
+			
+			
+			# Set depth of blind via
+     		my $messMngrBlind = MessageMngr->new("D3333");
+      		my $res = BlindDrillTools->SetBlindDrillsAllSteps( $inCAM, $jobName, $messMngrBlind );
+			
+			
+		
+      		# Check right depth of blind via
+      		my $messMngrBlindCheck = MessageMngr->new("D3333");
+	        CheckDrillTools->BlindDrillCheckAllSteps( $inCAM, $jobName, $messMngrBlindCheck );
+	        
+	        
+			
+			
+			
+			
+			
+			
 			# Finish message
 			my @mess = ( "PANELIZACE - HOTOVO");
 			my $messMngr = MessageMngr->new($jobName);
@@ -1000,22 +1055,33 @@ sub _Panelize {
 
 sub _GetExistkonClass {
 		my $idPcb = shift;
-		my $atrbtClass = 0;
-		my $wroteChecklist = '';
+		my $wroteChecklist = '                        ';
+		my $wroteChecklist_inner = '';
 		
-		   $atrbtClass = CamAttributes->GetJobAttrByName($inCAM, $idPcb, 'pcb_class');
+		
+		   my $atrbtClass = CamAttributes->GetJobAttrByName($inCAM, $idPcb, 'pcb_class');
+		   my $atrbtClassInner = CamAttributes->GetJobAttrByName($inCAM, $idPcb, 'pcb_class_inner');
 		   
 		   unless($atrbtClass) {
 		   	   		my $textClass = _GetConstrClass($idPcb , 'o+1');
-		   	   		
+		   	   	
 		   	   		($atrbtClass) = $textClass =~ /Class_(\d)/;
-		   	   		
+
 		   	   		if ($atrbtClass){
 		   	   				$wroteChecklist = '....zapsano do KT';
 		   	   		}
 		  	}
+		  	unless($atrbtClassInner) {
+		  			my $textClass_inner = _GetConstrClass_inner($idPcb , 'o+1');
+		  			($atrbtClassInner) = $textClass_inner =~ /Class_(\d)/;
+		  	
+		  	
+		   	   		if ($atrbtClassInner){
+		   	   				$wroteChecklist_inner = '....zapsano do KT';
+		   	   		}
+		  	}
 		   
-	return ($atrbtClass, $wroteChecklist);
+	return ($atrbtClass, $wroteChecklist, $atrbtClassInner, $wroteChecklist_inner);
 }
 
 sub _GetInnerLayers {
@@ -1671,6 +1737,26 @@ sub _GetConstrClass {
 		my $stepId = shift;
 		my $checkList = 'Checks';
 		my $positionInChecks = 'action=2';
+		my $res = 0;
+		
+  				$inCAM->INFO(units => 'mm', angle_direction => 'ccw', entity_type => 'check',
+  			  	     entity_path => "$jobId/$stepId/$checkList",
+  			      	 data_type => 'EXISTS');
+  				if ($inCAM->{doinfo}{gEXISTS} eq "yes") {
+  			       				$inCAM->INFO(units => 'mm', angle_direction => 'ccw', entity_type => 'check',
+  			  	     												entity_path => "$jobId/$stepId/$checkList",
+  			       													data_type => 'ERF_MODEL',
+  			       													options => $positionInChecks);
+  			       													
+  			       			$res = $inCAM->{doinfo}{gERF_MODEL};
+  			    }
+  	return($res);	       													
+}
+sub _GetConstrClass_inner {
+		my $jobId = shift;
+		my $stepId = shift;
+		my $checkList = 'Checks';
+		my $positionInChecks = 'action=1';
 		my $res = 0;
 		
   				$inCAM->INFO(units => 'mm', angle_direction => 'ccw', entity_type => 'check',
