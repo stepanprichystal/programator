@@ -28,7 +28,7 @@ my $inCAM    = InCAM->new();
 
 $inCAM->SupressToolkitException(1);
 
-$app->{"inCAM"} = $inCAM;
+#$app->{"inCAM"} = $inCAM;
 
 $app->Run();
 

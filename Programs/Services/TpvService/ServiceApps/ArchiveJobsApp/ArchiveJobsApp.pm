@@ -46,6 +46,7 @@ sub new {
 	# All controls
 
 	$self->{"inCAM"}         = undef;
+	$self->{"totalAttempt"} = 0; # total attempt of process job cnt
 	$self->{"processedJobs"} = 0;
 	$self->{"processedJobsIds"} = [];
 	$self->{"maxLim"}        = 20;
@@ -77,7 +78,8 @@ sub Run {
 
 			foreach my $jobId (@jobs) {
 
-				$self->{"logger"}->info("Process job: $jobId");
+				$self->{"totalAttempt"}++;
+				$self->{"logger"}->info("Process job: $jobId (total attempt: ".$self->{"totalAttempt"}.", total processed: ".$self->{"processedJobs"}.")");
 
 				$self->__RunJob($jobId);
 
@@ -143,6 +145,8 @@ sub __ProcessJob {
 	my $jobId = shift;
 
 	$jobId = lc($jobId);
+	
+	
 
 	my $inCAM = $self->{"inCAM"};
 
