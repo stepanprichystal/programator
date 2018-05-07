@@ -14,9 +14,9 @@ use warnings;
 use lib qw( C:\Perl\site\lib\TpvScripts\Scripts );
 
 #necessary for load pall packages
-#use FindBin;
-#use lib "$FindBin::Bin/../";
-#use PackagesLib;
+use FindBin;
+use lib "$FindBin::Bin/../";
+use PackagesLib;
 
 use aliased 'Helpers::FileHelper';
 use aliased 'Packages::InCAM::InCAM';
@@ -68,7 +68,7 @@ foreach my $jobId (@jobs) {
 
 	$res .= "JobId = $jobId, duration = " .  sprintf("%02d:%02d:%02d", $duration/3600, $duration/60%60, $duration%60) . "\n";
 
-	CamHelper->CloseJob( $inCAM, $jobId ) unless ($wasOpened);
+	CamJob->CloseJob( $inCAM, $jobId ) unless ($wasOpened);
 
 }
 
