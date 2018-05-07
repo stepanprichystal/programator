@@ -568,6 +568,17 @@ sub _CheckPool{
  						# Set user name to attribute
  						_SetAttrUser($jobId);
  						
+ 						#optimalization of scoring (MPANEL) + check if score has right distance from profile when POOL
+						if (CamHelper->StepExists( $inCAM, $jobId, 'mpanel')){
+								$inCAM->COM('script_run',name=>"y:/server/site_data/scripts/ScoreRepairScript.pl",dirmode=>'global',params=>"$jobId mpanel");
+								$inCAM->COM('script_run',name=>"z:/sys/scripts/RouteListControlsScript.pl",dirmode=>'global',params=>"$jobId mpanel");
+						}
+						#optimalization of scoring when o+1_single exists + check if score has right distance from profile when POOL
+						if (CamHelper->StepExists( $inCAM, $jobId, 'o+1_single') && CamHelper->StepExists( $inCAM, $jobId, 'o+1')){
+								$inCAM->COM('script_run',name=>"y:/server/site_data/scripts/ScoreRepairScript.pl",dirmode=>'global',params=>"$jobId o+1");
+								$inCAM->COM('script_run',name=>"z:/sys/scripts/RouteListControlsScript.pl",dirmode=>'global',params=>"$jobId o+1");
+						}
+ 						
  	 					#input parameters
  	 					my $poznamka = $txt->get("1.0","end");
 	 			  		chomp($poznamka);
@@ -665,16 +676,7 @@ sub _CheckPool{
 										}
 										
 										
-										#optimalization of scoring (MPANEL) + check if score has right distance from profile when POOL
-										if (CamHelper->StepExists( $inCAM, $jobId, 'mpanel')){
-											$inCAM->COM('script_run',name=>"y:/server/site_data/scripts/ScoreRepairScript.pl",dirmode=>'global',params=>"$jobId mpanel");
-											$inCAM->COM('script_run',name=>"z:/sys/scripts/RouteListControlsScript.pl",dirmode=>'global',params=>"$jobId mpanel");
-										}
-										#optimalization of scoring when o+1_single exists + check if score has right distance from profile when POOL
-										if (CamHelper->StepExists( $inCAM, $jobId, 'o+1_single') && CamHelper->StepExists( $inCAM, $jobId, 'o+1')){
-											$inCAM->COM('script_run',name=>"y:/server/site_data/scripts/ScoreRepairScript.pl",dirmode=>'global',params=>"$jobId o+1");
-											$inCAM->COM('script_run',name=>"z:/sys/scripts/RouteListControlsScript.pl",dirmode=>'global',params=>"$jobId o+1");
-										}
+
 										
 										
 										# Run Netlist compare

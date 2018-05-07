@@ -128,6 +128,7 @@ sub _AddJobToQueue {
 	);
 
 	push( @{ $self->{"jobs"} }, \%jobInfo );
+	$self->{"taskCnt"}++;
 
 	# Check if DEBUG mode (if test server already prepared)
 	# launch task in with fake server

@@ -73,7 +73,7 @@ my $logger = get_logger("serverLog");
 # global variables #
 
 my @clients : shared = ();                                 # info about running incam and  client which use it
-my %clientsThreads   = ();                                 # contain client id and its thread object
+my %clientsThreads : shared = ();                          # contain client id and its thread id (tid)
 my $clientsCnt       = 0;                                  # total count of client, which incam edotor was launched for
 my $MAX_INCAM_CNT    = AppConf->GetValue("maxClients");    # max incam instance running in same time
 my $portStarts       = AppConf->GetValue("portStart");     # all incam edotros are running on this or heigher port
@@ -136,9 +136,9 @@ while ( my $new_sock = $main_socket->accept() ) {
 
 	my $thr = threads->create( sub { __ClientThread( $new_sock, $clientId, \@clients ) } );
 	$thr->set_thread_exit_only(1);
-	$thr->detach();
+	#$thr->detach();
 
-	$clientsThreads{$clientId} = $thr;
+	$clientsThreads{$clientId} = $thr->tid();
 
 	$logger->info("Total accepted clients: $clientsCnt");
 
@@ -345,9 +345,7 @@ sub __KillOldServers {
 		
 		sleep(120);    # Do celanup every 2 minutes
 	}
-
-	
-
+ 
 }
 
 sub __CleanUpClient {
@@ -368,14 +366,17 @@ sub __CleanUpClient {
 	Win32::Process::KillProcess( $client->{"inCAMPID"},  0 );
 	Win32::Process::KillProcess( $client->{"serverPID"}, 0 );
 
-	my $thrObj = $clientsThreads{ $client->{"clientId"} };
+	my $thrId = $clientsThreads{ $client->{"clientId"} };
 
-	unless ( defined $thrObj ) {
-		$logger->error("undef thread obj");
-		die;
-	}
+#	unless ( defined $thrObj ) {
+#		$logger->error("undef thread obj");
+#		die;
+#	}
+
+	my $thrObj = threads->object($thrId);
 
 	if ( defined $thrObj && $thrObj->is_running() ) {
+		$logger->error("Kill thread");
 		$thrObj->kill('KILL');
 	}
 

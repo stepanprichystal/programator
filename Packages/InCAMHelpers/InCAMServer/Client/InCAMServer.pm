@@ -326,19 +326,9 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	#
 	print STDERR "\nOdpoved z InCAM - user name: " . $rep . "\n";
 
-	#		print STDERR "\nKonec pouziti InCAMu\n";
-	#
-	#		sleep( int( rand(20) ) );
-	#
-	#		$server->JobDone();
-	#
-	#		sleep( int( rand(50) ) );
-	#
-	#	}
-
-	# ================================================#
-	# ================================================#
-
+ 
+	 		$server->JobDone();
+ 
 }
 
 1;

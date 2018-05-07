@@ -294,8 +294,14 @@ sub OnCheckGroupData {
 
 	if ( $defaultInfo->GetTypeOfPcb() ne "Neplatovany" ) {
 
-		my $maxCuThick = CuLayer->GetMaxCuByClass( $defaultInfo->GetPcbClass() );
-
+		my $maxCuThick = undef;
+		
+		if ( $defaultInfo->GetLayerCnt() == 1 ) {
+		 	$maxCuThick = CuLayer->GetMaxCuByClass( $defaultInfo->GetPcbClass(), 1 ); # 1vv - same condition as inner layers
+		}else{
+			 $maxCuThick = CuLayer->GetMaxCuByClass( $defaultInfo->GetPcbClass() );
+		}
+ 
 		if ( $defaultInfo->GetBaseCuThick() > $maxCuThick ) {
 			$dataMngr->_AddErrorResult(
 										"Max Cu thickness outer layer",
