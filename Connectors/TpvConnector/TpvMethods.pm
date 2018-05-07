@@ -276,6 +276,52 @@ sub ClearLogDb {
 	Helper->ExecuteNonQuery( $cmd, \@params );
 }
 
+# Insert new pcbId which is unable to archive
+# Remove records older than 14 days
+# Do not insert if alreadz inserted
+sub InsertUnableToArchive{
+	my $self    = shift;
+	my $pcbId   = shift;
+	
+	
+	# Clear  record older than 14 days
+	my $cmd = "DELETE FROM  archivejobs_notArchived  WHERE Inserted < (now() - INTERVAL 14 DAY);";
+	
+	
+	my @params1 = ( SqlParameter->new( "_PcbId", Enums->SqlDbType_VARCHAR, $pcbId ) );
+
+	my $cmd1 = "SELECT
+				PcbId 
+				FROM archivejobs_notArchived
+				WHERE PcbId = _PcbId;";
+
+	my $pcbIdExist = Helper->ExecuteScalar( $cmd1, \@params1 );
+	
+	unless($pcbIdExist){
+ 
+		my $cmd = "INSERT INTO archivejobs_notArchived (PcbId) VALUES (_PcbId);";
+		Helper->ExecuteNonQuery( $cmd, \@params1 );
+	}
+	
+	
+}
+
+# Return arary of jobs which are unable to archive
+sub GetUnableToArchivedJobs{
+	my $self    = shift;
+	
+	my @params = ();
+
+	my $cmd = "SELECT 
+			*
+		FROM archivejobs_notArchived ";
+
+	my @result = Helper->ExecuteDataSet( $cmd, \@params );
+
+	return map { $_->{"PcbId"} } @result;
+	
+}
+
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#
@@ -296,9 +342,12 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 #
 #	dump(@arr);
 
-	my @logs = TpvMethods->GetErrLogsToProcess("checkElTests");
+	 # TpvMethods->InsertUnableToArchive("d152457");
 
-	print @logs;
+	my @jobs = TpvMethods->GetUnableToArchivedJobs();
+	 
+	 
+	 die;
 
 }
 

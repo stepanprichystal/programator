@@ -26,6 +26,7 @@ use aliased 'Helpers::JobHelper';
 use aliased 'CamHelpers::CamJob';
 use aliased 'Enums::EnumsPaths';
 use aliased 'CamHelpers::CamHelper';
+use aliased 'Connectors::TpvConnector::TpvMethods';
 
 #-------------------------------------------------------------------------------------------#
 #  Public method
@@ -153,7 +154,11 @@ sub __ProcessJob {
 	# 1) Test if job is not open and not checked out by someone
 
 	my $errMess = "";
+	$self->{"logger"}->debug("Job $jobId before in use");
+	
 	my $inUse = $self->__JobInUse( $jobId, \$errMess );
+	
+	$self->{"logger"}->debug("Job $jobId After in use");
 
 	if ($inUse) {
 
@@ -168,7 +173,9 @@ sub __ProcessJob {
 	}
 
 	# 2) Try to create odb file
+	$self->{"logger"}->debug("Job $jobId before create odb");
 	my $odbCreated = $self->__CreateODB($jobId);
+	$self->{"logger"}->debug("Job $jobId after create odb");
 
 	# 3) if ODB was created, delete job from incam db
 	if ($odbCreated) {
@@ -254,6 +261,15 @@ sub __GetJob2Archive {
 	my %tmp;
 	@tmp{@pcbInProduc} = ();
 	@job2Archive = grep { !exists $tmp{$_} } @list;
+	
+	
+	# select only jobs which are not unable to archive
+	my @jobs = TpvMethods->GetUnableToArchivedJobs();
+	
+	my %tmp2;
+	@tmp2{@jobs} = ();
+	@job2Archive = grep { !exists $tmp2{$_} } @job2Archive;
+	
 
 	# limit if more than 30jobs, in order don't block  another service apps
 	$logger->info( "Number of jobs to archive: " . scalar(@job2Archive) . "\n" );
@@ -408,6 +424,9 @@ sub __ProcessError {
 
 	# sent error to log db
 	#$self->{"loggerDB"}->Error( $jobId, $errMess );
+	
+	# insert job to unnable to archive job list
+	TpvMethods->InsertUnableToArchive($jobId);
 
 }
 
