@@ -277,7 +277,7 @@ sub ClearLogDb {
 }
 
 # Insert new pcbId which is unable to archive
-# Remove records older than 14 days
+# Remove records older than 2 days
 # Do not insert if alreadz inserted
 sub InsertUnableToArchive{
 	my $self    = shift;
@@ -285,7 +285,7 @@ sub InsertUnableToArchive{
 	
 	
 	# Clear  record older than 14 days
-	my $cmd = "DELETE FROM  archivejobs_notArchived  WHERE Inserted < (now() - INTERVAL 14 DAY);";
+	my $cmd = "DELETE FROM  archivejobs_notArchived  WHERE Inserted < (now() - INTERVAL 2 DAY);";
 	
 	
 	my @params1 = ( SqlParameter->new( "_PcbId", Enums->SqlDbType_VARCHAR, $pcbId ) );

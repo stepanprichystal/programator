@@ -290,17 +290,12 @@ sub __AddPilotHolesDefinition {
 	}
 	else {
 
-		# New version of pilot holes	10.11.2017
-		# hole 4-5,4 add pilot hole 0.5
-		# hole 5.5-6.5 add pilot hole 0.5
+		# New version of pilot holes	7.5.2018
+		# hole 4-6.5 add pilot hole 0.8
 		my @tools1 =
-		  grep { $_->GetDrillSize() >= 4000 && $_->GetDrillSize() <= 5400 && $_->GetTypeProcess() eq Enums->TypeProc_HOLE } @{ $self->{"tools"} };
-		$self->__AddPilotHoles( \@tools1, 500 );
-
-		my @tools2 =
-		  grep { $_->GetDrillSize() >= 5500 && $_->GetDrillSize() <= 6500 && $_->GetTypeProcess() eq Enums->TypeProc_HOLE } @{ $self->{"tools"} };
-		$self->__AddPilotHoles( \@tools2, 600 );
-
+		  grep { $_->GetDrillSize() >= 4000 && $_->GetDrillSize() <= 6500 && $_->GetTypeProcess() eq Enums->TypeProc_HOLE } @{ $self->{"tools"} };
+		$self->__AddPilotHoles( \@tools1, 800 );
+ 
 	}
 
 	# 2) Go throught pilot holes and create their tool definition

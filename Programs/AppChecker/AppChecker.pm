@@ -66,25 +66,31 @@ sub Run {
 	my @files = <$dir/*>;
 	my $count = @files;
 
-	if ( $count > $self->{"maxLogCnt"} ) {
-		return 0;
-	}
-
-	while ( $self->{"period"} ) {
-
-		# test if many logs
-
-		# Test if there is too many logs
-		# If more than 100,
-
-		foreach my $app ( @{ $self->{"apps"} } ) {
-
-			if ( $app->{"appCond"}->( $self, $app ) ) {
-
-				$app->{"appAction"}->( $self, $app );
-			}
-		}
-	}
+#	while ( 1) {
+#
+#		# test if many logs
+#		if ( $count > $self->{"maxLogCnt"} ) {
+#			return 0;
+#		}
+#
+#		# Test if there is too many logs
+#		# If more than 100,
+#
+#		foreach my $app ( @{ $self->{"apps"} } ) {
+#
+#			# store only one log from one app and one user per hour
+#			my $logName = __GetLogName($app->{"appName"});
+#			
+#			
+#			
+#			if ( $app->{"appCond"}->( $self, $app ) ) {
+#
+#				$app->{"appAction"}->( $self, $app );
+#			}
+#		}
+#		
+#		sleep($self->{"period"} );
+#	}
 
 }
 
@@ -104,6 +110,19 @@ sub CreateLogPath {
 	}
 
 	return $p;
+}
+
+sub __GetLogName{
+	my $self    = shift;
+	my $appName = shift;
+
+	$appName =~ s/\s//g;
+	my $logname = $ENV{USERNAME};
+
+	my $d = DateTime->now;
+ 
+	return $appName . "_" . $d->ymd('-') . "_" . $d->hms('-') . "_" . $logname;
+	
 }
 
 #-------------------------------------------------------------------------------------------#

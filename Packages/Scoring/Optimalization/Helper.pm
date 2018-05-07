@@ -336,7 +336,7 @@ sub GetStraightScore {
 
 		  }
 		  else {
-			  GeneralHelper->AddError( $errors, "Wrong score line. Score line id:" . $lines[$i]->{"id"} . " is diagonal" );
+			  GeneralHelper->AddError( $errors, "Wrong score line. Score line id:" . $lines[$i]->{"id"} . " is not strictly horizontal or verticall." );
 		  }
 	  }
 	  return @lines;

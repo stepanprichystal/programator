@@ -49,7 +49,7 @@ else {
 #test
 if (0) {
 	my $layer = "score";
-	$jobName  = "f13609";
+	$jobName  = "d152457";
 	$stepName = "mpanel";
 
 	$inCAM->COM(
@@ -170,6 +170,12 @@ if ( $inCAM->{doinfo}{gEXISTS} eq "yes" ) {
 
 			#$inCAM->COM ('editor_page_close');
 		}
+	}
+	
+	if(defined $errors{"errors"}{"mess"}){
+		my $messMngr =  MessageMngr->new($jobName);
+			$messMngr->ShowModal( -1, EnumsGeneral->MessageType_ERROR, [$errors{"errors"}{"mess"}] );
+		
 	}
 
 }
