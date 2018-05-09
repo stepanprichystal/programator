@@ -87,8 +87,7 @@ sub Run {
 
 			# store only one log from one app and one user per hour
 
-			#if ( $app->{"appCond"}->( $self, $app ) ) {
-			if (1) {
+			if ( $app->{"appCond"}->( $self, $app ) ) {
 
 				next if ( $self->__SameLogExist( $app->{"appName"}, \@files ) );
 
