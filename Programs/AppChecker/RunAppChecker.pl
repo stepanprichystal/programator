@@ -30,7 +30,7 @@ use aliased 'Enums::EnumsPaths';
 use aliased 'Enums::EnumsApp';
 use aliased 'Helpers::GeneralHelper';
 
-exit(0);
+ 
 my $noHide = shift;
 
 # Log for perl
@@ -95,7 +95,7 @@ my $asyncAppCond = sub {
 		my $diff = $refTime - $dt->epoch();
 
 		# add log if not respond more then 5 second and less than 20
-		if ( $diff > 5 &&  $diff > 20 ) {
+		if ( $diff > 5 && $diff < 60 ) {
 			
 			$logger->info(" App: ".$app->{"appName"}. " failed on PC: " .$ENV{USERNAME});
 			
@@ -111,8 +111,7 @@ my $asyncAppCond = sub {
 my $asyncAppAction = sub {
 	my $appChecker = shift;
 	my $app        = shift;
-
-	my $path = $appChecker->CreateLogPath( $app->{"appName"} );
+	my $path = shift;
 
 	#move all logs from lof dir
 	my $appLog = EnumsPaths->Client_INCAMTMPLOGS . "\\" . $app->{"appName"};

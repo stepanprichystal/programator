@@ -1,6 +1,7 @@
 
 package Enums::EnumsPaths;
 
+# paths on client computer
 use constant {
 	Client_EXPORTFILES => "c:\\Export\\ExportFiles\\Pcb\\",
 	Client_EXPORTFILESPOOL => "c:\\Export\\ExportFiles\\Pool\\",
@@ -74,7 +75,13 @@ use constant {
 	Jobs_AOITESTS =>  "\\\\192.168.2.66\\spool\\pci\\",
 	Jobs_AOITESTSFUSION =>  "\\\\192.168.2.60\\spool\\pci\\",
 	Jobs_AOITESTSFUSIONDB =>  "\\\\192.168.2.60\\job_db\\",
-	Jobs_JETPRINTMACHINE => "\\\\printer-pc\\jobs\\"
+	
+	# Jet print paths
+	Jobs_JETPRINTMACHINE => "\\\\printer-pc\\jobs\\",
+	
+	# Paths where helper logs are stored
+	App_LOGS => "\\\\fs2.gatema.cz\\Log\\"
+	
 };
 
 # sometimes script is run from windows service, thus mapped disc Y is not avalaible, use incam\imcam adress
