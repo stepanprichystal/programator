@@ -14,7 +14,7 @@ use PackagesLib;
 use aliased 'Packages::InCAM::InCAM';
 use aliased 'Programs::Exporter::ExportUtility::Groups::ETExport::ETExportTmp';
 
-my $jobId    = "f13610";
+my $jobId    = "d152457";
 my $inCAM    = InCAM->new();
 
 #GET INPUT NIF INFORMATION

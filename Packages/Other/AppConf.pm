@@ -79,8 +79,8 @@ sub __GetVal {
 
 		$confPath = $main::configPath;
 
-		unless ( -e $main::configPath ) {
-			die "Configuration style file $main::configPath doesn't exist";
+		unless ( -e $confPath ) {
+			die "Configuration style file $confPath doesn't exist. Key: $key";
 		}
 	}
 

@@ -143,7 +143,7 @@ sub __ProcessJob {
 	if ( CheckElTest->ElTestRequested($jobId) ) {
 
 		unless ( CheckElTest->ElTestExists($jobId) ) {
-
+ 
 			my %orderInfo = HegMethods->GetAllByOrderId($orderId);
 
 			my $pattern = DateTime::Format::Strptime->new( pattern => '%Y-%m-%d %H:%M:%S', );
@@ -159,15 +159,17 @@ sub __ProcessJob {
 
 			if ( defined $difCreation ) {
 
-				$diff = DateTime->now->epoch() - $difCreation;
+				$diff = DateTime->now("time_zone" => 'Europe/Prague')->epoch() - $difCreation;
 			}
 			else {
 
-				$diff = DateTime->now->epoch() - $dateStart;
+				$diff = DateTime->now("time_zone" => 'Europe/Prague')->epoch() - $dateStart;
 
 			}
 
-			if ( $diff / 3600 > 16 ) {
+			$self->{"logger"}->debug("El test for job: $orderId doesnt exist for $diff hours");
+
+			if ( $diff / 3600 > 10 ) {
 
 				my $errText = "Elektrický test pro: $jobId neexistuje. Co nejdříve ho vytvoř!";
 				my $term = $pattern->parse_datetime( $orderInfo{"termin"} )->dmy('/');    # start order date

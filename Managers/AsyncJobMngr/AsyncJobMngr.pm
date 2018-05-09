@@ -519,7 +519,6 @@ sub __Timer1sHandler {
 	# Another help app can get "state" of this app
 	my $loggerState =  get_logger( Enums->Logger_APPSTATE );
 	$loggerState->debug();
-
 }
 
 

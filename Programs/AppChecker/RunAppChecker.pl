@@ -73,12 +73,14 @@ my $asyncAppCond = sub {
 
 		my $refTime = time();
  
+ 		unless(-e $p){
+ 			return 0;
+ 		}
+ 
 		tie my @file, 'Tie::File', $p
 		  or die "Can't open $p: $!\n";
 		my $date = $file[-1];
-		
-		return 0 if(scalar(@file) < 30); 
-
+ 
 		unless ( $date =~ m/^(\d{4})\/(\d{2})\/(\d{2}) (\d{2}):(\d{2}):(\d{2})/ ) {
 			return 0;
 		}
@@ -95,7 +97,7 @@ my $asyncAppCond = sub {
 		my $diff = $refTime - $dt->epoch();
 
 		# add log if not respond more then 5 second and less than 20
-		if ( $diff > 5 && $diff < 60 ) {
+		if ( $diff > 2 && $diff < 60 ) {
 			
 			$logger->info(" App: ".$app->{"appName"}. " failed on PC: " .$ENV{USERNAME});
 			

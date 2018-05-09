@@ -21,6 +21,8 @@ use aliased 'Packages::ETesting::BasicHelper::OptSet';
 use aliased 'Packages::ETesting::BasicHelper::ETSet';
 use aliased 'Packages::Polygon::Features::Features::Features';
 use aliased 'Enums::EnumsPaths';
+use aliased 'Enums::EnumsGeneral';
+use aliased 'CamHelpers::CamDrilling';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -160,6 +162,15 @@ sub __FlatternETStep {
 		  || $_->{"gROWlayer_type"} eq "drill"
 	} @allLayers;
 
+	# Remove layers which are not needed flc, fls
+	my @filterLayer = map { $_->{"gROWname"} }
+	  CamDrilling->GetNCLayersByTypes( $inCAM, $jobId, [ EnumsGeneral->LAYERTYPE_nplt_lcMill, EnumsGeneral->LAYERTYPE_nplt_lsMill ] );
+
+	my %tmp;
+	@tmp{@filterLayer} = ();
+	@allLayers = grep { !exists $tmp{ $_->{"gROWname"} } } @allLayers;
+	
+	
 	foreach my $l (@allLayers) {
 
 		CamLayer->FlatternLayer( $inCAM, $jobId, $etStep, $l->{"gROWname"} );
@@ -276,7 +287,7 @@ sub __CreateIpc {
 		$outPath .= "t";
 		$outName .= "t";
 	}
-	
+
 	$resultEtSet = ETSet->ETSetOutput( $inCAM, $jobId, $etStep, $optName, $etsetName, $outPath, $outName );
 
 	unless ($resultEtSet) {
