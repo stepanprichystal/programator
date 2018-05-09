@@ -342,7 +342,7 @@ sub OnCheckGroupData {
 		my $stackup = $defaultInfo->GetStackup();
 
 		my $errMes = "";
-		my $matOk = StackupOperation->StackupMatInStock( $jobId, $defaultInfo->GetStackup(), \$errMes );
+		my $matOk = StackupOperation->StackupMatInStock( $inCAM, $jobId, $defaultInfo->GetStackup(), \$errMes );
 
 		unless ($matOk) {
 

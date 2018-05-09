@@ -67,7 +67,11 @@ sub GetStandards {
 			"bl"  => 21,
 			"br" => 21,
 			"bt"   => 41.6,
-			"bb"   => 41.6
+			"bb"   => 41.6,
+			
+			# used prepreg size
+			"pW" => 307,
+			"pH" => 360
 		)
 	);
 
@@ -87,7 +91,11 @@ sub GetStandards {
 			"bl"  => 21,
 			"br" => 21,
 			"bt"   => 41.6,
-			"bb"   => 41.6
+			"bb"   => 41.6,
+			
+			# used prepreg size
+			"pW" => 307,
+			"pH" => 440
 		)
 	);
 

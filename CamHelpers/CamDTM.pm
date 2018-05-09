@@ -386,7 +386,7 @@ sub SetDTMTools {
 
 	}
 
-	$inCAM->COM( 'tools_set', layer => $layer, thickness => '0', user_params => $DTMType );
+	$inCAM->COM( 'tools_set', "layer" => $layer, "thickness" => '0', "user_params" => $DTMType, "user_des_names" => join(";", @userClmns)  );
 
 	# toto tady musi byt, jinak po tools_set nefunguje spravne shape slot/hole v DTM
 	$inCAM->COM( 'tools_show', "layer" => "$layer" );

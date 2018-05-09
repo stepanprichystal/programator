@@ -31,6 +31,8 @@ sub new {
 				 "br" => undef,
 				 "bt"   => undef,
 				 "bb"   => undef,
+				 "pH"   => undef,
+				 "pW"   => undef,
 				 @_,
 	);
 
@@ -51,6 +53,8 @@ sub new {
 	$self->{'br'} = $args{"br"};
 	$self->{'bt'}   = $args{"bt"};
 	$self->{'bb'}   = $args{"bb"};
+	$self->{'pH'}   = $args{"pH"};
+	$self->{'pW'}   = $args{"pW"};
 	
 	$self->{'wArea'} = $self->{'w'} - ( $self->{'bl'} + $self->{'br'} );
 	$self->{'hArea'} = $self->{'h'} - ( $self->{'bt'} + $self->{'bb'} );
@@ -110,6 +114,18 @@ sub BorderB {
 	my $self = shift;
 
 	return $self->{"bb"};
+}
+
+sub PrepregH {
+	my $self = shift;
+
+	return $self->{"pH"};
+}
+
+sub PrepregW {
+	my $self = shift;
+
+	return $self->{"pW"};
 }
 
 sub WArea {

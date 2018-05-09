@@ -99,7 +99,7 @@ sub Run {
 
 		my $errMes = "";
 
-		my $matOk = StackupOperation->StackupMatInStock( $jobId, $stackup, \$errMes );
+		my $matOk = StackupOperation->StackupMatInStock( $inCAM, $jobId, $stackup, \$errMes );
 
 		unless($matOk){
 			$self->_AddChange( "Materiál, který je obsažen ve složení nelze použít. Detail chyby: $errMes", 1 );

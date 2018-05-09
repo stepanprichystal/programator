@@ -1400,9 +1400,11 @@ sub GetCopperStoreInfo {
 sub GetPrepregStoreInfo {
 	my $self = shift;
 	my $qId  = shift;                                                      # quality id (DR4, IS400, ..)
-	my $id   = shift;                                                      # prepreg thick id
+	my $id   = shift;
+	my $matXsize = shift;	# in mm  
+	my $matYsize = shift;	   # in mm                                                            # prepreg thick id
 
-	return $self->GetMatStoreInfo( EnumsIS->MatType_PREPREG, $qId, $id );
+	return $self->GetMatStoreInfo( EnumsIS->MatType_PREPREG, $qId, $id, undef, undef, $matXsize, $matYsize );
 
 }
 
@@ -1411,9 +1413,11 @@ sub GetCoreStoreInfo {
 	my $self = shift;
 	my $qId  = shift;                                                      # quality id (DR4, IS400, ..)
 	my $id   = shift;                                                      # core thick id
-	my $id2  = shift;                                                      # copper thick id
+	my $id2  = shift;  														# copper thick id  
+	my $matXsize = shift;	# in mm  
+	my $matYsize = shift;	   # in mm                                                 
 
-	return $self->GetMatStoreInfo( EnumsIS->MatType_CORE, $qId, $id, $id2 );
+	return $self->GetMatStoreInfo( EnumsIS->MatType_CORE, $qId, $id, $id2, undef, $matXsize, $matYsize );
 }
 
 # Return infro from actual store from CNC store about material (copper, core, prepreg types only)
@@ -1425,6 +1429,10 @@ sub GetMatStoreInfo {
 	my $qId     = shift;
 	my $id      = shift;
 	my $id2     = shift;
+	my $matHeight = shift;	# in mm  
+	my $matWidth = shift;	# in mm
+	my $matDepth = shift;	# in mm
+	
 
 	my @params = (
 				   SqlParameter->new( "_matType", Enums->SqlDbType_VARCHAR, $matType ),
@@ -1432,7 +1440,8 @@ sub GetMatStoreInfo {
 				   SqlParameter->new( "__id",     Enums->SqlDbType_INT,     $id ),
 				   SqlParameter->new( "__id2",    Enums->SqlDbType_INT,     $id2 )
 	);
-
+	
+ 
 	my $where = "";
 	if ( $matType eq EnumsIS->MatType_PREPREG ) {
 
@@ -1443,10 +1452,29 @@ sub GetMatStoreInfo {
 
 		$where .= "and uda.dps_qid = __qId and uda.dps_id2 = __id2";
 	}
+	
+	
+	if(defined $matHeight){
+		push(@params,  SqlParameter->new( "__matHeight",    Enums->SqlDbType_INT,     $matHeight/1000 ));
+		$where .= "and kks.vyska = __matHeight";
+	}
+	
+	if(defined $matWidth){
+		push(@params,  SqlParameter->new( "__matWidth",    Enums->SqlDbType_INT,     $matWidth/1000 ));
+		$where .= "and kks.sirka = __matWidth";
+	}	
+	
+	if(defined $matDepth){
+		push(@params,  SqlParameter->new( "__matDepth",    Enums->SqlDbType_INT,     $matDepth/1000 ));
+		$where .= "and kks.hloubka = __matDepth";
+	}	
 
 	my $cmd = "SELECT kks.reference_subjektu, 
 					
 					kks.nazev_subjektu as nazev_mat,
+					kks.vyska * 1000 AS vyska,
+					kks.sirka * 1000 AS sirka,
+					kks.hloubka * 1000 AS hloubka,
 					sklad.reference_subjektu, 
 					sklad.nazev_subjektu, 
 					ss.pocet_disp as stav_skladu, 
@@ -1466,13 +1494,9 @@ sub GetMatStoreInfo {
 					$where";
 
 	my @result = Helper->ExecuteDataSet( $cmd, \@params );
+ 
 
-	if ( scalar(@result) ) {
-
-		return $result[0];
-	}
-
-	return 0;
+	return @result;
 }
 
 # Return number of cores in pcb
@@ -1661,9 +1685,9 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $jobId = "d152456";
 
-	my @cores = HegMethods->GetAllCoresInfo($jobId);
+	my @cores = HegMethods->GetCoreStoreInfo(6, 14, 5);
 
-die;
+	die;
 
 }
 
