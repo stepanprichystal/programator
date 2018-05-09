@@ -335,20 +335,20 @@ sub OnCheckGroupData {
 									"Je použit špatný atribut pro konektorové zlato: \".gold_finger\". Zmněň atribut na \".gold_plating\"." );
 	}
 
-	# 14) Test if stackup material is on stock
-	if ( $layerCnt > 2 ) {
-
-		# a) test id material in helios, match material in stackup
-		my $stackup = $defaultInfo->GetStackup();
-
-		my $errMes = "";
-		my $matOk = StackupOperation->StackupMatInStock( $inCAM, $jobId, $defaultInfo->GetStackup(), \$errMes );
-
-		unless ($matOk) {
-
-			$dataMngr->_AddErrorResult( "Stackup material", "Materiál, který je obsažen ve složení nelze použít. Detail chyby: $errMes" );
-		}
-	}
+#	# 14) Test if stackup material is on stock
+#	if ( $layerCnt > 2 ) {
+#
+#		# a) test id material in helios, match material in stackup
+#		my $stackup = $defaultInfo->GetStackup();
+#
+#		my $errMes = "";
+#		my $matOk = StackupOperation->StackupMatInStock( $inCAM, $jobId, $defaultInfo->GetStackup(), \$errMes );
+#
+#		unless ($matOk) {
+#
+#			$dataMngr->_AddErrorResult( "Stackup material", "Materiál, který je obsažen ve složení nelze použít. Detail chyby: $errMes" );
+#		}
+#	}
 
 	# 15) Check if all netlist control was succes in past
 	my @reports = NetlistCompare->new( $inCAM, $jobId )->GetStoredReports();

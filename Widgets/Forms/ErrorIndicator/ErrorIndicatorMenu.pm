@@ -208,9 +208,7 @@ sub __RefreshMenu {
 sub __OnClick {
 	my $self       = shift;
 	my $resultMngr = shift;
-
-	print "ddddd";
-
+ 
 	my $cnt = 0;
 
 		my $str = "";
