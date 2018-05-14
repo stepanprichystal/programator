@@ -17,14 +17,14 @@ use aliased 'Programs::Exporter::ExportUtility::Groups::NifExport::NifExportTmp'
 
 
 #input parameters
-my $jobId    = "d213054";
+my $jobId    = "d166659";
  
 my $poznamka = "";
 my $tenting  = 0;
 my $pressfit = 0;
 my $maska01  = 0;
-my $datacode  = "";
-my $ullogo  = "";
+my $datacode  = "MS";
+my $ullogo  = "MS";
 my $jumpScoring  = 0;
 
  

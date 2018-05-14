@@ -70,10 +70,32 @@ sub Parse {
 	unlink($infoFile);
 
 	# if filter specify feats
-	if ($featFilter && scalar(@{$featFilter})) {
+	if ( $featFilter && scalar( @{$featFilter} ) ) {
+
 		my %tmp;
 		@tmp{ @{$featFilter} } = ();
-		@feat = grep { exists $tmp{ ( $_ =~ /^#(\d+)/i )[0] } } @feat;
+		my @featTmp = ();
+
+		for ( my $i = 0 ; $i < scalar(@feat) ; $i++ ) {
+
+			my ( $featId, $featType ) = $feat[$i] =~ m/^#(\d*)\s*#(\w)/;
+			if ( exists $tmp{$featId} ) {
+
+				push( @featTmp, $feat[$i] );
+
+				# if features is surface, add next lines (whole surafce def)
+				if ( $featType =~ /s/i ) {
+					$i++;
+					while ( $feat[$i] ne "\n" ) {
+						push( @featTmp, $feat[$i] );
+						$i++;
+					}
+					push( @featTmp, $feat[$i] );
+				}
+			}
+		}
+
+		@feat = @featTmp;
 	}
 
 	my @features = $self->__ParseLines( \@feat );
@@ -272,7 +294,7 @@ sub __ParseLines {
 					if ( exists $surfInf{"island"} ) {
 
 						# determine if surface is circle
-						if ( scalar( @{ $surfInf{"island"}} ) == 2 && $surfInf{"island"}->[1]->{"type"} eq "c" ) {
+						if ( scalar( @{ $surfInf{"island"} } ) == 2 && $surfInf{"island"}->[1]->{"type"} eq "c" ) {
 							$surfInf{"circle"} = 1;
 						}
 
@@ -295,7 +317,7 @@ sub __ParseLines {
 			push( @allSurf, \%surfInf );    # push last parsed surf
 
 			$featInfo->{"surfaces"} = \@allSurf;
- 
+
 		}
 
 		# Text
@@ -440,9 +462,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my @features = $f->GetFeatures();
 
- 
-
- die;
+	die;
 
 }
 

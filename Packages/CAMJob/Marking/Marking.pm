@@ -178,8 +178,6 @@ sub GetDatacodesInfo {
 	my @dcDef = map  {   ($_ =~ /^#(\d*)\s*#P.*\s(.*(datacode|data|date|ul|logo).*)\s[pn]\s\d.*/i)[1] } @dcSyms;
 	my %dcDef = map {  $_ =>{} } @dcDef;
  
-	# remove symbols, which are not datacode
-	#foreach ( my $i = scalar(@dcDef) - 1 ; $i >= 0 ; $i-- ) {
 	foreach my $name (keys %dcDef){
  
 		my $fSym = Features->new();
@@ -242,11 +240,11 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	use aliased 'Packages::InCAM::InCAM';
 
 	my $inCAM = InCAM->new();
-	my $jobId = "d141249";
+	my $jobId = "d166659";
 	
 	
 
-	my $exist = Marking->DatacodeExists( $inCAM, $jobId, "o+1", "mc" );
+	my $exist = Marking->GetDatacodesInfo( $inCAM, $jobId, "mpanel", "mc" );
 	
 	print STDERR $exist;
 
