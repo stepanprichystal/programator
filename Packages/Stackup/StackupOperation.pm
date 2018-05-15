@@ -150,7 +150,7 @@ sub OuterCore {
 # Check if material for multilayer pcb is actually on the store
 sub StackupMatInStock {
 	my $self    = shift;
-	my $inCAM = shift;
+	my $inCAM   = shift;
 	my $pcbId   = shift;    #pcb id
 	my $stackup = shift;    # if not defined, stackup will e loaded
 	my $errMess = shift;    # if err, missin materials in stock
@@ -160,60 +160,83 @@ sub StackupMatInStock {
 	unless ($stackup) {
 		$stackup = Stackup->new($pcbId);
 	}
-	
+
 	my $pnl = StandardBase->new( $inCAM, $pcbId );
-	
 
 	# 1) check cores
 	foreach my $m ( $stackup->GetAllCores() ) {
 
 		# abs - because copper id can be negative (plated core)
-		my @mat =  HegMethods->GetCoreStoreInfo( $m->GetQId(), $m->GetId(), abs($m->GetTopCopperLayer()->GetId()), $pnl->W(), $pnl->H() ); 
- 
+		my @mat = HegMethods->GetCoreStoreInfo( $m->GetQId(), $m->GetId(), abs( $m->GetTopCopperLayer()->GetId() ) );
+
 		if ( scalar(@mat) == 0 ) {
 
 			$result = 0;
 			$$errMess .=
-			  "- Material: " . $m->GetType() . " - "  . $m->GetTextType() . "," . $m->GetText() ." - ".$m->GetTopCopperLayer()->GetText(). " (".$pnl->W()."mm x ".$pnl->H()."mm) is not in  IS stock evidence\n";
+			    "- Material: "
+			  . $m->GetType() . " - "
+			  . $m->GetTextType() . ","
+			  . $m->GetText() . " - "
+			  . $m->GetTopCopperLayer()->GetText() . " ("
+			  . $pnl->W() . "mm x "
+			  . $pnl->H()
+			  . "mm) is not in  IS stock evidence\n";
 
 		}
-		elsif ( $mat[0]->{"stav_skladu"} == 0 ) {
+		else {
 
-			$result = 0;
-			$$errMess .= "- Material quantity of " . $sInfo->{"nazev_mat"} . "  is 0m2 in IS stock\n";
+			# Check if material dimension are in tolerance +-2mm
+			@mat = grep { abs( $_->{"sirka"} - $pnl->W() ) <= 2 && abs( $_->{"hloubka"} - $pnl->H() ) <= 2 } @mat;
 
+			if ( $mat[0]->{"stav_skladu"} == 0 ) {
+
+				$result = 0;
+				$$errMess .= "- Material quantity of " . $sInfo->{"nazev_mat"} . "  is 0m2 in IS stock\n";
+
+			}
 		}
 	}
 
 	# 2) Check prepregs
-	foreach my $m ( map {$_->GetAllPrepregs() } grep {  $_->GetType() eq Enums->MaterialType_PREPREG} $stackup->GetAllLayers() ) {
+	foreach my $m ( map { $_->GetAllPrepregs() } grep { $_->GetType() eq Enums->MaterialType_PREPREG } $stackup->GetAllLayers() ) {
 
 		my $prepregW = undef;
 		my $prepregH = undef;
-		
-		if($pnl->IsStandard()){
-			
+
+		if ( $pnl->IsStandard() ) {
+
 			$prepregW = $pnl->GetStandard()->PrepregW();
-			$prepregH = $pnl->GetStandard()->PrepregH();	
+			$prepregH = $pnl->GetStandard()->PrepregH();
 		}
 
-		my @mat = HegMethods->GetPrepregStoreInfo( $m->GetQId(), $m->GetId(), $prepregW, $prepregH );
- 
+		my @mat = HegMethods->GetPrepregStoreInfo( $m->GetQId(), $m->GetId() );
+
 		if ( scalar(@mat) == 0 ) {
 
 			$result = 0;
 			$$errMess .=
-			  "- Material: " . $m->GetType() . " - "  . $m->GetTextType() . "," . $m->GetText() . " (".$prepregW."mm x ".$prepregH."mm) is not in  IS stock evidence\n";
+			    "- Material: "
+			  . $m->GetType() . " - "
+			  . $m->GetTextType() . ","
+			  . $m->GetText() . " ("
+			  . $prepregW . "mm x "
+			  . $prepregH
+			  . "mm) is not in  IS stock evidence\n";
 
 		}
-		elsif ( $mat[0]->{"stav_skladu"} == 0 ) {
+		else {
 
-			$result = 0;
-			$$errMess .= "- Material quantity of " . $sInfo->{"nazev_mat"} . "  is 0m2 in IS stock\n";
+			# Check if material dimension are in tolerance +-2mm
+			@mat = grep { abs( $_->{"sirka"} - $prepregW ) <= 2 && abs( $_->{"hloubka"} - $prepregH ) <= 2 } @mat;
 
+			if ( $mat[0]->{"stav_skladu"} == 0 ) {
+
+				$result = 0;
+				$$errMess .= "- Material quantity of " . $sInfo->{"nazev_mat"} . "  is 0m2 in IS stock\n";
+
+			}
 		}
 	}
-	
 
 	return $result;
 }
@@ -229,10 +252,10 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	use aliased 'Packages::InCAM::InCAM';
 
 	my $inCAM = InCAM->new();
-	my $mes = "";
+	my $mes   = "";
 
-	my $test = StackupOperation->StackupMatInStock($inCAM, "d213054", undef, \$mes);
-	
+	my $test = StackupOperation->StackupMatInStock( $inCAM, "d152457", undef, \$mes );
+
 	print $mes;
 
 	print $test;

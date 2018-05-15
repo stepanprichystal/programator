@@ -97,13 +97,13 @@ sub Run {
 
 		# 3) Test if stackup material is on stock
 
-#		my $errMes = "";
-#
-#		my $matOk = StackupOperation->StackupMatInStock( $inCAM, $jobId, $stackup, \$errMes );
-#
-#		unless($matOk){
-#			$self->_AddChange( "Materiál, který je obsažen ve složení nelze použít. Detail chyby: $errMes", 1 );
-#		}
+		my $errMes = "";
+
+		my $matOk = StackupOperation->StackupMatInStock( $inCAM, $jobId, $stackup, \$errMes );
+
+		unless($matOk){
+			$self->_AddChange( "Materiál, který je obsažen ve složení nelze použít. Detail chyby: $errMes", 1 );
+		}
 
 	}
 
