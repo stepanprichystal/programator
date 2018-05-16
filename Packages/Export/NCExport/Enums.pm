@@ -10,6 +10,7 @@ use constant {
 			   Property_CAMERAS      => "cameras",
 			   Property_MAXTOOL      => "maxtool",
 			   Property_MINTOOL      => "mintool",
+			   Property_MAXDEPTHTOOL      => "maxdepthtool"
 };
  	 
 

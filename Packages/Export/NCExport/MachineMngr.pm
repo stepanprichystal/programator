@@ -161,6 +161,7 @@ sub __GetMachinesByVector {
 	$comb{ Enums->Property_CAMERAS }      = sub { my ( $m, $o ) = @_; return ( !$m && $o ? 0 : 1 ) };
 	$comb{ Enums->Property_MAXTOOL } = sub { my ( $m, $o ) = @_; return ( $m < $o ? 0 : 1 ) };
 	$comb{ Enums->Property_MINTOOL } = sub { my ( $m, $o ) = @_; return ( ($o != 0) && $m > $o ? 0 : 1 ) };
+	$comb{ Enums->Property_MAXDEPTHTOOL } = sub { my ( $m, $o ) = @_; return ( $m < $o ? 0 : 1 ) };
 	
 
 	#my $sumPropVec = 0;
@@ -236,6 +237,9 @@ sub __SetMachines {
 		$prop{ Enums->Property_CAMERAS }      = $vals[5];
 		$prop{ Enums->Property_MAXTOOL }      = $vals[6];
 		$prop{ Enums->Property_MINTOOL }      = $vals[7];
+		$prop{ Enums->Property_MAXDEPTHTOOL } = $vals[8];
+		
+		
 		
 		$m{"properties"} = \%prop;
 
