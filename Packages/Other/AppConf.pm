@@ -58,6 +58,7 @@ sub GetValue {
 
 	my $val = $self->__GetVal($key);
 
+
 	$val =~ s/^\s+|\s+$//g;
 
 	return $val;
@@ -88,12 +89,25 @@ sub __GetVal {
 
 	@lines = grep { $_ !~ /^#/ } @lines;
 
+
+	my $keyFound = 0;
+	my $val = undef;
+	
 	foreach my $l (@lines) {
 		my @arr = split( "=", $l );
 		if ( $arr[0] =~ /$key/ ) {
-			return $arr[1];
+			
+			$keyFound = 1;
+			$val = $arr[1];
+			last;
 		}
 	}
+	
+	die "Key: $key is not defined in configuration file path: $confPath" unless($keyFound);
+		
+	die "Value is not defined for key: $key, conf path: $confPath" unless(defined $val);
+	
+	return $val;
 
 }
 
