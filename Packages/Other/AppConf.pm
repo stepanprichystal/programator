@@ -102,7 +102,7 @@ sub __GetVal {
 			last;
 		}
 	}
-	
+ 
 	die "Key: $key is not defined in configuration file path: $confPath" unless($keyFound);
 		
 	die "Value is not defined for key: $key, conf path: $confPath" unless(defined $val);

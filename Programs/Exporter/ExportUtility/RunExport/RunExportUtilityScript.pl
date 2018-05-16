@@ -80,7 +80,7 @@ if ($@) {
 
 	print STDERR $@;
 
-	$exporter->StopAllTimers();
+	$exporter->StopAllTimers() if(defined $exporter);
 
 	my @m = (
 		"Doslo k neocekavanmu padu aplikace",

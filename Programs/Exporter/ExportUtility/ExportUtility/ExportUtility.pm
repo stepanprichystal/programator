@@ -41,7 +41,7 @@ use aliased 'Programs::Exporter::ExportUtility::ExportUtility::UnitBuilder';
 #-------------------------------------------------------------------------------------------#
 
 sub new {
-	my $class = shift;
+	my $class = shift;	
 
 	# Tray or window mode
 	my $runMode = shift;

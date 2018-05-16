@@ -86,7 +86,8 @@ if ($@) {
  
 	my $path = AsyncJobHelber->GetLogDir();
  
-	$merger->StopAllTimers();
+	$merger->StopAllTimers() if(defined $merger);
+	
 
 	my @m = (
 			  "Doslo k neocekavanmu padu aplikace",
