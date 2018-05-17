@@ -5,7 +5,7 @@
 <operations>
    <operation name="PlatedDrill">
      <!-- <magazine material="FR4">-</magazine> -->  
-      <magazine material="IS400">I2</magazine>  
+      <magazine material="IS400">-</magazine>  
       <magazine material="IS410">I2</magazine>
       <magazine material="PCL370HR">I2</magazine>
    </operation>
