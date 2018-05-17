@@ -75,13 +75,16 @@ sub Init {
 
 	# Synchronous/Asznchronous mode
 	$self->{"mode"} = shift;
+	
+	# 1 = client send export to TPV server
+	$self->{"onServer"} = shift;
 
 	$self->{"units"} = shift;
 
 	$self->{"parentForm"} = shift;
 
 	# Main application form
-	$self->{"popup"} = ExportPopupForm->new( $self->{"parentForm"}->{"mainFrm"}, $self->{"jobId"} );
+	$self->{"popup"} = ExportPopupForm->new( $self->{"parentForm"}->{"mainFrm"}, $self->{"jobId"}, $self->{"onServer"}  );
 
 	#set group count for popup form
 	$self->{"popup"}->SetGroupCnt( $self->{"units"}->GetActiveUnitsCnt() );
@@ -224,7 +227,7 @@ sub __OnResultPopupHandler {
 
 	}
 
-	$self->{"onResultEvt"}->Do($resultType, $self->{"mode"});
+	$self->{"onResultEvt"}->Do($resultType, $self->{"mode"}, $self->{"onServer"});
 
 }
 
