@@ -146,7 +146,7 @@ sub GetToolExceededDepth {
 	my $toolDepth    = shift; # µm
  
 	my $csHeadDepth = ( $toolDepth - ($toolDiameter/2) / tan( deg2rad( ( $toolAngle / 2 ) ) ) );
-	if ( abs($csHeadDepth) > 10 ) {
+	if ( $csHeadDepth > 0 && abs($csHeadDepth) > 10 ) {
 		$csHeadDepth = sprintf( "%.2f", $csHeadDepth );
 	}
 	else {
