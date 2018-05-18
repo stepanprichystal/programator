@@ -13,6 +13,7 @@ use Wx;
 use strict;
 use warnings;
 use File::Copy;
+use File::Basename;
 use Log::Log4perl qw(get_logger :levels);
 
 #local library
@@ -41,7 +42,7 @@ use aliased 'Programs::Exporter::ExportUtility::ExportUtility::UnitBuilder';
 #-------------------------------------------------------------------------------------------#
 
 sub new {
-	my $class = shift;	
+	my $class = shift;
 
 	# Tray or window mode
 	my $runMode = shift;
@@ -242,26 +243,47 @@ sub __CheckFilesHandler {
 		mkdir( EnumsPaths->Client_EXPORTFILES ) or die "Can't create dir: " . EnumsPaths->Client_EXPORTFILES . $_;
 	}
 
-	my @actFiles = @{ $self->{"exportFiles"} };
-	my @newFiles = ();
+	my @files = ();
 
 	#get all files from path
 	opendir( DIR, EnumsPaths->Client_EXPORTFILES ) or die $!;
+	while ( my $file = readdir(DIR) ) {
+
+		push( @files, EnumsPaths->Client_EXPORTFILES . $file );
+	}
+	closedir(DIR);
+
+	# Check files for export on server
+	#if ( AsyncJobHelber->ServerVersion() ) {
+	if (1) {
+		opendir( DIR, EnumsPaths->Jobs_EXPORTFILESPCB ) or die $!;
+		while ( my $file = readdir(DIR) ) {
+
+			push( @files, EnumsPaths->Jobs_EXPORTFILESPCB . $file );
+		}
+		closedir(DIR);
+	}
+
+	my @actFiles = @{ $self->{"exportFiles"} };
+	my @newFiles = ();
 
 	my $fileCreated;
 	my $fileName;
 	my $filePath;
 
-	while ( my $file = readdir(DIR) ) {
+	foreach my $filePath (@files) {
 
-		next unless $file =~ /^[a-z](\d+)$/i;
+		my $fileName = basename($filePath);
+		my $fileDir = dirname($filePath)."\\";
 
-		$filePath = EnumsPaths->Client_EXPORTFILES . $file;
+		next unless $fileName =~ /^[a-z](\d+)$/i;
+
+		$filePath = $fileDir . $fileName;
 
 		#get file attributes
 		my @stats = stat($filePath);
 
-		$fileName = lc($file);
+		$fileName = lc($fileName);
 		$fileName =~ s/\.xml//;
 		$fileCreated = $stats[9];
 
@@ -272,7 +294,7 @@ sub __CheckFilesHandler {
 
 		unless ($cnt) {
 
-			my %newFile = ( "name" => $fileName, "path" => $filePath, "created" => $fileCreated );
+			my %newFile = ( "name" => $fileName, "dirName" => $fileDir, "created" => $fileCreated );
 			push( @newFiles, \%newFile );
 		}
 	}
@@ -285,14 +307,14 @@ sub __CheckFilesHandler {
 
 			my $jobId = $jobFile->{"name"};
 
-			my $pathExportFile = EnumsPaths->Client_EXPORTFILES . $jobId;
+			my $pathExportFile = $jobFile->{"dirName"} . $jobId;
 			my $dataTransfer   = DataTransfer->new( $jobId, EnumsTransfer->Mode_READ, undef, undef, $pathExportFile );
 			my $taskData       = $dataTransfer->GetExportData();
 
-			my $f          = EnumsPaths->Client_EXPORTFILES . $jobId;
+			my $f          = $jobFile->{"dirName"} . $jobId;
 			my $jsonString = FileHelper->ReadAsString($f);
 
-			copy( $f, EnumsPaths->Client_EXPORTFILES . "backup\\" . $jobId );    # do backup
+			copy( $f, $jobFile->{"dirName"} . "backup\\" . $jobId );    # do backup
 
 			# TODO odkomentovat abt to mazalo
 			unlink($f);

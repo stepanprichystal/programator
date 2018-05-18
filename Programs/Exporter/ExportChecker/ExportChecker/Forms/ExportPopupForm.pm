@@ -46,7 +46,9 @@ sub new {
 	my $mainFrm = $self->__SetLayout($parent);
 
 	# Properties
-	$self->{"jobId"}       = shift;
+	$self->{"jobId"}    = shift;
+	$self->{"onServer"} = shift;    # export job on server export utility
+
 	$self->{"messageMngr"} = MessageMngr->new( $self->{"jobId"} );
 
 	my @errors = ();
@@ -222,8 +224,6 @@ sub __Refresh {
 	# Set actual gauge value
 	$self->{"gauge"}->SetValue( $self->{"gaugeActual"} );
 
-	 
-
 	# Set actual group value
 	$self->{"groupNameValTxt"}->SetLabel( $self->{"groupNameActual"} );
 }
@@ -390,7 +390,9 @@ sub __OnErrorClick {
 	if ( $self->{"exportFinished"} ) {
 		if ( $warnCnt == 0 || ( $warnCnt > 0 && $self->{"warningShowed"} ) ) {
 
-			$self->{"btnExport"}->Enable();
+			if ( !$self->{"onServer"} ) {
+				$self->{"btnExport"}->Enable();
+			}
 		}
 	}
 
@@ -398,23 +400,22 @@ sub __OnErrorClick {
 	my $str = "";
 
 	foreach my $eItem (@err) {
-		
+
 		my $cnt = scalar( @{ $eItem->{"errors"} } );
-		
-		unless($cnt){
+
+		unless ($cnt) {
 			next;
 		}
-		
+
 		$str .= "\n\n==============================================================\n";
 		$str .= "Group:  <b> " . $eItem->{"group"} . "</b>\n";
 		$str .= "==============================================================\n\n";
 
-		
 		for ( my $i = 0 ; $i < $cnt ; $i++ ) {
 
 			my $e = @{ $eItem->{"errors"} }[$i];
 
-			$str .= ( $i + 1 ).  ") <b>"  . $e->{"itemId"} . "</b>\n";
+			$str .= ( $i + 1 ) . ") <b>" . $e->{"itemId"} . "</b>\n";
 			$str .= "Error: " . $e->{"value"} . "\n";
 		}
 	}
@@ -442,11 +443,11 @@ sub __OnWarningClick {
 
 	foreach my $wItem (@warn) {
 		my $cnt = scalar( @{ $wItem->{"warnings"} } );
-		
-		unless($cnt){
+
+		unless ($cnt) {
 			next;
 		}
-		
+
 		$str .= "\n\n==============================================================\n";
 		$str .= "Group: <b>" . $wItem->{"group"} . "</b>\n";
 		$str .= "==============================================================\n\n";
@@ -510,8 +511,6 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	#$test->ShowPopup();
 	#$test->MainLoop();
 }
-
-
 
 1;
 

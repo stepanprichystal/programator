@@ -23,6 +23,7 @@ use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'Packages::Events::Event';
 use aliased 'Widgets::Forms::MyWxBookCtrlPage';
 use aliased 'Programs::Exporter::ExportChecker::ExportChecker::Forms::GroupTableForm';
+use aliased 'Managers::MessageMngr::MessageMngr';
 use aliased 'Enums::EnumsIS';
 
 use Widgets::Style;
@@ -52,6 +53,8 @@ sub new {
 	#$self->{"groupBuilder"} = GroupBuilder->new($self);
 
 	my $mainFrm = $self->__SetLayout($parent);
+	
+	$self->{"messageMngr"} = MessageMngr->new( "Exporter checker" );
 
 	#EVENTS
 
@@ -185,9 +188,10 @@ sub __OnExportSync {
 
 sub __OnExportASync {
 	my $self = shift;
+	my $onServer = shift;
 
 	#raise events
-	$self->{"onExportASync"}->Do();
+	$self->{"onExportASync"}->Do($onServer);
 
 }
 
@@ -275,19 +279,25 @@ sub __SetLayout {
 	my $imagelist = Wx::ImageList->new( 10, 25 );
 	$nb->AssignImageList($imagelist);
 
-	my $btnSync = Wx::Button->new( $pnlBtns, -1, "Export", &Wx::wxDefaultPosition, [ 160, 33 ] );
+	
+	my $btnSync = Wx::Button->new( $pnlBtns, -1, "Export", &Wx::wxDefaultPosition, [ 130, 33 ] );
 	$btnSync->SetFont($Widgets::Style::fontBtn);
+	my $btnASyncServer = Wx::Button->new( $pnlBtns, -1, "Export on server (beta)", &Wx::wxDefaultPosition, [ 160, 33 ] );
+	$btnASyncServer->SetFont($Widgets::Style::fontBtn);
 	my $btnASync = Wx::Button->new( $pnlBtns, -1, "Export on background", &Wx::wxDefaultPosition, [ 160, 33 ] );
 	$btnASync->SetFont($Widgets::Style::fontBtn);
 
 	# REGISTER EVENTS
 
 	Wx::Event::EVT_BUTTON( $btnSync,  -1, sub { $self->__OnExportSync() } );
+	Wx::Event::EVT_BUTTON( $btnASyncServer,  -1, sub { $self->__OnExportASync(1) } );
 	Wx::Event::EVT_BUTTON( $btnASync, -1, sub { $self->__OnExportASync() } );
+	 
 	$mainFrm->{"onClose"}->Add( sub { $self->__OnCloseHandler(@_) } );
 
 	$szBtnsChild->Add( $btnSync,  0, &Wx::wxALL, 2 );
 	$szBtnsChild->Add( $btnASync, 0, &Wx::wxALL, 2 );
+	$szBtnsChild->Add( $btnASyncServer,  0, &Wx::wxALL, 2 );
 	$szBtns->Add( 10, 10, 1, &Wx::wxGROW );
 	$szBtns->Add( $szBtnsChild, 0, &Wx::wxALIGN_RIGHT | &Wx::wxALL );
 	$pnlBtns->SetSizer($szBtns);

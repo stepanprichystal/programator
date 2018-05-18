@@ -1,6 +1,5 @@
 #!/usr/bin/perl -w
 
-
 #-------------------------------------------------------------------------------------------#
 # Description: Create directory structure needed for runing tpv scripts
 # Author:SPR
@@ -23,41 +22,35 @@ use aliased 'Enums::EnumsPaths';
 
 sub Create {
 
-	unless ( -e EnumsPaths->Client_INCAMTMPSCRIPTS ) {
-		mkdir( EnumsPaths->Client_INCAMTMPSCRIPTS ) or die "Can't create dir: " . EnumsPaths->Client_INCAMTMPSCRIPTS . $_;
-	}
+	my @dirs = ();
 
-	unless ( -e EnumsPaths->Client_INCAMTMPJOBMNGR ) {
-		mkdir( EnumsPaths->Client_INCAMTMPJOBMNGR ) or die "Can't create dir: " . EnumsPaths->Client_INCAMTMPJOBMNGR . $_;
-	}
+	push( @dirs, EnumsPaths->Client_INCAMTMP );
+	push( @dirs, EnumsPaths->Client_INCAMTMPSCRIPTS );
+	push( @dirs, EnumsPaths->Client_INCAMTMPJOBMNGR );
+	push( @dirs, EnumsPaths->Client_EXPORTFILES );
+	push( @dirs, EnumsPaths->Client_INCAMTMPAOI );
+	push( @dirs, EnumsPaths->Client_INCAMTMPNC );
+	push( @dirs, EnumsPaths->Client_INCAMTMPCHECKER );
+	push( @dirs, EnumsPaths->Client_INCAMTMPOTHER );
+	push( @dirs, EnumsPaths->Client_INCAMTMPLOGS );
+	push( @dirs, EnumsPaths->Jobs_EXPORT );
+	push( @dirs, EnumsPaths->Jobs_EXPORTFILES );
+	push( @dirs, EnumsPaths->Jobs_EXPORTFILESPCB );
+	push( @dirs, EnumsPaths->Jobs_EXPORTFILESPOOL );
 
-	unless ( -e EnumsPaths->Client_EXPORTFILES ) {
-		mkdir( EnumsPaths->Client_EXPORTFILES ) or die "Can't create dir: " . EnumsPaths->Client_EXPORTFILES . $_;
-	}
 
-	unless ( -e EnumsPaths->Client_INCAMTMPAOI ) {
-		mkdir( EnumsPaths->Client_INCAMTMPAOI ) or die "Can't create dir: " . EnumsPaths->Client_INCAMTMPAOI . $_;
-	}
+	foreach my $dir (@dirs) {
 
-	unless ( -e EnumsPaths->Client_INCAMTMPNC ) {
-		mkdir( EnumsPaths->Client_INCAMTMPNC ) or die "Can't create dir: " . EnumsPaths->Client_INCAMTMPNC . $_;
-	}
+		unless ( -e $dir ) {
+			mkdir($dir) or die "Can't create dir: " . $dir . $_;
+		}
 
-	unless ( -e EnumsPaths->Client_INCAMTMPCHECKER ) {
-		mkdir( EnumsPaths->Client_INCAMTMPCHECKER ) or die "Can't create dir: " . EnumsPaths->Client_INCAMTMPCHECKER . $_;
-	}
-
-	unless ( -e EnumsPaths->Client_INCAMTMPOTHER ) {
-		mkdir( EnumsPaths->Client_INCAMTMPOTHER ) or die "Can't create dir: " . EnumsPaths->Client_INCAMTMPOTHER . $_;
-	}
-	
-	unless ( -e EnumsPaths->Client_INCAMTMPLOGS ) {
-		mkdir( EnumsPaths->Client_INCAMTMPLOGS ) or die "Can't create dir: " . EnumsPaths->Client_INCAMTMPLOGS . $_;
 	}
 
 }
 
 1;
+
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
