@@ -144,7 +144,7 @@ sub __CopyIPCToServer {
 	get_logger("abstractQueue")->error( "Et test $jobId exist: $elTestExist\n " . $inCAM->GetExceptionError() );
 
 	# copy test to special ipc test folder
-	if ( GeneralHelper->IsTPVServer() && $orderNum > 1 && $elTestExist == 0 ) {
+	if ( GeneralHelper->IsTPVServer() && $elTestExist == 0 ) {
 
 		my $ipcPath = EnumsPaths->Client_ELTESTS . $jobId . "t\\" . $jobId . "t.ipc";
 		if ( -e $ipcPath ) {
