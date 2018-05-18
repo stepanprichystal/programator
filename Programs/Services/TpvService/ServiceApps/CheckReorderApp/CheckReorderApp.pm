@@ -244,11 +244,11 @@ sub __CheckAncestor {
 		if ( !CamJob->JobExist( $inCAM, $jobId ) ) {
 
 			die "Unable Acquire ancestor job: $ancestor" unless ( AcquireJob->Acquire( $inCAM, $ancestor ) );
-			
+
 			CamJob->CopyJob( $inCAM, $ancestor, $jobId );
-			CamJob->CheckInJob($inCAM, $ancestor);
-			CamJob->CloseJob($inCAM, $ancestor);
-			
+			CamJob->CheckInJob( $inCAM, $ancestor );
+			CamJob->CloseJob( $inCAM, $ancestor );
+
 			$self->{"logger"}->debug("Reorder with ancestor: $ancestor => $orderId");
 		}
 	}
@@ -263,6 +263,18 @@ sub __GetReorders {
 	# 1) reorders are orders which has number larger than 1
 
 	push( @reorders, grep { !defined $_->{"aktualni_krok"} || $_->{"aktualni_krok"} eq "" } HegMethods->GetReorders() );
+
+	# check if 01 order is already processed (is not predvyrobni priprava)
+#	for ( my $i = scalar(@reorders) -1 ; $i >= 0 ; $i-- ) {
+#
+#		my $jobId = $reorders[$i]->{"deska_reference_subjektu"};
+#
+#		# if 01 uis still on predvzrobni priprava, skip reorder
+#		if ( HegMethods->GetStatusOfOrder( $jobId . "-01" ) == 2 ) {
+#
+#			splice @reorders, $i, 1;
+#		}
+#	}
 
 	# 2) Reorders are orders with number -01, which has ancestor POOL mother
 
@@ -284,7 +296,7 @@ sub __GetReorders {
 	}
 
 	# olny zpracovani-auto
- 	@reorders = grep {  !defined $_->{"aktualni_krok"} || $_->{"aktualni_krok"} eq "" } @reorders;
+	@reorders = grep { !defined $_->{"aktualni_krok"} || $_->{"aktualni_krok"} eq "" } @reorders;
 
 	return @reorders;
 }

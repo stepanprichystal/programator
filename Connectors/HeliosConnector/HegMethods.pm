@@ -1019,6 +1019,18 @@ sub UpdateOrderTerm {
 }
 
 # Return value from clolumn "stav" for pcb order
+#Poøízeno na eshopu (02)
+#Zavedeno (0)
+#Na pøíjmu (1)
+#Pozastavena (12)
+#Pøedvýrobní pøíprava (2)
+#Na odsouhlasení (25)
+#Schválena (35)
+#Ve výrobì (4)
+#Vykrytí ze skladu (42)
+#V kooperaci (45)
+#Stornována (5)
+#Ukonèena (7)
 sub GetStatusOfOrder {
 	my $self    = shift;
 	my $orderId = shift;
@@ -1155,7 +1167,11 @@ sub GetReorders {
 
 	my @params = ();
 
-	my $cmd = "select distinct z.reference_subjektu, z.stav, z.aktualni_krok, d.stav AS dps_stav
+	my $cmd = "select distinct z.reference_subjektu, 
+								z.stav, 
+								z.aktualni_krok, 
+								d.stav AS dps_stav
+								d.reference_subjektu AS deska_reference_subjektu
 				from lcs.zakazky_dps_22_hlavicka z join lcs.desky_22 d on d.cislo_subjektu=z.deska
 				where z.stav='2'";
 

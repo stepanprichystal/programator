@@ -64,8 +64,13 @@ sub Build {
 
 	#konstr_trida_vnitrni_vrstvy
 	if ( $self->_IsRequire("konstr_trida_vnitrni_vrstvy") ) {
-		my $pcbClass = CamJob->GetJobPcbClassInner( $inCAM, $jobId );    #attribut pnl_class from job
 		
+		my $pcbClass = 0;
+		
+		if($self->{"layerCnt"} > 2){
+			$pcbClass = CamJob->GetJobPcbClassInner( $inCAM, $jobId );    #attribut pnl_class from job
+		}
+ 
 		$section->AddRow( "konstr_trida_vnitrni_vrstvy", $pcbClass );
 	}
  

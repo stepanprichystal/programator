@@ -184,6 +184,10 @@ sub GetProgress {
 	my $totalProgress = $self->{"units"}->GetProgress();
 
 	print " =========================== Total progress per task: $totalProgress \n";
+	
+	if($totalProgress > 100){
+		$totalProgress = 99;
+	}
 
 	return $totalProgress;
 }
