@@ -286,6 +286,8 @@ sub InsertUnableToArchive{
 	
 	# Clear  record older than 14 days
 	my $cmd = "DELETE FROM  archivejobs_notArchived  WHERE Inserted < (now() - INTERVAL 2 DAY);";
+	Helper->ExecuteNonQuery( $cmd, []);
+	
 	
 	
 	my @params1 = ( SqlParameter->new( "_PcbId", Enums->SqlDbType_VARCHAR, $pcbId ) );
@@ -299,8 +301,8 @@ sub InsertUnableToArchive{
 	
 	unless($pcbIdExist){
  
-		my $cmd = "INSERT INTO archivejobs_notArchived (PcbId) VALUES (_PcbId);";
-		Helper->ExecuteNonQuery( $cmd, \@params1 );
+		my $cmd2 = "INSERT INTO archivejobs_notArchived (PcbId) VALUES (_PcbId);";
+		Helper->ExecuteNonQuery( $cmd2, \@params1 );
 	}
 	
 	
@@ -342,9 +344,9 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 #
 #	dump(@arr);
 
-	 # TpvMethods->InsertUnableToArchive("d152457");
+	  TpvMethods->InsertUnableToArchive("d152457");
 
-	my @jobs = TpvMethods->GetUnableToArchivedJobs();
+	#my @jobs = TpvMethods->GetUnableToArchivedJobs();
 	 
 	 
 	 die;

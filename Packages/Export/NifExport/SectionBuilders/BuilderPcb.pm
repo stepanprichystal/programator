@@ -55,12 +55,20 @@ sub Build {
 		$section->AddRow( "zpracoval", $nifData{"zpracoval"} );
 	}
 
+
 	#kons_trida
 	if ( $self->_IsRequire("kons_trida") ) {
 		my $pcbClass = CamJob->GetJobPcbClass( $inCAM, $jobId );    #attribut pnl_class from job
 		$section->AddRow( "kons_trida", $pcbClass );
 	}
 
+	#konstr_trida_vnitrni_vrstvy
+	if ( $self->_IsRequire("konstr_trida_vnitrni_vrstvy") ) {
+		my $pcbClass = CamJob->GetJobPcbClassInner( $inCAM, $jobId );    #attribut pnl_class from job
+		
+		$section->AddRow( "konstr_trida_vnitrni_vrstvy", $pcbClass );
+	}
+ 
 	#pocet_vrstev
 	if ( $self->_IsRequire("pocet_vrstev") ) {
 

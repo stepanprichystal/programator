@@ -15,6 +15,7 @@ use warnings;
 #local library
 use aliased 'CamHelpers::CamJob';
 use aliased 'CamHelpers::CamLayer';
+use aliased 'CamHelpers::CamJob';
 use aliased 'Packages::NifFile::NifFile';
 use aliased 'CamHelpers::CamAttributes';
 use aliased 'Connectors::HeliosConnector::HegMethods';
@@ -72,7 +73,8 @@ sub Run {
 	}
 
 	# insert pcb class
-	my $pcbClass = CamAttributes->GetJobAttrByName( $inCAM, $jobId, "pcb_class" );
+
+	my $pcbClass = CamJob->GetJobPcbClass( $inCAM, $jobId );
 
 	if ( !defined $pcbClass || $pcbClass eq "" || $pcbClass < 3 ) {
 
@@ -83,6 +85,23 @@ sub Run {
 		}
 
 		CamAttributes->SetJobAttribute( $inCAM, $jobId, "pcb_class", $class );
+	}
+
+	# insert mjissing pcb inner class
+	if ( CamJob->GetSignalLayerCnt( $inCAM, $jobId ) > 2 ) {
+		
+		my $pcbClassInner = CamJob->GetJobPcbClassInner( $inCAM, $jobId );
+
+		if ( !defined $pcbClassInner || $pcbClassInner eq "" || $pcbClassInner < 3 ) {
+
+			my $class = $pcbClass;
+
+			if ( !defined $class || $class < 3 ) {
+				die "Unable to set constructor inner class, because outer construction class is not known.";
+			}
+
+			CamAttributes->SetJobAttribute( $inCAM, $jobId, "pcb_class_inner", $class );
+		}
 	}
 
 	# Add gold holder attribut when galvanic gold

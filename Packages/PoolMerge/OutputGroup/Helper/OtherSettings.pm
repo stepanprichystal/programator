@@ -45,7 +45,6 @@ sub SetJobHeliosAttributes {
 	my $result = 1;
 
 	my $inCAM = $self->{"inCAM"};
- 
 
 	# 2) Set proper info to noris
 	my %silk   = HegMethods->GetSilkScreenColor($masterJob);
@@ -123,35 +122,57 @@ sub __SetPcbClass {
 	# 1) Go through all jobs and take highest constr class
 	my @jobNames = $self->{"poolInfo"}->GetJobNames();
 
-	my $max = undef;
+	my $maxOuter = undef;
+	my $maxInner = undef;
 	foreach my $jobName (@jobNames) {
 
-		 my $nif = NifFile->new( $jobName );
+		my $nif = NifFile->new($jobName);
 
 		unless ( $nif->Exist() ) {
 			die "nif file doesn't exist " . $jobName;
 		}
 
+		# my outer class
 		my $constClass = $nif->GetValue("kons_trida");
- 
+
 		if ( !defined $constClass || $constClass < 3 ) {
 			$result = 0;
 			$$mess .= "Missing construction class in pcb \"$jobName\". Minimal class is \"class 3\"";
 			last;
 		}
 
-		if ( !defined $max || $max < $constClass ) {
-			$max = $constClass;
+		if ( !defined $maxOuter || $maxOuter < $constClass ) {
+			$maxOuter = $constClass;
+		}
+
+		my $layerCnt = $nif->GetValue("pocet_vrstev");
+		if ( defined $layerCnt && $layerCnt > 2 ) {
+
+			# my inner class
+			my $constClassInner = $nif->GetValue("konstr_trida_vnitrni_vrstvy");
+
+			if ( !defined $constClassInner || $constClassInner < 3 ) {
+				$result = 0;
+				$$mess .= "Missing inner construction class in pcb \"$jobName\". Minimal class is \"class 3\"";
+				last;
+			}
+
+			if ( !defined $maxInner || $maxInner < $constClassInner ) {
+				$maxInner = $constClassInner;
+			}
 		}
 	}
 
-	if ( defined $max ) {
-		CamAttributes->SetJobAttribute( $inCAM, $masterJob, "pcb_class", $max );
+	if ( defined $maxOuter ) {
+		CamAttributes->SetJobAttribute( $inCAM, $masterJob, "pcb_class", $maxOuter );
+	}
+
+	if ( defined $maxInner ) {
+		CamAttributes->SetJobAttribute( $inCAM, $masterJob, "pcb_class_inner", $maxInner );
 	}
 
 	return $result;
 }
-
 
 # Set info about solder mask and silk screnn, based on layers
 sub CreateDefaultStackup {

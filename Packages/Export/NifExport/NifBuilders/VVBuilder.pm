@@ -55,6 +55,7 @@ sub Build {
 	push(@req, "reference");
 	push(@req, "zpracoval");
 	push(@req, "kons_trida");
+	push(@req, "konstr_trida_vnitrni_vrstvy");
 	push(@req, "pocet_vrstev");
 	push(@req, "c_mask_colour");
 	push(@req, "s_mask_colour");
