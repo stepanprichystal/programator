@@ -254,8 +254,7 @@ sub __CheckFilesHandler {
 	closedir(DIR);
 
 	# Check files for export on server
-	#if ( AsyncJobHelber->ServerVersion() ) {
-	if (1) {
+	if ( AsyncJobHelber->ServerVersion() ) {
 		opendir( DIR, EnumsPaths->Jobs_EXPORTFILESPCB ) or die $!;
 		while ( my $file = readdir(DIR) ) {
 
