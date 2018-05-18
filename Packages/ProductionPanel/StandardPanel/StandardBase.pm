@@ -60,7 +60,7 @@ sub new {
 	my $mat = HegMethods->GetMaterialKind( $self->{"jobId"} );
 	$self->{"pcbMat"} = undef;
 
-	if ( $mat =~ /FR4|IS4/i ) {
+	if ( $mat =~ /FR4|IS4\d{2}|PCL370HR/i ) {
 
 		$self->{"pcbMat"} = Enums->PcbMat_FR4;
 	}
@@ -204,7 +204,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	use Data::Dump qw(dump);
 
 	my $inCAM = InCAM->new();
-	my $jobId = "f52457";
+	my $jobId = "d214271";
 
 	my $pnl = StandardBase->new( $inCAM, $jobId );
 
