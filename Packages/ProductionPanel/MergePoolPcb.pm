@@ -291,7 +291,7 @@ sub _CheckMasterReady {
 
 		my $orderName = $itemJob . '-' . $i;
 
-		if ( HegMethods->GetStatusOfOrder($orderName) eq 'Ve vyrobe' ) {
+		if ( HegMethods->GetStatusOfOrder($orderName, 1) eq 'Ve vyrobe' ) {
 			if ( HegMethods->GetInfMasterSlave($orderName) eq 'M' ) {
 				$res = 0;
 			}

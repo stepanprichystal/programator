@@ -1034,11 +1034,19 @@ sub UpdateOrderTerm {
 sub GetStatusOfOrder {
 	my $self    = shift;
 	my $orderId = shift;
+	my $editStyle = shift;    # if checked ,return value will be edited by style
+	
+ 
+	my $column = "stav";
+
+	if ($editStyle) {
+		$column = "lcs.nf_edit_style('stav_zakazky_dps_22', stav) stav";
+	}
 
 	my @params = ( SqlParameter->new( "_OrderId", Enums->SqlDbType_VARCHAR, $orderId ) );
 
 	my $cmd = "SELECT top 1
-				lcs.nf_edit_style('stav_zakazky_dps_22', stav) stav
+				$column
 				from lcs.zakazky_dps_22_hlavicka 
 				WHERE reference_subjektu = _OrderId";
 
@@ -1170,7 +1178,7 @@ sub GetReorders {
 	my $cmd = "select distinct z.reference_subjektu, 
 								z.stav, 
 								z.aktualni_krok, 
-								d.stav AS dps_stav
+								d.stav AS dps_stav,
 								d.reference_subjektu AS deska_reference_subjektu
 				from lcs.zakazky_dps_22_hlavicka z join lcs.desky_22 d on d.cislo_subjektu=z.deska
 				where z.stav='2'";
@@ -1699,9 +1707,10 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 ##
 ##	dump(@res);
 
-	my $jobId = "d152456";
+	my $jobId = "D152457";
 
-	my @cores = HegMethods->GetCoreStoreInfo(6, 14, 5);
+	#my @cores = HegMethods->GetReorders();
+	print HegMethods->GetStatusOfOrder( $jobId . "-01",1 );
 
 	die;
 

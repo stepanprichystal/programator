@@ -265,16 +265,16 @@ sub __GetReorders {
 	push( @reorders, grep { !defined $_->{"aktualni_krok"} || $_->{"aktualni_krok"} eq "" } HegMethods->GetReorders() );
 
 	# check if 01 order is already processed (is not predvyrobni priprava)
-#	for ( my $i = scalar(@reorders) -1 ; $i >= 0 ; $i-- ) {
-#
-#		my $jobId = $reorders[$i]->{"deska_reference_subjektu"};
-#
-#		# if 01 uis still on predvzrobni priprava, skip reorder
-#		if ( HegMethods->GetStatusOfOrder( $jobId . "-01" ) == 2 ) {
-#
-#			splice @reorders, $i, 1;
-#		}
-#	}
+	for ( my $i = scalar(@reorders) -1 ; $i >= 0 ; $i-- ) {
+
+		my $jobId = $reorders[$i]->{"deska_reference_subjektu"};
+
+		# if 01 is still on predvzrobni priprava, skip reorder
+		if ( HegMethods->GetStatusOfOrder( $jobId . "-01" ) == 2 ) {
+
+			splice @reorders, $i, 1;
+		}
+	}
 
 	# 2) Reorders are orders with number -01, which has ancestor POOL mother
 

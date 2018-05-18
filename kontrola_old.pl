@@ -746,7 +746,7 @@ sub _CheckStatusPriprava {
 
 		$num = sprintf( "%02d", $num );
 
-		if ( HegMethods->GetStatusOfOrder( $jobId . "-" . $num ) eq 'Predvyrobni priprava' ) {
+		if ( HegMethods->GetStatusOfOrder( $jobId . "-" . $num, 1 ) eq 'Predvyrobni priprava' ) {
 			$res = 0;
 			last;
 		}

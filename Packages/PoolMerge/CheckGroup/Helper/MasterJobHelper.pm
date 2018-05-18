@@ -196,7 +196,7 @@ sub __MasterCandidate {
 
 		my $orderNameTmp = $orderName . '-' . sprintf( "%02d", $i );
 
-		if ( HegMethods->GetStatusOfOrder($orderNameTmp) eq 'Ve vyrobe' ) {
+		if ( HegMethods->GetStatusOfOrder($orderNameTmp, 1) eq 'Ve vyrobe' ) {
 			if ( HegMethods->GetInfMasterSlave($orderNameTmp) eq 'M' ) {
 				$res = 0;
 				last;

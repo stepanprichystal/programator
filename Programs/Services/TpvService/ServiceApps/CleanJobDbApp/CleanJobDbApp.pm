@@ -389,7 +389,7 @@ sub __DeleteOldMDIFiles {
 	# Log deleted files
 	foreach my $pcbId ( uniq(@deletedJobs) ) {
 
-		my $state = HegMethods->GetStatusOfOrder( $pcbId . "-" . HegMethods->GetPcbOrderNumber($pcbId) );
+		my $state = HegMethods->GetStatusOfOrder( $pcbId . "-" . HegMethods->GetPcbOrderNumber($pcbId), 1 );
 		$self->{"logger"}->debug("Deleted: $pcbId - $state");
 	}
 

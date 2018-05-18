@@ -221,7 +221,7 @@ sub CheckChildJobStatus {
 	# 2) check if child jobs has current state is  "Predvyrovni priprava"
 	foreach my $orderName (@orderNames) {
 
-		my $curState = HegMethods->GetStatusOfOrder($orderName);
+		my $curState = HegMethods->GetStatusOfOrder($orderName, 1);
 
 		if ( $curState !~ /Predvyrobni priprava/i ) {
 			$result = 0;
