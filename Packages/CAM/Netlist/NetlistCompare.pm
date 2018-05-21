@@ -393,7 +393,7 @@ sub __CompareNetlist {
 				 "report_extra"         => 'yes',
 				 "report_miss_on_cu"    => 'yes',
 				 "report_miss"          => 'yes',
-				 "max_highlight_shapes" => '5000'
+				 "max_highlight_shapes" => '100000'
 	);
 
 	$inCAM->COM( 'rv_tab_empty', report => 'netlist_compare', is_empty => 'no' );
