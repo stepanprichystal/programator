@@ -1594,6 +1594,8 @@ sub GetSalesSpec {
 
 	my $cmd = "select top 1
                                                lcs.nf_edit_style('typ_ano_ne', d.rizena_impedance) Rizena_impedance,
+                                               lcs.nf_edit_style('typ_ano_ne', d.merit_presfitt) Merit_PRESSFIT,
+                                               lcs.nf_edit_style('typ_ano_ne', d.mereni_tolerance_vrtani) Merit_toleranci_vrtani,
                                                lcs.nf_edit_style('datacode_typ', d.datacode_typ) Typ_DataCodu,
                                                lcs.nf_edit_style('ul_logo_typ', d.ul_logo_typ) Typ_ULlogo,
                                                d.zaplneni_otvoru_text Zaplneni_otvoru,

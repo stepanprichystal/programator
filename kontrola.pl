@@ -125,7 +125,7 @@ $main->title('Informace o DPS');
 							}								
 																	
 																	
-								_PutDataInfo($topFrameLeftLeftTop);
+								_PutOUspecInfo($topFrameLeftLeftTop);
 								_PutHeliosInfo($topFrameLeftTop);
 
 								
@@ -509,7 +509,7 @@ sub __GetValueXML {
 	}
 
 }
-sub _PutDataInfo {
+sub _PutOUspecInfo {
 		my $heliosFrame = shift;
 		my ($xDPSsize, $yDPSsize) =_GetDimPCB();
 		my $colorText1 = 0;
