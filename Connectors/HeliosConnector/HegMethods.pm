@@ -1701,16 +1701,16 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 #print $wanted;
 #	
 #
-#	 HegMethods->UpdateOrderTerm("d152457-02", $inf{"termin"});
+	 HegMethods->UpdateOrderTerm("d152456-01", "2018-05-24 00:00:00");
 #	
 ##	@res = grep { $_->{"reference_subjektu"} =~ /-01/ } @res;
 ##
 ##	dump(@res);
-
-	my $jobId = "D152457";
-
-	#my @cores = HegMethods->GetReorders();
-	print HegMethods->GetStatusOfOrder( $jobId . "-01",1 );
+#
+#	my $jobId = "D152457";
+#
+#	#my @cores = HegMethods->GetReorders();
+#	print HegMethods->GetStatusOfOrder( $jobId . "-01",1 );
 
 	die;
 

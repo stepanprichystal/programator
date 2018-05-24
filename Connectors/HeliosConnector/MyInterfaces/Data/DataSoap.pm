@@ -10,7 +10,7 @@ require Connectors::HeliosConnector::MyTypemaps::Data
     if not Connectors::HeliosConnector::MyTypemaps::Data->can('get_class');
 
 sub START {
-    $_[0]->set_proxy('http://heg.gatema.cz/gatema/data.asmx') if not $_[2]->{proxy};
+    $_[0]->set_proxy('http://hegsrv.gatema.cz/gatema/data.asmx') if not $_[2]->{proxy};
     $_[0]->set_class_resolver('Connectors::HeliosConnector::MyTypemaps::Data')
         if not $_[2]->{class_resolver};
 
