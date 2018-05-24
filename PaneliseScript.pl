@@ -141,11 +141,12 @@ unless ($panelSizeCheck == 0) {
 		
 		# Copy all rout layers to solder mask
 		PreparationLayout->CopyRoutToSolderMask($inCAM, $jobName, 'o+1' );
-				
-		if ( CamHelper->StepExists( $inCAM, $jobName, 'mpanel' ) ) { 
- 					PreparationLayout->CopyRoutToSolderMask($inCAM, $jobName, 'mpanel' );
- 					$inCAM->COM ('set_step',name=> 'o+1');
- 		}
+			
+		#22.5.2018 zaremovano, delalo chyby pøi kopírování mpanelu z jiné zakázky.		
+		#if ( CamHelper->StepExists( $inCAM, $jobName, 'mpanel' ) ) { 
+ 		#			PreparationLayout->CopyRoutToSolderMask($inCAM, $jobName, 'mpanel' );
+ 		#			$inCAM->COM ('set_step',name=> 'o+1');
+ 		#}
  			
  			
 		# check CompareLayers
