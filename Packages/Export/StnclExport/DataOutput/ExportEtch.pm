@@ -214,7 +214,7 @@ sub __PrepareTopBotLayer {
 
 	my $resultItemGer = $self->_GetNewItem("Layer $type");
 
-	Helper->ExportLayers2( $resultItemGer, $inCAM, $step, \@layers, $path, sub { return $fileName }, 0, 1 );
+	Helper->ExportLayers2( $resultItemGer, $inCAM, $step, \@layers, $path, sub { return $fileName }, 0, 0 );
 
 	$self->_OnItemResult($resultItemGer);
 

@@ -106,7 +106,7 @@ sub __PrepareLayer {
 
 	my $resultItemGer = $self->_GetNewItem("Produce data");
 
-	Helper->ExportLayers2( $resultItemGer, $inCAM, $step, \@layers, $path, sub { return $fileName }, 0, 1 );
+	Helper->ExportLayers2( $resultItemGer, $inCAM, $step, \@layers, $path, sub { return $fileName }, 0, 0);
 
 	$self->_OnItemResult($resultItemGer);
 	

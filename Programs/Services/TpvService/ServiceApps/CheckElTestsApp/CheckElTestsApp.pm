@@ -134,7 +134,6 @@ sub __ProcessJob {
 	my $orderId = shift;
 	my $jobId   = shift;
 
-	$jobId = "d093276";
 
 	#my $inCAM = $self->{"inCAM"};
 
@@ -168,8 +167,10 @@ sub __ProcessJob {
 			}
 
 			$self->{"logger"}->debug("El test for job: $orderId doesnt exist for $diff hours");
-
-			if ( $diff / 3600 > 10 ) {
+			
+			$diff /= 3600; # to hours
+			
+			if ( $diff > 10 ) {
 
 				my $errText = "Elektrický test pro: $jobId neexistuje. Co nejdříve ho vytvoř!";
 				my $term = $pattern->parse_datetime( $orderInfo{"termin"} )->dmy('/');    # start order date

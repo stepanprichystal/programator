@@ -79,10 +79,10 @@ sub __GetVal {
 	else {
 
 		$confPath = $main::configPath;
-
-		unless ( -e $confPath ) {
+	}
+	
+	unless ( -e $confPath ) {
 			die "Configuration style file $confPath doesn't exist. Key: $key";
-		}
 	}
 
 	my @lines = @{ FileHelper->ReadAsLines($confPath) };
