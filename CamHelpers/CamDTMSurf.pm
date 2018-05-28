@@ -21,7 +21,6 @@ use aliased 'Enums::EnumsDrill';
 #   Package methods
 #-------------------------------------------------------------------------------------------#
 #
- 
 
 # Return info about tool in DTM
 # Result: array of hashes. Each has contain info about row in DTM
@@ -33,11 +32,9 @@ sub GetDTMTools {
 	my $layer   = shift;
 	my $breakSR = shift;
 
-	 
 	# tools, some can be duplicated
 	my @tools = $self->__GetAllSurfaceTools( $inCAM, $jobId, $step, $layer, $breakSR );
 
- 
 	return @tools;
 }
 
@@ -53,6 +50,9 @@ sub __GetAllSurfaceTools {
 	$breakSR = $breakSR ? "break_sr+" : "";
 
 	my @surfaces = ();
+
+	my $depth    = EnumsDrill->DTMatt_DEPTH;
+	my $magazine = EnumsDrill->DTMatt_MAGINFO;
 
 	my $fFeatures = $inCAM->INFO(
 								  units           => 'mm',
@@ -80,9 +80,6 @@ sub __GetAllSurfaceTools {
 		unless ($1) {
 			next;
 		}
-
-		my $depth    = EnumsDrill->DTMatt_DEPTH;
-		my $magazine = EnumsDrill->DTMatt_MAGINFO;
 
 		# set defaul tool values
 		my %tInfo = ( "id" => $surfId );
@@ -128,7 +125,7 @@ sub __GetAllSurfaceTools {
 				if ( defined $tInfo{$depth} ) {
 					$tInfo{$depth} =~ s/,/\./;
 					$tInfo{$depth} = sprintf( "%.2f", $tInfo{$depth} );
- 
+
 				}
 			}
 			elsif ( $at =~ /$magazine=\s*(.*)\s*/ ) {
@@ -139,10 +136,43 @@ sub __GetAllSurfaceTools {
 		}
 
 		push( @surfaces, \%tInfo );
+	}
+
+	# remove duplicities
+	my @uniqSurfaces = ();
+
+	foreach my $t (@surfaces) {
+
+		my $tFind = (
+			grep {
+				     $_->{".rout_tool"} == $t->{".rout_tool"}
+				  && $_->{".rout_tool2"} == $t->{".rout_tool2"}
+				  && $_->{$depth} == $t->{$depth}
+				  && $_->{$magazine} eq $t->{$magazine}
+			} @uniqSurfaces
+		)[0];
+
+		if ($tFind) {
+
+			push( $tFind->{"surfacesId"}, $t->{"id"} );    # add surface id
+
+		}
+		else {
+
+			my %tInfo = ();
+
+			$tInfo{".rout_tool"}  = $t->{".rout_tool"};
+			$tInfo{".rout_tool2"} = $t->{".rout_tool2"};
+			$tInfo{$depth}        = $t->{$depth};
+			$tInfo{$magazine}     = $t->{$magazine};
+			$tInfo{"surfacesId"}  = [ $t->{"id"} ];
+
+			push( @uniqSurfaces, \%tInfo );
+		}
 
 	}
 
-	return @surfaces;
+	return @uniqSurfaces;
 }
 
 #-------------------------------------------------------------------------------------------#
@@ -155,11 +185,11 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	use aliased 'Packages::InCAM::InCAM';
 
 	my $inCAM = InCAM->new();
-	my $jobId = "f52456";
+	my $jobId = "d214471";
 
 	#my $step  = "mpanel_10up";
 
-	my @result = CamDTMSurf->GetDTMTools( $inCAM, $jobId, "o+1", "f" );
+	my @result = CamDTMSurf->GetDTMTools( $inCAM, $jobId, "mpanel", "fzc", 1 );
 
 	#my $self             = shift;
 

@@ -72,7 +72,7 @@ sub CheckToolDepthSet {
 		else {
 
 			$str .=
-			  "Surface id: \"" . $t->GetSurfaceId() . "\" has wrong value of \"tool_depth\" attribute (depth is: \"" . $t->GetDepth() . "\").\n";
+			  "Surfaces id: \"" . join("; ",$t->GetSurfacesId()) . "\" has wrong value of \"tool_depth\" attribute (depth is: \"" . $t->GetDepth() . "\").\n";
 		}
 
 		$$mess .= $str;
@@ -104,7 +104,7 @@ sub CheckToolDepthNotSet {
 		}
 		else {
 
-			$str .= "Surface id: \"" . $t->GetSurfaceId() . "\" has set \"tool_depth\" attribute. This tool can't contain depth.\n";
+			$str .= "Surfaces id: \"" . join("; ",$t->GetSurfacesId()) . "\" has set \"tool_depth\" attribute. This tool can't contain depth.\n";
 		}
 
 		$$mess .= $str;
@@ -137,7 +137,7 @@ sub CheckMagazine {
 			$str .= "Finding magazine for DTM special tool: ";
 		}
 		else {
-			$str .= "Finding magazine for surface (id: \"" . $t->GetSurfaceId() . "\") special tool: ";
+			$str .= "Finding magazine for surfaces (id: " . join("; ",$t->GetSurfacesId()) . ") special tool: ";
 		}
 
 		$str .=
@@ -163,7 +163,7 @@ sub CheckSpecialTools {
 	my $result = 1;
 
 	my @tools = @{ $self->{"unitDTM"}->{"tools"} };
-	
+
 	# Do not this check for tools 2mm (because each pscb contain tool 2mm and this control is bothering)
 	@tools = grep { $_->GetDrillSize() != 2000 } @tools;
 
@@ -209,54 +209,71 @@ sub __CheckUniqueTools {
 	my $mess = shift;
 
 	my $result = 1;
-	
-
 
 	my @tools = @{ $self->{"unitDTM"}->{"tools"} };
 
+	# Get all unique  diamters
+	
+	my @diamters = uniq(map { $_->GetDrillSize()} @tools);
+	
+ 
 	for ( my $i = 0 ; $i < scalar(@tools) ; $i++ ) {
 
 		for ( my $j = $i ; $j < scalar(@tools) ; $j++ ) {
 
+			next if($i == $j);
+	 
 			my $ti = $tools[$i];
 			my $tj = $tools[$j];
 
 			# if tools equal, check if all attributes are same
 			if ( $ti->GetDrillSize() == $tj->GetDrillSize() && $ti->GetTypeProcess() eq $tj->GetTypeProcess() ) {
-				my $mStr = "NC layer: " . $self->{"unitDTM"}->{"layer"} . ". ";
-				$mStr .= "Same  tools (" . $ti->GetDrillSize() . "µm, " . $ti->GetTypeProcess() . ") has different parameter \"%s\" ";
-				$mStr .= "(";
-				$mStr .=
-				  $ti->GetSource() eq Enums->Source_DTM
-				  ? "column value: \"%s\" in DTM "
-				  : "attribnute value: \"%s\" in surface id: \"" . $ti->GetSurfaceId() . "\"";
-				$mStr .= "is not equal to ";
-				$mStr .=
-				  $tj->GetSource() eq Enums->Source_DTM
-				  ? "column value: \"%s\" in DTM "
-				  : "attribute value: \"%s\" in surface ids: " . $tj->GetSurfaceId();
-				$mStr .= ")";
-				$mStr .= ".\n Set same value to parameter or move one tool to new NC layer.\n";
+				my @diffs = ();
+ 
 
 				if ( $tools[$i]->GetDepth() != $tools[$j]->GetDepth() ) {
 					$result = 0;
-					$$mess .= sprintf( $mStr, "depth", $tools[$i]->GetDepth(), $tools[$j]->GetDepth() );
+					push( @diffs, { "n" => "depth", "t1" => $tools[$i]->GetDepth(), "t2" => $tools[$j]->GetDepth() } )
 				}
 
 				if ( $tools[$i]->GetMagazineInfo() ne $tools[$j]->GetMagazineInfo() ) {
 					$result = 0;
-					$$mess .= sprintf( $mStr, "magazine info", $tools[$i]->GetMagazine(), $tools[$j]->GetMagazine() );
+					push( @diffs, { "n" => "magazine info", "t1" => $tools[$i]->GetMagazine(), "t2" => $tools[$j]->GetMagazine() } )
 				}
 
 				if ( $tools[$i]->GetTolPlus() ne $tools[$j]->GetTolPlus() ) {
 					$result = 0;
-					$$mess .= sprintf( $mStr, "tolerance+", $tools[$i]->GetTolPlus(), $tools[$j]->GetTolPlus() );
+					push( @diffs, { "n" => "tolerance+", "t1" => $tools[$i]->GetTolPlus(), "t2" => $tools[$j]->GetTolPlus() } )
 				}
 
 				if ( $tools[$i]->GetTolMinus() ne $tools[$j]->GetTolMinus() ) {
 					$result = 0;
-					$$mess .= sprintf( $mStr, "tolerance-", $tools[$i]->GetTolMinus(), $tools[$j]->GetTolMinus() );
+					push( @diffs, { "n" => "tolerance-", "t1" => $tools[$i]->GetTolMinus(), "t2" => $tools[$j]->GetTolMinus() } )
 				}
+
+				if ( !$result ) {
+
+					my $mStr = "NC layer: " . $self->{"unitDTM"}->{"layer"} . ". ";
+					$mStr .= "Same  tools (" . $ti->GetDrillSize() . "µm, " . $ti->GetTypeProcess() . ") has different parameter \"%s\" ";
+					$mStr .= "(";
+					$mStr .=
+					  $ti->GetSource() eq Enums->Source_DTM
+					  ? "column value: \"%s\" in DTM "
+					  : "attribute value: \"%s\" in surfaces id: " . join("; ",$ti->GetSurfacesId()) . " ";
+					$mStr .= "is not equal to ";
+					$mStr .=
+					  $tj->GetSource() eq Enums->Source_DTM
+					  ? "column value: \"%s\" in DTM "
+					  : "attribute value: \"%s\" in surfaces id: " . join("; ",$tj->GetSurfacesId());
+					$mStr .= ")";
+					$mStr .= ".\n Set same value to parameter or move one tool to new NC layer.\n";
+
+					foreach my $d (@diffs) {
+
+						$$mess .= sprintf( $mStr, $d->{"n"}, $d->{"t1"}, $d->{"t2"} );
+					}
+				}
+
 			}
 		}
 	}
@@ -287,7 +304,7 @@ sub __CheckDrillSize {
 		}
 		else {
 
-			$str .= "Surface: " . $t->GetSurfaceId() . " has not set attribute \".rout_tool\".\n";
+			$str .= "Surfaces: " . join("; ",$t->GetSurfacesId()) . " has not set attribute \".rout_tool\".\n";
 		}
 
 		$$mess .= $str;
@@ -303,7 +320,7 @@ sub __CheckDrillSize {
 		    "NC layer: "
 		  . $self->{"unitDTM"}->{"layer"}
 		  . ". Attributes \".rout_tool\" and \".rout_tool2\" are not equal. Surface id: \""
-		  . $t->GetSurfaceId() . "\".\n";
+		  . join("; ",$t->GetSurfacesId()) . "\".\n";
 	}
 
 	return $result;

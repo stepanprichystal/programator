@@ -251,7 +251,7 @@ sub __InitUniDTM {
 
 		# special  DTM  surface property
 		$uniT->SetDrillSize2( $t->{".rout_tool2"} );
-		$uniT->SetSurfaceId( $t->{"id"} );
+		$uniT->SetSurfacesId( $t->{"surfacesId"} );
 
 		push( @{ $self->{"tools"} }, $uniT );
 	}

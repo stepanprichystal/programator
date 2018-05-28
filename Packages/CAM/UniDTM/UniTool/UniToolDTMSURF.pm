@@ -24,7 +24,7 @@ sub new {
 
 	$self->{"drillSize2"} = undef;    # diameter of rout pocket tool
 	
-	$self->{"surfaceId"} = undef;     # sign surface where is tool defined
+	$self->{"surfacesId"} = [];     # surfaces, which contain this tool
 
 	return $self;
 }
@@ -42,16 +42,17 @@ sub SetDrillSize2 {
 	$self->{"drillSize2"} = shift;
 }
 
-sub GetSurfaceId {
+sub GetSurfacesId {
 	my $self = shift;
 
-	return $self->{"surfaceId"};
+	return @{$self->{"surfacesId"}};
 }
 
-sub SetSurfaceId {
+sub SetSurfacesId {
 	my $self = shift;
+	my $surfacesId = shift;
 
-	$self->{"surfaceId"} = shift;
+	$self->{"surfacesId"} = $surfacesId;
 }
 
 #-------------------------------------------------------------------------------------------#
