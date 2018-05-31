@@ -9,6 +9,7 @@ use constant {
 	Standard_295x460   => "standard_295x460",      # big 1V2V
 	Standard_230x305   => "standard_230x305",      # small ALU
 	Standard_305x460   => "standard_305x460",      # big ALU
+	Standard_308x538   => "standard_308x538",      # bigNEW
 
 };
 

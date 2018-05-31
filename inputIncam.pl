@@ -158,7 +158,9 @@ my ($prefixDiskName, $bodyPath, $fileName, $suffixName, $jobName, $localFolder) 
 	
 	my $reference = getValueNoris($jobName, 'reference_zakazky');
 	my $hostName = $ENV{HOST};
-	OnlineWrite_order( $reference, "zpracovava $hostName" , "aktualni_krok" );
+	
+	HegMethods->UpdatePcbOrderState( $reference, "zpracovava $hostName");
+
 
 	$inCAM -> COM ('import_job',db=>'incam',path=>"$importPath",name=>"$jobName",analyze_surfaces=>'no');
 	$inCAM -> COM ('clipb_open_job',job=>"$jobName",update_clipboard=>'view_job');
@@ -236,8 +238,7 @@ my ($prefixDiskName, $bodyPath, $fileName, $suffixName, $jobName, $localFolder) 
 	
  			my $reference = getValueNoris($jobName, 'reference_zakazky');
  			my $hostName = $ENV{HOST};
- 			OnlineWrite_order( $reference, "zpracovava $hostName" , "aktualni_krok" );
- 			
+ 			HegMethods->UpdatePcbOrderState( $reference, "zpracovava $hostName");
  			
  					if ($suffixName =~ /[Zz][Ii][Pp]/){ 
  						_ExtractZip($path, $prefixDiskName, $bodyPath);
@@ -339,10 +340,6 @@ my ($prefixDiskName, $bodyPath, $fileName, $suffixName, $jobName, $localFolder) 
 		# Check if jobName already exist;
 		_CheckJobExist($jobName);
 	
-		# Write information about user who works on pcb
-# 			my $reference = getValueNoris($jobName, 'reference_zakazky');
-# 			my $hostName = $ENV{HOST};
-# 			OnlineWrite_order( $reference, "zpracovava $hostName" , "aktualni_krok" );
  			
  		$inCAM->COM('import_open_job',db=>'incam',path=>"$path",name=>"$jobName",analyze_surfaces=>'no');
     		

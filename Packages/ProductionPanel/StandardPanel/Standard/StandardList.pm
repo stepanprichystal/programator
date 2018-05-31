@@ -98,6 +98,30 @@ sub GetStandards {
 			"pH" => 440
 		)
 	);
+	
+		# ======== Standard Multilayer "newBIG" ========
+
+	push(
+		@l,
+		Standard->new(
+			"name"    => Enums->Standard_308x538,
+			"pcbType" => Enums->PcbType_MULTI,
+			"pcbMat"  => Enums->PcbMat_FR4,
+
+			# Properties
+			"active"      => 1,
+			"w"           => 308,
+			"h"           => 538,
+			"bl"  => 21,
+			"br" => 21,
+			"bt"   => 41.6,
+			"bb"   => 41.6,
+			
+			# used prepreg size
+			"pW" => 307,
+			"pH" => 440
+		)
+	);
 
 	# ======== Standard Single layer "Small" ========
 
