@@ -1,35 +1,146 @@
-#!/usr/bin/perl -w
+
+#-------------------------------------------------------------------------------------------#
+# Description: Manager responsible for NIF creation
+# Author:SPR
+#-------------------------------------------------------------------------------------------#
+package Packages::Coupon::Coupon;
 
 #3th party library
 use strict;
 use warnings;
-use Win32::Service;
-use Config;
-use Win32::Process;
-use Log::Log4perl qw(get_logger);
 
-#use lib qw( C:\Perl\site\lib\TpvScripts\Scripts );
+#local library
 
-#necessary for load pall packages
-use FindBin;
-use lib "$FindBin::Bin/../";
-use PackagesLib;
+use aliased 'CamHelpers::CamStep';
+use aliased 'CamHelpers::CamHelper';
+use aliased 'Packages::Coupon::Enums';
 
-use aliased 'Programs::Exporter::ExportUtility::RunExport::RunExportUtility';
-use aliased 'Helpers::GeneralHelper';
-use aliased 'Connectors::HeliosConnector::HegMethods';
-use aliased 'Packages::Other::CustomerNote';
-use aliased 'Enums::EnumsDrill';
+use aliased 'Packages::Coupon::MicrostripBuilders::SEBuilder';
+use aliased 'Packages::Coupon::ModelBuilders::CoatedMicrostrip';
+use aliased 'Packages::Coupon::CouponSingle';
+use aliased 'Packages::CAM::SymbolDrawing::Point';
+use aliased 'Packages::CAMJob::Panelization::SRStep';
 
-my $jobId = "d152457";
+#-------------------------------------------------------------------------------------------#
+#  Package methods
+#-------------------------------------------------------------------------------------------#
 
-my $customerNote = CustomerNote->new( HegMethods->GetCustomerInfo($jobId)->{"reference_subjektu"} );
+sub new {
+	my $class = shift;
+	my $self  = {};
+	bless $self;
 
-# Vraci jednu ze tri hodnot
+	$self->{"inCAM"} = shift;
+	$self->{"jobId"} = shift;
 
-# undef
-# EnumsDrill->DTM_VRTANE
-# EnumsDrill->DTM_VYSLEDNE
+	$self->{"settings"} = shift;
+
+	$self->{"prepared"} = 0;
+
+	$self->{"couponsSingle"} = [];
+
+	$self->{"couponStep"} = undef;
+
+	return $self;
+}
+
+sub Prepare {
+	my $self = shift;
+
+	my $inCAM = $self->{"inCAM"};
+	my $jobId = $self->{"jobId"};
+
+	# Built miscrostip builers
+
  
-print $customerNote->PlatedHolesType();
+	 
+	foreach my $settCouponSingle ( $self->{"settings"}->GetCouponsSingle() ) {
+
+		my @constrsId = $settCouponSingle->GetConstrainsId();
+
+		my $coupon = CouponSingle->new( $inCAM, $jobId, $self->{"settings"}, scalar(@{ $self->{"couponsSingle"} })+1, \@constrsId );
+
+		$coupon->Build();
+
+		push( @{ $self->{"couponsSingle"} }, $coupon );
+
+	}
+
+}
+
+sub Generate {
+	my $self = shift;
+
+	my $inCAM = $self->{"inCAM"};
+	my $jobId = $self->{"jobId"};
+
+	#my @coupons = grep { $_ =~ /^coupon_(\d+)$/} StepName->GetAllStepNames($inCAM, $jobId);
+
+	# CreateStep
+
+	$self->{"couponStep"} = SRStep->new( $inCAM, $jobId, $self->{"settings"}->GetStepName() );
+	$self->{"couponStep"}->Create(
+								   $self->{"settings"}->GetWidth(),        $self->GetCouponHeight(),
+								   $self->{"settings"}->GetCouponMargin(), $self->{"settings"}->GetCouponMargin(),
+								   $self->{"settings"}->GetCouponMargin(), $self->{"settings"}->GetCouponMargin()
+	  );
+	 
+	CamHelper->SetStep( $inCAM, $self->{"settings"}->GetStepName());
+
+	# profile
+ 
+	my $yCurrent = $self->{"settings"}->GetCouponMargin();
+
+	foreach my $coupon ( @{ $self->{"couponsSingle"} } ) {
+
+		my $origin = Point->new( $self->{"settings"}->GetCouponMargin(), $yCurrent );
+
+		$coupon->Draw($origin);
+
+		$yCurrent += $coupon->GetHeight() + $self->{"settings"}->GetCouponSpace();
+
+	}
+}
+
+sub GetCouponHeight {
+	my $self = shift;
+
+	my $h = $self->{"settings"}->GetCouponMargin() * 2 + ( scalar( @{ $self->{"couponsSingle"} } ) - 1 ) * $self->{"settings"}->GetCouponSpace();
+
+	$h += $_->GetHeight() foreach @{ $self->{"couponsSingle"} };
+
+	return $h;
+}
+
+sub GetCouponWidth {
+	my $self = shift;
+
+}
+
+#-------------------------------------------------------------------------------------------#
+#  Place for testing..
+#-------------------------------------------------------------------------------------------#
+my ( $package, $filename, $line ) = caller;
+if ( $filename =~ /DEBUG_FILE.pl/ ) {
+
+	use aliased 'Packages::InCAM::InCAM';
+	use aliased 'Packages::Coupon::Coupon';
+	use aliased 'Packages::Coupon::CouponSettings::CouponSettings';
+
+	my $inCAM = InCAM->new();
+	my $jobId = "d152456";
+
+	my $p = 'c:\Export\CouponSPR\output\SE_Coated_Microstrip\SE_Coated_Microstrip.xml';
+
+	my $sett = CouponSettings->new($p);
+
+	my $coupon = Coupon->new( $inCAM, $jobId, $sett );
+
+	$coupon->Prepare();
+
+	$coupon->Generate();
+
+}
+
+1;
 

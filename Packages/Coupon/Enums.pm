@@ -45,8 +45,14 @@ use constant {
 		 
 	 
 };
+
+
+# microstrip types
+use constant {
+		Pad_GND => "gndPad",	  
+		Pad_TRACK => "trackPad"	  
+};
  	
- 
  	 
 
 1;

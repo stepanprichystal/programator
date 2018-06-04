@@ -1,23 +1,54 @@
+
 #-------------------------------------------------------------------------------------------#
-# Description: Helper function for data prepare to output
+# Description: Manager responsible for NIF creation
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::Coupon::Helper;
+package Packages::Coupon::CpnBuilder::CpnLayout::CpnSingleLayout;
 
 #3th party library
 use strict;
 use warnings;
 
 #local library
-use aliased 'Helpers::GeneralHelper';
-use aliased 'Enums::EnumsGeneral';
-use aliased 'Packages::Stackup::Stackup::Stackup';
 
 #-------------------------------------------------------------------------------------------#
-#   Package methods
+#  Package methods
 #-------------------------------------------------------------------------------------------#
+sub new {
+	my $class = shift;
+	my $self  = {};
+	bless $self;
 
- 
+	$self->{"h"}             = undef;    # dynamic heght of single coupon
+	$self->{"stripsLayouts"} = [];
+
+	return $self;
+}
+
+sub SetHeight {
+	my $self = shift;
+
+	$self->{"h"} = shift;
+}
+
+sub GetHeight {
+	my $self = shift;
+
+	return $self->{"h"};
+}
+
+sub AddMicrostripLayout {
+	my $self = shift;
+
+	push( @{ $self->{"stripsLayouts"} }, shift );
+}
+
+sub GetMicrostripLayouts {
+	my $self = shift;
+
+	return @{ $self->{"stripsLayouts"} };
+
+}
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

@@ -298,6 +298,7 @@ sub __PrepareSchema {
 
 	}
 
+ 
 	# vlepeni do ramu
 	elsif ( $schType eq Enums->Schema_FRAME ) {
 

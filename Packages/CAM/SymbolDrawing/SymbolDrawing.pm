@@ -11,6 +11,7 @@ package Packages::CAM::SymbolDrawing::SymbolDrawing;
 use utf8;
 use strict;
 use warnings;
+use Storable qw(dclone);
 
 #local library
 
@@ -48,8 +49,8 @@ sub new {
 
 	my @syms = ();
 	$self->{"symbol"} = SymbolBase->new();    # parent of all symbols and primitives
-	
-	$self->{"symbol"}->SetPassGUID2prim(0);  # we don't want all primitives has same group GUID
+
+	$self->{"symbol"}->SetPassGUID2prim(0);   # we don't want all primitives has same group GUID
 
 	return $self;
 }
@@ -68,8 +69,7 @@ sub AddPrimitive {
 	my $primitive = shift;
 
 	$self->{"symbol"}->AddPrimitive($primitive);
-	
-	
+
 }
 
 sub SetMirrorX {
@@ -94,7 +94,8 @@ sub SetMirrorY {
 }
 
 sub Draw {
-	my $self = shift;
+	my $self     = shift;
+	
 
 	# 1)  Get all primitives
 	my @primitives = ();
@@ -112,8 +113,8 @@ sub Draw {
 sub __DrawPrimitives {
 	my $self       = shift;
 	my @primitives = @{ shift(@_) };
-	
-	$self->{"inCAM"}->COM( "cur_atr_reset"); # reset currently set attributes
+
+	$self->{"inCAM"}->COM("cur_atr_reset");    # reset currently set attributes
 
 	foreach my $pInfo (@primitives) {
 
@@ -122,13 +123,19 @@ sub __DrawPrimitives {
 
 		foreach my $p ( @{$primitives} ) {
 			
+			my $p = dclone($p); # do deep copy, because primitive properties (points) can be moved, rotated etc in functions below
+
 			# Every primitive feature have set attribute feat_group_id
-			CamSymbol->AddCurAttribute($self->{"inCAM"}, $self->{"jobId"}, "feat_group_id", $p->GetGroupGUID());
-			
+			CamSymbol->AddCurAttribute( $self->{"inCAM"}, $self->{"jobId"}, "feat_group_id", $p->GetGroupGUID() );
 
 			if ( $p->GetType() eq Enums->Primitive_LINE ) {
 
 				$self->__DrawLine( $p, $pos );
+
+			}
+			elsif ( $p->GetType() eq Enums->Primitive_POLYLINE ) {
+
+				$self->__DrawPolyline( $p, $pos );
 
 			}
 			elsif ( $p->GetType() eq Enums->Primitive_TEXT ) {
@@ -149,11 +156,8 @@ sub __DrawPrimitives {
 
 				$self->__DrawPad( $p, $pos );
 			}
-			
-			
-			
-			
-			CamSymbol->ResetCurAttributes($self->{"inCAM"});
+
+			CamSymbol->ResetCurAttributes( $self->{"inCAM"} );
 		}
 	}
 }
@@ -179,6 +183,32 @@ sub __DrawLine {
 
 	CamSymbol->AddLine( $self->{"inCAM"}, $sP, $eP, $line->GetSymbol(), $line->GetPolarity() );
 
+}
+
+sub __DrawPolyline {
+	my $self      = shift;
+	my $polyline  = shift;
+	my $symbolPos = shift;
+
+	# consider origin of whole drawing + origin of symbol hierarchy
+	foreach my $p ( $polyline->GetPoints() ) {
+
+		$p->Move( $self->{"position"}->X() + $symbolPos->X(), $self->{"position"}->Y() + $symbolPos->Y() );
+	}
+
+
+	# consider mirror
+	if ( $self->{"mirrorX"} ) {
+		foreach my $p ( $polyline->GetPoints() ) {
+
+			$p->MirrorX( $self->{"mirrorXPoint"} );
+		}
+	}
+
+	my @points = $polyline->GetPoints();
+
+	CamSymbol->AddPolyline( $self->{"inCAM"}, \@points, $polyline->GetSymbol(), $polyline->GetPolarity() );
+ 
 }
 
 sub __DrawText {

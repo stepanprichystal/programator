@@ -1,31 +1,17 @@
-package Tee;
-
-sub TIEHANDLE {
-	my $class   = shift;
-	my $handles = [@_];
-	bless $handles, $class;
-	return $handles;
-}
-
-sub PRINT {
-	my $href = shift;
-	my $handle;
-	my $success = 0;
-	foreach $handle (@$href) {
-		$success += print $handle @_;
-	}
-	return $success ==  @$href;
-}
-
-sub PRINTF {
-	my $href = shift;
-	my $handle;
-	my $success = 0;
-	foreach $handle (@$href) {
-		$success += print $handle @_;
-	}
-	return $success ==  @$href;
-}
-
- 
-1;
+stepName 		 = coupon
+padClearance 	 = 80    #µm
+pad2GNDClearance = 120               #µm
+padTrackSize     = 1524              #µm
+padGNDSize       = 1524              #µm
+padTrackShape    = s    #µm
+padGNDShape 	 = r     #µm
+padGNDSymNeg 	 = thr2000x1800x0x4x203       #µm
+padDrillSize      = 1050             #µm
+tracePad2GNDPad   = 2.54             # mm
+tracePad2tracePad = 2.54             # mm
+w                 = 180              # mm
+h                 = 203.2            # mm
+marginSingle      = 3                # mm
+marginCoupon      = 2                # mm
+couponSpace       = 0.5              # mm
+stripsPadsDist    = 4                # mm

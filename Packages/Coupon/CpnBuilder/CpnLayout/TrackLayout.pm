@@ -3,14 +3,14 @@
 # Description: Manager responsible for NIF creation
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::CouponSingleSettings;
+package Packages::Coupon::CpnBuilder::CpnLayout::TrackLayout;
 
 #3th party library
 use strict;
 use warnings;
 
 #local library
-use aliased 'Packages::XMLParser';
+ 
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -19,19 +19,32 @@ sub new {
 	my $class = shift;
 	my $self  = {};
 	bless $self;
-
-	$self->{"constrains"} = shift;
-	
+ 
+	$self->{"points"} = shift;
+ 	$self->{"width"} = shift;
  
 	return $self;
-
+ 
 }
-
-
-sub GetConstrains{
-	my  $self = shift;
+ 
+sub AddTrackPoint{
+	my $self  = shift;
+	my $point = shift;
 	
-	return @{$self->{"constrains"}};
+	push(@{$self->{"points"}}, $point);
+	
+} 
+
+sub GetPoints{
+	my $self  = shift;
+	
+	return @{$self->{"points"}};
+}
+ 
+sub GetWidth{
+	my $self  = shift;
+	
+	return $self->{"width"};
 }
  
 #-------------------------------------------------------------------------------------------#
