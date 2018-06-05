@@ -55,7 +55,6 @@ sub Build {
 		$section->AddRow( "zpracoval", $nifData{"zpracoval"} );
 	}
 
-
 	#kons_trida
 	if ( $self->_IsRequire("kons_trida") ) {
 		my $pcbClass = CamJob->GetJobPcbClass( $inCAM, $jobId );    #attribut pnl_class from job
@@ -63,17 +62,20 @@ sub Build {
 	}
 
 	#konstr_trida_vnitrni_vrstvy
-	if ( $self->_IsRequire("konstr_trida_vnitrni_vrstvy") ) {
+	if ( $self->{"layerCnt"} > 2 ) {
 		
-		my $pcbClass = 0;
-		
-		if($self->{"layerCnt"} > 2){
-			$pcbClass = CamJob->GetJobPcbClassInner( $inCAM, $jobId );    #attribut pnl_class from job
+		if ( $self->_IsRequire("konstr_trida_vnitrni_vrstvy") ) {
+
+			my $pcbClass = 0;
+
+			if ( $self->{"layerCnt"} > 2 ) {
+				$pcbClass = CamJob->GetJobPcbClassInner( $inCAM, $jobId );    #attribut pnl_class from job
+			}
+
+			$section->AddRow( "konstr_trida_vnitrni_vrstvy", $pcbClass );
 		}
- 
-		$section->AddRow( "konstr_trida_vnitrni_vrstvy", $pcbClass );
 	}
- 
+
 	#pocet_vrstev
 	if ( $self->_IsRequire("pocet_vrstev") ) {
 
@@ -146,18 +148,17 @@ sub Build {
 	if ( $self->_IsRequire("uhlik_typ") ) {
 		$section->AddRow( "uhlik_typ", $self->__GetUhlikTyp() );
 	}
-	
+
 	#film_konektoru
 	if ( $self->_IsRequire("film_konektoru") ) {
 		$section->AddRow( "film_konektoru", $self->__GetGoldFilmTyp() );
-	}	
-	
+	}
 
 	#prokoveni
 	if ( $self->_IsRequire("prokoveni") ) {
 		$section->AddRow( "prokoveni", $self->__GetProkoveni() );
 	}
-	
+
 	#prokoveni
 	if ( $self->_IsRequire("typ_dps") ) {
 		$section->AddRow( "typ_dps", $self->__GetTypDps() );
@@ -185,7 +186,6 @@ sub __GetGoldFilmTyp {
 	my $self = shift;
 	return $self->__GetLayerExist( "goldc", "golds" );
 }
- 
 
 sub __GetLayerExist {
 	my $self = shift;
@@ -210,7 +210,7 @@ sub __GetLayerExist {
 	elsif ( !$lcExist && $lsExist ) {
 		$res = "S";
 	}
-	
+
 	return $res;
 }
 
@@ -227,34 +227,34 @@ sub __GetProkoveni {
 	if ($sExist) {
 
 		my $mExist = CamHelper->LayerExists( $inCAM, $jobId, "m" );
-	 
+
 		if ($mExist) {
-			
+
 			$result = 'A';
-			
+
 		}
-		
+
 		# zbytek podminky yrusen 19.5.2017
 
-#			my @steps = CamStepRepeat->GetStepAndRepeat( $inCAM, $jobId, $stepName );
-#			
-#			foreach my $stepInner (@steps) {
-#				
-#				my $stepInnerName = $stepInner->{"gSRstep"};
-#				
-#				$inCAM->INFO(
-#							  units       => 'mm',
-#							  entity_type => 'layer',
-#							  entity_path => "$jobId/$stepInnerName/m",
-#							  data_type   => 'FEAT_HIST',
-#							  options     => 'break_sr'
-#				);
-#
-#				if ( $inCAM->{doinfo}{gFEAT_HISTtotal} > 0 ) {
-#					$result = 'A';
-#				}
-#			}
-#		}
+		#			my @steps = CamStepRepeat->GetStepAndRepeat( $inCAM, $jobId, $stepName );
+		#
+		#			foreach my $stepInner (@steps) {
+		#
+		#				my $stepInnerName = $stepInner->{"gSRstep"};
+		#
+		#				$inCAM->INFO(
+		#							  units       => 'mm',
+		#							  entity_type => 'layer',
+		#							  entity_path => "$jobId/$stepInnerName/m",
+		#							  data_type   => 'FEAT_HIST',
+		#							  options     => 'break_sr'
+		#				);
+		#
+		#				if ( $inCAM->{doinfo}{gFEAT_HISTtotal} > 0 ) {
+		#					$result = 'A';
+		#				}
+		#			}
+		#		}
 
 		my $rExist = CamDrilling->NCLayerExists( $inCAM, $jobId, EnumsGeneral->LAYERTYPE_plt_nMill );
 		if ($rExist) {
@@ -265,21 +265,21 @@ sub __GetProkoveni {
 	return ($result);
 }
 
-
 sub __GetTypDps {
 	my $self = shift;
- 
-	my $jobId    = $self->{"jobId"};
+
+	my $jobId  = $self->{"jobId"};
 	my $isPool = HegMethods->GetPcbIsPool($jobId);
 	my $isType = HegMethods->GetTypeOfPcb($jobId);
 
-	my $res = "";	
+	my $res = "";
 
 	if ( $isType eq 'Sablona' ) {
 		$res = "sablona";
-	
-	}elsif($isPool){
-		
+
+	}
+	elsif ($isPool) {
+
 		$res = "pool";
 	}
 
