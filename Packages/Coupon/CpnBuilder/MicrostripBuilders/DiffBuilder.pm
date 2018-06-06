@@ -179,7 +179,18 @@ sub Build {
 	return $result;
 }
 
+sub GetPadPosXCnt {
+	my $self = shift;
+
+	return 2;
  
+}
+
+sub GetPadPosYCnt {
+	my $self = shift;
+
+	return 2;
+}
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

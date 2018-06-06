@@ -43,6 +43,7 @@ sub Init {
 	$self->{"jobId"}     = shift;
 	$self->{"settings"}  = shift;
 	$self->{"constrain"} = shift;
+	$self->{"cpnSingle"} = shift;
 
 	# Set microstrip layout properties common for all microstrip types
 	
@@ -56,17 +57,8 @@ sub Init {
 
 }
 
-sub GetPadPositionsCnt {
-	my $self = shift;
 
-	return $self->{"padPosCnt"};
-}
-
-sub GetHeight {
-	my $self = shift;
-
-	return $self->{"height"};
-}
+ 
 
 sub GetLayout {
 	my $self = shift;

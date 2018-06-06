@@ -33,33 +33,32 @@ sub new {
 
 	# properties of constrain
 	#pads, lines, coordinates
-
-	$self->{"height"}    = 7.5;
-	$self->{"padPosCnt"} = 1;     # track and GND pads are placed vertically => it takes 1 position
+ 
+	$self->{"padPosXCnt"} = 1;     # track and GND pads are placed vertically => it takes 1 position
+	$self->{"padPosYCnt"} = 2;     # track and GND pads are placed vertically => it takes 1 position
 
 	return $self;
 }
 
 sub Build {
 	my $self      = shift;
-	my $cpnSingle = shift;
 	my $errMess   = shift;
 
 	my $result = 1;
  
 	# Origin where strip pad shoul be start (contain position of left side on coupon. Right side is symetric)
-	my $origin =  $cpnSingle->GetMicrostripOrigin();    
+	my $origin =  $self->{"cpnSingle"}->GetMicrostripOrigin();    
 
 	# set model
-
+	
 	my $areaW   = $self->{"settings"}->GetAreaWidth();
 	my $margin  = $self->{"settings"}->GetCouponSingleMargin();
 	my $p2pDist = $self->{"settings"}->GetPad2PadDist();
 
-	my $trackW = $self->{"constrain"}->GetParamDouble("WB") / 1000;
+	my $trackW = $self->{"constrain"}->GetParamDouble("WB") / 1000; # µm
 
 	# track and GND pads are placed horizontally => 1 positions
-	if ( $cpnSingle->IsMultistrip() ) {
+	if ( $self->{"cpnSingle"}->IsMultistrip() ) {
 
 		# build Track pads
 		my $sTrPad = PadLayout->new( Point->new( $origin->X(), $origin->Y() ), Enums->Pad_TRACK );
@@ -80,7 +79,7 @@ sub Build {
 		# polyline from 3 lines
 		# 1 from start pad
 		my $p1 = $sTrPad->GetPoint();
-		my $p2 = Point->new( $origin->X() + $p2pDist / 2, $origin->Y() + +$p2pDist / 2 );
+		my $p2 = Point->new( $origin->X() + $p2pDist / 2, $origin->Y() + $p2pDist / 2 );
 		my $p3 = Point->new( $areaW - $origin->X() - $p2pDist / 2, $origin->Y() + $p2pDist / 2 );
 		my $p4 = $eTrPad->GetPoint();
 
@@ -92,8 +91,7 @@ sub Build {
 
 	# track and GND pads are placed vertically => 2 positions
 	else {
-
-		$self->{"padPosCnt"} = 2;
+ 
 
 		# build GND pads
 		my $sGNDPad = PadLayout->new( Point->new( $origin->X(), $origin->Y() ), Enums->Pad_GND );
@@ -121,7 +119,26 @@ sub Build {
 
 }
 
+sub GetPadPosXCnt {
+	my $self = shift;
 
+	if($self->{"cpnSingle"}->IsMultistrip()){
+		return 1;
+	}else{
+		return 2;
+	}
+ 
+}
+
+sub GetPadPosYCnt {
+	my $self = shift;
+
+	if($self->{"cpnSingle"}->IsMultistrip()){
+		return 2;
+	}else{
+		return 1;
+	}
+}
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

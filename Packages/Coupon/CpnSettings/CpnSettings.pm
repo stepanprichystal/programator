@@ -183,12 +183,28 @@ sub GetPadDrillSize {
 
 }
 
-sub GetStripsPadsDist {
+sub GetGroupPadsDist {
 	my $self = shift;
 
-	return $self->__GetVal("stripsPadsDist");
+	return $self->__GetVal("groupPadsDist");
 
 }
+
+sub GetPadsTopTextDist {
+	my $self = shift;
+
+	return $self->__GetVal("padsTopTextDist");
+
+}
+
+sub GetTopTextHeight {
+	my $self = shift;
+
+	return $self->__GetVal("topTextHeight");
+
+}
+
+
 
 sub __GetVal {
 	my $self = shift;

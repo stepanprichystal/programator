@@ -16,7 +16,19 @@ h                 = 203.2            # mm
 marginSingle      = 3                # mm
 marginCoupon      = 2                # mm
 couponSpace       = 0.5              # mm
-stripsPadsDist    = 4                # mm
- 
+groupPadsDist    = 4                # mm
+
+# Text settings
+
+padsTopTextDist    = 2                # mm
+topTextHeight = 2 #mm
+titleTextPosition = right # top/right
+titleTextTrackImpedance = 1 # 1/0
+titleTextTrackWidth = 1 # 1/0
+titleTextTrackLayer = 1 # 1/0
+titleTextTrackSpace = 1 # 1/0
+
+titleTextLayout = oneline # oneline/multiline
+titleTextGroups = h # h = horizontal/multiline
 
  

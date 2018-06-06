@@ -1702,8 +1702,9 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 #my $wanted = "$date $time";   # creates 'yyyy-mm-dd hh:mm:ss' string
 #print $wanted;
 #	
-#
-	 HegMethods->UpdateOrderTerm("d152456-01", "2018-05-24 00:00:00");
+#	#
+print STDERR HegMethods->GetTermOfOrder( "d152456-01" );
+	# HegMethods->UpdateOrderTerm("d152456-01", "2050-10-26 15:00:00");
 #	
 ##	@res = grep { $_->{"reference_subjektu"} =~ /-01/ } @res;
 ##

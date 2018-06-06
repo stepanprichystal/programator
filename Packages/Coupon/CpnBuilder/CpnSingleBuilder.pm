@@ -145,7 +145,7 @@ sub GetMicrostripOrigin {
 
 		my $strip = $self->{"microstrips"}->[$i];
 
-		$x += ( $strip->GetPadPositionsCnt() - 1 ) * $self->{"settings"}->GetPad2PadDist() + $self->{"settings"}->GetStripsPadsDist();
+		$x += ( $strip->GetPadPositionsCnt() - 1 ) * $self->{"settings"}->GetPad2PadDist() + $self->{"settings"}->GetGroupPadsDist();
 	}
 
 	my $y = $self->{"settings"}->GetCouponSingleMargin();
