@@ -1693,7 +1693,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	
 #	my %inf = HegMethods->GetAllByOrderId("d152457-03");
 #	
-#	use DateTime;
+	use DateTime;
 #	
 #	my $dt   = DateTime->now;   # Stores current date and time as datetime object
 #my $date = $dt->ymd;   # Retrieves date as a string in 'yyyy-mm-dd' format
@@ -1703,7 +1703,23 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 #print $wanted;
 #	
 #
-	 HegMethods->UpdateOrderTerm("d152456-01", "2018-05-24 00:00:00");
+ #	 HegMethods->UpdateOrderTerm("d152456-01", "2018-05-24 00:00:00");
+
+my $deliver = HegMethods->GetTermOfOrder("d152456-01" );
+		my $dt      = undef;
+		if ( $deliver =~ m/^(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2}):(\d{2})$/ ) {
+			
+			
+			$dt = DateTime->new(
+								 "year"  => $1,
+								 "month" => $2,
+								 "day"   => $3,
+								 "hour"       => $4,
+     							 "minute"     => $5,
+      							 "second"     => $6);
+			
+		}
+
 #	
 ##	@res = grep { $_->{"reference_subjektu"} =~ /-01/ } @res;
 ##

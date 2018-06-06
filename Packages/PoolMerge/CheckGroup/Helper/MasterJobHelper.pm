@@ -53,11 +53,14 @@ sub GetMasterJob {
 
 		my $deliver = HegMethods->GetTermOfOrder( $order->{"orderId"} );
 		my $dt      = undef;
-		if ( $deliver =~ m/^(\d{4})-(\d{2})-(\d{2})/ ) {
+		if ( $deliver =~ m/^(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2}):(\d{2})$/ ) {
 			$dt = DateTime->new(
-								 "year"  => $1,
-								 "month" => $2,
-								 "day"   => $3
+								 "year"   => $1,
+								 "month"  => $2,
+								 "day"    => $3,
+								 "hour"   => $4,
+								 "minute" => $5,
+								 "second" => $6
 			);
 		}
 		else {
@@ -109,12 +112,15 @@ sub GetMasterJob {
 				my $smallestDate = $orderDeliver[0]->{"date"}->ymd . " " . $orderDeliver[0]->{"date"}->hms;
 				HegMethods->UpdateOrderTerm( $orderDeliver[$find]->{"order"}->{"orderId"}, $smallestDate, 1 );
 
-				$result = 2; # warning -> change term of order
-				$$mess .= "Pozor, u Multi PCB objednávky (".$orderDeliver[$find]->{"order"}->{"orderId"}.") byl snížen termín na: $smallestDate, aby mohla být vybrána jako matka (nechceme jiné matky než Multi PCB).\n";
+				$result = 2;    # warning -> change term of order
+				$$mess .=
+				    "Pozor, u Multi PCB objednávky ("
+				  . $orderDeliver[$find]->{"order"}->{"orderId"}
+				  . ") byl snížen termín na: $smallestDate, aby mohla být vybrána jako matka (nechceme jiné matky než Multi PCB).\n";
 			}
 		}
 		else {
-			$find = 0; # all orders are not multi, take first with smallest term
+			$find = 0;          # all orders are not multi, take first with smallest term
 
 		}
 
@@ -196,7 +202,7 @@ sub __MasterCandidate {
 
 		my $orderNameTmp = $orderName . '-' . sprintf( "%02d", $i );
 
-		if ( HegMethods->GetStatusOfOrder($orderNameTmp, 1) eq 'Ve vyrobe' ) {
+		if ( HegMethods->GetStatusOfOrder( $orderNameTmp, 1 ) eq 'Ve vyrobe' ) {
 			if ( HegMethods->GetInfMasterSlave($orderNameTmp) eq 'M' ) {
 				$res = 0;
 				last;
