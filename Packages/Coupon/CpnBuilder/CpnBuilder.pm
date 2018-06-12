@@ -57,17 +57,18 @@ sub Build {
 	my $result = 1;
 
 	# built complete coupon layout
+	my $cpnVariant = $buildParams->GetCpnVariant();
 
-	foreach my $groupInf ( $buildParams->GetGroups() ) {
+	foreach my $singleCpnVar ( $cpnVariant->GetSingleCpns() ) {
 
 		# Built single coupon layout
 
 		# filter constraints by current group
-		my %tmp;
-		@tmp{ @{ $groupInf->{"constrainsId"} } } = ();
-		my @constraints = grep { exists $tmp{ $_->GetConstrainId() } } $self->{"cpnSource"}->GetConstraints();
+#		my %tmp;
+#		@tmp{ @{ $groupInf->{"constrainsId"} } } = ();
+#		my @constraints = grep { exists $tmp{ $_->GetConstrainId() } } $self->{"cpnSource"}->GetConstraints();
 
-		my $coupon = CpnSingleBuilder->new( $inCAM, $jobId, $self->{"settings"}, \@constraints );
+		my $coupon = CpnSingleBuilder->new( $inCAM, $jobId, $self->{"settings"}, $singleCpnVar);
 
 		if ( $coupon->Build($errMess) ) {
 
@@ -92,7 +93,7 @@ sub Build {
 		$h += $_->GetHeight() foreach @{ $self->{"couponsSingle"} };
 		$self->{"layout"}->SetHeight($h);
 
-		$self->{"build"} = 1;                # build is ok
+		$self->{"build"} = 1;    # build is ok
 	}
 
 	return $result;
@@ -108,8 +109,6 @@ sub GetLayout {
 
 }
 
- 
-
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#
@@ -122,24 +121,71 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	use aliased 'Packages::Coupon::CpnSource::CpnSource';
 	use aliased 'Packages::Coupon::CpnBuilder::BuildParams';
 	use aliased 'Packages::Coupon::CpnGenerator::CpnGenerator';
+	use aliased 'Packages::Coupon::CpnPolicy::GroupPolicy';
+	use aliased 'Packages::Coupon::CpnPolicy::LayoutPolicy';
+	use aliased 'Packages::Coupon::CpnPolicy::SortPolicy';
 
 	my $inCAM = InCAM->new();
 	my $jobId = "d152456";
 
-	my $p         = 'c:\tmp\inplan\write\output\Diff_Coated_Microstrip\Diff_Coated_Microstrip.xml';
+	my $p         = 'c:\Export\CouponExport\cpn.xml';
 	my $cpnSource = CpnSource->new($p);
-	my $sett      = CpnSettings->new();
+	my $cpnSett   = CpnSettings->new();
+	$cpnSett->{"sett"}->{"trackPadIsolation"} = 200;
+	my $builder = CpnBuilder->new( $inCAM, $jobId, $cpnSource, $cpnSett );
 
-	my $builder = CpnBuilder->new( $inCAM, $jobId, $cpnSource, $sett );
+	# generate groups, choose one variant
 
-	my $buildParams = BuildParams->new( scalar( $cpnSource->GetConstraints() ) );
+	my @layers = map { $_->{"NAME"} } $cpnSource->GetCopperLayers();
+
+	# Group policy
+
+	my $groupPolicy = GroupPolicy->new( $cpnSource, $cpnSett->GetMaxTrackCnt(), $cpnSett->GetPoolCnt() );
+	my @filter = ( 1, 2, 3, 4 );
+
+	my @groupsComb = $groupPolicy->GenerateGroups( \@filter );
+
+	my $layoutPolicy = LayoutPolicy->new(
+										  \@layers,
+										  $cpnSett->GetPoolCnt(),
+										  $cpnSett->GetShareGNDPads(),
+										  $cpnSett->GetMaxTrackCnt(),
+										  $cpnSett->GetTrackPadIsolation(),
+										  $cpnSett->GetTracePad2GNDPad(),
+										  $cpnSett->GetPadTrackSize(),
+										  $cpnSett->GetPadGNDSize(),
+										  $cpnSett->GetRouteBetween(),
+										  $cpnSett->GetRouteAbove(),
+										  $cpnSett->GetRouteBelow(),
+										  $cpnSett->GetRouteStraight()
+	);
+
+	my @variants = $layoutPolicy->GetStripLayoutVariants( \@groupsComb );
+
+	$layoutPolicy->SetRoute( \@variants );
+	
+	# Sort policy
+
+	my $sortPolicy = SortPolicy->new();
+	my @sortVariants = $sortPolicy->SortVariants(\@variants);
+	
+	my $v = $sortVariants[0];
+
+	#	my $g = $groupsComb[0];    # take first comb
+	#
+	#	unless ( $groupPolicy->GroupCombExists( \@filter, $g ) ) {
+	#		die "group doesn 't exist";
+	#	}
+
+	#my $buildParams = BuildParams->new( scalar( $cpnSource->GetConstraints() ) );
+	my $buildParams = BuildParams->new($v);
 
 	my $errMess = "";
 	my $res = $builder->Build( \$errMess, $buildParams );
 
 	print STDERR "Build: $res\n";
 
-	my $generator = CpnGenerator->new( $inCAM, $jobId, $sett);
+	my $generator = CpnGenerator->new( $inCAM, $jobId, $sett );
 
 	$generator->Generate( $builder->GetLayout() );
 

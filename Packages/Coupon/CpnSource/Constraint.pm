@@ -20,44 +20,66 @@ sub new {
 	my $self  = {};
 	bless $self;
 
-	$self->{"cpnSource"} = shift;
-	$self->{"units"}        = shift;
-	$self->{"id"} = shift;
-	$self->{"type"}         = shift;
-	$self->{"model"}        = shift;
+	$self->{"cpnSource"}     = shift;
+	$self->{"units"}         = shift;
+	$self->{"id"}            = shift; # unique id from STACKUP_ORDERING_INDEX
+	$self->{"type"}          = shift;
+	$self->{"model"}         = shift;
 	$self->{"xmlConstraint"} = shift;
 
 	return $self;
 }
 
-sub GetType{
+sub GetType {
 	my $self = shift;
-	
+
 	return $self->{"type"};
 }
 
-
-sub GetModel{
+sub GetModel {
 	my $self = shift;
-	
+
 	return $self->{"model"};
 }
 
-sub GetConstrainId{
+sub GetConstrainId {
 	my $self = shift;
-	
+
 	return $self->{"id"};
 }
 
+sub GetTrackLayer {
+	my $self = shift;
 
-sub GetOption{
+	return $self->GetOption("TRACE_LAYER");
+}
+
+sub GetTopRefLayer {
+	my $self = shift;
+
+	return $self->GetOption("TOP_MODEL_LAYER");
+}
+
+sub GetBotRefLayer {
+	my $self = shift;
+
+	return $self->GetOption("BOTTOM_MODEL_LAYER");
+}
+
+sub GetTrackExtraLayer {
+	my $self = shift;
+
+	return $self->GetOption("EXTRA_SIGNAL_LAYER");
+}
+
+sub GetOption {
 	my $self = shift;
 	my $name = shift;
 
-	my $val =$self->{"xmlConstraint"}->{"$name"};
- 
+	my $val = $self->{"xmlConstraint"}->{"$name"};
+
 	return $val;
-	
+
 }
 
 sub GetParamDouble {
@@ -67,8 +89,7 @@ sub GetParamDouble {
 	my $val = ( grep { $_->{"NAME"} eq $name } $self->{"xmlConstraint"}->findnodes('./PARAMS/IMPEDANCE_CONSTRAINT_PARAMETER') )[0]
 	  ->getAttribute('DOUBLE_VALUE');    # space
 
-	if ( $self->{"units"} eq "mm" )
-	{
+	if ( $self->{"units"} eq "mm" ) {
 
 		$val *= 25.4;
 	}
@@ -76,12 +97,27 @@ sub GetParamDouble {
 	return $val;
 
 }
- 
-sub GetCpnSource{
+
+sub ExistsParam {
 	my $self = shift;
-	
+	my $name = shift;
+
+	my $par = ( grep { $_->{"NAME"} eq $name } $self->{"xmlConstraint"}->findnodes('./PARAMS/IMPEDANCE_CONSTRAINT_PARAMETER') )[0];
+
+	if ( defined $par ) {
+		return 1;
+	}
+	else {
+		return 0;
+	}
+
+}
+
+sub GetCpnSource {
+	my $self = shift;
+
 	return $self->{"cpnSource"};
-} 
+}
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

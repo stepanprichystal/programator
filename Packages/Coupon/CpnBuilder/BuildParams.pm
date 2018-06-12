@@ -25,13 +25,15 @@ sub new {
 	my $self  = {};
 	bless $self;
 
-	my $constrainCnt = shift;
+	$self->{"cpnVariant"} = shift;
 
-	$self->{"constrains"} = [];
-
-	for ( my $i = 0 ; $i < $constrainCnt ; $i++ ) {
-		push( @{ $self->{"constrains"} }, $i );
-	}
+#	my $constrainCnt = shift;
+#
+#	$self->{"constrains"} = [];
+#
+#	for ( my $i = 0 ; $i < $constrainCnt ; $i++ ) {
+#		push( @{ $self->{"constrains"} }, $i );
+#	}
 	
 	return $self;
 
@@ -40,17 +42,26 @@ sub new {
 
  
 
-sub SetGroup {
-	my $self         = shift;
-	my @constrainsId = shift;
-	my $groupId      = shift;
+#sub SetGroup {
+#	my $self         = shift;
+#	my @constrainsId = shift;
+#	my $groupId      = shift;
+#
+#	foreach my $id (@constrainsId) {
+#
+#		$self->{"constrains"}->[$id] = $groupId;
+#
+#	}
+#}
 
-	foreach my $id (@constrainsId) {
 
-		$self->{"constrains"}->[$id] = $groupId;
-
-	}
+sub GetCpnVariant{
+	my $self = shift;
+	
+	return $self->{"cpnVariant"};
+	
 }
+
 
 sub GetGroups {
 	my $self = shift;

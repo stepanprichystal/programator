@@ -12,6 +12,7 @@ use Class::Interface;
 use strict;
 use warnings;
 use Switch;
+use List::Util qw[min max];
 
 #local library
 use aliased 'Packages::Coupon::Enums';
@@ -34,8 +35,10 @@ sub new {
 	$self->{"inCAM"} = shift;
 	$self->{"jobId"} = shift;
 
-	$self->{"settings"}    = shift;    # global settings for generating coupon
-	$self->{"constraints"} = shift;    # list of constrain object (based on instack Job xml)
+	$self->{"settings"}     = shift;    # global settings for generating coupon
+	                                    #$self->{"constraints"} = shift;    # list of constrain object (based on instack Job xml)
+	                                    #$cpnVarinat
+	$self->{"singleCpnVar"} = shift;
 
 	$self->{"layout"} = CpnSingleLayout->new();    # Layout of one single coupon
 
@@ -59,37 +62,37 @@ sub Build {
 
 	# Built miscrostip builers
 
-	for ( my $i = 0 ; $i < scalar( @{ $self->{"constraints"} } ) ; $i++ ) {
+	foreach my $poolVar ( $self->{"singleCpnVar"}->GetPools() ) {
 
-		my $constr = $self->{"constraints"}->[$i];
+		foreach my $stripVar ( $poolVar->GetStrips() ) {
 
-		my $mStripBuilder = undef;
+			my $mStripBuilder = undef;
 
-		switch ( $constr->GetType() ) {
+			switch ( $stripVar->GetType() ) {
 
-			case Enums->Type_SE { $mStripBuilder = SEBuilder->new() }
+				case Enums->Type_SE { $mStripBuilder = SEBuilder->new() }
 
-			  case Enums->Type_DIFF { $mStripBuilder = DiffBuilder->new() }
+				  case Enums->Type_DIFF { $mStripBuilder = DiffBuilder->new() }
 
-			  else { die "Microstirp type: " . $constr->GetType() . "is not implemented"; }
+				  else { die "Microstirp type: " . $stripVar->GetType() . "is not implemented"; }
+			}
+
+			$mStripBuilder->Init( $inCAM, $jobId, $self->{"settings"}, $stripVar );
+
+			# Set property common for all microstrip types
+
+			if ( $mStripBuilder->Build( $self, $errMess ) ) {
+
+				$self->{"layout"}->AddMicrostripLayout( $mStripBuilder->GetLayout() )
+
+			}
+			else {
+
+				$result = 0;
+			}
+
+			push( @{ $self->{"microstrips"} }, $mStripBuilder );
 		}
-
-		$mStripBuilder->Init( $inCAM, $jobId, $self->{"settings"}, $constr );
-
-		# Set property common for all microstrip types
-
-		if ( $mStripBuilder->Build( $self, $errMess ) ) {
-
-			$self->{"layout"}->AddMicrostripLayout( $mStripBuilder->GetLayout() )
-
-		}
-		else {
-
-			$result = 0;
-		}
-
-		push( @{ $self->{"microstrips"} }, $mStripBuilder );
-
 	}
 
 	if ($result) {
@@ -130,27 +133,64 @@ sub GetHeight {
 	return $max;
 }
 
+# Return origin for microstrip
+# Microstrip origin is always in left down pad of microstrip
 sub GetMicrostripOrigin {
-	my $self = shift;
-	my $id   = shift;    # idof microstrip order
+	my $self         = shift;
+	my $stripBuilder = shift;              # idof microstrip order
+	my $side         = shift // "left";    # return origin from left/right pads on coupon
 
-	if ( $id > scalar( @{ $self->{"microstrips"} } ) ) {
+	my $stripVariant = $stripBuilder->GetStripVariant();
 
-		die "Unable to compute origin for Microstirp order id:" . $id;
-	}
-
+	# X cooredination - left down pad (trakc/GND) of microstrip
 	my $x = $self->{"settings"}->GetCouponSingleMargin();
 
-	for ( my $i = 0 ; $i < $id ; $i++ ) {
+	# choose pool
+	my $pool = $self->{"singleCpnVar"}->GetPoolByOrder( $stripVariant->Pool() );
 
-		my $strip = $self->{"microstrips"}->[$i];
+	for ( my $i = 0 ; $i < $stripVariant->Col() ; $i++ ) {
 
-		$x += ( $strip->GetPadPositionsCnt() - 1 ) * $self->{"settings"}->GetPad2PadDist() + $self->{"settings"}->GetGroupPadsDist();
+		# all strips on current column pos
+		my @stripsVar = $self->{"singleCpnVar"}->GetStripsByColumn($i);
+
+		# get positions of pad in x direction (1 or one)
+
+		my @pos = map { $self->__GetMicrostripById( $_->Id() )->GetPadPosXCnt() } (@stripsVar);
+
+		$x += ( max(@pos) - 1 ) * $self->{"settings"}->GetPad2PadDist() + $self->{"settings"}->GetGroupPadsDist();
 	}
 
-	my $y = $self->{"settings"}->GetCouponSingleMargin();
+	# Y cooredination - left down pad (trakc/GND) of microstrip
+	my $y = undef;
 
+	# bottom pool
+	if ( $pool->GetOrder() == 0 ) {
+
+		$y = $self->{"settings"}->GetCouponSingleMargin();
+		$y += $self->{"settings"}->GetPadTrackSize() / 2 / 1000;    # half of track pad size
+
+		# space for bottom routes in whole pool strip
+		$y += max( map { $_->RouteDist() } grep { $_->Route() eq Enums->Route_BELOW } $pool->GetStrips() );
+
+	}
+
+	# Add to y coordineate for pool order 0 "disetance" between GND and track pad
+	if ( $pool->GetOrder() == 1 ) {
+
+		$y += $self->{"settings"}->GetTracePad2GNDPad() / 1000;
+
+	}
+ 
 	return Point->new( $x, $y );
+}
+
+sub __GetMicrostripById {
+	my $self = shift;
+	my $id   = shift;
+
+	my $microstrip = ( grep { $_->GetStripVariant()->Id() eq $id } @{ $self->{"microstrips"} } )[0];
+
+	return $microstrip;
 
 }
 

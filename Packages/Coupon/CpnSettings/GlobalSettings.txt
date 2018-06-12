@@ -9,15 +9,27 @@ padTrackShape    = s    #µm
 padGNDShape 	 = r     #µm
 padGNDSymNeg 	 = thr2000x1800x0x4x203       #µm
 padDrillSize      = 1050             #µm
-tracePad2GNDPad   = 2.54             # mm
-tracePad2tracePad = 2.54             # mm
+tracePad2GNDPad   = 2540             # µm
+tracePad2tracePad = 2540             # µm
+trackPadIsolation = 100					# µm
+
 w                 = 180              # mm
 h                 = 203.2            # mm
 marginSingle      = 3                # mm
 marginCoupon      = 2                # mm
 couponSpace       = 0.5              # mm
 groupPadsDist    = 4                # mm
+twoEndedDesign = 1
 
+
+# pool settings
+maxTrackCnt = 2 # two track per measurement layer in one pool
+poolCnt = 2
+shareGNDPads = 1
+routeBetween = 1
+routeBelow = 0
+routeAbove = 0
+routeStraight = 1
 # Text settings
 
 padsTopTextDist    = 2                # mm

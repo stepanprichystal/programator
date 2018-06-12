@@ -183,10 +183,33 @@ sub GetPadDrillSize {
 
 }
 
+sub GetTracePad2GNDPad {
+	my $self = shift;
+
+	return $self->__GetVal("tracePad2GNDPad");
+
+}
+
+
+
 sub GetGroupPadsDist {
 	my $self = shift;
 
 	return $self->__GetVal("groupPadsDist");
+
+}
+
+sub GetMaxTrackCnt {
+	my $self = shift;
+
+	return $self->__GetVal("maxTrackCnt");
+
+}
+
+sub GetPoolCnt {
+	my $self = shift;
+
+	return $self->__GetVal("poolCnt");
 
 }
 
@@ -204,7 +227,49 @@ sub GetTopTextHeight {
 
 }
 
+sub GetTrackPadIsolation {
+	my $self = shift;
 
+	return $self->__GetVal("trackPadIsolation");
+}
+
+
+sub GetShareGNDPads {
+	my $self = shift;
+
+	return $self->__GetVal("shareGNDPads");
+}
+
+sub GetRouteBetween {
+	my $self = shift;
+
+	return $self->__GetVal("routeBetween");
+}
+
+sub GetRouteAbove {
+	my $self = shift;
+
+	return $self->__GetVal("routeAbove");
+}
+
+sub GetRouteBelow {
+	my $self = shift;
+
+	return $self->__GetVal("routeBelow");
+}
+
+sub GetRouteStraight {
+	my $self = shift;
+
+	return $self->__GetVal("routeStraight");
+}
+
+sub GetTwoEndedDesign{
+	my $self = shift;
+
+	return $self->__GetVal("twoEndedDesign");
+	
+}
 
 sub __GetVal {
 	my $self = shift;
