@@ -89,18 +89,7 @@ sub Build {
 		# build track line
 
 		# polyline from 3 lines
-		my @track = ();
-		push(@track, $sTrPad->GetPoint());
-		
-		 $origin->X() + $p2pDist	+ abs($p2pDist/2  - $s / 2 - $w/2)*tan( deg2rad(45)), $origin->Y() + $p2pDist / 2 - $s / 2 - $w/2 
-		
-		push(@track, Point->new( $origin->X() + $p2pDist / 2, $origin->Y() + $p2pDist / 2 ));
-		push(@track, Point->new( $areaW - $origin->X() - $p2pDist / 2, $origin->Y() + $p2pDist / 2 ));
-		
-		if ( $self->{"settings"}->GetTwoEndedDesign() ) {
-			push(@track, $eTrPad->GetPoint());
-		}
-
+		my @track = $self->_GetMultistripSETrack($origin);
 		my $track = TrackLayout->new( \@track, $trackW );
 
 		$self->{"layout"}->AddTrack($track);
@@ -137,8 +126,8 @@ sub Build {
 		}
 
 		# build track line
-
-		my $track = TrackLayout->new( [ $sTrPad->GetPoint(), $eTrPad->GetPoint() ], $trackW );
+		my @track = $self->_GetSEStraightTrack($origin);
+		my $track = TrackLayout->new( \@track, $trackW );
 
 		$self->{"layout"}->AddTrack($track);
 

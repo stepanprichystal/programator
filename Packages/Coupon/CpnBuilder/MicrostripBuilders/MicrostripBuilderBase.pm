@@ -140,8 +140,7 @@ sub _GetSingleDIFFTrack {
 sub _GetMultistripSETrack {
 	my $self     = shift;
 	my $origin   = shift;
-	my $routeDir = shift;
-
+ 
 	die "Only multistrip" if ( !$self->{"cpnSingle"}->IsMultistrip() );
 
 	my $yTrackDir = $self->{"stripVariant"}->Route() eq Enums->Route_ABOVE ? 1 : -1;
@@ -176,8 +175,7 @@ sub _GetMultistripSETrack {
 sub _GetMultistripDIFFTrackOuter {
 	my $self     = shift;
 	my $origin   = shift;
-	my $routeDir = shift;
-
+ 
 	die "Only multistrip" if ( !$self->{"cpnSingle"}->IsMultistrip() );
 
 	my $yTrackDir = $self->{"stripVariant"}->Route() eq Enums->Route_ABOVE ? 1 : -1;
