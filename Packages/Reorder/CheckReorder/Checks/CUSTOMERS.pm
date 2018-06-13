@@ -16,6 +16,8 @@ use warnings;
 #local library
 use aliased 'Packages::NifFile::NifFile';
 use aliased 'Connectors::HeliosConnector::HegMethods';
+use aliased 'CamHelpers::CamHelper';
+use aliased 'CamHelpers::CamAttributes';
 
 #-------------------------------------------------------------------------------------------#
 #  Public method
@@ -45,11 +47,10 @@ sub Run {
 	# 1) Kadlec customer
 	if ( $custInfo->{"reference_subjektu"} eq "04174" || $custInfo->{"reference_subjektu"} eq "04175" ) {
 
-		my $nif = NifFile->new($jobId);
+		my $custPnlExist = CamAttributes->GetJobAttrByName( $inCAM, $jobId, 'customer_panel' );
+		my $custSetExist = CamAttributes->GetJobAttrByName( $inCAM, $jobId, 'customer_set' );
 
-		my $val = $nif->GetValue("nasobnost_panelu");
-
-		if ( !defined $val || $val eq "" || $val == 0 ) {
+		if ( !CamHelper->StepExists( $inCAM, $jobId, "mpanel" ) && $custPnlExist ne "yes" && $custSetExist ne "yes" ) {
 
 			$self->_AddChange("Zákazník Kadlec si přeje veškeré dps dodávat v panelu. Předělej na panel.");
 		}

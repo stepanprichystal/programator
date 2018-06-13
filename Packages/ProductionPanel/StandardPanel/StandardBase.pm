@@ -28,10 +28,9 @@ sub new {
 
 	$self->{"inCAM"}    = shift;
 	$self->{"jobId"}    = shift;
-	$self->{"step"}     = shift || "panel";
-	$self->{"accuracy"} = shift || 0.2;       # accoracy during dimension comparing, default +-200µ
+	$self->{"step"}     = shift // "panel";
+	$self->{"accuracy"} = shift // 0.2;       # accoracy during dimension comparing, default +-200µ
 
- 
 	# Determine panel limits
 	my %profLim = CamJob->GetProfileLimits2( $self->{"inCAM"}, $self->{"jobId"}, $self->{"step"} );
 	my %areaLim = CamStep->GetActiveAreaLim( $self->{"inCAM"}, $self->{"jobId"}, $self->{"step"} );
@@ -106,7 +105,7 @@ sub IsStandardCandidate {
 # Type_NONSTANDARD
 # Type_STANDARD
 # Type_STANDARDNOAREA - standard but area is different
-sub IsStandard {
+sub GetStandardType {
 	my $self = shift;
 
 	my $s = $self->GetStandard();
@@ -115,15 +114,28 @@ sub IsStandard {
 
 	if ( defined $s ) {
 		$result = Enums->Type_STANDARDNOAREA;
-	}
 
-	if (    abs( $s->WArea() - $self->WArea() ) <= $self->{"accuracy"}
-		 && abs( $s->HArea() - $self->HArea() ) <= $self->{"accuracy"} )
-	{
-		$result = Enums->Type_STANDARD;
+		if (    abs( $s->WArea() - $self->WArea() ) <= $self->{"accuracy"}
+			 && abs( $s->HArea() - $self->HArea() ) <= $self->{"accuracy"} )
+		{
+			$result = Enums->Type_STANDARD;
+		}
 	}
 
 	return $result;
+}
+
+# Return 1 if pcb is type Enums->Type_STANDARD, ale 0
+sub IsStandard{
+	my $self = shift;
+	
+	if($self->GetStandardType() eq Enums->Type_STANDARD){
+
+		return 1;
+	}else{
+		
+		return 0;
+	}
 }
 
 # Return standard if exist, otherwise undef
@@ -148,10 +160,9 @@ sub GetStandard {
 			last;
 		}
 	}
-	
+
 	return $standard;
 }
-
 
 #-------------------------------------------------------------------------------------------#
 #  GET method for current panel
@@ -204,7 +215,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	use Data::Dump qw(dump);
 
 	my $inCAM = InCAM->new();
-	my $jobId = "d214271";
+	my $jobId = "d200996";
 
 	my $pnl = StandardBase->new( $inCAM, $jobId );
 
@@ -212,16 +223,11 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	#print $pnl->IsStandardCandidate(\@arr);
 
-	 
-	my $isS = $pnl->IsStandard(   );
+	my $isS = $pnl->IsStandard();
 
 	print "$isS\n\n  ";
-	
-	my $s = $pnl->GetStandard(   );
 
-	#print $s;
-
-	dump($s);
+	die "test";
 
 }
 

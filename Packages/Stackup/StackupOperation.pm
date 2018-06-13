@@ -141,7 +141,6 @@ sub OuterCore {
 
 			$result = 1;
 		}
-
 	}
 
 	return $result;
@@ -169,6 +168,9 @@ sub StackupMatInStock {
 		# abs - because copper id can be negative (plated core)
 		my @mat = HegMethods->GetCoreStoreInfo( $m->GetQId(), $m->GetId(), abs( $m->GetTopCopperLayer()->GetId() ) );
 
+		# Check if material dimension are in tolerance +-2mm
+		@mat = grep { abs( $_->{"sirka"} - $pnl->W() ) <= 2 && abs( $_->{"hloubka"} - $pnl->H() ) <= 2 } @mat;
+
 		if ( scalar(@mat) == 0 ) {
 
 			$result = 0;
@@ -185,13 +187,10 @@ sub StackupMatInStock {
 		}
 		else {
 
-			# Check if material dimension are in tolerance +-2mm
-			@mat = grep { abs( $_->{"sirka"} - $pnl->W() ) <= 2 && abs( $_->{"hloubka"} - $pnl->H() ) <= 2 } @mat;
-
 			if ( $mat[0]->{"stav_skladu"} == 0 ) {
 
 				$result = 0;
-				$$errMess .= "- Material quantity of " . $sInfo->{"nazev_mat"} . "  is 0m2 in IS stock\n";
+				$$errMess .= "- Material quantity of " . $mat[0]->{"nazev_mat"} . "  is 0m2 in IS stock\n";
 
 			}
 		}
@@ -202,15 +201,18 @@ sub StackupMatInStock {
 
 		my $prepregW = undef;
 		my $prepregH = undef;
+		
+		my @mat = HegMethods->GetPrepregStoreInfo( $m->GetQId(), $m->GetId() );
 
 		if ( $pnl->IsStandard() ) {
 
 			$prepregW = $pnl->GetStandard()->PrepregW();
 			$prepregH = $pnl->GetStandard()->PrepregH();
+
+			# Check if material dimension are in tolerance +-2mm
+			@mat = grep { abs( $_->{"sirka"} - $prepregW ) <= 2 && abs( $_->{"hloubka"} - $prepregH ) <= 2 } @mat;
 		}
-
-		my @mat = HegMethods->GetPrepregStoreInfo( $m->GetQId(), $m->GetId() );
-
+ 
 		if ( scalar(@mat) == 0 ) {
 
 			$result = 0;
@@ -226,13 +228,10 @@ sub StackupMatInStock {
 		}
 		else {
 
-			# Check if material dimension are in tolerance +-2mm
-			@mat = grep { abs( $_->{"sirka"} - $prepregW ) <= 2 && abs( $_->{"hloubka"} - $prepregH ) <= 2 } @mat;
-
 			if ( $mat[0]->{"stav_skladu"} == 0 ) {
 
 				$result = 0;
-				$$errMess .= "- Material quantity of " . $sInfo->{"nazev_mat"} . "  is 0m2 in IS stock\n";
+				$$errMess .= "- Material quantity of " . $mat[0]->{"nazev_mat"} . "  is 0m2 in IS stock\n";
 
 			}
 		}
@@ -254,7 +253,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	my $inCAM = InCAM->new();
 	my $mes   = "";
 
-	my $test = StackupOperation->StackupMatInStock( $inCAM, "d152457", undef, \$mes );
+	my $test = StackupOperation->StackupMatInStock( $inCAM, "d200996", undef, \$mes );
 
 	print $mes;
 
