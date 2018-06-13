@@ -77,11 +77,11 @@ sub Build {
 				  else { die "Microstirp type: " . $stripVar->GetType() . "is not implemented"; }
 			}
 
-			$mStripBuilder->Init( $inCAM, $jobId, $self->{"settings"}, $stripVar );
+			$mStripBuilder->Init( $inCAM, $jobId, $self->{"settings"}, $stripVar, $self );
 
 			# Set property common for all microstrip types
 
-			if ( $mStripBuilder->Build( $self, $errMess ) ) {
+			if ( $mStripBuilder->Build(  $errMess ) ) {
 
 				$self->{"layout"}->AddMicrostripLayout( $mStripBuilder->GetLayout() )
 
@@ -112,7 +112,7 @@ sub GetLayout {
 sub IsMultistrip {
 	my $self = shift;
 
-	return scalar( @{ $self->{"constraints"} } ) > 1 ? 1 : 0;
+	return $self->{"singleCpnVar"}->IsMultistrip();
 }
 
 sub GetHeight {
@@ -138,7 +138,7 @@ sub GetHeight {
 sub GetMicrostripOrigin {
 	my $self         = shift;
 	my $stripBuilder = shift;              # idof microstrip order
-	my $side         = shift // "left";    # return origin from left/right pads on coupon
+	 
 
 	my $stripVariant = $stripBuilder->GetStripVariant();
 

@@ -47,16 +47,18 @@ sub Init {
 	$self->{"stripVariant"} = shift;
 	$self->{"cpnSingle"}    = shift;
 
-	# Set microstrip layout properties common for all microstrip types
+	my $xmlConstr = $self->_GetXmlConstr();
 
-	$self->{"layout"}->SetModel( $self->{"constrain"}->GetModel() );    # model
+	# Set microstrip layout properties common for all microstrip types
+	
+	$self->{"layout"}->SetModel( $self->_GetXmlConstr()->GetModel() );    # model
 
 	# Get info about layers + translate to inCAM name notation
-	my $cpnSource = $self->{"constrain"}->GetCpnSource();
+	my $cpnSource = $xmlConstr->GetCpnSource();
 
-	$self->{"layout"}->SetTrackLayer( $cpnSource->GetInCAMLayer( $self->{"constrain"}->GetOption("TRACE_LAYER") ) );            #
-	$self->{"layout"}->SetTopRefLayer( $cpnSource->GetInCAMLayer( $self->{"constrain"}->GetOption("TOP_MODEL_LAYER") ) );       #
-	$self->{"layout"}->SetBotRefLayer( $cpnSource->GetInCAMLayer( $self->{"constrain"}->GetOption("BOTTOM_MODEL_LAYER") ) );    #
+	$self->{"layout"}->SetTrackLayer( $cpnSource->GetInCAMLayer( $xmlConstr->GetOption("TRACE_LAYER") ) );            #
+	$self->{"layout"}->SetTopRefLayer( $cpnSource->GetInCAMLayer( $xmlConstr->GetOption("TOP_MODEL_LAYER") ) );       #
+	$self->{"layout"}->SetBotRefLayer( $cpnSource->GetInCAMLayer( $xmlConstr->GetOption("BOTTOM_MODEL_LAYER") ) );    #
 
 }
 
@@ -65,6 +67,18 @@ sub GetLayout {
 
 	return $self->{"layout"};
 
+}
+
+sub GetStripVariant{
+	my $self = shift;
+
+	return $self->{"stripVariant"};	
+}
+
+sub _GetXmlConstr{
+	my $self = shift;
+
+	return $self->{"stripVariant"}->Data()->{"xmlConstraint"};	
 }
 
 sub _GetSEStraightTrack {

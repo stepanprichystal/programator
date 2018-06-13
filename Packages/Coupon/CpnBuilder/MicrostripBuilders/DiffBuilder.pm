@@ -43,13 +43,12 @@ sub new {
 
 sub Build {
 	my $self      = shift;
-	my $cpnSingle = shift;
 	my $errMess   = shift;
 
 	my $result = 1;
 
 	# Origin where strip pad shoul be start (contain position of left side on coupon. Right side is symetric)
-	my $origin = $cpnSingle->GetMicrostripOrigin();
+	my $origin = $self->{"cpnSingle"}->GetMicrostripOrigin();
 
 	# compute track dimension, pads
 
@@ -64,85 +63,71 @@ sub Build {
 	my $p2pDist = $self->{"settings"}->GetPad2PadDist();
 
 	# space between track 1 and 2
-	my $s = $self->{"constrain"}->GetParamDouble("S") / 1000;     # space mm
-	my $w = $self->{"constrain"}->GetParamDouble("WB") / 1000;    # width mm
+	my $s = $self->_GetXmlConstr()->GetParamDouble("S") / 1000;     # space mm
+	my $w = $self->_GetXmlConstr()->GetParamDouble("WB") / 1000;    # width mm
 
 	# track and GND pads are placed horizontally => 1 positions
-	if ( $cpnSingle->IsMultistrip() ) {
+	if ( $self->{"cpnSingle"}->IsMultistrip() ) {
 
-		# Build track 1
+		# Build track outer ---------------------------------
 
-		# width of track 1
-
-		# build GND pads
+		# build GND pad
 		$self->{"layout"}->AddPad( PadLayout->new( Point->new( $origin->X(), $origin->Y() + $p2pDist ), Enums->Pad_GND ) );
-
-		$self->{"layout"}->AddPad( PadLayout->new( Point->new( $areaW - $origin->X(), $origin->Y() + $p2pDist ), Enums->Pad_GND ) );
-
-		# build Track pads
+		# build Track pad
 		$self->{"layout"}->AddPad( PadLayout->new( Point->new( $origin->X(), $origin->Y() ), Enums->Pad_TRACK ) );
 
-		$self->{"layout"}->AddPad( PadLayout->new( Point->new( $areaW - $origin->X(), $origin->Y() ), Enums->Pad_TRACK ) );
+		if ( $self->{"settings"}->GetTwoEndedDesign() ) {
+
+			# build GND pad
+			$self->{"layout"}->AddPad( PadLayout->new( Point->new( $areaW - $origin->X(), $origin->Y() + $p2pDist ), Enums->Pad_GND ) );
+			# build Track pad
+			$self->{"layout"}->AddPad( PadLayout->new( Point->new( $areaW - $origin->X(), $origin->Y() ), Enums->Pad_TRACK ) );
+
+		}
 
 		# build track line
+		my @trackOuter = $self->_GetMultistripDIFFTrackOuter($origin);
+		$self->{"layout"}->AddTrack( TrackLayout->new( \@trackOuter, $w ) );
 
-		# polyline from 3 lines
-		my $p1L1 = Point->new( $origin->X(), $origin->Y() );
-		my $p2L1 =
-		  Point->new( $origin->X() + abs( $p2pDist / 2 + $s / 2 + $w / 2 ) * tan( deg2rad(45) ), $origin->Y() + $p2pDist / 2 + $s / 2 + $w / 2 );
-		my $p3L1 = Point->new( $areaW - $origin->X() - abs( $p2pDist / 2 + $s / 2 + $w / 2 ) * tan( deg2rad(45) ),
-							   $origin->Y() + $p2pDist / 2 + $s / 2 + $w / 2 );
-		my $p4L1 = Point->new( $areaW - $origin->X(), $origin->Y() );
+		# Build track outer ---------------------------------
 
-		$self->{"layout"}->AddTrack( TrackLayout->new( [ $p1L1, $p2L1, $p3L1, $p4L1 ], $w * 1000 ) );
-
-		# Build track 2
-
-		# build GND pads
+		# build GND pad
 		$self->{"layout"}->AddPad( PadLayout->new( Point->new( $origin->X() + $p2pDist, $origin->Y() + $p2pDist ), Enums->Pad_GND ) );
-
-		$self->{"layout"}->AddPad( PadLayout->new( Point->new( $areaW - $origin->X() - $p2pDist, $origin->Y() + $p2pDist ), Enums->Pad_GND ) );
-
-		# build Track pads
+		# build Track pad
 		$self->{"layout"}->AddPad( PadLayout->new( Point->new( $origin->X() + $p2pDist, $origin->Y() ), Enums->Pad_TRACK ) );
 
-		$self->{"layout"}->AddPad( PadLayout->new( Point->new( $areaW - $origin->X() - $p2pDist, $origin->Y() ), Enums->Pad_TRACK ) );
+		if ( $self->{"settings"}->GetTwoEndedDesign() ) {
 
+			# build GND pad
+			$self->{"layout"}->AddPad( PadLayout->new( Point->new( $areaW - $origin->X() - $p2pDist, $origin->Y() + $p2pDist ), Enums->Pad_GND ) );
+			# build Track pad
+			$self->{"layout"}->AddPad( PadLayout->new( Point->new( $areaW - $origin->X() - $p2pDist, $origin->Y() ), Enums->Pad_TRACK ) );
+		}
+		
 		# build track line
-		# polyline from 3 lines
-		my $p1L2 = Point->new( $origin->X() + $p2pDist, $origin->Y() );
-		my $p2L2 = Point->new( $origin->X() + $p2pDist + abs( $p2pDist / 2 - $s / 2 - $w / 2 ) * tan( deg2rad(45) ),
-							   $origin->Y() + $p2pDist / 2 - $s / 2 - $w / 2 );
-		my $p3L2 = Point->new( $areaW - $origin->X() - $p2pDist - abs( $p2pDist / 2 - $s / 2 - $w / 2 ) * tan( deg2rad(45) ),
-							   $origin->Y() + $p2pDist / 2 - $s / 2 - $w / 2 );
-		my $p4L2 = Point->new( $areaW - $origin->X() - $p2pDist, $origin->Y() );
-
-		$self->{"layout"}->AddTrack( TrackLayout->new( [ $p1L2, $p2L2, $p3L2, $p4L2 ], $w * 1000 ) );
+		my @trackInner = $self->_GetMultistripDIFFTrackInner($origin);
+		$self->{"layout"}->AddTrack( TrackLayout->new( \@trackInner, $w ) );
 
 	}
 
 	# track and GND pads are placed vertically => 2 positions
 	else {
 
-		# Build track 1 ---------------------------------
+		# Build track upper ---------------------------------
 
-		# width of track 1 - lower
-
-		# build GND pads
+		# build GND pad
 		my $sGNDPadL1 = PadLayout->new( Point->new( $origin->X(), $origin->Y() ), Enums->Pad_GND );
 		$self->{"layout"}->AddPad($sGNDPadL1);
-
-		# build Track pads
+		# build Track pad
 		my $sTrPadL1 = PadLayout->new( Point->new( $origin->X() + $p2pDist, $origin->Y() ), Enums->Pad_TRACK );
 		$self->{"layout"}->AddPad($sTrPadL1);
 
 		if ( $self->{"settings"}->GetTwoEndedDesign() ) {
 
-			# build GND pads
+			# build GND pad
 			my $eGNDPadL1 = PadLayout->new( Point->new( $areaW - $origin->X(), $origin->Y() ), Enums->Pad_GND );
 			$self->{"layout"}->AddPad($eGNDPadL1);
-
-			# build Track pads
+			# build Track pad
 			my $eTrPadL1 = PadLayout->new( Point->new( $areaW - $origin->X() - $p2pDist, $origin->Y() ), Enums->Pad_TRACK );
 			$self->{"layout"}->AddPad($eTrPadL1);
 
@@ -150,44 +135,34 @@ sub Build {
 
 		# build track line
 
-		# polyline from 3 lines
-		my $p1L1 = $sTrPadL1->GetPoint();
-		my $p2L1 = Point->new( $origin->X() + $p2pDist + $p2pDist / 2, $origin->Y() + $p2pDist / 2 - $s / 2 );
-		my $p3L1 = Point->new( $areaW - $origin->X() - $p2pDist - $p2pDist / 2, $origin->Y() + $p2pDist / 2 - $s / 2 );
-		my $p4L1 = $eTrPadL1->GetPoint();
+		my @trackTop = $self->_GetSingleDIFFTrack( $origin, "top" );
+		$self->{"layout"}->AddTrack( TrackLayout->new( \@trackTop, $w ) );
 
-		$self->{"layout"}->AddTrack( TrackLayout->new( [ $p1L1, $p2L1, $p3L1, $p4L1 ], $w ) );
+		# Build track 2 lower ---------------------------------
 
-		# Build track 2 ---------------------------------
-
-		# build GND pads
+		# build GND pad
 		my $sGNDPadL2 = PadLayout->new( Point->new( $origin->X(), $origin->Y() + $p2pDist ), Enums->Pad_GND );
 		$self->{"layout"}->AddPad($sGNDPadL2);
 
-		# build Track pads
+		# build Track pad
 		my $sTrPadL2 = PadLayout->new( Point->new( $origin->X() + $p2pDist, $origin->Y() + $p2pDist ), Enums->Pad_TRACK );
 		$self->{"layout"}->AddPad($sTrPadL2);
 
 		if ( $self->{"settings"}->GetTwoEndedDesign() ) {
 
-			# build GND pads
+			# build GND pad
 			my $eGNDPadL2 = PadLayout->new( Point->new( $areaW - $origin->X(), $origin->Y() + $p2pDist ), Enums->Pad_GND );
 			$self->{"layout"}->AddPad($eGNDPadL2);
 
-			# build Track pads
+			# build Track pad
 			my $eTrPadL2 = PadLayout->new( Point->new( $areaW - $origin->X() - $p2pDist, $origin->Y() + $p2pDist ), Enums->Pad_TRACK );
 			$self->{"layout"}->AddPad($eTrPadL2);
 
 		}
 
 		# build track line
-		# polyline from 3 lines
-		my $p1L2 = $sTrPadL2->GetPoint();
-		my $p2L2 = Point->new( $origin->X() + $p2pDist + $p2pDist / 2, $origin->Y() + $p2pDist - $p2pDist / 2 + $s / 2 );
-		my $p3L2 = Point->new( $areaW - $origin->X() - $p2pDist - $p2pDist / 2, $origin->Y() + $p2pDist - $p2pDist / 2 + $s / 2 );
-		my $p4L2 = $eTrPadL2->GetPoint();
-
-		$self->{"layout"}->AddTrack( TrackLayout->new( [ $p1L2, $p2L2, $p3L2, $p4L2 ], $w ) );
+		my @trackBot = $self->_GetSingleDIFFTrack( $origin, "bot" );
+		$self->{"layout"}->AddTrack( TrackLayout->new( \@trackBot, $w ) );
 
 	}
 

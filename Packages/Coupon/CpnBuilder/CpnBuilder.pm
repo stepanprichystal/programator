@@ -141,7 +141,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	# Group policy
 
 	my $groupPolicy = GroupPolicy->new( $cpnSource, $cpnSett->GetMaxTrackCnt(), $cpnSett->GetPoolCnt() );
-	my @filter = ( 1, 2, 3, 4 );
+	my @filter = (1);
 
 	my @groupsComb = $groupPolicy->GenerateGroups( \@filter );
 
@@ -185,7 +185,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	print STDERR "Build: $res\n";
 
-	my $generator = CpnGenerator->new( $inCAM, $jobId, $sett );
+	my $generator = CpnGenerator->new( $inCAM, $jobId, $cpnSett );
 
 	$generator->Generate( $builder->GetLayout() );
 

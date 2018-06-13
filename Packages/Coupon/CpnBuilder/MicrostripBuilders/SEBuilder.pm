@@ -48,7 +48,7 @@ sub Build {
 	my $result = 1;
 
 	# Origin where strip pad shoul be start (contain position of left side on coupon. Right side is symetric)
-	my $origin = $self->{"cpnSingle"}->GetMicrostripOrigin();
+	my $origin = $self->{"cpnSingle"}->GetMicrostripOrigin($self);
 
 	# set model
 
@@ -56,18 +56,18 @@ sub Build {
 	my $margin  = $self->{"settings"}->GetCouponSingleMargin();
 	my $p2pDist = $self->{"settings"}->GetPad2PadDist();
 
-	my $trackW = $self->{"constrain"}->GetParamDouble("WB") / 1000;    # µm
+	my $trackW = $self->_GetXmlConstr()->GetParamDouble("WB") / 1000;    # µm
 
 	# track and GND pads are placed horizontally => 1 positions
 	if ( $self->{"cpnSingle"}->IsMultistrip() ) {
 
 		# LEFT SIDE
 
-		# build Track pads
+		# build Track pad
 		my $sTrPad = PadLayout->new( Point->new( $origin->X(), $origin->Y() ), Enums->Pad_TRACK );
 		$self->{"layout"}->AddPad($sTrPad);
 
-		# build GND pads
+		# build GND pad
 		my $sGNDPad = PadLayout->new( Point->new( $origin->X(), $origin->Y() + $p2pDist ), Enums->Pad_GND );
 		$self->{"layout"}->AddPad($sGNDPad);
 
@@ -76,11 +76,11 @@ sub Build {
 
 		if ( $self->{"settings"}->GetTwoEndedDesign() ) {
 
-			# build Track pads
+			# build Track pad
 			my $eTrPad = PadLayout->new( Point->new( $areaW - $origin->X(), $origin->Y() ), Enums->Pad_TRACK );
 			$self->{"layout"}->AddPad($eTrPad);
 
-			# build GND pads
+			# build GND pad
 			my $eGNDPad = PadLayout->new( Point->new( $areaW - $origin->X(), $origin->Y() + $p2pDist ), Enums->Pad_GND );
 			$self->{"layout"}->AddPad($eGNDPad);
 
@@ -101,11 +101,10 @@ sub Build {
 
 		# LEFT SIDE
 
-		# build GND pads
+		# build GND pad
 		my $sGNDPad = PadLayout->new( Point->new( $origin->X(), $origin->Y() ), Enums->Pad_GND );
 		$self->{"layout"}->AddPad($sGNDPad);
-
-		# build Track pads
+		# build Track pad
 		my $sTrPad = PadLayout->new( Point->new( $origin->X() + $p2pDist, $origin->Y() ), Enums->Pad_TRACK );
 		$self->{"layout"}->AddPad($sTrPad);
 
@@ -116,11 +115,10 @@ sub Build {
 
 		if ( $self->{"settings"}->GetTwoEndedDesign() ) {
 
-			# build GND pads
+			# build GND pad
 			$eGNDPad = PadLayout->new( Point->new( $areaW - $origin->X(), $origin->Y() ), Enums->Pad_GND );
 			$self->{"layout"}->AddPad($eGNDPad);
-
-			# build Track pads
+			# build Track pad
 			$eTrPad = PadLayout->new( Point->new( $areaW - $origin->X() - $p2pDist, $origin->Y() ), Enums->Pad_TRACK );
 			$self->{"layout"}->AddPad($eTrPad);
 		}
