@@ -915,9 +915,20 @@ sub _Panelize {
 			
 			# Set attributes in Helios
 			if($runCSV ne 'csv') {
-						my $reference = HegMethods->GetNumberOrder($jobName);
-						#HelperWriter->OnlineWrite_order( $reference, "jiz v panelu" , "aktualni_krok" );
-						HelperWriter->OnlineWrite_order( $reference, 'N', 'pooling');
+					if (HegMethods->GetPcbIsPool($jobName) == 1){
+							if (PlatedRoutArea->PlatedAreaExceed($inCAM, $jobName, 'o+1') == 1) {
+									HegMethods->UpdateOrderNotes($jobName, 'Panelizovano samostatne z duvodu otvoru >= 5,0mm.');
+									HegMethods->UpdateOdsouhlasovat($jobName, 'A');
+					
+									my $reference = HegMethods->GetNumberOrder($jobName);
+										HegMethods->UpdatePooling($reference, 0);
+							}else{
+									HegMethods->UpdateOrderNotes($jobName, 'Pool-desku neni s cim sloucit - panelizovano samostatne.');
+									my $reference = HegMethods->GetNumberOrder($jobName);
+										HegMethods->UpdatePooling($reference, 0);			
+							}
+					}
+									
 			}
 			if($runCSV eq 'csv') {
 					_SetMaskSilkHelios($jobName, 'panel');

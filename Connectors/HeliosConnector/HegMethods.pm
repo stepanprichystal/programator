@@ -91,6 +91,7 @@ sub GetAllByPcbId {
 				 z.kusy_pozadavek pocet,
 				 z.pooling,
 				 z.poznamka poznamka_zakazka,
+				 z.odsouhlasovat,
 				 z.stav,
 				 d.material_druh,
 				 lcs.nf_edit_style('ddlb_22_hal', dn.hal) n_surface,
@@ -847,6 +848,24 @@ sub UpdateOrderNotes {
 		my $allNotes = $notes . "\n" . $curNotes;
 		$res = Connectors::HeliosConnector::HelperWriter->OnlineWrite_order( "$pcbId" . "-" . $lastOrder, $allNotes, "poznamka" );
 	}
+
+	return $res;
+}
+
+# Update item Odsouhlasovat
+sub UpdateOdsouhlasovat {
+	my $self  = shift;
+	my $pcbId = shift;
+	my $state = shift;
+	my $res   = 0;
+
+	my $lastOrder = $self->GetPcbOrderNumber($pcbId);
+
+
+
+		require Connectors::HeliosConnector::HelperWriter;
+
+			$res = Connectors::HeliosConnector::HelperWriter->OnlineWrite_order( "$pcbId" . "-" . $lastOrder, $state, "odsouhlasovat" );
 
 	return $res;
 }
