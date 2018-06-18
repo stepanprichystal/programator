@@ -918,8 +918,10 @@ sub _Panelize {
 					if (HegMethods->GetPcbIsPool($jobName) == 1){
 							if (PlatedRoutArea->PlatedAreaExceed($inCAM, $jobName, 'o+1') == 1) {
 									HegMethods->UpdateOrderNotes($jobName, 'Panelizovano samostatne z duvodu otvoru >= 5,0mm.');
-									HegMethods->UpdateOdsouhlasovat($jobName, 'A');
-					
+									
+									unless (HegMethods->GetIdcustomer($jobName) eq '05626') {
+											HegMethods->UpdateOdsouhlasovat($jobName, 'A');
+									}
 									my $reference = HegMethods->GetNumberOrder($jobName);
 										HegMethods->UpdatePooling($reference, 0);
 							}else{
