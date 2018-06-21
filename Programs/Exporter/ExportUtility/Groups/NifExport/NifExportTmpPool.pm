@@ -7,7 +7,7 @@ use Wx;
 use aliased 'CamHelpers::CamJob';
 use aliased 'CamHelpers::CamHelper';
 use aliased 'CamHelpers::CamLayer';
-
+use aliased 'CamHelpers::CamAttributes';
 use aliased 'CamHelpers::CamDrilling';
 use aliased 'Enums::EnumsPaths';
 use aliased 'Enums::EnumsGeneral';
@@ -177,6 +177,13 @@ sub Run {
 		my $item = $resultMngr->GetNewItem("Potisk BOT");
 		$resultMngr->AddItem($item);
 		$item->AddError("Nesedí potisk bot v metrixu jobu a ve formuláøi Heliosu");
+	}
+	
+	# Control on customer panel if exist o+1_single and not exist customer_panel
+	if(CamHelper->StepExists( $inCAM, $jobId, "o+1_single" ) &&  CamAttributes->GetJobAttrByName( $inCAM, $jobId, "customer_panel" ) ne "yes"){
+		my $item = $resultMngr->GetNewItem("Customer panel");
+		$resultMngr->AddItem($item);
+		$item->AddError("V jobu je step o+1_single, ale nejsou nastaveny atributy zakaznickeho panelu. Nastav je.");
 	}
 
 	unless ( $resultMngr->Succes() ) {

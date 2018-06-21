@@ -263,6 +263,7 @@ sub OnCheckGroupData {
 								. "Flatennuj step \"mpanel\" do \"o+1\""
 		);
 	}
+	
 
 	# 10) Check if exist pressfit, if is checked in nif
 	if ( $defaultInfo->GetPressfitExist() && !$groupData->GetPressfit() ) {

@@ -100,6 +100,8 @@ sub CopyChildSteps {
 		unless ( CamJob->IsJobOpen( $inCAM, $jobName ) ) {
 			$inCAM->COM( "open_job", job => "$jobName", "open_win" => "no" );
 		}
+		
+		
 
 		$inCAM->COM(
 					 "copy_entity",

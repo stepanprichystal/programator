@@ -23,6 +23,7 @@ use aliased 'Packages::Export::NifExport::NifMngr';
 use aliased 'Packages::NifFile::NifFile';
 use aliased 'CamHelpers::CamAttributes';
 use aliased 'Packages::CAMJob::Dim::JobDim';
+
 #-------------------------------------------------------------------------------------------#
 #  Public method
 #-------------------------------------------------------------------------------------------#
