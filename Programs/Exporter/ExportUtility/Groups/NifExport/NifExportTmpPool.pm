@@ -29,6 +29,8 @@ use aliased 'Packages::Export::NifExport::NifMngr';
 use aliased 'Programs::Exporter::ExportUtility::DataTransfer::UnitsDataContracts::NifData';
 use aliased 'Packages::ItemResult::ItemResultMngr';
 
+use aliased 'Packages::CAMJob::Dim::JobDim';
+
 #-------------------------------------------------------------------------------------------#
 #  NC export, all layers, all machines..
 #-------------------------------------------------------------------------------------------#
@@ -117,11 +119,16 @@ sub Run {
 	$taskData->SetC_silk_screen_colour( $silk2{"top"} );
 	$taskData->SetS_silk_screen_colour( $silk2{"bot"} );
 
-	my %dim = $self->__GetDimension( $inCAM, $jobId );
+	#my %dim = $self->__GetDimension( $inCAM, $jobId );
+	
+	my %dim = JobDim->GetDimension( $inCAM, $jobId );
 
 	$taskData->SetSingle_x( $dim{"single_x"} );
 	$taskData->SetSingle_y( $dim{"single_y"} );
-
+	$taskData->SetPanel_x( $dim{"panel_x"} );
+	$taskData->SetPanel_y( $dim{"panel_y"} );
+	$taskData->SetNasobnost_panelu( $dim{"nasobnost_panelu"} );
+ 
 	my $name = CamAttributes->GetJobAttrByName( $inCAM, $jobId, "user_name" );
 	$taskData->SetZpracoval($name);
 
@@ -233,30 +240,30 @@ sub Run {
 }
 
 # TODO metodu pak smazat
-
-sub __GetDimension {
-
-	my $self  = shift;
-	my $inCAM = shift;
-	my $jobId = shift;
-
-	my %dim = ();
-	$dim{"single_x"} = "";
-	$dim{"single_y"} = "";
-
-	#get information about dimension, Ssteps: 0+1, mpanel
-
-	my %profilO1 = CamJob->GetProfileLimits( $inCAM, $jobId, "o+1" );
-
-	$dim{"single_x"} = abs( $profilO1{"xmax"} - $profilO1{"xmin"} );
-	$dim{"single_y"} = abs( $profilO1{"ymax"} - $profilO1{"ymin"} );
-
-	#format numbers
-	$dim{"single_x"} = sprintf( "%.1f", $dim{"single_x"} ) if ( $dim{"single_x"} );
-	$dim{"single_y"} = sprintf( "%.1f", $dim{"single_y"} ) if ( $dim{"single_y"} );
-
-	return %dim;
-}
+#
+#sub __GetDimension {
+#
+#	my $self  = shift;
+#	my $inCAM = shift;
+#	my $jobId = shift;
+#
+#	my %dim = ();
+#	$dim{"single_x"} = "";
+#	$dim{"single_y"} = "";
+#
+#	#get information about dimension, Ssteps: 0+1, mpanel
+#
+#	my %profilO1 = CamJob->GetProfileLimits( $inCAM, $jobId, "o+1" );
+#
+#	$dim{"single_x"} = abs( $profilO1{"xmax"} - $profilO1{"xmin"} );
+#	$dim{"single_y"} = abs( $profilO1{"ymax"} - $profilO1{"ymin"} );
+#
+#	#format numbers
+#	$dim{"single_x"} = sprintf( "%.1f", $dim{"single_x"} ) if ( $dim{"single_x"} );
+#	$dim{"single_y"} = sprintf( "%.1f", $dim{"single_y"} ) if ( $dim{"single_y"} );
+#
+#	return %dim;
+#}
 
 1;
 

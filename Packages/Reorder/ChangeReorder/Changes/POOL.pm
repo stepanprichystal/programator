@@ -21,7 +21,8 @@ use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'Packages::Routing::PlatedRoutArea';
 use aliased 'Packages::Export::NifExport::NifMngr';
 use aliased 'Packages::NifFile::NifFile';
-
+use aliased 'CamHelpers::CamAttributes';
+use aliased 'Packages::CAMJob::Dim::JobDim';
 #-------------------------------------------------------------------------------------------#
 #  Public method
 #-------------------------------------------------------------------------------------------#
@@ -69,25 +70,35 @@ sub Run {
 
 	}
 
-	# if pcb was not changet to standard and is not new id (01), export nif
+	# if pcb was not change to standard and is not new id (01), export nif
 	if ( HegMethods->GetPcbIsPool($jobId) ) {
 
-		my $formerNif = NifFile->new($jobId);
-
+		# fill necessary attributes for create pool nif
 		my %exportNifData = ();
 
-		# fill necessary attributes for create pool nif (values are taken from old nif)
-		$exportNifData{"zpracoval"}            = $formerNif->GetValue("zpracoval");
-		$exportNifData{"single_x"}             = $formerNif->GetValue("single_x");
-		$exportNifData{"single_y"}             = $formerNif->GetValue("single_y");
-		$exportNifData{"c_mask_colour"}        = $formerNif->GetValue("c_mask_colour");
-		$exportNifData{"s_mask_colour"}        = $formerNif->GetValue("s_mask_colour");
-		$exportNifData{"c_silk_screen_colour"} = $formerNif->GetValue("c_silk_screen_colour");
-		$exportNifData{"s_silk_screen_colour"} = $formerNif->GetValue("s_silk_screen_colour");
-		$exportNifData{"datacode"}             = $formerNif->GetValue("datacode");
-		$exportNifData{"ul_logo"}              = $formerNif->GetValue("ul_logo");
-		$exportNifData{"maska01"}              = $formerNif->GetPayment("2814075");
-		$exportNifData{"wrongData"}            = $formerNif->GetPayment("4007227");
+		# values taken from job (nasobnost_panelu and dimensions could be changed)
+		$exportNifData{"zpracoval"} = CamAttributes->GetJobAttrByName( $inCAM, $jobId, "user_name" );
+		
+		my %dim = JobDim->GetDimension( $inCAM, $jobId );
+		$exportNifData{"single_x"}         = $dim{"single_x"};
+		$exportNifData{"single_y"}         = $dim{"single_y"};
+		$exportNifData{"panel_x"}          = $dim{"panel_x"};
+		$exportNifData{"panel_y"}          = $dim{"panel_y"};
+		$exportNifData{"nasobnost_panelu"} = $dim{"nasobnost_panelu"};
+
+		my %silk   = ( "top" => undef, "bot" => undef );
+		my %solder = ( "top" => undef, "bot" => undef );
+		$exportNifData{"c_mask_colour"}        = CamHelper->LayerExists( $inCAM, $jobId, "mc" ) ? "Z" : "";
+		$exportNifData{"s_mask_colour"}        = CamHelper->LayerExists( $inCAM, $jobId, "ms" ) ? "Z" : "";
+		$exportNifData{"c_silk_screen_colour"} = CamHelper->LayerExists( $inCAM, $jobId, "pc" ) ? "B" : "";
+		$exportNifData{"s_silk_screen_colour"} = CamHelper->LayerExists( $inCAM, $jobId, "ps" ) ? "B" : "";
+	 
+		$exportNifData{"datacode"}  = HegMethods->GetDatacodeLayer($jobId);
+		$exportNifData{"ul_logo"}   = HegMethods->GetUlLogoLayer($jobId);
+		
+		my $formerNif = NifFile->new($jobId);
+		$exportNifData{"maska01"}   = $formerNif->GetPayment("2814075");
+		$exportNifData{"wrongData"} = $formerNif->GetPayment("4007227");
 
 		my $nifMngr = NifMngr->new( $inCAM, $jobId, \%exportNifData );
 

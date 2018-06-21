@@ -24,6 +24,7 @@ use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'Packages::Routing::PlatedRoutArea';
 use aliased 'Packages::Export::NifExport::NifMngr';
 use aliased 'Packages::NifFile::NifFile';
+use aliased 'Packages::CAMJob::Dim::JobDim';
 use aliased 'Programs::Services::TpvService::ServiceApps::CheckReorderApp::CheckReorder::AcquireJob';
 use aliased 'Packages::CAM::FeatureFilter::FeatureFilter';
 use aliased 'Programs::Exporter::ExportUtility::Groups::NifExport::NifExportTmpPool';
@@ -129,24 +130,32 @@ sub Run {
  
 	$taskData->SetC_mask_colour( $solder{"top"} );
 	$taskData->SetS_mask_colour( $solder{"bot"} );
+	
+	#get information about dimension, step: 0+1
+	
+#	my %dim = ();
+#	$dim{"single_x"} = "";
+#	$dim{"single_y"} = "";
 
-	my %dim = ();
-	$dim{"single_x"} = "";
-	$dim{"single_y"} = "";
-
-	#get information about dimension, Ssteps: 0+1, mpanel
-
-	my %profilO1 = CamJob->GetProfileLimits( $inCAM, $jobId, "o+1" );
-
-	$dim{"single_x"} = abs( $profilO1{"xmax"} - $profilO1{"xmin"} );
-	$dim{"single_y"} = abs( $profilO1{"ymax"} - $profilO1{"ymin"} );
-
-	#format numbers
-	$dim{"single_x"} = sprintf( "%.1f", $dim{"single_x"} ) if ( $dim{"single_x"} );
-	$dim{"single_y"} = sprintf( "%.1f", $dim{"single_y"} ) if ( $dim{"single_y"} );
+#	my %profilO1 = CamJob->GetProfileLimits( $inCAM, $jobId, "o+1" );
+#
+#	$dim{"single_x"} = abs( $profilO1{"xmax"} - $profilO1{"xmin"} );
+#	$dim{"single_y"} = abs( $profilO1{"ymax"} - $profilO1{"ymin"} );
+#
+#	#format numbers
+#	$dim{"single_x"} = sprintf( "%.1f", $dim{"single_x"} ) if ( $dim{"single_x"} );
+#	$dim{"single_y"} = sprintf( "%.1f", $dim{"single_y"} ) if ( $dim{"single_y"} );
+#
+#	$taskData->SetSingle_x( $dim{"single_x"} );
+#	$taskData->SetSingle_y( $dim{"single_y"} );
+	
+	my %dim = JobDim->GetDimension( $inCAM, $jobId );
 
 	$taskData->SetSingle_x( $dim{"single_x"} );
 	$taskData->SetSingle_y( $dim{"single_y"} );
+	$taskData->SetPanel_x( $dim{"panel_x"} );
+	$taskData->SetPanel_y( $dim{"panel_y"} );
+	$taskData->SetNasobnost_panelu( $dim{"nasobnost_panelu"} );
 
 	my $name = CamAttributes->GetJobAttrByName( $inCAM, $jobId, "user_name" );
 	$taskData->SetZpracoval($name);

@@ -20,20 +20,20 @@ use aliased 'CamHelpers::CamAttributes';
 #   Package methods
 #-------------------------------------------------------------------------------------------#
 
-# Return hash:
+# Return hash with values for HEG columns:
 # nasobnost_panelu
 # nasobnost
 # single_x
 # single_y
 # panel_x
 # panel_y
-
+#
+# If job is POOL child, doesn't return value: nasobnost
 sub GetDimension {
 
 	my $self  = shift;
 	my $inCAM = shift;
 	my $jobId = shift;
-	 
 
 	my %dim = ();
 	$dim{"single_x"}         = "";
@@ -56,8 +56,8 @@ sub GetDimension {
 
 	#get information about customer panel if exist
 
-	my $custPnlExist = CamAttributes->GetJobAttrByName($inCAM, $jobId, "customer_panel" );    # zakaznicky panel
-	my $custSetExist = CamAttributes->GetJobAttrByName($inCAM, $jobId,"customer_set" );      # zakaznicke sady
+	my $custPnlExist = CamAttributes->GetJobAttrByName( $inCAM, $jobId, "customer_panel" );    # zakaznicky panel
+	my $custSetExist = CamAttributes->GetJobAttrByName( $inCAM, $jobId, "customer_set" );      # zakaznicke sady
 
 	#get inforamtion about multiplicity steps
 	my $mpanelMulipl;
@@ -67,35 +67,41 @@ sub GetDimension {
 
 	my $panelMultipl;
 
-	my $isPool = HegMethods->GetPcbIsPool($jobId);
+	my $pnlExist = CamHelper->StepExists( $inCAM, $jobId, "panel" );
 
-	if ($isPool) {
-		$panelMultipl = $self->__GetMultiplOfStep( $inCAM, $jobId, "panel", "o+1" );
-	}
-	else {
-		$panelMultipl = $self->__GetMultiplOfStep( $inCAM, $jobId, "panel" );
+	# if job is pool child, panel doesn't exist
+	if ($pnlExist) {
+
+		my $isPool = HegMethods->GetPcbIsPool($jobId);
+
+		if ($isPool) {
+			$panelMultipl = $self->__GetMultiplOfStep( $inCAM, $jobId, "panel", "o+1" );
+		}
+		else {
+			$panelMultipl = $self->__GetMultiplOfStep( $inCAM, $jobId, "panel" );
+		}
 	}
 
 	#set dimension by "customer panel"
 	if ( $custPnlExist eq "yes" ) {
 
-		my $custSingleX    = CamAttributes->GetJobAttrByName($inCAM, $jobId,"cust_pnl_singlex" );
-		my $custSingleY    = CamAttributes->GetJobAttrByName($inCAM, $jobId,"cust_pnl_singley" );
-		my $custPnlMultipl = CamAttributes->GetJobAttrByName($inCAM, $jobId,"cust_pnl_multipl" );
+		my $custSingleX    = CamAttributes->GetJobAttrByName( $inCAM, $jobId, "cust_pnl_singlex" );
+		my $custSingleY    = CamAttributes->GetJobAttrByName( $inCAM, $jobId, "cust_pnl_singley" );
+		my $custPnlMultipl = CamAttributes->GetJobAttrByName( $inCAM, $jobId, "cust_pnl_multipl" );
 
 		$dim{"single_x"}         = $custSingleX;
 		$dim{"single_y"}         = $custSingleY;
 		$dim{"panel_x"}          = abs( $profilO1{"xmax"} - $profilO1{"xmin"} );
 		$dim{"panel_y"}          = abs( $profilO1{"ymax"} - $profilO1{"ymin"} );
 		$dim{"nasobnost_panelu"} = $custPnlMultipl;
-		$dim{"nasobnost"}        = $custPnlMultipl * $panelMultipl;
+		$dim{"nasobnost"}        = $custPnlMultipl * $panelMultipl if ($pnlExist);    # only if step panel exist
 
 	}
 
 	# set dimension by "customer set"
 	elsif ( $custSetExist eq "yes" ) {
 
-		my $custSetMultipl = CamAttributes->GetJobAttrByName($inCAM, $jobId, "cust_set_multipl" );
+		my $custSetMultipl = CamAttributes->GetJobAttrByName( $inCAM, $jobId, "cust_set_multipl" );
 		my $mpanelX        = abs( $profilM{"xmax"} - $profilM{"xmin"} );
 		my $mpanelY        = abs( $profilM{"ymax"} - $profilM{"ymin"} );
 
@@ -115,7 +121,7 @@ sub GetDimension {
 		$dim{"panel_x"}          = $mpanelX;
 		$dim{"panel_y"}          = $mpanelY;
 		$dim{"nasobnost_panelu"} = $custSetMultipl;
-		$dim{"nasobnost"}        = $custSetMultipl * $panelMultipl;
+		$dim{"nasobnost"}        = $custSetMultipl * $panelMultipl if ($pnlExist);    # only if step panel exist
 	}
 	else {
 
@@ -131,13 +137,13 @@ sub GetDimension {
 			$panelXtmp     = abs( $profilM{"xmax"} - $profilM{"xmin"} );
 			$panelYtmp     = abs( $profilM{"ymax"} - $profilM{"ymin"} );
 			$mMultiplTmp   = $mpanelMulipl;
-			$pnlMultiplTmp = $pnlMultiplTmp * $mpanelMulipl;
+			$pnlMultiplTmp = $pnlMultiplTmp * $mpanelMulipl if ($pnlExist);    # only if step panel exist
 		}
 
 		$dim{"panel_x"}          = $panelXtmp;
 		$dim{"panel_y"}          = $panelYtmp;
 		$dim{"nasobnost_panelu"} = $mMultiplTmp;
-		$dim{"nasobnost"}        = $pnlMultiplTmp;
+		$dim{"nasobnost"}        = $pnlMultiplTmp if ($pnlExist);              # only if step panel exist
 
 	}
 
@@ -146,11 +152,14 @@ sub GetDimension {
 	$dim{"single_y"} = sprintf( "%.1f", $dim{"single_y"} ) if ( $dim{"single_y"} );
 	$dim{"panel_x"}  = sprintf( "%.1f", $dim{"panel_x"} )  if ( $dim{"panel_x"} );
 	$dim{"panel_y"}  = sprintf( "%.1f", $dim{"panel_y"} )  if ( $dim{"panel_y"} );
-	
-	my %profilP = CamJob->GetProfileLimits( $inCAM, $jobId, "panel" );
-	
-	$dim{"vyrobni_panel_x"}  = abs( $profilP{"xmax"} - $profilP{"xmin"} );
-	$dim{"vyrobni_panel_y"}  = abs( $profilP{"ymax"} - $profilP{"ymin"} );
+
+	if ($pnlExist) {
+		
+		my %profilP = CamJob->GetProfileLimits( $inCAM, $jobId, "panel" );
+
+		$dim{"vyrobni_panel_x"} = abs( $profilP{"xmax"} - $profilP{"xmin"} );
+		$dim{"vyrobni_panel_y"} = abs( $profilP{"ymax"} - $profilP{"ymin"} );
+	}
 
 	return %dim;
 }
@@ -202,7 +211,7 @@ sub __GetMultiplOfStep {
 	return $stepCnt;
 
 }
-  
+
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#
@@ -214,12 +223,9 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 	my $jobId = "f52456";
- 
 
-	my %dim = JobDim->GetDimension( $inCAM, $jobId);
+	my %dim = JobDim->GetDimension( $inCAM, $jobId );
 
- 
-	
 	print "eee";
 }
 

@@ -20,6 +20,7 @@ use aliased 'CamHelpers::CamCopperArea';
 use aliased 'CamHelpers::CamStepRepeat';
 use aliased 'Packages::Stackup::StackupDefault';
 use aliased 'Helpers::JobHelper';
+use aliased 'Packages::NifFile::NifFile';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -90,7 +91,15 @@ sub CreatePoolFile {
 		# if count doesnt equal, add difference
 		if ( $cntReal > $cntFile ) {
 
-			$orderCnt{ $order->{"orderId"} } += ( $cntReal - $cntFile );
+			$orderCnt{ $order->{"orderId"} } = $cntReal;
+		}
+		
+		# consider, if pool has defined customer panel
+		my $nif = NifFile->new( $order->{"jobName"} );
+		my $custPnl = $nif->GetValue("nasobnost_panelu");
+		
+		if(defined $custPnl && $custPnl ne "" && $custPnl > 0){
+			$orderCnt{ $order->{"orderId"} } *= $custPnl;
 		}
 	}
 

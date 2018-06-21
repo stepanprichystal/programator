@@ -6,8 +6,8 @@
 # === automatic changes ======  
  
 INCAM_JOB
-POOL_MASTER
 MISSING_JOBATTR
+POOL_MASTER
 POOL
 MASK_POLAR
 LAYER_NAMES

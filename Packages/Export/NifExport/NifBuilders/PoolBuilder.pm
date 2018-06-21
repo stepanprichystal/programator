@@ -69,6 +69,9 @@ sub Build {
 	@req = ();
 	push(@req, "single_x");
 	push(@req, "single_y");
+	push(@req, "panel_x");
+	push(@req, "panel_y");
+	push(@req, "nasobnost_panelu");
 
 	$nifMngr->AddSection("Rozmery", BuilderDim->new(\@req));
 

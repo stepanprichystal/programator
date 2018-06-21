@@ -19,6 +19,7 @@ use aliased 'CamHelpers::CamJob';
 use aliased 'Packages::NifFile::NifFile';
 use aliased 'CamHelpers::CamAttributes';
 use aliased 'Connectors::HeliosConnector::HegMethods';
+use aliased 'CamHelpers::CamHelper';
 
 #-------------------------------------------------------------------------------------------#
 #  Public method
@@ -37,8 +38,9 @@ sub Run {
 	my $self = shift;
 	my $mess = shift;
 
-	my $inCAM = $self->{"inCAM"};
-	my $jobId = $self->{"jobId"};
+	my $inCAM  = $self->{"inCAM"};
+	my $jobId  = $self->{"jobId"};
+	my $isPool = HegMethods->GetPcbIsPool($jobId);
 
 	my $result = 1;
 
@@ -89,7 +91,7 @@ sub Run {
 
 	# insert mjissing pcb inner class
 	if ( CamJob->GetSignalLayerCnt( $inCAM, $jobId ) > 2 ) {
-		
+
 		my $pcbClassInner = CamJob->GetJobPcbClassInner( $inCAM, $jobId );
 
 		if ( !defined $pcbClassInner || $pcbClassInner eq "" || $pcbClassInner < 3 ) {
@@ -116,6 +118,24 @@ sub Run {
 		}
 	}
 
+	# Add customer panel for POOL jobs, if nasobnost_panelu exist in HEG
+	my $multiplHeg   = HegMethods->GetInfoDimensions($jobId)->{"nasobnost_panelu"};
+	my $custPnlExist = CamAttributes->GetJobAttrByName( $inCAM, $jobId, "customer_panel" );  # zakaznicky panel
+
+	if ( $isPool && defined $multiplHeg && $multiplHeg ne "" && $multiplHeg != 0 && $custPnlExist ne "yes" ) {
+
+		# get single dimension from
+		die "Unable read single piece dimension from step o+1_single, because step doesn't exist."
+		  unless ( CamHelper->StepExists( $inCAM, $jobId, "o+1_single" ) );
+
+		my %lim = CamJob->GetProfileLimits2( $inCAM, $jobId, "o+1_single" );
+
+		CamJob->SetJobAttribute( $inCAM, 'customer_panel',   'yes',                              $jobId );
+		CamJob->SetJobAttribute( $inCAM, 'cust_pnl_singlex', abs( $lim{"xMax"} - $lim{"xMin"} ), $jobId );
+		CamJob->SetJobAttribute( $inCAM, 'cust_pnl_singley', abs( $lim{"yMax"} - $lim{"yMin"} ), $jobId );
+		CamJob->SetJobAttribute( $inCAM, 'cust_pnl_multipl', $multiplHeg,                        $jobId );
+	}
+	
 	return $result;
 }
 

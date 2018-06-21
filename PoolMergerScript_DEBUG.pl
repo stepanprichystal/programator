@@ -27,13 +27,12 @@ $main::DEBUG = 1;
 # ----------------------------------------------
 
 #NonStandartUnits();
-#CreateFakePoolFile(0);
 CreateFakePoolFile(0);
+#CreateFakePoolFile(0);
 NotCreateServer();
-NoChecks();
+#NoChecks();
 # ----------------------------------------------
-
-
+ 
 if($inCAM->IsConnected()){
 	$inCAM->ClientFinish();
 }
@@ -99,6 +98,7 @@ sub CreateFakePoolFile {
 		<orders panel_height=\"326.0\" panel_width=\"266.0\">
   		  <order h=\"66.0\" order_id=\"$motherOrder\" rotated=\"0\" w=\"44.0\" x=\"10.0\" y=\"10\"/>
   		  <order h=\"83.6\" order_id=\"$childOrder\" rotated=\"0\" w=\"140.0\" x=\"100\" y=\"200\"/>
+  		  <order h=\"83.6\" order_id=\"$childOrder\" rotated=\"0\" w=\"140.0\" x=\"100\" y=\"100\"/>
 	</orders>";
 
 	my $f;
