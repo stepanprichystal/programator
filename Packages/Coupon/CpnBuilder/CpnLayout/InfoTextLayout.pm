@@ -3,13 +3,14 @@
 # Description: Manager responsible for NIF creation
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::Coupon::CpnBuilder::CpnLayout::CpnSingleLayout;
+package Packages::Coupon::CpnBuilder::CpnLayout::InfoTextLayout;
 
 #3th party library
 use strict;
 use warnings;
 
 #local library
+ 
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -19,54 +20,78 @@ sub new {
 	my $self  = {};
 	bless $self;
 
-	$self->{"h"}             = undef;    # dynamic heght of single coupon
-	$self->{"stripsLayouts"} = [];
-	$self->{"infoTextLayout"} = undef;
-	$self->{"infoTextPos"} = undef;
-
+ 	$self->{"type"} = undef; # top/right
+ 	$self->{"width"} = undef; 
+ 	$self->{"height"} = undef; 
+ 	
+ 	$self->{"texts"} = [];
+ 
 	return $self;
+ 
 }
-
-sub SetInfoTextLayout{
-	my $self = shift;
-	my $textLayout = shift;
-	my $position = shift;
+ 
+sub SetType{
+	my $self  = shift;
+	my $type = shift;
 	
-	$self->{"infoTextLayout"} = $textLayout;
-	$self->{"infoTextPos"} = $position;
+	$self->{"type"} = $type;
+} 
+
+sub SetWidth{
+	my $self  = shift;
+	my $width = shift;
+	
+	$self->{"width"} = $width;
+} 
+
+sub SetHeight{
+	my $self  = shift;
+	my $height = shift;
+	
+	$self->{"height"} = $height;
+} 
+
+
+ 
+sub AddText{
+	my $self  = shift;
+	my $point = shift;
+	my $textVal = shift;
+	
+	my %info = ();
+	
+	$info{"point"} = $point;
+	$info{"val"} = $textVal;
+	
+	
+	push(@{$self->{"texts"}}, \%info);
+	
+} 
+
+sub GetTexts{
+	my $self  = shift;
+	
+	return @{$self->{"texts"}};
 }
-
-sub SetHeight {
-	my $self = shift;
-
-	$self->{"h"} = shift;
+ 
+sub GetType{
+	my $self  = shift;
+	
+	return $self->{"type"};
 }
 
 sub GetHeight {
 	my $self = shift;
 
-	return $self->{"h"};
+	return $self->{"height"};
 }
 
-sub AddMicrostripLayout {
+sub GetWidth {
 	my $self = shift;
 
-	push( @{ $self->{"stripsLayouts"} }, shift );
+	return $self->{"width"};
 }
-
-sub GetMicrostripLayouts {
-	my $self = shift;
-
-	return @{ $self->{"stripsLayouts"} };
-
-}
-
-sub GetInfoTextLayout{
-	my $self = shift;
-	
-	return $self->{"infoTextLayout"};
-}
-
+ 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#

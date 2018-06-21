@@ -90,7 +90,8 @@ sub Build {
 
 		# height depand on microstrip types
 		my $h = $self->{"settings"}->GetCouponMargin() * 2 + ( scalar( @{ $self->{"couponsSingle"} } ) - 1 ) * $self->{"settings"}->GetCouponSpace();
-		$h += $_->GetHeight() foreach @{ $self->{"couponsSingle"} };
+		$h += $_->GetHeight() foreach  $self->{"layout"}->GetCouponsSingle();
+		
 		$self->{"layout"}->SetHeight($h);
 
 		$self->{"build"} = 1;    # build is ok

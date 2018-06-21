@@ -75,6 +75,14 @@ sub GetStripVariant{
 	return $self->{"stripVariant"};	
 }
 
+sub GetHeight{
+	my $self   = shift;
+	
+	$self->{"stripVariant"}
+	
+	
+}
+
 sub _GetXmlConstr{
 	my $self = shift;
 

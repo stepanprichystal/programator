@@ -55,7 +55,7 @@ sub _Build {
 	foreach my $layer ( @{ $self->{"layers"} } ) {
 
 		$layer->Init( $self->{"inCAM"}, $self->{"jobId"}, $self->{"settings"}, $layout );
-		$layer->Draw();
+		$layer->Draw($layout);
 	}
 }
 

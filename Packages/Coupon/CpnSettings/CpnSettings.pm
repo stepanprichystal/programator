@@ -68,6 +68,15 @@ sub GetPad2PadDist {
 
 }
 
+
+sub GetTracePad2TracePad {
+	my $self = shift;
+
+	return $self->__GetVal("tracePad2TracePad");
+
+}
+
+
 sub GetCouponSingleMargin {
 	my $self = shift;
 
@@ -213,19 +222,7 @@ sub GetPoolCnt {
 
 }
 
-sub GetPadsTopTextDist {
-	my $self = shift;
-
-	return $self->__GetVal("padsTopTextDist");
-
-}
-
-sub GetTopTextHeight {
-	my $self = shift;
-
-	return $self->__GetVal("topTextHeight");
-
-}
+ 
 
 sub GetTrackPadIsolation {
 	my $self = shift;
@@ -270,6 +267,105 @@ sub GetTwoEndedDesign{
 	return $self->__GetVal("twoEndedDesign");
 	
 }
+
+
+###
+
+sub GetPadsTopTextDist{
+	my $self = shift;
+
+	return $self->__GetVal("padsTopTextDist");
+	
+}
+
+sub GetInfoText{
+	my $self = shift;
+
+	return $self->__GetVal("infoText");
+	
+}
+
+sub GetInfoTextPosition{
+	my $self = shift;
+
+	return $self->__GetVal("infoTextPosition");
+	
+}
+
+sub GetInfoTextNumber{
+	my $self = shift;
+
+	return $self->__GetVal("infoTextNumber");
+	
+}
+
+sub GetInfoTextTrackImpedance{
+	my $self = shift;
+
+	return $self->__GetVal("infoTextTrackImpedance");
+	
+}
+
+sub GetInfoTextTrackWidth{
+	my $self = shift;
+
+	return $self->__GetVal("infoTextTrackWidth");
+	
+}
+
+sub GetInfoTextTrackSpace{
+	my $self = shift;
+
+	return $self->__GetVal("infoTextTrackSpace");
+	
+}
+
+sub GetInfoTextTrackLayer{
+	my $self = shift;
+
+	return $self->__GetVal("infoTextTrackLayer");
+	
+}
+
+sub GetInfoTextHSpacing{
+	my $self = shift;
+
+	return $self->__GetVal("infoTextHSpacing");
+	
+}
+
+sub GetInfoTextVSpacing{
+	my $self = shift;
+
+	return $self->__GetVal("infoTextVSpacing");
+	
+}
+ 
+###
+
+sub GetInfoTextWidth{
+	my $self = shift;
+
+	return $self->__GetVal("infoTextWidth");
+	
+}
+
+sub GetInfoTextHeight{
+	my $self = shift;
+
+	return $self->__GetVal("infoTextHeight");
+	
+}
+
+sub GetInfoTextWeight{
+	my $self = shift;
+
+	return $self->__GetVal("infoTextWeight");
+	
+} 
+ 
+ 
+ 
 
 sub __GetVal {
 	my $self = shift;
