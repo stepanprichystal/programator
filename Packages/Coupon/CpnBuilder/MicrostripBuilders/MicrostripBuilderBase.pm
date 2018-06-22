@@ -50,7 +50,7 @@ sub Init {
 	my $xmlConstr = $self->_GetXmlConstr();
 
 	# Set microstrip layout properties common for all microstrip types
-	
+
 	$self->{"layout"}->SetModel( $self->_GetXmlConstr()->GetModel() );    # model
 
 	# Get info about layers + translate to inCAM name notation
@@ -69,24 +69,24 @@ sub GetLayout {
 
 }
 
-sub GetStripVariant{
+sub GetStripVariant {
 	my $self = shift;
 
-	return $self->{"stripVariant"};	
+	return $self->{"stripVariant"};
 }
 
-sub GetHeight{
-	my $self   = shift;
-	
-	$self->{"stripVariant"}
-	
-	
-}
+#sub GetHeight{
+#	my $self   = shift;
+#
+#	$self->{"stripVariant"}
+#
+#
+#}
 
-sub _GetXmlConstr{
+sub _GetXmlConstr {
 	my $self = shift;
 
-	return $self->{"stripVariant"}->Data()->{"xmlConstraint"};	
+	return $self->{"stripVariant"}->Data()->{"xmlConstraint"};
 }
 
 sub _GetSEStraightTrack {
@@ -114,16 +114,15 @@ sub _GetSEStraightTrack {
 }
 
 sub _GetSingleDIFFTrack {
-	my $self     = shift;
-	my $origin   = shift;
-	my $type = shift; # top/bot
-	
+	my $self   = shift;
+	my $origin = shift;
+	my $type   = shift;    # top/bot
 
 	die "Only single strip " if ( $self->{"cpnSingle"}->IsMultistrip() );
 
-	my $yTrackDir = ($type eq "top" ? -1 : 1);
-	my $areaW = $self->{"settings"}->GetAreaWidth();
-	my $p2pDist   = $self->{"settings"}->GetTracePad2tracePad() / 1000;  
+	my $yTrackDir = ( $type eq "top" ? -1 : 1 );
+	my $areaW     = $self->{"settings"}->GetAreaWidth();
+	my $p2pDist   = $self->{"settings"}->GetTracePad2TracePad() / 1000;
 
 	my $xmlConstr = $self->{"stripVariant"}->Data()->{"xmlConstraint"};
 	my $w         = $xmlConstr->GetParamDouble("WB") / 1000;              # track width in mm
@@ -133,11 +132,11 @@ sub _GetSingleDIFFTrack {
 	my @track = ();
 
 	# start point
-	push( @track, Point->new( $origin->X(), $origin->Y() ) );
+	push( @track, Point->new( $origin->X(), $origin->Y() + ( $type eq "top" ? $p2pDist : 0 ) ) );
 
 	# second point
-	my $x2 = $origin->X() + ( $p2pDist/2 - $s / 2 - $w / 2 ) * tan( deg2rad(45) );
-	my $y2 = $origin->Y() + ($type eq "top" ? $p2pDist : 0)   + $yTrackDir*( $p2pDist/2 - $s / 2 - $w / 2);
+	my $x2 = $origin->X() + ( $p2pDist / 2 - $s / 2 - $w / 2 ) * tan( deg2rad(45) );
+	my $y2 = $origin->Y() + ( $type eq "top" ? $p2pDist : 0 ) + $yTrackDir * ( $p2pDist / 2 - $s / 2 - $w / 2 );
 	push( @track, Point->new( $x2, $y2 ) );
 
 	# third
@@ -147,7 +146,7 @@ sub _GetSingleDIFFTrack {
 
 	if ( $self->{"settings"}->GetTwoEndedDesign() ) {
 
-		push( @track, Point->new( $areaW - $origin->X(), $origin->Y() ) );
+		push( @track, Point->new( $areaW - $origin->X(), $origin->Y() + ( $type eq "top" ? $p2pDist : 0 ) ) );
 	}
 	else {
 
@@ -157,47 +156,54 @@ sub _GetSingleDIFFTrack {
 	return @track;
 }
 
-
-
 sub _GetMultistripSETrack {
-	my $self     = shift;
-	my $origin   = shift;
- 
+	my $self   = shift;
+	my $origin = shift;
+
 	die "Only multistrip" if ( !$self->{"cpnSingle"}->IsMultistrip() );
 
-	my $yTrackDir = $self->{"stripVariant"}->Route() eq Enums->Route_ABOVE ? 1 : -1;
-	my $areaW     = $self->{"settings"}->GetAreaWidth();
-	my @track     = ();
+	my @track = ();
 
-	# start point
-	push( @track, Point->new( $origin->X(), $origin->Y() ) );
+	if ( $self->{"stripVariant"}->Route() eq Enums->Route_STREIGHT ) {
 
-	# second point
-	my $x2 = $origin->X() + $self->{"stripVariant"}->RouteDist() * tan( deg2rad(45) );
-	my $y2 = $origin->Y() + $yTrackDir * $self->{"stripVariant"}->RouteDist();
-	push( @track, Point->new( $x2, $y2 ) );
+		@track = $self->_GetSEStraightTrack($origin);
 
-	# third
-	my $x3 = $areaW - $x2;
-	my $y3 = $y2;
-	push( @track, Point->new( $x3, $y3 ) );
-
-	if ( $self->{"settings"}->GetTwoEndedDesign() ) {
-
-		push( @track, Point->new( $areaW - $origin->X(), $origin->Y() ) );
 	}
 	else {
+		
+		my $yTrackDir = $self->{"stripVariant"}->Route() eq Enums->Route_ABOVE ? 1 : -1;
+		my $areaW = $self->{"settings"}->GetAreaWidth();
 
-		die "not implemented";
+		# start point
+		push( @track, Point->new( $origin->X(), $origin->Y() ) );
+
+		# second point
+		my $x2 = $origin->X() + $self->{"stripVariant"}->RouteDist() * tan( deg2rad(45) );
+		my $y2 = $origin->Y() + $yTrackDir * $self->{"stripVariant"}->RouteDist();
+		push( @track, Point->new( $x2, $y2 ) );
+
+		# third
+		my $x3 = $areaW - $x2;
+		my $y3 = $y2;
+		push( @track, Point->new( $x3, $y3 ) );
+
+		if ( $self->{"settings"}->GetTwoEndedDesign() ) {
+
+			push( @track, Point->new( $areaW - $origin->X(), $origin->Y() ) );
+		}
+		else {
+
+			die "not implemented";
+		}
 	}
 
 	return @track;
 }
 
 sub _GetMultistripDIFFTrackOuter {
-	my $self     = shift;
-	my $origin   = shift;
- 
+	my $self   = shift;
+	my $origin = shift;
+
 	die "Only multistrip" if ( !$self->{"cpnSingle"}->IsMultistrip() );
 
 	my $yTrackDir = $self->{"stripVariant"}->Route() eq Enums->Route_ABOVE ? 1 : -1;

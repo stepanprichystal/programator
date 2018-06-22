@@ -142,7 +142,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	# Group policy
 
 	my $groupPolicy = GroupPolicy->new( $cpnSource, $cpnSett->GetMaxTrackCnt(), $cpnSett->GetPoolCnt() );
-	my @filter = (1);
+	my @filter = (1,2);
 
 	my @groupsComb = $groupPolicy->GenerateGroups( \@filter );
 
@@ -170,7 +170,10 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	my $sortPolicy = SortPolicy->new();
 	my @sortVariants = $sortPolicy->SortVariants(\@variants);
 	
-	my $v = $sortVariants[0];
+	my $v = $sortVariants[3];
+	
+	print STDERR "Choosed variant:\n\n".$v;
+ 
 
 	#	my $g = $groupsComb[0];    # take first comb
 	#

@@ -13,7 +13,7 @@ tracePad2GNDPad   = 2540             # µm
 tracePad2TracePad = 2540             # µm
 trackPadIsolation = 100					# µm
 
-w                 = 180              # mm
+w                 = 130              # mm
 h                 = 203.2            # mm
 marginSingle      = 3                # mm
 marginCoupon      = 1                # mm

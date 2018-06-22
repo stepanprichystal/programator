@@ -64,7 +64,7 @@ sub GetOrder{
 sub GetStripByColumn{
 	my $self = shift;
 	my $column = shift;
-	
+ 
 	my $s = (grep { $_->Col() == $column } @{$self->{"strips"}})[0];
 	
 	return $s;

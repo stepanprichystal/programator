@@ -96,7 +96,7 @@ sub GetStripLayoutVariants {
 					$stripInfo->SetColumn( $s->{"col"} );
 					$stripInfo->SetData( $s->{"d"} );
 
-					if ( $j + 1 == scalar( @{$signleCpn} ) ) {
+					if ( $j + 1 == scalar(  @{ $signleCpn->[$i] } ) ) {
 						$stripInfo->SetIsLast(1);
 					}
 					else {
@@ -373,10 +373,15 @@ sub __SetStripsRoute {
 			my $stripRouteOk = 0;
 			my $trackDist    = undef;
 
-			# bottom (order 0) vs top (order 1) pool
-			my $routeBetwDir = ( $pool->GetOrder() == 0 ) ? Enums->Route_ABOVE : Enums->Route_BELOW;
+			if ( $routeStreight && !$singlCpn->IsMultistrip() ) {
 
-			if ( !$singlCpn->IsMultistrip ) {
+				$usedRoute{ Enums->Route_STREIGHT } = 1;
+				$strip->SetRoute( Enums->Route_STREIGHT );
+				$stripRouteOk = 1;
+				next;
+			}
+
+			if ( $routeStreight && !$usedRoute{ Enums->Route_STREIGHT } && $self->__CheckStraightRoute($strip) ) {
 
 				$usedRoute{ Enums->Route_STREIGHT } = 1;
 				$strip->SetRoute( Enums->Route_STREIGHT );
@@ -426,13 +431,7 @@ sub __SetStripsRoute {
 				}
 			}
 
-			if ( $routeStreight && !$usedRoute{ Enums->Route_STREIGHT } && $self->__CheckStraightRoute($strip) ) {
 
-				$usedRoute{ Enums->Route_STREIGHT } = 1;
-				$strip->SetRoute( Enums->Route_STREIGHT );
-				$stripRouteOk = 1;
-				next;
-			}
 
 			unless ($stripRouteOk) {
 				$reuslt = 0;

@@ -168,8 +168,8 @@ sub __GetHeight {
 	if ( $self->{"settings"}->GetInfoText() ) {
 
 		my $textLayout = $self->{"layout"}->GetInfoTextLayout();
-		
-		die "Infot text layout is not defined " unless(defined $textLayout);
+
+		die "Infot text layout is not defined " unless ( defined $textLayout );
 
 		if ( $self->{"settings"}->GetInfoTextPosition() eq "top" ) {
 
@@ -218,21 +218,20 @@ sub GetMicrostripOrigin {
 	# Y cooredination - left down pad (trakc/GND) of microstrip
 	my $y = undef;
 
+
 	# bottom pool
-	if ( $pool->GetOrder() == 0 ) {
+	
+	$y = $self->{"settings"}->GetCouponSingleMargin();
+	$y += $self->{"settings"}->GetPadTrackSize() / 2 / 1000;    # half of track pad size
 
-		$y = $self->{"settings"}->GetCouponSingleMargin();
-		$y += $self->{"settings"}->GetPadTrackSize() / 2 / 1000;    # half of track pad size
-
-		# space for bottom routes in whole pool strip if exist
-		my @spaces = map { $_->RouteDist() } grep { $_->Route() eq Enums->Route_BELOW } $pool->GetStrips();
-		if (@spaces) {
-			$y += max(@spaces);
-		}
-
+	# space for bottom routes in whole pool strip if exist
+	my @spaces = map { $_->RouteDist() } grep { $_->Route() eq Enums->Route_BELOW } $pool->GetStrips();
+	if (@spaces) {
+		$y += max(@spaces);
 	}
 
-	# Add to y coordineate for pool order 0 "disetance" between GND and track pad
+	# top pool
+
 	if ( $pool->GetOrder() == 1 ) {
 
 		$y += $self->{"settings"}->GetTracePad2GNDPad() / 1000;
@@ -258,7 +257,7 @@ sub __GetMicrostripsHeight {
 			$padsY = 3;
 		}
 
-		$h = ( $padsY - 1 ) * $self->{"settings"}->GetTracePad2TracePad() + $self->{"settings"}->GetPadTrackSize() / 1000;
+		$h = ( $padsY - 1 ) * $self->{"settings"}->GetTracePad2TracePad() / 1000 + $self->{"settings"}->GetPadTrackSize() / 1000;
 
 		foreach my $poolVar (@poolsVar) {
 
@@ -284,7 +283,7 @@ sub __GetMicrostripsHeight {
 
 			}
 
-			$h = ( $padsY - 1 ) * $self->{"settings"}->GetTracePad2TracePad() + $self->{"settings"}->GetPadTrackSize() / 1000;
+			$h = ( $padsY - 1 ) * $self->{"settings"}->GetTracePad2TracePad() / 1000 + $self->{"settings"}->GetPadTrackSize() / 1000;
 		}
 	}
 
@@ -295,7 +294,7 @@ sub __GetMicrostripsHeight {
 
 		my $padsY = $self->__GetMicrostripBuilder( $strip->Id() )->GetPadPosYCnt();
 
-		$h = ( $padsY - 1 ) * $self->{"settings"}->GetTracePad2TracePad() + $self->{"settings"}->GetPadTrackSize() / 1000;
+		$h = ( $padsY - 1 ) * $self->{"settings"}->GetTracePad2TracePad() / 1000 + $self->{"settings"}->GetPadTrackSize() / 1000;
 	}
 
 	return $h;

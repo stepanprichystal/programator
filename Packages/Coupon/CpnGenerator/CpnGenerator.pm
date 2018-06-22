@@ -119,7 +119,7 @@ sub __GenerateSingle {
 
 			  case Enums->Model_UNCOATED_MICROSTRIP { $modelBuilder = UncoatedMicrostrip->new() }
 
-			  else { die "Microstirp model: " . $stripLayout->GetModel() . "is not implemented"; }
+			  else { die "Microstirp model: " . $stripLayout->GetModel() . " is not implemented"; }
 		}
 
 		$modelBuilder->Init( $inCAM, $jobId, $self->{"settings"} );

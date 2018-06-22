@@ -77,7 +77,7 @@ sub GetStripsByColumn{
 	my $self = shift;
 	my $column = shift;
 	
-	my @strips = map { $_->GetStripByColumn() } @{ $self->{"pools"} };
+	my @strips = map { $_->GetStripByColumn($column) } @{ $self->{"pools"} };
 	
 	return @strips;
 }

@@ -48,8 +48,8 @@ sub Draw {
 				 "solid_type"    => "surface",
 				 "step_margin_x" => "0",
 				 "step_margin_y" => "0",
-				 "consider_feat" => "no",
-				 "feat_margin"   => "20",
+				 "consider_feat" => "yes",
+				 "feat_margin"   => "0",
 				 "dest"          => "layer_name",
 				 "layer"         => $self->{"layerName"}
 	);
