@@ -351,7 +351,7 @@ sub __PreparePcbNumber {
 
 		CamSymbol->AddCurAttribute( $inCAM, $jobId, ".string", "pcbid" );
 
-		CamSymbol->AddText( $inCAM, uc($jobId), \%pos, 5.08, 2, $mirror );
+		CamSymbol->AddText( $inCAM, uc($jobId), \%pos, 5.08, undef, 2, $mirror );
 
 		CamSymbol->ResetCurAttributes($inCAM);
 	}

@@ -7,7 +7,7 @@ use warnings;
 
 
 # ============ INPUT LINE =================
-my $inputLine ="copy_entity,type=job,source_job=d000747,source_name=d000747,dest_job=ahoj,dest_name=ahoj,dest_database=incam,remove_from_sr=yes";
+my $inputLine ="add_text,type=string,polarity=positive,x=82.9082575,y=-4.5738,text=test,fontname=standard,style=regular,mirror=no,angle=0,direction=cw,x_size=2.1,y_size=2 (1)";
 
  
 

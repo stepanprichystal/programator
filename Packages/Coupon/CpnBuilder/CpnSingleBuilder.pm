@@ -73,26 +73,13 @@ sub Build {
 
 		if ( $textBuilder->Build($errMess) ) {
 
-			my $p          = undef;
 			my $textLayout = $textBuilder->GetLayout();
 
 			if ( $textLayout->GetType() eq "right" ) {
 				$cpnWArea -= $textLayout->GetWidth();
-
-				$p = Point->new( $self->{"settings"}->GetWidth() - $self->{"settings"}->GetCouponSingleMargin() - $textLayout->GetWidth(),
-								 $self->{"settings"}->GetCouponSingleMargin() );
-
-			}
-			elsif ( $textLayout->GetType() eq "top" ) {
-
-				#compute
-
-				$p = Point->new( $self->{"settings"}->GetCouponSingleMargin(),
-						 $self->{"settings"}->GetCouponSingleMargin() + $self->__GetMicrostripsHeight() + $self->{"settings"}->GetPadsTopTextDist() );
-
 			}
 
-			$self->{"layout"}->SetInfoTextLayout( $textBuilder->GetLayout(), $p );
+			$self->{"layout"}->SetInfoTextLayout($textLayout);
 
 		}
 		else {
@@ -103,6 +90,7 @@ sub Build {
 
 	# Built miscrostip builers
 
+	# Init
 	foreach my $poolVar ( $self->{"singleCpnVar"}->GetPools() ) {
 
 		foreach my $stripVar ( $poolVar->GetStrips() ) {
@@ -118,26 +106,62 @@ sub Build {
 				  else { die "Microstirp type: " . $stripVar->GetType() . "is not implemented"; }
 			}
 
-			$mStripBuilder->Init( $inCAM, $jobId, $self->{"settings"}, $stripVar, $self );
-
-			# Set property common for all microstrip types
-
-			if ( $mStripBuilder->Build($errMess) ) {
-
-				$self->{"layout"}->AddMicrostripLayout( $mStripBuilder->GetLayout() )
-
-			}
-			else {
-
-				$result = 0;
-			}
+			$mStripBuilder->Init( $inCAM, $jobId, $self->{"settings"}, $cpnWArea, $stripVar, $self );
 
 			push( @{ $self->{"microstrips"} }, $mStripBuilder );
 		}
 	}
 
+	# Built
+	foreach my $mStripBuilder ( @{ $self->{"microstrips"} } ) {
+
+		# Set property common for all microstrip types
+
+		if ( $mStripBuilder->Build($errMess) ) {
+
+			$self->{"layout"}->AddMicrostripLayout( $mStripBuilder->GetLayout() );
+		}
+		else {
+
+			$result = 0;
+		}
+	}
+
 	if ($result) {
+
+		# Set height of whole coupon
 		$self->{"layout"}->SetHeight( $self->__GetHeight() );
+
+		# Set info text position
+		if ( $self->{"settings"}->GetInfoText() ) {
+
+			my $textLayout = $self->{"layout"}->GetInfoTextLayout();
+			my $p;
+
+			if ( $textLayout->GetType() eq "right" ) {
+
+				my $x = $self->{"settings"}->GetWidth() - $self->{"settings"}->GetCouponSingleMargin() - $textLayout->GetWidth();
+				my $y = $self->{"settings"}->GetCouponSingleMargin();
+
+				# if coupon is heigher than text, center text vertically to single coupon
+				if ( $self->__GetMicrostripsHeight() > $textLayout->GetHeight() ) {
+					$y += ( $self->__GetMicrostripsHeight() - $textLayout->GetHeight() ) / 2;
+				}
+				$p = Point->new( $x, $y );
+
+			}
+			elsif ( $textLayout->GetType() eq "top" ) {
+
+				#compute
+		 		# align text to right
+				$p = Point->new(  $cpnWArea - $textLayout->GetWidth() - $self->{"settings"}->GetCouponSingleMargin(),
+						 $self->{"settings"}->GetCouponSingleMargin() + $self->__GetMicrostripsHeight() + $self->{"settings"}->GetPadsTopTextDist() );
+
+			}
+
+			$textLayout->SetPosition($p);
+		}
+
 		$self->{"build"} = 1;
 	}
 
@@ -212,20 +236,20 @@ sub GetMicrostripOrigin {
 
 		my @pos = map { $self->__GetMicrostripBuilder( $_->Id() )->GetPadPosXCnt() } (@stripsVar);
 
-		$x += ( max(@pos) - 1 ) * $self->{"settings"}->GetPad2PadDist() + $self->{"settings"}->GetGroupPadsDist();
+		$x += ( max(@pos) - 1 ) * $self->{"settings"}->GetPad2PadDist() / 1000 + $self->{"settings"}->GetGroupPadsDist();
 	}
 
 	# Y cooredination - left down pad (trakc/GND) of microstrip
 	my $y = undef;
 
-
 	# bottom pool
-	
+
 	$y = $self->{"settings"}->GetCouponSingleMargin();
 	$y += $self->{"settings"}->GetPadTrackSize() / 2 / 1000;    # half of track pad size
 
 	# space for bottom routes in whole pool strip if exist
-	my @spaces = map { $_->RouteDist() } grep { $_->Route() eq Enums->Route_BELOW } $pool->GetStrips();
+	my $botPool = $self->{"singleCpnVar"}->GetPoolByOrder(0);
+	my @spaces = map { $_->RouteDist() } grep { $_->Route() eq Enums->Route_BELOW } $botPool->GetStrips();
 	if (@spaces) {
 		$y += max(@spaces);
 	}
@@ -257,7 +281,7 @@ sub __GetMicrostripsHeight {
 			$padsY = 3;
 		}
 
-		$h = ( $padsY - 1 ) * $self->{"settings"}->GetTracePad2TracePad() / 1000 + $self->{"settings"}->GetPadTrackSize() / 1000;
+		$h = ( $padsY - 1 ) * $self->{"settings"}->GetTrackPad2TrackPad() / 1000 + $self->{"settings"}->GetPadTrackSize() / 1000;
 
 		foreach my $poolVar (@poolsVar) {
 
@@ -283,7 +307,7 @@ sub __GetMicrostripsHeight {
 
 			}
 
-			$h = ( $padsY - 1 ) * $self->{"settings"}->GetTracePad2TracePad() / 1000 + $self->{"settings"}->GetPadTrackSize() / 1000;
+			$h = ( $padsY - 1 ) * $self->{"settings"}->GetTrackPad2TrackPad() / 1000 + $self->{"settings"}->GetPadTrackSize() / 1000;
 		}
 	}
 
@@ -294,7 +318,7 @@ sub __GetMicrostripsHeight {
 
 		my $padsY = $self->__GetMicrostripBuilder( $strip->Id() )->GetPadPosYCnt();
 
-		$h = ( $padsY - 1 ) * $self->{"settings"}->GetTracePad2TracePad() / 1000 + $self->{"settings"}->GetPadTrackSize() / 1000;
+		$h = ( $padsY - 1 ) * $self->{"settings"}->GetTrackPad2TrackPad() / 1000 + $self->{"settings"}->GetPadTrackSize() / 1000;
 	}
 
 	return $h;

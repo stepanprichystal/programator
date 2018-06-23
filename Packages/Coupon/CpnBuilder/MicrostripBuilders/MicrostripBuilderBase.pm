@@ -29,6 +29,7 @@ sub new {
 	$self->{"jobId"}        = undef;
 	$self->{"settings"}     = undef;
 	$self->{"stripVariant"} = undef;
+	$self->{"cpnWArea"} = undef;
 
 	$self->{"layout"}    = MicrostripLayout->new();
 	$self->{"padPosCnt"} = undef;                     # number of pad postitions placed horizontally side by side (1 or two) in probe measure area
@@ -44,8 +45,10 @@ sub Init {
 	$self->{"inCAM"}        = shift;
 	$self->{"jobId"}        = shift;
 	$self->{"settings"}     = shift;
+	$self->{"cpnWArea"} 	= shift;
 	$self->{"stripVariant"} = shift;
 	$self->{"cpnSingle"}    = shift;
+
 
 	my $xmlConstr = $self->_GetXmlConstr();
 
@@ -93,7 +96,7 @@ sub _GetSEStraightTrack {
 	my $self   = shift;
 	my $origin = shift;
 
-	my $areaW = $self->{"settings"}->GetAreaWidth();
+	 
 	my @track = ();
 
 	# start point
@@ -103,7 +106,7 @@ sub _GetSEStraightTrack {
 
 	if ( $self->{"settings"}->GetTwoEndedDesign() ) {
 
-		push( @track, Point->new( $areaW - $origin->X(), $origin->Y() ) );
+		push( @track, Point->new( $self->{"cpnWArea"} - $origin->X(), $origin->Y() ) );
 	}
 	else {
 
@@ -116,13 +119,13 @@ sub _GetSEStraightTrack {
 sub _GetSingleDIFFTrack {
 	my $self   = shift;
 	my $origin = shift;
-	my $type   = shift;    # top/bot
+	my $type   = shift;    # upper/lower
 
 	die "Only single strip " if ( $self->{"cpnSingle"}->IsMultistrip() );
 
-	my $yTrackDir = ( $type eq "top" ? -1 : 1 );
-	my $areaW     = $self->{"settings"}->GetAreaWidth();
-	my $p2pDist   = $self->{"settings"}->GetTracePad2TracePad() / 1000;
+	my $yTrackDir = ( $type eq "upper" ? -1 : 1 );
+ 
+	my $p2pDist   = $self->{"settings"}->GetTrackPad2TrackPad() / 1000;
 
 	my $xmlConstr = $self->{"stripVariant"}->Data()->{"xmlConstraint"};
 	my $w         = $xmlConstr->GetParamDouble("WB") / 1000;              # track width in mm
@@ -132,21 +135,21 @@ sub _GetSingleDIFFTrack {
 	my @track = ();
 
 	# start point
-	push( @track, Point->new( $origin->X(), $origin->Y() + ( $type eq "top" ? $p2pDist : 0 ) ) );
+	push( @track, Point->new( $origin->X(), $origin->Y() ) );
 
 	# second point
 	my $x2 = $origin->X() + ( $p2pDist / 2 - $s / 2 - $w / 2 ) * tan( deg2rad(45) );
-	my $y2 = $origin->Y() + ( $type eq "top" ? $p2pDist : 0 ) + $yTrackDir * ( $p2pDist / 2 - $s / 2 - $w / 2 );
+	my $y2 = $origin->Y()  + $yTrackDir * ( $p2pDist / 2 - $s / 2 - $w / 2 );
 	push( @track, Point->new( $x2, $y2 ) );
 
 	# third
-	my $x3 = $areaW - $x2;
+	my $x3 = $self->{"cpnWArea"} - $x2;
 	my $y3 = $y2;
 	push( @track, Point->new( $x3, $y3 ) );
 
 	if ( $self->{"settings"}->GetTwoEndedDesign() ) {
 
-		push( @track, Point->new( $areaW - $origin->X(), $origin->Y() + ( $type eq "top" ? $p2pDist : 0 ) ) );
+		push( @track, Point->new( $self->{"cpnWArea"} - $origin->X(), $origin->Y()  ) );
 	}
 	else {
 
@@ -172,7 +175,7 @@ sub _GetMultistripSETrack {
 	else {
 		
 		my $yTrackDir = $self->{"stripVariant"}->Route() eq Enums->Route_ABOVE ? 1 : -1;
-		my $areaW = $self->{"settings"}->GetAreaWidth();
+		 
 
 		# start point
 		push( @track, Point->new( $origin->X(), $origin->Y() ) );
@@ -183,13 +186,13 @@ sub _GetMultistripSETrack {
 		push( @track, Point->new( $x2, $y2 ) );
 
 		# third
-		my $x3 = $areaW - $x2;
+		my $x3 = $self->{"cpnWArea"} - $x2;
 		my $y3 = $y2;
 		push( @track, Point->new( $x3, $y3 ) );
 
 		if ( $self->{"settings"}->GetTwoEndedDesign() ) {
 
-			push( @track, Point->new( $areaW - $origin->X(), $origin->Y() ) );
+			push( @track, Point->new( $self->{"cpnWArea"} - $origin->X(), $origin->Y() ) );
 		}
 		else {
 
@@ -207,7 +210,7 @@ sub _GetMultistripDIFFTrackOuter {
 	die "Only multistrip" if ( !$self->{"cpnSingle"}->IsMultistrip() );
 
 	my $yTrackDir = $self->{"stripVariant"}->Route() eq Enums->Route_ABOVE ? 1 : -1;
-	my $areaW = $self->{"settings"}->GetAreaWidth();
+ 
 
 	my $xmlConstr = $self->{"stripVariant"}->Data()->{"xmlConstraint"};
 	my $w         = $xmlConstr->GetParamDouble("WB") / 1000;              # track width in mm
@@ -225,13 +228,13 @@ sub _GetMultistripDIFFTrackOuter {
 	push( @track, Point->new( $x2, $y2 ) );
 
 	# third
-	my $x3 = $areaW - $x2;
+	my $x3 = $self->{"cpnWArea"} - $x2;
 	my $y3 = $y2;
 	push( @track, Point->new( $x3, $y3 ) );
 
 	if ( $self->{"settings"}->GetTwoEndedDesign() ) {
 
-		push( @track, Point->new( $areaW - $origin->X(), $origin->Y() ) );
+		push( @track, Point->new( $self->{"cpnWArea"} - $origin->X(), $origin->Y() ) );
 	}
 	else {
 
@@ -249,8 +252,8 @@ sub _GetMultistripDIFFTrackInner {
 	die "Only multistrip" if ( !$self->{"cpnSingle"}->IsMultistrip() );
 
 	my $yTrackDir = $self->{"stripVariant"}->Route() eq Enums->Route_ABOVE ? 1 : -1;
-	my $areaW     = $self->{"settings"}->GetAreaWidth();
-	my $p2pDist   = $self->{"settings"}->GetTracePad2tracePad() / 1000;                # in mm
+	 
+	my $p2pDist   = $self->{"settings"}->GetTrackPad2TrackPad() / 1000;                # in mm
 
 	my $xmlConstr = $self->{"stripVariant"}->Data()->{"xmlConstraint"};
 	my $w         = $xmlConstr->GetParamDouble("WB") / 1000;                           # track width in mm
@@ -260,21 +263,21 @@ sub _GetMultistripDIFFTrackInner {
 	my @track = ();
 
 	# start point
-	push( @track, Point->new( $origin->X() + $p2pDist, $origin->Y() ) );
+	push( @track, Point->new( $origin->X(), $origin->Y() ) );
 
 	# second point
-	my $x2 = $origin->X() + $p2pDist + ( $self->{"stripVariant"}->RouteDist() - $s / 2 - $w / 2 ) * tan( deg2rad(45) );
+	my $x2 = $origin->X() + ( $self->{"stripVariant"}->RouteDist() - $s / 2 - $w / 2 ) * tan( deg2rad(45) );
 	my $y2 = $origin->Y() + $yTrackDir * ( $self->{"stripVariant"}->RouteDist() - $s / 2 - $w / 2 );
 	push( @track, Point->new( $x2, $y2 ) );
 
 	# third
-	my $x3 = $areaW - $x2;
+	my $x3 = $self->{"cpnWArea"} - $x2;
 	my $y3 = $y2;
 	push( @track, Point->new( $x3, $y3 ) );
 
 	if ( $self->{"settings"}->GetTwoEndedDesign() ) {
 
-		push( @track, Point->new( $areaW - $origin->X(), $origin->Y() ) );
+		push( @track, Point->new( $self->{"cpnWArea"} - $origin->X(), $origin->Y() ) );
 	}
 
 	return @track;

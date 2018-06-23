@@ -697,7 +697,7 @@ sub _AddTitleTexts {
 	my $self = shift;
 	my $text = shift;    # countersink z-axis
 
-	$self->{"drawingTitle"}->AddPrimitive( PrimitiveText->new( $text, Point->new(), $self->{"titleTextHeight"}, $self->{"titleTextLineWidth"} ) );
+	$self->{"drawingTitle"}->AddPrimitive( PrimitiveText->new( $text, Point->new(), $self->{"titleTextHeight"}, undef, $self->{"titleTextLineWidth"} ) );
 
 	$self->{"drawingTitle"}
 	  ->AddPrimitive( PrimitiveLine->new( Point->new( 0, -2 ), Point->new( length($text) * $self->{"titleTextHeight"}, -2 ), "r300" ) );

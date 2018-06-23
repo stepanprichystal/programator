@@ -212,7 +212,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	#	CamSymbol->AddTable( $inCAM, \%pos, \@colWidths, 10, 5, 2, \@rows );
 	#
 	#	my %posTitl = ( "x" => 0, "y" => scalar(@rows) * 10 + 5 );
-	#	CamSymbol->AddText( $inCAM, "Tool depths definition", \%posTitl, 6, 1 );
+	 
 
 	my @points = ();
 	my %point1 = ( "x" => 0, "y" => 0 );

@@ -11,6 +11,8 @@ use warnings;
 use List::MoreUtils qw(uniq);
 use List::Util qw[max];
 use Algorithm::Combinatorics qw(partitions);
+use Integer::Partition;
+use Set::Partition;
 
 #local library
 use aliased 'Packages::Coupon::Enums';
@@ -28,47 +30,309 @@ sub new {
 
 	# se
 	$self->{"maxTrackCnt"} = shift;
-	$self->{"poolCnt"}     = shift;
+
+	my @layers = map { $_->{"NAME"} } $self->{"cpnSource"}->GetCopperLayers();
+	$self->{"layers"} = \@layers;
+
+	#$self->{"poolCnt"}     = shift;
 
 	return $self;
 
 }
 
 sub GenerateGroups {
-	my $self   = shift;
-	my $filter = shift;
+	my $self = shift;
 
-	my @poolCombs = $self->__GeneratePools($filter);
+	my $filter = shift;    # process only some constrain by  specify array of STACKUP_ORDERING_INDEX vals
 
-	my @groupCombs = ();
+	my $maxTrackCnt = $self->{"maxTrackCnt"};    # max tracks on one layer in one pool
 
-	my $poolCnt = $self->{"poolCnt"};
+	my @layers = map { $_->{"NAME"} } $self->{"cpnSource"}->GetCopperLayers();
+	my @xmlCons = $self->{"cpnSource"}->GetConstraints();
 
-	foreach my $c (@poolCombs) {
+	if ( defined $filter ) {
+		my %tmp;
 
-		my @poolComb  = @{$c};
-		my @groupComb = ();
+		@tmp{ @{$filter} } = ();
 
-		# define single coupon until all pool are not processed
-		while ( scalar(@poolComb) ) {
-
-			my @group = ();
-
-			for ( my $i = 0 ; $i < scalar($poolCnt) ; $i++ ) {
-
-				# define pool
-				last unless ( scalar(@poolComb) );
-
-				push( @group, shift(@poolComb) );
-			}
-
-			push( @groupComb, \@group );
-		}
-
-		push( @groupCombs, \@groupComb );
+		@xmlCons = grep { exists $tmp{ $_->GetOption("STACKUP_ORDERING_INDEX") } } @xmlCons;
 	}
 
-	return @groupCombs;
+	@xmlCons = $self->__GetConstraints( \@xmlCons );    # build structure for constrain
+
+	my @allComb = partitions( \@xmlCons );
+
+	# sort
+	# Sort whole array. Combination with minimum cpool cnt on begining of all combinations in list
+	@allComb = sort { scalar( @{$a} ) <=> scalar( @{$b} ) } @allComb;
+
+	# sort inside each combination. Pool with maxiaml count of strips move to begining of all poos
+	for ( my $i = 0 ; $i < scalar(@allComb) ; $i++ ) {
+
+		my @tTmp = sort { scalar( @{$b} ) <=> scalar( @{$a} ) } @{ $allComb[$i] };
+		$allComb[$i] = \@tTmp;
+	}
+
+	# Sort whole array. Sort combination by size of first pool in combination. Bigger pool are on begining
+	@allComb = sort { scalar( @{ $b->[0] } ) <=> scalar( @{ $a->[0] } ) } @allComb;
+
+	print STDERR "\n\n--- Combinations: " . scalar(@allComb) . "-----\n";
+
+	foreach my $c (@allComb) {
+		print STDERR $self->CombToStr($c) . "\n";
+	}
+
+	print STDERR "\n\n--- Filter by max count of measure in one group \n";
+
+	for ( my $i = scalar(@allComb) - 1 ; $i >= 0 ; $i-- ) {
+
+		my $remove         = 0;
+		my @affectedLayers = ();
+
+		# go through each group
+		foreach my $group ( @{ $allComb[$i] } ) {
+
+			my $moreTracksExists = 0;    # More (= 2 by actual seetings) tracks per one track layer
+
+			foreach my $l (@layers) {
+				my %h              = ();
+				my $lTypestByGroup = 0;
+
+				my %types = ();
+				$types{$_}++ foreach ( grep { $_ ne Enums->Layer_TYPENOAFFECT } map { $_->{"l"}->{$l} } @{$group} );
+
+				# 2. RULE Max count of miscrostrip track in one "pool" is $maxTrackCnt
+				if ( defined $types{ Enums->Layer_TYPETRACK } && $types{ Enums->Layer_TYPETRACK } > $maxTrackCnt ) {
+					print STDERR "Removed by max trace cnt\n";
+					$remove = 1;
+					last;
+				}
+			}
+		}
+
+		if ($remove) {
+			print STDERR "Combination REMOVED: " . $self->CombToStr( $allComb[$i] ) . "\n";
+			splice @allComb, $i, 1;
+		}
+		else {
+			print STDERR "Combination OK     :  " . $self->CombToStr( $allComb[$i] ) . "\n";
+		}
+	}
+
+	#
+	#	my @poolCombs = $self->__GeneratePools($filter);
+	#
+	#	my @groupCombs = ();
+	#
+	#	my $poolCnt = $self->{"poolCnt"};
+	#
+	#	foreach my $c (@poolCombs) {
+	#
+	#		my @poolComb  = @{$c};
+	#		my @groupComb = ();
+	#
+	#		# define single coupon until all pool are not processed
+	#		while ( scalar(@poolComb) ) {
+	#
+	#			my @group = ();
+	#
+	#			for ( my $i = 0 ; $i < scalar($poolCnt) ; $i++ ) {
+	#
+	#				# define pool
+	#				last unless ( scalar(@poolComb) );
+	#
+	#				push( @group, shift(@poolComb) );
+	#			}
+	#
+	#			push( @groupComb, \@group );
+	#		}
+	#
+	#		push( @groupCombs, \@groupComb );
+	#	}
+
+	return @allComb;
+}
+
+sub VerifyGroupComb {
+	my $self          = shift;
+	my $groupComb     = shift;
+	my $maxPoolCnt    = shift;
+	my $groupPoolComb = shift;
+
+	my $result = 1;
+	foreach my $group (@{$groupComb}) {
+
+		# return all alowed pool combination for one group
+		#
+		# Example:
+		# (m1 m2 m3 m4 m5)
+		# (m1) (m2 m3 m4 m5)
+		# (m5) (m1 m2 m3 m4)
+		# (m1 m2) (m3 m4 m5)
+		# (m1 m3) (m2 m4 m5)
+
+		my @poolComb = $self->__GetPoolComb( $group, $maxPoolCnt );
+
+		if ( scalar(@poolComb) ) {
+
+			push( @{$groupPoolComb}, \@poolComb );
+
+		}
+		else {
+
+			$result = 0;
+			@{$groupPoolComb} = ();
+			last;
+		}
+
+	}
+	return $result;
+}
+
+
+
+sub __GetPoolComb {
+	my $self       = shift;
+	my $group      = shift;
+	my $maxPoolCnt = shift;
+
+	# 1) Devide group to pools
+
+	my @poolComb = ();
+
+	# define paratitions (dividing strip measurement into "pools" by "n" items)
+	my @partitions = ();
+
+	push( @partitions, scalar( @{$group} ) );    # max pool count = 1pool per 1 group
+
+	if ( $maxPoolCnt == 2 ) {
+		push( @partitions, ( 1 .. int( scalar( @{$group} ) / 2 ) ) );
+	}
+
+	foreach my $partSize (@partitions) {
+
+		my $s = Set::Partition->new( list      => $group,
+									 partition => [$partSize], );
+
+		while ( my $p = $s->next ) {
+			push( @poolComb, $p );
+
+			print join( ' ', map { "(@$_)" } @$p ), $/;
+
+		}
+	}
+
+	# 2) Filter pools by Layout criteria
+	my @layers      = @{ $self->{"layers"} };
+	my $maxTrackCnt = $self->{"maxTrackCnt"};
+
+	for ( my $i = scalar(@poolComb) - 1 ; $i >= 0 ; $i-- ) {
+
+		my $remove         = 0;
+		my @affectedLayers = ();
+
+		# go through each group
+		foreach my $pool ( @{ $poolComb[$i] } ) {
+
+			my $maxTrackCntUsed = 0;    # In one track layer was already found max possible count of track by settings
+
+			foreach my $l (@layers) {
+				my %h              = ();
+				my $lTypestByGroup = 0;
+
+				my %types = ();
+				$types{$_}++ foreach ( grep { $_ ne Enums->Layer_TYPENOAFFECT } map { $_->{"l"}->{$l} } @{$pool} );
+
+				# 1. RULE Layer type collision in one "pool"
+				if ( scalar( keys %types ) > 1 ) {
+
+					print STDERR "Removed by layer colisiton. More types in one layer (types: " . join( ";", keys %types ) . ")\n";
+					$remove = 1;
+					last;
+				}
+
+				if ( defined $types{ Enums->Layer_TYPETRACK } ) {
+
+					# 3. RULE If exist 2 track in same track layer, no another layer can contain 2 or more tracks
+					if ( $types{ Enums->Layer_TYPETRACK } == $maxTrackCnt && $maxTrackCntUsed ) {
+						print STDERR "Removed by max trace count in more layers than one layer per pool\n";
+						$remove = 1;
+						last;
+					}
+					elsif ( $types{ Enums->Layer_TYPETRACK } == $maxTrackCnt && !$maxTrackCntUsed ) {
+						$maxTrackCntUsed = 1;
+
+					}
+				}
+
+				# 4. RULE. Only some combination of microstrip are alowed in one track layer
+				# if script is here its mean only track layer are in this pool in current layer
+				if ( defined $types{ Enums->Layer_TYPETRACK } ) {
+
+					my @forbidden = ();
+
+					push( @forbidden, [ Enums->Type_COSE,   Enums->Type_SE ] );
+					push( @forbidden, [ Enums->Type_COSE,   Enums->Type_DIFF ] );
+					push( @forbidden, [ Enums->Type_COSE,   Enums->Type_COSE ] );
+					push( @forbidden, [ Enums->Type_COSE,   Enums->Type_CODIFF ] );
+					push( @forbidden, [ Enums->Type_CODIFF, Enums->Type_SE ] );
+					push( @forbidden, [ Enums->Type_CODIFF, Enums->Type_DIFF ] );
+					push( @forbidden, [ Enums->Type_CODIFF, Enums->Type_CODIFF ] );
+
+					# get all microstrip which contain for current layer, layer type : track
+					my @mTypes = map { $_->{"type"} } grep { $_->{"l"}->{$l} eq Enums->Layer_TYPETRACK } @{$pool};
+
+					# Check all forbidden combination
+					foreach my $fComb (@forbidden) {
+
+						# convert forbibidden comb to array
+						my %fCombTmp = @{$fComb};
+						$fCombTmp{$_} = 0 foreach ( keys %fCombTmp );
+
+						foreach my $mTytpe (@mTypes) {
+
+							if ( defined $fCombTmp{$mTytpe} ) {
+								$fCombTmp{$mTytpe} = 1;
+							}
+						}
+
+						# check if exist forbidden combination
+						my $combOk = 0;
+						foreach my $type ( keys %fCombTmp ) {
+
+							if ( defined $fCombTmp{$type} && $fCombTmp{$type} == 0 ) {
+								$combOk = 1;
+								last;
+							}
+						}
+
+						unless ($combOk) {
+							$remove = 1;
+							print STDERR "Removed by bz forbidden combination in one pool (" . join( ";", @{$fComb} ) . ")\n";
+							last;
+						}
+
+						last if ($remove);
+					}
+
+				}
+
+			}
+
+			last if ($remove);
+		}
+
+		if ($remove) {
+			print STDERR "Combination REMOVED: " . $self->CombToStr( $poolComb[$i] ) . "\n";
+			splice @poolComb, $i, 1;
+		}
+		else {
+			print STDERR "Combination OK     :  " . $self->CombToStr( $poolComb[$i] ) . "\n";
+		}
+
+	}
+	
+	return @poolComb;
 }
 
 sub GroupCombExists {
@@ -76,7 +340,7 @@ sub GroupCombExists {
 	my $filter = shift;    # process only some constrain by  specify array of STACKUP_ORDERING_INDEX vals
 
 	my @testGroups = @{ shift(@_) };
- 
+
 	my $maxTrackCnt = $self->{"maxTrackCnt"};    # max tracks on one layer in one pool
 
 	my $result = 0;
@@ -116,7 +380,7 @@ sub GroupCombExists {
 		# compare test group and generated group
 		my $same = 1;
 		foreach my $k ( keys %testH ) {
-					
+
 			if ( !defined $genH{$k} ) {
 				$same = 0;
 				last;
@@ -151,7 +415,7 @@ sub GroupsToStr {
 		}
 		$str .= "\n";
 	}
-	
+
 	return $str;
 }
 
@@ -204,6 +468,10 @@ sub __GeneratePools {
 	@allComb = sort { scalar( @{ $b->[0] } ) <=> scalar( @{ $a->[0] } ) } @allComb;
 
 	print STDERR "\n\n--- Pocet kombinaci " . scalar(@allComb) . "-----\n";
+
+	foreach my $c (@allComb) {
+		print STDERR $self->CombToStr($c) . "\n";
+	}
 
 	print STDERR "--- Kontrola kolize vrstev-----\n";
 
@@ -261,7 +529,7 @@ sub __GeneratePools {
 					my @mTypes = map { $_->{"type"} } grep { $_->{"l"}->{$l} eq Enums->Layer_TYPETRACK } @{$pool};
 
 					# Check allowed combination of microstrip which has track in same layer
-					if ( scalar(@mTypes) == $maxTrackCnt ) {
+					if ( scalar(@mTypes) > 1 && scalar(@mTypes) == $maxTrackCnt ) {
 
 						# allowed combination
 						my %rules = ();
@@ -371,11 +639,11 @@ sub __GetConstraints {
 		  . ( $c->GetBotRefLayer() =~ /^L/ ? $c->GetBotRefLayer() : "-" ) . " w="
 		  . $c->GetParamDouble("WB");
 
-		$inf{"id"}    = $c->GetConstrainId();
-		$inf{"type"}  = $c->GetType();
-		$inf{"track"} = $c->GetTrackLayer();
+		$inf{"id"}            = $c->GetConstrainId();
+		$inf{"type"}          = $c->GetType();
+		$inf{"track"}         = $c->GetTrackLayer();
 		$inf{"xmlConstraint"} = $c;
- 
+
 		my %h = ();
 
 		# init all layer type to -1

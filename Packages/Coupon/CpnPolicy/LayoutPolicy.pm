@@ -18,6 +18,7 @@ use aliased 'Packages::Coupon::CpnPolicy::CpnVariant::CpnVariant';
 use aliased 'Packages::Coupon::CpnPolicy::CpnVariant::CpnSingleVariant';
 use aliased 'Packages::Coupon::CpnPolicy::CpnVariant::CpnPoolVariant';
 use aliased 'Packages::Coupon::Enums';
+
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
@@ -25,97 +26,26 @@ sub new {
 	my $class = shift;
 	my $self  = {};
 	bless $self;
-	
-	$self->{"layers"} = shift; # layer names from instack job Xml
+
+	$self->{"layers"} = shift;    # layer names from instack job Xml
 
 	# Load settings if defined
 
+	$self->{"poolCnt"}      = shift;
+	$self->{"shareGNDPads"} = shift;
+	$self->{"maxTrackCnt"}  = shift;
 
-	$self->{"poolCnt"} = shift;
-	$self->{"shareGNDPads"}   = shift;
-	$self->{"maxTrackCnt"}      = shift;
-	
-	
 	$self->{"trackPadIsolation"} = shift;
-	$self->{"tracePad2GNDPad"}   = shift;
+	$self->{"trackPad2GNDPad"}   = shift;
 	$self->{"padTrackSize"}      = shift;
-	$self->{"padGNDSize"}      = shift;
- 
+	$self->{"padGNDSize"}        = shift;
 
 	$self->{"routeBetween"}  = shift;
 	$self->{"routeAbove"}    = shift;
 	$self->{"routeBelow"}    = shift;
 	$self->{"routeStreight"} = shift;
 
-
-
 	return $self;
-
-}
-
-sub GetStripLayoutVariants {
-	my $self         = shift;
-	my @groupCombs     = @{ shift(@_) };    # array of pool for specific combination
-	
-
-
-	my @variants = ();
-
-	my $idx = 0;
-	foreach my $comb (@groupCombs) {
-
-		if ( $idx == 0 ) {
-			print STDERR "$idx";
-		}
-		push( @variants, $self->__GetStripLayoutVariant( $comb ) );
-
-		$idx++;
-	}
-
-	# convert variants to object struct
-	my @objVariants = ();
-
-	foreach my $v (@variants) {
-
-		my $cpnVar = CpnVariant->new();
-
-		foreach my $signleCpn ( @{$v} ) {
-
-			my $signleCpnVar = CpnSingleVariant->new();
-
-			for ( my $i = 0 ; $i < scalar( @{$signleCpn} ) ; $i++ ) {
-
-				my $poolVar = CpnPoolVariant->new($i);
-
-				for ( my $j = 0 ; $j < scalar( @{ $signleCpn->[$i] } ) ; $j++ ) {
-					my $s = $signleCpn->[$i]->[$j];
-
-					my $stripInfo = CpnStripVariant->new( $s->{"id"} );
-					$stripInfo->SetPool( $s->{"pool"} );
-
-					$stripInfo->SetColumn( $s->{"col"} );
-					$stripInfo->SetData( $s->{"d"} );
-
-					if ( $j + 1 == scalar(  @{ $signleCpn->[$i] } ) ) {
-						$stripInfo->SetIsLast(1);
-					}
-					else {
-						$stripInfo->SetIsLast(0);
-					}
-
-					$poolVar->AddStrip($stripInfo);
-				}
-
-				$signleCpnVar->AddPool($poolVar);
-			}
-
-			$cpnVar->AddCpnSingle($signleCpnVar);
-		}
-
-		push( @objVariants, $cpnVar );
-	}
-
-	return @objVariants;
 }
 
 # Name notation
@@ -137,31 +67,30 @@ sub GetStripLayoutVariants {
 #
 # | col1 | col2 | col3 | ... | coln                                |
 # Columns contains pads GND+track in vertical line
-sub __GetStripLayoutVariant {
-	my $self         = shift;
-	my @gc            = @{ shift(@_) };    # one group combination
-	
-	 
-	my $shareGNDPads = $self->{"shareGNDPads"};
-	my $maxTrackCnt  = $self->{"maxTrackCnt"} ;
+sub GetStripLayoutVariant {
+	my $self          = shift;
+	my @groupPoolComb = @{ shift(@_) };    # one group combination
 
-	my @coupon = ();                      #contain single coupons
+	my $shareGNDPads = $self->{"shareGNDPads"};
+	my $maxTrackCnt  = $self->{"maxTrackCnt"};
+
+	my @coupon = ();                       #contain single coupons
 
 	# define single coupon until all pool are not processed
-	foreach my $group  (@gc){
- 
+	foreach my $group (@groupPoolComb) {
+
 		my @cpnSingle = ();
 		my @pools     = ();
-		for ( my $i = 0 ; $i < scalar(@{$group}) ; $i++ ) {
- 
-			my @p = @{$group->[$i]};
+		for ( my $i = 0 ; $i < scalar( @{$group} ) ; $i++ ) {
+
+			my @p = @{ $group->[$i] };
 
 			push( @pools, [] );
 
 			# Check if pool contain max alowed track cnt in one layer in one pool
 			# Cut last strip
 			my @lastCandidates = ();
-			foreach my $l (@{$self->{"layers"}}) {
+			foreach my $l ( @{ $self->{"layers"} } ) {
 
 				my $trackCnt = scalar( grep { $_ eq Enums->Layer_TYPETRACK } map { $_->{"l"}->{$l} } @p );
 				if ( $trackCnt == $maxTrackCnt ) {
@@ -212,7 +141,44 @@ sub __GetStripLayoutVariant {
 
 	}
 
-	return \@coupon;
+	# Build object structure - CpnVariant
+
+	my $cpnVar = CpnVariant->new();
+
+	foreach my $signleCpn (@coupon) {
+
+		my $signleCpnVar = CpnSingleVariant->new();
+
+		for ( my $i = 0 ; $i < scalar( @{$signleCpn} ) ; $i++ ) {
+
+			my $poolVar = CpnPoolVariant->new($i);
+
+			for ( my $j = 0 ; $j < scalar( @{ $signleCpn->[$i] } ) ; $j++ ) {
+				my $s = $signleCpn->[$i]->[$j];
+
+				my $stripInfo = CpnStripVariant->new( $s->{"id"} );
+				$stripInfo->SetPool( $s->{"pool"} );
+
+				$stripInfo->SetColumn( $s->{"col"} );
+				$stripInfo->SetData( $s->{"d"} );
+
+				if ( $j + 1 == scalar( @{ $signleCpn->[$i] } ) ) {
+					$stripInfo->SetIsLast(1);
+				}
+				else {
+					$stripInfo->SetIsLast(0);
+				}
+
+				$poolVar->AddStrip($stripInfo);
+			}
+
+			$signleCpnVar->AddPool($poolVar);
+		}
+
+		$cpnVar->AddCpnSingle($signleCpnVar);
+	}
+
+	return $cpnVar;
 
 }
 
@@ -324,8 +290,8 @@ sub __GetNextStrip {
 sub SetRoute {
 	my $self     = shift;
 	my @variants = @{ shift(@_) };
- 
-	my $errMess       = shift;
+
+	my $errMess = shift;
 
 	for ( my $i = scalar(@variants) - 1 ; $i >= 0 ; $i-- ) {
 
@@ -349,10 +315,10 @@ sub SetRoute {
 }
 
 sub __SetStripsRoute {
-	my $self          = shift;
-	my $singlCpn      = shift;
-	my $errMess       = shift;
-	
+	my $self     = shift;
+	my $singlCpn = shift;
+	my $errMess  = shift;
+
 	my $routeBetween  = $self->{"routeBetween"};
 	my $routeAbove    = $self->{"routeAbove"};
 	my $routeBelow    = $self->{"routeBelow"};
@@ -431,8 +397,6 @@ sub __SetStripsRoute {
 				}
 			}
 
-
-
 			unless ($stripRouteOk) {
 				$reuslt = 0;
 				last;
@@ -450,10 +414,14 @@ sub __SetStripsRoute {
 
 # Only strips which are last in pool and which are type SE or COSE
 sub __CheckStraightRoute {
-	my $self             = shift;
+	my $self  = shift;
 	my $strip = shift;
 
 	my $res = 1;
+
+	if ( $strip->GetType() ne Enums->Type_SE && $strip->GetType() ne Enums->Type_COSE ) {
+		$res = 0;
+	}
 
 	if ( !$strip->GetIsLast() ) {
 		$res = 0;
@@ -472,10 +440,9 @@ sub __CheckRoute {
 	my $result = 1;
 
 	my $trackPadIsolation = $self->{"trackPadIsolation"} / 1000;    # mm
-	my $tracePad2GNDPad   = $self->{"tracePad2GNDPad"} / 1000;      # mm
+	my $trackPad2GNDPad   = $self->{"trackPad2GNDPad"} / 1000;      # mm
 	my $padTrackSize      = $self->{"padTrackSize"} / 1000;         # mm
 	my $padGNDSize        = $self->{"padGNDSize"} / 1000;           # mm
- 
 
 	my $stripData = $strip->Data();
 
@@ -495,11 +462,11 @@ sub __CheckRoute {
 	if ($trackThroughPads) {
 
 		# free space for track
-		my $space = $tracePad2GNDPad - $padTrackSize / 2 - $padGNDSize / 2;
+		my $space = $trackPad2GNDPad - $padTrackSize / 2 - $padGNDSize / 2;
 
 		if ( ( $space - $trackW ) >= 2 * $trackPadIsolation ) {
 
-			$$trackDistance = $tracePad2GNDPad / 2;
+			$$trackDistance = $trackPad2GNDPad / 2;
 		}
 		else {
 			$result = 0;

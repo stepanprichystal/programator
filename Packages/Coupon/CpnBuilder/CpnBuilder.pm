@@ -64,11 +64,11 @@ sub Build {
 		# Built single coupon layout
 
 		# filter constraints by current group
-#		my %tmp;
-#		@tmp{ @{ $groupInf->{"constrainsId"} } } = ();
-#		my @constraints = grep { exists $tmp{ $_->GetConstrainId() } } $self->{"cpnSource"}->GetConstraints();
+		#		my %tmp;
+		#		@tmp{ @{ $groupInf->{"constrainsId"} } } = ();
+		#		my @constraints = grep { exists $tmp{ $_->GetConstrainId() } } $self->{"cpnSource"}->GetConstraints();
 
-		my $coupon = CpnSingleBuilder->new( $inCAM, $jobId, $self->{"settings"}, $singleCpnVar);
+		my $coupon = CpnSingleBuilder->new( $inCAM, $jobId, $self->{"settings"}, $singleCpnVar );
 
 		if ( $coupon->Build($errMess) ) {
 
@@ -90,8 +90,8 @@ sub Build {
 
 		# height depand on microstrip types
 		my $h = $self->{"settings"}->GetCouponMargin() * 2 + ( scalar( @{ $self->{"couponsSingle"} } ) - 1 ) * $self->{"settings"}->GetCouponSpace();
-		$h += $_->GetHeight() foreach  $self->{"layout"}->GetCouponsSingle();
-		
+		$h += $_->GetHeight() foreach $self->{"layout"}->GetCouponsSingle();
+
 		$self->{"layout"}->SetHeight($h);
 
 		$self->{"build"} = 1;    # build is ok
@@ -141,57 +141,89 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	# Group policy
 
-	my $groupPolicy = GroupPolicy->new( $cpnSource, $cpnSett->GetMaxTrackCnt(), $cpnSett->GetPoolCnt() );
-	my @filter = (1,2);
+	# Return structure => Array of groups combinations
+	# Each combination contain groups,
+	# Each group contain strips
+	my $groupPolicy = GroupPolicy->new( $cpnSource, $cpnSett->GetMaxTrackCnt() );
+	my @filter = ( 1, 2, 3, 4 );
 
 	my @groupsComb = $groupPolicy->GenerateGroups( \@filter );
 
+	# Generate structure => Arraz of group combination
+	# Each combination contain groups,
+	# Each group contain pools
+	# Each pool contain strips
+	my @groupsPoolComb = ();
+
+	foreach my $comb (@groupsComb) {
+
+		my $combPools = [];
+
+		if ( $groupPolicy->VerifyGroupComb( $comb, $cpnSett->GetPoolCnt(), $combPools ) ) {
+
+			push( @groupsPoolComb, $combPools );
+		}
+	}
+
+	print STDERR "\n\n--- Combination after generate pool groups: " . scalar(@groupsPoolComb) . " \n";
+
+	# Generate structure => Array of CpnVariant strutures
 	my $layoutPolicy = LayoutPolicy->new(
-										  \@layers,
-										  $cpnSett->GetPoolCnt(),
-										  $cpnSett->GetShareGNDPads(),
-										  $cpnSett->GetMaxTrackCnt(),
-										  $cpnSett->GetTrackPadIsolation(),
-										  $cpnSett->GetTracePad2GNDPad(),
-										  $cpnSett->GetPadTrackSize(),
-										  $cpnSett->GetPadGNDSize(),
-										  $cpnSett->GetRouteBetween(),
-										  $cpnSett->GetRouteAbove(),
-										  $cpnSett->GetRouteBelow(),
-										  $cpnSett->GetRouteStraight()
+										  \@layers,                         $cpnSett->GetPoolCnt(),
+										  $cpnSett->GetShareGNDPads(),      $cpnSett->GetMaxTrackCnt(),
+										  $cpnSett->GetTrackPadIsolation(), $cpnSett->GetTracePad2GNDPad(),
+										  $cpnSett->GetPadTrackSize(),      $cpnSett->GetPadGNDSize(),
+										  $cpnSett->GetRouteBetween(),      $cpnSett->GetRouteAbove(),
+										  $cpnSett->GetRouteBelow(),        $cpnSett->GetRouteStraight()
 	);
 
-	my @variants = $layoutPolicy->GetStripLayoutVariants( \@groupsComb );
+	my @variants = ();
 
-	$layoutPolicy->SetRoute( \@variants );
-	
-	# Sort policy
+	my $idx = 0;
+	foreach my $comb (@groupsPoolComb) {
 
-	my $sortPolicy = SortPolicy->new();
-	my @sortVariants = $sortPolicy->SortVariants(\@variants);
-	
-	my $v = $sortVariants[3];
-	
-	print STDERR "Choosed variant:\n\n".$v;
- 
+		my $variant = $self->GetStripLayoutVariant( $comb, $variant );
 
-	#	my $g = $groupsComb[0];    # take first comb
-	#
-	#	unless ( $groupPolicy->GroupCombExists( \@filter, $g ) ) {
-	#		die "group doesn 't exist";
-	#	}
+		if ( $layoutPolicy->VerifyRoutes($variant) ) {
 
-	#my $buildParams = BuildParams->new( scalar( $cpnSource->GetConstraints() ) );
-	my $buildParams = BuildParams->new($v);
+			push( @variants, $variant );
+		}
 
-	my $errMess = "";
-	my $res = $builder->Build( \$errMess, $buildParams );
+	}
+}
 
-	print STDERR "Build: $res\n";
+#my @variants = $layoutPolicy->GetStripLayoutVariants( \@groupsComb );
 
-	my $generator = CpnGenerator->new( $inCAM, $jobId, $cpnSett );
+$layoutPolicy->SetRoute( \@variants );
 
-	$generator->Generate( $builder->GetLayout() );
+# Sort policy
+
+my $sortPolicy   = SortPolicy->new();
+my @sortVariants = $sortPolicy->SortVariants( \@variants );
+
+my $v = $sortVariants[0];
+
+print STDERR "Choosed variant:\n\n" . $v;
+
+#	my $g = $groupsComb[0];    # take first comb
+#
+#	unless ( $groupPolicy->GroupCombExists( \@filter, $g ) ) {
+#		die "group doesn 't exist";
+#	}
+
+#my $buildParams = BuildParams->new( scalar( $cpnSource->GetConstraints() ) );
+my $buildParams = BuildParams->new($v);
+
+my $errMess = "";
+my $res = $builder->Build( \$errMess, $buildParams );
+
+print STDERR "Build: $res\n";
+
+my $generator = CpnGenerator->new( $inCAM, $jobId, $cpnSett );
+
+$inCAM->SetDisplay(0);
+$generator->Generate( $builder->GetLayout() );
+$inCAM->SetDisplay(1);
 
 }
 

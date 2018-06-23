@@ -22,7 +22,7 @@ sub new {
 	$self->{"h"}             = undef;    # dynamic heght of single coupon
 	$self->{"stripsLayouts"} = [];
 	$self->{"infoTextLayout"} = undef;
-	$self->{"infoTextPos"} = undef;
+	 
 
 	return $self;
 }
@@ -30,10 +30,9 @@ sub new {
 sub SetInfoTextLayout{
 	my $self = shift;
 	my $textLayout = shift;
-	my $position = shift;
-	
+ 
 	$self->{"infoTextLayout"} = $textLayout;
-	$self->{"infoTextPos"} = $position;
+	 
 }
 
 sub SetHeight {

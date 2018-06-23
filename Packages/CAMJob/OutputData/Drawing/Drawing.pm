@@ -130,17 +130,17 @@ sub __AddTitleTexts {
 
 	$title .= $text;
 
-	$self->{"drawingTitle"}->AddPrimitive( PrimitiveText->new( $title, Point->new(), $self->{"titleTextHeight"}, $self->{"titleTextLineWidth"} ) );
+	$self->{"drawingTitle"}->AddPrimitive( PrimitiveText->new( $title, Point->new(), $self->{"titleTextHeight"}, undef, $self->{"titleTextLineWidth"} ) );
 
 	$self->{"drawingTitle"}
 	  ->AddPrimitive( PrimitiveLine->new( Point->new( 0, -2 ), Point->new( length($title) * $self->{"titleTextHeight"}, -2 ), "r300" ) );
 	$self->{"drawingTitle"}
 	  ->AddPrimitive( PrimitiveLine->new( Point->new( 0, -3 ), Point->new( length($title) * $self->{"titleTextHeight"}, -3 ), "r300" ) );
 
-	$self->{"drawingTitle"}->AddPrimitive( PrimitiveText->new( "(1:" . $self->{"scale"} . ")", Point->new( 0, -10 ), 4, 1 ) );
+	$self->{"drawingTitle"}->AddPrimitive( PrimitiveText->new( "(1:" . $self->{"scale"} . ")", Point->new( 0, -10 ), 4, undef, 1 ) );
 
 	if ( $self->{"plated"} ) {
-		$self->{"drawingTitle"}->AddPrimitive( PrimitiveText->new( "Note: All measures are after plating", Point->new( 25, -8 ), 2, 1 ) );
+		$self->{"drawingTitle"}->AddPrimitive( PrimitiveText->new( "Note: All measures are after plating", Point->new( 25, -8 ), 2, undef, 1 ) );
 	}
 
 	$self->{"drawingTitle"}->Draw();

@@ -55,7 +55,8 @@ sub Build {
 	my $gndL   = $layout->GetBotRefLayer();
 
 	# Build coupon layers
-
+	
+	
 	# process: mc
 	if ( CamHelper->LayerExists( $inCAM, $jobId, "mc" ) ) {
 

@@ -9,8 +9,8 @@ padTrackShape    = s    #µm
 padGNDShape 	 = r     #µm
 padGNDSymNeg 	 = thr2000x1800x0x4x203       #µm
 padDrillSize      = 1050             #µm
-tracePad2GNDPad   = 2540             # µm
-tracePad2TracePad = 2540             # µm
+trackPad2GNDPad   = 2540             # µm
+trackPad2TrackPad = 2540             # µm
 trackPadIsolation = 100					# µm
 
 w                 = 130              # mm
@@ -23,7 +23,7 @@ twoEndedDesign = 1
 
 
 # pool settings
-maxTrackCnt = 2 # two track per measurement layer in one pool
+maxTrackCnt = 2 # two track per measurement layer in group
 poolCnt = 2
 shareGNDPads = 1
 routeBetween = 1
@@ -34,11 +34,11 @@ routeStraight = 1
 # Text settings
 
 infoTextWidth = 1
-infoTextHeight = 2
+infoTextHeight = 1
 infoTextWeight = 0.2 
 padsTopTextDist    = 2                # mm
 infoText = 1 # 1/0
-infoTextPosition = right # top/right
+infoTextPosition = top # top/right
 infoTextNumber = 1 # 1/0 numberingo of strips
 infoTextTrackImpedance = 1 # 1/0
 infoTextTrackWidth = 1 # 1/0

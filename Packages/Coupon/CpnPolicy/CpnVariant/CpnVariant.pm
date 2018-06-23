@@ -79,18 +79,18 @@ sub stringify {
 	
 	#$str .= "Variant: single cpn = " . $self->GetSingleCpnsCnt() . ":\n";
 
-	for ( my $i = 0 ; $i < scalar( @{ $self->{"singleCpns"} } ) ; $i++ ) {
+	for ( my $i = scalar( @{ $self->{"singleCpns"} } ) -1  ; $i >= 0 ; $i-- ) {
 
 		my $scpn  = $self->{"singleCpns"}->[$i];
 		my @pools = $scpn->GetPools();
 
-		$str .= "|________________________ Coupon single $i ________________________\n";
+		$str .= "|________________________ Coupon single ".$i." ________________________\n";
 
-		for ( my $j = 0 ; $j < scalar(@pools) ; $j++ ) {
+		for ( my $j = scalar(@pools) -1  ; $j >= 0 ; $j-- ) {
 
 			my $p = $pools[$j];
 
-			$str .= "| Pool $j  \n";
+			$str .= "| Pool ".$p->GetOrder()."  \n";
 			
 			my @strips = $p->GetStrips();
 			
@@ -98,7 +98,7 @@ sub stringify {
 				
 				my $s = $strips[$k];
 				
-				$str .= "|-- Strip $k - ".$s->GetType().".\n";
+				$str .= "|-- Strip type - ".$s->GetType().".\n";
 				
 			}
 		}

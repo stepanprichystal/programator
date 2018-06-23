@@ -239,7 +239,7 @@ sub __DrawText {
 
 	}
 
-	CamSymbol->AddText( $self->{"inCAM"}, $t->GetValue(), $p, $t->GetHeight(), $t->GetLineWidth(), $mirror, $t->GetPolarity(), $t->GetAngle() );
+	CamSymbol->AddText( $self->{"inCAM"}, $t->GetValue(), $p, $t->GetHeight(), $t->GetWidth() , $t->GetLineWidth(), $mirror, $t->GetPolarity(), $t->GetAngle() );
 
 }
 

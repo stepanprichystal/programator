@@ -64,15 +64,15 @@ sub GetStepName {
 sub GetPad2PadDist {
 	my $self = shift;
 
-	return $self->__GetVal("tracePad2GNDPad");
+	return $self->__GetVal("trackPad2GNDPad");
 
 }
 
 
-sub GetTracePad2TracePad {
+sub GetTrackPad2TrackPad {
 	my $self = shift;
 
-	return $self->__GetVal("tracePad2TracePad");
+	return $self->__GetVal("trackPad2TrackPad");
 
 }
 
@@ -195,7 +195,7 @@ sub GetPadDrillSize {
 sub GetTracePad2GNDPad {
 	my $self = shift;
 
-	return $self->__GetVal("tracePad2GNDPad");
+	return $self->__GetVal("trackPad2GNDPad");
 
 }
 

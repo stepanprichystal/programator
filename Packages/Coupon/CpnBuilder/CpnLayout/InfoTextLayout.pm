@@ -22,7 +22,8 @@ sub new {
 
  	$self->{"type"} = undef; # top/right
  	$self->{"width"} = undef; 
- 	$self->{"height"} = undef; 
+ 	$self->{"height"} = undef;
+ 	$self->{"position"} = undef;
  	
  	$self->{"texts"} = [];
  
@@ -51,7 +52,12 @@ sub SetHeight{
 	$self->{"height"} = $height;
 } 
 
-
+sub SetPosition{
+	my $self  = shift;
+	my $pos = shift;
+	
+	$self->{"position"} = $pos;
+} 
  
 sub AddText{
 	my $self  = shift;
@@ -90,6 +96,12 @@ sub GetWidth {
 	my $self = shift;
 
 	return $self->{"width"};
+}
+
+sub GetPosition {
+	my $self = shift;
+
+	return $self->{"position"};
 }
  
 #-------------------------------------------------------------------------------------------#

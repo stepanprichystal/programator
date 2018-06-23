@@ -52,7 +52,7 @@ sub Build {
 
 	# set model
 
-	my $areaW   = $self->{"settings"}->GetAreaWidth();
+	my $areaW   = $self->{"cpnWArea"};
 	my $margin  = $self->{"settings"}->GetCouponSingleMargin();
 	my $p2pDist = $self->{"settings"}->GetPad2PadDist() / 1000;
 

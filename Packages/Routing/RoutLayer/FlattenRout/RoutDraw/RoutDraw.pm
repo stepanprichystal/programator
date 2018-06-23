@@ -170,7 +170,7 @@ sub __DrawOutlineOrder {
 												  ( ( $lim{"xMax"} - $lim{"xMin"} ) / 2 ) + $lim{"xMin"},
 												  ( ( $lim{"yMax"} - $lim{"yMin"} ) / 2 ) + $lim{"yMin"}
 									  ),
-									  8, 3
+									  8, undef, 3
 		);
 		$draw->AddPrimitive($txt);
 

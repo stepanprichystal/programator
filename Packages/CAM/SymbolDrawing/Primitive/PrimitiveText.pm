@@ -23,12 +23,13 @@ use aliased 'Packages::CAM::SymbolDrawing::Enums';
 sub new {
 	my $class     = shift;
 	my $value     = shift;
-	my $position  = shift;    # font size in mm
-	my $height    = shift;    # font size in mm
-	my $lineWidth = shift;    # font size in mm
+	my $position  = shift;               # text position in mm
+	my $height    = shift;               # char height  in mm
+	my $width     = shift // $height;    # char width  in mm (default same as height)
+	my $lineWidth = shift;               # char lines width in mm
 	my $mirror    = shift;
 	my $angle     = shift;
-	my $polarity  = shift;    #
+	my $polarity  = shift;               #
 
 	my $self = {};
 	$self = $class->SUPER::new( Enums->Primitive_TEXT, $polarity );
@@ -37,6 +38,7 @@ sub new {
 	$self->{"value"}     = $value;
 	$self->{"position"}  = $position;
 	$self->{"height"}    = $height;
+	$self->{"width"}     = $width;
 	$self->{"lineWidth"} = $lineWidth;
 	$self->{"mirror"}    = $mirror;
 	$self->{"angle"}     = $angle;
@@ -72,6 +74,12 @@ sub GetHeight {
 	my $self = shift;
 
 	return $self->{"height"};
+}
+
+sub GetWidth {
+	my $self = shift;
+
+	return $self->{"width"};
 }
 
 sub GetLineWidth {

@@ -78,26 +78,26 @@ sub Build {
 		# built one text line or two lines
 		my $txtPart1 = "";
 
-		if ( $self->{"settings"}->GetInfoTextNumber() ) {
-			$txtPart1 .= "<measure>";
-		}
+		#		if ( $self->{"settings"}->GetInfoTextNumber() ) {
+		#			$txtPart1 .= "<measure>";
+		#		}
 
 		if ( $self->{"settings"}->GetInfoTextTrackImpedance() ) {
-			$txtPart1 .= sprintf("%d", $xmlConstr->GetOption("CALCULATED_IMPEDANCE")) . "ohm";
+			$txtPart1 .= sprintf( "%d", $xmlConstr->GetOption("CALCULATED_IMPEDANCE") ) . "ohm";
 		}
 
 		my $txtPart2 = "";
 
 		if ( $self->{"settings"}->GetInfoTextTrackLayer() ) {
-			$txtPart2 .= $xmlConstr->GetCpnSource()->GetInCAMLayer( $xmlConstr->GetOption("TRACE_LAYER") )." - ";
+			$txtPart2 .= $xmlConstr->GetCpnSource()->GetInCAMLayer( $xmlConstr->GetOption("TRACE_LAYER") ) . " - ";
 		}
 
 		if ( $self->{"settings"}->GetInfoTextTrackWidth() ) {
-			$txtPart2 .= "W=" . sprintf("%d",$xmlConstr->GetParamDouble("WB"));
+			$txtPart2 .= "W=" . sprintf( "%d", $xmlConstr->GetParamDouble("WB") );
 		}
 
 		if ( $self->{"settings"}->GetInfoTextTrackSpace() && $xmlConstr->ExistsParam("S") ) {
-			$txtPart2 .= "S=" . sprintf("%d",$xmlConstr->GetParamDouble("S"));
+			$txtPart2 .= " S=" . sprintf( "%d", $xmlConstr->GetParamDouble("S") );
 		}
 
 		# text lines are placed horizontally
@@ -130,18 +130,39 @@ sub Build {
 		# text lines are placed vertically
 		elsif ( $textPos eq "top" ) {
 
-			my $t = $txtPart1 . " " . $txtPart2;
+			my $t = "";
 
-			$self->{"layout"}->AddText( Point->new( $curX, $curY ), $txtPart2 );
+			if ( scalar( $self->{"layout"}->GetTexts() ) > 0 ) {
+
+				$self->{"layout"}->AddText( Point->new( $curX, $curY ), "|" );
+				$curX += $self->{"settings"}->GetInfoTextHSpacing();
+			}
+
+			$t .= $txtPart1 . " " . $txtPart2;
+
+			$self->{"layout"}->AddText( Point->new( $curX, $curY ), $t );
 
 			$curX += length($t) * $self->{"settings"}->GetInfoTextWidth();
 			$curX += $self->{"settings"}->GetInfoTextHSpacing();
+
 		}
 
 	}
 
-	$self->{"layout"}->SetWidth( $curX - $self->{"settings"}->GetInfoTextHSpacing() );
-	$self->{"layout"}->SetHeight( $curX - $self->{"settings"}->GetInfoTextVSpacing() );
+	if ( $textPos eq "right" ) {
+
+		$self->{"layout"}->SetHeight( $curY - $self->{"settings"}->GetInfoTextVSpacing() );
+
+		# search max lines
+		my $maxLen = max( map { length( $_->{"val"} ) } $self->{"layout"}->GetTexts() );
+		$self->{"layout"}->SetWidth( $maxLen * $self->{"settings"}->GetInfoTextWidth() );
+
+	}
+	elsif ( $textPos eq "top" ) {
+
+		$self->{"layout"}->SetHeight( $self->{"settings"}->GetInfoTextHeight() );
+		$self->{"layout"}->SetWidth( $curX - $self->{"settings"}->GetInfoTextHSpacing() );
+	}
 
 	$self->{"build"} = 1;
 

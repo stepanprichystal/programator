@@ -21,6 +21,7 @@ use aliased 'Packages::Coupon::CpnGenerator::ModelBuilders::CoatedMicrostrip';
 
 use aliased 'Packages::CAM::SymbolDrawing::Point';
 use aliased 'Packages::CAMJob::Panelization::SRStep';
+use aliased 'Packages::Coupon::CpnGenerator::CpnLayers::InfoTextLayer';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -106,7 +107,7 @@ sub __GenerateSingle {
 	my %rt = ( "x" => $self->{"settings"}->GetAreaWidth(), "y" => $cpnLayout->GetHeight() );
 
 	CamStep->CreateProfileRect( $inCAM, $stepName, \%lb, \%rt );
-
+ 
 	# Process all microstrip layouts in single coupon
 	foreach my $stripLayout ( $cpnLayout->GetMicrostripLayouts() ) {
 
@@ -126,6 +127,18 @@ sub __GenerateSingle {
 
 		$modelBuilder->Build($stripLayout);
 	}
+	
+	# Proces text layout
+		
+	# build info texts
+   # Proces info text layout
+	if ($cpnLayout->GetInfoTextLayout() ) {
+		
+		my $textLayer =  InfoTextLayer->new("c");
+		$textLayer->Init($inCAM, $jobId, $self->{"settings"});
+		$textLayer->Draw($cpnLayout->GetInfoTextLayout());
+	}
+ 
 
 }
 
