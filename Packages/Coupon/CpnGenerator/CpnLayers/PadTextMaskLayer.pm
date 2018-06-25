@@ -4,7 +4,7 @@
 # creation nif file depend on pcb type
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::Coupon::CpnGenerator::CpnLayers::PadLayer;
+package Packages::Coupon::CpnGenerator::CpnLayers::PadTextMaskLayer;
 
 use base('Packages::Coupon::CpnGenerator::CpnLayers::LayerBase');
 
@@ -17,13 +17,9 @@ use warnings;
 
 #local library
 use aliased 'Packages::CAM::SymbolDrawing::SymbolDrawing';
-use aliased 'Packages::CAM::SymbolDrawing::Primitive::PrimitivePad';
-use aliased 'Packages::CAM::SymbolDrawing::Primitive::PrimitivePolyline';
-use aliased 'Packages::CAM::SymbolDrawing::Primitive::PrimitiveLine';
-
 use aliased 'CamHelpers::CamLayer';
 use aliased 'Packages::Coupon::Enums';
-use aliased 'Packages::CAM::SymbolDrawing::Enums' => 'DrawEnums';
+use aliased 'Packages::CAM::SymbolDrawing::Primitive::PrimitiveText';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -44,30 +40,27 @@ sub Draw {
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
 
-	# drav GND and track pads
+	if ( $self->{"layerName"} ne "c" && $self->{"layerName"} ne "s" ) {
+		die "Track pad text can be put only to layer c,s";
+	}
+	
+	return if (!$self->{"settings"}->GetPadTextUnmask);
+
 	foreach my $pad ( $layout->GetPads() ) {
-		if ( $pad->GetType() eq Enums->Pad_GND ) {
 
-			my $shareGNDLayers = $pad->GetShareGndLayers();
+		if ( $pad->GetType() eq Enums->Pad_TRACK && $self->{"settings"}->GetPadText() ) {
 
-			if ( !$shareGNDLayers->{ $self->{"layerName"} } ) {
+			my $padText = $pad->GetPadText();
 
-				my $symClearance =
-				  $self->{"settings"}->GetPadGNDShape() . ( $self->{"settings"}->GetPadGNDSize() + $self->{"settings"}->GetPad2GNDClearance() );
-				my $symPad = $self->{"settings"}->GetPadGNDSym();
-				$self->{"drawing"}->AddPrimitive( PrimitivePad->new( $symClearance, $pad->GetPoint(), 0, DrawEnums->Polar_NEGATIVE ) );
-				$self->{"drawing"}->AddPrimitive( PrimitivePad->new( $symPad,       $pad->GetPoint(), 0, DrawEnums->Polar_POSITIVE ) );
-			}
+			my $mirror = $self->{"layerName"} eq "c" ? 0 : 1;
+
+			my $pText = PrimitiveText->new( $padText->GetText(), ($self->{"layerName"} eq "c" ? $padText->GetPosition() : $padText->GetPositionMirror()),
+											$self->{"settings"}->GetPadTextHeight(),
+											$self->{"settings"}->GetPadTextWidth(),
+											$self->{"settings"}->GetPadTextWeight()+ $self->{"settings"}->GetPadTextClearance()*2/1000, ($self->{"layerName"} eq "c" ? 0 : 1) );
+ 
+			$self->{"drawing"}->AddPrimitive($pText);
 		}
-		else {
-
-			my $symClearance =
-			  $self->{"settings"}->GetPadTrackShape() . ( $self->{"settings"}->GetPadTrackSize() + $self->{"settings"}->GetPad2GNDClearance() );
-			my $symPad = $self->{"settings"}->GetPadTrackSym();
-			$self->{"drawing"}->AddPrimitive( PrimitivePad->new( $symClearance, $pad->GetPoint(), 0, DrawEnums->Polar_NEGATIVE ) );
-			$self->{"drawing"}->AddPrimitive( PrimitivePad->new( $symPad,       $pad->GetPoint(), 0, DrawEnums->Polar_POSITIVE ) );
-		}
-
 	}
 
 	# Draw to layer

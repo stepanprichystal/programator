@@ -105,11 +105,10 @@ sub GetAreaWidth {
 
 }
 
-sub GetWidth {
+sub GetCpnSingleWidth {
 	my $self = shift;
 
-	return $self->__GetVal("w");
-
+	return $self->__GetVal("cpnSingleWidth");
 }
  
 sub GetStackupJobXml {
@@ -199,6 +198,13 @@ sub GetTracePad2GNDPad {
 
 }
 
+sub GetTrackToCopper {
+	my $self = shift;
+
+	return $self->__GetVal("trackToCopper");
+}
+
+
 
 
 sub GetGroupPadsDist {
@@ -265,11 +271,16 @@ sub GetTwoEndedDesign{
 	my $self = shift;
 
 	return $self->__GetVal("twoEndedDesign");
-	
+}
+
+sub GetMaxStripsCntH{
+	my $self = shift;
+
+	return $self->__GetVal("maxStripsCntH");
 }
 
 
-###
+# Info text settings
 
 sub GetPadsTopTextDist{
 	my $self = shift;
@@ -341,8 +352,6 @@ sub GetInfoTextVSpacing{
 	
 }
  
-###
-
 sub GetInfoTextWidth{
 	my $self = shift;
 
@@ -363,8 +372,66 @@ sub GetInfoTextWeight{
 	return $self->__GetVal("infoTextWeight");
 	
 } 
+
+sub GetInfoTextRightCpnDist{
+	my $self = shift;
+
+	return $self->__GetVal("infoTextRightCpnDist");
+	
+} 
+
  
  
+# pad text settings
+
+sub GetPadTextWidth{
+	my $self = shift;
+
+	return $self->__GetVal("padTextWidth");
+	
+} 
+
+sub GetPadTextHeight{
+	my $self = shift;
+
+	return $self->__GetVal("padTextHeight");
+	
+} 
+
+sub GetPadTextWeight{
+	my $self = shift;
+
+	return $self->__GetVal("padTextWeight");
+	
+} 
+
+sub GetPadTextDist{
+	my $self = shift;
+
+	return $self->__GetVal("padTextDist");
+	
+} 
+
+sub GetPadText{
+	my $self = shift;
+
+	return $self->__GetVal("padText");
+	
+}
+
+sub GetPadTextUnmask{
+	my $self = shift;
+
+	return $self->__GetVal("padTextUnmask");
+	
+} 
+
+sub GetPadTextClearance{
+	my $self = shift;
+
+	return $self->__GetVal("padTextClearance");
+	
+} 
  
 
 sub __GetVal {

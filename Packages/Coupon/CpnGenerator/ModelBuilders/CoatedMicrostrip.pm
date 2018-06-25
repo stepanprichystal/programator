@@ -21,6 +21,7 @@ use aliased 'Packages::Coupon::CpnGenerator::CpnLayers::GNDLayer';
 use aliased 'Packages::Coupon::CpnGenerator::CpnLayers::PadLayer';
 use aliased 'Packages::Coupon::CpnGenerator::CpnLayers::PadNegLayer';
 use aliased 'Packages::Coupon::CpnGenerator::CpnLayers::PthDrillLayer';
+use aliased 'Packages::Coupon::CpnGenerator::CpnLayers::PadTextLayer';
 use aliased 'Packages::Coupon::Helper';
 use aliased 'CamHelpers::CamJob';
 use aliased 'CamHelpers::CamHelper';
@@ -64,12 +65,17 @@ sub Build {
 	}
 
 	# process: c
-	$self->_AddLayer( PadLayer->new("c") );
-
+	$self->_AddLayer(PadTextLayer->new("c"));
+ 
 	if ( $trackL eq "c" ) {
 
 		$self->_AddLayer( TrackLayer->new("c") );
+	}else{
+		
+		$self->_AddLayer( PadLayer->new("c") );
 	}
+	
+	
 
 	for ( my $i = 0 ; $i < scalar( $layerCnt - 2 ) ; $i++ ) {
 
@@ -85,11 +91,17 @@ sub Build {
 	}
 
 	# process: s
-	$self->_AddLayer( PadLayer->new("s") );
+
+	$self->_AddLayer(PadTextLayer->new("s"));
 	if ( $trackL eq "s" ) {
 
 		$self->_AddLayer( TrackLayer->new("s") );
+	}else{
+		
+		$self->_AddLayer( PadLayer->new("s") );
 	}
+	
+	
 
 	# process: ms
 	if ( CamHelper->LayerExists( $inCAM, $jobId, "ms" ) ) {

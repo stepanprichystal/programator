@@ -89,7 +89,7 @@ sub Build {
 		my $txtPart2 = "";
 
 		if ( $self->{"settings"}->GetInfoTextTrackLayer() ) {
-			$txtPart2 .= $xmlConstr->GetCpnSource()->GetInCAMLayer( $xmlConstr->GetOption("TRACE_LAYER") ) . " - ";
+			$txtPart2 .=  $xmlConstr->GetOption("TRACE_LAYER")  . " - ";
 		}
 
 		if ( $self->{"settings"}->GetInfoTextTrackWidth() ) {

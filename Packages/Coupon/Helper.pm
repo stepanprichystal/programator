@@ -17,7 +17,72 @@ use aliased 'Packages::Stackup::Stackup::Stackup';
 #   Package methods
 #-------------------------------------------------------------------------------------------#
 
- 
+sub GetLayerNum{
+	my $self     = shift;
+	my $layer = shift;
+	my $layerCnt = shift;
+	
+	my $num;
+	
+	if ( $layer eq "c" ) {
+		$num = 1;
+	}
+	elsif ( $layer eq "s" ) {
+
+		$num = $layerCnt;
+	}
+	elsif( $layer =~ m/v(\d+)/i) {
+
+		$num = $1;
+	}else{
+		
+		die "Invalid layer name";
+	}
+	
+	return $num;
+}
+
+sub GetAllLayerNames{
+	my $self     = shift;
+	my $layerCnt = shift;
+	
+	my @names =  (1..$layerCnt);
+	
+	@names = map { $self->GetInCAMLayer("L".$_, $layerCnt) } @names;
+	
+	return @names;
+	
+}
+
+
+sub GetInCAMLayer {
+	my $self     = shift;
+	my $lName    = shift;
+	my $layerCnt = shift;
+	
+	return undef if( $lName =~ /no copper layer/i);
+
+	die "Wrong InStack stackup layer name" if ( $lName !~ /l\d+/i  );
+
+	my $lInCAM;
+
+	# load copper layers
+	my ($lNum) = $lName =~ /l(\d+)/i;
+
+	if ( $lNum == 1 ) {
+		$lInCAM = "c";
+	}
+	elsif ( $lNum == $layerCnt ) {
+
+		$lInCAM = "s";
+	}
+	else {
+
+		$lInCAM = "v" . $lNum;
+	}
+
+	return $lInCAM;
+}
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

@@ -19,12 +19,12 @@ use aliased 'Enums::EnumsPaths';
 #-------------------------------------------------------------------------------------------#
 
 sub AddSurfaceCircle {
-	my $self    = shift;
-	my $inCAM   = shift;
-	my $radius  = shift;
-	my $centerP = shift;
-	my $pattern = shift;
-	my $polarity = shift;  
+	my $self     = shift;
+	my $inCAM    = shift;
+	my $radius   = shift;
+	my $centerP  = shift;
+	my $pattern  = shift;
+	my $polarity = shift;
 
 	# if pattern is not defined, use solid pattern
 	unless ($pattern) {
@@ -34,16 +34,13 @@ sub AddSurfaceCircle {
 	$polarity = defined $polarity ? $polarity : 'positive';
 
 	$inCAM->COM( "add_surf_strt", "surf_type" => "feature" );
-	
-	$inCAM->COM( "add_surf_poly_strt", "x" =>$centerP->{"x"} + $radius, "y" => $centerP->{"y"} );
+
+	$inCAM->COM( "add_surf_poly_strt", "x" => $centerP->{"x"} + $radius, "y" => $centerP->{"y"} );
 
 	$inCAM->COM( "add_surf_poly_crv", "xc" => $centerP->{"x"}, "yc" => $centerP->{"y"}, "xe" => $centerP->{"x"} + $radius, "ye" => $centerP->{"y"} );
 
-	 
 	$inCAM->COM("add_surf_poly_end");
 	$inCAM->COM( "add_surf_end", "polarity" => $polarity, "attributes" => "no" );
-
-	
 
 }
 
@@ -97,16 +94,18 @@ sub AddSurfaceSolidPattern {
 	}
 
 	$outline_invert = $outline_invert ? "yes" : 'no';
-
 	$inCAM->COM(
 				 "add_surf_fill",
-				 "type"                    => "predefined_pattern",
-				 "cut_prims"               => "no",
-				 "outline_draw"            => $outline_draw,
-				 "outline_width"           => $outline_width,
-				 "outline_invert"          => $outline_invert,
-				 "predefined_pattern_type" => "solid"
+				 "type"           => "solid",
+				 "solid_type"     => "surface",
+				 "min_brush"      => "25.4",
+				 "use_arcs"       => "yes",
+				 "cut_prims"      => "no",
+				 "outline_draw"   => $outline_draw,
+				 "outline_width"  => $outline_width,
+				 "outline_invert" => $outline_invert
 	);
+	 
 }
 
 sub AddSurfaceLinePattern {
@@ -212,7 +211,6 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	#	CamSymbol->AddTable( $inCAM, \%pos, \@colWidths, 10, 5, 2, \@rows );
 	#
 	#	my %posTitl = ( "x" => 0, "y" => scalar(@rows) * 10 + 5 );
-	 
 
 	my @points = ();
 	my %point1 = ( "x" => 0, "y" => 0 );

@@ -10,7 +10,7 @@ use strict;
 use warnings;
 
 #local library
-
+use overload '""' => \&stringify;
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
@@ -27,6 +27,7 @@ sub new {
 	$self->{"data"}      = undef;
 	$self->{"routeType"} = undef;
 	$self->{"routeDist"} = undef;
+	$self->{"routeWidth"} = undef;
 	$self->{"isLast"} = undef;
 
 	return $self;
@@ -84,6 +85,12 @@ sub RouteDist {
 	return $self->{"routeDist"};
 }
 
+sub RouteWidth {
+	my $self = shift;
+
+	return $self->{"routeWidth"};
+}
+
 sub SetRoute {
 	my $self = shift;
 
@@ -94,6 +101,12 @@ sub SetRouteDist {
 	my $self = shift;
 
 	$self->{"routeDist"} = shift;
+}
+
+sub SetRouteWidth {
+	my $self = shift;
+
+	$self->{"routeWidth"} = shift;
 }
 
 sub SetIsLast {
@@ -113,6 +126,14 @@ sub GetType{
 	my $self = shift;
 	
 	return $self->{"data"}->{"type"};
+}
+
+sub stringify {
+	my ($self) = @_;
+
+	return $self->Data()->{"title"};
+
+	
 }
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

@@ -29,6 +29,9 @@ sub new {
 	$self->{"trackLayer"}  = undef;
 	$self->{"topRefLayer"} = undef;
 	$self->{"botRefLayer"} = undef;
+	
+	# Active area width
+	$self->{"activeAreaWidth"} = undef;
 
 	return $self;
 }
@@ -113,6 +116,8 @@ sub GetTracks {
 	return @{ $self->{"tracks"} };
 
 }
+
+ 
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

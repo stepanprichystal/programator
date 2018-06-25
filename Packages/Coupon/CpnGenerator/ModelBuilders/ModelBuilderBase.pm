@@ -20,10 +20,10 @@ sub new {
 	my $self  = {};
 	bless $self;
 
-	$self->{"inCAM"}          = undef;
-	$self->{"jobId"}          = undef;
-	$self->{"settings"}       = undef;
-
+	$self->{"inCAM"}    = undef;
+	$self->{"jobId"}    = undef;
+	$self->{"step"}     = undef;
+	$self->{"settings"} = undef;
 
 	#require rows in nif section
 	$self->{"layers"} = [];
@@ -34,9 +34,10 @@ sub new {
 sub Init {
 	my $self = shift;
 
-	$self->{"inCAM"}          = shift;
-	$self->{"jobId"}          = shift;
-	$self->{"settings"}       = shift;
+	$self->{"inCAM"}    = shift;
+	$self->{"jobId"}    = shift;
+	$self->{"step"}     = shift;
+	$self->{"settings"} = shift;
 
 }
 
@@ -51,12 +52,10 @@ sub _AddLayer {
 sub _Build {
 	my $self   = shift;
 	my $layout = shift;
-	
-
 
 	foreach my $layer ( @{ $self->{"layers"} } ) {
 
-		$layer->Init( $self->{"inCAM"}, $self->{"jobId"}, $self->{"settings"}, $layout );
+		$layer->Init( $self->{"inCAM"}, $self->{"jobId"}, $self->{"step"}, $self->{"settings"}, $layout );
 		$layer->Draw($layout);
 	}
 }

@@ -22,9 +22,8 @@ sub new {
 	
 	$self->{"point"} = shift;
  	$self->{"type"} = shift;
- 	$self->{"symbol"} = shift;
-	
-  
+	$self->{"shareGNDLayers"} = shift; # Tell which layer has to contain GND pads (connected to ground in this layer)
+  	$self->{"padText"} = shift;
 	return $self;
 
 }
@@ -41,10 +40,18 @@ sub GetType{
 	return $self->{"type"};
 }
 
-sub GetSymbol{
+
+
+sub GetShareGndLayers{
 	my $self = shift;
 	
-	return $self->{"symbol"};
+	return $self->{"shareGNDLayers"};
+}
+
+sub GetPadText{
+	my $self = shift;
+	
+	return $self->{"padText"};
 }
  
 #-------------------------------------------------------------------------------------------#

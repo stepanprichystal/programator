@@ -40,7 +40,14 @@ sub GetStrips{
 	my $self = shift;
 	 
 	 return @{$self->{"strips"}};
-} 
+}
+
+sub GetStripsByLayer{
+	my $self = shift;
+	my $layer = shift;
+ 
+	 return grep { $_->Data()->{"xmlConstraint"}->GetTrackLayer() eq $layer  }@{$self->{"strips"}};
+}  
 
 
 sub GetColumnCnt{

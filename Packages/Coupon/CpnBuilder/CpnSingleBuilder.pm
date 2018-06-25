@@ -17,12 +17,15 @@ use List::Util qw[min max];
 #local library
 use aliased 'Packages::Coupon::Enums';
 use aliased 'CamHelpers::CamStep';
+use aliased 'CamHelpers::CamJob';
 use aliased 'CamHelpers::CamHelper';
 use aliased 'Packages::Coupon::CpnBuilder::MicrostripBuilders::SEBuilder';
 use aliased 'Packages::Coupon::CpnBuilder::MicrostripBuilders::DiffBuilder';
 use aliased 'Packages::CAM::SymbolDrawing::Point';
 use aliased 'Packages::Coupon::CpnBuilder::CpnLayout::CpnSingleLayout';
 use aliased 'Packages::Coupon::CpnBuilder::CpnInfoTextBuilder';
+use aliased 'Packages::Coupon::Helper';
+use aliased 'Packages::CAM::SymbolDrawing::Point';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -47,6 +50,8 @@ sub new {
 
 	$self->{"build"} = 0;                          # indicator if layout was built
 
+	$self->{"layerCnt"} = CamJob->GetSignalLayerCnt( $self->{"inCAM"}, $self->{"jobId"} );
+
 	return $self;
 }
 
@@ -60,10 +65,9 @@ sub Build {
 	my $jobId = $self->{"jobId"};
 
 	my $result = 1;
-
-	# Coupon area - depand on info text position (right/top)
-	# if infot text is on the right, coupon width area is increased by info text width
-	my $cpnWArea = $self->{"settings"}->GetWidth() - 2 * $self->{"settings"}->GetCouponMargin();
+	
+	
+ 
 
 	# Build text info builders
 
@@ -75,10 +79,31 @@ sub Build {
 
 			my $textLayout = $textBuilder->GetLayout();
 
+			my $p;
+			my %activeArea = $self->GetActiveArea();
+
 			if ( $textLayout->GetType() eq "right" ) {
-				$cpnWArea -= $textLayout->GetWidth();
+
+				my $x = $self->{"settings"}->GetCpnSingleWidth() + $self->{"settings"}->GetInfoTextRightCpnDist();
+				my $y = $self->{"settings"}->GetCouponSingleMargin();
+
+				# if coupon is heigher than text, center text vertically to single coupon
+				
+				if ( $activeArea{"h"} > $textLayout->GetHeight() ) {
+					$y += ( $activeArea{"h"} - $textLayout->GetHeight() ) / 2;
+				}
+				$p = Point->new( $x, $y );
+
+			}
+			elsif ( $textLayout->GetType() eq "top" ) {
+
+				#compute
+				# align text to right
+				$p = Point->new( $self->{"settings"}->GetCpnSingleWidth() - $textLayout->GetWidth() - $self->{"settings"}->GetCouponSingleMargin(),
+								 $self->{"settings"}->GetCouponSingleMargin() + $activeArea{"h"} + $self->{"settings"}->GetPadsTopTextDist() ) ;
 			}
 
+			$textLayout->SetPosition($p);
 			$self->{"layout"}->SetInfoTextLayout($textLayout);
 
 		}
@@ -106,7 +131,7 @@ sub Build {
 				  else { die "Microstirp type: " . $stripVar->GetType() . "is not implemented"; }
 			}
 
-			$mStripBuilder->Init( $inCAM, $jobId, $self->{"settings"}, $cpnWArea, $stripVar, $self );
+			$mStripBuilder->Init( $inCAM, $jobId, $self->{"settings"},  $stripVar, $self );
 
 			push( @{ $self->{"microstrips"} }, $mStripBuilder );
 		}
@@ -127,40 +152,18 @@ sub Build {
 		}
 	}
 
+	# Specify which layer has to contains ground negative pads in for each microstrip gnd pads
+	# Consider onlz pads which has to bz connected to ground
+
 	if ($result) {
 
 		# Set height of whole coupon
-		$self->{"layout"}->SetHeight( $self->__GetHeight() );
+		my %cpnArea = $self->GetCpnSingleArea();
 
-		# Set info text position
-		if ( $self->{"settings"}->GetInfoText() ) {
+		$self->{"layout"}->SetHeight( $cpnArea{"h"} );
+		$self->{"layout"}->SetWidth( $cpnArea{"w"} );
 
-			my $textLayout = $self->{"layout"}->GetInfoTextLayout();
-			my $p;
-
-			if ( $textLayout->GetType() eq "right" ) {
-
-				my $x = $self->{"settings"}->GetWidth() - $self->{"settings"}->GetCouponSingleMargin() - $textLayout->GetWidth();
-				my $y = $self->{"settings"}->GetCouponSingleMargin();
-
-				# if coupon is heigher than text, center text vertically to single coupon
-				if ( $self->__GetMicrostripsHeight() > $textLayout->GetHeight() ) {
-					$y += ( $self->__GetMicrostripsHeight() - $textLayout->GetHeight() ) / 2;
-				}
-				$p = Point->new( $x, $y );
-
-			}
-			elsif ( $textLayout->GetType() eq "top" ) {
-
-				#compute
-		 		# align text to right
-				$p = Point->new(  $cpnWArea - $textLayout->GetWidth() - $self->{"settings"}->GetCouponSingleMargin(),
-						 $self->{"settings"}->GetCouponSingleMargin() + $self->__GetMicrostripsHeight() + $self->{"settings"}->GetPadsTopTextDist() );
-
-			}
-
-			$textLayout->SetPosition($p);
-		}
+		 
 
 		$self->{"build"} = 1;
 	}
@@ -180,37 +183,28 @@ sub IsMultistrip {
 	return $self->{"singleCpnVar"}->IsMultistrip();
 }
 
-sub __GetHeight {
-	my $self = shift;
+sub GetShareGNDLayers {
+	my $self         = shift;
+	my $stripBuilder = shift;    # idof microstrip order
 
-	#die "Coupon single was nopt build " unless ( $self->{"build"} );
+	my $stripVariant = $stripBuilder->GetStripVariant();
 
-	my $h = 2 * $self->{"settings"}->GetCouponSingleMargin();
+	my @strips = $self->{"singleCpnVar"}->GetStripsByColumn( $stripVariant->Col() );
 
-	$h += $self->__GetMicrostripsHeight();
+	my @test = map { ( $_->Data()->{"xmlConstraint"}->GetTopRefLayer(), $_->Data()->{"xmlConstraint"}->GetBotRefLayer() ) } @strips;
 
-	if ( $self->{"settings"}->GetInfoText() ) {
+	my @gndLayers =
+	  map { Helper->GetInCAMLayer( $_, $self->{"layerCnt"} ) }
+	  grep { defined $_ && $_ =~ /l\d+/i }
+	  map { ( $_->Data()->{"xmlConstraint"}->GetTopRefLayer(), $_->Data()->{"xmlConstraint"}->GetBotRefLayer() ) } @strips;
 
-		my $textLayout = $self->{"layout"}->GetInfoTextLayout();
+	my %layers;
+	@layers{ Helper->GetAllLayerNames( $self->{"layerCnt"} ) } = ();
 
-		die "Infot text layout is not defined " unless ( defined $textLayout );
+	$layers{$_} = 0 foreach keys %layers;
+	$layers{$_} = 1 foreach @gndLayers;
 
-		if ( $self->{"settings"}->GetInfoTextPosition() eq "top" ) {
-
-			$h += $self->{"settings"}->GetPadsTopTextDist();
-			$h += $textLayout->GetHeight();
-
-		}
-		elsif ( $self->{"settings"}->GetInfoTextPosition() eq "right" ) {
-
-			if ( $textLayout->GetHeight() > $self->__GetMicrostripsHeight() ) {
-
-				$h += $textLayout->GetHeight() - $self->__GetMicrostripsHeight();
-			}
-		}
-	}
-
-	return $h;
+	return \%layers;
 }
 
 # Return origin for microstrip
@@ -249,8 +243,9 @@ sub GetMicrostripOrigin {
 
 	# space for bottom routes in whole pool strip if exist
 	my $botPool = $self->{"singleCpnVar"}->GetPoolByOrder(0);
-	my @spaces = map { $_->RouteDist() } grep { $_->Route() eq Enums->Route_BELOW } $botPool->GetStrips();
+	my @spaces = map { $_->RouteDist() + $_->RouteWidth()/2 } grep { $_->Route() eq Enums->Route_BELOW } $botPool->GetStrips();
 	if (@spaces) {
+		$y -=$self->{"settings"}->GetPadTrackSize() / 2 / 1000;
 		$y += max(@spaces);
 	}
 
@@ -265,10 +260,82 @@ sub GetMicrostripOrigin {
 	return Point->new( $x, $y );
 }
 
-# Return height of microstrp area  (withiut info text)
-sub __GetMicrostripsHeight {
+# return height including title text height
+sub GetCpnSingleArea {
 	my $self = shift;
 
+	my %areaInfo = ( "pos" => undef, "w" => undef, "h" => undef );
+
+	my %stripArea = $self->GetActiveArea();
+
+	# compute position
+	$areaInfo{"pos"} = Point->new( $self->{"settings"}->GetCouponMargin(), $self->{"settings"}->GetCouponMargin() );
+
+	# compute width
+	my $w = 2 * $self->{"settings"}->GetCouponSingleMargin() + $stripArea{"w"};
+
+	# consider right text
+	if ( $self->{"settings"}->GetInfoText() ) {
+
+		my $textLayout = $self->{"layout"}->GetInfoTextLayout();
+
+		die "Infot text layout is not defined " unless ( defined $textLayout );
+
+		if ( $self->{"settings"}->GetInfoTextPosition() eq "right" ) {
+			$w += $self->{"settings"}->GetInfoTextRightCpnDist() + $textLayout->GetWidth();
+		}
+	}
+
+	$areaInfo{"w"} = $w;
+
+	# compute height
+	my $h = 2 * $self->{"settings"}->GetCouponSingleMargin() + $stripArea{"h"};
+
+	# consider top texts
+	if ( $self->{"settings"}->GetInfoText() ) {
+
+		my $textLayout = $self->{"layout"}->GetInfoTextLayout();
+
+		die "Infot text layout is not defined " unless ( defined $textLayout );
+
+		if ( $self->{"settings"}->GetInfoTextPosition() eq "top" ) {
+
+			$h += $self->{"settings"}->GetPadsTopTextDist();
+			$h += $textLayout->GetHeight();
+
+		}
+		elsif ( $self->{"settings"}->GetInfoTextPosition() eq "right" ) {
+
+			if ( $textLayout->GetHeight() > $stripArea{"h"} ) {
+
+				$h += $textLayout->GetHeight() - $stripArea{"h"};
+			}
+		}
+	}
+
+	$areaInfo{"h"} = $h;
+
+	return %areaInfo;
+}
+
+# Return active area of microstrips
+# Active area means border of area wherea are placed all pads and tracks (no texts)
+# Return hash:
+# - pos- Points struture - origin of active area in single coupon
+# - w - width of active area
+# - h - height of active area
+sub GetActiveArea {
+	my $self = shift;
+
+	my %areaInfo = ( "pos" => undef, "w" => undef, "h" => undef );
+
+	# compute position
+	$areaInfo{"pos"} = Point->new( $self->{"settings"}->GetCouponSingleMargin(), $self->{"settings"}->GetCouponSingleMargin() );
+
+	# compute width
+	$areaInfo{"w"} = $self->{"settings"}->GetCpnSingleWidth() - 2 * $self->{"settings"}->GetCouponSingleMargin();
+
+	# compute height
 	my $h = undef;
 
 	if ( $self->{"singleCpnVar"}->IsMultistrip() ) {
@@ -288,7 +355,7 @@ sub __GetMicrostripsHeight {
 			# check if pool "bottom" contains track route type "below"
 			if ( $poolVar->GetOrder() == 0 ) {
 
-				my @spaces = map { $_->RouteDist() } grep { $_->Route() eq Enums->Route_BELOW } $poolVar->GetStrips();
+				my @spaces = map { $_->RouteDist() + $_->RouteWidth()/2 } grep { $_->Route() eq Enums->Route_BELOW } $poolVar->GetStrips();
 				if (@spaces) {
 					$h += max(@spaces);
 					$h -= $self->{"settings"}->GetPadTrackSize() / 1000 / 2;    # route is higher than pad anular ring
@@ -299,7 +366,7 @@ sub __GetMicrostripsHeight {
 			# check if pool "top" contains track route type "above"
 			elsif ( $poolVar->GetOrder() == 1 ) {
 
-				my @spaces = map { $_->RouteDist() } grep { $_->Route() eq Enums->Route_ABOVE } $poolVar->GetStrips();
+				my @spaces = map { $_->RouteDist() + $_->RouteWidth()/2 } grep { $_->Route() eq Enums->Route_ABOVE } $poolVar->GetStrips();
 				if (@spaces) {
 					$h += max(@spaces);
 					$h -= $self->{"settings"}->GetPadTrackSize() / 1000 / 2;    # route is higher than pad anular ring
@@ -307,7 +374,7 @@ sub __GetMicrostripsHeight {
 
 			}
 
-			$h = ( $padsY - 1 ) * $self->{"settings"}->GetTrackPad2TrackPad() / 1000 + $self->{"settings"}->GetPadTrackSize() / 1000;
+			
 		}
 	}
 
@@ -321,7 +388,9 @@ sub __GetMicrostripsHeight {
 		$h = ( $padsY - 1 ) * $self->{"settings"}->GetTrackPad2TrackPad() / 1000 + $self->{"settings"}->GetPadTrackSize() / 1000;
 	}
 
-	return $h;
+	$areaInfo{"h"} = $h;
+
+	return %areaInfo;
 }
 
 sub __GetMicrostripBuilder {

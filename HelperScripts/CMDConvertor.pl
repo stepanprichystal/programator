@@ -7,7 +7,7 @@ use warnings;
 
 
 # ============ INPUT LINE =================
-my $inputLine ="add_text,type=string,polarity=positive,x=82.9082575,y=-4.5738,text=test,fontname=standard,style=regular,mirror=no,angle=0,direction=cw,x_size=2.1,y_size=2 (1)";
+my $inputLine ="add_surf_fill,type=solid,solid_type=surface,min_brush=25.4,use_arcs=yes,cut_prims=no,outline_draw=no,outline_width=0,outline_invert=no ";
 
  
 

@@ -21,7 +21,6 @@ use aliased 'Packages::CAM::SymbolDrawing::Primitive::PrimitivePad';
 use aliased 'Packages::CAM::SymbolDrawing::Primitive::PrimitivePolyline';
 use aliased 'Packages::CAM::SymbolDrawing::Primitive::PrimitiveLine';
 
-
 use aliased 'CamHelpers::CamLayer';
 use aliased 'Packages::Coupon::Enums';
 use aliased 'Packages::CAM::SymbolDrawing::Enums' => 'DrawEnums';
@@ -45,43 +44,91 @@ sub Draw {
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
 
-#	# drav GND and track pads
-#	foreach my $pad ( $layout->GetPads() ) {
-#
-#		my $symClearance = undef;
-#		my $symPad = undef;
-#
-#		if ( $pad->GetType() eq Enums->Pad_GND ) {
-#
-#			$symClearance = $self->{"settings"}->GetPadGNDShape() . ( $self->{"settings"}->GetPadGNDSize() + $self->{"settings"}->GetPad2GNDClearance() );
-#			$symPad = $self->{"settings"}->GetPadGNDSym();
-#		}
-#		else {
-#
-#			$symClearance = $self->{"settings"}->GetPadTrackShape() . ( $self->{"settings"}->GetPadTrackSize() + $self->{"settings"}->GetPad2GNDClearance() );
-#			$symPad = $self->{"settings"}->GetPadTrackSym();
-#		}
-#
-# 
-# 		$self->{"drawing"}->AddPrimitive(PrimitivePad->new( $symClearance, $pad->GetPoint(), 0, DrawEnums->Polar_NEGATIVE ));
-#		$self->{"drawing"}->AddPrimitive(PrimitivePad->new( $symPad, $pad->GetPoint(), 0,  DrawEnums->Polar_POSITIVE )); 
-#	}
+	# Draw pad clearance
+	foreach my $pad ( $layout->GetPads() ) {
 
-	# draw tracks
+		if ( $pad->GetType() eq Enums->Pad_GND ) {
+
+			my $shareGNDLayers = $pad->GetShareGndLayers();
+
+			if ( !$shareGNDLayers->{ $self->{"layerName"} } ) {
+
+				my $symClearance =
+				  $self->{"settings"}->GetPadGNDShape() . ( $self->{"settings"}->GetPadGNDSize() + $self->{"settings"}->GetPad2GNDClearance() );
+				$self->{"drawing"}->AddPrimitive( PrimitivePad->new( $symClearance, $pad->GetPoint(), 0, DrawEnums->Polar_NEGATIVE ) );
+			}
+
+		}
+		else {
+
+			my $symClearance =
+			  $self->{"settings"}->GetPadTrackShape() . ( $self->{"settings"}->GetPadTrackSize() + $self->{"settings"}->GetPad2GNDClearance() );
+			$self->{"drawing"}->AddPrimitive( PrimitivePad->new( $symClearance, $pad->GetPoint(), 0, DrawEnums->Polar_NEGATIVE ) );
+		}
+
+	}
+
+	# Draw track clearance
 
 	foreach my $track ( $layout->GetTracks() ) {
 
 		my @points = $track->GetPoints();
-		
-		if(scalar(@points) == 2){
-			my $l = PrimitiveLine->new( $points[0], $points[1], "r" . $track->GetWidth() );
-		$self->{"drawing"}->AddPrimitive($l);
-			
-		}else{
-			my $p = PrimitivePolyline->new( \@points, "r" . $track->GetWidth() );
-		$self->{"drawing"}->AddPrimitive($p);
+
+		# Draw negative clearance
+		my $symNeg = "r" . ( $track->GetWidth() + $self->{"settings"}->GetTrackToCopper() );
+		if ( scalar(@points) == 2 ) {
+			my $l = PrimitiveLine->new( $points[0], $points[1], $symNeg, DrawEnums->Polar_NEGATIVE );
+			$self->{"drawing"}->AddPrimitive($l);
+
 		}
- 
+		else {
+			my $p = PrimitivePolyline->new( \@points, $symNeg, DrawEnums->Polar_NEGATIVE );
+			$self->{"drawing"}->AddPrimitive($p);
+		}
+
+	}
+
+	# Draw track
+
+	foreach my $track ( $layout->GetTracks() ) {
+
+		my @points = $track->GetPoints();
+
+		# Draw lines
+
+		if ( scalar(@points) == 2 ) {
+			my $l = PrimitiveLine->new( $points[0], $points[1], "r" . $track->GetWidth() );
+			$self->{"drawing"}->AddPrimitive($l);
+
+		}
+		else {
+			my $p = PrimitivePolyline->new( \@points, "r" . $track->GetWidth() );
+			$self->{"drawing"}->AddPrimitive($p);
+		}
+
+	}
+
+	# draw pads
+	foreach my $pad ( $layout->GetPads() ) {
+
+		my $symPad = undef;
+
+		if ( $pad->GetType() eq Enums->Pad_GND ) {
+
+			my $shareGNDLayers = $pad->GetShareGndLayers();
+
+			if ( !$shareGNDLayers->{ $self->{"layerName"} } ) {
+				$self->{"drawing"}
+				  ->AddPrimitive( PrimitivePad->new( $self->{"settings"}->GetPadGNDSym(), $pad->GetPoint(), 0, DrawEnums->Polar_POSITIVE ) );
+
+			}
+		}
+		else {
+
+			$self->{"drawing"}
+			  ->AddPrimitive( PrimitivePad->new( $self->{"settings"}->GetPadTrackSym(), $pad->GetPoint(), 0, DrawEnums->Polar_POSITIVE ) );
+		}
+
 	}
 
 	# Draw to layer

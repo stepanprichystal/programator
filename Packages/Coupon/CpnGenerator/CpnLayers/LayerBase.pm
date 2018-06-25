@@ -29,7 +29,8 @@ sub new {
 
 	$self->{"inCAM"}    = undef;
 	$self->{"jobId"}    = undef;
-	$self->{"settings"}  = undef;    # global settings for generating coupon
+	$self->{"step"}     = undef;
+	$self->{"settings"} = undef;     # global settings for generating coupon
 
 	return $self;
 }
@@ -39,8 +40,9 @@ sub Init {
 
 	$self->{"inCAM"}    = shift;
 	$self->{"jobId"}    = shift;
+	$self->{"step"}     = shift;
 	$self->{"settings"} = shift;
-	
+
 	$self->{"drawing"} = SymbolDrawing->new( $self->{"inCAM"}, $self->{"jobId"}, );
 
 }

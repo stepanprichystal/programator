@@ -21,7 +21,6 @@ use aliased 'Packages::CAM::SymbolDrawing::Primitive::PrimitivePad';
 use aliased 'Packages::CAM::SymbolDrawing::Primitive::PrimitivePolyline';
 use aliased 'Packages::CAM::SymbolDrawing::Primitive::PrimitiveLine';
 
-
 use aliased 'CamHelpers::CamLayer';
 use aliased 'Packages::Coupon::Enums';
 use aliased 'Packages::CAM::SymbolDrawing::Enums' => 'DrawEnums';
@@ -34,7 +33,7 @@ sub new {
 	my $class = shift;
 	my $self  = $class->SUPER::new(@_);
 	bless $self;
-	 
+
 	return $self;
 }
 
@@ -52,17 +51,25 @@ sub Draw {
 
 		if ( $pad->GetType() eq Enums->Pad_GND ) {
 
-			$symClearance = $self->{"settings"}->GetPadGNDShape() . ( $self->{"settings"}->GetPadGNDSize() + $self->{"settings"}->GetPad2GNDClearance() );
+			my $shareGNDLayers = $pad->GetShareGndLayers();
+
+			if ( !$shareGNDLayers->{ $self->{"layerName"} } ) {
+
+				$symClearance =
+				  $self->{"settings"}->GetPadGNDShape() . ( $self->{"settings"}->GetPadGNDSize() + $self->{"settings"}->GetPad2GNDClearance() );
+				$self->{"drawing"}->AddPrimitive( PrimitivePad->new( $symClearance, $pad->GetPoint(), 0, DrawEnums->Polar_NEGATIVE ) );
+
+			}
 		}
 		else {
 
-			$symClearance = $self->{"settings"}->GetPadTrackShape() . ( $self->{"settings"}->GetPadTrackSize() + $self->{"settings"}->GetPad2GNDClearance() );
+			$symClearance =
+			  $self->{"settings"}->GetPadTrackShape() . ( $self->{"settings"}->GetPadTrackSize() + $self->{"settings"}->GetPad2GNDClearance() );
+			$self->{"drawing"}->AddPrimitive( PrimitivePad->new( $symClearance, $pad->GetPoint(), 0, DrawEnums->Polar_NEGATIVE ) );
 		}
 
- 		$self->{"drawing"}->AddPrimitive(PrimitivePad->new( $symClearance, $pad->GetPoint(), 0, DrawEnums->Polar_NEGATIVE ));
-
 	}
- 
+
 	# Draw to layer
 	$self->_Draw();
 

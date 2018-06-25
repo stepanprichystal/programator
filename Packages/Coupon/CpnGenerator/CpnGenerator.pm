@@ -18,6 +18,7 @@ use aliased 'Packages::Coupon::Enums';
 
 use aliased 'Packages::Coupon::CpnBuilder::MicrostripBuilders::SEBuilder';
 use aliased 'Packages::Coupon::CpnGenerator::ModelBuilders::CoatedMicrostrip';
+use aliased 'Packages::Coupon::CpnGenerator::ModelBuilders::StriplineMicrostrip';
 
 use aliased 'Packages::CAM::SymbolDrawing::Point';
 use aliased 'Packages::CAMJob::Panelization::SRStep';
@@ -32,9 +33,9 @@ sub new {
 	my $self  = {};
 	bless $self;
 
-	$self->{"inCAM"} = shift;
-	$self->{"jobId"} = shift;
-	$self->{"settings"}  = shift;    # global settings for generating coupon
+	$self->{"inCAM"}    = shift;
+	$self->{"jobId"}    = shift;
+	$self->{"settings"} = shift;    # global settings for generating coupon
 
 	$self->{"couponStep"} = undef;
 
@@ -43,8 +44,7 @@ sub new {
 
 sub Generate {
 	my $self   = shift;
-	my $layout = shift; # layout of complete coupon
-	
+	my $layout = shift;             # layout of complete coupon
 
 	my $result = 1;
 
@@ -102,12 +102,12 @@ sub __GenerateSingle {
 	CamStep->CreateStep( $inCAM, $jobId, $stepName );
 	CamHelper->SetStep( $inCAM, $stepName );
 
-	# create profile 
+	# create profile
 	my %lb = ( "x" => 0, "y" => 0 );
-	my %rt = ( "x" => $self->{"settings"}->GetAreaWidth(), "y" => $cpnLayout->GetHeight() );
+	my %rt = ( "x" => $cpnLayout->GetWidth(), "y" => $cpnLayout->GetHeight() );
 
 	CamStep->CreateProfileRect( $inCAM, $stepName, \%lb, \%rt );
- 
+
 	# Process all microstrip layouts in single coupon
 	foreach my $stripLayout ( $cpnLayout->GetMicrostripLayouts() ) {
 
@@ -120,25 +120,27 @@ sub __GenerateSingle {
 
 			  case Enums->Model_UNCOATED_MICROSTRIP { $modelBuilder = UncoatedMicrostrip->new() }
 
+			  case Enums->Model_STRIPLINE { $modelBuilder = StriplineMicrostrip->new() }
+
 			  else { die "Microstirp model: " . $stripLayout->GetModel() . " is not implemented"; }
 		}
 
-		$modelBuilder->Init( $inCAM, $jobId, $self->{"settings"} );
+		$modelBuilder->Init( $inCAM, $jobId, $stepName, $self->{"settings"} );
 
 		$modelBuilder->Build($stripLayout);
 	}
-	
+
 	# Proces text layout
-		
+
 	# build info texts
-   # Proces info text layout
-	if ($cpnLayout->GetInfoTextLayout() ) {
+	# Proces info text layout
+	if ( $cpnLayout->GetInfoTextLayout() ) {
 		
-		my $textLayer =  InfoTextLayer->new("c");
-		$textLayer->Init($inCAM, $jobId, $self->{"settings"});
-		$textLayer->Draw($cpnLayout->GetInfoTextLayout());
-	}
  
+		my $textLayer = InfoTextLayer->new("c");
+		$textLayer->Init( $inCAM, $jobId, $stepName, $self->{"settings"} );
+		$textLayer->Draw( $cpnLayout->GetInfoTextLayout() );
+	}
 
 }
 

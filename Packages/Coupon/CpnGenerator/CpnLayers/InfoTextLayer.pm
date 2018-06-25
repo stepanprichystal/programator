@@ -17,15 +17,13 @@ use warnings;
 
 #local library
 use aliased 'Packages::CAM::SymbolDrawing::SymbolDrawing';
-use aliased 'Packages::CAM::SymbolDrawing::Primitive::PrimitivePad';
-use aliased 'Packages::CAM::SymbolDrawing::Primitive::PrimitivePolyline';
-use aliased 'Packages::CAM::SymbolDrawing::Primitive::PrimitiveLine';
 use aliased 'Packages::CAM::SymbolDrawing::Primitive::PrimitiveText';
 
 use aliased 'Packages::CAM::SymbolDrawing::Point';
 use aliased 'CamHelpers::CamLayer';
 use aliased 'Packages::Coupon::Enums';
 use aliased 'Packages::CAM::SymbolDrawing::Enums' => 'DrawEnums';
+use aliased 'Packages::CAM::SymbolDrawing::Primitive::PrimitiveSurfPoly';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -46,15 +44,39 @@ sub Draw {
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
 
-	# draw tracks
 	my $origin = $layout->GetPosition();
+
+	# draw clearance
+	my $textH = $layout->GetHeight();
+	my $textW = $layout->GetWidth();
+
+	my @points = ();
+	push( @points, Point->new( $origin->X() - 0.2,          $origin->Y() - 0.2 ) );
+	push( @points, Point->new( $origin->X() - 0.2,          $origin->Y() + $textH + 0.2 ) );
+	push( @points, Point->new( $origin->X() + 0.2 + $textW, $origin->Y() + $textH + 0.2 ) );
+	push( @points, Point->new( $origin->X() + 0.2 + $textW, $origin->Y() - 0.2 ) );
+
+	my $pTextNeg = PrimitiveSurfPoly->new(
+		\@points,
+		undef,
+		DrawEnums->Polar_NEGATIVE
+
+	);
+
+	$self->{"drawing"}->AddPrimitive($pTextNeg);
+
+	# draw texts
 
 	foreach my $text ( $layout->GetTexts() ) {
 
 		my $p = Point->new( $text->{"point"}->X() + $origin->X(), $text->{"point"}->Y() + $origin->Y() );
-		my $pText = PrimitiveText->new( $text->{"val"}, $p, $self->{"settings"}->GetInfoTextHeight(), $self->{"settings"}->GetInfoTextWidth(), $self->{"settings"}->GetInfoTextWeight() );
+		my $pText = PrimitiveText->new( $text->{"val"}, $p,
+										$self->{"settings"}->GetInfoTextHeight(),
+										$self->{"settings"}->GetInfoTextWidth(),
+										$self->{"settings"}->GetInfoTextWeight() );
 
 		$self->{"drawing"}->AddPrimitive($pText);
+
 	}
 
 	# Draw to layer

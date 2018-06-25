@@ -52,7 +52,7 @@ sub Build {
 
 	# set model
 
-	my $areaW   = $self->{"cpnWArea"};
+	my $areaW   = $self->{"settings"}->GetCpnSingleWidth();
 	my $margin  = $self->{"settings"}->GetCouponSingleMargin();
 	my $p2pDist = $self->{"settings"}->GetPad2PadDist() / 1000;
 
@@ -79,11 +79,11 @@ sub Build {
 		# LEFT SIDE
 
 		# build Track pad
-		my $sTrPad = PadLayout->new( Point->new( $tOrigin->X(), $tOrigin->Y() ), Enums->Pad_TRACK );
+		my $sTrPad = PadLayout->new( Point->new( $tOrigin->X(), $tOrigin->Y() ), Enums->Pad_TRACK, undef, $self->_GetPadText($tOrigin) );
 		$self->{"layout"}->AddPad($sTrPad);
 
 		# build GND pad
-		my $sGNDPad = PadLayout->new( Point->new( $gOrigin->X(), $gOrigin->Y()), Enums->Pad_GND );
+		my $sGNDPad = PadLayout->new( Point->new( $gOrigin->X(), $gOrigin->Y()), Enums->Pad_GND, $self->{"cpnSingle"}->GetShareGNDLayers($self) );
 		$self->{"layout"}->AddPad($sGNDPad);
 
 		my $eGNDPad;
@@ -92,11 +92,11 @@ sub Build {
 		if ( $self->{"settings"}->GetTwoEndedDesign() ) {
 
 			# build Track pad
-			my $eTrPad = PadLayout->new( Point->new( $areaW - $tOrigin->X(), $tOrigin->Y() ), Enums->Pad_TRACK );
+			my $eTrPad = PadLayout->new( Point->new( $areaW - $tOrigin->X(), $tOrigin->Y() ), Enums->Pad_TRACK, undef,  $self->_GetPadText(Point->new( $areaW - $tOrigin->X(), $tOrigin->Y() )) );
 			$self->{"layout"}->AddPad($eTrPad);
 
 			# build GND pad
-			my $eGNDPad = PadLayout->new( Point->new( $areaW - $gOrigin->X(), $gOrigin->Y() ), Enums->Pad_GND );
+			my $eGNDPad = PadLayout->new( Point->new( $areaW - $gOrigin->X(), $gOrigin->Y() ), Enums->Pad_GND, $self->{"cpnSingle"}->GetShareGNDLayers($self) );
 			$self->{"layout"}->AddPad($eGNDPad);
 
 		}
@@ -147,7 +147,7 @@ sub Build {
 
 		# build track line
 
-		my @track = $self->_GetSEStraightTrack($gOrigin);
+		my @track = $self->_GetSEStraightTrack($tOrigin);
 		my $track = TrackLayout->new( \@track, $trackW );
 
 		$self->{"layout"}->AddTrack($track);

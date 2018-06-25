@@ -35,7 +35,6 @@ sub new {
 	# properties of constrain
 	#pads, lines, coordinates
 
-	$self->{"height"}    = 7.5;
 	$self->{"padPosCnt"} = 2;     #
 
 	return $self;
@@ -58,7 +57,7 @@ sub Build {
 
 	# set model
 
-	my $areaW   = $self->{"cpnWArea"};
+	my $areaW    = $self->{"settings"}->GetCpnSingleWidth();
 	my $margin  = $self->{"settings"}->GetCouponSingleMargin();
 	my $p2pDist = $self->{"settings"}->GetPad2PadDist() / 1000;    # mm
 
@@ -69,8 +68,8 @@ sub Build {
 
 		# Build track outer ---------------------------------
 
-		my $tOutOrigin;                                               # origin of track pad
-		my $gOutOrigin;                                               # origin of GND pad
+		my $tOutOrigin;                                            # origin of track pad
+		my $gOutOrigin;                                            # origin of GND pad
 		if ( $self->{"stripVariant"}->Pool() == 0 ) {
 
 			$tOutOrigin = Point->new( $origin->X(), $origin->Y() );
@@ -83,18 +82,30 @@ sub Build {
 		}
 
 		# build GND pad
-		$self->{"layout"}->AddPad( PadLayout->new( Point->new( $gOutOrigin->X(), $gOutOrigin->Y()  ), Enums->Pad_GND ) );
+		$self->{"layout"}->AddPad(
+				 PadLayout->new( Point->new( $gOutOrigin->X(), $gOutOrigin->Y() ), Enums->Pad_GND, $self->{"cpnSingle"}->GetShareGNDLayers($self) ) );
 
 		# build Track pad
-		$self->{"layout"}->AddPad( PadLayout->new( Point->new( $tOutOrigin->X(), $tOutOrigin->Y() ), Enums->Pad_TRACK ) );
+		$self->{"layout"}
+		  ->AddPad( PadLayout->new( Point->new( $tOutOrigin->X(), $tOutOrigin->Y() ), Enums->Pad_TRACK, undef, $self->_GetPadText($tOutOrigin) ) );
 
 		if ( $self->{"settings"}->GetTwoEndedDesign() ) {
 
 			# build GND pad
-			$self->{"layout"}->AddPad( PadLayout->new( Point->new( $areaW - $gOutOrigin->X(), $gOutOrigin->Y() ), Enums->Pad_GND ) );
+			$self->{"layout"}->AddPad(
+									   PadLayout->new(
+													   Point->new( $areaW - $gOutOrigin->X(), $gOutOrigin->Y() ), Enums->Pad_GND,
+													   $self->{"cpnSingle"}->GetShareGNDLayers($self)
+									   )
+			);
 
 			# build Track pad
-			$self->{"layout"}->AddPad( PadLayout->new( Point->new( $areaW - $tOutOrigin->X(), $tOutOrigin->Y() ), Enums->Pad_TRACK ) );
+			$self->{"layout"}->AddPad(
+							  PadLayout->new(
+											  Point->new( $areaW - $tOutOrigin->X(), $tOutOrigin->Y() ),
+											  Enums->Pad_TRACK, undef, $self->_GetPadText( Point->new( $areaW - $tOutOrigin->X(), $tOutOrigin->Y() ) )
+							  )
+			);
 
 		}
 
@@ -103,33 +114,47 @@ sub Build {
 		$self->{"layout"}->AddTrack( TrackLayout->new( \@trackOuter, $w ) );
 
 		# Build track inner ---------------------------------
-					
-		my $tInOrigin;                                               # origin of track pad
-		my $gInOrigin;                                               # origin of GND pad
+
+		my $tInOrigin;    # origin of track pad
+		my $gInOrigin;    # origin of GND pad
 		if ( $self->{"stripVariant"}->Pool() == 0 ) {
 
-			$tInOrigin = Point->new( $origin->X() + $self->{"settings"}->GetPad2PadDist()/1000, $origin->Y() );
-			$gInOrigin = Point->new( $origin->X() + $self->{"settings"}->GetPad2PadDist()/1000, $origin->Y() + $self->{"settings"}->GetPad2PadDist() / 1000 );
+			$tInOrigin = Point->new( $origin->X() + $self->{"settings"}->GetPad2PadDist() / 1000, $origin->Y() );
+			$gInOrigin =
+			  Point->new( $origin->X() + $self->{"settings"}->GetPad2PadDist() / 1000, $origin->Y() + $self->{"settings"}->GetPad2PadDist() / 1000 );
 		}
 		elsif ( $self->{"stripVariant"}->Pool() == 1 ) {
 
-			$tInOrigin = Point->new( $origin->X() + $self->{"settings"}->GetPad2PadDist()/1000, $origin->Y() + $self->{"settings"}->GetPad2PadDist() / 1000 );
-			$gInOrigin = Point->new( $origin->X() + $self->{"settings"}->GetPad2PadDist()/1000, $origin->Y() );
+			$tInOrigin =
+			  Point->new( $origin->X() + $self->{"settings"}->GetPad2PadDist() / 1000, $origin->Y() + $self->{"settings"}->GetPad2PadDist() / 1000 );
+			$gInOrigin = Point->new( $origin->X() + $self->{"settings"}->GetPad2PadDist() / 1000, $origin->Y() );
 		}
 
 		# build GND pad
-		$self->{"layout"}->AddPad( PadLayout->new( Point->new( $gInOrigin->X(), $gInOrigin->Y()), Enums->Pad_GND ) );
+		$self->{"layout"}->AddPad(
+				   PadLayout->new( Point->new( $gInOrigin->X(), $gInOrigin->Y() ), Enums->Pad_GND, $self->{"cpnSingle"}->GetShareGNDLayers($self) ) );
 
 		# build Track pad
-		$self->{"layout"}->AddPad( PadLayout->new( Point->new( $tInOrigin->X() , $tInOrigin->Y() ), Enums->Pad_TRACK ) );
+		$self->{"layout"}
+		  ->AddPad( PadLayout->new( Point->new( $tInOrigin->X(), $tInOrigin->Y() ), Enums->Pad_TRACK, undef, $self->_GetPadText($tInOrigin) ) );
 
 		if ( $self->{"settings"}->GetTwoEndedDesign() ) {
 
 			# build GND pad
-			$self->{"layout"}->AddPad( PadLayout->new( Point->new( $areaW - $gInOrigin->X(), $gInOrigin->Y() ), Enums->Pad_GND ) );
+			$self->{"layout"}->AddPad(
+									   PadLayout->new(
+													   Point->new( $areaW - $gInOrigin->X(), $gInOrigin->Y() ), Enums->Pad_GND,
+													   $self->{"cpnSingle"}->GetShareGNDLayers($self)
+									   )
+			);
 
 			# build Track pad
-			$self->{"layout"}->AddPad( PadLayout->new( Point->new( $areaW - $tInOrigin->X(), $tInOrigin->Y() ), Enums->Pad_TRACK ) );
+			$self->{"layout"}->AddPad(
+								PadLayout->new(
+												Point->new( $areaW - $tInOrigin->X(), $tInOrigin->Y() ),
+												Enums->Pad_TRACK, undef, $self->_GetPadText( Point->new( $areaW - $tInOrigin->X(), $tInOrigin->Y() ) )
+								)
+			);
 		}
 
 		# build track line
@@ -141,11 +166,10 @@ sub Build {
 	# track and GND pads are placed vertically => 2 positions
 	else {
 
-
 		# Build track upper ---------------------------------
- 		my $tUpperOrigin = Point->new( $origin->X() + $self->{"settings"}->GetPad2PadDist() / 1000, $origin->Y() + $self->{"settings"}->GetPad2PadDist() / 1000 );
+		my $tUpperOrigin =
+		  Point->new( $origin->X() + $self->{"settings"}->GetPad2PadDist() / 1000, $origin->Y() + $self->{"settings"}->GetPad2PadDist() / 1000 );
 		my $gUpperOrigin = Point->new( $origin->X(), $origin->Y() + $self->{"settings"}->GetPad2PadDist() / 1000 );
- 
 
 		# build GND pad
 		my $sGNDPadL1 = PadLayout->new( Point->new( $gUpperOrigin->X(), $gUpperOrigin->Y() ), Enums->Pad_GND );
@@ -171,7 +195,6 @@ sub Build {
 		my @trackTop = $self->_GetSingleDIFFTrack( $tUpperOrigin, "upper" );
 		$self->{"layout"}->AddTrack( TrackLayout->new( \@trackTop, $w ) );
 
-
 		# Build track 2 lower ---------------------------------
 		my $tLowerOrigin = Point->new( $origin->X() + $self->{"settings"}->GetPad2PadDist() / 1000, $origin->Y() );
 		my $gLowerOrigin = Point->new( $origin->X(), $origin->Y() );
@@ -187,7 +210,7 @@ sub Build {
 		if ( $self->{"settings"}->GetTwoEndedDesign() ) {
 
 			# build GND pad
-			my $eGNDPadL2 = PadLayout->new( Point->new( $areaW - $gLowerOrigin->X(), $gLowerOrigin->Y()), Enums->Pad_GND );
+			my $eGNDPadL2 = PadLayout->new( Point->new( $areaW - $gLowerOrigin->X(), $gLowerOrigin->Y() ), Enums->Pad_GND );
 			$self->{"layout"}->AddPad($eGNDPadL2);
 
 			# build Track pad

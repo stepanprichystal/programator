@@ -342,11 +342,11 @@ sub __DrawSurfPoly {
 	}
 	elsif ( $patt->GetPredefined_pattern_type() eq "solid" ) {
 
-		CamSymbolSurf->AddSurfaceLinePattern( $self->{"inCAM"}, $patt->GetOutline_draw(), $patt->GetOutline_width() );
+		CamSymbolSurf->AddSurfaceSolidPattern( $self->{"inCAM"}, $patt->GetOutline_draw(), $patt->GetOutline_width() );
 	}
 
 	my @points = $surf->GetPoints();
-	CamSymbolSurf->AddSurfacePolyline( $self->{"inCAM"}, \@points, 1 );
+	CamSymbolSurf->AddSurfacePolyline( $self->{"inCAM"}, \@points, 1, $surf->GetPolarity() );
 
 }
 

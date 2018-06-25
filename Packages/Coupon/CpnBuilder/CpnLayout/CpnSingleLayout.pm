@@ -19,20 +19,20 @@ sub new {
 	my $self  = {};
 	bless $self;
 
-	$self->{"h"}             = undef;    # dynamic heght of single coupon
-	$self->{"stripsLayouts"} = [];
+	$self->{"h"}              = undef;    # dynamic heght of single coupon
+	$self->{"w"}              = undef;    # dynamic width of single coupo (active area width + text on rights)
+	$self->{"stripsLayouts"}  = [];
 	$self->{"infoTextLayout"} = undef;
-	 
 
 	return $self;
 }
 
-sub SetInfoTextLayout{
-	my $self = shift;
+sub SetInfoTextLayout {
+	my $self       = shift;
 	my $textLayout = shift;
- 
+
 	$self->{"infoTextLayout"} = $textLayout;
-	 
+
 }
 
 sub SetHeight {
@@ -45,6 +45,20 @@ sub GetHeight {
 	my $self = shift;
 
 	return $self->{"h"};
+}
+
+sub SetWidth {
+	my $self  = shift;
+	my $width = shift;
+
+	$self->{"w"} = $width;
+
+}
+
+sub GetWidth {
+	my $self = shift;
+
+	return $self->{"w"};
 }
 
 sub AddMicrostripLayout {
@@ -60,9 +74,9 @@ sub GetMicrostripLayouts {
 
 }
 
-sub GetInfoTextLayout{
+sub GetInfoTextLayout {
 	my $self = shift;
-	
+
 	return $self->{"infoTextLayout"};
 }
 
