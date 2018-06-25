@@ -22,7 +22,7 @@ use PackagesLib;
 
 use aliased 'CamHelpers::CamHelper';
 use aliased 'CamHelpers::CamLayer';
-
+use aliased 'Connectors::HeliosConnector::HegMethods';
 
 my $jobName = "$ENV{JOB}";
 my $StepName = "o+1";
@@ -34,6 +34,12 @@ my $atmMaxY = 280;	#maximalni prirez pro ATM
 my $racomMaxX = 270; #maximalni prirez pro RACOM
 my $racomMaxY = 400; #maximalni prirez pro RACOM	
 my $vypln = 1;
+my $poolMpanel = 0;
+	
+	if (HegMethods->GetPcbIsPool($jobName) == 1) {
+			$poolMpanel = 1;
+	}
+	
 	
 my $main = MainWindow->new;
 $main->title('Macro pro mPanel');

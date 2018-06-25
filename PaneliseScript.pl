@@ -528,7 +528,7 @@ sub _GUIpanelizace {
 						  						
 							
 							$botFrameRight = $botFrame->Frame(-width=>50, -height=>20)->pack(-side=>'right',-fill=>'both');	
-						  			$tl_no=$botFrameRight->Button(
+						  			$botFrameRight->Button(
 						  						-width=>'70',
 						  						-text => "POKRACOVAT K PANELIZACI",
 						  						-command=> sub {_Panelize($panelSizeCheck)},
@@ -607,22 +607,77 @@ sub _CheckPool{
      			
  	 					my $export = NifExportTmpPool->new();
  	 				
- 	 					#return 1 if OK, else 0
- 	 					$export->Run( $inCAM, $jobId, $poznamka, $tenting, $pressfit, $maska01, $datacode, $ullogo, undef, $wrongData);
  	 					
  	 							my $reference = HegMethods->GetNumberOrder($jobId);
 			      				HelperWriter->OnlineWrite_order( $reference, "k panelizaci" , "aktualni_krok" );
 			      				HelperWriter->OnlineWrite_order( $reference, 'A', 'pooling');
 			
 			
-								my ($pcbXsizePool,$pcbYsizePool) = _GetSizeOfPcb($jobId, 'o+1');
+								my @repeats = ();
+								my ($pcbXsizeKus,$pcbYsizeKus,$pcbXsizePanel, $pcbYsizePanel);
+								my $panelNasobnost;
+								
+								if (CamHelper->StepExists( $inCAM, $jobId, 'o+1_single')){
+									
+										if ( CamStepRepeat->ExistStepAndRepeats( $inCAM, $jobId, 'o+1_panel' ) ) {
+													@repeats = CamStepRepeat->GetRepeatStep( $inCAM, $jobId, 'o+1_panel' );
+													$panelNasobnost = scalar @repeats;
+										}
+										
+									
+										($pcbXsizeKus,$pcbYsizeKus) = _GetSizeOfPcb($jobId, 'o+1_single');
+										($pcbXsizePanel,$pcbYsizePanel) = _GetSizeOfPcb($jobId, 'o+1');
+								}else{
+										($pcbXsizeKus,$pcbYsizeKus) = _GetSizeOfPcb($jobId, 'o+1');
+								}
 								
 								my $pocetVrstev = CamJob->GetSignalLayerCnt($inCAM, $jobId);
+					 			
 					 			## write attribute to Noris
 			      	 			HelperWriter->OnlineWrite_pcb("$jobId", "$constClass", "konstr_trida");
 					 			HelperWriter->OnlineWrite_pcb("$jobId", "$pocetVrstev", "pocet_vrstev");
-					 			HelperWriter->OnlineWrite_pcb("$jobId", "$pcbXsizePool", "kus_x");
-					 			HelperWriter->OnlineWrite_pcb("$jobId", "$pcbYsizePool", "kus_y");
+					 			HelperWriter->OnlineWrite_pcb("$jobId", "$pcbXsizeKus", "kus_x");
+					 			HelperWriter->OnlineWrite_pcb("$jobId", "$pcbYsizeKus", "kus_y");
+					 			
+					 			
+					 			
+					 			if($pcbXsizePanel) {
+					 					
+					 					HelperWriter->OnlineWrite_pcb("$jobId", "$pcbXsizePanel", "panel_x");
+					 					HelperWriter->OnlineWrite_pcb("$jobId", "$pcbYsizePanel", "panel_y");
+					 					
+					 					
+					 					HelperWriter->OnlineWrite_pcb("$jobId", 1,"nasobnost_panelu");	
+										HelperWriter->OnlineWrite_pcb("$jobId", 1,"nasobnost");
+					 						
+					 					HegMethods->UpdateOrderMultiplicity("$jobId", $panelNasobnost); #musi se aktualizovat i nasobnost v zakazce
+					 					
+					 					
+										HelperWriter->OnlineWrite_pcb("$jobId", $panelNasobnost,"nasobnost");
+										HelperWriter->OnlineWrite_pcb("$jobId", $panelNasobnost,"nasobnost_panelu");
+					 					
+					 					
+					 					# Set construction class to the attribute of job
+										CamJob->SetJobAttribute($inCAM, 'customer_panel', 'yes', $jobId);
+										CamJob->SetJobAttribute($inCAM, 'cust_pnl_singlex', $pcbXsizeKus, $jobId);
+										CamJob->SetJobAttribute($inCAM, 'cust_pnl_singley', $pcbYsizeKus, $jobId);
+										CamJob->SetJobAttribute($inCAM, 'cust_pnl_multipl', $panelNasobnost, $jobId);	
+					 			}else{
+					 					# Set construction class to the attribute of job
+										CamJob->SetJobAttribute($inCAM, 'customer_panel', 'no', $jobId);
+										CamJob->SetJobAttribute($inCAM, 'cust_pnl_singlex', 0, $jobId);
+										CamJob->SetJobAttribute($inCAM, 'cust_pnl_singley', 0, $jobId);
+										CamJob->SetJobAttribute($inCAM, 'cust_pnl_multipl', 0, $jobId);
+										
+										HelperWriter->OnlineWrite_pcb("$jobId", "","nasobnost_panelu");
+										HelperWriter->OnlineWrite_pcb("$jobId", "","nasobnost");
+					 				
+					 			}
+					 			
+								
+	
+					 			#return 1 if OK, else 0
+ 	 							$export->Run( $inCAM, $jobId, $poznamka, $tenting, $pressfit, $maska01, $datacode, $ullogo, undef, $wrongData);
 
 
 

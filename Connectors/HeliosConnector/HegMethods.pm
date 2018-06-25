@@ -870,6 +870,22 @@ sub UpdateOdsouhlasovat {
 	return $res;
 }
 
+# Update item multiplicity in last order
+sub UpdateOrderMultiplicity {
+	my $self  = shift;
+	my $pcbId = shift;
+	my $nas = shift;
+	my $res   = 0;
+
+	my $lastOrder = $self->GetPcbOrderNumber($pcbId);
+
+		require Connectors::HeliosConnector::HelperWriter;
+
+			$res = Connectors::HeliosConnector::HelperWriter->OnlineWrite_order( "$pcbId" . "-" . $lastOrder, $nas, "nasobnost" );
+
+	return $res;
+}
+
 sub UpdateNCInfo {
 	my $self        = shift;
 	my $pcbId       = shift;
