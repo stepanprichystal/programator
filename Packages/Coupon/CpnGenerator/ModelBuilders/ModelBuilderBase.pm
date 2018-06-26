@@ -41,6 +41,13 @@ sub Init {
 
 }
 
+sub GetLayers{
+	my $self = shift;	
+	
+	return @{$self->{"layers"}};
+	
+}
+
 sub _AddLayer {
 	my $self  = shift;
 	my $layer = shift;
@@ -48,6 +55,7 @@ sub _AddLayer {
 	push( @{ $self->{"layers"} }, $layer );
 
 }
+ 
 
 sub _Build {
 	my $self   = shift;
@@ -56,7 +64,7 @@ sub _Build {
 	foreach my $layer ( @{ $self->{"layers"} } ) {
 
 		$layer->Init( $self->{"inCAM"}, $self->{"jobId"}, $self->{"step"}, $self->{"settings"}, $layout );
-		$layer->Draw($layout);
+		$layer->Build($layout);
 	}
 }
 

@@ -152,6 +152,10 @@ sub __DrawPrimitives {
 
 				$self->__DrawSurfPoly( $p, $pos );
 			}
+			elsif ( $p->GetType() eq Enums->Primitive_SURFACEFILL ) {
+
+				$self->__DrawSurfFill( $p );
+			}
 			elsif ( $p->GetType() eq Enums->Primitive_PAD ) {
 
 				$self->__DrawPad( $p, $pos );
@@ -347,6 +351,31 @@ sub __DrawSurfPoly {
 
 	my @points = $surf->GetPoints();
 	CamSymbolSurf->AddSurfacePolyline( $self->{"inCAM"}, \@points, 1, $surf->GetPolarity() );
+
+}
+
+sub __DrawSurfFill {
+	my $self      = shift;
+	my $surf      = shift;
+	 
+	my $patt = $surf->GetPattern();
+ 
+	 if ( $patt->GetPredefined_pattern_type() eq "solid" ) {
+
+		CamSymbolSurf->AddSurfaceFillSolid( $self->{"inCAM"},   $patt->GetOutline_draw(), $patt->GetOutline_width(), $patt->GetOutline_invert(),
+		$surf->GetMarginX(),
+		$surf->GetMarginY(),
+		$surf->GetSRMarginX(),
+		$surf->GetSRMarginY(),
+		$surf->GetConsiderFeat(),
+		$surf->GetFeatMargin(),
+		);
+	
+	 }else{
+		
+		die "Pattern type is not defined";
+	}
+	 
 
 }
 

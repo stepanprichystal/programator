@@ -28,8 +28,8 @@ poolCnt = 2
 maxStripsCntH = 4
 shareGNDPads = 1
 routeBetween = 1
-routeBelow = 0
-routeAbove = 0
+routeBelow = 1
+routeAbove = 1
 routeStraight = 1
 
 # Info text settings
@@ -40,7 +40,7 @@ infoTextWeight = 0.2
 padsTopTextDist    = 2                # mm
 infoTextRightCpnDist = 1 #mm
 infoText = 1 # 1/0
-infoTextPosition = right # top/right
+infoTextPosition = top # top/right
 infoTextNumber = 1 # 1/0 numberingo of strips
 infoTextTrackImpedance = 1 # 1/0
 infoTextTrackWidth = 1 # 1/0

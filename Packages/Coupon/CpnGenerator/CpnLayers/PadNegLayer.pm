@@ -37,7 +37,7 @@ sub new {
 	return $self;
 }
 
-sub Draw {
+sub Build {
 	my $self   = shift;
 	my $layout = shift;    # microstrip layout
 
@@ -71,7 +71,7 @@ sub Draw {
 	}
 
 	# Draw to layer
-	$self->_Draw();
+	#$self->_Draw();
 
 }
 

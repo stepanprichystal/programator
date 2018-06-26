@@ -14,8 +14,10 @@ use Switch;
 
 use aliased 'CamHelpers::CamStep';
 use aliased 'CamHelpers::CamHelper';
+use aliased 'CamHelpers::CamJob';
+use aliased 'CamHelpers::CamLayer';
 use aliased 'Packages::Coupon::Enums';
-
+use aliased 'Packages::Coupon::Helper';
 use aliased 'Packages::Coupon::CpnBuilder::MicrostripBuilders::SEBuilder';
 use aliased 'Packages::Coupon::CpnGenerator::ModelBuilders::CoatedMicrostrip';
 use aliased 'Packages::Coupon::CpnGenerator::ModelBuilders::StriplineMicrostrip';
@@ -109,6 +111,8 @@ sub __GenerateSingle {
 	CamStep->CreateProfileRect( $inCAM, $stepName, \%lb, \%rt );
 
 	# Process all microstrip layouts in single coupon
+	my @builders = ();
+
 	foreach my $stripLayout ( $cpnLayout->GetMicrostripLayouts() ) {
 
 		# Init model builder
@@ -128,6 +132,23 @@ sub __GenerateSingle {
 		$modelBuilder->Init( $inCAM, $jobId, $stepName, $self->{"settings"} );
 
 		$modelBuilder->Build($stripLayout);
+
+		push( @builders, $modelBuilder );
+	}
+
+	# Draw layout layer by layer
+	my @layers =  map { $_->{"gROWname"} } CamJob->GetBoardBaseLayers( $inCAM, $jobId );
+
+	foreach my $l (@layers) {
+
+		CamLayer->WorkLayer( $inCAM, $l );
+
+		foreach my $builder (@builders) {
+
+			my @curLayers = grep { $_->GetLayerName() eq $l } $builder->GetLayers();
+
+			$_->Draw() foreach (@curLayers);
+		}
 	}
 
 	# Proces text layout
@@ -135,11 +156,13 @@ sub __GenerateSingle {
 	# build info texts
 	# Proces info text layout
 	if ( $cpnLayout->GetInfoTextLayout() ) {
-		
- 
+
 		my $textLayer = InfoTextLayer->new("c");
 		$textLayer->Init( $inCAM, $jobId, $stepName, $self->{"settings"} );
-		$textLayer->Draw( $cpnLayout->GetInfoTextLayout() );
+		$textLayer->Build( $cpnLayout->GetInfoTextLayout() );
+		
+		CamLayer->WorkLayer( $inCAM, $textLayer->GetLayerName() );
+		$textLayer->Draw();
 	}
 
 }

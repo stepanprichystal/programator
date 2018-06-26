@@ -105,7 +105,7 @@ sub AddSurfaceSolidPattern {
 				 "outline_width"  => $outline_width,
 				 "outline_invert" => $outline_invert
 	);
-	 
+
 }
 
 sub AddSurfaceLinePattern {
@@ -182,6 +182,59 @@ sub SurfaceCrossHatchPattern {
 				 "cross_hatch_witdh"       => $cross_hatch_width,
 				 "cross_hatch_dist"        => $cross_hatch_dist
 	);
+}
+
+sub AddSurfaceFillSolid {
+	my $self     = shift;
+	my $inCAM    = shift;
+	
+	# solid pattern parameters
+	my $outline_draw      = shift;
+	my $outline_width     = shift;    # outline width in µm
+	my $outline_invert    = shift // 0;
+	
+	$outline_draw = $outline_draw ? "yes" : 'no';
+	$outline_invert = $outline_invert ? "yes" : 'no';
+	
+	# surface fill parameters
+	my $step_margin_x    = shift;
+	my $step_margin_y    = shift;
+	my $sr_margin_x    = shift;
+	my $sr_margin_y    = shift;
+	my $consider_feat    = shift;
+	my $feat_margin    = shift;
+	
+	my $polarity = shift // "positive";             #
+	
+	$consider_feat = $consider_feat ? "yes" : 'no';
+	
+
+	$inCAM->COM(
+				 "sr_fill",
+				 "type"            => "solid",
+				 "solid_type"      => "surface",
+				 "min_brush"       => "25.4",
+				 "use_arcs"        => "no",
+				 "cut_prims"       => "no",
+				 "outline_draw"    => $outline_draw,
+				 "outline_width"   => $outline_width,
+				 "outline_invert"  => $outline_invert,
+				 "polarity"        => $polarity,
+				 "step_margin_x"   => $step_margin_x,
+				 "step_margin_y"   => $step_margin_y,
+				 
+				 "sr_margin_x"     => $sr_margin_x,
+				 "sr_margin_y"     => $sr_margin_y,
+				 "sr_max_dist_x"   => "0",
+				 "sr_max_dist_y"   => "0",
+				 "nest_sr"         => "yes",
+				 "consider_feat"   => $consider_feat,
+				 "feat_margin"     => $feat_margin,
+
+				 "dest"            => "affected_layers",
+				 "layer"           => ".affected"
+	);
+
 }
 
 #-------------------------------------------------------------------------------------------#

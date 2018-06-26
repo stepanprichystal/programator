@@ -59,13 +59,9 @@ sub GetDrawing {
 	return $self->{"drawing"};
 }
 
-sub _Draw {
+sub Draw {
 	my $self = shift;
 
-	my $inCAM = $self->{"inCAM"};
-	my $jobId = $self->{"jobId"};
-
-	CamLayer->WorkLayer( $inCAM, $self->{"layerName"} );
 
 	$self->{"drawing"}->Draw();
 }

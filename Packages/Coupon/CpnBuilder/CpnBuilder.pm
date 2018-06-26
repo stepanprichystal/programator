@@ -160,7 +160,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	# Each pool contain strips
 	my @groupsPoolComb = ();
 
-	foreach my $comb ($groupsComb[0]) {
+	foreach my $comb (@groupsComb) {
 
 		my $combPools = [];
 
