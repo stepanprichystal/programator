@@ -38,8 +38,6 @@ hideAfterStart = 1
 autoRemove = 20
 
  
- 
- 
 
 # Loging type 
 # 0 - no log, 
