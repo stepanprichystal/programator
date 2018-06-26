@@ -77,6 +77,18 @@ sub GetStripByColumn{
 	return $s;
 }
 
+sub GetLastStrip{
+	my $self = shift;
+	my $column = shift;
+ 
+	my $s = (grep { $_->GetIsLast } @{$self->{"strips"}})[0];
+	
+	return $s;
+}
+
+
+ 
+
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

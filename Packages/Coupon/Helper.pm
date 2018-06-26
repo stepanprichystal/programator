@@ -84,6 +84,21 @@ sub GetInCAMLayer {
 	return $lInCAM;
 }
 
+
+sub GetInStackLayer {
+	my $self     = shift;
+	my $lName    = shift;
+	my $layerCnt = shift;
+	
+ 
+	die "Wrong InCAM stackup layer name" if ( $lName !~ /[csv]\d*/i  );
+
+	my $lInStack;
+	
+	my $lNum = $self->GetLayerNum($lName, $layerCnt);
+
+	return "L".$lNum;
+}
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#

@@ -84,6 +84,15 @@ sub GetStripsByColumn{
 	return @strips;
 }
 
+sub GetStripsByLayer{
+	my $self = shift;
+	my $trackLayer = shift;  
+ 
+	my @strips =  map { $_->GetStripsByLayer($trackLayer) } @{ $self->{"pools"} };
+	
+	return @strips;
+}
+
 sub GetAllStrips{
 	my $self = shift;
 	my $column = shift;

@@ -59,4 +59,11 @@ padText = 1 # 1/0
 padTextUnmask = 1
 padTextClearance = 100 #µm
 
+# Guard tracks settings
+
+guardTracks = 1 # 1/0
+guardTracksType = single # single - single lines, full - fill whole area except pads area
+guardTrackDist = 0.3 #mm
+guardTrackWidth = 200 # mm
+
  

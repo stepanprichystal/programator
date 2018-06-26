@@ -47,7 +47,7 @@ sub Build {
 	my $result = 1;
 
 	# Origin where strip pad shoul be start (contain position of left side on coupon. Right side is symetric)
-	my $origin = $self->{"cpnSingle"}->GetMicrostripOrigin($self);
+	my $origin = $self->{"cpnSingle"}->GetMicrostripOrigin($self->{"stripVariant"});
 
 	# compute track dimension, pads
 
@@ -228,18 +228,18 @@ sub Build {
 	return $result;
 }
 
-sub GetPadPosXCnt {
-	my $self = shift;
-
-	return 2;
-
-}
-
-sub GetPadPosYCnt {
-	my $self = shift;
-
-	return 2;
-}
+#sub GetPadPosXCnt {
+#	my $self = shift;
+#
+#	return 2;
+#
+#}
+#
+#sub GetPadPosYCnt {
+#	my $self = shift;
+#
+#	return 2;
+#}
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

@@ -3,7 +3,7 @@
 # Description: Manager responsible for NIF creation
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::Coupon::CpnBuilder::CpnInfoTextBuilder;
+package Packages::Coupon::CpnBuilder::OtherBuilders::CpnInfoTextBuilder;
 
 use Class::Interface;
 &implements('Packages::Coupon::CpnBuilder::ICpnBuilder');

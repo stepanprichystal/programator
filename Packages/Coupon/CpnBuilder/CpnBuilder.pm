@@ -149,8 +149,9 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	# Each group contain strips
 	my $groupPolicy = GroupPolicy->new( $cpnSource, $cpnSett->GetMaxTrackCnt() );
 	
-	#my @filter = (1,2,3,7,8); # below + above lines
-	my @filter = (1, 2,3,4);
+	my @filter = (1,19,20,21,22); # below + above lines
+	#	my @filter = (1,3,13, 14, 19,20,21); # below + above lines
+	#my @filter = (3);
 
 	my @groupsComb = $groupPolicy->GenerateGroups( \@filter );
 

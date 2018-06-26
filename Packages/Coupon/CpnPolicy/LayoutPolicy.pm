@@ -438,6 +438,8 @@ sub __VerifyStripRoutes {
 
 					$usedRoute{ Enums->Route_STREIGHT } = 1;
 					$strip->SetRoute( Enums->Route_STREIGHT );
+					$strip->SetRouteDist(0);
+					$strip->SetRouteWidth($self->__GetTrackWidth($strip));
 					$stripRouteOk = 1;
 					next;
 				}
@@ -523,6 +525,14 @@ sub __CheckStraightRoute {
 	if ( !$strip->GetIsLast() ) {
 		$res = 0;
 	}
+	
+	if($res){
+
+		$strip->SetRouteDist(0);
+		$strip->SetRouteWidth( $self->__GetTrackWidth($strip));
+		
+	}
+	
 
 	return $res;
 }
@@ -542,19 +552,10 @@ sub __CheckRoute {
 
 	my $stripData = $strip->Data();
 
-	my $trackW = undef; # total track (tracks if differential) width
+	my $trackW = $self->__GetTrackWidth($strip); # total track (tracks if differential) width
 	my $trackDistance = undef; # track distance from track pad (height from track pad which track is placed on coupon)
 
-	if ( $strip->GetType() eq Enums->Type_SE || $strip->GetType() eq Enums->Type_COSE ) {
-
-		$trackW = $stripData->{"xmlConstraint"}->GetParamDouble("WB");
-	}
-	else {
-
-		$trackW = 2 * $stripData->{"xmlConstraint"}->GetParamDouble("WB") + $stripData->{"xmlConstraint"}->GetParamDouble("S");
-	}
-
-	$trackW /= 1000;
+	 
 
 	if ($trackThroughPads) {
 
@@ -585,6 +586,28 @@ sub __CheckRoute {
 	}
 
 	return $result;
+}
+
+sub __GetTrackWidth{
+	my $self             = shift;
+	my $strip            = shift;
+	
+	my $trackW = undef; # total track (tracks if differential) width
+
+	my $stripData = $strip->Data();
+
+	if ( $strip->GetType() eq Enums->Type_SE || $strip->GetType() eq Enums->Type_COSE ) {
+
+		$trackW = $stripData->{"xmlConstraint"}->GetParamDouble("WB");
+	}
+	else {
+
+		$trackW = 2 * $stripData->{"xmlConstraint"}->GetParamDouble("WB") + $stripData->{"xmlConstraint"}->GetParamDouble("S");
+	}
+
+	$trackW /= 1000;
+	
+	return $trackW
 }
 
 #-------------------------------------------------------------------------------------------#

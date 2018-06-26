@@ -98,12 +98,12 @@ sub GetCouponSpace {
 
 }
 
-sub GetAreaWidth {
-	my $self = shift;
-
-	return $self->__GetVal("w") - 2 * $self->__GetVal("marginCoupon");
-
-}
+#sub GetAreaWidth {
+#	my $self = shift;
+#
+#	return $self->__GetVal("w") - 2 * $self->__GetVal("marginCoupon");
+#
+#}
 
 sub GetCpnSingleWidth {
 	my $self = shift;
@@ -433,6 +433,39 @@ sub GetPadTextClearance{
 	
 } 
  
+
+# Guard track settings
+
+sub GetGuardTracks{
+	my $self = shift;
+
+	return $self->__GetVal("guardTracks");
+	
+} 
+
+sub GetGuardTracksType{
+	my $self = shift;
+
+	return $self->__GetVal("guardTracksType");
+	
+} 
+
+
+sub GetGuardTrackDist{
+	my $self = shift;
+
+	return $self->__GetVal("guardTrackDist");
+	
+} 
+
+sub GetGuardTrackWidth{
+	my $self = shift;
+
+	return $self->__GetVal("guardTrackWidth");
+	
+} 
+
+
 
 sub __GetVal {
 	my $self = shift;

@@ -23,17 +23,12 @@ sub new {
 	$self->{"w"}              = undef;    # dynamic width of single coupo (active area width + text on rights)
 	$self->{"stripsLayouts"}  = [];
 	$self->{"infoTextLayout"} = undef;
+	$self->{"guardTracksLayout"} = undef;
 
 	return $self;
 }
 
-sub SetInfoTextLayout {
-	my $self       = shift;
-	my $textLayout = shift;
 
-	$self->{"infoTextLayout"} = $textLayout;
-
-}
 
 sub SetHeight {
 	my $self = shift;
@@ -74,10 +69,32 @@ sub GetMicrostripLayouts {
 
 }
 
+sub SetInfoTextLayout {
+	my $self       = shift;
+	my $textLayout = shift;
+
+	$self->{"infoTextLayout"} = $textLayout;
+
+}
+
 sub GetInfoTextLayout {
 	my $self = shift;
 
 	return $self->{"infoTextLayout"};
+}
+
+sub SetGuardTracksLayout {
+	my $self       = shift;
+	my $layouts = shift;
+
+	$self->{"guardTracksLayout"} = $layouts
+
+}
+
+sub GetGuardTracksLayout {
+	my $self = shift;
+
+	return $self->{"guardTracksLayout"};
 }
 
 #-------------------------------------------------------------------------------------------#

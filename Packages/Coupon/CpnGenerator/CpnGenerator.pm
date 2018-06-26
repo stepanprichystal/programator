@@ -25,6 +25,7 @@ use aliased 'Packages::Coupon::CpnGenerator::ModelBuilders::StriplineMicrostrip'
 use aliased 'Packages::CAM::SymbolDrawing::Point';
 use aliased 'Packages::CAMJob::Panelization::SRStep';
 use aliased 'Packages::Coupon::CpnGenerator::CpnLayers::InfoTextLayer';
+use aliased 'Packages::Coupon::CpnGenerator::CpnLayers::GuardTracksLayer';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -137,7 +138,7 @@ sub __GenerateSingle {
 	}
 
 	# Draw layout layer by layer
-	my @layers =  map { $_->{"gROWname"} } CamJob->GetBoardBaseLayers( $inCAM, $jobId );
+	my @layers = map { $_->{"gROWname"} } CamJob->GetBoardBaseLayers( $inCAM, $jobId );
 
 	foreach my $l (@layers) {
 
@@ -160,9 +161,24 @@ sub __GenerateSingle {
 		my $textLayer = InfoTextLayer->new("c");
 		$textLayer->Init( $inCAM, $jobId, $stepName, $self->{"settings"} );
 		$textLayer->Build( $cpnLayout->GetInfoTextLayout() );
-		
+
 		CamLayer->WorkLayer( $inCAM, $textLayer->GetLayerName() );
 		$textLayer->Draw();
+	}
+
+	if ( $self->{"settings"}->GetGuardTracks() ) {
+
+		foreach my $layout ( @{ $cpnLayout->GetGuardTracksLayout() } ) {
+
+			my $gtLayer = GuardTracksLayer->new( $layout->GetLayer() );
+			$gtLayer->Init( $inCAM, $jobId, $stepName, $self->{"settings"} );
+			$gtLayer->Build($layout);
+
+			CamLayer->WorkLayer( $inCAM, $gtLayer->GetLayerName() );
+			$gtLayer->Draw();
+
+		}
+
 	}
 
 }
