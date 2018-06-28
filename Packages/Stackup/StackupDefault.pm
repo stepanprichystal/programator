@@ -6,7 +6,6 @@
 package Packages::Stackup::StackupDefault;
 
 #loading of locale modules
- 
 
 #3th party library
 use English;
@@ -41,7 +40,6 @@ sub CreateStackup {
 	my $outerCuThick = shift;
 	my $pcbClass     = shift;
 
- 
 	#test input parameters
 	if ( $lCount < 4 ) {
 		print STDERR "Number of Cu has to be larger then 4";
@@ -93,18 +91,17 @@ sub CreateStackup {
 	#$messMngr->ShowModal( -1, EnumsGeneral->MessageType_INFORMATION, \@mess, \@btn );
 
 	#my $res = $messMngr->Result();
-	my $res = 0;
-	
+	my $mat = HegMethods->GetMaterialKind( $self->{"jobId"} );
 
 	my $path;
 
-	if ($res) {
-
-		$path = GeneralHelper->Root() . "\\Resources\\DefaultStackups\\";
-	}
-	else {
+	if ( $mat =~ /is400/ ) {
 
 		$path = GeneralHelper->Root() . "\\Resources\\DefaultStackups_is400\\";
+	}
+	else {
+		$path = GeneralHelper->Root() . "\\Resources\\DefaultStackups\\";
+
 	}
 
 	my $stcFile = $path . $defaultName;
@@ -126,10 +123,10 @@ sub CreateStackup {
 	my $pcbThick = $stackup->GetFinalThick();
 
 	#generate name of stackup file eg.: d99991_4vv_1,578_Euro.xml
-	my $stackupName = $self->__GetStackupName( $stackup, $pcbId);
+	my $stackupName = $self->__GetStackupName( $stackup, $pcbId );
 
 	$self->_CompleteNewStackup( $pcbId, $pcbThick, $stackupName );
- 
+
 	#Tidy up temp dir
 	FileHelper->DeleteTempFiles();
 
@@ -242,10 +239,10 @@ sub _CreateNewStackup {
 
 	$xml->{"ml"}{"soll"} = 0;
 	my $xmlString = XMLout( $xml->{ml}, RootName => "ml" );
-	
-	my @oldStackups = FileHelper->GetFilesNameByPattern(EnumsPaths->Jobs_STACKUPS, $pcbId);
-	
-	foreach my $f (@oldStackups){
+
+	my @oldStackups = FileHelper->GetFilesNameByPattern( EnumsPaths->Jobs_STACKUPS, $pcbId );
+
+	foreach my $f (@oldStackups) {
 		unlink $f;
 	}
 
@@ -276,20 +273,18 @@ sub _CompleteNewStackup {
 
 }
 
-
 sub __GetStackupName {
-	my $self     = shift;
-	my $stackup    = shift;
-	my $pcbId    = shift;
-	
-	my $lCount = $stackup->GetCuLayerCnt();
+	my $self    = shift;
+	my $stackup = shift;
+	my $pcbId   = shift;
+
+	my $lCount   = $stackup->GetCuLayerCnt();
 	my $pcbThick = $stackup->GetFinalThick();
-	
 
 	$pcbThick = sprintf( "%4.3f", ( $pcbThick / 1000 ) );
 	$pcbThick =~ s/\./\,/g;
 
-	my %customerInfo = %{HegMethods->GetCustomerInfo($pcbId)};
+	my %customerInfo = %{ HegMethods->GetCustomerInfo($pcbId) };
 
 	my $customer = $customerInfo{"customer"};
 
@@ -316,15 +311,15 @@ my ( $package, $filename, $line ) = caller;
 
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-		my $pcbId        = "f81679";
-		my $layerCnt     = 6;
-		my @innerCuUsage = ( 58, 15, 12, 44 );
-		my $outerCuThick = 35;
-		my $pcbClass     = 6;
+	my $pcbId        = "f81679";
+	my $layerCnt     = 6;
+	my @innerCuUsage = ( 58, 15, 12, 44 );
+	my $outerCuThick = 35;
+	my $pcbClass     = 6;
 
-		use aliased 'Packages::Stackup::StackupDefault';
+	use aliased 'Packages::Stackup::StackupDefault';
 
-		StackupDefault->CreateStackup( $pcbId, $layerCnt, \@innerCuUsage, $outerCuThick, $pcbClass );
+	StackupDefault->CreateStackup( $pcbId, $layerCnt, \@innerCuUsage, $outerCuThick, $pcbClass );
 }
 
 1;
