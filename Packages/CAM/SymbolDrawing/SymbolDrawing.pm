@@ -371,6 +371,20 @@ sub __DrawSurfFill {
 		$surf->GetFeatMargin(),
 		);
 	
+	 }elsif ( $patt->GetPredefined_pattern_type() eq "symbol" ) {
+
+		CamSymbolSurf->AddSurfaceFillSymbol( $self->{"inCAM"},   $patt->GetOutline_draw(), $patt->GetOutline_width(), $patt->GetOutline_invert(),
+		$patt->GetSymbol(),
+		$patt->GetSymbolDX(),
+		$patt->GetSymbolDY(),
+		$surf->GetMarginX(),
+		$surf->GetMarginY(),
+		$surf->GetSRMarginX(),
+		$surf->GetSRMarginY(),
+		$surf->GetConsiderFeat(),
+		$surf->GetFeatMargin(),
+		);
+ 
 	 }else{
 		
 		die "Pattern type is not defined";

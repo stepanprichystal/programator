@@ -55,9 +55,9 @@ sub Build {
 			my $mirror = $self->{"layerName"} eq "c" ? 0 : 1;
 
 			my $pText = PrimitiveText->new( $padText->GetText(), ($self->{"layerName"} eq "c" ? $padText->GetPosition() : $padText->GetPositionMirror()),
-											$self->{"settings"}->GetPadTextHeight(),
-											$self->{"settings"}->GetPadTextWidth(),
-											$self->{"settings"}->GetPadTextWeight()+ $self->{"settings"}->GetPadTextClearance()*2/1000, ($self->{"layerName"} eq "c" ? 0 : 1) );
+											$self->{"settings"}->GetPadTextHeight()/1000,
+											$self->{"settings"}->GetPadTextWidth()/1000,
+											$self->{"settings"}->GetPadTextWeight()/1000 , ($self->{"layerName"} eq "c" ? 0 : 1) );
  
 			$self->{"drawing"}->AddPrimitive($pText);
 		}

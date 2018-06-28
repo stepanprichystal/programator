@@ -58,7 +58,7 @@ sub Build {
 	# set model
 
 	my $areaW    = $self->{"settings"}->GetCpnSingleWidth();
-	my $margin  = $self->{"settings"}->GetCouponSingleMargin();
+	my $margin  = $self->{"settings"}->GetCouponSingleMargin()/1000;
 	my $p2pDist = $self->{"settings"}->GetPad2PadDist() / 1000;    # mm
 
 	my $w = $self->_GetXmlConstr()->GetParamDouble("WB");          # width µm

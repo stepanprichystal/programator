@@ -98,7 +98,7 @@ sub stringify {
 				
 				my $s = $strips[$k];
 				
-				$str .= "|-- Strip type - ".$s->GetType().".\n";
+				$str .= "|-- Strip type - ".$s->GetType()." ( track: ".$s->Data()->{"xmlConstraint"}->GetTrackLayer().")\n";
 				
 			}
 		}

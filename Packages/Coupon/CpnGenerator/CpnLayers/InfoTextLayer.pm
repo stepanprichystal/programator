@@ -71,9 +71,9 @@ sub Build {
 
 		my $p = Point->new( $text->{"point"}->X() + $origin->X(), $text->{"point"}->Y() + $origin->Y() );
 		my $pText = PrimitiveText->new( $text->{"val"}, $p,
-										$self->{"settings"}->GetInfoTextHeight(),
-										$self->{"settings"}->GetInfoTextWidth(),
-										$self->{"settings"}->GetInfoTextWeight() );
+										$self->{"settings"}->GetInfoTextHeight()/1000,
+										$self->{"settings"}->GetInfoTextWidth()/1000,
+										$self->{"settings"}->GetInfoTextWeight()/1000 );
 
 		$self->{"drawing"}->AddPrimitive($pText);
 

@@ -2,7 +2,7 @@
 
 stepName 		 = coupon 	# default step name
 padClearance 	 = 80    	#µm
-pad2GNDClearance = 120               #µm
+pad2GNDClearance = 200               #µm
 padTrackSize     = 1524              #µm
 padGNDSize       = 1524              #µm
 padTrackShape    = s    #µm
@@ -15,10 +15,11 @@ trackPadIsolation = 100					# µm
 trackToCopper = 400 # µm
 
 cpnSingleWidth                 = 130              # mm
-marginSingle      = 2                # mm
-marginCoupon      = 2                # mm
-couponSpace       = 1              # mm
-groupPadsDist    = 4                # mm
+
+marginSingle      = 2000                # µm
+marginCoupon      = 2000               # µm
+couponSpace       = 1000             # µm
+groupPadsDist    = 4000                # µm
 twoEndedDesign = 1
 
 
@@ -34,11 +35,11 @@ routeStraight = 1
 
 # Info text settings
 
-infoTextWidth = 1
-infoTextHeight = 1
-infoTextWeight = 0.2 
-padsTopTextDist    = 2                # mm
-infoTextRightCpnDist = 1 #mm
+infoTextWidth = 1000 # µm
+infoTextHeight = 1000 # µm
+infoTextWeight = 200 #µm
+padsTopTextDist    = 2000                # µm
+infoTextRightCpnDist = 1000 #µm
 infoText = 1 # 1/0
 infoTextPosition = right # top/right
 infoTextNumber = 1 # 1/0 numberingo of strips
@@ -46,25 +47,34 @@ infoTextTrackImpedance = 1 # 1/0
 infoTextTrackWidth = 1 # 1/0
 infoTextTrackLayer = 1 # 1/0
 infoTextTrackSpace = 1 # 1/0
-infoTextHSpacing = 1 #
-infoTextVSpacing = 1 #
+infoTextHSpacing = 1000 #µm
+infoTextVSpacing = 1000 #µm
+infoTextUnmask = 1 # µm
 
 # Track pad text settings
 
-padTextWidth = 0.8
-padTextHeight = 0.7
-padTextWeight = 0.2 
-padTextDist = 0.15 # mm
+padTextWidth = 800 #µm
+padTextHeight = 700 #µm
+padTextWeight = 200 #µm
+padTextDist = 150 # µm
 padText = 1 # 1/0
 padTextUnmask = 1
-padTextClearance = 100 #µm
+ 
 
 # Guard tracks settings
 
 guardTracks = 1 # 1/0
 guardTracksType = single # single - single lines, full - fill whole area except pads area
-guardTrack2TrackDist = 0.25 #mm
-guardTrack2PadDist = 0.4 #mm
+guardTrack2TrackDist = 250 #µm
+guardTrack2PadDist = 400 #µm
+guardTrack2Shielding = 400 #µm
 guardTrackWidth = 200 # µm
 
+
+# General shielding for signal layers
+shielding = 1 # 1/0
+shieldingType = symbol # symbol/solid
+shieldingSymbol = r200 # µm incam symbol 
+shieldingSymbolDX = 500 # µm
+shieldingSymbolDY = 500 # µm
  

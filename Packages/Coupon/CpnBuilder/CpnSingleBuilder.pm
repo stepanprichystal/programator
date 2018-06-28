@@ -25,6 +25,7 @@ use aliased 'Packages::CAM::SymbolDrawing::Point';
 use aliased 'Packages::Coupon::CpnBuilder::CpnLayout::CpnSingleLayout';
 use aliased 'Packages::Coupon::CpnBuilder::OtherBuilders::CpnInfoTextBuilder';
 use aliased 'Packages::Coupon::CpnBuilder::OtherBuilders::GuardTracksBuilder';
+use aliased 'Packages::Coupon::CpnBuilder::OtherBuilders::ShieldingBuilder';
 use aliased 'Packages::Coupon::Helper';
 use aliased 'Packages::CAM::SymbolDrawing::Point';
 
@@ -130,8 +131,8 @@ sub Build {
 
 			if ( $textLayout->GetType() eq "right" ) {
 
-				my $x = $self->{"settings"}->GetCpnSingleWidth() + $self->{"settings"}->GetInfoTextRightCpnDist();
-				my $y = $self->{"settings"}->GetCouponSingleMargin();
+				my $x = $self->{"settings"}->GetCpnSingleWidth() + $self->{"settings"}->GetInfoTextRightCpnDist() / 1000;
+				my $y = $self->{"settings"}->GetCouponSingleMargin() / 1000;
 
 				# if coupon is heigher than text, center text vertically to single coupon
 
@@ -145,8 +146,10 @@ sub Build {
 
 				#compute
 				# align text to right
-				$p = Point->new( $self->{"settings"}->GetCpnSingleWidth() - $textLayout->GetWidth() - $self->{"settings"}->GetCouponSingleMargin(),
-								 $self->{"settings"}->GetCouponSingleMargin() + $activeArea{"h"} + $self->{"settings"}->GetPadsTopTextDist() );
+				$p = Point->new(
+							 $self->{"settings"}->GetCpnSingleWidth() - $textLayout->GetWidth() - $self->{"settings"}->GetCouponSingleMargin() / 1000,
+							 $self->{"settings"}->GetCouponSingleMargin() / 1000 + $activeArea{"h"} + $self->{"settings"}->GetPadsTopTextDist() / 1000
+				);
 			}
 
 			$textLayout->SetPosition($p);
@@ -174,8 +177,22 @@ sub Build {
 
 	}
 
-	# Specify which layer has to contains ground negative pads in for each microstrip gnd pads
-	# Consider onlz pads which has to bz connected to ground
+	# Build shielding
+	if ( $self->{"settings"}->GetShielding() ) {
+
+		my $sBuilder = ShieldingBuilder->new( $inCAM, $jobId, $self->{"settings"}, $self->{"singleCpnVar"}, $self );
+		if ( $sBuilder->Build($errMess) ) {
+
+			$self->{"layout"}->SetShieldingLayout( $sBuilder->GetLayout() );
+		}
+		else {
+
+			$result = 0;
+		}
+
+	}
+
+
 
 	if ($result) {
 
@@ -232,9 +249,10 @@ sub GetShareGNDLayers {
 sub GetMicrostripOrigin {
 	my $self         = shift;
 	my $stripVariant = shift;
+ 
 
 	# X cooredination - left down pad (trakc/GND) of microstrip
-	my $x = $self->{"settings"}->GetCouponSingleMargin() + $self->{"settings"}->GetPadTrackSize() / 1000 / 2;
+	my $x = $self->{"settings"}->GetCouponSingleMargin() / 1000 + $self->{"settings"}->GetPadTrackSize() / 1000 / 2;
 
 	# choose pool
 	my $pool = $self->{"singleCpnVar"}->GetPoolByOrder( $stripVariant->Pool() );
@@ -248,7 +266,7 @@ sub GetMicrostripOrigin {
 
 		my @pos = map { $self->GetMicrostripPosCnt( $_, "x" ) } (@stripsVar);
 
-		$x += ( max(@pos) - 1 ) * $self->{"settings"}->GetPad2PadDist() / 1000 + $self->{"settings"}->GetGroupPadsDist();
+		$x += ( max(@pos) - 1 ) * $self->{"settings"}->GetPad2PadDist() / 1000 + $self->{"settings"}->GetGroupPadsDist() / 1000;
 	}
 
 	# Y cooredination - left down pad (trakc/GND) of microstrip
@@ -256,7 +274,7 @@ sub GetMicrostripOrigin {
 
 	# bottom pool
 
-	$y = $self->{"settings"}->GetCouponSingleMargin();
+	$y = $self->{"settings"}->GetCouponSingleMargin() / 1000;
 	$y += $self->{"settings"}->GetPadTrackSize() / 2 / 1000;    # half of track pad size
 
 	# space for bottom routes in whole pool strip if exist
@@ -287,10 +305,10 @@ sub GetCpnSingleArea {
 	my %stripArea = $self->GetActiveArea();
 
 	# compute position
-	$areaInfo{"pos"} = Point->new( $self->{"settings"}->GetCouponMargin(), $self->{"settings"}->GetCouponMargin() );
+	$areaInfo{"pos"} = Point->new( $self->{"settings"}->GetCouponMargin() / 1000, $self->{"settings"}->GetCouponMargin() / 1000 );
 
 	# compute width
-	my $w = 2 * $self->{"settings"}->GetCouponSingleMargin() + $stripArea{"w"};
+	my $w = 2 * $self->{"settings"}->GetCouponSingleMargin() / 1000 + $stripArea{"w"};
 
 	# consider right text
 	if ( $self->{"settings"}->GetInfoText() ) {
@@ -300,14 +318,14 @@ sub GetCpnSingleArea {
 		die "Infot text layout is not defined " unless ( defined $textLayout );
 
 		if ( $self->{"settings"}->GetInfoTextPosition() eq "right" ) {
-			$w += $self->{"settings"}->GetInfoTextRightCpnDist() + $textLayout->GetWidth();
+			$w += $self->{"settings"}->GetInfoTextRightCpnDist() / 1000 + $textLayout->GetWidth();
 		}
 	}
 
 	$areaInfo{"w"} = $w;
 
 	# compute height
-	my $h = 2 * $self->{"settings"}->GetCouponSingleMargin() + $stripArea{"h"};
+	my $h = 2 * $self->{"settings"}->GetCouponSingleMargin() / 1000 + $stripArea{"h"};
 
 	# consider top texts
 	if ( $self->{"settings"}->GetInfoText() ) {
@@ -318,7 +336,7 @@ sub GetCpnSingleArea {
 
 		if ( $self->{"settings"}->GetInfoTextPosition() eq "top" ) {
 
-			$h += $self->{"settings"}->GetPadsTopTextDist();
+			$h += $self->{"settings"}->GetPadsTopTextDist() / 1000;
 			$h += $textLayout->GetHeight();
 
 		}
@@ -348,10 +366,10 @@ sub GetActiveArea {
 	my %areaInfo = ( "pos" => undef, "w" => undef, "h" => undef );
 
 	# compute position
-	$areaInfo{"pos"} = Point->new( $self->{"settings"}->GetCouponSingleMargin(), $self->{"settings"}->GetCouponSingleMargin() );
+	$areaInfo{"pos"} = Point->new( $self->{"settings"}->GetCouponSingleMargin() / 1000, $self->{"settings"}->GetCouponSingleMargin() / 1000 );
 
 	# compute width
-	$areaInfo{"w"} = $self->{"settings"}->GetCpnSingleWidth() - 2 * $self->{"settings"}->GetCouponSingleMargin();
+	$areaInfo{"w"} = $self->{"settings"}->GetCpnSingleWidth() - 2 * $self->{"settings"}->GetCouponSingleMargin() / 1000;
 
 	# compute height
 	my $h = undef;

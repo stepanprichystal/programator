@@ -4,7 +4,7 @@
 # creation nif file depend on pcb type
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::Coupon::CpnGenerator::CpnLayers::GuardTracksLayer;
+package Packages::Coupon::CpnGenerator::CpnLayers::InfoTextMaskLayer;
 
 use base('Packages::Coupon::CpnGenerator::CpnLayers::LayerBase');
 
@@ -18,7 +18,7 @@ use warnings;
 #local library
 use aliased 'Packages::CAM::SymbolDrawing::SymbolDrawing';
 use aliased 'Packages::CAM::SymbolDrawing::Primitive::PrimitiveText';
-use aliased 'Packages::CAM::SymbolDrawing::Primitive::PrimitiveLine';
+
 use aliased 'Packages::CAM::SymbolDrawing::Point';
 use aliased 'CamHelpers::CamLayer';
 use aliased 'Packages::Coupon::Enums';
@@ -44,57 +44,28 @@ sub Build {
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
 
-	 
-	# Draw pad clearance
-	if ( $layout->GetType() eq "single" ) {
+	return if (!$self->{"settings"}->GetInfoTextUnmask());
 
-		foreach my $line ( $layout->GetLines() ) {
+	my $origin = $layout->GetPosition();
 
-			my $l =
-			  PrimitiveLine->new( $line->{"startP"}, $line->{"endP"},
-								  "s" . ( $self->{"settings"}->GetGuardTrackWidth() + $self->{"settings"}->GetGuardTrack2Shielding() ),
-								  DrawEnums->Polar_NEGATIVE );
-			$self->{"drawing"}->AddPrimitive($l);
+	# draw clearance
+ 
+ 
+	foreach my $text ( $layout->GetTexts() ) {
 
-		}
+		my $p = Point->new( $text->{"point"}->X() + $origin->X(), $text->{"point"}->Y() + $origin->Y() );
+		my $pText = PrimitiveText->new( $text->{"val"}, $p,
+										$self->{"settings"}->GetInfoTextHeight()/1000,
+										$self->{"settings"}->GetInfoTextWidth()/1000,
+										$self->{"settings"}->GetInfoTextWeight()/1000,
+										0,0, DrawEnums->Polar_NEGATIVE);
 
-	}
-	elsif ( $layout->GetType() eq "full" ) {
-
-		foreach my $area ( $layout->GetAreas() ) {
-		
-			my %areaNeg = ();
-			$areaNeg{"xMin"} =  $area->{"xMin"} - $self->{"settings"}->GetGuardTrack2Shielding()/1000;
-			$areaNeg{"xMax"} =  $area->{"xMax"} + $self->{"settings"}->GetGuardTrack2Shielding()/1000;
-			$areaNeg{"yMin"} =  $area->{"yMin"} - $self->{"settings"}->GetGuardTrack2Shielding()/1000;
-			$areaNeg{"yMax"} =  $area->{"yMax"} + $self->{"settings"}->GetGuardTrack2Shielding()/1000;
-			
-
-			$self->{"drawing"}->AddPrimitive( PrimitiveSurfPoly->new( \%areaNeg, undef, DrawEnums->Polar_NEGATIVE ) );
-
-		}
-	}
-
-	# draw sielding
-	if ( $layout->GetType() eq "single" ) {
-
-		foreach my $line ( $layout->GetLines() ) {
-
-			my $l =
-			  PrimitiveLine->new( $line->{"startP"}, $line->{"endP"}, "s" . $self->{"settings"}->GetGuardTrackWidth(), DrawEnums->Polar_POSITIVE );
-			$self->{"drawing"}->AddPrimitive($l);
-
-		}
+		$self->{"drawing"}->AddPrimitive($pText);
 
 	}
-	elsif ( $layout->GetType() eq "full" ) {
 
-		foreach my $area ( $layout->GetAreas() ) {
-
-			$self->{"drawing"}->AddPrimitive( PrimitiveSurfPoly->new( $area, undef, DrawEnums->Polar_POSITIVE ) );
-
-		}
-	}
+	# Draw to layer
+ 
 
 }
 

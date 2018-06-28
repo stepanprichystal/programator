@@ -98,14 +98,8 @@ sub GetStripLayoutVariants {
 				my $poolVar = CpnPoolVariant->new($i);
 
 				for ( my $j = 0 ; $j < scalar( @{ $pools->[$i] } ) ; $j++ ) {
-					my $s = $pools->[$i]->[$j];
-
-					my $stripInfo = CpnStripVariant->new( $s->{"id"} );
-					$stripInfo->SetPool( $s->{"pool"} );
-
-					$stripInfo->SetColumn( $s->{"col"} );
-					$stripInfo->SetData( $s->{"d"} );
-
+					my $stripInfo = $pools->[$i]->[$j];
+ 
 					if ( $j + 1 == scalar( @{ $pools->[$i] } ) ) {
 						$stripInfo->SetIsLast(1);
 					}
@@ -257,13 +251,13 @@ sub __ProcessGroupPoolComb {
 
 			if ( scalar(@lastCandidates) > 1 ) {
 				my $stripInfoLast = $self->__GetNextStrip( \@lastCandidates, \@pools, $shareGNDPads, $maxTrackCnt );
-				if ( $stripInfoLast->{"col"} < $stripInfo->{"col"} ) {
+				if ( $stripInfoLast->Col() < $stripInfo->Col() ) {
 
-					push( @p, $stripInfo->{"d"} );    # push back
+					push( @p, $stripInfo->Data() );    # push back
 					$stripInfo = $stripInfoLast;
 				}
 				else {
-					push( @lastCandidates, $stripInfoLast->{"d"} );    # push back
+					push( @lastCandidates, $stripInfoLast->Data() );    # push back
 				}
 			}
 
@@ -302,11 +296,11 @@ sub __GetNextStrip {
 			# go through all microstrip in below pool and chcek if is poosible set same position
 			# check only microstips from position of last microstrip in current pool
 
-			my $startCol = scalar(@$poolCur) ? $poolCur->[-1]->{"col"} + 1 : undef;
+			my $startCol = scalar(@$poolCur) ? $poolCur->[-1]->Col() + 1 : undef;
 
 			for ( my $k = 0 ; $k < scalar( @{$poolPrev} ) ; $k++ ) {
 
-				next if ( defined $startCol && $poolPrev->[$k]->{"col"} < $startCol );
+				next if ( defined $startCol && $poolPrev->[$k]->Col() < $startCol );
 
 				my $gndOk         = 1;
 				my $stripPrevInfo = $poolPrev->[$k];
@@ -316,7 +310,7 @@ sub __GetNextStrip {
 
 					# get layer type of below pool strip in for current layer
 
-					my $prevLType = $stripPrevInfo->{"d"}->{"l"}->{ $gndLayers[$l] };
+					my $prevLType = $stripPrevInfo->Data()->{"l"}->{ $gndLayers[$l] };
 					if ( $prevLType ne Enums->Layer_TYPENOAFFECT && $prevLType ne Enums->Layer_TYPEGND ) {
 						$gndOk = 0;
 						last;
@@ -325,9 +319,9 @@ sub __GetNextStrip {
 
 				# if column position of below pool strip is suitable, save index of strip and continue in searching
 				if ($gndOk) {
-					if ( !defined $foundStripPos || $foundStripPos > $stripPrevInfo->{"col"} ) {
+					if ( !defined $foundStripPos || $foundStripPos > $stripPrevInfo->Col() ) {
 						$foundStripIdx = $j;
-						$foundStripPos = $stripPrevInfo->{"col"};
+						$foundStripPos = $stripPrevInfo->Col();
 					}
 				}
 			}
@@ -342,7 +336,7 @@ sub __GetNextStrip {
 		if ( !defined $poolPrev ) {
 
 			if ( scalar( @{$poolCur} ) > 0 ) {
-				$foundStripPos = $poolCur->[-1]->{"col"} + 1;
+				$foundStripPos = $poolCur->[-1]->Col() + 1;
 			}
 			else {
 				$foundStripPos = 0;
@@ -351,8 +345,8 @@ sub __GetNextStrip {
 		else {
 
 			# get max col pos from below and current pool
-			my $maxPrev = defined $poolPrev->[-1] ? $poolPrev->[-1]->{"col"} : -1;
-			my $maxCur  = defined $poolCur->[-1]  ? $poolCur->[-1]->{"col"}  : -1;
+			my $maxPrev = defined $poolPrev->[-1] ? $poolPrev->[-1]->Col() : -1;
+			my $maxCur  = defined $poolCur->[-1]  ? $poolCur->[-1]->Col()  : -1;
 
 			$foundStripPos = max( $maxPrev, $maxCur ) + 1;
 		}
@@ -367,16 +361,21 @@ sub __GetNextStrip {
 
 	# build strip info
 
-	my %stripInfo = (
-					  "id"   => $p->[$foundStripIdx]->{"id"},
-					  "pool" => scalar(@pools) - 1,
-					  "col"  => $foundStripPos,
-					  "d"    => $p->[$foundStripIdx]
-	);
+	my $stripInfo  = CpnStripVariant->new($p->[$foundStripIdx]->{"id"});
+	$stripInfo->SetPool(scalar(@pools) - 1);
+	$stripInfo->SetColumn($foundStripPos);
+	$stripInfo->SetData($p->[$foundStripIdx]);
+
+#	my %stripInfo = (
+#					  "id"   => $p->[$foundStripIdx]->{"id"},
+#					  "pool" => scalar(@pools) - 1,
+#					  "col"  => $foundStripPos,
+#					  "d"    => $p->[$foundStripIdx]
+#	);
 
 	splice @$p, $foundStripIdx, 1;
 
-	return \%stripInfo;
+	return $stripInfo;
 
 }
 

@@ -26,6 +26,7 @@ use aliased 'Packages::CAM::SymbolDrawing::Point';
 use aliased 'Packages::CAMJob::Panelization::SRStep';
 use aliased 'Packages::Coupon::CpnGenerator::CpnLayers::InfoTextLayer';
 use aliased 'Packages::Coupon::CpnGenerator::CpnLayers::GuardTracksLayer';
+use aliased 'Packages::Coupon::CpnGenerator::CpnLayers::ShieldingLayer';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -60,16 +61,19 @@ sub Generate {
 
 	$self->{"couponStep"} = SRStep->new( $inCAM, $jobId, $layout->GetStepName() );
 	$self->{"couponStep"}->Create(
-								   $layout->GetWidth(),                    $layout->GetHeight(),
-								   $self->{"settings"}->GetCouponMargin(), $self->{"settings"}->GetCouponMargin(),
-								   $self->{"settings"}->GetCouponMargin(), $self->{"settings"}->GetCouponMargin()
+								   $layout->GetWidth(),
+								   $layout->GetHeight(),
+								   $self->{"settings"}->GetCouponMargin() / 1000,
+								   $self->{"settings"}->GetCouponMargin() / 1000,
+								   $self->{"settings"}->GetCouponMargin() / 1000,
+								   $self->{"settings"}->GetCouponMargin() / 1000
 	);
 
 	CamHelper->SetStep( $inCAM, $self->{"settings"}->GetStepName() );
 
 	# Create single oupon steps
 
-	my $yCurrent = $self->{"settings"}->GetCouponMargin();
+	my $yCurrent = $self->{"settings"}->GetCouponMargin() / 1000;
 
 	for ( my $i = 0 ; $i < scalar( $layout->GetCouponsSingle() ) ; $i++ ) {
 
@@ -79,10 +83,9 @@ sub Generate {
 
 		$self->__GenerateSingle( $cpnSignleLayout, $srStep );
 
-		$self->{"couponStep"}->AddSRStep( $srStep, $self->{"settings"}->GetCouponMargin(), $yCurrent, 0, 1, 1, 1, 1 );
+		$self->{"couponStep"}->AddSRStep( $srStep, $self->{"settings"}->GetCouponMargin() / 1000, $yCurrent, 0, 1, 1, 1, 1 );
 
-		$yCurrent += $cpnSignleLayout->GetHeight() + $self->{"settings"}->GetCouponSpace();
-
+		$yCurrent += $cpnSignleLayout->GetHeight() + $self->{"settings"}->GetCouponSpace() / 1000;
 	}
 
 	return $result;
@@ -152,8 +155,6 @@ sub __GenerateSingle {
 		}
 	}
 
-
-
 	if ( $self->{"settings"}->GetGuardTracks() ) {
 
 		foreach my $layout ( @{ $cpnLayout->GetGuardTracksLayout() } ) {
@@ -168,10 +169,24 @@ sub __GenerateSingle {
 		}
 
 	}
-	
-		# Proces text layout
 
-	# build info texts
+	# Proces text layout
+
+	# Shielding layout
+	if ( $cpnLayout->GetShieldingLayout() ) {
+ 
+		foreach my $l (CamJob->GetSignalLayerNames( $inCAM, $jobId )) {
+
+			my $shieldingLayer = ShieldingLayer->new($l);
+			$shieldingLayer->Init( $inCAM, $jobId, $stepName, $self->{"settings"} );
+			$shieldingLayer->Build( $cpnLayout->GetShieldingLayout() );
+
+			CamLayer->WorkLayer( $inCAM, $shieldingLayer->GetLayerName() );
+			$shieldingLayer->Draw();
+
+		}
+	}
+
 	# Proces info text layout
 	if ( $cpnLayout->GetInfoTextLayout() ) {
 
@@ -181,8 +196,8 @@ sub __GenerateSingle {
 
 		CamLayer->WorkLayer( $inCAM, $textLayer->GetLayerName() );
 		$textLayer->Draw();
-	}
 
+	}
 }
 
 #-------------------------------------------------------------------------------------------#

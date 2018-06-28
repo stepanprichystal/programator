@@ -53,7 +53,7 @@ sub Build {
 	# set model
 
 	my $areaW   = $self->{"settings"}->GetCpnSingleWidth();
-	my $margin  = $self->{"settings"}->GetCouponSingleMargin();
+	my $margin  = $self->{"settings"}->GetCouponSingleMargin()/1000;
 	my $p2pDist = $self->{"settings"}->GetPad2PadDist() / 1000;
 
 	my $trackW = $self->_GetXmlConstr()->GetParamDouble("WB");    # µm

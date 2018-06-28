@@ -426,12 +426,7 @@ sub GetPadTextUnmask{
 	
 } 
 
-sub GetPadTextClearance{
-	my $self = shift;
-
-	return $self->__GetVal("padTextClearance");
-	
-} 
+ 
  
 
 # Guard track settings
@@ -465,6 +460,14 @@ sub GetGuardTrack2PadDist{
 	
 } 
 
+sub GetGuardTrack2Shielding{
+	my $self = shift;
+
+	return $self->__GetVal("guardTrack2Shielding");
+	
+} 
+
+
 sub GetGuardTrackWidth{
 	my $self = shift;
 
@@ -472,7 +475,46 @@ sub GetGuardTrackWidth{
 	
 } 
 
+# Shielding settings
 
+sub GetShielding{
+	my $self = shift;
+
+	return $self->__GetVal("shielding");
+	
+} 
+
+sub GetShieldingType{
+	my $self = shift;
+
+	return $self->__GetVal("shieldingType");
+	
+} 
+
+
+sub GetShieldingSymbol{
+	my $self = shift;
+
+	return $self->__GetVal("shieldingSymbol");
+	
+} 
+
+
+sub GetShieldingSymbolDX{
+	my $self = shift;
+
+	return $self->__GetVal("shieldingSymbolDX");
+	
+} 
+
+sub GetShieldingSymbolDY{
+	my $self = shift;
+
+	return $self->__GetVal("shieldingSymbolDY");
+	
+} 
+ 
+ 
 
 sub __GetVal {
 	my $self = shift;

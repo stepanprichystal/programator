@@ -24,6 +24,7 @@ sub new {
 	$self->{"stripsLayouts"}  = [];
 	$self->{"infoTextLayout"} = undef;
 	$self->{"guardTracksLayout"} = undef;
+	$self->{"shieldingLayout"} = undef;
 
 	return $self;
 }
@@ -96,6 +97,22 @@ sub GetGuardTracksLayout {
 
 	return $self->{"guardTracksLayout"};
 }
+
+sub SetShieldingLayout {
+	my $self       = shift;
+	my $layouts = shift;
+
+	$self->{"shieldingLayout"} = $layouts
+
+}
+
+sub GetShieldingLayout {
+	my $self = shift;
+
+	return $self->{"shieldingLayout"};
+}
+
+
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

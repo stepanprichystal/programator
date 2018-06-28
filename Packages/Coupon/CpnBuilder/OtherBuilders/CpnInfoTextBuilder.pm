@@ -108,22 +108,22 @@ sub Build {
 
 				# bot row
 				$self->{"layout"}->AddText( Point->new( $curX, $curY ), $txtPart2 );
-				$curY += $self->{"settings"}->GetInfoTextHeight();
-				$curY += $self->{"settings"}->GetInfoTextVSpacing();
+				$curY += $self->{"settings"}->GetInfoTextHeight()/1000;
+				$curY += $self->{"settings"}->GetInfoTextVSpacing()/1000;
 
 				# top row
 				$self->{"layout"}->AddText( Point->new( $curX, $curY ), $txtPart1 );
-				$curY += $self->{"settings"}->GetInfoTextHeight()
+				$curY += $self->{"settings"}->GetInfoTextHeight()/1000
 
 			}
 			else {
 
 				$self->{"layout"}->AddText( Point->new( $curX, $curY ), $txtPart1 . " " . $txtPart2 );
-				$curY += $self->{"settings"}->GetInfoTextHeight()
+				$curY += $self->{"settings"}->GetInfoTextHeight()/1000
 
 			}
 
-			$curY += $self->{"settings"}->GetInfoTextVSpacing()
+			$curY += $self->{"settings"}->GetInfoTextVSpacing()/1000
 
 		}
 
@@ -135,15 +135,15 @@ sub Build {
 			if ( scalar( $self->{"layout"}->GetTexts() ) > 0 ) {
 
 				$self->{"layout"}->AddText( Point->new( $curX, $curY ), "|" );
-				$curX += $self->{"settings"}->GetInfoTextHSpacing();
+				$curX += $self->{"settings"}->GetInfoTextHSpacing()/1000;
 			}
 
 			$t .= $txtPart1 . " " . $txtPart2;
 
 			$self->{"layout"}->AddText( Point->new( $curX, $curY ), $t );
 
-			$curX += length($t) * $self->{"settings"}->GetInfoTextWidth();
-			$curX += $self->{"settings"}->GetInfoTextHSpacing();
+			$curX += length($t) * $self->{"settings"}->GetInfoTextWidth()/1000;
+			$curX += $self->{"settings"}->GetInfoTextHSpacing()/1000;
 
 		}
 
@@ -151,17 +151,17 @@ sub Build {
 
 	if ( $textPos eq "right" ) {
 
-		$self->{"layout"}->SetHeight( $curY - $self->{"settings"}->GetInfoTextVSpacing() );
+		$self->{"layout"}->SetHeight( $curY - $self->{"settings"}->GetInfoTextVSpacing()/1000 );
 
 		# search max lines
 		my $maxLen = max( map { length( $_->{"val"} ) } $self->{"layout"}->GetTexts() );
-		$self->{"layout"}->SetWidth( $maxLen * $self->{"settings"}->GetInfoTextWidth() );
+		$self->{"layout"}->SetWidth( $maxLen * $self->{"settings"}->GetInfoTextWidth()/1000 );
 
 	}
 	elsif ( $textPos eq "top" ) {
 
-		$self->{"layout"}->SetHeight( $self->{"settings"}->GetInfoTextHeight() );
-		$self->{"layout"}->SetWidth( $curX - $self->{"settings"}->GetInfoTextHSpacing() );
+		$self->{"layout"}->SetHeight( $self->{"settings"}->GetInfoTextHeight()/1000 );
+		$self->{"layout"}->SetWidth( $curX - $self->{"settings"}->GetInfoTextHSpacing()/1000 );
 	}
 
 	$self->{"build"} = 1;

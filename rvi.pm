@@ -1,146 +1,62 @@
+# Global coupon settings
 
-#-------------------------------------------------------------------------------------------#
-# Description: Manager responsible for NIF creation
-# Author:SPR
-#-------------------------------------------------------------------------------------------#
-package Packages::Coupon::Coupon;
+stepName           = coupon      # default step name
+  padClearance     = 80          #µm
+  pad2GNDClearance = 120         #µm
+  padTrackSize     = 1524        #µm
+  padGNDSize       = 1524        #µm
+  padTrackShape    = s    #µm
+padGNDShape 	 = r     #µm
+padGNDSymNeg = thr2000x1800x0x4x203    #µm
+  padDrillSize      = 1050             #µm
+  trackPad2GNDPad   = 2540             # µm
+  trackPad2TrackPad = 2540             # µm
+  trackPadIsolation = 100              # µm
+  trackToCopper     = 400              # µm
 
-#3th party library
-use strict;
-use warnings;
+  cpnSingleWidth = 130                 # mm
 
-#local library
+  marginSingle   = 2000                # µm
+  marginCoupon   = 2000                # µm
+  couponSpace    = 1000                # µm
+  groupPadsDist  = 4000                # µm
+  twoEndedDesign = 1
 
-use aliased 'CamHelpers::CamStep';
-use aliased 'CamHelpers::CamHelper';
-use aliased 'Packages::Coupon::Enums';
+  # pool settings
+  maxTrackCnt = 5                      # two track per measurement layer in group
+  poolCnt = 2 maxStripsCntH = 3 shareGNDPads = 1 routeBetween = 1 routeBelow = 1 routeAbove = 1 routeStraight = 1
 
-use aliased 'Packages::Coupon::MicrostripBuilders::SEBuilder';
-use aliased 'Packages::Coupon::ModelBuilders::CoatedMicrostrip';
-use aliased 'Packages::Coupon::CouponSingle';
-use aliased 'Packages::CAM::SymbolDrawing::Point';
-use aliased 'Packages::CAMJob::Panelization::SRStep';
+  # Info text settings
 
-#-------------------------------------------------------------------------------------------#
-#  Package methods
-#-------------------------------------------------------------------------------------------#
+  infoTextWidth = 1 infoTextHeight = 1 infoTextWeight = 0.2 padsTopTextDist = 2    # mm
+  infoTextRightCpnDist   = 1                                                       #mm
+  infoText               = 1                                                       # 1/0
+  infoTextPosition       = right                                                   # top/right
+  infoTextNumber         = 1                                                       # 1/0 numberingo of strips
+  infoTextTrackImpedance = 1                                                       # 1/0
+  infoTextTrackWidth     = 1                                                       # 1/0
+  infoTextTrackLayer     = 1                                                       # 1/0
+  infoTextTrackSpace     = 1                                                       # 1/0
+  infoTextHSpacing       = 1                                                       #
+  infoTextVSpacing       = 1                                                       #
 
-sub new {
-	my $class = shift;
-	my $self  = {};
-	bless $self;
+  # Track pad text settings
 
-	$self->{"inCAM"} = shift;
-	$self->{"jobId"} = shift;
+  padTextWidth = 0.8 padTextHeight = 0.7 padTextWeight = 0.2 padTextDist = 0.15    # mm
+  padText = 1                                                                      # 1/0
+  padTextUnmask = 1 padTextClearance = 100                                         #µm
 
-	$self->{"settings"} = shift;
+  # Guard tracks settings
 
-	$self->{"prepared"} = 0;
+  guardTracks          = 1                                                         # 1/0
+  guardTracksType      = single                                                    # single - single lines, full - fill whole area except pads area
+  guardTrack2TrackDist = 0.25                                                      #mm
+  guardTrack2PadDist   = 0.4                                                       #mm
+  guardTrackWidth      = 200                                                       # µm
 
-	$self->{"couponsSingle"} = [];
+  # General shielding for signal layers
+  shieldingType = symbol                                                           # symbol/solid
 
-	$self->{"couponStep"} = undef;
-
-	return $self;
-}
-
-sub Prepare {
-	my $self = shift;
-
-	my $inCAM = $self->{"inCAM"};
-	my $jobId = $self->{"jobId"};
-
-	# Built miscrostip builers
-
- 
-	 
-	foreach my $settCouponSingle ( $self->{"settings"}->GetCouponsSingle() ) {
-
-		my @constrsId = $settCouponSingle->GetConstrainsId();
-
-		my $coupon = CouponSingle->new( $inCAM, $jobId, $self->{"settings"}, scalar(@{ $self->{"couponsSingle"} })+1, \@constrsId );
-
-		$coupon->Build();
-
-		push( @{ $self->{"couponsSingle"} }, $coupon );
-
-	}
-
-}
-
-sub Generate {
-	my $self = shift;
-
-	my $inCAM = $self->{"inCAM"};
-	my $jobId = $self->{"jobId"};
-
-	#my @coupons = grep { $_ =~ /^coupon_(\d+)$/} StepName->GetAllStepNames($inCAM, $jobId);
-
-	# CreateStep
-
-	$self->{"couponStep"} = SRStep->new( $inCAM, $jobId, $self->{"settings"}->GetStepName() );
-	$self->{"couponStep"}->Create(
-								   $self->{"settings"}->GetWidth(),        $self->GetCouponHeight(),
-								   $self->{"settings"}->GetCouponMargin(), $self->{"settings"}->GetCouponMargin(),
-								   $self->{"settings"}->GetCouponMargin(), $self->{"settings"}->GetCouponMargin()
-	  );
-	 
-	CamHelper->SetStep( $inCAM, $self->{"settings"}->GetStepName());
-
-	# profile
- 
-	my $yCurrent = $self->{"settings"}->GetCouponMargin();
-
-	foreach my $coupon ( @{ $self->{"couponsSingle"} } ) {
-
-		my $origin = Point->new( $self->{"settings"}->GetCouponMargin(), $yCurrent );
-
-		$coupon->Draw($origin);
-
-		$yCurrent += $coupon->GetHeight() + $self->{"settings"}->GetCouponSpace();
-
-	}
-}
-
-sub GetCouponHeight {
-	my $self = shift;
-
-	my $h = $self->{"settings"}->GetCouponMargin() * 2 + ( scalar( @{ $self->{"couponsSingle"} } ) - 1 ) * $self->{"settings"}->GetCouponSpace();
-
-	$h += $_->GetHeight() foreach @{ $self->{"couponsSingle"} };
-
-	return $h;
-}
-
-sub GetCouponWidth {
-	my $self = shift;
-
-}
-
-#-------------------------------------------------------------------------------------------#
-#  Place for testing..
-#-------------------------------------------------------------------------------------------#
-my ( $package, $filename, $line ) = caller;
-if ( $filename =~ /DEBUG_FILE.pl/ ) {
-
-	use aliased 'Packages::InCAM::InCAM';
-	use aliased 'Packages::Coupon::Coupon';
-	use aliased 'Packages::Coupon::CouponSettings::CouponSettings';
-
-	my $inCAM = InCAM->new();
-	my $jobId = "d152456";
-
-	my $p = 'c:\Export\CouponSPR\output\SE_Coated_Microstrip\SE_Coated_Microstrip.xml';
-
-	my $sett = CouponSettings->new($p);
-
-	my $coupon = Coupon->new( $inCAM, $jobId, $sett );
-
-	$coupon->Prepare();
-
-	$coupon->Generate();
-
-}
-
-1;
-
+  shieldingSymbol   = r50                                                          # µm incam symbol
+  shieldingSymbolDX = 250                                                          # µm
+  shieldingSymbolDY = 250                                                          # µm

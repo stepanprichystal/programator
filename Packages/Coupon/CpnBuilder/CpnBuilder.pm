@@ -91,11 +91,11 @@ sub Build {
 		$self->{"layout"}->SetStepName( $self->{"settings"}->GetStepName() );
 		
 		# width depand on single coupon width
-		my $w = max(map{ $_->GetWidth() }$self->{"layout"}->GetCouponsSingle()) + $self->{"settings"}->GetCouponMargin() * 2;
+		my $w = max(map{ $_->GetWidth() }$self->{"layout"}->GetCouponsSingle()) + $self->{"settings"}->GetCouponMargin()/1000 * 2;
 		$self->{"layout"}->SetWidth($w);
 
 		# height depand on microstrip types
-		my $h = $self->{"settings"}->GetCouponMargin() * 2 + ( scalar( @{ $self->{"couponsSingle"} } ) - 1 ) * $self->{"settings"}->GetCouponSpace();
+		my $h = $self->{"settings"}->GetCouponMargin()/1000 * 2 + ( scalar( @{ $self->{"couponsSingle"} } ) - 1 ) * $self->{"settings"}->GetCouponSpace()/1000;
 		$h += $_->GetHeight() foreach $self->{"layout"}->GetCouponsSingle();
 		$self->{"layout"}->SetHeight($h);
 
@@ -158,7 +158,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	my $p         = 'c:\Export\CouponExport\cpn.xml';
 	my $cpnSource = CpnSource->new($p);
 	my $cpnSett   = CpnSettings->new();
-	$cpnSett->{"sett"}->{"trackPadIsolation"} = 500;
+	$cpnSett->{"sett"}->{"trackPadIsolation"} = 200;
 	my $builder = CpnBuilder->new( $inCAM, $jobId, $cpnSource, $cpnSett );
 
 	# generate groups, choose one variant
@@ -172,9 +172,9 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	# Each group contain strips
 	my $groupPolicy = GroupPolicy->new( $cpnSource, $cpnSett->GetMaxTrackCnt() );
 	
-	my @filter = (1, 2, 3, 4); # below + above lines
 	#my @filter = (1); # below + above lines
-	#	my @filter = (1,3,13, 14, 19,20,21); # below + above lines
+	#my @filter = (1); # below + above lines
+		my @filter = (1,3,13, 14, 19,21); # below + above lines
 	#my @filter = (3);
 
 	my @groupsComb = $groupPolicy->GenerateGroups( \@filter );

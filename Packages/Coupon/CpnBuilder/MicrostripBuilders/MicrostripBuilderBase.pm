@@ -96,24 +96,24 @@ sub _GetPadText {
 	my $text = Helper->GetLayerNum( $self->{"layout"}->GetTrackLayer(), $self->{"layerCnt"} );
 
 	# built text positioon + negative rect position
-	my $x    = $origin->X() - ( $self->{"settings"}->GetPadTextWidth() * length($text) ) / 2.5;
-	my $xMir = $origin->X() + ( $self->{"settings"}->GetPadTextWidth() * length($text) ) / 2.5;
+	my $x    = $origin->X() - ( $self->{"settings"}->GetPadTextWidth()/1000 * length($text) ) / 2.5;
+	my $xMir = $origin->X() + ( $self->{"settings"}->GetPadTextWidth()/1000 * length($text) ) / 2.5;
 	my $y    = 0;
 
 	if ( $self->{"stripVariant"}->Pool() == 0 ) {
 
-		$y =  $self->{"activeArea"}->{"pos"}->Y() -  ($self->{"settings"}->GetPadTextDist() + $self->{"settings"}->GetPadTextHeight());
+		$y =  $self->{"activeArea"}->{"pos"}->Y() -  ($self->{"settings"}->GetPadTextDist()/1000 + $self->{"settings"}->GetPadTextHeight()/1000);
 
 	}
 	elsif ( $self->{"stripVariant"}->Pool() == 1 ) {
 
-		$y =  $self->{"activeArea"}->{"pos"}->Y() +$self->{"activeArea"}->{"h"} +   $self->{"settings"}->GetPadTextDist();
+		$y =  $self->{"activeArea"}->{"pos"}->Y() +$self->{"activeArea"}->{"h"} +   $self->{"settings"}->GetPadTextDist()/1000;
 
 	}
 
 	# Built negative rectangle (for text putted to copper)
-	my $rectW = $self->{"settings"}->GetPadTextWidth() * length($text) + 0.2;
-	my $rectH = $self->{"settings"}->GetPadTextHeight()  + 0.2;
+	my $rectW = $self->{"settings"}->GetPadTextWidth()/1000 * length($text) + 0.2;
+	my $rectH = $self->{"settings"}->GetPadTextHeight()/1000  + 0.2;
 	my $rectPos =  Point->new( $x-0.1,   $y-0.1 );
 	my $rectPosMir =  Point->new( $x+0.1,   $y-0.1 );
 
