@@ -128,6 +128,8 @@ sub GetType{
 	return $self->{"data"}->{"type"};
 }
 
+
+
 sub stringify {
 	my ($self) = @_;
 

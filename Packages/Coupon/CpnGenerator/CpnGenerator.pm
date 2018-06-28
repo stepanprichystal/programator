@@ -152,19 +152,7 @@ sub __GenerateSingle {
 		}
 	}
 
-	# Proces text layout
 
-	# build info texts
-	# Proces info text layout
-	if ( $cpnLayout->GetInfoTextLayout() ) {
-
-		my $textLayer = InfoTextLayer->new("c");
-		$textLayer->Init( $inCAM, $jobId, $stepName, $self->{"settings"} );
-		$textLayer->Build( $cpnLayout->GetInfoTextLayout() );
-
-		CamLayer->WorkLayer( $inCAM, $textLayer->GetLayerName() );
-		$textLayer->Draw();
-	}
 
 	if ( $self->{"settings"}->GetGuardTracks() ) {
 
@@ -179,6 +167,20 @@ sub __GenerateSingle {
 
 		}
 
+	}
+	
+		# Proces text layout
+
+	# build info texts
+	# Proces info text layout
+	if ( $cpnLayout->GetInfoTextLayout() ) {
+
+		my $textLayer = InfoTextLayer->new("c");
+		$textLayer->Init( $inCAM, $jobId, $stepName, $self->{"settings"} );
+		$textLayer->Build( $cpnLayout->GetInfoTextLayout() );
+
+		CamLayer->WorkLayer( $inCAM, $textLayer->GetLayerName() );
+		$textLayer->Draw();
 	}
 
 }

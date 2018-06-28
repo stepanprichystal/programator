@@ -56,6 +56,8 @@ sub Build {
 	my $jobId = $self->{"jobId"};
 
 	my $result = 1;
+	
+	$self->__CheckLayerNames();
 
 	# built complete coupon layout
 	my $cpnVariant = $buildParams->GetCpnVariant();
@@ -113,6 +115,27 @@ sub GetLayout {
 
 }
 
+sub __CheckLayerNames{
+	my $self = shift;
+ 
+	my @copperLayers = $self->{"cpnSource"}->GetCopperLayers();
+ 	
+	# 1) Check if layer names are L1-Ln
+	
+	@copperLayers = sort { $a->{"LAYER_INDEX"} <=> $b->{"LAYER_INDEX"} } @copperLayers;
+	
+	for(my $i= 0; $i < scalar(@copperLayers); $i++){
+		
+		my $l = $copperLayers[$i]->{"NAME"};
+		
+		if($l !~ m/L(\d+)/ || $1 != $i+1){
+			
+			die "Wrong layer name: $l, is on postion: $i in InSTACK stackup.";
+		}
+	}
+ 
+}
+
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#
@@ -135,7 +158,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	my $p         = 'c:\Export\CouponExport\cpn.xml';
 	my $cpnSource = CpnSource->new($p);
 	my $cpnSett   = CpnSettings->new();
-	$cpnSett->{"sett"}->{"trackPadIsolation"} = 200;
+	$cpnSett->{"sett"}->{"trackPadIsolation"} = 500;
 	my $builder = CpnBuilder->new( $inCAM, $jobId, $cpnSource, $cpnSett );
 
 	# generate groups, choose one variant
@@ -149,7 +172,8 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	# Each group contain strips
 	my $groupPolicy = GroupPolicy->new( $cpnSource, $cpnSett->GetMaxTrackCnt() );
 	
-	my @filter = (1,19,20,21,22); # below + above lines
+	my @filter = (1, 2, 3, 4); # below + above lines
+	#my @filter = (1); # below + above lines
 	#	my @filter = (1,3,13, 14, 19,20,21); # below + above lines
 	#my @filter = (3);
 

@@ -246,7 +246,7 @@ sub GetMicrostripOrigin {
 
 		# get positions of pad in x direction (1 or one)
 
-		my @pos = map { $self->__GetMicrostripPosCnt( $_, "x" ) } (@stripsVar);
+		my @pos = map { $self->GetMicrostripPosCnt( $_, "x" ) } (@stripsVar);
 
 		$x += ( max(@pos) - 1 ) * $self->{"settings"}->GetPad2PadDist() / 1000 + $self->{"settings"}->GetGroupPadsDist();
 	}
@@ -400,7 +400,7 @@ sub GetActiveArea {
 
 		my $strip = ( map { $_->GetStrips() } $self->{"singleCpnVar"}->GetPools() )[0];
 
-		my $padsY = $self->__GetMicrostripPosCnt( $strip, "y" );
+		my $padsY = $self->GetMicrostripPosCnt( $strip, "y" );
 
 		$h = ( $padsY - 1 ) * $self->{"settings"}->GetTrackPad2TrackPad() / 1000 + $self->{"settings"}->GetPadTrackSize() / 1000;
 	}
@@ -420,7 +420,7 @@ sub GetActiveArea {
 #
 #}
 
-sub __GetMicrostripPosCnt {
+sub GetMicrostripPosCnt {
 	my $self      = shift;
 	my $stripVar  = shift;
 	my $direction = shift;    # x or y direction

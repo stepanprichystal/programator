@@ -23,9 +23,9 @@ twoEndedDesign = 1
 
 
 # pool settings
-maxTrackCnt = 4 # two track per measurement layer in group
+maxTrackCnt = 5 # two track per measurement layer in group
 poolCnt = 2
-maxStripsCntH = 4
+maxStripsCntH = 3
 shareGNDPads = 1
 routeBetween = 1
 routeBelow = 1
@@ -40,7 +40,7 @@ infoTextWeight = 0.2
 padsTopTextDist    = 2                # mm
 infoTextRightCpnDist = 1 #mm
 infoText = 1 # 1/0
-infoTextPosition = top # top/right
+infoTextPosition = right # top/right
 infoTextNumber = 1 # 1/0 numberingo of strips
 infoTextTrackImpedance = 1 # 1/0
 infoTextTrackWidth = 1 # 1/0
@@ -63,7 +63,8 @@ padTextClearance = 100 #µm
 
 guardTracks = 1 # 1/0
 guardTracksType = single # single - single lines, full - fill whole area except pads area
-guardTrackDist = 0.3 #mm
-guardTrackWidth = 200 # mm
+guardTrack2TrackDist = 0.25 #mm
+guardTrack2PadDist = 0.4 #mm
+guardTrackWidth = 200 # µm
 
  

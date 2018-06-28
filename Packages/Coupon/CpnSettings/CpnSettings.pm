@@ -451,10 +451,17 @@ sub GetGuardTracksType{
 } 
 
 
-sub GetGuardTrackDist{
+sub GetGuardTrack2TrackDist{
 	my $self = shift;
 
-	return $self->__GetVal("guardTrackDist");
+	return $self->__GetVal("guardTrack2TrackDist");
+	
+} 
+
+sub GetGuardTrack2PadDist{
+	my $self = shift;
+
+	return $self->__GetVal("guardTrack2PadDist");
 	
 } 
 
