@@ -95,7 +95,7 @@ sub CreateStackup {
 
 	my $path;
 
-	if ( $mat =~ /is400/ ) {
+	if ( $mat =~ /is400/i ) {
 
 		$path = GeneralHelper->Root() . "\\Resources\\DefaultStackups_is400\\";
 	}
