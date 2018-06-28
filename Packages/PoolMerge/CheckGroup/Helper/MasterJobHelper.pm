@@ -135,6 +135,14 @@ sub GetMasterJob {
 		  "All jobs (" . join( ";", join( ";", map { $_->{"order"}->{"jobName"} } @orderDeliver ) ) . ")  are already in produce like \"master job\"";
 		$result = 0;
 	}
+	
+	# Set material FR4
+	
+	if($result){
+		
+		HegMethods->UpdateMaterialKind($$masterJob, "FR4", 1);
+	}
+	
 
 	return $result;
 

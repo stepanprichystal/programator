@@ -910,6 +910,31 @@ sub UpdateNCInfo {
 
 }
 
+sub UpdateMaterialKind {
+	my $self        = shift;
+	my $pcbId       = shift;
+	my $mat      = shift;
+	my $childThread = shift;
+
+	if ($childThread) {
+
+		my $result = $self->__SystemCall( "UpdateMaterialKind", $pcbId, $mat );
+
+		return $result;
+	}
+	else {
+
+		#use Connectors::HeliosConnector::HelperWriter;
+		require Connectors::HeliosConnector::HelperWriter;
+
+		my $res = Connectors::HeliosConnector::HelperWriter->OnlineWrite_pcb( "$pcbId", $mat, "material_druh" );
+
+		return $res;
+	}
+
+}
+
+
 # update column pooling in pcb order
 sub UpdatePooling {
 	my $self        = shift;
@@ -1730,6 +1755,10 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 #	
 	use DateTime;
 #	
+
+
+   HegMethods->UpdateMaterialKind("d152456", "FR4");
+
 #	my $dt   = DateTime->now;   # Stores current date and time as datetime object
 #my $date = $dt->ymd;   # Retrieves date as a string in 'yyyy-mm-dd' format
 #my $time = $dt->hms;   # Retrieves time as a string in 'hh:mm:ss' format
@@ -1739,23 +1768,23 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 #	
 #
  #	 HegMethods->UpdateOrderTerm("d152456-01", "2018-05-24 00:00:00");
-
-my $deliver = HegMethods->GetTermOfOrder("d152456-01" );
-		my $dt      = undef;
-		if ( $deliver =~ m/^(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2}):(\d{2})$/ ) {
-			
-			
-			$dt = DateTime->new(
-								 "year"  => $1,
-								 "month" => $2,
-								 "day"   => $3,
-								 "hour"       => $4,
-     							 "minute"     => $5,
-      							 "second"     => $6);
-			
-		}
-
-#	
+#
+#my $deliver = HegMethods->GetTermOfOrder("d152456-01" );
+#		my $dt      = undef;
+#		if ( $deliver =~ m/^(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2}):(\d{2})$/ ) {
+#			
+#			
+#			$dt = DateTime->new(
+#								 "year"  => $1,
+#								 "month" => $2,
+#								 "day"   => $3,
+#								 "hour"       => $4,
+#     							 "minute"     => $5,
+#      							 "second"     => $6);
+#			
+#		}
+#
+##	
 ##	@res = grep { $_->{"reference_subjektu"} =~ /-01/ } @res;
 ##
 ##	dump(@res);
@@ -1765,8 +1794,7 @@ my $deliver = HegMethods->GetTermOfOrder("d152456-01" );
 #	#my @cores = HegMethods->GetReorders();
 #	print HegMethods->GetStatusOfOrder( $jobId . "-01",1 );
 
-	die;
-
+ 
 }
 
 1;
