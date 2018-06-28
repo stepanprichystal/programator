@@ -91,7 +91,7 @@ sub CreateStackup {
 	#$messMngr->ShowModal( -1, EnumsGeneral->MessageType_INFORMATION, \@mess, \@btn );
 
 	#my $res = $messMngr->Result();
-	my $mat = HegMethods->GetMaterialKind( $self->{"jobId"} );
+	my $mat = HegMethods->GetMaterialKind( $pcbId );
 
 	my $path;
 
