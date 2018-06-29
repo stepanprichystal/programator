@@ -242,57 +242,57 @@ sub __GetPoolComb {
 					}
 				}
 
-				# 4. RULE. Only some combination of microstrip are alowed in one track layer
-				# if script is here its mean only track layer are in this pool in current layer
-				if ( defined $types{ Enums->Layer_TYPETRACK } ) {
-
-					my @forbidden = ();
-
-					push( @forbidden, [ Enums->Type_COSE,   Enums->Type_SE ] );
-					push( @forbidden, [ Enums->Type_COSE,   Enums->Type_DIFF ] );
-					push( @forbidden, [ Enums->Type_COSE,   Enums->Type_COSE ] );
-					push( @forbidden, [ Enums->Type_COSE,   Enums->Type_CODIFF ] );
-					push( @forbidden, [ Enums->Type_CODIFF, Enums->Type_SE ] );
-					push( @forbidden, [ Enums->Type_CODIFF, Enums->Type_DIFF ] );
-					push( @forbidden, [ Enums->Type_CODIFF, Enums->Type_CODIFF ] );
-
-					# get all microstrip which contain for current layer, layer type : track
-					my @mTypes = map { $_->{"type"} } grep { $_->{"l"}->{$l} eq Enums->Layer_TYPETRACK } @{$pool};
-
-					# Check all forbidden combination
-					foreach my $fComb (@forbidden) {
-
-						# convert forbibidden comb to array
-						my %fCombTmp = @{$fComb};
-						$fCombTmp{$_} = 0 foreach ( keys %fCombTmp );
-
-						foreach my $mTytpe (@mTypes) {
-
-							if ( defined $fCombTmp{$mTytpe} ) {
-								$fCombTmp{$mTytpe} = 1;
-							}
-						}
-
-						# check if exist forbidden combination
-						my $combOk = 0;
-						foreach my $type ( keys %fCombTmp ) {
-
-							if ( defined $fCombTmp{$type} && $fCombTmp{$type} == 0 ) {
-								$combOk = 1;
-								last;
-							}
-						}
-
-						unless ($combOk) {
-							$remove = 1;
-							#print STDERR "Removed by bz forbidden combination in one pool (" . join( ";", @{$fComb} ) . ")\n";
-							last;
-						}
-
-						last if ($remove);
-					}
-
-				}
+#				# 4. RULE. Only some combination of microstrip are alowed in one track layer
+#				# if script is here its mean only track layer are in this pool in current layer
+#				if ( defined $types{ Enums->Layer_TYPETRACK } ) {
+#
+#					my @forbidden = ();
+#
+#					push( @forbidden, [ Enums->Type_COSE,   Enums->Type_SE ] );
+#					push( @forbidden, [ Enums->Type_COSE,   Enums->Type_DIFF ] );
+#					push( @forbidden, [ Enums->Type_COSE,   Enums->Type_COSE ] );
+#					push( @forbidden, [ Enums->Type_COSE,   Enums->Type_CODIFF ] );
+#					push( @forbidden, [ Enums->Type_CODIFF, Enums->Type_SE ] );
+#					push( @forbidden, [ Enums->Type_CODIFF, Enums->Type_DIFF ] );
+#					push( @forbidden, [ Enums->Type_CODIFF, Enums->Type_CODIFF ] );
+#
+#					# get all microstrip which contain for current layer, layer type : track
+#					my @mTypes = map { $_->{"type"} } grep { $_->{"l"}->{$l} eq Enums->Layer_TYPETRACK } @{$pool};
+#
+#					# Check all forbidden combination
+#					foreach my $fComb (@forbidden) {
+#
+#						# convert forbibidden comb to array
+#						my %fCombTmp = @{$fComb};
+#						$fCombTmp{$_} = 0 foreach ( keys %fCombTmp );
+#
+#						foreach my $mTytpe (@mTypes) {
+#
+#							if ( defined $fCombTmp{$mTytpe} ) {
+#								$fCombTmp{$mTytpe} = 1;
+#							}
+#						}
+#
+#						# check if exist forbidden combination
+#						my $combOk = 0;
+#						foreach my $type ( keys %fCombTmp ) {
+#
+#							if ( defined $fCombTmp{$type} && $fCombTmp{$type} == 0 ) {
+#								$combOk = 1;
+#								last;
+#							}
+#						}
+#
+#						unless ($combOk) {
+#							$remove = 1;
+#							#print STDERR "Removed by bz forbidden combination in one pool (" . join( ";", @{$fComb} ) . ")\n";
+#							last;
+#						}
+#
+#						last if ($remove);
+#					}
+#
+#				}
 
 			}
 

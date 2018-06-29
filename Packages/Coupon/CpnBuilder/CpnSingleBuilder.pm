@@ -21,6 +21,7 @@ use aliased 'CamHelpers::CamJob';
 use aliased 'CamHelpers::CamHelper';
 use aliased 'Packages::Coupon::CpnBuilder::MicrostripBuilders::SEBuilder';
 use aliased 'Packages::Coupon::CpnBuilder::MicrostripBuilders::DiffBuilder';
+use aliased 'Packages::Coupon::CpnBuilder::MicrostripBuilders::COSEBuilder';
 use aliased 'Packages::CAM::SymbolDrawing::Point';
 use aliased 'Packages::Coupon::CpnBuilder::CpnLayout::CpnSingleLayout';
 use aliased 'Packages::Coupon::CpnBuilder::OtherBuilders::CpnInfoTextBuilder';
@@ -82,6 +83,8 @@ sub Build {
 				case Enums->Type_SE { $mStripBuilder = SEBuilder->new() }
 
 				  case Enums->Type_DIFF { $mStripBuilder = DiffBuilder->new() }
+
+				  case Enums->Type_COSE { $mStripBuilder = COSEBuilder->new() }
 
 				  else { die "Microstirp type: " . $stripVar->GetType() . "is not implemented"; }
 			}
@@ -192,8 +195,6 @@ sub Build {
 
 	}
 
-
-
 	if ($result) {
 
 		# Set height of whole coupon
@@ -228,14 +229,20 @@ sub GetShareGNDLayers {
 
 	my @strips = $self->{"singleCpnVar"}->GetStripsByColumn( $stripVariant->Col() );
 
-	my @test = map { ( $_->Data()->{"xmlConstraint"}->GetTopRefLayer(), $_->Data()->{"xmlConstraint"}->GetBotRefLayer() ) } @strips;
+	my @gndLayers = ();          # layers where has to by GND pad (on specific column position)
 
-	my @gndLayers =
-	  map { Helper->GetInCAMLayer( $_, $self->{"layerCnt"} ) }
-	  grep { defined $_ && $_ =~ /l\d+/i }
-	  map { ( $_->Data()->{"xmlConstraint"}->GetTopRefLayer(), $_->Data()->{"xmlConstraint"}->GetBotRefLayer() ) } @strips;
+	foreach my $s (@strips) {
 
-	my %layers;
+		my $topGnd = $_->Data()->{"xmlConstraint"}->GetTopRefLayer();
+		my $botGnd = $_->Data()->{"xmlConstraint"}->GetBotRefLayer();
+		my $track  = $_->Data()->{"xmlConstraint"}->GetTrackLayer();
+
+		push( @gndLayers, Helper->GetInCAMLayer( $_, $topGnd ) ) if ( defined $topGnd && $topGnd =~ /l\d+/i );
+		push( @gndLayers, Helper->GetInCAMLayer( $_, $botGnd ) ) if ( defined $botGnd && $botGnd =~ /l\d+/i );
+		push( @gndLayers, Helper->GetInCAMLayer( $_, $track ) ) if ( $s->GetType() eq Enums->Type_COSE || $s->GetType() eq Enums->Type_CODIFF );
+	}
+ 
+	  my %layers;
 	@layers{ Helper->GetAllLayerNames( $self->{"layerCnt"} ) } = ();
 
 	$layers{$_} = 0 foreach keys %layers;
@@ -249,7 +256,6 @@ sub GetShareGNDLayers {
 sub GetMicrostripOrigin {
 	my $self         = shift;
 	my $stripVariant = shift;
- 
 
 	# X cooredination - left down pad (trakc/GND) of microstrip
 	my $x = $self->{"settings"}->GetCouponSingleMargin() / 1000 + $self->{"settings"}->GetPadTrackSize() / 1000 / 2;

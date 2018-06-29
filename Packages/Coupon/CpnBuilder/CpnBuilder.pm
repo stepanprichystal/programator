@@ -174,7 +174,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	
 	#my @filter = (1); # below + above lines
 	#my @filter = (1); # below + above lines
-		my @filter = (1,3,13, 14, 19,21); # below + above lines
+		my @filter = ( 5); # below + above lines
 	#my @filter = (3);
 
 	my @groupsComb = $groupPolicy->GenerateGroups( \@filter );

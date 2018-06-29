@@ -86,8 +86,10 @@ sub GetParamDouble {
 	my $self = shift;
 	my $name = shift;
 
-	my $val = ( grep { $_->{"NAME"} eq $name } $self->{"xmlConstraint"}->findnodes('./PARAMS/IMPEDANCE_CONSTRAINT_PARAMETER') )[0]
-	  ->getAttribute('DOUBLE_VALUE');    # space
+	my $att = ( grep { $_->{"NAME"} eq $name } $self->{"xmlConstraint"}->findnodes('./PARAMS/IMPEDANCE_CONSTRAINT_PARAMETER') )[0];
+	die "Attribute doesnt exist $name." unless($att);
+	
+	my $val = $att->getAttribute('DOUBLE_VALUE');    # space
 
 	if ( $self->{"units"} eq "mm" ) {
 

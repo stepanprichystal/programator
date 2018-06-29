@@ -20,7 +20,9 @@ use aliased 'Packages::CAM::SymbolDrawing::SymbolDrawing';
 use aliased 'Packages::CAM::SymbolDrawing::Primitive::PrimitivePad';
 use aliased 'Packages::CAM::SymbolDrawing::Primitive::PrimitivePolyline';
 use aliased 'Packages::CAM::SymbolDrawing::Primitive::PrimitiveLine';
-
+use aliased 'Packages::CAM::SymbolDrawing::Primitive::PrimitiveSurfFill';
+use aliased 'Packages::CAM::SymbolDrawing::Primitive::PrimitiveSurfPoly';
+use aliased 'Packages::CAM::SymbolDrawing::Primitive::Helper::SurfaceSolidPattern';
 use aliased 'CamHelpers::CamLayer';
 use aliased 'Packages::Coupon::Enums';
 use aliased 'Packages::CAM::SymbolDrawing::Enums' => 'DrawEnums';
@@ -75,7 +77,15 @@ sub Build {
 		my @points = $track->GetPoints();
 
 		# Draw negative clearance
-		my $symNeg = "r" . ( $track->GetWidth() + $self->{"settings"}->GetTrackToCopper() );
+		my $symNeg = "r";
+
+		if ( $layout->GetCoplanar() ) {
+			$symNeg .= ( $track->GetWidth() + $track->GetGNDDist() );
+		}
+		else {
+			$symNeg .= ( $track->GetWidth() + $self->{"settings"}->GetTrackToCopper() );
+		}
+
 		if ( scalar(@points) == 2 ) {
 			my $l = PrimitiveLine->new( $points[0], $points[1], $symNeg, DrawEnums->Polar_NEGATIVE );
 			$self->{"drawing"}->AddPrimitive($l);
@@ -122,6 +132,13 @@ sub Build {
 				  ->AddPrimitive( PrimitivePad->new( $self->{"settings"}->GetPadGNDSym(), $pad->GetPoint(), 0, DrawEnums->Polar_POSITIVE ) );
 
 			}
+
+			# If coplanar add GND pads
+			if ( $layout->GetCoplanar() ) {
+
+				$self->{"drawing"}
+				  ->AddPrimitive( PrimitivePad->new( $self->{"settings"}->GetPadGNDSymNeg(), $pad->GetPoint(), 0, DrawEnums->Polar_NEGATIVE ) );
+			}
 		}
 		else {
 
@@ -131,8 +148,28 @@ sub Build {
 
 	}
 
-	# Draw to layer
-	#$self->_Draw();
+	# If coplanar add GND surface
+	if ( $layout->GetCoplanar() ) {
+		my $step = $self->{"step"};
+
+		# add "break line" before GND filling which prevent to fill area where is place info text
+		my %lim = CamJob->GetProfileLimits2( $inCAM, $jobId, $step );
+
+		if ( $self->{"settings"}->GetCpnSingleWidth() < $lim{"xMax"} ) {
+			my @coord = ();
+			push( @coord, Point->new( $self->{"settings"}->GetCpnSingleWidth(), 0 ) );
+			push( @coord, Point->new( $self->{"settings"}->GetCpnSingleWidth(), $lim{"yMax"} ) );
+			push( @coord, Point->new( $lim{"xMax"},                             $lim{"yMax"} ) );
+			push( @coord, Point->new( $lim{"xMax"},                             0 ) );
+
+			$self->{"drawing"}->AddPrimitive( PrimitiveSurfPoly->new( \@coord, undef, DrawEnums->Polar_NEGATIVE ) );
+		}
+
+		# add surface fill
+		my $solidPattern = SurfaceSolidPattern->new( 0, 0 );
+
+		$self->{"drawing"}->AddPrimitive( PrimitiveSurfFill->new( $solidPattern, 0, 0, 0, 0, 1, 0, DrawEnums->Polar_POSITIVE ) );
+	}
 
 }
 

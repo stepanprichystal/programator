@@ -68,27 +68,6 @@ sub Build {
 
 	$self->{"drawing"}->AddPrimitive( PrimitiveSurfFill->new( $solidPattern, 0, 0, 0, 0, 1, 0, DrawEnums->Polar_POSITIVE ) );
 
-	#		my $pattern  = shift;
-	#	my $marginX  = shift;
-	#	my $marginY  = shift;
-	#	my $srMarginX = shift;
-	#	my $srMarginY = shift;
-	#	my $considerFeat  = shift;
-	#	my $featMargin  = shift;
-	#	my $polarity = shift;    #
-	#
-	#	$inCAM->COM(
-	#				 "sr_fill",
-	#				 "type"          => "solid",
-	#				 "solid_type"    => "surface",
-	#				 "step_margin_x" => "0",
-	#				 "step_margin_y" => "0",
-	#				 "consider_feat" => "yes",
-	#				 "feat_margin"   => "0",
-	#				 "dest"          => "layer_name",
-	#				 "layer"         => $self->{"layerName"}
-	#	);
-
 	# drav GND  pads
 	foreach my $pad ( grep { $_->GetType() eq Enums->Pad_GND } $layout->GetPads() ) {
 
@@ -107,11 +86,8 @@ sub Build {
 			$self->{"drawing"}
 			  ->AddPrimitive( PrimitivePad->new( $self->{"settings"}->GetPadTrackSym(), $pad->GetPoint(), 0, DrawEnums->Polar_POSITIVE ) );
 		}
-
 	}
 
-	# Draw to layer
-	#$self->_Draw();
 
 }
 

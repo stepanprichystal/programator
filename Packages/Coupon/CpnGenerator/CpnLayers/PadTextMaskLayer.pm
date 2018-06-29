@@ -44,10 +44,14 @@ sub Build {
 	return if (!$self->{"settings"}->GetPadTextUnmask);
 
 	foreach my $pad ( $layout->GetPads() ) {
+		
+		
 
 		if ( $pad->GetType() eq Enums->Pad_TRACK && $self->{"settings"}->GetPadText() ) {
 
 			my $padText = $pad->GetPadText();
+			
+			return unless(defined $padText); # only multistrips has texts
 
 			my $mirror = $self->{"layerName"} eq "mc" ? 0 : 1;
 

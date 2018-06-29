@@ -5,8 +5,8 @@ package Packages::Coupon::Enums;
 use constant {
 	Type_SE            => "se",
 	Type_DIFF          => "diff",
-	Type_COSE   => "co_se",
-	Type_CODIFF => "co_diff",
+	Type_COSE   => "coplanar_se",
+	Type_CODIFF => "coplanar_diff",
 
 };
 
