@@ -40,10 +40,7 @@ sub Build {
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
 
-	if ( $self->{"layerName"} ne "c" && $self->{"layerName"} ne "s" ) {
-		die "Track pad text can be put only to layer c,s";
-	}
-	
+ 
 	return if (!$self->{"settings"}->GetPadTextUnmask);
 
 	foreach my $pad ( $layout->GetPads() ) {
@@ -52,12 +49,12 @@ sub Build {
 
 			my $padText = $pad->GetPadText();
 
-			my $mirror = $self->{"layerName"} eq "c" ? 0 : 1;
+			my $mirror = $self->{"layerName"} eq "mc" ? 0 : 1;
 
-			my $pText = PrimitiveText->new( $padText->GetText(), ($self->{"layerName"} eq "c" ? $padText->GetPosition() : $padText->GetPositionMirror()),
+			my $pText = PrimitiveText->new( $padText->GetText(), ($self->{"layerName"} eq "mc" ? $padText->GetPosition() : $padText->GetPositionMirror()),
 											$self->{"settings"}->GetPadTextHeight()/1000,
 											$self->{"settings"}->GetPadTextWidth()/1000,
-											$self->{"settings"}->GetPadTextWeight()/1000 , ($self->{"layerName"} eq "c" ? 0 : 1) );
+											$self->{"settings"}->GetPadTextWeight()/1000 , ($self->{"layerName"} eq "mc" ? 0 : 1) );
  
 			$self->{"drawing"}->AddPrimitive($pText);
 		}

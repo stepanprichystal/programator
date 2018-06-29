@@ -380,6 +380,13 @@ sub GetInfoTextRightCpnDist{
 	
 } 
 
+sub GetInfoTextUnmask{
+	my $self = shift;
+
+	return $self->__GetVal("infoTextUnmask");
+	
+} 
+
  
  
 # pad text settings

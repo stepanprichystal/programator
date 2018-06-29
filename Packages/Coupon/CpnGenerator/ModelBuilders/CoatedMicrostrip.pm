@@ -22,7 +22,6 @@ use aliased 'Packages::Coupon::CpnGenerator::CpnLayers::PadLayer';
 use aliased 'Packages::Coupon::CpnGenerator::CpnLayers::PadNegLayer';
 use aliased 'Packages::Coupon::CpnGenerator::CpnLayers::PthDrillLayer';
 use aliased 'Packages::Coupon::CpnGenerator::CpnLayers::PadTextLayer';
-use aliased 'Packages::Coupon::CpnGenerator::CpnLayers::InfoTextMaskLayer';
 use aliased 'Packages::Coupon::CpnGenerator::CpnLayers::PadTextMaskLayer';
 
 use aliased 'Packages::Coupon::Helper';
@@ -66,7 +65,6 @@ sub Build {
 
 		$self->_AddLayer( MaskLayer->new("mc") );
 		$self->_AddLayer( PadTextMaskLayer->new("mc") );
-		$self->_AddLayer( InfoTextMaskLayer->new("mc") );
 	}
 
 	# process: c
@@ -112,6 +110,7 @@ sub Build {
 	if ( CamHelper->LayerExists( $inCAM, $jobId, "ms" ) ) {
 
 		$self->_AddLayer( MaskLayer->new("ms") );
+		$self->_AddLayer( PadTextMaskLayer->new("ms") );
 	}
 	
 	# process: m

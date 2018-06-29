@@ -4,8 +4,8 @@
 # Builder for pcb POOL
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::Coupon::CpnBuilder::MicrostripBuilders::SEBuilder;
-use base('Packages::Coupon::CpnBuilder::MicrostripBuilders::MicrostripBuilderBase');
+package Packages::Coupon::CpnBuilder::MicrostripBuilders::COSEBuilder;
+use base('Packages::Coupon::CpnBuilder::MicrostripBuilders::SEBuilder');
 
 use Class::Interface;
 &implements('Packages::Coupon::CpnBuilder::ICpnBuilder');
@@ -19,8 +19,6 @@ use Math::Trig;
 use aliased 'CamHelpers::CamJob';
 use aliased 'CamHelpers::CamHelper';
 use aliased 'Packages::CAM::SymbolDrawing::Point';
-use aliased 'Packages::Coupon::CpnBuilder::CpnLayout::PadLayout';
-use aliased 'Packages::Coupon::CpnBuilder::CpnLayout::TrackLayout';
 use aliased 'Packages::Coupon::Enums';
 
 #-------------------------------------------------------------------------------------------#
@@ -33,7 +31,6 @@ sub new {
 	bless $self;
 
 	# properties of constrain
-	#pads, lines, coordinates
  
 	return $self;
 }
@@ -41,8 +38,21 @@ sub new {
 sub Build {
 	my $self    = shift;
 	my $errMess = shift;
+ 
+ 	# 1) Build SE layout
+ 
+	my $result = $self->SUPER::Build($errMess); 
 
-	my $result = 1;
+	# 2) Add extra behaviour for conaplanar SE
+
+	$self->{"layout"}->SetCoplanar();
+	
+	my $coSE = $self->_GetXmlConstr()->GetParamDouble("CS");    # µm
+	
+	
+	foreach my $item  ($self->{"layout"}){
+	
+	}
 
 	# Origin where left down strip pad shoul be start (contain position of left side on coupon. Right side is symetric)
 	my $origin = $self->{"cpnSingle"}->GetMicrostripOrigin( $self->{"stripVariant"});
@@ -53,7 +63,7 @@ sub Build {
 	my $margin  = $self->{"settings"}->GetCouponSingleMargin()/1000;
 	my $p2pDist = $self->{"settings"}->GetPad2PadDist() / 1000;
 
-	my $trackW = $self->_GetXmlConstr()->GetParamDouble("WB");    # µm
+	
 
 	# track and GND pads are placed horizontally => 1 positions
 	if ( $self->{"cpnSingle"}->IsMultistrip() ) {

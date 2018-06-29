@@ -34,9 +34,7 @@ sub new {
 
 	# properties of constrain
 	#pads, lines, coordinates
-
-	$self->{"padPosCnt"} = 2;     #
-
+ 
 	return $self;
 }
 

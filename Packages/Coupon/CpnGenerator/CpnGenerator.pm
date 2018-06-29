@@ -25,6 +25,7 @@ use aliased 'Packages::Coupon::CpnGenerator::ModelBuilders::StriplineMicrostrip'
 use aliased 'Packages::CAM::SymbolDrawing::Point';
 use aliased 'Packages::CAMJob::Panelization::SRStep';
 use aliased 'Packages::Coupon::CpnGenerator::CpnLayers::InfoTextLayer';
+use aliased 'Packages::Coupon::CpnGenerator::CpnLayers::InfoTextMaskLayer';
 use aliased 'Packages::Coupon::CpnGenerator::CpnLayers::GuardTracksLayer';
 use aliased 'Packages::Coupon::CpnGenerator::CpnLayers::ShieldingLayer';
 
@@ -174,8 +175,8 @@ sub __GenerateSingle {
 
 	# Shielding layout
 	if ( $cpnLayout->GetShieldingLayout() ) {
- 
-		foreach my $l (CamJob->GetSignalLayerNames( $inCAM, $jobId )) {
+
+		foreach my $l ( CamJob->GetSignalLayerNames( $inCAM, $jobId ) ) {
 
 			my $shieldingLayer = ShieldingLayer->new($l);
 			$shieldingLayer->Init( $inCAM, $jobId, $stepName, $self->{"settings"} );
@@ -198,6 +199,22 @@ sub __GenerateSingle {
 		$textLayer->Draw();
 
 	}
+
+	# infot text unmask
+	if ( $self->{"settings"}->GetInfoTextUnmask() ) {
+
+		foreach my $l ( grep { $_ =~ /^m[cs]$/ } @layers ) {
+
+			my $textMaskLayer = InfoTextMaskLayer->new($l);
+			$textMaskLayer->Init( $inCAM, $jobId, $stepName, $self->{"settings"} );
+			$textMaskLayer->Build( $cpnLayout->GetInfoTextLayout() );
+
+			CamLayer->WorkLayer( $inCAM, $textMaskLayer->GetLayerName() );
+			$textMaskLayer->Draw();
+		}
+
+	}
+
 }
 
 #-------------------------------------------------------------------------------------------#

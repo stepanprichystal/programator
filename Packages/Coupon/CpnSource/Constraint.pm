@@ -20,7 +20,7 @@ sub new {
 	my $self  = {};
 	bless $self;
 
-	$self->{"cpnSource"}     = shift;
+	#$self->{"cpnSource"}     = shift;
 	$self->{"units"}         = shift;
 	$self->{"id"}            = shift; # unique id from STACKUP_ORDERING_INDEX
 	$self->{"type"}          = shift;
@@ -113,11 +113,11 @@ sub ExistsParam {
 
 }
 
-sub GetCpnSource {
-	my $self = shift;
-
-	return $self->{"cpnSource"};
-}
+#sub GetCpnSource {
+#	my $self = shift;
+#
+#	return $self->{"cpnSource"};
+#}
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

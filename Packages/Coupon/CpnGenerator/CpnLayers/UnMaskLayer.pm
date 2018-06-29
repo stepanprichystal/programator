@@ -41,19 +41,27 @@ sub Build {
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
 
-	# unmask whole layer
+	# Unmask track
+ 
 
-	$inCAM->COM(
-				 "sr_fill",
-				 "type"          => "solid",
-				 "solid_type"    => "surface",
-				 "step_margin_x" => "0",
-				 "step_margin_y" => "0",
-				 "consider_feat" => "no",
-				 "feat_margin"   => "0",
-				 "dest"          => "layer_name",
-				 "layer"         => $self->{"layerName"}
-	);
+	foreach my $track ( $layout->GetTracks() ) {
+
+		my @points = $track->GetPoints();
+
+		# Draw negative clearance
+		my $symNeg = "r" . ( $track->GetWidth() + 800 );  # 800µm mask clareance
+		
+		if ( scalar(@points) == 2 ) {
+			my $l = PrimitiveLine->new( $points[0], $points[1], $symNeg, DrawEnums->Polar_POSITIVE );
+			$self->{"drawing"}->AddPrimitive($l);
+
+		}
+		else {
+			my $p = PrimitivePolyline->new( \@points, $symNeg, DrawEnums->Polar_POSITIVE );
+			$self->{"drawing"}->AddPrimitive($p);
+		}
+
+	}
 
 	# Draw to layer
 	#$self->_Draw();

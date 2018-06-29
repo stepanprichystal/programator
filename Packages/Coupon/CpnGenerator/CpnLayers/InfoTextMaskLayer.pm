@@ -57,8 +57,8 @@ sub Build {
 		my $pText = PrimitiveText->new( $text->{"val"}, $p,
 										$self->{"settings"}->GetInfoTextHeight()/1000,
 										$self->{"settings"}->GetInfoTextWidth()/1000,
-										$self->{"settings"}->GetInfoTextWeight()/1000,
-										0,0, DrawEnums->Polar_NEGATIVE);
+										$self->{"settings"}->GetInfoTextWeight()/1000 + 0.1,
+										0,0, DrawEnums->Polar_POSITIVE);
 
 		$self->{"drawing"}->AddPrimitive($pText);
 

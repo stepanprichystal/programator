@@ -24,6 +24,7 @@ sub new {
 	$self->{"w"}        = undef;
 	$self->{"h"}        = undef;
 
+
 	$self->{"couponsSingle"} = [];
 
 	return $self;
@@ -84,6 +85,8 @@ sub GetCouponsSingle {
 	return @{ $self->{"couponsSingle"} };
 
 }
+
+
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

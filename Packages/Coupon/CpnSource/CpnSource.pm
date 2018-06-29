@@ -65,7 +65,7 @@ sub GetConstraints {
 
 
 
-		my $c = Constraint->new( $self, $self->{"units"},  $constraint->{"STACKUP_ORDERING_INDEX"}, $tInStack, $mInStack, $constraint );
+		my $c = Constraint->new(  $self->{"units"},  $constraint->{"STACKUP_ORDERING_INDEX"}, $tInStack, $mInStack, $constraint );
 
 		push( @constraints, $c );
 

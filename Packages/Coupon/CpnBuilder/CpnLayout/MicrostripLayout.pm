@@ -32,6 +32,8 @@ sub new {
 	
 	# Active area width
 	$self->{"activeAreaWidth"} = undef;
+	
+	$self->{"coplanar"} = 0;
 
 	return $self;
 }
@@ -114,6 +116,20 @@ sub GetTracks {
 	my $self = shift;
 
 	return @{ $self->{"tracks"} };
+
+}
+
+sub SetCoplanar {
+	my $self = shift;
+
+	$self->{"coplanar"} = shift;
+
+}
+
+sub GetCoplanar {
+	my $self = shift;
+
+	return $self->{"coplanar"};
 
 }
 
