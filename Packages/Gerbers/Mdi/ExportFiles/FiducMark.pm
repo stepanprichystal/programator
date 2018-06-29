@@ -47,8 +47,10 @@ sub AddalignmentMark {
 	if (  $layerName =~ /^v\d+/ && HegMethods->GetMaterialKind($jobName) =~ /fr4/i ) {
 
 		my @sorted =
-		  sort { ( $b =~ /X(\d+)/ )[0] <=> ( $a =~ /X(\d+)/ )[0] or ( $b =~ /Y(\d+)/ )[0] <=> ( $a =~ /Y(\d+)/ )[0] }
+		  sort { ( $b =~ /X(\d+)/ )[0] <=> ( $a =~ /X(\d+)/ )[0]  }
 		  grep { $_ =~ /X(\d+)Y(\d+)/ } @arrFiducialPosition;
+		  
+		@sorted=  sort { ( $b =~ /Y(\d+)/ )[0] <=> ( $a =~ /Y(\d+)/ )[0]  } @sorted[0..1];
 		  
 		 for(my $i= 0;  $i < scalar(@arrFiducialPosition); $i++){
 		 	
