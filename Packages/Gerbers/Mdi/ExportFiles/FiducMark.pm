@@ -6,6 +6,7 @@
 package Packages::Gerbers::Mdi::ExportFiles::FiducMark;
 
 #local library
+use aliased 'Connectors::HeliosConnector::HegMethods';
 
 my $FIDMARK_MM   = "5.16120000";
 my $FIDMARK_INCH = "0.202815";
@@ -25,14 +26,13 @@ sub AddalignmentMark {
 	$self->_GetCoorFiducial( $genesis, $layerName, $units, $jobName, $stepName, $searchMark );
 
 	my $maxDcode = $self->_GetHighestDcode("$pathGerber");
-	
+
 	# if max code doesnt exist, set fake max code 9, because first dcode in gerbers start with 10
 	my $noDcode = 0;
-	unless( defined $maxDcode){
-		$noDcode = 1;
+	unless ( defined $maxDcode ) {
+		$noDcode  = 1;
 		$maxDcode = 9;
 	}
- 
 
 	push( @arrFiducialPosition, 'G54D' . ( $maxDcode + 1 ) . '*' );
 	for ( my $i = 1 ; $i <= 4 ; $i++ ) {
@@ -40,6 +40,27 @@ sub AddalignmentMark {
 			      sprintf( "X%010d", sprintf "%3.0f", $featCoor->{"fid$i"}->{'x'} * 1000000 )
 				. sprintf( "Y%010d", sprintf "%3.0f", $featCoor->{"fid$i"}->{'y'} * 1000000 )
 				. 'D03*' );
+	}
+
+	# Temporary solution, for FR4 materials and inner layer, delete one fiducial mark
+	# Fr4 cores has only 3 fiduc drill layer
+	if (  $layerName =~ /^v\d+/ && HegMethods->GetMaterialKind($jobName) =~ /fr4/i ) {
+
+		my @sorted =
+		  sort { ( $b =~ /X(\d+)/ )[0] <=> ( $a =~ /X(\d+)/ )[0] or ( $b =~ /Y(\d+)/ )[0] <=> ( $a =~ /Y(\d+)/ )[0] }
+		  grep { $_ =~ /X(\d+)Y(\d+)/ } @arrFiducialPosition;
+		  
+		 for(my $i= 0;  $i < scalar(@arrFiducialPosition); $i++){
+		 	
+		 	if($arrFiducialPosition[$i] eq $sorted[0]){
+		 		
+		 		splice @arrFiducialPosition, $i, 1;
+		 		last;
+		 	}
+		 	
+		 }
+
+
 	}
 
 	my $NEWFILE;
@@ -55,11 +76,12 @@ sub AddalignmentMark {
 				print $NEWFILE "$line\n";
 			}
 			$existFiduc = 1;
-		
-		} 
+
+		}
+
 		# when there are more dcodes OR when no anohter dcode are defined
-		elsif ( $_ =~ /$lastDcode/ || ($noDcode && $_ =~ /MOIN/) ) {
-	 
+		elsif ( $_ =~ /$lastDcode/ || ( $noDcode && $_ =~ /MOIN/ ) ) {
+
 			print $NEWFILE "$_";
 			if ( $units eq 'mm' ) {
 				$valueDcode = $FIDMARK_MM;
@@ -194,9 +216,9 @@ sub _GetHighestDcode {
 		}
 		close $f;
 	}
-	
+
 	# no dcode in gerber
-	unless(defined $highestDcode){
+	unless ( defined $highestDcode ) {
 		$highestDcode = undef;
 	}
 

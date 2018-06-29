@@ -466,12 +466,12 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId    = "f52457";
+	my $jobId    = "d113608";
 	my $stepName = "panel";
 
 	my $export = ExportFiles->new( $inCAM, $jobId, $stepName );
 
-	my %type = ( Enums->Type_SIGNAL => "0", Enums->Type_MASK => "1", Enums->Type_PLUG => "0" );
+	my %type = ( Enums->Type_SIGNAL => "1", Enums->Type_MASK => "0", Enums->Type_PLUG => "0" );
 
 	$export->Run( \%type );
 
