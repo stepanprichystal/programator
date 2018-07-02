@@ -94,8 +94,7 @@ sub SetMirrorY {
 }
 
 sub Draw {
-	my $self     = shift;
-	
+	my $self = shift;
 
 	# 1)  Get all primitives
 	my @primitives = ();
@@ -122,8 +121,8 @@ sub __DrawPrimitives {
 		my $pos        = $pInfo->{"position"};
 
 		foreach my $p ( @{$primitives} ) {
-			
-			my $p = dclone($p); # do deep copy, because primitive properties (points) can be moved, rotated etc in functions below
+
+			my $p = dclone($p);                # do deep copy, because primitive properties (points) can be moved, rotated etc in functions below
 
 			# Every primitive feature have set attribute feat_group_id
 			CamSymbol->AddCurAttribute( $self->{"inCAM"}, $self->{"jobId"}, "feat_group_id", $p->GetGroupGUID() );
@@ -154,7 +153,7 @@ sub __DrawPrimitives {
 			}
 			elsif ( $p->GetType() eq Enums->Primitive_SURFACEFILL ) {
 
-				$self->__DrawSurfFill( $p );
+				$self->__DrawSurfFill($p);
 			}
 			elsif ( $p->GetType() eq Enums->Primitive_PAD ) {
 
@@ -200,7 +199,6 @@ sub __DrawPolyline {
 		$p->Move( $self->{"position"}->X() + $symbolPos->X(), $self->{"position"}->Y() + $symbolPos->Y() );
 	}
 
-
 	# consider mirror
 	if ( $self->{"mirrorX"} ) {
 		foreach my $p ( $polyline->GetPoints() ) {
@@ -212,7 +210,7 @@ sub __DrawPolyline {
 	my @points = $polyline->GetPoints();
 
 	CamSymbol->AddPolyline( $self->{"inCAM"}, \@points, $polyline->GetSymbol(), $polyline->GetPolarity() );
- 
+
 }
 
 sub __DrawText {
@@ -243,7 +241,8 @@ sub __DrawText {
 
 	}
 
-	CamSymbol->AddText( $self->{"inCAM"}, $t->GetValue(), $p, $t->GetHeight(), $t->GetWidth() , $t->GetLineWidth(), $mirror, $t->GetPolarity(), $t->GetAngle() );
+	CamSymbol->AddText( $self->{"inCAM"}, $t->GetValue(),    $p, $t->GetHeight(), $t->GetWidth(), $t->GetLineWidth(),
+						$mirror,          $t->GetPolarity(), $t->GetAngle() );
 
 }
 
@@ -272,10 +271,13 @@ sub __DrawPad {
 		else {
 			$mirror = 1;
 		}
-
 	}
 
-	CamSymbol->AddPad( $self->{"inCAM"}, $t->GetSymbol(), $p, $mirror, $t->GetPolarity() );
+	CamSymbol->AddPad( $self->{"inCAM"}, $t->GetSymbol(), $p, $mirror, $t->GetPolarity(), $t->GetAngle(),
+					   $t->GetResize(),  $t->GetXscale(), $t->GetYscale() );
+					   
+					   
+					   
 
 }
 
@@ -355,41 +357,39 @@ sub __DrawSurfPoly {
 }
 
 sub __DrawSurfFill {
-	my $self      = shift;
-	my $surf      = shift;
-	 
+	my $self = shift;
+	my $surf = shift;
+
 	my $patt = $surf->GetPattern();
- 
-	 if ( $patt->GetPredefined_pattern_type() eq "solid" ) {
 
-		CamSymbolSurf->AddSurfaceFillSolid( $self->{"inCAM"},   $patt->GetOutline_draw(), $patt->GetOutline_width(), $patt->GetOutline_invert(),
-		$surf->GetMarginX(),
-		$surf->GetMarginY(),
-		$surf->GetSRMarginX(),
-		$surf->GetSRMarginY(),
-		$surf->GetConsiderFeat(),
-		$surf->GetFeatMargin(),
-		);
-	
-	 }elsif ( $patt->GetPredefined_pattern_type() eq "symbol" ) {
+	if ( $patt->GetPredefined_pattern_type() eq "solid" ) {
 
-		CamSymbolSurf->AddSurfaceFillSymbol( $self->{"inCAM"},   $patt->GetOutline_draw(), $patt->GetOutline_width(), $patt->GetOutline_invert(),
-		$patt->GetSymbol(),
-		$patt->GetSymbolDX(),
-		$patt->GetSymbolDY(),
-		$surf->GetMarginX(),
-		$surf->GetMarginY(),
-		$surf->GetSRMarginX(),
-		$surf->GetSRMarginY(),
-		$surf->GetConsiderFeat(),
-		$surf->GetFeatMargin(),
+		CamSymbolSurf->AddSurfaceFillSolid(
+											$self->{"inCAM"},          $patt->GetOutline_draw(),
+											$patt->GetOutline_width(), $patt->GetOutline_invert(),
+											$surf->GetMarginX(),       $surf->GetMarginY(),
+											$surf->GetSRMarginX(),     $surf->GetSRMarginY(),
+											$surf->GetConsiderFeat(),  $surf->GetFeatMargin(),
 		);
- 
-	 }else{
-		
+
+	}
+	elsif ( $patt->GetPredefined_pattern_type() eq "symbol" ) {
+
+		CamSymbolSurf->AddSurfaceFillSymbol(
+											 $self->{"inCAM"},          $patt->GetOutline_draw(),
+											 $patt->GetOutline_width(), $patt->GetOutline_invert(),
+											 $patt->GetSymbol(),        $patt->GetSymbolDX(),
+											 $patt->GetSymbolDY(),      $surf->GetMarginX(),
+											 $surf->GetMarginY(),       $surf->GetSRMarginX(),
+											 $surf->GetSRMarginY(),     $surf->GetConsiderFeat(),
+											 $surf->GetFeatMargin(),
+		);
+
+	}
+	else {
+
 		die "Pattern type is not defined";
 	}
-	 
 
 }
 

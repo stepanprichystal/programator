@@ -186,6 +186,10 @@ sub AddPad {
 	my $pos      = shift;    #hash x, y
 	my $mirror   = shift;
 	my $polarity = shift;    #
+	my $angle = shift // 0;
+	my $resize = shift // 0;
+	my $xscale = shift // 1;
+	my $yscale = shift // 1;
 
 	$polarity = defined $polarity ? $polarity : 'positive';
 
@@ -205,11 +209,11 @@ sub AddPad {
 				   "x"          => $pos->{"x"},
 				   "y"          => $pos->{"y"},
 				   "mirror"     => $mirror,
-				   "angle"      => "0",
+				   "angle"      => $angle,
 				   "direction"  => "ccw",
-				   "resize"     => "0",
-				   "xscale"     => "1",
-				   "yscale"     => "1"
+				   "resize"     => $resize,
+				   "xscale"     => $xscale,
+				   "yscale"     => $yscale
 	  );
 }
 

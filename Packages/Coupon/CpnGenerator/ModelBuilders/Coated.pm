@@ -4,7 +4,7 @@
 # Builder for pcb POOL
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::Coupon::CpnGenerator::ModelBuilders::UncoatedMicrostrip;
+package Packages::Coupon::CpnGenerator::ModelBuilders::Coated;
 use base('Packages::Coupon::CpnGenerator::ModelBuilders::ModelBuilderBase');
 
 use Class::Interface;
@@ -16,7 +16,6 @@ use warnings;
 
 #local library
 use aliased 'Packages::Coupon::CpnGenerator::CpnLayers::MaskLayer';
-use aliased 'Packages::Coupon::CpnGenerator::CpnLayers::UnMaskLayer';
 use aliased 'Packages::Coupon::CpnGenerator::CpnLayers::TrackLayer';
 use aliased 'Packages::Coupon::CpnGenerator::CpnLayers::GNDLayer';
 use aliased 'Packages::Coupon::CpnGenerator::CpnLayers::PadLayer';
@@ -24,6 +23,7 @@ use aliased 'Packages::Coupon::CpnGenerator::CpnLayers::PadNegLayer';
 use aliased 'Packages::Coupon::CpnGenerator::CpnLayers::PthDrillLayer';
 use aliased 'Packages::Coupon::CpnGenerator::CpnLayers::PadTextLayer';
 use aliased 'Packages::Coupon::CpnGenerator::CpnLayers::PadTextMaskLayer';
+
 use aliased 'Packages::Coupon::Helper';
 use aliased 'CamHelpers::CamJob';
 use aliased 'CamHelpers::CamHelper';
@@ -45,6 +45,7 @@ sub new {
 sub Build {
 	my $self   = shift;
 	my $layout = shift;
+	my $layersLayout = shift;
 
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
@@ -58,22 +59,18 @@ sub Build {
 	my $gndL   = $layout->GetBotRefLayer();
 
 	# Build coupon layers
-
+	
+	
 	# process: mc
 	if ( CamHelper->LayerExists( $inCAM, $jobId, "mc" ) ) {
 
-		if($trackL eq "c"){
-			$self->_AddLayer( UnMaskLayer->new("mc") );
-		}else{
-			$self->_AddLayer( MaskLayer->new("mc") );
-		}
-		
+		$self->_AddLayer( MaskLayer->new("mc") );
 		$self->_AddLayer( PadTextMaskLayer->new("mc") );
 	}
 
 	# process: c
 	$self->_AddLayer(PadTextLayer->new("c"));
-
+ 
 	if ( $trackL eq "c" ) {
 
 		$self->_AddLayer( TrackLayer->new("c") );
@@ -87,8 +84,9 @@ sub Build {
 	for ( my $i = 0 ; $i < scalar( $layerCnt - 2 ) ; $i++ ) {
 
 		my $inLayer = "v" . ($i + 2);
-
+	 
 		if ( $gndL eq $inLayer ) {
+			
 			$self->_AddLayer( GNDLayer->new($inLayer) );
 		}
 		else {
@@ -98,8 +96,8 @@ sub Build {
 	}
 
 	# process: s
+
 	$self->_AddLayer(PadTextLayer->new("s"));
-	
 	if ( $trackL eq "s" ) {
 
 		$self->_AddLayer( TrackLayer->new("s") );
@@ -113,12 +111,7 @@ sub Build {
 	# process: ms
 	if ( CamHelper->LayerExists( $inCAM, $jobId, "ms" ) ) {
 
-		if($trackL eq "s"){
-			$self->_AddLayer( UnMaskLayer->new("ms") );
-		}else{
-			$self->_AddLayer( MaskLayer->new("ms") );
-		}
-		
+		$self->_AddLayer( MaskLayer->new("ms") );
 		$self->_AddLayer( PadTextMaskLayer->new("ms") );
 	}
 	
@@ -126,7 +119,7 @@ sub Build {
 	$self->_AddLayer( PthDrillLayer->new("m") );
 
 	
-	$self->_Build($layout);
+	$self->_Build($layout, $layersLayout);
 
 	
 }

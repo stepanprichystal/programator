@@ -21,20 +21,27 @@ use aliased 'Packages::CAM::SymbolDrawing::Enums';
 #-------------------------------------------------------------------------------------------#
 
 sub new {
-	my $class     = shift;
-	my $symbol     = shift; # r2000, s400, ..
-	my $position  = shift;    # font size in mm
-	my $mirror    = shift;
-	my $polarity  = shift;    #
+	my $class    = shift;
+	my $symbol   = shift;        # r2000, s400, ..
+	my $position = shift;        # font size in mm
+	my $mirror   = shift;
+	my $polarity = shift;        #
+	my $angle    = shift // 0;
+	my $resize   = shift // 0;
+	my $xscale   = shift // 1;
+	my $yscale   = shift // 1;
 
 	my $self = {};
 	$self = $class->SUPER::new( Enums->Primitive_PAD, $polarity );
 	bless $self;
 
-	$self->{"symbol"}     = $symbol;
-	$self->{"position"}  = $position;
-	$self->{"mirror"}    = $mirror;
-
+	$self->{"symbol"}   = $symbol;
+	$self->{"position"} = $position;
+	$self->{"mirror"}   = $mirror;
+	$self->{"angle"}    = $angle;
+	$self->{"resize"}   = $resize;
+	$self->{"xscale"}   = $xscale;
+	$self->{"yscale"}   = $yscale;
 
 	return $self;
 }
@@ -63,17 +70,40 @@ sub GetPosition {
 	return $self->{"position"};
 }
 
- 
- 
-
 sub GetMirror {
 	my $self = shift;
 
 	return $self->{"mirror"};
 }
 
- 
 
+sub GetAngle {
+	my $self = shift;
+
+	return $self->{"angle"};
+}
+
+
+sub GetResize {
+	my $self = shift;
+
+	return $self->{"resize"};
+}
+
+
+sub GetXscale {
+	my $self = shift;
+
+	return $self->{"xscale"};
+}
+
+
+sub GetYscale {
+	my $self = shift;
+
+	return $self->{"yscale"};
+}
+ 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#

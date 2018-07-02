@@ -4,7 +4,7 @@
 # Builder for pcb POOL
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::Coupon::CpnGenerator::ModelBuilders::StriplineMicrostrip;
+package Packages::Coupon::CpnGenerator::ModelBuilders::CoatedUpperEmbedded;
 use base('Packages::Coupon::CpnGenerator::ModelBuilders::ModelBuilderBase');
 
 use Class::Interface;
@@ -17,6 +17,7 @@ use warnings;
 #local library
 use aliased 'Packages::Coupon::CpnGenerator::CpnLayers::MaskLayer';
 use aliased 'Packages::Coupon::CpnGenerator::CpnLayers::TrackLayer';
+use aliased 'Packages::Coupon::CpnGenerator::CpnLayers::TrackClearanceLayer';
 use aliased 'Packages::Coupon::CpnGenerator::CpnLayers::GNDLayer';
 use aliased 'Packages::Coupon::CpnGenerator::CpnLayers::PadLayer';
 use aliased 'Packages::Coupon::CpnGenerator::CpnLayers::PadNegLayer';
@@ -42,6 +43,7 @@ sub new {
 sub Build {
 	my $self   = shift;
 	my $layout = shift;
+	my $layersLayout = shift;
 
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
@@ -52,8 +54,8 @@ sub Build {
 
 	# Info from constrain XML
 	my $trackL  = $layout->GetTrackLayer();
-	my $gndTopL = $layout->GetTopRefLayer();
-	my $gndBotL = $layout->GetBotRefLayer();
+	my $emptyL = $layout->GetTopRefLayer();
+	my $gndL = $layout->GetBotRefLayer();
 
 	# Build coupon layers
 
@@ -66,29 +68,26 @@ sub Build {
 
 	# process: c
 	$self->_AddLayer( PadTextLayer->new("c") );
+	$self->_AddLayer( TrackClearanceLayer->new("c") );
+	$self->_AddLayer( PadLayer->new("c") );
 
-	if ( $gndTopL eq "c" || $gndBotL eq "c" ) {
-
-		$self->_AddLayer( GNDLayer->new("c") );
-
-	}
-	else {
-
-		$self->_AddLayer( PadLayer->new("c") );
-	}
+	 
 
 	for ( my $i = 0 ; $i < scalar( $layerCnt - 2 ) ; $i++ ) {
 
 		my $inLayer = "v" . ( $i + 2 );
-
+ 
 		if ( $trackL eq $inLayer ) {
+			
+			$self->_AddLayer(PadTextLayer->new($inLayer));
 			$self->_AddLayer( TrackLayer->new($inLayer) );
 		}
-		elsif ( $gndTopL eq $inLayer || $gndBotL eq $inLayer ) {
+		elsif ( $gndL eq $inLayer ) {
 
 			$self->_AddLayer( GNDLayer->new($inLayer) );
 		}
 		else {
+			$self->_AddLayer( TrackClearance->new($inLayer) );
 			$self->_AddLayer( PadNegLayer->new($inLayer) );
 		}
 
@@ -96,16 +95,8 @@ sub Build {
 
 	# process: s
 	$self->_AddLayer( PadTextLayer->new("s") );
-
-	if ( $gndTopL eq "s" || $gndBotL eq "s" ) {
-
-		$self->_AddLayer( GNDLayer->new("s") );
-	}
-	else {
-
-		$self->_AddLayer( PadLayer->new("s") );
-
-	}
+	$self->_AddLayer( TrackClearanceLayer->new("s") );
+	$self->_AddLayer( PadLayer->new("s") );
 
 	# process: ms
 	if ( CamHelper->LayerExists( $inCAM, $jobId, "ms" ) ) {
@@ -117,7 +108,7 @@ sub Build {
 	# process: m
 	$self->_AddLayer( PthDrillLayer->new("m") );
 
-	$self->_Build($layout);
+	$self->_Build($layout, $layersLayout);
 
 }
 

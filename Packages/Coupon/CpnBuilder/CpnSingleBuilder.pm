@@ -19,16 +19,19 @@ use aliased 'Packages::Coupon::Enums';
 use aliased 'CamHelpers::CamStep';
 use aliased 'CamHelpers::CamJob';
 use aliased 'CamHelpers::CamHelper';
+use aliased 'Packages::Coupon::Helper';
+use aliased 'Packages::CAM::SymbolDrawing::Point';
+
+use aliased 'Packages::Coupon::CpnBuilder::CpnLayout::CpnSingleLayout';
 use aliased 'Packages::Coupon::CpnBuilder::MicrostripBuilders::SEBuilder';
 use aliased 'Packages::Coupon::CpnBuilder::MicrostripBuilders::DiffBuilder';
 use aliased 'Packages::Coupon::CpnBuilder::MicrostripBuilders::COSEBuilder';
-use aliased 'Packages::CAM::SymbolDrawing::Point';
-use aliased 'Packages::Coupon::CpnBuilder::CpnLayout::CpnSingleLayout';
+use aliased 'Packages::Coupon::CpnBuilder::MicrostripBuilders::CODiffBuilder';
+
 use aliased 'Packages::Coupon::CpnBuilder::OtherBuilders::CpnInfoTextBuilder';
 use aliased 'Packages::Coupon::CpnBuilder::OtherBuilders::GuardTracksBuilder';
 use aliased 'Packages::Coupon::CpnBuilder::OtherBuilders::ShieldingBuilder';
-use aliased 'Packages::Coupon::Helper';
-use aliased 'Packages::CAM::SymbolDrawing::Point';
+use aliased 'Packages::Coupon::CpnBuilder::OtherBuilders::CpnLayerBuilder';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -85,6 +88,8 @@ sub Build {
 				  case Enums->Type_DIFF { $mStripBuilder = DiffBuilder->new() }
 
 				  case Enums->Type_COSE { $mStripBuilder = COSEBuilder->new() }
+
+				  case Enums->Type_CODIFF { $mStripBuilder = CODiffBuilder->new() }
 
 				  else { die "Microstirp type: " . $stripVar->GetType() . "is not implemented"; }
 			}
@@ -195,6 +200,18 @@ sub Build {
 
 	}
 
+	# Build layer information
+
+	my $lBuilder = CpnLayerBuilder->new( $inCAM, $jobId, $self->{"settings"}, $self->{"singleCpnVar"}, $self );
+	if ( $lBuilder->Build($errMess) ) {
+
+		$self->{"layout"}->SetLayersLayout( $lBuilder->GetLayout() );
+	}
+	else {
+
+		$result = 0;
+	}
+
 	if ($result) {
 
 		# Set height of whole coupon
@@ -223,30 +240,41 @@ sub IsMultistrip {
 
 sub GetShareGNDLayers {
 	my $self         = shift;
-	my $stripBuilder = shift;    # idof microstrip order
+	my $stripBuilder = shift;         # idof microstrip order
+	my $secondPos    = shift // 0;    # iff strip is diff and func is called by pad in "second column (pad on right)"
 
 	my $stripVariant = $stripBuilder->GetStripVariant();
 
 	my @strips = $self->{"singleCpnVar"}->GetStripsByColumn( $stripVariant->Col() );
 
-	my @gndLayers = ();          # layers where has to by GND pad (on specific column position)
+	my @gndLayers = ();               # layers where has to by GND pad (on specific column position)
 
 	foreach my $s (@strips) {
 
-		my $topGnd = $_->Data()->{"xmlConstraint"}->GetTopRefLayer();
-		my $botGnd = $_->Data()->{"xmlConstraint"}->GetBotRefLayer();
-		my $track  = $_->Data()->{"xmlConstraint"}->GetTrackLayer();
+		my $topGnd = $s->Data()->{"xmlConstraint"}->GetTopRefLayer();
+		my $botGnd = $s->Data()->{"xmlConstraint"}->GetBotRefLayer();
+		my $track  = $s->Data()->{"xmlConstraint"}->GetTrackLayer();
 
-		push( @gndLayers, Helper->GetInCAMLayer( $_, $topGnd ) ) if ( defined $topGnd && $topGnd =~ /l\d+/i );
-		push( @gndLayers, Helper->GetInCAMLayer( $_, $botGnd ) ) if ( defined $botGnd && $botGnd =~ /l\d+/i );
-		push( @gndLayers, Helper->GetInCAMLayer( $_, $track ) ) if ( $s->GetType() eq Enums->Type_COSE || $s->GetType() eq Enums->Type_CODIFF );
+		push( @gndLayers, Helper->GetInCAMLayer( $topGnd, $self->{"layerCnt"} ) ) if ( defined $topGnd && $topGnd =~ /l\d+/i );
+		push( @gndLayers, Helper->GetInCAMLayer( $botGnd, $self->{"layerCnt"} ) ) if ( defined $botGnd && $botGnd =~ /l\d+/i );
+		push( @gndLayers, Helper->GetInCAMLayer( $track,  $self->{"layerCnt"} ) )
+		  if ( $s->GetType() eq Enums->Type_COSE || $s->GetType() eq Enums->Type_CODIFF );
 	}
- 
-	  my %layers;
+
+	my %layers;
 	@layers{ Helper->GetAllLayerNames( $self->{"layerCnt"} ) } = ();
 
 	$layers{$_} = 0 foreach keys %layers;
 	$layers{$_} = 1 foreach @gndLayers;
+
+	if ( scalar(@strips) > 1 ) {
+
+		# stirp in same column
+		my $s2 = ( grep { $_->Id() ne $stripVariant->Id() } @strips )[0];
+		if ( $secondPos && ( $s2->GetType() eq Enums->Type_SE || $s2->GetType() eq Enums->Type_COSE ) ) {
+			$layers{$_} = 0 foreach keys %layers;
+		}
+	}
 
 	return \%layers;
 }

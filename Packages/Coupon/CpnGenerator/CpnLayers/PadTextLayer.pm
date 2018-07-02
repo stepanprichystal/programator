@@ -40,14 +40,10 @@ sub new {
 sub Build {
 	my $self   = shift;
 	my $layout = shift;    # microstrip layout
+	my $layerLayout = shift;
 
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
-
-	if ( $self->{"layerName"} ne "c" && $self->{"layerName"} ne "s" ) {
-		die "Track pad text can be put only to layer c,s";
-	}
-	
  
 
 	foreach my $pad ( $layout->GetPads() ) {
@@ -58,11 +54,11 @@ sub Build {
 			
 			return unless(defined $padText); # only multistrips has texts
 
-			my $mirror = $self->{"layerName"} eq "c" ? 0 : 1;
+ 
 
 			# clearance in copper (put negative square)
 	 
- 			my $origin = ( $self->{"layerName"} eq "c" ? $padText->GetNegRectPosition() : $padText->GetNegRectPositionMirror() );
+ 			my $origin = ( $layerLayout->GetMirror() ? $padText->GetNegRectPositionMirror() : $padText->GetNegRectPosition() );
  
  			my @points = ( );
  			push(@points, Point->new( $origin->X(), $origin->Y()));
@@ -84,11 +80,11 @@ sub Build {
 			# Add text pad
 			my $pText = PrimitiveText->new(
 											$padText->GetText(),
-											( $self->{"layerName"} eq "c" ? $padText->GetPosition() : $padText->GetPositionMirror() ),
+											( $layerLayout->GetMirror()? $padText->GetPositionMirror() : $padText->GetPosition() ),
 											$self->{"settings"}->GetPadTextHeight()/1000,
 											$self->{"settings"}->GetPadTextWidth()/1000,
 											$self->{"settings"}->GetPadTextWeight()/1000,
-											( $self->{"layerName"} eq "c" ? 0 : 1 )
+											( $layerLayout->GetMirror() ? 1 : 0 )
 			);
 
 			$self->{"drawing"}->AddPrimitive($pText);

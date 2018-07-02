@@ -16,16 +16,16 @@ trackToCopper = 400 # µm
 
 cpnSingleWidth                 = 130              # mm
 
-marginSingle      = 2000                # µm
-marginCoupon      = 2000               # µm
+marginSingle      = 1000                # µm
+marginCoupon      = 1500               # µm
 couponSpace       = 1000             # µm
 groupPadsDist    = 4000                # µm
 twoEndedDesign = 1
 
 
 # pool settings
-maxTrackCnt = 5 # two track per measurement layer in group
-poolCnt = 2
+maxTrackCnt = 6 # two track per measurement layer in group
+poolCnt = 1
 maxStripsCntH = 3
 shareGNDPads = 1
 routeBetween = 1
@@ -37,7 +37,7 @@ routeStraight = 1
 
 infoTextWidth = 1000 # µm
 infoTextHeight = 1000 # µm
-infoTextWeight = 200 #µm
+infoTextWeight = 300 #µm
 padsTopTextDist    = 2000                # µm
 infoTextRightCpnDist = 1000 #µm
 infoText = 1 # 1/0
@@ -55,7 +55,7 @@ infoTextUnmask = 1 # µm
 
 padTextWidth = 800 #µm
 padTextHeight = 700 #µm
-padTextWeight = 200 #µm
+padTextWeight = 300 #µm
 padTextDist = 150 # µm
 padText = 1 # 1/0
 padTextUnmask = 1
@@ -63,7 +63,7 @@ padTextUnmask = 1
 
 # Guard tracks settings
 
-guardTracks = 0 # 1/0
+guardTracks = 1 # 1/0
 guardTracksType = single # single - single lines, full - fill whole area except pads area
 guardTrack2TrackDist = 250 #µm
 guardTrack2PadDist = 400 #µm
@@ -77,4 +77,22 @@ shieldingType = symbol # symbol/solid
 shieldingSymbol = r200 # µm incam symbol 
 shieldingSymbolDX = 500 # µm
 shieldingSymbolDY = 500 # µm
+
+# Logo
+
+title = 1 # 1/0
+titleTextWidth = 1000 # µm
+titleTextHeight = 1000 # µm
+logoWidth = 6000 # µm
+logoHeight = 1300 # µm
+logoSymbol = gatema_logo #  
+logoSymbolWidth = 15600 #  
+logoSymbolHeight = 3600 #  
+titleTextWeight = 400 #µm
+titleMargin = 350 #µm
+titleType = left # left/top
+titleLogoJobIdHDist = 1000 #µm H distance bewweeen logo and job id
+titleLogoJobIdVDist = 400 #µm V distance if 2rows title
+titleUnMask = 1 # 1/0
+
  

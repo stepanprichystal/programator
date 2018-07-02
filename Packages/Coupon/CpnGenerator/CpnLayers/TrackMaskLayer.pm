@@ -4,7 +4,7 @@
 # creation nif file depend on pcb type
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::Coupon::CpnGenerator::CpnLayers::PadTextMaskLayer;
+package Packages::Coupon::CpnGenerator::CpnLayers::TrackMaskLayer;
 
 use base('Packages::Coupon::CpnGenerator::CpnLayers::LayerBase');
 
@@ -17,9 +17,12 @@ use warnings;
 
 #local library
 use aliased 'Packages::CAM::SymbolDrawing::SymbolDrawing';
+use aliased 'Packages::CAM::SymbolDrawing::Primitive::PrimitivePad';
+use aliased 'Packages::CAM::SymbolDrawing::Primitive::PrimitiveLine';
 use aliased 'CamHelpers::CamLayer';
 use aliased 'Packages::Coupon::Enums';
-use aliased 'Packages::CAM::SymbolDrawing::Primitive::PrimitiveText';
+use aliased 'Packages::CAM::SymbolDrawing::Primitive::PrimitivePolyline';
+use aliased 'Packages::CAM::SymbolDrawing::Enums' => 'DrawEnums';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -36,32 +39,30 @@ sub new {
 sub Build {
 	my $self   = shift;
 	my $layout = shift;    # microstrip layout
-	my $layerLayout = shift;
 
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
 
+	# Unmask track
  
-	return if (!$self->{"settings"}->GetPadTextUnmask);
 
-	foreach my $pad ( $layout->GetPads() ) {
+	foreach my $track ( $layout->GetTracks() ) {
+
+		my @points = $track->GetPoints();
+
+		# Draw negative clearance
+		my $symNeg = "r" . ( $track->GetWidth() + 800 );  # 800µm mask clareance
 		
-		
+		if ( scalar(@points) == 2 ) {
+			my $l = PrimitiveLine->new( $points[0], $points[1], $symNeg, DrawEnums->Polar_POSITIVE );
+			$self->{"drawing"}->AddPrimitive($l);
 
-		if ( $pad->GetType() eq Enums->Pad_TRACK && $self->{"settings"}->GetPadText() ) {
-
-			my $padText = $pad->GetPadText();
-			
-			return unless(defined $padText); # only multistrips has texts
-
-	 
-			my $pText = PrimitiveText->new( $padText->GetText(), ($layerLayout->GetMirror() ? $padText->GetPositionMirror() : $padText->GetPosition()),
-											$self->{"settings"}->GetPadTextHeight()/1000,
-											$self->{"settings"}->GetPadTextWidth()/1000,
-											$self->{"settings"}->GetPadTextWeight()/1000 , ($layerLayout->GetMirror() ? 1 : 0) );
- 
-			$self->{"drawing"}->AddPrimitive($pText);
 		}
+		else {
+			my $p = PrimitivePolyline->new( \@points, $symNeg, DrawEnums->Polar_POSITIVE );
+			$self->{"drawing"}->AddPrimitive($p);
+		}
+
 	}
 
 	# Draw to layer

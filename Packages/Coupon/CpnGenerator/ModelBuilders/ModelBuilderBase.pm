@@ -60,11 +60,13 @@ sub _AddLayer {
 sub _Build {
 	my $self   = shift;
 	my $layout = shift;
+	my $layersLayout = shift;
+
 
 	foreach my $layer ( @{ $self->{"layers"} } ) {
 
 		$layer->Init( $self->{"inCAM"}, $self->{"jobId"}, $self->{"step"}, $self->{"settings"}, $layout );
-		$layer->Build($layout);
+		$layer->Build($layout, $layersLayout->{$layer->GetLayerName()});
 	}
 }
 

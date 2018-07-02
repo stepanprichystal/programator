@@ -19,8 +19,11 @@ use aliased 'CamHelpers::CamLayer';
 use aliased 'Packages::Coupon::Enums';
 use aliased 'Packages::Coupon::Helper';
 use aliased 'Packages::Coupon::CpnBuilder::MicrostripBuilders::SEBuilder';
-use aliased 'Packages::Coupon::CpnGenerator::ModelBuilders::CoatedMicrostrip';
-use aliased 'Packages::Coupon::CpnGenerator::ModelBuilders::StriplineMicrostrip';
+use aliased 'Packages::Coupon::CpnGenerator::ModelBuilders::Coated';
+use aliased 'Packages::Coupon::CpnGenerator::ModelBuilders::Uncoated';
+use aliased 'Packages::Coupon::CpnGenerator::ModelBuilders::Stripline';
+use aliased 'Packages::Coupon::CpnGenerator::ModelBuilders::CoatedUpperEmbedded';
+use aliased 'Packages::Coupon::CpnGenerator::ModelBuilders::UncoatedUpperEmbedded';
 
 use aliased 'Packages::CAM::SymbolDrawing::Point';
 use aliased 'Packages::CAMJob::Panelization::SRStep';
@@ -28,6 +31,7 @@ use aliased 'Packages::Coupon::CpnGenerator::CpnLayers::InfoTextLayer';
 use aliased 'Packages::Coupon::CpnGenerator::CpnLayers::InfoTextMaskLayer';
 use aliased 'Packages::Coupon::CpnGenerator::CpnLayers::GuardTracksLayer';
 use aliased 'Packages::Coupon::CpnGenerator::CpnLayers::ShieldingLayer';
+use aliased 'Packages::Coupon::CpnGenerator::CpnLayers::TitleLayer';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -59,16 +63,21 @@ sub Generate {
 	#my @coupons = grep { $_ =~ /^coupon_(\d+)$/} StepName->GetAllStepNames($inCAM, $jobId);
 
 	# CreateStep
+	my $leftMargin = $self->{"settings"}->GetCouponMargin() / 1000;
+	my $topMargin  = $self->{"settings"}->GetCouponMargin() / 1000;
+
+	if ( $self->{"settings"}->GetTitle() ) {
+
+		if ( $layout->GetTitleLayout()->GetHeight() > $self->{"settings"}->GetCouponMargin() / 1000 ) {
+
+			$leftMargin = $layout->GetTitleLayout()->GetHeight() if ( $self->{"settings"}->GetTitleType() eq "left" );
+			$topMargin  = $layout->GetTitleLayout()->GetHeight() if ( $self->{"settings"}->GetTitleType() eq "top" );
+		}
+	}
 
 	$self->{"couponStep"} = SRStep->new( $inCAM, $jobId, $layout->GetStepName() );
-	$self->{"couponStep"}->Create(
-								   $layout->GetWidth(),
-								   $layout->GetHeight(),
-								   $self->{"settings"}->GetCouponMargin() / 1000,
-								   $self->{"settings"}->GetCouponMargin() / 1000,
-								   $self->{"settings"}->GetCouponMargin() / 1000,
-								   $self->{"settings"}->GetCouponMargin() / 1000
-	);
+	$self->{"couponStep"}->Create( $layout->GetWidth(), $layout->GetHeight(), $topMargin, $self->{"settings"}->GetCouponMargin() / 1000,
+								   $leftMargin, $self->{"settings"}->GetCouponMargin() / 1000 );
 
 	CamHelper->SetStep( $inCAM, $self->{"settings"}->GetStepName() );
 
@@ -84,9 +93,36 @@ sub Generate {
 
 		$self->__GenerateSingle( $cpnSignleLayout, $srStep );
 
-		$self->{"couponStep"}->AddSRStep( $srStep, $self->{"settings"}->GetCouponMargin() / 1000, $yCurrent, 0, 1, 1, 1, 1 );
+		$self->{"couponStep"}->AddSRStep( $srStep, $leftMargin, $yCurrent, 0, 1, 1, 1, 1 );
 
 		$yCurrent += $cpnSignleLayout->GetHeight() + $self->{"settings"}->GetCouponSpace() / 1000;
+	}
+
+	# Process title
+	if ( $self->{"settings"}->GetTitle() ) {
+
+		my $tLayer = TitleLayer->new("c");
+
+		$tLayer->Init( $inCAM, $jobId, $layout->GetStepName(), $self->{"settings"} );
+		$tLayer->Build( $layout->GetTitleLayout() );
+
+		CamHelper->SetStep( $inCAM, $layout->GetStepName() );
+		CamLayer->WorkLayer( $inCAM, $tLayer->GetLayerName() );
+		$tLayer->Draw();
+
+		if ( $self->{"settings"}->GetTitleUnMask() ) {
+
+			my $tLayer = TitleLayer->new("mc");
+
+			$tLayer->Init( $inCAM, $jobId, $layout->GetStepName(), $self->{"settings"} );
+			$tLayer->Build( $layout->GetTitleLayout() );
+
+			CamHelper->SetStep( $inCAM, $layout->GetStepName() );
+			CamLayer->WorkLayer( $inCAM, $tLayer->GetLayerName() );
+			$tLayer->Draw();
+
+		}
+
 	}
 
 	return $result;
@@ -99,6 +135,10 @@ sub __GenerateSingle {
 
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
+
+	# coupon layers
+	my @layers = map { $_->{"gROWname"} } CamJob->GetBoardBaseLayers( $inCAM, $jobId );    # silks, mask, signal
+	push( @layers, "m" );                                                                  # Drill
 
 	# Create step
 
@@ -125,24 +165,29 @@ sub __GenerateSingle {
 
 		switch ( $stripLayout->GetModel() ) {
 
-			case Enums->Model_COATED_MICROSTRIP { $modelBuilder = CoatedMicrostrip->new() }
+			case Enums->Model_COATED_MICROSTRIP { $modelBuilder = Coated->new() }
+			
+			  case Enums->Model_UNCOATED_MICROSTRIP { $modelBuilder = Uncoated->new() }
 
-			  case Enums->Model_UNCOATED_MICROSTRIP { $modelBuilder = UncoatedMicrostrip->new() }
-
-			  case Enums->Model_STRIPLINE { $modelBuilder = StriplineMicrostrip->new() }
+			  case Enums->Model_STRIPLINE { $modelBuilder = Stripline->new() }
+			  
+			  case Enums->Model_COATED_UPPER_EMBEDDED { $modelBuilder = CoatedUpperEmbedded->new() }
+			  
+			   case Enums->Model_UNCOATED_UPPER_EMBEDDED { $modelBuilder = UncoatedUpperEmbedded->new() }
+			  
+			  
 
 			  else { die "Microstirp model: " . $stripLayout->GetModel() . " is not implemented"; }
 		}
 
 		$modelBuilder->Init( $inCAM, $jobId, $stepName, $self->{"settings"} );
 
-		$modelBuilder->Build($stripLayout);
+		$modelBuilder->Build( $stripLayout, $cpnLayout->GetLayersLayout() );
 
 		push( @builders, $modelBuilder );
 	}
 
 	# Draw layout layer by layer
-	my @layers = map { $_->{"gROWname"} } CamJob->GetBoardBaseLayers( $inCAM, $jobId );
 
 	foreach my $l (@layers) {
 

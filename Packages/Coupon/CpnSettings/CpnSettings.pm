@@ -521,8 +521,106 @@ sub GetShieldingSymbolDY{
 	
 } 
  
- 
+# Title (logo + job id)
 
+sub GetTitle{
+	my $self = shift;
+
+	return $self->__GetVal("title");	
+} 
+
+sub GetTitleTextWidth{
+	my $self = shift;
+
+	return $self->__GetVal("titleTextWidth");
+	
+} 
+
+sub GetTitleTextHeight{
+	my $self = shift;
+
+	return $self->__GetVal("titleTextHeight");
+	
+} 
+ 
+sub GetTitleTextWeight{
+	my $self = shift;
+
+	return $self->__GetVal("titleTextWeight");
+	
+}  
+
+sub GetTitleMargin{
+	my $self = shift;
+
+	return $self->__GetVal("titleMargin");
+	
+}
+
+sub GetTitleType{
+	my $self = shift;
+
+	return $self->__GetVal("titleType");
+	
+}
+
+sub GetTitleLogoJobIdHDist{
+	my $self = shift;
+
+	return $self->__GetVal("titleLogoJobIdHDist");
+	
+}
+
+sub GetTitleLogoJobIdVDist{
+	my $self = shift;
+
+	return $self->__GetVal("titleLogoJobIdVDist");
+	
+} 
+
+sub GetLogoWidth{
+	my $self = shift;
+
+	return $self->__GetVal("logoWidth");
+	
+}
+
+sub GetLogoHeight{
+	my $self = shift;
+
+	return $self->__GetVal("logoHeight");
+	
+}
+ 
+sub GetLogoSymbol{
+	my $self = shift;
+
+	return $self->__GetVal("logoSymbol");
+	
+} 
+ 
+sub GetLogoSymbolWidth{
+	my $self = shift;
+
+	return $self->__GetVal("logoSymbolWidth");
+	
+}
+
+sub GetLogoSymbolHeight{
+	my $self = shift;
+
+	return $self->__GetVal("logoSymbolHeight");
+	
+}
+
+sub GetTitleUnMask{
+	my $self = shift;
+
+	return $self->__GetVal("titleUnMask");
+	
+}
+
+ 
 sub __GetVal {
 	my $self = shift;
 	my $key  = shift;

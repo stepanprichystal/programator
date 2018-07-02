@@ -19,6 +19,7 @@ use aliased 'CamHelpers::CamStep';
 use aliased 'CamHelpers::CamHelper';
 use aliased 'Packages::Coupon::Enums';
 use aliased 'Packages::Coupon::CpnBuilder::CpnSingleBuilder';
+use aliased 'Packages::Coupon::CpnBuilder::OtherBuilders::TitleBuilder';
 use aliased 'Packages::CAM::SymbolDrawing::Point';
 use aliased 'Packages::Coupon::CpnBuilder::CpnLayout::CpnLayout';
 
@@ -56,7 +57,7 @@ sub Build {
 	my $jobId = $self->{"jobId"};
 
 	my $result = 1;
-	
+
 	$self->__CheckLayerNames();
 
 	# built complete coupon layout
@@ -65,11 +66,6 @@ sub Build {
 	foreach my $singleCpnVar ( $cpnVariant->GetSingleCpns() ) {
 
 		# Built single coupon layout
-
-		# filter constraints by current group
-		#		my %tmp;
-		#		@tmp{ @{ $groupInf->{"constrainsId"} } } = ();
-		#		my @constraints = grep { exists $tmp{ $_->GetConstrainId() } } $self->{"cpnSource"}->GetConstraints();
 
 		my $coupon = CpnSingleBuilder->new( $inCAM, $jobId, $self->{"settings"}, $singleCpnVar );
 
@@ -85,19 +81,34 @@ sub Build {
 
 	}
 
+	# build title
+	if ( $self->{"settings"}->GetTitle() ) {
+
+		# compute height of cpn single (without cpn argin)
+		my $h = ( scalar( @{ $self->{"couponsSingle"} } ) - 1 ) * $self->{"settings"}->GetCouponSpace() / 1000;
+		$h += $_->GetHeight() foreach $self->{"layout"}->GetCouponsSingle();
+
+		my $tBuilder = TitleBuilder->new( $inCAM, $jobId, $self->{"settings"}, $cpnVariant, $h );
+		if ( $tBuilder->Build($errMess) ) {
+
+			$self->{"layout"}->SetTitleLayout( $tBuilder->GetLayout() );
+		}
+		else {
+
+			$result = 0;
+		}
+
+	}
+
 	# Set other coupon layout property
 	if ($result) {
 
 		$self->{"layout"}->SetStepName( $self->{"settings"}->GetStepName() );
-		
-		# width depand on single coupon width
-		my $w = max(map{ $_->GetWidth() }$self->{"layout"}->GetCouponsSingle()) + $self->{"settings"}->GetCouponMargin()/1000 * 2;
-		$self->{"layout"}->SetWidth($w);
 
-		# height depand on microstrip types
-		my $h = $self->{"settings"}->GetCouponMargin()/1000 * 2 + ( scalar( @{ $self->{"couponsSingle"} } ) - 1 ) * $self->{"settings"}->GetCouponSpace()/1000;
-		$h += $_->GetHeight() foreach $self->{"layout"}->GetCouponsSingle();
-		$self->{"layout"}->SetHeight($h);
+		my %cpnArea = $self->GetCpnArea();
+
+		$self->{"layout"}->SetWidth( $cpnArea{"w"} );
+		$self->{"layout"}->SetHeight( $cpnArea{"h"} );
 
 		$self->{"build"} = 1;    # build is ok
 	}
@@ -115,25 +126,63 @@ sub GetLayout {
 
 }
 
-sub __CheckLayerNames{
+sub GetCpnArea {
 	my $self = shift;
- 
+
+	#die "Cpn is not builded." if ( !$self->{"build"} );
+
+	my %areaInfo = ( "w" => undef, "h" => undef );
+
+	# width depand on single coupon width
+	my $w = max( map { $_->GetWidth() } $self->{"layout"}->GetCouponsSingle() ) + $self->{"settings"}->GetCouponMargin() / 1000 * 2;
+
+	# consider title text on left
+	if ( $self->{"settings"}->GetTitle() && $self->{"settings"}->GetTitleType() eq "left" ) {
+
+		my $tLayout = $self->{"layout"}->GetTitleLayout()->GetHeight();
+
+		if ( $self->{"layout"}->GetTitleLayout()->GetHeight() > $self->{"settings"}->GetCouponMargin() / 1000 ) {
+			$w += -$self->{"settings"}->GetCouponMargin() / 1000 + $self->{"layout"}->GetTitleLayout()->GetHeight();
+		}
+	}
+
+	# height depand on microstrip types
+	my $h = $self->{"settings"}->GetCouponMargin() / 1000 * 2 +
+	  ( scalar( @{ $self->{"couponsSingle"} } ) - 1 ) * $self->{"settings"}->GetCouponSpace() / 1000;
+	$h += $_->GetHeight() foreach $self->{"layout"}->GetCouponsSingle();
+
+	# consider title text on top
+	if ( $self->{"settings"}->GetTitle() && $self->{"settings"}->GetTitleType() eq "top" ) {
+		if ( $self->{"layout"}->GetTitleLayout()->GetHeight() > $self->{"settings"}->GetCouponMargin() / 1000 ) {
+			$h += -$self->{"settings"}->GetCouponMargin() / 1000 + $self->{"layout"}->GetTitleLayout()->GetHeight();
+		}
+	}
+
+	$areaInfo{"h"} = $h;
+	$areaInfo{"w"} = $w;
+
+	return %areaInfo;
+}
+
+sub __CheckLayerNames {
+	my $self = shift;
+
 	my @copperLayers = $self->{"cpnSource"}->GetCopperLayers();
- 	
+
 	# 1) Check if layer names are L1-Ln
-	
+
 	@copperLayers = sort { $a->{"LAYER_INDEX"} <=> $b->{"LAYER_INDEX"} } @copperLayers;
-	
-	for(my $i= 0; $i < scalar(@copperLayers); $i++){
-		
+
+	for ( my $i = 0 ; $i < scalar(@copperLayers) ; $i++ ) {
+
 		my $l = $copperLayers[$i]->{"NAME"};
-		
-		if($l !~ m/L(\d+)/ || $1 != $i+1){
-			
+
+		if ( $l !~ m/L(\d+)/ || $1 != $i + 1 ) {
+
 			die "Wrong layer name: $l, is on postion: $i in InSTACK stackup.";
 		}
 	}
- 
+
 }
 
 #-------------------------------------------------------------------------------------------#
@@ -171,11 +220,11 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	# Each combination contain groups,
 	# Each group contain strips
 	my $groupPolicy = GroupPolicy->new( $cpnSource, $cpnSett->GetMaxTrackCnt() );
-	
+
 	#my @filter = (1); # below + above lines
 	#my @filter = (1); # below + above lines
-		my @filter = ( 5); # below + above lines
-	#my @filter = (3);
+	my @filter = ( 1,  3, 7, 8,27, 28 );    # below + above lines
+	                          #my @filter = (26);
 
 	my @groupsComb = $groupPolicy->GenerateGroups( \@filter );
 
@@ -210,30 +259,29 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	my @variants = ();
 
 	my $idx = 0;
+
 	#my @test = ($groupsPoolComb[0]);
 	#@groupsPoolComb = $groupsPoolComb[-1];
 	foreach my $comb (@groupsPoolComb) {
 
-		my $cpnVariant = $layoutPolicy->GetStripLayoutVariants( $comb);
+		my $cpnVariant = $layoutPolicy->GetStripLayoutVariants($comb);
 
-		if ( defined $cpnVariant )  {
+		if ( defined $cpnVariant ) {
 			push( @variants, $cpnVariant );
 		}
 	}
-	
-	unless(scalar(@variants)){
-		
+
+	unless ( scalar(@variants) ) {
+
 		die "No combination is possible";
 	}
-	
+
 	# Sort policy
 
 	my $sortPolicy   = SortPolicy->new();
 	my @sortVariants = $sortPolicy->SortVariants( \@variants );
 
 	my $v = $sortVariants[0];
-	
- 
 
 	print STDERR "Choosed variant:\n\n" . $v;
 

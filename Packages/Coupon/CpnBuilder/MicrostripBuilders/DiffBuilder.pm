@@ -130,7 +130,7 @@ sub Build {
 
 		# build GND pad
 		$self->{"layout"}->AddPad(
-				   PadLayout->new( Point->new( $gInOrigin->X(), $gInOrigin->Y() ), Enums->Pad_GND, $self->{"cpnSingle"}->GetShareGNDLayers($self) ) );
+				   PadLayout->new( Point->new( $gInOrigin->X(), $gInOrigin->Y() ), Enums->Pad_GND, $self->{"cpnSingle"}->GetShareGNDLayers($self, 1) ) );
 
 		# build Track pad
 		$self->{"layout"}

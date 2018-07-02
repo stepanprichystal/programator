@@ -26,7 +26,8 @@ use aliased 'Packages::CAM::SymbolDrawing::Primitive::Helper::SurfaceSolidPatter
 use aliased 'CamHelpers::CamLayer';
 use aliased 'Packages::Coupon::Enums';
 use aliased 'Packages::CAM::SymbolDrawing::Enums' => 'DrawEnums';
-
+use aliased 'CamHelpers::CamJob';
+use aliased 'Packages::CAM::SymbolDrawing::Point';
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
@@ -53,7 +54,7 @@ sub Build {
 
 			my $shareGNDLayers = $pad->GetShareGndLayers();
 
-			if ( !$shareGNDLayers->{ $self->{"layerName"} } ) {
+			if ( !$shareGNDLayers->{ $self->{"layerName"} }  && !$layout->GetCoplanar()) {
 
 				my $symClearance =
 				  $self->{"settings"}->GetPadGNDShape() . ( $self->{"settings"}->GetPadGNDSize() + $self->{"settings"}->GetPad2GNDClearance() );
@@ -80,10 +81,10 @@ sub Build {
 		my $symNeg = "r";
 
 		if ( $layout->GetCoplanar() ) {
-			$symNeg .= ( $track->GetWidth() + $track->GetGNDDist() );
+			$symNeg .= ( $track->GetWidth() + 2*$track->GetGNDDist() );
 		}
 		else {
-			$symNeg .= ( $track->GetWidth() + $self->{"settings"}->GetTrackToCopper() );
+			$symNeg .= ( $track->GetWidth() + 2*$self->{"settings"}->GetTrackToCopper() );
 		}
 
 		if ( scalar(@points) == 2 ) {
@@ -127,7 +128,7 @@ sub Build {
 
 			my $shareGNDLayers = $pad->GetShareGndLayers();
 
-			if ( !$shareGNDLayers->{ $self->{"layerName"} } ) {
+			if ( !$shareGNDLayers->{ $self->{"layerName"} } && !$layout->GetCoplanar() ) {
 				$self->{"drawing"}
 				  ->AddPrimitive( PrimitivePad->new( $self->{"settings"}->GetPadGNDSym(), $pad->GetPoint(), 0, DrawEnums->Polar_POSITIVE ) );
 

@@ -4,7 +4,7 @@
 # creation nif file depend on pcb type
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::Coupon::CpnGenerator::CpnLayers::PadTextMaskLayer;
+package Packages::Coupon::CpnGenerator::CpnLayers::TitleLayer;
 
 use base('Packages::Coupon::CpnGenerator::CpnLayers::LayerBase');
 
@@ -17,9 +17,12 @@ use warnings;
 
 #local library
 use aliased 'Packages::CAM::SymbolDrawing::SymbolDrawing';
+use aliased 'Packages::CAM::SymbolDrawing::Primitive::PrimitiveText';
+use aliased 'Packages::CAM::SymbolDrawing::Primitive::PrimitivePad';
+use aliased 'Packages::CAM::SymbolDrawing::Point';
 use aliased 'CamHelpers::CamLayer';
 use aliased 'Packages::Coupon::Enums';
-use aliased 'Packages::CAM::SymbolDrawing::Primitive::PrimitiveText';
+use aliased 'Packages::CAM::SymbolDrawing::Enums' => 'DrawEnums';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -36,36 +39,42 @@ sub new {
 sub Build {
 	my $self   = shift;
 	my $layout = shift;    # microstrip layout
-	my $layerLayout = shift;
 
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
 
+	#my $origin = $layout->GetPosition();
+
+	my $angle = 0;
+	$angle = 90 if ( $layout->GetType() eq "left" );
+
+	# draw logo
+
+	# compute scale of logo. InCAM logo is height 3.6mm
+	my $logoPos = $layout->GetLogoPosition();
+	my $scaleX   = $self->{"settings"}->GetLogoWidth() / $self->{"settings"}->GetLogoSymbolWidth();
+	my $scaleY   = $self->{"settings"}->GetLogoHeight() / $self->{"settings"}->GetLogoSymbolHeight();
  
-	return if (!$self->{"settings"}->GetPadTextUnmask);
+	my $logo = PrimitivePad->new( $self->{"settings"}->GetLogoSymbol(), $layout->GetLogoPosition(),
+								  0, DrawEnums->Polar_POSITIVE, $angle, 0, $scaleX, $scaleX );
+	$self->{"drawing"}->AddPrimitive($logo);
 
-	foreach my $pad ( $layout->GetPads() ) {
-		
-		
+	# Draw job id
 
-		if ( $pad->GetType() eq Enums->Pad_TRACK && $self->{"settings"}->GetPadText() ) {
+	my $jobIdPos = $layout->GetJobIdPosition();
 
-			my $padText = $pad->GetPadText();
-			
-			return unless(defined $padText); # only multistrips has texts
+	my $pText = PrimitiveText->new(
+									$layout->GetJobIdVal(),
+									$layout->GetJobIdPosition(),
+									$self->{"settings"}->GetTitleTextHeight() / 1000,
+									$self->{"settings"}->GetTitleTextWidth() / 1000,
+									$self->{"settings"}->GetTitleTextWeight() / 1000,
+									0,
+									$angle
+	);
 
-	 
-			my $pText = PrimitiveText->new( $padText->GetText(), ($layerLayout->GetMirror() ? $padText->GetPositionMirror() : $padText->GetPosition()),
-											$self->{"settings"}->GetPadTextHeight()/1000,
-											$self->{"settings"}->GetPadTextWidth()/1000,
-											$self->{"settings"}->GetPadTextWeight()/1000 , ($layerLayout->GetMirror() ? 1 : 0) );
+	$self->{"drawing"}->AddPrimitive($pText);
  
-			$self->{"drawing"}->AddPrimitive($pText);
-		}
-	}
-
-	# Draw to layer
-	#$self->_Draw();
 
 }
 

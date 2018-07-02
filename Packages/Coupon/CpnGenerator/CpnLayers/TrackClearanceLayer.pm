@@ -4,7 +4,7 @@
 # creation nif file depend on pcb type
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::Coupon::CpnGenerator::CpnLayers::UnMaskLayer;
+package Packages::Coupon::CpnGenerator::CpnLayers::TrackClearanceLayer;
 
 use base('Packages::Coupon::CpnGenerator::CpnLayers::LayerBase');
 
@@ -18,9 +18,11 @@ use warnings;
 #local library
 use aliased 'Packages::CAM::SymbolDrawing::SymbolDrawing';
 use aliased 'Packages::CAM::SymbolDrawing::Primitive::PrimitivePad';
+use aliased 'Packages::CAM::SymbolDrawing::Primitive::PrimitiveLine';
 use aliased 'CamHelpers::CamLayer';
 use aliased 'Packages::Coupon::Enums';
 use aliased 'Packages::CAM::SymbolDrawing::Primitive::PrimitivePolyline';
+use aliased 'Packages::CAM::SymbolDrawing::Enums' => 'DrawEnums';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -49,15 +51,15 @@ sub Build {
 		my @points = $track->GetPoints();
 
 		# Draw negative clearance
-		my $symNeg = "r" . ( $track->GetWidth() + 800 );  # 800µm mask clareance
+		my $symNeg = "r" . ( $track->GetWidth() + 2*$self->{"settings"}->GetTrackToCopper() );  # 800µm mask clareance
 		
 		if ( scalar(@points) == 2 ) {
-			my $l = PrimitiveLine->new( $points[0], $points[1], $symNeg, DrawEnums->Polar_POSITIVE );
+			my $l = PrimitiveLine->new( $points[0], $points[1], $symNeg, DrawEnums->Polar_NEGATIVE );
 			$self->{"drawing"}->AddPrimitive($l);
 
 		}
 		else {
-			my $p = PrimitivePolyline->new( \@points, $symNeg, DrawEnums->Polar_POSITIVE );
+			my $p = PrimitivePolyline->new( \@points, $symNeg, DrawEnums->Polar_NEGATIVE );
 			$self->{"drawing"}->AddPrimitive($p);
 		}
 
