@@ -166,16 +166,14 @@ sub __GenerateSingle {
 		switch ( $stripLayout->GetModel() ) {
 
 			case Enums->Model_COATED_MICROSTRIP { $modelBuilder = Coated->new() }
-			
+
 			  case Enums->Model_UNCOATED_MICROSTRIP { $modelBuilder = Uncoated->new() }
 
 			  case Enums->Model_STRIPLINE { $modelBuilder = Stripline->new() }
-			  
+
 			  case Enums->Model_COATED_UPPER_EMBEDDED { $modelBuilder = CoatedUpperEmbedded->new() }
-			  
-			   case Enums->Model_UNCOATED_UPPER_EMBEDDED { $modelBuilder = UncoatedUpperEmbedded->new() }
-			  
-			  
+
+			  case Enums->Model_UNCOATED_UPPER_EMBEDDED { $modelBuilder = UncoatedUpperEmbedded->new() }
 
 			  else { die "Microstirp model: " . $stripLayout->GetModel() . " is not implemented"; }
 		}
