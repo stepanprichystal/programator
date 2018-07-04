@@ -169,6 +169,13 @@ sub SetBodyBackgroundColor {
 	my $color = shift;
 
 	$self->{"bodyColor"} = $color;
+	
+	if ($color) {
+		$self->SetBackgroundColour($color);
+		$self->Refresh();
+	}
+	
+	
 }
 
 # Set color of select item
