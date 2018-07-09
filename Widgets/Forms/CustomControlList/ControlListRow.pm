@@ -25,13 +25,14 @@ use aliased 'Widgets::Forms::CustomControlList::Enums';
 
 sub new {
 
-	my ( $class, $parent, $text, $rowHeight ) = @_;
+	my ( $class, $id, $parent, $text, $rowHeight ) = @_;
 
 	#my $self = $class->SUPER::new( &Wx::wxVERTICAL );
 
 	my $self = {};
 	bless($self);
 
+	$self->{"id"} = $id // -1; # defualt id is -1
 	$self->{"parent"} = $parent;
 	$self->{"text"}   = $text;
 
@@ -67,6 +68,12 @@ sub GetRowText {
 	my $self = shift;
 
 	return $self->{"text"};
+}
+
+sub GetRowId {
+	my $self = shift;
+
+	return $self->{"id"};
 }
 
 sub GetCells {
@@ -132,6 +139,8 @@ sub __OnSelectedChange {
 	$self->{"onSelectedChanged"}->Do($self);
 }
 
+ 
+ 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#

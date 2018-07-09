@@ -51,10 +51,10 @@ sub new {
 
 sub AddPage {
 	my $self = shift;
-
 	my $id = shift;
+	my $scrolling = shift // 1;
 
-	my $page = CustomNotebookPage->new( $self, $id );
+	my $page = CustomNotebookPage->new( $self, $id, $scrolling );
 
 	$self->{"pages"}->{ $page->GetPageId() } = $page;
 

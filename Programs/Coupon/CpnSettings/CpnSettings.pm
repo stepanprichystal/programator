@@ -218,7 +218,12 @@ sub GetMaxTrackCnt {
 	my $self = shift;
 
 	return $self->__GetVal("maxTrackCnt");
+}
 
+sub SetMaxTrackCnt {
+	my $self = shift;
+
+	$self->{"sett"}->{"maxTrackCnt"} = shift; 
 }
 
 sub GetPoolCnt {

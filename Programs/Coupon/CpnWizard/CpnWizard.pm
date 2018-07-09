@@ -68,8 +68,6 @@ sub Run {
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
 
-  
-
 	$self->{"form"}->{"mainFrm"}->Show();
 
 	$self->{"form"}->MainLoop();

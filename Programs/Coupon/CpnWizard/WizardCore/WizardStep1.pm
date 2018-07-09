@@ -29,53 +29,52 @@ use aliased 'Programs::Coupon::CpnPolicy::GroupPolicy';
 
 sub new {
 	my $class = shift;
-	my $self = $class->SUPER::new( 1, @_ );
+	
+	my $stepId = 1;
+	my $title = "Select microstrips, generate groups";
+	
+	
+	my $self = $class->SUPER::new( $stepId, $title, @_ );
 	bless $self;
 
 	# data model for step class
-	$self->{"filter"}     = undef;
-	$self->{"userGroups"} = undef;
-	$self->{"groupComb"}  = undef;
-	$self->{"cpnSett"}    = undef;
-
-	$self->{"constrGroup"} = undef;
 
 	return $self;
 }
 
-sub Init {
+sub Load {
 	my $self = shift;
 
-	$self->{"cpnSett"} = CpnSettings->new();
+	 
 
 	# Generate default group combination
 
-	my $cpnVariant = Helper->GetBestGroupCombination( $self->{"cpnSource"}, $self->{"filter"}, $self->{"cpnSett"} );
+	#my $cpnVariant = Helper->GetBestGroupCombination( $self->{"cpnSource"}, $self->{"filter"}, $self->{"cpnSett"} );
 
 	# Get groups from cpn variant
 	my $defGroupComb = [];
 
-	#	my @allConstr = $self->{"cpnSource"}->GetConstraints();
+	my @allConstr = $self->{"cpnSource"}->GetConstraints();
+
+	push( @{$defGroupComb}, \@allConstr );
+
+	#	foreach my $singlCpn ( $cpnVariant->GetSingleCpns() ) {
 	#
-	#	push(@{$defGroupComb},  \@allConstr);
+	#		my @xmlConstr = map { $_->Data()->{"xmlConstraint"} } $singlCpn->GetAllStrips();
+	#		push( @{$defGroupComb}, \@xmlConstr );
+	#	}
 
-	foreach my $singlCpn ( $cpnVariant->GetSingleCpns() ) {
-
-		my @xmlConstr = map { $_->Data()->{"xmlConstraint"} } $singlCpn->GetAllStrips();
-		push( @{$defGroupComb}, \@xmlConstr );
-	}
-
-	my $groupPolicy = GroupPolicy->new( $self->{"cpnSource"}, $self->{"cpnSett"}->GetMaxTrackCnt() );
-
-	$self->{"groupComb"} = $groupPolicy->GenerateGroupComb($defGroupComb);
-
-	for ( my $i = 0 ; $i < scalar( @{ $self->{"groupComb"} } ) ; $i++ ) {
-
-		foreach my $s ( @{ $self->{"groupComb"}->[$i] } ) {
-
-			$self->{"constrGroup"}->{$s->{"id"}} = $i + 1;
-		}
-	}
+	#	my $groupPolicy = GroupPolicy->new( $self->{"cpnSource"}, $self->{"cpnSett"}->GetMaxTrackCnt() );
+	#
+	#	$self->{"groupComb"} = $groupPolicy->GenerateGroupComb($defGroupComb);
+	#
+	#	for ( my $i = 0 ; $i < scalar( @{ $self->{"groupComb"} } ) ; $i++ ) {
+	#
+	#		foreach my $s ( @{ $self->{"groupComb"}->[$i] } ) {
+	#
+	#			$self->{"constrGroup"}->{$s->{"id"}} = $i + 1;
+	#		}
+	#	}
 
 	# Init default groups for all constraint
 
@@ -105,42 +104,52 @@ sub Build {
 #-------------------------------------------------------------------------------------------#
 # Update method - update wizard step data model
 #-------------------------------------------------------------------------------------------#
-sub UpdateGroupFilter {
-	my $self   = shift;
-	my $filter = shift;
+sub UpdateConstrFilter {
+	my $self     = shift;
+	my $constrId = shift;
+	my $selected = shift;
 
-	$self->{"filter"} = $filter;
+	$self->{"userFilter"}->{$constrId} = $selected;
 }
 
-sub UpdateUserGroups {
-	my $self       = shift;
-	my $userGroups = shift;
 
-	$self->{"userGroups"} = $userGroups;
 
-	my $groupPolicy = GroupPolicy->new( $self->{"cpnSource"}, $self->{"cpnSett"}->GetMaxTrackCnt() );
+sub AutogenerateGroups {
+	my $self = shift;
 
-	$self->{"groupComb"} = $groupPolicy->GenerateGroupComb( $self->{"userGroups"} );
+	my $result = 1;
 
+	# prepare filter - only selected constr
+	my @filter = grep { $self->{"userFilter"}->{$_} == 1 } keys %{ $self->{"userFilter"} };
+
+	my $cpnVariant = Helper->GetBestGroupCombination( $self->{"cpnSource"}, \@filter, $self->{"globalSett"} );
+
+	if ( defined $cpnVariant ) {
+
+		# set goups to constr
+		my @singlCpns = $cpnVariant->GetSingleCpns();
+		for ( my $i = 0 ; $i < scalar( scalar(@singlCpns) ) ; $i++ ) {
+
+			my $singlCpn = $singlCpns[$i];
+			$self->UpdateConstrGroup( $_, $i + 1 ) foreach ( map { $_->Id() } $singlCpn->GetAllStrips() );
+
+		}
+		
+		print STDERR "Generated variant: $cpnVariant";
+	}
+	else {
+
+		$result = 0;
+	}
+
+	return $result;
 }
 
 #-------------------------------------------------------------------------------------------#
 # Get data from model -
 #-------------------------------------------------------------------------------------------#
 
-sub GetConstraints {
-	my $self = shift;
 
-	return $self->{"cpnSource"}->GetConstraints();
-
-}
-
-sub GetConstrGroup {
-	my $self = shift;
-
-	return $self->{"constrGroup"};
-
-}
 
 #sub UpdateGlobalSettings {
 #	my $self    = shift;

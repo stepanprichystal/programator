@@ -31,7 +31,7 @@ sub new {
 
 	my $rowHeight    = 20;
 
-	my $self = $class->SUPER::new( $parent, $note->{"title"}, $rowHeight );
+	my $self = $class->SUPER::new( -1, $parent, $note->{"title"}, $rowHeight );
 
 	bless($self);
 

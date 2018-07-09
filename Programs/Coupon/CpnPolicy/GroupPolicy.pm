@@ -549,7 +549,7 @@ sub __GetConstraint {
 	  . ( $c->GetBotRefLayer() =~ /^L/ ? $c->GetBotRefLayer() : "-" ) . " w="
 	  . $c->GetParamDouble("WB");
 
-	$inf{"id"}            = $c->GetConstrainId();
+	$inf{"id"}            = $c->GetId();
 	$inf{"type"}          = $c->GetType();
 	$inf{"track"}         = $c->GetTrackLayer();
 	$inf{"xmlConstraint"} = $c;

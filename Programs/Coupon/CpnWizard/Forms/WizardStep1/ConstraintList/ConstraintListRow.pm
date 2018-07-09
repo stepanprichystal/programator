@@ -30,38 +30,52 @@ sub new {
 	my $class           = shift;
 	my $parent          = shift;
 	my $constraint      = shift;
-	my $constraintGroup = shift;
+	 
 
 	#my $filmRuleSet1 = shift;
 	#my $filmRuleSet2 = shift;
-	my $rowHeight = 20;
+	my $rowHeight = 25;
 
-	my $self = $class->SUPER::new( $parent, "", $rowHeight );
+	my $self = $class->SUPER::new( $constraint->GetId(), $parent, "", $rowHeight );
 
 	bless($self);
 
 	$self->{"constraint"}      = $constraint;
-	$self->{"constraintGroup"} = $constraintGroup;
+ 
 	$self->{"rowHeight"}       = $rowHeight;
 
 	$self->__SetLayout();
 
 	# EVENTS
-	$self->{"onRowChanged"} = Event->new();
+	$self->{"onGroupChanged"} = Event->new();
 
 	return $self;
 }
 
- 
+sub GetGroup{
+	my $self = shift;
+	
+	return $self->{"groupTxt"}->GetValue();
+}
+
+sub SetGroup{
+	my $self = shift;
+	my $val = shift;
+	
+	$self->{"groupTxt"}->SetValue($val);
+	
+}
 
 sub __SetLayout {
 	my $self = shift;
 
 	# DEFINE CELLS
 	my $constr = $self->{"constraint"};
-	my $groupTxt =
-	  Wx::TextCtrl->new( $self->{"parent"}, -1, $self->{"constraintGroup"}, &Wx::wxDefaultPosition, [ 20, $self->{"rowHeight"} ] );
-	my $idTxt      = Wx::StaticText->new( $self->{"parent"}, -1, $constr->GetConstrainId(), &Wx::wxDefaultPosition, [ 20, $self->{"rowHeight"} ] );
+ 
+
+	my $idTxt      = Wx::StaticText->new( $self->{"parent"}, -1, $constr->GetId(), &Wx::wxDefaultPosition, [ 20, $self->{"rowHeight"} ] );
+		my $groupTxt =
+	  Wx::TextCtrl->new( $self->{"parent"}, -1, -1, &Wx::wxDefaultPosition, [ 20, $self->{"rowHeight"} ] );
 	#my $typeTxt    = Wx::StaticText->new( $self->{"parent"}, -1, $constr->GetType(),        &Wx::wxDefaultPosition, [ 20, $self->{"rowHeight"} ] );
 	#my $modelTxt   = Wx::StaticText->new( $self->{"parent"}, -1, $constr->GetModel(),       &Wx::wxDefaultPosition, [ 20, $self->{"rowHeight"} ] );
 	my $typePnl = IconPnl->new( $self->{"parent"}, $constr->GetType(), $constr->GetModel(), $self->{"rowHeight"});
@@ -70,8 +84,9 @@ sub __SetLayout {
 	my $topRefLTxt = Wx::StaticText->new( $self->{"parent"}, -1, $constr->GetTopRefLayer(), &Wx::wxDefaultPosition, [ 20, $self->{"rowHeight"} ] );
 	my $botRefLTxt = Wx::StaticText->new( $self->{"parent"}, -1, $constr->GetBotRefLayer(), &Wx::wxDefaultPosition, [ 20, $self->{"rowHeight"} ] );
 
-	$self->_AddCell($groupTxt);
+	
 	$self->_AddCell($idTxt);
+	$self->_AddCell($groupTxt);
 	$self->_AddCell($typePnl);
 	#$self->_AddCell($modelTxt);
 	$self->_AddCell($trackLTxt);
@@ -80,7 +95,7 @@ sub __SetLayout {
 
 	# SET EVENTS
 
-	Wx::Event::EVT_TEXT( $groupTxt, -1, sub { $self->__OnRowChanged(@_) } );
+	Wx::Event::EVT_TEXT( $groupTxt, -1, sub { $self->__OnGroupChanged(@_) } );
 
 	# SET REFERENCES
 
@@ -88,19 +103,19 @@ sub __SetLayout {
 
 }
 
-sub ConstrSelectionChanged {
-	my $self           = shift;
-	my @selectedLayers = @{ shift(@_) };
+#sub ConstrSelectionChanged {
+#	my $self           = shift;
+#	my @selectedLayers = @{ shift(@_) };
+#
+#	#
+#	#	$self->{"film1Frm"}->PlotSelectChanged( \@selectedLayers );
+#	#	$self->{"film2Frm"}->PlotSelectChanged( \@selectedLayers );
+#}
 
-	#
-	#	$self->{"film1Frm"}->PlotSelectChanged( \@selectedLayers );
-	#	$self->{"film2Frm"}->PlotSelectChanged( \@selectedLayers );
-}
-
-sub __OnRowChanged {
+sub __OnGroupChanged {
 	my $self = shift;
 
-	$self->{"onRowChanged"}->Do($self);
+	$self->{"onGroupChanged"}->Do($self);
 }
 #
 ## =====================================================================

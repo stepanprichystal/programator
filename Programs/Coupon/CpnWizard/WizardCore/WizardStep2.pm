@@ -52,7 +52,7 @@ sub Init {
 	$self->{"filter"}    = $filter;
 	$self->{"cpnSett"}   = $cpnSett;
 	
-	@{$self->{"filter"}} = (1,2);
+ 
 
 }
 

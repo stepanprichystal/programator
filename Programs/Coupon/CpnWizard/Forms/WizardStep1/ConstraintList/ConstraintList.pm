@@ -35,27 +35,29 @@ sub new {
 	 
 
 	# Name, Color, Polarity, Mirror, Comp
-	my @widths = ( 50		, 20  ,  50    , 250	      ,  100    , 90          ,  90            , 90             );
+	my @widths = ( 45		, 30  ,  30    , 250	      ,  100         , 150             ,  150            , 1000             );
 	my @titles = ( "Include", "Id", "Group","Type + model",  "Test layer", "Top ref layer", "Bot ref layer" );
 
 	my $columnCnt    = scalar(@widths);
 	my $columnWidths = \@widths;
 	my $verticalLine = 1;
 
-	my $self = $class->SUPER::new( $parent, , Enums->Mode_CHECKBOX, $columnCnt, $columnWidths, $verticalLine );
+	my $self = $class->SUPER::new( $parent, , Enums->Mode_CHECKBOX, $columnCnt, $columnWidths, $verticalLine, 2, 1 );
 
 	bless($self);
 
 	$self->{"titles"} = \@titles;
 	$self->{"inCAM"}  = $inCAM;
 	$self->{"jobId"}  = $jobId;
+	
+	$self->{"constraintSet"} = 0;
 	 
  
 	$self->__SetLayout();
 
 	# EVENTS
 
-	$self->{"onRowChanged"} = Event->new();
+	$self->{"onGroupChanged"} = Event->new();
 
 	return $self;
 }
@@ -100,31 +102,36 @@ sub new {
 sub SetConstraints {
 	my $self   = shift;
 	my @constraints = @{shift(@_)};
-	my $constrGroup = shift;
-	
+ 
+ 
 	
 	#create rows for each constraint
  
 	foreach my $c (@constraints) {
 
-		my $row = ConstraintListRow->new( $self, $c, $constrGroup->{$c->GetId()} );
+		my $row = ConstraintListRow->new( $self, $c );
 
 		# zaregistrovat udalost
 		#$self->{"onSelectedChanged"}->Add(sub{ $row->PlotSelectionChanged($self, @_) });
-		
-	 
-
-		$row->{"onRowChanged"}->Add( sub { $self->{"onRowChanged"}->Do(@_) } );
-
+ 
 		$self->AddRow($row);
+		
+		$row->{"onGroupChanged"}->Add( sub { $self->{"onGroupChanged"}->Do($self, @_) } );
+		
 
 	}
-	
- 
 
-	$self->__OnSelectedChangeHandler();
+	#$self->__OnSelectedChangeHandler();
 
 	$self->{"szMain"}->Layout();
+	
+	$self->{"constraintSet"} = 1;
+}
+
+sub ConstraintsSet{
+	my $self = shift;	
+	
+	return $self->{"constraintSet"};
 }
 
 sub __SetLayout {
@@ -133,42 +140,42 @@ sub __SetLayout {
 
 	# DEFINE SIZERS
 
-	$self->SetHeader( $self->{"titles"} );
+	$self->SetHeader( $self->{"titles"},  Wx::Colour->new( 250, 250, 250 ));
 
 	$self->SetVerticalLine( Wx::Colour->new( 206, 206, 206 ) );
 	
 	$self->SetBodyBackgroundColor( Wx::Colour->new( 255, 255, 255 ) );
-	$self->SetHeaderBackgroundColor( Wx::Colour->new( 200, 200, 200 ) );
+	$self->SetHeaderBackgroundColor( Wx::Colour->new( 127, 127, 127 ) );
 
 
 
 	# REGISTER EVENTS
 
-	$self->{"onSelectedChanged"}->Add( sub { $self->__OnSelectedChangeHandler(@_) } );
+	#$self->{"onSelectedChanged"}->Add( sub { $self->__OnSelectedChangeHandler(@_) } );
 
 	# BUILD LAYOUT STRUCTURE
 
 }
 
-sub __OnSelectedChangeHandler {
-	my $self = shift;
-
-	my @selectedConstr = ();
-
-	foreach my $row ( $self->GetSelectedRows() ) {
-
-		push( @selectedConstr, $row->GetRowText() );
-	}
-
-	my @rows = $self->GetAllRows();
-
-	foreach my $r (@rows) {
-		$r->ConstrSelectionChanged( \@selectedConstr );
-	}
-
-	print STDERR "test";
-
-}
+#sub __OnSelectedChangeHandler {
+#	my $self = shift;
+#
+#	my @selectedConstr = ();
+#
+#	foreach my $row ( $self->GetSelectedRows() ) {
+#
+#		push( @selectedConstr, $row->GetRowText() );
+#	}
+#
+#	my @rows = $self->GetAllRows();
+#
+#	foreach my $r (@rows) {
+#		$r->ConstrSelectionChanged( \@selectedConstr );
+#	}
+#
+#	print STDERR "test";
+#
+#}
 
 
 #-------------------------------------------------------------------------------------------#

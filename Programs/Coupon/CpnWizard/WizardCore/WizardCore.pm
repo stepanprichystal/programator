@@ -34,6 +34,12 @@ sub new {
 
 	$self->{"steps"} = [];
 
+	# Properties common for all steps
+
+	$self->{"userFilter"} = {};
+	$self->{"userGroups"} = {};
+	$self->{"globalSett"} = CpnSettings->new();
+
 	# Events
 
 	$self->{"stepChangedEvt"} = Event->new();
@@ -110,10 +116,24 @@ sub Init {
 
 	my $cpnSource = CpnSource->new($xmlPath);
 
-	my $s = WizardStep1->new( $self->{"inCAM"}, $self->{"jobId"}, $cpnSource );
+	# Set initial state
+ 
+	foreach my $constr ( $cpnSource->GetConstraints() ) {
 
-	$s->UpdateGroupFilter( [ 1] );
-	$s->Init();
+		# User filter -> all microstrips are checked on the begining
+		$self->{"userFilter"}->{ $constr->GetId() } = 1;
+
+		# All strips put to one group
+		$self->{"userGroups"}->{ $constr->GetId() } = 1;
+
+	}
+
+	$self->{"globalSett"} = CpnSettings->new();
+	 
+
+	my $s = WizardStep1->new( $self->{"inCAM"}, $self->{"jobId"}, $cpnSource, $self->{"userFilter"}, $self->{"userGroups"}, $self->{"globalSett"} );
+ 
+	$s->Load();
 
 	push( @{ $self->{"steps"} }, $s );
 

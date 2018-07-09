@@ -3,7 +3,7 @@
 # Description:
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Programs::Coupon::CpnWizard::Forms::WizardStep2::WizardStep2Frm;
+package Programs::Coupon::CpnWizard::Forms::WizardStepFrmBase;
 
 #3th party library
 use strict;
@@ -13,7 +13,9 @@ use warnings;
 
 use aliased 'Enums::EnumsPaths';
 use aliased 'Enums::EnumsGeneral';
-
+use aliased 'Programs::Coupon::CpnWizard::Forms::WizardStep1::ConstraintList::ConstraintList';
+use aliased 'Widgets::Forms::MyWxScrollPanel';
+use aliased 'Programs::Coupon::CpnWizard::Forms::WizardStep1::GeneratorFrm';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -26,51 +28,14 @@ sub new {
 
 	$self->{"inCAM"} = shift;
 	$self->{"jobId"} = shift;
-
-	#$self->{"layout"} = shift;
+	$self->{"parentFrm"} = shift;
  
+
+	$self->{"coreWizardStep"} = undef;    # will be set during Update methopd
+
 	return $self;
 }
-
-sub GetLayout{
-	my $self = shift;
-	my $parent = shift;
-	
-	my $szMain = Wx::BoxSizer->new(&Wx::wxVERTICAL);
-	my $pnlMain = Wx::Panel->new( $parent, -1 );
-
-	my $szRowDetail1 = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
-	my $szRowDetail2 = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
-
-	# DEFINE CONTROLS
-	my $statusTxt1 = Wx::StaticText->new( $pnlMain, -1, "Step 2", &Wx::wxDefaultPosition );
- 	my $statusTxt2 = Wx::StaticText->new( $pnlMain, -1, "blalba 2", &Wx::wxDefaultPosition );
-	 
-	# SET EVENTS
-
-	# BUILD STRUCTURE OF LAYOUT
-	$pnlMain->SetSizer($szMain);
-
-	$szMain->Add( $statusTxt1,  0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
-	$szMain->Add( $statusTxt2,   1, &Wx::wxEXPAND | &Wx::wxALL, 0 );
- 
-	return $pnlMain;
-	
-}
- 
-
-sub Load {
-	my $self       = shift;
-	my $wizardStep = shift;
-
-	#my @constr      = $wizardStep->GetConstraints();
-	#my $constrGroup = $wizardStep->GetConstrGroup();
-
- 
-
-} 
- 
-
+  
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#
@@ -82,7 +47,6 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 	my $jobId = "f13609";
- 
 
 }
 

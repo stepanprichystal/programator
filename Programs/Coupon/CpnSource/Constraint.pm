@@ -48,11 +48,7 @@ sub GetModel {
 	return $self->{"model"};
 }
 
-sub GetConstrainId {
-	my $self = shift;
-
-	return $self->{"id"};
-}
+ 
 
 sub GetTrackLayer {
 	my $self = shift;
