@@ -33,30 +33,36 @@ sub new {
 	my $class = shift;
 	my $self  = {};
 	bless $self;
-
+ 
 	$self->{"inCAM"} = shift;
 	$self->{"jobId"} = shift;
 
-	$self->{"settings"}     = shift;    # global settings for generating coupon
-	$self->{"singleCpnVar"} = shift;
-	$self->{"cpnSingle"}    = shift;
+	$self->{"layout"}       = [] ;    # Layout of one single coupon
+	$self->{"build"}        = 0;                        # indicator if layout was built
+	$self->{"singleCpnVar"} = undef;
 
-	$self->{"layout"} = [];             # Layout of one single coupon
+	# Settings references
+	$self->{"cpnSett"} = undef;                         # global settings for generating coupon
+	$self->{"cpnSingleSett"} = undef;                         # global settings for generating coupon
 
-	$self->{"microstrips"} = [];
 
+	# Other properties
 	$self->{"layerCnt"} = CamJob->GetSignalLayerCnt( $self->{"inCAM"}, $self->{"jobId"} );
-
-	$self->{"build"} = 0;               # indicator if layout was built
-
+	
 	return $self;
 }
 
 # Build single coupon layout
 # If ok return 1, else 0 + err message
 sub Build {
-	my $self    = shift;
-	my $errMess = shift;
+	my $self         = shift;
+	my $cpnSingleVar = shift;
+	my $cpnSett      = shift;
+	my $errMess      = shift;
+
+	$self->{"singleCpnVar"} = $cpnSingleVar;
+	$self->{"cpnSett"}      = $cpnSett;
+	$self->{"cpnSingleSett"}      = $cpnSingleVar->GetCpnSingleSettings();
 
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
@@ -68,26 +74,34 @@ sub Build {
 	foreach my $l (@layers) {
 
 		my $layout = GuardTracksLayout->new($l);
-		$layout->SetType( $self->{"settings"}->GetGuardTracksType() );
+		$layout->SetType( $self->{"cpnSett"}->GetGuardTracksType() );
+		
+		$layout->SetGuardTrackWidth($self->{"cpnSett"}->GetGuardTrackWidth() );
+		$layout->SetGuardTrack2Shielding($self->{"cpnSett"}->GetGuardTrack2Shielding() );
+		
 
 		my @boxes = $self->__GetGuardAreas($l);
 
 		if (@boxes) {
 
-			if ( $self->{"settings"}->GetGuardTracksType() eq "single" ) {
+			if ( $self->{"cpnSett"}->GetGuardTracksType() eq "single" ) {
 
 				$self->__SetLayoutTypeLines( $layout, \@boxes );
 
 			}
-			elsif ( $self->{"settings"}->GetGuardTracksType() eq "full" ) {
+			elsif ( $self->{"cpnSett"}->GetGuardTracksType() eq "full" ) {
 
 				$self->__SetLayoutTypeFull( $layout, \@boxes );
 			}
+			
+			
 
 			push( @{ $self->{"layout"} }, $layout );
 		}
 
 	}
+	
+	
 
 	$self->{"build"} = 1;
 
@@ -125,8 +139,8 @@ sub __SetLayoutTypeLines {
 
 			my %lBot = ();
 
-			$lBot{"startP"} = Point->new( $box->{"xMin"}, $box->{"yMin"} + $self->{"settings"}->GetGuardTrackWidth() / 1000 / 2 );
-			$lBot{"endP"}   = Point->new( $box->{"xMax"}, $box->{"yMin"} + $self->{"settings"}->GetGuardTrackWidth() / 1000 / 2 );
+			$lBot{"startP"} = Point->new( $box->{"xMin"}, $box->{"yMin"} + $self->{"cpnSett"}->GetGuardTrackWidth() / 1000 / 2 );
+			$lBot{"endP"}   = Point->new( $box->{"xMax"}, $box->{"yMin"} + $self->{"cpnSett"}->GetGuardTrackWidth() / 1000 / 2 );
 
 			push( @{ $box->{"lines"} }, \%lBot );
 		}
@@ -136,8 +150,8 @@ sub __SetLayoutTypeLines {
 
 			my %lTop = ();
 
-			$lTop{"startP"} = Point->new( $box->{"xMin"}, $box->{"yMax"} - $self->{"settings"}->GetGuardTrackWidth() / 1000 / 2 );
-			$lTop{"endP"}   = Point->new( $box->{"xMax"}, $box->{"yMax"} - $self->{"settings"}->GetGuardTrackWidth() / 1000 / 2 );
+			$lTop{"startP"} = Point->new( $box->{"xMin"}, $box->{"yMax"} - $self->{"cpnSett"}->GetGuardTrackWidth() / 1000 / 2 );
+			$lTop{"endP"}   = Point->new( $box->{"xMax"}, $box->{"yMax"} - $self->{"cpnSett"}->GetGuardTrackWidth() / 1000 / 2 );
 
 			push( @{ $box->{"lines"} }, \%lTop );
 		}
@@ -149,7 +163,7 @@ sub __SetLayoutTypeLines {
 		#			# overlaping
 		#			if (
 		#				 abs( $box->{"lines"}->[0]->{"startP"}->Y() - $box->{"lines"}->[1]->{"startP"}->Y() ) <
-		#				 $self->{"settings"}->GetGuardTrackWidth() / 1000 )
+		#				 $self->{"cpnSett"}->GetGuardTrackWidth() / 1000 )
 		#			{
 		#
 		#				splice @{ $box->{"lines"} }, 1, 1;
@@ -160,7 +174,7 @@ sub __SetLayoutTypeLines {
 		if ( scalar( @{ $box->{"lines"} } ) ) {
 
 			# line width is out of box
-			if ( $self->{"settings"}->GetGuardTrackWidth() / 1000 > ( $box->{"yMax"} - $box->{"yMin"} ) ) {
+			if ( $self->{"cpnSett"}->GetGuardTrackWidth() / 1000 > ( $box->{"yMax"} - $box->{"yMin"} ) ) {
 
 				@{ $box->{"lines"} } = ();
 			}
@@ -220,10 +234,10 @@ sub __GetGuardAreas {
 
 		my $endPos =
 		  $oriLast->X() +
-		  $self->{"settings"}->GetPad2PadDist() / 1000 * ( $posXCnt - 1 ) +
-		  $self->{"settings"}->GetPadTrackSize() / 1000 / 2 +
-		  $self->{"settings"}->GetGuardTrack2PadDist()/1000 +
-		  $self->{"settings"}->GetGuardTrackWidth() / 1000 / 2;
+		  $self->{"cpnSingleSett"}->GetPad2PadDist() / 1000 * ( $posXCnt - 1 ) +
+		  $self->{"cpnSingleSett"}-$self->{"cpnSingleSett"} / 1000 / 2 +
+		  $self->{"cpnSett"}->GetGuardTrack2PadDist()/1000 +
+		  $self->{"cpnSett"}->GetGuardTrackWidth() / 1000 / 2;
 
 		push( @xBorders, $endPos );
 	}
@@ -249,12 +263,12 @@ sub __GetGuardAreas {
 		my $oriLast = $self->{"cpnSingle"}->GetMicrostripOrigin( ( $self->{"singleCpnVar"}->GetPools() )[1]->GetLastStrip() );
 
 		# bott of gnd pad
-		push( @limits, $oriLast->Y() - $self->{"settings"}->GetPadTrackSize() / 1000 / 2 - $self->{"settings"}->GetGuardTrack2TrackDist()/1000 );
+		push( @limits, $oriLast->Y() - $self->{"cpnSingleSett"}->GetPadTrackSize() / 1000 / 2 - $self->{"cpnSett"}->GetGuardTrack2TrackDist()/1000 );
 
 		die "Too large value of 'track-guard 2 tracks distance'" if ( $limits[1] < $limits[0] );
 
 		# top of gnd pad
-		push( @limits, $oriLast->Y() + $self->{"settings"}->GetPadTrackSize() / 1000 / 2 + $self->{"settings"}->GetGuardTrack2TrackDist()/1000 );
+		push( @limits, $oriLast->Y() + $self->{"cpnSingleSett"}->GetPadTrackSize() / 1000 / 2 + $self->{"cpnSett"}->GetGuardTrack2TrackDist()/1000 );
 
 		die "Too large value of 'track-guard 2 tracks distance'" if ( $limits[2] > $cpnArea{"h"} );
 
@@ -354,7 +368,7 @@ sub __GetGuardAreas {
 		# if t
 		my $sPos = undef;
 		if ( scalar(@lStrips) ) {
-			$sPos = $self->__GetAbsoluteRouteDist( $lStrips[0] ) - $lStrips[0]->RouteWidth() / 2 - $self->{"settings"}->GetGuardTrack2TrackDist()/1000;
+			$sPos = $self->__GetAbsoluteRouteDist( $lStrips[0] ) - $lStrips[0]->RouteWidth() / 2 - $self->{"cpnSett"}->GetGuardTrack2TrackDist()/1000;
 		}
 
 		# if break line pos is lower than track line OR if all track lines are processed
@@ -366,7 +380,7 @@ sub __GetGuardAreas {
 			my $breakLine = splice @breakLines, $minIdx, 1;
 			my $yE        = $breakLine;
 			my $xS        = $intervals->lookup($yE);
-			my $xE        = $self->{"settings"}->GetCpnSingleWidth() - $xS;
+			my $xE        = $self->{"cpnSett"}->GetCpnSingleWidth() - $xS;
 
 			if ( $yS < $yE ) {
 
@@ -388,14 +402,14 @@ sub __GetGuardAreas {
 
 		# compute limits of border in Y axis
 		my $yE = $self->__GetAbsoluteRouteDist($s);
-		$yE -= $s->RouteWidth() / 2 + $self->{"settings"}->GetGuardTrack2TrackDist()/1000;
+		$yE -= $s->RouteWidth() / 2 + $self->{"cpnSett"}->GetGuardTrack2TrackDist()/1000;
 
 		# compute limits in X axis
 
 		# get origin of last strip in current pool
 
 		my $xS = $intervals->lookup($yE);
-		my $xE = $self->{"settings"}->GetCpnSingleWidth() - $xS;
+		my $xE = $self->{"cpnSett"}->GetCpnSingleWidth() - $xS;
 
 		# if box has non zero height
 		if ( $yS < $yE ) {
@@ -408,7 +422,7 @@ sub __GetGuardAreas {
 			push( @boxes, \%boxLim );
 		}
 
-		$yS = $yE + 2 * $self->{"settings"}->GetGuardTrack2TrackDist()/1000 + $s->RouteWidth();
+		$yS = $yE + 2 * $self->{"cpnSett"}->GetGuardTrack2TrackDist()/1000 + $s->RouteWidth();
 		
 		# remove unused break lines
 		for ( my $i = scalar(@breakLines) - 1 ; $i >= 0 ; $i-- ) {
@@ -424,7 +438,7 @@ sub __GetGuardAreas {
 		# add last box (from last top track to top border of single cpn)
 		my %boxLim = ( "breakLine" => 0 );
 		$boxLim{"xMin"} = $intervals->lookup($yE);
-		$boxLim{"xMax"} = $self->{"settings"}->GetCpnSingleWidth() - $intervals->lookup($yE);
+		$boxLim{"xMax"} = $self->{"cpnSett"}->GetCpnSingleWidth() - $intervals->lookup($yE);
 		$boxLim{"yMin"} = $yS;
 		$boxLim{"yMax"} = $yE;
 
@@ -444,10 +458,10 @@ sub __GetAbsoluteRouteDist {
 	my $yE  = $ori->Y();
 
 	if ( !$self->{"cpnSingle"}->IsMultistrip() && ( $s->GetType() eq Enums->Type_DIFF || $s->GetType() eq Enums->Type_CODIFF ) ) {
-		$yE += $self->{"settings"}->GetPad2PadDist() / 1000 / 2;    # single diff has two rows
+		$yE += $self->{"cpnSingleSett"}->GetPad2PadDist() / 1000 / 2;    # single diff has two rows
 	}
 
-	$yE += $self->{"settings"}->GetPad2PadDist() / 1000 if ( $s->Pool() == 1 );
+	$yE += $self->{"cpnSingleSett"}->GetPad2PadDist() / 1000 if ( $s->Pool() == 1 );
 
 	# consider route type + width + distance track to gguard tracks
 	if ( $s->Route() eq Enums->Route_ABOVE ) {

@@ -35,7 +35,7 @@ use aliased 'Packages::CAM::SymbolDrawing::Point';
 sub new {
 	my $class = shift;
 	my $self  = $class->SUPER::new(@_);
-	bless $self;
+	bless $self;;
 
 	return $self;
 }
@@ -43,6 +43,7 @@ sub new {
 sub Build {
 	my $self   = shift;
 	my $layout = shift;    # microstrip layout
+	my $cpnSingleLayout = shift;    # cpn single layout
 
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
@@ -57,7 +58,7 @@ sub Build {
 			if ( !$shareGNDLayers->{ $self->{"layerName"} }  && !$layout->GetCoplanar()) {
 
 				my $symClearance =
-				  $self->{"settings"}->GetPadGNDShape() . ( $self->{"settings"}->GetPadGNDSize() + $self->{"settings"}->GetPad2GNDClearance() );
+				  $cpnSingleLayout->GetPadGNDShape() . ( $cpnSingleLayout->GetPadGNDSize() + $layout->GetPad2GND() );
 				$self->{"drawing"}->AddPrimitive( PrimitivePad->new( $symClearance, $pad->GetPoint(), 0, DrawEnums->Polar_NEGATIVE ) );
 			}
 
@@ -65,7 +66,7 @@ sub Build {
 		else {
 
 			my $symClearance =
-			  $self->{"settings"}->GetPadTrackShape() . ( $self->{"settings"}->GetPadTrackSize() + $self->{"settings"}->GetPad2GNDClearance() );
+			  $cpnSingleLayout->GetPadTrackShape() . ( $cpnSingleLayout->GetPadTrackSize() + $layout->GetPad2GND() );
 			$self->{"drawing"}->AddPrimitive( PrimitivePad->new( $symClearance, $pad->GetPoint(), 0, DrawEnums->Polar_NEGATIVE ) );
 		}
 
@@ -84,7 +85,7 @@ sub Build {
 			$symNeg .= ( $track->GetWidth() + 2*$track->GetGNDDist() );
 		}
 		else {
-			$symNeg .= ( $track->GetWidth() + 2*$self->{"settings"}->GetTrackToCopper() );
+			$symNeg .= ( $track->GetWidth() + 2*$layout->GetTrackToCopper() );
 		}
 
 		if ( scalar(@points) == 2 ) {
@@ -130,7 +131,7 @@ sub Build {
 
 			if ( !$shareGNDLayers->{ $self->{"layerName"} } && !$layout->GetCoplanar() ) {
 				$self->{"drawing"}
-				  ->AddPrimitive( PrimitivePad->new( $self->{"settings"}->GetPadGNDSym(), $pad->GetPoint(), 0, DrawEnums->Polar_POSITIVE ) );
+				  ->AddPrimitive( PrimitivePad->new( $cpnSingleLayout->GetPadGNDSym(), $pad->GetPoint(), 0, DrawEnums->Polar_POSITIVE ) );
 
 			}
 
@@ -138,13 +139,13 @@ sub Build {
 			if ( $layout->GetCoplanar() ) {
 
 				$self->{"drawing"}
-				  ->AddPrimitive( PrimitivePad->new( $self->{"settings"}->GetPadGNDSymNeg(), $pad->GetPoint(), 0, DrawEnums->Polar_NEGATIVE ) );
+				  ->AddPrimitive( PrimitivePad->new( $cpnSingleLayout->GetPadGNDSymNeg(), $pad->GetPoint(), 0, DrawEnums->Polar_NEGATIVE ) );
 			}
 		}
 		else {
 
 			$self->{"drawing"}
-			  ->AddPrimitive( PrimitivePad->new( $self->{"settings"}->GetPadTrackSym(), $pad->GetPoint(), 0, DrawEnums->Polar_POSITIVE ) );
+			  ->AddPrimitive( PrimitivePad->new( $cpnSingleLayout->GetPadTrackSym(), $pad->GetPoint(), 0, DrawEnums->Polar_POSITIVE ) );
 		}
 
 	}

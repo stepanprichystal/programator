@@ -38,7 +38,8 @@ sub new {
 
 sub Build {
 	my $self   = shift;
-	my $layout = shift;    # microstrip layout
+	my $layout = shift;    # title layout
+	my $cpnSingleLayout = shift;    # cpn single layout
 
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
@@ -52,10 +53,10 @@ sub Build {
 
 	# compute scale of logo. InCAM logo is height 3.6mm
 	my $logoPos = $layout->GetLogoPosition();
-	my $scaleX   = $self->{"settings"}->GetLogoWidth() / $self->{"settings"}->GetLogoSymbolWidth();
-	my $scaleY   = $self->{"settings"}->GetLogoHeight() / $self->{"settings"}->GetLogoSymbolHeight();
+	my $scaleX   = $layout->GetLogoWidth() / $layout->GetLogoSymbolWidth();
+	my $scaleY   = $layout->GetLogoHeight() / $layout->GetLogoSymbolHeight();
  
-	my $logo = PrimitivePad->new( $self->{"settings"}->GetLogoSymbol(), $layout->GetLogoPosition(),
+	my $logo = PrimitivePad->new( $layout->GetLogoSymbol(), $layout->GetLogoPosition(),
 								  0, DrawEnums->Polar_POSITIVE, $angle, 0, $scaleX, $scaleX );
 	$self->{"drawing"}->AddPrimitive($logo);
 
@@ -66,9 +67,9 @@ sub Build {
 	my $pText = PrimitiveText->new(
 									$layout->GetJobIdVal(),
 									$layout->GetJobIdPosition(),
-									$self->{"settings"}->GetTitleTextHeight() / 1000,
-									$self->{"settings"}->GetTitleTextWidth() / 1000,
-									$self->{"settings"}->GetTitleTextWeight() / 1000,
+									$layout->GetTitleTextHeight() / 1000,
+									$layout->GetTitleTextWidth() / 1000,
+									$layout->GetTitleTextWeight() / 1000,
 									0,
 									$angle
 	);

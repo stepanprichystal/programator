@@ -29,10 +29,24 @@ sub new {
 	$self->{"routeDist"} = undef;
 	$self->{"routeWidth"} = undef;
 	$self->{"isLast"} = undef;
+	$self->{"settings"}   = undef;
 
 	return $self;
 }
 
+sub SetCpnStripSettings {
+	my $self = shift;
+	my $sett = shift;
+
+	$self->{"settings"} = $sett;
+}
+
+sub GetCpnStripSettings{
+	my $self = shift;
+	my $sett = shift;
+
+	$self->{"settings"} = $sett;	
+}
 sub Id {
 	my $self = shift;
 

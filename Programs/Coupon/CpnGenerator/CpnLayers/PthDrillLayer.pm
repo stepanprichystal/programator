@@ -41,6 +41,7 @@ sub new {
 sub Build {
 	my $self   = shift;
 	my $layout = shift;    # microstrip layout
+	my $cpnSingleLayout = shift;    # cpn single layout
 
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
@@ -48,7 +49,7 @@ sub Build {
 	# drav GND and track pads
 	foreach my $pad ( $layout->GetPads() ) {
 
- 		$self->{"drawing"}->AddPrimitive(PrimitivePad->new( "r".$self->{"settings"}->GetPadDrillSize, $pad->GetPoint() ));
+ 		$self->{"drawing"}->AddPrimitive(PrimitivePad->new( "r".$cpnSingleLayout->GetPadDrillSize(), $pad->GetPoint() ));
 	}
  
 	# Draw to layer

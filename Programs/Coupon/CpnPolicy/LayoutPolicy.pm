@@ -31,21 +31,58 @@ sub new {
 
 	# Load settings if defined
 
-	$self->{"poolCnt"}      = shift;
-	$self->{"shareGNDPads"} = shift;
-	$self->{"maxTrackCnt"}  = shift;
+	# global settings
+	$self->{"maxTrackCnt"}       = undef;
+	$self->{"shareGNDPads"}      = undef;
+	$self->{"trackPadIsolation"} = undef;
+	$self->{"routeBetween"}      = undef;
+	$self->{"routeAbove"}        = undef;
+	$self->{"routeBelow"}        = undef;
+	$self->{"routeStreight"}     = undef;
 
-	$self->{"trackPadIsolation"} = shift;
-	$self->{"trackPad2GNDPad"}   = shift;
-	$self->{"padTrackSize"}      = shift;
-	$self->{"padGNDSize"}        = shift;
-
-	$self->{"routeBetween"}  = shift;
-	$self->{"routeAbove"}    = shift;
-	$self->{"routeBelow"}    = shift;
-	$self->{"routeStreight"} = shift;
+	# groups settings
+	$self->{"groupSett"} = {};
+ 
 
 	return $self;
+}
+
+sub SetGlobalSettings {
+	my $self = shift;
+	
+	$self->{"maxTrackCnt"}       = shift;
+	$self->{"shareGNDPads"}      = shift;
+	$self->{"trackPadIsolation"} = shift;
+	$self->{"routeBetween"}      = shift;
+	$self->{"routeAbove"}        = shift;
+	$self->{"routeBelow"}        = shift;
+	$self->{"routeStreight"}     = shift;
+}
+
+sub SetGroupSettings {
+	my $self    = shift;
+	my $groupId = shift;
+
+	my %sett = ();
+	$sett{"poolCnt"}         = shift;
+	$sett{"trackPad2GNDPad"} = shift;
+	$sett{"padTrackSize"}    = shift;
+	$sett{"padGNDSize"}      = shift;
+
+	$self->{"groupSett"}->{$groupId} = \%sett;
+
+}
+
+sub __GetGroupSett {
+	my $self    = shift;
+	my $groupId = shift;
+	
+	unless(defined $self->{"groupSett"}->{$groupId}){
+		die "group settings: $groupId is not defined" ;
+	}
+	
+
+	return $self->{"groupSett"}->{$groupId};
 }
 
 # Name notation
@@ -78,17 +115,17 @@ sub GetStripLayoutVariants {
 	#contain single coupons
 
 	# define single coupon until all pool are not processed
+	my $groupOrder = 0;
 	foreach my $group (@groupComb) {
 
 		# 1) Process all grou pool variants for scurrent group
 		# Each grou pool variant create CpnVariantStructure
- 
+
 		my @singleCpnVariants = ();
 		foreach my $groupPoolComb ( @{$group} ) {
- 
 
 			# 1) Choose microstrip positions in current pools variant
-			my $pools = $self->__ProcessGroupPoolComb($groupPoolComb);
+			my $pools = $self->__ProcessGroupPoolComb( $groupPoolComb, $groupOrder );
 
 			# 2) build SingleCpnVariant structure
 			my $signleCpnVar = CpnSingleVariant->new();
@@ -99,7 +136,7 @@ sub GetStripLayoutVariants {
 
 				for ( my $j = 0 ; $j < scalar( @{ $pools->[$i] } ) ; $j++ ) {
 					my $stripInfo = $pools->[$i]->[$j];
- 
+
 					if ( $j + 1 == scalar( @{ $pools->[$i] } ) ) {
 						$stripInfo->SetIsLast(1);
 					}
@@ -113,6 +150,8 @@ sub GetStripLayoutVariants {
 				$signleCpnVar->AddPool($poolVar);
 			}
 
+			$signleCpnVar->SetOrder($groupOrder);
+
 			# 3) Verify route
 			my $errMess = "";
 
@@ -120,7 +159,11 @@ sub GetStripLayoutVariants {
 				push( @singleCpnVariants, $signleCpnVar );
 			}
 
+			
+
 		}
+		
+		
 
 		# 2) Choose one SingleCpnVariant from all variants
 		if ( scalar(@singleCpnVariants) ) {
@@ -131,7 +174,7 @@ sub GetStripLayoutVariants {
 				( scalar( @{ $b->{'pools'} } ) <=> scalar( @{ $a->{'pools'} } ) )    # more pools better
 				  or
 				  ( $a->GetColumnCnt() <=> $b->GetColumnCnt() )                      # less column better
-				 
+
 			}
 
 			my $signleCpnVar = $singleCpnVariants[0];
@@ -143,6 +186,8 @@ sub GetStripLayoutVariants {
 			$result = 0;
 			last;
 		}
+		
+		$groupOrder++;
 
 	}
 
@@ -203,6 +248,7 @@ sub GetStripLayoutVariants {
 sub __ProcessGroupPoolComb {
 	my $self          = shift;
 	my $groupPoolComb = shift;
+	#my $groupId       = shift;
 
 	my $shareGNDPads = $self->{"shareGNDPads"};
 	my $maxTrackCnt  = $self->{"maxTrackCnt"};
@@ -361,17 +407,17 @@ sub __GetNextStrip {
 
 	# build strip info
 
-	my $stripInfo  = CpnStripVariant->new($p->[$foundStripIdx]->{"id"});
-	$stripInfo->SetPool(scalar(@pools) - 1);
+	my $stripInfo = CpnStripVariant->new( $p->[$foundStripIdx]->{"id"} );
+	$stripInfo->SetPool( scalar(@pools) - 1 );
 	$stripInfo->SetColumn($foundStripPos);
-	$stripInfo->SetData($p->[$foundStripIdx]);
+	$stripInfo->SetData( $p->[$foundStripIdx] );
 
-#	my %stripInfo = (
-#					  "id"   => $p->[$foundStripIdx]->{"id"},
-#					  "pool" => scalar(@pools) - 1,
-#					  "col"  => $foundStripPos,
-#					  "d"    => $p->[$foundStripIdx]
-#	);
+	#	my %stripInfo = (
+	#					  "id"   => $p->[$foundStripIdx]->{"id"},
+	#					  "pool" => scalar(@pools) - 1,
+	#					  "col"  => $foundStripPos,
+	#					  "d"    => $p->[$foundStripIdx]
+	#	);
 
 	splice @$p, $foundStripIdx, 1;
 
@@ -438,7 +484,7 @@ sub __VerifyStripRoutes {
 					$usedRoute{ Enums->Route_STREIGHT } = 1;
 					$strip->SetRoute( Enums->Route_STREIGHT );
 					$strip->SetRouteDist(0);
-					$strip->SetRouteWidth($self->__GetTrackWidth($strip));
+					$strip->SetRouteWidth( $self->__GetTrackWidth($strip) );
 					$stripRouteOk = 1;
 					next;
 				}
@@ -453,7 +499,7 @@ sub __VerifyStripRoutes {
 
 				if ( $pool->GetOrder() == 0 ) {
 
-					if ( $routeBetween && !$usedRoute{ Enums->Route_ABOVE } && $self->__CheckRoute( $strip, 1, $errMess ) ) {
+					if ( $routeBetween && !$usedRoute{ Enums->Route_ABOVE } && $self->__CheckRoute( $strip, 1, $singlCpn->GetOrder(), $errMess ) ) {
 
 						$usedRoute{ Enums->Route_ABOVE } = 1;
 						$strip->SetRoute( Enums->Route_ABOVE );
@@ -461,7 +507,7 @@ sub __VerifyStripRoutes {
 						next;
 					}
 
-					if ( $routeBelow && !$usedRoute{ Enums->Route_BELOW } && $self->__CheckRoute( $strip, 0, $errMess ) ) {
+					if ( $routeBelow && !$usedRoute{ Enums->Route_BELOW } && $self->__CheckRoute( $strip, 0, $singlCpn->GetOrder(), $errMess ) ) {
 
 						$usedRoute{ Enums->Route_BELOW } = 1;
 						$strip->SetRoute( Enums->Route_BELOW );
@@ -472,7 +518,7 @@ sub __VerifyStripRoutes {
 				}
 				elsif ( $pool->GetOrder() == 1 ) {
 
-					if ( $routeBetween && !$usedRoute{ Enums->Route_BELOW } && $self->__CheckRoute( $strip, 1, $errMess ) ) {
+					if ( $routeBetween && !$usedRoute{ Enums->Route_BELOW } && $self->__CheckRoute( $strip, 1, $singlCpn->GetOrder(), $errMess ) ) {
 
 						$usedRoute{ Enums->Route_BELOW } = 1;
 						$strip->SetRoute( Enums->Route_BELOW );
@@ -480,7 +526,7 @@ sub __VerifyStripRoutes {
 						next;
 					}
 
-					if ( $routeAbove && !$usedRoute{ Enums->Route_ABOVE } && $self->__CheckRoute( $strip, 0, $errMess ) ) {
+					if ( $routeAbove && !$usedRoute{ Enums->Route_ABOVE } && $self->__CheckRoute( $strip, 0, $singlCpn->GetOrder(), $errMess ) ) {
 
 						$usedRoute{ Enums->Route_ABOVE } = 1;
 						$strip->SetRoute( Enums->Route_ABOVE );
@@ -524,14 +570,13 @@ sub __CheckStraightRoute {
 	if ( !$strip->GetIsLast() ) {
 		$res = 0;
 	}
-	
-	if($res){
+
+	if ($res) {
 
 		$strip->SetRouteDist(0);
-		$strip->SetRouteWidth( $self->__GetTrackWidth($strip));
-		
+		$strip->SetRouteWidth( $self->__GetTrackWidth($strip) );
+
 	}
-	
 
 	return $res;
 }
@@ -539,22 +584,21 @@ sub __CheckStraightRoute {
 sub __CheckRoute {
 	my $self             = shift;
 	my $strip            = shift;
-	my $trackThroughPads = shift;   
+	my $trackThroughPads = shift;
+	my $groupId          = shift;
 	my $errMess          = shift;
 
 	my $result = 1;
 
-	my $trackPadIsolation = $self->{"trackPadIsolation"} / 1000;    # mm
-	my $trackPad2GNDPad   = $self->{"trackPad2GNDPad"} / 1000;      # mm
-	my $padTrackSize      = $self->{"padTrackSize"} / 1000;         # mm
-	my $padGNDSize        = $self->{"padGNDSize"} / 1000;           # mm
+	my $trackPadIsolation = $self->{"trackPadIsolation"} / 1000;                            # mm
+	my $trackPad2GNDPad   = $self->__GetGroupSett($groupId)->{"trackPad2GNDPad"} / 1000;    # mm
+	my $padTrackSize      = $self->__GetGroupSett($groupId)->{"padTrackSize"} / 1000;       # mm
+	my $padGNDSize        = $self->__GetGroupSett($groupId)->{"padGNDSize"} / 1000;         # mm
 
 	my $stripData = $strip->Data();
 
-	my $trackW = $self->__GetTrackWidth($strip); # total track (tracks if differential) width
-	my $trackDistance = undef; # track distance from track pad (height from track pad which track is placed on coupon)
-
-	 
+	my $trackW        = $self->__GetTrackWidth($strip);    # total track (tracks if differential) width
+	my $trackDistance = undef;                             # track distance from track pad (height from track pad which track is placed on coupon)
 
 	if ($trackThroughPads) {
 
@@ -577,21 +621,21 @@ sub __CheckRoute {
 
 		$trackDistance = $padTrackSize / 2 + $trackPadIsolation + $trackW / 2;
 	}
-	
-	if($result){
+
+	if ($result) {
 		$strip->SetRouteDist($trackDistance);
 		$strip->SetRouteWidth($trackW);
-		
+
 	}
 
 	return $result;
 }
 
-sub __GetTrackWidth{
-	my $self             = shift;
-	my $strip            = shift;
-	
-	my $trackW = undef; # total track (tracks if differential) width
+sub __GetTrackWidth {
+	my $self  = shift;
+	my $strip = shift;
+
+	my $trackW = undef;    # total track (tracks if differential) width
 
 	my $stripData = $strip->Data();
 
@@ -605,8 +649,8 @@ sub __GetTrackWidth{
 	}
 
 	$trackW /= 1000;
-	
-	return $trackW
+
+	return $trackW;
 }
 
 #-------------------------------------------------------------------------------------------#

@@ -19,18 +19,39 @@ sub new {
 	my $self  = {};
 	bless $self;
 
-	$self->{"h"}              = undef;    # dynamic heght of single coupon
-	$self->{"w"}              = undef;    # dynamic width of single coupo (active area width + text on rights)
-	$self->{"stripsLayouts"}  = [];
-	$self->{"infoTextLayout"} = undef;
+	$self->{"h"}                 = undef;    # dynamic heght of single coupon
+	$self->{"w"}                 = undef;    # dynamic width of single coupo (active area width + text on rights)
+	$self->{"stripsLayouts"}     = [];
+	$self->{"infoTextLayout"}    = undef;
 	$self->{"guardTracksLayout"} = undef;
-	$self->{"shieldingLayout"} = undef;
-	$self->{"layersLayout"} = undef;
+	$self->{"shieldingLayout"}   = undef;
+	$self->{"cpnSingleWidth"}    = undef;
+	$self->{"position"}          = undef;
+
+	$self->{"padGNDSymNeg"}     = undef;
+	$self->{"padTrackSize"}     = undef;
+	$self->{"padTrackSym"}      = undef;
+	$self->{"padGNDShape"}      = undef;
+	$self->{"padGNDSize"}       = undef;
+	$self->{"padGNDSym"}        = undef;
+	$self->{"padTrackShape"}    = undef;
+	$self->{"padDrillSize"}     = undef;
 
 	return $self;
 }
 
+sub SetPosition {
+	my $self = shift;
+	my $pos  = shift;
 
+	$self->{"position"} = $pos;
+}
+
+sub GetPosition {
+	my $self = shift;
+
+	return $self->{"position"};
+}
 
 sub SetHeight {
 	my $self = shift;
@@ -86,7 +107,7 @@ sub GetInfoTextLayout {
 }
 
 sub SetGuardTracksLayout {
-	my $self       = shift;
+	my $self    = shift;
 	my $layouts = shift;
 
 	$self->{"guardTracksLayout"} = $layouts
@@ -100,7 +121,7 @@ sub GetGuardTracksLayout {
 }
 
 sub SetShieldingLayout {
-	my $self       = shift;
+	my $self    = shift;
 	my $layouts = shift;
 
 	$self->{"shieldingLayout"} = $layouts
@@ -113,21 +134,136 @@ sub GetShieldingLayout {
 	return $self->{"shieldingLayout"};
 }
 
-sub SetLayersLayout {
-	my $self       = shift;
-	my $layouts = shift;
+sub SetCpnSingleWidth {
+	my $self = shift;
+	my $w    = shift;
 
-	$self->{"layersLayout"} = $layouts
+	$self->{"cpnSingleWidth"} = $w
 
 }
 
-sub GetLayersLayout {
+sub GetCpnSingleWidth {
 	my $self = shift;
 
-	return $self->{"layersLayout"};
+	return $self->{"cpnSingleWidth"};
 }
 
- 
+# Pad and track dimensions + shapes
+
+sub SetPadGNDSymNeg {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->{"padGNDSymNeg"} = $val;
+
+}
+
+sub GetPadGNDSymNeg {
+	my $self = shift;
+
+	return $self->{"padGNDSymNeg"};
+}
+
+sub SetPadTrackSize {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->{"padGNDSymNeg"} = $val;
+
+}
+
+sub GetPadTrackSize {
+	my $self = shift;
+
+	return $self->{"padTrackSize"};
+}
+
+
+
+sub SetPadTrackSym {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->{"padTrackSym"} = $val;
+
+}
+
+sub GetPadTrackSym {
+	my $self = shift;
+
+	return $self->{"padTrackSym"};
+}
+
+sub SetPadGNDShape {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->{"padGNDShape"} = $val;
+
+}
+
+sub GetPadGNDShape {
+	my $self = shift;
+
+	return $self->{"padGNDShape"};
+}
+
+sub SetPadGNDSize {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->{"padGNDSize"} = $val;
+
+}
+
+sub GetPadGNDSize {
+	my $self = shift;
+
+	return $self->{"padGNDSize"};
+}
+
+sub SetPadGNDSym {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->{"padGNDSym"} = $val;
+
+}
+
+sub GetPadGNDSym {
+	my $self = shift;
+
+	return $self->{"padGNDSym"};
+}
+
+sub SetPadTrackShape {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->{"padTrackShape"} = $val;
+
+}
+
+sub GetPadTrackShape {
+	my $self = shift;
+
+	return $self->{"padTrackShape"};
+}
+
+sub SetPadDrillSize {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->{"padDrillSize"} = $val;
+
+}
+
+sub GetPadDrillSize {
+	my $self = shift;
+
+	return $self->{"padDrillSize"};
+}
+
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#

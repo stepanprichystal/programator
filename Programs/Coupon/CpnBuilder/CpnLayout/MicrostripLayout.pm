@@ -33,6 +33,9 @@ sub new {
 	# Active area width
 	$self->{"activeAreaWidth"} = undef;
 	
+	$self->{"trackToCopper"} = undef;
+	$self->{"pad2GNDClearance"} = undef;
+	
 	$self->{"coplanar"} = 0;
 
 	return $self;
@@ -133,7 +136,33 @@ sub GetCoplanar {
 
 }
 
- 
+sub SetTrackToCopper {
+	my $self = shift;
+
+	$self->{"trackToCopper"} = shift;
+
+}
+
+sub GetTrackToCopper {
+	my $self = shift;
+
+	return $self->{"trackToCopper"};
+
+}
+
+ sub SetPad2GND {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->{"pad2GNDClearance"} = $val;
+
+}
+
+sub GetPad2GND {
+	my $self = shift;
+
+	return $self->{"pad2GNDClearance"};
+}
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

@@ -10,6 +10,7 @@ use strict;
 use warnings;
 use List::Util qw[max];
 use overload '""' => \&stringify;
+
 #local library
 
 #-------------------------------------------------------------------------------------------#
@@ -22,8 +23,23 @@ sub new {
 	bless $self;
 
 	$self->{"singleCpns"} = [];
+	$self->{"settings"}   = undef;
 
 	return $self;
+}
+
+sub SetCpnSettings {
+	my $self = shift;
+	my $sett = shift;
+
+	$self->{"settings"} = $sett;
+}
+
+sub GetCpnSettings{
+	my $self = shift;
+	my $sett = shift;
+
+	$self->{"settings"} = $sett;	
 }
 
 sub AddCpnSingle {
@@ -53,7 +69,6 @@ sub GetColumnCnt {
 
 }
 
-
 # |=============================Coupon=============================|
 # | ________________________ Coupon single 2 ______________________|
 # | Pool 2 - track pad + tracks                                    |
@@ -76,37 +91,37 @@ sub stringify {
 	my ($self) = @_;
 
 	my $str = "|============================= Coupon =============================|\n";
-	
+
 	#$str .= "Variant: single cpn = " . $self->GetSingleCpnsCnt() . ":\n";
 
-	for ( my $i = scalar( @{ $self->{"singleCpns"} } ) -1  ; $i >= 0 ; $i-- ) {
+	for ( my $i = scalar( @{ $self->{"singleCpns"} } ) - 1 ; $i >= 0 ; $i-- ) {
 
 		my $scpn  = $self->{"singleCpns"}->[$i];
 		my @pools = $scpn->GetPools();
 
-		$str .= "|________________________ Coupon single ".$i." ________________________\n";
+		$str .= "|________________________ Coupon single " . $i . " ________________________\n";
 
-		for ( my $j = scalar(@pools) -1  ; $j >= 0 ; $j-- ) {
+		for ( my $j = scalar(@pools) - 1 ; $j >= 0 ; $j-- ) {
 
 			my $p = $pools[$j];
 
-			$str .= "| Pool ".$p->GetOrder()."  \n";
-			
+			$str .= "| Pool " . $p->GetOrder() . "  \n";
+
 			my @strips = $p->GetStrips();
-			
-			for(my $k= 0;  $k < scalar(@strips); $k++){
-				
+
+			for ( my $k = 0 ; $k < scalar(@strips) ; $k++ ) {
+
 				my $s = $strips[$k];
-				
-				$str .= "|-- Strip type - ".$s->GetType()." ( track: ".$s->Data()->{"xmlConstraint"}->GetTrackLayer().")\n";
-				
+
+				$str .= "|-- Strip type - " . $s->GetType() . " ( track: " . $s->Data()->{"xmlConstraint"}->GetTrackLayer() . ")\n";
+
 			}
 		}
 
 	}
-	
+
 	$str .= "|==================================================================|\n";
-	
+
 	return $str;
 
 }

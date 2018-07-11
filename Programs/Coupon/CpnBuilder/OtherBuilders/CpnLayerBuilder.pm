@@ -38,15 +38,12 @@ sub new {
 	$self->{"inCAM"} = shift;
 	$self->{"jobId"} = shift;
 
-	$self->{"settings"}     = shift;    # global settings for generating coupon
-	$self->{"singleCpnVar"} = shift;
-	$self->{"cpnSingle"}    = shift;
+	$self->{"layout"} = {};
+	;    # Layout of one single coupon
+	$self->{"build"} = 0;    # indicator if layout was built
 
-	$self->{"layout"} = {};             # Layout of one layer
-
-	$self->{"layerCnt"} = CamJob->GetSignalLayerCnt( $self->{"inCAM"}, $self->{"jobId"} );
-
-	$self->{"build"} = 0;               # indicator if layout was built
+	# Settings references
+	$self->{"cpnSett"} = undef;    # global settings for generating coupon
 
 	return $self;
 }
@@ -55,7 +52,9 @@ sub new {
 # If ok return 1, else 0 + err message
 sub Build {
 	my $self    = shift;
+	my $cpnSett = shift;
 	my $errMess = shift;
+	$self->{"cpnSett"} = $cpnSett;
 
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
@@ -89,11 +88,10 @@ sub Build {
 			my $side = StackupOperation->GetSideByLayer( $jobId, $l, $stackup );
 			$lLayout->SetMirror( $side eq "top" ? 0 : 1 );
 		}
-		
+
 		$self->{"layout"}->{$l} = $lLayout;
 
 	}
- 
 
 	$self->{"build"} = 1;
 

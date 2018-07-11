@@ -43,8 +43,9 @@ sub new {
 }
 
 sub Build {
-	my $self   = shift;
-	my $layout = shift;    # microstrip layout
+	my $self            = shift;
+	my $layout          = shift;    # microstrip layout
+	my $cpnSingleLayout = shift;    # cpn single layout
 
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
@@ -53,10 +54,10 @@ sub Build {
 	# add "break line" before GND filling which prevent to fill area where is place info text
 	my %lim = CamJob->GetProfileLimits2( $inCAM, $jobId, $step );
 
-	if ( $self->{"settings"}->GetCpnSingleWidth() < $lim{"xMax"} ) {
+	if ( $layout->GetCpnSingleWidth() < $lim{"xMax"} ) {
 		my @coord = ();
-		push( @coord, Point->new( $self->{"settings"}->GetCpnSingleWidth(), 0 ) );
-		push( @coord, Point->new( $self->{"settings"}->GetCpnSingleWidth(), $lim{"yMax"} ) );
+		push( @coord, Point->new( $layout->GetCpnSingleWidth(), 0 ) );
+		push( @coord, Point->new( $layout->GetCpnSingleWidth(), $lim{"yMax"} ) );
 		push( @coord, Point->new( $lim{"xMax"},                             $lim{"yMax"} ) );
 		push( @coord, Point->new( $lim{"xMax"},                             0 ) );
 
@@ -72,22 +73,21 @@ sub Build {
 	foreach my $pad ( grep { $_->GetType() eq Enums->Pad_GND } $layout->GetPads() ) {
 
 		$self->{"drawing"}
-		  ->AddPrimitive( PrimitivePad->new( $self->{"settings"}->GetPadGNDSymNeg(), $pad->GetPoint(), 0, DrawEnums->Polar_NEGATIVE ) );
+		  ->AddPrimitive( PrimitivePad->new( $cpnSingleLayout->GetPadGNDSymNeg(), $pad->GetPoint(), 0, DrawEnums->Polar_NEGATIVE ) );
 	}
 
 	# drav track pads
 	foreach my $pad ( grep { $_->GetType() eq Enums->Pad_TRACK } $layout->GetPads() ) {
 
 		my $symClearance =
-		  $self->{"settings"}->GetPadTrackShape() . ( $self->{"settings"}->GetPadTrackSize() + $self->{"settings"}->GetPad2GNDClearance() );
+		  $cpnSingleLayout->GetPadTrackShape() . ( $cpnSingleLayout->GetPadTrackSize() + $layout->GetPad2GND() );
 		$self->{"drawing"}->AddPrimitive( PrimitivePad->new( $symClearance, $pad->GetPoint(), 0, DrawEnums->Polar_NEGATIVE ) );
 
 		if ( $self->{"layerName"} !~ /v\d+/ ) {
 			$self->{"drawing"}
-			  ->AddPrimitive( PrimitivePad->new( $self->{"settings"}->GetPadTrackSym(), $pad->GetPoint(), 0, DrawEnums->Polar_POSITIVE ) );
+			  ->AddPrimitive( PrimitivePad->new( $cpnSingleLayout->GetPadTrackSym(), $pad->GetPoint(), 0, DrawEnums->Polar_POSITIVE ) );
 		}
 	}
-
 
 }
 

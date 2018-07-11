@@ -42,7 +42,8 @@ sub new {
 sub Build {
 	my $self   = shift;
 	my $layout = shift;
-	my $layersLayout = shift;
+	my $cpnSingleLayout = shift;
+		my $layersLayout    = shift;
 
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
@@ -120,7 +121,7 @@ sub Build {
 	# process: m
 	$self->_AddLayer( PthDrillLayer->new("m") );
 
-	$self->_Build($layout, $layersLayout);
+	$self->_Build( $layout, $cpnSingleLayout, $layersLayout );
 
 }
 

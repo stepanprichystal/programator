@@ -10,7 +10,6 @@ use strict;
 use warnings;
 
 #local library
- 
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -22,28 +21,30 @@ sub new {
 
 	$self->{"layer"} = shift;
 
- 	$self->{"type"} = undef; #  
-  
-  	# poperties for type "single"
-  	$self->{"lines"} = [];
-  	
-  	# poperties for type "full"
-  	$self->{"areas"} = []; # areas defined as rectangle by four points
- 
+	$self->{"type"} = undef;    #
+
+	# poperties for type "single"
+	$self->{"lines"} = [];
+
+	# poperties for type "full"
+	$self->{"areas"} = [];      # areas defined as rectangle by four points
+	
+	$self->{"guardTrackWidth"} = undef;
+
 	return $self;
- 
+
 }
- 
-sub SetType{
-	my $self  = shift;
+
+sub SetType {
+	my $self = shift;
 	my $type = shift;
-	
+
 	$self->{"type"} = $type;
-} 
- 
-sub GetType{
-	my $self  = shift;
-	
+}
+
+sub GetType {
+	my $self = shift;
+
 	return $self->{"type"};
 }
 
@@ -52,30 +53,58 @@ sub AddLine {
 
 	push( @{ $self->{"lines"} }, shift );
 }
- 
+
 sub GetLines {
 	my $self = shift;
 
 	return @{ $self->{"lines"} };
-} 
+}
 
 sub AddArea {
 	my $self = shift;
 
 	push( @{ $self->{"areas"} }, shift );
 }
- 
+
 sub GetAreas {
 	my $self = shift;
 
 	return @{ $self->{"areas"} };
-} 
+}
 
-sub GetLayer{
-	my $self  = shift;
-	
+sub GetLayer {
+	my $self = shift;
+
 	return $self->{"layer"};
 }
+
+sub SetGuardTrackWidth {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->{"guardTrackWidth"} = $val;
+}
+
+sub GetGuardTrackWidth {
+	my $self = shift;
+
+	return $self->{"guardTrackWidth"};
+}
+
+sub SetGuardTrack2Shielding {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->{"guardTrack2Shielding"} = $val;
+}
+
+sub GetGuardTrack2Shielding {
+	my $self = shift;
+
+	return $self->{"guardTrack2Shielding"};
+}
+
+
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#

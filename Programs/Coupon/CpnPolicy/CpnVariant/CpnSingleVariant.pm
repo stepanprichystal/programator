@@ -23,7 +23,35 @@ sub new {
 
 	$self->{"pools"} = [];
 
+	$self->{"settings"}   = undef;
+
 	return $self;
+}
+
+sub SetOrder{
+	my $self = shift;	
+	
+	$self->{"order"} = shift;
+}
+
+sub GetOrder{
+	my $self = shift;
+	  
+	return $self->{"order"};
+} 
+
+sub SetCpnSingleSettings {
+	my $self = shift;
+	my $sett = shift;
+
+	$self->{"settings"} = $sett;
+}
+
+sub GetCpnSingleSettings{
+	my $self = shift;
+	my $sett = shift;
+
+	$self->{"settings"} = $sett;	
 }
 
 sub AddPool {

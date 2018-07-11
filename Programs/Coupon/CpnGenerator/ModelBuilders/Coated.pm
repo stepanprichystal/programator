@@ -28,7 +28,6 @@ use aliased 'Programs::Coupon::Helper';
 use aliased 'CamHelpers::CamJob';
 use aliased 'CamHelpers::CamHelper';
 
-
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
@@ -38,14 +37,14 @@ sub new {
 	my $self  = $class->SUPER::new(@_);
 	bless $self;
 
-
 	return $self;
 }
 
 sub Build {
-	my $self   = shift;
-	my $layout = shift;
-	my $layersLayout = shift;
+	my $self            = shift;
+	my $layout          = shift;
+	my $cpnSingleLayout = shift;
+	my $layersLayout    = shift;
 
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
@@ -59,8 +58,7 @@ sub Build {
 	my $gndL   = $layout->GetBotRefLayer();
 
 	# Build coupon layers
-	
-	
+
 	# process: mc
 	if ( CamHelper->LayerExists( $inCAM, $jobId, "mc" ) ) {
 
@@ -69,24 +67,23 @@ sub Build {
 	}
 
 	# process: c
-	$self->_AddLayer(PadTextLayer->new("c"));
- 
+	$self->_AddLayer( PadTextLayer->new("c") );
+
 	if ( $trackL eq "c" ) {
 
 		$self->_AddLayer( TrackLayer->new("c") );
-	}else{
-		
+	}
+	else {
+
 		$self->_AddLayer( PadLayer->new("c") );
 	}
-	
-	
 
 	for ( my $i = 0 ; $i < scalar( $layerCnt - 2 ) ; $i++ ) {
 
-		my $inLayer = "v" . ($i + 2);
-	 
+		my $inLayer = "v" . ( $i + 2 );
+
 		if ( $gndL eq $inLayer ) {
-			
+
 			$self->_AddLayer( GNDLayer->new($inLayer) );
 		}
 		else {
@@ -97,16 +94,15 @@ sub Build {
 
 	# process: s
 
-	$self->_AddLayer(PadTextLayer->new("s"));
+	$self->_AddLayer( PadTextLayer->new("s") );
 	if ( $trackL eq "s" ) {
 
 		$self->_AddLayer( TrackLayer->new("s") );
-	}else{
-		
+	}
+	else {
+
 		$self->_AddLayer( PadLayer->new("s") );
 	}
-	
-	
 
 	# process: ms
 	if ( CamHelper->LayerExists( $inCAM, $jobId, "ms" ) ) {
@@ -114,14 +110,12 @@ sub Build {
 		$self->_AddLayer( MaskLayer->new("ms") );
 		$self->_AddLayer( PadTextMaskLayer->new("ms") );
 	}
-	
+
 	# process: m
 	$self->_AddLayer( PthDrillLayer->new("m") );
 
-	
-	$self->_Build($layout, $layersLayout);
+	$self->_Build( $layout, $cpnSingleLayout, $layersLayout );
 
-	
 }
 
 #-------------------------------------------------------------------------------------------#

@@ -39,7 +39,8 @@ sub new {
 
 sub Build {
 	my $self   = shift;
-	my $layout = shift;    # microstrip layout
+	my $layout = shift;    # info text layout
+	my $cpnSingleLayout = shift;    # cpn single layout
 
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
@@ -71,9 +72,9 @@ sub Build {
 
 		my $p = Point->new( $text->{"point"}->X() + $origin->X(), $text->{"point"}->Y() + $origin->Y() );
 		my $pText = PrimitiveText->new( $text->{"val"}, $p,
-										$self->{"settings"}->GetInfoTextHeight()/1000,
-										$self->{"settings"}->GetInfoTextWidth()/1000,
-										$self->{"settings"}->GetInfoTextWeight()/1000 );
+										$layout->GetInfoTextHeight()/1000,
+										$layout->GetInfoTextWidth()/1000,
+										$layout->GetInfoTextWeight()/1000 );
 
 		$self->{"drawing"}->AddPrimitive($pText);
 

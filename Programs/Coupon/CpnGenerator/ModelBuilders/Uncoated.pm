@@ -34,11 +34,13 @@ sub new {
 }
 
 sub Build {
-	my $self         = shift;
-	my $layout       = shift;
-	my $layersLayout = shift;
-	my $inCAM        = $self->{"inCAM"};
-	my $jobId        = $self->{"jobId"};
+	my $self            = shift;
+	my $layout          = shift;
+	my $cpnSingleLayout = shift;
+	my $layersLayout    = shift;
+
+	my $inCAM = $self->{"inCAM"};
+	my $jobId = $self->{"jobId"};
 
 	# 1) Build Coated microstrip
 	$self->SUPER::Build( $layout, $layersLayout );
@@ -52,8 +54,7 @@ sub Build {
 	my $layerCnt = scalar( grep { $_ =~ /[csv]\d*/i } keys %{$layersLayout} );
 
 	# process: mc
-	if ( Helper->GetLayerNum( $trackL, $layerCnt ) == 2 )
-	{
+	if ( Helper->GetLayerNum( $trackL, $layerCnt ) == 2 ) {
 		$self->_AddLayer( TrackMaskLayer->new("mc") );
 
 		if ( CamHelper->LayerExists( $inCAM, $jobId, "mc" ) ) {
@@ -76,7 +77,7 @@ sub Build {
 		}
 	}
 
-	$self->_Build( $layout, $layersLayout );
+	$self->_Build( $layout, $cpnSingleLayout, $layersLayout );
 
 }
 

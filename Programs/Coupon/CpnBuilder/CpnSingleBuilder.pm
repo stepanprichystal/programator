@@ -45,16 +45,17 @@ sub new {
 	$self->{"inCAM"} = shift;
 	$self->{"jobId"} = shift;
 
-	$self->{"settings"}     = shift;    # global settings for generating coupon
-	                                    #$self->{"constraints"} = shift;    # list of constrain object (based on instack Job xml)
-	                                    #$cpnVarinat
-	$self->{"singleCpnVar"} = shift;
+	$self->{"layout"}       = CpnSingleLayout->new();    # Layout of one single coupon
+	$self->{"build"}        = 0;                         # indicator if layout was built
+	$self->{"singleCpnVar"} = undef;
 
-	$self->{"layout"} = CpnSingleLayout->new();    # Layout of one single coupon
+	# Setting references
+	$self->{"cpnSett"}       = undef;                    # global settings for generating coupon
+	$self->{"cpnSingleSett"} = undef;
+
+	# Other helper properties
 
 	$self->{"microstrips"} = [];
-
-	$self->{"build"} = 0;                          # indicator if layout was built
 
 	$self->{"layerCnt"} = CamJob->GetSignalLayerCnt( $self->{"inCAM"}, $self->{"jobId"} );
 
@@ -64,8 +65,14 @@ sub new {
 # Build single coupon layout
 # If ok return 1, else 0 + err message
 sub Build {
-	my $self    = shift;
-	my $errMess = shift;
+	my $self         = shift;
+	my $singleCpnVar = shift;
+	my $cpnSett      = shift;    # global settings for generating coupon
+	my $errMess      = shift;
+
+	$self->{"singleCpnVar"}  = $singleCpnVar;
+	$self->{"cpnSett"}       = $cpnSett;
+	$self->{"cpnSingleSett"} = $singleCpnVar->GetCpnSingleSettings();
 
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
@@ -94,9 +101,9 @@ sub Build {
 				  else { die "Microstirp type: " . $stripVar->GetType() . "is not implemented"; }
 			}
 
-			$mStripBuilder->Init( $inCAM, $jobId, $self->{"settings"}, $stripVar, $self );
+			$mStripBuilder->Init( $inCAM, $jobId, $self );
 
-			if ( $mStripBuilder->Build($errMess) ) {
+			if ( $mStripBuilder->Build( $stripVar, $self->{"cpnSett"}, $self->{"cpnSingleSett"}, $errMess ) ) {
 
 				$self->{"layout"}->AddMicrostripLayout( $mStripBuilder->GetLayout() );
 			}
@@ -109,28 +116,13 @@ sub Build {
 		}
 	}
 
-	#	# Built
-	#	foreach my $mStripBuilder ( @{ $self->{"microstrips"} } ) {
-	#
-	#		# Set property common for all microstrip types
-	#
-	#		if ( $mStripBuilder->Build($errMess) ) {
-	#
-	#			$self->{"layout"}->AddMicrostripLayout( $mStripBuilder->GetLayout() );
-	#		}
-	#		else {
-	#
-	#			$result = 0;
-	#		}
-	#	}
-
 	# Build text info builders
 
-	if ( $self->{"settings"}->GetInfoText() ) {
+	if ( $self->{"cpnSett"}->GetInfoText() ) {
 
-		my $textBuilder = CpnInfoTextBuilder->new( $inCAM, $jobId, $self->{"settings"}, $self->{"singleCpnVar"}, $self );
+		my $textBuilder = CpnInfoTextBuilder->new( $inCAM, $jobId );
 
-		if ( $textBuilder->Build($errMess) ) {
+		if ( $textBuilder->Build( $self->{"singleCpnVar"}, $self->{"cpnSett"}, $errMess ) ) {
 
 			my $textLayout = $textBuilder->GetLayout();
 
@@ -139,8 +131,8 @@ sub Build {
 
 			if ( $textLayout->GetType() eq "right" ) {
 
-				my $x = $self->{"settings"}->GetCpnSingleWidth() + $self->{"settings"}->GetInfoTextRightCpnDist() / 1000;
-				my $y = $self->{"settings"}->GetCouponSingleMargin() / 1000;
+				my $x = $self->{"cpnSett"}->GetCpnSingleWidth() + $self->{"cpnSett"}->GetInfoTextRightCpnDist() / 1000;
+				my $y = $self->{"cpnSett"}->GetCouponSingleMargin() / 1000;
 
 				# if coupon is heigher than text, center text vertically to single coupon
 
@@ -155,8 +147,8 @@ sub Build {
 				#compute
 				# align text to right
 				$p = Point->new(
-							 $self->{"settings"}->GetCpnSingleWidth() - $textLayout->GetWidth() - $self->{"settings"}->GetCouponSingleMargin() / 1000,
-							 $self->{"settings"}->GetCouponSingleMargin() / 1000 + $activeArea{"h"} + $self->{"settings"}->GetPadsTopTextDist() / 1000
+							   $self->{"cpnSett"}->GetCpnSingleWidth() - $textLayout->GetWidth() - $self->{"cpnSett"}->GetCouponSingleMargin() / 1000,
+							   $self->{"cpnSett"}->GetCouponSingleMargin() / 1000 + $activeArea{"h"} + $self->{"cpnSett"}->GetPadsTopTextDist() / 1000
 				);
 			}
 
@@ -171,10 +163,10 @@ sub Build {
 	}
 
 	# Build guard tracks
-	if ( $self->{"settings"}->GetGuardTracks() ) {
+	if ( $self->{"cpnSett"}->GetGuardTracks() ) {
 
-		my $gtBuilder = GuardTracksBuilder->new( $inCAM, $jobId, $self->{"settings"}, $self->{"singleCpnVar"}, $self );
-		if ( $gtBuilder->Build($errMess) ) {
+		my $gtBuilder = GuardTracksBuilder->new( $inCAM, $jobId );
+		if ( $gtBuilder->Build( $self->{"singleCpnVar"}, $self->{"cpnSett"}, $errMess ) ) {
 
 			$self->{"layout"}->SetGuardTracksLayout( $gtBuilder->GetLayout() );
 		}
@@ -186,10 +178,10 @@ sub Build {
 	}
 
 	# Build shielding
-	if ( $self->{"settings"}->GetShielding() ) {
+	if ( $self->{"cpnSett"}->GetShielding() ) {
 
-		my $sBuilder = ShieldingBuilder->new( $inCAM, $jobId, $self->{"settings"}, $self->{"singleCpnVar"}, $self );
-		if ( $sBuilder->Build($errMess) ) {
+		my $sBuilder = ShieldingBuilder->new( $inCAM, $jobId );
+		if ( $sBuilder->Build( $self->{"singleCpnVar"}, $self->{"cpnSett"}, $errMess ) ) {
 
 			$self->{"layout"}->SetShieldingLayout( $sBuilder->GetLayout() );
 		}
@@ -200,19 +192,22 @@ sub Build {
 
 	}
 
-	# Build layer information
-
-	my $lBuilder = CpnLayerBuilder->new( $inCAM, $jobId, $self->{"settings"}, $self->{"singleCpnVar"}, $self );
-	if ( $lBuilder->Build($errMess) ) {
-
-		$self->{"layout"}->SetLayersLayout( $lBuilder->GetLayout() );
-	}
-	else {
-
-		$result = 0;
-	}
-
+	# Build other parameters
 	if ($result) {
+
+		# set width of strip line (include pads + cpn single margins)
+		$self->{"layout"}->SetCpnSingleWidth( $self->{"cpnSett"}->GetCpnSingleWidth() );
+
+		# build info about pad shapes and dimensions
+		$self->{"layout"}->SetPadGNDSymNeg( $self->{"cpnSingleSett"}->GetPadGNDSymNeg() );
+		$self->{"layout"}->SetPadTrackSize( $self->{"cpnSingleSett"}->GetPadTrackSize() );
+		$self->{"layout"}->SetPadTrackSym( $self->{"cpnSingleSett"}->GetPadTrackSym() );
+		$self->{"layout"}->SetPadGNDShape( $self->{"cpnSingleSett"}->GetPadGNDShape() );
+		$self->{"layout"}->SetPadGNDSize( $self->{"cpnSingleSett"}->GetPadGNDSize() );
+		$self->{"layout"}->SetPadGNDSym( $self->{"cpnSingleSett"}->GetPadGNDSym() );
+		$self->{"layout"}->SetPadTrackShape( $self->{"cpnSingleSett"}->GetPadTrackShape() );
+		$self->{"layout"}->SetPadDrillSize( $self->{"cpnSingleSett"}->GetPadDrillSize() );
+
 
 		# Set height of whole coupon
 		my %cpnArea = $self->GetCpnSingleArea();
@@ -286,7 +281,7 @@ sub GetMicrostripOrigin {
 	my $stripVariant = shift;
 
 	# X cooredination - left down pad (trakc/GND) of microstrip
-	my $x = $self->{"settings"}->GetCouponSingleMargin() / 1000 + $self->{"settings"}->GetPadTrackSize() / 1000 / 2;
+	my $x = $self->{"cpnSett"}->GetCouponSingleMargin() / 1000 + $self->{"cpnSingleSett"}->GetPadTrackSize() / 1000 / 2;
 
 	# choose pool
 	my $pool = $self->{"singleCpnVar"}->GetPoolByOrder( $stripVariant->Pool() );
@@ -300,7 +295,7 @@ sub GetMicrostripOrigin {
 
 		my @pos = map { $self->GetMicrostripPosCnt( $_, "x" ) } (@stripsVar);
 
-		$x += ( max(@pos) - 1 ) * $self->{"settings"}->GetPad2PadDist() / 1000 + $self->{"settings"}->GetGroupPadsDist() / 1000;
+		$x += ( max(@pos) - 1 ) * $self->{"cpnSingleSett"}->GetPad2PadDist() / 1000 + $self->{"cpnSingleSett"}->GetGroupPadsDist() / 1000;
 	}
 
 	# Y cooredination - left down pad (trakc/GND) of microstrip
@@ -308,14 +303,14 @@ sub GetMicrostripOrigin {
 
 	# bottom pool
 
-	$y = $self->{"settings"}->GetCouponSingleMargin() / 1000;
-	$y += $self->{"settings"}->GetPadTrackSize() / 2 / 1000;    # half of track pad size
+	$y = $self->{"cpnSett"}->GetCouponSingleMargin() / 1000;
+	$y += $self->{"cpnSingleSett"}->GetPadTrackSize() / 2 / 1000;    # half of track pad size
 
 	# space for bottom routes in whole pool strip if exist
 	my $botPool = $self->{"singleCpnVar"}->GetPoolByOrder(0);
 	my @spaces = map { $_->RouteDist() + $_->RouteWidth() / 2 } grep { $_->Route() eq Enums->Route_BELOW } $botPool->GetStrips();
 	if (@spaces) {
-		$y -= $self->{"settings"}->GetPadTrackSize() / 2 / 1000;
+		$y -= $self->{"cpnSingleSett"}->GetPadTrackSize() / 2 / 1000;
 		$y += max(@spaces);
 	}
 
@@ -323,7 +318,7 @@ sub GetMicrostripOrigin {
 
 	if ( $pool->GetOrder() == 1 ) {
 
-		$y += $self->{"settings"}->GetTracePad2GNDPad() / 1000;
+		$y += $self->{"cpnSingleSett"}->GetTrackPad2GNDPad() / 1000;
 
 	}
 
@@ -339,42 +334,42 @@ sub GetCpnSingleArea {
 	my %stripArea = $self->GetActiveArea();
 
 	# compute position
-	$areaInfo{"pos"} = Point->new( $self->{"settings"}->GetCouponMargin() / 1000, $self->{"settings"}->GetCouponMargin() / 1000 );
+	$areaInfo{"pos"} = Point->new( $self->{"cpnSett"}->GetCouponMargin() / 1000, $self->{"cpnSett"}->GetCouponMargin() / 1000 );
 
 	# compute width
-	my $w = 2 * $self->{"settings"}->GetCouponSingleMargin() / 1000 + $stripArea{"w"};
+	my $w = 2 * $self->{"cpnSett"}->GetCouponSingleMargin() / 1000 + $stripArea{"w"};
 
 	# consider right text
-	if ( $self->{"settings"}->GetInfoText() ) {
+	if ( $self->{"cpnSett"}->GetInfoText() ) {
 
 		my $textLayout = $self->{"layout"}->GetInfoTextLayout();
 
 		die "Infot text layout is not defined " unless ( defined $textLayout );
 
-		if ( $self->{"settings"}->GetInfoTextPosition() eq "right" ) {
-			$w += $self->{"settings"}->GetInfoTextRightCpnDist() / 1000 + $textLayout->GetWidth();
+		if ( $self->{"cpnSett"}->GetInfoTextPosition() eq "right" ) {
+			$w += $self->{"cpnSett"}->GetInfoTextRightCpnDist() / 1000 + $textLayout->GetWidth();
 		}
 	}
 
 	$areaInfo{"w"} = $w;
 
 	# compute height
-	my $h = 2 * $self->{"settings"}->GetCouponSingleMargin() / 1000 + $stripArea{"h"};
+	my $h = 2 * $self->{"cpnSett"}->GetCouponSingleMargin() / 1000 + $stripArea{"h"};
 
 	# consider top texts
-	if ( $self->{"settings"}->GetInfoText() ) {
+	if ( $self->{"cpnSett"}->GetInfoText() ) {
 
 		my $textLayout = $self->{"layout"}->GetInfoTextLayout();
 
 		die "Infot text layout is not defined " unless ( defined $textLayout );
 
-		if ( $self->{"settings"}->GetInfoTextPosition() eq "top" ) {
+		if ( $self->{"cpnSett"}->GetInfoTextPosition() eq "top" ) {
 
-			$h += $self->{"settings"}->GetPadsTopTextDist() / 1000;
+			$h += $self->{"cpnSett"}->GetPadsTopTextDist() / 1000;
 			$h += $textLayout->GetHeight();
 
 		}
-		elsif ( $self->{"settings"}->GetInfoTextPosition() eq "right" ) {
+		elsif ( $self->{"cpnSett"}->GetInfoTextPosition() eq "right" ) {
 
 			if ( $textLayout->GetHeight() > $stripArea{"h"} ) {
 
@@ -400,10 +395,10 @@ sub GetActiveArea {
 	my %areaInfo = ( "pos" => undef, "w" => undef, "h" => undef );
 
 	# compute position
-	$areaInfo{"pos"} = Point->new( $self->{"settings"}->GetCouponSingleMargin() / 1000, $self->{"settings"}->GetCouponSingleMargin() / 1000 );
+	$areaInfo{"pos"} = Point->new( $self->{"cpnSett"}->GetCouponSingleMargin() / 1000, $self->{"cpnSett"}->GetCouponSingleMargin() / 1000 );
 
 	# compute width
-	$areaInfo{"w"} = $self->{"settings"}->GetCpnSingleWidth() - 2 * $self->{"settings"}->GetCouponSingleMargin() / 1000;
+	$areaInfo{"w"} = $self->{"cpnSett"}->GetCpnSingleWidth() - 2 * $self->{"cpnSett"}->GetCouponSingleMargin() / 1000;
 
 	# compute height
 	my $h = undef;
@@ -418,7 +413,7 @@ sub GetActiveArea {
 			$padsY = 3;
 		}
 
-		$h = ( $padsY - 1 ) * $self->{"settings"}->GetTrackPad2TrackPad() / 1000 + $self->{"settings"}->GetPadTrackSize() / 1000;
+		$h = ( $padsY - 1 ) * $self->{"cpnSingleSett"}->GetTrackPad2TrackPad() / 1000 + $self->{"cpnSingleSett"}->GetPadTrackSize() / 1000;
 
 		foreach my $poolVar (@poolsVar) {
 
@@ -428,7 +423,7 @@ sub GetActiveArea {
 				my @spaces = map { $_->RouteDist() + $_->RouteWidth() / 2 } grep { $_->Route() eq Enums->Route_BELOW } $poolVar->GetStrips();
 				if (@spaces) {
 					$h += max(@spaces);
-					$h -= $self->{"settings"}->GetPadTrackSize() / 1000 / 2;    # route is higher than pad anular ring
+					$h -= $self->{"cpnSingleSett"}->GetPadTrackSize() / 1000 / 2;    # route is higher than pad anular ring
 				}
 
 			}
@@ -439,7 +434,7 @@ sub GetActiveArea {
 				my @spaces = map { $_->RouteDist() + $_->RouteWidth() / 2 } grep { $_->Route() eq Enums->Route_ABOVE } $poolVar->GetStrips();
 				if (@spaces) {
 					$h += max(@spaces);
-					$h -= $self->{"settings"}->GetPadTrackSize() / 1000 / 2;    # route is higher than pad anular ring
+					$h -= $self->{"cpnSingleSett"}->GetPadTrackSize() / 1000 / 2;    # route is higher than pad anular ring
 				}
 
 			}
@@ -454,7 +449,7 @@ sub GetActiveArea {
 
 		my $padsY = $self->GetMicrostripPosCnt( $strip, "y" );
 
-		$h = ( $padsY - 1 ) * $self->{"settings"}->GetTrackPad2TrackPad() / 1000 + $self->{"settings"}->GetPadTrackSize() / 1000;
+		$h = ( $padsY - 1 ) * $self->{"cpnSingleSett"}->GetTrackPad2TrackPad() / 1000 + $self->{"cpnSingleSett"}->GetPadTrackSize() / 1000;
 	}
 
 	$areaInfo{"h"} = $h;

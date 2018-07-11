@@ -44,6 +44,7 @@ sub new {
 sub Build {
 	my $self   = shift;
 	my $layout = shift;    # microstrip layout
+	my $cpnSingleLayout = shift;    # cpn single layout
 
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
@@ -52,10 +53,10 @@ sub Build {
 	# add "break line" before shieldning filling which prevent to fill area where is place info text
 	my %lim = CamJob->GetProfileLimits2( $inCAM, $jobId, $step );
 
-	if ( $self->{"settings"}->GetCpnSingleWidth() < $lim{"xMax"} ) {
+	if ( $layout->GetCpnSingleWidth() < $lim{"xMax"} ) {
 		my @coord = ();
-		push( @coord, Point->new( $self->{"settings"}->GetCpnSingleWidth(), 0 ) );
-		push( @coord, Point->new( $self->{"settings"}->GetCpnSingleWidth(), $lim{"yMax"} ) );
+		push( @coord, Point->new( $layout->GetCpnSingleWidth(), 0 ) );
+		push( @coord, Point->new( $layout->GetCpnSingleWidth(), $lim{"yMax"} ) );
 		push( @coord, Point->new( $lim{"xMax"},                             $lim{"yMax"} ) );
 		push( @coord, Point->new( $lim{"xMax"},                             0 ) );
 

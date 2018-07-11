@@ -29,45 +29,50 @@ sub new {
 	my $class = shift;
 	my $self  = {};
 	bless $self;
-
+ 
 	$self->{"inCAM"} = shift;
 	$self->{"jobId"} = shift;
 
-	$self->{"settings"}     = shift;    # global settings for generating coupon
-	$self->{"singleCpnVar"} = shift;
-	$self->{"cpnSingle"}    = shift;
+	$self->{"layout"}       = ShieldingLayout->new() ;    # Layout of one single coupon
+	$self->{"build"}        = 0;                        # indicator if layout was built
+	$self->{"singleCpnVar"} = undef;
 
-	$self->{"layout"} = ShieldingLayout->new();    # Layout of one single coupon
+	# Settings references
+	$self->{"cpnSett"} = undef;                         # global settings for generating coupon
 
-	$self->{"microstrips"} = [];
 
-	$self->{"build"} = 0;                         # indicator if layout was built
-
+	# Other properties
+ 
 	return $self;
 }
 
 # Build single coupon layout
 # If ok return 1, else 0 + err message
 sub Build {
-	my $self    = shift;
-	my $errMess = shift;
+	my $self         = shift;
+	my $cpnSingleVar = shift;
+	my $cpnSett      = shift;
+	my $errMess      = shift;
+
+	$self->{"singleCpnVar"} = $cpnSingleVar;
+	$self->{"cpnSett"}      = $cpnSett;
 
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
 
 	my $result = 1;
 
-	return $result if ( !$self->{"settings"}->GetShielding() );
+	return $result if ( !$self->{"cpnSett"}->GetShielding() );
 
-	 my $t = $self->{"settings"}->GetShieldingType();
+	 my $t = $self->{"cpnSett"}->GetShieldingType();
 
 	$self->{"layout"}->SetType($t);
 	
 	if($t eq "symbol"){
 	 
- 		$self->{"layout"}->SetSymbol($self->{"settings"}->GetShieldingSymbol());
- 		$self->{"layout"}->SetSymbolDX($self->{"settings"}->GetShieldingSymbolDX()/1000);
- 		$self->{"layout"}->SetSymbolDY($self->{"settings"}->GetShieldingSymbolDY()/1000);
+ 		$self->{"layout"}->SetSymbol($self->{"cpnSett"}->GetShieldingSymbol());
+ 		$self->{"layout"}->SetSymbolDX($self->{"cpnSett"}->GetShieldingSymbolDX()/1000);
+ 		$self->{"layout"}->SetSymbolDY($self->{"cpnSett"}->GetShieldingSymbolDY()/1000);
 	}
 
 	$self->{"build"} = 1;

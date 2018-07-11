@@ -24,8 +24,7 @@ sub new {
 	 
 	return $self;
 }
-
-
+ 
 
 sub SortVariants {
 	my $self = shift;
@@ -72,6 +71,7 @@ sub SortVariants {
 
 	return @sorted;
 }
+ 
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

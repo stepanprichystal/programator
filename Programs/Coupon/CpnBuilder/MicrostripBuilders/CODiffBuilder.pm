@@ -36,8 +36,13 @@ sub new {
 }
 
 sub Build {
-	my $self    = shift;
-	my $errMess = shift;
+	my $self          = shift;
+	my $stripVariant  = shift;
+	my $cpnSett       = shift;
+	my $cpnSingleSett = shift;
+	my $errMess       = shift;
+	
+	$self->SUPER::Build($stripVariant, $cpnSett, $cpnSingleSett);
  
  	# 1) Build SE layout
  

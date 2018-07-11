@@ -38,13 +38,13 @@ sub new {
 }
 
 sub Build {
-	my $self   = shift;
-	my $layout = shift;    # microstrip layout
+	my $self            = shift;
+	my $layout          = shift;    # microstrip layout
+	my $cpnSingleLayout = shift;    # cpn single layout
 
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
 
-	 
 	# Draw pad clearance
 	if ( $layout->GetType() eq "single" ) {
 
@@ -52,7 +52,7 @@ sub Build {
 
 			my $l =
 			  PrimitiveLine->new( $line->{"startP"}, $line->{"endP"},
-								  "s" . ( $self->{"settings"}->GetGuardTrackWidth() + $self->{"settings"}->GetGuardTrack2Shielding() ),
+								  "s" . ( $layout->GetGuardTrackWidth() + $layout->GetGuardTrack2Shielding() ),
 								  DrawEnums->Polar_NEGATIVE );
 			$self->{"drawing"}->AddPrimitive($l);
 
@@ -62,13 +62,12 @@ sub Build {
 	elsif ( $layout->GetType() eq "full" ) {
 
 		foreach my $area ( $layout->GetAreas() ) {
-		
+
 			my %areaNeg = ();
-			$areaNeg{"xMin"} =  $area->{"xMin"} - $self->{"settings"}->GetGuardTrack2Shielding()/1000;
-			$areaNeg{"xMax"} =  $area->{"xMax"} + $self->{"settings"}->GetGuardTrack2Shielding()/1000;
-			$areaNeg{"yMin"} =  $area->{"yMin"} - $self->{"settings"}->GetGuardTrack2Shielding()/1000;
-			$areaNeg{"yMax"} =  $area->{"yMax"} + $self->{"settings"}->GetGuardTrack2Shielding()/1000;
-			
+			$areaNeg{"xMin"} = $area->{"xMin"} - $layout->GetGuardTrack2Shielding() / 1000;
+			$areaNeg{"xMax"} = $area->{"xMax"} + $layout->GetGuardTrack2Shielding() / 1000;
+			$areaNeg{"yMin"} = $area->{"yMin"} - $layout->GetGuardTrack2Shielding() / 1000;
+			$areaNeg{"yMax"} = $area->{"yMax"} + $layout->GetGuardTrack2Shielding() / 1000;
 
 			$self->{"drawing"}->AddPrimitive( PrimitiveSurfPoly->new( \%areaNeg, undef, DrawEnums->Polar_NEGATIVE ) );
 
@@ -81,7 +80,7 @@ sub Build {
 		foreach my $line ( $layout->GetLines() ) {
 
 			my $l =
-			  PrimitiveLine->new( $line->{"startP"}, $line->{"endP"}, "s" . $self->{"settings"}->GetGuardTrackWidth(), DrawEnums->Polar_POSITIVE );
+			  PrimitiveLine->new( $line->{"startP"}, $line->{"endP"}, "s" . $layout->GetGuardTrackWidth(), DrawEnums->Polar_POSITIVE );
 			$self->{"drawing"}->AddPrimitive($l);
 
 		}

@@ -34,45 +34,50 @@ sub new {
 
 	# properties of constrain
 	#pads, lines, coordinates
- 
+
 	return $self;
 }
 
 sub Build {
-	my $self    = shift;
-	my $errMess = shift;
+	my $self          = shift;
+	my $stripVariant  = shift;
+	my $cpnSett       = shift;
+	my $cpnSingleSett = shift;
+	my $errMess       = shift;
+	
+	my $cpnStripSett = $stripVariant->GetCpnStripSettings();
+	
+	$self->SUPER::Build($stripVariant, $cpnSett, $cpnSingleSett);
 
 	my $result = 1;
 
 	# Origin where left down strip pad shoul be start (contain position of left side on coupon. Right side is symetric)
-	my $origin = $self->{"cpnSingle"}->GetMicrostripOrigin( $self->{"stripVariant"});
+	my $origin = $self->{"cpnSingle"}->GetMicrostripOrigin( $self->{"stripVariant"} );
 
 	# set model
 
-	my $areaW   = $self->{"settings"}->GetCpnSingleWidth();
-	my $margin  = $self->{"settings"}->GetCouponSingleMargin()/1000;
-	my $p2pDist = $self->{"settings"}->GetPad2PadDist() / 1000;
+	my $areaW   = $self->{"cpnSett"}->GetCpnSingleWidth();
+	my $margin  = $self->{"cpnSett"}->GetCouponSingleMargin() / 1000;
+	my $p2pDist = $self->{"cpnSingleSett"}->GetPad2PadDist() / 1000;
 
 	my $trackW = $self->_GetXmlConstr()->GetParamDouble("WB");    # µm
 
 	# track and GND pads are placed horizontally => 1 positions
 	if ( $self->{"cpnSingle"}->IsMultistrip() ) {
 
-		
-		my $tOrigin; # origin of track pad
-		my $gOrigin; # origin of GND pad
+		my $tOrigin;                                              # origin of track pad
+		my $gOrigin;                                              # origin of GND pad
 		if ( $self->{"stripVariant"}->Pool() == 0 ) {
 
-			$tOrigin = Point->new( $origin->X(), $origin->Y() );  
-			$gOrigin = Point->new( $origin->X(), $origin->Y() + $self->{"settings"}->GetPad2PadDist() / 1000);    
+			$tOrigin = Point->new( $origin->X(), $origin->Y() );
+			$gOrigin = Point->new( $origin->X(), $origin->Y() + $self->{"cpnSingleSett"}->GetPad2PadDist() / 1000 );
 		}
 		elsif ( $self->{"stripVariant"}->Pool() == 1 ) {
 
-			$tOrigin = Point->new( $origin->X(), $origin->Y() + $self->{"settings"}->GetPad2PadDist() / 1000 );  
-			$gOrigin = Point->new( $origin->X(), $origin->Y() );    
+			$tOrigin = Point->new( $origin->X(), $origin->Y() + $self->{"cpnSingleSett"}->GetPad2PadDist() / 1000 );
+			$gOrigin = Point->new( $origin->X(), $origin->Y() );
 		}
 
-	
 		# LEFT SIDE
 
 		# build Track pad
@@ -80,20 +85,22 @@ sub Build {
 		$self->{"layout"}->AddPad($sTrPad);
 
 		# build GND pad
-		my $sGNDPad = PadLayout->new( Point->new( $gOrigin->X(), $gOrigin->Y()), Enums->Pad_GND, $self->{"cpnSingle"}->GetShareGNDLayers($self) );
+		my $sGNDPad = PadLayout->new( Point->new( $gOrigin->X(), $gOrigin->Y() ), Enums->Pad_GND, $self->{"cpnSingle"}->GetShareGNDLayers($self) );
 		$self->{"layout"}->AddPad($sGNDPad);
 
 		my $eGNDPad;
 		my $eTrPad;
 
-		if ( $self->{"settings"}->GetTwoEndedDesign() ) {
+		if ( $self->{"cpnSett"}->GetTwoEndedDesign() ) {
 
 			# build Track pad
-			my $eTrPad = PadLayout->new( Point->new( $areaW - $tOrigin->X(), $tOrigin->Y() ), Enums->Pad_TRACK, undef,  $self->_GetPadText(Point->new( $areaW - $tOrigin->X(), $tOrigin->Y() )) );
+			my $eTrPad = PadLayout->new( Point->new( $areaW - $tOrigin->X(), $tOrigin->Y() ),
+										 Enums->Pad_TRACK, undef, $self->_GetPadText( Point->new( $areaW - $tOrigin->X(), $tOrigin->Y() ) ) );
 			$self->{"layout"}->AddPad($eTrPad);
 
 			# build GND pad
-			my $eGNDPad = PadLayout->new( Point->new( $areaW - $gOrigin->X(), $gOrigin->Y() ), Enums->Pad_GND, $self->{"cpnSingle"}->GetShareGNDLayers($self) );
+			my $eGNDPad =
+			  PadLayout->new( Point->new( $areaW - $gOrigin->X(), $gOrigin->Y() ), Enums->Pad_GND, $self->{"cpnSingle"}->GetShareGNDLayers($self) );
 			$self->{"layout"}->AddPad($eGNDPad);
 
 		}
@@ -113,7 +120,7 @@ sub Build {
 	# track and GND pads are placed vertically => 2 positions
 	else {
 
-		my $tOrigin = Point->new( $origin->X() + $self->{"settings"}->GetPad2PadDist() / 1000, $origin->Y() );    # origin of track pad
+		my $tOrigin = Point->new( $origin->X() + $self->{"cpnSingleSett"}->GetPad2PadDist() / 1000, $origin->Y() );    # origin of track pad
 		my $gOrigin = Point->new( $origin->X(), $origin->Y() );                                                   # origin of GND pad
 
 		# LEFT SIDE
@@ -131,7 +138,7 @@ sub Build {
 		my $eGNDPad;
 		my $eTrPad;
 
-		if ( $self->{"settings"}->GetTwoEndedDesign() ) {
+		if ( $self->{"cpnSett"}->GetTwoEndedDesign() ) {
 
 			# build GND pad
 			$eGNDPad = PadLayout->new( Point->new( $areaW - $gOrigin->X(), $gOrigin->Y() ), Enums->Pad_GND );
@@ -150,6 +157,8 @@ sub Build {
 		$self->{"layout"}->AddTrack($track);
 
 	}
+	
+
 
 	return $result;
 

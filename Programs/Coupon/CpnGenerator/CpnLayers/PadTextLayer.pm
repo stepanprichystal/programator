@@ -38,52 +38,48 @@ sub new {
 }
 
 sub Build {
-	my $self   = shift;
-	my $layout = shift;    # microstrip layout
-	my $layerLayout = shift;
+	my $self            = shift;
+	my $layout          = shift;    # microstrip layout
+	my $cpnSingleLayout = shift;    # cpn single layout
+	my $layerLayout     = shift;	# layer layout
 
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
- 
 
 	foreach my $pad ( $layout->GetPads() ) {
 
-		if ( $pad->GetType() eq Enums->Pad_TRACK && $self->{"settings"}->GetPadText() ) {
+		if ( $pad->GetType() eq Enums->Pad_TRACK ) {
 
 			my $padText = $pad->GetPadText();
-			
-			return unless(defined $padText); # only multistrips has texts
 
- 
+			return unless ( defined $padText );    # only multistrips has texts
 
 			# clearance in copper (put negative square)
-	 
- 			my $origin = ( $layerLayout->GetMirror() ? $padText->GetNegRectPositionMirror() : $padText->GetNegRectPosition() );
- 
- 			my @points = ( );
- 			push(@points, Point->new( $origin->X(), $origin->Y()));
- 			push(@points, Point->new( $origin->X(), $origin->Y() + $padText->GetNegRectH()));
- 			push(@points, Point->new( $origin->X() + $padText->GetNegRectW(), $origin->Y() + $padText->GetNegRectH()));
- 			push(@points, Point->new( $origin->X() + $padText->GetNegRectW(), $origin->Y()));
- 
-			my $pTextNeg = PrimitiveSurfPoly->new(
-											  \@points,
-											  undef,
-											  DrawEnums->Polar_NEGATIVE
-											  
-											   
-			);
-			
-			$self->{"drawing"}->AddPrimitive($pTextNeg);
 
+			my $origin = ( $layerLayout->GetMirror() ? $padText->GetNegRectPositionMirror() : $padText->GetNegRectPosition() );
+
+			my @points = ();
+			push( @points, Point->new( $origin->X(),                           $origin->Y() ) );
+			push( @points, Point->new( $origin->X(),                           $origin->Y() + $padText->GetNegRectH() ) );
+			push( @points, Point->new( $origin->X() + $padText->GetNegRectW(), $origin->Y() + $padText->GetNegRectH() ) );
+			push( @points, Point->new( $origin->X() + $padText->GetNegRectW(), $origin->Y() ) );
+
+			my $pTextNeg = PrimitiveSurfPoly->new(
+				\@points,
+				undef,
+				DrawEnums->Polar_NEGATIVE
+
+			);
+
+			$self->{"drawing"}->AddPrimitive($pTextNeg);
 
 			# Add text pad
 			my $pText = PrimitiveText->new(
 											$padText->GetText(),
-											( $layerLayout->GetMirror()? $padText->GetPositionMirror() : $padText->GetPosition() ),
-											$self->{"settings"}->GetPadTextHeight()/1000,
-											$self->{"settings"}->GetPadTextWidth()/1000,
-											$self->{"settings"}->GetPadTextWeight()/1000,
+											( $layerLayout->GetMirror() ? $padText->GetPositionMirror() : $padText->GetPosition() ),
+											$layout->GetPadTextHeight() / 1000,
+											$layout->GetPadTextWidth() / 1000,
+											$layout->GetPadTextWeight() / 1000,
 											( $layerLayout->GetMirror() ? 1 : 0 )
 			);
 

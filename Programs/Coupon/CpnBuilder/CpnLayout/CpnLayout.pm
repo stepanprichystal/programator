@@ -20,15 +20,30 @@ sub new {
 	my $self  = {};
 	bless $self;
 
-	$self->{"stepName"} = undef;
-	$self->{"w"}        = undef;
-	$self->{"h"}        = undef;
-	$self->{"titleLayout"} = undef;
+	$self->{"stepName"}      = undef;
+	$self->{"w"}             = undef;
+	$self->{"h"}             = undef;
+	$self->{"titleLayout"}   = undef;
 	$self->{"couponsSingle"} = [];
-	
-	$self->{"globalSett"} = undef;
+	$self->{"couponMargin"}  = undef;
+	$self->{"globalSett"}    = undef;
+	$self->{"layersLayout"}  = undef;
 
 	return $self;
+
+}
+
+sub SetCpnMargin {
+	my $self = shift;
+
+	$self->{"couponMargin"} = shift;
+
+}
+
+sub GetCpnMargin {
+	my $self = shift;
+
+	return $self->{"couponMargin"};
 
 }
 
@@ -87,7 +102,6 @@ sub GetCouponsSingle {
 
 }
 
-
 sub SetTitleLayout {
 	my $self = shift;
 
@@ -104,7 +118,7 @@ sub GetTitleLayout {
 
 sub SetGlobalSett {
 	my $self = shift;
- 
+
 	$self->{"globalSett"} = shift;
 
 }
@@ -116,6 +130,19 @@ sub GetGlobalSett {
 
 }
 
+sub SetLayersLayout {
+	my $self    = shift;
+	my $layouts = shift;
+
+	$self->{"layersLayout"} = $layouts
+
+}
+
+sub GetLayersLayout {
+	my $self = shift;
+
+	return $self->{"layersLayout"};
+}
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

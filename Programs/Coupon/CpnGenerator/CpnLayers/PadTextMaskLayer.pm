@@ -34,32 +34,33 @@ sub new {
 }
 
 sub Build {
-	my $self   = shift;
-	my $layout = shift;    # microstrip layout
-	my $layerLayout = shift;
+	my $self            = shift;
+	my $layout          = shift;    # microstrip layout
+	my $cpnSingleLayout = shift;    # cpn single layout
+	my $layerLayout     = shift;
 
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
 
- 
-	return if (!$self->{"settings"}->GetPadTextUnmask);
+	return if ( !$self->{"settings"}->GetPadTextUnmask );
 
 	foreach my $pad ( $layout->GetPads() ) {
-		
-		
 
 		if ( $pad->GetType() eq Enums->Pad_TRACK && $self->{"settings"}->GetPadText() ) {
 
 			my $padText = $pad->GetPadText();
-			
-			return unless(defined $padText); # only multistrips has texts
 
-	 
-			my $pText = PrimitiveText->new( $padText->GetText(), ($layerLayout->GetMirror() ? $padText->GetPositionMirror() : $padText->GetPosition()),
-											$self->{"settings"}->GetPadTextHeight()/1000,
-											$self->{"settings"}->GetPadTextWidth()/1000,
-											$self->{"settings"}->GetPadTextWeight()/1000 , ($layerLayout->GetMirror() ? 1 : 0) );
- 
+			return unless ( defined $padText );    # only multistrips has texts
+
+			my $pText = PrimitiveText->new(
+											$padText->GetText(),
+											( $layerLayout->GetMirror() ? $padText->GetPositionMirror() : $padText->GetPosition() ),
+											$layout->GetPadTextHeight() / 1000,
+											$layout->GetPadTextWidth() / 1000,
+											$layout->GetPadTextWeight() / 1000,
+											( $layerLayout->GetMirror() ? 1 : 0 )
+			);
+
 			$self->{"drawing"}->AddPrimitive($pText);
 		}
 	}

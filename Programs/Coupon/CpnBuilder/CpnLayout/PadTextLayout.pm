@@ -27,6 +27,10 @@ sub new {
  	$self->{"negRectH"} = shift;
  	$self->{"negRectPosition"} = shift; 
  	$self->{"negRectPositionMirror"} = shift;
+ 	
+ 	 $self->{"padTextHeight"} = undef;
+ 	 $self->{"padTextWidth"} = undef;
+ 	 $self->{"padTextWeight"} = undef;
  	 
  
 	return $self;
@@ -133,7 +137,46 @@ sub GetNegRectPositionMirror {
 }
 
  
- 
+ sub SetPadTextHeight {
+	my $self = shift;
+	my $val = shift;
+
+	$self->{"padTextHeight"} = $val;
+}
+
+sub GetPadTextHeight {
+	my $self = shift;
+
+	return $self->{"padTextHeight"};
+}
+
+
+sub SetPadTextWidth {
+	my $self = shift;
+	my $val = shift;
+
+	$self->{"padTextWidth"} = $val;
+}
+
+sub GetPadTextWidth {
+	my $self = shift;
+
+	return $self->{"padTextWidth"};
+}
+
+
+sub SetPadTextWeight {
+	my $self = shift;
+	my $val = shift;
+
+	$self->{"padTextWeight"} = $val;
+}
+
+sub GetPadTextWeight {
+	my $self = shift;
+
+	return $self->{"padTextWeight"};
+}
  
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

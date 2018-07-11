@@ -24,6 +24,11 @@ sub new {
  	$self->{"width"} = undef; 
  	$self->{"height"} = undef;
  	$self->{"position"} = undef;
+ 	$self->{"infoTextUnmask"} = undef;
+ 	
+ 	 $self->{"infoTextHeight"} = undef;
+ 	 $self->{"infoTextWidth"} = undef;
+ 	 $self->{"infoTextWeight"} = undef;
  	
  	$self->{"texts"} = [];
  
@@ -102,6 +107,64 @@ sub GetPosition {
 	my $self = shift;
 
 	return $self->{"position"};
+}
+
+
+
+sub SetInfoTextUnmask {
+	my $self = shift;
+	my $unmask = shift;
+
+	$self->{"infoTextUnmask"} = $unmask;
+}
+
+sub GetInfoTextUnmask {
+	my $self = shift;
+
+	return $self->{"titleUnamsk"};
+}
+
+
+
+sub SetInfoTextHeight {
+	my $self = shift;
+	my $val = shift;
+
+	$self->{"infoTextHeight"} = $val;
+}
+
+sub GetInfoTextHeight {
+	my $self = shift;
+
+	return $self->{"infoTextHeight"};
+}
+
+
+sub SetInfoTextWidth {
+	my $self = shift;
+	my $val = shift;
+
+	$self->{"infoTextWidth"} = $val;
+}
+
+sub GetInfoTextWidth {
+	my $self = shift;
+
+	return $self->{"infoTextWidth"};
+}
+
+
+sub SetInfoTextWeight {
+	my $self = shift;
+	my $val = shift;
+
+	$self->{"infoTextWeight"} = $val;
+}
+
+sub GetInfoTextWeight {
+	my $self = shift;
+
+	return $self->{"infoTextWeight"};
 }
  
 #-------------------------------------------------------------------------------------------#

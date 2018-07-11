@@ -33,15 +33,12 @@ sub new {
 	$self->{"inCAM"} = shift;
 	$self->{"jobId"} = shift;
 
-	$self->{"settings"}     = shift;    # global settings for generating coupon
-	$self->{"singleCpnVar"} = shift;
-	$self->{"cpnSingle"}    = shift;
+	$self->{"layout"}       = InfoTextLayout->new();    # Layout of one single coupon
+	$self->{"build"}        = 0;                        # indicator if layout was built
+	$self->{"singleCpnVar"} = undef;
 
-	$self->{"layout"} = InfoTextLayout->new();    # Layout of one single coupon
-
-	$self->{"microstrips"} = [];
-
-	$self->{"build"} = 0;                         # indicator if layout was built
+	# Settings references
+	$self->{"cpnSett"} = undef;                         # global settings for generating coupon
 
 	return $self;
 }
@@ -49,17 +46,22 @@ sub new {
 # Build single coupon layout
 # If ok return 1, else 0 + err message
 sub Build {
-	my $self    = shift;
-	my $errMess = shift;
+	my $self         = shift;
+	my $cpnSingleVar = shift;
+	my $cpnSett      = shift;
+	my $errMess      = shift;
+
+	$self->{"singleCpnVar"} = $cpnSingleVar;
+	$self->{"cpnSett"}      = $cpnSett;
 
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
 
 	my $result = 1;
 
-	return $result if ( !$self->{"settings"}->GetInfoText() );
+	return $result if ( !$self->{"cpnSett"}->GetInfoText() );
 
-	my $textPos = $self->{"settings"}->GetInfoTextPosition();
+	my $textPos = $self->{"cpnSett"}->GetInfoTextPosition();
 
 	$self->{"layout"}->SetType($textPos);
 	$self->{"singleCpnVar"}->IsMultistrip();
@@ -78,25 +80,25 @@ sub Build {
 		# built one text line or two lines
 		my $txtPart1 = "";
 
-		#		if ( $self->{"settings"}->GetInfoTextNumber() ) {
+		#		if ( $self->{"cpnSett"}->GetInfoTextNumber() ) {
 		#			$txtPart1 .= "<measure>";
 		#		}
 
-		if ( $self->{"settings"}->GetInfoTextTrackImpedance() ) {
+		if ( $self->{"cpnSett"}->GetInfoTextTrackImpedance() ) {
 			$txtPart1 .= sprintf( "%d", $xmlConstr->GetOption("CALCULATED_IMPEDANCE") ) . "ohm";
 		}
 
 		my $txtPart2 = "";
 
-		if ( $self->{"settings"}->GetInfoTextTrackLayer() ) {
-			$txtPart2 .=  $xmlConstr->GetOption("TRACE_LAYER")  . " - ";
+		if ( $self->{"cpnSett"}->GetInfoTextTrackLayer() ) {
+			$txtPart2 .= $xmlConstr->GetOption("TRACE_LAYER") . " - ";
 		}
 
-		if ( $self->{"settings"}->GetInfoTextTrackWidth() ) {
+		if ( $self->{"cpnSett"}->GetInfoTextTrackWidth() ) {
 			$txtPart2 .= "W=" . sprintf( "%d", $xmlConstr->GetParamDouble("WB") );
 		}
 
-		if ( $self->{"settings"}->GetInfoTextTrackSpace() && $xmlConstr->ExistsParam("S") ) {
+		if ( $self->{"cpnSett"}->GetInfoTextTrackSpace() && $xmlConstr->ExistsParam("S") ) {
 			$txtPart2 .= " S=" . sprintf( "%d", $xmlConstr->GetParamDouble("S") );
 		}
 
@@ -108,22 +110,22 @@ sub Build {
 
 				# bot row
 				$self->{"layout"}->AddText( Point->new( $curX, $curY ), $txtPart2 );
-				$curY += $self->{"settings"}->GetInfoTextHeight()/1000;
-				$curY += $self->{"settings"}->GetInfoTextVSpacing()/1000;
+				$curY += $self->{"cpnSett"}->GetInfoTextHeight() / 1000;
+				$curY += $self->{"cpnSett"}->GetInfoTextVSpacing() / 1000;
 
 				# top row
 				$self->{"layout"}->AddText( Point->new( $curX, $curY ), $txtPart1 );
-				$curY += $self->{"settings"}->GetInfoTextHeight()/1000
+				$curY += $self->{"cpnSett"}->GetInfoTextHeight() / 1000
 
 			}
 			else {
 
 				$self->{"layout"}->AddText( Point->new( $curX, $curY ), $txtPart1 . " " . $txtPart2 );
-				$curY += $self->{"settings"}->GetInfoTextHeight()/1000
+				$curY += $self->{"cpnSett"}->GetInfoTextHeight() / 1000
 
 			}
 
-			$curY += $self->{"settings"}->GetInfoTextVSpacing()/1000
+			$curY += $self->{"cpnSett"}->GetInfoTextVSpacing() / 1000
 
 		}
 
@@ -135,15 +137,15 @@ sub Build {
 			if ( scalar( $self->{"layout"}->GetTexts() ) > 0 ) {
 
 				$self->{"layout"}->AddText( Point->new( $curX, $curY ), "|" );
-				$curX += $self->{"settings"}->GetInfoTextHSpacing()/1000;
+				$curX += $self->{"cpnSett"}->GetInfoTextHSpacing() / 1000;
 			}
 
 			$t .= $txtPart1 . " " . $txtPart2;
 
 			$self->{"layout"}->AddText( Point->new( $curX, $curY ), $t );
 
-			$curX += length($t) * $self->{"settings"}->GetInfoTextWidth()/1000;
-			$curX += $self->{"settings"}->GetInfoTextHSpacing()/1000;
+			$curX += length($t) * $self->{"cpnSett"}->GetInfoTextWidth() / 1000;
+			$curX += $self->{"cpnSett"}->GetInfoTextHSpacing() / 1000;
 
 		}
 
@@ -151,18 +153,26 @@ sub Build {
 
 	if ( $textPos eq "right" ) {
 
-		$self->{"layout"}->SetHeight( $curY - $self->{"settings"}->GetInfoTextVSpacing()/1000 );
+		$self->{"layout"}->SetHeight( $curY - $self->{"cpnSett"}->GetInfoTextVSpacing() / 1000 );
 
 		# search max lines
 		my $maxLen = max( map { length( $_->{"val"} ) } $self->{"layout"}->GetTexts() );
-		$self->{"layout"}->SetWidth( $maxLen * $self->{"settings"}->GetInfoTextWidth()/1000 );
+		$self->{"layout"}->SetWidth( $maxLen * $self->{"cpnSett"}->GetInfoTextWidth() / 1000 );
 
 	}
 	elsif ( $textPos eq "top" ) {
 
-		$self->{"layout"}->SetHeight( $self->{"settings"}->GetInfoTextHeight()/1000 );
-		$self->{"layout"}->SetWidth( $curX - $self->{"settings"}->GetInfoTextHSpacing()/1000 );
+		$self->{"layout"}->SetHeight( $self->{"cpnSett"}->GetInfoTextHeight() / 1000 );
+		$self->{"layout"}->SetWidth( $curX - $self->{"cpnSett"}->GetInfoTextHSpacing() / 1000 );
 	}
+	
+	$self->{"layout"}->SetInfoTextUnmask($self->{"cpnSett"}->GetInfoTextUnmask());
+	
+	$self->{"layout"}->SetInfoTextHeight($self->{"cpnSett"}->GetInfoTextHeight());
+	$self->{"layout"}->SetInfoTextWidth($self->{"cpnSett"}->GetInfoTextWidth());
+	$self->{"layout"}->SetInfoTextWeight($self->{"cpnSett"}->GetInfoTextWeight());
+	
+
 
 	$self->{"build"} = 1;
 

@@ -37,6 +37,7 @@ sub new {
 sub Build {
 	my $self   = shift;
 	my $layout = shift;    # microstrip layout
+	my $cpnSingleLayout = shift;    # cpn single layout
 
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
@@ -49,11 +50,11 @@ sub Build {
 
 		if ( $pad->GetType() eq Enums->Pad_GND ) {
 
-			$symClear = $self->{"settings"}->GetPadGNDShape() . ( $self->{"settings"}->GetPadGNDSize() + $self->{"settings"}->GetPadClearance() );
+			$symClear = $cpnSingleLayout->GetPadGNDShape() . ( $cpnSingleLayout->GetPadGNDSize() + $self->{"settings"}->GetPadClearance() );
 		}
 		else {
 
-			$symClear = $self->{"settings"}->GetPadTrackShape() . ( $self->{"settings"}->GetPadTrackSize() + $self->{"settings"}->GetPadClearance() );
+			$symClear = $cpnSingleLayout->GetPadTrackShape() . ( $cpnSingleLayout->GetPadTrackSize() + $self->{"settings"}->GetPadClearance() );
 		}
 
 		my $pad = PrimitivePad->new( $symClear, $pad->GetPoint() );

@@ -14,10 +14,13 @@ use warnings;
 use aliased 'Enums::EnumsPaths';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'Programs::Coupon::CpnSettings::CpnSettings';
+use aliased 'Programs::Coupon::CpnSettings::CpnSingleSettings';
+use aliased 'Programs::Coupon::CpnSettings::CpnStripSettings';
+
 use aliased 'Programs::Coupon::CpnSource::CpnSource';
 use aliased 'Programs::Coupon::CpnBuilder::BuildParams';
 use aliased 'Programs::Coupon::CpnPolicy::GroupPolicy';
-
+use aliased 'Programs::Coupon::CpnPolicy::GeneratorPolicy';
 use aliased 'Programs::Coupon::CpnPolicy::LayoutPolicy';
 use aliased 'Programs::Coupon::CpnPolicy::SortPolicy';
 
@@ -26,26 +29,26 @@ use aliased 'Programs::Coupon::CpnPolicy::SortPolicy';
 #-------------------------------------------------------------------------------------------#
 
 sub GetBestGroupCombination {
-	my $self      = shift;
-	my $cpnSource = shift;
-	my $filter    = shift;
-	my $cpnSett   = shift;
+	my $self       = shift;
+	my $cpnSource  = shift;
+	my $filter     = shift;
+	my $defCpnSett = shift;
 
 	my $resultVariant = shift;
 
 	# Return structure => Array of groups combinations
 	# Each combination contain groups,
 	# Each group contain strips
-	my $groupPolicy = GroupPolicy->new( $cpnSource, $cpnSett->GetMaxTrackCnt() );
+	my $groupGenPolicy = GeneratorPolicy->new( $cpnSource, $defCpnSett->GetMaxTrackCnt() );
 
 	# take combination with smallest cnt of groups
-	my @groupsComb = $groupPolicy->GenerateGroups($filter);
+	my @groupsComb = $groupGenPolicy->GenerateGroups($filter);
 
 	# if more than one group
 	# take groups combinations with smalelst amoun of group, unitill find the best
 
 	my $combFound = 0;
-	while ( !$combFound  && scalar(@groupsComb)  ) {
+	while ( !$combFound && scalar(@groupsComb) ) {
 
 		my $curGroupCnt  = scalar( @{ $groupsComb[0] } );
 		my @curGroupComb = ();
@@ -57,12 +60,29 @@ sub GetBestGroupCombination {
 			}
 		}
 
-		my $variant = $self->GetBestGroupVariant( $cpnSource, \@curGroupComb, $cpnSett );
+		# Define group settings for each group
+		my $defCpnGroupsSett = {};
+		for ( my $i = 0 ; $i < $curGroupCnt ; $i++ ) {
+
+			$defCpnGroupsSett->{$i} = CpnSingleSettings->new();
+		}
+
+		# Define strip settings for each strip
+		my $defCpnStripSett = {};
+		for ( my $i = 0 ; $i < scalar( @{$filter} ) ; $i++ ) {
+
+			$defCpnStripSett->{ $filter->[$i] } = CpnStripSettings->new();
+		}
+
+		my $variant = $self->GetBestGroupVariant( $cpnSource, \@curGroupComb, $defCpnSett, $defCpnGroupsSett );
 
 		# variant was found
 		if ( defined $variant ) {
+
+			$self->AddSett2CpnVarinat( $variant, $defCpnSett, $defCpnGroupsSett, $defCpnStripSett );
+
 			$resultVariant = $variant;
-			$combFound = 1;
+			$combFound     = 1;
 		}
 
 		# continue in searching
@@ -78,15 +98,25 @@ sub GetBestGroupCombination {
 }
 
 sub GetBestGroupVariant {
-	my $self      = shift;
-	my $cpnSource = shift;
-	my @groupCombs = @{ shift(@_) };
-	my $cpnSett   = shift;
+	my $self          = shift;
+	my $cpnSource     = shift;
+	my @groupCombs    = @{ shift(@_) };
+	my $cpnSett       = shift;
+	my $cpnGroupsSett = shift;
 
 	my $cpnVariant = undef;
 
 	# Check if is possible build coupon, if so, get best variant
 	my $groupPolicy = GroupPolicy->new( $cpnSource, $cpnSett->GetMaxTrackCnt() );
+
+	# global settings
+	$groupPolicy->SetGlobalSettings( $cpnSett->GetMaxTrackCnt() );
+
+	# group settings
+	foreach my $groupId ( keys %{$cpnGroupsSett} ) {
+
+		$groupPolicy->SetGroupSettings( $groupId, $cpnGroupsSett->{$groupId}->GetPoolCnt(), $cpnGroupsSett->{$groupId}->GetMaxStripsCntH() );
+	}
 
 	# Generate structure => Arraz of group combination
 	# Each combination contain groups,
@@ -95,12 +125,12 @@ sub GetBestGroupVariant {
 	my @groupsPoolComb = ();
 
 	my $combPools = [];
- 
+
 	foreach my $comb (@groupCombs) {
 
 		my $combPools = [];
 
-		if ( $groupPolicy->VerifyGroupComb( $comb, $cpnSett->GetPoolCnt(), $cpnSett->GetMaxStripsCntH(), $combPools ) ) {
+		if ( $groupPolicy->VerifyGroupComb( $comb, $combPools ) ) {
 
 			push( @groupsPoolComb, $combPools );
 		}
@@ -108,14 +138,26 @@ sub GetBestGroupVariant {
 
 	my @layers = map { $_->{"NAME"} } $cpnSource->GetCopperLayers();
 
-	my $layoutPolicy = LayoutPolicy->new(
-										  \@layers,                         $cpnSett->GetPoolCnt(),
-										  $cpnSett->GetShareGNDPads(),      $cpnSett->GetMaxTrackCnt(),
-										  $cpnSett->GetTrackPadIsolation(), $cpnSett->GetTracePad2GNDPad(),
-										  $cpnSett->GetPadTrackSize(),      $cpnSett->GetPadGNDSize(),
-										  $cpnSett->GetRouteBetween(),      $cpnSett->GetRouteAbove(),
-										  $cpnSett->GetRouteBelow(),        $cpnSett->GetRouteStraight()
+	my $layoutPolicy = LayoutPolicy->new( \@layers );
+
+	# global settings
+	$layoutPolicy->SetGlobalSettings(
+									  $cpnSett->GetMaxTrackCnt(),       $cpnSett->GetShareGNDPads(),
+									  $cpnSett->GetTrackPadIsolation(), $cpnSett->GetRouteBetween(),
+									  $cpnSett->GetRouteAbove(),        $cpnSett->GetRouteBelow(),
+									  $cpnSett->GetRouteStraight()
 	);
+
+	# group settings
+	foreach my $groupId ( keys %{$cpnGroupsSett} ) {
+
+		$layoutPolicy->SetGroupSettings( $groupId,
+										 $cpnGroupsSett->{$groupId}->GetPoolCnt(),
+										 $cpnGroupsSett->{$groupId}->GetTrackPad2GNDPad(),
+										 $cpnGroupsSett->{$groupId}->GetPadTrackSize(),
+										 $cpnGroupsSett->{$groupId}->GetPadGNDSize() )
+
+	}
 
 	my @variants = ();
 
@@ -144,6 +186,32 @@ sub GetBestGroupVariant {
 	}
 
 	return $cpnVariant;
+}
+
+sub AddSett2CpnVarinat {
+	my $self             = shift;
+	my $variant          = shift;
+	my $defCpnSett       = shift;
+	my $defCpnGroupsSett = shift;
+	my $defCpnStripSett  = shift;
+
+	# set global settings to cpn variant
+	$variant->SetCpnSettings($defCpnSett);
+
+	# set ingle cpn settings
+	foreach my $singleCpn ( $variant->GetSingleCpns() ) {
+
+		die "Single cpn sdettings is not defined" unless(defined $defCpnGroupsSett->{ $singleCpn->GetOrder() });
+
+		$singleCpn->SetCpnSingleSettings( $defCpnGroupsSett->{ $singleCpn->GetOrder() } );
+
+		foreach my $s ( $singleCpn->GetAllStrips() ) {
+			
+			die "Strip cpn sdettings is not defined" unless(defined $defCpnStripSett->{ $s->Id() });
+			
+			$s->SetCpnStripSettings( $defCpnStripSett->{ $s->Id() } );
+		}
+	}
 }
 
 #-------------------------------------------------------------------------------------------#

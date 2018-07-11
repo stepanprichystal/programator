@@ -42,9 +42,8 @@ sub new {
 	my $self  = {};
 	bless $self;
 
-	$self->{"inCAM"}    = shift;
-	$self->{"jobId"}    = shift;
-	$self->{"settings"} = shift;    # global settings for generating coupon
+	$self->{"inCAM"} = shift;
+	$self->{"jobId"} = shift;
 
 	$self->{"couponStep"} = undef;
 
@@ -53,7 +52,7 @@ sub new {
 
 sub Generate {
 	my $self   = shift;
-	my $layout = shift;             # layout of complete coupon
+	my $layout = shift;    # layout of complete coupon
 
 	my $result = 1;
 
@@ -63,58 +62,47 @@ sub Generate {
 	#my @coupons = grep { $_ =~ /^coupon_(\d+)$/} StepName->GetAllStepNames($inCAM, $jobId);
 
 	# CreateStep
-	my $leftMargin = $self->{"settings"}->GetCouponMargin() / 1000;
-	my $topMargin  = $self->{"settings"}->GetCouponMargin() / 1000;
-
-	if ( $self->{"settings"}->GetTitle() ) {
-
-		if ( $layout->GetTitleLayout()->GetHeight() > $self->{"settings"}->GetCouponMargin() / 1000 ) {
-
-			$leftMargin = $layout->GetTitleLayout()->GetHeight() if ( $self->{"settings"}->GetTitleType() eq "left" );
-			$topMargin  = $layout->GetTitleLayout()->GetHeight() if ( $self->{"settings"}->GetTitleType() eq "top" );
-		}
-	}
+	my $cpnMargin = $layout->GetCpnMargin();
 
 	$self->{"couponStep"} = SRStep->new( $inCAM, $jobId, $layout->GetStepName() );
-	$self->{"couponStep"}->Create( $layout->GetWidth(), $layout->GetHeight(), $topMargin, $self->{"settings"}->GetCouponMargin() / 1000,
-								   $leftMargin, $self->{"settings"}->GetCouponMargin() / 1000 );
+	$self->{"couponStep"}
+	  ->Create( $layout->GetWidth(), $layout->GetHeight(), $cpnMargin->{"top"}, $cpnMargin->{"bot"}, $cpnMargin->{"left"}, $cpnMargin->{"right"} );
 
-	CamHelper->SetStep( $inCAM, $self->{"settings"}->GetStepName() );
+	CamHelper->SetStep( $inCAM, $layout->GetStepName() );
 
 	# Create single oupon steps
-
-	my $yCurrent = $self->{"settings"}->GetCouponMargin() / 1000;
 
 	for ( my $i = 0 ; $i < scalar( $layout->GetCouponsSingle() ) ; $i++ ) {
 
 		my $cpnSignleLayout = ( $layout->GetCouponsSingle() )[$i];
 
-		my $srStep = $self->{"settings"}->GetStepName() . "_$i";
+		my $srStep = $layout->GetStepName() . "_$i";
 
-		$self->__GenerateSingle( $cpnSignleLayout, $srStep );
+		$self->__GenerateSingle( $cpnSignleLayout,  $layout->GetLayersLayout(), $srStep );
 
-		$self->{"couponStep"}->AddSRStep( $srStep, $leftMargin, $yCurrent, 0, 1, 1, 1, 1 );
+		my $p = $cpnSignleLayout->GetPosition();
 
-		$yCurrent += $cpnSignleLayout->GetHeight() + $self->{"settings"}->GetCouponSpace() / 1000;
+		$self->{"couponStep"}->AddSRStep( $srStep, $p->X(), $p->Y(), 0, 1, 1, 1, 1 );
+
 	}
 
 	# Process title
-	if ( $self->{"settings"}->GetTitle() ) {
+	if ( $layout->GetTitleLayout() ) {
 
 		my $tLayer = TitleLayer->new("c");
 
-		$tLayer->Init( $inCAM, $jobId, $layout->GetStepName(), $self->{"settings"} );
+		$tLayer->Init( $inCAM, $jobId, $layout->GetStepName() );
 		$tLayer->Build( $layout->GetTitleLayout() );
 
 		CamHelper->SetStep( $inCAM, $layout->GetStepName() );
 		CamLayer->WorkLayer( $inCAM, $tLayer->GetLayerName() );
 		$tLayer->Draw();
 
-		if ( $self->{"settings"}->GetTitleUnMask() ) {
+		if ( $layout->GetTitleLayout()->GetTitleUnMask() ) {
 
 			my $tLayer = TitleLayer->new("mc");
 
-			$tLayer->Init( $inCAM, $jobId, $layout->GetStepName(), $self->{"settings"} );
+			$tLayer->Init( $inCAM, $jobId, $layout->GetStepName() );
 			$tLayer->Build( $layout->GetTitleLayout() );
 
 			CamHelper->SetStep( $inCAM, $layout->GetStepName() );
@@ -130,7 +118,8 @@ sub Generate {
 
 sub __GenerateSingle {
 	my $self      = shift;
-	my $cpnLayout = shift;
+	my $cpnSingleLayout = shift;
+	my $layersLayout = shift;
 	my $stepName  = shift;
 
 	my $inCAM = $self->{"inCAM"};
@@ -151,14 +140,14 @@ sub __GenerateSingle {
 
 	# create profile
 	my %lb = ( "x" => 0, "y" => 0 );
-	my %rt = ( "x" => $cpnLayout->GetWidth(), "y" => $cpnLayout->GetHeight() );
+	my %rt = ( "x" => $cpnSingleLayout->GetWidth(), "y" => $cpnSingleLayout->GetHeight() );
 
 	CamStep->CreateProfileRect( $inCAM, $stepName, \%lb, \%rt );
 
 	# Process all microstrip layouts in single coupon
 	my @builders = ();
 
-	foreach my $stripLayout ( $cpnLayout->GetMicrostripLayouts() ) {
+	foreach my $stripLayout ( $cpnSingleLayout->GetMicrostripLayouts() ) {
 
 		# Init model builder
 		my $modelBuilder = undef;
@@ -178,9 +167,9 @@ sub __GenerateSingle {
 			  else { die "Microstirp model: " . $stripLayout->GetModel() . " is not implemented"; }
 		}
 
-		$modelBuilder->Init( $inCAM, $jobId, $stepName, $self->{"settings"} );
+		$modelBuilder->Init( $inCAM, $jobId, $stepName );
 
-		$modelBuilder->Build( $stripLayout, $cpnLayout->GetLayersLayout() );
+		$modelBuilder->Build( $stripLayout, $cpnSingleLayout, $layersLayout );
 
 		push( @builders, $modelBuilder );
 	}
@@ -199,12 +188,12 @@ sub __GenerateSingle {
 		}
 	}
 
-	if ( $self->{"settings"}->GetGuardTracks() ) {
+	if ( $cpnSingleLayout->GetGuardTracksLayout() ) {
 
-		foreach my $layout ( @{ $cpnLayout->GetGuardTracksLayout() } ) {
+		foreach my $layout ( @{ $cpnSingleLayout->GetGuardTracksLayout() } ) {
 
 			my $gtLayer = GuardTracksLayer->new( $layout->GetLayer() );
-			$gtLayer->Init( $inCAM, $jobId, $stepName, $self->{"settings"} );
+			$gtLayer->Init( $inCAM, $jobId, $stepName );
 			$gtLayer->Build($layout);
 
 			CamLayer->WorkLayer( $inCAM, $gtLayer->GetLayerName() );
@@ -217,13 +206,13 @@ sub __GenerateSingle {
 	# Proces text layout
 
 	# Shielding layout
-	if ( $cpnLayout->GetShieldingLayout() ) {
+	if ( $cpnSingleLayout->GetShieldingLayout() ) {
 
 		foreach my $l ( CamJob->GetSignalLayerNames( $inCAM, $jobId ) ) {
 
 			my $shieldingLayer = ShieldingLayer->new($l);
-			$shieldingLayer->Init( $inCAM, $jobId, $stepName, $self->{"settings"} );
-			$shieldingLayer->Build( $cpnLayout->GetShieldingLayout() );
+			$shieldingLayer->Init( $inCAM, $jobId, $stepName );
+			$shieldingLayer->Build( $cpnSingleLayout->GetShieldingLayout() );
 
 			CamLayer->WorkLayer( $inCAM, $shieldingLayer->GetLayerName() );
 			$shieldingLayer->Draw();
@@ -232,30 +221,29 @@ sub __GenerateSingle {
 	}
 
 	# Proces info text layout
-	if ( $cpnLayout->GetInfoTextLayout() ) {
+	if ( $cpnSingleLayout->GetInfoTextLayout() ) {
 
 		my $textLayer = InfoTextLayer->new("c");
-		$textLayer->Init( $inCAM, $jobId, $stepName, $self->{"settings"} );
-		$textLayer->Build( $cpnLayout->GetInfoTextLayout() );
+		$textLayer->Init( $inCAM, $jobId, $stepName );
+		$textLayer->Build( $cpnSingleLayout->GetInfoTextLayout() );
 
 		CamLayer->WorkLayer( $inCAM, $textLayer->GetLayerName() );
 		$textLayer->Draw();
 
-	}
+		# infot text unmask
+		if ( $cpnSingleLayout->GetInfoTextLayout()->GetInfoTextUnmask() ) {
 
-	# infot text unmask
-	if ( $self->{"settings"}->GetInfoTextUnmask() ) {
+			foreach my $l ( grep { $_ =~ /^m[cs]$/ } @layers ) {
 
-		foreach my $l ( grep { $_ =~ /^m[cs]$/ } @layers ) {
+				my $textMaskLayer = InfoTextMaskLayer->new($l);
+				$textMaskLayer->Init( $inCAM, $jobId, $stepName );
+				$textMaskLayer->Build( $cpnSingleLayout->GetInfoTextLayout() );
 
-			my $textMaskLayer = InfoTextMaskLayer->new($l);
-			$textMaskLayer->Init( $inCAM, $jobId, $stepName, $self->{"settings"} );
-			$textMaskLayer->Build( $cpnLayout->GetInfoTextLayout() );
+				CamLayer->WorkLayer( $inCAM, $textMaskLayer->GetLayerName() );
+				$textMaskLayer->Draw();
+			}
 
-			CamLayer->WorkLayer( $inCAM, $textMaskLayer->GetLayerName() );
-			$textMaskLayer->Draw();
 		}
-
 	}
 
 }
