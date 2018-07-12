@@ -847,10 +847,12 @@ sub __CheckMinAreaForTabs {
 sub _CheckCutomerNetlist {
 	my $jobId = shift;
 	
+		unless (HegMethods->GetIdcustomer($jobId) eq '05626') { # U multi pcb to neni potreba kontrolovat
 			$inCAM->INFO(units => 'mm', angle_direction => 'ccw', entity_type => 'netlist',entity_path => "$jobId/o+1/cadnet",data_type => 'EXISTS');
          			if ($inCAM->{doinfo}{gEXISTS} eq "yes") {
          					push @errorMessageArr , "- Byl nalezen netlist zakaznika, je nutne jej porovnat s nactenymi daty, vice informaci ve OneNotu pod NETLIST - porovnani zak.IPC";
 		 			}
+		}
 }
 
 
