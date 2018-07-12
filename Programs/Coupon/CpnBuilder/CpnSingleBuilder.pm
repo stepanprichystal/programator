@@ -131,7 +131,7 @@ sub Build {
 
 			if ( $textLayout->GetType() eq "right" ) {
 
-				my $x = $self->{"cpnSett"}->GetCpnSingleWidth() + $self->{"cpnSett"}->GetInfoTextRightCpnDist() / 1000;
+				my $x = $self->{"cpnSingleSett"}->GetCpnSingleWidth() + $self->{"cpnSett"}->GetInfoTextRightCpnDist() / 1000;
 				my $y = $self->{"cpnSett"}->GetCouponSingleMargin() / 1000;
 
 				# if coupon is heigher than text, center text vertically to single coupon
@@ -147,7 +147,7 @@ sub Build {
 				#compute
 				# align text to right
 				$p = Point->new(
-							   $self->{"cpnSett"}->GetCpnSingleWidth() - $textLayout->GetWidth() - $self->{"cpnSett"}->GetCouponSingleMargin() / 1000,
+							   $self->{"cpnSingleSett"}->GetCpnSingleWidth() - $textLayout->GetWidth() - $self->{"cpnSett"}->GetCouponSingleMargin() / 1000,
 							   $self->{"cpnSett"}->GetCouponSingleMargin() / 1000 + $activeArea{"h"} + $self->{"cpnSett"}->GetPadsTopTextDist() / 1000
 				);
 			}
@@ -165,7 +165,7 @@ sub Build {
 	# Build guard tracks
 	if ( $self->{"cpnSett"}->GetGuardTracks() ) {
 
-		my $gtBuilder = GuardTracksBuilder->new( $inCAM, $jobId );
+		my $gtBuilder = GuardTracksBuilder->new( $inCAM, $jobId, $self );
 		if ( $gtBuilder->Build( $self->{"singleCpnVar"}, $self->{"cpnSett"}, $errMess ) ) {
 
 			$self->{"layout"}->SetGuardTracksLayout( $gtBuilder->GetLayout() );
@@ -196,7 +196,7 @@ sub Build {
 	if ($result) {
 
 		# set width of strip line (include pads + cpn single margins)
-		$self->{"layout"}->SetCpnSingleWidth( $self->{"cpnSett"}->GetCpnSingleWidth() );
+		$self->{"layout"}->SetCpnSingleWidth( $self->{"cpnSingleSett"}->GetCpnSingleWidth() );
 
 		# build info about pad shapes and dimensions
 		$self->{"layout"}->SetPadGNDSymNeg( $self->{"cpnSingleSett"}->GetPadGNDSymNeg() );
@@ -207,6 +207,8 @@ sub Build {
 		$self->{"layout"}->SetPadGNDSym( $self->{"cpnSingleSett"}->GetPadGNDSym() );
 		$self->{"layout"}->SetPadTrackShape( $self->{"cpnSingleSett"}->GetPadTrackShape() );
 		$self->{"layout"}->SetPadDrillSize( $self->{"cpnSingleSett"}->GetPadDrillSize() );
+		
+		
 
 
 		# Set height of whole coupon
@@ -398,7 +400,7 @@ sub GetActiveArea {
 	$areaInfo{"pos"} = Point->new( $self->{"cpnSett"}->GetCouponSingleMargin() / 1000, $self->{"cpnSett"}->GetCouponSingleMargin() / 1000 );
 
 	# compute width
-	$areaInfo{"w"} = $self->{"cpnSett"}->GetCpnSingleWidth() - 2 * $self->{"cpnSett"}->GetCouponSingleMargin() / 1000;
+	$areaInfo{"w"} = $self->{"cpnSingleSett"}->GetCpnSingleWidth() - 2 * $self->{"cpnSett"}->GetCouponSingleMargin() / 1000;
 
 	# compute height
 	my $h = undef;

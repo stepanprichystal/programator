@@ -50,11 +50,11 @@ sub Build {
 
 		if ( $pad->GetType() eq Enums->Pad_GND ) {
 
-			$symClear = $cpnSingleLayout->GetPadGNDShape() . ( $cpnSingleLayout->GetPadGNDSize() + $self->{"settings"}->GetPadClearance() );
+			$symClear = $cpnSingleLayout->GetPadGNDShape() . ( $cpnSingleLayout->GetPadGNDSize() + $layout->GetPadClearance() );
 		}
 		else {
 
-			$symClear = $cpnSingleLayout->GetPadTrackShape() . ( $cpnSingleLayout->GetPadTrackSize() + $self->{"settings"}->GetPadClearance() );
+			$symClear = $cpnSingleLayout->GetPadTrackShape() . ( $cpnSingleLayout->GetPadTrackSize() + $layout->GetPadClearance() );
 		}
 
 		my $pad = PrimitivePad->new( $symClear, $pad->GetPoint() );

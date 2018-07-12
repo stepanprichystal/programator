@@ -34,7 +34,7 @@ sub new {
 
 	# properties of constrain
 	#pads, lines, coordinates
- 
+
 	return $self;
 }
 
@@ -44,15 +44,15 @@ sub Build {
 	my $cpnSett       = shift;
 	my $cpnSingleSett = shift;
 	my $errMess       = shift;
-	
+
 	my $cpnStripSett = $stripVariant->GetCpnStripSettings();
-	
-	$self->SUPER::Build($stripVariant, $cpnSett, $cpnSingleSett);
+
+	$self->SUPER::Build( $stripVariant, $cpnSett, $cpnSingleSett );
 
 	my $result = 1;
 
 	# Origin where strip pad shoul be start (contain position of left side on coupon. Right side is symetric)
-	my $origin = $self->{"cpnSingle"}->GetMicrostripOrigin($self->{"stripVariant"});
+	my $origin = $self->{"cpnSingle"}->GetMicrostripOrigin( $self->{"stripVariant"} );
 
 	# compute track dimension, pads
 
@@ -62,19 +62,19 @@ sub Build {
 
 	# set model
 
-	my $areaW    = $self->{"cpnSett"}->GetCpnSingleWidth();
-	my $margin  = $self->{"cpnSett"}->GetCouponSingleMargin()/1000;
+	my $areaW   = $self->{"cpnSingleSett"}->GetCpnSingleWidth();
+	my $margin  = $self->{"cpnSett"}->GetCouponSingleMargin() / 1000;
 	my $p2pDist = $self->{"cpnSingleSett"}->GetPad2PadDist() / 1000;    # mm
 
-	my $w = $self->_GetXmlConstr()->GetParamDouble("WB");          # width µm
+	my $w = $self->_GetXmlConstr()->GetParamDouble("WB");               # width µm
 
 	# track and GND pads are placed horizontally => 1 positions
 	if ( $self->{"cpnSingle"}->IsMultistrip() ) {
 
 		# Build track outer ---------------------------------
 
-		my $tOutOrigin;                                            # origin of track pad
-		my $gOutOrigin;                                            # origin of GND pad
+		my $tOutOrigin;                                                 # origin of track pad
+		my $gOutOrigin;                                                 # origin of GND pad
 		if ( $self->{"stripVariant"}->Pool() == 0 ) {
 
 			$tOutOrigin = Point->new( $origin->X(), $origin->Y() );
@@ -125,19 +125,19 @@ sub Build {
 		if ( $self->{"stripVariant"}->Pool() == 0 ) {
 
 			$tInOrigin = Point->new( $origin->X() + $self->{"cpnSingleSett"}->GetPad2PadDist() / 1000, $origin->Y() );
-			$gInOrigin =
-			  Point->new( $origin->X() + $self->{"cpnSingleSett"}->GetPad2PadDist() / 1000, $origin->Y() + $self->{"cpnSingleSett"}->GetPad2PadDist() / 1000 );
+			$gInOrigin = Point->new( $origin->X() + $self->{"cpnSingleSett"}->GetPad2PadDist() / 1000,
+									 $origin->Y() + $self->{"cpnSingleSett"}->GetPad2PadDist() / 1000 );
 		}
 		elsif ( $self->{"stripVariant"}->Pool() == 1 ) {
 
-			$tInOrigin =
-			  Point->new( $origin->X() + $self->{"cpnSingleSett"}->GetPad2PadDist() / 1000, $origin->Y() + $self->{"cpnSingleSett"}->GetPad2PadDist() / 1000 );
+			$tInOrigin = Point->new( $origin->X() + $self->{"cpnSingleSett"}->GetPad2PadDist() / 1000,
+									 $origin->Y() + $self->{"cpnSingleSett"}->GetPad2PadDist() / 1000 );
 			$gInOrigin = Point->new( $origin->X() + $self->{"cpnSingleSett"}->GetPad2PadDist() / 1000, $origin->Y() );
 		}
 
 		# build GND pad
 		$self->{"layout"}->AddPad(
-				   PadLayout->new( Point->new( $gInOrigin->X(), $gInOrigin->Y() ), Enums->Pad_GND, $self->{"cpnSingle"}->GetShareGNDLayers($self, 1) ) );
+			  PadLayout->new( Point->new( $gInOrigin->X(), $gInOrigin->Y() ), Enums->Pad_GND, $self->{"cpnSingle"}->GetShareGNDLayers( $self, 1 ) ) );
 
 		# build Track pad
 		$self->{"layout"}
@@ -172,8 +172,8 @@ sub Build {
 	else {
 
 		# Build track upper ---------------------------------
-		my $tUpperOrigin =
-		  Point->new( $origin->X() + $self->{"cpnSingleSett"}->GetPad2PadDist() / 1000, $origin->Y() + $self->{"cpnSingleSett"}->GetPad2PadDist() / 1000 );
+		my $tUpperOrigin = Point->new( $origin->X() + $self->{"cpnSingleSett"}->GetPad2PadDist() / 1000,
+									   $origin->Y() + $self->{"cpnSingleSett"}->GetPad2PadDist() / 1000 );
 		my $gUpperOrigin = Point->new( $origin->X(), $origin->Y() + $self->{"cpnSingleSett"}->GetPad2PadDist() / 1000 );
 
 		# build GND pad
@@ -229,8 +229,6 @@ sub Build {
 		$self->{"layout"}->AddTrack( TrackLayout->new( \@trackBot, $w ) );
 
 	}
-	
- 
 
 	return $result;
 }

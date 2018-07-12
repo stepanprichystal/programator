@@ -28,14 +28,15 @@ sub new {
 	$self->{"cpnSingleWidth"}    = undef;
 	$self->{"position"}          = undef;
 
-	$self->{"padGNDSymNeg"}     = undef;
-	$self->{"padTrackSize"}     = undef;
-	$self->{"padTrackSym"}      = undef;
-	$self->{"padGNDShape"}      = undef;
-	$self->{"padGNDSize"}       = undef;
-	$self->{"padGNDSym"}        = undef;
-	$self->{"padTrackShape"}    = undef;
-	$self->{"padDrillSize"}     = undef;
+	$self->{"padGNDSymNeg"}  = undef;
+	$self->{"padTrackSize"}  = undef;
+	$self->{"padTrackSym"}   = undef;
+	$self->{"padGNDShape"}   = undef;
+	$self->{"padGNDSize"}    = undef;
+	$self->{"padGNDSym"}     = undef;
+	$self->{"padTrackShape"} = undef;
+	$self->{"padDrillSize"}  = undef;
+
 
 	return $self;
 }
@@ -168,7 +169,7 @@ sub SetPadTrackSize {
 	my $self = shift;
 	my $val  = shift;
 
-	$self->{"padGNDSymNeg"} = $val;
+	$self->{"padTrackSize"} = $val;
 
 }
 
@@ -177,8 +178,6 @@ sub GetPadTrackSize {
 
 	return $self->{"padTrackSize"};
 }
-
-
 
 sub SetPadTrackSym {
 	my $self = shift;
@@ -263,6 +262,8 @@ sub GetPadDrillSize {
 
 	return $self->{"padDrillSize"};
 }
+
+
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

@@ -39,11 +39,14 @@ sub new {
 	$self->{"jobId"} = shift;
 
 	$self->{"layout"} = {};
-	;    # Layout of one single coupon
+	# Layout of one single coupon
 	$self->{"build"} = 0;    # indicator if layout was built
 
 	# Settings references
 	$self->{"cpnSett"} = undef;    # global settings for generating coupon
+	
+	# Other properties
+ 
 
 	return $self;
 }
@@ -63,7 +66,7 @@ sub Build {
 
 	my $stackup;
 
-	if ( $self->{"layerCnt"} > 2 ) {
+	if ( CamJob->GetSignalLayerCnt($inCAM, $jobId) > 2 ) {
 		$stackup = Stackup->new($jobId);
 	}
 

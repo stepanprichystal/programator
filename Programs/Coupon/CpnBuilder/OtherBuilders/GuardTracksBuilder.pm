@@ -36,6 +36,7 @@ sub new {
  
 	$self->{"inCAM"} = shift;
 	$self->{"jobId"} = shift;
+	$self->{"cpnSingle"} = shift;
 
 	$self->{"layout"}       = [] ;    # Layout of one single coupon
 	$self->{"build"}        = 0;                        # indicator if layout was built
@@ -48,6 +49,7 @@ sub new {
 
 	# Other properties
 	$self->{"layerCnt"} = CamJob->GetSignalLayerCnt( $self->{"inCAM"}, $self->{"jobId"} );
+	
 	
 	return $self;
 }
@@ -235,7 +237,7 @@ sub __GetGuardAreas {
 		my $endPos =
 		  $oriLast->X() +
 		  $self->{"cpnSingleSett"}->GetPad2PadDist() / 1000 * ( $posXCnt - 1 ) +
-		  $self->{"cpnSingleSett"}-$self->{"cpnSingleSett"} / 1000 / 2 +
+		  $self->{"cpnSingleSett"}->GetPadTrackSize() / 1000 / 2 +
 		  $self->{"cpnSett"}->GetGuardTrack2PadDist()/1000 +
 		  $self->{"cpnSett"}->GetGuardTrackWidth() / 1000 / 2;
 
@@ -380,7 +382,7 @@ sub __GetGuardAreas {
 			my $breakLine = splice @breakLines, $minIdx, 1;
 			my $yE        = $breakLine;
 			my $xS        = $intervals->lookup($yE);
-			my $xE        = $self->{"cpnSett"}->GetCpnSingleWidth() - $xS;
+			my $xE        = $self->{"cpnSingleSett"}->GetCpnSingleWidth() - $xS;
 
 			if ( $yS < $yE ) {
 
@@ -409,7 +411,7 @@ sub __GetGuardAreas {
 		# get origin of last strip in current pool
 
 		my $xS = $intervals->lookup($yE);
-		my $xE = $self->{"cpnSett"}->GetCpnSingleWidth() - $xS;
+		my $xE = $self->{"cpnSingleSett"}->GetCpnSingleWidth() - $xS;
 
 		# if box has non zero height
 		if ( $yS < $yE ) {
@@ -438,7 +440,7 @@ sub __GetGuardAreas {
 		# add last box (from last top track to top border of single cpn)
 		my %boxLim = ( "breakLine" => 0 );
 		$boxLim{"xMin"} = $intervals->lookup($yE);
-		$boxLim{"xMax"} = $self->{"cpnSett"}->GetCpnSingleWidth() - $intervals->lookup($yE);
+		$boxLim{"xMax"} = $self->{"cpnSingleSett"}->GetCpnSingleWidth() - $intervals->lookup($yE);
 		$boxLim{"yMin"} = $yS;
 		$boxLim{"yMax"} = $yE;
 

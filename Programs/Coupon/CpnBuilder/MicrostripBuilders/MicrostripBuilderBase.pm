@@ -61,16 +61,6 @@ sub Init {
 
 	$self->{"activeArea"} = \%activeArea;
 
-	my $xmlConstr = $self->_GetXmlConstr();
-
-	# Set microstrip layout properties common for all microstrip types
-
-	$self->{"layout"}->SetModel( $xmlConstr->GetModel() );    # model
-
-	$self->{"layout"}->SetTrackLayer( Helper->GetInCAMLayer( $xmlConstr->GetOption("TRACE_LAYER"), $self->{"layerCnt"} ) );    #
-	$self->{"layout"}->SetTopRefLayer( Helper->GetInCAMLayer( $xmlConstr->GetOption("TOP_MODEL_LAYER"),    $self->{"layerCnt"} ) );    #
-	$self->{"layout"}->SetBotRefLayer( Helper->GetInCAMLayer( $xmlConstr->GetOption("BOTTOM_MODEL_LAYER"), $self->{"layerCnt"} ) );    #
-
 }
 
 sub Build {
@@ -82,12 +72,20 @@ sub Build {
 	$self->{"stripVariant"}  = $stripVariant;
 	$self->{"cpnSett"}       = $cpnSett;
 	$self->{"cpnSingleSett"} = $cpnSingleSett;
-	
+
 	my $cpnStripSett = $stripVariant->GetCpnStripSettings();
 
 	# build common settings for all st
-	$self->{"layout"}->SetTrackToCopper($cpnStripSett->GetTrackToCopper());
+	$self->{"layout"}->SetTrackToCopper( $cpnStripSett->GetTrackToCopper() );
 	$self->{"layout"}->SetPad2GND( $cpnStripSett->GetPad2GND() );
+	$self->{"layout"}->SetPadClearance( $cpnStripSett->GetPadClearance() );
+
+	my $xmlConstr = $self->_GetXmlConstr();
+
+	$self->{"layout"}->SetModel( $xmlConstr->GetModel() );    # model
+	$self->{"layout"}->SetTrackLayer( Helper->GetInCAMLayer( $xmlConstr->GetOption("TRACE_LAYER"), $self->{"layerCnt"} ) );    #
+	$self->{"layout"}->SetTopRefLayer( Helper->GetInCAMLayer( $xmlConstr->GetOption("TOP_MODEL_LAYER"),    $self->{"layerCnt"} ) ); #
+	$self->{"layout"}->SetBotRefLayer( Helper->GetInCAMLayer( $xmlConstr->GetOption("BOTTOM_MODEL_LAYER"), $self->{"layerCnt"} ) ); #
 
 }
 
@@ -145,6 +143,7 @@ sub _GetPadText {
 	$padTextLayout->SetPadTextHeight( $self->{"cpnSett"}->GetPadTextHeight() );
 	$padTextLayout->SetPadTextWidth( $self->{"cpnSett"}->GetPadTextWidth() );
 	$padTextLayout->SetPadTextWeight( $self->{"cpnSett"}->GetPadTextWeight() );
+	$padTextLayout->SetPadTextUnmask( $self->{"cpnSett"}->GetPadTextUnmask() );
 
 	return $padTextLayout;
 
@@ -161,7 +160,7 @@ sub _GetSEStraightTrack {
 	my $origin = shift;
 
 	my @track          = ();
-	my $cpnSingleWidth = $self->{"cpnSett"}->GetCpnSingleWidth();
+	my $cpnSingleWidth = $self->{"cpnSingleSett"}->GetCpnSingleWidth();
 
 	# start point
 	push( @track, Point->new( $origin->X(), $origin->Y() ) );
@@ -189,13 +188,13 @@ sub _GetSingleDIFFTrack {
 
 	my $yTrackDir = ( $type eq "upper" ? -1 : 1 );
 
-	my $p2pDist = $self->{"cpnSett"}->GetTrackPad2TrackPad() / 1000;
+	my $p2pDist = $self->{"cpnSingleSett"}->GetTrackPad2TrackPad() / 1000;
 
 	my $xmlConstr = $self->{"stripVariant"}->Data()->{"xmlConstraint"};
 	my $w         = $xmlConstr->GetParamDouble("WB") / 1000;              # track width in mm
 	my $s         = $xmlConstr->GetParamDouble("S") / 1000;               # track space in mm
 
-	my $cpnSingleWidth = $self->{"cpnSett"}->GetCpnSingleWidth();
+	my $cpnSingleWidth = $self->{"cpnSingleSett"}->GetCpnSingleWidth();
 
 	# Outer track
 	my @track = ();
@@ -233,7 +232,7 @@ sub _GetMultistripSETrack {
 
 	my @track = ();
 
-	my $cpnSingleWidth = $self->{"cpnSett"}->GetCpnSingleWidth();
+	my $cpnSingleWidth = $self->{"cpnSingleSett"}->GetCpnSingleWidth();
 
 	if ( $self->{"stripVariant"}->Route() eq Enums->Route_STREIGHT ) {
 
@@ -282,7 +281,7 @@ sub _GetMultistripDIFFTrackOuter {
 	my $w         = $xmlConstr->GetParamDouble("WB") / 1000;              # track width in mm
 	my $s         = $xmlConstr->GetParamDouble("S") / 1000;               # track space in mm
 
-	my $cpnSingleWidth = $self->{"cpnSett"}->GetCpnSingleWidth();
+	my $cpnSingleWidth = $self->{"cpnSingleSett"}->GetCpnSingleWidth();
 
 	# Outer track
 	my @track = ();
@@ -321,13 +320,13 @@ sub _GetMultistripDIFFTrackInner {
 
 	my $yTrackDir = $self->{"stripVariant"}->Route() eq Enums->Route_ABOVE ? 1 : -1;
 
-	my $p2pDist = $self->{"cpnSett"}->GetTrackPad2TrackPad() / 1000;    # in mm
+	my $p2pDist = $self->{"cpnSingleSett"}->GetTrackPad2TrackPad() / 1000;    # in mm
 
 	my $xmlConstr = $self->{"stripVariant"}->Data()->{"xmlConstraint"};
 	my $w         = $xmlConstr->GetParamDouble("WB") / 1000;              # track width in mm
 	my $s         = $xmlConstr->GetParamDouble("S") / 1000;               # track space in mm
 
-	my $cpnSingleWidth = $self->{"cpnSett"}->GetCpnSingleWidth();
+	my $cpnSingleWidth = $self->{"cpnSingleSett"}->GetCpnSingleWidth();
 
 	# Outer track
 	my @track = ();

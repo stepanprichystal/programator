@@ -22,6 +22,7 @@ use aliased 'Programs::Coupon::CpnBuilder::CpnSingleBuilder';
 use aliased 'Programs::Coupon::CpnBuilder::OtherBuilders::TitleBuilder';
 use aliased 'Packages::CAM::SymbolDrawing::Point';
 use aliased 'Programs::Coupon::CpnBuilder::CpnLayout::CpnLayout';
+use aliased 'Programs::Coupon::CpnBuilder::OtherBuilders::CpnLayerBuilder';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -89,7 +90,7 @@ sub Build {
 		my $h = ( scalar( @{ $self->{"couponsSingle"} } ) - 1 ) * $self->{"cpnSett"}->GetCouponSpace() / 1000;
 		$h += $_->GetHeight() foreach $self->{"layout"}->GetCouponsSingle();
 
-		my $tBuilder = TitleBuilder->new( $inCAM, $jobId, $cpnVariant, $h );
+		my $tBuilder = TitleBuilder->new( $inCAM, $jobId, $h );
 		if ( $tBuilder->Build( $cpnVariant, $self->{"cpnSett"}, $errMess ) ) {
 
 			$self->{"layout"}->SetTitleLayout( $tBuilder->GetLayout() );
@@ -144,7 +145,7 @@ sub Build {
 		# Build layer information
 
 		my $lBuilder = CpnLayerBuilder->new( $inCAM, $jobId );
-		if ( $lBuilder->Build(  $self->{"cpnSett"}, $errMess ) ) {
+		if ( $lBuilder->Build( $self->{"cpnSett"}, $errMess ) ) {
 
 			$self->{"layout"}->SetLayersLayout( $lBuilder->GetLayout() );
 		}
@@ -178,8 +179,7 @@ sub GetLayout {
 
 sub GetCpnArea {
 	my $self = shift;
-
-	die "Cpn is not builded." if ( !$self->{"build"} );
+ 
 
 	my %areaInfo = ( "w" => undef, "h" => undef );
 
@@ -241,140 +241,48 @@ sub __CheckLayerNames {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	#	use aliased 'Packages::InCAM::InCAM';
-	#	use aliased 'Programs::Coupon::CpnBuilder::CpnBuilder';
-	#	use aliased 'Programs::Coupon::CpnSettings::CpnSettings';
-	#	use aliased 'Programs::Coupon::CpnSource::CpnSource';
-	#	use aliased 'Programs::Coupon::CpnBuilder::BuildParams';
-	#	use aliased 'Programs::Coupon::CpnGenerator::CpnGenerator';
-	#	use aliased 'Programs::Coupon::CpnPolicy::GroupPolicy';
-	#	use aliased 'Programs::Coupon::CpnPolicy::LayoutPolicy';
-	#	use aliased 'Programs::Coupon::CpnPolicy::SortPolicy';
-	#
-	#	my $inCAM = InCAM->new();
-	#	my $jobId = "d152456";
-	#
-	#	my $p         = 'c:\Export\CouponExport\cpn.xml';
-	#	my $cpnSource = CpnSource->new($p);
-	#	my $cpnSett   = CpnSettings->new();
-	#	$cpnSett->{"sett"}->{"trackPadIsolation"} = 200;
-	#	my $builder = CpnBuilder->new( $inCAM, $jobId, $cpnSource, $cpnSett );
-	#
-	#	# generate groups, choose one variant
-	#
-	#	my @layers = map { $_->{"NAME"} } $cpnSource->GetCopperLayers();
-	#
-	#	# Group policy
-	#
-	#	# Return structure => Array of groups combinations
-	#	# Each combination contain groups,
-	#	# Each group contain strips
-	#	my $groupPolicy = GroupPolicy->new( $cpnSource, $cpnSett->GetMaxTrackCnt() );
-	#
-	#	#my @filter = (1); # below + above lines
-	#	#my @filter = (1); # below + above lines
-	#	my @filter = ( 1, 3, 7, 8, 27, 28 );    # below + above lines
-	#	                                        #my @filter = (26);
-	#
-	#	my @groupsComb = $groupPolicy->GenerateGroups( \@filter );
-	#
-	#	# Generate structure => Arraz of group combination
-	#	# Each combination contain groups,
-	#	# Each group contain pools
-	#	# Each pool contain strips
-	#	my @groupsPoolComb = ();
-	#
-	#	foreach my $comb (@groupsComb) {
-	#
-	#		my $combPools = [];
-	#
-	#		if ( $groupPolicy->VerifyGroupComb( $comb, $cpnSett->GetPoolCnt(), $cpnSett->GetMaxStripsCntH(), $combPools ) ) {
-	#
-	#			push( @groupsPoolComb, $combPools );
-	#		}
-	#	}
-	#
-	#	print STDERR "\n\n--- Combination after generate pool groups: " . scalar(@groupsPoolComb) . " \n";
-	#
-	#	# Generate structure => Array of CpnVariant strutures
-	#	$self->{"maxTrackCnt"}       = shift;
-	#	$self->{"shareGNDPads"}      = shift;
-	#	$self->{"trackPadIsolation"} = shift;
-	#	$self->{"routeBetween"}      = shift;
-	#	$self->{"routeAbove"}        = shift;
-	#	$self->{"routeBelow"}        = shift;
-	#	$self->{"routeStreight"}     = shift;
-	#
-	#	$self->{"groupSett"} = shift;
-	#
-	#	my $layoutPolicy = LayoutPolicy->new(
-	#		\@layers,
-	#		$cpnSett->GetMaxTrackCnt(),
-	#		$cpnSett->GetShareGNDPads(),
-	#		$cpnSett->GetTrackPadIsolation(),
-	#		$cpnSett->GetRouteBetween(),
-	#		$cpnSett->GetRouteAbove(),
-	#		$cpnSett->GetRouteBelow(),
-	#		$cpnSett->GetRouteStraight()
-	#
-	#	);
-	#
-	#	$layoutPolicy->AddGroupSettings(
-	#
-	#		$cpnSett->GetPoolCnt(),
-	#		,
-	#		$cpnSett->GetTrackPad2GNDPad(),
-	#		$cpnSett->GetPadTrackSize(), $cpnSett->GetPadGNDSize()
-	#	  )
-	#
-	#	  my @variants = ();
-	#
-	#	my $idx = 0;
-	#
-	#	#my @test = ($groupsPoolComb[0]);
-	#	#@groupsPoolComb = $groupsPoolComb[-1];
-	#	foreach my $comb (@groupsPoolComb) {
-	#
-	#		my $cpnVariant = $layoutPolicy->GetStripLayoutVariants($comb);
-	#
-	#		if ( defined $cpnVariant ) {
-	#			push( @variants, $cpnVariant );
-	#		}
-	#	}
-	#
-	#	unless ( scalar(@variants) ) {
-	#
-	#		die "No combination is possible";
-	#	}
-	#
-	#	# Sort policy
-	#
-	#	my $sortPolicy   = SortPolicy->new();
-	#	my @sortVariants = $sortPolicy->SortVariants( \@variants );
-	#
-	#	my $v = $sortVariants[0];
-	#
-	#	print STDERR "Choosed variant:\n\n" . $v;
-	#
-	#	#	my $g = $groupsComb[0];    # take first comb
-	#	#
-	#	#	unless ( $groupPolicy->GroupCombExists( \@filter, $g ) ) {
-	#	#		die "group doesn 't exist";
-	#	#	}
-	#
-	#	#my $buildParams = BuildParams->new( scalar( $cpnSource->GetConstraints() ) );
-	#	my $buildParams = BuildParams->new($v);
-	#
-	#	my $errMess = "";
-	#	my $res = $builder->Build(  $buildParams, \$errMess, );
-	#	print STDERR "Build: $res\n";
-	#
-	#	my $generator = CpnGenerator->new( $inCAM, $jobId, $cpnSett );
-	#
-	#	$inCAM->SetDisplay(0);
-	#	$generator->Generate( $builder->GetLayout() );
-	#	$inCAM->SetDisplay(1);
+	use aliased 'Packages::InCAM::InCAM';
+	use aliased 'Programs::Coupon::CpnBuilder::CpnBuilder';
+	use aliased 'Programs::Coupon::CpnSettings::CpnSettings';
+	use aliased 'Programs::Coupon::CpnSource::CpnSource';
+	use aliased 'Programs::Coupon::CpnBuilder::BuildParams';
+	use aliased 'Programs::Coupon::CpnGenerator::CpnGenerator';
+	use aliased 'Programs::Coupon::CpnPolicy::GroupPolicy';
+	use aliased 'Programs::Coupon::CpnPolicy::LayoutPolicy';
+	use aliased 'Programs::Coupon::CpnPolicy::SortPolicy';
+	use aliased 'Programs::Coupon::CpnWizard::WizardCore::Helper';
 
+	my $inCAM = InCAM->new();
+	my $jobId = "d152456";
+
+	my $p         = 'c:\Export\CouponExport\cpn.xml';
+	my $cpnSource = CpnSource->new($p);
+	my $cpnSett   = CpnSettings->new();
+	$cpnSett->{"sett"}->{"trackPadIsolation"} = 200;
+	 
+
+	my $variant = Helper->GetBestGroupCombination( $cpnSource, [ 1, 2, 3, 4, 7, 8,9], $cpnSett );
+	
+	die "variant is not found" unless($variant);
+	
+	print $variant;
+	
+	my $mess = "";
+	my $builder = CpnBuilder->new($inCAM, $jobId, $cpnSource);
+	if($builder->Build($variant, \$mess)){
+		my $layout = $builder->GetLayout();
+	
+	
+		my $generator = CpnGenerator->new($inCAM, $jobId);
+		
+		$inCAM->SetDisplay(0);
+		
+		$generator->Generate($layout);
+		
+		$inCAM->SetDisplay(1);
+		 
+	}
+	
 }
 
 1;

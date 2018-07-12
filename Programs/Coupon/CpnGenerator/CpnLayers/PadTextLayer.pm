@@ -77,9 +77,9 @@ sub Build {
 			my $pText = PrimitiveText->new(
 											$padText->GetText(),
 											( $layerLayout->GetMirror() ? $padText->GetPositionMirror() : $padText->GetPosition() ),
-											$layout->GetPadTextHeight() / 1000,
-											$layout->GetPadTextWidth() / 1000,
-											$layout->GetPadTextWeight() / 1000,
+											$padText->GetPadTextHeight() / 1000,
+											$padText->GetPadTextWidth() / 1000,
+											$padText->GetPadTextWeight() / 1000,
 											( $layerLayout->GetMirror() ? 1 : 0 )
 			);
 

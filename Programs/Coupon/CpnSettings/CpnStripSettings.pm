@@ -45,6 +45,13 @@ sub GetTrackToCopper {
 }
 
 
+sub GetPadClearance {
+	my $self = shift;
+
+	return $self->_GetVal("padClearance");
+
+}
+
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

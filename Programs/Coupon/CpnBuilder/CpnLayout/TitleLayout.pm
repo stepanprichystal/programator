@@ -182,31 +182,6 @@ sub GetTitleTextWeight {
 	return $self->{"titleTextWeight"};
 }
 
-sub SetTitleTextWeight {
-	my $self = shift;
-	my $val  = shift;
-
-	$self->{"titleTextWeight"} = $val;
-}
-
-sub GetTitleTextWeight {
-	my $self = shift;
-
-	return $self->{"titleTextWeight"};
-}
-
-sub SetTitleTextWeight {
-	my $self = shift;
-	my $val  = shift;
-
-	$self->{"titleTextWeight"} = $val;
-}
-
-sub GetTitleTextWeight {
-	my $self = shift;
-
-	return $self->{"titleTextWeight"};
-}
 
 sub SetLogoHeight {
 	my $self = shift;

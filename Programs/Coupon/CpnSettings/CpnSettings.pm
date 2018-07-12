@@ -93,12 +93,7 @@ sub GetXmlUnits {
 }
 
 
-sub GetPadClearance {
-	my $self = shift;
 
-	return $self->_GetVal("padClearance");
-
-}
 
 
 sub GetMaxTrackCnt {

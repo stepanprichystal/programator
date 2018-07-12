@@ -42,15 +42,16 @@ sub Build {
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
 
-	return if ( !$self->{"settings"}->GetPadTextUnmask );
-
+ 
 	foreach my $pad ( $layout->GetPads() ) {
 
-		if ( $pad->GetType() eq Enums->Pad_TRACK && $self->{"settings"}->GetPadText() ) {
+		if ( $pad->GetType() eq Enums->Pad_TRACK) {
 
 			my $padText = $pad->GetPadText();
 
-			return unless ( defined $padText );    # only multistrips has texts
+			next unless ( defined $padText );    # only multistrips has texts
+
+			next if($padText->GetPadTextUnmask());
 
 			my $pText = PrimitiveText->new(
 											$padText->GetText(),

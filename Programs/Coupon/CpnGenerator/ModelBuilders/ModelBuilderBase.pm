@@ -23,7 +23,6 @@ sub new {
 	$self->{"inCAM"}    = undef;
 	$self->{"jobId"}    = undef;
 	$self->{"step"}     = undef;
-	$self->{"settings"} = undef;
 
 	#require rows in nif section
 	$self->{"layers"} = [];
@@ -37,7 +36,6 @@ sub Init {
 	$self->{"inCAM"}    = shift;
 	$self->{"jobId"}    = shift;
 	$self->{"step"}     = shift;
-	$self->{"settings"} = shift;
 
 }
 
@@ -68,7 +66,7 @@ sub _Build {
 		
 		
 
-		$layer->Init( $self->{"inCAM"}, $self->{"jobId"}, $self->{"step"}, $self->{"settings"}, $layout );
+		$layer->Init( $self->{"inCAM"}, $self->{"jobId"}, $self->{"step"}, $layout );
 		$layer->Build($layout, $cpnSingleLayout, $layersLayout->{$layer->GetLayerName()});
 	}
 }

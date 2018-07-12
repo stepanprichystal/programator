@@ -37,9 +37,8 @@ sub SetCpnSettings {
 
 sub GetCpnSettings{
 	my $self = shift;
-	my $sett = shift;
 
-	$self->{"settings"} = $sett;	
+	return $self->{"settings"};	
 }
 
 sub AddCpnSingle {

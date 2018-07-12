@@ -19,7 +19,6 @@ use aliased 'Programs::Coupon::Enums';
 use aliased 'CamHelpers::CamStep';
 use aliased 'CamHelpers::CamHelper';
 use aliased 'Packages::CAM::SymbolDrawing::Point';
-use aliased 'Programs::Coupon::CpnBuilder::CpnLayout::TitleTextLayout';
 use aliased 'Programs::Coupon::CpnBuilder::CpnLayout::TitleLayout';
 
 #-------------------------------------------------------------------------------------------#
@@ -85,7 +84,7 @@ sub Build {
 
 	my $rowCnt = 1;
 
-	if ( $type eq "left" && $totalWidth / 1000 > $self->{"cpnsSingleHeight"} ) {
+	if ( $type eq "left" && ($totalWidth / 1000) > $self->{"cpnsSingleHeight"} ) {
 		$rowCnt = 2;
 	}
 

@@ -43,9 +43,8 @@ sub SetCpnStripSettings {
 
 sub GetCpnStripSettings{
 	my $self = shift;
-	my $sett = shift;
 
-	$self->{"settings"} = $sett;	
+	return $self->{"settings"};	
 }
 sub Id {
 	my $self = shift;

@@ -54,10 +54,10 @@ sub Build {
 	# add "break line" before GND filling which prevent to fill area where is place info text
 	my %lim = CamJob->GetProfileLimits2( $inCAM, $jobId, $step );
 
-	if ( $layout->GetCpnSingleWidth() < $lim{"xMax"} ) {
+	if ( $cpnSingleLayout->GetCpnSingleWidth() < $lim{"xMax"} ) {
 		my @coord = ();
-		push( @coord, Point->new( $layout->GetCpnSingleWidth(), 0 ) );
-		push( @coord, Point->new( $layout->GetCpnSingleWidth(), $lim{"yMax"} ) );
+		push( @coord, Point->new( $cpnSingleLayout->GetCpnSingleWidth(), 0 ) );
+		push( @coord, Point->new( $cpnSingleLayout->GetCpnSingleWidth(), $lim{"yMax"} ) );
 		push( @coord, Point->new( $lim{"xMax"},                             $lim{"yMax"} ) );
 		push( @coord, Point->new( $lim{"xMax"},                             0 ) );
 

@@ -49,9 +49,7 @@ sub SetCpnSingleSettings {
 
 sub GetCpnSingleSettings{
 	my $self = shift;
-	my $sett = shift;
-
-	$self->{"settings"} = $sett;	
+	return $self->{"settings"};	
 }
 
 sub AddPool {

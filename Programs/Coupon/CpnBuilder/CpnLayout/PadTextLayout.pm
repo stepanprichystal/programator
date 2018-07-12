@@ -31,7 +31,7 @@ sub new {
  	 $self->{"padTextHeight"} = undef;
  	 $self->{"padTextWidth"} = undef;
  	 $self->{"padTextWeight"} = undef;
- 	 
+ 	 $self->{"padTextUnmask"} = undef;
  
 	return $self;
  
@@ -177,6 +177,21 @@ sub GetPadTextWeight {
 
 	return $self->{"padTextWeight"};
 }
+
+sub SetPadTextUnmask {
+	my $self = shift;
+	my $val = shift;
+
+	$self->{"padTextUnmask"} = $val;
+}
+
+sub GetPadTextUnmask {
+	my $self = shift;
+
+	return $self->{"padTextUnmask"};
+}
+
+
  
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

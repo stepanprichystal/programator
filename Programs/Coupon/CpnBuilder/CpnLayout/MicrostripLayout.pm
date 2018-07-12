@@ -36,6 +36,9 @@ sub new {
 	$self->{"trackToCopper"} = undef;
 	$self->{"pad2GNDClearance"} = undef;
 	
+	$self->{"padClearance"} = undef;
+	
+	
 	$self->{"coplanar"} = 0;
 
 	return $self;
@@ -162,6 +165,20 @@ sub GetPad2GND {
 	my $self = shift;
 
 	return $self->{"pad2GNDClearance"};
+}
+
+sub SetPadClearance {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->{"padClearance"} = $val;
+
+}
+
+sub GetPadClearance {
+	my $self = shift;
+
+	return $self->{"padClearance"};
 }
 
 #-------------------------------------------------------------------------------------------#
