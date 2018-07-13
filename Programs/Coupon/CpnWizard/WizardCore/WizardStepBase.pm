@@ -25,18 +25,27 @@ sub new {
 
 	$self->{"stepNumber"} = shift;
 	$self->{"title"}      = shift;
-	$self->{"inCAM"}      = shift;
-	$self->{"jobId"}      = shift;
-
+ 
 	# common data structurews for all steps
+	$self->{"cpnSource"}  = undef;
+	$self->{"userFilter"} = undef;
+	$self->{"userGroups"} = undef;
+	$self->{"globalSett"} = undef;
+
+	# next step build by current step
+	$self->{"nextStep"} = undef;
+
+	return $self;
+}
+
+sub Init{
+	my $self = shift;
+	$self->{"inCAM"} = shift;
+	$self->{"jobId"} = shift;
 	$self->{"cpnSource"}  = shift;
 	$self->{"userFilter"} = shift;
 	$self->{"userGroups"} = shift;
 	$self->{"globalSett"} = shift;
-
-	$self->{"nextStep"} = undef;
-
-	return $self;
 }
 
 sub GetNextStep {
@@ -99,6 +108,8 @@ sub UpdateConstrGroup {
 	$self->{"userGroups"}->{$constrId} = $groupVal;
 
 }
+
+
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

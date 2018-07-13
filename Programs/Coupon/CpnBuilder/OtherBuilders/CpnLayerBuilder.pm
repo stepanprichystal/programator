@@ -71,14 +71,17 @@ sub Build {
 	}
 
 	my @layers = map { $_->{"gROWname"} } CamJob->GetBoardBaseLayers( $inCAM, $jobId );    # silks, mask, signal
+	push(@layers, "m");
 
 	foreach my $l (@layers) {
 
 		my $lLayout = LayerLayout->new($l);
 
 		# Set mirror
-
-		if ( $l =~ /^[mp]?c$/ ) {
+		if ( $l =~ /^m$/ ) {
+			$lLayout->SetMirror(0);
+		}
+		elsif ( $l =~ /^[mp]?c$/ ) {
 			$lLayout->SetMirror(0);
 
 		}

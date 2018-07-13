@@ -141,6 +141,12 @@ sub GetType{
 	return $self->{"data"}->{"type"};
 }
 
+sub GetModel{
+	my $self = shift;
+	
+	return $self->{"data"}->{"xmlConstraint"}->GetModel();
+}
+
 
 
 sub stringify {

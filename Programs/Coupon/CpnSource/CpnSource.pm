@@ -10,7 +10,7 @@ use strict;
 use warnings;
 
 #local library
-use XML::LibXML;
+use XML::LibXML qw(:threads_shared);
 use aliased 'Programs::Coupon::CpnSource::Constraint';
 
 #-------------------------------------------------------------------------------------------#
@@ -34,7 +34,8 @@ sub GetConstraint {
 	my $self = shift;
 	my $id   = shift;
 
-	return ( $self->GetConstraints() )[$id];
+	return (grep { $_->GetId() == $id } $self->GetConstraints())[0];
+
 
 }
 

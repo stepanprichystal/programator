@@ -107,9 +107,7 @@ sub Update {
 	my $self       = shift;
 	my $wizardStep = shift;
 
-	unless ( defined $self->{"coreWizardStep"} ) {
-		$self->{"coreWizardStep"} = $wizardStep;
-	}
+	$self->{"coreWizardStep"} = $wizardStep; # Update current step wizard
 
 	my @constr       = $self->{"coreWizardStep"}->GetConstraints();
 	my $constrGroup  = $self->{"coreWizardStep"}->GetConstrGroups();

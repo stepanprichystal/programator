@@ -24,9 +24,9 @@ twoEndedDesign = 1
 
 
 # pool settings
-maxTrackCnt = 6 # two track per measurement layer in group
-poolCnt = 2
-maxStripsCntH = 40
+maxTrackCnt = 1 # two track per measurement layer in group
+poolCnt = 1
+maxStripsCntH = 1
 shareGNDPads = 1
 routeBetween = 1
 routeBelow = 1

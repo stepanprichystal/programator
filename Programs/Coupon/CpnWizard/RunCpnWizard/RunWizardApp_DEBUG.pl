@@ -28,5 +28,9 @@ $app->Run();
 
 $launcher->GetInCAM()->CloseServer();
 
+my $pom = 0;
+
+#Error during generating coupon
+
 
 

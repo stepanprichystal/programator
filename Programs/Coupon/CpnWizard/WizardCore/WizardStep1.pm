@@ -29,12 +29,11 @@ use aliased 'Programs::Coupon::CpnPolicy::GroupPolicy';
 
 sub new {
 	my $class = shift;
-	
+
 	my $stepId = 1;
-	my $title = "Select microstrips, generate groups";
-	
-	
-	my $self = $class->SUPER::new( $stepId, $title, @_ );
+	my $title  = "Select microstrips, generate groups";
+
+	my $self = $class->SUPER::new( $stepId, $title );
 	bless $self;
 
 	# data model for step class
@@ -45,11 +44,7 @@ sub new {
 sub Load {
 	my $self = shift;
 
-	 
-
 	# Generate default group combination
-
-	#my $cpnVariant = Helper->GetBestGroupCombination( $self->{"cpnSource"}, $self->{"filter"}, $self->{"cpnSett"} );
 
 	# Get groups from cpn variant
 	my $defGroupComb = [];
@@ -57,26 +52,6 @@ sub Load {
 	my @allConstr = $self->{"cpnSource"}->GetConstraints();
 
 	push( @{$defGroupComb}, \@allConstr );
-
-	#	foreach my $singlCpn ( $cpnVariant->GetSingleCpns() ) {
-	#
-	#		my @xmlConstr = map { $_->Data()->{"xmlConstraint"} } $singlCpn->GetAllStrips();
-	#		push( @{$defGroupComb}, \@xmlConstr );
-	#	}
-
-	#	my $groupPolicy = GroupPolicy->new( $self->{"cpnSource"}, $self->{"cpnSett"}->GetMaxTrackCnt() );
-	#
-	#	$self->{"groupComb"} = $groupPolicy->GenerateGroupComb($defGroupComb);
-	#
-	#	for ( my $i = 0 ; $i < scalar( @{ $self->{"groupComb"} } ) ; $i++ ) {
-	#
-	#		foreach my $s ( @{ $self->{"groupComb"}->[$i] } ) {
-	#
-	#			$self->{"constrGroup"}->{$s->{"id"}} = $i + 1;
-	#		}
-	#	}
-
-	# Init default groups for all constraint
 
 }
 
@@ -86,16 +61,22 @@ sub Build {
 
 	my $result = 1;
 
-	#get group combination variants by user settings
+	# get group combination variants by user settings
 
-	if ( defined $self->{"groupComb"} ) {
+	if ( scalar( grep { $self->{"userFilter"}->{$_} } keys %{ $self->{"userFilter"} } ) ) {
 
-		$self->{"nextStep"} = WizardStep2->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"cpnSource"} );
-		$self->{"nextStep"}->Init( $self->{"groupComb"}, $self->{"constrGroup"}, $self->{"filter"}, $self->{"cpnSett"} );
+		$self->{"nextStep"} = WizardStep2->new();
+		$self->{"nextStep"}->Init($self->{"inCAM"}, 
+								$self->{"jobId"},
+									$self->{"cpnSource"},
+								   $self->{"userFilter"},
+								   $self->{"userGroups"},
+								   $self->{"globalSett"});
 
 	}
 	else {
 		$result = 0;
+		$$errMess .= "No microstrips selected";
 	}
 
 	return $result;
@@ -111,8 +92,6 @@ sub UpdateConstrFilter {
 
 	$self->{"userFilter"}->{$constrId} = $selected;
 }
-
-
 
 sub AutogenerateGroups {
 	my $self = shift;
@@ -134,7 +113,7 @@ sub AutogenerateGroups {
 			$self->UpdateConstrGroup( $_, $i + 1 ) foreach ( map { $_->Id() } $singlCpn->GetAllStrips() );
 
 		}
-		
+
 		print STDERR "Generated variant: $cpnVariant";
 	}
 	else {
@@ -149,51 +128,11 @@ sub AutogenerateGroups {
 # Get data from model -
 #-------------------------------------------------------------------------------------------#
 
-
-
-#sub UpdateGlobalSettings {
-#	my $self    = shift;
-#	my $cpnSett = shift;
-#
-#	$self->{"cpnSett"} = $cpnSett;
-#}
-
-#sub UpdateData {
-#	my $self         = shift;
-#	my $filter       = shift // [];
-#	my $userComb     = shift;
-#	my $userGlobSett = shift;
-#
-#	my $cpnSett = CpnSettings->new();
-#
-#	if ( defined $userGlobSett ) {
-#
-#		$cpnSett = $userGlobSett;
-#
-#		# update settings
-#	}
-#
-#	my $cpnVariant = Helper->GetBestGroupCombination( $self->{"cpnSource"}, $filter, $cpnSett );
-#
-#	return $cpnVariant;
-#}
-
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
-
-	use aliased 'Programs::Stencil::StencilCreator::StencilCreator';
-	use aliased 'Packages::InCAM::InCAM';
-
-	my $inCAM = InCAM->new();
-	my $jobId = "f13609";
-
-	#my $creator = StencilCreator->new( $inCAM, $jobId, Enums->StencilSource_JOB, "f13609" );
-	my $creator = StencilCreator->new( $inCAM, $jobId, Enums->StencilSource_CUSTDATA );
-
-	$creator->Run();
 
 }
 

@@ -25,24 +25,33 @@ sub new {
 	my $self  = $class->SUPER::new(@_);
 	bless $self;
 
- 
 }
- 
 
 sub GetStepName {
 	my $self = shift;
 
 	return $self->_GetVal("stepName");
-
 }
 
+sub SetStepName {
+	my $self = shift;
+	my $val  = shift;
 
+	$self->_SetVal("stepName") = $val;
+}
 
 sub GetCouponSingleMargin {
 	my $self = shift;
 
 	return $self->_GetVal("marginSingle");
 
+}
+
+sub SetCouponSingleMargin {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->_SetVal("marginSingle") = $val;
 }
 
 sub GetCouponMargin {
@@ -52,6 +61,13 @@ sub GetCouponMargin {
 
 }
 
+sub SetCouponMargin {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->_SetVal("marginCoupon") = $val;
+}
+
 sub GetCouponSpace {
 	my $self = shift;
 
@@ -59,6 +75,12 @@ sub GetCouponSpace {
 
 }
 
+sub Set {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->_SetVal("") = $val;
+}
 
 sub GetTrackPadIsolation {
 	my $self = shift;
@@ -66,35 +88,17 @@ sub GetTrackPadIsolation {
 	return $self->_GetVal("trackPadIsolation");
 }
 
-#sub GetAreaWidth {
-#	my $self = shift;
-#
-#	return $self->_GetVal("w") - 2 * $self->_GetVal("marginCoupon");
-#
-#}
+sub SetTrackPadIsolation {
+	my $self = shift;
+	my $val  = shift;
 
-#
-# 
-#sub GetStackupJobXml {
-#	my $self = shift;
-#
-#	return $self->_GetVal("inplanJobPath");
-#}
-
-#sub GetXmlParser {
-#	my $self = shift;
-#
-#	return $self->_GetVal("xmlParser");
-#}
+	$self->_SetVal("trackPadIsolation") = $val;
+}
 
 sub GetXmlUnits {
 
 	return "INCH";
 }
-
-
-
-
 
 sub GetMaxTrackCnt {
 	my $self = shift;
@@ -104,19 +108,22 @@ sub GetMaxTrackCnt {
 
 sub SetMaxTrackCnt {
 	my $self = shift;
+	my $val  = shift;
 
-	$self->{"sett"}->{"maxTrackCnt"} = shift; 
+	$self->_SetVal("maxTrackCnt") = $val;
 }
-
-
- 
-
-
 
 sub GetShareGNDPads {
 	my $self = shift;
 
 	return $self->_GetVal("shareGNDPads");
+}
+
+sub SetShareGNDPads {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->_SetVal("shareGNDPads") = $val;
 }
 
 sub GetRouteBetween {
@@ -125,10 +132,24 @@ sub GetRouteBetween {
 	return $self->_GetVal("routeBetween");
 }
 
+sub SetRouteBetween {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->_SetVal("routeBetween") = $val;
+}
+
 sub GetRouteAbove {
 	my $self = shift;
 
 	return $self->_GetVal("routeAbove");
+}
+
+sub SetRouteAbove {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->_SetVal("routeAbove") = $val;
 }
 
 sub GetRouteBelow {
@@ -137,360 +158,691 @@ sub GetRouteBelow {
 	return $self->_GetVal("routeBelow");
 }
 
+sub SetRouteBelow {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->_SetVal("routeBelow") = $val;
+}
+
 sub GetRouteStraight {
 	my $self = shift;
 
 	return $self->_GetVal("routeStraight");
 }
 
-sub GetTwoEndedDesign{
+sub SetRouteStraight {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->_SetVal("routeStraight") = $val;
+}
+
+sub GetTwoEndedDesign {
 	my $self = shift;
 
 	return $self->_GetVal("twoEndedDesign");
 }
 
+sub SetTwoEndedDesign {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->_SetVal("twoEndedDesign") = $val;
+}
 
 # Info text settings
 
-sub GetPadsTopTextDist{
+sub GetPadsTopTextDist {
 	my $self = shift;
 
 	return $self->_GetVal("padsTopTextDist");
-	
+
 }
 
-sub GetInfoText{
+sub SetPadsTopTextDist {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->_SetVal("padsTopTextDist") = $val;
+}
+
+sub GetInfoText {
 	my $self = shift;
 
 	return $self->_GetVal("infoText");
-	
+
 }
 
-sub GetInfoTextPosition{
+sub SetInfoText {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->_SetVal("infoText") = $val;
+}
+
+sub GetInfoTextPosition {
 	my $self = shift;
 
 	return $self->_GetVal("infoTextPosition");
-	
+
 }
 
-sub GetInfoTextNumber{
+sub SetInfoTextPosition {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->_SetVal("infoTextPosition") = $val;
+}
+
+sub GetInfoTextNumber {
 	my $self = shift;
 
 	return $self->_GetVal("infoTextNumber");
-	
+
 }
 
-sub GetInfoTextTrackImpedance{
+sub SetInfoTextNumber {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->_SetVal("infoTextNumber") = $val;
+}
+
+sub GetInfoTextTrackImpedance {
 	my $self = shift;
 
 	return $self->_GetVal("infoTextTrackImpedance");
-	
+
 }
 
-sub GetInfoTextTrackWidth{
+sub SetInfoTextTrackImpedance {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->_SetVal("infoTextTrackImpedance") = $val;
+}
+
+sub GetInfoTextTrackWidth {
 	my $self = shift;
 
 	return $self->_GetVal("infoTextTrackWidth");
-	
+
 }
 
-sub GetInfoTextTrackSpace{
+sub SetInfoTextTrackWidth {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->_SetVal("infoTextTrackWidth") = $val;
+}
+
+sub GetInfoTextTrackSpace {
 	my $self = shift;
 
 	return $self->_GetVal("infoTextTrackSpace");
-	
+
 }
 
-sub GetInfoTextTrackLayer{
+sub SetInfoTextTrackSpace {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->_SetVal("infoTextTrackSpace") = $val;
+}
+
+sub GetInfoTextTrackLayer {
 	my $self = shift;
 
 	return $self->_GetVal("infoTextTrackLayer");
-	
+
 }
 
-sub GetInfoTextHSpacing{
+sub SetInfoTextTrackLayer {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->_SetVal("infoTextTrackLayer") = $val;
+}
+
+sub GetInfoTextHSpacing {
 	my $self = shift;
 
 	return $self->_GetVal("infoTextHSpacing");
-	
+
 }
 
-sub GetInfoTextVSpacing{
+sub SetInfoTextHSpacing {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->_SetVal("infoTextHSpacing") = $val;
+}
+
+sub GetInfoTextVSpacing {
 	my $self = shift;
 
 	return $self->_GetVal("infoTextVSpacing");
-	
+
 }
- 
-sub GetInfoTextWidth{
+
+sub SetInfoTextVSpacing {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->_SetVal("infoTextVSpacing") = $val;
+}
+
+sub GetInfoTextWidth {
 	my $self = shift;
 
 	return $self->_GetVal("infoTextWidth");
-	
+
 }
 
-sub GetInfoTextHeight{
+sub SetInfoTextWidth {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->_SetVal("infoTextWidth") = $val;
+}
+
+sub GetInfoTextHeight {
 	my $self = shift;
 
 	return $self->_GetVal("infoTextHeight");
-	
+
 }
 
-sub GetInfoTextWeight{
+sub SetInfoTextHeight {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->_SetVal("infoTextHeight") = $val;
+}
+
+sub GetInfoTextWeight {
 	my $self = shift;
 
 	return $self->_GetVal("infoTextWeight");
-	
-} 
 
-sub GetInfoTextRightCpnDist{
+}
+
+sub SetInfoTextWeight {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->_SetVal("infoTextWeight") = $val;
+}
+
+sub GetInfoTextRightCpnDist {
 	my $self = shift;
 
 	return $self->_GetVal("infoTextRightCpnDist");
-	
-} 
 
-sub GetInfoTextUnmask{
+}
+
+sub SetInfoTextRightCpnDist {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->_SetVal("infoTextRightCpnDist") = $val;
+}
+
+sub GetInfoTextUnmask {
 	my $self = shift;
 
 	return $self->_GetVal("infoTextUnmask");
-	
-} 
 
- 
- 
+}
+
+sub SetInfoTextUnmask {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->_SetVal("infoTextUnmask") = $val;
+}
+
 # pad text settings
 
-sub GetPadTextWidth{
+sub GetPadTextWidth {
 	my $self = shift;
 
 	return $self->_GetVal("padTextWidth");
-	
-} 
 
-sub GetPadTextHeight{
+}
+
+sub SetPadTextWidth {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->_SetVal("padTextWidth") = $val;
+}
+
+sub GetPadTextHeight {
 	my $self = shift;
 
 	return $self->_GetVal("padTextHeight");
-	
-} 
 
-sub GetPadTextWeight{
+}
+
+sub SetPadTextHeight {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->_SetVal("padTextHeight") = $val;
+}
+
+sub GetPadTextWeight {
 	my $self = shift;
 
 	return $self->_GetVal("padTextWeight");
-	
-} 
 
-sub GetPadTextDist{
+}
+
+sub SetPadTextWeight {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->_SetVal("padTextWeight") = $val;
+}
+
+sub GetPadTextDist {
 	my $self = shift;
 
 	return $self->_GetVal("padTextDist");
-	
-} 
 
-sub GetPadText{
+}
+
+sub SetPadTextDist {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->_SetVal("padTextDist") = $val;
+}
+
+sub GetPadText {
 	my $self = shift;
 
 	return $self->_GetVal("padText");
-	
+
 }
 
-sub GetPadTextUnmask{
+sub SetPadText {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->_SetVal("padText") = $val;
+}
+
+sub GetPadTextUnmask {
 	my $self = shift;
 
 	return $self->_GetVal("padTextUnmask");
-	
-} 
 
- 
- 
+}
+
+sub SetPadTextUnmask {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->_SetVal("padTextUnmask") = $val;
+}
 
 # Guard track settings
 
-sub GetGuardTracks{
+sub GetGuardTracks {
 	my $self = shift;
 
 	return $self->_GetVal("guardTracks");
-	
-} 
 
-sub GetGuardTracksType{
+}
+
+sub SetGuardTracks {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->_SetVal("guardTracks") = $val;
+}
+
+sub GetGuardTracksType {
 	my $self = shift;
 
 	return $self->_GetVal("guardTracksType");
-	
-} 
 
+}
 
-sub GetGuardTrack2TrackDist{
+sub SetGuardTracksType {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->_SetVal("guardTracksType") = $val;
+}
+
+sub GetGuardTrack2TrackDist {
 	my $self = shift;
 
 	return $self->_GetVal("guardTrack2TrackDist");
-	
-} 
 
-sub GetGuardTrack2PadDist{
+}
+
+sub SetGuardTrack2TrackDist {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->_SetVal("guardTrack2TrackDist") = $val;
+}
+
+sub GetGuardTrack2PadDist {
 	my $self = shift;
 
 	return $self->_GetVal("guardTrack2PadDist");
-	
-} 
 
-sub GetGuardTrack2Shielding{
+}
+
+sub SetGuardTrack2PadDist {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->_SetVal("guardTrack2PadDist") = $val;
+}
+
+sub GetGuardTrack2Shielding {
 	my $self = shift;
 
 	return $self->_GetVal("guardTrack2Shielding");
-	
-} 
 
+}
 
-sub GetGuardTrackWidth{
+sub SetGuardTrack2Shielding {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->_SetVal("guardTrack2Shielding") = $val;
+}
+
+sub GetGuardTrackWidth {
 	my $self = shift;
 
 	return $self->_GetVal("guardTrackWidth");
-	
-} 
+
+}
+
+sub SetGuardTrackWidth {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->_SetVal("guardTrackWidth") = $val;
+}
 
 # Shielding settings
 
-sub GetShielding{
+sub GetShielding {
 	my $self = shift;
 
 	return $self->_GetVal("shielding");
-	
-} 
 
-sub GetShieldingType{
+}
+
+sub SetShielding {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->_SetVal("shielding") = $val;
+}
+
+sub GetShieldingType {
 	my $self = shift;
 
 	return $self->_GetVal("shieldingType");
-	
-} 
 
+}
 
-sub GetShieldingSymbol{
+sub SetShieldingType {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->_SetVal("shieldingType") = $val;
+}
+
+sub GetShieldingSymbol {
 	my $self = shift;
 
 	return $self->_GetVal("shieldingSymbol");
-	
-} 
 
+}
 
-sub GetShieldingSymbolDX{
+sub SetShieldingSymbol {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->_SetVal("shieldingSymbol") = $val;
+}
+
+sub GetShieldingSymbolDX {
 	my $self = shift;
 
 	return $self->_GetVal("shieldingSymbolDX");
-	
-} 
 
-sub GetShieldingSymbolDY{
+}
+
+sub SetShieldingSymbolDX {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->_SetVal("shieldingSymbolDX") = $val;
+}
+
+sub GetShieldingSymbolDY {
 	my $self = shift;
 
 	return $self->_GetVal("shieldingSymbolDY");
-	
-} 
- 
+
+}
+
+sub SetShieldingSymbolDY {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->_SetVal("shieldingSymbolDY") = $val;
+}
+
 # Title (logo + job id)
 
-sub GetTitle{
+sub GetTitle {
 	my $self = shift;
 
-	return $self->_GetVal("title");	
-} 
+	return $self->_GetVal("title");
+}
 
-sub GetTitleTextWidth{
+sub SetTitle {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->_SetVal("title") = $val;
+}
+
+sub GetTitleTextWidth {
 	my $self = shift;
 
 	return $self->_GetVal("titleTextWidth");
-	
-} 
 
-sub GetTitleTextHeight{
+}
+
+sub SetTitleTextWidth {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->_SetVal("titleTextWidth") = $val;
+}
+
+sub GetTitleTextHeight {
 	my $self = shift;
 
 	return $self->_GetVal("titleTextHeight");
-	
-} 
- 
-sub GetTitleTextWeight{
+
+}
+
+sub SetTitleTextHeight {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->_SetVal("titleTextHeight") = $val;
+}
+
+sub GetTitleTextWeight {
 	my $self = shift;
 
 	return $self->_GetVal("titleTextWeight");
-	
-}  
 
-sub GetTitleMargin{
+}
+
+sub SetTitleTextWeight {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->_SetVal("titleTextWeight") = $val;
+}
+
+sub GetTitleMargin {
 	my $self = shift;
 
 	return $self->_GetVal("titleMargin");
-	
+
 }
 
-sub GetTitleType{
+sub SetTitleMargin {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->_SetVal("titleMargin") = $val;
+}
+
+sub GetTitleType {
 	my $self = shift;
 
 	return $self->_GetVal("titleType");
-	
+
 }
 
-sub GetTitleLogoJobIdHDist{
+sub SetTitleType {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->_SetVal("titleType") = $val;
+}
+
+sub GetTitleLogoJobIdHDist {
 	my $self = shift;
 
 	return $self->_GetVal("titleLogoJobIdHDist");
-	
+
 }
 
-sub GetTitleLogoJobIdVDist{
+sub SetTitleLogoJobIdHDist {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->_SetVal("titleLogoJobIdHDist") = $val;
+}
+
+sub GetTitleLogoJobIdVDist {
 	my $self = shift;
 
 	return $self->_GetVal("titleLogoJobIdVDist");
-	
-} 
 
-sub GetLogoWidth{
+}
+
+sub SetTitleLogoJobIdVDist {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->_SetVal("titleLogoJobIdVDist") = $val;
+}
+
+sub GetLogoWidth {
 	my $self = shift;
 
 	return $self->_GetVal("logoWidth");
-	
+
 }
 
-sub GetLogoHeight{
+sub SetLogoWidth {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->_SetVal("logoWidth") = $val;
+}
+
+sub GetLogoHeight {
 	my $self = shift;
 
 	return $self->_GetVal("logoHeight");
-	
+
 }
- 
-sub GetLogoSymbol{
+
+sub SetLogoHeight {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->_SetVal("logoHeight") = $val;
+}
+
+sub GetLogoSymbol {
 	my $self = shift;
 
 	return $self->_GetVal("logoSymbol");
-	
-} 
- 
-sub GetLogoSymbolWidth{
+
+}
+
+sub SetLogoSymbol {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->_SetVal("logoSymbol") = $val;
+}
+
+sub GetLogoSymbolWidth {
 	my $self = shift;
 
 	return $self->_GetVal("logoSymbolWidth");
-	
+
 }
 
-sub GetLogoSymbolHeight{
+sub SetLogoSymbolWidth {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->_SetVal("logoSymbolWidth") = $val;
+}
+
+sub GetLogoSymbolHeight {
 	my $self = shift;
 
 	return $self->_GetVal("logoSymbolHeight");
-	
+
 }
 
-sub GetTitleUnMask{
+sub SetLogoSymbolHeight {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->_SetVal("logoSymbolHeight") = $val;
+}
+
+sub GetTitleUnMask {
 	my $self = shift;
 
 	return $self->_GetVal("titleUnMask");
-	
+
 }
 
- 
+sub SetTitleUnMask {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->_SetVal("titleUnMask") = $val;
+}
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

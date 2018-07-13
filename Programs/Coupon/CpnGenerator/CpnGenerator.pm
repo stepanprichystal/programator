@@ -24,7 +24,7 @@ use aliased 'Programs::Coupon::CpnGenerator::ModelBuilders::Uncoated';
 use aliased 'Programs::Coupon::CpnGenerator::ModelBuilders::Stripline';
 use aliased 'Programs::Coupon::CpnGenerator::ModelBuilders::CoatedUpperEmbedded';
 use aliased 'Programs::Coupon::CpnGenerator::ModelBuilders::UncoatedUpperEmbedded';
-
+use aliased 'Helpers::GeneralHelper';
 use aliased 'Packages::CAM::SymbolDrawing::Point';
 use aliased 'Packages::CAMJob::Panelization::SRStep';
 use aliased 'Programs::Coupon::CpnGenerator::CpnLayers::InfoTextLayer';
@@ -78,7 +78,7 @@ sub Generate {
 
 		my $srStep = $layout->GetStepName() . "_$i";
 
-		$self->__GenerateSingle( $cpnSignleLayout,  $layout->GetLayersLayout(), $srStep );
+		$self->__GenerateSingle( $cpnSignleLayout, $layout->GetLayersLayout(), $srStep );
 
 		my $p = $cpnSignleLayout->GetPosition();
 
@@ -116,11 +116,36 @@ sub Generate {
 	return $result;
 }
 
+sub FlattenCpn {
+	my $self   = shift;
+	my $layout = shift;    # layout of complete coupon
+
+	my $inCAM = $self->{"inCAM"};
+	my $jobId = $self->{"jobId"};
+
+	my $tmpName = GeneralHelper->GetGUID();
+
+	CamStep->RenameStep( $inCAM, $jobId, $layout->GetStepName(), $tmpName );
+
+	my @layers = keys %{ $layout->GetLayersLayout() };
+
+	CamStep->CreateFlattenStep( $inCAM, $jobId, $tmpName, $layout->GetStepName(), 0, \@layers );
+
+	# remove old steps - nested + main coupon
+	CamStep->DeleteStep( $inCAM, $jobId, $tmpName );
+
+	for ( my $i = 0 ; $i < scalar( $layout->GetCouponsSingle() ) ; $i++ ) {
+
+		CamStep->DeleteStep( $inCAM, $jobId, $layout->GetStepName() . "_$i" );
+	}
+
+}
+
 sub __GenerateSingle {
-	my $self      = shift;
+	my $self            = shift;
 	my $cpnSingleLayout = shift;
-	my $layersLayout = shift;
-	my $stepName  = shift;
+	my $layersLayout    = shift;
+	my $stepName        = shift;
 
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
@@ -143,6 +168,23 @@ sub __GenerateSingle {
 	my %rt = ( "x" => $cpnSingleLayout->GetWidth(), "y" => $cpnSingleLayout->GetHeight() );
 
 	CamStep->CreateProfileRect( $inCAM, $stepName, \%lb, \%rt );
+
+	# Proces guard tracks
+
+	if ( $cpnSingleLayout->GetGuardTracksLayout() ) {
+
+		foreach my $layout ( @{ $cpnSingleLayout->GetGuardTracksLayout() } ) {
+
+			my $gtLayer = GuardTracksLayer->new( $layout->GetLayer() );
+			$gtLayer->Init( $inCAM, $jobId, $stepName );
+			$gtLayer->Build($layout);
+
+			CamLayer->WorkLayer( $inCAM, $gtLayer->GetLayerName() );
+			$gtLayer->Draw();
+
+		}
+
+	}
 
 	# Process all microstrip layouts in single coupon
 	my @builders = ();
@@ -188,22 +230,7 @@ sub __GenerateSingle {
 		}
 	}
 
-	if ( $cpnSingleLayout->GetGuardTracksLayout() ) {
 
-		foreach my $layout ( @{ $cpnSingleLayout->GetGuardTracksLayout() } ) {
-
-			my $gtLayer = GuardTracksLayer->new( $layout->GetLayer() );
-			$gtLayer->Init( $inCAM, $jobId, $stepName );
-			$gtLayer->Build($layout);
-
-			CamLayer->WorkLayer( $inCAM, $gtLayer->GetLayerName() );
-			$gtLayer->Draw();
-
-		}
-
-	}
-
-	# Proces text layout
 
 	# Shielding layout
 	if ( $cpnSingleLayout->GetShieldingLayout() ) {

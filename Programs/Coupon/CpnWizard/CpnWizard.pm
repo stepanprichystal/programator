@@ -7,6 +7,9 @@
 package Programs::Coupon::CpnWizard::CpnWizard;
 
 #3th party library
+use threads;
+use threads::shared;
+use Wx;
 use strict;
 use warnings;
 

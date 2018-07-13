@@ -10,7 +10,7 @@ use strict;
 use warnings;
 
 #local library
-
+use aliased 'Helpers::GeneralHelper';
 use aliased 'Enums::EnumsPaths';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'Programs::Coupon::CpnSettings::CpnSettings';
@@ -212,6 +212,12 @@ sub AddSett2CpnVarinat {
 			$s->SetCpnStripSettings( $defCpnStripSett->{ $s->Id() } );
 		}
 	}
+}
+
+sub GetResourcePath{
+	my $self = shift;
+	
+	return GeneralHelper->Root() . "\\Programs\\Coupon\\CpnWizard\\Resources\\";
 }
 
 #-------------------------------------------------------------------------------------------#

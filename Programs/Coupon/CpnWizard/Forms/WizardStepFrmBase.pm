@@ -16,10 +16,12 @@ use aliased 'Enums::EnumsGeneral';
 use aliased 'Programs::Coupon::CpnWizard::Forms::WizardStep1::ConstraintList::ConstraintList';
 use aliased 'Widgets::Forms::MyWxScrollPanel';
 use aliased 'Programs::Coupon::CpnWizard::Forms::WizardStep1::GeneratorFrm';
+use aliased 'Packages::Events::Event';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
+
 
 sub new {
 	my $class = shift;
@@ -29,9 +31,14 @@ sub new {
 	$self->{"inCAM"} = shift;
 	$self->{"jobId"} = shift;
 	$self->{"parentFrm"} = shift;
+	$self->{"messMngr"} = shift;
  
 
 	$self->{"coreWizardStep"} = undef;    # will be set during Update methopd
+	
+	# Events
+	
+	$self->{"onStepWorking"} = Event->new();
 
 	return $self;
 }

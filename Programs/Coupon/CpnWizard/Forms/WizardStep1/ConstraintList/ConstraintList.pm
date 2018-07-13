@@ -35,8 +35,8 @@ sub new {
 	 
 
 	# Name, Color, Polarity, Mirror, Comp
-	my @widths = ( 45		, 30  ,  30    , 250	      ,  100         , 150             ,  150            , 1000             );
-	my @titles = ( "Include", "Id", "Group","Type + model",  "Test layer", "Top ref layer", "Bot ref layer" );
+	my @widths = ( 45		, 30  ,  30    , 250	      ,  100         , 150             ,  150          , 100        , 1000             );
+	my @titles = ( "Include", "Id", "Group","Type + model",  "Test layer", "Top ref layer", "Bot ref layer", "Impedance"  );
 
 	my $columnCnt    = scalar(@widths);
 	my $columnWidths = \@widths;

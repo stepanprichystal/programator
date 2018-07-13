@@ -24,10 +24,8 @@ sub new {
 	my $class = shift;
 	my $self  = $class->SUPER::new(@_);
 	bless $self;
- 
-}
-  
 
+}
 
 sub GetPad2GND {
 	my $self = shift;
@@ -36,7 +34,12 @@ sub GetPad2GND {
 
 }
 
- 
+sub SetPad2GND {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->_SetVal("pad2GNDClearance") = $val;
+}
 
 sub GetTrackToCopper {
 	my $self = shift;
@@ -44,6 +47,12 @@ sub GetTrackToCopper {
 	return $self->_GetVal("trackToCopper");
 }
 
+sub SetTrackToCopper {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->_SetVal("trackToCopper") = $val;
+}
 
 sub GetPadClearance {
 	my $self = shift;
@@ -52,6 +61,12 @@ sub GetPadClearance {
 
 }
 
+sub SetPadClearance {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->_SetVal("padClearance") = $val;
+}
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

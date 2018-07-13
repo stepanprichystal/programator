@@ -12,6 +12,7 @@ use Class::Interface;
 #3th party library
 use strict;
 use warnings;
+use List::MoreUtils qw(uniq);
 
 #local library
 
@@ -19,40 +20,57 @@ use aliased 'Enums::EnumsPaths';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'Programs::Coupon::CpnWizard::WizardCore::WizardStep3';
 use aliased 'Programs::Coupon::CpnSettings::CpnSettings';
+use aliased 'Programs::Coupon::CpnSettings::CpnSingleSettings';
+use aliased 'Programs::Coupon::CpnSettings::CpnStripSettings';
 use aliased 'Programs::Coupon::CpnSource::CpnSource';
 use aliased 'Programs::Coupon::CpnWizard::WizardCore::Helper';
 use aliased 'Programs::Coupon::CpnPolicy::GroupPolicy';
+use aliased 'Programs::Coupon::CpnPolicy::GeneratorPolicy';
+use aliased 'Programs::Coupon::CpnBuilder::CpnBuilder';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
+my $PROCESS_END_EVT : shared;    # evt raise when processing reorder is done
 
 sub new {
 	my $class = shift;
-	my $self  = $class->SUPER::new(2,@_);
+
+	my $stepId = 2;
+	my $title  = "Check global cpn settings, groups settings and strips settings";
+
+	my $self = $class->SUPER::new( $stepId, $title );
 	bless $self;
 
 	# data model for step class
-	$self->{"groupComb"} = undef;
-	$self->{"filter"}    = undef;
-	$self->{"cpnSett"}   = undef;
+	$self->{"autogenerate"} = 1;    # allow automaticallz geenerate groups when user groups fail
 
-	$self->{"autoGenerate"} = 1;
+	$self->{"cpnStripSett"} = {};   # strip settings for each strip
+
+	$self->{"cpnGroupSett"} = {};   # group settings for each group
 
 	return $self;
 }
 
-sub Init {
-	my $self      = shift;
-	my $groupComb = shift;
-	my $filter    = shift;
-	my $cpnSett   = shift;
+sub Load {
+	my $self = shift;
 
-	$self->{"groupComb"} = $groupComb;
-	$self->{"filter"}    = $filter;
-	$self->{"cpnSett"}   = $cpnSett;
-	
- 
+	my %constrFilter = %{ $self->GetConstrFilter() };
+	my @constr = grep { $constrFilter{$_} } keys %constrFilter;
+
+	# Define group settings for each group
+	my @uniqGroups = $self->GetUniqueGroups();
+
+	for ( my $i = 0 ; $i < scalar(@uniqGroups) ; $i++ ) {
+
+		$self->{"cpnGroupSett"}->{ $uniqGroups[$i] } = CpnSingleSettings->new();
+	}
+
+	# Define strip settings for each strip
+	for ( my $i = 0 ; $i < scalar(@constr) ; $i++ ) {
+
+		$self->{"cpnStripSett"}->{ $constr[$i] } = CpnStripSettings->new();
+	}
 
 }
 
@@ -62,96 +80,147 @@ sub Build {
 
 	my $result = 1;
 
-	#get group combination variants by user settings
+	my $groupGenPolicy = GeneratorPolicy->new( $self->{"cpnSource"}, $self->{"globalSett"}->GetMaxTrackCnt() );
 
-	# 1) build combination structure
+	# Create structure from strips and groups suitable for Layout algorithm
+	my %constrFilter = %{ $self->GetConstrFilter() };
+	my @constr = grep { $constrFilter{$_} } keys %constrFilter;
 
-	my $cpnVariant = Helper->GetBestGroupVariant( $self->{"cpnSource"}, $self->{"groupComb"}, $self->{"cpnSett"} );
+	my @comb = ();
+	foreach my $g ( $self->GetUniqueGroups() ) {
+		my @strips = map { $self->{"cpnSource"}->GetConstraint($_) } grep { $self->{"userGroups"}->{$_} == $g } @constr;
 
-	# generate new groups
-	if ( !defined $cpnVariant && $self->{"autoGenerate"} ) {
-
-		$cpnVariant = Helper->GetBestGroupCombination( $self->{"cpnSource"}, $self->{"filter"}, $self->{"cpnSett"} );
-
+		push( @comb, \@strips );
 	}
 
-	# if cpn variant layout is ok, build is ok
-	if ( defined $cpnVariant ) {
+	my $combStruct = $groupGenPolicy->GenerateGroupComb( \@comb );
 
-		$self->{"nextStep"} = WizardStep3->new( $self->{"inCAM"}, $self->{"jobId"} );
+	# Create translate table (user group id => group id given by order)
+	my %groupSettings = ();
+	my @uniqGroups    = $self->GetUniqueGroups();
+	for ( my $i = 0 ; $i < scalar(@uniqGroups) ; $i++ ) {
 
-		$self->{"nextStep"}->Init($self->{"cpnVariant"}, $self->{"cpnSett"});
-
+		$groupSettings{$i} = $self->{"cpnGroupSett"}->{ $uniqGroups[$i] };
 	}
-	else {
-		$result = 0;
+
+	# try build Cpnvariant
+	my $variant =
+	  Helper->GetBestGroupVariant( $self->{"cpnSource"}, [$combStruct], $self->{"globalSett"}, \%groupSettings );
+
+	if ( !defined $variant && $self->{"autogenerate"} ) {
+
+		$variant = Helper->GetBestGroupCombination( $self->{"cpnSource"}, \@constr, $self->{"globalSett"} );
+
+		if ( !defined $variant ) {
+
+			$$errMess .= "Unable to automatically generate coupon. Change settings or create more groups.";
+
+		}
+		else {
+
+			# 1) update constr gorups
+			my @singleCpns = $variant->GetSingleCpns();
+
+			for ( my $i = 0 ; $i < scalar(@singleCpns) ; $i++ ) {
+
+				foreach my $strip ( $singleCpns[$i]->GetAllStrips() ) {
+					$self->UpdateConstrGroup( $strip->Id(), $i );
+				}
+			}
+
+			# 2) create new settings for group and strips
+			$self->Load();
+
+			%groupSettings = ();
+			my @uniqGroups = $self->GetUniqueGroups();
+			for ( my $i = 0 ; $i < scalar(@uniqGroups) ; $i++ ) {
+
+				$groupSettings{$i} = $self->{"cpnGroupSett"}->{ $uniqGroups[$i] };
+			}
+
+		}
+	}
+	elsif ( !defined $variant && !$self->{"autogenerate"} ) {
+
+		$$errMess .= "Unable to build coupon. Try allow option 'autogenerate'";
+	}
+
+	# variant was found
+	if ( defined $variant ) {
+
+		Helper->AddSett2CpnVarinat( $variant, $self->{"globalSett"}, \%groupSettings, $self->{"cpnStripSett"} );
+
+		# Build layout
+
+		my $inCAM = $self->{"inCAM"};
+		my $jobId = $self->{"jobId"};
+
+		my $builder = CpnBuilder->new( $inCAM, $jobId, $self->{"cpnSource"} );
+		if ( $builder->Build( $variant, $errMess ) ) {
+			my $layout = $builder->GetLayout();
+
+			$self->{"nextStep"} = WizardStep3->new( $layout, $variant );
+			$self->{"nextStep"}
+			  ->Init( $self->{"inCAM"}, $self->{"jobId"}, $self->{"cpnSource"}, $self->{"userFilter"}, $self->{"userGroups"}, $self->{"globalSett"} );
+
+		}
+		else {
+
+			$result = 0;
+		}
 	}
 
 	return $result;
 }
 
 #-------------------------------------------------------------------------------------------#
-# Update method - update wiyard step data model
+# Update method - update wizard step data model
 #-------------------------------------------------------------------------------------------#
-sub UpdateGlobalSettings {
-	my $self    = shift;
-	my $cpnSett = shift;
+sub UpdateConstrFilter {
+	my $self     = shift;
+	my $constrId = shift;
+	my $selected = shift;
 
-	$self->{"cpnSett"} = $cpnSett;
+	$self->{"userFilter"}->{$constrId} = $selected;
 }
 
-sub UpdateGroupSettings {
+sub UpdateAutogenerate {
+	my $self          = shift;
+	my $autogenereate = shift;
 
-	#	my $self      = shift;
-	#	my $cpnSett = shift;
-	#	my $group     = shift;
-	#
-	#	$self->{"cpnSett"} = $cpnSett;
+	$self->{"autogenerate"} = $autogenereate;
 }
 
-sub UpdateAutogenerateGroup {
-	my $self         = shift;
-	my $autoGenerate = shift;
+#-------------------------------------------------------------------------------------------#
+# Get data from model -
+#-------------------------------------------------------------------------------------------#
 
-	$self->{"autoGenerate"} = $autoGenerate;
+# Return unique groups sorted ASC
+sub GetUniqueGroups {
+	my $self = shift;
+
+	my %constrFilter = %{ $self->GetConstrFilter() };
+	my @constr = grep { $constrFilter{$_} } keys %constrFilter;
+
+	my $constrGroups = $self->GetConstrGroups();
+	my @uniqGroups = uniq( map { $constrGroups->{$_} } grep { $constrFilter{$_} } keys %constrFilter );
+
+	@uniqGroups = sort { $a <=> $b } @uniqGroups;
+
+	return @uniqGroups;
 }
 
-#sub UpdateStepData {
-#	my $self         = shift;
-#	my $filter       = shift // [];
-#	my $userComb     = shift;
-#	my $userGlobSett = shift;
-#
-#	my $cpnSett = CpnSettings->new();
-#
-#	if ( defined $userGlobSett ) {
-#
-#		$cpnSett = $userGlobSett;
-#
-#		# update settings
-#	}
-#
-#	my $cpnVariant = Helper->GetBestGroupCombination( $self->{"cpnSource"}, $filter, $cpnSett );
-#
-#	return $cpnVariant;
-#}
+sub GetAutogenerate {
+	my $self = shift;
+
+	return $self->{"autogenerate"};
+}
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
-
-	use aliased 'Programs::Stencil::StencilCreator::StencilCreator';
-	use aliased 'Packages::InCAM::InCAM';
-
-	my $inCAM = InCAM->new();
-	my $jobId = "f13609";
-
-	#my $creator = StencilCreator->new( $inCAM, $jobId, Enums->StencilSource_JOB, "f13609" );
-	my $creator = StencilCreator->new( $inCAM, $jobId, Enums->StencilSource_CUSTDATA );
-
-	$creator->Run();
 
 }
 

@@ -30,7 +30,7 @@ sub new {
 	$self->{"inCAM"} = shift;
 	$self->{"jobId"} = shift;
 
-	#$self->{"layout"} = shift;
+	$self->{"totalStepCnt"} = shift;
 
 	$self->{"steps"} = [];
 
@@ -48,33 +48,42 @@ sub new {
 }
 
 sub Next {
-	my $self = shift;
+	my $self    = shift;
+	my $errMess = shift;
+	my $raiseChangeEvt = shift // 1;
+
+	my $result = 1;
 
 	my $curStep = $self->{"steps"}->[-1];
 
-	my $errMess = "";
-	my $s       = undef;
+	my $s = undef;
 
-	if ( $curStep->Build( \$errMess ) ) {
+	if ( $curStep->Build($errMess) ) {
 
 		$s = $curStep->GetNextStep();
+
 		push( @{ $self->{"steps"} }, $s );
 
 	}
 	else {
 
-		die "Failed to build step $curStep $errMess";
-
+		$result = 0;
 	}
 
-	my $lastStep = $self->{"steps"}->[-1];
-
-	$self->{"stepChangedEvt"}->Do($lastStep);
+	if ($result) {
+		my $lastStep = $self->{"steps"}->[-1];
+		$lastStep->Load();
+		
+		$self->{"stepChangedEvt"}->Do($lastStep) if($raiseChangeEvt);
+	}
+	
+	return $result;
 
 }
 
 sub Back {
 	my $self = shift;
+	my $raiseChangeEvt = shift // 1;
 
 	if ( scalar( @{ $self->{"steps"} } ) > 1 ) {
 
@@ -86,8 +95,9 @@ sub Back {
 	}
 
 	my $lastStep = $self->{"steps"}->[-1];
+	$lastStep->Load();
 
-	$self->{"stepChangedEvt"}->Do($lastStep);
+	$self->{"stepChangedEvt"}->Do($lastStep) if($raiseChangeEvt);
 
 	#return $self->{"steps"}->[-1];
 }
@@ -95,19 +105,36 @@ sub Back {
 sub Begin {
 	my $self = shift;
 
+	for ( my $i = scalar( @{$self->{"steps"}} ) - 1 ; $i > 0; $i-- ) {
+
+		$self->Back(0);
+	}
+
 	my $lastStep = $self->{"steps"}->[-1];
+	$lastStep->Load();
 
 	$self->{"stepChangedEvt"}->Do($lastStep);
-
 }
 
 sub End {
 	my $self = shift;
+	my $errMess = shift;
 
-	my $lastStep = $self->{"steps"}->[-1];
+	my $result = 1;
 
+	for ( my $i = scalar( @{$self->{"steps"}} ) - 1 ; $i < $self->{"totalStepCnt"} -1; $i++ ) {
+
+		unless($self->Next($errMess, 0)){
+			
+			$result = 0;
+			last;
+		}
+	}
+ 
+ 	my $lastStep = $self->{"steps"}->[-1];
 	$self->{"stepChangedEvt"}->Do($lastStep);
-
+	
+	return $result;
 }
 
 sub Init {
@@ -117,7 +144,7 @@ sub Init {
 	my $cpnSource = CpnSource->new($xmlPath);
 
 	# Set initial state
- 
+
 	foreach my $constr ( $cpnSource->GetConstraints() ) {
 
 		# User filter -> all microstrips are checked on the begining
@@ -129,14 +156,19 @@ sub Init {
 	}
 
 	$self->{"globalSett"} = CpnSettings->new();
-	 
 
-	my $s = WizardStep1->new( $self->{"inCAM"}, $self->{"jobId"}, $cpnSource, $self->{"userFilter"}, $self->{"userGroups"}, $self->{"globalSett"} );
- 
+	my $s = WizardStep1->new();
+	$s->Init( $self->{"inCAM"}, $self->{"jobId"}, $cpnSource, $self->{"userFilter"}, $self->{"userGroups"}, $self->{"globalSett"} );
 	$s->Load();
 
 	push( @{ $self->{"steps"} }, $s );
 
+}
+
+sub GetCurrentStepNumber{
+	my $self    = shift;
+	
+	return $self->{"steps"}->[-1]->GetStepNumber();
 }
 
 #-------------------------------------------------------------------------------------------#

@@ -8,6 +8,7 @@ package Programs::Coupon::CpnSettings::CpnSettingsBase;
 #3th party library
 use strict;
 use warnings;
+use Storable qw(dclone);
 
 #local library
 
@@ -24,7 +25,6 @@ sub new {
 	my $self  = {};
 	bless $self;
 
-	
 	# Load settings if defined
 
 	$self->{"sett"} = {};
@@ -53,7 +53,24 @@ sub new {
 	return $self;
 
 }
- 
+
+# Return deep current settings
+# whole object is deep copy, no reference on source instance
+sub GetDeepCopy {
+	my $self = shift;
+
+	my $sett = dclone($self);
+
+	return $sett;
+}
+
+# Update settings by another settings instance
+sub UpdateSettings {
+	my $self     = shift;
+	my $settings = shift;
+
+	$self->{"sett"} = $settings->{"sett"};
+}
 
 sub _GetVal {
 	my $self = shift;
@@ -64,6 +81,17 @@ sub _GetVal {
 	die "Value of key: $key is not defined" unless ( defined $v );
 
 	return $v;
+}
+
+sub _SetVal {
+	my $self = shift;
+	my $key  = shift;
+	my $val  = shift;
+
+	die "Key  is not defined"   unless ( defined $key );
+	die "Value  is not defined" unless ( defined $val );
+
+	$self->{"sett"}->{$key} = $val;
 }
 
 #-------------------------------------------------------------------------------------------#

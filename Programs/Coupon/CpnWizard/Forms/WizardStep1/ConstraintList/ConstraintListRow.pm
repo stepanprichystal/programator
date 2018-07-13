@@ -11,8 +11,10 @@ use base qw(Widgets::Forms::CustomControlList::ControlListRow);
 #3th party library
 use strict;
 use warnings;
+use utf8;
 use Wx;
 use Wx qw(:sizer wxDefaultPosition wxDefaultSize wxDEFAULT_DIALOG_STYLE wxRESIZE_BORDER);
+
 
 #local library
 
@@ -47,7 +49,7 @@ sub new {
 	$self->__SetLayout();
 
 	# EVENTS
-	$self->{"onGroupChanged"} = Event->new();
+	$self->{"onGroupChanged"} = Event->new(); 
 
 	return $self;
 }
@@ -83,6 +85,8 @@ sub __SetLayout {
 	my $trackLTxt  = Wx::StaticText->new( $self->{"parent"}, -1, $constr->GetTrackLayer(),  &Wx::wxDefaultPosition, [ 20, $self->{"rowHeight"} ] );
 	my $topRefLTxt = Wx::StaticText->new( $self->{"parent"}, -1, $constr->GetTopRefLayer(), &Wx::wxDefaultPosition, [ 20, $self->{"rowHeight"} ] );
 	my $botRefLTxt = Wx::StaticText->new( $self->{"parent"}, -1, $constr->GetBotRefLayer(), &Wx::wxDefaultPosition, [ 20, $self->{"rowHeight"} ] );
+ 
+	my $impedanceLTxt = Wx::StaticText->new( $self->{"parent"}, -1, sprintf("%.2f Ω", $constr->GetOption("CALCULATED_IMPEDANCE")), &Wx::wxDefaultPosition, [ 20, $self->{"rowHeight"} ] );
 
 	
 	$self->_AddCell($idTxt);
@@ -92,7 +96,8 @@ sub __SetLayout {
 	$self->_AddCell($trackLTxt);
 	$self->_AddCell($topRefLTxt);
 	$self->_AddCell($botRefLTxt);
-
+	$self->_AddCell($impedanceLTxt);
+	
 	# SET EVENTS
 
 	Wx::Event::EVT_TEXT( $groupTxt, -1, sub { $self->__OnGroupChanged(@_) } );
