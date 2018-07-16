@@ -159,6 +159,8 @@ $main->title('Informace o DPS');
 											_CheckStatusPriprava($jobName);
 											_CheckLimitWithTabs($jobName);
 											
+											_CheckCutomerNetlist($jobName);
+											
 											my $tmpFrameInfo = $middleFrame2Top->Frame(-width=>100, -height=>10)->grid(-column=>0,-row=>0,-columnspan=>2,-sticky=>"news");
 											foreach my $item (@errorMessageArr) {
 																	$tmpFrameInfo ->Label(-textvariable=>\$item, -fg=>"red", -font=>"ARIAL 12")->grid(-column=>1,-row=>"$rowStart",-columnspan=>2,-sticky=>"w");
@@ -180,6 +182,7 @@ $main->MainLoop;
 					}
 	}
 	closedir BOARDS;
+	
 
 
 
@@ -841,6 +844,19 @@ sub __CheckMinAreaForTabs {
 				return(0);
 		}
 }
+sub _CheckCutomerNetlist {
+	my $jobId = shift;
+	
+		unless (HegMethods->GetIdcustomer($jobId) eq '05626') { # U multi pcb to neni potreba kontrolovat
+			$inCAM->INFO(units => 'mm', angle_direction => 'ccw', entity_type => 'netlist',entity_path => "$jobId/o+1/cadnet",data_type => 'EXISTS');
+         			if ($inCAM->{doinfo}{gEXISTS} eq "yes") {
+         					push @errorMessageArr , "- Byl nalezen netlist zakaznika, je nutne jej porovnat s nactenymi daty, vice informaci ve OneNotu pod NETLIST - porovnani zak.IPC";
+		 			}
+		}
+}
+
+
+
 sub __GetSizeOfPcb {
 		my $pcbId = shift;
 		my $StepName = shift;
@@ -877,3 +893,12 @@ sub _MoveToServer {
 							}
 			 dirmove (EnumsPaths->Client_ELTESTS . $jobName,"$cestaArchivEL/$jobName");
 }
+
+
+
+
+
+
+
+
+
