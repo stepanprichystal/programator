@@ -179,7 +179,7 @@ sub Run {
 
 	# Control on customer panel if exist o+1_single and not exist customer_panel
 	# multi
-	if ( !HegMethods->GetIdcustomer( $jobId eq '05626' )) {
+	if ( HegMethods->GetIdcustomer( $jobId)  ne '05626' ) {
 
 		if ( CamHelper->StepExists( $inCAM, $jobId, "o+1_single" ) && CamAttributes->GetJobAttrByName( $inCAM, $jobId, "customer_panel" ) ne "yes" ) {
 
