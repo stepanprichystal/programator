@@ -51,13 +51,13 @@ sub Run {
 	my $inCAM = shift;
 	my $jobId = shift;
 
-	my $poznamka  = shift;
-	my $tenting   = shift;
-	my $pressfit  = shift;
-	my $maska01   = shift;
-	my $datacode  = shift;
-	my $ulLogo    = shift;
-	my $jumpScore = shift;
+	my $poznamka    = shift;
+	my $tenting     = shift;
+	my $pressfit    = shift;
+	my $maska01     = shift;
+	my $datacode    = shift;
+	my $ulLogo      = shift;
+	my $jumpScore   = shift;
 	my $wrongFormat = shift;
 
 	my $stepName = "panel";
@@ -65,8 +65,6 @@ sub Run {
 	# ========================================================
 	# Prepare GROUP DATA =====================================
 	# ========================================================
-
- 
 
 	my $taskData = NifData->new();
 
@@ -120,7 +118,7 @@ sub Run {
 	$taskData->SetS_silk_screen_colour( $silk2{"bot"} );
 
 	#my %dim = $self->__GetDimension( $inCAM, $jobId );
-	
+
 	my %dim = JobDim->GetDimension( $inCAM, $jobId );
 
 	$taskData->SetSingle_x( $dim{"single_x"} );
@@ -128,7 +126,7 @@ sub Run {
 	$taskData->SetPanel_x( $dim{"panel_x"} );
 	$taskData->SetPanel_y( $dim{"panel_y"} );
 	$taskData->SetNasobnost_panelu( $dim{"nasobnost_panelu"} );
- 
+
 	my $name = CamAttributes->GetJobAttrByName( $inCAM, $jobId, "user_name" );
 	$taskData->SetZpracoval($name);
 
@@ -173,17 +171,22 @@ sub Run {
 
 	}
 	if ( $silk{"bot"} != $botSilkExist ) {
-		
+
 		my $item = $resultMngr->GetNewItem("Potisk BOT");
 		$resultMngr->AddItem($item);
 		$item->AddError("Nesedí potisk bot v metrixu jobu a ve formuláøi Heliosu");
 	}
-	
+
 	# Control on customer panel if exist o+1_single and not exist customer_panel
-	if(CamHelper->StepExists( $inCAM, $jobId, "o+1_single" ) &&  CamAttributes->GetJobAttrByName( $inCAM, $jobId, "customer_panel" ) ne "yes"){
-		my $item = $resultMngr->GetNewItem("Customer panel");
-		$resultMngr->AddItem($item);
-		$item->AddError("V jobu je step o+1_single, ale nejsou nastaveny atributy zakaznickeho panelu. Nastav je.");
+	# multi
+	if ( !HegMethods->GetIdcustomer( $jobId eq '05626' )) {
+
+		if ( CamHelper->StepExists( $inCAM, $jobId, "o+1_single" ) && CamAttributes->GetJobAttrByName( $inCAM, $jobId, "customer_panel" ) ne "yes" ) {
+
+			my $item = $resultMngr->GetNewItem("Customer panel");
+			$resultMngr->AddItem($item);
+			$item->AddError("V jobu je step o+1_single, ale nejsou nastaveny atributy zakaznickeho panelu. Nastav je.");
+		}
 	}
 
 	unless ( $resultMngr->Succes() ) {
