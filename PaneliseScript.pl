@@ -616,8 +616,8 @@ sub _CheckPool{
 								my @repeats = ();
 								my ($pcbXsizeKus,$pcbYsizeKus,$pcbXsizePanel, $pcbYsizePanel);
 								my $panelNasobnost;
-								
-								if (CamHelper->StepExists( $inCAM, $jobId, 'o+1_single')){
+
+								if (CamHelper->StepExists( $inCAM, $jobId, 'o+1_single') and HegMethods->GetIdcustomer($jobId) ne '05626'){
 									
 										if ( CamStepRepeat->ExistStepAndRepeats( $inCAM, $jobId, 'o+1_panel' ) ) {
 													@repeats = CamStepRepeat->GetRepeatStep( $inCAM, $jobId, 'o+1_panel' );

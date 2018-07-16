@@ -43,8 +43,11 @@ use aliased 'CamHelpers::CamCopperArea';
 use aliased 'CamHelpers::CamLayer';
 use aliased 'CamHelpers::CamJob'; 
 use aliased 'CamHelpers::CamHelper';
+use aliased 'CamHelpers::CamStep';
+use aliased 'CamHelpers::CamStepRepeat';
 
 use aliased 'Managers::MessageMngr::MessageMngr';
+
 
 
 my $inCAM    = InCAM->new();
@@ -177,7 +180,6 @@ my ($prefixDiskName, $bodyPath, $fileName, $suffixName, $jobName, $localFolder) 
 						my $panelName = $item;
 						my $newName = 'mpanel';
 								$inCAM ->	COM ('rename_entity',job=> "$jobName",name=> "$panelName",new_name=>"$newName",is_fw=>'no',type=>'step',fw_type=>'form');
-						
 				}
 			}
 	}else{
@@ -206,10 +208,12 @@ my ($prefixDiskName, $bodyPath, $fileName, $suffixName, $jobName, $localFolder) 
 			_CheckSingleLayer($jobName, $inputStep);
 	}
 	
-	
-	
-	
+	#Change original steps to worksteps in mpanel
+	if (CamHelper->StepExists( $inCAM, $jobName, 'mpanel')){
+				_ChangeStepsInMpanel($jobName);
+	}
 	_Process($jobName, $inputStep);
+	
 
 }
 
@@ -1221,6 +1225,57 @@ sub _SearchResultInReport {
 	 				$messMngr->ShowModal( -1, EnumsGeneral->MessageType_WARNING, \@errorList ); 
 	 		}
 }
+
+sub _ChangeStepsInMpanel {
+		my $jobId = shift;
+
+
+		my @repeats = CamStepRepeat->GetStepAndRepeat( $inCAM, $jobId, 'mpanel' );
+
+		my $line = 1;
+		foreach my $j (@repeats) {
+		
+				my $origStep = __GetOrigStep( $j->{'gSRstep'} );
+					if ($origStep){
+   			  					CamStepRepeat->ChangeStepAndRepeat(
+   			  										$inCAM, 
+   			  										$jobId, 
+   			  										'mpanel',
+   			  										$line, 
+   			  										$origStep, 
+   			  										$j->{'gSRxa'}, 
+   			  										$j->{'gSRya'}, 
+   			  										$j->{'gSRdx'}, 
+   			  										$j->{'gSRdy'},
+   			  										$j->{'gSRnx'}, 
+   			  										$j->{'gSRny'}, 
+   			  										$j->{'gSRangle'}, 
+   			  										'ccw', 
+   			  										$j->{'gSRmirror'}, 
+   			  										$j->{'gSRflip'}
+   			  									);
+   			  									
+   			  									$line++;
+   			  			}else{
+   			  							my @errorList = 'Nemohu zmenit vsechny stepy v mpanelu na pracovni stepy, udelej to rucne!';
+   			  							my $messMngr = MessageMngr->new($jobId);
+   			  								$messMngr->ShowModal( -1, EnumsGeneral->MessageType_WARNING, \@errorList );    #  Script se zastavi
+   			  								last;
+   			  			}
+   				
+		}
+}
+
+sub __GetOrigStep {
+		my $origStep = shift;
+		my $editStep = undef;
+		
+			if ( $origStep eq "o" || $origStep eq "input" || $origStep eq "pcb") {
+							$editStep = 'o+1';
+			}
+	return($editStep);
+}
+
 
 
 
