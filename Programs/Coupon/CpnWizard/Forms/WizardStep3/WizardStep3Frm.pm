@@ -80,7 +80,7 @@ sub GetLayout {
 	Wx::Event::EVT_BUTTON( $showInCAMBtn, -1, sub { $self->__ShowInCAMAsync() } );
 	
 	$PROCESS_END_EVT = Wx::NewEventType;
-	Wx::Event::EVT_COMMAND( $self->{"parentFrm"}, -1, $PROCESS_END_EVT, sub { $self->__GenerateCpnEndHndl(@_) } );
+	Wx::Event::EVT_COMMAND( $self->{"parentFrm"}, -1, $PROCESS_END_EVT, sub { $self->__GenerateCpnCallback(@_) } );
 
 	# SET REFERENCES
 
@@ -109,14 +109,16 @@ sub FinishCoupon {
 
 	$self->{"onStepWorking"}->Do("start");
 
-	$self->{"inCAM"}->ClientFinish();
+	$self->RunAsyncWorker(\&$self->__GenerateCouponAsync, \&$self->__GenerateCpnCallback, [$self->{"jobId"}, 1], $self->{"inCAM"}); 
 
- 
-
-	#start new process, where check job before export
-	my $worker = threads->create( sub { $self->__GenerateCouponAsync( $self->{"jobId"}, 1, $self->{"inCAM"}->GetPort() ) } );
-	$worker->set_thread_exit_only(1);
-	$self->{"threadId"} = $worker->tid();
+#	$self->{"inCAM"}->ClientFinish();
+#
+# 
+#
+#	#start new process, where check job before export
+#	my $worker = threads->create( sub { $self->__GenerateCouponAsync( $self->{"jobId"}, 1, $self->{"inCAM"}->GetPort() ) } );
+#	$worker->set_thread_exit_only(1);
+#	$self->{"threadId"} = $worker->tid();
 
 }
 
@@ -143,14 +145,17 @@ sub __ShowInCAMAsync {
 	my $self = shift;
 	
 	$self->{"onStepWorking"}->Do("start");
+	
+	$self->RunAsyncWorker(\&$self->__GenerateCouponAsync, \&$self->__GenerateCpnCallback, [$self->{"jobId"}, 0], $self->{"inCAM"}); 
+	
 
-	$self->{"inCAM"}->ClientFinish();
-
- 
-	#start new process, where check job before export
-	my $worker = threads->create( sub { $self->__GenerateCouponAsync( $self->{"jobId"}, 0, $self->{"inCAM"}->GetPort() ) } );
-	$worker->set_thread_exit_only(1);
-	$self->{"threadId"} = $worker->tid();
+#	$self->{"inCAM"}->ClientFinish();
+#
+# 
+#	#start new process, where check job before export
+#	my $worker = threads->create( sub { $self->__GenerateCouponAsync( $self->{"jobId"}, 0, $self->{"inCAM"}->GetPort() ) } );
+#	$worker->set_thread_exit_only(1);
+#	$self->{"threadId"} = $worker->tid();
 }
 
 # ================================================================================
@@ -159,13 +164,14 @@ sub __ShowInCAMAsync {
 
 sub __GenerateCouponAsync {
 	my $self         = shift;
+	my $inCAM = shift;
 	my $jobId        = shift;
 	my $wizardFinish = shift;
-	my $serverPort   = shift;
+	 
 
-	my $inCAM = InCAM->new( "remote" => 'localhost', "port" => $serverPort );
-
-	$inCAM->ServerReady();
+#	my $inCAM = InCAM->new( "remote" => 'localhost', "port" => $serverPort );
+#
+#	$inCAM->ServerReady();
 
 	my $result  = 1;
 	my $errMess = "";
@@ -191,31 +197,30 @@ sub __GenerateCouponAsync {
 	$res{"result"}       = $result;
 	$res{"errMess"}      = $errMess;
 	$res{"finishWizard"} = $wizardFinish;
-
-	my $threvent = new Wx::PlThreadEvent( -1, $PROCESS_END_EVT, \%res );
-	Wx::PostEvent( $self->{"parentFrm"}, $threvent );
-
+ 
+	return \%res;
 }
 
 # ================================================================================
 # Private methods
 # ================================================================================
  
-sub __GenerateCpnEndHndl {
-	my ( $self, $frame, $event ) = @_;
+sub __GenerateCpnCallback {
+	my $self         = shift;
+	my $resultData = shift;
 
 	$self->{"onStepWorking"}->Do("stop");
 
-	# Reconnect again InCAM, after  was used by child thread
-	$self->{"inCAM"}->Reconnect();
+#	# Reconnect again InCAM, after  was used by child thread
+#	$self->{"inCAM"}->Reconnect();
 
 	# Set progress bar
  
-	my %d = %{ $event->GetData };
+	#my %d = %{ $event->GetData };
 
-	if ( $d{"result"} ) {
+	if ( $resultData->{"result"} ) {
 
-		if ( $d{"finishWizard"} ) {
+		if ( $resultData->{"finishWizard"} ) {
 
 			$self->{"inCAM"}->ClientFinish();
 			$self->{"parentFrm"}->Close();
@@ -230,7 +235,7 @@ sub __GenerateCpnEndHndl {
 	}
 	else {
 
-		$self->{"messMngr"}->ShowModal( -1, EnumsGeneral->MessageType_ERROR, [ "Error during generating coupon.\nError detail:\n" . $d{"errMess"} ] );
+		$self->{"messMngr"}->ShowModal( -1, EnumsGeneral->MessageType_ERROR, [ "Error during generating coupon.\nError detail:\n" . $resultData->{"errMess"} ] );
 	}
 
 }

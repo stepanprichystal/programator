@@ -12,7 +12,7 @@ use Wx;
 
 #local library
 use aliased 'Enums::EnumsGeneral';
-
+use aliased 'Programs::Coupon::CpnWizard::WizardCore::Helper';
 #tested form
 
 #-------------------------------------------------------------------------------------------#
@@ -57,7 +57,7 @@ sub __SetLayout {
 	#my $stepBackg = Wx::Colour->new( 215, 215, 215 );
 	#$pnlMain->SetBackgroundColour( $stepBackg );    #green
 
-	my $settings = $self->__SetLayoutSett($pnlMain);
+	my $settings = $self->__SetGeneralSett($pnlMain);
 
 	# BUILD STRUCTURE OF LAYOUT
 	$pnlMain->SetSizer($szMain);                                          # DEFINE LAYOUT STRUCTURE
@@ -71,24 +71,39 @@ sub __SetLayout {
 
 }
 
-sub __SetLayoutSett {
+sub __SetGeneralSett {
 	my $self   = shift;
 	my $parent = shift;
 
 	#define staticboxes
-	my $statBox = Wx::StaticBox->new( $parent, -1, 'Settings' );
+	my $statBox = Wx::StaticBox->new( $parent, -1, 'General settings' );
 	my $szStatBox = Wx::StaticBoxSizer->new( $statBox, &Wx::wxVERTICAL );
 	 
-
-	#$szStatBox->Add( $szRow1, 0, &Wx::wxEXPAND );
+	 my $logoFile = Helper->GetResourcePath()."settings20x20.bmp";
+	my $bitmap = Wx::Bitmap->new( $logoFile, &Wx::wxBITMAP_TYPE_BMP );
+	
+	my $statBtmIco = Wx::StaticBitmap->new( $statBox, -1, $bitmap );
+   
+   	Wx::Event::EVT_LEFT_DOWN( $statBtmIco, sub { $self->__ShowHelp( $statBtmIco, @_ ) } );
+	 
+#	 my $splash =  Wx::SplashScreen->new( $bitmap,
+#                           wxSPLASH_CENTRE_ON_PARENT|wxSPLASH_TIMEOUT,
+#                           5000, undef, -1 );
+	
+	$szStatBox->Add( $statBtmIco, 0, &Wx::wxEXPAND );
 
 	# EVENTS
-
+ 
 	 
 
 	# SAVE REFERENCES
 	 
 	return $szStatBox;
+}
+
+sub __ShowHelp{
+	
+	print STDERR "TEST";
 }
 
 sub __OkClick {

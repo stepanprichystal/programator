@@ -32,6 +32,7 @@ sub new {
 	$self->{"jobId"} = shift;
 	$self->{"parentFrm"} = shift;
 	$self->{"messMngr"} = shift;
+	$self->{"asyncWorker"} = shift;
  
 
 	$self->{"coreWizardStep"} = undef;    # will be set during Update methopd
@@ -41,6 +42,19 @@ sub new {
 	$self->{"onStepWorking"} = Event->new();
 
 	return $self;
+}
+
+
+sub RunAsyncWorker{
+	my $self = shift;
+	my $workerMethod   = shift;
+	my $callbackMethod = shift;
+	my $workerParams   = shift;
+	my $inCAM          = shift;
+	
+	
+	$self->{"asyncWorker"}->Run($workerMethod, $callbackMethod, $workerParams, $inCAM);
+	
 }
   
 #-------------------------------------------------------------------------------------------#

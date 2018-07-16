@@ -159,6 +159,8 @@ sub Build {
 		if ( $builder->Build( $variant, $errMess ) ) {
 			my $layout = $builder->GetLayout();
 
+	 
+
 			$self->{"nextStep"} = WizardStep3->new( $layout, $variant );
 			$self->{"nextStep"}
 			  ->Init( $self->{"inCAM"}, $self->{"jobId"}, $self->{"cpnSource"}, $self->{"userFilter"}, $self->{"userGroups"}, $self->{"globalSett"} );
@@ -172,6 +174,8 @@ sub Build {
 
 	return $result;
 }
+
+ 
 
 #-------------------------------------------------------------------------------------------#
 # Update method - update wizard step data model

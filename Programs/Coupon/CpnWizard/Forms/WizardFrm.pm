@@ -25,6 +25,7 @@ use aliased 'Programs::Coupon::CpnWizard::Forms::WizardStep1::WizardStep1Frm';
 use aliased 'Programs::Coupon::CpnWizard::Forms::WizardStep2::WizardStep2Frm';
 use aliased 'Programs::Coupon::CpnWizard::Forms::WizardStep3::WizardStep3Frm';
 use aliased 'Enums::EnumsGeneral';
+use aliased 'Widgets::WxAsyncWorker::WxAsyncWorker';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -51,6 +52,7 @@ sub new {
 
 	# Properties
 	$self->{"wizardCore"} = undef;
+	$self->{"asyncWorker"} = WxAsyncWorker->new($self->{"mainFrm"});
 
 	return $self;
 }
@@ -62,11 +64,11 @@ sub Init {
 	my $jobId = $self->{"jobId"};
 
 	# init wizard GUI steps
-	$self->{"wizardSteps"}->{1} = WizardStep1Frm->new( $inCAM, $jobId, $self->{"mainFrm"}, $self->_GetMessageMngr() );
+	$self->{"wizardSteps"}->{1} = WizardStep1Frm->new( $inCAM, $jobId, $self->{"mainFrm"}, $self->_GetMessageMngr(), $self->{"asyncWorker"} );
 
-	$self->{"wizardSteps"}->{2} = WizardStep2Frm->new( $inCAM, $jobId, $self->{"mainFrm"}, $self->_GetMessageMngr() );
+	$self->{"wizardSteps"}->{2} = WizardStep2Frm->new( $inCAM, $jobId, $self->{"mainFrm"}, $self->_GetMessageMngr(), $self->{"asyncWorker"} );
 
-	$self->{"wizardSteps"}->{3} = WizardStep3Frm->new( $inCAM, $jobId, $self->{"mainFrm"}, $self->_GetMessageMngr() );
+	$self->{"wizardSteps"}->{3} = WizardStep3Frm->new( $inCAM, $jobId, $self->{"mainFrm"}, $self->_GetMessageMngr(), $self->{"asyncWorker"} );
 
 	$self->__SetLayout();
 
