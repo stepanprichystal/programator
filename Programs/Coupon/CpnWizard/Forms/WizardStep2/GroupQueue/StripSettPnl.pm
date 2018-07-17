@@ -18,7 +18,7 @@ use aliased 'Helpers::GeneralHelper';
 use aliased 'CamHelpers::CamLayer';
 use aliased 'Programs::Exporter::ExportChecker::Groups::NifExport::Presenter::NifHelper';
 use aliased 'Programs::Coupon::CpnWizard::WizardCore::Helper';
-
+use aliased 'Packages::Events::Event';
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
@@ -26,6 +26,7 @@ use aliased 'Programs::Coupon::CpnWizard::WizardCore::Helper';
 sub new {
 	my $class  = shift;
 	my $parent = shift;
+	my $stripId = shift;
 	my $type  = shift;
 	my $model  = shift;
 
@@ -39,13 +40,16 @@ sub new {
 
 	bless($self);
 
-	$self->__SetLayout($type, $model);
+	$self->__SetLayout($stripId, $type, $model);
+	
+	$self->{"onStripSett"} = Event->new();
 
 	return $self;
 }
 
 sub __SetLayout {
 	my $self  = shift;
+		my $stripId = shift;
 	my $type          = shift;
 	my $model         = shift;
 
@@ -69,6 +73,9 @@ sub __SetLayout {
 	$szMain->Add( $titleTxt,   0, &Wx::wxEXPAND | &Wx::wxLEFT, 2 );
 	$szMain->Add( $btnSett,   0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
 	$self->SetSizer($szMain);
+	
+	# Events
+	Wx::Event::EVT_BUTTON( $btnSett, -1, sub { $self->{"onStripSett"}->Do($stripId) } );
 	
  
 }

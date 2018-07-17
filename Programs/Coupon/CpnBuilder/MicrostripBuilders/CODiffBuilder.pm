@@ -18,7 +18,7 @@ use Math::Trig;
 #local library
 use aliased 'CamHelpers::CamJob';
 use aliased 'CamHelpers::CamHelper';
-use aliased 'Packages::CAM::SymbolDrawing::Point';
+use aliased 'Programs::Coupon::CpnBuilder::CpnLayout::PointLayout';
 use aliased 'Programs::Coupon::Enums';
 
 #-------------------------------------------------------------------------------------------#

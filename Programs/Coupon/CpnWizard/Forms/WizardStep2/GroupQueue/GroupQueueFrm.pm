@@ -39,7 +39,8 @@ sub new {
 
 	#EVENTS
 
-	#$self->{"onProduce"} = Event->new();
+	$self->{"onGroupSett"} = Event->new();
+	$self->{"onStripSett"} = Event->new();
 
 	return $self;
 }
@@ -51,11 +52,10 @@ sub SetGroups {
 	my $constrGroups = shift;
 
 	# remove old groups
-	for(my $i= scalar(@{ $self->{"jobItems"} }) -1;  $i >= 0 ; $i--){
-		
+	for ( my $i = scalar( @{ $self->{"jobItems"} } ) - 1 ; $i >= 0 ; $i-- ) {
+
 		$self->RemoveItemFromQueue( $self->{"jobItems"}->[$i]->GetItemId() );
 	}
- 
 
 	#create rows for each constraint
 
@@ -65,6 +65,10 @@ sub SetGroups {
 
 		my $item = GroupQueueRowFrm->new( $self->GetParentForItem(), $g, \@gc );
 		$self->AddItemToQueue($item);
+
+		# Add handler to item
+		$item->{"onGroupSett"}->Add( sub { $self->{"onGroupSett"}->Do(@_) } );
+		$item->{"onStripSett"}->Add( sub { $self->{"onStripSett"}->Do(@_) } );
 
 	}
 
@@ -85,7 +89,7 @@ sub __SetLayout {
 
 	$self->SetItemUnselectColor( Wx::Colour->new( 255, 255, 255 ) );
 	$self->SetItemSelectColor( Wx::Colour->new( 255, 255, 255 ) );
-	
+
 	$self->SetBackgroundColour( Wx::Colour->new( 255, 255, 255 ) );
 
 }

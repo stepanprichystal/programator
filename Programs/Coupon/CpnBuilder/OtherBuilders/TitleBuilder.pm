@@ -18,7 +18,7 @@ use List::Util qw[min max];
 use aliased 'Programs::Coupon::Enums';
 use aliased 'CamHelpers::CamStep';
 use aliased 'CamHelpers::CamHelper';
-use aliased 'Packages::CAM::SymbolDrawing::Point';
+use aliased 'Programs::Coupon::CpnBuilder::CpnLayout::PointLayout';
 use aliased 'Programs::Coupon::CpnBuilder::CpnLayout::TitleLayout';
 
 #-------------------------------------------------------------------------------------------#
@@ -94,7 +94,7 @@ sub Build {
 	# title in 1 row
 	if ( $rowCnt == 1 ) {
 
-		my $logoPos = Point->new(
+		my $logoPos = PointLayout->new(
 			$self->{"cpnSett"}->GetTitleMargin() / 1000 + $self->{"cpnSett"}->GetLogoWidth() / 2 / 1000,
 			$self->{"cpnSett"}->GetTitleMargin() / 1000 + $self->{"cpnSett"}->GetLogoHeight() / 2 / 1000    # logo is pad and pad has origin in center
 		);
@@ -103,7 +103,7 @@ sub Build {
 
 		$self->{"layout"}->SetLogoPosition($logoPos);
 
-		my $jobIdPos = Point->new(
+		my $jobIdPos = PointLayout->new(
 			$self->{"cpnSett"}->GetTitleMargin() / 1000 +
 			  $self->{"cpnSett"}->GetLogoWidth() / 1000 +
 			  $self->{"cpnSett"}->GetTitleLogoJobIdHDist() / 1000,
@@ -127,13 +127,13 @@ sub Build {
 	# title in 2 rows
 	else {
 
-		my $jobIdPos = Point->new( ( $self->{"cpnSett"}->GetTitleMargin() ) / 1000, ( $self->{"cpnSett"}->GetTitleMargin() ) / 1000 );
+		my $jobIdPos = PointLayout->new( ( $self->{"cpnSett"}->GetTitleMargin() ) / 1000, ( $self->{"cpnSett"}->GetTitleMargin() ) / 1000 );
 
 		#$jobIdPos->Rotate( 90, 0 ) if ( $type eq "left" );
 
 		$self->{"layout"}->SetJobIdPosition($jobIdPos);
 
-		my $logoPos = Point->new(
+		my $logoPos = PointLayout->new(
 			( $self->{"cpnSett"}->GetTitleMargin() ) / 1000 + $self->{"cpnSett"}->GetLogoWidth() / 2 / 1000,
 			(
 			   $self->{"cpnSett"}->GetTitleMargin() +
@@ -165,12 +165,12 @@ sub Build {
 	if ( $type eq "top" ) {
 
 		my $logoPos    = $self->{"layout"}->GetLogoPosition();
-		my $logoPosNew = Point->new( $self->{"cpnSett"}->GetCouponMargin() / 1000 + $logoPos->X(),
+		my $logoPosNew = PointLayout->new( $self->{"cpnSett"}->GetCouponMargin() / 1000 + $logoPos->X(),
 									 $self->{"cpnSett"}->GetCouponMargin() / 1000 + $self->{"cpnsSingleHeight"} + $logoPos->Y() );
 		$self->{"layout"}->SetLogoPosition($logoPosNew);
 
 		my $jobIdPos    = $self->{"layout"}->GetJobIdPosition();
-		my $jobIdPosNew = Point->new( $self->{"cpnSett"}->GetCouponMargin() / 1000 + $jobIdPos->X(),
+		my $jobIdPosNew = PointLayout->new( $self->{"cpnSett"}->GetCouponMargin() / 1000 + $jobIdPos->X(),
 									  $self->{"cpnSett"}->GetCouponMargin() / 1000 + $self->{"cpnsSingleHeight"} + $jobIdPos->Y() );
 		$self->{"layout"}->SetJobIdPosition($jobIdPosNew);
 
@@ -189,12 +189,12 @@ sub Build {
 		my $logoPos = $self->{"layout"}->GetLogoPosition();
 		$logoPos->Rotate( 90, 0 );
 
-		my $logoPosNew = Point->new( $xPos + $logoPos->X(), $yPos + $logoPos->Y() );
+		my $logoPosNew = PointLayout->new( $xPos + $logoPos->X(), $yPos + $logoPos->Y() );
 		$self->{"layout"}->SetLogoPosition($logoPosNew);
 
 		my $jobIdPos = $self->{"layout"}->GetJobIdPosition();
 		$jobIdPos->Rotate( 90, 0 );
-		my $jobIdPosNew = Point->new( $xPos + $jobIdPos->X(), $yPos + $jobIdPos->Y() );
+		my $jobIdPosNew = PointLayout->new( $xPos + $jobIdPos->X(), $yPos + $jobIdPos->Y() );
 		$self->{"layout"}->SetJobIdPosition($jobIdPosNew);
 	}
 

@@ -22,8 +22,9 @@ use aliased 'Programs::Coupon::CpnSettings::CpnSettings';
 use aliased 'Programs::Coupon::CpnSettings::CpnSingleSettings';
 use aliased 'Programs::Coupon::CpnSettings::CpnStripSettings';
 use aliased 'Programs::Coupon::CpnWizard::WizardCore::Helper';
-
+use aliased 'Packages::ObjectStorable::JsonStorable::JsonStorable';
 use aliased 'Programs::Coupon::CpnGenerator::CpnGenerator';
+use aliased 'Packages::Events::Event';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -46,7 +47,9 @@ sub new {
 	$self->{"cpnVariant"}   = $cpnVariant;
 	$self->{"cpnGenerated"} = 0;
 	
-	
+
+	# EVENTS
+	$self->{"onGenerateCouponAsync"} = Event->new(); 
 
 	return $self;
 }
@@ -131,20 +134,43 @@ sub UpdateCpnGenerated {
 	$self->{"cpnGenerated"} = shift;
 }
  
+sub GenerateCoupon{
+	my $self = shift;
+	my $wizardFinish = shift;
+	
+	# Define params for async subroutine
+	my @params = ();
+	
+	my $layout       = $self->GetCpnLayout();
+	my $storable     = JsonStorable->new();
+	my $cpnLayoutSer = $storable->Encode($layout);
+	
+	push( @params, $self->{"jobId"} );
+	push( @params, $self->GetCpnGenerated() );
+	push( @params, $wizardFinish );
+	push( @params, $cpnLayoutSer );
+
+ 
+	$self->RunAsyncWorker( \&GenerateCouponAsync, sub {  $self->{"onGenerateCouponAsync"}->Do(@_) }, \@params, $self->{"inCAM"} );
+}
+ 
+ 
 # Asynchrounous function, called from child thread
 sub GenerateCouponAsync {
-	my $self = shift;
-
+	my $className = shift;
 	my $inCAM        = shift;
 	my $jobId        = shift;
-	my $cpnLayout    = shift;
 	my $cpnGenerated = shift;
-
 	my $wizardFinish = shift;
-	my $errMess      = shift;
+	my $cpnLayoutSer    = shift; # serialized cpn layout
+	
+	my $errMess      = "";
 
 	my $result = 1;
 
+	my $storable = JsonStorable->new();
+	my $cpnLayout = $storable->Decode($cpnLayoutSer);
+ 
 	unless ($cpnGenerated) {
 		my $generator = CpnGenerator->new( $inCAM, $jobId );
 		
@@ -159,8 +185,14 @@ sub GenerateCouponAsync {
 		my $generator = CpnGenerator->new( $inCAM, $jobId );
 		$generator->FlattenCpn($cpnLayout);
 	}
+	
+	my %res : shared = ();
+
+	$res{"result"}       = $result;
+	$res{"errMess"}      = $errMess;
+	$res{"finishWizard"} = $wizardFinish;
  
-	return $result;
+	return \%res;
 }
 
 #-------------------------------------------------------------------------------------------#

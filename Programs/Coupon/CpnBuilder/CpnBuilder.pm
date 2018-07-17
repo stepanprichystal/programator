@@ -20,7 +20,7 @@ use aliased 'CamHelpers::CamHelper';
 use aliased 'Programs::Coupon::Enums';
 use aliased 'Programs::Coupon::CpnBuilder::CpnSingleBuilder';
 use aliased 'Programs::Coupon::CpnBuilder::OtherBuilders::TitleBuilder';
-use aliased 'Packages::CAM::SymbolDrawing::Point';
+use aliased 'Programs::Coupon::CpnBuilder::CpnLayout::PointLayout';
 use aliased 'Programs::Coupon::CpnBuilder::CpnLayout::CpnLayout';
 use aliased 'Programs::Coupon::CpnBuilder::OtherBuilders::CpnLayerBuilder';
 
@@ -136,7 +136,7 @@ sub Build {
 		for ( my $i = 0 ; $i < scalar( $self->{"layout"}->GetCouponsSingle() ) ; $i++ ) {
 			my $cpnSignleLayout = ( $self->{"layout"}->GetCouponsSingle() )[$i];
 
-			my $pos = Point->new( $cpnMargin{"left"}, $yCurrent );
+			my $pos = PointLayout->new( $cpnMargin{"left"}, $yCurrent );
 			$cpnSignleLayout->SetPosition($pos);
 
 			$yCurrent += $cpnSignleLayout->GetHeight() + $self->{"cpnSett"}->GetCouponSpace() / 1000;

@@ -30,7 +30,7 @@ sub new {
 sub GetPad2GND {
 	my $self = shift;
 
-	return $self->_GetVal("pad2GNDClearance");
+	return $self->_GetVal("pad2GND");
 
 }
 
@@ -38,7 +38,7 @@ sub SetPad2GND {
 	my $self = shift;
 	my $val  = shift;
 
-	$self->_SetVal("pad2GNDClearance") = $val;
+	$self->_SetVal("pad2GND", $val);
 }
 
 sub GetTrackToCopper {
@@ -51,7 +51,7 @@ sub SetTrackToCopper {
 	my $self = shift;
 	my $val  = shift;
 
-	$self->_SetVal("trackToCopper") = $val;
+	$self->_SetVal("trackToCopper", $val);
 }
 
 sub GetPadClearance {
@@ -65,7 +65,7 @@ sub SetPadClearance {
 	my $self = shift;
 	my $val  = shift;
 
-	$self->_SetVal("padClearance") = $val;
+	$self->_SetVal("padClearance", $val);
 }
 
 #-------------------------------------------------------------------------------------------#

@@ -64,16 +64,16 @@ sub Init {
 	my $jobId = $self->{"jobId"};
 
 	# init wizard GUI steps
-	$self->{"wizardSteps"}->{1} = WizardStep1Frm->new( $inCAM, $jobId, $self->{"mainFrm"}, $self->_GetMessageMngr(), $self->{"asyncWorker"} );
+	$self->{"wizardSteps"}->{1} = WizardStep1Frm->new( $inCAM, $jobId, $self->{"mainFrm"}, $self->_GetMessageMngr() );
 
-	$self->{"wizardSteps"}->{2} = WizardStep2Frm->new( $inCAM, $jobId, $self->{"mainFrm"}, $self->_GetMessageMngr(), $self->{"asyncWorker"} );
+	$self->{"wizardSteps"}->{2} = WizardStep2Frm->new( $inCAM, $jobId, $self->{"mainFrm"}, $self->_GetMessageMngr() );
 
-	$self->{"wizardSteps"}->{3} = WizardStep3Frm->new( $inCAM, $jobId, $self->{"mainFrm"}, $self->_GetMessageMngr(), $self->{"asyncWorker"} );
+	$self->{"wizardSteps"}->{3} = WizardStep3Frm->new( $inCAM, $jobId, $self->{"mainFrm"}, $self->_GetMessageMngr() );
 
 	$self->__SetLayout();
 
 	# Properties
-	$self->{"wizardCore"} = WizardCore->new( $inCAM, $jobId, scalar( keys %{ $self->{"wizardSteps"} } ) );
+	$self->{"wizardCore"} = WizardCore->new( $inCAM, $jobId, scalar( keys %{ $self->{"wizardSteps"} } ), $self->{"asyncWorker"} );
 
 	my $xmlPath = 'c:\Export\CouponExport\cpn.xml';
 	$self->{"wizardCore"}->Init($xmlPath);

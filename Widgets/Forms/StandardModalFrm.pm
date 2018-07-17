@@ -80,8 +80,9 @@ sub SetButtonHeight {
 sub AddContent {
 	my $self    = shift;
 	my $content = shift;
+	my $margin = shift // 4; # default margin 4 px 
 
-	$self->{"szContainer"}->Add( $content, 1, &Wx::wxEXPAND | &Wx::wxALL, 4 );
+	$self->{"szContainer"}->Add( $content, 1, &Wx::wxEXPAND | &Wx::wxALL, $margin );
 }
 
 sub AddButton {

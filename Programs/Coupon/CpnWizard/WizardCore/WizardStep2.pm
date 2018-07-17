@@ -163,7 +163,7 @@ sub Build {
 
 			$self->{"nextStep"} = WizardStep3->new( $layout, $variant );
 			$self->{"nextStep"}
-			  ->Init( $self->{"inCAM"}, $self->{"jobId"}, $self->{"cpnSource"}, $self->{"userFilter"}, $self->{"userGroups"}, $self->{"globalSett"} );
+			  ->Init( $self->{"inCAM"}, $self->{"jobId"}, $self->{"cpnSource"}, $self->{"userFilter"}, $self->{"userGroups"}, $self->{"globalSett"},$self->{"asyncWorker"}  );
 
 		}
 		else {
@@ -218,6 +218,20 @@ sub GetAutogenerate {
 	my $self = shift;
 
 	return $self->{"autogenerate"};
+}
+
+sub GetGroupSettings {
+	my $self = shift;
+	my $groupId = shift;
+	
+	return $self->{"cpnGroupSett"}->{$groupId};
+}
+
+sub GetStripSettings {
+	my $self = shift;
+	my $stripId = shift;
+	
+	return $self->{"cpnStripSett"}->{$stripId};
 }
 
 #-------------------------------------------------------------------------------------------#

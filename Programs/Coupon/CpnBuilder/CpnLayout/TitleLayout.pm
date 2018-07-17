@@ -4,6 +4,11 @@
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Programs::Coupon::CpnBuilder::CpnLayout::TitleLayout;
+use base qw(Programs::Coupon::CpnBuilder::CpnLayout::CpnLayoutBase);
+
+use Class::Interface;
+&implements('Packages::ObjectStorable::JsonStorable::IJsonStorable');
+
 
 #3th party library
 use strict;
@@ -17,6 +22,7 @@ use warnings;
 sub new {
 	my $class = shift;
 	my $self  = {};
+	$self = $class->SUPER::new(@_);
 	bless $self;
 
 	$self->{"type"} = undef;    # top/right
@@ -47,6 +53,8 @@ sub new {
 	$self->{"logoWidth"}        = undef;
 	$self->{"logoSymbolHeight"} = undef;
 	$self->{"logoSymbolWidth"}  = undef;
+	
+	$self->{"__CLASS__"} = "Programs::Coupon::CpnBuilder::CpnLayout::TitleLayout";
 
 	return $self;
 
@@ -248,6 +256,8 @@ sub GetLogoSymbol {
 
 	return $self->{"logoSymbol"};
 }
+
+sub TO_JSON { return { %{ shift() } }; }
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#

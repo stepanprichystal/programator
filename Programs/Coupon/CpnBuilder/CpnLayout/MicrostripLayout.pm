@@ -4,6 +4,11 @@
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Programs::Coupon::CpnBuilder::CpnLayout::MicrostripLayout;
+use base qw(Programs::Coupon::CpnBuilder::CpnLayout::CpnLayoutBase);
+
+use Class::Interface;
+&implements('Packages::ObjectStorable::JsonStorable::IJsonStorable');
+
 
 #3th party library
 use strict;
@@ -17,6 +22,7 @@ use warnings;
 sub new {
 	my $class = shift;
 	my $self  = {};
+	$self = $class->SUPER::new(@_);
 	bless $self;
 
 	# Microstrip layout properties

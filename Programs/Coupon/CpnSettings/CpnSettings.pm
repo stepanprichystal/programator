@@ -37,13 +37,13 @@ sub SetStepName {
 	my $self = shift;
 	my $val  = shift;
 
-	$self->_SetVal("stepName") = $val;
+	$self->_SetVal("stepName", $val);
 }
 
 sub GetCouponSingleMargin {
 	my $self = shift;
 
-	return $self->_GetVal("marginSingle");
+	return $self->_GetVal("couponSingleMargin");
 
 }
 
@@ -51,13 +51,13 @@ sub SetCouponSingleMargin {
 	my $self = shift;
 	my $val  = shift;
 
-	$self->_SetVal("marginSingle") = $val;
+	$self->_SetVal("couponSingleMargin", $val);
 }
 
 sub GetCouponMargin {
 	my $self = shift;
 
-	return $self->_GetVal("marginCoupon");
+	return $self->_GetVal("couponMargin");
 
 }
 
@@ -65,7 +65,7 @@ sub SetCouponMargin {
 	my $self = shift;
 	my $val  = shift;
 
-	$self->_SetVal("marginCoupon") = $val;
+	$self->_SetVal("couponMargin", $val);
 }
 
 sub GetCouponSpace {
@@ -79,7 +79,7 @@ sub Set {
 	my $self = shift;
 	my $val  = shift;
 
-	$self->_SetVal("") = $val;
+	$self->_SetVal("", $val);
 }
 
 sub GetTrackPadIsolation {
@@ -92,7 +92,7 @@ sub SetTrackPadIsolation {
 	my $self = shift;
 	my $val  = shift;
 
-	$self->_SetVal("trackPadIsolation") = $val;
+	$self->_SetVal("trackPadIsolation", $val);
 }
 
 sub GetXmlUnits {
@@ -110,7 +110,7 @@ sub SetMaxTrackCnt {
 	my $self = shift;
 	my $val  = shift;
 
-	$self->_SetVal("maxTrackCnt") = $val;
+	$self->_SetVal("maxTrackCnt", $val);
 }
 
 sub GetShareGNDPads {
@@ -123,7 +123,7 @@ sub SetShareGNDPads {
 	my $self = shift;
 	my $val  = shift;
 
-	$self->_SetVal("shareGNDPads") = $val;
+	$self->_SetVal("shareGNDPads", $val);
 }
 
 sub GetRouteBetween {
@@ -136,7 +136,7 @@ sub SetRouteBetween {
 	my $self = shift;
 	my $val  = shift;
 
-	$self->_SetVal("routeBetween") = $val;
+	$self->_SetVal("routeBetween", $val);
 }
 
 sub GetRouteAbove {
@@ -149,7 +149,7 @@ sub SetRouteAbove {
 	my $self = shift;
 	my $val  = shift;
 
-	$self->_SetVal("routeAbove") = $val;
+	$self->_SetVal("routeAbove", $val);
 }
 
 sub GetRouteBelow {
@@ -162,7 +162,7 @@ sub SetRouteBelow {
 	my $self = shift;
 	my $val  = shift;
 
-	$self->_SetVal("routeBelow") = $val;
+	$self->_SetVal("routeBelow", $val);
 }
 
 sub GetRouteStraight {
@@ -175,7 +175,7 @@ sub SetRouteStraight {
 	my $self = shift;
 	my $val  = shift;
 
-	$self->_SetVal("routeStraight") = $val;
+	$self->_SetVal("routeStraight", $val);
 }
 
 sub GetTwoEndedDesign {
@@ -188,7 +188,7 @@ sub SetTwoEndedDesign {
 	my $self = shift;
 	my $val  = shift;
 
-	$self->_SetVal("twoEndedDesign") = $val;
+	$self->_SetVal("twoEndedDesign", $val);
 }
 
 # Info text settings
@@ -204,7 +204,7 @@ sub SetPadsTopTextDist {
 	my $self = shift;
 	my $val  = shift;
 
-	$self->_SetVal("padsTopTextDist") = $val;
+	$self->_SetVal("padsTopTextDist", $val);
 }
 
 sub GetInfoText {
@@ -218,7 +218,7 @@ sub SetInfoText {
 	my $self = shift;
 	my $val  = shift;
 
-	$self->_SetVal("infoText") = $val;
+	$self->_SetVal("infoText", $val);
 }
 
 sub GetInfoTextPosition {
@@ -232,7 +232,7 @@ sub SetInfoTextPosition {
 	my $self = shift;
 	my $val  = shift;
 
-	$self->_SetVal("infoTextPosition") = $val;
+	$self->_SetVal("infoTextPosition", $val);
 }
 
 sub GetInfoTextNumber {
@@ -246,7 +246,7 @@ sub SetInfoTextNumber {
 	my $self = shift;
 	my $val  = shift;
 
-	$self->_SetVal("infoTextNumber") = $val;
+	$self->_SetVal("infoTextNumber", $val);
 }
 
 sub GetInfoTextTrackImpedance {
@@ -260,7 +260,7 @@ sub SetInfoTextTrackImpedance {
 	my $self = shift;
 	my $val  = shift;
 
-	$self->_SetVal("infoTextTrackImpedance") = $val;
+	$self->_SetVal("infoTextTrackImpedance", $val);
 }
 
 sub GetInfoTextTrackWidth {
@@ -274,7 +274,7 @@ sub SetInfoTextTrackWidth {
 	my $self = shift;
 	my $val  = shift;
 
-	$self->_SetVal("infoTextTrackWidth") = $val;
+	$self->_SetVal("infoTextTrackWidth", $val);
 }
 
 sub GetInfoTextTrackSpace {
@@ -288,7 +288,7 @@ sub SetInfoTextTrackSpace {
 	my $self = shift;
 	my $val  = shift;
 
-	$self->_SetVal("infoTextTrackSpace") = $val;
+	$self->_SetVal("infoTextTrackSpace", $val);
 }
 
 sub GetInfoTextTrackLayer {
@@ -302,7 +302,7 @@ sub SetInfoTextTrackLayer {
 	my $self = shift;
 	my $val  = shift;
 
-	$self->_SetVal("infoTextTrackLayer") = $val;
+	$self->_SetVal("infoTextTrackLayer", $val);
 }
 
 sub GetInfoTextHSpacing {
@@ -316,7 +316,7 @@ sub SetInfoTextHSpacing {
 	my $self = shift;
 	my $val  = shift;
 
-	$self->_SetVal("infoTextHSpacing") = $val;
+	$self->_SetVal("infoTextHSpacing", $val);
 }
 
 sub GetInfoTextVSpacing {
@@ -330,7 +330,7 @@ sub SetInfoTextVSpacing {
 	my $self = shift;
 	my $val  = shift;
 
-	$self->_SetVal("infoTextVSpacing") = $val;
+	$self->_SetVal("infoTextVSpacing", $val);
 }
 
 sub GetInfoTextWidth {
@@ -344,7 +344,7 @@ sub SetInfoTextWidth {
 	my $self = shift;
 	my $val  = shift;
 
-	$self->_SetVal("infoTextWidth") = $val;
+	$self->_SetVal("infoTextWidth", $val);
 }
 
 sub GetInfoTextHeight {
@@ -358,7 +358,7 @@ sub SetInfoTextHeight {
 	my $self = shift;
 	my $val  = shift;
 
-	$self->_SetVal("infoTextHeight") = $val;
+	$self->_SetVal("infoTextHeight", $val);
 }
 
 sub GetInfoTextWeight {
@@ -372,7 +372,7 @@ sub SetInfoTextWeight {
 	my $self = shift;
 	my $val  = shift;
 
-	$self->_SetVal("infoTextWeight") = $val;
+	$self->_SetVal("infoTextWeight", $val);
 }
 
 sub GetInfoTextRightCpnDist {
@@ -386,7 +386,7 @@ sub SetInfoTextRightCpnDist {
 	my $self = shift;
 	my $val  = shift;
 
-	$self->_SetVal("infoTextRightCpnDist") = $val;
+	$self->_SetVal("infoTextRightCpnDist", $val);
 }
 
 sub GetInfoTextUnmask {
@@ -400,7 +400,7 @@ sub SetInfoTextUnmask {
 	my $self = shift;
 	my $val  = shift;
 
-	$self->_SetVal("infoTextUnmask") = $val;
+	$self->_SetVal("infoTextUnmask", $val);
 }
 
 # pad text settings
@@ -416,7 +416,7 @@ sub SetPadTextWidth {
 	my $self = shift;
 	my $val  = shift;
 
-	$self->_SetVal("padTextWidth") = $val;
+	$self->_SetVal("padTextWidth", $val);
 }
 
 sub GetPadTextHeight {
@@ -430,7 +430,7 @@ sub SetPadTextHeight {
 	my $self = shift;
 	my $val  = shift;
 
-	$self->_SetVal("padTextHeight") = $val;
+	$self->_SetVal("padTextHeight", $val);
 }
 
 sub GetPadTextWeight {
@@ -444,7 +444,7 @@ sub SetPadTextWeight {
 	my $self = shift;
 	my $val  = shift;
 
-	$self->_SetVal("padTextWeight") = $val;
+	$self->_SetVal("padTextWeight", $val);
 }
 
 sub GetPadTextDist {
@@ -458,7 +458,7 @@ sub SetPadTextDist {
 	my $self = shift;
 	my $val  = shift;
 
-	$self->_SetVal("padTextDist") = $val;
+	$self->_SetVal("padTextDist", $val);
 }
 
 sub GetPadText {
@@ -472,7 +472,7 @@ sub SetPadText {
 	my $self = shift;
 	my $val  = shift;
 
-	$self->_SetVal("padText") = $val;
+	$self->_SetVal("padText", $val);
 }
 
 sub GetPadTextUnmask {
@@ -486,7 +486,7 @@ sub SetPadTextUnmask {
 	my $self = shift;
 	my $val  = shift;
 
-	$self->_SetVal("padTextUnmask") = $val;
+	$self->_SetVal("padTextUnmask", $val);
 }
 
 # Guard track settings
@@ -502,7 +502,7 @@ sub SetGuardTracks {
 	my $self = shift;
 	my $val  = shift;
 
-	$self->_SetVal("guardTracks") = $val;
+	$self->_SetVal("guardTracks", $val);
 }
 
 sub GetGuardTracksType {
@@ -516,7 +516,7 @@ sub SetGuardTracksType {
 	my $self = shift;
 	my $val  = shift;
 
-	$self->_SetVal("guardTracksType") = $val;
+	$self->_SetVal("guardTracksType", $val);
 }
 
 sub GetGuardTrack2TrackDist {
@@ -530,7 +530,7 @@ sub SetGuardTrack2TrackDist {
 	my $self = shift;
 	my $val  = shift;
 
-	$self->_SetVal("guardTrack2TrackDist") = $val;
+	$self->_SetVal("guardTrack2TrackDist", $val);
 }
 
 sub GetGuardTrack2PadDist {
@@ -544,7 +544,7 @@ sub SetGuardTrack2PadDist {
 	my $self = shift;
 	my $val  = shift;
 
-	$self->_SetVal("guardTrack2PadDist") = $val;
+	$self->_SetVal("guardTrack2PadDist", $val);
 }
 
 sub GetGuardTrack2Shielding {
@@ -558,7 +558,7 @@ sub SetGuardTrack2Shielding {
 	my $self = shift;
 	my $val  = shift;
 
-	$self->_SetVal("guardTrack2Shielding") = $val;
+	$self->_SetVal("guardTrack2Shielding", $val);
 }
 
 sub GetGuardTrackWidth {
@@ -572,7 +572,7 @@ sub SetGuardTrackWidth {
 	my $self = shift;
 	my $val  = shift;
 
-	$self->_SetVal("guardTrackWidth") = $val;
+	$self->_SetVal("guardTrackWidth", $val);
 }
 
 # Shielding settings
@@ -588,7 +588,7 @@ sub SetShielding {
 	my $self = shift;
 	my $val  = shift;
 
-	$self->_SetVal("shielding") = $val;
+	$self->_SetVal("shielding", $val);
 }
 
 sub GetShieldingType {
@@ -602,7 +602,7 @@ sub SetShieldingType {
 	my $self = shift;
 	my $val  = shift;
 
-	$self->_SetVal("shieldingType") = $val;
+	$self->_SetVal("shieldingType", $val);
 }
 
 sub GetShieldingSymbol {
@@ -616,7 +616,7 @@ sub SetShieldingSymbol {
 	my $self = shift;
 	my $val  = shift;
 
-	$self->_SetVal("shieldingSymbol") = $val;
+	$self->_SetVal("shieldingSymbol", $val);
 }
 
 sub GetShieldingSymbolDX {
@@ -630,7 +630,7 @@ sub SetShieldingSymbolDX {
 	my $self = shift;
 	my $val  = shift;
 
-	$self->_SetVal("shieldingSymbolDX") = $val;
+	$self->_SetVal("shieldingSymbolDX", $val);
 }
 
 sub GetShieldingSymbolDY {
@@ -644,7 +644,7 @@ sub SetShieldingSymbolDY {
 	my $self = shift;
 	my $val  = shift;
 
-	$self->_SetVal("shieldingSymbolDY") = $val;
+	$self->_SetVal("shieldingSymbolDY", $val);
 }
 
 # Title (logo + job id)
@@ -659,7 +659,7 @@ sub SetTitle {
 	my $self = shift;
 	my $val  = shift;
 
-	$self->_SetVal("title") = $val;
+	$self->_SetVal("title", $val);
 }
 
 sub GetTitleTextWidth {
@@ -673,7 +673,7 @@ sub SetTitleTextWidth {
 	my $self = shift;
 	my $val  = shift;
 
-	$self->_SetVal("titleTextWidth") = $val;
+	$self->_SetVal("titleTextWidth", $val);
 }
 
 sub GetTitleTextHeight {
@@ -687,7 +687,7 @@ sub SetTitleTextHeight {
 	my $self = shift;
 	my $val  = shift;
 
-	$self->_SetVal("titleTextHeight") = $val;
+	$self->_SetVal("titleTextHeight", $val);
 }
 
 sub GetTitleTextWeight {
@@ -701,7 +701,7 @@ sub SetTitleTextWeight {
 	my $self = shift;
 	my $val  = shift;
 
-	$self->_SetVal("titleTextWeight") = $val;
+	$self->_SetVal("titleTextWeight", $val);
 }
 
 sub GetTitleMargin {
@@ -715,7 +715,7 @@ sub SetTitleMargin {
 	my $self = shift;
 	my $val  = shift;
 
-	$self->_SetVal("titleMargin") = $val;
+	$self->_SetVal("titleMargin", $val);
 }
 
 sub GetTitleType {
@@ -729,7 +729,7 @@ sub SetTitleType {
 	my $self = shift;
 	my $val  = shift;
 
-	$self->_SetVal("titleType") = $val;
+	$self->_SetVal("titleType", $val);
 }
 
 sub GetTitleLogoJobIdHDist {
@@ -743,7 +743,7 @@ sub SetTitleLogoJobIdHDist {
 	my $self = shift;
 	my $val  = shift;
 
-	$self->_SetVal("titleLogoJobIdHDist") = $val;
+	$self->_SetVal("titleLogoJobIdHDist", $val);
 }
 
 sub GetTitleLogoJobIdVDist {
@@ -757,7 +757,7 @@ sub SetTitleLogoJobIdVDist {
 	my $self = shift;
 	my $val  = shift;
 
-	$self->_SetVal("titleLogoJobIdVDist") = $val;
+	$self->_SetVal("titleLogoJobIdVDist", $val);
 }
 
 sub GetLogoWidth {
@@ -771,7 +771,7 @@ sub SetLogoWidth {
 	my $self = shift;
 	my $val  = shift;
 
-	$self->_SetVal("logoWidth") = $val;
+	$self->_SetVal("logoWidth", $val);
 }
 
 sub GetLogoHeight {
@@ -785,7 +785,7 @@ sub SetLogoHeight {
 	my $self = shift;
 	my $val  = shift;
 
-	$self->_SetVal("logoHeight") = $val;
+	$self->_SetVal("logoHeight", $val);
 }
 
 sub GetLogoSymbol {
@@ -799,7 +799,7 @@ sub SetLogoSymbol {
 	my $self = shift;
 	my $val  = shift;
 
-	$self->_SetVal("logoSymbol") = $val;
+	$self->_SetVal("logoSymbol", $val);
 }
 
 sub GetLogoSymbolWidth {
@@ -813,7 +813,7 @@ sub SetLogoSymbolWidth {
 	my $self = shift;
 	my $val  = shift;
 
-	$self->_SetVal("logoSymbolWidth") = $val;
+	$self->_SetVal("logoSymbolWidth", $val);
 }
 
 sub GetLogoSymbolHeight {
@@ -827,7 +827,7 @@ sub SetLogoSymbolHeight {
 	my $self = shift;
 	my $val  = shift;
 
-	$self->_SetVal("logoSymbolHeight") = $val;
+	$self->_SetVal("logoSymbolHeight", $val);
 }
 
 sub GetTitleUnMask {
@@ -841,7 +841,7 @@ sub SetTitleUnMask {
 	my $self = shift;
 	my $val  = shift;
 
-	$self->_SetVal("titleUnMask") = $val;
+	$self->_SetVal("titleUnMask", $val);
 }
 
 #-------------------------------------------------------------------------------------------#
@@ -849,6 +849,15 @@ sub SetTitleUnMask {
 #-------------------------------------------------------------------------------------------#
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
+
+	use aliased 'Programs::Coupon::CpnSettings::CpnSettings';
+	
+	my $sett =CpnSettings->new();
+	print $sett->GetHelpText("stepName");
+	print $sett->GetLabelText("stepName");
+	
+	my $v = $sett->GetStepName();
+	die;
 
 }
 

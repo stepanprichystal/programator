@@ -31,6 +31,7 @@ sub new {
 	$self->{"userFilter"} = undef;
 	$self->{"userGroups"} = undef;
 	$self->{"globalSett"} = undef;
+	$self->{"asyncWorker"} = undef;
 
 	# next step build by current step
 	$self->{"nextStep"} = undef;
@@ -46,6 +47,7 @@ sub Init{
 	$self->{"userFilter"} = shift;
 	$self->{"userGroups"} = shift;
 	$self->{"globalSett"} = shift;
+	$self->{"asyncWorker"} = shift;
 }
 
 sub GetNextStep {
@@ -60,6 +62,17 @@ sub GetStepNumber {
 	return $self->{"stepNumber"};
 }
 
+
+sub RunAsyncWorker{
+	my $self = shift;
+	my $workerMethod   = shift;
+	my $callbackMethod = shift;
+	my $workerParams   = shift;
+	my $inCAM          = shift;
+	
+	
+	$self->{"asyncWorker"}->Run($workerMethod, $callbackMethod, $workerParams, $inCAM);
+}
 #-------------------------------------------------------------------------------------------#
 # GEt method - get wizard step data model
 #-------------------------------------------------------------------------------------------#

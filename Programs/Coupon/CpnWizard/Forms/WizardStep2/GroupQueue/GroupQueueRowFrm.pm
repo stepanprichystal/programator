@@ -44,11 +44,8 @@ sub new {
 
 	# EVENTS
 
-	#	$self->{"onStop"}     = Event->new();
-	#	$self->{"onContinue"} = Event->new();
-	#	$self->{"onAbort"}    = Event->new();
-	#	$self->{"onRestart"}    = Event->new();
-	#	$self->{"onRemove"}   = Event->new();
+	$self->{"onGroupSett"} = Event->new();
+	$self->{"onStripSett"} = Event->new();
 
 	return $self;
 }
@@ -75,7 +72,8 @@ sub __SetLayout {
 
 	foreach my $constr ( @{$constr} ) {
 
-		my $stripsPnl = StripSettPnl->new( $self, $constr->GetType(), $constr->GetModel(), $self->{"rowHeight"} );
+		my $stripsPnl = StripSettPnl->new( $self, $constr->GetId(), $constr->GetType(), $constr->GetModel(), $self->{"rowHeight"} );
+		$stripsPnl->{"onStripSett"}->Add( sub { $self->{"onStripSett"}->Do(@_) } );
 		$szRowCol1->Add( $stripsPnl, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 
 		my $trackLTxt = Wx::StaticText->new( $self, -1, $constr->GetTrackLayer(), &Wx::wxDefaultPosition, [ 100, 25 ] );
@@ -94,6 +92,8 @@ sub __SetLayout {
 		$szRowCol5->Add( $impedanceLTxt, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 		
 		
+		
+		
 	}
 	
 	$self->SetBackgroundColour( Wx::Colour->new( 255, 255, 255 ) );
@@ -109,10 +109,9 @@ sub __SetLayout {
 	$self->SetSizer($szMain);
 
 	# SET EVENTS
-
-	#	$self->{"groupSettingsClick"}->Add( sub { $groupPnl->{"groupSettingsClick"}->Do(@_) } );
-	#	$self->{"stripSettingsClick"}->Add( sub { $groupPnl->{"stripSettingsClick"}->Do(@_) } );
-
+ 
+	$groupPnl->{"onGroupSett"}->Add( sub { $self->{"onGroupSett"}->Do(@_) } );
+ 
 	# SET REFERENCES
 
 }

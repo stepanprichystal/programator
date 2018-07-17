@@ -19,7 +19,8 @@ use aliased 'Widgets::Forms::MyWxScrollPanel';
 use aliased 'Programs::Coupon::CpnWizard::Forms::WizardStep1::GeneratorFrm';
 use aliased 'Programs::Coupon::CpnWizard::WizardCore::Helper';
 use aliased 'Programs::Coupon::CpnWizard::Forms::WizardStep2::GlobalSettFrm';
-
+use aliased 'Programs::Coupon::CpnWizard::Forms::WizardStep2::GroupSettFrm';
+use aliased 'Programs::Coupon::CpnWizard::Forms::WizardStep2::StripSettFrm';
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
@@ -97,33 +98,26 @@ sub GetLayout {
 	$szListHeader->Add( $topRefTxt, 0, &Wx::wxEXPAND | &Wx::wxALL, 2 );
 	$szListHeader->Add( $botRefTxt, 0, &Wx::wxEXPAND | &Wx::wxALL, 2 );
 	$szListHeader->Add( $impedanceTxt, 0, &Wx::wxEXPAND | &Wx::wxALL, 2 );
-	
-
-	#$szAutogenerate->Add( $szSettPanel, 0, &Wx::wxEXPAND | &Wx::wxALL, 4 );
 
 	$szMain->Add( $szSettPanel,   0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
 	$szMain->Add( 1,              5, 0 );
 	$szMain->Add( $pnlListHeader, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
 	$szMain->Add( $list,          1, &Wx::wxEXPAND | &Wx::wxALL, 0 );
+	
+	$pnlListHeader->SetSizer($szListHeader);
+	$pnlMain->SetSizer($szMain);
 
 	# SET EVENTS
 
-	#$list->{"onSelectedChanged"}->Add( sub { $self->__OnSelectedChangeList(@_) } );
-
-	#$list->{"onSelectedChanged"}->Add( sub { $self->__OnSelectedChangeSetGroupList(@_) } );
-	#$list->{"onGroupChanged"}->Add( sub    { $self->__OnGroupChangeList(@_) } );
-	#Wx::Event::EVT_PAINT( $scrollPnl, sub { $self->__OnScrollPaint(@_) } );
 	Wx::Event::EVT_BUTTON( $btnGlobal,      -1, sub { $self->__ShowGlobalSett() } );
-	#	Wx::Event::EVT_BUTTON( $btnCheckAllGroup, -1, sub { $self->__UnCheckAll() } );
 	Wx::Event::EVT_RADIOBUTTON( $rbGenYes, -1, sub { $self->__OnRadioBtnChanged(1) } );
 	Wx::Event::EVT_RADIOBUTTON( $rbGenNo,  -1, sub { $self->__OnRadioBtnChanged(0) } );
-	
-	#$self->{"PROCESS_END_EVT"} : shared = Wx::NewEventType;
-	
-	Wx::Event::EVT_COMMAND( $self->{"parentFrm"}, -1, $self->{"PROCESS_END_EVT"}, sub { $self->__BuildCpnEndHndl(@_) } );
 
-	$pnlListHeader->SetSizer($szListHeader);
-	$pnlMain->SetSizer($szMain);
+
+	$list->{"onGroupSett"}->Add( sub { $self->__ShowGroupSett(@_) } );
+	$list->{"onStripSett"}->Add( sub { $self->__ShowStripSett(@_) } );
+
+	
 
 	# SET REFERENCES
 
@@ -189,6 +183,7 @@ sub __ShowGlobalSett {
 	my $frm = GlobalSettFrm->new( $self->{"parentFrm"}, $settingsTmp, \$result );
 
 	$frm->ShowModal();
+ 
 
 	# update layout
 	if ($result) {
@@ -199,37 +194,50 @@ sub __ShowGlobalSett {
 
 }
 
-sub __BuildCpnEndHndl {
-	my ( $self, $frame, $event ) = @_;
+sub __ShowGroupSett {
+	my $self = shift;
+	my $groupId = shift;
 
-#	$self->{"onStepWorking"}->Do("stop");
-#
-#	# Reconnect again InCAM, after  was used by child thread
-#	$self->{"inCAM"}->Reconnect();
-#
-#	# Set progress bar
-# 
-#	my %d = %{ $event->GetData };
-#
-#	if ( $d{"result"} ) {
-#
-#		if ( $d{"finishWizard"} ) {
-#
-#			$self->{"inCAM"}->ClientFinish();
-#			$self->{"parentFrm"}->Close();
-#		}
-#		else {
-#			$self->{"parentFrm"}->Hide();
-#			$self->{"inCAM"}->PAUSE("Check Coupon...");
-#			$self->{"parentFrm"}->Show();
-#
-#			$self->{"coreWizardStep"}->UpdateCpnGenerated(1);
-#		}
-#	}
-#	else {
-#
-#		$self->{"messMngr"}->ShowModal( -1, EnumsGeneral->MessageType_ERROR, [ "Error during generating coupon.\nError detail:\n" . $d{"errMess"} ] );
-#	}
+	# User will edit only copy of global settings
+	# If click Ok, global settings will be updated by this copy
+	
+	my $settingsTmp = $self->{"coreWizardStep"}->GetGroupSettings($groupId)->GetDeepCopy();
+
+	my $result = 0;
+	my $frm = GroupSettFrm->new( $self->{"parentFrm"}, $settingsTmp, \$result );
+
+	$frm->ShowModal();
+ 
+
+	# update layout
+	if ($result) {
+
+		my $groupSett = $self->{"coreWizardStep"}->GetGroupSettings($groupId);
+		$groupSett->UpdateSettings($settingsTmp);
+	}
+
+}
+
+sub __ShowStripSett {
+	my $self = shift;
+	my $stripId = shift;
+
+	# User will edit only copy of global settings
+	# If click Ok, global settings will be updated by this copy
+	
+	my $settingsTmp = $self->{"coreWizardStep"}->GetStripSettings($stripId)->GetDeepCopy();
+
+	my $result = 0;
+	my $frm = StripSettFrm->new( $self->{"parentFrm"}, $settingsTmp, \$result );
+
+	$frm->ShowModal();
+  
+	# update layout
+	if ($result) {
+
+		my $stripSett = $self->{"coreWizardStep"}->GetStripSettings($stripId);
+		$stripSett->UpdateSettings($settingsTmp);
+	}
 
 }
 

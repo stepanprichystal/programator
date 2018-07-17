@@ -18,7 +18,7 @@ use List::Util qw[min max];
 use aliased 'Programs::Coupon::Enums';
 use aliased 'CamHelpers::CamStep';
 use aliased 'CamHelpers::CamHelper';
-use aliased 'Packages::CAM::SymbolDrawing::Point';
+use aliased 'Programs::Coupon::CpnBuilder::CpnLayout::PointLayout';
 use aliased 'Programs::Coupon::CpnBuilder::CpnLayout::ShieldingLayout';
 
 #-------------------------------------------------------------------------------------------#

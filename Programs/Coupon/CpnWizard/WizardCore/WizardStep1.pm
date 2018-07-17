@@ -71,7 +71,8 @@ sub Build {
 									$self->{"cpnSource"},
 								   $self->{"userFilter"},
 								   $self->{"userGroups"},
-								   $self->{"globalSett"});
+								   $self->{"globalSett"},
+								   $self->{"asyncWorker"} );
 
 	}
 	else {

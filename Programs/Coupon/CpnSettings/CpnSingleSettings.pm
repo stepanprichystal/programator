@@ -38,7 +38,7 @@ sub SetPad2PadDist {
 	my $self = shift;
 	my $val  = shift;
 
-	$self->_SetVal("trackPad2GNDPad") = $val;
+	$self->_SetVal("trackPad2GNDPad", $val);
 }
 
 
@@ -53,7 +53,7 @@ sub SetTrackPad2TrackPad {
 	my $self = shift;
 	my $val  = shift;
 
-	$self->_SetVal("trackPad2TrackPad") = $val;
+	$self->_SetVal("trackPad2TrackPad", $val);
 }
 
 sub GetCpnSingleWidth {
@@ -66,7 +66,7 @@ sub SetCpnSingleWidth {
 	my $self = shift;
 	my $val  = shift;
 
-	$self->_SetVal("") = $val;
+	$self->_SetVal("cpnSingleWidth", $val);
 } 
 
 sub GetPadTrackSize {
@@ -74,14 +74,7 @@ sub GetPadTrackSize {
 
 	return $self->_GetVal("padTrackSize");
 } 
-
-sub Set {
-	my $self = shift;
-	my $val  = shift;
-
-	$self->_SetVal("cpnSingleWidth") = $val;
-}
-
+ 
 sub GetPadGNDSize {
 	my $self = shift;
 
@@ -92,7 +85,7 @@ sub SetPadGNDSize {
 	my $self = shift;
 	my $val  = shift;
 
-	$self->_SetVal("padGNDSize") = $val;
+	$self->_SetVal("padGNDSize", $val);
 }
 
 sub GetPadTrackShape {
@@ -105,7 +98,7 @@ sub SetPadTrackShape {
 	my $self = shift;
 	my $val  = shift;
 
-	$self->_SetVal("padTrackShape") = $val;
+	$self->_SetVal("padTrackShape", $val);
 }
 
 sub GetPadGNDShape {
@@ -118,7 +111,7 @@ sub SetPadGNDShape {
 	my $self = shift;
 	my $val  = shift;
 
-	$self->_SetVal("padGNDShape") = $val;
+	$self->_SetVal("padGNDShape", $val);
 }
 
 sub GetPadTrackSym {
@@ -147,7 +140,7 @@ sub SetPadGNDSymNeg {
 	my $self = shift;
 	my $val  = shift;
 
-	$self->_SetVal("padGNDSymNeg") = $val;
+	$self->_SetVal("padGNDSymNeg", $val);
 }
 
 sub GetPadDrillSize {
@@ -161,7 +154,7 @@ sub SetPadDrillSize {
 	my $self = shift;
 	my $val  = shift;
 
-	$self->_SetVal("padDrillSize") = $val;
+	$self->_SetVal("padDrillSize", $val);
 }
 
 
@@ -177,7 +170,7 @@ sub SetTrackPad2GNDPad {
 	my $self = shift;
 	my $val  = shift;
 
-	$self->_SetVal("trackPad2GNDPad") = $val;
+	$self->_SetVal("trackPad2GNDPad", $val);
 }
 
 sub GetGroupPadsDist {
@@ -192,7 +185,7 @@ sub SetGroupPadsDist {
 	my $self = shift;
 	my $val  = shift;
 
-	$self->_SetVal("groupPadsDist") = $val;
+	$self->_SetVal("groupPadsDist", $val);
 }
 
 sub GetPoolCnt {
@@ -207,7 +200,7 @@ sub SetPoolCnt {
 	my $self = shift;
 	my $val  = shift;
 
-	$self->_SetVal("poolCnt") = $val;
+	$self->_SetVal("poolCnt", $val);
 }
 
 sub GetMaxStripsCntH{
@@ -220,7 +213,7 @@ sub SetMaxStripsCntH {
 	my $self = shift;
 	my $val  = shift;
 
-	$self->_SetVal("maxStripsCntH") = $val;
+	$self->_SetVal("maxStripsCntH", $val);
 }
 
 

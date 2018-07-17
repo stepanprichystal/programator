@@ -20,7 +20,7 @@ use aliased 'CamHelpers::CamStep';
 use aliased 'CamHelpers::CamJob';
 use aliased 'CamHelpers::CamHelper';
 use aliased 'Programs::Coupon::Helper';
-use aliased 'Packages::CAM::SymbolDrawing::Point';
+use aliased 'Programs::Coupon::CpnBuilder::CpnLayout::PointLayout';
 
 use aliased 'Programs::Coupon::CpnBuilder::CpnLayout::CpnSingleLayout';
 use aliased 'Programs::Coupon::CpnBuilder::MicrostripBuilders::SEBuilder';
@@ -139,14 +139,14 @@ sub Build {
 				if ( $activeArea{"h"} > $textLayout->GetHeight() ) {
 					$y += ( $activeArea{"h"} - $textLayout->GetHeight() ) / 2;
 				}
-				$p = Point->new( $x, $y );
+				$p = PointLayout->new( $x, $y );
 
 			}
 			elsif ( $textLayout->GetType() eq "top" ) {
 
 				#compute
 				# align text to right
-				$p = Point->new(
+				$p = PointLayout->new(
 							   $self->{"cpnSingleSett"}->GetCpnSingleWidth() - $textLayout->GetWidth() - $self->{"cpnSett"}->GetCouponSingleMargin() / 1000,
 							   $self->{"cpnSett"}->GetCouponSingleMargin() / 1000 + $activeArea{"h"} + $self->{"cpnSett"}->GetPadsTopTextDist() / 1000
 				);
@@ -324,7 +324,7 @@ sub GetMicrostripOrigin {
 
 	}
 
-	return Point->new( $x, $y );
+	return PointLayout->new( $x, $y );
 }
 
 # return height including title text height
@@ -336,7 +336,7 @@ sub GetCpnSingleArea {
 	my %stripArea = $self->GetActiveArea();
 
 	# compute position
-	$areaInfo{"pos"} = Point->new( $self->{"cpnSett"}->GetCouponMargin() / 1000, $self->{"cpnSett"}->GetCouponMargin() / 1000 );
+	$areaInfo{"pos"} = PointLayout->new( $self->{"cpnSett"}->GetCouponMargin() / 1000, $self->{"cpnSett"}->GetCouponMargin() / 1000 );
 
 	# compute width
 	my $w = 2 * $self->{"cpnSett"}->GetCouponSingleMargin() / 1000 + $stripArea{"w"};
@@ -397,7 +397,7 @@ sub GetActiveArea {
 	my %areaInfo = ( "pos" => undef, "w" => undef, "h" => undef );
 
 	# compute position
-	$areaInfo{"pos"} = Point->new( $self->{"cpnSett"}->GetCouponSingleMargin() / 1000, $self->{"cpnSett"}->GetCouponSingleMargin() / 1000 );
+	$areaInfo{"pos"} = PointLayout->new( $self->{"cpnSett"}->GetCouponSingleMargin() / 1000, $self->{"cpnSett"}->GetCouponSingleMargin() / 1000 );
 
 	# compute width
 	$areaInfo{"w"} = $self->{"cpnSingleSett"}->GetCpnSingleWidth() - 2 * $self->{"cpnSett"}->GetCouponSingleMargin() / 1000;

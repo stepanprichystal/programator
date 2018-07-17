@@ -20,6 +20,7 @@ use aliased 'Enums::EnumsGeneral';
 use aliased 'Packages::InCAM::InCAM';
 use aliased 'Programs::Coupon::CpnWizard::WizardCore::Helper';
 use aliased 'Programs::Coupon::CpnBuilder::CpnBuilder';
+use aliased 'Packages::ObjectStorable::JsonStorable::JsonStorable';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -60,6 +61,7 @@ sub GetLayout {
 
 	# BUILD STRUCTURE OF LAYOUT
 	$szSettPanel->Add( $showInCAMBtn, 0, &Wx::wxEXPAND | &Wx::wxALL, 4 );
+
 	#$szSettPanel->Add( $gauge,        0, &Wx::wxEXPAND | &Wx::wxALL, 4 );
 
 	$szPreview->Add( $finalPrevTxt, 0, &Wx::wxEXPAND | &Wx::wxALL, 4 );
@@ -78,7 +80,7 @@ sub GetLayout {
 	# SET EVENTS
 
 	Wx::Event::EVT_BUTTON( $showInCAMBtn, -1, sub { $self->__ShowInCAMAsync() } );
-	
+
 	$PROCESS_END_EVT = Wx::NewEventType;
 	Wx::Event::EVT_COMMAND( $self->{"parentFrm"}, -1, $PROCESS_END_EVT, sub { $self->__GenerateCpnCallback(@_) } );
 
@@ -86,8 +88,7 @@ sub GetLayout {
 
 	$self->{"previewTxt"} = $previewTxt;
 
-	$self->{"szMain"}     = $szMain;
- 
+	$self->{"szMain"} = $szMain;
 
 	return $pnlMain;
 
@@ -107,116 +108,40 @@ sub Update {
 sub FinishCoupon {
 	my $self = shift;
 
-	$self->{"onStepWorking"}->Do("start");
-
-	$self->RunAsyncWorker(\&$self->__GenerateCouponAsync, \&$self->__GenerateCpnCallback, [$self->{"jobId"}, 1], $self->{"inCAM"}); 
-
-#	$self->{"inCAM"}->ClientFinish();
-#
-# 
-#
-#	#start new process, where check job before export
-#	my $worker = threads->create( sub { $self->__GenerateCouponAsync( $self->{"jobId"}, 1, $self->{"inCAM"}->GetPort() ) } );
-#	$worker->set_thread_exit_only(1);
-#	$self->{"threadId"} = $worker->tid();
-
+	$self->__GenerateCoupon(1);
 }
 
-#sub __ShowInCAM {
-#	my $self = shift;
-#
-#	my $inCAM = $self->{"inCAM"};
-#
-#	my $errMess = shift;
-#	if ( $self->{"coreWizardStep"}->GenerateCoupon( 0, \$errMess ) ) {
-#
-#		$self->{"parentFrm"}->Hide();
-#		$inCAM->PAUSE("Check Coupon...");
-#		$self->{"parentFrm"}->Show();
-#
-#	}
-#	else {
-#
-#		$self->{"messMngr"}->ShowModal( -1, EnumsGeneral->MessageType_ERROR, ["Error during generating coupon.\n\nError detail:\n$errMess"] );
-#	}
-#
-#}
 sub __ShowInCAMAsync {
 	my $self = shift;
 	
-	$self->{"onStepWorking"}->Do("start");
-	
-	$self->RunAsyncWorker(\&$self->__GenerateCouponAsync, \&$self->__GenerateCpnCallback, [$self->{"jobId"}, 0], $self->{"inCAM"}); 
-	
-
-#	$self->{"inCAM"}->ClientFinish();
-#
-# 
-#	#start new process, where check job before export
-#	my $worker = threads->create( sub { $self->__GenerateCouponAsync( $self->{"jobId"}, 0, $self->{"inCAM"}->GetPort() ) } );
-#	$worker->set_thread_exit_only(1);
-#	$self->{"threadId"} = $worker->tid();
+	$self->__GenerateCoupon(0);
 }
 
 # ================================================================================
 # PRIVATE WORKER (child thread) METHODS
 # ================================================================================
 
-sub __GenerateCouponAsync {
+sub __GenerateCoupon {
 	my $self         = shift;
-	my $inCAM = shift;
-	my $jobId        = shift;
 	my $wizardFinish = shift;
-	 
 
-#	my $inCAM = InCAM->new( "remote" => 'localhost', "port" => $serverPort );
-#
-#	$inCAM->ServerReady();
+	$self->{"onStepWorking"}->Do("start");
 
-	my $result  = 1;
-	my $errMess = "";
+	$self->{"coreWizardStep"}->{"onGenerateCouponAsync"}->Add( sub { $self->__GenerateCouponEnd(@_) } );
 
-	eval {
-
-		$result = $self->{"coreWizardStep"}->GenerateCouponAsync( $inCAM, $jobId,
-																  $self->{"coreWizardStep"}->GetCpnLayout(),
-																  $self->{"coreWizardStep"}->GetCpnGenerated(),
-																  $wizardFinish, \$errMess );
-
-	};
-	if ($@) {
-
-		$result = 0;
-		$errMess .= "Unexpected error: " . $@;
-	}
-
-	$inCAM->ClientFinish();
-
-	my %res : shared = ();
-
-	$res{"result"}       = $result;
-	$res{"errMess"}      = $errMess;
-	$res{"finishWizard"} = $wizardFinish;
- 
-	return \%res;
+	$self->{"coreWizardStep"}->GenerateCoupon($wizardFinish);
 }
 
-# ================================================================================
-# Private methods
-# ================================================================================
- 
-sub __GenerateCpnCallback {
-	my $self         = shift;
+sub __GenerateCouponEnd {
+	my $self       = shift;
 	my $resultData = shift;
 
+	# 1) remove events
+	$self->{"coreWizardStep"}->{"onGenerateCouponAsync"}->RemoveAll();
+
+	# 2) update GUI
+
 	$self->{"onStepWorking"}->Do("stop");
-
-#	# Reconnect again InCAM, after  was used by child thread
-#	$self->{"inCAM"}->Reconnect();
-
-	# Set progress bar
- 
-	#my %d = %{ $event->GetData };
 
 	if ( $resultData->{"result"} ) {
 
@@ -227,7 +152,15 @@ sub __GenerateCpnCallback {
 		}
 		else {
 			$self->{"parentFrm"}->Hide();
-			$self->{"inCAM"}->PAUSE("Check Coupon...");
+			my $res = $self->{"inCAM"}->PAUSE("Check Coupon...");
+			
+			# protection if somebodz click "Abort"
+			if($res !~ /ok/i){
+				print STDERR "ERRROR, user click ABORT on InCAM pause window.";
+				$self->{"messMngr"}->ShowModal( -1, EnumsGeneral->MessageType_SYSTEMERROR, [ "You clicked Abort, Instack generator will be closed" ] );
+				$self->{"parentFrm"}->Close();
+			}
+			
 			$self->{"parentFrm"}->Show();
 
 			$self->{"coreWizardStep"}->UpdateCpnGenerated(1);
@@ -235,10 +168,89 @@ sub __GenerateCpnCallback {
 	}
 	else {
 
-		$self->{"messMngr"}->ShowModal( -1, EnumsGeneral->MessageType_ERROR, [ "Error during generating coupon.\nError detail:\n" . $resultData->{"errMess"} ] );
+		$self->{"messMngr"}
+		  ->ShowModal( -1, EnumsGeneral->MessageType_ERROR, [ "Error during generating coupon.\nError detail:\n" . $resultData->{"errMess"} ] );
 	}
-
 }
+
+#sub __GenerateCouponAsync {
+#	my $self         = shift;
+#	my $inCAM        = shift;
+#	my $jobId        = shift;
+#	my $wizardFinish = shift;
+#
+#	#	my $inCAM = InCAM->new( "remote" => 'localhost', "port" => $serverPort );
+#	#
+#	#	$inCAM->ServerReady();
+#
+#	my $result  = 1;
+#	my $errMess = "";
+#
+#	eval {
+#
+#		$result =
+#		  $self->{"coreWizardStep"}->GenerateCouponAsync( $inCAM, $jobId,
+#														  $self->{"coreWizardStep"}->GetCpnLayout(),
+#														  $self->{"coreWizardStep"}->GetCpnGenerated(),
+#														  $wizardFinish, \$errMess );
+#
+#	};
+#	if ($@) {
+#
+#		$result = 0;
+#		$errMess .= "Unexpected error: " . $@;
+#	}
+#
+#	$inCAM->ClientFinish();
+#
+#	my %res : shared = ();
+#
+#	$res{"result"}       = $result;
+#	$res{"errMess"}      = $errMess;
+#	$res{"finishWizard"} = $wizardFinish;
+#
+#	return \%res;
+#}
+
+# ================================================================================
+# Private methods
+# ================================================================================
+
+#sub __GenerateCpnCallback {
+#	my $self       = shift;
+#	my $resultData = shift;
+#
+#	$self->{"onStepWorking"}->Do("stop");
+#
+#	#	# Reconnect again InCAM, after  was used by child thread
+#	#	$self->{"inCAM"}->Reconnect();
+#
+#	# Set progress bar
+#
+#	#my %d = %{ $event->GetData };
+#
+#	if ( $resultData->{"result"} ) {
+#
+#		if ( $resultData->{"finishWizard"} ) {
+#
+#			$self->{"inCAM"}->ClientFinish();
+#			$self->{"parentFrm"}->Close();
+#		}
+#		else {
+#			$self->{"parentFrm"}->Hide();
+#			$self->{"inCAM"}->PAUSE("Check Coupon...");
+#			$self->{"parentFrm"}->Show();
+#
+#			$self->{"coreWizardStep"}->UpdateCpnGenerated(1);
+#		}
+#	}
+#	else {
+#
+#		$self->{"messMngr"}
+#		  ->ShowModal( -1, EnumsGeneral->MessageType_ERROR, [ "Error during generating coupon.\nError detail:\n" . $resultData->{"errMess"} ] );
+#	}
+#
+#}
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

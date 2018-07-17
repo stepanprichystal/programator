@@ -12,7 +12,7 @@ use warnings;
 use Math::Trig;
 
 #local library
-use aliased 'Packages::CAM::SymbolDrawing::Point';
+use aliased 'Programs::Coupon::CpnBuilder::CpnLayout::PointLayout';
 use aliased 'Programs::Coupon::CpnBuilder::CpnLayout::MicrostripLayout';
 use aliased 'Programs::Coupon::Enums';
 use aliased 'CamHelpers::CamJob';
@@ -135,10 +135,10 @@ sub _GetPadText {
 	# Built negative rectangle (for text putted to copper)
 	my $rectW      = $self->{"cpnSett"}->GetPadTextWidth() / 1000 * length($text) + 0.2;
 	my $rectH      = $self->{"cpnSett"}->GetPadTextHeight() / 1000 + 0.2;
-	my $rectPos    = Point->new( $x - 0.1, $y - 0.1 );
-	my $rectPosMir = Point->new( $x + 0.1, $y - 0.1 );
+	my $rectPos    = PointLayout->new( $x - 0.1, $y - 0.1 );
+	my $rectPosMir = PointLayout->new( $x + 0.1, $y - 0.1 );
 
-	my $padTextLayout = PadTextLayout->new( $text, Point->new( $x, $y ), Point->new( $xMir, $y ), $rectW, $rectH, $rectPos, $rectPosMir );
+	my $padTextLayout = PadTextLayout->new( $text, PointLayout->new( $x, $y ), PointLayout->new( $xMir, $y ), $rectW, $rectH, $rectPos, $rectPosMir );
 
 	$padTextLayout->SetPadTextHeight( $self->{"cpnSett"}->GetPadTextHeight() );
 	$padTextLayout->SetPadTextWidth( $self->{"cpnSett"}->GetPadTextWidth() );
@@ -163,13 +163,13 @@ sub _GetSEStraightTrack {
 	my $cpnSingleWidth = $self->{"cpnSingleSett"}->GetCpnSingleWidth();
 
 	# start point
-	push( @track, Point->new( $origin->X(), $origin->Y() ) );
+	push( @track, PointLayout->new( $origin->X(), $origin->Y() ) );
 
 	# end point
 
 	if ( $self->{"cpnSett"}->GetTwoEndedDesign() ) {
 
-		push( @track, Point->new( $cpnSingleWidth - $origin->X(), $origin->Y() ) );
+		push( @track, PointLayout->new( $cpnSingleWidth - $origin->X(), $origin->Y() ) );
 	}
 	else {
 
@@ -200,21 +200,21 @@ sub _GetSingleDIFFTrack {
 	my @track = ();
 
 	# start point
-	push( @track, Point->new( $origin->X(), $origin->Y() ) );
+	push( @track, PointLayout->new( $origin->X(), $origin->Y() ) );
 
 	# second point
 	my $x2 = $origin->X() + ( $p2pDist / 2 - $s / 2 - $w / 2 ) * tan( deg2rad(45) );
 	my $y2 = $origin->Y() + $yTrackDir * ( $p2pDist / 2 - $s / 2 - $w / 2 );
-	push( @track, Point->new( $x2, $y2 ) );
+	push( @track, PointLayout->new( $x2, $y2 ) );
 
 	# third
 	my $x3 = $cpnSingleWidth - $x2;
 	my $y3 = $y2;
-	push( @track, Point->new( $x3, $y3 ) );
+	push( @track, PointLayout->new( $x3, $y3 ) );
 
 	if ( $self->{"cpnSett"}->GetTwoEndedDesign() ) {
 
-		push( @track, Point->new( $cpnSingleWidth - $origin->X(), $origin->Y() ) );
+		push( @track, PointLayout->new( $cpnSingleWidth - $origin->X(), $origin->Y() ) );
 	}
 	else {
 
@@ -244,21 +244,21 @@ sub _GetMultistripSETrack {
 		my $yTrackDir = $self->{"stripVariant"}->Route() eq Enums->Route_ABOVE ? 1 : -1;
 
 		# start point
-		push( @track, Point->new( $origin->X(), $origin->Y() ) );
+		push( @track, PointLayout->new( $origin->X(), $origin->Y() ) );
 
 		# second point
 		my $x2 = $origin->X() + $self->{"stripVariant"}->RouteDist() * tan( deg2rad(45) );
 		my $y2 = $origin->Y() + $yTrackDir * $self->{"stripVariant"}->RouteDist();
-		push( @track, Point->new( $x2, $y2 ) );
+		push( @track, PointLayout->new( $x2, $y2 ) );
 
 		# third
 		my $x3 = $cpnSingleWidth - $x2;
 		my $y3 = $y2;
-		push( @track, Point->new( $x3, $y3 ) );
+		push( @track, PointLayout->new( $x3, $y3 ) );
 
 		if ( $self->{"cpnSett"}->GetTwoEndedDesign() ) {
 
-			push( @track, Point->new( $cpnSingleWidth - $origin->X(), $origin->Y() ) );
+			push( @track, PointLayout->new( $cpnSingleWidth - $origin->X(), $origin->Y() ) );
 		}
 		else {
 
@@ -287,21 +287,21 @@ sub _GetMultistripDIFFTrackOuter {
 	my @track = ();
 
 	# start point
-	push( @track, Point->new( $origin->X(), $origin->Y() ) );
+	push( @track, PointLayout->new( $origin->X(), $origin->Y() ) );
 
 	# second point
 	my $x2 = $origin->X() + ( $self->{"stripVariant"}->RouteDist() + $s / 2 + $w / 2 ) * tan( deg2rad(45) );
 	my $y2 = $origin->Y() + $yTrackDir * ( $self->{"stripVariant"}->RouteDist() + $s / 2 + $w / 2 );
-	push( @track, Point->new( $x2, $y2 ) );
+	push( @track, PointLayout->new( $x2, $y2 ) );
 
 	# third
 	my $x3 = $cpnSingleWidth - $x2;
 	my $y3 = $y2;
-	push( @track, Point->new( $x3, $y3 ) );
+	push( @track, PointLayout->new( $x3, $y3 ) );
 
 	if ( $self->{"cpnSett"}->GetTwoEndedDesign() ) {
 
-		push( @track, Point->new( $cpnSingleWidth - $origin->X(), $origin->Y() ) );
+		push( @track, PointLayout->new( $cpnSingleWidth - $origin->X(), $origin->Y() ) );
 	}
 	else {
 
@@ -332,21 +332,21 @@ sub _GetMultistripDIFFTrackInner {
 	my @track = ();
 
 	# start point
-	push( @track, Point->new( $origin->X(), $origin->Y() ) );
+	push( @track, PointLayout->new( $origin->X(), $origin->Y() ) );
 
 	# second point
 	my $x2 = $origin->X() + ( $self->{"stripVariant"}->RouteDist() - $s / 2 - $w / 2 ) * tan( deg2rad(45) );
 	my $y2 = $origin->Y() + $yTrackDir * ( $self->{"stripVariant"}->RouteDist() - $s / 2 - $w / 2 );
-	push( @track, Point->new( $x2, $y2 ) );
+	push( @track, PointLayout->new( $x2, $y2 ) );
 
 	# third
 	my $x3 = $cpnSingleWidth - $x2;
 	my $y3 = $y2;
-	push( @track, Point->new( $x3, $y3 ) );
+	push( @track, PointLayout->new( $x3, $y3 ) );
 
 	if ( $self->{"cpnSett"}->GetTwoEndedDesign() ) {
 
-		push( @track, Point->new( $cpnSingleWidth - $origin->X(), $origin->Y() ) );
+		push( @track, PointLayout->new( $cpnSingleWidth - $origin->X(), $origin->Y() ) );
 	}
 
 	return @track;

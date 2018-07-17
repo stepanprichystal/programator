@@ -22,7 +22,7 @@ use aliased 'Programs::Coupon::Helper';
 use aliased 'CamHelpers::CamStep';
 use aliased 'CamHelpers::CamJob';
 use aliased 'CamHelpers::CamHelper';
-use aliased 'Packages::CAM::SymbolDrawing::Point';
+use aliased 'Programs::Coupon::CpnBuilder::CpnLayout::PointLayout';
 use aliased 'Programs::Coupon::CpnBuilder::CpnLayout::GuardTracksLayout';
 
 #-------------------------------------------------------------------------------------------#
@@ -86,7 +86,7 @@ sub Build {
 
 		if (@boxes) {
 
-			if ( $self->{"cpnSett"}->GetGuardTracksType() eq "single" ) {
+			if ( $self->{"cpnSett"}->GetGuardTracksType() eq "single_line" ) {
 
 				$self->__SetLayoutTypeLines( $layout, \@boxes );
 
@@ -141,8 +141,8 @@ sub __SetLayoutTypeLines {
 
 			my %lBot = ();
 
-			$lBot{"startP"} = Point->new( $box->{"xMin"}, $box->{"yMin"} + $self->{"cpnSett"}->GetGuardTrackWidth() / 1000 / 2 );
-			$lBot{"endP"}   = Point->new( $box->{"xMax"}, $box->{"yMin"} + $self->{"cpnSett"}->GetGuardTrackWidth() / 1000 / 2 );
+			$lBot{"startP"} = PointLayout->new( $box->{"xMin"}, $box->{"yMin"} + $self->{"cpnSett"}->GetGuardTrackWidth() / 1000 / 2 );
+			$lBot{"endP"}   = PointLayout->new( $box->{"xMax"}, $box->{"yMin"} + $self->{"cpnSett"}->GetGuardTrackWidth() / 1000 / 2 );
 
 			push( @{ $box->{"lines"} }, \%lBot );
 		}
@@ -152,8 +152,8 @@ sub __SetLayoutTypeLines {
 
 			my %lTop = ();
 
-			$lTop{"startP"} = Point->new( $box->{"xMin"}, $box->{"yMax"} - $self->{"cpnSett"}->GetGuardTrackWidth() / 1000 / 2 );
-			$lTop{"endP"}   = Point->new( $box->{"xMax"}, $box->{"yMax"} - $self->{"cpnSett"}->GetGuardTrackWidth() / 1000 / 2 );
+			$lTop{"startP"} = PointLayout->new( $box->{"xMin"}, $box->{"yMax"} - $self->{"cpnSett"}->GetGuardTrackWidth() / 1000 / 2 );
+			$lTop{"endP"}   = PointLayout->new( $box->{"xMax"}, $box->{"yMax"} - $self->{"cpnSett"}->GetGuardTrackWidth() / 1000 / 2 );
 
 			push( @{ $box->{"lines"} }, \%lTop );
 		}
@@ -200,10 +200,10 @@ sub __SetLayoutTypeFull {
 		my $box = $boxes[$i];
 
 		my @coord = ();
-		push( @coord, Point->new( $box->{"xMin"}, $box->{"yMin"} ) );
-		push( @coord, Point->new( $box->{"xMin"}, $box->{"yMax"} ) );
-		push( @coord, Point->new( $box->{"xMax"}, $box->{"yMax"} ) );
-		push( @coord, Point->new( $box->{"xMax"}, $box->{"yMin"} ) );
+		push( @coord, PointLayout->new( $box->{"xMin"}, $box->{"yMin"} ) );
+		push( @coord, PointLayout->new( $box->{"xMin"}, $box->{"yMax"} ) );
+		push( @coord, PointLayout->new( $box->{"xMax"}, $box->{"yMax"} ) );
+		push( @coord, PointLayout->new( $box->{"xMax"}, $box->{"yMin"} ) );
 
 		# set layout
 		$layout->AddArea( \@coord );

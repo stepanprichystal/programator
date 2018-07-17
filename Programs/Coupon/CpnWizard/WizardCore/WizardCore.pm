@@ -31,6 +31,7 @@ sub new {
 	$self->{"jobId"} = shift;
 
 	$self->{"totalStepCnt"} = shift;
+	$self->{"asyncWorker"} = shift;
 
 	$self->{"steps"} = [];
 
@@ -95,7 +96,7 @@ sub Back {
 	}
 
 	my $lastStep = $self->{"steps"}->[-1];
-	$lastStep->Load();
+
 
 	$self->{"stepChangedEvt"}->Do($lastStep) if($raiseChangeEvt);
 
@@ -111,7 +112,7 @@ sub Begin {
 	}
 
 	my $lastStep = $self->{"steps"}->[-1];
-	$lastStep->Load();
+
 
 	$self->{"stepChangedEvt"}->Do($lastStep);
 }
@@ -158,7 +159,7 @@ sub Init {
 	$self->{"globalSett"} = CpnSettings->new();
 
 	my $s = WizardStep1->new();
-	$s->Init( $self->{"inCAM"}, $self->{"jobId"}, $cpnSource, $self->{"userFilter"}, $self->{"userGroups"}, $self->{"globalSett"} );
+	$s->Init( $self->{"inCAM"}, $self->{"jobId"}, $cpnSource, $self->{"userFilter"}, $self->{"userGroups"}, $self->{"globalSett"}, $self->{"asyncWorker"} );
 	$s->Load();
 
 	push( @{ $self->{"steps"} }, $s );

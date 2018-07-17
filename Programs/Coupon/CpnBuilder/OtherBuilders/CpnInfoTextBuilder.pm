@@ -18,7 +18,7 @@ use List::Util qw[min max];
 use aliased 'Programs::Coupon::Enums';
 use aliased 'CamHelpers::CamStep';
 use aliased 'CamHelpers::CamHelper';
-use aliased 'Packages::CAM::SymbolDrawing::Point';
+use aliased 'Programs::Coupon::CpnBuilder::CpnLayout::PointLayout';
 use aliased 'Programs::Coupon::CpnBuilder::CpnLayout::InfoTextLayout';
 
 #-------------------------------------------------------------------------------------------#
@@ -109,18 +109,18 @@ sub Build {
 			if ( !$self->{"singleCpnVar"}->IsMultistrip() ) {
 
 				# bot row
-				$self->{"layout"}->AddText( Point->new( $curX, $curY ), $txtPart2 );
+				$self->{"layout"}->AddText( PointLayout->new( $curX, $curY ), $txtPart2 );
 				$curY += $self->{"cpnSett"}->GetInfoTextHeight() / 1000;
 				$curY += $self->{"cpnSett"}->GetInfoTextVSpacing() / 1000;
 
 				# top row
-				$self->{"layout"}->AddText( Point->new( $curX, $curY ), $txtPart1 );
+				$self->{"layout"}->AddText( PointLayout->new( $curX, $curY ), $txtPart1 );
 				$curY += $self->{"cpnSett"}->GetInfoTextHeight() / 1000
 
 			}
 			else {
 
-				$self->{"layout"}->AddText( Point->new( $curX, $curY ), $txtPart1 . " " . $txtPart2 );
+				$self->{"layout"}->AddText( PointLayout->new( $curX, $curY ), $txtPart1 . " " . $txtPart2 );
 				$curY += $self->{"cpnSett"}->GetInfoTextHeight() / 1000
 
 			}
@@ -136,13 +136,13 @@ sub Build {
 
 			if ( scalar( $self->{"layout"}->GetTexts() ) > 0 ) {
 
-				$self->{"layout"}->AddText( Point->new( $curX, $curY ), "|" );
+				$self->{"layout"}->AddText( PointLayout->new( $curX, $curY ), "|" );
 				$curX += $self->{"cpnSett"}->GetInfoTextHSpacing() / 1000;
 			}
 
 			$t .= $txtPart1 . " " . $txtPart2;
 
-			$self->{"layout"}->AddText( Point->new( $curX, $curY ), $t );
+			$self->{"layout"}->AddText( PointLayout->new( $curX, $curY ), $t );
 
 			$curX += length($t) * $self->{"cpnSett"}->GetInfoTextWidth() / 1000;
 			$curX += $self->{"cpnSett"}->GetInfoTextHSpacing() / 1000;

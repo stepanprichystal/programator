@@ -4,6 +4,11 @@
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Programs::Coupon::CpnBuilder::CpnLayout::CpnLayout;
+use base qw(Programs::Coupon::CpnBuilder::CpnLayout::CpnLayoutBase);
+
+use Class::Interface;
+&implements('Packages::ObjectStorable::JsonStorable::IJsonStorable');
+
 
 #3th party library
 use strict;
@@ -11,6 +16,7 @@ use warnings;
 
 #local library
 use aliased 'Programs::Coupon::CpnBuilder::CpnLayout::CpnSingleLayout';
+#use aliased 'Programs::Coupon::CpnBuilder::CpnLayout::TitleLayout';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -18,7 +24,9 @@ use aliased 'Programs::Coupon::CpnBuilder::CpnLayout::CpnSingleLayout';
 sub new {
 	my $class = shift;
 	my $self  = {};
+	$self = $class->SUPER::new(@_);
 	bless $self;
+ 
 
 	$self->{"stepName"}      = undef;
 	$self->{"w"}             = undef;
@@ -28,6 +36,8 @@ sub new {
 	$self->{"couponMargin"}  = undef;
 	$self->{"globalSett"}    = undef;
 	$self->{"layersLayout"}  = undef;
+
+	#$self->{"titleLayout"} = TitleLayout->new();
 
 	return $self;
 
@@ -144,12 +154,33 @@ sub GetLayersLayout {
 	return $self->{"layersLayout"};
 }
 
+
+
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
+	use aliased 'Programs::Coupon::CpnBuilder::CpnLayout::CpnLayout';
+	use aliased 'Packages::ObjectStorable::JsonStorable::JsonStorable';
+	use JSON;
+
+	my $l = CpnLayout->new();
+
+	my $storable = JsonStorable->new();
+	
+	my $s = $storable->Encode($l);
+	
+	my $d = $storable->Decode($s);
+	
+	
+
+	die;
+
+	#my $object = bless( JSON->new->decode($serialized), 'Programs::Coupon::CpnBuilder::CpnLayout::CpnLayout' );
+
+	
 }
 
 1;

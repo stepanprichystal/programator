@@ -12,6 +12,7 @@ use Wx;
 use strict;
 use warnings;
 use Thread::Queue;
+use Sub::Identify ':all';
 
 #local library
 use aliased "Helpers::GeneralHelper";
@@ -27,11 +28,10 @@ sub new {
 	my $self  = {};
 	bless $self;
 
-	$self->{"wxFrame"}   = shift;
- 
-	
+	$self->{"wxFrame"} = shift;
+
 	$self->{"callbacks"} = {};
-	$self->{"inCAMS"}    = {};
+	$self->{"inCAMs"}    = {};
 
 	$self->__InitThreadPool();
 
@@ -67,9 +67,9 @@ sub Run {
 	$self->{"callbacks"}->{$workerId} = $callbackMethod;
 
 	if ($inCAM) {
-		$self->{"inCAMS"}->{$workerId} = $inCAM;
+		$self->{"inCAMs"}->{$workerId} = $inCAM;
 		$inCAM->ClientFinish();
- 
+
 	}
 
 	# Wait for an available thread
@@ -77,7 +77,10 @@ sub Run {
 
 	# run thread
 
-	my @ary : shared = ( $workerId, ( defined $inCAM ? $inCAM->GetPort() : 0 ), $workerMethod, $workerParams );
+	my $wmFullName = sub_fullname($workerMethod);
+
+	my @ary = ( $workerId, ( defined $inCAM ? $inCAM->GetPort() : 0 ), $wmFullName, $workerParams );
+
 	$self->{"work_queues"}->{$tid}->enqueue( \@ary );
 
 }
@@ -105,29 +108,31 @@ sub __WorkerWrapper {
 		my $workParams = $work_q->dequeue();
 
 		# Do work
-		my $inCAMPort    = $workParams->[0];
-		my $workerId     = $workParams->[1];
+		my $workerId     = $workParams->[0];
+		my $inCAMPort    = $workParams->[1];
 		my $workerMethod = $workParams->[2];
 		my $params       = $workParams->[3];
 
-		#my $params         = $workParams->[1];
+		my @paramsWorker = @{$params};
 
 		my $inCAM = undef;
 		if ( $inCAMPort != 0 ) {
 			$inCAM = InCAM->new( "remote" => 'localhost', "port" => $inCAMPort );
 			$inCAM->ServerReady();
-			
-			unshift @{$params}, $inCAM;
+
+			unshift @paramsWorker, $inCAM;
 		}
 
 		my $resultData : shared;
 		eval {
 
-			$resultData = $workerMethod->($params);
+			my ( $package, $func ) = $workerMethod =~ /^(.*)::(.*)$/;
+
+			$resultData = $package->$func(@paramsWorker);
 		};
 		if ($@) {
 
-			print STDERR  "Unexpected error: " . $@;
+			print STDERR "Unexpected error: " . $@;
 		}
 
 		if ( $inCAMPort != 0 ) {
@@ -146,8 +151,11 @@ sub __WorkerWrapper {
 }
 
 sub __CallBackWrapper {
-	my $self              = shift;
-	my $resultDataWrapper = shift;
+	my $self  = shift;
+	my $frame = shift;
+	my $event = shift;
+
+	my $resultDataWrapper = $event->GetData();
 
 	my $callBackMethod = $self->{"callbacks"}->{ $resultDataWrapper->{"callbackKey"} };
 
@@ -161,7 +169,7 @@ sub __CallBackWrapper {
 	delete $self->{"callbacks"}->{ $resultDataWrapper->{"callbackKey"} };
 	delete $self->{"inCAMs"}->{ $resultDataWrapper->{"callbackKey"} };
 
-	$callBackMethod->Do( $resultDataWrapper->{"data"} );
+	$callBackMethod->( $resultDataWrapper->{"data"} );
 
 }
 

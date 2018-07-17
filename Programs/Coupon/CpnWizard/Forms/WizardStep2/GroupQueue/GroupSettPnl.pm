@@ -18,6 +18,7 @@ use aliased 'Helpers::GeneralHelper';
 use aliased 'CamHelpers::CamLayer';
 use aliased 'Programs::Exporter::ExportChecker::Groups::NifExport::Presenter::NifHelper';
 use aliased 'Programs::Coupon::CpnWizard::WizardCore::Helper';
+use aliased 'Packages::Events::Event';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -39,6 +40,11 @@ sub new {
 	bless($self);
 
 	$self->__SetLayout($group);
+	
+	# Events
+	
+	$self->{"onGroupSett"} = Event->new();
+
 
 	return $self;
 }
@@ -58,6 +64,8 @@ sub __SetLayout {
 	$szMain->Add( $groupTxt, 0, &Wx::wxEXPAND | &Wx::wxALL, 5 );
 	$szMain->Add( $btnSett,  0, &Wx::wxALL, 0 );
 	$self->SetSizer($szMain);
+	
+	Wx::Event::EVT_BUTTON( $btnSett, -1, sub { $self->{"onGroupSett"}->Do($group) } );
 
 }
 
