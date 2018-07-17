@@ -22,6 +22,7 @@ use PackagesLib;
 use aliased 'CamHelpers::CamJob';
 use aliased 'CamHelpers::CamLayer';
 use aliased 'CamHelpers::CamStep';
+use aliased 'CamHelpers::CamHelper';
 
 
 #-------------------------------------------------------------------------------------------#
@@ -38,8 +39,11 @@ sub CompareOrigLayers {
 		CamLayer->ClearLayers($inCAM);
 
 		$origStep = CamStep->GetReferenceStep($inCAM, $jobId, $worksStep);
-		
-		
+			if ( CamHelper->StepExists( $inCAM, $jobId, 'o+1_panel' ) ) {
+					$origStep = 'o+1_panel';
+					$inCAM->COM ('display_sr',display=>'yes');
+			}
+			
 		$inCAM->COM ('set_step',name=>$worksStep);
 		
 		
