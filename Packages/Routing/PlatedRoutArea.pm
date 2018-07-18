@@ -194,7 +194,7 @@ sub GetAreasOfRout {
 	push( @coord, { "x" => $limits{"xMax"}, "y" => $limits{"yMax"} } );
 	push( @coord, { "x" => $limits{"xMax"}, "y" => $limits{"yMin"} } );
 
-	CamSymbol->AddPolyline( $inCAM, \@coord, "r300", "negative" );
+	CamSymbol->AddPolyline( $inCAM, \@coord, "r300", "negative", 1 );
 
 	# 3) Do countours from milling
 

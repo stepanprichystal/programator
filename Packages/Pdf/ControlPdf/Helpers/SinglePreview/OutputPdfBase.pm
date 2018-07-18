@@ -130,7 +130,7 @@ sub __OptimizeLayers {
 		my @coord = ( \%c1, \%c2, \%c3, \%c4 );
 
 		#
-		CamSymbol->AddPolyline( $inCAM, \@coord, "r1", "negative" );
+		CamSymbol->AddPolyline( $inCAM, \@coord, "r1", "negative", 1 );
 
 	}
 

@@ -27,7 +27,7 @@ sub new {
 	my $result   = shift;
 
 	my $title     = "Coupon microstrip settings";
-	my $dimension = [ 540, 560 ];
+	my $dimension = [ 440, 300 ];
 	my $flags     = &Wx::wxSYSTEM_MENU | &Wx::wxCAPTION | &Wx::wxCLIP_CHILDREN | &Wx::wxRESIZE_BORDER | &Wx::wxMINIMIZE_BOX | &Wx::wxCLOSE_BOX;
 
 	my $self = $class->SUPER::new( $parent, $settings, $title, $dimension, $flags, $result );

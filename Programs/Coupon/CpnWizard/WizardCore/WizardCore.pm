@@ -184,7 +184,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	my $inCAM = InCAM->new();
 	my $jobId = "f13609";
 
-	my $xmlPath = 'c:\Export\CouponExport\cpn.xml';
+	my $xmlPath = 'r:\PCB\Safiral_4vv.xml';
 
 	my $wizard = WizardCore->new( $inCAM, $jobId );
 	$wizard->Init($xmlPath);

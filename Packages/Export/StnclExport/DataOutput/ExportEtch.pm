@@ -481,7 +481,7 @@ sub __AddSchema {
 		push( @coord, \%p4 );
 
 		# frame 100µm width around pcb (fr frame coordinate)
-		CamSymbol->AddPolyline( $self->{"inCAM"}, \@coord, "r300", "positive" );
+		CamSymbol->AddPolyline( $self->{"inCAM"}, \@coord, "r300", "positive", 1  );
 
 	}
 	else {
@@ -498,7 +498,7 @@ sub __AddSchema {
 		push( @coord, \%p4 );
 
 		# frame 100µm width around pcb (fr frame coordinate)
-		CamSymbol->AddPolyline( $self->{"inCAM"}, \@coord, "r300", "positive" );
+		CamSymbol->AddPolyline( $self->{"inCAM"}, \@coord, "r300", "positive", 1 );
 	}
 
 }

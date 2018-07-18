@@ -22,17 +22,16 @@ use aliased 'Programs::Coupon::CpnWizard::Forms::Settings::HelpWindow';
 #-------------------------------------------------------------------------------------------#
 sub new {
 
-	my $class       = shift;
-	my $parent      = shift;
-	my $parentFrame = shift;
-	my $settingsKey = shift;
-	my $settings    = shift;
-	my $controls    = shift;
-	my $labelWidth = shift //200;
+	my $class        = shift;
+	my $parent       = shift;
+	my $parentFrame  = shift;
+	my $settingsKey  = shift;
+	my $settings     = shift;
+	my $controls     = shift;
+	my $labelWidth   = shift // 200;
 	my $controlWidth = shift;
 
 	my $self = {};
-
 	bless($self);
 
 	# Properties
@@ -41,9 +40,7 @@ sub new {
 	$self->{"settingsKey"} = $settingsKey;
 	$self->{"settings"}    = $settings;
 	$self->{"controls"}    = $controls;
-	$self->{"labelWidth"}    = $labelWidth;
- 
-
+	$self->{"labelWidth"}  = $labelWidth;
 
 	$self->__SetLayout();
 
@@ -71,8 +68,8 @@ sub __SetLayout {
 	my $szMain = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
 
 	my $labelTxt = Wx::StaticText->new( $self->{"parent"}, -1, $settLabel, &Wx::wxDefaultPosition, [ $self->{"labelWidth"}, 25 ] );
-  
-	my $unitsTxt = Wx::StaticText->new( $self->{"parent"}, -1, $settUnits, &Wx::wxDefaultPosition, [ 40,  25 ] );
+
+	my $unitsTxt = Wx::StaticText->new( $self->{"parent"}, -1, $settUnits, &Wx::wxDefaultPosition, [ 40, 25 ] );
 
 	my $helpPnl;
 	if ( $settHelp ne "" || -e $settHelpImgPath ) {
@@ -90,11 +87,11 @@ sub __SetLayout {
 
 	# BUILD STRUCTURE OF LAYOUT
 
-	$szMain->Add( $labelTxt,           0  );
-	$szMain->Add( $self->{"controls"}, 0  );
+	$szMain->Add( $labelTxt,           0 );
+	$szMain->Add( $self->{"controls"}, 0 );
 	$szMain->Add( $unitsTxt,           0 );
-	$szMain->Add( $helpPnl,            0  );
-	$szMain->Add( 1, 1, 1);
+	$szMain->Add( $helpPnl,            0 );
+	$szMain->Add( 1, 1, 1 );
 
 	$self->{"szMain"} = $szMain;
 }
@@ -107,7 +104,10 @@ sub __ShowHelp {
 	my $settLabel       = $self->{"settings"}->GetLabelText($key);
 	my $settHelp        = $self->{"settings"}->GetHelpText($key);
 	my $settUnits       = $self->{"settings"}->GetUnitText($key);
-	my $settHelpImgPath = Helper->GetResourcePath() . "Help\\$key.bmp";
+	my $settHelpImgPath = Helper->GetResourcePath() . "Help\\$key.png";
+
+
+
 
 	my $w = HelpWindow->new( $self->{"parentFrame"}, $settLabel, $settHelp, $settHelpImgPath );
 	$w->ShowModal();

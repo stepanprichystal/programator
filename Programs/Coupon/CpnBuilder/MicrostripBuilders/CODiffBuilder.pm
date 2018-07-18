@@ -42,11 +42,11 @@ sub Build {
 	my $cpnSingleSett = shift;
 	my $errMess       = shift;
 	
-	$self->SUPER::Build($stripVariant, $cpnSett, $cpnSingleSett);
+	
  
  	# 1) Build SE layout
  
-	my $result = $self->SUPER::Build($errMess); 
+	my $result =$self->SUPER::Build($stripVariant, $cpnSett, $cpnSingleSett);
 
 	# 2) Add extra behaviour for conaplanar SE
 

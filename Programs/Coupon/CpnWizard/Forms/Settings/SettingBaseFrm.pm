@@ -125,7 +125,7 @@ sub __BuildRowUni_SpinCtrl {
 	}
 
 	# 2) CONNECT control to setting object
-	Wx::Event::EVT_SPINCTRL( $control, -1, sub { $self->{"settings"}->$setMethod( $control->GetValue() ) } );
+	Wx::Event::EVT_TEXT( $control, -1, sub { $self->{"settings"}->$setMethod( $control->GetValue() ) } );
 
 	# 3) BUILD row layout
 	return $self->_GetSettingRow( $parent, $key, $control );
@@ -151,11 +151,20 @@ sub __BuildRowUni_CheckBox {
 	}
 
 	# 2) CONNECT control to setting object
-	Wx::Event::EVT_CHECKBOX( $control, -1, sub { $self->{"settings"}->$setMethod( $control->GetValue() ) } );
+	Wx::Event::EVT_CHECKBOX(
+		$control, -1,
+		sub {
+			$self->{"settings"}->$setMethod( $control->GetValue() );
 
-	if ($disableControls) {
-		Wx::Event::EVT_CHECKBOX( $control, -1, sub { $self->__DisableControls( $control, $disableControls ) } );
-	}
+			if ($disableControls) {
+				$self->__DisableControls( $control, $disableControls );
+			}
+		}
+	);
+
+	#	if ($disableControls) {
+	#		Wx::Event::EVT_CHECKBOX( $control, -1, sub { $self->__DisableControls( $control, $disableControls ) } );
+	#	}
 
 	# 3) BUILD row layout
 	return $self->_GetSettingRow( $parent, $key, $control );
@@ -239,7 +248,7 @@ sub _SetKey {
 sub _GetSeparateLine {
 	my $self   = shift;
 	my $parent = shift;
-	my $thick  = shift // 2;
+	my $thick  = shift // 1;
 	my $pnl    = Wx::Panel->new( $parent, -1, &Wx::wxDefaultPosition, [ $thick, -1 ] );
 	$pnl->SetBackgroundColour( Wx::Colour->new( 192, 192, 192 ) );
 

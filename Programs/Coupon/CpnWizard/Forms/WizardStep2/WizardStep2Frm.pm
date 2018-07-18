@@ -21,11 +21,10 @@ use aliased 'Programs::Coupon::CpnWizard::WizardCore::Helper';
 use aliased 'Programs::Coupon::CpnWizard::Forms::WizardStep2::GlobalSettFrm';
 use aliased 'Programs::Coupon::CpnWizard::Forms::WizardStep2::GroupSettFrm';
 use aliased 'Programs::Coupon::CpnWizard::Forms::WizardStep2::StripSettFrm';
+
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
- 
-
 
 sub new {
 	my $class = shift;
@@ -65,18 +64,17 @@ sub GetLayout {
 	$pnlListHeader->SetBackgroundColour( Wx::Colour->new( 127, 127, 127 ) );
 	$pnlListHeader->SetForegroundColour( Wx::Colour->new( 250, 250, 250 ) );
 
-	my $groupTxt = Wx::StaticText->new( $pnlListHeader, -1, "Group number", &Wx::wxDefaultPosition, [ 125, 25 ] );
-	
-	my $stripsTxt = Wx::StaticText->new( $pnlListHeader, -1, "Group microstrips", &Wx::wxDefaultPosition, [ 330, 25 ] );
+	my $groupTxt = Wx::StaticText->new( $pnlListHeader, -1, "Group number", &Wx::wxDefaultPosition, [ 120, 20 ] );
 
-	my $trackLTxt = Wx::StaticText->new( $pnlListHeader, -1, "Track layer", &Wx::wxDefaultPosition, [ 105, 25 ] );
+	my $stripsTxt = Wx::StaticText->new( $pnlListHeader, -1, "Group microstrips", &Wx::wxDefaultPosition, [ 321, 20 ] );
 
-	my $topRefTxt = Wx::StaticText->new( $pnlListHeader, -1, "Top ref layer", &Wx::wxDefaultPosition, [ 133, 25 ] );
+	my $trackLTxt = Wx::StaticText->new( $pnlListHeader, -1, "Track layer", &Wx::wxDefaultPosition, [ 100, 20 ] );
 
-	my $botRefTxt = Wx::StaticText->new( $pnlListHeader, -1, "Bot ref layer", &Wx::wxDefaultPosition, [ 133, 25 ] );
+	my $topRefTxt = Wx::StaticText->new( $pnlListHeader, -1, "Top ref layer", &Wx::wxDefaultPosition, [ 130, 20 ] );
 
-	my $impedanceTxt = Wx::StaticText->new( $pnlListHeader, -1, "Impedance", &Wx::wxDefaultPosition, [ 100, 25 ] );
+	my $botRefTxt = Wx::StaticText->new( $pnlListHeader, -1, "Bot ref layer", &Wx::wxDefaultPosition, [ 130, 20 ] );
 
+	my $impedanceTxt = Wx::StaticText->new( $pnlListHeader, -1, "Impedance", &Wx::wxDefaultPosition, [ 100, 20 ] );
 
 	my $list = GroupQueueFrm->new($pnlMain);
 
@@ -92,32 +90,34 @@ sub GetLayout {
 	$szSettPanel->Add( 1, 1, 1, &Wx::wxEXPAND | &Wx::wxALL, 0 );
 	$szSettPanel->Add( $szAutogenerate, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
 
-	$szListHeader->Add( $groupTxt,  0, &Wx::wxEXPAND | &Wx::wxALL, 2 );
-	$szListHeader->Add( $stripsTxt, 0, &Wx::wxEXPAND | &Wx::wxALL, 2 );
-	$szListHeader->Add( $trackLTxt, 0, &Wx::wxEXPAND | &Wx::wxALL, 2 );
-	$szListHeader->Add( $topRefTxt, 0, &Wx::wxEXPAND | &Wx::wxALL, 2 );
-	$szListHeader->Add( $botRefTxt, 0, &Wx::wxEXPAND | &Wx::wxALL, 2 );
-	$szListHeader->Add( $impedanceTxt, 0, &Wx::wxEXPAND | &Wx::wxALL, 2 );
+	$szListHeader->Add( $groupTxt,                                0, &Wx::wxEXPAND | &Wx::wxALL, 3 );
+	$szListHeader->Add( $self->__GetSeparateLine($pnlListHeader), 0, &Wx::wxEXPAND | &Wx::wxALL, 2 );
+	$szListHeader->Add( $stripsTxt,                               0, &Wx::wxEXPAND | &Wx::wxALL, 3 );
+	$szListHeader->Add( $self->__GetSeparateLine($pnlListHeader), 0, &Wx::wxEXPAND | &Wx::wxALL, 2 );
+	$szListHeader->Add( $trackLTxt,                               0, &Wx::wxEXPAND | &Wx::wxALL, 3 );
+	$szListHeader->Add( $self->__GetSeparateLine($pnlListHeader), 0, &Wx::wxEXPAND | &Wx::wxALL, 2 );
+	$szListHeader->Add( $topRefTxt,                               0, &Wx::wxEXPAND | &Wx::wxALL, 3 );
+	$szListHeader->Add( $self->__GetSeparateLine($pnlListHeader), 0, &Wx::wxEXPAND | &Wx::wxALL, 2 );
+	$szListHeader->Add( $botRefTxt,                               0, &Wx::wxEXPAND | &Wx::wxALL, 3 );
+	$szListHeader->Add( $self->__GetSeparateLine($pnlListHeader), 0, &Wx::wxEXPAND | &Wx::wxALL, 2 );
+	$szListHeader->Add( $impedanceTxt,                            0, &Wx::wxEXPAND | &Wx::wxALL, 3 );
 
 	$szMain->Add( $szSettPanel,   0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
 	$szMain->Add( 1,              5, 0 );
 	$szMain->Add( $pnlListHeader, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
 	$szMain->Add( $list,          1, &Wx::wxEXPAND | &Wx::wxALL, 0 );
-	
+
 	$pnlListHeader->SetSizer($szListHeader);
 	$pnlMain->SetSizer($szMain);
 
 	# SET EVENTS
 
-	Wx::Event::EVT_BUTTON( $btnGlobal,      -1, sub { $self->__ShowGlobalSett() } );
+	Wx::Event::EVT_BUTTON( $btnGlobal, -1, sub { $self->__ShowGlobalSett() } );
 	Wx::Event::EVT_RADIOBUTTON( $rbGenYes, -1, sub { $self->__OnRadioBtnChanged(1) } );
 	Wx::Event::EVT_RADIOBUTTON( $rbGenNo,  -1, sub { $self->__OnRadioBtnChanged(0) } );
 
-
 	$list->{"onGroupSett"}->Add( sub { $self->__ShowGroupSett(@_) } );
 	$list->{"onStripSett"}->Add( sub { $self->__ShowStripSett(@_) } );
-
-	
 
 	# SET REFERENCES
 
@@ -140,8 +140,8 @@ sub Update {
 	my $self       = shift;
 	my $wizardStep = shift;
 
-	$self->{"coreWizardStep"} = $wizardStep; # Update current step wizard
-	
+	$self->{"coreWizardStep"} = $wizardStep;    # Update current step wizard
+
 	my @uniqGroups  = $self->{"coreWizardStep"}->GetUniqueGroups();
 	my @constr      = $self->{"coreWizardStep"}->GetConstraints();
 	my $constrGroup = $self->{"coreWizardStep"}->GetConstrGroups();
@@ -176,14 +176,13 @@ sub __ShowGlobalSett {
 
 	# User will edit only copy of global settings
 	# If click Ok, global settings will be updated by this copy
-	
+
 	my $settingsTmp = $self->{"coreWizardStep"}->GetGlobalSett()->GetDeepCopy();
 
 	my $result = 0;
 	my $frm = GlobalSettFrm->new( $self->{"parentFrm"}, $settingsTmp, \$result );
 
 	$frm->ShowModal();
- 
 
 	# update layout
 	if ($result) {
@@ -195,19 +194,18 @@ sub __ShowGlobalSett {
 }
 
 sub __ShowGroupSett {
-	my $self = shift;
+	my $self    = shift;
 	my $groupId = shift;
 
 	# User will edit only copy of global settings
 	# If click Ok, global settings will be updated by this copy
-	
+
 	my $settingsTmp = $self->{"coreWizardStep"}->GetGroupSettings($groupId)->GetDeepCopy();
 
 	my $result = 0;
 	my $frm = GroupSettFrm->new( $self->{"parentFrm"}, $settingsTmp, \$result );
 
 	$frm->ShowModal();
- 
 
 	# update layout
 	if ($result) {
@@ -219,19 +217,19 @@ sub __ShowGroupSett {
 }
 
 sub __ShowStripSett {
-	my $self = shift;
+	my $self    = shift;
 	my $stripId = shift;
 
 	# User will edit only copy of global settings
 	# If click Ok, global settings will be updated by this copy
-	
+
 	my $settingsTmp = $self->{"coreWizardStep"}->GetStripSettings($stripId)->GetDeepCopy();
 
 	my $result = 0;
 	my $frm = StripSettFrm->new( $self->{"parentFrm"}, $settingsTmp, \$result );
 
 	$frm->ShowModal();
-  
+
 	# update layout
 	if ($result) {
 
@@ -239,6 +237,16 @@ sub __ShowStripSett {
 		$stripSett->UpdateSettings($settingsTmp);
 	}
 
+}
+
+sub __GetSeparateLine {
+	my $self   = shift;
+	my $parent = shift;
+	my $thick  = shift // 1;
+	my $pnl    = Wx::Panel->new( $parent, -1, &Wx::wxDefaultPosition, [ 1, -1 ] );
+	$pnl->SetBackgroundColour( Wx::Colour->new( 230, 230, 230 ) );
+
+	return $pnl;
 }
 
 #-------------------------------------------------------------------------------------------#

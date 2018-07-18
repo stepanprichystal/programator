@@ -80,6 +80,7 @@ sub new {
 
 			$labelText = "";
 			$helpText  = "";
+			$unitText = "";
 		}
 
 	}

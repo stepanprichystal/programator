@@ -129,6 +129,7 @@ sub AddPolyline {
 	my @coord    = @{ shift(@_) };    #hash x, y
 	my $symbol   = shift;
 	my $polarity = shift;
+	my $closePolygon = shift;
 
 	if ( scalar(@coord) < 3 ) {
 		die "Polyline has to have at lest 3 coordinates.\n";
@@ -141,8 +142,10 @@ sub AddPolyline {
 		$inCAM->COM( "add_polyline_xy", "x" => $c->{"x"}, "y" => $c->{"y"} );
 	}
 
-	#last is frst Tohle tadz bzlo historickz, ale nechceme abz poliline funkce kreslila vydz uyavrenz polygon
-	#$inCAM->COM( "add_polyline_xy", "x" => $coord[0]->{"x"}, "y" => $coord[0]->{"y"} );
+	if($closePolygon){
+		$inCAM->COM( "add_polyline_xy", "x" => $coord[0]->{"x"}, "y" => $coord[0]->{"y"} );
+	}
+	
 	$inCAM->COM(
 				 "add_polyline_end",
 				 "polarity"      => $polarity,

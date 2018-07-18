@@ -252,7 +252,7 @@ sub __BuildPadTextSett {
 
 	$szRows->Add( $self->_GetSeparateLine($pnlRows), 0, &Wx::wxEXPAND | &Wx::wxALL, 4 );
 	$szRows->Add( $self->__BuildRowUni_CheckBox( $pnlRows, "padTextUnmask" ), 0, &Wx::wxALL, 1 );
-	$szRows->Add( $self->__BuildRowUni_CheckBox( $pnlRows, "padTextDist" ),   0, &Wx::wxALL, 1 );
+	$szRows->Add( $self->__BuildRowUni_SpinCtrl( $pnlRows, "padTextDist", 0, 3000 ),   0, &Wx::wxALL, 1 );
 	$szRows->Add( $self->_GetSeparateLine($pnlRows), 0, &Wx::wxEXPAND | &Wx::wxALL, 4 );
 	$szRows->Add( Wx::StaticText->new( $pnlRows, -1, "Pad text font:", &Wx::wxDefaultPosition ), 0, &Wx::wxALL, 4 );
 	$szRows->Add( $self->__BuildRowUni_SpinCtrl( $pnlRows, "padTextWidth",  100, 2000 ), 0, &Wx::wxALL, 1 );
@@ -394,7 +394,9 @@ sub __BuildLogoSett {
 	$szRows->Add( $self->_GetSeparateLine($pnlRows), 0, &Wx::wxEXPAND | &Wx::wxALL, 4 );
 	$szRows->Add( $self->__BuildRowUni_ComboBox( $pnlRows, "titleType", [ "left", "top" ] ), 0, &Wx::wxALL, 1 );
 	$szRows->Add( $self->__BuildRowUni_CheckBox( $pnlRows, "titleUnMask" ), 0 );
-	$szRows->Add( $self->__BuildRowUni_CheckBox( $pnlRows, "padTextDist" ), 0 );
+	$szRows->Add( $self->__BuildRowUni_SpinCtrl( $pnlRows, "titleMargin",  0, 10000 ), 0, &Wx::wxALL, 1 );
+	$szRows->Add( $self->__BuildRowUni_SpinCtrl( $pnlRows, "titleLogoJobIdHDist",  0, 10000 ), 0, &Wx::wxALL, 1 );
+	$szRows->Add( $self->__BuildRowUni_SpinCtrl( $pnlRows, "titleLogoJobIdVDist",  0, 10000 ), 0, &Wx::wxALL, 1 );
 	$szRows->Add( $self->_GetSeparateLine($pnlRows), 0, &Wx::wxEXPAND | &Wx::wxALL, 4 );
 	$szRows->Add( Wx::StaticText->new( $pnlRows, -1, "Logo settings:", &Wx::wxDefaultPosition ), 0, &Wx::wxALL, 4 );
 	$szRows->Add( $self->__BuildRowUni_SpinCtrl( $pnlRows, "logoWidth",  100, 2000 ), 0, &Wx::wxALL, 1 );

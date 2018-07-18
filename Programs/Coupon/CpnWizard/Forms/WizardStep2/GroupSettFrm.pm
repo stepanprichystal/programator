@@ -78,8 +78,13 @@ sub __BuildLayoutSett {
 	# ----
 
 	$szRows->Add( $self->__BuildRowUni_SpinCtrl( $pnlRows, "cpnSingleWidth", 100, 400 ),   0, &Wx::wxALL, 1 );
-	$szRows->Add( $self->__BuildRowUni_SpinCtrl( $pnlRows, "poolCnt",        1,   2 ),     0, &Wx::wxALL, 1 );
+	
+	
+	$szRows->Add( $self->_GetSeparateLine($pnlRows), 0, &Wx::wxEXPAND | &Wx::wxALL, 4 );
+	$szRows->Add( Wx::StaticText->new( $pnlRows, -1, "Pads layout:", &Wx::wxDefaultPosition ), 0, &Wx::wxALL, 4 );
+	
 	$szRows->Add( $self->__BuildRowUni_SpinCtrl( $pnlRows, "maxStripsCntH",  1,   10 ),    0, &Wx::wxALL, 1 );
+	$szRows->Add( $self->__BuildRowUni_SpinCtrl( $pnlRows, "poolCnt",        1,   2 ),     0, &Wx::wxALL, 1 );
 	$szRows->Add( $self->__BuildRowUni_SpinCtrl( $pnlRows, "groupPadsDist",  0,   10000 ), 0, &Wx::wxALL, 1 );
  
 

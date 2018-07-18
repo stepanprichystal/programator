@@ -19,8 +19,6 @@ use aliased 'CamHelpers::CamJob';
 use aliased 'Packages::InCAMHelpers::AppLauncher::AppLauncher';
 use aliased 'Packages::InCAMHelpers::AppLauncher::Enums';
 use aliased 'Helpers::GeneralHelper';
-use aliased 'Programs::Stencil::StencilCreator::Helpers::Helper' => 'StencilHelper';
-use aliased 'Programs::Stencil::StencilCreator::Enums'           => 'StnclEnums';
 use aliased 'Packages::InCAM::InCAM';
 
 my $jobId = shift;
@@ -48,21 +46,19 @@ unless ( __CheckBeforeRun( \$mess ) ) {
 
 # 2) Launch app
 
-my $appName = 'Programs::Stencil::StencilCreator::StencilCreator';    # has to implement IAppLauncher
+my $appName = 'Programs::Coupon::CpnWizard::CpnWizard';    # has to implement IAppLauncher
 
 my $sourceJob = undef;
-my $type = __GetSourceDataType(\$sourceJob);
+ 
 
-my $launcher = AppLauncher->new( $appName, $jobId, $type, $sourceJob);
-$launcher->SetWaitingFrm( "Stencil creator - $jobId", "Loading application ...", Enums->WaitFrm_CLOSEAUTO );
+my $launcher = AppLauncher->new( $appName, $jobId);
+$launcher->SetWaitingFrm( "Impedance coupon generator - $jobId", "Loading application ...", Enums->WaitFrm_CLOSEAUTO );
 
 #my $logPath = GeneralHelper->Root() . "\\Packages\\Reorder\\ReorderApp\\Config\\Logger.conf";
-
 #$launcher->SetLogConfig($logPath);
 
 $launcher->Run();
 
-print STDERR "Stencil creator finish\n";
 
 exit(1);
 
@@ -70,83 +66,17 @@ exit(1);
 sub __CheckBeforeRun {
 	my $mess = shift;
 
-	my %stencilInfo = StencilHelper->GetStencilInfo($jobId);
+	my $result = 1;
 
-	unless ( defined $stencilInfo{"tech"} ) {
-
-		$$mess .= "Nebyl dohledán typ šablony (laserová, leptaná, vrtaná)";
-		return 0;
-	}
-
-#	unless ( defined $stencilInfo{"type"} ) {
-#
-#		$$mess .= "Nebyl dohledán typ šablony (TOP, BOT, TOP+BOT). Zapište typ do poznámky v IS.";
-#		return 0;
-#	}
+	my $class = CamJob->GetLimJobPcbClass($inCAM, $jobId, "max");
 	
-	my @layers  = CamJob->GetAllLayers( $inCAM, $jobId );
-	my $saExist = scalar( grep { $_->{"gROWname"} =~ /sa-(ori|made)/ } @layers );
-	my $sbExist = scalar( grep { $_->{"gROWname"} =~ /sb-(ori|made)/ } @layers );
+	if(!defined $class && $class == 0){
 
-	if ( $stencilInfo{"type"} eq StnclEnums->StencilType_TOP && !$saExist ) {
-
-		$$mess .= "Šablona je typ TOP, ale v metrixu chybí vrstva sa-ori nebo sb-made.";
-		return 0;
-	}
-	elsif ( $stencilInfo{"type"} eq StnclEnums->StencilType_BOT && !$sbExist ) {
-
-		$$mess .= "Šablona je typ BOT, ale v metrixu chybí vrstva sb-ori nebo sb-made.";
-		return 0;
-
-	}
-	elsif ( $stencilInfo{"type"} eq StnclEnums->StencilType_TOPBOT && ( !$sbExist || !$saExist ) ) {
-
-		$$mess .= "Šablona je typ TOP + BOT. Metrix musí obsahovat vrstvy sa-ori a sb-ori.";
-		return 0;
-	}
-	
-	# Check stencil source steps
-	my @steps = StencilHelper->GetStencilSourceSteps($inCAM, $jobId);
-	my $sourceJob =  scalar(grep {$_ =~ /ori_\w\d+_/} @steps);
-	my $sourceCustData =  scalar(grep {$_ =~ /ori_data/} @steps);
-	
-	if(!$sourceJob && !$sourceCustData){
-		
-		$$mess .= "V jobu nejsou žádné zdrojové stepy, ze kterých lze vytvořit šablonu.\n";
-		$$mess .= "- data z existujícího jobu: \"ori_<jmeno_jobu>_<jmeno_stepu>\".\n";
-		$$mess .= "- data od zákazníka: \"ori_data\".\n";
-		return 0;
-	}
-	
-	if($sourceJob && $sourceCustData){
-		
-		$$mess .= "V jobu byly nalezeny zdrojové stepy ze dvou zdrojů (nelze):\n";
-		$$mess .= "- data z existujícího jobu: \"ori_<jmeno_jobu>_<jmeno_stepu>\".\n";
-		$$mess .= "- data od zákazníka: \"ori_data\".\n";
-		return 0;
+		$result = 0;
+		$$mess .= "Job pcb class is not defined";
 	}
 	
 	return 1;
-
-}
-
-sub __GetSourceDataType{
-	my $jobName = shift;
-	
-	my @steps = StencilHelper->GetStencilSourceSteps($inCAM, $jobId);
-	my $sourceJob =  scalar(grep {$_ =~ /ori_\w\d+_/} @steps);
-	my $sourceCustData =  scalar(grep {$_ =~ /ori_data/} @steps);
-	
-	if($sourceJob){
-		
-		($$jobName) = $steps[0] =~ m/ori_(\w\d+)_/i;
-		
-		return StnclEnums->StencilSource_JOB;
-	}else{
-		
-		return StnclEnums->StencilSource_CUSTDATA;
-	}
-	
 }
 
 

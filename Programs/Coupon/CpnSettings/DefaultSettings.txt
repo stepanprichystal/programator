@@ -6,14 +6,13 @@
 # --------------------------------------------------------------------------------------
 
 [t = Step name]
-[h = Name of coupon generated in inCAMe]
 stepName   = coupon 
 
 
 # DIMENSIONS SETTINGS
 # --------------------------------------------------------------------------------------
 [t = Coupon margin]
-[h = Margin of coupon group ]
+[h = Margin of coupon ]
 [u = µm ]
 couponMargin      = 1500               # µm
 
@@ -32,8 +31,8 @@ couponSpace       = 1000             # µm
 # --------------------------------------------------------------------------------------
 
 [t = Microstrip tracks per layer ]
-[h = Max count of microstrip line per one group ]
-maxTrackCnt = 1
+[h = Max count of microstrip line per one layer (in one group) ]
+maxTrackCnt = 4
 
 [t = Straight route]
 [h = The route can lead directly from the start track pad straight to end track pad ] 
@@ -72,7 +71,7 @@ twoEndedDesign = 1
 infoText = 1 # 1/0
 
 [t = Info texts position]
-[h = Info texts position - toght OR top]
+[h = Info texts position - right OR top]
 infoTextPosition = right # top/right
 
 [t = Unmask info texts ]
@@ -94,16 +93,13 @@ infoTextTrackSpace = 1 # 1/0
  
 
 [t = Char width]
-[h = Char width]
 [u = µm ]
 infoTextWidth = 1000 # µm
 
 [t = Char height]
-[h = Char height]
 [u = µm ]
 infoTextHeight = 1000 # µm
 [t = Char weight]
-[h = Char weight]
 [u = µm ]
 infoTextWeight = 300 #µm
 
@@ -140,15 +136,12 @@ padTextUnmask = 1
 padTextDist = 150 # µm
 
 [t = Char width]
-[h = Char width]
 [u = µm ]
 padTextWidth = 800 #µm
 [t = Char height]
-[h = Char height]
 [u = µm ]
 padTextHeight = 700 #µm
 [t = Char weight]
-[h = Char weight]
 [u = µm ]
 padTextWeight = 300 #µm
 
@@ -182,14 +175,13 @@ shieldingSymbolDY = 500 # µm
 # --------------------------------------------------------------------------------------
 [t = Guard tracks]
 [h = Guard tracks]
-guardTracks = 1 # 1/0
+guardTracks = 0 # 1/0
 
 [t = Guard tracks type]
 [h = Guard tracks type - Single = single lines are put along both sides of microstrip, Full - whole emptz space between microstrip lines is filled by surface]
 guardTracksType = single_line # single_line - single lines, full - fill whole area except pads area
 
 [t = Guard tracks width]
-[h = Guard tracks width]
 [u = µm ]
 guardTrackWidth = 200 # µm
 
@@ -215,7 +207,7 @@ guardTrack2Shielding = 400 #µm
 # LOGO SETTINGS
 # --------------------------------------------------------------------------------------
 [t = Logo title]
-[h = Logo title]
+[h = Logo + job id]
 title = 1 # 1/0
 
 [t = Unmask logo]
@@ -230,57 +222,51 @@ titleUnMask = 1 # 1/0
 titleType = left # left/top
 
 [t = Logo title margin]
-[h = Logo title margin]
 [u = µm ]
 titleMargin = 350 #µm
 
 [t = Logo to Jobid horizontal dist]
-[h = Logo to Jobid horizontal dist]
+[h = Space between gatema logo and job id (if labels are placed side by side on one line)]
 [u = µm ]
 titleLogoJobIdHDist = 1000 #µm H distance bewweeen logo and job id
 
 [t = Logo to Jobid vertical dist]
-[h = Logo to Jobid vertical dist]
+[h = Space between gatema logo and job id (if labels are placed underneath on two lines)]
 [u = µm ]
 titleLogoJobIdVDist = 400 #µm V distance if 2rows title
 
 
 [t = Logo width on coupon]
-[h = Logo width on coupon]
 [u = µm ]
 logoWidth = 6000 # µm
 
 [t = Logo height on coupon]
-[h = Logo height on coupon]
 [u = µm ]
 logoHeight = 1300 # µm
 
 [t = Logo InCAM symbol]
-[h = Logo InCAM symbol]
+[h = Symbol from InCAM library. Do not forget spicify szmbol width + height]
 logoSymbol = gatema_logo #  
 
 [t = InCAM logo symbol width]
-[h = InCAM logo symbol width]
+[h = Specify loho width of InCAM symbol. Important set accurate values, has impact to logo scaling]
 [u = µm ]
 logoSymbolWidth = 15600 #  
 
 [t = InCAM logo symbol height]
-[h = InCAM logo symbol height]
+[h = Specify loho height of InCAM symbol. Important set accurate values, has impact to logo scaling]
 [u = µm ]
 logoSymbolHeight = 3600 # 
 
 [t = Char width]
-[h = Char width]
 [u = µm ]
 titleTextWidth = 1000 # µm
 
 [t = Char height]
-[h = Char height]
 [u = µm ]
 titleTextHeight = 1000 # µm
 
 [t = Char weight]
-[h = Char weight]
 [u = µm ]
 titleTextWeight = 400 #µm
 
@@ -298,12 +284,12 @@ titleTextWeight = 400 #µm
 [u = mm ]
 cpnSingleWidth                 = 130              # mm
 
-[t = Max cnt of microstrip - vertical]
-[h = Max cnt of microstrip - vertical]
+[t = Max cnt of microstrip - Y axis]
+[h = Max cnt of microstrip - Y axis]
 poolCnt = 2
 
-[t = Max cnt of microstrip - horizontal]
-[h = Max cnt of microstrip - horizontal]
+[t = Max cnt of microstrip - X axis]
+[h = Max cnt of microstrip - X axis]
 maxStripsCntH = 8
 
 [t = Space between microstrip pads]
@@ -315,31 +301,24 @@ groupPadsDist    = 4000                # µm
 # Pad symbol definitions
 # --------------------------------------------------------------------------------------
 
-
 [t = Track pad shape]
-[h = Track pad shape]
 padTrackShape    = s    #µm
 
 [t = Track pad size]
-[h = Track pad size]
 [u =  µm]
 padTrackSize     = 1524              #µm
 
 [t = GND pad shape]
-[h = GND pad shape]
 padGNDShape 	 = r     #µm
 
 [t = GND pad size]
-[h = GND pad size]
 [u = µm ]
 padGNDSize       = 1524              #µm
 
 [t = GND negative symbol]
-[h = GND negative symbol]
 padGNDSymNeg 	 = thr2000x1800x0x4x203       #µm
 
 [t = Drill size]
-[h = Drill size]
 [u = µm ]
 padDrillSize      = 1050             #µm
 

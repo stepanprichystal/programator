@@ -32,6 +32,7 @@ use aliased 'Programs::Coupon::CpnGenerator::CpnLayers::InfoTextMaskLayer';
 use aliased 'Programs::Coupon::CpnGenerator::CpnLayers::GuardTracksLayer';
 use aliased 'Programs::Coupon::CpnGenerator::CpnLayers::ShieldingLayer';
 use aliased 'Programs::Coupon::CpnGenerator::CpnLayers::TitleLayer';
+use aliased 'CamHelpers::CamSymbol';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -83,7 +84,6 @@ sub Generate {
 		my $p = $cpnSignleLayout->GetPosition();
 
 		$self->{"couponStep"}->AddSRStep( $srStep, $p->X(), $p->Y(), 0, 1, 1, 1, 1 );
-
 	}
 
 	# Process title
@@ -110,7 +110,25 @@ sub Generate {
 			$tLayer->Draw();
 
 		}
+	}
 
+	# Unmask coupon border
+	my @masks = grep { $_ =~ /^m[cs]$/ } keys %{ $layout->GetLayersLayout() };
+	if ( scalar(@masks) > 0 ) {
+
+		foreach my $l (@masks) {
+
+			CamLayer->WorkLayer( $inCAM, $l );
+
+			my @coord = ();
+			push( @coord, { "x" => 0,                   "y" => 0 } );
+			push( @coord, { "x" => 0,                   "y" => $layout->GetHeight() } );
+			push( @coord, { "x" => $layout->GetWidth(), "y" => $layout->GetHeight() } );
+			push( @coord, { "x" => $layout->GetWidth(), "y" => 0 } );
+
+			# frame 100µm width around pcb (fr frame coordinate)
+			CamSymbol->AddPolyline( $inCAM, \@coord, "r100", "positive", 1 );
+		}
 	}
 
 	return $result;
@@ -171,7 +189,7 @@ sub __GenerateSingle {
 
 	# Proces guard tracks
 
-	if ( $cpnSingleLayout->GetGuardTracksLayout() ) {
+	if ( defined $cpnSingleLayout->GetGuardTracksLayout() ) {
 
 		foreach my $layout ( @{ $cpnSingleLayout->GetGuardTracksLayout() } ) {
 
@@ -181,9 +199,7 @@ sub __GenerateSingle {
 
 			CamLayer->WorkLayer( $inCAM, $gtLayer->GetLayerName() );
 			$gtLayer->Draw();
-
 		}
-
 	}
 
 	# Process all microstrip layouts in single coupon
@@ -230,16 +246,29 @@ sub __GenerateSingle {
 		}
 	}
 
+	# Proces guard tracks
 
+	if ( defined $cpnSingleLayout->GetGuardTracksLayout() ) {
+
+		foreach my $layout ( @{ $cpnSingleLayout->GetGuardTracksLayout() } ) {
+
+			my $gtLayer = GuardTracksLayer->new( $layout->GetLayer() );
+			$gtLayer->Init( $inCAM, $jobId, $stepName );
+			$gtLayer->Build($layout);
+
+			CamLayer->WorkLayer( $inCAM, $gtLayer->GetLayerName() );
+			$gtLayer->Draw();
+		}
+	}
 
 	# Shielding layout
-	if ( $cpnSingleLayout->GetShieldingLayout() ) {
+	if ( defined $cpnSingleLayout->GetShieldingLayout() ) {
 
 		foreach my $l ( CamJob->GetSignalLayerNames( $inCAM, $jobId ) ) {
 
 			my $shieldingLayer = ShieldingLayer->new($l);
 			$shieldingLayer->Init( $inCAM, $jobId, $stepName );
-			$shieldingLayer->Build( $cpnSingleLayout->GetShieldingLayout() );
+			$shieldingLayer->Build( $cpnSingleLayout->GetShieldingLayout(), $cpnSingleLayout );
 
 			CamLayer->WorkLayer( $inCAM, $shieldingLayer->GetLayerName() );
 			$shieldingLayer->Draw();

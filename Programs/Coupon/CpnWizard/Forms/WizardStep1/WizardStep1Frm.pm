@@ -63,7 +63,7 @@ sub GetLayout {
 	$scrollPnl->SetSizer($scrollSizer);
 
 	# addpanel to siyers
-	$containerSz->Add( $list, 0, &Wx::wxEXPAND );
+	$containerSz->Add( $list, 1, &Wx::wxEXPAND );
 	#$containerSz->Add( 1, 1, &Wx::wxEXPAND );
 
 	$scrollSizer->Add( $containerPnl, 1, &Wx::wxEXPAND );
@@ -200,7 +200,7 @@ sub __ShowGenerator {
 	# update layout
 	if ($result) {
 
-		$self->Update();
+		$self->Update($self->{"coreWizardStep"});
 	}
 
 }

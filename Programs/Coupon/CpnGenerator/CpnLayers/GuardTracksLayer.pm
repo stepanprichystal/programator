@@ -46,7 +46,7 @@ sub Build {
 	my $jobId = $self->{"jobId"};
 
 	# Draw pad clearance
-	if ( $layout->GetType() eq "single" ) {
+	if ( $layout->GetType() eq "single_line" ) {
 
 		foreach my $line ( $layout->GetLines() ) {
 
@@ -75,7 +75,7 @@ sub Build {
 	}
 
 	# draw sielding
-	if ( $layout->GetType() eq "single" ) {
+	if ( $layout->GetType() eq "single_line" ) {
 
 		foreach my $line ( $layout->GetLines() ) {
 

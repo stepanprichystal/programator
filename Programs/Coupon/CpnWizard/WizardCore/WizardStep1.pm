@@ -22,7 +22,9 @@ use aliased 'Programs::Coupon::CpnSettings::CpnSettings';
 use aliased 'Programs::Coupon::CpnSource::CpnSource';
 use aliased 'Programs::Coupon::CpnWizard::WizardCore::Helper';
 use aliased 'Programs::Coupon::CpnPolicy::GroupPolicy';
-
+use aliased 'Connectors::HeliosConnector::HegMethods';
+use aliased 'CamHelpers::CamJob';
+use aliased 'Helpers::JobHelper';
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
@@ -53,6 +55,29 @@ sub Load {
 
 	push( @{$defGroupComb}, \@allConstr );
 
+	# Edit global settings according current job
+
+	# Umnask infoText, textPad, logo only if not HAL or PBFree HAL
+
+	my $surf = HegMethods->GetPcbSurface( $self->{"jobId"} );
+	if ( $surf =~ /[ab]/i ) {
+
+		$self->{"globalSett"}->SetTitleUnMask(0);
+		$self->{"globalSett"}->SetInfoTextUnmask(0);
+		$self->{"globalSett"}->SetPadTextUnmask(0);
+	}
+	else {
+
+		$self->{"globalSett"}->SetTitleUnMask(1);
+		$self->{"globalSett"}->SetInfoTextUnmask(1);
+		$self->{"globalSett"}->SetPadTextUnmask(1);
+	}
+	
+	# Set value of min PAD2track isolation according pcb costruction class
+	my $isol = JobHelper->GetIsolationByClass( CamJob->GetLimJobPcbClass($self->{"inCAM"}, $self->{"jobId"}, "max"));
+	if($isol > 0){
+		$self->{"globalSett"}->SetTrackPadIsolation($isol);
+	}
 }
 
 sub Build {
@@ -66,13 +91,8 @@ sub Build {
 	if ( scalar( grep { $self->{"userFilter"}->{$_} } keys %{ $self->{"userFilter"} } ) ) {
 
 		$self->{"nextStep"} = WizardStep2->new();
-		$self->{"nextStep"}->Init($self->{"inCAM"}, 
-								$self->{"jobId"},
-									$self->{"cpnSource"},
-								   $self->{"userFilter"},
-								   $self->{"userGroups"},
-								   $self->{"globalSett"},
-								   $self->{"asyncWorker"} );
+		$self->{"nextStep"}->Init( $self->{"inCAM"},      $self->{"jobId"},      $self->{"cpnSource"}, $self->{"userFilter"},
+								   $self->{"userGroups"}, $self->{"globalSett"}, $self->{"asyncWorker"} );
 
 	}
 	else {
