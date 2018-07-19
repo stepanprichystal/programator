@@ -1129,13 +1129,17 @@ sub _GetExistkonClass {
 		my $idPcb = shift;
 		my $wroteChecklist = '                        ';
 		my $wroteChecklist_inner = '';
+		my $step = 'o+1';
 		
+		if(CamHelper->StepExists( $inCAM, $pcbId, 'o+1_single')) {
+				$step = 'o+1_single';
+		}
 		
 		   my $atrbtClass = CamAttributes->GetJobAttrByName($inCAM, $idPcb, 'pcb_class');
 		   my $atrbtClassInner = CamAttributes->GetJobAttrByName($inCAM, $idPcb, 'pcb_class_inner');
 		   
 		   unless($atrbtClass) {
-		   	   		my $textClass = _GetConstrClass($idPcb , 'o+1');
+		   	   		my $textClass = _GetConstrClass($idPcb , $step);
 		   	   	
 		   	   		($atrbtClass) = $textClass =~ /Class_(\d)/;
 
@@ -1144,7 +1148,7 @@ sub _GetExistkonClass {
 		   	   		}
 		  	}
 		  	unless($atrbtClassInner) {
-		  			my $textClass_inner = _GetConstrClass_inner($idPcb , 'o+1');
+		  			my $textClass_inner = _GetConstrClass_inner($idPcb , $step);
 		  			($atrbtClassInner) = $textClass_inner =~ /Class_(\d)/;
 		  	
 		  	
