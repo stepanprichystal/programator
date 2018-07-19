@@ -1482,6 +1482,10 @@ sub _CheckIfCleanUpDone {
 		my $step = 'o+1';
 		my $res = 0;
 		
+		if(CamHelper->StepExists( $inCAM, $pcbId, 'o+1_single')) {
+			$step = 'o+1_single';
+		}
+		
 		
 		$inCAM->INFO(units => 'mm', angle_direction => 'ccw', entity_type => 'check',entity_path => "$pcbId/$step/Clean_up",data_type => 'EXISTS');
 		if ($inCAM->{doinfo}{gEXISTS} eq "yes") {
