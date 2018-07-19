@@ -195,7 +195,11 @@ sub _GUIpanelizace {
 														-fg=>'red')
 														->pack(-padx=>3,-pady=>15,-side=>'top',-fill=>'both');
 									
-									$topFrameLeft_L->Label(-text=>"Zkontrolovano v......" . _GetConstrClass($jobName , 'o+1') . $wroteChackList ,-font=>"Arial 10")->pack(-padx => 3, -pady => 3,-side=>'bottom');
+									my $stepTMP = 'o+1';
+									if(CamHelper->StepExists( $inCAM, $jobName, 'o+1_single')) {
+												$stepTMP = 'o+1_single';
+									}
+									$topFrameLeft_L->Label(-text=>"Zkontrolovano v......" . _GetConstrClass($jobName , $stepTMP) . $wroteChackList ,-font=>"Arial 10")->pack(-padx => 3, -pady => 3,-side=>'bottom');
 									
 					if (HegMethods->GetTypeOfPcb($jobName) eq 'Vicevrstvy') {
 									
@@ -210,7 +214,7 @@ sub _GUIpanelizace {
 														-fg=>'orange')
 														->pack(-padx=>3,-pady=>15,-side=>'top',-fill=>'both');
 													
-									$topFrameLeft_R->Label(-text=>"Zkontrolovano v......" . _GetConstrClass_inner($jobName , 'o+1') . $wroteChackList_inner ,-font=>"Arial 10")->pack(-padx => 3, -pady => 3,-side=>'bottom');
+									$topFrameLeft_R->Label(-text=>"Zkontrolovano v......" . _GetConstrClass_inner($jobName , $stepTMP) . $wroteChackList_inner ,-font=>"Arial 10")->pack(-padx => 3, -pady => 3,-side=>'bottom');
 					}
 														
 						$topFrameRight = $topFrame->Frame(-width=>100, -height=>70)->pack(-side=>'right',-fill=>'both',-expand => "True");
@@ -1140,7 +1144,7 @@ sub _GetExistkonClass {
 		   
 		   unless($atrbtClass) {
 		   	   		my $textClass = _GetConstrClass($idPcb , $step);
-		   	   	
+
 		   	   		($atrbtClass) = $textClass =~ /Class_(\d)/;
 
 		   	   		if ($atrbtClass){
