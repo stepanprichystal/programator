@@ -1,10 +1,10 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Uncoated  upper embedded microstrip builder
+# Description: Stripline 2T model builder
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Programs::Coupon::CpnGenerator::ModelBuilders::UncoatedUpperEmbedded;
-use base('Programs::Coupon::CpnGenerator::ModelBuilders::CoatedUpperEmbedded');
+package Programs::Coupon::CpnGenerator::ModelBuilders::Stripline2T;
+use base('Programs::Coupon::CpnGenerator::ModelBuilders::Stripline');
 
 use Class::Interface;
 &implements('Programs::Coupon::CpnGenerator::ModelBuilders::IModelBuilder');
@@ -14,7 +14,15 @@ use strict;
 use warnings;
 
 #local library
-use aliased 'Programs::Coupon::CpnGenerator::CpnLayers::TrackMaskLayer';
+use aliased 'Programs::Coupon::CpnGenerator::CpnLayers::MaskLayer';
+use aliased 'Programs::Coupon::CpnGenerator::CpnLayers::TrackLayer';
+use aliased 'Programs::Coupon::CpnGenerator::CpnLayers::GNDLayer';
+use aliased 'Programs::Coupon::CpnGenerator::CpnLayers::PadLayer';
+use aliased 'Programs::Coupon::CpnGenerator::CpnLayers::PadNegLayer';
+use aliased 'Programs::Coupon::CpnGenerator::CpnLayers::PthDrillLayer';
+use aliased 'Programs::Coupon::CpnGenerator::CpnLayers::PadTextLayer';
+use aliased 'Programs::Coupon::CpnGenerator::CpnLayers::PadTextMaskLayer';
+use aliased 'Programs::Coupon::CpnGenerator::CpnLayers::TrackClearanceLayer';
 use aliased 'Programs::Coupon::Helper';
 use aliased 'CamHelpers::CamJob';
 use aliased 'CamHelpers::CamHelper';
@@ -45,33 +53,17 @@ sub Build {
 
 	# 2) Buil special behaviour
 
-	# Info from constrain XML
-	my $trackL = $layout->GetTrackLayer();
-	my $gndL   = $layout->GetBotRefLayer();
+	my $layerCnt = CamJob->GetSignalLayerCnt( $inCAM, $jobId );
 
-	my $layerCnt = scalar( grep { $_ =~ /[csv]\d*/i } keys %{$layersLayout} );
+	my $extraTrackL = $layout->GetExtraTrackLayer();
 
-	# process: mc
-	if ( Helper->GetLayerNum( $trackL, $layerCnt ) == 2 ) {
-		$self->_AddLayer( TrackMaskLayer->new("mc") );
+	for ( my $i = 0 ; $i < scalar( $layerCnt - 2 ) ; $i++ ) {
 
-		if ( CamHelper->LayerExists( $inCAM, $jobId, "mc" ) ) {
+		my $inLayer = "v" . ( $i + 2 );
 
-			if ( $trackL eq "c" ) {
-				$self->_AddLayer( TrackMaskLayer->new("mc") );
-			}
-		}
-	}
+		if ( $extraTrackL eq $inLayer ) {
 
-	# process: ms
-	if ( Helper->GetLayerNum( $trackL, $layerCnt ) == $layerCnt - 1 ) {
-		$self->_AddLayer( TrackMaskLayer->new("ms") );
-
-		if ( CamHelper->LayerExists( $inCAM, $jobId, "ms" ) ) {
-
-			if ( $trackL eq "s" ) {
-				$self->_AddLayer( TrackMaskLayer->new("ms") );
-			}
+			$self->_AddLayer( TrackClearanceLayer->new($inLayer) );
 		}
 	}
 

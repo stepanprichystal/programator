@@ -1,6 +1,6 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Manager responsible for NIF creation
+# Description: Title builder
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Programs::Coupon::CpnBuilder::OtherBuilders::TitleBuilder;
@@ -84,7 +84,7 @@ sub Build {
 
 	my $rowCnt = 1;
 
-	if ( $type eq "left" && ($totalWidth / 1000) > $self->{"cpnsSingleHeight"} ) {
+	if ( $type eq "left" && ( $totalWidth / 1000 ) > $self->{"cpnsSingleHeight"} ) {
 		$rowCnt = 2;
 	}
 
@@ -166,12 +166,12 @@ sub Build {
 
 		my $logoPos    = $self->{"layout"}->GetLogoPosition();
 		my $logoPosNew = PointLayout->new( $self->{"cpnSett"}->GetCouponMargin() / 1000 + $logoPos->X(),
-									 $self->{"cpnSett"}->GetCouponMargin() / 1000 + $self->{"cpnsSingleHeight"} + $logoPos->Y() );
+										   $self->{"cpnSett"}->GetCouponMargin() / 1000 + $self->{"cpnsSingleHeight"} + $logoPos->Y() );
 		$self->{"layout"}->SetLogoPosition($logoPosNew);
 
 		my $jobIdPos    = $self->{"layout"}->GetJobIdPosition();
 		my $jobIdPosNew = PointLayout->new( $self->{"cpnSett"}->GetCouponMargin() / 1000 + $jobIdPos->X(),
-									  $self->{"cpnSett"}->GetCouponMargin() / 1000 + $self->{"cpnsSingleHeight"} + $jobIdPos->Y() );
+											$self->{"cpnSett"}->GetCouponMargin() / 1000 + $self->{"cpnsSingleHeight"} + $jobIdPos->Y() );
 		$self->{"layout"}->SetJobIdPosition($jobIdPosNew);
 
 	}

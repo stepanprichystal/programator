@@ -20,6 +20,7 @@ use aliased 'Packages::InCAMHelpers::AppLauncher::AppLauncher';
 use aliased 'Packages::InCAMHelpers::AppLauncher::Enums';
 use aliased 'Helpers::GeneralHelper';
 use aliased 'Packages::InCAM::InCAM';
+use aliased 'Programs::Coupon::CpnSource::CpnSource';
 
 my $jobId = shift;
 
@@ -68,6 +69,8 @@ sub __CheckBeforeRun {
 
 	my $result = 1;
 
+
+	# 1) Check if class is not empty
 	my $class = CamJob->GetLimJobPcbClass($inCAM, $jobId, "max");
 	
 	if(!defined $class && $class == 0){
@@ -76,7 +79,15 @@ sub __CheckBeforeRun {
 		$$mess .= "Job pcb class is not defined";
 	}
 	
-	return 1;
+	# 2) Check if layer cnt is same in job and instack
+	my $cpnSource = CpnSource->new($jobId);
+	if( CamJob->GetSignalLayerCnt($inCAM, $jobId) != scalar($cpnSource->GetCopperLayers())){
+ 
+		$result = 0;
+		$$mess .= "Job layer count is not equals to InStack copper layer count";
+	}
+	
+	return $result;
 }
 
 

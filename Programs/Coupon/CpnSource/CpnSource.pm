@@ -12,6 +12,7 @@ use warnings;
 #local library
 use XML::LibXML qw(:threads_shared);
 use aliased 'Programs::Coupon::CpnSource::Constraint';
+use aliased 'Enums::EnumsPaths';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -21,8 +22,8 @@ sub new {
 	my $self  = {};
 	bless $self;
 
-	$self->{"xmlPath"} = shift;
-
+	$self->{"jobId"} = shift;
+ 
 	$self->{"units"} = "mm";    # xml is in INCH
 	
 	$self->__Init();
@@ -129,10 +130,12 @@ sub GetCopperLayers {
 
 sub __Init{
 	my $self = shift;
+ 
+	my $xmlPath = EnumsPaths->Jobs_COUPONS.$self->{"jobId"}.".xml";
 	
-	die "Xml file doesn't exist" unless(-e $self->{"xmlPath"});
+	die "Xml file ($xmlPath) doesn't exist" unless(-e $xmlPath);
 
-	$self->{"dom"} = XML::LibXML->load_xml( location => $self->{"xmlPath"} );
+	$self->{"dom"} = XML::LibXML->load_xml( location => $xmlPath );
 }
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

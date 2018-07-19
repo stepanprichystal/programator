@@ -1,7 +1,6 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Nif Builder is responsible for creation nif file depend on pcb type
-# Builder for pcb POOL
+# Description: Coplanar diferential builder
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Programs::Coupon::CpnBuilder::MicrostripBuilders::CODiffBuilder;
@@ -31,7 +30,7 @@ sub new {
 	bless $self;
 
 	# properties of constrain
- 
+
 	return $self;
 }
 
@@ -41,27 +40,25 @@ sub Build {
 	my $cpnSett       = shift;
 	my $cpnSingleSett = shift;
 	my $errMess       = shift;
-	
-	
- 
- 	# 1) Build SE layout
- 
-	my $result =$self->SUPER::Build($stripVariant, $cpnSett, $cpnSingleSett);
+
+	# 1) Build SE layout
+
+	my $result = $self->SUPER::Build( $stripVariant, $cpnSett, $cpnSingleSett );
 
 	# 2) Add extra behaviour for conaplanar SE
 
 	$self->{"layout"}->SetCoplanar(1);
-	
+
 	my $coSE = $self->_GetXmlConstr()->GetParamDouble("CS");    # µm
- 
-	foreach my $t  ($self->{"layout"}->GetTracks()){
-	
+
+	foreach my $t ( $self->{"layout"}->GetTracks() ) {
+
 		$t->SetGNDDist($coSE);
 	}
 
 	return $result;
 }
- 
+
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#

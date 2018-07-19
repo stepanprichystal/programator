@@ -35,11 +35,10 @@ sub new {
 	$self->{"layers"} = \@layers;
 
 	# global settings
-	$self->{"maxTrackCnt"}       = undef;
+	$self->{"maxTrackCnt"} = undef;
 
 	# groups settings
 	$self->{"groupSett"} = {};
-
 
 	return $self;
 
@@ -47,9 +46,9 @@ sub new {
 
 sub SetGlobalSettings {
 	my $self = shift;
-	
-	$self->{"maxTrackCnt"}       = shift;
- 
+
+	$self->{"maxTrackCnt"} = shift;
+
 }
 
 sub SetGroupSettings {
@@ -57,7 +56,7 @@ sub SetGroupSettings {
 	my $groupId = shift;
 
 	my %sett = ();
-	$sett{"maxPoolCnt"}         = shift;
+	$sett{"maxPoolCnt"}    = shift;
 	$sett{"maxStripsCntH"} = shift;
 
 	$self->{"groupSett"}->{$groupId} = \%sett;
@@ -67,21 +66,21 @@ sub SetGroupSettings {
 sub __GetGroupSett {
 	my $self    = shift;
 	my $groupId = shift;
-	
-	die "group settings: $groupId is not defined" unless(defined $self->{"groupSett"}->{$groupId});
+
+	die "group settings: $groupId is not defined" unless ( defined $self->{"groupSett"}->{$groupId} );
 
 	return $self->{"groupSett"}->{$groupId};
 }
- 
+
 sub VerifyGroupComb {
 	my $self          = shift;
 	my $groupComb     = shift;
 	my $groupPoolComb = shift;
 
-	my $result = 1;
+	my $result  = 1;
 	my $groupId = 0;
 	foreach my $group ( @{$groupComb} ) {
-		
+
 		my $maxPoolCnt    = $self->__GetGroupSett($groupId)->{"maxPoolCnt"};
 		my $maxStripsCntH = $self->__GetGroupSett($groupId)->{"maxStripsCntH"};
 
@@ -107,7 +106,7 @@ sub VerifyGroupComb {
 			@{$groupPoolComb} = ();
 			last;
 		}
-		
+
 		$groupId++;
 
 	}
@@ -135,7 +134,7 @@ sub __GetPoolComb {
 
 	# Merge more constrain which create "fake constraint". After partition process this fake constraint will be splited
 	# Merge constrain to max 6 "fake constraints"
-	my $maxItems   = 6;
+	my $maxItems   = 8;
 	my %fakeConstr = ();
 
 	my $fakeConstrCnt = ceil( scalar( @{$group} ) / $maxItems );
@@ -203,12 +202,12 @@ sub __GetPoolComb {
 		my @affectedLayers = ();
 
 		# go through each group
-		foreach my $pool ( @{ $poolComb[$i] } ) {
+		foreach my $pools ( @{ $poolComb[$i] } ) {
 
-			if ( scalar( @{$pool} ) > $maxStripsCntH ) {
+			if ( scalar( @{$pools} ) > $maxStripsCntH ) {
 				$remove = 1;
 
-				#print STDERR "Removed by max strip count in Horizontal dir (cnt: " . scalar( @{$pool} ) . ", max: $maxStripsCntH)\n";
+				print STDERR "Removed by max strip count in Horizontal dir (cnt: " . scalar( @{$pools} ) . ", max: $maxStripsCntH)\n";
 				last;
 			}
 
@@ -219,27 +218,33 @@ sub __GetPoolComb {
 				my $lTypestByGroup = 0;
 
 				my %types = ();
-				$types{$_}++ foreach ( grep { $_ ne Enums->Layer_TYPENOAFFECT } map { $_->{"l"}->{$l} } @{$pool} );
+				$types{$_}++ foreach ( grep { $_ ne Enums->Layer_TYPENOAFFECT } map { $_->{"l"}->{$l} } @{$pools} );
 
 				# 1. RULE Layer type collision in one "pool"
 				if ( scalar( keys %types ) > 1 ) {
 
-					#print STDERR "Removed by layer colisiton. More types in one layer (types: " . join( ";", keys %types ) . ")\n";
+					print STDERR "Removed by layer colisiton. More types in one layer (types: " . join( ";", keys %types ) . ")\n";
 					$remove = 1;
 					last;
 				}
 
 				if ( defined $types{ Enums->Layer_TYPETRACK } ) {
 
-					# 3. RULE If exist 2 track in same track layer, no another layer can contain 2 or more tracks
-					if ( $types{ Enums->Layer_TYPETRACK } == $maxTrackCnt && $maxTrackCntUsed ) {
-
-						#print STDERR "Removed by max trace count in more layers than one layer per pool\n";
+					#					# 3. RULE If exist 2 track in same track layer, no another layer can contain 2 or more tracks
+					#					if ( $types{ Enums->Layer_TYPETRACK } == $maxTrackCnt && $maxTrackCntUsed ) {
+					#
+					#						print STDERR "Removed by max trace count in more layers than one layer per pool\n";
+					#						$remove = 1;
+					#						last;
+					#					}
+					#					elsif ( $types{ Enums->Layer_TYPETRACK } == $maxTrackCnt && !$maxTrackCntUsed ) {
+					#						$maxTrackCntUsed = 1;
+					#
+					#					}
+					if ( $types{ Enums->Layer_TYPETRACK } > $maxTrackCnt ) {
+						print STDERR "Removed by max trace count in one layer per group\n";
 						$remove = 1;
 						last;
-					}
-					elsif ( $types{ Enums->Layer_TYPETRACK } == $maxTrackCnt && !$maxTrackCntUsed ) {
-						$maxTrackCntUsed = 1;
 
 					}
 				}
@@ -314,7 +319,7 @@ sub __GetPoolComb {
 
 	return @poolComb;
 }
- 
+
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#

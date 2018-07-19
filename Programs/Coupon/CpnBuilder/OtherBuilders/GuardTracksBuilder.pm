@@ -1,6 +1,6 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Manager responsible for NIF creation
+# Description: Build layout for all guard track of specific layer
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Programs::Coupon::CpnBuilder::OtherBuilders::GuardTracksBuilder;
@@ -33,24 +33,22 @@ sub new {
 	my $class = shift;
 	my $self  = {};
 	bless $self;
- 
-	$self->{"inCAM"} = shift;
-	$self->{"jobId"} = shift;
+
+	$self->{"inCAM"}     = shift;
+	$self->{"jobId"}     = shift;
 	$self->{"cpnSingle"} = shift;
 
-	$self->{"layout"}       = [] ;    # Layout of one single coupon
-	$self->{"build"}        = 0;                        # indicator if layout was built
+	$self->{"layout"}       = [];      # Layout of one single coupon
+	$self->{"build"}        = 0;       # indicator if layout was built
 	$self->{"singleCpnVar"} = undef;
 
 	# Settings references
-	$self->{"cpnSett"} = undef;                         # global settings for generating coupon
-	$self->{"cpnSingleSett"} = undef;                         # global settings for generating coupon
-
+	$self->{"cpnSett"}       = undef;    # global settings for generating coupon
+	$self->{"cpnSingleSett"} = undef;    # global settings for generating coupon
 
 	# Other properties
 	$self->{"layerCnt"} = CamJob->GetSignalLayerCnt( $self->{"inCAM"}, $self->{"jobId"} );
-	
-	
+
 	return $self;
 }
 
@@ -62,9 +60,9 @@ sub Build {
 	my $cpnSett      = shift;
 	my $errMess      = shift;
 
-	$self->{"singleCpnVar"} = $cpnSingleVar;
-	$self->{"cpnSett"}      = $cpnSett;
-	$self->{"cpnSingleSett"}      = $cpnSingleVar->GetCpnSingleSettings();
+	$self->{"singleCpnVar"}  = $cpnSingleVar;
+	$self->{"cpnSett"}       = $cpnSett;
+	$self->{"cpnSingleSett"} = $cpnSingleVar->GetCpnSingleSettings();
 
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
@@ -77,10 +75,9 @@ sub Build {
 
 		my $layout = GuardTracksLayout->new($l);
 		$layout->SetType( $self->{"cpnSett"}->GetGuardTracksType() );
-		
-		$layout->SetGuardTrackWidth($self->{"cpnSett"}->GetGuardTrackWidth() );
-		$layout->SetGuardTrack2Shielding($self->{"cpnSett"}->GetGuardTrack2Shielding() );
-		
+
+		$layout->SetGuardTrackWidth( $self->{"cpnSett"}->GetGuardTrackWidth() );
+		$layout->SetGuardTrack2Shielding( $self->{"cpnSett"}->GetGuardTrack2Shielding() );
 
 		my @boxes = $self->__GetGuardAreas($l);
 
@@ -95,15 +92,11 @@ sub Build {
 
 				$self->__SetLayoutTypeFull( $layout, \@boxes );
 			}
-			
-			
 
 			push( @{ $self->{"layout"} }, $layout );
 		}
 
 	}
-	
-	
 
 	$self->{"build"} = 1;
 
@@ -238,7 +231,7 @@ sub __GetGuardAreas {
 		  $oriLast->X() +
 		  $self->{"cpnSingleSett"}->GetPad2PadDist() / 1000 * ( $posXCnt - 1 ) +
 		  $self->{"cpnSingleSett"}->GetPadTrackSize() / 1000 / 2 +
-		  $self->{"cpnSett"}->GetGuardTrack2PadDist()/1000 +
+		  $self->{"cpnSett"}->GetGuardTrack2PadDist() / 1000 +
 		  $self->{"cpnSett"}->GetGuardTrackWidth() / 1000 / 2;
 
 		push( @xBorders, $endPos );
@@ -265,12 +258,14 @@ sub __GetGuardAreas {
 		my $oriLast = $self->{"cpnSingle"}->GetMicrostripOrigin( ( $self->{"singleCpnVar"}->GetPools() )[1]->GetLastStrip() );
 
 		# bott of gnd pad
-		push( @limits, $oriLast->Y() - $self->{"cpnSingleSett"}->GetPadTrackSize() / 1000 / 2 - $self->{"cpnSett"}->GetGuardTrack2TrackDist()/1000 );
+		push( @limits,
+			  $oriLast->Y() - $self->{"cpnSingleSett"}->GetPadTrackSize() / 1000 / 2 - $self->{"cpnSett"}->GetGuardTrack2TrackDist() / 1000 );
 
 		die "Too large value of 'track-guard 2 tracks distance'" if ( $limits[1] < $limits[0] );
 
 		# top of gnd pad
-		push( @limits, $oriLast->Y() + $self->{"cpnSingleSett"}->GetPadTrackSize() / 1000 / 2 + $self->{"cpnSett"}->GetGuardTrack2TrackDist()/1000 );
+		push( @limits,
+			  $oriLast->Y() + $self->{"cpnSingleSett"}->GetPadTrackSize() / 1000 / 2 + $self->{"cpnSett"}->GetGuardTrack2TrackDist() / 1000 );
 
 		die "Too large value of 'track-guard 2 tracks distance'" if ( $limits[2] > $cpnArea{"h"} );
 
@@ -342,7 +337,6 @@ sub __GetGuardAreas {
 	}
 
 	# 3) Compute guard boxes based on track line and break line (+ limits of coupon -top/bot)
- 
 
 	my @breakLines = ();
 	if ( scalar( $self->{"singleCpnVar"}->GetPools() == 2 ) ) {
@@ -354,7 +348,6 @@ sub __GetGuardAreas {
 
 		#foreach my $s (@lStrips) {
 		my %boxLim = ( "breakLine" => 0 );
- 
 
 		# search min break line
 		my $min    = undef;
@@ -370,12 +363,13 @@ sub __GetGuardAreas {
 		# if t
 		my $sPos = undef;
 		if ( scalar(@lStrips) ) {
-			$sPos = $self->__GetAbsoluteRouteDist( $lStrips[0] ) - $lStrips[0]->RouteWidth() / 2 - $self->{"cpnSett"}->GetGuardTrack2TrackDist()/1000;
+			$sPos =
+			  $self->__GetAbsoluteRouteDist( $lStrips[0] ) - $lStrips[0]->RouteWidth() / 2 - $self->{"cpnSett"}->GetGuardTrack2TrackDist() / 1000;
 		}
 
 		# if break line pos is lower than track line OR if all track lines are processed
 		# Create box based on break line
-		if ( ( scalar(@lStrips) &&  scalar(@breakLines) && $min < $sPos ) || ( !scalar(@lStrips) && scalar(@breakLines) ) ) {
+		if ( ( scalar(@lStrips) && scalar(@breakLines) && $min < $sPos ) || ( !scalar(@lStrips) && scalar(@breakLines) ) ) {
 
 			# remove minimal break line
 
@@ -404,7 +398,7 @@ sub __GetGuardAreas {
 
 		# compute limits of border in Y axis
 		my $yE = $self->__GetAbsoluteRouteDist($s);
-		$yE -= $s->RouteWidth() / 2 + $self->{"cpnSett"}->GetGuardTrack2TrackDist()/1000;
+		$yE -= $s->RouteWidth() / 2 + $self->{"cpnSett"}->GetGuardTrack2TrackDist() / 1000;
 
 		# compute limits in X axis
 
@@ -424,8 +418,8 @@ sub __GetGuardAreas {
 			push( @boxes, \%boxLim );
 		}
 
-		$yS = $yE + 2 * $self->{"cpnSett"}->GetGuardTrack2TrackDist()/1000 + $s->RouteWidth();
-		
+		$yS = $yE + 2 * $self->{"cpnSett"}->GetGuardTrack2TrackDist() / 1000 + $s->RouteWidth();
+
 		# remove unused break lines
 		for ( my $i = scalar(@breakLines) - 1 ; $i >= 0 ; $i-- ) {
 			splice @breakLines, $i, 1 if ( $breakLines[$i] < $yS );
@@ -449,7 +443,6 @@ sub __GetGuardAreas {
 
 	return @boxes;
 
-	 
 }
 
 sub __GetAbsoluteRouteDist {

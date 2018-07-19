@@ -1,15 +1,14 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Base class for BIF builders. Nif Builder is responsible for
-# creation nif file depend on pcb type
+# Description: Layer builder
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Programs::Coupon::CpnGenerator::CpnLayers::PadTextMaskLayer;
 
 use base('Programs::Coupon::CpnGenerator::CpnLayers::LayerBase');
 
-#use Class::Interface;
-#&implements('Programs::Coupon::CpnBuilder::MicrostripBuilders::IModelBuilder');
+use Class::Interface;
+&implements('Programs::Coupon::CpnGenerator::CpnLayers::ILayerBuilder');
 
 #3th party library
 use strict;
@@ -51,14 +50,14 @@ sub Build {
 
 			next unless ( defined $padText );    # only multistrips has texts
 
-			next if($padText->GetPadTextUnmask());
+			next unless($padText->GetPadTextUnmask());
 
 			my $pText = PrimitiveText->new(
 											$padText->GetText(),
 											( $layerLayout->GetMirror() ? $padText->GetPositionMirror() : $padText->GetPosition() ),
-											$layout->GetPadTextHeight() / 1000,
-											$layout->GetPadTextWidth() / 1000,
-											$layout->GetPadTextWeight() / 1000,
+											$padText->GetPadTextHeight() / 1000,
+											$padText->GetPadTextWidth() / 1000,
+											$padText->GetPadTextWeight() / 1000,
 											( $layerLayout->GetMirror() ? 1 : 0 )
 			);
 

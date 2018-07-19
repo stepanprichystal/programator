@@ -140,9 +140,8 @@ sub End {
 
 sub Init {
 	my $self    = shift;
-	my $xmlPath = shift;
-
-	my $cpnSource = CpnSource->new($xmlPath);
+ 
+	my $cpnSource = CpnSource->new($self->{"jobId"});
 
 	# Set initial state
 

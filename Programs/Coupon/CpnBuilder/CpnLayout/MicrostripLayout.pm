@@ -1,6 +1,6 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Manager responsible for NIF creation
+# Description: Microatrip layout
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Programs::Coupon::CpnBuilder::CpnLayout::MicrostripLayout;
@@ -8,7 +8,6 @@ use base qw(Programs::Coupon::CpnBuilder::CpnLayout::CpnLayoutBase);
 
 use Class::Interface;
 &implements('Packages::ObjectStorable::JsonStorable::IJsonStorable');
-
 
 #3th party library
 use strict;
@@ -32,19 +31,19 @@ sub new {
 	# Microstript model properties
 	$self->{"microstripModel"} = undef;
 
-	$self->{"trackLayer"}  = undef;
-	$self->{"topRefLayer"} = undef;
-	$self->{"botRefLayer"} = undef;
-	
+	$self->{"trackLayer"}      = undef;
+	$self->{"topRefLayer"}     = undef;
+	$self->{"botRefLayer"}     = undef;
+	$self->{"extraTrackLayer"} = undef;
+
 	# Active area width
 	$self->{"activeAreaWidth"} = undef;
-	
-	$self->{"trackToCopper"} = undef;
+
+	$self->{"trackToCopper"}    = undef;
 	$self->{"pad2GNDClearance"} = undef;
-	
+
 	$self->{"padClearance"} = undef;
-	
-	
+
 	$self->{"coplanar"} = 0;
 
 	return $self;
@@ -96,6 +95,18 @@ sub GetBotRefLayer {
 	my $self = shift;
 
 	return $self->{"botRefLayer"};
+}
+
+sub SetExtraTrackLayer {
+	my $self = shift;
+
+	$self->{"extraTrackLayer"} = shift;
+}
+
+sub GetExtraTrackLayer {
+	my $self = shift;
+
+	return $self->{"extraTrackLayer"};
 }
 
 sub AddPad {
@@ -159,7 +170,7 @@ sub GetTrackToCopper {
 
 }
 
- sub SetPad2GND {
+sub SetPad2GND {
 	my $self = shift;
 	my $val  = shift;
 

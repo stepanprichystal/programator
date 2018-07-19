@@ -1,10 +1,9 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Nif Builder is responsible for creation nif file depend on pcb type
-# Builder for pcb POOL
+# Description: Coated microstrip builder
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Programs::Coupon::CpnGenerator::ModelBuilders::Coated;
+package Programs::Coupon::CpnGenerator::ModelBuilders::CoatedMicrostrip;
 use base('Programs::Coupon::CpnGenerator::ModelBuilders::ModelBuilderBase');
 
 use Class::Interface;

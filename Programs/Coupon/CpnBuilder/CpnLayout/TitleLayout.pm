@@ -1,6 +1,6 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Manager responsible for NIF creation
+# Description: Logo + job id layout for whoule coupon
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Programs::Coupon::CpnBuilder::CpnLayout::TitleLayout;
@@ -8,7 +8,6 @@ use base qw(Programs::Coupon::CpnBuilder::CpnLayout::CpnLayoutBase);
 
 use Class::Interface;
 &implements('Packages::ObjectStorable::JsonStorable::IJsonStorable');
-
 
 #3th party library
 use strict;
@@ -53,7 +52,7 @@ sub new {
 	$self->{"logoWidth"}        = undef;
 	$self->{"logoSymbolHeight"} = undef;
 	$self->{"logoSymbolWidth"}  = undef;
-	
+
 	$self->{"__CLASS__"} = "Programs::Coupon::CpnBuilder::CpnLayout::TitleLayout";
 
 	return $self;
@@ -190,7 +189,6 @@ sub GetTitleTextWeight {
 	return $self->{"titleTextWeight"};
 }
 
-
 sub SetLogoHeight {
 	my $self = shift;
 	my $val  = shift;
@@ -243,8 +241,7 @@ sub GetLogoSymbolWidth {
 	return $self->{"logoSymbolWidth"};
 }
 
-
-sub SetLogoSymbol{
+sub SetLogoSymbol {
 	my $self = shift;
 	my $val  = shift;
 
@@ -258,6 +255,7 @@ sub GetLogoSymbol {
 }
 
 sub TO_JSON { return { %{ shift() } }; }
+
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#

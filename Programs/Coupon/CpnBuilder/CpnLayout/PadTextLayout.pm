@@ -1,6 +1,6 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Manager responsible for NIF creation
+# Description: Layout for track pad info text
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Programs::Coupon::CpnBuilder::CpnLayout::PadTextLayout;
@@ -9,13 +9,11 @@ use base qw(Programs::Coupon::CpnBuilder::CpnLayout::CpnLayoutBase);
 use Class::Interface;
 &implements('Packages::ObjectStorable::JsonStorable::IJsonStorable');
 
-
 #3th party library
 use strict;
 use warnings;
 
 #local library
- 
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -26,43 +24,42 @@ sub new {
 	$self = $class->SUPER::new(@_);
 	bless $self;
 
- 	$self->{"text"} = shift; # top/right
- 	$self->{"position"} = shift; 
- 	$self->{"positionMirror"} = shift;
- 	$self->{"negRectW"} = shift;
- 	$self->{"negRectH"} = shift;
- 	$self->{"negRectPosition"} = shift; 
- 	$self->{"negRectPositionMirror"} = shift;
- 	
- 	 $self->{"padTextHeight"} = undef;
- 	 $self->{"padTextWidth"} = undef;
- 	 $self->{"padTextWeight"} = undef;
- 	 $self->{"padTextUnmask"} = undef;
- 
-	return $self;
- 
-}
- 
-sub SetText{
-	my $self  = shift;
-	my $type = shift;
-	
-	$self->{"text"} = $type;
-} 
+	$self->{"text"}                  = shift;    # top/right
+	$self->{"position"}              = shift;
+	$self->{"positionMirror"}        = shift;
+	$self->{"negRectW"}              = shift;
+	$self->{"negRectH"}              = shift;
+	$self->{"negRectPosition"}       = shift;
+	$self->{"negRectPositionMirror"} = shift;
 
-sub GetText{
-	my $self  = shift;
-	
+	$self->{"padTextHeight"} = undef;
+	$self->{"padTextWidth"}  = undef;
+	$self->{"padTextWeight"} = undef;
+	$self->{"padTextUnmask"} = undef;
+
+	return $self;
+
+}
+
+sub SetText {
+	my $self = shift;
+	my $type = shift;
+
+	$self->{"text"} = $type;
+}
+
+sub GetText {
+	my $self = shift;
+
 	return $self->{"text"};
 }
- 
-sub SetPosition{
-	my $self  = shift;
-	my $pos = shift;
-	
-	$self->{"position"} = $pos;
-} 
 
+sub SetPosition {
+	my $self = shift;
+	my $pos  = shift;
+
+	$self->{"position"} = $pos;
+}
 
 sub GetPosition {
 	my $self = shift;
@@ -70,13 +67,12 @@ sub GetPosition {
 	return $self->{"position"};
 }
 
-sub SetPositionMirror{
-	my $self  = shift;
-	my $pos = shift;
-	
-	$self->{"positionMirror"} = $pos;
-} 
+sub SetPositionMirror {
+	my $self = shift;
+	my $pos  = shift;
 
+	$self->{"positionMirror"} = $pos;
+}
 
 sub GetPositionMirror {
 	my $self = shift;
@@ -84,14 +80,12 @@ sub GetPositionMirror {
 	return $self->{"positionMirror"};
 }
 
+sub SetNegRectW {
+	my $self = shift;
+	my $pos  = shift;
 
-sub SetNegRectW{
-	my $self  = shift;
-	my $pos = shift;
-	
 	$self->{"negRectW"} = $pos;
-} 
-
+}
 
 sub GetNegRectW {
 	my $self = shift;
@@ -99,28 +93,25 @@ sub GetNegRectW {
 	return $self->{"negRectW"};
 }
 
-sub SetNegRectH{
-	my $self  = shift;
-	my $pos = shift;
-	
-	$self->{"negRectH"} = $pos;
-} 
+sub SetNegRectH {
+	my $self = shift;
+	my $pos  = shift;
 
+	$self->{"negRectH"} = $pos;
+}
 
 sub GetNegRectH {
 	my $self = shift;
 
 	return $self->{"negRectH"};
 }
- 
 
-sub SetNegRectPosition{
-	my $self  = shift;
-	my $pos = shift;
-	
+sub SetNegRectPosition {
+	my $self = shift;
+	my $pos  = shift;
+
 	$self->{"negRectPosition"} = $pos;
-} 
-
+}
 
 sub GetNegRectPosition {
 	my $self = shift;
@@ -128,13 +119,12 @@ sub GetNegRectPosition {
 	return $self->{"negRectPosition"};
 }
 
-sub SetNegRectPositionMirror{
-	my $self  = shift;
-	my $pos = shift;
-	
-	$self->{"negRectPositionMirror"} = $pos;
-} 
+sub SetNegRectPositionMirror {
+	my $self = shift;
+	my $pos  = shift;
 
+	$self->{"negRectPositionMirror"} = $pos;
+}
 
 sub GetNegRectPositionMirror {
 	my $self = shift;
@@ -142,10 +132,9 @@ sub GetNegRectPositionMirror {
 	return $self->{"negRectPositionMirror"};
 }
 
- 
- sub SetPadTextHeight {
+sub SetPadTextHeight {
 	my $self = shift;
-	my $val = shift;
+	my $val  = shift;
 
 	$self->{"padTextHeight"} = $val;
 }
@@ -156,10 +145,9 @@ sub GetPadTextHeight {
 	return $self->{"padTextHeight"};
 }
 
-
 sub SetPadTextWidth {
 	my $self = shift;
-	my $val = shift;
+	my $val  = shift;
 
 	$self->{"padTextWidth"} = $val;
 }
@@ -170,10 +158,9 @@ sub GetPadTextWidth {
 	return $self->{"padTextWidth"};
 }
 
-
 sub SetPadTextWeight {
 	my $self = shift;
-	my $val = shift;
+	my $val  = shift;
 
 	$self->{"padTextWeight"} = $val;
 }
@@ -186,7 +173,7 @@ sub GetPadTextWeight {
 
 sub SetPadTextUnmask {
 	my $self = shift;
-	my $val = shift;
+	my $val  = shift;
 
 	$self->{"padTextUnmask"} = $val;
 }
@@ -197,8 +184,6 @@ sub GetPadTextUnmask {
 	return $self->{"padTextUnmask"};
 }
 
-
- 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#

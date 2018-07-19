@@ -74,11 +74,8 @@ sub Init {
 
 	# Properties
 	$self->{"wizardCore"} = WizardCore->new( $inCAM, $jobId, scalar( keys %{ $self->{"wizardSteps"} } ), $self->{"asyncWorker"} );
-
-	#my $xmlPath = 'c:\Export\CouponExport\cpn.xml';
-	my $xmlPath = 'r:\PCB\Safiral_4vv.xml';
-	
-	$self->{"wizardCore"}->Init($xmlPath);
+ 
+	$self->{"wizardCore"}->Init();
 
 	$self->{"wizardCore"}->{"stepChangedEvt"}->Add( sub { $self->__StepChanged(@_) } );
 

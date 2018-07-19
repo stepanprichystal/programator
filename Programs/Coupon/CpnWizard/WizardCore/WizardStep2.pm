@@ -143,6 +143,7 @@ sub Build {
 	elsif ( !defined $variant && !$self->{"autogenerate"} ) {
 
 		$$errMess .= "Unable to build coupon. Try allow option 'autogenerate'";
+		$result = 0;
 	}
 
 	# variant was found

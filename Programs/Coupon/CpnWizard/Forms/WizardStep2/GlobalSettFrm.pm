@@ -188,8 +188,8 @@ sub __BuildInfoTextSett {
 	$szStatBox->Add( $self->__BuildRowUni_CheckBox( $statBox, "infoText", 0, $pnlRows ), 0, &Wx::wxALL, 1 );
 
 	$szRows->Add( $self->_GetSeparateLine($pnlRows), 0, &Wx::wxEXPAND | &Wx::wxALL, 4 );
-	$szRows->Add( $self->__BuildRowUni_ComboBox( $pnlRows, "infoTextPosition", [ "right", "top" ] ), 0, &Wx::wxALL, 1 );
 	$szRows->Add( $self->__BuildRowUni_CheckBox( $pnlRows, "infoTextUnmask" ), 0, &Wx::wxALL, 1 );
+	$szRows->Add( $self->__BuildRowUni_ComboBox( $pnlRows, "infoTextPosition", [ "right", "top" ] ), 0, &Wx::wxALL, 1 );
 	$szRows->Add( $self->_GetSeparateLine($pnlRows), 0, &Wx::wxEXPAND | &Wx::wxALL, 4 );
 
 	$szRows->Add( Wx::StaticText->new( $pnlRows, -1, "Display property of info text:", &Wx::wxDefaultPosition ), 0, &Wx::wxALL, 4 );

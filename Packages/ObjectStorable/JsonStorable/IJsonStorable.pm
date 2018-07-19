@@ -1,6 +1,6 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Interface, which must implement each UnitForm
+# Description: Interface, for all object which has to be decoded back to object
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Packages::ObjectStorable::JsonStorable::IJsonStorable;

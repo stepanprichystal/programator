@@ -1,15 +1,14 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Base class for BIF builders. Nif Builder is responsible for
-# creation nif file depend on pcb type
+# Description: Layer builder
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Programs::Coupon::CpnGenerator::CpnLayers::GuardTracksLayer;
 
 use base('Programs::Coupon::CpnGenerator::CpnLayers::LayerBase');
 
-#use Class::Interface;
-#&implements('Programs::Coupon::CpnBuilder::MicrostripBuilders::IModelBuilder');
+use Class::Interface;
+&implements('Programs::Coupon::CpnGenerator::CpnLayers::ILayerBuilder');
 
 #3th party library
 use strict;
@@ -38,60 +37,72 @@ sub new {
 }
 
 sub Build {
-	my $self            = shift;
-	my $layout          = shift;    # microstrip layout
-	my $cpnSingleLayout = shift;    # cpn single layout
+	my $self      = shift;
+	my $layout    = shift;        # microstrip layout
+	my $clearance = shift // 0;
 
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
 
 	# Draw pad clearance
-	if ( $layout->GetType() eq "single_line" ) {
+	if ($clearance) {
+		if ( $layout->GetType() eq "single_line" ) {
 
-		foreach my $line ( $layout->GetLines() ) {
+			foreach my $line ( $layout->GetLines() ) {
 
-			my $l =
-			  PrimitiveLine->new( $line->{"startP"}, $line->{"endP"},
-								  "s" . ( $layout->GetGuardTrackWidth() + $layout->GetGuardTrack2Shielding() ),
-								  DrawEnums->Polar_NEGATIVE );
-			$self->{"drawing"}->AddPrimitive($l);
+				my $l =
+				  PrimitiveLine->new( $line->{"startP"}, $line->{"endP"},
+									  "s" . ( $layout->GetGuardTrackWidth() + $layout->GetGuardTrack2Shielding() ),
+									  DrawEnums->Polar_NEGATIVE );
+				$self->{"drawing"}->AddPrimitive($l);
 
-		}
-
-	}
-	elsif ( $layout->GetType() eq "full" ) {
-
-		foreach my $area ( $layout->GetAreas() ) {
-
-			my %areaNeg = ();
-			$areaNeg{"xMin"} = $area->{"xMin"} - $layout->GetGuardTrack2Shielding() / 1000;
-			$areaNeg{"xMax"} = $area->{"xMax"} + $layout->GetGuardTrack2Shielding() / 1000;
-			$areaNeg{"yMin"} = $area->{"yMin"} - $layout->GetGuardTrack2Shielding() / 1000;
-			$areaNeg{"yMax"} = $area->{"yMax"} + $layout->GetGuardTrack2Shielding() / 1000;
-
-			$self->{"drawing"}->AddPrimitive( PrimitiveSurfPoly->new( \%areaNeg, undef, DrawEnums->Polar_NEGATIVE ) );
+			}
 
 		}
+		elsif ( $layout->GetType() eq "full" ) {
+
+			foreach my $area ( $layout->GetAreas() ) {
+
+				# area containc rectangle points LB LT RT RB
+				# Move coordinate
+				my @areaNeg = ();
+
+				push( @areaNeg, $area->[0]->Copy() );
+				push( @areaNeg, $area->[1]->Copy() );
+				push( @areaNeg, $area->[2]->Copy() );
+				push( @areaNeg, $area->[3]->Copy() );
+
+				$areaNeg[0]->Move( -$layout->GetGuardTrack2Shielding() / 1000, -$layout->GetGuardTrack2Shielding() / 1000 );
+				$areaNeg[1]->Move( -$layout->GetGuardTrack2Shielding() / 1000, $layout->GetGuardTrack2Shielding() / 1000 );
+				$areaNeg[2]->Move( +$layout->GetGuardTrack2Shielding() / 1000, +$layout->GetGuardTrack2Shielding() / 1000 );
+				$areaNeg[3]->Move( +$layout->GetGuardTrack2Shielding() / 1000, -$layout->GetGuardTrack2Shielding() / 1000 );
+
+				$self->{"drawing"}->AddPrimitive( PrimitiveSurfPoly->new( $area, undef, DrawEnums->Polar_NEGATIVE ) );
+
+			}
+		}
 	}
+	else {
 
-	# draw sielding
-	if ( $layout->GetType() eq "single_line" ) {
+		# draw sielding
+		if ( $layout->GetType() eq "single_line" ) {
 
-		foreach my $line ( $layout->GetLines() ) {
+			foreach my $line ( $layout->GetLines() ) {
 
-			my $l =
-			  PrimitiveLine->new( $line->{"startP"}, $line->{"endP"}, "s" . $layout->GetGuardTrackWidth(), DrawEnums->Polar_POSITIVE );
-			$self->{"drawing"}->AddPrimitive($l);
+				my $l =
+				  PrimitiveLine->new( $line->{"startP"}, $line->{"endP"}, "s" . $layout->GetGuardTrackWidth(), DrawEnums->Polar_POSITIVE );
+				$self->{"drawing"}->AddPrimitive($l);
+
+			}
 
 		}
+		elsif ( $layout->GetType() eq "full" ) {
 
-	}
-	elsif ( $layout->GetType() eq "full" ) {
+			foreach my $area ( $layout->GetAreas() ) {
 
-		foreach my $area ( $layout->GetAreas() ) {
+				$self->{"drawing"}->AddPrimitive( PrimitiveSurfPoly->new( $area, undef, DrawEnums->Polar_POSITIVE ) );
 
-			$self->{"drawing"}->AddPrimitive( PrimitiveSurfPoly->new( $area, undef, DrawEnums->Polar_POSITIVE ) );
-
+			}
 		}
 	}
 

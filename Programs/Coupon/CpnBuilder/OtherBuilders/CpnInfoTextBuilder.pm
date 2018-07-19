@@ -1,6 +1,6 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Manager responsible for NIF creation
+# Description: Info text builder
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Programs::Coupon::CpnBuilder::OtherBuilders::CpnInfoTextBuilder;
@@ -165,14 +165,12 @@ sub Build {
 		$self->{"layout"}->SetHeight( $self->{"cpnSett"}->GetInfoTextHeight() / 1000 );
 		$self->{"layout"}->SetWidth( $curX - $self->{"cpnSett"}->GetInfoTextHSpacing() / 1000 );
 	}
-	
-	$self->{"layout"}->SetInfoTextUnmask($self->{"cpnSett"}->GetInfoTextUnmask());
-	
-	$self->{"layout"}->SetInfoTextHeight($self->{"cpnSett"}->GetInfoTextHeight());
-	$self->{"layout"}->SetInfoTextWidth($self->{"cpnSett"}->GetInfoTextWidth());
-	$self->{"layout"}->SetInfoTextWeight($self->{"cpnSett"}->GetInfoTextWeight());
-	
 
+	$self->{"layout"}->SetInfoTextUnmask( $self->{"cpnSett"}->GetInfoTextUnmask() );
+
+	$self->{"layout"}->SetInfoTextHeight( $self->{"cpnSett"}->GetInfoTextHeight() );
+	$self->{"layout"}->SetInfoTextWidth( $self->{"cpnSett"}->GetInfoTextWidth() );
+	$self->{"layout"}->SetInfoTextWeight( $self->{"cpnSett"}->GetInfoTextWeight() );
 
 	$self->{"build"} = 1;
 

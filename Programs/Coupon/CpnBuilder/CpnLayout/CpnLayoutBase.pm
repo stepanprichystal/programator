@@ -1,6 +1,6 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Manager responsible for NIF creation
+# Description: Base class for all layout class
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Programs::Coupon::CpnBuilder::CpnLayout::CpnLayoutBase;
@@ -27,7 +27,8 @@ sub new {
 	return $self;
 
 }
- 
+
+# Important because of serialize class
 sub TO_JSON { return { %{ shift() } }; }
 
 #-------------------------------------------------------------------------------------------#

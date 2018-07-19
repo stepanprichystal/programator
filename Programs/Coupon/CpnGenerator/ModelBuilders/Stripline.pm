@@ -1,7 +1,6 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Nif Builder is responsible for creation nif file depend on pcb type
-# Builder for pcb POOL
+# Description: Stripline model builder
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Programs::Coupon::CpnGenerator::ModelBuilders::Stripline;
@@ -40,10 +39,10 @@ sub new {
 }
 
 sub Build {
-	my $self   = shift;
-	my $layout = shift;
+	my $self            = shift;
+	my $layout          = shift;
 	my $cpnSingleLayout = shift;
-		my $layersLayout    = shift;
+	my $layersLayout    = shift;
 
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
@@ -82,10 +81,10 @@ sub Build {
 	for ( my $i = 0 ; $i < scalar( $layerCnt - 2 ) ; $i++ ) {
 
 		my $inLayer = "v" . ( $i + 2 );
- 
+
 		if ( $trackL eq $inLayer ) {
-			
-			$self->_AddLayer(PadTextLayer->new($inLayer));
+
+			$self->_AddLayer( PadTextLayer->new($inLayer) );
 			$self->_AddLayer( TrackLayer->new($inLayer) );
 		}
 		elsif ( $gndTopL eq $inLayer || $gndBotL eq $inLayer ) {

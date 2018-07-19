@@ -250,7 +250,7 @@ sub _GetSeparateLine {
 	my $parent = shift;
 	my $thick  = shift // 1;
 	my $pnl    = Wx::Panel->new( $parent, -1, &Wx::wxDefaultPosition, [ $thick, -1 ] );
-	$pnl->SetBackgroundColour( Wx::Colour->new( 192, 192, 192 ) );
+	$pnl->SetBackgroundColour( Wx::Colour->new( 250, 250, 250 ) );
 
 	return $pnl;
 }

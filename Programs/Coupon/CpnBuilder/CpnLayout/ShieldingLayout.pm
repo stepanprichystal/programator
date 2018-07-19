@@ -1,6 +1,6 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Manager responsible for NIF creation
+# Description: Shielding layout for one coupon group
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Programs::Coupon::CpnBuilder::CpnLayout::ShieldingLayout;
@@ -8,7 +8,6 @@ use base qw(Programs::Coupon::CpnBuilder::CpnLayout::CpnLayoutBase);
 
 use Class::Interface;
 &implements('Packages::ObjectStorable::JsonStorable::IJsonStorable');
-
 
 #3th party library
 use strict;

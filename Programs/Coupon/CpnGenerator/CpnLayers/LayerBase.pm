@@ -51,13 +51,7 @@ sub GetLayerName {
 
 	return $self->{"layerName"};
 }
-
-sub GetDrawing {
-	my $self = shift;
-
-	return $self->{"drawing"};
-}
-
+ 
 sub Draw {
 	my $self = shift;
 

@@ -1,5 +1,5 @@
 #-------------------------------------------------------------------------------------------#
-# Description: Class which represent primitive geometric - line
+# Description: Class which represent primitive geometric - polyline
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Packages::CAM::SymbolDrawing::Primitive::PrimitivePolyline;

@@ -46,10 +46,9 @@ sub new {
 	$self->{"cpnLayout"}    = $cpnLayout;
 	$self->{"cpnVariant"}   = $cpnVariant;
 	$self->{"cpnGenerated"} = 0;
-	
 
 	# EVENTS
-	$self->{"onGenerateCouponAsync"} = Event->new(); 
+	$self->{"onGenerateCouponAsync"} = Event->new();
 
 	return $self;
 }
@@ -133,65 +132,72 @@ sub UpdateCpnGenerated {
 
 	$self->{"cpnGenerated"} = shift;
 }
- 
-sub GenerateCoupon{
-	my $self = shift;
+
+sub GenerateCoupon {
+	my $self         = shift;
 	my $wizardFinish = shift;
-	
+
 	# Define params for async subroutine
 	my @params = ();
-	
+
 	my $layout       = $self->GetCpnLayout();
 	my $storable     = JsonStorable->new();
 	my $cpnLayoutSer = $storable->Encode($layout);
-	
+
 	push( @params, $self->{"jobId"} );
 	push( @params, $self->GetCpnGenerated() );
 	push( @params, $wizardFinish );
 	push( @params, $cpnLayoutSer );
 
- 
-	$self->RunAsyncWorker( \&GenerateCouponAsync, sub {  $self->{"onGenerateCouponAsync"}->Do(@_) }, \@params, $self->{"inCAM"} );
+	$self->RunAsyncWorker( \&GenerateCouponAsync, sub { $self->{"onGenerateCouponAsync"}->Do(@_) }, \@params, $self->{"inCAM"} );
 }
- 
- 
+
 # Asynchrounous function, called from child thread
 sub GenerateCouponAsync {
-	my $className = shift;
+	my $className    = shift;
 	my $inCAM        = shift;
 	my $jobId        = shift;
 	my $cpnGenerated = shift;
 	my $wizardFinish = shift;
-	my $cpnLayoutSer    = shift; # serialized cpn layout
-	
-	my $errMess      = "";
+	my $cpnLayoutSer = shift;    # serialized cpn layout
+
+	my $errMess = "";
 
 	my $result = 1;
 
-	my $storable = JsonStorable->new();
-	my $cpnLayout = $storable->Decode($cpnLayoutSer);
- 
-	unless ($cpnGenerated) {
-		my $generator = CpnGenerator->new( $inCAM, $jobId );
-		
-		$inCAM->SetDisplay(0);
-		$generator->Generate($cpnLayout);
-		$inCAM->SetDisplay(1);
+	eval {
+
+		my $storable  = JsonStorable->new();
+		my $cpnLayout = $storable->Decode($cpnLayoutSer);
+
+		unless ($cpnGenerated) {
+			my $generator = CpnGenerator->new( $inCAM, $jobId );
+
+			$inCAM->SetDisplay(0);
+			$generator->Generate($cpnLayout);
+			$inCAM->SetDisplay(1);
+		}
+
+		# flatten coupon
+		if ($wizardFinish) {
+
+			my $generator = CpnGenerator->new( $inCAM, $jobId );
+			$generator->FlattenCpn($cpnLayout);
+		}
+
+	};
+	if ($@) {
+
+		$result = 0;
+		$errMess .= "Unexpected error: " . $@;
 	}
 
-	# flatten coupon
-	if ($wizardFinish) {
-
-		my $generator = CpnGenerator->new( $inCAM, $jobId );
-		$generator->FlattenCpn($cpnLayout);
-	}
-	
 	my %res : shared = ();
 
 	$res{"result"}       = $result;
 	$res{"errMess"}      = $errMess;
 	$res{"finishWizard"} = $wizardFinish;
- 
+
 	return \%res;
 }
 

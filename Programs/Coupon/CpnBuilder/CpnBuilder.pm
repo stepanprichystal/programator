@@ -1,6 +1,6 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Manager responsible for NIF creation
+# Description: Builder of whole coupon
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Programs::Coupon::CpnBuilder::CpnBuilder;
@@ -179,7 +179,6 @@ sub GetLayout {
 
 sub GetCpnArea {
 	my $self = shift;
- 
 
 	my %areaInfo = ( "w" => undef, "h" => undef );
 
@@ -244,10 +243,11 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	use aliased 'Packages::InCAM::InCAM';
 	use aliased 'Programs::Coupon::CpnBuilder::CpnBuilder';
 	use aliased 'Programs::Coupon::CpnSettings::CpnSettings';
+	use aliased 'Programs::Coupon::CpnSettings::CpnSingleSettings';
 	use aliased 'Programs::Coupon::CpnSource::CpnSource';
-	use aliased 'Programs::Coupon::CpnBuilder::BuildParams';
 	use aliased 'Programs::Coupon::CpnGenerator::CpnGenerator';
 	use aliased 'Programs::Coupon::CpnPolicy::GroupPolicy';
+	use aliased 'Programs::Coupon::CpnPolicy::GeneratorPolicy';
 	use aliased 'Programs::Coupon::CpnPolicy::LayoutPolicy';
 	use aliased 'Programs::Coupon::CpnPolicy::SortPolicy';
 	use aliased 'Programs::Coupon::CpnWizard::WizardCore::Helper';
@@ -255,34 +255,56 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	my $inCAM = InCAM->new();
 	my $jobId = "d152456";
 
-	my $p         = 'c:\Export\CouponExport\cpn.xml';
-	my $cpnSource = CpnSource->new($p);
+	my $cpnSource = CpnSource->new($jobId);
 	my $cpnSett   = CpnSettings->new();
-	$cpnSett->{"sett"}->{"trackPadIsolation"} = 200;
-	 
 
-	my $variant = Helper->GetBestGroupCombination( $cpnSource, [ 1, 2, 3, 4, 7, 8,9], $cpnSett );
-	
-	die "variant is not found" unless($variant);
-	
-	print $variant;
-	
-	my $mess = "";
-	my $builder = CpnBuilder->new($inCAM, $jobId, $cpnSource);
-	if($builder->Build($variant, \$mess)){
-		my $layout = $builder->GetLayout();
-	
-	
-		my $generator = CpnGenerator->new($inCAM, $jobId);
-		
-		$inCAM->SetDisplay(0);
-		
-		$generator->Generate($layout);
-		
-		$inCAM->SetDisplay(1);
-		 
+	$cpnSett->SetTrackPadIsolation(125);
+	$cpnSett->SetMaxTrackCnt(1);
+
+	my $groupGenPolicy = GeneratorPolicy->new( $cpnSource, $cpnSett->GetMaxTrackCnt() );
+
+	# Create structure from strips and groups suitable for Layout algorithm
+	#	my %constrFilter = %{ $self->GetConstrFilter() };
+	#	my @constr = grep { $constrFilter{$_} } keys %constrFilter;
+
+	my @comb = ();
+	foreach my $g (1) {
+
+		push( @comb, [ $cpnSource->GetConstraint(1), $cpnSource->GetConstraint(2), $cpnSource->GetConstraint(3) ] );
 	}
-	
+
+	my $combStruct = $groupGenPolicy->GenerateGroupComb( \@comb );
+
+	# Create translate table (user group id => group id given by order)
+	my %groupSettings = ( 0 => CpnSingleSettings->new() );
+
+	#	# try build Cpnvariant
+	my $variant = Helper->GetBestGroupVariant( $cpnSource, [$combStruct], $cpnSett, \%groupSettings );
+
+	die;
+	#
+	#	my $variant = Helper->GetBestGroupCombination( $cpnSource, [ 1, 2, 3, 4, 7, 8,9], $cpnSett );
+	#
+	#	die "variant is not found" unless($variant);
+	#
+	#	print $variant;
+	#
+	#	my $mess = "";
+	#	my $builder = CpnBuilder->new($inCAM, $jobId, $cpnSource);
+	#	if($builder->Build($variant, \$mess)){
+	#		my $layout = $builder->GetLayout();
+	#
+	#
+	#		my $generator = CpnGenerator->new($inCAM, $jobId);
+	#
+	#		$inCAM->SetDisplay(0);
+	#
+	#		$generator->Generate($layout);
+	#
+	#		$inCAM->SetDisplay(1);
+	#
+	#	}
+
 }
 
 1;

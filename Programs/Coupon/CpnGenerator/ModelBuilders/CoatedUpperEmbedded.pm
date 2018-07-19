@@ -1,7 +1,6 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Nif Builder is responsible for creation nif file depend on pcb type
-# Builder for pcb POOL
+# Description: Coated upper embedded builder
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Programs::Coupon::CpnGenerator::ModelBuilders::CoatedUpperEmbedded;
@@ -41,10 +40,10 @@ sub new {
 }
 
 sub Build {
-	my $self   = shift;
-	my $layout = shift;
+	my $self            = shift;
+	my $layout          = shift;
 	my $cpnSingleLayout = shift;
-		my $layersLayout    = shift;
+	my $layersLayout    = shift;
 
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
@@ -54,9 +53,9 @@ sub Build {
 	my $layerCnt = CamJob->GetSignalLayerCnt( $inCAM, $jobId );
 
 	# Info from constrain XML
-	my $trackL  = $layout->GetTrackLayer();
+	my $trackL = $layout->GetTrackLayer();
 	my $emptyL = $layout->GetTopRefLayer();
-	my $gndL = $layout->GetBotRefLayer();
+	my $gndL   = $layout->GetBotRefLayer();
 
 	# Build coupon layers
 
@@ -72,23 +71,22 @@ sub Build {
 	$self->_AddLayer( TrackClearanceLayer->new("c") );
 	$self->_AddLayer( PadLayer->new("c") );
 
-	 
-
 	for ( my $i = 0 ; $i < scalar( $layerCnt - 2 ) ; $i++ ) {
 
 		my $inLayer = "v" . ( $i + 2 );
- 
+
 		if ( $trackL eq $inLayer ) {
-			
-			$self->_AddLayer(PadTextLayer->new($inLayer));
+
+			$self->_AddLayer( PadTextLayer->new($inLayer) );
 			$self->_AddLayer( TrackLayer->new($inLayer) );
 		}
 		elsif ( $gndL eq $inLayer ) {
 
 			$self->_AddLayer( GNDLayer->new($inLayer) );
 		}
-		else {
-			$self->_AddLayer( TrackClearance->new($inLayer) );
+		else{
+			
+			$self->_AddLayer( TrackClearanceLayer->new($inLayer) );
 			$self->_AddLayer( PadNegLayer->new($inLayer) );
 		}
 

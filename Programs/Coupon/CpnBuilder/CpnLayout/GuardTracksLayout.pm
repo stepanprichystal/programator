@@ -1,6 +1,6 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Manager responsible for NIF creation
+# Description: Guard tracks layout, layout for one layer
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Programs::Coupon::CpnBuilder::CpnLayout::GuardTracksLayout;
@@ -8,7 +8,6 @@ use base qw(Programs::Coupon::CpnBuilder::CpnLayout::CpnLayoutBase);
 
 use Class::Interface;
 &implements('Packages::ObjectStorable::JsonStorable::IJsonStorable');
-
 
 #3th party library
 use strict;
@@ -34,7 +33,7 @@ sub new {
 
 	# poperties for type "full"
 	$self->{"areas"} = [];      # areas defined as rectangle by four points
-	
+
 	$self->{"guardTrackWidth"} = undef;
 
 	return $self;
@@ -109,7 +108,6 @@ sub GetGuardTrack2Shielding {
 
 	return $self->{"guardTrack2Shielding"};
 }
-
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

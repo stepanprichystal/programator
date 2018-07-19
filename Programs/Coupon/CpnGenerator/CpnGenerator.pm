@@ -1,6 +1,6 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Manager responsible for NIF creation
+# Description: Generate InCAM coupon step based on coupon layout, created bz coupon Builders
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Programs::Coupon::CpnGenerator::CpnGenerator;
@@ -19,9 +19,10 @@ use aliased 'CamHelpers::CamLayer';
 use aliased 'Programs::Coupon::Enums';
 use aliased 'Programs::Coupon::Helper';
 use aliased 'Programs::Coupon::CpnBuilder::MicrostripBuilders::SEBuilder';
-use aliased 'Programs::Coupon::CpnGenerator::ModelBuilders::Coated';
-use aliased 'Programs::Coupon::CpnGenerator::ModelBuilders::Uncoated';
+use aliased 'Programs::Coupon::CpnGenerator::ModelBuilders::CoatedMicrostrip';
+use aliased 'Programs::Coupon::CpnGenerator::ModelBuilders::UncoatedMicrostrip';
 use aliased 'Programs::Coupon::CpnGenerator::ModelBuilders::Stripline';
+use aliased 'Programs::Coupon::CpnGenerator::ModelBuilders::Stripline2T';
 use aliased 'Programs::Coupon::CpnGenerator::ModelBuilders::CoatedUpperEmbedded';
 use aliased 'Programs::Coupon::CpnGenerator::ModelBuilders::UncoatedUpperEmbedded';
 use aliased 'Helpers::GeneralHelper';
@@ -33,6 +34,8 @@ use aliased 'Programs::Coupon::CpnGenerator::CpnLayers::GuardTracksLayer';
 use aliased 'Programs::Coupon::CpnGenerator::CpnLayers::ShieldingLayer';
 use aliased 'Programs::Coupon::CpnGenerator::CpnLayers::TitleLayer';
 use aliased 'CamHelpers::CamSymbol';
+use aliased 'CamHelpers::CamDTM';
+use aliased 'Enums::EnumsDrill';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -60,16 +63,27 @@ sub Generate {
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
 
-	#my @coupons = grep { $_ =~ /^coupon_(\d+)$/} StepName->GetAllStepNames($inCAM, $jobId);
 
 	# CreateStep
 	my $cpnMargin = $layout->GetCpnMargin();
 
+	# if step coupon exist and is not currently set in editor, it gives error
+	# Set step solve this problem..
+	if ( CamHelper->StepExists( $inCAM, $jobId, $layout->GetStepName() ) ) {
+		CamHelper->SetStep( $inCAM, $layout->GetStepName() );
+	}
+
 	$self->{"couponStep"} = SRStep->new( $inCAM, $jobId, $layout->GetStepName() );
 	$self->{"couponStep"}
-	  ->Create( $layout->GetWidth(), $layout->GetHeight(), $cpnMargin->{"top"}, $cpnMargin->{"bot"}, $cpnMargin->{"left"}, $cpnMargin->{"right"} );
+	  ->Create( $layout->GetWidth(), $layout->GetHeight(), $cpnMargin->{"top"}, $cpnMargin->{"bot"}, $cpnMargin->{"left"}, $cpnMargin->{"right"} )
+	  ;
 
 	CamHelper->SetStep( $inCAM, $layout->GetStepName() );
+
+	# If exist drill layer "m", set DTM type = vysledne
+	if ( defined $layout->GetLayersLayout()->{"m"} ) {
+		CamDTM->SetDTMTable( $inCAM, $jobId, $layout->GetStepName(), "m", EnumsDrill->DTM_VYSLEDNE );
+	}
 
 	# Create single oupon steps
 
@@ -187,7 +201,7 @@ sub __GenerateSingle {
 
 	CamStep->CreateProfileRect( $inCAM, $stepName, \%lb, \%rt );
 
-	# Proces guard tracks
+	# Proces guard tracks - clearance
 
 	if ( defined $cpnSingleLayout->GetGuardTracksLayout() ) {
 
@@ -195,7 +209,7 @@ sub __GenerateSingle {
 
 			my $gtLayer = GuardTracksLayer->new( $layout->GetLayer() );
 			$gtLayer->Init( $inCAM, $jobId, $stepName );
-			$gtLayer->Build($layout);
+			$gtLayer->Build( $layout, 1 );
 
 			CamLayer->WorkLayer( $inCAM, $gtLayer->GetLayerName() );
 			$gtLayer->Draw();
@@ -212,11 +226,13 @@ sub __GenerateSingle {
 
 		switch ( $stripLayout->GetModel() ) {
 
-			case Enums->Model_COATED_MICROSTRIP { $modelBuilder = Coated->new() }
+			case Enums->Model_COATED_MICROSTRIP { $modelBuilder = CoatedMicrostrip->new() }
 
-			  case Enums->Model_UNCOATED_MICROSTRIP { $modelBuilder = Uncoated->new() }
+			  case Enums->Model_UNCOATED_MICROSTRIP { $modelBuilder = UncoatedMicrostrip->new() }
 
 			  case Enums->Model_STRIPLINE { $modelBuilder = Stripline->new() }
+
+			  case Enums->Model_STRIPLINE_2T { $modelBuilder = Stripline2T->new() }
 
 			  case Enums->Model_COATED_UPPER_EMBEDDED { $modelBuilder = CoatedUpperEmbedded->new() }
 
@@ -287,9 +303,10 @@ sub __GenerateSingle {
 		$textLayer->Draw();
 
 		# infot text unmask
+		print STDERR $cpnSingleLayout->GetInfoTextLayout()->GetInfoTextUnmask();
 		if ( $cpnSingleLayout->GetInfoTextLayout()->GetInfoTextUnmask() ) {
 
-			foreach my $l ( grep { $_ =~ /^m[cs]$/ } @layers ) {
+			foreach my $l ( grep { $_ =~ /^mc$/ } @layers ) {
 
 				my $textMaskLayer = InfoTextMaskLayer->new($l);
 				$textMaskLayer->Init( $inCAM, $jobId, $stepName );
@@ -297,11 +314,11 @@ sub __GenerateSingle {
 
 				CamLayer->WorkLayer( $inCAM, $textMaskLayer->GetLayerName() );
 				$textMaskLayer->Draw();
+
 			}
-
 		}
-	}
 
+	}
 }
 
 #-------------------------------------------------------------------------------------------#

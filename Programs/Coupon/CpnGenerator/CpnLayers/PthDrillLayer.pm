@@ -1,15 +1,14 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Base class for BIF builders. Nif Builder is responsible for
-# creation nif file depend on pcb type
+# Description: Layer builder
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Programs::Coupon::CpnGenerator::CpnLayers::PthDrillLayer;
 
 use base('Programs::Coupon::CpnGenerator::CpnLayers::LayerBase');
 
-#use Class::Interface;
-#&implements('Programs::Coupon::CpnBuilder::MicrostripBuilders::IModelBuilder');
+use Class::Interface;
+&implements('Programs::Coupon::CpnGenerator::CpnLayers::ILayerBuilder');
 
 #3th party library
 use strict;
@@ -52,8 +51,7 @@ sub Build {
  		$self->{"drawing"}->AddPrimitive(PrimitivePad->new( "r".$cpnSingleLayout->GetPadDrillSize(), $pad->GetPoint() ));
 	}
  
-	# Draw to layer
-	#$self->_Draw();
+ 
 
 }
 

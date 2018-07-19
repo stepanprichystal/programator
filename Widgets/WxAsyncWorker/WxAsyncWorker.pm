@@ -1,6 +1,9 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description:
+# Description: Class allow do asynchrounous operation together using WX widgets
+# Class allow more asynchrounous operation in the same time
+# Class solve dissconecting inCAM library in main thread, connecting in Child thread + reconnect in mian thread
+# See ussage of this class e.g.: Programs::Coupon::CpnWizard::WizardCore::WizardStep3
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Widgets::WxAsyncWorker::WxAsyncWorker;
@@ -23,12 +26,15 @@ use aliased 'Packages::InCAM::InCAM';
 #-------------------------------------------------------------------------------------------#
 my $PROCESS_END_EVT : shared;    # evt raise when processing reorder is done
 
+# Classs work default with two threads in queue.
+# It means max 2 asynchrounos operation can run in same time
 sub new {
 	my $class = shift;
 	my $self  = {};
 	bless $self;
 
-	$self->{"wxFrame"} = shift;
+	$self->{"wxFrame"} = shift;             # Reference on top level wxFrame
+	$self->{"MAX_THREADS"} = shift // 2;    # Max num of operation in same time
 
 	$self->{"callbacks"} = {};
 	$self->{"inCAMs"}    = {};
@@ -57,10 +63,21 @@ sub DESTROY {
 sub Run {
 	my $self = shift;
 
-	my $workerMethod   = shift;
+	# function reference on worker method
+	# Return variable should be shared: scalar, hash, array. This variable is passed to callbackMethod as first argument
+	my $workerMethod = shift;
+
+	# function reference on which is called after worker method is done
 	my $callbackMethod = shift;
-	my $workerParams   = shift;
-	my $inCAM          = shift;
+
+	# input parameters in array ref for worker method.
+	#(parameters can be only scalar, array, hash. No other types are supported)
+	my $workerParams = shift;
+
+	# if inCAM is passed, connected inCAM will be passed as first argument in worker
+	# method (inCAM need to disconect in main thread and connect in child thread)
+	my $inCAM = shift;
+	
 
 	my $workerId = GeneralHelper->GetGUID();
 
@@ -179,9 +196,6 @@ sub __CallBackWrapper {
 
 sub __InitThreadPool {
 	my $self = shift;
-
-	# Maximum working threads, which start new incam
-	$self->{"MAX_THREADS"} = 2;
 
 	# Threads add their ID to this queue when they are ready for work
 	# Also, when app terminates a -1 is added to this queue

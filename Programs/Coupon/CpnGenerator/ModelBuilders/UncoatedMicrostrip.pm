@@ -1,11 +1,10 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Nif Builder is responsible for creation nif file depend on pcb type
-# Builder for pcb POOL
+# Description: Uncoated microstrip builder
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Programs::Coupon::CpnGenerator::ModelBuilders::Uncoated;
-use base('Programs::Coupon::CpnGenerator::ModelBuilders::Coated');
+package Programs::Coupon::CpnGenerator::ModelBuilders::UncoatedMicrostrip;
+use base('Programs::Coupon::CpnGenerator::ModelBuilders::CoatedMicrostrip');
 
 use Class::Interface;
 &implements('Programs::Coupon::CpnGenerator::ModelBuilders::IModelBuilder');
@@ -43,7 +42,7 @@ sub Build {
 	my $jobId = $self->{"jobId"};
 
 	# 1) Build Coated microstrip
-	$self->SUPER::Build( $layout, $layersLayout );
+	$self->SUPER::Build( $layout, $cpnSingleLayout, $layersLayout );
 
 	# 2) Buil special behaviour
 
@@ -53,8 +52,12 @@ sub Build {
 
 	my $layerCnt = scalar( grep { $_ =~ /[csv]\d*/i } keys %{$layersLayout} );
 
+	# Track layer can has index 1,2 or layer cnt, layer cnt -1
+	# (standard microstrip and embedded upper/lower)
+	my $layerNum = Helper->GetLayerNum( $trackL, $layerCnt );
+
 	# process: mc
-	if ( Helper->GetLayerNum( $trackL, $layerCnt ) == 2 ) {
+	if ( $layerNum == 1 ) {
 		$self->_AddLayer( TrackMaskLayer->new("mc") );
 
 		if ( CamHelper->LayerExists( $inCAM, $jobId, "mc" ) ) {
@@ -66,7 +69,7 @@ sub Build {
 	}
 
 	# process: ms
-	if ( Helper->GetLayerNum( $trackL, $layerCnt ) == $layerCnt - 1 ) {
+	if ( $layerNum == $layerCnt ) {
 		$self->_AddLayer( TrackMaskLayer->new("ms") );
 
 		if ( CamHelper->LayerExists( $inCAM, $jobId, "ms" ) ) {

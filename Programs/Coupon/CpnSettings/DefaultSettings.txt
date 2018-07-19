@@ -14,7 +14,7 @@ stepName   = coupon
 [t = Coupon margin]
 [h = Margin of coupon ]
 [u = µm ]
-couponMargin      = 1500               # µm
+couponMargin      = 1700               # µm
 
 [t = Group margin]
 [h = Margin of coupon group ]
@@ -30,8 +30,8 @@ couponSpace       = 1000             # µm
 # LAYOUT SETTINGS
 # --------------------------------------------------------------------------------------
 
-[t = Microstrip tracks per layer ]
-[h = Max count of microstrip line per one layer (in one group) ]
+[t = Microstrip tracks cnt / one layer ]
+[h = Maximum number of microstrip lines per one track layer. (E.g.: if max is 2 then Maximum number of misrostrip line in one track layer is 2 microstrip lines. ]
 maxTrackCnt = 4
 
 [t = Straight route]
@@ -101,7 +101,7 @@ infoTextWidth = 1000 # µm
 infoTextHeight = 1000 # µm
 [t = Char weight]
 [u = µm ]
-infoTextWeight = 300 #µm
+infoTextWeight = 450 #µm
 
 [t = Top text distance ]
 [h = Top text distance]
@@ -118,7 +118,7 @@ infoTextHSpacing = 1000 #µm
 [t = Vertical text space]
 [h = Vertical text space]
 [u = µm ]
-infoTextVSpacing = 1000 #µm
+infoTextVSpacing = 500 #µm
 
  
 
@@ -133,17 +133,17 @@ padTextUnmask = 1
 
 [t = Dist from track pad ]
 [h = Minimal distance from track pad]
-padTextDist = 150 # µm
+padTextDist = 200 # µm
 
 [t = Char width]
 [u = µm ]
 padTextWidth = 800 #µm
 [t = Char height]
 [u = µm ]
-padTextHeight = 700 #µm
+padTextHeight = 800 #µm
 [t = Char weight]
 [u = µm ]
-padTextWeight = 300 #µm
+padTextWeight = 400 #µm
 
 
 
@@ -188,12 +188,12 @@ guardTrackWidth = 200 # µm
 [t = Guard to track dist]
 [h = Guard to track dist]
 [u = µm ]
-guardTrack2TrackDist = 250 #µm
+guardTrack2TrackDist = 500 #µm
 
 [t = Guard to pad dist]
 [h = Guard to pad dist]
 [u = µm ]
-guardTrack2PadDist = 400 #µm
+guardTrack2PadDist = 350 #µm
 
 [t = Guard to shielding dist]
 [h = Guard to shielding dist]
@@ -282,7 +282,7 @@ titleTextWeight = 400 #µm
 [t = Line/coupon width]
 [h = Determines the length of the coupon lines including the measurement pads and group margins ]
 [u = mm ]
-cpnSingleWidth                 = 130              # mm
+cpnSingleWidth                 = 155   # mm
 
 [t = Max cnt of microstrip - Y axis]
 [h = Max cnt of microstrip - Y axis]

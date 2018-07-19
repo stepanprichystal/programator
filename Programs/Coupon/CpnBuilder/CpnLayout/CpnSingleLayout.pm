@@ -1,6 +1,6 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Manager responsible for NIF creation
+# Description: Layout of single coupon/group
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Programs::Coupon::CpnBuilder::CpnLayout::CpnSingleLayout;
@@ -8,7 +8,6 @@ use base qw(Programs::Coupon::CpnBuilder::CpnLayout::CpnLayoutBase);
 
 use Class::Interface;
 &implements('Packages::ObjectStorable::JsonStorable::IJsonStorable');
-
 
 #3th party library
 use strict;
@@ -42,7 +41,6 @@ sub new {
 	$self->{"padGNDSym"}     = undef;
 	$self->{"padTrackShape"} = undef;
 	$self->{"padDrillSize"}  = undef;
-
 
 	return $self;
 }
@@ -269,15 +267,11 @@ sub GetPadDrillSize {
 	return $self->{"padDrillSize"};
 }
 
-
-
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
-
-	
 
 }
 

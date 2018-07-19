@@ -18,7 +18,6 @@ use aliased 'Programs::Coupon::CpnSettings::CpnSingleSettings';
 use aliased 'Programs::Coupon::CpnSettings::CpnStripSettings';
 
 use aliased 'Programs::Coupon::CpnSource::CpnSource';
-use aliased 'Programs::Coupon::CpnBuilder::BuildParams';
 use aliased 'Programs::Coupon::CpnPolicy::GroupPolicy';
 use aliased 'Programs::Coupon::CpnPolicy::GeneratorPolicy';
 use aliased 'Programs::Coupon::CpnPolicy::LayoutPolicy';

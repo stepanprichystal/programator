@@ -1,7 +1,7 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Base class for BIF builders. Nif Builder is responsible for
-# creation nif file depend on pcb type
+# Description: Microstrip builder is responsible for compute microstrip layout
+# Pad, track, texts positions, etc..
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Programs::Coupon::CpnBuilder::MicrostripBuilders::MicrostripBuilderBase;
@@ -84,8 +84,9 @@ sub Build {
 
 	$self->{"layout"}->SetModel( $xmlConstr->GetModel() );    # model
 	$self->{"layout"}->SetTrackLayer( Helper->GetInCAMLayer( $xmlConstr->GetOption("TRACE_LAYER"), $self->{"layerCnt"} ) );    #
-	$self->{"layout"}->SetTopRefLayer( Helper->GetInCAMLayer( $xmlConstr->GetOption("TOP_MODEL_LAYER"),    $self->{"layerCnt"} ) ); #
-	$self->{"layout"}->SetBotRefLayer( Helper->GetInCAMLayer( $xmlConstr->GetOption("BOTTOM_MODEL_LAYER"), $self->{"layerCnt"} ) ); #
+	$self->{"layout"}->SetTopRefLayer( Helper->GetInCAMLayer( $xmlConstr->GetOption("TOP_MODEL_LAYER"),    $self->{"layerCnt"} ) );    #
+	$self->{"layout"}->SetBotRefLayer( Helper->GetInCAMLayer( $xmlConstr->GetOption("BOTTOM_MODEL_LAYER"), $self->{"layerCnt"} ) );    #
+	$self->{"layout"}->SetExtraTrackLayer( Helper->GetInCAMLayer( $xmlConstr->GetOption("EXTRA_SIGNAL_LAYER"), $self->{"layerCnt"} ) );    #
 
 }
 
@@ -323,8 +324,8 @@ sub _GetMultistripDIFFTrackInner {
 	my $p2pDist = $self->{"cpnSingleSett"}->GetTrackPad2TrackPad() / 1000;    # in mm
 
 	my $xmlConstr = $self->{"stripVariant"}->Data()->{"xmlConstraint"};
-	my $w         = $xmlConstr->GetParamDouble("WB") / 1000;              # track width in mm
-	my $s         = $xmlConstr->GetParamDouble("S") / 1000;               # track space in mm
+	my $w         = $xmlConstr->GetParamDouble("WB") / 1000;                  # track width in mm
+	my $s         = $xmlConstr->GetParamDouble("S") / 1000;                   # track space in mm
 
 	my $cpnSingleWidth = $self->{"cpnSingleSett"}->GetCpnSingleWidth();
 

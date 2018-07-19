@@ -3,8 +3,8 @@ package Programs::Coupon::Enums;
 
 # microstrip types
 use constant {
-	Type_SE            => "se",
-	Type_DIFF          => "diff",
+	Type_SE     => "se",
+	Type_DIFF   => "diff",
 	Type_COSE   => "coplanar_se",
 	Type_CODIFF => "coplanar_diff",
 
@@ -44,7 +44,7 @@ use constant {
 
 };
 
-# microstrip types
+# coupon pad types
 use constant {
 			   Pad_GND   => "gndPad",
 			   Pad_TRACK => "trackPad"
@@ -54,18 +54,19 @@ use constant {
 # Type unused:
 # - layers which order is highest or lowest more than 2 positions from track layer and track-extra layer(this layer has no impact to mesurement)
 use constant {
-	Layer_TYPEGND => "layerGnd", # layer which contain GND
-	Layer_TYPETRACK  => "layerTrack", # measurement layer
-	Layer_TYPETRACKEXTRA  => "layerTrackExtra", # measurement layer
-	Layer_TYPEAFFECT  => "layerAffect", # another trace layer, empty GND
-	Layer_TYPENOAFFECT  => "layerNoAffect" 
+	Layer_TYPEGND        => "layerGnd",           # layer which contain GND
+	Layer_TYPETRACK      => "layerTrack",         # measurement layer
+	Layer_TYPETRACKEXTRA => "layerTrackExtra",    # measurement layer
+	Layer_TYPEAFFECT     => "layerAffect",        # another trace layer, empty GND
+	Layer_TYPENOAFFECT   => "layerNoAffect"
 
-  };
-  
- use constant {
-			   Route_ABOVE   => "routeAbove",
-			   Route_BELOW => "routeBelow",
+};
+
+# Route/miscrostrip line types
+use constant {
+			   Route_ABOVE    => "routeAbove",
+			   Route_BELOW    => "routeBelow",
 			   Route_STREIGHT => "routeStraight"
-}; 
+};
 
-  1;
+1;

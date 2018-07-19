@@ -1,15 +1,14 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Interface for model buildersd
+# Description: Interface for layetr builders
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Programs::Coupon::CpnGenerator::ModelBuilders::IModelBuilder;
+package Programs::Coupon::CpnGenerator::CpnLayers::ILayerBuilder;
 
 #3th party library
 use strict;
 use warnings;
 
-#use File::Copy;
 
 #local library
 
@@ -21,6 +20,10 @@ use Class::Interface;
 &interface;
 
 sub Build;
+
+sub Draw;
+
+sub GetLayerName;
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

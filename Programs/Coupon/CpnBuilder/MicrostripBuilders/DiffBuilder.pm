@@ -1,7 +1,6 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Nif Builder is responsible for creation nif file depend on pcb type
-# Builder for pcb POOL
+# Description: # Description: Differential builder
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Programs::Coupon::CpnBuilder::MicrostripBuilders::DiffBuilder;
@@ -233,18 +232,7 @@ sub Build {
 	return $result;
 }
 
-#sub GetPadPosXCnt {
-#	my $self = shift;
-#
-#	return 2;
-#
-#}
-#
-#sub GetPadPosYCnt {
-#	my $self = shift;
-#
-#	return 2;
-#}
+ 
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

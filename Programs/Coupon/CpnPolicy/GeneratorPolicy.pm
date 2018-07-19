@@ -70,7 +70,7 @@ sub GenerateGroups {
 	# Reduce maximum count of partition combination (in order fast computation)
 	# Max count of items, which are partitions created from is 6 items
 	my @allComb;
-	my $maxItems = 7;
+	my $maxItems = 8;
 
 	if ( scalar(@xmlConsStruct) <= $maxItems ) {
 		@allComb = partitions( \@xmlConsStruct )

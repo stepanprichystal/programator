@@ -1,5 +1,5 @@
 #-------------------------------------------------------------------------------------------#
-# Description: Helper function for data prepare to output
+# Description: Helper function for coupon wizard
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Programs::Coupon::Helper;
@@ -18,7 +18,7 @@ use aliased 'Packages::Stackup::Stackup::Stackup';
 #-------------------------------------------------------------------------------------------#
 
 
-
+# Return layer naumber for InCAM layer name c= 1
 sub GetLayerNum{
 	my $self     = shift;
 	my $layer = shift;
@@ -44,6 +44,7 @@ sub GetLayerNum{
 	return $num;
 }
 
+# return all InCAM layers name by number. e.g.: layer cnt = 4, return [c, v2, v3, s]
 sub GetAllLayerNames{
 	my $self     = shift;
 	my $layerCnt = shift;
@@ -56,7 +57,7 @@ sub GetAllLayerNames{
 	
 }
 
-
+# Return InCAM layer name for InSIGHT layer name
 sub GetInCAMLayer {
 	my $self     = shift;
 	my $lName    = shift;
@@ -86,7 +87,7 @@ sub GetInCAMLayer {
 	return $lInCAM;
 }
 
-
+# Return InStack layer name by inCAM layer name
 sub GetInStackLayer {
 	my $self     = shift;
 	my $lName    = shift;

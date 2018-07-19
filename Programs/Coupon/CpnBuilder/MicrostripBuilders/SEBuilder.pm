@@ -1,7 +1,6 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Nif Builder is responsible for creation nif file depend on pcb type
-# Builder for pcb POOL
+# Description: Single ended builder
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Programs::Coupon::CpnBuilder::MicrostripBuilders::SEBuilder;
@@ -44,10 +43,10 @@ sub Build {
 	my $cpnSett       = shift;
 	my $cpnSingleSett = shift;
 	my $errMess       = shift;
-	
+
 	my $cpnStripSett = $stripVariant->GetCpnStripSettings();
-	
-	$self->SUPER::Build($stripVariant, $cpnSett, $cpnSingleSett);
+
+	$self->SUPER::Build( $stripVariant, $cpnSett, $cpnSingleSett );
 
 	my $result = 1;
 
@@ -85,7 +84,8 @@ sub Build {
 		$self->{"layout"}->AddPad($sTrPad);
 
 		# build GND pad
-		my $sGNDPad = PadLayout->new( PointLayout->new( $gOrigin->X(), $gOrigin->Y() ), Enums->Pad_GND, $self->{"cpnSingle"}->GetShareGNDLayers($self) );
+		my $sGNDPad =
+		  PadLayout->new( PointLayout->new( $gOrigin->X(), $gOrigin->Y() ), Enums->Pad_GND, $self->{"cpnSingle"}->GetShareGNDLayers($self) );
 		$self->{"layout"}->AddPad($sGNDPad);
 
 		my $eGNDPad;
@@ -100,7 +100,8 @@ sub Build {
 
 			# build GND pad
 			my $eGNDPad =
-			  PadLayout->new( PointLayout->new( $areaW - $gOrigin->X(), $gOrigin->Y() ), Enums->Pad_GND, $self->{"cpnSingle"}->GetShareGNDLayers($self) );
+			  PadLayout->new( PointLayout->new( $areaW - $gOrigin->X(), $gOrigin->Y() ),
+							  Enums->Pad_GND, $self->{"cpnSingle"}->GetShareGNDLayers($self) );
 			$self->{"layout"}->AddPad($eGNDPad);
 
 		}
@@ -121,7 +122,7 @@ sub Build {
 	else {
 
 		my $tOrigin = PointLayout->new( $origin->X() + $self->{"cpnSingleSett"}->GetPad2PadDist() / 1000, $origin->Y() );    # origin of track pad
-		my $gOrigin = PointLayout->new( $origin->X(), $origin->Y() );                                                   # origin of GND pad
+		my $gOrigin = PointLayout->new( $origin->X(), $origin->Y() );                                                        # origin of GND pad
 
 		# LEFT SIDE
 
@@ -157,35 +158,11 @@ sub Build {
 		$self->{"layout"}->AddTrack($track);
 
 	}
-	
-
 
 	return $result;
 
 }
-#
-#sub GetPadPosXCnt {
-#	my $self = shift;
-#
-#	if ( $self->{"cpnSingle"}->IsMultistrip() ) {
-#		return 1;
-#	}
-#	else {
-#		return 2;
-#	}
-#
-#}
-#
-#sub GetPadPosYCnt {
-#	my $self = shift;
-#
-#	if ( $self->{"cpnSingle"}->IsMultistrip() ) {
-#		return 2;
-#	}
-#	else {
-#		return 1;
-#	}
-#}
+ 
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

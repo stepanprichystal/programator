@@ -1,6 +1,6 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Manager responsible for NIF creation
+# Description: Builder of one coupon group
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Programs::Coupon::CpnBuilder::CpnSingleBuilder;
@@ -147,9 +147,8 @@ sub Build {
 				#compute
 				# align text to right
 				$p = PointLayout->new(
-							   $self->{"cpnSingleSett"}->GetCpnSingleWidth() - $textLayout->GetWidth() - $self->{"cpnSett"}->GetCouponSingleMargin() / 1000,
-							   $self->{"cpnSett"}->GetCouponSingleMargin() / 1000 + $activeArea{"h"} + $self->{"cpnSett"}->GetPadsTopTextDist() / 1000
-				);
+						 $self->{"cpnSingleSett"}->GetCpnSingleWidth() - $textLayout->GetWidth() - $self->{"cpnSett"}->GetCouponSingleMargin() / 1000,
+						 $self->{"cpnSett"}->GetCouponSingleMargin() / 1000 + $activeArea{"h"} + $self->{"cpnSett"}->GetPadsTopTextDist() / 1000 );
 			}
 
 			$textLayout->SetPosition($p);
@@ -207,9 +206,6 @@ sub Build {
 		$self->{"layout"}->SetPadGNDSym( $self->{"cpnSingleSett"}->GetPadGNDSym() );
 		$self->{"layout"}->SetPadTrackShape( $self->{"cpnSingleSett"}->GetPadTrackShape() );
 		$self->{"layout"}->SetPadDrillSize( $self->{"cpnSingleSett"}->GetPadDrillSize() );
-		
-		
-
 
 		# Set height of whole coupon
 		my %cpnArea = $self->GetCpnSingleArea();
@@ -244,7 +240,7 @@ sub GetShareGNDLayers {
 
 	my @strips = $self->{"singleCpnVar"}->GetStripsByColumn( $stripVariant->Col() );
 
-	my @gndLayers = ();               # layers where has to by GND pad (on specific column position)
+	my @gndLayers = ();                                                                 # layers where has to by GND pad (on specific column position)
 
 	foreach my $s (@strips) {
 

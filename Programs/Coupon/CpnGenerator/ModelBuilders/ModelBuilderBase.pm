@@ -1,6 +1,6 @@
 #-------------------------------------------------------------------------------------------#
-# Description: Base class for BIF builders. Nif Builder is responsible for
-# creation nif file depend on pcb type
+# Description: Model builders are responsible for build Microstrip model
+# One model is usable for more types of microstrips
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Programs::Coupon::CpnGenerator::ModelBuilders::ModelBuilderBase;
@@ -20,9 +20,9 @@ sub new {
 	my $self  = {};
 	bless $self;
 
-	$self->{"inCAM"}    = undef;
-	$self->{"jobId"}    = undef;
-	$self->{"step"}     = undef;
+	$self->{"inCAM"} = undef;
+	$self->{"jobId"} = undef;
+	$self->{"step"}  = undef;
 
 	#require rows in nif section
 	$self->{"layers"} = [];
@@ -33,17 +33,17 @@ sub new {
 sub Init {
 	my $self = shift;
 
-	$self->{"inCAM"}    = shift;
-	$self->{"jobId"}    = shift;
-	$self->{"step"}     = shift;
+	$self->{"inCAM"} = shift;
+	$self->{"jobId"} = shift;
+	$self->{"step"}  = shift;
 
 }
 
-sub GetLayers{
-	my $self = shift;	
-	
-	return @{$self->{"layers"}};
-	
+sub GetLayers {
+	my $self = shift;
+
+	return @{ $self->{"layers"} };
+
 }
 
 sub _AddLayer {
@@ -53,21 +53,17 @@ sub _AddLayer {
 	push( @{ $self->{"layers"} }, $layer );
 
 }
- 
 
 sub _Build {
-	my $self   = shift;
-	my $layout = shift;
+	my $self            = shift;
+	my $layout          = shift;
 	my $cpnSingleLayout = shift;
-	my $layersLayout = shift;
-
+	my $layersLayout    = shift;
 
 	foreach my $layer ( @{ $self->{"layers"} } ) {
-		
-		
 
 		$layer->Init( $self->{"inCAM"}, $self->{"jobId"}, $self->{"step"}, $layout );
-		$layer->Build($layout, $cpnSingleLayout, $layersLayout->{$layer->GetLayerName()});
+		$layer->Build( $layout, $cpnSingleLayout, $layersLayout->{ $layer->GetLayerName() } );
 	}
 }
 

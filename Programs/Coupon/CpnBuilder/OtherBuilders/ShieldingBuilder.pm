@@ -1,6 +1,6 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Manager responsible for NIF creation
+# Description: Shielding builder
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Programs::Coupon::CpnBuilder::OtherBuilders::ShieldingBuilder;
@@ -29,20 +29,19 @@ sub new {
 	my $class = shift;
 	my $self  = {};
 	bless $self;
- 
+
 	$self->{"inCAM"} = shift;
 	$self->{"jobId"} = shift;
 
-	$self->{"layout"}       = ShieldingLayout->new() ;    # Layout of one single coupon
-	$self->{"build"}        = 0;                        # indicator if layout was built
+	$self->{"layout"}       = ShieldingLayout->new();    # Layout of one single coupon
+	$self->{"build"}        = 0;                         # indicator if layout was built
 	$self->{"singleCpnVar"} = undef;
 
 	# Settings references
-	$self->{"cpnSett"} = undef;                         # global settings for generating coupon
-
+	$self->{"cpnSett"} = undef;                          # global settings for generating coupon
 
 	# Other properties
- 
+
 	return $self;
 }
 
@@ -64,15 +63,15 @@ sub Build {
 
 	return $result if ( !$self->{"cpnSett"}->GetShielding() );
 
-	 my $t = $self->{"cpnSett"}->GetShieldingType();
+	my $t = $self->{"cpnSett"}->GetShieldingType();
 
 	$self->{"layout"}->SetType($t);
-	
-	if($t eq "symbol"){
-	 
- 		$self->{"layout"}->SetSymbol($self->{"cpnSett"}->GetShieldingSymbol());
- 		$self->{"layout"}->SetSymbolDX($self->{"cpnSett"}->GetShieldingSymbolDX()/1000);
- 		$self->{"layout"}->SetSymbolDY($self->{"cpnSett"}->GetShieldingSymbolDY()/1000);
+
+	if ( $t eq "symbol" ) {
+
+		$self->{"layout"}->SetSymbol( $self->{"cpnSett"}->GetShieldingSymbol() );
+		$self->{"layout"}->SetSymbolDX( $self->{"cpnSett"}->GetShieldingSymbolDX() / 1000 );
+		$self->{"layout"}->SetSymbolDY( $self->{"cpnSett"}->GetShieldingSymbolDY() / 1000 );
 	}
 
 	$self->{"build"} = 1;

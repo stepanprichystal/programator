@@ -1,6 +1,9 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description:
+# Description: Do serialization/seserialization of perl object to JSON
+# Object for serialization need to implement interface IJsonStorable
+# During deserialization, algorithm search property: __CLASS__ with name of class, 
+# which requested object will be crated from
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Packages::ObjectStorable::JsonStorable::JsonStorable;
@@ -48,14 +51,15 @@ sub Decode {
 	# 2) Find hash ref, which are serialized object (contains property __CLASS__)
 
 	$self->__RecursiveDecode($decoded);
-	
+
 	return $decoded;
 
 }
 
+# Create objects based on class name stored decoded structure
 sub __RecursiveDecode {
-	my $self       = shift;
-	my $ref = shift;
+	my $self = shift;
+	my $ref  = shift;
 
 	my $ref_type = ref $ref;
 
