@@ -442,6 +442,7 @@ sub _GUIpanelizace {
 										   #_CheckminimalToolRout($jobName); Now this error is checked in LayerCheckWarn
 											_CheckMpanelExistPool($jobName);
 											_CheckPlgcPlgs($jobName);
+											_CheckIfCleanUpDone($jobName);
 											
 											
 											
@@ -1476,6 +1477,31 @@ sub _CheckPlgcPlgs {
 				}
 	
 }
+sub _CheckIfCleanUpDone {
+		my $pcbId = shift;
+		my $step = 'o+1';
+		my $res = 0;
+		
+		
+		$inCAM->INFO(units => 'mm', angle_direction => 'ccw', entity_type => 'check',entity_path => "$pcbId/$step/Clean_up",data_type => 'EXISTS');
+		if ($inCAM->{doinfo}{gEXISTS} eq "yes") {
+				$inCAM->INFO(units => 'mm', 
+			      angle_direction => 'ccw', 
+			        entity_type => 'check',
+			        entity_path => "$pcbId/$step/Clean_up",
+			        data_type => 'STATUS',
+			        options => "action=16");
+			        
+			        if($inCAM->{doinfo}{gSTATUS} eq 'UNDONE' ){
+			        		push @errorMessageArr,  '- Pozor, nebyl proveden Clean_UP, naprav to.';
+			        }		       	
+		}else{
+							push @errorMessageArr,  '- Pozor, nebyl proveden Clean_UP, naprav to.';
+		}
+}
+
+
+
 
 sub _CheckTypeOfPcb {
 		my $pcbId = shift;
