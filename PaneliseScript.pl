@@ -1131,7 +1131,7 @@ sub _GetExistkonClass {
 		my $wroteChecklist_inner = '';
 		my $step = 'o+1';
 		
-		if(CamHelper->StepExists( $inCAM, $pcbId, 'o+1_single')) {
+		if(CamHelper->StepExists( $inCAM, $idPcb, 'o+1_single')) {
 				$step = 'o+1_single';
 		}
 		
