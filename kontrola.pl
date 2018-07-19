@@ -25,6 +25,7 @@ use aliased 'Enums::EnumsPaths';
 use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'Packages::Routing::PlatedRoutAtt';
 use aliased 'CamHelpers::CamCopperArea';
+use aliased 'CamHelpers::CamHelper';
 use aliased 'Packages::InCAM::InCAM';
 
 use aliased 'Packages::CAMJob::Marking::Marking';
@@ -218,31 +219,21 @@ sub _PutXMLorder {
 				
 				__GetValueXML($hashXML{$tmpPole[0]}, $outputDir, $articleid);
 									if (%hashXML) {	
-										
-													$inCAM->INFO(units=>'mm',entity_type => 'step',entity_path => "$jobName/$StepName",data_type => 'PROF_LIMITS');
-													my $pcbXsize = sprintf "%3.2f",($inCAM->{doinfo}{gPROF_LIMITSxmax} - $inCAM->{doinfo}{gPROF_LIMITSxmin});
-													my $pcbYsize = sprintf "%3.2f",($inCAM->{doinfo}{gPROF_LIMITSymax} - $inCAM->{doinfo}{gPROF_LIMITSymin});
-	
-													if ($pcbXsize > $pcbYsize) {
-																my $tmpXsize = $pcbXsize;
-		   															$pcbXsize = $pcbYsize;
-		   															$pcbYsize = $tmpXsize;
-													}
-													
-													my $viewInfo = 0;
-													my $viewInfo1 = 0;
-													my $viewInfo2 = 0;
-													my $viewInfo3 = 0;
-													my $viewInfo4 = 0;
-													
-													unless($hashINFO{size_x} < ($pcbXsize + 1) and $hashINFO{size_x} > ($pcbXsize - 1)) {
-															$viewInfo = 1;
-															$viewInfo1 = 1;
-													}
-													unless($hashINFO{size_y} < ($pcbYsize + 1) and $hashINFO{size_y} > ($pcbYsize - 1)) {
-															$viewInfo = 1;
-															$viewInfo1 = 1;
-													}
+												my $viewInfo = 0;
+												my $viewInfo1 = 0;
+												my $viewInfo2 = 0;
+												my $viewInfo3 = 0;
+												my $viewInfo4 = 0;
+												
+												my $stepTmp = $StepName;
+												
+												
+											if (CamHelper->StepExists( $inCAM, $jobName, 'mpanel')){
+														$stepTmp = 'mpanel';
+											}
+												
+											($viewInfo, $viewInfo1) = _CompareDimPcbXml($jobName, $stepTmp);	
+
 													
 													my ($silkPCBtop, $silkPCBbot) = 0;
 													$inCAM->INFO(entity_type=>'layer',entity_path=>"$jobName/o+1/pc",data_type=>'exists');
@@ -912,8 +903,28 @@ sub _MoveToServer {
 			 dirmove (EnumsPaths->Client_ELTESTS . $jobName,"$cestaArchivEL/$jobName");
 }
 
-
-
+sub _CompareDimPcbXml {
+		my $jobId = shift;
+		my $step = shift;
+		my $res = 0;
+		
+		
+		my ($pcbXsize,$pcbYsize) = __GetSizeOfPcb($jobId, $step);
+	
+					if ($pcbXsize > $pcbYsize) {
+									my $tmpXsize = $pcbXsize;
+				   						$pcbXsize = $pcbYsize;
+				   						$pcbYsize = $tmpXsize;
+					}
+													
+					unless($hashINFO{size_x} < ($pcbXsize + 1) and $hashINFO{size_x} > ($pcbXsize - 1)) {
+									$res = 1;
+					}
+					unless($hashINFO{size_y} < ($pcbYsize + 1) and $hashINFO{size_y} > ($pcbYsize - 1)) {
+									$res = 1;
+					}
+	return($res, $res);
+}
 
 
 
