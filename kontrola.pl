@@ -27,6 +27,8 @@ use aliased 'Packages::Routing::PlatedRoutAtt';
 use aliased 'CamHelpers::CamCopperArea';
 use aliased 'Packages::InCAM::InCAM';
 
+use aliased 'Packages::CAMJob::Marking::Marking';
+
 my $inCAM    = InCAM->new();
 
 unless ($ENV{JOB}) {
@@ -158,6 +160,11 @@ $main->title('Informace o DPS');
 											_CheckCustomerFinishHoles($jobName);
 											_CheckStatusPriprava($jobName);
 											_CheckLimitWithTabs($jobName);
+											
+											my $dataCodeHeg = lc HegMethods->GetDatacodeLayer($jobName);
+											if($dataCodeHeg) {
+												_CheckCorrectDataCode($jobName, $dataCodeHeg);
+											}
 											
 											_CheckCutomerNetlist($jobName);
 											
@@ -350,9 +357,11 @@ sub _PutXMLorder {
 														$framegrid->Label(-text=>"$hashINFO{sideplating}",-font=>'arial 9',-fg=>'red')->grid(-column=>1,-row=>"$rowStart",-columnspan=>1,-sticky=>"w");
 													}
 													
-													$rowStart++;
-													$framegrid->Label(-text=>"Prokovena freza",-font=>'arial 9',-fg=>'DimGray')->grid(-column=>0,-row=>"$rowStart",-columnspan=>1,-sticky=>"w");
-													$framegrid->Label(-text=>"$hashINFO{pth_freza}",-font=>'arial 9',-fg=>'DimGray')->grid(-column=>1,-row=>"$rowStart",-columnspan=>1,-sticky=>"w");
+													if ($hashINFO{pth_freza} eq 'yes'){
+														$rowStart++;
+														$framegrid->Label(-text=>"Prokovena freza",-font=>'arial 9',-fg=>'red')->grid(-column=>0,-row=>"$rowStart",-columnspan=>1,-sticky=>"w");
+														$framegrid->Label(-text=>"$hashINFO{pth_freza}",-font=>'arial 9',-fg=>'red')->grid(-column=>1,-row=>"$rowStart",-columnspan=>1,-sticky=>"w");
+													}
 													
 													$rowStart++;
 													$framegrid->Label(-text=>"Datacode",-font=>'arial 9',-fg=>'DimGray')->grid(-column=>0,-row=>"$rowStart",-columnspan=>1,-sticky=>"w");
@@ -810,12 +819,21 @@ sub _CheckLimitWithTabs {
 		
 		if (__CheckMinAreaForTabs($jobId) == 1 and $pozadavekKusu > $limitKusu ) {
 					push @errorMessageArr , "- Je prekrocen limit kusu($limitKusu) frezovanych na mustky, jestli zakazik nepozaduje panel, je nutne domluvit dodavani v panelu - jinak nelze vyrobit.Vice ve OneNotu-Nejmensi rozmer kusu na patku.";
-		}
-	
-	
-	
-	
+		}	
 }
+
+sub _CheckCorrectDataCode {
+	my $jobId = shift;
+	my $layer = shift;
+	my $step = 'o+1';
+	
+			unless ( Marking->DatacodeExists( $inCAM, $jobId, $step, $layer ) ) {
+                               
+						push @errorMessageArr , $hashINFO{datacode}.  "- Datacode je ve spatnem formatu nebo v pozadovane vrstve chybi.";
+			}
+}
+
+
 
 sub __CheckMinAreaForTabs {
 	my $jobId = shift;
