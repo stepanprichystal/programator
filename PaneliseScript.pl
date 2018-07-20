@@ -195,7 +195,11 @@ sub _GUIpanelizace {
 														-fg=>'red')
 														->pack(-padx=>3,-pady=>15,-side=>'top',-fill=>'both');
 									
-									$topFrameLeft_L->Label(-text=>"Zkontrolovano v......" . _GetConstrClass($jobName , 'o+1') . $wroteChackList ,-font=>"Arial 10")->pack(-padx => 3, -pady => 3,-side=>'bottom');
+									my $stepTMP = 'o+1';
+									if(CamHelper->StepExists( $inCAM, $jobName, 'o+1_single')) {
+												$stepTMP = 'o+1_single';
+									}
+									$topFrameLeft_L->Label(-text=>"Zkontrolovano v......" . _GetConstrClass($jobName , $stepTMP) . $wroteChackList ,-font=>"Arial 10")->pack(-padx => 3, -pady => 3,-side=>'bottom');
 									
 					if (HegMethods->GetTypeOfPcb($jobName) eq 'Vicevrstvy') {
 									
@@ -210,7 +214,7 @@ sub _GUIpanelizace {
 														-fg=>'orange')
 														->pack(-padx=>3,-pady=>15,-side=>'top',-fill=>'both');
 													
-									$topFrameLeft_R->Label(-text=>"Zkontrolovano v......" . _GetConstrClass_inner($jobName , 'o+1') . $wroteChackList_inner ,-font=>"Arial 10")->pack(-padx => 3, -pady => 3,-side=>'bottom');
+									$topFrameLeft_R->Label(-text=>"Zkontrolovano v......" . _GetConstrClass_inner($jobName , $stepTMP) . $wroteChackList_inner ,-font=>"Arial 10")->pack(-padx => 3, -pady => 3,-side=>'bottom');
 					}
 														
 						$topFrameRight = $topFrame->Frame(-width=>100, -height=>70)->pack(-side=>'right',-fill=>'both',-expand => "True");
@@ -442,6 +446,7 @@ sub _GUIpanelizace {
 										   #_CheckminimalToolRout($jobName); Now this error is checked in LayerCheckWarn
 											_CheckMpanelExistPool($jobName);
 											_CheckPlgcPlgs($jobName);
+											_CheckIfCleanUpDone($jobName);
 											
 											
 											
@@ -616,8 +621,8 @@ sub _CheckPool{
 								my @repeats = ();
 								my ($pcbXsizeKus,$pcbYsizeKus,$pcbXsizePanel, $pcbYsizePanel);
 								my $panelNasobnost;
-								
-								if (CamHelper->StepExists( $inCAM, $jobId, 'o+1_single')){
+
+								if (CamHelper->StepExists( $inCAM, $jobId, 'o+1_single') and HegMethods->GetIdcustomer($jobId) ne '05626'){
 									
 										if ( CamStepRepeat->ExistStepAndRepeats( $inCAM, $jobId, 'o+1_panel' ) ) {
 													@repeats = CamStepRepeat->GetRepeatStep( $inCAM, $jobId, 'o+1_panel' );
@@ -1128,14 +1133,18 @@ sub _GetExistkonClass {
 		my $idPcb = shift;
 		my $wroteChecklist = '                        ';
 		my $wroteChecklist_inner = '';
+		my $step = 'o+1';
 		
+		if(CamHelper->StepExists( $inCAM, $idPcb, 'o+1_single')) {
+				$step = 'o+1_single';
+		}
 		
 		   my $atrbtClass = CamAttributes->GetJobAttrByName($inCAM, $idPcb, 'pcb_class');
 		   my $atrbtClassInner = CamAttributes->GetJobAttrByName($inCAM, $idPcb, 'pcb_class_inner');
 		   
 		   unless($atrbtClass) {
-		   	   		my $textClass = _GetConstrClass($idPcb , 'o+1');
-		   	   	
+		   	   		my $textClass = _GetConstrClass($idPcb , $step);
+
 		   	   		($atrbtClass) = $textClass =~ /Class_(\d)/;
 
 		   	   		if ($atrbtClass){
@@ -1143,7 +1152,7 @@ sub _GetExistkonClass {
 		   	   		}
 		  	}
 		  	unless($atrbtClassInner) {
-		  			my $textClass_inner = _GetConstrClass_inner($idPcb , 'o+1');
+		  			my $textClass_inner = _GetConstrClass_inner($idPcb , $step);
 		  			($atrbtClassInner) = $textClass_inner =~ /Class_(\d)/;
 		  	
 		  	
@@ -1476,6 +1485,35 @@ sub _CheckPlgcPlgs {
 				}
 	
 }
+sub _CheckIfCleanUpDone {
+		my $pcbId = shift;
+		my $step = 'o+1';
+		my $res = 0;
+		
+		if(CamHelper->StepExists( $inCAM, $pcbId, 'o+1_single')) {
+			$step = 'o+1_single';
+		}
+		
+		
+		$inCAM->INFO(units => 'mm', angle_direction => 'ccw', entity_type => 'check',entity_path => "$pcbId/$step/Clean_up",data_type => 'EXISTS');
+		if ($inCAM->{doinfo}{gEXISTS} eq "yes") {
+				$inCAM->INFO(units => 'mm', 
+			      angle_direction => 'ccw', 
+			        entity_type => 'check',
+			        entity_path => "$pcbId/$step/Clean_up",
+			        data_type => 'STATUS',
+			        options => "action=16");
+			        
+			        if($inCAM->{doinfo}{gSTATUS} eq 'UNDONE' ){
+			        		push @errorMessageArr,  '- Pozor, nebyl proveden Clean_UP, naprav to.';
+			        }		       	
+		}else{
+							push @errorMessageArr,  '- Pozor, nebyl proveden Clean_UP, naprav to.';
+		}
+}
+
+
+
 
 sub _CheckTypeOfPcb {
 		my $pcbId = shift;
