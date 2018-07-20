@@ -339,7 +339,7 @@ sub __OkClick {
 		}
 
 		# if poslan dotaz add user name
-		if ( $newStep eq "poslan dotaz" ) {
+		if ( $newStep eq "poslan dotaz" ||  $newStep eq "zpracovava"  ) {
 
 			$newStep .= " " . getlogin();
 		}

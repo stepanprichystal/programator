@@ -5,6 +5,7 @@ OBCHOD-Chybi papir;
 OBCHOD-Chybi data;
 posle nova data;
 poslan dotaz; (+ jmeno uzivatele)
+zpracovava; (+ jmeno uzivatele)
 k panelizaci;
 HOTOVO-zadat;
 Exportovano;

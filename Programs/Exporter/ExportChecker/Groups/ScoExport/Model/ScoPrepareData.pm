@@ -79,7 +79,8 @@ sub OnPrepareGroupData {
 
 	my $scoringType = ScoEnums->Type_CLASSIC;
 
-	if ( $defaultInfo->GetMaterialKind() =~ /al/i ) {
+	# If AL or pcbthick is smaller than 600
+	if ( $defaultInfo->GetMaterialKind() =~ /al/i || $defaultInfo->GetPcbThick() < 600) {
 
 		$scoringType = ScoEnums->Type_ONEDIR;
 	}
