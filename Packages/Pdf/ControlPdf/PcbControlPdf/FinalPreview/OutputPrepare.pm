@@ -643,7 +643,7 @@ sub __OptimizeLayers {
 	push( @coord, \%p4 );
 
 	# frame 100µm width around pcb (fr frame coordinate)
-	CamSymbol->AddPolyline( $self->{"inCAM"}, \@coord, "r10", "positive" );
+	CamSymbol->AddPolyline( $self->{"inCAM"}, \@coord, "r10", "positive", 1 );
 
 	# copy border to all output layers
 

@@ -746,7 +746,7 @@ sub __OptimizeLayers {
 	push( @coord, \%p4 );
 
 	# frame 100µm width around pcb (fr frame coordinate)
-	CamSymbol->AddPolyline( $self->{"inCAM"}, \@coord, "r10", "positive" );
+	CamSymbol->AddPolyline( $self->{"inCAM"}, \@coord, "r10", "positive", 1 );
 
 	# copy border to all output layers
 
@@ -800,7 +800,7 @@ sub __DrawDashedRect {
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
 
-	CamSymbol->AddPolyline( $self->{"inCAM"}, \@coord, "r$outline", "positive" );
+	CamSymbol->AddPolyline( $self->{"inCAM"}, \@coord, "r$outline", "positive", 1 );
 	$outline = $outline * 2 / 1000;
 
 	for ( my $i = 0 ; $i < scalar(@coord) ; $i++ ) {

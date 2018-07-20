@@ -34,7 +34,7 @@ sub new {
 	#my $filmRuleSet2 = shift;
 	my $rowHeight    = 20;
 
-	my $self = $class->SUPER::new( $parent, $layer->{"gROWname"}, $rowHeight );
+	my $self = $class->SUPER::new( -1, $parent, $layer->{"gROWname"}, $rowHeight );
 
 	bless($self);
 

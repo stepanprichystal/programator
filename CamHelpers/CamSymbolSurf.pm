@@ -19,12 +19,12 @@ use aliased 'Enums::EnumsPaths';
 #-------------------------------------------------------------------------------------------#
 
 sub AddSurfaceCircle {
-	my $self    = shift;
-	my $inCAM   = shift;
-	my $radius  = shift;
-	my $centerP = shift;
-	my $pattern = shift;
-	my $polarity = shift;  
+	my $self     = shift;
+	my $inCAM    = shift;
+	my $radius   = shift;
+	my $centerP  = shift;
+	my $pattern  = shift;
+	my $polarity = shift;
 
 	# if pattern is not defined, use solid pattern
 	unless ($pattern) {
@@ -34,16 +34,13 @@ sub AddSurfaceCircle {
 	$polarity = defined $polarity ? $polarity : 'positive';
 
 	$inCAM->COM( "add_surf_strt", "surf_type" => "feature" );
-	
-	$inCAM->COM( "add_surf_poly_strt", "x" =>$centerP->{"x"} + $radius, "y" => $centerP->{"y"} );
+
+	$inCAM->COM( "add_surf_poly_strt", "x" => $centerP->{"x"} + $radius, "y" => $centerP->{"y"} );
 
 	$inCAM->COM( "add_surf_poly_crv", "xc" => $centerP->{"x"}, "yc" => $centerP->{"y"}, "xe" => $centerP->{"x"} + $radius, "ye" => $centerP->{"y"} );
 
-	 
 	$inCAM->COM("add_surf_poly_end");
 	$inCAM->COM( "add_surf_end", "polarity" => $polarity, "attributes" => "no" );
-
-	
 
 }
 
@@ -97,16 +94,18 @@ sub AddSurfaceSolidPattern {
 	}
 
 	$outline_invert = $outline_invert ? "yes" : 'no';
-
 	$inCAM->COM(
 				 "add_surf_fill",
-				 "type"                    => "predefined_pattern",
-				 "cut_prims"               => "no",
-				 "outline_draw"            => $outline_draw,
-				 "outline_width"           => $outline_width,
-				 "outline_invert"          => $outline_invert,
-				 "predefined_pattern_type" => "solid"
+				 "type"           => "solid",
+				 "solid_type"     => "surface",
+				 "min_brush"      => "25.4",
+				 "use_arcs"       => "yes",
+				 "cut_prims"      => "no",
+				 "outline_draw"   => $outline_draw,
+				 "outline_width"  => $outline_width,
+				 "outline_invert" => $outline_invert
 	);
+
 }
 
 sub AddSurfaceLinePattern {
@@ -140,6 +139,39 @@ sub AddSurfaceLinePattern {
 				 "lines_witdh"             => $lines_width,
 				 "lines_dist"              => $lines_dist
 	);
+}
+
+# Surface symbol patter
+sub AddSurfaceSymbolPattern {
+	my $self           = shift;
+	my $inCAM          = shift;
+	my $outline_draw   = shift;
+	my $outline_width  = shift // 0;    # outline width in µm
+	my $outline_invert = shift;
+	my $cut_prims      = shift;
+	my $symbol         = shift;
+	my $dx             = shift;
+	my $dy             = shift;
+
+	$outline_draw   = $outline_draw   ? "yes" : 'no';
+	$outline_invert = $outline_invert ? "yes" : 'no';
+	$cut_prims      = $cut_prims      ? "yes" : 'no';
+ 
+	$inCAM->COM(
+				 'add_surf_fill',
+				 "type"           => "pattern",
+				 "symbol"         => $symbol,
+				 "dx"             => $dx,
+				 "dy"             => $dy,
+				 "x_off"          => "0",
+				 "y_off"          => "0",
+				 "break_partial"  => "yes",
+				 "cut_prims"      => $cut_prims,
+				 "outline_draw"   => $outline_draw,
+				 "outline_width"  => $outline_width,
+				 "outline_invert" => $outline_invert,
+	);
+
 }
 
 # surface cross_hatch pattern
@@ -185,6 +217,120 @@ sub SurfaceCrossHatchPattern {
 	);
 }
 
+
+
+sub AddSurfaceFillSolid {
+	my $self  = shift;
+	my $inCAM = shift;
+
+	# solid pattern parameters
+	my $outline_draw   = shift;
+	my $outline_width  = shift;        # outline width in µm
+	my $outline_invert = shift // 0;
+
+	$outline_draw   = $outline_draw   ? "yes" : 'no';
+	$outline_invert = $outline_invert ? "yes" : 'no';
+
+	# surface fill parameters
+	my $step_margin_x = shift;
+	my $step_margin_y = shift;
+	my $sr_margin_x   = shift;
+	my $sr_margin_y   = shift;
+	my $consider_feat = shift;
+	my $feat_margin   = shift;
+
+	my $polarity = shift // "positive";    #
+
+	$consider_feat = $consider_feat ? "yes" : 'no';
+
+	$inCAM->COM(
+		"sr_fill",
+		"type"           => "solid",
+		"solid_type"     => "surface",
+		"min_brush"      => "25.4",
+		"use_arcs"       => "no",
+		"cut_prims"      => "no",
+		"outline_draw"   => $outline_draw,
+		"outline_width"  => $outline_width,
+		"outline_invert" => $outline_invert,
+		"polarity"       => $polarity,
+		"step_margin_x"  => $step_margin_x,
+		"step_margin_y"  => $step_margin_y,
+
+		"sr_margin_x"   => $sr_margin_x,
+		"sr_margin_y"   => $sr_margin_y,
+		"sr_max_dist_x" => "0",
+		"sr_max_dist_y" => "0",
+		"nest_sr"       => "yes",
+		"consider_feat" => $consider_feat,
+		"feat_margin"   => $feat_margin,
+
+		"dest"  => "affected_layers",
+		"layer" => ".affected"
+	);
+
+}
+
+sub AddSurfaceFillSymbol {
+	my $self  = shift;
+	my $inCAM = shift;
+
+	# solid pattern parameters
+
+	my $outline_draw   = shift;
+	my $outline_width  = shift;        # outline width in µm
+	my $outline_invert = shift // 0;
+	
+	my $symbol         = shift;
+	my $dx             = shift;
+	my $dy             = shift;
+
+	$outline_draw   = $outline_draw   ? "yes" : 'no';
+	$outline_invert = $outline_invert ? "yes" : 'no';
+
+	# surface fill parameters
+	my $step_margin_x = shift;
+	my $step_margin_y = shift;
+	my $sr_margin_x   = shift;
+	my $sr_margin_y   = shift;
+	my $consider_feat = shift;
+	my $feat_margin   = shift;
+
+	my $polarity = shift // "positive";    #
+
+	$consider_feat = $consider_feat ? "yes" : 'no';
+
+	$inCAM->COM(
+		"sr_fill",
+		"type"           => "pattern",
+		"symbol"         => $symbol,
+		"dx"             => $dx,
+		"dy"             => $dy,
+		"x_off"          => "0",
+		"y_off"          => "0",
+		"break_partial"  => "yes",
+		"cut_prims"      => "no",
+		"outline_draw"   => $outline_draw,
+		"outline_width"  => $outline_width,
+		"outline_invert" => $outline_invert,
+		"polarity"       => $polarity,
+		"step_margin_x"  => $step_margin_x,
+		"step_margin_y"  => $step_margin_y,
+
+		"sr_margin_x"   => $sr_margin_x,
+		"sr_margin_y"   => $sr_margin_y,
+		"sr_max_dist_x" => "0",
+		"sr_max_dist_y" => "0",
+		"nest_sr"       => "yes",
+		"consider_feat" => $consider_feat,
+		"feat_margin"   => $feat_margin,
+
+		"dest"  => "affected_layers",
+		"layer" => ".affected"
+	);
+
+}
+
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#
@@ -193,7 +339,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	use aliased 'CamHelpers::CamSymbolSurf';
 	use aliased 'Packages::InCAM::InCAM';
 
-	my $jobName   = "f13608";
+	my $jobName   = "d152456";
 	my $layerName = "c";
 
 	my $inCAM = InCAM->new();
@@ -212,19 +358,20 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	#	CamSymbol->AddTable( $inCAM, \%pos, \@colWidths, 10, 5, 2, \@rows );
 	#
 	#	my %posTitl = ( "x" => 0, "y" => scalar(@rows) * 10 + 5 );
-	#	CamSymbol->AddText( $inCAM, "Tool depths definition", \%posTitl, 6, 1 );
 
-	my @points = ();
-	my %point1 = ( "x" => 0, "y" => 0 );
-	my %point2 = ( "x" => 100, "y" => 0 );
-	my %point3 = ( "x" => 100, "y" => 100 );
-	my %point4 = ( "x" => 0, "y" => 100 );
+#	my @points = ();
+#	my %point1 = ( "x" => 0, "y" => 0 );
+#	my %point2 = ( "x" => 100, "y" => 0 );
+#	my %point3 = ( "x" => 100, "y" => 100 );
+#	my %point4 = ( "x" => 0, "y" => 100 );
+#
+#	@points = ( \%point1, \%point2, \%point3, \%point4 );
+#
+#	CamSymbolSurf->AddSurfaceLinePattern( $inCAM, 1, 100, undef, 45, 50, 1000 );
 
-	@points = ( \%point1, \%point2, \%point3, \%point4 );
-
-	CamSymbolSurf->AddSurfaceLinePattern( $inCAM, 1, 100, undef, 45, 50, 1000 );
-
-	CamSymbolSurf->AddSurfacePolyline( $inCAM, \@points, 1 )
+	CamSymbolSurf->AddSurfaceFillSymbol( $inCAM, 0, 0, 0, "r50", "2", "2", 0,0,0,0,1,0   );
+	
+	
 
 }
 

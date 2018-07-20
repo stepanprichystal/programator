@@ -23,9 +23,10 @@ use aliased 'Packages::Events::Event';
 #-------------------------------------------------------------------------------------------#
 
 sub new {
-	my $class  = shift;
-	my $parent = shift;
-	my $pageId = shift;
+	my $class     = shift;
+	my $parent    = shift;
+	my $pageId    = shift;
+	my $scrolling = shift;
 
 	my $self = $class->SUPER::new( $parent, -1, );
 
@@ -34,8 +35,9 @@ sub new {
 	# Items references
 
 	# PROPERTIES
-	$self->{"pageId"}  = $pageId;
-	$self->{"content"} = undef;     #reference to page content
+	$self->{"pageId"}    = $pageId;
+	$self->{"content"}   = undef;        #reference to page content
+	$self->{"scrolling"} = $scrolling;
 
 	$self->__SetLayout();
 
@@ -45,11 +47,9 @@ sub new {
 	return $self;
 }
 
-
-
 sub RefreshContent {
 	my $self = shift;
-	
+
 	$self->Layout();
 
 	$self->{"scrollPnl"}->FitInside();
@@ -57,10 +57,7 @@ sub RefreshContent {
 	my $s      = $self->{"containerSz"}->GetSize();
 	my $height = $s->GetHeight();
 
-	 
-
 	$self->{"scrollPnl"}->SetRowCount( $height / 10 );
-
 
 }
 
@@ -88,62 +85,88 @@ sub AddContent {
 
 	$self->{"content"} = $content;
 
-
 	$self->{"containerSz"}->Add( $content, 1, &Wx::wxEXPAND | &Wx::wxALL, 0 );
 
-	$self->{"scrollPnl"}->FitInside();
+	if ( $self->{"scrolling"} ) {
+		
+		$self->{"scrollPnl"}->FitInside();
 
-	$self->{"scrollPnl"}->Layout();
+		$self->{"scrollPnl"}->Layout();
 
-	my ( $width, $height ) = $self->{"containerPnl"}->GetSizeWH();
- 
-	$self->{"scrollPnl"}->SetRowCount( $height / 10 );
+		my ( $width, $height ) = $self->{"containerPnl"}->GetSizeWH();
+
+		$self->{"scrollPnl"}->SetRowCount( $height / 10 );
+	}else{
+		$self->{"containerPnl"}->Layout();
+	}
+	
+	
 
 }
-
 
 sub __SetLayout {
 	my $self = shift;
 
-	my $szMain = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
-
 	$self->SetBackgroundColour( Wx::Colour->new( 150, 0, 0 ) );
 
 	# DEFINE SIZERS
-
-	my $scrollSizer = Wx::BoxSizer->new(&Wx::wxVERTICAL);
+	my $szMain      = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
 	my $containerSz = Wx::BoxSizer->new(&Wx::wxVERTICAL);
 
 	# DEFINE PANELS
+	my $containerPnl;
 
-	my $rowHeight = 10;
-	my $scrollPnl = MyWxScrollPanel->new( $self, $rowHeight, );
+	if ( $self->{"scrolling"} ) {
 
-	my $containerPnl = Wx::Panel->new( $scrollPnl, -1, );
+		# DEFINE SIZERS
+		my $scrollSizer = Wx::BoxSizer->new(&Wx::wxVERTICAL);
+
+		my $rowHeight = 10;
+		my $scrollPnl = MyWxScrollPanel->new( $self, $rowHeight, );
+
+		$containerPnl = Wx::Panel->new( $scrollPnl, -1, );
+
+		
+
+		#$scrollSizer->Layout();
+
+		# BUILD LAYOUT STRUCTURE
+
+		#set sizers
+
+		$scrollPnl->SetSizer($scrollSizer);
+
+		# addpanel to siyers
+		$scrollSizer->Add( $containerPnl, 1, &Wx::wxEXPAND );
+		$szMain->Add( $scrollPnl, 1, &Wx::wxEXPAND );
+
+		# SET EVENTS
+		Wx::Event::EVT_PAINT( $scrollPnl, sub { $self->__OnScrollPaint(@_) } );
+
+		$self->{"scrollPnl"}   = $scrollPnl;
+		$self->{"scrollSizer"} = $scrollSizer;
+
+	}
+	else {
+
+		$containerPnl = Wx::Panel->new( $self, -1, );
+
+		
+		# BUILD LAYOUT STRUCTURE
+		
+		$szMain->Add( $containerPnl, 1, &Wx::wxEXPAND );
+
+	}
 
 	$containerPnl->SetBackgroundColour( Wx::Colour->new( 0, 255, 0 ) );
 
-	#$scrollSizer->Layout();
-
 	# BUILD LAYOUT STRUCTURE
-
-	#set sizers
 	$containerPnl->SetSizer($containerSz);
-	$scrollPnl->SetSizer($scrollSizer);
-
-	# addpanel to siyers
-	$scrollSizer->Add( $containerPnl, 1, &Wx::wxEXPAND );
-	$szMain->Add( $scrollPnl, 1, &Wx::wxEXPAND );
 	$self->SetSizer($szMain);
 
-	# SET EVENTS
-	Wx::Event::EVT_PAINT( $scrollPnl, sub { $self->__OnScrollPaint(@_) } );
-
-	$self->{"scrollPnl"}    = $scrollPnl;
-	$self->{"scrollSizer"}  = $scrollSizer;
 	$self->{"containerSz"}  = $containerSz;
 	$self->{"containerPnl"} = $containerPnl;
-	$self->{"szMain"} = $szMain;
+	$self->{"szMain"}       = $szMain;
 }
 
 sub __OnScrollPaint {

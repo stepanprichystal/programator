@@ -61,7 +61,7 @@ sub AddItemToQueue {
 
 	push( @{ $self->{"jobItems"} }, $item );
 
-	$self->{"containerSz"}->Add( $item, 0, &Wx::wxEXPAND | &Wx::wxALL, $self->{"itemGap"} );
+	$self->{"containerSz"}->Add( $item, 0, &Wx::wxEXPAND | &Wx::wxBOTTOM, $self->{"itemGap"} );
 
 	$self->__RenumberItems();
 
@@ -218,7 +218,7 @@ sub __SetLayout {
 
 	my $containerPnl = Wx::Panel->new( $scrollPnl, -1, );
 
-	$containerPnl->SetBackgroundColour( Wx::Colour->new( 230, 230, 230 ) );
+	$containerPnl->SetBackgroundColour( Wx::Colour->new( 255, 255, 255 ) );
 
 	#$scrollSizer->Layout();
 

@@ -426,7 +426,7 @@ sub __PutFrameAorundPcb {
 	push( @coord, \%p4 );
 
 	# frame 100µm width around pcb (fr frame coordinate)
-	CamSymbol->AddPolyline( $self->{"inCAM"}, \@coord, "r100", "positive" );
+	CamSymbol->AddPolyline( $self->{"inCAM"}, \@coord, "r100", "positive", 1 );
 }
 
 # Create special step, which IPC will be exported from

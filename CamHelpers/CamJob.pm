@@ -12,6 +12,7 @@ package CamHelpers::CamJob;
 
 use strict;
 use warnings;
+use List::Util qw[max min];
 
 #loading of locale modules
 
@@ -210,6 +211,41 @@ sub GetJobPcbClassInner {
 
 	return $info{"pcb_class_inner"};
 
+}
+
+# Return max or min pcb classs from outer and inner pcb class
+sub GetLimJobPcbClass {
+	my $self  = shift;
+	my $inCAM = shift;
+	my $jobId = shift;
+	my $lim   = shift;    # max/min
+
+	my @classes = ();
+
+	push( @classes, $self->GetJobPcbClass( $inCAM, $jobId ) );
+
+	if ( $self->GetSignalLayerCnt( $inCAM, $jobId ) > 2 ) {
+
+		my $inner = $self->GetJobPcbClassInner( $inCAM, $jobId );
+
+		if ( defined $inner && $inner > 0 ) {
+
+			push( @classes, $inner );
+		}
+	}
+
+	my $resPcbClass = undef;
+
+	if ( $lim eq "max" ) {
+
+		$resPcbClass = max(@classes);
+	}
+	elsif ( $lim eq "min" ) {
+
+		$resPcbClass = min(@classes);
+	}
+
+	return $resPcbClass;
 }
 
 #Create layer
@@ -584,16 +620,11 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId = "f52457";
+	my $jobId = "d152456";
 
-	my $user = undef;
+	my $lim = CamJob->GetLimJobPcbClass( $inCAM, $jobId, "max" );
 
-	while (1) {
-		my @list = CamJob->GetJobList($inCAM);
-
-		print @list . "\n";
-
-	}
+	print $lim
 
 }
 

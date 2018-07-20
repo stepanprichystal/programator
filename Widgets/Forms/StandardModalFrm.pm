@@ -17,6 +17,7 @@ use Wx;
 
 use aliased 'Widgets::Forms::MyWxFrame';
 use Widgets::Style;
+use aliased 'Managers::MessageMngr::MessageMngr';
 
 #tested form
 
@@ -56,6 +57,8 @@ sub new {
 
 	# Properties
 	$self->{"btnHeight"} = 30;
+	
+	$self->{"messMngr"} = MessageMngr->new($title, $self); # standard message mngr
 
 	return $self;
 }
@@ -77,8 +80,9 @@ sub SetButtonHeight {
 sub AddContent {
 	my $self    = shift;
 	my $content = shift;
+	my $margin = shift // 4; # default margin 4 px 
 
-	$self->{"szContainer"}->Add( $content, 1, &Wx::wxEXPAND | &Wx::wxALL, 4 );
+	$self->{"szContainer"}->Add( $content, 1, &Wx::wxEXPAND | &Wx::wxALL, $margin );
 }
 
 sub AddButton {
@@ -102,6 +106,12 @@ sub AddButton {
 
 	$self->Layout();
 
+}
+
+sub _GetMessageMngr{
+	my $self      = shift;
+	
+	return $self->{"messMngr"};
 }
 
 

@@ -7,7 +7,6 @@
 
 package Widgets::Forms::CustomControlList::ControlListColumn;
 
-
 #3th party library
 use strict;
 use warnings;
@@ -24,19 +23,16 @@ use Widgets::Style;
 
 sub new {
 
-	 my  $class = shift;
-	 
+	my $class = shift;
 
 	#my $self = $class->SUPER::new( &Wx::wxVERTICAL );
 
 	my $self = {};
 	bless($self);
 
-	 $self->{"parent"} = shift;
-	$self->{"width"} = shift;
-	
-
-	
+	$self->{"parent"} = shift;
+	$self->{"width"}  = shift;
+	$self->{"rowTopBotMargin"} = shift;
 
 	$self->__SetLayout();
 
@@ -49,14 +45,11 @@ sub new {
 	return $self;
 }
 
-
 sub GetSizer {
 	my $self = shift;
 
 	return $self->{"szMain"};
 }
-
- 
 
 # Move last GroupWrapperForm in column to next column
 sub MoveNextGroup {
@@ -138,14 +131,13 @@ sub AppendNewGroup {
 
 # Append GroupWrapperForm from bot
 sub AddCell {
-	my $self  = shift;
+	my $self = shift;
 	my $cell = shift;
  
-# 
-	$self->{"sizerCells"}->Add( $cell, 0, &Wx::wxEXPAND |&Wx::wxALL, 1);
+	
+	$self->{"sizerCells"}->Add( $cell, 0, &Wx::wxEXPAND | &Wx::wxTOP |  &Wx::wxBOTTOM, $self->{"rowTopBotMargin"} );
 	$self->{"sizerCells"}->Layout();
 }
-
 
 # Return actual height of all GroupWrapperForms (thus whole column)
 sub GetHeight {
@@ -158,10 +150,8 @@ sub GetHeight {
 	my $s         = $self->{"sizerGroup"}->GetSize();
 	my $colHeight = $s->GetHeight();
 
-
 	return $colHeight;
 }
-
 
 sub __SetLayout {
 	my $self = shift;
@@ -202,12 +192,11 @@ sub __GetChildCnt {
 #-------------------------------------------------------------------------------------------#
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
+
 	#my $test = Programs::Exporter::ExportChecker::Forms::GroupTableForm->new();
 
 	#$test->MainLoop();
 }
-
- 
 
 1;
 

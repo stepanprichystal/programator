@@ -44,6 +44,13 @@ sub Add{
 	}
 }
 
+sub RemoveAll{
+	my $self = shift; 
+	my $subRef = shift;
+	
+	$self->{"subs"} = [];
+}
+
 
 sub Handlers{
 	my $self = shift; 

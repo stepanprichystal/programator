@@ -392,6 +392,30 @@ sub RenameStep {
 	);
 }
 
+# Create new step
+sub CreateStep {
+	my $self     = shift;
+	my $inCAM    = shift;
+	my $jobId    = shift;
+	my $stepName = shift;
+
+	if ( !CamHelper->StepExists( $inCAM, $jobId, $stepName ) ) {
+		$inCAM->COM(
+					 'create_entity',
+					 "job"   => $jobId,
+					 "name"  => $stepName,
+					 "is_fw" => 'no',
+					 "type"  => 'step'
+		);
+
+		return 1;
+	}
+	else {
+		return 0;
+	}
+
+}
+
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#

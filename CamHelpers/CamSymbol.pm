@@ -18,15 +18,67 @@ use aliased 'CamHelpers::CamAttributes';
 #-------------------------------------------------------------------------------------------#
 #   Package methods
 #-------------------------------------------------------------------------------------------#
-
+#sub AddText {
+#	my $self       = shift;
+#	my $inCAM      = shift;
+#	my $text       = shift;
+#	my $position   = shift;
+#	my $textHeight = shift;    # font size in mm
+#	my $lineWidth  = shift;    # font size in mm
+#
+#	# optional
+#	my $mirror   = shift;
+#	my $polarity = shift;
+#	my $angle    = shift;
+#
+#	if ($mirror) {
+#		$mirror = "yes";
+#	}
+#	else {
+#		$mirror = "no";
+#	}
+#
+#	unless ($polarity) {
+#		$polarity = "positive";
+#	}
+#
+#	unless ($angle) {
+#		$angle = 0;
+#	}
+#
+#	$inCAM->COM(
+#				 "add_text",
+#				 "type"      => "string",
+#				 "polarity"  => $polarity,
+#				 "x"         => $position->{"x"},
+#				 "y"         => $position->{"y"},
+#				 "text"      => $text,
+#				 "fontname"  => "standard",
+#				 "height"    => $textHeight,
+#				 "style"     => "regular",
+#				 "width"     => "normal",
+#				 "mirror"    => $mirror,
+#				 "angle"     => $angle,
+#				 "direction" => "ccw",
+#				 "w_factor"  => $lineWidth,
+#				 "attributes"  => 'yes',
+##				 "x_size"    => $textHeight,
+##				 "y_size"    => $textWidth
+#	);
+#
+#
+#
+#
+#}
 #Return hash, kyes are "top"/"bot", values are 0/1
 sub AddText {
 	my $self       = shift;
 	my $inCAM      = shift;
 	my $text       = shift;
 	my $position   = shift;
-	my $textHeight = shift;    # font size in mm
-	my $lineWidth  = shift;    # font size in mm
+	my $textHeight = shift;                   # char height in mm
+	my $textWidth  = shift // $textHeight;    # char width in mm (default same as height)
+	my $lineWidth  = shift;                   # text lines width mm
 
 	# optional
 	my $mirror   = shift;
@@ -49,22 +101,26 @@ sub AddText {
 	}
 
 	$inCAM->COM(
-				 "add_text",
-				 "type"      => "string",
-				 "polarity"  => $polarity,
-				 "x"         => $position->{"x"},
-				 "y"         => $position->{"y"},
-				 "text"      => $text,
-				 "fontname"  => "standard",
-				 "height"    => $textHeight,
-				 "style"     => "regular",
-				 "width"     => "normal",
-				 "mirror"    => $mirror,
-				 "angle"     => $angle,
-				 "direction" => "ccw",
-				 "w_factor"  => $lineWidth,
-				 attributes => 'yes'
+		"add_text",
+		"type"       => "string",
+		"polarity"   => $polarity,
+		"x"          => $position->{"x"},
+		"y"          => $position->{"y"},
+		"text"       => $text,
+		"fontname"   => "standard",
+		"height"     => $textHeight,
+		"style"      => "regular",
+		"width"      => "normal",
+		"mirror"     => $mirror,
+		"angle"      => $angle,
+		"direction"  => "ccw",
+		"w_factor"   => $lineWidth,
+		"attributes" => 'yes',
+
+		#				 "x_size"    => $textHeight,
+		#				 "y_size"    => $textWidth
 	);
+
 }
 
 sub AddPolyline {
@@ -72,7 +128,8 @@ sub AddPolyline {
 	my $inCAM    = shift;
 	my @coord    = @{ shift(@_) };    #hash x, y
 	my $symbol   = shift;
-	my $polarity = shift;             #
+	my $polarity = shift;
+	my $closePolygon = shift;
 
 	if ( scalar(@coord) < 3 ) {
 		die "Polyline has to have at lest 3 coordinates.\n";
@@ -85,8 +142,10 @@ sub AddPolyline {
 		$inCAM->COM( "add_polyline_xy", "x" => $c->{"x"}, "y" => $c->{"y"} );
 	}
 
-	#last is frst
-	$inCAM->COM( "add_polyline_xy", "x" => $coord[0]->{"x"}, "y" => $coord[0]->{"y"} );
+	if($closePolygon){
+		$inCAM->COM( "add_polyline_xy", "x" => $coord[0]->{"x"}, "y" => $coord[0]->{"y"} );
+	}
+	
 	$inCAM->COM(
 				 "add_polyline_end",
 				 "polarity"      => $polarity,
@@ -122,7 +181,6 @@ sub AddLine {
 				   "polarity" => $polarity
 	  );
 }
- 
 
 sub AddPad {
 	my $self     = shift;
@@ -131,6 +189,10 @@ sub AddPad {
 	my $pos      = shift;    #hash x, y
 	my $mirror   = shift;
 	my $polarity = shift;    #
+	my $angle = shift // 0;
+	my $resize = shift // 0;
+	my $xscale = shift // 1;
+	my $yscale = shift // 1;
 
 	$polarity = defined $polarity ? $polarity : 'positive';
 
@@ -145,16 +207,16 @@ sub AddPad {
 	  $inCAM->COM(
 				   "add_pad",
 				   "attributes" => 'yes',
-				   "symbol"    => $symbol,
-				   "polarity"  => $polarity,
-				   "x"         => $pos->{"x"},
-				   "y"         => $pos->{"y"},
-				   "mirror"    => $mirror,
-				   "angle"     => "0",
-				   "direction" => "ccw",
-				   "resize"    => "0",
-				   "xscale"    => "1",
-				   "yscale"    => "1"
+				   "symbol"     => $symbol,
+				   "polarity"   => $polarity,
+				   "x"          => $pos->{"x"},
+				   "y"          => $pos->{"y"},
+				   "mirror"     => $mirror,
+				   "angle"      => $angle,
+				   "direction"  => "ccw",
+				   "resize"     => $resize,
+				   "xscale"     => $xscale,
+				   "yscale"     => $yscale
 	  );
 }
 

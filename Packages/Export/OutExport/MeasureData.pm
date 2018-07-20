@@ -84,7 +84,7 @@ sub Output {
 		
 		CamLayer->WorkLayer( $inCAM, $l );
 		
-		CamSymbol->AddText( $inCAM, "Pcb id: $jobId", \%positionInf, 2, 0.5 );
+		CamSymbol->AddText( $inCAM, "Pcb id: $jobId", \%positionInf, 2, undef, 0.5 );
 	}
  
 	$self->__OutputPdf(\@layersOut);

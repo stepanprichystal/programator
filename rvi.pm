@@ -1,35 +1,62 @@
-#!/usr/bin/perl -w
+# Global coupon settings
 
-#3th party library
-use strict;
-use warnings;
-use Win32::Service;
-use Config;
-use Win32::Process;
-use Log::Log4perl qw(get_logger);
+stepName           = coupon      # default step name
+  padClearance     = 80          #µm
+  pad2GNDClearance = 120         #µm
+  padTrackSize     = 1524        #µm
+  padGNDSize       = 1524        #µm
+  padTrackShape    = s    #µm
+padGNDShape 	 = r     #µm
+padGNDSymNeg = thr2000x1800x0x4x203    #µm
+  padDrillSize      = 1050             #µm
+  trackPad2GNDPad   = 2540             # µm
+  trackPad2TrackPad = 2540             # µm
+  trackPadIsolation = 100              # µm
+  trackToCopper     = 400              # µm
 
-#use lib qw( C:\Perl\site\lib\TpvScripts\Scripts );
+  cpnSingleWidth = 130                 # mm
 
-#necessary for load pall packages
-use FindBin;
-use lib "$FindBin::Bin/../";
-use PackagesLib;
+  marginSingle   = 2000                # µm
+  marginCoupon   = 2000                # µm
+  couponSpace    = 1000                # µm
+  groupPadsDist  = 4000                # µm
+  twoEndedDesign = 1
 
-use aliased 'Programs::Exporter::ExportUtility::RunExport::RunExportUtility';
-use aliased 'Helpers::GeneralHelper';
-use aliased 'Connectors::HeliosConnector::HegMethods';
-use aliased 'Packages::Other::CustomerNote';
-use aliased 'Enums::EnumsDrill';
+  # pool settings
+  maxTrackCnt = 5                      # two track per measurement layer in group
+  poolCnt = 2 maxStripsCntH = 3 shareGNDPads = 1 routeBetween = 1 routeBelow = 1 routeAbove = 1 routeStraight = 1
 
-my $jobId = "d152457";
+  # Info text settings
 
-my $customerNote = CustomerNote->new( HegMethods->GetCustomerInfo($jobId)->{"reference_subjektu"} );
+  infoTextWidth = 1 infoTextHeight = 1 infoTextWeight = 0.2 padsTopTextDist = 2    # mm
+  infoTextRightCpnDist   = 1                                                       #mm
+  infoText               = 1                                                       # 1/0
+  infoTextPosition       = right                                                   # top/right
+  infoTextNumber         = 1                                                       # 1/0 numberingo of strips
+  infoTextTrackImpedance = 1                                                       # 1/0
+  infoTextTrackWidth     = 1                                                       # 1/0
+  infoTextTrackLayer     = 1                                                       # 1/0
+  infoTextTrackSpace     = 1                                                       # 1/0
+  infoTextHSpacing       = 1                                                       #
+  infoTextVSpacing       = 1                                                       #
 
-# Vraci jednu ze tri hodnot
+  # Track pad text settings
 
-# undef
-# EnumsDrill->DTM_VRTANE
-# EnumsDrill->DTM_VYSLEDNE
- 
-print $customerNote->PlatedHolesType();
+  padTextWidth = 0.8 padTextHeight = 0.7 padTextWeight = 0.2 padTextDist = 0.15    # mm
+  padText = 1                                                                      # 1/0
+  padTextUnmask = 1 padTextClearance = 100                                         #µm
 
+  # Guard tracks settings
+
+  guardTracks          = 1                                                         # 1/0
+  guardTracksType      = single                                                    # single - single lines, full - fill whole area except pads area
+  guardTrack2TrackDist = 0.25                                                      #mm
+  guardTrack2PadDist   = 0.4                                                       #mm
+  guardTrackWidth      = 200                                                       # µm
+
+  # General shielding for signal layers
+  shieldingType = symbol                                                           # symbol/solid
+
+  shieldingSymbol   = r50                                                          # µm incam symbol
+  shieldingSymbolDX = 250                                                          # µm
+  shieldingSymbolDY = 250                                                          # µm

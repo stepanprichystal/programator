@@ -417,6 +417,13 @@ sub GetExceptionsError {
 	return \@exceptions;
 }
 
+# Return port which InCAM libary working with
+sub GetPort{
+	my ($self) = shift;
+	
+	return $self->{"port"};
+}
+
 # Return if InCAM library is connected to server or to InCAM editor
 sub IsConnected {
 	my ($self) = shift;

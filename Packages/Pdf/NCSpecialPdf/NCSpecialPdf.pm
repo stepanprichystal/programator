@@ -266,10 +266,10 @@ sub __ProcessOther {
 		CamSymbol->AddLine( $inCAM, Point->new( 0, $yPos - 4 ), Point->new( length($txt) * 3, $yPos - 4 ), "r300" );
 
 		if ( $l->{"plated"} ) {
-			CamSymbol->AddText( $inCAM, "(Veskere rozmery jsou uvedeny pred prokovem)", Point->new( 0, $yPos - 8 ), 2.5, 0.5 );
+			CamSymbol->AddText( $inCAM, "(Veskere rozmery jsou uvedeny pred prokovem)", Point->new( 0, $yPos - 8 ), 2.5, undef, 0.5 );
 		}
 
-		CamSymbol->AddText( $inCAM, $txt, \%point, 3, 0.5 );
+		CamSymbol->AddText( $inCAM, $txt, \%point, 3, undef, 0.5 );
 
 	}
 }

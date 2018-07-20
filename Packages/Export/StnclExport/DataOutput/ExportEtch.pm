@@ -457,14 +457,14 @@ sub __AddSchema {
 			# Add big text
 			my %bigTextPos = ( "x" => -10, "y" => $lim{"yMax"} * 3 / 4 );
 			my $bigText = ( $lim{"xMax"} - $lim{"xMin"} ) . " x " . ( $lim{"yMax"} - $lim{"yMin"} ) . " mm";
-			CamSymbol->AddText( $inCAM, $bigText, \%bigTextPos, 4.2, 1, ($lType eq "bot" ? 1:0), "negative", 270 );
+			CamSymbol->AddText( $inCAM, $bigText, \%bigTextPos, 4.2, undef, 1, ($lType eq "bot" ? 1:0), "negative", 270 );
 			 
 
 			# Add small text
 
 			my %smallTextPos = ( "x" => $frLim{"xMin"} + 3 + ($lType eq "bot" ? -2:0), "y" => $frLim{"yMin"} + 3 );
 			my $smallText = ( $frLim{"xMax"} - $frLim{"xMin"} ) . " x " . ( $frLim{"yMax"} - $frLim{"yMin"} ) . "";
-			CamSymbol->AddText( $inCAM, $smallText, \%smallTextPos, 2, 1, ($lType eq "bot" ? 1:0), undef, 90 );
+			CamSymbol->AddText( $inCAM, $smallText, \%smallTextPos, 2, undef, 1, ($lType eq "bot" ? 1:0), undef, 90 );
 		}
 
 		# Add frame
@@ -481,7 +481,7 @@ sub __AddSchema {
 		push( @coord, \%p4 );
 
 		# frame 100µm width around pcb (fr frame coordinate)
-		CamSymbol->AddPolyline( $self->{"inCAM"}, \@coord, "r300", "positive" );
+		CamSymbol->AddPolyline( $self->{"inCAM"}, \@coord, "r300", "positive", 1  );
 
 	}
 	else {
@@ -498,7 +498,7 @@ sub __AddSchema {
 		push( @coord, \%p4 );
 
 		# frame 100µm width around pcb (fr frame coordinate)
-		CamSymbol->AddPolyline( $self->{"inCAM"}, \@coord, "r300", "positive" );
+		CamSymbol->AddPolyline( $self->{"inCAM"}, \@coord, "r300", "positive", 1 );
 	}
 
 }

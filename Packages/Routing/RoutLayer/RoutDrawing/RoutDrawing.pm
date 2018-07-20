@@ -267,7 +267,7 @@ sub DrawFootRoutResult {
 		@noFoots = map { $_->{"angle"} . " deg" } @noFoots;
 		my $str = "NOT FIND FOOTS: " . join( "; ", @noFoots );
 
-		$draw->AddPrimitive( PrimitiveText->new( $str, Point->new( 0, -20 ), 5, 2 ) );
+		$draw->AddPrimitive( PrimitiveText->new( $str, Point->new( 0, -20 ), 5, undef, 2 ) );
 	}
 
 	foreach my $foot (@foots) {
@@ -311,7 +311,7 @@ sub DrawFootRoutResult {
 		if ($drawLabel) {
 			my $txt = PrimitiveText->new( "Foot: " . $foot->{"angle"} . "deg",
 										  Point->new( $foot->{"footEdge"}->{"x2"} - 30, $foot->{"footEdge"}->{"y2"} - 10 ),
-										  2.2, 1.2 );
+										  2.2, undef, 1.2 );
 			$draw->AddPrimitive($txt);
 		}
 

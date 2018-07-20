@@ -31,6 +31,8 @@ sub new {
 	my $columnCnt    = shift;
 	my $columnWidths = shift;
 	my $verticalLine = shift;
+	my $headerTextMargin = shift // 1;
+	my $rowTopBotMargin = shift // 0; 
 
 	my $self = $class->SUPER::new( $parent, -1, &Wx::wxDefaultPosition, &Wx::wxDefaultSize);
 
@@ -40,6 +42,9 @@ sub new {
 	$self->{"columnCnt"}    = $columnCnt;
 	$self->{"columnWidth"}  = $columnWidths;
 	$self->{"verticalLine"} = $verticalLine;
+	$self->{"headerTextMargin"} = $headerTextMargin;
+	$self->{"rowTopBotMargin"} = $rowTopBotMargin;
+	 
 
 	my @columns = ();
 	$self->{"columns"} = \@columns;
@@ -66,6 +71,7 @@ sub new {
 sub SetHeader {
 	my $self   = shift;
 	my @titles = @{ shift(@_) };
+	my $fontColor = shift;
 
 	my @columnsHeader = @{ $self->{"columnsHeader"} };
 
@@ -74,10 +80,19 @@ sub SetHeader {
 
 		my $coll = $columnsHeader[$i];
 		my $tit  = $titles[$i];
+		
+		my $szTitle = Wx::BoxSizer->new(&Wx::wxVERTICAL);
+		
 
-		my $titleTxt = Wx::StaticText->new( $self, -1, $tit, [ -1, -1 ] );
+		my $titleTxt = Wx::StaticText->new( $self->{"headerPnl"}, -1, $tit, [ -1, -1 ] );
+		
+		if(defined $fontColor){
+			$titleTxt->SetForegroundColour($fontColor);
+		}
 
-		$coll->AddCell($titleTxt);
+		$szTitle->Add( $titleTxt, 0, &Wx::wxEXPAND | &Wx::wxALL, $self->{"headerTextMargin"} );
+
+		$coll->AddCell($szTitle);
 	}
 
 }
@@ -107,6 +122,9 @@ sub AddRow {
 	}
 
 }
+
+ 
+
 
 sub GetSelectedRows {
 	my $self = shift;
@@ -140,7 +158,19 @@ sub GetRowByText {
 
 }
 
-sub GetSelectedId {
+sub GetRowById {
+	my $self = shift;
+	my $id = shift;	
+	
+	foreach my $r ( grep { defined $_->GetRowId() } @{$self->{"rows"}}){
+		
+		if( $r->GetRowId() eq $id ){
+			
+			return $r;
+		}
+	}
+	
+	die "Row with id: $id doesn't exists";
 
 }
 
@@ -169,6 +199,13 @@ sub SetBodyBackgroundColor {
 	my $color = shift;
 
 	$self->{"bodyColor"} = $color;
+	
+	if ($color) {
+		$self->SetBackgroundColour($color);
+		$self->Refresh();
+	}
+	
+	
 }
 
 # Set color of select item
@@ -201,6 +238,8 @@ sub SetVerticalLine {
 	}
 
 }
+
+
 
 # Create column, for placing GroupWrappersForm
 sub __SetLayout {
@@ -241,19 +280,19 @@ sub __SetLayout {
 	for ( my $i = 0 ; $i < $self->{"columnCnt"} ; $i++ ) {
 
 		my $w         = $widths[$i];
-		my $colRows   = ControlListColumn->new( $self, $w );
-		my $colHeader = ControlListColumn->new( $self, $w );
+		my $colRows   = ControlListColumn->new( $self, $w, $self->{"rowTopBotMargin"} );
+		my $colHeader = ControlListColumn->new( $self, $w, 0);
 
-		$szColumns->Add( $colRows->GetSizer(), 0, &Wx::wxEXPAND |  &Wx::wxALL, 1);
-		$szHeader->Add( $colHeader->GetSizer(), 0, &Wx::wxEXPAND  |  &Wx::wxALL, 1 );
+		$szColumns->Add( $colRows->GetSizer(), 0, &Wx::wxEXPAND |  &Wx::wxALL, $self->{"headerTextMargin"});
+		$szHeader->Add( $colHeader->GetSizer(), 0, &Wx::wxEXPAND  |  &Wx::wxALL, $self->{"headerTextMargin"} );
 
 		# add column separator
 		#if ( $i > 0 ) {
 
 		if ( $self->{"verticalLine"} &&  $i < $self->{"columnCnt"} - 1 ) {
 
-			$szColumns->Add( $self->__GetVSeparator(), 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );    #
-			$szHeader->Add( $self->__GetVSeparator(), 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+			$szColumns->Add( $self->__GetVSeparator(), 0, &Wx::wxEXPAND | &Wx::wxALL, $self->{"headerTextMargin"} );    #
+			$szHeader->Add( $self->__GetVSeparator(), 0, &Wx::wxEXPAND | &Wx::wxALL, $self->{"headerTextMargin"} );
 		}
 
 		#}

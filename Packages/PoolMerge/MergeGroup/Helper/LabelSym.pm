@@ -74,26 +74,26 @@ sub __DefineSymbol {
 		
 		$l1 = PrimitiveLine->new( Point->new( 0, 0.3 ), Point->new( 0,   3.1 ), "r300" );
 		$l2 = PrimitiveLine->new( Point->new( 0, 3.1 ), Point->new( 2.8, 3.1 ), "r300" );
-		$txt = PrimitiveText->new( $self->{"labelText"}, Point->new( 3.5, 1.95 ), $charW, 1 );
+		$txt = PrimitiveText->new( $self->{"labelText"}, Point->new( 3.5, 1.95 ), $charW, undef, 1 );
 	}
 	elsif ( $self->{"rotation"} && !$self->{"bot"} ) {
 		
 		$l1 = PrimitiveLine->new( Point->new( -0.3 , 0 ), Point->new( -3.1,  0 ), "r300" );
 		$l2 = PrimitiveLine->new( Point->new( -3.1, 0 ), Point->new( -3.1, 2.8 ), "r300" );
-		$txt = PrimitiveText->new( $self->{"labelText"}, Point->new( -1.95, 3.5 ), $charW, 1, 0, 90 );
+		$txt = PrimitiveText->new( $self->{"labelText"}, Point->new( -1.95, 3.5 ), $charW, undef, 1, 0, 90 );
 
 	}
 	elsif ( !$self->{"rotation"} && $self->{"bot"} ) {
 
 		$l1 = PrimitiveLine->new( Point->new( 0, 0.3 ), Point->new( 0,   3.1 ), "r300" );
 		$l2 = PrimitiveLine->new( Point->new( 0, 3.1 ), Point->new( -2.8, 3.1 ), "r300" );
-		$txt = PrimitiveText->new( $self->{"labelText"}, Point->new( -3.5, 1.95 ), $charW, 1, 1, 0);
+		$txt = PrimitiveText->new( $self->{"labelText"}, Point->new( -3.5, 1.95 ), $charW, undef, 1, 1, 0);
 	}
 	elsif ( $self->{"rotation"} && $self->{"bot"} ) {
 
 		$l1 = PrimitiveLine->new( Point->new( 0.3, 0 ), Point->new( 3.1,  0 ), "r300" );
 		$l2 = PrimitiveLine->new( Point->new( 3.1, 0 ), Point->new( 3.1, 2.8 ), "r300" );
-		$txt = PrimitiveText->new( $self->{"labelText"}, Point->new( 1.95, 3.5 ), $charW, 1, 1, 90 );
+		$txt = PrimitiveText->new( $self->{"labelText"}, Point->new( 1.95, 3.5 ), $charW, undef, 1, 1, 90 );
 	}
 
 	$self->AddPrimitive($l1);

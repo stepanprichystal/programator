@@ -48,6 +48,7 @@ use constant {
 	Jobs_ARCHIVOLD   => "\\\\gatema.cz\\fs\\p\\Archiv_old\\",
 	Jobs_ARCHIVREMOVED   => "\\\\gatema.cz\\fs\\r\\Archiv_removed\\",
 	Jobs_STACKUPS => "\\\\gatema.cz\\fs\\r\\PCB\\pcb\\VV_slozeni\\",
+	Jobs_COUPONS => "\\\\gatema.cz\\fs\\r\\PCB\\pcb\\VV_InStackCoupon\\",
 	Jobs_PCBMDI   => "\\\\gatema.cz\\fs\\r\\pcb\\mdi\\",
 	Jobs_MDI      => "\\\\gatema.cz\\fs\\r\\mdi\\",
 	Jobs_JETPRINT => "\\\\gatema.cz\\fs\\r\\potisk\\",

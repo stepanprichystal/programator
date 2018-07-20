@@ -22,6 +22,7 @@ sub new {
 
 	$self->{"outline_draw"}  = shift;
 	$self->{"outline_width"} = shift;
+	$self->{"outline_invert"} = shift;
 	
 	$self->{"predefined_pattern_type"}    = "solid";
 
@@ -46,6 +47,14 @@ sub GetPredefined_pattern_type {
 
 	return $self->{"predefined_pattern_type"};
 }
+
+
+sub GetOutline_invert {
+	my $self = shift;
+
+	return $self->{"outline_invert"};
+}
+
  
 
 #-------------------------------------------------------------------------------------------#

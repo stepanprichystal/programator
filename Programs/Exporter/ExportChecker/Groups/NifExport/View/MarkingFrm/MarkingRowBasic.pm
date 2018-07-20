@@ -29,7 +29,7 @@ sub new {
 
 	my $rowHeight = 20;
 
-	my $self = $class->SUPER::new( $parent, $markingName, $rowHeight );
+	my $self = $class->SUPER::new( -1, $parent, $markingName, $rowHeight );
 
 	bless($self);
 

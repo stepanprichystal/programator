@@ -102,7 +102,7 @@ sub __DefineSymbol {
 
 	$self->AddPrimitive(
 						 PrimitiveText->new(
-											 $self->{"textValue"},  $textPos,             $self->{"textHeight"}, $self->{"textLineWidth"},
+											 $self->{"textValue"},  $textPos,             $self->{"textHeight"}, undef, $self->{"textLineWidth"},
 											 $self->{"textMirror"}, $self->{"textAngle"}, $self->GetPolarity()
 						 )
 	);

@@ -1,0 +1,358 @@
+# ======================================================================================
+# Global coupon settings
+# ======================================================================================
+
+# GENERAL SETTINGS
+# --------------------------------------------------------------------------------------
+
+[t = Step name]
+stepName   = coupon 
+
+
+# DIMENSIONS SETTINGS
+# --------------------------------------------------------------------------------------
+[t = Coupon margin]
+[h = Margin of coupon ]
+[u = µm ]
+couponMargin      = 1700               # µm
+
+[t = Group margin]
+[h = Margin of coupon group ]
+[u = µm ]
+couponSingleMargin      = 1000
+
+[t = Space between groups]
+[h = Verticall space between groups ]
+[u = µm ]  
+couponSpace       = 1000             # µm
+
+
+# LAYOUT SETTINGS
+# --------------------------------------------------------------------------------------
+
+[t = Microstrip tracks cnt / one layer ]
+[h = Maximum number of microstrip lines per one track layer. (E.g.: if max is 2 then Maximum number of misrostrip line in one track layer is 2 microstrip lines. ]
+maxTrackCnt = 4
+
+[t = Straight route]
+[h = The route can lead directly from the start track pad straight to end track pad ] 
+routeStraight = 1
+
+[t = Route between pads]
+[h = Track can be placed between GND and Track pads (if it is possible with respect of route thickness and route-pad isolation) ] 
+routeBetween = 1
+
+[t = Route below pads]
+[h = Track can be placed below Track pads (settings - route between pads has higher priority if is active) ] 
+routeBelow = 1
+
+[t = Route above pads]
+[h = Track can be placed above Track pads (settings - route between pads has higher priority if is active) ] 
+routeAbove = 1
+
+
+[t = Share GND pads]
+[h = When option is active, more microstrips can have "share" same GND pad. ] 
+shareGNDPads = 1
+
+[t = Two ended design]
+[h = Microstrip line ends with pads at both line ends  ] 
+twoEndedDesign = 1
+
+[t = Min track to pad dist]
+[h = Minimal track to pad isolation. Depand on construction class. Distance shouldn't be smaller than min track/space isolation (PCB class)]
+[u = µm ]
+ trackPadIsolation = 100					# µm
+
+# INFO TEXT SETTINGS
+# --------------------------------------------------------------------------------------
+[t = Display coupon info texts ]
+[h = Display coupon info texts]
+infoText = 1 # 1/0
+
+[t = Info texts position]
+[h = Info texts position - right OR top]
+infoTextPosition = right # top/right
+
+[t = Unmask info texts ]
+[h = Umnask info texts (if text is to thin and finish surface is HAL, do not umask)]
+infoTextUnmask = 1 # µm
+
+
+
+[t = Microstrip number]
+infoTextNumber = 1 # 1/0 numberingo of strips
+[t = Impedance value]
+infoTextTrackImpedance = 1 # 1/0
+[t = Track width]
+infoTextTrackWidth = 1 # 1/0
+[t = Track layer name]
+infoTextTrackLayer = 1 # 1/0
+[t = Space (differential tracks)]
+infoTextTrackSpace = 1 # 1/0
+ 
+
+[t = Char width]
+[u = µm ]
+infoTextWidth = 1000 # µm
+
+[t = Char height]
+[u = µm ]
+infoTextHeight = 1000 # µm
+[t = Char weight]
+[u = µm ]
+infoTextWeight = 450 #µm
+
+[t = Top text distance ]
+[h = Top text distance]
+[u = µm ]
+padsTopTextDist    = 2000                # µm
+[t = Right text distance]
+[h = Right text distance]
+[u = µm ]
+infoTextRightCpnDist = 1000 #µm
+[t = Horizontal text space]
+[h = Horizontal text space]
+[u = µm ]
+infoTextHSpacing = 1000 #µm
+[t = Vertical text space]
+[h = Vertical text space]
+[u = µm ]
+infoTextVSpacing = 500 #µm
+
+ 
+
+# TRACK PAD SETTINGS
+# --------------------------------------------------------------------------------------
+[t = Display pad text ]
+[h = Display pad text]
+padText = 1 # 1/0
+[t = Unmask pad texts ]
+[h = Umnask pad texts (if text is to thin and finish surface is HAL, do not umask)]
+padTextUnmask = 1
+
+[t = Dist from track pad ]
+[h = Minimal distance from track pad]
+padTextDist = 200 # µm
+
+[t = Char width]
+[u = µm ]
+padTextWidth = 800 #µm
+[t = Char height]
+[u = µm ]
+padTextHeight = 800 #µm
+[t = Char weight]
+[u = µm ]
+padTextWeight = 400 #µm
+
+
+
+# GENERAL SHIELDING SETTINGS
+# --------------------------------------------------------------------------------------
+[t = General shielding]
+[h = General shielding]
+shielding = 0 # 1/0
+
+[t = Shielding type]
+[h = Shielding type: Solid = fill empty places by surface. Symbol = fill empty spaces by defined symbol]
+shieldingType = symbol # symbol/solid
+
+[t = Shielding symbol]
+[h = Shielding symbol e.g: r200, s500, .... Custom symbol from inCAM]
+shieldingSymbol = r200 # µm incam symbol
+
+[t = Vertical symbols dist]
+[h = Vertical symbols dist]
+[u = µm ]
+shieldingSymbolDX = 500 # µm
+[t = Horizontal symbols dist]
+[h = Horizontal symbols dist]
+[u = µm ]
+shieldingSymbolDY = 500 # µm
+ 
+
+# GUARD TRACK SETTINGS
+# --------------------------------------------------------------------------------------
+[t = Guard tracks]
+[h = Guard tracks]
+guardTracks = 0 # 1/0
+
+[t = Guard tracks type]
+[h = Guard tracks type - Single = single lines are put along both sides of microstrip, Full - whole emptz space between microstrip lines is filled by surface]
+guardTracksType = single_line # single_line - single lines, full - fill whole area except pads area
+
+[t = Guard tracks width]
+[u = µm ]
+guardTrackWidth = 200 # µm
+
+[t = Guard to track dist]
+[h = Guard to track dist]
+[u = µm ]
+guardTrack2TrackDist = 500 #µm
+
+[t = Guard to pad dist]
+[h = Guard to pad dist]
+[u = µm ]
+guardTrack2PadDist = 350 #µm
+
+[t = Guard to shielding dist]
+[h = Guard to shielding dist]
+[u = µm ]
+guardTrack2Shielding = 400 #µm
+
+
+
+
+
+# LOGO SETTINGS
+# --------------------------------------------------------------------------------------
+[t = Logo title]
+[h = Logo + job id]
+title = 1 # 1/0
+
+[t = Unmask logo]
+[h = Umnask logo (if text is to thin and finish surface is HAL, do not umask)]
+titleUnMask = 1 # 1/0
+
+
+
+[t = Logo title type]
+[h = Logo title type: - left = Logo title is put into left frame of coupon, Top = logotitle is put into top freame of coupon]
+[u = µm ]
+titleType = left # left/top
+
+[t = Logo title margin]
+[u = µm ]
+titleMargin = 350 #µm
+
+[t = Logo to Jobid horizontal dist]
+[h = Space between gatema logo and job id (if labels are placed side by side on one line)]
+[u = µm ]
+titleLogoJobIdHDist = 1000 #µm H distance bewweeen logo and job id
+
+[t = Logo to Jobid vertical dist]
+[h = Space between gatema logo and job id (if labels are placed underneath on two lines)]
+[u = µm ]
+titleLogoJobIdVDist = 400 #µm V distance if 2rows title
+
+
+[t = Logo width on coupon]
+[u = µm ]
+logoWidth = 6000 # µm
+
+[t = Logo height on coupon]
+[u = µm ]
+logoHeight = 1300 # µm
+
+[t = Logo InCAM symbol]
+[h = Symbol from InCAM library. Do not forget spicify szmbol width + height]
+logoSymbol = gatema_logo #  
+
+[t = InCAM logo symbol width]
+[h = Specify loho width of InCAM symbol. Important set accurate values, has impact to logo scaling]
+[u = µm ]
+logoSymbolWidth = 15600 #  
+
+[t = InCAM logo symbol height]
+[h = Specify loho height of InCAM symbol. Important set accurate values, has impact to logo scaling]
+[u = µm ]
+logoSymbolHeight = 3600 # 
+
+[t = Char width]
+[u = µm ]
+titleTextWidth = 1000 # µm
+
+[t = Char height]
+[u = µm ]
+titleTextHeight = 1000 # µm
+
+[t = Char weight]
+[u = µm ]
+titleTextWeight = 400 #µm
+
+
+
+
+ 
+
+
+# ======================================================================================
+# Group settings
+# ======================================================================================
+[t = Line/coupon width]
+[h = Determines the length of the coupon lines including the measurement pads and group margins ]
+[u = mm ]
+cpnSingleWidth                 = 155   # mm
+
+[t = Max cnt of microstrip - Y axis]
+[h = Max cnt of microstrip - Y axis]
+poolCnt = 2
+
+[t = Max cnt of microstrip - X axis]
+[h = Max cnt of microstrip - X axis]
+maxStripsCntH = 8
+
+[t = Space between microstrip pads]
+[h = Space between microstrip pads]
+[u = µm ]
+groupPadsDist    = 4000                # µm
+
+
+# Pad symbol definitions
+# --------------------------------------------------------------------------------------
+
+[t = Track pad shape]
+padTrackShape    = s    #µm
+
+[t = Track pad size]
+[u =  µm]
+padTrackSize     = 1524              #µm
+
+[t = GND pad shape]
+padGNDShape 	 = r     #µm
+
+[t = GND pad size]
+[u = µm ]
+padGNDSize       = 1524              #µm
+
+[t = GND negative symbol]
+padGNDSymNeg 	 = thr2000x1800x0x4x203       #µm
+
+[t = Drill size]
+[u = µm ]
+padDrillSize      = 1050             #µm
+
+[t = Track pad 2 GND pad dist]
+[h = Track pad 2 GND pad dist]
+[u = µm ]
+trackPad2GNDPad   = 2540             # µm
+
+[t = Track pad 2 track pad dist]
+[h = Track pad 2 track pad dist]
+[u = µm ]
+trackPad2TrackPad = 2540             # µm
+
+
+
+
+# ======================================================================================
+# Microstrip settings
+# ======================================================================================
+[t = Pads to ground dist]
+[h = Pads to ground dist]
+[u = µm ]
+pad2GND = 200               #µm
+
+[t = Track to ground dist]
+[h = Track to ground dist]
+[u = µm ]
+trackToCopper = 400 # µm
+
+[t = Pad mask clearance]
+[h = Pad mask clearance]
+[u = µm ]
+padClearance 	 = 80    	#µm
+ 
+ 
+ 
+ 
