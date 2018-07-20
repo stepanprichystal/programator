@@ -42,6 +42,7 @@ sub Build {
 	my $cpnSingleLayout = shift;    # cpn single layout
 	my $layerLayout     = shift;	# layer layout
 
+
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
 
@@ -66,7 +67,7 @@ sub Build {
 			my $pTextNeg = PrimitiveSurfPoly->new(
 				\@points,
 				undef,
-				DrawEnums->Polar_NEGATIVE
+				$self->_InvertPolar(DrawEnums->Polar_NEGATIVE, $layerLayout)
 
 			);
 
@@ -79,7 +80,10 @@ sub Build {
 											$padText->GetPadTextHeight() / 1000,
 											$padText->GetPadTextWidth() / 1000,
 											$padText->GetPadTextWeight() / 1000,
-											( $layerLayout->GetMirror() ? 1 : 0 )
+											( $layerLayout->GetMirror() ? 1 : 0 ),
+											undef,
+											$self->_InvertPolar(DrawEnums->Polar_POSITIVE, $layerLayout)
+											
 			);
 
 			$self->{"drawing"}->AddPrimitive($pText);

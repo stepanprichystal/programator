@@ -51,7 +51,7 @@ sub CopyRoutToSolderMask {
 									}
 									
 									CamLayer->WorkLayer( $inCAM, $lnew );
-									CamLayer->CopySelected( $inCAM, [$s->{"mask"}], 0, $resize );
+									CamLayer->CopySelOtherLayer( $inCAM, [$s->{"mask"}], 0, $resize );
 									
 									CamLayer->ClearLayers($inCAM);
 									

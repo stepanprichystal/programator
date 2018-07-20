@@ -40,6 +40,7 @@ sub Build {
 	my $self   = shift;
 	my $layout = shift;    # microstrip layout
 	my $cpnSingleLayout = shift;    # cpn single layout
+	my $layerLayout     = shift;	# layer layout
 
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
@@ -55,8 +56,8 @@ sub Build {
 				my $symClearance =
 				  $cpnSingleLayout->GetPadGNDShape() . ( $cpnSingleLayout->GetPadGNDSize() + $layout->GetPad2GND() );
 				my $symPad = $cpnSingleLayout->GetPadGNDSym();
-				$self->{"drawing"}->AddPrimitive( PrimitivePad->new( $symClearance, $pad->GetPoint(), 0, DrawEnums->Polar_NEGATIVE ) );
-				$self->{"drawing"}->AddPrimitive( PrimitivePad->new( $symPad,       $pad->GetPoint(), 0, DrawEnums->Polar_POSITIVE ) );
+				$self->{"drawing"}->AddPrimitive( PrimitivePad->new( $symClearance, $pad->GetPoint(), 0,  $self->_InvertPolar(DrawEnums->Polar_NEGATIVE, $layerLayout)  ) );
+				$self->{"drawing"}->AddPrimitive( PrimitivePad->new( $symPad,       $pad->GetPoint(), 0, $self->_InvertPolar(DrawEnums->Polar_POSITIVE, $layerLayout) ) );
 			}
 		}
 		else {
@@ -64,8 +65,8 @@ sub Build {
 			my $symClearance =
 			  $cpnSingleLayout->GetPadTrackShape() . ( $cpnSingleLayout->GetPadTrackSize() + $layout->GetPad2GND() );
 			my $symPad = $cpnSingleLayout->GetPadTrackSym();
-			$self->{"drawing"}->AddPrimitive( PrimitivePad->new( $symClearance, $pad->GetPoint(), 0, DrawEnums->Polar_NEGATIVE ) );
-			$self->{"drawing"}->AddPrimitive( PrimitivePad->new( $symPad,       $pad->GetPoint(), 0, DrawEnums->Polar_POSITIVE ) );
+			$self->{"drawing"}->AddPrimitive( PrimitivePad->new( $symClearance, $pad->GetPoint(), 0, $self->_InvertPolar(DrawEnums->Polar_NEGATIVE, $layerLayout) ) );
+			$self->{"drawing"}->AddPrimitive( PrimitivePad->new( $symPad,       $pad->GetPoint(), 0, $self->_InvertPolar(DrawEnums->Polar_POSITIVE, $layerLayout) ) );
 		}
 
 	}

@@ -555,9 +555,10 @@ sub MirrorLayerByProfCenter {
 	$inCAM->COM( 'affected_layer', name => $layer, mode => "single", affected => "no" );
 }
 
-# Move layer data. Snapp point is left down
+# Move selected layer data. Snapp point is left down
 # Right step must be open and set
-sub MoveLayerData {
+# If nothing selected , move all in layer
+sub MoveSelSameLayer {
 	my $self        = shift;
 	my $inCAM       = shift;
 	my $layer       = shift;
@@ -567,7 +568,6 @@ sub MoveLayerData {
 	my $x = -1 * $sourcePoint->{"x"} + $targetPoint->{"x"};
 	my $y = -1 * $sourcePoint->{"y"} + $targetPoint->{"y"};
 
-	$self->WorkLayer( $inCAM, $layer );
 
 	$inCAM->COM( "sel_move", "dx" => $x, "dy" => $y );
 
@@ -697,7 +697,7 @@ sub Contourize {
 }
 
 # Copy selected features to other layer
-sub CopySelected {
+sub CopySelOtherLayer {
 	my $self   = shift;
 	my $inCAM  = shift;
 	my @layers = @{ shift(@_) };
@@ -721,7 +721,7 @@ sub CopySelected {
 }
 
 # Move selected features to other layer
-sub MoveSelected {
+sub MoveSelOtherLayer {
 	my $self   = shift;
 	my $inCAM  = shift;
 	my $layer  = shift;

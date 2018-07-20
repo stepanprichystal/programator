@@ -266,7 +266,8 @@ sub AddSurfaceFillSolid {
 		"feat_margin"   => $feat_margin,
 
 		"dest"  => "affected_layers",
-		"layer" => ".affected"
+		"layer" => ".affected",
+		"attributes" => 'yes'
 	);
 
 }
@@ -326,7 +327,8 @@ sub AddSurfaceFillSymbol {
 		"feat_margin"   => $feat_margin,
 
 		"dest"  => "affected_layers",
-		"layer" => ".affected"
+		"layer" => ".affected",
+		"attributes" => 'yes'
 	);
 
 }

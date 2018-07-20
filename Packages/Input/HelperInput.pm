@@ -70,7 +70,7 @@ sub CopyRoutToSolderMask {
 							my $lnew = CamLayer->RoutCompensation( $inCAM, $s->{"layer"}, 'document' );
 									
 									CamLayer->WorkLayer( $inCAM, $lnew );
-									CamLayer->CopySelected( $inCAM, [$s->{"mask"}], 0, 200 );
+									CamLayer->CopySelOtherLayer( $inCAM, [$s->{"mask"}], 0, 200 );
 									
 									CamLayer->ClearLayers($inCAM);
 									

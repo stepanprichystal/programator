@@ -3,7 +3,7 @@
 # Description: Layer builder
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Programs::Coupon::CpnGenerator::CpnLayers::ShieldingLayer;
+package Programs::Coupon::CpnGenerator::CpnLayers::NegSignalLayer;
 
 use base('Programs::Coupon::CpnGenerator::CpnLayers::LayerBase');
 
@@ -18,13 +18,13 @@ use warnings;
 use aliased 'Packages::CAM::SymbolDrawing::SymbolDrawing';
 use aliased 'CamHelpers::CamLayer';
 use aliased 'Programs::Coupon::Enums';
-
 use aliased 'Packages::CAM::SymbolDrawing::Primitive::PrimitiveSurfFill';
 use aliased 'Packages::CAM::SymbolDrawing::Primitive::PrimitiveSurfPoly';
 use aliased 'Packages::CAM::SymbolDrawing::Primitive::Helper::SurfaceSolidPattern';
-use aliased 'Packages::CAM::SymbolDrawing::Primitive::Helper::SurfaceSymbolPattern';
 use aliased 'Packages::CAM::SymbolDrawing::Enums' => 'DrawEnums';
 use aliased 'CamHelpers::CamJob';
+use aliased 'CamHelpers::CamFilter';
+
 use aliased 'CamHelpers::CamSymbolSurf';
 use aliased 'Packages::CAM::SymbolDrawing::Point';
 
@@ -37,47 +37,67 @@ sub new {
 	my $self  = $class->SUPER::new(@_);
 	bless $self;
 
+	$self->{"surfFillGUID"} = undef;
+
 	return $self;
 }
 
 sub Build {
-	my $self   = shift;
-	my $layout = shift;    # microstrip layout
-	my $cpnSingleLayout = shift;    # cpn single layout
-	my $layerLayout     = shift;	# layer layout
+	my $self = shift;
+	my $margin = shift // 0;
 
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
 	my $step  = $self->{"step"};
 
-	# add "break line" before shieldning filling which prevent to fill area where is place info text
-	my %lim = CamJob->GetProfileLimits2( $inCAM, $jobId, $step );
+	# add "break line" before GND filling which prevent to fill area where is place info text
+	my $solidPattern = SurfaceSolidPattern->new( 0, 0 );
 
-	if ( $cpnSingleLayout->GetCpnSingleWidth() < $lim{"xMax"} ) {
-		my @coord = ();
-		push( @coord, Point->new( $cpnSingleLayout->GetCpnSingleWidth(), 0 ) );
-		push( @coord, Point->new( $cpnSingleLayout->GetCpnSingleWidth(), $lim{"yMax"} ) );
-		push( @coord, Point->new( $lim{"xMax"},                             $lim{"yMax"} ) );
-		push( @coord, Point->new( $lim{"xMax"},                             0 ) );
+	my $p = PrimitiveSurfFill->new( $solidPattern, $margin, $margin, 0, 0, 1, 0, DrawEnums->Polar_POSITIVE );
 
-		$self->{"drawing"}->AddPrimitive( PrimitiveSurfPoly->new( \@coord, undef, $self->_InvertPolar(DrawEnums->Polar_NEGATIVE, $layerLayout) ) );
+	$self->{"surfFillGUID"} = $p->GetGroupGUID();
+
+	$self->{"drawing"}->AddPrimitive($p);
+
+}
+
+sub MoveFillSurf {
+	my $self = shift;
+	my $back = shift;
+
+	my $inCAM = $self->{"inCAM"};
+	my $jobId = $self->{"jobId"};
+	my $step  = $self->{"step"};
+
+	if ( CamFilter->SelectBySingleAtt( $inCAM, $jobId, "feat_group_id", $self->{"surfFillGUID"} ) ) {
+
+		my %lLim = CamJob->GetProfileLimits2( $inCAM, $jobId, $step );
+		my %source;
+		my %target;
+		if ($back) {
+			%source = ( "x" => 0, "y" => $lLim{"yMax"} );
+			%target = ( "x" => 0, "y" => 0 );
+		}
+		else {
+			%source = ( "x" => 0, "y" => 0 );
+			%target = ( "x" => 0, "y" => $lLim{"yMax"} );
+		}
+
+		# move layer
+		CamLayer->MoveSelSameLayer( $inCAM, $self->GetLayerName(), \%source, \%target );
+	 
+	}
+	else {
+
+		die "No positive surface fill (feat_group_id: " . $self->{"surfFillGUID"} . ") found in layer: " . $self->GetLayerName();
 	}
 
-	# add surface fill
-	if ( $layout->GetType() eq "solid" ) {
+}
 
-		my $solidPattern = SurfaceSolidPattern->new( 0, 0 );
+sub MoveFillSurfBack {
+	my $self = shift;
 
-		$self->{"drawing"}->AddPrimitive( PrimitiveSurfFill->new( $solidPattern, 0, 0, 0, 0, 1, 0, $self->_InvertPolar(DrawEnums->Polar_POSITIVE, $layerLayout) ) );
-
-	}elsif($layout->GetType() eq "symbol"){
-		
- 
-		my $symbolPattern = SurfaceSymbolPattern->new( 0, 0, 0, $layout->GetSymbol(), $layout->GetSymbolDX(), $layout->GetSymbolDY() );
-
-		$self->{"drawing"}->AddPrimitive( PrimitiveSurfFill->new( $symbolPattern, 0, 0, 0, 0, 1, 0, $self->_InvertPolar(DrawEnums->Polar_POSITIVE, $layerLayout) ) );
-		
-	}
+	$self->MoveFillSurf(1);
 
 }
 

@@ -638,7 +638,7 @@ sub __PrepareHALFFIDUC {
 	CamLayer->WorkLayer( $inCAM, $layers[0]->{"gROWname"} );
 	if ( CamFilter->SelectBySingleAtt( $inCAM, $jobId, ".fiducial_name", "*" ) ) {
 
-		CamLayer->CopySelected( $inCAM, [$lName] );
+		CamLayer->CopySelOtherLayer( $inCAM, [$lName] );
 		$layer->SetOutputLayer($lName);
 	}
 }

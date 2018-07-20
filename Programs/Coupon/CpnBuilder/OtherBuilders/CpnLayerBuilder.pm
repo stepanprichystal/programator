@@ -25,6 +25,7 @@ use aliased 'CamHelpers::CamHelper';
 use aliased 'Programs::Coupon::CpnBuilder::CpnLayout::LayerLayout';
 use aliased 'Packages::Stackup::Stackup::Stackup';
 use aliased 'Packages::Stackup::StackupOperation';
+use aliased 'Packages::CAM::SymbolDrawing::Enums' => 'DrawEnums';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -39,14 +40,14 @@ sub new {
 	$self->{"jobId"} = shift;
 
 	$self->{"layout"} = {};
+
 	# Layout of one single coupon
 	$self->{"build"} = 0;    # indicator if layout was built
 
 	# Settings references
 	$self->{"cpnSett"} = undef;    # global settings for generating coupon
-	
+
 	# Other properties
- 
 
 	return $self;
 }
@@ -66,37 +67,54 @@ sub Build {
 
 	my $stackup;
 
-	if ( CamJob->GetSignalLayerCnt($inCAM, $jobId) > 2 ) {
+	if ( CamJob->GetSignalLayerCnt( $inCAM, $jobId ) > 2 ) {
 		$stackup = Stackup->new($jobId);
 	}
 
-	my @layers = map { $_->{"gROWname"} } CamJob->GetBoardBaseLayers( $inCAM, $jobId );    # silks, mask, signal
-	push(@layers, "m");
+	my @layers = CamJob->GetBoardBaseLayers( $inCAM, $jobId );    # silks, mask, signal
+	my $m = ( grep { $_->{"gROWname"} eq "m" } CamJob->GetNCLayers( $inCAM, $jobId ) )[0];    # m
+
+	if ( defined $m ) {
+		push( @layers, $m );
+	}
 
 	foreach my $l (@layers) {
 
-		my $lLayout = LayerLayout->new($l);
+		my $lName = $l->{"gROWname"};
+
+		my $lLayout = LayerLayout->new($lName);
 
 		# Set mirror
-		if ( $l =~ /^m$/ ) {
+		if ( $lName =~ /^m$/ ) {
 			$lLayout->SetMirror(0);
 		}
-		elsif ( $l =~ /^[mp]?c$/ ) {
+		elsif ( $lName =~ /^[mp]?c$/ ) {
 			$lLayout->SetMirror(0);
 
 		}
-		elsif ( $l =~ /^[mp]?s$/ ) {
+		elsif ( $lName =~ /^[mp]?s$/ ) {
 			$lLayout->SetMirror(1);
 
 		}
-		elsif ( $l =~ /^v\d+$/ ) {
+		elsif ( $lName =~ /^v\d+$/ ) {
 
-			my $side = StackupOperation->GetSideByLayer( $jobId, $l, $stackup );
+			my $side = StackupOperation->GetSideByLayer( $jobId, $lName, $stackup );
 			$lLayout->SetMirror( $side eq "top" ? 0 : 1 );
 		}
 
-		$self->{"layout"}->{$l} = $lLayout;
+		# Se layer polarity
+		if ( $l->{"gROWpolarity"} eq "positive" ) {
+			$lLayout->SetPolarity( DrawEnums->Polar_POSITIVE );
+		}
+		else {
+			$lLayout->SetPolarity( DrawEnums->Polar_NEGATIVE );
+		}
 
+		# Set layer type
+		$lLayout->SetType( $l->{"gROWlayer_type"} );
+
+
+		$self->{"layout"}->{$lName} = $lLayout;
 	}
 
 	$self->{"build"} = 1;

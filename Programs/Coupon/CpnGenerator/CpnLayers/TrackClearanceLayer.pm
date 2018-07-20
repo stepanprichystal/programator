@@ -39,6 +39,7 @@ sub Build {
 	my $self   = shift;
 	my $layout = shift;    # microstrip layout
 	my $cpnSingleLayout = shift;    # cpn single layout
+	my $layerLayout     = shift;	# layer layout
 
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
@@ -54,12 +55,12 @@ sub Build {
 		my $symNeg = "r" . ( $track->GetWidth() + 2*$layout->GetTrackToCopper() );  # 800µm mask clareance
 		
 		if ( scalar(@points) == 2 ) {
-			my $l = PrimitiveLine->new( $points[0], $points[1], $symNeg, DrawEnums->Polar_NEGATIVE );
+			my $l = PrimitiveLine->new( $points[0], $points[1], $symNeg, $self->_InvertPolar(DrawEnums->Polar_NEGATIVE, $layerLayout) );
 			$self->{"drawing"}->AddPrimitive($l);
 
 		}
 		else {
-			my $p = PrimitivePolyline->new( \@points, $symNeg, DrawEnums->Polar_NEGATIVE );
+			my $p = PrimitivePolyline->new( \@points, $symNeg, $self->_InvertPolar(DrawEnums->Polar_NEGATIVE, $layerLayout) );
 			$self->{"drawing"}->AddPrimitive($p);
 		}
 

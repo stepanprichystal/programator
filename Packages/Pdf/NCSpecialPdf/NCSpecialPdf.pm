@@ -229,7 +229,7 @@ sub __ProcessDrawing {
 		$inCAM->COM( "sel_move", "dx" => $lim{"xMax"} + 10, "dy" => $limDraw{"yMax"} - $limDraw{"yMin"} );    # drawing 10 mm above profile data
 
 		CamLayer->WorkLayer( $inCAM, $lTmp );
-		CamLayer->CopySelected( $inCAM, [ $layerRes->GetLayerName() ] );
+		CamLayer->CopySelOtherLayer( $inCAM, [ $layerRes->GetLayerName() ] );
 		CamMatrix->DeleteLayer( $inCAM, $jobId, $lTmp );
 
 	}

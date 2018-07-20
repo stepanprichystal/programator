@@ -170,7 +170,7 @@ sub __MovePads {
 		if ($sel) {
 
 			$movedCnt += $sel;
-			CamLayer->MoveSelected( $inCAM, $targetLayer );
+			CamLayer->MoveSelOtherLayer( $inCAM, $targetLayer );
 
 			# if some holes have pressfit, set DTM
 			my @pressfit = grep { $_->GetTypeUse() =~ /press_fit/ &&  $_->GetTypeProcess() eq EnumsDTM->TypeProc_HOLE} @uniDTMTools;

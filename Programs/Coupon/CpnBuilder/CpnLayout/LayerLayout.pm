@@ -28,6 +28,12 @@ sub new {
 
 	# Mirror set by job stackup
 	$self->{"mirror"} = undef;    #
+	
+	# Polarity
+	$self->{"polarity"} = undef;    #	
+	
+	# Layer type
+	$self->{"type"} = undef;    #	
 
 	# More microstrip use layer as GND
 	$self->{"shareGND"} = undef;
@@ -35,6 +41,46 @@ sub new {
 	return $self;
 
 }
+
+sub SetLayerName {
+	my $self   = shift;
+	my $layerName = shift;
+
+	$self->{"layerName"} = $layerName;
+}
+
+sub GetLayerName {
+	my $self = shift;
+
+	return $self->{"layerName"};
+}
+
+sub SetType {
+	my $self   = shift;
+	my $type = shift;
+
+	$self->{"type"} = $type;
+}
+
+sub GetType {
+	my $self = shift;
+
+	return $self->{"type"};
+}
+
+sub SetPolarity {
+	my $self   = shift;
+	my $polar = shift;
+
+	$self->{"polarity"} = $polar;
+}
+
+sub GetPolarity {
+	my $self = shift;
+
+	return $self->{"polarity"};
+}
+
 
 sub SetMirror {
 	my $self   = shift;

@@ -169,7 +169,7 @@ sub __PrepareLayer {
 
 	if ( $plotLayer->GetComp() != 0 && $f->Select() ) {
 		$marksSeparated = GeneralHelper->GetGUID();
-		CamLayer->MoveSelected( $inCAM, $marksSeparated );
+		CamLayer->MoveSelOtherLayer( $inCAM, $marksSeparated );
 	}
 
 	# 4) Remove frame
@@ -203,7 +203,7 @@ sub __PrepareLayer {
 	if ( $marksSeparated ) {
 		
 		CamLayer->WorkLayer( $inCAM, $marksSeparated );
-		CamLayer->MoveSelected( $inCAM, $lName );
+		CamLayer->MoveSelOtherLayer( $inCAM, $lName );
 		CamMatrix->DeleteLayer($inCAM, $jobId,$marksSeparated);
 		CamLayer->WorkLayer( $inCAM, $lName );
 	}
@@ -278,7 +278,8 @@ sub __PrepareOutputLayer {
 		my %target = ( "x" => $startX, "y" => $startY );
 
 		# move layer
-		CamLayer->MoveLayerData( $inCAM, $plotL->{"outputLayer"}, \%source, \%target );
+		CamLayer->WorkLayer( $inCAM, $plotL->{"outputLayer"} );
+		CamLayer->MoveSelSameLayer( $inCAM, $plotL->{"outputLayer"}, \%source, \%target );
 
 		# merge layer to final output layer
 		$inCAM->COM( "merge_layers", "source_layer" => $plotL->{"outputLayer"}, "dest_layer" => $outputLName );

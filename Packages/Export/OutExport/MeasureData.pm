@@ -190,7 +190,7 @@ sub __GetPadFeats {
 		if ( CamFilter->BySurfaceArea( $inCAM, 0, $i ) > 0 ) {
 
 			my $sellected = GeneralHelper->GetGUID();
-			CamLayer->CopySelected( $inCAM, [$sellected] );
+			CamLayer->CopySelOtherLayer( $inCAM, [$sellected] );
 
 			CamLayer->WorkLayer( $inCAM, $layer );
 

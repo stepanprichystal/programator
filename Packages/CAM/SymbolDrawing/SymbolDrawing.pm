@@ -370,6 +370,7 @@ sub __DrawSurfFill {
 											$surf->GetMarginX(),       $surf->GetMarginY(),
 											$surf->GetSRMarginX(),     $surf->GetSRMarginY(),
 											$surf->GetConsiderFeat(),  $surf->GetFeatMargin(),
+											$surf->GetPolarity()
 		);
 
 	}
@@ -383,6 +384,7 @@ sub __DrawSurfFill {
 											 $surf->GetMarginY(),       $surf->GetSRMarginX(),
 											 $surf->GetSRMarginY(),     $surf->GetConsiderFeat(),
 											 $surf->GetFeatMargin(),
+											 $surf->GetPolarity()
 		);
 
 	}

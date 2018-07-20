@@ -154,7 +154,8 @@ sub __PrepareOriLayers {
 			CamLayer->RotateLayerData( $inCAM, $prepared, 90 );    # rotated about left-down corner CCW
 			my %source = ( "x" => 0, "y" => 0 );
 			my %target = ( "x" => 0, "y" => $pcbProf->{"h"} );     # move to zero again
-			CamLayer->MoveLayerData( $inCAM, $prepared, \%source, \%target );
+			CamLayer->WorkLayer( $inCAM, $prepared );
+			CamLayer->MoveSelSameLayer( $inCAM, $prepared, \%source, \%target );
 		}
 
 	}

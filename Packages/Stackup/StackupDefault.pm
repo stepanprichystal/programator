@@ -311,7 +311,7 @@ my ( $package, $filename, $line ) = caller;
 
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	my $pcbId        = "f81679";
+	my $pcbId        = "d016138";
 	my $layerCnt     = 6;
 	my @innerCuUsage = ( 58, 15, 12, 44 );
 	my $outerCuThick = 35;

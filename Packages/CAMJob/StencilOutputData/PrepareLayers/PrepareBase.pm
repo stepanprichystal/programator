@@ -140,7 +140,7 @@ sub __PrepareFiducialLayer {
 		CamLayer->WorkLayer( $inCAM, $layer->{"gROWname"} );
 		if ( CamFilter->SelectBySingleAtt( $inCAM, $jobId, ".fiducial_name", "*" ) ) {
 
-			CamLayer->CopySelected( $inCAM, [$lName] );
+			CamLayer->CopySelOtherLayer( $inCAM, [$lName] );
 			 
 		}else{
 			

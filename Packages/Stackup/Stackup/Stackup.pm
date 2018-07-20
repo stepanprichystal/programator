@@ -260,11 +260,12 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	use aliased 'Packages::Stackup::Stackup::Stackup';
 
-	my $stackup = Stackup->new("d208483");
+	my $stackup = Stackup->new("d016138");
  
 	
 	 my $mir = $stackup->GetFinalThick();
 		 
+	print STDERR $mir;
 	
 	#my $stackup = Stackup->new("d99991");
  

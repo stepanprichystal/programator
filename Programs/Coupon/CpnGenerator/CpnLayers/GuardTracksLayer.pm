@@ -39,6 +39,7 @@ sub new {
 sub Build {
 	my $self      = shift;
 	my $layout    = shift;        # microstrip layout
+	my $layerLayout     = shift;	# layer layout
 	my $clearance = shift // 0;
 
 	my $inCAM = $self->{"inCAM"};
@@ -53,7 +54,7 @@ sub Build {
 				my $l =
 				  PrimitiveLine->new( $line->{"startP"}, $line->{"endP"},
 									  "s" . ( $layout->GetGuardTrackWidth() + $layout->GetGuardTrack2Shielding() ),
-									  DrawEnums->Polar_NEGATIVE );
+									  $self->_InvertPolar(DrawEnums->Polar_NEGATIVE, $layerLayout) );
 				$self->{"drawing"}->AddPrimitive($l);
 
 			}
@@ -77,7 +78,7 @@ sub Build {
 				$areaNeg[2]->Move( +$layout->GetGuardTrack2Shielding() / 1000, +$layout->GetGuardTrack2Shielding() / 1000 );
 				$areaNeg[3]->Move( +$layout->GetGuardTrack2Shielding() / 1000, -$layout->GetGuardTrack2Shielding() / 1000 );
 
-				$self->{"drawing"}->AddPrimitive( PrimitiveSurfPoly->new( $area, undef, DrawEnums->Polar_NEGATIVE ) );
+				$self->{"drawing"}->AddPrimitive( PrimitiveSurfPoly->new( $area, undef, $self->_InvertPolar(DrawEnums->Polar_NEGATIVE, $layerLayout) ) );
 
 			}
 		}
@@ -90,7 +91,7 @@ sub Build {
 			foreach my $line ( $layout->GetLines() ) {
 
 				my $l =
-				  PrimitiveLine->new( $line->{"startP"}, $line->{"endP"}, "s" . $layout->GetGuardTrackWidth(), DrawEnums->Polar_POSITIVE );
+				  PrimitiveLine->new( $line->{"startP"}, $line->{"endP"}, "s" . $layout->GetGuardTrackWidth(), $self->_InvertPolar(DrawEnums->Polar_POSITIVE, $layerLayout) );
 				$self->{"drawing"}->AddPrimitive($l);
 
 			}
@@ -100,7 +101,7 @@ sub Build {
 
 			foreach my $area ( $layout->GetAreas() ) {
 
-				$self->{"drawing"}->AddPrimitive( PrimitiveSurfPoly->new( $area, undef, DrawEnums->Polar_POSITIVE ) );
+				$self->{"drawing"}->AddPrimitive( PrimitiveSurfPoly->new( $area, undef, $self->_InvertPolar(DrawEnums->Polar_POSITIVE, $layerLayout) ) );
 
 			}
 		}

@@ -1969,14 +1969,14 @@ sub _SolderMaskUncoverVia {
 						CamFilter->SelectByReferenece( $inCAM, $jobId, "disjoint", $drillingLayer, undef, undef, undef, 'ms');
 						$inCAM->COM ('get_select_count');
 									if ($inCAM->{COMANS} > 0) {
-											CamLayer->CopySelected($inCAM, [$layerTMP], 0, 0 );
+											CamLayer->CopySelOtherLayer($inCAM, [$layerTMP], 0, 0 );
 											CamLayer->ClearLayers($inCAM);
 									
 									
 					 								CamFilter->SelectByReferenece( $inCAM, $jobId, "Touch", $layerTMP, undef, undef, undef, 'mc');
 					 								$inCAM->COM ('get_select_count');
 					 								if ($inCAM->{COMANS} > 0) {
-					 										CamLayer->CopySelected($inCAM, ['ms'], 0, -50 );
+					 										CamLayer->CopySelOtherLayer($inCAM, ['ms'], 0, -50 );
 					 										CamLayer->ClearLayers($inCAM);
 					 										
 					 										_reportTMP($jobId . ' Odmaskovany via v ms');
@@ -1992,13 +1992,13 @@ sub _SolderMaskUncoverVia {
 						CamFilter->SelectByReferenece( $inCAM, $jobId, "disjoint", $drillingLayer, undef, undef, undef, 'mc');
 						$inCAM->COM ('get_select_count');
 									if ($inCAM->{COMANS} > 0) {
-											CamLayer->CopySelected($inCAM, [$layerTMP], 0, 0 );
+											CamLayer->CopySelOtherLayer($inCAM, [$layerTMP], 0, 0 );
 											CamLayer->ClearLayers($inCAM);
 									
 													CamFilter->SelectByReferenece( $inCAM, $jobId, "Touch", $layerTMP, undef, undef, undef, 'ms');
 													$inCAM->COM ('get_select_count');
 													if ($inCAM->{COMANS} > 0) {
-															CamLayer->CopySelected($inCAM, ['mc'], 0, -50 );
+															CamLayer->CopySelOtherLayer($inCAM, ['mc'], 0, -50 );
 															CamLayer->ClearLayers($inCAM);
 															
 															_reportTMP($jobId . ' Odmaskovany via v mc');

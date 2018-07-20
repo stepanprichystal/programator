@@ -524,7 +524,7 @@ sub __PrepareNPLTTHROUGHNC {
 
 		if ( CamFilter->BySurfaceArea( $inCAM, 0, $maxArea ) > 0 ) {
 			my @layers = ($lName);
-			CamLayer->CopySelected( $inCAM, \@layers, 0, 100 );
+			CamLayer->CopySelOtherLayer( $inCAM, \@layers, 0, 100 );
 		}
 
 		$inCAM->COM( 'delete_layer', "layer" => $lTmp );

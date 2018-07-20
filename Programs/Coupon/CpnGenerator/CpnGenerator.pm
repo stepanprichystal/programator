@@ -33,9 +33,11 @@ use aliased 'Programs::Coupon::CpnGenerator::CpnLayers::InfoTextMaskLayer';
 use aliased 'Programs::Coupon::CpnGenerator::CpnLayers::GuardTracksLayer';
 use aliased 'Programs::Coupon::CpnGenerator::CpnLayers::ShieldingLayer';
 use aliased 'Programs::Coupon::CpnGenerator::CpnLayers::TitleLayer';
+use aliased 'Programs::Coupon::CpnGenerator::CpnLayers::NegSignalLayer';
 use aliased 'CamHelpers::CamSymbol';
 use aliased 'CamHelpers::CamDTM';
 use aliased 'Enums::EnumsDrill';
+use aliased 'Packages::CAM::SymbolDrawing::Enums' => 'DrawEnums';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -63,7 +65,6 @@ sub Generate {
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
 
-
 	# CreateStep
 	my $cpnMargin = $layout->GetCpnMargin();
 
@@ -75,31 +76,15 @@ sub Generate {
 
 	$self->{"couponStep"} = SRStep->new( $inCAM, $jobId, $layout->GetStepName() );
 	$self->{"couponStep"}
-	  ->Create( $layout->GetWidth(), $layout->GetHeight(), $cpnMargin->{"top"}, $cpnMargin->{"bot"}, $cpnMargin->{"left"}, $cpnMargin->{"right"} )
-	  ;
+	  ->Create( $layout->GetWidth(), $layout->GetHeight(), $cpnMargin->{"top"}, $cpnMargin->{"bot"}, $cpnMargin->{"left"}, $cpnMargin->{"right"} );
 
 	CamHelper->SetStep( $inCAM, $layout->GetStepName() );
 
-	# If exist drill layer "m", set DTM type = vysledne
+	# 1) If exist drill layer "m", set DTM type = vysledne
 	if ( defined $layout->GetLayersLayout()->{"m"} ) {
 		CamDTM->SetDTMTable( $inCAM, $jobId, $layout->GetStepName(), "m", EnumsDrill->DTM_VYSLEDNE );
 	}
-
-	# Create single oupon steps
-
-	for ( my $i = 0 ; $i < scalar( $layout->GetCouponsSingle() ) ; $i++ ) {
-
-		my $cpnSignleLayout = ( $layout->GetCouponsSingle() )[$i];
-
-		my $srStep = $layout->GetStepName() . "_$i";
-
-		$self->__GenerateSingle( $cpnSignleLayout, $layout->GetLayersLayout(), $srStep );
-
-		my $p = $cpnSignleLayout->GetPosition();
-
-		$self->{"couponStep"}->AddSRStep( $srStep, $p->X(), $p->Y(), 0, 1, 1, 1, 1 );
-	}
-
+ 
 	# Process title
 	if ( $layout->GetTitleLayout() ) {
 
@@ -142,6 +127,39 @@ sub Generate {
 
 			# frame 100µm width around pcb (fr frame coordinate)
 			CamSymbol->AddPolyline( $inCAM, \@coord, "r100", "positive", 1 );
+		}
+	}
+
+	# Create single oupon steps
+
+	for ( my $i = 0 ; $i < scalar( $layout->GetCouponsSingle() ) ; $i++ ) {
+
+		my $cpnSignleLayout = ( $layout->GetCouponsSingle() )[$i];
+
+		my $srStep = $layout->GetStepName() . "_$i";
+
+		$self->__GenerateSingle( $cpnSignleLayout, $layout->GetLayersLayout(), $srStep );
+
+		my $p = $cpnSignleLayout->GetPosition();
+
+		$self->{"couponStep"}->AddSRStep( $srStep, $p->X(), $p->Y(), 0, 1, 1, 1, 1 );
+	}
+	
+	
+	# Check negative signal layers, if exists fill layer with ground
+	foreach my $lName ( keys %{ $layout->GetLayersLayout() } ) {
+
+		my $l = $layout->GetLayersLayout()->{$lName};
+
+		if ( $l->GetPolarity() eq DrawEnums->Polar_NEGATIVE ) {
+
+			my $negLayer = NegSignalLayer->new($lName);
+			$negLayer->Init( $inCAM, $jobId, $layout->GetStepName() );
+			$negLayer->Build(0.3);
+
+			CamHelper->SetStep( $inCAM, $layout->GetStepName() );
+			CamLayer->WorkLayer( $inCAM, $negLayer->GetLayerName() );
+			$negLayer->Draw();
 		}
 	}
 
@@ -201,6 +219,27 @@ sub __GenerateSingle {
 
 	CamStep->CreateProfileRect( $inCAM, $stepName, \%lb, \%rt );
 
+	#  Check negative signal layers, if exists fill layer with positive surf
+	# After filling is surface move out of coupon, because of proper working of another layer filling (GND layer, Shielding, etc)
+	# In the end, when layer is complete, positive surf is returned back "under" another symbols
+	my @negLayerBuilders = ();
+	foreach my $lName ( keys %{ $layersLayout } ) {
+
+		my $l = $layersLayout->{$lName};
+
+		if ( $l->GetPolarity() eq DrawEnums->Polar_NEGATIVE ) {
+
+			my $negLayer = NegSignalLayer->new($lName);
+			$negLayer->Init( $inCAM, $jobId, $stepName );
+			$negLayer->Build();
+ 
+			CamLayer->WorkLayer( $inCAM, $negLayer->GetLayerName() );
+			$negLayer->Draw();
+			$negLayer->MoveFillSurf();
+			push(@negLayerBuilders, $negLayer);
+		}
+	}
+
 	# Proces guard tracks - clearance
 
 	if ( defined $cpnSingleLayout->GetGuardTracksLayout() ) {
@@ -209,7 +248,7 @@ sub __GenerateSingle {
 
 			my $gtLayer = GuardTracksLayer->new( $layout->GetLayer() );
 			$gtLayer->Init( $inCAM, $jobId, $stepName );
-			$gtLayer->Build( $layout, 1 );
+			$gtLayer->Build( $layout, $layersLayout->{ $layout->GetLayer() }, 1 );
 
 			CamLayer->WorkLayer( $inCAM, $gtLayer->GetLayerName() );
 			$gtLayer->Draw();
@@ -270,7 +309,7 @@ sub __GenerateSingle {
 
 			my $gtLayer = GuardTracksLayer->new( $layout->GetLayer() );
 			$gtLayer->Init( $inCAM, $jobId, $stepName );
-			$gtLayer->Build($layout);
+			$gtLayer->Build( $layout, $layersLayout->{ $layout->GetLayer() } );
 
 			CamLayer->WorkLayer( $inCAM, $gtLayer->GetLayerName() );
 			$gtLayer->Draw();
@@ -284,7 +323,7 @@ sub __GenerateSingle {
 
 			my $shieldingLayer = ShieldingLayer->new($l);
 			$shieldingLayer->Init( $inCAM, $jobId, $stepName );
-			$shieldingLayer->Build( $cpnSingleLayout->GetShieldingLayout(), $cpnSingleLayout );
+			$shieldingLayer->Build( $cpnSingleLayout->GetShieldingLayout(), $cpnSingleLayout, $layersLayout->{$l} );
 
 			CamLayer->WorkLayer( $inCAM, $shieldingLayer->GetLayerName() );
 			$shieldingLayer->Draw();
@@ -319,6 +358,15 @@ sub __GenerateSingle {
 		}
 
 	}
+	
+	# If exist negative layers, move back positive surface created on begining of this function
+	foreach my $builder  (@negLayerBuilders){
+		
+		CamLayer->WorkLayer( $inCAM, $builder->GetLayerName() );
+		$builder->MoveFillSurfBack();
+	
+	}
+			 
 }
 
 #-------------------------------------------------------------------------------------------#

@@ -27,6 +27,7 @@ use aliased 'Programs::Coupon::Enums';
 use aliased 'Packages::CAM::SymbolDrawing::Enums' => 'DrawEnums';
 use aliased 'CamHelpers::CamJob';
 use aliased 'Packages::CAM::SymbolDrawing::Point';
+
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
@@ -34,15 +35,16 @@ use aliased 'Packages::CAM::SymbolDrawing::Point';
 sub new {
 	my $class = shift;
 	my $self  = $class->SUPER::new(@_);
-	bless $self;;
+	bless $self;
 
 	return $self;
 }
 
 sub Build {
-	my $self   = shift;
-	my $layout = shift;    # microstrip layout
+	my $self            = shift;
+	my $layout          = shift;    # microstrip layout
 	my $cpnSingleLayout = shift;    # cpn single layout
+	my $layerLayout     = shift;    # layer layout
 
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
@@ -54,11 +56,11 @@ sub Build {
 
 			my $shareGNDLayers = $pad->GetShareGndLayers();
 
-			if ( !$shareGNDLayers->{ $self->{"layerName"} }  && !$layout->GetCoplanar()) {
+			if ( !$shareGNDLayers->{ $self->{"layerName"} } && !$layout->GetCoplanar() ) {
 
 				my $symClearance =
 				  $cpnSingleLayout->GetPadGNDShape() . ( $cpnSingleLayout->GetPadGNDSize() + $layout->GetPad2GND() );
-				$self->{"drawing"}->AddPrimitive( PrimitivePad->new( $symClearance, $pad->GetPoint(), 0, DrawEnums->Polar_NEGATIVE ) );
+				$self->{"drawing"}->AddPrimitive( PrimitivePad->new( $symClearance, $pad->GetPoint(), 0, $self->_InvertPolar(DrawEnums->Polar_NEGATIVE, $layerLayout) ) );
 			}
 
 		}
@@ -66,7 +68,7 @@ sub Build {
 
 			my $symClearance =
 			  $cpnSingleLayout->GetPadTrackShape() . ( $cpnSingleLayout->GetPadTrackSize() + $layout->GetPad2GND() );
-			$self->{"drawing"}->AddPrimitive( PrimitivePad->new( $symClearance, $pad->GetPoint(), 0, DrawEnums->Polar_NEGATIVE ) );
+			$self->{"drawing"}->AddPrimitive( PrimitivePad->new( $symClearance, $pad->GetPoint(), 0, $self->_InvertPolar(DrawEnums->Polar_NEGATIVE, $layerLayout) ) );
 		}
 
 	}
@@ -81,19 +83,19 @@ sub Build {
 		my $symNeg = "r";
 
 		if ( $layout->GetCoplanar() ) {
-			$symNeg .= ( $track->GetWidth() + 2*$track->GetGNDDist() );
+			$symNeg .= ( $track->GetWidth() + 2 * $track->GetGNDDist() );
 		}
 		else {
-			$symNeg .= ( $track->GetWidth() + 2*$layout->GetTrackToCopper() );
+			$symNeg .= ( $track->GetWidth() + 2 * $layout->GetTrackToCopper() );
 		}
 
 		if ( scalar(@points) == 2 ) {
-			my $l = PrimitiveLine->new( $points[0], $points[1], $symNeg, DrawEnums->Polar_NEGATIVE );
+			my $l = PrimitiveLine->new( $points[0], $points[1], $symNeg, $self->_InvertPolar(DrawEnums->Polar_NEGATIVE, $layerLayout) );
 			$self->{"drawing"}->AddPrimitive($l);
 
 		}
 		else {
-			my $p = PrimitivePolyline->new( \@points, $symNeg, DrawEnums->Polar_NEGATIVE );
+			my $p = PrimitivePolyline->new( \@points, $symNeg, $self->_InvertPolar(DrawEnums->Polar_NEGATIVE, $layerLayout) );
 			$self->{"drawing"}->AddPrimitive($p);
 		}
 
@@ -108,12 +110,12 @@ sub Build {
 		# Draw lines
 
 		if ( scalar(@points) == 2 ) {
-			my $l = PrimitiveLine->new( $points[0], $points[1], "r" . $track->GetWidth() );
+			my $l = PrimitiveLine->new( $points[0], $points[1], "r" . $track->GetWidth(), $self->_InvertPolar(DrawEnums->Polar_POSITIVE, $layerLayout) );
 			$self->{"drawing"}->AddPrimitive($l);
 
 		}
 		else {
-			my $p = PrimitivePolyline->new( \@points, "r" . $track->GetWidth() );
+			my $p = PrimitivePolyline->new( \@points, "r" . $track->GetWidth(), $self->_InvertPolar(DrawEnums->Polar_POSITIVE, $layerLayout) );
 			$self->{"drawing"}->AddPrimitive($p);
 		}
 
@@ -130,7 +132,7 @@ sub Build {
 
 			if ( !$shareGNDLayers->{ $self->{"layerName"} } && !$layout->GetCoplanar() ) {
 				$self->{"drawing"}
-				  ->AddPrimitive( PrimitivePad->new( $cpnSingleLayout->GetPadGNDSym(), $pad->GetPoint(), 0, DrawEnums->Polar_POSITIVE ) );
+				  ->AddPrimitive( PrimitivePad->new( $cpnSingleLayout->GetPadGNDSym(), $pad->GetPoint(), 0, $self->_InvertPolar(DrawEnums->Polar_POSITIVE, $layerLayout) ) );
 
 			}
 
@@ -138,13 +140,13 @@ sub Build {
 			if ( $layout->GetCoplanar() ) {
 
 				$self->{"drawing"}
-				  ->AddPrimitive( PrimitivePad->new( $cpnSingleLayout->GetPadGNDSymNeg(), $pad->GetPoint(), 0, DrawEnums->Polar_NEGATIVE ) );
+				  ->AddPrimitive( PrimitivePad->new( $cpnSingleLayout->GetPadGNDSymNeg(), $pad->GetPoint(), 0, $self->_InvertPolar(DrawEnums->Polar_NEGATIVE, $layerLayout) ) );
 			}
 		}
 		else {
 
 			$self->{"drawing"}
-			  ->AddPrimitive( PrimitivePad->new( $cpnSingleLayout->GetPadTrackSym(), $pad->GetPoint(), 0, DrawEnums->Polar_POSITIVE ) );
+			  ->AddPrimitive( PrimitivePad->new( $cpnSingleLayout->GetPadTrackSym(), $pad->GetPoint(), 0, $self->_InvertPolar(DrawEnums->Polar_POSITIVE, $layerLayout) ) );
 		}
 
 	}
@@ -160,16 +162,16 @@ sub Build {
 			my @coord = ();
 			push( @coord, Point->new( $cpnSingleLayout->GetCpnSingleWidth(), 0 ) );
 			push( @coord, Point->new( $cpnSingleLayout->GetCpnSingleWidth(), $lim{"yMax"} ) );
-			push( @coord, Point->new( $lim{"xMax"},                             $lim{"yMax"} ) );
-			push( @coord, Point->new( $lim{"xMax"},                             0 ) );
+			push( @coord, Point->new( $lim{"xMax"},                          $lim{"yMax"} ) );
+			push( @coord, Point->new( $lim{"xMax"},                          0 ) );
 
-			$self->{"drawing"}->AddPrimitive( PrimitiveSurfPoly->new( \@coord, undef, DrawEnums->Polar_NEGATIVE ) );
+			$self->{"drawing"}->AddPrimitive( PrimitiveSurfPoly->new( \@coord, undef, $self->_InvertPolar(DrawEnums->Polar_NEGATIVE, $layerLayout) ) );
 		}
 
 		# add surface fill
 		my $solidPattern = SurfaceSolidPattern->new( 0, 0 );
 
-		$self->{"drawing"}->AddPrimitive( PrimitiveSurfFill->new( $solidPattern, 0, 0, 0, 0, 1, 0, DrawEnums->Polar_POSITIVE ) );
+		$self->{"drawing"}->AddPrimitive( PrimitiveSurfFill->new( $solidPattern, 0, 0, 0, 0, 1, 0, $self->_InvertPolar(DrawEnums->Polar_POSITIVE, $layerLayout) ) );
 	}
 
 }

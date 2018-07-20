@@ -110,7 +110,7 @@ sub __PreparePadLayer {
 
 	if ( CamFilter->SelectByFeatureIndexes( $inCAM, $jobId, \@featsId ) ) {
 
-		CamLayer->CopySelected( $inCAM, [$lName] );
+		CamLayer->CopySelOtherLayer( $inCAM, [$lName] );
 
 	}
 	else {

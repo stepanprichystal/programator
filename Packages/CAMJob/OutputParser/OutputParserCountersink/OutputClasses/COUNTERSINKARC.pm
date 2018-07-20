@@ -98,7 +98,7 @@ sub __PrepareCountersink {
 
 	if ( scalar(@thrghDrill) ) {
 		CamLayer->AffectLayers( $inCAM, \@thrghDrill );
-		CamLayer->CopySelected( $inCAM, [$thrghDrill] );
+		CamLayer->CopySelOtherLayer( $inCAM, [$thrghDrill] );
 		CamLayer->WorkLayer( $inCAM, $thrghDrill );
 	}
 
