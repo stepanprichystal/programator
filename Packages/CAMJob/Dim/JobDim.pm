@@ -187,7 +187,7 @@ sub __GetMultiplOfStep {
 	my @stepNy    = @{ $inCAM->{doinfo}{gSRny} };
 
 	foreach my $stepName (@stepNames) {
-		if ( $stepName =~ /coupon_\d/ ) {
+		if ( $stepName =~ /coupon_?\d*/ ) {
 			$stepCnt -= 1;
 		}
 	}
