@@ -30,7 +30,7 @@ $main::DEBUG = 1;
 CreateFakePoolFile(0);
 #CreateFakePoolFile(0);
 NotCreateServer();
-#NoChecks();
+NoChecks();
 # ----------------------------------------------
  
 if($inCAM->IsConnected()){

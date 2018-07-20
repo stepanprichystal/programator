@@ -184,6 +184,16 @@ sub CopyStepFinalCheck {
 					 "feat_types"  => "line\;pad;surface;arc;text",
 					 "pol_types"   => "positive\;negative"
 		);
+		
+		# Delete pcb id label from layers (text + nomeclature attribute after profile)
+		my $f = FeatureFilter->new( $inCAM, $masterJob, undef, \@boardBase );
+		$f->SetProfile(2);
+		$f->AddIncludeAtt( ".nomenclature" );
+		
+		if($f->Select()){
+			CamLayer->DeleteFeatures($inCAM);
+		}
+		
 	}
 
 	# nc layers (pads only)
