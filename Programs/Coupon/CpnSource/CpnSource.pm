@@ -1,6 +1,6 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Manager responsible for NIF creation
+# Description: Parser InStack xml job
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Programs::Coupon::CpnSource::CpnSource;

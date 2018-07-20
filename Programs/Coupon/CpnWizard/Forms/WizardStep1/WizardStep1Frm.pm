@@ -64,6 +64,7 @@ sub GetLayout {
 
 	# addpanel to siyers
 	$containerSz->Add( $list, 1, &Wx::wxEXPAND );
+
 	#$containerSz->Add( 1, 1, &Wx::wxEXPAND );
 
 	$scrollSizer->Add( $containerPnl, 1, &Wx::wxEXPAND );
@@ -92,10 +93,10 @@ sub GetLayout {
 
 	# SET REFERENCES
 
-	$self->{"constrList"} = $list;
-	$self->{"scrollPnl"}  = $scrollPnl;
-	$self->{"parent"}     = $parent;
-	$self->{"containerPnl"}     = $containerPnl;
+	$self->{"constrList"}   = $list;
+	$self->{"scrollPnl"}    = $scrollPnl;
+	$self->{"parent"}       = $parent;
+	$self->{"containerPnl"} = $containerPnl;
 
 	#my ( $width, $height ) = $containerPnl->GetSizeWH();
 
@@ -107,7 +108,7 @@ sub Update {
 	my $self       = shift;
 	my $wizardStep = shift;
 
-	$self->{"coreWizardStep"} = $wizardStep; # Update current step wizard
+	$self->{"coreWizardStep"} = $wizardStep;    # Update current step wizard
 
 	my @constr       = $self->{"coreWizardStep"}->GetConstraints();
 	my $constrGroup  = $self->{"coreWizardStep"}->GetConstrGroups();
@@ -132,20 +133,7 @@ sub Update {
 
 	$self->{"scrollPnl"}->FitInside();
 	$self->{"scrollPnl"}->Layout();
-
-	#my ( $width, $height ) = $self->{"containerPnl"}->GetSizeWH();
-
-	# we dont know exact size of container (window hasnt been showed)
-	#if ($listFirstInit) {
-		$self->{"scrollPnl"}->SetRowCount( scalar(@constr) );
-#
-#	}
-#	else {
-#		
-#		my ( $width, $height ) = $self->{"containerPnl"}->GetSizeWH();
-#		$self->{"scrollPnl"}->SetRowCount($height/10);
-#
-#	}
+	$self->{"scrollPnl"}->SetRowCount( scalar(@constr) );
 
 }
 
@@ -200,7 +188,7 @@ sub __ShowGenerator {
 	# update layout
 	if ($result) {
 
-		$self->Update($self->{"coreWizardStep"});
+		$self->Update( $self->{"coreWizardStep"} );
 	}
 
 }

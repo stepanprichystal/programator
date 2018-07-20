@@ -1,7 +1,6 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Form represent one JobQueue item. Contain controls which show
-# status of tasking job.
+# Description: 
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Programs::Coupon::CpnWizard::Forms::WizardStep2::GroupQueue::GroupQueueRowFrm;

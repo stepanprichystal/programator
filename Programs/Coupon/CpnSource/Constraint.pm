@@ -1,6 +1,6 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Manager responsible for NIF creation
+# Description: Parsed InStack constrain
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Programs::Coupon::CpnSource::Constraint;

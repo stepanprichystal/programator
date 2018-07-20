@@ -1,6 +1,6 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Default coupon settings
+# Description: Base class for all settings
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Programs::Coupon::CpnSettings::CpnSettingsBase;

@@ -1,6 +1,7 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Default coupon settings
+# Description: Sort coupons, by amount of microstrip in group
+# The more microstrips in a small place, the better
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Programs::Coupon::CpnPolicy::SortPolicy;

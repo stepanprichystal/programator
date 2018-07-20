@@ -1,6 +1,6 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Default coupon settings
+# Description: Setting for coupon group
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Programs::Coupon::CpnSettings::CpnSingleSettings;

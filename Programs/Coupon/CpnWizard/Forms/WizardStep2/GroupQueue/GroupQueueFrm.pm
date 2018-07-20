@@ -1,6 +1,6 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Container, which display JobQueueItems in queue
+# Description: 
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Programs::Coupon::CpnWizard::Forms::WizardStep2::GroupQueue::GroupQueueFrm;

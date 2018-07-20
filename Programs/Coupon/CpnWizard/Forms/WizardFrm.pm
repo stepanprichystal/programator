@@ -1,13 +1,13 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Widget slouzici pro zobrazovani zprav ruznych typu uzivateli
+# Description: Wizard main form
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 
 package Programs::Coupon::CpnWizard::Forms::WizardFrm;
 use base 'Widgets::Forms::StandardFrm';
 
-#3th party librarysss
+#3th party library
 use Wx;
 use strict;
 use warnings;
@@ -183,20 +183,7 @@ sub __StepChanged {
 	my $wizardStepFrm = $self->{"wizardSteps"}->{ $wizardStep->GetStepNumber() };
 
 	$wizardStepFrm->Update($wizardStep);
-
-	# build layout
-	if ( $dir eq "next" ) {
-
-		#my $page = $self->{"notebook"}->GetPage($wizardStep->GetStepNumber());
-
-		#		my $content = $wizardStepFrm->GetLayout( $page->GetParent(), $wizardStep );
-		#
-		#		$page->AddContent($content, 0);
-
-	}
-
-	#$wizardStepFrm->Load($wizardCoreStep);
-
+ 
 	$self->{"notebook"}->ShowPage( $wizardStep->GetStepNumber() );
 
 	# Change step description
@@ -219,8 +206,7 @@ sub __StepChanged {
 		$self->{"endBtn"}->SetLabel("Finish");
 
 	}
-
-	#$self->{"mainFrm"}->Refresh();
+ 
 	print STDERR "StepChanged $wizardStep\n";
 }
 

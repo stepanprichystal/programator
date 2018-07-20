@@ -1,6 +1,7 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Default coupon settings
+# Description: Responsible for create combinations of microstrip in one group
+# One group can have max two "pools", pools contain microstrip
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Programs::Coupon::CpnPolicy::GroupPolicy;

@@ -1,6 +1,6 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Default coupon settings
+# Description: Responsible for create coupon groups and its combinations
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Programs::Coupon::CpnPolicy::GeneratorPolicy;
@@ -40,6 +40,7 @@ sub new {
 	return $self;
 
 }
+
 
 sub GenerateGroups {
 	my $self = shift;

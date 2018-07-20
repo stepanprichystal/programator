@@ -1,5 +1,5 @@
 #-------------------------------------------------------------------------------------------#
-# Description: Form, which allow set nif quick notes
+# Description: 
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Programs::Coupon::CpnWizard::Forms::WizardStep2::StripSettFrm;

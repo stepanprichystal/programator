@@ -1,6 +1,6 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Default coupon settings
+# Description: Responsible for set microstrip positions in group/pool
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Programs::Coupon::CpnPolicy::LayoutPolicy;
@@ -42,14 +42,13 @@ sub new {
 
 	# groups settings
 	$self->{"groupSett"} = {};
- 
 
 	return $self;
 }
 
 sub SetGlobalSettings {
 	my $self = shift;
-	
+
 	$self->{"maxTrackCnt"}       = shift;
 	$self->{"shareGNDPads"}      = shift;
 	$self->{"trackPadIsolation"} = shift;
@@ -76,11 +75,10 @@ sub SetGroupSettings {
 sub __GetGroupSett {
 	my $self    = shift;
 	my $groupId = shift;
-	
-	unless(defined $self->{"groupSett"}->{$groupId}){
-		die "group settings: $groupId is not defined" ;
+
+	unless ( defined $self->{"groupSett"}->{$groupId} ) {
+		die "group settings: $groupId is not defined";
 	}
-	
 
 	return $self->{"groupSett"}->{$groupId};
 }
@@ -159,11 +157,7 @@ sub GetStripLayoutVariants {
 				push( @singleCpnVariants, $signleCpnVar );
 			}
 
-			
-
 		}
-		
-		
 
 		# 2) Choose one SingleCpnVariant from all variants
 		if ( scalar(@singleCpnVariants) ) {
@@ -186,7 +180,7 @@ sub GetStripLayoutVariants {
 			$result = 0;
 			last;
 		}
-		
+
 		$groupOrder++;
 
 	}
@@ -199,55 +193,11 @@ sub GetStripLayoutVariants {
 	}
 
 }
-#
-#sub __GenerateCpnVariant {
-#	my $self   = shift;
-#	my @coupon = @{ shift(@_) };
-#
-#	# Build object structure - CpnVariant
-#
-#	my $cpnVar = CpnVariant->new();
-#
-#	foreach my $signleCpn (@coupon) {
-#
-#		my $signleCpnVar = CpnSingleVariant->new();
-#
-#		for ( my $i = 0 ; $i < scalar( @{$signleCpn} ) ; $i++ ) {
-#
-#			my $poolVar = CpnPoolVariant->new($i);
-#
-#			for ( my $j = 0 ; $j < scalar( @{ $signleCpn->[$i] } ) ; $j++ ) {
-#				my $s = $signleCpn->[$i]->[$j];
-#
-#				my $stripInfo = CpnStripVariant->new( $s->{"id"} );
-#				$stripInfo->SetPool( $s->{"pool"} );
-#
-#				$stripInfo->SetColumn( $s->{"col"} );
-#				$stripInfo->SetData( $s->{"d"} );
-#
-#				if ( $j + 1 == scalar( @{ $signleCpn->[$i] } ) ) {
-#					$stripInfo->SetIsLast(1);
-#				}
-#				else {
-#					$stripInfo->SetIsLast(0);
-#				}
-#
-#				$poolVar->AddStrip($stripInfo);
-#			}
-#
-#			$signleCpnVar->AddPool($poolVar);
-#		}
-#
-#		$cpnVar->AddCpnSingle($signleCpnVar);
-#	}
-#
-#	return $cpnVar;
-#
-#}
 
 sub __ProcessGroupPoolComb {
 	my $self          = shift;
 	my $groupPoolComb = shift;
+
 	#my $groupId       = shift;
 
 	my $shareGNDPads = $self->{"shareGNDPads"};
@@ -279,8 +229,6 @@ sub __ProcessGroupPoolComb {
 					push( @lastCandidates, splice @p, $j, 1 );
 				}
 			}
-
-			#}
 		}
 
 		while ( scalar(@p) || @lastCandidates ) {

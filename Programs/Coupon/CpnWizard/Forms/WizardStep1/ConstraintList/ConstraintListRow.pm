@@ -1,7 +1,5 @@
 #-------------------------------------------------------------------------------------------#
-# Description: Represent columnLayout.
-# Class keep GroupWrapperForm in Column layout and can move
-# GroupWrapperForm to neighbour columns
+# Description: 
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 

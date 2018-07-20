@@ -1,6 +1,6 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description:
+# Description: Wizard core, responsible for go next/back through all wizard steps
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Programs::Coupon::CpnWizard::WizardCore::WizardCore;

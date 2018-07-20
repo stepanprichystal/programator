@@ -1,7 +1,6 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Stencil creator prepare stencil lazer for export
-# Provides stencil panelization and GUI
+# Description: Run coupon wizard
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Programs::Coupon::CpnWizard::CpnWizard;
@@ -82,12 +81,7 @@ sub Run {
 
 sub __SetHandlers {
 	my $self = shift;
-
-#	$self->{"form"}->{"fmrDataChanged"}->Add( sub { $self->__OnFrmDataChanged(@_) } );
-#
-#	$self->{"form"}->{"prepareClick"}->Add( sub { $self->__OnPrepareClick(@_) } );
-#	
-#	$self->{"stencilPopup"}->{'stencilOutputEvt'}->Add(  sub {$self->__OutputStencil(@_)});
+ 
 
 }
  

@@ -1,6 +1,5 @@
 #-------------------------------------------------------------------------------------------#
-# Description: Responsible for creating "table of column", where GroupWrapperForms are
-# placed in. Is responsible for recaltulating "column" layout.
+# Description:  Display constraints
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Programs::Coupon::CpnWizard::Forms::WizardStep1::ConstraintList::ConstraintList;
