@@ -21,5 +21,7 @@
    </operation>
    <operation name="RoutBeforeEtch">
       <magazine material="FR4">I7</magazine>
+      <magazine material="IS400">I7</magazine>
+      <magazine material="PCL370HR">I7</magazine>
    </operation>
 </operations>
