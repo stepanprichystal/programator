@@ -1,4 +1,5 @@
 package Packages::CAMJob::Drilling::DrillChecking::LayerErrorInfo;
+
 #-------------------------------------------------------------------------------------------#
 # Description: Class is responsible for checking drilling errors
 # when some errors occur, NC export is not possible
@@ -86,77 +87,79 @@ sub CheckNCLayers {
 
 	}
 
-	# 1) Check if some layer has wronng name
-
-	unless ( $self->CheckWrongNames( \@layers, $mess ) ) {
-
-		$result = 0;
-	}
-
-	# 2) Check if layer is not empty
-
-	unless ( $self->CheckIsNotEmpty( \@layers, $stepName, $mess ) ) {
-
-		$result = 0;
-	}
-
-	# 3) Check if layer not contain attribute nomenclature
-
-	unless ( $self->CheckAttributes( \@layers, $mess ) ) {
-
-		$result = 0;
-	}
-
-	# 4) Check if drill layers not contain invalid symbols..
-
-	unless ( $self->CheckInvalidSymbols(\@layers, $mess ) ) {
-
-		$result = 0;
-	}
-
-	# 4) Check if layer has to set right direction
-
-	unless ( $self->CheckDirTop2Bot( $inCAM, $jobId, \@layers, $mess ) ) {
-
-		$result = 0;
-	}
-
-	# 5) Check if layer has to set right direction
-
-	unless ( $self->CheckDirBot2Top( $inCAM, $jobId, \@layers, $mess ) ) {
-
-		$result = 0;
-	}
-
-	# 6) Check if tool parameters are set correctly
+	# 1) Check if tool parameters are set correctly
 	unless ( $self->CheckToolParameters( $inCAM, $jobId, $stepName, \@layers, $mess ) ) {
 
 		$result = 0;
+
 	}
+	else {
 
-	# 7) Check if depth is correctly set
-	unless ( $self->CheckContainDepth( $inCAM, $jobId, $stepName, \@layers, $mess ) ) {
+		# 1) Check if some layer has wronng name
 
-		$result = 0;
-	}
+		unless ( $self->CheckWrongNames( \@layers, $mess ) ) {
 
-	# 8) Check if depth is not set
-	unless ( $self->CheckContainNoDepth( $inCAM, $jobId, $stepName, \@layers, $mess ) ) {
+			$result = 0;
+		}
 
-		$result = 0;
-	}
-	
-	# 9) Check if all tools in job have correct size
-	unless ( $self->CheckToolDiameter( $inCAM, \@layers, $mess ) ) {
+		# 2) Check if layer is not empty
 
-		$result = 0;
-	}
-	
+		unless ( $self->CheckIsNotEmpty( \@layers, $stepName, $mess ) ) {
 
-	# 10) Checkdifference between drill and finish diameter
-	unless ( $self->CheckDiamterDiff( $inCAM, $jobId, $stepName, \@layers, $mess ) ) {
+			$result = 0;
+		}
 
-		$result = 0;
+		# 3) Check if layer not contain attribute nomenclature
+
+		unless ( $self->CheckAttributes( \@layers, $mess ) ) {
+
+			$result = 0;
+		}
+
+		# 4) Check if drill layers not contain invalid symbols..
+
+		unless ( $self->CheckInvalidSymbols( \@layers, $mess ) ) {
+
+			$result = 0;
+		}
+
+		# 4) Check if layer has to set right direction
+
+		unless ( $self->CheckDirTop2Bot( $inCAM, $jobId, \@layers, $mess ) ) {
+
+			$result = 0;
+		}
+
+		# 5) Check if layer has to set right direction
+
+		unless ( $self->CheckDirBot2Top( $inCAM, $jobId, \@layers, $mess ) ) {
+
+			$result = 0;
+		}
+
+		# 7) Check if depth is correctly set
+		unless ( $self->CheckContainDepth( $inCAM, $jobId, $stepName, \@layers, $mess ) ) {
+
+			$result = 0;
+		}
+
+		# 8) Check if depth is not set
+		unless ( $self->CheckContainNoDepth( $inCAM, $jobId, $stepName, \@layers, $mess ) ) {
+
+			$result = 0;
+		}
+
+		# 9) Check if all tools in job have correct size
+		unless ( $self->CheckToolDiameter( $inCAM, \@layers, $mess ) ) {
+
+			$result = 0;
+		}
+
+		# 10) Checkdifference between drill and finish diameter
+		unless ( $self->CheckDiamterDiff( $inCAM, $jobId, $stepName, \@layers, $mess ) ) {
+
+			$result = 0;
+		}
 	}
 
 	return $result;
@@ -301,8 +304,6 @@ sub CheckInvalidSymbols {
 		}
 	}
 
-	 
-
 	return $result;
 }
 
@@ -382,22 +383,19 @@ sub CheckDirTop2Bot {
 		}
 
 	}
-	
+
 	# Check for blind layer from top, if not end in S layer
-	my @layers2 = $self->__GetLayersByType( \@layers, [EnumsGeneral->LAYERTYPE_plt_bDrillTop ] );
-	
+	my @layers2 = $self->__GetLayersByType( \@layers, [ EnumsGeneral->LAYERTYPE_plt_bDrillTop ] );
+
 	foreach my $l (@layers2) {
 
-		 my $lName = $l->{"gROWname"};
-	 
-		if ( $l->{"gROWdrl_end_name"} eq "s") {
-					$result = 0;
-					$$mess .=
-					"Blind layer: $lName, can not end in matrix in layer: \"s\"\n";
-				}
+		my $lName = $l->{"gROWname"};
+
+		if ( $l->{"gROWdrl_end_name"} eq "s" ) {
+			$result = 0;
+			$$mess .= "Blind layer: $lName, can not end in matrix in layer: \"s\"\n";
+		}
 	}
-	
-	
 
 	return $result;
 
@@ -440,25 +438,22 @@ sub CheckDirBot2Top {
 		if ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_plt_cDrill && $dir && $dir eq "bot2top" ) {
 
 			$result = 0;
-			$$mess .=
-"Vrstva: $lName má špatně nastavený vrták v metrixu u vrtání jádra. Vrták musí mít vždy směr TOP-to-BOT.\n";
+			$$mess .= "Vrstva: $lName má špatně nastavený vrták v metrixu u vrtání jádra. Vrták musí mít vždy směr TOP-to-BOT.\n";
 
 		}
 	}
-	
-	
+
 	# Check for blind layer from top, if not end in S layer
-	my @layers2 = $self->__GetLayersByType( \@layers, [EnumsGeneral->LAYERTYPE_plt_bDrillTop ] );
-	
+	my @layers2 = $self->__GetLayersByType( \@layers, [ EnumsGeneral->LAYERTYPE_plt_bDrillTop ] );
+
 	foreach my $l (@layers2) {
 
-		 my $lName = $l->{"gROWname"};
-	 
-		if ( $l->{"gROWdrl_end_name"} eq "c") {
-					$result = 0;
-					$$mess .=
-					"Blind layer: $lName, can not end in matrix in layer: \"c\"\n";
-				}
+		my $lName = $l->{"gROWname"};
+
+		if ( $l->{"gROWdrl_end_name"} eq "c" ) {
+			$result = 0;
+			$$mess .= "Blind layer: $lName, can not end in matrix in layer: \"c\"\n";
+		}
 	}
 
 	return $result;
@@ -482,6 +477,7 @@ sub CheckToolParameters {
 		# 1) Check if tools are unique within while layer, check if all necessary parameters are set
 		unless ( $l->{"uniDTM"}->CheckTools($mess) ) {
 			$result = 0;
+			next;
 
 		}
 
@@ -580,7 +576,6 @@ sub CheckContainNoDepth {
 
 }
 
-
 # Check if all tools in job are available in our CNC department (drill_size.tab, rout_size.tab )
 sub CheckToolDiameter {
 	my $self   = shift;
@@ -603,7 +598,6 @@ sub CheckToolDiameter {
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_nDrill );
 
 	my @layersDrill = $self->__GetLayersByType( \@layers, \@t );
- 
 
 	my @t2 = ();
 
@@ -622,12 +616,11 @@ sub CheckToolDiameter {
 	# check all nc layers on wrong shaped pads. Pads has to by only r<number>
 
 	my @layersAll = $self->__GetLayersByType( \@layers, [ @t, @t2 ] );
- 
 
 	# check all nc layers on max available drill tool
 	my @tool    = CamDTM->GetToolTable( $inCAM, 'drill' );
-	my $maxTool = max(@tool)*1000; # in µm
-	my $minTool = min(@tool)*1000; # in µm
+	my $maxTool = max(@tool) * 1000;                         # in µm
+	my $minTool = min(@tool) * 1000;                         # in µm
 
 	foreach my $l (@layersAll) {
 
@@ -644,24 +637,23 @@ sub CheckToolDiameter {
 			  . ") larger than our max tool ($maxTool mm)\n";
 		}
 
-#		my @minTools = grep { ( $_->{"sym"} =~ m/^r(\d+\.?\d*)$/ )[0] < $minTool } @{ $l->{"symHist"}->{"pads"} };
-#
-#		if ( scalar(@minTools) ) {
-#
-#			$result = 0;
-#			$$mess .=
-#			    "NC layer: "
-#			  . $l->{"gROWname"}
-#			  . " contains drilled holes ("
-#			  . join( ";", map { $_->{"sym"} } @minTools )
-#			  . ") smaller than our min tool ($minTool mm)\n";
-#		}
+		#		my @minTools = grep { ( $_->{"sym"} =~ m/^r(\d+\.?\d*)$/ )[0] < $minTool } @{ $l->{"symHist"}->{"pads"} };
+		#
+		#		if ( scalar(@minTools) ) {
+		#
+		#			$result = 0;
+		#			$$mess .=
+		#			    "NC layer: "
+		#			  . $l->{"gROWname"}
+		#			  . " contains drilled holes ("
+		#			  . join( ";", map { $_->{"sym"} } @minTools )
+		#			  . ") smaller than our min tool ($minTool mm)\n";
+		#		}
 
 	}
 
 	return $result;
 }
-
 
 # Check if tools are unique within while layer, check if all necessary parameters are set
 sub CheckDiamterDiff {

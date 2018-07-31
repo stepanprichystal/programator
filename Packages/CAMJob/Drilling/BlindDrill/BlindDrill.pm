@@ -37,10 +37,9 @@ sub GetDrillType {
 	my $resData   = shift // {};    # resutl data when no drill type returned
 
 	my $drillType = 0;
-	
+
 	$resData->{ Enums->BLINDTYPE_STANDARD } = {};
-	$resData->{ Enums->BLINDTYPE_SPECIAL } = {};
-	
+	$resData->{ Enums->BLINDTYPE_SPECIAL }  = {};
 
 	# compute depth for type 1 and 2
 	my $drillDepthT1 = $self->ComputeDrillDepth( $stackup, $drillSize, $ncLayer, Enums->BLINDTYPE_STANDARD );
@@ -80,14 +79,13 @@ sub GetDrillType {
 	return $drillType;
 }
 
-
 # Compute blind drill depth
 sub ComputeDrillDepth {
 	my $self      = shift;
 	my $stackup   = shift;
-	my $drillSize = shift;                                             # DTM uni tool
-	my $ncLayer   = shift;                                             # NC Layer with start/stop properties
-	my $drillType = shift;                                             # Type 1 - cylindrial part to Cu , Type 2 - drill peak to Cu
+	my $drillSize = shift;    # DTM uni tool
+	my $ncLayer   = shift;    # NC Layer with start/stop properties
+	my $drillType = shift;    # Type 1 - cylindrial part to Cu , Type 2 - drill peak to Cu
 
 	my $depth = 0;
 
@@ -96,18 +94,32 @@ sub ComputeDrillDepth {
 	my $drillDir = $ncLayer->{"gROWdrl_dir"};
 
 	# Stackup thick from start to end Cu of drilling (end cu - compute only half thick of Cu)
-	my $stackThick = 0;                                                #µm
+	my $stackThick = 0;       #µm
 
 	my @layers = $stackup->GetAllLayers();
 	@layers = reverse(@layers) if ( $drillDir eq "bot2top" );
 
+	my $addThick = 0;
 	foreach my $l (@layers) {
+
+		# check "start layer" of computting total thickness
+		if ( !$addThick && $l->GetType() eq StackEnums->MaterialType_COPPER ) {
+
+			if (    $drillDir eq "bot2top" && $l->GetCopperNumber() <= $drillS
+				 || $drillDir eq "top2bot" && $l->GetCopperNumber() >= $drillS )
+			{
+				$addThick = 1;
+			}
+		}
+
+		next unless ($addThick);
 
 		if ( $l->GetType() eq StackEnums->MaterialType_COPPER && $l->GetCopperNumber() eq $drillE ) {
 
-			$stackThick += $l->GetThick() / 2;                         # end cu computed only half thick
+			$stackThick += $l->GetThick() / 2;    # end cu computed only half thick
 			last;
 		}
+		
 		$stackThick += $l->GetThick();
 	}
 
@@ -143,7 +155,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	use aliased 'CamHelpers::CamDrilling';
 
 	my $inCAM = InCAM->new();
-	my $jobId = "d152457";
+	my $jobId = "d218211";
 	my $step  = "o+1";
 
 	use aliased 'Packages::Stackup::Stackup::Stackup';
@@ -152,7 +164,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my %res = ();
 
-	my %l = ( "gROWname" => "sc1" );
+	my %l = ( "gROWname" => "ss1" );
 	CamDrilling->AddLayerStartStop( $inCAM, $jobId, [ \%l ] );
 
 	my $r = BlindDrill->GetDrillType( $stackup, 1650, \%l, \%res );

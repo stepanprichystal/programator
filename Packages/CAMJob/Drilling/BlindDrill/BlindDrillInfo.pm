@@ -143,17 +143,17 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	use aliased 'Packages::Stackup::Stackup::Stackup';
 
 	my $inCAM = InCAM->new();
-	my $jobId = "d212783";
+	my $jobId = "d218211";
 	my $step  = "o+1";
 
 	my $stackup = Stackup->new($jobId);
 
 	my %res = ();
 
-	my %l = ( "gROWname" => "sc1" );
+	my %l = ( "gROWname" => "ss2" );
 
 	my $mess = "";
-	my $r = BlindDrillInfo->BlindDrillInfo( $inCAM, $jobId, $step, \%l, \$mess );
+	my $r = BlindDrillInfo->BlindDrillChecks( $inCAM, $jobId, $step, \%l, \$mess );
 
 	print "Result:" . $r . "\n" . $mess;
 

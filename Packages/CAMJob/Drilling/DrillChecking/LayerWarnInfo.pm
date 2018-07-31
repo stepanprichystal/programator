@@ -86,17 +86,19 @@ sub CheckNCLayers {
 
 		$result = 0;
 	}
+	else {
 
-	# 2) Check if tool parameters are set correctly
-	unless ( $self->CheckNonBoardLayers( $inCAM, $jobId, $mess ) ) {
+		# 2) Check if tool parameters are set correctly
+		unless ( $self->CheckNonBoardLayers( $inCAM, $jobId, $mess ) ) {
 
-		$result = 0;
-	}
+			$result = 0;
+		}
 
-	# 1) Check floating point diameters
-	unless ( $self->CheckFloatDiemeters( $inCAM, $jobId, $stepName, \@layers, $mess ) ) {
+		# 1) Check floating point diameters
+		unless ( $self->CheckFloatDiemeters( $inCAM, $jobId, $stepName, \@layers, $mess ) ) {
 
-		$result = 0;
+			$result = 0;
+		}
 	}
 
 	return $result;

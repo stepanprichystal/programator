@@ -44,7 +44,7 @@ sub new {
 	my $columnWidths = \@widths;
 	my $verticalLine = 1;
 
-	my $self = $class->SUPER::new( $parent, , Enums->Mode_CHECKBOX, $columnCnt, $columnWidths, $verticalLine );
+	my $self = $class->SUPER::new( $parent,  Enums->Mode_CHECKBOX, $columnCnt, $columnWidths, $verticalLine, undef, 1 );
 
 	bless($self);
 

@@ -57,7 +57,7 @@ sub Build {
 
 	#kons_trida
 	if ( $self->_IsRequire("kons_trida") ) {
-		my $pcbClass = CamJob->GetJobPcbClass( $inCAM, $jobId );    #attribut pnl_class from job
+		my $pcbClass = CamJob->GetLimJobPcbClass( $inCAM, $jobId, "max" );    #attribut pnl_class from job
 		$section->AddRow( "kons_trida", $pcbClass );
 	}
 

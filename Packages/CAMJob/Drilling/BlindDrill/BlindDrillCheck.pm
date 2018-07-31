@@ -71,21 +71,44 @@ sub CheckDrillIsolation {
 
 	my $reqIsol = 0;                 # requested isolation for specificied tool
 	my $reqIsolFromCu;               # name of Cu layer which isolation is requested for
-	my $realIsol = 0;                # real isolation, which is between end drilled Cu layer and next Cu layer in drill direction
+	my $realCuIsol   = 0;            # real isolation, which is between end drilled Cu layer and next Cu layer in drill direction
+	my $realPeakIsol = 0;            # isolation, which is between drill peak and next Cu layer in drill direction
 
 	# Real isolation
 	my @layers = $stackup->GetAllLayers();
 	@layers = reverse(@layers) if ( $ncLayer->{"gROWdrl_dir"} eq "bot2top" );
 
+	my $drillS   = $ncLayer->{"gROWdrl_start"};
+	my $drillE   = $ncLayer->{"gROWdrl_end"};
+	my $drillDir = $ncLayer->{"gROWdrl_dir"};
+
+	my $addThick = 0;
 	for ( my $i = 0 ; $i < scalar(@layers) ; $i++ ) {
+
 		my $l = $layers[$i];
+
+		# check "start layer" of computting total thickness
+		if ( !$addThick && $l->GetType() eq StackEnums->MaterialType_COPPER ) {
+
+			if (    $drillDir eq "bot2top" && $l->GetCopperNumber() <= $drillS
+				 || $drillDir eq "top2bot" && $l->GetCopperNumber() >= $drillS )
+			{
+				$addThick = 1;
+			}
+		}
+
+		next unless ($addThick);
 
 		if ( $l->GetType() eq StackEnums->MaterialType_COPPER && $l->GetCopperNumber() eq $ncLayer->{"gROWdrl_end"} ) {
 
-			$realIsol      = $layers[ $i + 1 ]->GetThick();
+			$realPeakIsol += $l->GetThick();
+			$realPeakIsol += $layers[ $i + 1 ]->GetThick();
+			$realPeakIsol -= $drillDepth;
 			$reqIsolFromCu = $layers[ $i + 2 ]->GetCopperName();
 			last;
 		}
+
+		$realPeakIsol += $l->GetThick();
 	}
 
 	# Peal absolute length
@@ -108,14 +131,14 @@ sub CheckDrillIsolation {
 		print STDERR "Type 2: Isolation: $reqIsol\n";
 	}
 
-	if ( $realIsol < $reqIsol ) {
+	if ( $realPeakIsol < $reqIsol ) {
 
 		$result = 0;
 
 	}
 
 	$resultData->{"requestedIsolThick"}   = $reqIsol;
-	$resultData->{"currentIsolThick"}     = $realIsol;
+	$resultData->{"currentIsolThick"}     = $realPeakIsol;
 	$resultData->{"requestedIsolCuLayer"} = $reqIsolFromCu;
 
 	return $result;

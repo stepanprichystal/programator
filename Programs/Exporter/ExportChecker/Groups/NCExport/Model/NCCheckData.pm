@@ -80,6 +80,9 @@ sub OnCheckGroupData {
 
 	unless ( LayerErrorInfo->CheckNCLayers( $inCAM, $jobId, $stepName, undef, \$mess ) ) {
 		$dataMngr->_AddErrorResult( "Checking NC layer", $mess );
+		
+		# Do not continue in other check if this  "basic" check fail
+		return 0;
 	}
 
 	my $mess2 = "";    # warnings
