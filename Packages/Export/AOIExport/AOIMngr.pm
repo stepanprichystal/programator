@@ -300,7 +300,7 @@ sub __ExportAOI {
 	$inCAM->COM( "cdr_set_area_auto", "steps" => $stepsStr, "margin_x" => "0", "margin_y" => "0", "inspected_steps" => "" );
 
 	# Exclude texts from test
-	$inCAM->COM( "cdr_auto_zone_text", "margin" => "0", "pcb" => "yes", "panel" => "no" );
+	$inCAM->COM( "cdr_auto_zone_text", "margin" => "100", "pcb" => "yes", "panel" => "no" );
 
 	# STOP HANDLE EXCEPTION IN INCAM
 	#$inCAM->HandleException(0);
