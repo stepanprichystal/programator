@@ -30,9 +30,9 @@ sub new {
 	bless $self;
 
 	$self->{"microns"}         = shift;
-	$self->{"accuracy"}        = $self->{"microns"} ? 20 : 0.02;    # 20µm is value, which score line could be not strictly ("vertical/horiyontal")
-	$self->{"accuracyOverlap"} = $self->{"microns"} ? 500 : 0.5;    # 500µ is min allowed parallel overlap (see existParallelOverlap())
-	                                                                #instance of  "base" class Features.pm
+	$self->{"accuracy"}        = shift // ($self->{"microns"} ? 20 : 0.02);   # 20µm is value, which score line could be not strictly ("vertical/horiyontal")
+	$self->{"accuracyOverlap"} = shift // ($self->{"microns"} ? 500 : 0.5);    # 500µ is min allowed parallel overlap (see existParallelOverlap())
+                                                            #instance of  "base" class Features.pm
 	$self->{"base"}            = Features->new();
 
 	my @features = ();

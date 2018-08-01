@@ -6,8 +6,8 @@
 package Programs::Services::TpvService::ServiceApps::CheckReorderApp::CheckReorderApp;
 use base("Programs::Services::TpvService::ServiceApps::ServiceAppBase");
 
-#use Class::Interface;
-#&implements('Programs::Services::TpvService::ServiceApps::IServiceApp');
+use Class::Interface;
+&implements('Programs::Services::TpvService::ServiceApps::IServiceApp');
 
 #3th party library
 use strict;

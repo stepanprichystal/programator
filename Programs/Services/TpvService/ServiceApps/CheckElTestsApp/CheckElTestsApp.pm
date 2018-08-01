@@ -5,8 +5,8 @@
 package Programs::Services::TpvService::ServiceApps::CheckElTestsApp::CheckElTestsApp;
 use base("Programs::Services::TpvService::ServiceApps::ServiceAppBase");
 
-#use Class::Interface;
-#&implements('Programs::Services::TpvService::ServiceApps::IServiceApp'); Thole musi byt zakomentovane jinak to nejede na serveru
+use Class::Interface;
+&implements('Programs::Services::TpvService::ServiceApps::IServiceApp');
 
 #3th party library
 use utf8;

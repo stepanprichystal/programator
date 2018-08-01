@@ -56,7 +56,7 @@ use constant {
 	Jobs_ELTESTSIPC =>  "\\\\gatema.cz\\fs\\r\\El_tests\\",
 	Jobs_STENCILDATA   => "\\\\gatema.cz\\fs\\r\\Kooperace_sablony\\",
 	Jobs_COOPERDRILL   => "\\\\gatema.cz\\fs\\r\\Kooperace_drillMap\\",
-	Jobs_APPLOGS => "\\\\gatema.cz\\fs\\r\\pcb\\pcb\\\appLogs\\",
+	Jobs_APPLOGS => "\\\\fs2.gatema.cz\\Log\\",
 	Jobs_EXPORTFILES => "\\\\gatema.cz\\fs\\r\\Export\\ExportFiles\\",
 	Jobs_EXPORTFILESPCB => "\\\\gatema.cz\\fs\\r\\Export\\ExportFiles\\Pcb\\",
 	Jobs_EXPORTFILESPOOL => "\\\\gatema.cz\\fs\\r\\Export\\ExportFiles\\Pool\\",

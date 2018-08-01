@@ -5,7 +5,6 @@
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 
-
 use strict;
 use warnings;
 
@@ -15,7 +14,6 @@ use warnings;
 use FindBin;
 use lib "$FindBin::Bin/../";
 use PackagesLib;
- 
 
 #local library
 use aliased 'Packages::InCAM::InCAM';
@@ -26,6 +24,7 @@ use aliased 'Packages::Scoring::Optimalization::Helper';
 use aliased 'Packages::Scoring::Optimalization::Enums';
 use aliased 'Packages::Polygon::Features::ScoreFeatures::ScoreFeatures';
 use aliased 'Managers::MessageMngr::MessageMngr';
+
 #-------------------------------------------------------------------------------------------#
 #  Script methods
 #-------------------------------------------------------------------------------------------#
@@ -53,24 +52,24 @@ if (0) {
 	$stepName = "mpanel";
 
 	$inCAM->COM(
-				   "clipb_open_job",
-				   job              => "$jobName",
-				   update_clipboard => "view_job"
+				 "clipb_open_job",
+				 job              => "$jobName",
+				 update_clipboard => "view_job"
 	);
 	$inCAM->COM( "open_job", job => "$jobName" );
 	$inCAM->COM(
-				   "open_entity",
-				   job  => "$jobName",
-				   type => "step",
-				   name => $stepName
+				 "open_entity",
+				 job  => "$jobName",
+				 type => "step",
+				 name => $stepName
 	);
 	$inCAM->AUX( 'set_group', group => $inCAM->{COMANS} );
 
 	$inCAM->COM(
-				   "display_layer",
-				   name    => $layer,
-				   display => "yes",
-				   number  => 1
+				 "display_layer",
+				 name    => $layer,
+				 display => "yes",
+				 number  => 1
 	);
 	$inCAM->COM( "work_layer", name => $layer );
 
@@ -86,27 +85,27 @@ unless ($stepName) {
 }
 
 $inCAM->INFO(
-				entity_type => 'layer',
-				entity_path => "$jobName/$stepName/score",
-				data_type   => 'exists'
+			  entity_type => 'layer',
+			  entity_path => "$jobName/$stepName/score",
+			  data_type   => 'exists'
 );
 
 if ( $inCAM->{doinfo}{gEXISTS} eq "yes" ) {
 
 	$inCAM->COM(
-				   "open_entity",
-				   job  => "$jobName",
-				   type => "step",
-				   name => $stepName
+				 "open_entity",
+				 job  => "$jobName",
+				 type => "step",
+				 name => $stepName
 	);
 
 	$inCAM->AUX( 'set_group', group => $inCAM->{COMANS} );
 
 	$inCAM->COM(
-				   "display_layer",
-				   name    => "score",
-				   display => "yes",
-				   number  => 1
+				 "display_layer",
+				 name    => "score",
+				 display => "yes",
+				 number  => 1
 	);
 	$inCAM->COM( "work_layer", name => "score" );
 
@@ -116,7 +115,7 @@ if ( $inCAM->{doinfo}{gEXISTS} eq "yes" ) {
 	my %errors        = ( "errors" => undef, "warrings" => undef );
 
 	#get features from score layer
-	my $scoreFeatures = ScoreFeatures->new();
+	my $scoreFeatures = ScoreFeatures->new(0, 0.08); # 80um tolerance during set direction verticall/horiyontall
 	$scoreFeatures->Parse( $inCAM, $jobName, $stepName, "score" );
 	my @scoreFeatures = $scoreFeatures->GetFeatures();
 
@@ -127,10 +126,23 @@ if ( $inCAM->{doinfo}{gEXISTS} eq "yes" ) {
 		exit;
 	}
 
-	my $dist         = 0;                                                                                  #sit from profile
+	my $dist = 0;                                                                 #sit from profile
 	my %profileLimts = CamJob->GetProfileLimits( $inCAM, $jobName, $stepName );
-	
-	my $checkProf    = Helper->CheckProfileDistance( \@scoreFeatures, \%profileLimts, $dist, \%errors );
+
+	my $checkProf = Helper->CheckProfileDistance( \@scoreFeatures, \%profileLimts, $dist, \%errors );
+
+	while ( !$scoreFeatures->IsStraight() ) {
+		my $messMngr = MessageMngr->new($jobName);
+		my $str = "id: " . join( "; ", map { $_->{"id"} } grep { !defined $_->{"direction"} } @scoreFeatures );
+		$messMngr->ShowModal( -1,
+							  EnumsGeneral->MessageType_ERROR,
+							  ["Uvedene lajny ($str) jsou prilis krive (nejsou ani horizontalni ani vertikalni), narovnej je rucne manualne!"] );
+
+		$inCAM->PAUSE("Narovnej lajny rucne ($str)");
+
+		$scoreFeatures->Parse( $inCAM, $jobName, $stepName, "score" );
+		@scoreFeatures = $scoreFeatures->GetFeatures();
+	}
 
 	my @lines = Helper->GetStraightScore( \@scoreFeatures, \$changesLokal, \%errors );
 
@@ -162,7 +174,7 @@ if ( $inCAM->{doinfo}{gEXISTS} eq "yes" ) {
 
 		if ( scalar(@mess) > 0 ) {
 
-			my $messMngr =  MessageMngr->new($jobName);
+			my $messMngr = MessageMngr->new($jobName);
 			$messMngr->ShowModal( -1, EnumsGeneral->MessageType_INFORMATION, \@mess );
 
 		}
@@ -171,11 +183,11 @@ if ( $inCAM->{doinfo}{gEXISTS} eq "yes" ) {
 			#$inCAM->COM ('editor_page_close');
 		}
 	}
-	
-	if(defined $errors{"errors"}{"mess"}){
-		my $messMngr =  MessageMngr->new($jobName);
-			$messMngr->ShowModal( -1, EnumsGeneral->MessageType_ERROR, [$errors{"errors"}{"mess"}] );
-		
+
+	if ( defined $errors{"errors"}{"mess"} ) {
+		my $messMngr = MessageMngr->new($jobName);
+		$messMngr->ShowModal( -1, EnumsGeneral->MessageType_ERROR, [ $errors{"errors"}{"mess"} ] );
+
 	}
 
 }
@@ -191,13 +203,13 @@ sub DrawScoreLines {
 		if ( $features[$i]{"type"} eq "L" ) {
 
 			$lastIdx = $inCAM->COM(
-									  'add_line',
-									  attributes => 'no',
-									  xs         => $features[$i]{"x1"},
-									  ys         => $features[$i]{"y1"},
-									  xe         => $features[$i]{"x2"},
-									  ye         => $features[$i]{"y2"},
-									  "symbol"   => "r400"
+									'add_line',
+									attributes => 'no',
+									xs         => $features[$i]{"x1"},
+									ys         => $features[$i]{"y1"},
+									xe         => $features[$i]{"x2"},
+									ye         => $features[$i]{"y2"},
+									"symbol"   => "r400"
 			);
 		}
 

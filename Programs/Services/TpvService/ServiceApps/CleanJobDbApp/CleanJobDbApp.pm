@@ -6,8 +6,8 @@
 package Programs::Services::TpvService::ServiceApps::CleanJobDbApp::CleanJobDbApp;
 use base("Programs::Services::TpvService::ServiceApps::ServiceAppBase");
 
-#use Class::Interface;
-#&implements('Programs::Services::TpvService::ServiceApps::IServiceApp');
+use Class::Interface;
+&implements('Programs::Services::TpvService::ServiceApps::IServiceApp');
 
 #3th party library
 use strict;
@@ -498,7 +498,7 @@ sub __DeleteAppLogs{
 		my @stats = stat($dir);
 		
 		# remove older than 3 months
-		if( -d $dir && (time() - $stats[10] ) > 3*60*60*24*30){
+		if( -d $dir && (time() - $stats[10] ) >  1*60*60*24*30){
 			
 			$totalLogDeleted++;
  			
@@ -556,7 +556,7 @@ sub __ProcessError {
 	$self->{"logger"}->error($errMess);
 
 	# sent error to log db
-	$self->{"loggerDB"}->Error( $jobId, $errMess );
+	#$self->{"loggerDB"}->Error( $jobId, $errMess );
 
 }
 
