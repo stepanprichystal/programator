@@ -2051,10 +2051,12 @@ sub _FindAttrBGA{
 	foreach my $layerName ('c', 's') { 
 				my %attriLay = ();
 
-				my %hist = CamHistogram->GetAttHistogram($inCAM, $jobId, $step, $layerName);
+				if (CamHelper->LayerExists( $inCAM, $jobId, $layerName ) == 1) {
+							my %hist = CamHistogram->GetAttHistogram($inCAM, $jobId, $step, $layerName);
                                                if ( $hist{".bga"} ) {
                                                            $res = 1;
                                                }
+				}
 	}
 	return($res);
 }
