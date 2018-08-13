@@ -9,9 +9,8 @@ use Tk::LabFrame;
 use File::Copy::Recursive qw(fcopy rcopy dircopy fmove rmove dirmove);
 use File::Path qw( rmtree );
 
-use LoadLibrary;
+#use LoadLibrary;
 #use GenesisHelper;
-use GeneralHelper;
 
 #necessary for load pall packages
 use FindBin;
@@ -33,6 +32,7 @@ use aliased 'CamHelpers::CamJob';
 use aliased 'CamHelpers::CamHelper';
 use aliased 'CamHelpers::CamLayer';
 use aliased 'CamHelpers::CamAttributes';
+use aliased 'CamHelpers::CamHistogram';
 use aliased 'CamHelpers::CamCopperArea';
 use aliased 'CamHelpers::CamGoldArea';
 use aliased 'CamHelpers::CamStepRepeat';
@@ -95,6 +95,11 @@ _CheckTypeOfPcb($jobName);
 #Remove attr .feed from layer F
 _DelAttrFeed();
 
+#Set attr bga to form when exist
+my $bga = 0;
+if (_FindAttrBGA($jobName, 'o+1') == 1) {
+	$bga = 1;
+}
 
 # When there are uncover soldermask of drilling only from one side, then subroutine perform uncover sodermask even on the other side.
 _SolderMaskUncoverVia($jobName);
@@ -586,9 +591,18 @@ sub _CheckPool{
 						}
  						
  	 					#input parameters
- 	 					my $poznamka = $txt->get("1.0","end");
+ 	 					my $poznamka = '';
+						
+	 			  		if($bga == 1) {
+	 			  			$poznamka .= 'Na desce je BGA;';  	
+	 			  		} 
+	 			  		$poznamka .= $txt->get("1.0","end");
 	 			  		chomp($poznamka);
 	 			  		$poznamka =~ s/\n/,/g;
+	 			  		
+	 			  		
+	 			  		
+	 			  		
 	 			  		
  	 					my $tenting  = 0;
  	 					my $pressfit = 0;
@@ -1770,7 +1784,7 @@ sub _SetPanelCustomer {
 							
 							my $btnNumber = $messMngr->Result();    # vraci poradove cislo zmacknuteho tlacitka (pocitano od 0, zleva)
 							
-							if ($resulta == 0) {
+							if ($btnNumber == 0) {
 									my ($singleXsize, $singleYsize, $nas_mpanel_zak) = _CustomerPanel($jobId);
 				
 									# Set construction class to the attribute of job
@@ -2001,7 +2015,7 @@ sub _SolderMaskUncoverVia {
 															CamLayer->CopySelOtherLayer($inCAM, ['mc'], 0, -50 );
 															CamLayer->ClearLayers($inCAM);
 															
-															_reportTMP($jobId . ' Odmaskovany via v mc');
+															#_reportTMP($jobId . ' Odmaskovany via v mc');
 													}
 													
 													if (CamHelper->LayerExists( $inCAM, $jobId, $layerTMP) == 1) {
@@ -2027,3 +2041,24 @@ sub _DelAttrFeed {
 			CamAttributes->DelFeatuesAttribute($inCAM, '.feed');
 			CamLayer->ClearLayers($inCAM);
 }
+
+sub _FindAttrBGA{
+	my $jobId = shift;
+	my $step = shift;
+	my $res = 0;
+	
+	
+	foreach my $layerName ('c', 's') { 
+				my %attriLay = ();
+
+				my %hist = CamHistogram->GetAttHistogram($inCAM, $jobId, $step, $layerName);
+                                               if ( $hist{".bga"} ) {
+                                                           $res = 1;
+                                               }
+	}
+	return($res);
+}
+
+
+
+
