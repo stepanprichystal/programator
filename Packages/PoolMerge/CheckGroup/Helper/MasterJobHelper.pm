@@ -138,10 +138,10 @@ sub GetMasterJob {
 	
 	# Set material FR4
 	
-	#if($result){
-	#	
-	#	HegMethods->UpdateMaterialKind($$masterJob, "FR4", 1);
-	#}
+	if($result){
+		
+		HegMethods->UpdateMaterialKind($$masterJob, "FR4", 1);
+	}
 	
 
 	return $result;
