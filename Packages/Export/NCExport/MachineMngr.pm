@@ -359,11 +359,11 @@ sub __SetStaticPropertyTable {
 	$t{ EnumsGeneral->LAYERTYPE_nplt_frMill }{"ml"} = [ 0, 0, 1, 0, 0, 0 ];
 	$t{ EnumsGeneral->LAYERTYPE_nplt_frMill }{"sl"} = [ 0, 0, 0, 0, 0, 0 ];
 
-	$t{ EnumsGeneral->LAYERTYPE_nplt_jbMillTop }{"ml"} = [ 0, 0, 0, 1, 0, 1 ];
-	$t{ EnumsGeneral->LAYERTYPE_nplt_jbMillTop }{"sl"} = [ 0, 0, 0, 1, 0, 1 ];
+	$t{ EnumsGeneral->LAYERTYPE_nplt_cbMillTop }{"ml"} = [ 0, 0, 0, 1, 0, 1 ];
+	$t{ EnumsGeneral->LAYERTYPE_nplt_cbMillTop }{"sl"} = [ 0, 0, 0, 1, 0, 1 ];
 	
-	$t{ EnumsGeneral->LAYERTYPE_nplt_jbMillBot }{"ml"} = [ 0, 0, 0, 1, 0, 1 ];
-	$t{ EnumsGeneral->LAYERTYPE_nplt_jbMillBot }{"sl"} = [ 0, 0, 0, 1, 0, 1 ];
+	$t{ EnumsGeneral->LAYERTYPE_nplt_cbMillBot }{"ml"} = [ 0, 0, 0, 1, 0, 1 ];
+	$t{ EnumsGeneral->LAYERTYPE_nplt_cbMillBot }{"sl"} = [ 0, 0, 0, 1, 0, 1 ];
 
 	$t{ EnumsGeneral->LAYERTYPE_nplt_kMill }{"ml"} = [ 0, 0, 1, 0, 0, 0 ];
 	$t{ EnumsGeneral->LAYERTYPE_nplt_kMill }{"sl"} = [ 0, 0, 1, 0, 0, 0 ];
@@ -376,7 +376,16 @@ sub __SetStaticPropertyTable {
 
 	$t{ EnumsGeneral->LAYERTYPE_nplt_fMillSpec }{"ml"} = [ 0, 0, 1, 0, 0, 0 ];
 	$t{ EnumsGeneral->LAYERTYPE_nplt_fMillSpec }{"sl"} = [ 0, 0, 1, 0, 0, 0 ];
-
+	
+	$t{ EnumsGeneral->LAYERTYPE_nplt_cvrlycMill }{"ml"} = [ 0, 0, 0, 1, 0, 0 ];
+	$t{ EnumsGeneral->LAYERTYPE_nplt_cvrlycMill }{"sl"} = [ 0, 0, 0, 1, 0, 0 ];
+	
+	$t{ EnumsGeneral->LAYERTYPE_nplt_cvrlysMill }{"ml"} = [ 0, 0, 0, 1, 0, 0 ];
+	$t{ EnumsGeneral->LAYERTYPE_nplt_cvrlysMill }{"sl"} = [ 0, 0, 0, 1, 0, 0 ];
+	
+	$t{ EnumsGeneral->LAYERTYPE_nplt_prepregMill }{"ml"} = [ 0, 0, 0, 1, 0, 0 ];
+	$t{ EnumsGeneral->LAYERTYPE_nplt_prepregMill }{"sl"} = [ 0, 0, 0, 1, 0, 0 ];
+ 
 }
 
 #-------------------------------------------------------------------------------------------#

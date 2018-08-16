@@ -248,6 +248,17 @@ sub GetLimJobPcbClass {
 	return $resPcbClass;
 }
 
+#Return class of flex part of pcb saved as job attribute PcbClassFlex
+sub GetJobFlexPcbClass {
+
+	my $self = shift;
+
+	my %info = CamAttributes->GetJobAttr(@_);
+
+	return $info{"pcb_class_flex"};
+
+}
+
 #Create layer
 sub CreateLayer {
 

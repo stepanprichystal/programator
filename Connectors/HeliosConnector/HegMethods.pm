@@ -86,6 +86,8 @@ sub GetAllByPcbId {
 				 dn.frezovani_po n_milling_after,
 				 dn.poznamka n_poznamka_dps,
 				 dn.poznamka_zakaznik n_poznamka_web,
+				 d.material,
+				 m.nazev_subjektu material_nazev,
 				 d.poznamka_zakaznik poznamka_web,
 				 n.poznamka n_poznamka_zak,
 				 z.kusy_pozadavek pocet,
@@ -106,7 +108,7 @@ sub GetAllByPcbId {
 				 d.sablona_typ
 				 from lcs.desky_22 d with (nolock)
 				 left outer join lcs.subjekty c with (nolock) on c.cislo_subjektu=d.zakaznik
-				 left outer join lcs.subjekty m with (nolock) on m.cislo_subjektu=d.material
+				 left outer join lcs.kmenova_karta_skladu m with (nolock) on m.cislo_subjektu=d.material
 				 left outer join lcs.zakazky_dps_22_hlavicka z with (nolock) on z.deska=d.cislo_subjektu
 				 left outer join lcs.vztahysubjektu vs with (nolock) on vs.cislo_subjektu=z.cislo_subjektu and vs.cislo_vztahu=22175
 				 left outer join lcs.zakazky_dps_22_hlavicka n with (nolock) on vs.cislo_vztaz_subjektu=n.cislo_subjektu

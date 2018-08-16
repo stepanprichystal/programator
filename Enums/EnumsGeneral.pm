@@ -68,12 +68,17 @@ use constant {
 	LAYERTYPE_nplt_rsMill    => "nplt_rsMill",       # rs mill before plating
 	LAYERTYPE_nplt_frMill    => "nplt_frMill",       # milling frame "fr"
 	LAYERTYPE_nplt_score     => "nplt_score",        # scoring
-	LAYERTYPE_nplt_jbMillTop => "nplt_jbMillTop",    #z-axis mill top of core
-	LAYERTYPE_nplt_jbMillBot => "nplt_jbMillBot",    #z-axis mill bot of core
+	LAYERTYPE_nplt_cbMillTop => "nplt_cbMillTop",    #z-axis mill top of core
+	LAYERTYPE_nplt_cbMillBot => "nplt_cbMillBot",    #z-axis mill bot of core
 	LAYERTYPE_nplt_kMill     => "nplt_kmill",        #milling of gold connector
 	LAYERTYPE_nplt_lcMill    => "nplt_lcMill",       #milling of template for c side (snimaci lak)
 	LAYERTYPE_nplt_lsMill    => "nplt_lsMill",       #milling of template for s side (snimaci lak)
 	LAYERTYPE_nplt_fMillSpec => "nplt_fMillSpec",    #special milling (ramecek, dovrtani apod)
+	
+	# new tmp for flexi
+	LAYERTYPE_nplt_cvrlycMill      => "nplt_cvrlycMill",         # top coverlay mill 
+	LAYERTYPE_nplt_cvrlysMill      => "nplt_cvrlysMill",         # bot coverlay mill
+	LAYERTYPE_nplt_prepregMill      => "nplt_prepregMill"         # prepreg mill
 
 };
 

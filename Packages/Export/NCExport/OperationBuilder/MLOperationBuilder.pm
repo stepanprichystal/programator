@@ -373,12 +373,17 @@ sub __DefineNPlatedOperations {
 	my @nplt_bMillBot  = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_bMillBot } };     #z-axis bot mill
 	my @nplt_rsMill    = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_rsMill } };       #rs mill before plating
 	my @nplt_frMill    = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_frMill } };       #milling frame
-	my @nplt_jbMillTop = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_jbMillTop } };    #z-axis Top mill of core
-	my @nplt_jbMillBot = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_jbMillBot } };    #z-axis bot mill of core
+	my @nplt_cbMillTop = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_cbMillTop } };    #z-axis Top mill of core
+	my @nplt_cbMillBot = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_cbMillBot } };    #z-axis bot mill of core
 	my @nplt_lcMill    = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_lcMill } };       #milling template snim lak c
 	my @nplt_lsMill    = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_lsMill } };       #milling template snim lak s
 	my @nplt_kMill     = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_kMill } };        #milling conneector
 
+	my @nplt_cvrlycMill     = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_cvrlycMill } };        #top coverlay mill 
+	my @nplt_cvrlysMill     = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_cvrlysMill } };        #bot coverlay mill 
+	my @nplt_prepregMill     = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_prepregMill } };       #prepreg mill
+	
+	 
 	#Define operation:
 
 	# 1) Operation name = fzc<press order>, can contain layer
@@ -444,24 +449,24 @@ sub __DefineNPlatedOperations {
 		$opManager->AddOperationDef( $outFile, \@layers, $pressOrder );
 	}
 
-	# 4) Operation name = jfzc<core number> - can contain layer from @nplt_jbMillTop
-	foreach my $jLayer (@nplt_jbMillTop) {
+	# 4) Operation name = jfzc<core number> - can contain layer from @nplt_cbMillTop
+	foreach my $jLayer (@nplt_cbMillTop) {
 
 		#name of cu layer, where core drill start
 		my $startTopLayer = $jLayer->{"gROWdrl_start_name"};
 		my $core          = $stackup->GetCoreByCopperLayer($startTopLayer);
 		my @jLayers       = ($jLayer);
-		$opManager->AddOperationDef( "j" . $core->GetCoreNumber() . "fzc", \@jLayers, 0 );
+		$opManager->AddOperationDef( "j". $core->GetCoreNumber(). "fzc", \@jLayers, 0 );
 	}
 
-	# 5) Operation name = jfzs<core number> - can contain layer from @nplt_jbMillBot
-	foreach my $jLayer (@nplt_jbMillBot) {
+	# 5) Operation name = jfzs<core number> - can contain layer from @nplt_cbMillBot
+	foreach my $jLayer (@nplt_cbMillBot) {
 
 		#name of cu layer, where core drill start
 		my $startTopLayer = $jLayer->{"gROWdrl_start_name"};
 		my $core          = $stackup->GetCoreByCopperLayer($startTopLayer);
 		my @jLayers       = ($jLayer);
-		$opManager->AddOperationDef( "j" . $core->GetCoreNumber() . "fzs", \@jLayers, 0 );
+		$opManager->AddOperationDef( "j". $core->GetCoreNumber(). "fzs", \@jLayers, 0 );
 	}
 
 	# 6) Operation name = f - can contain layer
@@ -500,6 +505,14 @@ sub __DefineNPlatedOperations {
 	# 11) Operation name = fls - can contain layer
 	# - @nplt_lsMill
 	$opManager->AddOperationDef( "fls", \@nplt_lsMill, -1 );
+	
+	# 11) Operation name = fls - can contain layer
+	$opManager->AddOperationDef( "coverlayc", \@nplt_cvrlycMill, -1 );
+	# 11) Operation name = fls - can contain layer
+	$opManager->AddOperationDef( "coverlays", \@nplt_cvrlysMill, -1 );
+	# 11) Operation name = fls - can contain layer
+	$opManager->AddOperationDef( "prepreg", \@nplt_prepregMill, -1 );
+	 
 
 }
 

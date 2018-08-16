@@ -139,7 +139,7 @@ sub __Init {
 
 	#create manager for merging and moving files to archiv
 	$self->{"mergeFileMngr"} = MergeFileMngr->new( $self->{'inCAM'}, $self->{'jobId'}, $self->{"stepName"}, $self->{"exportSingle"} );
-	$self->{"mergeFileMngr"}->{"fileEditor"} = FileEditor->new( $self->{'jobId'}, $self->{"layerCnt"} );
+	$self->{"mergeFileMngr"}->{"fileEditor"} = FileEditor->new(  $self->{'inCAM'}, $self->{'jobId'}, $self->{"stepName"}, $self->{"layerCnt"} );
 	$self->{"mergeFileMngr"}->{"onItemResult"}->Add( sub { $self->_OnItemResult(@_) } );
 
 	#create manager, which decide what will be exported
@@ -303,12 +303,12 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	use aliased 'Packages::InCAM::InCAM';
 
-	my $jobId = "d152456";
+	my $jobId = "d222142";
 	my $step  = "panel";
 	my $inCAM = InCAM->new();
 
 	# Exportovat jednotlive vrstvy nebo vsechno
-	my $exportSingle = 0;
+	my $exportSingle = 1;
 
 	# Vrstvy k exportovani, nema vliv pokud $exportSingle == 0
 	my @pltLayers = ();
@@ -317,7 +317,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	# Pokud se bude exportovat jednotlive po vrstvach, tak vrstvz dotahnout nejaktakhle:
 	#@pltLayers = CamDrilling->GetPltNCLayers( $inCAM, $jobId );
-	my @npltLayers = ( "d", "d2" );
+	my @npltLayers = ( "fcoverlays", "d2" );
 
 	my $export = ExportMngr->new( $inCAM, $jobId, $step, $exportSingle, \@pltLayers, \@npltLayers );
 	$export->Run( $inCAM, $jobId, $exportSingle, \@pltLayers, \@npltLayers );

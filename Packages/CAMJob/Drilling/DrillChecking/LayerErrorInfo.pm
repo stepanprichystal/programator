@@ -216,8 +216,8 @@ sub CheckAttributes {
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_bMillBot );
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_rsMill );
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_frMill );
-	push( @t, EnumsGeneral->LAYERTYPE_nplt_jbMillTop );
-	push( @t, EnumsGeneral->LAYERTYPE_nplt_jbMillBot );
+	push( @t, EnumsGeneral->LAYERTYPE_nplt_cbMillTop );
+	push( @t, EnumsGeneral->LAYERTYPE_nplt_cbMillBot );
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_kMill );
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_lcMill );
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_lsMill );
@@ -284,8 +284,8 @@ sub CheckInvalidSymbols {
 	push( @t2, EnumsGeneral->LAYERTYPE_nplt_bMillBot );
 	push( @t2, EnumsGeneral->LAYERTYPE_nplt_rsMill );
 	push( @t2, EnumsGeneral->LAYERTYPE_nplt_frMill );
-	push( @t2, EnumsGeneral->LAYERTYPE_nplt_jbMillTop );
-	push( @t2, EnumsGeneral->LAYERTYPE_nplt_jbMillBot );
+	push( @t2, EnumsGeneral->LAYERTYPE_nplt_cbMillTop );
+	push( @t2, EnumsGeneral->LAYERTYPE_nplt_cbMillBot );
 	push( @t2, EnumsGeneral->LAYERTYPE_nplt_nMill );
 
 	# check all nc layers on wrong shaped pads. Pads has to by only r<number>
@@ -347,7 +347,7 @@ sub CheckDirTop2Bot {
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_bMillTop );
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_rsMill );
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_frMill );
-	push( @t, EnumsGeneral->LAYERTYPE_nplt_jbMillTop );
+	push( @t, EnumsGeneral->LAYERTYPE_nplt_cbMillTop );
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_lcMill );
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_kMill );
 
@@ -415,7 +415,7 @@ sub CheckDirBot2Top {
 	push( @t, EnumsGeneral->LAYERTYPE_plt_bDrillBot );
 	push( @t, EnumsGeneral->LAYERTYPE_plt_bMillBot );
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_bMillBot );
-	push( @t, EnumsGeneral->LAYERTYPE_nplt_jbMillBot );
+	push( @t, EnumsGeneral->LAYERTYPE_nplt_cbMillBot );
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_lsMill );
 
 	my @layers1 = $self->__GetLayersByType( \@layers, \@t );
@@ -523,8 +523,8 @@ sub CheckContainDepth {
 	push( @t, EnumsGeneral->LAYERTYPE_plt_bMillBot );
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_bMillTop );
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_bMillBot );
-	push( @t, EnumsGeneral->LAYERTYPE_nplt_jbMillTop );
-	push( @t, EnumsGeneral->LAYERTYPE_nplt_jbMillBot );
+	push( @t, EnumsGeneral->LAYERTYPE_nplt_cbMillTop );
+	push( @t, EnumsGeneral->LAYERTYPE_nplt_cbMillBot );
 
 	@layers = $self->__GetLayersByType( \@layers, \@t );
 
@@ -609,8 +609,8 @@ sub CheckToolDiameter {
 	push( @t2, EnumsGeneral->LAYERTYPE_nplt_bMillBot );
 	push( @t2, EnumsGeneral->LAYERTYPE_nplt_rsMill );
 	push( @t2, EnumsGeneral->LAYERTYPE_nplt_frMill );
-	push( @t2, EnumsGeneral->LAYERTYPE_nplt_jbMillTop );
-	push( @t2, EnumsGeneral->LAYERTYPE_nplt_jbMillBot );
+	push( @t2, EnumsGeneral->LAYERTYPE_nplt_cbMillTop );
+	push( @t2, EnumsGeneral->LAYERTYPE_nplt_cbMillBot );
 	push( @t2, EnumsGeneral->LAYERTYPE_nplt_nMill );
 
 	# check all nc layers on wrong shaped pads. Pads has to by only r<number>
