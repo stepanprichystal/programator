@@ -662,18 +662,7 @@ sub _CheckPool{
 					 			
 					 			if($pcbXsizePanel) {
 					 					
-					 					HelperWriter->OnlineWrite_pcb("$jobId", "$pcbXsizePanel", "panel_x");
-					 					HelperWriter->OnlineWrite_pcb("$jobId", "$pcbYsizePanel", "panel_y");
-					 					
-					 					
-					 					HelperWriter->OnlineWrite_pcb("$jobId", 1,"nasobnost_panelu");	
-										HelperWriter->OnlineWrite_pcb("$jobId", 1,"nasobnost");
-					 						
-					 					HegMethods->UpdateOrderMultiplicity("$jobId", $panelNasobnost); #musi se aktualizovat i nasobnost v zakazce
-					 					
-					 					
-										HelperWriter->OnlineWrite_pcb("$jobId", $panelNasobnost,"nasobnost");
-										HelperWriter->OnlineWrite_pcb("$jobId", $panelNasobnost,"nasobnost_panelu");
+										_WriteDimPanelToHeg($jobId, $pcbXsizeKus, $pcbYsizeKus, $pcbXsizePanel, $pcbYsizePanel, $panelNasobnost);
 					 					
 					 					
 					 					# Set construction class to the attribute of job
@@ -682,14 +671,33 @@ sub _CheckPool{
 										CamJob->SetJobAttribute($inCAM, 'cust_pnl_singley', $pcbYsizeKus, $jobId);
 										CamJob->SetJobAttribute($inCAM, 'cust_pnl_multipl', $panelNasobnost, $jobId);	
 					 			}else{
-					 					# Set construction class to the attribute of job
-										CamJob->SetJobAttribute($inCAM, 'customer_panel', 'no', $jobId);
-										CamJob->SetJobAttribute($inCAM, 'cust_pnl_singlex', 0, $jobId);
-										CamJob->SetJobAttribute($inCAM, 'cust_pnl_singley', 0, $jobId);
-										CamJob->SetJobAttribute($inCAM, 'cust_pnl_multipl', 0, $jobId);
-										
-										HelperWriter->OnlineWrite_pcb("$jobId", "","nasobnost_panelu");
-										HelperWriter->OnlineWrite_pcb("$jobId", "","nasobnost");
+					 				
+					 					my $customerPanelExist = CamAttributes->GetJobAttrByName($inCAM, $jobId, 'customer_panel');
+										my $customerCountExist = CamAttributes->GetJobAttrByName($inCAM, $jobId, 'cust_pnl_multipl');
+				
+										if ($customerPanelExist eq 'yes' and $customerCountExist > 0) {
+												my $messMngr = MessageMngr->new($pcbId);
+												my @mess = ("Je zadan panel zakaznika, ponechat tyto hodnoty pro vytvoreni nifu?");
+												my @btn = ("Smazat", "Ponechat");
+												$messMngr->ShowModal( -1, EnumsGeneral->MessageType_WARNING, \@mess, \@btn ); 
+												my $btnNumber = $messMngr->Result(); 
+												
+												if ($btnNumber == 1) {
+
+														$pcbXsizePanel = $pcbXsizeKus; # Rozmer o+1 je rozmer panelu, v atributech je rozmer kusu
+														$pcbYsizePanel = $pcbYsizeKus;	
+														$pcbXsizeKus   = CamAttributes->GetJobAttrByName( $inCAM, $jobId, "cust_pnl_singlex" );
+														$pcbYsizeKus   = CamAttributes->GetJobAttrByName( $inCAM, $jobId, "cust_pnl_singley" );
+														$panelNasobnost = CamAttributes->GetJobAttrByName( $inCAM, $jobId, "cust_pnl_multipl" );
+														
+														_WriteDimPanelToHeg($jobId, $pcbXsizeKus, $pcbYsizeKus, $pcbXsizePanel, $pcbYsizePanel, $panelNasobnost);
+															
+												}else{		
+														_ClearValueInHeg($jobId);	 					
+												}
+										}else{
+											_ClearValueInHeg($jobId);	
+										}
 					 				
 					 			}
 					 			
@@ -2060,6 +2068,47 @@ sub _FindAttrBGA{
 	}
 	return($res);
 }
+
+sub _WriteDimPanelToHeg {
+		my $jobId = shift;
+		my $pcbXsizeKus = shift;
+		my $pcbYsizeKus = shift;
+		my $pcbXsizePanel = shift;
+		my $pcbYsizePanel = shift;
+		my $panelNasobnost = shift;
+		
+				HelperWriter->OnlineWrite_pcb("$jobId", "$pcbXsizeKus", "kus_x");
+				HelperWriter->OnlineWrite_pcb("$jobId", "$pcbYsizeKus", "kus_y");
+					 			
+				HelperWriter->OnlineWrite_pcb("$jobId", "$pcbXsizePanel", "panel_x");
+				HelperWriter->OnlineWrite_pcb("$jobId", "$pcbYsizePanel", "panel_y");
+					 					
+					 					
+				HelperWriter->OnlineWrite_pcb("$jobId", 1,"nasobnost_panelu");	
+				HelperWriter->OnlineWrite_pcb("$jobId", 1,"nasobnost");
+					 						
+				HegMethods->UpdateOrderMultiplicity("$jobId", $panelNasobnost); #musi se aktualizovat i nasobnost v zakazce
+					 					
+					 					
+				HelperWriter->OnlineWrite_pcb("$jobId", $panelNasobnost,"nasobnost");
+				HelperWriter->OnlineWrite_pcb("$jobId", $panelNasobnost,"nasobnost_panelu");
+	
+}
+sub _ClearValueInHeg {
+		my $jobId = shift;
+		
+				# Set construction class to the attribute of job
+				CamJob->SetJobAttribute($inCAM, 'customer_panel', 'no', $jobId);
+				CamJob->SetJobAttribute($inCAM, 'cust_pnl_singlex', 0, $jobId);
+				CamJob->SetJobAttribute($inCAM, 'cust_pnl_singley', 0, $jobId);
+				CamJob->SetJobAttribute($inCAM, 'cust_pnl_multipl', 0, $jobId);
+										
+				HelperWriter->OnlineWrite_pcb("$jobId", "","nasobnost_panelu");
+				HelperWriter->OnlineWrite_pcb("$jobId", "","nasobnost");
+	
+				HegMethods->UpdateOrderMultiplicity("$jobId", ""); #musi se aktualizovat i nasobnost v zakazce
+}
+
 
 
 
