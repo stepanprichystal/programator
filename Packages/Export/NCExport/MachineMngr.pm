@@ -18,6 +18,7 @@ use aliased 'Packages::Export::NCExport::Enums';
 use aliased 'Enums::EnumsMachines';
 use aliased 'Enums::EnumsPaths';
 use aliased 'Helpers::GeneralHelper';
+use aliased 'Helpers::JobHelper';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'CamHelpers::CamJob';
 
@@ -309,6 +310,11 @@ sub __SetStaticPropertyTable {
 	my %t = ();
 	$self->{"propTable"} = \%t;
 
+	my $camera = 0;
+	if(JobHelper->GetIsFlex($self->{"jobId"})){
+		$camera = 1;
+	}
+
 	# Header is:
 	# 1) DRILL
 	# 2) DRILL DEPTH
@@ -345,9 +351,9 @@ sub __SetStaticPropertyTable {
 	$t{ EnumsGeneral->LAYERTYPE_nplt_nDrill }{"ml"} = [ 1, 0, 0, 0, 0, 0 ];
 	$t{ EnumsGeneral->LAYERTYPE_nplt_nDrill }{"sl"} = [ 1, 0, 0, 0, 0, 0 ];
 
-	$t{ EnumsGeneral->LAYERTYPE_nplt_nMill }{"ml"} = [ 0, 0, 1, 0, 0, 0 ];
-	$t{ EnumsGeneral->LAYERTYPE_nplt_nMill }{"sl"} = [ 0, 0, 1, 0, 0, 0 ];
-
+	$t{ EnumsGeneral->LAYERTYPE_nplt_nMill }{"ml"} = [ 0, 0, 1, 0, 0, $camera ];
+	$t{ EnumsGeneral->LAYERTYPE_nplt_nMill }{"sl"} = [ 0, 0, 1, 0, 0, $camera ];
+ 
 	$t{ EnumsGeneral->LAYERTYPE_nplt_bMillTop }{"ml"} = [ 0, 0, 0, 1, 0, 0 ];
 	$t{ EnumsGeneral->LAYERTYPE_nplt_bMillTop }{"sl"} = [ 0, 0, 0, 1, 0, 0 ];
 	$t{ EnumsGeneral->LAYERTYPE_nplt_bMillBot }{"ml"} = [ 0, 0, 0, 1, 0, 0 ];

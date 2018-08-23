@@ -270,6 +270,45 @@ sub GetPcbType {
 	return $type;
 }
 
+# Return 1 if pcb is flex or rigid flex
+sub GetIsFlex{
+	my $self = shift;
+	my $jobId = shift;
+	
+ 	my $isFlex = 0;
+ 
+	if(defined $self->GetPcbFlexType($jobId)){
+		$isFlex = 1
+	}
+				  
+	return $isFlex;			  
+}
+
+# 
+sub GetPcbFlexType {
+	my $self = shift;
+
+	my $jobId = shift;
+
+	my $type;
+ 
+	my $info = ( HegMethods->GetAllByPcbId($jobId) )[0];
+
+	if ( $info->{"poznamka"} =~ /type=flexi/i ) {
+		$type = EnumsGeneral->PcbFlexType_FLEX;
+		
+	}elsif( $info->{"poznamka"} =~ /type=rigid-flexi-o/i ) {
+		
+		$type = EnumsGeneral->PcbFlexType_RIGIDFLEXO;
+	
+	}elsif( $info->{"poznamka"} =~ /type=rigid-flexi-i/i ) {
+		
+		$type = EnumsGeneral->PcbFlexType_RIGIDFLEXI;
+	} 
+	
+	return $type;
+}
+
 sub GetIsolationByClass {
 	my $self  = shift;
 	my $class = shift;

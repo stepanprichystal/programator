@@ -9,6 +9,14 @@ use constant {
 			   PcbTyp_STENCIL    => "stencil"
 };
 
+
+use constant {
+			   PcbFlexType_FLEX   => "pcbType_flex",
+			   PcbFlexType_RIGIDFLEXO   => "pcbType_rigidFlexO",
+			   PcbFlexType_RIGIDFLEXI   => "pcbType_rigidFlexI"
+};
+
+
 use constant {
 			   MessageType_ERROR       => 'Error',
 			   MessageType_SYSTEMERROR => 'System error',

@@ -56,6 +56,8 @@ sub Build {
 	my %lim = CamJob->GetProfileLimits2( $inCAM, $jobId, "panel" );
 	my $w   = abs( $lim{"xMax"} - $lim{"xMin"} );
 	my $h   = abs( $lim{"yMax"} - $lim{"yMin"} );
+	
+	my $pcbFlexType = JobHelper->GetPcbFlexType($jobId);
 
 	# =========================
 	# Zdrojové data postupu
@@ -63,7 +65,7 @@ sub Build {
 
 	my $info = ( HegMethods->GetAllByPcbId($jobId) )[0];
 
-	if ( $info->{"poznamka"} !~ /type=flexi/i ) {
+	unless (defined $pcbFlexType ) {
 
 		return 0;
 	}
@@ -83,6 +85,20 @@ sub Build {
 	$section->AddRow( "pocet_vrstev_flex", "*" );
 
 	$section->AddRow( "plocha", sprintf( "%0.1f dm2", $w * $h * 2 / 10000 ) );
+	
+	
+	$section->AddRow( "tloustka_cu", JobHelper->GetBaseCuThick($jobId, "c") . "um" );
+	
+	my $tlFlexCu = JobHelper->GetBaseCuThick($jobId, "c");
+	
+	if($pcbFlexType eq EnumsGeneral->PcbFlexType_RIGIDFLEXI){
+		
+		my @cores = $stackup->GetAllCores();
+		$tlFlexCu = $cores[int(scalar(@cores)/2)]->GetTopCopperLayer()->GetThick();
+	}
+	
+	$section->AddRow( "tl_flex_cu", $tlFlexCu . "um" );
+	
 
 	# postup  operace Flexi -------------
 	

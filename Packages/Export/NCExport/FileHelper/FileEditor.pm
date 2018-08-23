@@ -156,9 +156,10 @@ sub EditAfterOpen {
 	}
 
 	# ================================================================
-	# 4) EDIT:
+	# 4) EDIT:Add drilled pcb number (not possible add this in hooks when layer is type "rout")
 
-	if ( $layer->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_cvrlycMill || $layer->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_cvrlysMill ) {
+	if ( $layer->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_cvrlycMill || $layer->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_cvrlysMill ||
+	    $layer->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_prepregMill ) {
 
 		# get tool number of r850 tool
 		my $t = ( grep { $_->{"line"} =~ /T\d*D85([^\d]|$)/i } @{ $parseFile->{"footer"} } )[0];
