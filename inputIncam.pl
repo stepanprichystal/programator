@@ -1,28 +1,12 @@
 #!/usr/bin/perl-w
 
-#loading of locale modules
-use LoadLibrary;
-
-
+use warnings;
 use File::Copy::Recursive qw(fcopy rcopy dircopy fmove rmove dirmove);
 use Archive::Zip;
 use File::Find;
 use Tk;
 use Tk::LabFrame;
 
-
-#local library
-use Enums;
-use FileHelper;
-use GeneralHelper;
-use DrillHelper;
-use StackupHelper;
-use MessageForm;
-use SimpleInputForm;
-use DefaultStackupScript;
-use GenesisHelper;
-use Gatmain;
-use sqlNoris;
 
 #necessary for load pall packages
 use FindBin;
@@ -38,6 +22,7 @@ use aliased 'Packages::InCAM::InCAM';
 use aliased 'Packages::ETesting::MoveElTests';
 
 use aliased 'Connectors::HeliosConnector::HegMethods';
+use aliased 'Connectors::HeliosConnector::HelperWriter';
 
 use aliased 'CamHelpers::CamCopperArea';
 use aliased 'CamHelpers::CamLayer';
@@ -49,10 +34,8 @@ use aliased 'CamHelpers::CamStepRepeat';
 use aliased 'Managers::MessageMngr::MessageMngr';
 
 
-
 my $inCAM    = InCAM->new();
 
-use warnings;
 
 my $importPath;
 
@@ -134,8 +117,11 @@ sub MultiCustomer {
 
 
 unless (-e $path) {
+		#new
 		my @mess = ("Chybí importní soubor!");
-		new MessageForm( Enums::MessageType->INFORMATION, \@mess, undef );
+		my $messMngr = MessageMngr->new('');
+		$messMngr->ShowModal( -1, EnumsGeneral->MessageType_INFORMATION, \@mess ); 
+		
 		return();
 }
 
@@ -159,10 +145,10 @@ my ($prefixDiskName, $bodyPath, $fileName, $suffixName, $jobName, $localFolder) 
 	_CheckJobExist($jobName);
 	
 	
-	my $reference = getValueNoris($jobName, 'reference_zakazky');
 	my $hostName = $ENV{HOST};
+	my $reference = HegMethods->GetNumberOrder($jobName);
+	HelperWriter->OnlineWrite_order( $reference, "zpracovava $hostName" , "aktualni_krok" );
 	
-	HegMethods->UpdatePcbOrderState( $reference, "zpracovava $hostName");
 
 
 	$inCAM -> COM ('import_job',db=>'incam',path=>"$importPath",name=>"$jobName",analyze_surfaces=>'no');
@@ -230,8 +216,10 @@ sub GerberCustomer {
 
 
 unless (-e $path) {
+		#new
 		my @mess = ("Chybí importní soubor!");
-		new MessageForm( Enums::MessageType->INFORMATION, \@mess, undef );
+		my $messMngr = MessageMngr->new('');
+		$messMngr->ShowModal( -1, EnumsGeneral->MessageType_INFORMATION, \@mess ); 
 	return();
 }
 
@@ -240,9 +228,10 @@ my ($prefixDiskName, $bodyPath, $fileName, $suffixName, $jobName, $localFolder) 
 	# Check if jobName already exist;
 		_CheckJobExist($jobName);
 	
- 			my $reference = getValueNoris($jobName, 'reference_zakazky');
- 			my $hostName = $ENV{HOST};
- 			HegMethods->UpdatePcbOrderState( $reference, "zpracovava $hostName");
+			my $hostName = $ENV{HOST};
+			my $reference = HegMethods->GetNumberOrder($jobName);
+			HelperWriter->OnlineWrite_order( $reference, "zpracovava $hostName" , "aktualni_krok" );
+	
  			
  					if ($suffixName =~ /[Zz][Ii][Pp]/){ 
  						_ExtractZip($path, $prefixDiskName, $bodyPath);
@@ -333,8 +322,10 @@ sub ODBinputFolder {
                                    -title => 'Choose dir ODB++');
     
     		unless (-e $path) {
-					my @mess = ("Chybí importní soubor!");
-					new MessageForm( Enums::MessageType->INFORMATION, \@mess, undef );
+						#new
+						my @mess = ("Chybí importní soubor!");
+						my $messMngr = MessageMngr->new('');
+						$messMngr->ShowModal( -1, EnumsGeneral->MessageType_INFORMATION, \@mess ); 
 				return();
 			}
 
@@ -661,17 +652,23 @@ sub _CheckJobExist {
 		# Check if jobName already exist;
 		$inCAM -> INFO(entity_type=>'job',entity_path=>"$jobId",data_type=>'exists');
 		  if ($inCAM->{doinfo}{gEXISTS} eq "yes") {
-						my @btns = ("SMAZAT JOB a pokracovat v importu", "KONEC"); # "ok" = tl. cislo 1, "table tools" = tl.cislo 2
-						my @m =	("Jmeno jobu $jobId jiz existuje!");
-						
-						new MessageForm( Enums::MessageType->WARNING, \@m, \@btns, \$result);
+						#new
+						my $messMngr = MessageMngr->new($pcbId);
+						my @mess =	("Jmeno jobu $jobId jiz existuje!");
+						my @btn = ("SMAZAT JOB a pokracovat v importu", "KONEC"); # "ok" = tl. cislo 1, "table tools" = tl.cislo 2
+						$messMngr->ShowModal( -1, EnumsGeneral->MessageType_WARNING, \@mess, \@btn ); 
+						my $result = $messMngr->Result(); 
+												
 						if ($result == 1) {
 							exit;
 						}else{
-								my @arrBTNS = ("ANO", "NE"); # "ok" = tl. cislo 1, "table tools" = tl.cislo 2
-								my @arrM =	("Opravdu smazat job $jobId ?");
-						
-								new MessageForm( Enums::MessageType->WARNING, \@arrM, \@arrBTNS, \$resultDelete);
+								#new
+								my $messMngr = MessageMngr->new($pcbId);
+								my @mess =	("Opravdu smazat job $jobId ?");
+								my @btn = ("ANO", "NE"); # "ok" = tl. cislo 1, "table tools" = tl.cislo 2
+								$messMngr->ShowModal( -1, EnumsGeneral->MessageType_WARNING, \@mess, \@btn ); 
+								my $resultDelete = $messMngr->Result(); 
+												
 								if ($resultDelete == 1) {
 											exit;
 								}else{
@@ -693,8 +690,11 @@ sub _SearchTgz {
 
 					# check how many tgz file found out
 					unless (scalar @tgzArr == 1) {
+								#new
 								my @mess = ("Nemùu najít správnı tgz file pro import!");
-								new MessageForm( Enums::MessageType->INFORMATION, \@mess, undef );
+								my $messMngr = MessageMngr->new('');
+								$messMngr->ShowModal( -1, EnumsGeneral->MessageType_INFORMATION, \@mess ); 
+								
 								exit;
 					}else{
 							return($tgzArr[0]);
@@ -1140,16 +1140,22 @@ sub _DrawSurface {
 sub _GuiMaska {
 	my $layer = shift;
 	
-			my @btns = ("PAUSA", "NE", "VYTVORIT"); # "Nechcu" = tl. cislo 2, "Chcu" = tl.cislo 1
-			my @mess1 = ( "Zakaznik nepozaduje masku na strane $layer, ale v poolu je potreba. Mam vytvorit vrstvu masky celou odmaskovanou?");
-			my $result = -1;
+	
+				my $result = -1;
+				#new
+				my $messMngr = MessageMngr->new($pcbId);
+				
+				my @mess =	("Zakaznik nepozaduje masku na strane $layer, ale v poolu je potreba. Mam vytvorit vrstvu masky celou odmaskovanou?");
+				my @btn = ("PAUSA", "NE", "VYTVORIT"); # "ok" = tl. cislo 1, "table tools" = tl.cislo 2
+				
+				$messMngr->ShowModal( -1, EnumsGeneral->MessageType_WARNING, \@mess, \@btn ); 
+				$result = $messMngr->Result(); 
 
-			new MessageForm( Enums::MessageType->QUESTION, \@mess1, \@btns, \$result);
 
-			if ($result == 3) {
-					$inCAM -> PAUSE("PAUSA - > Zkontroluj");
-					$result = _GuiMaska($layer);
-			}
+				if ($result == 3) {
+						$inCAM -> PAUSE("PAUSA - > Zkontroluj");
+						$result = _GuiMaska($layer);
+				}
 					
 	return($result);
 	

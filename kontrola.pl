@@ -612,6 +612,14 @@ sub _PutHeliosInfo {
 																	$colorText2 = 'red';
 															}
 													}
+													
+													if ($item =~ /Tloustka$/) {
+														if ($putTextInfo2 > 1.70 or $putTextInfo2 < 1.45) {
+																$colorText1 = 'red';
+																$colorText2 = 'red';
+														}
+													}
+													
 													my @tmpFrameH = ();
 													$tmpFrameH[$i] = $heliosFrame ->Frame(-width=>100, -height=>10)->pack(-side=>'top',-fill=>'x');
 													$tmpFrameH[$i] ->Label(-textvariable=>\$putTextInfo1, -fg=>"$colorText1")->pack(-side=>'left');
