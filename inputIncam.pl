@@ -499,12 +499,12 @@ sub _Process {
  			if (HegMethods->GetPcbIsPool ($pcbId)) {
 					my %solderMask = HegMethods->GetSolderMaskColor($pcbId);
 	 		 				unless ($solderMask{'top'}) {	
-	 		 						if (_GuiMaska('mc') == 1) {	
+	 		 						if (_GuiMaska('mc') == 2) {	
 	 		 								_DrawSurface ($pcbId,'o+1', 'mc');
 	 		 						}	
 	 		 				}	
 	 		 				unless ($solderMask{'bot'}) {	
-	 		 						if (_GuiMaska('ms') == 1) {	
+	 		 						if (_GuiMaska('ms') == 2) {	
 	 		 								_DrawSurface ($pcbId,'o+1', 'ms');
 	 		 						}
 	 		 				}
@@ -1146,13 +1146,12 @@ sub _GuiMaska {
 				my $messMngr = MessageMngr->new($pcbId);
 				
 				my @mess =	("Zakaznik nepozaduje masku na strane $layer, ale v poolu je potreba. Mam vytvorit vrstvu masky celou odmaskovanou?");
-				my @btn = ("PAUSA", "NE", "VYTVORIT"); # "ok" = tl. cislo 1, "table tools" = tl.cislo 2
+				my @btn = ("PAUSA", "NE", "VYTVORIT"); # "PAUSA" = tl. cislo 0, "NE" = tl.cislo 1 , Vytvorit = 2
 				
 				$messMngr->ShowModal( -1, EnumsGeneral->MessageType_WARNING, \@mess, \@btn ); 
 				$result = $messMngr->Result(); 
 
-
-				if ($result == 3) {
+				if ($result == 0) {
 						$inCAM -> PAUSE("PAUSA - > Zkontroluj");
 						$result = _GuiMaska($layer);
 				}
