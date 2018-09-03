@@ -452,6 +452,7 @@ sub _GUIpanelizace {
 											_CheckMpanelExistPool($jobName);
 											_CheckPlgcPlgs($jobName);
 											_CheckIfCleanUpDone($jobName);
+											_CheckAttrRoutInAll($jobName);
 											
 											
 											
@@ -1534,7 +1535,20 @@ sub _CheckIfCleanUpDone {
 		}
 }
 
+sub _CheckAttrRoutInAll {
+		my $pcbId = shift;
+		my $step = 'o+1';
+			
+				foreach my $l (CamJob->GetBoardBaseLayers( $inCAM, $pcbId )) {
 
+		my %attHist = CamHistogram->GetAttHistogram( $inCAM, $pcbId, "o+1", $l->{"gROWname"}, 1 );
+
+		if ( $attHist{".rout_chain"} || $attHist{".comp"} ) {
+			
+				push @errorMessageArr,  '- Pozor, ve vrstve ' . $l->{"gROWname"} . ' byl nalezen atribut rout_chain/comp.';
+		}
+	}
+}
 
 
 sub _CheckTypeOfPcb {
