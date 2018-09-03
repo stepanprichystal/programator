@@ -964,7 +964,11 @@ sub _Panelize {
 						$inCAM->COM ('autopan_place_pcbs',job=>"$jobName",panel=>EnumsProducPanel->PANEL_NAME,pcb=>"$stepName",scheme=>"$schema",mode=>'preview',apply_pattern=>'no',apply_flip=>'no');
 						$inCAM->COM ('show_component',component=>'Action_Area',show=>'no');
 			
-				$inCAM->PAUSE ('Vytvor panel + pouzij schema');
+			
+				my @attrHeg = HegMethods->GetAllByPcbId("$jobName");
+				my $pozadavekKusy = $pole[0]->{'pocet'};
+				
+				$inCAM->PAUSE ('Vytvor panel + pouzij schema ' . ' Pozadovany pocet kusu = ' . $pozadavekKusy);
 			}
 			
 			if (HegMethods->GetTypeOfPcb($jobName) eq 'Vicevrstvy') {
