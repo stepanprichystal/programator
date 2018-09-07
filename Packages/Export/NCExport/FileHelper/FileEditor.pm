@@ -194,7 +194,6 @@ sub EditAfterOpen {
 						push( @cmd, { "line" => "$dn" } );
 						push( @cmd, { "line" => "M02X" . sprintf( "%.3f", 2 * $xVal ) . "Y0.000M70\n" } );
 						push( @cmd, { "line" => "M30\n" } );
-						push( @cmd, { "line" => "M02X0Y0\n" } );
 					}
 					else {
 						push( @cmd, { "line" => "$dn" } );

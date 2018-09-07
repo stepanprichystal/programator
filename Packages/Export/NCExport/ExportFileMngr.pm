@@ -20,7 +20,9 @@ use aliased 'Helpers::FileHelper';
 use aliased 'CamHelpers::CamHelper';
 use aliased 'CamHelpers::CamJob';
 use aliased 'CamHelpers::CamStepRepeat';
-
+use aliased 'Packages::CAM::UniRTM::UniRTM::UniRTM';
+use JSON;
+use aliased 'Helpers::JobHelper';
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
@@ -55,6 +57,9 @@ sub ExportFiles {
 
 	my @exportFiles = $self->__GetExportCombination($opManager);
 
+	# Parse route layers and store info about outline and inner routs
+	$self->__StoreRoutLayerInfo( \@exportFiles );
+
 	foreach my $c (@exportFiles) {
 
 		my $result = ItemResult->new( $c->{"layer"}, undef, "Layers" );
@@ -66,6 +71,8 @@ sub ExportFiles {
 
 		$self->__ResultExportLayer( $c->{"layer"}, $result );
 	}
+	
+	$self->__DeleteRoutLayerInfo();
 
 }
 
@@ -361,6 +368,63 @@ sub __DeleteLogs {
 	}
 
 }
+
+# During export NC programs we need some extra info about rout layers
+# (which one is outline, which one is inside rout etc.)
+# Thic method parse all routes only one and info is used by hooks manytimes
+sub __StoreRoutLayerInfo {
+	my $self        = shift;
+	my @exportFiles = @{ shift(@_) };
+
+	my $jobId    = $self->{"jobId"};
+	my $inCAM    = $self->{"inCAM"};
+	my $stepName = $self->{"stepName"};
+
+	my %info = ();
+
+	my @layers = grep { $_ eq "f" } map { $_->{"layer"} } @exportFiles;
+	foreach my $s ( map { $_->{"stepName"} } CamStepRepeat->GetUniqueNestedStepAndRepeat( $inCAM, $jobId, $stepName ) ) {
+
+		$info{$s} = {};
+
+		foreach my $l (@layers) {
+
+			$info{$s}->{$l} = {};
+
+			my $rtm = UniRTM->new( $inCAM, $jobId, $s, $l );
+ 
+			foreach my $ch ($rtm->GetChains()) {
+
+				my $outline = scalar( grep { $_->IsOutline() } $ch->GetChainSequences() ) == scalar( $ch->GetChainSequences() ) ? 1 : 0;
+				$info{$s}->{$l}->{$ch->GetChainTool()->GetChainOrder()} = { "isOutline" => $outline };
+			}
+		}
+	}
+	
+	my $json = JSON->new();
+
+	my $serialized = $json->pretty->encode( \%info );
+	
+	my $p = JobHelper->GetJobOutput($jobId)."RoutLayerInfo";
+	
+	unlink $p;
+
+	open( my $f, '>', $p );
+	print $f $serialized;
+	close $f;
+}
+
+sub __DeleteRoutLayerInfo {
+	my $self = shift;
+
+	my $p = JobHelper->GetJobOutput( $self->{"jobId"})."RoutLayerInfo";
+
+	if ( -e $p ) {
+		unlink($p) or die "$p: $!";
+	}
+
+}
+
 
 sub __ResultExportLayer {
 	my $self       = shift;

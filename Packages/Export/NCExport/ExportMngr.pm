@@ -177,13 +177,16 @@ sub __Run {
 
 		# 2) create sequence of dps operation
 		$self->{"operationMngr"}->CreateOperations();
-
+ 
 		get_logger("abstractQueue")->error( "Finding  " . $self->{"jobId"} . " BUG ExportMngr 2\n " );
 
 		# 3) for every operation filter suitable machines
 		$self->{"machineMngr"}->AssignMachines( $self->{"operationMngr"} );
 
 		get_logger("abstractQueue")->error( "Finding  " . $self->{"jobId"} . " BUG ExportMngr 3\n " );
+		
+		# 3) update tif file with information about nc operations
+		NCHelper->StoreOperationInfoTif( $self->{"inCAM"}, $self->{"jobId"}, $self->{"operationMngr"});
 
 		# 4) Export physical nc files
 		$self->{"exportFileMngr"}->ExportFiles( $self->{"operationMngr"} );
@@ -303,12 +306,12 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	use aliased 'Packages::InCAM::InCAM';
 
-	my $jobId = "d222142";
+	my $jobId = "d152457";
 	my $step  = "panel";
 	my $inCAM = InCAM->new();
 
 	# Exportovat jednotlive vrstvy nebo vsechno
-	my $exportSingle = 1;
+	my $exportSingle = 0;
 
 	# Vrstvy k exportovani, nema vliv pokud $exportSingle == 0
 	my @pltLayers = ();
@@ -317,7 +320,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	# Pokud se bude exportovat jednotlive po vrstvach, tak vrstvz dotahnout nejaktakhle:
 	#@pltLayers = CamDrilling->GetPltNCLayers( $inCAM, $jobId );
-	my @npltLayers = ( "fcoverlays", "d2" );
+	my @npltLayers = ( "f");
 
 	my $export = ExportMngr->new( $inCAM, $jobId, $step, $exportSingle, \@pltLayers, \@npltLayers );
 	$export->Run( $inCAM, $jobId, $exportSingle, \@pltLayers, \@npltLayers );

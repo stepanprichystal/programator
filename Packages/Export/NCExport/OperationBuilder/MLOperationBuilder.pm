@@ -332,18 +332,28 @@ sub __DefinePlatedOperations {
 
 	# Find cores, which has not blind or core drilling
 
-	my $noNCExist = 0;    # tell if  exist core, where is no NC operation
+	my $noNCExist = 0;    # tell if  exist core, where is no plated NCoperation
 	for ( my $i = 0 ; $i < $coreCnt ; $i++ ) {
 
 		my $coreNum = $i + 1;
-		my $core    = $stackupNC->GetCore($coreNum);
+		my $coreNC    = $stackupNC->GetCore($coreNum);
 
-		my $existNc = 0;
-
-		$existNc += $core->ExistNCLayers( Enums->SignalLayer_TOP );
-		$existNc += $core->ExistNCLayers( Enums->SignalLayer_BOT );
-
-		if ( $existNc == 0 ) {
+		# start/stop plated NC layers in core
+		my @ncLayers = ();
+		if ( $coreNC->ExistNCLayers( Enums->SignalLayer_TOP ) ) {
+			push( @ncLayers, $coreNC->GetNCLayers( Enums->SignalLayer_TOP ) );
+		}
+		if ( $coreNC->ExistNCLayers( Enums->SignalLayer_BOT ) ) {
+			push( @ncLayers, $coreNC->GetNCLayers( Enums->SignalLayer_BOT ) );
+		}
+		
+		# outer core
+		my $outer = 0;
+ 		if ( $coreNC->GetTopSigLayer()->GetName() eq "c" || $coreNC->GetBotSigLayer()->GetName() eq "s" ) {
+			$outer = 1;
+		}
+		
+		if ( scalar( grep { $_->{"plated"} } @ncLayers ) == 0 || $outer ) {
 			$noNCExist = 1;
 			last;
 		}
@@ -365,6 +375,7 @@ sub __DefineNPlatedOperations {
 	my $stackup       = $self->{'stackup'};               #info about press count, which layer are pressed, etc..
 
 	my $stackupNC = StackupNC->new( $self->{"inCAM"}, $stackup );
+	my $coreCnt      = $stackupNC->GetCoreCnt();
 
 	#non plated
 	my @nplt_nDrill    = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_nDrill } };       #normall nplt drill
@@ -379,11 +390,10 @@ sub __DefineNPlatedOperations {
 	my @nplt_lsMill    = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_lsMill } };       #milling template snim lak s
 	my @nplt_kMill     = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_kMill } };        #milling conneector
 
-	my @nplt_cvrlycMill     = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_cvrlycMill } };        #top coverlay mill 
-	my @nplt_cvrlysMill     = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_cvrlysMill } };        #bot coverlay mill 
-	my @nplt_prepregMill     = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_prepregMill } };       #prepreg mill
-	
-	 
+	my @nplt_cvrlycMill  = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_cvrlycMill } };     #top coverlay mill
+	my @nplt_cvrlysMill  = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_cvrlysMill } };     #bot coverlay mill
+	my @nplt_prepregMill = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_prepregMill } };    #prepreg mill
+
 	#Define operation:
 
 	# 1) Operation name = fzc<press order>, can contain layer
@@ -450,23 +460,23 @@ sub __DefineNPlatedOperations {
 	}
 
 	# 4) Operation name = jfzc<core number> - can contain layer from @nplt_cbMillTop
-	foreach my $jLayer (@nplt_cbMillTop) {
+	for ( my $i = 0 ; $i < $coreCnt ; $i++ ) {
+ 
+		my $core    = $stackup->GetCore($i + 1);
 
-		#name of cu layer, where core drill start
-		my $startTopLayer = $jLayer->{"gROWdrl_start_name"};
-		my $core          = $stackup->GetCoreByCopperLayer($startTopLayer);
-		my @jLayers       = ($jLayer);
-		$opManager->AddOperationDef( "j". $core->GetCoreNumber(). "fzc", \@jLayers, 0 );
+		my @jLayers = grep { $_->{"gROWdrl_start"} == $core->GetTopCopperLayer()->GetCopperNumber() } @nplt_cbMillTop;
+
+		$opManager->AddOperationDef( "j" . $core->GetCoreNumber() . "fzc", \@jLayers, 0 );
 	}
 
 	# 5) Operation name = jfzs<core number> - can contain layer from @nplt_cbMillBot
-	foreach my $jLayer (@nplt_cbMillBot) {
+	for ( my $i = 0 ; $i < $coreCnt ; $i++ ) {
+ 
+		my $core    = $stackup->GetCore($i + 1);
 
-		#name of cu layer, where core drill start
-		my $startTopLayer = $jLayer->{"gROWdrl_start_name"};
-		my $core          = $stackup->GetCoreByCopperLayer($startTopLayer);
-		my @jLayers       = ($jLayer);
-		$opManager->AddOperationDef( "j". $core->GetCoreNumber(). "fzs", \@jLayers, 0 );
+		my @jLayers = grep { $_->{"gROWdrl_start"} == $core->GetBotCopperLayer()->GetCopperNumber() } @nplt_cbMillBot;
+
+		$opManager->AddOperationDef( "j" . $core->GetCoreNumber() . "fzs", \@jLayers, 0 );
 	}
 
 	# 6) Operation name = f - can contain layer
@@ -481,7 +491,7 @@ sub __DefineNPlatedOperations {
 	}
 
 	# add all @nplt_nDrill which has dir from top2bot
-	my @nplt_nDrill_t2b = grep { $_->{"gROWdrl_dir"} ne "bot2top"} @nplt_nDrill;
+	my @nplt_nDrill_t2b = grep { $_->{"gROWdrl_dir"} ne "bot2top" } @nplt_nDrill;
 	my @layers = ( @nplt_nMill, @nplt_nDrill_t2b );
 
 	$opManager->AddOperationDef( "fc" . $stackup->GetPressCount(), \@layers, $stackup->GetPressCount() );
@@ -505,14 +515,15 @@ sub __DefineNPlatedOperations {
 	# 11) Operation name = fls - can contain layer
 	# - @nplt_lsMill
 	$opManager->AddOperationDef( "fls", \@nplt_lsMill, -1 );
-	
+
 	# 11) Operation name = fls - can contain layer
 	$opManager->AddOperationDef( "coverlayc", \@nplt_cvrlycMill, -1 );
+
 	# 11) Operation name = fls - can contain layer
 	$opManager->AddOperationDef( "coverlays", \@nplt_cvrlysMill, -1 );
+
 	# 11) Operation name = fls - can contain layer
 	$opManager->AddOperationDef( "prepreg", \@nplt_prepregMill, -1 );
-	 
 
 }
 

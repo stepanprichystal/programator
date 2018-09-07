@@ -251,7 +251,7 @@ sub __GetToolParamLine {
 	unless ($par) {
 		return undef;
 	}
-
+	
 	my $toolSize     = $tool->GetDrillSize() / 1000;
 	my $magazineInfo = $tool->GetMagazineInfo();
 

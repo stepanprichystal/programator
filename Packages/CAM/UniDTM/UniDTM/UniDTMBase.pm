@@ -295,7 +295,7 @@ sub __AddPilotHolesDefinition {
 		my @tools1 =
 		  grep { $_->GetDrillSize() >= 4000 && $_->GetDrillSize() <= 6500 && $_->GetTypeProcess() eq Enums->TypeProc_HOLE } @{ $self->{"tools"} };
 		$self->__AddPilotHoles( \@tools1, 800 );
- 
+
 	}
 
 	# 2) Go throught pilot holes and create their tool definition
@@ -433,6 +433,13 @@ sub __GetOperationByLayer {
 
 	if ( $l{"type"} eq EnumsGeneral->LAYERTYPE_nplt_rsMill ) {
 		$operation = "RoutBeforeEtch";
+	}
+
+	if (    $l{"type"} eq EnumsGeneral->LAYERTYPE_nplt_cvrlycMill
+		 || $l{"type"} eq EnumsGeneral->LAYERTYPE_nplt_cvrlysMill
+		 || $l{"type"} eq EnumsGeneral->LAYERTYPE_nplt_prepregMill )
+	{
+		$operation = "SpecialFlex";
 	}
 
 	return $operation;

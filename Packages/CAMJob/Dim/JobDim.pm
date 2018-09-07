@@ -154,7 +154,7 @@ sub GetDimension {
 	$dim{"panel_y"}  = sprintf( "%.1f", $dim{"panel_y"} )  if ( $dim{"panel_y"} );
 
 	if ($pnlExist) {
-		
+
 		my %profilP = CamJob->GetProfileLimits( $inCAM, $jobId, "panel" );
 
 		$dim{"vyrobni_panel_x"} = abs( $profilP{"xmax"} - $profilP{"xmin"} );
@@ -209,6 +209,28 @@ sub __GetMultiplOfStep {
 	}
 
 	return $stepCnt;
+
+}
+
+# Return total amount of production panel
+# plus extra production panel
+sub GetTotalPruductPnlCnt {
+	my $self  = shift;
+	my $inCAM = shift;
+	my $jobId = shift;
+
+	my $info = ( HegMethods->GetAllByPcbId($jobId) )[0];
+ 
+	my %dim = $self->GetDimension( $inCAM, $jobId );
+	my $pocet = int( $info->{"pocet"} / $dim{"nasobnost"} );
+
+	if ( $info->{"pocet"} % $dim{"nasobnost"} ) {
+		$pocet++;
+	}
+	
+	# add extra panel count
+
+	return $pocet;
 
 }
 

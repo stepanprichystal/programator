@@ -10,13 +10,18 @@ use strict;
 use warnings;
 use File::Copy;
 use Try::Tiny;
+use List::MoreUtils qw(uniq);
 
 #local library
 use aliased 'Enums::EnumsGeneral';
 use aliased 'Enums::EnumsPaths';
 use aliased 'Connectors::HeliosConnector::HegMethods';
-
+use aliased 'Packages::TifFile::TifNCOperations';
 use aliased 'Helpers::GeneralHelper';
+use aliased 'CamHelpers::CamRouting';
+use aliased 'Packages::Stackup::Stackup::Stackup';
+use aliased 'CamHelpers::CamJob';
+use aliased 'Packages::CAMJob::Dim::JobDim';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -433,6 +438,45 @@ sub __BuildNcInfo {
 	}
 
 	return $str;
+}
+
+sub StoreOperationInfoTif{
+	my $self = shift;
+	my $inCAM = shift;
+	my $jobId = shift;
+	my $operationMngr = shift;
+	
+	my $tif = TifNCOperations->new( $self->{"jobId"} );
+	
+	
+	# store machines
+	my @machines = uniq( map { $_->{"suffix"}} map { $_->GetMachines() } $operationMngr->GetOperationItems());
+	$tif->AddMachines(\@machines);
+	
+	
+	# store operations
+	
+	
+	my $layerCnt = CamJob->GetSignalLayerCnt( $inCAM, $jobId );# Signal layer cnt
+
+#	#search min slot tool for operation
+#	my $minTool = CamRouting->GetMinSlotTool( $inCAM, $jobId, $step, $l{"type"} );
+#
+#	# Rout speed
+#	my %routSpeedTab        = $self->__ParseRoutSpeedTable("RoutSpeed.csv");
+#	my %routSpeedOutlineTab = $self->__ParseRoutSpeedTable("RoutSpeedOutline.csv");
+#
+#	# Thickness of drilled material
+#	my $matThick;
+#	if ( $layerCnt <= 2 ) {
+#
+#		$matThick = HegMethods->GetPcbMaterialThick($jobId);
+#	}
+#	else {
+#		my $stackup = Stackup->new($jobId);
+#		$matThick = $stackup->GetThickByLayerName( $l{"gROWdrl_start_name"} );
+#	}
+#	
 }
 
 #-------------------------------------------------------------------------------------------#
