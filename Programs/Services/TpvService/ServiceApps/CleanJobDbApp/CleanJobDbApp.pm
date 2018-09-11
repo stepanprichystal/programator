@@ -363,7 +363,7 @@ sub __DeleteOldMDIFiles {
 			next if ( $file =~ /^\.$/ );
 			next if ( $file =~ /^\.\.$/ );
 
-			my ($fileJobId) = $file =~ m/^(\w\d+)/i;
+			my ($fileJobId) = $file =~ m/^(\w\d{6})/i;
 
 			unless ( defined $fileJobId ) {
 				next;

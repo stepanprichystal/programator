@@ -158,8 +158,10 @@ sub EditAfterOpen {
 	# ================================================================
 	# 4) EDIT:Add drilled pcb number (not possible add this in hooks when layer is type "rout")
 
-	if ( $layer->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_cvrlycMill || $layer->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_cvrlysMill ||
-	    $layer->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_prepregMill ) {
+	if (    $layer->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_cvrlycMill
+		 || $layer->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_cvrlysMill
+		 || $layer->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_prepregMill )
+	{
 
 		# get tool number of r850 tool
 		my $t = ( grep { $_->{"line"} =~ /T\d*D85([^\d]|$)/i } @{ $parseFile->{"footer"} } )[0];
@@ -187,7 +189,7 @@ sub EditAfterOpen {
 					my ($xVal) = $dn =~ /X(\d+\.\d+)Y/;
 
 					my @cmd = ();
-					
+
 					# Mirror drilled pcbid (must be mirrored in subroutine in order to mirror involve only drill number)
 					if ($mirror) {
 						push( @cmd, { "line" => "M31" } );
@@ -205,6 +207,27 @@ sub EditAfterOpen {
 
 			}
 
+		}
+
+	}
+
+	# ================================================================
+	# 5) EDIT:Move F_<guid> definition from tool line to first line after tool
+	my $isRout = scalar( grep { $_->{"gROWlayer_type"} eq "rout" } $opItem->GetSortedLayers() ) ? 1 : 0;
+	if ($isRout) {
+
+		my @b = @{ $parseFile->{"body"} };
+
+		# index of rows where is F_<guid> definition
+		my @tIdx = grep { defined $b[$_]->{"tool"} && $b[$_]->{"line"} =~ /\(F_[\w-]+\)/ } 0 .. $#b;
+
+		foreach my $idx (@tIdx) {
+
+			my ($fDef) = $b[$idx]->{"line"} =~ /(\(F_[\w-]+\))/;
+
+			$b[$idx]->{"line"} =~ s/\(F_[\w-]+\)//;    # cut F_<guid>
+			$b[ $idx + 1 ]->{"line"} =~ s/\n$//;
+			$b[ $idx + 1 ]->{"line"} .= $fDef."\n"               # copy F_<guid> to next line
 		}
 
 	}

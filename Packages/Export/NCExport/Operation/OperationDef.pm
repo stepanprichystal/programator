@@ -43,6 +43,13 @@ sub new {
 	return $self;
 }
 
+sub GetName {
+	my $self = shift;
+
+	return $self->{"name"};
+
+}
+
 sub GetLayers {
 	my $self = shift;
 

@@ -186,7 +186,7 @@ sub __Run {
 		get_logger("abstractQueue")->error( "Finding  " . $self->{"jobId"} . " BUG ExportMngr 3\n " );
 		
 		# 3) update tif file with information about nc operations
-		NCHelper->StoreOperationInfoTif( $self->{"inCAM"}, $self->{"jobId"}, $self->{"operationMngr"});
+		NCHelper->StoreOperationInfoTif( $self->{"inCAM"}, $self->{"jobId"}, $self->{"stepName"},  $self->{"operationMngr"});
 
 		# 4) Export physical nc files
 		$self->{"exportFileMngr"}->ExportFiles( $self->{"operationMngr"} );
@@ -311,7 +311,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	my $inCAM = InCAM->new();
 
 	# Exportovat jednotlive vrstvy nebo vsechno
-	my $exportSingle = 0;
+	my $exportSingle = 1;
 
 	# Vrstvy k exportovani, nema vliv pokud $exportSingle == 0
 	my @pltLayers = ();
