@@ -1,18 +1,1 @@
-<ml name="2" soll="1,537" path="undefined">
-<element id="4" p="100" pos="1" type="Copper" />
-<element id="6" qId="1" type="Prepreg" />
-<element id="6" qId="1" type="Prepreg" />
-<element id="5" p="35" pos="4" type="Copper" />
-<element id="9" pos="5" qId="1" type="Core" />
-<element id="5" p="55" pos="6" type="Copper" />
-<element id="1" qId="1" type="Prepreg" />
-<element id="6" qId="1" type="Prepreg" />
-<element id="6" qId="1" type="Prepreg" />
-<element id="1" qId="1" type="Prepreg" />
-<element id="5" p="48" type="Copper" />
-<element id="9" qId="1" type="Core" />
-<element id="5" p="39" type="Copper" />
-<element id="6" qId="1" type="Prepreg" />
-<element id="6" qId="1" type="Prepreg" />
-<element id="4" p="100" pos="9" type="Copper" />
-</ml>
+<ml dbVersion="9" path="undefined" soll="1,537" name="6vv_type2"><element id="4" p="100" pos="1" type="Copper" /><element id="6" qId="1" type="Prepreg" /><element id="6" qId="1" type="Prepreg" /><element qId="1" id="6" type="Prepreg" /><element id="5" p="35" pos="4" type="Copper" /><element id="7" pos="5" qId="1" type="Core" /><element id="5" p="55" pos="6" type="Copper" /><element id="6" qId="1" type="Prepreg" /><element qId="1" id="6" type="Prepreg" /><element id="6" qId="1" type="Prepreg" /><element id="5" p="48" type="Copper" /><element id="7" qId="1" type="Core" /><element id="5" p="39" type="Copper" /><element id="6" qId="1" type="Prepreg" /><element qId="1" id="6" type="Prepreg" /><element id="6" qId="1" type="Prepreg" /><element id="4" p="100" pos="9" type="Copper" /></ml>
