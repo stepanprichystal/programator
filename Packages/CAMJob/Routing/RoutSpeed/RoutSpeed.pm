@@ -10,6 +10,7 @@ use strict;
 use warnings;
 use List::MoreUtils qw(uniq);
 use POSIX qw(floor ceil);
+use Path::Tiny qw(path);
 
 #local library
 use aliased 'Helpers::GeneralHelper';
@@ -19,13 +20,104 @@ use aliased 'Packages::Stackup::Stackup::Stackup';
 use aliased 'CamHelpers::CamJob';
 use aliased 'Helpers::FileHelper';
 use aliased 'Packages::CAMJob::Dim::JobDim';
+use aliased 'Packages::CAMJob::Routing::RoutDuplicated::RoutDuplicated';
+use aliased 'Connectors::HeliosConnector::HegMethods';
+use aliased 'Helpers::JobHelper';
+use aliased 'Packages::TifFile::TifNCOperations';
 
 #-------------------------------------------------------------------------------------------#
 #  Script methods
 #-------------------------------------------------------------------------------------------#
-# Return duration of job/step/layer in second
-# Consider Pilot holes
-sub GetRoutSpeedTable {
+
+# Complete rout speed to exported NC files
+sub CompleteRoutSpeed {
+	my $self    = shift;
+	my $jobId = shift;
+	my $totalPnlCnt = shift;
+	my $errMess = shift;
+	
+	my $result  = 1;
+	
+ 
+	my $ncPath = JobHelper->GetJobArchive($jobId) . "nc\\";
+
+	my $tif = TifNCOperations->new($jobId);
+
+	return 0 unless ( $tif->TifFileExist() );
+
+	# Only operation which contain rout layer
+
+	my @ncOperations = grep { $_->{"isRout"} } $tif->GetNCOperations();
+
+	foreach my $ncOper (@ncOperations) {
+
+		my %routSpeedTab = $self->__GetRoutSpeedTable( $ncOper->{"ncMatThick"}, $ncOper->{"minSlotTool"}, $totalPnlCnt, $ncOper->{"layers"} );
+
+		next unless ( $ncOper->{"isRout"} );
+
+		foreach my $m ( keys %{ $ncOper->{"machines"} } ) {
+
+			my $ncFile = $ncPath . $jobId . "_" . $ncOper->{"opName"} . "." . $m;
+
+			die "NCFile doesn't exist $ncFile" unless ( -e $ncFile );
+
+			my $file = path($ncFile);
+
+			my $data = $file->slurp_utf8;
+
+			foreach my $toolKey ( keys %{ $ncOper->{"machines"}->{$m} } ) {
+
+				my $t = $ncOper->{"machines"}->{$m}->{$toolKey};
+
+				my $speed = $self->__GetRoutSpeed($t->{"drillSize"}, $t->{"isOutline"}, $t->{"isDuplicate"}, \%routSpeedTab);
+ 
+				die "No speed defined for tool size: " . $t->{"drillSize"} . ", key: $toolKey" unless defined($speed);
+
+				$data =~ s/\(F_$toolKey\)/F$speed/i;
+			}
+
+			# Do final check if all keys (F_<guid>) was replaced by speed
+			if ( $data =~ /\(F_[\w-]+\)/i ) {
+
+				$data =~ s/\(F_[\w-]+\)/\(F_not_defined)/ig;
+				$result = 0;
+				$$errMess .= "NC operation: $ncOper, machine: $m, speed is not defined.\n";
+			}
+
+			$file->spew_utf8($data);
+
+		}
+	}
+ 
+	return $result;
+}
+
+
+sub __GetRoutSpeed {
+	my $self         = shift;
+	my $drillSize    = shift;    # µm
+	my $isOutline    = shift;
+	my $isDuplicated = shift;
+	my $routSpeedTab = shift;
+
+	my $speed;
+	if ($isOutline) {
+		$speed = $routSpeedTab->{$drillSize}->{"outline"};
+	}
+	else {
+		$speed = $routSpeedTab->{$drillSize}->{"standard"};
+	}
+
+	if ($isDuplicated) {
+
+		$speed = RoutDuplicated->GetRoutSpeed($drillSize);
+	}
+
+	return $speed;
+
+}
+
+sub __GetRoutSpeedTable {
 	my $self        = shift;
 	my $matThick    = shift;    # µm
 	my $minTool     = shift;    #µm
@@ -38,14 +130,11 @@ sub GetRoutSpeedTable {
 
 	my @paketThick = ( 1500, 3000, 4000 );    # possible paket trasholds in µm
 
-	my $packetType        = $self->__GetPacketType( $matThick, \%routSpeedTab,        $minTool, $totlaPnlCnt );
-	my $packetTypeOutline = $self->__GetPacketType( $matThick, \%routSpeedOutlineTab, $minTool, $totlaPnlCnt );
+	my $packetType = $self->__GetPacketType( $matThick, \%routSpeedTab, $minTool, $totlaPnlCnt );
 
-	if(scalar(grep{$_->{"gROWname"} =~ /[rf]z[cs]/} @{$layers})){
+	if ( scalar( grep { $_ =~ /[rf]z[cs]/ } @{$layers} ) ) {
 		$packetType = 0;
-		$packetTypeOutline = 0;
 	}
-
 
 	my %tSpeed = ();
 
@@ -58,7 +147,7 @@ sub GetRoutSpeedTable {
 
 	}
 
-	return %routSpeedTab
+	return %tSpeed
 
 }
 
@@ -76,6 +165,9 @@ sub __GetPacketType {
 
 	for ( my $i = scalar(@paketThick) - 1 ; $i >= 0 ; $i-- ) {
 
+		unless ( defined $minTool ) {
+			die "";
+		}
 		die "Minimal slot tool: $minTool is not defined in \"RoutSpeedTable\"" unless ( defined $routSpeedTable{$minTool} );
 
 		if ( defined $routSpeedTable{$minTool}->[$i] ) {
@@ -109,21 +201,24 @@ sub __GetPacketType {
 	else {
 		my $pnlPerPacket = int( $paketThick[$defPaketIdx] / $matThick );
 
+		# if total count of packet is two, split panels amnount equaly to both packet
 		if ( ceil( $totlaPnlCnt / $pnlPerPacket ) == 2 ) {
 
+			# each packet will contain max panel cnt: $pnlPerPacket
 			$pnlPerPacket = ceil( $totlaPnlCnt / 2 );
+
+			# search smallest packet treshold thickness for new packet
+			for ( my $i = $defPaketIdx ; $i >= 0 ; $i-- ) {
+
+				if ( $pnlPerPacket * $matThick < $paketThick[$i] ) {
+					$realPaketIdx = $i;
+				}
+				else {
+					last;
+				}
+			}
 		}
 
-		# search smallest packet treshold thockness
-		for ( my $i = $defPaketIdx ; $i >= 0 ; $i-- ) {
-
-			if ( $pnlPerPacket * $matThick < $paketThick[$i] ) {
-				$realPaketIdx = $i;
-			}
-			else {
-				last;
-			}
-		}
 	}
 
 	# here is exception, if two packet,
@@ -175,7 +270,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	use aliased 'Packages::CAMJob::Routing::RoutSpeed::RoutSpeed';
 	use aliased 'Packages::InCAM::InCAM';
 
-	my $result = RoutSpeed->GetRoutSpeedTable( 1600, 1000, 8, ["f"] );
+	my $result = RoutSpeed->__GetRoutSpeedTable( 1600, 1000, 8, ["f"] );
 
 	print STDERR "Result is: $result";
 

@@ -29,6 +29,7 @@ use aliased 'Packages::Export::NCExport::Helpers::NCHelper';
 use aliased 'CamHelpers::CamDrilling';
 use aliased 'CamHelpers::CamJob';
 use aliased 'Packages::Export::NCExport::Helpers::NpltDrillHelper';
+use aliased 'Packages::CAMJob::Routing::RoutSpeed::RoutSpeed';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -62,14 +63,14 @@ sub Run {
 
 	my $err = undef;
 	eval {
- 
+
 		$self->__Init();
 
 		$self->__Run();
 
 	};
 	if ($@) {
-		
+
 		$err = $@;
 	}
 
@@ -77,8 +78,8 @@ sub Run {
 	if ( !$self->{"exportSingle"} ) {
 		NpltDrillHelper->RestoreNpltDrill( $self->{"inCAM"}, $self->{"jobId"}, $cnt );
 	}
-	
-	die $err if($err);
+
+	die $err if ($err);
 
 }
 
@@ -102,6 +103,7 @@ sub TaskItemsCount {
 	$totalCnt += scalar( CamDrilling->GetNPltNCLayers( $self->{"inCAM"}, $self->{"jobId"} ) );
 
 	$totalCnt++;    # nc merging
+	$totalCnt++;    # rout speed feed
 	$totalCnt++;    # nc info save
 
 	return $totalCnt;
@@ -139,7 +141,8 @@ sub __Init {
 
 	#create manager for merging and moving files to archiv
 	$self->{"mergeFileMngr"} = MergeFileMngr->new( $self->{'inCAM'}, $self->{'jobId'}, $self->{"stepName"}, $self->{"exportSingle"} );
-	$self->{"mergeFileMngr"}->{"fileEditor"} = FileEditor->new(  $self->{'inCAM'}, $self->{'jobId'}, $self->{"stepName"}, $self->{"layerCnt"} );
+	$self->{"mergeFileMngr"}->{"fileEditor"} =
+	  FileEditor->new( $self->{'inCAM'}, $self->{'jobId'}, $self->{"stepName"}, $self->{"layerCnt"}, $self->{"exportSingle"} );
 	$self->{"mergeFileMngr"}->{"onItemResult"}->Add( sub { $self->_OnItemResult(@_) } );
 
 	#create manager, which decide what will be exported
@@ -177,16 +180,17 @@ sub __Run {
 
 		# 2) create sequence of dps operation
 		$self->{"operationMngr"}->CreateOperations();
- 
+
 		get_logger("abstractQueue")->error( "Finding  " . $self->{"jobId"} . " BUG ExportMngr 2\n " );
 
 		# 3) for every operation filter suitable machines
 		$self->{"machineMngr"}->AssignMachines( $self->{"operationMngr"} );
 
 		get_logger("abstractQueue")->error( "Finding  " . $self->{"jobId"} . " BUG ExportMngr 3\n " );
-		
-		# 3) update tif file with information about nc operations
-		NCHelper->StoreOperationInfoTif( $self->{"inCAM"}, $self->{"jobId"}, $self->{"stepName"},  $self->{"operationMngr"});
+
+		# 3) update tif file with information about nc operations (time consuming operation, this is reason why store to tif for later useage)
+		NCHelper->StoreOperationInfoTif( $self->{"inCAM"}, $self->{"jobId"}, $self->{"stepName"}, $self->{"operationMngr"} )
+		  if ( !$self->{"exportSingle"} );
 
 		# 4) Export physical nc files
 		$self->{"exportFileMngr"}->ExportFiles( $self->{"operationMngr"} );
@@ -194,10 +198,41 @@ sub __Run {
 		# 5) Merge an move files to archive
 		$self->{"mergeFileMngr"}->MergeFiles( $self->{"operationMngr"} );
 
+		# 6) Set rout feed speed to NC files
+		$self->__SetRoutFeedSpeed();
+
 		# 6) Save nc info table to database
 		$self->__UpdateNCInfo();
 	}
 
+}
+
+sub __SetRoutFeedSpeed {
+	my $self = shift;
+
+	return 0 if ( $self->{"exportSingle"} );
+
+	my $resultItem = $self->_GetNewItem("Set rout speed");
+
+	# If pcb is in status 'Ve vyrobe', set rout speed
+	my $lastOrder = $self->{"jobId"} . "-" . HegMethods->GetPcbOrderNumber( $self->{"jobId"} );
+	if ( HegMethods->GetStatusOfOrder( $lastOrder, 0 ) == 4 ) {
+
+		my $info = HegMethods->GetInfoAfterStartProduce($lastOrder);
+
+		die "pocet_prirezu is no defined in HEG for orderid: $lastOrder"
+		  if ( !defined $info->{'pocet_prirezu'} || !defined $info->{'prirezu_navic'} );
+
+		my $totalPnlCnt = $info->{'pocet_prirezu'} + $info->{'prirezu_navic'};
+
+		my $errMess = "";
+		unless ( RoutSpeed->CompleteRoutSpeed( $self->{"jobId"}, $totalPnlCnt, \$errMess ) ) {
+
+			$resultItem->AddError($errMess);
+		}
+	}
+
+	$self->_OnItemResult($resultItem);
 }
 
 #Get information about nc files for  technical procedure
@@ -311,7 +346,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	my $inCAM = InCAM->new();
 
 	# Exportovat jednotlive vrstvy nebo vsechno
-	my $exportSingle = 1;
+	my $exportSingle = 0;
 
 	# Vrstvy k exportovani, nema vliv pokud $exportSingle == 0
 	my @pltLayers = ();
@@ -320,7 +355,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	# Pokud se bude exportovat jednotlive po vrstvach, tak vrstvz dotahnout nejaktakhle:
 	#@pltLayers = CamDrilling->GetPltNCLayers( $inCAM, $jobId );
-	my @npltLayers = ( "f");
+	my @npltLayers = ("f");
 
 	my $export = ExportMngr->new( $inCAM, $jobId, $step, $exportSingle, \@pltLayers, \@npltLayers );
 	$export->Run( $inCAM, $jobId, $exportSingle, \@pltLayers, \@npltLayers );

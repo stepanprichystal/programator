@@ -91,64 +91,18 @@ sub CompleteRoutFeed {
 	my $jobId = $orderId;
 	$jobId =~ s/-.*$//;
 
-	my $tif = TifNCOperations->new($jobId);
-
-	return 0 unless ( $tif->TifFileExist() );
-	
 	my $info = HegMethods->GetInfoAfterStartProduce($orderId);
- 	
+
 	die "pocet_prirezu is no defined in HEG for orderid: $orderId" if ( !defined $info->{'pocet_prirezu'} || !defined $info->{'prirezu_navic'} );
- 	my $totalPnlCnt = $info->{'pocet_prirezu'} + $info->{'prirezu_navic'};
- 
-	my $ncPath = JobHelper->GetJobArchive($jobId) . "nc\\";
- 
+	my $totalPnlCnt = $info->{'pocet_prirezu'} + $info->{'prirezu_navic'};
 
-	#filter only files, which include pcb number
-
-	my @ncOperations = $tif->GetNCOperations();
-
-	foreach my $ncOper (@ncOperations) {
-		
-		my %routSpeedTab = RoutSpeed->GetRoutSpeedTable( 1600, 1000, 8, ["f"] );
-	 
-		next unless ( $ncOper->{"isRout"} );
-
-		foreach my $m ( keys %{ $ncOper->{"machines"} } ) {
-
-			my $ncFile = $ncPath . $jobId . "_" . $ncOper->{"opName"} . "." . $m;
-
-			die "NCFile doesn't exist $ncFile" unless ( -e $ncFile );
-
-			
-
-				my $file = path($ncFile);
-
-				my $data = $file->slurp_utf8;
-				
-				foreach my $toolKey  ( keys %{$ncOper->{"machines"}->{$m}}){
-				
-				
-				
- 
-
-				
-
-	 
-				
-				}
-				
-				$data =~ s/(m97,[a-f][\d]+[\/\-\:\+]{0,2})\d*/$1$orderNum/i;
-				
-				
-				
-				$file->spew_utf8($data);
-
-			}
-
-		}
-
+	my $mess = "";
+	unless(RoutSpeed->CompleteRoutSpeed( $jobId, $totalPnlCnt, \$mess )){
+		die "Error during set rout speed: $mess";
 	}
+	
 
+	return 1;
 }
 
 #-------------------------------------------------------------------------------------------#
@@ -159,7 +113,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	use aliased 'Packages::TriggerFunction::NCFiles';
 
-	NCFiles->ChangePcbOrderNumber("f52456-01");
+	NCFiles->CompleteRoutFeed("d152457-01");
 
 	print STDERR "ttt";
 

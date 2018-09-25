@@ -515,7 +515,7 @@ sub StoreOperationInfoTif {
 			my $stackup = Stackup->new($jobId);
 			$matThick = $stackup->GetThickByLayerName( $layers[0]->{"gROWdrl_start_name"} );
 		}
-		$opInf{"ncMatThick"} = $matThick;
+		$opInf{"ncMatThick"} = $matThick*1000;
 
 		if ($isRout) {
 
@@ -542,7 +542,7 @@ sub StoreOperationInfoTif {
 	my %toolInfo = ();
 
 	my @layers = map {$_->{"gROWname"}} grep { $_->{"gROWlayer_type"} eq "rout" } CamJob->GetNCLayers( $inCAM, $jobId );
-	foreach my $s ( map { $_->{"stepName"} } CamStepRepeat->GetUniqueNestedStepAndRepeat( $inCAM, $jobId, $step ) ) {
+	foreach my $s ( (map { $_->{"stepName"} } CamStepRepeat->GetUniqueNestedStepAndRepeat( $inCAM, $jobId, $step ) ), $step ) {
 
 		$toolInfo{$s} = {};
 
@@ -555,12 +555,12 @@ sub StoreOperationInfoTif {
 			foreach my $ch ( $rtm->GetChains() ) {
 
 				my $outline = scalar( grep { $_->IsOutline() } $ch->GetChainSequences() ) == scalar( $ch->GetChainSequences() ) ? 1 : 0;
-				$toolInfo{$s}->{$l}->{ $ch->GetChainTool()->GetChainOrder() } = { "isOutline" => $outline, "drillSize" => $ch->GetChainSize() };
+				$toolInfo{$s}->{$l}->{ $ch->GetChainTool()->GetChainOrder() } = { "isOutline" => $outline };
 			}
 		}
 	}
 
-	$tif->SetToolInfo( \%toolInfo );
+	$tif->SetToolInfos( \%toolInfo );
 	
 	
 	# test add layter

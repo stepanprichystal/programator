@@ -9,6 +9,7 @@ use base ('Packages::TifFile::TifFile::TifFile');
 #3th party library
 use strict;
 use warnings;
+use Data::Dumper;
 
 #local library
 use aliased 'Helpers::GeneralHelper';
@@ -49,14 +50,30 @@ sub SetNCOperations {
 
 }
 
-sub SetToolInfo {
+sub SetToolInfos {
 	my $self     = shift;
 	my $toolInfo = shift;
 
 	$self->{"tifData"}->{ $self->{"key"} }->{"ToolInfo"} = $toolInfo;
 
 	$self->_Save();
+}
 
+sub GetToolInfo {
+	my $self     = shift;
+	my $chainNum = shift;
+	my $layer = shift;
+	my $step = shift;
+
+	my $toolInfo = $self->{"tifData"}->{ $self->{"key"} }->{"ToolInfo"};
+	
+	return undef if(!defined $toolInfo->{$step});
+	
+	return undef if(!defined $toolInfo->{$step}->{$layer});
+	
+	return undef if(!defined $toolInfo->{$step}->{$layer}->{$chainNum});
+	
+	return $toolInfo->{$step}->{$layer}->{$chainNum};
 }
 
 sub AddToolToOperation {
@@ -64,27 +81,20 @@ sub AddToolToOperation {
 	my $layer    = shift;
 	my $machine  = shift;    # machine suffix
 	my $key      = shift;
+	my $drillSize      = shift;
 	my $chainNum = shift;
 	my $step     = shift;
 	my $duplRout = shift;
 
 	my $result = 1;          # tool information was found in tif file
-
-	print STDERR "Tool info\n\n";
-	print STDERR "layer = $layer\n";
-	print STDERR "machine = $machine\n";
-	print STDERR "key = $key\n";
-	print STDERR "chainNum = $chainNum\n";
-	print STDERR "step = $step\n";
-	print STDERR "duplRout = $duplRout\n";
+ 
 
 	# search tool info
-
-	my $tInfo = $self->{"tifData"}->{ $self->{"key"} }->{"ToolInfo"}->{$step}->{$layer}->{$chainNum};
-
+	my $tInfo =	$self->GetToolInfo($chainNum, $layer, $step);
+	 
 	if ( defined $tInfo ) {
 
-		# search all nc operation where participate this tool
+		# search all machines where participate this tool
 		my @opItems = ();
 		foreach my $opItem ( @{ $self->{"tifData"}->{ $self->{"key"} }->{"NCOperations"} } ) {
 
@@ -102,19 +112,21 @@ sub AddToolToOperation {
 
 				#$toolOpInfo{"key"} = $key;
 
-				$toolOpInfo{"chainNum"} = $chainNum;
+				$toolOpInfo{"chainNum"}  = $chainNum;
 				$toolOpInfo{"step"}      = $step;
 				$toolOpInfo{"layer"}     = $layer;
-				$toolOpInfo{"duplRout"}  = $duplRout;
+				$toolOpInfo{"isDuplicate"}  = $duplRout;
 				$toolOpInfo{"isOutline"} = $tInfo->{"isOutline"};
+				$toolOpInfo{"drillSize"}  = $drillSize;
 
 				$item->{"machines"}->{$machine}->{$key} = \%toolOpInfo;
-
+			
 			}
 
 			$self->_Save();
-			
-		}else {
+
+		}
+		else {
 			$result = 0;
 		}
 
@@ -129,13 +141,13 @@ sub AddToolToOperation {
 
 }
 
-sub GetNCOperations{
-	my $self     = shift;
-	
-	return @{$self->{"tifData"}->{ $self->{"key"} }->{"NCOperations"}};
-	
-	
+sub GetNCOperations {
+	my $self = shift;
+
+	return @{ $self->{"tifData"}->{ $self->{"key"} }->{"NCOperations"} };
+
 }
+
 #sub SetSignalLayers {
 #	my $self   = shift;
 #	my $layers = shift;

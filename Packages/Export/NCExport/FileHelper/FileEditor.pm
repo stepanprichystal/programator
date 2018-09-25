@@ -38,6 +38,7 @@ sub new {
 	$self->{"jobId"}    = shift;
 	$self->{"stepName"} = shift;
 	$self->{"layerCnt"} = shift;
+	$self->{"exportSingle"} = shift;
 
 	return $self;
 }
@@ -213,6 +214,7 @@ sub EditAfterOpen {
 
 	# ================================================================
 	# 5) EDIT:Move F_<guid> definition from tool line to first line after tool
+	
 	my $isRout = scalar( grep { $_->{"gROWlayer_type"} eq "rout" } $opItem->GetSortedLayers() ) ? 1 : 0;
 	if ($isRout) {
 
@@ -230,6 +232,21 @@ sub EditAfterOpen {
 			$b[ $idx + 1 ]->{"line"} .= $fDef."\n"               # copy F_<guid> to next line
 		}
 
+	}
+	
+	# ================================================================
+	# 6) EDIT: If export single set F_<guid> definition to F_not_defined
+	 
+	# Remove F_<guid>, if export single
+	if($self->{"exportSingle"} && $isRout){
+		
+		my @b = @{ $parseFile->{"body"} };
+
+		# index of rows where is F_<guid> definition
+		my @tIdx = grep { $b[$_]->{"line"} =~ /\(F_[\w-]+\)/ } 0 .. $#b;
+		foreach my $idx (@tIdx) {
+			$b[ $idx ]->{"line"} =~ s/\(F_[\w-]+\)/\(F_not_defined\)/;
+		}
 	}
 
 }

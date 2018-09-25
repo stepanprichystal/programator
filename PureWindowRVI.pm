@@ -2,7 +2,7 @@
 # Description: Form, which allow set nif quick notes
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package PureWindow;
+package PureWindowRVI;
 use base 'Widgets::Forms::StandardFrm';
 
 #3th party librarysss
@@ -29,12 +29,13 @@ sub new {
 	my $class  = shift;
 	my @params = @_;
  
-	my $title     = "My title";
-	my $w         = 500;
-	my $h         = 700;
+	my $title     = "Untility for transform PDF to drilling parameters";
+	my $w         = 400;
+	my $h         = 200;
 	my @dimension = ( $w, $h );
 
 	my $self = $class->SUPER::new( -1, $title, \@dimension, undef );
+
 
 	bless($self);
 
@@ -66,20 +67,20 @@ sub __SetLayout {
 	my $self = shift;
 
 	# DEFINE CONTROLS
-	my $szMain = Wx::BoxSizer->new(&Wx::wxVERTICAL);
+
 
 	# Content definition	
 	my $content = $self->__SetContentLayout( $self->{"mainFrm"} );
-
 	$self->AddContent($content);
+
 
 	# Button height
 	$self->SetButtonHeight(30);
 
 	# Button definition
-	my $btnTest = $self->AddButton( "notify 1", sub { $self->test1(@_) } );
-	my $btnTest2 = $self->AddButton( "notify 2", sub { $self->test2(@_) } );
-	my $btnTest3 = $self->AddButton( "test 3",      sub { $self->test3(@_) } );
+	my $btnTest = $self->AddButton( "Transform", sub { $self->transform(@_) } );
+	
+	
 
 	# DEFINE LAYOUT STRUCTURE
 
@@ -92,61 +93,73 @@ sub __SetContentLayout {
 	my $parent = shift;
 
 	#define staticboxes
-	my $statBox = Wx::StaticBox->new( $parent, -1, 'My content' );
-	my $szStatBox = Wx::StaticBoxSizer->new( $statBox, &Wx::wxVERTICAL );
+	my $mainBox = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
+
+	#my $szBoxR = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
+	my $szBoxL = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
+
+	my $szBoxR = Wx::StaticBox->new( $parent, 1, 'XML to Drilling parameters file' );
+	my $szStatBox = Wx::StaticBoxSizer->new( $szBoxR, &Wx::wxDefaultPosition );
+	
 
 	# DEFINE CONTROLS
+	my $browse = Wx::Button->new( $parent, -1, 'Choose XML file...' , &Wx::wxDefaultPosition, [ 200, 50 ] );
+	my $testTxtXtrl = Wx::TextCtrl->new( $szBoxR, -1, "Test", &Wx::wxDefaultPosition );
 
-	my $signalChb = Wx::CheckBox->new( $statBox, -1, "Signal layers", &Wx::wxDefaultPosition );
-	my $maskChb   = Wx::CheckBox->new( $statBox, -1, "Mask layers",   &Wx::wxDefaultPosition );
-	my $plugChb   = Wx::CheckBox->new( $statBox, -1, "Plug layers",   &Wx::wxDefaultPosition );
-	my $goldChb   = Wx::CheckBox->new( $statBox, -1, "Gold layers",   &Wx::wxDefaultPosition );
 
 	# SET EVENTS
-	Wx::Event::EVT_CHECKBOX( $signalChb, -1, sub { $self->__OnCheckboxChecked("Ahoj") } );
-	Wx::Event::EVT_CHECKBOX( $maskChb, -1, sub { $self->__OnCheckboxChecked("Hi") } );
-	Wx::Event::EVT_CHECKBOX( $plugChb, -1, sub { $self->__OnCheckboxChecked("Hallo") } );
-	Wx::Event::EVT_CHECKBOX( $goldChb, -1, sub { $self->__OnCheckboxChecked("Ciao") } );
+	Wx::Event::EVT_BUTTON( $browse, -1, sub { $self->__OnChooseDir() } );
 
 	# BUILD STRUCTURE OF LAYOUT
+	
+	$szBoxL->Add($browse); 
+	$szStatBox->Add( $testTxtXtrl, 0, &Wx::wxEXPAND | &Wx::wxLEFT, 0 );
+	
+	
+	$mainBox->Add( $szBoxL,    0, &Wx::wxEXPAND | &Wx::wxHORIZONTAL, 0 );
+	$mainBox->Add( $szStatBox, 0, &Wx::wxEXPAND | &Wx::wxHORIZONTAL, 0 );
+	
+	
 
-	$szStatBox->Add( $signalChb, 1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
-	$szStatBox->Add( $maskChb,   1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
-	$szStatBox->Add( $plugChb,   1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
-	$szStatBox->Add( $goldChb,   1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+
 
 	# Set References
-	$self->{"signalChb"} = $signalChb;
-	$self->{"maskChb"}   = $maskChb;
-	$self->{"plugChb"}   = $plugChb;
-	$self->{"goldChb"}   = $goldChb;
 
-	return $szStatBox;
+	$self->{"button"} = $browse;
+	
+
+	return $mainBox;
 }
 
+sub __OnChooseDir {
+	my $self  = shift;
+
+	my $dirDialog = undef;
+
+
+		$dirDialog = Wx::FileDialog->new( $self->{"mainFrm"}, "Select directory with data", "c:/" );
+
+	if ( $dirDialog->ShowModal() != &Wx::wxID_CANCEL ) {
+
+		my @paths = $dirDialog->GetPaths;
+		
+		$self->{"path"} = $paths[0];
+		$self->{"button"}->SetLabel('File was chosen');
+		
+	}
+}
 
 #-------------------------------------------------------------------------------------------#
 #  Handlers
 #-------------------------------------------------------------------------------------------#
 
-sub test1 {
+sub transform {
 	my $self = shift;
 
- print STDERR "notify 1\n";
-
-}
-sub test2 {
-	my $self = shift;
-	
-	print STDERR "notify 2\n";
+ print STDERR $self->{"path"} , "\n";
 
 }
 
-sub test3 {
-	my $self = shift;
-
-	 print STDERR "notify 3\n";
-}
 
 sub __OnCheckboxChecked {
 	my $self = shift;
