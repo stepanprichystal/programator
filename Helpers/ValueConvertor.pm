@@ -167,13 +167,13 @@ sub GetJobLayerTitle {
 		}
 
 	}
-	elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_jbMillTop ) {
+	elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_cbMillTop ) {
 		$title = "Non-plated core milling from top";
 		if ($cz) {
 			$title = "Neprokovené hloubkové leptáním jádra z top";
 		}
 	}
-	elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_jbMillBot ) {
+	elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_cbMillBot ) {
 		$title = "Non-plated core milling from bot";
 		if ($cz) {
 			$title = "Neprokovené hloubkové frézování jádra z bot";
@@ -495,10 +495,10 @@ sub GetFileNameByLayer {
 		$name = undef;    # we do not export rs
 
 	}
-	elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_jbMillTop ) {
+	elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_cbMillTop ) {
 		$name = "mill_core_top";
 	}
-	elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_jbMillBot ) {
+	elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_cbMillBot ) {
 		$name = "mill_core_bot";
 	}
 	elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_kMill ) {

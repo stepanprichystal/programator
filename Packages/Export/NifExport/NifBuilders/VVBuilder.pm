@@ -28,6 +28,7 @@ use aliased 'Packages::Export::NifExport::SectionBuilders::BuilderDrillVV';
 use aliased 'Packages::Export::NifExport::SectionBuilders::BuilderDrillCore';
 use aliased 'Packages::Export::NifExport::SectionBuilders::BuilderRoutVV';
 use aliased 'Packages::Export::NifExport::SectionBuilders::BuilderRoutCore';
+use aliased 'Packages::Export::NifExport::SectionBuilders::BuilderFlexiTmp';
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
@@ -49,6 +50,9 @@ sub new {
 sub Build {
 	my $self    = shift;
 	my $nifMngr = shift;
+	
+	# Flexi section
+	$nifMngr->AddSection("FLEXI PARAMETRY PRO POSTUP", BuilderFlexiTmp->new([]));
 
 	#DPS section
 	my @req = ();

@@ -10,13 +10,22 @@ use strict;
 use warnings;
 use File::Copy;
 use Try::Tiny;
+use List::MoreUtils qw(uniq);
+use List::Util qw[max min];
 
 #local library
 use aliased 'Enums::EnumsGeneral';
 use aliased 'Enums::EnumsPaths';
 use aliased 'Connectors::HeliosConnector::HegMethods';
-
+use aliased 'Packages::TifFile::TifNCOperations';
 use aliased 'Helpers::GeneralHelper';
+use aliased 'CamHelpers::CamRouting';
+use aliased 'Packages::Stackup::Stackup::Stackup';
+use aliased 'CamHelpers::CamJob';
+use aliased 'Packages::CAMJob::Dim::JobDim';
+use aliased 'CamHelpers::CamDrilling';
+use aliased 'CamHelpers::CamStepRepeat';
+use aliased 'Packages::CAM::UniRTM::UniRTM::UniRTM';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -300,7 +309,7 @@ sub RenumberToolASC {
 		$file->{"footer"}->[$i]->{"line"} =~ s/T$old/$prefix$new/;
 
 		# update tool in parsed file
-		$file->{"footer"}->[$i]->{"tool"} = $t{ $file->{"footer"}->[$i]->{"tool"}} ;
+		$file->{"footer"}->[$i]->{"tool"} = $t{ $file->{"footer"}->[$i]->{"tool"} };
 	}
 
 	#  sustitute prefix with "T"
@@ -433,6 +442,151 @@ sub __BuildNcInfo {
 	}
 
 	return $str;
+}
+
+sub StoreOperationInfoTif {
+	my $self          = shift;
+	my $inCAM         = shift;
+	my $jobId         = shift;
+	my $step          = shift;
+	my $operationMngr = shift;
+
+	my $tif = TifNCOperations->new($jobId);
+
+	# store machines
+	#my @machines = uniq( map { $_->{"suffix"} } map { $_->GetMachines() } $operationMngr->GetOperationItems() );
+	#$tif->AddMachines( \@machines );
+
+	# store operations
+
+	my $layerCnt = CamJob->GetSignalLayerCnt( $inCAM, $jobId );    # Signal layer cnt
+
+	my @op = ();
+
+	my @opItems = ();
+	foreach my $opItem ( $operationMngr->GetOperationItems() ) {
+
+		if ( defined $opItem->GetOperationGroup() ) {
+
+			push( @opItems, $opItem );
+			next;
+		}
+
+		if ( !defined $opItem->GetOperationGroup() ) {
+
+			# unless operation definition is defined at least in one operations in group operation items
+			# process this operation
+
+			my $o = ( $opItem->GetOperations() )[0];
+
+			my $isInGroup = scalar( grep { $_->GetName() eq $o->GetName() }
+									map { $_->GetOperations() } grep { defined $_->GetOperationGroup() } $operationMngr->GetOperationItems() );
+
+			push( @opItems, $opItem ) if ( !$isInGroup );
+
+		}
+
+	}
+
+	foreach my $opItem (@opItems) {
+		my %opInf = ();
+
+		$opInf{"opName"} = $opItem->GetName();
+
+		my @layers = $opItem->GetSortedLayers();
+		
+
+		my @machines = map { $_->{"suffix"} } $opItem->GetMachines();
+		$opInf{"machines"} = {};
+		$opInf{"machines"}->{$_} = {} foreach @machines;
+		
+		 
+	 
+
+		my $isRout = scalar( grep { $_->{"gROWlayer_type"} eq "rout" } @layers ) ? 1 : 0;
+		$opInf{"isRout"} = $isRout;
+
+		my $matThick;
+		if ( $layerCnt <= 2 ) {
+
+			$matThick = HegMethods->GetPcbMaterialThick($jobId);
+		}
+		else {
+			my $stackup = Stackup->new($jobId);
+			$matThick = $stackup->GetThickByLayerName( $layers[0]->{"gROWdrl_start_name"} );
+		}
+		$opInf{"ncMatThick"} = $matThick*1000;
+
+		if ($isRout) {
+
+			#			my @tools = ();
+			#			foreach my $l (@layers) {
+			#				my $tool = CamRouting->GetMinSlotToolByLayers( $inCAM, $jobId, $step, [@layers] );
+			#				push( @tools,  $tool)
+			#			}
+
+			$opInf{"minSlotTool"} = CamRouting->GetMinSlotToolByLayers( $inCAM, $jobId, $step, [@layers] );
+		}
+		
+		@layers = map { $_->{"gROWname"} } @layers;
+		$opInf{"layers"} = \@layers;
+ 
+
+		push( @op, \%opInf );
+
+	}
+
+	$tif->SetNCOperations( \@op );
+
+	# store rout tool info
+	my %toolInfo = ();
+
+	my @layers = map {$_->{"gROWname"}} grep { $_->{"gROWlayer_type"} eq "rout" } CamJob->GetNCLayers( $inCAM, $jobId );
+	foreach my $s ( (map { $_->{"stepName"} } CamStepRepeat->GetUniqueNestedStepAndRepeat( $inCAM, $jobId, $step ) ), $step ) {
+
+		$toolInfo{$s} = {};
+
+		foreach my $l (@layers) {
+
+			 
+
+			my $rtm = UniRTM->new( $inCAM, $jobId, $s, $l );
+
+			foreach my $ch ( $rtm->GetChains() ) {
+
+				my $outline = scalar( grep { $_->IsOutline() } $ch->GetChainSequences() ) == scalar( $ch->GetChainSequences() ) ? 1 : 0;
+				$toolInfo{$s}->{$l}->{ $ch->GetChainTool()->GetChainOrder() } = { "isOutline" => $outline };
+			}
+		}
+	}
+
+	$tif->SetToolInfos( \%toolInfo );
+	
+	
+	# test add layter
+	
+	#$tif->AddToolToOperation("fzc", "c", "tttttt", 1, "o+1", 0);
+ 
+	
+
+	#	#search min slot tool for operation
+	#	my $minTool = CamRouting->GetMinSlotTool( $inCAM, $jobId, $step, $l{"type"} );
+	#
+	#	# Rout speed
+	#	my %routSpeedTab        = $self->__ParseRoutSpeedTable("RoutSpeed.csv");
+	#	my %routSpeedOutlineTab = $self->__ParseRoutSpeedTable("RoutSpeedOutline.csv");
+	#
+	#	# Thickness of drilled material
+	#	my $matThick;
+	#	if ( $layerCnt <= 2 ) {
+	#
+	#		$matThick = HegMethods->GetPcbMaterialThick($jobId);
+	#	}
+	#	else {
+	#		my $stackup = Stackup->new($jobId);
+	#		$matThick = $stackup->GetThickByLayerName( $l{"gROWdrl_start_name"} );
+	#	}
+	#
 }
 
 #-------------------------------------------------------------------------------------------#

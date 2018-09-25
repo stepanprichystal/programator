@@ -21,5 +21,7 @@ use constant {
 			   DTMatt_MAGINFO   => "tool_magazine_info"
 }; 
 
+# material kind - base material, 
+
 1;
 

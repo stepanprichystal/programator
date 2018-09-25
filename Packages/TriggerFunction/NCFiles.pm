@@ -13,8 +13,8 @@ use Path::Tiny qw(path);
 #loading of locale modules
 use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'Helpers::JobHelper';
-
-
+use aliased 'Packages::TifFile::TifNCOperations';
+use aliased 'Packages::CAMJob::Routing::RoutSpeed::RoutSpeed';
 
 #-------------------------------------------------------------------------------------------#
 #   Package methods
@@ -24,16 +24,16 @@ use aliased 'Helpers::JobHelper';
 # Example if dps is second ordered: M97,F12345 => M97,F12345-2
 # parameter $orderId is eg: F12345-01
 sub ChangePcbOrderNumber {
-	my $self  = shift;
+	my $self    = shift;
 	my $orderId = shift;
-	
-	my $jobId =  $orderId;
+
+	my $jobId = $orderId;
 	$jobId =~ s/-.*$//;
 
 	my ($orderNum) = $orderId =~ m/^\w\d+-(\d*)$/;
-	$orderNum = int ($orderNum);
- 
-	my $ncPath   = JobHelper->GetJobArchive($jobId) . "nc\\";
+	$orderNum = int($orderNum);
+
+	my $ncPath = JobHelper->GetJobArchive($jobId) . "nc\\";
 
 	my @ncFiles = ();
 
@@ -57,7 +57,7 @@ sub ChangePcbOrderNumber {
 	}
 
 	#replace number of order
-	
+
 	#legend for drilled number is (F12345-01D J1):
 	#	 Èíslo pds
 	#	 -Tlouška mìdi
@@ -79,7 +79,29 @@ sub ChangePcbOrderNumber {
 		$file->spew_utf8($data);
 
 	}
+
+	return 1;
+}
+
+# Put rout feed speed to all rout tool calling in all programs
+sub CompleteRoutFeed {
+	my $self    = shift;
+	my $orderId = shift;
+
+	my $jobId = $orderId;
+	$jobId =~ s/-.*$//;
+
+	my $info = HegMethods->GetInfoAfterStartProduce($orderId);
+
+	die "pocet_prirezu is no defined in HEG for orderid: $orderId" if ( !defined $info->{'pocet_prirezu'} || !defined $info->{'prirezu_navic'} );
+	my $totalPnlCnt = $info->{'pocet_prirezu'} + $info->{'prirezu_navic'};
+
+	my $mess = "";
+	unless(RoutSpeed->CompleteRoutSpeed( $jobId, $totalPnlCnt, \$mess )){
+		die "Error during set rout speed: $mess";
+	}
 	
+
 	return 1;
 }
 
@@ -91,7 +113,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	use aliased 'Packages::TriggerFunction::NCFiles';
 
-	NCFiles->ChangePcbOrderNumber("f52456-01");
+	NCFiles->CompleteRoutFeed("d152457-01");
 
 	print STDERR "ttt";
 

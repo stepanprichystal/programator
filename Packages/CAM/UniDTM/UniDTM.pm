@@ -114,8 +114,8 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	my $inCAM = InCAM->new();
 
 	my $jobId    = "d152456";
-	my $stepName = "o+1";
-	my $unitDTM  = UniDTM->new( $inCAM, $jobId, "o+1", "f", 1 );
+	my $stepName = "panel";
+	my $unitDTM  = UniDTM->new( $inCAM, $jobId, $stepName, "f", 1 );
 	
 	my @tools = $unitDTM->GetUniqueTools();
 	

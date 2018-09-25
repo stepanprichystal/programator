@@ -21,6 +21,8 @@ use aliased 'Enums::EnumsGeneral';
 use aliased 'Packages::ProductionPanel::Helper';
 use aliased 'Packages::Stackup::Stackup::Stackup';
 use aliased 'Packages::Stackup::StackupNC::StackupNC';
+use aliased 'CamHelpers::CamNCHooks';
+use aliased 'CamHelpers::CamJob';
 
 #-------------------------------------------------------------------------------------------#
 #  Interface
@@ -32,8 +34,11 @@ sub new {
 	$self = {};
 	bless $self;
 
-	$self->{"pcbId"}    = shift;
+	$self->{"inCAM"}    = shift;
+	$self->{"jobId"}    = shift;
+	$self->{"stepName"} = shift;
 	$self->{"layerCnt"} = shift;
+	$self->{"exportSingle"} = shift;
 
 	return $self;
 }
@@ -45,6 +50,7 @@ sub EditAfterOpen {
 	my $layer     = shift;
 	my $parseFile = shift;    #parsed file in hash
 	my $opItem    = shift;    #operation item reference
+	my $machine   = shift;
 
 	# ================================================================
 	# 1) EDIT: edit all files, which are generated from V1
@@ -78,8 +84,8 @@ sub EditAfterOpen {
 		 || $layer->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_bMillBot
 		 || $layer->{"type"} eq EnumsGeneral->LAYERTYPE_plt_bMillTop
 		 || $layer->{"type"} eq EnumsGeneral->LAYERTYPE_plt_bMillBot
-		 || $layer->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_jbMillTop
-		 || $layer->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_jbMillBot )
+		 || $layer->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_cbMillTop
+		 || $layer->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_cbMillBot )
 	{
 		NCHelper->AddG83WhereMissing($parseFile);
 		NCHelper->PutMessRightPlace($parseFile);
@@ -92,7 +98,7 @@ sub EditAfterOpen {
 	# - J<number of core> if opItem is core
 	if ( $layer->{"type"} eq EnumsGeneral->LAYERTYPE_plt_fDrill && $self->{"layerCnt"} > 2 ) {
 
-		my $stackup = Stackup->new( $self->{"pcbId"} );
+		my $stackup = Stackup->new( $self->{"jobId"} );
 
 		# case of blind drill (not last pressing) or burried (core drilling) or only frame drill (v1)
 		if ( $opItem->{"name"} =~ /c[0-9]+/ || $opItem->{"name"} =~ /v1/ || $opItem->{"name"} =~ /j[0-9]+/ ) {
@@ -149,6 +155,100 @@ sub EditAfterOpen {
 			NCHelper->ChangeDrilledNumber( $parseFile, $cuThickMark, $coreMark );
 		}
 	}
+
+	# ================================================================
+	# 4) EDIT:Add drilled pcb number (not possible add this in hooks when layer is type "rout")
+
+	if (    $layer->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_cvrlycMill
+		 || $layer->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_cvrlysMill
+		 || $layer->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_prepregMill )
+	{
+
+		# get tool number of r850 tool
+		my $t = ( grep { $_->{"line"} =~ /T\d*D85([^\d]|$)/i } @{ $parseFile->{"footer"} } )[0];
+
+		if ( defined $t ) {
+
+			my ($toolNum) = $t->{"line"} =~ /(T\d+)/;
+
+			# Search postition in program with theses tool
+
+			for ( my $i = 0 ; $i < scalar( @{ $parseFile->{"body"} } ) ; $i++ ) {
+
+				my $l = $parseFile->{"body"}->[$i];
+
+				if ( defined $l->{"tool"} && $l->{"line"} =~ /$toolNum([^\d]|$)/i ) {
+
+					my $mirror = $layer->{"gROWdrl_dir"} eq "bot2top" ? 1 : 0;
+					my @scanMarks =
+					  CamNCHooks->GetLayerCamMarks( $self->{"inCAM"}, $self->{"jobId"}, $self->{"stepName"}, "c", $mirror );
+
+					my %lim = CamJob->GetProfileLimits( $self->{"inCAM"}, $self->{"jobId"}, $self->{"stepName"} );
+					my %nullPoint = ( "x" => abs( $lim{"xmax"} - $lim{"xmin"} ) / 2, "y" => $lim{"ymin"} + 4 );
+
+					my $dn = CamNCHooks->GetDrilledNumber( $self->{"jobId"}, $layer->{"gROWname"}, $machine->{"id"}, \@scanMarks, \%nullPoint, 0 );
+					my ($xVal) = $dn =~ /X(\d+\.\d+)Y/;
+
+					my @cmd = ();
+
+					# Mirror drilled pcbid (must be mirrored in subroutine in order to mirror involve only drill number)
+					if ($mirror) {
+						push( @cmd, { "line" => "M31" } );
+						push( @cmd, { "line" => "$dn" } );
+						push( @cmd, { "line" => "M02X" . sprintf( "%.3f", 2 * $xVal ) . "Y0.000M70\n" } );
+						push( @cmd, { "line" => "M30\n" } );
+					}
+					else {
+						push( @cmd, { "line" => "$dn" } );
+					}
+
+					splice @{ $parseFile->{"body"} }, $i + 1, 0, @cmd;
+
+				}
+
+			}
+
+		}
+
+	}
+
+	# ================================================================
+	# 5) EDIT:Move F_<guid> definition from tool line to first line after tool
+	
+	my $isRout = scalar( grep { $_->{"gROWlayer_type"} eq "rout" } $opItem->GetSortedLayers() ) ? 1 : 0;
+	if ($isRout) {
+
+		my @b = @{ $parseFile->{"body"} };
+
+		# index of rows where is F_<guid> definition
+		my @tIdx = grep { defined $b[$_]->{"tool"} && $b[$_]->{"line"} =~ /\(F_[\w-]+\)/ } 0 .. $#b;
+
+		foreach my $idx (@tIdx) {
+
+			my ($fDef) = $b[$idx]->{"line"} =~ /(\(F_[\w-]+\))/;
+
+			$b[$idx]->{"line"} =~ s/\(F_[\w-]+\)//;    # cut F_<guid>
+			$b[ $idx + 1 ]->{"line"} =~ s/\n$//;
+			$b[ $idx + 1 ]->{"line"} .= $fDef."\n"               # copy F_<guid> to next line
+		}
+
+	}
+	
+	# ================================================================
+	# 6) EDIT: If export single set F_<guid> definition to F_not_defined
+	 
+	# Remove F_<guid>, if export single
+	if($self->{"exportSingle"} && $isRout){
+		
+		my @b = @{ $parseFile->{"body"} };
+
+		# index of rows where is F_<guid> definition
+		my @tIdx = grep { $b[$_]->{"line"} =~ /\(F_[\w-]+\)/ } 0 .. $#b;
+		foreach my $idx (@tIdx) {
+			$b[ $idx ]->{"line"} =~ s/\(F_[\w-]+\)/\(F_not_defined\)/;
+		}
+	}
+
 }
 
 # Run before file is save after merging before moving to archiv
@@ -182,13 +282,12 @@ sub EditBeforeSave {
 					$parseFile->{"body"}->[$i]->{"line"} = "(" . $parseFile->{"body"}->[$i]->{"line"} . ")\n";
 					last;
 				}
-				
-				
+
 			}
 
 		}
 	}
-	
+
 	# ================================================================
 	# 2) EDIT: if operation item contains only layers type of:
 	# LAYERTYPE_plt_nDrill
@@ -213,22 +312,20 @@ sub EditBeforeSave {
 					$parseFile->{"body"}->[$i]->{"line"} = "(" . $parseFile->{"body"}->[$i]->{"line"} . ")\n";
 					last;
 				}
-				
-				
+
 			}
 
 		}
 	}
-	
+
 	# =============================================================
 	# 3) EDIT: Renumber tool numbers ASC if program is merged from more layers
- 
- 	if(scalar($opItem->GetSortedLayers()) > 1){
- 
+
+	if ( scalar( $opItem->GetSortedLayers() ) > 1 ) {
+
 		NCHelper->RenumberToolASC($parseFile);
- 	}
-	
-	
+	}
+
 }
 
 1;

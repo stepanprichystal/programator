@@ -63,6 +63,9 @@ sub __LoadTifFile {
 		my $hashData = $json->decode($serializeData);
 
 		$self->{"tifData"} = $hashData;
+	}else{
+		
+		die "Tif file doesn't exists ".$self->{"filePath"};
 	}
 }
 

@@ -18,6 +18,7 @@ use aliased 'Packages::Export::NCExport::Enums';
 use aliased 'Enums::EnumsMachines';
 use aliased 'Enums::EnumsPaths';
 use aliased 'Helpers::GeneralHelper';
+use aliased 'Helpers::JobHelper';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'CamHelpers::CamJob';
 
@@ -309,6 +310,11 @@ sub __SetStaticPropertyTable {
 	my %t = ();
 	$self->{"propTable"} = \%t;
 
+	my $camera = 0;
+	if(JobHelper->GetIsFlex($self->{"jobId"})){
+		$camera = 1;
+	}
+
 	# Header is:
 	# 1) DRILL
 	# 2) DRILL DEPTH
@@ -345,9 +351,9 @@ sub __SetStaticPropertyTable {
 	$t{ EnumsGeneral->LAYERTYPE_nplt_nDrill }{"ml"} = [ 1, 0, 0, 0, 0, 0 ];
 	$t{ EnumsGeneral->LAYERTYPE_nplt_nDrill }{"sl"} = [ 1, 0, 0, 0, 0, 0 ];
 
-	$t{ EnumsGeneral->LAYERTYPE_nplt_nMill }{"ml"} = [ 0, 0, 1, 0, 0, 0 ];
-	$t{ EnumsGeneral->LAYERTYPE_nplt_nMill }{"sl"} = [ 0, 0, 1, 0, 0, 0 ];
-
+	$t{ EnumsGeneral->LAYERTYPE_nplt_nMill }{"ml"} = [ 0, 0, 1, 0, 0, $camera ];
+	$t{ EnumsGeneral->LAYERTYPE_nplt_nMill }{"sl"} = [ 0, 0, 1, 0, 0, $camera ];
+ 
 	$t{ EnumsGeneral->LAYERTYPE_nplt_bMillTop }{"ml"} = [ 0, 0, 0, 1, 0, 0 ];
 	$t{ EnumsGeneral->LAYERTYPE_nplt_bMillTop }{"sl"} = [ 0, 0, 0, 1, 0, 0 ];
 	$t{ EnumsGeneral->LAYERTYPE_nplt_bMillBot }{"ml"} = [ 0, 0, 0, 1, 0, 0 ];
@@ -359,11 +365,11 @@ sub __SetStaticPropertyTable {
 	$t{ EnumsGeneral->LAYERTYPE_nplt_frMill }{"ml"} = [ 0, 0, 1, 0, 0, 0 ];
 	$t{ EnumsGeneral->LAYERTYPE_nplt_frMill }{"sl"} = [ 0, 0, 0, 0, 0, 0 ];
 
-	$t{ EnumsGeneral->LAYERTYPE_nplt_jbMillTop }{"ml"} = [ 0, 0, 0, 1, 0, 1 ];
-	$t{ EnumsGeneral->LAYERTYPE_nplt_jbMillTop }{"sl"} = [ 0, 0, 0, 1, 0, 1 ];
+	$t{ EnumsGeneral->LAYERTYPE_nplt_cbMillTop }{"ml"} = [ 0, 0, 0, 1, 0, 1 ];
+	$t{ EnumsGeneral->LAYERTYPE_nplt_cbMillTop }{"sl"} = [ 0, 0, 0, 1, 0, 1 ];
 	
-	$t{ EnumsGeneral->LAYERTYPE_nplt_jbMillBot }{"ml"} = [ 0, 0, 0, 1, 0, 1 ];
-	$t{ EnumsGeneral->LAYERTYPE_nplt_jbMillBot }{"sl"} = [ 0, 0, 0, 1, 0, 1 ];
+	$t{ EnumsGeneral->LAYERTYPE_nplt_cbMillBot }{"ml"} = [ 0, 0, 0, 1, 0, 1 ];
+	$t{ EnumsGeneral->LAYERTYPE_nplt_cbMillBot }{"sl"} = [ 0, 0, 0, 1, 0, 1 ];
 
 	$t{ EnumsGeneral->LAYERTYPE_nplt_kMill }{"ml"} = [ 0, 0, 1, 0, 0, 0 ];
 	$t{ EnumsGeneral->LAYERTYPE_nplt_kMill }{"sl"} = [ 0, 0, 1, 0, 0, 0 ];
@@ -376,7 +382,16 @@ sub __SetStaticPropertyTable {
 
 	$t{ EnumsGeneral->LAYERTYPE_nplt_fMillSpec }{"ml"} = [ 0, 0, 1, 0, 0, 0 ];
 	$t{ EnumsGeneral->LAYERTYPE_nplt_fMillSpec }{"sl"} = [ 0, 0, 1, 0, 0, 0 ];
-
+	
+	$t{ EnumsGeneral->LAYERTYPE_nplt_cvrlycMill }{"ml"} = [ 0, 0, 0, 1, 0, 0 ];
+	$t{ EnumsGeneral->LAYERTYPE_nplt_cvrlycMill }{"sl"} = [ 0, 0, 0, 1, 0, 0 ];
+	
+	$t{ EnumsGeneral->LAYERTYPE_nplt_cvrlysMill }{"ml"} = [ 0, 0, 0, 1, 0, 0 ];
+	$t{ EnumsGeneral->LAYERTYPE_nplt_cvrlysMill }{"sl"} = [ 0, 0, 0, 1, 0, 0 ];
+	
+	$t{ EnumsGeneral->LAYERTYPE_nplt_prepregMill }{"ml"} = [ 0, 0, 0, 1, 0, 0 ];
+	$t{ EnumsGeneral->LAYERTYPE_nplt_prepregMill }{"sl"} = [ 0, 0, 0, 1, 0, 0 ];
+ 
 }
 
 #-------------------------------------------------------------------------------------------#

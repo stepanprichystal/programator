@@ -91,8 +91,8 @@ sub InitParser {
 			|| $NCType eq EnumsGeneral->LAYERTYPE_plt_bMillBot
 			|| $NCType eq EnumsGeneral->LAYERTYPE_nplt_bMillTop
 			|| $NCType eq EnumsGeneral->LAYERTYPE_nplt_bMillBot
-			|| $NCType eq EnumsGeneral->LAYERTYPE_nplt_jbMillTop
-			|| $NCType eq EnumsGeneral->LAYERTYPE_nplt_jbMillBot )
+			|| $NCType eq EnumsGeneral->LAYERTYPE_nplt_cbMillTop
+			|| $NCType eq EnumsGeneral->LAYERTYPE_nplt_cbMillBot )
 	{
 		$parser->AddClass( COUNTERSINKSURF->new( $inCAM, $jobId, $step, $l ) );
 		$parser->AddClass( COUNTERSINKARC->new( $inCAM, $jobId, $step, $l ) );

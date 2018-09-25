@@ -156,12 +156,17 @@ sub GetNPltNCLayerInfo {
 	my @nplt_bMillBot  = ();    #z-axis bot mill
 	my @nplt_rsMill    = ();    #rs mill before plating
 	my @nplt_frMill    = ();    #milling frame
-	my @nplt_jbMillTop = ();    #z-axis Top mill of core
-	my @nplt_jbMillBot = ();    #z-axis Bop mill of core
+	my @nplt_cbMillTop = ();    #z-axis Top mill of core
+	my @nplt_cbMillBot = ();    #z-axis Bop mill of core
 	my @nplt_kMill     = ();    #milling of connector
 	my @nplt_lcMill    = ();    #milling of template snim lak pro c
 	my @nplt_lsMill    = ();    #milling of template snim lak pro s
 	my @nplt_fMillSpec = ();    #Special milling (ramecke, dovrtani)
+	
+	my @nplt_cvrlycMill = ();    #top coverlay mill 
+	my @nplt_cvrlysMill = ();    #bot coverlay mill
+	my @nplt_prepregMill = ();    #prepreg mill
+ 	 
 
 	my @ncPar = ();
 	foreach my $l (@layers) {
@@ -190,11 +195,11 @@ sub GetNPltNCLayerInfo {
 		elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_frMill ) {
 			push( @nplt_frMill, $l );
 		}
-		elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_jbMillTop ) {
-			push( @nplt_jbMillTop, $l );
+		elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_cbMillTop ) {
+			push( @nplt_cbMillTop, $l );
 		}
-		elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_jbMillBot ) {
-			push( @nplt_jbMillBot, $l );
+		elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_cbMillBot ) {
+			push( @nplt_cbMillBot, $l );
 		}
 		elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_kMill ) {
 			push( @nplt_kMill, $l );
@@ -209,7 +214,18 @@ sub GetNPltNCLayerInfo {
 			push( @nplt_fMillSpec, $l );
 
 		}
+		
+		elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_cvrlycMill ) {
+			push( @nplt_cvrlycMill, $l );
 
+		}elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_cvrlysMill ) {
+			push( @nplt_cvrlysMill, $l );
+
+		}elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_prepregMill ) {
+			push( @nplt_prepregMill, $l );
+
+		}
+ 
 	}
 
 
@@ -219,12 +235,16 @@ sub GetNPltNCLayerInfo {
 	$info{ EnumsGeneral->LAYERTYPE_nplt_bMillBot }  = \@nplt_bMillBot;
 	$info{ EnumsGeneral->LAYERTYPE_nplt_rsMill }    = \@nplt_rsMill;
 	$info{ EnumsGeneral->LAYERTYPE_nplt_frMill }    = \@nplt_frMill;
-	$info{ EnumsGeneral->LAYERTYPE_nplt_jbMillTop } = \@nplt_jbMillTop;
-	$info{ EnumsGeneral->LAYERTYPE_nplt_jbMillBot } = \@nplt_jbMillBot;
+	$info{ EnumsGeneral->LAYERTYPE_nplt_cbMillTop } = \@nplt_cbMillTop;
+	$info{ EnumsGeneral->LAYERTYPE_nplt_cbMillBot } = \@nplt_cbMillBot;
 	$info{ EnumsGeneral->LAYERTYPE_nplt_kMill }     = \@nplt_kMill;
 	$info{ EnumsGeneral->LAYERTYPE_nplt_lcMill }    = \@nplt_lcMill;
 	$info{ EnumsGeneral->LAYERTYPE_nplt_lsMill }    = \@nplt_lsMill;
 	$info{ EnumsGeneral->LAYERTYPE_nplt_fMillSpec } = \@nplt_fMillSpec;
+	
+	$info{ EnumsGeneral->LAYERTYPE_nplt_cvrlycMill } = \@nplt_cvrlycMill;
+	$info{ EnumsGeneral->LAYERTYPE_nplt_cvrlysMill } = \@nplt_cvrlysMill;
+	$info{ EnumsGeneral->LAYERTYPE_nplt_prepregMill } = \@nplt_prepregMill;
 
 	return %info;
 }

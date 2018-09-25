@@ -289,13 +289,13 @@ sub AddNCLayerType {
 		}
 		elsif ( $l->{"gROWname"} =~ /^jfzc[0-9]*$/ ) {
 
-			$l->{"type"}   = EnumsGeneral->LAYERTYPE_nplt_jbMillTop;
+			$l->{"type"}   = EnumsGeneral->LAYERTYPE_nplt_cbMillTop;
 			$l->{"plated"} = 0;
 
 		}
 		elsif ( $l->{"gROWname"} =~ /^jfzs[0-9]*$/ ) {
 
-			$l->{"type"}   = EnumsGeneral->LAYERTYPE_nplt_jbMillBot;
+			$l->{"type"}   = EnumsGeneral->LAYERTYPE_nplt_cbMillBot;
 			$l->{"plated"} = 0;
 
 		}
@@ -322,6 +322,24 @@ sub AddNCLayerType {
 			$l->{"type"}   = EnumsGeneral->LAYERTYPE_nplt_fMillSpec;
 			$l->{"plated"} = 0;
 		}
+		
+		# new for flexi
+		elsif ( $l->{"gROWname"} =~ /^fcoverlayc.*/ ) {
+
+			$l->{"type"}   = EnumsGeneral->LAYERTYPE_nplt_cvrlycMill;
+			$l->{"plated"} = 0;
+		
+		}elsif ( $l->{"gROWname"} =~ /^fcoverlays.*/ ) {
+
+			$l->{"type"}   = EnumsGeneral->LAYERTYPE_nplt_cvrlysMill;
+			$l->{"plated"} = 0;
+		
+		}elsif ( $l->{"gROWname"} =~ /^fprepreg.*/ ) {
+
+			$l->{"type"}   = EnumsGeneral->LAYERTYPE_nplt_prepregMill;
+			$l->{"plated"} = 0;
+		}
+	
 	}
 
 	#return @res;

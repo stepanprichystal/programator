@@ -39,6 +39,25 @@ sub new {
 	return $self;
 }
 
+ 
+sub GetName {
+	my $self     = shift;
+
+	return $self->{"name"};
+}
+
+sub GetOperationGroup{
+	my $self     = shift;
+	
+	return $self->{"operationGroup"};
+}
+
+sub GetOperations{
+	my $self     = shift;
+	
+	return @{$self->{"operations"}};
+}
+
 sub SetMachines {
 	my $self     = shift;
 	my $machines = shift;

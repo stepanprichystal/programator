@@ -73,7 +73,11 @@ sub __ProcessByMachine {
 		my $layer = $opLayers[$i];
 
 		my @lines = $self->__OpenFile( $layer, $machine->{"suffix"}, 1 );
-		%fAct = $self->__ParseFile( $layer, \@lines, $opItem );
+ 
+		 %fAct     = Parser->ParseFile(\@lines);
+		# Every file is parsed, an here is possibility to edit special file before merging
+		my $fileEditor = $self->{"fileEditor"};
+		$fileEditor->EditAfterOpen( $layer, \%fAct, $opItem, $machine );
 
 		if ( $i > 0 ) {
 			@fResult = $self->__MergeFiles( $layer, $opItem, \%fAct, \%fBef );
@@ -83,7 +87,7 @@ sub __ProcessByMachine {
 		%fBef = %fAct;
 	}
 
-	$self->__SaveOperation( \%fAct, $opItem, $machine->{"suffix"} )
+	$self->__SaveOperation( \%fAct, $opItem, $machine )
 
 }
 
@@ -119,7 +123,9 @@ sub __SaveOperation {
 	my $self      = shift;
 	my $parseFile = shift;
 	my $opItem    = shift;
-	my $suffix    = shift;
+	my $machine = shift;
+	
+	my $suffix    = $machine->{"suffix"};
 
 	my $fileEditor   = $self->{"fileEditor"};
 	my $stagingExist = $opItem->StagingExist();
@@ -168,13 +174,15 @@ sub __SaveOperation {
 
 					#open and parse, by standard rules
 					my @lines = $self->__OpenFile( $l, $suffix, $stageNumber );
-					my %parseFile = $self->__ParseFile( $l, \@lines, $opItem );
-					$fileEditor->EditBeforeSave( \%parseFile, $opItem );
+					my %fAct     = Parser->ParseFile(\@lines);
+					my $fileEditor = $self->{"fileEditor"};
+					$fileEditor->EditAfterOpen( $l, \%fAct, $opItem );
+					$fileEditor->EditBeforeSave( \%fAct, $opItem );
 
 					#build path
 					$fileName = $self->{'archive'} . $jobName .$opItem->{"name"} . "_" . $fileNumber . "." . $suffix;
 
-					$self->__SaveFile( \%parseFile, $fileName );
+					$self->__SaveFile( \%fAct, $fileName );
 
 					#save
 					$stageNumber++;
@@ -242,23 +250,7 @@ sub __MergeFiles {
 	return @result;
 
 }
-
-# Every file is parsed, an here is possibility to edit special file
-# before merging. E.g. add command "G82"
-sub __ParseFile {
-	my $self   = shift;
-	my $layer  = shift;
-	my $lines  = shift;
-	my $opItem = shift;
-
-	my %fParse     = Parser->ParseFile($lines);
-	my $fileEditor = $self->{"fileEditor"};
-
-	$fileEditor->EditAfterOpen( $layer, \%fParse, $opItem );
-
-	return %fParse;
-
-}
+ 
 
 # set path to directory where are nc files saved
 sub __SetArchiveDirs {

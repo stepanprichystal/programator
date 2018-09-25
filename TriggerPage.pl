@@ -34,7 +34,7 @@ use aliased 'Connectors::TpvConnector::TaskOndemMethods';
 my $orderId  = shift;    # job order for process
 my $taskType = shift;    # type of task to process
 
-#$orderId = "d152456-01";
+$orderId = "d152457-01";
 #$taskType = TaskEnums->Data_CONTROL;
 
 my $logConfig = "c:\\Apache24\\htdocs\\tpv\\Logger.conf";
@@ -115,7 +115,18 @@ sub __PcbToProduce {
 	if ($@) {
 
 		$processed = 0;
-		$logger->error( "\n Error when processing \"NC files\" job: $orderId.\n" . $@, 1 );
+		$logger->error( "\n Error when processing \"NC files\" (change pcb drilled nuimber) job: $orderId.\n" . $@, 1 );
+	}
+	
+	# 3) Add rout speed to NC rout operation
+	eval {
+
+		NCFiles->CompleteRoutFeed($orderId);
+	};
+	if ($@) {
+
+		$processed = 0;
+		$logger->error( "\n Error when processing \"NC files\" (add rout speed) job: $orderId.\n" . $@, 1 );
 	}
 }
 

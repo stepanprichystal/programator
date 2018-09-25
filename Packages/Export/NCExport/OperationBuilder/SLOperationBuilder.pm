@@ -158,6 +158,9 @@ sub __DefineNPlatedOperations {
 	my @nplt_lcMill   = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_lcMill } };      #milling template snim lak c
 	my @nplt_lsMill   = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_lsMill } };      #milling template snim lak s
 	
+	my @nplt_cvrlycMill     = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_cvrlycMill } };        #top coverlay mill 
+	my @nplt_cvrlysMill     = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_cvrlysMill } };        #bot coverlay mill 
+	
 	#Define operation:
 
 	# 1) Operation name = fc - can contain layer
@@ -207,6 +210,11 @@ sub __DefineNPlatedOperations {
 	# 7) Operation name = fls - can contain layer
 	# - @nplt_lsMill
 	$opManager->AddOperationDef( "fls", \@nplt_lsMill, -1 );
+	
+		# 11) Operation name = fls - can contain layer
+	$opManager->AddOperationDef( "coverlayc", \@nplt_cvrlycMill, -1 );
+	# 11) Operation name = fls - can contain layer
+	$opManager->AddOperationDef( "coverlays", \@nplt_cvrlysMill, -1 );
 }
 
 #-------------------------------------------------------------------------------------------#

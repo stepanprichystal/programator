@@ -15,7 +15,7 @@ use aliased 'CamHelpers::CamJob';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'Enums::EnumsPaths';
 use aliased 'Packages::CAM::UniDTM::Enums' => 'DTMEnums';
-
+use aliased 'Helpers::JobHelper';
 #-------------------------------------------------------------------------------------------#
 #   Package methods
 #-------------------------------------------------------------------------------------------#
@@ -219,16 +219,17 @@ sub GetToolParam {
 		my $magazine = $tool->GetMagazine();    # number of magazine
 
 		if ( defined $magazine && $magazine ne "" ) {
-			
+
 			# if magazine is "-", replace by empty string
-			if($magazine eq "-"){
+			if ( $magazine eq "-" ) {
 				$magazine = "";
 			}
-			
-			$line .=  $magazine;
-		
-		}else{
-			
+
+			$line .= $magazine;
+
+		}
+		else {
+
 			$$magazineOk = 0;
 		}
 
@@ -250,7 +251,7 @@ sub __GetToolParamLine {
 	unless ($par) {
 		return undef;
 	}
-
+	
 	my $toolSize     = $tool->GetDrillSize() / 1000;
 	my $magazineInfo = $tool->GetMagazineInfo();
 
@@ -303,7 +304,6 @@ sub __GetToolParamLine {
 	return $line;
 }
 
-
 #return array with tool parameters for drilling according material
 sub GetMaterialParams {
 	my $self         = shift;
@@ -319,62 +319,62 @@ sub GetMaterialParams {
 
 	my %params = ( "drill" => \@d, "rout" => \@r, "special" => \@s, "ok" => 1 );
 
-#	#load parameters only when material exist
-#	if ($materialName) {
-#
-#		if ( $materialName =~ /FR4/i ) {
-#
-#			$materialFile = "FR4";
-#
-#		}
-#		elsif ( $materialName =~ /IS410/i ) {
-#
-#			$materialFile = "IS410";
-#
-#		}
-#		elsif ( $materialName =~ /IS400/i ) {
-#
-#			$materialFile = "IS400";
-#
-#		}
-#		elsif ( $materialName =~ /Al/i ) {
-#
-#			$materialFile = "AL";
-#
-#		}
-#		elsif ( $materialName =~ /G200/i ) {
-#
-#			$materialFile = "G200";
-#			
-#		}elsif ( $materialName =~ /PCL370HR/i ) {
-#
-#			$materialFile = "PCL370HR";
-#		
-#		}elsif ( $materialName =~ /DUROID/i ) {
-#
-#			$materialFile = "R58X0-DUROID";
-#		}
-#
-#		print STDERR "\n\n$materialName - $ncPath - $materialFile\n\n";
-#	}
-#
-#	#IS420
-#	#G200
-#	#RO4
-#	#RO3
-#	#AL_CORE
-#	#CU_CORE
-#	#P96
-#	#P97
-#	#LAMBDA450
-#	#FOSFORBRONZ
-#	#ALPAKA
-#	#NEREZ
-#	#NEREZOVA_OCEL
-#
-#	unless ($materialFile) {
-#		$params{"ok"} = 0;
-#	}
+	#	#load parameters only when material exist
+	#	if ($materialName) {
+	#
+	#		if ( $materialName =~ /FR4/i ) {
+	#
+	#			$materialFile = "FR4";
+	#
+	#		}
+	#		elsif ( $materialName =~ /IS410/i ) {
+	#
+	#			$materialFile = "IS410";
+	#
+	#		}
+	#		elsif ( $materialName =~ /IS400/i ) {
+	#
+	#			$materialFile = "IS400";
+	#
+	#		}
+	#		elsif ( $materialName =~ /Al/i ) {
+	#
+	#			$materialFile = "AL";
+	#
+	#		}
+	#		elsif ( $materialName =~ /G200/i ) {
+	#
+	#			$materialFile = "G200";
+	#
+	#		}elsif ( $materialName =~ /PCL370HR/i ) {
+	#
+	#			$materialFile = "PCL370HR";
+	#
+	#		}elsif ( $materialName =~ /DUROID/i ) {
+	#
+	#			$materialFile = "R58X0-DUROID";
+	#		}
+	#
+	#		print STDERR "\n\n$materialName - $ncPath - $materialFile\n\n";
+	#	}
+	#
+	#	#IS420
+	#	#G200
+	#	#RO4
+	#	#RO3
+	#	#AL_CORE
+	#	#CU_CORE
+	#	#P96
+	#	#P97
+	#	#LAMBDA450
+	#	#FOSFORBRONZ
+	#	#ALPAKA
+	#	#NEREZ
+	#	#NEREZOVA_OCEL
+	#
+	#	unless ($materialFile) {
+	#		$params{"ok"} = 0;
+	#	}
 
 	$materialFile = $ncPath . "parametersFile\\" . $machine . "\\" . $materialName;
 
@@ -415,33 +415,92 @@ sub GetMaterialParams {
 	return %params;
 }
 
+# Return line which contain cooridnates with drilled number
+sub GetDrilledNumber {
+	my $self      = shift;
+	my $jobId     = shift;
+	my $layerName = shift;
+	my $machine = shift;
+	my @scanMarks = @{ shift(@_) };
+	my %nullPoint = %{ shift(@_) };
+	my $cuThickReq =shift // 1;
+
+	my $numberStr = $jobId;
+
+	my $cuThick = JobHelper->GetBaseCuThick( $jobId, "c" );
+
+	print STDERR "\n\n ========== CT TUHICK $cuThick \n\n";
+
+	if ( $cuThickReq && defined $cuThick ) {
+
+		if ( $cuThick == 0 ) {
+			$numberStr .= "--";
+		}
+		elsif ( $cuThick <= 17 ) {
+			$numberStr .= "/";
+		}
+		elsif ( $cuThick <= 34 ) {
+			$numberStr .= "-";
+		}
+		elsif ( $cuThick <= 69 ) {
+			$numberStr .= ":";
+		}
+		elsif ( $cuThick <= 104 ) {
+			$numberStr .= "+";
+		}
+		else {
+			$numberStr .= "++";
+		}
+	}else{
+		$numberStr .= " ";
+	}
+
+	my $scanMark = "";
+
+	# select
+	if ( $layerName eq "v1"  ) {
+
+		$scanMark = "drilled_pcbId_v2";
+	}
+	else{
+
+		$scanMark = "drilled_pcbId_c";
+
+	}
+
+	$numberStr = $self->GetScanMark( \@scanMarks, \%nullPoint, $scanMark ) . "M97," . $numberStr;
+
+	$machine =~ m/machine_(\w)/;
+	$numberStr .= uc($1) . "\n";
+
+	return $numberStr;
+}
+
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-#		use aliased 'CamHelpers::CamNCHooks';
-#		use aliased 'Packages::InCAM::InCAM';
-#	
-#		my $inCAM = InCAM->new();
-#	
-#		my $jobId     = "f50251";
-#		my $stepName  = "panel";
-#		
-#		my $materialName = "PCL370HR"; 
-#		my $machine = "machine_a";
-#		my $path = "\\\\incam\\incam_server\\site_data\\hooks\\ncd\\";
-#		
-#		
-#		my %toolParams = CamNCHooks->GetMaterialParams( $materialName, $machine, $path );
-#	
-#		my $parameters = CamNCHooks->GetToolParam( $uniTool, \%toolParams, \$magazineOk );
-#	
-#		print 1;
+	#		use aliased 'CamHelpers::CamNCHooks';
+	#		use aliased 'Packages::InCAM::InCAM';
+	#
+	#		my $inCAM = InCAM->new();
+	#
+	#		my $jobId     = "f50251";
+	#		my $stepName  = "panel";
+	#
+	#		my $materialName = "PCL370HR";
+	#		my $machine = "machine_a";
+	#		my $path = "\\\\incam\\incam_server\\site_data\\hooks\\ncd\\";
+	#
+	#
+	#		my %toolParams = CamNCHooks->GetMaterialParams( $materialName, $machine, $path );
+	#
+	#		my $parameters = CamNCHooks->GetToolParam( $uniTool, \%toolParams, \$magazineOk );
+	#
+	#		print 1;
 
 }
-
-
 
 1;

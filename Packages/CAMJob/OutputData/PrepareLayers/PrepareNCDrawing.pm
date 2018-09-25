@@ -78,8 +78,8 @@ sub Prepare {
 		  || $_->{"type"} eq EnumsGeneral->LAYERTYPE_plt_bMillBot
 		  || $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_bMillTop
 		  || $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_bMillBot
-		  || $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_jbMillTop
-		  || $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_jbMillBot
+		  || $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_cbMillTop
+		  || $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_cbMillBot
 	} @layers;
 
 	foreach my $l (@layers) {

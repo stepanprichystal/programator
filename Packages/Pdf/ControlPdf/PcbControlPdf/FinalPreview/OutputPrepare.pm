@@ -482,8 +482,7 @@ sub __PrepareNPLTTHROUGHNC {
 		# We don't want see this pieces in pdf, so delete tem from layer $lName
 		 
 		#$inCAM->COM( "merge_layers", "source_layer" => $lName, "dest_layer" => $lTmp );
-		
-		
+
 		my $unitRTM = UniRTM->new( $inCAM, $self->{"jobId"}, $self->{"pdfStep"}, $l->{"gROWname"} );
 		my @outline = $unitRTM->GetOutlineChains();
 		my @outFeatsId =  map {$_->{"id"}} map { $_->GetOriFeatures() } @outline;

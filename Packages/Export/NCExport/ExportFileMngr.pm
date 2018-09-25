@@ -55,6 +55,7 @@ sub ExportFiles {
 
 	my @exportFiles = $self->__GetExportCombination($opManager);
 
+ 
 	foreach my $c (@exportFiles) {
 
 		my $result = ItemResult->new( $c->{"layer"}, undef, "Layers" );
@@ -66,6 +67,7 @@ sub ExportFiles {
 
 		$self->__ResultExportLayer( $c->{"layer"}, $result );
 	}
+ 
 
 }
 
@@ -361,6 +363,9 @@ sub __DeleteLogs {
 	}
 
 }
+ 
+ 
+
 
 sub __ResultExportLayer {
 	my $self       = shift;
