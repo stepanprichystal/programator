@@ -1,4 +1,4 @@
-# List of duplicated routs
+# List of duplicated rout diameters
 # Each line contain one rout and constant speed
 # <rout_size_um>=<rout_speed>
 

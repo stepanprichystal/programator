@@ -20,7 +20,8 @@ use aliased 'Packages::TifFile::TifNCOperations';
 #  Script methods
 #-------------------------------------------------------------------------------------------#
 
-#
+# Return if rout should be duplicated
+# It depands on if rout is outline and if is defined in "rout duplicate table"
 sub GetDuplicateRout {
 	my $self      = shift;
 	my $jobId     = shift;
@@ -64,6 +65,7 @@ sub GetDuplicateRout {
 	return $toolDuplicated;
 }
 
+# Return speed for duplicate rout
 sub GetRoutSpeed {
 	my $self = shift;
 	my $toolSize = shift;

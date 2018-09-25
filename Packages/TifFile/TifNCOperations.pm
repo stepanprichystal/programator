@@ -28,18 +28,8 @@ sub new {
 
 	return $self;
 }
-
-#sub AddMachines {
-#	my $self     = shift;
-#	my @machines = @{ shift(@_) };
-#
-#	foreach my $m (@machines) {
-#
-#		$self->{"tifData"}->{ $self->{"key"} }->{$m} = {};
-#	}
-#
-#}
-
+ 
+# Set info about all NC operations like c1, fz1, fr, etc
 sub SetNCOperations {
 	my $self       = shift;
 	my $operations = shift;
@@ -50,6 +40,7 @@ sub SetNCOperations {
 
 }
 
+# Set info about chain tool for step and layer (if tool is outline etc)
 sub SetToolInfos {
 	my $self     = shift;
 	my $toolInfo = shift;
@@ -76,6 +67,7 @@ sub GetToolInfo {
 	return $toolInfo->{$step}->{$layer}->{$chainNum};
 }
 
+# Add info about exported NC file to specific operation
 sub AddToolToOperation {
 	my $self     = shift;
 	my $layer    = shift;
@@ -148,14 +140,7 @@ sub GetNCOperations {
 
 }
 
-#sub SetSignalLayers {
-#	my $self   = shift;
-#	my $layers = shift;
-#
-#	$self->{"tifData"}->{ $self->{"key"} } = $layers;
-#
-#	$self->_Save();
-#}
+ 
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

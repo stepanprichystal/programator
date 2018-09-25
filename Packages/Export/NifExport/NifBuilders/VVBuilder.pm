@@ -29,6 +29,7 @@ use aliased 'Packages::Export::NifExport::SectionBuilders::BuilderDrillCore';
 use aliased 'Packages::Export::NifExport::SectionBuilders::BuilderRoutVV';
 use aliased 'Packages::Export::NifExport::SectionBuilders::BuilderRoutCore';
 use aliased 'Packages::Export::NifExport::SectionBuilders::BuilderFlexiTmp';
+use aliased 'Packages::Export::NifExport::SectionBuilders::BuilderNCDuration';
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
@@ -51,8 +52,7 @@ sub Build {
 	my $self    = shift;
 	my $nifMngr = shift;
 	
-	# Flexi section
-	$nifMngr->AddSection("FLEXI PARAMETRY PRO POSTUP", BuilderFlexiTmp->new([]));
+
 
 	#DPS section
 	my @req = ();
@@ -187,11 +187,13 @@ sub Build {
 	
 	$nifMngr->AddSection("Vrtani jader", BuilderDrillCore->new(\@req));
 
-
-
-	#Blind drill section
+	# NC operation duration
+	@req = ();
+ 	
+	$nifMngr->AddSection("Delka NC operaci", BuilderNCDuration->new(\@req));
 	
-
+	# Flexi section
+	$nifMngr->AddSection("DOCASNE - FLEXI PARAMETRY PRO POSTUP", BuilderFlexiTmp->new([]));
 
 }
 

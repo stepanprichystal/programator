@@ -83,7 +83,7 @@ sub ChangePcbOrderNumber {
 	return 1;
 }
 
-# Put rout feed speed to all rout tool calling in all programs
+# Put rout feed speed to all rout tool calling in all NC programs
 sub CompleteRoutFeed {
 	my $self    = shift;
 	my $orderId = shift;

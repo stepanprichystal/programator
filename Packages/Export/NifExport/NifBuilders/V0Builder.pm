@@ -24,6 +24,7 @@ use aliased 'Packages::Export::NifExport::SectionBuilders::BuilderScore';
 use aliased 'Packages::Export::NifExport::SectionBuilders::BuilderRout';
 use aliased 'Packages::Export::NifExport::SectionBuilders::BuilderDrill';
 use aliased 'Packages::Export::NifExport::SectionBuilders::BuilderOther';
+use aliased 'Packages::Export::NifExport::SectionBuilders::BuilderNCDuration';
 
 
 #-------------------------------------------------------------------------------------------#
@@ -133,11 +134,15 @@ sub Build {
 	push(@req, "min_vrtak_pomer");
 	
 	$nifMngr->AddSection("Vrtani", BuilderDrill->new(\@req));
-
-
-
-
-
+	
+	
+	# NC operation duration
+	@req = ();
+ 	
+	$nifMngr->AddSection("Delka NC operaci", BuilderNCDuration->new(\@req));
+	
+	# Flexi section
+	$nifMngr->AddSection("DOCASNE - FLEXI PARAMETRY PRO POSTUP", BuilderFlexiTmp->new([]));
 }
 
  

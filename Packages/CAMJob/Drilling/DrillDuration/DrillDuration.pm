@@ -100,15 +100,19 @@ sub GetDrillDuration {
 
 	foreach my $tSize ( keys %toolsCnt ) {
 
-		print STDERR $tSize . "- ";
+		#print STDERR $tSize . "- ";
+
+		unless ( defined $duration{$tSize} ){
+			die;
+		}
 
 		die "Duration is not defined for tool $tSize" unless ( defined $duration{$tSize} );
 
 		$total += $toolsCnt{$tSize} * $duration{$tSize}->[1] / 100;    # drill holes duration
 
-		print STDERR " Cnt = " . $toolsCnt{$tSize};
-		print STDERR " Drill 1 hole = " . $duration{$tSize}->[1] / 100;
-		print STDERR " Drill time = " . $toolsCnt{$tSize} * $duration{$tSize}->[1] / 100;
+		#print STDERR " Cnt = " . $toolsCnt{$tSize};
+		#print STDERR " Drill 1 hole = " . $duration{$tSize}->[1] / 100;
+		#print STDERR " Drill time = " . $toolsCnt{$tSize} * $duration{$tSize}->[1] / 100;
 
 		my $uniDTMTool = $unitDTM->GetTool( $tSize, EnumsDTM->TypeProc_HOLE );
 
@@ -122,9 +126,9 @@ sub GetDrillDuration {
 
 		my $num = ceil( $toolsCnt{$tSize} / ( $limit * 100 ) );
 
-		print STDERR " Vymena = " . $num;
-		print STDERR " Total = "
-		  . ( $toolsCnt{$tSize} * $duration{$tSize}->[1] / 100 + ceil( $toolsCnt{$tSize} / ( $limit * 100 ) ) * $duration{$tSize}->[0] ) . "\n";
+		#print STDERR " Vymena = " . $num;
+		#print STDERR " Total = "
+		#  . ( $toolsCnt{$tSize} * $duration{$tSize}->[1] / 100 + ceil( $toolsCnt{$tSize} / ( $limit * 100 ) ) * $duration{$tSize}->[0] ) . "\n";
 
 		$total += ceil( $toolsCnt{$tSize} / ( $limit * 100 ) ) * $duration{$tSize}->[0];    # duration of tool preparing
 

@@ -1,5 +1,5 @@
 #-------------------------------------------------------------------------------------------#
-# Description: Computing drill duration
+# Description: Fill rout speed to NC programs
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Packages::CAMJob::Routing::RoutSpeed::RoutSpeed;
@@ -31,14 +31,13 @@ use aliased 'Packages::TifFile::TifNCOperations';
 
 # Complete rout speed to exported NC files
 sub CompleteRoutSpeed {
-	my $self    = shift;
-	my $jobId = shift;
+	my $self        = shift;
+	my $jobId       = shift;
 	my $totalPnlCnt = shift;
-	my $errMess = shift;
-	
-	my $result  = 1;
-	
- 
+	my $errMess     = shift;
+
+	my $result = 1;
+
 	my $ncPath = JobHelper->GetJobArchive($jobId) . "nc\\";
 
 	my $tif = TifNCOperations->new($jobId);
@@ -69,8 +68,8 @@ sub CompleteRoutSpeed {
 
 				my $t = $ncOper->{"machines"}->{$m}->{$toolKey};
 
-				my $speed = $self->__GetRoutSpeed($t->{"drillSize"}, $t->{"isOutline"}, $t->{"isDuplicate"}, \%routSpeedTab);
- 
+				my $speed = $self->__GetRoutSpeed( $t->{"drillSize"}, $t->{"isOutline"}, $t->{"isDuplicate"}, \%routSpeedTab );
+
 				die "No speed defined for tool size: " . $t->{"drillSize"} . ", key: $toolKey" unless defined($speed);
 
 				$data =~ s/\(F_$toolKey\)/F$speed/i;
@@ -88,10 +87,9 @@ sub CompleteRoutSpeed {
 
 		}
 	}
- 
+
 	return $result;
 }
-
 
 sub __GetRoutSpeed {
 	my $self         = shift;
@@ -201,7 +199,9 @@ sub __GetPacketType {
 	else {
 		my $pnlPerPacket = int( $paketThick[$defPaketIdx] / $matThick );
 
-		# if total count of packet is two, split panels amnount equaly to both packet
+		# here is exception, if two packet,
+		# try to split panels amount equally among theses two packets
+		# in order get smaller height of packets and than heigher speed of rout
 		if ( ceil( $totlaPnlCnt / $pnlPerPacket ) == 2 ) {
 
 			# each packet will contain max panel cnt: $pnlPerPacket
@@ -220,10 +220,6 @@ sub __GetPacketType {
 		}
 
 	}
-
-	# here is exception, if two packet,
-	# try to split panels amount equally among theses two packets
-	# in order get smaller height of packets and than heigher speed of rout
 
 	return $realPaketIdx;
 
