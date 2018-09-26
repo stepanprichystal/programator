@@ -65,7 +65,7 @@ sub __LoadTifFile {
 		$self->{"tifData"} = $hashData;
 	}else{
 		
-		die "Tif file doesn't exists ".$self->{"filePath"};
+		print STDERR "Tif file doesn't exists ".$self->{"filePath"};
 	}
 }
 

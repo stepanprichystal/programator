@@ -217,22 +217,22 @@ sub __LeftRoutChecks {
 
 	my $unitRTM = $nestedStep->GetUniRTM();
 
-	# 1) test if tehere are left no cyclic rout, which has foot down
-	my @lefts   = grep { $_->GetComp() eq EnumsRout->Comp_LEFT } $unitRTM->GetChains();
-	my @leftSeq = map  { $_->GetChainSequences() } @lefts;
-	@leftSeq = grep { $_->HasFootDown() } @leftSeq;
-
-	if ( scalar(@leftSeq) ) {
-
-		my @info = map { $_->GetStrInfo() } @leftSeq;
-		my $str = join( "; ", @info );
-		my $m =
-		    "Ve zdrojovém stepu: \""
-		  . $nestedStep->GetStepName()
-		  . "\", ve vrstvě: \"$layer\" jsou frézy s kompenzací left, které mají nastavenou patku (.foot_down attribut) ($str). Patka však nijak neovlivní flattenovanou vrstvu.";
-
-		$resItem->AddWarning($m);
-	}
+#	# 1) test if tehere are left no cyclic rout, which has foot down
+#	my @lefts   = grep { $_->GetComp() eq EnumsRout->Comp_LEFT } $unitRTM->GetChains();
+#	my @leftSeq = map  { $_->GetChainSequences() } @lefts;
+#	@leftSeq = grep { $_->HasFootDown() } @leftSeq;
+#
+#	if ( scalar(@leftSeq) ) {
+#
+#		my @info = map { $_->GetStrInfo() } @leftSeq;
+#		my $str = join( "; ", @info );
+#		my $m =
+#		    "Ve zdrojovém stepu: \""
+#		  . $nestedStep->GetStepName()
+#		  . "\", ve vrstvě: \"$layer\" jsou frézy s kompenzací left, které mají nastavenou patku (.foot_down attribut) ($str). Patka však nijak neovlivní flattenovanou vrstvu.";
+#
+#		$resItem->AddWarning($m);
+#	}
 
 	# 2) Test if outline orut has only one attribute "foot_down_<angle>deg" of specific kind
 	my @outlines = $unitRTM->GetOutlineChains();

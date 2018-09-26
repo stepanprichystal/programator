@@ -112,11 +112,11 @@ sub GetMasterJob {
 				my $smallestDate = $orderDeliver[0]->{"date"}->ymd . " " . $orderDeliver[0]->{"date"}->hms;
 				HegMethods->UpdateOrderTerm( $orderDeliver[$find]->{"order"}->{"orderId"}, $smallestDate, 1 );
 
-				$result = 2;    # warning -> change term of order
-				$$mess .=
-				    "Pozor, u Multi PCB objednávky ("
-				  . $orderDeliver[$find]->{"order"}->{"orderId"}
-				  . ") byl snížen termín na: $smallestDate, aby mohla být vybrána jako matka (nechceme jiné matky než Multi PCB).\n";
+#				$result = 2;    # warning -> change term of order
+#				$$mess .=
+#				    "Pozor, u Multi PCB objednávky ("
+#				  . $orderDeliver[$find]->{"order"}->{"orderId"}
+#				  . ") byl snížen termín na: $smallestDate, aby mohla být vybrána jako matka (nechceme jiné matky než Multi PCB).\n";
 			}
 		}
 		else {

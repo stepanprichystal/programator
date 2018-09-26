@@ -185,6 +185,8 @@ sub __MovePads {
 
 						$t->{"gTOOLmin_tol"} = $uniDTMTool->GetTolMinus();
 						$t->{"gTOOLmax_tol"} = $uniDTMTool->GetTolPlus();
+						$t->{"gTOOLfinish_size"} = $uniDTMTool->GetFinishSize();
+						 
 					}
 				}
 
