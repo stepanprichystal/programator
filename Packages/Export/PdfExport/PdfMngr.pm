@@ -21,7 +21,7 @@ use aliased 'Helpers::JobHelper';
 use aliased 'CamHelpers::CamHelper';
 use aliased 'Packages::Pdf::StackupPdf::StackupPdf';
 use aliased 'Packages::Pdf::ControlPdf::PcbControlPdf::ControlPdf';
-use aliased 'Packages::Pdf::PressfitPdf::PressfitPdf';
+use aliased 'Packages::Pdf::DrillMapPdf::DrillMapPdf';
 use aliased 'Packages::Pdf::NCSpecialPdf::NCSpecialPdf';
 
 #-------------------------------------------------------------------------------------------#
@@ -42,6 +42,7 @@ sub new {
 	$self->{"infoToPdf"}       = shift;    # put info about operator to pdf
 	$self->{"exportStackup"}   = shift;    # if export stackup pdf to job's archive
 	$self->{"exportPressfit"}  = shift;    # if export pressfit pdf
+	$self->{"exportToleranceHole"}  = shift;    # if export tolerance hole pdf
 	$self->{"exportNCSpecial"} = shift;    # if export NC special pdf
 
 	$self->{"layerCnt"} = CamJob->GetSignalLayerCnt( $self->{'inCAM'}, $self->{'jobId'} );
@@ -70,7 +71,11 @@ sub Run {
 	if ( $self->{"exportPressfit"} ) {
 		$self->__ExportPressfit();
 	}
-
+	
+	if ( $self->{"exportToleranceHole"} ) {
+		$self->__ExportToleranceHole();
+	}
+	
 	if ( $self->{"exportNCSpecial"} ) {
 		$self->__ExportNCSpecial();
 	}
@@ -222,12 +227,12 @@ sub __ExportPressfit {
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
 
-	my $pressfit = PressfitPdf->new( $inCAM, $jobId );
-	my $resultCreate = $pressfit->Create("panel");
+	my $pressfit = DrillMapPdf->new( $inCAM, $jobId );
+	my $resultCreate = $pressfit->CreatePressfitMeasure("panel");
 
-	my @tmpPahs = $pressfit->GetPressfitPaths();
+	my @tmpPahs = $pressfit->GetPdfPaths();
 
-	my $pdfPath = JobHelper->GetJobArchive($jobId) . "pdf\\" . $jobId . "_pressfit_";
+	my $pdfPath = JobHelper->GetJobArchive($jobId) . "pdf\\" . $jobId . "_pressfitHole_";
 
 	for ( my $i = 0 ; $i < scalar(@tmpPahs) ; $i++ ) {
 
@@ -253,6 +258,46 @@ sub __ExportPressfit {
 	$self->_OnItemResult($resultPressfit);
 
 }
+
+
+sub __ExportToleranceHole {
+	my $self = shift;
+
+	my $inCAM = $self->{"inCAM"};
+	my $jobId = $self->{"jobId"};
+
+	my $drillMapPdf = DrillMapPdf->new( $inCAM, $jobId );
+	my $resultCreate = $drillMapPdf->CreateToleranceMeasure("panel");
+
+	my @tmpPahs = $drillMapPdf->GetPdfPaths();
+
+	my $pdfPath = JobHelper->GetJobArchive($jobId) . "pdf\\" . $jobId . "_toleranceHole_";
+
+	for ( my $i = 0 ; $i < scalar(@tmpPahs) ; $i++ ) {
+
+		my $f = $pdfPath . ( $i + 1 ) . ".pdf";
+
+		if ( -e $f ) {
+			unless ( unlink($f) ) {
+				die "Can not delete old pdf tolerance hole file (" . $f . "). Maybe file is still open.\n";
+			}
+		}
+
+		copy( $tmpPahs[$i], $f ) or die "Copy failed: $!";
+		unlink( $tmpPahs[$i] );
+
+	}
+
+	my $resultPressfit = $self->_GetNewItem("Tolerance hole pdf");
+
+	unless ($resultCreate) {
+		$resultPressfit->AddError("Failed to create pdf tolerance hole measurement");
+	}
+
+	$self->_OnItemResult($resultPressfit);
+
+}
+
 
 sub __ExportNCSpecial {
 	my $self = shift;
@@ -311,7 +356,11 @@ sub TaskItemsCount {
 	if ( $self->{"exportPressfit"} ) {
 		$totalCnt += 1;        # output pressfit pdf
 	}
-
+	
+	if ( $self->{"exportToleranceHole"} ) {
+		$totalCnt += 1;        # output tolerances pdf
+	}
+ 
 	if ( $self->{"exportNCSpecial"} ) {
 		$totalCnt += 1;        # output nc special pdf
 	}

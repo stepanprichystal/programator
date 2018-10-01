@@ -92,6 +92,7 @@ sub Build {
 	push(@req, "ul_logo");
 	push(@req, "2814075"); #maska 0,1mm
 	push(@req, "merit_presfitt");
+	push(@req, "mereni_tolerance_vrtani");
 	push(@req, "prerusovana_drazka");
 	
 	$nifMngr->AddSection("Ostatni", BuilderOther->new(\@req));

@@ -34,8 +34,8 @@ use aliased 'Connectors::TpvConnector::TaskOndemMethods';
 my $orderId  = shift;    # job order for process
 my $taskType = shift;    # type of task to process
 
-$orderId = "d152457-01";
-#$taskType = TaskEnums->Data_CONTROL;
+#$orderId = "d223954-01";
+#$taskType = TaskEnums->PCB_TOPRODUCE;
 
 my $logConfig = "c:\\Apache24\\htdocs\\tpv\\Logger.conf";
 Log::Log4perl->init($logConfig);
@@ -119,10 +119,10 @@ sub __PcbToProduce {
 	}
 	
 	# 3) Add rout speed to NC rout operation
-	eval {
+	#eval {
 
 		NCFiles->CompleteRoutFeed($orderId);
-	};
+	#};
 	if ($@) {
 
 		$processed = 0;

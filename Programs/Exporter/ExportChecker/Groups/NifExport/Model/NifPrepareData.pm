@@ -72,6 +72,18 @@ sub OnPrepareGroupData {
 	}
 
 	$groupData->SetPressfit($defPressfit);
+	
+	# Prepare tolerance hole
+	my $defTolHole = 0;
+
+	if ( $defaultInfo->GetToleranceHoleExist() || $defaultInfo->GetToleranceHoleIS() ) {
+
+		$defTolHole = 1;
+	}
+
+	$groupData->SetToleranceHole($defTolHole);
+	
+	
 	$groupData->SetNotes("");
 
 	# prepare default selected quick notes

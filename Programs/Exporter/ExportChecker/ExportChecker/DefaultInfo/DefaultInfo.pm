@@ -27,6 +27,7 @@ use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'Packages::Technology::EtchOperation';
 use aliased 'Packages::Other::CustomerNote';
 use aliased 'Packages::Tooling::PressfitOperation';
+use aliased 'Packages::Tooling::TolHoleOperation';
 use aliased 'Packages::Stackup::StackupOperation';
 use aliased 'Packages::ProductionPanel::PanelDimension';
 use aliased 'Helpers::JobHelper';
@@ -64,6 +65,7 @@ sub new {
 	$self->{"costomerInfo"}  = undef;    # info about customer, name, reference, ...
 	$self->{"costomerNote"}  = undef;    # notes about customer, like export paste, info to pdf, ..
 	$self->{"pressfitExist"} = undef;    # if pressfit exist in job
+	$self->{"tolHoleExist"}  = undef;    # if tolerance hole exist in job
 	$self->{"pcbBaseInfo"}   = undef;    # contain base info about pcb from IS
 	$self->{"reorder"}       = undef;    # indicate id in time in export exist reorder
 	$self->{"panelType"}     = undef;    # return type of panel from Enums::EnumsProducPanel
@@ -99,7 +101,7 @@ sub GetPcbClassInner {
 	my $self = shift;
 
 	# take class from "outer" if not defined
-	if(!defined $self->{"pcbClassInner"} || $self->{"pcbClassInner"} == 0 ){
+	if ( !defined $self->{"pcbClassInner"} || $self->{"pcbClassInner"} == 0 ) {
 		return $self->GetPcbClass();
 	}
 
@@ -265,14 +267,15 @@ sub GetCompByLayer {
 	# Detect if it is inner layer
 	my $inner = $layerName =~ /^v\d+$/ ? 1 : 0;
 
-	my $class   = undef;
-	
-	if($inner){
+	my $class = undef;
+
+	if ($inner) {
 		$class = $self->GetPcbClassInner();
-	}else{
+	}
+	else {
 		$class = $self->GetPcbClass();
 	}
-	
+
 	my $cuThick = $self->GetBaseCuThick($layerName);
 
 	my $comp = 0;
@@ -282,8 +285,6 @@ sub GetCompByLayer {
 		return 0;
 	}
 
-	
-	
 	return EtchOperation->GetCompensation( $cuThick, $class, $inner );
 
 }
@@ -456,8 +457,8 @@ sub SetDefaultLayersSettings {
 			if ( defined $l->{"comp"} && $l->{"gROWpolarity"} eq "negative" ) {
 				$l->{"comp"} = -$l->{"comp"};
 			}
-			
-			unless(defined $l->{"comp"}){
+
+			unless ( defined $l->{"comp"} ) {
 				$l->{"comp"} = "NaN";
 			}
 
@@ -531,6 +532,12 @@ sub GetPressfitExist {
 	return $self->{"pressfitExist"};
 }
 
+sub GetToleranceHoleExist {
+	my $self = shift;
+
+	return $self->{"tolHoleExist"};
+}
+
 sub GetPcbBaseInfo {
 	my $self = shift;
 	my $key  = shift;
@@ -549,6 +556,19 @@ sub GetMeritPressfitIS {
 	my $key  = shift;
 
 	if ( $self->{"pcbBaseInfo"}->{"merit_presfitt"} =~ /^A$/i ) {
+		return 1;
+	}
+	else {
+		return 0;
+	}
+}
+
+# Return if tolerance hole existbased on info from IS
+sub GetToleranceHoleIS {
+	my $self = shift;
+	my $key  = shift;
+
+	if ( $self->{"pcbBaseInfo"}->{"mereni_tolerance_vrtani"} =~ /^A$/i ) {
 		return 1;
 	}
 	else {
@@ -601,9 +621,8 @@ sub __InitDefault {
 	$self->{"signalLayers"} = \@signalLayers;
 
 	$self->{"pcbClass"} = CamJob->GetJobPcbClass( $self->{"inCAM"}, $self->{"jobId"} );
-	
+
 	$self->{"pcbClassInner"} = CamJob->GetJobPcbClassInner( $self->{"inCAM"}, $self->{"jobId"} );
-	
 
 	$self->{"layerCnt"} = CamJob->GetSignalLayerCnt( $self->{"inCAM"}, $self->{"jobId"} );
 
@@ -641,6 +660,8 @@ sub __InitDefault {
 	$self->{"costomerNote"} = CustomerNote->new( $self->{"costomerInfo"}->{"reference_subjektu"} );
 
 	$self->{"pressfitExist"} = PressfitOperation->ExistPressfitJob( $self->{"inCAM"}, $self->{"jobId"}, $self->{"step"}, 1 );
+	
+	$self->{"tolHoleExist"} = TolHoleOperation->ExistTolHoleJob( $self->{"inCAM"}, $self->{"jobId"}, $self->{"step"}, 1 );
 
 	$self->{"pcbBaseInfo"} = HegMethods->GetBasePcbInfo( $self->{"jobId"} );
 

@@ -241,6 +241,8 @@ sub GetBasePcbInfo {
 				 d.material_tloustka_medi,
 				 d.material_typ_materialu,
 				 d.merit_presfitt,
+				 d.mereni_tolerance_vrtani,
+				 d.zlaceni,
 				 z.pooling,
 				 d.stav
 				 from lcs.desky_22 d with (nolock)

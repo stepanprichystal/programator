@@ -263,7 +263,6 @@ sub OnCheckGroupData {
 								. "Flatennuj step \"mpanel\" do \"o+1\""
 		);
 	}
-	
 
 	# 10) Check if exist pressfit, if is checked in nif
 	if ( $defaultInfo->GetPressfitExist() && !$groupData->GetPressfit() ) {
@@ -283,26 +282,50 @@ sub OnCheckGroupData {
 		$dataMngr->_AddErrorResult(
 									"Pressfit",
 									"Volba 'Pressfit' je použita, ale žádné otvory typu pressfit nebyly nalezeny."
-									  . " Prosím zruš volbu nebo přidej pressfit otvory (ppomocí Drill Tool Manageru)."
+									  . " Prosím zruš volbu nebo přidej pressfit otvory (pomocí Drill Tool Manageru)."
 		);
 	}
 
-	# 13) If exist pressfit, check if finsh size and tolerances are set
+	# 14) Check if exist tolerance hole, if is checked in nif
+	if ( $defaultInfo->GetToleranceHoleExist() && !$groupData->GetToleranceHole() ) {
 
-	$self->__CheckPressfitTools($dataMngr);
+		$dataMngr->_AddErrorResult( "Tolerance holes",
+									"Některé nástroje v dps mají požadavek na tolerance, volba 'Tolerance (NPlt)' by měla být použita." );
+	}
+
+	# 15) Check if exist tolerance hole, if is checked in nif
+	if ( $defaultInfo->GetToleranceHoleIS() && !$groupData->GetToleranceHole() ) {
+
+		$dataMngr->_AddErrorResult( "Tolerance holes",
+									"V IS je u dps požadavek na 'měření tolerancí nplt', volba 'Tolerance (NPlt)' by měla být použita." );
+	}
+
+	# 16) if tolerance hole is checked, but is not in data
+	if ( !$defaultInfo->GetToleranceHoleExist() && $groupData->GetToleranceHole() ) {
+
+		$dataMngr->_AddErrorResult(
+									"Tolerance holes",
+									"Volba 'Tolerance (NPlt)' je použita, ale žádné otvory s tolerancemi nebyly nalezeny."
+									  . " Prosím zruš volbu nebo přidej tolerance k nplt otvorům (pomocí Drill Tool Manageru)."
+		);
+	}
+ 
+
+	#---------------------------------------------
 
 	# 14) Check max cu thickness by pcb class
 
 	if ( $defaultInfo->GetTypeOfPcb() ne "Neplatovany" ) {
 
 		my $maxCuThick = undef;
-		
+
 		if ( $defaultInfo->GetLayerCnt() == 1 ) {
-		 	$maxCuThick = CuLayer->GetMaxCuByClass( $defaultInfo->GetPcbClass(), 1 ); # 1vv - same condition as inner layers
-		}else{
-			 $maxCuThick = CuLayer->GetMaxCuByClass( $defaultInfo->GetPcbClass() );
+			$maxCuThick = CuLayer->GetMaxCuByClass( $defaultInfo->GetPcbClass(), 1 );    # 1vv - same condition as inner layers
 		}
- 
+		else {
+			$maxCuThick = CuLayer->GetMaxCuByClass( $defaultInfo->GetPcbClass() );
+		}
+
 		if ( $defaultInfo->GetBaseCuThick() > $maxCuThick ) {
 			$dataMngr->_AddErrorResult(
 										"Max Cu thickness outer layer",
@@ -324,17 +347,18 @@ sub OnCheckGroupData {
 				if ( $cu->GetThick() > $maxCuThick ) {
 
 					$dataMngr->_AddErrorResult(
-						"Max Cu thickness inner layer",
-						"Maximal Cu thickness of inner layer: ".$cu->GetCopperName()." for pcbclass: "
-						  . $defaultInfo->GetPcbClassInner()
-						  . " is: $maxCuThick µm. Current job Cu thickness is: "
-						  . $cu->GetThick()
-						  . "µm"
+												"Max Cu thickness inner layer",
+												"Maximal Cu thickness of inner layer: "
+												  . $cu->GetCopperName()
+												  . " for pcbclass: "
+												  . $defaultInfo->GetPcbClassInner()
+												  . " is: $maxCuThick µm. Current job Cu thickness is: "
+												  . $cu->GetThick() . "µm"
 					);
 				}
 			}
 
-		} 
+		}
 
 	}
 
@@ -531,64 +555,7 @@ sub __IsTentingCS {
 	return $tenting;
 }
 
-# check if tool has finis size and tolerance
-sub __CheckPressfitTools {
-	my $self     = shift;
-	my $dataMngr = shift;
-
-	my $inCAM = $dataMngr->{"inCAM"};
-	my $jobId = $dataMngr->{"jobId"};
-
-	my @layers = PressfitOperation->GetPressfitLayers( $inCAM, $jobId, "panel", 1 );
-
-	foreach my $l (@layers) {
-
-		# check pressfit tools
-		my @tools = CamDTM->GetDTMToolsByType( $inCAM, $jobId, "panel", $l, "press_fit", 1 );
-
-		foreach my $t (@tools) {
-
-			# test on finish size
-			if (    !defined $t->{"gTOOLfinish_size"}
-				 || $t->{"gTOOLfinish_size"} == 0
-				 || $t->{"gTOOLfinish_size"} eq ""
-				 || $t->{"gTOOLfinish_size"} eq "?" )
-			{
-				$dataMngr->_AddErrorResult( "Pressfit",
-											"Tool: " . $t->{"gTOOLdrill_size"} . "µm has no finish size (layer: '" . $l . "'). Complete it.\n" );
-			}
-
-			if ( $t->{"gTOOLmin_tol"} == 0 && $t->{"gTOOLmax_tol"} == 0 ) {
-
-				$dataMngr->_AddErrorResult( "Pressfit",
-										  "Tool: " . $t->{"gTOOLdrill_size"} . "µm hasn't defined tolerance (layer: '" . $l . "'). Complete it.\n" );
-			}
-		}
-	}
-
-	foreach my $l ( CamDrilling->GetNCLayersByTypes( $inCAM, $jobId, [ EnumsGeneral->LAYERTYPE_nplt_nMill, EnumsGeneral->LAYERTYPE_plt_nMill ] ) ) {
-
-		# check non pressfit tools, if tolerances are not set
-		my @toolsNoPressfit = grep { $_->{"gTOOLtype2"} ne "press_fit" } CamDTM->GetDTMTools( $inCAM, $jobId, "panel", $l->{"gROWname"}, 1 );
-
-		foreach my $t (@toolsNoPressfit) {
-
-			if ( $t->{"gTOOLmin_tol"} != 0 || $t->{"gTOOLmax_tol"} != 0 ) {
-
-				$dataMngr->_AddErrorResult(
-											"Pressfit",
-											"Tool: "
-											  . $t->{"gTOOLdrill_size"}
-											  . "µm has set tolerances ("
-											  . $t->{"gTOOLmin_tol"} . ", "
-											  . $t->{"gTOOLmax_tol"}
-											  . " ), but tool type is not \"pressfit\". Set proper tool type in DTM"
-				);
-			}
-		}
-	}
-
-}
+ 
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

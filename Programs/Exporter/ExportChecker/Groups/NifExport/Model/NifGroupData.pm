@@ -184,6 +184,18 @@ sub GetPressfit {
 	return $self->{"data"}->{"merit_presfitt"};
 }
 
+#tolerance hole
+sub SetToleranceHole {
+	my $self  = shift;
+	my $value = shift;
+	$self->{"data"}->{"mereni_tolerance_vrtani"} = $value;
+}
+
+sub GetToleranceHole {
+	my $self  = shift;
+	return $self->{"data"}->{"mereni_tolerance_vrtani"};
+}
+
 #notes
 sub SetNotes {
 	my $self  = shift;

@@ -607,6 +607,7 @@ sub _CheckPool{
 	 			  		
  	 					my $tenting  = 0;
  	 					my $pressfit = 0;
+ 	 					my $toleranceHole = 0;
  	 					
  	 					my @dataCodeArr = ();
  	 						while (my ($key,$value) = each %dtCode) {
@@ -705,7 +706,7 @@ sub _CheckPool{
 								
 	
 					 			#return 1 if OK, else 0
- 	 							$export->Run( $inCAM, $jobId, $poznamka, $tenting, $pressfit, $maska01, $datacode, $ullogo, undef, $wrongData);
+ 	 							$export->Run( $inCAM, $jobId, $poznamka, $tenting, $pressfit, $toleranceHole, $maska01, $datacode, $ullogo, undef, $wrongData);
 
 
 

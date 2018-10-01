@@ -541,7 +541,7 @@ sub StoreOperationInfoTif {
 	# store rout tool info
 	my %toolInfo = ();
 
-	my @layers = map {$_->{"gROWname"}} grep { $_->{"gROWlayer_type"} eq "rout" } CamJob->GetNCLayers( $inCAM, $jobId );
+	my @layers = map {$_->{"gROWname"}} grep { $_->{"gROWlayer_type"} eq "rout" && $_->{"gROWname"} ne "score"  } CamJob->GetNCLayers( $inCAM, $jobId );
 	foreach my $s ( (map { $_->{"stepName"} } CamStepRepeat->GetUniqueNestedStepAndRepeat( $inCAM, $jobId, $step ) ), $step ) {
 
 		$toolInfo{$s} = {};

@@ -125,6 +125,14 @@ sub OnPrepareGroupData {
 		$defPressfit = 1;
 	}
 	
+	# 7) default tolerance hole export
+	my $defTolHole = 0;
+
+	if ( $defaultInfo->GetToleranceHoleExist() || $defaultInfo->GetToleranceHoleIS()) {
+
+		$defTolHole = 1;
+	}
+	
 	# 7) default NC special export
 	my $defNCSpec = 0;
 
@@ -140,6 +148,7 @@ sub OnPrepareGroupData {
 	$groupData->SetInfoToPdf($defInfoToPdf);
 	$groupData->SetExportStackup($defStackup);
 	$groupData->SetExportPressfit($defPressfit);
+	$groupData->SetExportToleranceHole($defTolHole);
 	$groupData->SetExportNCSpecial($defNCSpec);
 	
 	return $groupData;

@@ -42,6 +42,7 @@ sub Run {
 	my $poznamka  = shift;
 	my $tenting   = shift;
 	my $pressfit  = shift;
+	my $tolHole  = shift;
 	my $maska01   = shift;
 	my $datacode  = shift;
 	my $ulLogo    = shift;
@@ -69,6 +70,9 @@ sub Run {
 	}
 	if(defined $pressfit){
 		$groupData->SetPressfit($pressfit);
+	}
+	if(defined $tolHole){
+		$groupData->SetToleranceHole($tolHole);
 	}
 	if(defined $maska01){
 		$groupData->SetMaska01($maska01);

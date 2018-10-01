@@ -87,6 +87,19 @@ sub Build {
 		$section->AddRow( "merit_presfitt", $pressfit );
 	}
 
+	#mereni_tolerance_vrtani
+	if ( $self->_IsRequire("mereni_tolerance_vrtani") ) {
+
+		my $toleranceHole = "N";
+
+		if ( $nifData{"mereni_tolerance_vrtani"} ) {
+			$toleranceHole = "A";
+		}
+
+		$section->AddRow( "mereni_tolerance_vrtani", $toleranceHole );
+	}
+
+
 	#ul_logo
 	if ( $self->_IsRequire("prerusovana_drazka") ) {
 		my $jumpScore = "N";

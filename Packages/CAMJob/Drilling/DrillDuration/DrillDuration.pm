@@ -101,10 +101,7 @@ sub GetDrillDuration {
 	foreach my $tSize ( keys %toolsCnt ) {
 
 		#print STDERR $tSize . "- ";
-
-		unless ( defined $duration{$tSize} ){
-			die;
-		}
+ 
 
 		die "Duration is not defined for tool $tSize" unless ( defined $duration{$tSize} );
 

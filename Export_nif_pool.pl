@@ -29,6 +29,7 @@ my $jobId    = "d113609";
 my $poznamka = "";
 my $tenting  = 1;
 my $pressfit = 0;
+my $tolHole = 0;
 my $maska01  = 0;
 my $datacode  = "";
 my $ullogo  = "";
@@ -40,4 +41,4 @@ my $inCAM = InCAM->new();
 my $export = NifExportTmpPool->new();
 
 #return 1 if OK, else 0
-$export->Run( $inCAM, $jobId, $poznamka, $tenting, $pressfit, $maska01, $datacode, $ullogo, $jumpScoring);
+$export->Run( $inCAM, $jobId, $poznamka, $tenting, $pressfit, $tolHole, $maska01, $datacode, $ullogo, $jumpScoring);

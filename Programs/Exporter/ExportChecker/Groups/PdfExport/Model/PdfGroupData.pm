@@ -109,6 +109,20 @@ sub GetExportPressfit {
 	return $self->{"data"}->{"exportPressfit"};
 }
 
+
+sub SetExportToleranceHole {
+	my $self  = shift;
+	my $value = shift;
+	$self->{"data"}->{"exportToleranceHole"} = $value;
+}
+
+sub GetExportToleranceHole {
+	my $self  = shift;
+	my $value = shift;
+	return $self->{"data"}->{"exportToleranceHole"};
+}
+ 
+
 sub SetExportNCSpecial {
 	my $self  = shift;
 	my $value = shift;

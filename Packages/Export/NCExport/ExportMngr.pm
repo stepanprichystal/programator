@@ -30,6 +30,7 @@ use aliased 'CamHelpers::CamDrilling';
 use aliased 'CamHelpers::CamJob';
 use aliased 'Packages::Export::NCExport::Helpers::NpltDrillHelper';
 use aliased 'Packages::CAMJob::Routing::RoutSpeed::RoutSpeed';
+use aliased 'Enums::EnumsGeneral';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -117,7 +118,7 @@ sub __Init {
 	my @plt = CamDrilling->GetPltNCLayers( $self->{"inCAM"}, $self->{"jobId"} );
 	$self->{"pltLayers"} = \@plt;
 
-	my @nplt = CamDrilling->GetNPltNCLayers( $self->{"inCAM"}, $self->{"jobId"} );
+	my @nplt =  CamDrilling->GetNPltNCLayers( $self->{"inCAM"}, $self->{"jobId"} );
 	$self->{"npltLayers"} = \@nplt;
 
 	CamDrilling->AddHistogramValues( $self->{"inCAM"}, $self->{"jobId"}, $self->{"stepName"}, $self->{"pltLayers"} );
@@ -341,7 +342,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	use aliased 'Packages::InCAM::InCAM';
 
-	my $jobId = "d152457";
+	my $jobId = "d226577";
 	my $step  = "panel";
 	my $inCAM = InCAM->new();
 

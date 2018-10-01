@@ -36,6 +36,7 @@ use aliased 'Packages::CAM::UniDTM::Enums' => 'DTMEnums';
 use aliased 'CamHelpers::CamDTM';
 use aliased 'Packages::CAMJob::Drilling::BlindDrill::BlindDrillInfo';
 use aliased 'Packages::CAMJob::Drilling::CountersinkCheck';
+use aliased 'Packages::Tooling::PressfitOperation';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -483,6 +484,79 @@ sub OnCheckGroupData {
 			  . "Otvory: $str"
 					);
 		
+	}
+	
+	
+	# 18) Check if pressfit toles has set tolerances
+	my @layers = PressfitOperation->GetPressfitLayers( $inCAM, $jobId, "panel", 1 );
+
+	foreach my $l (@layers) {
+
+		# check pressfit tools
+		my @tools = CamDTM->GetDTMToolsByType( $inCAM, $jobId, "panel", $l, "press_fit", 1 );
+
+		foreach my $t (@tools) {
+
+			# test on finish size
+			if (    !defined $t->{"gTOOLfinish_size"}
+				 || $t->{"gTOOLfinish_size"} == 0
+				 || $t->{"gTOOLfinish_size"} eq ""
+				 || $t->{"gTOOLfinish_size"} eq "?" )
+			{
+				$dataMngr->_AddErrorResult( "Pressfit",
+											"Tool: " . $t->{"gTOOLdrill_size"} . "µm has no finish size (layer: '" . $l . "'). Complete it.\n" );
+			}
+
+			if ( $t->{"gTOOLmin_tol"} == 0 && $t->{"gTOOLmax_tol"} == 0 ) {
+
+				$dataMngr->_AddErrorResult( "Pressfit",
+										  "Tool: " . $t->{"gTOOLdrill_size"} . "µm hasn't defined tolerance (layer: '" . $l . "'). Complete it.\n" );
+			}
+		}
+	}
+
+	# 19) Check if there are set tolerances in non pressfit plt holes
+	foreach my $l ( CamDrilling->GetNCLayersByTypes( $inCAM, $jobId, [ EnumsGeneral->LAYERTYPE_plt_nMill ] ) ) {
+
+		# check non pressfit tools, if tolerances are not set
+		my @toolsNoPressfit =
+		  grep { $_->{"gTOOLtype2"} ne "press_fit" && ( $_->{"gTOOLmin_tol"} != 0 || $_->{"gTOOLmax_tol"} != 0 ) }
+		  CamDTM->GetDTMTools( $inCAM, $jobId, "panel", $l->{"gROWname"}, 1 );
+
+		foreach my $t (@toolsNoPressfit) {
+
+			$dataMngr->_AddErrorResult(
+										"Pressfit",
+										"Tool: "
+										  . $t->{"gTOOLdrill_size"}
+										  . "µm has set tolerances ("
+										  . $t->{"gTOOLmin_tol"} . ", "
+										  . $t->{"gTOOLmax_tol"}
+										  . " ), but tool type is not set to \"pressfit\". Set proper tool type in DTM"
+			);
+		}
+	}
+	
+	# 20) Check if there are set tolerances and type other than non_plated in nplt holes
+	foreach my $l ( CamDrilling->GetNCLayersByTypes( $inCAM, $jobId, [ EnumsGeneral->LAYERTYPE_nplt_nMill, EnumsGeneral->LAYERTYPE_nplt_nDrill ] ) ) {
+
+		# check non pressfit tools, if tolerances are not set
+		my @toolsNoToler =
+		  grep { $_->{"gTOOLtype"} ne "non_plated" && ( $_->{"gTOOLmin_tol"} != 0 || $_->{"gTOOLmax_tol"} != 0 ) }
+		  CamDTM->GetDTMTools( $inCAM, $jobId, "panel", $l->{"gROWname"}, 1 );
+
+		foreach my $t (@toolsNoToler) {
+
+			$dataMngr->_AddErrorResult(
+										"Tolerance holes",
+										"Tool: "
+										  . $t->{"gTOOLdrill_size"}
+										  . "µm has set tolerances ("
+										  . $t->{"gTOOLmin_tol"} . ", "
+										  . $t->{"gTOOLmax_tol"}
+										  . " ), but tool type is not set to \"not plated\". Set proper tool type in DTM"
+			);
+		}
 	}
 
 

@@ -163,12 +163,13 @@ sub __SetLayoutSettings {
 	my $szCol4 = Wx::BoxSizer->new(&Wx::wxVERTICAL);
 
 	# DEFINE CONTROLS
-	my $textWidth = 90;
+	my $textWidth = 110;
 	my $cbWidth   = 55;
 
 	my $tentingChb     = Wx::CheckBox->new( $statBox, -1, "Tenting (c,s)",      &Wx::wxDefaultPosition, [ $textWidth, 20 ] );
 	my $maskaChb       = Wx::CheckBox->new( $statBox, -1, "Mask 100µm",  &Wx::wxDefaultPosition, [ $textWidth, 20 ] );
-	my $pressfitChb    = Wx::CheckBox->new( $statBox, -1, "Pressfit",     &Wx::wxDefaultPosition, [ $textWidth, 20 ] );
+	my $pressfitChb    = Wx::CheckBox->new( $statBox, -1, "Pressfit (Plt)",     &Wx::wxDefaultPosition, [ $textWidth, 20 ] );
+	my $tolMeasureChb    = Wx::CheckBox->new( $statBox, -1, "Tolerance (NPlt)",     &Wx::wxDefaultPosition, [ $textWidth, 20 ] );
 	#my $jumpscoringChb = Wx::CheckBox->new( $statBox, -1, "Jump scoring", &Wx::wxDefaultPosition, [ $textWidth, 20 ] );
 
   
@@ -186,6 +187,7 @@ sub __SetLayoutSettings {
 	$szCol1->Add( $tentingChb,     0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 	$szCol1->Add( $maskaChb,       0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 	$szCol1->Add( $pressfitChb,    0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szCol1->Add( $tolMeasureChb,    0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 	#$szCol1->Add( $jumpscoringChb, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 
 	$szCol2->Add( $markingFrm, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
@@ -198,7 +200,7 @@ sub __SetLayoutSettings {
 	#$szRow1->Add( 10,         10, 1,         &Wx::wxGROW );    #expander
 
 	$szStatBox->Add( $szCol1, 0, &Wx::wxEXPAND | &Wx::wxLEFT,   );
-	$szStatBox->Add( $szCol2, 0, &Wx::wxEXPAND | &Wx::wxLEFT, 20);
+	$szStatBox->Add( $szCol2, 0, &Wx::wxEXPAND | &Wx::wxLEFT, 10);
 	#$szStatBox->Add( $szCol3, 0, &Wx::wxEXPAND | &Wx::wxLEFT, 2 );
 	$szStatBox->Add( $szCol4, 0, &Wx::wxEXPAND | &Wx::wxLEFT, 20 );
 	
@@ -207,6 +209,8 @@ sub __SetLayoutSettings {
 	$self->{"tentingChb"} = $tentingChb;
 	$self->{"maskaChb"} = $maskaChb;
 	$self->{"pressfitChb"} = $pressfitChb;
+	$self->{"tolMeasureChb"} = $tolMeasureChb;
+	
 
 	$self->{"markingFrm"} = $markingFrm;
 	
@@ -595,6 +599,19 @@ sub GetPressfit {
 	my $self = shift;
 	return $self->{"pressfitChb"}->GetValue();
 }
+
+sub SetToleranceHole {
+	my $self  = shift;
+	my $value = shift;
+	
+	$self->{"tolMeasureChb"}->SetValue($value);
+}
+
+sub GetToleranceHole {
+	my $self = shift;
+	return $self->{"tolMeasureChb"}->GetValue();
+}
+
 
 sub SetNotes {
 	my $self  = shift;

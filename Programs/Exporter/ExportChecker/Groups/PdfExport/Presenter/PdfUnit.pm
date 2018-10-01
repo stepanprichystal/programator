@@ -90,6 +90,7 @@ sub RefreshGUI {
 	$self->{"form"}->SetControlLang( $groupData->GetControlLang() );
 	$self->{"form"}->SetExportStackup( $groupData->GetExportStackup() );
 	$self->{"form"}->SetExportPressfit( $groupData->GetExportPressfit() );
+	$self->{"form"}->SetExportToleranceHole( $groupData->GetExportToleranceHole() );
 	$self->{"form"}->SetExportNCSpecial( $groupData->GetExportNCSpecial() );
 	$self->{"form"}->SetInfoToPdf( $groupData->GetInfoToPdf() );
 	
@@ -117,6 +118,7 @@ sub GetGroupData {
 		$groupData->SetControlLang( $frm->GetControlLang() );
 		$groupData->SetExportStackup( $frm->GetExportStackup() );
 		$groupData->SetExportPressfit( $frm->GetExportPressfit() );
+		$groupData->SetExportToleranceHole( $frm->GetExportToleranceHole() );
 		$groupData->SetExportNCSpecial( $frm->GetExportNCSpecial() );
 		$groupData->SetInfoToPdf( $frm->GetInfoToPdf() );
 	}

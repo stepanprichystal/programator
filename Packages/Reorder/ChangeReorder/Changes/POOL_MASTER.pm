@@ -27,7 +27,6 @@ use aliased 'Packages::NifFile::NifFile';
 use aliased 'Packages::CAMJob::Dim::JobDim';
 use aliased 'Programs::Services::TpvService::ServiceApps::CheckReorderApp::CheckReorder::AcquireJob';
 use aliased 'Packages::CAM::FeatureFilter::FeatureFilter';
-use aliased 'Programs::Exporter::ExportUtility::Groups::NifExport::NifExportTmpPool';
 use aliased 'Programs::Exporter::ExportUtility::DataTransfer::UnitsDataContracts::NifData';
 
 #-------------------------------------------------------------------------------------------#

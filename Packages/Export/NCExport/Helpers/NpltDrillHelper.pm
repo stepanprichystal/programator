@@ -163,7 +163,7 @@ sub __MovePads {
 
 			die "Tools definition in layer: " . $self->{"layer"} . " is wrong.\n $mess";
 		}
-		my @uniDTMTools = grep { $_->GetSource() eq EnumsDTM->Source_DTM} $unitDTM->GetTools();
+		my @uniDTMTools = grep { $_->GetSource() eq EnumsDTM->Source_DTM } $unitDTM->GetTools();
 
 		my $sel = CamFilter->ByTypes( $inCAM, ["pad"] );
 
@@ -172,21 +172,22 @@ sub __MovePads {
 			$movedCnt += $sel;
 			CamLayer->MoveSelOtherLayer( $inCAM, $targetLayer );
 
-			# if some holes have pressfit, set DTM
-			my @pressfit = grep { $_->GetTypeUse() =~ /press_fit/ &&  $_->GetTypeProcess() eq EnumsDTM->TypeProc_HOLE} @uniDTMTools;
+			# if some holes have tolerances, set DTM
+			my @holeTol = grep { ( $_->GetTolPlus() > 0 || $_->GetTolMinus() > 0 ) && $_->GetTypeProcess() eq EnumsDTM->TypeProc_HOLE }
+			  @uniDTMTools;
 
-			if (@pressfit) {
+			if (@holeTol) {
 
 				my @toolsTarget = CamDTM->GetDTMTools( $inCAM, $jobId, $s, $targetLayer, 0 );
 
-				foreach my $uniDTMTool (@pressfit) {
+				foreach my $uniDTMTool (@holeTol) {
 
 					foreach my $t ( grep { $_->{"gTOOLdrill_size"} eq $uniDTMTool->GetDrillSize() && $_->{"gTOOLshape"} eq "hole" } @toolsTarget ) {
 
-						$t->{"gTOOLmin_tol"} = $uniDTMTool->GetTolMinus();
-						$t->{"gTOOLmax_tol"} = $uniDTMTool->GetTolPlus();
+						$t->{"gTOOLmin_tol"}     = $uniDTMTool->GetTolMinus();
+						$t->{"gTOOLmax_tol"}     = $uniDTMTool->GetTolPlus();
 						$t->{"gTOOLfinish_size"} = $uniDTMTool->GetFinishSize();
-						 
+
 					}
 				}
 

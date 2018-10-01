@@ -2,7 +2,6 @@
 # Description: Contains trigger methods, which work with NC files
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-
 package Packages::TriggerFunction::NCFiles;
 
 #3th party library
@@ -13,12 +12,12 @@ use Path::Tiny qw(path);
 #loading of locale modules
 use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'Helpers::JobHelper';
-use aliased 'Packages::TifFile::TifNCOperations';
 use aliased 'Packages::CAMJob::Routing::RoutSpeed::RoutSpeed';
 
 #-------------------------------------------------------------------------------------------#
 #   Package methods
 #-------------------------------------------------------------------------------------------#
+ 
 
 # Function replace pcb order number in all NC files placed in archive, which contains this number
 # Example if dps is second ordered: M97,F12345 => M97,F12345-2
@@ -83,6 +82,8 @@ sub ChangePcbOrderNumber {
 	return 1;
 }
 
+
+
 # Put rout feed speed to all rout tool calling in all NC programs
 sub CompleteRoutFeed {
 	my $self    = shift;
@@ -97,10 +98,9 @@ sub CompleteRoutFeed {
 	my $totalPnlCnt = $info->{'pocet_prirezu'} + $info->{'prirezu_navic'};
 
 	my $mess = "";
-	unless(RoutSpeed->CompleteRoutSpeed( $jobId, $totalPnlCnt, \$mess )){
+	unless ( RoutSpeed->CompleteRoutSpeed( $jobId, $totalPnlCnt, \$mess ) ) {
 		die "Error during set rout speed: $mess";
 	}
-	
 
 	return 1;
 }
@@ -113,7 +113,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	use aliased 'Packages::TriggerFunction::NCFiles';
 
-	NCFiles->CompleteRoutFeed("d152457-01");
+	NCFiles->CompleteRoutFeed("d223954-01");
 
 	print STDERR "ttt";
 

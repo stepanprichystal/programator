@@ -14,6 +14,7 @@ use warnings;
 
 use aliased 'Programs::Exporter::ExportUtility::DataTransfer::UnitsDataContracts::NifData';
 use aliased 'CamHelpers::CamAttributes';
+
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
@@ -42,14 +43,16 @@ sub OnExportGroupData {
 	my $exportData = NifData->new();
 
 	# Author
-	my $name = CamAttributes->GetJobAttrByName($inCAM, $jobId,"user_name");
-	$exportData->SetZpracoval($name );
+	my $name = CamAttributes->GetJobAttrByName( $inCAM, $jobId, "user_name" );
+	$exportData->SetZpracoval($name);
+
 	#$exportData->SetZpracoval( $ENV{"LOGNAME"} );
 
 	# Other
 	$exportData->SetTenting( $groupData->GetTenting() );
 	$exportData->SetMaska01( $groupData->GetMaska01() );
 	$exportData->SetPressfit( $groupData->GetPressfit() );
+	$exportData->SetToleranceHole( $groupData->GetToleranceHole() );
 	$exportData->SetNotes( $groupData->GetNotes() );
 	$exportData->SetQuickNotes( $groupData->GetQuickNotes() );
 	$exportData->SetDatacode( $groupData->GetDatacode() );

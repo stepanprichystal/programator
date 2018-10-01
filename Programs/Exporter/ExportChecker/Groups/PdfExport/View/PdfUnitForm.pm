@@ -190,22 +190,25 @@ sub __SetLayoutPressfit {
 	my $parent = shift;
 
 	#define staticboxes
-	my $statBox = Wx::StaticBox->new( $parent, -1, 'Pressfit' );
+	my $statBox = Wx::StaticBox->new( $parent, -1, 'Tolerance measurement' );
 	my $szStatBox = Wx::StaticBoxSizer->new( $statBox, &Wx::wxHORIZONTAL );
 
 	# DEFINE CONTROLS
 
-	my $exportPressfitChb = Wx::CheckBox->new( $statBox, -1, "Export", &Wx::wxDefaultPosition );
+	my $exportPressfitChb = Wx::CheckBox->new( $statBox, -1, "Pressfit (Plt)", &Wx::wxDefaultPosition );
+	my $exportTolMeasureChb = Wx::CheckBox->new( $statBox, -1, "Tolerance (NPlt)", &Wx::wxDefaultPosition );
  
 
 	# SET EVENTS
 
 	# BUILD STRUCTURE OF LAYOUT
 
-	$szStatBox->Add( $exportPressfitChb, 1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szStatBox->Add( $exportPressfitChb, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szStatBox->Add( $exportTolMeasureChb, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 
 	# Set References
 	$self->{"exportPressfitChb"} = $exportPressfitChb;
+	$self->{"exportTolMeasureChb"} = $exportTolMeasureChb;
 
 	return $szStatBox;
 }
@@ -271,6 +274,16 @@ sub DisableControls{
 	}else{
 		
 		$self->{"exportPressfitChb"}->Enable();
+	}
+	
+	unless($self->{"defaultInfo"}->GetToleranceHoleExist()){
+		
+		$self->{"exportTolMeasureChb"}->SetValue(0);
+		$self->{"exportTolMeasureChb"}->Disable();
+		
+	}else{
+		
+		$self->{"exportTolMeasureChb"}->Enable();
 	}
 	
 	
@@ -387,6 +400,26 @@ sub GetExportPressfit {
 	my $self = shift;
 
 	if ( $self->{"exportPressfitChb"}->IsChecked() ) {
+
+		return 1;
+	}
+	else {
+		return 0;
+	}
+}
+
+
+sub SetExportToleranceHole {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->{"exportTolMeasureChb"}->SetValue($val);
+}
+
+sub GetExportToleranceHole {
+	my $self = shift;
+
+	if ( $self->{"exportTolMeasureChb"}->IsChecked() ) {
 
 		return 1;
 	}

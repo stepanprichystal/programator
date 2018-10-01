@@ -334,6 +334,18 @@ sub OnCheckGroupData {
 		$dataMngr->_AddErrorResult( "Gold finger",
 									"Je použit špatný atribut pro konektorové zlato: \".gold_finger\". Zmněň atribut na \".gold_plating\"." );
 	}
+	
+	# Check if goldfinger doesnt exist in job, but are checked in IS
+	if ( $defaultInfo->GetPcbBaseInfo()->{"zlaceni"}  =~ /^A$/i && !CamGoldArea->GoldFingersExist( $inCAM, $jobId, $stepName, undef, ".gold_plating" ) ) {
+		
+		$dataMngr->_AddErrorResult( "Gold connector", "V IS je požadavek na zlacení, ale v desce nebyl nalezen zlacený konektor (atribut .gold_plating )" );
+	}
+	
+	# Check if goldfinger doesnt exist in job, but thera are layers goldc, golds
+	if ( ($defaultInfo->LayerExist("goldc") || $defaultInfo->LayerExist("golds") || $defaultInfo->LayerExist("fk") ) && !CamGoldArea->GoldFingersExist( $inCAM, $jobId, $stepName, undef, ".gold_plating" ) ) {
+		
+		$dataMngr->_AddErrorResult( "Gold connector", "V matrixu je některá z vrstev: goldc;golds;fk, ale nebyl nalezen zlacený konektor (atribut .gold_plating )" );
+	}
 
 	# 14) Test if stackup material is on stock
 	if ( $layerCnt > 2 ) {

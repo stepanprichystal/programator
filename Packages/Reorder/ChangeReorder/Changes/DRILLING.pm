@@ -1,8 +1,8 @@
 #-------------------------------------------------------------------------------------------#
-# Description:  Class responsible for edit routing layers
+# Description:  Class responsible for edit drilling layer
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::Reorder::ChangeReorder::Changes::ROUTING;
+package Packages::Reorder::ChangeReorder::Changes::DRILLING;
 use base('Packages::Reorder::ChangeReorder::Changes::ChangeBase');
 
 use Class::Interface;
@@ -21,6 +21,7 @@ use aliased 'CamHelpers::CamDrilling';
 use aliased 'CamHelpers::CamLayer';
 use aliased 'CamHelpers::CamHelper';
 use aliased 'CamHelpers::CamJob';
+use aliased 'CamHelpers::CamDTM';
 use aliased 'CamHelpers::CamHistogram';
 use aliased 'CamHelpers::CamAttributes';
 use aliased 'Enums::EnumsGeneral';
@@ -38,12 +39,11 @@ sub new {
 	return $self;
 }
 
-# Delete and add new schema
 sub Run {
 	my $self = shift;
 	my $mess = shift;
 
-	my $inCAM  = $self->{"inCAM"}; 
+	my $inCAM  = $self->{"inCAM"};
 	my $jobId  = $self->{"jobId"};
 	my $isPool = HegMethods->GetPcbIsPool($jobId);
 
@@ -51,45 +51,37 @@ sub Run {
 
 	# Add pilot holes if doesnt exist to layer f
 
-	my @steps = "o+1";
+	return $result if ($isPool);
 
-	unless ($isPool) {
+	my @steps = map { $_->{"stepName"} } CamStepRepeat->GetUniqueNestedStepAndRepeat( $inCAM, $jobId, 'panel' );
 
-		@steps = map { $_->{"stepName"} } CamStepRepeat->GetUniqueNestedStepAndRepeat( $inCAM, $jobId, 'panel' );
-	}
-
-	my @layers = CamDrilling->GetNCLayersByType( $inCAM, $jobId, EnumsGeneral->LAYERTYPE_nplt_nMill );
+	my @layers = CamDrilling->GetNCLayersByTypes( $inCAM, $jobId, [ EnumsGeneral->LAYERTYPE_nplt_nMill, EnumsGeneral->LAYERTYPE_nplt_nDrill ] );
 
 	foreach my $step (@steps) {
 
 		foreach my $l (@layers) {
 
-			# check if step contain pilot holes
-			my %attHist = CamHistogram->GetAttHistogram( $inCAM, $jobId, $step, $l->{"gROWname"} );
-			unless ( exists $attHist{".pilot_hole"} ) {
+			# if there are type pressfit with tolerance, change type to non_plated and standard
+	 		my @tools = CamDTM->GetDTMTools( $inCAM, $jobId, $step, $l->{"gROWname"} );
+			my $change = 0;
+			foreach my $t ( @tools ) {
 
-				PilotHole->AddPilotHole( $inCAM, $jobId, $step, $l->{"gROWname"} );
+				if ( $t->{"gTOOLtype2"} eq "press_fit" && ( $t->{"gTOOLmin_tol"} != 0 || $t->{"gTOOLmax_tol"} != 0 ) ) {
+
+					$t->{"gTOOLtype2"} = "standard";
+					$t->{"gTOOLtype"}  = "non_plated";
+					$change = 1;
+				}
+			}
+			
+			if($change){
+				
+				CamDTM->SetDTMTools( $inCAM, $jobId, $step, $l->{"gROWname"}, \@tools );
 			}
 		}
 	}
 
-	# Remove .feed atribut if exists
-	my @routLayers = CamJob->GetLayerByType( $inCAM, $jobId, "rout" );
-
-	foreach my $step (@steps) {
-
-		CamHelper->SetStep( $inCAM, $step );
-
-		foreach my $l (@layers) {
-
-			CamLayer->WorkLayer( $inCAM, $l->{"gROWname"} );
-
-			CamAttributes->DelFeatuesAttribute( $inCAM, ".feed", "" );
-		}
-	}
-
 	return $result;
-
 }
 
 #-------------------------------------------------------------------------------------------#
@@ -98,11 +90,11 @@ sub Run {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	use aliased 'Packages::Reorder::ChangeReorder::Changes::ROUTING' => "Change";
+	use aliased 'Packages::Reorder::ChangeReorder::Changes::DRILLING' => "Change";
 	use aliased 'Packages::InCAM::InCAM';
 
 	my $inCAM = InCAM->new();
-	my $jobId = "d210856";
+	my $jobId = "d152457";
 
 	my $check = Change->new( "key", $inCAM, $jobId );
 

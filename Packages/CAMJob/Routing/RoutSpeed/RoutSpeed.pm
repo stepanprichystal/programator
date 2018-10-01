@@ -232,17 +232,21 @@ sub __ParseRoutSpeedTable {
 	my $p = GeneralHelper->Root() . "\\Packages\\CAMJob\\Routing\\RoutSpeed\\" . $file;
 
 	my @lines = @{ FileHelper->ReadAsLines($p) };
-	@lines = grep { defined $_ } @lines[ 2 .. scalar(@lines) ];
-
+ 
 	my %tools = ();
 
 	foreach my $line (@lines) {
+		
+		chomp($line);
+		
+		next if($line =~ /#/);
+		
 		my @vals = split( ";", $line );
 		chomp(@vals);
 
 		my $t = int( ( shift @vals ) * 1000 );
 
-		die "Wrong parsed tool size at $p" unless ($t);
+		die "Wrong parsed tool size at $p, line $line" unless ($t);
 
 		my $pakThick1 = $vals[0] eq "-" ? undef : $vals[0];
 		my $pakThick2 = $vals[1] eq "-" ? undef : $vals[1];

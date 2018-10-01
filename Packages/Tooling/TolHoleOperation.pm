@@ -1,8 +1,8 @@
 #-------------------------------------------------------------------------------------------#
-# Description: Contain special function, which work with tooling
+# Description: Contain special function, which work with tolerance hole operation
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::Tooling::PressfitOperation;
+package Packages::Tooling::TolHoleOperation;
 
 #3th party library
 use strict;
@@ -19,34 +19,35 @@ use aliased 'Enums::EnumsGeneral';
 #  Script methods
 #-------------------------------------------------------------------------------------------#
 
-# Return layer name where is pressfit
-sub GetPressfitLayers {
+# Return layer name where is tolerance holes
+sub GetTolHoleLayers {
 	my $self    = shift;
 	my $inCAM   = shift;
 	my $jobId   = shift;
 	my $step    = shift;    # step which is breaked and controlled
 	my $breakSR = shift;
 
-	my @lPressfit = ();
+	my @lTol = ();
 
-	my @layers = CamDrilling->GetNCLayersByTypes( $inCAM, $jobId, [ EnumsGeneral->LAYERTYPE_plt_nDrill ] );
+	my @layers = CamDrilling->GetNCLayersByTypes( $inCAM, $jobId, [ EnumsGeneral->LAYERTYPE_nplt_nDrill, EnumsGeneral->LAYERTYPE_nplt_nMill ] );
 
 	if (@layers) {
 
 		foreach my $l (@layers) {
-			my @result = CamDTM->GetDTMToolsByType( $inCAM, $jobId, $step, $l->{"gROWname"}, "press_fit", $breakSR );
+			my @result = grep { $_->{"gTOOLmin_tol"} > 0 || $_->{"gTOOLmax_tol"} }
+			  CamDTM->GetDTMTools( $inCAM, $jobId, $step, $l->{"gROWname"}, 1 );
 
 			if ( scalar(@result) ) {
-				push( @lPressfit, $l->{"gROWname"} );
+				push( @lTol, $l->{"gROWname"} );
 			}
 		}
 	}
- 
-	return @lPressfit;
+
+	return @lTol;
 }
 
-# Return if exist pressfit in job in layer m,f
-sub ExistPressfitJob {
+# Return if exist tolerance holes in job in layer m,f
+sub ExistTolHoleJob {
 	my $self    = shift;
 	my $inCAM   = shift;
 	my $jobId   = shift;
@@ -55,7 +56,7 @@ sub ExistPressfitJob {
 
 	my $exist = 0;
 
-	my @l = $self->GetPressfitLayers( $inCAM, $jobId, $step, $breakSR );
+	my @l = $self->GetTolHoleLayers( $inCAM, $jobId, $step, $breakSR );
 
 	if ( scalar(@l) ) {
 		return 1;
@@ -66,8 +67,6 @@ sub ExistPressfitJob {
 
 }
 
-
-
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#
@@ -75,18 +74,19 @@ sub ExistPressfitJob {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-		use aliased 'Packages::Tooling::PressfitOperation';
+	use aliased 'Packages::Tooling::TolHoleOperation';
 	use aliased 'Packages::InCAM::InCAM';
 
 	my $inCAM = InCAM->new();
 
 	my $jobId    = "d152457";
 	my $stepName = "panel";
-	my $res  = PressfitOperation->ExistPressfitJob( $inCAM, $jobId, $stepName, 1);
+	my $res  = TolHoleOperation->ExistTolHoleJob( $inCAM, $jobId, $stepName);
 	
 	 
 	
 	die;
+	
 
 }
 
