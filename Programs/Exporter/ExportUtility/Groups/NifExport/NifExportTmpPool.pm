@@ -79,7 +79,7 @@ sub Run {
 		$taskData->SetPressfit($pressfit);
 	}
 	if(defined $tolHole){
-		$groupData->SetToleranceHole($tolHole);
+		$taskData->SetToleranceHole($tolHole);
 	}
 	if ( defined $maska01 ) {
 		$taskData->SetMaska01($maska01);
