@@ -79,7 +79,7 @@ sub ElTestExists {
 			closedir($d);
 		}
 
-		if ( scalar( grep { $_ =~ /^A[357]_/i } @dirs ) < 1 ) {
+		if ( scalar( grep { $_ =~ /^original$/i } @dirs ) < 1 ) {
 
 			$elTestExist = 0;
 		}
@@ -102,11 +102,11 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	use aliased 'Packages::InCAM::InCAM';
 
 	my $inCAM = InCAM->new();
-	my $jobId = "d167723";
+	my $jobId = "d226809";
 	my $step  = "o+1";
 
 	my $mess = "";
-	my $res = CheckElTest->ElTestRequested($jobId );
+	my $res = CheckElTest->ElTestExists($jobId );
 
 	print "$res - $mess";
 
