@@ -14,7 +14,7 @@ use Try::Tiny;
 use Log::Log4perl qw(get_logger :levels);
 
 #local library
-use lib qw( \\\\incam\\InCAM\\server\\site_data\\scripts);
+#use lib qw( \\\\incam\\InCAM\\server\\site_data\\scripts);
 
 #use lib qw( C:\Perl\site\lib\TpvScripts\Scripts );
 
@@ -34,7 +34,7 @@ use aliased 'Connectors::TpvConnector::TaskOndemMethods';
 my $orderId  = shift;    # job order for process
 my $taskType = shift;    # type of task to process
 
-#$orderId = "d223954-01";
+#$orderId = "d152457-01";
 #$taskType = TaskEnums->PCB_TOPRODUCE;
 
 my $logConfig = "c:\\Apache24\\htdocs\\tpv\\Logger.conf";
@@ -119,10 +119,10 @@ sub __PcbToProduce {
 	}
 	
 	# 3) Add rout speed to NC rout operation
-	#eval {
+	eval {
 
 		NCFiles->CompleteRoutFeed($orderId);
-	#};
+	};
 	if ($@) {
 
 		$processed = 0;
