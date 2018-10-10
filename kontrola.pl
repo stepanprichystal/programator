@@ -184,7 +184,7 @@ $main->MainLoop;
 	opendir ( BOARDS, EnumsPaths->Client_ELTESTS );
 		while( (my $jobItem = readdir(BOARDS))){
 					if ($jobItem =~ /[Dd]\d{6,}/) {
-							if (-e EnumsPaths->Client_ELTESTS . "$jobItem/server.ini") {
+							if (-e EnumsPaths->Client_ELTESTS . "$jobItem/$jobItem.pad") {
 									_MoveToServer($jobItem);
 							}
 					}
