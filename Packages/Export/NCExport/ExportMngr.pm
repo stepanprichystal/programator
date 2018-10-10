@@ -28,6 +28,7 @@ use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'Packages::Export::NCExport::Helpers::NCHelper';
 use aliased 'CamHelpers::CamDrilling';
 use aliased 'CamHelpers::CamJob';
+use aliased 'Helpers::JobHelper';
 use aliased 'Packages::Export::NCExport::Helpers::NpltDrillHelper';
 use aliased 'Packages::CAMJob::Routing::RoutSpeed::RoutSpeed';
 use aliased 'Enums::EnumsGeneral';
@@ -217,7 +218,7 @@ sub __SetRoutFeedSpeed {
 
 	# If pcb is in status 'Ve vyrobe', set rout speed
 	my $lastOrder = $self->{"jobId"} . "-" . HegMethods->GetPcbOrderNumber( $self->{"jobId"} );
-	if ( HegMethods->GetStatusOfOrder( $lastOrder, 0 ) == 4 ) {
+	if ( HegMethods->GetStatusOfOrder( $lastOrder, 0 ) == 4 || JobHelper->GetIsFlex($self->{"jobId"})) {
 
 		my $info = HegMethods->GetInfoAfterStartProduce($lastOrder);
 
@@ -342,7 +343,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	use aliased 'Packages::InCAM::InCAM';
 
-	my $jobId = "d226577";
+	my $jobId = "d174897";
 	my $step  = "panel";
 	my $inCAM = InCAM->new();
 

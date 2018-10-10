@@ -164,10 +164,13 @@ sub __GetPacketType {
 	for ( my $i = scalar(@paketThick) - 1 ; $i >= 0 ; $i-- ) {
 
 		unless ( defined $minTool ) {
-			die "";
+		 
+			$defPaketIdx = scalar(@paketThick)-1;
+			last;
 		}
+		
 		die "Minimal slot tool: $minTool is not defined in \"RoutSpeedTable\"" unless ( defined $routSpeedTable{$minTool} );
-
+		 
 		if ( defined $routSpeedTable{$minTool}->[$i] ) {
 			$defPaketIdx = $i;
 			last;
@@ -197,7 +200,15 @@ sub __GetPacketType {
 		}
 	}
 	else {
+		
+		
 		my $pnlPerPacket = int( $paketThick[$defPaketIdx] / $matThick );
+		
+		# if  at least one panel not match minimum panel count per packet (depand on minimal rout tool)
+		# set default one panel per paket
+		if($pnlPerPacket == 0){
+			$pnlPerPacket = 1;
+		}
 
 		# here is exception, if two packet,
 		# try to split panels amount equally among theses two packets
