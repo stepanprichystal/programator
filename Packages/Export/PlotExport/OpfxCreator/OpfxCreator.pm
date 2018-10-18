@@ -367,7 +367,7 @@ sub __OutputPlotSets {
 			"layer"       => $outputL,
 			"device_type" => "LP7008",
 			"polarity"    => $polarity,
-			"xstretch"    => "100.013",    # magic constant, given historicaly
+			"xstretch"    => "100.000",    # magic constant, given historicaly
 			"ystretch"    => "100.013"
 		);
 
