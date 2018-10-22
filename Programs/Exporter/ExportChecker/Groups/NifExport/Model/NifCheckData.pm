@@ -429,7 +429,8 @@ sub __CheckDataCodeJob {
 
 	unless ( $defaultInfo->IsPool() ) {
 
-		@steps = map { $_->{"stepName"} } CamStepRepeat->GetUniqueStepAndRepeat( $inCAM, $jobId, "panel" );
+		@steps = map { $_->{"stepName"} } CamStepRepeat->GetUniqueStepAndRepeat( $inCAM, $jobId, "panel");
+		JobHelper->RemoveSpecPnlSteps(\@steps);
 	}
 
 	foreach my $step (@steps) {

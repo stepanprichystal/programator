@@ -849,13 +849,21 @@ sub __SetLayoutCustomerInfo {
 
 	my @request = ();
 
+	if ( defined $custNote->SizeX() ) {
+
+		push( @request, "- Stencil width: " . $custNote->SizeX() . "mm" );
+	}
+	if ( defined $custNote->SizeY() ) {
+
+		push( @request, "- Stencil height: " . $custNote->SizeY() . "mm" );
+	}
 	if ( defined $custNote->HoleDistX() ) {
 
-		push( @request, "- Vertical distance between hole: " . $custNote->HoleDistX() . "mm" );
+		push( @request, "- Horizontal distance between hole: " . $custNote->HoleDistX() . "mm" );
 	}
 	if ( defined $custNote->HoleDistY() ) {
 
-		push( @request, "- Horizontal distance between hole: " . $custNote->HoleDistY() . "mm" );
+		push( @request, "- Vertical distance between hole: " . $custNote->HoleDistY() . "mm" );
 	}
 	if ( defined $custNote->OuterHoleDist() ) {
 

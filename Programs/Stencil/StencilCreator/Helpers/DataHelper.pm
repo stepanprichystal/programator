@@ -287,6 +287,13 @@ sub SetDefaultByCustomer {
 	my $jobId = $self->{"jobId"};
 
 	my $result = 1;
+	
+	# Set stencil size X + size Y
+	if ( !$self->{"isPool"} && defined $self->{"customerNote"}->SizeX() && defined $self->{"customerNote"}->SizeY() ) {
+	
+		$self->{"dataMngr"}->SetStencilSizeX($self->{"customerNote"}->SizeX());
+		$self->{"dataMngr"}->SetStencilSizeY($self->{"customerNote"}->SizeY());
+	}
 
 	my $schemaType = $self->{"dataMngr"}->GetSchemaType();
 

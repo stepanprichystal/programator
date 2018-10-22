@@ -19,6 +19,7 @@ use aliased 'CamHelpers::CamHelper';
 use aliased 'CamHelpers::CamStepRepeat';
 use aliased 'CamHelpers::CamAttributes';
 use aliased 'Connectors::HeliosConnector::HegMethods';
+use aliased 'Helpers::JobHelper';
 
 #-------------------------------------------------------------------------------------------#
 #  Public method
@@ -54,7 +55,6 @@ sub Run {
 	my $custPnlExist = CamAttributes->GetJobAttrByName( $inCAM, $jobId, "customer_panel" );    # zakaznicky panel
 	my $custSetExist = CamAttributes->GetJobAttrByName( $inCAM, $jobId, "customer_set" );      # zakaznicke sady
 
-	 
 	my $multiplHeg = HegMethods->GetInfoDimensions($jobId)->{"nasobnost_panelu"};
 
 	# 1) Check only when nasobnost_panelu is set, thus potentional missing of job attributes
@@ -91,7 +91,9 @@ sub Run {
 	# 2) Check if "nasobnost_panelu" is not set and real number of step is in panel is not equal to "nasobnost" in nif
 	if ( !defined $multiplHeg || $multiplHeg eq "" || $multiplHeg == 0 ) {
 
-		my $multiplReal = scalar( CamStepRepeat->GetRepeatStep( $inCAM, $jobId, "panel" ) );
+		my @sr = map { $_->{"stepName"} } CamStepRepeat->GetRepeatStep( $inCAM, $jobId, "panel" );
+		JobHelper->RemoveSpecPnlSteps( \@sr );
+		my $multiplReal   = scalar(@sr);
 		my $multiplPnlHeg = HegMethods->GetInfoDimensions($jobId)->{"nasobnost"};
 
 		if ( $multiplReal != $multiplPnlHeg ) {
@@ -108,11 +110,11 @@ sub Run {
 	# If customer pnl, check if all information are set
 	if ( $custPnlExist eq "yes" ) {
 
-		my $custPnlX = CamAttributes->GetJobAttrByName( $inCAM, $jobId, "cust_pnl_singlex" );
-		my $custPnlY = CamAttributes->GetJobAttrByName( $inCAM, $jobId, "cust_pnl_singley" );
+		my $custPnlX    = CamAttributes->GetJobAttrByName( $inCAM, $jobId, "cust_pnl_singlex" );
+		my $custPnlY    = CamAttributes->GetJobAttrByName( $inCAM, $jobId, "cust_pnl_singley" );
 		my $custPnlMult = CamAttributes->GetJobAttrByName( $inCAM, $jobId, "cust_pnl_multipl" );
 
-		if ( !defined $custPnlX || !defined $custPnlY || !defined $custPnlMult  || $custPnlX == 0 || $custPnlY == 0  || $custPnlMult == 0 ) {
+		if ( !defined $custPnlX || !defined $custPnlY || !defined $custPnlMult || $custPnlX == 0 || $custPnlY == 0 || $custPnlMult == 0 ) {
 			$self->_AddChange(
 							   "V atributech jobu je aktivní 'zákaznický panel', ale informace není kompletní"
 								 . " (atributy jobu: \"cust_pnl_singlex\", \"cust_pnl_singley\", \"cust_pnl_multipl\")",
@@ -146,7 +148,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	use aliased 'Packages::InCAM::InCAM';
 
 	my $inCAM = InCAM->new();
-	my $jobId = "f52457";
+	my $jobId = "d226970";
 
 	my $check = Change->new();
 

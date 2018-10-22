@@ -59,7 +59,9 @@ sub GetCustomerInfo {
 					IF(t1.CenterByData = '', null , t1.CenterByData) as CenterByData,				
 					IF(t1.MinHoleDataDist = '', null , t1.MinHoleDataDist) as MinHoleDataDist,
 					IF(t1.NoHalfHoles = '', null , t1.NoHalfHoles) as NoHalfHoles,
-					IF(t1.NoFiducial = '', null , t1.NoFiducial) as NoFiducial
+					IF(t1.NoFiducial = '', null , t1.NoFiducial) as NoFiducial,
+					IF(t1.SizeX = '', null , t1.SizeX) as SizeX,
+					IF(t1.SizeY = '', null , t1.SizeY) as SizeY
 					
     				FROM customer_note_stencil AS t1
     				WHERE t1.CustomerId = _CustomerId

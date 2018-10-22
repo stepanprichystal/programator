@@ -193,6 +193,21 @@ sub GetNetlistStepNames {
 	return @s;
 }
 
+
+# Remove special panel steps like coupons from list of step
+sub RemoveSpecPnlSteps {
+	my $self = shift;
+	my $steps = shift;
+	
+	for(my $i= scalar(@{$steps}) -1;  $i >= 0; $i--){
+		
+		if( $steps->[$i] =~ /coupon_?/){
+			
+			splice @{$steps}, $i, 1;
+		}
+	} 
+}
+
 sub GetJobOutput {
 	my $self  = shift;
 	my $jobId = shift;

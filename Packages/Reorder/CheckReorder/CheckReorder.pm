@@ -156,7 +156,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	use Data::Dump qw(dump);
 
 	my $inCAM = InCAM->new();
-	my $jobId = "d152456";
+	my $jobId = "d226970";
 
 	my $ch = CheckReorder->new( $inCAM, $jobId );
 	my @arr = $ch->RunChecks();

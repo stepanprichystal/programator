@@ -174,6 +174,8 @@ sub GetUniqueStepAndRepeat {
 	return @steps;
 }
 
+ 
+
 #Return information about steps in given step
 sub GetStepAndRepeat {
 	my $self     = shift;
@@ -438,24 +440,20 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	my $step  = "panel";
 
 	my @sr = CamStepRepeat->GetStepAndRepeat( $inCAM, $jobId, $step );
-	
-#	my $l = undef;
-#	
-#	for(my $i= 0;  $i < scalar(@sr); $i++){
-# 
-#		if(  $srg[$i]->{"SRstep"} eq "mpanel"){	
-#			$l = $i+1;
-#			last;
-#		}
-#	}
-#	
-#	
-#	
-#	 
 
-	 
-
-	 
+	#	my $l = undef;
+	#
+	#	for(my $i= 0;  $i < scalar(@sr); $i++){
+	#
+	#		if(  $srg[$i]->{"SRstep"} eq "mpanel"){
+	#			$l = $i+1;
+	#			last;
+	#		}
+	#	}
+	#
+	#
+	#
+	#
 
 }
 

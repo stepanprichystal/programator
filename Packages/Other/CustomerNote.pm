@@ -150,6 +150,26 @@ sub RequiredSchema {
 	return $self->{"notes"}->{"RequiredSchema"};
 }
 
+# type of plated holes vrtane/vysledne/undef
+sub PlatedHolesType {
+	my $self = shift;
+
+	if ( !$self->Exist() ) {
+		return undef;
+	}
+
+	my $t = undef;
+
+	if ( $self->{"notes"}->{"PlatedHolesType"} eq "f" ) {
+		$t = EnumsDrill->DTM_VYSLEDNE;
+
+	}
+	elsif ( $self->{"notes"}->{"PlatedHolesType"} eq "d" ) {
+		$t = EnumsDrill->DTM_VRTANE;
+	}
+	return $t;
+}
+
 # ======== Stencil notes ============
 
 sub HoleDistX {
@@ -222,24 +242,24 @@ sub NoFiducial {
 	return $self->{"notes"}->{"NoFiducial"};
 }
 
-# type of plated holes vrtane/vysledne/undef
-sub PlatedHolesType {
+sub SizeX {
 	my $self = shift;
 
 	if ( !$self->Exist() ) {
 		return undef;
 	}
 
-	my $t = undef;
+	return $self->{"notes"}->{"SizeX"};
+}
 
-	if ( $self->{"notes"}->{"PlatedHolesType"} eq "f" ) {
-		$t = EnumsDrill->DTM_VYSLEDNE;
+sub SizeY {
+	my $self = shift;
 
+	if ( !$self->Exist() ) {
+		return undef;
 	}
-	elsif ( $self->{"notes"}->{"PlatedHolesType"} eq "d" ) {
-		$t = EnumsDrill->DTM_VRTANE;
-	}
-	return $t;
+
+	return $self->{"notes"}->{"SizeY"};
 }
 
 #-------------------------------------------------------------------------------------------#

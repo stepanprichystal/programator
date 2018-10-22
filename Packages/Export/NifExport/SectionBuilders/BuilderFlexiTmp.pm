@@ -153,9 +153,9 @@ sub Build {
 		
 		# program na zakryti
 		 if ( $info->{"poznamka"} !~ /type=rigid-flexi-i/i ) {
-		$section->AddRow( "expozice_zakryti_top",   "307x407_fullcu_top_mdi.xml" );
+		$section->AddRow( "expozice_zakryti_top",   "307x407_plna_cu_top_mdi.xml" );
 		 }
-		 $section->AddRow( "expozice_zakryti_bot",   "307x407_fullcu_bot_mdi.xml" );
+		 $section->AddRow( "expozice_zakryti_bot",   "307x407_plna_cu_bot_mdi.xml" );
 		
 
 		my @rigidCores = grep { $_->GetQId() != 10 } $stackup->GetAllCores();
