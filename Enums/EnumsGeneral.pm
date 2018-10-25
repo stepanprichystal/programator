@@ -101,17 +101,11 @@ use constant {
 			   DB_TEST       => 'db1'
 };
 
-1;
-
-#
-#package EnumsGeneral::UserName;
-#
-#use constant {
-#    SPR => mku,
-#	MKU => 'Warning',
-#	RVI=>'Question',
-#	RC => 'Information'
-#};
+# names of special coupon steps
+use constant {
+			   Coupon_IMPEDANCE => 'coupon_impedance', # coupon for impedance measurement
+			   Coupon_DRILL =>      => 'coupon_drill'  # coupon for drill hole measrument
+};
 
 1;
-
+ 

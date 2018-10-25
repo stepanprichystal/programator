@@ -26,6 +26,7 @@ use aliased 'CamHelpers::CamDrilling';
 use aliased 'CamHelpers::CamGoldArea';
 use aliased 'CamHelpers::CamHistogram';
 use aliased 'CamHelpers::CamStepRepeat';
+use aliased 'CamHelpers::CamStepRepeatPnl';
 use aliased 'CamHelpers::CamDTM';
 use aliased 'Packages::Tooling::PressfitOperation';
 use aliased 'Packages::CAMJob::Marking::Marking';
@@ -429,8 +430,7 @@ sub __CheckDataCodeJob {
 
 	unless ( $defaultInfo->IsPool() ) {
 
-		@steps = map { $_->{"stepName"} } CamStepRepeat->GetUniqueStepAndRepeat( $inCAM, $jobId, "panel");
-		JobHelper->RemoveSpecPnlSteps(\@steps);
+		@steps = map { $_->{"stepName"} } CamStepRepeatPnl->GetUniqueStepAndRepeat( $inCAM, $jobId);
 	}
 
 	foreach my $step (@steps) {

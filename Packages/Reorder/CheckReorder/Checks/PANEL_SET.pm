@@ -17,6 +17,7 @@ use warnings;
 use aliased 'Packages::NifFile::NifFile';
 use aliased 'CamHelpers::CamHelper';
 use aliased 'CamHelpers::CamStepRepeat';
+use aliased 'CamHelpers::CamStepRepeatPnl';
 use aliased 'CamHelpers::CamAttributes';
 use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'Helpers::JobHelper';
@@ -91,9 +92,7 @@ sub Run {
 	# 2) Check if "nasobnost_panelu" is not set and real number of step is in panel is not equal to "nasobnost" in nif
 	if ( !defined $multiplHeg || $multiplHeg eq "" || $multiplHeg == 0 ) {
 
-		my @sr = map { $_->{"stepName"} } CamStepRepeat->GetRepeatStep( $inCAM, $jobId, "panel" );
-		JobHelper->RemoveSpecPnlSteps( \@sr );
-		my $multiplReal   = scalar(@sr);
+		my $multiplReal   = scalar( CamStepRepeatPnl->GetRepeatStep( $inCAM, $jobId));
 		my $multiplPnlHeg = HegMethods->GetInfoDimensions($jobId)->{"nasobnost"};
 
 		if ( $multiplReal != $multiplPnlHeg ) {

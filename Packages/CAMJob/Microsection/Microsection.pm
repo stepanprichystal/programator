@@ -55,7 +55,7 @@ sub CreateCoupon {
 
 	my @groups = $self->__GetGroups();
 
-	my $stepName = "coupon_drill";
+	my $stepName = EnumsGeneral->Coupon_DRILL;
 
 	my $step = SRStep->new( $inCAM, $jobId, $stepName );
 	$step->Create( (scalar(@groups) * $CPN_GROUP_WIDTH)/1000, $CPN_HEIGHT/1000, 0, 0, 0, 0 );
@@ -268,7 +268,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	use aliased 'Packages::InCAM::InCAM';
 
 	my $inCAM = InCAM->new();
-	my $jobId = "d152457";
+	my $jobId = "d226970";
 	my $step  = "panel";
 
 	my $m = Microsection->new( $inCAM, $jobId );

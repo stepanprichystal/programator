@@ -6,7 +6,7 @@
 # --------------------------------------------------------------------------------------
 
 [t = Step name]
-stepName   = coupon 
+stepName   = coupon_impedance
 
 
 # DIMENSIONS SETTINGS

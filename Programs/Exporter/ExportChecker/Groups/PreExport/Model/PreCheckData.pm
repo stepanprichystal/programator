@@ -22,6 +22,8 @@ use aliased 'CamHelpers::CamHistogram';
 use aliased 'Enums::EnumsProducPanel';
 use aliased 'CamHelpers::CamGoldArea';
 use aliased 'CamHelpers::CamStepRepeat';
+use aliased 'CamHelpers::CamStepRepeatPnl';
+
 use aliased 'CamHelpers::CamAttributes';
 use aliased 'Packages::Stackup::StackupOperation';
 use aliased 'Packages::CAM::Netlist::NetlistCompare';
@@ -217,23 +219,25 @@ sub OnCheckGroupData {
 
 			if ( $l->{"gROWname"} =~ /^v\d$/ ) {
 
-				my %symHist = CamHistogram->GetSymHistogram( $inCAM, $jobId, $stepName, $l->{"gROWname"} );
+				foreach my $s ( CamStepRepeatPnl->GetUniqueStepAndRepeat( $inCAM, $jobId) ) {
 
-				if ( $l->{"gROWpolarity"} eq "negative" ) {
-					next;
+					my %symHist = CamHistogram->GetSymHistogram( $inCAM, $jobId, $s->{"stepName"}, $l->{"gROWname"} );
+
+					if ( $l->{"gROWpolarity"} eq "negative" ) {
+						next;
+					}
+
+					my @thermalPads = grep { $_->{"sym"} =~ /th/ } @{ $symHist{"pads"} };
+
+					if ( scalar(@thermalPads) ) {
+						$dataMngr->_AddErrorResult(
+													"Inner layers",
+													"Step: \"".$s->{"stepName"}."\", layer : \""
+													  . $l->{"gROWname"}
+													  . "\" contains thermal pads and is type: \"positive\". Are you sure, layer shouldn't be negative?"
+						);
+					}
 				}
-
-				my @thermalPads = grep { $_->{"sym"} =~ /th/ } @{ $symHist{"pads"} };
-
-				if ( scalar(@thermalPads) ) {
-					$dataMngr->_AddErrorResult(
-												"Inner layers",
-												"Layer : \""
-												  . $l->{"gROWname"}
-												  . "\" contains thermal pads and is type: \"positive\". Are you sure, layer shouldn't be negative?"
-					);
-				}
-
 			}
 		}
 	}
@@ -319,9 +323,9 @@ sub OnCheckGroupData {
 		if ( $h > 408 ) {
 
 			$dataMngr->_AddErrorResult(
-				"Panel dimension",
-				"Příliš velký panel. \nPokud job obsahuje zlacený konektor nebo povrch je galvanické zlato,"
-				  . " panel musí mýt maximálně tak velký jako malý standardní panel."
+										"Panel dimension",
+										"Příliš velký panel. \nPokud job obsahuje zlacený konektor nebo povrch je galvanické zlato,"
+										  . " panel musí mýt maximálně tak velký jako malý standardní panel."
 			);
 		}
 
@@ -334,17 +338,23 @@ sub OnCheckGroupData {
 		$dataMngr->_AddErrorResult( "Gold finger",
 									"Je použit špatný atribut pro konektorové zlato: \".gold_finger\". Zmněň atribut na \".gold_plating\"." );
 	}
-	
+
 	# Check if goldfinger doesnt exist in job, but are checked in IS
-	if ( $defaultInfo->GetPcbBaseInfo()->{"zlaceni"}  =~ /^A$/i && !CamGoldArea->GoldFingersExist( $inCAM, $jobId, $stepName, undef, ".gold_plating" ) ) {
-		
-		$dataMngr->_AddErrorResult( "Gold connector", "V IS je požadavek na zlacení, ale v desce nebyl nalezen zlacený konektor (atribut .gold_plating )" );
+	if ( $defaultInfo->GetPcbBaseInfo()->{"zlaceni"} =~ /^A$/i
+		 && !CamGoldArea->GoldFingersExist( $inCAM, $jobId, $stepName, undef, ".gold_plating" ) )
+	{
+
+		$dataMngr->_AddErrorResult( "Gold connector",
+									"V IS je požadavek na zlacení, ale v desce nebyl nalezen zlacený konektor (atribut .gold_plating )" );
 	}
-	
+
 	# Check if goldfinger doesnt exist in job, but thera are layers goldc, golds
-	if ( ($defaultInfo->LayerExist("goldc") || $defaultInfo->LayerExist("golds") || $defaultInfo->LayerExist("fk") ) && !CamGoldArea->GoldFingersExist( $inCAM, $jobId, $stepName, undef, ".gold_plating" ) ) {
-		
-		$dataMngr->_AddErrorResult( "Gold connector", "V matrixu je některá z vrstev: goldc;golds;fk, ale nebyl nalezen zlacený konektor (atribut .gold_plating )" );
+	if ( ( $defaultInfo->LayerExist("goldc") || $defaultInfo->LayerExist("golds") || $defaultInfo->LayerExist("fk") )
+		 && !CamGoldArea->GoldFingersExist( $inCAM, $jobId, $stepName, undef, ".gold_plating" ) )
+	{
+
+		$dataMngr->_AddErrorResult( "Gold connector",
+									"V matrixu je některá z vrstev: goldc;golds;fk, ale nebyl nalezen zlacený konektor (atribut .gold_plating )" );
 	}
 
 	# 14) Test if stackup material is on stock

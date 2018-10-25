@@ -19,6 +19,7 @@ use aliased 'CamHelpers::CamDrilling';
 use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'CamHelpers::CamHelper';
 use aliased 'CamHelpers::CamStepRepeat';
+use aliased 'CamHelpers::CamStepRepeatPnl';
 use aliased 'CamHelpers::CamHistogram';
 use aliased 'Programs::Exporter::ExportChecker::Groups::NifExport::Presenter::NifHelper';
 use aliased 'Packages::CAMJob::Drilling::DrillChecking::LayerErrorInfo';
@@ -93,7 +94,7 @@ sub OnCheckGroupData {
 	}
 
 	# 3) If panel contain more drifrent step, check if fsch exist
-	my @uniqueSteps = CamStepRepeat->GetUniqueStepAndRepeat( $inCAM, $jobId, "panel" );
+	my @uniqueSteps = CamStepRepeatPnl->GetUniqueStepAndRepeat( $inCAM, $jobId, 1, [EnumsGeneral->Coupon_IMPEDANCE]);
 
 	if ( scalar(@uniqueSteps) > 1 && !$defaultInfo->LayerExist("fsch") ) {
 
