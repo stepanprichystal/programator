@@ -24,4 +24,17 @@
       <magazine material="IS400">I7</magazine>
       <magazine material="PCL370HR">I7</magazine>
    </operation>
+     <operation name="PrepregRout">
+      <magazine material="FR4">I7</magazine>
+      <magazine material="IS400">I7</magazine>
+   </operation>
+     <operation name="FlexRout">
+      <magazine material="FR4">I7</magazine>
+      <magazine material="IS400">I7</magazine>
+   </operation>
+   <operation name="CoverlayRout">
+      <magazine material="FR4">I7</magazine>
+      <magazine material="IS400">I7</magazine>
+   </operation>
+   
 </operations>

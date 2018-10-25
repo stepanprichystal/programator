@@ -241,16 +241,6 @@ sub __CheckUniqueTools {
 					push( @diffs, { "n" => "magazine info", "t1" => $tools[$i]->GetMagazine(), "t2" => $tools[$j]->GetMagazine() } )
 				}
 
-				if ( $tools[$i]->GetTolPlus() ne $tools[$j]->GetTolPlus() ) {
-					$result = 0;
-					push( @diffs, { "n" => "tolerance+", "t1" => $tools[$i]->GetTolPlus(), "t2" => $tools[$j]->GetTolPlus() } )
-				}
-
-				if ( $tools[$i]->GetTolMinus() ne $tools[$j]->GetTolMinus() ) {
-					$result = 0;
-					push( @diffs, { "n" => "tolerance-", "t1" => $tools[$i]->GetTolMinus(), "t2" => $tools[$j]->GetTolMinus() } )
-				}
-
 				if ( !$result ) {
 
 					my $mStr = "NC layer: " . $self->{"unitDTM"}->{"layer"} . ". ";

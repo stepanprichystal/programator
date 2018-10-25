@@ -25,6 +25,7 @@ use aliased 'Packages::CAM::UniDTM::UniDTM::UniDTMCheck';
 use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'Helpers::GeneralHelper';
 use aliased 'Helpers::FileHelper';
+use aliased 'Helpers::JobHelper';
 use aliased 'CamHelpers::CamHelper';
 use aliased 'Packages::CAM::UniDTM::PilotDef::PilotDef';
 
@@ -410,6 +411,7 @@ sub __GetOperationByLayer {
 
 	my $operation = undef;
 
+	# a) Determine type depand on plated/nonplated and hlole/chain type
 	if ( $l{"plated"} && $typeProc eq Enums->TypeProc_HOLE ) {
 
 		$operation = "PlatedDrill";
@@ -431,15 +433,30 @@ sub __GetOperationByLayer {
 
 	}
 
-	if ( $l{"type"} eq EnumsGeneral->LAYERTYPE_nplt_rsMill ) {
-		$operation = "RoutBeforeEtch";
-	}
+	# b) Determine type depand on layer type
+	if ( $typeProc eq Enums->TypeProc_CHAIN && $l{"type"} eq EnumsGeneral->LAYERTYPE_nplt_rsMill ) {
 
-	if (    $l{"type"} eq EnumsGeneral->LAYERTYPE_nplt_cvrlycMill
-		 || $l{"type"} eq EnumsGeneral->LAYERTYPE_nplt_cvrlysMill
-		 || $l{"type"} eq EnumsGeneral->LAYERTYPE_nplt_prepregMill )
+		$operation = "RoutBeforeEtch";
+
+	}
+	elsif (
+			$typeProc eq Enums->TypeProc_CHAIN
+			&& (    $l{"type"} eq EnumsGeneral->LAYERTYPE_nplt_cvrlycMill
+				 || $l{"type"} eq EnumsGeneral->LAYERTYPE_nplt_cvrlysMill )
+	  )
 	{
-		$operation = "SpecialFlex";
+		$operation = "CoverlayRout";
+
+	}
+	elsif ( $typeProc eq Enums->TypeProc_CHAIN && $l{"type"} eq EnumsGeneral->LAYERTYPE_nplt_prepregMill ) {
+
+		$operation = "PrepregRout";
+
+	}
+	elsif ( $typeProc eq Enums->TypeProc_CHAIN && JobHelper->GetIsFlex($jobId)) {
+
+		$operation = "FlexRout";
+
 	}
 
 	return $operation;

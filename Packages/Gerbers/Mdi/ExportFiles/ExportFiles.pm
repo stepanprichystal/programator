@@ -32,7 +32,6 @@ use aliased 'Packages::Gerbers::Mdi::ExportFiles::ExportXml';
 use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'Packages::Technology::EtchOperation';
 use aliased 'Packages::TifFile::TifSigLayers';
- 
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -106,10 +105,6 @@ sub __ExportLayers {
 
 	foreach my $l (@layers) {
 
-		if($l->{"gROWname"} eq "plgc"){
-			print STDERR "dd";
-		}
-
 		CamLayer->WorkLayer( $inCAM, $l->{"gROWname"} );
 
 		# new result item for lyer
@@ -119,7 +114,7 @@ sub __ExportLayers {
 		my %lim = $self->__GetLayerLimit( $l->{"gROWname"} );
 
 		# 1) Optimize levels
-		$self->__OptimizeLayer( $l);
+		$self->__OptimizeLayer($l);
 
 		# 2) insert frame 100µm width around pcb (fr frame coordinate)
 		$self->__PutFrameAorundPcb( $l->{"gROWname"}, \%lim );
@@ -130,19 +125,17 @@ sub __ExportLayers {
 		# 4) compensate layer by computed compensation
 		$self->__CompensateLayer( $l->{"gROWname"} );
 
-
 		# 5) export gerbers
 		my $fiducDCode = undef;
 		my $tmpFile = $self->__ExportGerberLayer( $l->{"gROWname"}, \$fiducDCode, $resultItem );
-		
+
 		# 6) export xml
 		$self->{"exportXml"}->Export( $l, $fiducDCode );
-		
+
 		# 7) Copy file to mdi folder after exportig xml template
 		my $finalName = EnumsPaths->Jobs_PCBMDI . $jobId . $l->{"gROWname"} . "_mdi.ger";
 		copy( $tmpFile, $finalName ) or die "Unable to copy mdi gerber file from: $tmpFile.\n";
 		unlink($tmpFile);
-		
 
 		#  reise result of export
 		$self->_OnItemResult($resultItem);
@@ -248,18 +241,23 @@ sub __GetLayerLimit {
 
 	my %lim = ();
 
-	# if top/bot layer, clip around fr frame
-	if ( $self->{"layerCnt"} > 2 && ( $layerName =~ /^[(gold)m]*[cs]$/ ) ) {
+	# clip around fr frame if:
+
+	# - mask layer (mc;ms) layer
+	# - gold layer (goldc; golds)
+	# - signal layer (c;s) and not flex
+	if ( ( $self->{"layerCnt"} > 2 && $layerName =~ /^[(gold)m][cs]$/ )
+		 || $self->{"layerCnt"} > 2 && $layerName =~ /^[cs]$/ && !JobHelper->GetIsFlex($self->{"jobId"}) )
+	{
 
 		%lim = %{ $self->{"frLim"} };
-	}
-
-	#if inner layers, plg(c/s) layers clip around profile
-	elsif ( $layerName =~ /^v\d$/ ) {
-
-		%lim = %{ $self->{"profLim"} };
 
 	}
+	# clip around profile if
+	# - inner layers (vx)
+	# - plg(c/s) layers
+	# - signal layer (c;s) and pcb is flex
+	# - all other cases
 	else {
 
 		%lim = %{ $self->{"profLim"} };
@@ -304,7 +302,7 @@ sub __GetFrLimits {
 sub __ExportGerberLayer {
 	my $self          = shift;
 	my $layerName     = shift;
-	my $fiducDCode = shift;
+	my $fiducDCode    = shift;
 	my $resultItemGer = shift;
 
 	my $inCAM = $self->{"inCAM"};
@@ -332,9 +330,9 @@ sub __ExportGerberLayer {
 	my $tmpFullPath = EnumsPaths->Client_INCAMTMPOTHER . $layerName . $tmpFileId;
 
 	# 2) Add fiducial mark on the bbeginning of gerber data
-  	CamHelper->SetStep($inCAM, $self->{"step"});
+	CamHelper->SetStep( $inCAM, $self->{"step"} );
 	$$fiducDCode = FiducMark->AddalignmentMark( $inCAM, $jobId, $layerName, 'inch', $tmpFullPath, 'cross_*', $self->{"step"} );
-	CamHelper->SetStep($inCAM, $self->{"mdiStep"});
+	CamHelper->SetStep( $inCAM, $self->{"mdiStep"} );
 
 	return $tmpFullPath;
 }
@@ -349,21 +347,21 @@ sub __ClipAreaLayer {
 }
 
 # Optimize lazer in order contain only one level of features
-# Before optimiyation, countourize data in negative layers 
+# Before optimiyation, countourize data in negative layers
 # (in other case "sliver fills" are broken during data compensation)
 sub __OptimizeLayer {
-	my $self      = shift;
-	my $l = shift;
-	
+	my $self = shift;
+	my $l    = shift;
+
 	my $layerName = $l->{"gROWname"};
 
 	if ( $layerName =~ /^(plg)?[cs]$/ || $layerName =~ /^v\d$/ ) {
-				
+
 		if ( $l->{"gROWpolarity"} eq "negative" ) {
 			CamLayer->Contourize( $self->{"inCAM"}, $layerName );
 			CamLayer->WorkLayer( $self->{"inCAM"}, $layerName );
 		}
-		
+
 		my $res = CamLayer->OptimizeLevels( $self->{"inCAM"}, $layerName, 1 );
 		CamLayer->WorkLayer( $self->{"inCAM"}, $layerName );
 	}
@@ -383,22 +381,22 @@ sub __CompensateLayer {
 
 	if ( $layerName =~ /^c$/ || $layerName =~ /^s$/ || $layerName =~ /^v\d$/ ) {
 
-#		# read comp from tif file
-#		if ( $self->{"tifFile"}->TifFileExist() ) {
-			
-			my %sigLayers = $self->{"tifFile"}->GetSignalLayers();
-			$comp = $sigLayers{$layerName}->{'comp'};
-		
-#		}
-#		# read default comp (old pcb doesn't contain dif file)
-#		else{
-#			
-#			my $inner = $layerName =~ /^v\d+$/ ? 1 : 0;
-#			my $cuThick = JobHelper->GetBaseCuThick($jobId, $layerName);
-#
-#			$comp = EtchOperation->GetCompensation( $cuThick, $class, $inner );
-#		}
-	
+		#		# read comp from tif file
+		#		if ( $self->{"tifFile"}->TifFileExist() ) {
+
+		my %sigLayers = $self->{"tifFile"}->GetSignalLayers();
+		$comp = $sigLayers{$layerName}->{'comp'};
+
+		#		}
+		#		# read default comp (old pcb doesn't contain dif file)
+		#		else{
+		#
+		#			my $inner = $layerName =~ /^v\d+$/ ? 1 : 0;
+		#			my $cuThick = JobHelper->GetBaseCuThick($jobId, $layerName);
+		#
+		#			$comp = EtchOperation->GetCompensation( $cuThick, $class, $inner );
+		#		}
+
 	}
 
 	if ( $comp != 0 ) {
@@ -466,7 +464,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId    = "d218337";
+	my $jobId    = "d222763";
 	my $stepName = "panel";
 
 	my $export = ExportFiles->new( $inCAM, $jobId, $stepName );
