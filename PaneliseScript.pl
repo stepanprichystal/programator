@@ -36,6 +36,8 @@ use aliased 'CamHelpers::CamHistogram';
 use aliased 'CamHelpers::CamCopperArea';
 use aliased 'CamHelpers::CamGoldArea';
 use aliased 'CamHelpers::CamStepRepeat';
+use aliased 'CamHelpers::CamStepRepeatPnl';
+
 use aliased 'CamHelpers::CamStep';
 use aliased 'CamHelpers::CamFilter';
 
@@ -45,6 +47,7 @@ use aliased 'Packages::ProductionPanel::CheckPanel';
 use aliased 'Packages::ProductionPanel::CounterPoolPcb';
 
 use aliased 'Packages::Routing::RoutLayer::FlattenRout::CreateFsch';
+
 use aliased 'Packages::Routing::PilotHole';
 use aliased 'Packages::Routing::PlatedRoutAtt';
 use aliased 'Packages::Routing::PlatedRoutArea';
@@ -1123,7 +1126,7 @@ sub _Panelize {
 			}else{
 			
 				# If panel contain more drifrent step, the fsch create
-				my @uniqueSteps = CamStepRepeat->GetUniqueStepAndRepeat( $inCAM, $jobName, "panel" );
+				my @uniqueSteps = CamStepRepeatPnl->GetUniqueStepAndRepeat( $inCAM, $jobName);
 				if ( scalar(@uniqueSteps) > 1 ){
 							my $fsch = CreateFsch->new( $inCAM, $jobName);
 							   $fsch->Create();
