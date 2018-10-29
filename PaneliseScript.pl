@@ -28,8 +28,11 @@ use aliased 'Packages::CAMJob::Drilling::DrillChecking::LayerWarnInfo';
 use aliased 'Packages::Input::HelperInput';
 use aliased 'Packages::GuideSubs::Netlist::NetlistControl';
 
-use aliased 'CamHelpers::CamJob';
+
 use aliased 'CamHelpers::CamHelper';
+
+use aliased 'CamHelpers::CamJob';
+
 use aliased 'CamHelpers::CamLayer';
 use aliased 'CamHelpers::CamAttributes';
 use aliased 'CamHelpers::CamHistogram';
