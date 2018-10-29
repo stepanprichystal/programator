@@ -1129,7 +1129,7 @@ sub _Panelize {
 			}else{
 			
 				# If panel contain more drifrent step, the fsch create
-				my @uniqueSteps = CamStepRepeatPnl->GetUniqueStepAndRepeat( $inCAM, $jobName);
+				my @uniqueSteps = CamStepRepeatPnl->GetUniqueStepAndRepeat( $inCAM, $jobName, 1, [EnumsGeneral->Coupon_IMPEDANCE]);
 				if ( scalar(@uniqueSteps) > 1 ){
 							my $fsch = CreateFsch->new( $inCAM, $jobName);
 							   $fsch->Create();
@@ -1138,7 +1138,7 @@ sub _Panelize {
 				# Check if contain only one kind of nested step but with various rotation
 				if ( scalar(@uniqueSteps) == 1 ) {
 
-	  					my @repeatsSR = CamStepRepeatPnl->GetRepeatStep( $inCAM, $jobName);
+	  					my @repeatsSR = CamStepRepeatPnl->GetRepeatStep( $inCAM, $jobName, 1, [EnumsGeneral->Coupon_IMPEDANCE]);
 	      	
 				  		my $angle = $repeatsSR[0]->{"angle"};
 	  					my @diffAngle = grep { $_->{"angle"} != $angle } @repeatsSR;
