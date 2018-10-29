@@ -17,6 +17,8 @@ use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'CamHelpers::CamJob';
 use aliased 'CamHelpers::CamHelper';
 use aliased 'Packages::Routing::RoutLayer::FlattenRout::FlattenPanel::FlattenPanel';
+use aliased 'Helpers::JobHelper';
+use aliased 'Enums::EnumsGeneral';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -42,7 +44,8 @@ sub CreateFsch {
 
 	my $inCAM = $self->{"inCAM"};
 	
-	my $flatten = FlattenPanel->new( $inCAM, $masterJob, "panel", "f", "fsch", 1);
+	my @excludeSteps = grep { $_ ne EnumsGeneral->Coupon_IMPEDANCE } JobHelper->GetCouponStepNames();
+	my $flatten = FlattenPanel->new( $inCAM, $masterJob, "panel", "f", "fsch", 1, \@excludeSteps );
 
 	$flatten->{"onItemResult"}->Add( sub { $self->_OnItemResult(@_) } );
 

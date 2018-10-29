@@ -106,7 +106,7 @@ sub OnCheckGroupData {
 
 	if ( scalar(@uniqueSteps) == 1 ) {
 
-		my @repeatsSR = CamStepRepeat->GetRepeatStep( $inCAM, $jobId, "panel" );
+		my @repeatsSR = CamStepRepeatPnl->GetRepeatStep( $inCAM, $jobId, 1, [EnumsGeneral->Coupon_IMPEDANCE] );
 
 		my $angle = $repeatsSR[0]->{"angle"};
 		my @diffAngle = grep { $_->{"angle"} != $angle } @repeatsSR;
