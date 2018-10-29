@@ -27,6 +27,8 @@ use aliased 'Programs::Coupon::CpnWizard::WizardCore::Helper';
 use aliased 'Programs::Coupon::CpnPolicy::GroupPolicy';
 use aliased 'Programs::Coupon::CpnPolicy::GeneratorPolicy';
 use aliased 'Programs::Coupon::CpnBuilder::CpnBuilder';
+use aliased 'CamHelpers::CamJob';
+use aliased 'Helpers::JobHelper';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -70,6 +72,32 @@ sub Load {
 	for ( my $i = 0 ; $i < scalar(@constr) ; $i++ ) {
 
 		$self->{"cpnStripSett"}->{ $constr[$i] } = CpnStripSettings->new();
+	}
+
+	my $isol = JobHelper->GetIsolationByClass( CamJob->GetLimJobPcbClass( $self->{"inCAM"}, $self->{"jobId"}, "max" ) );
+	if ( $isol > 0 ) {
+
+		# Set value of min Pad2GND isolation according pcb costruction class
+		for ( my $i = 0 ; $i < scalar(@constr) ; $i++ ) {
+
+			$self->{"cpnStripSett"}->{ $constr[$i] }->SetPad2GND( $isol + 25 );    # add 25µm isolation for some reserve during etching
+		}
+
+		# set Pad GND symbol by isolation if symbol is "thermal"
+		for ( my $i = 0 ; $i < scalar(@uniqGroups) ; $i++ ) {
+
+			my $sym = $self->{"cpnGroupSett"}->{ $uniqGroups[$i] }->GetPadGNDSymNeg();
+			if ( $sym =~ /^thr(\d+)x(\d+)x(\d+)x(\d+)x(\d+)$/ ) {
+
+				my $outerSize = $2 + 2 * $isol + 2 * 25;                           # add 25µm isolation for some reserve during etching
+				$sym =~ s/^thr(\d+)(x\d+x\d+x\d+x\d+)$/thr$outerSize$2/;
+
+				$self->{"cpnGroupSett"}->{ $uniqGroups[$i] }->SetPadGNDSymNeg($sym);
+
+			}
+
+		}
+
 	}
 
 }
@@ -160,11 +188,9 @@ sub Build {
 		if ( $builder->Build( $variant, $errMess ) ) {
 			my $layout = $builder->GetLayout();
 
-	 
-
 			$self->{"nextStep"} = WizardStep3->new( $layout, $variant );
-			$self->{"nextStep"}
-			  ->Init( $self->{"inCAM"}, $self->{"jobId"}, $self->{"cpnSource"}, $self->{"userFilter"}, $self->{"userGroups"}, $self->{"globalSett"},$self->{"asyncWorker"}  );
+			$self->{"nextStep"}->Init( $self->{"inCAM"},      $self->{"jobId"},      $self->{"cpnSource"}, $self->{"userFilter"},
+									   $self->{"userGroups"}, $self->{"globalSett"}, $self->{"asyncWorker"} );
 
 		}
 		else {
@@ -175,8 +201,6 @@ sub Build {
 
 	return $result;
 }
-
- 
 
 #-------------------------------------------------------------------------------------------#
 # Update method - update wizard step data model
@@ -222,16 +246,16 @@ sub GetAutogenerate {
 }
 
 sub GetGroupSettings {
-	my $self = shift;
+	my $self    = shift;
 	my $groupId = shift;
-	
+
 	return $self->{"cpnGroupSett"}->{$groupId};
 }
 
 sub GetStripSettings {
-	my $self = shift;
+	my $self    = shift;
 	my $stripId = shift;
-	
+
 	return $self->{"cpnStripSett"}->{$stripId};
 }
 

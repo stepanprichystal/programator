@@ -34,6 +34,7 @@ sub new {
 	$self->{"jobId"}       = shift;
 	$self->{"step"}        = shift;
 	$self->{"sourceLayer"} = shift;
+	$self->{"excludeSteps"} = shift; # exclude specified steps from rout creating#
 
 	my @nestedSteps = ();
 	$self->{"nestedSteps"} = \@nestedSteps;
@@ -52,6 +53,14 @@ sub Init {
 	# init steps
 
 	my @repeatsSR = CamStepRepeat->GetRepeatStep( $inCAM, $jobId, $self->{"step"} );
+	
+	# exclude steps if requested
+	if($self->{"excludeSteps"}){
+		my %tmp;
+		@tmp{ @{$self->{"excludeSteps"}} } = ();
+		@repeatsSR = grep { !exists $tmp{ $_->{"stepName"} } } @repeatsSR;
+	}
+	
 
 	foreach my $rStep (@repeatsSR) {
 
@@ -201,6 +210,8 @@ sub ReloadStepUniRTM {
 	my $u = UniRTM->new( $inCAM, $jobId, $self->GetStep(), $nestedStep->GetRoutLayer() );
 	$nestedStep->SetUniRTM($u);
 }
+
+
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

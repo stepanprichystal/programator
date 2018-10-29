@@ -57,7 +57,7 @@ sub Build {
 			if ( !$shareGNDLayers->{ $self->{"layerName"} } ) {
 
 				$symClearance =
-				  $cpnSingleLayout->GetPadGNDShape() . ( $cpnSingleLayout->GetPadGNDSize() + $layout->GetPad2GND() );
+				  $cpnSingleLayout->GetPadGNDShape() . ( $cpnSingleLayout->GetPadGNDSize() + 2*$layout->GetPad2GND() );
 				$self->{"drawing"}->AddPrimitive( PrimitivePad->new( $symClearance, $pad->GetPoint(), 0, $self->_InvertPolar(DrawEnums->Polar_NEGATIVE, $layerLayout) ) );
 
 			}
@@ -65,7 +65,7 @@ sub Build {
 		else {
 
 			$symClearance =
-			  $cpnSingleLayout->GetPadTrackShape() . ( $cpnSingleLayout->GetPadTrackSize() + $layout->GetPad2GND() );
+			  $cpnSingleLayout->GetPadTrackShape() . ( $cpnSingleLayout->GetPadTrackSize() + 2*$layout->GetPad2GND() );
 			$self->{"drawing"}->AddPrimitive( PrimitivePad->new( $symClearance, $pad->GetPoint(), 0, $self->_InvertPolar(DrawEnums->Polar_NEGATIVE, $layerLayout) ) );
 		}
 

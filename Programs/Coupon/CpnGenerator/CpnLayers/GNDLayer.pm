@@ -80,7 +80,7 @@ sub Build {
 	foreach my $pad ( grep { $_->GetType() eq Enums->Pad_TRACK } $layout->GetPads() ) {
 
 		my $symClearance =
-		  $cpnSingleLayout->GetPadTrackShape() . ( $cpnSingleLayout->GetPadTrackSize() + $layout->GetPad2GND() );
+		  $cpnSingleLayout->GetPadTrackShape() . ( $cpnSingleLayout->GetPadTrackSize() + 2*$layout->GetPad2GND() );
 		$self->{"drawing"}->AddPrimitive( PrimitivePad->new( $symClearance, $pad->GetPoint(), 0, $self->_InvertPolar(DrawEnums->Polar_NEGATIVE, $layerLayout) ) );
 
 		if ( $self->{"layerName"} !~ /v\d+/ ) {

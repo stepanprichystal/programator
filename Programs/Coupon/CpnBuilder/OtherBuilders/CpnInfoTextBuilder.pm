@@ -85,7 +85,7 @@ sub Build {
 		#		}
 
 		if ( $self->{"cpnSett"}->GetInfoTextTrackImpedance() ) {
-			$txtPart1 .= sprintf( "%d", $xmlConstr->GetOption("CALCULATED_IMPEDANCE") ) . "ohm";
+			$txtPart1 .= sprintf( "%d", $xmlConstr->GetOption("CALCULATION_REQUIRED_IMPEDANCE") ) . "ohm";
 		}
 
 		my $txtPart2 = "";

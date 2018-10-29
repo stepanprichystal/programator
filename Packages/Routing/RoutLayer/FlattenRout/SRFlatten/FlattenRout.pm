@@ -15,14 +15,15 @@ use aliased 'Helpers::GeneralHelper';
 use aliased 'CamHelpers::CamHelper';
 use aliased 'CamHelpers::CamLayer';
 use aliased 'CamHelpers::CamAttributes';
+use aliased 'CamHelpers::CamStepRepeat';
 use aliased 'Packages::CAM::UniRTM::UniRTM::UniRTM';
 use aliased 'Packages::CAM::FeatureFilter::FeatureFilter';
 use aliased 'Packages::ItemResult::Enums' => "ResEnums";
 use aliased 'Packages::ItemResult::ItemResult';
 use aliased 'Packages::Routing::RoutLayer::FlattenRout::SRFlatten::ToolsOrder::ToolsOrder';
 use aliased 'Packages::Routing::RoutLayer::FlattenRout::SRFlatten::SRStep::SRStep';
-use aliased 'Packages::Routing::RoutLayer::FlattenRout::SRFlatten::SRFlatten::SRFlatten';
 use aliased 'Packages::Routing::RoutLayer::FlattenRout::SRFlatten::ToolsOrder::GroupChain';
+use aliased 'Packages::Routing::RoutLayer::FlattenRout::SRFlatten::SRFlatten::SRStepPos';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -78,24 +79,22 @@ sub CreateFromSRStep {
 	}
 
 	# 1) Create structures for creating flatten layer and tool ordering
+ 
+	my @stepPos = $self->__GetNestedStepsPositions($srStep);
 
-	my $srFlatten = SRFlatten->new( $inCAM, $jobId, $srStep, $self->{"flatLayer"} );
-	$srFlatten->Init();
-
-	my @groupChains = $self->__GetGroupChains($srFlatten);
+	my @groupChains = $self->__GetGroupChains( $srStep, \@stepPos );
 
 	my %convTable = ();
 
 	# 2) Create flatten layer (copy all rout from nested steps to new flatenned layer)
 
-	$self->__CreateFlatLayer( \%convTable, \@groupChains, $srFlatten );
+	$self->__CreateFlatLayer( \%convTable, \@groupChains, $srStep );
 
 	# 3) Sort inner routs chains and than outline rout chains
 
-	my $toolOrder = ToolsOrder->new( $inCAM, $jobId, \@groupChains, \%convTable, $srFlatten->GetStep(), $self->{"flatLayer"}, $itemResult );
+	my $toolOrder = ToolsOrder->new( $inCAM, $jobId, \@groupChains, \%convTable, $srStep->GetStep(), $self->{"flatLayer"}, $itemResult );
 
 	$toolOrder->SetInnerOrder();
-
 	$toolOrder->SetOutlineOrder();
 
 	# 4) Check if sortin result is what we expected
@@ -106,10 +105,36 @@ sub CreateFromSRStep {
 
 }
 
+sub __GetNestedStepsPositions {
+	my $self   = shift;
+	my $srStep = shift;
+
+	my $inCAM = $self->{"inCAM"};
+	my $jobId = $self->{"jobId"};
+
+	my @stepPos = ();
+
+	CamHelper->SetStep( $inCAM, $srStep->GetStep() );
+
+	# init steps
+	my @repeatedSteps = CamStepRepeat->GetRepeatStep( $inCAM, $jobId, $srStep->GetStep() );
+
+	foreach my $nestStep ( $srStep->GetNestedSteps() ) {
+ 
+		foreach ( grep { $_->{"stepName"} eq $nestStep->GetStepName() && $_->{"angle"} eq $nestStep->GetAngle()} @repeatedSteps ) {
+			
+			push( @stepPos, SRStepPos->new( $nestStep, $_->{"originX"}, $_->{"originY"} ) );
+		}
+	}
+
+	return @stepPos;
+}
+
 # Return list of "chain groups" - special structure suitable for ordering chainlist
 sub __GetGroupChains {
-	my $self      = shift;
-	my $srFlatten = shift;
+	my $self          = shift;
+	my $srStep        = shift;
+	my $stepPositions = shift;
 
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
@@ -118,7 +143,7 @@ sub __GetGroupChains {
 
 	# 1) create group chain from nested steps
 
-	foreach my $stepPos ( $srFlatten->GetStepPositions() ) {
+	foreach my $stepPos ( @{$stepPositions} ) {
 
 		my $gCh = GroupChain->new( $stepPos->GetStepId(), $stepPos->GetStepName(), $stepPos->GetRoutLayer(), $stepPos->GetPosX(),
 								   $stepPos->GetPosY(),   $stepPos->GetUniRTM() );
@@ -129,9 +154,9 @@ sub __GetGroupChains {
 	# 2) create group chain from "top" step rout if requested
 	if ( $self->{"considerStepRout"} ) {
 
-		my $unitRTM = UniRTM->new( $inCAM, $jobId, $srFlatten->GetStep(), $srFlatten->GetSourceLayer() );
+		my $unitRTM = UniRTM->new( $inCAM, $jobId, $srStep->GetStep(), $srStep->GetSourceLayer() );
 
-		my $gCh = GroupChain->new( GeneralHelper->GetGUID(), $srFlatten->GetStep(), $srFlatten->GetSourceLayer(), 0, 0, $unitRTM );
+		my $gCh = GroupChain->new( GeneralHelper->GetGUID(), $srStep->GetStep(), $srStep->GetSourceLayer(), 0, 0, $unitRTM );
 
 		push( @groupChains, $gCh );
 
@@ -145,7 +170,7 @@ sub __CreateFlatLayer {
 	my $self        = shift;
 	my $convTable   = shift;
 	my @groupChains = @{ shift(@_) };
-	my $srFlatten   = shift;
+	my $srStep      = shift;
 
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
@@ -161,16 +186,15 @@ sub __CreateFlatLayer {
 		$inCAM->COM( 'create_layer', layer => $self->{"flatLayer"}, context => 'board', type => 'rout', polarity => 'positive', ins_layer => '' );
 	}
 
-	CamHelper->SetStep( $inCAM, $srFlatten->GetStep() );
+	CamHelper->SetStep( $inCAM, $srStep->GetStep() );
 
 	foreach my $groupChain (@groupChains) {
 
-		$self->__CopyRoutToFlatLayer( $groupChain->GetGroupId(),
-									  $groupChain->GetSourceLayer(),
-									  $groupChain->GetGroupPosX(),
-									  $groupChain->GetGroupPosY(),
-									  $groupChain->GetGroupUniRTM(),
-									  $convTable, $srFlatten );
+		$self->__CopyRoutToFlatLayer(
+									  $groupChain->GetGroupId(),     $groupChain->GetSourceLayer(),
+									  $groupChain->GetGroupPosX(),   $groupChain->GetGroupPosY(),
+									  $groupChain->GetGroupUniRTM(), $convTable
+		);
 	}
 
 }
@@ -183,7 +207,6 @@ sub __CopyRoutToFlatLayer {
 	my $groupPosY   = shift;
 	my $groupUniRTM = shift;
 	my $convTable   = shift;
-	my $srFlatten   = shift;
 
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};

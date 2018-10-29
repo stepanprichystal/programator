@@ -84,7 +84,7 @@ sub __SetLayout {
 	my $topRefLTxt = Wx::StaticText->new( $self->{"parent"}, -1, $constr->GetTopRefLayer(), &Wx::wxDefaultPosition, [ 20, $self->{"rowHeight"} ] );
 	my $botRefLTxt = Wx::StaticText->new( $self->{"parent"}, -1, $constr->GetBotRefLayer(), &Wx::wxDefaultPosition, [ 20, $self->{"rowHeight"} ] );
  
-	my $impedanceLTxt = Wx::StaticText->new( $self->{"parent"}, -1, sprintf("%.2f Ω", $constr->GetOption("CALCULATED_IMPEDANCE")), &Wx::wxDefaultPosition, [ 20, $self->{"rowHeight"} ] );
+	my $impedanceLTxt = Wx::StaticText->new( $self->{"parent"}, -1, sprintf("%.2f Ω", $constr->GetOption("CALCULATION_REQUIRED_IMPEDANCE")), &Wx::wxDefaultPosition, [ 20, $self->{"rowHeight"} ] );
 
 	
 	$self->_AddCell($idTxt);

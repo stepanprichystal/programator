@@ -258,8 +258,8 @@ sub __PrepareDrillMaps {
 
 	# 1) keep only pressfit hole in layer
 
-	my @symb = map { "r" . $_->{"gTOOLdrill_size"} } @tools;
-	my $result = CamFilter->BySymbols( $inCAM, \@symb );
+	my @dcodes = map { $_->{"gTOOLnum"} } @tools;
+	my $result = CamFilter->ByDCodes( $inCAM, \@dcodes );
 
 	#my $result = CamFilter->SelectBySingleAtt( $inCAM, $jobId, ".plated_type", "press_fit" );
 
@@ -347,7 +347,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId = "d152457";
+	my $jobId = "d228608";
 	my $presss = DrillMapPdf->new( $inCAM, $jobId );
 	$presss->CreateToleranceMeasure("panel");
 

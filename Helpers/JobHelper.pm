@@ -194,18 +194,14 @@ sub GetNetlistStepNames {
 }
 
 
-# Remove special panel steps like coupons from list of step
-sub RemoveSpecPnlSteps {
+# Return step names, which are special coupon steps
+# coupon_impedance
+# coupon_drill
+sub GetCouponStepNames {
 	my $self = shift;
-	my $steps = shift;
 	
-	for(my $i= scalar(@{$steps}) -1;  $i >= 0; $i--){
-		
-		if( $steps->[$i] =~ /coupon_?/){
-			
-			splice @{$steps}, $i, 1;
-		}
-	} 
+	my @s = ( EnumsGeneral->Coupon_IMPEDANCE, EnumsGeneral->Coupon_DRILL );
+	return @s;
 }
 
 sub GetJobOutput {

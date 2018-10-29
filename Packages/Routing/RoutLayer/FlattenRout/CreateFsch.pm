@@ -15,6 +15,7 @@ use aliased 'Packages::Routing::RoutLayer::FlattenRout::FlattenPanel::FlattenPan
 use aliased 'Managers::MessageMngr::MessageMngr';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'Packages::ItemResult::ItemResult';
+use aliased 'Helpers::JobHelper';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -36,7 +37,8 @@ sub new {
 sub Create {
 	my $self = shift;
 
-	my $flatten = FlattenPanel->new( $self->{"inCAM"}, $self->{"jobId"}, "panel", "f", "fsch" );
+	my @excludeSteps = grep { $_ ne EnumsGeneral->Coupon_IMPEDANCE }JobHelper->GetCouponStepNames();
+	my $flatten = FlattenPanel->new( $self->{"inCAM"}, $self->{"jobId"}, "panel", "f", "fsch", 0,  \@excludeSteps  );
 
 	$flatten->{"onItemResult"}->Add( sub { $self->__ProcesResult(@_) } );
 
@@ -92,7 +94,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId = "d224724";
+	my $jobId = "d113608";
   
 
 	my $fsch = CreateFsch->new( $inCAM, $jobId);

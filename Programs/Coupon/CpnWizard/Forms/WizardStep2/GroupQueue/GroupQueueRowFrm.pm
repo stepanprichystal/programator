@@ -87,7 +87,7 @@ sub __SetLayout {
 		$szRowCol4->Add( $botRefLTxt, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 		
 		my $impedanceLTxt =
-		  Wx::StaticText->new( $self, -1, sprintf("%.2f Ω", $constr->GetOption("CALCULATED_IMPEDANCE")), &Wx::wxDefaultPosition, [ 130, 25 ] );
+		  Wx::StaticText->new( $self, -1, sprintf("%.2f Ω", $constr->GetOption("CALCULATION_REQUIRED_IMPEDANCE")), &Wx::wxDefaultPosition, [ 130, 25 ] );
 		$szRowCol5->Add( $impedanceLTxt, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 		
 		

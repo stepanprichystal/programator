@@ -103,8 +103,6 @@ sub SelectBySingleAtt {
 	$inCAM->COM( 'filter_area_end', filter_name => 'popup', operation => 'select' );
 
 	$inCAM->COM( 'filter_reset', filter_name => 'popup' );
-	
- 
 
 	$inCAM->COM('get_select_count');
 
@@ -193,6 +191,32 @@ sub BySymbols {
 	return $inCAM->GetReply();
 }
 
+# Select all features by DCode
+# Return count of celected features
+sub ByDCodes {
+	my $self   = shift;
+	my $inCAM  = shift;
+	my @DCodes = @{ shift(@_) };
+
+	my $slected = 0;
+
+	$inCAM->COM( 'filter_reset', filter_name => 'popup' );
+
+	foreach my $dcode (@DCodes) {
+		
+		
+		$inCAM->COM( "set_filter_dcode", "filter_name" => "",  "dcode" => $dcode );
+		$inCAM->COM('filter_area_strt');
+		$inCAM->COM( 'filter_area_end', filter_name => 'popup', operation => 'select' );
+
+	}
+	
+	$inCAM->COM('get_select_count');
+	$slected = $inCAM->GetReply();
+
+	return $slected;
+}
+
 # Select features by type
 sub ByTypes {
 	my $self  = shift;
@@ -272,14 +296,12 @@ sub ByBoundBox {
 	my $inCAM    = shift;
 	my $minWidth = shift;
 	my $maxWidth = shift;
-	
- 	$inCAM->COM( 'filter_reset', filter_name => 'popup' );
- 	$inCAM->COM("reset_filter_criteria","filter_name"=>"","criteria"=>"all");
- 	$inCAM->COM( "set_filter_type", "filter_name" => "", "lines" => "yes", "pads" => "yes", "surfaces" => "yes", "arcs" => "yes", "text" => "yes" );
- 	$inCAM->COM( "set_filter_polarity", "filter_name" => "", "positive" => "yes", "negative" => "yes" );
-	
- 	
-	
+
+	$inCAM->COM( 'filter_reset', filter_name => 'popup' );
+	$inCAM->COM( "reset_filter_criteria", "filter_name" => "", "criteria" => "all" );
+	$inCAM->COM( "set_filter_type", "filter_name" => "", "lines" => "yes", "pads" => "yes", "surfaces" => "yes", "arcs" => "yes", "text" => "yes" );
+	$inCAM->COM( "set_filter_polarity", "filter_name" => "", "positive" => "yes", "negative" => "yes" );
+
 	$inCAM->COM('adv_filter_reset');
 	$inCAM->COM(
 				 'adv_filter_set',
@@ -291,14 +313,14 @@ sub ByBoundBox {
 				 "min_length"   => '0',
 				 "max_length"   => '0'
 	);
-	
+
 	$inCAM->COM('filter_area_strt');
 
 	$inCAM->COM(
 				 'filter_area_end',
-				 "layer"          => '',
-				 "filter_name"    => 'popup',
-				 "operation"      => 'select' 
+				 "layer"       => '',
+				 "filter_name" => 'popup',
+				 "operation"   => 'select'
 	);
 
 	return $inCAM->GetReply();
@@ -370,7 +392,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	#my $step  = "mpanel_10up";
 
-	my $result = CamFilter->ByBoundBox( $inCAM,  0, 0);
+	my $result = CamFilter->ByBoundBox( $inCAM, 0, 0 );
 
 	#my $self             = shift;
 

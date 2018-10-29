@@ -33,14 +33,15 @@ sub new {
 	my $self      = $class->SUPER::new( $packageId, @_ );
 	bless $self;
 
-	$self->{"inCAM"}     = shift;
-	$self->{"jobId"}     = shift;
-	$self->{"stepName"}  = shift;
-	$self->{"layer"}     = shift;    # source layer, which is flattened
-	$self->{"flatLayer"} = shift;    # name of result flattened layer
-	$self->{"noDrawing"} = shift;    # if set, result is not drawed, when create rout is succes
+	$self->{"inCAM"}        = shift;
+	$self->{"jobId"}        = shift;
+	$self->{"stepName"}     = shift;
+	$self->{"layer"}        = shift;    # source layer, which is flattened
+	$self->{"flatLayer"}    = shift;    # name of result flattened layer
+	$self->{"noDrawing"}    = shift;    # if set, result is not drawed, when create rout is succes
+	$self->{"excludeSteps"} = shift;    # exclude specified nested steps from rout creating
 
-	$self->{"result"} = 1;           # indicate if remove final faltten layer in case of errors
+	$self->{"result"} = 1;              # indicate if remove final faltten layer in case of errors
 
 	# Test if nested steps has to be flatened, because contain SR
 	$self->{"preparedL"} = $self->{"layer"};
@@ -60,7 +61,7 @@ sub Run {
 	$self->__ProcessResult( $self->__FlattenNestedSteps() );
 
 	# 2) init structure suitable for, flatten step, rout checking and rout start finding
-	my $SRStep = SRStep->new( $inCAM, $jobId, $self->{"stepName"}, $self->{"preparedL"} );
+	my $SRStep = SRStep->new( $inCAM, $jobId, $self->{"stepName"}, $self->{"preparedL"}, $self->{"excludeSteps"} );
 	$SRStep->Init();
 
 	# 3) checks rout validity before flatten
@@ -93,7 +94,7 @@ sub Run {
 	# 6) Draw start chain and foots to new layer (if drawing is not switched off)
 
 	if ( !( $self->{"noDrawing"} && $self->{"result"} ) ) {
-		
+
 		my $draw = RoutDraw->new( $inCAM, $jobId, $self->{"stepName"}, $self->{"flatLayer"} );
 
 		$draw->CreateResultLayer( $resFindStart->{"errStartSteps"}, $resFlattenRout->{"chainOrderIds"} );
@@ -119,26 +120,6 @@ sub Run {
 	return $self->{"result"};
 }
 
-# Return 1 if nested steps contain SR too
-sub __NestedStepsAreSR {
-	my $self = shift;
-
-	my $res = 0;
-
-	my @uniqueSR = CamStepRepeat->GetUniqueStepAndRepeat( $self->{"inCAM"}, $self->{"jobId"}, $self->{"stepName"} );
-
-	foreach my $uStep (@uniqueSR) {
-
-		if ( CamStepRepeat->ExistStepAndRepeats( $self->{"inCAM"}, $self->{"jobId"}, $uStep->{"stepName"} ) ) {
-			$res = 1;
-			last;
-		}
-
-	}
-
-	return $res;
-}
-
 sub __FlattenNestedSteps {
 	my $self = shift;
 
@@ -147,21 +128,40 @@ sub __FlattenNestedSteps {
 
 	my $resultItem = ItemResult->new("Flatten nested steps");
 
-	unless ( $self->__NestedStepsAreSR() ) {
+	# Get unique nested steps and exclude nested steps if requested
+	my @uniqueSR = CamStepRepeat->GetUniqueStepAndRepeat( $inCAM, $jobId, $self->{"stepName"} );
+
+	if ( $self->{"excludeSteps"} ) {
+		my %tmp;
+		@tmp{ @{ $self->{"excludeSteps"} } } = ();
+		@uniqueSR = grep { !exists $tmp{ $_->{"stepName"} } } @uniqueSR;
+	}
+
+	# 1) Check if exist nested step which contain S&R
+	my $nestedHasSR = 0;
+	foreach my $uStep (@uniqueSR) {
+
+		if ( CamStepRepeat->ExistStepAndRepeats( $self->{"inCAM"}, $self->{"jobId"}, $uStep->{"stepName"} ) ) {
+			$nestedHasSR = 1;
+			last;
+		}
+	}
+
+	unless ($nestedHasSR) {
 		return $resultItem;
 	}
 
-	# 1) Check if depth of SR is not bigger then one
-	if ( CamStepRepeat->GetStepAndRepeatDepth( $inCAM, $jobId, $self->{"stepName"} ) > 2 ) {
+	# 2) Check if depth of S&R of nested steps is not bigger then one
+	foreach my $s (@uniqueSR) {
+		if ( CamStepRepeat->GetStepAndRepeatDepth( $inCAM, $jobId, $s->{"stepName"} ) > 1 ) {
 
-		die "Step and repeat depth (nesting) is bigger then depth = 2.\n";
+			die "Step: " . $self->{"stepName"} . " has S&R depth (nesting) greater than depth = 2.\n Problem nested step: " . $s->{"stepName"};
+		}
 	}
 
 	$self->{"preparedL"} = GeneralHelper->GetGUID();
 
-	my @uniqueSR = CamStepRepeat->GetUniqueStepAndRepeat( $self->{"inCAM"}, $self->{"jobId"}, $self->{"stepName"} );
-
-	# No nested step can have SR
+	# 3) Flatten all nested steps which have S&R
 
 	my @SRsteps   = ();
 	my @noSRsteps = ();
@@ -176,8 +176,6 @@ sub __FlattenNestedSteps {
 			push( @noSRsteps, $step );
 		}
 	}
-
-	# 2) flatten all nested SR steps
 
 	foreach my $step (@SRsteps) {
 
@@ -206,6 +204,8 @@ sub __FlattenNestedSteps {
 
 	return $resultItem;
 }
+
+ 
 
 sub __ProcessResult {
 	my $self = shift;
