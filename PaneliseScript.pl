@@ -1131,12 +1131,11 @@ sub _Panelize {
 							my $fsch = CreateFsch->new( $inCAM, $jobName);
 							   $fsch->Create();
 				}
-		
-		
+
 				# Check if contain only one kind of nested step but with various rotation
 				if ( scalar(@uniqueSteps) == 1 ) {
 
-	  					my @repeatsSR = CamStepRepeat->GetRepeatStep( $inCAM, $jobName, "panel" );
+	  					my @repeatsSR = CamStepRepeatPnl->GetRepeatStep( $inCAM, $jobName);
 	      	
 				  		my $angle = $repeatsSR[0]->{"angle"};
 	  					my @diffAngle = grep { $_->{"angle"} != $angle } @repeatsSR;
