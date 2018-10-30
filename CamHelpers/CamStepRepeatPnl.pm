@@ -10,6 +10,7 @@ package CamHelpers::CamStepRepeatPnl;
 #3th party library
 use strict;
 use warnings;
+use List::Util qw[max min];
 
 #loading of locale modules
 use aliased 'CamHelpers::CamStepRepeat';
@@ -31,7 +32,7 @@ sub GetRepeatStep {
 
 	my @steps = CamStepRepeat->GetRepeatStep( $inCAM, $jobId, $stepName );
 
-	$self->__RemoveCouponSteps( \@steps, $includeCpns, $includeSteps );
+	$self->__RemoveCouponSteps( \@steps, "stepName", $includeCpns, $includeSteps );
 
 	return @steps;
 }
@@ -48,9 +49,35 @@ sub GetUniqueStepAndRepeat {
 
 	my @steps = CamStepRepeat->GetUniqueStepAndRepeat( $inCAM, $jobId, $stepName );
 
-	$self->__RemoveCouponSteps( \@steps, $includeCpns, $includeSteps );
+	$self->__RemoveCouponSteps( \@steps, "stepName", $includeCpns, $includeSteps );
 
 	return @steps;
+}
+
+# Return limits of all step and repeat
+sub GetStepAndRepeatLim {
+	my $self           = shift;
+	my $inCAM          = shift;
+	my $jobId          = shift;
+	my $considerOrigin = shift;
+	my $includeCpns  = shift // 0;    # include coupons steps, default: no
+	my $includeSteps = shift;         # definition of included coupon steps, if undef = all coupon steps
+	
+	my $stepName = "panel";
+	
+	my @SR = CamStepRepeat->GetStepAndRepeat( $inCAM, $jobId, $stepName, $considerOrigin );
+	
+	$self->__RemoveCouponSteps( \@SR, "gSRstep", $includeCpns, $includeSteps );
+	
+	
+	my %limits;
+ 
+	$limits{"xMin"} =  min( map { $_->{"gSRxmin"} } @SR);
+	$limits{"xMax"} =  max( map { $_->{"gSRxmax"} } @SR);
+	$limits{"yMin"} =  min( map { $_->{"gSRymin"} } @SR);
+	$limits{"yMax"} =  max( map { $_->{"gSRymax"} } @SR);
+
+	return %limits;
 }
 
  
@@ -58,23 +85,26 @@ sub GetUniqueStepAndRepeat {
 sub __RemoveCouponSteps {
 	my $self         = shift;
 	my $steps        = shift;
+	my $keyStepName = shift;
 	my $includeCpns  = shift;
 	my $includeSteps = shift;
-
+ 
 	for ( my $i = scalar( @{$steps} ) - 1 ; $i >= 0 ; $i-- ) {
+		
+		die "Key value: $keyStepName is not defined in step info" if(!defined $steps->[$i]->{$keyStepName});
 
 		if ( !$includeCpns ) {
 
-			if ( $steps->[$i]->{"stepName"} =~ /^coupon_?/ ) {
+			if ( $steps->[$i]->{$keyStepName} =~ /^coupon_?/ ) {
 
 				splice @{$steps}, $i, 1;
 
 			}
 		}
 		else {
-			if ( $steps->[$i]->{"stepName"} =~ /^coupon_?/ && defined $includeSteps ) {
+			if ( $steps->[$i]->{$keyStepName} =~ /^coupon_?/ && defined $includeSteps ) {
 
-				if ( !scalar( grep { $_ eq $steps->[$i]->{"stepName"} } @{$includeSteps} ) ) {
+				if ( !scalar( grep { $_ eq $steps->[$i]->{$keyStepName} } @{$includeSteps} ) ) {
 					splice @{$steps}, $i, 1;
 				}
 
@@ -91,27 +121,18 @@ my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	use aliased 'CamHelpers::CamStepRepeat';
+	use aliased 'CamHelpers::CamStepRepeatPnl';
 	use aliased 'Packages::InCAM::InCAM';
 
 	my $inCAM = InCAM->new();
-	my $jobId = "d152457";
+	my $jobId = "d044218";
 	my $step  = "panel";
 
-	my @sr = CamStepRepeat->GetStepAndRepeat( $inCAM, $jobId, $step );
+	my %lim = CamStepRepeat->GetStepAndRepeatLim( $inCAM, $jobId, $step );
 
-	#	my $l = undef;
-	#
-	#	for(my $i= 0;  $i < scalar(@sr); $i++){
-	#
-	#		if(  $srg[$i]->{"SRstep"} eq "mpanel"){
-	#			$l = $i+1;
-	#			last;
-	#		}
-	#	}
-	#
-	#
-	#
-	#
+	my @s = CamStepRepeatPnl->GetRepeatStep( $inCAM, $jobId);
+	
+	die;
 
 }
 

@@ -174,18 +174,31 @@ sub GetUniqueStepAndRepeat {
 	return @steps;
 }
 
- 
-
 #Return information about steps in given step
 sub GetStepAndRepeat {
-	my $self     = shift;
-	my $inCAM    = shift;
-	my $jobId    = shift;
-	my $stepName = shift;
+	my $self           = shift;
+	my $inCAM          = shift;
+	my $jobId          = shift;
+	my $stepName       = shift;
+	my $considerOrigin = shift // 0;
 
 	my @arr = ();
 
-	$inCAM->INFO( "units" => "mm", entity_type => 'step', angle_direction => 'ccw', entity_path => "$jobId/$stepName", data_type => 'SR' );
+	unless ($considerOrigin) {
+
+		$inCAM->INFO( "units" => "mm", entity_type => 'step', angle_direction => 'ccw', entity_path => "$jobId/$stepName", data_type => 'SR' )
+		  ;
+	}
+	else {
+		$inCAM->INFO(
+					  "units"         => "mm",
+					  entity_type     => 'step',
+					  angle_direction => 'ccw',
+					  entity_path     => "$jobId/$stepName",
+					  data_type       => 'SR',
+					  "options"       => "consider_origin"
+		);
+	}
 
 	for ( my $i = 0 ; $i < scalar( @{ $inCAM->{doinfo}{gSRstep} } ) ; $i++ ) {
 		my %info = ();
