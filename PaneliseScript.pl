@@ -28,8 +28,11 @@ use aliased 'Packages::CAMJob::Drilling::DrillChecking::LayerWarnInfo';
 use aliased 'Packages::Input::HelperInput';
 use aliased 'Packages::GuideSubs::Netlist::NetlistControl';
 
-use aliased 'CamHelpers::CamJob';
+
 use aliased 'CamHelpers::CamHelper';
+
+use aliased 'CamHelpers::CamJob';
+
 use aliased 'CamHelpers::CamLayer';
 use aliased 'CamHelpers::CamAttributes';
 use aliased 'CamHelpers::CamHistogram';
@@ -1126,17 +1129,16 @@ sub _Panelize {
 			}else{
 			
 				# If panel contain more drifrent step, the fsch create
-				my @uniqueSteps = CamStepRepeatPnl->GetUniqueStepAndRepeat( $inCAM, $jobName);
+				my @uniqueSteps = CamStepRepeatPnl->GetUniqueStepAndRepeat( $inCAM, $jobName, 1, [EnumsGeneral->Coupon_IMPEDANCE]);
 				if ( scalar(@uniqueSteps) > 1 ){
 							my $fsch = CreateFsch->new( $inCAM, $jobName);
 							   $fsch->Create();
 				}
-		
-		
+
 				# Check if contain only one kind of nested step but with various rotation
 				if ( scalar(@uniqueSteps) == 1 ) {
 
-	  					my @repeatsSR = CamStepRepeat->GetRepeatStep( $inCAM, $jobName, "panel" );
+	  					my @repeatsSR = CamStepRepeatPnl->GetRepeatStep( $inCAM, $jobName, 1, [EnumsGeneral->Coupon_IMPEDANCE]);
 	      	
 				  		my $angle = $repeatsSR[0]->{"angle"};
 	  					my @diffAngle = grep { $_->{"angle"} != $angle } @repeatsSR;
