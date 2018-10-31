@@ -20,6 +20,8 @@ use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'Packages::ProductionPanel::StandardPanel::StandardExt';
 use aliased 'CamHelpers::CamStep';
 use aliased 'CamHelpers::CamStepRepeat';
+use aliased 'CamHelpers::CamStepRepeatPnl';
+use aliased 'Enums::EnumsGeneral';
 
 #-------------------------------------------------------------------------------------------#
 #  Public method
@@ -68,7 +70,7 @@ sub Run {
 	# Do control check if SR step are whole inside active area
  
 		my %limActive = CamStep->GetActiveAreaLim( $inCAM, $jobId, "panel" );
-		my %limSR = CamStepRepeat->GetStepAndRepeatLim( $inCAM, $jobId, "panel" );
+		my %limSR = CamStepRepeatPnl->GetStepAndRepeatLim( $inCAM, $jobId, 0, 1, [EnumsGeneral->Coupon_IMPEDANCE] );
 
 		if (    $limActive{"xMin"}  > $limSR{"xMin"}
 			 || $limActive{"yMax"}  < $limSR{"yMax"}

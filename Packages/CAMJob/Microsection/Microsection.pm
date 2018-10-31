@@ -25,6 +25,8 @@ use aliased 'CamHelpers::CamStep';
 use aliased 'CamHelpers::CamHelper';
 use aliased 'Packages::CAMJob::Panelization::SRStep';
 use aliased 'CamHelpers::CamStepRepeat';
+use aliased 'CamHelpers::CamStepRepeatPnl';
+
 use aliased 'CamHelpers::CamJob';
 
 
@@ -52,8 +54,14 @@ sub CreateCoupon {
 
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
+	
+	my @uniqueSR = map { $_->{"stepName"} } CamStepRepeatPnl->GetUniqueStepAndRepeat( $inCAM, $jobId );
+	
+	return 0 unless(scalar(@uniqueSR));
 
 	my @groups = $self->__GetGroups();
+	
+	return 0 unless(scalar(@groups)); # no holes / layers for coupon
 
 	my $stepName = EnumsGeneral->Coupon_DRILL;
 
@@ -154,6 +162,8 @@ sub CreateCoupon {
  
 		CamSymbol->AddLine( $inCAM,  $ps, $pe, "r200" );
 	}
+	
+	return 1;
 
 }
 
@@ -173,7 +183,7 @@ sub __GetGroups {
 
 	CamDrilling->AddLayerStartStop( $inCAM, $jobId, \@layers );
 
-	my @uniqueSR = map { $_->{"stepName"} } CamStepRepeat->GetUniqueStepAndRepeat( $inCAM, $jobId, "panel" );
+	my @uniqueSR = map { $_->{"stepName"} } CamStepRepeatPnl->GetUniqueStepAndRepeat( $inCAM, $jobId );
 
 	my @groups = ();
 
@@ -268,7 +278,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	use aliased 'Packages::InCAM::InCAM';
 
 	my $inCAM = InCAM->new();
-	my $jobId = "d113608";
+	my $jobId = "d200760";
 	my $step  = "panel";
 
 	my $m = Microsection->new( $inCAM, $jobId );
