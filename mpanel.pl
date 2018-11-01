@@ -254,7 +254,7 @@ elsif ($okoli == 10) {
 			$fid_schema = 'cust_racom_10';
 	} elsif ($znacky eq "WENDEL") {
 			$fid_schema = 'cust_wendel_10';
-	} elsif ($znacky eq "LAMBERT") {
+	} elsif ($znacky eq "LAMBERT_10") {
 			$fid_schema = 'cust_lambert_10';
 	} elsif ($znacky eq "APPLIED") {
 			$fid_schema = 'cust_applied_okoli_10';
@@ -432,7 +432,7 @@ unless ($znacky eq 'ATM' or $znacky eq 'RACOM') {
 ##########################################################################################################
 sub fill_znacky {
     $construct_znacky->delete(0,'end');
-    foreach my $className (qw /GATEMA GATEMA_OLD_5mm BMR C.SAM_7 BEZ_FIDUCIALU ATM AZITECH_10 RACOM LAMBERT WENDEL ELMATICA PRINCITEC_5x8 APPLIED DICOM_12mm TOROLA BETACONTROL_10mm DVORSKY_12mm SMT_10mm_12mm PIERONKIEWICZ_10 BARDAS_10 CST_12mm KVARK_10/) {
+    foreach my $className (qw /GATEMA GATEMA_OLD_5mm BMR C.SAM_7 BEZ_FIDUCIALU ATM AZITECH_10 RACOM LAMBERT_10 WENDEL ELMATICA PRINCITEC_5x8 APPLIED DICOM_12mm TOROLA BETACONTROL_10mm DVORSKY_12mm SMT_10mm_12mm PIERONKIEWICZ_10 BARDAS_10 CST_12mm KVARK_10/) {
         $construct_znacky->insert('end',"$className");
     }
 }
