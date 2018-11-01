@@ -23,7 +23,7 @@ foreach my $oneDoc (@dokuments) {
 
 	
 	print $oneDoc , "\n";
-	last;
+	
 	
 }
 
