@@ -32,7 +32,7 @@ sub GetRepeatStep {
 
 	my @steps = CamStepRepeat->GetRepeatStep( $inCAM, $jobId, $stepName );
 
-	$self->__RemoveCouponSteps( \@steps, "stepName", $includeCpns, $includeSteps );
+	CamStepRepeat->RemoveCouponSteps( \@steps,  $includeCpns, $includeSteps );
 
 	return @steps;
 }
@@ -49,7 +49,7 @@ sub GetUniqueStepAndRepeat {
 
 	my @steps = CamStepRepeat->GetUniqueStepAndRepeat( $inCAM, $jobId, $stepName );
 
-	$self->__RemoveCouponSteps( \@steps, "stepName", $includeCpns, $includeSteps );
+	CamStepRepeat->RemoveCouponSteps( \@steps,   $includeCpns, $includeSteps );
 
 	return @steps;
 }
@@ -67,7 +67,7 @@ sub GetStepAndRepeatLim {
 	
 	my @SR = CamStepRepeat->GetStepAndRepeat( $inCAM, $jobId, $stepName, $considerOrigin );
 	
-	$self->__RemoveCouponSteps( \@SR, "gSRstep", $includeCpns, $includeSteps );
+	CamStepRepeat->RemoveCouponSteps( \@SR,  $includeCpns, $includeSteps );
 	
 	
 	my %limits;
@@ -82,37 +82,7 @@ sub GetStepAndRepeatLim {
 
  
 
-sub __RemoveCouponSteps {
-	my $self         = shift;
-	my $steps        = shift;
-	my $keyStepName = shift;
-	my $includeCpns  = shift;
-	my $includeSteps = shift;
- 
-	for ( my $i = scalar( @{$steps} ) - 1 ; $i >= 0 ; $i-- ) {
-		
-		die "Key value: $keyStepName is not defined in step info" if(!defined $steps->[$i]->{$keyStepName});
 
-		if ( !$includeCpns ) {
-
-			if ( $steps->[$i]->{$keyStepName} =~ /^coupon_?/ ) {
-
-				splice @{$steps}, $i, 1;
-
-			}
-		}
-		else {
-			if ( $steps->[$i]->{$keyStepName} =~ /^coupon_?/ && defined $includeSteps ) {
-
-				if ( !scalar( grep { $_ eq $steps->[$i]->{$keyStepName} } @{$includeSteps} ) ) {
-					splice @{$steps}, $i, 1;
-				}
-
-			}
-		}
-
-	}
-}
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

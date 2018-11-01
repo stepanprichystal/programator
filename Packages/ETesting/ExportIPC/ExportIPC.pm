@@ -71,11 +71,14 @@ sub Export {
 	$inCAM->COM( 'open_entity', job => $jobId, type => 'step', name => $etStepName, iconic => 'no' );
 	$inCAM->AUX( 'set_group', group => $inCAM->{COMANS} );
 
-	#remove step named "coupon" if exist
-	my $couponExist = CamStepRepeat->ExistStepAndRepeat( $inCAM, $jobId, $etStepName, "coupon" );
+	#remove all coupons wxcept impedance coupon
+	my @coupons = grep { $_ ne EnumsGeneral->Coupon_IMPEDANCE } JobHelper->GetCouponStepNames();
 
-	if ($couponExist) {
-		CamStepRepeat->DeleteStepAndRepeat( $inCAM, $jobId, $etStepName, "coupon" );
+	foreach my $cStep (@coupons) {
+		
+		if ( CamStepRepeat->ExistStepAndRepeat( $inCAM, $jobId, $etStepName, $cStep ) ) {
+			CamStepRepeat->DeleteStepAndRepeat( $inCAM, $jobId, $etStepName, $cStep );
+		}
 	}
 
 	#check if SR exists in etStep, if so, flattern whole step
@@ -169,8 +172,7 @@ sub __FlatternETStep {
 	my %tmp;
 	@tmp{@filterLayer} = ();
 	@allLayers = grep { !exists $tmp{ $_->{"gROWname"} } } @allLayers;
-	
-	
+
 	foreach my $l (@allLayers) {
 
 		CamLayer->FlatternLayer( $inCAM, $jobId, $etStep, $l->{"gROWname"} );

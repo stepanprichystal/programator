@@ -166,7 +166,7 @@ sub GetUniqueStepAndRepeat {
 		unless ( scalar( grep { $_->{"stepName"} eq $info->{"gSRstep"} } @steps ) ) {
 			my %stepInf = ();
 			$stepInf{"stepName"} = $info->{"gSRstep"};
-
+ 
 			push( @steps, \%stepInf );
 		}
 	}
@@ -202,6 +202,7 @@ sub GetStepAndRepeat {
 
 	for ( my $i = 0 ; $i < scalar( @{ $inCAM->{doinfo}{gSRstep} } ) ; $i++ ) {
 		my %info = ();
+		$info{"stepName"} = ${ $inCAM->{doinfo}{gSRstep} }[$i];
 		$info{"gSRstep"} = ${ $inCAM->{doinfo}{gSRstep} }[$i];
 		$info{"gSRxa"}   = ${ $inCAM->{doinfo}{gSRxa} }[$i];
 		$info{"gSRya"}   = ${ $inCAM->{doinfo}{gSRya} }[$i];
@@ -305,7 +306,7 @@ sub DeleteStepAndRepeat {
 
 	my @arr = $self->GetStepAndRepeat( $inCAM, $jobId, $stepName );
 
-	for ( my $i = 0 ; $i < scalar(@arr) ; $i++ ) {
+	for ( my $i = scalar(@arr) -1 ; $i >= 0; $i-- ) {
 
 		if ( $srName eq $arr[$i]->{"gSRstep"} ) {
 			$inCAM->COM( 'sr_tab_del', line => ( $i + 1 ) );
@@ -439,6 +440,42 @@ sub GetStepAndRepeatLim {
 	return %limits;
 }
 
+
+# Remove all coupon steps from list of steps
+# each item has to contain key: "stepName"
+sub RemoveCouponSteps {
+	my $self         = shift;
+	my $steps        = shift;
+	my $includeCpns  = shift;
+	my $includeSteps = shift;
+	
+	my $keyStepName = "stepName";
+ 
+	for ( my $i = scalar( @{$steps} ) - 1 ; $i >= 0 ; $i-- ) {
+		
+		die "Key value: \"$keyStepName\" is not defined in step info" if(!defined $steps->[$i]->{"stepName"});
+
+		if ( !$includeCpns ) {
+
+			if ( $steps->[$i]->{$keyStepName} =~ /^coupon_?/ ) {
+
+				splice @{$steps}, $i, 1;
+
+			}
+		}
+		else {
+			if ( $steps->[$i]->{$keyStepName} =~ /^coupon_?/ && defined $includeSteps ) {
+
+				if ( !scalar( grep { $_ eq $steps->[$i]->{$keyStepName} } @{$includeSteps} ) ) {
+					splice @{$steps}, $i, 1;
+				}
+
+			}
+		}
+
+	}
+}
+
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#
@@ -449,10 +486,12 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	use aliased 'Packages::InCAM::InCAM';
 
 	my $inCAM = InCAM->new();
-	my $jobId = "d152457";
+	my $jobId = "d229010";
 	my $step  = "panel";
 
-	my @sr = CamStepRepeat->GetStepAndRepeat( $inCAM, $jobId, $step );
+	my @sr = CamStepRepeat->GetUniqueStepAndRepeat( $inCAM, $jobId, $step );
+
+	die;
 
 	#	my $l = undef;
 	#

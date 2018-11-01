@@ -37,7 +37,7 @@ sub new {
 sub Create {
 	my $self = shift;
 
-	my @excludeSteps = grep { $_ ne EnumsGeneral->Coupon_IMPEDANCE }JobHelper->GetCouponStepNames();
+	my @excludeSteps = grep { $_ ne EnumsGeneral->Coupon_IMPEDANCE } JobHelper->GetCouponStepNames();
 	my $flatten = FlattenPanel->new( $self->{"inCAM"}, $self->{"jobId"}, "panel", "f", "fsch", 0,  \@excludeSteps  );
 
 	$flatten->{"onItemResult"}->Add( sub { $self->__ProcesResult(@_) } );

@@ -202,8 +202,12 @@ sub __LoadNestedSteps {
 	$self->{"errorMess"} = "";
 
 	my @repeats = CamStepRepeat->GetRepeatStep( $inCAM, $jobId, $step );
-
 	my @uniqueSR = CamStepRepeat->GetUniqueStepAndRepeat( $inCAM, $jobId, $step );
+
+	CamStepRepeat->RemoveCouponSteps( \@repeats );
+	CamStepRepeat->RemoveCouponSteps( \@uniqueSR );
+
+	# remove coupo steps
 
 	# Set width/height
 	foreach my $uStep (@uniqueSR) {
@@ -224,9 +228,9 @@ sub __LoadNestedSteps {
 	foreach my $uStep (@uniqueSR) {
 
 		my %datum = CamStep->GetDatumPoint( $inCAM, $jobId, $uStep->{"stepName"}, 1 );
- 
+
 		# tolerance minus 10µm
-		if ( ($datum{"x"}*1000 - $uStep->{"lim"}->{"xmin"}) < -10 ||  ($datum{"y"}*1000 - $uStep->{"lim"}->{"ymin"} ) < -10 ) {
+		if ( ( $datum{"x"} * 1000 - $uStep->{"lim"}->{"xmin"} ) < -10 || ( $datum{"y"} * 1000 - $uStep->{"lim"}->{"ymin"} ) < -10 ) {
 
 			$self->{"initSucc"} = 0;
 			$self->{"errorMess"} .=
@@ -386,12 +390,12 @@ sub __LoadStep {
 		$self->{"errorMess"} .= "Some scorelines in step: " . $self->{"step"} . " are overlapping.";
 		$self->{"initSucc"} = 0;
 	}
- 
+
 	my %lim = CamJob->GetProfileLimits( $inCAM, $jobId, $self->{"step"} );
 	my %datum = CamStep->GetDatumPoint( $inCAM, $jobId, $self->{"step"}, 1 );
 
 	# tolerance minus 10µm
-	if ( ($datum{"x"}*1000 - $lim{"xmin"}) < -10 ||  ($datum{"y"}*1000 - $lim{"ymin"} ) < -10 ) {
+	if ( ( $datum{"x"} * 1000 - $lim{"xmin"} ) < -10 || ( $datum{"y"} * 1000 - $lim{"ymin"} ) < -10 ) {
 
 		$self->{"initSucc"} = 0;
 		$self->{"errorMess"} .=
@@ -399,7 +403,7 @@ sub __LoadStep {
 		  . $self->{"step"}
 		  . " není datum-point umístěn v levém dolním rohu profilu nebo uvnitř profilu. Posuň datum point do levého dolního rohu.\n";
 	}
- 
+
 	# register lines to zero, if origin is not in left lower corner
 
 	foreach my $k ( keys %lim ) {
@@ -414,7 +418,7 @@ sub __LoadStep {
 
 	# add score lines, according original score lines in step
 	my @lines = $score->GetFeatures();
-	
+
 	foreach my $l (@lines) {
 
 		my %startP = ( "x" => $l->{"x1"}, "y" => $l->{"y1"} );
