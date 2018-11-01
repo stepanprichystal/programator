@@ -93,12 +93,13 @@ sub CompleteRoutFeed {
 	$jobId =~ s/-.*$//;
 
 	my $info = HegMethods->GetInfoAfterStartProduce($orderId);
+	my $matKind = HegMethods->GetMaterialKind($jobId );
 
 	die "pocet_prirezu is no defined in HEG for orderid: $orderId" if ( !defined $info->{'pocet_prirezu'} || !defined $info->{'prirezu_navic'} );
 	my $totalPnlCnt = $info->{'pocet_prirezu'} + $info->{'prirezu_navic'};
 
 	my $mess = "";
-	unless ( RoutSpeed->CompleteRoutSpeed( $jobId, $totalPnlCnt, \$mess ) ) {
+	unless ( RoutSpeed->CompleteRoutSpeed( $jobId, $totalPnlCnt, $matKind, \$mess ) ) {
 		die "Error during set rout speed: $mess";
 	}
 

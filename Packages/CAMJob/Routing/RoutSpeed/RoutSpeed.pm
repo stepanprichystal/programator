@@ -17,11 +17,9 @@ use aliased 'Helpers::GeneralHelper';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'CamHelpers::CamRouting';
 use aliased 'Packages::Stackup::Stackup::Stackup';
-use aliased 'CamHelpers::CamJob';
 use aliased 'Helpers::FileHelper';
 use aliased 'Packages::CAMJob::Dim::JobDim';
 use aliased 'Packages::CAMJob::Routing::RoutDuplicated::RoutDuplicated';
-use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'Helpers::JobHelper';
 use aliased 'Packages::TifFile::TifNCOperations';
 
@@ -31,10 +29,11 @@ use aliased 'Packages::TifFile::TifNCOperations';
 
 # Complete rout speed to exported NC files
 sub CompleteRoutSpeed {
-	my $self        = shift;
-	my $jobId       = shift;
-	my $totalPnlCnt = shift;
-	my $errMess     = shift;
+	my $self         = shift;
+	my $jobId        = shift;
+	my $totalPnlCnt  = shift;
+	my $materialKind = shift;
+	my $errMess      = shift;
 
 	my $result = 1;
 
@@ -50,7 +49,8 @@ sub CompleteRoutSpeed {
 
 	foreach my $ncOper (@ncOperations) {
 
-		my %routSpeedTab = $self->__GetRoutSpeedTable( $ncOper->{"ncMatThick"}, $ncOper->{"minSlotTool"}, $totalPnlCnt, $ncOper->{"layers"} );
+		my %routSpeedTab =
+		  $self->__GetRoutSpeedTable( $ncOper->{"ncMatThick"}, $ncOper->{"minSlotTool"}, $totalPnlCnt, $materialKind, $ncOper->{"layers"} );
 
 		next unless ( $ncOper->{"isRout"} );
 
@@ -68,7 +68,10 @@ sub CompleteRoutSpeed {
 
 				my $t = $ncOper->{"machines"}->{$m}->{$toolKey};
 
-				my $speed = $self->__GetRoutSpeed( $t->{"drillSize"}, $t->{"isOutline"}, $t->{"isDuplicate"}, \%routSpeedTab );
+				my $speed =
+				  $self->__GetRoutSpeed( $t->{"drillSize"}, $t->{"isOutline"}, $t->{"isDuplicate"},
+										 ($t->{"magazineInfo"} ? $t->{"magazineInfo"} : "std"),
+										 \%routSpeedTab );
 
 				die "No speed defined for tool size: " . $t->{"drillSize"} . ", key: $toolKey" unless defined($speed);
 
@@ -96,14 +99,17 @@ sub __GetRoutSpeed {
 	my $drillSize    = shift;    # µm
 	my $isOutline    = shift;
 	my $isDuplicated = shift;
+	my $toolType = shift; # std/magazine info
 	my $routSpeedTab = shift;
+
+	my $key = "d=$drillSize"."_type=$toolType"; # diameter + type
 
 	my $speed;
 	if ($isOutline) {
-		$speed = $routSpeedTab->{$drillSize}->{"outline"};
+		$speed = $routSpeedTab->{$key}->{"outline"};
 	}
 	else {
-		$speed = $routSpeedTab->{$drillSize}->{"standard"};
+		$speed = $routSpeedTab->{$key}->{"standard"};
 	}
 
 	if ($isDuplicated) {
@@ -116,15 +122,16 @@ sub __GetRoutSpeed {
 }
 
 sub __GetRoutSpeedTable {
-	my $self        = shift;
-	my $matThick    = shift;    # µm
-	my $minTool     = shift;    #µm
-	my $totlaPnlCnt = shift;
-	my $layers      = shift;
+	my $self         = shift;
+	my $matThick     = shift;    # µm
+	my $minTool      = shift;    #µm
+	my $totlaPnlCnt  = shift;
+	my $materialKind = shift;
+	my $layers       = shift;
 
 	# Rout speed
-	my %routSpeedTab        = $self->__ParseRoutSpeedTable("RoutSpeed.csv");
-	my %routSpeedOutlineTab = $self->__ParseRoutSpeedTable("RoutSpeedOutline.csv");
+	my %routSpeedTab        = $self->__ParseRoutSpeedTable( 0, $materialKind );
+	my %routSpeedOutlineTab = $self->__ParseRoutSpeedTable( 1, $materialKind );
 
 	my @paketThick = ( 1500, 3000, 4000 );    # possible paket trasholds in µm
 
@@ -140,7 +147,7 @@ sub __GetRoutSpeedTable {
 
 		$tSpeed{$t} = {
 						"standard" => $routSpeedTab{$t}->[$packetType],
-						"outline"  => $routSpeedOutlineTab{$t}->[$packetType]
+						"outline"  => $routSpeedOutlineTab{$t} ? $routSpeedOutlineTab{$t}->[$packetType] : undef
 		};
 
 	}
@@ -164,14 +171,14 @@ sub __GetPacketType {
 	for ( my $i = scalar(@paketThick) - 1 ; $i >= 0 ; $i-- ) {
 
 		unless ( defined $minTool ) {
-		 
-			$defPaketIdx = scalar(@paketThick)-1;
+
+			$defPaketIdx = scalar(@paketThick) - 1;
 			last;
 		}
-		
-		die "Minimal slot tool: $minTool is not defined in \"RoutSpeedTable\"" unless ( defined $routSpeedTable{$minTool} );
-		 
-		if ( defined $routSpeedTable{$minTool}->[$i] ) {
+
+		die "Minimal slot tool: $minTool is not defined in \"RoutSpeedTable\"" unless ( defined $routSpeedTable{ "d=$minTool" . "_type=std" } );
+
+		if ( defined $routSpeedTable{ "d=$minTool" . "_type=std" }->[$i] ) {
 			$defPaketIdx = $i;
 			last;
 		}
@@ -200,13 +207,12 @@ sub __GetPacketType {
 		}
 	}
 	else {
-		
-		
+
 		my $pnlPerPacket = int( $paketThick[$defPaketIdx] / $matThick );
-		
+
 		# if  at least one panel not match minimum panel count per packet (depand on minimal rout tool)
 		# set default one panel per paket
-		if($pnlPerPacket == 0){
+		if ( $pnlPerPacket == 0 ) {
 			$pnlPerPacket = 1;
 		}
 
@@ -237,25 +243,43 @@ sub __GetPacketType {
 }
 
 sub __ParseRoutSpeedTable {
-	my $self = shift;
-	my $file = shift;
+	my $self         = shift;
+	my $outlineRout  = shift;
+	my $materialKind = shift;
+
+	my $file = $outlineRout ? "RoutSpeedOutline.csv" : "RoutSpeed.csv";
 
 	my $p = GeneralHelper->Root() . "\\Packages\\CAMJob\\Routing\\RoutSpeed\\" . $file;
 
 	my @lines = @{ FileHelper->ReadAsLines($p) };
- 
-	my %tools = ();
+
+	my %tools        = ();
+	my %toolsByMat   = ();
+	my @curMaterials = ();
 
 	foreach my $line (@lines) {
-		
-		chomp($line);
-		
-		next if($line =~ /#/);
-		
+
+		$line =~ s/\s//g;
+
+		if ( $line =~ /Materials=(.*)/i ) {
+
+			if (%toolsByMat) {
+				foreach my $mat (@curMaterials) {
+					%{ $tools{$mat} } = %toolsByMat;
+				}
+				%toolsByMat = ();
+			}
+
+			@curMaterials = split( ";", $1 );
+		}
+
+		next if ( $line =~ /#/ || $line eq "" );
+
 		my @vals = split( ";", $line );
 		chomp(@vals);
 
-		my $t = int( ( shift @vals ) * 1000 );
+		my $t = int( ( shift @vals ) * 1000 );    # tool diameter
+		my $tType = shift @vals;                  # tool type if tool is special
 
 		die "Wrong parsed tool size at $p, line $line" unless ($t);
 
@@ -263,10 +287,24 @@ sub __ParseRoutSpeedTable {
 		my $pakThick2 = $vals[1] eq "-" ? undef : $vals[1];
 		my $pakThick3 = $vals[2] eq "-" ? undef : $vals[2];
 
-		$tools{$t} = [ $pakThick1, $pakThick2, $pakThick3 ];
+		my $key = "d=$t" . "_type=$tType"; # diameter + type
+		$toolsByMat{ $key } = [ $pakThick1, $pakThick2, $pakThick3 ];
 	}
 
-	return %tools;
+	if (%toolsByMat) {
+		foreach my $mat (@curMaterials) {
+			$tools{$mat} = \%toolsByMat;
+		}
+	}
+
+	if ( $tools{$materialKind} ) {
+
+		return %{ $tools{$materialKind} };
+	}
+	else {
+
+		return %{ $tools{"default"} };
+	}
 }
 
 #-------------------------------------------------------------------------------------------#
@@ -281,7 +319,8 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	use aliased 'Packages::CAMJob::Routing::RoutSpeed::RoutSpeed';
 	use aliased 'Packages::InCAM::InCAM';
 
-	my $result = RoutSpeed->__GetRoutSpeedTable( 1600, 1000, 8, ["f"] );
+	my $errMess = "";
+	my $result = RoutSpeed->CompleteRoutSpeed( "d113608", 20, "AL_CORE", \$errMess );
 
 	print STDERR "Result is: $result";
 

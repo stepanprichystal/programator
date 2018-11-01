@@ -28,7 +28,7 @@ sub new {
 
 	return $self;
 }
- 
+
 # Set info about all NC operations like c1, fz1, fr, etc
 sub SetNCOperations {
 	my $self       = shift;
@@ -53,37 +53,37 @@ sub SetToolInfos {
 sub GetToolInfo {
 	my $self     = shift;
 	my $chainNum = shift;
-	my $layer = shift;
-	my $step = shift;
+	my $layer    = shift;
+	my $step     = shift;
 
 	my $toolInfo = $self->{"tifData"}->{ $self->{"key"} }->{"ToolInfo"};
-	
-	return undef if(!defined $toolInfo->{$step});
-	
-	return undef if(!defined $toolInfo->{$step}->{$layer});
-	
-	return undef if(!defined $toolInfo->{$step}->{$layer}->{$chainNum});
-	
+
+	return undef if ( !defined $toolInfo->{$step} );
+
+	return undef if ( !defined $toolInfo->{$step}->{$layer} );
+
+	return undef if ( !defined $toolInfo->{$step}->{$layer}->{$chainNum} );
+
 	return $toolInfo->{$step}->{$layer}->{$chainNum};
 }
 
 # Add info about exported NC file to specific operation
 sub AddToolToOperation {
-	my $self     = shift;
-	my $layer    = shift;
-	my $machine  = shift;    # machine suffix
-	my $key      = shift;
-	my $drillSize      = shift;
-	my $chainNum = shift;
-	my $step     = shift;
-	my $duplRout = shift;
+	my $self         = shift;
+	my $layer        = shift;
+	my $machine      = shift;    # machine suffix
+	my $key          = shift;
+	my $drillSize    = shift;
+	my $chainNum     = shift;
+	my $step         = shift;
+	my $duplRout     = shift;
+	my $magazineInfo = shift;    # if special tool (see Config/MagazineSpec.xml) magazineInfo is set
 
-	my $result = 1;          # tool information was found in tif file
- 
+	my $result = 1;              # tool information was found in tif file
 
 	# search tool info
-	my $tInfo =	$self->GetToolInfo($chainNum, $layer, $step);
-	 
+	my $tInfo = $self->GetToolInfo( $chainNum, $layer, $step );
+
 	if ( defined $tInfo ) {
 
 		# search all machines where participate this tool
@@ -104,15 +104,20 @@ sub AddToolToOperation {
 
 				#$toolOpInfo{"key"} = $key;
 
-				$toolOpInfo{"chainNum"}  = $chainNum;
-				$toolOpInfo{"step"}      = $step;
-				$toolOpInfo{"layer"}     = $layer;
-				$toolOpInfo{"isDuplicate"}  = $duplRout;
-				$toolOpInfo{"isOutline"} = $tInfo->{"isOutline"};
-				$toolOpInfo{"drillSize"}  = $drillSize;
+				$toolOpInfo{"chainNum"}    = $chainNum;
+				$toolOpInfo{"step"}        = $step;
+				$toolOpInfo{"layer"}       = $layer;
+				$toolOpInfo{"isDuplicate"} = $duplRout;
+				$toolOpInfo{"isOutline"}   = $tInfo->{"isOutline"};
+				$toolOpInfo{"drillSize"}   = $drillSize;
+				
+				if($magazineInfo){
+					$toolOpInfo{"magazineInfo"}   = $magazineInfo;
+				}
+				
 
 				$item->{"machines"}->{$machine}->{$key} = \%toolOpInfo;
-			
+
 			}
 
 			$self->_Save();
@@ -139,8 +144,6 @@ sub GetNCOperations {
 	return @{ $self->{"tifData"}->{ $self->{"key"} }->{"NCOperations"} };
 
 }
-
- 
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
