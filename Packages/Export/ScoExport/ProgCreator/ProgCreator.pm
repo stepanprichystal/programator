@@ -12,7 +12,7 @@ use warnings;
 #local library
 #use aliased 'Enums::EnumsGeneral';
 #
-#use aliased 'Packages::Scoring::ScoreChecker::ScoreChecker';
+ 
 #use aliased 'Packages::Scoring::ScoreOptimize::ScoreOptimize';
 #
 #use aliased 'Packages::Export::ScoExport::Enums';

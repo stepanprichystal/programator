@@ -32,6 +32,8 @@ use aliased 'Helpers::JobHelper';
 use aliased 'CamHelpers::CamDrilling';
 use aliased 'Packages::ItemResult::Enums' => "ItemResEnums";
 use aliased 'Enums::EnumsPaths';
+use aliased 'Enums::EnumsGeneral';
+
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -293,6 +295,7 @@ sub __ExportAOI {
 	# Set steps and repeat
 
 	my @steps = CamStepRepeat->GetUniqueStepAndRepeat( $inCAM, $jobId, $stepToTest );
+	CamStepRepeat->RemoveCouponSteps(\@steps, 1, [EnumsGeneral->Coupon_IMPEDANCE]);
 
 	@steps = map { $_->{"stepName"} } @steps;
 
@@ -445,7 +448,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobName   = "f52457";
+	my $jobName   = "d229010";
 	my $stepName  = "panel";
 	my $layerName = "c";
 
