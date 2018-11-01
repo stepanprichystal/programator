@@ -128,6 +128,36 @@ sub GetAllByPcbId {
 	}
 }
 
+sub GetExternalDoc {
+		my $self  = shift;
+		my $pcbId = shift;
+
+		my @params = ( SqlParameter->new( "_PcbId", Enums->SqlDbType_VARCHAR, $pcbId ) );
+	
+		my $cmd = "select top 1
+	stuff ((select ',' +  'heliosgreen://v1/nrs/Gatema/Classes(145)/Folders(11019)/RunFunction?FunctionName=spusteni&RecordNumbers=[' + cast(vs.cislo_vztaz_subjektu as varchar(30)) + ']' from lcs.vztahysubjektu vs where vs.cislo_vztahu = 17810 and vs.cislo_subjektu = n.cislo_subjektu for xml path (''), TYPE).value('.', 'varchar(max)'), 1, 1 , '' ) externi_dokumenty
+	from lcs.desky_22 d with (nolock)
+				 left outer join lcs.subjekty c with (nolock) on c.cislo_subjektu=d.zakaznik
+				 left outer join lcs.kmenova_karta_skladu m with (nolock) on m.cislo_subjektu=d.material
+				 left outer join lcs.zakazky_dps_22_hlavicka z with (nolock) on z.deska=d.cislo_subjektu
+				 left outer join lcs.vztahysubjektu vs with (nolock) on vs.cislo_subjektu=z.cislo_subjektu and vs.cislo_vztahu=22175
+				 left outer join lcs.zakazky_dps_22_hlavicka n with (nolock) on vs.cislo_vztaz_subjektu=n.cislo_subjektu
+				 left outer join lcs.subjekty prijal with (nolock) on prijal.cislo_subjektu=n.prijal
+				 left outer join lcs.desky_22 dn with (nolock) on n.deska=dn.cislo_subjektu
+				 left outer join lcs.subjekty mn with (nolock) on mn.cislo_subjektu=dn.material
+				 where d.reference_subjektu=_PcbId and  z.cislo_poradace = 22050
+				 order by z.reference_subjektu desc,n.cislo_subjektu desc,z.cislo_subjektu desc";
+				 
+		my @result = Helper->ExecuteDataSet( $cmd, \@params );
+
+	if (@result) {
+		return @result;
+	}
+	else {
+		return undef;
+	}
+}
+
 # Return hash ref with information about order
 # parameter is pcbid with order id: eg: f12345-01
 sub GetInfoAfterStartProduce {

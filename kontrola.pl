@@ -684,6 +684,19 @@ sub _PutOfferToGui {
 												
 									$i++;
 									}
+									
+									my @infoPcbOffer = HegMethods->GetExternalDoc($jobName);		
+									my @dokuments = split /,/ ,$infoPcbOffer[0]->{'externi_dokumenty'};
+									
+									my $countOfDoc = 1;
+									foreach my $oneDoc (@dokuments) {
+										
+											$tmpFrame[$i] = $OfferFrame->Frame(-width=>100, -height=>10)->pack(-side=>'top',-fill=>'x');
+											my $tl_no=$tmpFrame[$i]->Button(-width=>'20',-text => "Externi dokument " . $countOfDoc,-command=> \sub {system("c:/Program Files (x86)/Internet Explorer/iexplore.exe", $oneDoc);},-bg=>'blue',-fg=>'white')->pack(-padx => 1, -pady => 1,-side=>'left');
+											
+										$i++;
+										$countOfDoc++;
+									}
 							}else{
 								$OfferFrame ->Label(-text=>'Nepripojena zadna nabidka', -fg=>'black')->pack(-side=>'top',-fill=>'y');
 							}
