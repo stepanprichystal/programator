@@ -1528,20 +1528,20 @@ sub _CheckIfCleanUpDone {
 		}
 		
 		
-		$inCAM->INFO(units => 'mm', angle_direction => 'ccw', entity_type => 'check',entity_path => "$pcbId/$step/Clean_up",data_type => 'EXISTS');
+		$inCAM->INFO(units => 'mm', angle_direction => 'ccw', entity_type => 'check',entity_path => "$pcbId/$step/clean_up",data_type => 'EXISTS');
 		if ($inCAM->{doinfo}{gEXISTS} eq "yes") {
 				$inCAM->INFO(units => 'mm', 
 			      angle_direction => 'ccw', 
 			        entity_type => 'check',
-			        entity_path => "$pcbId/$step/Clean_up",
+			        entity_path => "$pcbId/$step/clean_up",
 			        data_type => 'STATUS',
 			        options => "action=16");
 			        
 			        if($inCAM->{doinfo}{gSTATUS} eq 'UNDONE' ){
-			        		push @errorMessageArr,  '- Pozor, nebyl proveden Clean_UP, naprav to.';
+			        		push @errorMessageArr,  '- Pozor, nebyl proveden clean_up, naprav to.';
 			        }		       	
 		}else{
-							push @errorMessageArr,  '- Pozor, nebyl proveden Clean_UP, naprav to.';
+							push @errorMessageArr,  '- Pozor, nebyl proveden clean_up, naprav to.';
 		}
 }
 
