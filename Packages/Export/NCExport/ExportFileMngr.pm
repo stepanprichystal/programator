@@ -129,14 +129,12 @@ sub __ExportNcSet {
 
 		if ( $layerName ne "fsch" ) {
 
-			#check if panel contain name "mapanel" step
-			my $mpanelExist = CamStepRepeat->ExistStepAndRepeat( $inCAM, $jobId, $stepName, "mpanel" );
+			my @sr = CamStepRepeat->GetStepAndRepeat( $inCAM, $jobId, $stepName );
 
-			if ($mpanelExist) {
+			#check if panel contain name "mapanel" step
+			if (CamStepRepeat->ExistStepAndRepeat( $inCAM, $jobId, $stepName, "mpanel" )) {
 
 				# find line number with first occurence of mpanel in SR table
-				my @sr = CamStepRepeat->GetStepAndRepeat( $inCAM, $jobId, $stepName );
-
 				my $lNum = undef;
 
 				for ( my $i = 0 ; $i < scalar(@sr) ; $i++ ) {
@@ -178,12 +176,23 @@ sub __ExportNcSet {
 
 			}
 			else {
+				
+				# there can by more steps in panel (coupons). Look line number in S&R of o+1 step
+				 my $lNum = undef;
 
-				$inCAM->COM( "sredit_set_step_nest", "lines" => "1", "nx" => "1", "ny" => "1", "clear_selection" => "yes" );
+				for ( my $i = 0 ; $i < scalar(@sr) ; $i++ ) {
+
+					if ( $sr[$i]->{"gSRstep"} eq "o+1" ) {
+						$lNum = $i + 1;
+						last;
+					}
+				}
+
+				$inCAM->COM( "sredit_set_step_nest", "lines" => $lNum, "nx" => "1", "ny" => "1", "clear_selection" => "yes" );
 				$inCAM->COM(
 							 "nc_order",
 							 "serial"  => "1",
-							 "sr_line" => "1",
+							 "sr_line" => $lNum,
 							 "sr_nx"   => "1",
 							 "sr_ny"   => "1",
 							 "mode"    => "btrl",
@@ -207,6 +216,8 @@ sub __ExportNcSet {
 	$inCAM->HandleException(1);
 
 	$inCAM->COM( "nc_cre_output", "layer" => $layerName, "ncset" => $setName );
+	
+ 
 
 	# STOP HANDLE EXCEPTION IN INCAM
 	$inCAM->HandleException(0);

@@ -264,6 +264,14 @@ sub Build {
 			}
 		}
 	}
+	
+	
+	# Vrtani po prokovu
+	if ( $layerCnt > 2 ) {
+		$section->AddRow( "program_freza_po_prokovu", $ncArchiv . "\\nc\\" . $jobId . "_fc1" );
+	}else{
+		$section->AddRow( "program_freza_po_prokovu", $ncArchiv . "\\nc\\" . $jobId . "_fc" );
+	}
 
 }
 
