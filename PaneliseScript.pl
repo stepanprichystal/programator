@@ -1890,7 +1890,7 @@ sub __getInfoPanel {
 sub _GetConstrClass {
 		my $jobId = shift;
 		my $stepId = shift;
-		my $checkList = 'Checks';
+		my $checkList = 'checks';
 		my $positionInChecks = 'action=2';
 		my $res = 0;
 		
@@ -1910,7 +1910,7 @@ sub _GetConstrClass {
 sub _GetConstrClass_inner {
 		my $jobId = shift;
 		my $stepId = shift;
-		my $checkList = 'Checks';
+		my $checkList = 'checks';
 		my $positionInChecks = 'action=1';
 		my $res = 0;
 		

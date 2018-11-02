@@ -208,8 +208,8 @@ sub Build {
 		# Do check on proper gerbers only if data format is ok
 		if ( (!defined $nifData{"wrongFormat"} || $nifData{"wrongFormat"} == 0) && scalar(@gerbers) ) {
 
-			my $topExist = scalar( grep { $_ =~ /\.top$|top\.[(gbr)(ger)]/s } @gerbers );
-			my $botExist = scalar( grep { $_ =~ /\.bot$|bot\.[(gbr)(ger)]/s } @gerbers );
+			my $topExist = scalar( grep { $_ =~ /\.top$|top\.[(gbr)(ger)]/si } @gerbers );
+			my $botExist = scalar( grep { $_ =~ /\.bot$|bot\.[(gbr)(ger)]/si } @gerbers );
 
 			if ( !$topExist || !$botExist ) {
 				$gerbersOk = 0;

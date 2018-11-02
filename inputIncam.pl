@@ -437,10 +437,10 @@ sub _Process {
  			
  			
  			# Here run clean-up
- 			$inCAM -> COM('chklist_from_lib',chklist=>'Clean_up',profile=>'none',customer=>'');
- 			$inCAM -> COM('chklist_open',chklist=>'Clean_up');
- 			$inCAM -> COM('chklist_show',chklist=>'Clean_up',nact=>'1',pinned=>'no',pinned_enabled=>'yes');
- 			$inCAM -> COM('chklist_run',chklist=>'Clean_up',nact=>'a',area=>'profile',async_run=>'no');
+ 			$inCAM -> COM('chklist_from_lib',chklist=>'clean_up',profile=>'none',customer=>'');
+ 			$inCAM -> COM('chklist_open',chklist=>'clean_up');
+ 			$inCAM -> COM('chklist_show',chklist=>'clean_up',nact=>'1',pinned=>'no',pinned_enabled=>'yes');
+ 			$inCAM -> COM('chklist_run',chklist=>'clean_up',nact=>'a',area=>'profile',async_run=>'no');
  			
  			
  			$inCAM -> PAUSE('ZKONTROLUJ CLEAN-UP');
@@ -455,7 +455,7 @@ sub _Process {
  			}
  			
  			
- 			$inCAM -> COM('chklist_close',chklist=>'Clean_up',mode=>'hide');
+ 			$inCAM -> COM('chklist_close',chklist=>'clean_up',mode=>'hide');
  			
  			# Set CAM GUIDE called Skriptiky
  			$inCAM -> COM('show_component',component=>'CAM_Guide',show=>'no',width=>0,height=>0);
@@ -472,13 +472,13 @@ sub _Process {
  			
  			
  			# Here run Checks
- 			$inCAM -> COM('chklist_from_lib',chklist=>'Checks',profile=>'none',customer=>'');
- 			$inCAM -> COM('chklist_open',chklist=>'Checks');
- 			$inCAM -> COM('chklist_show',chklist=>'Checks',nact=>'1',pinned=>'no',pinned_enabled=>'yes');
+ 			$inCAM -> COM('chklist_from_lib',chklist=>'checks',profile=>'none',customer=>'');
+ 			$inCAM -> COM('chklist_open',chklist=>'checks');
+ 			$inCAM -> COM('chklist_show',chklist=>'checks',nact=>'1',pinned=>'no',pinned_enabled=>'yes');
  			#$inCAM -> COM('chklist_run',chklist=>'Checks',nact=>'a',area=>'profile',async_run=>'no');
  			
  			$inCAM -> PAUSE('PROVED CHECK-list');
- 			$inCAM -> COM('chklist_close',chklist=>'Checks',mode=>'hide');
+ 			$inCAM -> COM('chklist_close',chklist=>'checks',mode=>'hide');
  			
  			# When I have mpanel so will be flattened 
  			 	$inCAM->INFO(entity_type=>'step',entity_path=>"$pcbId/mpanel",data_type=>'exists');
@@ -1196,7 +1196,7 @@ sub _CheckREDresult {
 								 units           => 'mm',
 								 angle_direction => 'ccw',
 								 entity_type     => 'check',
-								 entity_path     => "$jobId/$StepName/Clean_up",
+								 entity_path     => "$jobId/$StepName/clean_up",
 								 data_type       => 'MEAS',
 								 options         => "action=11+severity=R",
 								 parse           => 'no'
