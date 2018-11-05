@@ -1528,20 +1528,20 @@ sub _CheckIfCleanUpDone {
 		}
 		
 		
-		$inCAM->INFO(units => 'mm', angle_direction => 'ccw', entity_type => 'check',entity_path => "$pcbId/$step/Clean_up",data_type => 'EXISTS');
+		$inCAM->INFO(units => 'mm', angle_direction => 'ccw', entity_type => 'check',entity_path => "$pcbId/$step/clean_up",data_type => 'EXISTS');
 		if ($inCAM->{doinfo}{gEXISTS} eq "yes") {
 				$inCAM->INFO(units => 'mm', 
 			      angle_direction => 'ccw', 
 			        entity_type => 'check',
-			        entity_path => "$pcbId/$step/Clean_up",
+			        entity_path => "$pcbId/$step/clean_up",
 			        data_type => 'STATUS',
 			        options => "action=16");
 			        
 			        if($inCAM->{doinfo}{gSTATUS} eq 'UNDONE' ){
-			        		push @errorMessageArr,  '- Pozor, nebyl proveden Clean_UP, naprav to.';
+			        		push @errorMessageArr,  '- Pozor, nebyl proveden clean_up, naprav to.';
 			        }		       	
 		}else{
-							push @errorMessageArr,  '- Pozor, nebyl proveden Clean_UP, naprav to.';
+							push @errorMessageArr,  '- Pozor, nebyl proveden clean_up, naprav to.';
 		}
 }
 
@@ -1890,7 +1890,7 @@ sub __getInfoPanel {
 sub _GetConstrClass {
 		my $jobId = shift;
 		my $stepId = shift;
-		my $checkList = 'Checks';
+		my $checkList = 'checks';
 		my $positionInChecks = 'action=2';
 		my $res = 0;
 		
@@ -1910,7 +1910,7 @@ sub _GetConstrClass {
 sub _GetConstrClass_inner {
 		my $jobId = shift;
 		my $stepId = shift;
-		my $checkList = 'Checks';
+		my $checkList = 'checks';
 		my $positionInChecks = 'action=1';
 		my $res = 0;
 		
