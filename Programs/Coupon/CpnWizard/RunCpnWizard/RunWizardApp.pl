@@ -72,11 +72,12 @@ sub __CheckBeforeRun {
 
 	# 1) Check if class is not empty
 	my $class = CamJob->GetLimJobPcbClass($inCAM, $jobId, "max");
+ 
 	
-	if(!defined $class && $class == 0){
+	if(!defined $class || $class == 0){
 
 		$result = 0;
-		$$mess .= "Job pcb class is not defined";
+		$$mess .= "Job pcb class is not defined. First set job attributes: Pcbclass; Pcbclass_inner ";
 	}
 	
 	# 2) Check if layer cnt is same in job and instack

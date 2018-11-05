@@ -16,6 +16,7 @@ use aliased 'Enums::EnumsGeneral';
 use aliased 'CamHelpers::CamHelper';
 use aliased 'CamHelpers::CamStep';
 use aliased 'CamHelpers::CamStepRepeat';
+use aliased 'CamHelpers::CamStepRepeatPnl';
 use aliased 'CamHelpers::CamJob';
 use aliased 'Helpers::JobHelper';
 use aliased 'Packages::CAM::Netlist::NetlistCompare';
@@ -48,7 +49,7 @@ sub DoControl {
 	if ($pnlExist) {
 
 		# Standard
-		@steps = map { $_->{"stepName"} } CamStepRepeat->GetUniqueStepAndRepeat( $inCAM, $jobId, "panel" );
+		@steps = map { $_->{"stepName"} } CamStepRepeatPnl->GetUniqueStepAndRepeat( $inCAM, $jobId );
 
 	}
 	else {
@@ -182,7 +183,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId = "d152457";
+	my $jobId = "d229465";
 
 	my $notClose = 0;
 

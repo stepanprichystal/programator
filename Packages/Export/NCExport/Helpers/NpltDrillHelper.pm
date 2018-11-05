@@ -47,7 +47,7 @@ sub SeparateNpltDrill {
 
 	# fsch layer => pom
 
-	$movedPads += $self->__CreateNpltDrill( $inCAM, $jobId, "fsch", "fsch_nplt_ndrill", 1 );
+	$movedPads += $self->__CreateNpltDrill( $inCAM, $jobId, "fsch", "fsch_d", 1 );
 
 	return $movedPads;
 
@@ -63,7 +63,7 @@ sub RestoreNpltDrill {
 
 	$restoredPads += $self->__RemoveNpltDrill( $inCAM, $jobId, "d", "f" );
 
-	$restoredPads += $self->__RemoveNpltDrill( $inCAM, $jobId, "fsch_nplt_ndrill", "fsch", 1 );
+	$restoredPads += $self->__RemoveNpltDrill( $inCAM, $jobId, "fsch_d", "fsch", 1 );
 
 	if ( $movedPads != $restoredPads ) {
 		die "Spearete pad cnt ($movedPads) != resoted pad cnt ($restoredPads)";
@@ -89,7 +89,8 @@ sub __CreateNpltDrill {
 		#CamMatrix->DeleteLayer( $inCAM, $jobId, $to );
 	}
 
-	CamMatrix->CreateLayer( $inCAM, $jobId, $to, "drill", "positive", ( $nonStandard ? 0 : 1 ) );
+	#CamMatrix->CreateLayer( $inCAM, $jobId, $to, "drill", "positive", ( $nonStandard ? 0 : 1 ) );
+	CamMatrix->CreateLayer( $inCAM, $jobId, $to, "drill", "positive", 1 );
 
 	# if direction is top2bot but, there is z-axis from bot, change dir b2t
 	if ( scalar( CamDrilling->GetNCLayersByType( $inCAM, $jobId, EnumsGeneral->LAYERTYPE_nplt_bMillBot ) ) ) {

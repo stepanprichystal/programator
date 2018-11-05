@@ -336,7 +336,7 @@ sub __DefinePlatedOperations {
 	for ( my $i = 0 ; $i < $coreCnt ; $i++ ) {
 
 		my $coreNum = $i + 1;
-		my $coreNC    = $stackupNC->GetCore($coreNum);
+		my $coreNC  = $stackupNC->GetCore($coreNum);
 
 		# start/stop plated NC layers in core
 		my @ncLayers = ();
@@ -346,13 +346,13 @@ sub __DefinePlatedOperations {
 		if ( $coreNC->ExistNCLayers( Enums->SignalLayer_BOT ) ) {
 			push( @ncLayers, $coreNC->GetNCLayers( Enums->SignalLayer_BOT ) );
 		}
-		
+
 		# outer core
 		my $outer = 0;
- 		if ( $coreNC->GetTopSigLayer()->GetName() eq "c" || $coreNC->GetBotSigLayer()->GetName() eq "s" ) {
+		if ( $coreNC->GetTopSigLayer()->GetName() eq "c" || $coreNC->GetBotSigLayer()->GetName() eq "s" ) {
 			$outer = 1;
 		}
-		
+
 		if ( scalar( grep { $_->{"plated"} } @ncLayers ) == 0 || $outer ) {
 			$noNCExist = 1;
 			last;
@@ -375,7 +375,7 @@ sub __DefineNPlatedOperations {
 	my $stackup       = $self->{'stackup'};               #info about press count, which layer are pressed, etc..
 
 	my $stackupNC = StackupNC->new( $self->{"inCAM"}, $stackup );
-	my $coreCnt      = $stackupNC->GetCoreCnt();
+	my $coreCnt = $stackupNC->GetCoreCnt();
 
 	#non plated
 	my @nplt_nDrill    = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_nDrill } };       #normall nplt drill
@@ -435,6 +435,15 @@ sub __DefineNPlatedOperations {
 
 		# add all @nplt_nDrill which has dir from bot2top
 		my @nplt_nDrill_b2t = grep { $_->{"gROWdrl_dir"} eq "bot2top" && $_->{"gROWdrl_start"} == $startBot } @nplt_nDrill;
+
+		# Exception, if "fsch_d" layer is created. Remove "d" and use instead only "fsch_d" layer
+		# fsch_d contain nplt drills from layer fsch
+		if ( scalar( grep { $_->{"gROWname"} =~ /fsch_d/i } @nplt_nDrill_b2t ) > 0 ) {
+			
+			die "Layer \"d\" must exist if exist layer \"fsch_d\"" unless(grep { $_->{"gROWname"} =~ /^d$/i } @nplt_nDrill_b2t );
+			@nplt_nDrill_b2t = grep { $_->{"gROWname"} !~ /^d$/i } @nplt_nDrill_b2t;
+		}
+
 		push( @layers, @nplt_nDrill_b2t );
 
 		$opManager->AddOperationDef( $outFile, \@layers, $pressOrder );
@@ -461,8 +470,8 @@ sub __DefineNPlatedOperations {
 
 	# 4) Operation name = jfzc<core number> - can contain layer from @nplt_cbMillTop
 	for ( my $i = 0 ; $i < $coreCnt ; $i++ ) {
- 
-		my $core    = $stackup->GetCore($i + 1);
+
+		my $core = $stackup->GetCore( $i + 1 );
 
 		my @jLayers = grep { $_->{"gROWdrl_start"} == $core->GetTopCopperLayer()->GetCopperNumber() } @nplt_cbMillTop;
 
@@ -471,8 +480,8 @@ sub __DefineNPlatedOperations {
 
 	# 5) Operation name = jfzs<core number> - can contain layer from @nplt_cbMillBot
 	for ( my $i = 0 ; $i < $coreCnt ; $i++ ) {
- 
-		my $core    = $stackup->GetCore($i + 1);
+
+		my $core = $stackup->GetCore( $i + 1 );
 
 		my @jLayers = grep { $_->{"gROWdrl_start"} == $core->GetBotCopperLayer()->GetCopperNumber() } @nplt_cbMillBot;
 
@@ -492,6 +501,13 @@ sub __DefineNPlatedOperations {
 
 	# add all @nplt_nDrill which has dir from top2bot
 	my @nplt_nDrill_t2b = grep { $_->{"gROWdrl_dir"} ne "bot2top" } @nplt_nDrill;
+
+	# Exception, if "fsch_d" layer is created. Remove "d" and use instead only "fsch_d" layer
+	# fsch_d contain nplt drills from layer fsch
+	if ( scalar( grep { $_->{"gROWname"} =~ /fsch_d/i } @nplt_nDrill_t2b ) > 0 ) {
+		die "Layer \"d\" must exist if exist layer \"fsch_d\"" unless(grep { $_->{"gROWname"} =~ /^d$/i } @nplt_nDrill_t2b );
+		@nplt_nDrill_t2b = grep { $_->{"gROWname"} !~ /^d$/i } @nplt_nDrill_t2b;
+	}
 	my @layers = ( @nplt_nMill, @nplt_nDrill_t2b );
 
 	$opManager->AddOperationDef( "fc" . $stackup->GetPressCount(), \@layers, $stackup->GetPressCount() );

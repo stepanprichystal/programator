@@ -148,7 +148,7 @@ sub __DefineNPlatedOperations {
 	my %npltDrillInfo = %{ $self->{"npltDrillInfo"} };    #contain array of hashes of all NC layers with info (start/stop drill layer)
 
 	#non plated
-	my @nplt_nDrill   = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_nDrill } };    	 #normall nplt drill
+	my @nplt_nDrill   = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_nDrill } };      #normall nplt drill
 	my @nplt_nMill    = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_nMill } };       #normall mill slits
 	my @nplt_bMillTop = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_bMillTop } };    #z-axis top mill
 	my @nplt_bMillBot = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_bMillBot } };    #z-axis bot mill
@@ -157,10 +157,10 @@ sub __DefineNPlatedOperations {
 	my @nplt_kMill    = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_kMill } };       #milling conneector
 	my @nplt_lcMill   = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_lcMill } };      #milling template snim lak c
 	my @nplt_lsMill   = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_lsMill } };      #milling template snim lak s
-	
-	my @nplt_cvrlycMill     = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_cvrlycMill } };        #top coverlay mill 
-	my @nplt_cvrlysMill     = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_cvrlysMill } };        #bot coverlay mill 
-	
+
+	my @nplt_cvrlycMill = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_cvrlycMill } };    #top coverlay mill
+	my @nplt_cvrlysMill = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_cvrlysMill } };    #bot coverlay mill
+
 	#Define operation:
 
 	# 1) Operation name = fc - can contain layer
@@ -174,10 +174,18 @@ sub __DefineNPlatedOperations {
 	if ( scalar(@fsch) > 0 ) {
 		@nplt_nMill = grep { $_->{"gROWname"} !~ /^f[0-9]*$/i } @nplt_nMill;
 	}
+
 	# add all @nplt_nDrill which has dir from top2bot
-	my @nplt_nDrill_t2b = grep { $_->{"gROWdrl_dir"} ne "bot2top"} @nplt_nDrill;
-	
-	my @layers1 = (@nplt_nMill, @nplt_nDrill_t2b); 
+	my @nplt_nDrill_t2b = grep { $_->{"gROWdrl_dir"} ne "bot2top" } @nplt_nDrill;
+
+	# Exception, if "fsch_d" layer is created. Remove "d" and use instead only "fsch_d" layer
+	# fsch_d contain nplt drills from layer fsch
+	if ( scalar( grep { $_->{"gROWname"} =~ /fsch_d/i } @nplt_nDrill_t2b ) > 0 ) {
+		die "Layer \"d\" must exist if exist layer \"fsch_d\"" unless(grep { $_->{"gROWname"} =~ /^d$/i } @nplt_nDrill_t2b );
+		@nplt_nDrill_t2b = grep { $_->{"gROWname"} !~ /^d$/i } @nplt_nDrill_t2b;
+	}
+
+	my @layers1 = ( @nplt_nMill, @nplt_nDrill_t2b );
 
 	$opManager->AddOperationDef( "fc", \@layers1, -1 );
 
@@ -188,11 +196,18 @@ sub __DefineNPlatedOperations {
 	# 3) Operation name = fzs - can contain layer
 	# - @nplt_bMillBot
 	# - @nplt_nDrill
-	
+
 	# add all @nplt_nDrill which has dir from bot2top
-	my @nplt_nDrill_b2t = grep { $_->{"gROWdrl_dir"} eq "bot2top"} @nplt_nDrill;
-	my @layers2 = (@nplt_bMillBot, @nplt_nDrill_b2t); 
-	
+	my @nplt_nDrill_b2t = grep { $_->{"gROWdrl_dir"} eq "bot2top" } @nplt_nDrill;
+
+	# Exception, if "fsch_d" layer is created. Remove "d" and use instead only "fsch_d" layer
+	# fsch_d contain nplt drills from layer fsch
+	if ( scalar( grep { $_->{"gROWname"} =~ /fsch_d/i } @nplt_nDrill_b2t ) > 0 ) {
+		die "Layer \"d\" must exist if exist layer \"fsch_d\"" unless(grep { $_->{"gROWname"} =~ /^d$/i } @nplt_nDrill_b2t );
+		@nplt_nDrill_b2t = grep { $_->{"gROWname"} !~ /^d$/i } @nplt_nDrill_b2t;
+	}
+	my @layers2 = ( @nplt_bMillBot, @nplt_nDrill_b2t );
+
 	$opManager->AddOperationDef( "fzs", \@layers2, -1 );
 
 	# 4) Operation name = rs - can contain layer
@@ -210,9 +225,10 @@ sub __DefineNPlatedOperations {
 	# 7) Operation name = fls - can contain layer
 	# - @nplt_lsMill
 	$opManager->AddOperationDef( "fls", \@nplt_lsMill, -1 );
-	
-		# 11) Operation name = fls - can contain layer
+
+	# 11) Operation name = fls - can contain layer
 	$opManager->AddOperationDef( "coverlayc", \@nplt_cvrlycMill, -1 );
+
 	# 11) Operation name = fls - can contain layer
 	$opManager->AddOperationDef( "coverlays", \@nplt_cvrlysMill, -1 );
 }
