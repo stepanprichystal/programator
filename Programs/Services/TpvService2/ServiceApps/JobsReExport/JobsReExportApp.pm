@@ -165,7 +165,7 @@ sub __GetJob2ReExport {
 
 	}
 
-	return ( $self->{"maxLim"} >= @jobs ) ? @jobs : splice( @jobs, -$self->{"maxLim"} );
+	return @jobs;
 }
 
 sub __GetSelectedExportUnits {
@@ -280,8 +280,8 @@ sub __CheckBeforeExport {
 	push( @unitsReq, "pre" );    # pre unit has to by present always
 	
 	 
-	
-	print STDERR "Klice: ".join("; ",@unitsReq);
+	$self->{"logger"}->debug("Exported groups for job: $jobId, are: ".join("; ",@unitsReq));
+	 
 
 	$self->{"units"} = UnitHelper->PrepareUnits( $inCAM, $jobId );
 
@@ -290,13 +290,11 @@ sub __CheckBeforeExport {
 		print STDERR "Set gorup:".$u->GetUnitId()."\n";
 	
 		if (  grep { $_ eq  $u->GetUnitId()} @unitsReq) {
-			
-			print STDERR "Set gorup:".$u->GetUnitId()." ON\n";
+
 			$u->SetGroupState( CheckerEnums->GroupState_ACTIVEON );
 		}
 		else {
-			
-			print STDERR "Set gorup:".$u->GetUnitId()." OFF\n";
+
 			$u->SetGroupState( CheckerEnums->GroupState_ACTIVEOFF );
 		}
 	}
