@@ -246,13 +246,16 @@ sub __GetLayerLimit {
 	# - mask layer (mc;ms) layer
 	# - gold layer (goldc; golds)
 	# - signal layer (c;s) and not flex
-	if ( ( $self->{"layerCnt"} > 2 && $layerName =~ /^[(gold)m][cs]$/ )
-		 || $self->{"layerCnt"} > 2 && $layerName =~ /^[cs]$/ && !JobHelper->GetIsFlex($self->{"jobId"}) )
+	if ( $self->{"layerCnt"} > 2
+		 && ( $layerName =~ /^((gold)|m)[cs]$/
+			  || ( $layerName =~ /^[cs]$/ && !JobHelper->GetIsFlex( $self->{"jobId"} ) ) )
+	  )
 	{
 
 		%lim = %{ $self->{"frLim"} };
 
 	}
+
 	# clip around profile if
 	# - inner layers (vx)
 	# - plg(c/s) layers
@@ -464,12 +467,12 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId    = "d222763";
+	my $jobId    = "d152456";
 	my $stepName = "panel";
 
 	my $export = ExportFiles->new( $inCAM, $jobId, $stepName );
 
-	my %type = ( Enums->Type_SIGNAL => "1", Enums->Type_MASK => "0", Enums->Type_PLUG => "0" );
+	my %type = ( Enums->Type_SIGNAL => "1", Enums->Type_MASK => "1", Enums->Type_PLUG => "1", Enums->Type_GOLD => "1" );
 
 	$export->Run( \%type );
 
