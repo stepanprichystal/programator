@@ -160,7 +160,7 @@ sub __GetJob2ReExport {
 
 		if ( $line =~ /^\w\d+$/i ) {
 
-			push( @jobs, $line );
+			push( @jobs, lc($line) );
 		}
 
 	}
