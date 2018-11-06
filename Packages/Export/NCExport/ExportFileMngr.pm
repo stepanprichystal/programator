@@ -150,7 +150,7 @@ sub __ExportNcSet {
 				$inCAM->COM(
 							 "nc_order",
 							 "serial"  => "1",
-							 "sr_line" => "1",
+							 "sr_line" => $lNum,
 							 "sr_nx"   => "1",
 							 "sr_ny"   => "1",
 							 "mode"    => "btrl",
