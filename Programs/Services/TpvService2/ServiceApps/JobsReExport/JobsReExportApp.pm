@@ -205,7 +205,7 @@ sub __RemoveFromJoblist {
 
 	for ( my $i = scalar(@lines) - 1 ; $i >= 0 ; $i-- ) {
 
-		if ( $lines[$i] =~ /$jobId/ ) {
+		if ( $lines[$i] =~ /$jobId/i ) {
 
 			if ($notProcessed) {
 
