@@ -75,7 +75,7 @@ sub _OpenJob{
 	my $usr = undef;
 	if ( CamJob->IsJobOpen( $self->{"inCAM"}, $jobId, 1, \$usr ) ) {
 
-		die "Unable to process reorder, because job $jobId is open by user: $usr";
+		die "Unable to process job, because job $jobId is open by user: $usr";
 	}
 	
 	$self->{"inCAM"}->COM( "open_job", job => "$jobId", "open_win" => "yes" );

@@ -1,0 +1,28 @@
+
+THIS IS EXAMPLE FILE OF JOBlIST.TXT
+
+
+# ======================================================
+# File to writing jobs which is needed to "re export"
+# Below are units which will be exported
+
+# Exported Units:
+
+# UNIT nif     = 1
+# UNIT nc      = 0			   
+# UNIT et      = 0
+# UNIT aoi     = 0			   
+# UNIT plot    = 0			   
+# UNIT ger     = 0			   
+# UNIT pdf     = 0			   
+# UNIT score   = 0			   
+# UNIT out     = 0			  
+# UNIT stencil = 0			   
+
+# ======================================================
+# Job list
+# ======================================================
+
+d113608
+d113610
+ 

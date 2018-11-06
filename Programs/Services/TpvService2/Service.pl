@@ -26,6 +26,7 @@ use aliased 'Helpers::FileHelper';
 
 # applications
 use aliased 'Programs::Services::TpvService2::ServiceApps::TaskOnDemand::TaskOnDemandApp';
+use aliased 'Programs::Services::TpvService2::ServiceApps::JobsReExport::JobsReExportApp';
 use aliased 'Programs::Services::TpvService2::ServiceApps::TmpApp::TmpApp';
 
 Win32::Daemon::RegisterCallbacks(
@@ -150,6 +151,11 @@ sub __GetApp {
 	if ( $appName eq EnumsApp->App_TASKONDEMAND ) {
 
 		$app = TaskOnDemandApp->new();
+	
+	}elsif ( $appName eq EnumsApp->App_JOBSREEXPORT ) {
+
+		$app = JobsReExportApp->new();
+	
 	}
 	elsif ( $appName eq EnumsApp->App_TEST ) {
 
