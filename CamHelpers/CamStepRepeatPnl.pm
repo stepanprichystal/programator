@@ -54,6 +54,24 @@ sub GetUniqueStepAndRepeat {
 	return @steps;
 }
 
+#Return information about all  steps and their nested steps in panel
+sub GetUniqueNestedStepAndRepeat {
+	my $self  = shift;
+	my $inCAM = shift;
+	my $jobId        = shift;
+	my $includeCpns  = shift // 0;    # include coupons steps, default: no
+	my $includeSteps = shift;         # definition of included coupon steps, if undef = all coupon steps
+
+	my $stepName = "panel";
+
+	my @steps = CamStepRepeat->GetUniqueNestedStepAndRepeat( $inCAM, $jobId, $stepName );
+
+	CamStepRepeat->RemoveCouponSteps( \@steps,   $includeCpns, $includeSteps );
+
+	return @steps;
+}
+
+
 # Return limits of all step and repeat
 sub GetStepAndRepeatLim {
 	my $self           = shift;

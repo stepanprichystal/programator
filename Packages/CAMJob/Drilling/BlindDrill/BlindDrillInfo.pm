@@ -95,30 +95,6 @@ sub BlindDrillChecks {
 				  . "µm), není v toloeranci +-10µm s vypočítanou hloubkou: "
 				  . int($resultDepth{"computedDepth"}) . "µm, metoda výpočtu: ".Enums->GetMethodName($drillType)."\n\n";
 			}
-
-#			# Check isolation
-#			my %resultIsol = ();
-#			unless (
-#				 BlindDrillCheck->CheckDrillIsolation( $stackup, $tool->GetDrillSize(), $tool->GetDepth() * 1000, $layer, $drillType, \%resultIsol ) )
-#			{
-#
-#				$toolOk = 0;
-#
-#				$ettStr .=
-#				    "- Malá izolace od vnitřní vrstvy Cu:"
-#				  . $resultIsol{"requestedIsolCuLayer"}
-#				  . ". Požadované izolace je:"
-#				  . $resultIsol{"requestedIsolThick"} . "µm\n";
-#
-#			}
-#
-#			# Check Aspect ratio
-#			my %resultAR = ();
-#			unless ( BlindDrillCheck->AspectRatioCheck( $tool->GetDrillSize(), $tool->GetDepth() * 1000, \%resultAR ) ) {
-#
-#				$toolOk = 0;
-#				$ettStr .= "- Nevyhovující Aspect Ratio otvoru (" . $resultAR{"ar"} . ")\n";
-#			}
 		}
 
 		unless ($toolOk) {
@@ -143,14 +119,14 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	use aliased 'Packages::Stackup::Stackup::Stackup';
 
 	my $inCAM = InCAM->new();
-	my $jobId = "d218211";
+	my $jobId = "d152456";
 	my $step  = "o+1";
 
 	my $stackup = Stackup->new($jobId);
 
 	my %res = ();
 
-	my %l = ( "gROWname" => "ss2" );
+	my %l = ( "gROWname" => "sc1" );
 
 	my $mess = "";
 	my $r = BlindDrillInfo->BlindDrillChecks( $inCAM, $jobId, $step, \%l, \$mess );

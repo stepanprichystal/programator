@@ -91,7 +91,7 @@ sub ComputeDrillDepth {
 
 	my $drillS   = $ncLayer->{"gROWdrl_start"};
 	my $drillE   = $ncLayer->{"gROWdrl_end"};
-	my $drillDir = $ncLayer->{"gROWdrl_dir"};
+	my $drillDir = $ncLayer->{"gROWdrl_dir"} ;
 
 	# Stackup thick from start to end Cu of drilling (end cu - compute only half thick of Cu)
 	my $stackThick = 0;       #µm
@@ -122,6 +122,8 @@ sub ComputeDrillDepth {
 		
 		$stackThick += $l->GetThick();
 	}
+	
+	die "Error during calculation of stackup thickness between start/end drill layer (".$ncLayer->{"gROWname"}.")" unless($stackThick);
 
 	#  Absolute peak length/height
 	my $peakLen = ( $drillSize / 2 ) / tan( deg2rad( Enums->DRILL_TOOL_ANGLE / 2 ) );
@@ -164,7 +166,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my %res = ();
 
-	my %l = ( "gROWname" => "ss1" );
+	my %l = ( "gROWname" => "sc2" );
 	CamDrilling->AddLayerStartStop( $inCAM, $jobId, [ \%l ] );
 
 	my $r = BlindDrill->GetDrillType( $stackup, 1650, \%l, \%res );

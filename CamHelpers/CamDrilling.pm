@@ -449,7 +449,15 @@ sub AddLayerStartStop {
 		$layer->{"gROWdrl_end"}        = $order{$end};
 
 		$layer->{"gROWname"}    = ${ $inCAM->{doinfo}{gROWname} }[$idx];
-		$layer->{"gROWdrl_dir"} = ${ $inCAM->{doinfo}{gROWdrl_dir} }[$idx];    #drill direction top2bot/bot2top
+		
+		# not_def value is set when drill direction not was set manually in InCAM (default direction from top to bot)
+		#drill direction top2bot/bot2top/not_def
+		$layer->{"gROWdrl_dir"} = ${ $inCAM->{doinfo}{gROWdrl_dir} }[$idx];
+		
+		# "not_def" value is set when drill direction not was set manually in InCAM (default direction from top to bot)
+		# from this point gROWdrl_dir has only 2 values: top2bot/bot2top
+		$layer->{"gROWdrl_dir"} = "top2bot" if($layer->{"gROWdrl_dir"} eq "not_def");
+	 
 
 		#Necessary, for old genesis bot drilling. Because all drilling direction
 		#were from TOP to BOT. But InCAM allows make Bot blind with direction

@@ -16,6 +16,7 @@ use aliased 'Packages::CAMJob::Drilling::BlindDrill::BlindDrillInfo';
 use aliased 'Packages::CAMJob::Drilling::BlindDrill::BlindDrill';
 use aliased 'CamHelpers::CamHelper';
 use aliased 'CamHelpers::CamStepRepeat';
+use aliased 'CamHelpers::CamStepRepeatPnl';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'CamHelpers::CamDrilling';
 
@@ -42,7 +43,7 @@ sub BlindDrillCheckAllSteps {
 
 		my $errStr = "";
 
-		foreach my $s ( CamStepRepeat->GetUniqueNestedStepAndRepeat( $inCAM, $jobId, $stepName ) ) {
+		foreach my $s ( CamStepRepeat->GetUniqueNestedStepAndRepeat( $inCAM, $jobId, $stepName) ) {
 
 			foreach my $l (
 				 CamDrilling->GetNCLayersByTypes( $inCAM, $jobId, [ EnumsGeneral->LAYERTYPE_plt_bDrillTop, EnumsGeneral->LAYERTYPE_plt_bDrillBot ] ) )
@@ -90,11 +91,11 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	#	use aliased 'Packages::Routing::RoutLayer::RoutDrawing::RoutDrawing';
 	#
-	my $messMngr = MessageMngr->new("D3333");
+	my $messMngr = MessageMngr->new("d");
 
 	my $inCAM = InCAM->new();
 
-	my $jobId = "d218211";
+	my $jobId = "d152456";
 	my $step  = "";
 
 	CheckDrillTools->BlindDrillCheckAllSteps( $inCAM, $jobId, $messMngr );

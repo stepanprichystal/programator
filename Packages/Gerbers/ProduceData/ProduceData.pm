@@ -162,11 +162,11 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId = "d228448";
+	my $jobId = "d229689";
 
 	my $mess = "";
 
-	my $control = ProduceData->new( $inCAM, $jobId, "mpanel" );
+	my $control = ProduceData->new( $inCAM, $jobId, "o+1" );
 	$control->Create();
 
 }

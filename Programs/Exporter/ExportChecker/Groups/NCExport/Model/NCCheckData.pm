@@ -448,7 +448,7 @@ sub OnCheckGroupData {
 
 	if ( scalar(@blindL) ) {
 
-		foreach my $s ( CamStepRepeat->GetUniqueNestedStepAndRepeat( $inCAM, $jobId, $stepName ) ) {
+		foreach my $s ( CamStepRepeat->GetUniqueNestedStepAndRepeat( $inCAM, $jobId, "panel" ) ) {
 
 			foreach my $l (@blindL) {
 				my $errStrStep = "";

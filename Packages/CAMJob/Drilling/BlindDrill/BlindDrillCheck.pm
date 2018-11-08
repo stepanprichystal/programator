@@ -43,7 +43,7 @@ sub CheckDrillDepth {
 		my $depthComputed = BlindDrill->ComputeDrillDepth( $stackup, $drillSize, $ncLayer, $type );
 
 		# tolerance 10µm
-		if ( abs( $depthComputed - $drillSize ) > 10 ) {
+		if ( abs( $depthComputed - $drillDepth ) > 10 ) {
 			$result = 0;
 
 		}
@@ -54,6 +54,8 @@ sub CheckDrillDepth {
 	else {
 		die "Unable to compute drill depth, because no calculation type (STANDARD/SPECIAL) can by used";
 	}
+	
+	return $result;
 
 }
 
