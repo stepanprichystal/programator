@@ -540,11 +540,13 @@ sub _PutOUspecInfo {
 													my $putTextInfo1 = $item . "=";
 													my $putTextInfo2 = $infoPcbHelios[0]->{$item};
 													chomp $putTextInfo2;
-													my @tmpFrameH = ();
-													$tmpFrameH[$i] = $heliosFrame ->Frame(-width=>100, -height=>10)->pack(-side=>'top',-fill=>'x');
-													$tmpFrameH[$i] ->Label(-textvariable=>\$putTextInfo1, -fg=>"$colorText1")->pack(-side=>'left');
-													$tmpFrameH[$i] ->Label(-textvariable=>\$putTextInfo2, -fg=>"$colorText2",-font=> 'ARIAL 9 {bold}')->pack(-side=>'left');		
-									$i++;
+													if($putTextInfo2){
+															my @tmpFrameH = ();
+															$tmpFrameH[$i] = $heliosFrame ->Frame(-width=>100, -height=>10)->pack(-side=>'top',-fill=>'x');
+															$tmpFrameH[$i] ->Label(-textvariable=>\$putTextInfo1, -fg=>"$colorText1")->pack(-side=>'left');
+															$tmpFrameH[$i] ->Label(-textvariable=>\$putTextInfo2, -fg=>"$colorText2",-font=> 'ARIAL 9 {bold}')->pack(-side=>'left');		
+														$i++;
+													}
 									}
 													my @tmpInfoHelios = HegMethods->GetAllByPcbId($jobName);	
 													my $poznamkaTpv = $tmpInfoHelios[0]->{'poznamka_web'};
