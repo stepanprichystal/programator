@@ -28,22 +28,19 @@ use aliased 'Packages::Stackup::Stackup::StackupHelper';
 sub new {
 	my $class = shift;
 	my $self  = {};
-	
-	my $pcbId = shift; # pcb id
+
+	my $pcbId = shift;    # pcb id
 
 	my $cache = Cache::MemoryCache->new();
 
 	my $key     = "stackup_" . $pcbId;
-	my $stackup = $cache->get($key); #check cache
+	my $stackup = $cache->get($key);     #check cache
 
 	#if doesnt exist in cache, do normal initialization
 	if ( !defined $stackup ) {
-		
-		
-		
-		
+
 		$self = $class->SUPER::new( $pcbId, @_ );
-		$cache->set( $key, $self, 200);
+		$cache->set( $key, $self, 200 );
 	}
 	else {
 		$self = $stackup;
@@ -54,7 +51,6 @@ sub new {
 	return $self;
 }
 
-
 # Return total thick of this stackup in µm
 sub GetFinalThick {
 	my $self = shift;
@@ -64,20 +60,19 @@ sub GetFinalThick {
 	my %info;
 	foreach my $lInfo ( @{ $self->{"layers"} } ) {
 
-		%info = %{$lInfo}; 
+		%info = %{$lInfo};
 		$thick += $info{thick};
 	}
- 
+
 	return $thick;
 }
-
 
 # Return total thick of this stackup
 sub GetCuLayerCnt {
 	my $self = shift;
 
-	my $lCount      = scalar(grep { $_->GetType() eq Enums->MaterialType_COPPER  } $self->GetAllLayers());
-	
+	my $lCount = scalar( grep { $_->GetType() eq Enums->MaterialType_COPPER } $self->GetAllLayers() );
+
 	return $lCount;
 }
 
@@ -165,8 +160,6 @@ sub GetThickByLayerName {
 
 }
 
-
-
 # Return Cu layer by name (c, v2, v3 ...)
 sub GetCuLayer {
 	my $self      = shift;
@@ -208,16 +201,18 @@ sub GetCoreByCopperLayer {
 }
 
 # Get core by core number
-sub GetCore{
-	my $self = shift;
+sub GetCore {
+	my $self    = shift;
 	my $coreNum = shift;
-	
-	return (grep {$_->GetCoreNumber() eq $coreNum } $self->GetAllCores())[0];
+
+	return ( grep { $_->GetCoreNumber() eq $coreNum } $self->GetAllCores() )[0];
 }
 
 # Return all layers type of core
 sub GetAllCores {
-	my $self = shift;
+	my $self    = shift;
+	my $noRigid = shift;    # filter out rigid cores
+	my $noFlex  = shift;    # filter out flex cores
 
 	my @thickList = @{ $self->{"layers"} };
 	my @cores     = ();
@@ -227,6 +222,16 @@ sub GetAllCores {
 		if ( GeneralHelper->RegexEquals( $l->GetType(), Enums->MaterialType_CORE ) ) {
 			push( @cores, $l );
 		}
+	}
+
+	# filter out rigid cores
+	if ($noRigid) {
+		@cores = grep { $_->GetThick() > 100 } @cores;
+	}
+
+	# filter out flex cores
+	if ($noRigid) {
+		@cores = grep { $_->GetThick() <= 100 } @cores;
 	}
 
 	if ( scalar(@cores) ) {
@@ -246,8 +251,8 @@ sub GetAllCores {
 sub GetStackupType {
 	my $self = shift;
 
-	my @cores =  $self->GetAllCores();
-	
+	my @cores = $self->GetAllCores();
+
 	return $cores[0]->GetTextType();
 
 }
@@ -261,14 +266,12 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	use aliased 'Packages::Stackup::Stackup::Stackup';
 
 	my $stackup = Stackup->new("d016138");
- 
-	
-	 my $mir = $stackup->GetFinalThick();
-		 
+
+	my $mir = $stackup->GetFinalThick();
+
 	print STDERR $mir;
-	
+
 	#my $stackup = Stackup->new("d99991");
- 
 
 	print 1;
 }

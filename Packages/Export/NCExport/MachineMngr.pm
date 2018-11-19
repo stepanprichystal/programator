@@ -22,7 +22,6 @@ use aliased 'Helpers::JobHelper';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'CamHelpers::CamJob';
 
-
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
@@ -64,7 +63,7 @@ sub AssignMachines {
 
 }
 
-# create "vector of properties" for given NC operation, 
+# create "vector of properties" for given NC operation,
 # which machine should have for process nc operation
 sub __GetPropertyVector {
 	my $self          = shift;
@@ -91,6 +90,7 @@ sub __GetPropertyVector {
 	$comb{ Enums->Property_DRILLCROSSES } = sub { my ( $a, $b ) = @_; return $a | $b };
 	$comb{ Enums->Property_CAMERAS }      = sub { my ( $a, $b ) = @_; return $a | $b };
 	$comb{ Enums->Property_MAXTOOL }      = sub { my ( $a, $b ) = @_; return max( $a, $b ) };
+	$comb{ Enums->Property_MAXDEPTHTOOL } = sub { my ( $a, $b ) = @_; return max( $a, $b ) };
 
 	# Result vector - final combination of all layers "property vectors"
 	my %resVector     = ();
@@ -154,16 +154,15 @@ sub __GetMachinesByVector {
 	# $m - "machine"
 	# $o - "operation"
 
-	$comb{ Enums->Property_DRILL }        = sub { my ( $m, $o ) = @_; return ( !$m && $o ? 0 : 1 ) };
-	$comb{ Enums->Property_DRILLDEPTH }   = sub { my ( $m, $o ) = @_; return ( !$m && $o ? 0 : 1 ) };
-	$comb{ Enums->Property_ROUT }         = sub { my ( $m, $o ) = @_; return ( !$m && $o ? 0 : 1 ) };
-	$comb{ Enums->Property_ROUTDEPTH }    = sub { my ( $m, $o ) = @_; return ( !$m && $o ? 0 : 1 ) };
-	$comb{ Enums->Property_DRILLCROSSES } = sub { my ( $m, $o ) = @_; return ( !$m && $o ? 0 : 1 ) };
-	$comb{ Enums->Property_CAMERAS }      = sub { my ( $m, $o ) = @_; return ( !$m && $o ? 0 : 1 ) };
-	$comb{ Enums->Property_MAXTOOL } = sub { my ( $m, $o ) = @_; return ( $m < $o ? 0 : 1 ) };
-	$comb{ Enums->Property_MINTOOL } = sub { my ( $m, $o ) = @_; return ( ($o != 0) && $m > $o ? 0 : 1 ) };
-	$comb{ Enums->Property_MAXDEPTHTOOL } = sub { my ( $m, $o ) = @_; return ( $m < $o ? 0 : 1 ) };
-	
+	$comb{ Enums->Property_DRILL }        = sub { my ( $m, $o ) = @_; return ( !$m        && $o      ? 0 : 1 ) };
+	$comb{ Enums->Property_DRILLDEPTH }   = sub { my ( $m, $o ) = @_; return ( !$m        && $o      ? 0 : 1 ) };
+	$comb{ Enums->Property_ROUT }         = sub { my ( $m, $o ) = @_; return ( !$m        && $o      ? 0 : 1 ) };
+	$comb{ Enums->Property_ROUTDEPTH }    = sub { my ( $m, $o ) = @_; return ( !$m        && $o      ? 0 : 1 ) };
+	$comb{ Enums->Property_DRILLCROSSES } = sub { my ( $m, $o ) = @_; return ( !$m        && $o      ? 0 : 1 ) };
+	$comb{ Enums->Property_CAMERAS }      = sub { my ( $m, $o ) = @_; return ( !$m        && $o      ? 0 : 1 ) };
+	$comb{ Enums->Property_MAXTOOL }      = sub { my ( $m, $o ) = @_; return ( defined $o && $m < $o ? 0 : 1 ) };
+	$comb{ Enums->Property_MINTOOL }      = sub { my ( $m, $o ) = @_; return ( defined $o && $m > $o ? 0 : 1 ) };
+	$comb{ Enums->Property_MAXDEPTHTOOL } = sub { my ( $m, $o ) = @_; return ( defined $o && $m < $o ? 0 : 1 ) };
 
 	#my $sumPropVec = 0;
 	#map { $sumPropVec += $_ } @propVec;
@@ -239,9 +238,7 @@ sub __SetMachines {
 		$prop{ Enums->Property_MAXTOOL }      = $vals[6];
 		$prop{ Enums->Property_MINTOOL }      = $vals[7];
 		$prop{ Enums->Property_MAXDEPTHTOOL } = $vals[8];
-		
-		
-		
+
 		$m{"properties"} = \%prop;
 
 		push( @machines, \%m );
@@ -292,11 +289,36 @@ sub __GetDynamicProperty {
 	# create hash of property from this vector
 	my %h = ();
 
-	# get max tool
-	$h{ Enums->Property_MAXTOOL } = $layer->{"maxTool"} / 1000;
-	
-	# get min tool
-	$h{ Enums->Property_MINTOOL } = $layer->{"minTool"} / 1000;
+	my @tools = $layer->{"UniDTM"}->GetUniqueTools();
+
+	my $maxStandard = undef;
+	my $maxSpecial  = undef;
+	my $minStandard = undef;
+
+	for ( my $i = 0 ; $i < scalar(@tools) ; $i++ ) {
+
+		if ( !$tools[$i]->GetSpecial() && ( !defined $maxStandard || $maxStandard < $tools[$i]->GetDrillSize() ) ) {
+			$maxStandard = $tools[$i]->GetDrillSize();
+		}
+
+		if ( !$tools[$i]->GetSpecial() && ( !defined $minStandard || $minStandard > $tools[$i]->GetDrillSize() ) ) {
+			$minStandard = $tools[$i]->GetDrillSize();
+		}
+
+		if ( $tools[$i]->GetSpecial() && ( !defined $maxSpecial || $maxSpecial < $tools[$i]->GetDrillSize() ) ) {
+			$maxSpecial = $tools[$i]->GetDrillSize();
+		}
+
+	}
+
+	# set max tool which is not special
+	$h{ Enums->Property_MAXTOOL } = $maxStandard / 1000 if (defined $maxStandard);
+
+	# get min tool which is not special
+	$h{ Enums->Property_MINTOOL } = $minStandard / 1000 if (defined $minStandard);
+
+	# set max tool which is  special
+	$h{ Enums->Property_MAXDEPTHTOOL } = $maxSpecial / 1000 if (defined $maxSpecial);
 
 	return %h;
 
@@ -311,7 +333,7 @@ sub __SetStaticPropertyTable {
 	$self->{"propTable"} = \%t;
 
 	my $camera = 0;
-	if(JobHelper->GetIsFlex($self->{"jobId"})){
+	if ( JobHelper->GetIsFlex( $self->{"jobId"} ) ) {
 		$camera = 1;
 	}
 
@@ -353,7 +375,7 @@ sub __SetStaticPropertyTable {
 
 	$t{ EnumsGeneral->LAYERTYPE_nplt_nMill }{"ml"} = [ 0, 0, 1, 0, 0, $camera ];
 	$t{ EnumsGeneral->LAYERTYPE_nplt_nMill }{"sl"} = [ 0, 0, 1, 0, 0, $camera ];
- 
+
 	$t{ EnumsGeneral->LAYERTYPE_nplt_bMillTop }{"ml"} = [ 0, 0, 0, 1, 0, 0 ];
 	$t{ EnumsGeneral->LAYERTYPE_nplt_bMillTop }{"sl"} = [ 0, 0, 0, 1, 0, 0 ];
 	$t{ EnumsGeneral->LAYERTYPE_nplt_bMillBot }{"ml"} = [ 0, 0, 0, 1, 0, 0 ];
@@ -367,7 +389,7 @@ sub __SetStaticPropertyTable {
 
 	$t{ EnumsGeneral->LAYERTYPE_nplt_cbMillTop }{"ml"} = [ 0, 0, 0, 1, 0, 1 ];
 	$t{ EnumsGeneral->LAYERTYPE_nplt_cbMillTop }{"sl"} = [ 0, 0, 0, 1, 0, 1 ];
-	
+
 	$t{ EnumsGeneral->LAYERTYPE_nplt_cbMillBot }{"ml"} = [ 0, 0, 0, 1, 0, 1 ];
 	$t{ EnumsGeneral->LAYERTYPE_nplt_cbMillBot }{"sl"} = [ 0, 0, 0, 1, 0, 1 ];
 
@@ -376,22 +398,22 @@ sub __SetStaticPropertyTable {
 
 	$t{ EnumsGeneral->LAYERTYPE_nplt_lcMill }{"ml"} = [ 0, 0, 1, 0, 0, 0 ];
 	$t{ EnumsGeneral->LAYERTYPE_nplt_lcMill }{"sl"} = [ 0, 0, 1, 0, 0, 0 ];
-	
+
 	$t{ EnumsGeneral->LAYERTYPE_nplt_lsMill }{"ml"} = [ 0, 0, 1, 0, 0, 0 ];
 	$t{ EnumsGeneral->LAYERTYPE_nplt_lsMill }{"sl"} = [ 0, 0, 1, 0, 0, 0 ];
 
 	$t{ EnumsGeneral->LAYERTYPE_nplt_fMillSpec }{"ml"} = [ 0, 0, 1, 0, 0, 0 ];
 	$t{ EnumsGeneral->LAYERTYPE_nplt_fMillSpec }{"sl"} = [ 0, 0, 1, 0, 0, 0 ];
-	
+
 	$t{ EnumsGeneral->LAYERTYPE_nplt_cvrlycMill }{"ml"} = [ 0, 0, 0, 1, 0, 0 ];
 	$t{ EnumsGeneral->LAYERTYPE_nplt_cvrlycMill }{"sl"} = [ 0, 0, 0, 1, 0, 0 ];
-	
+
 	$t{ EnumsGeneral->LAYERTYPE_nplt_cvrlysMill }{"ml"} = [ 0, 0, 0, 1, 0, 0 ];
 	$t{ EnumsGeneral->LAYERTYPE_nplt_cvrlysMill }{"sl"} = [ 0, 0, 0, 1, 0, 0 ];
-	
+
 	$t{ EnumsGeneral->LAYERTYPE_nplt_prepregMill }{"ml"} = [ 0, 0, 0, 1, 0, 0 ];
 	$t{ EnumsGeneral->LAYERTYPE_nplt_prepregMill }{"sl"} = [ 0, 0, 0, 1, 0, 0 ];
- 
+
 }
 
 #-------------------------------------------------------------------------------------------#

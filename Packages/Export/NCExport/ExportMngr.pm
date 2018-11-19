@@ -32,7 +32,7 @@ use aliased 'Helpers::JobHelper';
 use aliased 'Packages::Export::NCExport::Helpers::NpltDrillHelper';
 use aliased 'Packages::CAMJob::Routing::RoutSpeed::RoutSpeed';
 use aliased 'Enums::EnumsGeneral';
-
+use aliased 'Packages::CAM::UniDTM::UniDTM';
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
@@ -114,24 +114,33 @@ sub TaskItemsCount {
 sub __Init {
 	my $self = shift;
 
-	# Load all NC layers
-
+	# 1) Load all NC layers
 	my @plt = CamDrilling->GetPltNCLayers( $self->{"inCAM"}, $self->{"jobId"} );
 	$self->{"pltLayers"} = \@plt;
 
 	my @nplt =  CamDrilling->GetNPltNCLayers( $self->{"inCAM"}, $self->{"jobId"} );
 	$self->{"npltLayers"} = \@nplt;
 
-	CamDrilling->AddHistogramValues( $self->{"inCAM"}, $self->{"jobId"}, $self->{"stepName"}, $self->{"pltLayers"} );
-	CamDrilling->AddHistogramValues( $self->{"inCAM"}, $self->{"jobId"}, $self->{"stepName"}, $self->{"npltLayers"} );
 
-	# Filter layers, if export single
+
+	# 2) Filter layers, if export single
 	if ( $self->{"exportSingle"} ) {
 
 		$self->__FilterLayers( $self->{"requiredPlt"}, $self->{"requiredNPlt"} );
-
 	}
-
+	
+	# 3) Add layer attributes
+	CamDrilling->AddHistogramValues( $self->{"inCAM"}, $self->{"jobId"}, $self->{"stepName"}, $self->{"pltLayers"} );
+	CamDrilling->AddHistogramValues( $self->{"inCAM"}, $self->{"jobId"}, $self->{"stepName"}, $self->{"npltLayers"} );
+	
+	foreach my $l  (@{$self->{"pltLayers"}}){
+		$l->{"UniDTM"} = UniDTM->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"stepName"}, $l->{"gROWname"}, 1 );
+	}
+	
+	foreach my $l  (@{$self->{"npltLayers"}}){
+		$l->{"UniDTM"} = UniDTM->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"stepName"}, $l->{"gROWname"}, 1 );
+	}	
+ 
 	$self->{"layerCnt"} = CamJob->GetSignalLayerCnt( $self->{'inCAM'}, $self->{'jobId'} );
 
 	#create manager for choosing right machines
@@ -344,7 +353,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	use aliased 'Packages::InCAM::InCAM';
 
-	my $jobId = "d229129";
+	my $jobId = "d113608";
 	my $step  = "panel";
 	my $inCAM = InCAM->new();
 
@@ -358,7 +367,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	# Pokud se bude exportovat jednotlive po vrstvach, tak vrstvz dotahnout nejaktakhle:
 	#@pltLayers = CamDrilling->GetPltNCLayers( $inCAM, $jobId );
-	my @npltLayers = ("f");
+	my @npltLayers = ("fzc");
 
 	my $export = ExportMngr->new( $inCAM, $jobId, $step, $exportSingle, \@pltLayers, \@npltLayers );
 	$export->Run( $inCAM, $jobId, $exportSingle, \@pltLayers, \@npltLayers );

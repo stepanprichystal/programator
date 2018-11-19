@@ -15,5 +15,11 @@ use constant {
     SignalLayer_BOT => "bot"
 };
 
+
+use constant {
+    CoreType_RIGID => "rigidCore",
+    CoreType_FLEX => "flexCore"
+};
+
 1;
 

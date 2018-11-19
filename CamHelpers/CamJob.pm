@@ -31,19 +31,23 @@ use aliased 'CamHelpers::CamStepRepeat';
 #-------------------------------------------------------------------------------------------#
 
 sub GetSignalLayerCnt {
-	my $self  = shift;
-	my $inCAM = shift;
-	my $jobId = shift;
+	my $self    = shift;
+	my $inCAM   = shift;
+	my $jobId   = shift;
+	my $noOuter = shift;
+	my $noInner = shift;
 
-	return scalar( CamJob->GetSignalLayer( $inCAM, $jobId ) );
+	return scalar( CamJob->GetSignalLayer( $inCAM, $jobId, $noOuter, $noInner ) );
 }
 
 sub GetSignalLayerNames {
-	my $self  = shift;
-	my $inCAM = shift;
-	my $jobId = shift;
+	my $self    = shift;
+	my $inCAM   = shift;
+	my $jobId   = shift;
+	my $noOuter = shift;
+	my $noInner = shift;
 
-	my @l = CamJob->GetSignalLayer( $inCAM, $jobId );
+	my @l = CamJob->GetSignalLayer( $inCAM, $jobId, $noOuter, $noInner );
 
 	my @result = map { $_->{"gROWname"} } @l;
 
@@ -51,9 +55,11 @@ sub GetSignalLayerNames {
 }
 
 sub GetSignalLayer {
-	my $self  = shift;
-	my $inCAM = shift;
-	my $jobId = shift;
+	my $self    = shift;
+	my $inCAM   = shift;
+	my $jobId   = shift;
+	my $noOuter = shift;
+	my $noInner = shift;
 
 	$inCAM->INFO( 'entity_type' => 'matrix', 'entity_path' => "$jobId/matrix", 'data_type' => 'ROW' );
 
@@ -79,6 +85,18 @@ sub GetSignalLayer {
 			}
 		}
 	}
+	
+	# filter out outer layers
+	if($noOuter){
+		@arr =  grep { $_->{"gROWname"} !~ /^[cs]$/} @arr;
+	}
+	
+	
+	# filter out inner layers
+	if($noInner){
+		@arr =  grep { $_->{"gROWname"} !~ /^v\d+$/} @arr;
+	}	
+	
 	return @arr;
 }
 

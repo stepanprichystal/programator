@@ -13,6 +13,7 @@ use strict;
 use warnings;
 
 #local library
+use aliased 'Packages::Stackup::Enums';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -78,6 +79,22 @@ sub GetPlatingExists {
 
 	return $plating;
 
+}
+
+# Return if core is rigid or flex
+# Decision is basend on core thickness (less than 100µm is flex core )
+sub GetCoreRigidType{
+	my $self = shift;
+	
+	if($self->GetThick() < 100){
+		
+		return Enums->CoreType_FLEX;
+	
+	}else{
+		
+		return Enums->CoreType_RIGID;
+	}
+	
 }
 
 

@@ -201,7 +201,7 @@ sub StackupMatInStock {
 
 		my $prepregW = undef;
 		my $prepregH = undef;
-		
+
 		my @mat = HegMethods->GetPrepregStoreInfo( $m->GetQId(), $m->GetId() );
 
 		if ( $pnl->IsStandard() ) {
@@ -212,7 +212,7 @@ sub StackupMatInStock {
 			# Check if material dimension are in tolerance +-2mm
 			@mat = grep { abs( $_->{"sirka"} - $prepregW ) <= 2 && abs( $_->{"hloubka"} - $prepregH ) <= 2 } @mat;
 		}
- 
+
 		if ( scalar(@mat) == 0 ) {
 
 			$result = 0;
@@ -240,6 +240,81 @@ sub StackupMatInStock {
 	return $result;
 }
 
+# For each places where are coupled flex and rigid core, return info:
+# -  position of prepreg in stackup
+# - top core
+# - bot core
+sub GetLaminatePackages {
+	my $self    = shift;
+	my $pcbId   = shift;    #pcb id
+	my $stackup = shift;    # if not defined, stackup will e loaded
+
+	my $result = 1;
+
+	unless ($stackup) {
+		$stackup = Stackup->new($pcbId);
+	}
+
+	my @laminatePckgsInf = ();
+	
+	my @laminatePckgs = ();
+
+	my @layers = $stackup->GetAllLayers();
+	for ( my $i = 0 ; $i < scalar(@layers) ; $i++ ) {
+
+		# if core, look for most outer Cu layer (if progress lamination, there could be more Cu layers)
+		if ( $layers[$i]->GetType() eq Enums->MaterialType_CORE ) {
+
+			my $j = $i + 1;
+
+			while (1) {
+				
+				if ( !defined $layers[$j] ) {
+					$j -= 1;
+					last;
+					
+				}elsif ( $layers[$j]->GetType() eq Enums->MaterialType_CORE ) {
+
+					$j -= 3;
+					last;
+				}
+				
+
+				$j++;
+
+			}
+
+			# create package
+			my %packageInf = ();
+			#my @l = @layers[ $i - ( $j - $i ) .. $i + ( $j - $i ) ] ;
+			$packageInf{"layers"} =  [@layers[ $i - ( $j - $i ) .. $i + ( $j - $i ) ] ];
+			$packageInf{"coreType"} =  $layers[$i]->GetCoreRigidType();
+			push( @laminatePckgs, \%packageInf );
+		}
+	}
+
+	#
+
+	my $lNum = 0;
+	for ( my $i = 0 ; $i < scalar(@laminatePckgs) -1 ; $i++ ) {
+
+		$lNum += scalar( @{$laminatePckgs[$i]->{"layers"}} );
+
+		 
+
+		my %contactPlcInf = ();
+		$contactPlcInf{"stackupPos"} = $lNum;
+		$contactPlcInf{"packageTop"} = $laminatePckgs[$i];
+		$contactPlcInf{"packageBot"} = $laminatePckgs[ $i + 1 ];
+
+		push( @laminatePckgsInf, \%contactPlcInf );
+
+	}
+
+	return @laminatePckgsInf;
+
+}
+
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#
@@ -253,11 +328,9 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	my $inCAM = InCAM->new();
 	my $mes   = "";
 
-	my $test = StackupOperation->StackupMatInStock( $inCAM, "d200996", undef, \$mes );
+	my @packages = StackupOperation->GetRigidFlexContactStackupPositions( $inCAM, "d222763" );
 
-	print $mes;
-
-	print $test;
+	print @packages;
 
 }
 
