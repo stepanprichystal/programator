@@ -50,8 +50,8 @@ sub AddFlexiHoles {
 	else {
 		$layer = "v1";
 	}
-
-	my $sym       = "r3000";
+ 
+	my $sym       = "r3500";
 	my $holePitch = 220;
 	my $framDist  = 5;
 	
