@@ -15,6 +15,7 @@ use DateTime;
 use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'CamHelpers::CamHelper';
 use aliased 'CamHelpers::CamStep';
+use aliased 'CamHelpers::CamJob';
 use aliased 'Helpers::JobHelper';
 use aliased 'CamHelpers::CamNetlist';
 
@@ -112,15 +113,15 @@ sub GetMasterJob {
 				my $smallestDate = $orderDeliver[0]->{"date"}->ymd . " " . $orderDeliver[0]->{"date"}->hms;
 				HegMethods->UpdateOrderTerm( $orderDeliver[$find]->{"order"}->{"orderId"}, $smallestDate, 1 );
 
-#				$result = 2;    # warning -> change term of order
-#				$$mess .=
-#				    "Pozor, u Multi PCB objednávky ("
-#				  . $orderDeliver[$find]->{"order"}->{"orderId"}
-#				  . ") byl snížen termín na: $smallestDate, aby mohla být vybrána jako matka (nechceme jiné matky než Multi PCB).\n";
+				#				$result = 2;    # warning -> change term of order
+				#				$$mess .=
+				#				    "Pozor, u Multi PCB objednávky ("
+				#				  . $orderDeliver[$find]->{"order"}->{"orderId"}
+				#				  . ") byl snížen termín na: $smallestDate, aby mohla být vybrána jako matka (nechceme jiné matky než Multi PCB).\n";
 			}
 		}
 		else {
-			$find = 0;          # all orders are not multi, take first with smallest term
+			$find = 0;    # all orders are not multi, take first with smallest term
 
 		}
 
@@ -135,13 +136,24 @@ sub GetMasterJob {
 		  "All jobs (" . join( ";", join( ";", map { $_->{"order"}->{"jobName"} } @orderDeliver ) ) . ")  are already in produce like \"master job\"";
 		$result = 0;
 	}
-	
+
 	# Set material FR4
-	
-	#if($result){	
-	#	HegMethods->UpdateMaterialKind($$masterJob, "FR4", 1);
-	#}
-	
+
+	if ($result) {
+
+		my $lCnt = CamJob->GetSignalLayerCnt( $self->{"inCAM"}, $$masterJob );
+
+		# 4vv - big panel
+		# 6vv - big and small panel
+
+		# 324 mm is height of small panel (active area) from pool optimizer
+		if ( ( $lCnt == 4 && $self->{"poolInfo"}->GetPnlH() > 324 )
+			 || $lCnt == 6 )
+		{
+			HegMethods->UpdateMaterialKind( $$masterJob, "FR4", 1 );
+		}
+
+	}
 
 	return $result;
 

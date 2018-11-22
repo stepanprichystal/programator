@@ -8,7 +8,7 @@
 
 
    <app name="taskOnDemand" 	active="1" repeat="0.2" night="0" />
-   <app name="jobsReExport" 	active="0" repeat="0.2" night="0" />
+   <app name="jobsReExport" 	active="1" repeat="0.2" night="0" />
    
   <!-- Running in night --> 
 
