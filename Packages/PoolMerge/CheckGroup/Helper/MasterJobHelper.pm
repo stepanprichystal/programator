@@ -147,8 +147,10 @@ sub GetMasterJob {
 		# 6vv - big and small panel
 
 		# 324 mm is height of small panel (active area) from pool optimizer
-		if ( ( $lCnt == 4 && $self->{"poolInfo"}->GetPnlH() > 324 )
-			 || $lCnt == 6 )
+		#if ( ( $lCnt == 4 && $self->{"poolInfo"}->GetPnlH() > 324 )
+		#	 || $lCnt == 6 )
+		#{
+		if ( $lCnt == 6 )
 		{
 			HegMethods->UpdateMaterialKind( $$masterJob, "FR4", 1 );
 		}
