@@ -1,6 +1,6 @@
 #!/usr/bin/perl-w
 #################################
-#remark    : skript vyhleda chybejici data k potisku(jetPrint) a bud je zkopiruje z archivu*1 nebo vyexportuje z genesisu*2
+#remark    :  skript vyhleda chybejici data k potisku(jetPrint) a bud je zkopiruje z archivu*1 nebo vyexportuje z genesisu*2
 # *1 - to znamena data s novymi znackami fiducial_jet
 # *2 - to znamena data s navadenim na ctverecky
 #Made      : RV
