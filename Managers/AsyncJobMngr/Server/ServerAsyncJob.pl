@@ -126,6 +126,11 @@ if ( defined $fIndicator ) {
 
 	my $pFIndicator = EnumsPaths->Client_INCAMTMPOTHER . $fIndicator;
 
+	unless( -e $pFIndicator){
+		
+		die "File indicator: $pFIndicator doesn't exist;"
+	}
+
 	#my $pFIndicator = "c:\\tmp\\InCam\\scripts\\other\\" . $fIndicator;
 
 	my $file = path($pFIndicator);

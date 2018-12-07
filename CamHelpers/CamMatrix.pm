@@ -47,23 +47,33 @@ sub AddSideType {
 }
 
 # create new empty layer
-sub CreateLayer{
-	my $self  = shift;
-	my $inCAM = shift;
-	my $jobId = shift;
+sub CreateLayer {
+	my $self      = shift;
+	my $inCAM     = shift;
+	my $jobId     = shift;
 	my $layerName = shift;
 	my $layerType = shift;
-	my $polarity = shift;
-	my $board = shift;
+	my $polarity  = shift;
+	my $board     = shift;
+	my $insLayer  = shift // "";         # name of next layer where new layer will be put
+	my $location  = shift // "before";   # before/after
 
-	$layerType = "document" unless(defined $layerType );
-	
-	$polarity = "positive" unless(defined $polarity );
+	  $layerType = "document" unless ( defined $layerType );
+
+	$polarity = "positive" unless ( defined $polarity );
 
 	$board = defined $board && $board == 1 ? "board" : "misc";
-	
-	$inCAM->COM( 'create_layer', "layer" => $layerName, "context" => $board, "type" => $layerType, "polarity" => $polarity, "ins_layer" => '' );
-	
+
+	$inCAM->COM(
+				 'create_layer',
+				 "layer"     => $layerName,
+				 "context"   => $board,
+				 "type"      => $layerType,
+				 "polarity"  => $polarity,
+				 "ins_layer" => $insLayer,
+				 "location"  => $location
+	);
+
 }
 
 # Delete Layer if exist
@@ -90,10 +100,10 @@ sub SetLayerDirection {
 	my $inCAM = shift;
 	my $jobId = shift;
 	my $layer = shift;
-	my $dir = shift; # bottom_to_top, top_to_bottom
+	my $dir   = shift;    # bottom_to_top, top_to_bottom
 
-	$inCAM->COM("matrix_layer_direction","job" => "$jobId","matrix" => "matrix","layer" => "$layer","direction" => $dir);
-	
+	$inCAM->COM( "matrix_layer_direction", "job" => "$jobId", "matrix" => "matrix", "layer" => "$layer", "direction" => $dir );
+
 }
 
 1;

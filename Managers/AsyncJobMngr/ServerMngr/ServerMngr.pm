@@ -625,17 +625,21 @@ sub __CreateServer {
 
 	my $pidInCAM;
 	my $pidServer;
-	my $fIndicator = GeneralHelper->GetGUID();    # file name, where is value, which indicate if server is ready 1/0
+	my $fIndicator;    # file name, where is value, which indicate if server is ready 1/0
 
 	# create indicator file
 
 	# 2) try to create inCAM server
 	while (1) {
 		
-		
-
+		$fIndicator = GeneralHelper->GetGUID();
+	
 		# launch InCAm instance + server
 		$pidInCAM = $self->__CreateInCAMInstance( $freePort, $fIndicator );
+		
+		unless($pidInCAM){
+			next;
+		}
 
 		# creaate and test server connection
 		$pidServer = $self->__CreateServerConn( $freePort, $fIndicator );
@@ -734,8 +738,12 @@ sub __CreateInCAMInstance {
 		close($f);
 	}
 	else {
-		die "unable to create file  file $pFIndicator";
+		return 0;
+		print STDERR  "unable to create file  file $pFIndicator";
 	}
+	
+	# another test if file indicator exist
+	return 0 unless(-e $pFIndicator);
 
 	# 3) start new server on $freePort
 

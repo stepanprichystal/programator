@@ -15,7 +15,7 @@ use aliased 'Enums::EnumsGeneral';
 use aliased 'Helpers::FileHelper';
 use aliased 'Enums::EnumsPaths';
 use aliased 'Packages::TifFile::TifNCOperations';
-
+use aliased 'CamHelpers::CamDrilling';
 #-------------------------------------------------------------------------------------------#
 #  Script methods
 #-------------------------------------------------------------------------------------------#
@@ -31,6 +31,18 @@ sub GetDuplicateRout {
 	my $step      = shift;
 
 	my $toolDuplicated = 0;
+	
+	# Only non plated rout, and plated rout could be duplicated
+	my %lInfo = ("gROWname" => $layer);
+	CamDrilling->AddNCLayerType( [\%lInfo]);
+	
+	my @alowedTypes = (
+		EnumsGeneral->LAYERTYPE_plt_nMill,
+		EnumsGeneral->LAYERTYPE_nplt_nMill
+	);
+	
+	return 0 unless(grep {$_ eq $lInfo{"type"} } @alowedTypes);
+	
 
 	my $tif = TifNCOperations->new($jobId);
 
