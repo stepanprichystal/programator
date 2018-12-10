@@ -205,13 +205,13 @@ sub Build {
 		if ( $info->{"poznamka"} !~ /type=rigid-flexi-i/i ) {
 
 			$section->AddRow( "program_vrtani_rigid_jadro_top", $ncArchiv . "\\nc\\" . $jobId . "_v1" );
-			$section->AddRow( "program_hl_freza_rigid_top_1",   $ncArchiv . "\\nc\\" . $jobId . "_jfzs" . $rigidCores[0]->GetCoreNumber() );
-			$section->AddRow( "program_hl_freza_rigid_top_2",   $ncArchiv . "\\nc\\" . $jobId . "_jfzc" . $rigidCores[0]->GetCoreNumber() );
+			$section->AddRow( "program_hl_freza_rigid_top_1",   $ncArchiv . "\\nc\\" . $jobId . "_j".$rigidCores[0]->GetCoreNumber()."fzs" );
+			$section->AddRow( "program_hl_freza_rigid_top_2",   $ncArchiv . "\\nc\\" . $jobId . ")_fc".$stackup->GetPressCount()  );
 		}
 
 		$section->AddRow( "program_vrtani_rigid_jadro_bot", $ncArchiv . "\\nc\\" . $jobId . "_v1" );
-		$section->AddRow( "program_hl_freza_rigid_bot_1",   $ncArchiv . "\\nc\\" . $jobId . "_jfzc" . $rigidCores[-1]->GetCoreNumber() );
-		$section->AddRow( "program_hl_freza_rigid_bot_2",   $ncArchiv . "\\nc\\" . $jobId . "_jfzs" . $rigidCores[-1]->GetCoreNumber() );
+		$section->AddRow( "program_hl_freza_rigid_bot_1",   $ncArchiv . "\\nc\\" . $jobId . "_j".$rigidCores[-1]->GetCoreNumber()."fzc");
+		$section->AddRow( "program_hl_freza_rigid_bot_2",   $ncArchiv . "\\nc\\" . $jobId . "_fzs".$stackup->GetPressCount());
 
 		$section->AddRow( "program_prokovene_vrtani", $ncArchiv . "\\nc\\" . $jobId . "_c1" );
 
