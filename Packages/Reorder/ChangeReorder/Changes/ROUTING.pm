@@ -49,7 +49,7 @@ sub Run {
 
 	my $result = 1;
 
-	# Add pilot holes if doesnt exist to layer f
+	# Add pilot holes if doesnt exist to layer f and r
 
 	my @steps = "o+1";
 
@@ -58,7 +58,7 @@ sub Run {
 		@steps = map { $_->{"stepName"} } CamStepRepeat->GetUniqueNestedStepAndRepeat( $inCAM, $jobId, 'panel' );
 	}
 
-	my @layers = CamDrilling->GetNCLayersByType( $inCAM, $jobId, EnumsGeneral->LAYERTYPE_nplt_nMill );
+	my @layers = CamDrilling->GetNCLayersByTypes( $inCAM, $jobId, [EnumsGeneral->LAYERTYPE_nplt_nMill, EnumsGeneral->LAYERTYPE_plt_nMill] );
 
 	foreach my $step (@steps) {
 

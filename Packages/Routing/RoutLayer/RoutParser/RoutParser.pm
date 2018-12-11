@@ -32,8 +32,8 @@ sub GetFeatures {
 	my $parser = RouteFeatures->new();
 
 	$parser->Parse($inCAM, $jobId, $step, $layer, $breakSR);
-
-	my @features = $parser->GetFeatures();
+ 
+	return $parser->GetFeatures();
 
 }
 

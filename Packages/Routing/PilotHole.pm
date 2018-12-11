@@ -110,12 +110,12 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	use aliased 'Packages::Routing::PilotHole';
 	use aliased 'Packages::InCAM::InCAM';
 
-	my $jobId = "d152457";
+	my $jobId = "d113609";
 	my $inCAM = InCAM->new();
 
 	my $step = "o+1";
 
-	my $max = PilotHole->AddPilotHole( $inCAM, $jobId, $step, "f");
+	my $max = PilotHole->AddPilotHole( $inCAM, $jobId, $step, "r");
  
 
 }

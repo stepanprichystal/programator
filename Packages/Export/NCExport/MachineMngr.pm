@@ -324,7 +324,7 @@ sub __GetDynamicProperty {
 
 }
 
-# Table tells, what properties machines has to has, for manage process given layer
+# Table tells, what properties machines has to have, for manage process given layer
 # Properties depand on pcb type Multilayer / single layer
 sub __SetStaticPropertyTable {
 	my $self = shift;
@@ -357,7 +357,7 @@ sub __SetStaticPropertyTable {
 	$t{ EnumsGeneral->LAYERTYPE_plt_cDrill }{"sl"} = [ 0, 0, 0, 0, 0, 0 ];
 
 	$t{ EnumsGeneral->LAYERTYPE_plt_nMill }{"ml"} = [ 0, 0, 1, 0, 0, 1 ];
-	$t{ EnumsGeneral->LAYERTYPE_plt_nMill }{"sl"} = [ 0, 0, 1, 0, 0, 1 ];
+	$t{ EnumsGeneral->LAYERTYPE_plt_nMill }{"sl"} = [ 0, 0, 1, 0, 0, 0 ];
 
 	$t{ EnumsGeneral->LAYERTYPE_plt_bMillTop }{"ml"} = [ 0, 0, 0, 1, 0, 1 ];
 	$t{ EnumsGeneral->LAYERTYPE_plt_bMillTop }{"sl"} = [ 0, 0, 0, 1, 0, 1 ];
@@ -376,10 +376,10 @@ sub __SetStaticPropertyTable {
 	$t{ EnumsGeneral->LAYERTYPE_nplt_nMill }{"ml"} = [ 0, 0, 1, 0, 0, $camera ];
 	$t{ EnumsGeneral->LAYERTYPE_nplt_nMill }{"sl"} = [ 0, 0, 1, 0, 0, $camera ];
 
-	$t{ EnumsGeneral->LAYERTYPE_nplt_bMillTop }{"ml"} = [ 0, 0, 0, 1, 0, 0 ];
-	$t{ EnumsGeneral->LAYERTYPE_nplt_bMillTop }{"sl"} = [ 0, 0, 0, 1, 0, 0 ];
-	$t{ EnumsGeneral->LAYERTYPE_nplt_bMillBot }{"ml"} = [ 0, 0, 0, 1, 0, 0 ];
-	$t{ EnumsGeneral->LAYERTYPE_nplt_bMillBot }{"sl"} = [ 0, 0, 0, 1, 0, 0 ];
+	$t{ EnumsGeneral->LAYERTYPE_nplt_bMillTop }{"ml"} = [ 0, 0, 0, 1, 0, $camera ];
+	$t{ EnumsGeneral->LAYERTYPE_nplt_bMillTop }{"sl"} = [ 0, 0, 0, 1, 0, $camera ];
+	$t{ EnumsGeneral->LAYERTYPE_nplt_bMillBot }{"ml"} = [ 0, 0, 0, 1, 0, $camera ];
+	$t{ EnumsGeneral->LAYERTYPE_nplt_bMillBot }{"sl"} = [ 0, 0, 0, 1, 0, $camera ];
 
 	$t{ EnumsGeneral->LAYERTYPE_nplt_rsMill }{"ml"} = [ 0, 0, 1, 0, 0, 1 ];
 	$t{ EnumsGeneral->LAYERTYPE_nplt_rsMill }{"sl"} = [ 0, 0, 1, 0, 0, 1 ];
@@ -387,8 +387,8 @@ sub __SetStaticPropertyTable {
 	$t{ EnumsGeneral->LAYERTYPE_nplt_frMill }{"ml"} = [ 0, 0, 1, 0, 0, 0 ];
 	$t{ EnumsGeneral->LAYERTYPE_nplt_frMill }{"sl"} = [ 0, 0, 0, 0, 0, 0 ];
 
-	$t{ EnumsGeneral->LAYERTYPE_nplt_cbMillTop }{"ml"} = [ 0, 0, 0, 1, 0, 1 ];
-	$t{ EnumsGeneral->LAYERTYPE_nplt_cbMillTop }{"sl"} = [ 0, 0, 0, 1, 0, 1 ];
+	$t{ EnumsGeneral->LAYERTYPE_nplt_cbMillTop }{"ml"} = [ 0, 0, 0, 1, 0, 0 ];
+	$t{ EnumsGeneral->LAYERTYPE_nplt_cbMillTop }{"sl"} = [ 0, 0, 0, 1, 0, 0 ];
 
 	$t{ EnumsGeneral->LAYERTYPE_nplt_cbMillBot }{"ml"} = [ 0, 0, 0, 1, 0, 1 ];
 	$t{ EnumsGeneral->LAYERTYPE_nplt_cbMillBot }{"sl"} = [ 0, 0, 0, 1, 0, 1 ];

@@ -42,6 +42,7 @@ use aliased 'CamHelpers::CamCopperArea';
 use aliased 'CamHelpers::CamGoldArea';
 use aliased 'CamHelpers::CamStepRepeat';
 use aliased 'CamHelpers::CamStepRepeatPnl';
+use aliased 'CamHelpers::CamDrilling';
 
 use aliased 'CamHelpers::CamStep';
 use aliased 'CamHelpers::CamFilter';
@@ -64,6 +65,7 @@ use aliased 'Packages::Compare::Layers::CompareLayers';
 use aliased 'Packages::CAMJob::SolderMask::PreparationLayout';
 use aliased 'Packages::GuideSubs::Drilling::BlindDrilling::BlindDrillTools';
 use aliased 'Packages::GuideSubs::Drilling::BlindDrilling::CheckDrillTools';
+use aliased 'Packages::GuideSubs::Routing::DoRoutOptimalization';
 
 use aliased 'Widgets::Forms::SimpleInput::SimpleInputFrm';
 
@@ -80,7 +82,6 @@ use aliased 'Managers::MessageMngr::MessageMngr';
 
 
 unless ($ENV{JOB}) {
-	$jobName = shift;
 	$file = shift;
 	$constClass = shift;
 	$maska01 = shift;
@@ -722,7 +723,15 @@ sub _CheckPool{
 										_ArchivaceData($jobId);
 										
 										## Add pilot holes 
-										PilotHole->AddPilotHole($inCAM, $jobId, 'o+1', 'f');
+	  
+										foreach my $l (CamDrilling->GetNCLayersByTypes( $inCAM, $jobId, [EnumsGeneral->LAYERTYPE_nplt_nMill, EnumsGeneral->LAYERTYPE_plt_nMill] )) {
+
+											PilotHole->AddPilotHole( $inCAM, $jobId, 'o+1', $l->{"gROWname"} );									 
+										}
+										
+										## Split route circles in f and r (steps o+1, mpanel)
+										DoRoutOptimalization->SplitRoutCircles( $inCAM, $jobId );
+	 
 
 										
 										#prevod negativnich vnitrnich vrstev
@@ -820,10 +829,22 @@ sub _Panelize {
 	my $schema = '';
 	
 	## Add pilot holes 
-			PilotHole->AddPilotHole($inCAM, $jobName, 'o+1', 'f');
-	if (CamHelper->StepExists( $inCAM, $jobName, 'mpanel')){
-			PilotHole->AddPilotHole($inCAM, $jobName, 'mpanel', 'f');
+	foreach my $l (CamDrilling->GetNCLayersByTypes( $inCAM, $jobName, [EnumsGeneral->LAYERTYPE_nplt_nMill, EnumsGeneral->LAYERTYPE_plt_nMill] )) {
+
+		PilotHole->AddPilotHole( $inCAM, $jobName, 'o+1', $l->{"gROWname"} );									 
 	}
+	
+	if (CamHelper->StepExists( $inCAM, $jobName, 'mpanel')){
+		
+		## Add pilot holes 
+		foreach my $l (CamDrilling->GetNCLayersByTypes( $inCAM, $jobName, [EnumsGeneral->LAYERTYPE_nplt_nMill, EnumsGeneral->LAYERTYPE_plt_nMill] )) {
+
+			PilotHole->AddPilotHole( $inCAM, $jobName, 'mpanel', $l->{"gROWname"} );									 
+		}
+	}
+	
+	## Split route circles in f and r (steps o+1, mpanel)
+	DoRoutOptimalization->SplitRoutCircles( $inCAM, $jobName );
 
 
 			# When exist fsch -> remove it
