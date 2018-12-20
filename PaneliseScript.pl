@@ -1914,7 +1914,7 @@ sub _GetConstrClass {
 		my $jobId = shift;
 		my $stepId = shift;
 		my $checkList = 'checks';
-		my $positionInChecks = 'action=2';
+		my $positionInChecks = 'action=3';
 		my $res = 0;
 		
   				$inCAM->INFO(units => 'mm', angle_direction => 'ccw', entity_type => 'check',
@@ -1934,7 +1934,7 @@ sub _GetConstrClass_inner {
 		my $jobId = shift;
 		my $stepId = shift;
 		my $checkList = 'checks';
-		my $positionInChecks = 'action=1';
+		my $positionInChecks = 'action=2';
 		my $res = 0;
 		
   				$inCAM->INFO(units => 'mm', angle_direction => 'ccw', entity_type => 'check',
