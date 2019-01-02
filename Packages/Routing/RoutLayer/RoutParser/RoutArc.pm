@@ -278,25 +278,24 @@ sub GetArcInnerAngle {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	use aliased 'Packages::CAM::FeatureFilter::FeatureFilter';
-	use aliased 'Packages::InCAM::InCAM';
-
-	my $inCAM = InCAM->new();
-	my $jobId = "f13608";
-
-	my $f = FeatureFilter->new( $inCAM, "m" );
-
-	$f->SetPolarity("positive");
-
-	my @types = ( "surface", "pad" );
-	$f->SetTypes( \@types );
-
-	my @syms = ( "r500", "r1" );
-	$f->AddIncludeSymbols( \[ "r500", "r1" ] );
-
-	print $f->Select();
-
-	print "fff";
+#	use aliased 'Packages::CAM::FeatureFilter::FeatureFilter';
+#	use aliased 'Packages::InCAM::InCAM';
+#
+#	my $inCAM = InCAM->new();
+#	my $jobId = "f13608";
+#
+#	my $f = FeatureFilter->new( $inCAM, "m" );
+#
+#	$f->SetPolarity("positive");
+#
+# 
+#
+#	my @syms = ( "r500", "r1" );
+#	$f->AddIncludeSymbols( \[ "r500", "r1" ] );
+#
+#	print $f->Select();
+#
+#	print "fff";
 
 }
 

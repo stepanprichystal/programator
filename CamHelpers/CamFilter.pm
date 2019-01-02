@@ -346,6 +346,8 @@ sub SelectByReferenece {
 	CamLayer->WorkLayer( $inCAM, $layer );
 
 	$inCAM->COM( 'filter_reset', filter_name => 'popup' );
+	$inCAM->COM( "reset_filter_criteria", "filter_name" => "", "criteria" => "all" );
+
 
 	# Set filtered layer ====================================================================
 	$self->__AddFilterAtt( $inCAM, $jobId, $att, $attValue );

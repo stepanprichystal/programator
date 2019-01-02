@@ -11,7 +11,7 @@ use warnings;
 
 #loading of locale modules
 use aliased 'CamHelpers::CamHelper';
-
+use aliased 'CamHelpers::CamJob';
 #-------------------------------------------------------------------------------------------#
 #   Package methods
 #-------------------------------------------------------------------------------------------#
@@ -46,7 +46,37 @@ sub AddSideType {
 	}
 }
 
-# create new empty layer
+# Duplicate layer
+sub CopyLayer {
+	my $self        = shift;
+	my $inCAM       = shift;
+	my $jobId       = shift;
+	my $sourceLayer = shift;
+	my $sourceStep  = shift;
+	my $targetLayer = shift;
+	my $targetStep  = shift;
+	my $invert      = shift // 0;
+	my $mode        = shift // "replace";    # replace / append
+
+	$invert = defined $invert && $invert == 1 ? "yes" : "no";
+
+	$inCAM->COM(
+		'copy_layer',
+		"source_job"   => $jobId,
+		"source_step"  => $sourceStep,
+		"source_layer" => $sourceLayer,
+		"dest"         => 'layer_name',
+		"dest_layer"   => $targetLayer,
+		"dest_step"    => $targetStep,
+		"mode"         => $mode,
+		"invert"       => $invert
+	);
+	
+	return 1;
+ 
+}
+
+# Create new empty layer
 sub CreateLayer {
 	my $self      = shift;
 	my $inCAM     = shift;
@@ -55,10 +85,10 @@ sub CreateLayer {
 	my $layerType = shift;
 	my $polarity  = shift;
 	my $board     = shift;
-	my $insLayer  = shift // "";         # name of next layer where new layer will be put
-	my $location  = shift // "before";   # before/after
+	my $insLayer  = shift // "";          # name of next layer where new layer will be put
+	my $location  = shift // "before";    # before/after
 
-	  $layerType = "document" unless ( defined $layerType );
+	$layerType = "document" unless ( defined $layerType );
 
 	$polarity = "positive" unless ( defined $polarity );
 
@@ -104,6 +134,18 @@ sub SetLayerDirection {
 
 	$inCAM->COM( "matrix_layer_direction", "job" => "$jobId", "matrix" => "matrix", "layer" => "$layer", "direction" => $dir );
 
+}
+
+# Return layer polarity
+sub GetLayerPolarity {
+	my $self  = shift;
+	my $inCAM = shift;
+	my $jobId = shift;
+	my $layer = shift;
+
+	my $l = ( grep { $_->{"gROWname"} eq $layer } CamJob->GetAllLayers( $inCAM, $jobId ) )[0];
+
+	return $l->{"gROWpolarity"};
 }
 
 1;

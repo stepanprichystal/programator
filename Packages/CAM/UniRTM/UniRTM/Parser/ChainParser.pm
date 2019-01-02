@@ -213,9 +213,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	my $f = FeatureFilter->new( $inCAM, "m" );
 
 	$f->SetPolarity("positive");
-
-	my @types = ( "surface", "pad" );
-	$f->SetTypes( \@types );
+ 
 
 	my @syms = ( "r500", "r1" );
 	$f->AddIncludeSymbols( \[ "r500", "r1" ] );

@@ -7,9 +7,7 @@ use warnings;
 
 
 # ============ INPUT LINE =================
-my $inputLine ="break_feat,ind=29,x=42.3046825,y=46.4645475,length=0";
-
-
+my $inputLine ="sel_ref_feat,layers=pom2,use=filter,mode=touch,pads_as=shape,f_types=line\;pad\;surface\;arc\;text,polarity=positive\;negative,include_syms=,exclude_syms=";
 
 
 

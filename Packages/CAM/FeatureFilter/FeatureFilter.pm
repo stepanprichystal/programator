@@ -13,6 +13,8 @@ use warnings;
 use aliased 'CamHelpers::CamLayer';
 use aliased 'CamHelpers::CamAttributes';
 use aliased 'Packages::CAM::FeatureFilter::Enums';
+use aliased 'Packages::CAM::FeatureFilter::FilterPropStd';
+use aliased 'Packages::CAM::FeatureFilter::FilterPropRef';
 
 #-------------------------------------------------------------------------------------------#
 #  Public method
@@ -23,107 +25,73 @@ sub new {
 	$self = {};
 	bless $self;
 
-	$self->{"inCAM"}      = shift;
-	$self->{"jobId"}      = shift;
-	$self->{"layerName"}  = shift;
-	$self->{"layerNames"} = shift;    # array of layer names, in case of more layers we want to filter
+	$self->{"inCAM"} = shift;
+	$self->{"jobId"} = shift;
 
-	$self->{"includeSym"} = undef;    # Included symbols
-	$self->{"excludeSym"} = undef;    # Excluded symbols
+	# Property of standard filter
 
-	$self->{"includeAttr"} = undef;   # Included attributes name + value
-	$self->{"excludeAttr"} = undef;   # Included attributes name + value
+	my $layer  = shift;
+	my $layers = shift;    # array of layer names, in case of more layers we want to filter
 
-	$self->{"featureIndexes"} = undef;    # filter by featuer indexes
+	$self->{"layers"} = [];
 
-	$self->Reset();
+	push( @{ $self->{"layers"} }, $layer )     if ( defined $layer );
+	push( @{ $self->{"layers"} }, @{$layers} ) if ( defined $layers );
+
+	die "No layer defined" unless ( @{ $self->{"layers"} } );
+
+	$self->{"stdFilter"} = FilterPropStd->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"layers"} );
+	$self->{"refFilter"} = FilterPropRef->new( $self->{"inCAM"}, $self->{"jobId"} );
+
+	$self->{"inCAM"}->COM('adv_filter_reset');
+	$self->{"inCAM"}->COM( 'filter_reset', filter_name => 'popup' );
+
+	if ( scalar( @{ $self->{"layers"} } ) == 1 ) {
+		CamLayer->WorkLayer( $self->{"inCAM"}, $self->{"layers"}->[0] );
+	}
+	else {
+		CamLayer->AffectLayers( $self->{"inCAM"}, $self->{"layers"} );
+	}
 
 	return $self;
-}
-
-sub SetFilterType {
-	my $self = shift;
-	my %args = (
-		"lines"    => 0,
-		"pads"     => 0,
-		"surfaces" => 0,
-		"arcs"     => 0,
-		"text"     => 0,
-		@_,    # argument pair list goes here
-	);
-
-	my $inCAM = $self->{"inCAM"};
-
-	my $lines    = $args{"lines"}    ? "yes" : "no";
-	my $pads     = $args{"pads"}     ? "yes" : "no";
-	my $surfaces = $args{"surfaces"} ? "yes" : "no";
-	my $arcs     = $args{"arcs"}     ? "yes" : "no";
-	my $text     = $args{"text"}     ? "yes" : "no";
-
-	$inCAM->COM(
-				 "set_filter_type",
-				 "filter_name" => "",
-				 "lines"       => $lines,
-				 "pads"        => $pads,
-				 "surfaces"    => $surfaces,
-				 "arcs"        => $arcs,
-				 "text"        => $text
-	);
-
 }
 
 sub Select {
 	my $self = shift;
 
 	my $inCAM = $self->{"inCAM"};
- 
+
+	# Build standard filter property
+	my $buildStd = $self->{"stdFilter"}->BuildAll();
+	my $buildRef = $self->{"refFilter"}->BuildAll();
+
 	# if filter indexes are set, do select in loop (max 20 index in one loop)
 	# Reason: cmd adv_filter_set, is posiible process only 200chars in parameter "indexes"
-	if ( scalar( @{ $self->{"featureIndexes"} } ) ) {
-		my @ids = @{ $self->{"featureIndexes"} };
-		my @idsPart = ();
+	if ( $self->{"stdFilter"}->GetFeatureIndexes() ) {
 
-		# each loop select 20 features
-		for ( my $i = 0 ; $i < scalar(@ids) ; $i++ ) {
+		my @ids = $self->{"stdFilter"}->GetFeatureIndexes();
 
-			push( @idsPart, $ids[$i] );
+		my $loopCnt = 20;
 
-			if ( scalar(@idsPart) == 20 ) {
+		while ( scalar(@ids) ) {
 
-				my $str = join( "\\;", @idsPart );
-				$inCAM->COM(
-							 "adv_filter_set",
-							 "filter_name" => "popup",
-							 "active"      => "yes",
-							 "indexes"     => $str,
-				);
+			# each loop select max 20 features
+			my @idsPart = splice @ids, 0, ( scalar(@ids) < $loopCnt ? scalar(@ids) : $loopCnt );
 
-				$inCAM->COM('filter_area_strt');
-				$inCAM->COM( 'filter_area_end', filter_name => 'popup', operation => 'select' );
- 
-				@idsPart = ();
-			}
+			my $str = join( "\\;", @idsPart );
+			$inCAM->COM(
+						 "adv_filter_set",
+						 "filter_name" => "popup",
+						 "active"      => "yes",
+						 "indexes"     => $str,
+			);
+
+			$self->__Select( $buildStd, $buildRef );
 		}
-		
-		# select rest of features
-	if ( scalar(@idsPart) ) {
-		my $str = join( "\\;", @idsPart );
-		$inCAM->COM(
-					 "adv_filter_set",
-					 "filter_name" => "popup",
-					 "active"      => "yes",
-					 "indexes"     => $str,
-		);
-
-		$inCAM->COM('filter_area_strt');
-		$inCAM->COM( 'filter_area_end', filter_name => 'popup', operation => 'select' );
-		$inCAM->COM( 'filter_reset', filter_name => 'popup' );
-	}
 	}
 	else {
 
-		$inCAM->COM('filter_area_strt');
-		$inCAM->COM( 'filter_area_end', filter_name => 'popup', operation => 'select' );
+		$self->__Select( $buildStd, $buildRef );
 
 	}
 
@@ -136,223 +104,298 @@ sub Select {
 sub Reset {
 	my $self = shift;
 
-	my $inCAM = $self->{"inCAM"};
-
-	if ( defined $self->{"layerNames"} ) {
-
-		CamLayer->AffectLayers( $self->{"inCAM"}, $self->{"layerNames"} );
-	}
-	elsif ( defined $self->{"layerName"} ) {
-
-		CamLayer->WorkLayer( $self->{"inCAM"}, $self->{"layerName"} );
+	if ( scalar( @{ $self->{"layers"} } ) == 1 ) {
+		CamLayer->WorkLayer( $self->{"inCAM"}, $self->{"layers"}->[0] );
 	}
 	else {
-
-		die "no layer defined";
+		CamLayer->AffectLayers( $self->{"inCAM"}, $self->{"layers"} );
 	}
+
+	# reset stored filter property
+	$self->{"stdFilter"}->Reset();
+	$self->{"refFilter"}->Reset();
+
+	# reset InCAM feature filter
 	$self->{"inCAM"}->COM('adv_filter_reset');
-
 	$self->{"inCAM"}->COM( 'filter_reset', filter_name => 'popup' );
-
-	# Clear properties
-
-	my @is = ();
-	$self->{"includeSym"} = \@is;
-	my @es = ();
-	$self->{"excludeSym"} = \@es;
-
-	my @ia = ();
-	$self->{"includeAttr"} = \@ia;
-	my @ea = ();
-	$self->{"excludeAttr"} = \@ea;
-
-	my @fi = ();
-	$self->{"featureIndexes"} = \@fi;
 
 }
 
 sub Unselect {
 	my $self = shift;
 
+	die "Not implemented";
 }
 
-# Tell where use filter in layer
-# Mode:
-#0 - ignore the profile
-#1 - inside the profile
-#2 - outside the profile
-sub SetProfile {
-	my $self = shift;
-	my $mode = shift;    #  both\positive\negative
+sub __Select {
+	my $self     = shift;
+	my $buildStd = shift;
+	my $buildRef = shift;
 
 	my $inCAM = $self->{"inCAM"};
 
-	$inCAM->COM( 'set_filter_profile', 'mode' => $mode );
+	# Select features with standard filter
+	if ( $buildStd && !$buildRef ) {
+
+		$inCAM->COM('filter_area_strt');
+		$inCAM->COM( 'filter_area_end', filter_name => 'popup', operation => 'select' );
+	}
+
+	# Select features with reference filter
+	elsif ( $buildStd && $buildRef ) {
+
+		# Prepare refereance filter properties
+
+		$inCAM->COM(
+					 'sel_ref_feat',
+					 'layers'       => $self->{"refFilter"}->BuildRefLayer(),
+					 'use'          => 'filter',
+					 'mode'         => $self->{"refFilter"}->BuildReferenceMode(),
+					 'pads_as'      => 'shape',
+					 'f_types'      => $self->{"refFilter"}->BuildFeatTypes(),
+					 'polarity'     => $self->{"refFilter"}->BuildPolarity(),
+					 "include_syms" => $self->{"refFilter"}->BuildIncludeSym(),
+					 "exclude_syms" => $self->{"refFilter"}->BuildExcludeSym()
+		);
+	}
+	else {
+
+		die "Filter properties was not built";
+	}
+
 }
 
+# ---------------------------------------------------------------------------------------
+# Set properties for STANDARD filter
+# ---------------------------------------------------------------------------------------
+
+# Filter by feature types. Options:
+# - "lines"    => 0/1,
+# - "pads"     => 0/1,
+# - "surfaces" => 0/1,
+# - "arcs"     => 0/1,
+# - "text"     => 0/1,
+sub SetFeatureTypes {
+	my $self    = shift;
+	my @options = @_;      # pairs: key + value
+
+	$self->{"stdFilter"}->SetFeatureTypes(@options);
+}
+
+# Filter by polarity
+# - Polarity_POSITIVE  - postivice
+# - Polarity_NEGATIVE - negative
+# - Polarity_BOTH positive and negative
 sub SetPolarity {
 	my $self     = shift;
-	my $polarity = shift;    #  both\positive\negative
+	my $polarity = shift;
 
-	my $inCAM = $self->{"inCAM"};
-
-	$inCAM->COM(
-				 'filter_set',
-				 'filter_name'  => 'popup',
-				 'update_popup' => 'no',
-				 'polarity'     => ( $polarity eq "both" ? "positive\;negative" : $polarity )
-	);
-
+	$self->{"stdFilter"}->SetPolarity($polarity);
 }
 
-sub SetTypes {
-	my $self  = shift;
-	my @types = @{ shift(@_) };
+# Filter by feature symbols
+sub AddIncludeSymbols {
+	my $self    = shift;
+	my $symbols = shift;    # array ref of symbols
 
-	my $typeStr = join( "\\;", @types );
-
-	my $inCAM = $self->{"inCAM"};
-
-	$inCAM->COM(
-				 'filter_set',
-				 'filter_name'  => 'popup',
-				 'update_popup' => 'no',
-				 'feat_types'   => $typeStr
-	);
-
+	$self->{"stdFilter"}->AddIncludeSymbols($symbols);
 }
 
+# Exclude symbols from filter
+sub AddExcludeSymbols {
+	my $self    = shift;
+	my $symbols = shift;    # array ref of symbols
+
+	$self->{"stdFilter"}->AddExcludeSymbols($symbols);
+}
+
+# Include attribute and att value to filter
+sub AddIncludeAtt {
+	my $self     = shift;
+	my $attName  = shift;    # attribute name
+	my $attValue = shift;    # attribut value. Type according InCAM attribute type, undef is allowed
+
+	$self->{"stdFilter"}->AddIncludeAtt( $attName, $attValue );
+}
+
+# Exclude attribute and att value to filter
+sub AddExcludeAtt {
+	my $self     = shift;
+	my $attName  = shift;    # attribute name
+	my $attValue = shift;    # attribut value. Type according InCAM attribute type, undef is allowed
+
+	$self->{"stdFilter"}->AddExcludeAtt( $attName, $attValue );
+}
+
+# Set logic between include attributes
+# - Enums->Logic_AND
+# - Enums->Logic_OR
+sub SetIncludeAttrCond {
+	my $self = shift;
+	my $cond = shift;
+
+	$self->{"stdFilter"}->SetIncludeAttrCond($cond);
+}
+
+# Set logic between include attributes
+# - Enums->Logic_AND
+# - Enums->Logic_OR
+sub SetExcludeAttrCond {
+	my $self = shift;
+	my $cond = shift;
+
+	$self->{"stdFilter"}->SetExcludeAttrCond($cond);
+}
+
+# Filter according profile
+# Mode:
+# - Enums->ProfileMode_IGNORE (0)
+# - Enums->ProfileMode_INSIDE (1)
+# - Enums->ProfileMode_OUTSIDE (2)
+sub SetProfile {
+	my $self = shift;
+	my $mode = shift;
+
+	$self->{"stdFilter"}->SetProfile($mode);
+}
+
+# Filter by specific text or expression
 sub SetText {
 	my $self = shift;
 	my $text = shift;
 
-	my $inCAM = $self->{"inCAM"};
-
-	$inCAM->COM(
-				 'set_filter_text',
-				 'filter_name' => "",
-				 'text'        => $text
-	);
-
+	$self->{"stdFilter"}->SetText($text);
 }
 
-sub AddIncludeSymbols {
-	my $self    = shift;
-	my @symbols = @{ shift(@_) };
+# Filter lline length
+sub SetLineLength {
+	my $self      = shift;
+	my $minLength = shift;    # in mm
+	my $maxLength = shift;    # in mm
 
-	push( @{ $self->{"includeSym"} }, @symbols );
-	my $symbolStr = join( "\\;", @{ $self->{"includeSym"} } );
-
-	my $inCAM = $self->{"inCAM"};
-
-	$inCAM->COM( "set_filter_symbols", "filter_name" => "", "symbols" => $symbolStr );
-
+	$self->{"stdFilter"}->SetLineLength( $minLength, $maxLength );
 }
 
-sub AddExcludeSymbols {
-	my $self    = shift;
-	my @symbols = @{ shift(@_) };
-
-	push( @{ $self->{"excludeSym"} }, @symbols );
-	my $symbolStr = join( "\\;", @{ $self->{"excludeSym"} } );
-
-	my $inCAM = $self->{"inCAM"};
-
-	$inCAM->COM( "set_filter_symbols", "filter_name" => "", "exclude_symbols" => $symbolStr );
-
-}
-
-# include attribute and att value to filter
-sub AddIncludeAtt {
-	my $self       = shift;
-	my $attName    = shift;
-	my $attVal     = shift;
-	my $refenrence = shift;    # if set, attributes are set for reference filter
-
-	unless ( defined $attName ) {
-		return 0;
-	}
-
-	my $inCAM = $self->{"inCAM"};
-	my $jobId = $self->{"jobId"};
-
-	# decide, which type is attribute
-	my %attrInfo = CamAttributes->GetAttrParamsByName( $inCAM, $jobId, $attName );
-
-	my $min_int_val   = 0;
-	my $max_int_val   = 0;
-	my $min_float_val = 0;
-	my $max_float_val = 0;
-	my $option        = "";
-	my $text          = "";
-
-	if ( $attrInfo{"gATRtype"} eq "int" ) {
-
-		$min_int_val = $attVal->{"min"};
-		$max_int_val = $attVal->{"max"};
-
-	}
-	elsif ( $attrInfo{"gATRtype"} eq "float" ) {
-
-		$min_float_val = $attVal->{"min"};
-		$max_float_val = $attVal->{"max"};
-
-	}
-	elsif ( $attrInfo{"gATRtype"} eq "option" ) {
-
-		$option = $attVal;
-
-	}
-	elsif ( $attrInfo{"gATRtype"} eq "text" ) {
-
-		$text = $attVal;
-	}
-
-	$inCAM->COM(
-				 'set_filter_attributes',
-				 filter_name => !$refenrence ? 'popup' : 'ref_select',
-				 exclude_attributes => 'no',
-				 condition          => 'yes',
-				 attribute          => $attName,
-				 min_int_val        => $min_int_val,
-				 max_int_val        => $max_int_val,
-				 min_float_val      => $min_float_val,
-				 max_float_val      => $max_float_val,
-				 option             => $option,
-				 text               => $text
-	);
-
-}
-
-# include attribute and att value to filter
+# Filter by feature indexes
 sub AddFeatureIndexes {
-	my $self           = shift;
-	my $featureIndexes = shift;
+	my $self    = shift;
+	my $indexes = shift;      # array ref of indexes
 
-	push( @{ $self->{"featureIndexes"} }, @{$featureIndexes} );
-
-	#	my $str = join( "\\;", @{ $self->{"featureIndexes"} } );
-	#
-	#	my $inCAM = $self->{"inCAM"};
-	#
-	#	$inCAM->COM(
-	#		"adv_filter_set",
-	#		"filter_name" => "popup",
-	#		"active"      => "yes",
-	#		"indexes"     => $str,
-	#
-	#	);
-
+	$self->{"stdFilter"}->AddFeatureIndexes($indexes);
 }
 
+# ---------------------------------------------------------------------------------------
+# Set properties for REFERENCE filter
+# ---------------------------------------------------------------------------------------
+
+# Activate reference filter by set one reference layer
+sub SetRefLayer {
+	my $self  = shift;
+	my $layer = shift;    # reference layer
+
+	$self->{"refFilter"}->SetRefLayer($layer);
+}
+
+# Activate reference filter by set more reference layers
+sub SetRefLayers {
+	my $self   = shift;
+	my $layers = shift;    # array of reference layers
+
+	$self->{"refFilter"}->SetRefLayers($layers);
+}
+
+# Reference filter
+# Filter by feature types. Options:
+# - "lines"    => 0/1,
+# - "pads"     => 0/1,
+# - "surfaces" => 0/1,
+# - "arcs"     => 0/1,
+# - "text"     => 0/1,
+sub SetFeatureTypesRef {
+	my $self    = shift;
+	my @options = @_;      # pairs: key + value
+
+	die "Reference filter is not active. First set reference layer" unless ( $self->{"refFilter"}->IsActive() );
+
+	$self->{"refFilter"}->SetFeatureTypes(@options);
+}
+
+# Reference filter
+# Filter by polarity
+# - Polarity_POSITIVE  - postivice
+# - Polarity_NEGATIVE - negative
+# - Polarity_BOTH positive and negative
+sub SetPolarityRef {
+	my $self     = shift;
+	my $polarity = shift;
+
+	die "Reference filter is not active. First set reference layer" unless ( $self->{"refFilter"}->IsActive() );
+
+	$self->{"refFilter"}->SetPolarity($polarity);
+}
+
+# Reference filter
+# Filter by feature symbols
+sub AddIncludeSymbolsRef {
+	my $self    = shift;
+	my $symbols = shift;    # array ref of symbols
+
+	die "Reference filter is not active. First set reference layer" unless ( $self->{"refFilter"}->IsActive() );
+
+	$self->{"refFilter"}->AddIncludeSymbols($symbols);
+}
+
+# Reference filter
+# Exclude symbols from filter
+sub AddExcludeSymbolsRef {
+	my $self    = shift;
+	my $symbols = shift;    # array ref of symbols
+
+	die "Reference filter is not active. First set reference layer" unless ( $self->{"refFilter"}->IsActive() );
+
+	$self->{"refFilter"}->AddExcludeSymbols($symbols);
+}
+
+# Reference filter
+# include attribute and att value to filter
+sub AddIncludeAttRef {
+	my $self     = shift;
+	my $attName  = shift;    # attribute name
+	my $attValue = shift;    # attribut value
+
+	die "Reference filter is not active. First set reference layer" unless ( $self->{"refFilter"}->IsActive() );
+
+	$self->{"refFilter"}->AddIncludeAtt( $attName, $attValue );
+}
+
+# Reference filter
 # Set logic between include attributes
-sub SetIncludeAttrCond {
+# - Enums->Logic_AND
+# - Enums->Logic_OR
+sub SetIncludeAttrCondRef {
 	my $self = shift;
-	my $cond = shift; #FilterEnums->Logic_OR, FilterEnums->Logic_AND
+	my $cond = shift;
 
-	my $inCAM = $self->{"inCAM"};
+	die "Reference filter is not active. First set reference layer" unless ( $self->{"refFilter"}->IsActive() );
 
-	$inCAM->COM( "set_filter_and_or_logic", "filter_name" => "popup", "criteria" => "inc_attr", "logic" => $cond );
+	$self->{"refFilter"}->SetIncludeAttrCond($cond);
+}
+
+# Reference filter
+# Tell where use filter in layer
+# Mode of reference selection
+# - Enums->RefMode_TOUCH - take all features touch reference features
+# - Enums->RefMode_DISJOINT - take all features not touching any reference features
+# - Enums->RefMode_COVER - take all features fully covered by at least one reference feature
+# - Enums->RefMode_INCLUDE - take all features that fully include at least one reference feature
+# - Enums->RefMode_SAMECENTER - take all features that fully include at least one reference feature
+sub SetReferenceMode {
+	my $self = shift;
+	my $mode = shift;
+
+	die "Reference filter is not active. First set reference layer" unless ( $self->{"refFilter"}->IsActive() );
+
+	$self->{"refFilter"}->SetReferenceMode($mode);
 }
 
 #-------------------------------------------------------------------------------------------#
@@ -365,24 +408,54 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	use aliased 'Packages::InCAM::InCAM';
 
 	my $inCAM = InCAM->new();
-	my $jobId = "f52456";
+	my $jobId = "d113608";
 
-	my $f = FeatureFilter->new( $inCAM, $jobId, "fzc" );
+	my $f = FeatureFilter->new( $inCAM, $jobId, "c" );
 
-	#$f->SetPolarity("positive");
+	#my %num = ( "min" => 1100 / 1000 / 25.4, "max" => 1100 / 1000 / 25.4 );
+	#$f->AddIncludeAtt( ".rout_tool", \%num );
 
-	#my @types = ("surface", "pad");
-	#$f->SetTypes(\@types);
+	#$f->AddFeatureIndexes( [ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22 ] );
+	# - "lines"    => 0/1,
+	# - "pads"     => 0/1,
+	# - "surfaces" => 0/1,
+	# - "arcs"     => 0/1,
+	# - "text"     => 0/1,
+	$f->SetFeatureTypes( "line" => 1 );
 
-	#my @syms = ("r500", "r1");
-	#$f->AddIncludeSymbols(  \["r500", "r1"] );
+	$f->SetPolarity( Enums->Polarity_BOTH );
 
-	my %num = ( "min" => 1100 / 1000 / 25.4, "max" => 1100 / 1000 / 25.4 );
-	$f->AddIncludeAtt( ".rout_tool", \%num );
+	#$f->AddIncludeSymbols( ["r254", "r500"]);
+	#$f->AddExcludeSymbols( ["r254", "r500"]);
 
+	#my %num = ( "min" => 1100 / 1000 / 25.4, "max" => 3000 / 1000 / 25.4 );
+	#$f->AddExcludeAtt(".smd");
+	#$f->AddExcludeAtt(".gold_plating");
+	#$f->SetExcludeAttrCond(Enums->Logic_OR);
+
+	#$f->SetFeatTypes( "text" => 1 );
+	#$f->SetText("*Drill*");
+
+	##d$f->SetLineLength(2,10);
+	#$f->AddFeatureIndexes( [ 440, 441 ] );
+
+	$f->SetRefLayer("pom2");
+	#$f->SetFeatureTypesRef( "line" => 1, "surface" => 1 );
+	#$f->SetPolarityRef( Enums->Polarity_POSITIVE );
+	#$f->AddIncludeSymbolsRef( ["r254", "r500"]);
+	#$f->AddIncludeAttRef(".nomenclature");
+	#$f->AddIncludeAttRef(".smd");
+	$f->SetIncludeAttrCondRef(Enums->Logic_AND);
+	$f->SetReferenceMode(Enums->RefMode_DISJOINT);
+	
+	
+	
 	print $f->Select();
 
 	print "fff";
+	
+#	sel_ref_feat,layers=pom2,use=filter,mode=touch,pads_as=shape,f_types=surface,pol
+#arity=positive\;negative,include_syms=,exclude_syms= (0)
 
 }
 

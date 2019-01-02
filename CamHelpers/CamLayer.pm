@@ -796,21 +796,20 @@ sub ResizeFeatures {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	my $jobName   = "f13610";
-	my $layerName = "fsch";
+	 
 
 	use aliased 'CamHelpers::CamLayer';
 
 	use aliased 'Packages::InCAM::InCAM';
 
 	my $inCAM = InCAM->new();
-	my $jobId = "f13610";
+	my $jobId = "d113608";
 
 	my %lim = CamJob->GetProfileLimits2( $inCAM, $jobId, "o+1" );
 
-	my $res = CamLayer->LayerIntersection( $inCAM, "goldc", "c", \%lim );
+	CamLayer->NegativeLayerData( $inCAM, "v3_", \%lim );
 
-	print $res;
+	 
 
 }
 

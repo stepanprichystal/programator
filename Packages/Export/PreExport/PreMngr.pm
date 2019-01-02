@@ -22,7 +22,7 @@ use aliased 'CamHelpers::CamHelper';
 use aliased 'Packages::TifFile::TifSigLayers';
 use aliased 'Packages::Export::PreExport::Enums';
 use aliased 'CamHelpers::CamGoldArea';
-use aliased 'Packages::CAMJob::GoldFingers::GoldFingersCheck';
+use aliased 'Packages::CAMJob::PCBConnector::GoldFingersCheck';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods

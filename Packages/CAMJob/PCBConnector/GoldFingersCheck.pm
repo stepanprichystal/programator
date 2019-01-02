@@ -2,7 +2,7 @@
 # Description: GoldFingerChecks check
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::CAMJob::GoldFingers::GoldFingersCheck;
+package Packages::CAMJob::PCBConnector::GoldFingersCheck;
 
 #3th party library
 use utf8;
@@ -151,7 +151,7 @@ sub GoldFingersConnected {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	use aliased 'Packages::CAMJob::GoldFingers::GoldFingersCheck';
+	use aliased 'Packages::CAMJob::PCBConnector::GoldFingersCheck';
 	use Data::Dump qw(dump);
 	use aliased 'Packages::InCAM::InCAM';
 

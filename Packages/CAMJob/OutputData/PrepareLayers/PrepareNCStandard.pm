@@ -308,8 +308,8 @@ sub __CreateDrillMaps {
 	);
 
 	my $f = FeatureFilter->new( $inCAM, $jobId, $lNameMap );
-	my @types = ("text");
-	$f->SetTypes( \@types );
+	 
+	$f->SetFeatureTypes( "text" => 1 );
 	$f->SetText("*Drill*");
 
 	if ( $f->Select() > 0 ) {
