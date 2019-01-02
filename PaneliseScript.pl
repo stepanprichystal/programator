@@ -82,6 +82,7 @@ use aliased 'Managers::MessageMngr::MessageMngr';
 
 
 unless ($ENV{JOB}) {
+	$jobName = shift;
 	$file = shift;
 	$constClass = shift;
 	$maska01 = shift;
