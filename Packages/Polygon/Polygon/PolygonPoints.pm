@@ -41,13 +41,15 @@ sub GetPolygonDirection {
 
 # Test intersection between poly1 and poly2
 # Return  Pos_INSIDE/Pos_OUTSIDE/Pos_INTERSECT
-# eg Pos_INSIDE means, poly1 is inside poly2
-# if point of poly2 lay on polygon border 1, it considered as INSIDE polygon
-# Note: This works only if polygons are convex!!
+# - Pos_INSIDE: poly1 is whole inside poly2
+# - Pos_OUTSIDE: poly1 is whole outside poly2
+# - Pos_INTERSECT: poly1 intersect with poly2
+# if point of poly2 lay on polygon border, it is considered as INSIDE point
+# IMPORTANT NOTE: This works only if polygons are convex!!
 sub GetPoly2PolyIntersect {
 	my $self  = shift;
-	my @poly1 = @{ shift(@_) };
-	my @poly2 = @{ shift(@_) };
+	my @poly1 = @{ shift(@_) };    # array of array refs, where first cell is "x" val, sexond is "y" val
+	my @poly2 = @{ shift(@_) };    # array of array refs, where first cell is "x" val, sexond is "y" val
 
 	my $inPoint  = 0;
 	my $outPoint = 0;
@@ -59,6 +61,50 @@ sub GetPoly2PolyIntersect {
 
 		my $p = $poly1[$i];
 
+		if ( $polygon->isinside($p) ) {
+			$inPoint++;
+		}
+		else {
+			$outPoint++;
+		}
+	}
+
+	my $pos = undef;
+
+	if ( $inPoint && !$outPoint ) {
+		$pos = Enums->Pos_INSIDE;
+	}
+	elsif ( !$inPoint && $outPoint ) {
+		$pos = Enums->Pos_OUTSIDE;
+	}
+	else {
+		$pos = Enums->Pos_INTERSECT;
+	}
+
+	return $pos;
+}
+
+# Test intersection between polygon and segment line
+# Return  Pos_INSIDE/Pos_OUTSIDE/Pos_INTERSECT
+# - Pos_INSIDE: line is whole inside polygon
+# - Pos_OUTSIDE: line is whole outside of polygon
+# - Pos_INTERSECT: line intersect polygon
+# if point of line lay on polygon border, it is considered as INSIDE point
+# IMPORTANT NOTE: This works only if polygons are convex!!
+sub GetPoly2SegmentLineIntersect {
+	my $self   = shift;
+	my @poly   = @{ shift(@_) };    # array of array refs, where first cell is "x" val, sexond is "y" val
+	my $startP = shift;             # start point, array refs where first cell is "x" val, sexond is "y" val
+	my $endP   = shift;             # end point, array refs where first cell is "x" val, sexond is "y" val
+
+	my $inPoint  = 0;
+	my $outPoint = 0;
+
+	my $polygon = Math::Geometry::Planar->new();
+	$polygon->points( \@poly );
+
+	 foreach my $p  (($startP, $endP)){
+  
 		if ( $polygon->isinside($p) ) {
 			$inPoint++;
 		}
@@ -172,7 +218,7 @@ sub GetPolygonLim {
 	my $poly1 = Math::Polygon->new(@points1);
 
 	my @box = $poly1->bbox();
-	
+
 	return @box;
 }
 
@@ -180,18 +226,15 @@ sub GetPolygonDim {
 	my $self    = shift;
 	my @points1 = @{ shift(@_) };
 
-	my @box = $self->GetPolygonLim(\@points1);
+	my @box = $self->GetPolygonLim( \@points1 );
 
 	my %inf = ();
-	
-	$inf{"w"} = abs($box[0]-$box[2]);
-	$inf{"h"} = abs($box[1]-$box[3]);
-	
-	
+
+	$inf{"w"} = abs( $box[0] - $box[2] );
+	$inf{"h"} = abs( $box[1] - $box[3] );
+
 	return %inf;
 }
- 
- 
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

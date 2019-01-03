@@ -170,9 +170,8 @@ sub __SetLayoutSettings {
 	my $maskaChb       = Wx::CheckBox->new( $statBox, -1, "Mask 100µm",  &Wx::wxDefaultPosition, [ $textWidth, 20 ] );
 	my $pressfitChb    = Wx::CheckBox->new( $statBox, -1, "Pressfit (Plt)",     &Wx::wxDefaultPosition, [ $textWidth, 20 ] );
 	my $tolMeasureChb    = Wx::CheckBox->new( $statBox, -1, "Tolerance (NPlt)",     &Wx::wxDefaultPosition, [ $textWidth, 20 ] );
-	#my $jumpscoringChb = Wx::CheckBox->new( $statBox, -1, "Jump scoring", &Wx::wxDefaultPosition, [ $textWidth, 20 ] );
-
-  
+	my $chamferEdgesChb = Wx::CheckBox->new( $statBox, -1, "Chamfer edge", &Wx::wxDefaultPosition, [ $textWidth, 20 ] );
+ 
 	my $markingFrm = MarkingList->new($statBox);
 
 	my $silkTopCb = NifColorCb->new( $statBox, $self->{"inCAM"}, $self->{"jobId"}, "Silk top",        \@silkColor );
@@ -188,7 +187,7 @@ sub __SetLayoutSettings {
 	$szCol1->Add( $maskaChb,       0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 	$szCol1->Add( $pressfitChb,    0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 	$szCol1->Add( $tolMeasureChb,    0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
-	#$szCol1->Add( $jumpscoringChb, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szCol1->Add( $chamferEdgesChb, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 
 	$szCol2->Add( $markingFrm, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 
@@ -210,6 +209,8 @@ sub __SetLayoutSettings {
 	$self->{"maskaChb"} = $maskaChb;
 	$self->{"pressfitChb"} = $pressfitChb;
 	$self->{"tolMeasureChb"} = $tolMeasureChb;
+	$self->{"chamferEdgesChb"} = $chamferEdgesChb;
+	
 	
 
 	$self->{"markingFrm"} = $markingFrm;
@@ -612,6 +613,19 @@ sub GetToleranceHole {
 	return $self->{"tolMeasureChb"}->GetValue();
 }
 
+
+# Chamfer edges
+sub SetChamferEdges {
+	my $self  = shift;
+	my $value = shift;
+	
+	$self->{"chamferEdgesChb"}->SetValue($value);
+}
+
+sub GetChamferEdges {
+	my $self = shift;
+	return $self->{"chamferEdgesChb"}->GetValue();
+}
 
 sub SetNotes {
 	my $self  = shift;

@@ -206,6 +206,18 @@ sub GetToleranceHole {
 	return $self->{"data"}->{"mereni_tolerance_vrtani"};
 }
 
+# Chamfer edges
+sub SetChamferEdges {
+	my $self  = shift;
+	my $value = shift;
+	$self->{"data"}->{"srazeni_hran"} = $value;
+}
+
+sub GetChamferEdges {
+	my $self  = shift;
+	return $self->{"data"}->{"srazeni_hran"};
+}
+
 #notes
 sub SetNotes {
 	my $self  = shift;

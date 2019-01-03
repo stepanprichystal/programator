@@ -576,6 +576,20 @@ sub GetToleranceHoleIS {
 	}
 }
 
+
+# Return if chamfer edge exist in IS
+sub GetChamferEdgesIS {
+	my $self = shift;
+	my $key  = shift;
+
+	if ( $self->{"pcbBaseInfo"}->{"srazeni_hran"} =~ /^A$/i ) {
+		return 1;
+	}
+	else {
+		return 0;
+	}
+}
+
 # Return if any reordr exist for this job id
 sub GetIsReorder {
 	my $self = shift;

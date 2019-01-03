@@ -13,6 +13,7 @@ use Math::Polygon;
 use List::Util qw[max min];
 
 #local library
+use aliased 'Packages::Polygon::Enums' => "PolyEnums";
 use aliased 'Packages::Polygon::PolygonFeatures';
 use aliased 'Packages::Polygon::Polygon::PolygonPoints';
 use aliased 'Packages::Polygon::Features::Features::Features';
@@ -46,7 +47,7 @@ sub ConnectorDetection {
 	my $connectorEdges = shift // [];    # ref where all connector edges info for specified layer was stored
 
 	my $MAXFINGERGAP      = shift // 10;     # max gap 10mm
-	my $MAXFINGERPROFDIST = shift // 2.0;    # max finger dist from board edge 2.0mm
+	my $MAXFINGERPROFDIST = shift // 3.0;    # max finger dist from board edge 3.0mm
 
 	my $result = 0;
 
@@ -56,24 +57,20 @@ sub ConnectorDetection {
 	# move edges $MAXFINGERPROFDIST from profile direct to center of pcb
 	my @edgesWork = $self->__GetConnWorkingEdges( \@edgesOri, $MAXFINGERPROFDIST );
 
-	#	# DELETE
+	#	# DELETE -  Drawing boxes
 	#	my $test = GeneralHelper->GetGUID();
-	#
 	#	CamMatrix->CreateLayer( $inCAM, $jobId, $test, "document", "positive", 0 );
-	#
 	#	CamLayer->WorkLayer( $inCAM, $test );
 	#
 	#	foreach my $edge (@edgesWork) {
 	#
-	#		CamSymbol->AddLine( $inCAM, { "x" => $edge->{"x1"}, "y" => $edge->{"y1"} }, { "x" => $edge->{"x2"}, "y" => $edge->{"y2"} }, "r500" );
-	#
+	#		CamSymbol->AddPolyline( $inCAM, $edge->{"box"}, "r500", "positive", 1 );
 	#	}
 	#
 	#	sleep(2);
+	#	CamMatrix->DeleteLayer( $inCAM, $jobId, $test );
 	#
-	#	#CamMatrix->DeleteLayer( $inCAM, $jobId, $test );
-	#
-	#	# DELETE
+	#	# DELETE -  Drawing boxes
 
 	@edgesWork = sort { $b->{"l"} <=> $a->{"l"} } @edgesWork;
 
@@ -82,11 +79,11 @@ sub ConnectorDetection {
 	my $workL = GeneralHelper->GetGUID();
 	CamLayer->WorkLayer( $inCAM, $layer );
 	CamLayer->CopySelOtherLayer( $inCAM, [$workL] );
-	my $f = FeatureFilter->new( $inCAM, $jobId, $workL ); 
-	$f->SetFeatureTypes( "pad" => 1, "line" =>1);# fingers has to be pad
+	my $f = FeatureFilter->new( $inCAM, $jobId, $workL );
+	$f->SetFeatureTypes( "pad" => 1, "line" => 1 );    # fingers has to be pad
 
-	$f->AddIncludeAtt(".smd");             # pads has to have attribute smd
-	$f->AddIncludeAtt(".gold_plating");    # pads has to have attribute smd
+	$f->AddIncludeAtt(".smd");                         # pads has to have attribute smd
+	$f->AddIncludeAtt(".gold_plating");                # pads has to have attribute smd
 	$f->SetIncludeAttrCond( FilterEnums->Logic_OR );
 	$f->SetLineLength( 0.1, 10 );
 
@@ -108,8 +105,6 @@ sub ConnectorDetection {
 		$fConn->Parse( $inCAM, $jobId, $step, $workL );
 		my @fingersFeat = $fConn->GetFeatures();
 
-		
-
 		my @fingers = ();
 		foreach my $fFeat (@fingersFeat) {
 
@@ -117,45 +112,29 @@ sub ConnectorDetection {
 			push( @fingers, \%currFInf );
 		}
 
-#		# remove " finger lines" which go cross connector edges (these lines are probably only connection to "gold holder" pad)
-#		for ( my $i = scalar(@fingers) - 1 ; $i >= 0 ; $i-- ) {
-#
-#			my $remove = 0;
-#			foreach my $e ( map { $_->{"ori"} } @edgesWork ) {
-#
-#				if (
-#					 SegmentLineIntersection->DoIntersect(
-#														   { "x" => $fingers[$i]->{"axis"}->{"x1"}, "y" => $fingers[$i]->{"axis"}->{"y1"} },
-#														   { "x" => $fingers[$i]->{"axis"}->{"x2"}, "y" => $fingers[$i]->{"axis"}->{"y2"} },
-#														   { "x" => $e->{"x1"},                     "y" => $e->{"y1"} },
-#														   { "x" => $e->{"x2"},                     "y" => $e->{"y2"} }
-#					 )
-#				  )
-#				{
-#					$remove = 1;
-#					last;
-#				}
-#			}
-#
-#			splice @fingers, $i, 1 if ($remove);
-#		}
-
 		# store to pad which profile edges go through it
 		foreach my $e (@edgesWork) {
 
+			my @box = map { [ $_->{"x"}, $_->{"y"} ] } @{ $e->{"box"} };
+
 			foreach my $f (@fingers) {
 
-				if (
-					 SegmentLineIntersection->DoIntersect(
-														   { "x" => $f->{"axis"}->{"x1"}, "y" => $f->{"axis"}->{"y1"} },
-														   { "x" => $f->{"axis"}->{"x2"}, "y" => $f->{"axis"}->{"y2"} },
-														   { "x" => $e->{"x1"},           "y" => $e->{"y1"} },
-														   { "x" => $e->{"x2"},           "y" => $e->{"y2"} }
-					 )
-				  )
-				{
-					push( @{ $f->{"allEdges"} }, $e );
+				next
+				  if (
+					   !(
+						     ( $f->{"dir"} eq "h" && $e->{"dir"} eq "v" )
+						  || ( $f->{"dir"} eq "v" && $e->{"dir"} eq "h" )
+						  || ( $f->{"dir"} eq "d" && $e->{"dir"} eq "d" )
+					   )
+				  );
 
+				my $fAxisS = [ $f->{"axis"}->{"x1"}, $f->{"axis"}->{"y1"} ];
+				my $fAxisE = [ $f->{"axis"}->{"x2"}, $f->{"axis"}->{"y2"} ];
+
+				my $pos = PolygonPoints->GetPoly2SegmentLineIntersect( \@box, $fAxisS, $fAxisE );
+
+				if ( $pos eq PolyEnums->Pos_INTERSECT || $pos eq PolyEnums->Pos_INSIDE ) {
+					push( @{ $f->{"allEdges"} }, $e );
 				}
 			}
 		}
@@ -222,7 +201,7 @@ sub ConnectorDetection {
 		}
 
 		# RULE 1: remove groups where are less than 3 fingers (smallest connector has 2 fingers)
-		@connectors = grep { scalar( @{$_} ) > 2 } @connectors;
+		@connectors = grep { scalar( @{$_} ) >= 2 } @connectors;
 
 		return 0 unless (@connectors);
 
@@ -243,10 +222,12 @@ sub ConnectorDetection {
 			}
 		}
 
-		# RULE 3: check if fingers are placed along more than 40% of connector edge width
+		# RULE 3: check if fingers are placed along more than 50% of connector edge width
 		for ( my $i = scalar(@connectors) - 1 ; $i >= 0 ; $i-- ) {
 
-			my $frstFinger = $connectors[$i]->[0];    # test on first finger
+			next if ( scalar(@connectors) < 5 );    # test only for connector bigger than
+
+			my $frstFinger = $connectors[$i]->[0];  # test on first finger
 
 			next if ( $frstFinger->{"edge"}->{"dir"} eq "d" );
 
@@ -257,7 +238,7 @@ sub ConnectorDetection {
 
 			$fingerConLen = abs( max( map { $_->{$axis} } @{ $connectors[$i] } ) - min( map { $_->{$axis} } @{ $connectors[$i] } ) );
 
-			if ( $fingerConLen / $conEdgeLen < 0.4 ) {
+			if ( $fingerConLen / $conEdgeLen < 0.5 ) {
 				splice @connectors, $i, 1;
 				next;
 			}
@@ -315,8 +296,7 @@ sub ConnectorDetection {
 		}
 
 	}
-	
-	
+
 	CamMatrix->DeleteLayer( $inCAM, $jobId, $workL );
 
 	return $result;
@@ -346,21 +326,6 @@ sub __GetConnEdges {
 			my @fb = grep { $_->{"type"} eq "L" } $fEdgeOri->GetFeatures();
 			$_->{"fingerSide"} = "both" foreach (@fb);
 			push( @edgesOri, @fb );
-
-			#			# DELETE
-			#			my $test = GeneralHelper->GetGUID();
-			#
-			#			CamMatrix->CreateLayer( $inCAM, $jobId, $test, "document", "positive", 0 );
-			#
-			#			CamLayer->WorkLayer( $inCAM, $test );
-			#
-			#			foreach my $edge ( grep { $_->{"type"} eq "L" } $fEdgeOri->GetFeatures() ) {
-			#
-			#				CamSymbol->AddLine( $inCAM, { "x" => $edge->{"x1"}, "y" => $edge->{"y1"} }, { "x" => $edge->{"x2"}, "y" => $edge->{"y2"} }, "r500" );
-			#			}
-			#
-			#			sleep(2);
-			#			CamMatrix->DeleteLayer( $inCAM, $jobId, $test );
 		}
 	}
 
@@ -379,23 +344,6 @@ sub __GetConnEdges {
 		push( @edgesOri, @fL );
 
 		CamMatrix->DeleteLayer( $inCAM, $jobId, $profileL );
-
-		#		# DELETE
-		#		my $test = GeneralHelper->GetGUID();
-		#
-		#		CamMatrix->CreateLayer( $inCAM, $jobId, $test, "document", "positive", 0 );
-		#
-		#		CamLayer->WorkLayer( $inCAM, $test );
-		#
-		#		foreach my $edge ( grep { $_->{"type"} eq "L" } $fEdgeOri->GetFeatures() ) {
-		#
-		#			CamSymbol->AddLine( $inCAM, { "x" => $edge->{"x1"}, "y" => $edge->{"y1"} }, { "x" => $edge->{"x2"}, "y" => $edge->{"y2"} }, "r500" );
-		#
-		#		}
-		#
-		#		sleep(2);
-		#		CamMatrix->DeleteLayer( $inCAM, $jobId, $test );
-
 	}
 
 	# if not fk exist, add lines from depth milling
@@ -424,23 +372,6 @@ sub __GetConnEdges {
 			$_->{"fingerSide"} = "both" foreach (@fb);
 			push( @edgesOri, @fb );
 
-			#			# DELETE
-			#			my $test = GeneralHelper->GetGUID();
-			#
-			#			CamMatrix->CreateLayer( $inCAM, $jobId, $test, "document", "positive", 0 );
-			#
-			#			CamLayer->WorkLayer( $inCAM, $test );
-			#
-			#			foreach my $edge ( grep { $_->{"type"} eq "L" } $fEdgeOri->GetFeatures() ) {
-			#
-			#				CamSymbol->AddLine( $inCAM, { "x" => $edge->{"x1"}, "y" => $edge->{"y1"} }, { "x" => $edge->{"x2"}, "y" => $edge->{"y2"} }, "r500" );
-			#
-			#			}
-			#
-			#			sleep(2);
-			#			CamMatrix->DeleteLayer( $inCAM, $jobId, $test );
-			#
-			#			# DELETE
 		}
 	}
 
@@ -481,13 +412,16 @@ sub __GetConnWorkingEdge {
 												   { "x" => $edge->{"x2"}, "y" => $edge->{"y2"} },
 												   $MAXFINGERPROFDIST, $fingerSide );
 
-	my %edgeInf = ();
-	$edgeInf{"id"} = $edge->{"id"};
+	# build  "rectangle box" from 4 points - area where connector could be pottentionally placed
+	my @box = ();
+	push( @box, { "x" => $edge->{"x1"},   "y" => $edge->{"y1"} } );
+	push( @box, { "x" => $line[0]->{"x"}, "y" => $line[0]->{"y"} } );
+	push( @box, { "x" => $line[1]->{"x"}, "y" => $line[1]->{"y"} } );
+	push( @box, { "x" => $edge->{"x2"},   "y" => $edge->{"y2"} } );
 
-	$edgeInf{"x1"} = $line[0]->{"x"};
-	$edgeInf{"y1"} = $line[0]->{"y"};
-	$edgeInf{"x2"} = $line[1]->{"x"};
-	$edgeInf{"y2"} = $line[1]->{"y"};
+	my %edgeInf = ();
+	$edgeInf{"id"}  = $edge->{"id"};
+	$edgeInf{"box"} = \@box;
 
 	$edgeInf{"ori"} = $edge;                                                                                # store original profile edge
 	$edgeInf{"l"} = sqrt( ( $edge->{"x1"} - $edge->{"x2"} )**2 + ( $edge->{"y2"} - $edge->{"y1"} )**2 );    # original edge length
@@ -587,6 +521,46 @@ sub DrawConnectorResult {
 
 }
 
+sub GetConnectorAngle {
+	my $self  = shift;
+	my $inCAM = shift;
+	my $jobId = shift;
+	my $step  = shift;
+
+	my $finAngle;    # default is 90°
+
+	# if exist fz layers, get angle from fzc + fzs
+
+	my @fzLayers =
+	  CamDrilling->GetNCLayersByTypes( $inCAM, $jobId, [ EnumsGeneral->LAYERTYPE_nplt_bMillTop, EnumsGeneral->LAYERTYPE_nplt_bMillBot ] );
+
+	my @angles = ();
+
+	foreach my $l (@fzLayers) {
+
+		my $unitDTM = UniDTM->new( $inCAM, $jobId, $step, $l->{"gROWname"} );
+
+		my @tools = $unitDTM->GetUniqueTools();
+
+		my @a = uniq( map { $_->GetAngle() } grep { $_->GetSpecial() && $_->GetAngle() > 0 } @tools );
+
+		push( @angles, @a ) if ( scalar(@a) );
+	}
+
+	my %h;
+	$h{$_}++ foreach (@angles);
+
+	foreach my $angle ( keys %h ) {
+
+		$finAngle = $angle;
+
+		# if two same angle (same from top and bot) it is probablz tool for chamfering connector
+		last if ( $h{$angle} == 2 );
+	}
+
+	return $finAngle;
+}
+
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#
@@ -599,41 +573,25 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	use aliased 'Packages::InCAM::InCAM';
 
 	my $inCAM = InCAM->new();
-	my $jobId = "d113608";
+	my $jobId = "d228881";
 	my $layer = "c";
 	my $mess  = "";
+ 
 
-	my @sigLayers = ();
-	push( @sigLayers, $layer ) if ( CamHelper->LayerExists( $inCAM, $jobId, $layer ) );
+#	my @edges = ();
+#	my $result = PCBConnectorCheck->ConnectorDetection( $inCAM, $jobId, "o+1", $layer, \@edges );
+#
+#	print STDERR "Result is $result, number of edfes:" . scalar(@edges) . " \n";
+#
+#	if ($result) {
+#
+#		PCBConnectorCheck->DrawConnectorResult( $inCAM, $jobId, \@edges );
+#	}
 
-	my @edges = ();
-	my $result = PCBConnectorCheck->ConnectorDetection( $inCAM, $jobId, "o+1", $layer, \@edges );
 
-	print STDERR "Result is $result, number of edfes:" . scalar(@edges) . " \n";
-
-	if ($result) {
-
-		unless ( CamHelper->LayerExists( $inCAM, $jobId, "pom" ) ) {
-			CamMatrix->CreateLayer( $inCAM, $jobId, "pom", "document", "positive", 0 );
-		}
-
-		CamLayer->WorkLayer( $inCAM, "pom" );
-		CamLayer->DeleteFeatures($inCAM);
-
-		foreach my $edge (@edges) {
-
-			CamSymbol->AddLine( $inCAM, { "x" => $edge->{"x1"}, "y" => $edge->{"y1"} }, { "x" => $edge->{"x2"}, "y" => $edge->{"y2"} }, "r500" );
-
-			foreach my $finger ( map { $_->{"axis"} } @{ $edge->{"fingerFeats"} } ) {
-
-				CamSymbol->AddLine( $inCAM,
-									{ "x" => $finger->{"x1"}, "y" => $finger->{"y1"} },
-									{ "x" => $finger->{"x2"}, "y" => $finger->{"y2"} }, "r200" );
-			}
-
-		}
-
-	}
+	my $angle = PCBConnectorCheck->GetConnectorAngle($inCAM, $jobId, "o+1");
+	
+	print $angle;
 
 }
 

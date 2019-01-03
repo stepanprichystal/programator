@@ -31,6 +31,8 @@ use aliased 'CamHelpers::CamDTM';
 use aliased 'Packages::Tooling::PressfitOperation';
 use aliased 'Packages::CAMJob::Marking::Marking';
 use aliased 'Packages::CAMJob::Technology::CuLayer';
+use aliased 'Packages::CAMJob::PCBConnector::InLayersClearanceCheck';
+use aliased 'Packages::CAMJob::PCBConnector::PCBConnectorCheck';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -310,7 +312,38 @@ sub OnCheckGroupData {
 									  . " Prosím zruš volbu nebo přidej tolerance k nplt otvorům (pomocí Drill Tool Manageru)."
 		);
 	}
- 
+
+	# 17) Check if chamfer edges is in IS and not checked in export
+	if ( $defaultInfo->GetChamferEdgesIS() && !$groupData->GetChamferEdges() ) {
+
+		$dataMngr->_AddErrorResult( "Chamfer edges",
+									"V IS je u dps požadavek na sražení konektoru, volba \"Chamfer edges\" by měla být zapnutá." );
+	}
+
+	# 18) Check clearance of inner layer form chamfered connector
+	if ( $groupData->GetChamferEdges() && $defaultInfo->GetLayerCnt() > 2 ) {
+
+		foreach my $s ( map { $_->{"stepName"} } CamStepRepeatPnl->GetUniqueNestedStepAndRepeat( $inCAM, $jobId ) ) {
+
+			my $a = PCBConnectorCheck->GetConnectorAngle( $inCAM, $jobId, $s );
+			my @resultData = ();
+
+			unless ( InLayersClearanceCheck->CheckAllInLayers( $inCAM, $jobId, $s, $a, \@resultData ) ) {
+
+				foreach my $res (@resultData) {
+
+					unless ($res->{"result"}) {
+
+						my $mess =
+						  "Step: \"$s\", layer: " . $res->{"layer"} . ". Motiv vnitřní vrstvy je příliš blízko sražené hraně konektoru.\n";
+						$mess .= "Minimální vzdálenost motivu od profilu dps: " . $res->{"minProfDist"} . "mm (úhel sražení: $a°)";
+
+						$dataMngr->_AddErrorResult( "Odstup vnitřní vrstvy", $mess );
+					}
+				}
+			}
+		}
+	}
 
 	#---------------------------------------------
 
@@ -430,7 +463,7 @@ sub __CheckDataCodeJob {
 
 	unless ( $defaultInfo->IsPool() ) {
 
-		@steps = map { $_->{"stepName"} } CamStepRepeatPnl->GetUniqueStepAndRepeat( $inCAM, $jobId);
+		@steps = map { $_->{"stepName"} } CamStepRepeatPnl->GetUniqueStepAndRepeat( $inCAM, $jobId );
 	}
 
 	foreach my $step (@steps) {
@@ -555,8 +588,6 @@ sub __IsTentingCS {
 
 	return $tenting;
 }
-
- 
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

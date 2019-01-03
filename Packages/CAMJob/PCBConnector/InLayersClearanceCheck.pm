@@ -30,7 +30,7 @@ use aliased 'Packages::CAM::FeatureFilter::Enums' => 'FilterEnums';
 #-------------------------------------------------------------------------------------------#
 #  Script methods
 #-------------------------------------------------------------------------------------------#
-my $EDGE2LAYERDIST = 1000;    # 1000µm clearance of inner layer from chamfered connector edge 
+my $EDGE2LAYERDIST = 1000;    # 1000µm clearance of inner layer from chamfered connector edge
 
 sub CheckInLayer {
 	my $self           = shift;
@@ -38,11 +38,12 @@ sub CheckInLayer {
 	my $jobId          = shift;
 	my $step           = shift;
 	my $layer          = shift;
-	my $chamferSide    = shift;    # top/bot
+	my $chamferSide    = shift;         # top/bot
 	my $connectorEdges = shift;
 	my $stackup        = shift;
-	my $chamferAngle   = shift;    # angle of chamfer tool 90°/120°/140°
-	my $chamferDepth   = shift;    # routing depth of chamfer tool
+	my $chamferAngle   = shift;         # angle of chamfer tool 90°/120°/140°
+	my $chamferDepth   = shift;         # routing depth of chamfer tool
+	my $resultData     = shift // {};
 
 	my $result = 1;
 
@@ -66,8 +67,8 @@ sub CheckInLayer {
 
 		$minProfDist = tan( deg2rad( $chamferAngle / 2 ) ) * ( $chamferDepth - $lDepth ) + $EDGE2LAYERDIST;
 	}
-	
-	print STDERR "min prof distance: $minProfDist \n";
+
+	$resultData->{"minProfDist"} = $minProfDist;
 
 	# Draw edge with thick of computed min distance from profile to inner layer
 	# Celect all features from inner layer which are touched bz theses edges (if selected, min distance is not keeped)
@@ -93,15 +94,14 @@ sub CheckInLayer {
 		CamLayer->NegativeLayerData( $inCAM, $testLayer, \%lim );
 		$negLayer = 1;
 	}
-	
+
 	CamLayer->WorkLayer( $inCAM, $testLayer );
 	CamLayer->Contourize( $inCAM, $testLayer );
 
-
 	my $f = FeatureFilter->new( $inCAM, $jobId, $testLayer );
-	$f->SetRefLayer($edgeL);  
-	$f->SetReferenceMode(FilterEnums->RefMode_TOUCH);    
-	$f->SetProfile(FilterEnums->ProfileMode_INSIDE);  
+	$f->SetRefLayer($edgeL);
+	$f->SetReferenceMode( FilterEnums->RefMode_TOUCH );
+	$f->SetProfile( FilterEnums->ProfileMode_INSIDE );
 	if ( $f->Select() ) {
 
 		$result = 0;
@@ -134,17 +134,17 @@ sub CheckAllInLayers {
 	my @topEdges = ();
 	my $topConnector = PCBConnectorCheck->ConnectorDetection( $inCAM, $jobId, $step, "c", \@topEdges );
 
-	if ($topConnector) {
-		PCBConnectorCheck->DrawConnectorResult( $inCAM, $jobId, \@topEdges, "topCon" );
-	}
+#	if ($topConnector) {
+#		PCBConnectorCheck->DrawConnectorResult( $inCAM, $jobId, \@topEdges, "topCon" );
+#	}
 
 	# Get board edges for bot connector
 	my @botEdges = ();
 	my $botConnector = PCBConnectorCheck->ConnectorDetection( $inCAM, $jobId, $step, "s", \@botEdges );
 
-	if ($botConnector) {
-		PCBConnectorCheck->DrawConnectorResult( $inCAM, $jobId, \@botEdges, "botCon" );
-	}
+#	if ($botConnector) {
+#		PCBConnectorCheck->DrawConnectorResult( $inCAM, $jobId, \@botEdges, "botCon" );
+#	}
 
 	foreach my $inLayer ( map { $_->{"gROWname"} } CamJob->GetSignalLayer( $inCAM, $jobId, 1 ) ) {
 
@@ -153,14 +153,31 @@ sub CheckAllInLayers {
 		my $clrOk = 1;
 
 		if ( $depth < $stackup->GetFinalThick() / 2 && $topConnector ) {
-			
-			$clrOk = $self->CheckInLayer( $inCAM, $jobId, $step, $inLayer, "top", \@topEdges, $stackup, $chamferAngle, $chamferDepth );
-			push( @{$resultData}, { "layer" => $inLayer, "result" => $clrOk, "edges" => \@topEdges } );
+			my %lResultData = ();
+			$clrOk = $self->CheckInLayer( $inCAM, $jobId, $step, $inLayer, "top", \@topEdges, $stackup, $chamferAngle, $chamferDepth, \%lResultData );
+			push(
+				  @{$resultData},
+				  {
+					 "layer"       => $inLayer,
+					 "result"      => $clrOk,
+					 "edges"       => \@topEdges,
+					 "minProfDist" => $lResultData{"minProfDist"}
+				  }
+			);
 		}
 		elsif ( $depth >= $stackup->GetFinalThick() / 2 && $botConnector ) {
-			
-			$clrOk = $self->CheckInLayer( $inCAM, $jobId, $step, $inLayer, "bot", \@botEdges, $stackup, $chamferAngle, $chamferDepth );
-			push( @{$resultData}, { "layer" => $inLayer, "result" => $clrOk, "edges" => \@botEdges } );
+
+			my %lResultData = ();
+			$clrOk = $self->CheckInLayer( $inCAM, $jobId, $step, $inLayer, "bot", \@botEdges, $stackup, $chamferAngle, $chamferDepth, \%lResultData );
+			push(
+				  @{$resultData},
+				  {
+					 "layer"       => $inLayer,
+					 "result"      => $clrOk,
+					 "edges"       => \@botEdges,
+					 "minProfDist" => $lResultData{"minProfDist"}
+				  }
+			);
 		}
 
 		$result = 0 unless ($clrOk);
@@ -200,7 +217,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	use aliased 'Packages::InCAM::InCAM';
 
 	my $inCAM = InCAM->new();
-	my $jobId = "d228860";
+	my $jobId = "d228881";
 	my $step  = "o+1";
 	my $mess  = "";
 
@@ -214,7 +231,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 		print STDERR "Layer: " . $res->{"layer"} . " - result: " . $res->{"result"} . " \n";
 
 	}
-	
+
 	#uhel je
 
 }

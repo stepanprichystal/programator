@@ -72,7 +72,7 @@ sub OnPrepareGroupData {
 	}
 
 	$groupData->SetPressfit($defPressfit);
-	
+
 	# Prepare tolerance hole
 	my $defTolHole = 0;
 
@@ -82,8 +82,10 @@ sub OnPrepareGroupData {
 	}
 
 	$groupData->SetToleranceHole($defTolHole);
-	
-	
+
+	# Prepare chamfer edge
+	$groupData->SetChamferEdges( $defaultInfo->GetChamferEdgesIS() ? 1 : 0 );
+
 	$groupData->SetNotes("");
 
 	# prepare default selected quick notes
@@ -91,7 +93,7 @@ sub OnPrepareGroupData {
 	$groupData->SetQuickNotes( \@quickNotes );
 
 	# prepare datacode
-	$groupData->SetDatacode( $self->__GetDacode($inCAM, $jobId, $defaultInfo));
+	$groupData->SetDatacode( $self->__GetDacode( $inCAM, $jobId, $defaultInfo ) );
 
 	# prepare ul logo
 	$groupData->SetUlLogo( HegMethods->GetUlLogoLayer($jobId) );
@@ -169,25 +171,25 @@ sub OnPrepareReorderGroupData {
 		$groupData->SetMaska01(1);
 	}
 
-#	# Datacodes
-#	my $datacode = $nif->GetValue("datacode");
-#	$datacode =~ s/\s//g if ( defined $datacode );    # remove spaces
-#
-#	if ( defined $datacode && $datacode ne "" ) {
-#
-#		$datacode = uc($datacode);
-#		$groupData->SetDatacode($self->__GetDacode($inCAM, $jobId, $defaultInfo));
-#	}
-#
-#	# UL logo
-#	my $ul = $nif->GetValue("ul_logo");
-#	$ul =~ s/\s//g if ( defined $ul );                # remove spaces
-#
-#	if ( defined $ul && $ul ne "" ) {
-#
-#		$ul = uc($ul);
-#		$groupData->SetUlLogo($ul);
-#	}
+	#	# Datacodes
+	#	my $datacode = $nif->GetValue("datacode");
+	#	$datacode =~ s/\s//g if ( defined $datacode );    # remove spaces
+	#
+	#	if ( defined $datacode && $datacode ne "" ) {
+	#
+	#		$datacode = uc($datacode);
+	#		$groupData->SetDatacode($self->__GetDacode($inCAM, $jobId, $defaultInfo));
+	#	}
+	#
+	#	# UL logo
+	#	my $ul = $nif->GetValue("ul_logo");
+	#	$ul =~ s/\s//g if ( defined $ul );                # remove spaces
+	#
+	#	if ( defined $ul && $ul ne "" ) {
+	#
+	#		$ul = uc($ul);
+	#		$groupData->SetUlLogo($ul);
+	#	}
 
 	# Note
 	my $note = $nif->GetValue("poznamka");
@@ -235,7 +237,6 @@ sub __GetDacode {
 	my $inCAM       = shift;
 	my $jobId       = shift;
 	my $defaultInfo = shift;
- 
 
 	my $dataCode = HegMethods->GetDatacodeLayer($jobId);
 	$dataCode =~ s/\s//g;
@@ -249,7 +250,7 @@ sub __GetDacode {
 	push( @layerNames, @layersJob );
 	@layerNames = uniq(@layerNames);
 
-	my $str = uc(join( ",", @layerNames ));
+	my $str = uc( join( ",", @layerNames ) );
 
 	return $str;
 

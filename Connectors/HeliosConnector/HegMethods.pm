@@ -272,6 +272,7 @@ sub GetBasePcbInfo {
 				 d.material_typ_materialu,
 				 d.merit_presfitt,
 				 d.mereni_tolerance_vrtani,
+				 d.srazeni_hran,
 				 d.zlaceni,
 				 z.pooling,
 				 d.stav

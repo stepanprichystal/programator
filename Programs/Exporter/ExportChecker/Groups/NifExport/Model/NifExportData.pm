@@ -53,6 +53,7 @@ sub OnExportGroupData {
 	$exportData->SetMaska01( $groupData->GetMaska01() );
 	$exportData->SetPressfit( $groupData->GetPressfit() );
 	$exportData->SetToleranceHole( $groupData->GetToleranceHole() );
+	$exportData->SetChamferEdges( $groupData->GetChamferEdges());
 	$exportData->SetNotes( $groupData->GetNotes() );
 	$exportData->SetQuickNotes( $groupData->GetQuickNotes() );
 	$exportData->SetDatacode( $groupData->GetDatacode() );

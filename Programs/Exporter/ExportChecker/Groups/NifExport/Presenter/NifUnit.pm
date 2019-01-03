@@ -98,6 +98,7 @@ sub RefreshGUI {
 	$self->{"form"}->SetMaska01( $groupData->GetMaska01() );
 	$self->{"form"}->SetPressfit( $groupData->GetPressfit() );
 	$self->{"form"}->SetToleranceHole( $groupData->GetToleranceHole() );
+	$self->{"form"}->SetChamferEdges( $groupData->GetChamferEdges() );
 	$self->{"form"}->SetNotes( $groupData->GetNotes() );
 	$self->{"form"}->SetQuickNotes( $groupData->GetQuickNotes() );
 	$self->{"form"}->SetDatacode( $groupData->GetDatacode() );
@@ -141,6 +142,7 @@ sub GetGroupData {
 		$groupData->SetMaska01( $frm->GetMaska01() );
 		$groupData->SetPressfit( $frm->GetPressfit() );
 		$groupData->SetToleranceHole( $frm->GetToleranceHole() );
+		$groupData->SetChamferEdges( $frm->GetChamferEdges() );
 		$groupData->SetNotes( $frm->GetNotes() );
 		$groupData->SetQuickNotes( $frm->GetQuickNotes() );
 		$groupData->SetDatacode( $frm->GetDatacode() );
