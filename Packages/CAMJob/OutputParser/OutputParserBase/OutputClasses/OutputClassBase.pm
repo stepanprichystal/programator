@@ -85,8 +85,9 @@ sub _SeparateFeatsBySymbolsNC {
 
 	my $f = FeatureFilter->new( $inCAM, $jobId, $lName );
 
-	$f->SetFilterType( "lines" => !$lines, "pads" => !$pads, "surfaces" => !$surfaces, "arcs" => !$arcs, "text" => !$text );
+	$f->SetFeatureTypes( "lines" => !$lines, "pads" => !$pads, "surfaces" => !$surfaces, "arcs" => !$arcs, "text" => !$text );
 
+	 
 	if ( $f->Select() > 0 ) {
 
 		CamLayer->DeleteFeatures($inCAM);

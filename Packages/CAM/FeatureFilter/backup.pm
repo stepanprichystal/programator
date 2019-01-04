@@ -57,7 +57,7 @@ sub new {
 	return $self;
 }
 
-sub SetFilterType {
+sub SetFeatureTypes {
 	my $self = shift;
 	my %args = (
 		"lines"    => 0,

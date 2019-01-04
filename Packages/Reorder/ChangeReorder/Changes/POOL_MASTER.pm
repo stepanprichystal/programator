@@ -94,7 +94,7 @@ sub Run {
 		my $f = FeatureFilter->new( $inCAM, $jobId, $l );
 		$f->SetProfile(2);
 		$f->SetPolarity("positive");
-		$f->SetFilterType( "text" => 1 );
+		$f->SetFeatureTypes( "text" => 1 );
 		if ( $f->Select() ) {
 			CamLayer->DeleteFeatures( $inCAM, $jobId );
 		}
