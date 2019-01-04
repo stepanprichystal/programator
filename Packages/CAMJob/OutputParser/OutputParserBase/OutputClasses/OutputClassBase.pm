@@ -85,7 +85,7 @@ sub _SeparateFeatsBySymbolsNC {
 
 	my $f = FeatureFilter->new( $inCAM, $jobId, $lName );
 
-	$f->SetFeatureTypes( "lines" => !$lines, "pads" => !$pads, "surfaces" => !$surfaces, "arcs" => !$arcs, "text" => !$text );
+	$f->SetFeatureTypes( "line" => !$lines, "pad" => !$pads, "surface" => !$surfaces, "arc" => !$arcs, "text" => !$text );
 
 	 
 	if ( $f->Select() > 0 ) {
@@ -96,7 +96,7 @@ sub _SeparateFeatsBySymbolsNC {
 	# remove symbols from original layer
 
 	my $f2 = FeatureFilter->new( $inCAM, $jobId, $l->{"gROWname"} );
-	$f->SetFilterType( "lines" => $lines, "pads" => $pads, "surfaces" => $surfaces, "arcs" => $arcs, "text" => $text );
+	$f->SetFilterType( "line" => $lines, "pad" => $pads, "surface" => $surfaces, "arc" => $arcs, "text" => $text );
 
 	if ( $f2->Select() > 0 ) {
 
