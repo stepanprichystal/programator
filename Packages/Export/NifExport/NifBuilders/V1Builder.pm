@@ -90,6 +90,7 @@ sub Build {
 	push(@req, "2814075"); #maska 0,1mm
 	push(@req, "mereni_tolerance_vrtani");
 	push(@req, "prerusovana_drazka");
+	push(@req, "srazeni_hran");
 	
 	$nifMngr->AddSection("Ostatni", BuilderOther->new(\@req));
 	 

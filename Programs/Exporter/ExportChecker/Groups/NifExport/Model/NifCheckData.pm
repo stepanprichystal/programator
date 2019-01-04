@@ -320,25 +320,46 @@ sub OnCheckGroupData {
 									"V IS je u dps požadavek na sražení konektoru, volba \"Chamfer edges\" by měla být zapnutá." );
 	}
 
-	# 18) Check clearance of inner layer form chamfered connector
+	# 18) Chem if chamfer edge is not checked if there is tool for chamfering in job
+	if ( !$defaultInfo->GetChamferEdgesIS() && !$groupData->GetChamferEdges() ) {
+
+		foreach my $s ( map { $_->{"stepName"} } CamStepRepeatPnl->GetUniqueNestedStepAndRepeat( $inCAM, $jobId ) ) {
+
+			my $a = 0;
+			if ( PCBConnectorCheck->ConnectorToolDetection( $inCAM, $jobId, $s, \$a ) ) {
+
+				$dataMngr->_AddWarningResult(
+					"Chamfer tool",
+					"Ve stepu: \"$s\" byl nalezena speciální fréza (z top a bot), "
+					  . "která jede pojezdem a má speciální úhel: $a°. Nemá být zapnuta volba \"Chamfer edge\"?"
+				);
+			}
+
+		}
+	}
+
+	# 19) Check clearance of inner layer form chamfered connector
 	if ( $groupData->GetChamferEdges() && $defaultInfo->GetLayerCnt() > 2 ) {
 
 		foreach my $s ( map { $_->{"stepName"} } CamStepRepeatPnl->GetUniqueNestedStepAndRepeat( $inCAM, $jobId ) ) {
 
-			my $a = PCBConnectorCheck->GetConnectorAngle( $inCAM, $jobId, $s );
+			my $a          = 90;                                                                     # if no tool is found in mill, default is 90
+			my $toolExist  = PCBConnectorCheck->ConnectorToolDetection( $inCAM, $jobId, $s, \$a );
 			my @resultData = ();
 
 			unless ( InLayersClearanceCheck->CheckAllInLayers( $inCAM, $jobId, $s, $a, \@resultData ) ) {
 
 				foreach my $res (@resultData) {
 
-					unless ($res->{"result"}) {
+					unless ( $res->{"result"} ) {
 
 						my $mess =
-						  "Step: \"$s\", layer: " . $res->{"layer"} . ". Motiv vnitřní vrstvy je příliš blízko sražené hraně konektoru.\n";
-						$mess .= "Minimální vzdálenost motivu od profilu dps: " . $res->{"minProfDist"} . "mm (úhel sražení: $a°)";
+						    "Step: \"$s\", layer: \""
+						  . $res->{"layer"}
+						  . "\". Motiv vnitřní vrstvy je příliš blízko sražené hraně konektoru.\n";
+						$mess .= "Minimální vzdálenost motivu od profilu dps: " . $res->{"minProfDist"} . "µm (úhel sražení: $a°)";
 
-						$dataMngr->_AddErrorResult( "Odstup vnitřní vrstvy", $mess );
+						$dataMngr->_AddErrorResult( "Odstup vnitřní vrstvy od hrany konektoru", $mess );
 					}
 				}
 			}

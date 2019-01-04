@@ -31,6 +31,7 @@ use aliased 'Packages::Polygon::Line::LineTransform';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'Packages::CAM::FeatureFilter::Enums' => "FilterEnums";
 use aliased 'Packages::CAM::UniDTM::UniDTM';
+use aliased 'Packages::CAM::UniDTM::Enums' => 'DTMEnums';
 
 #-------------------------------------------------------------------------------------------#
 #  Script methods
@@ -50,6 +51,9 @@ sub ConnectorDetection {
 	my $MAXFINGERPROFDIST = shift // 3.0;    # max finger dist from board edge 3.0mm
 
 	my $result = 0;
+
+	# Set step
+	CamHelper->SetStep( $inCAM, $step );
 
 	# 1) Pprepare potentional connector edges (from connector mill layer, board outline, etc,..)
 	my @edgesOri = $self->__GetConnEdges( $inCAM, $jobId, $step, $layer );
@@ -521,13 +525,16 @@ sub DrawConnectorResult {
 
 }
 
-sub GetConnectorAngle {
-	my $self  = shift;
-	my $inCAM = shift;
-	my $jobId = shift;
-	my $step  = shift;
+# Look to depth milling layers (top and bot) and search slot tool with angles. If same angel from both sides,
+# it is probably tool for chamfering edge
+sub ConnectorToolDetection {
+	my $self     = shift;
+	my $inCAM    = shift;
+	my $jobId    = shift;
+	my $step     = shift;
+	my $finAngle = shift;    # if tool si found, sotore tool angle
 
-	my $finAngle;    # default is 90°
+	my $result = 0;
 
 	# if exist fz layers, get angle from fzc + fzs
 
@@ -540,7 +547,7 @@ sub GetConnectorAngle {
 
 		my $unitDTM = UniDTM->new( $inCAM, $jobId, $step, $l->{"gROWname"} );
 
-		my @tools = $unitDTM->GetUniqueTools();
+		my @tools = grep { $_->GetTypeProcess() eq DTMEnums->TypeProc_CHAIN } $unitDTM->GetUniqueTools();
 
 		my @a = uniq( map { $_->GetAngle() } grep { $_->GetSpecial() && $_->GetAngle() > 0 } @tools );
 
@@ -552,13 +559,15 @@ sub GetConnectorAngle {
 
 	foreach my $angle ( keys %h ) {
 
-		$finAngle = $angle;
-
-		# if two same angle (same from top and bot) it is probablz tool for chamfering connector
-		last if ( $h{$angle} == 2 );
+		# if two same angle (same from top and bot) it is probably tool for chamfering connector
+		if ( $h{$angle} == 2 ) {
+			$$finAngle = $angle;
+			$result    = 1;
+			last;
+		}
 	}
 
-	return $finAngle;
+	return $result;
 }
 
 #-------------------------------------------------------------------------------------------#
@@ -576,22 +585,22 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	my $jobId = "d228881";
 	my $layer = "c";
 	my $mess  = "";
- 
 
-#	my @edges = ();
-#	my $result = PCBConnectorCheck->ConnectorDetection( $inCAM, $jobId, "o+1", $layer, \@edges );
-#
-#	print STDERR "Result is $result, number of edfes:" . scalar(@edges) . " \n";
-#
-#	if ($result) {
-#
-#		PCBConnectorCheck->DrawConnectorResult( $inCAM, $jobId, \@edges );
-#	}
+	#	my @edges = ();
+	#	my $result = PCBConnectorCheck->ConnectorDetection( $inCAM, $jobId, "o+1", $layer, \@edges );
+	#
+	#	print STDERR "Result is $result, number of edfes:" . scalar(@edges) . " \n";
+	#
+	#	if ($result) {
+	#
+	#		PCBConnectorCheck->DrawConnectorResult( $inCAM, $jobId, \@edges );
+	#	}
 
+	my $tool = 1;
 
-	my $angle = PCBConnectorCheck->GetConnectorAngle($inCAM, $jobId, "o+1");
-	
-	print $angle;
+	my $res = PCBConnectorCheck->ConnectorToolDetection( $inCAM, $jobId, "o+1", \$tool );
+
+	print "Result = $res, tool = $tool\n";
 
 }
 

@@ -98,6 +98,18 @@ sub Build {
 
 		$section->AddRow( "mereni_tolerance_vrtani", $toleranceHole );
 	}
+	
+	#mereni_tolerance_vrtani
+	if ( $self->_IsRequire("srazeni_hran") ) {
+
+		my $chamferEdge = "N";
+
+		if ( $nifData{"srazeni_hran"} ) {
+			$chamferEdge = "A";
+		}
+
+		$section->AddRow( "srazeni_hran", $chamferEdge );
+	}
 
 
 	#ul_logo
