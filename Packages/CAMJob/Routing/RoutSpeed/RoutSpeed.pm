@@ -130,8 +130,8 @@ sub __GetRoutSpeedTable {
 	my $layers       = shift;
 
 	# Rout speed
-	my %routSpeedTab        = $self->__ParseRoutSpeedTable( 0, $materialKind );
-	my %routSpeedOutlineTab = $self->__ParseRoutSpeedTable( 1, $materialKind );
+	my %routSpeedTab        = $self->__ParseRoutSpeedTable( $materialKind );
+	 
 
 	my @paketThick = ( 1500, 3000, 4000 );    # possible paket trasholds in µm
 
@@ -244,12 +244,9 @@ sub __GetPacketType {
 
 sub __ParseRoutSpeedTable {
 	my $self         = shift;
-	my $outlineRout  = shift;
 	my $materialKind = shift;
-
-	my $file = $outlineRout ? "RoutSpeedOutline.csv" : "RoutSpeed.csv";
-
-	my $p = GeneralHelper->Root() . "\\Packages\\CAMJob\\Routing\\RoutSpeed\\" . $file;
+ 
+	my $p = GeneralHelper->Root() . "\\Packages\\CAMJob\\Routing\\RoutSpeed\\RoutSpeed.csv";
 
 	my @lines = @{ FileHelper->ReadAsLines($p) };
 

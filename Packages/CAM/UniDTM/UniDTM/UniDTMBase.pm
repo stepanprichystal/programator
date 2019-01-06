@@ -335,7 +335,9 @@ sub __LoadToolsMagazine {
 
 	foreach my $t ( @{ $self->{"tools"} } ) {
 
-		my $operation = $self->__GetOperationByLayer($t);
+		my $operation = $self->__GetToolOperation($t);
+		
+		$t->SetToolOperation($operation);
 
 		my $mInfo = $t->GetMagazineInfo();
 
@@ -371,12 +373,8 @@ sub __LoadToolsMagazine {
 
 		# load default tool
 		else {
-
-			unless ( defined $operation ) {
-				next;
-			}
-
-			my $magazines = $self->{"magazineDef"}->{"operation"}->{$operation}->{"magazine"};
+ 
+			my $magazines = $self->{"magazineDef"}->{"tooloperation"}->{$operation}->{"magazine"};
 
 			if ( defined $magazines ) {
 				my @mArr = @{$magazines};
@@ -392,7 +390,7 @@ sub __LoadToolsMagazine {
 	}
 }
 
-sub __GetOperationByLayer {
+sub __GetToolOperation {
 	my $self = shift;
 	my $tool = shift;
 
@@ -410,33 +408,32 @@ sub __GetOperationByLayer {
 	$l{"gROWlayer_type"} = CamHelper->LayerType( $inCAM, $jobId, $self->{"layer"} );
 
 	my $operation = undef;
-
 	# a) Determine type depand on plated/nonplated and hlole/chain type
 	if ( $l{"plated"} && $typeProc eq Enums->TypeProc_HOLE ) {
 
-		$operation = "PlatedDrill";
+		$operation = EnumsDrill->ToolOp_PLATEDDRILL;
 
 	}
 	elsif ( $l{"plated"} && $typeProc eq Enums->TypeProc_CHAIN ) {
 
-		$operation = "PlatedRout";
+		$operation = EnumsDrill->ToolOp_PLATEDROUT;
 
 	}
 	elsif ( !$l{"plated"} && $typeProc eq Enums->TypeProc_HOLE ) {
 
-		$operation = "NPlatedDrill";
+		$operation = EnumsDrill->ToolOp_NPLATEDDRILL;
 
 	}
 	elsif ( !$l{"plated"} && $typeProc eq Enums->TypeProc_CHAIN ) {
 
-		$operation = "NPlatedRout";
+		$operation = EnumsDrill->ToolOp_NPLATEDROUT;
 
 	}
 
 	# b) Determine type depand on layer type
 	if ( $typeProc eq Enums->TypeProc_CHAIN && $l{"type"} eq EnumsGeneral->LAYERTYPE_nplt_rsMill ) {
 
-		$operation = "RoutBeforeEtch";
+		$operation = EnumsDrill->ToolOp_ROUTBEFOREETCH;
 
 	}
 	elsif (
@@ -445,19 +442,16 @@ sub __GetOperationByLayer {
 				 || $l{"type"} eq EnumsGeneral->LAYERTYPE_nplt_cvrlysMill )
 	  )
 	{
-		$operation = "CoverlayRout";
+		$operation = EnumsDrill->ToolOp_COVERLAYROUT;
 
 	}
 	elsif ( $typeProc eq Enums->TypeProc_CHAIN && $l{"type"} eq EnumsGeneral->LAYERTYPE_nplt_prepregMill ) {
 
-		$operation = "PrepregRout";
+		$operation = EnumsDrill->ToolOp_PREPREGROUT;
 
 	}
-	elsif ( $typeProc eq Enums->TypeProc_CHAIN && JobHelper->GetIsFlex($jobId)) {
 
-		$operation = "FlexRout";
-
-	}
+	die "Tool operation is not defined for tool: " . $tool->GetDrillSize() . ", layer: " . $self->{"layer"} . "\n";
 
 	return $operation;
 }

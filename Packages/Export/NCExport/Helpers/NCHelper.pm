@@ -452,12 +452,8 @@ sub StoreOperationInfoTif {
 	my $operationMngr = shift;
 
 	my $tif = TifNCOperations->new($jobId);
-
-	# store machines
-	#my @machines = uniq( map { $_->{"suffix"} } map { $_->GetMachines() } $operationMngr->GetOperationItems() );
-	#$tif->AddMachines( \@machines );
-
-	# store operations
+ 
+	# 1) store operations
 
 	my $layerCnt = CamJob->GetSignalLayerCnt( $inCAM, $jobId );    # Signal layer cnt
 
@@ -491,18 +487,17 @@ sub StoreOperationInfoTif {
 	foreach my $opItem (@opItems) {
 		my %opInf = ();
 
+		# Set Operation name
 		$opInf{"opName"} = $opItem->GetName();
 
 		my @layers = $opItem->GetSortedLayers();
-		
 
+		# Ser Operation machines
 		my @machines = map { $_->{"suffix"} } $opItem->GetMachines();
 		$opInf{"machines"} = {};
 		$opInf{"machines"}->{$_} = {} foreach @machines;
-		
-		 
-	 
 
+		# Set if operation contains rout layers
 		my $isRout = scalar( grep { $_->{"gROWlayer_type"} eq "rout" } @layers ) ? 1 : 0;
 		$opInf{"isRout"} = $isRout;
 
@@ -515,40 +510,35 @@ sub StoreOperationInfoTif {
 			my $stackup = Stackup->new($jobId);
 			$matThick = $stackup->GetThickByLayerName( $layers[0]->{"gROWdrl_start_name"} );
 		}
-		$opInf{"ncMatThick"} = $matThick*1000;
 
-		if ($isRout) {
+		# Set material thickness during operation
+		$opInf{"ncMatThick"} = $matThick * 1000;
 
-			#			my @tools = ();
-			#			foreach my $l (@layers) {
-			#				my $tool = CamRouting->GetMinSlotToolByLayers( $inCAM, $jobId, $step, [@layers] );
-			#				push( @tools,  $tool)
-			#			}
-
-			$opInf{"minSlotTool"} = CamRouting->GetMinSlotToolByLayers( $inCAM, $jobId, $step, [@layers] );
-		}
+		# Set operation min slot tool
+		$opInf{"minSlotTool"} = CamRouting->GetMinSlotToolByLayers( $inCAM, $jobId, $step, [@layers] ) if ($isRout);
 		
+		# Set operation layers
 		@layers = map { $_->{"gROWname"} } @layers;
 		$opInf{"layers"} = \@layers;
  
-
+		
+		
 		push( @op, \%opInf );
 
 	}
 
 	$tif->SetNCOperations( \@op );
 
-	# store rout tool info
+	# 2) store rout tool info
 	my %toolInfo = ();
 
-	my @layers = map {$_->{"gROWname"}} grep { $_->{"gROWlayer_type"} eq "rout" && $_->{"gROWname"} ne "score"  } CamJob->GetNCLayers( $inCAM, $jobId );
-	foreach my $s ( (map { $_->{"stepName"} } CamStepRepeat->GetUniqueNestedStepAndRepeat( $inCAM, $jobId, $step ) ), $step ) {
+	my @layers =
+	  map { $_->{"gROWname"} } grep { $_->{"gROWlayer_type"} eq "rout" && $_->{"gROWname"} ne "score" } CamJob->GetNCLayers( $inCAM, $jobId );
+	foreach my $s ( ( map { $_->{"stepName"} } CamStepRepeat->GetUniqueNestedStepAndRepeat( $inCAM, $jobId, $step ) ), $step ) {
 
 		$toolInfo{$s} = {};
 
 		foreach my $l (@layers) {
-
-			 
 
 			my $rtm = UniRTM->new( $inCAM, $jobId, $s, $l );
 
@@ -561,32 +551,7 @@ sub StoreOperationInfoTif {
 	}
 
 	$tif->SetToolInfos( \%toolInfo );
-	
-	
-	# test add layter
-	
-	#$tif->AddToolToOperation("fzc", "c", "tttttt", 1, "o+1", 0);
  
-	
-
-	#	#search min slot tool for operation
-	#	my $minTool = CamRouting->GetMinSlotTool( $inCAM, $jobId, $step, $l{"type"} );
-	#
-	#	# Rout speed
-	#	my %routSpeedTab        = $self->__ParseRoutSpeedTable("RoutSpeed.csv");
-	#	my %routSpeedOutlineTab = $self->__ParseRoutSpeedTable("RoutSpeedOutline.csv");
-	#
-	#	# Thickness of drilled material
-	#	my $matThick;
-	#	if ( $layerCnt <= 2 ) {
-	#
-	#		$matThick = HegMethods->GetPcbMaterialThick($jobId);
-	#	}
-	#	else {
-	#		my $stackup = Stackup->new($jobId);
-	#		$matThick = $stackup->GetThickByLayerName( $l{"gROWdrl_start_name"} );
-	#	}
-	#
 }
 
 #-------------------------------------------------------------------------------------------#
