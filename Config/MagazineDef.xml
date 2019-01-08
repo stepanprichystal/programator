@@ -1,40 +1,43 @@
 ﻿<?xml version="1.0" encoding="UTF-8"?>
 
-<!-- This file specified magazines for tools, based on operation and material type -->
+<!-- This file specified magazines for tools, based on tool operation and material type -->
+<!-- E.g.: Rout tool from CAM layer "f - final routing" is type NPlatedRout --> 
+<!-- E.g.: Drill tool from CAM layer "f - final routing" is type NPlatedDrill -->
+<!-- E.g.: Drill tool from CAM layer "fc - routing peelable stencil" is type NPlatedDrill -->
 
-<operations>
-   <operation name="PlatedDrill">
+<tooloperations>
+   <tooloperation name="PlatedDrill">
      <!-- <magazine material="FR4">-</magazine> -->  
       <magazine material="IS400">-</magazine>  
       <magazine material="IS410">-</magazine>
       <magazine material="PCL370HR">-</magazine>
-   </operation>
-   <operation name="PlatedRout">
-   </operation>
-   <operation name="NPlatedRout">
-      <magazine material="Al">I9</magazine>
-   </operation>
-   <operation name="NPlatedDrill">
+   </tooloperation>
+   <tooloperation name="PlatedRout">
+   </tooloperation>
+   <tooloperation name="NPlatedRout">
+      <magazine material="AL_CORE">I9</magazine>
+      <magazine material="PYRALUX">I7</magazine>
+      <magazine material="PYRALUX-FR4">I7</magazine>
+   </tooloperation>
+   <tooloperation name="NPlatedDrill">
       <magazine material="FR4">I5</magazine>
       <magazine material="IS400">I5</magazine>
       <magazine material="PCL370HR">I5</magazine>
-   </operation>
-   <operation name="RoutBeforeEtch">
+      <magazine material="PYRALUX">I5</magazine>
+      <magazine material="PYRALUX-FR4">I5</magazine>
+   </tooloperation>
+   <tooloperation name="RoutBeforeEtch">
       <magazine material="FR4">I7</magazine>
       <magazine material="IS400">I7</magazine>
       <magazine material="PCL370HR">I7</magazine>
-   </operation>
-     <operation name="PrepregRout">
-      <magazine material="FR4">I7</magazine>
-      <magazine material="IS400">I7</magazine>
-   </operation>
-     <operation name="FlexRout">
-      <magazine material="FR4">I7</magazine>
-      <magazine material="IS400">I7</magazine>
-   </operation>
-   <operation name="CoverlayRout">
-      <magazine material="FR4">I7</magazine>
-      <magazine material="IS400">I7</magazine>
-   </operation>
+   </tooloperation>
+     <tooloperation name="PrepregRout">
+      <magazine material="PYRALUX">I7</magazine>
+      <magazine material="PYRALUX-FR4">I7</magazine>
+   </tooloperation>
+   <tooloperation name="CoverlayRout">
+      <magazine material="PYRALUX">I7</magazine>
+      <magazine material="PYRALUX-FR4">I7</magazine>
+   </tooloperation>
    
-</operations>
+</tooloperations>

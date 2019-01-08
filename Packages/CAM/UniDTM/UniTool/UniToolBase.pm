@@ -29,6 +29,11 @@ sub new {
 	# Tell if tool comes from surface, or standard DTM
 	# tell, if tool is used for chain or hole
 	$self->{"source"} = shift;    #  Source_DTM/Source_DTMSURF
+	
+	# Each tool has specified operation which is based on layer type and tool "typeProcess"
+	# Based on this parameter, rout tool speed can be calculated
+	# 
+	$self->{"toolOperation"} = undef;
 
 	# following parameters must be same for all tools, which has
 	# same "key" created by drillSize + typeProcess
@@ -105,6 +110,19 @@ sub GetTypeProcess {
 
 	return $self->{"typeProcess"};
 }
+
+sub GetToolOperation {
+	my $self = shift;
+
+	return $self->{"toolOperation"};
+}
+
+sub SetToolOperation {
+	my $self = shift;
+
+	$self->{"toolOperation"} = shift;
+}
+ 
 
 sub GetSource {
 	my $self = shift;

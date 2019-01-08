@@ -26,6 +26,8 @@ use aliased 'Packages::CAMJob::Dim::JobDim';
 use aliased 'CamHelpers::CamDrilling';
 use aliased 'CamHelpers::CamStepRepeat';
 use aliased 'Packages::CAM::UniRTM::UniRTM::UniRTM';
+use aliased 'Packages::CAM::UniDTM::UniDTM';
+use aliased 'Packages::CAM::UniDTM::Enums' => 'DTMEnums';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -453,11 +455,7 @@ sub StoreOperationInfoTif {
 
 	my $tif = TifNCOperations->new($jobId);
 
-	# store machines
-	#my @machines = uniq( map { $_->{"suffix"} } map { $_->GetMachines() } $operationMngr->GetOperationItems() );
-	#$tif->AddMachines( \@machines );
-
-	# store operations
+	# 1) store operations
 
 	my $layerCnt = CamJob->GetSignalLayerCnt( $inCAM, $jobId );    # Signal layer cnt
 
@@ -491,18 +489,17 @@ sub StoreOperationInfoTif {
 	foreach my $opItem (@opItems) {
 		my %opInf = ();
 
+		# Set Operation name
 		$opInf{"opName"} = $opItem->GetName();
 
 		my @layers = $opItem->GetSortedLayers();
-		
 
+		# Ser Operation machines
 		my @machines = map { $_->{"suffix"} } $opItem->GetMachines();
 		$opInf{"machines"} = {};
 		$opInf{"machines"}->{$_} = {} foreach @machines;
-		
-		 
-	 
 
+		# Set if operation contains rout layers
 		my $isRout = scalar( grep { $_->{"gROWlayer_type"} eq "rout" } @layers ) ? 1 : 0;
 		$opInf{"isRout"} = $isRout;
 
@@ -515,22 +512,33 @@ sub StoreOperationInfoTif {
 			my $stackup = Stackup->new($jobId);
 			$matThick = $stackup->GetThickByLayerName( $layers[0]->{"gROWdrl_start_name"} );
 		}
-		$opInf{"ncMatThick"} = $matThick*1000;
+
+		# Set material thickness during operation
+		$opInf{"ncMatThick"} = $matThick * 1000;
+
+		# Set operation min standard "not special" slot tool
+		$opInf{"minSlotTool"} = undef;
 
 		if ($isRout) {
+			
+			foreach my $layer (@layers) {
 
-			#			my @tools = ();
-			#			foreach my $l (@layers) {
-			#				my $tool = CamRouting->GetMinSlotToolByLayers( $inCAM, $jobId, $step, [@layers] );
-			#				push( @tools,  $tool)
-			#			}
+				my $unitDTM = UniDTM->new( $inCAM, $jobId, $step, $layer->{"gROWname"}, 1 );
+				my $tool = $unitDTM->GetMinTool( DTMEnums->TypeProc_CHAIN, 1 ); # slot tool, default (no special)
 
-			$opInf{"minSlotTool"} = CamRouting->GetMinSlotToolByLayers( $inCAM, $jobId, $step, [@layers] );
+				# tool type chain doesn't have exist
+				next  if ( !defined $tool );
+
+				if ( !defined $opInf{"minSlotTool"} || $tool->GetDrillSize() < $opInf{"minSlotTool"} ) {
+					$opInf{"minSlotTool"} = $tool->GetDrillSize();
+				}
+			}
 		}
-		
+ 
+
+		# Set operation layers
 		@layers = map { $_->{"gROWname"} } @layers;
 		$opInf{"layers"} = \@layers;
- 
 
 		push( @op, \%opInf );
 
@@ -538,17 +546,16 @@ sub StoreOperationInfoTif {
 
 	$tif->SetNCOperations( \@op );
 
-	# store rout tool info
+	# 2) store rout tool info
 	my %toolInfo = ();
 
-	my @layers = map {$_->{"gROWname"}} grep { $_->{"gROWlayer_type"} eq "rout" && $_->{"gROWname"} ne "score"  } CamJob->GetNCLayers( $inCAM, $jobId );
-	foreach my $s ( (map { $_->{"stepName"} } CamStepRepeat->GetUniqueNestedStepAndRepeat( $inCAM, $jobId, $step ) ), $step ) {
+	my @layers =
+	  map { $_->{"gROWname"} } grep { $_->{"gROWlayer_type"} eq "rout" && $_->{"gROWname"} ne "score" } CamJob->GetNCLayers( $inCAM, $jobId );
+	foreach my $s ( ( map { $_->{"stepName"} } CamStepRepeat->GetUniqueNestedStepAndRepeat( $inCAM, $jobId, $step ) ), $step ) {
 
 		$toolInfo{$s} = {};
 
 		foreach my $l (@layers) {
-
-			 
 
 			my $rtm = UniRTM->new( $inCAM, $jobId, $s, $l );
 
@@ -561,32 +568,7 @@ sub StoreOperationInfoTif {
 	}
 
 	$tif->SetToolInfos( \%toolInfo );
-	
-	
-	# test add layter
-	
-	#$tif->AddToolToOperation("fzc", "c", "tttttt", 1, "o+1", 0);
- 
-	
 
-	#	#search min slot tool for operation
-	#	my $minTool = CamRouting->GetMinSlotTool( $inCAM, $jobId, $step, $l{"type"} );
-	#
-	#	# Rout speed
-	#	my %routSpeedTab        = $self->__ParseRoutSpeedTable("RoutSpeed.csv");
-	#	my %routSpeedOutlineTab = $self->__ParseRoutSpeedTable("RoutSpeedOutline.csv");
-	#
-	#	# Thickness of drilled material
-	#	my $matThick;
-	#	if ( $layerCnt <= 2 ) {
-	#
-	#		$matThick = HegMethods->GetPcbMaterialThick($jobId);
-	#	}
-	#	else {
-	#		my $stackup = Stackup->new($jobId);
-	#		$matThick = $stackup->GetThickByLayerName( $l{"gROWdrl_start_name"} );
-	#	}
-	#
 }
 
 #-------------------------------------------------------------------------------------------#

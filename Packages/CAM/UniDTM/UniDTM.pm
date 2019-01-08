@@ -78,9 +78,13 @@ sub GetToolMagazine {
 # Return tool which has minimal diameter
 sub GetMinTool {
 	my $self        = shift;
-	my $processType = shift;
+	my $processType = shift; # Enums->TypeProc_CHAIN, Enums->TypeProc_HOLE
+	my $noSpecial   = shift // 0; # if 1, special tools with magazine info are not considered
+	
 
 	my @tools = $self->GetUniqueTools();
+
+	@tools = grep { !$_->GetSpecial() } @tools if($noSpecial);
 
 	if ($processType) {
 
@@ -114,11 +118,13 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId    = "d152456";
-	my $stepName = "panel";
+	my $jobId    = "d113609";
+	my $stepName = "o+1";
 	my $unitDTM  = UniDTM->new( $inCAM, $jobId, $stepName, "f", 1 );
 	
 	my @tools = $unitDTM->GetUniqueTools();
+	
+	print $_->GetToolOperation() foreach(@tools);
 	
 	die;
 

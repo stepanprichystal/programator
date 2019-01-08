@@ -69,17 +69,18 @@ sub GetToolInfo {
 
 # Add info about exported NC file to specific operation
 sub AddToolToOperation {
-	my $self         = shift;
-	my $layer        = shift;
-	my $machine      = shift;    # machine suffix
-	my $key          = shift;
-	my $drillSize    = shift;
-	my $chainNum     = shift;
-	my $step         = shift;
-	my $duplRout     = shift;
-	my $magazineInfo = shift;    # if special tool (see Config/MagazineSpec.xml) magazineInfo is set
+	my $self          = shift;
+	my $layer         = shift;
+	my $machine       = shift;    # machine suffix
+	my $key           = shift;
+	my $drillSize     = shift;
+	my $chainNum      = shift;
+	my $toolOperation = shift;
+	my $step          = shift;
+	my $duplRout      = shift;
+	my $magazineInfo  = shift;    # if special tool (see Config/MagazineSpec.xml) magazineInfo is set
 
-	my $result = 1;              # tool information was found in tif file
+	my $result = 1;               # tool information was found in tif file
 
 	# search tool info
 	my $tInfo = $self->GetToolInfo( $chainNum, $layer, $step );
@@ -104,17 +105,17 @@ sub AddToolToOperation {
 
 				#$toolOpInfo{"key"} = $key;
 
-				$toolOpInfo{"chainNum"}    = $chainNum;
-				$toolOpInfo{"step"}        = $step;
-				$toolOpInfo{"layer"}       = $layer;
-				$toolOpInfo{"isDuplicate"} = $duplRout;
-				$toolOpInfo{"isOutline"}   = $tInfo->{"isOutline"};
-				$toolOpInfo{"drillSize"}   = $drillSize;
-				
-				if($magazineInfo){
-					$toolOpInfo{"magazineInfo"}   = $magazineInfo;
+				$toolOpInfo{"step"}          = $step;
+				$toolOpInfo{"layer"}         = $layer;
+				$toolOpInfo{"isDuplicate"}   = $duplRout;
+				$toolOpInfo{"isOutline"}     = $tInfo->{"isOutline"};
+				$toolOpInfo{"drillSize"}     = $drillSize;
+				$toolOpInfo{"chainNum"}      = $chainNum;
+				$toolOpInfo{"toolOperation"} = $toolOperation;
+
+				if ($magazineInfo) {
+					$toolOpInfo{"magazineInfo"} = $magazineInfo;
 				}
-				
 
 				$item->{"machines"}->{$machine}->{$key} = \%toolOpInfo;
 
