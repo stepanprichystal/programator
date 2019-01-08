@@ -307,11 +307,32 @@ sub _PutXMLorder {
 													$framegrid->Label(-text=>"Special stackup",-font=>'arial 9',-fg=>'red')->grid(-column=>0,-row=>"$rowStart",-columnspan=>1,-sticky=>"w");
 													$framegrid->Label(-text=>"$hashINFO{special_layer_construction}",-font=>'arial 9',-fg=>'red')->grid(-column=>1,-row=>"$rowStart",-columnspan=>1,-sticky=>"w");
 													}
+													
+													if ($hashINFO{layer_buildup} eq 'N/D') {
+															$rowStart++;
+															$framegrid->Label(-text=>"Stackup",-font=>'arial 9',-fg=>'DimGray')->grid(-column=>0,-row=>"$rowStart",-columnspan=>1,-sticky=>"w");
+															$framegrid->Label(-text=>"Neni striktne definovan",-font=>'arial 9',-fg=>'DimGray')->grid(-column=>1,-row=>"$rowStart",-columnspan=>1,-sticky=>"w");
+													}elsif($hashINFO{layer_buildup} eq '4L01') {
+															$rowStart++;
+															$framegrid->Label(-text=>"Stackup",-font=>'arial 9',-fg=>'DimGray')->grid(-column=>0,-row=>"$rowStart",-columnspan=>1,-sticky=>"w");
+															$framegrid->Label(-text=>"Standradni slozeni (Core 1,20)",-font=>'arial 9',-fg=>'DimGray')->grid(-column=>1,-row=>"$rowStart",-columnspan=>1,-sticky=>"w");	
+													}elsif($hashINFO{layer_buildup} eq 'CUST') {
+															$rowStart++;
+															$framegrid->Label(-text=>"Stackup",-font=>'arial 9',-fg=>'red')->grid(-column=>0,-row=>"$rowStart",-columnspan=>1,-sticky=>"w");
+															$framegrid->Label(-text=>"Specialni slozeni",-font=>'arial 9',-fg=>'red')->grid(-column=>1,-row=>"$rowStart",-columnspan=>1,-sticky=>"w");	
+													}
+													
+													
 													if ($viewInfo4){
 													$rowStart++;
 													$framegrid->Label(-text=>"Zlaceny konektor",-font=>'arial 9',-fg=>'red')->grid(-column=>0,-row=>"$rowStart",-columnspan=>1,-sticky=>"w");
 													$framegrid->Label(-text=>"$hashINFO{goldfingers} padu",-font=>'arial 9',-fg=>'red')->grid(-column=>1,-row=>"$rowStart",-columnspan=>1,-sticky=>"w");
 													}
+													
+													
+													
+													
+													
 													
 													if ($hashINFO{chamfered_borders} > 0){
 															$rowStart++;
@@ -458,6 +479,7 @@ sub __GetValueXML {
 												if ($katalog->{Order}->[$countPCB]->{PCB}->{silkscreenTOP} =~ /^HASH/){$hashINFO{'silkscreenTOP'}="$emptyText";}else{$hashINFO{'silkscreenTOP'}= ($katalog->{Order}->[$countPCB]->{PCB}->{silkscreenTOP});};
 												if ($katalog->{Order}->[$countPCB]->{PCB}->{silkscreenBOT} =~ /^HASH/){$hashINFO{'silkscreenBOT'}="$emptyText";}else{$hashINFO{'silkscreenBOT'}= ($katalog->{Order}->[$countPCB]->{PCB}->{silkscreenBOT});};
 												if ($katalog->{Order}->[$countPCB]->{PCB}->{special_layer_construction} =~ /^HASH/){$hashINFO{'special_layer_construction'}="$emptyText";}else{$hashINFO{'special_layer_construction'}= ($katalog->{Order}->[$countPCB]->{PCB}->{special_layer_construction});};
+												if ($katalog->{Order}->[$countPCB]->{PCB}->{layer_buildup} =~ /^HASH/){$hashINFO{'layer_buildup'}="$emptyText";}else{$hashINFO{'layer_buildup'}= ($katalog->{Order}->[$countPCB]->{PCB}->{layer_buildup});};
 												if ($katalog->{Order}->[$countPCB]->{PCB}->{goldfingers} =~ /^HASH/){$hashINFO{'goldfingers'}="$emptyText";}else{$hashINFO{'goldfingers'}= ($katalog->{Order}->[$countPCB]->{PCB}->{goldfingers});};
 												if ($katalog->{Order}->[$countPCB]->{PCB}->{panel_processing} =~ /^HASH/){$hashINFO{'panel_processing'}="$emptyText";}else{$hashINFO{'panel_processing'}= ($katalog->{Order}->[$countPCB]->{PCB}->{panel_processing});};
 												if ($katalog->{Order}->[$countPCB]->{PCB}->{min_track} =~ /^HASH/){$hashINFO{'min_track'}="$emptyText";}else{$hashINFO{'min_track'}= ($katalog->{Order}->[$countPCB]->{PCB}->{min_track});};
@@ -494,7 +516,8 @@ sub __GetValueXML {
 												if ($katalog->{Order}->{PCB}->{solderstopBOT} =~ /^HASH/){$hashINFO{'solderstopBOT'}="$emptyText";}else{$hashINFO{'solderstopBOT'}= ($katalog->{Order}->{PCB}->{solderstopBOT});};
 												if ($katalog->{Order}->{PCB}->{silkscreenTOP} =~ /^HASH/){$hashINFO{'silkscreenTOP'}="$emptyText";}else{$hashINFO{'silkscreenTOP'}= ($katalog->{Order}->{PCB}->{silkscreenTOP});};
 												if ($katalog->{Order}->{PCB}->{silkscreenBOT} =~ /^HASH/){$hashINFO{'silkscreenBOT'}="$emptyText";}else{$hashINFO{'silkscreenBOT'}= ($katalog->{Order}->{PCB}->{silkscreenBOT});};
-												if ($katalog->{Order}->{PCB}->{special_layer_construction} =~ /^HASH/){$hashINFO{'special_layer_construction'}="$emptyText";}else{$hashINFO{'special_layer_construction'}= ($katalog->{Order}->{PCB}->{special_layer_construction});};
+												if ($katalog->{Order}->{PCB}->{special_layer_construction} =~ /^HASH/){$hashINFO{'special_layer_construction'}="$emptyText";}else{$hashINFO{'special_layer_construction'}= ($katalog->{Order}->{PCB}->{special_layer_construction});};	
+												if ($katalog->{Order}->{PCB}->{layer_buildup} =~ /^HASH/){$hashINFO{'layer_buildup'}="$emptyText";}else{$hashINFO{'layer_buildup'}= ($katalog->{Order}->{PCB}->{layer_buildup});};
 												if ($katalog->{Order}->{PCB}->{goldfingers} =~ /^HASH/){$hashINFO{'goldfingers'}="$emptyText";}else{$hashINFO{'goldfingers'}= ($katalog->{Order}->{PCB}->{goldfingers});};
 												if ($katalog->{Order}->{PCB}->{panel_processing} =~ /^HASH/){$hashINFO{'panel_processing'}="$emptyText";}else{$hashINFO{'panel_processing'}= ($katalog->{Order}->{PCB}->{panel_processing});};
 												if ($katalog->{Order}->{PCB}->{min_track} =~ /^HASH/){$hashINFO{'min_track'}="$emptyText";}else{$hashINFO{'min_track'}= ($katalog->{Order}->{PCB}->{min_track});};
