@@ -111,6 +111,7 @@ sub GetUniqueTools {
 	foreach my $t (@toolsUniq) {
 
 		my $tNew = UniToolBase->new( $t->GetDrillSize(), $t->GetTypeProcess() );
+		$tNew->SetToolOperation($t->GetToolOperation());
 		$tNew->SetDepth( $t->GetDepth() );
 		$tNew->SetMagazine( $t->GetMagazine() );
 		$tNew->SetMagazineInfo( $t->GetMagazineInfo() );
@@ -451,7 +452,7 @@ sub __GetToolOperation {
 
 	}
 
-	die "Tool operation is not defined for tool: " . $tool->GetDrillSize() . ", layer: " . $self->{"layer"} . "\n";
+	die "Tool operation is not defined for tool: " . $tool->GetDrillSize() . ", layer: " . $self->{"layer"} unless(defined $operation);
 
 	return $operation;
 }

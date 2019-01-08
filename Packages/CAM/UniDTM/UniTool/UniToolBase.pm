@@ -33,7 +33,7 @@ sub new {
 	# Each tool has specified operation which is based on layer type and tool "typeProcess"
 	# Based on this parameter, rout tool speed can be calculated
 	# 
-	$self->{"toolOperation"} = shift;
+	$self->{"toolOperation"} = undef;
 
 	# following parameters must be same for all tools, which has
 	# same "key" created by drillSize + typeProcess

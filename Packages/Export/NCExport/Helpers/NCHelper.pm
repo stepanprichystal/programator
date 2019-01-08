@@ -26,6 +26,8 @@ use aliased 'Packages::CAMJob::Dim::JobDim';
 use aliased 'CamHelpers::CamDrilling';
 use aliased 'CamHelpers::CamStepRepeat';
 use aliased 'Packages::CAM::UniRTM::UniRTM::UniRTM';
+use aliased 'Packages::CAM::UniDTM::UniDTM';
+use aliased 'Packages::CAM::UniDTM::Enums' => 'DTMEnums';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -452,7 +454,7 @@ sub StoreOperationInfoTif {
 	my $operationMngr = shift;
 
 	my $tif = TifNCOperations->new($jobId);
- 
+
 	# 1) store operations
 
 	my $layerCnt = CamJob->GetSignalLayerCnt( $inCAM, $jobId );    # Signal layer cnt
@@ -514,15 +516,30 @@ sub StoreOperationInfoTif {
 		# Set material thickness during operation
 		$opInf{"ncMatThick"} = $matThick * 1000;
 
-		# Set operation min slot tool
-		$opInf{"minSlotTool"} = CamRouting->GetMinSlotToolByLayers( $inCAM, $jobId, $step, [@layers] ) if ($isRout);
-		
+		# Set operation min standard "not special" slot tool
+		$opInf{"minSlotTool"} = undef;
+
+		if ($isRout) {
+			
+			foreach my $layer (@layers) {
+
+				my $unitDTM = UniDTM->new( $inCAM, $jobId, $step, $layer->{"gROWname"}, 1 );
+				my $tool = $unitDTM->GetMinTool( DTMEnums->TypeProc_CHAIN, 1 ); # slot tool, default (no special)
+
+				# tool type chain doesn't have exist
+				next  if ( !defined $tool );
+
+				if ( !defined $opInf{"minSlotTool"} || $tool->GetDrillSize() < $opInf{"minSlotTool"} ) {
+					$opInf{"minSlotTool"} = $tool->GetDrillSize();
+				}
+			}
+		}
+ 
+
 		# Set operation layers
 		@layers = map { $_->{"gROWname"} } @layers;
 		$opInf{"layers"} = \@layers;
- 
-		
-		
+
 		push( @op, \%opInf );
 
 	}
@@ -551,7 +568,7 @@ sub StoreOperationInfoTif {
 	}
 
 	$tif->SetToolInfos( \%toolInfo );
- 
+
 }
 
 #-------------------------------------------------------------------------------------------#

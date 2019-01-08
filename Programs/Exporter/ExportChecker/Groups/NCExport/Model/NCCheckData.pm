@@ -189,7 +189,7 @@ sub OnCheckGroupData {
 
 	# 7) Check, when ALU material, if all plated holes aer in "f" layer
 
-	if ( $defaultInfo->GetMaterialKind() =~ /al/i ) {
+	if ( $defaultInfo->GetMaterialKind() =~ /^AL/i ) {
 
 		my @uniqueSteps = CamStepRepeat->GetUniqueStepAndRepeat( $inCAM, $jobId, "panel" );
 
@@ -216,7 +216,7 @@ sub OnCheckGroupData {
 	# Check only LAYERTYPE_nplt_nMill
 	# Available tools for Al: 1; 1,5; 2; 3; mm
 
-	if ( $defaultInfo->GetMaterialKind() =~ /al/i ) {
+	if ( $defaultInfo->GetMaterialKind() =~ /^AL/i ) {
 
 		my @aluTool = ( 1, 1.5, 2, 3 );    #all alu rout tools
 
