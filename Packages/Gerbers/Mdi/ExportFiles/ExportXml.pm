@@ -101,11 +101,26 @@ sub __ExportXml {
 	unless ($templ) {
 		return 0;
 	}
-	my ( $lowerlimit, $upperlimit, $acceptance, $brightness, $power, $iterations, $upper, $lower, $diameter );
-	my $x_position;
-	my $y_position;
 
-	if ( $layerName eq 'c' or $layerName eq 's' ) {
+	# Default parameters for image
+	my $power      = undef;
+	my $brightness = 3;
+	my $acceptance = 70;
+	my $x_position = 0.0;
+	my $y_position = 0.0;
+
+	# Defaul parameters for fiducial holes
+	my $diameter   = 3;
+	my $iterations = 3;
+	my $lower      = -0.02;
+	my $lowerlimit = -0.04;
+	my $upper      = 0.02;
+	my $upperlimit = 0.04;
+
+	# Signal layers c, s
+	if ( $layerName =~ /^[cs]$/ ) {
+
+		# When tenting, fiducial holes are plated => smaller
 		if ( $etching eq "tenting" ) {
 			$diameter   = 2.87;
 			$brightness = 8;
@@ -117,6 +132,8 @@ sub __ExportXml {
 
 		}
 		else {
+
+			# When pattern + flash, fiducial holes are plated => smaller
 			if ( $self->{"nifFile"}->GetValue("flash") > 0 ) {
 				$diameter   = 2.87;
 				$brightness = 8;
@@ -138,7 +155,9 @@ sub __ExportXml {
 
 		}
 	}
-	elsif ( $layerName eq 'mc' or $layerName eq 'ms' ) {
+
+	# Solder mask layer mc, ms
+	elsif ( $layerName =~ /^m[cs]$/ ) {
 
 		# set power by mask color
 		my %mask = HegMethods->GetSolderMaskColor($jobId);
@@ -146,22 +165,22 @@ sub __ExportXml {
 		my $clr = $mask{ $layerName eq 'mc' ? "top" : "bot" };
 
 		if ( $clr =~ /Z/i ) {
-			$power = 250;        # green
+			$power = 250;    # green
 		}
 		elsif ( $clr =~ /B/i ) {
-			$power = 240;        # black
+			$power = 240;    # black
 		}
 		elsif ( $clr =~ /M/i ) {
-			$power = 240;        # blue
+			$power = 240;    # blue
 		}
 		elsif ( $clr =~ /W/i ) {
-			$power = 220;        # white
+			$power = 220;    # white
 		}
 		elsif ( $clr =~ /R/i ) {
-			$power = 240;        # red
+			$power = 240;    # red
 		}
 		else {
-			$power = 230;        # other
+			$power = 230;    # other
 		}
 
 		$diameter   = 2.85;
@@ -173,19 +192,18 @@ sub __ExportXml {
 		$y_position = 0;
 
 	}
-	else {
-		$diameter   = 3;
-		$brightness = 3;
-		$upperlimit = 0.04;
-		$lowerlimit = -0.04;
-		$acceptance = 70;
-		$x_position = 0.0;
-		$y_position = 0.0;
-	}
 
-	$iterations = 3;
-	$upper      = 0.02;
-	$lower      = -0.02;
+	# Plug hole layers, gold connector layers
+	elsif ( $layerName =~ /^plg[cs]$/ || $layerName =~ /^gold[cs]$/ ) {
+
+		$diameter   = 2.87;
+		$brightness = 8;
+		$upperlimit = 0.08;
+		$lowerlimit = -0.08;
+		$acceptance = 70;
+		$x_position = 0.5;
+		$y_position = -1.0;
+	}
 
 	my $xPnlSize = $self->{"profLim"}->{"xMax"} - $self->{"profLim"}->{"xMin"};
 	my $yPnlSize = $self->{"profLim"}->{"yMax"} - $self->{"profLim"}->{"yMin"};
