@@ -66,7 +66,10 @@ sub Select {
 	my %h;
 	$h{$_}++ foreach ( @{ $self->{"layers"} }, CamMatrix->GetAffectedLayers( $inCAM, $self->{"jobId"} ) );
 	my @wrongL = grep { $h{$_} == 1 } keys %h;
-	die "Some layers (" . join( "; ", @wrongL ) . ") are wrongly affected or are not affected (requested layers)" if ( scalar(@wrongL) );
+	if ( scalar(@wrongL) ){
+		die "Some layers (" . join( "; ", @wrongL ) . ") are wrongly affected or are not affected (requested layers)" ;
+	}
+	
 
 	# Build standard filter property
 	my $buildStd = $self->{"stdFilter"}->BuildAll();

@@ -156,7 +156,7 @@ sub GetAffectedLayers{
 	
 	$inCAM->COM("get_affect_layer");
 	
-	my @layers = split(",", $inCAM->GetReply()) ;
+	my @layers = split(" ", $inCAM->GetReply()) ;
 	
  	$_ =~ s/\s//g foreach(@layers);
 	
