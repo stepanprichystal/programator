@@ -74,7 +74,7 @@ sub _Prepare {
 
 	my $outputLayer = OutputLayer->new();    # layer process result
 
-	my $drawLayer = $self->_SeparateFeatsBySymbolsNC( [ "lines" ] );
+	my $drawLayer = $self->_SeparateFeatsBySymbolsNC( [ "line" ] );
  
 	# 1) Set prepared layer name
 	$outputLayer->SetLayerName($drawLayer);

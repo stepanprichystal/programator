@@ -148,4 +148,19 @@ sub GetLayerPolarity {
 	return $l->{"gROWpolarity"};
 }
 
+# Return array of affected layers
+sub GetAffectedLayers{
+	my $self  = shift;
+	my $inCAM = shift;
+	my $jobId = shift;
+	
+	$inCAM->COM("get_affect_layer");
+	
+	my @layers = split(",", $inCAM->GetReply()) ;
+	
+ 	$_ =~ s/\s//g foreach(@layers);
+	
+	return @layers;
+}
+
 1;

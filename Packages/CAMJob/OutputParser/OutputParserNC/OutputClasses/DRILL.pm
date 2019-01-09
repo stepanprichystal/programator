@@ -76,7 +76,7 @@ sub _Prepare {
 	my $outputLayer = OutputLayer->new();    # layer process result
  
 
-	my $drawLayer = $self->_SeparateFeatsBySymbolsNC( ["pads"] );
+	my $drawLayer = $self->_SeparateFeatsBySymbolsNC( ["pad"] );
  
  
 	# adjust DTM to finish size

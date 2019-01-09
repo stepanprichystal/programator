@@ -75,7 +75,7 @@ sub _Prepare {
 
 	my $outputLayer = OutputLayer->new();    # layer process result
 
-	my $lTmp = $self->_SeparateFeatsBySymbolsNC( [ "surfaces", "lines", "arcs", "text" ] );
+	my $lTmp = $self->_SeparateFeatsBySymbolsNC( [ "surface", "line", "arc", "text" ] );
 
 	my $drawLayer = CamLayer->RoutCompensation( $inCAM, $lTmp, "document" );
 

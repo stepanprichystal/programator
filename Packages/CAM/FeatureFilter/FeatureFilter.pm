@@ -12,6 +12,7 @@ use warnings;
 #local library
 use aliased 'CamHelpers::CamLayer';
 use aliased 'CamHelpers::CamAttributes';
+use aliased 'CamHelpers::CamMatrix';
 use aliased 'Packages::CAM::FeatureFilter::Enums';
 use aliased 'Packages::CAM::FeatureFilter::FilterPropStd';
 use aliased 'Packages::CAM::FeatureFilter::FilterPropRef';
@@ -60,6 +61,12 @@ sub Select {
 	my $self = shift;
 
 	my $inCAM = $self->{"inCAM"};
+
+	# check if all requested layer are affected and no any else
+	my %h;
+	$h{$_}++ foreach ( @{ $self->{"layers"} }, CamMatrix->GetAffectedLayers( $inCAM, $self->{"jobId"} ) );
+	my @wrongL = grep { $h{$_} == 1 } keys %h;
+	die "Some layers (" . join( "; ", @wrongL ) . ") are wrongly affected or are not affected (requested layers)" if ( scalar(@wrongL) );
 
 	# Build standard filter property
 	my $buildStd = $self->{"stdFilter"}->BuildAll();
@@ -406,9 +413,10 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	use aliased 'Packages::CAM::FeatureFilter::FeatureFilter';
 	use aliased 'Packages::InCAM::InCAM';
+	use aliased 'CamHelpers::CamHelper';
 
 	my $inCAM = InCAM->new();
-	my $jobId = "d113608";
+	my $jobId = "d233928";
 
 	my $f = FeatureFilter->new( $inCAM, $jobId, "c" );
 
@@ -421,9 +429,9 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	# - "surfaces" => 0/1,
 	# - "arcs"     => 0/1,
 	# - "text"     => 0/1,
-	$f->SetFeatureTypes( "line" => 1 );
+	#$f->SetFeatureTypes( "line" => 1 );
 
-	$f->SetPolarity( Enums->Polarity_BOTH );
+	#$f->SetPolarity( Enums->Polarity_BOTH );
 
 	#$f->AddIncludeSymbols( ["r254", "r500"]);
 	#$f->AddExcludeSymbols( ["r254", "r500"]);
@@ -439,23 +447,24 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	##d$f->SetLineLength(2,10);
 	#$f->AddFeatureIndexes( [ 440, 441 ] );
 
-	$f->SetRefLayer("pom2");
+	#$f->SetRefLayer("pom2");
+
 	#$f->SetFeatureTypesRef( "line" => 1, "surface" => 1 );
 	#$f->SetPolarityRef( Enums->Polarity_POSITIVE );
 	#$f->AddIncludeSymbolsRef( ["r254", "r500"]);
 	#$f->AddIncludeAttRef(".nomenclature");
 	#$f->AddIncludeAttRef(".smd");
-	$f->SetIncludeAttrCondRef(Enums->Logic_AND);
-	$f->SetReferenceMode(Enums->RefMode_DISJOINT);
-	
-	
-	
+	#$f->SetIncludeAttrCondRef( Enums->Logic_AND );
+	#$f->SetReferenceMode( Enums->RefMode_DISJOINT );
+
+	#CamLayer->WorkLayer($inCAM, "m");
+
 	print $f->Select();
 
 	print "fff";
-	
-#	sel_ref_feat,layers=pom2,use=filter,mode=touch,pads_as=shape,f_types=surface,pol
-#arity=positive\;negative,include_syms=,exclude_syms= (0)
+
+	#	sel_ref_feat,layers=pom2,use=filter,mode=touch,pads_as=shape,f_types=surface,pol
+	#arity=positive\;negative,include_syms=,exclude_syms= (0)
 
 }
 

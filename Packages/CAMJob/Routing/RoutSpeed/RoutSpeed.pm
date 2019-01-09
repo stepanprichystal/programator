@@ -370,7 +370,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	use aliased 'Packages::InCAM::InCAM';
 
 	my $errMess = "";
-	my $result = RoutSpeed->CompleteRoutSpeed( "d222754", 100, "PYRALUX", \$errMess );
+	my $result = RoutSpeed->CompleteRoutSpeed( "d113609", 100, "IS400", \$errMess );
 
 	print STDERR "Result is: $result, mess: $errMess";
 

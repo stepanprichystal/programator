@@ -82,7 +82,7 @@ sub OnCheckGroupData {
 
 	unless ( LayerErrorInfo->CheckNCLayers( $inCAM, $jobId, $stepName, undef, \$mess ) ) {
 		$dataMngr->_AddErrorResult( "Checking NC layer", $mess );
-		
+
 		# Do not continue in other check if this  "basic" check fail
 		return 0;
 	}
@@ -94,7 +94,7 @@ sub OnCheckGroupData {
 	}
 
 	# 3) If panel contain more drifrent step, check if fsch exist
-	my @uniqueSteps = CamStepRepeatPnl->GetUniqueStepAndRepeat( $inCAM, $jobId, 1, [EnumsGeneral->Coupon_IMPEDANCE]);
+	my @uniqueSteps = CamStepRepeatPnl->GetUniqueStepAndRepeat( $inCAM, $jobId, 1, [ EnumsGeneral->Coupon_IMPEDANCE ] );
 
 	if ( scalar(@uniqueSteps) > 1 && !$defaultInfo->LayerExist("fsch") ) {
 
@@ -106,7 +106,7 @@ sub OnCheckGroupData {
 
 	if ( scalar(@uniqueSteps) == 1 ) {
 
-		my @repeatsSR = CamStepRepeatPnl->GetRepeatStep( $inCAM, $jobId, 1, [EnumsGeneral->Coupon_IMPEDANCE] );
+		my @repeatsSR = CamStepRepeatPnl->GetRepeatStep( $inCAM, $jobId, 1, [ EnumsGeneral->Coupon_IMPEDANCE ] );
 
 		my $angle = $repeatsSR[0]->{"angle"};
 		my @diffAngle = grep { $_->{"angle"} != $angle } @repeatsSR;
@@ -469,13 +469,15 @@ sub OnCheckGroupData {
 	unless ( CountersinkCheck->WrongDepthForCSinkTool( $inCAM, $jobId, \@wrongDepths ) ) {
 
 		my $str = join(
-			"; ", map {
-				    $_->GetDrillSize ()
+			"; ",
+			map {
+				    $_->GetDrillSize()
 				  . "µm: úhel: "
 				  . $_->GetAngle()
 				  . ", hloubka: "
-				  . ($_->GetDepth() * 1000). "µm, délka špičky: "
-				  . $_->{"peakLen"}."µm"
+				  . ( $_->GetDepth() * 1000 )
+				  . "µm, délka špičky: "
+				  . $_->{"peakLen"} . "µm"
 			} @wrongDepths
 		);
 
@@ -483,11 +485,10 @@ sub OnCheckGroupData {
 			"Countersink tool",
 "V jobu jsou použité nástroje s úhlem, které mají větší hloubku než je délka \"špičky frézy\". V otovoru může být nežádoucí \"zobáček\"\n"
 			  . "Otvory: $str"
-					);
-		
+		);
+
 	}
-	
-	
+
 	# 18) Check if pressfit toles has set tolerances
 	my @layers = PressfitOperation->GetPressfitLayers( $inCAM, $jobId, "panel", 1 );
 
@@ -537,7 +538,7 @@ sub OnCheckGroupData {
 			);
 		}
 	}
-	
+
 	# 20) Check if there are set tolerances and type other than non_plated in nplt holes
 	foreach my $l ( CamDrilling->GetNCLayersByTypes( $inCAM, $jobId, [ EnumsGeneral->LAYERTYPE_nplt_nMill, EnumsGeneral->LAYERTYPE_nplt_nDrill ] ) ) {
 
@@ -560,6 +561,29 @@ sub OnCheckGroupData {
 		}
 	}
 
+	# 21) Check if pcb pcb class less than 8 and plated drill exist
+	# If so, warn user to small diameter
+	if ( $defaultInfo->GetPcbClass() < 8 ) {
+
+		my @layers = CamDrilling->GetNCLayersByTypes( $inCAM, $jobId, [ EnumsGeneral->LAYERTYPE_plt_nDrill ] );
+
+		foreach my $step ( map {$_->{"stepName"}} CamStepRepeatPnl->GetUniqueStepAndRepeat( $inCAM, $jobId ) ) {
+			
+			foreach my $l (@layers) {
+				my $min = CamDrilling->GetMinHoleToolByLayers( $inCAM, $jobId, $step, [ $l ] );
+
+				if ( defined $min && $min <= 200 ) {
+
+					$dataMngr->_AddWarningResult(
+												  "Via otvory",
+												  "Ve stepu: $step, vrstvě: ".$l->{"gROWname"}." jsou pokovené otvory s průměrem <= 200µm. "
+													. "To prodlužuje dobu výroby dps. Není možné průměry zvětšit za cenu zvýšení konstrukční třídy?"
+					);
+				}
+			}
+		}
+
+	}
 
 }
 

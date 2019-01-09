@@ -16,6 +16,7 @@ use warnings;
 #local library
 use aliased 'CamHelpers::CamJob';
 use aliased 'CamHelpers::CamStepRepeat';
+use aliased 'CamHelpers::CamStepRepeatPnl';
 use aliased 'CamHelpers::CamHelper';
 use aliased 'CamHelpers::CamStep';
 use aliased 'CamHelpers::CamLayer';
@@ -66,7 +67,7 @@ sub Run {
 
 	my $layerCnt = CamJob->GetSignalLayerCnt( $inCAM, $jobId );
 
-	my @steps = CamStepRepeat->GetUniqueStepAndRepeat( $inCAM, $jobId, "panel" );
+	my @steps = CamStepRepeatPnl->GetUniqueStepAndRepeat( $inCAM, $jobId);
 
 	$inCAM->COM( "set_subsystem", "name" => "Panel-Design" );
 

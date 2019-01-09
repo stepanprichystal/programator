@@ -51,14 +51,14 @@ sub new {
 # this keep original DTM values in created layer
 sub _SeparateFeatsBySymbolsNC {
 	my $self         = shift;
-	my $symbols      = shift;    # surfaces", "pads", "lines", "arcs", "text"
+	my $symbols      = shift;    # surface", "pad", "line", "arc", "text"
 	my $notUpdateDTM = shift;
 	my $notUpdateRTM = shift;
 
-	my $lines    = defined( ( grep { $_ eq "lines" } @{$symbols} )[0] )    ? 1 : 0;
-	my $pads     = defined( ( grep { $_ eq "pads" } @{$symbols} )[0] )     ? 1 : 0;
-	my $surfaces = defined( ( grep { $_ eq "surfaces" } @{$symbols} )[0] ) ? 1 : 0;
-	my $arcs     = defined( ( grep { $_ eq "arcs" } @{$symbols} )[0] )     ? 1 : 0;
+	my $lines    = defined( ( grep { $_ eq "line" } @{$symbols} )[0] )    ? 1 : 0;
+	my $pads     = defined( ( grep { $_ eq "pad" } @{$symbols} )[0] )     ? 1 : 0;
+	my $surfaces = defined( ( grep { $_ eq "surface" } @{$symbols} )[0] ) ? 1 : 0;
+	my $arcs     = defined( ( grep { $_ eq "arc" } @{$symbols} )[0] )     ? 1 : 0;
 	my $text     = defined( ( grep { $_ eq "text" } @{$symbols} )[0] )     ? 1 : 0;
 
 	my $inCAM = $self->{"inCAM"};
@@ -96,7 +96,7 @@ sub _SeparateFeatsBySymbolsNC {
 	# remove symbols from original layer
 
 	my $f2 = FeatureFilter->new( $inCAM, $jobId, $l->{"gROWname"} );
-	$f->SetFeatureTypes( "line" => $lines, "pad" => $pads, "surface" => $surfaces, "arc" => $arcs, "text" => $text );
+	$f2->SetFeatureTypes( "line" => $lines, "pad" => $pads, "surface" => $surfaces, "arc" => $arcs, "text" => $text );
 
 	if ( $f2->Select() > 0 ) {
 
