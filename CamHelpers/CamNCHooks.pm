@@ -16,6 +16,8 @@ use aliased 'Enums::EnumsGeneral';
 use aliased 'Enums::EnumsPaths';
 use aliased 'Packages::CAM::UniDTM::Enums' => 'DTMEnums';
 use aliased 'Helpers::JobHelper';
+use aliased 'Helpers::GeneralHelper';
+
 #-------------------------------------------------------------------------------------------#
 #   Package methods
 #-------------------------------------------------------------------------------------------#
@@ -251,51 +253,22 @@ sub __GetToolParamLine {
 	unless ($par) {
 		return undef;
 	}
+
+	my $toolType = $tool->GetTypeProcess() eq DTMEnums->TypeProc_HOLE ? "drill" : "rout";
+	my $special = $tool->GetSpecial() ? "spec" : "def";
+
+	# Build tool key
+	my $toolKey = "c" . sprintf( "%d", $tool->GetDrillSize() );
+	$toolKey .= "_" . $tool->GetMagazineInfo() if ( $tool->GetSpecial() );
+
+	# Get tool parameter line
+	$line = $par->{$toolType}->{$special}->{$toolKey};
+
+	return undef if(!defined $line);
 	
-	my $toolSize     = $tool->GetDrillSize() / 1000;
-	my $magazineInfo = $tool->GetMagazineInfo();
-
-	if ( $tool->GetSpecial() ) {
-
-		# Example of line: C6.50F0.1U25.0S7.0H500special=W11;6.5 90st
-		foreach my $l ( @{ $par->{"special"} } ) {
-
-			$l =~ m/C(.*)F.*special=(.*)/i;
-
-			if ( $1 == $toolSize && $2 eq $magazineInfo ) {
-				$line = $l;
-
-				#remove special
-				$line =~ s/special=.*//i;
-				last;
-			}
-		}
-	}
-	else {
-
-		my @par = undef;
-
-		if ( $tool->GetTypeProcess() eq DTMEnums->TypeProc_HOLE ) {
-			@par = @{ $par->{"drill"} };
-
-		}
-		elsif ( $tool->GetTypeProcess() eq DTMEnums->TypeProc_CHAIN ) {
-			@par = @{ $par->{"rout"} };
-		}
-
-		# Example of line: C6.50F0.1U25.0S7.0H500
-		foreach (@par) {
-
-			$_ =~ m/C(.*)F/i;
-
-			my $t = $1;
-
-			if ( defined $t && $t == $toolSize ) {
-				$line = $_;
-				last;
-			}
-		}
-	}
+	# If tool is special, remove magazine info from line
+	# Example of line: C6.50F0.1U25.0S7.0H500special=W11;6.5 90st
+	$line =~ s/special=.*//i if ( $tool->GetSpecial() );
 
 	if ($line) {
 		chomp($line);
@@ -304,126 +277,162 @@ sub __GetToolParamLine {
 	return $line;
 }
 
-#return array with tool parameters for drilling according material
+# Return material parameters for specific machine and material
+# If layer is type of drill, return drill parameters
+# If layer is type of rout, return drill + rout parameters
 sub GetMaterialParams {
 	my $self         = shift;
+	my $inCAM        = shift;
+	my $jobId        = shift;
+	my $layer        = shift;
 	my $materialName = shift;
 	my $machine      = shift;
-	my $ncPath       = shift;    # \\incam\incam_server\site_data\hooks\<ncr OR ncd>\
+	my $path         = shift // GeneralHelper->RootHooks();    # root path of hooks (user hooks / server hooks)
+ 
+	my %params = ();
+	$params{"ok"} = 1;
+ 
 
-	my $materialFile = undef;
+	# Get info about exported layer
+	my %lInfo     = CamDrilling->GetNCLayerInfo( $inCAM, $jobId, $layer, 1, 1 );
+	my $plated    = $lInfo{"plated"};                                              # 1/0
+	my $layerType = $lInfo{"gROWlayer_type"};                                      # rout/drill
+	
+	# Dir name of default machine parameters
+	my $macDefName = "machine_default";
 
-	my @d = ();                  # drilling params
-	my @r = ();                  # routing params
-	my @s = ();                  # special params
+	# 1) parse Drilling parameter
+	my $drillDef  = {};
+	my $drillSpec = {};
 
-	my %params = ( "drill" => \@d, "rout" => \@r, "special" => \@s, "ok" => 1 );
+	# parse default parems
+	my $drillDefFile = $path . "\\ncd\\parametersFile\\$macDefName\\" . $materialName;
+	my $drillDefRes = $self->__ParseMaterialParams( $drillDefFile, $plated, $drillDef, $drillSpec, "drill" );
 
-	#	#load parameters only when material exist
-	#	if ($materialName) {
-	#
-	#		if ( $materialName =~ /FR4/i ) {
-	#
-	#			$materialFile = "FR4";
-	#
-	#		}
-	#		elsif ( $materialName =~ /IS410/i ) {
-	#
-	#			$materialFile = "IS410";
-	#
-	#		}
-	#		elsif ( $materialName =~ /IS400/i ) {
-	#
-	#			$materialFile = "IS400";
-	#
-	#		}
-	#		elsif ( $materialName =~ /Al/i ) {
-	#
-	#			$materialFile = "AL";
-	#
-	#		}
-	#		elsif ( $materialName =~ /G200/i ) {
-	#
-	#			$materialFile = "G200";
-	#
-	#		}elsif ( $materialName =~ /PCL370HR/i ) {
-	#
-	#			$materialFile = "PCL370HR";
-	#
-	#		}elsif ( $materialName =~ /DUROID/i ) {
-	#
-	#			$materialFile = "R58X0-DUROID";
-	#		}
-	#
-	#		print STDERR "\n\n$materialName - $ncPath - $materialFile\n\n";
-	#	}
-	#
-	#	#IS420
-	#	#G200
-	#	#RO4
-	#	#RO3
-	#	#AL_CORE
-	#	#CU_CORE
-	#	#P96
-	#	#P97
-	#	#LAMBDA450
-	#	#FOSFORBRONZ
-	#	#ALPAKA
-	#	#NEREZ
-	#	#NEREZOVA_OCEL
-	#
-	#	unless ($materialFile) {
-	#		$params{"ok"} = 0;
-	#	}
+	# parse special params for machine
+	my $drillMachFile = $path . "\\ncd\\parametersFile\\$machine\\" . $materialName;
+	my $drillMachRes = $self->__ParseMaterialParams( $drillMachFile, $plated, $drillDef, $drillSpec, "drill" );
 
-	$materialFile = $ncPath . "parametersFile\\" . $machine . "\\" . $materialName;
+	# check if drill was parsed
+	$params{"ok"} = 0 if ( !$drillDefRes && !$drillMachRes );
 
-	if ( open( my $fMat, "$materialFile" ) ) {
+	$params{"drill"}->{"def"}  = $drillDef;
+	$params{"drill"}->{"spec"} = $drillSpec;
 
-		print STDERR "\n\n file opened $materialFile\n\n";
+	# 2) parse Routing parameter
 
-		my $section = undef;
+	if ( $layerType eq "rout" ) {
 
-		while ( my $l = <$fMat> ) {
+		my $routDef  = {};
+		my $routSpec = {};
 
-			if ( $l =~ /#\s*drill/i ) {
-				$section = "drill";
+		# parse default parems
+		my $routDefFile = $path . "\\ncr\\parametersFile\\$macDefName\\" . $materialName;
+		my $routDefRes = $self->__ParseMaterialParams( $routDefFile, $plated, $routDef, $routSpec, "rout" );
 
-				print STDERR "\n\n section drill \n\n";
-			}
-			elsif ( $l =~ /#\s*rout/i ) {
-				$section = "rout";
-			}
-			elsif ( $l =~ /#\s*special/i ) {
-				$section = "special";
-			}
+		# parse special params for machine
+		my $routMachFile = $path . "\\ncr\\parametersFile\\$machine\\" . $materialName;
+		my $routMachRes = $self->__ParseMaterialParams( $routMachFile, $plated, $routDef, $routSpec, "rout" );
 
-			if ( $section && ( $l =~ /C(.*)F.*/i ) ) {
-				push( @{ $params{$section} }, $l );
-			}
-		}
+		# check if drill was parsed
+		$params{"ok"} = 0 if ( !$routDefRes && !$routMachRes );
 
-		close($fMat);
-
-	}
-	else {
-
-		$params{"ok"} = 0;
-
+		$params{"rout"}->{"def"}  = $routDef;
+		$params{"rout"}->{"spec"} = $routSpec;
 	}
 
 	return %params;
 }
 
+# Parse parameter file from specific path
+sub __ParseMaterialParams {
+	my $self     = shift;
+	my $file     = shift;
+	my $plated   = shift;    # plated/nplated
+	my $defPar   = shift;
+	my $specPar  = shift;
+	my $toolType = shift;    # drill/rout
+
+	my $result = 1;
+
+	if ( open( my $fMat, "$file" ) ) {
+
+		my $readLine = 0;
+		my $parSection;
+		while ( my $l = <$fMat> ) {
+
+			$l =~ s/\s*//g;
+
+			next if ( $l eq "" );
+
+			# Tools block line
+			# TOOLS = DRILL/ROUT, TYPE = DEFAULT/SPECIAL, PLATED = YES/NO
+			if ( $l =~ /^#tools=(\w+),type=(\w+),plated=(\w+)$/i ) {
+
+				my $parToolType = $1;
+				$parSection = lc($2);
+				my $parPlated = lc($3) eq "yes" ? 1 : 0;
+
+				# check tool type
+				die "Parameter file ($file) should contain only parameters for tool type: $toolType, but file contain type: $parToolType" if ( $parToolType !~ /$toolType/i );
+				die "Parameter file ($file), wrong parameter tool type: $parSection at line: $l" if ( $parSection ne "special" && $parSection ne "default" );
+
+				if ( $plated == $parPlated ) {
+					$readLine = 1;
+				}
+				else {
+					$readLine = 0;
+				}
+
+			}
+
+			# Tools line
+			elsif ( $l =~ /C(.*)F.*/i ) {
+
+				my $key = "c" . sprintf( "%d", $1 * 1000 );
+
+				if ( $parSection eq "special" && $l =~ /^C(.*)F.*special=(.*)/i ) {
+
+					$key .= "_" . $2;
+
+					$specPar->{$key} = $l if ($readLine);
+				}
+				elsif ( $parSection eq "default" ) {
+
+					$defPar->{$key} = $l if ($readLine);
+
+				}
+				else {
+
+					die "Error during parsing line. Section: $parSection in parameter file: $file, line: $l";
+				}
+
+			}
+			else {
+
+				die "Wrong line format ($l) in parameter file: $file";
+			}
+		}
+
+		close($fMat);
+	}
+	else {
+
+		$result = 0;
+	}
+
+	return $result;
+}
+
 # Return line which contain cooridnates with drilled number
 sub GetDrilledNumber {
-	my $self      = shift;
-	my $jobId     = shift;
-	my $layerName = shift;
-	my $machine = shift;
-	my @scanMarks = @{ shift(@_) };
-	my %nullPoint = %{ shift(@_) };
-	my $cuThickReq =shift // 1;
+	my $self       = shift;
+	my $jobId      = shift;
+	my $layerName  = shift;
+	my $machine    = shift;
+	my @scanMarks  = @{ shift(@_) };
+	my %nullPoint  = %{ shift(@_) };
+	my $cuThickReq = shift // 1;
 
 	my $numberStr = $jobId;
 
@@ -451,18 +460,19 @@ sub GetDrilledNumber {
 		else {
 			$numberStr .= "++";
 		}
-	}else{
+	}
+	else {
 		$numberStr .= " ";
 	}
 
 	my $scanMark = "";
 
 	# select
-	if ( $layerName eq "v1"  ) {
+	if ( $layerName eq "v1" ) {
 
 		$scanMark = "drilled_pcbId_v2";
 	}
-	else{
+	else {
 
 		$scanMark = "drilled_pcbId_c";
 
@@ -482,24 +492,32 @@ sub GetDrilledNumber {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	#		use aliased 'CamHelpers::CamNCHooks';
-	#		use aliased 'Packages::InCAM::InCAM';
-	#
-	#		my $inCAM = InCAM->new();
-	#
-	#		my $jobId     = "f50251";
-	#		my $stepName  = "panel";
-	#
-	#		my $materialName = "PCL370HR";
-	#		my $machine = "machine_a";
-	#		my $path = "\\\\incam\\incam_server\\site_data\\hooks\\ncd\\";
-	#
-	#
-	#		my %toolParams = CamNCHooks->GetMaterialParams( $materialName, $machine, $path );
-	#
-	#		my $parameters = CamNCHooks->GetToolParam( $uniTool, \%toolParams, \$magazineOk );
-	#
-	#		print 1;
+ 
+
+	use aliased 'CamHelpers::CamNCHooks';
+	use aliased 'Packages::InCAM::InCAM';
+	use aliased 'Packages::CAM::UniDTM::UniDTM';
+
+	my $inCAM = InCAM->new();
+
+	my $jobId    = "d222763";
+	my $stepName = "panel";
+
+	my $materialName = "IS400";
+	my $machine      = "machine_g";
+	my $layer        = "jfzc";
+
+	my $uniDTM = UniDTM->new( $inCAM, $jobId, $stepName, $layer, 1 );
+	my @t = $uniDTM->GetTools();
+
+	my $path = "\\\\incam\\incam_server\\users\\stepan\\hooks\\";
+
+	my %toolParams = CamNCHooks->GetMaterialParams( $inCAM, $jobId, $layer, $materialName, $machine, $path );
+
+	my $magazineOk = 0;
+	my $parameters = CamNCHooks->GetToolParam( $t[0], \%toolParams, \$magazineOk );
+
+	print 1;
 
 }
 

@@ -107,7 +107,7 @@ use constant {
 
 	InCAM_users => ( -e "Y:" )
 	? "y:\\server\\users\\"
-	: "\\\\incam\\incam_server\\",
+	: "\\\\incam\\incam_server\\users\\",
 
 	#InCAM_users => "\\\\incam\\incam_server\\",
 

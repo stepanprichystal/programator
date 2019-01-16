@@ -359,7 +359,7 @@ sub __LoadToolsMagazine {
 
 					my $magMat = $magInfo->{"material"};
 
-					if ( $magMat =~ /$materialName/i || $materialName =~ /$magMat/i ) {
+					if ( $materialName =~ /^$magMat/i) {
 						$m = $magInfo;
 						last;
 					}
@@ -379,7 +379,7 @@ sub __LoadToolsMagazine {
 
 			if ( defined $magazines ) {
 				my @mArr = @{$magazines};
-				my $m = ( grep { $_->{"material"} =~ /$materialName/i } @mArr )[0];
+				my $m = ( grep { $_->{"material"} =~ /^$materialName$/i } @mArr )[0];
 
 				if ( defined $m ) {
 

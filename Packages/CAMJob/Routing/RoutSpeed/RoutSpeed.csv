@@ -1,5 +1,5 @@
 # DESCRIPTION: File contains rout speed values for specific materials (from HEG) and specific NC operation.
-# Rout speed depand on theses parameters>
+# Rout speed depands on theses parameters:
 # - OPERATIONS: Each tool do some NC operation
 #              - PlatedRout
 #              - NPlatedRout
@@ -11,7 +11,7 @@
 #              - special - Specific tool magazine is selected from MagazineSpec.xml
 # - Rout speed INSIDE: Speed for all routs which are detected as rout inside pcb countour
 # - Rout speed OUTLINE: Speed for all routs which are detected as countour routing
-# - 1.5; 3.0; 4.5: Theses numbers are thicknesses of pcb packet. Thickness of pcb packet depand on minimal rout tool and total order pcb quantity
+# - 1.5; 3.0; 4.5: Theses numbers are thicknesses of pcb packet. Thickness of pcb packet depands on minimal rout tool and total order pcb quantity
 
 
 

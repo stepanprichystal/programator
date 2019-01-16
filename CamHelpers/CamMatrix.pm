@@ -163,4 +163,17 @@ sub GetAffectedLayers{
 	return @layers;
 }
 
+
+# Return layer type
+sub GetLayerType {
+	my $self  = shift;
+	my $inCAM = shift;
+	my $jobId = shift;
+	my $layer = shift;
+
+	my $l = ( grep { $_->{"gROWname"} eq $layer } CamJob->GetAllLayers( $inCAM, $jobId ) )[0];
+
+	return $l->{"gROWlayer_type"};
+}
+
 1;

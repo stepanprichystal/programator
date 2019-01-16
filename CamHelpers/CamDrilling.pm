@@ -15,6 +15,7 @@ use aliased 'Enums::EnumsPaths';
 use aliased 'CamHelpers::CamHelper';
 use aliased 'CamHelpers::CamJob';
 use aliased 'Enums::EnumsGeneral';
+use aliased 'CamHelpers::CamMatrix';
 
 #-------------------------------------------------------------------------------------------#
 #   Package methods
@@ -245,7 +246,7 @@ sub AddNCLayerType {
 		}
 
 		# Non plated NC layers
-		elsif ( $l->{"gROWname"} =~ /^d[0-9]*$/ ||  $l->{"gROWname"} =~ /^fsch_d$/ ) {
+		elsif ( $l->{"gROWname"} =~ /^d[0-9]*$/ || $l->{"gROWname"} =~ /^fsch_d$/ ) {
 
 			$l->{"type"}   = EnumsGeneral->LAYERTYPE_nplt_nDrill;
 			$l->{"plated"} = 0;
@@ -322,27 +323,51 @@ sub AddNCLayerType {
 			$l->{"type"}   = EnumsGeneral->LAYERTYPE_nplt_fMillSpec;
 			$l->{"plated"} = 0;
 		}
-		
+
 		# new for flexi
 		elsif ( $l->{"gROWname"} =~ /^fcoverlayc.*/ ) {
 
 			$l->{"type"}   = EnumsGeneral->LAYERTYPE_nplt_cvrlycMill;
 			$l->{"plated"} = 0;
-		
-		}elsif ( $l->{"gROWname"} =~ /^fcoverlays.*/ ) {
+
+		}
+		elsif ( $l->{"gROWname"} =~ /^fcoverlays.*/ ) {
 
 			$l->{"type"}   = EnumsGeneral->LAYERTYPE_nplt_cvrlysMill;
 			$l->{"plated"} = 0;
-		
-		}elsif ( $l->{"gROWname"} =~ /^fprepreg.*/ ) {
+
+		}
+		elsif ( $l->{"gROWname"} =~ /^fprepreg.*/ ) {
 
 			$l->{"type"}   = EnumsGeneral->LAYERTYPE_nplt_prepregMill;
 			$l->{"plated"} = 0;
 		}
-	
+
 	}
 
 	#return @res;
+}
+
+# Return info about NC layer
+sub GetNCLayerInfo {
+	my $self       = shift;
+	my $inCAM      = shift;
+	my $jobId      = shift;
+	my $layer      = shift;
+	my $ncType     = shift // 0;    # NC type + plated
+	my $matrixType = shift // 0;    # rout/drill
+
+	my %lInfo = ( "gROWname" => $layer );
+
+	if ($ncType) {
+		$self->AddNCLayerType( [ \%lInfo ] );
+	}
+	if ($matrixType) {
+
+		$lInfo{"gROWlayer_type"} = CamMatrix->GetLayerType( $inCAM, $jobId, $layer );
+	}
+
+	return %lInfo;
 }
 
 # return all plated NC layers
@@ -448,16 +473,15 @@ sub AddLayerStartStop {
 		$layer->{"gROWdrl_start"}      = $order{$start};
 		$layer->{"gROWdrl_end"}        = $order{$end};
 
-		$layer->{"gROWname"}    = ${ $inCAM->{doinfo}{gROWname} }[$idx];
-		
+		$layer->{"gROWname"} = ${ $inCAM->{doinfo}{gROWname} }[$idx];
+
 		# not_def value is set when drill direction not was set manually in InCAM (default direction from top to bot)
 		#drill direction top2bot/bot2top/not_def
 		$layer->{"gROWdrl_dir"} = ${ $inCAM->{doinfo}{gROWdrl_dir} }[$idx];
-		
+
 		# "not_def" value is set when drill direction not was set manually in InCAM (default direction from top to bot)
 		# from this point gROWdrl_dir has only 2 values: top2bot/bot2top
-		$layer->{"gROWdrl_dir"} = "top2bot" if($layer->{"gROWdrl_dir"} eq "not_def");
-	 
+		$layer->{"gROWdrl_dir"} = "top2bot" if ( $layer->{"gROWdrl_dir"} eq "not_def" );
 
 		#Necessary, for old genesis bot drilling. Because all drilling direction
 		#were from TOP to BOT. But InCAM allows make Bot blind with direction
@@ -577,9 +601,6 @@ sub AddHistogramValues {
 	}
 }
 
-
-
- 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#

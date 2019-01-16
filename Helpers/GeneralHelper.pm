@@ -48,10 +48,31 @@ sub Root {
 
 	#get path off this file GeneralHelper.pm
 	my $generalHelperPath = File::Spec->rel2abs(__FILE__);
-	( $name, $path2, $suffix ) = fileparse( $generalHelperPath, @suffixlist );
+	my ( $name, $path2, $suffix ) = fileparse( $generalHelperPath, @suffixlist );
 
 	#get "root" directory, where are all scripts and modules
 	return dirname($path2);
+
+}
+
+# Return root direcotry of hooks (server or user hooks)
+sub RootHooks {
+
+	my $root;
+
+	# get path off file which is executing
+ 
+	my $p = Cwd::abs_path($0);
+ 
+	# script is executed from user hook
+	if($p =~ /[\\\/]users[\\\/](\w+)[\\\/]/i){
+		$root = EnumsPaths->InCAM_users.$1."\\hooks\\";
+	
+	}else{
+		$root = EnumsPaths->InCAM_hooks;
+	}
+ 
+	return $root; 
 
 }
 
@@ -327,7 +348,7 @@ sub IsTPVServer{
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	
-	print Helpers::GeneralHelper->GetLastInCAMVersion();
+	
 	
 }
 1;
