@@ -55,8 +55,8 @@ sub GetDrillDuration {
 
 	my $materialName = HegMethods->GetMaterialKind($jobId);
 	my $machine      = EnumsMachines->MACHINE_C;                                          # default is C, contain all hole diamters
-	my $path         = EnumsPaths->InCAM_hooks . "\\ncd\\";
-	my %toolParams   = CamNCHooks->GetMaterialParams( $materialName, $machine, $path );
+
+	my %toolParams   = CamNCHooks->GetMaterialParams( $inCAM, $jobId, $layer, $materialName, $machine );
 
 	my $unitDTM = UniDTM->new( $inCAM, $jobId, $step, $layer, $SR );
 
