@@ -127,7 +127,7 @@ sub GetEtchType {
 	}
 	elsif ( $self->{"layerCnt"} == 2 ) {
 
-		if ( $self->{"platedRoutExceed"} || $self->{"rsExist"} ) {
+		if ( $self->{"platedRoutExceed"} || $self->{"rsExist"} || JobHelper->GetIsFlex($self->{"jobId"}) ) {
 			$etchType = EnumsGeneral->Etching_PATTERN;
 		}
 		else {
@@ -694,12 +694,17 @@ sub __InitDefault {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	#use aliased 'Programs::Exporter::ExportChecker::ExportChecker::StorageMngr';
+	use aliased 'Programs::Exporter::ExportChecker::ExportChecker::DefaultInfo::DefaultInfo';
+	use aliased 'Packages::InCAM::InCAM';
 
-	#my $id
+	my $inCAM = InCAM->new();
 
-	#my $form = StorageMngr->new();
+	my $jobId     = "d222753";
+	my $stepName  = "o+1";
+	my $layerName = "c";
 
+	 my $d = DefaultInfo->new($inCAM, $jobId);
+	 $d->GetEtchType("c");
 }
 
 1;
