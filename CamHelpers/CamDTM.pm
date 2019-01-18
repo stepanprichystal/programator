@@ -303,7 +303,7 @@ sub GetDTMDefaultType {
 
 		CamDrilling->AddNCLayerType( \@la );
 
-		if (    $l{"type"} eq EnumsGeneral->LAYERTYPE_plt_fDrill
+		if (    $l{"type"} eq EnumsGeneral->LAYERTYPE_plt_fcDrill
 			 || $l{"type"} eq EnumsGeneral->LAYERTYPE_plt_dcDrill
 			 || $l{"type"} eq EnumsGeneral->LAYERTYPE_plt_nMill )
 		{

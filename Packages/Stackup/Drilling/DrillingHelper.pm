@@ -96,7 +96,7 @@ sub GetPltNCLayerInfo {
 			push( @bMillBot, $l );
 
 		}
-		elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_plt_fDrill ) {
+		elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_plt_fcDrill ) {
 			push( @fDrill, $l );
 
 		}
@@ -109,7 +109,7 @@ sub GetPltNCLayerInfo {
 	$info{ EnumsGeneral->LAYERTYPE_plt_cDrill }    = \@cDrill;
 	$info{ EnumsGeneral->LAYERTYPE_plt_bDrillTop } = \@bDrillTop;
 	$info{ EnumsGeneral->LAYERTYPE_plt_bDrillBot } = \@bDrillBot;
-	$info{ EnumsGeneral->LAYERTYPE_plt_fDrill }    = \@fDrill;
+	$info{ EnumsGeneral->LAYERTYPE_plt_fcDrill }    = \@fDrill;
 	$info{ EnumsGeneral->LAYERTYPE_plt_nMill }     = \@nMill;
 	$info{ EnumsGeneral->LAYERTYPE_plt_bMillTop }  = \@bMillTop;
 	$info{ EnumsGeneral->LAYERTYPE_plt_bMillBot }  = \@bMillBot;

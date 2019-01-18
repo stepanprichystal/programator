@@ -209,6 +209,24 @@ sub AddNCLayerType {
 			$l->{"plated"} = 1;
 
 		}
+		elsif ( $l->{"gROWname"} =~ /^mfill[0-9]*$/ ) {
+
+			$l->{"type"}   = EnumsGeneral->LAYERTYPE_plt_nFillDrill;
+			$l->{"plated"} = 1;
+
+		}
+		elsif ( $l->{"gROWname"} =~ /^scfill[0-9]+$/ ) {
+
+			$l->{"type"}   = EnumsGeneral->LAYERTYPE_plt_bFillDrillTop;
+			$l->{"plated"} = 1;
+
+		}
+		elsif ( $l->{"gROWname"} =~ /^ssfill[0-9]+$/ ) {
+
+			$l->{"type"}   = EnumsGeneral->LAYERTYPE_plt_bFillDrillBot;
+			$l->{"plated"} = 1;
+
+		}
 		elsif ( $l->{"gROWname"} =~ /^j[0-9]+$/ ) {
 
 			$l->{"type"}   = EnumsGeneral->LAYERTYPE_plt_cDrill;
@@ -235,7 +253,7 @@ sub AddNCLayerType {
 		}
 		elsif ( $l->{"gROWname"} =~ /^v[0-9]+$/ ) {
 
-			$l->{"type"}   = EnumsGeneral->LAYERTYPE_plt_fDrill;
+			$l->{"type"}   = EnumsGeneral->LAYERTYPE_plt_fcDrill;
 			$l->{"plated"} = 1;
 
 		}

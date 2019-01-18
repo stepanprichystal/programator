@@ -58,7 +58,7 @@ sub SortLayersByRules {
 	$priority{ EnumsGeneral->LAYERTYPE_plt_bMillBot }  = 1060;
 	$priority{ EnumsGeneral->LAYERTYPE_plt_nMill }     = 1070;
 	$priority{ EnumsGeneral->LAYERTYPE_plt_cDrill }    = 1080;
-	$priority{ EnumsGeneral->LAYERTYPE_plt_fDrill }    = 1090;
+	$priority{ EnumsGeneral->LAYERTYPE_plt_fcDrill }    = 1090;
 
 	# nplted layer are merged together
 	$priority{ EnumsGeneral->LAYERTYPE_nplt_nDrill }   = 2010;
@@ -152,7 +152,7 @@ sub GetHeaderLayer {
 	$priority{ EnumsGeneral->LAYERTYPE_plt_nMill }     = 1060;
 	$priority{ EnumsGeneral->LAYERTYPE_plt_nDrill }    = 1010;
 	$priority{ EnumsGeneral->LAYERTYPE_plt_cDrill }    = 1080;
-	$priority{ EnumsGeneral->LAYERTYPE_plt_fDrill }    = 1090;
+	$priority{ EnumsGeneral->LAYERTYPE_plt_fcDrill }    = 1090;
 
 	# nplated layer are merged together
 	$priority{ EnumsGeneral->LAYERTYPE_nplt_nDrill }   = 2060;
