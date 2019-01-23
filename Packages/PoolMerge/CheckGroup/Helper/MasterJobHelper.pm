@@ -150,10 +150,12 @@ sub GetMasterJob {
 		#if ( ( $lCnt == 4 && $self->{"poolInfo"}->GetPnlH() > 324 )
 		#	 || $lCnt == 6 )
 		#{
-		if ( $lCnt == 6 )
-		{
-			HegMethods->UpdateMaterialKind( $$masterJob, "FR4", 1 );
-		}
+			
+# 23.1.2019 zrusene spotrebovavani FR4
+#		if ( $lCnt == 6 )
+#		{
+#			HegMethods->UpdateMaterialKind( $$masterJob, "FR4", 1 );
+#		}
 
 	}
 
