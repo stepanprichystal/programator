@@ -16,6 +16,7 @@ use warnings;
 #local library
 use aliased 'Packages::Stackup::Drilling::DrillingHelper';
 use aliased 'Enums::EnumsGeneral';
+use aliased 'CamHelpers::CamDrilling';
 
 #-------------------------------------------------------------------------------------------#
 #  Interface
@@ -45,12 +46,6 @@ sub DefineOperations {
 	my $self      = shift;
 	my $opManager = shift;
 
-	#my %pressInfo = StackupHelper->GetStackupPressInfo( $self->{'jobId'} );
-	#$self->{'pressInfo'} = \%pressInfo;    #hash
-
-	#my %sigLayerInfo = DrillingHelper->GetStackupDrillingInfo( $self->{'jobId'}, $self->{'stepName'}, $self->{'inCAM'}, $self->{'pressInfo'} );
-	#$self->{'sigLayerInfo'} = \%sigLayerInfo;    #hash
-
 	#plated nc layers
 	my %pltDrillInfo = DrillingHelper->GetPltNCLayerInfo( $self->{"jobId"}, $self->{"stepName"}, $self->{"inCAM"}, $self->{"pltLayers"} );
 	$self->{"pltDrillInfo"} = \%pltDrillInfo;
@@ -64,8 +59,6 @@ sub DefineOperations {
 	$self->__DefinePlatedGroups($opManager);
 	$self->__DefineNPlatedGroups($opManager);
 
-	#$self->__BuildOperationItems($opManager);
-
 }
 
 # Create groups from single operations
@@ -73,8 +66,6 @@ sub DefineOperations {
 sub __DefinePlatedGroups {
 	my $self      = shift;
 	my $opManager = shift;
-
-	# No groups here
 
 }
 
@@ -111,29 +102,49 @@ sub __DefinePlatedOperations {
 	my %pltDrillInfo = %{ $self->{"pltDrillInfo"} };    #contain array of hashes of all NC layers with info (start/stop drill layer)
 
 	#plated
-	my @plt_nDrill    = @{ $pltDrillInfo{ EnumsGeneral->LAYERTYPE_plt_nDrill } };       #normall through holes plated
-	my @plt_cDrill    = @{ $pltDrillInfo{ EnumsGeneral->LAYERTYPE_plt_cDrill } };       #core plated
-	my @plt_bDrillTop = @{ $pltDrillInfo{ EnumsGeneral->LAYERTYPE_plt_bDrillTop } };    #blind holes top
-	my @plt_bDrillBot = @{ $pltDrillInfo{ EnumsGeneral->LAYERTYPE_plt_bDrillBot } };    #blind holes bot
-	my @plt_fDrill    = @{ $pltDrillInfo{ EnumsGeneral->LAYERTYPE_plt_fcDrill } };       #frame drilling
-	my @plt_nMill     = @{ $pltDrillInfo{ EnumsGeneral->LAYERTYPE_plt_nMill } };        #normall mill slits
-	my @plt_bMillTop  = @{ $pltDrillInfo{ EnumsGeneral->LAYERTYPE_plt_bMillTop } };     #z-axis top mill slits
-	my @plt_bMillBot  = @{ $pltDrillInfo{ EnumsGeneral->LAYERTYPE_plt_bMillBot } };     #z-axis bot mill slits
-	my @plt_dcDrill   = @{ $pltDrillInfo{ EnumsGeneral->LAYERTYPE_plt_dcDrill } };      #drill crosses
+	my @plt_nDrill     = @{ $pltDrillInfo{ EnumsGeneral->LAYERTYPE_plt_nDrill } };        # normall through holes plated
+	my @plt_nFillDrill = @{ $pltDrillInfo{ EnumsGeneral->LAYERTYPE_plt_nFillDrill } };    # normall filledthrough holes plated
+	my @plt_cDrill     = @{ $pltDrillInfo{ EnumsGeneral->LAYERTYPE_plt_cDrill } };        # core plated
+	my @plt_fDrill     = @{ $pltDrillInfo{ EnumsGeneral->LAYERTYPE_plt_fDrill } };        # frame drilling
+	my @plt_fcDrill    = @{ $pltDrillInfo{ EnumsGeneral->LAYERTYPE_plt_fcDrill } };       # core frame drilling
+	my @plt_nMill      = @{ $pltDrillInfo{ EnumsGeneral->LAYERTYPE_plt_nMill } };         # normall mill slits
+	my @plt_bMillTop   = @{ $pltDrillInfo{ EnumsGeneral->LAYERTYPE_plt_bMillTop } };      # z-axis top mill slits
+	my @plt_bMillBot   = @{ $pltDrillInfo{ EnumsGeneral->LAYERTYPE_plt_bMillBot } };      # z-axis bot mill slits
+	my @plt_dcDrill    = @{ $pltDrillInfo{ EnumsGeneral->LAYERTYPE_plt_dcDrill } };       # drill crosses
 
-	# 1) Operation name = c - can contain layer
-	# - $plt_nDrill
-	$opManager->AddOperationDef( "c", \@plt_nDrill, -1 );
+	my $viaFill = CamDrilling->GetViaFillExists( $self->{"inCAM"}, $self->{"jobId"} );
 
-	# 2) Operation name = r - can contain layer
+	# 1) Operation name = c/c_d - can contain layer
+	# - plt_nDrill
+	# - plt_fDrill
+	my @layersOperC = (@plt_nDrill);
+
+	# if via fill, do not add frilled frame
+	if ($viaFill) {
+
+		$opManager->AddOperationDef( "c_d", \@layersOperC, -1 );
+	}
+	else {
+
+		push( @layersOperC, @plt_fDrill );
+		$opManager->AddOperationDef( "c", \@plt_nFillDrill, -1 );
+	}
+
+	# 2) Operation name = c - can contain layer
+	# - plt_nFillDrill
+	if ($viaFill) {
+		$opManager->AddOperationDef( "c", \@plt_nDrill, -1 );
+	}
+
+	# 3) Operation name = r - can contain layer
 	# - @plt_nMill
 	$opManager->AddOperationDef( "r", \@plt_nMill, -1 );
 
-	# 3) Operation name = rzc - can contain layer
+	# 4) Operation name = rzc - can contain layer
 	# - @plt_bMillTop
 	$opManager->AddOperationDef( "rzc", \@plt_bMillTop, -1 );
 
-	# 4) Operation name = rzs - can contain layer
+	# 5) Operation name = rzs - can contain layer
 	# - @plt_bMillBot
 	$opManager->AddOperationDef( "rzs", \@plt_bMillBot, -1 );
 
@@ -181,7 +192,7 @@ sub __DefineNPlatedOperations {
 	# Exception, if "fsch_d" layer is created. Remove "d" and use instead only "fsch_d" layer
 	# fsch_d contain nplt drills from layer fsch
 	if ( scalar( grep { $_->{"gROWname"} =~ /fsch_d/i } @nplt_nDrill_t2b ) > 0 ) {
-		die "Layer \"d\" must exist if exist layer \"fsch_d\"" unless(grep { $_->{"gROWname"} =~ /^d$/i } @nplt_nDrill_t2b );
+		die "Layer \"d\" must exist if exist layer \"fsch_d\"" unless ( grep { $_->{"gROWname"} =~ /^d$/i } @nplt_nDrill_t2b );
 		@nplt_nDrill_t2b = grep { $_->{"gROWname"} !~ /^d$/i } @nplt_nDrill_t2b;
 	}
 
@@ -203,7 +214,7 @@ sub __DefineNPlatedOperations {
 	# Exception, if "fsch_d" layer is created. Remove "d" and use instead only "fsch_d" layer
 	# fsch_d contain nplt drills from layer fsch
 	if ( scalar( grep { $_->{"gROWname"} =~ /fsch_d/i } @nplt_nDrill_b2t ) > 0 ) {
-		die "Layer \"d\" must exist if exist layer \"fsch_d\"" unless(grep { $_->{"gROWname"} =~ /^d$/i } @nplt_nDrill_b2t );
+		die "Layer \"d\" must exist if exist layer \"fsch_d\"" unless ( grep { $_->{"gROWname"} =~ /^d$/i } @nplt_nDrill_b2t );
 		@nplt_nDrill_b2t = grep { $_->{"gROWname"} !~ /^d$/i } @nplt_nDrill_b2t;
 	}
 	my @layers2 = ( @nplt_bMillBot, @nplt_nDrill_b2t );

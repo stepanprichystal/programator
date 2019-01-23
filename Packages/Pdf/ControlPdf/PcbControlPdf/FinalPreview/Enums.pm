@@ -13,7 +13,8 @@ use constant {
 	Type_NPLTTHROUGHNC => "typeNPltThroughNc",
 	Type_GOLDFINGER => "typeGoldFinger",
 	Type_PEELABLE => "typePeelableMask",
-	Type_GRAFIT => "typeGrafitPaste"
+	Type_GRAFIT => "typeGrafitPaste",
+	Type_VIAFILL => "typeViaFill"
 };
 
  

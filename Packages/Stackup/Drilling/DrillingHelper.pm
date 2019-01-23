@@ -50,15 +50,19 @@ sub GetPltNCLayerInfo {
 	#	}
 
 	#sort this layers by type
-	my @nDrill    = ();    #normall through holes plated
-	my @cDrill    = ();    #core plated
-	my @bDrillTop = ();    #blind holes top
-	my @bDrillBot = ();    #blind holes bot
-	my @fDrill    = ();    #frame drilling
-	my @nMill     = ();    #normall mill slits
-	my @bMillTop  = ();    #z-axis top mill slits
-	my @bMillBot  = ();    #z-axis bot mill slits
-	my @dcDrill   = ();    #drill corsses
+	my @nDrill        = ();    #normall through holes plated
+	my @nFillDrill    = ();    #filed through holes plated
+	my @cDrill        = ();    #core plated
+	my @bDrillTop     = ();    #blind holes top
+	my @bDrillBot     = ();    #blind holes bot
+	my @bFillDrillTop = ();    #filled blind holes top
+	my @bFillDrillBot = ();    #filled blind holes bot
+	my @fDrill        = ();    #frame drilling
+	my @fcDrill       = ();    #core frame drilling
+	my @nMill         = ();    #normall mill slits
+	my @bMillTop      = ();    #z-axis top mill slits
+	my @bMillBot      = ();    #z-axis bot mill slits
+	my @dcDrill       = ();    #drill corsses
 
 	my @ncPar = ();
 	foreach my $l (@layers) {
@@ -72,12 +76,24 @@ sub GetPltNCLayerInfo {
 			push( @nDrill, $l );
 
 		}
+		elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_plt_nFillDrill ) {
+
+			push( @nFillDrill, $l );
+		}
 		elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_plt_bDrillTop ) {
 			push( @bDrillTop, $l );
 
 		}
 		elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_plt_bDrillBot ) {
 			push( @bDrillBot, $l );
+
+		}
+		elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_plt_bFillDrillTop ) {
+			push( @bFillDrillTop, $l );
+
+		}
+		elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_plt_bFillDrillBot ) {
+			push( @bFillDrillBot, $l );
 
 		}
 		elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_plt_cDrill ) {
@@ -96,8 +112,12 @@ sub GetPltNCLayerInfo {
 			push( @bMillBot, $l );
 
 		}
-		elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_plt_fcDrill ) {
+		elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_plt_fDrill ) {
 			push( @fDrill, $l );
+
+		}
+		elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_plt_fcDrill ) {
+			push( @fcDrill, $l );
 
 		}
 		elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_plt_dcDrill ) {
@@ -105,15 +125,19 @@ sub GetPltNCLayerInfo {
 		}
 	}
 
-	$info{ EnumsGeneral->LAYERTYPE_plt_nDrill }    = \@nDrill;
-	$info{ EnumsGeneral->LAYERTYPE_plt_cDrill }    = \@cDrill;
-	$info{ EnumsGeneral->LAYERTYPE_plt_bDrillTop } = \@bDrillTop;
-	$info{ EnumsGeneral->LAYERTYPE_plt_bDrillBot } = \@bDrillBot;
-	$info{ EnumsGeneral->LAYERTYPE_plt_fcDrill }    = \@fDrill;
-	$info{ EnumsGeneral->LAYERTYPE_plt_nMill }     = \@nMill;
-	$info{ EnumsGeneral->LAYERTYPE_plt_bMillTop }  = \@bMillTop;
-	$info{ EnumsGeneral->LAYERTYPE_plt_bMillBot }  = \@bMillBot;
-	$info{ EnumsGeneral->LAYERTYPE_plt_dcDrill }   = \@dcDrill;
+	$info{ EnumsGeneral->LAYERTYPE_plt_nDrill }        = \@nDrill;
+	$info{ EnumsGeneral->LAYERTYPE_plt_nFillDrill }    = \@nFillDrill;
+	$info{ EnumsGeneral->LAYERTYPE_plt_cDrill }        = \@cDrill;
+	$info{ EnumsGeneral->LAYERTYPE_plt_bDrillTop }     = \@bDrillTop;
+	$info{ EnumsGeneral->LAYERTYPE_plt_bDrillBot }     = \@bDrillBot;
+	$info{ EnumsGeneral->LAYERTYPE_plt_bFillDrillTop } = \@bFillDrillTop;
+	$info{ EnumsGeneral->LAYERTYPE_plt_bFillDrillBot } = \@bFillDrillBot;
+	$info{ EnumsGeneral->LAYERTYPE_plt_fDrill }        = \@fDrill;
+	$info{ EnumsGeneral->LAYERTYPE_plt_fcDrill }       = \@fcDrill;
+	$info{ EnumsGeneral->LAYERTYPE_plt_nMill }         = \@nMill;
+	$info{ EnumsGeneral->LAYERTYPE_plt_bMillTop }      = \@bMillTop;
+	$info{ EnumsGeneral->LAYERTYPE_plt_bMillBot }      = \@bMillBot;
+	$info{ EnumsGeneral->LAYERTYPE_plt_dcDrill }       = \@dcDrill;
 
 	return %info;
 }
@@ -162,11 +186,10 @@ sub GetNPltNCLayerInfo {
 	my @nplt_lcMill    = ();    #milling of template snim lak pro c
 	my @nplt_lsMill    = ();    #milling of template snim lak pro s
 	my @nplt_fMillSpec = ();    #Special milling (ramecke, dovrtani)
-	
-	my @nplt_cvrlycMill = ();    #top coverlay mill 
-	my @nplt_cvrlysMill = ();    #bot coverlay mill
-	my @nplt_prepregMill = ();    #prepreg mill
- 	 
+
+	my @nplt_cvrlycMill  = ();  #top coverlay mill
+	my @nplt_cvrlysMill  = ();  #bot coverlay mill
+	my @nplt_prepregMill = ();  #prepreg mill
 
 	my @ncPar = ();
 	foreach my $l (@layers) {
@@ -214,22 +237,23 @@ sub GetNPltNCLayerInfo {
 			push( @nplt_fMillSpec, $l );
 
 		}
-		
+
 		elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_cvrlycMill ) {
 			push( @nplt_cvrlycMill, $l );
 
-		}elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_cvrlysMill ) {
+		}
+		elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_cvrlysMill ) {
 			push( @nplt_cvrlysMill, $l );
 
-		}elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_prepregMill ) {
+		}
+		elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_prepregMill ) {
 			push( @nplt_prepregMill, $l );
 
 		}
- 
+
 	}
 
-
-	$info{ EnumsGeneral->LAYERTYPE_nplt_nDrill }     = \@nplt_nDrill;
+	$info{ EnumsGeneral->LAYERTYPE_nplt_nDrill }    = \@nplt_nDrill;
 	$info{ EnumsGeneral->LAYERTYPE_nplt_nMill }     = \@nplt_nMill;
 	$info{ EnumsGeneral->LAYERTYPE_nplt_bMillTop }  = \@nplt_bMillTop;
 	$info{ EnumsGeneral->LAYERTYPE_nplt_bMillBot }  = \@nplt_bMillBot;
@@ -241,9 +265,9 @@ sub GetNPltNCLayerInfo {
 	$info{ EnumsGeneral->LAYERTYPE_nplt_lcMill }    = \@nplt_lcMill;
 	$info{ EnumsGeneral->LAYERTYPE_nplt_lsMill }    = \@nplt_lsMill;
 	$info{ EnumsGeneral->LAYERTYPE_nplt_fMillSpec } = \@nplt_fMillSpec;
-	
-	$info{ EnumsGeneral->LAYERTYPE_nplt_cvrlycMill } = \@nplt_cvrlycMill;
-	$info{ EnumsGeneral->LAYERTYPE_nplt_cvrlysMill } = \@nplt_cvrlysMill;
+
+	$info{ EnumsGeneral->LAYERTYPE_nplt_cvrlycMill }  = \@nplt_cvrlycMill;
+	$info{ EnumsGeneral->LAYERTYPE_nplt_cvrlysMill }  = \@nplt_cvrlysMill;
 	$info{ EnumsGeneral->LAYERTYPE_nplt_prepregMill } = \@nplt_prepregMill;
 
 	return %info;

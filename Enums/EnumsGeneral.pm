@@ -61,7 +61,7 @@ use constant {
 	LAYERTYPE_plt_nDrill        => "plt_nDrill",           # normall through holes plated
 	LAYERTYPE_plt_bDrillTop     => "plt_bDrillTop",        # blind holes top
 	LAYERTYPE_plt_bDrillBot     => "plt_bDrillBot",        # blind holes bot
-	LAYERTYPE_plt_nFillDrill    => "plt_nDrill",           # filled through holes plated
+	LAYERTYPE_plt_nFillDrill    => "plt_nFillDrill",           # filled through holes plated
 	LAYERTYPE_plt_bFillDrillTop => "plt_bFillDrillTop",    # blind filled holes top
 	LAYERTYPE_plt_bFillDrillBot => "plt_bFillDrillBot",    # blind filled holes bot
 	LAYERTYPE_plt_cDrill        => "plt_cDrill",           # core plated

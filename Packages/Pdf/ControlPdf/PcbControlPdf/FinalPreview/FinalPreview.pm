@@ -141,6 +141,10 @@ sub __PrepareColors {
 		$pcbMatClr->SetTexture( Enums->Texture_CU );
 
 	}
+	
+	# Via fill
+	my $viaFillClr = LayerColor->new(PrevEnums->Surface_COLOR, "97,47,4" );
+	$clrs{ Enums->Type_VIAFILL } = $viaFillClr;
 
 	# Outer cu
 	my $outerCuClr = undef;

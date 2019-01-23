@@ -50,15 +50,22 @@ sub SortLayersByRules {
 	my %priority = ();
 
 	# plated layer are merged together
-	$priority{ EnumsGeneral->LAYERTYPE_plt_dcDrill }   = 1010;
+	$priority{ EnumsGeneral->LAYERTYPE_plt_dcDrill } = 0;
+	$priority{ EnumsGeneral->LAYERTYPE_plt_cDrill }  = 0;
+
+	$priority{ EnumsGeneral->LAYERTYPE_plt_bFillDrillTop } = 1020;
+	$priority{ EnumsGeneral->LAYERTYPE_plt_bFillDrillBot } = 1020;
+	$priority{ EnumsGeneral->LAYERTYPE_plt_nFillDrill }    = 1030;
+
 	$priority{ EnumsGeneral->LAYERTYPE_plt_bDrillTop } = 1020;
-	$priority{ EnumsGeneral->LAYERTYPE_plt_bDrillBot } = 1030;
-	$priority{ EnumsGeneral->LAYERTYPE_plt_nDrill }    = 1040;
-	$priority{ EnumsGeneral->LAYERTYPE_plt_bMillTop }  = 1050;
-	$priority{ EnumsGeneral->LAYERTYPE_plt_bMillBot }  = 1060;
-	$priority{ EnumsGeneral->LAYERTYPE_plt_nMill }     = 1070;
-	$priority{ EnumsGeneral->LAYERTYPE_plt_cDrill }    = 1080;
-	$priority{ EnumsGeneral->LAYERTYPE_plt_fcDrill }    = 1090;
+	$priority{ EnumsGeneral->LAYERTYPE_plt_bDrillBot } = 1020;
+	$priority{ EnumsGeneral->LAYERTYPE_plt_nDrill }    = 1030;
+	$priority{ EnumsGeneral->LAYERTYPE_plt_fDrill }    = 1040;
+	$priority{ EnumsGeneral->LAYERTYPE_plt_fcDrill }   = 1040;
+
+	$priority{ EnumsGeneral->LAYERTYPE_plt_bMillTop } = 1070;
+	$priority{ EnumsGeneral->LAYERTYPE_plt_bMillBot } = 1070;
+	$priority{ EnumsGeneral->LAYERTYPE_plt_nMill }    = 1080;
 
 	# nplted layer are merged together
 	$priority{ EnumsGeneral->LAYERTYPE_nplt_nDrill }   = 2010;
@@ -144,15 +151,26 @@ sub GetHeaderLayer {
 	my %priority = ();
 
 	# plated layer are merged together
-	$priority{ EnumsGeneral->LAYERTYPE_plt_dcDrill }   = 1100;
-	$priority{ EnumsGeneral->LAYERTYPE_plt_bDrillTop } = 1020;
-	$priority{ EnumsGeneral->LAYERTYPE_plt_bDrillBot } = 1030;
-	$priority{ EnumsGeneral->LAYERTYPE_plt_bMillTop }  = 1040;
-	$priority{ EnumsGeneral->LAYERTYPE_plt_bMillBot }  = 1050;
-	$priority{ EnumsGeneral->LAYERTYPE_plt_nMill }     = 1060;
+	$priority{ EnumsGeneral->LAYERTYPE_plt_dcDrill } = 0;
+	$priority{ EnumsGeneral->LAYERTYPE_plt_cDrill }  = 0;
+
+
 	$priority{ EnumsGeneral->LAYERTYPE_plt_nDrill }    = 1010;
-	$priority{ EnumsGeneral->LAYERTYPE_plt_cDrill }    = 1080;
-	$priority{ EnumsGeneral->LAYERTYPE_plt_fcDrill }    = 1090;
+	$priority{ EnumsGeneral->LAYERTYPE_plt_bDrillTop } = 1020;
+	$priority{ EnumsGeneral->LAYERTYPE_plt_bDrillBot } = 1020;
+	
+	$priority{ EnumsGeneral->LAYERTYPE_plt_fDrill }    = 1030;
+
+	$priority{ EnumsGeneral->LAYERTYPE_plt_bMillTop } = 1040;
+	$priority{ EnumsGeneral->LAYERTYPE_plt_bMillBot } = 1040;
+	$priority{ EnumsGeneral->LAYERTYPE_plt_nMill }    = 1050;
+	
+	$priority{ EnumsGeneral->LAYERTYPE_plt_bFillDrillTop } = 1040;
+	$priority{ EnumsGeneral->LAYERTYPE_plt_bFillDrillBot } = 1040;
+	$priority{ EnumsGeneral->LAYERTYPE_plt_nFillDrill }    = 1050;
+
+	$priority{ EnumsGeneral->LAYERTYPE_plt_fcDrill } = 1090;
+
 
 	# nplated layer are merged together
 	$priority{ EnumsGeneral->LAYERTYPE_nplt_nDrill }   = 2060;
@@ -520,21 +538,20 @@ sub StoreOperationInfoTif {
 		$opInf{"minSlotTool"} = undef;
 
 		if ($isRout) {
-			
+
 			foreach my $layer (@layers) {
 
 				my $unitDTM = UniDTM->new( $inCAM, $jobId, $step, $layer->{"gROWname"}, 1 );
-				my $tool = $unitDTM->GetMinTool( DTMEnums->TypeProc_CHAIN, 1 ); # slot tool, default (no special)
+				my $tool = $unitDTM->GetMinTool( DTMEnums->TypeProc_CHAIN, 1 );    # slot tool, default (no special)
 
 				# tool type chain doesn't have exist
-				next  if ( !defined $tool );
+				next if ( !defined $tool );
 
 				if ( !defined $opInf{"minSlotTool"} || $tool->GetDrillSize() < $opInf{"minSlotTool"} ) {
 					$opInf{"minSlotTool"} = $tool->GetDrillSize();
 				}
 			}
 		}
- 
 
 		# Set operation layers
 		@layers = map { $_->{"gROWname"} } @layers;

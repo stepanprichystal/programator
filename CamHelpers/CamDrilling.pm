@@ -250,8 +250,13 @@ sub AddNCLayerType {
 			$l->{"type"}   = EnumsGeneral->LAYERTYPE_plt_bMillBot;
 			$l->{"plated"} = 1;
 
+		}elsif ( $l->{"gROWname"} =~ /^v$/ ) {
+
+			$l->{"type"}   = EnumsGeneral->LAYERTYPE_plt_fDrill;
+			$l->{"plated"} = 1;
+
 		}
-		elsif ( $l->{"gROWname"} =~ /^v[0-9]+$/ ) {
+		elsif ( $l->{"gROWname"} =~ /^v1$/ ) {
 
 			$l->{"type"}   = EnumsGeneral->LAYERTYPE_plt_fcDrill;
 			$l->{"plated"} = 1;
@@ -368,12 +373,22 @@ sub AddNCLayerType {
 
 # Return info about NC layer
 sub GetNCLayerInfo {
-	my $self       = shift;
-	my $inCAM      = shift;
-	my $jobId      = shift;
-	my $layer      = shift;
-	my $ncType     = shift // 0;    # NC type + plated
-	my $matrixType = shift // 0;    # rout/drill
+	my $self  = shift;
+	my $inCAM = shift;
+	my $jobId = shift;
+	my $layer = shift;
+
+	# Add key: type
+	# Add key: plated
+	my $ncType = shift // 0;
+
+	# Add key: gROWlayer_type
+	my $matrixType = shift // 0;
+
+	# Add key: gROWdrl_start_name, gROWdrl_end_name
+	# Add key: gROWdrl_start, gROWdrl_end
+	# Add key: gROWdrl_dir
+	my $startStop = shift // 0;
 
 	my %lInfo = ( "gROWname" => $layer );
 
@@ -381,8 +396,11 @@ sub GetNCLayerInfo {
 		$self->AddNCLayerType( [ \%lInfo ] );
 	}
 	if ($matrixType) {
-
 		$lInfo{"gROWlayer_type"} = CamMatrix->GetLayerType( $inCAM, $jobId, $layer );
+	}
+
+	if ($startStop) {
+		$lInfo{"gROWlayer_type"} = $self->AddLayerStartStop( $inCAM, $jobId, [\%lInfo] );
 	}
 
 	return %lInfo;
@@ -617,6 +635,24 @@ sub AddHistogramValues {
 		$layer->{"minTool"} = $min;
 		$layer->{"maxTool"} = $max;
 	}
+}
+
+# Return 1 if exist some via fill layer in matrix
+sub GetViaFillExists {
+	my $self  = shift;
+	my $inCAM = shift;
+	my $jobId = shift;
+	my $types = shift;
+
+	my @fillL = $self->GetNCLayersByTypes(
+										   $inCAM, $jobId,
+										   [
+											  EnumsGeneral->LAYERTYPE_plt_nFillDrill, EnumsGeneral->LAYERTYPE_plt_bFillDrillTop,
+											  EnumsGeneral->LAYERTYPE_plt_bFillDrillBot
+										   ]
+	);
+
+	return scalar(@fillL) ? 1 : 0;
 }
 
 #-------------------------------------------------------------------------------------------#

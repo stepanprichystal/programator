@@ -57,9 +57,9 @@ sub Output {
 	my $time = sprintf "%02.f:%02.f:%02.f", localtime->hour(), localtime->min(), localtime->sec();
 	my $date = sprintf "%02.f.%02.f.%04.f", localtime->mday(), ( localtime->mon() + 1 ), ( localtime->year() + 1900 );
 
-	push( @lines, "-------------------------------------------------------------------" );
+	push( @lines, "------------------------------------------------------------------------" );
 	push( @lines, " Information about pcb data number: " . uc( $self->{"jobId"} ) );
-	push( @lines, "-------------------------------------------------------------------" );
+	push( @lines, "------------------------------------------------------------------------" );
 	push( @lines, "" );
 	push( @lines, $self->__CompleteLine( " Pcb:", uc( $self->{"jobId"} ) ) );
 	push( @lines, $self->__CompleteLine( " Export date:", "$date at $time" ) );
@@ -68,9 +68,9 @@ sub Output {
 	push( @lines, "" );
 
 	# Layers
-	push( @lines, "-------------------------------------------------------------------" );
+	push( @lines, "------------------------------------------------------------------------" );
 	push( @lines, " Exported files " );
-	push( @lines, "-------------------------------------------------------------------" );
+	push( @lines, "------------------------------------------------------------------------" );
 
 	push( @lines, "" );
 
@@ -79,6 +79,7 @@ sub Output {
 
 	foreach my $l ( $layerList->GetLayersByType( EnumsOutput->Type_BOARDLAYERS ) ) {
 
+		
 		push( @lines, $self->__CompleteLine( " - " . $l->GetName() . ".ger", $l->GetTitle() . $self->__GetInfo($l) ) );
 
 	}
@@ -116,7 +117,9 @@ sub Output {
 	push( @lines, " Other files:" );
 	push( @lines, "" );
 
-	foreach my $l ( ( $layerList->GetLayersByType( EnumsOutput->Type_OUTLINE ), $layerList->GetLayersByType( EnumsOutput->Type_DRILLMAP ) ) ) {
+	foreach my $l ( ( $layerList->GetLayersByType( EnumsOutput->Type_OUTLINE ), 
+					  $layerList->GetLayersByType( EnumsOutput->Type_DRILLMAP ),
+					  $layerList->GetLayersByType( EnumsOutput->Type_FILLEDHOLES ) ) ) {
 
 		push( @lines, $self->__CompleteLine( " - " . $l->GetName() . ".ger", $l->GetTitle() . $self->__GetInfo($l) ) );
 
@@ -129,9 +132,9 @@ sub Output {
 
 	push( @lines, "" );
 
-	push( @lines, "-------------------------------------------------------------------" );
+	push( @lines, "------------------------------------------------------------------------" );
 	push( @lines, " Important notes " );
-	push( @lines, "-------------------------------------------------------------------" );
+	push( @lines, "------------------------------------------------------------------------" );
 
 	push( @lines, "" );
 
@@ -181,7 +184,7 @@ sub __CompleteLine {
 	my $leftText  = shift;
 	my $rightText = shift;
 
-	my $fillCnt = int( 30 - length($leftText) );    # 30 is requested total title len
+	my $fillCnt = int( 35 - length($leftText) );    # 30 is requested total title len
 
 	my $fill = "";
 

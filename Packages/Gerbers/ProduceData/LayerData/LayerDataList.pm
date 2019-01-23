@@ -14,7 +14,7 @@ use warnings;
 use aliased 'Packages::Gerbers::ProduceData::LayerData::LayerData';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'Helpers::ValueConvertor';
-use aliased 'Packages::CAMJob::OutputData::Enums';
+use aliased 'Packages::CAMJob::OutputData::Enums' => 'EnumsOut';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -31,7 +31,7 @@ sub new {
 	$self->{"layers"} = \@l;
 
 	$self->{"stepName"} = undef;
-	
+
 	$self->{"lang"} = "en";
 
 	return $self;
@@ -53,7 +53,10 @@ sub AddLayers {
 
 		$self->__GetFileName( $lOutput, \$name, \$nameSuffix );
 
-		my $l = LayerData->new( $lOutput->GetType(), $name, $nameSuffix, $lOutput->GetTitle($self->{"lang"}), $lOutput->GetInfo($self->{"lang"}), $lOutput->GetOutput() );
+		my $l = LayerData->new( $lOutput->GetType(), $name, $nameSuffix,
+								$lOutput->GetTitle( $self->{"lang"} ),
+								$lOutput->GetInfo( $self->{"lang"} ),
+								$lOutput->GetOutput() );
 		push( @{ $self->{"layers"} }, $l );
 
 		# Process parent layers
@@ -62,7 +65,10 @@ sub AddLayers {
 
 			if ( defined $child->GetParent() && $child->GetParent() == $lOutput ) {
 
-				my $lChild = LayerData->new( $child->GetType(), $name, $nameSuffix, $child->GetTitle($self->{"lang"}), $child->GetInfo($self->{"lang"}), $child->GetOutput() );
+				my $lChild = LayerData->new( $child->GetType(), $name, $nameSuffix,
+											 $child->GetTitle( $self->{"lang"} ),
+											 $child->GetInfo( $self->{"lang"} ),
+											 $child->GetOutput() );
 				push( @{ $self->{"layers"} }, $lChild );
 
 				$lChild->{"parent"} = $l;
@@ -80,8 +86,7 @@ sub __GetFileName {
 	# 1) get new name
 	my $oriL = $lOutput->GetOriLayer();
 
-	$$name = $self->{"jobId"} . ValueConvertor->GetFileNameByLayer($oriL);
- 
+	$$name = $self->{"jobId"} . $self->__GetFileNameByLayer( $oriL, $lOutput->GetType() );
 
 	# 2) verify if same name exist (consider only layer without parent)
 
@@ -95,6 +100,138 @@ sub __GetFileName {
 
 		$$nameSuffix = scalar(@same) + 1;
 	}
+
+}
+
+# Return name of file of exported layer
+sub __GetFileNameByLayer {
+	my $self       = shift;
+	my $l          = shift;
+	my $outputType = shift;    # Packages::CAMJob::OutputData::Enums::Type_
+
+	my $name = "";
+	my ($numInName) = $l->{"gROWname"} =~ /(\d*)/;
+	unless (defined) {
+		$numInName = "";
+	}
+	else {
+		$numInName = "_" . $numInName;
+	}
+
+	# outline
+	if ( $l->{"gROWname"} =~ /^o$/i ) {
+		$name = "dim";
+
+	}
+
+	# inner layer
+	elsif ( $l->{"gROWname"} =~ /^v(\d)$/i ) {
+
+		my $lNum = $1;
+		$name = "in" . $lNum;
+	}
+
+	# board base layer
+	elsif ( $l->{"gROWname"} =~ /^([pmlg]|gold)?[cs]$/i ) {
+
+		my %en = ();
+		$en{"pc"}    = "plt";
+		$en{"ps"}    = "plb";
+		$en{"mc"}    = "smt";
+		$en{"ms"}    = "smb";
+		$en{"c"}     = "top";
+		$en{"s"}     = "bot";
+		$en{"lc"}    = "lc";
+		$en{"ls"}    = "ls";
+		$en{"gc"}    = "gc";
+		$en{"gs"}    = "gs";
+		$en{"goldc"} = "goldfingerst";
+		$en{"golds"} = "goldfingersb";
+
+		$name = $en{ $l->{"gROWname"} };
+
+	}
+
+	# nc layers
+	elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_plt_nDrill
+			|| ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_plt_nFillDrill && $outputType eq EnumsOut->Type_NCLAYERS ) )
+	{
+
+		$name = "pth";
+	}
+	elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_plt_bDrillTop
+			|| ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_plt_bFillDrillTop && $outputType eq EnumsOut->Type_NCLAYERS ) )
+	{
+
+		$name = "pth_blind_" . $l->{"gROWdrl_start"} . "-" . $l->{"gROWdrl_end"};
+
+	}
+	elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_plt_bDrillBot
+			|| ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_plt_bFillDrillBot && $outputType eq EnumsOut->Type_NCLAYERS ) )
+	{
+
+		$name = "pth_blind_" . $l->{"gROWdrl_start"} . "-" . $l->{"gROWdrl_end"};
+	}
+	elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_plt_nFillDrill && $outputType eq EnumsOut->Type_FILLEDHOLES ) {
+
+		$name = "filled_pth";
+	}
+	elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_plt_bFillDrillTop && $outputType eq EnumsOut->Type_FILLEDHOLES ) {
+
+		$name = "filled_pth_blind_" . $l->{"gROWdrl_start"} . "-" . $l->{"gROWdrl_end"};
+	}
+	elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_plt_bFillDrillBot && $outputType eq EnumsOut->Type_FILLEDHOLES ) {
+
+		$name = "filled_pth_blind_" . $l->{"gROWdrl_start"} . "-" . $l->{"gROWdrl_end"};
+	}
+	elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_plt_cDrill ) {
+		$name = "pth_core_" . $l->{"gROWdrl_start"} . "-" . $l->{"gROWdrl_end"};
+	}
+	elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_plt_nMill ) {
+		$name = "mill_pth";
+
+	}
+	elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_plt_bMillTop ) {
+
+		$name = "mill_pth_top";
+
+	}
+	elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_plt_bMillBot ) {
+		$name = "mill_pth_bot";
+
+	}
+	elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_nDrill ) {
+		$name = "npth";
+
+	}
+	elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_nMill ) {
+		$name = "mill";
+
+	}
+	elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_bMillTop ) {
+		$name = "mill_top";
+	}
+	elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_bMillBot ) {
+		$name = "mill_bot";
+	}
+	elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_rsMill ) {
+		$name = undef;    # we do not export rs
+
+	}
+	elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_cbMillTop ) {
+		$name = "mill_core_top";
+	}
+	elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_cbMillBot ) {
+		$name = "mill_core_bot";
+	}
+	elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_kMill ) {
+		$name = undef;
+	}
+	elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_score ) {
+		$name = "score";
+	}
+
+	return $name;
 
 }
 
