@@ -252,6 +252,7 @@ sub __FlatternETStep {
 		  || $_->{"gROWlayer_type"} eq "mixed"
 		  || $_->{"gROWlayer_type"} eq "power_ground"
 		  || $_->{"gROWlayer_type"} eq "solder_mask"
+		  || $_->{"gROWlayer_type"} eq "coverlay"
 		  || $_->{"gROWlayer_type"} eq "rout"
 		  || $_->{"gROWlayer_type"} eq "drill"
 	} @allLayers;
