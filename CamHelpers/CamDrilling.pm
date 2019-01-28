@@ -647,21 +647,26 @@ sub AddHistogramValues {
 }
 
 # Return 1 if exist some via fill layer in matrix
+# ref params $side is fileld:
+# - top - only top filling
+# - bot - only bot filling
+# - both - top and bot filling
 sub GetViaFillExists {
 	my $self  = shift;
 	my $inCAM = shift;
 	my $jobId = shift;
+	my $side  = shift // undef;    # top/bot/both
 
+	my @topViaFill =
+	  $self->GetNCLayersByTypes( $inCAM, $jobId, [ EnumsGeneral->LAYERTYPE_plt_nFillDrill, EnumsGeneral->LAYERTYPE_plt_bFillDrillTop ] );
 
-	my @fillL = $self->GetNCLayersByTypes(
-										   $inCAM, $jobId,
-										   [
-											  EnumsGeneral->LAYERTYPE_plt_nFillDrill, EnumsGeneral->LAYERTYPE_plt_bFillDrillTop,
-											  EnumsGeneral->LAYERTYPE_plt_bFillDrillBot
-										   ]
-	);
+	my @botViaFill = $self->GetNCLayersByTypes( $inCAM, $jobId, [ EnumsGeneral->LAYERTYPE_plt_bFillDrillBot ] );
 
-	return scalar(@fillL) ? 1 : 0;
+	$$side = "top"  if ( scalar(@topViaFill)    && !scalar(@botViaFill) );
+	$$side = "bot"  if ( scalar( !@topViaFill ) && scalar(@botViaFill) );
+	$$side = "both" if ( scalar(@topViaFill)    && scalar(@botViaFill) );
+
+	return defined $$side ? 1 : 0;
 }
 
 #-------------------------------------------------------------------------------------------#
@@ -680,8 +685,8 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	my $layerName = "j1";
 
 	my %inf = CamDrilling->GetNCLayerInfo( $inCAM, $jobId, $layerName, 1, 1, 1 );
-	
-	print "Type:". $inf{"gROWlayer_type"};
+
+	print "Type:" . $inf{"gROWlayer_type"};
 
 }
 

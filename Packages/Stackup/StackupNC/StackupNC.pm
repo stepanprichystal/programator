@@ -27,13 +27,11 @@ sub new {
 	$self = {};
 	bless $self;
 
-	
-
 	$self->{"inCAM"} = shift;
 
 	# stackup
 	$self->{"stackup"} = shift;
-	
+
 	# stackup
 	$self->{"jobId"} = $self->{"stackup"}->{"pcbId"};
 
@@ -47,10 +45,10 @@ sub new {
 	my @pltLayers = CamDrilling->GetPltNCLayers( $self->{"inCAM"}, $self->{"jobId"} );
 	my @npltLayers = CamDrilling->GetNPltNCLayers( $self->{"inCAM"}, $self->{"jobId"} );
 	my @NCLayers = ( @pltLayers, @npltLayers );
-	
+
 	#get info which layer drilling/millin starts from/ end in
 	CamDrilling->AddLayerStartStop( $self->{"inCAM"}, $self->{"jobId"}, \@NCLayers );
-	
+
 	$self->{"ncLayers"} = \@NCLayers;
 
 	$self->__InitPress();
@@ -150,6 +148,21 @@ sub GetCoreCnt {
 	return scalar( @{ $self->{"cores"} } );
 }
 
+# Return if press order is last pressing
+sub GetIsLastPress {
+	my $self       = shift;
+	my $pressOrder = shift;
+
+	my @press = @{ $self->{"press"} };
+
+	if ( $pressOrder == scalar(@press) ) {
+		return 1;
+	}
+	else {
+		return 0;
+	}
+}
+
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#
@@ -159,17 +172,17 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	use aliased 'Packages::Stackup::StackupNC::StackupNC';
 	use aliased 'Packages::Stackup::Stackup::Stackup';
 	use aliased 'Packages::InCAM::InCAM';
-	
-	my $inCAM  = InCAM->new();
+
+	my $inCAM = InCAM->new();
 
 	my $stackup = Stackup->new("d152456");
-	my $stackupNC = StackupNC->new($inCAM, $stackup);
-	
-	my $coreStack = $stackup->GetCore(2);
+	my $stackupNC = StackupNC->new( $inCAM, $stackup );
+
+	my $coreStack   = $stackup->GetCore(2);
 	my $coreStackNC = $stackupNC->GetCore(1);
-	
+
 	print $coreStack->GetPlatingExists();
-	
+
 	die;
 
 }

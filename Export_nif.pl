@@ -23,8 +23,8 @@ my $poznamka = "";
 my $tenting  = 0;
 my $pressfit = 0;
 my $maska01  = 0;
-my $datacode  = "MS";
-my $ullogo  = "MS";
+my $datacode  = "";
+my $ullogo  = "";
 my $jumpScoring  = 0;
 
  

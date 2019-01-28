@@ -20,6 +20,7 @@ use aliased 'Packages::Stackup::Enums';
 
 use aliased 'Packages::Stackup::Stackup::Stackup';
 use aliased 'Packages::Stackup::StackupNC::StackupNC';
+use aliased 'CamHelpers::CamDrilling';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -46,18 +47,19 @@ sub Build {
 	my $stackup   = Stackup->new( $self->{'jobId'} );
 	my $stackupNC = StackupNC->new( $inCAM, $stackup );
 	my $pressCnt  = $stackupNC->GetPressCnt();
+	my $viaFill   = CamDrilling->GetViaFillExists( $inCAM, $jobId );
 
 	# comment
-	$section->AddComment(" SLEPE VRTANI SKRZ MEZI LISOVANIM ");
+	$section->AddComment(" SLEPE VRTANI SKRZ DPS PO LISOVANI");
 
-	# "-1" number tell, we don't want last pressing, 
+	# "-1" number tell, we don't want last pressing,
 	# because it's same as normal drilling, which implement builder BuilderDrill
 	for ( my $i = 0 ; $i < $pressCnt - 1 ; $i++ ) {
 
 		my $pressOrder = $i + 1;
 
 		# comment
-		$section->AddComment( "Vrtani Pred Prokovem C" . $pressOrder );
+		$section->AddComment( "Vrtani Pred Prokovem C" . $pressOrder . " ($pressOrder. lisovani)" );
 
 		my $press = $stackupNC->GetPress($pressOrder);
 
@@ -82,7 +84,7 @@ sub Build {
 
 		#}
 
-		my $maxAspectRatio = $press->GetMaxAspectRatio(Enums->SignalLayer_TOP, EnumsGeneral->LAYERTYPE_plt_nDrill);
+		my $maxAspectRatio = $press->GetMaxAspectRatio( Enums->SignalLayer_TOP, EnumsGeneral->LAYERTYPE_plt_nDrill );
 
 		#if ( $self->_IsRequire( "min_vrtak_pomer_c_" . $pressOrder ) ) {
 		$section->AddRow( "min_vrtak_pomer_c_" . $pressOrder, $maxAspectRatio );
@@ -90,14 +92,14 @@ sub Build {
 		#}
 	}
 
-	# "-1" number tell, we don't want last pressing, 
+	# "-1" number tell, we don't want last pressing,
 	# because it's same as normal drilling, which implement builder BuilderDrill
-	for ( my $i = 0 ; $i < $pressCnt -1 ; $i++ ) {
+	for ( my $i = 0 ; $i < $pressCnt - 1 ; $i++ ) {
 
 		my $pressOrder = $i + 1;
 
 		# comment
-		$section->AddComment( "Vrtani Pred Prokovem S" . $pressOrder );
+		$section->AddComment( "Vrtani Pred Prokovem S" . $pressOrder . " ($pressOrder. lisovani)" );
 
 		my $press = $stackupNC->GetPress($pressOrder);
 
@@ -122,7 +124,7 @@ sub Build {
 
 		#}
 
-		my $maxAspectRatio = $press->GetMaxAspectRatio(Enums->SignalLayer_BOT, EnumsGeneral->LAYERTYPE_plt_nDrill);
+		my $maxAspectRatio = $press->GetMaxAspectRatio( Enums->SignalLayer_BOT, EnumsGeneral->LAYERTYPE_plt_nDrill );
 
 		#if ( $self->_IsRequire( "min_vrtak_pomer_s_" . $pressOrder ) ) {
 		$section->AddRow( "min_vrtak_pomer_s_" . $pressOrder, $maxAspectRatio );
@@ -131,32 +133,37 @@ sub Build {
 	}
 
 	# comment
-	$section->AddComment(" SLEPE VRTANI MEZI LISOVANIM ");
+	$section->AddComment( " SLEPE VRTANI PO LISOVANI " . ( $viaFill ? "(PRED ZAPLNENIM OTVORU)" : "" ) );
 
 	for ( my $i = 0 ; $i < $pressCnt ; $i++ ) {
 
 		my $pressOrder = $i + 1;
 
+		my $layerType =
+		  $viaFill && $pressCnt == $pressOrder
+		  ? EnumsGeneral->LAYERTYPE_plt_bFillDrillTop
+		  : EnumsGeneral->LAYERTYPE_plt_bDrillTop;
+
 		# comment
-		$section->AddComment( "Slepe Vrtani C" . $pressOrder );
+		$section->AddComment( "Slepe Vrtani C" . $pressOrder . " ($pressOrder. lisovani)" );
 
 		my $press = $stackupNC->GetPress($pressOrder);
 
-		my $existDrill = $press->ExistNCLayers( Enums->SignalLayer_TOP, EnumsGeneral->LAYERTYPE_plt_bDrillTop );
+		my $existDrill = $press->ExistNCLayers( Enums->SignalLayer_TOP, $layerType );
 
 		#if ( $self->_IsRequire( "slepe_otvory_c_" . $pressOrder ) ) {
 		$section->AddRow( "slepe_otvory_c_" . $pressOrder, $existDrill ? "A" : "N" );
 
 		#}
 
-		my $minTool = $press->GetMinHoleTool( Enums->SignalLayer_TOP, EnumsGeneral->LAYERTYPE_plt_bDrillTop );
+		my $minTool = $press->GetMinHoleTool( Enums->SignalLayer_TOP, $layerType );
 
 		#if ( $self->_IsRequire( "min_vrtak_sl_c_" . $pressOrder ) ) {
 		$section->AddRow( "min_vrtak_sl_c_" . $pressOrder, $self->__FormatTool($minTool) );
 
 		#}
 
-		my $maxAspectRatio = $press->GetMaxBlindAspectRatio(Enums->SignalLayer_TOP, EnumsGeneral->LAYERTYPE_plt_bDrillTop );
+		my $maxAspectRatio = $press->GetMaxBlindAspectRatio( Enums->SignalLayer_TOP, $layerType );
 
 		#if ( $self->_IsRequire( "min_vrtak_pomer_sl_c_" . $pressOrder ) ) {
 		$section->AddRow( "min_vrtak_pomer_sl_c_" . $pressOrder, $maxAspectRatio );
@@ -168,26 +175,31 @@ sub Build {
 
 		my $pressOrder = $i + 1;
 
+		my $layerType =
+		  $viaFill && $pressCnt == $pressOrder
+		  ? EnumsGeneral->LAYERTYPE_plt_bFillDrillBot
+		  : EnumsGeneral->LAYERTYPE_plt_bDrillBot;
+
 		# comment
-		$section->AddComment( "Slepe Vrtani S" . $pressOrder );
+		$section->AddComment( "Slepe Vrtani S" . $pressOrder . " ($pressOrder. lisovani)" );
 
 		my $press = $stackupNC->GetPress($pressOrder);
 
-		my $existDrill = $press->ExistNCLayers( Enums->SignalLayer_BOT, EnumsGeneral->LAYERTYPE_plt_bDrillBot );
+		my $existDrill = $press->ExistNCLayers( Enums->SignalLayer_BOT, $layerType );
 
 		#if ( $self->_IsRequire( "slepe_otvory_s_" . $pressOrder ) ) {
 		$section->AddRow( "slepe_otvory_s_" . $pressOrder, $existDrill ? "A" : "N" );
 
 		#}
 
-		my $minTool = $press->GetMinHoleTool( Enums->SignalLayer_BOT, EnumsGeneral->LAYERTYPE_plt_bDrillBot );
+		my $minTool = $press->GetMinHoleTool( Enums->SignalLayer_BOT, $layerType );
 
 		#if ( $self->_IsRequire( "min_vrtak_sl_s_" . $pressOrder ) ) {
 		$section->AddRow( "min_vrtak_sl_s_" . $pressOrder, $self->__FormatTool($minTool) );
 
 		#}
 
-		my $maxAspectRatio = $press->GetMaxBlindAspectRatio(Enums->SignalLayer_BOT, EnumsGeneral->LAYERTYPE_plt_bDrillBot );
+		my $maxAspectRatio = $press->GetMaxBlindAspectRatio( Enums->SignalLayer_BOT, $layerType );
 
 		#if ( $self->_IsRequire( "min_vrtak_pomer_sl_s_1" . $pressOrder ) ) {
 		$section->AddRow( "min_vrtak_pomer_sl_s_" . $pressOrder, $maxAspectRatio );
@@ -195,14 +207,79 @@ sub Build {
 		#}
 	}
 
+	if ($viaFill) {
+
+		# comment
+		$section->AddComment(" SLEPE VRTANI PO ZAPLNENI OTVORU");
+
+		# comment
+		$section->AddComment( "Slepe Vrtani C" . $pressCnt );
+
+		my $press = $stackupNC->GetPress($pressCnt);
+
+		my $existDrill = $press->ExistNCLayers( Enums->SignalLayer_TOP, EnumsGeneral->LAYERTYPE_plt_bDrillTop );
+
+		#if ( $self->_IsRequire( "slepe_otvory_c_" . $pressOrder ) ) {
+		$section->AddRow( "PO_ZAPLNENI_slepe_otvory_c_" . $pressCnt, $existDrill ? "A" : "N" );
+
+		#}
+
+		my $minTool = $press->GetMinHoleTool( Enums->SignalLayer_TOP, EnumsGeneral->LAYERTYPE_plt_bDrillTop );
+
+		#if ( $self->_IsRequire( "min_vrtak_sl_c_" . $pressOrder ) ) {
+		$section->AddRow( "PO_ZAPLNENI_min_vrtak_sl_c_" . $pressCnt, $self->__FormatTool($minTool) );
+
+		#}
+
+		my $maxAspectRatio = $press->GetMaxBlindAspectRatio( Enums->SignalLayer_TOP, EnumsGeneral->LAYERTYPE_plt_bDrillTop );
+
+		#if ( $self->_IsRequire( "min_vrtak_pomer_sl_c_" . $pressOrder ) ) {
+		$section->AddRow( "PO_ZAPLNENI_min_vrtak_pomer_sl_c_" . $pressCnt, $maxAspectRatio );
+
+		#}
+	}
+
+	if ($viaFill) {
+
+		# comment
+		$section->AddComment(" SLEPE VRTANI PO ZAPLNENI OTVORU");
+
+		# comment
+		$section->AddComment( "Slepe Vrtani S" . $pressCnt );
+
+		my $press = $stackupNC->GetPress($pressCnt);
+
+		my $existDrill = $press->ExistNCLayers( Enums->SignalLayer_BOT, EnumsGeneral->LAYERTYPE_plt_bDrillBot );
+
+		#if ( $self->_IsRequire( "slepe_otvory_c_" . $pressOrder ) ) {
+		$section->AddRow( "PO_ZAPLNENI_slepe_otvory_s_" . $pressCnt, $existDrill ? "A" : "N" );
+
+		#}
+
+		my $minTool = $press->GetMinHoleTool( Enums->SignalLayer_BOT, EnumsGeneral->LAYERTYPE_plt_bDrillBot );
+
+		#if ( $self->_IsRequire( "min_vrtak_sl_c_" . $pressOrder ) ) {
+		$section->AddRow( "PO_ZAPLNENI_min_vrtak_sl_s_" . $pressCnt, $self->__FormatTool($minTool) );
+
+		#}
+
+		my $maxAspectRatio = $press->GetMaxBlindAspectRatio( Enums->SignalLayer_BOT, EnumsGeneral->LAYERTYPE_plt_bDrillBot );
+
+		#if ( $self->_IsRequire( "min_vrtak_pomer_sl_c_" . $pressOrder ) ) {
+		$section->AddRow( "PO_ZAPLNENI_min_vrtak_pomer_sl_s_" . $pressCnt, $maxAspectRatio );
+
+		#}
+
+	}
+
 }
 
 sub __FormatTool {
 	my $self    = shift;
 	my $minTool = shift;
-	
+
 	if ( defined $minTool ) {
-		$minTool =  sprintf "%0.2f", ( $minTool / 1000 );
+		$minTool = sprintf "%0.2f", ( $minTool / 1000 );
 	}
 	else {
 		$minTool = "";

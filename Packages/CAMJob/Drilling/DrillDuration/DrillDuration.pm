@@ -103,7 +103,7 @@ sub GetDrillDuration {
 		#print STDERR $tSize . "- ";
  
 
-		die "Duration is not defined for tool $tSize" unless ( defined $duration{$tSize} );
+		die "Duration is not defined for tool $tSize, layer: $layer" unless ( defined $duration{$tSize} );
 
 		$total += $toolsCnt{$tSize} * $duration{$tSize}->[1] / 100;    # drill holes duration
 

@@ -24,6 +24,7 @@ use aliased 'Packages::CAMJob::OutputData::LayerData::LayerData';
 use aliased 'CamHelpers::CamFilter';
 use aliased 'Packages::CAM::FeatureFilter::FeatureFilter';
 use aliased 'Packages::CAMJob::OutputData::Drawing::Drawing';
+use aliased 'Packages::CAMJob::OutputData::Helper';
 use aliased 'Packages::CAM::SymbolDrawing::Point';
 use aliased 'Enums::EnumsDrill';
 use aliased 'CamHelpers::CamHistogram';
