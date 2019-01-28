@@ -159,7 +159,7 @@ sub GetHeaderLayer {
 	$priority{ EnumsGeneral->LAYERTYPE_plt_bDrillTop } = 1020;
 	$priority{ EnumsGeneral->LAYERTYPE_plt_bDrillBot } = 1020;
 	
-	$priority{ EnumsGeneral->LAYERTYPE_plt_fDrill }    = 1030;
+
 
 	$priority{ EnumsGeneral->LAYERTYPE_plt_bMillTop } = 1040;
 	$priority{ EnumsGeneral->LAYERTYPE_plt_bMillBot } = 1040;
@@ -170,6 +170,7 @@ sub GetHeaderLayer {
 	$priority{ EnumsGeneral->LAYERTYPE_plt_nFillDrill }    = 1050;
 
 	$priority{ EnumsGeneral->LAYERTYPE_plt_fcDrill } = 1090;
+	$priority{ EnumsGeneral->LAYERTYPE_plt_fDrill }    = 1090;
 
 
 	# nplated layer are merged together

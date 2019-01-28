@@ -250,7 +250,8 @@ sub AddNCLayerType {
 			$l->{"type"}   = EnumsGeneral->LAYERTYPE_plt_bMillBot;
 			$l->{"plated"} = 1;
 
-		}elsif ( $l->{"gROWname"} =~ /^v$/ ) {
+		}
+		elsif ( $l->{"gROWname"} =~ /^v$/ ) {
 
 			$l->{"type"}   = EnumsGeneral->LAYERTYPE_plt_fDrill;
 			$l->{"plated"} = 1;
@@ -394,13 +395,21 @@ sub GetNCLayerInfo {
 
 	if ($ncType) {
 		$self->AddNCLayerType( [ \%lInfo ] );
+		die "Key: \"type\" was not set"   unless ( defined $lInfo{"type"} );
+		die "Key: \"plated\" was not set" unless ( defined $lInfo{"plated"} );
 	}
 	if ($matrixType) {
 		$lInfo{"gROWlayer_type"} = CamMatrix->GetLayerType( $inCAM, $jobId, $layer );
+		die "Key: \"gROWlayer_type\"  was not set" unless ( defined $lInfo{"gROWlayer_type"} );
 	}
 
 	if ($startStop) {
-		$lInfo{"gROWlayer_type"} = $self->AddLayerStartStop( $inCAM, $jobId, [\%lInfo] );
+		$self->AddLayerStartStop( $inCAM, $jobId, [ \%lInfo ] );
+		die "Key: \"gROWdrl_start_name\"  was not set" unless ( defined $lInfo{"gROWdrl_start_name"} );
+		die "Key: \"gROWdrl_end_name\"  was not set"   unless ( defined $lInfo{"gROWdrl_end_name"} );
+		die "Key: \"gROWdrl_start\"  was not set"      unless ( defined $lInfo{"gROWdrl_start"} );
+		die "Key: \"gROWdrl_end\"  was not set"        unless ( defined $lInfo{"gROWdrl_end"} );
+		die "Key: \"gROWdrl_dir\"  was not set"        unless ( defined $lInfo{"gROWdrl_dir"} );
 	}
 
 	return %lInfo;
@@ -642,7 +651,7 @@ sub GetViaFillExists {
 	my $self  = shift;
 	my $inCAM = shift;
 	my $jobId = shift;
-	my $types = shift;
+
 
 	my @fillL = $self->GetNCLayersByTypes(
 										   $inCAM, $jobId,
@@ -661,16 +670,18 @@ sub GetViaFillExists {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	#use aliased 'CamHelpers::$self';
-	#use aliased 'Packages::InCAM::InCAM';
+	use aliased 'CamHelpers::CamDrilling';
+	use aliased 'Packages::InCAM::InCAM';
 
-	#my $inCAM = InCAM->new();
+	my $inCAM = InCAM->new();
 
-	#my $jobId     = "f49756";
-	#my $stepName  = "o+1";
-	#my $layerName = "fzs";
+	my $jobId     = "d113609";
+	my $stepName  = "o+1";
+	my $layerName = "j1";
 
-	#my @depth = $self->AddHistogramValues( $inCAM, $jobId, $stepName, $layerName );
+	my %inf = CamDrilling->GetNCLayerInfo( $inCAM, $jobId, $layerName, 1, 1, 1 );
+	
+	print "Type:". $inf{"gROWlayer_type"};
 
 }
 

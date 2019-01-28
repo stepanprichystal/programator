@@ -80,6 +80,8 @@ sub AddOperationDef {
 		 && defined $pressOrder )
 	{
 
+		die "Operation definition: $name, already exists" if($self->GetOperationDef($name));
+
 		my $def = OperationDef->new( $name, $layers, $pressOrder );
 		push( @{ $self->{"operDefs"} }, $def );
 

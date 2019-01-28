@@ -75,7 +75,8 @@ sub __DefinePlatedGroups {
 	my $self      = shift;
 	my $opManager = shift;
 
-	my $stackup = $self->{'stackup'};    #info about press count, which layer are pressed, etc..
+	my $stackup = $self->{'stackup'};                                                    #info about press count, which layer are pressed, etc..
+	my $viaFill = CamDrilling->GetViaFillExists( $self->{"inCAM"}, $self->{"jobId"} );
 
 	# 1) Create group FROM TOP depend on pressing order
 
@@ -89,10 +90,10 @@ sub __DefinePlatedGroups {
 		#group for last pressing
 		if ( $pressOrder == $stackup->GetPressCount() ) {
 
-			$name = "c" . $stackup->GetPressCount();
+			$name = "c" . $stackup->GetPressCount() . ( $viaFill ? "_d" : "" );
 
 			#if exist, add normal drill + blind from top
-			my $operC = $opManager->GetOperationDef( "c" . $pressOrder );
+			my $operC = $opManager->GetOperationDef( "c" . $pressOrder . ( $viaFill ? "_d" : "" ) );
 			if ($operC) {
 				push( @operations, $operC );
 			}
@@ -126,10 +127,10 @@ sub __DefinePlatedGroups {
 		#group for last pressing
 		if ( $pressOrder == $stackup->GetPressCount() ) {
 
-			$name = "s" . $stackup->GetPressCount();
+			$name = "s" . $stackup->GetPressCount() . ( $viaFill ? "_d" : "" );
 
 			#if exist, add normal drill + blind from top
-			my $operS = $opManager->GetOperationDef( "s" . $pressOrder );
+			my $operS = $opManager->GetOperationDef( "s" . $pressOrder . ( $viaFill ? "_d" : "" ) );
 			if ($operS) {
 				push( @operations, $operS );
 			}
@@ -237,23 +238,22 @@ sub __DefinePlatedOperations {
 		my @normalTop = grep { $_->{"gROWdrl_start"} == $startTop } @plt_nDrill;
 		push( @layers, @normalTop );
 
-		# frame drilling if no viafill and it is last pressing
-		push( @layers, $plt_fDrill[0] ) if ( !$viaFill && $pressOrder == $stackup->GetPressCount() );
-
 		# blind drilling start from top in layer <$drillStartTop>
 		my @blindTop = grep { $_->{"gROWdrl_start"} == $startTop } @plt_bDrillTop;
 		push( @layers, @blindTop );
 
 		#when it is last pressing, we don't add V1 frame
-		if ( $pressOrder != $stackup->GetPressCount() ) {
+		if ( $pressOrder == $stackup->GetPressCount() && !$viaFill ) {
+
+			push( @layers, $plt_fDrill[0] ) if ( scalar(@plt_fDrill) == 1 );
+
+		}
+		elsif ( $pressOrder != $stackup->GetPressCount() ) {
 
 			#for each pressing except last, add "v1" frame drilling
 			if ( !$press->ExistNCLayers( Enums->SignalLayer_TOP, EnumsGeneral->LAYERTYPE_plt_cDrill ) ) {
 
-				#my @frameDrill = grep { $_->{"gROWname"} =~ /v1/ } @plt_bDrillBot;
-				if ( scalar(@plt_fcDrill) == 1 ) {
-					push( @layers, $plt_fcDrill[0] );
-				}
+				push( @layers, $plt_fcDrill[0] ) if ( scalar(@plt_fcDrill) == 1 );
 			}
 		}
 
@@ -268,8 +268,8 @@ sub __DefinePlatedOperations {
 
 		my $press = $stackup->{"press"}{$pressOrder};
 
-		my $outFile = "s" . $pressOrder. ( $viaFill && $pressOrder == $stackup->GetPressCount() ? "_d" : "" );    # Add "_d" if viafill
-		my @layers  = ();
+		my $outFile = "s" . $pressOrder . ( $viaFill && $pressOrder == $stackup->GetPressCount() ? "_d" : "" );    # Add "_d" if viafill
+		my @layers = ();
 
 		my $startBot     = $press->{"botNumber"};
 		my $startBotName = $press->{"bot"};
@@ -286,8 +286,8 @@ sub __DefinePlatedOperations {
 	# - @plt_nFillDrill
 	# - @plt_bFillDrillTop
 	# Only if exist via fill
-	# Via fill layer can start only from very top 
-	if ($viaFill ) {
+	# Via fill layer can start only from very top
+	if ($viaFill) {
 
 		my $press = $stackup->{"press"}{ $stackup->GetPressCount() };
 
@@ -320,11 +320,11 @@ sub __DefinePlatedOperations {
 		my $outFile = "s" . $stackup->GetPressCount();
 		my @layers  = ();
 
-		my $startTop     = $press->{"topNumber"};
-		my $startTopName = $press->{"top"};
+		my $startBot     = $press->{"botNumber"};
+		my $startBotName = $press->{"bot"};
 
 		#filled blind drilling start from top
-		push( @layers, grep { $_->{"gROWdrl_start"} == $startTop } @plt_bFillDrillTop );
+		push( @layers, grep { $_->{"gROWdrl_start"} == $startBot } @plt_bFillDrillBot );
 
 		my $oDef = $opManager->AddOperationDef( $outFile, \@layers, $stackup->GetPressCount() );
 	}

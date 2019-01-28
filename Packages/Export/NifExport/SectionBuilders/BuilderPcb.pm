@@ -63,7 +63,7 @@ sub Build {
 
 	#konstr_trida_vnitrni_vrstvy
 	if ( $self->{"layerCnt"} > 2 ) {
-		
+
 		if ( $self->_IsRequire("konstr_trida_vnitrni_vrstvy") ) {
 
 			my $pcbClass = 0;
@@ -225,37 +225,12 @@ sub __GetProkoveni {
 	my $sExist = CamHelper->LayerExists( $inCAM, $jobId, "s" );
 
 	if ($sExist) {
-
-		my $mExist = CamHelper->LayerExists( $inCAM, $jobId, "m" );
-
-		if ($mExist) {
+		if ( CamDrilling->GetNCLayersByTypes( $inCAM, $jobId, [ EnumsGeneral->LAYERTYPE_plt_nDrill, EnumsGeneral->LAYERTYPE_plt_nFillDrill ] ) ) {
 
 			$result = 'A';
 
 		}
-
-		# zbytek podminky yrusen 19.5.2017
-
-		#			my @steps = CamStepRepeat->GetStepAndRepeat( $inCAM, $jobId, $stepName );
-		#
-		#			foreach my $stepInner (@steps) {
-		#
-		#				my $stepInnerName = $stepInner->{"gSRstep"};
-		#
-		#				$inCAM->INFO(
-		#							  units       => 'mm',
-		#							  entity_type => 'layer',
-		#							  entity_path => "$jobId/$stepInnerName/m",
-		#							  data_type   => 'FEAT_HIST',
-		#							  options     => 'break_sr'
-		#				);
-		#
-		#				if ( $inCAM->{doinfo}{gFEAT_HISTtotal} > 0 ) {
-		#					$result = 'A';
-		#				}
-		#			}
-		#		}
-
+ 
 		my $rExist = CamDrilling->NCLayerExists( $inCAM, $jobId, EnumsGeneral->LAYERTYPE_plt_nMill );
 		if ($rExist) {
 			$result = 'A';

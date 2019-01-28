@@ -83,7 +83,7 @@ sub CheckDrillIsolation {
 		my $l = $layers[$i];
 
 		if ( $l->GetType() eq StackEnums->MaterialType_COPPER && $l->GetCopperNumber() eq $ncLayer->{"gROWdrl_end"} ) {
-
+ 
 			$realIsol      = $layers[ $i + 1 ]->GetThick();
 			$reqIsolFromCu = $layers[ $i + 2 ]->GetCopperName();
 			last;

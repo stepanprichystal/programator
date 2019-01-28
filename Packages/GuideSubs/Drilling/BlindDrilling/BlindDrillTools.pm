@@ -24,7 +24,7 @@ use aliased 'Enums::EnumsDrill';
 use aliased 'CamHelpers::CamDrilling';
 use aliased 'CamHelpers::CamDTM';
 use aliased 'Packages::CAMJob::Drilling::BlindDrill::Enums' => 'BlindEnums';
-
+ 
 #-------------------------------------------------------------------------------------------#
 #  Public method
 #-------------------------------------------------------------------------------------------#
@@ -107,17 +107,17 @@ sub SetBlindDrills {
 			else {
 
 				my $depth = BlindDrill->ComputeDrillDepth( $stackup, $drillSize, \%lInfo, $blindType );
-				$t->{"userColumns"}->{ EnumsDrill->DTMclmn_DEPTH } =  sprintf("%.2f", ($depth / 1000));
+				$t->{"userColumns"}->{ EnumsDrill->DTMclmn_DEPTH } = sprintf( "%.2f", ( $depth / 1000 ) );
 
 				my $typWarn = BlindEnums->GetMethodName($blindType);
-				if($blindType eq BlindEnums->BLINDTYPE_SPECIAL){
+				if ( $blindType eq BlindEnums->BLINDTYPE_SPECIAL ) {
 					$typWarn = "<r>$typWarn - pozor nepoužívat na napojované!</r>";
 				}
 
 				$tReport .=
 				    " <g>OK</g> Metoda výpočtu - $typWarn:\n"
 				  . "	- Vypočítaná hloubka:  "
-				  . sprintf("%.2f", $depth)
+				  . sprintf( "%.2f", $depth )
 				  . "µm \n"
 				  . "	- Aspect ratio otvoru: "
 				  . ( $resType{$blindType}->{"arOk"} ? "<g>OK</g>" : "<r>FAIL</r>" )
@@ -160,10 +160,17 @@ sub SetBlindDrills {
 			$messType = EnumsGeneral->MessageType_WARNING;
 		}
 
-		$messMngr->ShowModal( -1, $messType,
-							  [ "Výpočet hlopubky slepých otvorů (step: \"$step\", layer: \"$layer\"):\n", 
-							   "-------------------------------------------------------------------------\n",$tReport, "\nCo chcete udělat?" ],
-							  \@b );
+		$messMngr->ShowModal(
+							  -1,
+							  $messType,
+							  [
+								 "Výpočet hlopubky slepých otvorů (step: \"$step\", layer: \"$layer\"):\n",
+								 "-------------------------------------------------------------------------\n",
+								 $tReport,
+								 "\nCo chcete udělat?"
+							  ],
+							  \@b
+		);
 
 		if ( $messMngr->Result() == 0 ) {
 			last;
@@ -196,11 +203,19 @@ sub SetBlindDrillsAllSteps {
 	my $step = 'panel';
 
 	return 0 unless ( CamHelper->StepExists( $inCAM, $jobId, $step ) );
+ 
 
 	foreach my $s ( CamStepRepeat->GetUniqueNestedStepAndRepeat( $inCAM, $jobId, $step ) ) {
 
 		foreach my $l (
-				 CamDrilling->GetNCLayersByTypes( $inCAM, $jobId, [ EnumsGeneral->LAYERTYPE_plt_bDrillTop, EnumsGeneral->LAYERTYPE_plt_bDrillBot ] ) )
+						CamDrilling->GetNCLayersByTypes(
+														 $inCAM, $jobId,
+														 [
+														   EnumsGeneral->LAYERTYPE_plt_bDrillTop,     EnumsGeneral->LAYERTYPE_plt_bDrillBot,
+														   EnumsGeneral->LAYERTYPE_plt_bFillDrillTop, EnumsGeneral->LAYERTYPE_plt_bFillDrillBot
+														 ]
+						)
+		  )
 		{
 
 			# set only if some hoels in layer
@@ -232,9 +247,8 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId = "d152456";
+	my $jobId = "d113609";
 	my $step  = "o+1";
-
 
 	my $mess = "";
 

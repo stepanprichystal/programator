@@ -998,6 +998,7 @@ sub INFO {
 	unless ( $self->{"connected"} ) {
 		return;
 	}
+ 
 
 	my %args = @_;
 	my ( $entity_path, $data_type, $parameters, $serial_number, $options, $help, $entity_type, $angle_direction ) =

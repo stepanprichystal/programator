@@ -117,23 +117,25 @@ sub __DefinePlatedOperations {
 	# 1) Operation name = c/c_d - can contain layer
 	# - plt_nDrill
 	# - plt_fDrill
-	my @layersOperC = (@plt_nDrill);
-
 	# if via fill, do not add frilled frame
 	if ($viaFill) {
 
-		$opManager->AddOperationDef( "c_d", \@layersOperC, -1 );
+		$opManager->AddOperationDef( "c_d", \@plt_nDrill, -1 );
 	}
 	else {
-
-		push( @layersOperC, @plt_fDrill );
-		$opManager->AddOperationDef( "c", \@plt_nFillDrill, -1 );
+		my @l = ();
+		push( @l, @plt_nDrill );
+		push( @l, @plt_fDrill );
+		$opManager->AddOperationDef( "c", \@l, -1 );
 	}
 
 	# 2) Operation name = c - can contain layer
 	# - plt_nFillDrill
 	if ($viaFill) {
-		$opManager->AddOperationDef( "c", \@plt_nDrill, -1 );
+		my @l = ();
+		push( @l, @plt_nFillDrill );
+		push( @l, @plt_fDrill );
+		$opManager->AddOperationDef( "c", \@l, -1 );
 	}
 
 	# 3) Operation name = r - can contain layer
