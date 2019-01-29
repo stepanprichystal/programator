@@ -246,8 +246,9 @@ sub __GetLayerLimit {
 	# - mask layer (mc;ms) layer
 	# - gold layer (goldc; golds)
 	# - signal layer (c;s) and not flex
+	# - plg(c/s) layers
 	if ( $self->{"layerCnt"} > 2
-		 && ( $layerName =~ /^((gold)|m)[cs]$/
+		 && ( $layerName =~ /^((gold)|m|plg)[cs]$/
 			  || ( $layerName =~ /^[cs]$/ && !JobHelper->GetIsFlex( $self->{"jobId"} ) ) )
 	  )
 	{
@@ -258,7 +259,6 @@ sub __GetLayerLimit {
 
 	# clip around profile if
 	# - inner layers (vx)
-	# - plg(c/s) layers
 	# - signal layer (c;s) and pcb is flex
 	# - all other cases
 	else {
