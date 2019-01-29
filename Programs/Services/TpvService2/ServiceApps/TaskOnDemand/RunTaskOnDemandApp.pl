@@ -20,8 +20,8 @@ use lib qw( C:\Perl\site\lib\TpvScripts\Scripts );
 use aliased 'Packages::InCAM::InCAM';
 use aliased 'Programs::Services::TpvService2::ServiceApps::TaskOnDemand::TaskOnDemandApp' => "App";
  
-my $jobId    = "d152456";
-
+my $jobId    = "d113609";
+my $orderId    = "d113609-01";
 my $app = App->new();
 
 my $inCAM    = InCAM->new();
@@ -30,9 +30,17 @@ $inCAM->SupressToolkitException(1);
 
 $app->{"inCAM"} = $inCAM;
 
-$app->Run();
+#$app->Run();
 
-#$app->__RunJob($jobId);
+$app->__RunJob($jobId, $orderId, "cooperation_data", undef, "thdsds");
+
+
+#	my $jobId    = shift;
+#	my $orderId  = shift;
+#	my $taskType = shift;
+#	my $inserted = shift;
+#	my $loginId = shift
+
 #$app->__ProcessJob($jobId);
 
 print "app inited";

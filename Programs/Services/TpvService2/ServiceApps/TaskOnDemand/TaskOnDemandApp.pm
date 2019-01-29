@@ -79,9 +79,12 @@ sub Run {
 			foreach my $jobInf (@jobs) {
 
 				$self->{"logger"}->info(
-						"Process task, jobId: " . $jobInf->{"JobId"} . " orderId: " . $jobInf->{"OrderId"} . " task type: " . $jobInf->{"TaskType"} );
+						"Process task, jobId: " . $jobInf->{"JobId"} 
+						. " orderId: " . $jobInf->{"OrderId"} 
+						. " task type: " . $jobInf->{"TaskType"}
+						. " loginId: ". $jobInf->{"LoginId"} );
 
-				$self->__RunJob( $jobInf->{"JobId"}, $jobInf->{"OrderId"}, $jobInf->{"TaskType"}, $jobInf->{"Inserted"} );
+				$self->__RunJob( $jobInf->{"JobId"}, $jobInf->{"OrderId"}, $jobInf->{"TaskType"}, $jobInf->{"Inserted"}, $jobInf->{"LoginId"} );
 
 				# check max limit of processed jobs in order app doesn't run too long
 				# and block another app
@@ -107,10 +110,11 @@ sub __RunJob {
 	my $orderId  = shift;
 	my $taskType = shift;
 	my $inserted = shift;
+	my $loginId = shift;
 
 	eval {
 
-		$self->__ProcessJob( $jobId, $orderId, $taskType, $inserted );
+		$self->__ProcessJob( $jobId, $orderId, $taskType, $inserted, $loginId );
 
 	};
 	if ($@) {
@@ -144,6 +148,7 @@ sub __ProcessJob {
 	my $orderId  = shift;
 	my $taskType = shift;
 	my $inserted = shift;
+	my $loginId = shift;
 
 	$jobId = lc($jobId);
 
@@ -159,14 +164,14 @@ sub __ProcessJob {
 	if ( $taskType eq TaskEnums->Data_COOPERATION ) {
 
 		my $data = ControlData->new($self, $inCAM, $jobId );
-		$result = $data->Run( \$errMess, TaskEnums->Data_COOPERATION, $inserted );
+		$result = $data->Run( \$errMess, TaskEnums->Data_COOPERATION, $inserted, $loginId );
 		
 		 
 	}
 	elsif ( $taskType eq TaskEnums->Data_CONTROL ) {
 
 		my $data = ControlData->new($self, $inCAM, $jobId );
-		$result = $data->Run( \$errMess, TaskEnums->Data_CONTROL, $inserted );
+		$result = $data->Run( \$errMess, TaskEnums->Data_CONTROL, $inserted, $loginId );
 	}
 	else {
 
@@ -188,7 +193,7 @@ sub __ProcessJob {
 		$inCAM->COM( "close_job", "job" => "$jobId" );
 	}
 
-	TaskOndemMethods->DeleteTaskPcb( $jobId, $taskType );
+	TaskOndemMethods->DeleteTaskPcb( $jobId, $taskType, $loginId );
 
 }
 

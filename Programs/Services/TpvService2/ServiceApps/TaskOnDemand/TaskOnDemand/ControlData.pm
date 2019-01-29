@@ -34,6 +34,7 @@ use aliased 'Programs::Services::TpvService2::ServiceApps::TaskOnDemand::Enums';
 use aliased 'Programs::Services::TpvService2::ServiceApps::TaskOnDemand::TaskOnDemand::MailTemplate::TemplateKey';
 use aliased 'Packages::Other::HtmlTemplate::HtmlTemplate';
 use aliased 'Packages::NifFile::NifFile';
+use aliased 'Connectors::HeliosConnector::HegMethods';
 
 #-------------------------------------------------------------------------------------------#
 #  Public method
@@ -63,6 +64,7 @@ sub Run {
 	my $errorStr = shift;    # ref on error string, where error message is stored
 	my $type     = shift;    # Data_COOPERATION, Data_CONTROL
 	my $inserted = shift;    # time of inserting request
+	my $loginId  = shift;	 # login of user which requested control data
 
 	my $result = 1;
 
@@ -79,7 +81,7 @@ sub Run {
 
 	}
 
-	$self->SendMail( $result, $errorStr, $type, $inserted );
+	$self->SendMail( $result, $errorStr, $type, $inserted, $loginId );
 
 	return $result;
 }
@@ -216,12 +218,17 @@ sub SendMail {
 	my $errorStr = shift;
 	my $type     = shift;
 	my $inserted = shift;
+	my $loginId = shift;
+	
+	
 
-	$self->{"taskDataApp"}->{"logger"}->debug("send mail result $result, $errorStr, $inserted");
+	$self->{"taskDataApp"}->{"logger"}->debug("send mail result $result, $errorStr, $inserted, $loginId");
 
-	#my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
-
+	
+	# Get info about user
+	my $userInfo = HegMethods->GetEmployyInfo($loginId);
+ 
 	# fill templkey with data
 	my $templKey = TemplateKey->new();
 
@@ -282,9 +289,19 @@ sub SendMail {
 
 		my $sender = new Mail::Sender { smtp => $self->{"smtp"}, port => 25, from => $self->{"from"} };
 
+		my @addres = ();
+		
+		if(defined $userInfo && defined $userInfo->{"e_mail"} =~ /^[a-z0-9.]+\@[a-z0-9.-]+$/i){
+			
+			push(@addres,$userInfo->{"e_mail"});
+		}else{
+			
+			push(@addres,'pcb@gatema.cz');
+		}
+	 
 		$sender->Open(
 			{
-			   to      => 'pcb@gatema.cz',
+			   to      => \@addres,
 			   subject => "Task on demand - " . $t . " ($jobId)",
 
 			   #msg     => "I'm sending you the list you wanted.",
@@ -293,7 +310,7 @@ sub SendMail {
 			   encoding => "7bit",
 
 			  # bcc => ( !$result ? 'stepan.prichystal@gatema.cz' : undef )    #TODO temporary
-			  bcc =>  'stepan.prichystal@gatema.cz'   #TODO temporary
+			  bcc =>  ['stepan.prichystal@gatema.cz']   #TODO temporary
 			}
 		);
 

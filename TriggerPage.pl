@@ -33,6 +33,7 @@ use aliased 'Connectors::TpvConnector::TaskOndemMethods';
 
 my $orderId  = shift;    # job order for process
 my $taskType = shift;    # type of task to process
+my $loginId = shift;    # user which do request
 
 #$orderId = "d152457-01";
 #$taskType = TaskEnums->PCB_TOPRODUCE;
@@ -45,7 +46,7 @@ my $logger = get_logger("trigger");
 $logger->debug("Trigger page run");
 
 
-$logger->debug("Params before set default values. Order id: $orderId, Task type: $taskType");
+$logger->debug("Params before set default values. Order id: $orderId, Task type: $taskType, LoginId: $loginId");
 
 
 # Set default values for params
@@ -139,7 +140,7 @@ sub __DataCooperation {
 	eval {
 
 		$logger->info("Data cooperation $jobId.");
-		TaskOndemMethods->InsertTaskPcb( $jobId, TaskEnums->Data_COOPERATION );
+		TaskOndemMethods->InsertTaskPcb( $jobId, TaskEnums->Data_COOPERATION, $loginId );
 
 	};
 	if ($@) {
@@ -159,7 +160,7 @@ sub __DataControl {
 	eval {
 
 		$logger->info("Data control $jobId.");
-		TaskOndemMethods->InsertTaskPcb( $jobId, TaskEnums->Data_CONTROL );
+		TaskOndemMethods->InsertTaskPcb( $jobId, TaskEnums->Data_CONTROL, $loginId );
 
 	};
 	if ($@) {

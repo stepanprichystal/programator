@@ -35,6 +35,7 @@ sub GetAllTasks {
 						OrderId,
 						TaskType,
 						Inserted,
+						LoginId
 						IF(OrderId is not null, 'order' , 'pcb') as OrderType 
 				FROM task_ondemand;";
 
@@ -47,14 +48,18 @@ sub InsertTaskPcb {
 	my $self     = shift;
 	my $jobId    = shift;
 	my $taskType = shift;
+	my $loginId  = shift // "-";
 
-	my @params1 =
-	  ( SqlParameter->new( "_JobId", Enums->SqlDbType_VARCHAR, $jobId ), SqlParameter->new( "_TaskType", Enums->SqlDbType_VARCHAR, $taskType ) );
+	my @params1 = (
+					SqlParameter->new( "_JobId",    Enums->SqlDbType_VARCHAR, $jobId ),
+					SqlParameter->new( "_TaskType", Enums->SqlDbType_VARCHAR, $taskType ),
+					SqlParameter->new( "_LoginId",  Enums->SqlDbType_VARCHAR, $loginId )
+	);
 
 	my $cmd1 = "SELECT
 				COUNT(*) 
 				FROM task_ondemand
-				WHERE JobId = _JobId AND TaskType = _TaskType;";
+				WHERE JobId = _JobId AND TaskType = _TaskType AND LoginId = _LoginId;";
 
 	my $taskExist = Helper->ExecuteScalar( $cmd1, \@params1 );
 
@@ -62,21 +67,24 @@ sub InsertTaskPcb {
 	if ($taskExist) {
 
 		# update ecord
-		my @params2 =
-		  ( SqlParameter->new( "_JobId", Enums->SqlDbType_VARCHAR, $jobId ), SqlParameter->new( "_TaskType", Enums->SqlDbType_VARCHAR, $taskType ) );
+		my @params2 = (
+						SqlParameter->new( "_JobId",    Enums->SqlDbType_VARCHAR, $jobId ),
+						SqlParameter->new( "_TaskType", Enums->SqlDbType_VARCHAR, $taskType ),
+						SqlParameter->new( "_LoginId",  Enums->SqlDbType_VARCHAR, $loginId )
+		);
 
 		my $cmd2 = "UPDATE task_ondemand 
 				SET
 				Updated = now(),
 				RequestOrder = RequestOrder +1
-				WHERE JobId= _JobId AND TaskType = _TaskType;";
+				WHERE JobId= _JobId AND TaskType = _TaskType AND LoginId = _LoginId;";
 
 		my $result = Helper->ExecuteNonQuery( $cmd2, \@params2 );
 
 	}
 	else {
 
-		my $cmd = "INSERT INTO task_ondemand (JobId, TaskType) VALUES (_JobId, _TaskType);";
+		my $cmd = "INSERT INTO task_ondemand (JobId, TaskType, LoginId) VALUES (_JobId, _TaskType, _LoginId);";
 		Helper->ExecuteNonQuery( $cmd, \@params1 );
 
 	}
@@ -87,11 +95,14 @@ sub DeleteTaskPcb {
 	my $self     = shift;
 	my $jobId    = shift;
 	my $taskType = shift;
+	my $loginId  = shift // "-";
 
 	my @params =
-	  ( SqlParameter->new( "_JobId", Enums->SqlDbType_VARCHAR, $jobId ), SqlParameter->new( "_TaskType", Enums->SqlDbType_VARCHAR, $taskType ) );
-
-	my $cmd = "DELETE FROM  task_ondemand  WHERE JobId= _JobId AND TaskType = _TaskType;";
+	  ( SqlParameter->new( "_JobId", Enums->SqlDbType_VARCHAR, $jobId ), 
+	    SqlParameter->new( "_TaskType", Enums->SqlDbType_VARCHAR, $taskType ),
+	    SqlParameter->new( "_LoginId",  Enums->SqlDbType_VARCHAR, $loginId ) );
+	    
+	my $cmd = "DELETE FROM  task_ondemand  WHERE JobId= _JobId AND TaskType = _TaskType AND LoginId = _LoginId;";
 
 	my $taskExist = Helper->ExecuteNonQuery( $cmd, \@params );
 
@@ -104,12 +115,12 @@ sub DeleteTaskPcb {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	use aliased 'Connectors::TpvConnector::TaskOndemMethods'; 
+	use aliased 'Connectors::TpvConnector::TaskOndemMethods';
 
 	#TaskOndemMethods->InsertTaskPcb( "d152457", TaskEnums->Data_CONTROL );
-	
+
 	my @l = TaskOndemMethods->GetAllTasks();
-	
+
 	die;
 
 }
