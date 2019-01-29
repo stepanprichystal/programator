@@ -32,7 +32,7 @@ $app->{"inCAM"} = $inCAM;
 
 #$app->Run();
 
-$app->__RunJob($jobId, $orderId, "cooperation_data", undef, "thdsds");
+$app->__RunJob($jobId, $orderId, "cooperation_data", undef, "th");
 
 
 #	my $jobId    = shift;
