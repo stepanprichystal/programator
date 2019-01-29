@@ -35,7 +35,7 @@ sub GetAllTasks {
 						OrderId,
 						TaskType,
 						Inserted,
-						LoginId
+						LoginId,
 						IF(OrderId is not null, 'order' , 'pcb') as OrderType 
 				FROM task_ondemand;";
 

@@ -52,7 +52,7 @@ sub new {
 	# Sender attributes
 	#$self->{"smtp"} = "127.0.0.1"; #testing server paper-cut
 
-	$self->{"smtp"} = 'gatema-cz.mail.protection.outlook.com';
+	$self->{"smtp"} = 'gatema-cz.mail.protection.outlook.com'; # new servr from 29.1.2019
 	$self->{"from"} = 'tpvserver@gatema.cz';
 
 	return $self;
