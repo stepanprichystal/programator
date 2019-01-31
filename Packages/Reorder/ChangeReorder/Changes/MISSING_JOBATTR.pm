@@ -84,6 +84,8 @@ sub Run {
 
 		if ( !defined $class || $class < 3 ) {
 			die "Pcb class is not defined in nif";
+		}else{
+			
 		}
 
 		CamAttributes->SetJobAttribute( $inCAM, $jobId, "pcb_class", $class );
@@ -96,7 +98,7 @@ sub Run {
 
 		if ( !defined $pcbClassInner || $pcbClassInner eq "" || $pcbClassInner < 3 ) {
 
-			my $class = $pcbClass;
+			my $class = CamJob->GetJobPcbClass( $inCAM, $jobId );
 
 			if ( !defined $class || $class < 3 ) {
 				die "Unable to set constructor inner class, because outer construction class is not known.";
