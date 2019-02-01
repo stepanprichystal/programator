@@ -646,12 +646,12 @@ sub CompensateLayerData {
 
 }
 
-# InvertPolarity of layer
+# Compensate NC layer
 sub RoutCompensation {
 	my $self  = shift;
 	my $inCAM = shift;
 	my $layer = shift;
-	my $type  = shift;
+	my $type  = shift; # rout/document
 
 	unless ( defined $type ) {
 

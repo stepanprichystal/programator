@@ -1000,6 +1000,7 @@ sub INFO {
 	}
 
 	my %args = @_;
+ 
 	my ( $entity_path, $data_type, $parameters, $serial_number, $options, $help, $entity_type, $angle_direction ) =
 	  ( "", "", "", "", "", "", "", "" );
 	my $i;

@@ -37,7 +37,10 @@ sub GetRepeatStep {
 	return @steps;
 }
 
-#Return information about steps in panel step
+# Return information about all nested steps in panel step
+# Return array of hashes. Hash contains keys:
+# - stepName
+# - totalCnt: Total count of steps in specified step
 sub GetUniqueStepAndRepeat {
 	my $self  = shift;
 	my $inCAM = shift;
@@ -54,7 +57,10 @@ sub GetUniqueStepAndRepeat {
 	return @steps;
 }
 
-#Return information about all  steps and their nested steps in panel
+# Return information about all nested steps (through all deepness level) steps in panel step
+# Return array of hashes. Hash contains keys:
+# - stepName
+# - totalCnt: Total count of steps in specified step
 sub GetUniqueNestedStepAndRepeat {
 	my $self  = shift;
 	my $inCAM = shift;

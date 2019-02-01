@@ -1,6 +1,6 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Build section for sotring NC duration
+# Description: Build section for  NC operation duration
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Packages::Export::NifExport::SectionBuilders::BuilderNCDuration;
@@ -23,6 +23,7 @@ use aliased 'Enums::EnumsGeneral';
 use aliased 'CamHelpers::CamStepRepeat';
 use aliased 'Packages::TifFile::TifNCOperations';
 use aliased 'Packages::CAMJob::Drilling::DrillDuration::DrillDuration';
+use aliased 'Packages::CAMJob::Routing::RoutDuration::RoutDuration';
 use aliased 'Packages::Export::NCExport::ExportMngr';
 use aliased 'Packages::CAMJob::Dim::JobDim';
 
@@ -47,12 +48,13 @@ sub Build {
 	my $jobId    = $self->{"jobId"};
 	my %nifData  = %{ $self->{"nifData"} };
 	my $stepName = "panel";
- 
 
-	$section->AddComment("Doba vrtani na jeden kus [mm]");
+	$section->AddComment("Doba NC operace na jeden kus [min]");
 
-	my $export = ExportMngr->new( $inCAM, $jobId, $stepName );
-	my @opItems = ();
+	my $materialName = HegMethods->GetMaterialKind($jobId);
+	my $export       = ExportMngr->new( $inCAM, $jobId, $stepName );
+	my @opItems      = ();
+
 	foreach my $opItem ( $export->GetOperationMngr()->GetOperationItems() ) {
 
 		if ( defined $opItem->GetOperationGroup() ) {
@@ -76,28 +78,30 @@ sub Build {
 			push( @opItems, $opItem ) if ( !$isInGroup );
 		}
 	}
- 
- 	my %dim =  JobDim->GetDimension($inCAM, $jobId);
+
+	my %multipl = JobDim->GetDimension( $inCAM, $jobId );    # multiple of panel
 
 	foreach my $ncOper (@opItems) {
 
-		my @layers = grep { $_->{"gROWlayer_type"} eq "drill" } $ncOper->GetSortedLayers();
+		my $duration = 0;
 
-		if (@layers) {
+		foreach my $l ( $ncOper->GetSortedLayers() ) {
 
-			my $duration = 0;
+			# dill hole duration (include all nested steps and tool changes)
+			$duration += DrillDuration->GetDrillDuration( $inCAM, $jobId, $stepName, $l->{"gROWname"} );
 
-			foreach my $l (@layers) {
+			# rout paths duration (include all nested steps and tool changes)
+			$duration += RoutDuration->GetRoutDuration( $inCAM, $jobId, $stepName, $l->{"gROWname"} ) if ( $l->{"gROWlayer_type"} eq "rout" );
 
-				$duration += DrillDuration->GetDrillDuration( $inCAM, $jobId, $stepName, $l->{"gROWname"} );
-			}
-			
-			$duration = $duration /60 /  $dim{"nasobnost"};
- 
-			$section->AddRow( "tac_vrtani_".$jobId."_".$ncOper->GetName().".", sprintf("%.2f", $duration));
 		}
-		
+
+		# time for one pcb
+		$duration = $duration / 60 / $multipl{"nasobnost"};
+
+		$section->AddRow( "tac_vrtani_" . $jobId . "_" . $ncOper->GetName() . ".", sprintf( "%.2f", $duration ) );
+
 	}
+
 }
 
 #-------------------------------------------------------------------------------------------#

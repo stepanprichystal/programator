@@ -167,13 +167,13 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
  
  
 	my $inCAM = InCAM->new();
-	my $jobId = "d224724";
-	my $step  = "d224683";
+	my $jobId = "d113608";
+	my $step  = "mpanel";
 	my $layer = 'f';
   
-  my $rtm = UniRTM->new($inCAM, $jobId, $step, $layer);
+  my $rtm = UniRTM->new($inCAM, $jobId, $step, $layer, 1);
   
-  my @outline = $rtm->GetOutlineChains();
+ 
   die;
 }
 

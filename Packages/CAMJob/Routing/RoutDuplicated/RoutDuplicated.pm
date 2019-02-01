@@ -14,7 +14,7 @@ use aliased 'Helpers::GeneralHelper';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'Helpers::FileHelper';
 use aliased 'Enums::EnumsPaths';
-use aliased 'Packages::TifFile::TifNCOperations';
+
 use aliased 'CamHelpers::CamDrilling';
 #-------------------------------------------------------------------------------------------#
 #  Script methods
@@ -26,7 +26,7 @@ sub GetDuplicateRout {
 	my $self      = shift;
 	my $jobId     = shift;
 	my $toolSize  = shift;    # µm
-	my $toolChain = shift;
+	my $isOutline = shift;
 	my $layer     = shift;
 	my $step      = shift;
 
@@ -42,16 +42,8 @@ sub GetDuplicateRout {
 	);
 	
 	return 0 unless(grep {$_ eq $lInfo{"type"} } @alowedTypes);
-	
-
-	my $tif = TifNCOperations->new($jobId);
-
-	return 0 unless ( $tif->TifFileExist() );
-
-	# Check if tool is not outline (inly inside rout can be duplicated)
-	my $tInfo = $tif->GetToolInfo( $toolChain, $layer, $step );
-
-	if ( defined $tInfo && !$tInfo->{"isOutline"} ) {
+ 
+	if ( !$isOutline ) {
 
 		my $confPath = GeneralHelper->Root() . "\\Packages\\CAMJob\\Routing\\RoutDuplicated\\RoutDuplicated.txt";
 

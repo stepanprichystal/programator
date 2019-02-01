@@ -26,8 +26,35 @@ use aliased 'Packages::TifFile::TifNCOperations';
 #-------------------------------------------------------------------------------------------#
 #  Script methods
 #-------------------------------------------------------------------------------------------#
+# Return speed for specific tool
+sub GetToolRoutSpeed {
+	my $self         = shift;
+	my $toolSize     = shift;          # size in mm
+	my $operation    = shift;          # Enums::EnumsDrill->ToolOP_xxx
+	my $magazineInfo = shift;          # Special tools and its magazine info are located at Config/MagazinePsec.xml
+	my $isOutline    = shift;          # Rout is outlie
+	my $isDuplicated = shift;          # Rout go through same paths for second time
+	my $materialKind = shift;          # From IS (druh_materialu)
+	                                   # - 0: packet type <= 1500 mm
+	                                   # - 1: packet type <= 3000 mm
+	                                   # - 2: packet type >= 3000 mm
+	my $packetType   = shift // 0;     # default is 0 -> assume packet from pcb panels is thinner than 1,5 mm
+	my %routSpeedTab = shift // ();    # parsed rout speed table (by RoutSpeed::ParseRoutSpeedFile method)
+	
+	$magazineInfo = undef if(defined $magazineInfo && $magazineInfo eq "");
 
-# Complete rout speed to exported NC files
+	# parse rout speed tab if not defined
+	%routSpeedTab = $self->ParseRoutSpeedFile($materialKind) unless (%routSpeedTab);
+
+	my $speed = $self->__GetRoutSpeed( $toolSize, $magazineInfo, $isOutline, $isDuplicated, $packetType, $routSpeedTab{$operation} );
+
+	die "No speed defined for tool size: $toolSize, magazineInfo: $magazineInfo, outline: $isOutline, duplicated: $isDuplicated" unless(defined $speed);
+
+	return $speed;
+
+}
+
+# Complete rout speed to exported NC files located in hob archive
 sub CompleteRoutSpeed {
 	my $self         = shift;
 	my $jobId        = shift;
@@ -44,7 +71,7 @@ sub CompleteRoutSpeed {
 	return 0 unless ( $tif->TifFileExist() );
 
 	# Parse csv file with rout speed
-	my %routSpeedTab = $self->__ParseRoutSpeedFile($materialKind);
+	my %routSpeedTab = $self->ParseRoutSpeedFile($materialKind);
 
 	# Only operation which contain rout layer
 
@@ -71,31 +98,36 @@ sub CompleteRoutSpeed {
 
 				# Get packet speeds for minimal rout tool (default, not special)
 				my @minToolSpeeds;
-				
-				if( defined $ncOper->{"minSlotTool"}){
-					
+
+				if ( defined $ncOper->{"minSlotTool"} ) {
+
 					my $minTool = $ncOper->{"minSlotTool"};
-					
+
 					# Check if min tool is defined in tabel
-					die "Minimal slot tool: $minTool is not defined in \"RoutSpeedTable\"" unless ( defined $routSpeedTab{ $t->{"toolOperation"} }{ "d=$minTool" . "_type=def" } );
-				 
-					if(!$t->{"isOutline"}){
-						@minToolSpeeds = @{$routSpeedTab{ $t->{"toolOperation"} }->{"d=$minTool" . "_type=def"}}[0..2];
-					}else{
-						@minToolSpeeds = @{$routSpeedTab{ $t->{"toolOperation"} }->{"d=$minTool" . "_type=def"}}[3..5];
+					die "Minimal slot tool: $minTool is not defined in \"RoutSpeedTable\""
+					  unless ( defined $routSpeedTab{ $t->{"toolOperation"} }{ "d=$minTool" . "_type=def" } );
+
+					if ( !$t->{"isOutline"} ) {
+						@minToolSpeeds = @{ $routSpeedTab{ $t->{"toolOperation"} }->{ "d=$minTool" . "_type=def" } }[ 0 .. 2 ];
+					}
+					else {
+						@minToolSpeeds = @{ $routSpeedTab{ $t->{"toolOperation"} }->{ "d=$minTool" . "_type=def" } }[ 3 .. 5 ];
 					}
 				}
 
 				my $packetType =
 				  $self->__GetPacketType( $ncOper->{"ncMatThick"}, $ncOper->{"minSlotTool"}, $totalPnlCnt, \@minToolSpeeds );
-				  
+
 				# for depth milling, take always rout speed for first (lowest) packet type
 				if ( scalar( grep { $_ =~ /[rf]z[cs]/ } @{ $ncOper->{"layers"} } ) ) {
 					$packetType = 0;    # packet type <= 1500µm
 				}
 
 				# 2) Get final rout speed
-				my $speed = $self->__GetRoutSpeed( $t, $packetType, $routSpeedTab{ $t->{"toolOperation"} } );
+
+				my $speed =
+				  $self->__GetRoutSpeed( $t->{"drillSize"}, $t->{"magazineInfo"}, $t->{"isOutline"}, $t->{"isDuplicate"}, $packetType,
+										 $routSpeedTab{ $t->{"toolOperation"} } );
 
 				die "No speed defined for tool size: " . $t->{"drillSize"} . ", key: $toolKey" unless defined($speed);
 
@@ -119,21 +151,20 @@ sub CompleteRoutSpeed {
 
 sub __GetRoutSpeed {
 	my $self         = shift;
-	my $t            = shift;
+	my $drillSize    = shift;             # µm
+	my $toolType     = shift // "def";    # def/magazine info
+	my $isOutline    = shift;
+	my $isDuplicated = shift;
+
 	my $packetType   = shift;
 	my $routSpeedTab = shift;
 
-	my $drillSize    = $t->{"drillSize"};                                          # µm
-	my $toolType     = ( $t->{"magazineInfo"} ? $t->{"magazineInfo"} : "def" );    # def/magazine info
-	my $isOutline    = $t->{"isOutline"};
-	my $isDuplicated = $t->{"isDuplicate"};
-
-	my $key = "d=$drillSize" . "_type=$toolType";                                  # diameter + type
+	my $key = "d=$drillSize" . "_type=$toolType";    # diameter + type
 
 	# Get rout speed, consider if is outline
 	my $speed;
 	if ($isOutline) {
-		$speed = $routSpeedTab->{$key}->[ $packetType + 3 ];                       # outline spped stars on the third position
+		$speed = $routSpeedTab->{$key}->[ $packetType + 3 ];    # outline spped stars on the third position
 	}
 	else {
 		$speed = $routSpeedTab->{$key}->[$packetType];
@@ -154,10 +185,10 @@ sub __GetRoutSpeed {
 # - 1: packet type <= 3000
 # - 2: packet type >= 3000
 sub __GetPacketType {
-	my $self           = shift;
-	my $matThick       = shift;
-	my $minTool        = shift;
-	my $totlaPnlCnt    = shift;
+	my $self          = shift;
+	my $matThick      = shift;
+	my $minTool       = shift;
+	my $totlaPnlCnt   = shift;
 	my $minToolSpeeds = shift;
 
 	# Determine max possible paket height
@@ -172,7 +203,7 @@ sub __GetPacketType {
 			$defPaketIdx = scalar(@paketThick) - 1;
 			last;
 		}
- 
+
 		if ( defined $minToolSpeeds->[$i] ) {
 			$defPaketIdx = $i;
 			last;
@@ -237,7 +268,7 @@ sub __GetPacketType {
 
 }
 
-sub __ParseRoutSpeedFile {
+sub ParseRoutSpeedFile {
 	my $self         = shift;
 	my $materialKind = shift;
 
@@ -316,8 +347,9 @@ sub __ParseRoutSpeedByOperation {
 
 			next;
 		}
-		
-		die "Bad formated rout stool speed line: \"$line\" (operation: " . join( "; ", @operNames ) . ")" unless($line =~ /\d+\.\d+;[\w\.]+(;[\d-]+){6}/); 
+
+		die "Bad formated rout stool speed line: \"$line\" (operation: " . join( "; ", @operNames ) . ")"
+		  unless ( $line =~ /\d+\.\d+;[\w\.]+(;[\d-]+){6}/ );
 
 		my @vals = split( ";", $line );
 		chomp(@vals);

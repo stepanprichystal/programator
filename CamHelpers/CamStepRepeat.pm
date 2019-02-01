@@ -76,7 +76,10 @@ sub __ExploreStepDepth {
 
 }
 
-#Return information about all nested steps (in all deepness) steps in given step
+# Return information about all nested steps (through all deepness level) steps in given step
+# Return array of hashes. Hash contains keys:
+# - stepName
+# - totalCnt: Total count of steps in specified step
 sub GetUniqueNestedStepAndRepeat {
 	my $self     = shift;
 	my $inCAM    = shift;
@@ -85,7 +88,7 @@ sub GetUniqueNestedStepAndRepeat {
 
 	my @uniqueSteps = ();
 
-	my %step = ( "stepName" => $stepName );
+	my %step = ( "stepName" => $stepName, "totalCnt" => 1 );
 
 	$self->__ExploreStep( $inCAM, $jobId, \%step, \@uniqueSteps );
 
@@ -96,6 +99,9 @@ sub GetUniqueNestedStepAndRepeat {
 }
 
 # Return information about deepest nested steps, which doesn't contain another SR
+# Return array of hashes. Hash contains keys:
+# - stepName
+# - totalCnt: Total count of steps in specified step
 sub GetUniqueDeepestSR {
 	my $self     = shift;
 	my $inCAM    = shift;
@@ -104,7 +110,7 @@ sub GetUniqueDeepestSR {
 
 	my @uniqueSteps = ();
 
-	my %step = ( "stepName" => $stepName );
+	my %step = ( "stepName" => $stepName, "totalCnt" => 1 );
 
 	$self->__ExploreStep( $inCAM, $jobId, \%step, \@uniqueSteps );
 
@@ -136,22 +142,30 @@ sub __ExploreStep {
 		# recusive search another nested steps
 		foreach my $ch (@childs) {
 
+			$ch->{"totalCnt"} *= $exploreStep->{"totalCnt"}; 
 			$self->__ExploreStep( $inCAM, $jobId, $ch, $uniqueSteps );
 
 		}
 	}
 
 	# this step has no childern, test, if is not already in array
-	my $exist = scalar( grep { $_->{"stepName"} eq $exploreStep->{"stepName"} } @{$uniqueSteps} );
+	my $uniqueStepInf = ( grep { $_->{"stepName"} eq $exploreStep->{"stepName"} } @{$uniqueSteps} )[0];
 
-	unless ($exist) {
-
-		push( @{$uniqueSteps}, $exploreStep );
+	unless ($uniqueStepInf) {
+		$uniqueStepInf = {};
+		$uniqueStepInf->{"stepName"} = $exploreStep->{"stepName"};
+		$uniqueStepInf->{"totalCnt"} = 0;
+		push( @{$uniqueSteps}, $uniqueStepInf );
 	}
+	
+	$uniqueStepInf->{"totalCnt"} += $exploreStep->{"totalCnt"};
 
 }
 
-#Return information about steps in given step
+# Return information about all nested steps in specified step
+# Return array of hashes. Hash contains keys:
+# - stepName
+# - totalCnt: Total count of steps in specified step
 sub GetUniqueStepAndRepeat {
 	my $self     = shift;
 	my $inCAM    = shift;
@@ -163,12 +177,18 @@ sub GetUniqueStepAndRepeat {
 
 	foreach my $info (@arr) {
 
-		unless ( scalar( grep { $_->{"stepName"} eq $info->{"gSRstep"} } @steps ) ) {
-			my %stepInf = ();
-			$stepInf{"stepName"} = $info->{"gSRstep"};
- 
-			push( @steps, \%stepInf );
+		my $stepInf = ( grep { $_->{"stepName"} eq $info->{"gSRstep"} } @steps )[0];
+
+		unless ( $stepInf) {
+			$stepInf             = ();
+			$stepInf->{"stepName"} = $info->{"gSRstep"};
+			$stepInf->{"totalCnt"}    = 0;
+			push( @steps, $stepInf );
 		}
+
+		# add count of occurence
+		$stepInf->{"totalCnt"} += $info->{"gSRnx"} * $info->{"gSRny"};
+
 	}
 
 	return @steps;
@@ -186,8 +206,7 @@ sub GetStepAndRepeat {
 
 	unless ($considerOrigin) {
 
-		$inCAM->INFO( "units" => "mm", entity_type => 'step', angle_direction => 'ccw', entity_path => "$jobId/$stepName", data_type => 'SR' )
-		  ;
+		$inCAM->INFO( "units" => "mm", entity_type => 'step', angle_direction => 'ccw', entity_path => "$jobId/$stepName", data_type => 'SR' );
 	}
 	else {
 		$inCAM->INFO(
@@ -203,11 +222,11 @@ sub GetStepAndRepeat {
 	for ( my $i = 0 ; $i < scalar( @{ $inCAM->{doinfo}{gSRstep} } ) ; $i++ ) {
 		my %info = ();
 		$info{"stepName"} = ${ $inCAM->{doinfo}{gSRstep} }[$i];
-		$info{"gSRstep"} = ${ $inCAM->{doinfo}{gSRstep} }[$i];
-		$info{"gSRxa"}   = ${ $inCAM->{doinfo}{gSRxa} }[$i];
-		$info{"gSRya"}   = ${ $inCAM->{doinfo}{gSRya} }[$i];
-		$info{"gSRdx"}   = ${ $inCAM->{doinfo}{gSRdx} }[$i];
-		$info{"gSRdy"}   = ${ $inCAM->{doinfo}{gSRdy} }[$i];
+		$info{"gSRstep"}  = ${ $inCAM->{doinfo}{gSRstep} }[$i];
+		$info{"gSRxa"}    = ${ $inCAM->{doinfo}{gSRxa} }[$i];
+		$info{"gSRya"}    = ${ $inCAM->{doinfo}{gSRya} }[$i];
+		$info{"gSRdx"}    = ${ $inCAM->{doinfo}{gSRdx} }[$i];
+		$info{"gSRdy"}    = ${ $inCAM->{doinfo}{gSRdy} }[$i];
 
 		$info{"gSRnx"}     = ${ $inCAM->{doinfo}{gSRnx} }[$i];
 		$info{"gSRny"}     = ${ $inCAM->{doinfo}{gSRny} }[$i];
@@ -306,7 +325,7 @@ sub DeleteStepAndRepeat {
 
 	my @arr = $self->GetStepAndRepeat( $inCAM, $jobId, $stepName );
 
-	for ( my $i = scalar(@arr) -1 ; $i >= 0; $i-- ) {
+	for ( my $i = scalar(@arr) - 1 ; $i >= 0 ; $i-- ) {
 
 		if ( $srName eq $arr[$i]->{"gSRstep"} ) {
 			$inCAM->COM( 'sr_tab_del', line => ( $i + 1 ) );
@@ -440,7 +459,6 @@ sub GetStepAndRepeatLim {
 	return %limits;
 }
 
-
 # Remove all coupon steps from list of steps
 # each item has to contain key: "stepName"
 sub RemoveCouponSteps {
@@ -448,12 +466,12 @@ sub RemoveCouponSteps {
 	my $steps        = shift;
 	my $includeCpns  = shift;
 	my $includeSteps = shift;
-	
+
 	my $keyStepName = "stepName";
- 
+
 	for ( my $i = scalar( @{$steps} ) - 1 ; $i >= 0 ; $i-- ) {
-		
-		die "Key value: \"$keyStepName\" is not defined in step info" if(!defined $steps->[$i]->{"stepName"});
+
+		die "Key value: \"$keyStepName\" is not defined in step info" if ( !defined $steps->[$i]->{"stepName"} );
 
 		if ( !$includeCpns ) {
 
@@ -486,26 +504,14 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	use aliased 'Packages::InCAM::InCAM';
 
 	my $inCAM = InCAM->new();
-	my $jobId = "d229010";
+	my $jobId = "d113609";
 	my $step  = "panel";
 
-	my @sr = CamStepRepeat->GetUniqueStepAndRepeat( $inCAM, $jobId, $step );
+	my @sr = CamStepRepeat->GetUniqueDeepestSR( $inCAM, $jobId, $step );
 
 	die;
 
-	#	my $l = undef;
-	#
-	#	for(my $i= 0;  $i < scalar(@sr); $i++){
-	#
-	#		if(  $srg[$i]->{"SRstep"} eq "mpanel"){
-	#			$l = $i+1;
-	#			last;
-	#		}
-	#	}
-	#
-	#
-	#
-	#
+ 
 
 }
 

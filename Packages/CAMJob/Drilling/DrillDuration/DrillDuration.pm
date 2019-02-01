@@ -10,6 +10,7 @@ use strict;
 use warnings;
 use List::MoreUtils qw(uniq);
 use POSIX qw(floor ceil);
+use XML::Simple;
 
 #local library
 use aliased 'Helpers::GeneralHelper';
@@ -22,41 +23,133 @@ use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'Enums::EnumsMachines';
 use aliased 'Enums::EnumsPaths';
 use aliased 'Packages::CAM::UniDTM::Enums' => "EnumsDTM";
+use aliased 'CamHelpers::CamStepRepeat';
+use aliased 'CamHelpers::CamHistogram';
 
 #-------------------------------------------------------------------------------------------#
 #  Script methods
 #-------------------------------------------------------------------------------------------#
+
+my $TOOLCHANGETIME = 40;    # time for tool change 40s
+
 # Return duration of job/step/layer in second
 # Consider Pilot holes
 sub GetDrillDuration {
-	my $self  = shift;
-	my $inCAM = shift;
-	my $jobId = shift;
-	my $step  = shift;
-	my $layer = shift;
-	my $SR    = shift // 1;
+	my $self     = shift;
+	my $inCAM    = shift;
+	my $jobId    = shift;
+	my $stepName = shift;
+	my $layer    = shift;
+	my $SR       = shift // 0;
+	my $machine  = shift // EnumsMachines->MACHINE_DEF;    # default machine for get tool parameter
 
-	# Parse duration of drill holes
-	my %duration = ();
+	# total time of drilling for step (including nested steps)
+	my $duration = 0;
+
+	# Parse file where are stored measured duration (per 100 holes) for all tools
+	my %measuredDur = ();
 
 	my @lines = @{ FileHelper->ReadAsLines( GeneralHelper->Root() . "\\Packages\\CAMJob\\Drilling\\DrillDuration\\DrillToolDuration.csv" ) };
 
 	foreach my $l (@lines) {
 
 		$l =~ s/\s//g;
+		$measuredDur{ "c" . $1 } = [ $2, $3 ] if ( $l =~ m/(\d+);(\d+);(\d+)/ );
+	}
 
-		if ( $l =~ m/(\d+);(\d+);(\d+)/ ) {
+	my @uniqueSteps = CamStepRepeat->GetUniqueNestedStepAndRepeat( $inCAM, $jobId, $stepName );    # step for exploration
+	push( @uniqueSteps, { "stepName" => $stepName, "totalCnt" => 1 } );
 
-			$duration{$1} = [ $2, $3 ];
+	my %cumulativeUsage = ();
+
+	foreach my $s (@uniqueSteps) {
+
+		# check if layer is not empty
+		my %hist = CamHistogram->GetFeatuesHistogram( $inCAM, $jobId, $s->{"stepName"}, $layer, 0 );
+		next if ( $hist{"total"} == 0 );
+
+		# rout paths duration
+		my %drillToolUsage = $self->GetDrillToolUsage( $inCAM, $jobId, $s->{"stepName"}, $layer, 0 );
+
+		# compute total duration
+		foreach my $toolKey ( keys %drillToolUsage ) {
+
+			next unless ( $drillToolUsage{$toolKey} );
+
+			die "Duration is not defined for tool $toolKey" unless ( defined $measuredDur{$toolKey} );
+
+			# a) add to total drill tool duration (multipled by number of occurence in main step)
+			$duration += ( $drillToolUsage{$toolKey} * $measuredDur{$toolKey}->[1] / 100 ) * $s->{"totalCnt"};    # drill holes duration
+
+			# b) store cumulative rout tool ussage for computing tool change (length in mm)
+			# (multipled by number of occurence in main step)
+			$cumulativeUsage{$toolKey} = 0 unless ( defined $cumulativeUsage{$toolKey} );
+			$cumulativeUsage{$toolKey} += $drillToolUsage{$toolKey} * $s->{"totalCnt"};
 		}
 	}
 
-	# Get tool parameters (need drill limiot for holes)
+	# Compute tool change by tool limits (tool limit is taken from default machine).
 
 	my $materialName = HegMethods->GetMaterialKind($jobId);
-	my $machine      = EnumsMachines->MACHINE_C;                                          # default is C, contain all hole diamters
+	my %toolParams   = CamNCHooks->GetMaterialParams( $inCAM, $jobId, $layer, $materialName, EnumsMachines->MACHINE_DEF );
+	my $tChangeCnt   = 0;
 
-	my %toolParams   = CamNCHooks->GetMaterialParams( $inCAM, $jobId, $layer, $materialName, $machine );
+	foreach my $toolKey ( keys %cumulativeUsage ) {
+
+		my $tLim;    # in [m/10]
+
+		# get limit of special tool
+		if ( $toolKey =~ /^c(\d+)_/ ) {
+
+			$tLim = $toolParams{"drill"}->{"spec"}->{$toolKey};
+		}
+		else {
+
+			$tLim = $toolParams{"drill"}->{"def"}->{$toolKey};
+		}
+
+		$tLim = ( $tLim =~ m/N(\d+)/i )[0];
+
+		die "Tool drill limit is not defined for tool: $toolKey in parameter file" unless ( defined $tLim );
+
+		# Add relative tool change time because of exceed tool limit
+		$duration += $cumulativeUsage{$toolKey} / ( $tLim * 100 )  * $measuredDur{$toolKey}->[0];
+
+	}
+
+	# Add tool change accrodin tool type count
+	my @tChanges = grep { $cumulativeUsage{$_} > 0 } keys %cumulativeUsage;
+	
+	$duration += $measuredDur{$_}->[0] foreach(@tChanges);
+
+	# Add one extra tool change
+	$duration += $TOOLCHANGETIME;
+
+	return $duration;
+}
+
+sub GetDrillToolUsage {
+	my $self    = shift;
+	my $inCAM   = shift;
+	my $jobId   = shift;
+	my $step    = shift;
+	my $layer   = shift;
+	my $SR      = shift // 0;
+	my $machine = shift // EnumsMachines->MACHINE_DEF;    # default machine for get tool parameter
+
+	# Drill tool usage table
+	my %toolUsage = ();
+
+	# Fill table with all standard tools (key is: c_<tool size in µm>)
+	my @tools = CamDTM->GetToolTable( $inCAM, "drill" );
+	$toolUsage{ "c" . $_ * 1000 } = 0 foreach (@tools);
+
+	# Fill table with all special tools  (key is: c_<tool size in µm>_<magazine info>)
+	my $toolSpec = XMLin( FileHelper->Open( GeneralHelper->Root() . "\\Config\\MagazineSpec.xml" ) );
+
+	$toolUsage{ "c" . ( $toolSpec->{"tool"}->{$_}->{"diameter"} * 1000 ) . "_" . $_ } = 0 foreach ( keys %{ $toolSpec->{"tool"} } );
+
+	# Get tool parameters (need drill limiot for holes)
 
 	my $unitDTM = UniDTM->new( $inCAM, $jobId, $step, $layer, $SR );
 
@@ -64,75 +157,29 @@ sub GetDrillDuration {
 
 	my @dtmTools = CamDTM->GetDTMTools( $inCAM, $jobId, $step, $layer, $SR );
 
-	my %toolsCnt = ();
-
 	foreach my $t (@tool) {
 
-		unless ( exists $toolsCnt{ $t->GetDrillSize() } ) {
-
-			$toolsCnt{ $t->GetDrillSize() } = 0;
-		}
-
+		# Add standard tool counts
 		foreach my $dtmTools (@dtmTools) {
 
 			if ( $dtmTools->{"gTOOLdrill_size"} eq $t->GetDrillSize() ) {
 
-				$toolsCnt{ $t->GetDrillSize() } += $dtmTools->{"gTOOLcount"};
+				$toolUsage{ "c" . $t->GetDrillSize() } += $dtmTools->{"gTOOLcount"};
 			}
 		}
 
 		# Add pilot holes
-		if ( $toolsCnt{ $t->GetDrillSize() } > 0 ) {
+		if ( $toolUsage{ "c" . $t->GetDrillSize() } > 0 ) {
 
 			foreach my $p ( $unitDTM->GetPilots( $t->GetDrillSize() ) ) {
 
-				unless ( exists $toolsCnt{$p} ) {
-
-					$toolsCnt{$p} = 0;
-				}
-
-				$toolsCnt{$p} += $toolsCnt{ $t->GetDrillSize() };
+				$toolUsage{ "c" . $p } += $toolUsage{ "c" . $t->GetDrillSize() };
 			}
 		}
 	}
 
-	my $total = 0;
+	return %toolUsage;
 
-	foreach my $tSize ( keys %toolsCnt ) {
-
-		#print STDERR $tSize . "- ";
- 
-
-		die "Duration is not defined for tool $tSize" unless ( defined $duration{$tSize} );
-
-		$total += $toolsCnt{$tSize} * $duration{$tSize}->[1] / 100;    # drill holes duration
-
-		#print STDERR " Cnt = " . $toolsCnt{$tSize};
-		#print STDERR " Drill 1 hole = " . $duration{$tSize}->[1] / 100;
-		#print STDERR " Drill time = " . $toolsCnt{$tSize} * $duration{$tSize}->[1] / 100;
-
-		my $uniDTMTool = $unitDTM->GetTool( $tSize, EnumsDTM->TypeProc_HOLE );
-
-		my $params = CamNCHooks->GetToolParam( $uniDTMTool, \%toolParams );
-
-		my ($limit) = $params =~ m/N(\d+)/i;
-
-		unless ( defined $limit ) {
-			die "Tool drill limit is not defined for tool $tSize in parameter file" unless ( defined $duration{$tSize} );
-		}
-
-		my $num = ceil( $toolsCnt{$tSize} / ( $limit * 100 ) );
-
-		#print STDERR " Vymena = " . $num;
-		#print STDERR " Total = "
-		#  . ( $toolsCnt{$tSize} * $duration{$tSize}->[1] / 100 + ceil( $toolsCnt{$tSize} / ( $limit * 100 ) ) * $duration{$tSize}->[0] ) . "\n";
-
-		$total += ceil( $toolsCnt{$tSize} / ( $limit * 100 ) ) * $duration{$tSize}->[0];    # duration of tool preparing
-
-	}
-
-	# 1 vymena navic
-	return $total + 40;
 }
 
 #-------------------------------------------------------------------------------------------#
