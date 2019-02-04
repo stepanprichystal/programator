@@ -21,6 +21,8 @@ use aliased 'CamHelpers::CamDrilling';
 use aliased 'CamHelpers::CamRouting';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'Helpers::JobHelper';
+use aliased 'Packages::CAMJob::Dim::JobDim';
+use aliased 'CamHelpers::CamStepRepeatPnl';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -46,7 +48,7 @@ sub Build {
 	my $viaFill  = CamDrilling->GetViaFillExists( $inCAM, $jobId );
 
 	# comment
-	$section->AddComment("Vrtani skrz pred prokovem ". ($viaFill ? "(pred zalpnenim otvoru)" : ""));
+	$section->AddComment( "Vrtani skrz pred prokovem " . ( $viaFill ? "(pred zalpnenim otvoru)" : "" ) );
 	my $lType = !$viaFill ? EnumsGeneral->LAYERTYPE_plt_nDrill : EnumsGeneral->LAYERTYPE_plt_nFillDrill;
 
 	#vrtani_pred (vrtani pred prokovem)
@@ -77,6 +79,11 @@ sub Build {
 		$section->AddRow( "otvory", $self->__GetHoleType($lType) );
 	}
 
+	#pocet_der
+	if ( $self->_IsRequire("pocet_der") ) {
+		$section->AddRow( "pocet_der", $self->__GetHoleCnt($lType) );
+	}
+
 	#min_vrtak
 	if ( $self->_IsRequire("min_vrtak") ) {
 		my $minTool = CamDrilling->GetMinHoleTool( $inCAM, $jobId, $stepName, $lType, "c" );
@@ -92,21 +99,16 @@ sub Build {
 	}
 
 	#get general information about drilling
-	my ( $holeCnt, $holesTypeNum, $aspectRatio ) = ( 0, 0, 0 );
+	my ( $holesTypeNum, $aspectRatio ) = ( 0, 0 );
 
-	if ( $self->_IsRequire("pocet_vrtaku") || $self->_IsRequire("pocet_der") || $self->_IsRequire("min_vrtak_pomer") ) {
-		( $holeCnt, $holesTypeNum, $aspectRatio ) = $self->__GetInfoDrill( $stepName, $lType );
+	if ( $self->_IsRequire("pocet_vrtaku") || $self->_IsRequire("min_vrtak_pomer") ) {
+		( $holesTypeNum, $aspectRatio ) = $self->__GetInfoDrill( $stepName, $lType );
 
 	}
 
 	#pocet_vrtaku
 	if ( $self->_IsRequire("pocet_vrtaku") ) {
 		$section->AddRow( "pocet_vrtaku", $holesTypeNum );
-	}
-
-	#pocet_der
-	if ( $self->_IsRequire("pocet_der") ) {
-		$section->AddRow( "pocet_der", $holeCnt );
 	}
 
 	#min_vrtak_pomer
@@ -147,6 +149,11 @@ sub Build {
 			$section->AddRow( "otvory_D", $self->__GetHoleType( EnumsGeneral->LAYERTYPE_plt_nDrill ) );
 		}
 
+		#pocet_der_D
+		if ( $self->_IsRequire("pocet_der_D") ) {
+			$section->AddRow( "pocet_der_D", $self->__GetHoleCnt( EnumsGeneral->LAYERTYPE_plt_nDrill ) );
+		}
+
 		#min_vrtak
 		if ( $self->_IsRequire("min_vrtak_D") ) {
 			my $minTool = CamDrilling->GetMinHoleTool( $inCAM, $jobId, $stepName, EnumsGeneral->LAYERTYPE_plt_nDrill, "c" );
@@ -162,21 +169,16 @@ sub Build {
 		}
 
 		#get general information about drilling
-		my ( $holeCnt, $holesTypeNum, $aspectRatio ) = ( 0, 0, 0 );
+		my ( $holesTypeNum, $aspectRatio ) = ( 0, 0 );
 
 		if ( $self->_IsRequire("pocet_vrtaku_D") || $self->_IsRequire("pocet_der_D") || $self->_IsRequire("min_vrtak_pomer_D") ) {
-			( $holeCnt, $holesTypeNum, $aspectRatio ) = $self->__GetInfoDrill( $stepName, EnumsGeneral->LAYERTYPE_plt_nDrill );
+			( $holesTypeNum, $aspectRatio ) = $self->__GetInfoDrill( $stepName, EnumsGeneral->LAYERTYPE_plt_nDrill );
 
 		}
 
 		#pocet_vrtaku
 		if ( $self->_IsRequire("pocet_vrtaku_D") ) {
 			$section->AddRow( "pocet_vrtaku_D", $holesTypeNum );
-		}
-
-		#pocet_der
-		if ( $self->_IsRequire("pocet_der_D") ) {
-			$section->AddRow( "pocet_der_D", $holeCnt );
 		}
 
 		#min_vrtak_pomer
@@ -251,6 +253,68 @@ sub __GetHoleType {
 	return $holeType;
 }
 
+sub __GetHoleCnt {
+	my $self  = shift;
+	my $lType = shift;
+
+	my $inCAM = $self->{"inCAM"};
+	my $jobId = $self->{"jobId"};
+
+	my $holeCnt = 0;
+
+	my @layers = CamDrilling->GetNCLayersByType( $inCAM, $jobId, $lType );
+	my %dim = JobDim->GetDimension( $inCAM, $jobId );
+
+	# If pool, total count of one piece
+	if ( !CamHelper->StepExists( $inCAM, $jobId, "panel" ) ) {
+
+		for ( my $i = 0 ; $i < scalar(@layers) ; $i++ ) {
+
+			my $lName = $layers[$i]->{"gROWname"};
+
+			$inCAM->INFO(
+						  units       => 'mm',
+						  entity_type => 'layer',
+						  entity_path => "$jobId/o+1/$lName",
+						  data_type   => 'FEAT_HIST'
+			);
+
+			$holeCnt += $inCAM->{doinfo}{gFEAT_HISTpad};
+		}
+
+		$holeCnt = int( $holeCnt / $dim{"nasobnost_panelu"} ) if ( defined $dim{"nasobnost_panelu"} && $dim{"nasobnost_panelu"} ne "" );
+
+	}
+	else {
+
+		# total hole cnt of layers on one piece (technical frame and coupons are not count)
+
+		my @childSteps = map { $_->{"stepName"} } CamStepRepeatPnl->GetUniqueStepAndRepeat( $inCAM, $jobId );
+		for ( my $i = 0 ; $i < scalar(@layers) ; $i++ ) {
+
+			my $lName = $layers[$i]->{"gROWname"};
+
+			foreach my $step (@childSteps) {
+
+				$inCAM->INFO(
+							  units       => 'mm',
+							  entity_type => 'layer',
+							  entity_path => "$jobId/$step/$lName",
+							  data_type   => 'FEAT_HIST'
+				);
+
+				die if ( !defined $step->{"totalCnt"} );
+				$holeCnt += $inCAM->{doinfo}{gFEAT_HISTpad} * $step->{"totalCnt"};
+			}
+
+		}
+
+		$holeCnt = int( $holeCnt / $dim{"nasobnost"} );
+	}
+
+	return $holeCnt;
+}
+
 sub __GetInfoDrill {
 	my $self     = shift;
 	my $stepName = shift;
@@ -260,18 +324,14 @@ sub __GetInfoDrill {
 	my $jobId    = $self->{"jobId"};
 	my $pcbThick = JobHelper->GetFinalPcbThick($jobId);
 
-	my $holeCnt   = 0;     # total hole cnt of layers
 	my @holeTypes = ();    # all holes type of layers
 
 	my @layers = CamDrilling->GetNCLayersByType( $inCAM, $jobId, $lType );
+	my @childSteps = map { $_->{"stepName"} } CamStepRepeatPnl->GetUniqueStepAndRepeat( $inCAM, $jobId );
 
 	for ( my $i = 0 ; $i < scalar(@layers) ; $i++ ) {
 
 		my $lName = $layers[$i]->{"gROWname"};
-
-		#nuber of holes
-		$inCAM->INFO( units => 'mm', entity_type => 'layer', entity_path => "$jobId/$stepName/$lName", data_type => 'FEAT_HIST', options => "break_sr" );
-		$holeCnt += $inCAM->{doinfo}{gFEAT_HISTpad} + 1;
 
 		#nuber of hole types
 		$inCAM->INFO( units => 'mm', entity_type => 'layer', entity_path => "$jobId/$stepName/$lName", data_type => 'TOOL', options => "break_sr" );
@@ -295,7 +355,7 @@ sub __GetInfoDrill {
 		$aspectRatio = sprintf "%0.2f", ( $pcbThick / $holeTypes[0] );
 	}
 
-	return ( $holeCnt, scalar(@holeTypes), $aspectRatio );
+	return ( scalar(@holeTypes), $aspectRatio );
 }
 
 #-------------------------------------------------------------------------------------------#
