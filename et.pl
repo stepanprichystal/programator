@@ -50,7 +50,7 @@ use aliased 'Packages::Routing::PlatedRoutAtt';
 use aliased 'Packages::Routing::PlatedRoutArea';
  
 use aliased 'Packages::GuideSubs::Scoring::DoFlattenScore';
-use aliased 'Packages::Stackup::StackupDefault';
+use aliased 'Packages::CAMJob::Stackup::StackupDefault';
 use aliased 'Packages::GuideSubs::Routing::CheckRout';
 use aliased 'Packages::Compare::Layers::CompareLayers';
 use aliased 'Packages::CAMJob::SolderMask::PreparationLayout';

@@ -2,14 +2,14 @@
 # Description:  Script slouzi pro vypocet hlubky vybrusu pri navadeni na vrtackach.
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::Stackup::Drilling::DrillingHelper;
+package Packages::Export::NCExport::Helpers::DrillingHelper;
 
 #3th party library
 use strict;
 use warnings;
 
 #local library
-use aliased 'Packages::Stackup::Drilling::DrillingHelper';
+use aliased 'Packages::Export::NCExport::Helpers::DrillingHelper';
 use aliased 'CamHelpers::CamJob';
 use aliased 'CamHelpers::CamDrilling';
 use aliased 'Enums::EnumsGeneral';

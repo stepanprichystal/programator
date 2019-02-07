@@ -43,7 +43,7 @@ sub Build {
 	my $stepName = "panel";
 
 	my $stackup = Stackup->new( $self->{'jobId'} );
-	my $stackupNC = StackupNC->new($self->{"inCAM"}, $stackup );
+	my $stackupNC = StackupNC->new($self->{'jobId'}, $self->{"inCAM"});
 	my $coreCnt = $stackupNC->GetCoreCnt();
 
 	# comment

@@ -149,13 +149,12 @@ sub GetMaxAspectRatio {
 	my $side        = shift;    # type of Enums::SignalLayer_xxx
 	my $NClayerType = shift;    # type of Enums::LayerType_xxx
 	
-	my $stackup = $self->{"stackupNC"}->{"stackup"};
 	my $fromLayer = $side eq Enums->SignalLayer_TOP ? $self->{"topSignalLayer"} : $self->{"botSignalLayer"};
 	
 	my $minHole = $self->GetMinHoleTool($side, $NClayerType);
 	
 	# thick of pcb after this pressing in µm
-	my $finalThick = $stackup->GetThickByLayerName($fromLayer->GetName())*1000;
+	my $finalThick = $self->GetThickByLayerName($fromLayer->GetName())*1000;
 
 	my $aspectRatio = 0;
 

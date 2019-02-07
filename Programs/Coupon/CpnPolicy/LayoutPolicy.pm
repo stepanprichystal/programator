@@ -18,6 +18,7 @@ use aliased 'Programs::Coupon::CpnPolicy::CpnVariant::CpnVariant';
 use aliased 'Programs::Coupon::CpnPolicy::CpnVariant::CpnSingleVariant';
 use aliased 'Programs::Coupon::CpnPolicy::CpnVariant::CpnPoolVariant';
 use aliased 'Programs::Coupon::Enums';
+use aliased 'Enums::EnumsImp';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -224,7 +225,7 @@ sub __ProcessGroupPoolComb {
 			for ( my $j = scalar(@p) - 1 ; $j >= 0 ; $j-- ) {
 
 				if ( $p[$j]->{"l"}->{$l} eq Enums->Layer_TYPETRACK
-					 && ( $p[$j]->{"type"} eq Enums->Type_SE || $p[$j]->{"type"} eq Enums->Type_COSE ) )
+					 && ( $p[$j]->{"type"} eq EnumsImp->Type_SE || $p[$j]->{"type"} eq EnumsImp->Type_COSE ) )
 				{
 					push( @lastCandidates, splice @p, $j, 1 );
 				}
@@ -511,7 +512,7 @@ sub __CheckStraightRoute {
 
 	my $res = 1;
 
-	if ( $strip->GetType() ne Enums->Type_SE && $strip->GetType() ne Enums->Type_COSE ) {
+	if ( $strip->GetType() ne EnumsImp->Type_SE && $strip->GetType() ne EnumsImp->Type_COSE ) {
 		$res = 0;
 	}
 
@@ -587,7 +588,7 @@ sub __GetTrackWidth {
 
 	my $stripData = $strip->Data();
 
-	if ( $strip->GetType() eq Enums->Type_SE || $strip->GetType() eq Enums->Type_COSE ) {
+	if ( $strip->GetType() eq EnumsImp->Type_SE || $strip->GetType() eq EnumsImp->Type_COSE ) {
 
 		$trackW = $stripData->{"xmlConstraint"}->GetParamDouble("WB");
 	}

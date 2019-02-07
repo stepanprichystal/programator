@@ -18,8 +18,8 @@ my @layers = ( "L1", "L2", "L3", "L4" );
 my @constraints = ();
 
 my %se1 = (
-			"id"   => Enums->Type_SE . "1",
-			"type" => Enums->Type_SE,
+			"id"   => EnumsImp->Type_SE . "1",
+			"type" => EnumsImp->Type_SE,
 			"l"    => {
 					 "L1" => Enums->Layer_TYPETRACK,
 					 "L2" => Enums->Layer_TYPEGND,
@@ -29,8 +29,8 @@ my %se1 = (
 );
 
 my %se2 = (
-			"id"   => Enums->Type_SE . "2",
-			"type" => Enums->Type_SE,
+			"id"   => EnumsImp->Type_SE . "2",
+			"type" => EnumsImp->Type_SE,
 			"l"    => {
 					 "L1" => Enums->Layer_TYPETRACK,
 					 "L2" => Enums->Layer_TYPEGND,
@@ -40,8 +40,8 @@ my %se2 = (
 );
 
 my %se3 = (
-			"id"   => Enums->Type_SE . "3",
-			"type" => Enums->Type_SE,
+			"id"   => EnumsImp->Type_SE . "3",
+			"type" => EnumsImp->Type_SE,
 			"l"    => {
 					 "L1" => Enums->Layer_TYPETRACK,
 					 "L2" => Enums->Layer_TYPEGND,
@@ -51,8 +51,8 @@ my %se3 = (
 );
 
 my %se4 = (
-			"id"   => Enums->Type_SE . "4",
-			"type" => Enums->Type_SE,
+			"id"   => EnumsImp->Type_SE . "4",
+			"type" => EnumsImp->Type_SE,
 			"l"    => {
 					 "L1" => Enums->Layer_TYPETRACK,
 					 "L2" => Enums->Layer_TYPEGND,
@@ -62,8 +62,8 @@ my %se4 = (
 );
 
 my %diff1 = (
-			  "id"   => Enums->Type_DIFF . "1",
-			  "type" => Enums->Type_DIFF,
+			  "id"   => EnumsImp->Type_DIFF . "1",
+			  "type" => EnumsImp->Type_DIFF,
 			  "l"    => {
 					   "L1" => Enums->Layer_TYPETRACK,
 					   "L2" => Enums->Layer_TYPEGND,
@@ -73,8 +73,8 @@ my %diff1 = (
 );
 
 my %diff2 = (
-			  "id"   => Enums->Type_DIFF . "2",
-			  "type" => Enums->Type_DIFF,
+			  "id"   => EnumsImp->Type_DIFF . "2",
+			  "type" => EnumsImp->Type_DIFF,
 			  "l"    => {
 					   "L1" => Enums->Layer_TYPENOAFFECT,
 					   "L2" => Enums->Layer_TYPENOAFFECT,
@@ -212,28 +212,28 @@ for ( my $i = scalar(@allComb) - 1 ; $i >= 0 ; $i-- ) {
 					my %rules = ();
 
 					# se
-					$rules{ Enums->Type_SE . Enums->Type_SE }     = 1;
-					$rules{ Enums->Type_SE . Enums->Type_DIFF }   = 1;
-					$rules{ Enums->Type_SE . Enums->Type_COSE }   = 0;
-					$rules{ Enums->Type_SE . Enums->Type_CODIFF } = 0;
+					$rules{ EnumsImp->Type_SE . EnumsImp->Type_SE }     = 1;
+					$rules{ EnumsImp->Type_SE . EnumsImp->Type_DIFF }   = 1;
+					$rules{ EnumsImp->Type_SE . EnumsImp->Type_COSE }   = 0;
+					$rules{ EnumsImp->Type_SE . EnumsImp->Type_CODIFF } = 0;
 
 					# diff
-					$rules{ Enums->Type_DIFF . Enums->Type_SE }     = 1;
-					$rules{ Enums->Type_DIFF . Enums->Type_DIFF }   = 0;
-					$rules{ Enums->Type_DIFF . Enums->Type_COSE }   = 0;
-					$rules{ Enums->Type_DIFF . Enums->Type_CODIFF } = 0;
+					$rules{ EnumsImp->Type_DIFF . EnumsImp->Type_SE }     = 1;
+					$rules{ EnumsImp->Type_DIFF . EnumsImp->Type_DIFF }   = 0;
+					$rules{ EnumsImp->Type_DIFF . EnumsImp->Type_COSE }   = 0;
+					$rules{ EnumsImp->Type_DIFF . EnumsImp->Type_CODIFF } = 0;
 
 					# cose
-					$rules{ Enums->Type_COSE . Enums->Type_SE }     = 0;
-					$rules{ Enums->Type_COSE . Enums->Type_DIFF }   = 0;
-					$rules{ Enums->Type_COSE . Enums->Type_COSE }   = 0;
-					$rules{ Enums->Type_COSE . Enums->Type_CODIFF } = 0;
+					$rules{ EnumsImp->Type_COSE . EnumsImp->Type_SE }     = 0;
+					$rules{ EnumsImp->Type_COSE . EnumsImp->Type_DIFF }   = 0;
+					$rules{ EnumsImp->Type_COSE . EnumsImp->Type_COSE }   = 0;
+					$rules{ EnumsImp->Type_COSE . EnumsImp->Type_CODIFF } = 0;
 
 					# codiff
-					$rules{ Enums->Type_CODIFF . Enums->Type_SE }     = 0;
-					$rules{ Enums->Type_CODIFF . Enums->Type_DIFF }   = 0;
-					$rules{ Enums->Type_CODIFF . Enums->Type_COSE }   = 0;
-					$rules{ Enums->Type_CODIFF . Enums->Type_CODIFF } = 0;
+					$rules{ EnumsImp->Type_CODIFF . EnumsImp->Type_SE }     = 0;
+					$rules{ EnumsImp->Type_CODIFF . EnumsImp->Type_DIFF }   = 0;
+					$rules{ EnumsImp->Type_CODIFF . EnumsImp->Type_COSE }   = 0;
+					$rules{ EnumsImp->Type_CODIFF . EnumsImp->Type_CODIFF } = 0;
 
 					unless ( $rules{ $mTypes[0] . $mTypes[1] } ) {
 						print STDERR "Removed by not alowed microstrim combinations (" . $mTypes[0] . "-" . $mTypes[1] . ") in one pool\n";
@@ -271,10 +271,10 @@ for ( my $i = scalar(@allComb) - 1 ; $i >= 0 ; $i-- ) {
 # priority of order left to right (1 highest priority -> the most right order)
 my %p = ();
 
-$p{ Enums->Type_SE }     = 1;
-$p{ Enums->Type_DIFF }   = 2;
-$p{ Enums->Type_COSE }   = 3;
-$p{ Enums->Type_CODIFF } = 4;
+$p{ EnumsImp->Type_SE }     = 1;
+$p{ EnumsImp->Type_DIFF }   = 2;
+$p{ EnumsImp->Type_COSE }   = 3;
+$p{ EnumsImp->Type_CODIFF } = 4;
 
 for ( my $i = 0 ; $i < scalar(@allComb) ; $i++ ) {
 

@@ -2,7 +2,7 @@
 # Description: Helper class, can load technical parameter about prepregs, cores, coppers
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::Stackup::Stackup::StackupInfo;
+package Packages::Stackup::StackupBase::StackupInfo;
 
 #3th party library
 use strict;
@@ -16,7 +16,7 @@ use aliased 'Enums::EnumsGeneral';
 use aliased 'Packages::Stackup::Enums';
 use aliased 'Enums::EnumsPaths';
 
-#use aliased 'Packages::Stackup::Stackup::StackupHelper';
+#use aliased 'Packages::Stackup::StackupBase::StackupHelper';
 #use aliased 'Packages::Stackup::Stackup::StackupLayerHelper';
 #use aliased 'Packages::Stackup::Stackup::StackupLayer';
 #use aliased 'Packages::Stackup::Stackup::Stackup';

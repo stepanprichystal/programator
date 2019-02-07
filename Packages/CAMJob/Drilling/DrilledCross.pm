@@ -2,7 +2,7 @@
 # Description:  Script slouzi pro vypocet hlubky vybrusu pri navadeni na vrtackach.
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::Stackup::Drilling::DrillCrossHelper;
+package Packages::CAMJob::Drilling::DrilledCross;
 
  
 

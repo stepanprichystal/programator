@@ -17,6 +17,7 @@ use aliased 'CamHelpers::CamHelper';
 use aliased 'CamHelpers::CamJob';
 use aliased 'CamHelpers::CamLayer';
 use aliased 'Programs::Coupon::Enums';
+use aliased 'Enums::EnumsImp';
 use aliased 'Programs::Coupon::Helper';
 use aliased 'Programs::Coupon::CpnBuilder::MicrostripBuilders::SEBuilder';
 use aliased 'Programs::Coupon::CpnGenerator::ModelBuilders::CoatedMicrostrip';
@@ -265,17 +266,17 @@ sub __GenerateSingle {
 
 		switch ( $stripLayout->GetModel() ) {
 
-			case Enums->Model_COATED_MICROSTRIP { $modelBuilder = CoatedMicrostrip->new() }
+			case EnumsImp->Model_COATED_MICROSTRIP { $modelBuilder = CoatedMicrostrip->new() }
 
-			  case Enums->Model_UNCOATED_MICROSTRIP { $modelBuilder = UncoatedMicrostrip->new() }
+			  case EnumsImp->Model_UNCOATED_MICROSTRIP { $modelBuilder = UncoatedMicrostrip->new() }
 
-			  case Enums->Model_STRIPLINE { $modelBuilder = Stripline->new() }
+			  case EnumsImp->Model_STRIPLINE { $modelBuilder = Stripline->new() }
 
-			  case Enums->Model_STRIPLINE_2T { $modelBuilder = Stripline2T->new() }
+			  case EnumsImp->Model_STRIPLINE_2T { $modelBuilder = Stripline2T->new() }
 
-			  case Enums->Model_COATED_UPPER_EMBEDDED { $modelBuilder = CoatedUpperEmbedded->new() }
+			  case EnumsImp->Model_COATED_UPPER_EMBEDDED { $modelBuilder = CoatedUpperEmbedded->new() }
 
-			  case Enums->Model_UNCOATED_UPPER_EMBEDDED { $modelBuilder = UncoatedUpperEmbedded->new() }
+			  case EnumsImp->Model_UNCOATED_UPPER_EMBEDDED { $modelBuilder = UncoatedUpperEmbedded->new() }
 
 			  else { die "Microstirp model: " . $stripLayout->GetModel() . " is not implemented"; }
 		}

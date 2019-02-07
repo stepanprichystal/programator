@@ -32,9 +32,30 @@ sub GetRepeatStep {
 
 	my @steps = CamStepRepeat->GetRepeatStep( $inCAM, $jobId, $stepName );
 
-	CamStepRepeat->RemoveCouponSteps( \@steps,  $includeCpns, $includeSteps );
+	CamStepRepeat->RemoveCouponSteps( \@steps, $includeCpns, $includeSteps );
 
 	return @steps;
+}
+
+# Return information about deepest nested steps in panel step, which doesn't contain another SR
+# Return array of hashes. Hash contains keys:
+# - stepName
+# - totalCnt: Total count of steps in specified step
+sub GetUniqueDeepestSR {
+	my $self         = shift;
+	my $inCAM        = shift;
+	my $jobId        = shift;
+	my $includeCpns  = shift // 0;    # include coupons steps, default: no
+	my $includeSteps = shift;         # definition of included coupon steps, if undef = all coupon steps
+
+	my $stepName = "panel";
+
+	my @steps = CamStepRepeat->GetUniqueDeepestSR( $inCAM, $jobId, $stepName );
+
+	CamStepRepeat->RemoveCouponSteps( \@steps, $includeCpns, $includeSteps );
+
+	return @steps;
+
 }
 
 # Return information about all nested steps in panel step
@@ -42,8 +63,8 @@ sub GetRepeatStep {
 # - stepName
 # - totalCnt: Total count of steps in specified step
 sub GetUniqueStepAndRepeat {
-	my $self  = shift;
-	my $inCAM = shift;
+	my $self         = shift;
+	my $inCAM        = shift;
 	my $jobId        = shift;
 	my $includeCpns  = shift // 0;    # include coupons steps, default: no
 	my $includeSteps = shift;         # definition of included coupon steps, if undef = all coupon steps
@@ -52,7 +73,7 @@ sub GetUniqueStepAndRepeat {
 
 	my @steps = CamStepRepeat->GetUniqueStepAndRepeat( $inCAM, $jobId, $stepName );
 
-	CamStepRepeat->RemoveCouponSteps( \@steps,   $includeCpns, $includeSteps );
+	CamStepRepeat->RemoveCouponSteps( \@steps, $includeCpns, $includeSteps );
 
 	return @steps;
 }
@@ -62,8 +83,8 @@ sub GetUniqueStepAndRepeat {
 # - stepName
 # - totalCnt: Total count of steps in specified step
 sub GetUniqueNestedStepAndRepeat {
-	my $self  = shift;
-	my $inCAM = shift;
+	my $self         = shift;
+	my $inCAM        = shift;
 	my $jobId        = shift;
 	my $includeCpns  = shift // 0;    # include coupons steps, default: no
 	my $includeSteps = shift;         # definition of included coupon steps, if undef = all coupon steps
@@ -72,11 +93,10 @@ sub GetUniqueNestedStepAndRepeat {
 
 	my @steps = CamStepRepeat->GetUniqueNestedStepAndRepeat( $inCAM, $jobId, $stepName );
 
-	CamStepRepeat->RemoveCouponSteps( \@steps,   $includeCpns, $includeSteps );
+	CamStepRepeat->RemoveCouponSteps( \@steps, $includeCpns, $includeSteps );
 
 	return @steps;
 }
-
 
 # Return limits of all step and repeat
 sub GetStepAndRepeatLim {
@@ -84,29 +104,24 @@ sub GetStepAndRepeatLim {
 	my $inCAM          = shift;
 	my $jobId          = shift;
 	my $considerOrigin = shift;
-	my $includeCpns  = shift // 0;    # include coupons steps, default: no
-	my $includeSteps = shift;         # definition of included coupon steps, if undef = all coupon steps
-	
+	my $includeCpns    = shift // 0;    # include coupons steps, default: no
+	my $includeSteps   = shift;         # definition of included coupon steps, if undef = all coupon steps
+
 	my $stepName = "panel";
-	
+
 	my @SR = CamStepRepeat->GetStepAndRepeat( $inCAM, $jobId, $stepName, $considerOrigin );
-	
-	CamStepRepeat->RemoveCouponSteps( \@SR,  $includeCpns, $includeSteps );
-	
-	
+
+	CamStepRepeat->RemoveCouponSteps( \@SR, $includeCpns, $includeSteps );
+
 	my %limits;
- 
-	$limits{"xMin"} =  min( map { $_->{"gSRxmin"} } @SR);
-	$limits{"xMax"} =  max( map { $_->{"gSRxmax"} } @SR);
-	$limits{"yMin"} =  min( map { $_->{"gSRymin"} } @SR);
-	$limits{"yMax"} =  max( map { $_->{"gSRymax"} } @SR);
+
+	$limits{"xMin"} = min( map { $_->{"gSRxmin"} } @SR );
+	$limits{"xMax"} = max( map { $_->{"gSRxmax"} } @SR );
+	$limits{"yMin"} = min( map { $_->{"gSRymin"} } @SR );
+	$limits{"yMax"} = max( map { $_->{"gSRymax"} } @SR );
 
 	return %limits;
 }
-
- 
-
-
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
@@ -124,8 +139,8 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my %lim = CamStepRepeat->GetStepAndRepeatLim( $inCAM, $jobId, $step );
 
-	my @s = CamStepRepeatPnl->GetRepeatStep( $inCAM, $jobId);
-	
+	my @s = CamStepRepeatPnl->GetRepeatStep( $inCAM, $jobId );
+
 	die;
 
 }

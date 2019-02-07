@@ -44,7 +44,7 @@ sub Build {
 	my %nifData  = %{ $self->{"nifData"} };
 
 	my $stackup   = Stackup->new( $self->{'jobId'} );
-	my $stackupNC = StackupNC->new($inCAM, $stackup);
+	my $stackupNC = StackupNC->new($self->{'jobId'}, $inCAM);
 	my $pressCnt  = $stackupNC->GetPressCnt();
 
 	# comment

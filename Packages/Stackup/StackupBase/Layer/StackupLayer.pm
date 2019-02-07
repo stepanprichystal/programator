@@ -4,7 +4,7 @@
 # of stackup layers
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::Stackup::Stackup::Layer::StackupLayer;
+package Packages::Stackup::StackupBase::Layer::StackupLayer;
 
 #3th party library
 use strict;

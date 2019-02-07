@@ -14,7 +14,7 @@ use warnings;
 #local library
 #use aliased 'Packages::Export::NCExport::NCExportHelper';
 #use aliased 'Packages::Stackup::StackupHelper';
-#use aliased 'Packages::Stackup::Drilling::DrillingHelper';
+#use aliased 'Packages::Export::NCExport::Helpers::DrillingHelper';
 #use aliased 'CamHelpers::CamJob';
 #use aliased 'Enums::EnumsPaths';
 #use aliased 'Helpers::JobHelper';

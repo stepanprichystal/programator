@@ -18,7 +18,7 @@ use aliased 'CamHelpers::CamHelper';
 use aliased 'CamHelpers::CamAttributes';
 use aliased 'CamHelpers::CamCopperArea';
 use aliased 'CamHelpers::CamStepRepeat';
-use aliased 'Packages::Stackup::StackupDefault';
+use aliased 'Packages::CAMJob::Stackup::StackupDefault';
 use aliased 'Helpers::JobHelper';
 use aliased 'Packages::NifFile::NifFile';
 

@@ -129,12 +129,12 @@ sub GetAllByPcbId {
 }
 
 sub GetExternalDoc {
-		my $self  = shift;
-		my $pcbId = shift;
+	my $self  = shift;
+	my $pcbId = shift;
 
-		my @params = ( SqlParameter->new( "_PcbId", Enums->SqlDbType_VARCHAR, $pcbId ) );
-	
-		my $cmd = "select top 1
+	my @params = ( SqlParameter->new( "_PcbId", Enums->SqlDbType_VARCHAR, $pcbId ) );
+
+	my $cmd = "select top 1
 	stuff ((select ',' +  'heliosgreen://v1/nrs/Gatema/Classes(145)/Folders(11019)/RunFunction?FunctionName=spusteni&RecordNumbers=[' + cast(vs.cislo_vztaz_subjektu as varchar(30)) + ']' from lcs.vztahysubjektu vs where vs.cislo_vztahu = 17810 and vs.cislo_subjektu = n.cislo_subjektu for xml path (''), TYPE).value('.', 'varchar(max)'), 1, 1 , '' ) externi_dokumenty
 	from lcs.desky_22 d with (nolock)
 				 left outer join lcs.subjekty c with (nolock) on c.cislo_subjektu=d.zakaznik
@@ -147,8 +147,8 @@ sub GetExternalDoc {
 				 left outer join lcs.subjekty mn with (nolock) on mn.cislo_subjektu=dn.material
 				 where d.reference_subjektu=_PcbId and  z.cislo_poradace = 22050
 				 order by z.reference_subjektu desc,n.cislo_subjektu desc,z.cislo_subjektu desc";
-				 
-		my @result = Helper->ExecuteDataSet( $cmd, \@params );
+
+	my @result = Helper->ExecuteDataSet( $cmd, \@params );
 
 	if (@result) {
 		return @result;
@@ -896,11 +896,9 @@ sub UpdateOdsouhlasovat {
 
 	my $lastOrder = $self->GetPcbOrderNumber($pcbId);
 
+	require Connectors::HeliosConnector::HelperWriter;
 
-
-		require Connectors::HeliosConnector::HelperWriter;
-
-			$res = Connectors::HeliosConnector::HelperWriter->OnlineWrite_order( "$pcbId" . "-" . $lastOrder, $state, "odsouhlasovat" );
+	$res = Connectors::HeliosConnector::HelperWriter->OnlineWrite_order( "$pcbId" . "-" . $lastOrder, $state, "odsouhlasovat" );
 
 	return $res;
 }
@@ -909,14 +907,14 @@ sub UpdateOdsouhlasovat {
 sub UpdateOrderMultiplicity {
 	my $self  = shift;
 	my $pcbId = shift;
-	my $nas = shift;
+	my $nas   = shift;
 	my $res   = 0;
 
 	my $lastOrder = $self->GetPcbOrderNumber($pcbId);
 
-		require Connectors::HeliosConnector::HelperWriter;
+	require Connectors::HeliosConnector::HelperWriter;
 
-			$res = Connectors::HeliosConnector::HelperWriter->OnlineWrite_order( "$pcbId" . "-" . $lastOrder, $nas, "nasobnost" );
+	$res = Connectors::HeliosConnector::HelperWriter->OnlineWrite_order( "$pcbId" . "-" . $lastOrder, $nas, "nasobnost" );
 
 	return $res;
 }
@@ -948,7 +946,7 @@ sub UpdateNCInfo {
 sub UpdateMaterialKind {
 	my $self        = shift;
 	my $pcbId       = shift;
-	my $mat      = shift;
+	my $mat         = shift;
 	my $childThread = shift;
 
 	if ($childThread) {
@@ -968,7 +966,6 @@ sub UpdateMaterialKind {
 	}
 
 }
-
 
 # update column pooling in pcb order
 sub UpdatePooling {
@@ -1087,14 +1084,13 @@ sub UpdateSolderMask {
 	}
 }
 
-
 # update column pooling in pcb order
 sub UpdateOrderTerm {
 	my $self        = shift;
 	my $order       = shift;
-	my $term      	= shift;
+	my $term        = shift;
 	my $childThread = shift;
- 
+
 	if ($childThread) {
 
 		my $result = $self->__SystemCall( "UpdateOrderTerm", $order, $term );
@@ -1127,11 +1123,10 @@ sub UpdateOrderTerm {
 #Stornována (5)
 #Ukonèena (7)
 sub GetStatusOfOrder {
-	my $self    = shift;
-	my $orderId = shift;
+	my $self      = shift;
+	my $orderId   = shift;
 	my $editStyle = shift;    # if checked ,return value will be edited by style
-	
- 
+
 	my $column = "stav";
 
 	if ($editStyle) {
@@ -1289,10 +1284,10 @@ sub GetReorders {
 # Return orders with ancestor in pcb
 # Option  is status
 sub GetOrdersWithAncestor {
-	my $self  = shift;
+	my $self     = shift;
 	my $statuses = shift;
 
-	my @params = ( );
+	my @params = ();
 
 	my $cmd = "SELECT z.reference_subjektu, 
 					  z.pooling,
@@ -1302,18 +1297,17 @@ sub GetOrdersWithAncestor {
 				FROM lcs.zakazky_dps_22_hlavicka z
 				JOIN lcs.vztahysubjektu vs ON vs.cislo_vztahu = 23291 and vs.cislo_subjektu = z.deska
 				JOIN lcs.desky_22 p ON p.cislo_subjektu = vs.cislo_vztaz_subjektu";
-				
-	if(defined $statuses){
-		
+
+	if ( defined $statuses ) {
+
 		my @statuses = map { "\'" . $_ . "\'" } @{$statuses};
 		my $strStatus = join( ",", @statuses );
-		
-		$cmd .= " WHERE z.stav IN ($strStatus)"
-	}			
-			 
+
+		$cmd .= " WHERE z.stav IN ($strStatus)";
+	}
 
 	my @res = Helper->ExecuteDataSet( $cmd, \@params );
-	
+
 	return @res;
 
 }
@@ -1517,11 +1511,11 @@ sub GetCopperStoreInfo {
 
 # Return store information about prepreg defined by multical ids
 sub GetPrepregStoreInfo {
-	my $self = shift;
-	my $qId  = shift;                                                      # quality id (DR4, IS400, ..)
-	my $id   = shift;
-	my $matXsize = shift;	# in mm  
-	my $matYsize = shift;	   # in mm                                                            # prepreg thick id
+	my $self     = shift;
+	my $qId      = shift;    # quality id (DR4, IS400, ..)
+	my $id       = shift;
+	my $matXsize = shift;    # in mm
+	my $matYsize = shift;    # in mm                                                            # prepreg thick id
 
 	return $self->GetMatStoreInfo( EnumsIS->MatType_PREPREG, $qId, $id, undef, undef, $matXsize, $matYsize );
 
@@ -1529,12 +1523,12 @@ sub GetPrepregStoreInfo {
 
 # Return store information about core defined by multical ids
 sub GetCoreStoreInfo {
-	my $self = shift;
-	my $qId  = shift;                                                      # quality id (DR4, IS400, ..)
-	my $id   = shift;                                                      # core thick id
-	my $id2  = shift;  														# copper thick id  
-	my $matXsize = shift;	# in mm  
-	my $matYsize = shift;	   # in mm                                                 
+	my $self     = shift;
+	my $qId      = shift;    # quality id (DR4, IS400, ..)
+	my $id       = shift;    # core thick id
+	my $id2      = shift;    # copper thick id
+	my $matXsize = shift;    # in mm
+	my $matYsize = shift;    # in mm
 
 	return $self->GetMatStoreInfo( EnumsIS->MatType_CORE, $qId, $id, $id2, undef, $matXsize, $matYsize );
 }
@@ -1543,15 +1537,14 @@ sub GetCoreStoreInfo {
 # qId, Id, Id2 are from UDA table and are refer to Multicall file "ml.xml",
 # where are defined materials and qid
 sub GetMatStoreInfo {
-	my $self    = shift;
-	my $matType = shift;
-	my $qId     = shift;
-	my $id      = shift;
-	my $id2     = shift;
-	my $matHeight = shift;	# in mm  
-	my $matWidth = shift;	# in mm
-	my $matDepth = shift;	# in mm
-	
+	my $self      = shift;
+	my $matType   = shift;
+	my $qId       = shift;
+	my $id        = shift;
+	my $id2       = shift;
+	my $matHeight = shift;    # in mm
+	my $matWidth  = shift;    # in mm
+	my $matDepth  = shift;    # in mm
 
 	my @params = (
 				   SqlParameter->new( "_matType", Enums->SqlDbType_VARCHAR, $matType ),
@@ -1559,8 +1552,7 @@ sub GetMatStoreInfo {
 				   SqlParameter->new( "__id",     Enums->SqlDbType_INT,     $id ),
 				   SqlParameter->new( "__id2",    Enums->SqlDbType_INT,     $id2 )
 	);
-	
- 
+
 	my $where = "";
 	if ( $matType eq EnumsIS->MatType_PREPREG ) {
 
@@ -1571,22 +1563,21 @@ sub GetMatStoreInfo {
 
 		$where .= "and uda.dps_qid = __qId and uda.dps_id2 = __id2";
 	}
-	
-	
-	if(defined $matHeight){
-		push(@params,  SqlParameter->new( "__matHeight",    Enums->SqlDbType_INT,     $matHeight/1000 ));
+
+	if ( defined $matHeight ) {
+		push( @params, SqlParameter->new( "__matHeight", Enums->SqlDbType_INT, $matHeight / 1000 ) );
 		$where .= "and kks.vyska = __matHeight";
 	}
-	
-	if(defined $matWidth){
-		push(@params,  SqlParameter->new( "__matWidth",    Enums->SqlDbType_INT,     $matWidth/1000 ));
+
+	if ( defined $matWidth ) {
+		push( @params, SqlParameter->new( "__matWidth", Enums->SqlDbType_INT, $matWidth / 1000 ) );
 		$where .= "and kks.sirka = __matWidth";
-	}	
-	
-	if(defined $matDepth){
-		push(@params,  SqlParameter->new( "__matDepth",    Enums->SqlDbType_INT,     $matDepth/1000 ));
+	}
+
+	if ( defined $matDepth ) {
+		push( @params, SqlParameter->new( "__matDepth", Enums->SqlDbType_INT, $matDepth / 1000 ) );
 		$where .= "and kks.hloubka = __matDepth";
-	}	
+	}
 
 	my $cmd = "SELECT kks.reference_subjektu, 
 					
@@ -1613,9 +1604,33 @@ sub GetMatStoreInfo {
 					$where";
 
 	my @result = Helper->ExecuteDataSet( $cmd, \@params );
- 
 
 	return @result;
+}
+
+# Return material info by material reference
+sub GetMatInfo {
+	my $self         = shift;
+	my $matReference = shift;
+
+	my @params = ( SqlParameter->new( "__matReference", Enums->SqlDbType_VARCHAR, $matReference ) );
+
+	my $cmd = "SELECT 
+				kks.reference_subjektu,
+				 uda.dps_id,
+  				 uda.dps_id2,
+ 				 uda.dps_qid
+				FROM lcs.kmenova_karta_skladu kks
+				join lcs.uda_kmenova_karta_skladu uda on uda.cislo_subjektu= kks.cislo_subjektu
+				WHERE kks.reference_subjektu = __matReference";
+
+	my @result = Helper->ExecuteDataSet( $cmd, \@params );
+	if (@result) {
+		return  $result[0] ;
+	}
+	else {
+		return 0;
+	}
 }
 
 # Return number of cores in pcb
@@ -1745,15 +1760,14 @@ sub GetPcbAncestor {
 	if ( scalar(@res) ) {
 
 		return $res[0];
-		
-	}else{
-		
+
+	}
+	else {
+
 		return undef;
 	}
 
 }
-
-
 
 #-------------------------------------------------------------------------------------------#
 #  Helper method
@@ -1788,8 +1802,9 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	use aliased 'Connectors::HeliosConnector::HegMethods';
 	use Data::Dump qw(dump);
-	 
- 
+
+	my @test = HegMethods->GetMatInfo("0301000013");
+	dump(@test);
 }
 
 1;

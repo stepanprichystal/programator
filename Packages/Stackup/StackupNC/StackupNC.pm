@@ -5,6 +5,7 @@
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Packages::Stackup::StackupNC::StackupNC;
+use base('Packages::Stackup::StackupBase::StackupBase');
 
 #3th party library
 use strict;
@@ -23,26 +24,22 @@ use aliased 'Packages::Stackup::StackupNC::StackupNCSignal';
 #-------------------------------------------------------------------------------------------#
 
 sub new {
-	my $self = shift;
-	$self = {};
+	my $class = shift;
+	
+	my $jobId = shift;
+	my $inCAM = shift;
+		
+	my $self = $class->SUPER::new($jobId);
 	bless $self;
-
+ 
+ 
+	# SET PROPERTIES
 	
+	$self->{"inCAM"} = $inCAM;
+	 
+	$self->{"NCPress"} = [];
 
-	$self->{"inCAM"} = shift;
-
-	# stackup
-	$self->{"stackup"} = shift;
-	
-	# stackup
-	$self->{"jobId"} = $self->{"stackup"}->{"pcbId"};
-
-	# Signal layers
-	my @press = ();
-	$self->{"press"} = \@press;
-
-	my @cores = ();
-	$self->{"cores"} = \@cores;
+	$self->{"NCCores"} = [];
 
 	my @pltLayers = CamDrilling->GetPltNCLayers( $self->{"inCAM"}, $self->{"jobId"} );
 	my @npltLayers = CamDrilling->GetNPltNCLayers( $self->{"inCAM"}, $self->{"jobId"} );
@@ -53,18 +50,19 @@ sub new {
 	
 	$self->{"ncLayers"} = \@NCLayers;
 
+	# INIT STACKUP
+
 	$self->__InitPress();
 	$self->__InitCores();
+	
 	return $self;
 }
 
 sub __InitPress {
 	my $self = shift;
-
-	my $stackup = $self->{"stackup"};
-
-	my $pressCnt  = $stackup->GetPressCount();
-	my %pressInfo = $stackup->GetPressInfo();
+ 
+	my $pressCnt  = $self->SUPER::GetPressCount();
+	my %pressInfo = $self->SUPER::GetPressInfo();
 
 	for ( my $i = 0 ; $i < $pressCnt ; $i++ ) {
 
@@ -76,15 +74,14 @@ sub __InitPress {
 
 		my $pressNC = StackupNCPress->new( $self, $topSignal, $botSignal, $pressOrder );
 
-		push( @{ $self->{"press"} }, $pressNC );
+		push( @{ $self->{"NCPress"} }, $pressNC );
 	}
 }
 
 sub __InitCores {
 	my $self = shift;
 
-	my $stackup = $self->{"stackup"};
-	my @cores   = $stackup->GetAllCores();
+	my @cores   = $self->SUPER::GetAllCores();
 
 	for ( my $i = 0 ; $i < scalar(@cores) ; $i++ ) {
 
@@ -104,7 +101,7 @@ sub __InitCores {
 
 			my $coreNC = StackupNCCore->new( $self, $topSignal, $botSignal, $coreNum );
 
-			push( @{ $self->{"cores"} }, $coreNC );
+			push( @{ $self->{"NCCores"} }, $coreNC );
 
 		}
 	}
@@ -115,7 +112,7 @@ sub GetPress {
 	my $self       = shift;
 	my $pressOrder = shift;
 
-	my @press = @{ $self->{"press"} };
+	my @press = @{ $self->{"NCPress"} };
 	my $idx = ( grep { $press[$_]->GetPressOrder() eq $pressOrder } 0 .. $#press )[0];
 
 	if ( defined $idx ) {
@@ -130,7 +127,7 @@ sub GetCore {
 	my $self       = shift;
 	my $coreNumber = shift;
 
-	my @cores = @{ $self->{"cores"} };
+	my @cores = @{ $self->{"NCCores"} };
 	my $idx = ( grep { $cores[$_]->GetCoreNumber() eq $coreNumber } 0 .. $#cores )[0];
 
 	if ( defined $idx ) {
@@ -142,12 +139,12 @@ sub GetCore {
 
 sub GetPressCnt {
 	my $self = shift;
-	return scalar( @{ $self->{"press"} } );
+	return scalar( @{ $self->{"NCPress"} } );
 }
 
 sub GetCoreCnt {
 	my $self = shift;
-	return scalar( @{ $self->{"cores"} } );
+	return scalar( @{ $self->{"NCCores"} } );
 }
 
 #-------------------------------------------------------------------------------------------#
@@ -162,14 +159,12 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	
 	my $inCAM  = InCAM->new();
 
-	my $stackup = Stackup->new("d152456");
-	my $stackupNC = StackupNC->new($inCAM, $stackup);
+ 	my $jobId = "d113609";
+	my $stackupNC = StackupNC->new( $jobId, $inCAM);
 	
-	my $coreStack = $stackup->GetCore(2);
+	 
 	my $coreStackNC = $stackupNC->GetCore(1);
-	
-	print $coreStack->GetPlatingExists();
-	
+ 
 	die;
 
 }

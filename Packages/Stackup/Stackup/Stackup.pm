@@ -4,7 +4,7 @@
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Packages::Stackup::Stackup::Stackup;
-use base('Packages::Stackup::Stackup::StackupBase');
+use base('Packages::Stackup::StackupBase::StackupBase');
 
 #3th party library
 use strict;
@@ -17,7 +17,7 @@ use aliased 'Helpers::FileHelper';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'Packages::Stackup::Enums';
 use aliased 'Enums::EnumsPaths';
-use aliased 'Packages::Stackup::Stackup::StackupHelper';
+use aliased 'Packages::Stackup::StackupBase::StackupHelper';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -265,7 +265,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	use aliased 'Packages::Stackup::Stackup::Stackup';
 
-	my $stackup = Stackup->new("d016138");
+	my $stackup = Stackup->new("d113609");
 
 	my $mir = $stackup->GetFinalThick();
 

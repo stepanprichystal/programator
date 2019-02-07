@@ -59,11 +59,11 @@ sub new {
 	$self->{"type"}     = shift;
 	$self->{"messages"} = shift;
 	$self->{"buttons"}  = shift;
-
-	#$self->{"resultMngr"} = shift;
-	$self->{"caller"} = shift;
-	$self->{"onExit"} = shift;
-	$self->{"result"} = -1;
+	$self->{"images"}   = shift;
+	                                                                                                               #$self->{"resultMngr"} = shift;
+	$self->{"caller"}   = shift;
+	$self->{"onExit"}   = shift;
+	$self->{"result"}   = -1;
 
 	$self->__SetLayout();
 
@@ -235,14 +235,16 @@ sub __WriteMessages() {
 	my $self    = shift;
 	my $richTxt = shift;
 	my $mess;
-	 
- 
+
+	# WriteImage (const wxString &filename, wxBitmapType bitmapType, const wxRichTextAttr &textAttr=wxRichTextAttr())
+	#Loads an image from a file and writes it at the current insertion point. More...
+
 	$richTxt->Freeze();
 
 	$richTxt->BeginFontSize(10.5);
 
 	my @messages = @{ $self->{messages} };
-	my $index = -1;
+	my $index    = -1;
 
 	for ( my $i = 0 ; $i < scalar(@messages) ; $i++ ) {
 
@@ -259,11 +261,11 @@ sub __WriteMessages() {
 
 		#foreach my $l (split //,$mess) {
 
-		my $messPom     = "";    # here is stored char bz char message and tested on <r> atd
-		
+		my $messPom = "";    # here is stored char bz char message and tested on <r> atd
 
 		my $openTag  = "";
 		my $closeTag = "";
+		my $imgTag   = "";
 
 		foreach my $ch ( split //, $mess ) {
 
@@ -274,6 +276,7 @@ sub __WriteMessages() {
 
 			$openTag  = substr $messPom, -3;
 			$closeTag = substr $messPom, -4;
+			$imgTag   = substr $messPom, -10;
 
 			if ( $openTag =~ /<(\w)>/ ) {
 
@@ -286,10 +289,14 @@ sub __WriteMessages() {
 				elsif ( $1 eq "b" ) {
 					$richTxt->BeginBold();
 				}
-				$richTxt->Remove( $richTxt->GetLastPosition()-1, $richTxt->GetLastPosition() ); # tohle tady musi byt jinak nejde odmazat posleddni znak
-				$richTxt->Remove( $richTxt->GetLastPosition()-3, $richTxt->GetLastPosition() );
-				 
-			 
+				elsif ( $1 eq "i" ) {
+					$richTxt->BeginBold();
+				}
+				$richTxt->Remove( $richTxt->GetLastPosition() - 1, $richTxt->GetLastPosition() )
+				  ;    # tohle tady musi byt jinak nejde odmazat posleddni znak
+				$richTxt->Remove( $richTxt->GetLastPosition() - 3, $richTxt->GetLastPosition() );
+				$messPom = substr $messPom, 0, length($messPom) - 4;
+
 			}
 			elsif ( $closeTag =~ /<\/(\w)>/ ) {
 
@@ -299,9 +306,30 @@ sub __WriteMessages() {
 				else {
 					$richTxt->EndTextColour();
 				}
-				$richTxt->Remove( $richTxt->GetLastPosition()-1, $richTxt->GetLastPosition() ); # tohle tady musi byt jinak nejde odmazat posleddni znak
-				$richTxt->Remove( $richTxt->GetLastPosition()-4, $richTxt->GetLastPosition() );
+				$richTxt->Remove( $richTxt->GetLastPosition() - 1, $richTxt->GetLastPosition() )
+				  ;    # tohle tady musi byt jinak nejde odmazat posleddni znak
+				$richTxt->Remove( $richTxt->GetLastPosition() - 4, $richTxt->GetLastPosition() );
 				$index -= 4;
+				$messPom = substr $messPom, 0, length($messPom) - 4;
+
+			}
+			elsif ( $imgTag =~ m/<img(\d+)>/ ) {
+
+				my $imgNumber = $1;
+
+				my $tagLen = length( ($imgTag =~ m/(<img\d+>)/)[0] );
+
+				$richTxt->Remove( $richTxt->GetLastPosition() - 1, $richTxt->GetLastPosition() )
+				  ;    # tohle tady musi byt jinak nejde odmazat posleddni znak
+				$richTxt->Remove( $richTxt->GetLastPosition() - $tagLen, $richTxt->GetLastPosition() );
+				$index -= $tagLen;
+				$messPom = substr $messPom, 0, length($messPom) - $tagLen;
+
+				 
+				my $img = (grep{$_->[0] eq $imgNumber} @{$self->{"images"}})[0];
+				die "Image number: $imgNumber was not found in imamge collection" unless(defined $img);
+				
+				$richTxt->WriteImage( $img->[1], $img->[2]);
 			}
 
 		}
@@ -310,10 +338,11 @@ sub __WriteMessages() {
 
 		if ( $i + 1 != scalar(@messages) ) {
 			$richTxt->BeginFontSize(1);
-#			$richTxt->WriteText('\n');
-#			$richTxt->WriteText('\n');
-#			$index++;
-#			$index++;
+
+						$richTxt->WriteText("\n");
+			#			$richTxt->WriteText('\n');
+						$index++;
+			#			$index++;
 			$richTxt->BeginFontSize(10.5);
 		}
 
@@ -399,8 +428,6 @@ sub __OnClick {
 
 	#$parent->{"result"} = $button->{"order"};
 	#$self->Destroy();
-
-	 
 
 	my $onExit = $self->{"onExit"};
 

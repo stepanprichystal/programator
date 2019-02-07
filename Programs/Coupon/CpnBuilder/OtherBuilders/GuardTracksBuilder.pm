@@ -452,7 +452,7 @@ sub __GetAbsoluteRouteDist {
 	my $ori = $self->{"cpnSingle"}->GetMicrostripOrigin($s);
 	my $yE  = $ori->Y();
 
-	if ( !$self->{"cpnSingle"}->IsMultistrip() && ( $s->GetType() eq Enums->Type_DIFF || $s->GetType() eq Enums->Type_CODIFF ) ) {
+	if ( !$self->{"cpnSingle"}->IsMultistrip() && ( $s->GetType() eq EnumsImp->Type_DIFF || $s->GetType() eq EnumsImp->Type_CODIFF ) ) {
 		$yE += $self->{"cpnSingleSett"}->GetPad2PadDist() / 1000 / 2;    # single diff has two rows
 	}
 

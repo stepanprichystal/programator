@@ -16,6 +16,7 @@ use List::Util qw[min max];
 
 #local library
 use aliased 'Programs::Coupon::Enums';
+use aliased 'Enums::EnumsImp';
 use aliased 'CamHelpers::CamStep';
 use aliased 'CamHelpers::CamJob';
 use aliased 'CamHelpers::CamHelper';
@@ -90,13 +91,13 @@ sub Build {
 
 			switch ( $stripVar->GetType() ) {
 
-				case Enums->Type_SE { $mStripBuilder = SEBuilder->new() }
+				case EnumsImp->Type_SE { $mStripBuilder = SEBuilder->new() }
 
-				  case Enums->Type_DIFF { $mStripBuilder = DiffBuilder->new() }
+				  case EnumsImp->Type_DIFF { $mStripBuilder = DiffBuilder->new() }
 
-				  case Enums->Type_COSE { $mStripBuilder = COSEBuilder->new() }
+				  case EnumsImp->Type_COSE { $mStripBuilder = COSEBuilder->new() }
 
-				  case Enums->Type_CODIFF { $mStripBuilder = CODiffBuilder->new() }
+				  case EnumsImp->Type_CODIFF { $mStripBuilder = CODiffBuilder->new() }
 
 				  else { die "Microstirp type: " . $stripVar->GetType() . "is not implemented"; }
 			}
@@ -251,7 +252,7 @@ sub GetShareGNDLayers {
 		push( @gndLayers, Helper->GetInCAMLayer( $topGnd, $self->{"layerCnt"} ) ) if ( defined $topGnd && $topGnd =~ /l\d+/i );
 		push( @gndLayers, Helper->GetInCAMLayer( $botGnd, $self->{"layerCnt"} ) ) if ( defined $botGnd && $botGnd =~ /l\d+/i );
 		push( @gndLayers, Helper->GetInCAMLayer( $track,  $self->{"layerCnt"} ) )
-		  if ( $s->GetType() eq Enums->Type_COSE || $s->GetType() eq Enums->Type_CODIFF );
+		  if ( $s->GetType() eq EnumsImp->Type_COSE || $s->GetType() eq EnumsImp->Type_CODIFF );
 	}
 
 	my %layers;
@@ -264,7 +265,7 @@ sub GetShareGNDLayers {
 
 		# stirp in same column
 		my $s2 = ( grep { $_->Id() ne $stripVariant->Id() } @strips )[0];
-		if ( $secondPos && ( $s2->GetType() eq Enums->Type_SE || $s2->GetType() eq Enums->Type_COSE ) ) {
+		if ( $secondPos && ( $s2->GetType() eq EnumsImp->Type_SE || $s2->GetType() eq EnumsImp->Type_COSE ) ) {
 			$layers{$_} = 0 foreach keys %layers;
 		}
 	}
@@ -471,24 +472,24 @@ sub GetMicrostripPosCnt {
 	my $direction = shift;    # x or y direction
 
 	my %multiStrip = ();
-	$multiStrip{ Enums->Type_SE }{"x"}     = 1;
-	$multiStrip{ Enums->Type_SE }{"y"}     = 2;
-	$multiStrip{ Enums->Type_DIFF }{"x"}   = 2;
-	$multiStrip{ Enums->Type_DIFF }{"y"}   = 2;
-	$multiStrip{ Enums->Type_COSE }{"x"}   = 1;
-	$multiStrip{ Enums->Type_COSE }{"y"}   = 2;
-	$multiStrip{ Enums->Type_CODIFF }{"x"} = 2;
-	$multiStrip{ Enums->Type_CODIFF }{"y"} = 2;
+	$multiStrip{ EnumsImp->Type_SE }{"x"}     = 1;
+	$multiStrip{ EnumsImp->Type_SE }{"y"}     = 2;
+	$multiStrip{ EnumsImp->Type_DIFF }{"x"}   = 2;
+	$multiStrip{ EnumsImp->Type_DIFF }{"y"}   = 2;
+	$multiStrip{ EnumsImp->Type_COSE }{"x"}   = 1;
+	$multiStrip{ EnumsImp->Type_COSE }{"y"}   = 2;
+	$multiStrip{ EnumsImp->Type_CODIFF }{"x"} = 2;
+	$multiStrip{ EnumsImp->Type_CODIFF }{"y"} = 2;
 
 	my %singleStrip = ();
-	$singleStrip{ Enums->Type_SE }{"x"}     = 2;
-	$singleStrip{ Enums->Type_SE }{"y"}     = 1;
-	$singleStrip{ Enums->Type_DIFF }{"x"}   = 2;
-	$singleStrip{ Enums->Type_DIFF }{"y"}   = 2;
-	$singleStrip{ Enums->Type_COSE }{"x"}   = 2;
-	$singleStrip{ Enums->Type_COSE }{"y"}   = 1;
-	$singleStrip{ Enums->Type_CODIFF }{"x"} = 2;
-	$singleStrip{ Enums->Type_CODIFF }{"y"} = 2;
+	$singleStrip{ EnumsImp->Type_SE }{"x"}     = 2;
+	$singleStrip{ EnumsImp->Type_SE }{"y"}     = 1;
+	$singleStrip{ EnumsImp->Type_DIFF }{"x"}   = 2;
+	$singleStrip{ EnumsImp->Type_DIFF }{"y"}   = 2;
+	$singleStrip{ EnumsImp->Type_COSE }{"x"}   = 2;
+	$singleStrip{ EnumsImp->Type_COSE }{"y"}   = 1;
+	$singleStrip{ EnumsImp->Type_CODIFF }{"x"} = 2;
+	$singleStrip{ EnumsImp->Type_CODIFF }{"y"} = 2;
 
 	if ( $self->IsMultistrip() ) {
 

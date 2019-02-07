@@ -2,7 +2,7 @@
 # Description: Helper class, which is used by Stackup.pm class for various helper purposes
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::Stackup::Stackup::StackupHelper;
+package Packages::Stackup::StackupBase::StackupHelper;
 
 #3th party library
 use strict;
@@ -17,7 +17,7 @@ use aliased 'Helpers::FileHelper';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'Packages::Stackup::Enums';
 use aliased 'Enums::EnumsPaths';
-#use aliased 'Packages::Stackup::Stackup::StackupHelper';
+#use aliased 'Packages::Stackup::StackupBase::StackupHelper';
 #use aliased 'Packages::Stackup::Stackup::StackupLayerHelper';
 #use aliased 'Packages::Stackup::Stackup::StackupLayer';
 #use aliased 'Packages::Stackup::Stackup::Stackup';

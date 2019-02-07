@@ -11,6 +11,14 @@ use constant {
 
 
 use constant {
+    InStackMaterialType_ISOLATOR => "Isolator",
+    InStackMaterialType_CORE => "Core",
+    InStackMaterialType_FOIL => "Foil"
+	 
+};
+
+
+use constant {
     SignalLayer_TOP => "top",
     SignalLayer_BOT => "bot"
 };

@@ -21,38 +21,32 @@ use aliased 'Managers::MessageMngr::Enums';
 use aliased 'Packages::Events::Event';
 
 sub new {
-	my $self = shift;
-	my $pcbId = shift; 	# title of message windows
-	my $parent = shift; # default parent (Wx:window) of all mesages. Possible to specify different when call Show/ShowModal
-	 
+	my $self   = shift;
+	my $pcbId  = shift;    # title of message windows
+	my $parent = shift;    # default parent (Wx:window) of all mesages. Possible to specify different when call Show/ShowModal
+
 	$self = {};
 	bless($self);
-	
- 
+
 	# PROPERTIES
 
 	#actual Message
-	$self->{result}      = -1;         #contain's reference on result scalar variable
-	$self->{messFrm}     = undef;      #contain's reference on result scalar variable
-	
-	$self->{'onMessage'} =  Event->new();      #event when message
-	
- 
+	$self->{result}  = -1;       #contain's reference on result scalar variable
+	$self->{messFrm} = undef;    #contain's reference on result scalar variable
+
+	$self->{'onMessage'} = Event->new();    #event when message
+
 	$self->{"pcbId"} = $pcbId;
- 
-	if(!$self->{"pcbId"}){
+
+	if ( !$self->{"pcbId"} ) {
 		$self->{"pcbId"} = -1;
 	}
 	$self->{"childPcbId"} = -1;
 
 	$self->{"parent"} = $parent;
 
-
 	my @messQueue = ();
-	$self->{messQueue} = \@messQueue;    #contain's reference on result scalar variable
-	
-	
-	
+	$self->{messQueue} = \@messQueue;       #contain's reference on result scalar variable
 
 	#my $worker = threads->create( sub { $self->__WorkerMethod( ) });
 	#$worker->set_thread_exit_only(1);
@@ -61,29 +55,24 @@ sub new {
 
 }
 
-
 sub __WorkerMethod {
 	my $self = shift;
-	
-	while(1){
-		
-		
+
+	while (1) {
+
 		sleep(1);
 		print STDERR " loop\n";
-		
+
 		$self->__ShowMessages();
-		
+
 	}
-	
-	
+
 }
 
+sub SetPcbIds {
 
-
-sub SetPcbIds{
-	
 	my $self = shift;
-	$self->{"pcbId"} = shift;
+	$self->{"pcbId"}      = shift;
 	$self->{"childPcbId"} = shift;
 }
 
@@ -94,12 +83,11 @@ sub Show {
 
 sub ShowModal {
 	my $self = shift;
-	$self->__AddToQueue(1, @_ );
+	$self->__AddToQueue( 1, @_ );
 
 }
 
-
-# Results are number of pushed button. 
+# Results are number of pushed button.
 # Count from left to right. Numbers start with number 1
 sub Result {
 
@@ -125,21 +113,21 @@ sub __AddToQueue {
 	my $self = shift;
 
 	my %info = ();
-	$info{"modal"}    = shift;
-	$info{"parent"}   = shift;
- 
-	
+	$info{"modal"}  = shift;
+	$info{"parent"} = shift;
+
 	$info{"type"}     = shift;
 	$info{"messages"} = shift;
 	$info{"buttons"}  = shift;
-	$info{"status"}   = Enums->StatusType_NOTSHOWED;
-	
+	$info{"images"}   = shift; # collection of images
+
+	$info{"status"} = Enums->StatusType_NOTSHOWED;
+
 	my $result = "test";
-	$info{"result"}   = \$result;
-	
+	$info{"result"} = \$result;
+
 	my $trace = Devel::StackTrace->new();
 	$info{"caller"} = $trace->frame(2)->{"package"};
-
 
 	#$info{id}       = GeneralHelper->GetGUID();
 
@@ -158,21 +146,14 @@ sub __ShowMessages {
 	}
 
 	#delete destroyed windwos
-	
+
 	#for (my $i = 0; $i < scalar (@queue); $i++){
-		
+
 	#$queue[$i]
-		
-		 
-		
+
 	#}
-	
- 
 
 	my %mess = %{ $queue[0] };    #take first meesage from queue
-	
-	
-	
 
 	if ( $mess{status} eq Enums->StatusType_WAITFORRESULT ) {
 
@@ -181,13 +162,13 @@ sub __ShowMessages {
 	elsif ( $mess{status} eq Enums->StatusType_NOTSHOWED ) {
 
 		my $parent = $mess{"parent"};
-		if((!defined $parent || $parent ==-1) && defined $self->{"parent"}){
+		if ( ( !defined $parent || $parent == -1 ) && defined $self->{"parent"} ) {
 			$parent = $self->{"parent"};
 		}
- 
-		my $messFrm = MessageForm->new( $parent, $self->{"pcbId"}, $mess{"type"}, $mess{"messages"}, $mess{"buttons"}, $mess{"caller"},
+
+		my $messFrm = MessageForm->new( $parent, $self->{"pcbId"}, $mess{"type"}, $mess{"messages"}, $mess{"buttons"}, $mess{"images"}, $mess{"caller"},
 										sub { __OnExitMessFrm( $self, @_ ) } );
-										
+
 		$messFrm->Centre(&Wx::wxVERTICAL);
 
 		#$self->{messFrm} = $messFrm;
@@ -224,14 +205,13 @@ sub __OnExitMessFrm {
 	if ( $exitMess{"status"} eq Enums->StatusType_WAITFORRESULT ) {
 
 		shift @{ $self->{messQueue} };    #delete first message
-		
-		
-		$self->{"result"} = $resultBtn;
 
+		$self->{"result"} = $resultBtn;
 
 		#$mainfrm->MakeModal(0); # (Re-enables parent window)
 		#$mainfrm->{"eventLoop"}->Exit();
 		$messFrmObj->Hide();
+
 		#$mainfrm->Hide();
 		#$messFrmObj->Destroy();
 
@@ -241,13 +221,12 @@ sub __OnExitMessFrm {
 		my $resultTxt = $btns[$resultBtn];
 
 		my $onMessage = $self->{'onMessage'};
-		if ( scalar($onMessage->Handlers()) ) {
+		if ( scalar( $onMessage->Handlers() ) ) {
 
-			$onMessage->Do( $self->{"pcbId"}, $self->{"childPcbId"}, $self->__GetMessagesTxt( $exitMess{"messages"} ), $exitMess{"type"}, $resultTxt );
+			$onMessage->Do( $self->{"pcbId"}, $self->{"childPcbId"}, $self->__GetMessagesTxt( $exitMess{"messages"} ), $exitMess{"type"},
+							$resultTxt );
 		}
 
-		 
-		
 		#$messFrmObj->Destroy();
 
 		#show next message in queue
@@ -273,35 +252,47 @@ sub __GetMessagesTxt {
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#
 
-
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	use aliased 'Managers::MessageMngr::MessageMngr';
 	use aliased 'Enums::EnumsGeneral';
+	use aliased 'Helpers::GeneralHelper';
 
-	# typy oken:
+	# Typy oken:
 	# MessageType_ERROR
 	# MessageType_SYSTEMERROR
 	# MessageType_WARNING
 	# MessageType_QUESTION
 	# MessageType_INFORMATION
 
-	my $str = 'Druha <r>FAIL</r> TEST <g>GREEN</g> konec ';
+	# Definice textovych zprav
+	my $str = "Druha <r>FAIL</r> TEST <g>GREEN</g> konec \n";
 
-	my @mess1 = ( "Prvni zprava", $str );
+	my @mess1 = ( "Prvni zprava\n", $str );
+	push( @mess1, "<img1>" );
+	push( @mess1, "dalsi text" );
+
+	# Definice tlacitek
 	my @btn = ( "tl1", "tl2" );
 
+	# Kolekce obrazku
+	# Kazdy obrazek je definovan polem:
+	# - 0 index = cislo obrazku (umisteni pomoci tagu <img<cislo orazku>>)
+	# - 1 index = cesta
+	# - 2 index = typ obrazku
+	my @imgs = ();
+	my $p    = GeneralHelper->Root() . "\\Programs\\Coupon\\CpnWizard\\Resources\\small_coplanar_diff_coated_embedded_without_gnd.bmp";
+	push( @imgs, [ 1, $p, &Wx::wxBITMAP_TYPE_BMP ] );
+ 
+ 
 	my $messMngr = MessageMngr->new("D3333");
 
-	$messMngr->ShowModal( -1, EnumsGeneral->MessageType_WARNING, \@mess1 );    #  Script se zastavi
+	$messMngr->ShowModal( -1, EnumsGeneral->MessageType_WARNING, \@mess1, \@btn, \@imgs );    #  Script se zastavi
 
 	#my $btnNumber = $messMngr->Result();    # vraci poradove cislo zmacknuteho tlacitka (pocitano od 0, zleva)
 
 	#$messMngr->Show( -1, EnumsGeneral->MessageType_WARNING, \@mess1 );    #  Script se nezastavi a jede dal;
-
-	
-	
 
 }
 

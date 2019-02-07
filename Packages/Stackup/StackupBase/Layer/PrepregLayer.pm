@@ -4,8 +4,8 @@
 # type of layer
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::Stackup::Stackup::Layer::PrepregLayer;
-use base('Packages::Stackup::Stackup::Layer::StackupLayer');
+package Packages::Stackup::StackupBase::Layer::PrepregLayer;
+use base('Packages::Stackup::StackupBase::Layer::StackupLayer');
 
 
 #3th party library

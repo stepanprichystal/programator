@@ -11,6 +11,7 @@ use strict;
 use warnings;
 
 #local library
+use aliased 'Enums::EnumsImp';
 use aliased 'Enums::EnumsPaths';
 use aliased 'Helpers::FileHelper';
 use aliased 'Enums::EnumsGeneral';
@@ -512,6 +513,20 @@ sub GetFileNameByLayer {
 
 }
 
+# Return full name of impedance line type by shortcut
+#EnumsImp->Type_SE     => "se",
+#EnumsImp->Type_DIFF   => "diff",
+#EnumsImp->Type_COSE   => "coplanar_se",
+#EnumsImp->Type_CODIFF => "coplanar_diff",
+sub GetImpedanceType{
+	my $self = shift;
+	my $type = shift;
+	
+	return "Single ended" if($type eq EnumsImp->Type_SE);
+	return "Differential" if($type eq EnumsImp->Type_DIFF);
+	return "Coplanar single ended" if($type eq EnumsImp->Type_COSE);
+	return "Coplanar differential" if($type eq EnumsImp->Type_CODIFF);
+}
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#

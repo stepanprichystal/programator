@@ -790,6 +790,16 @@ sub ResizeFeatures {
 	$inCAM->COM( "sel_resize", "size" => $val, "corner_ctl" => "no" );
 }
 
+# Return number
+sub GetSelFeaturesCnt{
+	my $self  = shift;
+	my $inCAM = shift;
+	
+	$inCAM->COM('get_select_count');
+
+	return $inCAM->GetReply();
+}
+
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#

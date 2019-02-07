@@ -3,7 +3,7 @@
 # Description: Contain inforamtion about stacku layer
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::Stackup::Stackup::Press::StackupPress;
+package Packages::Stackup::StackupBase::Press::StackupPress;
 
 #3th party library
 use strict;

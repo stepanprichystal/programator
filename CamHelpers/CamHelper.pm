@@ -267,6 +267,8 @@ sub GetPcbType {
 	return $type;
 }
 
+
+
 sub EntityChanged {
 	my $self   = shift;
 	my $inCAM  = shift;

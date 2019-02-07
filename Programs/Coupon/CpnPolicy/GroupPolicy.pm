@@ -256,13 +256,13 @@ sub __GetPoolComb {
 				#
 				#					my @forbidden = ();
 				#
-				#					push( @forbidden, [ Enums->Type_COSE,   Enums->Type_SE ] );
-				#					push( @forbidden, [ Enums->Type_COSE,   Enums->Type_DIFF ] );
-				#					push( @forbidden, [ Enums->Type_COSE,   Enums->Type_COSE ] );
-				#					push( @forbidden, [ Enums->Type_COSE,   Enums->Type_CODIFF ] );
-				#					push( @forbidden, [ Enums->Type_CODIFF, Enums->Type_SE ] );
-				#					push( @forbidden, [ Enums->Type_CODIFF, Enums->Type_DIFF ] );
-				#					push( @forbidden, [ Enums->Type_CODIFF, Enums->Type_CODIFF ] );
+				#					push( @forbidden, [ EnumsImp->Type_COSE,   EnumsImp->Type_SE ] );
+				#					push( @forbidden, [ EnumsImp->Type_COSE,   EnumsImp->Type_DIFF ] );
+				#					push( @forbidden, [ EnumsImp->Type_COSE,   EnumsImp->Type_COSE ] );
+				#					push( @forbidden, [ EnumsImp->Type_COSE,   EnumsImp->Type_CODIFF ] );
+				#					push( @forbidden, [ EnumsImp->Type_CODIFF, EnumsImp->Type_SE ] );
+				#					push( @forbidden, [ EnumsImp->Type_CODIFF, EnumsImp->Type_DIFF ] );
+				#					push( @forbidden, [ EnumsImp->Type_CODIFF, EnumsImp->Type_CODIFF ] );
 				#
 				#					# get all microstrip which contain for current layer, layer type : track
 				#					my @mTypes = map { $_->{"type"} } grep { $_->{"l"}->{$l} eq Enums->Layer_TYPETRACK } @{$pool};

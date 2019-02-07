@@ -61,7 +61,7 @@ sub Build {
 
 	if ( $self->{"layerCnt"} > 2 ) {
 		$stackup   = Stackup->new($jobId);
-		$stackupNC = StackupNC->new( $inCAM, $stackup );
+		$stackupNC = StackupNC->new($jobId,  $inCAM);
 		$coreCnt   = $stackupNC->GetCoreCnt();
 		$pressCnt  = $stackupNC->GetPressCnt();
 	}

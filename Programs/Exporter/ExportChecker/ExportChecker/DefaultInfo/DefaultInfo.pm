@@ -647,7 +647,7 @@ sub __InitDefault {
 	if ( $self->{"layerCnt"} > 2 ) {
 
 		$self->{"stackup"} = Stackup->new( $self->{'jobId'} );
-		$self->{"stackupNC"} = StackupNC->new( $self->{"inCAM"}, $self->{"stackup"} );
+		$self->{"stackupNC"} = StackupNC->new( $self->{'jobId'}, $self->{"inCAM"} );
 	}
 
 	if ( CamHelper->LayerExists( $self->{"inCAM"}, $self->{"jobId"}, "score" ) ) {

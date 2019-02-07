@@ -14,7 +14,7 @@ use strict;
 use warnings;
 
 #local library
-use aliased 'Packages::Stackup::Drilling::DrillingHelper';
+use aliased 'Packages::Export::NCExport::Helpers::DrillingHelper';
 use aliased 'Enums::EnumsGeneral';
 
 #-------------------------------------------------------------------------------------------#

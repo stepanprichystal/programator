@@ -13,7 +13,7 @@ use strict;
 use warnings;
 
 #local library
-use aliased 'Packages::Stackup::Drilling::DrillingHelper';
+use aliased 'Packages::Export::NCExport::Helpers::DrillingHelper';
 use aliased 'Packages::Stackup::Stackup::Stackup';
 use aliased 'Packages::Stackup::StackupNC::StackupNC';
 use aliased 'Enums::EnumsGeneral';
@@ -49,7 +49,7 @@ sub DefineOperations {
 
 	my $stackup = Stackup->new( $self->{'jobId'} );
 	$self->{'stackup'} = $stackup;                                         #hash
-	$self->{'stackupNC'} = StackupNC->new( $self->{"inCAM"}, $stackup );
+	$self->{'stackupNC'} = StackupNC->new( $self->{'jobId'}, $self->{"inCAM"});
 
 	#plated nc layers
 	my %pltDrillInfo = DrillingHelper->GetPltNCLayerInfo( $self->{"jobId"}, $self->{"stepName"}, $self->{"inCAM"}, $self->{"pltLayers"} );
@@ -374,7 +374,7 @@ sub __DefineNPlatedOperations {
 	my %npltDrillInfo = %{ $self->{"npltDrillInfo"} };    #contain array of hashes of all NC layers with info (start/stop drill layer)
 	my $stackup       = $self->{'stackup'};               #info about press count, which layer are pressed, etc..
 
-	my $stackupNC = StackupNC->new( $self->{"inCAM"}, $stackup );
+	my $stackupNC = StackupNC->new( $self->{'jobId'}, $self->{"inCAM"} );
 	my $coreCnt = $stackupNC->GetCoreCnt();
 
 	#non plated

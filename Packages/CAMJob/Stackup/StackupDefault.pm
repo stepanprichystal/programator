@@ -3,7 +3,7 @@
 #  pro dps 4vv, 6vv, 8vv  9um + 18um + 35um
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::Stackup::StackupDefault;
+package Packages::CAMJob::Stackup::StackupDefault;
 
 #loading of locale modules
 
@@ -123,7 +123,7 @@ sub CreateStackup {
 	my $pcbThick = $stackup->GetFinalThick();
 
 	#generate name of stackup file eg.: d99991_4vv_1,578_Euro.xml
-	my $stackupName = $self->__GetStackupName( $stackup, $pcbId );
+	my $stackupName = $self->GetStackupName( $stackup, $pcbId );
 
 	$self->_CompleteNewStackup( $pcbId, $pcbThick, $stackupName );
 
@@ -133,6 +133,39 @@ sub CreateStackup {
 	return 1;
 
 }
+
+# Generate standard stackup file name
+sub GetStackupName {
+	my $self    = shift;
+	my $stackup = shift;
+	my $pcbId   = shift;
+
+	my $lCount   = $stackup->GetCuLayerCnt();
+	my $pcbThick = $stackup->GetFinalThick();
+
+	$pcbThick = sprintf( "%4.3f", ( $pcbThick / 1000 ) );
+	$pcbThick =~ s/\./\,/g;
+
+	my %customerInfo = %{ HegMethods->GetCustomerInfo($pcbId) };
+
+	my $customer = $customerInfo{"customer"};
+
+	if ($customer) {
+		$customer =~ s/\s//g;
+		$customer = substr( $customer, 0, 8 );
+	}
+	else {
+		$customer = "";
+	}
+
+	if ( $customer =~ /safiral/i )    #exception for safiral
+	{
+		$customer = "";
+	}
+
+	return $pcbId . "_" . $lCount . "vv" . "_" . $pcbThick . "_" . $customer;
+}
+
 
 #Load xml stackup for pcb
 sub _LoadStandardStackup {
@@ -273,36 +306,7 @@ sub _CompleteNewStackup {
 
 }
 
-sub __GetStackupName {
-	my $self    = shift;
-	my $stackup = shift;
-	my $pcbId   = shift;
 
-	my $lCount   = $stackup->GetCuLayerCnt();
-	my $pcbThick = $stackup->GetFinalThick();
-
-	$pcbThick = sprintf( "%4.3f", ( $pcbThick / 1000 ) );
-	$pcbThick =~ s/\./\,/g;
-
-	my %customerInfo = %{ HegMethods->GetCustomerInfo($pcbId) };
-
-	my $customer = $customerInfo{"customer"};
-
-	if ($customer) {
-		$customer =~ s/\s//g;
-		$customer = substr( $customer, 0, 8 );
-	}
-	else {
-		$customer = "";
-	}
-
-	if ( $customer =~ /safiral/i )    #exception for safiral
-	{
-		$customer = "";
-	}
-
-	return $pcbId . "_" . $lCount . "vv" . "_" . $pcbThick . "_" . $customer;
-}
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
@@ -317,7 +321,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	my $outerCuThick = 35;
 	my $pcbClass     = 6;
 
-	use aliased 'Packages::Stackup::StackupDefault';
+	use aliased 'Packages::CAMJob::Stackup::StackupDefault';
 
 	StackupDefault->CreateStackup( $pcbId, $layerCnt, \@innerCuUsage, $outerCuThick, $pcbClass );
 }
