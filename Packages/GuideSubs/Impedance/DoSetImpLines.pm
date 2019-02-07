@@ -54,13 +54,14 @@ sub SetImpedanceLines {
 	# Parse  XML xonstraints
 	my $inStackJob = InStackJob->new($jobId);
 
-	my @steps =  grep { $_ =~ /^o+\d+^/ } CamStep->GetAllStepNames( $inCAM, $jobId );
+	my @steps =  grep { $_ =~ /^o\+\d+$/ } CamStep->GetAllStepNames( $inCAM, $jobId );
 
 	foreach my $step (@steps) {
 
 		CamHelper->SetStep( $inCAM, $step );
+	 
 
-		foreach my $constraint ( $inStackJob->GetConstraints() ) {
+		foreach my $constraint ( sort { $a->GetTrackLayer(1) cmp $b->GetTrackLayer(1) } $inStackJob->GetConstraints() ) {
 
 			$self->__SetImpedanceLine( $inCAM, $jobId, $step, $constraint, scalar( $inStackJob->GetConstraints() ), $messMngr );
 
@@ -87,7 +88,7 @@ sub __SetImpedanceLine {
 	my $cType    = $constraint->GetType();
 	my $cModel   = $constraint->GetModel();
 	my $lineWOri = sprintf( "%.0f", $constraint->GetOption( "ORIGINAL_TRACE_WIDTH", 1 ) );
-	my $lineWReq = sprintf( "%.0f", $constraint->GetOption( "CALCULATION_REQ_TRACE_WIDTH", 1 ) );
+	my $lineWReq = sprintf( "%.0f", $constraint->GetOption( "CALCULATED_TRACE_WIDTH", 1 ) );
 	my $impVal   = $constraint->GetOption("CUSTOMER_REQUIRED_IMPEDANCE");
 
 	my @imgs = ();
@@ -107,7 +108,7 @@ sub __SetImpedanceLine {
 
 	push( @mess, "\nOznač cesty, které mají splňovat danou impedanci." );
 
-	$messMngr->ShowModal( -1, EnumsGeneral->MessageType_INFORMATION, \@mess, [ "Zkusím štěstí", "Označím ručně" ], \@imgs );
+	$messMngr->ShowModal( -1, EnumsGeneral->MessageType_INFORMATION, \@mess, [ "Zkusím štěstí", "Označím ručně", "Přeskočit" ], \@imgs );
 
 	# auto
 	if ( $messMngr->Result() == 0 ) {
@@ -115,14 +116,21 @@ sub __SetImpedanceLine {
 		$self->__PAUSE( $inCAM, "select_auto", $constraint );
 
 	}
-	else {
+	elsif( $messMngr->Result() == 1) {
 
 		$self->__PAUSE( $inCAM, "select_manual", $constraint );
+	
+	}elsif( $messMngr->Result() == 2) {
+
+		return 0;
 	}
 
 	while (1) {
 
-		my $checkFeatOk = $self->__CheckSelectedLines( $inCAM, $jobId, $step, $l, $constraint, $messMngr );
+		my $skip = 0;
+		my $checkFeatOk = $self->__CheckSelectedLines( $inCAM, $jobId, $step, $l, $constraint, $messMngr, \$skip );
+		
+		return 0 if($skip);
 
 		my @mess2 = ();
 
@@ -158,6 +166,8 @@ sub __SetImpedanceLine {
 		}
 
 	}
+	
+	return 1;
 }
 
 sub __AutoSelect {
@@ -178,6 +188,7 @@ sub __CheckSelectedLines {
 	my $step       = shift;
 	my $layer      = shift;
 	my $constraint = shift;
+	my $skip = shift;
 
 	my $messMngr = shift;
 
@@ -190,7 +201,7 @@ sub __CheckSelectedLines {
 	my $cType    = $constraint->GetType();
 	my $cModel   = $constraint->GetModel();
 	my $lineWOri = sprintf( "%.0f", $constraint->GetOption( "ORIGINAL_TRACE_WIDTH", 1 ) );
-	my $lineWReq = sprintf( "%.0f", $constraint->GetOption( "CALCULATION_REQ_TRACE_WIDTH", 1 ) );
+	my $lineWReq = sprintf( "%.0f", $constraint->GetOption( "CALCULATED_TRACE_WIDTH", 1 ) );
 	my $impVal   = $constraint->GetOption("CUSTOMER_REQUIRED_IMPEDANCE");
 
 	# image collection for message form
@@ -228,6 +239,10 @@ sub __CheckSelectedLines {
 
 			$self->__PAUSE( $inCAM, "select_manual", $constraint );
 			return 0;
+		}elsif ( $messMngr->Result() == 2 ) {
+
+			$$skip = 1;
+			return 1;
 		}
 	}
 
@@ -327,7 +342,7 @@ sub __SetImpedanceLineAttr {
 	my $cType    = $constraint->GetType();
 	my $cModel   = $constraint->GetModel();
 	my $lineWOri = sprintf( "%.0f", $constraint->GetOption( "ORIGINAL_TRACE_WIDTH", 1 ) );
-	my $lineWReq = sprintf( "%.0f", $constraint->GetOption( "CALCULATION_REQ_TRACE_WIDTH", 1 ) );
+	my $lineWReq = sprintf( "%.0f", $constraint->GetOption( "CALCULATED_TRACE_WIDTH", 1 ) );
 	my $impVal   = $constraint->GetOption("CUSTOMER_REQUIRED_IMPEDANCE");
 
 	# set constraint ID
@@ -359,7 +374,7 @@ sub __PAUSE {
 	my $cType    = $constraint->GetType();
 	my $cModel   = $constraint->GetModel();
 	my $lineWOri = sprintf( "%.0f", $constraint->GetOption( "ORIGINAL_TRACE_WIDTH", 1 ) );
-	my $lineWReq = sprintf( "%.0f", $constraint->GetOption( "CALCULATION_REQ_TRACE_WIDTH", 1 ) );
+	my $lineWReq = sprintf( "%.0f", $constraint->GetOption( "CALCULATED_TRACE_WIDTH", 1 ) );
 	my $impVal   = $constraint->GetOption("CUSTOMER_REQUIRED_IMPEDANCE");
 
 	my $mess = "";

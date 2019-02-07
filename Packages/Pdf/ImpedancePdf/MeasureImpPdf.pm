@@ -1,6 +1,6 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Export pad info PDF
+# Description: Export impedance measurement PDF
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Packages::Pdf::ImpedancePdf::MeasureImpPdf;
@@ -9,6 +9,7 @@ use base('Packages::ItemResult::ItemEventMngr');
 #3th party library
 use strict;
 use warnings;
+use PDF::API2;
 
 #local library
 use aliased 'Enums::EnumsImp';
@@ -47,49 +48,46 @@ sub new {
 }
 
 sub Create {
-	my $self         = shift;
-	my $step         = shift;
-	my $stencilLayer = shift;
-	my $feats        = shift;                                                                        # array of feat id
-	my $title        = shift;                                                                        # text placed under stencil data
+	my $self = shift;
 
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
 
+	my @outputPaths = ();
+
 	# Impedance job
 	my $inStackJob = InStackJob->new($jobId);
-	my $stackup = Stackup->new($jobId);
+	my $stackup    = Stackup->new($jobId);
 
 	# get impedance steps
 
 	my @steps = CamStepRepeatPnl->GetUniqueNestedStepAndRepeat( $inCAM, $jobId );
 
-	my @constr = sort { $a->GetTrackLayer(1) <=> $b->GetTrackLayer(1) } $inStackJob->GetConstraints();
+	my @constr = sort { $a->GetTrackLayer(1) cmp $b->GetTrackLayer(1) } $inStackJob->GetConstraints();
 
 	#my $impExist = 0;
+	for ( my $i = 0 ; $i < scalar(@constr) ; $i++ ) {
 
-	foreach my $c (@constr) {
-
+		my $c = $constr[$i];
 		foreach my $step (@steps) {
 
-			my %attHist = CamHistogram->GetAttHistogram( $inCAM, $jobId, $step->{"stepName"}, $c->GetTrackLayer(1) );
+			my %attHist = CamHistogram->GetAttHistogram( $inCAM, $jobId, $step->{"stepName"}, $c->GetTrackLayer(1), 0 );
 
 			if ( $attHist{".imp_constraint_id"} ) {
 
-				CamHelper->SetStep( $inCAM, $step );
+				CamHelper->SetStep( $inCAM, $step->{"stepName"} );
 
 				my $dataLayer = $self->__PrepareDataLayer($c);
-				my $impLayer  = $self->__PrepareImpLayer($c, $stackup);
+				my $impLayer = $self->__PrepareImpLayer( $step->{"stepName"}, $c, $i + 1, scalar(@constr), $stackup );
 
-				$self->__OutputPdf( $step, $dataLayer, $padLayer );
+				push( @outputPaths, $self->__OutputPdf( $step->{"stepName"}, $dataLayer, $impLayer ) );
 			}
 		}
 	}
 
-	#splice @steps, $i, 1 unless ( scalar @{ $steps[$i]->{"impLayers"} } );
+	# Merge all pdf file
+	$self->__MergeAndOutputPdf(\@outputPaths);
 
-	#$inCAM->COM( 'delete_layer', layer => $dataLayer );
-	#$inCAM->COM( 'delete_layer', layer => $padLayer );
 
 	return 1;
 }
@@ -121,9 +119,12 @@ sub __PrepareDataLayer {
 }
 
 sub __PrepareImpLayer {
-	my $self       = shift;
-	my $constraint = shift;
-	my $stackup = shift;
+	my $self           = shift;
+	my $step           = shift;
+	my $constraint     = shift;
+	my $constrOrder    = shift;
+	my $constraintsCnt = shift;
+	my $stackup        = shift;
 
 	my $trackLayer = $constraint->GetTrackLayer(1);
 
@@ -136,40 +137,42 @@ sub __PrepareImpLayer {
 
 	# prepare pads
 
-	if ( CamFilter->SelectBySingleAtt( $inCAM, $jobId, ".imp_constraint_id", $constraint->GetId() ) ) {
+	if ( CamFilter->SelectBySingleAtt( $inCAM, $jobId, ".imp_constraint_id", { "min" => $constraint->GetId(), "max" => $constraint->GetId() } ) ) {
 
 		CamLayer->CopySelOtherLayer( $inCAM, [$lName] );
 
 	}
 	else {
 
-		die "No impedance lines selected (.imp_constraint_id = ".$constraint->GetId().")";
+		die "No impedance lines selected (.imp_constraint_id = " . $constraint->GetId() . ")";
 	}
 
 	# prepare title
 	CamLayer->WorkLayer( $inCAM, $lName );
 	my %lim = CamJob->GetProfileLimits2( $inCAM, $jobId, $step );
 
-	my $l1Text = "$jobId Impedance measurement";
-	CamSymbol->AddText( $inCAM, $l1Text, { "x" => $lim{"xMin"}, "y" => $lim{"yMax"} + 20 }, 4, undef, 1.5 );
-	
-	my $l2Text = "Layer: $trackLayer, ". $stackup->GetThickByLayerName($trackLayer). "um";
-	CamSymbol->AddText( $inCAM, $l2Text, { "x" => $lim{"xMin"}, "y" => $lim{"yMax"} + 14 }, 4, undef, 1.5 );
+	my $l0Text = uc($jobId);
+	CamSymbol->AddText( $inCAM, $l0Text, { "x" => $lim{"xMin"}, "y" => $lim{"yMax"} + 30 }, 4, undef, 1.5 );
 
-	my $l3Text = "Type: ".ValueConvertor->GetImpedanceType($constraint->GetType());
-	CamSymbol->AddText( $inCAM, $l3Text, { "x" => $lim{"xMin"}, "y" => $lim{"yMax"} + 8 }, 4, undef, 1.5 );
-	
-	
+	my $l1Text = " Impedance measurement $constrOrder/$constraintsCnt";
+	CamSymbol->AddText( $inCAM, $l1Text, { "x" => $lim{"xMin"}, "y" => $lim{"yMax"} + 24 }, 4, undef, 1.5 );
+
+	my $l2Text = "Layer     : $trackLayer; base Cu = " . $stackup->GetCuLayer($trackLayer)->GetThick() . "um";
+	CamSymbol->AddText( $inCAM, $l2Text, { "x" => $lim{"xMin"}, "y" => $lim{"yMax"} + 18 }, 2, undef, 1.0 );
+
+	my $l3Text = "Type      : " . ValueConvertor->GetImpedanceType( $constraint->GetType() );
+	CamSymbol->AddText( $inCAM, $l3Text, { "x" => $lim{"xMin"}, "y" => $lim{"yMax"} + 14 }, 2, undef, 1.0 );
+
 	my $l4Text = "Parameters: ";
-	$l4Text .= "w = ".sprintf( "%.0f", $constraint->GetOption( "CALCULATION_REQ_TRACE_WIDTH", 1 ) );
-	
-	if($constraint->GetType() eq EnumsImp->Type_DIFF || $constraint->GetType() eq EnumsImp->Type_CODIFF ){
-			$l4Text .= "s = ".sprintf( "%.0f", $constraint->GetOption( "CALCULATION_REQ_TRACE_WIDTH", 1 ) );
-	}
+	$l4Text .= "w = " . sprintf( "%.0f", $constraint->GetParamDouble("WB") ) . "um";
 
+	if ( $constraint->GetType() eq EnumsImp->Type_DIFF || $constraint->GetType() eq EnumsImp->Type_CODIFF ) {
+		$l4Text .= "; s = " . sprintf( "%.0f", $constraint->GetParamDouble("S") ) . "um";
+	}
+	CamSymbol->AddText( $inCAM, $l4Text, { "x" => $lim{"xMin"}, "y" => $lim{"yMax"} + 10 }, 2, undef, 1.0 );
 	
-	my $l4Text = "Parameters: ".ValueConvertor->GetImpedanceType($constraint->GetType());
-	CamSymbol->AddText( $inCAM, $l4Text, { "x" => $lim{"xMin"}, "y" => $lim{"yMax"} + 8 }, 4, undef, 1.5 );
+	my $l5Text = "InStack id: " .  ( $constraint->GetId() );
+	CamSymbol->AddText( $inCAM, $l5Text, { "x" => $lim{"xMin"}, "y" => $lim{"yMax"} + 6 }, 2, undef, 1.0 );
 
 	return $lName;
 }
@@ -178,14 +181,14 @@ sub __OutputPdf {
 	my $self      = shift;
 	my $step      = shift;
 	my $dataLayer = shift;
-	my $padLayer  = shift;
+	my $impLayer  = shift;
 
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
 
-	my $layerStr = $dataLayer . ";" . $padLayer;
+	my $layerStr = $dataLayer . ";" . $impLayer;
 
-	my $pdfFile = $self->{"outputPath"};
+	my $pdfFile = EnumsPaths->Client_INCAMTMPOTHER . GeneralHelper->GetGUID() . ".pdf";
 	$pdfFile =~ s/\\/\//g;
 
 	CamHelper->SetStep( $inCAM, $step );
@@ -203,21 +206,82 @@ sub __OutputPdf {
 				 paper_size        => 'A4',
 				 orient            => 'none',
 				 auto_tray         => 'no',
-				 top_margin        => '0',
-				 bottom_margin     => '0',
-				 left_margin       => '0',
-				 right_margin      => '0',
+				 top_margin        => '5',
+				 bottom_margin     => '5',
+				 left_margin       => '5',
+				 right_margin      => '5',
 				 "x_spacing"       => '0',
 				 "y_spacing"       => '0',
-				 "color1"          => '707070',
+				 "color1"          => '808080',
 				 "color2"          => '990000'
 	);
 
 	$inCAM->COM( 'delete_layer', "layer" => $dataLayer );
-	$inCAM->COM( 'delete_layer', "layer" => $padLayer );
+	$inCAM->COM( 'delete_layer', "layer" => $impLayer );
 
 	return $pdfFile;
 }
+
+
+sub __MergeAndOutputPdf {
+	my $self    = shift;
+	my @inFiles = @{ shift(@_) };
+	 
+
+	# the output file
+	my $pdf_out = PDF::API2->new( -file => $self->{"outputPath"} );
+
+	my $pagesTotal = 1;
+
+	foreach my $input_file (@inFiles) {
+		my $pdf_in   = PDF::API2->open($input_file);
+		my @numpages = ( 1 .. $pdf_in->pages() );
+
+		foreach my $numpage (@numpages) {
+
+			my $page_in = $pdf_in->openpage($numpage);
+
+			#
+			#		#
+			#		# create a new page
+			#		#
+			my $page_out = $pdf_out->page(0);
+
+			#
+			my @mbox = $page_in->get_mediabox;
+			$page_out->mediabox(@mbox);
+
+			#
+			my $xo = $pdf_out->importPageIntoForm( $pdf_in, $numpage );
+
+			#
+			#		#
+			#		# lay up the input page in the output page
+			#		# note that you can adjust the position and scale, if required
+			#		#
+			my $gfx = $page_out->gfx;
+
+			#
+			$gfx->formimage(
+				$xo,
+				0, 0,    # x y
+				1
+			);           # scale
+ 
+			$pagesTotal++;
+
+		}
+	}
+
+	$pdf_out->save();
+	
+	
+	# remove tmp files
+	foreach my $f ( @inFiles ) {
+		unlink($f);
+	}
+}
+
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
@@ -225,16 +289,16 @@ sub __OutputPdf {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	use aliased 'Packages::Export::StnclExport::DataOutput::ExportDrill';
+	use aliased 'Packages::Pdf::ImpedancePdf::MeasureImpPdf';
 
 	use aliased 'Packages::InCAM::InCAM';
 
 	my $inCAM = InCAM->new();
 
-	my $jobId = "f13610";
+	my $jobId = "d113608";
 
-	my $export = ExportDrill->new( $inCAM, $jobId );
-	$export->Output();
+	my $export = MeasureImpPdf->new( $inCAM, $jobId );
+	$export->Create();
 
 }
 
