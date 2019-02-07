@@ -54,7 +54,7 @@ sub SetImpedanceLines {
 	# Parse  XML xonstraints
 	my $inStackJob = InStackJob->new($jobId);
 
-	my @steps = map { $_->{"stepName"} } CamStepRepeatPnl->GetUniqueDeepestSR( $inCAM, $jobId );
+	my @steps =  grep { $_ =~ /^o+\d+^/ } CamStep->GetAllStepNames( $inCAM, $jobId );
 
 	foreach my $step (@steps) {
 
