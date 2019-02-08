@@ -26,6 +26,7 @@ use aliased 'Programs::Exporter::ExportChecker::Groups::GerExport::Presenter::Ge
 use aliased 'Programs::Exporter::ExportChecker::Groups::ScoExport::Presenter::ScoUnit';
 use aliased 'Programs::Exporter::ExportChecker::Groups::PdfExport::Presenter::PdfUnit';
 use aliased 'Programs::Exporter::ExportChecker::Groups::OutExport::Presenter::OutUnit';
+use aliased 'Programs::Exporter::ExportChecker::Groups::ImpExport::Presenter::ImpUnit';
 use aliased 'Programs::Exporter::ExportChecker::ExportChecker::GroupBuilder::Enums';
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -77,11 +78,14 @@ sub Build {
 	
 	my $aoiUnit1 = AOIUnit->new( $self->{"jobId"} );
 	my $etUnit1 = ETUnit->new( $self->{"jobId"} );
+	my $impUnit1 = ImpUnit->new( $self->{"jobId"} );
 	my $outUnit1 = OutUnit->new( $self->{"jobId"} );
+	
 
 	my $row1Tab2 = $tableTab2->AddRow();
 	$row1Tab2->AddCell($aoiUnit1, Enums->Width_25);
 	$row1Tab2->AddCell($etUnit1, Enums->Width_25);
+	$row1Tab2->AddCell($impUnit1, Enums->Width_25);
 	$row1Tab2->AddCell($outUnit1, Enums->Width_25);
  
  

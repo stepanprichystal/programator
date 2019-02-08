@@ -74,6 +74,9 @@ sub Create {
 			my %attHist = CamHistogram->GetAttHistogram( $inCAM, $jobId, $step->{"stepName"}, $c->GetTrackLayer(1), 0 );
 
 			if ( $attHist{".imp_constraint_id"} ) {
+				
+				my $resultItem = $self->_GetNewItem( "Impedance id: ".$c->GetId() );
+				$resultItem->SetGroup("Pdf pages");
 
 				CamHelper->SetStep( $inCAM, $step->{"stepName"} );
 
@@ -81,6 +84,8 @@ sub Create {
 				my $impLayer = $self->__PrepareImpLayer( $step->{"stepName"}, $c, $i + 1, scalar(@constr), $stackup );
 
 				push( @outputPaths, $self->__OutputPdf( $step->{"stepName"}, $dataLayer, $impLayer ) );
+				
+				$self->_OnItemResult($resultItem);
 			}
 		}
 	}
@@ -226,6 +231,8 @@ sub __OutputPdf {
 sub __MergeAndOutputPdf {
 	my $self    = shift;
 	my @inFiles = @{ shift(@_) };
+	 
+	#my $resultItem = $self->_GetNewItem( "Merge pdf" ); 
 	 
 
 	# the output file

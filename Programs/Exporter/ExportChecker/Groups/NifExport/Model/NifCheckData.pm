@@ -329,9 +329,9 @@ sub OnCheckGroupData {
 			if ( PCBConnectorCheck->ConnectorToolDetection( $inCAM, $jobId, $s, \$a ) ) {
 
 				$dataMngr->_AddWarningResult(
-					"Chamfer tool",
-					"Ve stepu: \"$s\" byl nalezena speciální fréza (z top a bot), "
-					  . "která jede pojezdem a má speciální úhel: $a°. Nemá být zapnuta volba \"Chamfer edge\"?"
+											  "Chamfer tool",
+											  "Ve stepu: \"$s\" byl nalezena speciální fréza (z top a bot), "
+												. "která jede pojezdem a má speciální úhel: $a°. Nemá být zapnuta volba \"Chamfer edge\"?"
 				);
 			}
 
@@ -381,17 +381,20 @@ sub OnCheckGroupData {
 			$maxCuThick = CuLayer->GetMaxCuByClass( $defaultInfo->GetPcbClass() );
 		}
 
-		if ( $defaultInfo->GetBaseCuThick() > $maxCuThick ) {
-			$dataMngr->_AddErrorResult(
-										"Max Cu thickness outer layer",
-										"Maximal Cu thickness of outer layers for pcbclass: "
-										  . $defaultInfo->GetPcbClass()
-										  . " is: $maxCuThick µm. Current job Cu thickness is: "
-										  . $defaultInfo->GetBaseCuThick() . "µm"
-			);
-		}
+		if ( $defaultInfo->GetLayerCnt() <= 2 ) {
+			
+			if ( $defaultInfo->GetBaseCuThick() > $maxCuThick ) {
+				$dataMngr->_AddErrorResult(
+											"Max Cu thickness outer layer",
+											"Maximal Cu thickness of outer layers for pcbclass: "
+											  . $defaultInfo->GetPcbClass()
+											  . " is: $maxCuThick µm. Current job Cu thickness is: "
+											  . $defaultInfo->GetBaseCuThick() . "µm"
+				);
+			}
 
-		if ( $defaultInfo->GetLayerCnt() > 2 ) {
+		}
+		else {
 
 			foreach my $cu ( grep { $_->GetType() eq StackEnums->MaterialType_COPPER && $_->GetCopperName() =~ /v\d+/ }
 							 $defaultInfo->GetStackup()->GetAllLayers() )

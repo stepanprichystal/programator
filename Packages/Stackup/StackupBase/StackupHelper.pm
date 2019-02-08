@@ -33,8 +33,8 @@ sub GetLayerCopperNumber{
 	my $layerName = shift;
 	my $layerCount = shift;
 	
-	
-		#get number from layer name;
+
+	# get number from layer name;
 	if ( $layerName =~ /\d/ ) {
 		$layerName =~ s/\D//g;
 	}

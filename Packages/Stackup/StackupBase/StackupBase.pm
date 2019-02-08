@@ -20,6 +20,7 @@ use aliased 'Packages::Stackup::StackupBase::StackupParsers::InStackParser';
 use aliased 'Packages::Stackup::StackupBase::StackupParsers::MultiCalParser';
 use aliased 'Packages::Stackup::StackupBase::Layer::PrepregLayer';
 
+
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
@@ -112,6 +113,16 @@ sub GetAllCores {
 	}
 
 	return @cores;
+}
+
+# Return source type which stackup read from
+sub GetStackupSource {
+	my $self = shift;
+	
+	my $p    = $self->{"parser"};
+
+	return Enums->StackupSource_INSTACK if ( ref($p) && $p->isa("Packages::Stackup::StackupBase::StackupParsers::InStackParser") );
+	return Enums->StackupSource_ML if ( ref($p) && $p->isa("Packages::Stackup::StackupBase::StackupParsers::MultiCalParser") )
 }
 
 sub __CreateStackup {

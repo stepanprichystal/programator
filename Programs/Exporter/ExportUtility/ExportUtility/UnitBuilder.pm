@@ -29,6 +29,7 @@ use aliased 'Programs::Exporter::ExportUtility::Groups::GerExport::GerWorkUnit';
 use aliased 'Programs::Exporter::ExportUtility::Groups::PdfExport::PdfWorkUnit';
 use aliased 'Programs::Exporter::ExportUtility::Groups::OutExport::OutWorkUnit';
 use aliased 'Programs::Exporter::ExportUtility::Groups::StnclExport::StnclWorkUnit';
+use aliased 'Programs::Exporter::ExportUtility::Groups::ImpExport::ImpWorkUnit';
 use aliased 'Programs::Exporter::ExportUtility::UnitEnums';
 
 #-------------------------------------------------------------------------------------------#
@@ -142,6 +143,13 @@ sub __GetUnitClass {
 
 		$unit = StnclWorkUnit->new($unitId);
 
+	}elsif ( $unitId eq UnitEnums->UnitId_IMP ) {
+
+		$unit = ImpWorkUnit->new($unitId);
+
+	}else{
+		
+		die "Unit class (id: $unitId) was not found";
 	}
 
 

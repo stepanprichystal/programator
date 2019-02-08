@@ -29,5 +29,11 @@ use constant {
     CoreType_FLEX => "flexCore"
 };
 
+# source which stackup class read from
+use constant {
+    StackupSource_ML => "stackupSource_ml",
+    StackupSource_INSTACK => "stackupSource_instack"
+};
+
 1;
 
