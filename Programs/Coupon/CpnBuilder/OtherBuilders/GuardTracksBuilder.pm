@@ -17,6 +17,7 @@ use Array::IntSpan;
 use List::MoreUtils qw(uniq);
 
 #local library
+use aliased 'Enums::EnumsImp';
 use aliased 'Programs::Coupon::Enums';
 use aliased 'Programs::Coupon::Helper';
 use aliased 'CamHelpers::CamStep';
