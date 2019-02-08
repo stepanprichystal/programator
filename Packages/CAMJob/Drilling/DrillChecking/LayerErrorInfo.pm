@@ -202,9 +202,15 @@ sub CheckAttributes {
 
 		if ( $l->{"attHist"}->{".nomenclature"} ) {
 			$result = 0;
-			$$mess .= "NC layer: " . $l->{"gROWname"} . " contains attribut .nomenclature. Please remove them.\n";
+			$$mess .= "NC layer: " . $l->{"gROWname"} . " contains attribut .nomenclature. Please remove it.\n";
+		}
+		
+		if ( $l->{"attHist"}->{".out_nc_ignore"} ) {
+			$result = 0;
+			$$mess .= "NC layer: " . $l->{"gROWname"} . " contains attribut .out_nc_ignore. Please remove it.\n";
 		}
 	}
+ 
 
 	my @t = ();
 

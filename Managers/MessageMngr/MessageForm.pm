@@ -414,12 +414,18 @@ sub __AddButtons {
 		my $button = Wx::Button->new( $pnlBtns, -1, $btn );
 		$button->SetFont($Widgets::Style::fontBtn);
 		$button->{"order"} = $i;
+		
+		$button->SetFocus() if($i == scalar(@buttons)-1); # focus on right button
+		 
 
 		$szBtnsChild->Add( $button, 0, &Wx::wxALL, 1 );
 
 		Wx::Event::EVT_BUTTON( $button, -1, sub { __OnClick( $self, $button ) } );
 
 	}
+	
+	
+	
 }
 
 sub __OnClick {

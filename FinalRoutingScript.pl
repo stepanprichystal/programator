@@ -49,7 +49,7 @@ my $messMngr = MessageMngr->new($jobId);
 my ( $indexFeat, $xdim, $ydim );
 
 my $deleteOriginal = 1;
-my $oriLayer       = 'f_original_' . $jobId;
+my $oriLayer       = 'foutline_ori_' . $jobId;
 
 # Get work layer
 $inCAM->COM('get_work_layer');
@@ -564,7 +564,7 @@ sub __DeletePomLayers {
 		if (    $l->{"gROWname"} =~ m/open_route/
 			 || $l->{"gROWname"} =~ m/narrow_places/
 			 || $l->{"gROWname"} =~ m/bounded_arcs_/
-			 || ( $l->{"gROWname"} =~ m/f_original_/ && $deleteOriginal ) )
+			 || ( $l->{"gROWname"} =~ m/foutline_ori_/ && $deleteOriginal ) )
 		{
 
 			$inCAM->COM( 'delete_layer', layer => $l->{"gROWname"} );

@@ -24,6 +24,7 @@ use aliased 'Packages::Polygon::Features::PolyLineFeatures::PolyLineFeatures';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'CamHelpers::CamDrilling';
 use aliased 'CamHelpers::CamStepRepeat';
+use aliased 'CamHelpers::CamHistogram';
 
 #-------------------------------------------------------------------------------------------#
 #  Script methods
@@ -35,8 +36,6 @@ sub PlatedAreaExceed {
 	my $inCAM    = shift;
 	my $jobId    = shift;
 	my $stepName = shift;
-	
-	
 
 	my $maxArea = 19.5;    # approx area of hole 5mm
 
@@ -69,6 +68,9 @@ sub PlatedAreaExceed {
 		foreach my $r ( ( @rLayers, @rzcLayers, @rzsLayers ) ) {
 
 			my $lName = $r->{"gROWname"};
+
+			my %featHist = CamHistogram->GetFeatuesHistogram( $inCAM, $jobId, $stepName, $lName, 0 );
+			next unless ( $featHist{"total"} );
 
 			# test if step has nested..
 			# if so, test if has only one type
@@ -209,7 +211,7 @@ sub GetAreasOfRout {
 				 "keep_original" => "no",
 				 "text2limit"    => "no"
 	);
-	
+
 	$inCAM->COM(
 				 'sel_design2rout',
 				 det_tol => '100',
@@ -217,7 +219,6 @@ sub GetAreasOfRout {
 				 rad_tol => '52'
 	);
 	$inCAM->COM( "arc2lines", "arc_line_tol" => 70 );
-	
 
 	my $polyLine = PolyLineFeatures->new();
 	$polyLine->Parse( $inCAM, $jobId, $stepName, $compL );
@@ -251,7 +252,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	use aliased 'Packages::Routing::PlatedRoutArea';
 	use aliased 'Packages::InCAM::InCAM';
 
-	my $jobId = "d152457";
+	my $jobId = "d113608";
 	my $inCAM = InCAM->new();
 
 	my $step = "o+1";

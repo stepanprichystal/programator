@@ -34,7 +34,7 @@ push( @mess1, "dalsi t<img1>ext" );
 
 # Buttons definition:
 # -----------------------
-my @btn = ( "tl1", "tl2" );
+my @btn = ( "tl1", "tl2", "tl2" );
 
 # Image collection:
 # -----------------------
