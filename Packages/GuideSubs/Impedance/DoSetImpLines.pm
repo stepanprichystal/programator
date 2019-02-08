@@ -176,6 +176,8 @@ sub __AutoSelect {
 	my $constraint = shift;
 
 	my $lineWOri = sprintf( "%.0f", $constraint->GetOption( "ORIGINAL_TRACE_WIDTH", 1 ) );
+	
+	print STDERR "Search lines width: $lineWOri";
 
 	CamFilter->BySymbols( $inCAM, [ "r" . $lineWOri, "s" . $lineWOri ] );
 

@@ -154,7 +154,7 @@ sub GetMaxAspectRatio {
 	my $minHole = $self->GetMinHoleTool($side, $NClayerType);
 	
 	# thick of pcb after this pressing in µm
-	my $finalThick = $self->GetThickByLayerName($fromLayer->GetName())*1000;
+	my $finalThick = $self->{"stackupNC"}->GetThickByLayerName($fromLayer->GetName())*1000;
 
 	my $aspectRatio = 0;
 

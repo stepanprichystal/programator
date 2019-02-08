@@ -52,9 +52,8 @@ sub Run {
 	if ( $self->{"exportPdf"} ) {
 
 		my $export = MeasureImpPdf->new( $inCAM, $jobId );
-  
-		$export->{"onItemResult"}->Add( sub { $self->_OnItemResult(@_) } );	
 
+		$export->{"onItemResult"}->Add( sub { $self->_OnItemResult(@_) } );
 
 		if ( $export->Create() ) {
 
@@ -70,7 +69,7 @@ sub Run {
 		my $convertor = StackupConvertor->new($jobId);
 		my $res       = $convertor->DoConvert();
 
-		my $resultStack = $self->_GetNewItem("Convert stackup");
+		my $resultStack = $self->_GetNewItem("Generate ML stackup");
 
 		unless ($res) {
 			$resultStack->AddError("Failed to create MultiCal xml stackup");
@@ -86,7 +85,8 @@ sub TaskItemsCount {
 
 	my $totalCnt = 0;
 
-	$totalCnt += 1 if ( $self->{"exportPdf"} );        # export Pdf
+	$totalCnt += 2 if ( $self->{"exportPdf"} );    # Merge pdf + 1 impedance line (other lines are not considered)
+
 	$totalCnt += 1 if ( $self->{"exportStackup"} );    # export stackup
 
 	return $totalCnt;

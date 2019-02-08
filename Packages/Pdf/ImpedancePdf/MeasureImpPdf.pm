@@ -76,7 +76,7 @@ sub Create {
 			if ( $attHist{".imp_constraint_id"} ) {
 				
 				my $resultItem = $self->_GetNewItem( "Impedance id: ".$c->GetId() );
-				$resultItem->SetGroup("Pdf pages");
+				$resultItem->SetGroup("Impedance pdf:");
 
 				CamHelper->SetStep( $inCAM, $step->{"stepName"} );
 
@@ -232,7 +232,7 @@ sub __MergeAndOutputPdf {
 	my $self    = shift;
 	my @inFiles = @{ shift(@_) };
 	 
-	#my $resultItem = $self->_GetNewItem( "Merge pdf" ); 
+	my $resultItem = $self->_GetNewItem( "Impedance pdf merge" ); 
 	 
 
 	# the output file
@@ -287,6 +287,8 @@ sub __MergeAndOutputPdf {
 	foreach my $f ( @inFiles ) {
 		unlink($f);
 	}
+	
+	$self->_OnItemResult($resultItem);
 }
 
 
