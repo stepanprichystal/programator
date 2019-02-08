@@ -1,5 +1,5 @@
 #-------------------------------------------------------------------------------------------#
-# Description: Floatten score in SR steps to mpanel
+# Description: Set impedance lines
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Packages::GuideSubs::Impedance::DoSetImpLines;
@@ -32,7 +32,7 @@ use aliased 'CamHelpers::CamAttributes';
 #  Public method
 #-------------------------------------------------------------------------------------------#
 
-# Split rout cycle in rout layers: plated and noplated rout
+# Set impedance lines
 sub SetImpedanceLines {
 	my $self  = shift;
 	my $inCAM = shift;
@@ -113,6 +113,7 @@ sub __SetImpedanceLine {
 	# auto
 	if ( $messMngr->Result() == 0 ) {
 
+		$self->__AutoSelect($inCAM, $constraint);
 		$self->__PAUSE( $inCAM, "select_auto", $constraint );
 
 	}
@@ -190,9 +191,8 @@ sub __CheckSelectedLines {
 	my $step       = shift;
 	my $layer      = shift;
 	my $constraint = shift;
-	my $skip = shift;
-
 	my $messMngr = shift;
+	my $skip = shift;
 
 	my $f = Features->new();
 
@@ -232,6 +232,7 @@ sub __CheckSelectedLines {
 
 		if ( $messMngr->Result() == 0 ) {
 
+			$self->__AutoSelect($inCAM, $constraint);
 			$self->__PAUSE( $inCAM, "select_auto", $constraint );
 			return 0;
 		}
