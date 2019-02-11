@@ -115,6 +115,7 @@ sub EndChecking {
 	my %errors   = %{ shift(@_) };
 	my %warnings = %{ shift(@_) };
 
+
 	# store errors
 	push( @{ $self->{"errors"} },   \%errors );
 	push( @{ $self->{"warnings"} }, \%warnings );
@@ -136,6 +137,8 @@ sub EndChecking {
 		$self->__CheckingFinish();
 
 	}
+	
+
 }
 
 # Is called, when thread , which does export checking is succesfully terminated
@@ -173,6 +176,7 @@ sub __CheckingFinish {
 
 		$self->{"btnStop"}->Disable();
 		$self->{"btnChange"}->Enable();
+		$self->__EnableExportForce();
 	}
 
 }
@@ -383,18 +387,19 @@ sub __SetLayout {
 sub __OnErrorClick {
 	my $self = shift;
 
-	$self->{"errorShowed"} = 1;
-
 	my $warnCnt = $self->__GetWarnCnt();
 
-	if ( $self->{"exportFinished"} ) {
-		if ( $warnCnt == 0 || ( $warnCnt > 0 && $self->{"warningShowed"} ) ) {
+	#	if ( $self->{"exportFinished"} ) {
+	#		if ( $warnCnt == 0 || ( $warnCnt > 0 && $self->{"warningShowed"} ) ) {
+	#
+	#			if ( !$self->{"onServer"} ) {
+	#				$self->{"btnExport"}->Enable();
+	#			}
+	#		}
+	#	}
 
-			if ( !$self->{"onServer"} ) {
-				$self->{"btnExport"}->Enable();
-			}
-		}
-	}
+	$self->{"errorShowed"} = $self->__GetErrCnt();
+	$self->__EnableExportForce();
 
 	my @err = @{ $self->{"errors"} };
 	my $str = "";
@@ -427,16 +432,19 @@ sub __OnErrorClick {
 sub __OnWarningClick {
 	my $self = shift;
 
-	$self->{"warningShowed"} = 1;
+	#$self->{"warningShowed"} = 1;
 	my $errCnt = $self->__GetErrCnt();
 
-	if ( $self->{"exportFinished"} ) {
+	#	if ( $self->{"exportFinished"} ) {
+	#
+	#		if ( $errCnt == 0 || ( $errCnt > 0 && $self->{"errorShowed"} ) ) {
+	#
+	#			$self->{"btnExport"}->Enable();
+	#		}
+	#	}
 
-		if ( $errCnt == 0 || ( $errCnt > 0 && $self->{"errorShowed"} ) ) {
-
-			$self->{"btnExport"}->Enable();
-		}
-	}
+	$self->{"warningShowed"} = $self->__GetWarnCnt();
+	$self->__EnableExportForce();
 
 	my @warn = @{ $self->{"warnings"} };
 	my $str  = "";
@@ -498,6 +506,20 @@ sub __OnCloseHandler {
 
 	#raise events
 	$self->{"onClose"}->Do(@_);
+
+}
+
+sub __EnableExportForce {
+	my $self = shift;
+
+	if ( $self->{"exportFinished"} 
+	&& $self->{"errorShowed"} == $self->__GetErrCnt() 
+	&& $self->{"warningShowed"} == $self->__GetWarnCnt() )
+	{
+
+		$self->{"btnExport"}->Enable();
+
+	}
 
 }
 
