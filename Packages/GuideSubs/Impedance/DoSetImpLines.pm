@@ -54,12 +54,11 @@ sub SetImpedanceLines {
 	# Parse  XML xonstraints
 	my $inStackJob = InStackJob->new($jobId);
 
-	my @steps =  grep { $_ =~ /^o\+\d+$/ } CamStep->GetAllStepNames( $inCAM, $jobId );
+	my @steps = grep { $_ =~ /^o\+\d+$/ } CamStep->GetAllStepNames( $inCAM, $jobId );
 
 	foreach my $step (@steps) {
 
 		CamHelper->SetStep( $inCAM, $step );
-	 
 
 		foreach my $constraint ( sort { $a->GetTrackLayer(1) cmp $b->GetTrackLayer(1) } $inStackJob->GetConstraints() ) {
 
@@ -108,30 +107,34 @@ sub __SetImpedanceLine {
 
 	push( @mess, "\nOznač cesty, které mají splňovat danou impedanci." );
 
-	$messMngr->ShowModal( -1, EnumsGeneral->MessageType_INFORMATION, \@mess, [ "Zkusím štěstí", "Označím ručně", "Přeskočit" ], \@imgs );
+	$messMngr->ShowModal( -1, EnumsGeneral->MessageType_INFORMATION, \@mess, [ "Přeskočit", "Zkusím štěstí", "Označím ručně" ], \@imgs );
 
-	# auto
 	if ( $messMngr->Result() == 0 ) {
 
-		$self->__AutoSelect($inCAM, $constraint);
+		# skip
+		return 0;
+	}
+	elsif ( $messMngr->Result() == 1 ) {
+
+		# auto
+
+		$self->__AutoSelect( $inCAM, $constraint );
 		$self->__PAUSE( $inCAM, "select_auto", $constraint );
 
 	}
-	elsif( $messMngr->Result() == 1) {
+	elsif ( $messMngr->Result() == 2 ) {
 
+		#manual
 		$self->__PAUSE( $inCAM, "select_manual", $constraint );
-	
-	}elsif( $messMngr->Result() == 2) {
 
-		return 0;
 	}
 
 	while (1) {
 
 		my $skip = 0;
 		my $checkFeatOk = $self->__CheckSelectedLines( $inCAM, $jobId, $step, $l, $constraint, $messMngr, \$skip );
-		
-		return 0 if($skip);
+
+		return 0 if ($skip);
 
 		my @mess2 = ();
 
@@ -162,12 +165,12 @@ sub __SetImpedanceLine {
 				$self->__SetImpedanceLineAttr( $inCAM, $jobId, $constraint, 1, \@feats );
 
 			}
-			
+
 			last;
 		}
 
 	}
-	
+
 	return 1;
 }
 
@@ -177,7 +180,7 @@ sub __AutoSelect {
 	my $constraint = shift;
 
 	my $lineWOri = sprintf( "%.0f", $constraint->GetOption( "ORIGINAL_TRACE_WIDTH", 1 ) );
-	
+
 	print STDERR "Search lines width: $lineWOri";
 
 	CamFilter->BySymbols( $inCAM, [ "r" . $lineWOri, "s" . $lineWOri ] );
@@ -191,8 +194,8 @@ sub __CheckSelectedLines {
 	my $step       = shift;
 	my $layer      = shift;
 	my $constraint = shift;
-	my $messMngr = shift;
-	my $skip = shift;
+	my $messMngr   = shift;
+	my $skip       = shift;
 
 	my $f = Features->new();
 
@@ -228,25 +231,28 @@ sub __CheckSelectedLines {
 		push( @mess2, "- Požadovaná šířka: <b>$lineWReq µm</b>" );
 
 		$messMngr->ShowModal( -1, EnumsGeneral->MessageType_INFORMATION,
-							  \@mess2, [ "Zkusím štěstí", "Označím ručně", "Přeskočit" ], \@imgs );
+							  \@mess2, [ "Přeskočit", "Zkusím štěstí", "Označím ručně" ], \@imgs );
 
 		if ( $messMngr->Result() == 0 ) {
-
-			$self->__AutoSelect($inCAM, $constraint);
-			$self->__PAUSE( $inCAM, "select_auto", $constraint );
-			return 0;
-		}
-
-		# manual
-		elsif ( $messMngr->Result() == 1 ) {
-
-			$self->__PAUSE( $inCAM, "select_manual", $constraint );
-			return 0;
-		}elsif ( $messMngr->Result() == 2 ) {
-
+			
+			# skip
 			$$skip = 1;
 			return 1;
 		}
+		elsif ( $messMngr->Result() == 1 ) {
+
+			# auto
+			$self->__AutoSelect( $inCAM, $constraint );
+			$self->__PAUSE( $inCAM, "select_auto", $constraint );
+			return 0;
+		}
+		elsif ( $messMngr->Result() == 2 ) {
+
+			# manual
+			$self->__PAUSE( $inCAM, "select_manual", $constraint );
+			return 0;
+		}
+
 	}
 
 	# check if all lines are type of: arc, pad
@@ -261,9 +267,9 @@ sub __CheckSelectedLines {
 		push( @mess, "Id zmiňovaných features: <b>" . join( "; ", map { $_->{"id"} } @wrongType ) . "</b>" );
 		push( @mess, "\nChcete přesto nastavit impedančná cesty?" );
 
-		$messMngr->ShowModal( -1, EnumsGeneral->MessageType_ERROR, \@mess, [ "Ne, opravím to", "Ano, nastavit" ] );
+		$messMngr->ShowModal( -1, EnumsGeneral->MessageType_ERROR, \@mess, ["Ano, nastavit", "Ne, opravím to" ] );
 
-		if ( $messMngr->Result() == 0 ) {
+		if ( $messMngr->Result() == 1 ) {
 
 			$self->__PAUSE( $inCAM, "correct_select", $constraint );
 
@@ -291,9 +297,9 @@ sub __CheckSelectedLines {
 
 		push( @mess, "\nChcete přesto nastavit impedančná cesty?" );
 
-		$messMngr->ShowModal( -1, EnumsGeneral->MessageType_ERROR, \@mess, [ "Ne, opravím to", "Ano, nastavit" ], \@imgs );
+		$messMngr->ShowModal( -1, EnumsGeneral->MessageType_ERROR, \@mess, [ "Ano, nastavit", "Ne, opravím to" ], \@imgs );
 
-		if ( $messMngr->Result() == 0 ) {
+		if ( $messMngr->Result() == 1 ) {
 
 			$self->__PAUSE( $inCAM, "correct_select", $constraint );
 
@@ -320,9 +326,9 @@ sub __CheckSelectedLines {
 
 		push( @mess, "\nChcete přesto nastavit impedančná cesty?" );
 
-		$messMngr->ShowModal( -1, EnumsGeneral->MessageType_ERROR, \@mess, [ "Ne, opravím to", "Ano, nastavit" ] );
+		$messMngr->ShowModal( -1, EnumsGeneral->MessageType_ERROR, \@mess, [  "Ano, nastavit", "Ne, opravím to" ] );
 
-		if ( $messMngr->Result() == 0 ) {
+		if ( $messMngr->Result() == 1 ) {
 
 			$self->__PAUSE( $inCAM, "correct_select", $constraint );
 
@@ -355,7 +361,7 @@ sub __SetImpedanceLineAttr {
 	if ($resize) {
 
 		my @featId = map { $_->{"id"} } @{$feats};
-		CamFilter->SelectByFeatureIndexes($inCAM, $jobId, \@featId);
+		CamFilter->SelectByFeatureIndexes( $inCAM, $jobId, \@featId );
 
 		$inCAM->COM( "sel_change_sym", "symbol" => "r$lineWReq" );
 	}

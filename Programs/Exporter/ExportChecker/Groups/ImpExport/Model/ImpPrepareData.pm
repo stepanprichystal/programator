@@ -46,7 +46,7 @@ sub OnGetGroupState {
 	my $state = Enums->GroupState_DISABLE;
  
  	# Active only if stackup source is from InSTACK
-	if ( $defaultInfo->GetStackup()->GetStackupSource() eq StackEnums->StackupSource_INSTACK ) {
+	if ( $defaultInfo->GetLayerCnt() > 2 && $defaultInfo->GetStackup()->GetStackupSource() eq StackEnums->StackupSource_INSTACK ) {
 
 		$state = Enums->GroupState_ACTIVEON;
 
