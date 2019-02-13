@@ -23,7 +23,7 @@ use aliased 'Helpers::ValueConvertor';
 use aliased 'CamHelpers::CamFilter';
 use aliased 'CamHelpers::CamDTM';
 use aliased 'Packages::CAM::UniDTM::UniDTM';
-use aliased 'Packages::CAM::UniRTM::UniRTM::UniRTM';
+use aliased 'Packages::CAM::UniRTM::UniRTM';
 use aliased 'Packages::CAMJob::OutputData::PrepareLayers::PrepareNCDrawing';
 use aliased 'Packages::CAMJob::OutputData::PrepareLayers::PrepareNCStandard';
 use aliased 'CamHelpers::CamHelper';

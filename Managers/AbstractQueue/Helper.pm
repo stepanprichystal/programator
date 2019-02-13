@@ -14,7 +14,6 @@ use Win32::Process;
 use Win32::Process::Info;
 use Win32::Process::List;
 
-
 #local library
 use aliased 'Helpers::GeneralHelper';
 use aliased 'Managers::MessageMngr::MessageMngr';
@@ -80,20 +79,29 @@ sub CheckRunningInstance {
 }
 
 sub Logging {
-	my $self     = shift;
+	my $self = shift;
 	my $path = shift;
- 
+
 	my $appName = AppConf->GetValue("appName");
 	$appName =~ s/\s//g;
-	
+
 	my $fileName = "LogsSTDOUT";
- 
- 
+
 	unless ( -e $path ) {
 		die "Logging directory $path doesn't exist";
 	}
 
 	$path = $path . "\\" . $fileName;
+
+	# Delete logs bigger than 100MB
+	if ( -e $path ) {
+		my $fileSize = -s "$path";
+
+		if ( ( $fileSize / 1000 / 1000 ) > 100 ) {
+
+			unlink($path);
+		}
+	}
 
 	my $OLDOUT;
 	my $OLDERR;
@@ -138,9 +146,6 @@ sub Logging {
 #
 #}
 #
-
-
-
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

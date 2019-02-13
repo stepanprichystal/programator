@@ -15,7 +15,7 @@ use warnings;
 
 #local library
 use aliased 'Enums::EnumsGeneral';
-use aliased 'Packages::CAM::UniRTM::UniRTM::UniRTM';
+use aliased 'Packages::CAM::UniRTM::UniRTM';
 use aliased 'Enums::EnumsRout';
 use aliased 'CamHelpers::CamAttributes';
 use aliased 'CamHelpers::CamDrilling';

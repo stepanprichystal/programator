@@ -60,7 +60,7 @@ sub new {
 	
 	
 	 # Run app for checking status of some application
- 	$self->__RunAppChecker();
+ 	 # $self->__RunAppChecker();
  
 	
 	return $self;

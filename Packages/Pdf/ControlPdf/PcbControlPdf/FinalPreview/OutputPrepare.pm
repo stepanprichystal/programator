@@ -26,9 +26,10 @@ use aliased 'CamHelpers::CamFilter';
 use aliased 'CamHelpers::CamHelper';
 use aliased 'CamHelpers::CamSymbol';
 use aliased 'Enums::EnumsGeneral';
-use aliased 'Packages::CAM::UniRTM::UniRTM::UniRTM';
+use aliased 'Packages::CAM::UniRTM::UniRTM';
 use aliased 'Packages::CAM::FeatureFilter::FeatureFilter';
 use aliased 'Packages::CAMJob::OutputData::Helper';
+use aliased 'CamHelpers::CamHistogram';
 
 #-------------------------------------------------------------------------------------------#
 #  Interface
@@ -452,6 +453,7 @@ sub __PrepareNPLTTHROUGHNC {
 	}
 
 	my $inCAM  = $self->{"inCAM"};
+	my $jobId = $self->{"jobId"};
 	my @layers = $layer->GetSingleLayers();
 	my $lName  = GeneralHelper->GetGUID();
 
@@ -459,6 +461,9 @@ sub __PrepareNPLTTHROUGHNC {
 
 	# compensate
 	foreach my $l (@layers) {
+			
+		my %featHist = CamHistogram->GetFeatuesHistogram($inCAM, $jobId,   $self->{"pdfStep"}, $l->{"gROWname"});
+		next if($featHist{"total"} == 0);
 
 		if ( $l->{"gROWlayer_type"} eq "rout" ) {
 
@@ -475,21 +480,21 @@ sub __PrepareNPLTTHROUGHNC {
 			$inCAM->COM( "merge_layers", "source_layer" => $l->{"gROWname"}, "dest_layer" => $lName );
 		}
  
-		
-
 
 		# There can by small remains of pcb material, which is not milled
 		# We don't want see this pieces in pdf, so delete tem from layer $lName
+		# (pieces larger than 20% of total step area will be keepd)
 		 
 		#$inCAM->COM( "merge_layers", "source_layer" => $lName, "dest_layer" => $lTmp );
 
 		my $unitRTM = UniRTM->new( $inCAM, $self->{"jobId"}, $self->{"pdfStep"}, $l->{"gROWname"} );
-		my @outline = $unitRTM->GetOutlineChains();
-		my @outFeatsId =  map {$_->{"id"}} map { $_->GetOriFeatures() } @outline;
-		#my $f = FeatureFilter->new( $inCAM, $self->{"jobId"}, $l->{"gROWname"} );
-		#$f->AddFeatureIndexes(\@outFeatsId);
-		#$f->Select();
+
+		my @outFeatsId = map { $_->{"id"} } map { @{$_} } $unitRTM->GetOutlineFeatures();
 		
+		
+		#my @outline = $unitRTM->GetOutlineChains();
+		#my @outFeatsId =  map {$_->{"id"}} map { $_->GetOriFeatures() } @outline;
+		 
 		CamFilter->SelectByFeatureIndexes($inCAM, $self->{"jobId"}, \@outFeatsId);
 		
 		
@@ -518,12 +523,12 @@ sub __PrepareNPLTTHROUGHNC {
 		my $profileArea =
 		  abs( $self->{"profileLim"}->{"xMin"} - $self->{"profileLim"}->{"xMax"} ) *
 		  abs( $self->{"profileLim"}->{"yMin"} - $self->{"profileLim"}->{"yMax"} );
-		#my $maxArea = $profileArea / 10;
-		my $maxArea = $profileArea / 2;
+
+		my $maxArea = $profileArea / 2; # pieces larger than 20% of totalaarea will be keeped
 
 		if ( CamFilter->BySurfaceArea( $inCAM, 0, $maxArea ) > 0 ) {
 			my @layers = ($lName);
-			CamLayer->CopySelOtherLayer( $inCAM, \@layers, 0, 100 );
+			CamLayer->CopySelOtherLayer( $inCAM, \@layers, 0, 0 );
 		}
 
 		$inCAM->COM( 'delete_layer', "layer" => $lTmp );

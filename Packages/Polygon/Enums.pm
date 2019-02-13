@@ -14,6 +14,7 @@ use constant {
 use constant {
 			   Dir_CW   => "CW",
 			   Dir_CCW   => "CCW"
+
 };
   
   

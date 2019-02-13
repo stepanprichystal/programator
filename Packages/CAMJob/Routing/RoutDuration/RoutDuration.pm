@@ -23,7 +23,7 @@ use aliased 'Enums::EnumsMachines';
 use aliased 'Enums::EnumsPaths';
 use aliased 'Packages::CAM::UniDTM::UniDTM';
 use aliased 'Packages::CAM::UniDTM::Enums' => "EnumsDTM";
-use aliased 'Packages::CAM::UniRTM::UniRTM::UniRTM';
+use aliased 'Packages::CAM::UniRTM::UniRTM';
 use aliased 'Packages::CAM::UniRTM::Enums' => "EnumsRTM";
 use aliased 'Packages::CAMJob::Routing::RoutSpeed::RoutSpeed';
 use aliased 'Packages::CAMJob::Routing::RoutDuplicated::RoutDuplicated';
@@ -213,8 +213,12 @@ sub __SetSequenceToolUsage {
 	my $length = 0;
 
 	foreach my $f ( $uniChainSeq->GetFeatures() ) {
-
-		die "No length defined for rout feature id: " . $f->{"id"} if ( !defined $f->{"length"} || $f->{"length"} == 0 );
+		
+		# There could be line with zero length but nof undefined
+		if ( !defined $f->{"length"}  ){
+			die "No length defined for rout feature id: " . $f->{"id"} ;
+		}
+		
 		$length += $f->{"length"};
 	}
 
@@ -246,15 +250,15 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	#use Data::Dump qw(dump);
 
-	use aliased 'Packages::CAMJob::Drilling::DrillDuration::DrillDuration';
+	use aliased 'Packages::CAMJob::Routing::RoutDuration::RoutDuration';
 	use aliased 'Packages::InCAM::InCAM';
 
 	my $inCAM = InCAM->new();
-	my $jobId = "d152457";
+	my $jobId = "d231312";
 	my $step  = "panel";
-	my $layer = "m";
+	my $layer = "f";
 
-	my $result = DrillDuration->GetDrillDuration( $inCAM, $jobId, $step, $layer );
+	my $result = RoutDuration->GetRoutDuration( $inCAM, $jobId, $step, $layer );
 
 	print STDERR "Result is: " . int( $result / 60 ) . ":" . sprintf( "%02s", $result % 60 ) . " error \n";
 

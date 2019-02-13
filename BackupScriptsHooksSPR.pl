@@ -1,41 +1,32 @@
 #!/usr/bin/perl -w
 
+#-------------------------------------------------------------------------------------------#
+# Description: Script do backup of hook scripts on server
+# Author:SPR
+#-------------------------------------------------------------------------------------------#
+
 #3th party library
 use strict;
 use warnings;
-use POSIX qw(strftime);
+ 
+use lib qw( C:\Perl\site\lib\TpvScripts\Scripts );
+
+#necessary for load pall packages
+use FindBin;
+use lib "$FindBin::Bin/../";
+use PackagesLib;
+
+use aliased 'Helpers::GeneralHelper';
 
 
-# Script zip script files and save to backup dr
-
-
-my $fname = strftime "%Y_%m_%d", localtime;
-
-use Archive::Zip qw( :ERROR_CODES :CONSTANTS );
-use File::Path 'rmtree';
-
+# Script zip script files and save to backup dir
+ 
 my $sourceDir = "y:\\server\\users\\stepan\\hooks\\";
-my $backupDir = "r:\\pcb\\pcb\\Scripts_backup\\SPR_Hooks\\" . $fname;
+my $backupDir = "r:\\pcb\\pcb\\Scripts_backup\\SPR_Hooks\\";
 
-my $i           = 1;
-my $basckupPath = $backupDir. ".zip";
-while ( -e $basckupPath ) {
+local @ARGV = ( $sourceDir, $backupDir, undef );
 
-	$basckupPath = $backupDir . "_v" . $i. ".zip";
-	
-	$i++;
+my $backScript = GeneralHelper->Root()."\\HelperScripts\\BackupScripts\\BackupScripts.pl";
+require $backScript;
 
-}
- 
-
-my $zip = Archive::Zip->new();
-
-my $pred = sub { /\.*/ };
-$zip->addTree( $sourceDir, 'Scripts', $pred );
- 
-
-unless ( $zip->writeToFileNamed($basckupPath) == AZ_OK ) {
-
-	die "Cannot zip files";
-}
 

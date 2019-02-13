@@ -12,7 +12,7 @@ use Math::Trig;
 use Clone qw(clone);
 
 #local library
-use aliased 'Packages::CAM::UniRTM::UniRTM::UniRTM';
+use aliased 'Packages::CAM::UniRTM::UniRTM';
 use aliased 'Enums::EnumsRout';
 use aliased 'CamHelpers::CamAttributes';
 

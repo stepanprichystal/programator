@@ -24,7 +24,7 @@ use aliased 'CamHelpers::CamRouting';
 use aliased 'CamHelpers::CamHistogram';
 use aliased 'CamHelpers::CamMatrix';
 use aliased 'CamHelpers::CamStepRepeat';
-use aliased 'Packages::CAM::UniRTM::UniRTM::UniRTM';
+use aliased 'Packages::CAM::UniRTM::UniRTM';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods

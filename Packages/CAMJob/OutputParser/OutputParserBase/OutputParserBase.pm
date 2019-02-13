@@ -16,7 +16,7 @@ use aliased 'CamHelpers::CamHelper';
 use aliased 'CamHelpers::CamLayer';
 use aliased 'Helpers::GeneralHelper';
 use aliased 'Packages::CAM::UniDTM::UniDTM';
-use aliased 'Packages::CAM::UniRTM::UniRTM::UniRTM';
+use aliased 'Packages::CAM::UniRTM::UniRTM';
 use aliased 'CamHelpers::CamDrilling';
 use aliased 'CamHelpers::CamHistogram';
 use aliased 'Packages::CAMJob::OutputParser::OutputParserBase::OutputResult::OutputResult';

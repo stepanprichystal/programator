@@ -8,7 +8,7 @@
 # - Magazine
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::CAM::UniRTM::UniRTM::UniRTM;
+package Packages::CAM::UniRTM::UniRTM;
 use base("Packages::CAM::UniRTM::UniRTM::UniRTMBase");
 
 #3th party library
@@ -18,7 +18,6 @@ use warnings;
 #local library
 
 use aliased 'Packages::CAM::UniRTM::Enums';
-
 
 #-------------------------------------------------------------------------------------------#
 #  Public method
@@ -155,26 +154,57 @@ sub GetCircleChainSeq {
 	return @circleChainSeq;
 }
 
+# Get left cycle chain
+sub GetOutlineFeatures {
+	my $self = shift;
+
+
+
+	my @allFeats = map { $_->GetFeatures() } map { $_->GetChainSequences() } @{ $self->{"chains"} };
+
+
+	# remove helper attributes
+	
+	my @sequences = RoutCyclic->GetRoutSequences( \@allFeats );
+
+	my @closeOutline = ();
+
+	foreach my $seq (@sequences) {
+
+		my %result = RoutCyclic->GetSortedRout($seq);
+
+		if ( $result{"result"} ) {
+			push( @closeOutline, $result{"edges"} );
+		}
+		else {
+
+			next;
+		}
+	}
+
+	return @closeOutline;
+}
+
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	use aliased 'Packages::CAM::UniRTM::UniRTM::UniRTM';
+	use aliased 'Packages::CAM::UniRTM::UniRTM';
 	use aliased 'Packages::CAM::UniDTM::UniDTM';
 	use aliased 'Packages::InCAM::InCAM';
- 
- 
+
 	my $inCAM = InCAM->new();
 	my $jobId = "d113608";
-	my $step  = "mpanel";
+	my $step  = "o+1";
 	my $layer = 'f';
-  
-  my $rtm = UniRTM->new($inCAM, $jobId, $step, $layer, 1);
-  
- 
-  die;
+
+	my $rtm = UniRTM->new( $inCAM, $jobId, $step, $layer, 1, 0, 1 );
+	
+	my @outline = $rtm->GetMultiChainSeqList();
+
+	die;
 }
 
 1;

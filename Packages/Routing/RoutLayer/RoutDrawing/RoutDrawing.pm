@@ -21,7 +21,7 @@ use aliased 'Packages::CAM::SymbolDrawing::Point';
 use aliased 'Packages::CAM::FeatureFilter::FeatureFilter';
 use aliased 'Packages::CAM::FeatureFilter::Enums' => "FilterEnums";
 use aliased 'Packages::Polygon::Features::Features::Features';
-use aliased 'Packages::CAM::UniRTM::UniRTM::UniRTM';
+use aliased 'Packages::CAM::UniRTM::UniRTM';
 use aliased 'Packages::CAM::SymbolDrawing::Primitive::PrimitiveText';
 
 #-------------------------------------------------------------------------------------------#

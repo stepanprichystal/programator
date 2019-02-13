@@ -20,8 +20,11 @@ sub new {
 	$self = {};
 	bless $self;
 
-	# Id of features
+	# Integer InCam feature id
 	$self->{"id"} = undef;
+
+	# Integer Unique id assigned by Feature parser (counted from 1)
+	$self->{"uid"} = undef;
 
 	# type of features - L, A, etc..
 	$self->{"type"} = undef;
@@ -55,9 +58,18 @@ sub new {
 	#attributes of features
 	$self->{"att"} = undef;
  
+ 	# Properties set only if breakSR during parse layer
+ 
+ 	# feature source step
+	$self->{"SRStep"} = undef;
+	
+ 	# feature source step ancestors in string format: <ancestor>/<ancestor parent>/...
+	$self->{"SRAncestors"} = undef;
 
 	return $self;
 }
+
+
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

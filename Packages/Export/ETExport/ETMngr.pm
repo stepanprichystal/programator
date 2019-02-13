@@ -142,13 +142,14 @@ sub __CopyIPCToServer {
 
 	get_logger("abstractQueue")->error( "Et test $jobId exist: $elTestExist\n " . $inCAM->GetExceptionError() );
 
-	# copy test to special ipc test folder
+	# move test to special ipc test folder
 	if ( GeneralHelper->IsTPVServer() && $elTestExist == 0 ) {
 
 		my $ipcPath = EnumsPaths->Client_ELTESTS . $jobId . "t\\" . $jobId . "t.ipc";
 		if ( -e $ipcPath ) {
 
 			copy( $ipcPath, EnumsPaths->Jobs_ELTESTSIPC . $jobId . "t.ipc" );
+			unlink($ipcPath);    # remove from server dir
 		}
 
 		get_logger("abstractQueue")->error( "Et test $jobId copy from path $ipcPath\n " . $inCAM->GetExceptionError() );
@@ -160,9 +161,9 @@ sub TaskItemsCount {
 
 	my $totalCnt = 0;
 
-	$totalCnt += 1;    # EtStep Created
-	$totalCnt += 1;    # Et set createed
-	$totalCnt += 1;    # Et optimize
+	$totalCnt += 1;              # EtStep Created
+	$totalCnt += 1;              # Et set createed
+	$totalCnt += 1;              # Et optimize
 
 	return $totalCnt;
 
@@ -181,9 +182,9 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	my $inCAM = InCAM->new();
 
 	my $jobId = "d229010";
-	
-	my $et = ETMngr->new($inCAM, $jobId, "panel", 1);
-	
+
+	my $et = ETMngr->new( $inCAM, $jobId, "panel", 1 );
+
 	$et->Run()
 
 }

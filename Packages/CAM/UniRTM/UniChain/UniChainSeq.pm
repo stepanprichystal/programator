@@ -4,7 +4,7 @@
 # Responsible for tools are unique (diameter + typeProc)
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::CAM::UniRTM::UniRTM::UniChainSeq;
+package Packages::CAM::UniRTM::UniChain::UniChainSeq;
 
 #3th party library
 use strict;
@@ -15,10 +15,6 @@ use List::MoreUtils qw(uniq);
 use aliased 'Packages::CAM::UniRTM::Enums';
 use aliased 'Packages::Routing::RoutLayer::RoutParser::RoutArc';
 use aliased 'Enums::EnumsRout';
-use aliased "Packages::Polygon::PolygonFeatures";
-use aliased 'Packages::Polygon::Polygon::PolygonPoints';
-use aliased 'Packages::Polygon::Polygon::PolygonArc';
-use aliased 'Packages::Polygon::Polygon::PolygonAttr';
 
 #-------------------------------------------------------------------------------------------#
 #  Public method
@@ -43,13 +39,13 @@ sub new {
 	my @outsideChainSeq = ();
 	$self->{"outsideChainSeq"} = \@outsideChainSeq;    # chain seq ref, which is this chain sequence inside
 
-	# Features, wchich chain sequnece is created from. 
-	$self->{"oriFeatures"}    = [];  
-	
-	# Features, wchich chain sequnece is created from. 
+	# Features, wchich chain sequnece is created from.
+	$self->{"oriFeatures"} = [];
+
+	# Features, wchich chain sequnece is created from.
 	# These features can by modified during UniRTM initialization (arc/circles are fragmented, direction is changed to CW etc)
-	$self->{"features"}    = [];               
-	$self->{"featureType"} = undef;                    # tell type of features, wchich chain is created from. FeatType_SURF/FeatType_LINEARC
+	$self->{"features"}    = [];
+	$self->{"featureType"} = undef;    # tell type of features, wchich chain is created from. FeatType_SURF/FeatType_LINEARC
 
 	# ==== Property set, only if rout is cyclic ====
 
@@ -68,10 +64,10 @@ sub new {
 # For Surfaces
 # - return list of sorted points CW, which create envelop for surface (convex-hull)
 
-sub GetPoints {
+sub GetShapePoints {
 	my $self = shift;
 
-	my $accuracy = 0.2; # radius tolerance, when convert arc to points
+	my $accuracy = 0.2;    # radius tolerance, when convert arc to points
 
 	my @points = ();
 
@@ -79,91 +75,11 @@ sub GetPoints {
 
 	if ( $self->GetFeatureType eq Enums->FeatType_SURF ) {
 
-		# Chain sequnce created form surface contain only one surface feature
-		my $singleIsland    = 1;
-		my @surfaceEnvelops = ();
-
-		# if more surfaces ore more islands in one surface, do convex hull for all surfaces
-		if ( scalar(@features) > 1 ) {
-			$singleIsland = 0;
-		}
-
-		foreach my $surfFeat (@features) {
-
-			my @envelops = PolygonFeatures->GetSurfaceEnvelops( $surfFeat, $accuracy );
-
-			if ( scalar(@envelops) > 1 ) {
-				$singleIsland = 0;
-			}
-
-			foreach my $e (@envelops) {
-				push( @surfaceEnvelops, @{$e} );
-			}
-		}
-
-		@surfaceEnvelops = map { [ $_->{"x"}, $_->{"y"} ] } @surfaceEnvelops;
-
-		# Do convex hull from all surface envelop points
-		if ($singleIsland) {
-
-			#@surfaceEnvelops = map { [ $_->{"x"}, $_->{"y"} ] } @surfaceEnvelops;
-		}
-		else {
-
-			@surfaceEnvelops = PolygonPoints->GetConvexHull( \@surfaceEnvelops );
-		}
-
-		@points = @surfaceEnvelops;
-
-		#		my @envPoints = map { @{ $_->{"envelop"} } } $self->GetFeatures();
-		#
-		#		push( @points, map { [ $_->{"x"}, $_->{"y"} ] } @envPoints );
-
+		@points = Helper->GetSurfPoints( \@features, $accuracy );
 	}
 	else {
 
-		my @pointsPom = ();
-
-		
-		for(my $i = 0; $i <scalar(@features); $i++ ) {
-
-			my $f = $features[$i];
-			my $lastPoint = undef;
-
-			if ( $f->{"type"} =~ /A/i ) {
-
-				my $result = undef;
-  
- 				$f->{"dir"} = $f->{"newDir"} ?  $f->{"newDir"} :  $f->{"oriDir"}; # GetFragmentArc assume propertt "dir"
-				my @p = PolygonArc->GetFragmentArc( $f, $accuracy, \$result );
-
-				if ($result) {
-
-					push( @pointsPom, @p );
-				
-				}else{
-					# takke start + end point of arc/circle
-					push( @pointsPom, [ $f->{"x1"}, $f->{"y1"} ] );
-
-				  }
-
-			}
-			elsif ( $f->{"type"} =~ /l/i ) {
-
-				push( @pointsPom, [ $f->{"x1"},  $f->{"y1"} ] );
-				
-			}
-			
-			$lastPoint = [ $f->{"x2"}, $f->{"y2"} ];
-			
-			if($i == scalar(@features) -1){
-				push( @points,   $lastPoint );
-			}
-		}
-
-
-		push( @points,   @pointsPom );    
-
+		@points = Helper->GetLineArcShapePoints( \@features, $accuracy );
 	}
 
 	return @points;
@@ -224,7 +140,6 @@ sub SetFeatures {
 	$self->{"features"} = $features;
 }
 
-
 sub GetOriFeatures {
 	my $self = shift;
 
@@ -246,7 +161,6 @@ sub AddFeature {
 	push( @{ $self->{"features"} }, $feature );
 
 }
-
 
 sub SetFeatureType {
 	my $self = shift;

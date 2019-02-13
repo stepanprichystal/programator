@@ -16,7 +16,7 @@ use aliased 'Enums::EnumsGeneral';
 use aliased 'CamHelpers::CamHelper';
 use aliased 'CamHelpers::CamDrilling';
 use aliased 'Packages::CAM::UniDTM::UniDTM';
-use aliased 'Packages::CAM::UniRTM::UniRTM::UniRTM';
+use aliased 'Packages::CAM::UniRTM::UniRTM';
 use aliased 'Packages::CAM::UniRTM::Enums' => "RTMEnums";
 use aliased 'Packages::CAM::UniDTM::Enums' => 'DTMEnums';
 use aliased 'CamHelpers::CamStepRepeat';

@@ -21,6 +21,8 @@ use Storable qw(dclone);
 
 use aliased 'Packages::Polygon::Features::Features::Item';
 use aliased 'Packages::Polygon::Polygon::PolygonPoints';
+use aliased 'CamHelpers::CamHistogram';
+use aliased 'CamHelpers::CamStepRepeat';
 
 #-------------------------------------------------------------------------------------------#
 #  Interface
@@ -48,6 +50,9 @@ sub Parse {
 	my $breakSR    = shift;
 	my $selected   = shift;    # parse only selected feature
 	my $featFilter = shift;    # parse only given feat id
+
+	die "Parameter \"selected\" is not allowed in combination with parameter \"breakSR\""   if ( $breakSR && $selected );
+	die "Parameter \"featFilter\" is not allowed in combination with parameter \"breakSR\"" if ( $breakSR && $featFilter );
 
 	my $breakSRVal  = $breakSR  ? "break_sr+" : "";
 	my $selectedVal = $selected ? "select+"   : "";
@@ -99,6 +104,12 @@ sub Parse {
 	}
 
 	my @features = $self->__ParseLines( \@feat );
+
+	# Add inforamtion about source steps, ancestor steps to feats
+	if ($breakSR) {
+
+		$self->__AddBreakSRInfo( $inCAM, $jobId, $step, $layer, \@features );
+	}
 
 	$self->{"features"} = \@features;
 }
@@ -179,6 +190,7 @@ sub __ParseLines {
 
 	my $type = undef;
 	my $l    = undef;
+	
 	for ( my $i = 0 ; $i < scalar(@lines) ; $i++ ) {
 
 		$l = $lines[$i];
@@ -356,7 +368,7 @@ sub __ParseLines {
 		}
 		else {
 
-			next;
+			die "Unknow feature type: $l";
 		}
 
 		# parse attributes
@@ -370,6 +382,9 @@ sub __ParseLines {
 			}
 			$featInfo->{"att"}{ $attValue[0] } = $attValue[1];
 		}
+
+		# assing internal unique id
+		$featInfo->{"uid"} = $i + 1;
 
 		push( @features, $featInfo );
 	}
@@ -438,6 +453,75 @@ sub __ParseSurfDef {
 	}
 
 	return @surfPoints;
+}
+
+# Add infto about sorce step and ancestor steps when breakSR
+sub __AddBreakSRInfo {
+	my $self     = shift;
+	my $inCAM    = shift;
+	my $jobId    = shift;
+	my $step     = shift;
+	my $layer    = shift;
+	my $features = shift;
+	
+	my %stepFeatsCnt = ();
+	my @allSteps = map { $_->{"stepName"} } CamStepRepeat->GetUniqueNestedStepAndRepeat( $inCAM, $jobId, $step );
+	
+	return 0 unless(scalar(@allSteps)); # SR doesn't exist, return 0
+	
+	push( @allSteps, $step );
+	foreach my $step (@allSteps) {
+
+		my %featHist = CamHistogram->GetFeatuesHistogram( $inCAM, $jobId, $step, $layer, 0 );
+		$stepFeatsCnt{$step} = $featHist{"total"};
+
+	}
+	my @stepsInfo = ();
+	$self->__GetBreakSRInfo( $inCAM, $jobId, \@stepsInfo, $step, [] );
+
+	my $curIdx = 0;
+	foreach my $stepInfo (@stepsInfo) {
+
+		my $ancestorStr = join( "/", reverse( @{ $stepInfo->{"SRAncestors"} } ) );
+
+		my $stepCnt = $stepFeatsCnt{ $stepInfo->{"SRStep"} };
+
+		for ( my $i = 0 ; $i < $stepCnt ; $i++ ) {
+			$features->[$curIdx]->{"SRStep"}      = $stepInfo->{"SRStep"};
+			$features->[$curIdx]->{"SRAncestors"} = $ancestorStr;
+
+			$curIdx++;
+
+		}
+	}
+
+	die "$step feature cnt (" . scalar( @{$features} ) . ") don't equal to SR parsed feature cnt ($curIdx)" if ( scalar( @{$features} ) != $curIdx );
+	
+	return 1;
+}
+
+sub __GetBreakSRInfo {
+	my $self         = shift;
+	my $inCAM        = shift;
+	my $jobId        = shift;
+	my $srFeatures   = shift;
+	my $curStepName  = shift;
+	my @stepAncestor = @{ shift(@_) };
+
+	my @repeats = CamStepRepeat->GetRepeatStep( $inCAM, $jobId, $curStepName );
+
+	foreach my $repeat (@repeats) {
+
+		my @ancestor = ( @stepAncestor, $curStepName );
+
+		$self->__GetBreakSRInfo( $inCAM, $jobId, $srFeatures, $repeat->{"stepName"}, \@ancestor );
+	}
+
+	my %featInf = ();
+	$featInf{"SRStep"}      = $curStepName;
+	$featInf{"SRAncestors"} = \@stepAncestor;
+
+	push( @{$srFeatures}, \%featInf );
 }
 
 #-------------------------------------------------------------------------------------------#
