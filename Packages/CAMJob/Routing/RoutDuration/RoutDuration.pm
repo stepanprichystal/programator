@@ -214,7 +214,7 @@ sub __SetSequenceToolUsage {
 
 	foreach my $f ( $uniChainSeq->GetFeatures() ) {
 
-		die "No length defined for rout feature id: " . $f->{"id"} if ( !defined $f->{"length"} || $f->{"length"} == 0 );
+		die "No length defined for rout feature id: " . $f->{"id"} if ( !defined $f->{"length"} );
 		$length += $f->{"length"};
 	}
 
