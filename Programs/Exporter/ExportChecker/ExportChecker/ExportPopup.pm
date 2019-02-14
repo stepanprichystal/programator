@@ -155,16 +155,18 @@ sub __CheckAsyncWorker {
 	}
 	catch {
 
-		my $e = "Export checker thread was unexpectedly exited\n\n";
+		print STDERR $e;	
+		print STDERR $_;
+		#my $e = "Export checker thread was unexpectedly exited\n\n";
  
-		BaseException->new($e, $_);
- 
- 		# Create item result with 
-		my %info = ();
-		$info{"resultMngr"} = ItemResultMngr->new();
-		my $resItem = $info{"resultMngr"}->GetNewItem();
-		$info{"resultMngr"}->AddItem("Export checker", ItemResEnums->ItemResult_Fail);
-		$units->{"onCheckEvent"}->Do( "end", \%info );
+#		BaseException->new($e, $_);
+# 
+# 		# Create item result with 
+#		my %info = ("unit" => "pre");
+#		$info{"resultMngr"} = ItemResultMngr->new();
+#		my $resItem = $info{"resultMngr"}->GetNewItem();
+#		$info{"resultMngr"}->AddItem("Export checker", ItemResEnums->ItemResult_Fail);
+#		$units->{"onCheckEvent"}->Do( "end", \%info );
 
 
 		

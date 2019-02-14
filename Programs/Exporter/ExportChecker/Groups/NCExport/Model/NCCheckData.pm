@@ -608,10 +608,10 @@ sub OnCheckGroupData {
 					my @chainTools =  map { $_->GetChain()->GetChainTool()} $multiChain->GetChains();
 					if ( grep { $_->GetComp() eq EnumsRout->Comp_LEFT } @chainTools ) {
 		 
-						my $routStr = join ("\n", map { "- Chain order: ".$_->GetChainOrder(). ", Chain source step: ".$_->GetChainSourceStep() } @chainTools);
+						my $routStr = join ("\n", map { "- Chain order: ".$_->GetChainOrder(). ", Chain source step: ".$_->GetSourceStep() } @chainTools);
 						
 						$dataMngr->_AddWarningResult("Chybějící můstky",
-													  "Ve stepu: $step ve vrstvě: \"f\" byla detekována obrysová fréza tvořená chainy:\n$routStr".
+													  "Ve stepu: $step ve vrstvě: \"f\" byla detekována obrysová fréza tvořená chainy:\n$routStr\n\n".
 													  "Ujisti se, že uvnitř panelu nechybí můstky"
 													  
 						);
