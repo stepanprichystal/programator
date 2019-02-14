@@ -10,6 +10,7 @@ use warnings;
 use Math::Trig;
 use Math::Polygon::Calc;       #Math-Polygon
 use Math::Geometry::Planar;    #Math-Geometry-Planar-GPC
+use List::Util qw[max min];
 
 #local library
 use aliased 'CamHelpers::CamDTM';
@@ -152,11 +153,6 @@ sub GetRoutSequences {
 	# 1) all features which are not line or arc add as single sequences
 	my @nonSeqFeats = grep { $_->{"type"} !~ /l/i && $_->{"type"} !~ /a/i } @edges;
 
-	foreach my $f (@nonSeqFeats) {
-		my @s = ($f);
-		push( @sequences, \@s );
-	}
-
 	# 2) filter all non arc and line features
 	@edges = grep { $_->{"type"} =~ /l/i || $_->{"type"} =~ /a/i } @edges;
 
@@ -167,6 +163,7 @@ sub GetRoutSequences {
 	# 3) create feature matrix for fast searching of joined edegs
 	my $report = "";
 	my %m = PolygonFeatures->GetFeatureMatrix( \@edges, 10, \$report );
+
 	#print STDERR $report;
 
 	my $buildSeqDone = scalar(@edges) ? 0 : 1;
@@ -255,7 +252,22 @@ sub GetRoutSequences {
 
 	if ( $fSeqCnt != scalar(@edges) ) {
 
-		die "Feat number in sequences not equal  source  feat number";
+		die "Feat number in sequences ($fSeqCnt) not equal  source  feat number (" . scalar(@edges) . ")";
+	}
+
+	# All features which are not line or arc add as single sequences
+	foreach my $f (@nonSeqFeats) {
+		my @s = ($f);
+		push( @sequences, \@s );
+	}
+
+	# Remove helper key value
+	foreach my $e (@edges) {
+		$e->{"used"}      = undef;
+		$e->{"processed"} = undef;
+		$e->{"cellS"}     = undef;
+		$e->{"cellE"}     = undef;
+
 	}
 
 	return @sequences;
@@ -265,7 +277,7 @@ sub GetRoutSequences {
 # Works out only for close polygon
 # If rout is open, return empty array
 # What means "sorted":
-# - rout chan be made by edges with differnet dierction ..|-->|-->|<--|-->|...
+# - rout can be made by edges with differnet dierction ..|-->|-->|<--|-->|...
 # - this method do same direction CW/CCW randomly by first choosed edge
 sub GetSortedRout {
 	my $self  = shift;
@@ -274,7 +286,7 @@ sub GetSortedRout {
 	# Result of sorting edges
 	my %result = ();
 	$result{"result"}    = 1;        # if 1 sorting ok, else rout was open
-	$result{"changes"}   = 0;        # sme changes are done, arc fragment, switch edge points..
+	$result{"changes"}   = 0;        # some changes are done, arc fragment, switch edge points..
 	$result{"openPoint"} = undef;    # if rout is open, point where rout is open
 	$result{"edges"}     = undef;    # sorted edges
 
@@ -409,7 +421,9 @@ sub GetSortedRout {
 	#pokud obrys obsahuje obloukz, je potreba je potreba je dostatecne aproximovat,
 	#aby jsme spolehlive spocitali zda je obrys CW nebo CCW
 	my $fragmented = 0;
-	@sorteEdges = RoutArc->FragmentArcReplace( \@sorteEdges, -1, \$fragmented );
+	my $idStartFrom = max( map{$_->{"id"}} @sorteEdges) +1;
+	my $uidStartFrom = max( map{$_->{"uid"}} @sorteEdges) +1;
+	@sorteEdges = RoutArc->FragmentArcReplace( \@sorteEdges, -1, \$fragmented,  $idStartFrom, $uidStartFrom);
 
 	# Get information about original direction
 

@@ -4,7 +4,7 @@
 # Responsible for tools are unique (diameter + typeProc)
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::CAM::UniRTM::UniRTM::UniChainTool;
+package Packages::CAM::UniRTM::UniChain::UniChainTool;
 
 #3th party library
 use strict;

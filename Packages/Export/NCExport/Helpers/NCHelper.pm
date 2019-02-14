@@ -25,7 +25,7 @@ use aliased 'CamHelpers::CamJob';
 use aliased 'Packages::CAMJob::Dim::JobDim';
 use aliased 'CamHelpers::CamDrilling';
 use aliased 'CamHelpers::CamStepRepeat';
-use aliased 'Packages::CAM::UniRTM::UniRTM::UniRTM';
+use aliased 'Packages::CAM::UniRTM::UniRTM';
 use aliased 'Packages::CAM::UniDTM::UniDTM';
 use aliased 'Packages::CAM::UniDTM::Enums' => 'DTMEnums';
 

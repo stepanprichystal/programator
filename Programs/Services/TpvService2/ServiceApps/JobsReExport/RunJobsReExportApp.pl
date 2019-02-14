@@ -32,7 +32,7 @@ $app->{"inCAM"} = $inCAM;
 
 $app->Run();
 
-#$app->__RunJob($jobId);
+#$app->__RunJob("d222222");
 
 #$app->__ProcessJob($jobId);
 print "app inited";

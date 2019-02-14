@@ -235,7 +235,9 @@ sub __ProcessJob {
 	# 1) Open Job
 
 	unless ( CamJob->JobExist( $inCAM, $jobId ) ) {
-		$self->{"logger"}->debug("Job doesn't exist: $jobId");
+		 
+		$self->__ProcessError( $jobId, "Job doesn't exist: $jobId" );
+		$self->__RemoveFromJoblist( $jobId, 1 );
 		return 0;
 	}
 

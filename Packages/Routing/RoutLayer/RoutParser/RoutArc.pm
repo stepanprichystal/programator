@@ -28,6 +28,11 @@ sub FragmentArcReplace {
 	my @sorteEdges       = @{ shift(@_) };
 	my $defaultSegNumber = shift;
 	my $fragmented       = shift;
+	my $idStartFrom      = shift;            # index which new arc id start from
+	my $uidStartFrom     = shift;            # index which new arc unique id start from
+
+	die "Start feature id number is not defined"  unless ( defined $idStartFrom );
+	die "Start feature uid number is not defined" unless ( defined $uidStartFrom );
 
 	#pokud obrys obsahuje obloukz, je potreba je potreba je dostatecne aproximovat,
 	#aby jsme spolehlive spocitali zda je obrys CW nebo CCW
@@ -57,7 +62,10 @@ sub FragmentArcReplace {
 
 					%featInfo = %{ $sorteEdges[$i] };
 
-					$featInfo{"id"} = GeneralHelper->GetNumUID();
+					$featInfo{"id"}  = $idStartFrom;     # !! set max id from all layer features, not random!
+					$featInfo{"uid"} = $uidStartFrom;    # !! set max uid from all layerfeatures, not random!
+					$idStartFrom++;
+					$uidStartFrom++;
 
 					#$featInfo{"x1"} = sprintf( "%.3f", $arcPoints[$j][0] );
 					#$featInfo{"y1"} = sprintf( "%.3f", $arcPoints[$j][1] );
@@ -191,7 +199,6 @@ sub GetArcInnerAngle {
 	return $alfa;
 }
 
- 
 ## Convert arc to lines with specific segment line
 ## v nekterych pripadech fce ArcToPoly dava spatne vysledkyu
 #sub FragmentArcToSegments {
@@ -207,7 +214,7 @@ sub GetArcInnerAngle {
 #	my @arrEnd    = ( $arc->{"x2"},   $arc->{"y2"} );
 #	my @arrCenter = ( $arc->{"xmid"}, $arc->{"ymid"} );
 #	my $direction = $arc->{"newDir"} || $arc->{"oriDir"};
-# 
+#
 #	if ( $arc->{"x1"} == $arc->{"x2"} && $arc->{"y1"} == $arc->{"y2"} ) {
 #		die "Not arc but circle\n";
 #	}
@@ -260,7 +267,7 @@ sub GetArcInnerAngle {
 ##		print STDERR "line  = ["
 ##		  . sprintf( "%.1f", $_->{"x1"} ) . ", "
 ##		  . sprintf( "%.1f", $_->{"y1"} ) . "],  ["
-##		  
+##
 ##		  . sprintf( "%.1f", $_->{"x2"} ) . ", "
 ##		  . sprintf( "%.1f", $_->{"y2"} )
 ##		  . "]\n";
@@ -278,24 +285,24 @@ sub GetArcInnerAngle {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-#	use aliased 'Packages::CAM::FeatureFilter::FeatureFilter';
-#	use aliased 'Packages::InCAM::InCAM';
-#
-#	my $inCAM = InCAM->new();
-#	my $jobId = "f13608";
-#
-#	my $f = FeatureFilter->new( $inCAM, "m" );
-#
-#	$f->SetPolarity("positive");
-#
-# 
-#
-#	my @syms = ( "r500", "r1" );
-#	$f->AddIncludeSymbols( \[ "r500", "r1" ] );
-#
-#	print $f->Select();
-#
-#	print "fff";
+	#	use aliased 'Packages::CAM::FeatureFilter::FeatureFilter';
+	#	use aliased 'Packages::InCAM::InCAM';
+	#
+	#	my $inCAM = InCAM->new();
+	#	my $jobId = "f13608";
+	#
+	#	my $f = FeatureFilter->new( $inCAM, "m" );
+	#
+	#	$f->SetPolarity("positive");
+	#
+	#
+	#
+	#	my @syms = ( "r500", "r1" );
+	#	$f->AddIncludeSymbols( \[ "r500", "r1" ] );
+	#
+	#	print $f->Select();
+	#
+	#	print "fff";
 
 }
 

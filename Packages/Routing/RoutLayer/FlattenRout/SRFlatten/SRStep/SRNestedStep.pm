@@ -13,7 +13,7 @@ use warnings;
 use aliased 'Packages::CAM::UniRTM::Enums';
 use aliased 'Helpers::GeneralHelper';
 use aliased 'CamHelpers::CamHelper';
-use aliased 'Packages::CAM::UniRTM::UniRTM::UniRTM';
+use aliased 'Packages::CAM::UniRTM::UniRTM';
 use aliased 'CamHelpers::CamLayer';
 use aliased 'CamHelpers::CamJob';
 

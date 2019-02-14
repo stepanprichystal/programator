@@ -8,24 +8,24 @@ package Packages::CAM::UniRTM::UniRTM::Parser::ChainParser;
 use strict;
 use warnings;
 use Storable qw(dclone);
+use List::Util;
+use Scalar::Util qw(refaddr);
+use List::MoreUtils qw(uniq);
 
 #local library
 use aliased 'CamHelpers::CamDTM';
 use aliased 'CamHelpers::CamDTMSurf';
-use aliased 'Packages::CAM::UniRTM::UniRTM::UniChainSeq';
-use aliased 'Packages::CAM::UniRTM::UniRTM::UniChain';
+use aliased 'Packages::CAM::UniRTM::UniChain::UniChainSeq';
+use aliased 'Packages::CAM::UniRTM::UniChain::UniChain';
+use aliased 'Packages::CAM::UniRTM::UniChain::UniMultiChainSeq';
 use aliased 'Packages::CAM::UniRTM::Enums';
 use aliased 'Enums::EnumsDrill';
 use aliased 'Enums::EnumsRout';
 use aliased 'Packages::Routing::RoutLayer::RoutParser::RoutCyclic';
-use List::MoreUtils qw(uniq);
 
 #-------------------------------------------------------------------------------------------#
 #  Public method
 #-------------------------------------------------------------------------------------------#
-
-# Check if tools parameters are ok
-# When some errors occure here, proper NC export is not possible
 
 sub GetChains {
 	my $self      = shift;
@@ -43,8 +43,8 @@ sub GetChains {
 		#$self->__SetChainProperties($ch);
 
 		my @featChain = grep { $_->{"att"}->{".rout_chain"} == $ch->GetChainOrder() } @features;
-		
-		$uniChain->SetFeatures(\@featChain);
+
+		$uniChain->SetFeatures( \@featChain );
 
 		my @sequences = RoutCyclic->GetRoutSequences( \@featChain );
 
@@ -52,7 +52,7 @@ sub GetChains {
 
 			my $chSeq = UniChainSeq->new($uniChain);
 
-			$chSeq->SetOriFeatures(dclone($seqPoints));
+			$chSeq->SetOriFeatures( dclone($seqPoints) );
 			$chSeq->SetFeatures($seqPoints);
 			$self->__SetChainSeqProperties($chSeq);
 
@@ -63,57 +63,6 @@ sub GetChains {
 	}
 	return @chains;
 }
-
-#sub GetChains {
-#	my $self     = shift;
-#	my @features = @{ shift(@_) };
-#
-#	my @chains = ();
-#
-#	# 1) Detect Chain
-#	foreach my $f (@features) {
-#
-#		# if no attributes
-#		unless ( $f->{"att"} ) {
-#			next;
-#		}
-#
-#		my %attr = %{ $f->{"att"} };
-#
-#		# if features contain attribute rout chain
-#		if ( $attr{".rout_chain"} && $attr{".rout_chain"} > 0 ) {
-#
-#			my $uniChain = undef;
-#
-#			$uniChain = ( grep { $_->GetChainOrder() eq $attr{".rout_chain"} } @chains )[0];
-#
-#			#  unless chain with given routchain, exist, add feature
-#			unless ($uniChain) {
-#
-#				#
-#				#				unless(defined $attr{".rout_tool"}){
-#				#
-#				#					print "dd";
-#				#				}
-#				#
-#				my $chainOrder = $attr{".rout_chain"};
-#
-#				#				my $chainSize = sprintf( "%.1f", $attr{".rout_tool"} * 25.4 ) * 1000;
-#
-#				$uniChain = UniChain->new($chainOrder);
-#
-#				push( @chains, $uniChain );
-#
-#			}
-#
-#			# Add features
-#			$uniChain->AddFeature($f);
-#		}
-#
-#	}
-#
-#	return @chains;
-#}
 
 sub __SetChainProperties {
 	my $self     = shift;
@@ -179,23 +128,94 @@ sub __SetChainSeqProperties {
 	else {
 		$uniChainSeq->SetFeatureType( Enums->FeatType_LINEARC );
 	}
-	
+
 	# 6) Set start edge of  chain
 	my @feats = $uniChainSeq->GetFeatures();
-	
+
 	my $minEId = undef;
 	my $minIdx = undef;
-	
-	for (my $i = 0; $i < scalar(@feats); $i++){
-		
-		if(!defined $minEId || $minEId > $feats[$i]->{"id"}){
+
+	for ( my $i = 0 ; $i < scalar(@feats) ; $i++ ) {
+
+		if ( !defined $minEId || $minEId > $feats[$i]->{"id"} ) {
 			$minEId = $feats[$i]->{"id"};
 			$minIdx = $i;
-		}	
+		}
 	}
-	
-	$uniChainSeq->SetStartEdge($feats[$minIdx]);
-	
+
+	$uniChainSeq->SetStartEdge( $feats[$minIdx] );
+
+}
+
+# Parse and return list of uni multi chains
+sub GetMultiChainSequences {
+	my $self   = shift;
+	my $chains = shift;    # parsed inited UniChain
+
+	my @multiChainSeq = ();
+
+	my @uniChainSeq = map { $_->GetChainSequences() } @{$chains};
+	my @allFeats    = map { $_->GetFeatures() } @uniChainSeq;
+	my @sequences   = RoutCyclic->GetRoutSequences( \@allFeats );
+
+	foreach my $seq (@sequences) {
+
+		my @u = ();        # all uniChainSeq of new builded UniMultiChainSeq
+
+		# 1) For each feature search UniChainSeq, where is feature assigned
+		foreach my $feat ( @{$seq} ) {
+
+			my $findSeq;
+
+			foreach my $uniChai (@uniChainSeq) {
+
+				if ( grep { $_->{"uid"} eq $feat->{"uid"} } $uniChai->GetFeatures() ) {
+
+					$findSeq = $uniChai;
+					last;
+				}
+			}
+
+			die "UniChainSeq was not found by feat uid: " . $feat->{"uid"} if ( !defined $findSeq );
+
+			# Add seq to list if already not added
+			push( @u, $findSeq ) unless ( grep { refaddr($_) == refaddr($findSeq) } @u );
+		}
+
+		# 2) Init multiChainSeq object
+		my $uniMultiChain = UniMultiChainSeq->new( \@u );
+
+		# 3) Decide if is cyclic
+		my @oriFeats = map { $_->GetOriFeatures() } @u;
+		my %result = RoutCyclic->GetSortedRout( \@oriFeats );
+
+		if ( $result{"result"} ) {
+
+			$uniMultiChain->SetCyclic(1);
+
+			# if no feature
+			if ( $result{"changes"} == 0 ) {
+				$uniMultiChain->SetDirection( RoutCyclic->GetRoutDirection( $result{"edges"} ) );
+			}
+ 
+		}
+		else {
+
+			$uniMultiChain->SetCyclic(0);
+		}
+
+		# Set feature type
+		if ( $seq->[0]->{"type"} =~ /s/i ) {
+			$uniMultiChain->SetFeatureType( Enums->FeatType_SURF );
+		}
+		else {
+			$uniMultiChain->SetFeatureType( Enums->FeatType_LINEARC );
+		}
+
+		push( @multiChainSeq, $uniMultiChain );
+	}
+
+	return @multiChainSeq;
 }
 
 #-------------------------------------------------------------------------------------------#
@@ -213,7 +233,6 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	my $f = FeatureFilter->new( $inCAM, "m" );
 
 	$f->SetPolarity("positive");
- 
 
 	my @syms = ( "r500", "r1" );
 	$f->AddIncludeSymbols( \[ "r500", "r1" ] );

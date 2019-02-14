@@ -12,7 +12,7 @@ use warnings;
 
 #local library
 use aliased 'Packages::ItemResult::ItemResult';
-use aliased 'Packages::CAM::UniRTM::UniRTM::UniRTM';
+use aliased 'Packages::CAM::UniRTM::UniRTM';
 use aliased 'Enums::EnumsRout';
 use aliased 'Packages::Polygon::PointsTransform';
 use aliased 'Packages::Polygon::Enums' => "PolyEnums";
@@ -163,11 +163,11 @@ sub __OutsideChains {
 				 
 				my $outside = $notInside[$i];
 		 
-				my @outsidePoint = $outside->GetPoints();
+				my @outsidePoint = $outside->GetShapePoints();
 
 				foreach my $outline (@lefts) {
 
-					my @points = map { { "x" => $_->[0], "y" => $_->[1] } } $outline->GetPoints();
+					my @points = map { { "x" => $_->[0], "y" => $_->[1] } } $outline->GetShapePoints();
 					my %lim = PointsTransform->GetLimByPoints( \@points );
 					$lim{"xMin"} -= 6;
 					$lim{"xMax"} += 6;

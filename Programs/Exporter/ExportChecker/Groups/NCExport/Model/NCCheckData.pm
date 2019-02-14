@@ -25,7 +25,7 @@ use aliased 'Programs::Exporter::ExportChecker::Groups::NifExport::Presenter::Ni
 use aliased 'Packages::CAMJob::Drilling::DrillChecking::LayerErrorInfo';
 use aliased 'Packages::CAMJob::Drilling::DrillChecking::LayerWarnInfo';
 use aliased 'Packages::Routing::RoutLayer::RoutChecks::RoutCheckTools';
-use aliased 'Packages::CAM::UniRTM::UniRTM::UniRTM';
+use aliased 'Packages::CAM::UniRTM::UniRTM';
 use aliased 'Packages::CAM::UniDTM::UniDTM';
 use aliased 'Helpers::GeneralHelper';
 use aliased 'Packages::CAMJob::Drilling::AspectRatioCheck';

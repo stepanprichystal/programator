@@ -12,14 +12,14 @@ use List::MoreUtils qw(uniq);
 #local library
 use aliased 'CamHelpers::CamDTM';
 use aliased 'CamHelpers::CamDTMSurf';
-use aliased 'Packages::CAM::UniRTM::UniRTM::UniChainSeq';
-use aliased 'Packages::CAM::UniRTM::UniRTM::UniChain';
+use aliased 'Packages::CAM::UniRTM::UniChain::UniChainSeq';
+use aliased 'Packages::CAM::UniRTM::UniChain::UniChain';
 use aliased 'Packages::CAM::UniRTM::Enums';
 use aliased 'Enums::EnumsDrill';
 use aliased 'Enums::EnumsRout';
 use aliased 'Packages::CAM::UniDTM::Enums' => "DTMEnums";
 use aliased 'Packages::Routing::RoutLayer::RoutParser::RoutCyclic';
-use aliased 'Packages::CAM::UniRTM::UniRTM::UniChainTool';
+use aliased 'Packages::CAM::UniRTM::UniChain::UniChainTool';
 
 #-------------------------------------------------------------------------------------------#
 #  Public method

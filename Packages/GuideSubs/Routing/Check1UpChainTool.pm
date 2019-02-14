@@ -11,7 +11,7 @@ use warnings;
 use Math::Trig;
 
 #local library
-use aliased 'Packages::CAM::UniRTM::UniRTM::UniRTM';
+use aliased 'Packages::CAM::UniRTM::UniRTM';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'CamHelpers::CamAttributes';
 

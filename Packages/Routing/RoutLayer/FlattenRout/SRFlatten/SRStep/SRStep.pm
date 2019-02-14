@@ -19,7 +19,7 @@ use aliased 'CamHelpers::CamAttributes';
 use aliased 'CamHelpers::CamStepRepeat';
 use aliased 'CamHelpers::CamStep';
 use aliased 'Packages::Routing::RoutLayer::FlattenRout::SRFlatten::SRStep::SRNestedStep';
-use aliased 'Packages::CAM::UniRTM::UniRTM::UniRTM';
+use aliased 'Packages::CAM::UniRTM::UniRTM';
 
 #-------------------------------------------------------------------------------------------#
 #  Public method

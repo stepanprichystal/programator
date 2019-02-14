@@ -485,9 +485,9 @@ sub __SetLayoutOther {
 	$noteTextTxt = Wx::StaticText->new( $statBox, -1, "   REORDER (" . join( "; ", @affectOrderNum ) . ")   ", &Wx::wxDefaultPosition, [ 110, 22 ] );
 	$noteTextTxt->SetForegroundColour( Wx::Colour->new( 255, 0, 0 ) );
 
-	my $firstOrder = grep { $_ == 1 } @affectOrderNum;
+	#my $firstOrder = grep { $_ == 1 } @affectOrderNum;
 
-	if ($firstOrder) {
+	if (scalar(@affectOrderNum) <= 1) {
 		$noteTextTxt->Hide();
 	}
 

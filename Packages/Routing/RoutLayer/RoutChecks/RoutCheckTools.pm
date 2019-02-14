@@ -10,7 +10,7 @@ use strict;
 use warnings;
 
 #local library
-use aliased 'Packages::CAM::UniRTM::UniRTM::UniRTM';
+use aliased 'Packages::CAM::UniRTM::UniRTM';
 
 #-------------------------------------------------------------------------------------------#
 #  Public method

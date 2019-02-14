@@ -219,7 +219,7 @@ sub OnCheckGroupData {
 
 			if ( $l->{"gROWname"} =~ /^v\d$/ ) {
 
-				foreach my $s ( CamStepRepeatPnl->GetUniqueStepAndRepeat( $inCAM, $jobId) ) {
+				foreach my $s ( CamStepRepeatPnl->GetUniqueStepAndRepeat( $inCAM, $jobId ) ) {
 
 					my %symHist = CamHistogram->GetSymHistogram( $inCAM, $jobId, $s->{"stepName"}, $l->{"gROWname"} );
 
@@ -232,7 +232,9 @@ sub OnCheckGroupData {
 					if ( scalar(@thermalPads) ) {
 						$dataMngr->_AddErrorResult(
 													"Inner layers",
-													"Step: \"".$s->{"stepName"}."\", layer : \""
+													"Step: \""
+													  . $s->{"stepName"}
+													  . "\", layer : \""
 													  . $l->{"gROWname"}
 													  . "\" contains thermal pads and is type: \"positive\". Are you sure, layer shouldn't be negative?"
 						);
@@ -420,6 +422,18 @@ sub OnCheckGroupData {
 		$dataMngr->_AddWarningResult( "Matrix", "V matrixu jsou \"misc\" vrstvy, které by měly být \"board\": $str " );
 	}
 
+	# 18) Check if more same jobid is in production, if so add warning
+	my @orders = HegMethods->GetPcbOrderNumbers($jobId);
+	if ( scalar(@orders) > 1 ) {
+ 
+		@orders    = grep { $_->{"stav"} == 4 } @orders;    #Ve výrobě (4)
+		
+		if(scalar(@orders) > 1 ){
+			
+			$dataMngr->_AddWarningResult( "DPS ve výrobě", "Pozor deska je již ve výrobě a export ovlivní tyto zakázky: ".join("; ", map{ $_->{"reference_subjektu"}} @orders));
+		}
+
+	}
 }
 
 #-------------------------------------------------------------------------------------------#

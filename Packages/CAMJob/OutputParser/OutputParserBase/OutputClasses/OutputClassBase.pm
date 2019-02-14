@@ -19,7 +19,7 @@ use aliased 'Packages::CAM::FeatureFilter::FeatureFilter';
 use aliased 'Helpers::GeneralHelper';
 use aliased 'CamHelpers::CamLayer';
 use aliased 'Packages::CAM::UniDTM::UniDTM';
-use aliased 'Packages::CAM::UniRTM::UniRTM::UniRTM';
+use aliased 'Packages::CAM::UniRTM::UniRTM';
 use aliased 'CamHelpers::CamJob';
 use aliased 'CamHelpers::CamDTM';
 use aliased 'Enums::EnumsDrill';

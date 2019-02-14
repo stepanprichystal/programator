@@ -17,7 +17,7 @@ use aliased 'Enums::EnumsRout';
 use aliased 'CamHelpers::CamHelper';
 use aliased 'CamHelpers::CamLayer';
 use aliased 'CamHelpers::CamAttributes';
-use aliased 'Packages::CAM::UniRTM::UniRTM::UniRTM';
+use aliased 'Packages::CAM::UniRTM::UniRTM';
 use aliased 'Packages::Routing::RoutLayer::RoutStart::RoutStart';
 use aliased 'Packages::Routing::RoutLayer::RoutDrawing::RoutDrawing';
 use aliased 'Packages::CAM::FeatureFilter::FeatureFilter';

@@ -2,7 +2,7 @@
 # Description: Do checks of tool in Universal DTM
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::CAM::UniRTM::UniRTM::UniRTMCheck;
+package Packages::CAM::UniRTM::UniRTMCheck;
 
 #3th party library
 use strict;

@@ -23,7 +23,7 @@ use aliased 'CamHelpers::CamHelper';
 use aliased 'CamHelpers::CamDrilling';
 use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'Enums::EnumsGeneral';
-use aliased 'Packages::CAM::UniRTM::UniRTM::UniRTM';
+use aliased 'Packages::CAM::UniRTM::UniRTM';
 use aliased 'Enums::EnumsPaths';
 use aliased 'Helpers::JobHelper';
 
