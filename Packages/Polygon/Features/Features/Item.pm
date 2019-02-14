@@ -25,6 +25,9 @@ sub new {
 
 	# Integer Unique id assigned by Feature parser (counted from 1)
 	$self->{"uid"} = undef;
+	
+ 	# feature source step
+	$self->{"step"} = undef;
 
 	# type of features - L, A, etc..
 	$self->{"type"} = undef;
@@ -54,15 +57,15 @@ sub new {
 	
 	# text value of type text
 	$self->{"text"} = undef;
+	
+	# array of surface item (holes and ilands)
+	$self->{"surfaces"} = undef;
 
 	#attributes of features
 	$self->{"att"} = undef;
  
  	# Properties set only if breakSR during parse layer
  
- 	# feature source step
-	$self->{"SRStep"} = undef;
-	
  	# feature source step ancestors in string format: <ancestor>/<ancestor parent>/...
 	$self->{"SRAncestors"} = undef;
 

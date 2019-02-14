@@ -204,10 +204,10 @@ sub GetRoutSequences {
 
 				# only unique features, remove duplicities
 				my %seen;
-				@set = grep { !$seen{ $_->{"id"} }++ } @set;
+				@set = grep { !$seen{ $_->{"uid"} }++ } @set;
 
 				my @joined = grep {
-					$_->{"id"} != $seq[$i]->{"id"}
+					$_->{"uid"} != $seq[$i]->{"uid"}
 					  && (    ( abs( $_->{"x1"} - $seq[$i]->{"x1"} ) < 0.001 && abs( $_->{"y1"} - $seq[$i]->{"y1"} ) < 0.001 )
 						   || ( abs( $_->{"x1"} - $seq[$i]->{"x2"} ) < 0.001 && abs( $_->{"y1"} - $seq[$i]->{"y2"} ) < 0.001 )
 						   || ( abs( $_->{"x2"} - $seq[$i]->{"x1"} ) < 0.001 && abs( $_->{"y2"} - $seq[$i]->{"y1"} ) < 0.001 )

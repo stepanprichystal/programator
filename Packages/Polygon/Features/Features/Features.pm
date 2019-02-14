@@ -50,6 +50,7 @@ sub Parse {
 	my $breakSR    = shift;
 	my $selected   = shift;    # parse only selected feature
 	my $featFilter = shift;    # parse only given feat id
+ 
 
 	die "Parameter \"selected\" is not allowed in combination with parameter \"breakSR\""   if ( $breakSR && $selected );
 	die "Parameter \"featFilter\" is not allowed in combination with parameter \"breakSR\"" if ( $breakSR && $featFilter );
@@ -103,7 +104,7 @@ sub Parse {
 		@feat = @featTmp;
 	}
 
-	my @features = $self->__ParseLines( \@feat );
+	my @features = $self->__ParseLines( \@feat, $step );
 
 	# Add inforamtion about source steps, ancestor steps to feats
 	if ($breakSR) {
@@ -185,12 +186,13 @@ sub __ParseLines {
 
 	my $self  = shift;
 	my @lines = @{ shift(@_) };
+	my $step  = shift;            # source step (default is parent step)
 
 	my @features = ();
 
 	my $type = undef;
 	my $l    = undef;
-	
+
 	for ( my $i = 0 ; $i < scalar(@lines) ; $i++ ) {
 
 		$l = $lines[$i];
@@ -385,6 +387,11 @@ sub __ParseLines {
 
 		# assing internal unique id
 		$featInfo->{"uid"} = $i + 1;
+		
+		# set source step. Default is parent step 
+		# (if breakSR, source step is set in __AddBreakSRInfo function)
+		$featInfo->{"uid"} = $i + 1;
+		$featInfo->{"step"} =  $step;
 
 		push( @features, $featInfo );
 	}
@@ -463,12 +470,12 @@ sub __AddBreakSRInfo {
 	my $step     = shift;
 	my $layer    = shift;
 	my $features = shift;
-	
+
 	my %stepFeatsCnt = ();
 	my @allSteps = map { $_->{"stepName"} } CamStepRepeat->GetUniqueNestedStepAndRepeat( $inCAM, $jobId, $step );
-	
-	return 0 unless(scalar(@allSteps)); # SR doesn't exist, return 0
-	
+
+	return 0 unless ( scalar(@allSteps) );    # SR doesn't exist, return 0
+
 	push( @allSteps, $step );
 	foreach my $step (@allSteps) {
 
@@ -484,10 +491,10 @@ sub __AddBreakSRInfo {
 
 		my $ancestorStr = join( "/", reverse( @{ $stepInfo->{"SRAncestors"} } ) );
 
-		my $stepCnt = $stepFeatsCnt{ $stepInfo->{"SRStep"} };
+		my $stepCnt = $stepFeatsCnt{ $stepInfo->{"step"} };
 
 		for ( my $i = 0 ; $i < $stepCnt ; $i++ ) {
-			$features->[$curIdx]->{"SRStep"}      = $stepInfo->{"SRStep"};
+			$features->[$curIdx]->{"step"}        = $stepInfo->{"step"};
 			$features->[$curIdx]->{"SRAncestors"} = $ancestorStr;
 
 			$curIdx++;
@@ -496,7 +503,7 @@ sub __AddBreakSRInfo {
 	}
 
 	die "$step feature cnt (" . scalar( @{$features} ) . ") don't equal to SR parsed feature cnt ($curIdx)" if ( scalar( @{$features} ) != $curIdx );
-	
+
 	return 1;
 }
 
@@ -518,7 +525,7 @@ sub __GetBreakSRInfo {
 	}
 
 	my %featInf = ();
-	$featInf{"SRStep"}      = $curStepName;
+	$featInf{"step"}        = $curStepName;
 	$featInf{"SRAncestors"} = \@stepAncestor;
 
 	push( @{$srFeatures}, \%featInf );

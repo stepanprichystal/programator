@@ -530,7 +530,7 @@ sub __PrepareNPLTTHROUGHNC {
 		  abs( $self->{"profileLim"}->{"xMin"} - $self->{"profileLim"}->{"xMax"} ) *
 		  abs( $self->{"profileLim"}->{"yMin"} - $self->{"profileLim"}->{"yMax"} );
 
-		my $maxArea = $profileArea / 5;    # pieces larger than 20% of totalaarea will be keeped
+		my $maxArea = $profileArea / 10;    # pieces smaller than 10% of totalaarea will be keeped in pictore
 
 		if ( CamFilter->BySurfaceArea( $inCAM, 0, $maxArea ) > 0 ) {
 			my @layers = ($lName);

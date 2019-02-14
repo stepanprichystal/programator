@@ -36,6 +36,9 @@ use aliased  'Programs::Exporter::ExportUtility::UnitEnums';
 #
 #use aliased 'Programs::Exporter::ExportChecker::ExportChecker::StorageMngr';
 use aliased 'Packages::Events::Event';
+use aliased 'Packages::Exceptions::BaseException';
+ use aliased 'Packages::ItemResult::ItemResultMngr';
+ use aliased 'Packages::ItemResult::Enums' => "ItemResEnums";
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -152,8 +155,20 @@ sub __CheckAsyncWorker {
 	}
 	catch {
 
-		print STDERR "\n\nThread was unexpectaly exited!!!\n\n";
-		print $_;
+		my $e = "Export checker thread was unexpectedly exited\n\n";
+ 
+		BaseException->new($e, $_);
+ 
+ 		# Create item result with 
+		my %info = ();
+		$info{"resultMngr"} = ItemResultMngr->new();
+		my $resItem = $info{"resultMngr"}->GetNewItem();
+		$info{"resultMngr"}->AddItem("Export checker", ItemResEnums->ItemResult_Fail);
+		$units->{"onCheckEvent"}->Do( "end", \%info );
+
+
+		
+		
 		$self->__CleanUpAndExitThread( 0, $inCAM );
 	};
 

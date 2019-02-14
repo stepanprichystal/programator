@@ -21,12 +21,14 @@ use aliased 'Helpers::GeneralHelper';
 #  Public method
 #-------------------------------------------------------------------------------------------#
 
+# Unique id for Chain tool is: Chain order + source step
 sub new {
 	my $self = shift;
 	$self = {};
 	bless $self;
 
-	$self->{"chainOrder"} = shift;
+	$self->{"chainOrder"} = shift; 
+	$self->{"sourceStep"} = shift;
 	$self->{"chainSize"}  = shift;    # size of tool in µm
 	$self->{"comp"}       = shift;
 	$self->{"uniDTMTool"} = shift;
@@ -46,6 +48,13 @@ sub GetChainOrder {
 	my $self = shift;
 
 	return $self->{"chainOrder"};
+
+}
+
+sub GetSourceStep {
+	my $self = shift;
+
+	return $self->{"sourceStep"};
 
 }
  
