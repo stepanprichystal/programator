@@ -153,37 +153,7 @@ sub GetCircleChainSeq {
 
 	return @circleChainSeq;
 }
-
-# Get left cycle chain
-sub GetOutlineFeatures {
-	my $self = shift;
-
-
-
-	my @allFeats = map { $_->GetFeatures() } map { $_->GetChainSequences() } @{ $self->{"chains"} };
-
-
-	# remove helper attributes
-	
-	my @sequences = RoutCyclic->GetRoutSequences( \@allFeats );
-
-	my @closeOutline = ();
-
-	foreach my $seq (@sequences) {
-
-		my %result = RoutCyclic->GetSortedRout($seq);
-
-		if ( $result{"result"} ) {
-			push( @closeOutline, $result{"edges"} );
-		}
-		else {
-
-			next;
-		}
-	}
-
-	return @closeOutline;
-}
+ 
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

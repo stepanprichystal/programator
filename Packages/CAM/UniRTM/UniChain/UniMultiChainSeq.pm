@@ -20,6 +20,7 @@ use aliased "Packages::Polygon::PolygonFeatures";
 use aliased 'Packages::Polygon::Polygon::PolygonPoints';
 use aliased 'Packages::Polygon::Polygon::PolygonArc';
 use aliased 'Packages::Polygon::Polygon::PolygonAttr';
+use aliased 'Packages::CAM::UniRTM::Helper';
 
 #-------------------------------------------------------------------------------------------#
 #  Public method
@@ -110,6 +111,20 @@ sub GetFeatureType {
 
 }
 
+sub GetFeatures {
+	my $self = shift;
+
+	return map {$_->GetFeatures() } @{$self->{"chains"}};
+
+}
+
+sub GetOriFeatures {
+	my $self = shift;
+
+	return map {$_->GetOriFeatures() } @{$self->{"chains"}};
+
+}
+ 
 sub AddOutsideMultiChainSeq {
 	my $self  = shift;
 	my $multiChain = shift;

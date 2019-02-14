@@ -192,20 +192,20 @@ sub __PrepareGOLDFINGER {
 
 		# Prepare reference layer (gold + mask), which specifies area, where is hard gold
 
-		my $goldL    = $layers[0]->{"gROWname"};
+		my $goldL   = $layers[0]->{"gROWname"};
 		my $baseCuL = ( $goldL =~ m/^gold([cs])$/ )[0];
 		my $maskL   = "m" . $baseCuL;
- 
-		unless(CamHelper->LayerExists($inCAM, $jobId, $maskL)){
+
+		unless ( CamHelper->LayerExists( $inCAM, $jobId, $maskL ) ) {
 			$maskL = 0;
 		}
-		
-		unless(CamHelper->LayerExists($inCAM, $jobId, $goldL)){
+
+		unless ( CamHelper->LayerExists( $inCAM, $jobId, $goldL ) ) {
 			die "Reference layer $goldL doesn't exist.";
 		}
 
 		my $resultL = Helper->FeaturesByRefLayer( $inCAM, $jobId, $baseCuL, $goldL, $maskL, $self->{"profileLim"} );
-		
+
 		$layer->SetOutputLayer($resultL);
 
 	}
@@ -243,7 +243,7 @@ sub __PreparePEELABLE {
 	unless ( $layer->HasLayers() ) {
 		return 0;
 	}
- 
+
 	my $inCAM  = $self->{"inCAM"};
 	my @layers = $layer->GetSingleLayers();
 
@@ -252,17 +252,26 @@ sub __PreparePEELABLE {
 		my $lName = GeneralHelper->GetGUID();
 
 		$inCAM->COM( "merge_layers", "source_layer" => $layers[0]->{"gROWname"}, "dest_layer" => $lName );
-		
-		
+
 		CamLayer->Contourize( $inCAM, $lName );
-		CamLayer->WorkLayer($inCAM, $lName);
-		$inCAM->COM("sel_fill","type" => "predefined_pattern","cut_prims" => "no","outline_draw" => "no","outline_width" => "0","outline_invert" => "no","predefined_pattern_type" => "lines","indentation" => "even","lines_angle" => "45","lines_witdh" => "1300","lines_dist" => "660");
-		
+		CamLayer->WorkLayer( $inCAM, $lName );
+		$inCAM->COM(
+					 "sel_fill",
+					 "type"                    => "predefined_pattern",
+					 "cut_prims"               => "no",
+					 "outline_draw"            => "no",
+					 "outline_width"           => "0",
+					 "outline_invert"          => "no",
+					 "predefined_pattern_type" => "lines",
+					 "indentation"             => "even",
+					 "lines_angle"             => "45",
+					 "lines_witdh"             => "1300",
+					 "lines_dist"              => "660"
+		);
 
 		$layer->SetOutputLayer($lName);
 	}
 }
-
 
 # Invert solder mask
 sub __PrepareMASK {
@@ -453,7 +462,7 @@ sub __PrepareNPLTTHROUGHNC {
 	}
 
 	my $inCAM  = $self->{"inCAM"};
-	my $jobId = $self->{"jobId"};
+	my $jobId  = $self->{"jobId"};
 	my @layers = $layer->GetSingleLayers();
 	my $lName  = GeneralHelper->GetGUID();
 
@@ -461,9 +470,9 @@ sub __PrepareNPLTTHROUGHNC {
 
 	# compensate
 	foreach my $l (@layers) {
-			
-		my %featHist = CamHistogram->GetFeatuesHistogram($inCAM, $jobId,   $self->{"pdfStep"}, $l->{"gROWname"});
-		next if($featHist{"total"} == 0);
+
+		my %featHist = CamHistogram->GetFeatuesHistogram( $inCAM, $jobId, $self->{"pdfStep"}, $l->{"gROWname"} );
+		next if ( $featHist{"total"} == 0 );
 
 		if ( $l->{"gROWlayer_type"} eq "rout" ) {
 
@@ -479,34 +488,31 @@ sub __PrepareNPLTTHROUGHNC {
 
 			$inCAM->COM( "merge_layers", "source_layer" => $l->{"gROWname"}, "dest_layer" => $lName );
 		}
- 
 
 		# There can by small remains of pcb material, which is not milled
 		# We don't want see this pieces in pdf, so delete tem from layer $lName
 		# (pieces larger than 20% of total step area will be keepd)
-		 
+
 		#$inCAM->COM( "merge_layers", "source_layer" => $lName, "dest_layer" => $lTmp );
 
-		my $unitRTM = UniRTM->new( $inCAM, $self->{"jobId"}, $self->{"pdfStep"}, $l->{"gROWname"} );
+		my $unitRTM = UniRTM->new( $inCAM, $self->{"jobId"}, $self->{"pdfStep"}, $l->{"gROWname"}, 0, 0, 1 );
 
-		my @outFeatsId = map { $_->{"id"} } map { @{$_} } $unitRTM->GetOutlineFeatures();
-		
-		
+		my @outFeatsId = map { $_->{"id"}} map { $_->GetOriFeatures() } grep { $_->GetCyclic() } $unitRTM->GetMultiChainSeqList();
+
 		#my @outline = $unitRTM->GetOutlineChains();
 		#my @outFeatsId =  map {$_->{"id"}} map { $_->GetOriFeatures() } @outline;
-		 
-		CamFilter->SelectByFeatureIndexes($inCAM, $self->{"jobId"}, \@outFeatsId);
-		
-		
+
+		CamFilter->SelectByFeatureIndexes( $inCAM, $self->{"jobId"}, \@outFeatsId );
+
 		$inCAM->COM("sel_reverse");
 		my $tmpRout = GeneralHelper->GetGUID();
 		$inCAM->COM(
-				 "sel_copy_other",
-				 "dest"         => "layer_name",
-				 "target_layer" => $tmpRout,
-				 "invert"       => "no"
+					 "sel_copy_other",
+					 "dest"         => "layer_name",
+					 "target_layer" => $tmpRout,
+					 "invert"       => "no"
 		);
-		
+
 		my $lTmp = CamLayer->RoutCompensation( $inCAM, $tmpRout, "document" );
 		$inCAM->COM( 'delete_layer', "layer" => $tmpRout );
 
@@ -524,7 +530,7 @@ sub __PrepareNPLTTHROUGHNC {
 		  abs( $self->{"profileLim"}->{"xMin"} - $self->{"profileLim"}->{"xMax"} ) *
 		  abs( $self->{"profileLim"}->{"yMin"} - $self->{"profileLim"}->{"yMax"} );
 
-		my $maxArea = $profileArea / 2; # pieces larger than 20% of totalaarea will be keeped
+		my $maxArea = $profileArea / 5;    # pieces larger than 20% of totalaarea will be keeped
 
 		if ( CamFilter->BySurfaceArea( $inCAM, 0, $maxArea ) > 0 ) {
 			my @layers = ($lName);
@@ -560,18 +566,17 @@ sub __CountersinkCheck {
 	my $result = 1;
 
 	#get depths for all diameter
-	 
+
 	# load UniDTM for layer
 	my $unitDTM = UniDTM->new( $inCAM, $jobId, $stepName, $lName, 1 );
 
-	 
 	# 2) check if tool depth is set
-	foreach my $t ($unitDTM->GetUniqueTools()){
-		
+	foreach my $t ( $unitDTM->GetUniqueTools() ) {
+
 		if ( $t->GetSpecial() && defined $t->GetAngle() && $t->GetAngle() > 0 ) {
-			
+
 			#vypocitej realne odebrani materialu na zaklade hloubky pojezdu/vrtani
- 
+
 			my $toolAngl = $t->GetAngle();
 
 			my $newDiameter = tan( deg2rad( $toolAngl / 2 ) ) * $t->GetDepth();
@@ -581,8 +586,8 @@ sub __CountersinkCheck {
 
 			# now change old diameter to new diameter
 			CamLayer->WorkLayer( $inCAM, $layerComp );
-			my @syms = ("r".$t->GetDrillSize());
-			CamFilter->BySymbols( $inCAM, \@syms);
+			my @syms = ( "r" . $t->GetDrillSize() );
+			CamFilter->BySymbols( $inCAM, \@syms );
 			$inCAM->COM( "sel_change_sym", "symbol" => "r" . $newDiameter, "reset_angle" => "no" );
 		}
 	}
@@ -620,9 +625,9 @@ sub __OptimizeLayers {
 		#"area_type"   => "rectangle",
 		"inout"       => "outside",
 		"contour_cut" => "yes",
-		"margin"      => "-2", # cut 2µm inside of pcb, because cut exactly on border can coause ilegal surfaces, in nplt mill example
-		"feat_types"  => "line\;pad;surface;arc;text",
-		"pol_types"   => "positive\;negative"
+		"margin"      => "-2",        # cut 2µm inside of pcb, because cut exactly on border can coause ilegal surfaces, in nplt mill example
+		"feat_types" => "line\;pad;surface;arc;text",
+		"pol_types"  => "positive\;negative"
 	);
 	$inCAM->COM( "affected_layer", "mode" => "all", "affected" => "no" );
 
