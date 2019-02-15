@@ -42,13 +42,12 @@ sub new {
 	$self->{"layerInvert"} = LayerInvert->new( $self->{"inCAM"}, $self->{"jobId"} );
 
 	$self->{"layerCnt"} = CamJob->GetSignalLayerCnt( $self->{"inCAM"}, $self->{"jobId"} );
-
+	
 	return $self;
 }
 
 sub Run {
 	my $self = shift;
-
 	my $inCAM = $self->{"inCAM"};
 
 	my $isChanged = 0;    # tell if something was changed in pcb

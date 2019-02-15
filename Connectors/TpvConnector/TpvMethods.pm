@@ -340,13 +340,13 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 #	);
 
 
-#	my @arr = TpvMethods->GetErrLogsToProcess("archiveJobs");
+	my @arr = TpvMethods->GetErrLogsToProcess("archiveJobs");
 #
 #	use Data::Dump qw(dump);
 #
 #	dump(@arr);
 
-	  TpvMethods->InsertUnableToArchive("d152457");
+	 # TpvMethods->InsertUnableToArchive("d152457");
 
 	#my @jobs = TpvMethods->GetUnableToArchivedJobs();
 	 

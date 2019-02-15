@@ -85,7 +85,7 @@ sub __OpenConnection {
 
 				#'PrintError' => 0,
 				#'PrintError'            => 0,
-				#'RaiseError'            => 1,
+				'RaiseError'            => 1,
 				#'ado_ConnectionTimeout' => $__conTimeout,
 				#'CommandTimeout'        => $__commandTimeout,
 				'on_connect_do'         => [ "SET NAMES 'utf8'", "SET CHARACTER SET 'utf8'" ],
@@ -165,8 +165,9 @@ sub __Execute {
 	#$con->do($cmdTable);
 
 	if ( defined $isDataset && $isDataset == 1 ) {
-		my $sth = $con->prepare($commands);
-		$sth->execute();
+		my $sth = $con->prepare($commands) or die $con->errstr;
+		my $res = $sth->execute(); # if undef => error
+ 
 		while ( my $ref = $sth->fetchrow_hashref() ) {
 
 			if ($noDiacritic) {
@@ -213,6 +214,7 @@ sub ExecuteDataSet {
 		}
 		catch {
 
+			 
 			#ErrorHandler->HeliosDatabase( EnumsErrors->LOGDBERROR . $_ );
 			die HeliosException->new( EnumsErrors->HELIOSDBREADERROR, $_ )
 

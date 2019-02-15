@@ -28,6 +28,7 @@ use aliased 'Packages::Other::AppConf';
 use aliased 'Managers::MessageMngr::MessageMngr';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'Enums::EnumsPaths';
+use aliased 'Packages::Exceptions::BaseException';
 
 #use Tee;
 #use Symbol;
@@ -89,19 +90,20 @@ if ($@) {
 	$merger->StopAllTimers() if(defined $merger);
 	
 
-	my @m = (
-			  "Doslo k neocekavanmu padu aplikace",
-			  "1) Pozor dulezite!! Odesli report emailem SPR (vyfot screen cele obrazovky + zabal vsechny soubory z adresy: $path )",
-			  "2) zkontroluj co potrebujes a aplikace bude ukoncena.", $@
-	);
+	my $eStr = "Doslo k neocekavanmu padu aplikace\n";
+	$eStr .= "1) Pozor dulezite!! Odesli report emailem SPR (vyfot screen cele obrazovky + zabal vsechny soubory z adresy: $path )\n";
+	$eStr .= "2) zkontroluj co potrebujes a aplikace bude ukoncena\n";
+	
+	my $baseE = BaseException->new($eStr, $@);
+	
+	print STDERR $baseE;
 
 	my $mngr = MessageMngr->new($appName);
-	$mngr->ShowModal( -1, EnumsGeneral->MessageType_SYSTEMERROR, \@m );    #  Script se zastavi
+	$mngr->ShowModal( -1, EnumsGeneral->MessageType_SYSTEMERROR, [$baseE] );    #  Script se zastavi
 }
 
 
-
-
+ 
 # Set logging Log4perl
 sub __SetLogging {
 

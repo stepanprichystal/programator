@@ -23,6 +23,8 @@ use aliased "Packages::ItemResult::ItemResult";
 use aliased 'Managers::AbstractQueue::Enums' => "EnumsAbstrQ";
 use aliased 'Managers::AsyncJobMngr::Enums'  => 'EnumsJobMngr';
 use aliased 'Programs::PoolMerge::Enums';
+use aliased 'Programs::PoolMerge::UnitEnums';
+use aliased 'Packages::Exceptions::BaseException';
 
 
 #-------------------------------------------------------------------------------------------#
@@ -57,18 +59,9 @@ sub RunTask {
 	};
 	if ( my $e = $@ ) {
 
-		my $errStr = "";
+		my $baseE = BaseException->new("Pool merger thread (jobid: ".${$self->{"pcbId"}}.") was unexpectedly exited", $e);
 
-		# get string error from exception
-		if ( $e->can("Error") ) {
-
-			$errStr .= $e->Error();
-		}
-		else {
-			$errStr .= $e;
-		}
-
-		$self->_TaskResultEvent( ResultEnums->ItemResult_Fail, $errStr );
+		$self->_TaskResultEvent( ResultEnums->ItemResult_Fail, $baseE->Error() );
 	}
 	
 	$self->{"logger"}->debug("Thread End, pcb id:".${$self->{"pcbId"}});
@@ -117,21 +110,11 @@ sub __RunTask {
 			}
 		};
 		if ( my $e = $@ ) {
+ 
 
-			my $errStr = "";
+			my $baseE = BaseException->new("Processing of group: ".UnitEnums->GetTitle($unitId)." was unexpectedly aborted", $e);
 
-			# get string error from exception
-			if ( $e->can("Error") ) {
-
-				$errStr .= $e->Error();
-
-			}
-			else {
-
-				$errStr .= $e;
-			}
-
-			$self->_GroupResultEvent( $unitId, ResultEnums->ItemResult_Fail, $errStr );
+			$self->_GroupResultEvent( $unitId, ResultEnums->ItemResult_Fail, $baseE->Error() );
 			last;
 
 		}

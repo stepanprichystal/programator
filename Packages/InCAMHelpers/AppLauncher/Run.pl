@@ -30,6 +30,7 @@ use aliased 'Helpers::FileHelper';
 use aliased 'Managers::MessageMngr::MessageMngr';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'Packages::InCAMHelpers::AppLauncher::Enums';
+use aliased 'Packages::Exceptions::BaseException';
 
 #-------------------------------------------------------------------------------------------#
 #  Script code
@@ -113,11 +114,13 @@ if ($@) {
 		Win32::Process::KillProcess( $waitFrmPid, 0 );    # Kill waiting frm
 	}
 
-	$logger->error( "Error during launching app: $packageName. \n\n " . $@ );
+	my $baseE = BaseException->new("Error during launching app: $packageName", $@);
+
+	$logger->error( $baseE->Error());
 
 	my $messMngr = MessageMngr->new($jobId);
 
-	my @mess1 = ( "App launcher fail:  " . $@ . "\n" );
+	my @mess1 = ( "App launcher fail", $baseE->Error());
 	$messMngr->ShowModal( -1, EnumsGeneral->MessageType_SYSTEMERROR, \@mess1 );
 
 }

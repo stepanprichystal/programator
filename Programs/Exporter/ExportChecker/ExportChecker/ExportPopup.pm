@@ -30,21 +30,22 @@ use aliased 'Programs::Exporter::ExportChecker::ExportChecker::Forms::ExportPopu
 #use aliased 'Programs::Exporter::ExportChecker::Server::Client';
 use aliased 'Packages::InCAM::InCAM';
 use aliased 'Programs::Exporter::ExportChecker::Enums';
-use aliased  'Programs::Exporter::ExportUtility::UnitEnums';
+use aliased 'Programs::Exporter::ExportUtility::UnitEnums';
 
 #use aliased 'Connectors::HeliosConnector::HegMethods';
 #
 #use aliased 'Programs::Exporter::ExportChecker::ExportChecker::StorageMngr';
 use aliased 'Packages::Events::Event';
 use aliased 'Packages::Exceptions::BaseException';
- use aliased 'Packages::ItemResult::ItemResultMngr';
- use aliased 'Packages::ItemResult::Enums' => "ItemResEnums";
+use aliased 'Packages::ItemResult::ItemResultMngr';
+use aliased 'Packages::ItemResult::Enums' => "ItemResEnums";
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
 my $CHECKER_START_EVT : shared;
 my $CHECKER_END_EVT : shared;
+my $CHECKER_ERROR_EVT : shared;
 
 #my $CHECKER_FINISH_EVT : shared;
 my $THREAD_FORCEEXIT_EVT : shared;
@@ -78,7 +79,7 @@ sub Init {
 
 	# Synchronous/Asznchronous mode
 	$self->{"mode"} = shift;
-	
+
 	# 1 = client send export to TPV server
 	$self->{"onServer"} = shift;
 
@@ -87,7 +88,7 @@ sub Init {
 	$self->{"parentForm"} = shift;
 
 	# Main application form
-	$self->{"popup"} = ExportPopupForm->new( $self->{"parentForm"}->{"mainFrm"}, $self->{"jobId"}, $self->{"onServer"}  );
+	$self->{"popup"} = ExportPopupForm->new( $self->{"parentForm"}->{"mainFrm"}, $self->{"jobId"}, $self->{"onServer"} );
 
 	#set group count for popup form
 	$self->{"popup"}->SetGroupCnt( $self->{"units"}->GetActiveUnitsCnt() );
@@ -107,14 +108,14 @@ sub CheckBeforeExport {
 	my $worker = threads->create( sub { $self->__CheckAsyncWorker( $self->{"jobId"}, $serverPort, $self->{"units"} ) } );
 	$worker->set_thread_exit_only(1);
 	$self->{"threadId"} = $worker->tid();
-	
-# 	for(my $i = 0; $i < 5; $i++){
-# 		sleep(1);
-# 			my $worker1 = threads->create( sub { $self->__CheckAsyncWorker( $self->{"jobId"}, $serverPort, $self->{"units"} ) } );
-#	$worker1->set_thread_exit_only(1);
-#	 
-# 	}
- 
+
+	# 	for(my $i = 0; $i < 5; $i++){
+	# 		sleep(1);
+	# 			my $worker1 = threads->create( sub { $self->__CheckAsyncWorker( $self->{"jobId"}, $serverPort, $self->{"units"} ) } );
+	#	$worker1->set_thread_exit_only(1);
+	#
+	# 	}
+
 	#$self->{"threadId"} = $worker->tid();
 
 }
@@ -131,7 +132,6 @@ sub __CheckAsyncWorker {
 	my $units = shift;
 
 	$export_thread = 1;
-
 
 	#require ::OLE;
 	#import Win32::OLE qw(in);
@@ -154,23 +154,14 @@ sub __CheckAsyncWorker {
 
 	}
 	catch {
-
-		print STDERR $e;	
-		print STDERR $_;
-		#my $e = "Export checker thread was unexpectedly exited\n\n";
+		
+		my $eMess = "Export checker thread was unexpectedly exited\n\n";
+		my $e = BaseException->new($eMess, $_);
+		
+		print STDERR $e;
+		
+		$self->__OnCheckErrorHandler($e->Error());
  
-#		BaseException->new($e, $_);
-# 
-# 		# Create item result with 
-#		my %info = ("unit" => "pre");
-#		$info{"resultMngr"} = ItemResultMngr->new();
-#		my $resItem = $info{"resultMngr"}->GetNewItem();
-#		$info{"resultMngr"}->AddItem("Export checker", ItemResEnums->ItemResult_Fail);
-#		$units->{"onCheckEvent"}->Do( "end", \%info );
-
-
-		
-		
 		$self->__CleanUpAndExitThread( 0, $inCAM );
 	};
 
@@ -244,7 +235,7 @@ sub __OnResultPopupHandler {
 
 	}
 
-	$self->{"onResultEvt"}->Do($resultType, $self->{"mode"}, $self->{"onServer"});
+	$self->{"onResultEvt"}->Do( $resultType, $self->{"mode"}, $self->{"onServer"} );
 
 }
 
@@ -271,8 +262,6 @@ sub __CheckerStartMessageHandler {
 # this is controlled by main process
 sub __CheckerEndMessageHandler {
 	my ( $self, $frame, $event ) = @_;
-
-	 
 
 	my %d = %{ $event->GetData };
 
@@ -316,6 +305,15 @@ sub __CheckerEndMessageHandler {
 
 }
 
+# this is controlled by main process
+sub __CheckerErrorMessageHandler{
+	my ( $self, $frame, $event ) = @_;
+
+	my %d = %{ $event->GetData };
+ 
+	$self->{"popup"}->ErrorChecking( $d{"mess"} );
+}
+
 ## this is controlled by main process
 #sub __CheckerFinishHandler {
 #	my ( $self, $frame, $event ) = @_;
@@ -343,7 +341,7 @@ sub __OnCheckHandler {
 
 	my %res : shared = ();
 
-	$res{"group"} = UnitEnums->GetTitle($unit->GetUnitId());
+	$res{"group"} = UnitEnums->GetTitle( $unit->GetUnitId() );
 
 	if ( $type eq "start" ) {
 
@@ -379,16 +377,21 @@ sub __OnCheckHandler {
 			push( @{ $res{"warnings"} },       $w->{"value"} );
 		}
 
-		#$res{"errorCnt"}    = scalar(@errors);
-		#$res{"warningCnt"}  = scalar(@warnings);
-		#$res{"errorStr"}    = $errorsStr;
-		#$res{"warningsStr"} = $warningsStr;
-
 		my $threvent = new Wx::PlThreadEvent( -1, $CHECKER_END_EVT, \%res );
 		Wx::PostEvent( $self->{"popup"}->{"mainFrm"}, $threvent );
-
 	}
 
+}
+
+sub __OnCheckErrorHandler {
+	my $self    = shift;
+	my $errMess = shift;    # start/end
+
+	my %res : shared = ();
+	$res{"mess"} = $errMess;
+
+	my $threvent = new Wx::PlThreadEvent( -1, $CHECKER_ERROR_EVT, \%res );
+	Wx::PostEvent( $self->{"popup"}->{"mainFrm"}, $threvent );
 }
 
 # ================================================================================
@@ -410,6 +413,10 @@ sub __SetHandlers {
 	$CHECKER_START_EVT = Wx::NewEventType;
 	Wx::Event::EVT_COMMAND( $self->{"popup"}->{"mainFrm"}, -1, $CHECKER_START_EVT, sub { $self->__CheckerStartMessageHandler(@_) } );
 
+	# Events when export checker fail
+	$CHECKER_ERROR_EVT = Wx::NewEventType;
+	Wx::Event::EVT_COMMAND( $self->{"popup"}->{"mainFrm"}, -1, $CHECKER_ERROR_EVT, sub { $self->__CheckerErrorMessageHandler(@_) } );
+ 
 	# Events when user stop checking force
 	$THREAD_FORCEEXIT_EVT = Wx::NewEventType;
 	Wx::Event::EVT_COMMAND( $self->{"popup"}->{"mainFrm"}, -1, $THREAD_FORCEEXIT_EVT, sub { $self->__CheckerForceExitHandler(@_) } );

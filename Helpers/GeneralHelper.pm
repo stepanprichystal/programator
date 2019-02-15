@@ -61,18 +61,19 @@ sub RootHooks {
 	my $root;
 
 	# get path off file which is executing
- 
+
 	my $p = Cwd::abs_path($0);
- 
+
 	# script is executed from user hook
-	if($p =~ /[\\\/]users[\\\/](\w+)[\\\/]/i){
-		$root = EnumsPaths->InCAM_users.$1."\\hooks\\";
-	
-	}else{
+	if ( $p =~ /[\\\/]users[\\\/](\w+)[\\\/]/i ) {
+		$root = EnumsPaths->InCAM_users . $1 . "\\hooks\\";
+
+	}
+	else {
 		$root = EnumsPaths->InCAM_hooks;
 	}
- 
-	return $root; 
+
+	return $root;
 
 }
 
@@ -111,8 +112,6 @@ sub GetGUID {
 	my $guid = Data::GUID->new;
 
 	my $guidStr = $guid->as_string;
-	
-	
 
 	return $guidStr;
 
@@ -122,18 +121,16 @@ sub GetGUID {
 
 #Return unique Id
 sub GetNumUID {
-	my $self = shift;
+	my $self   = shift;
 	my $length = shift;
-	
-	unless($length)
-	{
-		
+
+	unless ($length) {
+
 		$length = 10;
 	}
 
- 
-	return  int(rand(10**$length));
- 
+	return int( rand( 10**$length ) );
+
 }
 
 #Trim whitespaces "\s"
@@ -250,41 +247,15 @@ sub SetPaths {
 
 }
 
-sub CreateStackTrace {
-	my $self     = shift;
-	my $formated = shift;
-
-	my $str = "";
- 
-	my $trace = Devel::StackTrace->new();
-
-	$trace->next_frame();
-	while ( my $frame = $trace->next_frame() ) {
-		$str .= "Sub: "
-		  . ( $formated ? "<b>" : "" )
-		  . $frame->subroutine()
-		  . ( $formated ? "</b>" : "" )
-		  . ", File: "
-		  . $frame->filename()
-		  . ", Line: "
-		  . $frame->line() . "\n";
-	}
-
-	return $str;
-}
-
-
-
 
 
 sub GetLastInCAMVersion {
-	my $self     = shift;
- 
+	my $self = shift;
 
 	my $inCAMPath = EnumsPaths->InCAM_serverDisc;
 	my @version   = ();
 
-	opendir( DIR, $inCAMPath ) or die "cannot open $inCAMPath ".$!;
+	opendir( DIR, $inCAMPath ) or die "cannot open $inCAMPath " . $!;
 
 	while ( my $file = readdir(DIR) ) {
 
@@ -293,7 +264,6 @@ sub GetLastInCAMVersion {
 		if ( $file =~ m/^\./ ) {
 			next;
 		}
- 
 
 		if ( $file =~ /^(\d+\.\d+)(SP(\d+))?/i ) {
 			push( @version, $file );
@@ -305,9 +275,9 @@ sub GetLastInCAMVersion {
 	foreach my $file (@version) {
 
 		$file =~ m/^(\d+\.\d+)(SP(\d+))?/i;
-		
-		my $num = defined $3 ? $1.$3 : $1;
- 
+
+		my $num = defined $3 ? $1 . $3 : $1;
+
 		if ( $num > $maxNum ) {
 			$maxNum     = $num;
 			$maxNumName = $file;
@@ -316,8 +286,7 @@ sub GetLastInCAMVersion {
 
 	if ($maxNumName) {
 
-
-		return $inCAMPath . $maxNumName."\\";
+		return $inCAMPath . $maxNumName . "\\";
 	}
 	else {
 
@@ -326,20 +295,20 @@ sub GetLastInCAMVersion {
 	}
 }
 
-
 # Return if script is running on TPV server
 # TPV server is computer, which has set ENV variable TPV_ServerVersion
-sub IsTPVServer{
-	my $self     = shift;
- 
+sub IsTPVServer {
+	my $self = shift;
+
 	my $serverComp = $ENV{'TPV_ServerComputer'};
-	
-	unless($serverComp){
+
+	unless ($serverComp) {
 		return 0;
-	}else{
+	}
+	else {
 		return 1;
 	}
-	
+
 }
 
 #-------------------------------------------------------------------------------------------#
@@ -347,8 +316,6 @@ sub IsTPVServer{
 #-------------------------------------------------------------------------------------------#
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
-	
-	
-	
+
 }
 1;

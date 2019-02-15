@@ -22,33 +22,33 @@ use aliased 'Packages::InCAM::Helper';
 #-------------------------------------------------------------------------------------------#
 
 sub new {
+	my $class = shift;
+	my $errorMess      = shift;
+	my $errorDetail = shift;
 
-	my $self = shift;
-	$self = {};
+	my $self = $class->SUPER::new(@_);
+	bless $self;
 	
 	
-	$self->{"errorMess"} = shift;
-	$self->{"errorDetail"} = shift;
+	$self->{"errorMess"} = $errorMess;
+	$self->{"errorDetail"} = $errorDetail;
 	
-	my $mess = "====Helios DB error====\n\n".$self->{"errorMess"}.",\n\n====Helios DB error details====\n\n".$self->{"errorDetail"};
-	$self = 'Packages::Exceptions::BaseException'->new($mess);
+	my $mess = "";	
+	$mess .= "----Helios DB error------------\n";
+	$mess .= $self->{"errorMess"}."\n\n";
+	$mess .= "----Helios DB error detail-----\n";
+	$mess .= $self->{"errorDetail"}."\n\n";
+	
+	 $self->{"mess"} = $mess;
+ 
 	
 	bless($self);
-	
-	#vztisknout nejakou yakladni chzbu
-	$self->__PrintError();
-	
+ 
 
 	return $self;
 }
 
-sub __PrintError{
-	my $self = shift;
-	
-	print STDERR $self->{"mess"}."\nStack trace:\n\n".$self->{"stackTrace"};
-	
-	
-}
+ 
 
  
 #-------------------------------------------------------------------------------------------#

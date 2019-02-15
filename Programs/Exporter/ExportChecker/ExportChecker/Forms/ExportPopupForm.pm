@@ -137,8 +137,25 @@ sub EndChecking {
 		$self->__CheckingFinish();
 
 	}
-	
+}
 
+
+sub ErrorChecking{
+	my $self = shift;
+	my $errMess = shift;
+	
+	#$self->{"gaugeActual"} = $self->{"gaugeActual"};
+	$self->{"messageMngr"}->ShowModal( $self->{"mainFrm"}, EnumsGeneral->MessageType_SYSTEMERROR, [$errMess] );
+	
+	$self->{"btnChange"}->Enable();
+	$self->{"btnStop"}->Disable();
+
+	$self->{"groupNameValTxt"}->SetLabel("Exporter checker - error");
+	
+	$self->{"gaugeActual"} = 100;
+	
+	$self->__Refresh();
+	
 }
 
 # Is called, when thread , which does export checking is succesfully terminated
