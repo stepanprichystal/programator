@@ -75,7 +75,7 @@ sub GetShapePoints {
 
 	if ( $self->GetFeatureType eq Enums->FeatType_SURF ) {
 
-		@points = Helper->GetSurfPoints( \@features, $accuracy );
+		@points = Helper->GetSurfShapePoints( \@features, $accuracy );
 	}
 	else {
 
