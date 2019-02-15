@@ -1769,6 +1769,31 @@ sub GetPcbAncestor {
 
 }
 
+
+sub GetImpedancExist {
+	my $self  = shift;
+	my $pcbId = shift;
+	my $res = 0;
+
+	my @params = ( SqlParameter->new( "_PcbId", Enums->SqlDbType_VARCHAR, $pcbId ) );
+
+	my $cmd = "select top 1
+				 d.rizena_impedance
+				 from lcs.desky_22 d with (nolock)
+				  left outer join lcs.zakazky_dps_22_hlavicka z with (nolock) on z.deska=d.cislo_subjektu
+				 where d.reference_subjektu=_PcbId and  z.cislo_poradace = 22050";
+
+	$res = Helper->ExecuteScalar( $cmd, \@params );
+
+	if ( $res && $res eq "A" ) {
+		return 1;
+	}
+	else {
+		return 0;
+	}
+	
+}
+
 #-------------------------------------------------------------------------------------------#
 #  Helper method
 #-------------------------------------------------------------------------------------------#

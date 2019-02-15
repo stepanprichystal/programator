@@ -6,6 +6,8 @@ use Archive::Zip;
 use File::Find;
 use Tk;
 use Tk::LabFrame;
+use utf8;
+use Time::HiRes qw (sleep);
 
 
 #necessary for load pall packages
@@ -20,6 +22,7 @@ use aliased 'Enums::EnumsGeneral';
 use aliased 'Packages::CAMJob::Drilling::FinishSizeHoles::SetHolesRun';
 use aliased 'Packages::InCAM::InCAM';
 use aliased 'Packages::ETesting::MoveElTests';
+use aliased 'Packages::GuideSubs::Impedance::DoSetImpLines';
 
 use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'Connectors::HeliosConnector::HelperWriter';
@@ -118,7 +121,7 @@ sub MultiCustomer {
 
 unless (-e $path) {
 		#new
-		my @mess = ("ChybÌ importnÌ soubor!");
+		my @mess = ("Chyb√≠ importn√≠ soubor!");
 		my $messMngr = MessageMngr->new('');
 		$messMngr->ShowModal( -1, EnumsGeneral->MessageType_INFORMATION, \@mess ); 
 		
@@ -217,7 +220,7 @@ sub GerberCustomer {
 
 unless (-e $path) {
 		#new
-		my @mess = ("ChybÌ importnÌ soubor!");
+		my @mess = ("Chyb√≠ importn√≠ soubor!");
 		my $messMngr = MessageMngr->new('');
 		$messMngr->ShowModal( -1, EnumsGeneral->MessageType_INFORMATION, \@mess ); 
 	return();
@@ -323,7 +326,7 @@ sub ODBinputFolder {
     
     		unless (-e $path) {
 						#new
-						my @mess = ("ChybÌ importnÌ soubor!");
+						my @mess = ("Chyb√≠ importn√≠ soubor!");
 						my $messMngr = MessageMngr->new('');
 						$messMngr->ShowModal( -1, EnumsGeneral->MessageType_INFORMATION, \@mess ); 
 				return();
@@ -430,7 +433,7 @@ sub _Process {
  			_CheckCustomerFinishHoles($pcbId);
 
 
-			# Here check if there is customer¥s netlist.
+			# Here check if there is customerÔøΩs netlist.
  			#if(_CustomerNetlistExist($pcbId, $stepName)) {
  			#		$inCAM -> PAUSE("Deska obsahuje netlist zakaznika, zavolej RVI");
  			#}
@@ -470,6 +473,12 @@ sub _Process {
  					}
  			}
  			
+ 			# Here run Impedace Guide
+ 			if( HegMethods->GetImpedancExist($pcbId) ){
+ 				 		my $messMngr = MessageMngr->new($pcbId);
+						my $res = DoSetImpLines->SetImpedanceLines( $inCAM, $pcbId );	
+ 			}
+
  			
  			# Here run Checks
  			$inCAM -> COM('chklist_from_lib',chklist=>'checks',profile=>'none',customer=>'');
@@ -561,15 +570,30 @@ sub _NewJobCreate {
 			
 		}else{
 							$numberCustomer = HegMethods->GetIdcustomer($jobId);
-					my @pole = HegMethods->GetAllByPcbId($jobId);
-							$customerName = convert_from_czech($pole[0]->{'customer'});
+							my @pole = HegMethods->GetAllByPcbId($jobId);
+							$customerName = $pole[0]->{'customer'};
 		   					$customerName =~ s/,/./g;
+		   					
 			
 		}
-		
 
-		$inCAM ->	COM ('new_customer',name=>"$numberCustomer",disp_name=>"$customerName",properties=>'',skip_on_existing=>'yes');
-		$inCAM -> COM ('new_job',name=>"$jobId",db=>'incam',customer=>"$numberCustomer",disp_name=>"$customerName",notes=>'',attributes=>'');
+					$inCAM->HandleException(1);		
+		   			$inCAM->SupressToolkitException(1);
+		   			
+								$inCAM -> COM ('new_customer',name=>"$numberCustomer",disp_name=>"$customerName",properties=>'',skip_on_existing=>'yes');
+								
+								if ($inCAM->{STATUS} != 0) {
+										$inCAM -> COM ('delete_customer',disp_name=>"$customerName");
+										$inCAM -> COM ('new_customer',name=>"$numberCustomer",disp_name=>"$customerName",properties=>'',skip_on_existing=>'yes');
+								}
+								
+								
+					$inCAM->SupressToolkitException(0);
+					$inCAM->HandleException(0);
+					
+					$inCAM -> COM ('new_job',name=>"$jobId",db=>'incam',customer=>"$numberCustomer",disp_name=>"$customerName",notes=>'',attributes=>'');
+					
+							
 }
 sub convert_from_czech {
 	my $lineToConvert = shift;
@@ -654,8 +678,8 @@ sub _CheckJobExist {
 		  if ($inCAM->{doinfo}{gEXISTS} eq "yes") {
 						#new
 						my $messMngr = MessageMngr->new($pcbId);
-						my @mess =	("Jmeno jobu $jobId jiz existuje!");
-						my @btn = ("SMAZAT JOB a pokracovat v importu", "KONEC"); # "ok" = tl. cislo 1, "table tools" = tl.cislo 2
+						my @mess =	("Jm√©no jobu $jobId ji≈æ existuje!");
+						my @btn = ("SMAZAT JOB a pokraƒçovat v importu", "KONEC"); # "ok" = tl. cislo 1, "table tools" = tl.cislo 2
 						$messMngr->ShowModal( -1, EnumsGeneral->MessageType_WARNING, \@mess, \@btn ); 
 						my $result = $messMngr->Result(); 
 												
@@ -691,7 +715,7 @@ sub _SearchTgz {
 					# check how many tgz file found out
 					unless (scalar @tgzArr == 1) {
 								#new
-								my @mess = ("Nem˘ûu najÌt spr·vn˝ tgz file pro import!");
+								my @mess = ("NemÔøΩÔøΩu najÔøΩt sprÔøΩvnÔøΩ tgz file pro import!");
 								my $messMngr = MessageMngr->new('');
 								$messMngr->ShowModal( -1, EnumsGeneral->MessageType_INFORMATION, \@mess ); 
 								
@@ -1178,7 +1202,7 @@ sub _CheckSingleLayer {
 		while(){
 			$inCAM->INFO(entity_type=>'layer',entity_path=>"$pcbId/$inpStep/$layer",data_type=>'exists');
  					if ($inCAM->{doinfo}{gEXISTS} eq "no") {
- 							$inCAM->PAUSE("Pro jednostranou desku chybi strana 'C' - uprav, pak pokracuj.");
+ 							$inCAM->PAUSE("Pro jednostranou desku chyb√≠ strana 'C' - uprav, pak pokracuj.");
  					}else{
  							last;
 	 				}
