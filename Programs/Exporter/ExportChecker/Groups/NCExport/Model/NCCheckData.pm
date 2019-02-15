@@ -339,7 +339,7 @@ sub OnCheckGroupData {
 
 	# 10) Check if all blind and core drilling pads has pads in signal layers
 
-	my @childs = map { $_->{"stepName"} } CamStepRepeat->GetUniqueDeepestSR( $inCAM, $jobId, "panel" );
+	my @childs = map { $_->{"stepName"} } CamStepRepeatPnl->GetUniqueDeepestSR( $inCAM, $jobId);
 
 	my %allLayers = ();
 

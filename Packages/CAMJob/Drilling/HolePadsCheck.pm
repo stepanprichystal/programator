@@ -19,9 +19,12 @@ use aliased 'CamHelpers::CamJob';
 use aliased 'Helpers::FileHelper';
 use aliased 'Helpers::JobHelper';
 use aliased 'CamHelpers::CamFilter';
-use aliased 'CamHelpers::CamStepRepeat';
+use aliased 'CamHelpers::CamStepRepeatPnl';
 use aliased 'CamHelpers::CamLayer';
+use aliased 'CamHelpers::CamMatrix';
 use aliased 'Packages::Polygon::Features::Features::Features';
+use aliased 'Packages::CAM::FeatureFilter::FeatureFilter';
+use aliased 'Packages::CAM::FeatureFilter::Enums' => 'FilterEnums';
 
 #-------------------------------------------------------------------------------------------#
 #  Script methods
@@ -58,7 +61,7 @@ sub GetMissingPads {
 		$wrongPads{$lName} = [];
 
 		my @start = $self->__MissingPadsExsit( $inCAM, $jobId, $step, $l->{"gROWdrl_start_name"}, $l->{"gROWname"} );    # start
-		my @end   = $self->__MissingPadsExsit( $inCAM, $jobId, $step, $l->{"gROWdrl_end_name"},   $l->{"gROWname"} );    # end
+		my @end   = $self->__MissingPadsExsit( $inCAM, $jobId, $step, $l->{"gROWdrl_end_name"}, $l->{"gROWname"} );    # end
 
 		my @feats = ();
 
@@ -114,19 +117,40 @@ sub CheckMissingPadsAllLayers {
 }
 
 sub __MissingPadsExsit {
-	my $self     = shift;
-	my $inCAM    = shift;
-	my $jobId    = shift;
-	my $step     = shift;
-	my $sigLayer = shift;
-	my $ncLayer  = shift;
+	my $self              = shift;
+	my $inCAM             = shift;
+	my $jobId             = shift;
+	my $step              = shift;
+	my $sigLayer          = shift;
+	my $ncLayer           = shift;
 
 	my @holeFeats = ();
 
 	CamLayer->WorkLayer( $inCAM, $ncLayer );
+ 
+	if ( CamMatrix->GetLayerPolarity($inCAM, $jobId, $sigLayer) eq "positive" ) {
 
-	CamFilter->SelectByReferenece( $inCAM, $jobId, "multi_cover", $ncLayer, undef, undef, undef, $sigLayer );
+		CamFilter->SelectByReferenece( $inCAM, $jobId, "multi_cover", $ncLayer, undef, undef, undef, $sigLayer );
 
+	}
+	else {
+
+		my $f = FeatureFilter->new( $inCAM, $jobId, $ncLayer );
+
+		# 1) select all pads covered by negative features
+		$f->SetRefLayer($sigLayer);
+		$f->SetPolarityRef( FilterEnums->Polarity_NEGATIVE );
+		$f->SetReferenceMode( FilterEnums->RefMode_MULTICOVER );
+		$f->Select();
+		
+		# 2) select all pads which are not touched with positive features
+		$f->SetRefLayer($sigLayer);
+		$f->SetPolarityRef( FilterEnums->Polarity_POSITIVE );
+		$f->SetReferenceMode( FilterEnums->RefMode_DISJOINT );
+		$f->Select();
+ 
+	}
+	
 	$inCAM->COM('sel_reverse');
 
 	$inCAM->COM('get_select_count');
@@ -154,15 +178,15 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	use aliased 'Packages::InCAM::InCAM';
 
 	my $inCAM = InCAM->new();
-	my $jobId = "d34092";
+	my $jobId = "d237874";
 	my $step  = "o+1";
 
-	my @childs = CamStepRepeat->GetUniqueDeepestSR( $inCAM, $jobId, "panel" );
+	my @childs = CamStepRepeatPnl->GetUniqueDeepestSR( $inCAM, $jobId);
 
 	my %allLayers = ();
 
 	foreach my $step (@childs) {
-		
+
 		my $mess = "";
 
 		my %pads = ();
@@ -178,10 +202,10 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 					  map { "\n- Pad id: \"" . $_->{"featId"} . "\", missing pads in signal layers: \"" . join( ", ", @{ $_->{"missing"} } ) . "\"" }
 					  @{ $pads{$l} };
 
-					$mess .=  join("", @pads);	
+					$mess .= join( "", @pads );
 				}
 			}
-			
+
 			print $mess;
 		}
 	}

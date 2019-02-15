@@ -10,6 +10,7 @@ use constant {
 			   RefMode_TOUCH => "touch",
 			   RefMode_DISJOINT => "disjoint",
 			   RefMode_COVER => "cover",
+			   RefMode_MULTICOVER => "multi_cover",
 			   RefMode_INCLUDE => "include",
 			   RefMode_SAMECENTER => "same_center",
 };

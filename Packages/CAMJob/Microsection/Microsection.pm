@@ -73,17 +73,20 @@ sub CreateCoupon {
 	my @holes = $self->__GetAllHoles( \@groups );
 
 	# Signal pads
-	my @sigLayers = CamJob->GetSignalLayerNames( $inCAM, $jobId );
+	my @sigLayers = CamJob->GetSignalLayer( $inCAM, $jobId );
 
 	foreach my $l (@sigLayers) {
 
-		CamLayer->WorkLayer( $inCAM, $l );
+		CamLayer->WorkLayer( $inCAM, $l->{"gROWname"} );
 
 		foreach my $h (@holes) {
 
 			my $p = Point->new( $h->X() / 1000, $h->Y() / 1000 );
-			CamSymbol->AddPad( $inCAM, "r1400", $p );
+			
+			CamSymbol->AddPad( $inCAM, "r1400", $p, 0, $l->{"gROWpolarity"} );
 		}
+		
+		
 	}
 
 	# mask pads
