@@ -42,7 +42,8 @@ sub GetChains {
 		# 1) Set chain property
 		#$self->__SetChainProperties($ch);
 
-		my @featChain = grep { $_->{"att"}->{".rout_chain"} == $ch->GetChainOrder() } @features;
+		my @featChain = grep { $_->{"att"}->{".rout_chain"} == $ch->GetChainOrder()
+			&&  $_->{"step"} eq $ch->GetSourceStep() } @features;
 
 		$uniChain->SetFeatures( \@featChain );
 

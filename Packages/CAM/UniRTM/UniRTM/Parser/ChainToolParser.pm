@@ -49,9 +49,12 @@ sub GetChainList {
 		if ( $attr{".rout_chain"} && $attr{".rout_chain"} > 0 ) {
 
 			# test, if chain with given routchain not exist exist, add it
-			unless ( scalar( grep { $_->GetChainOrder() eq $attr{".rout_chain"} } @chainList ) ) {
+			# key for chain is toolOrder + sourceStep
+			unless ( scalar( grep { $_->GetChainOrder() eq $attr{".rout_chain"} && $_->GetSourceStep() eq $f->{"step"} } @chainList ) )
+			{
 
 				my $chainOrder = $attr{".rout_chain"};
+				my $sourceStep = $f->{"step"};
 				my $chainTool  = undef;
 				my $chainComp  = undef;
 
@@ -84,7 +87,7 @@ sub GetChainList {
 					$dtmTool = $uniDTM->GetTool( $chainTool, DTMEnums->TypeProc_CHAIN );
 				}
 
-				my $uniChainTool = UniChainTool->new( $chainOrder, $chainTool, $chainComp, $dtmTool );
+				my $uniChainTool = UniChainTool->new( $chainOrder, $sourceStep, $chainTool, $chainComp, $dtmTool );
 
 				push( @chainList, $uniChainTool );
 			}
@@ -94,7 +97,7 @@ sub GetChainList {
 	}
 
 	@chainList = sort { $a->GetChainOrder() <=> $b->GetChainOrder() } @chainList;
- 
+
 	return @chainList;
 
 }
@@ -105,24 +108,22 @@ sub GetChainList {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	  use aliased 'Packages::CAM::FeatureFilter::FeatureFilter';
-	  use aliased 'Packages::InCAM::InCAM';
+	use aliased 'Packages::CAM::FeatureFilter::FeatureFilter';
+	use aliased 'Packages::InCAM::InCAM';
 
-	  my $inCAM = InCAM->new();
-	  my $jobId = "f13608";
+	my $inCAM = InCAM->new();
+	my $jobId = "f13608";
 
-	  my $f = FeatureFilter->new( $inCAM, "m" );
+	my $f = FeatureFilter->new( $inCAM, "m" );
 
-	  $f->SetPolarity("positive");
+	$f->SetPolarity("positive");
 
- 
+	my @syms = ( "r500", "r1" );
+	$f->AddIncludeSymbols( \[ "r500", "r1" ] );
 
-	  my @syms = ( "r500", "r1" );
-	  $f->AddIncludeSymbols( \[ "r500", "r1" ] );
+	print $f->Select();
 
-	  print $f->Select();
-
-	  print "fff";
+	print "fff";
 
 }
 

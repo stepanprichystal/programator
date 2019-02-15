@@ -24,6 +24,7 @@ use aliased 'Enums::EnumsPaths';
 use aliased 'Packages::Other::AppConf';
 use aliased 'Packages::InCAMHelpers::AppLauncher::Enums';
 
+
 #-------------------------------------------------------------------------------------------#
 #  Public method
 #-------------------------------------------------------------------------------------------#

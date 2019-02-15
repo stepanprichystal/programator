@@ -167,7 +167,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 	my $jobId = "d113608";
-	my $step  = "o+1";
+	my $step  = "mpanel_1";
 	my $layer = 'f';
 
 	my $rtm = UniRTM->new( $inCAM, $jobId, $step, $layer, 1, 0, 1 );

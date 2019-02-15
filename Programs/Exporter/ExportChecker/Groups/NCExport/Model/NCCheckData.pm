@@ -21,6 +21,7 @@ use aliased 'CamHelpers::CamHelper';
 use aliased 'CamHelpers::CamStepRepeat';
 use aliased 'CamHelpers::CamStepRepeatPnl';
 use aliased 'CamHelpers::CamHistogram';
+use aliased 'CamHelpers::CamAttributes';
 use aliased 'Programs::Exporter::ExportChecker::Groups::NifExport::Presenter::NifHelper';
 use aliased 'Packages::CAMJob::Drilling::DrillChecking::LayerErrorInfo';
 use aliased 'Packages::CAMJob::Drilling::DrillChecking::LayerWarnInfo';
@@ -38,6 +39,7 @@ use aliased 'CamHelpers::CamDTM';
 use aliased 'Packages::CAMJob::Drilling::BlindDrill::BlindDrillInfo';
 use aliased 'Packages::CAMJob::Drilling::CountersinkCheck';
 use aliased 'Packages::Tooling::PressfitOperation';
+use aliased 'Enums::EnumsRout';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -567,22 +569,58 @@ sub OnCheckGroupData {
 
 		my @layers = CamDrilling->GetNCLayersByTypes( $inCAM, $jobId, [ EnumsGeneral->LAYERTYPE_plt_nDrill ] );
 
-		foreach my $step ( map {$_->{"stepName"}} CamStepRepeatPnl->GetUniqueStepAndRepeat( $inCAM, $jobId ) ) {
-			
+		foreach my $step ( map { $_->{"stepName"} } CamStepRepeatPnl->GetUniqueStepAndRepeat( $inCAM, $jobId ) ) {
+
 			foreach my $l (@layers) {
-				my $min = CamDrilling->GetMinHoleToolByLayers( $inCAM, $jobId, $step, [ $l ] );
+				my $min = CamDrilling->GetMinHoleToolByLayers( $inCAM, $jobId, $step, [$l] );
 
 				if ( defined $min && $min <= 200 ) {
 
 					$dataMngr->_AddWarningResult(
 												  "Via otvory",
-												  "Ve stepu: $step, vrstvě: ".$l->{"gROWname"}." jsou pokovené otvory s průměrem <= 200µm. "
+												  "Ve stepu: $step, vrstvě: "
+													. $l->{"gROWname"}
+													. " jsou pokovené otvory s průměrem <= 200µm. "
 													. "To prodlužuje dobu výroby dps. Není možné průměry zvětšit za cenu zvýšení konstrukční třídy?"
 					);
 				}
 			}
 		}
+	}
 
+	# 22) If mpanel exist, check if nested setps do not have circle chain (bridges are necessary)
+	if ( $defaultInfo->LayerExist("f") ) {
+
+		my $custPnlExist = CamAttributes->GetJobAttrByName( $inCAM, $jobId, "customer_panel" );
+
+		foreach my $step ( map { $_->{"stepName"} } CamStepRepeatPnl->GetUniqueStepAndRepeat( $inCAM, $jobId ) ) {
+
+			if ( $step eq "mpanel" || $custPnlExist ) {
+
+				my $rtm = UniRTM->new( $inCAM, $jobId, $step, "f", 1, 0, 1 );
+
+				# Cyclic chains which ae inside another cyclic chain - potentional nested step without bridges
+				my @cycleChains = grep { $_->GetCyclic() && $_->GetIsInside() } $rtm->GetMultiChainSeqList();
+
+				# if at least subchain has left comp => do warning
+				foreach my $multiChain (@cycleChains) {
+
+					my @chainTools =  map { $_->GetChain()->GetChainTool()} $multiChain->GetChains();
+					if ( grep { $_->GetComp() eq EnumsRout->Comp_LEFT } @chainTools ) {
+		 
+						my $routStr = join ("\n", map { "- Chain order: ".$_->GetChainOrder(). ", Chain source step: ".$_->GetSourceStep() } @chainTools);
+						
+						$dataMngr->_AddWarningResult("Chybějící můstky",
+													  "Ve stepu: $step ve vrstvě: \"f\" byla detekována obrysová fréza tvořená chainy:\n$routStr\n\n".
+													  "Ujisti se, že uvnitř panelu nechybí můstky"
+													  
+						);
+					}
+				}
+
+			}
+
+		}
 	}
 
 }

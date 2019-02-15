@@ -63,7 +63,6 @@ sub new {
 	$self->__RunTimers();
 
 	#$self->_Run();
-
 	return $self;
 }
 

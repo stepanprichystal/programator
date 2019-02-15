@@ -16,61 +16,41 @@ use Win32;
 #local library
 use aliased 'Packages::Exceptions::BaseException';
 use aliased 'Packages::InCAM::Helper';
- 
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
 
-
-
 sub new {
-
-	my $self = shift;
-	$self = {};
-
-	my $id = shift;
+	my $class = shift;
+	my $id      = shift;
 	my $cmdHist = shift;
-	
-	  
-	$self = 'Packages::Exceptions::BaseException'->new();
 
-	bless($self);
-	
-	
+	my $self = $class->SUPER::new(@_);
+	bless $self;
+
+
 	$self->{"cmdHistory"} = $self->__FormatHistory($cmdHist);
-	$self->{"errorId"}   = $id;
-	$self->{"errorMess"} = Helper->GetErrorTextById($id);
-	
-	
-	
+	$self->{"errorId"}    = $id;
+	$self->{"errorMess"}  = Helper->GetErrorTextById($id);
 
-	my $mess =
-	    "====InCAM error id====\n\n" 
-	  . $id
-	  . " \n\n====InCAM error description====\n\n"
-	  . $self->{"errorMess"}
-	  . "\n\n====InCAM command history====\n\n"
-	  . $self->{"cmdHistory"} . "\n";
-	
+	my $mess = "";
+
+	$mess .= "----InCAM error id-------------\n";
+	$mess .= $id . "\n\n";
+	$mess .= "----InCAM error description----\n";
+	$mess .= $self->{"errorMess"} . "\n\n";
+	$mess .= "----InCAM command history------\n";
+	$mess .= $self->{"cmdHistory"} . "\n\n";
+
 	$self->{"mess"} = $mess;
-
-	#vztisknout nejakou yakladni chzbu
-	$self->__PrintError();
-
+ 
 	return $self;
 }
-
-sub __PrintError {
-	my $self = shift;
-
-	print STDERR $self->{"mess"} . "\nStack trace:\n" . $self->{"stackTrace"};
-
-}
-
  
+
 sub __FormatHistory {
-		my $self = shift;
+	my $self    = shift;
 	my $refHist = shift;
 
 	my $out = "";
@@ -84,23 +64,18 @@ sub __FormatHistory {
 		for ( my $i = scalar( @{$refHist} ) - 1 ; $i >= 0 ; $i-- ) {
 
 			if ( $cnt <= 2 ) {
-				
-				$out .= ($cnt + 1). ". " . @{$refHist}[$i] . "\n";
+
+				$out .= ( $cnt + 1 ) . ". " . @{$refHist}[$i] . "\n";
 
 				$cnt += 1;
 			}
 		}
 
-		$out .= ($cnt + 1). ". ...\n";
+		$out .= ( $cnt + 1 ) . ". ...\n";
 	}
 
 	return $out;
 }
-
-
- 
- 
-
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
