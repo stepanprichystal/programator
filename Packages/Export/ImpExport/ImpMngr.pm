@@ -57,7 +57,7 @@ sub Run {
 
 		if ( $export->Create() ) {
 
-			my $pdfArchive = JobHelper->GetJobArchive($jobId) . "pdf\\" . $jobId . "_impedance.pdf";
+			my $pdfArchive = JobHelper->GetJobArchive($jobId) . "pdf\\" . $jobId . "_imp_drawing.pdf";
 			if ( -e $pdfArchive ) {
 				unless ( unlink($pdfArchive) ) {
 					die "Can not delete old impedance pdf file (" . $pdfArchive . "). Maybe file is still open.\n";
