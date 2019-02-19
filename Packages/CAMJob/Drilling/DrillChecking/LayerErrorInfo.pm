@@ -649,13 +649,32 @@ sub CheckToolDiameter {
 
 	foreach my $l (@layersRout) {
 
-		my @maxLTools = grep { $_ > $maxRoutTool } map { $_->GetDrillSize() } $l->{"uniDTM"}->GetTools();
+		my @maxLDrillTools =
+		  grep { $_->GetTypeProcess() eq Enums->TypeProc_HOLE && $_->GetDrillSize() > $maxDrillTool } $l->{"uniDTM"}->GetTools();
 
-		if ( scalar(@maxLTools) ) {
+		if ( scalar(@maxLDrillTools) ) {
 
 			$result = 0;
 			$$mess .=
-			  "NC layer: " . $l->{"gROWname"} . " contains rout tool (" . join( ";", @maxLTools ) . "µm) larger than our max tool ($maxRoutTool µm)\n";
+			    "NC layer: "
+			  . $l->{"gROWname"}
+			  . " contains drill tool ("
+			  . join( ";", map { $_->GetDrillSize()} @maxLDrillTools )
+			  . "µm) larger than our max tool ($maxDrillTool µm)\n";
+		}
+
+		my @maxLRoutTools =
+		  grep { $_->GetTypeProcess() eq Enums->TypeProc_CHAIN && $_->GetDrillSize() > $maxRoutTool } $l->{"uniDTM"}->GetTools();
+
+		if ( scalar(@maxLRoutTools) ) {
+
+			$result = 0;
+			$$mess .=
+			    "NC layer: "
+			  . $l->{"gROWname"}
+			  . " contains rout tool ("
+			  . join( ";", map { $_->GetDrillSize()} @maxLRoutTools )
+			  . "µm) larger than our max tool ($maxRoutTool µm)\n";
 		}
 	}
 
@@ -664,7 +683,7 @@ sub CheckToolDiameter {
 
 		foreach my $td ( map { $_->GetDrillSize() } $l->{"uniDTM"}->GetTools() ) {
 
-			unless ( grep { $_*1000 == $td } @drillTool ) {
+			unless ( grep { $_ * 1000 == $td } @drillTool ) {
 
 				$result = 0;
 				$$mess .= "NC layer: " . $l->{"gROWname"} . " contains drill tool: $td µm which is not available in CNC department\n";
@@ -675,13 +694,33 @@ sub CheckToolDiameter {
 	# 4) Chek rout tools againts CNC available tools
 	foreach my $l (@layersRout) {
 
-		foreach my $td ( map { $_->GetDrillSize() } $l->{"uniDTM"}->GetTools() ) {
+		foreach my $t ( $l->{"uniDTM"}->GetTools() ) {
 
-			unless ( grep { $_*1000 == $td } @routTool ) {
+			if ( $t->GetTypeProcess() eq Enums->TypeProc_HOLE ) {
+				unless ( grep { $_ * 1000 == $t->GetDrillSize() } @drillTool ) {
 
-				$result = 0;
-				$$mess .= "NC layer: " . $l->{"gROWname"} . " contains rout tool: $td µm which is not available in CNC department\n";
+					$result = 0;
+					$$mess .=
+					    "NC layer: "
+					  . $l->{"gROWname"}
+					  . " contains drill tool: "
+					  . $t->GetDrillSize()
+					  . " µm which is not available in CNC department\n";
+				}
 			}
+			elsif ( $t->GetTypeProcess() eq Enums->TypeProc_CHAIN ) {
+				unless ( grep { $_ * 1000 == $t->GetDrillSize() } @routTool ) {
+
+					$result = 0;
+					$$mess .=
+					    "NC layer: "
+					  . $l->{"gROWname"}
+					  . " contains rout tool:"
+					  . $t->GetDrillSize()
+					  . " µm which is not available in CNC department\n";
+				}
+			}
+
 		}
 	}
 
