@@ -284,7 +284,7 @@ sub __WriteMessages() {
 					$richTxt->BeginTextColour( Wx::Colour->new( 230, 0, 0 ) );
 				}
 				elsif ( $1 eq "g" ) {
-					$richTxt->BeginTextColour( Wx::Colour->new( 40, 200, 0 ) );
+					$richTxt->BeginTextColour( Wx::Colour->new( 4, 136, 53 ) );
 				}
 				elsif ( $1 eq "b" ) {
 					$richTxt->BeginBold();

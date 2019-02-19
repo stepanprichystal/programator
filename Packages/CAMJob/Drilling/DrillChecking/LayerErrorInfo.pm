@@ -204,13 +204,12 @@ sub CheckAttributes {
 			$result = 0;
 			$$mess .= "NC layer: " . $l->{"gROWname"} . " contains attribut .nomenclature. Please remove it.\n";
 		}
-		
+
 		if ( $l->{"attHist"}->{".out_nc_ignore"} ) {
 			$result = 0;
 			$$mess .= "NC layer: " . $l->{"gROWname"} . " contains attribut .out_nc_ignore. Please remove it.\n";
 		}
 	}
- 
 
 	my @t = ();
 
@@ -622,43 +621,68 @@ sub CheckToolDiameter {
 	push( @t2, EnumsGeneral->LAYERTYPE_nplt_cbMillBot );
 	push( @t2, EnumsGeneral->LAYERTYPE_nplt_nMill );
 
-	# check all nc layers on wrong shaped pads. Pads has to by only r<number>
+	my @layersRout = $self->__GetLayersByType( \@layers, \@t2 );
 
-	my @layersAll = $self->__GetLayersByType( \@layers, [ @t, @t2 ] );
+	# 1) check drill layers on max available drill tool
+	my @drillTool = CamDTM->GetToolTable( $inCAM, 'drill' );
+	my $maxDrillTool = max(@drillTool) * 1000;    # in µm
 
-	# check all nc layers on max available drill tool
-	my @tool    = CamDTM->GetToolTable( $inCAM, 'drill' );
-	my $maxTool = max(@tool) * 1000;                         # in µm
-	my $minTool = min(@tool) * 1000;                         # in µm
+	foreach my $l (@layersDrill) {
 
-	foreach my $l (@layersAll) {
+		my @maxLTools = grep { $_ > $maxDrillTool } map { $_->GetDrillSize() } $l->{"uniDTM"}->GetTools();
 
-		my @maxTools = grep { ( $_->{"sym"} =~ m/^r(\d+\.?\d*)$/ )[0] > $maxTool } @{ $l->{"symHist"}->{"pads"} };
-
-		if ( scalar(@maxTools) ) {
+		if ( scalar(@maxLTools) ) {
 
 			$result = 0;
 			$$mess .=
 			    "NC layer: "
 			  . $l->{"gROWname"}
-			  . " contains drilled holes ("
-			  . join( ";", map { $_->{"sym"} } @maxTools )
-			  . ") larger than our max tool ($maxTool mm)\n";
+			  . " contains drill tool ("
+			  . join( ";", @maxLTools )
+			  . "µm) larger than our max tool ($maxDrillTool µm)\n";
 		}
+	}
 
-		#		my @minTools = grep { ( $_->{"sym"} =~ m/^r(\d+\.?\d*)$/ )[0] < $minTool } @{ $l->{"symHist"}->{"pads"} };
-		#
-		#		if ( scalar(@minTools) ) {
-		#
-		#			$result = 0;
-		#			$$mess .=
-		#			    "NC layer: "
-		#			  . $l->{"gROWname"}
-		#			  . " contains drilled holes ("
-		#			  . join( ";", map { $_->{"sym"} } @minTools )
-		#			  . ") smaller than our min tool ($minTool mm)\n";
-		#		}
+	# 2) check rout layers on max available drill tool
+	my @routTool = CamDTM->GetToolTable( $inCAM, 'rout' );
+	my $maxRoutTool = max(@routTool) * 1000;    # in µm
 
+	foreach my $l (@layersRout) {
+
+		my @maxLTools = grep { $_ > $maxRoutTool } map { $_->GetDrillSize() } $l->{"uniDTM"}->GetTools();
+
+		if ( scalar(@maxLTools) ) {
+
+			$result = 0;
+			$$mess .=
+			  "NC layer: " . $l->{"gROWname"} . " contains rout tool (" . join( ";", @maxLTools ) . "µm) larger than our max tool ($maxRoutTool µm)\n";
+		}
+	}
+
+	# 3) Chek drill tools againts CNC available tools
+	foreach my $l (@layersDrill) {
+
+		foreach my $td ( map { $_->GetDrillSize() } $l->{"uniDTM"}->GetTools() ) {
+
+			unless ( grep { $_*1000 == $td } @drillTool ) {
+
+				$result = 0;
+				$$mess .= "NC layer: " . $l->{"gROWname"} . " contains drill tool: $td µm which is not available in CNC department\n";
+			}
+		}
+	}
+
+	# 4) Chek rout tools againts CNC available tools
+	foreach my $l (@layersRout) {
+
+		foreach my $td ( map { $_->GetDrillSize() } $l->{"uniDTM"}->GetTools() ) {
+
+			unless ( grep { $_*1000 == $td } @routTool ) {
+
+				$result = 0;
+				$$mess .= "NC layer: " . $l->{"gROWname"} . " contains rout tool: $td µm which is not available in CNC department\n";
+			}
+		}
 	}
 
 	return $result;

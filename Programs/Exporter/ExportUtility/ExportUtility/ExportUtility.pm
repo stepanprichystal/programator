@@ -245,21 +245,23 @@ sub __CheckFilesHandler {
 	my @files = ();
 
 	#get all files from path
-	opendir( DIR, EnumsPaths->Client_EXPORTFILES ) or die $!;
-	while ( my $file = readdir(DIR) ) {
+	my $dir;
+	opendir( $dir, EnumsPaths->Client_EXPORTFILES ) or die $!;
+	while ( my $file = readdir($dir) ) {
 
 		push( @files, EnumsPaths->Client_EXPORTFILES . $file );
 	}
-	closedir(DIR);
+	closedir($dir);
 
 	# Check files for export on server
+	my $dirSrv;
 	if ( AsyncJobHelber->ServerVersion() ) {
-		opendir( DIR, EnumsPaths->Jobs_EXPORTFILESPCB ) or die $!;
-		while ( my $file = readdir(DIR) ) {
+		opendir( $dirSrv, EnumsPaths->Jobs_EXPORTFILESPCB ) or die $!;
+		while ( my $file = readdir($dir) ) {
 
 			push( @files, EnumsPaths->Jobs_EXPORTFILESPCB . $file );
 		}
-		closedir(DIR);
+		closedir($dirSrv);
 	}
 
 	my @actFiles = @{ $self->{"exportFiles"} };

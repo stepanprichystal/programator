@@ -107,8 +107,11 @@ sub __SetImpedanceLine {
 
 	push( @mess, "\nOznač cesty, které mají splňovat danou impedanci." );
 
-	$messMngr->ShowModal( -1, EnumsGeneral->MessageType_INFORMATION, \@mess, [ "Přeskočit", "Zkusím štěstí", "Označím ručně" ], \@imgs );
-
+	# Freeeze layer (prevent from user click to editor);
+	$inCAM->COM("freeze_ent", "job_name" => $jobId, "ent_type"=> "layer", "ent" => "$l", "mode" => "freeze", "parent"=>$step);
+	$messMngr->ShowModal( -1, EnumsGeneral->MessageType_INFORMATION, \@mess, [ "Přeskočit", "Označím ručně", "Zkusím štěstí" ], \@imgs );
+	$inCAM->COM("freeze_ent", "job_name" => $jobId, "ent_type"=> "layer", "ent" =>  "$l", "mode" => "unfreeze", "parent"=>$step);
+	
 	if ( $messMngr->Result() == 0 ) {
 
 		# skip
@@ -116,16 +119,16 @@ sub __SetImpedanceLine {
 	}
 	elsif ( $messMngr->Result() == 1 ) {
 
-		# auto
-
-		$self->__AutoSelect( $inCAM, $constraint );
-		$self->__PAUSE( $inCAM, "select_auto", $constraint );
+		#manual
+		$self->__PAUSE( $inCAM, "select_manual", $constraint );
 
 	}
 	elsif ( $messMngr->Result() == 2 ) {
 
-		#manual
-		$self->__PAUSE( $inCAM, "select_manual", $constraint );
+		# auto
+		 
+		$self->__AutoSelect( $inCAM, $jobId, $constraint );
+		$self->__PAUSE( $inCAM, "select_auto", $constraint );
 
 	}
 
@@ -177,13 +180,21 @@ sub __SetImpedanceLine {
 sub __AutoSelect {
 	my $self       = shift;
 	my $inCAM      = shift;
+	my $jobId      = shift;
 	my $constraint = shift;
 
 	my $lineWOri = sprintf( "%.0f", $constraint->GetOption( "ORIGINAL_TRACE_WIDTH", 1 ) );
 
 	print STDERR "Search lines width: $lineWOri";
 
-	CamFilter->BySymbols( $inCAM, [ "r" . $lineWOri, "s" . $lineWOri ] );
+	# 1) First try select lines by line original line width
+	unless ( CamFilter->BySymbols( $inCAM, [ "r" . $lineWOri, "s" . $lineWOri ] ) ) {
+
+		# 2) Try to find if some lines contain constrainty id attribute
+
+		CamFilter->SelectBySingleAtt( $inCAM, $jobId, ".imp_constraint_id", { "min" => $constraint->GetId(), "max" => $constraint->GetId() } );
+
+	}
 
 }
 
@@ -230,26 +241,29 @@ sub __CheckSelectedLines {
 		push( @mess2, "- Původní šířka: <b>$lineWOri µm</b>" );
 		push( @mess2, "- Požadovaná šířka: <b>$lineWReq µm</b>" );
 
+		# Freeeze layer (prevent from user click to editor);
+		$inCAM->COM("freeze_ent", "job_name" => $jobId, "ent_type"=> "layer", "ent" => "$layer", "mode" => "freeze", "parent"=>$step);
 		$messMngr->ShowModal( -1, EnumsGeneral->MessageType_INFORMATION,
-							  \@mess2, [ "Přeskočit", "Zkusím štěstí", "Označím ručně" ], \@imgs );
+							  \@mess2, [ "Přeskočit", "Označím ručně", "Zkusím štěstí" ], \@imgs );
+		$inCAM->COM("freeze_ent", "job_name" => $jobId, "ent_type"=> "layer", "ent" => "$layer", "mode" => "unfreeze", "parent"=>$step);
 
 		if ( $messMngr->Result() == 0 ) {
-			
+
 			# skip
 			$$skip = 1;
 			return 1;
 		}
 		elsif ( $messMngr->Result() == 1 ) {
 
-			# auto
-			$self->__AutoSelect( $inCAM, $constraint );
-			$self->__PAUSE( $inCAM, "select_auto", $constraint );
+			# manual
+			$self->__PAUSE( $inCAM, "select_manual", $constraint );
 			return 0;
 		}
 		elsif ( $messMngr->Result() == 2 ) {
 
-			# manual
-			$self->__PAUSE( $inCAM, "select_manual", $constraint );
+			# auto
+			$self->__AutoSelect( $inCAM, $jobId, $constraint );
+			$self->__PAUSE( $inCAM, "select_auto", $constraint );
 			return 0;
 		}
 
@@ -267,7 +281,7 @@ sub __CheckSelectedLines {
 		push( @mess, "Id zmiňovaných features: <b>" . join( "; ", map { $_->{"id"} } @wrongType ) . "</b>" );
 		push( @mess, "\nChcete přesto nastavit impedančná cesty?" );
 
-		$messMngr->ShowModal( -1, EnumsGeneral->MessageType_ERROR, \@mess, ["Ano, nastavit", "Ne, opravím to" ] );
+		$messMngr->ShowModal( -1, EnumsGeneral->MessageType_ERROR, \@mess, [ "Ano, nastavit", "Ne, opravím to" ] );
 
 		if ( $messMngr->Result() == 1 ) {
 
@@ -293,7 +307,11 @@ sub __CheckSelectedLines {
 		push( @mess, "- Původní šířka: <b>$lineWOri µm</b>" );
 		push( @mess, "- Požadovaná šířka: <b>$lineWReq µm</b>" );
 
-		push( @mess, "\nId zmiňovaných features: <b>" . join( "; ", map { $_->{"id"} } @wrongWidth ) . "</b>" );
+		my $str = "";
+		foreach my $thick ( uniq( map { $_->{"thick"} } @wrongWidth ) ) {
+			  $str .= "- <b>Šířka " . $thick . "µm</b>: " . join( "; ", map {$_->{"id"}}grep { $_->{"thick"} == $thick } @wrongWidth ) . "\n";
+		}
+		push( @mess, "\nId zmiňovaných features:\n $str" );
 
 		push( @mess, "\nChcete přesto nastavit impedančná cesty?" );
 
@@ -326,7 +344,7 @@ sub __CheckSelectedLines {
 
 		push( @mess, "\nChcete přesto nastavit impedančná cesty?" );
 
-		$messMngr->ShowModal( -1, EnumsGeneral->MessageType_ERROR, \@mess, [  "Ano, nastavit", "Ne, opravím to" ] );
+		$messMngr->ShowModal( -1, EnumsGeneral->MessageType_ERROR, \@mess, [ "Ano, nastavit", "Ne, opravím to" ] );
 
 		if ( $messMngr->Result() == 1 ) {
 
