@@ -8,6 +8,8 @@ use Tk;
 use Tk::LabFrame;
 use utf8;
 use Time::HiRes qw (sleep);
+use XML::Simple;
+use Data::Dumper;
 
 
 #necessary for load pall packages
@@ -439,7 +441,7 @@ sub _Process {
  			#}
  			
  			
- 			# Here run clean-up
+ 			# Here run clean-up.
  			$inCAM -> COM('chklist_from_lib',chklist=>'clean_up',profile=>'none',customer=>'');
  			$inCAM -> COM('chklist_open',chklist=>'clean_up');
  			$inCAM -> COM('chklist_show',chklist=>'clean_up',nact=>'1',pinned=>'no',pinned_enabled=>'yes');
@@ -573,28 +575,44 @@ sub _NewJobCreate {
 							my @pole = HegMethods->GetAllByPcbId($jobId);
 							$customerName = $pole[0]->{'customer'};
 		   					$customerName =~ s/,/./g;
-		   					
-			
 		}
 
 					$inCAM->HandleException(1);		
 		   			$inCAM->SupressToolkitException(1);
-		   			
+		   						
 								$inCAM -> COM ('new_customer',name=>"$numberCustomer",disp_name=>"$customerName",properties=>'',skip_on_existing=>'yes');
 								
 								if ($inCAM->{STATUS} != 0) {
-										$inCAM -> COM ('delete_customer',disp_name=>"$customerName");
-										$inCAM -> COM ('new_customer',name=>"$numberCustomer",disp_name=>"$customerName",properties=>'',skip_on_existing=>'yes');
+										$inCAM -> COM ('delete_customer',name=>"$numberCustomer");
+										$inCAM -> COM ('new_customer',name=>"$numberCustomer",disp_name=>"$customerName",properties=>'',skip_on_existing=>'no');
 								}
 								
 								
 					$inCAM->SupressToolkitException(0);
 					$inCAM->HandleException(0);
 					
-					$inCAM -> COM ('new_job',name=>"$jobId",db=>'incam',customer=>"$numberCustomer",disp_name=>"$customerName",notes=>'',attributes=>'');
+					my $custIncamName = _GetInCamCustomer($numberCustomer);
+					$inCAM -> COM ('new_job',name=>"$jobId",db=>'incam',customer=>"$numberCustomer",disp_name=>"$custIncamName",notes=>'',attributes=>'');
 					
-							
+					
 }
+
+sub _GetInCamCustomer {
+		my $custNumber = shift;
+	
+			my $path = EnumsPaths->InCAM_server . "customers\\customers.xml";
+	
+			$katalog = XMLin("$path");
+
+			my $cust = $katalog->{'customer'}->{$custNumber}->{display_name};
+		
+		return($cust);
+}
+
+
+
+
+
 sub convert_from_czech {
 	my $lineToConvert = shift;
 	my $char;
