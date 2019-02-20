@@ -20,7 +20,6 @@ use aliased 'Enums::EnumsGeneral';
 use aliased 'Packages::InCAM::InCAM';
 use aliased 'Programs::Coupon::CpnWizard::WizardCore::Helper';
 use aliased 'Programs::Coupon::CpnBuilder::CpnBuilder';
-use aliased 'Packages::ObjectStorable::JsonStorable::JsonStorable';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods

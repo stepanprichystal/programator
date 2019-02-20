@@ -110,6 +110,7 @@ sub __SetLayout {
 	# BUILD STRUCTURE OF LAYOUT
 	$szStatus->Add( $statusTxt, 1, &Wx::wxEXPAND | &Wx::wxALL, 5 );
 	$szStatus->Add( $gauge,     0, &Wx::wxEXPAND | &Wx::wxALL, 5 );
+	 
 
 	$pnlMain->SetSizer($szMain);
 
@@ -154,6 +155,12 @@ sub __SetLayoutSteps {
 	foreach my $step ( keys %{ $self->{"wizardSteps"} } ) {
 
 		$self->{"wizardSteps"}->{$step}->{"onStepWorking"}->Add( sub { $self->__StepWorkingHndl(@_) } );
+		
+		if($self->{"wizardSteps"}->{$step}->{"onLastConfig"}){
+			$self->{"wizardSteps"}->{$step}->{"onLastConfig"}->Add( sub { $self->__LoadLastConfig(@_) } );
+		}
+		
+		
 
 		my $page = $notebook->AddPage( $step, 0 );
 
@@ -282,6 +289,12 @@ sub __BeginClick {
 
 	$self->{"wizardCore"}->Begin();
 
+}
+
+sub __LoadLastConfig{
+	my $self = shift;
+	
+	
 }
 
 #-------------------------------------------------------------------------------------------#

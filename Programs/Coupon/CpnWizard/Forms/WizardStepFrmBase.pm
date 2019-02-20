@@ -40,7 +40,7 @@ sub new {
 	# Events
 	
 	$self->{"onStepWorking"} = Event->new();
-
+ 
 	return $self;
 }
 
