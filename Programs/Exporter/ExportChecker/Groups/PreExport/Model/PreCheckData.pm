@@ -294,7 +294,7 @@ sub OnCheckGroupData {
 		my $isInside = 1;
 
 		my %limActive = CamStep->GetActiveAreaLim( $inCAM, $jobId, $stepName );
-		my %limSR = CamStepRepeat->GetStepAndRepeatLim( $inCAM, $jobId, $stepName );
+		my %limSR = CamStepRepeatPnl->GetStepAndRepeatLim( $inCAM, $jobId );
 
 		if (    $limActive{"xMin"} + 1 > $limSR{"xMin"}
 			 || $limActive{"yMax"} - 1 < $limSR{"yMax"}
