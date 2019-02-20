@@ -629,7 +629,7 @@ sub CheckToolDiameter {
 
 	foreach my $l (@layersDrill) {
 
-		my @maxLTools = grep { $_ > $maxDrillTool } map { $_->GetDrillSize() } $l->{"uniDTM"}->GetTools();
+		my @maxLTools =  map { $_->GetDrillSize() } grep {!$_->GetSpecial() && $_->GetDrillSize() > $maxDrillTool } $l->{"uniDTM"}->GetTools();
 
 		if ( scalar(@maxLTools) ) {
 
@@ -650,7 +650,7 @@ sub CheckToolDiameter {
 	foreach my $l (@layersRout) {
 
 		my @maxLDrillTools =
-		  grep { $_->GetTypeProcess() eq Enums->TypeProc_HOLE && $_->GetDrillSize() > $maxDrillTool } $l->{"uniDTM"}->GetTools();
+		  grep { !$_->GetSpecial() && $_->GetTypeProcess() eq Enums->TypeProc_HOLE && $_->GetDrillSize() > $maxDrillTool } $l->{"uniDTM"}->GetTools();
 
 		if ( scalar(@maxLDrillTools) ) {
 
@@ -664,7 +664,7 @@ sub CheckToolDiameter {
 		}
 
 		my @maxLRoutTools =
-		  grep { $_->GetTypeProcess() eq Enums->TypeProc_CHAIN && $_->GetDrillSize() > $maxRoutTool } $l->{"uniDTM"}->GetTools();
+		  grep { !$_->GetSpecial() && $_->GetTypeProcess() eq Enums->TypeProc_CHAIN && $_->GetDrillSize() > $maxRoutTool } $l->{"uniDTM"}->GetTools();
 
 		if ( scalar(@maxLRoutTools) ) {
 
@@ -681,7 +681,7 @@ sub CheckToolDiameter {
 	# 3) Chek drill tools againts CNC available tools
 	foreach my $l (@layersDrill) {
 
-		foreach my $td ( map { $_->GetDrillSize() } $l->{"uniDTM"}->GetTools() ) {
+		foreach my $td ( map { $_->GetDrillSize() } grep {!$_->GetSpecial()} $l->{"uniDTM"}->GetTools() ) {
 
 			unless ( grep { $_ * 1000 == $td } @drillTool ) {
 
@@ -694,7 +694,7 @@ sub CheckToolDiameter {
 	# 4) Chek rout tools againts CNC available tools
 	foreach my $l (@layersRout) {
 
-		foreach my $t ( $l->{"uniDTM"}->GetTools() ) {
+		foreach my $t ( grep {!$_->GetSpecial()} $l->{"uniDTM"}->GetTools() ) {
 
 			if ( $t->GetTypeProcess() eq Enums->TypeProc_HOLE ) {
 				unless ( grep { $_ * 1000 == $t->GetDrillSize() } @drillTool ) {

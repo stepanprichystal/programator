@@ -173,7 +173,7 @@ sub GetTool {
 	}
 	else {
 
-		return 0;
+		return undef;
 	}
 }
 

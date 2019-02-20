@@ -50,8 +50,7 @@ sub GetChainList {
 
 			# test, if chain with given routchain not exist exist, add it
 			# key for chain is toolOrder + sourceStep
-			unless ( scalar( grep { $_->GetChainOrder() eq $attr{".rout_chain"} && $_->GetSourceStep() eq $f->{"step"} } @chainList ) )
-			{
+			unless ( scalar( grep { $_->GetChainOrder() eq $attr{".rout_chain"} && $_->GetSourceStep() eq $f->{"step"} } @chainList ) ) {
 
 				my $chainOrder = $attr{".rout_chain"};
 				my $sourceStep = $f->{"step"};
@@ -85,6 +84,8 @@ sub GetChainList {
 				# id defined DTM, assign UniDTM tools to UniChainTool
 				if ($uniDTM) {
 					$dtmTool = $uniDTM->GetTool( $chainTool, DTMEnums->TypeProc_CHAIN );
+					die "Tool chain: $chainTool (comp: $chainComp; order: $chainOrder; source step: $sourceStep) was not found in \"UniDTM\""
+					  if ( !defined $dtmTool );
 				}
 
 				my $uniChainTool = UniChainTool->new( $chainOrder, $sourceStep, $chainTool, $chainComp, $dtmTool );
