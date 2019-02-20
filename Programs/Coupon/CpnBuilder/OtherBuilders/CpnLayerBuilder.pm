@@ -72,12 +72,10 @@ sub Build {
 	}
 
 	my @layers = CamJob->GetBoardBaseLayers( $inCAM, $jobId );    # silks, mask, signal
-	my $m = ( grep { $_->{"gROWname"} eq "m" } CamJob->GetNCLayers( $inCAM, $jobId ) )[0];    # m
+	my @cncLayers = grep { $_->{"gROWname"} eq "m" || $_->{"gROWname"} eq "f" } CamJob->GetNCLayers( $inCAM, $jobId );    # m
 
-	if ( defined $m ) {
-		push( @layers, $m );
-	}
-
+	push( @layers, @cncLayers ) if (scalar(@cncLayers));
+ 
 	foreach my $l (@layers) {
 
 		my $lName = $l->{"gROWname"};
@@ -85,7 +83,8 @@ sub Build {
 		my $lLayout = LayerLayout->new($lName);
 
 		# Set mirror
-		if ( $lName =~ /^m$/ ) {
+		if ( $lName =~ /^[mf]$/ ) {
+			# drill + rout layer
 			$lLayout->SetMirror(0);
 		}
 		elsif ( $lName =~ /^[mp]?c$/ ) {

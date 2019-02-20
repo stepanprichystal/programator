@@ -27,6 +27,8 @@ sub new {
 
 }
 
+# Coupon settings
+
 sub GetStepName {
 	my $self = shift;
 
@@ -47,7 +49,7 @@ sub GetCouponSingleMargin {
 
 }
 
-sub SetCouponSingleMargin {
+sub SetCoulponSingeMargin {
 	my $self = shift;
 	my $val  = shift;
 
@@ -74,6 +76,76 @@ sub GetCouponSpace {
 	return $self->_GetVal("couponSpace");
 
 }
+
+
+# Outline rout settings
+
+sub SetOutlineRout {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->_SetVal("outlineRout", $val);
+}
+
+sub GetOutlineRout {
+	my $self = shift;
+
+	return $self->_GetVal("outlineRout");
+}
+
+sub SetBridges {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->_SetVal("bridges", $val);
+}
+
+sub GetBridges {
+	my $self = shift;
+
+	return $self->_GetVal("bridges");
+}
+
+sub SetBridgesX {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->_SetVal("bridgesX", $val);
+}
+
+sub GetBridgesX {
+	my $self = shift;
+
+	return $self->_GetVal("bridgesX");
+}
+
+
+sub SetBridgesY {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->_SetVal("bridgesY", $val);
+}
+
+sub GetBridgesY {
+	my $self = shift;
+
+	return $self->_GetVal("bridgesY");
+}
+
+sub SetBridgesWidth {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->_SetVal("bridgesWidth", $val);
+}
+
+sub GetBridgesWidth {
+	my $self = shift;
+
+	return $self->_GetVal("bridgesWidth");
+}
+
 
 sub Set {
 	my $self = shift;

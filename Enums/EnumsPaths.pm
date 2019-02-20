@@ -17,6 +17,7 @@ use constant {
 	Client_INCAMTMPAOI     => "c:\\tmp\\InCam\\scripts\\aoi_export\\",
 	Client_INCAMTMPNC      => "c:\\tmp\\InCam\\scripts\\nc_export\\",
 	Client_INCAMTMPCHECKER => "c:\\tmp\\InCam\\scripts\\export_checker\\",
+	Client_INCAMTMPIMPGEN => "c:\\tmp\\InCam\\scripts\\imp_generator\\",
 	Client_INCAMTMPOTHER   => "c:\\tmp\\InCam\\scripts\\other\\",
 	Client_INCAMTMPSCRIPTS => "c:\\tmp\\InCam\\scripts\\",
 	Client_INCAMTMPJOBMNGR => "c:\\tmp\\InCam\\scripts\\job_mngr\\",

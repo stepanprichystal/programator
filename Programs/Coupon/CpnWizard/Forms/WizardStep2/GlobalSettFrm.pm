@@ -1,5 +1,5 @@
 #-------------------------------------------------------------------------------------------#
-# Description: 
+# Description:
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Programs::Coupon::CpnWizard::Forms::WizardStep2::GlobalSettFrm;
@@ -100,6 +100,8 @@ sub __BuildGeneralSett {
 	#define staticboxes
 	my $statBox = Wx::StaticBox->new( $parent, -1, 'General + dimension settings' );
 	my $szStatBox = Wx::StaticBoxSizer->new( $statBox, &Wx::wxVERTICAL );
+	my $pnlRows = Wx::Panel->new( $statBox, -1 );
+	my $szRows = Wx::BoxSizer->new(&Wx::wxVERTICAL);
 
 	# build rows
 	$szStatBox->Add( 1, 5, 0 );
@@ -107,7 +109,22 @@ sub __BuildGeneralSett {
 	$szStatBox->Add( $self->__BuildRowUni_SpinCtrl( $statBox, "couponMargin",       0, 10000 ), 0, &Wx::wxALL, 1 );
 	$szStatBox->Add( $self->__BuildRowUni_SpinCtrl( $statBox, "couponSingleMargin", 0, 10000 ), 0, &Wx::wxALL, 1 );
 
+	# Define disable enable checkbox
+	$szStatBox->Add( 1, 10, 0 );
+	$szStatBox->Add( $self->_GetSeparateLine($pnlRows), 0, &Wx::wxEXPAND | &Wx::wxALL, 4 );
+	$szStatBox->Add( $self->__BuildRowUni_CheckBox( $statBox, "outlineRout", 0, $pnlRows ), 0, &Wx::wxALL, 1 );
+	$szRows->Add( $self->__BuildRowUni_CheckBox( $pnlRows, "bridges" ),  0, &Wx::wxALL, 1 );
+	$szRows->Add( $self->__BuildRowUni_CheckBox( $pnlRows, "bridgesX" ), 0, &Wx::wxALL, 1 );
+	$szRows->Add( $self->__BuildRowUni_CheckBox( $pnlRows, "bridgesY" ), 0, &Wx::wxALL, 1 );
+	$szRows->Add( $self->__BuildRowUni_SpinCtrl( $pnlRows, "bridgesWidth", 0, 10000 ), 0, &Wx::wxALL, 1 );
+	unless ( $self->{"settings"}->GetOutlineRout() ) {
+		$pnlRows->Disable();
+	}
+
 	# EVENTS
+	
+	$pnlRows->SetSizer($szRows);
+	$szStatBox->Add( $pnlRows, 1, 0 );
 
 	# SAVE REFERENCES
 
@@ -150,7 +167,6 @@ sub __BuildLayoutSett {
 	$szStatBox->Add( $self->__BuildRowUni_CheckBox( $statBox, "shareGNDPads",   1 ), 0, &Wx::wxALL, 1 );
 	$szStatBox->Add( $self->__BuildRowUni_CheckBox( $statBox, "twoEndedDesign", 1 ), 0, &Wx::wxALL, 1 );
 	$szStatBox->Add( $self->__BuildRowUni_SpinCtrl( $statBox, "trackPadIsolation", 80, 500 ), 0, &Wx::wxALL, 1 );
-	
 
 	$szStatBox->Add( $self->_GetSeparateLine($statBox), 0, &Wx::wxEXPAND | &Wx::wxALL, 4 );
 	$szStatBox->Add( Wx::StaticText->new( $statBox, -1, "Choose possible route types:", &Wx::wxDefaultPosition ), 0, &Wx::wxEXPAND | &Wx::wxALL, 4 );
@@ -249,10 +265,9 @@ sub __BuildPadTextSett {
 	$szStatBox->Add( 1, 5, 0 );
 	$szStatBox->Add( $self->__BuildRowUni_CheckBox( $statBox, "padText", 0, $pnlRows ), 0, &Wx::wxALL, 1 );
 
-
 	$szRows->Add( $self->_GetSeparateLine($pnlRows), 0, &Wx::wxEXPAND | &Wx::wxALL, 4 );
 	$szRows->Add( $self->__BuildRowUni_CheckBox( $pnlRows, "padTextUnmask" ), 0, &Wx::wxALL, 1 );
-	$szRows->Add( $self->__BuildRowUni_SpinCtrl( $pnlRows, "padTextDist", 0, 3000 ),   0, &Wx::wxALL, 1 );
+	$szRows->Add( $self->__BuildRowUni_SpinCtrl( $pnlRows, "padTextDist", 0, 3000 ), 0, &Wx::wxALL, 1 );
 	$szRows->Add( $self->_GetSeparateLine($pnlRows), 0, &Wx::wxEXPAND | &Wx::wxALL, 4 );
 	$szRows->Add( Wx::StaticText->new( $pnlRows, -1, "Pad text font:", &Wx::wxDefaultPosition ), 0, &Wx::wxALL, 4 );
 	$szRows->Add( $self->__BuildRowUni_SpinCtrl( $pnlRows, "padTextWidth",  100, 2000 ), 0, &Wx::wxALL, 1 );
@@ -382,7 +397,7 @@ sub __BuildLogoSett {
 	my $szStatBox = Wx::StaticBoxSizer->new( $statBox, &Wx::wxVERTICAL );
 	my $pnlRows = Wx::Panel->new( $statBox, -1 );
 	my $szRows = Wx::BoxSizer->new(&Wx::wxVERTICAL);
- 
+
 	# build rows
 
 	# Define disable enable checkbox
@@ -394,9 +409,9 @@ sub __BuildLogoSett {
 	$szRows->Add( $self->_GetSeparateLine($pnlRows), 0, &Wx::wxEXPAND | &Wx::wxALL, 4 );
 	$szRows->Add( $self->__BuildRowUni_ComboBox( $pnlRows, "titleType", [ "left", "top" ] ), 0, &Wx::wxALL, 1 );
 	$szRows->Add( $self->__BuildRowUni_CheckBox( $pnlRows, "titleUnMask" ), 0 );
-	$szRows->Add( $self->__BuildRowUni_SpinCtrl( $pnlRows, "titleMargin",  0, 10000 ), 0, &Wx::wxALL, 1 );
-	$szRows->Add( $self->__BuildRowUni_SpinCtrl( $pnlRows, "titleLogoJobIdHDist",  0, 10000 ), 0, &Wx::wxALL, 1 );
-	$szRows->Add( $self->__BuildRowUni_SpinCtrl( $pnlRows, "titleLogoJobIdVDist",  0, 10000 ), 0, &Wx::wxALL, 1 );
+	$szRows->Add( $self->__BuildRowUni_SpinCtrl( $pnlRows, "titleMargin",         0, 10000 ), 0, &Wx::wxALL, 1 );
+	$szRows->Add( $self->__BuildRowUni_SpinCtrl( $pnlRows, "titleLogoJobIdHDist", 0, 10000 ), 0, &Wx::wxALL, 1 );
+	$szRows->Add( $self->__BuildRowUni_SpinCtrl( $pnlRows, "titleLogoJobIdVDist", 0, 10000 ), 0, &Wx::wxALL, 1 );
 	$szRows->Add( $self->_GetSeparateLine($pnlRows), 0, &Wx::wxEXPAND | &Wx::wxALL, 4 );
 	$szRows->Add( Wx::StaticText->new( $pnlRows, -1, "Logo settings:", &Wx::wxDefaultPosition ), 0, &Wx::wxALL, 4 );
 	$szRows->Add( $self->__BuildRowUni_SpinCtrl( $pnlRows, "logoWidth",  100, 2000 ), 0, &Wx::wxALL, 1 );

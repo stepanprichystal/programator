@@ -14,6 +14,7 @@ use Switch;
 
 use aliased 'CamHelpers::CamStep';
 use aliased 'CamHelpers::CamHelper';
+use aliased 'CamHelpers::CamMatrix';
 use aliased 'CamHelpers::CamJob';
 use aliased 'CamHelpers::CamLayer';
 use aliased 'Programs::Coupon::Enums';
@@ -85,7 +86,7 @@ sub Generate {
 	if ( defined $layout->GetLayersLayout()->{"m"} ) {
 		CamDTM->SetDTMTable( $inCAM, $jobId, $layout->GetStepName(), "m", EnumsDrill->DTM_VYSLEDNE );
 	}
- 
+
 	# Process title
 	if ( $layout->GetTitleLayout() ) {
 
@@ -145,8 +146,7 @@ sub Generate {
 
 		$self->{"couponStep"}->AddSRStep( $srStep, $p->X(), $p->Y(), 0, 1, 1, 1, 1 );
 	}
-	
-	
+
 	# Check negative signal layers, if exists fill layer with ground
 	foreach my $lName ( keys %{ $layout->GetLayersLayout() } ) {
 
@@ -164,12 +164,137 @@ sub Generate {
 		}
 	}
 
-	return $result;
+	# Do outline rout
+	if ( $layout->GetRoutLayout() ) {
+
+		my $routLayout = $layout->GetRoutLayout();
+		if ( $routLayout->GetOutlineRout() ) {
+
+			CamHelper->SetStep( $inCAM, $layout->GetStepName() );
+			CamMatrix->CreateLayer( $inCAM, $jobId, "f", "rout", "positive", 1 ) unless ( CamHelper->LayerExists( $inCAM, $jobId, "f" ) );
+			CamLayer->WorkLayer( $inCAM, "f" );
+
+			my $gap = $routLayout->GetBridgesWidth() / 1000;    # mm
+			my $t   = 2;
+			my $featStart = undef;
+
+			# Draw LEFT verticall edge
+			if ( $routLayout->GetBridges() && $routLayout->GetBridgesY() ) {
+
+				# left line (bot)
+				CamSymbol->AddLine( $inCAM,
+									{ "x" => 0, "y" => 0 },
+									{ "x" => 0, "y" => $layout->GetHeight() / 2 - $gap / 2 - $t / 2 },
+									"r200", "positive" );
+
+				# left line (top)
+				CamSymbol->AddLine( $inCAM,
+									{ "x" => 0, "y" => $layout->GetHeight() / 2 + $gap / 2 + $t / 2 },
+									{ "x" => 0, "y" => $layout->GetHeight() },
+									"r200", "positive" );
+									
+				$featStart = $inCAM->GetReply();
+			}
+			else {
+				# left line
+				CamSymbol->AddLine( $inCAM, { "x" => 0, "y" => 0 }, { "x" => 0, "y" => $layout->GetHeight() }, "r200", "positive" );
+
+			}
+
+			# Draw TOP horizontal edge
+			if ( $routLayout->GetBridges() && $routLayout->GetBridgesX() ) {
+
+				# top line (left)
+				CamSymbol->AddLine( $inCAM,
+									{ "x" => 0,                                           "y" => $layout->GetHeight() },
+									{ "x" => $layout->GetWidth() / 2 - $gap / 2 - $t / 2, "y" => $layout->GetHeight() },
+									"r200", "positive" );
+
+				# top line (right)
+				CamSymbol->AddLine( $inCAM,
+									{ "x" => $layout->GetWidth() / 2 + $gap / 2 + $t / 2, "y" => $layout->GetHeight() },
+									{ "x" => $layout->GetWidth(),                         "y" => $layout->GetHeight() },
+									"r200", "positive" );
+									
+				$featStart = $inCAM->GetReply();
+			}
+			else {
+				# top line
+				CamSymbol->AddLine( $inCAM,
+									{ "x" => 0,                   "y" => $layout->GetHeight() },
+									{ "x" => $layout->GetWidth(), "y" => $layout->GetHeight() },
+									"r200", "positive" );
+			}
+
+			# Draw RIGHT vertical edge
+			if ( $routLayout->GetBridges() && $routLayout->GetBridgesY() ) {
+
+				# right line (top)
+				CamSymbol->AddLine( $inCAM,
+									{ "x" => $layout->GetWidth(), "y" => $layout->GetHeight() },
+									{ "x" => $layout->GetWidth(), "y" => $layout->GetHeight() / 2 + $gap / 2 + $t / 2 },
+									"r200", "positive" );
+
+				# right line (bot)
+				CamSymbol->AddLine( $inCAM,
+									{ "x" => $layout->GetWidth(), "y" => $layout->GetHeight() / 2 - $gap / 2 - $t / 2 },
+									{ "x" => $layout->GetWidth(), "y" => 0 },
+									"r200", "positive" );
+				$featStart = $inCAM->GetReply();
+
+			}
+			else {
+
+				# right line
+				CamSymbol->AddLine( $inCAM,
+									{ "x" => $layout->GetWidth(), "y" => 0 },
+									{ "x" => $layout->GetWidth(), "y" => $layout->GetHeight() },
+									"r200", "positive" );
+			}
+
+			# Draw BOT horizontal edge
+			if ( $routLayout->GetBridges() && $routLayout->GetBridgesX() ) {
+
+				# bot lines (right)
+				CamSymbol->AddLine( $inCAM,
+									{ "x" => $layout->GetWidth(),                         "y" => 0 },
+									{ "x" => $layout->GetWidth() / 2 + $gap / 2 + $t / 2, "y" => 0 },
+									"r200", "positive" );
+
+				# bot lines (left)
+				CamSymbol->AddLine( $inCAM,
+									{ "x" => $layout->GetWidth() / 2 - $gap / 2 - $t / 2, "y" => 0 },
+									{ "x" => 0,                                           "y" => 0 },
+									"r200", "positive" );
+				$featStart = $inCAM->GetReply();
+
+			}
+			else {
+
+				# bot lines
+				CamSymbol->AddLine( $inCAM, { "x" => $layout->GetWidth(), "y" => 0 }, { "x" => 0, "y" => 0 }, "r200", "positive" );
+			}
+ 
+			# Add chain
+			$inCAM->COM(
+				'chain_add',
+				"layer"          => "f",
+				"chain"          => 1,
+				"size"           => $t,
+				"comp"           => "left",
+				"first"          => defined $featStart ? $featStart - 1: 0,    # id of edge, which should route start - 1 (-1 is necessary)
+				"chng_direction" => 0
+			);
+
+		}
+
+	}
+
 }
 
 sub FlattenCpn {
 	my $self   = shift;
-	my $layout = shift;    # layout of complete coupon
+	my $layout = shift;                                # layout of complete coupon
 
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
@@ -224,7 +349,7 @@ sub __GenerateSingle {
 	# After filling is surface move out of coupon, because of proper working of another layer filling (GND layer, Shielding, etc)
 	# In the end, when layer is complete, positive surf is returned back "under" another symbols
 	my @negLayerBuilders = ();
-	foreach my $lName ( keys %{ $layersLayout } ) {
+	foreach my $lName ( keys %{$layersLayout} ) {
 
 		my $l = $layersLayout->{$lName};
 
@@ -233,11 +358,11 @@ sub __GenerateSingle {
 			my $negLayer = NegSignalLayer->new($lName);
 			$negLayer->Init( $inCAM, $jobId, $stepName );
 			$negLayer->Build();
- 
+
 			CamLayer->WorkLayer( $inCAM, $negLayer->GetLayerName() );
 			$negLayer->Draw();
 			$negLayer->MoveFillSurf();
-			push(@negLayerBuilders, $negLayer);
+			push( @negLayerBuilders, $negLayer );
 		}
 	}
 
@@ -359,15 +484,15 @@ sub __GenerateSingle {
 		}
 
 	}
-	
+
 	# If exist negative layers, move back positive surface created on begining of this function
-	foreach my $builder  (@negLayerBuilders){
-		
+	foreach my $builder (@negLayerBuilders) {
+
 		CamLayer->WorkLayer( $inCAM, $builder->GetLayerName() );
 		$builder->MoveFillSurfBack();
-	
+
 	}
-			 
+
 }
 
 #-------------------------------------------------------------------------------------------#
