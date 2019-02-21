@@ -1,10 +1,9 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Coupon configuration 
+# Description: Coupon configuration
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Programs::Coupon::CpnWizard::CpnConfigSerializer::CpnConfig;
-
+package Programs::Coupon::CpnWizard::CpnConfigMngr::CpnConfig;
 
 use Class::Interface;
 &implements('Packages::ObjectStorable::JsonStorable::IJsonStorable');
@@ -15,23 +14,21 @@ use warnings;
 
 #local library
 
-
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
 sub new {
 	my $class = shift;
 	my $self  = {};
-	$self = $class->SUPER::new(@_);
 	bless $self;
 
-	$self->{"userFilter"}   = undef;    # keys represent strip id and value if strip is used in coupon
-	$self->{"userGroups"}   = undef;    # contain strips splitted into group. Key is strip id, val is group number
-	$self->{"globalSett"}   = undef;    # global settings of coupon
-	$self->{"cpnStripSett"} = {};       # strip settings for each strip by constraint id
-	$self->{"cpnGroupSett"} = {};       # group settings for each group
+	$self->{"userFilter"}   = shift;    # keys represent strip id and value if strip is used in coupon
+	$self->{"userGroups"}   = shift;    # contain strips splitted into group. Key is strip id, val is group number
+	$self->{"globalSett"}   = shift;    # global settings of coupon
+	$self->{"cpnStripSett"} = shift;    # strip settings for each strip by constraint id
+	$self->{"cpnGroupSett"} = shift;    # group settings for each group
 
-	$self->{"__CLASS__"} = caller();
+	$self->{"__CLASS__"} = $class;
 
 	return $self;
 
@@ -105,7 +102,6 @@ sub TO_JSON { return { %{ shift() } }; }
 #-------------------------------------------------------------------------------------------#
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
- 
 
 }
 

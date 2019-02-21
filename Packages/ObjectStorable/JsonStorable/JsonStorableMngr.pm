@@ -14,7 +14,7 @@ use JSON;
 #local library
 
 use aliased "Helpers::FileHelper";
-
+use aliased 'Packages::ObjectStorable::JsonStorable::JsonStorable';
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
@@ -25,51 +25,50 @@ sub new {
 	bless $self;
 
 	$self->{"filePath"} = shift;
-	
+
 	$self->{"jsonStorable"} = JsonStorable->new();
 
 	return $self;
 }
 
+
+sub SerializedDataExist{
+	my $self = shift;
+	
+	return (-e $self->{"filePath"}) ? 1 : 0;
+}
+
+
+# Load serialized data
 sub LoadData {
 	my $self = shift;
-
-	my $json = JSON->new();
 
 	unless ( -e $self->{"filePath"} ) {
 		die "Serialized data file doesn't exist: " . $self->{"filePath"};
 	}
 
 	my $serializeData = FileHelper->ReadAsString( $self->{"filePath"} );
+	my $data          = $self->{"jsonStorable"}->Decode($serializeData);
 
-	my $hashData = $json->decode($serializeData);
-
-	# Get information about package name
-	my $packageName = $hashData->{"__PACKAGE__"};
-
-	# Convert to object by package name
-	eval("use $packageName;");
-	my $stencilParams = $packageName->new();
-	$stencilParams->{"data"} = $hashData;
-
-	return $stencilParams;
+	return $data;
 }
 
 # Serialize class "ExportData"
 # Data has to be reference type and implement  Packages::ObjectStorable::JsonStorable::IJsonStorable
 sub StoreData {
 	my $self = shift;
-	my $data = shift; # data ref
- 
- 	
+	my $data = shift;    # data ref
+
 	my $serialized = $self->{"jsonStorable"}->Encode($data);
 
 	#delete old file
-	
+
 	unlink $self->{"filePath"};
 	open( my $f, '>', $self->{"filePath"} ) or die "Unable create serialized data file: " . $self->{"filePath"};
 	print $f $serialized;
 	close $f;
+	
+	return 1;
 }
 
 #-------------------------------------------------------------------------------------------#

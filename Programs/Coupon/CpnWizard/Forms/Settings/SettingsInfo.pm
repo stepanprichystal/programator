@@ -1,14 +1,13 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Base class for all settings
+# Description: Helper class provide title, description, units to each setting key
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Programs::Coupon::CpnSettings::CpnSettingsBase;
+package Programs::Coupon::CpnWizard::Forms::Settings::SettingsInfo;
 
 #3th party library
 use strict;
 use warnings;
-use Storable qw(dclone);
 
 #local library
 
@@ -25,9 +24,11 @@ sub new {
 	my $self  = {};
 	bless $self;
 
-	# Load settings if defined
+	# Load settings info for each settings
 
-	$self->{"sett"} = {};
+	$self->{"labelsTxt"} = {};
+	$self->{"helpsTxt"}  = {};
+	$self->{"unitsTxt"} = {};
 
 	# use default settings
 	my $p = GeneralHelper->Root() . "\\Programs\\Coupon\\CpnSettings\\DefaultSettings.txt";
@@ -35,71 +36,73 @@ sub new {
 
 	my @lines = @{ FileHelper->ReadAsLines($p) };
 
+	my $labelText = "";
+	my $helpText  = "";
+	my $unitText  = "";
+
 	foreach my $l (@lines) {
-		
-		$l =~ s/\s//g;
-		
-		#next if( $l =~ /^\[[thu]/ | $l =~ /^#/); 
-		
-		if ( $l =~ /^[^\[#].*=.*/ ) {
+
+		if ( $l =~ /\[t.*=.*\]/ ) {
+			$l =~ s/[\[\]]//ig;
+			my @splited = split( "=", $l );
+			$splited[1] =~ s/\n//g;
+			$labelText = $splited[1]
+
+		}
+		elsif ( $l =~ /\[h.*=.*\]/ ) {
+			$l =~ s/[\[\]]//ig;
+			my @splited = split( "=", $l );
+			$splited[1] =~ s/\n//g;
+			$helpText = $splited[1];
+
+		}
+		elsif ( $l =~ /\[u.*=.*\]/ ) {
+			$l =~ s/[\[\]]//ig;
+			my @splited = split( "=", $l );
+			$splited[1] =~ s/\n//g;
+			$unitText = $splited[1];
+
+		}
+		elsif ( $l =~ /^[^\[#].*=.*/ ) {
 
 			my @splited = split( "=", $l );
 
-			$splited[0] =~ s/\s//g;
-			$splited[1] =~ s/\s//g;
+			my $key =~ s/\s//g;
+ 
+			$self->{"labelsTxt"}->{ $key } = $labelText;
+			$self->{"helpsTxt"}->{ $key }  = $helpText;
+			$self->{"unitsTxt"}->{ $key }  = $unitText;
 
-			$self->{"sett"}->{ $splited[0] } = $splited[1];
+			$labelText = "";
+			$helpText  = "";
+			$unitText = "";
 		}
 	}
 
-	$self->{"__CLASS__"} = caller();
-
 	return $self;
-
 }
 
-# Return deep current settings
-# whole object is deep copy, no reference on source instance
-sub GetDeepCopy {
-	my $self = shift;
-
-	my $sett = dclone($self);
-
-	return $sett;
-}
-
-# Update settings by another settings instance
-sub UpdateSettings {
-	my $self     = shift;
-	my $settings = shift;
-
-	$self->{"sett"} = $settings->{"sett"};
-}
-
-sub _GetVal {
+sub GetHelpText {
 	my $self = shift;
 	my $key  = shift;
 
-	my $v = $self->{"sett"}->{$key};
-
-	die "Value of key: $key is not defined" unless ( defined $v );
-
-	return $v;
+	return $self->{"helpsTxt"}->{$key};
 }
 
-sub _SetVal {
+sub GetLabelText {
 	my $self = shift;
 	my $key  = shift;
-	my $val  = shift;
 
-	die "Key  is not defined"   unless ( defined $key );
-	die "Value  is not defined" unless ( defined $val );
+	return $self->{"labelsTxt"}->{$key}
 
-	$self->{"sett"}->{$key} = $val;
 }
 
-# Important because of serialize class
-sub TO_JSON { return { %{ shift() } }; }
+sub GetUnitText {
+	my $self = shift;
+	my $key  = shift;
+
+	return $self->{"unitsTxt"}->{$key};
+}
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

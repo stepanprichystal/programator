@@ -6,6 +6,9 @@
 package Programs::Coupon::CpnSettings::CpnStripSettings;
 use base('Programs::Coupon::CpnSettings::CpnSettingsBase');
 
+use Class::Interface;
+&implements('Packages::ObjectStorable::JsonStorable::IJsonStorable');
+
 #3th party library
 use strict;
 use warnings;

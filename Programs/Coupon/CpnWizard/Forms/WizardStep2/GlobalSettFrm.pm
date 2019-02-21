@@ -13,7 +13,6 @@ use Wx;
 #local library
 use aliased 'Enums::EnumsGeneral';
 use aliased 'Programs::Coupon::CpnWizard::WizardCore::Helper';
-use aliased 'Programs::Coupon::CpnWizard::Forms::Settings::SettingRow';
 use aliased 'Widgets::Forms::MyWxBookCtrlPage';
 
 #-------------------------------------------------------------------------------------------#
