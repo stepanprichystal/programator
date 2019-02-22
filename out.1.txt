@@ -1,0 +1,1 @@
+Programs::Coupon::CpnWizard::Forms::Settings::SettingRow

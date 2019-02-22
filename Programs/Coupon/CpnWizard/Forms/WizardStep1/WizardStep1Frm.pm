@@ -17,6 +17,7 @@ use aliased 'Enums::EnumsGeneral';
 use aliased 'Programs::Coupon::CpnWizard::Forms::WizardStep1::ConstraintList::ConstraintList';
 use aliased 'Widgets::Forms::MyWxScrollPanel';
 use aliased 'Programs::Coupon::CpnWizard::Forms::WizardStep1::GeneratorFrm';
+use aliased 'Packages::Events::Event';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -26,6 +27,10 @@ sub new {
 	my $class = shift;
 	my $self  = $class->SUPER::new(@_);
 	bless $self;
+
+	# Events
+
+	$self->{"lastConfigEvt"} = Event->new();
 
 	return $self;
 }
@@ -48,9 +53,18 @@ sub GetLayout {
 	#my $szRowList = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
 
 	# DEFINE CONTROLS
-	my $btnCheckAllGroup = Wx::Button->new( $pnlMain, -1, "Uncheck all",     &Wx::wxDefaultPosition, [ 100, 25 ] );
-	my $btnDelGroup      = Wx::Button->new( $pnlMain, -1, "Reset groups",    &Wx::wxDefaultPosition, [ 120, 25 ] );
-	my $btnGenGroup      = Wx::Button->new( $pnlMain, -1, "Generate groups", &Wx::wxDefaultPosition, [ 120, 25 ] );
+	my $btnCheckAllGroup = Wx::Button->new( $pnlMain, -1, "Uncheck all",        &Wx::wxDefaultPosition, [ 100, 25 ] );
+	my $btnDelGroup      = Wx::Button->new( $pnlMain, -1, "Reset groups",       &Wx::wxDefaultPosition, [ 120, 25 ] );
+	my $btnGenGroup      = Wx::Button->new( $pnlMain, -1, "Generate groups",    &Wx::wxDefaultPosition, [ 120, 25 ] );
+	my $btnLastConfig    = Wx::Button->new( $pnlMain, -1, "Last configuration", &Wx::wxDefaultPosition    );
+	
+	unless($self->{"configMngr"}->ConfigFileExist()){
+		$btnLastConfig->Disable();
+		#$btnLastConfig
+	}else{
+		$btnLastConfig->SetLabel( "Last configuration (".$self->{"configMngr"}->GetConfigFileDate().")");
+		#$btnLastConfig->SetSize()
+	}
 
 	#	my $p = 'c:\Perl\site\lib\TpvScripts\Scripts\Programs\Coupon\CpnWizard\Resources\small_se_uncoated_microstrip.bmp';
 	#		my $btmIco = Wx::Bitmap->new( $p, &Wx::wxBITMAP_TYPE_BMP );#wxBITMAP_TYPE_PNG
@@ -83,11 +97,14 @@ sub GetLayout {
 	Wx::Event::EVT_BUTTON( $btnGenGroup,      -1, sub { $self->__ShowGenerator() } );
 	Wx::Event::EVT_BUTTON( $btnCheckAllGroup, -1, sub { $self->__UnCheckAll() } );
 	Wx::Event::EVT_BUTTON( $btnDelGroup,      -1, sub { $self->__ResetGroups() } );
+	Wx::Event::EVT_BUTTON( $btnLastConfig,    -1, sub { $self->{"lastConfigEvt"}->Do() } );
 
 	# BUILD STRUCTURE OF LAYOUT
 	$szRowBtns->Add( $btnCheckAllGroup, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
 	$szRowBtns->Add( $btnDelGroup,      0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
 	$szRowBtns->Add( $btnGenGroup,      0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
+	$szRowBtns->Add( 1, 1, 1, &Wx::wxEXPAND | &Wx::wxALL, 0 );
+	$szRowBtns->Add( $btnLastConfig, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
 
 	$pnlMain->SetSizer($szMain);
 
@@ -97,6 +114,7 @@ sub GetLayout {
 	$self->{"scrollPnl"}    = $scrollPnl;
 	$self->{"parent"}       = $parent;
 	$self->{"containerPnl"} = $containerPnl;
+	$self->{"btnLastConfig"} = $btnLastConfig;
 
 	#my ( $width, $height ) = $containerPnl->GetSizeWH();
 
@@ -129,6 +147,10 @@ sub Update {
 		$r->SetSelected( $constrFilter->{ $c->GetId() } );
 		$r->SetGroup( $constrGroup->{ $c->GetId() } );
 
+	}
+	
+	unless($self->{"configMngr"}->ConfigFileExist()){
+		$self->{"btnLastConfig"}->Disable();
 	}
 
 	$self->{"scrollPnl"}->FitInside();

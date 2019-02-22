@@ -43,10 +43,7 @@ sub new {
 
 	# Main application form
 	$self->{"form"} = WizardFrm->new( -1, $self->{"jobId"} );
-
-	# Data where are stored stencil position, deimensions etc
  
-
 	return $self;
 }
 

@@ -22,31 +22,26 @@ use aliased 'Packages::Events::Event';
 #  Package methods
 #-------------------------------------------------------------------------------------------#
 
-
 sub new {
 	my $class = shift;
 	my $self  = {};
 	bless $self;
 
-	$self->{"inCAM"} = shift;
-	$self->{"jobId"} = shift;
-	$self->{"parentFrm"} = shift;
-	$self->{"messMngr"} = shift;
-	
- 
+	$self->{"inCAM"}      = shift;
+	$self->{"jobId"}      = shift;
+	$self->{"parentFrm"}  = shift;
+	$self->{"messMngr"}   = shift;
+	$self->{"configMngr"} = shift;
 
 	$self->{"coreWizardStep"} = undef;    # will be set during Update methopd
-	
+
 	# Events
-	
+
 	$self->{"onStepWorking"} = Event->new();
 
 	return $self;
 }
 
-
-
-  
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#

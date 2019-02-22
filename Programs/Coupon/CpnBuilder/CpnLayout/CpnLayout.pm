@@ -32,6 +32,7 @@ sub new {
 	$self->{"w"}             = undef;
 	$self->{"h"}             = undef;
 	$self->{"titleLayout"}   = undef;
+	$self->{"routLayout"} = undef;
 	$self->{"couponsSingle"} = [];
 	$self->{"couponMargin"}  = undef;
 	$self->{"globalSett"}    = undef;
@@ -124,6 +125,19 @@ sub GetTitleLayout {
 
 	return $self->{"titleLayout"};
 
+}
+
+sub SetRoutLayout {
+	my $self = shift;
+
+	$self->{"routLayout"} = shift;
+
+}
+
+sub GetRoutLayout {
+	my $self = shift;
+
+	return $self->{"routLayout"};
 }
 
 sub SetGlobalSett {

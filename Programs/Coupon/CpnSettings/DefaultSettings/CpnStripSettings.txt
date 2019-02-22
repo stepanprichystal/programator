@@ -1,0 +1,17 @@
+# ======================================================================================
+# Microstrip settings
+# ======================================================================================
+[t = Pads to ground dist]
+[h = Pads to ground dist. Default is isolation by max pcb class + 25µm reserve]
+[u = µm ]
+pad2GND = 200               #µm
+
+[t = Track to ground dist]
+[h = Track to ground dist]
+[u = µm ]
+trackToCopper = 400 # µm
+
+[t = Pad mask clearance]
+[h = Pad mask clearance]
+[u = µm ]
+padClearance 	 = 80    	#µm

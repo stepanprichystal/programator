@@ -55,48 +55,68 @@ sub new {
 }
 
 sub Load {
-	my $self = shift;
+	my $self               = shift;
+	my $oldConfig          = shift // 0;
+	my $oldConfigGroupSett = shift;
+	my $oldConfiStripSett  = shift;
 
 	my %constrFilter = %{ $self->GetConstrFilter() };
 	my @constr = grep { $constrFilter{$_} } keys %constrFilter;
 
-	# Define group settings for each group
 	my @uniqGroups = $self->GetUniqueGroups();
 
-	for ( my $i = 0 ; $i < scalar(@uniqGroups) ; $i++ ) {
+	# Default config settings
+	if ( !$oldConfig ) {
 
-		$self->{"cpnGroupSett"}->{ $uniqGroups[$i] } = CpnSingleSettings->new();
-	}
+		# 1) Define settings for each group
 
-	# Define strip settings for each strip
-	for ( my $i = 0 ; $i < scalar(@constr) ; $i++ ) {
-
-		$self->{"cpnStripSett"}->{ $constr[$i] } = CpnStripSettings->new();
-	}
-
-	my $isol = JobHelper->GetIsolationByClass( CamJob->GetLimJobPcbClass( $self->{"inCAM"}, $self->{"jobId"}, "max" ) );
-	if ( $isol > 0 ) {
-
-		# Set value of min Pad2GND isolation according pcb costruction class
-		for ( my $i = 0 ; $i < scalar(@constr) ; $i++ ) {
-
-			$self->{"cpnStripSett"}->{ $constr[$i] }->SetPad2GND( $isol + 25 );    # add 25µm isolation for some reserve during etching
-		}
-
-		# set Pad GND symbol by isolation if symbol is "thermal"
 		for ( my $i = 0 ; $i < scalar(@uniqGroups) ; $i++ ) {
 
-			my $sym = $self->{"cpnGroupSett"}->{ $uniqGroups[$i] }->GetPadGNDSymNeg();
-			if ( $sym =~ /^thr(\d+)x(\d+)x(\d+)x(\d+)x(\d+)$/ ) {
+			$self->{"cpnGroupSett"}->{ $uniqGroups[$i] } = CpnSingleSettings->new();
+		}
 
-				my $outerSize = $2 + 2 * $isol + 2 * 25;                           # add 25µm isolation for some reserve during etching
-				$sym =~ s/^thr(\d+)(x\d+x\d+x\d+x\d+)$/thr$outerSize$2/;
+		# 2) Define strip settings for each strip
 
-				$self->{"cpnGroupSett"}->{ $uniqGroups[$i] }->SetPadGNDSymNeg($sym);
+		# Default settings
+		for ( my $i = 0 ; $i < scalar(@constr) ; $i++ ) {
+
+			$self->{"cpnStripSett"}->{ $constr[$i] } = CpnStripSettings->new();
+		}
+
+		# 3) Set dynamically other settings
+		my $isol = JobHelper->GetIsolationByClass( CamJob->GetLimJobPcbClass( $self->{"inCAM"}, $self->{"jobId"}, "max" ) );
+		if ( $isol > 0 ) {
+
+			# Set value of min Pad2GND isolation according pcb costruction class
+			for ( my $i = 0 ; $i < scalar(@constr) ; $i++ ) {
+
+				$self->{"cpnStripSett"}->{ $constr[$i] }->SetPad2GND( $isol + 25 );    # add 25µm isolation for some reserve during etching
+			}
+
+			# set Pad GND symbol by isolation if symbol is "thermal"
+			for ( my $i = 0 ; $i < scalar(@uniqGroups) ; $i++ ) {
+
+				my $sym = $self->{"cpnGroupSett"}->{ $uniqGroups[$i] }->GetPadGNDSymNeg();
+				if ( $sym =~ /^thr(\d+)x(\d+)x(\d+)x(\d+)x(\d+)$/ ) {
+
+					my $outerSize = $2 + 2 * $isol + 2 * 25;                           # add 25µm isolation for some reserve during etching
+					$sym =~ s/^thr(\d+)(x\d+x\d+x\d+x\d+)$/thr$outerSize$2/;
+
+					$self->{"cpnGroupSett"}->{ $uniqGroups[$i] }->SetPadGNDSymNeg($sym);
+
+				}
 
 			}
 
 		}
+	}
+	else {
+
+		# 1) Define settings for each group
+		$self->{"cpnGroupSett"} = $oldConfigGroupSett;
+
+		# 2) Define strip settings for each strip
+		$self->{"cpnStripSett"} = $oldConfiStripSett;
 
 	}
 
@@ -257,6 +277,18 @@ sub GetStripSettings {
 	my $stripId = shift;
 
 	return $self->{"cpnStripSett"}->{$stripId};
+}
+
+sub GetAllGroupSettings {
+	my $self = shift;
+
+	return $self->{"cpnGroupSett"};
+}
+
+sub GetAllStripSettings {
+	my $self = shift;
+
+	return $self->{"cpnStripSett"};
 }
 
 #-------------------------------------------------------------------------------------------#

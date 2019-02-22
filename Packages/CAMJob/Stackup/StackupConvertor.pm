@@ -47,7 +47,7 @@ sub DoConvert {
 
 	my $thick = sprintf( "%.3f", $stackup->GetFinalThick() / 1000 );
 	 
-	my $name = StackupDefault->GetStackupName($stackup,$jobId);
+	my $name = StackupDefault->GetStackupName($stackup,$jobId).".xml";
 
 	# store to standard stackup folder
 	unless ($outputPath) {

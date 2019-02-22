@@ -14,6 +14,7 @@ use Wx;
 use aliased 'Enums::EnumsGeneral';
 use aliased 'Programs::Coupon::CpnWizard::WizardCore::Helper';
 use aliased 'Programs::Coupon::CpnWizard::Forms::Settings::SettingRow';
+use aliased 'Programs::Coupon::CpnWizard::Forms::Settings::SettingsInfo';
 
 #tested form
 
@@ -39,6 +40,7 @@ sub new {
 	# Properties
 	$self->{"result"}   = $result;
 	$self->{"settings"} = $settings;
+	$self->{"settInfo"} = SettingsInfo->new();
 
 	$self->__SetLayout();
 
@@ -72,8 +74,13 @@ sub _GetSettingRow {
 	my $parent      = shift;
 	my $settingsKey = shift;
 	my $controls    = shift;
+	
+	my $l = $self->{"settInfo"}->GetLabelText($settingsKey);
+	my $h = $self->{"settInfo"}->GetHelpText($settingsKey);
+	my $u = $self->{"settInfo"}->GetUnitText($settingsKey);
+	
 
-	my $row = SettingRow->new( $parent, $self, $settingsKey, $self->{"settings"}, $controls );
+	my $row = SettingRow->new( $parent, $self, $settingsKey, $l, $h, $u, $controls );
 
 	return $row->GetRowLayout();
 }

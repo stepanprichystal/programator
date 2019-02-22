@@ -15,8 +15,8 @@ use aliased 'Enums::EnumsPaths';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'Programs::Coupon::CpnWizard::WizardCore::WizardStep1';
 use aliased 'Programs::Coupon::CpnSettings::CpnSettings';
-use aliased 'Programs::Coupon::CpnSource::CpnSource';
 use aliased 'Packages::Events::Event';
+
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -31,7 +31,7 @@ sub new {
 	$self->{"jobId"} = shift;
 
 	$self->{"totalStepCnt"} = shift;
-	$self->{"asyncWorker"} = shift;
+	$self->{"asyncWorker"}  = shift;
 
 	$self->{"steps"} = [];
 
@@ -49,8 +49,8 @@ sub new {
 }
 
 sub Next {
-	my $self    = shift;
-	my $errMess = shift;
+	my $self           = shift;
+	my $errMess        = shift;
 	my $raiseChangeEvt = shift // 1;
 
 	my $result = 1;
@@ -74,10 +74,10 @@ sub Next {
 	if ($result) {
 		my $lastStep = $self->{"steps"}->[-1];
 		$lastStep->Load();
-		
-		$self->{"stepChangedEvt"}->Do($lastStep) if($raiseChangeEvt);
+
+		$self->{"stepChangedEvt"}->Do($lastStep) if ($raiseChangeEvt);
 	}
-	
+
 	return $result;
 
 }
@@ -97,8 +97,7 @@ sub Back {
 
 	my $lastStep = $self->{"steps"}->[-1];
 
-
-	$self->{"stepChangedEvt"}->Do($lastStep) if($raiseChangeEvt);
+	$self->{"stepChangedEvt"}->Do($lastStep) if ($raiseChangeEvt);
 
 	#return $self->{"steps"}->[-1];
 }
@@ -106,69 +105,130 @@ sub Back {
 sub Begin {
 	my $self = shift;
 
-	for ( my $i = scalar( @{$self->{"steps"}} ) - 1 ; $i > 0; $i-- ) {
+	for ( my $i = scalar( @{ $self->{"steps"} } ) - 1 ; $i > 0 ; $i-- ) {
 
 		$self->Back(0);
 	}
 
 	my $lastStep = $self->{"steps"}->[-1];
 
-
 	$self->{"stepChangedEvt"}->Do($lastStep);
 }
 
 sub End {
-	my $self = shift;
+	my $self    = shift;
 	my $errMess = shift;
 
 	my $result = 1;
 
-	for ( my $i = scalar( @{$self->{"steps"}} ) - 1 ; $i < $self->{"totalStepCnt"} -1; $i++ ) {
+	for ( my $i = scalar( @{ $self->{"steps"} } ) - 1 ; $i < $self->{"totalStepCnt"} - 1 ; $i++ ) {
 
-		unless($self->Next($errMess, 0)){
-			
+		unless ( $self->Next( $errMess, 0 ) ) {
+
 			$result = 0;
 			last;
 		}
 	}
- 
- 	my $lastStep = $self->{"steps"}->[-1];
+
+	my $lastStep = $self->{"steps"}->[-1];
 	$self->{"stepChangedEvt"}->Do($lastStep);
-	
+
 	return $result;
 }
 
-sub Init {
-	my $self    = shift;
- 
-	my $cpnSource = CpnSource->new($self->{"jobId"});
-
-	# Set initial state
+# Set initial state ov wizard by default value
+sub InitByDefault {
+	my $self      = shift;
+	my $cpnSource = shift;
 
 	foreach my $constr ( $cpnSource->GetConstraints() ) {
 
-		# User filter -> all microstrips are checked on the begining
+		# Default user filter -> all microstrips are checked on the begining
 		$self->{"userFilter"}->{ $constr->GetId() } = 1;
 
-		# All strips put to one group
+		# Default - all strips put to one group
 		$self->{"userGroups"}->{ $constr->GetId() } = 1;
 
 	}
 
+	# Default global settings
 	$self->{"globalSett"} = CpnSettings->new();
 
 	my $s = WizardStep1->new();
-	$s->Init( $self->{"inCAM"}, $self->{"jobId"}, $cpnSource, $self->{"userFilter"}, $self->{"userGroups"}, $self->{"globalSett"}, $self->{"asyncWorker"} );
+	$s->Init( $self->{"inCAM"},      $self->{"jobId"},      $cpnSource, $self->{"userFilter"},
+			  $self->{"userGroups"}, $self->{"globalSett"}, $self->{"asyncWorker"} );
+
 	$s->Load();
-
-	push( @{ $self->{"steps"} }, $s );
-
+	@{ $self->{"steps"} } = $s;
 }
 
-sub GetCurrentStepNumber{
-	my $self    = shift;
+sub InitByConfig {
+	my $self                = shift;
+	my $cpnSource           = shift;
+	my $oldConfigUserFilter = shift;    # keys represent strip id and value if strip is used in coupon
+	my $oldConfigUserGroups = shift;    # contain strips splitted into group. Key is strip id, val is group number
+	my $oldConfigGlobalSett = shift;    # global settings of coupon
+
+	# Set initial state
+	# Old config user filter
+	$self->{"userFilter"} = $oldConfigUserFilter;
+
+	# Old config user filter
+	$self->{"userGroups"} = $oldConfigUserGroups;
+
+	# Old config user filter
+	$self->{"globalSett"} = $oldConfigGlobalSett;
+
+	my $s = WizardStep1->new();
+	$s->Init( $self->{"inCAM"},      $self->{"jobId"},      $cpnSource, $self->{"userFilter"},
+			  $self->{"userGroups"}, $self->{"globalSett"}, $self->{"asyncWorker"} );
+
+	$s->Load();
+	@{ $self->{"steps"} } = $s;
+}
+
+# Init wizard by values from old configuration
+sub LoadConfig {
+	my $self         = shift;
+	my $cpnGroupSett = shift;    # group settings for each group
+	my $cpnStripSett = shift;    # strip settings for each strip by constraint id
+	my $errMess      = shift;
+
+	my $result = 1;
+
+	# Load second step
 	
+	my $curStep = $self->{"steps"}->[-1];
+
+	if ( $curStep->Build($errMess) ) {
+
+		my $s = $curStep->GetNextStep();
+		push( @{ $self->{"steps"} }, $s );
+
+		my $lastStep = $self->{"steps"}->[-1];
+		$lastStep->Load( 1, $cpnGroupSett, $cpnStripSett );
+
+		$self->{"stepChangedEvt"}->Do($lastStep);
+
+	}
+	else {
+		$result = 0;
+	}
+
+	return $result;
+}
+
+sub GetCurrentStepNumber {
+	my $self = shift;
+
 	return $self->{"steps"}->[-1]->GetStepNumber();
+}
+
+sub GetStep {
+	my $self       = shift;
+	my $stepNumber = shift;
+
+	return $self->{"steps"}->[$stepNumber];
 }
 
 #-------------------------------------------------------------------------------------------#

@@ -6,6 +6,9 @@
 package Programs::Coupon::CpnSettings::CpnStripSettings;
 use base('Programs::Coupon::CpnSettings::CpnSettingsBase');
 
+use Class::Interface;
+&implements('Packages::ObjectStorable::JsonStorable::IJsonStorable');
+
 #3th party library
 use strict;
 use warnings;
@@ -22,7 +25,7 @@ use aliased 'Helpers::GeneralHelper';
 #-------------------------------------------------------------------------------------------#
 sub new {
 	my $class = shift;
-	my $self  = $class->SUPER::new(@_);
+	my $self  = $class->SUPER::new("CpnStripSettings.txt");
 	bless $self;
 
 }

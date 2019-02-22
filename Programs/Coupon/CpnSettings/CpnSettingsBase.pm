@@ -26,67 +26,36 @@ sub new {
 	bless $self;
 
 	# Load settings if defined
-
-	$self->{"sett"}      = {};
-	$self->{"labelsTxt"} = {};
-	$self->{"helpsTxt"}  = {};
+	$self->{"settingsFile"} = shift;
+	$self->{"sett"} = {};
 
 	# use default settings
-	my $p = GeneralHelper->Root() . "\\Programs\\Coupon\\CpnSettings\\DefaultSettings.txt";
+	my $p = GeneralHelper->Root() . "\\Programs\\Coupon\\CpnSettings\\DefaultSettings\\".$self->{"settingsFile"};
 	die "Global settings file: $p deosn't exist" unless ( -e $p );
 
 	my @lines = @{ FileHelper->ReadAsLines($p) };
 
-	my $labelText = "";
-	my $helpText  = "";
-	my $unitText  = "";
-
 	foreach my $l (@lines) {
-
-		if ( $l =~ /\[t.*=.*\]/ ) {
-			$l =~ s/[\[\]]//ig;
-			my @splited = split( "=", $l );
-			$splited[1] =~ s/\n//g;
-			$labelText = $splited[1]
-
-		}
-		elsif ( $l =~ /\[h.*=.*\]/ ) {
-			$l =~ s/[\[\]]//ig;
-			my @splited = split( "=", $l );
-			$splited[1] =~ s/\n//g;
-			$helpText = $splited[1];
-
-		}
-		elsif ( $l =~ /\[u.*=.*\]/ ) {
-			$l =~ s/[\[\]]//ig;
-			my @splited = split( "=", $l );
-			$splited[1] =~ s/\n//g;
-			$unitText = $splited[1];
-
-		}
-		elsif ( $l =~ /.*=.*/ ) {
+		
+		$l =~ s/\s//g;
+		
+		#next if( $l =~ /^\[[thu]/ | $l =~ /^#/); 
+		
+		if ( $l =~ /^[^\[#].*=.*/ ) {
 
 			my @splited = split( "=", $l );
 
 			$splited[0] =~ s/\s//g;
 			$splited[1] =~ s/\s//g;
+			$splited[1] =~ s/#.*//g;
 
-			$splited[1] =~ s/#.*//i;
-			
 			$self->{"sett"}->{ $splited[0] } = $splited[1];
-			$self->{"labelsTxt"}->{ $splited[0] } = $labelText;
-			$self->{"helpsTxt"}->{ $splited[0] }  = $helpText;
-			$self->{"unitsTxt"}->{ $splited[0] }  = $unitText;
-
-			$labelText = "";
-			$helpText  = "";
-			$unitText = "";
 		}
-
 	}
 
-	return $self;
+	$self->{"__CLASS__"} = caller();
 
+	return $self;
 }
 
 # Return deep current settings
@@ -105,28 +74,6 @@ sub UpdateSettings {
 	my $settings = shift;
 
 	$self->{"sett"} = $settings->{"sett"};
-}
-
-sub GetHelpText {
-	my $self = shift;
-	my $key  = shift;
-
-	return $self->{"helpsTxt"}->{$key};
-}
-
-sub GetLabelText {
-	my $self = shift;
-	my $key  = shift;
-
-	return $self->{"labelsTxt"}->{$key}
-
-}
-
-sub GetUnitText {
-	my $self = shift;
-	my $key  = shift;
-
-	return $self->{"unitsTxt"}->{$key};
 }
 
 sub _GetVal {
@@ -150,6 +97,9 @@ sub _SetVal {
 
 	$self->{"sett"}->{$key} = $val;
 }
+
+# Important because of serialize class
+sub TO_JSON { return { %{ shift() } }; }
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

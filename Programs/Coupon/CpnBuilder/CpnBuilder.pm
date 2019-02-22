@@ -20,6 +20,7 @@ use aliased 'CamHelpers::CamHelper';
 use aliased 'Programs::Coupon::Enums';
 use aliased 'Programs::Coupon::CpnBuilder::CpnSingleBuilder';
 use aliased 'Programs::Coupon::CpnBuilder::OtherBuilders::TitleBuilder';
+use aliased 'Programs::Coupon::CpnBuilder::OtherBuilders::RoutBuilder';
 use aliased 'Programs::Coupon::CpnBuilder::CpnLayout::PointLayout';
 use aliased 'Programs::Coupon::CpnBuilder::CpnLayout::CpnLayout';
 use aliased 'Programs::Coupon::CpnBuilder::OtherBuilders::CpnLayerBuilder';
@@ -148,6 +149,18 @@ sub Build {
 		if ( $lBuilder->Build( $self->{"cpnSett"}, $errMess ) ) {
 
 			$self->{"layout"}->SetLayersLayout( $lBuilder->GetLayout() );
+		}
+		else {
+
+			$result = 0;
+		}
+		
+		# Build outline rout
+
+		my $rBuilder = RoutBuilder->new( $inCAM, $jobId );
+		if ( $rBuilder->Build( $self->{"cpnSett"}, $errMess ) ) {
+
+			$self->{"layout"}->SetRoutLayout( $rBuilder->GetLayout() );
 		}
 		else {
 

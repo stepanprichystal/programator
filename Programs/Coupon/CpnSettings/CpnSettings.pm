@@ -6,6 +6,9 @@
 package Programs::Coupon::CpnSettings::CpnSettings;
 use base('Programs::Coupon::CpnSettings::CpnSettingsBase');
 
+use Class::Interface;
+&implements('Packages::ObjectStorable::JsonStorable::IJsonStorable');
+
 #3th party library
 use strict;
 use warnings;
@@ -22,10 +25,12 @@ use aliased 'Helpers::GeneralHelper';
 #-------------------------------------------------------------------------------------------#
 sub new {
 	my $class = shift;
-	my $self  = $class->SUPER::new(@_);
+	my $self  = $class->SUPER::new("CpnSettings.txt");
 	bless $self;
 
 }
+
+# Coupon settings
 
 sub GetStepName {
 	my $self = shift;
@@ -74,6 +79,76 @@ sub GetCouponSpace {
 	return $self->_GetVal("couponSpace");
 
 }
+
+
+# Outline rout settings
+
+sub SetOutlineRout {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->_SetVal("outlineRout", $val);
+}
+
+sub GetOutlineRout {
+	my $self = shift;
+
+	return $self->_GetVal("outlineRout");
+}
+
+sub SetBridges {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->_SetVal("bridges", $val);
+}
+
+sub GetBridges {
+	my $self = shift;
+
+	return $self->_GetVal("bridges");
+}
+
+sub SetBridgesX {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->_SetVal("bridgesX", $val);
+}
+
+sub GetBridgesX {
+	my $self = shift;
+
+	return $self->_GetVal("bridgesX");
+}
+
+
+sub SetBridgesY {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->_SetVal("bridgesY", $val);
+}
+
+sub GetBridgesY {
+	my $self = shift;
+
+	return $self->_GetVal("bridgesY");
+}
+
+sub SetBridgesWidth {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->_SetVal("bridgesWidth", $val);
+}
+
+sub GetBridgesWidth {
+	my $self = shift;
+
+	return $self->_GetVal("bridgesWidth");
+}
+
 
 sub Set {
 	my $self = shift;

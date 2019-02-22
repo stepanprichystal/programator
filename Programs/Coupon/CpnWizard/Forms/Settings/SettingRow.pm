@@ -26,10 +26,11 @@ sub new {
 	my $parent       = shift;
 	my $parentFrame  = shift;
 	my $settingsKey  = shift;
-	my $settings     = shift;
+	my $labelText    = shift;
+	my $helpText     = shift;
+	my $unitText     = shift;
 	my $controls     = shift;
 	my $labelWidth   = shift // 200;
-	my $controlWidth = shift;
 
 	my $self = {};
 	bless($self);
@@ -38,7 +39,9 @@ sub new {
 	$self->{"parent"}      = $parent;
 	$self->{"parentFrame"} = $parentFrame;
 	$self->{"settingsKey"} = $settingsKey;
-	$self->{"settings"}    = $settings;
+	$self->{"labelText"}   = $labelText;
+	$self->{"helpText"}    = $helpText;
+	$self->{"unitText"}    = $unitText;
 	$self->{"controls"}    = $controls;
 	$self->{"labelWidth"}  = $labelWidth;
 
@@ -58,9 +61,9 @@ sub __SetLayout {
 
 	my $key = $self->{"settingsKey"};
 
-	my $settLabel       = $self->{"settings"}->GetLabelText($key);
-	my $settHelp        = $self->{"settings"}->GetHelpText($key);
-	my $settUnits       = $self->{"settings"}->GetUnitText($key);
+	my $settLabel       = $self->{"labelText"};
+	my $settHelp        = $self->{"helpText"};
+	my $settUnits       = $self->{"unitText"};
 	my $settHelpImgPath = Helper->GetResourcePath() . "Help\\$key.bmp";
 
 	# DEFINE CONTROLS
@@ -101,13 +104,10 @@ sub __ShowHelp {
 
 	my $key = $self->{"settingsKey"};
 
-	my $settLabel       = $self->{"settings"}->GetLabelText($key);
-	my $settHelp        = $self->{"settings"}->GetHelpText($key);
-	my $settUnits       = $self->{"settings"}->GetUnitText($key);
+	my $settLabel       = $self->{"labelText"};
+	my $settHelp        = $self->{"helpText"};
+	my $settUnits       = $self->{"unitText"};
 	my $settHelpImgPath = Helper->GetResourcePath() . "Help\\$key.png";
-
-
-
 
 	my $w = HelpWindow->new( $self->{"parentFrame"}, $settLabel, $settHelp, $settHelpImgPath );
 	$w->ShowModal();
