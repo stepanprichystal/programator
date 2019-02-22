@@ -22,11 +22,12 @@ sub new {
 	my $self  = {};
 	bless $self;
 
-	$self->{"userFilter"}   = shift;    # keys represent strip id and value if strip is used in coupon
-	$self->{"userGroups"}   = shift;    # contain strips splitted into group. Key is strip id, val is group number
-	$self->{"globalSett"}   = shift;    # global settings of coupon
-	$self->{"cpnStripSett"} = shift;    # strip settings for each strip by constraint id
-	$self->{"cpnGroupSett"} = shift;    # group settings for each group
+	$self->{"userFilter"}     = shift;    # keys represent strip id and value if strip is used in coupon
+	$self->{"userGroups"}     = shift;    # contain strips splitted into group. Key is strip id, val is group number
+	$self->{"globalSett"}     = shift;    # global settings of coupon
+	$self->{"cpnGroupSett"}   = shift;    # group settings for each group
+	$self->{"cpnStripSett"}   = shift;    # strip settings for each strip by constraint id
+	$self->{"cpnConstraints"} = shift;       # Listo of used constraint info
 
 	$self->{"__CLASS__"} = $class;
 
@@ -92,6 +93,19 @@ sub GetCpnGroupSett {
 	my $self = shift;
 
 	return $self->{"cpnGroupSett"};
+}
+
+
+sub SetCpnConstraints {
+	my $self = shift;
+
+	$self->{"cpnConstraints"} = shift;
+}
+
+sub GetCpnConstraints {
+	my $self = shift;
+
+	return $self->{"cpnConstraints"};
 }
 
 # Important because of serialize class

@@ -25,7 +25,7 @@ use aliased 'Helpers::GeneralHelper';
 #-------------------------------------------------------------------------------------------#
 sub new {
 	my $class = shift;
-	my $self  = $class->SUPER::new(@_);
+	my $self  = $class->SUPER::new("CpnSettings.txt");
 	bless $self;
 
 }
@@ -52,7 +52,7 @@ sub GetCouponSingleMargin {
 
 }
 
-sub SetCoulponSingeMargin {
+sub SetCouponSingleMargin {
 	my $self = shift;
 	my $val  = shift;
 

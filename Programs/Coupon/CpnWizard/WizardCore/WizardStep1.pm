@@ -25,6 +25,7 @@ use aliased 'Programs::Coupon::CpnPolicy::GroupPolicy';
 use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'CamHelpers::CamJob';
 use aliased 'Helpers::JobHelper';
+
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
@@ -44,39 +45,42 @@ sub new {
 }
 
 sub Load {
-	my $self = shift;
+	my $self   = shift;
+	my $config = shift // 0;
 
 	# Generate default group combination
+	if ( !$config ) {
 
-	# Get groups from cpn variant
-	my $defGroupComb = [];
+		# Get groups from cpn variant
+		my $defGroupComb = [];
 
-	my @allConstr = $self->{"cpnSource"}->GetConstraints();
+		my @allConstr = $self->{"cpnSource"}->GetConstraints();
 
-	push( @{$defGroupComb}, \@allConstr );
+		push( @{$defGroupComb}, \@allConstr );
 
-	# Edit global settings according current job
+		# Edit global settings according current job
 
-	# Umnask infoText, textPad, logo only if not HAL or PBFree HAL
+		# Umnask infoText, textPad, logo only if not HAL or PBFree HAL
 
-	my $surf = HegMethods->GetPcbSurface( $self->{"jobId"} );
-	if ( $surf =~ /[ab]/i ) {
+		my $surf = HegMethods->GetPcbSurface( $self->{"jobId"} );
+		if ( $surf =~ /[ab]/i ) {
 
-		$self->{"globalSett"}->SetTitleUnMask(0);
-		$self->{"globalSett"}->SetInfoTextUnmask(0);
-		$self->{"globalSett"}->SetPadTextUnmask(0);
-	}
-	else {
+			$self->{"globalSett"}->SetTitleUnMask(0);
+			$self->{"globalSett"}->SetInfoTextUnmask(0);
+			$self->{"globalSett"}->SetPadTextUnmask(0);
+		}
+		else {
 
-		$self->{"globalSett"}->SetTitleUnMask(1);
-		$self->{"globalSett"}->SetInfoTextUnmask(1);
-		$self->{"globalSett"}->SetPadTextUnmask(1);
-	}
-	
-	# Set value of min PAD2track isolation according pcb costruction class
-	my $isol = JobHelper->GetIsolationByClass( CamJob->GetLimJobPcbClass($self->{"inCAM"}, $self->{"jobId"}, "max"));
-	if($isol > 0){
-		$self->{"globalSett"}->SetTrackPadIsolation($isol);
+			$self->{"globalSett"}->SetTitleUnMask(1);
+			$self->{"globalSett"}->SetInfoTextUnmask(1);
+			$self->{"globalSett"}->SetPadTextUnmask(1);
+		}
+
+		# Set value of min PAD2track isolation according pcb costruction class
+		my $isol = JobHelper->GetIsolationByClass( CamJob->GetLimJobPcbClass( $self->{"inCAM"}, $self->{"jobId"}, "max" ) );
+		if ( $isol > 0 ) {
+			$self->{"globalSett"}->SetTrackPadIsolation($isol);
+		}
 	}
 }
 

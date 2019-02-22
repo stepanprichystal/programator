@@ -11,6 +11,7 @@ use strict;
 use warnings;
 use utf8;
 use JSON;
+use DateTime;
 
 #local library
 
@@ -35,6 +36,8 @@ sub new {
 
 	$self->{"restoredConfig"} = undef;
 
+	FileHelper->DeleteTempFilesFrom( EnumsPaths->Client_INCAMTMPIMPGEN, 3600 * 24 );    #delete 24 hours old settings
+
 	return $self;
 }
 
@@ -44,31 +47,70 @@ sub ConfigFileExist {
 	return $self->SerializedDataExist();
 }
 
+sub GetConfigFilePath {
+	my $self = shift;
+
+	return $self->{"filePath"};
+
+}
+
+sub GetConfigFileDate {
+	my $self = shift;
+	my $time = shift // 1;
+	my $date = shift // 0;
+
+	die "Time or Date argument has to be 1" if ( !$time && !$date );
+
+	my @stats       = stat( $self->{"filePath"} );
+	my $fileCreated = $stats[9];
+
+	my $dt = DateTime->from_epoch( epoch => $fileCreated, "time_zone" => 'Europe/Prague' );
+
+	my $str = "";
+	$str = $dt->hms() if ($time);
+	$str = $dt->dmy() if ($date);
+	$str = $dt->hms() . " " . $dt->dmy() if ( $time && $date );
+
+	return $str;
+}
+
 # Load serialized cpn config data
 sub LoadConfig {
 	my $self = shift;
 
 	$self->{"restoredConfig"} = $self->LoadData();
-	
-	if(defined $self->{"restoredConfig"}){
+
+	if ( defined $self->{"restoredConfig"} ) {
 		return 1;
-	}else{
+	}
+	else {
 		return 0;
 	}
- 
 
 }
 
 # Serialize and store cpn config data
 sub SaveConfig {
-	my $self         = shift;
-	my $userFilter   = shift;    # keys represent strip id and value if strip is used in coupon
-	my $userGroups   = shift;    # contain strips splitted into group. Key is strip id, val is group number
-	my $globalSett   = shift;    # global settings of coupon
-	my $cpnStripSett = shift;    # strip settings for each strip by constraint id
-	my $cpnGroupSett = shift;    # group settings for each group
+	my $self           = shift;
+	my $userFilter     = shift;    # keys represent strip id and value if strip is used in coupon
+	my $userGroups     = shift;    # contain strips splitted into group. Key is strip id, val is group number
+	my $globalSett     = shift;    # global settings of coupon
+	my $cpnGroupSett   = shift;    # group settings for each group
+	my $cpnStripSett   = shift;    # strip settings for each strip by constraint id
+	my $cpnConstraints = shift;		# Constraints from CpnSource
 
-	my $cpnConfig = CpnConfig->new( $userFilter, $userGroups, $globalSett, $cpnStripSett, $cpnGroupSett );
+
+	my %constrInfo = ();
+	foreach my $c  (@{$cpnConstraints}){
+	
+		my %inf = ();
+		$inf{"type"} = $c->GetType();
+		$inf{"model"} = $c->GetModel();
+		$inf{"layer"} = $c->GetTrackLayer();
+		$constrInfo{$c->GetId()} = \%inf;
+	}
+ 
+	my $cpnConfig = CpnConfig->new( $userFilter, $userGroups, $globalSett, $cpnGroupSett, $cpnStripSett, \%constrInfo );
 
 	# create dir path unless exist
 	unless ( -e EnumsPaths->Client_INCAMTMPIMPGEN ) {
@@ -130,6 +172,14 @@ sub GetCpnGroupSett {
 	return $self->{"restoredConfig"}->GetCpnGroupSett();
 }
 
+sub GetCpnConstraints {
+	my $self = shift;
+
+	die "Config data are not restored" if ( !defined $self->{"restoredConfig"} );
+
+	return $self->{"restoredConfig"}->GetCpnConstraints();
+}
+
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#
@@ -146,11 +196,10 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	$configMngr->SaveConfig( undef, undef, $sett );
 
- 
 	if ( $configMngr->LoadConfig() ) {
 
 		my $sett = $configMngr->GetGlobalSett();
-		
+
 		print $sett;
 
 	}

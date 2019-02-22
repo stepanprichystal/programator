@@ -26,6 +26,8 @@ use aliased 'Programs::Coupon::CpnWizard::Forms::WizardStep2::WizardStep2Frm';
 use aliased 'Programs::Coupon::CpnWizard::Forms::WizardStep3::WizardStep3Frm';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'Widgets::WxAsyncWorker::WxAsyncWorker';
+use aliased 'Programs::Coupon::CpnWizard::CpnConfigMngr::CpnConfigMngr';
+use aliased 'Programs::Coupon::CpnSource::CpnSource';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -35,10 +37,6 @@ sub new {
 	my $class  = shift;
 	my $parent = shift;
 	my $jobId  = shift;
-
-	#my $title   = shift;    # title on head of form
-	#my $message = shift;    # message which is showed for user
-	#my $result  = shift;    # reference of result variable, where result will be stored
 
 	my @dimension = ( 1200, 680 );
 	my $self = $class->SUPER::new( $parent, "Impedance coupon generator",
@@ -51,8 +49,10 @@ sub new {
 	$self->{"wizardSteps"} = {};
 
 	# Properties
-	$self->{"wizardCore"} = undef;
-	$self->{"asyncWorker"} = WxAsyncWorker->new($self->{"mainFrm"});
+	$self->{"wizardCore"}  = undef;                                       # Main core of wizard
+	$self->{"asyncWorker"} = WxAsyncWorker->new( $self->{"mainFrm"} );    # Helper for asznchrounous operation
+	$self->{"configMngr"}  = CpnConfigMngr->new($jobId);                  # manager for storing used configuration
+	$self->{"cpnSource"}   = CpnSource->new($jobId);                      # Parsed xml instack file
 
 	return $self;
 }
@@ -64,7 +64,7 @@ sub Init {
 	my $jobId = $self->{"jobId"};
 
 	# init wizard GUI steps
-	$self->{"wizardSteps"}->{1} = WizardStep1Frm->new( $inCAM, $jobId, $self->{"mainFrm"}, $self->_GetMessageMngr() );
+	$self->{"wizardSteps"}->{1} = WizardStep1Frm->new( $inCAM, $jobId, $self->{"mainFrm"}, $self->_GetMessageMngr(), $self->{"configMngr"} );
 
 	$self->{"wizardSteps"}->{2} = WizardStep2Frm->new( $inCAM, $jobId, $self->{"mainFrm"}, $self->_GetMessageMngr() );
 
@@ -74,8 +74,8 @@ sub Init {
 
 	# Properties
 	$self->{"wizardCore"} = WizardCore->new( $inCAM, $jobId, scalar( keys %{ $self->{"wizardSteps"} } ), $self->{"asyncWorker"} );
- 
-	$self->{"wizardCore"}->Init();
+
+	$self->{"wizardCore"}->InitByDefault( $self->{"cpnSource"} );
 
 	$self->{"wizardCore"}->{"stepChangedEvt"}->Add( sub { $self->__StepChanged(@_) } );
 
@@ -110,7 +110,6 @@ sub __SetLayout {
 	# BUILD STRUCTURE OF LAYOUT
 	$szStatus->Add( $statusTxt, 1, &Wx::wxEXPAND | &Wx::wxALL, 5 );
 	$szStatus->Add( $gauge,     0, &Wx::wxEXPAND | &Wx::wxALL, 5 );
-	 
 
 	$pnlMain->SetSizer($szMain);
 
@@ -155,12 +154,10 @@ sub __SetLayoutSteps {
 	foreach my $step ( keys %{ $self->{"wizardSteps"} } ) {
 
 		$self->{"wizardSteps"}->{$step}->{"onStepWorking"}->Add( sub { $self->__StepWorkingHndl(@_) } );
-		
-		if($self->{"wizardSteps"}->{$step}->{"onLastConfig"}){
-			$self->{"wizardSteps"}->{$step}->{"onLastConfig"}->Add( sub { $self->__LoadLastConfig(@_) } );
+
+		if ( $self->{"wizardSteps"}->{$step}->{"lastConfigEvt"} ) {
+			$self->{"wizardSteps"}->{$step}->{"lastConfigEvt"}->Add( sub { $self->__LoadLastConfig(@_) } );
 		}
-		
-		
 
 		my $page = $notebook->AddPage( $step, 0 );
 
@@ -190,7 +187,7 @@ sub __StepChanged {
 	my $wizardStepFrm = $self->{"wizardSteps"}->{ $wizardStep->GetStepNumber() };
 
 	$wizardStepFrm->Update($wizardStep);
- 
+
 	$self->{"notebook"}->ShowPage( $wizardStep->GetStepNumber() );
 
 	# Change step description
@@ -213,7 +210,7 @@ sub __StepChanged {
 		$self->{"endBtn"}->SetLabel("Finish");
 
 	}
- 
+
 	print STDERR "StepChanged $wizardStep\n";
 }
 
@@ -263,6 +260,17 @@ sub __EndClick {
 	# if last step, finish wizard
 	if ( $self->{"wizardCore"}->GetCurrentStepNumber() == scalar( keys %{ $self->{"wizardSteps"} } ) ) {
 
+		# 1) Get all config data from step 1 and store them
+		my $step1 = $self->{"wizardCore"}->GetStep(1);
+
+		my @cons = $self->{"cpnSource"}->GetConstraints();
+		$self->{"configMngr"}->SaveConfig( $step1->GetConstrFilter(),
+										   $step1->GetConstrGroups(),
+										   $step1->GetGlobalSett(),
+										   $step1->GetAllGroupSettings(),
+										   $step1->GetAllStripSettings(), \@cons );
+
+		# 2) finish coupon asynchronously
 		my $wizardStepFrm = $self->{"wizardSteps"}->{ $self->{"wizardCore"}->GetCurrentStepNumber() };
 		$wizardStepFrm->FinishCoupon();
 
@@ -291,10 +299,113 @@ sub __BeginClick {
 
 }
 
-sub __LoadLastConfig{
+my $self = shift;
+
+sub __LoadLastConfig {
 	my $self = shift;
-	
-	
+
+	$self->{"configMngr"}->LoadConfig();
+
+	my $userFilter     = $self->{"configMngr"}->GetUserFilter();        # keys represent strip id and value if strip is used in coupon
+	my $userGroups     = $self->{"configMngr"}->GetUserGroups();        # contain strips splitted into group. Key is strip id, val is group number
+	my $globalSett     = $self->{"configMngr"}->GetGlobalSett();        # global settings of coupon
+	my $cpnGroupSett   = $self->{"configMngr"}->GetCpnGroupSett();      # group settings for each group
+	my $cpnStripSett   = $self->{"configMngr"}->GetCpnStripSett();      # strip settings for each strip by constraint id
+	my $cpnConstraints = $self->{"configMngr"}->GetCpnConstraints();    # strip settings for each strip by constraint id
+
+	# Do same check before load new config
+	my $messMngr = $self->_GetMessageMngr();
+	my @strips   = $self->{"cpnSource"}->GetConstraints();
+
+	# 1) Check strip count in old config is equal
+	if ( scalar( keys %{$cpnStripSett} ) != scalar(@strips) ) {
+
+		my @mess = ();
+		push( @mess, "Unable to load old coupon configuration." );
+		push( @mess,
+			      "Number of constraints (<b>"
+				. scalar( keys %{$cpnStripSett} )
+				. "</b>) is diffrent from number of constraints in old configuration (<b>"
+				. scalar(@strips)
+				. "</b>)" );
+		push( @mess, "\nConfiguration file: " );
+		push( @mess, "- path   : " . $self->{"configMngr"}->GetConfigFilePath() );
+		push( @mess, "- created: " . $self->{"configMngr"}->GetConfigFileDate( 1, 1 ) );
+
+		$messMngr->ShowModal( -1, EnumsGeneral->MessageType_ERROR, \@mess );
+
+		return 0;
+	}
+
+	# 2) Check if wizard contain all contraint id from old config
+	foreach my $strip (@strips) {
+
+		unless ( $cpnStripSett->{ $strip->GetId() } ) {
+			my @mess = ();
+			push( @mess, "Unable to load old coupon configuration." );
+			push( @mess, "Constraint with id: <b>" . $strip->GetId() . " </b> was not found in old configuration file" );
+			push( @mess, "\nConfiguration file:" );
+			push( @mess, "- path   : " . $self->{"configMngr"}->GetConfigFilePath() );
+			push( @mess, "- created: " . $self->{"configMngr"}->GetConfigFileDate( 1, 1 ) );
+			$messMngr->ShowModal( -1, EnumsGeneral->MessageType_ERROR, \@mess );
+
+			return 0;
+		}
+	}
+
+	# 3) Check constraint parameter
+	my $res = 1;
+	foreach my $strip (@strips) {
+
+		my @mess = ( "Current constrain (id:" . $strip->GetId() . ") parameters are not equal to old configuration constraint parameters" );
+
+		if ( $strip->GetType() ne $cpnConstraints->{ $strip->GetId() }->{"type"} ) {
+
+			push( @mess,
+				      "- Constraint type (<b>"
+					. $strip->GetType()
+					. "</b>) is not equal to old configuration constraint type (<b>"
+					. $cpnConstraints->{ $strip->GetId() }->{"type"}
+					. "</b>)" );
+			$res = 0;
+		}
+
+		if ( $strip->GetModel() ne $cpnConstraints->{ $strip->GetId() }->{"model"} ) {
+
+			push( @mess,
+				      "- Constraint model (<b>"
+					. $strip->GetModel()
+					. "</b>) is not equal to old configuration constraint model (<b>"
+					. $cpnConstraints->{ $strip->GetId() }->{"model"}
+					. "</b>)" );
+			$res = 0;
+		}
+
+		if ( $strip->GetTrackLayer() ne $cpnConstraints->{ $strip->GetId() }->{"layer"} ) {
+
+			push( @mess,
+				      "- Constraint instack layer (<b>"
+					. $strip->GetTrackLayer()
+					. "</b>) is not equal to old configuration constraint instack layer (<b>"
+					. $cpnConstraints->{ $strip->GetId() }->{"layer"}
+					. "</b>)" );
+			$res = 0;
+		}
+
+		unless ($res) {
+			$messMngr->ShowModal( -1, EnumsGeneral->MessageType_ERROR, \@mess );
+			return 0;
+		}
+	}
+
+	# Load old configuration
+
+	# 1) Init wizard by config
+	$self->{"wizardCore"}->InitByConfig( $self->{"cpnSource"}, $userFilter, $userGroups, $globalSett );
+
+	$self->{"wizardCore"}->LoadConfig( $cpnGroupSett, $cpnStripSett );
+
+	#return $result;
 }
 
 #-------------------------------------------------------------------------------------------#

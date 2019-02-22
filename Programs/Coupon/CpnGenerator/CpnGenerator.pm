@@ -20,6 +20,7 @@ use aliased 'CamHelpers::CamLayer';
 use aliased 'Programs::Coupon::Enums';
 use aliased 'Enums::EnumsImp';
 use aliased 'Programs::Coupon::Helper';
+use aliased 'CamHelpers::CamAttributes';
 use aliased 'Programs::Coupon::CpnBuilder::MicrostripBuilders::SEBuilder';
 use aliased 'Programs::Coupon::CpnGenerator::ModelBuilders::CoatedMicrostrip';
 use aliased 'Programs::Coupon::CpnGenerator::ModelBuilders::UncoatedMicrostrip';
@@ -171,6 +172,11 @@ sub Generate {
 		if ( $routLayout->GetOutlineRout() ) {
 
 			CamHelper->SetStep( $inCAM, $layout->GetStepName() );
+			
+			# Set step attribute "rout on bridges"rout_on_b
+			CamAttributes->SetStepAttribute( $inCAM, $jobId, $layout->GetStepName(), "rout_on_bridges", "yes" );
+			
+			
 			CamMatrix->CreateLayer( $inCAM, $jobId, "f", "rout", "positive", 1 ) unless ( CamHelper->LayerExists( $inCAM, $jobId, "f" ) );
 			CamLayer->WorkLayer( $inCAM, "f" );
 

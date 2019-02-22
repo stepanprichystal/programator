@@ -26,11 +26,11 @@ sub new {
 	bless $self;
 
 	# Load settings if defined
-
+	$self->{"settingsFile"} = shift;
 	$self->{"sett"} = {};
 
 	# use default settings
-	my $p = GeneralHelper->Root() . "\\Programs\\Coupon\\CpnSettings\\DefaultSettings.txt";
+	my $p = GeneralHelper->Root() . "\\Programs\\Coupon\\CpnSettings\\DefaultSettings\\".$self->{"settingsFile"};
 	die "Global settings file: $p deosn't exist" unless ( -e $p );
 
 	my @lines = @{ FileHelper->ReadAsLines($p) };
@@ -47,6 +47,7 @@ sub new {
 
 			$splited[0] =~ s/\s//g;
 			$splited[1] =~ s/\s//g;
+			$splited[1] =~ s/#.*//g;
 
 			$self->{"sett"}->{ $splited[0] } = $splited[1];
 		}
@@ -55,7 +56,6 @@ sub new {
 	$self->{"__CLASS__"} = caller();
 
 	return $self;
-
 }
 
 # Return deep current settings

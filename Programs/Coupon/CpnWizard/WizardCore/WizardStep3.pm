@@ -55,6 +55,7 @@ sub new {
 
 sub Load {
 	my $self = shift;
+	my $oldConfig          = shift // 0;
 
 	$self->{"cpnGenerated"} = 0;
 

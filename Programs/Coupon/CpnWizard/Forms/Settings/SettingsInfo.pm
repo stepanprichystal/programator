@@ -23,18 +23,57 @@ sub new {
 	my $class = shift;
 	my $self  = {};
 	bless $self;
-
-	# Load settings info for each settings
-
-	$self->{"labelsTxt"} = {};
+  
+	$self->{"labelsTxt"} = {};  
 	$self->{"helpsTxt"}  = {};
-	$self->{"unitsTxt"} = {};
+	$self->{"unitsTxt"}  = {};
 
-	# use default settings
-	my $p = GeneralHelper->Root() . "\\Programs\\Coupon\\CpnSettings\\DefaultSettings.txt";
+	# Load all settings
+	my $p = GeneralHelper->Root() . "\\Programs\\Coupon\\CpnSettings\\DefaultSettings\\";
 	die "Global settings file: $p deosn't exist" unless ( -e $p );
 
-	my @lines = @{ FileHelper->ReadAsLines($p) };
+	opendir( DIR, $p ) or die $!;
+
+	while ( my $file = readdir(DIR) ) {
+
+		if ( $file =~ /\w+settings\.txt/i ) {
+ 
+			$self->__LoadSettings($p . $file);
+		}
+	}
+
+	close(DIR);
+
+	return $self;
+}
+
+sub GetHelpText {
+	my $self = shift;
+	my $key  = shift;
+
+	return $self->{"helpsTxt"}->{$key};
+}
+
+sub GetLabelText {
+	my $self = shift;
+	my $key  = shift;
+
+	return $self->{"labelsTxt"}->{$key}
+
+}
+
+sub GetUnitText {
+	my $self = shift;
+	my $key  = shift;
+
+	return $self->{"unitsTxt"}->{$key};
+}
+
+sub __LoadSettings {
+	my $self = shift;
+	my $file = shift;
+
+	my @lines = @{ FileHelper->ReadAsLines($file) };
 
 	my $labelText = "";
 	my $helpText  = "";
@@ -65,43 +104,19 @@ sub new {
 		}
 		elsif ( $l =~ /^[^\[#].*=.*/ ) {
 
+			$l =~ s/\s//g;
 			my @splited = split( "=", $l );
 
-			my $key =~ s/\s//g;
- 
-			$self->{"labelsTxt"}->{ $key } = $labelText;
-			$self->{"helpsTxt"}->{ $key }  = $helpText;
-			$self->{"unitsTxt"}->{ $key }  = $unitText;
+			$self->{"labelsTxt"}->{ $splited[0] } = $labelText;
+			$self->{"helpsTxt"}->{ $splited[0] }  = $helpText;
+			$self->{"unitsTxt"}->{ $splited[0] }  = $unitText;
 
 			$labelText = "";
 			$helpText  = "";
-			$unitText = "";
+			$unitText  = "";
 		}
 	}
 
-	return $self;
-}
-
-sub GetHelpText {
-	my $self = shift;
-	my $key  = shift;
-
-	return $self->{"helpsTxt"}->{$key};
-}
-
-sub GetLabelText {
-	my $self = shift;
-	my $key  = shift;
-
-	return $self->{"labelsTxt"}->{$key}
-
-}
-
-sub GetUnitText {
-	my $self = shift;
-	my $key  = shift;
-
-	return $self->{"unitsTxt"}->{$key};
 }
 
 #-------------------------------------------------------------------------------------------#

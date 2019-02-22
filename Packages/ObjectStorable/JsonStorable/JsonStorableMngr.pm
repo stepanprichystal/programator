@@ -31,7 +31,7 @@ sub new {
 	return $self;
 }
 
-
+# Return 1 if serialized file exist
 sub SerializedDataExist{
 	my $self = shift;
 	

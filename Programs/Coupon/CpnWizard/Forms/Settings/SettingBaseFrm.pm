@@ -75,9 +75,9 @@ sub _GetSettingRow {
 	my $settingsKey = shift;
 	my $controls    = shift;
 	
-	my $l = $self->{"settInfo"}->GetLabelText();
-	my $h = $self->{"settInfo"}->GetHelpText();
-	my $u = $self->{"settInfo"}->GetUnitText();
+	my $l = $self->{"settInfo"}->GetLabelText($settingsKey);
+	my $h = $self->{"settInfo"}->GetHelpText($settingsKey);
+	my $u = $self->{"settInfo"}->GetUnitText($settingsKey);
 	
 
 	my $row = SettingRow->new( $parent, $self, $settingsKey, $l, $h, $u, $controls );

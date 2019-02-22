@@ -1,0 +1,55 @@
+# ======================================================================================
+# Group settings
+# ======================================================================================
+[t = Line/coupon width]
+[h = Determines the length of the coupon lines including the measurement pads and group margins ]
+[u = mm ]
+cpnSingleWidth                 = 155   # mm
+
+[t = Max cnt of microstrip - Y axis]
+[h = Max cnt of microstrip - Y axis]
+poolCnt = 2
+
+[t = Max cnt of microstrip - X axis]
+[h = Max cnt of microstrip - X axis]
+maxStripsCntH = 8
+
+[t = Space between microstrip pads]
+[h = Space between microstrip pads]
+[u = µm ]
+groupPadsDist    = 4000                # µm
+
+
+# Pad symbol definitions
+# --------------------------------------------------------------------------------------
+
+[t = Track pad shape]
+padTrackShape    = s    #µm
+
+[t = Track pad size]
+[u =  µm]
+padTrackSize     = 1524              #µm
+
+[t = GND pad shape]
+padGNDShape 	 = r     #µm
+
+[t = GND pad size]
+[u = µm ]
+padGNDSize       = 1524              #µm
+
+[t = GND negative symbol]
+padGNDSymNeg 	 = thr2000x1800x0x4x203       #µm
+
+[t = Drill size]
+[u = µm ]
+padDrillSize      = 1050             #µm
+
+[t = Track pad 2 GND pad dist]
+[h = Track pad 2 GND pad dist]
+[u = µm ]
+trackPad2GNDPad   = 2540             # µm
+
+[t = Track pad 2 track pad dist]
+[h = Track pad 2 track pad dist]
+[u = µm ]
+trackPad2TrackPad = 2540             # µm
