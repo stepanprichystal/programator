@@ -1,0 +1,257 @@
+#!/usr/bin/perl-w
+#POOL SERVIS COPY
+
+use Tk;
+use Genesis;
+
+
+unless ($ENV{JOB}) {
+	$jobName = shift;
+} else {
+	$jobName = "$ENV{JOB}";
+
+}		
+$genesis = new Genesis;
+my $konst = 0;
+	# pool servis - copy other jobs
+
+		$mainPool = MainWindow->new();
+		$mainPool->title('pool servis - kopirovani');
+		#$mainPool->Label(-text => "Zadej jednotlive JOBS,oddelene carkou,ktere maji byt zkopirovany (d12345,d23456,...)",-font=>"normal 10 bold")->pack(-padx => 5, -pady => 5,-side=>top);
+		
+	$midleFrame = $mainPool ->Frame(-width=>100, -height=>20)->pack(-side=>'top',-fill=>'x');	
+		$entry = $midleFrame->Entry(-width=>40,-font=>"normal 10 bold",-fg=>brown)->pack(-padx => 5, -pady => 5,-side=>left);
+			$button=$midleFrame->Button(-width=>40,-text => "OK",-command=> \&copyD)->pack(-padx => 5, -pady => 5,-side=>left);
+			
+			
+$infoFrame = $mainPool ->Frame(-width=>100, -height=>20,-bg=>'lightblue')->pack(-side=>'bottom',-fill=>'x');
+$statusLabel = sprintf "Zadej jednotlive JOBS,oddelene carkou,ktere maji byt zkopirovany (d12345,d23456,...)";
+		$status = $infoFrame ->Label(-textvariable=>\$statusLabel,-bg=>'lightblue',-font=>'normal 9 {bold }')->pack(-side=>'top');
+		
+#$mainPool->waitWindow;
+MainLoop;
+
+
+sub copyD {
+		$valueCopy = $entry -> get;
+	    @poleCopy = split/,/,"$valueCopy";
+	    push (@poleCopy,'o+1');
+	    my $statusInner;
+			foreach $oneD (@poleCopy) {
+			 $statusLabel = sprintf "kopiruji $oneD ...";
+			 $status->update;
+			 if ($oneD ne 'o+1') {
+				$genesis -> COM ('open_job',job=>"$oneD");
+					$statusInner = check_inner_polarity($oneD);
+						if($statusInner eq 'neg') {
+							GUI_Error();
+						}
+
+				$genesis -> COM ('copy_entity',type=>'step',source_job=>"$oneD",source_name=>'o+1',dest_job=>"$jobName",dest_name=>"$oneD",dest_database=>'');
+				$genesis -> COM ('close_job',job=>"$oneD");
+			  }
+				$genesis -> COM ('open_job',job=>"$jobName");
+					$statusInner = check_inner_polarity($jobName);
+						if($statusInner eq 'neg') {
+							GUI_Error();
+						}
+				#$genesis -> COM ('open_entity',job=>"$jobName",type=>'step',name=>"$oneD",iconic=>'no');
+				#$genesis -> AUX ('set_group', group => $genesis->{COMANS});
+				$genesis->COM ('set_step',name=>"$oneD");
+
+				$genesis -> COM ('units',type=>'mm');
+				&writeIdentification;
+			$genesis -> COM ('editor_page_close');
+			}
+			$genesis -> COM ('matrix_auto_rows',job=>"$jobName",matrix=>'matrix',rename=>'no');
+			exit;
+	}
+	
+sub writeIdentification {
+	my $nevkladatX = 0;
+	my $nevkladatY = 0;
+	my $mirrorText;
+	my @signalLayers = get_signal_l();
+	
+					  foreach my $layer (@signalLayers) {
+					  	        $genesis -> COM ('clear_layers');
+								$genesis ->	COM	('affected_layer',name=>"",mode=>"all",affected=>"no");
+								$genesis -> COM ('display_layer',name=>"$layer",display=>'yes',number=>'1');
+								$genesis -> COM ('work_layer',name=>"$layer");
+								### info text screen
+							 	$statusLabel = sprintf "vkladam oznaceni do strany $layer $oneD ...";
+							 	$status->update;
+							 	####################
+							 	### mereni rozmeru desky
+								$genesis->INFO(units=>'mm',entity_type => 'step',entity_path => "$jobName/$oneD",data_type => 'PROF_LIMITS');
+				       		 my $myDpX = sprintf "%3.3f",($genesis->{doinfo}{gPROF_LIMITSxmax} - $genesis->{doinfo}{gPROF_LIMITSxmin});
+						     my $myDpY = sprintf "%3.3f",($genesis->{doinfo}{gPROF_LIMITSymax} - $genesis->{doinfo}{gPROF_LIMITSymin});
+						     
+						     
+						     if ($myDpX >= 25) {
+						     		 $Xh = ($myDpX / 2);
+							 		 $Yh = ($myDpY + 2.1);
+							 		 $fontXtop = 2.35;
+							 		 $fontYtop = 2.35;
+							 		 $factorTtop = 1;
+							 }elsif ($myDpX >= 12) {
+							 	 	 $Xh = ($myDpX / 2);
+							 		 $Yh = ($myDpY + 2.1);
+							 		 $fontXtop =  (2.35/100) * ((100/25) * $myDpX);
+							 		 $fontYtop = (2.35/100) * ((100/25) * $myDpX);
+							 		 $factorTtop = (1/100) * ((100/25) * $myDpX);
+							 }else{
+							 	 	$nevkladatX = 1;
+							 }
+							 
+							 if ($myDpY >= 25) {	 
+							 		$Xv = ($myDpX - $myDpX - 2.1);
+							 		$Yv = ($myDpY / 2);
+							 		$fontXleft = 2.35;
+							 		$fontYleft = 2.35;
+							 		$factorTleft = 1;
+							 }elsif ($myDpY >= 12) {
+							 	 	 $Xv = ($myDpX - $myDpX - 2.1);
+							 	     $Yv = ($myDpY / 2);
+							 		 $fontXleft =  (2.35/100) * ((100/25) * $myDpY);
+							 		 $fontYleft = (2.35/100) * ((100/25) * $myDpY);
+							 		 $factorTleft = (1/100) * ((100/25) * $myDpY);
+							 }else{
+							 	 	$nevkladatY = 1;
+							 }
+							 
+							 my $XhLine1 = ($Xh - 1);
+							 my $XhLine2 = ($Xh - 4);
+							 my $YhLine = ($Yh - 1.8);
+							 
+							 my $YvLine1 = ($Yv - 1);
+							 my $XvLine2 = ($Yv - 4);
+							 my $XvLine = ($Xv + 1.8);
+							 
+							 
+							 if ($layer eq 's' or $layer eq 'v3' or $layer eq 'v5' or $layer eq 'v7') {
+									$mirrorText = 'yes'; ## strana spoju "S"
+									$angleTest1 = 0;
+									$angleTest2 = 90;
+										if ($myDpX < 25) {
+												$Xh += (14/100) * ((100/25) * $myDpX);
+										}else{
+												$Xh += 14;
+										}
+										if ($myDpY < 25) {
+							 					$Yv += (14/100) * ((100/25) * $myDpY);
+							 			}else{
+							 					$Yv += 14;
+								 		}
+							}else{
+									$mirrorText = 'no'; ## strana soucastek "C"
+									$angleTest1 = 0;
+									$angleTest2 = 270;
+							}
+
+
+			if ($oneD eq 'o+1') {
+					$setName = $jobName;
+			}else{
+					$setName = $oneD;
+			}
+
+			if ($nevkladatX == 0) {
+				$genesis -> COM ('cur_atr_set',attribute=>'.n_electric');
+				$genesis -> COM ('add_text',attributes=>'yes',type=>'string',x=>"$Xh",y=>"$Yh",text=>"$setName",x_size=>"$fontXtop",y_size=>"$fontYtop",w_factor=>"$factorTtop",polarity=>'positive',angle=>"$angleTest1",mirror=>"$mirrorText",fontname=>'standard',ver=>'1');
+
+				$genesis -> COM ('add_polyline_strt');
+				$genesis -> COM ('add_polyline_xy',x=>"$XhLine1",y=>"$Yh" + 1);
+				$genesis -> COM ('add_polyline_xy',x=>"$XhLine2",y=>"$Yh" + 1);
+				$genesis -> COM ('add_polyline_xy',x=>"$XhLine2",y=>"$YhLine");
+				$genesis -> COM ('add_polyline_end',attributes=>'yes',symbol=>'r300',polarity=>'positive',bus_num_lines=>'0',bus_dist_by=>'pitch',bus_distance=>'0',bus_reference=>'left');
+				$genesis -> COM ('cur_atr_reset');
+			}
+			
+			if ($nevkladatY == 0) {
+				$genesis -> COM ('cur_atr_set',attribute=>'.n_electric');
+				$genesis -> COM ('add_text',attributes=>'yes',type=>'string',x=>"$Xv",y=>"$Yv",text=>"$setName",x_size=>"$fontXleft",y_size=>"$fontYleft",w_factor=>"$factorTleft",polarity=>'positive',angle=>"$angleTest2",mirror=>"$mirrorText",fontname=>'standard',ver=>'1');
+				$genesis -> COM ('cur_atr_reset');
+
+				$genesis -> COM ('add_polyline_strt');
+				$genesis -> COM ('add_polyline_xy',x=>"$Xv" - 1,y=>"$YvLine1");
+				$genesis -> COM ('add_polyline_xy',x=>"$Xv" - 1,y=>"$XvLine2");
+				$genesis -> COM ('add_polyline_xy',x=>"$XvLine",y=>"$XvLine2");
+				$genesis -> COM ('add_polyline_end',attributes=>'yes',symbol=>'r300',polarity=>'positive',bus_num_lines=>'0',bus_dist_by=>'pitch',bus_distance=>'0',bus_reference=>'left');
+				$genesis -> COM ('cur_atr_reset');
+			}
+				
+				$genesis ->	COM	('affected_layer',name=>"",mode=>"all",affected=>"no");
+				$genesis -> COM ('display_layer',name=>"$layer",display=>'no',number=>'1');
+	}
+}
+sub check_inner_polarity {
+	my $jobSlave = shift;
+	my @layersSignal = ();
+	my $statusINpolarity = 'pos';
+	my ($rowName, $rowContext, $rowType, $rowSide, $rowPolarity);
+	$genesis->INFO('entity_type'=>'matrix','entity_path'=>"$jobSlave/matrix",'data_type'=>'ROW');
+	$totalRows = @{$genesis->{doinfo}{gROWname}};
+	for (my $count=0;$count<$totalRows;$count++) {
+		if( $genesis->{doinfo}{gROWtype}[$count] ne "empty" ) {
+			$rowName = ${$genesis->{doinfo}{gROWname}}[$count];
+			$rowContext = ${$genesis->{doinfo}{gROWcontext}}[$count];
+			$rowType = ${$genesis->{doinfo}{gROWlayer_type}}[$count];
+			$rowSide = ${$genesis->{doinfo}{gROWside}}[$count];
+			$rowPolarity = ${$genesis->{doinfo}{gROWpolarity}}[$count];
+
+			if ($rowContext eq "board" && ($rowType eq "signal" | $rowType eq "power_ground" | $rowType eq "mixed")) {
+				if ($rowPolarity eq 'negative') {
+					$statusINpolarity = 'neg';
+				}
+				#push(@layersSignal, $rowName );
+			}
+
+		}
+	}
+    return($statusINpolarity);
+}
+sub GUI_Error {
+	$main = MainWindow->new();
+	$main->title('INFO');
+	$main->minsize(qw(390 50));
+
+			$frame_main1 = $main->Frame(-width=>150,-height=>70)->pack(-side=>'top',-fill=>'x');
+			$frame_main2 = $main->Frame(-width=>150,-height=>70)->pack(-side=>'top',-fill=>'x');
+			$main_button = $main->Frame(-width=>150,-height=>70)->pack(-side=>'bottom',-fill=>'x');
+			$frame_main1->Label(-text=>"PROBLEM",-font=>'normal 15 {bold}',-fg=>'red')->pack(-side=>'left');
+			$frame_main2->Label(-text=>"Jeden z kopirovanych jobs ma negativni signalove vrstvy, NUTNO opravit, pak cele panelizovani opakuj!!!",-font=>'normal 10',-fg=>'black')->pack(-side=>'top');
+
+			$main_button->Button(-width=>15,-text => "Konec",-command=>\sub{exit})->pack(-padx => 10, -pady => 10,-side=>'top');
+	MainLoop ();
+	$main->waitWindow;
+}
+sub get_signal_l {
+		my @poleLAYERS = ();
+	    	$genesis->INFO('entity_type'=>'matrix','entity_path'=>"$jobName/matrix",'data_type'=>'ROW');
+    				my $totalRows = ${$genesis->{doinfo}{gROWrow}}[-1];
+    						for ($count=0;$count<=$totalRows;$count++) {
+									my $rowFilled = ${$genesis->{doinfo}{gROWtype}}[$count];
+									my $rowName = ${$genesis->{doinfo}{gROWname}}[$count];
+									my $rowContext = ${$genesis->{doinfo}{gROWcontext}}[$count];
+									my $rowType = ${$genesis->{doinfo}{gROWlayer_type}}[$count];
+											if ($rowFilled ne "empty" && $rowContext eq "board" && ($rowType eq "signal" || $rowType eq "mixed" || $rowType eq "power_ground")) {
+            										push(@poleLAYERS, $rowName);
+											}
+							}
+		return (@poleLAYERS);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+

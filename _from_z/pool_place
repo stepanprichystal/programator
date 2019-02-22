@@ -1,0 +1,70 @@
+#!/usr/bin/perl-w
+#Inport CSV souboru, panelizace dle CSV
+
+use Genesis;
+
+
+unless ($ENV{JOB}) {
+	$jobName = shift;
+	$file = shift;
+	$activeXsize = shift;
+	$activeYsize = shift;
+}
+
+$genesis = new Genesis;
+my @tmpText = ();
+my $CountIndex;
+my @inportPole = ();
+my @jobsPole = ();
+my $pocetJobs;
+my %hashOnlyOneJobs;
+my @tmpPole = ();
+my @handleCSV = qw (jobName placeX placeY dimX dimY rotace);
+
+
+if($file){
+    	open (CSVFILE,"$file");
+            	while (<CSVFILE>) {
+								 @inportPole = split /\"/,$_;
+								 $indexIN = 0;
+								 $pocetJobs++;
+								 		foreach my $item (@inportPole) {
+								 			if ($item ne "") {
+								 				unless($item eq "\n") {
+														unless ($item eq ",") {
+																if ($item =~ /([DdFf]\d{5})\-\d{2}/) {
+																		$item = lc$1;
+																		$kontakt{$pocetJobs}{$handleCSV[$indexIN]} = $item;
+																		$hashOnlyOneJobs{$item} = 1;
+																}else{
+																		$kontakt{$pocetJobs}{$handleCSV[$indexIN]} = $item;
+																}
+																$indexIN++;
+																$Colum++;
+														}
+												}
+											}
+										}
+        	    }
+			close CSVFILE;
+}
+#rozmisteni
+for ($i=1;$i<=$pocetJobs;$i++) {
+	#jobName placeX placeY dimX dimY rotace);
+	my $job = $kontakt{$i}{'jobName'};
+	my $placeX = $kontakt{$i}{'placeX'} + $activeXsize;
+	my $placeY = $kontakt{$i}{'placeY'} + $activeYsize;
+	my $rotate = $kontakt{$i}{'rotace'};
+		if($job eq $jobName) {
+			$job = 'o+1';
+		}
+		if($rotate == 1) {
+			$rotate = 90;
+		}else{
+			$rotate = 0;
+		}
+		$genesis->COM('sr_tab_add',line=>"$i",step=>"$job",x=>"$placeX",y=>"$placeY",nx=>'1',ny=>'1',angle=>"$rotate");
+}
+
+
+

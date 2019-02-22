@@ -1,0 +1,49 @@
+#!/usr/bin/perl-w
+#################################
+#Sript name: cdr_error_delete.pl
+#Use       : Smaze vrstvy typu cdr, vytvorene po chybe exportu AOI
+#Made      : RV
+#################################
+use Genesis;
+
+unless ($ENV{JOB}) {
+	$jobName = shift;
+} else {
+	$jobName = "$ENV{JOB}";
+}
+
+my $genesis = new Genesis;
+
+$genesis->INFO('entity_type'=>'matrix','entity_path'=>"$jobName/matrix",'data_type'=>'ROW');
+    my $totalRows = ${$genesis->{doinfo}{gROWrow}}[-1];
+    for ($count=0;$count<=$totalRows;$count++) {
+		my $rowFilled = ${$genesis->{doinfo}{gROWtype}}[$count];
+		my $rowName = ${$genesis->{doinfo}{gROWname}}[$count];
+		my $rowContext = ${$genesis->{doinfo}{gROWcontext}}[$count];
+		my $rowType = ${$genesis->{doinfo}{gROWlayer_type}}[$count];
+			if ($rowFilled ne "empty" && $rowContext eq "board" && ($rowType eq "signal" || $rowType eq "mixed" || $rowType eq "power_ground")) {
+    		        push(@rowNames,$rowName);
+    		        $countLayers ++;
+			}
+			if ($rowFilled ne "empty") {
+					$countRow++;
+			}
+	}
+
+$rowAll = $countRow + 1;
+	foreach my $oneLayer (@rowNames) {
+		$genesis -> COM ('open_entity',job=>"$jobName",type=>'matrix',name=>'matrix',iconic=>'no');
+		$genesis -> COM ('matrix_add_layer',job=>"$jobName",matrix=>'matrix',layer=>"mk_1_${oneLayer}_sig_cdr",row=>"$rowAll",context=>'misc',type=>'signal',polarity=>'positive');
+		$genesis -> COM ('open_entity',job=>"$jobName",type=>'matrix',name=>'matrix',iconic=>'no');
+		$genesis -> COM ('matrix_delete_row',job=>"$jobName",matrix=>'matrix',row=>"$rowAll");
+		$genesis -> COM ('matrix_refresh',job=>"$jobName",matrix=>'matrix');
+		$genesis -> COM ('matrix_page_close',job=>"$jobName",matrix=>'matrix');
+	}
+		foreach my $oneLayer (@rowNames) {
+		$genesis -> COM ('open_entity',job=>"$jobName",type=>'matrix',name=>'matrix',iconic=>'no');
+		$genesis -> COM ('matrix_add_layer',job=>"$jobName",matrix=>'matrix',layer=>"ms_1_${oneLayer}_sig_cdr",row=>"$rowAll",context=>'misc',type=>'signal',polarity=>'positive');
+		$genesis -> COM ('open_entity',job=>"$jobName",type=>'matrix',name=>'matrix',iconic=>'no');
+		$genesis -> COM ('matrix_delete_row',job=>"$jobName",matrix=>'matrix',row=>"$rowAll");
+		$genesis -> COM ('matrix_refresh',job=>"$jobName",matrix=>'matrix');
+		$genesis -> COM ('matrix_page_close',job=>"$jobName",matrix=>'matrix');
+	}

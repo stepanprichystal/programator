@@ -1,0 +1,168 @@
+#!/usr/bin/perl-w
+#POOL SERVIS COPY
+
+use Tk;
+use Genesis;
+
+
+unless ($ENV{JOB}) {
+	$jobName = shift;
+} else {
+	$jobName = "$ENV{JOB}";
+
+}		
+$genesis = new Genesis;
+my $konst = 0;
+	# pool servis - copy other jobs
+
+		$mainPool = MainWindow->new();
+		$mainPool->title('pool servis - kopirovani');
+		#$mainPool->Label(-text => "Zadej jednotlive JOBS,oddelene carkou,ktere maji byt zkopirovany (d12345,d23456,...)",-font=>"normal 10 bold")->pack(-padx => 5, -pady => 5,-side=>top);
+		
+	$midleFrame = $mainPool ->Frame(-width=>100, -height=>20)->pack(-side=>'top',-fill=>'x');	
+		$entry = $midleFrame->Entry(-width=>40,-font=>"normal 10 bold",-fg=>brown)->pack(-padx => 5, -pady => 5,-side=>left);
+			$button=$midleFrame->Button(-width=>40,-text => "OK",-command=> \&copyD)->pack(-padx => 5, -pady => 5,-side=>left);
+			
+			
+$infoFrame = $mainPool ->Frame(-width=>100, -height=>20,-bg=>'lightblue')->pack(-side=>'bottom',-fill=>'x');
+$statusLabel = sprintf "Zadej jednotlive JOBS,oddelene carkou,ktere maji byt zkopirovany (d12345,d23456,...)";
+		$status = $infoFrame ->Label(-textvariable=>\$statusLabel,-bg=>'lightblue',-font=>'normal 9 {bold }')->pack(-side=>'top');
+		
+#$mainPool->waitWindow;
+MainLoop;
+
+
+	sub copyD {
+		$valueCopy = $entry -> get;
+	    @poleCopy = split/,/,"$valueCopy";
+	    push (@poleCopy,'o+1');
+			foreach $oneD (@poleCopy) {
+			 $statusLabel = sprintf "kopiruji $oneD ...";
+			 $status->update;
+			 if ($oneD ne 'o+1') {
+				$genesis -> COM ('open_job',job=>"$oneD");
+				$genesis -> COM ('copy_entity',type=>'step',source_job=>"$oneD",source_name=>'o+1',dest_job=>"$jobName",dest_name=>"$oneD",dest_database=>'');
+				$genesis -> COM ('close_job',job=>"$oneD");
+			  }
+				$genesis -> COM ('open_job',job=>"$jobName");
+				$genesis -> COM ('open_entity',job=>"$jobName",type=>'step',name=>"$oneD",iconic=>'no');
+				$genesis -> AUX ('set_group', group => $genesis->{COMANS});
+				$genesis -> COM ('units',type=>'mm');
+				&writeIdentification;
+			$genesis -> COM ('editor_page_close');
+			}
+			$genesis -> COM ('matrix_auto_rows',job=>"$jobName",matrix=>'matrix',rename=>'no');
+			exit;
+	}
+	
+sub writeIdentification {
+	my $nevkladatX = 0;
+	my $nevkladatY = 0;
+	my $mirrorText;
+					  foreach my $layer ('c','s') {
+					  	        $genesis -> COM ('clear_layers');
+								$genesis ->	COM	('affected_layer',name=>"",mode=>"all",affected=>"no");
+								$genesis -> COM ('display_layer',name=>"$layer",display=>'yes',number=>'1');
+								$genesis -> COM ('work_layer',name=>"$layer");
+								### info text screen
+							 	$statusLabel = sprintf "vkladam oznaceni do strany $layer $oneD ...";
+							 	$status->update;
+							 	####################
+							 	### mereni rozmeru desky
+								$genesis->INFO(units=>'mm',entity_type => 'step',entity_path => "$jobName/$oneD",data_type => 'PROF_LIMITS');
+				       		 my $myDpX = sprintf "%3.3f",($genesis->{doinfo}{gPROF_LIMITSxmax} - $genesis->{doinfo}{gPROF_LIMITSxmin});
+						     my $myDpY = sprintf "%3.3f",($genesis->{doinfo}{gPROF_LIMITSymax} - $genesis->{doinfo}{gPROF_LIMITSymin});
+						     
+						     
+						     if ($myDpX >= 25) {
+						     		 $Xh = ($myDpX / 2);
+							 		 $Yh = ($myDpY + 2.1);
+							 		 $fontXtop = 2.35;
+							 		 $fontYtop = 2.35;
+							 		 $factorTtop = 1;
+							 }elsif ($myDpX >= 12) {
+							 	 	 $Xh = ($myDpX / 2);
+							 		 $Yh = ($myDpY + 2.1);
+							 		 $fontXtop =  (2.35/100) * ((100/25) * $myDpX);
+							 		 $fontYtop = (2.35/100) * ((100/25) * $myDpX);
+							 		 $factorTtop = (1/100) * ((100/25) * $myDpX);
+							 }else{
+							 	 	$nevkladatX = 1;
+							 }
+							 
+							 if ($myDpY >= 25) {	 
+							 		$Xv = ($myDpX - $myDpX - 2.1);
+							 		$Yv = ($myDpY / 2);
+							 		$fontXleft = 2.35;
+							 		$fontYleft = 2.35;
+							 		$factorTleft = 1;
+							 }elsif ($myDpY >= 12) {
+							 	 	 $Xv = ($myDpX - $myDpX - 2.1);
+							 	     $Yv = ($myDpY / 2);
+							 		 $fontXleft =  (2.35/100) * ((100/25) * $myDpY);
+							 		 $fontYleft = (2.35/100) * ((100/25) * $myDpY);
+							 		 $factorTleft = (1/100) * ((100/25) * $myDpY);
+							 }else{
+							 	 	$nevkladatY = 1;
+							 }
+							 
+							 my $XhLine1 = ($Xh - 1);
+							 my $XhLine2 = ($Xh - 4);
+							 my $YhLine = ($Yh - 1.8);
+							 
+							 my $YvLine1 = ($Yv - 1);
+							 my $XvLine2 = ($Yv - 4);
+							 my $XvLine = ($Xv + 1.8);
+							 
+							 
+							 if ($layer eq 's') {
+									$mirrorText = 'yes'; ## strana spoju "S"
+									$angleTest1 = 0;
+									$angleTest2 = 90;
+										if ($myDpX < 25) {
+												$Xh += (14/100) * ((100/25) * $myDpX);
+										}else{
+												$Xh += 14;
+										}
+										if ($myDpY < 25) {
+							 					$Yv += (14/100) * ((100/25) * $myDpY);
+							 			}else{
+							 					$Yv += 14;
+								 		}
+							}else{
+									$mirrorText = 'no'; ## strana soucastek "C"
+									$angleTest1 = 0;
+									$angleTest2 = 270;
+							}
+
+
+			if ($oneD eq 'o+1') {
+					$setName = $jobName;
+			}else{
+					$setName = $oneD;
+			}
+
+			if ($nevkladatX == 0) {
+				$genesis -> COM ('add_text',attributes=>'no',type=>'string',x=>"$Xh",y=>"$Yh",text=>"$setName",x_size=>"$fontXtop",y_size=>"$fontYtop",w_factor=>"$factorTtop",polarity=>'positive',angle=>"$angleTest1",mirror=>"$mirrorText",fontname=>'standard',ver=>'1');
+				
+				$genesis -> COM ('add_polyline_strt');
+				$genesis -> COM ('add_polyline_xy',x=>"$XhLine1",y=>"$Yh" + 1);
+				$genesis -> COM ('add_polyline_xy',x=>"$XhLine2",y=>"$Yh" + 1);
+				$genesis -> COM ('add_polyline_xy',x=>"$XhLine2",y=>"$YhLine");
+				$genesis -> COM ('add_polyline_end',attributes=>'no',symbol=>'r300',polarity=>'positive',bus_num_lines=>'0',bus_dist_by=>'pitch',bus_distance=>'0',bus_reference=>'left');
+			}
+			
+			if ($nevkladatY == 0) {
+				$genesis -> COM ('add_text',attributes=>'no',type=>'string',x=>"$Xv",y=>"$Yv",text=>"$setName",x_size=>"$fontXleft",y_size=>"$fontYleft",w_factor=>"$factorTleft",polarity=>'positive',angle=>"$angleTest2",mirror=>"$mirrorText",fontname=>'standard',ver=>'1');
+				
+				$genesis -> COM ('add_polyline_strt');
+				$genesis -> COM ('add_polyline_xy',x=>"$Xv" - 1,y=>"$YvLine1");
+				$genesis -> COM ('add_polyline_xy',x=>"$Xv" - 1,y=>"$XvLine2");
+				$genesis -> COM ('add_polyline_xy',x=>"$XvLine",y=>"$XvLine2");
+				$genesis -> COM ('add_polyline_end',attributes=>'no',symbol=>'r300',polarity=>'positive',bus_num_lines=>'0',bus_dist_by=>'pitch',bus_distance=>'0',bus_reference=>'left');
+			}
+				
+				$genesis ->	COM	('affected_layer',name=>"",mode=>"all",affected=>"no");
+				$genesis -> COM ('display_layer',name=>"$layer",display=>'no',number=>'1');
+	}
+}

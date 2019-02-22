@@ -1,0 +1,56 @@
+#!/usr/bin/perl-w
+#################################
+
+#################################
+use Genesis;
+
+
+unless ($ENV{JOB}) {
+	$jobName = shift;
+#	$stepName = shift;
+} else {
+	$jobName = "$ENV{JOB}";
+#	$stepName = "panel";
+}
+my $genesis = new Genesis;
+
+$genesis->INFO('entity_type'=>'matrix','entity_path'=>"$jobName/matrix",'data_type'=>'ROW');
+    my $totalRows = ${$genesis->{doinfo}{gROWrow}}[-1];
+    for ($count=0;$count<=$totalRows;$count++) {
+		my $rowFilled = ${$genesis->{doinfo}{gROWtype}}[$count];
+		my $rowName = ${$genesis->{doinfo}{gROWname}}[$count];
+		my $rowContext = ${$genesis->{doinfo}{gROWcontext}}[$count];
+		my $rowType = ${$genesis->{doinfo}{gROWlayer_type}}[$count];
+			if ($rowFilled ne "empty" && $rowContext eq "board" && ($rowType eq "signal" || $rowType eq "mixed" || $rowType eq "power_ground")) {
+        		    $layerCount ++;
+        		    push(@signalLayer,$rowName);
+			}
+	}
+
+foreach $oneSignal(@signalLayer) {
+				        $genesis->COM('affected_layer',name=>"",mode=>"all",affected=>"no");
+						$genesis->COM ('filter_reset',filter_name=>'popup');
+						$genesis->COM ('display_layer',name=>"$oneSignal",display=>'yes',number=>'1');
+						$genesis->COM ('work_layer',name=>"$oneSignal");
+						
+	$genesis->COM('sel_drawn',type=>'mixed',therm_analyze=>'no');
+		$genesis->COM ('get_select_count');
+				if ($genesis->{COMANS} == 0) {
+						$genesis->COM ('filter_reset',filter_name=>'popup');
+						$genesis->COM ('filter_set',filter_name=>'popup',update_popup=>'no',polarity=>'negative');
+						$genesis->COM ('filter_area_strt');
+						$genesis->COM ('filter_area_end',layer=>'',filter_name=>'popup',operation=>'select',area_type=>'none',inside_area=>'no',intersect_area=>'no');
+
+						$genesis->COM ('filter_set',filter_name=>'popup',update_popup=>'no',feat_types=>'surface');
+						$genesis->COM ('filter_set',filter_name=>'popup',update_popup=>'no',polarity=>'positive');
+						$genesis->COM ('filter_area_strt');
+						$genesis->COM ('filter_area_end',layer=>'',filter_name=>'popup',operation=>'select',area_type=>'none',inside_area=>'no',intersect_area=>'no');
+				}
+	$genesis->PAUSE("Ted muzes upravit vybrani pro konturuzaci (vrstva:$oneSignal)");
+	$genesis->COM ('get_select_count');
+				if ($genesis->{COMANS} >= 1) {
+						$genesis->COM ('sel_contourize',accuracy=>'6.35',break_to_islands=>'yes',clean_hole_size=>'60',clean_hole_mode=>'x_and_y');
+				}
+	$genesis->COM ('display_layer',name=>"$oneSignal",display=>'no',number=>'1');
+	$genesis->COM ('filter_reset',filter_name=>'popup');
+}

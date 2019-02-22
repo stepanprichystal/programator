@@ -1,0 +1,67 @@
+#!/usr/bin/perl-w
+#################################
+#Sript name: checkPoolCount.pl
+#Verze     : 1.00
+#Use       : Vizualni kontrola poctu stepu a jejich nasobnosti v panelu pri POOLU
+#Made      : RV
+#################################
+use Genesis;
+use Tk;  
+use untilityScript;
+use sqlNoris;
+
+#loading of locale modules
+use LoadLibrary;
+
+#local library
+use Gatmain;
+
+
+my $genesis = new Genesis;
+
+
+
+unless ($ENV{JOB}) {
+	$jobName = shift;
+	$outputDir = shift;
+} else {
+	$jobName = "$ENV{JOB}";
+	$outputDir = "c:/Export";
+}
+			$genesis->INFO(entity_type=>'step',entity_path=>"$jobName/panel",data_type=>'SR');
+					@usedStepstmp = @{$genesis->{doinfo}{gSRstep}};
+					@usedStepX = @{$genesis->{doinfo}{gSRnx}};
+					@usedStepY = @{$genesis->{doinfo}{gSRny}};
+			$countForHash = 0;		
+			foreach $itemStep (@usedStepstmp) {
+				        unless ($itemStep =~ /coupon/) {
+								if ($itemStep eq 'o+1') {
+										$itemStep = $jobName;
+								}
+							
+							$nasobnostXY = ($usedStepX[$countForHash] * $usedStepY[$countForHash]);
+							$nasobnosti{"$itemStep"} += $nasobnostXY;
+							$countForHash++;
+							
+							my $reference = sqlNoris::getValueNoris($itemStep, 'reference_zakazky');
+							OnlineWrite_order($reference, "slouceno" , "aktualni_krok" );
+         				}
+			}
+			
+my @joblist =();
+foreach my $itemTemp(keys %nasobnosti) {
+			unless ($itemTemp eq $jobName) {
+					push(@joblist,$itemTemp);
+			}
+}
+	open (POOLFILE,">$outputDir/$jobName.pool");
+	print POOLFILE "[POOL]\n";
+	print POOLFILE "master = $jobName\n";
+	$" = ",";
+	print POOLFILE "slaves = @joblist";
+	print POOLFILE "\n\n";
+		while (($job, $nas) = each(%nasobnosti)){
+				print POOLFILE "[$job]\n";
+				print POOLFILE "nasobnost = $nas\n\n";
+		}
+	close POOLFILE;

@@ -1,0 +1,37 @@
+#!/usr/bin/perl-w
+#################################
+#Sript name: Controlnetlist.pl
+#Verze     : 1.00
+#Use       : Control steps by the netlist
+#Made      : RV
+#################################
+use Genesis;
+
+
+unless ($ENV{JOB}) {
+	$jobName = shift;
+} else {
+	$jobName = "$ENV{JOB}";
+}
+my $genesis = new Genesis;
+
+$genesis->INFO('entity_type'=>'job','entity_path'=>"$jobName",'data_type'=>'STEPS_LIST');
+   			  @allStepsList = @{$genesis->{doinfo}{gSTEPS_LIST}};
+$refStep = $allStepsList[0];
+$curStep = $allStepsList[1];
+
+
+	$genesis->INFO('entity_type'=>'job','entity_path'=>"$jobName",'data_type'=>'STEPS_LIST');
+   			  @allStepsList = @{$genesis->{doinfo}{gSTEPS_LIST}};
+		$refStep = $allStepsList[0];
+		$curStep = $allStepsList[1];
+	
+	# Old Genesis Recalculate NETlist.
+	$genesis-> COM ('netlist_recalc',job=>"$jobName",step=>"$refStep",type=>'cur',display=>'bottom');
+	$genesis-> COM ('netlist_ref_update',job=>"$jobName",step=>"$refStep",source=>'cur',reduce=>'yes');
+	$genesis-> COM ('netlist_recalc',job=>"$jobName",step=>"$refStep",type=>'ref',display=>'top');
+
+	$genesis-> COM ('netlist_recalc',job=>"$jobName",step=>"$curStep",type=>'cur',display=>'bottom');
+
+	$genesis-> COM ('netlist_compare',job1=>"$jobName",step1=>"$refStep",type1=>'ref',job2=>"$jobName",step2=>"$curStep",type2=>'cur',display=>'yes');
+	$genesis-> COM ('netlist_save_compare_results',output=>'screen');

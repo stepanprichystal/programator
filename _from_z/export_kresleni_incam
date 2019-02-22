@@ -1,0 +1,688 @@
+#!/usr/bin/perl -w
+#######################################################################################################################
+#Sript name: export_kresleni.pl
+#Verze     : 1.12 pridany kompenzace filmu 
+#Use       : panelizace filmu na jeden film, nastavba pro Export.pl
+#Made      : RV
+#######################################################################################################################
+# co udelat kdyz: 1. film se nedá slouèit.
+#				  2. vrstvy, ktere to nenakreslilo, nejsou smazany z metrixu
+#				  3. puvodni verze opfx souboru se nemazou
+use Genesis;
+use Tk;
+use sqlNoris;
+
+unless ($ENV{JOB}) {
+	$jobName = shift;
+	$sendTOplotter = shift;
+	$cestaZdroje = shift;
+	$Potisk = shift;
+	$padEnlarge = shift;
+	$linEnlarge = shift;
+	$enlargePad = shift;
+	$draw_film = shift;
+	$tenting = shift;
+} else {
+	$jobName = "$ENV{JOB}";
+	$cestaZdroje = "c:/Export";
+	$Potisk = 'Negativ';
+	$sendTOplotter = 'no';
+	$enlargePad = '70';
+	$tenting = 1;
+	$draw_film = 'small'; #/Big nakreslit film velky/maly 
+}		
+
+##### nastaveni hodnot 
+
+	
+$genesis = new Genesis;
+$cestaExportu = $cestaZdroje;
+
+my @plotPole = ();
+my $indexL_maly = '_m';
+my $indexL_velky = 'v';
+
+
+
+my $xstretch = 100.00;
+my $ystretch = 100.00;
+my $xstretch_v = 100.00;
+my $ystretch_v = 100.00;
+
+	if ($Potisk eq "Positiv") {
+ 	 	$PotiskPolarizace = 'positive';
+ 	
+ 	} else {
+ 	 	$PotiskPolarizace = 'negative';
+ 	}
+ 	
+	if($tenting == 1) {
+		$changePolarity = 'negative';
+		$suffixGen = 'n';
+	}else{
+		$changePolarity = 'positive';
+		$suffixGen = 'p';
+	}
+	
+my %metrix = ();
+my %priorita = ();
+my %hashPlot = ();
+my @nenakresleno = ();
+my @namePlotLayer = ();
+my @plotPole_male = ();
+my @plotPole_velke = ();
+my ($unpaired,$pocetPlotVrstev);
+
+generovani_vrstev();
+
+foreach my $layer (sort keys %metrix) {	 # zpracovavam jednotlive vrstvy pro slucovani
+				my $workItem = flatten_layer($layer,$indexL_maly);
+							   update_nameDB ($layer,$workItem);
+							   remove_all_over_profile ($workItem);
+					   		   fix_text ($workItem);
+					   		   	if ($metrix{$layer}->{'mirror'} eq 'yes') {
+		    		   		   			my $newItem = need_mirror ($workItem);
+		    		   		   			update_nameDB ($workItem,$newItem);
+		    		   		   			$workItem = $newItem;
+		    					}
+		    					if ($metrix{$layer}->{'komp'} > 0) {
+		    		   		   			my $newItem = do_kompenzation ($workItem,$metrix{$layer}->{'komp'});
+		    		   		   			update_nameDB ($workItem,$newItem);
+		    		   		   			$workItem = $newItem;
+		    					}
+		    					if ($metrix{$layer}->{'pol'} eq 'negative') {
+		    		   		   			my $newItem = make_negative ($workItem,$metrix{$layer}->{'komp'});
+		    		   		   			update_nameDB ($workItem,$newItem);
+		    		   		   			$workItem = $newItem;
+		    					}
+}
+foreach my $layer (sort keys %metrix) {	 # zpracovavam jednotlive vrstvy znovu pro velke filmy
+								if ($metrix{$layer}->{'format'} eq 'velky') {
+											my $workItem = flatten_layer($layer,$indexL_velky);
+														   fix_text ($workItem);
+#Nevim proc, ale neni treba mirror					if ($metrix{$layer}->{'mirror'} eq 'yes') {		
+#		    		   		   									my $newItem = need_mirror ($workItem);
+#		    		   		   									   $workItem = $newItem;
+#		    										}
+		    										if ($metrix{$layer}->{'komp'} > 0) {
+		    		   		   									my $newItem = do_kompenzation ($workItem,$metrix{$layer}->{'komp'});
+		    		   		   									   $workItem = $newItem;
+		    										}
+		    							push (@plotPole_velke,$workItem);
+		    					}
+}
+my $pocetPlotVrstev = keys %priorita;
+		foreach my $key (sort {$priorita{$a} cmp $priorita{$b}} keys %priorita) {
+					#print "$key\n";
+				 push (@namePlotLayer, $key);
+		}
+			if ($pocetPlotVrstev % 2) {
+					#liche cislo
+						$unpaired = pop @namePlotLayer;
+						push (@nenakresleno,$unpaired);
+						$genesis -> COM ('delete_layer',layer=>"$unpaired"); #odmazani nesloucene vrstvy
+						$pocetPlotVrstev -= 1;
+			}
+split_layers ();
+#set_parameters ('m'); # odmazani nastaveni puvodni vrstvy, bohuzel jsem narazil, ze nevim proc to tady je....
+get_together($indexL_maly);
+
+foreach my $itemOne (@plotPole_velke) {
+			if ($draw_film eq "big") {
+					$hashPlot{$itemOne} = 'yes';
+			}else{
+					$hashPlot{$itemOne} = 'no';
+			}
+			my @field = split /_/,$itemOne;
+			push (@poleIndexBig,$field[0]);
+}
+foreach my $itemOne (@plotPole_male) {
+			if ($draw_film eq "small") {
+					$hashPlot{$itemOne} = 'yes';
+			}else{
+				foreach my $indexTMP (@poleIndexBig) {
+						if($itemOne =~ /$indexTMP[\d{1,3}]/) {
+								$hashPlot{$itemOne} = 'no';
+						}else{
+								$hashPlot{$itemOne} = 'yes';
+						}
+				}
+			}
+}
+
+open (REPORT,">c:/tmp/Report_vykresleni");
+print REPORT "nenakresleno : @nenakresleno";
+close REPORT;
+
+send_to_plotter ();
+
+
+
+#######################################################################################################
+############################## SUBROUTINE #############################################################
+#######################################################################################################
+
+sub get_together{
+			my $indexL = shift;
+			my $i = 0;
+				while ($i < $pocetPlotVrstev) {
+							($xMINSizeA,$xMAXSizeA,$layerStop) = knowDim_posicion($namePlotLayer[$i]);
+							($xMINSizeB,$xMAXSizeB,$layerMove) = knowDim_posicion($namePlotLayer[++$i]);
+							$i++;
+							if ($xMAXSizeA <= $xMINSizeB) {
+									
+									$genesis -> COM ('affected_layer',affected=>'no',mode=>'all');
+									
+									my @pole1 = split /$indexL/,"$layerStop";
+									my @pole2 = split /$indexL/,"$layerMove";
+				
+										if($layerStop =~ /\_n/g) {
+												$polar1 = 'n';
+										}else{
+												$polar1 = '';
+										}
+										if($layerMove =~ /\_n/g) {
+												$polar2 = 'n';
+										}else{
+												$polar2 = '';
+										}
+							
+										if($layerStop =~ /(_\d{1,3})/g) { 
+												$kompValue1 = $1;
+										}else{
+												$kompValue1 = '';
+										}
+										if($layerMove =~ /(_\d{1,3})/g) { 
+												$kompValue2 = $1;
+										}else{
+												$kompValue2 = '';
+										}
+									my $newLname = $pole1[0] . $kompValue1 . $polar1 . '-' . $pole2[0] . $kompValue2 . $polar2;
+									push(@plotPole_male, $newLname); #aktualni seznam vrstev na vykresleni
+			
+				 					$genesis -> COM ('affected_layer',name=>"$layerStop",mode=>'single',affected=>'yes');
+									$genesis -> COM ('affected_layer',name=>"$layerMove",mode=>'single',affected=>'yes');
+									$genesis -> COM ('display_layer',name=>"$layerMove",display=>'yes',number=>'1');
+									$genesis -> COM ('work_layer',name=>"$layerMove");
+									
+									$genesis -> COM ('sel_copy_other',dest=>'layer_name',target_layer=>"$newLname",invert=>'no',dx=>'0',dy=>'0',size=>'0',x_anchor=>'0',y_anchor=>'0',rotation=>'0',mirror=>'none');
+									
+									$genesis -> COM ('affected_layer',name=>"$layerStop",mode=>'single',affected=>'no');
+									$genesis -> COM ('affected_layer',name=>"$layerMove",mode=>'single',affected=>'no');
+									$genesis -> COM ('delete_layer',layer=>"$layerStop");
+									$genesis -> COM ('delete_layer',layer=>"$layerMove");
+									
+							}else{
+							push (@nenakresleno,$layerStop,$layerMove);
+							} 
+				}
+}
+sub knowDim {
+	my $layerActual = shift;
+	my $xSize;
+	my $ySize;
+		
+							$genesis->INFO(units=>'mm',entity_type => 'layer',entity_path => "$jobName/panel/$layerActual",data_type => 'LIMITS');
+							
+							my $tmpXmin = $genesis->{doinfo}{gLIMITSxmin};
+							my $tmpYmin = $genesis->{doinfo}{gLIMITSymin};
+									$tmpXmin *= -1;
+									$tmpYmin *= -1;
+			        	$xSize = sprintf "%3.3f",($genesis->{doinfo}{gLIMITSxmax} + $tmpXmin);
+		    	    		$ySize = sprintf "%3.3f",($genesis->{doinfo}{gLIMITSymax} + $tmpYmin);
+		    	 return ($xSize,$ySize,$layerActual);
+}
+sub knowDim_posicion {
+	my $layerActual = shift;
+	my $xMinSize;
+	my $xMaxSize;
+		
+					$genesis->INFO(units=>'mm',entity_type => 'layer',entity_path => "$jobName/panel/$layerActual",data_type => 'LIMITS');
+			        	$xMinSize = sprintf "%3.3f",($genesis->{doinfo}{gLIMITSxmin});
+		    	    		$xMaxSize = sprintf "%3.3f",($genesis->{doinfo}{gLIMITSxmax});
+		    	 return ($xMinSize,$xMaxSize,$layerActual);
+}
+sub split_layers {
+	foreach my $rowNameNew (@namePlotLayer) {
+    	$genesis->INFO(units=>'mm',entity_type => 'layer',entity_path => "$jobName/panel/$rowNameNew",data_type => 'LIMITS');
+        	 $myDpsXsize = $genesis->{doinfo}{gLIMITSxmin};
+	         $myDpsYsize = $genesis->{doinfo}{gLIMITSymin};
+	         $myDpsXsizeMAX = $genesis->{doinfo}{gLIMITSxmax};
+    	     $myDpsYsizeMAX = $genesis->{doinfo}{gLIMITSymax};
+	          if ($movoSwitch == 0) {
+	       			  $myDpsXsize = (($myDpsXsize * (-1)) + 0.05) ;
+	       	 		  $myDpsYsize = (($myDpsYsize * (-1)) + 0.1);
+	       	 		  $movoSwitch = 1;
+	       	  }else{
+	       	  	      $myDpsXsize = ((($myDpsXsizeMAX * (-1)) + 609.6) - 0.2);
+	       	 		  $myDpsYsize = ((($myDpsYsize 	  * (-1)) +   0.0) + 0.1);
+	       	 		  $movoSwitch = 0;
+	       	  }
+	        
+	       	$genesis -> COM ('affected_layer',affected=>'no',mode=>'all');
+			$genesis -> COM ('display_layer',name=>"$rowNameNew",display=>'yes',number=>'1');
+			$genesis -> COM ('work_layer',name=>"$rowNameNew");
+	       	$genesis -> COM ('sel_move',dx=>"$myDpsXsize",dy=>"$myDpsYsize");
+	       	$genesis -> COM ('display_layer',name=>"$rowNameNew",display=>'no',number=>'1');
+	}
+	
+	
+}
+sub update_nameDB {
+		my $oldName = shift;
+		my $newName = shift;
+		my $tmpValue = $priorita{$oldName};
+		delete($priorita{$oldName});
+		$priorita{$newName} = $tmpValue;
+}
+sub flatten_layer {
+	my $workLayer = shift;
+	my $indexL = shift;
+	my $cuArea;
+	my $cuThick;
+	my $kompenzace;
+	my $barvaVrtstva;
+	my @attrName = ();
+	my @attr = ();
+	
+	        $genesis -> COM ('clear_layers');
+            $genesis -> COM ('affected_layer',name=>"",mode=>"all",affected=>"no");
+             delete_older_layers("${workLayer}$indexL");
+			$genesis -> COM ('flatten_layer',source_layer=>"$workLayer",target_layer=>"${workLayer}$indexL");
+			$genesis -> COM ('display_layer',name=>"${workLayer}$indexL",display=>'no',number=>'1');
+			
+
+		$genesis->INFO(units=>'mm',entity_type => 'layer',entity_path => "$jobName/panel/$workLayer",data_type => 'ATTR');
+		@attrName = @{$genesis->{doinfo}{gATTRname}};
+		@attr = @{$genesis->{doinfo}{gATTRval}};
+		my $icount = 0;
+				foreach $oneAt (@attrName) {
+						if ($oneAt eq "cu_area") {
+								$cuArea = $attr[$icount];
+						} 
+						if ($oneAt eq "copper_weight") {
+								$cuThick = $attr[$icount];
+						}
+						if ($oneAt eq "kompenzace") {
+								$kompenzace = $attr[$icount];
+						}
+						if ($oneAt eq "ink_colour") {
+								$barvaVrtstva = $attr[$icount];
+						}
+					$icount++; 
+				}
+	
+	$genesis->COM('set_attribute',type=>'layer',job=>"$jobName",name1=>'panel',name2=>"${workLayer}$indexL",name3=>'',attribute=>"cu_area",value=>"$cuArea",units=>'mm');
+	$genesis->COM('set_attribute',type=>'layer',job=>"$jobName",name1=>'panel',name2=>"${workLayer}$indexL",name3=>'',attribute=>"copper_weight",value=>"$cuThick",units=>'mm');
+	$genesis->COM('set_attribute',type=>'layer',job=>"$jobName",name1=>'panel',name2=>"${workLayer}$indexL",name3=>'',attribute=>"kompenzace",value=>"$kompenzace",units=>'mm');
+	$genesis->COM('set_attribute',type=>'layer',job=>"$jobName",name1=>'panel',name2=>"${workLayer}$indexL",name3=>'',attribute=>"ink_colour",value=>"$barvaVrtstva",units=>'mm');
+ return ("${workLayer}$indexL");
+}
+sub remove_all_over_profile {
+		my $workLayer = shift;
+		
+			$genesis->COM ('filter_reset',filter_name=>'popup');
+			$genesis->COM ('zoom_home');
+			$genesis->INFO(units=>'mm',entity_type => 'step',entity_path => "$jobName/panel",data_type => 'PROF_LIMITS');
+			 $odpocet = 6;
+        			 $xPanelmin = sprintf "%3.3f",($genesis->{doinfo}{gPROF_LIMITSxmin} - $odpocet);
+        			 $yPanelmin = sprintf "%3.3f",($genesis->{doinfo}{gPROF_LIMITSymin} - $odpocet);
+        			 $xPanelmax = sprintf "%3.3f",($genesis->{doinfo}{gPROF_LIMITSxmax} + $odpocet);
+        			 $yPanelmax = sprintf "%3.3f",($genesis->{doinfo}{gPROF_LIMITSymax} + $odpocet);
+        			
+        				$genesis -> COM ('clear_layers');
+                		$genesis->COM('affected_layer',name=>"",mode=>"all",affected=>"no");  
+        				$genesis->COM ('display_layer',name=>"$workLayer",display=>'yes',number=>'1');
+						$genesis->COM ('work_layer',name=>"$workLayer");
+							$genesis->COM('sel_options',clear_mode=>'clear_after',display_mode=>'all_layers',area_inout=>'outside',area_select=>'select',select_mode=>'standard',area_touching_mode=>'exclude');
+								$genesis->COM('filter_area_strt');
+								$genesis->COM('filter_area_xy',x=>"$xPanelmin",y=>"$yPanelmin");
+								$genesis->COM('filter_area_xy',x=>"$xPanelmax",y=>"$yPanelmax");
+								$genesis->COM('filter_area_end',layer=>'',filter_name=>'popup',operation=>'select',area_type=>'rectangle',inside_area=>'no',intersect_area=>'no');
+	        					
+	        						if ($genesis->{COMANS} > 0) {
+												$genesis->COM ('sel_delete');
+									}
+					$genesis->COM ('display_layer',name=>"$workLayer",display=>'no',number=>'1');
+}
+sub delete_older_layers {
+	my $workLayer = shift;
+    		$genesis->INFO(entity_type=>'layer',entity_path=>"$jobName/panel/$workLayer",data_type=>'exists');
+    			if ($genesis->{doinfo}{gEXISTS} eq "yes") {
+    					$genesis->COM('delete_layer',layer=>"$workLayer");
+    			}
+    	
+    	$genesis->INFO('entity_type'=>'matrix','entity_path'=>"$jobName/matrix",'data_type'=>'ROW');
+    	my $totalRows = ${$genesis->{doinfo}{gROWrow}}[-1];
+	    for ($count=0;$count<=$totalRows;$count++) {
+			my $rowName = ${$genesis->{doinfo}{gROWname}}[$count];
+			my $rowContext = ${$genesis->{doinfo}{gROWcontext}}[$count];
+			if ($rowContext eq "misc") {
+				if($rowName =~ /c\+s/g) {
+					    $genesis->COM('delete_layer',layer=>"$rowName");
+				}
+			}
+    	}
+}
+sub fix_text {
+	my $workLayer = shift;
+			$genesis -> COM ('clear_layers');
+            $genesis -> COM ('affected_layer',name=>"",mode=>"all",affected=>"no");
+			$genesis -> COM ('display_layer',name=>"$workLayer",display=>'yes',number=>'1');
+			$genesis -> COM ('work_layer',name=>"$workLayer");
+            
+			$genesis -> COM ('filter_reset',filter_name=>'popup');
+			$genesis -> COM ('affected_layer',affected=>'no',mode=>'all');
+			$genesis -> COM ('display_layer',name=>"$workLayer",display=>'yes',number=>'1');
+			$genesis -> COM ('work_layer',name=>"$workLayer");
+			$genesis -> COM ('filter_atr_set',filter_name=>'popup',condition=>'yes',attribute=>'.pnl_place',text=>'*copper*');
+			$genesis -> COM ('filter_atr_set',filter_name=>'popup',condition=>'yes',attribute=>'.pnl_place',text=>'*kompen*');
+			$genesis -> COM ('filter_atr_set',filter_name=>'popup',condition=>'yes',attribute=>'.pnl_place',text=>'*colour*');
+			$genesis -> COM ('filter_atr_logic',filter_name=>'popup',logic=>'or');
+			$genesis -> COM ('filter_area_strt');
+			$genesis -> COM ('filter_area_end',layer=>'',filter_name=>'popup',operation=>'select',area_type=>'none',inside_area=>'no',intersect_area=>'no',lines_only=>'no',ovals_only=>'no',min_len=>'0',max_len=>'0',min_angle=>'0',max_angle=>'0');
+			if ($genesis->{COMANS} > 0) {
+					$genesis -> COM ('sel_contourize',accuracy=>'6.35',break_to_islands=>'yes',clean_hole_size=>'20',clean_hole_mode=>'x_and_y');
+			}
+			$genesis -> COM ('display_layer',name=>"$workLayer",display=>'no',number=>'1');
+}
+sub need_mirror {
+	my $workLayer = shift;
+			$genesis -> COM ('clear_layers');
+            $genesis -> COM ('affected_layer',name=>"",mode=>"all",affected=>"no");
+			$genesis -> COM ('display_layer',name=>"$workLayer",display=>'yes',number=>'1');
+			$genesis -> COM ('work_layer',name=>"$workLayer");
+			
+			$genesis->INFO(units=>'mm',entity_type => 'step',entity_path => "$jobName/panel",data_type => 'PROF_LIMITS');
+				my $XminPomocna = ($genesis->{doinfo}{gPROF_LIMITSxmax} - $genesis->{doinfo}{gPROF_LIMITSxmin}) / 2;
+					$genesis -> COM ('sel_transform',mode=>'anchor',oper=>'mirror',duplicate=>'no',x_anchor=>"$XminPomocna",y_anchor=>'0',angle=>'0',x_scale=>'1',y_scale=>'1',x_offset=>'0',y_offset=>'0');
+					$genesis -> COM ('display_layer',name=>"$workLayer",display=>'no',number=>'1');
+	return ($workLayer);
+}	
+sub do_kompenzation {
+		my $layerActual = shift;
+		my $kompLayer = shift;
+		
+		delete_older_layers("${layerActual}_${kompLayer}");
+
+
+		######### NEGATIVNI SYMBOLY
+			$genesis -> COM ('filter_reset',filter_name=>'popup');
+			$genesis -> COM ('affected_layer',affected=>'no',mode=>'all');
+			$genesis -> COM ('display_layer',name=>"$layerActual",display=>'yes',number=>'1');
+			$genesis -> COM ('work_layer',name=>"$layerActual");
+			$genesis -> COM ('filter_set',filter_name=>'popup',update_popup=>'no',polarity=>'negative');
+			$genesis -> COM ('filter_area_strt');
+			$genesis -> COM ('filter_area_end',layer=>'',filter_name=>'popup',operation=>'select',area_type=>'none',inside_area=>'no',intersect_area=>'no');
+			$genesis->COM ('get_select_count');
+					if ($genesis->{COMANS} > 0) {
+							$genesis -> COM ('sel_resize',size=>"-${kompLayer}",corner_ctl=>'no');
+			}
+			$genesis -> COM ('filter_reset',filter_name=>'popup');
+			$genesis -> COM ('zoom_home');
+			$genesis -> COM ('display_layer',name=>"$layerActual",display=>'no',number=>'1');
+		
+			######### POSITIVNI SYMBOLY
+			$genesis -> COM ('filter_reset',filter_name=>'popup');
+			$genesis -> COM ('affected_layer',affected=>'no',mode=>'all');
+			$genesis -> COM ('display_layer',name=>"$layerActual",display=>'yes',number=>'1');
+			$genesis -> COM ('work_layer',name=>"$layerActual");
+			$genesis -> COM ('filter_set',filter_name=>'popup',update_popup=>'no',polarity=>'positive');
+			$genesis -> COM ('filter_area_strt');
+			$genesis -> COM ('filter_area_end',layer=>'',filter_name=>'popup',operation=>'select',area_type=>'none',inside_area=>'no',intersect_area=>'no');
+			$genesis -> COM ('get_select_count');
+					if ($genesis->{COMANS} > 0) {
+							$genesis -> COM ('sel_resize',size=>"$kompLayer",corner_ctl=>'no');
+			}
+			$genesis -> COM ('filter_reset',filter_name=>'popup');
+			$genesis -> COM ('zoom_home');
+			$genesis -> COM ('display_layer',name=>"$layerActual",display=>'no',number=>'1');
+			$genesis -> COM ('rename_layer',name=>"$layerActual",new_name=>"${layerActual}_${kompLayer}"); 
+	return ("${layerActual}_${kompLayer}");
+}
+sub make_negative {
+	my $layerActual = shift;
+	
+			$genesis->INFO(units=>'mm',entity_type => 'layer',entity_path => "$jobName/panel/$layerActual",data_type => 'LIMITS');
+        	$mytmpDpsXmin = sprintf "%3.3f",($genesis->{doinfo}{gLIMITSxmin});
+        	$mytmpDpsXmax = sprintf "%3.3f",($genesis->{doinfo}{gLIMITSxmax});
+            $mytmpDpsYmin = sprintf "%3.3f",($genesis->{doinfo}{gLIMITSymin});
+            $mytmpDpsYmax = sprintf "%3.3f",($genesis->{doinfo}{gLIMITSymax});
+            
+            	$genesis -> COM ('filter_reset',filter_name=>'popup');
+            	$genesis -> COM ('create_layer',layer=>'__neg__tmp',context=>'misc',type=>'signal',polarity=>'positive',ins_layer=>'');
+				$genesis -> COM ('display_layer',name=>'__neg__tmp',display=>'yes',number=>'1');
+				$genesis -> COM ('work_layer',name=>'__neg__tmp');
+
+				$genesis -> COM ('add_surf_strt',surf_type=>'feature');
+				$genesis -> COM ('add_surf_poly_strt',x=>"$mytmpDpsXmin",y=>"$mytmpDpsYmin");
+				$genesis -> COM ('add_surf_poly_seg',x=>"$mytmpDpsXmin",y=>"$mytmpDpsYmax");
+				$genesis -> COM ('add_surf_poly_seg',x=>"$mytmpDpsXmax",y=>"$mytmpDpsYmax");
+				$genesis -> COM ('add_surf_poly_seg',x=>"$mytmpDpsXmax",y=>"$mytmpDpsYmin");
+				$genesis -> COM ('add_surf_poly_seg',x=>"$mytmpDpsXmin",y=>"$mytmpDpsYmin");
+				$genesis -> COM ('add_surf_poly_end');
+				$genesis -> COM ('add_surf_end',attributes=>'no',polarity=>'positive');
+				$genesis -> COM ('zoom_home');
+				$genesis -> COM ('display_layer',name=>'__neg__tmp',display=>'no',number=>'1');
+				
+					$genesis -> COM ('filter_reset',filter_name=>'popup');
+					$genesis -> COM ('affected_layer',affected=>'no',mode=>'all');
+					$genesis -> COM ('display_layer',name=>"$layerActual",display=>'yes',number=>'1');
+					$genesis -> COM ('work_layer',name=>"$layerActual");
+					$genesis -> COM ('sel_move_other',target_layer=>'__neg__tmp',invert=>'yes',dx=>'0',dy=>'0',size=>'0',x_anchor=>'0',y_anchor=>'0',rotation=>'0',mirror=>'none');
+					$genesis -> COM ('display_layer',name=>"$layerActual",display=>'no',number=>'1');
+					
+					$genesis -> COM ('affected_layer',affected=>'no',mode=>'all');
+					$genesis -> COM ('display_layer',name=>"__neg__tmp",display=>'yes',number=>'1');
+					$genesis -> COM ('work_layer',name=>"__neg__tmp");
+					$genesis -> COM ('sel_move_other',target_layer=>"$layerActual",invert=>'no',dx=>'0',dy=>'0',size=>'0',x_anchor=>'0',y_anchor=>'0',rotation=>'0',mirror=>'none');
+					$genesis -> COM ('delete_layer',layer=>"__neg__tmp");
+					$genesis -> COM ('rename_layer',name=>"$layerActual",new_name=>"${layerActual}_n");
+		return ("${layerActual}_n");
+}
+sub send_to_plotter {
+		my $plotting = 'no';
+		my $localCopy = 'yes';
+		my $filmDimen;
+		my $ymirror = 0;
+		my ($layerX,$layerY,$layerTMP,$layerSwap);
+		delete_old_OPFX ();
+			foreach my $exportLayer (keys %hashPlot) {
+						if ($sendTOplotter eq 'yes') {
+								$plotting = $hashPlot{$exportLayer};
+						}else{
+								$plotting = 'no';
+						}
+						($layerX,$layerY,$layerTMP) = knowDim($exportLayer);
+						if ($layerY > $layerX) { # zde predpokladam, ze kreslim VELKE filmy.
+								$layerSwap = 'swap';
+								$filmDimen = '24x16';
+								$xshift = 0;
+								$yshift = 0;
+						}else{	 # zde predpokladam, ze kreslim MALE filmy.
+								$layerSwap = 'no_swap';
+									if ($layerY <= 406.0) {
+											$filmDimen = '24x16';
+									}else{
+											$filmDimen = '24x20';
+									}
+							$xshift = 0;
+							$yshift = 0;
+						
+						}
+						if ($tenting == 1) {
+								if ($exportLayer =~ /^[c,s]/) {
+										if (getValueNoris ($jobName,'surface_finishing') eq 'G'){
+												$plotPolarity = 'positive';
+										}else{
+											$plotPolarity = 'negative';
+										}
+								}else{
+										$plotPolarity = 'positive';
+								}
+						}else{
+										$plotPolarity = 'positive';
+						}
+
+						if ($exportLayer =~ /^sv/) {
+									$ymirror = 1;
+						}else{
+									$ymirror = 0;
+						}
+						#if ($exportLayer =~ /^msv/) {
+						#			$ymirror = 1;
+						#}else{
+						#			$ymirror = 0;
+						#}
+					$genesis->COM('output_layer_reset');
+					$genesis->COM('image_set_elpd2',job=>"$jobName",step=>'panel',layer=>"$exportLayer",device_type=>'LP7008',polarity=>"$plotPolarity",speed=>0,xstretch=>"$xstretch",ystretch=>"$ystretch",xshift=>"$xshift",yshift=>"$yshift",xmirror=>0,ymirror=>"$ymirror",copper_area=>0,xcenter=>0,ycenter=>0,plot_kind1=>56,plot_kind2=>56,minvec=>'0',advec=>'0',minflash=>'0',adflash=>'0',conductors1=>0,conductors2=>0,conductors3=>0,conductors4=>0,conductors5=>0,media=>'first',smoothing=>'smooth',swap_axes=>"$layerSwap",define_ext_lpd=>'no',resolution_value=>0.25,resolution_units=>'mil',quality=>'auto',enlarge_polarity=>'positive',enlarge_other=>'leave_as_is',enlarge_panel=>'no',enlarge_contours_by=>'0',overlap=>'no',enlarge_image_symbols=>'no',enlarge_0_vecs=>'no',enlarge_symbols=>'none',enlarge_symbols_by=>'0',symbol_name1=>'',enlarge_by1=>0,symbol_name2=>'',enlarge_by2=>0,symbol_name3=>'',enlarge_by3=>0,symbol_name4=>'',enlarge_by4=>0,symbol_name5=>'',enlarge_by5=>0,symbol_name6=>'',enlarge_by6=>0,symbol_name7=>'',enlarge_by7=>0,symbol_name8=>'',enlarge_by8=>0,symbol_name9=>'',enlarge_by9=>0,symbol_name10=>'',enlarge_by10=>0);
+						
+
+					$genesis->COM('output_layer_reset');
+					$genesis->COM('output_layer_set',layer=>"$exportLayer",angle=>'0',mirror=>'no',x_scale=>'1',y_scale=>'1',comp=>'0',polarity=>'positive',setupfile=>'',setupfiletmp=>'',line_units=>'mm',gscl_file=>'');
+					$genesis->COM('output',job=>"$jobName",step=>'panel',format=>'LP7008',dir_path=>"$cestaExportu",prefix=>'',suffix=>"",break_sr=>'yes',break_symbols=>'no',break_arc=>'no',scale_mode=>'all',surface_mode=>'contour',units=>'mm',x_anchor=>'0',y_anchor=>'0',x_offset=>'0',y_offset=>'0',line_units=>'mm',override_online=>'yes',film_size=>"$filmDimen",local_copy=>"$localCopy",send_to_plotter=>"$plotting",plotter_group=>'imager6',units_factor=>'0.1',auto_purge=>'no',entry_num=>'5',plot_copies=>'1',imgmgr_name=>'',deliver_date=>'',plot_mode=>'single');
+					$genesis->COM('disp_on');
+					$genesis->COM('origin_on');
+					$genesis->COM ('delete_layer',layer=>"$exportLayer"); # po exportu (ne)smaze vrstvy
+			}
+}
+sub delete_old_OPFX {
+	    	opendir (VYMAZANI,"$cestaZdroje");
+			@dataV = readdir VYMAZANI;
+			closedir VYMAZANI;
+			foreach my $one (@dataV) {
+				if ($one =~ /\@/) {
+						unless ($one =~ /\@[Vv]\d/) {
+								unlink("$cestaZdroje/$one");
+						}
+				}
+			}
+}
+sub generovani_vrstev {
+	my ($mirrPC,$mirrPS,$polarizace_C);
+		if ($PotiskPolarizace eq 'positive') {
+				$mirrPC = 'no';
+				$mirrPS = 'yes';
+ 		} else {
+				$mirrPC = 'yes';
+				$mirrPS = 'no';
+ 		}
+ 		$genesis->INFO(entity_type=>'layer',entity_path=>"$jobName/panel/s",data_type=>'exists');
+    				if ($genesis->{doinfo}{gEXISTS} eq "no") {
+ 								$polarizace_C = 'positive';
+ 								$format_C = 'maly';
+                                                                $draw_film = 'small';
+ 					}else{
+ 								$polarizace_C = 'positive';
+ 								$format_C = 'velky';
+		 			}
+		 			
+		 			
+		 			
+		 			
+		 			
+	    		$genesis->INFO(entity_type=>'layer',entity_path=>"$jobName/panel/lc",data_type=>'exists');
+    					if ($genesis->{doinfo}{gEXISTS} eq "yes") {
+    							$metrix{'lc'} = {'komp' => 0,
+				  								  'pol' => "positive",
+				  								  'mirror' => "no",
+				  								  'format' => 'maly'
+				  								  };
+				  				$priorita{'lc'} = 5;
+    					}
+    			$genesis->INFO(entity_type=>'layer',entity_path=>"$jobName/panel/gc",data_type=>'exists');
+    					if ($genesis->{doinfo}{gEXISTS} eq "yes") {
+    							$metrix{'gc'} = {'komp' => 0,
+				  								  'pol' => "positive",
+				  								  'mirror' => "no",
+				  								  'format' => 'maly'
+				  								  };
+				  				$priorita{'gc'} = 4;
+    					}
+    			$genesis->INFO(entity_type=>'layer',entity_path=>"$jobName/panel/pc",data_type=>'exists');
+    					if ($genesis->{doinfo}{gEXISTS} eq "yes") {
+    							$metrix{'pc'} = {'komp' => 0,
+				  								  'pol' => "$PotiskPolarizace",
+				  								  'mirror' => "$mirrPC",
+				  								  'format' => 'maly'
+				  								  };
+				  				$priorita{'pc'} = 3;
+    					}
+    			$genesis->INFO(entity_type=>'layer',entity_path=>"$jobName/panel/mc",data_type=>'exists');
+    					if ($genesis->{doinfo}{gEXISTS} eq "yes") {
+    							$metrix{'mc'} = {'komp' => 0,
+				  								  'pol' => "positive",
+				  								  'mirror' => "yes",
+				  								  'format' => 'maly'
+				  								  };
+				  				$priorita{'mc'} = 2;
+    					}
+    			$genesis->INFO(entity_type=>'layer',entity_path=>"$jobName/panel/c",data_type=>'exists');
+    					if ($genesis->{doinfo}{gEXISTS} eq "yes") {
+    							$metrix{'c'} = {'komp' => "$enlargePad",
+				  								  'pol' => "$polarizace_C",
+				  								  'mirror' => "yes",
+				  								  'format' => "$format_C"
+				  								  };
+				  				$priorita{'c'} = 1;
+    					}
+    			$genesis->INFO(entity_type=>'layer',entity_path=>"$jobName/panel/s",data_type=>'exists');
+    					if ($genesis->{doinfo}{gEXISTS} eq "yes") {
+    							$metrix{'s'} = {'komp' => "$enlargePad",
+				  								  'pol' => "positive",
+				  								  'mirror' => "no",
+				  								  'format' => 'velky'
+				  								  };
+				  				$priorita{'s'} = 1;
+    					}
+    			$genesis->INFO(entity_type=>'layer',entity_path=>"$jobName/panel/ms",data_type=>'exists');
+    					if ($genesis->{doinfo}{gEXISTS} eq "yes") {
+    							$metrix{'ms'} = {'komp' => 0,
+				  								  'pol' => "positive",
+				  								  'mirror' => "no",
+				  								  'format' => 'maly'
+				  								  };
+				  				$priorita{'ms'} = 2;
+    					}
+    			$genesis->INFO(entity_type=>'layer',entity_path=>"$jobName/panel/ps",data_type=>'exists');
+    					if ($genesis->{doinfo}{gEXISTS} eq "yes") {
+    							$metrix{'ps'} = {'komp' => 0,
+				  								  'pol' => "$PotiskPolarizace",
+				  								  'mirror' => "$mirrPS",
+				  								  'format' => 'maly'
+				  								  };
+				  				$priorita{'ps'} = 3;
+    					}
+    			$genesis->INFO(entity_type=>'layer',entity_path=>"$jobName/panel/gs",data_type=>'exists');
+    					if ($genesis->{doinfo}{gEXISTS} eq "yes") {
+    							$metrix{'gs'} = {'komp' => 0,
+				  								  'pol' => "positive",
+				  								  'mirror' => "yes",
+				  								  'format' => 'maly'
+				  								  };
+				  				$priorita{'gs'} = 4;
+    					}
+    			$genesis->INFO(entity_type=>'layer',entity_path=>"$jobName/panel/ls",data_type=>'exists');
+    					if ($genesis->{doinfo}{gEXISTS} eq "yes") {
+    							$metrix{'ls'} = {'komp' => 0,
+				  								  'pol' => "positive",
+				  								  'mirror' => "yes",
+				  								  'format' => 'maly'
+				  								  };
+				  				$priorita{'ls'} = 5;
+    					}
+    			$genesis->INFO(entity_type=>'layer',entity_path=>"$jobName/panel/ff",data_type=>'exists');
+    					if ($genesis->{doinfo}{gEXISTS} eq "yes") {
+    							$metrix{'ff'} = {'komp' => 0,
+				  								  'pol' => "positive",
+				  								  'mirror' => "no",
+				  								  'format' => 'maly'
+				  								  };
+				  				$priorita{'ff'} = 6;
+    					}
+}
+sub set_parameters {
+	my $rowName = shift;
+	my $plotPolarity = "positive";
+	$genesis->COM('image_set_elpd2',job=>"$jobName",step=>"panel",layer=>"$rowName",device_type=>'LP7008',polarity=>"$plotPolarity",speed=>0,xstretch=>0,ystretch=>0,xshift=>0,yshift=>0,xmirror=>0,ymirror=>0,copper_area=>0,xcenter=>0,ycenter=>0,plot_kind1=>56,plot_kind2=>56,minvec=>0,advec=>0,minflash=>0,adflash=>0,conductors1=>0,conductors2=>0,conductors3=>0,conductors4=>0,conductors5=>0,media=>'first',smoothing=>'smooth',swap_axes=>'no_swap',define_ext_lpd=>'no',resolution_value=>0.25,resolution_units=>'mil',quality=>'auto',enlarge_polarity=>'both',enlarge_other=>'leave_as_is',enlarge_panel=>'no',enlarge_contours_by=>0,overlap=>'no',enlarge_image_symbols=>'no',enlarge_0_vecs=>'no',enlarge_symbols=>'none',enlarge_symbols_by=>0,symbol_name1=>'',enlarge_by1=>0,symbol_name2=>'',enlarge_by2=>0,symbol_name3=>'',enlarge_by3=>0,symbol_name4=>'',enlarge_by4=>0,symbol_name5=>'',enlarge_by5=>0,symbol_name6=>'',enlarge_by6=>0,symbol_name7=>'',enlarge_by7=>0,symbol_name8=>'',enlarge_by8=>0,symbol_name9=>'',enlarge_by9=>0,symbol_name10=>'',enlarge_by10=>0);
+}

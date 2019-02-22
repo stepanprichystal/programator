@@ -1,0 +1,69 @@
+#!/usr/bin/perl-w
+# 2.skript zkontroluje, jestli vsechny line ve vrstvach F a R maji chain
+############################
+	
+use Genesis;
+use Tk;
+use Tk::BrowseEntry;
+
+
+unless ($ENV{JOB}) {
+	$jobName = shift;
+	$stepName = shift;
+} else {
+	$jobName = "$ENV{JOB}";
+	$stepName = "o+1";
+}
+
+$genesis = new Genesis;
+my $logo_way = "$ENV{'GENESIS_DIR'}/sys/scripts/gatema/error.gif";
+
+$mainMain = MainWindow->new();
+$mainMain->title('Pozor');
+$topmain = $mainMain->Frame(-width=>10, -height=>20)->pack(-side=>'top');
+$botmain = $mainMain->Frame(-width=>10, -height=>20)->pack(-side=>'bottom');
+$main = $topmain->Frame(-width=>10, -height=>20)->pack(-side=>'right');
+$logomain = $topmain->Frame(-width=>10, -height=>20)->pack(-side=>'left');
+
+
+
+check_mis_chain("$jobName", "$stepName", 'f');
+check_mis_chain("$jobName", "$stepName", 'r');
+
+foreach $radekPlny(@view) {
+	if ($radekPlny eq "full") {
+		   			$logo_frame = $logomain->Frame(-width=>50, -height=>50)->pack(-side=>'left');
+					$error_logo = $logo_frame->Photo(-file=>"$logo_way");
+					$logo_frame->Label(-image=>$error_logo)->pack();
+			$button = $botmain ->Button(-text=>'konec',-command=>\&konec)->pack(-padx=>5,-pady=>5);
+			$mainMain->waitVisibility;
+			$mainMain->waitWindow;
+	}
+}
+sub check_mis_chain {
+	my $jobItem = shift;
+	my $sourceStep = shift;
+	my $workLayer = shift;
+	
+		$genesis->INFO(entity_type=>'layer',entity_path=>"$jobItem/$sourceStep/$workLayer",data_type=>'exists');
+    		if ($genesis->{doinfo}{gEXISTS} eq "yes") {
+			my $infoFile = $genesis->INFO('units'=>'mm','entity_type'=>'layer','entity_path'=>"$jobItem/$sourceStep/$workLayer",'data_type'=>'FEATURES',parse=>'no');
+				open (INFOFILE,$infoFile);
+						while(<INFOFILE>) {
+									if ($_ =~ /\#L/) {
+											unless ($_ =~ /rout_chain/) {
+												push (@view,'full');
+				
+								        			$radek[$row] = $main->Message(-justify=>'center', -aspect=>5000, -text=>"Pozor, ve vrstve $workLayer jsou line bez vytvorene frezy.");
+												$radek[$row]->pack();
+												$radek[$row]->configure(-font=>'times 12 bold');
+												$row++;
+											}
+									}
+						}
+		}
+	return(0);
+}
+sub konec {	
+	exit;
+}

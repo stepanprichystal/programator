@@ -1,0 +1,105 @@
+#!/usr/bin/perl-w
+# 1.skript zjisti hodnotu navyseni vrtaku, nad 150 zobrazi hlasku
+############################
+	
+use Genesis;
+use Tk;
+use Tk::BrowseEntry;
+
+
+unless ($ENV{JOB}) {
+	$jobName = shift;
+	#$stepName = shift;
+} else {
+	$jobName = "$ENV{JOB}";
+	#$stepName = "o+1";
+}
+$genesis = new Genesis;
+my $logo_way = "$ENV{'GENESIS_DIR'}/sys/scripts/gatema/error.gif";
+
+$mainMain = MainWindow->new();
+$mainMain->title('Pozor');
+$topmain = $mainMain->Frame(-width=>10, -height=>20)->pack(-side=>'top');
+$botmain = $mainMain->Frame(-width=>10, -height=>20)->pack(-side=>'bottom');
+$main = $topmain->Frame(-width=>10, -height=>20)->pack(-side=>'right');
+$logomain = $topmain->Frame(-width=>10, -height=>20)->pack(-side=>'left');
+
+
+
+$genesis->INFO(entity_type=>'layer',entity_path=>"$jobName/o+1/m",data_type=>'exists');
+    	if ($genesis->{doinfo}{gEXISTS} eq "yes") {
+					push(@layerdrill,'m');
+		}
+$genesis->INFO(entity_type=>'layer',entity_path=>"$jobName/o+1/f",data_type=>'exists');
+    	if ($genesis->{doinfo}{gEXISTS} eq "yes") {
+					push(@layerdrill,'f');
+		}
+$genesis->INFO(entity_type=>'layer',entity_path=>"$jobName/o+1/d",data_type=>'exists');
+    	if ($genesis->{doinfo}{gEXISTS} eq "yes") {
+					push(@layerdrill,'d');
+		}
+
+foreach my $firstLayer (@layerdrill) {
+		$pocetTool = shift;
+		@numVrtaku = ();
+		@finishSize = ();
+		@type = ();
+		@type2 = ();
+		@min_tools = ();
+		@max_tools = ();
+		@bitSize = ();
+		$countDrill = shift;
+		$space = shift;
+		@polespace = ();
+		
+$genesis->INFO(units=>'mm',entity_type => 'layer',entity_path => "$jobName/o+1/$firstLayer",data_type => 'NUM_TOOL');
+	$pocetTool = $genesis->{doinfo}{gNUM_TOOL}; 
+
+
+	$genesis->INFO(units=>'mm',entity_type => 'layer',entity_path => "$jobName/o+1/$firstLayer",data_type => 'TOOL');
+	@numVrtaku = @{$genesis->{doinfo}{gTOOLnum}};
+	@finishSize = @{$genesis->{doinfo}{gTOOLfinish_size}};
+	@type = @{$genesis->{doinfo}{gTOOLtype}};
+	@type2 = @{$genesis->{doinfo}{gTOOLtype2}};
+	@min_tools = @{$genesis->{doinfo}{gTOOLmin_tol}};
+	@max_tools = @{$genesis->{doinfo}{gTOOLmax_tol}};
+	@bitSize = @{$genesis->{doinfo}{gTOOLbit}};
+
+$pocetTool -= 1;
+for($countDrill = 0;$countDrill <= $pocetTool;$countDrill++) {
+	$space = 0;
+		$space = (($bitSize[$countDrill] * 1000) - $finishSize[$countDrill]);
+		$row = 1;
+		push(@polespace,$space);
+
+		if($space > 151) {
+
+########################## GUI  GUI GUI GUI GUI GUI GUI  ###################################
+############################################################################################
+
+			push (@view,'full');
+				
+        			$radek[$row] = $main->Message(-justify=>'center', -aspect=>5000, -text=>"Prepocet otvoru je vetsi nez 150um, Zkontroluj to!Ve vrstve $firstLayer, nastroj T$numVrtaku[$countDrill] (hodnota $polespace[$countDrill])");
+					$radek[$row]->pack();
+					$radek[$row]->configure(-font=>'times 12 bold');
+					$row++;
+					
+##########################  END GUI END GUI END GUI END GUI #################################
+#############################################################################################
+		}
+}
+}
+
+foreach $radekPlny(@view) {
+	if ($radekPlny eq "full") {
+		   			$logo_frame = $logomain->Frame(-width=>50, -height=>50)->pack(-side=>'left');
+					$error_logo = $logo_frame->Photo(-file=>"$logo_way");
+					$logo_frame->Label(-image=>$error_logo)->pack();
+			$button = $botmain ->Button(-text=>'konec',-command=>\&konec)->pack(-padx=>5,-pady=>5);
+			$mainMain->waitVisibility;
+			$mainMain->waitWindow;
+	}
+}
+sub konec {	
+	exit;
+}

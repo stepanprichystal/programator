@@ -25,7 +25,7 @@ use aliased 'Packages::CAMJob::Drilling::FinishSizeHoles::SetHolesRun';
 use aliased 'Packages::InCAM::InCAM';
 use aliased 'Packages::ETesting::MoveElTests';
 use aliased 'Packages::GuideSubs::Impedance::DoSetImpLines';
-
+use aliased 'Helpers::GeneralHelper';
 use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'Connectors::HeliosConnector::HelperWriter';
 
@@ -399,7 +399,7 @@ sub _Process {
  			
  			
 			# Here run script for set value of drill diameter
-			$inCAM->COM('script_run',name=>"$ENV{'GENESIS_DIR'}/sys/perl/sub/vv",dirmode=>'global',params=>"$pcbId"); 
+			$inCAM->COM('script_run',name=>GeneralHelper->Root()."\\_from_z\\vv",dirmode=>'global',params=>"$pcbId"); 
 			
  			
 			# Change minimal line in rout layer

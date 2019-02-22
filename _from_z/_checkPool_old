@@ -1,0 +1,276 @@
+#!/usr/bin/perl-w
+#################################
+#Sript name: checkPoolCount.pl
+#Verze     : 1.00
+#Use       : Vizualni kontrola poctu stepu a jejich nasobnosti v panelu pri POOLU
+#Made      : RV
+#################################
+use Genesis;
+use Tk;
+use Win32::OLE;
+use Win32::OLE::Variant;    
+use untilityScript;
+use sqlNoris;
+use PDF::Create;
+
+#loading of locale modules
+use LoadLibrary;
+
+#local library
+use Gatmain;
+
+
+my $genesis = new Genesis;
+
+
+
+unless ($ENV{JOB}) {
+	$jobName = shift;
+	$outputDir = shift;
+} else {
+	$jobName = "$ENV{JOB}";
+	$outputDir = "c:/Export";
+}
+my $customerName;
+my $outputDirZdroje = "$outputDir/Zdroje";
+#my $outputDirZdroje = "$outputDir";
+
+
+$genesis->COM('get_user_name');
+my $userName = "$genesis->{COMANS}";
+my $userCode;
+if ($userName eq "radek") {
+    $userCode = "rc";
+} elsif ($userName eq "radim") {
+    $userCode = "rvi";
+} elsif ($userName eq "lukas") {
+    $userCode = "lba";
+} elsif ($userName eq "martin") {
+    $userCode = "mku";
+} elsif ($userName eq "vasek") {
+    $userCode = "va";
+} elsif ($userName eq "stepan") {
+    $userCode = "sp";
+}elsif ($userName eq "josef") {
+    $userCode = "jkr";
+} else {
+    $userCode = "none";
+}
+
+
+
+
+my $mainPirez = MainWindow->new;
+$mainPirez->title('Prirezy');
+$mainPirez->configure(-background=>'MediumAquamarine');
+$mainPirez->minsize(qw(260 100));
+$mainPirez->Label(-text => "Zadej vysledny pocet prirezu",-bg=>"MediumAquamarine",-fg=>'black',-font=>'times 12 {bold}')->pack(-padx => 5, -pady => 1,-side=>'top');
+$mainPirez->Entry(-textvariable => \$pocetPrirezu,-width=>7,-font=>"normal 15 bold")->pack(-padx => 5, -pady => 5,-side=>left);
+$mainPirez->Button(-width=>40,-height=>2,-text => "OK",-command=> \&doCheckResult)->pack(-padx => 5, -pady => 5,-side=>left);
+
+MainLoop ($mainPirez);
+
+sub doCheckResult {
+	$mainPirez->destroy;
+$genesis->INFO(entity_type=>'step',entity_path=>"$jobName/panel",data_type=>'SR');
+			@usedStepstmp = @{$genesis->{doinfo}{gSRstep}};
+			@usedStepX = @{$genesis->{doinfo}{gSRnx}};
+			@usedStepY = @{$genesis->{doinfo}{gSRny}};
+$countForHash = 0;		
+foreach $itemStep (@usedStepstmp) {
+	$termin = shift;
+	my $kt;
+        unless ($itemStep =~ /coupon/) {
+			if ($itemStep eq 'o+1') {
+				$itemStep = $jobName;
+			}
+				$nasobnostXY = ($usedStepX[$countForHash] * $usedStepY[$countForHash]);
+				$nasobnosti{"$itemStep"} += $nasobnostXY;
+			$countForHash++;
+			&noris;
+			$kt = getValueNoris($itemStep, 'konstr_trida');	
+			#set_online_write ("$itemStep", "$reference", 'slouceno');
+			OnlineWrite_order( $reference, "slouceno" , "aktualni_krok" );
+			push(@allTermin,$termin);
+			push(@allKT,$kt);
+         }
+}
+
+@allTermin = sort ({$a<=>$b} @allTermin);
+@allKT = sort ({$b<=>$a} @allKT);
+
+
+my $typDPS = getValueNoris($jobName, 'typ_desky');
+
+#GUI my $main = MainWindow->new;
+#GUI $main->title('Nasobnosti');
+#GUI $main->configure(-background=>'MediumAquamarine');
+#GUI $main->minsize(qw(260 200));
+
+#GUI $main->Label(-text => "Termin: $allTermin[0]",-bg=>"Paleturquoise",-fg=>'red',-font=>'times 15 {bold}')->pack(-padx => 5, -pady => 1,-side=>'top');
+#GUI $main->Label(-text => "Pocet prirezu: $pocetPrirezu",-bg=>"Paleturquoise",-fg=>'black',-font=>'times 12 {bold}')->pack(-padx => 5, -pady => 1,-side=>'top');
+$rowOne = 1;
+
+  my $pdf = new PDF::Create('filename'     => "$outputDirZdroje/${jobName}_pool.pdf",);
+  my $a4 = $pdf->new_page('MediaBox' => $pdf->get_page_size('A4'));
+  my $page = $a4->new_page;
+  my $f1 = $pdf->font('BaseFont' => 'Helvetica');
+  
+  $page->setrgbcolor (0,0,255);
+  $page->stringl($f1, 20, 20, 780, "Gatema - POOL servis");
+  $page->setrgbcolor (255,0,0);
+  $page->set_width(2);
+  $page->line(20, 770, 540, 770);
+  
+  $page->setrgbcolor (255,0,0);
+  $page->stringl($f1, 15, 350, 780, "Termin: $allTermin[0]");
+  $page->setrgbcolor (0,0,0);
+  $page->stringl($f1, 10, 535, 810, "$userCode");
+  $page->stringl($f1, 15, 350, 750, "Pocet prirezu: $pocetPrirezu");
+  if ($allKT[0] > 6) {
+  		$page->stringl($f1, 15, 350, 730, "KT = $allKT[0]");
+  }
+  if ($typDPS eq 'Vicevrstvy') {
+  		$page->stringl($f1, 10, 350, 715, "$typDPS");
+  }
+  
+  
+  $page->stringl($f1, 15, 25, 750, "Master = $jobName");
+  $page->setrgbcolor (0,0,0);
+	$rowPDF = 725;
+while (($job, $nas) = each(%nasobnosti)){
+					$customerName = '';
+					my $kusuPozadavek = getValueNoris ($job, 'pocet');
+					unless ((getValueNoris ($job, 'customer')) =~ /MULTI C/) {
+							$customerName = getValueNoris ($job, 'customer');
+					}
+					my $kusyNavic = (($pocetPrirezu * $nas) - $kusuPozadavek);
+					#GUI$LeftRow[$rowOne] = $main->Frame(-bg=>"Paleturquoise",-borderwidth=>2,-relief=>'groove')->pack(-side=>'top',-fill=>'x',-fill=>'y');
+   					#GUI$LeftRow[$rowOne]->Label(-width=>'17',-text => "$job - $nas x ($kusuPozadavek + $kusyNavic)",-bg=>"Paleturquoise",-fg=>'black',-font=>'times 15 {bold}')->pack(-padx => 5, -pady => 1,-side=>'right');
+   					 $page->stringl($f1, 10, 25, $rowPDF, "$job - $nas x ($kusuPozadavek + $kusyNavic)  $customerName");
+   					 $rowPDF -= 20;
+   					unless ($job eq $jobName) {
+   						chomp($job);
+   						push(@joblist,$job);
+   					}
+   					$rowOne++;
+}
+$pdf->close;
+&writePoolfile;
+#GUI MainLoop ($main);
+exec("$outputDirZdroje/${jobName}_pool.pdf");
+}
+sub noris {
+my $dbConnection = Win32::OLE->new("ADODB.Connection");
+$dbConnection->Open("DSN=dps;uid=genesis;pwd=genesis");
+
+
+$sqlStatement = "select top 1
+ d.nazev_subjektu board_name,
+ c.nazev_subjektu customer,
+ m.nazev_subjektu material,
+ d.maska_barva_1 c_mask_colour,
+ d.maska_barva_2 s_mask_colour,
+ d.potisk c_silk_screen_colour,
+ d.potisk_typ s_silk_screen_colour,
+ d.zlaceni golding,
+ d.konstr_trida construction_class,
+ d.pocet_vrstev,
+ d.rozmer_x x_size,
+ d.rozmer_y y_size,
+ d.strihani cutting,
+ d.drazkovani slotting,
+ d.frezovani_pred milling_before,
+ d.frezovani_po milling_after,
+ d.freza_pred_leptanim milling_before_etch,
+ d.hal surface_finishing,
+ d.material_tloustka,
+ d.min_vrtak,
+ d.material_tloustka_medi,
+ d.material_typ_materialu,
+ d.poznamka,
+ d.tloustka,
+ d.tenting,
+ d.datacode,
+ d.konstr_trida,
+ dn.kus_x n_kus_x,
+ dn.kus_y n_kus_y,
+ dn.panel_x n_mpanel_x,
+ dn.panel_y n_mpanel_y,
+ dn.nasobnost n_nasobnost,
+ dn.konstr_trida n_construction_class,
+ dn.rozmer_x n_x_panel,
+ dn.rozmer_y n_y_panel,
+ prijal.nazev_subjektu n_prijal,
+ dn.maska_barva_1 n_c_mask_colour,
+ dn.maska_barva_2 n_s_mask_colour,
+ dn.potisk n_c_silk_screen_colour,
+ dn.potisk_typ n_s_silk_screen_colour,
+ mn.nazev_subjektu n_material,
+ dn.strihani n_cutting,
+ dn.drazkovani n_slotting,
+ dn.frezovani_pred n_milling_before,
+ dn.frezovani_po n_milling_after,
+ dn.poznamka n_poznamka_dps,
+ dn.poznamka_zakaznik n_poznamka_web,
+ n.poznamka n_poznamka_zak,
+ z.kusy_pozadavek pocet,
+ z.pooling,
+ z.stav,
+ d.material_druh,
+ lcs.nf_edit_style('ddlb_22_hal', dn.hal) n_surface,
+ lcs.nf_edit_style('typ_desky_22', d.material_typ) typ_desky,
+ z.pocet_prirezu,
+ z.prirezu_navic,
+ z.termin,
+ z.aktualni_krok,
+ z.reference_subjektu reference_zakazky,
+ d.archiv + d.reference_subjektu archiv
+ from lcs.desky_22 d with (nolock)
+ left outer join lcs.subjekty c with (nolock) on c.cislo_subjektu=d.zakaznik
+ left outer join lcs.subjekty m with (nolock) on m.cislo_subjektu=d.material
+ left outer join lcs.zakazky_dps_22_hlavicka z with (nolock) on z.deska=d.cislo_subjektu
+ left outer join lcs.vztahysubjektu vs with (nolock) on vs.cislo_subjektu=z.cislo_subjektu and vs.cislo_vztahu=22175
+ left outer join lcs.zakazky_dps_22_hlavicka n with (nolock) on vs.cislo_vztaz_subjektu=n.cislo_subjektu
+ left outer join lcs.subjekty prijal with (nolock) on prijal.cislo_subjektu=n.prijal
+ left outer join lcs.desky_22 dn with (nolock) on n.deska=dn.cislo_subjektu
+ left outer join lcs.subjekty mn with (nolock) on mn.cislo_subjektu=dn.material
+ where d.reference_subjektu='$itemStep' and  z.cislo_poradace = 22050
+ order by z.reference_subjektu desc,n.cislo_subjektu desc,z.cislo_subjektu desc
+";
+
+$sqlExecute = $dbConnection->Execute("$sqlStatement");
+
+    $termin = $sqlExecute->Fields('termin')->Value;
+	$reference = $sqlExecute->Fields('reference_zakazky')->Value;
+
+
+$dbConnection->Close();
+}
+
+sub convert_from_czech {
+    my $lineToConvert = shift;
+    my $char;
+    my $ret;
+    my @str = split(//,$lineToConvert);
+
+    foreach my $char (@str) {
+        $char =~ tr/\xE1\xC1\xE8\xC8\xEF\xCF\xE9\xC9\xEC\xCC\xED\xCD\xF3\xD3\xF8\xD8\xB9\xA9\xBB\xAB\xFA\xDA\xF9\xD9\xFD\xDD\xBE\xAE\xF2\xD2/\x61\x41\x63\x43\x64\x44\x65\x45\x65\x45\x69\x49\x6F\x4F\x72\x52\x73\x53\x74\x54\x75\x55\x75\x55\x79\x59\x7A\x5A\x6E\x4E/;
+        $ret .= $char;
+    }
+    return ($ret);
+}       
+
+sub writePoolfile {
+	open (POOLFILE,">$outputDir/$jobName.pool");
+	print POOLFILE "[POOL]\n";
+	print POOLFILE "master = $jobName\n";
+	$" = ",";
+	print POOLFILE "slaves = @joblist";
+	print POOLFILE "\n\n";
+		while (($job, $nas) = each(%nasobnosti)){
+				print POOLFILE "[$job]\n";
+				print POOLFILE "nasobnost = $nas\n\n";
+		}
+	close POOLFILE;
+}

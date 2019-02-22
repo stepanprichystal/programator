@@ -1,0 +1,107 @@
+#!/usr/bin/perl-w
+# 1.skript zjisti hodnotu navyseni vrtaku, nad 150 zobrazi hlasku
+############################
+	
+use Genesis;
+use LoadLibrary;
+
+
+#3th party library
+use strict;
+use warnings;
+use XML::Simple;
+use Data::Dumper;
+use POSIX;
+use PDF::Create;
+
+#local library
+use Enums;
+use FileHelper;
+use GeneralHelper;
+use DrillHelper;
+use StackupHelper;
+use MessageForm;
+use SimpleInputForm;
+use sqlNoris;
+
+
+
+my $jobName;
+unless ($ENV{JOB}) {
+	$jobName = shift;
+	#$stepName = shift;
+} else {
+	$jobName = "$ENV{JOB}";
+	#$stepName = "o+1";
+}
+my $genesis = new Genesis;
+
+my @messField = ();
+
+
+
+my @layerdrill = ();
+$genesis->INFO(entity_type=>'layer',entity_path=>"$jobName/o+1/m",data_type=>'exists');
+    	if ($genesis->{doinfo}{gEXISTS} eq "yes") {
+					push(@layerdrill,'m');
+		}
+$genesis->INFO(entity_type=>'layer',entity_path=>"$jobName/o+1/f",data_type=>'exists');
+    	if ($genesis->{doinfo}{gEXISTS} eq "yes") {
+					push(@layerdrill,'f');
+		}
+
+foreach my $firstLayer (@layerdrill) {
+		my $pocetTool = 0;
+		my @numVrtaku = ();
+		my @finishSize = ();
+		my @type = ();
+		my @type2 = ();
+		my @min_tools = ();
+		my @max_tools = ();
+		my @bitSize = ();
+		my $countDrill = 0;
+		
+		$genesis->INFO(units=>'mm',entity_type => 'layer',entity_path => "$jobName/o+1/$firstLayer",data_type => 'NUM_TOOL');
+		$pocetTool = $genesis->{doinfo}{gNUM_TOOL}; 
+
+
+  		$genesis->INFO(units=>'mm',entity_type => 'layer',entity_path => "$jobName/o+1/$firstLayer",data_type => 'TOOL');
+  		@numVrtaku = @{$genesis->{doinfo}{gTOOLnum}};
+  		@finishSize = @{$genesis->{doinfo}{gTOOLfinish_size}};
+  		@type = @{$genesis->{doinfo}{gTOOLtype}};
+  		@type2 = @{$genesis->{doinfo}{gTOOLtype2}};
+  		@min_tools = @{$genesis->{doinfo}{gTOOLmin_tol}};
+  		@max_tools = @{$genesis->{doinfo}{gTOOLmax_tol}};
+  		@bitSize = @{$genesis->{doinfo}{gTOOLbit}};
+
+			$pocetTool -= 1;
+  			for($countDrill = 0;$countDrill <= $pocetTool;$countDrill++) {
+  			my $space = 0;
+  						$space = ($bitSize[$countDrill] * 1000) - $finishSize[$countDrill];
+  				
+#my $tmpV = $bitSize[$countDrill] * 1000; 				
+#open (REPORT,">>c:/Export/repport");
+#print REPORT "$firstLayer T$numVrtaku[$countDrill] $tmpV $finishSize[$countDrill] $space\n";
+#close REPORT;
+			
+			my $limitSpace = 165; #limitni hodnota navyseneho otvoru
+  					if($space > $limitSpace) {
+  							push (@messField,"Prepocet otvoru je vetsi nez ${limitSpace}um, Ve vrstve $firstLayer, nastroj T$numVrtaku[$countDrill] (hodnota $space)");
+  					}
+  			}
+}
+
+my @btns = ("table tools", "OK"); # "ok" = tl. cislo 1, "table tools" = tl.cislo 2
+my $result = -1;
+
+if (@messField) {
+		new MessageForm( Enums::MessageType->WARNING, \@messField, \@btns, \$result);
+			if ($result == 1) {
+				exit;
+		}elsif ($result == 2) {
+						$genesis->COM('open_entity',job=>"$jobName",type=>'step',name=>"o+1",iconic=>'no');
+    					$genesis->AUX('set_group', group => $genesis->{COMANS});	
+						$genesis->COM('tools_show', layer=>'m');
+		}
+		
+}

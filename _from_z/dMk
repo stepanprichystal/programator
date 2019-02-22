@@ -1,0 +1,145 @@
+#!/usr/bin/perl-w
+#################################
+#Verze     : 1.00
+#Use       : Skript vytvori hromadny drill_map pro pouzitelne pro kontrolovani desek z kooperace
+#Made      : RV
+#################################
+use Genesis;
+use Tk;
+
+
+
+$myStep = 'o+1';
+
+my $genesis = new Genesis;
+my $cestaExportu = 'c:/Export/';
+	
+my $filePath = 'r:/Archiv/';
+	
+$main = MainWindow->new();
+		$main->title('Zadej jobs pro vytvoreni drill_map');
+		
+	$midleFrame = $main ->Frame(-width=>100, -height=>20)->pack(-side=>'top',-fill=>'x');	
+		$entry = $midleFrame->Entry(-width=>40,-font=>"normal 10 bold",-fg=>brown)->pack(-padx => 5, -pady => 5,-side=>left);
+			$button=$midleFrame->Button(-width=>30,-text => "VYTVORIT",-command=> \&start)->pack(-padx => 5, -pady => 5,-side=>left);
+
+$infoFrame = $main ->Frame(-width=>100, -height=>20,-bg=>'plum')->pack(-side=>'bottom',-fill=>'x');
+$statusLabel = sprintf "Zadej jednotlive JOBS,oddelene carkou...";
+		$status = $infoFrame ->Label(-textvariable=>\$statusLabel,-bg=>'plum',-font=>'normal 9 {bold }')->pack(-side=>'top');
+
+MainLoop;
+
+
+
+sub start {	
+	$jobNameActual = "$ENV{JOB}";
+		unless ($jobNameActual eq '') {
+			$statusLabel = sprintf "Zaviram aktualni otevreny job";
+			$status->update;
+			$genesis -> COM ('save_job',job=>"$jobNameActual",override=>'no');
+			#$genesis ->COM ('editor_page_close');
+			$genesis ->COM ('close_job',job=>"$jobNameActual");
+			$genesis ->COM ('close_form',job=>"$jobNameActual");
+			$genesis ->COM ('close_flow',job=>"$jobNameActual");
+		}
+
+	$valueJob = $entry -> get;
+		if ($valueJob eq '') {
+				$statusLabel = sprintf "Zapomnels zadat jobs";
+				$status->update;
+		}
+	@poleJob = split/,/,"$valueJob";
+
+		foreach $jobName (@poleJob) {
+			$genesis->INFO(entity_type=>'job',entity_path=>"$jobName",data_type=>'exists');
+					if ($genesis->{doinfo}{gEXISTS} eq "no") {
+							$statusLabel = sprintf "...rozbaleni $jobName z archivu...";
+							$status->update;
+							$jobNumber = substr($jobName,1);
+							$odpocetTmp = $jobNumber % 500;
+								if ($odpocetTmp == 0) {
+										$odpocet = 0;
+								}else{
+										$odpocet = 1;
+								}
+							$jobFolder = sprintf "%05.f",((int ($jobNumber / 500) + $odpocet)* 500);
+							$filePath  = "r:/Archiv/$jobFolder/d${jobNumber}/d${jobNumber}.tgz";
+						$genesis -> COM ('import_job',db=>'genesis',path=>"$filePath",name=>"$jobName",analyze_surfaces=>'no');
+					}
+
+			$genesis->COM('open_job',job=>"$jobName");
+				$statusLabel = sprintf "...vytvarim drill_map pro $jobName...";
+				$status->update;
+				$genesis -> COM ('open_entity',job=>"$jobName",type=>'step',name=>"$myStep",iconic=>'no');
+									$genesis->AUX('set_group', group => $genesis->{COMANS});
+										$genesis->INFO(entity_type=>'layer',entity_path=>"$jobName/$myStep/m",data_type=>'exists');
+							    				if ($genesis->{doinfo}{gEXISTS} eq "yes") {
+										    		$genesis->COM('copy_layer',source_job=>"$jobName",source_step=>"$myStep",source_layer=>'m',dest=>'layer_name',dest_layer=>'pth',mode=>'replace',invert=>'no');
+													&calculateDrill;
+													&export_pdf;
+													$genesis -> COM ('editor_page_close');
+													$genesis ->	COM ('close_job',job=>"$jobName");
+													$genesis ->	COM ('close_form',job=>"$jobName");
+													$genesis ->	COM ('close_flow',job=>"$jobName");
+										 		}
+		}
+	$statusLabel = sprintf "...HOTOVO...";
+	$status->update;
+}
+
+sub calculateDrill {
+									$genesis->INFO(units=>'mm',entity_type => 'step',entity_path => "$jobName/$myStep",data_type => 'PROF_LIMITS');
+										$jobX = sprintf "%3.1f",((($genesis->{doinfo}{gPROF_LIMITSxmax}) / 2) -15);
+										$jobY = sprintf "%3.1f",($genesis->{doinfo}{gPROF_LIMITSymax} + 2);
+								    		$genesis->INFO(units=>'mm',entity_type => 'layer',entity_path => "$jobName/$myStep/pth",data_type => 'NUM_TOOL');
+													$pocetTool = $genesis->{doinfo}{gNUM_TOOL}; 
+											$genesis->INFO(units=>'mm',entity_type => 'layer',entity_path => "$jobName/$myStep/pth",data_type => 'TOOL_USER');
+													$tooluser = $genesis->{doinfo}{gTOOL_USER}; 
+											$genesis->INFO(units=>'mm',entity_type => 'layer',entity_path => "$jobName/$myStep/pth",data_type => 'TOOL');
+															@numVrtaku = @{$genesis->{doinfo}{gTOOLnum}};
+															@finishSize = @{$genesis->{doinfo}{gTOOLfinish_size}};
+															@type = @{$genesis->{doinfo}{gTOOLtype}};
+															@type2 = @{$genesis->{doinfo}{gTOOLtype2}};
+															@min_tools = @{$genesis->{doinfo}{gTOOLmin_tol}};
+															@max_tools = @{$genesis->{doinfo}{gTOOLmax_tol}};
+															
+															$genesis -> COM('tools_tab_reset');
+															$pocetTool -= 1;
+																for($countDrill = 0;$countDrill <= $pocetTool;$countDrill++) {
+																		if ($type[$countDrill] eq "plated") {
+																				$type[$countDrill] = "plate";
+																		}elsif ($type[$countDrill] eq "non_plated") {
+																				$type[$countDrill] = "nplate";
+																		}
+																		if ($tooluser eq 'vrtane') {
+																				if ($layerXXVV > 1) {
+																					if ($type[$countDrill] eq "plate") {
+																						$finishSize[$countDrill] = ($finishSize[$countDrill] - 100);
+																					}
+																				}
+																		}
+																		$min_tools[$countDrill] = $min_tools[$countDrill] + 80;
+																		$max_tools[$countDrill] = $max_tools[$countDrill] + 80;
+																	$drill_bit = 0;
+																	$drill_bit = sprintf "%1.3f",($finishSize[$countDrill]/1000);
+																	$genesis -> COM('tools_tab_add',num=>"$numVrtaku[$countDrill]",type=>"$type[$countDrill]",type2=>"$type2[$countDrill]",min_tol=>"$min_tools[$countDrill]",max_tol=>"$max_tools[$countDrill]",bit=>"$drill_bit",finish_size=>"$finishSize[$countDrill]",drill_size=>"$finishSize[$countDrill]");
+																	$genesis -> COM('tools_set',layer=>'pth',thickness=>'0',user_params=>'');
+																	$genesis -> COM('cre_drills_map',layer=>'pth',map_layer=>'pth_map',preserve_attr=>'yes',draw_origin=>'no',define_via_type=>'yes',units=>'mm',mark_dim=>'1270',mark_line_width=>'150',sr=>'no',slots=>'no',columns=>'Tool\;Count\;Type\;+Tol\;-Tol',notype=>'plt',table_pos=>'right',table_align=>'bottom');
+																   		$genesis->COM ('display_layer',name=>'pth_map',display=>'yes',number=>'1');
+																		$genesis->COM ('work_layer',name=>'pth_map');
+																		$addText = "\u$jobName";
+																		$genesis->COM ('add_text',attributes=>'no',type=>'string',x=>"$jobX",y=>"$jobY",text=>"$addText",x_size=>5.08,y_size=>5.08,w_factor=>2,polarity=>'positive',angle=>0,mirror=>'no',fontname=>'standard',ver=>'1');			
+																			$genesis -> COM ('filter_set',filter_name=>'popup',update_popup=>'no',text=>'*Drill*');
+																			$genesis -> COM ('filter_area_strt');
+																			$genesis -> COM ('filter_area_end',layer=>'pth_map',filter_name=>'popup',operation=>'select',area_type=>'none',inside_area=>'no',intersect_area=>'no');
+																			$genesis -> COM ('sel_change_txt',text=>'Finish',x_size=>'3.048',y_size=>'3.048',w_factor=>'0.75',polarity=>'positive',mirror=>'no',fontname=>'standard');
+																			$genesis -> COM ('filter_reset',filter_name=>'popup');
+																			$genesis-> COM ('display_layer',name=>'pth_map',display=>'no',number=>'1');
+																}
+}
+
+sub export_pdf {
+	$statusLabel = sprintf "...exportuji pdf...";
+	$status->update;
+	$genesis -> COM('print',title=>'',layer_name=>'pth_map',mirrored_layers=>'',draw_profile=>'yes',drawing_per_layer=>'yes',label_layers=>'no',dest=>'pdf_file',num_copies=>'1',dest_fname=>"$cestaExportu/${jobName}-drillmap.pdf",paper_size=>'A4',scale_to=>'0',nx=>'1',ny=>'1',orient=>'none',paper_orient=>'portrait',paper_width=>'0',paper_height=>'0',auto_tray=>'yes',top_margin=>'12.7',bottom_margin=>'12.7',left_margin=>'12.7',right_margin=>'12.7',x_spacing=>'0',y_spacing=>'0',color1=>'990000',color2=>'9900',color3=>'99',color4=>'990099',color5=>'999900',color6=>'9999',color7=>'0');
+}

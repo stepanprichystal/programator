@@ -1,0 +1,170 @@
+#!/usr/bin/perl-w
+	
+use Genesis;
+use Tk;
+use Tk::BrowseEntry;
+use Win32::OLE;
+
+
+unless ($ENV{JOB}) {
+	$jobName = shift;
+#	$stepName = shift;
+} else {
+	$jobName = "$ENV{JOB}";
+#	$stepName = "panel";
+}
+$genesis = new Genesis;
+
+my $logo_way = "$ENV{'GENESIS_DIR'}/sys/scripts/gatema/drill.gif";
+&info_from_noris;
+########################## GUI  GUI GUI GUI GUI GUI GUI  ###################################
+############################################################################################
+$genesis->INFO(entity_type=>'layer',entity_path=>"$jobName/o+1/s",data_type=>'exists');
+    	if ($genesis->{doinfo}{gEXISTS} eq "no") {
+    			$typDesky = 1;
+    	}
+    			
+unless ($customer =~ /[Mm][Uu][Ll][Tt][Ii] [Cc][Ii][Rr][Cc][Uu][Ii][Tt] [Bb]/ and $typDesky == 0) {
+		$main = MainWindow->new;
+		$main->title('Vys/Vrt');
+		$main->minsize(qw(220 120));
+
+			$topmain = $main->Frame(-width=>10, -height=>20)->pack(-side=>'top');
+			$botmain = $main->Frame(-width=>10, -height=>20)->pack(-side=>'bottom');
+			$main = $topmain->Frame(-width=>10, -height=>20)->pack(-side=>'right');
+			$logomain = $topmain->Frame(-width=>10, -height=>20)->pack(-side=>'left');
+
+
+
+			$logo_frame = $logomain->Frame(-width=>50, -height=>50)->pack(-side=>'left');
+								$error_logo = $logo_frame->Photo(-file=>"$logo_way");
+								$logo_frame->Label(-image=>$error_logo)->pack(); 
+
+				$rrr1 = $main->Radiobutton(-value=>"vysledne", -variable=>\$adjustDrill, -text=>"vysledne",-font=>'arial 12 {bold}')->pack(-padx => 5, -pady => 5,-side=>'top');
+				$rrr2 = $main->Radiobutton(-value=>"vrtane", -variable=>\$adjustDrill, -text=>"vrtane",-font=>'arial 12 {bold}')->pack(-padx => 5, -pady => 5,-side=>'top');
+
+				$tlProved = $main->Button(-text => "Pokracovat",-command=> \&pokracovat,-bg=>'lightblue',-relief=>'raise',-bd=>'3')->pack(-padx => 10, -pady => 5,-side=>'bottom');
+		MainLoop ();
+
+}else {
+	$adjustDrill = "vysledne";
+	&pokracovat;
+}
+#$main->waitWindow;
+##########################  END GUI END GUI END GUI END GUI #################################
+#############################################################################################
+	
+	
+	
+sub pokracovat {
+$genesis->INFO(units=>'mm',entity_type => 'layer',entity_path => "$jobName/o+1/m",data_type => 'NUM_TOOL');
+	$pocetTool = $genesis->{doinfo}{gNUM_TOOL}; 
+
+
+	$genesis->INFO(units=>'mm',entity_type => 'layer',entity_path => "$jobName/o+1/m",data_type => 'TOOL');
+	@numVrtaku = @{$genesis->{doinfo}{gTOOLnum}};
+	@finishSize = @{$genesis->{doinfo}{gTOOLfinish_size}};
+	@type = @{$genesis->{doinfo}{gTOOLtype}};
+	@type2 = @{$genesis->{doinfo}{gTOOLtype2}};
+	@min_tools = @{$genesis->{doinfo}{gTOOLmin_tol}};
+	@max_tools = @{$genesis->{doinfo}{gTOOLmax_tol}};
+	
+    $genesis -> COM('tools_tab_reset');
+$pocetTool -= 1;
+for($countDrill = 0;$countDrill <= $pocetTool;$countDrill++) {
+#foreach $countDrill(@numVrtaku) {
+	
+		if ($type[$countDrill] eq "plated") {
+			$type[$countDrill] = "plate";
+		}elsif ($type[$countDrill] eq "non_plated") {
+			$type[$countDrill] = "nplate";
+		}
+			
+	$drill_size = $genesis -> COM('drill_size_hook',layer=>'m',thickness=>'0',user_params=>"$adjustDrill",finish_size=>"$finishSize[$countDrill]",bit=>'Drill Des',type=>"$type[$countDrill]",min_tol=>"$min_tools[$countDrill]",max_tol=>"$max_tools[$countDrill]");
+@drill_size_bit = split /\s+/,$drill_size;
+	$genesis -> COM('tools_tab_add',num=>"$numVrtaku[$countDrill]",type=>"$type[$countDrill]",type2=>"$type2[$countDrill]",min_tol=>"$min_tools[$countDrill]",max_tol=>"$max_tools[$countDrill]",bit=>"$drill_size_bit[1]",finish_size=>"$finishSize[$countDrill]",drill_size=>"$drill_size_bit[0]");
+#,shape=>'hole'
+}
+$genesis -> COM('tools_set',layer=>'m',thickness=>'0',user_params=>"$adjustDrill");
+#,slots=>'yes
+
+
+		$genesis->INFO(entity_type=>'layer',entity_path=>"$jobName/o+1/d",data_type=>'exists');
+			    	if ($genesis->{doinfo}{gEXISTS} eq "yes") {
+						$genesis->COM('script_run',name=>"$ENV{'GENESIS_DIR'}/sys/perl/sub/sub_vv_d",dirmode=>'global',params=>"$jobName");
+				}
+		$genesis->INFO(entity_type=>'layer',entity_path=>"$jobName/o+1/f",data_type=>'exists');
+			    	if ($genesis->{doinfo}{gEXISTS} eq "yes") {
+						$genesis->COM('script_run',name=>"$ENV{'GENESIS_DIR'}/sys/perl/sub/sub_vv_f",dirmode=>'global',params=>"$jobName");
+				}
+
+
+exit;
+}
+
+sub info_from_noris {
+
+my $dbConnection = Win32::OLE->new("ADODB.Connection");
+$dbConnection->Open("DSN=dps;uid=genesis;pwd=genesis");
+$sqlStatement = "select top 1
+d.nazev_subjektu board_name,
+c.nazev_subjektu customer,
+m.nazev_subjektu material,
+d.maska_barva_1 c_mask_colour,
+d.maska_barva_2 s_mask_colour,
+d.potisk c_silk_screen_colour,
+d.potisk_typ s_silk_screen_colour,
+d.zlaceni golding,
+d.strihani cutting,
+d.drazkovani slotting,
+d.frezovani_pred milling_before,
+d.frezovani_po milling_after,
+d.hal surface_finishing,
+d.material_tloustka,
+d.material_tloustka_medi,
+d.material_typ_materialu,
+dn.nasobnost_x n_x_multiplicity,
+dn.nasobnost_y n_y_multiplicity,
+dn.nasobnost n_multiplicity,
+dn.konstr_trida n_construction_class,
+mn.nazev_subjektu n_material,
+dn.strihani n_cutting,
+dn.drazkovani n_slotting,
+dn.frezovani_pred n_milling_before,
+dn.frezovani_po n_milling_after,
+prijal.nazev_subjektu n_prijal,
+dn.rozmer_x n_x_size,
+dn.rozmer_y n_y_size,
+z.kusy_pozadavek pocet,
+lcs.nf_edit_style('ddlb_22_hal', dn.hal) n_surface
+from lcs.desky_22 d
+left outer join lcs.subjekty c on c.cislo_subjektu=d.zakaznik
+left outer join lcs.subjekty m on m.cislo_subjektu=d.material
+left outer join lcs.zakazky_dps_22_hlavicka z on z.deska=d.cislo_subjektu
+left outer join lcs.vztahysubjektu vs on vs.cislo_subjektu=z.cislo_subjektu and vs.cislo_vztahu=22175
+left outer join lcs.zakazky_dps_22_hlavicka n on vs.cislo_vztaz_subjektu=n.cislo_subjektu
+left outer join lcs.subjekty prijal on prijal.cislo_subjektu=n.prijal
+left outer join lcs.desky_22 dn on n.deska=dn.cislo_subjektu
+left outer join lcs.subjekty mn on mn.cislo_subjektu=dn.material where d.reference_subjektu='$jobName'
+order by n.cislo_subjektu desc,z.cislo_subjektu desc
+";
+
+$sqlExecute = $dbConnection->Execute("$sqlStatement");
+
+	$customer = convert_from_czech ($sqlExecute->Fields('customer')->Value);	
+
+$dbConnection->Close();
+
+}
+sub convert_from_czech {
+	my $lineToConvert = shift;
+	my $char;
+	my $ret;
+	my @str = split(//,$lineToConvert);
+
+	foreach my $char (@str) {
+		$char =~ tr/\xE1\xC1\xE8\xC8\xEF\xCF\xE9\xC9\xEC\xCC\xED\xCD\xF3\xD3\xF8\xD8\xB9\xA9\xBB\xAB\xFA\xDA\xF9\xD9\xFD\xDD\xBE\xAE\xF2\xD2/\x61\x41\x63\x43\x64\x44\x65\x45\x65\x45\x69\x49\x6F\x4F\x72\x52\x73\x53\x74\x54\x75\x55\x75\x55\x79\x59\x7A\x5A\x6E\x4E/;
+		$ret .= $char;
+	}
+	return ($ret);
+}		
