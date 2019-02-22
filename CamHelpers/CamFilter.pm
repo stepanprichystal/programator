@@ -1,5 +1,7 @@
 #-------------------------------------------------------------------------------------------#
 # Description: Wrapper for operations connected with inCam features filter
+# On the beginning each function, whole filter is reset, thus it is not possible use this functions
+# in combination with former set filter criteria (will be reset)
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 
@@ -30,6 +32,7 @@ sub SelectByFeatureIndexes {
 	my $jobId          = shift;
 	my $featureIndexes = shift;
 
+	$inCAM->COM('adv_filter_reset');
 	$inCAM->COM( 'filter_reset', filter_name => 'popup' );
 
 	my @ids = @{$featureIndexes};
@@ -94,7 +97,8 @@ sub SelectBySingleAtt {
 	my $polarity = shift;    # not implemented yet
 	my $symbol   = shift;    # not implemented yet
 
-	$inCAM->COM( 'filter_reset', filter_name => 'popup' );
+	$inCAM->COM('adv_filter_reset');
+	$inCAM->COM('filter_reset', filter_name => 'popup' );
 
 	$self->__AddFilterAtt( $inCAM, $jobId, $att, $attValue );
 
@@ -178,6 +182,7 @@ sub BySymbols {
 
 	my $symbolStr = join( "\\;", @symbols );
 
+	$inCAM->COM('adv_filter_reset');
 	$inCAM->COM( 'filter_reset', filter_name => 'popup' );
 
 	$inCAM->COM( "set_filter_symbols", "filter_name" => "", "exclude_symbols" => "no", "symbols" => $symbolStr );
@@ -200,6 +205,7 @@ sub ByDCodes {
 
 	my $slected = 0;
 
+	$inCAM->COM('adv_filter_reset');
 	$inCAM->COM( 'filter_reset', filter_name => 'popup' );
 
 	foreach my $dcode (@DCodes) {
@@ -225,6 +231,7 @@ sub ByTypes {
 
 	my $typeStr = join( "\\;", @types );
 
+	$inCAM->COM('adv_filter_reset');
 	$inCAM->COM( 'filter_reset', filter_name => 'popup' );
 
 	$inCAM->COM(
@@ -345,6 +352,7 @@ sub SelectByReferenece {
 
 	CamLayer->WorkLayer( $inCAM, $layer );
 
+	$inCAM->COM('adv_filter_reset');
 	$inCAM->COM( 'filter_reset', filter_name => 'popup' );
 	$inCAM->COM( "reset_filter_criteria", "filter_name" => "", "criteria" => "all" );
 

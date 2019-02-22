@@ -12,6 +12,7 @@ use warnings;
 #loading of locale modules
 use aliased 'CamHelpers::CamHelper';
 use aliased 'CamHelpers::CamJob';
+
 #-------------------------------------------------------------------------------------------#
 #   Package methods
 #-------------------------------------------------------------------------------------------#
@@ -61,19 +62,19 @@ sub CopyLayer {
 	$invert = defined $invert && $invert == 1 ? "yes" : "no";
 
 	$inCAM->COM(
-		'copy_layer',
-		"source_job"   => $jobId,
-		"source_step"  => $sourceStep,
-		"source_layer" => $sourceLayer,
-		"dest"         => 'layer_name',
-		"dest_layer"   => $targetLayer,
-		"dest_step"    => $targetStep,
-		"mode"         => $mode,
-		"invert"       => $invert
+				 'copy_layer',
+				 "source_job"   => $jobId,
+				 "source_step"  => $sourceStep,
+				 "source_layer" => $sourceLayer,
+				 "dest"         => 'layer_name',
+				 "dest_layer"   => $targetLayer,
+				 "dest_step"    => $targetStep,
+				 "mode"         => $mode,
+				 "invert"       => $invert
 	);
-	
+
 	return 1;
- 
+
 }
 
 # Create new empty layer
@@ -149,20 +150,36 @@ sub GetLayerPolarity {
 }
 
 # Return array of affected layers
-sub GetAffectedLayers{
+sub GetAffectedLayers {
 	my $self  = shift;
 	my $inCAM = shift;
 	my $jobId = shift;
-	
+
 	$inCAM->COM("get_affect_layer");
-	
-	my @layers = split(" ", $inCAM->GetReply()) ;
-	
- 	$_ =~ s/\s//g foreach(@layers);
-	
+
+	my @layers = split( " ", $inCAM->GetReply() );
+
+	$_ =~ s/\s//g foreach (@layers);
+
 	return @layers;
 }
 
+# Return current work layer
+sub GetWorkLayer {
+	my $self  = shift;
+	my $inCAM = shift;
+
+	$inCAM->COM("get_work_layer");
+
+	my $workLayer = $inCAM->GetReply();
+
+	if ( $workLayer eq "" ) {
+		return undef;
+	}
+	else {
+		return $workLayer;
+	}
+}
 
 # Return layer type
 sub GetLayerType {
@@ -174,6 +191,26 @@ sub GetLayerType {
 	my $l = ( grep { $_->{"gROWname"} eq $layer } CamJob->GetAllLayers( $inCAM, $jobId ) )[0];
 
 	return $l->{"gROWlayer_type"};
+}
+
+#-------------------------------------------------------------------------------------------#
+#  Place for testing..
+#-------------------------------------------------------------------------------------------#
+my ( $package, $filename, $line ) = caller;
+if ( $filename =~ /DEBUG_FILE.pl/ ) {
+
+	use aliased 'CamHelpers::CamMatrix';
+	use aliased 'Packages::InCAM::InCAM';
+
+	my $inCAM = InCAM->new();
+
+	my $jobId    = "f13608";
+	my $stepName = "panel";
+	
+	my $workLayer = CamMatrix->GetWorkLayer($inCAM);
+	die;
+
+
 }
 
 1;

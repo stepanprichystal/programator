@@ -14,6 +14,7 @@ use List::MoreUtils qw(uniq);
 use aliased 'Managers::MessageMngr::MessageMngr';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'CamHelpers::CamFilter';
+use aliased 'CamHelpers::CamMatrix';
 use aliased 'CamHelpers::CamHelper';
 use aliased 'CamHelpers::CamStep';
 use aliased 'CamHelpers::CamLayer';
@@ -108,10 +109,10 @@ sub __SetImpedanceLine {
 	push( @mess, "\nOznač cesty, které mají splňovat danou impedanci." );
 
 	# Freeeze layer (prevent from user click to editor);
-	$inCAM->COM("freeze_ent", "job_name" => $jobId, "ent_type"=> "layer", "ent" => "$l", "mode" => "freeze", "parent"=>$step);
+	$inCAM->COM( "freeze_ent", "job_name" => $jobId, "ent_type" => "layer", "ent" => "$l", "mode" => "freeze", "parent" => $step );
 	$messMngr->ShowModal( -1, EnumsGeneral->MessageType_INFORMATION, \@mess, [ "Přeskočit", "Označím ručně", "Zkusím štěstí" ], \@imgs );
-	$inCAM->COM("freeze_ent", "job_name" => $jobId, "ent_type"=> "layer", "ent" =>  "$l", "mode" => "unfreeze", "parent"=>$step);
-	
+	$inCAM->COM( "freeze_ent", "job_name" => $jobId, "ent_type" => "layer", "ent" => "$l", "mode" => "unfreeze", "parent" => $step );
+
 	if ( $messMngr->Result() == 0 ) {
 
 		# skip
@@ -126,7 +127,7 @@ sub __SetImpedanceLine {
 	elsif ( $messMngr->Result() == 2 ) {
 
 		# auto
-		 
+
 		$self->__AutoSelect( $inCAM, $jobId, $constraint );
 		$self->__PAUSE( $inCAM, "select_auto", $constraint );
 
@@ -225,6 +226,25 @@ sub __CheckSelectedLines {
 	my $p    = GeneralHelper->Root() . "\\Programs\\Coupon\\CpnWizard\\Resources\\small_" . $cType . "_" . $cModel . ".bmp";
 	push( @imgs, [ 1, $p, &Wx::wxBITMAP_TYPE_BMP ] );
 
+	# check if layer was not changed
+	my $workL = CamMatrix->GetWorkLayer($inCAM);
+	if ( !defined $workL || $workL ne $layer ) {
+
+		my @mess = ();
+		push( @mess, "<r>V matrixu je aktivní špatná vrstva: $workL namísto vrstvy: $layer</r>" );
+		push( @mess, "Oprav to.\n" );
+
+		$messMngr->ShowModal( -1, EnumsGeneral->MessageType_ERROR, \@mess, ["Opravím to"] );
+
+		if ( $messMngr->Result() == 1 ) {
+
+			$self->__PAUSE( $inCAM, "correct_select", $constraint );
+
+			return 0;
+		}
+
+	}
+
 	# check if lines are selected
 
 	if ( !CamLayer->GetSelFeaturesCnt($inCAM) ) {
@@ -242,10 +262,10 @@ sub __CheckSelectedLines {
 		push( @mess2, "- Požadovaná šířka: <b>$lineWReq µm</b>" );
 
 		# Freeeze layer (prevent from user click to editor);
-		$inCAM->COM("freeze_ent", "job_name" => $jobId, "ent_type"=> "layer", "ent" => "$layer", "mode" => "freeze", "parent"=>$step);
+		$inCAM->COM( "freeze_ent", "job_name" => $jobId, "ent_type" => "layer", "ent" => "$layer", "mode" => "freeze", "parent" => $step );
 		$messMngr->ShowModal( -1, EnumsGeneral->MessageType_INFORMATION,
 							  \@mess2, [ "Přeskočit", "Označím ručně", "Zkusím štěstí" ], \@imgs );
-		$inCAM->COM("freeze_ent", "job_name" => $jobId, "ent_type"=> "layer", "ent" => "$layer", "mode" => "unfreeze", "parent"=>$step);
+		$inCAM->COM( "freeze_ent", "job_name" => $jobId, "ent_type" => "layer", "ent" => "$layer", "mode" => "unfreeze", "parent" => $step );
 
 		if ( $messMngr->Result() == 0 ) {
 
@@ -309,7 +329,7 @@ sub __CheckSelectedLines {
 
 		my $str = "";
 		foreach my $thick ( uniq( map { $_->{"thick"} } @wrongWidth ) ) {
-			  $str .= "- <b>Šířka " . $thick . "µm</b>: " . join( "; ", map {$_->{"id"}}grep { $_->{"thick"} == $thick } @wrongWidth ) . "\n";
+			$str .= "- <b>Šířka " . $thick . "µm</b>: " . join( "; ", map { $_->{"id"} } grep { $_->{"thick"} == $thick } @wrongWidth ) . "\n";
 		}
 		push( @mess, "\nId zmiňovaných features:\n $str" );
 
@@ -447,7 +467,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId = "d113608";
+	my $jobId = "d238681";
 
 	my $notClose = 0;
 
