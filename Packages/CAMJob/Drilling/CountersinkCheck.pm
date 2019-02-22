@@ -19,7 +19,7 @@ use aliased 'Packages::CAM::UniDTM::UniDTM';
 use aliased 'Packages::CAM::UniRTM::UniRTM';
 use aliased 'Packages::CAM::UniRTM::Enums' => "RTMEnums";
 use aliased 'Packages::CAM::UniDTM::Enums' => 'DTMEnums';
-use aliased 'CamHelpers::CamStepRepeat';
+use aliased 'CamHelpers::CamStepRepeatPnl';
 
 #use aliased 'Helpers::FileHelper';
 #use aliased 'Helpers::JobHelper';
@@ -43,7 +43,7 @@ sub ExistCountersink {
 
 	if ( CamHelper->StepExists( $inCAM, $jobId, "panel" ) ) {
 
-		@steps = map { $_->{"stepName"} } CamStepRepeat->GetUniqueNestedStepAndRepeat( $inCAM, $jobId, "panel" );
+		@steps = map { $_->{"stepName"} } CamStepRepeatPnl->GetUniqueNestedStepAndRepeat( $inCAM, $jobId );
 	}
 
 	my @types = (
@@ -123,7 +123,7 @@ sub WrongDepthForCSinkTool {
 
 	if ( CamHelper->StepExists( $inCAM, $jobId, "panel" ) ) {
 
-		@steps = map { $_->{"stepName"} } CamStepRepeat->GetUniqueNestedStepAndRepeat( $inCAM, $jobId, "panel" );
+		@steps = map { $_->{"stepName"} } CamStepRepeatPnl->GetUniqueNestedStepAndRepeat( $inCAM, $jobId );
 	}
 
 	my @types = (
@@ -174,10 +174,10 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	use aliased 'Packages::InCAM::InCAM';
 
 	my $inCAM = InCAM->new();
-	my $jobId = "d152456";
+	my $jobId = "d238832";
 
 	my %res = ();
-	my $r = CountersinkCheck->WrongDepthForCSinkTool( $inCAM, $jobId );
+	my $r = CountersinkCheck->ExistCountersink( $inCAM, $jobId);
 
 	print $r;
 

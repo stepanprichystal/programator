@@ -7,7 +7,6 @@ package Packages::CAMJob::Drilling::FinishSizeHoles::SetHolesRun;
 
 use warnings;
 use strict;	
-use Genesis;
 use Tk;
 
 use lib qw(//incam/incam_server/site_data/scripts);
@@ -22,7 +21,7 @@ use aliased 'Connectors::HeliosConnector::HegMethods';
 
 sub SetFinishHoles {
 	my $self     = shift;
-	my $genesis = shift;
+	my $inCAM = shift;
 	my $jobName  = shift;
 	
 	
@@ -32,7 +31,7 @@ sub SetFinishHoles {
 	
 		#my $pcbType = HegMethods->GetTypeOfPcb($jobName);
 		#my $customerName = HegMethods->GetAllByPcbId($jobName)->{'customer'};
-		#$genesis -> PAUSE("aaa $customerName");
+		#$inCAM -> PAUSE("aaa $customerName");
 		unless (HegMethods->GetAllByPcbId($jobName)->{'customer'} =~ /[Mm][Uu][Ll][Tt][Ii] [Cc][Ii][Rr][Cc][Uu][Ii][Tt] [Bb]/ and HegMethods->GetTypeOfPcb($jobName) ne 'Jednostranny') {
 		 		my $main = MainWindow->new;
 					$main->title('Vys/Vrt');
@@ -52,12 +51,12 @@ sub SetFinishHoles {
 						$topMainRightTop->Radiobutton(-value=>"vysledne", -variable=>\$adjustDrill, -text=>"vysledne",-font=>'arial 12 {bold}')->pack(-padx => 5, -pady => 5,-side=>'left');
 						$topMainRightBot->Radiobutton(-value=>"vrtane", -variable=>\$adjustDrill, -text=>"vrtane",-font=>'arial 12 {bold}')->pack(-padx => 5, -pady => 5,-side=>'left');
 
-						$botMain->Button(-height=>2, -text => "NASTAVIT",-command=>sub {_RunSet($genesis, $jobName, $adjustDrill)},-bg=>'grey',-relief=>'raise',-bd=>'3')->pack(-padx => 1, -pady => 1,-side=>'bottom',-fill=>'x');
+						$botMain->Button(-height=>2, -text => "NASTAVIT",-command=>sub {_RunSet($inCAM, $jobName, $adjustDrill)},-bg=>'grey',-relief=>'raise',-bd=>'3')->pack(-padx => 1, -pady => 1,-side=>'bottom',-fill=>'x');
 				MainLoop ();
 
 		}else {
 			$adjustDrill = 'vysledne';
-			_RunSet($genesis, $jobName, $adjustDrill);
+			_RunSet($inCAM, $jobName, $adjustDrill);
 		}
 		##END GUI #################################
 
@@ -65,19 +64,19 @@ sub SetFinishHoles {
 	
 	
 sub _RunSet {
-		my $genesis = shift;
+		my $inCAM = shift;
 		my $jobName = shift;
 		my $userSet = shift;
 		
-				$genesis -> COM('tools_set',layer=>'m',thickness=>'0',user_params=>"$userSet");
-				$genesis -> COM('tools_recalc');
+				$inCAM -> COM('tools_set',layer=>'m',thickness=>'0',user_params=>"$userSet");
+				$inCAM -> COM('tools_recalc');
 
 
 
-				$genesis->INFO(entity_type=>'layer',entity_path=>"$jobName/o+1/f",data_type=>'exists');
-			    		if ($genesis->{doinfo}{gEXISTS} eq "yes") {
-								$genesis -> COM('tools_set',layer=>'f',thickness=>'0',user_params=>'vrtane');
-								$genesis -> COM('tools_recalc');
+				$inCAM->INFO(entity_type=>'layer',entity_path=>"$jobName/o+1/f",data_type=>'exists');
+			    		if ($inCAM->{doinfo}{gEXISTS} eq "yes") {
+								$inCAM -> COM('tools_set',layer=>'f',thickness=>'0',user_params=>'vrtane');
+								$inCAM -> COM('tools_recalc');
 						}
 
 

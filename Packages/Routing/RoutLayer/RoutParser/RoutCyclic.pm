@@ -156,7 +156,7 @@ sub GetRoutSequences {
 	# 2) filter all non arc and line features
 	@edges = grep { $_->{"type"} =~ /l/i || $_->{"type"} =~ /a/i } @edges;
 
-	unless ( scalar(@edges) ) {
+	if ( scalar(@edges) == 0 && scalar(@nonSeqFeats) == 0 ) {
 		return @sequences;
 	}
 

@@ -40,6 +40,7 @@ use aliased 'Packages::CAMJob::Drilling::BlindDrill::BlindDrillInfo';
 use aliased 'Packages::CAMJob::Drilling::CountersinkCheck';
 use aliased 'Packages::Tooling::PressfitOperation';
 use aliased 'Enums::EnumsRout';
+use aliased 'Packages::Polygon::Polygon::PolygonPoints';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -339,7 +340,7 @@ sub OnCheckGroupData {
 
 	# 10) Check if all blind and core drilling pads has pads in signal layers
 
-	my @childs = map { $_->{"stepName"} } CamStepRepeatPnl->GetUniqueDeepestSR( $inCAM, $jobId);
+	my @childs = map { $_->{"stepName"} } CamStepRepeatPnl->GetUniqueDeepestSR( $inCAM, $jobId );
 
 	my %allLayers = ();
 
@@ -605,24 +606,35 @@ sub OnCheckGroupData {
 				# if at least subchain has left comp => do warning
 				foreach my $multiChain (@cycleChains) {
 
-					my @chainTools =  map { $_->GetChain()->GetChainTool()} $multiChain->GetChains();
+					my @chainTools = map { $_->GetChain()->GetChainTool() } $multiChain->GetChains();
 					if ( grep { $_->GetComp() eq EnumsRout->Comp_LEFT } @chainTools ) {
-		 
-						my $routStr = join ("\n", map { "- Chain order: ".$_->GetChainOrder(). ", Chain source step: ".$_->GetSourceStep() } @chainTools);
-						
-						$dataMngr->_AddWarningResult("Chybějící můstky",
-													  "Ve stepu: $step ve vrstvě: \"f\" byla detekována obrysová fréza tvořená chainy:\n$routStr\n\n".
-													  "Ujisti se, že uvnitř panelu nechybí můstky"
-													  
+
+						my @points = map { [ $_->{"x2"}, $_->{"y2"} ] } $multiChain->GetFeatures();
+
+						print STDERR PolygonPoints->GetPolygonArea( \@points )."\n";
+						# Outline assume minial area of pcb > 400mm2
+						next if ( PolygonPoints->GetPolygonArea( \@points ) < 500 );
+
+						# limits of rout has to be biger than 10 mm
+						my %d = PolygonPoints->GetPolygonDim( \@points );
+						next if ( $d{"w"} < 10 || $d{"h"} < 10 );
+
+						my $routStr =
+						  join( "\n", map { "- Chain order: " . $_->GetChainOrder() . ", Chain source step: " . $_->GetSourceStep() } @chainTools );
+
+						$dataMngr->_AddWarningResult(
+							"Chybějící můstky",
+							"Ve stepu: $step ve vrstvě: \"f\" byla detekována obrysová fréza tvořená chainy:\n$routStr\n\n"
+							  . "Ujisti se, že uvnitř panelu nechybí můstky."
+
 						);
 					}
 				}
-
 			}
 
 		}
-	}
 
+	}
 }
 
 #-------------------------------------------------------------------------------------------#
