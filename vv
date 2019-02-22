@@ -1,0 +1,111 @@
+#!/usr/bin/perl-w
+ 
+use Tk;
+use sqlNoris;
+
+
+#necessary for load pall packages
+use FindBin;
+use lib "$FindBin::Bin/../";
+use PackagesLib;
+
+use aliased 'Packages::InCAM::InCAM';
+
+
+unless ($ENV{JOB}) {
+	$jobName = shift;
+#	$stepName = shift;
+} else {
+	$jobName = "$ENV{JOB}";
+#	$stepName = "panel";
+}
+
+my $inCAM = InCAM->new();
+
+my $logo_way = "$ENV{'GENESIS_DIR'}/sys/scripts/gatema/drill.gif";
+$customer = getValueNoris ($jobName, 'customer');
+
+########################## GUI  GUI GUI GUI GUI GUI GUI  ###################################
+############################################################################################
+$inCAM->INFO(entity_type=>'layer',entity_path=>"$jobName/o+1/s",data_type=>'exists');
+    	if ($inCAM->{doinfo}{gEXISTS} eq "no") {
+    			$typDesky = 1;
+    	}
+    			
+unless ($customer =~ /[Mm][Uu][Ll][Tt][Ii] [Ll]/ and $typDesky == 0) {
+		$main = MainWindow->new;
+		$main->title('Vys/Vrt');
+		$main->minsize(qw(220 120));
+
+			$topmain = $main->Frame(-width=>10, -height=>20)->pack(-side=>'top');
+			$botmain = $main->Frame(-width=>10, -height=>20)->pack(-side=>'bottom');
+			$main = $topmain->Frame(-width=>10, -height=>20)->pack(-side=>'right');
+			$logomain = $topmain->Frame(-width=>10, -height=>20)->pack(-side=>'left');
+
+
+
+			$logo_frame = $logomain->Frame(-width=>50, -height=>50)->pack(-side=>'left');
+								$error_logo = $logo_frame->Photo(-file=>"$logo_way");
+								$logo_frame->Label(-image=>$error_logo)->pack(); 
+
+				$rrr1 = $main->Radiobutton(-value=>"vysledne", -variable=>\$adjustDrill, -text=>"vysledne",-font=>'arial 12 {bold}')->pack(-padx => 5, -pady => 5,-side=>'top');
+				$rrr2 = $main->Radiobutton(-value=>"vrtane", -variable=>\$adjustDrill, -text=>"vrtane",-font=>'arial 12 {bold}')->pack(-padx => 5, -pady => 5,-side=>'top');
+
+				$tlProved = $main->Button(-text => "Pokracovat",-command=> \&pokracovat,-bg=>'lightblue',-relief=>'raise',-bd=>'3')->pack(-padx => 10, -pady => 5,-side=>'bottom');
+		MainLoop ();
+
+}else {
+	$adjustDrill = "vysledne";
+	&pokracovat;
+}
+#$main->waitWindow;
+##########################  END GUI END GUI END GUI END GUI #################################
+#############################################################################################
+	
+	
+	
+sub pokracovat {
+$inCAM->INFO(units=>'mm',entity_type => 'layer',entity_path => "$jobName/o+1/m",data_type => 'NUM_TOOL');
+	$pocetTool = $inCAM->{doinfo}{gNUM_TOOL}; 
+
+
+	$inCAM->INFO(units=>'mm',entity_type => 'layer',entity_path => "$jobName/o+1/m",data_type => 'TOOL');
+	@numVrtaku = @{$inCAM->{doinfo}{gTOOLnum}};
+	@finishSize = @{$inCAM->{doinfo}{gTOOLfinish_size}};
+	@type = @{$inCAM->{doinfo}{gTOOLtype}};
+	@type2 = @{$inCAM->{doinfo}{gTOOLtype2}};
+	@min_tools = @{$inCAM->{doinfo}{gTOOLmin_tol}};
+	@max_tools = @{$inCAM->{doinfo}{gTOOLmax_tol}};
+	
+    $inCAM -> COM('tools_tab_reset');
+$pocetTool -= 1;
+for($countDrill = 0;$countDrill <= $pocetTool;$countDrill++) {
+#foreach $countDrill(@numVrtaku) {
+	
+		if ($type[$countDrill] eq "plated") {
+			$type[$countDrill] = "plate";
+		}elsif ($type[$countDrill] eq "non_plated") {
+			$type[$countDrill] = "nplate";
+		}
+			
+	$drill_size = $inCAM -> COM('drill_size_hook',layer=>'m',thickness=>'0',user_params=>"$adjustDrill",finish_size=>"$finishSize[$countDrill]",bit=>'Drill Des',type=>"$type[$countDrill]",min_tol=>"$min_tools[$countDrill]",max_tol=>"$max_tools[$countDrill]");
+@drill_size_bit = split /\s+/,$drill_size;
+	$inCAM -> COM('tools_tab_add',num=>"$numVrtaku[$countDrill]",type=>"$type[$countDrill]",type2=>"$type2[$countDrill]",min_tol=>"$min_tools[$countDrill]",max_tol=>"$max_tools[$countDrill]",bit=>"$drill_size_bit[1]",finish_size=>"$finishSize[$countDrill]",drill_size=>"$drill_size_bit[0]");
+#,shape=>'hole'
+}
+$inCAM -> COM('tools_set',layer=>'m',thickness=>'0',user_params=>"$adjustDrill");
+#,slots=>'yes
+
+
+		$inCAM->INFO(entity_type=>'layer',entity_path=>"$jobName/o+1/d",data_type=>'exists');
+			    	if ($inCAM->{doinfo}{gEXISTS} eq "yes") {
+						$inCAM->COM('script_run',name=>"$ENV{'GENESIS_DIR'}/sys/perl/sub/sub_vv_d",dirmode=>'global',params=>"$jobName");
+				}
+		$inCAM->INFO(entity_type=>'layer',entity_path=>"$jobName/o+1/f",data_type=>'exists');
+			    	if ($inCAM->{doinfo}{gEXISTS} eq "yes") {
+						$inCAM->COM('script_run',name=>"$ENV{'GENESIS_DIR'}/sys/perl/sub/sub_vv_f",dirmode=>'global',params=>"$jobName");
+				}
+
+
+exit;
+}

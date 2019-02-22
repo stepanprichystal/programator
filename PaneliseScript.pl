@@ -593,12 +593,16 @@ sub _CheckPool{
  						#optimalization of scoring (MPANEL) + check if score has right distance from profile when POOL
 						if (CamHelper->StepExists( $inCAM, $jobId, 'mpanel')){
 								$inCAM->COM('script_run',name=>"y:/server/site_data/scripts/ScoreRepairScript.pl",dirmode=>'global',params=>"$jobId mpanel");
-								$inCAM->COM('script_run',name=>"z:/sys/scripts/RouteListControlsScript.pl",dirmode=>'global',params=>"$jobId mpanel");
+								#$inCAM->COM('script_run',name=>"z:/sys/scripts/RouteListControlsScript.pl",dirmode=>'global',params=>"$jobId mpanel");
+								my $check = CheckRout->new( $inCAM, $jobId, 'mpanel', 'f' );
+								$check->Check(); 
 						}
 						#optimalization of scoring when o+1_single exists + check if score has right distance from profile when POOL
 						if (CamHelper->StepExists( $inCAM, $jobId, 'o+1_single') && CamHelper->StepExists( $inCAM, $jobId, 'o+1')){
 								$inCAM->COM('script_run',name=>"y:/server/site_data/scripts/ScoreRepairScript.pl",dirmode=>'global',params=>"$jobId o+1");
-								$inCAM->COM('script_run',name=>"z:/sys/scripts/RouteListControlsScript.pl",dirmode=>'global',params=>"$jobId o+1");
+								#$inCAM->COM('script_run',name=>"z:/sys/scripts/RouteListControlsScript.pl",dirmode=>'global',params=>"$jobId o+1");
+								my $check = CheckRout->new( $inCAM, $jobId, 'o+1_single', 'f' );
+								$check->Check(); 
 						}
  						
  	 					#input parameters
@@ -1061,7 +1065,9 @@ sub _Panelize {
 			if (CamHelper->StepExists( $inCAM, $jobName, 'mpanel')){
 				
 					$inCAM->COM('script_run',name=>"y:/server/site_data/scripts/ScoreRepairScript.pl",dirmode=>'global',params=>"$jobName mpanel");
-					$inCAM->COM('script_run',name=>"z:/sys/scripts/RouteListControlsScript.pl",dirmode=>'global',params=>"$jobName mpanel");
+					#$inCAM->COM('script_run',name=>"z:/sys/scripts/RouteListControlsScript.pl",dirmode=>'global',params=>"$jobName mpanel");
+					my $check = CheckRout->new( $inCAM, $jobName, 'mpanel', 'f' );
+					$check->Check(); 
 					
 					my $max = DoFlattenScore->FlattenMpanelScore( $inCAM, $jobName  );
 			}
@@ -1069,7 +1075,9 @@ sub _Panelize {
 			#optimalization of scoring when o+1_single exists + check if score has right distance from profile when POOL
 			if (CamHelper->StepExists( $inCAM, $jobName, 'o+1_single') && CamHelper->StepExists( $inCAM, $jobName, 'o+1')){
 					$inCAM->COM('script_run',name=>"y:/server/site_data/scripts/ScoreRepairScript.pl",dirmode=>'global',params=>"$jobName o+1");
-					$inCAM->COM('script_run',name=>"z:/sys/scripts/RouteListControlsScript.pl",dirmode=>'global',params=>"$jobName o+1");
+					#$inCAM->COM('script_run',name=>"z:/sys/scripts/RouteListControlsScript.pl",dirmode=>'global',params=>"$jobName o+1");
+					my $check = CheckRout->new( $inCAM, $jobName, 'o+1_single', 'f' );
+					$check->Check(); 
 			}
 			
 			# move original data to archive
