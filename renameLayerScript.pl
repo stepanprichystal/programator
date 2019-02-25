@@ -1,19 +1,13 @@
 #!/usr/bin/perl-w
 
-use Genesis;
+
 #loading of locale modules
-use LoadLibrary;
+ 
 
 
 #local library
-use Enums;
-use FileHelper;
-use GeneralHelper;
-use DrillHelper;
-use StackupHelper;
-use MessageForm;
-use SimpleInputForm;
-use GenesisHelper;
+use Genesis;
+use aliased 'CamHelpers::CamJob';
 
 unless ($ENV{JOB}) {
 	$jobName = shift;
@@ -125,7 +119,7 @@ $layerHash{'pth'} = {
 						'type' => 'drill',
 						};
 
-if (GenesisHelper->countSignalLayers($jobName) == 1) {
+if (CamJob->GetSignalLayerCnt($genesis, $jobName) == 1) {
 							$layerHash{'npth'} = {
 													'nameNew' => 'm',
 													'type' => 'drill',
