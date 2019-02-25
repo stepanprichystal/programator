@@ -117,25 +117,27 @@ sub AddExcludeSymbols {
 
 # Include attribute and att value to filter
 sub AddIncludeAtt {
-	my $self     = shift;
-	my $attName  = shift;    # attribute name
-	my $attValue = shift;    # attribut value. Type according InCAM attribute type, undef is allowed
+	my $self      = shift;
+	my $attName   = shift;         # attribute name
+	my $attValue  = shift;         # attribut value. Type according InCAM attribute type, undef is allowed
+	my $condition = shift // 1;    # some attributes can have additional condition (attribute values)
 
 	die "Att name is not defined " unless ( defined $attName );
 
-	push( @{$self->{"includeAttr"}},  [$attName, $attValue] );
+	push( @{ $self->{"includeAttr"} }, [ $attName, $attValue, $condition ] );
 
 }
 
 # Exclude attribute and att value to filter
 sub AddExcludeAtt {
-	my $self     = shift;
-	my $attName  = shift;    # attribute name
-	my $attValue = shift;    # attribut value. Type according InCAM attribute type, undef is allowed
+	my $self      = shift;
+	my $attName   = shift;         # attribute name
+	my $attValue  = shift;         # attribut value. Type according InCAM attribute type, undef is allowed
+	my $condition = shift // 1;    # some attributes can have additional condition (attribute values)
 
 	die "Att name is not defined " unless ( defined $attName );
 
-	push( @{$self->{"excludeAttr"}},  [$attName, $attValue] );
+	push( @{ $self->{"excludeAttr"} }, [ $attName, $attValue, $condition ] );
 
 }
 
@@ -165,7 +167,7 @@ sub SetExcludeAttrCond {
 	my $cond = shift;
 
 	die "Condition is not defined " unless ( defined $cond );
-	
+
 	if (    $cond ne Enums->Logic_AND
 		 && $cond ne Enums->Logic_OR )
 	{
@@ -194,9 +196,10 @@ sub _Reset {
 }
 
 sub _PrepareAttrValue {
-	my $self    = shift;
-	my $attName = shift;
-	my $attVal  = shift;
+	my $self      = shift;
+	my $attName   = shift;
+	my $attVal    = shift;
+	my $condition = shift;
 
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
@@ -211,26 +214,31 @@ sub _PrepareAttrValue {
 	$attValInf{"option"}        = 0;
 	$attValInf{"text"}          = 0;
 
-	if ( $attrInfo{"gATRtype"} eq "int" ) {
+	die "Attribute ($attName) additional condition is not defined" if($condition && !defined $attVal);
 
-		$attValInf{"min_int_val"} = $attVal->{"min"};
-		$attValInf{"max_int_val"} = $attVal->{"max"};
+	if ($condition) {
 
-	}
-	elsif ( $attrInfo{"gATRtype"} eq "float" ) {
+		if ( $attrInfo{"gATRtype"} eq "int" ) {
 
-		$attValInf{"min_float_val"} = $attVal->{"min"};
-		$attValInf{"max_float_val"} = $attVal->{"max"};
+			$attValInf{"min_int_val"} = $attVal->{"min"};
+			$attValInf{"max_int_val"} = $attVal->{"max"};
 
-	}
-	elsif ( $attrInfo{"gATRtype"} eq "option" ) {
+		}
+		elsif ( $attrInfo{"gATRtype"} eq "float" ) {
 
-		$attValInf{"option"} = $attVal;
+			$attValInf{"min_float_val"} = $attVal->{"min"};
+			$attValInf{"max_float_val"} = $attVal->{"max"};
 
-	}
-	elsif ( $attrInfo{"gATRtype"} eq "text" ) {
+		}
+		elsif ( $attrInfo{"gATRtype"} eq "option" ) {
 
-		$attValInf{"text"} = $attVal;
+			$attValInf{"option"} = $attVal;
+
+		}
+		elsif ( $attrInfo{"gATRtype"} eq "text" ) {
+
+			$attValInf{"text"} = $attVal;
+		}
 	}
 
 	return %attValInf;

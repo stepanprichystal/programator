@@ -166,8 +166,8 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	use aliased 'Packages::InCAM::InCAM';
 
 	my $inCAM = InCAM->new();
-	my $jobId = "d113608";
-	my $step  = "mpanel_1";
+	my $jobId = "d113609";
+	my $step  = "o+1";
 	my $layer = 'f';
 
 	my $rtm = UniRTM->new( $inCAM, $jobId, $step, $layer, 1, 0, 1 );

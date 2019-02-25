@@ -31,6 +31,7 @@ use aliased 'CamHelpers::CamStepRepeat';
 use aliased 'CamHelpers::CamHistogram';
 use aliased 'CamHelpers::CamLayer';
 use aliased 'CamHelpers::CamMatrix';
+use aliased 'Packages::CAM::FeatureFilter::FeatureFilter';
 
 #-------------------------------------------------------------------------------------------#
 #  Script methods
@@ -61,17 +62,31 @@ sub GetRoutDuration {
 
 	foreach my $s (@uniqueSteps) {
 
-		# check if layer is not empty
-		my %hist = CamHistogram->GetFeatuesHistogram( $inCAM, $jobId, $s->{"stepName"}, $layer, 0 );
-		next if ( $hist{"total"} == 0 );
-
 		my $workLayer = $layer;
 
 		# If surface, layer has to be compenasete in order compute rout lengths
-		if ( $hist{"surf"} ) {
+		my %histSurf = CamHistogram->GetFeatuesHistogram( $inCAM, $jobId, $s->{"stepName"}, $workLayer, 0 );
+		if ( $histSurf{"surf"} ) {
 			CamLayer->WorkLayer( $inCAM, $layer );
 			$workLayer = CamLayer->RoutCompensation( $inCAM, $layer, "rout" );
+
+			#			# Remove circle surfaces (error in incame - wrong rout compensation, features has length 0)
+			CamLayer->WorkLayer( $inCAM, $workLayer );
+
+			my $featFilter = FeatureFilter->new( $inCAM, $jobId, $workLayer );
+
+			$featFilter->SetFeatureTypes( "line" => 1 );
+			$featFilter->SetLineLength( 0, 0 );
+			
+			if ( $featFilter->Select() ) {
+				CamLayer->DeleteFeatures($inCAM);
+			}
+
 		}
+
+		# check if layer is not empty
+		my %hist = CamHistogram->GetFeatuesHistogram( $inCAM, $jobId, $s->{"stepName"}, $workLayer, 0 );
+		next if ( $hist{"total"} == 0 );
 
 		# rout paths duration
 		my %routToolUsage = $self->GetRoutToolUsage( $inCAM, $jobId, $s->{"stepName"}, $layer, $workLayer, 0 );
@@ -83,16 +98,16 @@ sub GetRoutDuration {
 
 			foreach my $routPath ( @{ $routToolUsage{$toolKey} } ) {
 
-				my $len = $routPath->{"length"};
+				my $len   = $routPath->{"length"};
 				my $speed = $routPath->{"speed"};
 
 				# a) add to total rout tool duration (multipled by number of occurence in main step)
-				$duration += ( ($len / 1000) / ($speed/60) ) * $s->{"totalCnt"};
+				$duration += ( ( $len / 1000 ) / ( $speed / 60 ) ) * $s->{"totalCnt"};
 
 				# b) store cumulative rout tool ussage for computing tool change (length in mm)
 				# (multipled by number of occurence in main step)
 				$cumulativeUsage{$toolKey} = 0 unless ( defined $cumulativeUsage{$toolKey} );
-				$cumulativeUsage{$toolKey} += ($len * $s->{"totalCnt"});
+				$cumulativeUsage{$toolKey} += ( $len * $s->{"totalCnt"} );
 
 			}
 		}
@@ -126,7 +141,7 @@ sub GetRoutDuration {
 	}
 
 	# Add tool change accrodin tool type count
-	my @tChanges = grep {$cumulativeUsage{$_} > 0 } keys %cumulativeUsage;
+	my @tChanges = grep { $cumulativeUsage{$_} > 0 } keys %cumulativeUsage;
 	$duration += scalar(@tChanges) * $TOOLCHANGETIME;
 
 	return $duration;
@@ -156,7 +171,7 @@ sub GetRoutToolUsage {
 	my $toolSpec = XMLin( FileHelper->Open( GeneralHelper->Root() . "\\Config\\MagazineSpec.xml" ) );
 	$toolUsage{ "c" . ( $toolSpec->{"tool"}->{$_}->{"diameter"} * 1000 ) . "_" . $_ } = [] foreach ( keys %{ $toolSpec->{"tool"} } );
 
-	my $unitDTM = UniDTM->new( $inCAM, $jobId, $step, $layer, $SR );
+	my $unitDTM = UniDTM->new( $inCAM, $jobId, $step, $workLayer, $SR );
 	my $uniRTM = UniRTM->new( $inCAM, $jobId, $step, $workLayer, $SR, $unitDTM );
 	my $materialName = HegMethods->GetMaterialKind($jobId);
 
@@ -216,9 +231,7 @@ sub __SetSequenceToolUsage {
 
 		# There could be line with zero length but no undefined
 		die "No length defined for rout feature id: " . $f->{"id"} if ( !defined $f->{"length"} );
-		
-		
-		
+
 		$length += $f->{"length"};
 	}
 
@@ -254,7 +267,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	use aliased 'Packages::InCAM::InCAM';
 
 	my $inCAM = InCAM->new();
-	my $jobId = "d010302";
+	my $jobId = "d238832+1";
 	my $step  = "panel";
 	my $layer = "f";
 

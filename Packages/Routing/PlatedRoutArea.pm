@@ -69,7 +69,7 @@ sub PlatedAreaExceed {
 
 			my $lName = $r->{"gROWname"};
 
-			my %featHist = CamHistogram->GetFeatuesHistogram( $inCAM, $jobId, $stepName, $lName, 0 );
+			my %featHist = CamHistogram->GetFeatuesHistogram( $inCAM, $jobId, $stepName, $lName, 1 );
 			next unless ( $featHist{"total"} );
 
 			# test if step has nested..
@@ -252,7 +252,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	use aliased 'Packages::Routing::PlatedRoutArea';
 	use aliased 'Packages::InCAM::InCAM';
 
-	my $jobId = "d113608";
+	my $jobId = "d238913";
 	my $inCAM = InCAM->new();
 
 	my $step = "o+1";

@@ -88,19 +88,20 @@ sub SelectByFeatureIndexes {
 # Select all attributes of step in hash
 # Return count of celected features
 sub SelectBySingleAtt {
-	my $self     = shift;
-	my $inCAM    = shift;
-	my $jobId    = shift;
-	my $att      = shift;
-	my $attValue = shift;
+	my $self      = shift;
+	my $inCAM     = shift;
+	my $jobId     = shift;
+	my $att       = shift;
+	my $attValue  = shift;
+	my $condition = shift;
 
 	my $polarity = shift;    # not implemented yet
 	my $symbol   = shift;    # not implemented yet
 
 	$inCAM->COM('adv_filter_reset');
-	$inCAM->COM('filter_reset', filter_name => 'popup' );
+	$inCAM->COM( 'filter_reset', filter_name => 'popup' );
 
-	$self->__AddFilterAtt( $inCAM, $jobId, $att, $attValue );
+	$self->__AddFilterAtt( $inCAM, $jobId, $att, $attValue, 0, $condition );
 
 	#$inCAM->COM( 'set_filter_and_or_logic', filter_name => 'popup', criteria => 'inc_attr', logic => 'or' );
 	$inCAM->COM('filter_area_strt');
@@ -119,7 +120,8 @@ sub __AddFilterAtt {
 	my $jobId      = shift;
 	my $attName    = shift;
 	my $attVal     = shift;
-	my $refenrence = shift;    # if set, attributes are set for reference filter
+	my $refenrence = shift;         # if set, attributes are set for reference filter
+	my $condition  = shift // 1;    # some attributes can have additional condition
 
 	unless ( defined $attName ) {
 		return 0;
@@ -135,33 +137,38 @@ sub __AddFilterAtt {
 	my $option        = "";
 	my $text          = "";
 
-	if ( $attrInfo{"gATRtype"} eq "int" ) {
+	die "Attribute ($attName) additional condition is not defined" if($condition && !defined $attVal);
 
-		$min_int_val = $attVal->{"min"};
-		$max_int_val = $attVal->{"max"};
+	if ($condition) {
 
-	}
-	elsif ( $attrInfo{"gATRtype"} eq "float" ) {
+		if ( $attrInfo{"gATRtype"} eq "int" ) {
 
-		$min_float_val = $attVal->{"min"};
-		$max_float_val = $attVal->{"max"};
+			$min_int_val = $attVal->{"min"};
+			$max_int_val = $attVal->{"max"};
 
-	}
-	elsif ( $attrInfo{"gATRtype"} eq "option" ) {
+		}
+		elsif ( $attrInfo{"gATRtype"} eq "float" ) {
 
-		$option = $attVal;
+			$min_float_val = $attVal->{"min"};
+			$max_float_val = $attVal->{"max"};
 
-	}
-	elsif ( $attrInfo{"gATRtype"} eq "text" ) {
+		}
+		elsif ( $attrInfo{"gATRtype"} eq "option" ) {
 
-		$text = $attVal;
+			$option = $attVal;
+
+		}
+		elsif ( $attrInfo{"gATRtype"} eq "text" ) {
+
+			$text = $attVal;
+		}
 	}
 
 	$inCAM->COM(
 				 'set_filter_attributes',
 				 filter_name => !$refenrence ? 'popup' : 'ref_select',
 				 exclude_attributes => 'no',
-				 condition          => 'yes',
+				 condition          => $condition ? 'yes' : 'no',
 				 attribute          => $attName,
 				 min_int_val        => $min_int_val,
 				 max_int_val        => $max_int_val,
@@ -209,14 +216,13 @@ sub ByDCodes {
 	$inCAM->COM( 'filter_reset', filter_name => 'popup' );
 
 	foreach my $dcode (@DCodes) {
-		
-		
-		$inCAM->COM( "set_filter_dcode", "filter_name" => "",  "dcode" => $dcode );
+
+		$inCAM->COM( "set_filter_dcode", "filter_name" => "", "dcode" => $dcode );
 		$inCAM->COM('filter_area_strt');
 		$inCAM->COM( 'filter_area_end', filter_name => 'popup', operation => 'select' );
 
 	}
-	
+
 	$inCAM->COM('get_select_count');
 	$slected = $inCAM->GetReply();
 
@@ -356,7 +362,6 @@ sub SelectByReferenece {
 	$inCAM->COM( 'filter_reset', filter_name => 'popup' );
 	$inCAM->COM( "reset_filter_criteria", "filter_name" => "", "criteria" => "all" );
 
-
 	# Set filtered layer ====================================================================
 	$self->__AddFilterAtt( $inCAM, $jobId, $att, $attValue );
 
@@ -398,11 +403,11 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	use aliased 'Packages::InCAM::InCAM';
 
 	my $inCAM = InCAM->new();
-	my $jobId = "f52456";
+	my $jobId = "d238832+1";
 
 	#my $step  = "mpanel_10up";
 
-	my $result = CamFilter->ByBoundBox( $inCAM, 0, 0 );
+	my $result = CamFilter->SelectBySingleAtt( $inCAM, $jobId, ".pilot_hole", {"min" =>4, "max" =>4} );
 
 	#my $self             = shift;
 

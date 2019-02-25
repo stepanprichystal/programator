@@ -263,11 +263,10 @@ sub GetRoutSequences {
 
 	# Remove helper key value
 	foreach my $e (@edges) {
-		$e->{"used"}      = undef;
-		$e->{"processed"} = undef;
-		$e->{"cellS"}     = undef;
-		$e->{"cellE"}     = undef;
-
+		delete $e->{"used"};
+		delete $e->{"processed"};
+		delete $e->{"cellS"};
+		delete $e->{"cellE"};
 	}
 
 	return @sequences;

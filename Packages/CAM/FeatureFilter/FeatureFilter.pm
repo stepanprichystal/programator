@@ -66,10 +66,9 @@ sub Select {
 	my %h;
 	$h{$_}++ foreach ( @{ $self->{"layers"} }, CamMatrix->GetAffectedLayers( $inCAM, $self->{"jobId"} ) );
 	my @wrongL = grep { $h{$_} == 1 } keys %h;
-	if ( scalar(@wrongL) ){
-		die "Some layers (" . join( "; ", @wrongL ) . ") are wrongly affected or are not affected (requested layers)" ;
+	if ( scalar(@wrongL) ) {
+		die "Some layers (" . join( "; ", @wrongL ) . ") are wrongly affected or are not affected (requested layers)";
 	}
-	
 
 	# Build standard filter property
 	my $buildStd = $self->{"stdFilter"}->BuildAll();
@@ -224,17 +223,19 @@ sub AddIncludeAtt {
 	my $self     = shift;
 	my $attName  = shift;    # attribute name
 	my $attValue = shift;    # attribut value. Type according InCAM attribute type, undef is allowed
+	my $condition = shift;    # some attributes can have additional condition (attribute values)
 
-	$self->{"stdFilter"}->AddIncludeAtt( $attName, $attValue );
+	$self->{"stdFilter"}->AddIncludeAtt( $attName, $attValue, $condition );
 }
 
 # Exclude attribute and att value to filter
 sub AddExcludeAtt {
-	my $self     = shift;
-	my $attName  = shift;    # attribute name
-	my $attValue = shift;    # attribut value. Type according InCAM attribute type, undef is allowed
+	my $self      = shift;
+	my $attName   = shift;    # attribute name
+	my $attValue  = shift;    # attribut value. Type according InCAM attribute type, undef is allowed
+	my $condition = shift;    # some attributes can have additional condition (attribute values)
 
-	$self->{"stdFilter"}->AddExcludeAtt( $attName, $attValue );
+	$self->{"stdFilter"}->AddExcludeAtt( $attName, $attValue, $condition );
 }
 
 # Set logic between include attributes
@@ -419,55 +420,15 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	use aliased 'CamHelpers::CamHelper';
 
 	my $inCAM = InCAM->new();
-	my $jobId = "d233928";
+	my $jobId = "d238832";
 
-	my $f = FeatureFilter->new( $inCAM, $jobId, "c" );
-
-	#my %num = ( "min" => 1100 / 1000 / 25.4, "max" => 1100 / 1000 / 25.4 );
-	#$f->AddIncludeAtt( ".rout_tool", \%num );
-
-	#$f->AddFeatureIndexes( [ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22 ] );
-	# - "lines"    => 0/1,
-	# - "pads"     => 0/1,
-	# - "surfaces" => 0/1,
-	# - "arcs"     => 0/1,
-	# - "text"     => 0/1,
-	#$f->SetFeatureTypes( "line" => 1 );
-
-	#$f->SetPolarity( Enums->Polarity_BOTH );
-
-	#$f->AddIncludeSymbols( ["r254", "r500"]);
-	#$f->AddExcludeSymbols( ["r254", "r500"]);
-
-	#my %num = ( "min" => 1100 / 1000 / 25.4, "max" => 3000 / 1000 / 25.4 );
-	#$f->AddExcludeAtt(".smd");
-	#$f->AddExcludeAtt(".gold_plating");
-	#$f->SetExcludeAttrCond(Enums->Logic_OR);
-
-	#$f->SetFeatTypes( "text" => 1 );
-	#$f->SetText("*Drill*");
-
-	##d$f->SetLineLength(2,10);
-	#$f->AddFeatureIndexes( [ 440, 441 ] );
-
-	#$f->SetRefLayer("pom2");
-
-	#$f->SetFeatureTypesRef( "line" => 1, "surface" => 1 );
-	#$f->SetPolarityRef( Enums->Polarity_POSITIVE );
-	#$f->AddIncludeSymbolsRef( ["r254", "r500"]);
-	#$f->AddIncludeAttRef(".nomenclature");
-	#$f->AddIncludeAttRef(".smd");
-	#$f->SetIncludeAttrCondRef( Enums->Logic_AND );
-	#$f->SetReferenceMode( Enums->RefMode_DISJOINT );
-
-	#CamLayer->WorkLayer($inCAM, "m");
-
+	my $f = FeatureFilter->new( $inCAM, $jobId, "f" );
+	$f->SetFeatureTypes("line" => 1, "arc" => 1, );
+	$f->AddExcludeAtt(".rout_tool", undef, 0);
+ 
 	print $f->Select();
 
-	print "fff";
-
-	#	sel_ref_feat,layers=pom2,use=filter,mode=touch,pads_as=shape,f_types=surface,pol
-	#arity=positive\;negative,include_syms=,exclude_syms= (0)
+ 
 
 }
 
