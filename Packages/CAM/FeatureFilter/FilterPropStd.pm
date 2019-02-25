@@ -158,7 +158,7 @@ sub BuildAll {
 			my $attName    = $att->[0];
 			my $attVal     = $att->[1];
 			my $cond       = $att->[2];
-			my %attValInfo = $self->_PrepareAttrValue( $attName, $attVal );
+			my %attValInfo = $self->_PrepareAttrValue( $attName, $attVal, $cond );
 
 			$inCAM->COM(
 						 'set_filter_attributes',
