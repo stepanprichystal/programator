@@ -120,11 +120,10 @@ sub AddIncludeAtt {
 	my $self      = shift;
 	my $attName   = shift;         # attribute name
 	my $attValue  = shift;         # attribut value. Type according InCAM attribute type, undef is allowed
-	my $condition = shift // 1;    # some attributes can have additional condition (attribute values)
 
 	die "Att name is not defined " unless ( defined $attName );
 
-	push( @{ $self->{"includeAttr"} }, [ $attName, $attValue, $condition ] );
+	push( @{ $self->{"includeAttr"} }, [ $attName, $attValue ] );
 
 }
 
@@ -133,11 +132,10 @@ sub AddExcludeAtt {
 	my $self      = shift;
 	my $attName   = shift;         # attribute name
 	my $attValue  = shift;         # attribut value. Type according InCAM attribute type, undef is allowed
-	my $condition = shift // 1;    # some attributes can have additional condition (attribute values)
 
 	die "Att name is not defined " unless ( defined $attName );
 
-	push( @{ $self->{"excludeAttr"} }, [ $attName, $attValue, $condition ] );
+	push( @{ $self->{"excludeAttr"} }, [ $attName, $attValue ] );
 
 }
 
@@ -199,7 +197,6 @@ sub _PrepareAttrValue {
 	my $self      = shift;
 	my $attName   = shift;
 	my $attVal    = shift;
-	my $condition = shift;
 
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
@@ -214,9 +211,11 @@ sub _PrepareAttrValue {
 	$attValInf{"option"}        = 0;
 	$attValInf{"text"}          = 0;
 
-	die "Attribute ($attName) additional condition is not defined" if($condition && !defined $attVal);
-
-	if ($condition) {
+	if (defined $attVal) {
+		
+		# If attriubute condition is requested and 
+#		die "Attribute ($attName) additional condition is not defined for"
+#		  if ( (grep { $_ eq $attrInfo{"gATRtype"} } ( "int", "float", "option", "text" )) && !defined $attVal );
 
 		if ( $attrInfo{"gATRtype"} eq "int" ) {
 

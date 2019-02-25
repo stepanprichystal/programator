@@ -157,14 +157,13 @@ sub BuildAll {
 
 			my $attName    = $att->[0];
 			my $attVal     = $att->[1];
-			my $cond       = $att->[2];
-			my %attValInfo = $self->_PrepareAttrValue( $attName, $attVal, $cond );
+			my %attValInfo = $self->_PrepareAttrValue( $attName, $attVal );
 
 			$inCAM->COM(
 						 'set_filter_attributes',
 						 "filter_name"        => 'popup',
 						 "exclude_attributes" => 'no',
-						 "condition"          => $cond ? "yes" : "no",
+						 "condition"          => defined $attVal ? 'yes' : 'no',
 						 "attribute"          => $attName,
 						 "min_int_val"        => $attValInfo{"min_int_val"},
 						 "max_int_val"        => $attValInfo{"max_int_val"},

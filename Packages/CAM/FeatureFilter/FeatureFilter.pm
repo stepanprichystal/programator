@@ -223,9 +223,8 @@ sub AddIncludeAtt {
 	my $self     = shift;
 	my $attName  = shift;    # attribute name
 	my $attValue = shift;    # attribut value. Type according InCAM attribute type, undef is allowed
-	my $condition = shift;    # some attributes can have additional condition (attribute values)
 
-	$self->{"stdFilter"}->AddIncludeAtt( $attName, $attValue, $condition );
+	$self->{"stdFilter"}->AddIncludeAtt( $attName, $attValue );
 }
 
 # Exclude attribute and att value to filter
@@ -233,9 +232,8 @@ sub AddExcludeAtt {
 	my $self      = shift;
 	my $attName   = shift;    # attribute name
 	my $attValue  = shift;    # attribut value. Type according InCAM attribute type, undef is allowed
-	my $condition = shift;    # some attributes can have additional condition (attribute values)
 
-	$self->{"stdFilter"}->AddExcludeAtt( $attName, $attValue, $condition );
+	$self->{"stdFilter"}->AddExcludeAtt( $attName, $attValue );
 }
 
 # Set logic between include attributes
@@ -420,11 +418,11 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	use aliased 'CamHelpers::CamHelper';
 
 	my $inCAM = InCAM->new();
-	my $jobId = "d238832";
+	my $jobId = "d113608";
 
-	my $f = FeatureFilter->new( $inCAM, $jobId, "f" );
-	$f->SetFeatureTypes("line" => 1, "arc" => 1, );
-	$f->AddExcludeAtt(".rout_tool", undef, 0);
+	my $f = FeatureFilter->new( $inCAM, $jobId, "c" );
+	 
+	$f->AddIncludeAtt(".nomenclature");
  
 	print $f->Select();
 

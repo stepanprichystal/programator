@@ -121,7 +121,7 @@ sub __AddFilterAtt {
 	my $attName    = shift;
 	my $attVal     = shift;
 	my $refenrence = shift;         # if set, attributes are set for reference filter
-	my $condition  = shift // 1;    # some attributes can have additional condition
+	 
 
 	unless ( defined $attName ) {
 		return 0;
@@ -137,9 +137,9 @@ sub __AddFilterAtt {
 	my $option        = "";
 	my $text          = "";
 
-	die "Attribute ($attName) additional condition is not defined" if($condition && !defined $attVal);
+	#die "Attribute ($attName) additional condition is not defined" if($condition && !defined $attVal);
 
-	if ($condition) {
+	if (defined $attVal) {
 
 		if ( $attrInfo{"gATRtype"} eq "int" ) {
 
@@ -168,7 +168,7 @@ sub __AddFilterAtt {
 				 'set_filter_attributes',
 				 filter_name => !$refenrence ? 'popup' : 'ref_select',
 				 exclude_attributes => 'no',
-				 condition          => $condition ? 'yes' : 'no',
+				 condition          => defined $attVal ? 'yes' : 'no',
 				 attribute          => $attName,
 				 min_int_val        => $min_int_val,
 				 max_int_val        => $max_int_val,
