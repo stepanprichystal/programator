@@ -1003,7 +1003,9 @@ sub _Panelize {
 				my @attrHeg = HegMethods->GetAllByPcbId("$jobName");
 				my $pozadavekKusy = $pole[0]->{'pocet'};
 				
-				$inCAM->PAUSE ('Vytvor panel + pouzij schema ' . ' Pozadovany pocet kusu = ' . $pozadavekKusy);
+				
+				
+				$inCAM->PAUSE ('Vytvor panel + pouzij schema ' . ' Pozadovany pocet kusu = ' . $pozadavekKusy . _GetOptimalSpace("$jobName"));
 			}
 			
 			if (HegMethods->GetTypeOfPcb($jobName) eq 'Vicevrstvy') {
@@ -2165,7 +2167,24 @@ sub _ClearValueInHeg {
 				HegMethods->UpdateOrderMultiplicity("$jobId", ""); #musi se aktualizovat i nasobnost v zakazce
 }
 
-
+sub _GetOptimalSpace {
+		my $jobId = shift;
+		my $res = '';
+		
+		my $thickOfPcb = HegMethods->GetPcbMaterialThick($jobId);
+		
+			    if($thickOfPcb < 0.699) {
+					$res = '                   Minimalni mezera 10-15 mm';
+			}elsif($thickOfPcb < 0.899) {
+					$res = '                   Minimalni mezera 6-10 mm';
+			}elsif($thickOfPcb < 0.999) {
+					$res = '                   Minimalni mezera 4.5-6 mm';
+			}elsif($thickOfPcb == 99){
+					$res = ' V HEGu chybi tloustka desky.';
+			}
+		
+	return($res);
+}
 
 
 
