@@ -2169,7 +2169,7 @@ sub _ClearValueInHeg {
 
 sub _GetOptimalSpace {
 		my $jobId = shift;
-		my $res = 0;
+		my $res = '';
 		
 		my $thickOfPcb = HegMethods->GetPcbMaterialThick($jobId);
 		
