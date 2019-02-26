@@ -10,6 +10,7 @@ use utf8;
 use Time::HiRes qw (sleep);
 use XML::Simple;
 use Data::Dumper;
+use Time::localtime;
 
 
 #necessary for load pall packages
@@ -35,6 +36,7 @@ use aliased 'CamHelpers::CamJob';
 use aliased 'CamHelpers::CamHelper';
 use aliased 'CamHelpers::CamStep';
 use aliased 'CamHelpers::CamStepRepeat';
+use aliased 'CamHelpers::CamAttributes';
 
 use aliased 'Managers::MessageMngr::MessageMngr';
 
@@ -382,6 +384,9 @@ sub _Process {
 	my $pcbId = shift;
 	my $stepName = 'o+1';
 	
+			#set special attr datacore YYYY+1
+			my $custDateYYYY = (sprintf "%02.f",(localtime->year() + 1900) + 1);
+			CamAttributes->SetJobAttribute($inCAM, $pcbId, 'custom_year', $custDateYYYY);
 			
 			_CreateMissingLayer($pcbId, $stepName, 'm');
 			
