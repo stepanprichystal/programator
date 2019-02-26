@@ -385,7 +385,7 @@ sub _Process {
 	my $stepName = 'o+1';
 	
 			#set special attr datacore YYYY+1
-			my $custDateYYYY = (sprintf "%02.f",(localtime->year() + 1900) + 1);
+			my $custDateYYYY = (sprintf "%02.d",(localtime->year() %100) + 1);
 			CamAttributes->SetJobAttribute($inCAM, $pcbId, 'custom_year', $custDateYYYY);
 			
 			_CreateMissingLayer($pcbId, $stepName, 'm');
