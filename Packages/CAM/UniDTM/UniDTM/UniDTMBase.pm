@@ -436,6 +436,10 @@ sub __GetToolOperation {
 
 		$operation = EnumsDrill->ToolOp_ROUTBEFOREETCH;
 
+	}elsif ( $typeProc eq Enums->TypeProc_CHAIN && $l{"type"} eq EnumsGeneral->LAYERTYPE_nplt_kMill ) {
+
+		$operation = EnumsDrill->ToolOp_ROUTBEFOREET;
+
 	}
 	elsif (
 			$typeProc eq Enums->TypeProc_CHAIN

@@ -27,6 +27,7 @@ use constant {
 			   ToolOp_NPLATEDROUT    => "NPlatedRout",
 			   ToolOp_NPLATEDDRILL   => "NPlatedDrill",
 			   ToolOp_ROUTBEFOREETCH => "RoutBeforeEtch",
+			   ToolOp_ROUTBEFOREET   => "RoutBeforeET",
 			   ToolOp_PREPREGROUT    => "PrepregRout",
 			   ToolOp_COVERLAYROUT   => "CoverlayRout",
 };
