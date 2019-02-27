@@ -123,6 +123,31 @@ sub GetStepAndRepeatLim {
 	return %limits;
 }
 
+
+# Return information about nested deepest steps in panel step
+# Returned values match absolute position and rotation of nested steps in panel step
+# Each item contains
+# - x: final x position
+# - y: final y position
+# - angle: final angle
+sub GetTransformRepeatStep {
+	my $self         = shift;
+	my $inCAM        = shift;
+	my $jobId        = shift;
+	my $includeCpns  = shift // 0;    # include coupons steps, default: no
+	my $includeSteps = shift;         # definition of included coupon steps, if undef = all coupon steps
+
+	my $stepName = "panel";
+
+	my @steps = CamStepRepeat->GetTransformRepeatStep( $inCAM, $jobId,  $stepName);
+
+	CamStepRepeat->RemoveCouponSteps( \@steps, $includeCpns, $includeSteps );
+
+	return @steps;
+}
+
+ 
+
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#

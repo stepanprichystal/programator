@@ -50,6 +50,39 @@ sub GetCreateEtStep {
 	my $self  = shift;
 	return $self->{"data"}->{"createEtStep"};
 }
+
+# Keep sr profile of nested steps
+sub SetKeepProfiles {
+	my $self  = shift;
+	$self->{"data"}->{"keepProfiles"} = shift;
+}
+
+sub GetKeepProfiles {
+	my $self  = shift;
+	return $self->{"data"}->{"keepProfiles"};
+}
+
+# Copy local ipc to file
+sub SetLocalCopy {
+	my $self  = shift;
+	$self->{"data"}->{"localCopy"} = shift;
+}
+
+sub GetLocalCopy {
+	my $self  = shift;
+	return $self->{"data"}->{"localCopy"};
+}
+
+# Copy server ipc to file
+sub SetServerCopy {
+	my $self  = shift;
+	$self->{"data"}->{"serverCopy"} = shift;
+}
+
+sub GetServerCopy {
+	my $self  = shift;
+	return $self->{"data"}->{"serverCopy"};
+}
  
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

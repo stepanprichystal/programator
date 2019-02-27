@@ -16,6 +16,8 @@ use List::Util qw[max];
 #use aliased 'Packages::InCAM::InCAM';
 use aliased 'CamHelpers::CamStep';
 use aliased 'CamHelpers::CamHelper';
+use aliased 'Packages::Polygon::Enums' => 'EnumsPolygon';
+use aliased 'Packages::Polygon::PointsTransform';
 
 #-------------------------------------------------------------------------------------------#
 #   Package methods
@@ -299,6 +301,22 @@ sub ExistStepAndRepeat {
 
 }
 
+#Return if any step and repeat exist in given step
+sub ExistStepAndRepeats {
+	my $self = shift;
+
+	my @arr = $self->GetStepAndRepeat(@_);
+
+	if ( scalar(@arr) ) {
+		return 1;
+	}
+	else {
+
+		return 0;
+	}
+
+}
+
 #Delete specific step and repeat from given step
 sub DeleteStepAndRepeat {
 	my $self     = shift;
@@ -480,6 +498,10 @@ sub RemoveCouponSteps {
 
 # Return information about nested deepest steps in specific step
 # Returned values match absolute position and rotation of nested steps in specified step
+# Each item contains
+# - x: final x position
+# - y: final y position
+# - angle: final angle
 sub GetTransformRepeatStep {
 	my $self  = shift;
 	my $inCAM = shift;
@@ -506,18 +528,7 @@ sub __GetTransformRInfo {
 	my $transformRS   = shift;
 	my $curStep       = shift;
 	my @stepAncestors = @{ shift(@_) };
-
-	#	if ( !scalar(@stepAncestors) ) {
-	#		my $ancestor = ();
-	#		$ancestor->{"originX"}  = 0;
-	#		$ancestor->{"originY"}  = 0;
-	#		$ancestor->{"angle"}    = 0;
-	#		$ancestor->{"stepName"} = "";
-	#		push( @stepAncestors, $ancestor );
-	#	}
-
-	#my $curAncestor = $stepAncestors[-1];
-
+ 
 	my @repeats = $self->GetRepeatStep( $inCAM, $jobId, $curStep->{"stepName"} );
 
 	if (@repeats) {
@@ -536,9 +547,10 @@ sub __GetTransformRInfo {
 
 		# Leaf step, compute position and rotation
 		my %stepInf = ();
-		$stepInf{"x"}     = $curStep->{"originX"};
-		$stepInf{"y"}     = $curStep->{"originY"};
-		$stepInf{"angle"} = $curStep->{"angle"};
+		$stepInf{"stepName"} = $curStep->{"stepName"};
+		$stepInf{"x"}        = $curStep->{"originX"};
+		$stepInf{"y"}        = $curStep->{"originY"};
+		$stepInf{"angle"}    = $curStep->{"angle"};
 
 		@stepAncestors = reverse(@stepAncestors);
 
@@ -547,34 +559,24 @@ sub __GetTransformRInfo {
 			my $ancestor = $stepAncestors[$i];
 
 			next if ( $ancestor->{"stepName"} eq "" );
+ 
 
-			$stepInf{"stepName"} = $curStep->{"stepName"};
+			# point of ancestor rotation (ancestor datum point)
+			my $rotatePoint = {};
+			$rotatePoint->{"x"} = ( $ancestor->{"originX"} ) * 1000;
+			$rotatePoint->{"y"} = ( $ancestor->{"originY"} ) * 1000;
 
-			# consider from rotation in second ancestor
-			if ( $i > 1 ) {
+			# rorated point (cur step anchor)
+			my $anchorPoint = {};
+			$anchorPoint->{"x"} = $rotatePoint->{"x"} + ( $stepInf{"x"} - $ancestor->{"datumX"} ) * 1000;
+			$anchorPoint->{"y"} = $rotatePoint->{"y"} + ( $stepInf{"y"} - $ancestor->{"datumY"} ) * 1000;
 
-				# point of ancestor rotation (ancestor datum point)
-				my $rotatePoint = {};
-				$rotatePoint->{"x"} = ( $ancestor->{"originX"} - $ancestor->{"datumX"} ) * 1000;
-				$rotatePoint->{"y"} = ( $ancestor->{"originY"} - $ancestor->{"datumY"} ) * 1000;
+			my %newAnchorPoint = PointsTransform->RotatePoint( $anchorPoint, $ancestor->{"angle"}, EnumsPolygon->Dir_CCW, $rotatePoint );
+			$stepInf{"x"} = $newAnchorPoint{"x"} / 1000;
+			$stepInf{"y"} = $newAnchorPoint{"y"} / 1000;
 
-				# rorated point (cur step anchor)
-				my $anchorPoint = {};
-				$anchorPoint->{"x"} = $stepInf{"x"} * 1000;
-				$anchorPoint->{"y"} = $stepInf{"y"} * 1000;
-
-				my %newAnchorPoint = PointsTransform->RotatePoint( $anchorPoint, $ancestor->{"angle"}, Enums->Dir_CCW, $rotatePoint );
-				$stepInf{"x"} = $newAnchorPoint{"x"};
-				$stepInf{"y"} = $newAnchorPoint{"y"};
-
-			}
-			else {
-
-				$stepInf{"x"} += $ancestor->{"originX"};
-				$stepInf{"y"} += $ancestor->{"originY"};
-				$stepInf{"x"} -= $ancestor->{"datumX"};
-				$stepInf{"y"} -= $ancestor->{"datumY"};
-			}
+			$stepInf{"angle"} += $ancestor->{"angle"};
+			$stepInf{"angle"} -= 360 if ( $stepInf{"angle"} > 360 );
 		}
 
 		push( @{$transformRS}, \%stepInf );

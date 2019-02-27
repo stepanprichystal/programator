@@ -26,6 +26,8 @@ use aliased 'Packages::Events::Event';
 #use aliased 'CamHelpers::CamLayer';
 #use aliased 'CamHelpers::CamDrilling';
 use aliased 'CamHelpers::CamStep';
+use aliased 'Packages::ETesting::BasicHelper::Helper' => 'ETHelper';
+use aliased 'CamHelpers::CamStepRepeat';
 
 #use aliased 'CamHelpers::CamJob';
 
@@ -67,12 +69,14 @@ sub __SetLayout {
 
 	# DEFINE CONTROLS
 	my $settings = $self->__SetLayoutSettings($self);
+	my $IPCfile  = $self->__SetLayoutIPCFile($self);
 
 	# SET EVENTS
 
 	# BUILD STRUCTURE OF LAYOUT
 
-	$szMain->Add( $settings, 1, &Wx::wxEXPAND );
+	$szMain->Add( $settings, 0, &Wx::wxEXPAND );
+	$szMain->Add( $IPCfile,  0, &Wx::wxEXPAND );
 
 	$self->SetSizer($szMain);
 
@@ -86,56 +90,184 @@ sub __SetLayoutSettings {
 	my $parent = shift;
 
 	#define staticboxes
-	my $statBox = Wx::StaticBox->new( $parent, -1, 'Settings' );
+	my $statBox = Wx::StaticBox->new( $parent, -1, 'Export settings' );
+	my $szStatBox = Wx::StaticBoxSizer->new( $statBox, &Wx::wxVERTICAL );
+
+	my $szRow1 = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
+	my $szRow2 = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
+	my $szRow3 = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
+
+	# DEFINE CONTROLS
+	my $rbCreateStep = Wx::RadioButton->new( $statBox, -1, "Create ET step", &Wx::wxDefaultPosition, &Wx::wxDefaultSize, &Wx::wxRB_GROUP );
+	my $rbCustomStep = Wx::RadioButton->new( $statBox, -1, "Custom ET step", &Wx::wxDefaultPosition, &Wx::wxDefaultSize );
+
+	my $fromStepTxt = Wx::StaticText->new( $parent, -1, "From step", &Wx::wxDefaultPosition, [ 120, 22 ] );
+	my @steps = CamStep->GetAllStepNames( $self->{"inCAM"}, $self->{"jobId"} );
+	@steps = grep { $_ !~ /et_/ } @steps;
+	my $last = $steps[ scalar(@steps) - 1 ];
+	my $fromStepCb = Wx::ComboBox->new( $parent, -1, $last, &Wx::wxDefaultPosition, [ 50, 22 ], \@steps, &Wx::wxCB_READONLY );
+
+	my $keepProfilesTxt = Wx::StaticText->new( $parent, -1, "Keep profiles", &Wx::wxDefaultPosition, [ 120, 22 ] );
+	my $keepProfilesChb = Wx::CheckBox->new( $parent, -1, "", &Wx::wxDefaultPosition, [ 50, 22 ] );
+
+	my $customStepTxt = Wx::StaticText->new( $parent, -1, "From step", &Wx::wxDefaultPosition, [ 120, 22 ] );
+	my @etSteps = CamStep->GetAllStepNames( $self->{"inCAM"}, $self->{"jobId"} );
+	@etSteps = grep { $_ =~ /et_/ } @etSteps;
+	my $customStepCb =
+	  Wx::ComboBox->new( $parent, -1, $etSteps[ scalar(@etSteps) - 1 ], &Wx::wxDefaultPosition, [ 50, 22 ], \@etSteps, &Wx::wxCB_READONLY );
+
+	# SET EVENTS
+	Wx::Event::EVT_RADIOBUTTON( $rbCreateStep, -1, sub { $self->__OnModeChangeHandler(@_) } );
+	Wx::Event::EVT_RADIOBUTTON( $rbCustomStep, -1, sub { $self->__OnModeChangeHandler(@_) } );
+	Wx::Event::EVT_COMBOBOX( $fromStepCb, -1, sub { $self->__OnStepFromChange(@_) } );
+
+	# BUILD STRUCTURE OF LAYOUT
+	$szRow1->Add( $fromStepTxt, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szRow1->Add( $fromStepCb,  1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+
+	$szRow2->Add( $keepProfilesTxt, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szRow2->Add( $keepProfilesChb, 1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+
+	$szRow3->Add( $customStepTxt, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szRow3->Add( $customStepCb,  1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+
+	#$szRow2->Add( $createStepChb, 0, &Wx::wxEXPAND | &Wx::wxALL, 2 );
+	#$szRow2->Add( 5,100, 1, &Wx::wxEXPAND );
+
+	$szStatBox->Add( $rbCreateStep, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
+	$szStatBox->Add( 4, 4, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
+	$szStatBox->Add( $szRow1, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
+	$szStatBox->Add( $szRow2, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
+	$szStatBox->Add( 5, 5, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
+	$szStatBox->Add( $rbCustomStep, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
+	$szStatBox->Add( 4, 4, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
+	$szStatBox->Add( $szRow3, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
+
+	#$szStatBox->Add( $szRow3, 50, &Wx::wxEXPAND | &Wx::wxLEFT, 0 );
+
+	# Set References
+	$self->{"fromStepCb"}      = $fromStepCb;
+	$self->{"customStepCb"}    = $customStepCb;
+	$self->{"keepProfilesChb"} = $keepProfilesChb;
+	$self->{"rbCreateStep"}    = $rbCreateStep;
+	$self->{"rbCustomStep"}    = $rbCustomStep;
+
+	return $szStatBox;
+}
+
+# Set layout for Quick set box
+sub __SetLayoutIPCFile {
+	my $self   = shift;
+	my $parent = shift;
+
+	#define staticboxes
+	my $statBox = Wx::StaticBox->new( $parent, -1, 'IPC file' );
 	my $szStatBox = Wx::StaticBoxSizer->new( $statBox, &Wx::wxHORIZONTAL );
 
 	my $szCol1 = Wx::BoxSizer->new(&Wx::wxVERTICAL);
 	my $szCol2 = Wx::BoxSizer->new(&Wx::wxVERTICAL);
 
 	# DEFINE CONTROLS
-	my $stepTxt = Wx::StaticText->new( $parent, -1, "Original step", &Wx::wxDefaultPosition, [ 50, 22 ] );
+	my $localCopyTxt = Wx::StaticText->new( $parent, -1, "Local copy", &Wx::wxDefaultPosition, [ 120, 22 ] );
+	my $localCopyChb = Wx::CheckBox->new( $parent, -1, "", &Wx::wxDefaultPosition, [ 50, 22 ] );
 
-	my @steps = CamStep->GetAllStepNames( $self->{"inCAM"}, $self->{"jobId"} );
-	@steps =  grep { $_ !~ /et_/} @steps;
-	my $last = $steps[ scalar(@steps) - 1 ];
-
-	my $stepCb = Wx::ComboBox->new( $parent, -1, $last, &Wx::wxDefaultPosition, [ 50, 22 ], \@steps, &Wx::wxCB_READONLY );
-
-	my $createStepTxt = Wx::StaticText->new( $parent, -1, "Create \"et_".$stepCb->GetValue()."\"", &Wx::wxDefaultPosition, [ 50, 22 ] );
-	my $createStepChb = Wx::CheckBox->new( $parent, -1, "", &Wx::wxDefaultPosition, [ 50, 22 ] );
-	 
+	my $serverCopyTxt = Wx::StaticText->new( $parent, -1, "Sent to server", &Wx::wxDefaultPosition, [ 120, 22 ] );
+	my $serverCopyChb = Wx::CheckBox->new( $parent, -1, "", &Wx::wxDefaultPosition, [ 50, 22 ] );
+	$serverCopyChb->Disable();
 
 	# SET EVENTS
-	Wx::Event::EVT_COMBOBOX( $stepCb, -1, sub { $self->__OnStepChange(@_) } );
 
 	# BUILD STRUCTURE OF LAYOUT
-	$szCol1->Add( $stepTxt,       0, &Wx::wxEXPAND | &Wx::wxALL, 2 );
-	$szCol1->Add( $createStepTxt, 0, &Wx::wxEXPAND | &Wx::wxALL, 2 );
-	$szCol1->Add( 5,5, 1, &Wx::wxEXPAND );
+	$szCol1->Add( $localCopyTxt,  0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
+	$szCol1->Add( $serverCopyTxt, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
 
-	$szCol2->Add( $stepCb,        0, &Wx::wxEXPAND | &Wx::wxALL, 2 );
-	$szCol2->Add( $createStepChb, 0, &Wx::wxEXPAND | &Wx::wxALL, 2 );
-	$szCol2->Add( 5,100, 1, &Wx::wxEXPAND );
+	$szCol2->Add( $localCopyChb,  0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
+	$szCol2->Add( $serverCopyChb, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
 
-	$szStatBox->Add( $szCol1, 50, &Wx::wxEXPAND | &Wx::wxLEFT, 0 );
-	$szStatBox->Add( $szCol2, 50, &Wx::wxEXPAND | &Wx::wxLEFT, 0 );
+	$szStatBox->Add( $szCol1, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
+	$szStatBox->Add( $szCol2, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
+
+	#$szStatBox->Add( $szRow3, 50, &Wx::wxEXPAND | &Wx::wxLEFT, 0 );
 
 	# Set References
-	$self->{"stepCb"}        = $stepCb;
-	$self->{"createStepChb"} = $createStepChb;
-	$self->{"createStepTxt"} = $createStepTxt;
-	
+	$self->{"localCopyChb"}  = $localCopyChb;
+	$self->{"serverCopyChb"} = $serverCopyChb;
 	return $szStatBox;
 }
 
-# When change steps
-sub __OnStepChange {
+# Change export mode
+sub __OnModeChangeHandler {
 	my $self = shift;
-	
-	$self->{"createStepTxt"}->SetLabel("Create  \"et_".$self->{"stepCb"}->GetValue()."\"");
 
-	# disable "create et step" if doesnt exist
-	$self->DisableControls();
+	my $inCAM = $self->{"inCAM"};
+	my $jobId = $self->{"jobId"};
+
+	my $val = $self->{"rbCreateStep"}->GetValue();
+
+	if ( defined $val && $val == 1 ) {
+
+		$self->{"fromStepCb"}->Enable();
+
+		my $val = $self->{"rbCreateStep"}->GetValue();
+
+		if ( defined $val && $val == 1 ) {
+
+			# Set keep profiles checbox
+			my $keepProfiles = ETHelper->KeepProfilesAllowed( $inCAM, $jobId, $self->{"fromStepCb"}->GetValue() );
+			if ( $keepProfiles ) {
+
+				$self->{"keepProfilesChb"}->SetValue(1);
+				$self->{"keepProfilesChb"}->Enable();
+				
+			}
+			else {
+				$self->{"keepProfilesChb"}->SetValue(0);
+				$self->{"keepProfilesChb"}->Disable();
+				$self->{"serverCopyChb"}->SetValue(0);
+			}
+			
+			# Set sent to server checkbox
+			if($keepProfiles ||  !CamStepRepeat->ExistStepAndRepeats($inCAM, $jobId, $fromStepCb)){
+				$self->{"serverCopyChb"}->SetValue(1);
+			}else{
+				$self->{"serverCopyChb"}->SetValue(0);
+			}
+		}
+
+		$self->{"customStepCb"}->Disable();
+
+	}
+	else {
+
+		$self->{"fromStepCb"}->Disable();
+		$self->{"keepProfilesChb"}->Disable();
+
+		$self->{"customStepCb"}->Enable();
+
+		$self->{"localCopyChb"}->SetValue(1);
+		$self->{"serverCopyChb"}->SetValue(0);
+	}
+
+	#$self->{"onTentingChange"}->Do( $chb->GetValue() );
+}
+
+# Change export from step
+sub __OnStepFromChange {
+	my $self = shift;
+
+	my $inCAM = $self->{"inCAM"};
+	my $jobId = $self->{"jobId"};
+
+	if ( ETHelper->KeepProfilesAllowed( $inCAM, $jobId, $self->{"fromStepCb"}->GetValue() ) ) {
+
+		$self->{"keepProfilesChb"}->Enable();
+		$self->{"keepProfilesChb"}->SetValue(1);
+	}
+	else {
+		$self->{"keepProfilesChb"}->Disable();
+		$self->{"keepProfilesChb"}->SetValue(0);
+	}
+
 }
 
 # =====================================================================
@@ -145,18 +277,26 @@ sub __OnStepChange {
 sub DisableControls {
 	my $self = shift;
 
-	# disable "create et step" if doesnt exist
-	my $actualStep = $self->{"stepCb"}->GetValue();
-	unless ( $self->{"defaultInfo"}->StepExist( "et_" . $actualStep ) ) {
+	my $inCAM = $self->{"inCAM"};
+	my $jobId = $self->{"jobId"};
 
-		$self->{"createStepChb"}->Disable();
-		$self->{"createStepChb"}->SetValue(1);
+	# disable keep profiles if it is  no possible
 
+	my $val = $self->{"rbCreateStep"}->GetValue();
+
+	if ( defined $val && $val == 1 ) {
+		$self->{"fromStepCb"}->Enable();
+		$self->{"keepProfilesChb"}->Enable();
+
+		$self->{"customStepCb"}->Disable();
 	}
 	else {
-		$self->{"createStepChb"}->Enable();
+
+		$self->{"fromStepCb"}->Disable();
+		$self->{"keepProfilesChb"}->Disable();
+
+		$self->{"customStepCb"}->Enable();
 	}
- 
 }
 
 # =====================================================================
@@ -166,32 +306,120 @@ sub DisableControls {
 # Step to test ========================================================
 
 sub SetStepToTest {
-	my $self  = shift;
-	my $value = shift;
+	my $self       = shift;
+	my $stepToTest = shift;
+	my $createStep = shift;
 
-	$self->{"stepCb"}->SetValue($value);
-	$self->__OnStepChange();
-	
+	if ($createStep) {
+		$self->{"fromStepCb"}->SetValue($stepToTest);
+	}
+	else {
+		$self->{"customStepCb"}->SetValue($stepToTest);
+	}
+
+	#$self->__OnStepChange();
+
 }
 
 sub GetStepToTest {
 	my $self = shift;
-	return $self->{"stepCb"}->GetValue();
+
+	if ( $self->{"rbCreateStep"}->GetValue() ) {
+
+		return $self->{"fromStepCb"}->GetValue();
+	}
+	else {
+
+		return $self->{"customStepCb"}->GetValue();
+	}
 }
 
 # Create ET step ========================================================
 
 sub SetCreateEtStep {
-	my $self = shift;
+	my $self  = shift;
 	my $value = shift;
 
-	$self->{"createStepChb"}->SetValue($value);
+	if ($value) {
+
+		$self->{"rbCreateStep"}->SetValue(1);
+	}
+	else {
+
+		$self->{"rbCustomStep"}->SetValue(1);
+	}
 }
 
 sub GetCreateEtStep {
 	my $self = shift;
 
-	if ( $self->{"createStepChb"}->IsChecked() ) {
+	if ( $self->{"rbCreateStep"}->GetValue() ) {
+
+		return 1;
+	}
+	else {
+
+		return 0;
+	}
+}
+
+# Keep step profiles ========================================================
+
+sub SetKeepProfiles {
+	my $self  = shift;
+	my $value = shift;
+
+	$self->{"keepProfilesChb"}->SetValue($value);
+}
+
+sub GetKeepProfiles {
+	my $self = shift;
+
+	if ( $self->{"keepProfilesChb"}->IsChecked() ) {
+
+		return 1;
+	}
+	else {
+
+		return 0;
+	}
+}
+
+# Server copy profiles ========================================================
+
+sub SetLocalCopy {
+	my $self  = shift;
+	my $value = shift;
+
+	$self->{"localCopyChb"}->SetValue($value);
+}
+
+sub GetLocalCopy {
+	my $self = shift;
+
+	if ( $self->{"localCopyChb"}->IsChecked() ) {
+
+		return 1;
+	}
+	else {
+
+		return 0;
+	}
+}
+
+# Local copy profiles ========================================================
+
+sub SetServerCopy {
+	my $self  = shift;
+	my $value = shift;
+
+	$self->{"serverCopyChb"}->SetValue($value);
+}
+
+sub GetServerCopy {
+	my $self = shift;
+
+	if ( $self->{"serverCopyChb"}->IsChecked() ) {
 
 		return 1;
 	}

@@ -83,9 +83,12 @@ sub RefreshGUI {
 	my $groupData = $self->{"dataMngr"}->GetGroupData();
 
 	#refresh group form
-	$self->{"form"}->SetStepToTest( $groupData->GetStepToTest() );
+	$self->{"form"}->SetStepToTest( $groupData->GetStepToTest(), $groupData->GetCreateEtStep() );
 	$self->{"form"}->SetCreateEtStep( $groupData->GetCreateEtStep() );
-
+	$self->{"form"}->SetKeepProfiles( $groupData->GetKeepProfiles() );
+	$self->{"form"}->SetLocalCopy( $groupData->GetLocalCopy() );
+	$self->{"form"}->SetServerCopy( $groupData->GetServerCopy() );	
+ 
 	#refresh wrapper
 	$self->_RefreshWrapper();
 }
@@ -106,6 +109,10 @@ sub GetGroupData {
 		
 		$groupData->SetStepToTest( $frm->GetStepToTest() );
 		$groupData->SetCreateEtStep( $frm->GetCreateEtStep() );
+		$groupData->SetKeepProfiles( $frm->GetKeepProfiles() );
+		$groupData->SetLocalCopy( $frm->GetLocalCopy() );
+		$groupData->SetServerCopy( $frm->GetServerCopy() );	
+	 
 			
 	}
 	else {
