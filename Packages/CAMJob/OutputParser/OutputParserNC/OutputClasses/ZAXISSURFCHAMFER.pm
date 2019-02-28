@@ -79,10 +79,10 @@ sub _Prepare {
 	foreach my $tool (@toolSizes) {
 
 		my $outputLayer   = OutputLayer->new();                                              # layer process result
-		my $tool          = ( $chainSeq[0] )->GetChain()->GetChainTool()->GetUniDTMTool();
-		my $toolDepth     = $tool->GetDepth();
-		my $toolDrillSize = $tool->GetDrillSize();
-		my $toolAngle     = $tool->GetAngle();
+		my $toolDTM          = ( $chainSeq[0] )->GetChain()->GetChainTool()->GetUniDTMTool();
+		my $toolDepth     = $toolDTM->GetDepth();
+		my $toolDrillSize = $toolDTM->GetDrillSize();
+		my $toolAngle     = $toolDTM->GetAngle();
 
 		# get all chain seq by radius, by tool diameter (same tool diameters must have same angle)
 		my @matchCh = grep { $_->GetChain()->GetChainSize() == $toolDrillSize } @chainSeq;
@@ -119,7 +119,7 @@ sub _Prepare {
 		# 2 Add another extra info to output layer
 
 		$outputLayer->SetDataVal( "radiusReal", $radiusReal );    # real compted radius of line arc
-		$outputLayer->SetDataVal( "DTMTool",    $tool );                 # DTMTool which all chainSeq are processed by
+		$outputLayer->SetDataVal( "DTMTool",    $toolDTM );                 # DTMTool which all chainSeq are processed by
 		$outputLayer->SetDataVal( "exceededDepth", $exceededDepth );  				  # exceeded depth of tool if exist (if depth ot tool is bigger than size of tool peak)
 		$outputLayer->SetDataVal( "chainSeq",   \@matchCh );      # All chain seq, which was processed in ori layer in this class
 

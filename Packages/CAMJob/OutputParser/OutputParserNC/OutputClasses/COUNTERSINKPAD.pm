@@ -78,10 +78,10 @@ sub _Prepare {
 
 		my $outputLayer = OutputLayer->new();    # layer process result
 
-		my $tool          = ( grep { $_->GetDrillSize() / 2 == $r } @tools )[0];
-		my $toolDepth     = $tool->GetDepth();
-		my $toolDrillSize = $tool->GetDrillSize();
-		my $toolAngle     = $tool->GetAngle();
+		my $toolDTM          = ( grep { $_->GetDrillSize() / 2 == $r } @tools )[0];
+		my $toolDepth     = $toolDTM->GetDepth();
+		my $toolDrillSize = $toolDTM->GetDrillSize();
+		my $toolAngle     = $toolDTM->GetAngle();
 
 		# get all pads with this radius
 		my $f = Features->new();
@@ -111,7 +111,7 @@ sub _Prepare {
 			$outputLayer->SetDataVal( "radiusBeforePlt", $radiusReal + 0.05 );    # real compted radius of features in layer before plated
 		}
 		$outputLayer->SetDataVal( "radiusReal",  $radiusReal );                   # real computed radius of features in layer
-		$outputLayer->SetDataVal( "DTMTool",     $tool );                         # DTM tool, which is used for this pads
+		$outputLayer->SetDataVal( "DTMTool",     $toolDTM );                         # DTM tool, which is used for this pads
 		$outputLayer->SetDataVal( "exceededDepth", $exceededDepth );  				  # exceeded depth of tool if exist (if depth ot tool is bigger than size of tool peak)
 		$outputLayer->SetDataVal( "padFeatures", \@pads );                        # All pads, which was processed in ori layer in this class
 

@@ -75,9 +75,9 @@ sub _Prepare {
 	foreach my $tool (@toolSizes) {
 
 		my $outputLayer = OutputLayer->new();    # layer process result
-		my $tool          = ( grep { $_->GetChain()->GetChainSize() == $tool } @chainSeq )[0]->GetChain()->GetChainTool()->GetUniDTMTool();
-		my $toolDepth     = $tool->GetDepth();
-		my $toolDrillSize = $tool->GetDrillSize();
+		my $toolDTM          = ( grep { $_->GetChain()->GetChainSize() == $tool } @chainSeq )[0]->GetChain()->GetChainTool()->GetUniDTMTool();
+		my $toolDepth     = $toolDTM->GetDepth();
+		my $toolDrillSize = $toolDTM->GetDrillSize();
 
 		# get all chain seq by radius, by tool diameter (same tool diameters must have same angle)
 		my @matchCh = grep { $_->GetChain()->GetChainSize() == $toolDrillSize } @chainSeq;
@@ -104,7 +104,7 @@ sub _Prepare {
 		# 2 Add another extra info to output layer
 
 		$outputLayer->SetDataVal( "chainSeq", \@matchCh );    # All chain seq, which was processed in ori layer in this class
-		$outputLayer->SetDataVal( "DTMTool", $tool );
+		$outputLayer->SetDataVal( "DTMTool", $toolDTM );
 
 		$self->{"result"}->AddLayer($outputLayer);
 	}

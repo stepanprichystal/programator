@@ -108,9 +108,9 @@ sub _Prepare {
 
 			next unless (@matchCh);
 
-			my $tool          = $matchCh[0]->GetChain()->GetChainTool()->GetUniDTMTool();
-			my $toolDepth     = $tool->GetDepth();                                          # depth of tool
-			my $toolAngle     = $tool->GetAngle();                                          # angle of tool
+			my $toolDTM          = $matchCh[0]->GetChain()->GetChainTool()->GetUniDTMTool();
+			my $toolDepth     = $toolDTM->GetDepth();                                          # depth of tool
+			my $toolAngle     = $toolDTM->GetAngle();                                          # angle of tool
 
 
 			my $radiusNoDepth = $matchCh[0]->{"radius"};
@@ -136,7 +136,7 @@ sub _Prepare {
 			}
 
 			$outputLayer->SetDataVal( "radiusReal", $radiusReal );    # real compted radius of features in layer
-			$outputLayer->SetDataVal( "DTMTool",     $tool );                         # DTM tool, which is used for this pads
+			$outputLayer->SetDataVal( "DTMTool",     $toolDTM );                         # DTM tool, which is used for this pads
 			$outputLayer->SetDataVal( "exceededDepth", $exceededDepth );  # exceeded depth of tool if exist (if depth ot tool is bigger than size of tool peak)
 			$outputLayer->SetDataVal( "chainSeq",   \@matchCh );      # All chain seq, which was processed in ori layer in this class
 
