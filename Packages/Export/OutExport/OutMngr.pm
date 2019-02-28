@@ -25,6 +25,8 @@ use aliased 'Packages::Gerbers::ProduceData::ProduceData';
 use aliased 'Helpers::JobHelper';
 use aliased 'Packages::ETesting::ExportIPC::ExportIPC';
 use aliased 'Packages::Export::OutExport::MeasureData';
+use aliased 'CamHelpers::CamStepRepeat';
+use aliased 'Packages::ETesting::BasicHelper::Helper' => 'ETHelper';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -111,7 +113,16 @@ sub __ExportCooperationET {
 
 	if ( $self->{"exportEt"} ) {
 
-		$self->{"exportIPC"}->Export("kooperace");
+		# Decide if SR profiles can be kept
+		my $keepProfile = 0;
+		if( CamStepRepeat->ExistStepAndRepeats($inCAM, $jobId, $self->{"cooperStep"})){
+			
+			if(ETHelper->KeepProfilesAllowed( $inCAM, $jobId, $self->{"cooperStep"})){
+				$keepProfile = 1;
+			}
+		}
+		
+		$self->{"exportIPC"}->Export("kooperace", $keepProfile);
 
 		# if script run on server, move el test to r:/El_tests
 		

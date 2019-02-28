@@ -502,6 +502,7 @@ sub RemoveCouponSteps {
 # - x: final x position
 # - y: final y position
 # - angle: final angle
+# Function consider origin ( position of steps is relate to zero of step in parameter)
 sub GetTransformRepeatStep {
 	my $self  = shift;
 	my $inCAM = shift;
@@ -515,6 +516,9 @@ sub GetTransformRepeatStep {
 	$curStep->{"originY"}  = 0;
 	$curStep->{"angle"}    = 0;
 	$curStep->{"stepName"} = $step;
+	my %datum = CamStep->GetDatumPoint( $inCAM, $jobId, $step, 1 );
+	$curStep->{"datumX"} = $datum{"x"};
+	$curStep->{"datumY"} = $datum{"y"};
 
 	$self->__GetTransformRInfo( $inCAM, $jobId, \@stepsInfo, $curStep, [] );
 
@@ -528,7 +532,7 @@ sub __GetTransformRInfo {
 	my $transformRS   = shift;
 	my $curStep       = shift;
 	my @stepAncestors = @{ shift(@_) };
- 
+
 	my @repeats = $self->GetRepeatStep( $inCAM, $jobId, $curStep->{"stepName"} );
 
 	if (@repeats) {
@@ -554,12 +558,12 @@ sub __GetTransformRInfo {
 
 		@stepAncestors = reverse(@stepAncestors);
 
+		# do not consider last ancestor, because it is  not placed inside another ancestor
 		for ( my $i = 0 ; $i < scalar(@stepAncestors) ; $i++ ) {
 
 			my $ancestor = $stepAncestors[$i];
 
 			next if ( $ancestor->{"stepName"} eq "" );
- 
 
 			# point of ancestor rotation (ancestor datum point)
 			my $rotatePoint = {};
@@ -568,8 +572,17 @@ sub __GetTransformRInfo {
 
 			# rorated point (cur step anchor)
 			my $anchorPoint = {};
-			$anchorPoint->{"x"} = $rotatePoint->{"x"} + ( $stepInf{"x"} - $ancestor->{"datumX"} ) * 1000;
-			$anchorPoint->{"y"} = $rotatePoint->{"y"} + ( $stepInf{"y"} - $ancestor->{"datumY"} ) * 1000;
+ 
+ 			# do not consider anchor if ancestor doesn't have ancestor (last ancestor)
+ 			my $datumX = 0;
+ 			my $datumY = 0;
+ 			if($i < scalar(@stepAncestors) -1){
+ 				$datumX = $ancestor->{"datumX"};
+ 				$datumY = $ancestor->{"datumY"};
+ 			}
+ 
+			$anchorPoint->{"x"} = $rotatePoint->{"x"} + ( $stepInf{"x"} - $datumX ) * 1000;
+			$anchorPoint->{"y"} = $rotatePoint->{"y"} + ( $stepInf{"y"} - $datumY ) * 1000;
 
 			my %newAnchorPoint = PointsTransform->RotatePoint( $anchorPoint, $ancestor->{"angle"}, EnumsPolygon->Dir_CCW, $rotatePoint );
 			$stepInf{"x"} = $newAnchorPoint{"x"} / 1000;
@@ -594,7 +607,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 	my $jobId = "d113608";
-	my $step  = "panel";
+	my $step  = "mpanel";
 
 	my @sr = CamStepRepeat->GetTransformRepeatStep( $inCAM, $jobId, $step );
 

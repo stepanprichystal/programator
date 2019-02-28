@@ -130,6 +130,7 @@ sub GetStepAndRepeatLim {
 # - x: final x position
 # - y: final y position
 # - angle: final angle
+# Function consider origin ( position of steps is relate to zero of step in parameter)
 sub GetTransformRepeatStep {
 	my $self         = shift;
 	my $inCAM        = shift;

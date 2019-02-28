@@ -114,7 +114,9 @@ sub __SetLayoutSettings {
 	my @etSteps = CamStep->GetAllStepNames( $self->{"inCAM"}, $self->{"jobId"} );
 	@etSteps = grep { $_ =~ /et_/ } @etSteps;
 	my $customStepCb =
-	  Wx::ComboBox->new( $parent, -1, $etSteps[ scalar(@etSteps) - 1 ], &Wx::wxDefaultPosition, [ 50, 22 ], \@etSteps, &Wx::wxCB_READONLY );
+	  Wx::ComboBox->new( $parent, -1, ( scalar(@etSteps) ? $etSteps[ scalar(@etSteps) - 1 ] : 0 ),
+						 &Wx::wxDefaultPosition, [ 50, 22 ],
+						 \@etSteps, &Wx::wxCB_READONLY );
 
 	# SET EVENTS
 	Wx::Event::EVT_RADIOBUTTON( $rbCreateStep, -1, sub { $self->__OnModeChangeHandler(@_) } );
@@ -202,53 +204,35 @@ sub __OnModeChangeHandler {
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
 
-	my $val = $self->{"rbCreateStep"}->GetValue();
+	my $createStep = $self->{"rbCreateStep"}->GetValue();
 
-	if ( defined $val && $val == 1 ) {
+	if ( defined $createStep && $createStep == 1 ) {
 
 		$self->{"fromStepCb"}->Enable();
-
-		my $val = $self->{"rbCreateStep"}->GetValue();
-
-		if ( defined $val && $val == 1 ) {
-
-			# Set keep profiles checbox
-			my $keepProfiles = ETHelper->KeepProfilesAllowed( $inCAM, $jobId, $self->{"fromStepCb"}->GetValue() );
-			if ( $keepProfiles ) {
-
-				$self->{"keepProfilesChb"}->SetValue(1);
-				$self->{"keepProfilesChb"}->Enable();
-				
-			}
-			else {
-				$self->{"keepProfilesChb"}->SetValue(0);
-				$self->{"keepProfilesChb"}->Disable();
-				$self->{"serverCopyChb"}->SetValue(0);
-			}
-			
-			# Set sent to server checkbox
-			if($keepProfiles ||  !CamStepRepeat->ExistStepAndRepeats($inCAM, $jobId, $fromStepCb)){
-				$self->{"serverCopyChb"}->SetValue(1);
-			}else{
-				$self->{"serverCopyChb"}->SetValue(0);
-			}
-		}
-
 		$self->{"customStepCb"}->Disable();
+
+		my $keepProfiles = ETHelper->KeepProfilesAllowed( $inCAM, $jobId, $self->{"fromStepCb"}->GetValue() );
+
+		# Set sent to server checkbox
+		if ( $keepProfiles || !CamStepRepeat->ExistStepAndRepeats( $inCAM, $jobId, $self->{"fromStepCb"}->GetValue() ) ) {
+			$self->{"serverCopyChb"}->SetValue(1);
+		}
+		else {
+			$self->{"serverCopyChb"}->SetValue(0);
+		}
 
 	}
 	else {
 
 		$self->{"fromStepCb"}->Disable();
-		$self->{"keepProfilesChb"}->Disable();
-
 		$self->{"customStepCb"}->Enable();
 
 		$self->{"localCopyChb"}->SetValue(1);
 		$self->{"serverCopyChb"}->SetValue(0);
 	}
 
-	#$self->{"onTentingChange"}->Do( $chb->GetValue() );
+	# Disable keep profile checkbox
+	$self->__UpdateKeepProfile();
 }
 
 # Change export from step
@@ -258,7 +242,20 @@ sub __OnStepFromChange {
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
 
-	if ( ETHelper->KeepProfilesAllowed( $inCAM, $jobId, $self->{"fromStepCb"}->GetValue() ) ) {
+	$self->__UpdateKeepProfile();
+
+}
+
+# Update checkbox keep profile
+sub __UpdateKeepProfile {
+	my $self = shift;
+
+	my $inCAM = $self->{"inCAM"};
+	my $jobId = $self->{"jobId"};
+
+	my $createStep = $self->{"rbCreateStep"}->GetValue();
+	
+	if ( defined $createStep && $createStep == 1 && ETHelper->KeepProfilesAllowed( $inCAM, $jobId, $self->{"fromStepCb"}->GetValue() ) ) {
 
 		$self->{"keepProfilesChb"}->Enable();
 		$self->{"keepProfilesChb"}->SetValue(1);
@@ -280,23 +277,22 @@ sub DisableControls {
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
 
-	# disable keep profiles if it is  no possible
+	# Disable controls by ET mode
 
-	my $val = $self->{"rbCreateStep"}->GetValue();
+	my $createStep = $self->{"rbCreateStep"}->GetValue();
 
-	if ( defined $val && $val == 1 ) {
+	if ( defined $createStep && $createStep == 1 ) {
 		$self->{"fromStepCb"}->Enable();
-		$self->{"keepProfilesChb"}->Enable();
-
 		$self->{"customStepCb"}->Disable();
 	}
 	else {
 
 		$self->{"fromStepCb"}->Disable();
-		$self->{"keepProfilesChb"}->Disable();
-
 		$self->{"customStepCb"}->Enable();
 	}
+
+	# Disable keep profile checkbox
+	$self->__UpdateKeepProfile();
 }
 
 # =====================================================================

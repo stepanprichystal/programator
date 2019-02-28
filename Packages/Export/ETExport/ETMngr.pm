@@ -45,8 +45,11 @@ sub new {
 	$self->{"inCAM"} = shift;
 	$self->{"jobId"} = shift;
 
-	$self->{"stepToTest"}   = shift;    #step, which will be tested
-	$self->{"createEtStep"} = shift;    #step, which will be tested
+	$self->{"stepToTest"}   = shift;    # step, which will be tested
+	$self->{"createEtStep"} = shift;    # 1 - et step will be created from scratch, 0 - already prepared et step
+	$self->{"keepProfile"}  = shift;    # keep profile in nested steps (IPC file will contain SR)
+	$self->{"localCopy"}    = shift;    # store IPC file to local pc disc
+	$self->{"serverCopy"}   = shift;    # store ipc file to server
 
 	$self->{"exportIPC"} = ExportIPC->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"stepToTest"}, $self->{"createEtStep"} );
 	$self->{"exportIPC"}->{"onItemResult"}->Add( sub { $self->_OnItemResult(@_) } );
@@ -63,14 +66,15 @@ sub Run {
 	# Remove "nestlist helper" steps
 	CamNetlist->RemoveNetlistSteps( $inCAM, $jobId );
 
-	$self->{"exportIPC"}->Export();
+	$self->{"exportIPC"}->Export(undef, $self->{"keepProfile"});
 
 	# Copy created IPC to server where are ipc stored
-	$self->__CopyIPCToETServer();
+	if($self->{"serverCopy"}){
+		$self->__CopyIPCToETServer();
+	}
 
 	# Copy IPC to R: where IPC will be taken by random TPV user to processing (temporary solution for reorders)
-	$self->__CopyIPCToServer();
-
+	$self->__CopyIPCToETStorage();
 }
 
 # Copy created IPC to server where are prepared electrical test for machines
@@ -81,9 +85,7 @@ sub __CopyIPCToETServer {
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
 	my $step  = $self->{"stepToTest"};
-
-	# reorder
-	my $orderNum = HegMethods->GetPcbOrderNumber( $self->{"jobId"} );
+ 
 
 	# Test if el test exist
 	my $path = JobHelper->GetJobElTest($jobId) . "\\" . $jobId . "t.ipc";
@@ -107,15 +109,12 @@ sub __CopyIPCToETServer {
 
 # If exist reoreder on Na priprave and export is server version AND et test not exist, copy opc to special folder
 # Tests are taken from this folder by TPV
-sub __CopyIPCToServer {
+sub __CopyIPCToETStorage {
 	my $self = shift;
 
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
 	my $step  = $self->{"stepToTest"};
-
-	# reorder
-	my $orderNum = HegMethods->GetPcbOrderNumber( $self->{"jobId"} );
 
 	# Test if el test exist
 	my $path = JobHelper->GetJobElTest($jobId);

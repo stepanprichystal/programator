@@ -96,10 +96,10 @@ sub OnPrepareGroupData {
 
 	# Set sent to server checkbox
 	if ( $keepProfiles) {
-		$self->SetServerCopy(1);
+		$groupData->SetServerCopy(1);
 	}
 	else {
-		$self->SetLocalCopy(1);
+		$groupData->SetLocalCopy(1);
 	}
 
 	return $groupData;

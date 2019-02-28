@@ -104,17 +104,17 @@ sub TaskItemsCount {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	use aliased 'Packages::Export::ETExport::ETMngr';
-
-	use aliased 'Packages::InCAM::InCAM';
-
-	my $inCAM = InCAM->new();
-
-	my $jobId = "d229010";
-
-	my $et = ETMngr->new( $inCAM, $jobId, "panel", 1 );
-
-	$et->Run()
+#	use aliased 'Packages::Export::ETExport::ETMngr';
+#
+#	use aliased 'Packages::InCAM::InCAM';
+#
+#	my $inCAM = InCAM->new();
+#
+#	my $jobId = "d229010";
+#
+#	my $et = ETMngr->new( $inCAM, $jobId, "panel", 1 );
+#
+#	$et->Run()
 
 }
 
