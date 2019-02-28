@@ -494,9 +494,10 @@ sub __CheckDataCodeJob {
 
 		foreach my $layer ( split( ",", $dataCodes ) ) {
 			
+			$layer = lc($layer);
+			
 			die "Layer: $layer, which the datacode should be located in does not exist." if(!$defaultInfo->LayerExist($layer));
 
-			$layer = lc($layer);
 			my @dtCodes = Marking->GetDatacodesInfo( $inCAM, $jobId, $step, $layer );
 
 			# check if mirror datacode is ok
