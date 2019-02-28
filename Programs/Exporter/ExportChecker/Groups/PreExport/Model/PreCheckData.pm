@@ -11,6 +11,7 @@ use utf8;
 use strict;
 use warnings;
 use File::Copy;
+use DateTime;
 
 #local library
 use aliased 'CamHelpers::CamLayer';
@@ -434,6 +435,20 @@ sub OnCheckGroupData {
 		}
 
 	}
+	
+	# 19) Check attribu "custom_year" if contains current year plus 1
+	my %allAttr = CamAttributes->GetJobAttr( $inCAM, $jobId );
+
+	if ( defined $allAttr{"custom_year"} ) {
+		my $d = DateTime->now( "time_zone" => 'Europe/Prague' )->year() + 1;
+		
+		if($d ne $allAttr{"custom_year"}){
+			
+			$dataMngr->_AddErrorResult( "Attribut \"custom_year\"",  "Atribut: \"custom_year\" (".$allAttr{"custom_year"}.") není aktuální".
+			"Měl by mít hodnotu: $d" );
+		}
+	}
+	
 }
 
 #-------------------------------------------------------------------------------------------#
