@@ -440,9 +440,9 @@ sub OnCheckGroupData {
 	my %allAttr = CamAttributes->GetJobAttr( $inCAM, $jobId );
 
 	if ( defined $allAttr{"custom_year"} ) {
-		my $d = DateTime->now( "time_zone" => 'Europe/Prague' )->year() + 1;
+		my $d = (DateTime->now( "time_zone" => 'Europe/Prague' )->year() + 1)%100;
 		
-		if($d ne $allAttr{"custom_year"}){
+		if($d != $allAttr{"custom_year"}){
 			
 			$dataMngr->_AddErrorResult( "Attribut \"custom_year\"",  "Atribut: \"custom_year\" (".$allAttr{"custom_year"}.") není aktuální".
 			"Měl by mít hodnotu: $d" );

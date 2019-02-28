@@ -144,7 +144,7 @@ sub Run {
 
 	if ( defined $allAttr{"custom_year"} ) {
 
-		my $d = DateTime->now( "time_zone" => 'Europe/Prague' )->year() + 1;
+		my $d = (DateTime->now( "time_zone" => 'Europe/Prague' )->year() + 1)%100;
 		CamAttributes->SetJobAttribute( $inCAM, $jobId, "custom_year", $d );
 	}
 	
