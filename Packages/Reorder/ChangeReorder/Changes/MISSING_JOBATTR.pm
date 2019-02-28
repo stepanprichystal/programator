@@ -11,6 +11,7 @@ use Class::Interface;
 #3th party library
 use strict;
 use warnings;
+use DateTime;
 
 #local library
 use aliased 'CamHelpers::CamJob';
@@ -137,6 +138,16 @@ sub Run {
 		CamJob->SetJobAttribute( $inCAM, 'cust_pnl_singley', abs( $lim{"yMax"} - $lim{"yMin"} ), $jobId );
 		CamJob->SetJobAttribute( $inCAM, 'cust_pnl_multipl', $multiplHeg,                        $jobId );
 	}
+	
+	# Update attribut "custom year" if exist "SICURIT customer"
+	my %allAttr = CamAttributes->GetJobAttr( $inCAM, $jobId );
+
+	if ( defined $allAttr{"custom_year"} ) {
+
+		my $d = (DateTime->now( "time_zone" => 'Europe/Prague' )->year() + 1)%100;
+		CamAttributes->SetJobAttribute( $inCAM, $jobId, "custom_year", $d );
+	}
+	
 	
 	return $result;
 }
