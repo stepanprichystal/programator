@@ -384,7 +384,7 @@ sub _Process {
 	my $pcbId = shift;
 	my $stepName = 'o+1';
 	
-			#set special attr datacore YYYY+1 
+			#set special attr datacore YY+1 
 			#it was add to hook create job
 			#my $custDateYYYY = (sprintf "%02.d",(localtime->year() %100) + 1);
 			#CamAttributes->SetJobAttribute($inCAM, $pcbId, 'custom_year', $custDateYYYY);
