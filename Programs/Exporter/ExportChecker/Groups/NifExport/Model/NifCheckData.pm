@@ -493,6 +493,8 @@ sub __CheckDataCodeJob {
 	foreach my $step (@steps) {
 
 		foreach my $layer ( split( ",", $dataCodes ) ) {
+			
+			die "Layer: $layer, which the datacode should be located in does not exist." if(!$defaultInfo->LayerExist($layer));
 
 			$layer = lc($layer);
 			my @dtCodes = Marking->GetDatacodesInfo( $inCAM, $jobId, $step, $layer );
