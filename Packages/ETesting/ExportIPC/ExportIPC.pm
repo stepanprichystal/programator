@@ -9,12 +9,15 @@ use base('Packages::ItemResult::ItemEventMngr');
 #3th party library
 use strict;
 use warnings;
+use List::MoreUtils qw(uniq);
 
 #local library
 
 use aliased 'Helpers::JobHelper';
 use aliased 'Helpers::GeneralHelper';
 use aliased 'CamHelpers::CamJob';
+use aliased 'CamHelpers::CamStep';
+
 use aliased 'CamHelpers::CamHelper';
 use aliased 'CamHelpers::CamLayer';
 use aliased 'CamHelpers::CamMatrix';
@@ -26,6 +29,9 @@ use aliased 'Enums::EnumsPaths';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'CamHelpers::CamDrilling';
 use aliased 'CamHelpers::CamStepRepeatPnl';
+use aliased 'Packages::CAMJob::Panelization::SRStep';
+use aliased 'Packages::ProductionPanel::ActiveArea::ActiveArea';
+use aliased 'Packages::ETesting::BasicHelper::Helper';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -39,31 +45,36 @@ sub new {
 	$self->{"inCAM"} = shift;
 	$self->{"jobId"} = shift;
 
-	$self->{"stepToTest"}   = shift;    #step, which will be tested
+	$self->{"stepToTest"}   = shift;    # step, which will be tested
 	$self->{"createEtStep"} = shift;    # recreate step
 
 	# PROPERTIES
 
-	$self->{"etStep"}        = "et_" . $self->{"stepToTest"};    # name of et step, which ipc is exported from
-	#$self->{"refLToRestore"} = ();
+	$self->{"etStep"} = "et_" . $self->{"stepToTest"};    # name of et step, which ipc is exported from
 
 	return $self;
 }
 
 sub Export {
-	my $self        = shift;
-	my $outFileName = shift;                                     # name for ipc file
+	my $self           = shift;
+	my $outFileName    = shift;                           # name for ipc file
+	my $keepSRProfiles = shift;                           # Keep profiles for SR steps
 
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
 
 	my $etStepName = $self->{"etStep"};
 
-	#my $edited = $self->__EditRefLayer();
+	my @optSteps = ();                                    # step which will be exported in IPC file
 
 	if ( $self->{"createEtStep"} ) {
 
-		$self->__CreateEtStep();
+		if ( $self->{"stepToTest"} eq "panel" ) {
+			@optSteps = $self->__CreateEtStepPcbPanel($keepSRProfiles);
+		}
+		else {
+			@optSteps = $self->__CreateEtStepPcbStep($keepSRProfiles);
+		}
 	}
 	else {
 
@@ -72,43 +83,22 @@ sub Export {
 
 			die "Et step: $etStepName must be created before export ipc.\n";
 		}
-	}
 
-	#open et step
-	$inCAM->COM( "set_step", "name" => $etStepName );
-	$inCAM->COM( 'open_entity', job => $jobId, type => 'step', name => $etStepName, iconic => 'no' );
-	$inCAM->AUX( 'set_group', group => $inCAM->{COMANS} );
+		# Get step to test
 
-	#remove all coupons wxcept impedance coupon
-	my @coupons = grep { $_ ne EnumsGeneral->Coupon_IMPEDANCE } JobHelper->GetCouponStepNames();
+		if ( CamStepRepeat->ExistStepAndRepeats( $inCAM, $jobId, $etStepName ) ) {
 
-	foreach my $cStep (@coupons) {
-
-		if ( CamStepRepeat->ExistStepAndRepeat( $inCAM, $jobId, $etStepName, $cStep ) ) {
-			CamStepRepeat->DeleteStepAndRepeat( $inCAM, $jobId, $etStepName, $cStep );
+			@optSteps = map { $_->{"stepName"} } CamStepRepeat->GetUniqueDeepestSR( $inCAM, $jobId, $etStepName );
 		}
-	}
-
-	#check if SR exists in etStep, if so, flattern whole step
-	my $srExist = CamStepRepeat->ExistStepAndRepeats( $inCAM, $jobId, $etStepName );
-
-	if ($srExist) {
-		$self->__FlatternETStep($etStepName);
-	}
-
-	#change profile according fr layer, if multilayer
-	my $layerCnt = CamJob->GetSignalLayerCnt( $inCAM, $jobId );
-	if ( $layerCnt > 2 && $self->{"stepToTest"} eq "panel" ) {
-		$self->__EditProfileByFr($etStepName);
-
+		else {
+			@optSteps = ($etStepName);
+		}
 	}
 
 	$self->__ResulETStepCreated();
 
-	$self->__CreateIpc( $etStepName, $outFileName );
- 
-	# $self->__RestoreRefLayers();
- 
+	$self->__CreateIpc( $etStepName, \@optSteps, $outFileName );
+
 }
 
 ## prepare reference layer (solder mask or soldermask + coverlay) before export IPC
@@ -191,9 +181,9 @@ sub Export {
 #
 #}
 
-# create special step, which IPC will be exported from
-sub __CreateEtStep {
-	my $self = shift;
+sub __CreateEtStepPcbPanel {
+	my $self           = shift;
+	my $keepSRProfiles = shift;
 
 	my $inCAM      = $self->{"inCAM"};
 	my $jobId      = $self->{"jobId"};
@@ -201,27 +191,236 @@ sub __CreateEtStep {
 
 	my $stepEt = $self->{"etStep"};
 
-	#CamHelper->OpenJob( $inCAM, $jobId );
+	my @optSteps = ();
 
-	$inCAM->COM( 'open_entity', job => $jobId, type => 'step', name => $stepToTest, iconic => 'no' );
-	$inCAM->AUX( 'set_group', group => $inCAM->{COMANS} );
+	# 1) Check if SR structure has only one type of "leaf" step
+	# In other case IPC do not create SR ipc file
+	my @keepProfileSteps = ();
+	if ($keepSRProfiles) {
 
-	#delete if step already exist
-	if ( CamHelper->StepExists( $inCAM, $jobId, $stepEt ) ) {
-		$inCAM->COM( "delete_entity", "job" => $jobId, "name" => $stepEt, "type" => "step" );
+		my $mess = "";
+		unless ( Helper->KeepProfilesAllowed( $inCAM, $jobId, $stepToTest, \$mess ) ) {
+			die $mess;
+		}
+
+		@keepProfileSteps = map { $_->{"stepName"} } CamStepRepeatPnl->GetUniqueDeepestSR( $inCAM, $jobId, 1, [ EnumsGeneral->Coupon_IMPEDANCE ] );
 	}
 
-	$inCAM->COM(
-				 'copy_entity',
-				 type             => 'step',
-				 source_job       => $jobId,
-				 source_name      => $stepToTest,
-				 dest_job         => $jobId,
-				 dest_name        => $stepEt,
-				 dest_database    => "",
-				 "remove_from_sr" => "yes"
-	);
+	# 2) Prepare ET step
+	@optSteps = $self->__CreateEtStep( $keepSRProfiles, \@keepProfileSteps );
 
+	# 3) Adjust profile by fr
+	if ( CamHelper->LayerExists( $inCAM, $jobId, "fr" ) ) {
+		my $frFeatures = Features->new();
+		$frFeatures->Parse( $inCAM, $jobId, $stepToTest, "fr" );
+
+		my @frLines = $frFeatures->GetFeatures();
+
+		#draw profile by points form fr layer
+		$inCAM->COM( "profile_poly_strt", "x" => $frLines[0]->{"x1"}, "y" => $frLines[0]->{"y1"} );
+		$inCAM->COM( "profile_poly_seg",  "x" => $frLines[1]->{"x1"}, "y" => $frLines[1]->{"y1"} );
+		$inCAM->COM( "profile_poly_seg",  "x" => $frLines[2]->{"x1"}, "y" => $frLines[2]->{"y1"} );
+		$inCAM->COM( "profile_poly_seg",  "x" => $frLines[3]->{"x1"}, "y" => $frLines[3]->{"y1"} );
+		$inCAM->COM( "profile_poly_seg",  "x" => $frLines[0]->{"x1"}, "y" => $frLines[0]->{"y1"} );
+		$inCAM->COM("profile_poly_end");
+
+		#set datum point and origin to minimal coordinate
+
+		my $xMin;
+		my $yMin;
+
+		foreach my $points (@frLines) {
+
+			if ( !defined $xMin || $points->{"x1"} < $xMin ) {
+				$xMin = $points->{"x1"};
+			}
+
+			if ( !defined $yMin || $points->{"y1"} < $yMin ) {
+				$yMin = $points->{"y1"};
+			}
+
+		}
+
+		$inCAM->COM( "datum", "x" => $xMin, "y" => $yMin );
+		$inCAM->COM( "origin", "push_in_stack" => 0, "x" => $xMin, "y" => $yMin );
+	}
+
+	return @optSteps;
+}
+
+sub __CreateEtStepPcbStep {
+	my $self           = shift;
+	my $keepSRProfiles = shift;
+
+	my $inCAM      = $self->{"inCAM"};
+	my $jobId      = $self->{"jobId"};
+	my $stepToTest = $self->{"stepToTest"};
+
+	my $stepEt = $self->{"etStep"};
+
+	my @optSteps = ();
+
+	# 1) Check if SR structure has only one type of "leaf" step
+	# In other case IPC do not create SR ipc file
+	my @keepProfileSteps = ();
+	if ($keepSRProfiles) {
+
+		my $mess = "";
+		unless ( Helper->KeepProfilesAllowed( $inCAM, $jobId, $stepToTest, \$mess ) ) {
+			die $mess;
+		}
+
+		@keepProfileSteps = map { $_->{"stepName"} } CamStepRepeat->GetUniqueDeepestSR( $inCAM, $jobId, $stepToTest );
+	}
+
+	# 2) Prepare ET step
+	@optSteps = $self->__CreateEtStep( $keepSRProfiles, \@keepProfileSteps );
+
+	return @optSteps;
+}
+
+# create special step, which IPC will be exported from
+sub __CreateEtStep {
+	my $self           = shift;
+	my $keepSRProfiles = shift;
+	my $profileSteps   = shift;    # steps where profile will be kept
+
+	my $inCAM      = $self->{"inCAM"};
+	my $jobId      = $self->{"jobId"};
+	my $stepToTest = $self->{"stepToTest"};
+
+	my $stepEt = $self->{"etStep"};
+
+	my @optSteps = ();
+
+	# Set tested step
+	CamHelper->SetStep( $inCAM, $stepToTest );
+
+	# Delete all et steps and nested steps
+	foreach my $step ( grep { $_ =~ /^$stepEt/ } CamStep->GetAllStepNames( $inCAM, $jobId ) ) {
+		CamStep->DeleteStep( $inCAM, $jobId, $step );
+	}
+
+	if ($keepSRProfiles) {
+
+		# All steps where profile will be kept
+		my @endSteps = CamStepRepeat->GetTransformRepeatStep( $inCAM, $jobId, $stepToTest );
+
+		# Filter requested profile steps
+		for ( my $i = scalar(@endSteps) - 1 ; $i >= 0 ; $i-- ) {
+
+			unless ( grep { $_ eq $endSteps[$i]->{"stepName"} } @{$profileSteps} ) {
+				splice @endSteps, $i, 1;
+			}
+		}
+
+		# Create test step
+
+		my $sPnl = SRStep->new( $inCAM, $jobId, $stepEt );
+
+		# get limits of test step
+
+		my %lim = CamJob->GetProfileLimits2( $inCAM, $jobId, $stepToTest );
+
+		# get active area border of test step
+		my $aPnl = ActiveArea->new( $inCAM, $jobId, $stepToTest );
+		$sPnl->Create( ( $lim{"xMax"} - $lim{"xMin"} ),
+					   ( $lim{"yMax"} - $lim{"yMin"} ),
+					   $aPnl->BorderT(), $aPnl->BorderB(), $aPnl->BorderL(), $aPnl->BorderR(), { "x" => $lim{"xMin"}, "y" => $lim{"yMin"} } );
+
+		# Prepare nested step
+		my $endStepName = "et_" . $stepToTest . "_" . $endSteps[0]->{"stepName"};
+
+		CamStep->DeleteStep( $inCAM, $jobId, $endStepName );
+		CamStep->CopyStep( $inCAM, $jobId, $endSteps[0]->{"stepName"}, $jobId, $endStepName );
+
+		# Check if end step contain special rotation (standard angles are 0; 90; 270; 360)
+		# InCAM cant work with non standard rotration
+		my $stepDataRotated = 0;
+		if ( uniq( grep { $_ % 90 > 0 } map { $_->{"angle"} } @endSteps ) ) {
+
+			$stepDataRotated = 1;
+			my $profL = GeneralHelper->GetGUID();
+			CamStep->ProfileToLayer( $inCAM, $endStepName, $profL, 200 );
+
+			CamHelper->SetStep( $inCAM, $endStepName );
+			$inCAM->COM( 'affected_layer', name => "", mode => "all", affected => "yes" );
+
+			$inCAM->COM(
+						 "sel_transform",
+						 "oper"      => "rotate",
+						 "angle"     => $endSteps[0]->{"angle"},
+						 "direction" => "ccw",
+						 "x_anchor"  => 0,
+						 "y_anchor"  => 0,
+						 "mode"      => "anchor"
+			);
+
+			$inCAM->COM( 'affected_layer', name => "", mode => "all", affected => "no" );
+			CamStep->CreateProfileByLayer( $inCAM, $endStepName, $profL );
+			CamMatrix->DeleteLayer( $inCAM, $jobId, $profL );
+
+		}
+
+		CamHelper->SetStep( $inCAM, $stepToTest );
+		foreach my $endS (@endSteps) {
+
+			$sPnl->AddSRStep( $endStepName, $endS->{"x"}, $endS->{"y"}, ( !$stepDataRotated ? $endS->{"angle"} : 0 ), 1, 1 );
+		}
+
+		push( @optSteps, $endStepName );
+	}
+	else {
+
+		# Create ET step
+		$inCAM->COM(
+					 'copy_entity',
+					 type             => 'step',
+					 source_job       => $jobId,
+					 source_name      => $stepToTest,
+					 dest_job         => $jobId,
+					 dest_name        => $stepEt,
+					 dest_database    => "",
+					 "remove_from_sr" => "yes"
+		);
+		
+		CamHelper->SetStep( $inCAM, $stepEt );
+
+		# Remove drill coupon steps
+		my @coupons = grep { $_ ne EnumsGeneral->Coupon_IMPEDANCE } JobHelper->GetCouponStepNames();
+
+		foreach my $cStep (@coupons) {
+
+			if ( CamStepRepeat->ExistStepAndRepeat( $inCAM, $jobId, $stepEt, $cStep ) ) {
+				CamStepRepeat->DeleteStepAndRepeat( $inCAM, $jobId, $stepEt, $cStep );
+			}
+		}
+
+		# Delete content from panel step
+		my @allLayers = CamJob->GetBoardLayers( $inCAM, $jobId );
+
+		@allLayers = grep {
+			     $_->{"gROWlayer_type"} eq "signal"
+			  || $_->{"gROWlayer_type"} eq "mixed"
+			  || $_->{"gROWlayer_type"} eq "power_ground"
+			  || $_->{"gROWlayer_type"} eq "solder_mask"
+			  || $_->{"gROWlayer_type"} eq "coverlay"
+			  || $_->{"gROWlayer_type"} eq "rout"
+			  || $_->{"gROWlayer_type"} eq "drill"
+		} @allLayers;
+
+		
+		$inCAM->COM( 'affected_layer', name => "", mode => "all", affected => "yes" );
+		$inCAM->COM('sel_delete');
+		$inCAM->COM( 'affected_layer', name => "", mode => "all", affected => "no" );
+
+		# Flatten step
+		CamStep->FlattenStep( $inCAM, $jobId, \@allLayers, $stepEt );
+
+		push( @optSteps, $stepEt );
+	}
+
+	return @optSteps;
 }
 
 # Flattern all layers in et step. Thus, et step doesn't contain
@@ -287,49 +486,6 @@ sub __FlatternETStep {
 
 }
 
-# If pcb is multilayer, create profile by fr
-sub __EditProfileByFr {
-	my $self   = shift;
-	my $etStep = shift;
-
-	my $inCAM = $self->{"inCAM"};
-	my $jobId = $self->{"jobId"};
-
-	my $frFeatures = Features->new();
-	$frFeatures->Parse( $inCAM, $jobId, $etStep, "fr" );
-
-	my @frLines = $frFeatures->GetFeatures();
-
-	#draw profile by points form fr layer
-	$inCAM->COM( "profile_poly_strt", "x" => $frLines[0]->{"x1"}, "y" => $frLines[0]->{"y1"} );
-	$inCAM->COM( "profile_poly_seg",  "x" => $frLines[1]->{"x1"}, "y" => $frLines[1]->{"y1"} );
-	$inCAM->COM( "profile_poly_seg",  "x" => $frLines[2]->{"x1"}, "y" => $frLines[2]->{"y1"} );
-	$inCAM->COM( "profile_poly_seg",  "x" => $frLines[3]->{"x1"}, "y" => $frLines[3]->{"y1"} );
-	$inCAM->COM( "profile_poly_seg",  "x" => $frLines[0]->{"x1"}, "y" => $frLines[0]->{"y1"} );
-	$inCAM->COM("profile_poly_end");
-
-	#set datum point and origin to minimal coordinate
-
-	my $xMin;
-	my $yMin;
-
-	foreach my $points (@frLines) {
-
-		if ( !defined $xMin || $points->{"x1"} < $xMin ) {
-			$xMin = $points->{"x1"};
-		}
-
-		if ( !defined $yMin || $points->{"y1"} < $yMin ) {
-			$yMin = $points->{"y1"};
-		}
-
-	}
-
-	$inCAM->COM( "datum", "x" => $xMin, "y" => $yMin );
-	$inCAM->COM( "origin", "push_in_stack" => 0, "x" => $xMin, "y" => $yMin );
-
-}
-
 # Do optimization fot IPC
 # Create electrical test
 # Export it
@@ -337,13 +493,13 @@ sub __EditProfileByFr {
 sub __CreateIpc {
 	my $self        = shift;
 	my $etStep      = shift;
+	my $optSteps    = shift;
 	my $outFileName = shift;
 
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
 
 	my $setupOptName = "atg_flying";    #default setting saved in incam library
-	my @steps        = ($etStep);
 
 	# stat of handle inCAm exceptionS
 	$inCAM->HandleException(1);
@@ -352,7 +508,7 @@ sub __CreateIpc {
 	my $resultItemOpSet = $self->_GetNewItem("Optimization");
 
 	my $optName;
-	my $resultOpSet = OptSet->OptSetCreate( $inCAM, $jobId, $etStep, $setupOptName, \@steps, \$optName );
+	my $resultOpSet = OptSet->OptSetCreate( $inCAM, $jobId, $etStep, $setupOptName, $optSteps, \$optName );
 
 	unless ($resultOpSet) {
 		$resultItemOpSet->AddError( $inCAM->GetExceptionError() );
@@ -433,14 +589,13 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	use aliased 'Packages::ETesting::ExportIPC::ExportIPC';
 	use aliased 'Packages::InCAM::InCAM';
 
-	my $jobId = "d222768";
+	my $jobId = "d113608";
 	my $inCAM = InCAM->new();
 
 	my $step = "panel";
 
-	my $max = ExportIPC->new( $inCAM, $jobId, $step );
-	$max->Export("test");
-
+	my $max = ExportIPC->new( $inCAM, $jobId, $step, 1, );
+	$max->Export( undef, 0 );
 
 	print "area exceeded=" . $max . "---\n";
 

@@ -4,6 +4,7 @@
 #-------------------------------------------------------------------------------------------#
 package Programs::Exporter::ExportUtility::Groups::ETExport::ETWorkUnit;
 use base('Managers::AbstractQueue::AbstractQueue::JobWorkerUnit');
+
 #3th party library
 use strict;
 use warnings;
@@ -23,11 +24,11 @@ use aliased 'Packages::Export::ETExport::ETMngr';
 
 sub new {
 
-	my $class = shift;
+	my $class  = shift;
 	my $unitId = shift;
-	
-	my $self  = {};
- 
+
+	my $self = {};
+
 	$self = $class->SUPER::new($unitId);
 	bless $self;
 
@@ -37,34 +38,32 @@ sub new {
 
 	return $self;
 }
- 
-
-
 
 sub Init {
-	my $self       = shift;
-	my $inCAM      = shift;
-	my $jobId      = shift;
-	
+	my $self  = shift;
+	my $inCAM = shift;
+	my $jobId = shift;
+
 	my $taskData = $self->{"taskData"};
- 
-	$self->{"inCAM"}      = $inCAM;
-	$self->{"jobId"}      = $jobId;
- 
-	my $step = $taskData->GetStepToTest();
+
+	$self->{"inCAM"} = $inCAM;
+	$self->{"jobId"} = $jobId;
+
+	my $step         = $taskData->GetStepToTest();
 	my $createEtStep = $taskData->GetCreateEtStep();
-	
-	my $mngr = ETMngr->new($inCAM, $jobId, $step, $createEtStep);
-	
+	my $keepProfile  = $taskData->GetKeepProfiles();
+	my $localCopy    = $taskData->GetLocalCopy();
+	my $serverCopy   = $taskData->GetServerCopy();
+
+	my $mngr = ETMngr->new( $inCAM, $jobId, $step, $createEtStep, $keepProfile, $localCopy, $serverCopy );
+
 	$mngr->{"onItemResult"}->Add( sub { $self->_OnItemResultHandler(@_) } );
-	
+
 	$self->{"taskMngr"} = $mngr;
-	
+
 	$self->{"itemsCount"} = $mngr->TaskItemsCount();
-	
+
 }
-
-
 
 1;
 

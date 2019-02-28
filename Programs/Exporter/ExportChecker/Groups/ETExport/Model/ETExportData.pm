@@ -62,6 +62,9 @@ sub OnExportGroupData {
  
 	$exportData->SetStepToTest( $groupData->GetStepToTest() );
 	$exportData->SetCreateEtStep( $groupData->GetCreateEtStep() );
+	$exportData->SetKeepProfiles( $groupData->GetKeepProfiles() );
+	$exportData->SetLocalCopy( $groupData->GetLocalCopy() );
+	$exportData->SetServerCopy( $groupData->GetServerCopy() );	
   
 	return $exportData;
 

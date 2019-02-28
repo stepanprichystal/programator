@@ -7,16 +7,16 @@
 #-------------------------------------------------------------------------------------------#
 package Programs::Exporter::ExportChecker::Groups::ETExport::Model::ETPrepareData;
 
-
 #3th party library
 use strict;
 use warnings;
-
 
 #local library
 use aliased 'Programs::Exporter::ExportChecker::Groups::ETExport::Model::ETGroupData';
 use aliased 'Programs::Exporter::ExportChecker::Enums';
 use aliased 'Connectors::HeliosConnector::HegMethods';
+use aliased 'Packages::ETesting::BasicHelper::Helper' => 'ETHelper';
+
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
@@ -35,8 +35,7 @@ sub new {
 sub OnGetGroupState {
 	my $self     = shift;
 	my $dataMngr = shift;    #instance of GroupDataMngr
-	
-	 
+
 	my $defaultInfo = $dataMngr->GetDefaultInfo();
 
 	my $inCAM = $dataMngr->{"inCAM"};
@@ -61,7 +60,7 @@ sub OnGetGroupState {
 			$state = Enums->GroupState_ACTIVEON;
 		}
 	}
-	
+
 	#we want nif group allow always, so return ACTIVE ON
 	return $state;
 
@@ -76,19 +75,36 @@ sub OnPrepareGroupData {
 
 	my $inCAM = $dataMngr->{"inCAM"};
 	my $jobId = $dataMngr->{"jobId"};
-	
+
 	my $defaultInfo = $dataMngr->GetDefaultInfo();
- 
 
 	$groupData->SetStepToTest("panel");
- 
+
 	$groupData->SetCreateEtStep(1);
-	
-	 
- 	return $groupData;
+
+	my $keepProfiles = ETHelper->KeepProfilesAllowed( $inCAM, $jobId, "panel" );
+	if ( $keepProfiles ) {
+		$groupData->SetKeepProfiles(1);
+	}
+	else {
+
+		$groupData->SetKeepProfiles(0);
+
+	}
+
+	$groupData->SetLocalCopy(1);
+
+	# Set sent to server checkbox
+	if ( $keepProfiles) {
+		$groupData->SetServerCopy(1);
+	}
+	else {
+		$groupData->SetLocalCopy(1);
+	}
+
+	return $groupData;
 }
 
- 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#

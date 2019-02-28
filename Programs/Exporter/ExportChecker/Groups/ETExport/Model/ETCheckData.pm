@@ -7,6 +7,7 @@
 package Programs::Exporter::ExportChecker::Groups::ETExport::Model::ETCheckData;
 
 #3th party library
+use utf8;
 use strict;
 use warnings;
 use File::Copy;
@@ -17,6 +18,7 @@ use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'CamHelpers::CamHelper';
 use aliased 'CamHelpers::CamHistogram';
 use aliased 'CamHelpers::CamStepRepeatPnl';
+use aliased 'Packages::ETesting::BasicHelper::Helper' => 'ETHelper';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -38,6 +40,8 @@ sub OnCheckGroupData {
 	my $jobId    = $dataMngr->{"jobId"};
 	my $stepName = "panel";
 
+	my $groupData = $dataMngr->GetGroupData();
+
 	# 1) check attribute .n_electric (it can appear in odb data)
 
 	my @steps = map { $_->{"stepName"} } CamStepRepeatPnl->GetUniqueDeepestSR( $inCAM, $jobId );
@@ -54,14 +58,39 @@ sub OnCheckGroupData {
 
 				$dataMngr->_AddWarningResult(
 											  "Attribute",
-											  "Ve stepu: $step, vrstv�: \"$l\" n�kter� features obsahuj� atribut \".n_electric\"."
-												. "Plo�ky s t�mto atributem se nebudou elektricky testovat, je to ok?"
+											  "Ve stepu: $step, vrstvě: \"$l\" některé features obsahují atribut \".n_electric\"."
+												. "Plošky s tímto atributem se nebudou elektricky testovat, je to ok?"
 				);
 				next;
 			}
 		}
 	}
 
+	# 2) If use custom et step, check if step is not empty
+	if ( $groupData->GetCreateEtStep() == 0 ) {
+
+		my $s = $groupData->GetStepToTest();
+		if ( !defined $s || $s eq "" ) {
+
+			$dataMngr->_AddErrorResult( "Empty step",
+									 "Není vybrán žádný step ze kterého se vytvoří IPC soubor. Step musí mít název \"et_<jmeno stepu>\"" );
+
+		}
+	}
+
+	# 3) Check place of storeing IPC file
+	if ( $groupData->GetLocalCopy() == 0 && $groupData->GetServerCopy() == 0 ) {
+
+		$dataMngr->_AddErrorResult( "IPC file placement", "Není vybráno umístění, kam se má IPC soubor zkopírovat (Server copy; Local copy)" );
+
+	}
+	
+	# 4) Check if keep rpofile is possible
+	if($groupData->GetKeepProfiles() && !ETHelper->KeepProfilesAllowed( $inCAM, $jobId, $groupData->GetStepToTest())){
+		
+		$dataMngr->_AddErrorResult( "Keep profiles",
+									 "Pro ET step: ".$groupData->GetStepToTest()." není možné ponechat SR profily desek v IPC souboru." );
+	}
 }
 
 #-------------------------------------------------------------------------------------------#
@@ -70,18 +99,18 @@ sub OnCheckGroupData {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	#	use aliased 'Packages::Export::NCExport::NCExportGroup';
-	#
-	#	my $jobId    = "F13608";
-	#	my $stepName = "panel";
-	#
-	#	my $inCAM = InCAM->new();
-	#
-	#	my $ncgroup = NCExportGroup->new( $inCAM, $jobId );
-	#
-	#	$ncgroup->Run();
+  #	use aliased 'Packages::Export::NCExport::NCExportGroup';
+  #
+  #	my $jobId    = "F13608";
+  #	my $stepName = "panel";
+  #
+  #	my $inCAM = InCAM->new();
+  #
+  #	my $ncgroup = NCExportGroup->new( $inCAM, $jobId );
+  #
+  #	$ncgroup->Run();
 
-	#print $test;
+  #print $test;
 
 }
 

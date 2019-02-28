@@ -78,7 +78,7 @@ sub CreateFlattenStep {
 		}
 
 		# 2) flatten
-		$self->__FlatternStep( $inCAM, $jobId, \@layers, $targetStep, $treatDTM );
+		$self->FlattenStep( $inCAM, $jobId, \@layers, $targetStep, $treatDTM );
 
 		# 3) delete layers which are not requested to be flatenned
 
@@ -96,7 +96,7 @@ sub CreateFlattenStep {
 
 }
 
-sub __FlatternStep {
+sub FlattenStep {
 	my $self     = shift;
 	my $inCAM    = shift;
 	my $jobId    = shift;

@@ -14,8 +14,10 @@ use List::Util qw[max];
 #use aliased 'Helpers::JobHelper';
 #use aliased 'Enums::EnumsPaths';
 #use aliased 'Packages::InCAM::InCAM';
-#use aliased 'CamHelpers::CamJob';
+use aliased 'CamHelpers::CamStep';
 use aliased 'CamHelpers::CamHelper';
+use aliased 'Packages::Polygon::Enums' => 'EnumsPolygon';
+use aliased 'Packages::Polygon::PointsTransform';
 
 #-------------------------------------------------------------------------------------------#
 #   Package methods
@@ -142,7 +144,7 @@ sub __ExploreStep {
 		# recusive search another nested steps
 		foreach my $ch (@childs) {
 
-			$ch->{"totalCnt"} *= $exploreStep->{"totalCnt"}; 
+			$ch->{"totalCnt"} *= $exploreStep->{"totalCnt"};
 			$self->__ExploreStep( $inCAM, $jobId, $ch, $uniqueSteps );
 
 		}
@@ -152,12 +154,12 @@ sub __ExploreStep {
 	my $uniqueStepInf = ( grep { $_->{"stepName"} eq $exploreStep->{"stepName"} } @{$uniqueSteps} )[0];
 
 	unless ($uniqueStepInf) {
-		$uniqueStepInf = {};
+		$uniqueStepInf               = {};
 		$uniqueStepInf->{"stepName"} = $exploreStep->{"stepName"};
 		$uniqueStepInf->{"totalCnt"} = 0;
 		push( @{$uniqueSteps}, $uniqueStepInf );
 	}
-	
+
 	$uniqueStepInf->{"totalCnt"} += $exploreStep->{"totalCnt"};
 
 }
@@ -179,10 +181,10 @@ sub GetUniqueStepAndRepeat {
 
 		my $stepInf = ( grep { $_->{"stepName"} eq $info->{"gSRstep"} } @steps )[0];
 
-		unless ( $stepInf) {
-			$stepInf             = ();
+		unless ($stepInf) {
+			$stepInf               = ();
 			$stepInf->{"stepName"} = $info->{"gSRstep"};
-			$stepInf->{"totalCnt"}    = 0;
+			$stepInf->{"totalCnt"} = 0;
 			push( @steps, $stepInf );
 		}
 
@@ -262,7 +264,7 @@ sub GetRepeatStep {
 		$info{"originY"}  = ${ $inCAM->{doinfo}{gREPEATya} }[$i];
 		$info{"angle"}    = ${ $inCAM->{doinfo}{gREPEATangle} }[$i];
 
-		#		# mistake in Incam angle_direction => 'ccw' not work, thus:
+		#	mistake in Incam angle_direction => 'ccw' not work, thus:
 		#
 		#		$info{"angle"} = 360 - $info{"angle"};
 
@@ -280,22 +282,6 @@ sub GetRepeatStep {
 	return @arr;
 }
 
-#Return if any step and repeat exist in given step
-sub ExistStepAndRepeats {
-	my $self = shift;
-
-	my @arr = $self->GetStepAndRepeat(@_);
-
-	if ( scalar(@arr) ) {
-		return 1;
-	}
-	else {
-
-		return 0;
-	}
-
-}
-
 #Return if specific step and repeat exist
 sub ExistStepAndRepeat {
 	my $self     = shift;
@@ -310,6 +296,22 @@ sub ExistStepAndRepeat {
 		return 1;
 	}
 	else {
+		return 0;
+	}
+
+}
+
+#Return if any step and repeat exist in given step
+sub ExistStepAndRepeats {
+	my $self = shift;
+
+	my @arr = $self->GetStepAndRepeat(@_);
+
+	if ( scalar(@arr) ) {
+		return 1;
+	}
+	else {
+
 		return 0;
 	}
 
@@ -494,6 +496,106 @@ sub RemoveCouponSteps {
 	}
 }
 
+# Return information about nested deepest steps in specific step
+# Returned values match absolute position and rotation of nested steps in specified step
+# Each item contains
+# - x: final x position
+# - y: final y position
+# - angle: final angle
+# Function consider origin ( position of steps is relate to zero of step in parameter)
+sub GetTransformRepeatStep {
+	my $self  = shift;
+	my $inCAM = shift;
+	my $jobId = shift;
+	my $step  = shift;
+
+	my @stepsInfo = ();
+
+	my $curStep = ();
+	$curStep->{"originX"}  = 0;
+	$curStep->{"originY"}  = 0;
+	$curStep->{"angle"}    = 0;
+	$curStep->{"stepName"} = $step;
+	my %datum = CamStep->GetDatumPoint( $inCAM, $jobId, $step, 1 );
+	$curStep->{"datumX"} = $datum{"x"};
+	$curStep->{"datumY"} = $datum{"y"};
+
+	$self->__GetTransformRInfo( $inCAM, $jobId, \@stepsInfo, $curStep, [] );
+
+	return @stepsInfo;
+}
+
+sub __GetTransformRInfo {
+	my $self          = shift;
+	my $inCAM         = shift;
+	my $jobId         = shift;
+	my $transformRS   = shift;
+	my $curStep       = shift;
+	my @stepAncestors = @{ shift(@_) };
+
+	my @repeats = $self->GetRepeatStep( $inCAM, $jobId, $curStep->{"stepName"} );
+
+	if (@repeats) {
+		foreach my $repeat (@repeats) {
+			my @a = ( @stepAncestors, $curStep );
+
+			# Add datum point info
+			my %datum = CamStep->GetDatumPoint( $inCAM, $jobId, $repeat->{"stepName"}, 1 );
+			$repeat->{"datumX"} = $datum{"x"};
+			$repeat->{"datumY"} = $datum{"y"};
+
+			$self->__GetTransformRInfo( $inCAM, $jobId, $transformRS, $repeat, \@a );
+		}
+	}
+	else {
+
+		# Leaf step, compute position and rotation
+		my %stepInf = ();
+		$stepInf{"stepName"} = $curStep->{"stepName"};
+		$stepInf{"x"}        = $curStep->{"originX"};
+		$stepInf{"y"}        = $curStep->{"originY"};
+		$stepInf{"angle"}    = $curStep->{"angle"};
+
+		@stepAncestors = reverse(@stepAncestors);
+
+		# do not consider last ancestor, because it is  not placed inside another ancestor
+		for ( my $i = 0 ; $i < scalar(@stepAncestors) ; $i++ ) {
+
+			my $ancestor = $stepAncestors[$i];
+
+			next if ( $ancestor->{"stepName"} eq "" );
+
+			# point of ancestor rotation (ancestor datum point)
+			my $rotatePoint = {};
+			$rotatePoint->{"x"} = ( $ancestor->{"originX"} ) * 1000;
+			$rotatePoint->{"y"} = ( $ancestor->{"originY"} ) * 1000;
+
+			# rorated point (cur step anchor)
+			my $anchorPoint = {};
+ 
+ 			# do not consider anchor if ancestor doesn't have ancestor (last ancestor)
+ 			my $datumX = 0;
+ 			my $datumY = 0;
+ 			if($i < scalar(@stepAncestors) -1){
+ 				$datumX = $ancestor->{"datumX"};
+ 				$datumY = $ancestor->{"datumY"};
+ 			}
+ 
+			$anchorPoint->{"x"} = $rotatePoint->{"x"} + ( $stepInf{"x"} - $datumX ) * 1000;
+			$anchorPoint->{"y"} = $rotatePoint->{"y"} + ( $stepInf{"y"} - $datumY ) * 1000;
+
+			my %newAnchorPoint = PointsTransform->RotatePoint( $anchorPoint, $ancestor->{"angle"}, EnumsPolygon->Dir_CCW, $rotatePoint );
+			$stepInf{"x"} = $newAnchorPoint{"x"} / 1000;
+			$stepInf{"y"} = $newAnchorPoint{"y"} / 1000;
+
+			$stepInf{"angle"} += $ancestor->{"angle"};
+			$stepInf{"angle"} -= 360 if ( $stepInf{"angle"} > 360 );
+		}
+
+		push( @{$transformRS}, \%stepInf );
+	}
+}
+
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#
@@ -504,14 +606,12 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	use aliased 'Packages::InCAM::InCAM';
 
 	my $inCAM = InCAM->new();
-	my $jobId = "d113609";
-	my $step  = "panel";
+	my $jobId = "d113608";
+	my $step  = "mpanel";
 
-	my @sr = CamStepRepeat->GetUniqueDeepestSR( $inCAM, $jobId, $step );
+	my @sr = CamStepRepeat->GetTransformRepeatStep( $inCAM, $jobId, $step );
 
 	die;
-
- 
 
 }
 

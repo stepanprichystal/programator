@@ -10,6 +10,7 @@ use utf8;
 use strict;
 use warnings;
 use List::MoreUtils qw(uniq);
+use List::Util qw[max min];
 
 #local library
 
@@ -20,6 +21,8 @@ use aliased 'CamHelpers::CamJob';
 use aliased 'CamHelpers::CamHistogram';
 use aliased 'Packages::Polygon::Features::RouteFeatures::RouteFeatures';
 use aliased 'Packages::CAM::UniDTM::UniDTM';
+use aliased 'CamHelpers::CamDTM';
+use aliased 'Packages::CAM::UniDTM::Enums';
 
 #-------------------------------------------------------------------------------------------#
 #  Script methods
@@ -99,6 +102,13 @@ sub CheckNCLayers {
 
 			$result = 0;
 		}
+		
+		
+		# 3) Check if all tools in job have correct size
+		unless ( $self->CheckToolDiameter( $inCAM, \@layers, $mess ) ) {
+
+			$result = 0;
+		}
 	}
 
 	return $result;
@@ -144,9 +154,9 @@ sub CheckToolParameters {
 					$result = 0;
 					$$mess .= "NC layer \"" . $l->{"gROWname"} . "\".\n";
 					$$mess .=
-					    "Routing layers should not contain tools diamaeter smaller than 500µm. Layer contains tool diameter: "
+					    "Routing layers should not contain tools diamaeter smaller than 500Âµm. Layer contains tool diameter: "
 					  . $t->GetDrillSize()
-					  . "µm.\n";
+					  . "Âµm.\n";
 				}
 			}
 		}
@@ -225,7 +235,7 @@ sub CheckFloatDiemeters {
 
 		my @tools = $l->{"uniDTM"}->GetTools();
 
-		my @floatDim = map { $_->GetDrillSize() . "µm" } grep { $_->GetDrillSize() =~ /^\w\d+\.\d+$/ } @tools;
+		my @floatDim = map { $_->GetDrillSize() . "Âµm" } grep { $_->GetDrillSize() =~ /^\w\d+\.\d+$/ } @tools;
 		@floatDim = uniq(@floatDim);
 
 		if ( scalar(@floatDim) ) {
@@ -239,6 +249,150 @@ sub CheckFloatDiemeters {
 
 	return $result;
 
+}
+
+
+# Check if all tools in job are available in our CNC department (drill_size.tab, rout_size.tab )
+sub CheckToolDiameter {
+	my $self   = shift;
+	my $inCAM  = shift;
+	my @layers = @{ shift(@_) };
+	my $mess   = shift;
+
+	my $result = 1;
+
+	# check drill layers
+
+	my @t = ();
+
+	push( @t, EnumsGeneral->LAYERTYPE_plt_nDrill );
+	push( @t, EnumsGeneral->LAYERTYPE_plt_bDrillTop );
+	push( @t, EnumsGeneral->LAYERTYPE_plt_bDrillBot );
+	push( @t, EnumsGeneral->LAYERTYPE_plt_cDrill );
+	push( @t, EnumsGeneral->LAYERTYPE_plt_dcDrill );
+	push( @t, EnumsGeneral->LAYERTYPE_plt_fDrill );
+	push( @t, EnumsGeneral->LAYERTYPE_nplt_nDrill );
+
+	my @layersDrill = $self->__GetLayersByType( \@layers, \@t );
+
+	my @t2 = ();
+
+	push( @t2, EnumsGeneral->LAYERTYPE_plt_nMill );
+	push( @t2, EnumsGeneral->LAYERTYPE_plt_bMillTop );
+	push( @t2, EnumsGeneral->LAYERTYPE_plt_bMillBot );
+	push( @t2, EnumsGeneral->LAYERTYPE_nplt_kMill );
+	push( @t2, EnumsGeneral->LAYERTYPE_nplt_bMillTop );
+	push( @t2, EnumsGeneral->LAYERTYPE_nplt_bMillBot );
+	push( @t2, EnumsGeneral->LAYERTYPE_nplt_rsMill );
+	push( @t2, EnumsGeneral->LAYERTYPE_nplt_frMill );
+	push( @t2, EnumsGeneral->LAYERTYPE_nplt_cbMillTop );
+	push( @t2, EnumsGeneral->LAYERTYPE_nplt_cbMillBot );
+	push( @t2, EnumsGeneral->LAYERTYPE_nplt_nMill );
+
+	my @layersRout = $self->__GetLayersByType( \@layers, \@t2 );
+
+	# 1) check drill layers on max available drill tool
+	my @drillTool = CamDTM->GetToolTable( $inCAM, 'drill' );
+	my $maxDrillTool = max(@drillTool) * 1000;    # in µm
+
+	foreach my $l (@layersDrill) {
+
+		my @maxLTools =  map { $_->GetDrillSize() } grep {!$_->GetSpecial() && $_->GetDrillSize() > $maxDrillTool } $l->{"uniDTM"}->GetTools();
+
+		if ( scalar(@maxLTools) ) {
+
+			$result = 0;
+			$$mess .=
+			    "NC layer: "
+			  . $l->{"gROWname"}
+			  . " contains drill tool ("
+			  . join( ";", @maxLTools )
+			  . "µm) larger than our max tool ($maxDrillTool µm)\n";
+		}
+	}
+
+	# 2) check rout layers on max available drill tool
+	my @routTool = CamDTM->GetToolTable( $inCAM, 'rout' );
+	my $maxRoutTool = max(@routTool) * 1000;    # in µm
+
+	foreach my $l (@layersRout) {
+
+		my @maxLDrillTools =
+		  grep { !$_->GetSpecial() && $_->GetTypeProcess() eq Enums->TypeProc_HOLE && $_->GetDrillSize() > $maxDrillTool } $l->{"uniDTM"}->GetTools();
+
+		if ( scalar(@maxLDrillTools) ) {
+
+			$result = 0;
+			$$mess .=
+			    "NC layer: "
+			  . $l->{"gROWname"}
+			  . " contains drill tool ("
+			  . join( ";", map { $_->GetDrillSize()} @maxLDrillTools )
+			  . "µm) larger than our max tool ($maxDrillTool µm)\n";
+		}
+
+		my @maxLRoutTools =
+		  grep { !$_->GetSpecial() && $_->GetTypeProcess() eq Enums->TypeProc_CHAIN && $_->GetDrillSize() > $maxRoutTool } $l->{"uniDTM"}->GetTools();
+
+		if ( scalar(@maxLRoutTools) ) {
+
+			$result = 0;
+			$$mess .=
+			    "NC layer: "
+			  . $l->{"gROWname"}
+			  . " contains rout tool ("
+			  . join( ";", map { $_->GetDrillSize()} @maxLRoutTools )
+			  . "µm) larger than our max tool ($maxRoutTool µm)\n";
+		}
+	}
+
+	# 3) Chek drill tools againts CNC available tools
+	foreach my $l (@layersDrill) {
+
+		foreach my $td ( map { $_->GetDrillSize() } grep {!$_->GetSpecial()} $l->{"uniDTM"}->GetTools() ) {
+
+			unless ( grep { $_ * 1000 == $td } @drillTool ) {
+
+				$result = 0;
+				$$mess .= "NC layer: " . $l->{"gROWname"} . " contains drill tool: $td µm which is not available in CNC department\n";
+			}
+		}
+	}
+
+	# 4) Chek rout tools againts CNC available tools
+	foreach my $l (@layersRout) {
+
+		foreach my $t ( grep {!$_->GetSpecial()} $l->{"uniDTM"}->GetTools() ) {
+
+			if ( $t->GetTypeProcess() eq Enums->TypeProc_HOLE ) {
+				unless ( grep { $_ * 1000 == $t->GetDrillSize() } @drillTool ) {
+
+					$result = 0;
+					$$mess .=
+					    "NC layer: "
+					  . $l->{"gROWname"}
+					  . " contains drill tool: "
+					  . $t->GetDrillSize()
+					  . " µm which is not available in CNC department\n";
+				}
+			}
+			elsif ( $t->GetTypeProcess() eq Enums->TypeProc_CHAIN ) {
+				unless ( grep { $_ * 1000 == $t->GetDrillSize() } @routTool ) {
+
+					$result = 0;
+					$$mess .=
+					    "NC layer: "
+					  . $l->{"gROWname"}
+					  . " contains rout tool:"
+					  . $t->GetDrillSize()
+					  . " µm which is not available in CNC department\n";
+				}
+			}
+
+		}
+	}
+
+	return $result;
 }
 
 sub __GetLayersByType {
