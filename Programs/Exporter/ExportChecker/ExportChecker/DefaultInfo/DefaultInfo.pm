@@ -526,6 +526,12 @@ sub GetCustomerNote {
 	return $self->{"costomerNote"};
 }
 
+sub GetCustomerISInfo {
+	my $self = shift;
+
+	return $self->{"costomerInfo"};
+}
+
 sub GetPressfitExist {
 	my $self = shift;
 

@@ -426,29 +426,32 @@ sub OnCheckGroupData {
 	# 18) Check if more same jobid is in production, if so add warning
 	my @orders = HegMethods->GetPcbOrderNumbers($jobId);
 	if ( scalar(@orders) > 1 ) {
- 
-		@orders    = grep { $_->{"stav"} == 4 } @orders;    #Ve výrobě (4)
-		
-		if(scalar(@orders) > 1 ){
-			
-			$dataMngr->_AddWarningResult( "DPS ve výrobě", "Pozor deska je již ve výrobě a export ovlivní tyto zakázky: ".join("; ", map{ $_->{"reference_subjektu"}} @orders));
+
+		@orders = grep { $_->{"stav"} == 4 } @orders;    #Ve výrobě (4)
+
+		if ( scalar(@orders) > 1 ) {
+
+			$dataMngr->_AddWarningResult( "DPS ve výrobě",
+					 "Pozor deska je již ve výrobě a export ovlivní tyto zakázky: " . join( "; ", map { $_->{"reference_subjektu"} } @orders ) );
 		}
 
 	}
-	
-	# 19) Check attribu "custom_year" if contains current year plus 1
-	my %allAttr = CamAttributes->GetJobAttr( $inCAM, $jobId );
 
-	if ( defined $allAttr{"custom_year"} ) {
-		my $d = (DateTime->now( "time_zone" => 'Europe/Prague' )->year() + 1)%100;
-		
-		if($d != $allAttr{"custom_year"}){
-			
-			$dataMngr->_AddErrorResult( "Attribut \"custom_year\"",  "Atribut: \"custom_year\" (".$allAttr{"custom_year"}.") není aktuální".
-			"Měl by mít hodnotu: $d" );
+	# 19) Check attribu "custom_year" if contains current year plus 1 (only SICURIT customer, id: 07418)
+	if ( $defaultInfo->GetCustomerISInfo()->{"reference_subjektu"} eq "07418" ) {
+		my %allAttr = CamAttributes->GetJobAttr( $inCAM, $jobId );
+
+		if ( defined $allAttr{"custom_year"} ) {
+			my $d = ( DateTime->now( "time_zone" => 'Europe/Prague' )->year() + 1 ) % 100;
+
+			if ( $d != $allAttr{"custom_year"} ) {
+
+				$dataMngr->_AddErrorResult( "Attribut \"custom_year\"",
+										 "Atribut: \"custom_year\" (" . $allAttr{"custom_year"} . ") není aktuální" . "Měl by mít hodnotu: $d" );
+			}
 		}
 	}
-	
+
 }
 
 #-------------------------------------------------------------------------------------------#
