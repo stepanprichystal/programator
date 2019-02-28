@@ -30,6 +30,7 @@ use aliased 'Packages::CAM::UniRTM::UniRTM';
 use aliased 'Packages::CAM::FeatureFilter::FeatureFilter';
 use aliased 'Packages::CAMJob::OutputData::Helper';
 use aliased 'CamHelpers::CamHistogram';
+use aliased 'Packages::CAMJob::OutputParser::OutputParserNC::Enums' => 'OutParserEnums';
 
 #-------------------------------------------------------------------------------------------#
 #  Interface
@@ -337,6 +338,7 @@ sub __PreparePLTDEPTHNC {
 	}
 
 	my $inCAM  = $self->{"inCAM"};
+	my $jobId  = $self->{"jobId"};
 	my @layers = $layer->GetSingleLayers();
 
 	my $lName = GeneralHelper->GetGUID();
@@ -346,21 +348,38 @@ sub __PreparePLTDEPTHNC {
 	# compensate
 	foreach my $l (@layers) {
 
-		if ( $l->{"gROWlayer_type"} eq "rout" ) {
-			CamLayer->WorkLayer( $inCAM, $l->{"gROWname"} );
-			my $lComp = CamLayer->RoutCompensation( $inCAM, $l->{"gROWname"}, "document" );
+		use aliased 'Packages::CAMJob::OutputParser::OutputParserNC::OutputParserNC';
 
-			# check for special rout 6.5mm with depth
-			$self->__CountersinkCheck( $l, $lComp );
+		my $outputParser = OutputParserNC->new( $inCAM, $jobId, $self->{"pdfStep"} );
 
-			$inCAM->COM( "merge_layers", "source_layer" => $lComp, "dest_layer" => $lName );
-			$inCAM->COM( 'delete_layer', "layer" => $lComp );
+		my $result = $self->{"outputNClayer"}->Prepare( $l->{"gROWname"} );
 
+		next unless ( $result->GetResult() );
+
+		foreach my $classResult ( $result->GetClassResults(1) ) {
+
+			foreach my $l ( $classResult->GetLayers() ) {
+				$inCAM->COM( "merge_layers", "source_layer" => $l, "dest_layer" => $lName );
+			}
 		}
-		else {
 
-			$inCAM->COM( "merge_layers", "source_layer" => $l->{"gROWname"}, "dest_layer" => $lName );
-		}
+		$outputParser->Clear();
+
+		#		if ( $l->{"gROWlayer_type"} eq "rout" ) {
+		#			CamLayer->WorkLayer( $inCAM, $l->{"gROWname"} );
+		#			my $lComp = CamLayer->RoutCompensation( $inCAM, $l->{"gROWname"}, "document" );
+		#
+		#			# check for special rout 6.5mm with depth
+		#			$self->__CountersinkCheck( $l, $lComp );
+		#
+		#			$inCAM->COM( "merge_layers", "source_layer" => $lComp, "dest_layer" => $lName );
+		#			$inCAM->COM( 'delete_layer', "layer" => $lComp );
+		#
+		#		}
+		#		else {
+		#
+		#			$inCAM->COM( "merge_layers", "source_layer" => $l->{"gROWname"}, "dest_layer" => $lName );
+		#		}
 
 	}
 
@@ -382,6 +401,7 @@ sub __PrepareNPLTDEPTHNC {
 	}
 
 	my $inCAM  = $self->{"inCAM"};
+	my $jobId  = $self->{"jobId"};
 	my @layers = $layer->GetSingleLayers();
 	my $lName  = GeneralHelper->GetGUID();
 
@@ -390,20 +410,57 @@ sub __PrepareNPLTDEPTHNC {
 	# compensate
 	foreach my $l (@layers) {
 
-		if ( $l->{"gROWlayer_type"} eq "rout" ) {
-			CamLayer->WorkLayer( $inCAM, $l->{"gROWname"} );
-			my $lComp = CamLayer->RoutCompensation( $inCAM, $l->{"gROWname"}, "document" );
+		use aliased 'Packages::CAMJob::OutputParser::OutputParserNC::OutputParserNC';
 
-			# check for special rout 6.5mm with depth
-			$self->__CountersinkCheck( $l, $lComp );
+		my $outputParser = OutputParserNC->new( $inCAM, $jobId, $self->{"pdfStep"} );
 
-			$inCAM->COM( "merge_layers", "source_layer" => $lComp, "dest_layer" => $lName );
-			$inCAM->COM( 'delete_layer', "layer" => $lComp );
+		my $result = $outputParser->Prepare($l);
+
+		next unless ( $result->GetResult() );
+
+		foreach my $classResult ( $result->GetClassResults(1) ) {
+
+			foreach my $classL ( $classResult->GetLayers() ) {
+
+				my $resizeFeats = 0;
+ 
+				if (
+					    $classResult->GetType() eq OutParserEnums->Type_COUNTERSINKSURF
+					 || $classResult->GetType() eq OutParserEnums->Type_COUNTERSINKARC
+					 || $classResult->GetType() eq OutParserEnums->Type_COUNTERSINKPAD
+					 || $classResult->GetType() eq OutParserEnums->Type_ZAXISSURFCHAMFER
+					 || $classResult->GetType() eq OutParserEnums->Type_ZAXISSLOTCHAMFER
+				  )
+				{
+
+					my $resizeFeats = ( $classL->GetDataVal("DTMTool")->GetDrillSize() / 2 - $classL->GetDataVal("radiusReal") ) * 2;
+
+					CamLayer->WorkLayer( $inCAM, $classL->GetLayerName() );
+					CamLayer->ResizeFeatures( $inCAM, -$resizeFeats );
+
+				}
+
+				$inCAM->COM( "merge_layers", "source_layer" => $classL->GetLayerName(), "dest_layer" => $lName );
+
+			}
 		}
-		else {
 
-			$inCAM->COM( "merge_layers", "source_layer" => $l->{"gROWname"}, "dest_layer" => $lName );
-		}
+		$outputParser->Clear();
+
+		#		if ( $l->{"gROWlayer_type"} eq "rout" ) {
+		#			CamLayer->WorkLayer( $inCAM, $l->{"gROWname"} );
+		#			my $lComp = CamLayer->RoutCompensation( $inCAM, $l->{"gROWname"}, "document" );
+		#
+		#			# check for special rout 6.5mm with depth
+		#			$self->__CountersinkCheck( $l, $lComp );
+		#
+		#			$inCAM->COM( "merge_layers", "source_layer" => $lComp, "dest_layer" => $lName );
+		#			$inCAM->COM( 'delete_layer', "layer" => $lComp );
+		#		}
+		#		else {
+		#
+		#			$inCAM->COM( "merge_layers", "source_layer" => $l->{"gROWname"}, "dest_layer" => $lName );
+		#		}
 	}
 
 	$layer->SetOutputLayer($lName);
@@ -497,7 +554,7 @@ sub __PrepareNPLTTHROUGHNC {
 
 		my $unitRTM = UniRTM->new( $inCAM, $self->{"jobId"}, $self->{"pdfStep"}, $l->{"gROWname"}, 0, 0, 1 );
 
-		my @outFeatsId = map { $_->{"id"}} map { $_->GetOriFeatures() } grep { $_->GetCyclic() } $unitRTM->GetMultiChainSeqList();
+		my @outFeatsId = map { $_->{"id"} } map { $_->GetOriFeatures() } grep { $_->GetCyclic() } $unitRTM->GetMultiChainSeqList();
 
 		#my @outline = $unitRTM->GetOutlineChains();
 		#my @outFeatsId =  map {$_->{"id"}} map { $_->GetOriFeatures() } @outline;

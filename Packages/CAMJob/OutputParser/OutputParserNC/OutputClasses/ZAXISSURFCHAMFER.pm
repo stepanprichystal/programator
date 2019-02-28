@@ -119,6 +119,7 @@ sub _Prepare {
 		# 2 Add another extra info to output layer
 
 		$outputLayer->SetDataVal( "radiusReal", $radiusReal );    # real compted radius of line arc
+		$outputLayer->SetDataVal( "DTMTool",    $tool );                 # DTMTool which all chainSeq are processed by
 		$outputLayer->SetDataVal( "exceededDepth", $exceededDepth );  				  # exceeded depth of tool if exist (if depth ot tool is bigger than size of tool peak)
 		$outputLayer->SetDataVal( "chainSeq",   \@matchCh );      # All chain seq, which was processed in ori layer in this class
 

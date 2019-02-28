@@ -107,7 +107,7 @@ sub _Prepare {
 		# 2 Add another extra info to output layer
 
 		$outputLayer->SetDataVal( "chainSeq",   \@matchCh );             # All chain seq, which was processed in ori layer in this class
-		$outputLayer->SetDataVal( "DTMTool",    $tool );                 # All chain seq, which was processed in ori layer in this class
+		$outputLayer->SetDataVal( "DTMTool",    $tool );                 # DTMTool which all chainSeq are processed by
 		$outputLayer->SetDataVal( "radiusReal", $radiusReal / 1000 );
 
 		$self->{"result"}->AddLayer($outputLayer);

@@ -108,8 +108,10 @@ sub _Prepare {
 
 			next unless (@matchCh);
 
-			my $toolDepth = $matchCh[0]->GetChain()->GetChainTool()->GetUniDTMTool()->GetDepth();    # angle of tool
-			my $toolAngle = $matchCh[0]->GetChain()->GetChainTool()->GetUniDTMTool()->GetAngle();    # angle of tool
+			my $tool          = $matchCh[0]->GetChain()->GetChainTool()->GetUniDTMTool();
+			my $toolDepth     = $tool->GetDepth();                                          # depth of tool
+			my $toolAngle     = $tool->GetAngle();                                          # angle of tool
+
 
 			my $radiusNoDepth = $matchCh[0]->{"radius"};
 			my $radiusReal = CountersinkHelper->GetSlotRadiusByToolDepth( $radiusNoDepth * 1000, $tool, $toolAngle, $toolDepth * 1000 ) / 1000;
@@ -134,6 +136,7 @@ sub _Prepare {
 			}
 
 			$outputLayer->SetDataVal( "radiusReal", $radiusReal );    # real compted radius of features in layer
+			$outputLayer->SetDataVal( "DTMTool",     $tool );                         # DTM tool, which is used for this pads
 			$outputLayer->SetDataVal( "exceededDepth", $exceededDepth );  # exceeded depth of tool if exist (if depth ot tool is bigger than size of tool peak)
 			$outputLayer->SetDataVal( "chainSeq",   \@matchCh );      # All chain seq, which was processed in ori layer in this class
 

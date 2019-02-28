@@ -38,6 +38,31 @@ sub GetSlotRadiusByToolDepth {
 	return $rRadius;
 }
 
+# Compute new final "slot" radius for given tool and tool slot radius
+# which will araise on secondary side of pcb. (SS is Secondary Side of pcb)
+# Tool rout according given radius. Whole tool diameter is inside "routed circle"
+# Thus center of tool is NOT center of hole diameter
+# Used for countersing diameters larger than available tool diameters
+# All in µm
+sub GetSlotRadiusByToolDepthSS {
+	my $self         = shift;
+	my $slotRadius   = shift;    # radius if we doesn't consider tool angle
+	my $toolDiameter = shift;    # tool diameter
+	my $toolAngle    = shift;
+	my $toolDepth    = shift;
+	my $matThickness = shift;	 # material thickness
+
+	my $rRadiusSS = 0;
+	
+	if($toolDepth > $matThickness){
+		
+		$rRadiusSS = $slotRadius -  ( $toolDiameter / 2 - ( tan( deg2rad( $toolAngle / 2 ) ) * ($toolDepth- $matThickness)) );
+	}
+ 
+
+	return $rRadiusSS;
+}
+
 # Compute new final  radius for given tool
 # Tool drill only, no slot
 # Center of tool is center of hole diameter
@@ -56,6 +81,33 @@ sub GetHoleRadiusByToolDepth {
 
 	return $rRadius;
 }
+
+# Compute new final  radius for given tool
+# which will araise on secondary side of pcb. (SS is Secondary Side of pcb)
+# Tool drill only, no slot
+# Center of tool is center of hole diameter
+# All in µm
+sub GetHoleRadiusByToolDepthSS {
+	my $self         = shift;
+	my $toolDiameter = shift;
+	my $toolAngle    = shift;
+	my $toolDepth    = shift;
+	my $matThickness = shift;    # material thickness
+
+	my $rRadiusSS = 0;
+
+	if ( $toolDepth > $matThickness ) {
+
+		$rRadiusSS = tan( deg2rad( $toolAngle / 2 ) ) * ( $toolDepth - $matThickness );
+	}
+
+	if ( $rRadiusSS * 2 > $toolDiameter ) {
+		return $toolDiameter / 2;
+	}
+
+	return $rRadiusSS;
+}
+
 
 # If counter sink is plated, drill depth has to be larger
 # Return this extra depth
@@ -165,7 +217,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	use aliased 'Packages::Tooling::CountersinkHelper';
 
-	#print CountersinkHelper->GetSlotRadiusByToolDepth( 10, 6, 120, 1.5 );
+	print CountersinkHelper->GetSlotRadiusByToolDepthSS( 5000, 6000, 90, 3000, 3000 );
 
 	#print CountersinkHelper->GetHoleRadiusByToolDepth( 6000, 60, 3000 );
 

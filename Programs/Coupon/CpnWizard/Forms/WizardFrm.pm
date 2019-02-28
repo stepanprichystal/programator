@@ -61,6 +61,7 @@ sub Init {
 	my $self  = shift;
 	my $inCAM = shift;
 
+
 	my $jobId = $self->{"jobId"};
 
 	# init wizard GUI steps

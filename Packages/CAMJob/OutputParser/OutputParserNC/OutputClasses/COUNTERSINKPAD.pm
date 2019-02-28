@@ -111,9 +111,10 @@ sub _Prepare {
 			$outputLayer->SetDataVal( "radiusBeforePlt", $radiusReal + 0.05 );    # real compted radius of features in layer before plated
 		}
 		$outputLayer->SetDataVal( "radiusReal",  $radiusReal );                   # real computed radius of features in layer
+		$outputLayer->SetDataVal( "DTMTool",     $tool );                         # DTM tool, which is used for this pads
 		$outputLayer->SetDataVal( "exceededDepth", $exceededDepth );  				  # exceeded depth of tool if exist (if depth ot tool is bigger than size of tool peak)
 		$outputLayer->SetDataVal( "padFeatures", \@pads );                        # All pads, which was processed in ori layer in this class
-		$outputLayer->SetDataVal( "DTMTool",     $tool );                         # DTM tool, which is used for this pads
+
 
 		$self->{"result"}->AddLayer($outputLayer);
 	}
