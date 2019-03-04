@@ -176,6 +176,7 @@ sub Build {
 	push(@req, "otvory");
 	push(@req, "pocet_vrtaku");
 	push(@req, "pocet_der");
+	push(@req, "pocet_der_kus");
 	
 	$nifMngr->AddSection("Vrtani", BuilderDrill->new(\@req));
 	

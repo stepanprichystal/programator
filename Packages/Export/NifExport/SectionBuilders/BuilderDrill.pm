@@ -21,6 +21,9 @@ use aliased 'CamHelpers::CamDrilling';
 use aliased 'CamHelpers::CamRouting';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'Helpers::JobHelper';
+use aliased 'CamHelpers::CamHistogram';
+use aliased 'CamHelpers::CamStepRepeatPnl';
+use aliased 'Packages::CAMJob::Dim::JobDim';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -103,6 +106,36 @@ sub Build {
 		$section->AddRow( "min_vrtak_pomer", $aspectRatio );
 	}
 
+	#pocet_der_kus
+	if ( $self->_IsRequire("pocet_der_kus") ) {
+
+		my $pocetDer = 0;
+
+		my @drill = CamJob->GetLayerByType( $inCAM, $jobId, "drill" );
+		my @rout  = CamJob->GetLayerByType( $inCAM, $jobId, "rout" );
+
+		foreach my $step ( CamStepRepeatPnl->GetUniqueStepAndRepeat( $inCAM, $jobId ) ) {
+
+			foreach my $l ( ( @drill, @rout ) ) {
+
+				my %featHist = CamHistogram->GetFeatuesHistogram( $inCAM, $jobId, $step->{"stepName"}, $l->{"gROWname"} );
+				my %attHist = CamHistogram->GetAttCountHistogram( $inCAM, $jobId, $step->{"stepName"}, $l->{"gROWname"} );
+
+				$pocetDer += ( $step->{"totalCnt"} * $featHist{"pad"} );
+
+				$pocetDer -= ( $step->{"totalCnt"} * $attHist{".pilot_hole"}->{"_totalCnt"} )
+				  if ( defined $attHist{".pilot_hole"} );    # pilot holes
+				$pocetDer -= ( $step->{"totalCnt"} * $attHist{".extended"}->{"_totalCnt"} )
+				  if ( defined $attHist{".extended"} );      # rout bridges zero pad
+			}
+		}
+
+		my %multipl = JobDim->GetDimension( $inCAM, $jobId );    # multiple of panel
+		$pocetDer = int( $pocetDer / $multipl{"nasobnost"} );
+
+		$section->AddRow( "pocet_der_kus", $pocetDer );
+	}
+
 }
 
 sub __DrillExists {
@@ -128,7 +161,7 @@ sub __GetHoleType {
 	my $jobId = $self->{"jobId"};
 
 	my $holeType = undef;
-	
+
 	my $mExist = CamHelper->LayerExists( $inCAM, $jobId, "m" );
 	if ($mExist) {
 
