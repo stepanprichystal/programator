@@ -37,6 +37,7 @@ use aliased 'Packages::Polygon::Polygon::PolygonAttr';
 
 use aliased 'CamHelpers::CamSymbolSurf';
 use aliased 'Packages::CAMJob::OutputParser::OutputParserNC::Enums' => 'OutEnums';
+
 #use aliased 'Packages::SystemCall::SystemCall';
 
 #-------------------------------------------------------------------------------------------#
@@ -54,12 +55,11 @@ sub new {
 	$self->{"layerList"} = shift;
 
 	$self->{"profileLim"} = shift;    # limits of pdf step
-	
+
 	$self->{"outputNClayer"} = shift;
 
 	$self->{"pcbThick"}    = JobHelper->GetFinalPcbThick( $self->{"jobId"} ) / 1000;    # in mm
 	$self->{"dataOutline"} = "200";                                                     # symbol def, which is used for outline
-
 
 	return $self;
 }
@@ -90,8 +90,6 @@ sub Prepare {
 
 }
 
- 
-
 # MEthod do necessary stuff for each layer by type
 # like resizing, copying, change polarity, merging, ...
 sub __ProcessNClayer {
@@ -121,14 +119,13 @@ sub __ProcessNClayer {
 
 		$self->__ProcessLayerData( $classRes, $l, );
 		$self->__ProcessDrawing( $classRes, $l, $side, $t );
-		
-		
+
 		foreach my $layerRes ( $classRes->GetLayers() ) {
-			
+
 			my $lData = LayerData->new( $type, $l, $enTit, $czTit, $enInf, $czInf, $layerRes->GetLayerName() );
 			$self->{"layerList"}->AddLayer($lData);
-			
-		} 
+
+		}
 
 	}
 }
@@ -221,8 +218,28 @@ sub __ProcessLayerData {
 			}
 		}
 		elsif (    $classRes->GetType() eq OutEnums->Type_ZAXISSLOTCHAMFER
-				|| $classRes->GetType() eq OutEnums->Type_ZAXISSURFCHAMFER
-				|| $classRes->GetType() eq OutEnums->Type_ZAXISSURF
+				|| $classRes->GetType() eq OutEnums->Type_ZAXISSURFCHAMFER )
+		{
+
+			# Parsed data from "parser class result"
+			my $drawLayer  = $layerRes->GetLayerName();
+			my $radiusReal = $layerRes->GetDataVal("radiusReal");
+
+			# Resize tool diameter by real material removal
+			my $DTMTool     = $layerRes->GetDataVal("DTMTool");
+			my $newDiameter = tan( deg2rad( $DTMTool->GetAngle() / 2 ) ) * $DTMTool->GetDepth() * 2;
+			my $resizeFeats = ( $layerRes->GetDataVal("DTMTool")->GetDrillSize() - $newDiameter * 1000 );
+
+			CamLayer->WorkLayer( $inCAM, $drawLayer );
+			CamLayer->Contourize( $inCAM, $drawLayer, "area", "25000" );
+			CamLayer->WorkLayer( $inCAM, $drawLayer );
+			CamLayer->ResizeFeatures( $inCAM, -$resizeFeats );
+
+			# Adjust copied feature data. Create outlilne from each feature
+			$inCAM->COM( "sel_feat2outline", "width" => $self->{"dataOutline"}, "location" => "on_edge" );
+
+		}
+		elsif (    $classRes->GetType() eq OutEnums->Type_ZAXISSURF
 				|| $classRes->GetType() eq OutEnums->Type_ZAXISSLOT )
 		{
 
@@ -231,10 +248,8 @@ sub __ProcessLayerData {
 			my $radiusReal = $layerRes->GetDataVal("radiusReal");
 
 			# Adjust copied feature data. Create outlilne from each feature
-
-			if ( $classRes->GetType() eq OutEnums->Type_ZAXISSURF ) {
-				CamLayer->Contourize( $inCAM, $drawLayer, "area", "1000" );
-			}
+			CamLayer->WorkLayer( $inCAM, $drawLayer );
+			CamLayer->Contourize( $inCAM, $drawLayer ); # onlz counourize, no fill empty places
 
 			CamLayer->WorkLayer( $inCAM, $drawLayer );
 
@@ -249,11 +264,10 @@ sub __ProcessLayerData {
 
 # Prepare image
 sub __ProcessDrawing {
-	my $self       = shift;
-	my $classRes   = shift;
-	my $l          = shift;
-	my $side       = shift;
- 
+	my $self     = shift;
+	my $classRes = shift;
+	my $l        = shift;
+	my $side     = shift;
 
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
@@ -267,8 +281,7 @@ sub __ProcessDrawing {
 		my $lTmp = GeneralHelper->GetGUID();
 		$inCAM->COM( 'create_layer', layer => $lTmp );
 
-		 
-		my $draw = Drawing->new( $inCAM, $jobId, $lTmp, Point->new( 0,0), $self->{"pcbThick"}, $side, $l->{"plated"} );
+		my $draw = Drawing->new( $inCAM, $jobId, $lTmp, Point->new( 0, 0 ), $self->{"pcbThick"}, $side, $l->{"plated"} );
 
 		if (    $classRes->GetType() eq OutEnums->Type_COUNTERSINKSURF
 			 || $classRes->GetType() eq OutEnums->Type_COUNTERSINKARC )
@@ -282,10 +295,12 @@ sub __ProcessDrawing {
 			my @chains = @{ $layerRes->GetDataVal("chainSeq") };
 
 			#$toolDepth    = $chains[0]->GetChain()->GetChainTool()->GetUniDTMTool()->GetDepth();    # angle of tool
-			my $imgToolAngle = $chains[0]->GetChain()->GetChainTool()->GetUniDTMTool()->GetAngle();    # angle of tool
+			my $imgToolAngle = $chains[0]->GetChain()->GetChainTool()->GetUniDTMTool()->GetAngle();               # angle of tool
 			my $imgToolDepth = cotan( deg2rad( ( $imgToolAngle / 2 ) ) ) * $layerRes->GetDataVal("radiusReal");
-	 
-			$draw->CreateDetailCountersink( $layerRes->GetDataVal("radiusReal"), $imgToolDepth, $layerRes->GetDataVal("exceededDepth"), $imgToolAngle, "hole" );
+
+			$draw->CreateDetailCountersink( $layerRes->GetDataVal("radiusReal"),
+											$imgToolDepth, $layerRes->GetDataVal("exceededDepth"),
+											$imgToolAngle, "hole" );
 
 		}
 		elsif ( $classRes->GetType() eq OutEnums->Type_COUNTERSINKPAD ) {
@@ -301,11 +316,13 @@ sub __ProcessDrawing {
 
 			my $imgToolDepth = cotan( deg2rad( ( $imgToolAngle / 2 ) ) ) * $layerRes->GetDataVal("radiusReal");
 
-#			if ( $l->{"plated"} ) {
-#				$imgToolDepth -= OutEnums->Plating_THICKMM;
-#			}
+			#			if ( $l->{"plated"} ) {
+			#				$imgToolDepth -= OutEnums->Plating_THICKMM;
+			#			}
 
-			$draw->CreateDetailCountersink( $layerRes->GetDataVal("radiusReal"), $imgToolDepth, $layerRes->GetDataVal("exceededDepth"), $imgToolAngle, "hole" );
+			$draw->CreateDetailCountersink( $layerRes->GetDataVal("radiusReal"),
+											$imgToolDepth, $layerRes->GetDataVal("exceededDepth"),
+											$imgToolAngle, "hole" );
 
 		}
 		elsif (    $classRes->GetType() eq OutEnums->Type_ZAXISSLOTCHAMFER
@@ -314,14 +331,16 @@ sub __ProcessDrawing {
 
 			my @chains = @{ $layerRes->GetDataVal("chainSeq") };
 
-			my $imgToolAngle = $chains[0]->GetChain()->GetChainTool()->GetUniDTMTool()->GetAngle();    # angle of tool
+			my $imgToolAngle = $chains[0]->GetChain()->GetChainTool()->GetUniDTMTool()->GetAngle();               # angle of tool
 			my $imgToolDepth = cotan( deg2rad( ( $imgToolAngle / 2 ) ) ) * $layerRes->GetDataVal("radiusReal");
-			
-#			if ( $l->{"plated"} ) {
-#				$imgToolDepth -= OutEnums->Plating_THICKMM;
-#			}
 
-			$draw->CreateDetailCountersink( $layerRes->GetDataVal("radiusReal"), $imgToolDepth, $layerRes->GetDataVal("exceededDepth"), $imgToolAngle, "slot" );
+			#			if ( $l->{"plated"} ) {
+			#				$imgToolDepth -= OutEnums->Plating_THICKMM;
+			#			}
+
+			$draw->CreateDetailCountersink( $layerRes->GetDataVal("radiusReal"),
+											$imgToolDepth, $layerRes->GetDataVal("exceededDepth"),
+											$imgToolAngle, "slot" );
 
 		}
 		elsif (    $classRes->GetType() eq OutEnums->Type_ZAXISSLOT
@@ -365,8 +384,8 @@ sub __ProcessDrawing {
 		CamLayer->WorkLayer( $inCAM, $lTmp );
 		my %lim = CamJob->GetLayerLimits2( $inCAM, $jobId, $step, $lTmp );
 
-		$inCAM->COM( "sel_move", "dx" => 0, "dy" => $self->{"profileLim"}->{"yMax"} - $lim{"yMin"} + 10 ); # drawing 10 mm above profile data
- 
+		$inCAM->COM( "sel_move", "dx" => 0, "dy" => $self->{"profileLim"}->{"yMax"} - $lim{"yMin"} + 10 );    # drawing 10 mm above profile data
+
 		CamLayer->WorkLayer( $inCAM, $lTmp );
 		CamLayer->CopySelOtherLayer( $inCAM, [ $layerRes->GetLayerName() ] );
 		CamMatrix->DeleteLayer( $inCAM, $jobId, $lTmp );

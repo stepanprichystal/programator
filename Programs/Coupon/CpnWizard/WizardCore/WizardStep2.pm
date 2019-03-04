@@ -90,16 +90,16 @@ sub Load {
 			# Set value of min Pad2GND isolation according pcb costruction class
 			for ( my $i = 0 ; $i < scalar(@constr) ; $i++ ) {
 
-				$self->{"cpnStripSett"}->{ $constr[$i] }->SetPad2GND( $isol + 25 );    # add 25µm isolation for some reserve during etching
+				$self->{"cpnStripSett"}->{ $constr[$i] }->SetPad2GND( $isol);
 			}
 
-			# set Pad GND symbol by isolation if symbol is "thermal"
+			# Set Pad GND symbol by isolation if symbol is "thermal"
 			for ( my $i = 0 ; $i < scalar(@uniqGroups) ; $i++ ) {
 
 				my $sym = $self->{"cpnGroupSett"}->{ $uniqGroups[$i] }->GetPadGNDSymNeg();
 				if ( $sym =~ /^thr(\d+)x(\d+)x(\d+)x(\d+)x(\d+)$/ ) {
 
-					my $outerSize = $2 + 2 * $isol + 2 * 25;                           # add 25µm isolation for some reserve during etching
+					my $outerSize = $2 + 2 * $isol;                        
 					$sym =~ s/^thr(\d+)(x\d+x\d+x\d+x\d+)$/thr$outerSize$2/;
 
 					$self->{"cpnGroupSett"}->{ $uniqGroups[$i] }->SetPadGNDSymNeg($sym);

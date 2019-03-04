@@ -20,6 +20,7 @@ use aliased 'CamHelpers::CamHistogram';
 use aliased 'CamHelpers::CamStepRepeatPnl';
 use aliased 'Packages::ETesting::BasicHelper::Helper' => 'ETHelper';
 
+
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
@@ -91,6 +92,7 @@ sub OnCheckGroupData {
 		$dataMngr->_AddErrorResult( "Keep profiles",
 									 "Pro ET step: ".$groupData->GetStepToTest()." není možné ponechat SR profily desek v IPC souboru." );
 	}
+
 }
 
 #-------------------------------------------------------------------------------------------#

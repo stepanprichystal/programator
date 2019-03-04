@@ -30,6 +30,9 @@ use aliased 'Packages::CAM::UniRTM::UniRTM';
 use aliased 'Packages::CAM::FeatureFilter::FeatureFilter';
 use aliased 'Packages::CAMJob::OutputData::Helper';
 use aliased 'CamHelpers::CamHistogram';
+use aliased 'Packages::CAMJob::OutputParser::OutputParserNC::Enums' => 'OutParserEnums';
+use aliased 'Packages::CAMJob::OutputParser::OutputParserNC::OutputParserNC';
+use aliased 'Helpers::JobHelper';
 
 #-------------------------------------------------------------------------------------------#
 #  Interface
@@ -337,6 +340,7 @@ sub __PreparePLTDEPTHNC {
 	}
 
 	my $inCAM  = $self->{"inCAM"};
+	my $jobId  = $self->{"jobId"};
 	my @layers = $layer->GetSingleLayers();
 
 	my $lName = GeneralHelper->GetGUID();
@@ -345,28 +349,45 @@ sub __PreparePLTDEPTHNC {
 
 	# compensate
 	foreach my $l (@layers) {
+		my $outputParser = OutputParserNC->new( $inCAM, $jobId, $self->{"pdfStep"} );
 
-		if ( $l->{"gROWlayer_type"} eq "rout" ) {
-			CamLayer->WorkLayer( $inCAM, $l->{"gROWname"} );
-			my $lComp = CamLayer->RoutCompensation( $inCAM, $l->{"gROWname"}, "document" );
+		my $result = $outputParser->Prepare($l);
 
-			# check for special rout 6.5mm with depth
-			$self->__CountersinkCheck( $l, $lComp );
+		next unless ( $result->GetResult() );
 
-			$inCAM->COM( "merge_layers", "source_layer" => $lComp, "dest_layer" => $lName );
-			$inCAM->COM( 'delete_layer', "layer" => $lComp );
+		foreach my $classResult ( $result->GetClassResults(1) ) {
 
+			foreach my $classL ( $classResult->GetLayers() ) {
+
+				# When angle tool, resize final tool dieameter by tool depth
+				if (    $classResult->GetType() eq OutParserEnums->Type_COUNTERSINKSURF
+					 || $classResult->GetType() eq OutParserEnums->Type_COUNTERSINKARC
+					 || $classResult->GetType() eq OutParserEnums->Type_COUNTERSINKPAD
+					 || $classResult->GetType() eq OutParserEnums->Type_ZAXISSURFCHAMFER
+					 || $classResult->GetType() eq OutParserEnums->Type_ZAXISSLOTCHAMFER )
+				{
+
+					my $DTMTool     = $classL->GetDataVal("DTMTool");
+					my $newDiameter = tan( deg2rad( $DTMTool->GetAngle() / 2 ) ) * $DTMTool->GetDepth() * 2;
+
+					my $resizeFeats = ( $classL->GetDataVal("DTMTool")->GetDrillSize() - $newDiameter * 1000 );
+
+					CamLayer->WorkLayer( $inCAM, $classL->GetLayerName() );
+					CamLayer->ResizeFeatures( $inCAM, -$resizeFeats );
+
+				}
+
+				$inCAM->COM( "merge_layers", "source_layer" => $classL->GetLayerName(), "dest_layer" => $lName );
+
+			}
 		}
-		else {
 
-			$inCAM->COM( "merge_layers", "source_layer" => $l->{"gROWname"}, "dest_layer" => $lName );
-		}
-
+		$outputParser->Clear();
 	}
 
 	# resize
-	CamLayer->WorkLayer( $inCAM, $lName );
-	$inCAM->COM( "sel_resize", "size" => -100, "corner_ctl" => "no" );
+	#CamLayer->WorkLayer( $inCAM, $lName );
+	#$inCAM->COM( "sel_resize", "size" => -100, "corner_ctl" => "no" );
 
 	$layer->SetOutputLayer($lName);
 
@@ -382,6 +403,7 @@ sub __PrepareNPLTDEPTHNC {
 	}
 
 	my $inCAM  = $self->{"inCAM"};
+	my $jobId  = $self->{"jobId"};
 	my @layers = $layer->GetSingleLayers();
 	my $lName  = GeneralHelper->GetGUID();
 
@@ -390,20 +412,40 @@ sub __PrepareNPLTDEPTHNC {
 	# compensate
 	foreach my $l (@layers) {
 
-		if ( $l->{"gROWlayer_type"} eq "rout" ) {
-			CamLayer->WorkLayer( $inCAM, $l->{"gROWname"} );
-			my $lComp = CamLayer->RoutCompensation( $inCAM, $l->{"gROWname"}, "document" );
+		my $outputParser = OutputParserNC->new( $inCAM, $jobId, $self->{"pdfStep"} );
 
-			# check for special rout 6.5mm with depth
-			$self->__CountersinkCheck( $l, $lComp );
+		my $result = $outputParser->Prepare($l);
 
-			$inCAM->COM( "merge_layers", "source_layer" => $lComp, "dest_layer" => $lName );
-			$inCAM->COM( 'delete_layer', "layer" => $lComp );
+		next unless ( $result->GetResult() );
+
+		foreach my $classResult ( $result->GetClassResults(1) ) {
+
+			foreach my $classL ( $classResult->GetLayers() ) {
+
+				# When angle tool, resize final tool dieameter by tool depth
+				if (    $classResult->GetType() eq OutParserEnums->Type_COUNTERSINKSURF
+					 || $classResult->GetType() eq OutParserEnums->Type_COUNTERSINKARC
+					 || $classResult->GetType() eq OutParserEnums->Type_COUNTERSINKPAD
+					 || $classResult->GetType() eq OutParserEnums->Type_ZAXISSURFCHAMFER
+					 || $classResult->GetType() eq OutParserEnums->Type_ZAXISSLOTCHAMFER )
+				{
+
+					my $DTMTool     = $classL->GetDataVal("DTMTool");
+					my $newDiameter = tan( deg2rad( $DTMTool->GetAngle() / 2 ) ) * $DTMTool->GetDepth() * 2;
+
+					my $resizeFeats = ( $classL->GetDataVal("DTMTool")->GetDrillSize() - $newDiameter * 1000 );
+
+					CamLayer->WorkLayer( $inCAM, $classL->GetLayerName() );
+					CamLayer->ResizeFeatures( $inCAM, -$resizeFeats );
+
+				}
+
+				$inCAM->COM( "merge_layers", "source_layer" => $classL->GetLayerName(), "dest_layer" => $lName );
+
+			}
 		}
-		else {
 
-			$inCAM->COM( "merge_layers", "source_layer" => $l->{"gROWname"}, "dest_layer" => $lName );
-		}
+		$outputParser->Clear();
 	}
 
 	$layer->SetOutputLayer($lName);
@@ -420,33 +462,65 @@ sub __PreparePLTTHROUGHNC {
 	}
 
 	my $inCAM  = $self->{"inCAM"};
+	my $jobId  = $self->{"jobId"};
 	my @layers = $layer->GetSingleLayers();
 	my $lName  = GeneralHelper->GetGUID();
 
 	$inCAM->COM( 'create_layer', layer => $lName, context => 'misc', type => 'document', polarity => 'positive', ins_layer => '' );
 
+	my $pcbThick = JobHelper->GetFinalPcbThick($jobId);
+
 	# compensate
 	foreach my $l (@layers) {
 
-		if ( $l->{"gROWlayer_type"} eq "rout" ) {
+		my $outputParser = OutputParserNC->new( $inCAM, $jobId, $self->{"pdfStep"} );
 
-			CamLayer->WorkLayer( $inCAM, $l->{"gROWname"} );
-			my $lComp = CamLayer->RoutCompensation( $inCAM, $l->{"gROWname"}, "document" );
+		my $result = $outputParser->Prepare($l);
 
-			$inCAM->COM( "merge_layers", "source_layer" => $lComp, "dest_layer" => $lName );
+		next unless ( $result->GetResult() );
 
-			$inCAM->COM( 'delete_layer', "layer" => $lComp );
+		foreach my $classResult ( $result->GetClassResults(1) ) {
 
+			# When angle tool, resize final tool dieameter by tool depth
+			if (    $classResult->GetType() eq OutParserEnums->Type_ROUT
+				 || $classResult->GetType() eq OutParserEnums->Type_DRILL )
+			{
+				foreach my $classL ( $classResult->GetLayers() ) {
+
+					if ( $l->{"gROWlayer_type"} eq "rout" ) {
+
+						CamLayer->WorkLayer( $inCAM, $classL->GetLayerName() );
+						CamLayer->Contourize( $inCAM, $classL->GetLayerName(), "area", "25000" );
+					}
+
+					$inCAM->COM( "merge_layers", "source_layer" => $classL->GetLayerName(), "dest_layer" => $lName );
+				}
+
+			}
+			else {
+				foreach my $classL ( $classResult->GetLayers() ) {
+
+					my $DTMTool = $classL->GetDataVal("DTMTool");
+					next if ( $DTMTool->GetDepth() * 1000 < $pcbThick );
+
+					my $newDiameter = tan( deg2rad( $DTMTool->GetAngle() / 2 ) ) * ( $DTMTool->GetDepth() * 1000 - $pcbThick ) * 2;
+
+					my $resizeFeats = ( $classL->GetDataVal("DTMTool")->GetDrillSize() - $newDiameter );
+
+					CamLayer->WorkLayer( $inCAM, $classL->GetLayerName() );
+					CamLayer->ResizeFeatures( $inCAM, -$resizeFeats );
+
+					$inCAM->COM( "merge_layers", "source_layer" => $classL->GetLayerName(), "dest_layer" => $lName );
+				}
+			}
 		}
-		else {
-
-			$inCAM->COM( "merge_layers", "source_layer" => $l->{"gROWname"}, "dest_layer" => $lName );
-		}
+		
+		$outputParser->Clear();
 
 	}
 
-	CamLayer->WorkLayer( $inCAM, $lName );
-	$inCAM->COM( "sel_resize", "size" => -100, "corner_ctl" => "no" );
+	#CamLayer->WorkLayer( $inCAM, $lName );
+	#$inCAM->COM( "sel_resize", "size" => -100, "corner_ctl" => "no" );
 
 	$layer->SetOutputLayer($lName);
 
@@ -468,36 +542,58 @@ sub __PrepareNPLTTHROUGHNC {
 
 	$inCAM->COM( 'create_layer', layer => $lName, context => 'misc', type => 'document', polarity => 'positive', ins_layer => '' );
 
-	# compensate
+	my $pcbThick = JobHelper->GetFinalPcbThick($jobId);
+
 	foreach my $l (@layers) {
 
-		my %featHist = CamHistogram->GetFeatuesHistogram( $inCAM, $jobId, $self->{"pdfStep"}, $l->{"gROWname"} );
-		next if ( $featHist{"total"} == 0 );
+		my $outputParser = OutputParserNC->new( $inCAM, $jobId, $self->{"pdfStep"} );
 
-		if ( $l->{"gROWlayer_type"} eq "rout" ) {
+		my $result = $outputParser->Prepare($l);
 
-			CamLayer->WorkLayer( $inCAM, $l->{"gROWname"} );
-			my $lComp = CamLayer->RoutCompensation( $inCAM, $l->{"gROWname"}, "document" );
+		next unless ( $result->GetResult() );
 
-			$inCAM->COM( "merge_layers", "source_layer" => $lComp, "dest_layer" => $lName );
+		foreach my $classResult ( $result->GetClassResults(1) ) {
 
-			$inCAM->COM( 'delete_layer', "layer" => $lComp );
+			# When angle tool, resize final tool dieameter by tool depth
+			if (    $classResult->GetType() eq OutParserEnums->Type_DRILL
+				 || $classResult->GetType() eq OutParserEnums->Type_ROUT )
+			{
+				foreach my $classL ( $classResult->GetLayers() ) {
+					$inCAM->COM( "merge_layers", "source_layer" => $classL->GetLayerName(), "dest_layer" => $lName );
+				}
 
+			}
+			else {
+				foreach my $classL ( $classResult->GetLayers() ) {
+
+					my $DTMTool = $classL->GetDataVal("DTMTool");
+					next if ( $DTMTool->GetDepth() * 1000 < $pcbThick );
+
+					my $newDiameter = tan( deg2rad( $DTMTool->GetAngle() / 2 ) ) * ( $DTMTool->GetDepth() * 1000 - $pcbThick ) * 2;
+
+					my $resizeFeats = ( $classL->GetDataVal("DTMTool")->GetDrillSize() - $newDiameter );
+
+					CamLayer->WorkLayer( $inCAM, $classL->GetLayerName() );
+					CamLayer->ResizeFeatures( $inCAM, -$resizeFeats );
+
+					$inCAM->COM( "merge_layers", "source_layer" => $classL->GetLayerName(), "dest_layer" => $lName );
+
+				}
+			}
 		}
-		else {
 
-			$inCAM->COM( "merge_layers", "source_layer" => $l->{"gROWname"}, "dest_layer" => $lName );
-		}
+		$outputParser->Clear();
 
 		# There can by small remains of pcb material, which is not milled
 		# We don't want see this pieces in pdf, so delete tem from layer $lName
 		# (pieces larger than 20% of total step area will be keepd)
+		CamLayer->WorkLayer( $inCAM, $l->{"gROWname"} );
 
 		#$inCAM->COM( "merge_layers", "source_layer" => $lName, "dest_layer" => $lTmp );
 
 		my $unitRTM = UniRTM->new( $inCAM, $self->{"jobId"}, $self->{"pdfStep"}, $l->{"gROWname"}, 0, 0, 1 );
 
-		my @outFeatsId = map { $_->{"id"}} map { $_->GetOriFeatures() } grep { $_->GetCyclic() } $unitRTM->GetMultiChainSeqList();
+		my @outFeatsId = map { $_->{"id"} } map { $_->GetOriFeatures() } grep { $_->GetCyclic() } $unitRTM->GetMultiChainSeqList();
 
 		#my @outline = $unitRTM->GetOutlineChains();
 		#my @outFeatsId =  map {$_->{"id"}} map { $_->GetOriFeatures() } @outline;
@@ -530,15 +626,87 @@ sub __PrepareNPLTTHROUGHNC {
 		  abs( $self->{"profileLim"}->{"xMin"} - $self->{"profileLim"}->{"xMax"} ) *
 		  abs( $self->{"profileLim"}->{"yMin"} - $self->{"profileLim"}->{"yMax"} );
 
-		my $maxArea = $profileArea / 10;    # pieces smaller than 10% of totalaarea will be keeped in pictore
+		my $maxArea = $profileArea / 2;    # pieces smaller than 10% of totalaarea will be keeped in pictore
 
 		if ( CamFilter->BySurfaceArea( $inCAM, 0, $maxArea ) > 0 ) {
-			my @layers = ($lName);
-			CamLayer->CopySelOtherLayer( $inCAM, \@layers, 0, 0 );
+			CamLayer->CopySelOtherLayer( $inCAM, [$lName], 0, 0 );
 		}
 
 		$inCAM->COM( 'delete_layer', "layer" => $lTmp );
+
 	}
+
+	#	# compensate
+	#	foreach my $l (@layers) {
+	#
+	#		my %featHist = CamHistogram->GetFeatuesHistogram( $inCAM, $jobId, $self->{"pdfStep"}, $l->{"gROWname"} );
+	#		next if ( $featHist{"total"} == 0 );
+	#
+	#		if ( $l->{"gROWlayer_type"} eq "rout" ) {
+	#
+	#			CamLayer->WorkLayer( $inCAM, $l->{"gROWname"} );
+	#			my $lComp = CamLayer->RoutCompensation( $inCAM, $l->{"gROWname"}, "document" );
+	#
+	#			$inCAM->COM( "merge_layers", "source_layer" => $lComp, "dest_layer" => $lName );
+	#
+	#			$inCAM->COM( 'delete_layer', "layer" => $lComp );
+	#
+	#		}
+	#		else {
+	#
+	#			$inCAM->COM( "merge_layers", "source_layer" => $l->{"gROWname"}, "dest_layer" => $lName );
+	#		}
+	#
+	#		# There can by small remains of pcb material, which is not milled
+	#		# We don't want see this pieces in pdf, so delete tem from layer $lName
+	#		# (pieces larger than 20% of total step area will be keepd)
+	#
+	#		#$inCAM->COM( "merge_layers", "source_layer" => $lName, "dest_layer" => $lTmp );
+	#
+	#		my $unitRTM = UniRTM->new( $inCAM, $self->{"jobId"}, $self->{"pdfStep"}, $l->{"gROWname"}, 0, 0, 1 );
+	#
+	#		my @outFeatsId = map { $_->{"id"} } map { $_->GetOriFeatures() } grep { $_->GetCyclic() } $unitRTM->GetMultiChainSeqList();
+	#
+	#		#my @outline = $unitRTM->GetOutlineChains();
+	#		#my @outFeatsId =  map {$_->{"id"}} map { $_->GetOriFeatures() } @outline;
+	#
+	#		CamFilter->SelectByFeatureIndexes( $inCAM, $self->{"jobId"}, \@outFeatsId );
+	#
+	#		$inCAM->COM("sel_reverse");
+	#		my $tmpRout = GeneralHelper->GetGUID();
+	#		$inCAM->COM(
+	#					 "sel_copy_other",
+	#					 "dest"         => "layer_name",
+	#					 "target_layer" => $tmpRout,
+	#					 "invert"       => "no"
+	#		);
+	#
+	#		my $lTmp = CamLayer->RoutCompensation( $inCAM, $tmpRout, "document" );
+	#		$inCAM->COM( 'delete_layer', "layer" => $tmpRout );
+	#
+	#		# 1) do negative of prepared rout layer
+	#		CamLayer->NegativeLayerData( $inCAM, $lTmp, $self->{"profileLim"} );
+	#		CamLayer->WorkLayer( $inCAM, $lTmp );
+	#
+	#		# 2) Select all 'small pieces'/surfaces and copy them negative to $lName
+	#		CamLayer->Contourize( $inCAM, $lTmp );
+	#		CamLayer->WorkLayer( $inCAM, $lTmp );
+	#
+	#		# Select 'surface pieces'
+	#
+	#		my $profileArea =
+	#		  abs( $self->{"profileLim"}->{"xMin"} - $self->{"profileLim"}->{"xMax"} ) *
+	#		  abs( $self->{"profileLim"}->{"yMin"} - $self->{"profileLim"}->{"yMax"} );
+	#
+	#		my $maxArea = $profileArea / 10;    # pieces smaller than 10% of totalaarea will be keeped in pictore
+	#
+	#		if ( CamFilter->BySurfaceArea( $inCAM, 0, $maxArea ) > 0 ) {
+	#			my @layers = ($lName);
+	#			CamLayer->CopySelOtherLayer( $inCAM, \@layers, 0, 0 );
+	#		}
+	#
+	#		$inCAM->COM( 'delete_layer', "layer" => $lTmp );
+	#	}
 
 	$layer->SetOutputLayer($lName);
 }

@@ -44,9 +44,7 @@ sub new {
 
 	my $self = $class->SUPER::new( @_, Enums->Type_DRILL );
 	bless $self;
-	
-	 
-	
+
 	return $self;
 }
 
@@ -69,27 +67,25 @@ sub _Prepare {
 
 	my $lName = $l->{"gROWname"};
 
-	return 0 unless ( grep {$_->GetTypeProcess() eq DTMEnums->TypeProc_HOLE} $l->{"uniDTM"}->GetTools() );
+	return 0 unless ( grep { $_->GetTypeProcess() eq DTMEnums->TypeProc_HOLE } $l->{"uniDTM"}->GetTools() );
 
 	# Get all radiuses
 
 	my $outputLayer = OutputLayer->new();    # layer process result
- 
 
 	my $drawLayer = $self->_SeparateFeatsBySymbolsNC( ["pad"] );
- 
- 
 	# adjust DTM to finish size
 	$self->_SetDTMFinishSizes($drawLayer);
 
 	# 1) Set prepared layer name
+	# Attention!
+	# - layer contain original sizes of feature. ( if plated, features are resized by 2xplating thick)
 	$outputLayer->SetLayerName($drawLayer);
 
 	# 2 Add another extra info to output layer
 
 	$self->{"result"}->AddLayer($outputLayer);
 }
-
 
 #-------------------------------------------------------------------------------------------#
 #  Protected methods

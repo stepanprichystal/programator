@@ -33,6 +33,7 @@ use aliased 'Packages::CAMJob::OutputParser::OutputParserBase::OutputResult::Out
 use aliased 'Packages::Polygon::Polygon::PolygonAttr';
 use aliased 'Enums::EnumsRout';
 use aliased 'CamHelpers::CamLayer';
+use aliased 'CamHelpers::CamMatrix';
 
 #-------------------------------------------------------------------------------------------#
 #  Interface
@@ -87,28 +88,33 @@ sub _Prepare {
 		# get id of all features in chain
 		my @featsId = map { $_->{'id'} } map { $_->GetOriFeatures() } @matchCh;
 
-		my $drawLayer = $self->_SeparateFeatsByIdNC( \@featsId );
+		my $separateL = $self->_SeparateFeatsByIdNC( \@featsId );
+	my $drawLayer = CamLayer->RoutCompensation( $inCAM, $separateL, "document" );
+	CamMatrix->DeleteLayer( $inCAM, $jobId, $separateL );
 
 		# Warning, conturization is necessary here in order properly feature resize.
 		# Only for case, when rout is "cyclic" and compensation is "inside" (CW and Right)
-		CamLayer->Contourize( $inCAM, $drawLayer );
-		CamLayer->WorkLayer( $inCAM, $drawLayer );
-
-		my $radiusReal = $tool->GetDrillSize() / 2;
+		#CamLayer->Contourize( $inCAM, $drawLayer );
+	
+		my $radiusReal = $tool->GetDrillSize() / 2 / 1000;    # in mm
 
 		if ( $l->{"plated"} ) {
+			CamLayer->WorkLayer($inCAM, $drawLayer);
 			CamLayer->ResizeFeatures( $inCAM, -2 * Enums->Plating_THICK );
-			$radiusReal -= Enums->Plating_THICK;
+			$radiusReal -= Enums->Plating_THICKMM;
 		}
 
 		# 1) Set prepared layer name
-		$outputLayer->SetLayerName($drawLayer);    # Attention! lazer contain original sizes of feature, not finish/real sizes
+		# Attention!
+		# - layer contain original sizes of feature. ( if plated, features are resized by 2xplating thick)
+		# - rout layer are compensated to document (feature compnsate thickness is kept)
+		$outputLayer->SetLayerName($drawLayer);
 
 		# 2 Add another extra info to output layer
 
-		$outputLayer->SetDataVal( "chainSeq",   \@matchCh );             # All chain seq, which was processed in ori layer in this class
-		$outputLayer->SetDataVal( "DTMTool",    $tool );                 # All chain seq, which was processed in ori layer in this class
-		$outputLayer->SetDataVal( "radiusReal", $radiusReal / 1000 );
+		$outputLayer->SetDataVal( "chainSeq",   \@matchCh );      # All chain seq, which was processed in ori layer in this class
+		$outputLayer->SetDataVal( "DTMTool",    $tool );          # DTMTool which all chainSeq are processed by
+		$outputLayer->SetDataVal( "radiusReal", $radiusReal );    # [mm]
 
 		$self->{"result"}->AddLayer($outputLayer);
 	}

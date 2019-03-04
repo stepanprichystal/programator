@@ -23,6 +23,7 @@ use aliased 'Packages::CAM::FeatureFilter::Enums' => "FilterEnums";
 use aliased 'Packages::Polygon::Features::Features::Features';
 use aliased 'Packages::CAM::UniRTM::UniRTM';
 use aliased 'Packages::CAM::SymbolDrawing::Primitive::PrimitiveText';
+use aliased 'Packages::CAM::SymbolDrawing::Symbol::SymbolBase';
 
 #-------------------------------------------------------------------------------------------#
 #  Public method
@@ -81,7 +82,15 @@ sub DrawRoute {
 
 	my $draw = SymbolDrawing->new( $inCAM, $self->{"jobId"} );
 
-	my @groupGUIDs = ();
+	# 1) create one symbol which will contains all rout edges
+	my $routSym = SymbolBase->new();
+	$draw->AddSymbol($routSym);
+
+	# contain groupGUID of all edges of rout chain
+	# - foot down edge; rout start edge has own guid
+	# - other rout edges will contain same "groupGUID" value as symbol
+	my @specGroupGUIDs = ();
+	push( @specGroupGUIDs, $routSym->GetGroupGUID() );
 
 	# 1) Fill drawing with rout edges
 	for ( my $i = 0 ; $i < scalar(@sorteEdges) ; $i++ ) {
@@ -96,7 +105,6 @@ sub DrawRoute {
 											 "r400"
 			);
 
-			push( @groupGUIDs, $primitive->GetGroupGUID() );
 		}
 		elsif ( $sorteEdges[$i]{"type"} eq "A" ) {
 
@@ -108,23 +116,32 @@ sub DrawRoute {
 											   "r400"
 			);
 
-			push( @groupGUIDs, $primitive->GetGroupGUID() );
 		}
-
-		$draw->AddPrimitive($primitive);
 
 		# save GUID of start rout
 		if ( $sorteEdges[$i]->{"id"} eq $routStart->{"id"} ) {
 
+			$routSym->SetPassGUID2prim(0);
+			$routSym->AddPrimitive($primitive);
+			$routSym->SetPassGUID2prim(1);
+
 			$routStartGuid = $primitive->GetGroupGUID();
+			push( @specGroupGUIDs, $routStartGuid );
 		}
 
 		# save GUID of start rout
-		if ($setFootAtt) {
-			if ( $sorteEdges[$i]->{"id"} eq $footDown->{"id"} ) {
+		elsif ( $setFootAtt && $sorteEdges[$i]->{"id"} eq $footDown->{"id"} ) {
 
-				$footDownGuid = $primitive->GetGroupGUID();
-			}
+			$routSym->SetPassGUID2prim(0);
+			$routSym->AddPrimitive($primitive);
+			$routSym->SetPassGUID2prim(1);
+
+			$footDownGuid = $primitive->GetGroupGUID();
+			push( @specGroupGUIDs, $footDownGuid );
+		}
+		else {
+
+			$routSym->AddPrimitive($primitive);
 		}
 
 	}
@@ -139,11 +156,11 @@ sub DrawRoute {
 	# 4) Select rout and do chain
 	my $f = FeatureFilter->new( $inCAM, $jobId, $layer );
 
-	foreach my $guid (@groupGUIDs) {
-		$f->AddIncludeAtt( "feat_group_id", $guid );
-	}
-
 	$f->SetIncludeAttrCond( FilterEnums->Logic_OR );
+
+	foreach my $groupGUID (@specGroupGUIDs) {
+		$f->AddIncludeAtt( "feat_group_id", $groupGUID );
+	}
 
 	if ( $f->Select() ) {
 

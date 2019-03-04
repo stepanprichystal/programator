@@ -7,7 +7,6 @@
 package Packages::Pdf::ControlPdf::PcbControlPdf::FinalPreview::LayerData::LayerDataList;
 use base ('Packages::Pdf::ControlPdf::Helpers::FinalPreview::LayerData::LayerDataListBase');
 
-
 #3th party library
 use strict;
 use warnings;
@@ -25,12 +24,11 @@ use aliased 'Connectors::HeliosConnector::HegMethods';
 #-------------------------------------------------------------------------------------------#
 
 sub new {
-	my $class     = shift;
-	my $self      = $class->SUPER::new(@_ );
+	my $class = shift;
+	my $self  = $class->SUPER::new(@_);
 	bless $self;
 
 	$self->{"viewType"} = shift;
-
 
 	$self->__InitLayers();
 
@@ -56,7 +54,6 @@ sub __InitLayers {
 	push( @{ $self->{"layers"} }, LayerData->new( Enums->Type_GRAFIT ) );
 }
 
-  
 sub SetLayers {
 	my $self        = shift;
 	my @boardLayers = @{ shift(@_) };
@@ -73,46 +70,58 @@ sub SetLayers {
 				$self->_AddToLayerData( $l, Enums->Type_OUTERSURFACE );
 
 			}
-			elsif ( $l->{"gROWname"} =~ /^mc$/ ) {
+
+			if ( $l->{"gROWname"} =~ /^mc$/ ) {
 
 				$self->_AddToLayerData( $l, Enums->Type_MASK );
 
 			}
-			elsif ( $l->{"gROWname"} =~ /^pc$/ ) {
+
+			if ( $l->{"gROWname"} =~ /^pc$/ ) {
 
 				$self->_AddToLayerData( $l, Enums->Type_SILK );
 
-			}elsif ( $l->{"gROWname"} =~ /^goldc$/ ) {
+			}
+
+			if ( $l->{"gROWname"} =~ /^goldc$/ ) {
 
 				$self->_AddToLayerData( $l, Enums->Type_GOLDFINGER );
 
-			}elsif ( $l->{"gROWname"} =~ /^lc$/ ) {
+			}
+
+			if ( $l->{"gROWname"} =~ /^lc$/ ) {
 
 				$self->_AddToLayerData( $l, Enums->Type_PEELABLE );
 
-			}elsif ( $l->{"gROWname"} =~ /^gc$/ ) {
+			}
+
+			if ( $l->{"gROWname"} =~ /^gc$/ ) {
 
 				$self->_AddToLayerData( $l, Enums->Type_GRAFIT );
 
 			}
-			elsif ( $l->{"type"}
-					&& ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_plt_bDrillTop || $l->{"type"} eq EnumsGeneral->LAYERTYPE_plt_bMillTop ) )
+
+			if ( $l->{"type"}
+				 && ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_plt_bDrillTop || $l->{"type"} eq EnumsGeneral->LAYERTYPE_plt_bMillTop ) )
 			{
 
 				$self->_AddToLayerData( $l, Enums->Type_PLTDEPTHNC );
 
 			}
-			elsif ( $l->{"type"} && ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_bMillTop || $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_score ) )
-			{
+
+			if ( $l->{"type"} && ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_bMillTop || $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_score ) ) {
 
 				$self->_AddToLayerData( $l, Enums->Type_NPLTDEPTHNC );
 
 			}
-			elsif (
+
+			if (
 				$l->{"type"}
 				&& (
 					   $l->{"type"} eq EnumsGeneral->LAYERTYPE_plt_nMill
 					|| $l->{"type"} eq EnumsGeneral->LAYERTYPE_plt_nDrill
+					|| $l->{"type"} eq EnumsGeneral->LAYERTYPE_plt_bMillTop
+					|| $l->{"type"} eq EnumsGeneral->LAYERTYPE_plt_bMillBot
 
 				)
 			  )
@@ -121,11 +130,14 @@ sub SetLayers {
 				$self->_AddToLayerData( $l, Enums->Type_PLTTHROUGHNC );
 
 			}
-			elsif (
-					$l->{"type"}
-					&& (    $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_nMill
-						 || $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_rsMill
-						 || $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_kMill )
+
+			if (
+				 $l->{"type"}
+				 && (    $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_nMill
+					  || $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_rsMill
+					  || $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_kMill
+					  || $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_bMillTop
+					  || $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_bMillBot )
 			  )
 			{
 
@@ -146,49 +158,62 @@ sub SetLayers {
 
 				$self->_AddToLayerData( $l, Enums->Type_OUTERCU );
 				$self->_AddToLayerData( $l, Enums->Type_OUTERSURFACE );
- 
+
 			}
-			elsif ( $l->{"gROWname"} =~ /^ms$/ ) {
+
+			if ( $l->{"gROWname"} =~ /^ms$/ ) {
 
 				$self->_AddToLayerData( $l, Enums->Type_MASK );
 
 			}
-			elsif ( $l->{"gROWname"} =~ /^ps$/ ) {
+
+			if ( $l->{"gROWname"} =~ /^ps$/ ) {
 
 				$self->_AddToLayerData( $l, Enums->Type_SILK );
 
-			}elsif ( $l->{"gROWname"} =~ /^golds$/ ) {
+			}
+
+			if ( $l->{"gROWname"} =~ /^golds$/ ) {
 
 				$self->_AddToLayerData( $l, Enums->Type_GOLDFINGER );
 
-			}elsif ( $l->{"gROWname"} =~ /^ls$/ ) {
+			}
+
+			if ( $l->{"gROWname"} =~ /^ls$/ ) {
 
 				$self->_AddToLayerData( $l, Enums->Type_PEELABLE );
 
-			}elsif ( $l->{"gROWname"} =~ /^gs$/ ) {
+			}
+
+			if ( $l->{"gROWname"} =~ /^gs$/ ) {
 
 				$self->_AddToLayerData( $l, Enums->Type_GRAFIT );
 
 			}
-			elsif ( $l->{"type"}
-					&& ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_plt_bDrillBot || $l->{"type"} eq EnumsGeneral->LAYERTYPE_plt_bMillBot ) )
+
+			if ( $l->{"type"}
+				 && ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_plt_bDrillBot || $l->{"type"} eq EnumsGeneral->LAYERTYPE_plt_bMillBot ) )
 			{
 
 				$self->_AddToLayerData( $l, Enums->Type_PLTDEPTHNC );
 
 			}
-			elsif ( $l->{"type"}
-					&& ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_bMillBot || $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_score ) )
+
+			if ( $l->{"type"}
+				 && ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_bMillBot || $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_score ) )
 			{
 
 				$self->_AddToLayerData( $l, Enums->Type_NPLTDEPTHNC );
 
 			}
-			elsif (
+
+			if (
 				$l->{"type"}
 				&& (
 					   $l->{"type"} eq EnumsGeneral->LAYERTYPE_plt_nMill
 					|| $l->{"type"} eq EnumsGeneral->LAYERTYPE_plt_nDrill
+					|| $l->{"type"} eq EnumsGeneral->LAYERTYPE_plt_bMillTop
+					|| $l->{"type"} eq EnumsGeneral->LAYERTYPE_plt_bMillBot
 
 				)
 			  )
@@ -197,12 +222,16 @@ sub SetLayers {
 				$self->_AddToLayerData( $l, Enums->Type_PLTTHROUGHNC );
 
 			}
-			elsif (
-					$l->{"type"}
-					&& (    $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_nMill
-						 || $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_rsMill
-						 || $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_kMill )
+
+			if (
+				 $l->{"type"}
+				 && (    $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_nMill
+					  || $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_rsMill
+					  || $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_kMill
+					  || $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_bMillTop
+					  || $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_bMillBot )
 			  )
+
 			{
 
 				$self->_AddToLayerData( $l, Enums->Type_NPLTTHROUGHNC );
@@ -217,7 +246,6 @@ sub SetColors {
 	my $colors = shift;
 
 	$self->_SetColors($colors);
- 
 
 	# set color for THROUGH type of layers, according background
 
@@ -234,7 +262,6 @@ sub SetColors {
 # if image has white mask, background will be pink
 sub GetBackground {
 	my $self = shift;
-	
 
 	my $l    = $self->GetLayerByType( Enums->Type_MASK );
 	my $surf = $l->GetSurface();
@@ -249,8 +276,6 @@ sub GetBackground {
 		return "255,255,255";    # white
 	}
 }
-
- 
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

@@ -68,19 +68,21 @@ sub _Prepare {
 
 	my $lName = $l->{"gROWname"};
 
-	return 0 unless ( grep {$_->GetTypeProcess() eq DTMEnums->TypeProc_CHAIN} $l->{"uniDTM"}->GetTools() );
+	return 0 unless ( grep { $_->GetTypeProcess() eq DTMEnums->TypeProc_CHAIN } $l->{"uniDTM"}->GetTools() );
 
 	# Get all radiuses
 
 	my $outputLayer = OutputLayer->new();    # layer process result
 
-	my $drawLayer = $self->_SeparateFeatsBySymbolsNC( [ "line" ] );
- 
+	my $drawLayer = $self->_SeparateFeatsBySymbolsNC( ["line"] );
+
 	# 1) Set prepared layer name
+	# Attention!
+	# - layer contain original sizes of feature. ( if plated, features are resized by 2xplating thick)
+	# - rout layer are compensated to document (feature compnsate thickness is kept)
 	$outputLayer->SetLayerName($drawLayer);
 
 	# 2 Add another extra info to output layer
-
 	$self->{"result"}->AddLayer($outputLayer);
 }
 
