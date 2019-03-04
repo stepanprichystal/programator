@@ -16,6 +16,7 @@ use aliased 'Programs::Exporter::ExportChecker::Groups::ETExport::Model::ETGroup
 use aliased 'Programs::Exporter::ExportChecker::Enums';
 use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'Packages::ETesting::BasicHelper::Helper' => 'ETHelper';
+use aliased 'CamHelpers::CamAttributes';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -82,8 +83,15 @@ sub OnPrepareGroupData {
 
 	$groupData->SetCreateEtStep(1);
 
+	# 5) if customer panel, do not check panel
+	my $custPnl = CamAttributes->GetJobAttrByName( $inCAM, $jobId, "customer_panel" );
+	my $custSet = CamAttributes->GetJobAttrByName( $inCAM, $jobId, "customer_set" );
+	
 	my $keepProfiles = ETHelper->KeepProfilesAllowed( $inCAM, $jobId, "panel" );
-	if ( $keepProfiles ) {
+
+	if ( $keepProfiles 
+		&& ( !defined $custPnl || ( defined $custPnl && $custPnl eq "no" ) ) 
+		&& ( !defined $custSet || ( defined $custSet && $custSet eq "no" ) ) ) {
 		$groupData->SetKeepProfiles(1);
 	}
 	else {
@@ -95,7 +103,7 @@ sub OnPrepareGroupData {
 	$groupData->SetLocalCopy(1);
 
 	# Set sent to server checkbox
-	if ( $keepProfiles) {
+	if ($keepProfiles) {
 		$groupData->SetServerCopy(1);
 	}
 	else {

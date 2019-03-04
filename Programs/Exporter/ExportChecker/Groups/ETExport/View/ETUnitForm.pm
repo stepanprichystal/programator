@@ -292,7 +292,7 @@ sub DisableControls {
 	}
 
 	# Disable keep profile checkbox
-	$self->__UpdateKeepProfile();
+	#$self->__UpdateKeepProfile();
 }
 
 # =====================================================================

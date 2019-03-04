@@ -69,34 +69,34 @@ sub _Prepare {
 
 	my $lName = $l->{"gROWname"};
 
-	return 0 unless ( grep {$_->GetTypeProcess() eq DTMEnums->TypeProc_CHAIN} $l->{"uniDTM"}->GetTools() );
+	return 0 unless ( grep { $_->GetTypeProcess() eq DTMEnums->TypeProc_CHAIN } $l->{"uniDTM"}->GetTools() );
 
 	# Get all radiuses
 
 	my $outputLayer = OutputLayer->new();    # layer process result
 
-	my $lTmp = $self->_SeparateFeatsBySymbolsNC( [ "surface", "line", "arc", "text" ] );
-
-	my $drawLayer = CamLayer->RoutCompensation( $inCAM, $lTmp, "document" );
+	my $separateL = $self->_SeparateFeatsBySymbolsNC( [ "surface", "line", "arc", "text" ] );
+	my $drawLayer = CamLayer->RoutCompensation( $inCAM, $separateL, "document" );
+	CamMatrix->DeleteLayer( $inCAM, $jobId, $separateL );
 
 	# if rout layer is plated, convert all to surface and resize properly
 	if ( $l->{"plated"} ) {
 
-		CamLayer->Contourize( $inCAM, $drawLayer, "area", "25000" );
-		CamLayer->WorkLayer($inCAM,  $drawLayer);
+		#CamLayer->Contourize( $inCAM, $drawLayer, "area", "25000" );
+		CamLayer->WorkLayer( $inCAM, $drawLayer );
 		$inCAM->COM( "sel_resize", "size" => -( 2 * Enums->Plating_THICK ), "corner_ctl" => "no" );
-		 
 	}
-	
-	CamMatrix->DeleteLayer($inCAM, $jobId, $lTmp);
-  
+
 	# 1) Set prepared layer name
+	# Attention!
+	# - layer contain original sizes of feature. ( if plated, features are resized by 2xplating thick)
+	# - rout layer are compensated to document (feature compnsate thickness is kept)
 	$outputLayer->SetLayerName($drawLayer);
 
 	# 2) Add another extra info to output layer
 
 	$self->{"result"}->AddLayer($outputLayer);
-	 
+
 }
 
 #-------------------------------------------------------------------------------------------#

@@ -259,7 +259,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	$control->Create();
 
 	#$control->CreateStackup(\$mess);
-	#$control->CreatePreviewTop( \$mess );
+	$control->CreatePreviewTop( \$mess );
 
 	 $control->CreatePreviewBot(\$mess);
 	#$control->CreatePreviewSingle( \$mess );

@@ -140,7 +140,19 @@ sub __PrepareNCMILL {
 
 		my $result = $self->{"outputNClayer"}->Prepare($l);
 
-		my $lName = $result->MergeLayers();    # merge DRILLBase and ROUTBase result layer
+		# From plated rout create countour
+		if ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_plt_nMill ) {
+			
+			foreach my $lRes ( map { $_->GetLayers } $result->GetClassResults() ) {
+
+				CamLayer->WorkLayer( $inCAM, $lRes->GetLayerName() );
+				CamLayer->Contourize( $inCAM, $lRes->GetLayerName(), "area", "25000" );
+				CamLayer->WorkLayer( $inCAM, $lRes->GetLayerName() );
+				$inCAM->COM( "sel_feat2outline", "width" => "200", "location" => "on_edge" );
+			}
+		}
+
+		my $lName = $result->MergeLayers();                           # merge DRILLBase and ROUTBase result layer
 
 		my $lData = LayerData->new( $type, $l, $enTit, $czTit, $enInf, $czInf, $lName );
 
@@ -154,8 +166,8 @@ sub __PrepareNCMILL {
 
 			if ($drillResult) {
 				my $drillMap =
-				  $self->__CreateDrillMaps( $l, $drillResult->GetSingleLayer()->GetLayerName(), Enums->Type_DRILLMAP, $enTit, $czTit, $enInf,
-											$czInf );
+				  $self->__CreateDrillMaps( $l, $drillResult->GetSingleLayer()->GetLayerName(),
+											Enums->Type_DRILLMAP, $enTit, $czTit, $enInf, $czInf );
 
 				if ($drillMap) {
 					$drillMap->SetParent($lData);
@@ -254,7 +266,7 @@ sub __PrepareNCMILL {
 sub __CreateDrillMaps {
 	my $self       = shift;
 	my $oriLayer   = shift;
-	my $drillLayer = shift; # layer with pads
+	my $drillLayer = shift;    # layer with pads
 	my $type       = shift;
 	my $enTit      = shift;
 	my $czTit      = shift;
@@ -269,15 +281,15 @@ sub __CreateDrillMaps {
 
 	# 1) Check if only pads exist in layer
 	my %fHist = CamHistogram->GetFeatuesHistogram( $inCAM, $jobId, $stepName, $drillLayer );
-	
-	if($fHist{"total"} != $fHist{"pad"}){
+
+	if ( $fHist{"total"} != $fHist{"pad"} ) {
 		die "Layer: $drillLayer doien't contain only holes";
 	}
- 
+
 	# 2) copy pads to new layer
 	my $lNamePads = GeneralHelper->GetGUID();
- 
- 	CamLayer->WorkLayer($inCAM, $drillLayer);
+
+	CamLayer->WorkLayer( $inCAM, $drillLayer );
 	$inCAM->COM(
 		"sel_copy_other",
 
@@ -308,7 +320,7 @@ sub __CreateDrillMaps {
 	);
 
 	my $f = FeatureFilter->new( $inCAM, $jobId, $lNameMap );
-	 
+
 	$f->SetFeatureTypes( "text" => 1 );
 	$f->SetText("*Drill*");
 

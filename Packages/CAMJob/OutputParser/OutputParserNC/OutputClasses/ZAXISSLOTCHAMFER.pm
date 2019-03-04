@@ -33,6 +33,7 @@ use aliased 'Packages::CAMJob::OutputParser::OutputParserBase::OutputResult::Out
 use aliased 'Packages::Polygon::Polygon::PolygonAttr';
 use aliased 'Enums::EnumsRout';
 use aliased 'CamHelpers::CamLayer';
+use aliased 'CamHelpers::CamMatrix';
 
 #-------------------------------------------------------------------------------------------#
 #  Interface
@@ -79,7 +80,7 @@ sub _Prepare {
 	foreach my $tool (@toolSizes) {
 
 		my $outputLayer   = OutputLayer->new();                                              # layer process result
-		my $toolDTM          = ( $chainSeq[0] )->GetChain()->GetChainTool()->GetUniDTMTool();
+		my $toolDTM       = ( $chainSeq[0] )->GetChain()->GetChainTool()->GetUniDTMTool();
 		my $toolDepth     = $toolDTM->GetDepth();
 		my $toolDrillSize = $toolDTM->GetDrillSize();
 		my $toolAngle     = $toolDTM->GetAngle();
@@ -92,34 +93,38 @@ sub _Prepare {
 		# get id of all features in chain
 		my @featsId = map { $_->{'id'} } map { $_->GetOriFeatures() } @matchCh;
 
-		my $drawLayer = $self->_SeparateFeatsByIdNC( \@featsId );
+		my $separateL = $self->_SeparateFeatsByIdNC( \@featsId );
+	my $drawLayer = CamLayer->RoutCompensation( $inCAM, $separateL, "document" );
+	CamMatrix->DeleteLayer( $inCAM, $jobId, $separateL );
 
-		my $radiusReal = CountersinkHelper->GetHoleRadiusByToolDepth( $toolDrillSize, $toolAngle, $toolDepth * 1000 ) / 1000;
-		my $exceededDepth = CountersinkHelper->GetToolExceededDepth(   $toolDrillSize, $toolAngle, $toolDepth * 1000 ) / 1000;
- 
-		if ( $l->{"plated"} ) {
-			$radiusReal -= 0.05;
-		}
-
-		# resize all line/arc in drawLayer. Difference of (ToolDiameter/2 - $radiusReal)*2
-
-		my $resize = ( $toolDrillSize / 2 - $radiusReal * 1000 ) * 2;
+		my $radiusReal = CountersinkHelper->GetHoleRadiusByToolDepth( $toolDrillSize, $toolAngle, $toolDepth * 1000 ) / 1000;    # in mm
+		my $exceededDepth = CountersinkHelper->GetToolExceededDepth( $toolDrillSize, $toolAngle, $toolDepth * 1000 ) / 1000;     # in mm
 
 		# Warning, conturization is necessary here in order properly feature resize.
 		# Only for case, when rout is "cyclic" and compensation is "inside" (CW and Right)
-		CamLayer->Contourize( $inCAM, $drawLayer );
-		CamLayer->WorkLayer( $inCAM, $drawLayer );
-		CamLayer->ResizeFeatures( $inCAM, -$resize );
+		#CamLayer->Contourize( $inCAM, $drawLayer );
+		
+
+		#CamLayer->ResizeFeatures( $inCAM, -$resize );
+		if ( $l->{"plated"} ) {
+			CamLayer->WorkLayer( $inCAM, $drawLayer );
+			CamLayer->ResizeFeatures( $inCAM, -2 * Enums->Plating_THICK );
+			$radiusReal -= Enums->Plating_THICKMM;
+		}
 
 		# 1) Set prepared layer name
-		$outputLayer->SetLayerName($drawLayer);    # Attention! lazer contain original sizes of feature, not finish/real sizes
+		# Attention!
+		# - layer contain original sizes of feature. ( if plated, features are resized by 2xplating thick)
+		# - rout layer are compensated to document (feature compnsate thickness is kept)
+		$outputLayer->SetLayerName($drawLayer);
 
 		# 2 Add another extra info to output layer
 
-		$outputLayer->SetDataVal( "radiusReal", $radiusReal );    # real compted radius of line arc
-		$outputLayer->SetDataVal( "DTMTool",    $toolDTM );                 # DTMTool which all chainSeq are processed by
-		$outputLayer->SetDataVal( "exceededDepth", $exceededDepth );  # exceeded depth of tool if exist (if depth ot tool is bigger than size of tool peak)
-		$outputLayer->SetDataVal( "chainSeq",   \@matchCh );      # All chain seq, which was processed in ori layer in this class
+		$outputLayer->SetDataVal( "radiusReal",    $radiusReal );     # real compted radius of line arc [mm]
+		$outputLayer->SetDataVal( "DTMTool",       $toolDTM );        # DTMTool which all chainSeq are processed by
+		$outputLayer->SetDataVal( "exceededDepth", $exceededDepth )
+		  ;    # exceeded depth of tool if exist (if depth ot tool is bigger than size of tool peak)
+		$outputLayer->SetDataVal( "chainSeq", \@matchCh );    # All chain seq, which was processed in ori layer in this class
 
 		$self->{"result"}->AddLayer($outputLayer);
 	}
