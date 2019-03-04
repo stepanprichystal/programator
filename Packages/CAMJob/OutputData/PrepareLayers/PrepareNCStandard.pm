@@ -142,8 +142,8 @@ sub __PrepareNCMILL {
 
 		# From plated rout create countour
 		if ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_plt_nMill ) {
-			
-			foreach my $lRes ( map { $_->GetLayers } $result->GetClassResults() ) {
+  
+			foreach my $lRes ( map { $_->GetLayers } grep { $_->GetType() eq OutEnums->Type_ROUT } $result->GetClassResults(1) ) {
 
 				CamLayer->WorkLayer( $inCAM, $lRes->GetLayerName() );
 				CamLayer->Contourize( $inCAM, $lRes->GetLayerName(), "area", "25000" );
@@ -152,7 +152,7 @@ sub __PrepareNCMILL {
 			}
 		}
 
-		my $lName = $result->MergeLayers();                           # merge DRILLBase and ROUTBase result layer
+		my $lName = $result->MergeLayers();    # merge DRILLBase and ROUTBase result layer
 
 		my $lData = LayerData->new( $type, $l, $enTit, $czTit, $enInf, $czInf, $lName );
 
