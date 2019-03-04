@@ -1745,8 +1745,10 @@ sub _MakeStackup {
   				if (HegMethods->GetPcbIsPool($jobId) == 1) {
   										StackupDefault->CreateStackup($jobId, $countOfLayer, \@innerCuUsage, $newThicknessCopper, $constClass);
   				}else{
-  					
-							my @mess1 = ("Pocet vrstev = $countOfLayer, Vrstva medi = $newThicknessCopper, Konstrukcni trida = $constClass, Vyuziti medi = @innerCuUsage \n\U$jobId\E_\U$countOfLayer\Evv_,_$customerName
+  							my $thickOfPcb = sprintf "%.2f",(HegMethods->GetPcbMaterialThick($jobId) );
+  							$thickOfPcb =~ s/\./,/g;
+  							
+							my @mess1 = ("Pocet vrstev = $countOfLayer, Vrstva medi = $newThicknessCopper, Konstrukcni trida = $constClass, Vyuziti medi = @innerCuUsage \n\U$jobId\E_\U$countOfLayer\Evv_" . $thickOfPcb . "_$customerName
   								");
 							my @btn = ("Pokracovat - slozeni jsem vytvoril", "Vytvorit standardni slozeni"); # "ok" = tl. cislo 1, "table tools" = tl.cislo 2
 						
