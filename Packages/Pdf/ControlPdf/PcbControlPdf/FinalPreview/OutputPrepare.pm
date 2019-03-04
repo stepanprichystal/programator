@@ -514,7 +514,7 @@ sub __PreparePLTTHROUGHNC {
 				}
 			}
 		}
-		
+
 		$outputParser->Clear();
 
 	}
@@ -545,6 +545,9 @@ sub __PrepareNPLTTHROUGHNC {
 	my $pcbThick = JobHelper->GetFinalPcbThick($jobId);
 
 	foreach my $l (@layers) {
+
+		my %featHist = CamHistogram->GetFeatuesHistogram( $inCAM, $jobId, $self->{"pdfStep"}, $l->{"gROWname"} );
+		next if ( $featHist{"total"} == 0 );
 
 		my $outputParser = OutputParserNC->new( $inCAM, $jobId, $self->{"pdfStep"} );
 
@@ -583,7 +586,6 @@ sub __PrepareNPLTTHROUGHNC {
 		}
 
 		$outputParser->Clear();
-
 		# There can by small remains of pcb material, which is not milled
 		# We don't want see this pieces in pdf, so delete tem from layer $lName
 		# (pieces larger than 20% of total step area will be keepd)
