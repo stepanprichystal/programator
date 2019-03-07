@@ -1828,8 +1828,8 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	use aliased 'Connectors::HeliosConnector::HegMethods';
 	use Data::Dump qw(dump);
 
-	my @test = HegMethods->GetMatInfo("0301000013");
-	dump(@test);
+	my @matTop = HegMethods->GetCoreStoreInfo( 13, 2, 4 );
+	dump(@matTop);
 }
 
 1;

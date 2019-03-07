@@ -166,11 +166,13 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	use aliased 'Packages::InCAM::InCAM';
 
 	my $inCAM = InCAM->new();
-	my $jobId = "d239687";
-	my $step  = "o+1";
+	my $jobId = "d053627";
+	my $step  = "mpanel";
 	my $layer = 'f';
 
-	my $rtm = UniRTM->new( $inCAM, $jobId, $step, $layer, 1, 0, 1 );
+	my $dtm = UniDTM->new($inCAM, $jobId, $step, $layer, 1);
+
+	my $rtm = UniRTM->new( $inCAM, $jobId, $step, $layer, 1, $dtm );
 	
 	my @outline = $rtm->GetMultiChainSeqList();
 

@@ -108,16 +108,14 @@ sub Clear{
 	
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
-
-	my $lName = GeneralHelper->GetNumUID();
-	 
+ 
 	foreach my $classResult ( $self->GetClassResults() ) {
 		
 		$classResult->Clear();
  
 	}
 	
-	return $lName;
+	return 1;
 }
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

@@ -17,7 +17,7 @@ use aliased 'Programs::Exporter::ExportUtility::Groups::NifExport::NifExportTmp'
 
 
 #input parameters
-my $jobId    = "d113608";
+my $jobId    = "d222775";
  
 my $poznamka = "";
 my $tenting  = 0;

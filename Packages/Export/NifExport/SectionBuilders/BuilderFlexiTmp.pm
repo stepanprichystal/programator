@@ -98,9 +98,9 @@ sub Build {
 	$section->AddRow( "tl_flex_cu", $tlFlexCu . "um" );
 
 	my %dim = JobDim->GetDimension( $inCAM, $jobId );
-	my $pocet = int( $info->{"pocet"} / $dim{"nasobnost"});
-	
-	if($info->{"pocet"} % $dim{"nasobnost"} ){
+	my $pocet = int( $info->{"pocet"} / $dim{"nasobnost"} );
+
+	if ( $info->{"pocet"} % $dim{"nasobnost"} ) {
 		$pocet++;
 	}
 
@@ -113,13 +113,13 @@ sub Build {
 
 	if ( $layerCnt > 2 ) {
 
-		my @flexCores = grep { $_->GetQId() == 10 } $stackup->GetAllCores();
+		my @flexCores = grep { $_->GetQId() == 10 || $_->GetQId() == 13 } $stackup->GetAllCores();
 
 		for ( my $i = 0 ; $i < scalar(@flexCores) ; $i++ ) {
 
 			my @mat = HegMethods->GetCoreStoreInfo( $flexCores[$i]->GetQId(), $flexCores[$i]->GetId(), $flexCores[$i]->GetTopCopperLayer()->GetId() );
 
-			@mat = grep { abs( $_->{"sirka"} - $w ) < 5 && abs( $_->{"hloubka"} - $h ) < 5 } @mat;
+			#@mat = grep { abs( $_->{"sirka"} - $w ) < 5 && abs( $_->{"hloubka"} - $h ) < 5 } @mat;
 
 			$section->AddRow( "material_flex_" . ( $i + 1 ), $mat[0]{"nazev_mat"} );
 		}
@@ -150,25 +150,24 @@ sub Build {
 	# postup operace Rigid -------------
 
 	if ( $info->{"poznamka"} =~ /type=rigid-flexi/i ) {
-		
-		# program na zakryti
-		 if ( $info->{"poznamka"} !~ /type=rigid-flexi-i/i ) {
-		$section->AddRow( "expozice_zakryti_top",   "307x407_plna_cu_top_mdi.xml" );
-		 }
-		 $section->AddRow( "expozice_zakryti_bot",   "307x407_plna_cu_bot_mdi.xml" );
-		
 
-		my @rigidCores = grep { $_->GetQId() != 10 } $stackup->GetAllCores();
+		# program na zakryti
+		if ( $info->{"poznamka"} =~ /type=rigid-flexi-i/i ) {
+			$section->AddRow( "expozice_zakryti_top", "307x407_plna_cu_top_mdi.xml" );
+		}
+		$section->AddRow( "expozice_zakryti_bot", "307x407_plna_cu_bot_mdi.xml" );
+
+		my @rigidCores = grep { $_->GetQId() != 10 && $_->GetQId() != 13 } $stackup->GetAllCores();
 
 		# identifikuj jadra v Rigid casti TOP
 
-		if ( $info->{"poznamka"} !~ /type=rigid-flexi-i/i ) {
+		if ( $info->{"poznamka"} =~ /type=rigid-flexi-i/i ) {
 
 			my @rigidCoresTOP = ();
 
-			foreach my $c ($stackup->GetAllCores()) {
+			foreach my $c ( $stackup->GetAllCores() ) {
 
-				if ( $c->GetQId() == 10 ) {
+				if ( $c->GetQId() == 10 || $c->GetQId() == 13 ) {
 					last;
 				}
 
@@ -179,13 +178,13 @@ sub Build {
 		}
 
 		my @rigidCoresBOT = ();
-		foreach my $c (reverse $stackup->GetAllCores()) {
+		foreach my $c ( reverse $stackup->GetAllCores() ) {
 
-				if ( $c->GetQId() == 10 ) {
-					last;
-				}
+			if ( $c->GetQId() == 10 || $c->GetQId() == 13 ) {
+				last;
+			}
 
-				push( @rigidCoresBOT, $c );
+			push( @rigidCoresBOT, $c );
 		}
 
 		$section->AddRow( "jadra_bot_rigid_cast", join( ";", map { "J" . $_->GetCoreNumber() } reverse @rigidCoresBOT ) );
@@ -202,22 +201,22 @@ sub Build {
 
 		$section->AddRow( "material_rigid_bot", $matBot[0]{"nazev_mat"} );
 
-		if ( $info->{"poznamka"} !~ /type=rigid-flexi-i/i ) {
+		if ( $info->{"poznamka"} =~ /type=rigid-flexi-i/i ) {
 
 			$section->AddRow( "program_vrtani_rigid_jadro_top", $ncArchiv . "\\nc\\" . $jobId . "_v1" );
-			$section->AddRow( "program_hl_freza_rigid_top_1",   $ncArchiv . "\\nc\\" . $jobId . "_j".$rigidCores[0]->GetCoreNumber()."fzs" );
-			$section->AddRow( "program_hl_freza_rigid_top_2",   $ncArchiv . "\\nc\\" . $jobId . ")_fc".$stackup->GetPressCount()  );
+			$section->AddRow( "program_hl_freza_rigid_top_1",   $ncArchiv . "\\nc\\" . $jobId . "_j" . $rigidCores[0]->GetCoreNumber() . "fzs" );
+			$section->AddRow( "program_hl_freza_rigid_top_2",   $ncArchiv . "\\nc\\" . $jobId . ")_fc" . $stackup->GetPressCount() );
 		}
 
 		$section->AddRow( "program_vrtani_rigid_jadro_bot", $ncArchiv . "\\nc\\" . $jobId . "_v1" );
-		$section->AddRow( "program_hl_freza_rigid_bot_1",   $ncArchiv . "\\nc\\" . $jobId . "_j".$rigidCores[-1]->GetCoreNumber()."fzc");
-		$section->AddRow( "program_hl_freza_rigid_bot_2",   $ncArchiv . "\\nc\\" . $jobId . "_fzs".$stackup->GetPressCount());
+		$section->AddRow( "program_hl_freza_rigid_bot_1",   $ncArchiv . "\\nc\\" . $jobId . "_j" . $rigidCores[-1]->GetCoreNumber() . "fzc" );
+		$section->AddRow( "program_hl_freza_rigid_bot_2",   $ncArchiv . "\\nc\\" . $jobId . "_fzs" . $stackup->GetPressCount() );
 
 		$section->AddRow( "program_prokovene_vrtani", $ncArchiv . "\\nc\\" . $jobId . "_c1" );
 
 		# postup operace Prepreg-------------
 		my @noflowPrepreg = map { $_->GetAllPrepregs() } grep { $_->GetType() eq StackEnums->MaterialType_PREPREG } $stackup->GetAllLayers();
-		@noflowPrepreg = grep { $_->GetQId() == 10 } @noflowPrepreg;
+		@noflowPrepreg = grep { $_->GetQId() == 10 || $_->GetQId() == 13 } @noflowPrepreg;
 
 		my @noflowPrepregMat =
 		  HegMethods->GetPrepregStoreInfo( $noflowPrepreg[0]->GetQId(), $noflowPrepreg[0]->GetId() );
@@ -225,11 +224,13 @@ sub Build {
 		$section->AddRow( "material_prepreg", $noflowPrepregMat[0]{"nazev_mat"} );
 
 		$section->AddRow( "program_frezovani_prepreg", $ncArchiv . "\\nc\\" . $jobId . "_prepreg" );
- 
- 		my $prepregPerPanel = scalar(grep {  $_->GetQId() == 10 } map { $_->GetAllPrepregs() } grep { $_->GetType() eq StackEnums->MaterialType_PREPREG } $stackup->GetAllLayers());
- 		
- 		$section->AddRow( "pocet_prepregu_na_prirez", $prepregPerPanel );
- 
+
+		my $prepregPerPanel =
+		  scalar( grep { $_->GetQId() == 10 || $_->GetQId() == 13 }
+				  map { $_->GetAllPrepregs() } grep { $_->GetType() eq StackEnums->MaterialType_PREPREG } $stackup->GetAllLayers() );
+
+		$section->AddRow( "pocet_prepregu_na_prirez", $prepregPerPanel );
+
 		# postup ostatni operace
 
 		#if v poznamce je flexi
@@ -241,7 +242,7 @@ sub Build {
 
 	if ( $info->{"poznamka"} =~ /type=rigid-flexi/i ) {
 
-		my $flexCore = ( grep { $_->GetQId() == 10 } $stackup->GetAllCores() )[0];    # predpokladam jen 1 flex jadro
+		my $flexCore = ( grep { $_->GetQId() == 10 || $_->GetQId() == 13 } $stackup->GetAllCores() )[0];    # predpokladam jen 1 flex jadro
 
 		$section->AddRow( "expozice_flex_c", $jobId . $flexCore->GetTopCopperLayer()->GetCopperName() . "_mdi.xml" );
 		$section->AddRow( "expozice_flex_s", $jobId . $flexCore->GetBotCopperLayer()->GetCopperName() . "_mdi.xml" );
@@ -264,12 +265,12 @@ sub Build {
 			}
 		}
 	}
-	
-	
+
 	# Vrtani po prokovu
 	if ( $layerCnt > 2 ) {
 		$section->AddRow( "program_freza_po_prokovu", $ncArchiv . "\\nc\\" . $jobId . "_fc1" );
-	}else{
+	}
+	else {
 		$section->AddRow( "program_freza_po_prokovu", $ncArchiv . "\\nc\\" . $jobId . "_fc" );
 	}
 
