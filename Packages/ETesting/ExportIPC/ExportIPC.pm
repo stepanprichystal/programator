@@ -207,7 +207,7 @@ sub __CreateEtStepPcbPanel {
 	}
 
 	# 2) Prepare ET step
-	@optSteps = $self->__CreateEtStep( $keepSRProfiles, \@keepProfileSteps );
+	@optSteps = $self->__CreateEtStep( $keepSRProfiles, \@keepProfileSteps, 0 );
 
 	# 3) Adjust profile by fr
 	if ( CamHelper->LayerExists( $inCAM, $jobId, "fr" ) ) {
@@ -281,9 +281,10 @@ sub __CreateEtStepPcbStep {
 
 # create special step, which IPC will be exported from
 sub __CreateEtStep {
-	my $self           = shift;
-	my $keepSRProfiles = shift;
-	my $profileSteps   = shift;    # steps where profile will be kept
+	my $self               = shift;
+	my $keepSRProfiles     = shift;
+	my $profileSteps       = shift;         # steps where profile will be kept
+	my $considerParentData = shift // 1;    # keep data from parent panel in ET step
 
 	my $inCAM      = $self->{"inCAM"};
 	my $jobId      = $self->{"jobId"};
@@ -383,7 +384,7 @@ sub __CreateEtStep {
 					 dest_database    => "",
 					 "remove_from_sr" => "yes"
 		);
-		
+
 		CamHelper->SetStep( $inCAM, $stepEt );
 
 		# Remove drill coupon steps
@@ -396,7 +397,6 @@ sub __CreateEtStep {
 			}
 		}
 
-		# Delete content from panel step
 		my @allLayers = CamJob->GetBoardLayers( $inCAM, $jobId );
 
 		@allLayers = grep {
@@ -409,11 +409,12 @@ sub __CreateEtStep {
 			  || $_->{"gROWlayer_type"} eq "drill"
 		} @allLayers;
 
+		unless ($considerParentData) {
+			$inCAM->COM( 'affected_layer', name => "", mode => "all", affected => "yes" );
+			$inCAM->COM('sel_delete');
+			$inCAM->COM( 'affected_layer', name => "", mode => "all", affected => "no" );
+		}
 		
-		$inCAM->COM( 'affected_layer', name => "", mode => "all", affected => "yes" );
-		$inCAM->COM('sel_delete');
-		$inCAM->COM( 'affected_layer', name => "", mode => "all", affected => "no" );
-
 		# Flatten step
 		CamStep->FlattenStep( $inCAM, $jobId, \@allLayers, $stepEt );
 
@@ -589,10 +590,10 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	use aliased 'Packages::ETesting::ExportIPC::ExportIPC';
 	use aliased 'Packages::InCAM::InCAM';
 
-	my $jobId = "d113608";
+	my $jobId = "d060301";
 	my $inCAM = InCAM->new();
 
-	my $step = "panel";
+	my $step = "o+1";
 
 	my $max = ExportIPC->new( $inCAM, $jobId, $step, 1, );
 	$max->Export( undef, 0 );

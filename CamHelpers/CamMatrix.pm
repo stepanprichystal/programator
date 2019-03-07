@@ -57,7 +57,7 @@ sub CopyLayer {
 	my $targetLayer = shift;
 	my $targetStep  = shift;
 	my $invert      = shift // 0;
-	my $mode        = shift // "replace";    # replace / append
+	my $mode        = shift // "replace";    # replace / append / duplicate 
 
 	$invert = defined $invert && $invert == 1 ? "yes" : "no";
 
@@ -193,6 +193,19 @@ sub GetLayerType {
 	return $l->{"gROWlayer_type"};
 }
 
+# Return layer type
+sub SetNCLayerStartEnd {
+	my $self  = shift;
+	my $inCAM = shift;
+	my $jobId = shift;
+	my $layer = shift;
+	my $start = shift;    # start layer name
+	my $end   = shift;    # end layer name
+
+	$inCAM->COM( "matrix_layer_drill", "job" => $jobId, "matrix" => "matrix", "layer" => $layer, "start" => $start, "end" => $end );
+
+}
+
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#
@@ -206,10 +219,9 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $jobId    = "f13608";
 	my $stepName = "panel";
-	
+
 	my $workLayer = CamMatrix->GetWorkLayer($inCAM);
 	die;
-
 
 }
 

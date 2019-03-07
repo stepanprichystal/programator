@@ -40,7 +40,7 @@ sub new {
 
 	my $classType = shift;
 
-	$self->{"result"} = OutputClassResult->new($classType, $self->{"inCAM"}, $self->{"jobId"}, $self->{"step"}, $self->{"layer"});
+	$self->{"result"} = OutputClassResult->new( $classType, $self->{"inCAM"}, $self->{"jobId"}, $self->{"step"}, $self->{"layer"} );
 
 	return $self;
 }
@@ -59,7 +59,7 @@ sub _SeparateFeatsBySymbolsNC {
 	my $pads     = defined( ( grep { $_ eq "pad" } @{$symbols} )[0] )     ? 1 : 0;
 	my $surfaces = defined( ( grep { $_ eq "surface" } @{$symbols} )[0] ) ? 1 : 0;
 	my $arcs     = defined( ( grep { $_ eq "arc" } @{$symbols} )[0] )     ? 1 : 0;
-	my $text     = defined( ( grep { $_ eq "text" } @{$symbols} )[0] )     ? 1 : 0;
+	my $text     = defined( ( grep { $_ eq "text" } @{$symbols} )[0] )    ? 1 : 0;
 
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
@@ -87,7 +87,6 @@ sub _SeparateFeatsBySymbolsNC {
 
 	$f->SetFeatureTypes( "line" => !$lines, "pad" => !$pads, "surface" => !$surfaces, "arc" => !$arcs, "text" => !$text );
 
-	 
 	if ( $f->Select() > 0 ) {
 
 		CamLayer->DeleteFeatures($inCAM);
@@ -261,7 +260,6 @@ sub _SetDTMFinishSizes {
 	# 4) If some tools same, merge it
 	$inCAM->COM( "tools_merge", "layer" => $lName );
 }
-
 
 sub __UpdateDTM {
 	my $self         = shift;

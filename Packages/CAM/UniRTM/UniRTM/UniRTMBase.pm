@@ -146,7 +146,7 @@ sub __InitUniRTM {
 	}
 
 	# 5) Init multi chain seq
-	if ( $self->{"multiChainInit"} ) {
+	if ( $self->{"multiChainInit"}  && scalar(@{$self->{"chains"}})) {
 
 		my @uniMChSeq = ChainParser->GetMultiChainSequences( $self->{"chains"} );
 		$self->{"multiChainSeqList"} = \@uniMChSeq;

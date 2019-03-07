@@ -205,6 +205,10 @@ sub Clear {
 	my $jobId = $self->{"jobId"};
 	my $step  = $self->{"step"};
 
+	# We have to clear layers in other case InCAM message (Drilll size vwill be recalculated) 
+	# will be showed during delete layer
+	$inCAM->COM('clear_layers');
+
 	foreach my $resultL ( @{ $self->{"results"} } ) {
 
 		$resultL->Clear();

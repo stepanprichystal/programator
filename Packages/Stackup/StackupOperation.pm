@@ -308,6 +308,8 @@ sub GetLaminatePackages {
 		$contactPlcInf{"packageBot"} = $laminatePckgs[ $i + 1 ];
 
 		push( @laminatePckgsInf, \%contactPlcInf );
+		
+		$lNum ++; # add pprereg
 
 	}
 

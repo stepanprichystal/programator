@@ -101,15 +101,13 @@ sub Clear{
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
 
-	my $lName = GeneralHelper->GetNumUID();
-	 
 	foreach my $l ( $self->GetLayers() ) {
 		
 		CamMatrix->DeleteLayer( $inCAM, $jobId, $l->GetLayerName() );
  
 	}
 	
-	return $lName;
+	return 1;
 }
 
 #-------------------------------------------------------------------------------------------#
