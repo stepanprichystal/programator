@@ -257,7 +257,7 @@ sub __CheckFilesHandler {
 	my $dirSrv;
 	if ( AsyncJobHelber->ServerVersion() ) {
 		opendir( $dirSrv, EnumsPaths->Jobs_EXPORTFILESPCB ) or die $!;
-		while ( my $file = readdir($dir) ) {
+		while ( my $file = readdir($dirSrv) ) {
 
 			push( @files, EnumsPaths->Jobs_EXPORTFILESPCB . $file );
 		}
