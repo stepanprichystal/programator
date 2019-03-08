@@ -353,7 +353,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	use aliased 'Packages::InCAM::InCAM';
 
-	my $jobId = "d113608";
+	my $jobId = "d222775";
 	my $step  = "panel";
 	my $inCAM = InCAM->new();
 
@@ -370,7 +370,11 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	my @npltLayers = ("fzc");
 
 	my $export = ExportMngr->new( $inCAM, $jobId, $step, $exportSingle, \@pltLayers, \@npltLayers );
-	$export->Run( $inCAM, $jobId, $exportSingle, \@pltLayers, \@npltLayers );
+	
+	my $mngr = $export->GetOperationMngr();
+	
+	#$export->Run( $inCAM, $jobId, $exportSingle, \@pltLayers, \@npltLayers );
+	die;
 
 }
 

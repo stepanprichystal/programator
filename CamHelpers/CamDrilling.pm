@@ -468,6 +468,9 @@ sub AddLayerStartStop {
 		my $start = ${ $inCAM->{doinfo}{gROWdrl_start} }[$idx];
 		my $end   = ${ $inCAM->{doinfo}{gROWdrl_end} }[$idx];
 
+
+		
+
 		$layer->{"gROWdrl_start_name"} = $alias{$start};
 		$layer->{"gROWdrl_end_name"}   = $alias{$end};
 		$layer->{"gROWdrl_start"}      = $order{$start};
@@ -607,16 +610,22 @@ sub AddHistogramValues {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	#use aliased 'CamHelpers::$self';
-	#use aliased 'Packages::InCAM::InCAM';
+	use aliased 'CamHelpers::CamDrilling';
+	use aliased 'Packages::InCAM::InCAM';
 
-	#my $inCAM = InCAM->new();
+	my $inCAM = InCAM->new();
 
-	#my $jobId     = "f49756";
-	#my $stepName  = "o+1";
-	#my $layerName = "fzs";
+	my $jobId     = "d222775";
+	my $stepName  = "o+1";
+	my $layerName = "fzs";
+	
+	my @layers = CamDrilling->GetNPltNCLayers($inCAM, $jobId);
+	
+	 
 
-	#my @depth = $self->AddHistogramValues( $inCAM, $jobId, $stepName, $layerName );
+	 CamDrilling->AddLayerStartStop( $inCAM, $jobId, \@layers );
+	 
+	 die;
 
 }
 
