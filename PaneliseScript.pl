@@ -463,6 +463,7 @@ sub _GUIpanelizace {
 											_CheckPlgcPlgs($jobName);
 											_CheckIfCleanUpDone($jobName);
 											_CheckAttrRoutInAll($jobName);
+											_CheckStateOfVeVyrobe($jobName);
 											
 											
 											
@@ -1504,7 +1505,33 @@ sub _CheckBigestHole {
 		}
 }
 
+sub _CheckStateOfVeVyrobe {
+	my $jobId = shift;
 
+	my $num = HegMethods->GetPcbOrderNumber($jobId);
+
+	my $res = 0;
+	
+	
+	for ( $num; $num > 0 ; $num-- ) {
+
+		$num = sprintf( "%02d", $num );
+
+		if ( HegMethods->GetStatusOfOrder( $jobId . "-" . $num, 1 ) eq 'Ve vyrobe' ) {
+			
+			$res = 1;
+			last;
+		}
+		
+	}
+
+		if ($res) {
+			
+			push @errorMessageArr , '- Zakazka je ve stavu "Ve vyrobe" nelze provest Checkpool';
+		}
+
+	return ();
+}
 sub _CheckminimalToolRout {
 			my $pcbId = shift;
 			my $stepChain = 'o+1';
