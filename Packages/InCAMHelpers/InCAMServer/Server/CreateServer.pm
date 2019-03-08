@@ -35,7 +35,7 @@ sub CreateServer {
 	my %result = ( "result" => 0 );
 
 	eval {
- 
+
 		my $pidInCAM;
 		my $pidServer;
 		my $fIndicator = GeneralHelper->GetGUID();    # file name, where is value, which indicate if server is ready 1/0
@@ -43,28 +43,39 @@ sub CreateServer {
 		# create indicator file
 
 		# 2) try to create inCAM server. Max number of attempts 10
+		my $waitForLaunch = 25;    # 25 s
 		for ( 1 .. 10 ) {
 
 			$logger->debug( "Create Incam server attempt num.: " . $_ . " \n" );
-			 
+
 			# launch InCAm instance + server
 			$pidInCAM = $self->__CreateInCAMInstance( $freePort, $fIndicator );
 
 			# creaate and test server connection
-			$pidServer = $self->__CreateServerConn( $freePort, $fIndicator );
+			$pidServer = $self->__CreateServerConn( $freePort, $fIndicator, $waitForLaunch );
 
 			# if pid server returned, incam server is ok
 			if ($pidServer) {
- 
+
 				$result{"result"}    = 1;
 				$result{"inCAMPID"}  = $pidInCAM;
 				$result{"serverPID"} = $pidServer;
-				
+
 				# 3) Temoporary solution because -x is not working in inCAM
 				$self->__MoveWindowOut($pidInCAM);
-				
+
 				last;
+
 			}
+			else {
+
+				$logger->debug( "Increase wait time for InCAM launching from: $waitForLaunch on: ".($waitForLaunch + 5)."\n" );
+				
+				# for next attempt, increase wait time of launchong InCAM
+				$waitForLaunch += 5;
+
+			}
+
 		}
 	};
 	if ($@) {
@@ -97,42 +108,6 @@ sub CloseZombie {
 
 	my $call = SystemCall->new( $script, \@cmds );
 	my $result = $call->Run();
-
-}
-
-sub __CreateServer {
-	my $self     = shift;
-	my $freePort = shift;
-	my $result   = shift;
-
-	my $pidInCAM;
-	my $pidServer;
-	my $fIndicator = GeneralHelper->GetGUID();    # file name, where is value, which indicate if server is ready 1/0
-
-	# create indicator file
-
-	# 2) try to create inCAM server
-	foreach ( 1 .. 10 ) {
-
-		# launch InCAm instance + server
-		$pidInCAM = $self->__CreateInCAMInstance( $freePort, $fIndicator );
-
-		# creaate and test server connection
-		$pidServer = $self->__CreateServerConn( $freePort, $fIndicator );
-
-		# if pid server returned, incam server is ok
-		if ($pidServer) {
-
-			$result->{"result"}    = 1;
-			$result->{"inCAMPID"}  = $pidInCAM;
-			$result->{"serverPID"} = $pidServer;
-			last;
-		}
-	}
-
-	unless ($pidServer) {
-		die "Unable to Create InCAM server after 10 attempts.\n";
-	}
 
 }
 
@@ -187,7 +162,8 @@ sub __CreateInCAMInstance {
 	#sleep($sleep);
 
 	#run InCAM editor with serverscript
-	Win32::Process::Create( $processObj, $inCAMPath, "InCAM.exe -s" . $path . " " . $port . " " . $fIndicator. ' >c:\Export\test\test1.txt', 0, THREAD_PRIORITY_NORMAL, "." )
+	Win32::Process::Create( $processObj, $inCAMPath, "InCAM.exe -s" . $path . " " . $port . " " . $fIndicator . ' >c:\Export\test\test1.txt',
+							0, THREAD_PRIORITY_NORMAL, "." )
 	  || die "$!\n";
 
 	$pidInCAM = $processObj->GetProcessID();
@@ -201,9 +177,10 @@ sub __CreateInCAMInstance {
 # Try to conenct every 2 second
 # Called in asynchrounous thread
 sub __CreateServerConn {
-	my $self       = shift;
-	my $port       = shift;
-	my $fIndicator = shift;
+	my $self              = shift;
+	my $port              = shift;
+	my $fIndicator        = shift;
+	my $waitTimeForLaunch = shift;
 
 	my $inCAMLaunched = 0;
 
@@ -212,8 +189,10 @@ sub __CreateServerConn {
 
 		my $pFIndicator = EnumsPaths->Client_INCAMTMPOTHER . $fIndicator;
 
+		my $sleepTime = 1;    # 1 s than next attempt
+
 		# 2 ) Test in loop if server is ready (file indicator has to contain value 1)
-		for ( my $i = 0 ; $i < 25 ; $i++ ) {
+		for ( my $i = 0 ; $i < $waitTimeForLaunch ; $i++ ) {
 
 			if ( open( my $f, "<", $pFIndicator ) ) {
 
@@ -222,8 +201,8 @@ sub __CreateServerConn {
 
 				if ( $val == 1 ) {
 
-					unlink($pFIndicator);    # delete temp file
-					sleep(1);                # to be sure, server is ready to "listen" clients
+					unlink($pFIndicator);                       # delete temp file
+					sleep(1);                                   # to be sure, server is ready to "listen" clients
 					$inCAMLaunched = 1;
 					last;
 				}
@@ -234,7 +213,7 @@ sub __CreateServerConn {
 
 			#$self->{"threadLoger"}->debug("CLIENT(parent): PID: $$  try connect to server port: $port, attempt: $i ....failed\n");
 
-			sleep(1);
+			sleep(1); # sleep for one second
 		}
 	}
 	else {
@@ -260,21 +239,21 @@ sub __CreateServerConn {
 	#print STDERR "Server ready, next client finish\n";
 
 	if ($pidServer) {
-		
+
 		# test if there is a free editor
-		if(CamEditor->GetFreeEditorLicense($inCAM)){
-			
+		if ( CamEditor->GetFreeEditorLicense($inCAM) ) {
+
 			$inCAM->ClientFinish();
 			return $pidServer;
-		
-		}else{
-			
+
+		}
+		else {
+
 			# Close created InCAM server, because there is no free editor
 			$self->CloseZombie($port);
 			return 0;
 		}
-		
-		
+
 	}
 	else {
 		die "\nError connect to incam server";

@@ -56,9 +56,9 @@ sub new {
 	$self->{"lastLaunch"} = undef;                                  # time when last server was launched (shared var)
 	share( $self->{"lastLaunch"} );
 
-	$self->{"appLoger"} = get_logger(Enums->Logger_APP); 
-	$self->{"threadLoger"} = get_logger(Enums->Logger_SERVERTH); 
-	 
+	$self->{"appLoger"}    = get_logger( Enums->Logger_APP );
+	$self->{"threadLoger"} = get_logger( Enums->Logger_SERVERTH );
+
 	$self->__CloseZombie( undef, 0 );
 
 	$self->__InitServers();
@@ -98,7 +98,7 @@ sub InitThreadPool {
 
 	# Create the thread pool
 	for ( 1 .. $self->{"MAX_THREADS"} ) {
-		
+
 		$self->__AddThreadPool();
 
 	}
@@ -159,11 +159,11 @@ sub IsPortAvailable {
 sub PrepareServerPort {
 	my $self    = shift;
 	my $jobGUID = shift;
-	
+
 	$self->{"appLoger"}->debug("Preparing server port for JobGUID: $jobGUID");
 
 	my $serverRef = $self->{"servers"};
- 
+
 	#lock @servers
 
 	#my $prepare  = 0;    #indicate, if prot will be prepared or there is no free port
@@ -182,25 +182,23 @@ sub PrepareServerPort {
 
 			my $inCAM = InCAM->new( "remote" => 'localhost',
 									"port"   => $freePort );
-									
-			$inCAM->SetLogger(get_logger(Enums->Logger_INCAM));
-									
+
+			$inCAM->SetLogger( get_logger( Enums->Logger_INCAM ) );
+
 			$self->{"appLoger"}->debug("Take waiting server. Port: $freePort");
 
 			#server seems ready, try send message and get server pid
 			my $pidServer = $inCAM->ServerReady();
- 
- 
+
 			if ($pidServer) {
-				
+
 				$inCAM->ClientFinish();
-				
+
 				$self->{"appLoger"}->debug("Take waiting server. Server ready. Port: $freePort");
 			}
 			else {
-	
-				$self->{"appLoger"}->debug("Take waiting server. Server ready fail. Port: $freePort");
 
+				$self->{"appLoger"}->debug("Take waiting server. Server ready fail. Port: $freePort");
 
 				# destroy broken server and try prepare port again
 				$self->DestroyServer( $freePort, 1 );
@@ -227,7 +225,7 @@ sub PrepareServerPort {
 			$s = ${$serverRef}[$i];
 
 			if ( $s->{"state"} eq Enums->State_FREE_SERVER && !$s->{"external"} ) {
-				
+
 				$self->{"appLoger"}->debug("Free port exist, before create new incam server: $freePort");
 
 				$s->{"state"} = Enums->State_PREPARING_SERVER;
@@ -578,11 +576,10 @@ sub __PoolWorker {
 		my $work = $work_q->dequeue();
 
 		# Do work
- 
 
 		my $port    = $work->[0];
 		my $jobGUID = $work->[1];
-		
+
 		$self->{"threadLoger"}->debug("Thread: $tid is creating new server for port: $port, $jobGUID: $jobGUID ");
 
 		$self->__CreateServer( $port, $jobGUID, $lastLaunch );
@@ -630,24 +627,31 @@ sub __CreateServer {
 	# create indicator file
 
 	# 2) try to create inCAM server
+	my $waitForLaunch = 25;    # 25 s
 	while (1) {
-		
+
 		$fIndicator = GeneralHelper->GetGUID();
-	
+
 		# launch InCAm instance + server
 		$pidInCAM = $self->__CreateInCAMInstance( $freePort, $fIndicator );
-		
-		unless($pidInCAM){
+
+		unless ($pidInCAM) {
 			next;
 		}
 
 		# creaate and test server connection
-		$pidServer = $self->__CreateServerConn( $freePort, $fIndicator );
+		$pidServer = $self->__CreateServerConn( $freePort, $fIndicator, $waitForLaunch );
 
 		# if pid server returned, incam server is ok
 		if ($pidServer) {
 
 			last;
+		}
+		else {
+
+			$self->{"appLoger"}->debug( "Increase wait time for InCAM launching from: $waitForLaunch on: " . ( $waitForLaunch + 5 ) . "\n" );
+			# for next attempt, increase wait time of launchong InCAM
+			$waitForLaunch += 5;
 		}
 
 		$self->{"threadLoger"}->debug("Launchin InCam server failed, try again: $freePort");
@@ -739,20 +743,20 @@ sub __CreateInCAMInstance {
 	}
 	else {
 		return 0;
-		print STDERR  "unable to create file  file $pFIndicator";
+		print STDERR "unable to create file  file $pFIndicator";
 	}
-	
+
 	# another test if file indicator exist
-	return 0 unless(-e $pFIndicator);
+	return 0 unless ( -e $pFIndicator );
 
 	# 3) start new server on $freePort
 
 	my $inCAMPath = GeneralHelper->GetLastInCAMVersion();
-	
+
 	#$inCAMPath = "y:\\3.02\\";
 
 	$inCAMPath .= "bin\\InCAM.exe";
-	
+
 	$self->{"threadLoger"}->debug("Thread is creating incam from path: $inCAMPath");
 
 	unless ( -f $inCAMPath )    # does it exist?
@@ -774,32 +778,30 @@ sub __CreateInCAMInstance {
 	#my $sleep = int( rand(10));
 	#sleep($sleep);
 
-#THREAD_PRIORITY_NORMAL
-#DETACHED_PROCESS
-#CREATE_NEW_CONSOLE
+	#THREAD_PRIORITY_NORMAL
+	#DETACHED_PROCESS
+	#CREATE_NEW_CONSOLE
 	#run InCAM editor with serverscript
-	
-	
-#	use aliased 'Packages::SystemCall::SystemCall';
-#	
-#	my $script = GeneralHelper->Root() . "\\Managers\\AsyncJobMngr\\ServerMngr\\CreateInCAM.pl";
-#	my @cmds   = ( $inCAMPath, "InCAM.exe -s" . $path . " " . $port . " " . $fIndicator, );
-#
-#	my $call = SystemCall->new( $script, \@cmds );
-#	my $result = $call->Run();
-#
-#	my %output = $call->GetOutput();
-#	
-#	$pidInCAM = $output{"pidInCAM"};
-	
-	
-#	
+
+	#	use aliased 'Packages::SystemCall::SystemCall';
+	#
+	#	my $script = GeneralHelper->Root() . "\\Managers\\AsyncJobMngr\\ServerMngr\\CreateInCAM.pl";
+	#	my @cmds   = ( $inCAMPath, "InCAM.exe -s" . $path . " " . $port . " " . $fIndicator, );
+	#
+	#	my $call = SystemCall->new( $script, \@cmds );
+	#	my $result = $call->Run();
+	#
+	#	my %output = $call->GetOutput();
+	#
+	#	$pidInCAM = $output{"pidInCAM"};
+
+	#
 	Win32::Process::Create( $processObj, $inCAMPath, "InCAM.exe -s" . $path . " " . $port . " " . $fIndicator, 0, THREAD_PRIORITY_NORMAL, "." )
 	  || die "$!\n";
 
 	$pidInCAM = $processObj->GetProcessID();
- 
-	$self->{"threadLoger"}->debug("CLIENT PID: " . $pidInCAM . " (InCAM)........................................is launching\n");
+
+	$self->{"threadLoger"}->debug( "CLIENT PID: " . $pidInCAM . " (InCAM)........................................is launching\n" );
 
 	return $pidInCAM;
 }
@@ -811,7 +813,8 @@ sub __CreateServerConn {
 	my $self       = shift;
 	my $port       = shift;
 	my $fIndicator = shift;
-
+	my $waitTimeForLaunch = shift;
+	
 	my $inCAMLaunched = 0;
 
 	# if file indicator is not defined, it means, server is prepared external and is alreadz ready in this time
@@ -820,7 +823,7 @@ sub __CreateServerConn {
 		my $pFIndicator = EnumsPaths->Client_INCAMTMPOTHER . $fIndicator;
 
 		# 2 ) Test in loop if server is ready (file indicator has to contain value 1)
-		for ( my $i = 0 ; $i < 25 ; $i++ ) {
+		for ( my $i = 0 ; $i < $waitTimeForLaunch; $i++ ) {
 
 			if ( open( my $f, "<", $pFIndicator ) ) {
 
@@ -829,8 +832,8 @@ sub __CreateServerConn {
 
 				if ( $val == 1 ) {
 
-					unlink($pFIndicator);       # delete temp file
-					sleep(1);                   # to be sure, server is ready to "listen" clients
+					unlink($pFIndicator);    # delete temp file
+					sleep(1);                # to be sure, server is ready to "listen" clients
 					$inCAMLaunched = 1;
 					last;
 				}
@@ -838,18 +841,19 @@ sub __CreateServerConn {
 			else {
 				print STDERR "Unable to open file $pFIndicator";
 			}
- 
+
 			$self->{"threadLoger"}->debug("CLIENT(parent): PID: $$  try connect to server port: $port, attempt: $i ....failed\n");
 
-			sleep(1);
+			sleep(1); # each attempt represent one second
 		}
-	}else{
-		
+	}
+	else {
+
 		# InCam is prepared  (external sever)
 		$inCAMLaunched = 1;
 	}
-	
-	unless($inCAMLaunched){
+
+	unless ($inCAMLaunched) {
 		return 0;
 	}
 
@@ -877,8 +881,8 @@ sub __CreateServerConn {
 
 	my $inCAM = InCAM->new( "remote" => 'localhost',
 							"port"   => $port );
-							
-	$inCAM->SetLogger(get_logger(Enums->Logger_INCAM));
+
+	$inCAM->SetLogger( get_logger( Enums->Logger_INCAM ) );
 
 	#server seems ready, try send message and get server pid
 	my $pidServer = $inCAM->ServerReady();
