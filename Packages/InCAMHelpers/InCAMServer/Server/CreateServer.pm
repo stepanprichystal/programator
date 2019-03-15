@@ -256,7 +256,9 @@ sub __CreateServerConn {
 
 	}
 	else {
-		die "\nError connect to incam server";
+
+		
+		$logger->error( "Error connect to incam server" );
 		return 0;
 	}
 }

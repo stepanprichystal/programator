@@ -244,7 +244,7 @@ sub StackupMatInStock {
 # -  position of prepreg in stackup
 # - top core
 # - bot core
-sub GetLaminatePackages {
+sub GetJoinedFlexRigidPackages {
 	my $self    = shift;
 	my $pcbId   = shift;    #pcb id
 	my $stackup = shift;    # if not defined, stackup will e loaded
@@ -330,7 +330,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	my $inCAM = InCAM->new();
 	my $mes   = "";
 
-	my @packages = StackupOperation->GetRigidFlexContactStackupPositions( $inCAM, "d222763" );
+	my @packages = StackupOperation->GetJoinedFlexRigidPackages( $inCAM, "d222763" );
 
 	print @packages;
 

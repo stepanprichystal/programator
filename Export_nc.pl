@@ -19,10 +19,10 @@ my $inCAM  = InCAM->new();
 my $export = NCExportTmp->new();
 
 #input parameters
-my $jobId = "d239687";
+my $jobId = "d222775";
 
 # Exportovat jednotlive vrstvy nebo vsechno
-my $exportSingle = 1;
+my $exportSingle = 0;
 
 # Vrstvy k exportovani, nema vliv pokud $exportSingle == 0
 my @pltLayers  = ();

@@ -23,6 +23,7 @@ use aliased 'CamHelpers::CamSymbol';
 use aliased 'CamHelpers::CamLayer';
 use aliased 'CamHelpers::CamFilter';
 use aliased 'CamHelpers::CamNCHooks';
+
 #-------------------------------------------------------------------------------------------#
 #  Script methods
 #-------------------------------------------------------------------------------------------#
@@ -96,8 +97,6 @@ sub AddFlexiHoles {
 	return $result;
 }
 
-#-------------------------------------------------------------------------------------------#
-# Check if mpanel contain requsted schema by customer
 sub AddPressHolesCoverlay {
 	my $self     = shift;
 	my $inCAM    = shift;
@@ -116,8 +115,8 @@ sub AddPressHolesCoverlay {
 	  CamDrilling->GetNCLayersByTypes( $inCAM, $jobId, [ EnumsGeneral->LAYERTYPE_nplt_cvrlycMill, EnumsGeneral->LAYERTYPE_nplt_cvrlysMill ] );
 
 	my @scanMarks = CamNCHooks->GetLayerCamMarks( $inCAM, $jobId, $stepName, "v1" );
-	my %bot = CamNCHooks->GetScanMarkPoint(\@scanMarks, "3-15mm-IN-left-bot");
-	my %top = CamNCHooks->GetScanMarkPoint(\@scanMarks, "3-15mm-IN-left-top");
+	my %bot = CamNCHooks->GetScanMarkPoint( \@scanMarks, "3-15mm-IN-left-bot" );
+	my %top = CamNCHooks->GetScanMarkPoint( \@scanMarks, "3-15mm-IN-left-top" );
 
 	foreach my $layer (@coverlay) {
 
@@ -125,14 +124,53 @@ sub AddPressHolesCoverlay {
 		if ( CamFilter->SelectBySingleAtt( $inCAM, $jobId, ".pnl_place", "coverlay_press" ) ) {
 			$inCAM->COM("sel_delete");
 		}
-		
+
 		CamSymbol->AddCurAttribute( $inCAM, $jobId, ".pnl_place", "coverlay_press" );
-		
+
 		CamSymbol->AddPad( $inCAM, "r4000", \%top );
 		CamSymbol->AddPad( $inCAM, "r4000", \%bot );
 
 		CamSymbol->ResetCurAttributes($inCAM);
 	}
+
+}
+
+sub AddFlexiCoreHoles {
+	my $self     = shift;
+	my $inCAM    = shift;
+	my $jobId    = shift;
+	my $stepName = shift;
+
+	my $result = 1;
+
+	return 0 if ( $stepName ne "panel" );
+
+	my $flexType = JobHelper->GetPcbFlexType($jobId);
+
+	return 0 if ( $flexType ne EnumsGeneral->PcbFlexType_RIGIDFLEXI );
+
+	my $l = "v1";
+
+	my @scanMarks = CamNCHooks->GetLayerCamMarks( $inCAM, $jobId, $stepName, "c" );
+	my %lt = CamNCHooks->GetScanMarkPoint( \@scanMarks, "O-Outer_VV-left-top" );
+	my %rt = CamNCHooks->GetScanMarkPoint( \@scanMarks, "O-Outer_VV-right-top" );
+	my %lb = CamNCHooks->GetScanMarkPoint( \@scanMarks, "O-Outer_VV-left-bot" );
+	my %rb = CamNCHooks->GetScanMarkPoint( \@scanMarks, "O-Outer_VV-right-bot" );
+
+	CamLayer->WorkLayer( $inCAM, $l );
+	if ( CamFilter->SelectBySingleAtt( $inCAM, $jobId, ".pnl_place", "flexi_olec" ) ) {
+		$inCAM->COM("sel_delete");
+	}
+
+	CamSymbol->AddCurAttribute( $inCAM, $jobId, ".pnl_place", "flexi_olec" );
+
+	CamSymbol->AddPad( $inCAM, "r3000", \%lt );
+	CamSymbol->AddPad( $inCAM, "r3000", \%rt );
+	CamSymbol->AddPad( $inCAM, "r3000", \%lb );
+	CamSymbol->AddPad( $inCAM, "r3000", \%rb );
+
+	CamSymbol->ResetCurAttributes($inCAM);
+	CamLayer->ClearLayers( $inCAM, $l );
 
 }
 
@@ -147,11 +185,11 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	use aliased 'Packages::InCAM::InCAM';
 
 	my $inCAM = InCAM->new();
-	my $jobId = "d222775";
+	my $jobId = "d113609";
 
 	my $mess = "";
 
-	my $result = PnlSchemaPost->AddPressHolesCoverlay( $inCAM, $jobId, "panel" );
+	my $result = PnlSchemaPost->AddFlexiCoreHoles( $inCAM, $jobId, "panel" );
 
 	print STDERR "Result is: $result, error message: $mess\n";
 

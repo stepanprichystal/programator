@@ -895,7 +895,8 @@ sub __CreateServerConn {
 		return $pidServer;
 	}
 	else {
-		die "\nError connect to incam server";
+ 
+		$self->{"threadLoger"}->debug("Error connect to incam server\n");
 		return 0;
 	}
 }
