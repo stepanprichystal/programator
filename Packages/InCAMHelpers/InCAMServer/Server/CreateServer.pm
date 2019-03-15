@@ -204,6 +204,8 @@ sub __CreateServerConn {
 	my $self       = shift;
 	my $port       = shift;
 	my $fIndicator = shift;
+	
+	my $logger = get_logger("serverLog");
 
 	my $inCAMLaunched = 0;
 
@@ -273,11 +275,11 @@ sub __CreateServerConn {
 			$self->CloseZombie($port);
 			return 0;
 		}
-		
-		
 	}
 	else {
-		die "\nError connect to incam server";
+
+		
+		$logger->error( "Error connect to incam server" );
 		return 0;
 	}
 }
