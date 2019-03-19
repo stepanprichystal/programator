@@ -611,7 +611,8 @@ sub OnCheckGroupData {
 
 						my @points = map { [ $_->{"x2"}, $_->{"y2"} ] } $multiChain->GetFeatures();
 
-						print STDERR PolygonPoints->GetPolygonArea( \@points )."\n";
+						print STDERR PolygonPoints->GetPolygonArea( \@points ) . "\n";
+
 						# Outline assume minial area of pcb > 400mm2
 						next if ( PolygonPoints->GetPolygonArea( \@points ) < 500 );
 

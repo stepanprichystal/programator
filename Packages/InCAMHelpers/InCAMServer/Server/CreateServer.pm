@@ -257,7 +257,7 @@ sub __CreateServerConn {
 	}
 	else {
 
-		
+		my $logger = get_logger("serverLog");
 		$logger->error( "Error connect to incam server" );
 		return 0;
 	}

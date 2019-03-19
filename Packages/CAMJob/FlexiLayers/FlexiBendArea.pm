@@ -49,7 +49,7 @@ sub PutCuToBendArea {
 	my $errMess = "";
 	die $errMess unless ( $parser->CheckBendArea( \$errMess ) );
 
-	my @bendAreas = $self->GetBendAreas();
+	my @bendAreas = $parser->GetBendAreas();
 
 	# put Cu only to rigid signal layer
 	my @layers = ();
@@ -102,6 +102,54 @@ sub PutCuToBendArea {
 	return $result;
 }
 
+
+# If pcb contain soldermask an coverlay, unmask bend area in c,s
+sub UnMaskBendArea {
+	my $self      = shift;
+	my $inCAM     = shift;
+	my $jobId     = shift;
+	my $step      = shift;
+	my $clearance = shift // 100;    # Default clearance of solder mask from bend area
+
+	my $result = 1;
+
+	
+	
+	my @layers = CamJob->GetBoardBaseLayers($inCAM, $jobId);
+	
+	my @mask = grep { $_->{"gROWlayer_type"} eq "solder_mask" } @layers;
+	my @coverlay = grep { $_->{"gROWlayer_type"} eq "coverlay" } @layers;
+	
+	return 0 if(!(@mask && @coverlay));
+	
+	my $parser = BendAreaParser->new( $inCAM, $jobId, $step );
+	my $errMess = "";
+	die $errMess unless ( $parser->CheckBendArea( \$errMess ) );
+
+	my @bendAreas = $parser->GetBendAreas();
+ 
+
+	CamHelper->SetStep( $inCAM, $step );
+
+	foreach my $l (@mask) {
+
+		CamLayer->WorkLayer( $inCAM, $l->{"gROWname"} );
+
+		foreach my $bendArea (@bendAreas) {
+
+			my @points = map { { "x" => $_->[0], "y" => $_->[1] } } $bendArea->GetPoints();
+			my @pointsSurf = @points[ 0 .. scalar(@points) - 2 ];
+
+			CamSymbolSurf->AddSurfacePolyline( $inCAM, \@pointsSurf, 1 );
+			CamSymbol->AddPolyline( $inCAM, \@points, "r" . ( 2 * $clearance ), "positive");
+		}
+	}
+
+	CamLayer->ClearLayers($inCAM);
+
+	return $result;
+}
+
 sub PrepareCoverlayMaskByBendArea {
 	my $self      = shift;
 	my $inCAM     = shift;
@@ -138,7 +186,7 @@ sub PrepareCoverlayMaskByBendArea {
 		CamLayer->ClipAreaByProf( $inCAM, $l, 0 );
 		CamLayer->WorkLayer( $inCAM, $l );
 
-		foreach my $bendArea ( $self->GetBendAreas() ) {
+		foreach my $bendArea ( $parser->GetBendAreas() ) {
 
 			CamLayer->WorkLayer( $inCAM, $l );
 
@@ -166,7 +214,7 @@ sub PrepareRoutCoverlayByBendArea {
 	my $jobId             = shift;
 	my $step              = shift;
 	my $coverlayOverlap   = shift // 500;    # Ovelrap of coverlay to rigid area
-	my $coverlayClearance = shift // 500;    # clearance from rigid area profile (except transition zone)
+	my $coverlayClearance = shift // 1000;    # clearance from rigid area profile (except transition zone)
 
 	my $result = 1;
 
@@ -178,7 +226,7 @@ sub PrepareRoutCoverlayByBendArea {
 	my $bendResizedL = GeneralHelper->GetGUID();
 	CamMatrix->CreateLayer( $inCAM, $jobId, $bendResizedL, "document", "positive", 0 );
 	CamLayer->WorkLayer( $inCAM, $bendResizedL );
-	foreach my $bendArea ( $self->GetBendAreas() ) {
+	foreach my $bendArea ( $parser->GetBendAreas() ) {
 		my @points = map { { "x" => $_->[0], "y" => $_->[1] } } $bendArea->GetPoints();
 		my @pointsSurf = @points[ 0 .. scalar(@points) - 2 ];
 		CamSymbolSurf->AddSurfacePolyline( $inCAM, \@pointsSurf, 1, "negative" );
@@ -291,7 +339,7 @@ sub CreateRoutPrepregByBendArea {
 	my $errMess = "";
 	die $errMess unless ( $parser->CheckBendArea( \$errMess ) );
 
-	foreach my $bendArea ( $self->GetBendAreas() ) {
+	foreach my $bendArea ( $parser->GetBendAreas() ) {
 
 		CamLayer->WorkLayer( $inCAM, $prepregL );
 
@@ -526,13 +574,12 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	use aliased 'Packages::InCAM::InCAM';
 
 	my $inCAM = InCAM->new();
-	my $jobId = "d113609";
+	my $jobId = "d222776";
 
 	my $mess = "";
 
-	my $result = FlexiBendArea->CreateRoutTransitionPart1( $inCAM, $jobId, "o+1" );
-	 $result = FlexiBendArea->CreateRoutTransitionPart2( $inCAM, $jobId, "o+1" );
-
+	my $result = FlexiBendArea->PutCuToBendArea( $inCAM, $jobId, "o+1" );
+	 
 	print STDERR "Result is: $result, error message: $mess\n";
 
 }
