@@ -227,7 +227,7 @@ sub SendMail {
 	my $jobId = $self->{"jobId"};
 	
 	# Get info about user
-	my $userInfo = HegMethods->GetEmployyInfo($loginId);
+	my $userInfo = HegMethods->GetEmployyInfo(undef, $loginId);
  
 	# fill templkey with data
 	my $templKey = TemplateKey->new();

@@ -230,8 +230,20 @@ sub GetPcbName {
 sub GetEmployyInfo {
 	my $self     = shift;
 	my $userName = shift;
+	my $userId   = shift;
 
-	my @params = ( SqlParameter->new( "_LoginId", Enums->SqlDbType_VARCHAR, $userName ) );
+	die "Only one option (user name or user id) is enabled " if ( $userName && $userId );
+	die "No option (user name or user id) is defined" if ( !defined $userName && !defined $userId );
+
+	my @params = ();
+	if ( defined $userName ) {
+
+		@params = ( SqlParameter->new( "_UserName", Enums->SqlDbType_VARCHAR, $userName ) );
+	}
+	elsif ( defined $userId ) {
+
+		@params = ( SqlParameter->new( "_UserId", Enums->SqlDbType_VARCHAR, $userId ) );
+	}
 
 	my $cmd = "SELECT cislo_subjektu,
 			e_mail,
@@ -239,9 +251,19 @@ sub GetEmployyInfo {
 			prijmeni,
 			telefon_prace
 			
-			FROM lcs.zamestnanci 
-			WHERE login_id = _LoginId";
+			FROM lcs.zamestnanci ";
 
+	if ( defined $userName ) {
+
+		$cmd .= "WHERE login_id = _UserName";
+
+	}
+	elsif ( defined $userId ) {
+
+		$cmd .= "WHERE cislo_subjektu = _UserId";
+	}
+	
+	
 	my @result = Helper->ExecuteDataSet( $cmd, \@params );
 
 	if ( scalar(@result) == 1 ) {
@@ -1626,7 +1648,7 @@ sub GetMatInfo {
 
 	my @result = Helper->ExecuteDataSet( $cmd, \@params );
 	if (@result) {
-		return  $result[0] ;
+		return $result[0];
 	}
 	else {
 		return 0;
@@ -1769,11 +1791,10 @@ sub GetPcbAncestor {
 
 }
 
-
 sub GetImpedancExist {
 	my $self  = shift;
 	my $pcbId = shift;
-	my $res = 0;
+	my $res   = 0;
 
 	my @params = ( SqlParameter->new( "_PcbId", Enums->SqlDbType_VARCHAR, $pcbId ) );
 
@@ -1791,7 +1812,7 @@ sub GetImpedancExist {
 	else {
 		return 0;
 	}
-	
+
 }
 
 #-------------------------------------------------------------------------------------------#

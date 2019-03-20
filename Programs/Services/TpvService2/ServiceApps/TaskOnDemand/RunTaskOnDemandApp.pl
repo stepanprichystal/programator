@@ -30,9 +30,9 @@ $inCAM->SupressToolkitException(1);
 
 $app->{"inCAM"} = $inCAM;
 
-#$app->Run();
+$app->Run();
 
-$app->__RunJob($jobId, $orderId, "cooperation_data", undef, "th");
+#$app->__RunJob($jobId, $orderId, "cooperation_data", undef, "th");
 
 
 #	my $jobId    = shift;
