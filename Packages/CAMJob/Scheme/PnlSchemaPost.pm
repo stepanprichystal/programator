@@ -97,7 +97,7 @@ sub AddFlexiHoles {
 	return $result;
 }
 
-sub AddPressHolesCoverlay {
+sub AddHolesCoverlay {
 	my $self     = shift;
 	my $inCAM    = shift;
 	my $jobId    = shift;
@@ -115,8 +115,15 @@ sub AddPressHolesCoverlay {
 	  CamDrilling->GetNCLayersByTypes( $inCAM, $jobId, [ EnumsGeneral->LAYERTYPE_nplt_cvrlycMill, EnumsGeneral->LAYERTYPE_nplt_cvrlysMill ] );
 
 	my @scanMarks = CamNCHooks->GetLayerCamMarks( $inCAM, $jobId, $stepName, "v1" );
-	my %bot = CamNCHooks->GetScanMarkPoint( \@scanMarks, "3-15mm-IN-left-bot" );
-	my %top = CamNCHooks->GetScanMarkPoint( \@scanMarks, "3-15mm-IN-left-top" );
+	
+	# press holes
+	my %pressBot = CamNCHooks->GetScanMarkPoint( \@scanMarks, "3-15mm-IN-left-bot" );
+	my %pressTop = CamNCHooks->GetScanMarkPoint( \@scanMarks, "3-15mm-IN-left-top" );
+	
+	my %olecLT = CamNCHooks->GetScanMarkPoint( \@scanMarks, "O-Inner-left-top" );
+	my %olecRT = CamNCHooks->GetScanMarkPoint( \@scanMarks, "O-Inner-right-top" );
+	my %olecRB = CamNCHooks->GetScanMarkPoint( \@scanMarks, "O-Inner-right-bot" );
+	my %olecLB = CamNCHooks->GetScanMarkPoint( \@scanMarks, "O-Inner-left-bot" );
 
 	foreach my $layer (@coverlay) {
 
@@ -127,8 +134,18 @@ sub AddPressHolesCoverlay {
 
 		CamSymbol->AddCurAttribute( $inCAM, $jobId, ".pnl_place", "coverlay_press" );
 
-		CamSymbol->AddPad( $inCAM, "r4000", \%top );
-		CamSymbol->AddPad( $inCAM, "r4000", \%bot );
+		CamSymbol->AddPad( $inCAM, "r4000", \%pressTop );
+		CamSymbol->AddPad( $inCAM, "r4000", \%pressBot );
+
+		CamSymbol->ResetCurAttributes($inCAM);
+		
+		
+		CamSymbol->AddCurAttribute( $inCAM, $jobId, ".pnl_place", "coverlay_olec_vv" );
+
+		CamSymbol->AddPad( $inCAM, "r4000", \%olecLT );
+		CamSymbol->AddPad( $inCAM, "r4000", \%olecRT );
+		CamSymbol->AddPad( $inCAM, "r4000", \%olecRB );
+		CamSymbol->AddPad( $inCAM, "r4000", \%olecLB );
 
 		CamSymbol->ResetCurAttributes($inCAM);
 	}
