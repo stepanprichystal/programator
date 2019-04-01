@@ -79,7 +79,7 @@ sub Create {
 
 	CamHelper->SetStep( $self->{"inCAM"}, $self->{"step"} );
 
-	CamStep->CreateFlattenStep( $self->{"inCAM"}, $self->{"jobId"}, $self->{"step"}, $self->{"pdfStep"}, 0 );
+	CamStep->CreateFlattenStep( $self->{"inCAM"}, $self->{"jobId"}, $self->{"step"}, $self->{"pdfStep"}, 1 );
  
 	CamHelper->SetStep( $self->{"inCAM"}, $self->{"pdfStep"} );
 }
@@ -251,7 +251,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId = "d034621";
+	my $jobId = "d240200";
 
 	my $mess = "";
 

@@ -13,6 +13,7 @@ use warnings;
 use File::Copy;
 
 #local library
+use aliased 'CamHelpers::CamJob';
 use aliased 'CamHelpers::CamLayer';
 use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'CamHelpers::CamHelper';
@@ -46,9 +47,10 @@ sub OnCheckGroupData {
 	# 1) check attribute .n_electric (it can appear in odb data)
 
 	my @steps = map { $_->{"stepName"} } CamStepRepeatPnl->GetUniqueDeepestSR( $inCAM, $jobId );
-	my @l = ("c");
-	push( @l, "s" ) if ( CamHelper->LayerExists( $inCAM, $jobId, "s" ) );
-
+	
+	
+	my @l = CamJob->GetSignalLayerNames($inCAM, $jobId);
+ 
 	my $impPresent = 0;
 	foreach my $step (@steps) {
 
@@ -60,7 +62,7 @@ sub OnCheckGroupData {
 				$dataMngr->_AddWarningResult(
 											  "Attribute",
 											  "Ve stepu: $step, vrstvě: \"$l\" některé features obsahují atribut \".n_electric\"."
-												. "Plošky s tímto atributem se nebudou elektricky testovat, je to ok?"
+												. "Plošky s tímto atributem se nebudou elektricky testovat a tester je vyhodnotí jako nevodivé, je to ok?"
 				);
 				next;
 			}
