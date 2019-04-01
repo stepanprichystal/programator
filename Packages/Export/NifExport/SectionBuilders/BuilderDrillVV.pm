@@ -220,21 +220,21 @@ sub Build {
 		my $existDrill = $press->ExistNCLayers( Enums->SignalLayer_TOP, EnumsGeneral->LAYERTYPE_plt_bDrillTop );
 
 		#if ( $self->_IsRequire( "slepe_otvory_c_" . $pressOrder ) ) {
-		$section->AddRow( "PO_ZAPLNENI_slepe_otvory_c_" . $pressCnt, $existDrill ? "A" : "N" );
+		$section->AddRow( "vrtani_do_c" . $pressCnt, $existDrill ? "A" : "N" );
 
 		#}
 
 		my $minTool = $press->GetMinHoleTool( Enums->SignalLayer_TOP, EnumsGeneral->LAYERTYPE_plt_bDrillTop );
 
 		#if ( $self->_IsRequire( "min_vrtak_sl_c_" . $pressOrder ) ) {
-		$section->AddRow( "PO_ZAPLNENI_min_vrtak_sl_c_" . $pressCnt, $self->__FormatTool($minTool) );
+		$section->AddRow( "vrtani_do_s" . $pressCnt, $self->__FormatTool($minTool) );
 
 		#}
 
 		my $maxAspectRatio = $press->GetMaxBlindAspectRatio( Enums->SignalLayer_TOP, EnumsGeneral->LAYERTYPE_plt_bDrillTop );
 
 		#if ( $self->_IsRequire( "min_vrtak_pomer_sl_c_" . $pressOrder ) ) {
-		$section->AddRow( "PO_ZAPLNENI_min_vrtak_pomer_sl_c_" . $pressCnt, $maxAspectRatio );
+		$section->AddRow( "min_vrtak_pomer_do_c" . $pressCnt, $maxAspectRatio );
 
 		#}
 	}
@@ -252,21 +252,21 @@ sub Build {
 		my $existDrill = $press->ExistNCLayers( Enums->SignalLayer_BOT, EnumsGeneral->LAYERTYPE_plt_bDrillBot );
 
 		#if ( $self->_IsRequire( "slepe_otvory_c_" . $pressOrder ) ) {
-		$section->AddRow( "PO_ZAPLNENI_slepe_otvory_s_" . $pressCnt, $existDrill ? "A" : "N" );
+		$section->AddRow( "vrtani_do_s" . $pressCnt, $existDrill ? "A" : "N" );
 
 		#}
 
 		my $minTool = $press->GetMinHoleTool( Enums->SignalLayer_BOT, EnumsGeneral->LAYERTYPE_plt_bDrillBot );
 
 		#if ( $self->_IsRequire( "min_vrtak_sl_c_" . $pressOrder ) ) {
-		$section->AddRow( "PO_ZAPLNENI_min_vrtak_sl_s_" . $pressCnt, $self->__FormatTool($minTool) );
+		$section->AddRow( "min_vrtak_do_s" . $pressCnt, $self->__FormatTool($minTool) );
 
 		#}
 
 		my $maxAspectRatio = $press->GetMaxBlindAspectRatio( Enums->SignalLayer_BOT, EnumsGeneral->LAYERTYPE_plt_bDrillBot );
 
 		#if ( $self->_IsRequire( "min_vrtak_pomer_sl_c_" . $pressOrder ) ) {
-		$section->AddRow( "PO_ZAPLNENI_min_vrtak_pomer_sl_s_" . $pressCnt, $maxAspectRatio );
+		$section->AddRow( "min_vrtak_pomer_do_s" . $pressCnt, $maxAspectRatio );
 
 		#}
 

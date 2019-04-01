@@ -122,10 +122,10 @@ sub Build {
 		$section->AddComment("Vrtani skrz pred prokovem po zalpneni otvoru");
 
 		#vrtani_pred (vrtani pred prokovem)
-		if ( $self->_IsRequire("vrtani_pred_D") ) {
+		if ( $self->_IsRequire("vrtani_do_c") ) {
 
 			my $exist = $self->__DrillExists( EnumsGeneral->LAYERTYPE_plt_nDrill );
-			$section->AddRow( "vrtani_pred_D", $exist );
+			$section->AddRow( "vrtani_do_c", $exist );
 		}
 
 		#stages_vrtani_pred
