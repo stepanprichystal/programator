@@ -71,13 +71,17 @@ sub StackupExist {
 	my $self  = shift;
 	my $jobId = shift;
 
-	unless ( FileHelper->GetFileNameByPattern( EnumsPaths->Jobs_STACKUPS, $jobId . "_" ) ) {
+	my $inStack = ( -e EnumsPaths->Jobs_COUPONS . "$jobId.xml" );
 
-		return 0;
+	my $multicall = ( FileHelper->GetFileNameByPattern( EnumsPaths->Jobs_STACKUPS, $jobId . "_" ) );
+	
+	if ( $inStack || $multicall ) {
+
+		return 1;
 	}
 	else {
 
-		return 1;
+		return 0;
 	}
 
 }
@@ -179,7 +183,7 @@ sub GetJobElTest {
 	my $jobId = shift;
 
 	return EnumsPaths->Jobs_ELTESTS . substr( $jobId, 0, 4 ) . "\\" . $jobId . "t\\";
-	
+
 }
 
 # Return step names, which are special helper steps for compare netlists. (steplist are generated and can be deleted)
@@ -193,13 +197,12 @@ sub GetNetlistStepNames {
 	return @s;
 }
 
-
 # Return step names, which are special coupon steps
 # coupon_impedance
 # coupon_drill
 sub GetCouponStepNames {
 	my $self = shift;
-	
+
 	my @s = ( EnumsGeneral->Coupon_IMPEDANCE, EnumsGeneral->Coupon_DRILL );
 	return @s;
 }
@@ -218,7 +221,7 @@ sub GetJobList {
 	my $dbName = shift;
 
 	my @jobList = $self->GetJobListAll($dbName);
-	 
+
 	@jobList = grep { $_->{"name"} =~ /^d\d{6}$/ } @jobList;
 
 	return @jobList;
@@ -247,7 +250,7 @@ sub GetJobListAll {
 	my @jobList = @{ $xml->{"job"} };
 
 	@jobList = grep { $_->{"dbName"} eq $dbName } @jobList;
- 
+
 	return @jobList;
 }
 
@@ -282,41 +285,43 @@ sub GetPcbType {
 }
 
 # Return 1 if pcb is flex or rigid flex
-sub GetIsFlex{
-	my $self = shift;
+sub GetIsFlex {
+	my $self  = shift;
 	my $jobId = shift;
-	
- 	my $isFlex = 0;
- 
-	if(defined $self->GetPcbFlexType($jobId)){
-		$isFlex = 1
+
+	my $isFlex = 0;
+
+	if ( defined $self->GetPcbFlexType($jobId) ) {
+		$isFlex = 1;
 	}
-				  
-	return $isFlex;			  
+
+	return $isFlex;
 }
 
-# 
+#
 sub GetPcbFlexType {
 	my $self = shift;
 
 	my $jobId = shift;
 
 	my $type;
- 
+
 	my $info = ( HegMethods->GetAllByPcbId($jobId) )[0];
 
 	if ( $info->{"poznamka"} =~ /type=flexi/i ) {
 		$type = EnumsGeneral->PcbFlexType_FLEX;
-		
-	}elsif( $info->{"poznamka"} =~ /type=rigid-flexi-o/i ) {
-		
+
+	}
+	elsif ( $info->{"poznamka"} =~ /type=rigid-flexi-o/i ) {
+
 		$type = EnumsGeneral->PcbFlexType_RIGIDFLEXO;
-	
-	}elsif( $info->{"poznamka"} =~ /type=rigid-flexi-i/i ) {
-		
+
+	}
+	elsif ( $info->{"poznamka"} =~ /type=rigid-flexi-i/i ) {
+
 		$type = EnumsGeneral->PcbFlexType_RIGIDFLEXI;
-	} 
-	
+	}
+
 	return $type;
 }
 
@@ -365,6 +370,10 @@ sub GetIsolationByClass {
 #-------------------------------------------------------------------------------------------#
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
+
+	use aliased 'Helpers::JobHelper';
+	
+	print STDERR JobHelper->StackupExist("test");
 
 }
 

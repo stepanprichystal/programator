@@ -14,6 +14,7 @@ use File::Copy;
 #local library
 use aliased 'Helpers::GeneralHelper';
 use aliased 'Enums::EnumsPaths';
+use aliased 'Enums::EnumsGeneral';
 use aliased 'Helpers::FileHelper';
 use aliased 'CamHelpers::CamHelper';
 use aliased 'CamHelpers::CamStepRepeat';
@@ -237,7 +238,7 @@ sub __GetLayerLimit {
 	my $self      = shift;
 	my $layerName = shift;
 
-	# 0) Get limits by layer type
+	my $inCAM = $self->{"inCAM"};
 
 	my %lim = ();
 
@@ -245,16 +246,14 @@ sub __GetLayerLimit {
 
 	# - mask layer (mc;ms) layer
 	# - gold layer (goldc; golds)
-	# - signal layer (c;s) and not flex
+	# - signal layer (c;s) and not outer rigid flex
 	# - plg(c/s) layers
-	if ( $self->{"layerCnt"} > 2
-		 && ( $layerName =~ /^((gold)|m|plg)[cs]$/
-			  || ( $layerName =~ /^[cs]$/ && !JobHelper->GetIsFlex( $self->{"jobId"} ) ) )
+	if (
+		$self->{"layerCnt"} > 2
+		&& $layerName =~ /^((gold)|m|plg)?[cs]$/
 	  )
 	{
-
 		%lim = %{ $self->{"frLim"} };
-
 	}
 
 	# clip around profile if
@@ -264,6 +263,16 @@ sub __GetLayerLimit {
 	else {
 
 		%lim = %{ $self->{"profLim"} };
+	}
+
+	# Exceptions for Outer Rigid-Flex with top coverlay
+	if ( JobHelper->GetIsFlex( $self->{"jobId"} ) ) {
+
+		if (    JobHelper->GetPcbFlexType( $self->{"jobId"} ) eq EnumsGeneral->PcbFlexType_RIGIDFLEXO
+			 && CamHelper->LayerExists( $inCAM, $self->{"jobId"}, "coverlayc" ) )
+		{
+			%lim = %{ $self->{"profLim"} };
+		}
 	}
 
 	return %lim;
@@ -323,7 +332,10 @@ sub __ExportGerberLayer {
 	#my $resultItemGer = ItemResult->new("Output layers");
 
 	# init layer
-	my %l = ( "name" => $layerName, "mirror" => 0 );
+	my %l = (
+			  "name"   => $layerName,
+			  "mirror" => 0
+	);
 	my @layers = ( \%l );
 
 	# 1 ) Export gerber to temp directory
@@ -417,10 +429,22 @@ sub __PutFrameAorundPcb {
 
 	my @coord = ();
 
-	my %p1 = ( "x" => $lim{"xMin"}, "y" => $lim{"yMin"} );
-	my %p2 = ( "x" => $lim{"xMin"}, "y" => $lim{"yMax"} );
-	my %p3 = ( "x" => $lim{"xMax"}, "y" => $lim{"yMax"} );
-	my %p4 = ( "x" => $lim{"xMax"}, "y" => $lim{"yMin"} );
+	my %p1 = (
+			   "x" => $lim{"xMin"},
+			   "y" => $lim{"yMin"}
+	);
+	my %p2 = (
+			   "x" => $lim{"xMin"},
+			   "y" => $lim{"yMax"}
+	);
+	my %p3 = (
+			   "x" => $lim{"xMax"},
+			   "y" => $lim{"yMax"}
+	);
+	my %p4 = (
+			   "x" => $lim{"xMax"},
+			   "y" => $lim{"yMin"}
+	);
 	push( @coord, \%p1 );
 	push( @coord, \%p2 );
 	push( @coord, \%p3 );
@@ -467,12 +491,17 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId    = "d152456";
+	my $jobId    = "d222768";
 	my $stepName = "panel";
 
 	my $export = ExportFiles->new( $inCAM, $jobId, $stepName );
 
-	my %type = ( Enums->Type_SIGNAL => "1", Enums->Type_MASK => "1", Enums->Type_PLUG => "1", Enums->Type_GOLD => "1" );
+	my %type = (
+				 Enums->Type_SIGNAL => "1",
+				 Enums->Type_MASK   => "1",
+				 Enums->Type_PLUG   => "1",
+				 Enums->Type_GOLD   => "1"
+	);
 
 	$export->Run( \%type );
 

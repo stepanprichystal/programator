@@ -16,7 +16,7 @@ use File::Copy;
 use Log::Log4perl qw(get_logger :levels);
 
 #local library
-
+use aliased 'Helpers::FileHelper';
 use aliased 'Helpers::GeneralHelper';
 use aliased 'Helpers::JobHelper';
 use aliased 'Enums::EnumsPaths';
@@ -71,6 +71,11 @@ sub Run {
 
 	# Export
 	if ( $self->{"exportStackup"} ) {
+
+		# remove all multicall stackup for curent job 
+		# (there could be more than one stackup (slightly different name) for one job)
+		my @oldStackups = FileHelper->GetFilesNameByPattern( EnumsPaths->Jobs_STACKUPS, $jobId . "_" );
+		unlink ($_) foreach(@oldStackups);
 
 		my $convertor = StackupConvertor->new($jobId);
 		my $res       = $convertor->DoConvert();

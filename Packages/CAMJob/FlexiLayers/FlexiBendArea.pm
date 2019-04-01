@@ -214,7 +214,7 @@ sub PrepareRoutCoverlayByBendArea {
 	my $jobId             = shift;
 	my $step              = shift;
 	my $coverlayOverlap   = shift // 500;    # Ovelrap of coverlay to rigid area
-	my $coverlayClearance = shift // 1000;    # clearance from rigid area profile (except transition zone)
+	my $coverlayClearance = shift // 7000;    # clearance from rigid area profile (except transition zone)
 
 	my $result = 1;
 
@@ -320,7 +320,7 @@ sub CreateRoutPrepregByBendArea {
 	my $inCAM     = shift;
 	my $jobId     = shift;
 	my $step      = shift;
-	my $clearance = shift // 300;    # Default clearance of prepreg from rigin/flex transition
+	my $clearance = shift // 500;    # Default clearance of prepreg from rigin/flex transition
 
 	my $result = 1;
 

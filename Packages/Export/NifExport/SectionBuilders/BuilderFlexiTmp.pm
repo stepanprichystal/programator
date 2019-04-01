@@ -18,6 +18,7 @@ use Time::localtime;
 use aliased 'CamHelpers::CamJob';
 use aliased 'CamHelpers::CamHelper';
 use aliased 'CamHelpers::CamDrilling';
+use aliased 'CamHelpers::CamRouting';
 use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'CamHelpers::CamStepRepeat';
@@ -25,6 +26,7 @@ use aliased 'Packages::Stackup::Stackup::Stackup';
 use aliased 'Helpers::JobHelper';
 use aliased 'Packages::Stackup::Enums' => 'StackEnums';
 use aliased 'Packages::CAMJob::Dim::JobDim';
+
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -107,7 +109,20 @@ sub Build {
 	$section->AddRow( "pocet_prirezu", $pocet );
 	$section->AddRow( "plocha", sprintf( "%0.1f dm2", $w * $h * $pocet / 10000 ) );
 
-	$section->AddRow( "tenting_plocha", sprintf( "%0.1f cm2", $w * $h / 100 ) );
+	if (    $layerCnt > 2)	  
+	{
+		my %frDim = CamRouting->GetFrDimension( $inCAM, $jobId, "panel" );
+		$section->AddRow( "tenting_plocha", sprintf( "%0.1f cm2", $frDim{"xSize"} * $frDim{"ySize"} / 100 ) );
+
+	}
+	else {
+		$section->AddRow( "tenting_plocha", sprintf( "%0.1f cm2", $w * $h / 100 ) );
+	}
+	
+#	#exception for Outer rigid flex with coverlay on top
+#	if($pcbFlexType eq EnumsGeneral->PcbFlexType_RIGIDFLEXO &&  CamHelper->LayerExists( $inCAM, $jobId, "coverlayc" )){
+#		$section->AddRow( "tenting_plocha", sprintf( "%0.1f cm2", $w * $h / 100 ) );
+#	}
 
 	# postup  operace Flexi -------------
 
@@ -225,9 +240,10 @@ sub Build {
 
 		$section->AddRow( "program_frezovani_prepreg", $ncArchiv . "\\nc\\" . $jobId . "_prepreg" );
 
-		my $prepregPerPanel =
-		  scalar( grep { $_->GetQId() == 10 || $_->GetQId() == 13 }
-				  map { $_->GetAllPrepregs() } grep { $_->GetType() eq StackEnums->MaterialType_PREPREG } $stackup->GetAllLayers() );
+		my $prepregPerPanel = scalar(
+									grep { $_->GetQId() == 10 || $_->GetQId() == 13 }
+									map { $_->GetAllPrepregs() } grep { $_->GetType() eq StackEnums->MaterialType_PREPREG } $stackup->GetAllLayers()
+		);
 
 		$section->AddRow( "pocet_prepregu_na_prirez", $prepregPerPanel );
 
@@ -274,6 +290,50 @@ sub Build {
 		$section->AddRow( "program_freza_po_prokovu", $ncArchiv . "\\nc\\" . $jobId . "_fc" );
 	}
 
+}
+
+sub __GetFrDimemsion {
+	my $self     = shift;
+	my $stepName = shift;
+
+	my $inCAM    = $self->{"inCAM"};
+	my $jobId    = $self->{"jobId"};
+	my $layerCnt = $self->{"layerCnt"};
+
+	my $routThick = 2.0;
+
+	my %dim = ();
+
+	# multilayer case, take real fr dimension
+	if ( $layerCnt > 2 ) {
+
+		my $frExist = CamHelper->LayerExists( $inCAM, $jobId, "fr" );
+
+		unless ($frExist) {
+			$dim{"xSize"} = undef;
+			$dim{"ySize"} = undef;
+		}
+		else {
+
+			my %dimFr = CamRouting->GetFrDimension( $inCAM, $jobId, "panel" );
+
+			$dim{"xSize"} = $dimFr{"xSize"};
+			$dim{"ySize"} = $dimFr{"ySize"};
+
+		}
+	}
+
+	# if 2vv save dimension of pcb to "fr" dimension
+	else {
+
+		my %lim = CamJob->GetProfileLimits( $inCAM, $jobId, $stepName );
+
+		$dim{"xSize"} = sprintf "%.1f", ( $lim{"xmax"} - $lim{"xmin"} );
+		$dim{"ySize"} = sprintf "%.1f", ( $lim{"ymax"} - $lim{"ymin"} );
+
+	}
+
+	return %dim;
 }
 
 #-------------------------------------------------------------------------------------------#

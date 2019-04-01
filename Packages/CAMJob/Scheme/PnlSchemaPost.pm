@@ -164,7 +164,7 @@ sub AddFlexiCoreHoles {
 
 	my $flexType = JobHelper->GetPcbFlexType($jobId);
 
-	return 0 if ( $flexType ne EnumsGeneral->PcbFlexType_RIGIDFLEXI );
+	return 0 if ( $flexType ne EnumsGeneral->PcbFlexType_RIGIDFLEXI && $flexType ne EnumsGeneral->PcbFlexType_RIGIDFLEXO );
 
 	my $l = "v1";
 
