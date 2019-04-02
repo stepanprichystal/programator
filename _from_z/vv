@@ -33,7 +33,7 @@ $genesis->INFO(entity_type=>'layer',entity_path=>"$jobName/o+1/s",data_type=>'ex
     			$typDesky = 1;
     	}
     			
-unless ($customer =~ /[Mm][Uu][Ll][Tt][Ii] [Ll]/ and $typDesky == 0) {
+unless ($customer =~ /[Mm][Uu][Ll][Tt][Ii] [Hh]/ and $typDesky == 0) {
 		$main = MainWindow->new;
 		$main->title('Vys/Vrt');
 		$main->minsize(qw(220 120));
