@@ -16,6 +16,7 @@ use aliased 'CamHelpers::CamHelper';
 use aliased 'CamHelpers::CamJob';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'CamHelpers::CamMatrix';
+use aliased 'Enums::EnumsDrill';
 
 #-------------------------------------------------------------------------------------------#
 #   Package methods
@@ -602,6 +603,76 @@ sub AddHistogramValues {
 		$layer->{"minTool"} = $min;
 		$layer->{"maxTool"} = $max;
 	}
+}
+
+# Return NC operation name
+# Operation name is used for getting tool parameters, tool feed rate, etc..
+# Operation name depands on:
+# - matrix layer name
+# - process type of tool
+sub GetToolOperation {
+	my $self        = shift;
+	my $inCAM       = shift;
+	my $jobId       = shift;
+	my $layer       = shift;
+	my $processType = shift;    # EnumsDrills->TypeProc_HOLE /  EnumsDrills->TypeProc_CHAIN
+
+
+	my %l = $self->GetNCLayerInfo( $inCAM, $jobId, $layer, 1, 1 );
+
+	my $operation = undef;
+
+	# 1) Specify type by plated/nonplated and hlole/chain type
+	if ( $l{"plated"} && $processType eq EnumsDrill->TypeProc_HOLE ) {
+
+		$operation = EnumsDrill->ToolOp_PLATEDDRILL;
+
+	}
+	elsif ( $l{"plated"} && $processType eq EnumsDrill->TypeProc_CHAIN ) {
+
+		$operation = EnumsDrill->ToolOp_PLATEDROUT;
+
+	}
+	elsif ( !$l{"plated"} && $processType eq EnumsDrill->TypeProc_HOLE ) {
+
+		$operation = EnumsDrill->ToolOp_NPLATEDDRILL;
+
+	}
+	elsif ( !$l{"plated"} && $processType eq EnumsDrill->TypeProc_CHAIN ) {
+
+		$operation = EnumsDrill->ToolOp_NPLATEDROUT;
+
+	}
+
+	# 2) Specify type by on on layer type
+	if ( $processType eq EnumsDrill->TypeProc_CHAIN && $l{"type"} eq EnumsGeneral->LAYERTYPE_nplt_rsMill ) {
+
+		$operation = EnumsDrill->ToolOp_ROUTBEFOREETCH;
+
+	}
+	elsif ( $processType eq EnumsDrill->TypeProc_CHAIN && $l{"type"} eq EnumsGeneral->LAYERTYPE_nplt_kMill ) {
+
+		$operation = EnumsDrill->ToolOp_ROUTBEFOREET;
+
+	}
+	elsif (
+			$processType eq EnumsDrill->TypeProc_CHAIN
+			&& (    $l{"type"} eq EnumsGeneral->LAYERTYPE_nplt_cvrlycMill
+				 || $l{"type"} eq EnumsGeneral->LAYERTYPE_nplt_cvrlysMill )
+	  )
+	{
+		$operation = EnumsDrill->ToolOp_COVERLAYROUT;
+
+	}
+	elsif ( $processType eq EnumsDrill->TypeProc_CHAIN && $l{"type"} eq EnumsGeneral->LAYERTYPE_nplt_prepregMill ) {
+
+		$operation = EnumsDrill->ToolOp_PREPREGROUT;
+
+	}
+
+	die "Tool operation is not defined for tool process type: $processType, layer: " . $layer unless ( defined $operation );
+
+	return $operation;
 }
 
 #-------------------------------------------------------------------------------------------#

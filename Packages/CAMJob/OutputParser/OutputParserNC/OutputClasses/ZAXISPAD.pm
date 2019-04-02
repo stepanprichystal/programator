@@ -66,7 +66,7 @@ sub _Prepare {
 
 	my $lName = $l->{"gROWname"};
 	my @tools =
-	  grep { $_->GetTypeProcess() eq DTMEnums->TypeProc_HOLE && !$_->GetSpecial() } $l->{"uniDTM"}->GetUniqueTools();
+	  grep { $_->GetTypeProcess() eq EnumsDrill->TypeProc_HOLE && !$_->GetSpecial() } $l->{"uniDTM"}->GetUniqueTools();
 
 	return 0 unless (@tools);
 

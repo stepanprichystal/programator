@@ -17,6 +17,7 @@ use aliased 'Enums::EnumsPaths';
 use aliased 'Packages::CAM::UniDTM::Enums' => 'DTMEnums';
 use aliased 'Helpers::JobHelper';
 use aliased 'Helpers::GeneralHelper';
+use aliased 'Enums::EnumsDrill';
 
 #-------------------------------------------------------------------------------------------#
 #   Package methods
@@ -254,7 +255,7 @@ sub __GetToolParamLine {
 		return undef;
 	}
 
-	my $toolType = $tool->GetTypeProcess() eq DTMEnums->TypeProc_HOLE ? "drill" : "rout";
+	my $toolType = $tool->GetTypeProcess() eq EnumsDrill->TypeProc_HOLE ? "drill" : "rout";
 	my $special = $tool->GetSpecial() ? "spec" : "def";
 
 	# Build tool key
@@ -264,8 +265,8 @@ sub __GetToolParamLine {
 	# Get tool parameter line
 	$line = $par->{$toolType}->{$special}->{$toolKey};
 
-	return undef if(!defined $line);
-	
+	return undef if ( !defined $line );
+
 	# If tool is special, remove magazine info from line
 	# Example of line: C6.50F0.1U25.0S7.0H500special=W11;6.5 90st
 	$line =~ s/special=.*//i if ( $tool->GetSpecial() );
@@ -288,30 +289,31 @@ sub GetMaterialParams {
 	my $materialName = shift;
 	my $machine      = shift;
 	my $path         = shift // GeneralHelper->RootHooks();    # root path of hooks (user hooks / server hooks)
- 
+
 	my %params = ();
 	$params{"ok"} = 1;
- 
 
 	# Get info about exported layer
-	my %lInfo     = CamDrilling->GetNCLayerInfo( $inCAM, $jobId, $layer, 1, 1 );
-	my $plated    = $lInfo{"plated"};                                              # 1/0
-	my $layerType = $lInfo{"gROWlayer_type"};                                      # rout/drill
-	
+	my %lInfo = CamDrilling->GetNCLayerInfo( $inCAM, $jobId, $layer, 1, 1 );
+
+	# 1/0
+	my $layerType = $lInfo{"gROWlayer_type"};                  # rout/drill
+
 	# Dir name of default machine parameters
 	my $macDefName = "machine_default";
 
 	# 1) parse Drilling parameter
+	my $drillOp   = CamDrilling->GetToolOperation( $inCAM, $jobId, $layer, EnumsDrill->TypeProc_HOLE );
 	my $drillDef  = {};
 	my $drillSpec = {};
 
 	# parse default parems
 	my $drillDefFile = $path . "\\ncd\\parametersFile\\$macDefName\\" . $materialName;
-	my $drillDefRes = $self->__ParseMaterialParams( $drillDefFile, $plated, $drillDef, $drillSpec, "drill" );
+	my $drillDefRes = $self->__ParseMaterialParams( $drillDefFile, $drillDef, $drillSpec, "drill", $drillOp );
 
 	# parse special params for machine
 	my $drillMachFile = $path . "\\ncd\\parametersFile\\$machine\\" . $materialName;
-	my $drillMachRes = $self->__ParseMaterialParams( $drillMachFile, $plated, $drillDef, $drillSpec, "drill" );
+	my $drillMachRes = $self->__ParseMaterialParams( $drillMachFile, $drillDef, $drillSpec, "drill", $drillOp );
 
 	# check if drill was parsed
 	$params{"ok"} = 0 if ( !$drillDefRes && !$drillMachRes );
@@ -323,16 +325,17 @@ sub GetMaterialParams {
 
 	if ( $layerType eq "rout" ) {
 
+		my $routOp   = CamDrilling->GetToolOperation( $inCAM, $jobId, $layer, EnumsDrill->TypeProc_CHAIN );
 		my $routDef  = {};
 		my $routSpec = {};
 
 		# parse default parems
 		my $routDefFile = $path . "\\ncr\\parametersFile\\$macDefName\\" . $materialName;
-		my $routDefRes = $self->__ParseMaterialParams( $routDefFile, $plated, $routDef, $routSpec, "rout" );
+		my $routDefRes = $self->__ParseMaterialParams( $routDefFile, $routDef, $routSpec, "rout", $routOp );
 
 		# parse special params for machine
 		my $routMachFile = $path . "\\ncr\\parametersFile\\$machine\\" . $materialName;
-		my $routMachRes = $self->__ParseMaterialParams( $routMachFile, $plated, $routDef, $routSpec, "rout" );
+		my $routMachRes = $self->__ParseMaterialParams( $routMachFile, $routDef, $routSpec, "rout", $routOp );
 
 		# check if drill was parsed
 		$params{"ok"} = 0 if ( !$routDefRes && !$routMachRes );
@@ -348,10 +351,10 @@ sub GetMaterialParams {
 sub __ParseMaterialParams {
 	my $self     = shift;
 	my $file     = shift;
-	my $plated   = shift;    # plated/nplated
 	my $defPar   = shift;
 	my $specPar  = shift;
-	my $toolType = shift;    # drill/rout
+	my $toolType = shift;        # drill/rout
+	my $toolOp   = lc(shift);    # EnumsDrill->ToolOp_xxx
 
 	my $result = 1;
 
@@ -359,31 +362,57 @@ sub __ParseMaterialParams {
 
 		my $readLine = 0;
 		my $parSection;
-		while ( my $l = <$fMat> ) {
+		my @lines = <$fMat>;
+		for ( my $i = 0 ; $i < scalar(@lines) ; $i++ ) {
+			my $l = $lines[$i];
 
 			$l =~ s/\s*//g;
 
 			next if ( $l eq "" );
 
-			# Tools block line
-			# TOOLS = DRILL/ROUT, TYPE = DEFAULT/SPECIAL, PLATED = YES/NO
-			if ( $l =~ /^#tools=(\w+),type=(\w+),plated=(\w+)$/i ) {
+			# Tools header block lines:
+			#
+			# # DEFINITION OF TOOL PARAMETERS
+			# # -----------------------------
+			# # - TOOLS      = <ROUT/DRILL>
+			# # - TYPE       = <DEFAULT/SPECIAL>
+			# # - OPERATIONS = xxxxxx, yyyyyyy, zzzzzzz
 
-				my $parToolType = $1;
-				$parSection = lc($2);
-				my $parPlated = lc($3) eq "yes" ? 1 : 0;
+			if ( $l =~ /DEFINITION/i ) {
 
-				# check tool type
-				die "Parameter file ($file) should contain only parameters for tool type: $toolType, but file contain type: $parToolType" if ( $parToolType !~ /$toolType/i );
-				die "Parameter file ($file), wrong parameter tool type: $parSection at line: $l" if ( $parSection ne "special" && $parSection ne "default" );
+				my $headLine1 = lc( $lines[ $i + 2 ] );
+				$headLine1 =~ s/\s*//g;
 
-				if ( $plated == $parPlated ) {
+				my $headLine2 = lc( $lines[ $i + 3 ] );
+				$headLine2 =~ s/\s*//g;
+
+				my $headLine3 = lc( $lines[ $i + 4 ] );
+				$headLine3 =~ s/\s*//g;
+
+				$i += 4;
+
+				my $parToolType = ( $headLine1 =~ /TOOLS=(\w+)/i )[0];
+				$parSection = ( $headLine2 =~ /TYPE=(\w+)/i )[0];
+				my @parToolOps = split( ";", ( $headLine3 =~ /OPERATIONS=(.*)/i )[0] );
+
+				# Check if parameters are difined and not empty
+				die "Tool process type <DRILL/ROUT> is not defined in parameter file ($file)"
+				  if ( !defined $parToolType || $parToolType eq "" );
+				die "Tool type <DEFAULT/SPECIAL> is not defined in parameter file ($file)"
+				  if ( !defined $parSection || $parSection eq "" );
+
+				# Check tool type in parameter files
+				die "Parameter file ($file) should contain only parameters for tool type: $toolType, but file contain type: $parToolType"
+				  if ( $parToolType !~ /$toolType/i );
+				die "Parameter file ($file), wrong parameter tool type: $parSection at line: $l"
+				  if ( $parSection ne "special" && $parSection ne "default" );
+
+				if ( grep { $_ eq lc($toolOp) } @parToolOps ) {
 					$readLine = 1;
 				}
 				else {
 					$readLine = 0;
 				}
-
 			}
 
 			# Tools line
@@ -492,20 +521,18 @@ sub GetDrilledNumber {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
- 
-
 	use aliased 'CamHelpers::CamNCHooks';
 	use aliased 'Packages::InCAM::InCAM';
 	use aliased 'Packages::CAM::UniDTM::UniDTM';
 
 	my $inCAM = InCAM->new();
 
-	my $jobId    = "d222763";
+	my $jobId    = "d113608";
 	my $stepName = "panel";
 
 	my $materialName = "IS400";
-	my $machine      = "machine_g";
-	my $layer        = "jfzc";
+	my $machine      = "machine_c";
+	my $layer        = "rs";
 
 	my $uniDTM = UniDTM->new( $inCAM, $jobId, $stepName, $layer, 1 );
 	my @t = $uniDTM->GetTools();

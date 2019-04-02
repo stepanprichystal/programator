@@ -62,7 +62,7 @@ sub GetMinSlotToolByLayers {
 	foreach my $layer (@layers) {
 
 		my $unitDTM = UniDTM->new( $inCAM, $jobId, $stepName, $layer->{"gROWname"}, 1 );
-		my $tool = $unitDTM->GetMinTool(DTMEnums->TypeProc_CHAIN);
+		my $tool = $unitDTM->GetMinTool(EnumsDrill->TypeProc_CHAIN);
 		
 		# tool type chain doesn't have exist
 		if(!defined $tool){

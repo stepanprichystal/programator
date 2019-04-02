@@ -22,6 +22,7 @@ use aliased 'CamHelpers::CamNCHooks';
 use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'Enums::EnumsMachines';
 use aliased 'Enums::EnumsPaths';
+use aliased 'Enums::EnumsDrill';
 use aliased 'Packages::CAM::UniDTM::Enums' => "EnumsDTM";
 use aliased 'CamHelpers::CamStepRepeat';
 use aliased 'CamHelpers::CamHistogram';
@@ -153,7 +154,7 @@ sub GetDrillToolUsage {
 
 	my $unitDTM = UniDTM->new( $inCAM, $jobId, $step, $layer, $SR );
 
-	my @tool = grep { $_->GetTypeProcess() eq EnumsDTM->TypeProc_HOLE } $unitDTM->GetUniqueTools();
+	my @tool = grep { $_->GetTypeProcess() eq EnumsDrill->TypeProc_HOLE } $unitDTM->GetUniqueTools();
 
 	my @dtmTools = CamDTM->GetDTMTools( $inCAM, $jobId, $step, $layer, $SR );
 

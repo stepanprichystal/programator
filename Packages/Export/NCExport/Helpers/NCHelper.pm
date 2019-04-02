@@ -16,6 +16,7 @@ use List::Util qw[max min];
 #local library
 use aliased 'Enums::EnumsGeneral';
 use aliased 'Enums::EnumsPaths';
+use aliased 'Enums::EnumsDrill';
 use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'Packages::TifFile::TifNCOperations';
 use aliased 'Helpers::GeneralHelper';
@@ -524,7 +525,7 @@ sub StoreOperationInfoTif {
 			foreach my $layer (@layers) {
 
 				my $unitDTM = UniDTM->new( $inCAM, $jobId, $step, $layer->{"gROWname"}, 1 );
-				my $tool = $unitDTM->GetMinTool( DTMEnums->TypeProc_CHAIN, 1 ); # slot tool, default (no special)
+				my $tool = $unitDTM->GetMinTool( EnumsDrill->TypeProc_CHAIN, 1 ); # slot tool, default (no special)
 
 				# tool type chain doesn't have exist
 				next  if ( !defined $tool );

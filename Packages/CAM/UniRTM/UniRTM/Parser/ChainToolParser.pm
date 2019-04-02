@@ -83,7 +83,7 @@ sub GetChainList {
 
 				# id defined DTM, assign UniDTM tools to UniChainTool
 				if ($uniDTM) {
-					$dtmTool = $uniDTM->GetTool( $chainTool, DTMEnums->TypeProc_CHAIN );
+					$dtmTool = $uniDTM->GetTool( $chainTool, EnumsDrill->TypeProc_CHAIN );
 					die "Tool chain: $chainTool (comp: $chainComp; order: $chainOrder; source step: $sourceStep) was not found in \"UniDTM\""
 					  if ( !defined $dtmTool );
 				}

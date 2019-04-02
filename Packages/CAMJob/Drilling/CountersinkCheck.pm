@@ -20,6 +20,7 @@ use aliased 'Packages::CAM::UniRTM::UniRTM';
 use aliased 'Packages::CAM::UniRTM::Enums' => "RTMEnums";
 use aliased 'Packages::CAM::UniDTM::Enums' => 'DTMEnums';
 use aliased 'CamHelpers::CamStepRepeatPnl';
+use aliased 'Enums::EnumsDrill';
 
 #use aliased 'Helpers::FileHelper';
 #use aliased 'Helpers::JobHelper';
@@ -85,7 +86,7 @@ sub ExistCountersinkByLayer {
 	my $rtm = UniRTM->new( $inCAM, $jobId, $step, $layer->{"gROWname"}, 0, $dtm );
 
 	# test if exist countersink as pad
-	$csExist = ( grep { $_->GetDepth() > 0 && $_->GetAngle() && $_->GetTypeProcess() eq DTMEnums->TypeProc_HOLE } $dtm->GetUniqueTools() ) ? 1 : 0;
+	$csExist = ( grep { $_->GetDepth() > 0 && $_->GetAngle() && $_->GetTypeProcess() eq EnumsDrill->TypeProc_HOLE } $dtm->GetUniqueTools() ) ? 1 : 0;
 
 	unless ($csExist) {
 

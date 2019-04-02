@@ -111,7 +111,7 @@ sub GetUniqueTools {
 	foreach my $t (@toolsUniq) {
 
 		my $tNew = UniToolBase->new( $t->GetDrillSize(), $t->GetTypeProcess() );
-		$tNew->SetToolOperation($t->GetToolOperation());
+		$tNew->SetToolOperation( $t->GetToolOperation() );
 		$tNew->SetDepth( $t->GetDepth() );
 		$tNew->SetMagazine( $t->GetMagazine() );
 		$tNew->SetMagazineInfo( $t->GetMagazineInfo() );
@@ -158,7 +158,7 @@ sub GetTool {
 	my $typeProcess = shift;
 
 	unless ($typeProcess) {
-		$typeProcess = Enums->TypeProc_HOLE;
+		$typeProcess = EnumsDrill->TypeProc_HOLE;
 	}
 
 	my $mess = "";
@@ -216,7 +216,7 @@ sub __InitUniDTM {
 	foreach my $t (@DTMTools) {
 
 		my $drillSize = $t->{"gTOOLdrill_size"};
-		my $typeProc = $t->{"gTOOLshape"} eq "hole" ? Enums->TypeProc_HOLE : Enums->TypeProc_CHAIN;
+		my $typeProc = $t->{"gTOOLshape"} eq "hole" ? EnumsDrill->TypeProc_HOLE : EnumsDrill->TypeProc_CHAIN;
 
 		my $uniT = UniToolDTM->new( $drillSize, $typeProc, Enums->Source_DTM );
 
@@ -242,7 +242,7 @@ sub __InitUniDTM {
 	foreach my $t (@DTMSurfTools) {
 
 		my $drillSize = $t->{".rout_tool"};
-		my $typeProc  = Enums->TypeProc_CHAIN;
+		my $typeProc  = EnumsDrill->TypeProc_CHAIN;
 
 		my $uniT = UniToolDTMSURF->new( $drillSize, $typeProc, Enums->Source_DTMSURF );
 
@@ -287,7 +287,8 @@ sub __AddPilotHolesDefinition {
 
 		# hole 4-6.5 add pilot hole 0.8
 		my @tools1 =
-		  grep { $_->GetDrillSize() >= 4000 && $_->GetDrillSize() <= 6500 && $_->GetTypeProcess() eq Enums->TypeProc_HOLE } @{ $self->{"tools"} };
+		  grep { $_->GetDrillSize() >= 4000 && $_->GetDrillSize() <= 6500 && $_->GetTypeProcess() eq EnumsDrill->TypeProc_HOLE }
+		  @{ $self->{"tools"} };
 		$self->__AddPilotHoles( \@tools1, 800 );
 	}
 	else {
@@ -295,7 +296,8 @@ sub __AddPilotHolesDefinition {
 		# New version of pilot holes	7.5.2018
 		# hole 4-6.5 add pilot hole 0.8
 		my @tools1 =
-		  grep { $_->GetDrillSize() >= 4000 && $_->GetDrillSize() <= 6500 && $_->GetTypeProcess() eq Enums->TypeProc_HOLE } @{ $self->{"tools"} };
+		  grep { $_->GetDrillSize() >= 4000 && $_->GetDrillSize() <= 6500 && $_->GetTypeProcess() eq EnumsDrill->TypeProc_HOLE }
+		  @{ $self->{"tools"} };
 		$self->__AddPilotHoles( \@tools1, 800 );
 
 	}
@@ -306,7 +308,7 @@ sub __AddPilotHolesDefinition {
 
 		foreach my $d ( $pDef->GetPilotDiameters() ) {
 
-			my $uniT = UniToolDTM->new( $d, Enums->TypeProc_HOLE, Enums->Source_DTM );
+			my $uniT = UniToolDTM->new( $d, EnumsDrill->TypeProc_HOLE, Enums->Source_DTM );
 
 			push( @{ $self->{"tools"} }, $uniT );
 		}
@@ -330,14 +332,15 @@ sub __AddPilotHoles {
 sub __LoadToolsMagazine {
 	my $self = shift;
 
+	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
 
 	my $materialName = $self->{"materialName"};
 
 	foreach my $t ( @{ $self->{"tools"} } ) {
 
-		my $operation = $self->__GetToolOperation($t);
-		
+		my $operation = CamDrilling->GetToolOperation($inCAM, $jobId, $self->{"layer"}, $t->GetTypeProcess());
+
 		$t->SetToolOperation($operation);
 
 		my $mInfo = $t->GetMagazineInfo();
@@ -359,7 +362,7 @@ sub __LoadToolsMagazine {
 
 					my $magMat = $magInfo->{"material"};
 
-					if ( $materialName =~ /^$magMat/i) {
+					if ( $materialName =~ /^$magMat/i ) {
 						$m = $magInfo;
 						last;
 					}
@@ -374,7 +377,7 @@ sub __LoadToolsMagazine {
 
 		# load default tool
 		else {
- 
+
 			my $magazines = $self->{"magazineDef"}->{"tooloperation"}->{$operation}->{"magazine"};
 
 			if ( defined $magazines ) {
@@ -391,75 +394,7 @@ sub __LoadToolsMagazine {
 	}
 }
 
-sub __GetToolOperation {
-	my $self = shift;
-	my $tool = shift;
 
-	my $typeProc = $tool->GetTypeProcess();
-
-	my $inCAM = $self->{"inCAM"};
-	my $jobId = $self->{"jobId"};
-	my %l     = ( "gROWname" => $self->{"layer"} );
-
-	# add NC type
-	my @lArr = ( \%l );
-	CamDrilling->AddNCLayerType( \@lArr );
-
-	# add layer type
-	$l{"gROWlayer_type"} = CamHelper->LayerType( $inCAM, $jobId, $self->{"layer"} );
-
-	my $operation = undef;
-	# a) Determine type depand on plated/nonplated and hlole/chain type
-	if ( $l{"plated"} && $typeProc eq Enums->TypeProc_HOLE ) {
-
-		$operation = EnumsDrill->ToolOp_PLATEDDRILL;
-
-	}
-	elsif ( $l{"plated"} && $typeProc eq Enums->TypeProc_CHAIN ) {
-
-		$operation = EnumsDrill->ToolOp_PLATEDROUT;
-
-	}
-	elsif ( !$l{"plated"} && $typeProc eq Enums->TypeProc_HOLE ) {
-
-		$operation = EnumsDrill->ToolOp_NPLATEDDRILL;
-
-	}
-	elsif ( !$l{"plated"} && $typeProc eq Enums->TypeProc_CHAIN ) {
-
-		$operation = EnumsDrill->ToolOp_NPLATEDROUT;
-
-	}
-
-	# b) Determine type depand on layer type
-	if ( $typeProc eq Enums->TypeProc_CHAIN && $l{"type"} eq EnumsGeneral->LAYERTYPE_nplt_rsMill ) {
-
-		$operation = EnumsDrill->ToolOp_ROUTBEFOREETCH;
-
-	}elsif ( $typeProc eq Enums->TypeProc_CHAIN && $l{"type"} eq EnumsGeneral->LAYERTYPE_nplt_kMill ) {
-
-		$operation = EnumsDrill->ToolOp_ROUTBEFOREET;
-
-	}
-	elsif (
-			$typeProc eq Enums->TypeProc_CHAIN
-			&& (    $l{"type"} eq EnumsGeneral->LAYERTYPE_nplt_cvrlycMill
-				 || $l{"type"} eq EnumsGeneral->LAYERTYPE_nplt_cvrlysMill )
-	  )
-	{
-		$operation = EnumsDrill->ToolOp_COVERLAYROUT;
-
-	}
-	elsif ( $typeProc eq Enums->TypeProc_CHAIN && $l{"type"} eq EnumsGeneral->LAYERTYPE_nplt_prepregMill ) {
-
-		$operation = EnumsDrill->ToolOp_PREPREGROUT;
-
-	}
-
-	die "Tool operation is not defined for tool: " . $tool->GetDrillSize() . ", layer: " . $self->{"layer"} unless(defined $operation);
-
-	return $operation;
-}
 
 sub __LoadMagazineXml {
 	my $self = shift;

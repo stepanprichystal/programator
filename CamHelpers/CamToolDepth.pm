@@ -55,7 +55,7 @@ sub GetMaxAspectRatioByLayer {
 
 		my $t = $tools[$i];
 
-		if ( $t->GetTypeProcess() ne DTMEnums->TypeProc_HOLE ) {
+		if ( $t->GetTypeProcess() ne EnumsDrill->TypeProc_HOLE ) {
 			next;
 		}
 

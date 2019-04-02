@@ -78,7 +78,7 @@ sub GetToolMagazine {
 # Return tool which has minimal diameter
 sub GetMinTool {
 	my $self        = shift;
-	my $processType = shift; # Enums->TypeProc_CHAIN, Enums->TypeProc_HOLE
+	my $processType = shift; # EnumsDrill->TypeProc_CHAIN, EnumsDrill->TypeProc_HOLE
 	my $noSpecial   = shift // 0; # if 1, special tools with magazine info are not considered
 	
 

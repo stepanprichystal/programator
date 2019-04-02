@@ -33,6 +33,7 @@ use aliased 'Packages::CAMJob::Drilling::AspectRatioCheck';
 use aliased 'Packages::CAMJob::Drilling::HolePadsCheck';
 use aliased 'Packages::CAMJob::Routing::RoutPocketCheck';
 use aliased 'Enums::EnumsGeneral';
+use aliased 'Enums::EnumsDrill';
 use aliased 'Packages::CAMJob::Routing::RoutDepthCheck';
 use aliased 'Packages::CAM::UniDTM::Enums' => 'DTMEnums';
 use aliased 'CamHelpers::CamDTM';
@@ -228,7 +229,7 @@ sub OnCheckGroupData {
 		foreach my $l (@routLayers) {
 
 			my $unitDTM = UniDTM->new( $inCAM, $jobId, "panel", $l->{"gROWname"}, 1 );
-			my @tools = map { $_->GetDrillSize() / 1000 } grep { $_->GetTypeProcess() eq DTMEnums->TypeProc_CHAIN } $unitDTM->GetUniqueTools();
+			my @tools = map { $_->GetDrillSize() / 1000 } grep { $_->GetTypeProcess() eq EnumsDrill->TypeProc_CHAIN } $unitDTM->GetUniqueTools();
 
 			foreach my $t (@tools) {
 

@@ -23,6 +23,7 @@ use aliased 'Packages::Polygon::Features::RouteFeatures::RouteFeatures';
 use aliased 'Packages::CAM::UniDTM::UniDTM';
 use aliased 'CamHelpers::CamDTM';
 use aliased 'Packages::CAM::UniDTM::Enums';
+use aliased 'Enums::EnumsDrill';
 
 #-------------------------------------------------------------------------------------------#
 #  Script methods
@@ -318,7 +319,7 @@ sub CheckToolDiameter {
 	foreach my $l (@layersRout) {
 
 		my @maxLDrillTools =
-		  grep { !$_->GetSpecial() && $_->GetTypeProcess() eq Enums->TypeProc_HOLE && $_->GetDrillSize() > $maxDrillTool } $l->{"uniDTM"}->GetTools();
+		  grep { !$_->GetSpecial() && $_->GetTypeProcess() eq EnumsDrill->TypeProc_HOLE && $_->GetDrillSize() > $maxDrillTool } $l->{"uniDTM"}->GetTools();
 
 		if ( scalar(@maxLDrillTools) ) {
 
@@ -332,7 +333,7 @@ sub CheckToolDiameter {
 		}
 
 		my @maxLRoutTools =
-		  grep { !$_->GetSpecial() && $_->GetTypeProcess() eq Enums->TypeProc_CHAIN && $_->GetDrillSize() > $maxRoutTool } $l->{"uniDTM"}->GetTools();
+		  grep { !$_->GetSpecial() && $_->GetTypeProcess() eq EnumsDrill->TypeProc_CHAIN && $_->GetDrillSize() > $maxRoutTool } $l->{"uniDTM"}->GetTools();
 
 		if ( scalar(@maxLRoutTools) ) {
 
@@ -364,7 +365,7 @@ sub CheckToolDiameter {
 
 		foreach my $t ( grep {!$_->GetSpecial()} $l->{"uniDTM"}->GetTools() ) {
 
-			if ( $t->GetTypeProcess() eq Enums->TypeProc_HOLE ) {
+			if ( $t->GetTypeProcess() eq EnumsDrill->TypeProc_HOLE ) {
 				unless ( grep { $_ * 1000 == $t->GetDrillSize() } @drillTool ) {
 
 					$result = 0;
@@ -376,7 +377,7 @@ sub CheckToolDiameter {
 					  . " µm which is not available in CNC department\n";
 				}
 			}
-			elsif ( $t->GetTypeProcess() eq Enums->TypeProc_CHAIN ) {
+			elsif ( $t->GetTypeProcess() eq EnumsDrill->TypeProc_CHAIN ) {
 				unless ( grep { $_ * 1000 == $t->GetDrillSize() } @routTool ) {
 
 					$result = 0;

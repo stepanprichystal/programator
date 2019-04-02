@@ -29,6 +29,7 @@ use aliased 'Packages::CAM::FeatureFilter::FeatureFilter';
 use aliased 'Packages::Polygon::Line::SegmentLineIntersection';
 use aliased 'Packages::Polygon::Line::LineTransform';
 use aliased 'Enums::EnumsGeneral';
+use aliased 'Enums::EnumsDrill';
 use aliased 'Packages::CAM::FeatureFilter::Enums' => "FilterEnums";
 use aliased 'Packages::CAM::UniDTM::UniDTM';
 use aliased 'Packages::CAM::UniDTM::Enums' => 'DTMEnums';
@@ -547,7 +548,7 @@ sub ConnectorToolDetection {
 
 		my $unitDTM = UniDTM->new( $inCAM, $jobId, $step, $l->{"gROWname"} );
 
-		my @tools = grep { $_->GetTypeProcess() eq DTMEnums->TypeProc_CHAIN } $unitDTM->GetUniqueTools();
+		my @tools = grep { $_->GetTypeProcess() eq EnumsDrill->TypeProc_CHAIN } $unitDTM->GetUniqueTools();
 
 		my @a = uniq( map { $_->GetAngle() } grep { $_->GetSpecial() && $_->GetAngle() > 0 } @tools );
 

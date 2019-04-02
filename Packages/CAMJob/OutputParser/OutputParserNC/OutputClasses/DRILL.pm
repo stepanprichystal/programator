@@ -32,7 +32,7 @@ use aliased 'Packages::CAMJob::OutputParser::OutputParserBase::OutputResult::Out
 use aliased 'Packages::Polygon::Polygon::PolygonAttr';
 use aliased 'Enums::EnumsRout';
 use aliased 'CamHelpers::CamLayer';
-
+use aliased 'Enums::EnumsDrill';
 use aliased 'Packages::Polygon::Features::Features::Features';
 
 #-------------------------------------------------------------------------------------------#
@@ -67,7 +67,7 @@ sub _Prepare {
 
 	my $lName = $l->{"gROWname"};
 
-	return 0 unless ( grep { $_->GetTypeProcess() eq DTMEnums->TypeProc_HOLE } $l->{"uniDTM"}->GetTools() );
+	return 0 unless ( grep { $_->GetTypeProcess() eq EnumsDrill->TypeProc_HOLE } $l->{"uniDTM"}->GetTools() );
 
 	# Get all radiuses
 

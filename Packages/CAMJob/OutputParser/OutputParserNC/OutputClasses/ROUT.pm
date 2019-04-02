@@ -69,7 +69,7 @@ sub _Prepare {
 
 	my $lName = $l->{"gROWname"};
 
-	return 0 unless ( grep { $_->GetTypeProcess() eq DTMEnums->TypeProc_CHAIN } $l->{"uniDTM"}->GetTools() );
+	return 0 unless ( grep { $_->GetTypeProcess() eq EnumsDrill->TypeProc_CHAIN } $l->{"uniDTM"}->GetTools() );
 
 	# Get all radiuses
 

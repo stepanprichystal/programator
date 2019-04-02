@@ -19,6 +19,7 @@ use aliased 'CamHelpers::CamDTM';
 use aliased 'CamHelpers::CamMatrix';
 use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'Enums::EnumsGeneral';
+use aliased 'Enums::EnumsDrill';
 use aliased 'Packages::InCAM::InCAM';
 use aliased 'CamHelpers::CamDrilling';
 use aliased 'CamHelpers::CamStepRepeat';
@@ -174,7 +175,7 @@ sub __MovePads {
 			CamLayer->MoveSelOtherLayer( $inCAM, $targetLayer );
 
 			# if some holes have tolerances, set DTM
-			my @holeTol = grep { ( $_->GetTolPlus() > 0 || $_->GetTolMinus() > 0 ) && $_->GetTypeProcess() eq EnumsDTM->TypeProc_HOLE }
+			my @holeTol = grep { ( $_->GetTolPlus() > 0 || $_->GetTolMinus() > 0 ) && $_->GetTypeProcess() eq EnumsDrill->TypeProc_HOLE }
 			  @uniDTMTools;
 
 			if (@holeTol) {
