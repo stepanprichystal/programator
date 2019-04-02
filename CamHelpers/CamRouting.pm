@@ -15,6 +15,7 @@ use warnings;
 #loading of locale modules
 
 use aliased 'Enums::EnumsPaths';
+use aliased 'Enums::EnumsDrill';
 use aliased 'CamHelpers::CamHelper';
 use aliased 'CamHelpers::CamJob';
 use aliased 'CamHelpers::CamDrilling';
