@@ -1677,6 +1677,11 @@ sub _ArchivaceData {
 				}
 			
 			}#$inCAM->PAUSE("Presunuto?");
+			
+			#CLEAN R:/PCB
+			if( -e "r:/pcb/$pcbId"){
+				    rmtree("r:/pcb/$pcbId");
+			}		
 }
 
 sub _ChangePolarityMask {
