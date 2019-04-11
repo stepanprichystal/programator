@@ -3,10 +3,16 @@
 
 #loading of locale modules
  
+#necessary for load pall packages
+use FindBin;
+use lib "$FindBin::Bin/../";
+use PackagesLib;
+
+use lib qw( C:\Perl\site\lib\TpvScripts\Scripts );
 
 
 #local library
-use Genesis;
+use aliased 'Packages::InCAM::InCAM';
 use aliased 'CamHelpers::CamJob';
 
 unless ($ENV{JOB}) {
@@ -17,8 +23,7 @@ unless ($ENV{JOB}) {
 	$stepName = "$ENV{STEP}";
 	
 }
-
-my $genesis = new Genesis;
+my $genesis = InCAM->new();
 
 
 #my $jobName = "$ENV{JOB}";
