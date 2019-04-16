@@ -48,7 +48,7 @@ sub Build {
 	my $pressCnt  = $stackupNC->GetPressCnt();
 
 	# comment
-	$section->AddComment(" HLOUBKOVE FREZOVANI MEZI LISOVANIM ");
+	$section->AddComment(" HLOUBKOVE FREZOVANI PO LISOVANI ");
 
 	# From C
 

@@ -74,6 +74,7 @@ sub __PrepareLayers {
 	my $layerList = shift;
 
 	$self->__PreparePCBMAT( $layerList->GetLayerByType( Enums->Type_PCBMAT ) );
+	$self->__PrepareVIAFILL( $layerList->GetLayerByType( Enums->Type_VIAFILL ) );
 	$self->__PrepareOUTERCU( $layerList->GetLayerByType( Enums->Type_OUTERCU ) );
 	$self->__PrepareOUTERSURFACE( $layerList->GetLayerByType( Enums->Type_OUTERSURFACE ) );
 	$self->__PrepareGOLDFINGER( $layerList->GetLayerByType( Enums->Type_GOLDFINGER ) );
@@ -711,6 +712,35 @@ sub __PrepareNPLTTHROUGHNC {
 	#	}
 
 	$layer->SetOutputLayer($lName);
+}
+
+
+# Resize about 100µm (plating)
+sub __PrepareVIAFILL {
+	my $self  = shift;
+	my $layer = shift;
+
+	unless ( $layer->HasLayers() ) {
+		return 0;
+	}
+
+	my $inCAM  = $self->{"inCAM"};
+	my @layers = $layer->GetSingleLayers();
+	my $lName  = GeneralHelper->GetGUID();
+
+	$inCAM->COM( 'create_layer', layer => $lName, context => 'misc', type => 'document', polarity => 'positive', ins_layer => '' );
+
+	# compensate
+	foreach my $l (@layers) {
+
+		$inCAM->COM( "merge_layers", "source_layer" => $l->{"gROWname"}, "dest_layer" => $lName );
+	}
+
+	CamLayer->WorkLayer( $inCAM, $lName );
+	$inCAM->COM( "sel_resize", "size" => -100, "corner_ctl" => "no" );
+
+	$layer->SetOutputLayer($lName);
+
 }
 
 sub __CountersinkCheck {

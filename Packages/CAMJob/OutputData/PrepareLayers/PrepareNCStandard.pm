@@ -18,7 +18,8 @@ use aliased 'Packages::CAMJob::OutputData::Enums';
 use aliased 'CamHelpers::CamLayer';
 use aliased 'CamHelpers::CamJob';
 use aliased 'Packages::CAMJob::OutputData::LayerData::LayerData';
-use aliased 'Helpers::ValueConvertor';
+use aliased 'Packages::CAMJob::OutputData::Helper';
+use aliased 'Helpers::ValueConvertor'; 
 use aliased 'CamHelpers::CamFilter';
 use aliased 'CamHelpers::CamDTM';
 use aliased 'CamHelpers::CamHistogram';
@@ -84,10 +85,10 @@ sub __PrepareNCDRILLBase {
 
 	foreach my $l (@layers) {
 
-		my $enTit = ValueConvertor->GetJobLayerTitle($l);
-		my $czTit = ValueConvertor->GetJobLayerTitle( $l, 1 );
-		my $enInf = ValueConvertor->GetJobLayerInfo($l);
-		my $czInf = ValueConvertor->GetJobLayerInfo( $l, 1 );
+		my $enTit = Helper->GetJobLayerTitle($l);
+		my $czTit = Helper->GetJobLayerTitle( $l, 1 );
+		my $enInf = Helper->GetJobLayerInfo($l);
+		my $czInf = Helper->GetJobLayerInfo( $l, 1 );
 
 		my $result = $self->{"outputNClayer"}->Prepare($l);
 
@@ -131,10 +132,10 @@ sub __PrepareNCMILL {
 
 	foreach my $l (@layersSingle) {
 
-		my $enTit = ValueConvertor->GetJobLayerTitle($l);
-		my $czTit = ValueConvertor->GetJobLayerTitle( $l, 1 );
-		my $enInf = ValueConvertor->GetJobLayerInfo($l);
-		my $czInf = ValueConvertor->GetJobLayerInfo( $l, 1 );
+		my $enTit = Helper->GetJobLayerTitle($l);
+		my $czTit = Helper->GetJobLayerTitle( $l, 1 );
+		my $enInf = Helper->GetJobLayerInfo($l);
+		my $czInf = Helper->GetJobLayerInfo( $l, 1 );
 
 		# Compensate layer
 
@@ -196,10 +197,10 @@ sub __PrepareNCMILL {
 			$lMain = $layersMill[0];
 		}
 
-		my $enTit = ValueConvertor->GetJobLayerTitle($lMain);
-		my $czTit = ValueConvertor->GetJobLayerTitle( $lMain, 1 );
-		my $enInf = ValueConvertor->GetJobLayerInfo($lMain);
-		my $czInf = ValueConvertor->GetJobLayerInfo( $lMain, 1 );
+		my $enTit = Helper->GetJobLayerTitle($lMain);
+		my $czTit = Helper->GetJobLayerTitle( $lMain, 1 );
+		my $enInf = Helper->GetJobLayerInfo($lMain);
+		my $czInf = Helper->GetJobLayerInfo( $lMain, 1 );
 
 		# Merge all layers
 		foreach my $l (@layersMill) {

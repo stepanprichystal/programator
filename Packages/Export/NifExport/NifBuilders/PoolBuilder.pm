@@ -105,6 +105,7 @@ sub Build {
 	#Drill section
 	@req = ();
 	push(@req, "otvory");
+	push(@req, "pocet_der");
 	
 	$nifMngr->AddSection("Vrtani", BuilderDrill->new(\@req));
 	

@@ -21,11 +21,10 @@ use aliased 'CamHelpers::CamLayer';
 use aliased 'CamHelpers::CamMatrix';
 use aliased 'CamHelpers::CamJob';
 use aliased 'Packages::CAMJob::OutputData::LayerData::LayerData';
-use aliased 'Helpers::ValueConvertor';
 use aliased 'CamHelpers::CamFilter';
-
 use aliased 'Packages::CAM::FeatureFilter::FeatureFilter';
 use aliased 'Packages::CAMJob::OutputData::Drawing::Drawing';
+use aliased 'Packages::CAMJob::OutputData::Helper';
 use aliased 'Packages::CAM::SymbolDrawing::Point';
 use aliased 'Enums::EnumsDrill';
 use aliased 'CamHelpers::CamHistogram';
@@ -101,10 +100,10 @@ sub __ProcessNClayer {
 	my $jobId = $self->{"jobId"};
 	my $step  = $self->{"step"};
 
-	my $enTit = ValueConvertor->GetJobLayerTitle($l);
-	my $czTit = ValueConvertor->GetJobLayerTitle( $l, 1 );
-	my $enInf = ValueConvertor->GetJobLayerInfo($l);
-	my $czInf = ValueConvertor->GetJobLayerInfo( $l, 1 );
+	my $enTit = Helper->GetJobLayerTitle($l, $type);
+	my $czTit = Helper->GetJobLayerTitle($l, $type, 1 );
+	my $enInf = Helper->GetJobLayerInfo($l);
+	my $czInf = Helper->GetJobLayerInfo($l, 1 );
 
 	#my $drawingPos = Point->new( 0, abs( $self->{"profileLim"}->{"yMax"} - $self->{"profileLim"}->{"yMin"} ) + 50 );    # starts 150
 

@@ -18,6 +18,7 @@ use aliased 'Packages::Stackup::Stackup::Stackup';
 use aliased 'Packages::Stackup::StackupNC::StackupNC';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'Packages::Stackup::Enums';
+use aliased 'CamHelpers::CamDrilling';
 
 #-------------------------------------------------------------------------------------------#
 #  Interface
@@ -74,7 +75,8 @@ sub __DefinePlatedGroups {
 	my $self      = shift;
 	my $opManager = shift;
 
-	my $stackup = $self->{'stackup'};    #info about press count, which layer are pressed, etc..
+	my $stackup = $self->{'stackup'};                                                    #info about press count, which layer are pressed, etc..
+	my $viaFill = CamDrilling->GetViaFillExists( $self->{"inCAM"}, $self->{"jobId"} );
 
 	# 1) Create group FROM TOP depend on pressing order
 
@@ -88,10 +90,10 @@ sub __DefinePlatedGroups {
 		#group for last pressing
 		if ( $pressOrder == $stackup->GetPressCount() ) {
 
-			$name = "c" . $stackup->GetPressCount();
+			$name = "c" . $stackup->GetPressCount() . ( $viaFill ? "_d" : "" );
 
 			#if exist, add normal drill + blind from top
-			my $operC = $opManager->GetOperationDef( "c" . $pressOrder );
+			my $operC = $opManager->GetOperationDef( "c" . $pressOrder . ( $viaFill ? "_d" : "" ) );
 			if ($operC) {
 				push( @operations, $operC );
 			}
@@ -125,10 +127,10 @@ sub __DefinePlatedGroups {
 		#group for last pressing
 		if ( $pressOrder == $stackup->GetPressCount() ) {
 
-			$name = "s" . $stackup->GetPressCount();
+			$name = "s" . $stackup->GetPressCount() . ( $viaFill ? "_d" : "" );
 
 			#if exist, add normal drill + blind from top
-			my $operS = $opManager->GetOperationDef( "s" . $pressOrder );
+			my $operS = $opManager->GetOperationDef( "s" . $pressOrder . ( $viaFill ? "_d" : "" ) );
 			if ($operS) {
 				push( @operations, $operS );
 			}
@@ -196,22 +198,28 @@ sub __DefinePlatedOperations {
 	my $stackupNC    = $self->{'stackupNC'};            #info about signal lyers, contain if contain blind, cor drilling etc:..
 	my $pressCnt     = $stackupNC->GetPressCnt();
 	my $coreCnt      = $stackupNC->GetCoreCnt();
+	my $viaFill = CamDrilling->GetViaFillExists( $self->{"inCAM"}, $self->{"jobId"} );
 
 	#plated
-	my @plt_nDrill    = @{ $pltDrillInfo{ EnumsGeneral->LAYERTYPE_plt_nDrill } };       #normall through holes plated
-	my @plt_cDrill    = @{ $pltDrillInfo{ EnumsGeneral->LAYERTYPE_plt_cDrill } };       #core plated
-	my @plt_bDrillTop = @{ $pltDrillInfo{ EnumsGeneral->LAYERTYPE_plt_bDrillTop } };    #blind holes top
-	my @plt_bDrillBot = @{ $pltDrillInfo{ EnumsGeneral->LAYERTYPE_plt_bDrillBot } };    #blind holes bot
-	my @plt_fDrill    = @{ $pltDrillInfo{ EnumsGeneral->LAYERTYPE_plt_fDrill } };       #frame drilling
-	my @plt_nMill     = @{ $pltDrillInfo{ EnumsGeneral->LAYERTYPE_plt_nMill } };        #normall mill slits
-	my @plt_bMillTop  = @{ $pltDrillInfo{ EnumsGeneral->LAYERTYPE_plt_bMillTop } };     #z-axis top mill slits
-	my @plt_bMillBot  = @{ $pltDrillInfo{ EnumsGeneral->LAYERTYPE_plt_bMillBot } };     #z-axis bot mill slits
-	my @plt_dcDrill   = @{ $pltDrillInfo{ EnumsGeneral->LAYERTYPE_plt_dcDrill } };      #drill crosses
+	my @plt_nDrill        = @{ $pltDrillInfo{ EnumsGeneral->LAYERTYPE_plt_nDrill } };           #normall through holes plated
+	my @plt_nFillDrill    = @{ $pltDrillInfo{ EnumsGeneral->LAYERTYPE_plt_nFillDrill } };       # normall filledthrough holes plated
+	my @plt_cDrill        = @{ $pltDrillInfo{ EnumsGeneral->LAYERTYPE_plt_cDrill } };           #core plated
+	my @plt_bDrillTop     = @{ $pltDrillInfo{ EnumsGeneral->LAYERTYPE_plt_bDrillTop } };        #blind holes top
+	my @plt_bDrillBot     = @{ $pltDrillInfo{ EnumsGeneral->LAYERTYPE_plt_bDrillBot } };        #blind holes bot
+	my @plt_bFillDrillTop = @{ $pltDrillInfo{ EnumsGeneral->LAYERTYPE_plt_bFillDrillTop } };    # filled blind holes top
+	my @plt_bFillDrillBot = @{ $pltDrillInfo{ EnumsGeneral->LAYERTYPE_plt_bFillDrillBot } };    # filled blind holes bot
+	my @plt_fDrill        = @{ $pltDrillInfo{ EnumsGeneral->LAYERTYPE_plt_fDrill } };           #frame drilling
+	my @plt_fcDrill       = @{ $pltDrillInfo{ EnumsGeneral->LAYERTYPE_plt_fcDrill } };          # coreframe drilling
+	my @plt_nMill         = @{ $pltDrillInfo{ EnumsGeneral->LAYERTYPE_plt_nMill } };            #normall mill slits
+	my @plt_bMillTop      = @{ $pltDrillInfo{ EnumsGeneral->LAYERTYPE_plt_bMillTop } };         #z-axis top mill slits
+	my @plt_bMillBot      = @{ $pltDrillInfo{ EnumsGeneral->LAYERTYPE_plt_bMillBot } };         #z-axis bot mill slits
+	my @plt_dcDrill       = @{ $pltDrillInfo{ EnumsGeneral->LAYERTYPE_plt_dcDrill } };          #drill crosses
 
 	#Define operation:
 
-	# 1) Operation name = c<press order>, can contain layer
+	# 1) Operation name = c/c_d<press order>, can contain layer
 	# - @plt_nDrill
+	# - @plt_fDrill
 	# - @plt_bDrillTop
 
 	for ( my $i = 0 ; $i < $pressCnt ; $i++ ) {
@@ -219,37 +227,38 @@ sub __DefinePlatedOperations {
 		my $pressOrder = $i + 1;
 		my $press      = $stackupNC->GetPress($pressOrder);
 
-		my $outFile = "c" . $pressOrder;
-		my @layers  = ();
+		my $outFile = "c" . $pressOrder . ( $viaFill && $pressOrder == $stackup->GetPressCount() ? "_d" : "" );    # Add "_d" if viafill
+		my @layers = ();
 
 		my $topSignal    = $press->GetTopSigLayer();
 		my $startTop     = $topSignal->GetNumber();
 		my $startTopName = $topSignal->GetName();
 
-		#plated normal drilling "m" start from top in layer <$drillStartTop>
+		# plated normal drilling "m" start from top in layer <$drillStartTop>
 		my @normalTop = grep { $_->{"gROWdrl_start"} == $startTop } @plt_nDrill;
 		push( @layers, @normalTop );
 
-		#blind drilling start from top in layer <$drillStartTop>
+		# blind drilling start from top in layer <$drillStartTop>
 		my @blindTop = grep { $_->{"gROWdrl_start"} == $startTop } @plt_bDrillTop;
 		push( @layers, @blindTop );
 
 		#when it is last pressing, we don't add V1 frame
-		if ( $pressOrder != $stackup->GetPressCount() ) {
+		if ( $pressOrder == $stackup->GetPressCount() && !$viaFill ) {
+
+			push( @layers, $plt_fDrill[0] ) if ( scalar(@plt_fDrill) == 1 );
+
+		}
+		elsif ( $pressOrder != $stackup->GetPressCount() ) {
 
 			#for each pressing except last, add "v1" frame drilling
 			if ( !$press->ExistNCLayers( Enums->SignalLayer_TOP, EnumsGeneral->LAYERTYPE_plt_cDrill ) ) {
 
-				#my @frameDrill = grep { $_->{"gROWname"} =~ /v1/ } @plt_bDrillBot;
-				if ( scalar(@plt_fDrill) == 1 ) {
-					push( @layers, $plt_fDrill[0] );
-				}
+				push( @layers, $plt_fcDrill[0] ) if ( scalar(@plt_fcDrill) == 1 );
 			}
 		}
 
 		my $oDef = $opManager->AddOperationDef( $outFile, \@layers, $pressOrder );
 
-		#$oDef->SetExtraInfo( "pressOrder", $pressOrder );
 	}
 
 	# 2) Operation name = s<press order>, can contain layer
@@ -259,40 +268,82 @@ sub __DefinePlatedOperations {
 
 		my $press = $stackup->{"press"}{$pressOrder};
 
-		my $outFile = "s" . $pressOrder;
-		my @layers  = ();
+		my $outFile = "s" . $pressOrder . ( $viaFill && $pressOrder == $stackup->GetPressCount() ? "_d" : "" );    # Add "_d" if viafill
+		my @layers = ();
 
 		my $startBot     = $press->{"botNumber"};
 		my $startBotName = $press->{"bot"};
-
-		#plated normal drilling "m" start from bot in layer <$drillStartTop>
-		my @normalBot = grep { $_->{"gROWdrl_start"} == $startBot } @plt_nDrill;
-		push( @layers, @normalBot );
 
 		#blind drilling start from bot in layer <$drillStartTop>
 		my @blindBot = grep { $_->{"gROWdrl_start"} == $startBot } @plt_bDrillBot;
 		push( @layers, @blindBot );
 
 		my $oDef = $opManager->AddOperationDef( $outFile, \@layers, $pressOrder );
-
-		#$oDef->SetExtraInfo( "pressOrder", $pressOrder );
 	}
 
-	# 3) Operation name = r - can contain layer
+	# 3) Operation name = c<press order>, can contain layers:
+	# - @plt_fDrill
+	# - @plt_nFillDrill
+	# - @plt_bFillDrillTop
+	# Only if exist via fill
+	# Via fill layer can start only from very top
+	if ($viaFill) {
+
+		my $press = $stackup->{"press"}{ $stackup->GetPressCount() };
+
+		my $outFile = "c" . $stackup->GetPressCount();
+		my @layers  = ();
+
+		my $startTop     = $press->{"topNumber"};
+		my $startTopName = $press->{"top"};
+
+		# frame drilling if viafill
+		push( @layers, $plt_fDrill[0] );
+
+		#normal filled drilling start from top
+		push( @layers, grep { $_->{"gROWdrl_start"} == $startTop } @plt_nFillDrill );
+
+		#filled blind drilling start from top
+		push( @layers, grep { $_->{"gROWdrl_start"} == $startTop } @plt_bFillDrillTop );
+
+		my $oDef = $opManager->AddOperationDef( $outFile, \@layers, $stackup->GetPressCount() );
+	}
+
+	# 4) Operation name = s<press order>, can contain layer
+	# - @plt_bFillDrillBot
+	# Only if exist via fill
+	# Via fill layer can start only from very bot layer
+	if ($viaFill) {
+
+		my $press = $stackup->{"press"}{ $stackup->GetPressCount() };
+
+		my $outFile = "s" . $stackup->GetPressCount();
+		my @layers  = ();
+
+		my $startBot     = $press->{"botNumber"};
+		my $startBotName = $press->{"bot"};
+
+		#filled blind drilling start from top
+		push( @layers, grep { $_->{"gROWdrl_start"} == $startBot } @plt_bFillDrillBot );
+
+		my $oDef = $opManager->AddOperationDef( $outFile, \@layers, $stackup->GetPressCount() );
+	}
+
+	# 5) Operation name = r - can contain layer
 	# - @plt_nMill
 	$opManager->AddOperationDef( "r" . $stackup->GetPressCount(), \@plt_nMill, $stackup->GetPressCount() );
 
-	# 4) Operation name = rzc - can contain layer
+	# 6) Operation name = rzc - can contain layer
 	# - @plt_bMillTop
 	$opManager->AddOperationDef( "rzc" . $stackup->GetPressCount(), \@plt_bMillTop, $stackup->GetPressCount() );
 
-	# 5) Operation name = rzs - can contain layer
+	# 7) Operation name = rzs - can contain layer
 	# - @plt_bMillBot
 	$opManager->AddOperationDef( "rzs" . $stackup->GetPressCount(), \@plt_bMillBot, $stackup->GetPressCount() );
 
-	# 6) Operation name = j<core number> - can contain layers from
+	# 8) Operation name = j<core number> - can contain layers from
 	# - @plt_cDrill
-	# - @plt_fDrill
+	# - @plt_fcDrill
 	for ( my $i = 0 ; $i < $coreCnt ; $i++ ) {
 
 		my $coreNum = $i + 1;
@@ -317,21 +368,20 @@ sub __DefinePlatedOperations {
 			}
 
 			# Add frame
-			push( @layers, $plt_fDrill[0] );
+			push( @layers, $plt_fcDrill[0] );
 
 			$opManager->AddOperationDef( "j" . $core->GetCoreNumber(), \@layers, 0 );
 		}
 	}
 
-	# 7) Operation name = ds, can contain layer
+	# 9) Operation name = ds, can contain layer
 	# - @plt_dsDrill
 	$opManager->AddOperationDef( "dc", \@plt_dcDrill, $stackup->GetPressCount() );
 
-	# 8) Operation name = v1, can contain layer
-	# - @plt_fDrill
+	# 10) Operation name = v1, can contain layer
+	# - @plt_fcDrill
 
 	# Find cores, which has not blind or core drilling
-
 	my $noNCExist = 0;    # tell if  exist core, where is no plated NCoperation
 	for ( my $i = 0 ; $i < $coreCnt ; $i++ ) {
 
@@ -360,7 +410,7 @@ sub __DefinePlatedOperations {
 	}
 
 	if ($noNCExist) {
-		$opManager->AddOperationDef( "v1", \@plt_fDrill, $stackup->GetPressCount(), "core" );
+		$opManager->AddOperationDef( "v1", \@plt_fcDrill, $stackup->GetPressCount(), "core" );
 	}
 
 }
@@ -439,8 +489,8 @@ sub __DefineNPlatedOperations {
 		# Exception, if "fsch_d" layer is created. Remove "d" and use instead only "fsch_d" layer
 		# fsch_d contain nplt drills from layer fsch
 		if ( scalar( grep { $_->{"gROWname"} =~ /fsch_d/i } @nplt_nDrill_b2t ) > 0 ) {
-			
-			die "Layer \"d\" must exist if exist layer \"fsch_d\"" unless(grep { $_->{"gROWname"} =~ /^d$/i } @nplt_nDrill_b2t );
+
+			die "Layer \"d\" must exist if exist layer \"fsch_d\"" unless ( grep { $_->{"gROWname"} =~ /^d$/i } @nplt_nDrill_b2t );
 			@nplt_nDrill_b2t = grep { $_->{"gROWname"} !~ /^d$/i } @nplt_nDrill_b2t;
 		}
 
@@ -505,7 +555,7 @@ sub __DefineNPlatedOperations {
 	# Exception, if "fsch_d" layer is created. Remove "d" and use instead only "fsch_d" layer
 	# fsch_d contain nplt drills from layer fsch
 	if ( scalar( grep { $_->{"gROWname"} =~ /fsch_d/i } @nplt_nDrill_t2b ) > 0 ) {
-		die "Layer \"d\" must exist if exist layer \"fsch_d\"" unless(grep { $_->{"gROWname"} =~ /^d$/i } @nplt_nDrill_t2b );
+		die "Layer \"d\" must exist if exist layer \"fsch_d\"" unless ( grep { $_->{"gROWname"} =~ /^d$/i } @nplt_nDrill_t2b );
 		@nplt_nDrill_t2b = grep { $_->{"gROWname"} !~ /^d$/i } @nplt_nDrill_t2b;
 	}
 	my @layers = ( @nplt_nMill, @nplt_nDrill_t2b );

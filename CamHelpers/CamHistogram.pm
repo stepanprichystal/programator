@@ -187,23 +187,31 @@ sub GetFeatuesHistogram {
 	my $jobId     = shift;
 	my $stepName  = shift;
 	my $layerName = shift;
-	my $breakSR   = shift;    # default is with SR
+	my $breakSR   = shift // 1;    # default is with SR
+ 
 
-	my $sr = "break_sr";
-	if ( defined $breakSR && $breakSR == 0 ) {
-		$sr = "";
+	if ($breakSR) {
+		$inCAM->INFO(
+					  "units"           => 'mm',
+					  "angle_direction" => 'ccw',
+					  "entity_type"     => 'layer',
+					  "entity_path"     => "$jobId/$stepName/$layerName",
+					  "data_type"       => 'FEAT_HIST',
+					  "parameters"      => "arc+line+pad+surf+text+total",
+					  "options"         => "break_sr"
+		);
 	}
+	else {
+		$inCAM->INFO(
+			"units"           => 'mm',
+			"angle_direction" => 'ccw',
+			"entity_type"     => 'layer',
+			"entity_path"     => "$jobId/$stepName/$layerName",
+			"data_type"       => 'FEAT_HIST',
+			"parameters"      => "arc+line+pad+surf+text+total"
 
-	$inCAM->INFO(
-		units             => 'mm',
-		"angle_direction" => 'ccw',
-		"entity_type"     => 'layer',
-		"entity_path"     => "$jobId/$stepName/$layerName",
-		"data_type"       => 'FEAT_HIST',
-		"parameters"      => "arc+line+pad+surf+text+total",
-		( $sr  ? ( "options" => $sr ) : undef )
-	);
-
+		);
+	}
 	my %info = ();
 	$info{"line"}  = $inCAM->{doinfo}{gFEAT_HISTline};
 	$info{"pad"}   = $inCAM->{doinfo}{gFEAT_HISTpad};
@@ -295,29 +303,12 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId    = "f13608";
+	my $jobId    = "d113609";
 	my $stepName = "panel";
 
-	my %hist = CamHistogram->GetSymHistogram( $inCAM, $jobId, "o+1", "m", 1, 1 );
+	my %hist = CamHistogram->GetFeatuesHistogram( $inCAM, $jobId, "panel", "m");
 
-	my %line_arcs = ();
-
-	foreach my $k ( keys %{ $hist{"lines"} } ) {
-
-		my $lCnt = $hist{"lines"}->{$k};
-		my $aCnt = $hist{"arcs"}->{$k};
-
-		my $t = 0;
-
-		$t += $lCnt if ( defined $lCnt );
-		$t += $aCnt if ( defined $aCnt );
-
-		$line_arcs{$k} = $t;
-	}
-
-	$hist{"lines_arcs"} = \%line_arcs;
-
-	print STDERR "test";
+	die;
 
 }
 

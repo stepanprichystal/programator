@@ -589,6 +589,15 @@ sub OnCheckGroupData {
 			}
 		}
 	}
+	
+	# TMP
+	# Kontrola zaplenzch otovru
+	if(CamDrilling->GetViaFillExists($inCAM, $jobId)){
+		
+		$dataMngr->_AddWarningResult("Zaplnene via",
+												  "V jobu mas zaplnene via, nech vrtacky a postup zkontrolovat u SPR"
+					);
+	}
 
 	# 22) If mpanel exist, check if nested setps do not have circle chain (bridges are necessary)
 	if ( $defaultInfo->LayerExist("f") ) {

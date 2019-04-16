@@ -54,7 +54,7 @@ sub EditAfterOpen {
 
 	# ================================================================
 	# 1) EDIT: edit all files, which are generated from V1
-	if ( $layer->{"type"} eq EnumsGeneral->LAYERTYPE_plt_fDrill ) {
+	if ( $layer->{"type"} eq EnumsGeneral->LAYERTYPE_plt_fcDrill ) {
 
 		my $m47Mess;
 
@@ -96,7 +96,7 @@ sub EditAfterOpen {
 	# Add:
 	# - thick of Cu
 	# - J<number of core> if opItem is core
-	if ( $layer->{"type"} eq EnumsGeneral->LAYERTYPE_plt_fDrill && $self->{"layerCnt"} > 2 ) {
+	if ( $layer->{"type"} eq EnumsGeneral->LAYERTYPE_plt_fcDrill && $self->{"layerCnt"} > 2 ) {
 
 		my $stackup = Stackup->new( $self->{"jobId"} );
 

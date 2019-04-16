@@ -70,7 +70,10 @@ sub InitParser {
 	if (    $NCType eq EnumsGeneral->LAYERTYPE_plt_nDrill
 		 || $NCType eq EnumsGeneral->LAYERTYPE_plt_bDrillTop
 		 || $NCType eq EnumsGeneral->LAYERTYPE_plt_bDrillBot
-		 || $NCType eq EnumsGeneral->LAYERTYPE_plt_cDrill )
+		 || $NCType eq EnumsGeneral->LAYERTYPE_plt_cDrill
+		 || $NCType eq EnumsGeneral->LAYERTYPE_plt_nFillDrill
+		 || $NCType eq EnumsGeneral->LAYERTYPE_plt_bFillDrillTop
+		 || $NCType eq EnumsGeneral->LAYERTYPE_plt_bFillDrillBot )
 	{
 		$parser->AddClass( DRILL->new( $inCAM, $jobId, $step, $l ) );
 	}

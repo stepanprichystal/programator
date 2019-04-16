@@ -61,7 +61,7 @@ sub Build {
 
 	if ( $self->{"layerCnt"} > 2 ) {
 		$stackup   = Stackup->new($jobId);
-		$stackupNC = StackupNC->new($jobId,  $inCAM);
+		$stackupNC = StackupNC->new( $jobId, $inCAM );
 		$coreCnt   = $stackupNC->GetCoreCnt();
 		$pressCnt  = $stackupNC->GetPressCnt();
 	}
@@ -137,7 +137,8 @@ sub Build {
 			if ($mcExist) {
 				if ( $self->{"layerCnt"} > 2 ) {
 
-					%result = CamCopperArea->GetCuAreaMaskByBox( $cuThickness, $pcbThick, $inCAM, $jobId, "panel", "c", undef, ["mc"], undef, \%frLim );
+					%result =
+					  CamCopperArea->GetCuAreaMaskByBox( $cuThickness, $pcbThick, $inCAM, $jobId, "panel", "c", undef, ["mc"], undef, \%frLim );
 
 				}
 				else {
@@ -178,7 +179,8 @@ sub Build {
 			if ($msExist) {
 				if ( $self->{"layerCnt"} > 2 ) {
 
-					%result = CamCopperArea->GetCuAreaMaskByBox( $cuThickness, $pcbThick, $inCAM, $jobId, "panel", undef, "s", undef, ["ms"], \%frLim );
+					%result =
+					  CamCopperArea->GetCuAreaMaskByBox( $cuThickness, $pcbThick, $inCAM, $jobId, "panel", undef, "s", undef, ["ms"], \%frLim );
 
 				}
 				else {
@@ -230,6 +232,44 @@ sub Build {
 		$section->AddComment("Plocha Cu (top+bot) pro zlaceny konektor");
 
 		$section->AddRow( "zlacena_plocha", $area );
+	}
+
+	#plg_plocha_c
+	if ( $self->_IsRequire("plg_plocha_c") ) {
+
+		if ( CamHelper->LayerExists( $inCAM, $jobId, "plgc" ) ) {
+
+			my %result = ();
+
+			if ( $self->{"layerCnt"} > 2 ) {
+
+				%result = CamCopperArea->GetCuAreaByBox( $cuThickness, $pcbThick, $inCAM, $jobId, "panel", "plgc", undef, \%frLim, 1, 1 );
+			}
+			else {
+				%result = CamCopperArea->GetCuArea( $cuThickness, $pcbThick, $inCAM, $jobId, "panel", "plgc", undef, 1, 1 );
+			}
+
+			$section->AddRow( "plg_plocha_c", $result{"area"} );
+		}
+	}
+
+	#plg_plocha_s
+	if ( $self->_IsRequire("plg_plocha_s") ) {
+
+		if ( CamHelper->LayerExists( $inCAM, $jobId, "plgs" ) ) {
+
+			my %result = ();
+
+			if ( $self->{"layerCnt"} > 2 ) {
+
+				%result = CamCopperArea->GetCuAreaByBox( $cuThickness, $pcbThick, $inCAM, $jobId, "panel", undef, "plgs", \%frLim, 1, 1 );
+			}
+			else {
+				%result = CamCopperArea->GetCuArea( $cuThickness, $pcbThick, $inCAM, $jobId, "panel", undef, "plgs", 1, 1 );
+			}
+
+			$section->AddRow( "plg_plocha_s", $result{"area"} );
+		}
 	}
 
 	# Cu area (if blind holes) during pressing
@@ -354,11 +394,11 @@ sub Build {
 		#		}
 
 		if ( !$rsMillExist && !$blindDrillExist ) {
-			
+
 			$prog = 0;
 		}
 		else {
-			
+
 			$prog = 1;
 		}
 
@@ -371,23 +411,23 @@ sub Build {
 		my $prog;
 
 		###=> Zruseno DS 24.5.2017 ###
-#		my $condMill_hal = $pltMillExist && $surface =~ /^b$/i;
-#		my $noNcOperation = !$condMill_hal && !$rsMillExist && !$blindDrillExist;
-#
-#		if ( $noNcOperation || ( !$noNcOperation && $cuThickness > 70 ) ) {
-#
-#			$prog = 1;
-#		}
-#		else {
-#			$prog = 3;
-#		}
+		#		my $condMill_hal = $pltMillExist && $surface =~ /^b$/i;
+		#		my $noNcOperation = !$condMill_hal && !$rsMillExist && !$blindDrillExist;
+		#
+		#		if ( $noNcOperation || ( !$noNcOperation && $cuThickness > 70 ) ) {
+		#
+		#			$prog = 1;
+		#		}
+		#		else {
+		#			$prog = 3;
+		#		}
 
 		if ( !$rsMillExist && !$blindDrillExist ) {
-			
+
 			$prog = 1;
 		}
 		else {
-			
+
 			$prog = 3;
 		}
 

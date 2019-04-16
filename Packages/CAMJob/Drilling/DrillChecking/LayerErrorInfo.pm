@@ -257,9 +257,13 @@ sub CheckInvalidSymbols {
 	push( @t, EnumsGeneral->LAYERTYPE_plt_nDrill );
 	push( @t, EnumsGeneral->LAYERTYPE_plt_bDrillTop );
 	push( @t, EnumsGeneral->LAYERTYPE_plt_bDrillBot );
+	push( @t, EnumsGeneral->LAYERTYPE_plt_nFillDrill );
+	push( @t, EnumsGeneral->LAYERTYPE_plt_bFillDrillTop );
+	push( @t, EnumsGeneral->LAYERTYPE_plt_bFillDrillBot );
 	push( @t, EnumsGeneral->LAYERTYPE_plt_cDrill );
 	push( @t, EnumsGeneral->LAYERTYPE_plt_dcDrill );
 	push( @t, EnumsGeneral->LAYERTYPE_plt_fDrill );
+	push( @t, EnumsGeneral->LAYERTYPE_plt_fcDrill );
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_nDrill );
 
 	my @layersDrill = $self->__GetLayersByType( \@layers, \@t );
@@ -338,11 +342,14 @@ sub CheckDirTop2Bot {
 
 	push( @t, EnumsGeneral->LAYERTYPE_plt_nDrill );
 	push( @t, EnumsGeneral->LAYERTYPE_plt_bDrillTop );
+	push( @t, EnumsGeneral->LAYERTYPE_plt_nFillDrill );
+	push( @t, EnumsGeneral->LAYERTYPE_plt_bFillDrillTop );
 	push( @t, EnumsGeneral->LAYERTYPE_plt_cDrill );
 	push( @t, EnumsGeneral->LAYERTYPE_plt_nMill );
 	push( @t, EnumsGeneral->LAYERTYPE_plt_bMillTop );
 	push( @t, EnumsGeneral->LAYERTYPE_plt_dcDrill );
 	push( @t, EnumsGeneral->LAYERTYPE_plt_fDrill );
+	push( @t, EnumsGeneral->LAYERTYPE_plt_fcDrill );
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_nMill );
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_bMillTop );
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_rsMill );
@@ -387,7 +394,7 @@ sub CheckDirTop2Bot {
 	}
 
 	# Check for blind layer from top, if not end in S layer
-	my @layers2 = $self->__GetLayersByType( \@layers, [ EnumsGeneral->LAYERTYPE_plt_bDrillTop ] );
+	my @layers2 = $self->__GetLayersByType( \@layers, [ EnumsGeneral->LAYERTYPE_plt_bDrillTop, EnumsGeneral->LAYERTYPE_plt_bFillDrillTop ] );
 
 	foreach my $l (@layers2) {
 
@@ -398,7 +405,20 @@ sub CheckDirTop2Bot {
 			$$mess .= "Blind layer: $lName, can not end in matrix in layer: \"s\"\n";
 		}
 	}
+	
+	# Check for filled layers from top, if start in first layer
+	my @layers3 = $self->__GetLayersByType( \@layers, [ EnumsGeneral->LAYERTYPE_plt_nFillDrill, EnumsGeneral->LAYERTYPE_plt_bFillDrillTop ] );
 
+	foreach my $l (@layers3) {
+
+		my $lName = $l->{"gROWname"};
+
+		if ( $l->{"gROWdrl_start"} != 1 ) {
+			$result = 0;
+			$$mess .= "Filled blind layer from top: $lName, has to start in layer \"c\" (now start in: ".$l->{"gROWdrl_name"}.")\n";
+		}
+	}
+ 
 	return $result;
 
 }
@@ -446,8 +466,8 @@ sub CheckDirBot2Top {
 		}
 	}
 
-	# Check for blind layer from top, if not end in S layer
-	my @layers2 = $self->__GetLayersByType( \@layers, [ EnumsGeneral->LAYERTYPE_plt_bDrillTop ] );
+	# Check for blind layer from top, if not end in C layer
+	my @layers2 = $self->__GetLayersByType( \@layers, [ EnumsGeneral->LAYERTYPE_plt_bDrillBot, EnumsGeneral->LAYERTYPE_plt_bFillDrillBot ] );
 
 	foreach my $l (@layers2) {
 
@@ -456,6 +476,19 @@ sub CheckDirBot2Top {
 		if ( $l->{"gROWdrl_end_name"} eq "c" ) {
 			$result = 0;
 			$$mess .= "Blind layer: $lName, can not end in matrix in layer: \"c\"\n";
+		}
+	}
+	
+	# Check for filled layers from bot, if start in last layer
+	my @layers3 = $self->__GetLayersByType( \@layers, [ EnumsGeneral->LAYERTYPE_plt_bFillDrillBot ] );
+
+	foreach my $l (@layers3) {
+
+		my $lName = $l->{"gROWname"};
+
+		if ( $l->{"gROWdrl_start_name"} ne "s" ) {
+			$result = 0;
+			$$mess .= "Filled blind layer from bot: $lName, has to start in layer \"s\" (now start in: ".$l->{"gROWdrl_start_name"}.")\n";
 		}
 	}
 
@@ -522,6 +555,8 @@ sub CheckContainDepth {
 
 	push( @t, EnumsGeneral->LAYERTYPE_plt_bDrillTop );
 	push( @t, EnumsGeneral->LAYERTYPE_plt_bDrillBot );
+	push( @t, EnumsGeneral->LAYERTYPE_plt_bFillDrillTop );
+	push( @t, EnumsGeneral->LAYERTYPE_plt_bFillDrillBot );
 	push( @t, EnumsGeneral->LAYERTYPE_plt_bMillTop );
 	push( @t, EnumsGeneral->LAYERTYPE_plt_bMillBot );
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_bMillTop );
@@ -554,10 +589,12 @@ sub CheckContainNoDepth {
 	my @t = ();
 
 	push( @t, EnumsGeneral->LAYERTYPE_plt_nDrill );
+	push( @t, EnumsGeneral->LAYERTYPE_plt_nFillDrill );
 	push( @t, EnumsGeneral->LAYERTYPE_plt_cDrill );
 	push( @t, EnumsGeneral->LAYERTYPE_plt_nMill );
 	push( @t, EnumsGeneral->LAYERTYPE_plt_dcDrill );
 	push( @t, EnumsGeneral->LAYERTYPE_plt_fDrill );
+	push( @t, EnumsGeneral->LAYERTYPE_plt_fcDrill );
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_nDrill );
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_nMill );
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_rsMill );
@@ -579,9 +616,90 @@ sub CheckContainNoDepth {
 
 }
 
+# Check if all tools in job are available in our CNC department (drill_size.tab, rout_size.tab )
+sub CheckToolDiameter {
+	my $self   = shift;
+	my $inCAM  = shift;
+	my @layers = @{ shift(@_) };
+	my $mess   = shift;
 
+	my $result = 1;
 
-# Check if tools are unique within while layer, check if all necessary parameters are set
+	# check drill layers
+
+	my @t = ();
+
+	push( @t, EnumsGeneral->LAYERTYPE_plt_nDrill );
+	push( @t, EnumsGeneral->LAYERTYPE_plt_bDrillTop );
+	push( @t, EnumsGeneral->LAYERTYPE_plt_bDrillBot );
+	push( @t, EnumsGeneral->LAYERTYPE_plt_nFillDrill );
+	push( @t, EnumsGeneral->LAYERTYPE_plt_bFillDrillTop );
+	push( @t, EnumsGeneral->LAYERTYPE_plt_bFillDrillBot );
+	push( @t, EnumsGeneral->LAYERTYPE_plt_cDrill );
+	push( @t, EnumsGeneral->LAYERTYPE_plt_dcDrill );
+	push( @t, EnumsGeneral->LAYERTYPE_plt_fDrill );
+	push( @t, EnumsGeneral->LAYERTYPE_plt_fcDrill );
+	push( @t, EnumsGeneral->LAYERTYPE_nplt_nDrill );
+
+	my @layersDrill = $self->__GetLayersByType( \@layers, \@t );
+
+	my @t2 = ();
+
+	push( @t2, EnumsGeneral->LAYERTYPE_plt_nMill );
+	push( @t2, EnumsGeneral->LAYERTYPE_plt_bMillTop );
+	push( @t2, EnumsGeneral->LAYERTYPE_plt_bMillBot );
+	push( @t2, EnumsGeneral->LAYERTYPE_nplt_kMill );
+	push( @t2, EnumsGeneral->LAYERTYPE_nplt_bMillTop );
+	push( @t2, EnumsGeneral->LAYERTYPE_nplt_bMillBot );
+	push( @t2, EnumsGeneral->LAYERTYPE_nplt_rsMill );
+	push( @t2, EnumsGeneral->LAYERTYPE_nplt_frMill );
+	push( @t2, EnumsGeneral->LAYERTYPE_nplt_cbMillTop );
+	push( @t2, EnumsGeneral->LAYERTYPE_nplt_cbMillBot );
+	push( @t2, EnumsGeneral->LAYERTYPE_nplt_nMill );
+
+	# check all nc layers on wrong shaped pads. Pads has to by only r<number>
+
+	my @layersAll = $self->__GetLayersByType( \@layers, [ @t, @t2 ] );
+
+	# check all nc layers on max available drill tool
+	my @tool    = CamDTM->GetToolTable( $inCAM, 'drill' );
+	my $maxTool = max(@tool) * 1000;                         # in µm
+	my $minTool = min(@tool) * 1000;                         # in µm
+
+	foreach my $l (@layersAll) {
+
+		my @maxTools = grep { ( $_->{"sym"} =~ m/^r(\d+\.?\d*)$/ )[0] > $maxTool } @{ $l->{"symHist"}->{"pads"} };
+
+		if ( scalar(@maxTools) ) {
+
+			$result = 0;
+			$$mess .=
+			    "NC layer: "
+			  . $l->{"gROWname"}
+			  . " contains drilled holes ("
+			  . join( ";", map { $_->{"sym"} } @maxTools )
+			  . ") larger than our max tool ($maxTool mm)\n";
+		}
+
+		#		my @minTools = grep { ( $_->{"sym"} =~ m/^r(\d+\.?\d*)$/ )[0] < $minTool } @{ $l->{"symHist"}->{"pads"} };
+		#
+		#		if ( scalar(@minTools) ) {
+		#
+		#			$result = 0;
+		#			$$mess .=
+		#			    "NC layer: "
+		#			  . $l->{"gROWname"}
+		#			  . " contains drilled holes ("
+		#			  . join( ";", map { $_->{"sym"} } @minTools )
+		#			  . ") smaller than our min tool ($minTool mm)\n";
+		#		}
+
+	}
+
+	return $result;
+}
+
+# Check if drill size is greater than finish size
 sub CheckDiamterDiff {
 	my $self     = shift;
 	my $inCAM    = shift;
@@ -595,6 +713,7 @@ sub CheckDiamterDiff {
 	my @t = ();
 
 	push( @t, EnumsGeneral->LAYERTYPE_plt_nDrill );
+	push( @t, EnumsGeneral->LAYERTYPE_plt_nFillDrill );
 	push( @t, EnumsGeneral->LAYERTYPE_plt_cDrill );
 	push( @t, EnumsGeneral->LAYERTYPE_plt_nMill );
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_nDrill );
@@ -609,7 +728,7 @@ sub CheckDiamterDiff {
 	foreach my $l (@layers) {
 
 		my @tools = grep { $_->GetSource() eq Enums->Source_DTM } $l->{"uniDTM"}->GetTools();
-		@tools = grep { ( $_->GetFinishSize() - 100 ) > $_->GetDrillSize() } @tools;
+		@tools = grep { defined $_->GetFinishSize() && ( $_->GetFinishSize() - 100 ) > $_->GetDrillSize() } @tools;
 
 		if ( scalar(@tools) ) {
 
@@ -658,7 +777,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	use aliased 'Packages::InCAM::InCAM';
 
 	my $inCAM = InCAM->new();
-	my $jobId = "d113608";
+	my $jobId = "d113609"; 
 
 	my $mess = "";
 

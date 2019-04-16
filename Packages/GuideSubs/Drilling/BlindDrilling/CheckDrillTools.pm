@@ -46,7 +46,10 @@ sub BlindDrillCheckAllSteps {
 		foreach my $s ( CamStepRepeat->GetUniqueNestedStepAndRepeat( $inCAM, $jobId, $stepName) ) {
 
 			foreach my $l (
-				 CamDrilling->GetNCLayersByTypes( $inCAM, $jobId, [ EnumsGeneral->LAYERTYPE_plt_bDrillTop, EnumsGeneral->LAYERTYPE_plt_bDrillBot ] ) )
+				 CamDrilling->GetNCLayersByTypes( $inCAM, $jobId, [ EnumsGeneral->LAYERTYPE_plt_bDrillTop, 
+				 													EnumsGeneral->LAYERTYPE_plt_bDrillBot,
+				 													EnumsGeneral->LAYERTYPE_plt_bFillDrillTop,
+				 													EnumsGeneral->LAYERTYPE_plt_bFillDrillBot] ) )
 			{
 				my $errStrStep = "";
 				unless ( BlindDrillInfo->BlindDrillChecks( $inCAM, $jobId, $s->{"stepName"}, $l, \$errStrStep ) ) {

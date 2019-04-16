@@ -41,12 +41,13 @@ sub __InitLayers {
 	# layer data are sorted by final order of printing
 
 	push( @{ $self->{"layers"} }, LayerData->new( Enums->Type_PCBMAT ) );
+	push( @{ $self->{"layers"} }, LayerData->new( Enums->Type_VIAFILL ) );
 	push( @{ $self->{"layers"} }, LayerData->new( Enums->Type_OUTERCU ) );
 	push( @{ $self->{"layers"} }, LayerData->new( Enums->Type_OUTERSURFACE ) );
-	push( @{ $self->{"layers"} }, LayerData->new( Enums->Type_MASK ) );
-	push( @{ $self->{"layers"} }, LayerData->new( Enums->Type_SILK ) );
 	push( @{ $self->{"layers"} }, LayerData->new( Enums->Type_PLTDEPTHNC ) );
 	push( @{ $self->{"layers"} }, LayerData->new( Enums->Type_NPLTDEPTHNC ) );
+	push( @{ $self->{"layers"} }, LayerData->new( Enums->Type_MASK ) );
+	push( @{ $self->{"layers"} }, LayerData->new( Enums->Type_SILK ) );
 	push( @{ $self->{"layers"} }, LayerData->new( Enums->Type_PLTTHROUGHNC ) );
 	push( @{ $self->{"layers"} }, LayerData->new( Enums->Type_NPLTTHROUGHNC ) );
 	push( @{ $self->{"layers"} }, LayerData->new( Enums->Type_GOLDFINGER ) );
@@ -144,6 +145,16 @@ sub SetLayers {
 				$self->_AddToLayerData( $l, Enums->Type_NPLTTHROUGHNC );
 
 			}
+			elsif (
+					$l->{"type"}
+					&& (    $l->{"type"} eq EnumsGeneral->LAYERTYPE_plt_nFillDrill
+						 || $l->{"type"} eq EnumsGeneral->LAYERTYPE_plt_bFillDrillTop )
+			  )
+			{
+
+				$self->_AddToLayerData( $l, Enums->Type_VIAFILL );
+
+			}
 		}
 
 	}
@@ -235,6 +246,15 @@ sub SetLayers {
 			{
 
 				$self->_AddToLayerData( $l, Enums->Type_NPLTTHROUGHNC );
+
+			}elsif (
+					$l->{"type"}
+					&& (    $l->{"type"} eq EnumsGeneral->LAYERTYPE_plt_nFillDrill
+						 || $l->{"type"} eq EnumsGeneral->LAYERTYPE_plt_bFillDrillBot )
+			  )
+			{
+
+				$self->_AddToLayerData( $l, Enums->Type_VIAFILL );
 
 			}
 		}

@@ -74,11 +74,13 @@ sub AddOperationDef {
 	my $layers     = shift;
 	my $pressOrder = shift;
 
-	if ( defined $name
+	if (    defined $name
 		 && $layers
 		 && scalar( @{$layers} )
 		 && defined $pressOrder )
 	{
+
+		die "Operation definition: $name, already exists" if ( $self->GetOperationDef($name) );
 
 		my $def = OperationDef->new( $name, $layers, $pressOrder );
 		push( @{ $self->{"operDefs"} }, $def );
@@ -96,8 +98,11 @@ sub AddGroupDef {
 	my $name       = shift;
 	my $operations = shift;
 
-	# Group has to has more then one operations
-	if ( $operations && scalar( @{$operations} ) >= 2 ) {
+	# Group has to have at least one operation
+	if ( $operations && scalar( @{$operations} ) >= 1 ) {
+
+		die "Operation group: $name, already exists" if ( grep { $_->{"name"} eq $name } @{$self->{"operGroups"}} );
+
 		my $group = OperationGroup->new( $name, $operations );
 		push( @{ $self->{"operGroups"} }, $group );
 
@@ -119,8 +124,8 @@ sub GetInfoTable {
 	# this add info for all groups and operation containes in groups
 	my @opGroups = @{ $self->{"operGroups"} };
 	for ( my $i = 0 ; $i < scalar(@opGroups) ; $i++ ) {
-		
-		my %infoHash = ("group" => 1 );
+
+		my %infoHash = ( "group" => 1 );
 		my @groupInfo = ();
 
 		my $g = $opGroups[$i];
@@ -170,7 +175,7 @@ sub GetInfoTable {
 		# only if item is not contained in another item created from group
 		unless ( $self->__ReturnGroupItem($item) ) {
 
-			my %infoHash = ("group" => 0 );
+			my %infoHash = ( "group" => 0 );
 			my @groupInfo = ();
 
 			my @operations = @{ $item->{"operations"} };
@@ -188,7 +193,7 @@ sub GetInfoTable {
 			}
 		}
 	}
-	
+
 	return @groupInfoAll;
 
 }
@@ -215,7 +220,6 @@ sub __ReturnGroupItem {
 
 	}
 }
-
 
 # All single operations will not be exported for each machine, which can process this
 # operation item
@@ -251,11 +255,11 @@ sub ReduceMachines {
 		#if opDef was found in @opSearchOps, get all machines
 		if ( scalar( grep { $opDef->{"name"} eq $_->{"name"} } @opSearchOps ) ) {
 
-			 my @m = ();
-			 $opItem->{"machines"} = \@m;
-			 last;
+			my @m = ();
+			$opItem->{"machines"} = \@m;
+			last;
 		}
-	} 
+	}
 }
 
 ## All single operations will not be exported for each machine, which can process this

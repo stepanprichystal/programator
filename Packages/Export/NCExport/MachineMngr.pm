@@ -21,6 +21,7 @@ use aliased 'Helpers::GeneralHelper';
 use aliased 'Helpers::JobHelper';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'CamHelpers::CamJob';
+use aliased 'CamHelpers::CamDrilling';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -124,6 +125,11 @@ sub __GetPropertyVector {
 
 				# combine vector with preview "result" vector
 				foreach my $propName ( keys %comb ) {
+
+					if ( !defined $resVector{$propName} || !defined $lVec{$propName} ) {
+						$resVector{$propName} = 1;
+						next;
+					}
 
 					# get new signle property value, from two property values
 					$resVector{$propName} = $comb{$propName}->( $resVector{$propName}, $lVec{$propName} );
@@ -312,13 +318,13 @@ sub __GetDynamicProperty {
 	}
 
 	# set max tool which is not special
-	$h{ Enums->Property_MAXTOOL } = $maxStandard / 1000 if (defined $maxStandard);
+	$h{ Enums->Property_MAXTOOL } = $maxStandard / 1000 if ( defined $maxStandard );
 
 	# get min tool which is not special
-	$h{ Enums->Property_MINTOOL } = $minStandard / 1000 if (defined $minStandard);
+	$h{ Enums->Property_MINTOOL } = $minStandard / 1000 if ( defined $minStandard );
 
 	# set max tool which is  special
-	$h{ Enums->Property_MAXDEPTHTOOL } = $maxSpecial / 1000 if (defined $maxSpecial);
+	$h{ Enums->Property_MAXDEPTHTOOL } = $maxSpecial / 1000 if ( defined $maxSpecial );
 
 	return %h;
 
@@ -333,7 +339,9 @@ sub __SetStaticPropertyTable {
 	$self->{"propTable"} = \%t;
 
 	my $camera = 0;
-	if ( JobHelper->GetIsFlex( $self->{"jobId"} ) ) {
+	if (    JobHelper->GetIsFlex( $self->{"jobId"} )
+		 || CamDrilling->GetViaFillExists( $self->{"inCAM"}, $self->{"jobId"} ) )
+	{
 		$camera = 1;
 	}
 
@@ -346,12 +354,16 @@ sub __SetStaticPropertyTable {
 	# 6) CAMERAS
 
 	$t{ EnumsGeneral->LAYERTYPE_plt_nDrill }{"ml"} = [ 1, 0, 0, 0, 0, 1 ];
-	$t{ EnumsGeneral->LAYERTYPE_plt_nDrill }{"sl"} = [ 1, 0, 0, 0, 0, 0 ];
+	$t{ EnumsGeneral->LAYERTYPE_plt_nDrill }{"sl"} = [ 1, 0, 0, 0, 0, $camera ];    # use camera if <= 2v and via fill
+
+	$t{ EnumsGeneral->LAYERTYPE_plt_nFillDrill }{"ml"} = [ 1, 0, 0, 0, 0, 1 ];
+	$t{ EnumsGeneral->LAYERTYPE_plt_nFillDrill }{"sl"} = [ 1, 0, 0, 0, 0, 0 ];
 
 	$t{ EnumsGeneral->LAYERTYPE_plt_bDrillTop }{"ml"} = [ 0, 1, 0, 0, 0, 1 ];
-	$t{ EnumsGeneral->LAYERTYPE_plt_bDrillTop }{"sl"} = [ 0, 0, 0, 0, 0, 0 ];
 	$t{ EnumsGeneral->LAYERTYPE_plt_bDrillBot }{"ml"} = [ 0, 1, 0, 0, 0, 1 ];
-	$t{ EnumsGeneral->LAYERTYPE_plt_bDrillBot }{"sl"} = [ 0, 0, 0, 0, 0, 0 ];
+
+	$t{ EnumsGeneral->LAYERTYPE_plt_bFillDrillTop }{"ml"} = [ 0, 1, 0, 0, 0, 1 ];
+	$t{ EnumsGeneral->LAYERTYPE_plt_bFillDrillBot }{"ml"} = [ 0, 1, 0, 0, 0, 1 ];
 
 	$t{ EnumsGeneral->LAYERTYPE_plt_cDrill }{"ml"} = [ 1, 0, 0, 0, 0, 0 ];
 	$t{ EnumsGeneral->LAYERTYPE_plt_cDrill }{"sl"} = [ 0, 0, 0, 0, 0, 0 ];
@@ -367,8 +379,11 @@ sub __SetStaticPropertyTable {
 	$t{ EnumsGeneral->LAYERTYPE_plt_dcDrill }{"ml"} = [ 0, 0, 0, 0, 1, 1 ];
 	$t{ EnumsGeneral->LAYERTYPE_plt_dcDrill }{"sl"} = [ 0, 0, 0, 0, 0, 0 ];
 
-	$t{ EnumsGeneral->LAYERTYPE_plt_fDrill }{"ml"} = [ 1, 0, 0, 0, 0, 0 ];
+	$t{ EnumsGeneral->LAYERTYPE_plt_fDrill }{"ml"} = [ 1, 0, 0, 0, 0, 1 ];
 	$t{ EnumsGeneral->LAYERTYPE_plt_fDrill }{"sl"} = [ 1, 0, 0, 0, 0, 0 ];
+
+	$t{ EnumsGeneral->LAYERTYPE_plt_fcDrill }{"ml"} = [ 1, 0, 0, 0, 0, 0 ];
+	$t{ EnumsGeneral->LAYERTYPE_plt_fcDrill }{"sl"} = [ 1, 0, 0, 0, 0, 0 ];
 
 	$t{ EnumsGeneral->LAYERTYPE_nplt_nDrill }{"ml"} = [ 1, 0, 0, 0, 0, 0 ];
 	$t{ EnumsGeneral->LAYERTYPE_nplt_nDrill }{"sl"} = [ 1, 0, 0, 0, 0, 0 ];

@@ -95,6 +95,8 @@ sub Build {
 	push(@req, "mereni_tolerance_vrtani");
 	push(@req, "prerusovana_drazka");
 	push(@req, "srazeni_hran");
+	push(@req, "zaplneni_otvoru");
+ 
 	
 	$nifMngr->AddSection("Ostatni", BuilderOther->new(\@req));
 	 
@@ -105,6 +107,8 @@ sub Build {
 	push(@req, "g_plocha_s");
 	push(@req, "gold_c");
 	push(@req, "gold_s");
+	push(@req, "plg_plocha_c");
+	push(@req, "plg_plocha_s");
 	push(@req, "pocet_ponoru");
 	push(@req, "zlacena_plocha");
 	push(@req, "imersni_plocha");
@@ -157,6 +161,13 @@ sub Build {
 	push(@req, "pocet_der");
 	push(@req, "min_vrtak_pomer");
 	push(@req, "pocet_der_kus");
+
+	push(@req, "vrtani_do_c");
+	push(@req, "stages_do_c");
+	push(@req, "min_vrtak_do_c");
+	push(@req, "pocet_vrtaku_do_c");
+	push(@req, "pocet_der_do_c");
+	push(@req, "min_vrtak_pomer_do_c");
 	
 	$nifMngr->AddSection("Vrtani", BuilderDrill->new(\@req));
 

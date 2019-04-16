@@ -210,6 +210,24 @@ sub AddNCLayerType {
 			$l->{"plated"} = 1;
 
 		}
+		elsif ( $l->{"gROWname"} =~ /^mfill[0-9]*$/ ) {
+
+			$l->{"type"}   = EnumsGeneral->LAYERTYPE_plt_nFillDrill;
+			$l->{"plated"} = 1;
+
+		}
+		elsif ( $l->{"gROWname"} =~ /^scfill[0-9]+$/ ) {
+
+			$l->{"type"}   = EnumsGeneral->LAYERTYPE_plt_bFillDrillTop;
+			$l->{"plated"} = 1;
+
+		}
+		elsif ( $l->{"gROWname"} =~ /^ssfill[0-9]+$/ ) {
+
+			$l->{"type"}   = EnumsGeneral->LAYERTYPE_plt_bFillDrillBot;
+			$l->{"plated"} = 1;
+
+		}
 		elsif ( $l->{"gROWname"} =~ /^j[0-9]+$/ ) {
 
 			$l->{"type"}   = EnumsGeneral->LAYERTYPE_plt_cDrill;
@@ -234,9 +252,15 @@ sub AddNCLayerType {
 			$l->{"plated"} = 1;
 
 		}
-		elsif ( $l->{"gROWname"} =~ /^v[0-9]+$/ ) {
+		elsif ( $l->{"gROWname"} =~ /^v$/ ) {
 
 			$l->{"type"}   = EnumsGeneral->LAYERTYPE_plt_fDrill;
+			$l->{"plated"} = 1;
+
+		}
+		elsif ( $l->{"gROWname"} =~ /^v1$/ ) {
+
+			$l->{"type"}   = EnumsGeneral->LAYERTYPE_plt_fcDrill;
 			$l->{"plated"} = 1;
 
 		}
@@ -351,21 +375,42 @@ sub AddNCLayerType {
 
 # Return info about NC layer
 sub GetNCLayerInfo {
-	my $self       = shift;
-	my $inCAM      = shift;
-	my $jobId      = shift;
-	my $layer      = shift;
-	my $ncType     = shift // 0;    # NC type + plated
-	my $matrixType = shift // 0;    # rout/drill
+	my $self  = shift;
+	my $inCAM = shift;
+	my $jobId = shift;
+	my $layer = shift;
+
+	# Add key: type
+	# Add key: plated
+	my $ncType = shift // 0;
+
+	# Add key: gROWlayer_type
+	my $matrixType = shift // 0;
+
+	# Add key: gROWdrl_start_name, gROWdrl_end_name
+	# Add key: gROWdrl_start, gROWdrl_end
+	# Add key: gROWdrl_dir
+	my $startStop = shift // 0;
 
 	my %lInfo = ( "gROWname" => $layer );
 
 	if ($ncType) {
 		$self->AddNCLayerType( [ \%lInfo ] );
+		die "Key: \"type\" was not set"   unless ( defined $lInfo{"type"} );
+		die "Key: \"plated\" was not set" unless ( defined $lInfo{"plated"} );
 	}
 	if ($matrixType) {
-
 		$lInfo{"gROWlayer_type"} = CamMatrix->GetLayerType( $inCAM, $jobId, $layer );
+		die "Key: \"gROWlayer_type\"  was not set" unless ( defined $lInfo{"gROWlayer_type"} );
+	}
+
+	if ($startStop) {
+		$self->AddLayerStartStop( $inCAM, $jobId, [ \%lInfo ] );
+		die "Key: \"gROWdrl_start_name\"  was not set" unless ( defined $lInfo{"gROWdrl_start_name"} );
+		die "Key: \"gROWdrl_end_name\"  was not set"   unless ( defined $lInfo{"gROWdrl_end_name"} );
+		die "Key: \"gROWdrl_start\"  was not set"      unless ( defined $lInfo{"gROWdrl_start"} );
+		die "Key: \"gROWdrl_end\"  was not set"        unless ( defined $lInfo{"gROWdrl_end"} );
+		die "Key: \"gROWdrl_dir\"  was not set"        unless ( defined $lInfo{"gROWdrl_dir"} );
 	}
 
 	return %lInfo;
@@ -604,6 +649,31 @@ sub AddHistogramValues {
 		$layer->{"maxTool"} = $max;
 	}
 }
+
+# Return 1 if exist some via fill layer in matrix
+# ref params $side is fileld:
+# - top - only top filling
+# - bot - only bot filling
+# - both - top and bot filling
+sub GetViaFillExists {
+	my $self  = shift;
+	my $inCAM = shift;
+	my $jobId = shift;
+	my $side  = shift // undef;    # top/bot/both
+
+	my @topViaFill =
+	  $self->GetNCLayersByTypes( $inCAM, $jobId, [ EnumsGeneral->LAYERTYPE_plt_nFillDrill, EnumsGeneral->LAYERTYPE_plt_bFillDrillTop ] );
+
+	my @botViaFill = $self->GetNCLayersByTypes( $inCAM, $jobId, [ EnumsGeneral->LAYERTYPE_plt_bFillDrillBot ] );
+
+	$$side = "top"  if ( scalar(@topViaFill)    && !scalar(@botViaFill) );
+	$$side = "bot"  if ( scalar( !@topViaFill ) && scalar(@botViaFill) );
+	$$side = "both" if ( scalar(@topViaFill)    && scalar(@botViaFill) );
+
+	return defined $$side ? 1 : 0;
+}
+
+
 
 # Return NC operation name
 # Operation name is used for getting tool parameters, tool feed rate, etc..

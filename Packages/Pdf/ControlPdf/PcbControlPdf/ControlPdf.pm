@@ -253,7 +253,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $jobId = "d240200";
 
-	my $mess = "";
+	my $mess = ""; 
 
 	my $control = ControlPdf->new( $inCAM, $jobId, "mpanel", "en" );
 	$control->Create();

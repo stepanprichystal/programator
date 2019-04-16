@@ -79,6 +79,8 @@ sub Build {
 	push(@req, "mereni_tolerance_vrtani");
 	push(@req, "prerusovana_drazka");
 	push(@req, "srazeni_hran");
+	push(@req, "zaplneni_otvoru");
+	push(@req, "zaplneni_otvoru_STRANA");
 	
 	
 	$nifMngr->AddSection("Ostatni", BuilderOther->new(\@req));	

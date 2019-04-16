@@ -23,7 +23,7 @@ use aliased 'Packages::Stackup::StackupNC::StackupNCSignal';
 #  Package methods
 #-------------------------------------------------------------------------------------------#
 
-sub new {
+sub new { 
 	my $class = shift;
 	
 	my $jobId = shift;

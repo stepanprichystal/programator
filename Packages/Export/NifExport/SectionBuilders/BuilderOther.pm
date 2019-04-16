@@ -18,6 +18,8 @@ use warnings;
 use aliased 'CamHelpers::CamJob';
 use aliased 'CamHelpers::CamHelper';
 use aliased 'Connectors::HeliosConnector::HegMethods';
+use aliased 'CamHelpers::CamDrilling';
+use aliased 'Enums::EnumsGeneral';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -44,7 +46,7 @@ sub Build {
 	if ( $self->_IsRequire("poznamka") ) {
 
 		# add quick notes too
- 
+
 		$section->AddRow( "poznamka", $self->__PrepareNote() );
 	}
 
@@ -98,7 +100,7 @@ sub Build {
 
 		$section->AddRow( "mereni_tolerance_vrtani", $toleranceHole );
 	}
-	
+
 	#mereni_tolerance_vrtani
 	if ( $self->_IsRequire("srazeni_hran") ) {
 
@@ -111,7 +113,6 @@ sub Build {
 		$section->AddRow( "srazeni_hran", $chamferEdge );
 	}
 
-
 	#ul_logo
 	if ( $self->_IsRequire("prerusovana_drazka") ) {
 		my $jumpScore = "N";
@@ -122,6 +123,29 @@ sub Build {
 		$section->AddRow( "prerusovana_drazka", $jumpScore );
 	}
 
+	#zaplneni_otvoru
+	if ( $self->_IsRequire("zaplneni_otvoru") ) {
+		my $res = "N";
+
+		$section->AddComment("N - neni; B - vse; C - pouze vybrane");
+		$section->AddRow( "zaplneni_otvoru", $self->__GetViaFillType() );
+	}
+ 
+	
+#	#zaplneni_otvoru_STRANA
+#	if ( $self->_IsRequire("zaplneni_otvoru_STRANA") ) {
+#		my $res = "";
+#		
+#		my $side;
+#		if(CamDrilling->GetViaFillExists( $inCAM, $jobId, \$side )){
+#			
+#			$res = "C" if($side eq "top");
+#			$res = "S" if($side eq "bot");
+#			$res = "2" if($side eq "both");
+#		}
+#
+#		$section->AddRow( "zaplneni_otvoru_STRANA", $res );
+#	}
 }
 
 sub __PrepareNote {
@@ -144,17 +168,55 @@ sub __PrepareNote {
 	if ( $nifData{"quickNotes"} ) {
 
 		my @arr = @{ $nifData{"quickNotes"} };
-		
-		@arr = map {$_->{"text"} } @arr;
+
+		@arr = map { $_->{"text"} } @arr;
 
 		push( @notes, @arr );
 	}
 
-	$note = join( ";", @notes);
+	$note = join( ";", @notes );
 
 	return $note;
 
 }
+
+# Return type of viafilling
+# - N - no via fill
+# - B - all holes are fileld
+# - C - only specifiead holes are filled
+sub __GetViaFillType {
+	my $self = shift;
+
+	my $inCAM = $self->{"inCAM"};
+	my $jobId = $self->{"jobId"};
+
+	# 1) Default - no via fill
+	my $type = "N";
+
+	# 2)Test if anz via fill exist
+	my $viaFill = CamDrilling->GetViaFillExists( $inCAM, $jobId );
+
+	$type = "B" if ($viaFill);    # all via fill are filled
+
+	# 3) Test if not all via hole are filed
+
+	if ($viaFill) {
+		my $l = [ EnumsGeneral->LAYERTYPE_plt_nDrill, 
+		EnumsGeneral->LAYERTYPE_plt_bDrillTop,
+		EnumsGeneral->LAYERTYPE_plt_bDrillBot
+		];
+
+		# if via fill layer exist and "standard not via fill" it means, not all via are filled
+		if(CamDrilling->GetNCLayersByTypes( $inCAM, $jobId, $l )){
+			
+			$type = "C";
+		}
+	}
+	
+	return $type;
+}
+
+
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
