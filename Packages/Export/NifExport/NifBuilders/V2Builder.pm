@@ -157,11 +157,11 @@ sub Build {
 	push(@req, "pocet_der");
 	push(@req, "min_vrtak_pomer");
 
-	push(@req, "min_vrtak_D");
-	push(@req, "otvory_D");
-	push(@req, "pocet_vrtaku_D");
-	push(@req, "pocet_der_D");
-	push(@req, "min_vrtak_pomer_D");
+	push(@req, "vrtani_do_c");
+	push(@req, "min_vrtak_do_c");
+	push(@req, "pocet_vrtaku_do_c");
+	push(@req, "pocet_der_do_c");
+	push(@req, "min_vrtak_pomer_do_c");
 	
 	$nifMngr->AddSection("Vrtani", BuilderDrill->new(\@req));
 

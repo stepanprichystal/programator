@@ -129,7 +129,7 @@ sub Build {
 		}
 
 		#stages_vrtani_pred
-		if ( $self->_IsRequire("stages_vrtani_pred_D") ) {
+		if ( $self->_IsRequire("stages_zo_c") ) {
 
 			my @layers = CamDrilling->GetNCLayersByType( $inCAM, $jobId, EnumsGeneral->LAYERTYPE_plt_nDrill );
 
@@ -140,22 +140,16 @@ sub Build {
 				$maxCnt = $cnt if ( !defined $maxCnt || $maxCnt < $cnt );
 			}
 
-			$section->AddRow( "stages_vrtani_pred_D", $maxCnt );
+			$section->AddRow( "stages_zo_c", $maxCnt );
 		}
-
-		#otvory (vyelsedne / vrtane  => S/T)
-		if ( $self->_IsRequire("otvory_D") ) {
-
-			$section->AddRow( "otvory_D", $self->__GetHoleType( EnumsGeneral->LAYERTYPE_plt_nDrill ) );
-		}
-
+ 
 		#pocet_der_D
-		if ( $self->_IsRequire("pocet_der_D") ) {
-			$section->AddRow( "pocet_der_D", $self->__GetHoleCnt( EnumsGeneral->LAYERTYPE_plt_nDrill ) );
+		if ( $self->_IsRequire("pocet_der_do_c") ) {
+			$section->AddRow( "pocet_der_do_c", $self->__GetHoleCnt( EnumsGeneral->LAYERTYPE_plt_nDrill ) );
 		}
 
 		#min_vrtak
-		if ( $self->_IsRequire("min_vrtak_D") ) {
+		if ( $self->_IsRequire("min_vrtak_do_c") ) {
 			my $minTool = CamDrilling->GetMinHoleTool( $inCAM, $jobId, $stepName, EnumsGeneral->LAYERTYPE_plt_nDrill, "c" );
 
 			if ( defined $minTool ) {
@@ -165,25 +159,26 @@ sub Build {
 				$minTool = "";
 			}
 
-			$section->AddRow( "min_vrtak_D", $minTool );
+			$section->AddRow( "min_vrtak_do_c", $minTool );
 		}
 
 		#get general information about drilling
 		my ( $holesTypeNum, $aspectRatio ) = ( 0, 0 );
 
-		if ( $self->_IsRequire("pocet_vrtaku_D") || $self->_IsRequire("pocet_der_D") || $self->_IsRequire("min_vrtak_pomer_D") ) {
+		if ( $self->_IsRequire("pocet_vrtaku_do_c") || $self->_IsRequire("min_vrtak_pomer_do_c") ) {
 			( $holesTypeNum, $aspectRatio ) = $self->__GetInfoDrill( $stepName, EnumsGeneral->LAYERTYPE_plt_nDrill );
 
 		}
 
 		#pocet_vrtaku
-		if ( $self->_IsRequire("pocet_vrtaku_D") ) {
-			$section->AddRow( "pocet_vrtaku_D", $holesTypeNum );
+		if ( $self->_IsRequire("pocet_vrtaku_do_c") ) {
+			$section->AddRow( "pocet_vrtaku_do_c", $holesTypeNum );
 		}
+		
 
 		#min_vrtak_pomer
-		if ( $self->_IsRequire("min_vrtak_pomer_D") ) {
-			$section->AddRow( "min_vrtak_pomer_D", $aspectRatio );
+		if ( $self->_IsRequire("min_vrtak_pomer_do_c") ) {
+			$section->AddRow( "min_vrtak_pomer_do_c", $aspectRatio );
 		}
 	}
 
