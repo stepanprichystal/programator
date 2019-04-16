@@ -32,6 +32,7 @@ use aliased 'CamHelpers::CamHistogram';
 use aliased 'CamHelpers::CamLayer';
 use aliased 'CamHelpers::CamMatrix';
 use aliased 'Packages::CAM::FeatureFilter::FeatureFilter';
+use aliased 'CamHelpers::CamDrilling';
 
 #-------------------------------------------------------------------------------------------#
 #  Script methods
@@ -77,7 +78,7 @@ sub GetRoutDuration {
 
 			$featFilter->SetFeatureTypes( "line" => 1 );
 			$featFilter->SetLineLength( 0, 0 );
-			
+
 			if ( $featFilter->Select() ) {
 				CamLayer->DeleteFeatures($inCAM);
 			}
@@ -115,8 +116,18 @@ sub GetRoutDuration {
 
 	# Compute tool change by tool limits (tool limit is taken from default machine)
 	my $materialName = HegMethods->GetMaterialKind($jobId);
-	my %toolParams   = CamNCHooks->GetMaterialParams( $inCAM, $jobId, $layer, $materialName, EnumsMachines->MACHINE_DEF );
-	my $tChangeCnt   = 0;
+	my %lInfo = CamDrilling->GetNCLayerInfo( $inCAM, $jobId, $layer, 1, 1 );
+
+	if ( $lInfo{"type"} eq EnumsGeneral->LAYERTYPE_nplt_prepregMill ) {
+		$materialName = "PREPREG";
+	}
+	elsif ( $lInfo{"type"} eq EnumsGeneral->LAYERTYPE_nplt_cvrlycMill || $lInfo{"type"} eq EnumsGeneral->LAYERTYPE_nplt_cvrlysMill )
+	{
+		$materialName = "COVERLAY";
+	}
+
+	my %toolParams = CamNCHooks->GetMaterialParams( $inCAM, $jobId, $layer, $materialName, EnumsMachines->MACHINE_DEF );
+	my $tChangeCnt = 0;
 
 	foreach my $toolKey ( keys %cumulativeUsage ) {
 
@@ -134,7 +145,7 @@ sub GetRoutDuration {
 
 		$tLim = ( $tLim =~ m/N(\d+)/i )[0];
 
-		die "Tool rout limit is not defined for tool: $toolKey in parameter file" unless ( defined $tLim );
+		die "Tool rout limit is not defined for tool: $toolKey in parameter file, layer: $layer" unless ( defined $tLim );
 
 		# Add relative tool change time because of exceed tool limit
 		$duration += $cumulativeUsage{$toolKey} / ( $tLim * 100 ) * $TOOLCHANGETIME;
@@ -267,9 +278,9 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	use aliased 'Packages::InCAM::InCAM';
 
 	my $inCAM = InCAM->new();
-	my $jobId = "d238832+1";
+	my $jobId = "d131433";
 	my $step  = "panel";
-	my $layer = "f";
+	my $layer = "fprepreg";
 
 	my $result = RoutDuration->GetRoutDuration( $inCAM, $jobId, $step, $layer );
 
