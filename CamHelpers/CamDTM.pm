@@ -303,7 +303,7 @@ sub GetDTMDefaultType {
 
 		CamDrilling->AddNCLayerType( \@la );
 
-		if ( 	$l{"type"} eq EnumsGeneral->LAYERTYPE_plt_fDrill
+		if (    $l{"type"} eq EnumsGeneral->LAYERTYPE_plt_fDrill
 			 || $l{"type"} eq EnumsGeneral->LAYERTYPE_plt_fcDrill
 			 || $l{"type"} eq EnumsGeneral->LAYERTYPE_plt_dcDrill
 			 || $l{"type"} eq EnumsGeneral->LAYERTYPE_plt_nMill )
@@ -322,6 +322,7 @@ sub GetDTMDefaultType {
 }
 
 # Set new tools to DTM
+# Do recalculation of passed tool by drill_size_hook if requested
 sub SetDTMTools {
 	my $self    = shift;
 	my $inCAM   = shift;
@@ -330,8 +331,9 @@ sub SetDTMTools {
 	my $layer   = shift;
 	my @tools   = @{ shift(@_) };
 	my $DTMType = shift;            # vysledne, vrtane (do not do DTM recalculate. Use SetDTMTable)
+	my $recalc  = shift;            # only if $DTMType is set. If 1 do recalculate by drill_size_hook
 
-	my @userClmns = CamHelpers::CamDTM->GetDTMUserColNames($inCAM);    # User column name
+	my @userClmns = $self->GetDTMUserColNames($inCAM);    # User column name
 
 	CamHelper->SetStep( $inCAM, $step );
 	CamLayer->WorkLayer( $inCAM, $layer );
@@ -362,6 +364,35 @@ sub SetDTMTools {
 
 		my $userColumns = join( "\\;", @vals );
 
+		# if recalculate is requested, call drill_size_hook hook
+		if ( defined $DTMType && $recalc ) {
+			my $res = $inCAM->COM(
+								   'drill_size_hook',
+								   "layer"       => $layer,
+								   "type"        => $toolType,
+								   "type2"       => $t->{"gTOOLtype2"},
+								   "min_tol"     => $t->{"gTOOLmin_tol"},
+								   "max_tol"     => $t->{"gTOOLmax_tol"},
+								   "bit"         => $t->{"gTOOLbit"},
+								   "finish_size" => $t->{"gTOOLfinish_size"},
+								   "shape"       => $t->{"gTOOLshape"},
+								   "user_des"    => $userColumns,
+								   "user_params" => $DTMType
+			);
+
+			my $reply = $inCAM->GetReply();
+
+			if ( $reply =~ m/^(\d+\.?\d*)\s(\d+\.?\d*)$/ ) {
+				
+				$t->{"gTOOLdrill_size"} = $1;
+				$t->{"gTOOLbit"}        = $2;
+			}
+			else {
+				die "Hook drill_size_hook return wrong values: " . $inCAM->GetReply();
+			}
+
+		}
+
 		$inCAM->COM(
 					 'tools_tab_add',
 					 "num"         => $t->{"gTOOLnum"},
@@ -387,7 +418,7 @@ sub SetDTMTools {
 
 	}
 
-	$inCAM->COM( 'tools_set', "layer" => $layer, "thickness" => '0', "user_params" => $DTMType, "user_des_names" => join(";", @userClmns)  );
+	$inCAM->COM( 'tools_set', "layer" => $layer, "thickness" => '0', "user_params" => $DTMType, "user_des_names" => join( ";", @userClmns ) );
 
 	# toto tady musi byt, jinak po tools_set nefunguje spravne shape slot/hole v DTM
 	$inCAM->COM( 'tools_show', "layer" => "$layer" );
@@ -422,7 +453,7 @@ sub SetDTMTable {
 	my $jobId   = shift;
 	my $step    = shift;
 	my $layer   = shift;
-	my $DTMType = shift;    # vysledne, vrtane 
+	my $DTMType = shift;    # vysledne, vrtane
 
 	CamHelper->SetStep( $inCAM, $step );
 	CamLayer->WorkLayer( $inCAM, $layer );
@@ -442,22 +473,22 @@ sub GetToolTable {
 	my $type  = shift;    #drill/rout
 
 	die "No tool type defined" unless ($type);
-	
+
 	my $usrName = CamHelper->GetUserName($inCAM);
 
 	# roout tools
 	my @tools = ();
 
 	#determine if take user or site file drill_size.tab
-	my $toolTable = EnumsPaths->InCAM_users . $usrName . "\\hooks\\".$type."_size.tab";
+	my $toolTable = EnumsPaths->InCAM_users . $usrName . "\\hooks\\" . $type . "_size.tab";
 
 	unless ( -e $toolTable ) {
-		$toolTable = EnumsPaths->InCAM_hooks . $type."_size.tab";
+		$toolTable = EnumsPaths->InCAM_hooks . $type . "_size.tab";
 	}
 
 	@tools = @{ FileHelper->ReadAsLines($toolTable) };
 	s/\s+$// for (@tools);
-	
+
 	@tools = sort { $a <=> $b } @tools;
 
 	return @tools;
@@ -471,7 +502,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	use aliased 'CamHelpers::CamDTM';
 	use aliased 'Packages::InCAM::InCAM';
-	
+
 	use Data::Dump qw(dump);
 
 	my $inCAM = InCAM->new();
@@ -480,10 +511,8 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	#my $step  = "mpanel_10up";
 
 	my $dtm = CamDTM->GetDTMType( $inCAM, $jobId, "mpanel", "m" );
-	
+
 	die;
-	
-	 
 
 }
 
