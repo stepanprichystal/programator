@@ -598,6 +598,26 @@ sub OnCheckGroupData {
 												  "V jobu mas zaplnene via, nech vrtacky a postup zkontrolovat u SPR"
 					);
 	}
+	
+	
+		
+	# 22) Check if job viafill layer  are prepared if viafill in IS
+	my $viaFillType = $defaultInfo->GetPcbBaseInfo("zaplneni_otvoru");
+	
+	# A - viafill in gatema
+	# B - viafill in cooperation - all holes
+	# C - viafill in cooperation - specified holes
+	if(defined $viaFillType && $viaFillType =~ /[abc]/i){
+		
+ 		unless(CamDrilling->GetViaFillExists($inCAM, $jobId)){
+  
+		$dataMngr->_AddErrorResult("Via filling",
+												  "V IS je požadavek na zaplnění otvorů, v jobu ale nejsou připravené NC vrstvy (mfill; scfill; ssfill)"
+					);
+ 			
+ 		}
+	}
+	
 
 	# 22) If mpanel exist, check if nested setps do not have circle chain (bridges are necessary)
 	if ( $defaultInfo->LayerExist("f") ) {

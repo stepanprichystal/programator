@@ -24,7 +24,7 @@ use aliased 'Enums::EnumsProducPanel';
 use aliased 'CamHelpers::CamGoldArea';
 use aliased 'CamHelpers::CamStepRepeat';
 use aliased 'CamHelpers::CamStepRepeatPnl';
-
+use aliased 'CamHelpers::CamDrilling';
 use aliased 'CamHelpers::CamAttributes';
 use aliased 'Packages::Stackup::StackupOperation';
 use aliased 'Packages::CAM::Netlist::NetlistCompare';
@@ -452,6 +452,19 @@ sub OnCheckGroupData {
 		}
 	}
 
+	# 22) Check if job viafill layer  are prepared if viafill in IS
+	my $viaFillType = $defaultInfo->GetPcbBaseInfo("zaplneni_otvoru");
+	
+	# A - viafill in gatema
+	# B - viafill in cooperation - all holes
+	# C - viafill in cooperation - specified holes
+	if(defined $viaFillType && $viaFillType =~ /[abc]/i){
+ 
+		if ( !$defaultInfo->LayerExist("plgc") || !$defaultInfo->LayerExist("plgs") ) {
+
+			$dataMngr->_AddErrorResult( "Plg(c;s) vrstvy", "V IS je požadavek na zaplněné otovry, ale nejsou připravené \"plgc\" a \"plgs\" vrstvy." );
+		}
+	}
 }
 
 #-------------------------------------------------------------------------------------------#

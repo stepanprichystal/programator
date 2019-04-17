@@ -18,8 +18,6 @@ use aliased 'Packages::CAMJob::OutputData::Enums';
 use aliased 'CamHelpers::CamLayer';
 use aliased 'CamHelpers::CamJob';
 use aliased 'Packages::CAMJob::OutputData::LayerData::LayerData';
-use aliased 'Packages::CAMJob::OutputData::Helper';
-use aliased 'Helpers::ValueConvertor'; 
 use aliased 'CamHelpers::CamFilter';
 use aliased 'CamHelpers::CamDTM';
 use aliased 'CamHelpers::CamHistogram';
@@ -28,6 +26,7 @@ use aliased 'CamHelpers::CamSymbol';
 use aliased 'Packages::CAM::FeatureFilter::FeatureFilter';
 use aliased 'Packages::CAMJob::OutputParser::OutputParserNC::OutputParserNC';
 use aliased 'Packages::CAMJob::OutputParser::OutputParserNC::Enums' => 'OutEnums';
+use aliased 'Packages::CAMJob::OutputData::Helper';
 
 #use aliased 'Packages::SystemCall::SystemCall';
 
@@ -61,13 +60,13 @@ sub Prepare {
 	my $jobId = $self->{"jobId"};
 	my $step  = $self->{"step"};
 
-	$self->__PrepareNCDRILLBase( $layers, $type );
+	$self->__PrepareNCDRILL( $layers, $type );
 	$self->__PrepareNCMILL( $layers, $type );
 
 }
 
-# Create layer and fill profile - simulate pcb material
-sub __PrepareNCDRILLBase {
+# Prepare drill layer
+sub __PrepareNCDRILL {
 	my $self   = shift;
 	my @layers = @{ shift(@_) };
 	my $type   = shift;
@@ -75,48 +74,57 @@ sub __PrepareNCDRILLBase {
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
 
-	@layers = grep {
-		     $_->{"type"} eq EnumsGeneral->LAYERTYPE_plt_nDrill
-		  || $_->{"type"} eq EnumsGeneral->LAYERTYPE_plt_cDrill
-		  || $_->{"type"} eq EnumsGeneral->LAYERTYPE_plt_bDrillTop
-		  || $_->{"type"} eq EnumsGeneral->LAYERTYPE_plt_bDrillBot
+	# 1) Prepare single layers:
 
-	} @layers;
+	# plated core drill
+	my @layersSingle = grep { $_->{"type"} eq EnumsGeneral->LAYERTYPE_plt_cDrill } @layers;
 
-	foreach my $l (@layers) {
+	foreach my $l (@layersSingle) {
 
-		my $enTit = Helper->GetJobLayerTitle($l);
-		my $czTit = Helper->GetJobLayerTitle( $l, 1 );
-		my $enInf = Helper->GetJobLayerInfo($l);
-		my $czInf = Helper->GetJobLayerInfo( $l, 1 );
-
-		my $result = $self->{"outputNClayer"}->Prepare($l);
-
-		my $lName = $result->MergeLayers($inCAM);    # merge DRILLBase and ROUTBase result layer
-
-		my $lData = LayerData->new( $type, $l, $enTit, $czTit, $enInf, $czInf, $lName );
-
-		$self->{"layerList"}->AddLayer($lData);
-
-		# Add Drill map
-
-		if ( $result->GetClassResult( OutEnums->Type_DRILL, 1 ) ) {
-
-			my $drillResult = $result->GetClassResult( OutEnums->Type_DRILL, 1 );
-
-			my $drillMap =
-			  $self->__CreateDrillMaps( $l, $drillResult->GetSingleLayer()->GetLayerName(), Enums->Type_DRILLMAP, $enTit, $czTit, $enInf, $czInf );
-
-			if ($drillMap) {
-				$drillMap->SetParent($lData);
-				$self->{"layerList"}->AddLayer($drillMap);
-			}
-		}
-
+		$self->__PrepareNCSingleLayer( $l, $type );
 	}
+
+	# Prepare multiple layers
+
+	# plt drill + plt filled drill
+	my @layersNDrill =
+	  grep { $_->{"type"} eq EnumsGeneral->LAYERTYPE_plt_nDrill || $_->{"type"} eq EnumsGeneral->LAYERTYPE_plt_nFillDrill } @layers;
+
+	if ( scalar(@layersNDrill) ) {
+
+		# Choose layer, which 'data layer' take information from
+		my $lMain = $layersNDrill[0];
+
+		$self->__PrepareNCMergedLayers( \@layersNDrill, $lMain, $type );
+	}
+
+	# Prepare multiple layers: plt blind drill top + plt blind filled drill top
+	my @layersBlind =
+	  grep {
+		     $_->{"type"} eq EnumsGeneral->LAYERTYPE_plt_bDrillTop
+		  || $_->{"type"} eq EnumsGeneral->LAYERTYPE_plt_bFillDrillTop
+		  || $_->{"type"} eq EnumsGeneral->LAYERTYPE_plt_bDrillBot
+		  || $_->{"type"} eq EnumsGeneral->LAYERTYPE_plt_bFillDrillBot
+	  } @layers;
+
+	my %layersBlindMatrix = ();
+	push( @{ $layersBlindMatrix{ $_->{"gROWdrl_start"} . "_" . $_->{"gROWdrl_end"} . "_" . $_->{"gROWdrl_dir"} } }, $_ ) foreach (@layersBlind);
+
+	foreach my $k ( keys %layersBlindMatrix ) {
+
+		die "Wrong key format ($k)" if ( $k !~ /\d+_\d+_(top2bot|bot2top)/ );
+
+		my @l = @{ $layersBlindMatrix{$k} };
+
+		# Choose layer, which 'data layer' take information from
+		my $lMain = $l[0];
+
+		$self->__PrepareNCMergedLayers( \@l, $lMain, $type );
+	}
+
 }
 
-# Create layer and fill profile - simulate pcb material
+# Prepare mill layer
 sub __PrepareNCMILL {
 	my $self   = shift;
 	my @layers = @{ shift(@_) };
@@ -125,61 +133,20 @@ sub __PrepareNCMILL {
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
 
-	# Scoring single + plated mill single
+	# 1) Prepare single layers
 
+	# Scoring + plated mill
 	my @layersSingle =
 	  grep { $_->{"type"} eq EnumsGeneral->LAYERTYPE_plt_nMill || $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_score } @layers;
 
 	foreach my $l (@layersSingle) {
 
-		my $enTit = Helper->GetJobLayerTitle($l);
-		my $czTit = Helper->GetJobLayerTitle( $l, 1 );
-		my $enInf = Helper->GetJobLayerInfo($l);
-		my $czInf = Helper->GetJobLayerInfo( $l, 1 );
-
-		# Compensate layer
-
-		my $result = $self->{"outputNClayer"}->Prepare($l);
-
-		# From plated rout create countour
-		if ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_plt_nMill ) {
-  
-			foreach my $lRes ( map { $_->GetLayers } grep { $_->GetType() eq OutEnums->Type_ROUT } $result->GetClassResults(1) ) {
-
-				CamLayer->WorkLayer( $inCAM, $lRes->GetLayerName() );
-				CamLayer->Contourize( $inCAM, $lRes->GetLayerName(), "area", "25000" );
-				CamLayer->WorkLayer( $inCAM, $lRes->GetLayerName() );
-				$inCAM->COM( "sel_feat2outline", "width" => "200", "location" => "on_edge" );
-			}
-		}
-
-		my $lName = $result->MergeLayers();    # merge DRILLBase and ROUTBase result layer
-
-		my $lData = LayerData->new( $type, $l, $enTit, $czTit, $enInf, $czInf, $lName );
-
-		$self->{"layerList"}->AddLayer($lData);
-
-		# Add Drill map, if exist holes in layer
-
-		if ( $result->GetClassResult( OutEnums->Type_DRILL, 1 ) ) {
-
-			my $drillResult = $result->GetClassResult( OutEnums->Type_DRILL, 1 );
-
-			if ($drillResult) {
-				my $drillMap =
-				  $self->__CreateDrillMaps( $l, $drillResult->GetSingleLayer()->GetLayerName(),
-											Enums->Type_DRILLMAP, $enTit, $czTit, $enInf, $czInf );
-
-				if ($drillMap) {
-					$drillMap->SetParent($lData);
-					$self->{"layerList"}->AddLayer($drillMap);
-				}
-			}
-		}
+		$self->__PrepareNCSingleLayer( $l, $type );
 	}
 
-	# Merge: mill, rs, k mill layers
+	# 2) Prepare multiple merged layers
 
+	# Mill, rs, k mill layers
 	my @layersMill = grep {
 		     $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_nMill
 		  || $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_kMill
@@ -188,78 +155,125 @@ sub __PrepareNCMILL {
 
 	if ( scalar(@layersMill) ) {
 
-		my $lName         = GeneralHelper->GetNumUID();
-		my $lNameDrillMap = GeneralHelper->GetNumUID();
-
 		# Choose layer, which 'data layer' take information from
-		my $lMain = ( grep { $_->{"gROWname"} eq "f" } @layers )[0];
-		unless ($lMain) {
-			$lMain = $layersMill[0];
+		my $lMain = ( grep { $_->{"gROWname"} eq "f" } @layersMill )[0];
+		$lMain = $layersMill[0] unless ($lMain);
+
+		$self->__PrepareNCMergedLayers( \@layersMill, $lMain, $type );
+	}
+}
+
+sub __PrepareNCSingleLayer {
+	my $self = shift;
+	my $l    = shift;
+	my $type = shift;
+
+	my $inCAM = $self->{"inCAM"};
+	my $jobId = $self->{"jobId"};
+
+	my $enTit = Helper->GetJobLayerTitle( $l, $type );
+	my $czTit = Helper->GetJobLayerTitle( $l, $type, 1 );
+	my $enInf = Helper->GetJobLayerInfo( $l );
+	my $czInf = Helper->GetJobLayerInfo( $l, 1 );
+
+	my $result = $self->{"outputNClayer"}->Prepare($l);
+
+	my $lName = $result->MergeLayers();    # merge DRILLBase and ROUTBase result layer
+
+	my $lData = LayerData->new( $type, $l, $enTit, $czTit, $enInf, $czInf, $lName );
+
+	$self->{"layerList"}->AddLayer($lData);
+
+	# Add Drill map
+
+	if ( $result->GetClassResult( OutEnums->Type_DRILL, 1 ) ) {
+
+		my $drillResult = $result->GetClassResult( OutEnums->Type_DRILL, 1 );
+
+		my $drillMap =
+		  $self->__CreateDrillMaps( $l, $drillResult->GetSingleLayer()->GetLayerName(), Enums->Type_DRILLMAP, $enTit, $czTit, $enInf, $czInf );
+
+		if ($drillMap) {
+			$drillMap->SetParent($lData);
+			$self->{"layerList"}->AddLayer($drillMap);
 		}
+	}
+}
 
-		my $enTit = Helper->GetJobLayerTitle($lMain);
-		my $czTit = Helper->GetJobLayerTitle( $lMain, 1 );
-		my $enInf = Helper->GetJobLayerInfo($lMain);
-		my $czInf = Helper->GetJobLayerInfo( $lMain, 1 );
+sub __PrepareNCMergedLayers {
+	my $self   = shift;
+	my @layers = @{ shift(@_) };
+	my $lMain  = shift;
+	my $type   = shift;
 
-		# Merge all layers
-		foreach my $l (@layersMill) {
+	my $inCAM = $self->{"inCAM"};
+	my $jobId = $self->{"jobId"};
 
-			my $result = $self->{"outputNClayer"}->Prepare($l);
+	my $lName         = GeneralHelper->GetNumUID();
+	my $lNameDrillMap = GeneralHelper->GetNumUID();
 
-			my $lDrillRout = $result->MergeLayers($inCAM);    # merged drill + rout layer
+	my $enTit = Helper->GetJobLayerTitle( $lMain, $type );
+	my $czTit = Helper->GetJobLayerTitle( $lMain, $type, 1 );
+	my $enInf = Helper->GetJobLayerInfo( $lMain, );
+	my $czInf = Helper->GetJobLayerInfo( $lMain, 1 );
 
-			$inCAM->COM(
-						 "copy_layer",
-						 "source_job"   => $jobId,
-						 "source_step"  => $self->{"step"},
-						 "source_layer" => $lDrillRout,
-						 "dest"         => "layer_name",
-						 "dest_step"    => $self->{"step"},
-						 "dest_layer"   => $lName,
-						 "mode"         => "append"
-			);
+	# Merge all layers
+	foreach my $l (@layers) {
 
-			$inCAM->COM( "delete_layer", "layer" => $lDrillRout );
+		my $result = $self->{"outputNClayer"}->Prepare($l);
 
-			if ( $result->GetClassResult( OutEnums->Type_DRILL, 1 ) ) {
+		my $lDrillRout = $result->MergeLayers();    # merged drill + rout layer
 
-				my $drillResult = $result->GetClassResult( OutEnums->Type_DRILL, 1 );
+		$inCAM->COM(
+					 "copy_layer",
+					 "source_job"   => $jobId,
+					 "source_step"  => $self->{"step"},
+					 "source_layer" => $lDrillRout,
+					 "dest"         => "layer_name",
+					 "dest_step"    => $self->{"step"},
+					 "dest_layer"   => $lName,
+					 "mode"         => "append"
+		);
 
-				if ($drillResult) {
-					$inCAM->COM(
-								 "copy_layer",
-								 "source_job"   => $jobId,
-								 "source_step"  => $self->{"step"},
-								 "source_layer" => $drillResult->GetSingleLayer()->GetLayerName(),
-								 "dest"         => "layer_name",
-								 "dest_step"    => $self->{"step"},
-								 "dest_layer"   => $lNameDrillMap,
-								 "mode"         => "append"
-					);
-				}
+		$inCAM->COM( "delete_layer", "layer" => $lDrillRout );
+
+		if ( $result->GetClassResult( OutEnums->Type_DRILL, 1 ) ) {
+
+			my $drillResult = $result->GetClassResult( OutEnums->Type_DRILL, 1 );
+
+			if ($drillResult) {
+				$inCAM->COM(
+							 "copy_layer",
+							 "source_job"   => $jobId,
+							 "source_step"  => $self->{"step"},
+							 "source_layer" => $drillResult->GetSingleLayer()->GetLayerName(),
+							 "dest"         => "layer_name",
+							 "dest_step"    => $self->{"step"},
+							 "dest_layer"   => $lNameDrillMap,
+							 "mode"         => "append"
+				);
 			}
 		}
+	}
 
-		my $lData = LayerData->new( $type, $lMain, $enTit, $czTit, $enInf, $czInf, $lName );
+	my $lData = LayerData->new( $type, $lMain, $enTit, $czTit, $enInf, $czInf, $lName );
 
-		$self->{"layerList"}->AddLayer($lData);
+	$self->{"layerList"}->AddLayer($lData);
 
-		# Add Drill map, only if exist holes ($lNameDrillMap ha sto be created)
-		if ( CamHelper->LayerExists( $inCAM, $jobId, $lNameDrillMap ) ) {
+	# Add Drill map, only if exist holes ($lNameDrillMap ha sto be created)
+	if ( CamHelper->LayerExists( $inCAM, $jobId, $lNameDrillMap ) ) {
 
-			# After merging layers, merge tools in DTM
-			$inCAM->COM( "tools_merge", "layer" => $lNameDrillMap );
+		# After merging layers, merge tools in DTM
+		$inCAM->COM( "tools_merge", "layer" => $lNameDrillMap );
 
-			my $drillMap = $self->__CreateDrillMaps( $lMain, $lNameDrillMap, Enums->Type_DRILLMAP, $enTit, $czTit, $enInf, $czInf );
+		my $drillMap = $self->__CreateDrillMaps( $lMain, $lNameDrillMap, Enums->Type_DRILLMAP, $enTit, $czTit, $enInf, $czInf );
 
-			if ($drillMap) {
-				$drillMap->SetParent($lData);
-				$self->{"layerList"}->AddLayer($drillMap);
-			}
-
-			$inCAM->COM( "delete_layer", "layer" => $lNameDrillMap );
+		if ($drillMap) {
+			$drillMap->SetParent($lData);
+			$self->{"layerList"}->AddLayer($drillMap);
 		}
+
+		$inCAM->COM( "delete_layer", "layer" => $lNameDrillMap );
 	}
 }
 

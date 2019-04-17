@@ -368,7 +368,7 @@ sub OnCheckGroupData {
 
 	#---------------------------------------------
 
-	# 14) Check max cu thickness by pcb class
+	# 20) Check max cu thickness by pcb class
 
 	if ( $defaultInfo->GetTypeOfPcb() ne "Neplatovany" ) {
 
@@ -420,7 +420,7 @@ sub OnCheckGroupData {
 
 	}
 
-	# Check if HEG or NIF contain 'nakoveni jader', but stackup xml no
+	# 21) Check if HEG or NIF contain 'nakoveni jader', but stackup xml no
 	if ( $defaultInfo->GetSignalLayers() > 2 ) {
 
 		my $stackup = $defaultInfo->GetStackup();
@@ -457,6 +457,7 @@ sub OnCheckGroupData {
 			}
 		}
 	}
+
 
 }
 

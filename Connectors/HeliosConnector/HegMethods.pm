@@ -296,6 +296,7 @@ sub GetBasePcbInfo {
 				 d.mereni_tolerance_vrtani,
 				 d.srazeni_hran,
 				 d.zlaceni,
+				 d.zaplneni_otvoru,
 				 z.pooling,
 				 d.stav
 				 from lcs.desky_22 d with (nolock)

@@ -77,7 +77,7 @@ sub __PrepareBASEBOARD {
 	my $inCAM = $self->{"inCAM"};
 
 	@layers = grep { $_->{"gROWcontext"} eq "board" && $_->{"gROWlayer_type"} ne "drill" && $_->{"gROWlayer_type"} ne "rout" } @layers;
-	@layers = grep { $_->{"gROWname"} !~ /^([lg]|gold)[cs]$/i } @layers;    # special surfaces (goldc, gc, lc, etc)
+	@layers = grep { $_->{"gROWname"} !~ /^(plg|[lg]|gold)[cs]$/i } @layers;    # special surfaces (goldc, gc, lc, plgc,  etc)
 
 	foreach my $l (@layers) {
 
