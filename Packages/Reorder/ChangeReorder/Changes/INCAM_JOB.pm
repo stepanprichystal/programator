@@ -67,8 +67,22 @@ sub Run {
 		$inCAM->COM( "matrix_auto_rows", "job" => $jobId, "matrix" => "matrix" );
 	}
 
-	# 2) Check if DTM user columns are up to date in job
+	# 3) Check if DTM user columns are up to date in job
 	$self->__UpdateDTMColumns();
+
+	# 4) Prevent InCAM Bug prevention (show and hide DTM at drill/rout layer)
+	# Sometimes happen, incam return type "hole" instead of "slot" for routs in rout layers
+	# Show and Hide DTM is workaround for this wrong behaviour
+	my @routs = map { $_->{"gROWname"} } grep { $_->{"gROWlayer_type"} eq "rout" } CamJob->GetNCLayers( $inCAM, $jobId );
+
+	foreach my $l (@routs) {
+
+		CamLayer->WorkLayer( $inCAM, $l );
+		$inCAM->COM( "tools_show", "layer" => $l );                                       # show DTM
+		$inCAM->COM( "show_component", "component" => "Action_Area", "show" => "no" );    # hide DTM
+		CamLayer->ClearLayers($inCAM);
+
+	}
 
 	return $result;
 
@@ -109,10 +123,9 @@ sub __UpdateDTMColumns {
 
 				my ($clmns) = $data =~ /USER_DES_NAMES=(.*)/i;
 				my @clmns = ();
-				if(defined $clmns){
+				if ( defined $clmns ) {
 					@clmns = map { uc($_) } split( ";", $clmns );
 				}
-				
 
 				if ( scalar(@clmns) ) {
 
@@ -129,12 +142,11 @@ sub __UpdateDTMColumns {
 					foreach my $clmn (@curClmns) {
 						push( @missing, $clmn ) unless ( grep { $_ eq $clmn } @clmns );
 					}
-					 
 
-					# if exist any obsolete user DTM column and USER_DES values are not set => update 
+					# if exist any obsolete user DTM column and USER_DES values are not set => update
 
 					if ( scalar(@obsolete) ) {
-						
+
 						$updateClms = 1;
 
 						# check all tool

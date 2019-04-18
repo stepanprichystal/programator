@@ -288,7 +288,7 @@ sub GetMaterialParams {
 	my $layer        = shift;
 	my $materialName = shift;
 	my $machine      = shift;
-	my $path         = shift // GeneralHelper->RootHooks();    # root path of hooks (user hooks / server hooks)
+	my $path         = shift // GeneralHelper->RootHooks($inCAM);    # root path of hooks (user hooks / server hooks)
 
 	my %params = ();
 	$params{"ok"} = 1;

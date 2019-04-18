@@ -50,7 +50,7 @@ sub Build {
 	my $stepName = "panel";
 	my $viaFill  = CamDrilling->GetViaFillExists( $inCAM, $jobId );
 
-	my $stackupNC = StackupNC->new( $jobId, $inCAM );
+	
 
 	# comment
 	$section->AddComment( "Vrtani skrz pred prokovem " . ( $viaFill ? "(pred zalpnenim otvoru)" : "" ) );
@@ -133,6 +133,7 @@ sub Build {
 
 			my $existThrough = CamDrilling->NCLayerExists( $inCAM, $jobId, EnumsGeneral->LAYERTYPE_plt_nDrill );
 
+			my $stackupNC = StackupNC->new( $jobId, $inCAM );
 			my $lastPress = $stackupNC->GetPress( $stackupNC->GetPressCnt() );
 			my $blindExist = $lastPress->ExistNCLayers( StackEnums->SignalLayer_TOP, EnumsGeneral->LAYERTYPE_plt_bDrillTop );
 			

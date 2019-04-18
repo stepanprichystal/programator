@@ -8,7 +8,6 @@ use base('Packages::ItemResult::ItemEventMngr');
 
 use Class::Interface;
 &implements('Packages::Export::IMngr');
-
 #3th party library
 use strict;
 use warnings;
@@ -17,7 +16,7 @@ use warnings;
 use aliased 'CamHelpers::CamJob';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'Packages::Export::PreExport::LayerInvert';
-use aliased 'Packages::Export::PreExport::LayerFrame';
+use aliased 'Packages::CAMJob::Scheme::SchemeFrame::SchemeFrame';
 use aliased 'CamHelpers::CamHelper';
 use aliased 'Packages::TifFile::TifSigLayers';
 use aliased 'Packages::Export::PreExport::Enums';
@@ -38,16 +37,16 @@ sub new {
 	$self->{"jobId"}  = shift;
 	$self->{"layers"} = shift;
 
-	$self->{"layerFrame"} = LayerFrame->new( $self->{"inCAM"}, $self->{"jobId"} );
+	$self->{"layerFrame"}  = SchemeFrame->new( $self->{"inCAM"}, $self->{"jobId"} );
 	$self->{"layerInvert"} = LayerInvert->new( $self->{"inCAM"}, $self->{"jobId"} );
 
 	$self->{"layerCnt"} = CamJob->GetSignalLayerCnt( $self->{"inCAM"}, $self->{"jobId"} );
-	
+
 	return $self;
 }
 
 sub Run {
-	my $self = shift;
+	my $self  = shift;
 	my $inCAM = $self->{"inCAM"};
 
 	my $isChanged = 0;    # tell if something was changed in pcb
@@ -58,9 +57,6 @@ sub Run {
 
 	# Insert pattern frame
 	$self->__PatternFrame( \$isChanged );
-
-	# Inser gold frame
-	$self->__GoldFrame( \$isChanged, $resultItemFrames );
 
 	$self->_OnItemResult($resultItemFrames);
 
@@ -153,58 +149,7 @@ sub __PatternFrame {
 	}
 
 }
-
-sub __GoldFrame {
-	my $self      = shift;
-	my $isChanged = shift;
-	my $itemRes   = shift;
-
-	my $inCAM = $self->{"inCAM"};
-	my $jobId = $self->{"jobId"};
-
-	my @layers = ();
-	push( @layers, "c" ) if ( CamHelper->LayerExists( $inCAM, $jobId, "c" ) );
-	push( @layers, "s" ) if ( CamHelper->LayerExists( $inCAM, $jobId, "s" ) );
-
-	my $schema = "gold-2v";
-
-	if ( $self->{"layerCnt"} > 2 ) {
-		$schema = 'gold-vv';
-	}
-
-	foreach my $l (@layers) {
-
-		my $frameExist = $self->{"layerFrame"}->ExistFrame( $l, Enums->Frame_GOLDFINGER );
-
-		if ( CamGoldArea->GoldFingersExist( $inCAM, $jobId, "panel", $l ) ) {
-
-			# 1) Add frame
-			if ($frameExist) {
-				$self->{"layerFrame"}->DeleteFrame( $l, Enums->Frame_GOLDFINGER );
-			}
-			
-			$self->{"layerFrame"}->AddFrame( $l, Enums->Frame_GOLDFINGER, $schema );
-			$$isChanged = 1;
-
-			# 2) Do check if old gold finger are connected
-			my $mess = "";
-			my @layers = ($l);
-			
-			unless ( GoldFingersCheck->GoldFingersConnected( $inCAM, $jobId, \@layers, \$mess ) ) {
-
-				$itemRes->AddError("Error during insert \"gold connector frame\": $mess");
-			}
-		}
-		else {
-
-			if ($frameExist) {
-				$self->{"layerFrame"}->DeleteFrame( $l, Enums->Frame_GOLDFINGER );
-				$$isChanged = 1;
-			}
-		}
-	}
-
-}
+ 
 
 sub TaskItemsCount {
 	my $self = shift;

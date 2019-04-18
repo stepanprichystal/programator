@@ -14,6 +14,7 @@ use Devel::StackTrace;
 
 #local library
 use aliased 'Enums::EnumsPaths';
+use aliased 'CamHelpers::CamHelper';
 
 #-------------------------------------------------------------------------------------------#
 #   Package methods
@@ -57,6 +58,8 @@ sub Root {
 
 # Return root direcotry of hooks (server or user hooks)
 sub RootHooks {
+	my $self = shift;
+	my $inCAM = shift;
 
 	my $root;
 
@@ -64,10 +67,16 @@ sub RootHooks {
 
 	my $p = Cwd::abs_path($0);
 
-	# script is executed from user hook
+	# script is executed from user hook  
 	if ( $p =~ /[\\\/]users[\\\/](\w+)[\\\/]/i ) {
 		$root = EnumsPaths->InCAM_users . $1 . "\\hooks\\";
 
+	}
+	elsif($p =~ /^c:/i ){
+		
+		# or it is user local disc c: (not site disc)
+		
+		$root = EnumsPaths->InCAM_users . CamHelper->GetUserName($inCAM) . "\\hooks\\";
 	}
 	else {
 		$root = EnumsPaths->InCAM_hooks;

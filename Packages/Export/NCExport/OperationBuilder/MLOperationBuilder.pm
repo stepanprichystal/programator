@@ -499,25 +499,7 @@ sub __DefineNPlatedOperations {
 		$opManager->AddOperationDef( $outFile, \@layers, $pressOrder );
 	}
 
-	# 1) Operation name = fzc<press order>, can contain layer
-	# - @nplt_bMillTop
-
-	foreach my $pressOrder ( keys $stackup->{"press"} ) {
-
-		my $press   = $stackup->{"press"}{$pressOrder};
-		my $outFile = "fzc" . $pressOrder;
-		my @layers  = ();
-
-		my $startTop     = $press->{"topNumber"};
-		my $startTopName = $press->{"top"};
-
-		#blind milling start from top in layer <$drillStartTop>
-		my @blindTop = grep { $_->{"gROWdrl_start"} == $startTop } @nplt_bMillTop;
-		push( @layers, @blindTop );
-
-		$opManager->AddOperationDef( $outFile, \@layers, $pressOrder );
-	}
-
+ 
 	# 4) Operation name = jfzc<core number> - can contain layer from @nplt_cbMillTop
 	for ( my $i = 0 ; $i < $coreCnt ; $i++ ) {
 

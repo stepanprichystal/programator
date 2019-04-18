@@ -246,7 +246,7 @@ sub _SetDTMFinishSizes {
 	}
 
 	# 3) Set new values to DTM
-	CamDTM->SetDTMTools( $inCAM, $jobId, $self->{"step"}, $lName, \@tools );
+	CamDTM->SetDTMTools( $inCAM, $jobId, $self->{"step"}, $lName, \@tools, $DTMType );
 
 	$inCAM->INFO(
 				  units           => 'mm',

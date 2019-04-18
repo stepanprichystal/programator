@@ -1,4 +1,3 @@
-
 #-------------------------------------------------------------------------------------------#
 # Description: Manager responsible for AOI files creation
 # Author:SPR
@@ -16,6 +15,7 @@ use aliased 'Enums::EnumsProducPanel';
 use aliased 'Helpers::GeneralHelper';
 use aliased 'CamHelpers::CamFilter';
 use aliased 'CamHelpers::CamAttributes';
+
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
@@ -27,15 +27,10 @@ sub new {
 
 	$self->{"inCAM"} = shift;
 	$self->{"jobId"} = shift;
-		$self->{"step"} = "panel";
+	$self->{"step"}  = "panel";
 
 	return $self;
 }
-
-
-  
-
-
 
 # Changes layer mark polarity
 sub ChangeMarkPolarity {
@@ -57,12 +52,12 @@ sub ChangeMarkPolarity {
 
 	CamLayer->WorkLayer( $inCAM, $lName );
 
-	$self->__AddFilterAtt(  '.geometry', 'centre*' );
-	$self->__AddFilterAtt(  '.geometry', 'OLEC*' );
-	$self->__AddFilterAtt(  '.geometry', 'punch*' );
-	$self->__AddFilterAtt(  '.pnl_place', 'SOC*' );
-	$self->__AddFilterAtt(  '.pnl_place', 'Punch*' );
-	
+	$self->__AddFilterAtt( '.geometry',  'centre*' );
+	$self->__AddFilterAtt( '.geometry',  'OLEC*' );
+	$self->__AddFilterAtt( '.geometry',  'punch*' );
+	$self->__AddFilterAtt( '.pnl_place', 'SOC*' );
+	$self->__AddFilterAtt( '.pnl_place', 'Punch*' );
+
 	$inCAM->COM( 'set_filter_and_or_logic', filter_name => 'popup', criteria => 'inc_attr', logic => 'or' );
 	$inCAM->COM('filter_area_strt');
 	$inCAM->COM( 'filter_area_end', filter_name => 'popup', operation => 'select' );
@@ -83,17 +78,17 @@ sub __AddFilterAtt {
 	my $attVal  = shift;
 
 	$self->{"inCAM"}->COM(
-				 'set_filter_attributes',
-				 filter_name        => 'popup',
-				 exclude_attributes => 'no',
-				 condition          => 'yes',
-				 attribute          => $attName,
-				 min_int_val        => 0,
-				 max_int_val        => 0,
-				 min_float_val      => 0,
-				 max_float_val      => 0,
-				 option             => '',
-				 text               => $attVal
+						   'set_filter_attributes',
+						   filter_name        => 'popup',
+						   exclude_attributes => 'no',
+						   condition          => 'yes',
+						   attribute          => $attName,
+						   min_int_val        => 0,
+						   max_int_val        => 0,
+						   min_float_val      => 0,
+						   max_float_val      => 0,
+						   option             => '',
+						   text               => $attVal
 	);
 
 }

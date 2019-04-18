@@ -30,6 +30,7 @@ use aliased 'Packages::Stackup::StackupOperation';
 use aliased 'Packages::CAM::Netlist::NetlistCompare';
 use aliased 'Packages::CAMJob::Scheme::CustSchemeCheck';
 use aliased 'Packages::CAMJob::Matrix::LayerNamesCheck';
+use aliased 'Packages::CAMJob::PCBConnector::GoldFingersCheck';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -273,13 +274,16 @@ sub OnCheckGroupData {
 	}
 
 	# 11) Check gold finger layers (goldc, golds)
-	my $goldFinger = 0;
+	my $goldFinger       = 0;
+	my @goldFingerLayers = ();
 
 	foreach my $l ( ( "c", "s" ) ) {
 		if (    CamHelper->LayerExists( $inCAM, $jobId, $l )
 			 && CamGoldArea->GoldFingersExist( $inCAM, $jobId, $stepName, $l ) )
 		{
 			$goldFinger = 1;
+
+			push( @goldFingerLayers, $l );
 
 			# Check if exist gold finger layers
 			unless ( $defaultInfo->LayerExist( "gold" . $l ) ) {
@@ -358,6 +362,17 @@ sub OnCheckGroupData {
 
 		$dataMngr->_AddErrorResult( "Gold connector",
 									"V matrixu je některá z vrstev: goldc;golds;fk, ale nebyl nalezen zlacený konektor (atribut .gold_plating )" );
+	}
+
+	# Check if all gold finger are connected, if gold finger exist
+	if ($goldFinger) {
+		
+		my $mess = "";
+
+		unless ( GoldFingersCheck->GoldFingersConnected( $inCAM, $jobId, \@goldFingerLayers, \$mess ) ) {
+
+			$dataMngr->_AddErrorResult( "Wrong Gold finger connection", $mess );
+		}
 	}
 
 	# 14) Test if stackup material is on stock
@@ -454,15 +469,16 @@ sub OnCheckGroupData {
 
 	# 22) Check if job viafill layer  are prepared if viafill in IS
 	my $viaFillType = $defaultInfo->GetPcbBaseInfo("zaplneni_otvoru");
-	
+
 	# A - viafill in gatema
 	# B - viafill in cooperation - all holes
 	# C - viafill in cooperation - specified holes
-	if(defined $viaFillType && $viaFillType =~ /[abc]/i){
- 
+	if ( defined $viaFillType && $viaFillType =~ /[abc]/i ) {
+
 		if ( !$defaultInfo->LayerExist("plgc") || !$defaultInfo->LayerExist("plgs") ) {
 
-			$dataMngr->_AddErrorResult( "Plg(c;s) vrstvy", "V IS je požadavek na zaplněné otovry, ale nejsou připravené \"plgc\" a \"plgs\" vrstvy." );
+			$dataMngr->_AddErrorResult( "Plg(c;s) vrstvy",
+										"V IS je požadavek na zaplněné otovry, ale nejsou připravené \"plgc\" a \"plgs\" vrstvy." );
 		}
 	}
 }

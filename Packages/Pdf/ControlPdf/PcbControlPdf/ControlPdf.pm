@@ -251,11 +251,11 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId = "d240200";
+	my $jobId = "d243531";
 
 	my $mess = ""; 
 
-	my $control = ControlPdf->new( $inCAM, $jobId, "mpanel", "en" );
+	my $control = ControlPdf->new( $inCAM, $jobId, "o+1", "en" );
 	$control->Create();
 
 	#$control->CreateStackup(\$mess);

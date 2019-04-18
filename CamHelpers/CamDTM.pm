@@ -343,7 +343,7 @@ sub SetDTMTools {
 	}
 
 	$inCAM->COM('tools_tab_reset');
-
+ 
 	foreach my $t (@tools) {
 
 		# change type values ( command tool return values non_plated and plated, but tools_tab_set consum plate, nplate)
@@ -364,7 +364,7 @@ sub SetDTMTools {
 
 		my $userColumns = join( "\\;", @vals );
 
-		# if recalculate is requested, call drill_size_hook hook
+		# if recalculate is requested, call drill_size_hook hook and get computed DrillSize
 		if ( defined $DTMType && $recalc ) {
 			my $res = $inCAM->COM(
 								   'drill_size_hook',
@@ -383,7 +383,7 @@ sub SetDTMTools {
 			my $reply = $inCAM->GetReply();
 
 			if ( $reply =~ m/^(\d+\.?\d*)\s(\d+\.?\d*)$/ ) {
-				
+
 				$t->{"gTOOLdrill_size"} = $1;
 				$t->{"gTOOLbit"}        = $2;
 			}
@@ -406,43 +406,12 @@ sub SetDTMTools {
 					 "shape"       => $t->{"gTOOLshape"},
 					 "user_des"    => $userColumns
 		);
-
-		#		$inCAM->INFO(
-		#					  units           => 'mm',
-		#					  angle_direction => 'ccw',
-		#					  entity_type     => 'layer',
-		#					  entity_path     => "$jobId/$step/$layer",
-		#					  data_type       => 'TOOL',
-		#					  options         => "break_sr"
-		#		);
-
+  
 	}
 
 	$inCAM->COM( 'tools_set', "layer" => $layer, "thickness" => '0', "user_params" => $DTMType, "user_des_names" => join( ";", @userClmns ) );
 
-	# toto tady musi byt, jinak po tools_set nefunguje spravne shape slot/hole v DTM
-	$inCAM->COM( 'tools_show', "layer" => "$layer" );
-
-	#$inCAM->COM('tools_recalc');
-
-	#				$inCAM->INFO(
-	#							  units           => 'mm',
-	#							  angle_direction => 'ccw',
-	#							  entity_type     => 'layer',
-	#							  entity_path     => "$jobId/$step/$layer",
-	#							  data_type       => 'TOOL',
-	#							  options         => "break_sr"
-	#				);
-
-	#print 1;
-
-	#$inCAM->COM( 'tools_set', layer => $layer, thickness => '0', user_params => $DTMType );
-
-	#$inCAM->COM('tools_recalc');
-
-	#print STDERR "ddd";
-
-	# smayat
+	 
 
 }
 

@@ -50,22 +50,29 @@ sub new {
 
 	# PROPERTIES
 
-	$self->{"etStep"} = "et_" . $self->{"stepToTest"};    # name of et step, which ipc is exported from
+	# name of et step, which ipc is exported from
+	if ( $self->{"createEtStep"} ) {
+		
+		$self->{"etStep"} = "et_" . $self->{"stepToTest"};
+	}
+	else {
+		$self->{"etStep"} = $self->{"stepToTest"};
+	}
 
 	return $self;
 }
 
 sub Export {
 	my $self           = shift;
-	my $outFileName    = shift;                           # name for ipc file
-	my $keepSRProfiles = shift;                           # Keep profiles for SR steps
+	my $outFileName    = shift;    # name for ipc file
+	my $keepSRProfiles = shift;    # Keep profiles for SR steps
 
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
 
 	my $etStepName = $self->{"etStep"};
 
-	my @optSteps = ();                                    # step which will be exported in IPC file
+	my @optSteps = ();             # step which will be exported in IPC file
 
 	if ( $self->{"createEtStep"} ) {
 
@@ -78,7 +85,7 @@ sub Export {
 	}
 	else {
 
-		# test if step already exist
+		# test if step  exist
 		unless ( CamHelper->StepExists( $inCAM, $jobId, $etStepName ) ) {
 
 			die "Et step: $etStepName must be created before export ipc.\n";
@@ -414,7 +421,7 @@ sub __CreateEtStep {
 			$inCAM->COM('sel_delete');
 			$inCAM->COM( 'affected_layer', name => "", mode => "all", affected => "no" );
 		}
-		
+
 		# Flatten step
 		CamStep->FlattenStep( $inCAM, $jobId, \@allLayers, $stepEt );
 

@@ -2,7 +2,7 @@
 # Description: Adjustment of customer schema
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::CAMJob::Scheme::PnlSchemaPost;
+package Packages::CAMJob::Scheme::SchemeFlexiPcb;
 
 #3th party library
 use utf8;
@@ -23,6 +23,8 @@ use aliased 'CamHelpers::CamSymbol';
 use aliased 'CamHelpers::CamLayer';
 use aliased 'CamHelpers::CamFilter';
 use aliased 'CamHelpers::CamNCHooks';
+
+
 
 #-------------------------------------------------------------------------------------------#
 #  Script methods
@@ -190,6 +192,8 @@ sub AddFlexiCoreHoles {
 	CamLayer->ClearLayers( $inCAM, $l );
 
 }
+
+ 
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

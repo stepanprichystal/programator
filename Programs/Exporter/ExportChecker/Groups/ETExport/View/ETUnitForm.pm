@@ -112,9 +112,9 @@ sub __SetLayoutSettings {
 
 	my $customStepTxt = Wx::StaticText->new( $parent, -1, "From step", &Wx::wxDefaultPosition, [ 120, 22 ] );
 	my @etSteps = CamStep->GetAllStepNames( $self->{"inCAM"}, $self->{"jobId"} );
-	@etSteps = grep { $_ =~ /et_/ } @etSteps;
+	@etSteps = sort { $a cmp $b } grep { $_ =~ /et_/ } @etSteps;
 	my $customStepCb =
-	  Wx::ComboBox->new( $parent, -1, ( scalar(@etSteps) ? $etSteps[ scalar(@etSteps) - 1 ] : 0 ),
+	  Wx::ComboBox->new( $parent, -1, ( scalar(@etSteps) ? $etSteps[0] : 0 ),
 						 &Wx::wxDefaultPosition, [ 50, 22 ],
 						 \@etSteps, &Wx::wxCB_READONLY );
 
@@ -254,7 +254,7 @@ sub __UpdateKeepProfile {
 	my $jobId = $self->{"jobId"};
 
 	my $createStep = $self->{"rbCreateStep"}->GetValue();
-	
+
 	if ( defined $createStep && $createStep == 1 && ETHelper->KeepProfilesAllowed( $inCAM, $jobId, $self->{"fromStepCb"}->GetValue() ) ) {
 
 		$self->{"keepProfilesChb"}->Enable();
