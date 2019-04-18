@@ -14,7 +14,6 @@ use warnings;
 use Win32;
 
 #local library
-use aliased 'Packages::Exceptions::BaseException';
 use aliased 'Packages::InCAM::Helper';
 
 #-------------------------------------------------------------------------------------------#

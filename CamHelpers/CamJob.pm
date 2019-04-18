@@ -18,7 +18,6 @@ use List::Util qw[max min];
 
 use aliased 'Enums::EnumsPaths';
 use aliased 'CamHelpers::CamHelper';
-use aliased 'CamHelpers::CamJob';
 use aliased 'CamHelpers::CamAttributes';
 use aliased 'Helpers::GeneralHelper';
 use aliased 'Helpers::FileHelper';
@@ -37,7 +36,7 @@ sub GetSignalLayerCnt {
 	my $noOuter = shift;
 	my $noInner = shift;
 
-	return scalar( CamJob->GetSignalLayer( $inCAM, $jobId, $noOuter, $noInner ) );
+	return scalar( $self->GetSignalLayer( $inCAM, $jobId, $noOuter, $noInner ) );
 }
 
 sub GetSignalLayerNames {
@@ -47,7 +46,7 @@ sub GetSignalLayerNames {
 	my $noOuter = shift;
 	my $noInner = shift;
 
-	my @l = CamJob->GetSignalLayer( $inCAM, $jobId, $noOuter, $noInner );
+	my @l = $self->GetSignalLayer( $inCAM, $jobId, $noOuter, $noInner );
 
 	my @result = map { $_->{"gROWname"} } @l;
 
@@ -424,7 +423,7 @@ sub GetLayerByType {
 	my $jobId = shift;
 	my $type  = shift;
 
-	my @arr = CamJob->GetBoardLayers( $inCAM, $jobId );
+	my @arr = $self->GetBoardLayers( $inCAM, $jobId );
 
 	my @res = ();
 

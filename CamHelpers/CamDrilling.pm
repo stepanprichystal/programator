@@ -396,21 +396,26 @@ sub GetNCLayerInfo {
 
 	if ($ncType) {
 		$self->AddNCLayerType( [ \%lInfo ] );
-		die "Key: \"type\" was not set"   unless ( defined $lInfo{"type"} );
-		die "Key: \"plated\" was not set" unless ( defined $lInfo{"plated"} );
+		
+		unless ( defined $lInfo{"type"} ){
+			die;
+		}
+		
+		die "Key: \"type\" was not set at layer: $layer"   unless ( defined $lInfo{"type"} );
+		die "Key: \"plated\" was not set at layer: $layer" unless ( defined $lInfo{"plated"} );
 	}
 	if ($matrixType) {
 		$lInfo{"gROWlayer_type"} = CamMatrix->GetLayerType( $inCAM, $jobId, $layer );
-		die "Key: \"gROWlayer_type\"  was not set" unless ( defined $lInfo{"gROWlayer_type"} );
+		die "Key: \"gROWlayer_type\"  was not set at layer: $layer" unless ( defined $lInfo{"gROWlayer_type"} );
 	}
 
 	if ($startStop) {
 		$self->AddLayerStartStop( $inCAM, $jobId, [ \%lInfo ] );
-		die "Key: \"gROWdrl_start_name\"  was not set" unless ( defined $lInfo{"gROWdrl_start_name"} );
-		die "Key: \"gROWdrl_end_name\"  was not set"   unless ( defined $lInfo{"gROWdrl_end_name"} );
-		die "Key: \"gROWdrl_start\"  was not set"      unless ( defined $lInfo{"gROWdrl_start"} );
-		die "Key: \"gROWdrl_end\"  was not set"        unless ( defined $lInfo{"gROWdrl_end"} );
-		die "Key: \"gROWdrl_dir\"  was not set"        unless ( defined $lInfo{"gROWdrl_dir"} );
+		die "Key: \"gROWdrl_start_name\"  was not set at layer: $layer" unless ( defined $lInfo{"gROWdrl_start_name"} );
+		die "Key: \"gROWdrl_end_name\"  was not set at layer: $layer"   unless ( defined $lInfo{"gROWdrl_end_name"} );
+		die "Key: \"gROWdrl_start\"  was not set at layer: $layer"      unless ( defined $lInfo{"gROWdrl_start"} );
+		die "Key: \"gROWdrl_end\"  was not set at layer: $layer"        unless ( defined $lInfo{"gROWdrl_end"} );
+		die "Key: \"gROWdrl_dir\"  was not set at layer: $layer"        unless ( defined $lInfo{"gROWdrl_dir"} );
 	}
 
 	return %lInfo;
@@ -513,9 +518,6 @@ sub AddLayerStartStop {
 
 		my $start = ${ $inCAM->{doinfo}{gROWdrl_start} }[$idx];
 		my $end   = ${ $inCAM->{doinfo}{gROWdrl_end} }[$idx];
-
-
-		
 
 		$layer->{"gROWdrl_start_name"} = $alias{$start};
 		$layer->{"gROWdrl_end_name"}   = $alias{$end};
@@ -673,8 +675,6 @@ sub GetViaFillExists {
 	return defined $$side ? 1 : 0;
 }
 
-
-
 # Return NC operation name
 # Operation name is used for getting tool parameters, tool feed rate, etc..
 # Operation name depands on:
@@ -686,7 +686,6 @@ sub GetToolOperation {
 	my $jobId       = shift;
 	my $layer       = shift;
 	my $processType = shift;    # EnumsDrills->TypeProc_HOLE /  EnumsDrills->TypeProc_CHAIN
-
 
 	my %l = $self->GetNCLayerInfo( $inCAM, $jobId, $layer, 1, 1 );
 
@@ -759,14 +758,12 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	my $jobId     = "d222775";
 	my $stepName  = "o+1";
 	my $layerName = "fzs";
-	
-	my @layers = CamDrilling->GetNPltNCLayers($inCAM, $jobId);
-	
-	 
 
-	 CamDrilling->AddLayerStartStop( $inCAM, $jobId, \@layers );
-	 
-	 die;
+	my @layers = CamDrilling->GetNPltNCLayers( $inCAM, $jobId );
+
+	CamDrilling->AddLayerStartStop( $inCAM, $jobId, \@layers );
+
+	die;
 
 }
 

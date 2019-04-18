@@ -5,9 +5,7 @@
 #-------------------------------------------------------------------------------------------#
 
 package CamHelpers::CamHelper;
-
-#use lib qw(.. C:/Vyvoj/Perl/test);
-
+ 
 #3th party library
 use strict;
 use warnings;
@@ -373,19 +371,19 @@ sub EntityChanged {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	use aliased 'CamHelpers::CamHelper';
-	use aliased 'Packages::InCAM::InCAM';
-
-	my $inCAM = InCAM->new();
-
-	my $jobId     = "f69854";
-	my $stepName  = "panel";
-	 
-	my @arr =  ("mpanel", "m");
-
-	my $res = CamHelper->StepExists(  $inCAM, $jobId, "o+1");
-	
-	print STDERR "test";
+#	use aliased 'CamHelpers::CamHelper';
+#	use aliased 'Packages::InCAM::InCAM';
+#
+#	my $inCAM = InCAM->new();
+#
+#	my $jobId     = "f69854";
+#	my $stepName  = "panel";
+#	 
+#	my @arr =  ("mpanel", "m");
+#
+#	my $res = CamHelper->StepExists(  $inCAM, $jobId, "o+1");
+#	
+#	print STDERR "test";
  
 }
 

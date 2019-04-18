@@ -182,7 +182,7 @@ sub GetRoutToolUsage {
 	my $toolSpec = XMLin( FileHelper->Open( GeneralHelper->Root() . "\\Config\\MagazineSpec.xml" ) );
 	$toolUsage{ "c" . ( $toolSpec->{"tool"}->{$_}->{"diameter"} * 1000 ) . "_" . $_ } = [] foreach ( keys %{ $toolSpec->{"tool"} } );
 
-	my $unitDTM = UniDTM->new( $inCAM, $jobId, $step, $workLayer, $SR );
+	my $unitDTM = UniDTM->new( $inCAM, $jobId, $step, $layer, $SR );
 	my $uniRTM = UniRTM->new( $inCAM, $jobId, $step, $workLayer, $SR, $unitDTM );
 	my $materialName = HegMethods->GetMaterialKind($jobId);
 

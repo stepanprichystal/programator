@@ -14,7 +14,7 @@ use Devel::StackTrace;
 
 #local library
 use aliased 'Enums::EnumsPaths';
-use aliased 'CamHelpers::CamHelper';
+
 
 #-------------------------------------------------------------------------------------------#
 #   Package methods
@@ -75,8 +75,10 @@ sub RootHooks {
 	elsif($p =~ /^c:/i ){
 		
 		# or it is user local disc c: (not site disc)
-		
-		$root = EnumsPaths->InCAM_users . CamHelper->GetUserName($inCAM) . "\\hooks\\";
+		 
+		$inCAM->COM("get_user_name");
+		my $user =  $inCAM->GetReply();
+		$root = EnumsPaths->InCAM_users . $user . "\\hooks\\";
 	}
 	else {
 		$root = EnumsPaths->InCAM_hooks;
