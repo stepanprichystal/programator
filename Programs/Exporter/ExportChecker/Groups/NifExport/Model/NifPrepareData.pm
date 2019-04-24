@@ -18,11 +18,13 @@ use aliased 'Programs::Exporter::ExportChecker::Enums';
 use aliased 'CamHelpers::CamJob';
 use aliased 'CamHelpers::CamHelper';
 use aliased 'CamHelpers::CamAttributes';
+use aliased 'CamHelpers::CamHistogram';
 use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'Packages::CAMJob::Dim::JobDim';
 use aliased 'Packages::NifFile::NifFile';
 use aliased 'Packages::CAMJob::Marking::Marking';
+use aliased 'CamHelpers::CamStepRepeatPnl';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -88,8 +90,28 @@ sub OnPrepareGroupData {
 
 	$groupData->SetNotes("");
 
-	# prepare default selected quick notes
+	# Prepare default selected quick notes
 	my @quickNotes = ();
+
+	# Set BGA if exists
+	my $bgaExist  = 0;
+	my @bgaLayers = ("c");
+	push( @bgaLayers, "s" ) if ( $defaultInfo->LayerExist("s") );
+
+	foreach my $s ( CamStepRepeatPnl->GetUniqueDeepestSR( $inCAM, $jobId ) ) {
+		foreach my $l (@bgaLayers) {
+
+			my %att = CamHistogram->GetAttHistogram( $inCAM, $jobId, $s->{"stepName"}, $l );
+			if ( $att{".bga"} ) {
+
+				push( @quickNotes, { "id" => 1, "selected" => 1 } );
+				$bgaExist = 1;
+				last;
+			}
+		}
+		last if ($bgaExist);
+	}
+
 	$groupData->SetQuickNotes( \@quickNotes );
 
 	# prepare datacode

@@ -140,16 +140,16 @@ sub Build {
 			$section->AddRow( "vrtani_do_c", ( $existThrough || $blindExist ) ? "A" : "N" );
 		}
 
-		#stages_vrtani_pred
+		# stages_vrtani_pred
 		if ( $self->_IsRequire("stages_do_c") ) {
 
 			my @layers = CamDrilling->GetNCLayersByType( $inCAM, $jobId, EnumsGeneral->LAYERTYPE_plt_nDrill );
 
-			my $maxCnt;
+			my $maxCnt = 0; # Layer plt drill (m) doesnt have to exists
 			for ( my $i = 0 ; $i < scalar(@layers) ; $i++ ) {
 
 				my $cnt = CamDrilling->GetStagesCnt( $jobId, $stepName, $layers[$i]->{"gROWname"}, $inCAM );
-				$maxCnt = $cnt if ( !defined $maxCnt || $maxCnt < $cnt );
+				$maxCnt = $cnt if ( $maxCnt < $cnt );
 			}
 
 			$section->AddRow( "stages_do_c", $maxCnt );
@@ -195,6 +195,9 @@ sub Build {
 
 	#pocet_der_kus
 	if ( $self->_IsRequire("pocet_der_kus") ) {
+
+		# comment
+		$section->AddComment("Pocet vsech otvoru (prokovene i neprokovene)");
 
 		my $pocetDer = 0;
 

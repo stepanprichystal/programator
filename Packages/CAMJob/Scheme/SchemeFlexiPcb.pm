@@ -23,8 +23,12 @@ use aliased 'CamHelpers::CamSymbol';
 use aliased 'CamHelpers::CamLayer';
 use aliased 'CamHelpers::CamFilter';
 use aliased 'CamHelpers::CamNCHooks';
-
-
+use aliased 'CamHelpers::CamMatrix';
+use aliased 'Packages::Stackup::Stackup::Stackup';
+use aliased 'Packages::Stackup::Enums' => 'StackEnums';
+use aliased 'Packages::CAMJob::Scheme::SchemeFrame::SchemeFrame';
+use aliased 'Packages::CAMJob::Scheme::SchemeFrame::Enums' => 'SchemeFrEnums';
+use aliased 'Packages::Polygon::Features::Features::Features';
 
 #-------------------------------------------------------------------------------------------#
 #  Script methods
@@ -117,11 +121,11 @@ sub AddHolesCoverlay {
 	  CamDrilling->GetNCLayersByTypes( $inCAM, $jobId, [ EnumsGeneral->LAYERTYPE_nplt_cvrlycMill, EnumsGeneral->LAYERTYPE_nplt_cvrlysMill ] );
 
 	my @scanMarks = CamNCHooks->GetLayerCamMarks( $inCAM, $jobId, $stepName, "v1" );
-	
+
 	# press holes
 	my %pressBot = CamNCHooks->GetScanMarkPoint( \@scanMarks, "3-15mm-IN-left-bot" );
 	my %pressTop = CamNCHooks->GetScanMarkPoint( \@scanMarks, "3-15mm-IN-left-top" );
-	
+
 	my %olecLT = CamNCHooks->GetScanMarkPoint( \@scanMarks, "O-Inner-left-top" );
 	my %olecRT = CamNCHooks->GetScanMarkPoint( \@scanMarks, "O-Inner-right-top" );
 	my %olecRB = CamNCHooks->GetScanMarkPoint( \@scanMarks, "O-Inner-right-bot" );
@@ -140,8 +144,7 @@ sub AddHolesCoverlay {
 		CamSymbol->AddPad( $inCAM, "r4000", \%pressBot );
 
 		CamSymbol->ResetCurAttributes($inCAM);
-		
-		
+
 		CamSymbol->AddCurAttribute( $inCAM, $jobId, ".pnl_place", "coverlay_olec_vv" );
 
 		CamSymbol->AddPad( $inCAM, "r4000", \%olecLT );
@@ -192,8 +195,68 @@ sub AddFlexiCoreHoles {
 	CamLayer->ClearLayers( $inCAM, $l );
 
 }
-
  
+# Frame is prevention from bending panel corner in machines.
+# The copper frame on flexi core does flex more rigid and resistant to deformation
+sub AddFlexiCoreFrame {
+	my $self  = shift;
+	my $inCAM = shift;
+	my $jobId = shift;
+	
+	
+	my $frameWidthLR =  18; # 18mm of copper frame on left and right
+	my $frameWidthTB =  25; # 25 mm of copper frame on top and bot
+
+	my $schemeFrame = SchemeFrame->new( $inCAM, $jobId );
+
+	my $type = JobHelper->GetPcbFlexType($jobId);
+
+	if ( !( defined $type && ( $type eq EnumsGeneral->PcbFlexType_RIGIDFLEXO || $type eq EnumsGeneral->PcbFlexType_RIGIDFLEXI ) ) ) {
+		return 0;
+	}
+
+	my $stackup = Stackup->new($jobId);
+	my @layers  = ();
+
+	foreach my $c ( grep { $_->GetCoreRigidType() eq StackEnums->CoreType_FLEX } $stackup->GetAllCores() ) {
+
+		push( @layers, $c->GetTopCopperLayer()->GetCopperName() );
+		push( @layers, $c->GetBotCopperLayer()->GetCopperName() );
+	}
+
+	foreach my $l (@layers) {
+
+		# look for
+
+		my $polarity = CamMatrix->GetLayerPolarity( $inCAM, $jobId, $l );
+
+		$inCAM->COM(
+					 "sr_fill",
+					 "type"            => "solid",
+					 "solid_type"      => "surface",
+					 "polarity"        => $polarity,
+					 "step_max_dist_x" => $frameWidthLR,
+					 "step_max_dist_y" => $frameWidthTB,
+					 "consider_feat"   => "yes",
+					 "feat_margin"     => "0",
+					 "dest"            => "layer_name",
+					 "layer"           => $l
+		);
+
+		# look for place for drilled pcb without copper and add coper
+
+		CamLayer->WorkLayer( $inCAM, $l );
+
+		if ( CamFilter->SelectBySingleAtt( $inCAM, $jobId, ".pnl_place", "negativ_for_drilled_pcbId_v2" ) ) {
+
+			$inCAM->COM("sel_invert");
+		}
+
+	}
+
+	CamLayer->ClearLayers($inCAM);
+
+}
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
@@ -202,15 +265,15 @@ sub AddFlexiCoreHoles {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	use aliased 'Packages::CAMJob::Scheme::PnlSchemaPost';
+	use aliased 'Packages::CAMJob::Scheme::SchemeFlexiPcb';
 	use aliased 'Packages::InCAM::InCAM';
 
 	my $inCAM = InCAM->new();
-	my $jobId = "d113609";
+	my $jobId = "d222775";
 
 	my $mess = "";
 
-	my $result = PnlSchemaPost->AddFlexiCoreHoles( $inCAM, $jobId, "panel" );
+	my $result = SchemeFlexiPcb->AddFlexiCoreFrame( $inCAM, $jobId, "panel" );
 
 	print STDERR "Result is: $result, error message: $mess\n";
 

@@ -128,7 +128,7 @@ sub __SetLayout {
 	# Define notes
 	my @notes = ();
 
-	my %note1 = ( "id" => 1, "title" => "Maska, obsahuje BGA", "text" => "Maska, obsahuje BGA" );
+	my %note1 = ( "id" => 1, "title" => "DPS, obsahuje BGA", "text" => "DPS, obsahuje BGA" );
 	my %note2 = (
 				  "id"    => 2,
 				  "title" => "Maska, maska má malé přesahy.",

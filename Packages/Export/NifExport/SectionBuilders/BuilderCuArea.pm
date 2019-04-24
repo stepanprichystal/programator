@@ -234,6 +234,12 @@ sub Build {
 		$section->AddRow( "zlacena_plocha", $area );
 	}
 
+	# comment
+	if ( $self->_IsRequire("plg_plocha_c") || $self->_IsRequire("plg_plocha_s") ) {
+
+		$section->AddComment("Plocha Cu plosek zaplnovanych otvoru");
+	}
+
 	#plg_plocha_c
 	if ( $self->_IsRequire("plg_plocha_c") ) {
 

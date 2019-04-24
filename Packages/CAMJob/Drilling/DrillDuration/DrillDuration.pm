@@ -111,7 +111,12 @@ sub GetDrillDuration {
 
 		$tLim = ( $tLim =~ m/N(\d+)/i )[0];
 
-		die "Tool drill limit is not defined for tool: $toolKey in parameter file" unless ( defined $tLim );
+		my $errStr = "Tool drill limit is not defined for tool: $toolKey. Tool parameter file:\n";
+		$errStr .= "- Material name: $materialName\n";
+		$errStr .= "- Machine name: ".EnumsMachines->MACHINE_DEF."\n";
+		$errStr .= "Add tool parameters according: \"..\\site_data\\hooks\\ncd\\parametersFile\\navod_parametry\"";
+		
+		die $errStr unless ( defined $tLim );
 
 		# Add relative tool change time because of exceed tool limit
 		$duration += $cumulativeUsage{$toolKey} / ( $tLim * 100 )  * $measuredDur{$toolKey}->[0];
