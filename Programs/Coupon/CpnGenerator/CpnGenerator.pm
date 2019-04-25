@@ -26,6 +26,7 @@ use aliased 'Programs::Coupon::CpnGenerator::ModelBuilders::CoatedMicrostrip';
 use aliased 'Programs::Coupon::CpnGenerator::ModelBuilders::UncoatedMicrostrip';
 use aliased 'Programs::Coupon::CpnGenerator::ModelBuilders::Stripline';
 use aliased 'Programs::Coupon::CpnGenerator::ModelBuilders::Stripline2T';
+use aliased 'Programs::Coupon::CpnGenerator::ModelBuilders::Stripline2B';
 use aliased 'Programs::Coupon::CpnGenerator::ModelBuilders::CoatedUpperEmbedded';
 use aliased 'Programs::Coupon::CpnGenerator::ModelBuilders::UncoatedUpperEmbedded';
 use aliased 'Helpers::GeneralHelper';
@@ -404,6 +405,8 @@ sub __GenerateSingle {
 			  case EnumsImp->Model_STRIPLINE { $modelBuilder = Stripline->new() }
 
 			  case EnumsImp->Model_STRIPLINE_2T { $modelBuilder = Stripline2T->new() }
+			  
+			  case EnumsImp->Model_STRIPLINE_2B { $modelBuilder = Stripline2B->new() }
 
 			  case EnumsImp->Model_COATED_UPPER_EMBEDDED { $modelBuilder = CoatedUpperEmbedded->new() }
 
