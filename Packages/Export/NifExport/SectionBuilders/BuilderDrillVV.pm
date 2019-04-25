@@ -21,6 +21,7 @@ use aliased 'Packages::Stackup::Enums';
 use aliased 'Packages::Stackup::Stackup::Stackup';
 use aliased 'Packages::Stackup::StackupNC::StackupNC';
 use aliased 'CamHelpers::CamDrilling';
+use aliased 'Enums::EnumsDrill';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -47,7 +48,8 @@ sub Build {
 	my $stackup   = Stackup->new( $self->{'jobId'} );
 	my $stackupNC = StackupNC->new( $self->{'jobId'}, $inCAM);
 	my $pressCnt  = $stackupNC->GetPressCnt();
-	my $viaFill   = CamDrilling->GetViaFillExists( $inCAM, $jobId );
+	
+	
 
 	# comment
 	$section->AddComment(" SLEPE VRTANI SKRZ DPS PO LISOVANI");
@@ -132,6 +134,9 @@ sub Build {
 		#}
 	}
 
+	my $viaFill  = CamDrilling->GetViaFillExists( $inCAM, $jobId );
+	my $viaFillTopBlind   = CamDrilling->GetViaFillExists( $inCAM, $jobId,  EnumsDrill->ViaFill_TOPBLIND);
+
 	# comment
 	$section->AddComment( " SLEPE VRTANI PO LISOVANI " . ( $viaFill ? "(PRED ZAPLNENIM OTVORU)" : "" ) );
 
@@ -140,7 +145,7 @@ sub Build {
 		my $pressOrder = $i + 1;
 
 		my $layerType =
-		  $viaFill && $pressCnt == $pressOrder
+		  $viaFillTopBlind && $pressCnt == $pressOrder
 		  ? EnumsGeneral->LAYERTYPE_plt_bFillDrillTop
 		  : EnumsGeneral->LAYERTYPE_plt_bDrillTop;
 
@@ -171,12 +176,15 @@ sub Build {
 		#}
 	}
 
+
+	my $viaFillBotBlind   = CamDrilling->GetViaFillExists( $inCAM, $jobId,  EnumsDrill->ViaFill_BOTBLIND);
+
 	for ( my $i = 0 ; $i < $pressCnt ; $i++ ) {
 
 		my $pressOrder = $i + 1;
 
 		my $layerType =
-		  $viaFill && $pressCnt == $pressOrder
+		  $viaFillBotBlind && $pressCnt == $pressOrder
 		  ? EnumsGeneral->LAYERTYPE_plt_bFillDrillBot
 		  : EnumsGeneral->LAYERTYPE_plt_bDrillBot;
 
@@ -206,6 +214,8 @@ sub Build {
 
 		#}
 	}
+
+
 
 	if ($viaFill) {
 

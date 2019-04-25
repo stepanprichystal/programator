@@ -20,6 +20,7 @@ use aliased 'CamHelpers::CamHelper';
 use aliased 'CamHelpers::CamDrilling';
 use aliased 'CamHelpers::CamRouting';
 use aliased 'Enums::EnumsGeneral';
+use aliased 'Enums::EnumsDrill';
 use aliased 'Helpers::JobHelper';
 use aliased 'CamHelpers::CamHistogram';
 use aliased 'Packages::CAMJob::Dim::JobDim';
@@ -48,25 +49,25 @@ sub Build {
 	my $jobId    = $self->{"jobId"};
 	my %nifData  = %{ $self->{"nifData"} };
 	my $stepName = "panel";
-	my $viaFill  = CamDrilling->GetViaFillExists( $inCAM, $jobId );
 
-	
+	my $viaFill = CamDrilling->GetViaFillExists( $inCAM, $jobId );
 
 	# comment
-	$section->AddComment( "Vrtani skrz pred prokovem " . ( $viaFill ? "(pred zalpnenim otvoru)" : "" ) );
-	my $lType = !$viaFill ? EnumsGeneral->LAYERTYPE_plt_nDrill : EnumsGeneral->LAYERTYPE_plt_nFillDrill;
+	$section->AddComment( "Vrtani skrz pred prokovem " . ( $viaFill ? "pred zalpnenim otvoru" : "" ) );
+	my $lType = $viaFill ? EnumsGeneral->LAYERTYPE_plt_nFillDrill : EnumsGeneral->LAYERTYPE_plt_nDrill;
 
 	#vrtani_pred (vrtani pred prokovem)
 	if ( $self->_IsRequire("vrtani_pred") ) {
 
-		my $exist = $self->__DrillExists($lType);
+		my $exist = $self->__DrillExists( [ $lType, EnumsGeneral->LAYERTYPE_plt_fDrill ] );
+
 		$section->AddRow( "vrtani_pred", $exist );
 	}
 
 	#stages_vrtani_pred
 	if ( $self->_IsRequire("stages_vrtani_pred") ) {
 
-		my @layers = CamDrilling->GetNCLayersByType( $inCAM, $jobId, $lType );
+		my @layers = CamDrilling->GetNCLayersByTypes( $inCAM, $jobId, [ $lType, EnumsGeneral->LAYERTYPE_plt_fDrill ] );
 
 		my $maxCnt;
 		for ( my $i = 0 ; $i < scalar(@layers) ; $i++ ) {
@@ -81,17 +82,17 @@ sub Build {
 	#otvory (vyelsedne / vrtane  => S/T)
 	if ( $self->_IsRequire("otvory") ) {
 
-		$section->AddRow( "otvory", $self->__GetHoleType($lType) );
+		$section->AddRow( "otvory", $self->__GetHoleType( [ $lType, EnumsGeneral->LAYERTYPE_plt_fDrill ] ) );
 	}
 
 	#pocet_der
 	if ( $self->_IsRequire("pocet_der") ) {
-		$section->AddRow( "pocet_der", $self->__GetHoleCnt($lType) );
+		$section->AddRow( "pocet_der", $self->__GetHoleCnt( [ $lType, EnumsGeneral->LAYERTYPE_plt_fDrill ] ) );
 	}
 
 	#min_vrtak
 	if ( $self->_IsRequire("min_vrtak") ) {
-		my $minTool = CamDrilling->GetMinHoleTool( $inCAM, $jobId, $stepName, $lType, "c" );
+		my $minTool = CamDrilling->GetMinHoleTool( $inCAM, $jobId, $stepName, [$lType], "c" );
 
 		if ( defined $minTool ) {
 			$minTool = sprintf "%0.2f", ( $minTool / 1000 );
@@ -107,7 +108,7 @@ sub Build {
 	my ( $holesTypeNum, $aspectRatio ) = ( 0, 0 );
 
 	if ( $self->_IsRequire("pocet_vrtaku") || $self->_IsRequire("min_vrtak_pomer") ) {
-		( $holesTypeNum, $aspectRatio ) = $self->__GetInfoDrill( $stepName, $lType );
+		( $holesTypeNum, $aspectRatio ) = $self->__GetInfoDrill( $stepName, [ $lType, EnumsGeneral->LAYERTYPE_plt_fDrill ] );
 
 	}
 
@@ -133,10 +134,10 @@ sub Build {
 
 			my $existThrough = CamDrilling->NCLayerExists( $inCAM, $jobId, EnumsGeneral->LAYERTYPE_plt_nDrill );
 
-			my $stackupNC = StackupNC->new( $jobId, $inCAM );
-			my $lastPress = $stackupNC->GetPress( $stackupNC->GetPressCnt() );
+			my $stackupNC  = StackupNC->new( $jobId, $inCAM );
+			my $lastPress  = $stackupNC->GetPress( $stackupNC->GetPressCnt() );
 			my $blindExist = $lastPress->ExistNCLayers( StackEnums->SignalLayer_TOP, EnumsGeneral->LAYERTYPE_plt_bDrillTop );
-			
+
 			$section->AddRow( "vrtani_do_c", ( $existThrough || $blindExist ) ? "A" : "N" );
 		}
 
@@ -145,7 +146,7 @@ sub Build {
 
 			my @layers = CamDrilling->GetNCLayersByType( $inCAM, $jobId, EnumsGeneral->LAYERTYPE_plt_nDrill );
 
-			my $maxCnt = 0; # Layer plt drill (m) doesnt have to exists
+			my $maxCnt = 0;    # Layer plt drill (m) doesnt have to exists
 			for ( my $i = 0 ; $i < scalar(@layers) ; $i++ ) {
 
 				my $cnt = CamDrilling->GetStagesCnt( $jobId, $stepName, $layers[$i]->{"gROWname"}, $inCAM );
@@ -157,12 +158,12 @@ sub Build {
 
 		#pocet_der_D
 		if ( $self->_IsRequire("pocet_der_do_c") ) {
-			$section->AddRow( "pocet_der_do_c", $self->__GetHoleCnt( EnumsGeneral->LAYERTYPE_plt_nDrill ) );
+			$section->AddRow( "pocet_der_do_c", $self->__GetHoleCnt( [ EnumsGeneral->LAYERTYPE_plt_nDrill ] ) );
 		}
 
 		#min_vrtak
 		if ( $self->_IsRequire("min_vrtak_do_c") ) {
-			my $minTool = CamDrilling->GetMinHoleTool( $inCAM, $jobId, $stepName, EnumsGeneral->LAYERTYPE_plt_nDrill, "c" );
+			my $minTool = CamDrilling->GetMinHoleTool( $inCAM, $jobId, $stepName, [ EnumsGeneral->LAYERTYPE_plt_nDrill ], "c" );
 
 			if ( defined $minTool ) {
 				$minTool = sprintf "%0.2f", ( $minTool / 1000 );
@@ -178,7 +179,7 @@ sub Build {
 		my ( $holesTypeNum, $aspectRatio ) = ( 0, 0 );
 
 		if ( $self->_IsRequire("pocet_vrtaku_do_c") || $self->_IsRequire("min_vrtak_pomer_do_c") ) {
-			( $holesTypeNum, $aspectRatio ) = $self->__GetInfoDrill( $stepName, EnumsGeneral->LAYERTYPE_plt_nDrill );
+			( $holesTypeNum, $aspectRatio ) = $self->__GetInfoDrill( $stepName, [ EnumsGeneral->LAYERTYPE_plt_nDrill ] );
 
 		}
 
@@ -230,15 +231,16 @@ sub Build {
 
 # Thrugh drilling before viafilling
 sub __DrillExists {
-	my $self  = shift;
-	my $lType = shift;
+	my $self   = shift;
+	my $lTypes = shift;
 
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
 
-	my $exist = CamDrilling->NCLayerExists( $inCAM, $jobId, $lType );
+	my @layers = CamDrilling->GetNCLayersByTypes( $inCAM, $jobId, $lTypes );
 
-	if ($exist) {
+	my $exist;
+	if ( scalar(@layers) ) {
 		$exist = "A";
 	}
 	else {
@@ -249,13 +251,13 @@ sub __DrillExists {
 }
 
 sub __GetHoleType {
-	my $self  = shift;
-	my $lType = shift;
+	my $self   = shift;
+	my $lTypes = shift;
 
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
 
-	my @layers = CamDrilling->GetNCLayersByType( $inCAM, $jobId, $lType );
+	my @layers = CamDrilling->GetNCLayersByTypes( $inCAM, $jobId, $lTypes );
 
 	my $holeType = "";
 
@@ -270,7 +272,7 @@ sub __GetHoleType {
 			$holeType = 'T';
 		}
 
-		# If exist "m" and has no holes => ok
+		# If no holess => ok
 		unless ($holeType) {
 
 			#nuber of holes
@@ -293,15 +295,15 @@ sub __GetHoleType {
 }
 
 sub __GetHoleCnt {
-	my $self  = shift;
-	my $lType = shift;
+	my $self   = shift;
+	my $lTypes = shift;
 
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
 
 	my $holeCnt = 0;
 
-	my @layers = CamDrilling->GetNCLayersByType( $inCAM, $jobId, $lType );
+	my @layers = CamDrilling->GetNCLayersByTypes( $inCAM, $jobId, $lTypes );
 	my %dim = JobDim->GetDimension( $inCAM, $jobId );
 
 	# If pool, total count of one piece
@@ -331,24 +333,10 @@ sub __GetHoleCnt {
 		my @childSteps = CamStepRepeatPnl->GetUniqueStepAndRepeat( $inCAM, $jobId );
 		for ( my $i = 0 ; $i < scalar(@layers) ; $i++ ) {
 
-			my $lName = $layers[$i]->{"gROWname"};
+			my %hist = CamHistogram->GetFeatuesHistogram( $inCAM, $jobId, "panel", $layers[$i]->{"gROWname"} );
 
-			foreach my $step (@childSteps) {
-
-				$inCAM->INFO(
-							  units       => 'mm',
-							  entity_type => 'layer',
-							  entity_path => "$jobId/" . $step->{"stepName"} . "/$lName",
-							  data_type   => 'FEAT_HIST'
-				);
-
-				die if ( !defined $step->{"totalCnt"} );
-				$holeCnt += $inCAM->{doinfo}{gFEAT_HISTpad} * $step->{"totalCnt"};
-			}
-
+			$holeCnt += $hist{"pad"};
 		}
-
-		$holeCnt = int( $holeCnt / $dim{"nasobnost"} );
 	}
 
 	return $holeCnt;
@@ -357,7 +345,7 @@ sub __GetHoleCnt {
 sub __GetInfoDrill {
 	my $self     = shift;
 	my $stepName = shift;
-	my $lType    = shift;
+	my $lTypes   = shift;
 
 	my $inCAM    = $self->{"inCAM"};
 	my $jobId    = $self->{"jobId"};
@@ -365,8 +353,8 @@ sub __GetInfoDrill {
 
 	my @holeTypes = ();    # all holes type of layers
 
-	my @layers = CamDrilling->GetNCLayersByType( $inCAM, $jobId, $lType );
-	my @childSteps = map { $_->{"stepName"} } CamStepRepeatPnl->GetUniqueStepAndRepeat( $inCAM, $jobId );
+	my @layers = CamDrilling->GetNCLayersByTypes( $inCAM, $jobId, $lTypes );
+	#my @childSteps = map { $_->{"stepName"} } CamStepRepeatPnl->GetUniqueStepAndRepeat( $inCAM, $jobId );
 
 	for ( my $i = 0 ; $i < scalar(@layers) ; $i++ ) {
 

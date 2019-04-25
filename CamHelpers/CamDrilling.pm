@@ -30,10 +30,10 @@ sub GetMinHoleTool {
 	my $inCAM     = shift;
 	my $jobId     = shift;
 	my $stepName  = shift;
-	my $layertype = shift;
+	my $layertypes = shift;
 	my $fromLayer = shift;    #tell, only drill layers starts from <$fromLayer> will be considered
 
-	my @layers = $self->GetNCLayersByType( $inCAM, $jobId, $layertype );
+	my @layers = $self->GetNCLayersByTypes( $inCAM, $jobId, $layertypes );
 	$self->AddLayerStartStop( $inCAM, $jobId, \@layers );
 
 	my $minTool;
@@ -396,11 +396,11 @@ sub GetNCLayerInfo {
 
 	if ($ncType) {
 		$self->AddNCLayerType( [ \%lInfo ] );
-		
-		unless ( defined $lInfo{"type"} ){
+
+		unless ( defined $lInfo{"type"} ) {
 			die;
 		}
-		
+
 		die "Key: \"type\" was not set at layer: $layer"   unless ( defined $lInfo{"type"} );
 		die "Key: \"plated\" was not set at layer: $layer" unless ( defined $lInfo{"plated"} );
 	}
@@ -652,27 +652,50 @@ sub AddHistogramValues {
 	}
 }
 
-# Return 1 if exist some via fill layer in matrix
-# ref params $side is fileld:
-# - top - only top filling
-# - bot - only bot filling
-# - both - top and bot filling
+# Return type of via filling in job, based on NC layers
+# If $fillType is not defined, return if at leas one type of viafill exist
+# Values for param $fillType:
+#	EnumsDrill->ViaFill_TOPTHROUGH
+#	EnumsDrill->ViaFill_TOPBLIND
+#	EnumsDrill->ViaFill_BOTBLIND
 sub GetViaFillExists {
-	my $self  = shift;
-	my $inCAM = shift;
-	my $jobId = shift;
-	my $side  = shift // undef;    # top/bot/both
+	my $self     = shift;
+	my $inCAM    = shift;
+	my $jobId    = shift;
+	my $fillType = shift // undef;    # EnumsDrill->ViaFill_
 
-	my @topViaFill =
-	  $self->GetNCLayersByTypes( $inCAM, $jobId, [ EnumsGeneral->LAYERTYPE_plt_nFillDrill, EnumsGeneral->LAYERTYPE_plt_bFillDrillTop ] );
+	my @ncLayers;
 
-	my @botViaFill = $self->GetNCLayersByTypes( $inCAM, $jobId, [ EnumsGeneral->LAYERTYPE_plt_bFillDrillBot ] );
+	if ( defined $fillType ) {
 
-	$$side = "top"  if ( scalar(@topViaFill)    && !scalar(@botViaFill) );
-	$$side = "bot"  if ( scalar( !@topViaFill ) && scalar(@botViaFill) );
-	$$side = "both" if ( scalar(@topViaFill)    && scalar(@botViaFill) );
+		if ( $fillType eq EnumsDrill->ViaFill_TOPTHROUGH ) {
 
-	return defined $$side ? 1 : 0;
+			@ncLayers = $self->GetNCLayersByTypes( $inCAM, $jobId, [ EnumsGeneral->LAYERTYPE_plt_nFillDrill ] );
+		}
+		elsif ( $fillType eq EnumsDrill->ViaFill_TOPBLIND ) {
+
+			@ncLayers = $self->GetNCLayersByTypes( $inCAM, $jobId, [ EnumsGeneral->LAYERTYPE_plt_bFillDrillTop ] );
+		}
+		elsif ( $fillType eq EnumsDrill->ViaFill_BOTBLIND ) {
+
+			@ncLayers = $self->GetNCLayersByTypes( $inCAM, $jobId, [ EnumsGeneral->LAYERTYPE_plt_bFillDrillBot ] );
+
+		}
+	}
+	else {
+
+		# Check all via fill types
+
+		@ncLayers = $self->GetNCLayersByTypes(
+											   $inCAM, $jobId,
+											   [
+												  EnumsGeneral->LAYERTYPE_plt_nFillDrill, EnumsGeneral->LAYERTYPE_plt_bFillDrillTop,
+												  EnumsGeneral->LAYERTYPE_plt_bFillDrillBot
+											   ]
+		);
+	}
+
+	return scalar(@ncLayers) ? 1 : 0;
 }
 
 # Return NC operation name
