@@ -163,8 +163,9 @@ sub __ProcessJob {
 
 	my $inCAM = $self->{"inCAM"};
 
-	my ($jobId) = $orderId =~ /^(\w\d+)-\d+/i;
+	my ($jobId) = $orderId =~ /^(\w\d+)-(\d+)/i;
 	$jobId = lc($jobId);
+	 
 
 	# 1) Check if pcb exist in InCAM
 
@@ -185,7 +186,7 @@ sub __ProcessJob {
 		#  Do all automatic changes
 		if ($jobExist) {
 
-			my $changeReorder = ChangeReorder->new( $inCAM, $jobId );
+			my $changeReorder = ChangeReorder->new( $inCAM, $jobId, $orderId );
 			my $errMess       = "";
 			my $res           = $changeReorder->RunChanges( \$errMess );
 			$self->{"inCAM"}->COM( "save_job", "job" => "$jobId" );
@@ -197,7 +198,7 @@ sub __ProcessJob {
 	}
 
 	# 3) Do all controls and return check which are neet to be repair manualz bz tpv user
-	my $checkReorder = CheckReorder->new( $inCAM, $jobId );
+	my $checkReorder = CheckReorder->new( $inCAM, $jobId, $orderId );
 	@manCh = $checkReorder->RunChecks();
 
 	if ($jobExist) {

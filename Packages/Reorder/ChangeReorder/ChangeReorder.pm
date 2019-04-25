@@ -25,8 +25,9 @@ sub new {
 	$self = {};
 	bless $self;
 
-	$self->{"inCAM"} = shift;
-	$self->{"jobId"} = shift;
+	$self->{"inCAM"}   = shift;
+	$self->{"jobId"}   = shift;    # Job id without order id
+	$self->{"orderId"} = shift;    # Complete order id (X000000-00)
 
 	my @checks = ();
 	$self->{"changes"} = \@checks;
@@ -40,9 +41,8 @@ sub new {
 sub RunChanges {
 	my $self    = shift;
 	my $errMess = shift;
-
-	my $inCAM = $self->{"inCAM"};
-	my $jobId = $self->{"jobId"};
+	my $inCAM   = $self->{"inCAM"};
+	my $jobId   = $self->{"jobId"};
 
 	my $result = 1;
 
@@ -66,24 +66,24 @@ sub ExcludeChange {
 	my $excludeOk = 0;
 
 	for ( my $i = scalar( @{ $self->{"changes"} } ) - 1 ; $i >= 0 ; $i-- ) {
-		
-		if($self->{"changes"}->[$i]->GetChangeKey() eq $change){
-			
+
+		if ( $self->{"changes"}->[$i]->GetChangeKey() eq $change ) {
+
 			splice @{ $self->{"changes"} }, $i, 1;
 			$excludeOk = 1;
 			last;
 		}
 	}
-	
+
 	return $excludeOk;
 }
 
 sub __LoadChanges {
 	my $self = shift;
 
-	my $inCAM  = $self->{"inCAM"};
-	my $jobId  = $self->{"jobId"};
-	
+	my $inCAM   = $self->{"inCAM"};
+	my $jobId   = $self->{"jobId"};
+	my $orderId = $self->{"orderId"};
 
 	my $path  = GeneralHelper->Root() . "\\Packages\\Reorder\\ChangeReorder\\ChangeList";
 	my @lines = @{ FileHelper->ReadAsLines($path) };
@@ -107,7 +107,7 @@ sub __LoadChanges {
 			my $module = 'Packages::Reorder::ChangeReorder::Changes::' . $key;
 			eval("use  $module;");
 
-			push( @changes, $module->new( $key, $inCAM, $jobId ) );
+			push( @changes, $module->new( $key, $inCAM, $jobId, $orderId ) );
 		}
 	}
 
@@ -126,20 +126,19 @@ my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	use aliased 'Packages::Reorder::ChangeReorder::ChangeReorder';
-	
+
 	use aliased 'Packages::InCAM::InCAM';
-	
+
 	use Data::Dump qw(dump);
 
 	my $inCAM = InCAM->new();
 	my $jobId = "d152457";
-	
-	my $ch = ChangeReorder->new($inCAM, $jobId);
-	
+
+	my $ch = ChangeReorder->new( $inCAM, $jobId );
+
 	my $errMess = "";
-	my @arr = $ch->RunChanges(\$errMess);
+	my @arr     = $ch->RunChanges( \$errMess );
 	print $errMess;
- 
 
 }
 

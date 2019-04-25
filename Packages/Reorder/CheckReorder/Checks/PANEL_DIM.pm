@@ -37,9 +37,10 @@ sub new {
 
 # Check if exist new version of nif, if so it means it is from InCAM
 sub Run {
-	my $self     = shift;
+	my $self = shift;
 	my $inCAM    = $self->{"inCAM"};
 	my $jobId    = $self->{"jobId"};
+	my $orderId = $self->{"orderId"};
 	my $jobExist = $self->{"jobExist"};    # (in InCAM db)
 	my $isPool   = $self->{"isPool"};
 
@@ -47,9 +48,9 @@ sub Run {
 
 		return 0;
 	}
-	
+
 	# Check only standard orders
-	if($isPool){
+	if ($isPool) {
 		return 1;
 	}
 
@@ -61,25 +62,31 @@ sub Run {
 		my $smallest = "";
 		if ( $pnl->SmallerThanStandard( \$smallest ) ) {
 
-			$self->_AddChange(   "Dps má parametry standardu, ale přířez je menší než náš aktuálně nejmenší standard ($smallest). "
-							   . "Předělej desku na standard.", 1 );
+			$self->_AddChange(
+							   "Dps má parametry standardu, ale přířez je menší než náš aktuálně nejmenší standard ($smallest). "
+								 . "Předělej desku na standard.",
+							   1
+			);
 		}
 	}
- 
-	# 2) This class can change panel dimension (in future). 
+
+	# 2) This class can change panel dimension (in future).
 	# Do control check if SR step are whole inside active area
- 
-		my %limActive = CamStep->GetActiveAreaLim( $inCAM, $jobId, "panel" );
-		my %limSR = CamStepRepeatPnl->GetStepAndRepeatLim( $inCAM, $jobId, 0, 1, [EnumsGeneral->Coupon_IMPEDANCE] );
 
-		if (    $limActive{"xMin"}  > $limSR{"xMin"}
-			 || $limActive{"yMax"}  < $limSR{"yMax"}
-			 || $limActive{"xMax"}  < $limSR{"xMax"}
-			 || $limActive{"yMin"}  > $limSR{"yMin"} )
-		{
-			$self->_AddChange(  "SR stepy jsou umístěny za aktivní oblastí. Zkontroluj, zda technické okolí (frézovací otvor, naváděcí značky atd.) nezasahuje do desek v panelu." );
+	my %limActive = CamStep->GetActiveAreaLim( $inCAM, $jobId, "panel" );
+	my %limSR = CamStepRepeatPnl->GetStepAndRepeatLim( $inCAM, $jobId, 0, 1, [ EnumsGeneral->Coupon_IMPEDANCE ] );
 
-		}
+	if (    $limActive{"xMin"} > $limSR{"xMin"}
+		 || $limActive{"yMax"} < $limSR{"yMax"}
+		 || $limActive{"xMax"} < $limSR{"xMax"}
+		 || $limActive{"yMin"} > $limSR{"yMin"} )
+	{
+		$self->_AddChange(
+"SR stepy jsou umístěny za aktivní oblastí. Zkontroluj, zda technické okolí (frézovací otvor, naváděcí značky atd.) nezasahuje do desek v panelu."
+		);
+
+	}
+
 
 }
 

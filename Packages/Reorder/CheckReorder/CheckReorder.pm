@@ -29,8 +29,9 @@ sub new {
 	my $self  = $class->SUPER::new(@_);
 	bless $self;
 
-	$self->{"inCAM"} = shift;
-	$self->{"jobId"} = shift;
+	$self->{"inCAM"}   = shift;
+	$self->{"jobId"}   = shift; # Job id without order id
+	$self->{"orderId"} = shift; # Complete order id (X000000-00)
 
 	$self->{"isPool"} = HegMethods->GetPcbIsPool( $self->{"jobId"} );
 
@@ -65,10 +66,10 @@ sub RunChecks {
 	if ( !$isPool && !$pnlExist ) {
 
 		my %inf = ( "text" => "Pcb is former POOL, now it is standard. Prepare step \"panel\".", "critical" => 1 );
-		my @changes = (\%inf);
+		my @changes = ( \%inf );
 		push( @manCh, @changes );
-		
-		my $resultItem = $self->_GetNewItem( "-" );
+
+		my $resultItem = $self->_GetNewItem("-");
 		$resultItem->SetData( \@changes );
 		$self->_OnItemResult($resultItem);
 
@@ -103,9 +104,10 @@ sub GetItemCnt {
 sub __LoadChecks {
 	my $self = shift;
 
-	my $inCAM  = $self->{"inCAM"};
-	my $jobId  = $self->{"jobId"};
-	my $isPool = $self->{"isPool"};
+	my $inCAM   = $self->{"inCAM"};
+	my $jobId   = $self->{"jobId"};
+	my $orderId = $self->{"orderId"};
+	my $isPool  = $self->{"isPool"};
 
 	my $jobExist = CamJob->JobExist( $inCAM, $jobId );
 
@@ -131,7 +133,7 @@ sub __LoadChecks {
 			my $module = 'Packages::Reorder::CheckReorder::Checks::' . $key;
 			eval("use  $module;");
 
-			push( @checks, $module->new( $key, $inCAM, $jobId, $jobExist, $isPool ) );
+			push( @checks, $module->new( $key, $inCAM, $jobId, $orderId, $jobExist, $isPool ) );
 		}
 	}
 
@@ -155,10 +157,11 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	use Data::Dump qw(dump);
 
-	my $inCAM = InCAM->new();
-	my $jobId = "d073910";
+	my $inCAM   = InCAM->new();
+	my $jobId   = "d152457";
+	my $orderId = "d152457-03";
 
-	my $ch = CheckReorder->new( $inCAM, $jobId );
+	my $ch = CheckReorder->new( $inCAM, $jobId, $orderId );
 	my @arr = $ch->RunChecks();
 
 	dump(@arr)

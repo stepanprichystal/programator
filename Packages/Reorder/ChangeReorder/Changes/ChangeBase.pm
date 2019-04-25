@@ -20,15 +20,15 @@ sub new {
 	my $checkKey = shift;
 	my $inCAM    = shift;
 	my $jobId    = shift;
-	 
+	my $orderId = shift;
 
 	$self = {};
 	bless $self;
 
-	$self->{"key"}    = $checkKey;
-	$self->{"inCAM"}  = $inCAM;
-	$self->{"jobId"}  = $jobId;
-	 
+	$self->{"key"}      = $checkKey;
+	$self->{"inCAM"}    = $inCAM;
+	$self->{"jobId"}    = $jobId;
+	$self->{"orderId"} = $orderId;
 
 	return $self;
 }

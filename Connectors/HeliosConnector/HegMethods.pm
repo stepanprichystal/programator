@@ -1236,7 +1236,8 @@ sub GetAllByOrderId {
 				termin,
 				datum_zahajeni,
 				pocet_prirezu,
-				prirezu_navic
+				prirezu_navic,
+				kusy_pozadavek
 				from lcs.zakazky_dps_22_hlavicka 
 				WHERE reference_subjektu = _OrderId";
 
