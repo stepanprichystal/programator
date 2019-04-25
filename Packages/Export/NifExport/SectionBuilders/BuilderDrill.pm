@@ -92,7 +92,7 @@ sub Build {
 
 	#min_vrtak
 	if ( $self->_IsRequire("min_vrtak") ) {
-		my $minTool = CamDrilling->GetMinHoleTool( $inCAM, $jobId, $stepName, [$lType], "c" );
+		my $minTool = CamDrilling->GetMinHoleTool( $inCAM, $jobId, $stepName, [ $lType, EnumsGeneral->LAYERTYPE_plt_fDrill ], "c" );
 
 		if ( defined $minTool ) {
 			$minTool = sprintf "%0.2f", ( $minTool / 1000 );

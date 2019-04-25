@@ -135,8 +135,7 @@ sub Build {
 	}
 
 	my $viaFill  = CamDrilling->GetViaFillExists( $inCAM, $jobId );
-	my $viaFillTopBlind   = CamDrilling->GetViaFillExists( $inCAM, $jobId,  EnumsDrill->ViaFill_TOPBLIND);
-
+ 
 	# comment
 	$section->AddComment( " SLEPE VRTANI PO LISOVANI " . ( $viaFill ? "(PRED ZAPLNENIM OTVORU)" : "" ) );
 
@@ -145,7 +144,7 @@ sub Build {
 		my $pressOrder = $i + 1;
 
 		my $layerType =
-		  $viaFillTopBlind && $pressCnt == $pressOrder
+		  $viaFill && $pressCnt == $pressOrder
 		  ? EnumsGeneral->LAYERTYPE_plt_bFillDrillTop
 		  : EnumsGeneral->LAYERTYPE_plt_bDrillTop;
 
@@ -175,16 +174,13 @@ sub Build {
 
 		#}
 	}
-
-
-	my $viaFillBotBlind   = CamDrilling->GetViaFillExists( $inCAM, $jobId,  EnumsDrill->ViaFill_BOTBLIND);
-
+ 
 	for ( my $i = 0 ; $i < $pressCnt ; $i++ ) {
 
 		my $pressOrder = $i + 1;
 
 		my $layerType =
-		  $viaFillBotBlind && $pressCnt == $pressOrder
+		  $viaFill && $pressCnt == $pressOrder
 		  ? EnumsGeneral->LAYERTYPE_plt_bFillDrillBot
 		  : EnumsGeneral->LAYERTYPE_plt_bDrillBot;
 
