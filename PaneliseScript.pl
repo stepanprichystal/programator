@@ -92,6 +92,8 @@ unless ($ENV{JOB}) {
 	$jobName = "$ENV{JOB}";
 }
 
+
+
 my $inCAM = InCAM->new();
 my @errorMessageArr = ();
 my @warnMessageArr = ();
@@ -112,7 +114,9 @@ if (_FindAttrBGA($jobName, 'o+1') == 1) {
 }
 
 # When there are uncover soldermask of drilling only from one side, then subroutine perform uncover sodermask even on the other side.
-_SolderMaskUncoverVia($jobName);
+if(CamHelper->LayerExists( $inCAM, $jobName, 'm' ) ==1 ){
+		_SolderMaskUncoverVia($jobName);
+}
 
 
  #Check if there is attribut customer_panel

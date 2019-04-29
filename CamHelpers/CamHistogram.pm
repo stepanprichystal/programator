@@ -295,21 +295,21 @@ sub GetSymHistogram {
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#
-my ( $package, $filename, $line ) = caller;
-if ( $filename =~ /DEBUG_FILE.pl/ ) {
-
-	use aliased 'CamHelpers::CamHistogram';
-	use aliased 'Packages::InCAM::InCAM';
-
-	my $inCAM = InCAM->new();
-
-	my $jobId    = "d113609";
-	my $stepName = "panel";
-
-	my %hist = CamHistogram->GetFeatuesHistogram( $inCAM, $jobId, "panel", "m");
-
-	die;
-
-}
+#my ( $package, $filename, $line ) = caller;
+#if ( $filename =~ /DEBUG_FILE.pl/ ) {
+#
+#	use aliased 'CamHelpers::CamHistogram';
+#	use aliased 'Packages::InCAM::InCAM';
+#
+#	my $inCAM = InCAM->new();
+#
+#	my $jobId    = "d113609";
+#	my $stepName = "panel";
+#
+#	my %hist = CamHistogram->GetFeatuesHistogram( $inCAM, $jobId, "panel", "m");
+#
+#	die;
+#
+#}
 
 1;
