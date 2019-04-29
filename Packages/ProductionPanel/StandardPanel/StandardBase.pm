@@ -59,7 +59,7 @@ sub new {
 	my $mat = HegMethods->GetMaterialKind( $self->{"jobId"} );
 	$self->{"pcbMat"} = undef;
 
-	if ( $mat =~ /FR4|IS4\d{2}|PCL370HR/i ) {
+	if ( $mat =~ /FR4|IS4\d{2}|PCL370HR|RO\d/i ) {
 
 		$self->{"pcbMat"} = Enums->PcbMat_FR4;
 	}

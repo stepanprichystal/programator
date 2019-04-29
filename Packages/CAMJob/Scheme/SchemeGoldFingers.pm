@@ -84,17 +84,17 @@ sub AddGoldConFrame {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	use aliased 'Packages::CAMJob::Scheme::PnlSchemaPost';
-	use aliased 'Packages::InCAM::InCAM';
-
-	my $inCAM = InCAM->new();
-	my $jobId = "d113609";
-
-	my $mess = "";
-
-	my $result = PnlSchemaPost->AddFlexiCoreHoles( $inCAM, $jobId, "panel" );
-
-	print STDERR "Result is: $result, error message: $mess\n";
+#	use aliased 'Packages::CAMJob::Scheme::PnlSchemaPost';
+#	use aliased 'Packages::InCAM::InCAM';
+#
+#	my $inCAM = InCAM->new();
+#	my $jobId = "d113609";
+#
+#	my $mess = "";
+#
+#	my $result = PnlSchemaPost->AddFlexiCoreHoles( $inCAM, $jobId, "panel" );
+#
+#	print STDERR "Result is: $result, error message: $mess\n";
 
 }
 

@@ -397,12 +397,12 @@ sub GetNCLayerInfo {
 	if ($ncType) {
 		$self->AddNCLayerType( [ \%lInfo ] );
 
-		unless ( defined $lInfo{"type"} ) {
-			die;
-		}
-
-		die "Key: \"type\" was not set at layer: $layer"   unless ( defined $lInfo{"type"} );
-		die "Key: \"plated\" was not set at layer: $layer" unless ( defined $lInfo{"plated"} );
+#		unless ( defined $lInfo{"type"} ) {
+#			die;
+#		}
+#
+#		die "Key: \"type\" was not set at layer: $layer"   unless ( defined $lInfo{"type"} );
+#		die "Key: \"plated\" was not set at layer: $layer" unless ( defined $lInfo{"plated"} );
 	}
 	if ($matrixType) {
 		$lInfo{"gROWlayer_type"} = CamMatrix->GetLayerType( $inCAM, $jobId, $layer );
