@@ -193,7 +193,7 @@ sub OnCheckGroupData {
 
 	# 7) Check, when ALU material, if all plated holes aer in "f" layer
 
-	if ( $defaultInfo->GetMaterialKind() =~ /^AL/i ) {
+	if ( $defaultInfo->GetMaterialKind() =~ /^AL/i && $defaultInfo->LayerExist("m")) {
 
 		my @uniqueSteps = CamStepRepeat->GetUniqueStepAndRepeat( $inCAM, $jobId, "panel" );
 
