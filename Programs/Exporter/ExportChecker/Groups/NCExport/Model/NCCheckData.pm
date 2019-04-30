@@ -97,6 +97,27 @@ sub OnCheckGroupData {
 		$dataMngr->_AddWarningResult( "Checking NC layer", $mess2 );
 	}
 
+	# Check if special layers are created (v; v1; fr)
+	unless ($exportSingle) {
+
+		unless ( CamDrilling->NCLayerExists( $inCAM, $jobId, EnumsGeneral->LAYERTYPE_plt_fDrill ) ) {
+			$dataMngr->_AddErrorResult( "Special NC layer", "Special NC layer: \"v\" doesn't exist." );
+		}
+
+		my $v1 = CamDrilling->NCLayerExists( $inCAM, $jobId, EnumsGeneral->LAYERTYPE_plt_fcDrill );
+		my $fr = CamDrilling->NCLayerExists( $inCAM, $jobId, EnumsGeneral->LAYERTYPE_nplt_frMill );
+
+		if ( $defaultInfo->GetLayerCnt() <= 2 ) {
+
+			$dataMngr->_AddErrorResult( "Special NC layer", "Special NC layer: \"v1\" is not allowed for NON multilayer pcb" ) if ($v1);
+			$dataMngr->_AddErrorResult( "Special NC layer", "Special NC layer: \"fr\" is not allowed for NON multilayer pcb" ) if ($fr);
+		}
+		else {
+			$dataMngr->_AddErrorResult( "Special NC layer", "Special NC layer: \"v1\" doesn't exist." ) unless ($v1);
+			$dataMngr->_AddErrorResult( "Special NC layer", "Special NC layer: \"fr\" doesn't exist." ) unless ($fr);
+		}
+	}
+
 	# 3) If panel contain more drifrent step, check if fsch exist
 	my @uniqueSteps = CamStepRepeatPnl->GetUniqueStepAndRepeat( $inCAM, $jobId, 1, [ EnumsGeneral->Coupon_IMPEDANCE ] );
 
@@ -193,7 +214,7 @@ sub OnCheckGroupData {
 
 	# 7) Check, when ALU material, if all plated holes aer in "f" layer
 
-	if ( $defaultInfo->GetMaterialKind() =~ /^AL/i && $defaultInfo->LayerExist("m")) {
+	if ( $defaultInfo->GetMaterialKind() =~ /^AL/i && $defaultInfo->LayerExist("m") ) {
 
 		my @uniqueSteps = CamStepRepeat->GetUniqueStepAndRepeat( $inCAM, $jobId, "panel" );
 
@@ -589,35 +610,29 @@ sub OnCheckGroupData {
 			}
 		}
 	}
-	
+
 	# TMP
 	# Kontrola zaplenzch otovru
-	if(CamDrilling->GetViaFillExists($inCAM, $jobId)){
-		
-		$dataMngr->_AddWarningResult("Zaplnene via",
-												  "V jobu mas zaplnene via, nech vrtacky a postup zkontrolovat u SPR"
-					);
+	if ( CamDrilling->GetViaFillExists( $inCAM, $jobId ) ) {
+
+		$dataMngr->_AddWarningResult( "Zaplnene via", "V jobu mas zaplnene via, nech vrtacky a postup zkontrolovat u SPR" );
 	}
-	
-	
-		
+
 	# 22) Check if job viafill layer  are prepared if viafill in IS
 	my $viaFillType = $defaultInfo->GetPcbBaseInfo("zaplneni_otvoru");
-	
+
 	# A - viafill in gatema
 	# B - viafill in cooperation - all holes
 	# C - viafill in cooperation - specified holes
-	if(defined $viaFillType && $viaFillType =~ /[abc]/i){
-		
- 		unless(CamDrilling->GetViaFillExists($inCAM, $jobId)){
-  
-		$dataMngr->_AddErrorResult("Via filling",
-												  "V IS je požadavek na zaplnění otvorů, v jobu ale nejsou připravené NC vrstvy (mfill; scfill; ssfill)"
-					);
- 			
- 		}
+	if ( defined $viaFillType && $viaFillType =~ /[abc]/i ) {
+
+		unless ( CamDrilling->GetViaFillExists( $inCAM, $jobId ) ) {
+
+			$dataMngr->_AddErrorResult( "Via filling",
+									   "V IS je požadavek na zaplnění otvorů, v jobu ale nejsou připravené NC vrstvy (mfill; scfill; ssfill)" );
+
+		}
 	}
-	
 
 	# 22) If mpanel exist, check if nested setps do not have circle chain (bridges are necessary)
 	if ( $defaultInfo->LayerExist("f") ) {
