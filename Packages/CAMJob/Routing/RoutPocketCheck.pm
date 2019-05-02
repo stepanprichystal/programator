@@ -99,8 +99,17 @@ sub RoutPocketCheckDirAllLayers {
 	my $result = 1;
 
 	my @types = (
-				  EnumsGeneral->LAYERTYPE_plt_bMillTop,  EnumsGeneral->LAYERTYPE_plt_bMillBot,
-				  EnumsGeneral->LAYERTYPE_nplt_bMillTop, EnumsGeneral->LAYERTYPE_nplt_bMillBot
+				  EnumsGeneral->LAYERTYPE_plt_bMillTop,  
+				  EnumsGeneral->LAYERTYPE_plt_bMillBot,
+				  EnumsGeneral->LAYERTYPE_nplt_bMillTop, 
+				  EnumsGeneral->LAYERTYPE_nplt_bMillBot,
+				  EnumsGeneral->LAYERTYPE_nplt_lcMill,
+				  EnumsGeneral->LAYERTYPE_nplt_lsMill,
+				  EnumsGeneral->LAYERTYPE_nplt_cbMillTop,
+				  EnumsGeneral->LAYERTYPE_nplt_cbMillBot,
+				  EnumsGeneral->LAYERTYPE_nplt_cvrlycMill,
+				  EnumsGeneral->LAYERTYPE_nplt_cvrlysMill,
+				  EnumsGeneral->LAYERTYPE_nplt_prepregMill
 	);
 
 	foreach my $t (@types) {

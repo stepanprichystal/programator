@@ -99,17 +99,22 @@ sub OnPrepareGroupData {
 		$groupData->SetKeepProfiles(0);
 
 	}
-
-	$groupData->SetLocalCopy(1);
+ 
 
 	# Set sent to server checkbox
-	if ($keepProfiles) {
+	# 
+	if ($groupData->GetKeepProfiles()) {
+		
 		$groupData->SetServerCopy(1);
-	}
-	else {
+		$groupData->SetLocalCopy(0); # Set local copy IPC (only if keep profiles is set)
+	
+	}else{
+		
+		$groupData->SetServerCopy(0);
 		$groupData->SetLocalCopy(1);
+		
 	}
-
+ 
 	return $groupData;
 }
 

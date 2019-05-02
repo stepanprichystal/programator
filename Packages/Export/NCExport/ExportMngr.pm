@@ -353,12 +353,12 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	use aliased 'Packages::InCAM::InCAM';
 
-	my $jobId = "d222775";
+	my $jobId = "d113609";
 	my $step  = "panel";
 	my $inCAM = InCAM->new();
 
 	# Exportovat jednotlive vrstvy nebo vsechno
-	my $exportSingle = 0;
+	my $exportSingle = 1;
 
 	# Vrstvy k exportovani, nema vliv pokud $exportSingle == 0
 	my @pltLayers = ();
@@ -367,13 +367,13 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	# Pokud se bude exportovat jednotlive po vrstvach, tak vrstvz dotahnout nejaktakhle:
 	#@pltLayers = CamDrilling->GetPltNCLayers( $inCAM, $jobId );
-	my @npltLayers = ("fzc");
+	my @npltLayers = ("f_");
 
 	my $export = ExportMngr->new( $inCAM, $jobId, $step, $exportSingle, \@pltLayers, \@npltLayers );
 	
 	my $mngr = $export->GetOperationMngr();
 	
-	#$export->Run( $inCAM, $jobId, $exportSingle, \@pltLayers, \@npltLayers );
+	$export->Run( $inCAM, $jobId, $exportSingle, \@pltLayers, \@npltLayers );
 	die;
 
 }
