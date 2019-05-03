@@ -25,9 +25,9 @@ use aliased 'Enums::EnumsPaths';
 
 sub Move {
 
-	# Random move - move only with 40% chance.
+	# Random move - move only with 65% chance.
 	# This should prevent one tpv user has to process all el.tests of reorders
-	if(rand(100) > 40){
+	if(rand(100) > 65){
 		return 0;
 	}
 
@@ -41,10 +41,10 @@ sub Move {
 		my $dir = EnumsPaths->Client_ELTESTS .  $testName;
 
 		unless ( -e $dir ) {
-
-			mkdir($dir);
-			move( $file, $dir . "\\$testName.ipc" );
+			mkdir($dir);	
 		}
+		
+		move( $file, $dir . "\\$testName.ipc" );
 	}
 }
 

@@ -125,6 +125,33 @@ sub OnCheckGroupData {
 		$dataMngr->_AddErrorResult( "Layer check", "Order of signal layers in matrix is wrong. Fix it." );
 	}
 
+	# 4) Check if inner layers has properly set layer attribute "layer_side" (schema depands on this attribute)
+	if ( $layerCnt > 2 ) {
+
+		my $stackup = $defaultInfo->GetStackup();
+
+		foreach my $l ( grep { $_->{"gROWname"} =~ /^v\d+$/ } @sig ) {
+
+			# Get real side from stackup
+			my $side = StackupOperation->GetSideByLayer( $jobId, $l->{"gROWname"}, $stackup );
+
+			my %layerAttr = CamAttributes->GetLayerAttr( $inCAM, $jobId, $stepName, $l->{"gROWname"} );
+			if ( $layerAttr{'layer_side'} !~ /^$side$/i ) {
+
+				$dataMngr->_AddErrorResult(
+					"Wrong inserted schema ",
+					"Signálová vrstva: \""
+					  . $l->{"gROWname"}
+					  . "\" má špatně nastavený atribut vrstvy: \"Layer side\" ("
+					  . $layerAttr{'layer_side'}
+					  . "). Ve stackupu je vstva vedená jako: \"$side\". Uprav atribut a znovu vlož schéma do panelu!"
+				);
+			}
+
+		}
+
+	}
+
 	# 4) Check if material and pcb thickness and base cuthickness is set
 	my $materialKind = $defaultInfo->GetMaterialKind();
 	$materialKind =~ s/[\s\t]//g;
@@ -366,7 +393,7 @@ sub OnCheckGroupData {
 
 	# Check if all gold finger are connected, if gold finger exist
 	if ($goldFinger) {
-		
+
 		my $mess = "";
 
 		unless ( GoldFingersCheck->GoldFingersConnected( $inCAM, $jobId, \@goldFingerLayers, \$mess ) ) {

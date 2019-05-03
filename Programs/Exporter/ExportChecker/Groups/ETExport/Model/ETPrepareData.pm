@@ -101,8 +101,7 @@ sub OnPrepareGroupData {
 	}
  
 
-	# Set sent to server checkbox
-	# 
+	# Set server and local copy of IPC
 	if ($groupData->GetKeepProfiles()) {
 		
 		$groupData->SetServerCopy(1);
@@ -114,6 +113,7 @@ sub OnPrepareGroupData {
 		$groupData->SetLocalCopy(1);
 		
 	}
+ 
  
 	return $groupData;
 }

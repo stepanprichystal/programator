@@ -75,6 +75,8 @@ sub Run {
 
 	# Copy IPC to R: where IPC will be taken by random TPV user to processing (temporary solution for reorders)
 	$self->__CopyIPCToETStorage();
+ 
+	
 }
 
 # Copy created IPC to server where are prepared electrical test for machines
