@@ -20,6 +20,9 @@ use aliased 'Enums::EnumsRout';
 use aliased 'CamHelpers::CamAttributes';
 use aliased 'CamHelpers::CamDrilling';
 use aliased 'Packages::CAM::UniDTM::UniDTM';
+use aliased 'CamHelpers::CamStepRepeatPnl';
+use aliased 'CamHelpers::CamStepRepeat';
+use aliased 'Connectors::HeliosConnector::HegMethods';
 
 #-------------------------------------------------------------------------------------------#
 #  Public method
@@ -39,6 +42,7 @@ sub Run {
 
 	my $inCAM    = $self->{"inCAM"};
 	my $jobId    = $self->{"jobId"};
+	my $orderId  = $self->{"orderId"};
 	my $jobExist = $self->{"jobExist"};    # (in InCAM db)
 	my $isPool   = $self->{"isPool"};
 
@@ -92,9 +96,52 @@ sub Run {
 			if ( grep { !defined $_->GetMagazine() } $unitDTM->GetUniqueTools() ) {
 
 				$self->_AddChange(
-						"Vrstva: \"" . $l->{"gROWname"} . "\" obsahuje speciální nástroje ($str), které nemají definovaný magazín" );
+								  "Vrstva: \"" . $l->{"gROWname"} . "\" obsahuje speciální nástroje ($str), které nemají definovaný magazín" );
 			}
 
+		}
+
+	}
+
+	# Check if pcb is routed on bridge and order has more than 50 pieces
+	my %orderInfo = HegMethods->GetAllByOrderId($orderId);
+
+	if ( $orderInfo{"kusy_pozadavek"} > 50 ) {
+
+		my @steps = ();
+
+		if ($isPool) {
+
+			push( @steps, "o+1" );
+
+		}
+		else {
+
+			if ( CamStepRepeat->GetStepAndRepeatDepth( $inCAM, $jobId, "panel" ) == 1 ) {
+
+				my @s = CamStepRepeatPnl->GetUniqueStepAndRepeat( $inCAM, $jobId );
+
+				push( @steps, map { $_->{"stepName"} } @s ) if ( scalar(@s) );
+			}
+		}
+		
+		my $stepOnBridges = 1;
+		
+		foreach my $s  (@steps){
+		
+			if(CamAttributes->GetStepAttrByName( $inCAM, $jobId, $s, "rout_on_bridges" ) =~ /^no$/i){
+				
+				$stepOnBridges = 0;
+				last;
+			};
+		}
+
+
+		if($stepOnBridges){
+			
+			$self->_AddChange(
+							   "DPS obsahuje frézu na můstky a zároveň je požadavek na počet kusů větší než 50. Komunikuj s OÚ."
+			);
 		}
 
 	}

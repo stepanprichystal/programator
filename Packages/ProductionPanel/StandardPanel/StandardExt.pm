@@ -74,6 +74,7 @@ sub new {
 #}
 
 # Return if pcb is smaller then smallest standard (only if pcb is standart candidate)
+# Return 1 if at least one dim is smaller
 sub SmallerThanStandard {
 	my $self = shift;
 	my $standName = shift; # return smalles standard name (key)
@@ -94,7 +95,7 @@ sub SmallerThanStandard {
 	}
 	
 
-	if ( $self->W() <= $s->W() && $self->H() < $s->H() ||  $self->W() < $s->W() && $self->H() <= $s->H() ) {
+	if ( $self->W() < $s->W() || $self->H() < $s->H() ) {
 		$res = 1;
 	}
 

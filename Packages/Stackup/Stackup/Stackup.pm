@@ -185,9 +185,11 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $stackup = Stackup->new("d113608");
 
-	my $mir = $stackup->GetFinalThick();
+	print $stackup;
+	
+	$stackup = Stackup->new("d113608");
 
-	print STDERR $mir;
+	 print $stackup;
 
 	#my $stackup = Stackup->new("d99991");
 

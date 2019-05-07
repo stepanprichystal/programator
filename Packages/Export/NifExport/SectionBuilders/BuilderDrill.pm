@@ -132,13 +132,16 @@ sub Build {
 
 			# Exist if exist through drill or blind drill from top
 
-			my $existThrough = CamDrilling->NCLayerExists( $inCAM, $jobId, EnumsGeneral->LAYERTYPE_plt_nDrill );
+			my $throughExist = CamDrilling->NCLayerExists( $inCAM, $jobId, EnumsGeneral->LAYERTYPE_plt_nDrill );
+			my $blindExist = 0;
 
-			my $stackupNC  = StackupNC->new( $jobId, $inCAM );
-			my $lastPress  = $stackupNC->GetPress( $stackupNC->GetPressCnt() );
-			my $blindExist = $lastPress->ExistNCLayers( StackEnums->SignalLayer_TOP, EnumsGeneral->LAYERTYPE_plt_bDrillTop );
+			if ( $self->{"layerCnt"} > 2 ) {
+				my $stackupNC  = StackupNC->new( $jobId, $inCAM );
+				my $lastPress  = $stackupNC->GetPress( $stackupNC->GetPressCnt() );
+				my $blindExist = $lastPress->ExistNCLayers( StackEnums->SignalLayer_TOP, EnumsGeneral->LAYERTYPE_plt_bDrillTop );
+			}
 
-			$section->AddRow( "vrtani_do_c", ( $existThrough || $blindExist ) ? "A" : "N" );
+			$section->AddRow( "vrtani_do_c", ( $throughExist || $blindExist ) ? "A" : "N" );
 		}
 
 		# stages_vrtani_pred
@@ -354,6 +357,7 @@ sub __GetInfoDrill {
 	my @holeTypes = ();    # all holes type of layers
 
 	my @layers = CamDrilling->GetNCLayersByTypes( $inCAM, $jobId, $lTypes );
+
 	#my @childSteps = map { $_->{"stepName"} } CamStepRepeatPnl->GetUniqueStepAndRepeat( $inCAM, $jobId );
 
 	for ( my $i = 0 ; $i < scalar(@layers) ; $i++ ) {

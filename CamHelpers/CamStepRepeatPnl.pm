@@ -19,6 +19,7 @@ use aliased 'CamHelpers::CamHelper';
 #-------------------------------------------------------------------------------------------#
 #   Package methods
 #-------------------------------------------------------------------------------------------#
+ 
 
 # Return information about each steps in panel step
 sub GetRepeatStep {
@@ -123,7 +124,6 @@ sub GetStepAndRepeatLim {
 	return %limits;
 }
 
-
 # Return information about nested deepest steps in panel step
 # Returned values match absolute position and rotation of nested steps in panel step
 # Each item contains
@@ -140,14 +140,12 @@ sub GetTransformRepeatStep {
 
 	my $stepName = "panel";
 
-	my @steps = CamStepRepeat->GetTransformRepeatStep( $inCAM, $jobId,  $stepName);
+	my @steps = CamStepRepeat->GetTransformRepeatStep( $inCAM, $jobId, $stepName );
 
 	CamStepRepeat->RemoveCouponSteps( \@steps, $includeCpns, $includeSteps );
 
 	return @steps;
 }
-
- 
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

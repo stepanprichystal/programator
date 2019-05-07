@@ -90,7 +90,7 @@ sub SetLayers {
 
 			}
 
-			if ( $l->{"gROWname"} =~ /^lc$/ ) {
+			if ( $l->{"gROWname"} =~ /^f*lc$/ ) {
 
 				$self->_AddToLayerData( $l, Enums->Type_PEELABLE );
 
@@ -190,7 +190,7 @@ sub SetLayers {
 
 			}
 
-			if ( $l->{"gROWname"} =~ /^ls$/ ) {
+			if ( $l->{"gROWname"} =~ /^fls$/ ) {
 
 				$self->_AddToLayerData( $l, Enums->Type_PEELABLE );
 

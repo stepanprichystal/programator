@@ -33,6 +33,7 @@ use aliased 'CamHelpers::CamHistogram';
 use aliased 'Packages::CAMJob::OutputParser::OutputParserNC::Enums' => 'OutParserEnums';
 use aliased 'Packages::CAMJob::OutputParser::OutputParserNC::OutputParserNC';
 use aliased 'Helpers::JobHelper';
+use aliased 'CamHelpers::CamMatrix';
 
 #-------------------------------------------------------------------------------------------#
 #  Interface
@@ -249,15 +250,31 @@ sub __PreparePEELABLE {
 	}
 
 	my $inCAM  = $self->{"inCAM"};
+	my $jobId = $self->{"jobId"};
+	
 	my @layers = $layer->GetSingleLayers();
 
 	if ( $layers[0] ) {
 
+		# Prepare layer by layer type (rout vs standard)
 		my $lName = GeneralHelper->GetGUID();
 
-		$inCAM->COM( "merge_layers", "source_layer" => $layers[0]->{"gROWname"}, "dest_layer" => $lName );
+		if ( $layers[0]->{"gROWname"} =~ /^f/ ) {
 
-		CamLayer->Contourize( $inCAM, $lName );
+			my $lTmp = CamLayer->RoutCompensation( $inCAM, $layers[0]->{"gROWname"}, "document" );
+			CamLayer->Contourize( $inCAM, $lTmp, "x_or_y", "203200" );    # 203200 = max size of emptz space in InCAM which can be filled by surface
+
+			$inCAM->COM( "merge_layers", "source_layer" => $lTmp, "dest_layer" => $lName );
+			CamMatrix->DeleteLayer( $inCAM, $jobId, $lTmp );
+
+		}
+		else {
+
+			$inCAM->COM( "merge_layers", "source_layer" => $layers[0]->{"gROWname"}, "dest_layer" => $lName );
+			CamLayer->Contourize( $inCAM, $lName );
+		}
+
+		
 		CamLayer->WorkLayer( $inCAM, $lName );
 		$inCAM->COM(
 					 "sel_fill",
@@ -587,6 +604,7 @@ sub __PrepareNPLTTHROUGHNC {
 		}
 
 		$outputParser->Clear();
+
 		# There can by small remains of pcb material, which is not milled
 		# We don't want see this pieces in pdf, so delete tem from layer $lName
 		# (pieces larger than 20% of total step area will be keepd)
@@ -713,7 +731,6 @@ sub __PrepareNPLTTHROUGHNC {
 
 	$layer->SetOutputLayer($lName);
 }
-
 
 # Resize about 100µm (plating)
 sub __PrepareVIAFILL {
