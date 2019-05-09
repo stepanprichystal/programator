@@ -29,6 +29,7 @@ use aliased 'Packages::CAMJob::Drilling::DrillChecking::LayerErrorInfo';
 use aliased 'Packages::CAMJob::Drilling::DrillChecking::LayerWarnInfo';
 use aliased 'Packages::Input::HelperInput';
 use aliased 'Packages::GuideSubs::Netlist::NetlistControl';
+use aliased 'Packages::CAMJob::ViaFilling::PlugLayer';
 
 
 use aliased 'CamHelpers::CamHelper';
@@ -117,6 +118,19 @@ if (_FindAttrBGA($jobName, 'o+1') == 1) {
 if(CamHelper->LayerExists( $inCAM, $jobName, 'm' ) ==1 ){
 		_SolderMaskUncoverVia($jobName);
 }
+
+
+# Check and create PLGC and PLGS
+unless(CamHelper->LayerExists( $inCAM, $jobName, 'plgc' ) == 1 or CamHelper->LayerExists( $inCAM, $jobName, 'plgs' ) == 1){
+		if ( CamDrilling->GetViaFillExists( $inCAM, $jobName ) ) {
+
+				my $result = PlugLayer->CreateCopperPlugLayers( $inCAM, $jobName );
+
+		}
+}
+
+
+
 
 
  #Check if there is attribut customer_panel
@@ -459,7 +473,11 @@ sub _GUIpanelizace {
 																	
 											my $rowStart=0;
 											_CheckArcInSilk($jobName);
-											_CheckTableDrill($jobName);
+											
+											if(CamHelper->LayerExists( $inCAM, $jobName, 'm' ) ==1 ){
+												_CheckTableDrill($jobName);
+											}
+											
 											_CheckTableRout($jobName);
 											_CheckBigestHole($jobName);
 										   #_CheckminimalToolRout($jobName); Now this error is checked in LayerCheckWarn

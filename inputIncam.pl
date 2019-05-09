@@ -26,7 +26,10 @@ use aliased 'Packages::CAMJob::Drilling::FinishSizeHoles::SetHolesRun';
 use aliased 'Packages::InCAM::InCAM';
 use aliased 'Packages::ETesting::MoveElTests';
 use aliased 'Packages::GuideSubs::Impedance::DoSetImpLines';
+use aliased 'Packages::CAMJob::ViaFilling::PlugLayer';
+
 use aliased 'Helpers::GeneralHelper';
+
 use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'Connectors::HeliosConnector::HelperWriter';
 
@@ -37,6 +40,7 @@ use aliased 'CamHelpers::CamHelper';
 use aliased 'CamHelpers::CamStep';
 use aliased 'CamHelpers::CamStepRepeat';
 use aliased 'CamHelpers::CamAttributes';
+use aliased 'CamHelpers::CamDrilling';
 
 use aliased 'Managers::MessageMngr::MessageMngr';
 
@@ -441,10 +445,14 @@ sub _Process {
  			_CheckCustomerFinishHoles($pcbId);
 
 
-			# Here check if there is customer�s netlist.
- 			#if(_CustomerNetlistExist($pcbId, $stepName)) {
- 			#		$inCAM -> PAUSE("Deska obsahuje netlist zakaznika, zavolej RVI");
- 			#}
+
+			# Check and create PLGC and PLGS
+			if ( CamDrilling->GetViaFillExists( $inCAM, $pcbId ) ) {
+
+            		my $result = PlugLayer->CreateCopperPlugLayers( $inCAM, $pcbId );
+
+      		}
+			
  			
  			
  			# Here run clean-up.
@@ -739,7 +747,7 @@ sub _SearchTgz {
 					# check how many tgz file found out
 					unless (scalar @tgzArr == 1) {
 								#new
-								my @mess = ("Nem��u naj�t spr�vn� tgz file pro import!");
+								my @mess = ("Nemůžu najít spravný tgz file pro import!");
 								my $messMngr = MessageMngr->new('');
 								$messMngr->ShowModal( -1, EnumsGeneral->MessageType_INFORMATION, \@mess ); 
 								
