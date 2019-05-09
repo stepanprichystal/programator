@@ -17,7 +17,7 @@ use aliased 'Packages::Pdf::ControlPdf::PcbControlPdf::FinalPreview::Enums';
 use aliased 'Packages::Pdf::ControlPdf::Helpers::FinalPreview::Enums' => 'PrevEnums';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'CamHelpers::CamHistogram';
-use aliased 'Connectors::HeliosConnector::HegMethods';
+
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -93,7 +93,7 @@ sub SetLayers {
 			if ( $l->{"gROWname"} =~ /^f*lc$/ ) {
 
 				$self->_AddToLayerData( $l, Enums->Type_PEELABLE );
-
+				
 			}
 
 			if ( $l->{"gROWname"} =~ /^gc$/ ) {
@@ -247,7 +247,8 @@ sub SetLayers {
 
 				$self->_AddToLayerData( $l, Enums->Type_NPLTTHROUGHNC );
 
-			}elsif (
+			}
+			elsif (
 					$l->{"type"}
 					&& (    $l->{"type"} eq EnumsGeneral->LAYERTYPE_plt_nFillDrill
 						 || $l->{"type"} eq EnumsGeneral->LAYERTYPE_plt_bFillDrillBot )

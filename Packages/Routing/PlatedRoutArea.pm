@@ -200,7 +200,9 @@ sub GetAreasOfRout {
 
 	# 3) Do countours from milling
 
-	$inCAM->COM( "sel_contourize", "accuracy" => "6.35", "break_to_islands" => "yes", "clean_hole_size" => "76.2", "clean_hole_mode" => "x_or_y" );
+	#$inCAM->COM( "sel_contourize", "accuracy" => "6.35", "break_to_islands" => "yes", "clean_hole_size" => "76.2", "clean_hole_mode" => "x_or_y" );
+	CamLayer->Contourize( $inCAM, $compL, "x_or_y", "203200" );    # 203200 = max size of emptz space in InCAM which can be filled by surface
+	CamLayer->WorkLayer( $inCAM, $compL );
 
 	$inCAM->COM(
 				 "sel_feat2outline",
@@ -252,7 +254,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	use aliased 'Packages::Routing::PlatedRoutArea';
 	use aliased 'Packages::InCAM::InCAM';
 
-	my $jobId = "d238913";
+	my $jobId = "d240483";
 	my $inCAM = InCAM->new();
 
 	my $step = "o+1";

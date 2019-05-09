@@ -66,6 +66,7 @@ sub GetAllByPcbId {
 				 d.konstr_trida,
 				 d.zakaznicke_cislo,
 				 d.zlaceni,
+				 d.lak_typ,
 				 dn.kus_x n_kus_x,
 				 dn.kus_y n_kus_y,
 				 dn.panel_x n_mpanel_x,

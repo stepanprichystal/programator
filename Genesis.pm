@@ -1,3 +1,4 @@
+
 =head
 Package for running Perl programs in a Genesis/Enterprise environment.
 
@@ -69,22 +70,32 @@ Split into two files & revamped: 3 July 1997, Ben Michelson
 Hacked out of all reconition, Peter Gordon
 Original Version: 8 Nov 1996,  Herzl Rejwan
 =cut
+
 package Genesis;
 
-if (defined $ENV{GENESIS_DIR}) {
-   $_genesis_root = $ENV{GENESIS_DIR};
-} else {
-   $_genesis_root = "/genesis";
-}
+#3th party library
+use strict;
+use warnings;
 
-if (defined $ENV{GENESIS_EDIR}) {
-   $_genesis_edir = $ENV{GENESIS_EDIR};
-} else {
-   $_genesis_edir = "e$ENV{GENESIS_VER}";
-}
+use aliased 'Helpers::GeneralHelper';
+#
+#if (defined $ENV{GENESIS_DIR}) {
+#   $_genesis_root = $ENV{GENESIS_DIR};
+#} else {
+#   $_genesis_root = "/genesis";
+#}
+#
+#if (defined $ENV{GENESIS_EDIR}) {
+#   $_genesis_edir = $ENV{GENESIS_EDIR};
+#} else {
+#   $_genesis_edir = "e$ENV{GENESIS_VER}";
+#}
+#
+#if ($_genesis_edir !~ m#^([A-Z]:)?[/\\]#i) {
+#   $_genesis_edir = "$_genesis_root/$_genesis_edir";
+#}
 
-if ($_genesis_edir !~ m#^([A-Z]:)?[/\\]#i) {
-   $_genesis_edir = "$_genesis_root/$_genesis_edir";
-}
+my $root = GeneralHelper->Root();
+print STDERR $root;
 
-require "$_genesis_edir/all/perl/Genesis.pl";
+require $root . "\\Genesis.pl";

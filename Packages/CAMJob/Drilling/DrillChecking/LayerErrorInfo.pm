@@ -418,6 +418,24 @@ sub CheckDirTop2Bot {
 			$$mess .= "Filled blind layer from top: $lName, has to start in layer \"c\" (now start in: ".$l->{"gROWdrl_name"}.")\n";
 		}
 	}
+	
+	# Check plated through blind layer if start and end not in c/s layer
+	my @layers4 = grep { $_->{"gROWname"} =~ /\d/ } $self->__GetLayersByType( \@layers, [ EnumsGeneral->LAYERTYPE_plt_nDrill] );
+ 
+	foreach my $l (@layers4) {
+
+		my $lName = $l->{"gROWname"};
+
+		if ( $l->{"gROWdrl_start_name"} eq "c" ) {
+			$result = 0;
+			$$mess .= "Blind through plated NC layer \"".$lName."\" can not to start in layer \"c\"\n";
+		}
+		
+		if ( $l->{"gROWdrl_end_name"} eq "s" ) {
+			$result = 0;
+			$$mess .= "Blind through plated NC layer \"".$lName."\" can not to end in layer \"s\"\n";
+		}
+	}
  
 	return $result;
 

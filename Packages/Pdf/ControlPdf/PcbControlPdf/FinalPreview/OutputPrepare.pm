@@ -34,6 +34,7 @@ use aliased 'Packages::CAMJob::OutputParser::OutputParserNC::Enums' => 'OutParse
 use aliased 'Packages::CAMJob::OutputParser::OutputParserNC::OutputParserNC';
 use aliased 'Helpers::JobHelper';
 use aliased 'CamHelpers::CamMatrix';
+use aliased 'Connectors::HeliosConnector::HegMethods';
 
 #-------------------------------------------------------------------------------------------#
 #  Interface
@@ -249,12 +250,25 @@ sub __PreparePEELABLE {
 		return 0;
 	}
 
-	my $inCAM  = $self->{"inCAM"};
+	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
-	
+
 	my @layers = $layer->GetSingleLayers();
 
+	my $isInfo = ( HegMethods->GetAllByPcbId($jobId) )[0];
+
 	if ( $layers[0] ) {
+
+		# Add only if Peelable is requested by customer and exist in IS
+		# (sometimes Job contain only helper peelable layers)
+		if ( $self->{"viewType"} eq Enums->View_FROMTOP ) {
+
+			return 0 if ( $isInfo->{"lak_typ"} !~ /^[c2]$/i );
+		}
+		elsif ( $self->{"viewType"} eq Enums->View_FROMBOT ) {
+			
+			return 0 if ( $isInfo->{"lak_typ"} !~ /^[s2]$/i );
+		}
 
 		# Prepare layer by layer type (rout vs standard)
 		my $lName = GeneralHelper->GetGUID();
@@ -274,7 +288,6 @@ sub __PreparePEELABLE {
 			CamLayer->Contourize( $inCAM, $lName );
 		}
 
-		
 		CamLayer->WorkLayer( $inCAM, $lName );
 		$inCAM->COM(
 					 "sel_fill",

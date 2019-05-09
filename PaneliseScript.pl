@@ -1487,20 +1487,26 @@ sub _CheckTableDrill {
 	my $pcbId = shift;
 	my $StepName = 'o+1';
 	
-			$inCAM->INFO(units=>'mm',entity_type => 'layer',entity_path => "$pcbId/$StepName/m",data_type => 'TOOL');
+	my @l = CamDrilling->GetNCLayersByTypes($inCAM, $jobName, [EnumsGeneral->LAYERTYPE_plt_nDrill, EnumsGeneral->LAYERTYPE_plt_nFillDrill]);
+	
+	foreach my $lName  (map{$_->{"gROWname"}} @l){
+			
+			$inCAM->INFO(units=>'mm',entity_type => 'layer',entity_path => "$pcbId/$StepName/$lName",data_type => 'TOOL');
 			@hodnotyVrtaku = @{$inCAM->{doinfo}{gTOOLfinish_size}};
 			@hodnotyVrtaku = sort ({$a<=>$b} @hodnotyVrtaku);
 			$minVrtak = $hodnotyVrtaku[0];
 			$minVrtak = sprintf "%0.0f",($minVrtak);
 			
-			$inCAM->INFO(units=>'mm',entity_type => 'layer',entity_path => "$pcbId/$StepName/m",data_type => 'TOOL');
+			$inCAM->INFO(units=>'mm',entity_type => 'layer',entity_path => "$pcbId/$StepName/$lName",data_type => 'TOOL');
 			@hodnotyDrill = @{$inCAM->{doinfo}{gTOOLbit}};
 			
 			foreach my $oneDrill (@hodnotyDrill) {
 				if ($oneDrill == 0) {
-					push @errorMessageArr,  '- Pozor v seznamu VRTANI jsou nulove hodnoty!';
+					push @errorMessageArr,  '- Pozor v seznamu VRTANI ve vrstve: $lName jsou nulove hodnoty!';
 				}
 			} 
+			
+	}
 }
 sub _CheckBigestHole {
 	my $pcbId = shift;
