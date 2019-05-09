@@ -99,13 +99,13 @@ sub GetPolygonsPoints {
 
 			my $line = ${$polygon}[$i];
 
-			my @arr = ( $line->{" x 1 "}, $line->{" y1 "} );
+			my @arr = ( $line->{"x1"}, $line->{"y1"} );
 			push( @polygonPoints, \@arr );
 
 			if ( $i == scalar( @{$polygon} ) - 1 ) {
 
 				$line = ${$polygon}[0];
-				my @arrEnd = ( $line->{" x 1 "}, $line->{" y1 "} );
+				my @arrEnd = ( $line->{"x1"}, $line->{"y1"} );
 				push( @polygonPoints, \@arrEnd );
 			}
 		}
