@@ -25,6 +25,7 @@ use aliased 'Enums::EnumsGeneral';
 use aliased 'CamHelpers::CamDrilling';
 use aliased 'CamHelpers::CamStepRepeat';
 use aliased 'CamHelpers::CamHistogram';
+use aliased 'Packages::CAM::FeatureFilter::FeatureFilter';
 
 #-------------------------------------------------------------------------------------------#
 #  Script methods
@@ -200,7 +201,6 @@ sub GetAreasOfRout {
 
 	# 3) Do countours from milling
 
-	#$inCAM->COM( "sel_contourize", "accuracy" => "6.35", "break_to_islands" => "yes", "clean_hole_size" => "76.2", "clean_hole_mode" => "x_or_y" );
 	CamLayer->Contourize( $inCAM, $compL, "x_or_y", "203200" );    # 203200 = max size of emptz space in InCAM which can be filled by surface
 	CamLayer->WorkLayer( $inCAM, $compL );
 
@@ -214,13 +214,34 @@ sub GetAreasOfRout {
 				 "text2limit"    => "no"
 	);
 
+	# "simplify countour" Do long lines form short lines, do bigger arc from smaller arcs
 	$inCAM->COM(
 				 'sel_design2rout',
 				 det_tol => '100',
 				 con_tol => '100',
 				 rad_tol => '52'
 	);
+	
 	$inCAM->COM( "arc2lines", "arc_line_tol" => 70 );
+
+	# remove small lines (smaller than 10µm) and arc in order to proper parsing of coutours 
+	my $featFilter = FeatureFilter->new( $inCAM, $jobId, $compL );
+	$featFilter->SetFeatureTypes( "line" => 1 );
+	$featFilter->SetLineLength( 0, 0.01 );
+
+	if ( $featFilter->Select() ) {
+
+		# remove short lines
+		$inCAM->COM("sel_delete");
+
+		# connect lines with gap to 100µm
+		$inCAM->COM(
+					 'sel_design2rout',
+					 det_tol => '100',
+					 con_tol => '100',
+					 rad_tol => '0'
+		);
+	}
 
 	my $polyLine = PolyLineFeatures->new();
 	$polyLine->Parse( $inCAM, $jobId, $stepName, $compL );
@@ -254,7 +275,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	use aliased 'Packages::Routing::PlatedRoutArea';
 	use aliased 'Packages::InCAM::InCAM';
 
-	my $jobId = "d240483";
+	my $jobId = "d245265";
 	my $inCAM = InCAM->new();
 
 	my $step = "o+1";

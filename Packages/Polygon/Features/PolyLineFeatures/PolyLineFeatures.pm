@@ -60,11 +60,10 @@ sub GetFeatures {
 	return @{ $self->{"features"} };
 }
 
- 
 sub GetPolygonsFeatures {
 	my $self = shift;
 
-	my @lines     = grep { $_->{"type"} eq "L"  ||  $_->{"type"} eq "A"} @{ $self->{"features"} };
+	my @lines = grep { $_->{"type"} eq "L" || $_->{"type"} eq "A" } @{ $self->{"features"} };
 	my @sequences = RoutCyclic->GetRoutSequences( \@lines );
 
 	my @polygons = ();
@@ -74,11 +73,11 @@ sub GetPolygonsFeatures {
 		my %result = RoutCyclic->GetSortedRout($seq);
 
 		if ( $result{"result"} ) {
-			push(@polygons, $result{"edges"});
+			push( @polygons, $result{"edges"} );
 		}
 		else {
 
-			die "Polygon features are not cyclic";
+			die "Polygon features are not cyclic. Feature Ids: " . join( "; ", map { $_->{"id"} } @{$seq} );
 		}
 	} 
 	
@@ -100,13 +99,13 @@ sub GetPolygonsPoints {
 
 			my $line = ${$polygon}[$i];
 
-			my @arr = ( $line->{"x1"}, $line->{"y1"} );
+			my @arr = ( $line->{" x 1 "}, $line->{" y1 "} );
 			push( @polygonPoints, \@arr );
 
 			if ( $i == scalar( @{$polygon} ) - 1 ) {
 
 				$line = ${$polygon}[0];
-				my @arrEnd = ( $line->{"x1"}, $line->{"y1"} );
+				my @arrEnd = ( $line->{" x 1 "}, $line->{" y1 "} );
 				push( @polygonPoints, \@arrEnd );
 			}
 		}
@@ -125,38 +124,23 @@ sub GetPolygonsPoints {
 #-------------------------------------------------------------------------------------------#
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
-#
-#	use aliased 'Packages::Polygon::Features::PolyLineFeatures::PolyLineFeatures';
-#	use aliased 'Packages::InCAM::InCAM';
-#
-#	my $route = PolyLineFeatures->new();
-#
-#	my $jobId = "f13609";
-#	my $inCAM = InCAM->new();
-#
-#	my $step  = "panel";
-#	my $layer = "test";
-#
-#	$route->Parse( $inCAM, $jobId, $step, $layer );
-#
-#	my @features = $route->GetFeatures();
-#	my @chains   = $route->GetClosedPolyLines();
-#	my @points   = $route->GetPolygonsPoints();
-#
-#	use Math::Polygon;
-#
-#	my @areas = ();
-#
-#	foreach my $p (@points) {
-#
-#		my $p    = Math::Polygon->new( @{$p} );
-#		my $area = $p->area;
-#
-#		push( @areas, $area );
-#
-#	}
 
-	#print 1;
+	use aliased 'Packages::Polygon::Features::PolyLineFeatures::PolyLineFeatures';
+	use aliased 'Packages::InCAM::InCAM';
+
+	my $route = PolyLineFeatures->new();
+
+	my $jobId = " d245265";
+	my $inCAM = InCAM->new();
+
+	my $step  = " o+1";
+	my $layer = " test";
+
+	$route->Parse( $inCAM, $jobId, $step, $layer );
+
+	my @features = $route->GetPolygonsFeatures();
+	 
+
 
 }
 
