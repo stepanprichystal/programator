@@ -120,28 +120,27 @@ sub Run {
 			if ( CamStepRepeat->GetStepAndRepeatDepth( $inCAM, $jobId, "panel" ) == 1 ) {
 
 				my @s = CamStepRepeatPnl->GetUniqueStepAndRepeat( $inCAM, $jobId );
-
 				push( @steps, map { $_->{"stepName"} } @s ) if ( scalar(@s) );
 			}
 		}
-		
-		my $stepOnBridges = 1;
-		
-		foreach my $s  (@steps){
-		
-			if(CamAttributes->GetStepAttrByName( $inCAM, $jobId, $s, "rout_on_bridges" ) =~ /^no$/i){
-				
-				$stepOnBridges = 0;
-				last;
-			};
-		}
 
+		if ( scalar(@steps) ) {
 
-		if($stepOnBridges){
-			
-			$self->_AddChange(
-							   "DPS obsahuje frézu na můstky a zároveň je požadavek na počet kusů větší než 50. Komunikuj s OÚ."
-			);
+			my $stepOnBridges = 1;
+
+			foreach my $s (@steps) {
+
+				if ( CamAttributes->GetStepAttrByName( $inCAM, $jobId, $s, "rout_on_bridges" ) =~ /^no$/i ) {
+
+					$stepOnBridges = 0;
+					last;
+				}
+			}
+
+			if ($stepOnBridges) {
+
+				$self->_AddChange( "DPS obsahuje frézu na můstky a zároveň je požadavek na počet kusů větší než 50. Komunikuj s OÚ." );
+			}
 		}
 
 	}
