@@ -240,9 +240,9 @@ sub _SetMaskSilkHelios {
 					}
 				$inCAM->INFO(entity_type=>'layer',entity_path=>"$jobId/$step/ms",data_type=>'exists');
 					if ($inCAM->{doinfo}{gEXISTS} eq "yes") {
-							HelperWriter->OnlineWrite_pcb("$jobId", "Z", "maska_c_2");
+							HelperWriter->OnlineWrite_pcb("$jobId", "Z", "maska_s_1");
 					}else{
-							HelperWriter->OnlineWrite_pcb("$jobId", "", "maska_c_2");
+							HelperWriter->OnlineWrite_pcb("$jobId", "", "maska_s_1");
 					}
 
 }

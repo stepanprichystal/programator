@@ -3695,7 +3695,7 @@ sub _SetMaskSilkHelios {
 					}
 				$genesis->INFO(entity_type=>'layer',entity_path=>"$jobId/panel/ms",data_type=>'exists');
 					if ($genesis->{doinfo}{gEXISTS} eq "yes") {
-							HelperWriter->OnlineWrite_pcb("$jobId", "Z", "maska_c_2");
+							HelperWriter->OnlineWrite_pcb("$jobId", "Z", "maska_s_1");
 					}
 
 }

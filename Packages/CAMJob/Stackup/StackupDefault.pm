@@ -56,8 +56,8 @@ sub CreateStackup {
 		return 0;
 	}
 
-	if ( $outerCuThick < 18 ) {
-		print STDERR "Error, outher thick is less then 18";
+	if ( $outerCuThick < 9 ) {
+		print STDERR "Error, outher thick is less then 9";
 		return 0;
 	}
 
@@ -315,10 +315,10 @@ my ( $package, $filename, $line ) = caller;
 
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	my $pcbId        = "d016138";
+	my $pcbId        = "d152456";
 	my $layerCnt     = 6;
 	my @innerCuUsage = ( 58, 15, 12, 44 );
-	my $outerCuThick = 35;
+	my $outerCuThick = 9;
 	my $pcbClass     = 6;
 
 	use aliased 'Packages::CAMJob::Stackup::StackupDefault';
