@@ -3691,11 +3691,11 @@ sub _SetMaskSilkHelios {
 					}
 				$genesis->INFO(entity_type=>'layer',entity_path=>"$jobId/panel/mc",data_type=>'exists');
 					if ($genesis->{doinfo}{gEXISTS} eq "yes") {
-							HelperWriter->OnlineWrite_pcb("$jobId", "Z", "maska_barva_1");
+							HelperWriter->OnlineWrite_pcb("$jobId", "Z", "maska_c_1");
 					}
 				$genesis->INFO(entity_type=>'layer',entity_path=>"$jobId/panel/ms",data_type=>'exists');
 					if ($genesis->{doinfo}{gEXISTS} eq "yes") {
-							HelperWriter->OnlineWrite_pcb("$jobId", "Z", "maska_barva_2");
+							HelperWriter->OnlineWrite_pcb("$jobId", "Z", "maska_c_2");
 					}
 
 }

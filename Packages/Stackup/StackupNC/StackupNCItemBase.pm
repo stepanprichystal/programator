@@ -32,7 +32,6 @@ sub new {
 	$self->{"botSignalLayer"} = shift;
 
 	$self->{"inCAM"} = $self->{"stackupNC"}->{"inCAM"};
-
 	$self->{"jobId"} = $self->{"stackupNC"}->{"jobId"};
 
 	$self->{"ncLayers"} = $self->{"stackupNC"}->{"ncLayers"};
@@ -55,20 +54,20 @@ sub GetBotSigLayer {
 ## Return number of signal layer, which create this stackup info
 #sub GetSignalLayerCnt {
 #	my $self = shift;
-#	
+#
 #	my $cnt = $self->GetBotSigLayer->GetNumber() - $self->GetTopSigLayer->GetNumber() +1 ;
-#	
+#
 #	return $cnt;
 #}
- 
 
 # Return if exist NC layer of given side TOP/BOT
 sub ExistNCLayers {
 	my $self        = shift;
-	my $side        = shift;    # type of Enums::SignalLayer_xxx
-	my $NClayerType = shift;    # type of Enums::LayerType_xxx
+	my $NCStartSide = shift;    # Restriction for NC layers specify start side of NC layers. Type of Enums::SignalLayer_xxx
+	my $NCEndSide   = shift;    # Restriction for NC layers specify end side of NC layers. Type of Enums::SignalLayer_xxx
+	my $NClayerType = shift;    # Type of Enums::LayerType_xxx
 
-	my @drillLayers = $self->GetNCLayers( $side, $NClayerType );
+	my @drillLayers = $self->GetNCLayers( $NCStartSide, $NCEndSide, $NClayerType );
 
 	if ( scalar(@drillLayers) > 0 ) {
 		return 1;
@@ -78,31 +77,42 @@ sub ExistNCLayers {
 	}
 }
 
-#Return NC layers, which start from/end in this signal layer by given NC type
+# Return NC layers which go through package create by stackup NC item
+# Restriction on NC layers can be applied (NC start side, NC end side, NC layer type)
 sub GetNCLayers {
 	my $self        = shift;
-	my $side        = shift;    # type of Enums::SignalLayer_xxx
-	my $NClayerType = shift;    # type of Enums::LayerType_xxx
+	my $NCStartSide = shift;    # Restriction for NC layers specify start side of NC layers. Type of Enums::SignalLayer_xxx
+	my $NCEndSide   = shift;    # Restriction for NC layers specify end side of NC layers. Type of Enums::SignalLayer_xxx
+	my $NClayerType = shift;    # Type of Enums::LayerType_xxx
 
-	my @ncLayers = @{ $self->{"ncLayers"} };
+	my @ncLayers    = @{ $self->{"ncLayers"} };
 	my @drillLayers = ();
-	
-	unless(scalar(@ncLayers)){
-		
+
+	unless ( scalar(@ncLayers) ) {
+
 		return @drillLayers;
 	}
 
-	my $fromLayer = $side eq Enums->SignalLayer_TOP ? $self->{"topSignalLayer"} : $self->{"botSignalLayer"};
-
 	@drillLayers = @ncLayers;
 
-	if($NClayerType){
-		@drillLayers = grep { $_->{"type"} eq $NClayerType } @drillLayers;	
+	if ( defined $NClayerType ) {
+		@drillLayers = grep { $_->{"type"} eq $NClayerType } @drillLayers;
 	}
- 
-	#filter layer, which go from <$fromLayer>
-	if ($fromLayer) {
-		@drillLayers = grep { $_->{"gROWdrl_start_name"} eq $fromLayer->GetName() } @drillLayers;
+
+	# Filter NC layers by start signal layer
+	if ( defined $NCStartSide ) {
+		my $startLayer = $NCStartSide eq Enums->SignalLayer_TOP ? $self->{"topSignalLayer"} : $self->{"botSignalLayer"};
+		if ($startLayer) {
+			@drillLayers = grep { $_->{"gROWdrl_start_name"} eq $startLayer->GetName() } @drillLayers;
+		}
+	}
+
+	# Filter NC layers by end signal layer
+	if ( defined $NCEndSide ) {
+		my $endLayer = $NCEndSide eq Enums->SignalLayer_TOP ? $self->{"topSignalLayer"} : $self->{"botSignalLayer"};
+		if ($endLayer) {
+			@drillLayers = grep { $_->{"gROWdrl_end_name"} eq $endLayer->GetName() } @drillLayers;
+		}
 	}
 
 	return @drillLayers;
@@ -111,13 +121,14 @@ sub GetNCLayers {
 # Return minimal hole for given side and type of NC layers
 sub GetMinHoleTool {
 	my $self        = shift;
-	my $side        = shift;    # type of Enums::SignalLayer_xxx
-	my $NClayerType = shift;    # type of Enums::LayerType_xxx
+	my $NCStartSide = shift;    # Restriction for NC layers specify start side of NC layers. Type of Enums::SignalLayer_xxx
+	my $NCEndSide   = shift;    # Restriction for NC layers specify end side of NC layers. Type of Enums::SignalLayer_xxx
+	my $NClayerType = shift;    # Type of Enums::LayerType_xxx
 
-	my @layers = $self->GetNCLayers( $side, $NClayerType );
+	my @layers = $self->GetNCLayers( $NCStartSide, $NCEndSide, $NClayerType );
 
 	my $minTool = CamDrilling->GetMinHoleToolByLayers( $self->{"inCAM"}, $self->{"jobId"}, "panel", \@layers );
- 
+
 	return $minTool;
 
 }
@@ -125,10 +136,11 @@ sub GetMinHoleTool {
 # Return minimal slot hole for given side and type of NC layers
 sub GetMinSlot {
 	my $self        = shift;
-	my $side        = shift;    # type of Enums::SignalLayer_xxx
-	my $NClayerType = shift;    # type of Enums::LayerType_xxx
+	my $NCStartSide = shift;    # Restriction for NC layers specify start side of NC layers. Type of Enums::SignalLayer_xxx
+	my $NCEndSide   = shift;    # Restriction for NC layers specify end side of NC layers. Type of Enums::SignalLayer_xxx
+	my $NClayerType = shift;    # Type of Enums::LayerType_xxx
 
-	my @layers = $self->GetNCLayers( $side, $NClayerType );
+	my @layers = $self->GetNCLayers( $NCStartSide, $NCEndSide, $NClayerType );
 
 	my $minTool = CamRouting->GetMinSlotToolByLayers( $self->{"inCAM"}, $self->{"jobId"}, "panel", \@layers );
 
@@ -145,16 +157,16 @@ sub GetMinSlot {
 
 # Return minimal aspect ratio based on stackup thickness, by minimal hole.
 sub GetMaxAspectRatio {
-	my $self    = shift;
-	my $side        = shift;    # type of Enums::SignalLayer_xxx
-	my $NClayerType = shift;    # type of Enums::LayerType_xxx
-	
-	my $fromLayer = $side eq Enums->SignalLayer_TOP ? $self->{"topSignalLayer"} : $self->{"botSignalLayer"};
-	
-	my $minHole = $self->GetMinHoleTool($side, $NClayerType);
-	
+	my $self        = shift;
+	my $NCStartSide = shift;    # Restriction for NC layers specify start side of NC layers. Type of Enums::SignalLayer_xxx
+	my $NCEndSide   = shift;    # Restriction for NC layers specify end side of NC layers. Type of Enums::SignalLayer_xxx
+	my $NClayerType = shift;    # Type of Enums::LayerType_xxx
+
+	my $minHole = $self->GetMinHoleTool( $NCStartSide, $NCEndSide, $NClayerType );
+
 	# thick of pcb after this pressing in µm
-	my $finalThick = $self->{"stackupNC"}->GetThickByLayerName($fromLayer->GetName())*1000;
+	my $fromLayer = $NCStartSide eq Enums->SignalLayer_TOP ? $self->{"topSignalLayer"} : $self->{"botSignalLayer"};
+	my $finalThick = $self->{"stackupNC"}->GetThickByLayerName( $fromLayer->GetName() ) * 1000;
 
 	my $aspectRatio = 0;
 
@@ -172,12 +184,13 @@ sub GetMaxAspectRatio {
 # Return minimal aspect ratio based on stackup thickness, by minimal hole.
 sub GetMaxBlindAspectRatio {
 	my $self        = shift;
-	my $side        = shift;    # type of Enums::SignalLayer_xxx
+	my $NCStartSide = shift;    # Restriction for NC layers specify start side of NC layers. Type of Enums::SignalLayer_xxx
+	my $NCEndSide   = shift;    # Restriction for NC layers specify end side of NC layers. Type of Enums::SignalLayer_xxx
 	my $NClayerType = shift;    # type of Enums::LayerType_xxx
 
-	my @layers = $self->GetNCLayers( $side, $NClayerType );
+	my @layers = $self->GetNCLayers( $NCStartSide, $NCEndSide, $NClayerType );
 	my $maxAR;
-	
+
 	foreach my $layer (@layers) {
 
 		my $tmp = CamToolDepth->GetMaxAspectRatioByLayer( $self->{"inCAM"}, $self->{"jobId"}, "panel", $layer->{"gROWname"} );
@@ -187,9 +200,8 @@ sub GetMaxBlindAspectRatio {
 		}
 	}
 
-
 	if ( defined $maxAR && $maxAR > 0 ) {
-		$maxAR = sprintf "%0.2f", ( $maxAR );
+		$maxAR = sprintf "%0.2f", ($maxAR);
 	}
 	else {
 		$maxAR = "";
@@ -203,10 +215,11 @@ sub GetMaxBlindAspectRatio {
 # Thus we take layer with max cnt of stages
 sub GetStageCnt {
 	my $self        = shift;
-	my $side        = shift;    # type of Enums::SignalLayer_xxx
+	my $NCStartSide = shift;    # Restriction for NC layers specify start side of NC layers. Type of Enums::SignalLayer_xxx
+	my $NCEndSide   = shift;    # Restriction for NC layers specify end side of NC layers. Type of Enums::SignalLayer_xxx
 	my $NClayerType = shift;    # type of Enums::LayerType_xxx
 
-	my @layers = $self->GetNCLayers( $side, $NClayerType );
+	my @layers = $self->GetNCLayers( $NCStartSide, $NCEndSide, $NClayerType );
 
 	my $max = 0;
 	foreach my $layer (@layers) {

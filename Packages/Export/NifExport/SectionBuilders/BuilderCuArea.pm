@@ -292,11 +292,11 @@ sub Build {
 			my $stackupNCTopL = $press->GetTopSigLayer();
 			my $stackupNCBotL = $press->GetBotSigLayer();
 
-			my $existTopPlt_nDrill = $press->ExistNCLayers( Enums->SignalLayer_TOP, EnumsGeneral->LAYERTYPE_plt_nDrill );
-			my $existPlt_bDrillTop = $press->ExistNCLayers( Enums->SignalLayer_TOP, EnumsGeneral->LAYERTYPE_plt_bDrillTop );
+			my $existTopPlt_nDrill = $press->ExistNCLayers( Enums->SignalLayer_TOP, undef, EnumsGeneral->LAYERTYPE_plt_nDrill );
+			my $existPlt_bDrillTop = $press->ExistNCLayers( Enums->SignalLayer_TOP, undef, EnumsGeneral->LAYERTYPE_plt_bDrillTop );
 
-			my $existBotPlt_nDrill = $press->ExistNCLayers( Enums->SignalLayer_BOT, EnumsGeneral->LAYERTYPE_plt_nDrill );
-			my $existPlt_bDrillBot = $press->ExistNCLayers( Enums->SignalLayer_BOT, EnumsGeneral->LAYERTYPE_plt_bDrillBot );
+			my $existBotPlt_nDrill = $press->ExistNCLayers( Enums->SignalLayer_BOT, undef, EnumsGeneral->LAYERTYPE_plt_nDrill );
+			my $existPlt_bDrillBot = $press->ExistNCLayers( Enums->SignalLayer_BOT, undef, EnumsGeneral->LAYERTYPE_plt_bDrillBot );
 
 			if ( $existTopPlt_nDrill || $existPlt_bDrillTop || $existBotPlt_nDrill || $existPlt_bDrillBot ) {
 
@@ -338,8 +338,8 @@ sub Build {
 			my $coreNum = $i + 1;
 			my $core    = $stackupNC->GetCore($coreNum);
 
-			my $existDrillTop = $core->ExistNCLayers( Enums->SignalLayer_TOP, EnumsGeneral->LAYERTYPE_plt_cDrill );
-			my $existDrillBot = $core->ExistNCLayers( Enums->SignalLayer_BOT, EnumsGeneral->LAYERTYPE_plt_cDrill );
+			my $existDrillTop = $core->ExistNCLayers( Enums->SignalLayer_TOP,undef,  EnumsGeneral->LAYERTYPE_plt_cDrill );
+			my $existDrillBot = $core->ExistNCLayers( Enums->SignalLayer_BOT, undef, EnumsGeneral->LAYERTYPE_plt_cDrill );
 
 			if ( $existDrillTop || $existDrillBot ) {
 

@@ -33,6 +33,8 @@ sub new {
 sub GetSignalLayer {
 	my $self = shift;
 	my $side = shift;                 #top/bot
+	
+	die "not implemented";
 }
 
 sub GetPressOrder {

@@ -159,11 +159,14 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	
 	my $inCAM  = InCAM->new();
 
- 	my $jobId = "d113609";
+ 	my $jobId = "d244516";
 	my $stackupNC = StackupNC->new( $jobId, $inCAM);
 	
 	 
-	my $coreStackNC = $stackupNC->GetCore(1);
+	my $press = $stackupNC->GetPress(2);
+	
+	my @layers = $press->GetNCLayers("top");
+	my @layers2 = $press->GetNCLayers("bot");
  
 	die;
 

@@ -39,8 +39,8 @@ sub GetAllByPcbId {
 	my $cmd = "select top 1
 				 d.nazev_subjektu board_name,
 				 c.nazev_subjektu customer,
-				 d.maska_barva_1 c_mask_colour,
-				 d.maska_barva_2 s_mask_colour,
+				 d.maska_c_1 c_mask_colour,
+				 d.maska_c_2 s_mask_colour,
 				 d.potisk c_silk_screen_colour,
 				 d.potisk_typ s_silk_screen_colour,
 				 d.konstr_trida construction_class,
@@ -76,8 +76,8 @@ sub GetAllByPcbId {
 				 dn.rozmer_x n_x_panel,
 				 dn.rozmer_y n_y_panel,
 				 prijal.nazev_subjektu n_prijal,
-				 dn.maska_barva_1 n_c_mask_colour,
-				 dn.maska_barva_2 n_s_mask_colour,
+				 dn.maska_c_1 n_c_mask_colour,
+				 dn.maska_c_2 n_s_mask_colour,
 				 dn.potisk n_c_silk_screen_colour,
 				 dn.potisk_typ n_s_silk_screen_colour,
 				 mn.nazev_subjektu n_material,
@@ -414,8 +414,8 @@ sub GetSolderMaskColor {
 	my @params = ( SqlParameter->new( "_PcbId", Enums->SqlDbType_VARCHAR, $pcbId ) );
 
 	my $cmd = "select top 1
-				 d.maska_barva_1 c_mask_colour,
-				 d.maska_barva_2 s_mask_colour
+				 d.maska_c_1 c_mask_colour,
+				 d.maska_c_2 s_mask_colour
 				 from lcs.desky_22 d with (nolock)
 				  left outer join lcs.zakazky_dps_22_hlavicka z with (nolock) on z.deska=d.cislo_subjektu
 				 where d.reference_subjektu=_PcbId and  z.cislo_poradace = 22050";
@@ -1097,11 +1097,11 @@ sub UpdateSolderMask {
 
 		if ( $side eq "top" ) {
 
-			$res = Connectors::HeliosConnector::HelperWriter->OnlineWrite_pcb( "$pcbId", $value, "maska_barva_1" );
+			$res = Connectors::HeliosConnector::HelperWriter->OnlineWrite_pcb( "$pcbId", $value, "maska_c_1" );
 		}
 		else {
 
-			$res = Connectors::HeliosConnector::HelperWriter->OnlineWrite_pcb( "$pcbId", $value, "maska_barva_2" );
+			$res = Connectors::HeliosConnector::HelperWriter->OnlineWrite_pcb( "$pcbId", $value, "maska_c_2" );
 		}
 
 		return $res;

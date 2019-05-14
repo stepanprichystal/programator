@@ -63,7 +63,7 @@ sub Build {
 
 		my $press = $stackupNC->GetPress($pressOrder);
 
-		my $existDrill = $press->ExistNCLayers( Enums->SignalLayer_TOP, EnumsGeneral->LAYERTYPE_plt_bMillTop );
+		my $existDrill = $press->ExistNCLayers( Enums->SignalLayer_TOP, undef, EnumsGeneral->LAYERTYPE_plt_bMillTop );
 
 		#if ( $self->_IsRequire( "frezovani_vv_pred_c_" . $pressOrder ) ) {
 			$section->AddRow( "frezovani_vv_pred_c_" . $pressOrder, $existDrill  ? "A" : "N");
@@ -81,7 +81,7 @@ sub Build {
 
 		my $press = $stackupNC->GetPress($pressOrder);
 
-		my $existDrill = $press->ExistNCLayers( Enums->SignalLayer_BOT, EnumsGeneral->LAYERTYPE_plt_bMillBot );
+		my $existDrill = $press->ExistNCLayers( Enums->SignalLayer_BOT, undef, EnumsGeneral->LAYERTYPE_plt_bMillBot );
 
 		#if ( $self->_IsRequire( "frezovani_vv_pred_s_" . $pressOrder ) ) {
 			$section->AddRow( "frezovani_vv_pred_s_" . $pressOrder, $existDrill ? "A" : "N" );
@@ -98,7 +98,7 @@ sub Build {
 
 		my $press = $stackupNC->GetPress($pressOrder);
 
-		my $existDrill = $press->ExistNCLayers( Enums->SignalLayer_TOP, EnumsGeneral->LAYERTYPE_nplt_bMillTop );
+		my $existDrill = $press->ExistNCLayers( Enums->SignalLayer_TOP, undef, EnumsGeneral->LAYERTYPE_nplt_bMillTop );
 
 		#if ( $self->_IsRequire( "frezovani_vv_po_c_" . $pressOrder ) ) {
 			$section->AddRow( "frezovani_vv_po_c_" . $pressOrder, $existDrill  ? "A" : "N");
@@ -116,7 +116,7 @@ sub Build {
 
 		my $press = $stackupNC->GetPress($pressOrder);
 
-		my $existDrill = $press->ExistNCLayers( Enums->SignalLayer_BOT, EnumsGeneral->LAYERTYPE_nplt_bMillBot );
+		my $existDrill = $press->ExistNCLayers( Enums->SignalLayer_BOT, undef, EnumsGeneral->LAYERTYPE_nplt_bMillBot );
 
 		#if ( $self->_IsRequire( "frezovani_vv_po_s_" . $pressOrder ) ) {
 			$section->AddRow( "frezovani_vv_po_s_" . $pressOrder, $existDrill  ? "A" : "N");

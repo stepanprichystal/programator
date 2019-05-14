@@ -127,7 +127,7 @@ sub GetEtchType {
 	}
 	elsif ( $self->{"layerCnt"} == 2 ) {
 
-		if ( $self->{"platedRoutExceed"} || $self->{"rsExist"} || JobHelper->GetIsFlex($self->{"jobId"}) ) {
+		if ( $self->{"platedRoutExceed"} || $self->{"rsExist"} || JobHelper->GetIsFlex( $self->{"jobId"} ) ) {
 			$etchType = EnumsGeneral->Etching_PATTERN;
 		}
 		else {
@@ -191,7 +191,7 @@ sub GetEtchType {
 
 			# if core contain core drilling -> tenting
 
-			if ( $stackupNCitem->ExistNCLayers( StackupEnums->SignalLayer_TOP, EnumsGeneral->LAYERTYPE_plt_cDrill ) ) {
+			if ( $stackupNCitem->ExistNCLayers( StackupEnums->SignalLayer_TOP, undef,  EnumsGeneral->LAYERTYPE_plt_cDrill ) ) {
 
 				$etchType = EnumsGeneral->Etching_TENTING;
 			}
@@ -199,7 +199,7 @@ sub GetEtchType {
 			# if top layer of core contain blind drill top -> pattern (e.g. when 4vv stackup is make from 2 cores)
 
 			if ( $stackupNCitem->GetTopSigLayer()->GetName() eq $layerName ) {
-				if ( $stackupNCitem->ExistNCLayers( StackupEnums->SignalLayer_TOP, EnumsGeneral->LAYERTYPE_plt_bDrillTop ) ) {
+				if ( $stackupNCitem->ExistNCLayers( StackupEnums->SignalLayer_TOP, undef, EnumsGeneral->LAYERTYPE_plt_bDrillTop ) ) {
 					$etchType = EnumsGeneral->Etching_PATTERN;
 				}
 				else {
@@ -209,7 +209,7 @@ sub GetEtchType {
 
 			# if bot layer of core contain blind drill bot -> pattern (e.g. when 4vv stackup is make from 2 cores)
 			if ( $stackupNCitem->GetBotSigLayer()->GetName() eq $layerName ) {
-				if ( $stackupNCitem->ExistNCLayers( StackupEnums->SignalLayer_BOT, EnumsGeneral->LAYERTYPE_plt_bDrillBot ) ) {
+				if ( $stackupNCitem->ExistNCLayers( StackupEnums->SignalLayer_BOT, undef, EnumsGeneral->LAYERTYPE_plt_bDrillBot ) ) {
 					$etchType = EnumsGeneral->Etching_PATTERN;
 				}
 				else {
@@ -222,8 +222,8 @@ sub GetEtchType {
 
 			# if press, when both side of stackup item has to have same etching type
 
-			if (    $stackupNCitem->ExistNCLayers( StackupEnums->SignalLayer_TOP, EnumsGeneral->LAYERTYPE_plt_bDrillTop )
-				 || $stackupNCitem->ExistNCLayers( StackupEnums->SignalLayer_BOT, EnumsGeneral->LAYERTYPE_plt_bDrillBot ) )
+			if (    $stackupNCitem->ExistNCLayers( StackupEnums->SignalLayer_TOP, undef, EnumsGeneral->LAYERTYPE_plt_bDrillTop )
+				 || $stackupNCitem->ExistNCLayers( StackupEnums->SignalLayer_BOT, undef, EnumsGeneral->LAYERTYPE_plt_bDrillBot ) )
 			{
 				$etchType = EnumsGeneral->Etching_PATTERN;
 			}
@@ -263,13 +263,11 @@ sub GetSideByLayer {
 sub GetCompByLayer {
 	my $self      = shift;
 	my $layerName = shift;
+ 
+ 	
+	my $class = undef; # Signal layer construction class
 
-	# Detect if it is inner layer
-	my $inner = $layerName =~ /^v\d+$/ ? 1 : 0;
-
-	my $class = undef;
-
-	if ($inner) {
+	if ($layerName =~ /^v\d+$/) {
 		$class = $self->GetPcbClassInner();
 	}
 	else {
@@ -285,7 +283,59 @@ sub GetCompByLayer {
 		return 0;
 	}
 
-	return EtchOperation->GetCompensation( $cuThick, $class, $inner );
+	# Determine if layer has plating
+	my $plated = 0;
+
+	# 2vv always plated
+	if ( $self->GetLayerCnt() == 2 ) {
+
+		$plated = 1;
+
+	}
+	# vv - outer layer always plated, inner layer depand on NC layers
+	elsif ( $self->GetLayerCnt() > 2 ) {
+
+		if ( $layerName eq "c" || $layerName eq "s" ) {
+			$plated = 1;
+		}
+		else {
+
+			my $stackupNcItem;    # StackupNCCore/StackupNCPress
+
+			# 1) Find copper layer between cores
+			my $core = $self->{"stackup"}->GetCoreByCopperLayer($layerName);
+
+			if ($core) {
+
+				$stackupNcItem = $self->{"stackupNC"}->GetCore($core->GetCoreNumber());
+
+			}
+			else {
+
+				# 2) Find copper layer between press packages
+				for ( my $i = 0 ; $i < $self->{"stackup"}->GetPressCount() ; $i++ ) {
+
+					my $press = $self->{"stackupNC"}->GetPress( $i + 1 );
+
+					if ( $press->GetTopSigLayer()->GetName() eq $layerName || $press->GetBotSigLayer()->GetName() eq $layerName ) {
+
+						$stackupNcItem = $press;
+						last;
+					}
+				}
+			}
+
+			# Find plated NC layers (drill and rout)
+
+			my @ncLayers = ($stackupNcItem->GetNCLayers("top"), $stackupNcItem->GetNCLayers("bot")) ;
+			if(grep { $_->{"plated"}} @ncLayers){
+				
+				$plated = 1;
+			}
+		}
+	}
+
+	return EtchOperation->GetCompensation( $cuThick, $class, $plated );
 
 }
 
@@ -582,7 +632,6 @@ sub GetToleranceHoleIS {
 	}
 }
 
-
 # Return if chamfer edge exist in IS
 sub GetChamferEdgesIS {
 	my $self = shift;
@@ -680,7 +729,7 @@ sub __InitDefault {
 	$self->{"costomerNote"} = CustomerNote->new( $self->{"costomerInfo"}->{"reference_subjektu"} );
 
 	$self->{"pressfitExist"} = PressfitOperation->ExistPressfitJob( $self->{"inCAM"}, $self->{"jobId"}, $self->{"step"}, 1 );
-	
+
 	$self->{"tolHoleExist"} = TolHoleOperation->ExistTolHoleJob( $self->{"inCAM"}, $self->{"jobId"}, $self->{"step"}, 1 );
 
 	$self->{"pcbBaseInfo"} = HegMethods->GetBasePcbInfo( $self->{"jobId"} );
@@ -705,12 +754,12 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId     = "d222753";
+	my $jobId     = "d240127";
 	my $stepName  = "o+1";
 	my $layerName = "c";
 
-	 my $d = DefaultInfo->new($inCAM, $jobId);
-	 $d->GetEtchType("c");
+	my $d = DefaultInfo->new( $inCAM, $jobId );
+	$d->GetEtchType("c");
 }
 
 1;

@@ -65,28 +65,28 @@ sub Build {
 
 		my $press = $stackupNC->GetPress($pressOrder);
 
-		my $existDrill = $press->ExistNCLayers( Enums->SignalLayer_TOP, EnumsGeneral->LAYERTYPE_plt_nDrill );
+		my $existDrill = $press->ExistNCLayers( Enums->SignalLayer_TOP, undef, EnumsGeneral->LAYERTYPE_plt_nDrill );
 
 		#if ( $self->_IsRequire( "slepe_vrtani_" . $pressOrder . "c" ) ) {
 		$section->AddRow( "slepe_vrtani_" . $pressOrder . "c", $existDrill ? "A" : "N" );
 
 		#}
 
-		my $stagesCnt = $press->GetStageCnt( Enums->SignalLayer_TOP, EnumsGeneral->LAYERTYPE_plt_nDrill );
+		my $stagesCnt = $press->GetStageCnt( Enums->SignalLayer_TOP, undef, EnumsGeneral->LAYERTYPE_plt_nDrill );
 
 		#if ( $self->_IsRequire( "stages_slepe_vrtani_c_" . $pressOrder ) ) {
 		$section->AddRow( "stages_slepe_vrtani_c_" . $pressOrder, $stagesCnt );
 
 		#}
 
-		my $minTool = $press->GetMinHoleTool( Enums->SignalLayer_TOP, EnumsGeneral->LAYERTYPE_plt_nDrill );
+		my $minTool = $press->GetMinHoleTool( Enums->SignalLayer_TOP, undef,  EnumsGeneral->LAYERTYPE_plt_nDrill );
 
 		#if ( $self->_IsRequire( "min_vrtak_c_" . $pressOrder ) ) {
 		$section->AddRow( "min_vrtak_c_" . $pressOrder, $self->__FormatTool($minTool) );
 
 		#}
 
-		my $maxAspectRatio = $press->GetMaxAspectRatio( Enums->SignalLayer_TOP, EnumsGeneral->LAYERTYPE_plt_nDrill );
+		my $maxAspectRatio = $press->GetMaxAspectRatio( Enums->SignalLayer_TOP, undef, EnumsGeneral->LAYERTYPE_plt_nDrill );
 
 		#if ( $self->_IsRequire( "min_vrtak_pomer_c_" . $pressOrder ) ) {
 		$section->AddRow( "min_vrtak_pomer_c_" . $pressOrder, $maxAspectRatio );
@@ -105,28 +105,28 @@ sub Build {
 
 		my $press = $stackupNC->GetPress($pressOrder);
 
-		my $existDrill = $press->ExistNCLayers( Enums->SignalLayer_BOT, EnumsGeneral->LAYERTYPE_plt_nDrill );
+		my $existDrill = $press->ExistNCLayers( Enums->SignalLayer_BOT, undef, EnumsGeneral->LAYERTYPE_plt_nDrill );
 
 		#if ( $self->_IsRequire( "slepe_vrtani_" . $pressOrder . "s" ) ) {
 		$section->AddRow( "slepe_vrtani_" . $pressOrder . "s", $existDrill ? "A" : "N" );
 
 		#}
 
-		my $stagesCnt = $press->GetStageCnt( Enums->SignalLayer_BOT, EnumsGeneral->LAYERTYPE_plt_nDrill );
+		my $stagesCnt = $press->GetStageCnt( Enums->SignalLayer_BOT, undef, EnumsGeneral->LAYERTYPE_plt_nDrill );
 
 		#if ( $self->_IsRequire( "stages_slepe_vrtani_s_" . $pressOrder ) ) {
 		$section->AddRow( "stages_slepe_vrtani_s_" . $pressOrder, $stagesCnt );
 
 		#}
 
-		my $minTool = $press->GetMinHoleTool( Enums->SignalLayer_BOT, EnumsGeneral->LAYERTYPE_plt_nDrill );
+		my $minTool = $press->GetMinHoleTool( Enums->SignalLayer_BOT, undef, EnumsGeneral->LAYERTYPE_plt_nDrill );
 
 		#if ( $self->_IsRequire( "min_vrtak_s_" . $pressOrder ) ) {
 		$section->AddRow( "min_vrtak_s_" . $pressOrder, $self->__FormatTool($minTool) );
 
 		#}
 
-		my $maxAspectRatio = $press->GetMaxAspectRatio( Enums->SignalLayer_BOT, EnumsGeneral->LAYERTYPE_plt_nDrill );
+		my $maxAspectRatio = $press->GetMaxAspectRatio( Enums->SignalLayer_BOT, undef, EnumsGeneral->LAYERTYPE_plt_nDrill );
 
 		#if ( $self->_IsRequire( "min_vrtak_pomer_s_" . $pressOrder ) ) {
 		$section->AddRow( "min_vrtak_pomer_s_" . $pressOrder, $maxAspectRatio );
@@ -153,21 +153,21 @@ sub Build {
 
 		my $press = $stackupNC->GetPress($pressOrder);
 
-		my $existDrill = $press->ExistNCLayers( Enums->SignalLayer_TOP, $layerType );
+		my $existDrill = $press->ExistNCLayers( Enums->SignalLayer_TOP, undef,  $layerType );
 
 		#if ( $self->_IsRequire( "slepe_otvory_c_" . $pressOrder ) ) {
 		$section->AddRow( "slepe_otvory_c_" . $pressOrder, $existDrill ? "A" : "N" );
 
 		#}
 
-		my $minTool = $press->GetMinHoleTool( Enums->SignalLayer_TOP, $layerType );
+		my $minTool = $press->GetMinHoleTool( Enums->SignalLayer_TOP, undef, $layerType );
 
 		#if ( $self->_IsRequire( "min_vrtak_sl_c_" . $pressOrder ) ) {
 		$section->AddRow( "min_vrtak_sl_c_" . $pressOrder, $self->__FormatTool($minTool) );
 
 		#}
 
-		my $maxAspectRatio = $press->GetMaxBlindAspectRatio( Enums->SignalLayer_TOP, $layerType );
+		my $maxAspectRatio = $press->GetMaxBlindAspectRatio( Enums->SignalLayer_TOP, undef,  $layerType );
 
 		#if ( $self->_IsRequire( "min_vrtak_pomer_sl_c_" . $pressOrder ) ) {
 		$section->AddRow( "min_vrtak_pomer_sl_c_" . $pressOrder, $maxAspectRatio );
@@ -189,21 +189,21 @@ sub Build {
 
 		my $press = $stackupNC->GetPress($pressOrder);
 
-		my $existDrill = $press->ExistNCLayers( Enums->SignalLayer_BOT, $layerType );
+		my $existDrill = $press->ExistNCLayers( Enums->SignalLayer_BOT, undef, $layerType );
 
 		#if ( $self->_IsRequire( "slepe_otvory_s_" . $pressOrder ) ) {
 		$section->AddRow( "slepe_otvory_s_" . $pressOrder, $existDrill ? "A" : "N" );
 
 		#}
 
-		my $minTool = $press->GetMinHoleTool( Enums->SignalLayer_BOT, $layerType );
+		my $minTool = $press->GetMinHoleTool( Enums->SignalLayer_BOT, undef, $layerType );
 
 		#if ( $self->_IsRequire( "min_vrtak_sl_s_" . $pressOrder ) ) {
 		$section->AddRow( "min_vrtak_sl_s_" . $pressOrder, $self->__FormatTool($minTool) );
 
 		#}
 
-		my $maxAspectRatio = $press->GetMaxBlindAspectRatio( Enums->SignalLayer_BOT, $layerType );
+		my $maxAspectRatio = $press->GetMaxBlindAspectRatio( Enums->SignalLayer_BOT, undef, $layerType );
 
 		#if ( $self->_IsRequire( "min_vrtak_pomer_sl_s_1" . $pressOrder ) ) {
 		$section->AddRow( "min_vrtak_pomer_sl_s_" . $pressOrder, $maxAspectRatio );
@@ -230,14 +230,14 @@ sub Build {
 #
 #		#}
 
-		my $minTool = $press->GetMinHoleTool( Enums->SignalLayer_TOP, EnumsGeneral->LAYERTYPE_plt_bDrillTop );
+		my $minTool = $press->GetMinHoleTool( Enums->SignalLayer_TOP, undef, EnumsGeneral->LAYERTYPE_plt_bDrillTop );
 
 		#if ( $self->_IsRequire( "min_vrtak_sl_c_" . $pressOrder ) ) {
 		$section->AddRow( "min_vrtak_sl_do_c", $self->__FormatTool($minTool) );
 
 		#}
 
-		my $maxAspectRatio = $press->GetMaxBlindAspectRatio( Enums->SignalLayer_TOP, EnumsGeneral->LAYERTYPE_plt_bDrillTop );
+		my $maxAspectRatio = $press->GetMaxBlindAspectRatio( Enums->SignalLayer_TOP, undef, EnumsGeneral->LAYERTYPE_plt_bDrillTop );
 
 		#if ( $self->_IsRequire( "min_vrtak_pomer_sl_c_" . $pressOrder ) ) {
 		$section->AddRow( "min_vrtak_pomer_sl_do_c", $maxAspectRatio );
@@ -255,20 +255,20 @@ sub Build {
 
 		my $press = $stackupNC->GetPress($pressCnt);
 
-		my $existDrill = $press->ExistNCLayers( Enums->SignalLayer_BOT, EnumsGeneral->LAYERTYPE_plt_bDrillBot );
+		my $existDrill = $press->ExistNCLayers( Enums->SignalLayer_BOT, undef, EnumsGeneral->LAYERTYPE_plt_bDrillBot );
 
 		#if ( $self->_IsRequire( "vrtani_do_s" ) ) {
 			$section->AddRow( "vrtani_do_s", $existDrill ? "A" : "N" );
 		#}
 
-		my $minTool = $press->GetMinHoleTool( Enums->SignalLayer_BOT, EnumsGeneral->LAYERTYPE_plt_bDrillBot );
+		my $minTool = $press->GetMinHoleTool( Enums->SignalLayer_BOT, undef, EnumsGeneral->LAYERTYPE_plt_bDrillBot );
 
 		#if ( $self->_IsRequire( "min_vrtak_sl_c_" . $pressOrder ) ) {
 		$section->AddRow( "min_vrtak_sl_do_s", $self->__FormatTool($minTool) );
 
 		#}
 
-		my $maxAspectRatio = $press->GetMaxBlindAspectRatio( Enums->SignalLayer_BOT, EnumsGeneral->LAYERTYPE_plt_bDrillBot );
+		my $maxAspectRatio = $press->GetMaxBlindAspectRatio( Enums->SignalLayer_BOT, undef, EnumsGeneral->LAYERTYPE_plt_bDrillBot );
 
 		#if ( $self->_IsRequire( "min_vrtak_pomer_sl_c_" . $pressOrder ) ) {
 		$section->AddRow( "min_vrtak_pomer_sl_do_s", $maxAspectRatio );

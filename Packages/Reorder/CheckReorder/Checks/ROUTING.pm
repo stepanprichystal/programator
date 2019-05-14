@@ -126,20 +126,15 @@ sub Run {
 
 		if ( scalar(@steps) ) {
 
-			my $stepOnBridges = 1;
+			my $stepsOnBridges = 0;
 
 			foreach my $s (@steps) {
-
-				if ( CamAttributes->GetStepAttrByName( $inCAM, $jobId, $s, "rout_on_bridges" ) =~ /^no$/i ) {
-
-					$stepOnBridges = 0;
-					last;
-				}
+				$stepsOnBridges++ if ( CamAttributes->GetStepAttrByName( $inCAM, $jobId, $s, "rout_on_bridges" ) =~ /^yes$/i );
 			}
 
-			if ($stepOnBridges) {
+			if ($stepsOnBridges ==  scalar(@steps)) {
 
-				$self->_AddChange( "DPS obsahuje frézu na můstky a zároveň je požadavek na počet kusů větší než 50. Komunikuj s OÚ." );
+				$self->_AddChange("DPS obsahuje frézu na můstky a zároveň je požadavek na počet kusů větší než 50. Komunikuj s OÚ.");
 			}
 		}
 

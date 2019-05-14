@@ -61,7 +61,7 @@ sub Build {
 		my $coreNum = $i + 1;
 
 		my $core = $stackupNC->GetCore($coreNum);
-		my $existDrill = $core->ExistNCLayers( Enums->SignalLayer_TOP, EnumsGeneral->LAYERTYPE_nplt_cbMillTop );
+		my $existDrill = $core->ExistNCLayers( Enums->SignalLayer_TOP, undef, EnumsGeneral->LAYERTYPE_nplt_cbMillTop );
 
 		#if ( $self->_IsRequire( "frezovani_jadra_po_c_" . $coreNum ) ) {
 
@@ -77,7 +77,7 @@ sub Build {
 		my $coreNum = $i + 1;
 
 		my $core = $stackupNC->GetCore($coreNum);
-		my $existDrill = $core->ExistNCLayers( Enums->SignalLayer_BOT, EnumsGeneral->LAYERTYPE_nplt_cbMillBot );
+		my $existDrill = $core->ExistNCLayers( Enums->SignalLayer_BOT, undef, EnumsGeneral->LAYERTYPE_nplt_cbMillBot );
 
 		#if ( $self->_IsRequire( "frezovani_jadra_po_s_" . $coreNum ) ) {
 

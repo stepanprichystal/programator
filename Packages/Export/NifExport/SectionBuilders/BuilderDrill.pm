@@ -138,7 +138,7 @@ sub Build {
 			if ( $self->{"layerCnt"} > 2 ) {
 				my $stackupNC  = StackupNC->new( $jobId, $inCAM );
 				my $lastPress  = $stackupNC->GetPress( $stackupNC->GetPressCnt() );
-				my $blindExist = $lastPress->ExistNCLayers( StackEnums->SignalLayer_TOP, EnumsGeneral->LAYERTYPE_plt_bDrillTop );
+				my $blindExist = $lastPress->ExistNCLayers( StackEnums->SignalLayer_TOP, undef, EnumsGeneral->LAYERTYPE_plt_bDrillTop );
 			}
 
 			$section->AddRow( "vrtani_do_c", ( $throughExist || $blindExist ) ? "A" : "N" );

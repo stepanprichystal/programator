@@ -251,7 +251,7 @@ sub __DefinePlatedOperations {
 		elsif ( $pressOrder != $stackup->GetPressCount() ) {
 
 			#for each pressing except last, add "v1" frame drilling
-			if ( !$press->ExistNCLayers( Enums->SignalLayer_TOP, EnumsGeneral->LAYERTYPE_plt_cDrill ) ) {
+			if ( !$press->ExistNCLayers( Enums->SignalLayer_TOP, undef, EnumsGeneral->LAYERTYPE_plt_cDrill ) ) {
 
 				push( @layers, $plt_fcDrill[0] ) if ( scalar(@plt_fcDrill) == 1 );
 			}
@@ -350,7 +350,7 @@ sub __DefinePlatedOperations {
 		my $core    = $stackupNC->GetCore($coreNum);
 
 		my @layers = ();
-		my @layersCore = $core->GetNCLayers( Enums->SignalLayer_TOP, EnumsGeneral->LAYERTYPE_plt_cDrill );
+		my @layersCore = $core->GetNCLayers( Enums->SignalLayer_TOP, undef, EnumsGeneral->LAYERTYPE_plt_cDrill );
 
 		# if exist core drilling
 		if ( scalar(@layersCore) ) {
