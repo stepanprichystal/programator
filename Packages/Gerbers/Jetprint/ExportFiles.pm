@@ -376,8 +376,10 @@ sub __PrepareFiducials {
 
 		# put 100µm symbols on 3.2mm hole position in "m" layer
 		my $f = Features->new();
-		$f->Parse( $inCAM, $jobId, $self->{"step"}, "m" );
+		$f->Parse( $inCAM, $jobId, $self->{"step"}, "v" );
 		my @holes3p2 = grep { $_->{"type"} eq "P" && $_->{"att"}->{".pnl_place"} =~ /^M-(.*)-c$/ } $f->GetFeatures();
+
+		die "No fiducial holes 3.2mm was found in layer \"v\"" unless(scalar(@holes3p2));
 
 		# add point
 		CamLayer->WorkLayer( $inCAM, $layerName );
@@ -459,7 +461,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId    = "d152457";
+	my $jobId    = "d080492";
 	my $stepName = "panel";
 
 	my $export = ExportFiles->new( $inCAM, $jobId );
