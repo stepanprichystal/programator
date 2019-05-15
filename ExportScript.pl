@@ -3682,11 +3682,11 @@ sub _SetMaskSilkHelios {
 		my $jobId = shift;
 				$genesis->INFO(entity_type=>'layer',entity_path=>"$jobId/panel/pc",data_type=>'exists');
 					if ($genesis->{doinfo}{gEXISTS} eq "yes") {
-							HelperWriter->OnlineWrite_pcb("$jobId", "B", "potisk");
+							HelperWriter->OnlineWrite_pcb("$jobId", "B", "potisk_c_1");
 					}
 				$genesis->INFO(entity_type=>'layer',entity_path=>"$jobId/panel/ps",data_type=>'exists');
 					if ($genesis->{doinfo}{gEXISTS} eq "yes") {
-							HelperWriter->OnlineWrite_pcb("$jobId", "B", "potisk_typ");
+							HelperWriter->OnlineWrite_pcb("$jobId", "B", "potisk_s_1");
 					
 					}
 				$genesis->INFO(entity_type=>'layer',entity_path=>"$jobId/panel/mc",data_type=>'exists');

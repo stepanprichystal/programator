@@ -41,8 +41,8 @@ sub GetAllByPcbId {
 				 c.nazev_subjektu customer,
 				 d.maska_c_1 c_mask_colour,
 				 d.maska_s_1 s_mask_colour,
-				 d.potisk c_silk_screen_colour,
-				 d.potisk_typ s_silk_screen_colour,
+				 d.potisk_c_1 c_silk_screen_colour,
+				 d.potisk_s_1 s_silk_screen_colour,
 				 d.konstr_trida construction_class,
 				 d.pocet_vrstev,
 				 d.rozmer_x x_size,
@@ -78,8 +78,8 @@ sub GetAllByPcbId {
 				 prijal.nazev_subjektu n_prijal,
 				 dn.maska_c_1 n_c_mask_colour,
 				 dn.maska_s_1 n_s_mask_colour,
-				 dn.potisk n_c_silk_screen_colour,
-				 dn.potisk_typ n_s_silk_screen_colour,
+				 dn.potisk_c_1 n_c_silk_screen_colour,
+				 dn.potisk_s_1 n_s_silk_screen_colour,
 				 mn.nazev_subjektu n_material,
 				 dn.strihani n_cutting,
 				 dn.drazkovani n_slotting,
@@ -446,8 +446,8 @@ sub GetSilkScreenColor {
 	my @params = ( SqlParameter->new( "_PcbId", Enums->SqlDbType_VARCHAR, $pcbId ) );
 
 	my $cmd = "select top 1
-				 d.potisk c_silk_screen_colour,
-				 d.potisk_typ s_silk_screen_colour
+				 d.potisk_c_1 c_silk_screen_colour,
+				 d.potisk_s_1 s_silk_screen_colour
 				 from lcs.desky_22 d with (nolock)
 				  left outer join lcs.zakazky_dps_22_hlavicka z with (nolock) on z.deska=d.cislo_subjektu
 				 where d.reference_subjektu=_PcbId and  z.cislo_poradace = 22050";
@@ -1064,11 +1064,11 @@ sub UpdateSilkScreen {
 
 		if ( $side eq "top" ) {
 
-			$res = Connectors::HeliosConnector::HelperWriter->OnlineWrite_pcb( "$pcbId", $value, "potisk" );
+			$res = Connectors::HeliosConnector::HelperWriter->OnlineWrite_pcb( "$pcbId", $value, "potisk_c_1" );
 		}
 		else {
 
-			$res = Connectors::HeliosConnector::HelperWriter->OnlineWrite_pcb( "$pcbId", $value, "potisk_typ" );
+			$res = Connectors::HeliosConnector::HelperWriter->OnlineWrite_pcb( "$pcbId", $value, "potisk_s_1" );
 		}
 
 		return $res;
@@ -1488,8 +1488,8 @@ sub GetPcbsInProduceSilk {
 
 	my $cmd = "select distinct 
 				d.reference_subjektu,
-				d.potisk c_silk_screen_colour,
-				d.potisk_typ s_silk_screen_colour,
+				d.potisk_c_1 c_silk_screen_colour,
+				d.potisk_s_1 s_silk_screen_colour,
 				d.material_typ,
 				z.stav
 				from lcs.zakazky_dps_22_hlavicka z join lcs.desky_22 d on d.cislo_subjektu=z.deska 
@@ -1497,7 +1497,7 @@ sub GetPcbsInProduceSilk {
 				where 
 				vs.cislo_vztaz_subjektu is null and 
 				z.stav = 4 and
-				(d.potisk IS NOT NULL OR d.potisk_typ IS NOT NULL)";
+				(d.potisk_c_1 IS NOT NULL OR d.potisk_s_1 IS NOT NULL)";
 
 	my @result = Helper->ExecuteDataSet( $cmd, \@params );
 

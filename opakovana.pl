@@ -222,15 +222,15 @@ sub _SetMaskSilkHelios {
 		
 				$inCAM->INFO(entity_type=>'layer',entity_path=>"$jobId/$step/pc",data_type=>'exists');
 					if ($inCAM->{doinfo}{gEXISTS} eq "yes") {
-							HelperWriter->OnlineWrite_pcb("$jobId", "B", "potisk");
+							HelperWriter->OnlineWrite_pcb("$jobId", "B", "potisk_c_1");
 					}else{
-							HelperWriter->OnlineWrite_pcb("$jobId", "", "potisk");
+							HelperWriter->OnlineWrite_pcb("$jobId", "", "potisk_c_1");
 					}
 				$inCAM->INFO(entity_type=>'layer',entity_path=>"$jobId/$step/ps",data_type=>'exists');
 					if ($inCAM->{doinfo}{gEXISTS} eq "yes") {
-							HelperWriter->OnlineWrite_pcb("$jobId", "B", "potisk_typ");
+							HelperWriter->OnlineWrite_pcb("$jobId", "B", "potisk_s_1");
 					}else{
-							HelperWriter->OnlineWrite_pcb("$jobId", "", "potisk_typ");
+							HelperWriter->OnlineWrite_pcb("$jobId", "", "potisk_s_1");
 					}
 				$inCAM->INFO(entity_type=>'layer',entity_path=>"$jobId/$step/mc",data_type=>'exists');
 					if ($inCAM->{doinfo}{gEXISTS} eq "yes") {
