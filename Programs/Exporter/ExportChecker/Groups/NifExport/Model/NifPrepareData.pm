@@ -88,7 +88,7 @@ sub OnPrepareGroupData {
 	# Prepare chamfer edge
 	$groupData->SetChamferEdges( $defaultInfo->GetChamferEdgesIS() ? 1 : 0 );
 
-	$groupData->SetNotes("");
+
 
 	# Prepare default selected quick notes
 	my @quickNotes = ();
@@ -113,6 +113,9 @@ sub OnPrepareGroupData {
 	}
 
 	$groupData->SetQuickNotes( \@quickNotes );
+	
+	
+	$groupData->SetNotes("");
 
 	# prepare datacode
 	$groupData->SetDatacode( $self->__GetDacode( $inCAM, $jobId, $defaultInfo ) );
@@ -192,32 +195,13 @@ sub OnPrepareReorderGroupData {
 	if ( defined $mask && $mask !~ /\-/ ) {
 		$groupData->SetMaska01(1);
 	}
-
-	#	# Datacodes
-	#	my $datacode = $nif->GetValue("datacode");
-	#	$datacode =~ s/\s//g if ( defined $datacode );    # remove spaces
-	#
-	#	if ( defined $datacode && $datacode ne "" ) {
-	#
-	#		$datacode = uc($datacode);
-	#		$groupData->SetDatacode($self->__GetDacode($inCAM, $jobId, $defaultInfo));
-	#	}
-	#
-	#	# UL logo
-	#	my $ul = $nif->GetValue("ul_logo");
-	#	$ul =~ s/\s//g if ( defined $ul );                # remove spaces
-	#
-	#	if ( defined $ul && $ul ne "" ) {
-	#
-	#		$ul = uc($ul);
-	#		$groupData->SetUlLogo($ul);
-	#	}
-
+ 
 	# Note
 	my $note = $nif->GetValue("poznamka");
 
 	if ( defined $note && $note ne "" ) {
 
+ 
 		$note =~ s/;/\n/g;
 		$groupData->SetNotes($note);
 	}

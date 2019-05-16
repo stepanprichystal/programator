@@ -11,11 +11,7 @@ use constant {
 };
 
 
-# Type, which contain tools in standard DTM slot/hole
-use constant {
-	TypeTool_HOLE => "hole",
-	TypeTool_SLOT => "slot"
-};
+
 
  
  

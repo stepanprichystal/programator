@@ -306,9 +306,9 @@ sub GetDTMDefaultType {
 		if (    $l{"type"} eq EnumsGeneral->LAYERTYPE_plt_fDrill
 			 || $l{"type"} eq EnumsGeneral->LAYERTYPE_plt_fcDrill
 			 || $l{"type"} eq EnumsGeneral->LAYERTYPE_plt_dcDrill
-			 || $l{"type"} eq EnumsGeneral->LAYERTYPE_plt_nMill 
-		     || $l{"type"} eq EnumsGeneral->LAYERTYPE_plt_bDrillTop
-		     || $l{"type"} eq EnumsGeneral->LAYERTYPE_plt_bDrillBot )
+			 || $l{"type"} eq EnumsGeneral->LAYERTYPE_plt_nMill
+			 || $l{"type"} eq EnumsGeneral->LAYERTYPE_plt_bDrillTop
+			 || $l{"type"} eq EnumsGeneral->LAYERTYPE_plt_bDrillBot )
 		{
 
 			$DTMType = EnumsDrill->DTM_VRTANE;
@@ -319,7 +319,7 @@ sub GetDTMDefaultType {
 }
 
 # Set new tools to DTM
-# Do recalculation of passed tool by drill_size_hook if requested
+# Do not recalculation by DTM type (only set DTM type without any action)
 sub SetDTMTools {
 	my $self    = shift;
 	my $inCAM   = shift;
@@ -328,7 +328,6 @@ sub SetDTMTools {
 	my $layer   = shift;
 	my @tools   = @{ shift(@_) };
 	my $DTMType = shift;            # vysledne, vrtane (do not do DTM recalculate. Use SetDTMTable)
-	my $recalc  = shift;            # only if $DTMType is set. If 1 do recalculate by drill_size_hook
 
 	my @userClmns = $self->GetDTMUserColNames($inCAM);    # User column name
 
@@ -340,7 +339,7 @@ sub SetDTMTools {
 	}
 
 	$inCAM->COM('tools_tab_reset');
- 
+
 	foreach my $t (@tools) {
 
 		# change type values ( command tool return values non_plated and plated, but tools_tab_set consum plate, nplate)
@@ -361,33 +360,101 @@ sub SetDTMTools {
 
 		my $userColumns = join( "\\;", @vals );
 
-		# if recalculate is requested, call drill_size_hook hook and get computed DrillSize
-		if ( defined $DTMType && $recalc ) {
-			my $res = $inCAM->COM(
-								   'drill_size_hook',
-								   "layer"       => $layer,
-								   "type"        => $toolType,
-								   "type2"       => $t->{"gTOOLtype2"},
-								   "min_tol"     => $t->{"gTOOLmin_tol"},
-								   "max_tol"     => $t->{"gTOOLmax_tol"},
-								   "bit"         => $t->{"gTOOLbit"},
-								   "finish_size" => $t->{"gTOOLfinish_size"},
-								   "shape"       => $t->{"gTOOLshape"},
-								   "user_des"    => $userColumns,
-								   "user_params" => $DTMType
-			);
+		$inCAM->COM(
+					 'tools_tab_add',
+					 "num"         => $t->{"gTOOLnum"},
+					 "type"        => $toolType,
+					 "type2"       => $t->{"gTOOLtype2"},
+					 "min_tol"     => $t->{"gTOOLmin_tol"},
+					 "max_tol"     => $t->{"gTOOLmax_tol"},
+					 "bit"         => $t->{"gTOOLbit"},
+					 "finish_size" => $t->{"gTOOLfinish_size"},
+					 "drill_size"  => $t->{"gTOOLdrill_size"},
+					 "shape"       => $t->{"gTOOLshape"},
+					 "user_des"    => $userColumns
+		);
 
-			my $reply = $inCAM->GetReply();
+	}
 
-			if ( $reply =~ m/^(\d+\.?\d*)\s(\d+\.?\d*)$/ ) {
+	$inCAM->COM( 'tools_set', "layer" => $layer, "thickness" => '0', "user_params" => $DTMType, "user_des_names" => join( ";", @userClmns ) );
 
-				$t->{"gTOOLdrill_size"} = $1;
-				$t->{"gTOOLbit"}        = $2;
+}
+
+# Do recalculation of passed tool by drill_size_hook
+sub RecalcDTMTools {
+	my $self    = shift;
+	my $inCAM   = shift;
+	my $jobId   = shift;
+	my $step    = shift;
+	my $layer   = shift;
+	my $DTMType = shift;         # vysledne, vrtane (do not do DTM recalculate. Use SetDTMTable)
+	my $holes   = shift // 1;    # 0 = don't recalculate holes / 1 = recalculate holes
+	my $slots   = shift // 1;    # 0 = don't recalculate slots / 1 = recalculate slots
+
+	my @tools = $self->GetDTMTools( $inCAM, $jobId, $step, $layer );
+
+	die "DTM type has to be defined" if ( !defined $DTMType );
+	die "Nothing to recalculate (no slots, no holes)" if ( !$holes && !$slots );
+
+	my @userClmns = $self->GetDTMUserColNames($inCAM);    # User column name
+
+	CamHelper->SetStep( $inCAM, $step );
+	CamLayer->WorkLayer( $inCAM, $layer );
+
+	unless ( defined $DTMType ) {
+		$DTMType = $self->GetDTMType( $inCAM, $jobId, $step, $layer );
+	}
+
+	$inCAM->COM('tools_tab_reset');
+
+	foreach my $t (@tools) {
+
+		# change type values ( command tool return values non_plated and plated, but tools_tab_set consum plate, nplate)
+		my $toolType = $t->{"gTOOLtype"};
+		$toolType =~ s/^plated$/plate/;
+		$toolType =~ s/^non_plated$/nplate/;
+
+		# Prepare user column values
+		my @vals = ();
+		foreach my $userClmn (@userClmns) {
+
+			my $v = $t->{"userColumns"}->{$userClmn};
+			unless ( defined $v ) {
+				$v = "";
 			}
-			else {
-				die "Hook drill_size_hook return wrong values: " . $inCAM->GetReply();
-			}
+			push( @vals, $v );
+		}
 
+		my $userColumns = join( "\\;", @vals );
+
+		# Call drill_size_hook hook and get computed DrillSize
+
+		next if ( $t->{"gTOOLshape"} eq EnumsDrill->TypeTool_HOLE && !$holes );
+		next if ( $t->{"gTOOLshape"} eq EnumsDrill->TypeTool_SLOT && !$slots );
+
+		my $res = $inCAM->COM(
+							   'drill_size_hook',
+							   "layer"       => $layer,
+							   "type"        => $toolType,
+							   "type2"       => $t->{"gTOOLtype2"},
+							   "min_tol"     => $t->{"gTOOLmin_tol"},
+							   "max_tol"     => $t->{"gTOOLmax_tol"},
+							   "bit"         => $t->{"gTOOLbit"},
+							   "finish_size" => $t->{"gTOOLfinish_size"},
+							   "shape"       => $t->{"gTOOLshape"},
+							   "user_des"    => $userColumns,
+							   "user_params" => $DTMType
+		);
+
+		my $reply = $inCAM->GetReply();
+
+		if ( $reply =~ m/^(\d+\.?\d*)\s(\d+\.?\d*)$/ ) {
+
+			$t->{"gTOOLdrill_size"} = $1;
+			$t->{"gTOOLbit"}        = $2;
+		}
+		else {
+			die "Hook drill_size_hook return wrong values: " . $inCAM->GetReply();
 		}
 
 		$inCAM->COM(
@@ -403,12 +470,10 @@ sub SetDTMTools {
 					 "shape"       => $t->{"gTOOLshape"},
 					 "user_des"    => $userColumns
 		);
-  
+
 	}
 
 	$inCAM->COM( 'tools_set', "layer" => $layer, "thickness" => '0', "user_params" => $DTMType, "user_des_names" => join( ";", @userClmns ) );
-
-	 
 
 }
 
@@ -472,11 +537,11 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	use Data::Dump qw(dump);
 
 	my $inCAM = InCAM->new();
-	my $jobId = "d210959";
+	my $jobId = "d164090";
 
 	#my $step  = "mpanel_10up";
 
-	my $dtm = CamDTM->GetDTMType( $inCAM, $jobId, "mpanel", "m" );
+	my $dtm = CamDTM->RecalcDTMTools( $inCAM, $jobId, "o+1", "m", "vysledne", 0, 1 );
 
 	die;
 

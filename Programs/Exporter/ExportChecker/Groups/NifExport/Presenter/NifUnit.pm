@@ -99,8 +99,8 @@ sub RefreshGUI {
 	$self->{"form"}->SetPressfit( $groupData->GetPressfit() );
 	$self->{"form"}->SetToleranceHole( $groupData->GetToleranceHole() );
 	$self->{"form"}->SetChamferEdges( $groupData->GetChamferEdges() );
-	$self->{"form"}->SetNotes( $groupData->GetNotes() );
 	$self->{"form"}->SetQuickNotes( $groupData->GetQuickNotes() );
+	$self->{"form"}->SetNotes( $groupData->GetNotes() );
 	$self->{"form"}->SetDatacode( $groupData->GetDatacode() );
 	$self->{"form"}->SetUlLogo( $groupData->GetUlLogo() );
 	$self->{"form"}->SetJumpScoring( $groupData->GetJumpScoring() );
@@ -143,8 +143,8 @@ sub GetGroupData {
 		$groupData->SetPressfit( $frm->GetPressfit() );
 		$groupData->SetToleranceHole( $frm->GetToleranceHole() );
 		$groupData->SetChamferEdges( $frm->GetChamferEdges() );
-		$groupData->SetNotes( $frm->GetNotes() );
 		$groupData->SetQuickNotes( $frm->GetQuickNotes() );
+		$groupData->SetNotes( $frm->GetNotes() );
 		$groupData->SetDatacode( $frm->GetDatacode() );
 		$groupData->SetUlLogo( $frm->GetUlLogo() );
 		$groupData->SetJumpScoring( $frm->GetJumpScoring() );

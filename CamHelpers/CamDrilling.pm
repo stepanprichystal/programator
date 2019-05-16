@@ -373,6 +373,18 @@ sub AddNCLayerType {
 	#return @res;
 }
 
+# Return if NC layer is known for scripts
+# If "type" is find bz AddNCLayerType method, NC layer is known
+sub GetNCLayerIsKnown{
+	my $self = shift;
+	my $layerName = shift;
+	
+	my %lInfo = ( "gROWname" => $layerName );
+	$self->AddNCLayerType( [ \%lInfo ] );
+	
+	defined $lInfo{"type"} ? return 1 : return 0;
+}
+
 # Return info about NC layer
 sub GetNCLayerInfo {
 	my $self  = shift;
@@ -396,11 +408,7 @@ sub GetNCLayerInfo {
 
 	if ($ncType) {
 		$self->AddNCLayerType( [ \%lInfo ] );
-
-		unless ( defined $lInfo{"type"} ) {
-			die;
-		}
-
+ 
 		die "Key: \"type\" was not set at layer: $layer"   unless ( defined $lInfo{"type"} );
 		die "Key: \"plated\" was not set at layer: $layer" unless ( defined $lInfo{"plated"} );
 	}

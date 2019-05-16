@@ -26,6 +26,13 @@ use constant {
 			   DTMatt_MAGINFO => "tool_magazine_info"
 };
 
+
+# Type, which contain tools in standard DTM slot/hole
+use constant {
+	TypeTool_HOLE => "hole",
+	TypeTool_SLOT => "slot"
+};
+
 # Each tool has specified operation which is based on:
 # - JOB NC layer type (set by CamDrilling->AddNCLayerType)
 # - tool type (slot/hole)

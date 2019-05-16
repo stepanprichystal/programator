@@ -639,11 +639,17 @@ sub SetNotes {
 	}
 	 
 	if($value && $value ne ""){
+ 	 
+		# Remove duplicate notes (quick note could be already in IS)
+		my $notes = $self->{"quickNoteFrm"}->GetNotesData();
 		
-		
+		foreach my $text  (map {$_->{"text"} } @{$notes}){
+	 
+			$value =~ s/$text//g;
+		}
+
 		$value =~ s/;/\n/g;
-		
-		
+
 		$self->{"richTxt"}->WriteText($value);
 	}
 

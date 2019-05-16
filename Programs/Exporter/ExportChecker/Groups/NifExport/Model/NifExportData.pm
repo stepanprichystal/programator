@@ -54,8 +54,8 @@ sub OnExportGroupData {
 	$exportData->SetPressfit( $groupData->GetPressfit() );
 	$exportData->SetToleranceHole( $groupData->GetToleranceHole() );
 	$exportData->SetChamferEdges( $groupData->GetChamferEdges());
-	$exportData->SetNotes( $groupData->GetNotes() );
 	$exportData->SetQuickNotes( $groupData->GetQuickNotes() );
+	$exportData->SetNotes( $groupData->GetNotes() );
 	$exportData->SetDatacode( $groupData->GetDatacode() );
 	$exportData->SetUlLogo( $groupData->GetUlLogo() );
 	$exportData->SetJumpScoring( $groupData->GetJumpScoring() );
