@@ -9,7 +9,7 @@
 # GROUP ID	| MACHINES 		|  DRILL 		| DRILL DEPTH	| ROUT  	 | ROUT DEPTH 	| DRILL CROSSES | CAMERAS   | MAX TOOL   |  MIN TOOL |  MAX DEPTH TOOL 
 # 							|  (bool)		|  (bool)		|  (bool)	 |  (bool)		|  (bool)		|  (bool)	| mm (int)	 |  mm (int) |  mm ()
 # -----------------------------------------------------------------------------------------------------------------------------------------------------------
-	A 		| Lenz, vrtacka	|  1 			| 0 			| 0 		 | 0 			| 0 			| 0			|	6.5		 |	0.3		|	6.5
+	A 		| Lenz, vrtacka	|  1 			| 0 			| 0 		 | 0 			| 0 			| 0			|	6.5		 |	0.1		|	6.5
 	B 		| Schmoll 200	|  1 			| 1 			| 0 		 | 0 			| 1 			| 1			|	6.5		 |  0.1		|	6.5
 	C 		| Schmoll 300 	|  1 			| 1 			| 1			 | 1 			| 0 			| 1			|	6.5		 |	0.1		|	6.5
 	D 		| Schmoll 300 	|  1 			| 1 			| 1 		 | 1 			| 0 			| 1			|	6.5		 |	0.1		|	6.5
