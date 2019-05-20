@@ -14,6 +14,7 @@ use strict;
 use warnings;
 use File::Copy;
 use Log::Log4perl qw(get_logger :levels);
+use File::Path 'rmtree';
 
 #local library
 
@@ -66,17 +67,26 @@ sub Run {
 	# Remove "nestlist helper" steps
 	CamNetlist->RemoveNetlistSteps( $inCAM, $jobId );
 
-	$self->{"exportIPC"}->Export(undef, $self->{"keepProfile"});
+	$self->{"exportIPC"}->Export( undef, $self->{"keepProfile"} );
 
 	# Copy created IPC to server where are ipc stored
-	if($self->{"serverCopy"}){
+	if ( $self->{"serverCopy"} ) {
 		$self->__CopyIPCToETServer();
 	}
 
 	# Copy IPC to R: where IPC will be taken by random TPV user to processing (temporary solution for reorders)
 	$self->__CopyIPCToETStorage();
- 
-	
+
+	# Remove client copy of IPC if is not requested
+	unless ( $self->{"localCopy"} ) {
+
+		my $ipcPath = EnumsPaths->Client_ELTESTS . $jobId . "t\\";
+		if ( -e $ipcPath ) {
+
+			rmtree($ipcPath) or die "Unable to delete local copy of IPC ($ipcPath). " . $!;
+		}
+	}
+
 }
 
 # Copy created IPC to server where are prepared electrical test for machines
@@ -87,7 +97,6 @@ sub __CopyIPCToETServer {
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
 	my $step  = $self->{"stepToTest"};
- 
 
 	# Test if el test exist
 	my $path = JobHelper->GetJobElTest($jobId) . "\\" . $jobId . "t.ipc";

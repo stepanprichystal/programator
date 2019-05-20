@@ -24,6 +24,11 @@ sub GetCompensation {
 	my $cuThickness      = shift;    # base layer Cu thickness
 	my $constrClass      = shift;
 	my $isPlated         = shift;    # it means basic cuThickness is plated (+ 25um)
+	
+	die "PCB Cu thickness is not defined" if(!defined $cuThickness);
+	die "PCB construction class is not defined" if(!defined $constrClass);
+	
+	
 	my %compensationAttr = ();
 		
 		#print STDERR "MED $cuThickness $constrClass";

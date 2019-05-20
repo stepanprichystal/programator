@@ -380,7 +380,7 @@ sub SetDTMTools {
 
 }
 
-# Do recalculation of passed tool by drill_size_hook
+# Do tool recalculation for given step and layer with sizes returned by drill_size_hook
 sub RecalcDTMTools {
 	my $self    = shift;
 	my $inCAM   = shift;
