@@ -78,7 +78,7 @@ sub Run {
 	$self->__CopyIPCToETStorage();
 
 	# Remove client copy of IPC if is not requested
-	unless ( $self->{"localCopy"} ) {
+	if ( !$self->{"localCopy"} || GeneralHelper->IsTPVServer() ) {
 
 		my $ipcPath = EnumsPaths->Client_ELTESTS . $jobId . "t\\";
 		if ( -e $ipcPath ) {
@@ -127,6 +127,9 @@ sub __CopyIPCToETStorage {
 	my $jobId = $self->{"jobId"};
 	my $step  = $self->{"stepToTest"};
 
+	# move test to special ipc test folder if it is cerver script
+	return 0 unless ( GeneralHelper->IsTPVServer() );
+
 	# Test if el test exist
 	my $path = JobHelper->GetJobElTest($jobId);
 
@@ -152,14 +155,12 @@ sub __CopyIPCToETStorage {
 
 	get_logger("abstractQueue")->error( "Et test $jobId exist: $elTestExist\n " . $inCAM->GetExceptionError() );
 
-	# move test to special ipc test folder
-	if ( GeneralHelper->IsTPVServer() && $elTestExist == 0 ) {
+	if ( !( $elTestExist || $self->{"keepProfile"} ) ) {
 
 		my $ipcPath = EnumsPaths->Client_ELTESTS . $jobId . "t\\" . $jobId . "t.ipc";
 		if ( -e $ipcPath ) {
 
 			copy( $ipcPath, EnumsPaths->Jobs_ELTESTSIPC . $jobId . "t.ipc" );
-			unlink($ipcPath);    # remove from server dir
 		}
 
 		get_logger("abstractQueue")->error( "Et test $jobId copy from path $ipcPath\n " . $inCAM->GetExceptionError() );
@@ -171,9 +172,9 @@ sub TaskItemsCount {
 
 	my $totalCnt = 0;
 
-	$totalCnt += 1;              # EtStep Created
-	$totalCnt += 1;              # Et set createed
-	$totalCnt += 1;              # Et optimize
+	$totalCnt += 1;    # EtStep Created
+	$totalCnt += 1;    # Et set createed
+	$totalCnt += 1;    # Et optimize
 
 	return $totalCnt;
 
