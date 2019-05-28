@@ -225,9 +225,10 @@ sub __SetRoutFeedSpeed {
 
 	my $resultItem = $self->_GetNewItem("Set rout speed");
 
-	# If pcb is in status 'Ve vyrobe', set rout speed
+	# If pcb is in status 'Ve vyrobe', 'Pozastavena', set rout speed
 	my $lastOrder = $self->{"jobId"} . "-" . HegMethods->GetPcbOrderNumber( $self->{"jobId"} );
-	if ( HegMethods->GetStatusOfOrder( $lastOrder, 0 ) == 4 || JobHelper->GetIsFlex($self->{"jobId"})) {
+	my $pcbStatus =  HegMethods->GetStatusOfOrder( $lastOrder, 0 );
+	if ( $pcbStatus == 4 || $pcbStatus == 12 || JobHelper->GetIsFlex($self->{"jobId"})) {
 
 		my $info = HegMethods->GetInfoAfterStartProduce($lastOrder);
 		my $matKind = HegMethods->GetMaterialKind( $self->{"jobId"} );

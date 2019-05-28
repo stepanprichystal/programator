@@ -27,22 +27,30 @@ couponSingleMargin      = 1000
 couponSpace       = 1000             # µm
 
 
-# OUTLINE ROUT SETTINGS
+# COUNTORUR MECHANICAL PROCESSING
 # --------------------------------------------------------------------------------------
-[t = Outline rout]
-[h = Do outline routing of coupon ]
-outlineRout      = 1               # 1/0
+[t = Mechanical contour processing]
+[h = Mechanical contour processing ]
+countourMech = 1               # 1/0
 
-[t = Rout bridges]
-bridges      = 1 # 1/0
-[t = On horizontal edges]
-[h = Bridges are placed in the middle of horizontall coupon edges ]
-bridgesX       = 0 # 1/0
-[t = On vertical edges]
-[h = Bridges are placed in the middle of verticall coupon edges ]
-bridgesY       = 1 # 1/0
-[t = Bridges width ]
-[h = Size of bridges rout gap ]
+[t = Horizontal contour type]
+[h = Type of horizontal contour processing.  None - without mechanical processing; Rout - 2mm left rout; Score - standard scoring ]
+countourTypeX = score # none/rout/score
+
+[t = Horizontal rout bridges count]
+[h = Bridges are placed equally on coupon horizontal edge ]
+countourBridgesCntX = 0 #  
+
+[t = Vertical contour type]
+[h = Type of horizontal contour processing. None - without mechanical processing; Rout - 2mm left rout; Score - standard scoring ]
+countourTypeY = rout # none/rout/score
+
+[t = Vertical rout bridges count]
+[h = Bridges are placed equally on coupon vertical edge ]
+countourBridgesCntY  = 0 #  
+ 
+[t = Rout bridges width ]
+[h = Size of bridges rout gap in um]
 [u = µm ]  
 bridgesWidth       = 1000 #
 

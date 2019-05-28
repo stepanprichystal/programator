@@ -81,59 +81,71 @@ sub GetCouponSpace {
 }
 
 
-# Outline rout settings
+#  Countoru mechanical processing settings
 
-sub SetOutlineRout {
+sub SetCountourMech {
 	my $self = shift;
 	my $val  = shift;
 
-	$self->_SetVal("outlineRout", $val);
+	$self->_SetVal("countourMech", $val);
 }
 
-sub GetOutlineRout {
+sub GetCountourMech {
 	my $self = shift;
 
-	return $self->_GetVal("outlineRout");
+	return $self->_GetVal("countourMech");
 }
 
-sub SetBridges {
-	my $self = shift;
-	my $val  = shift;
-
-	$self->_SetVal("bridges", $val);
-}
-
-sub GetBridges {
-	my $self = shift;
-
-	return $self->_GetVal("bridges");
-}
-
-sub SetBridgesX {
+sub SetCountourTypeX {
 	my $self = shift;
 	my $val  = shift;
 
-	$self->_SetVal("bridgesX", $val);
+	$self->_SetVal("countourTypeX", $val);
 }
 
-sub GetBridgesX {
+sub GetCountourTypeX {
 	my $self = shift;
 
-	return $self->_GetVal("bridgesX");
+	return $self->_GetVal("countourTypeX");
 }
 
-
-sub SetBridgesY {
+sub SetCountourBridgesCntX {
 	my $self = shift;
 	my $val  = shift;
 
-	$self->_SetVal("bridgesY", $val);
+	$self->_SetVal("countourBridgesCntX", $val);
 }
 
-sub GetBridgesY {
+sub GetCountourBridgesCntX {
 	my $self = shift;
 
-	return $self->_GetVal("bridgesY");
+	return $self->_GetVal("countourBridgesCntX");
+}
+
+sub SetCountourTypeY {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->_SetVal("countourTypeY", $val);
+}
+
+sub GetCountourTypeY {
+	my $self = shift;
+
+	return $self->_GetVal("countourTypeY");
+}
+
+sub SetCountourBridgesCntY {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->_SetVal("countourBridgesCntY", $val);
+}
+
+sub GetCountourBridgesCntY {
+	my $self = shift;
+
+	return $self->_GetVal("countourBridgesCntY");
 }
 
 sub SetBridgesWidth {

@@ -111,12 +111,15 @@ sub __BuildGeneralSett {
 	# Define disable enable checkbox
 	$szStatBox->Add( 1, 10, 0 );
 	$szStatBox->Add( $self->_GetSeparateLine($pnlRows), 0, &Wx::wxEXPAND | &Wx::wxALL, 4 );
-	$szStatBox->Add( $self->__BuildRowUni_CheckBox( $statBox, "outlineRout", 0, $pnlRows ), 0, &Wx::wxALL, 1 );
-	$szRows->Add( $self->__BuildRowUni_CheckBox( $pnlRows, "bridges" ),  0, &Wx::wxALL, 1 );
-	$szRows->Add( $self->__BuildRowUni_CheckBox( $pnlRows, "bridgesX" ), 0, &Wx::wxALL, 1 );
-	$szRows->Add( $self->__BuildRowUni_CheckBox( $pnlRows, "bridgesY" ), 0, &Wx::wxALL, 1 );
+	$szStatBox->Add( $self->__BuildRowUni_CheckBox( $statBox, "countourMech", 0, $pnlRows ), 0, &Wx::wxALL, 1 );
+	$szRows->Add( $self->__BuildRowUni_ComboBox( $pnlRows, "countourTypeX", [ "none", "rout",  "score" ]), 0, &Wx::wxALL, 1 );;
+	$szRows->Add( $self->__BuildRowUni_SpinCtrl( $pnlRows, "countourBridgesCntX",  0, 4 ), 0, &Wx::wxALL, 1 );
+	$szRows->Add( $self->__BuildRowUni_ComboBox( $pnlRows, "countourTypeY", [ "none", "rout", "score" ]) , 0, &Wx::wxALL, 1 );
+	$szRows->Add( $self->__BuildRowUni_SpinCtrl( $pnlRows, "countourBridgesCntY",  0, 4 ), 0, &Wx::wxALL, 1 );
 	$szRows->Add( $self->__BuildRowUni_SpinCtrl( $pnlRows, "bridgesWidth", 0, 10000 ), 0, &Wx::wxALL, 1 );
-	unless ( $self->{"settings"}->GetOutlineRout() ) {
+	
+ 
+	unless ( $self->{"settings"}->GetCountourMech() ) {
 		$pnlRows->Disable();
 	}
 

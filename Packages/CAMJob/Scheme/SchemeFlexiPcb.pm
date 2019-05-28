@@ -204,8 +204,8 @@ sub AddFlexiCoreFrame {
 	my $jobId = shift;
 	
 	
-	my $frameWidthLR =  5; # 18mm of copper frame on left and right
-	my $frameWidthTB =  10; # 25 mm of copper frame on top and bot
+	my $frameWidthLR =  18; # 18mm of copper frame on left and right
+	my $frameWidthTB =  25; # 25 mm of copper frame on top and bot
 
 	my $schemeFrame = SchemeFrame->new( $inCAM, $jobId );
 

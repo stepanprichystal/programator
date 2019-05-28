@@ -106,11 +106,16 @@ sub __CopyIPCToETServer {
 
 		my $p = EnumsPaths->Jobs_ELTESTS . substr( uc($jobId), 0, 4 );
 
+		
 		unless ( -e $p ) {
+			# Create parent dir
 			mkdir($p) or die "Can't create dir: $p" . $_;
 		}
 
-		mkdir( JobHelper->GetJobElTest($jobId) ) or die "Can't create dir: " . JobHelper->GetJobElTest($jobId) . $_;
+		unless ( -e JobHelper->GetJobElTest($jobId) ) {
+			# Create jopb dir
+			mkdir( JobHelper->GetJobElTest($jobId) ) or die "Can't create dir: " . JobHelper->GetJobElTest($jobId) . $_;
+		}
 	}
 
 	my $ipcPath = EnumsPaths->Client_ELTESTS . $jobId . "t\\" . $jobId . "t.ipc";

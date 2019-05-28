@@ -47,7 +47,7 @@ sub new {
 # Build single coupon layout
 # If ok return 1, else 0 + err message
 sub Build {
-	my $self = shift;
+	my $self    = shift;
 	my $cpnSett = shift;
 	my $errMess = shift;
 
@@ -59,13 +59,14 @@ sub Build {
 
 	my $result = 1;
 
-	return $result if ( !$self->{"cpnSett"}->GetOutlineRout() );
+	return $result if ( !$self->{"cpnSett"}->GetCountourMech() );
 
-	$self->{"layout"}->SetOutlineRout(1);
+	$self->{"layout"}->GetCountourMech(1);
 
-	$self->{"layout"}->SetBridges( $self->{"cpnSett"}->GetBridges() );
-	$self->{"layout"}->SetBridgesX( $self->{"cpnSett"}->GetBridgesX() );
-	$self->{"layout"}->SetBridgesY( $self->{"cpnSett"}->GetBridgesY() );
+	$self->{"layout"}->SetCountourTypeX( $self->{"cpnSett"}->GetCountourTypeX() );
+	$self->{"layout"}->SetCountourBridgesCntX( $self->{"cpnSett"}->GetCountourBridgesCntX() );
+	$self->{"layout"}->SetCountourTypeY( $self->{"cpnSett"}->GetCountourTypeY() );
+	$self->{"layout"}->SetCountourBridgesCntY( $self->{"cpnSett"}->GetCountourBridgesCntY() );
 	$self->{"layout"}->SetBridgesWidth( $self->{"cpnSett"}->GetBridgesWidth() );
 	$self->{"build"} = 1;
 

@@ -93,7 +93,7 @@ sub _SetVal {
 	my $val  = shift;
 
 	die "Key  is not defined"   unless ( defined $key );
-	die "Value  is not defined" unless ( defined $val );
+	die "Value of key: $key is not defined" unless ( defined $val );
 
 	$self->{"sett"}->{$key} = $val;
 }

@@ -82,11 +82,10 @@ sub CreateCoupon {
 		foreach my $h (@holes) {
 
 			my $p = Point->new( $h->X() / 1000, $h->Y() / 1000 );
-			
+
 			CamSymbol->AddPad( $inCAM, "r1400", $p, 0, $l->{"gROWpolarity"} );
 		}
-		
-		
+
 	}
 
 	# mask pads
@@ -187,21 +186,11 @@ sub __GetGroups {
 	my @layers = CamDrilling->GetNCLayersByTypes(
 		$inCAM, $jobId,
 		[
-		   EnumsGeneral->LAYERTYPE_plt_nDrill, EnumsGeneral->LAYERTYPE_plt_bDrillTop,
-		   EnumsGeneral->LAYERTYPE_plt_bDrillBot,
-
+		   EnumsGeneral->LAYERTYPE_plt_nDrill,        EnumsGeneral->LAYERTYPE_plt_bDrillTop,
+		   EnumsGeneral->LAYERTYPE_plt_bDrillBot,     EnumsGeneral->LAYERTYPE_plt_nFillDrill,
+		   EnumsGeneral->LAYERTYPE_plt_bFillDrillTop, EnumsGeneral->LAYERTYPE_plt_bFillDrillBot,
 		   EnumsGeneral->LAYERTYPE_plt_cDrill
 		]
-
-		#		my @layers = CamDrilling->GetNCLayersByTypes(
-		#												  $inCAM, $jobId,
-		#												  [
-		#													 EnumsGeneral->LAYERTYPE_plt_nDrill,        EnumsGeneral->LAYERTYPE_plt_bDrillTop,
-		#													 EnumsGeneral->LAYERTYPE_plt_bDrillBot,     EnumsGeneral->LAYERTYPE_plt_nFillDrill,
-		#													 EnumsGeneral->LAYERTYPE_plt_bFillDrillTop, EnumsGeneral->LAYERTYPE_plt_bFillDrillBot,
-		#													 EnumsGeneral->LAYERTYPE_plt_cDrill
-		#												  ]
-
 	);
 
 	CamDrilling->AddLayerStartStop( $inCAM, $jobId, \@layers );

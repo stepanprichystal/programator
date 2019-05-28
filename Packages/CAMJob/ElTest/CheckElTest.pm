@@ -9,6 +9,7 @@ use utf8;
 use strict;
 use warnings;
 use List::MoreUtils qw(uniq);
+use Path::Tiny qw(path);
 
 #local library
 
@@ -33,8 +34,6 @@ sub ElTestRequested {
 
 	# Load nif info
 	my $nif = NifFile->new($jobId);
- 
- 
 
 	if ( !defined $nif->GetValue("pocet_vrstev") || !defined $nif->GetValue("kons_trida") ) {
 		die "Information from nif file is not complete (rows: pocet_vrstev; kons_trida )";
@@ -50,7 +49,7 @@ sub ElTestRequested {
 	}
 	else {
 
-		if ( $nif->GetValue("pocet_vrstev") == 0 || ($nif->GetValue("kons_trida") <= 3 && $nif->GetValue("pocet_vrstev") == 1) ) {
+		if ( $nif->GetValue("pocet_vrstev") == 0 || ( $nif->GetValue("kons_trida") <= 3 && $nif->GetValue("pocet_vrstev") == 1 ) ) {
 
 			$testRequested = 0;
 		}
@@ -59,19 +58,24 @@ sub ElTestRequested {
 			$testRequested = 1;
 		}
 	}
- 
+
 }
 
-# Return if job el test exists
-sub ElTestExists {
+# Return if job el test is prepared by follow steps:
+# Search "original" dir in el test storage
+# If no original dir, search original ipc file
+# (ipc file have SR steps - el test prepared
+#  ipc file has not SR and panel multiple is prepared - el test prepared too)
+sub ElTestPrepared {
 	my $self  = shift;
 	my $jobId = shift;
 
-	my $path = JobHelper->GetJobElTest( $jobId);
+	my $path = JobHelper->GetJobElTest($jobId);
 
-	my $elTestExist = 1;
+	my $elTestExist = 0;
 	if ( -e $path ) {
 
+		# 1) search for "original" dir
 		my @dirs = ();
 		my $d;
 		if ( opendir( $d, $path ) ) {
@@ -79,14 +83,40 @@ sub ElTestExists {
 			closedir($d);
 		}
 
-		if ( scalar( grep { $_ =~ /^original$/i } @dirs ) < 1 ) {
+		if ( scalar( grep { $_ =~ /^original$/i } @dirs ) ) {
 
-			$elTestExist = 0;
+			$elTestExist = 1;
+		}
+
+		# 2) search for ipc file
+		unless ($elTestExist) {
+
+			my $ipcFile = $path . "\\" . $jobId . "t.ipc";
+
+			if ( -e $ipcFile ) {
+
+				my $file = path($ipcFile);
+
+				my $data = $file->slurp_utf8;
+				if ( $data =~ /IMAGE PRIMARY/i ) {
+					$elTestExist = 1;
+
+				}
+				else {
+
+					# Load nif info
+					my $nif       = NifFile->new($jobId);
+					my $totalMultipl = $nif->GetValue("nasobnost");
+
+					if (  $totalMultipl == 1 ) {
+						$elTestExist = 1;
+					}
+
+				}
+			}
 		}
 	}
-	else {
-		$elTestExist = 0;
-	}
+	 
 
 	return $elTestExist;
 }
@@ -102,11 +132,11 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	use aliased 'Packages::InCAM::InCAM';
 
 	my $inCAM = InCAM->new();
-	my $jobId = "d226809";
+	my $jobId = "d152457";
 	my $step  = "o+1";
 
 	my $mess = "";
-	my $res = CheckElTest->ElTestExists($jobId );
+	my $res  = CheckElTest->ElTestPrepared($jobId);
 
 	print "$res - $mess";
 

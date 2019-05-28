@@ -141,7 +141,7 @@ sub __ProcessJob {
 
 	if ( CheckElTest->ElTestRequested($jobId) ) {
 
-		unless ( CheckElTest->ElTestExists($jobId) ) {
+		unless ( CheckElTest->ElTestPrepared($jobId) ) {
  
 			my %orderInfo = HegMethods->GetAllByOrderId($orderId);
 

@@ -167,13 +167,16 @@ sub __PrepareColors {
 	my $outerSurfaceClr = LayerColor->new(PrevEnums->Surface_TEXTURE, Enums->Texture_CU );
 	$clrs{ Enums->Type_OUTERSURFACE } = $outerSurfaceClr;
 
-	if ( $surface =~ /^a$/i || $surface =~ /^b$/i ) {
+	if ( $surface =~ /^[ab]$/i   ) {
+		# HAL + HAL Pbfree
 		$outerSurfaceClr->SetTexture( Enums->Texture_HAL );
 	}
-	elsif ( $surface =~ /^c$/i ) {
+	elsif ( $surface =~ /^[cj]$/i  ) {
+		# Chemical tin + chemical silver
 		$outerSurfaceClr->SetTexture( Enums->Texture_CHEMTINALU );
 	}
-	elsif ( $surface =~ /^i$/i || $surface =~ /^g$/i ) {
+	elsif ( $surface =~ /^[ig]$/i ) {
+		# Chemical gold + hard gold
 		$outerSurfaceClr->SetTexture( Enums->Texture_GOLD );
 	}
  

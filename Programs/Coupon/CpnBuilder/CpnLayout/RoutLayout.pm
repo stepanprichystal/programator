@@ -24,71 +24,85 @@ sub new {
 	$self = $class->SUPER::new(@_);
 	bless $self;
 
-	$self->{"outlineRout"}     = undef;                                                   # 0/1
-	$self->{"bridges"}     = undef;                                                   # 0/1
-	$self->{"bridgesX"}     = undef;                                                   # do bridges on horiyontal edges 0/1
-	$self->{"bridgesY"}     = undef;                                                   # do bridges on vertical edges 0/1
-	$self->{"bridgesWidth"} = undef;                                                   # Width of bridges gap
-	$self->{"__CLASS__"}   = "Programs::Coupon::CpnBuilder::CpnLayout::RoutLayout";
+	$self->{"countourMech"}        = undef;                                                   # 0/1
+	$self->{"countourTypeX"}       = undef;                                                   # none/rout/score
+	$self->{"countourBridgesCntX"} = undef;                                                   # number of bridges on horizontal edge
+	$self->{"countourTypeY"}       = undef;                                                   # none/rout/score
+	$self->{"countourBridgesCntY"} = undef;                                                   # number of bridges on vertical edge
+	$self->{"bridgesWidth"}        = undef;                                                   # Width of bridges gap
+	$self->{"__CLASS__"}           = "Programs::Coupon::CpnBuilder::CpnLayout::RoutLayout";
 
 	return $self;
 
 }
 
-sub SetOutlineRout {
-	my $self   = shift;
+sub SetCountourMech {
+	my $self    = shift;
 	my $outline = shift;
 
-	$self->{"outlineRout"} = $outline;
+	$self->{"countourMech"} = $outline;
 }
 
-sub GetOutlineRout {
+sub GetCountourMech {
 	my $self = shift;
 
-	return $self->{"outlineRout"};
+	return $self->{"countourMech"};
 }
 
-sub SetBridges {
-	my $self   = shift;
-	my $bridges = shift;
+sub SetCountourTypeX {
+	my $self = shift;
+	my $type = shift;
 
-	$self->{"bridges"} = $bridges;
+	$self->{"countourTypeX"} = $type;
 }
 
-sub GetBridges {
+sub GetCountourTypeX {
 	my $self = shift;
 
-	return $self->{"bridges"};
+	return $self->{"countourTypeX"};
 }
 
-sub SetBridgesX {
-	my $self   = shift;
-	my $bridges = shift;
+sub SetCountourBridgesCntX {
+	my $self       = shift;
+	my $bridgesCnt = shift;
 
-	$self->{"bridgesX"} = $bridges;
+	$self->{"countourBridgesCntX"} = $bridgesCnt;
 }
 
-sub GetBridgesX {
+sub GetCountourBridgesCntX {
 	my $self = shift;
 
-	return $self->{"bridgesX"};
+	return $self->{"countourBridgesCntX"};
 }
 
-sub SetBridgesY {
-	my $self   = shift;
-	my $bridges = shift;
+sub SetCountourTypeY {
+	my $self = shift;
+	my $type = shift;
 
-	$self->{"bridgesY"} = $bridges;
+	$self->{"countourTypeY"} = $type;
 }
 
-sub GetBridgesY {
+sub GetCountourTypeY {
 	my $self = shift;
 
-	return $self->{"bridgesY"};
+	return $self->{"countourTypeY"};
+}
+
+sub SetCountourBridgesCntY {
+	my $self       = shift;
+	my $bridgesCnt = shift;
+
+	$self->{"countourBridgesCntY"} = $bridgesCnt;
+}
+
+sub GetCountourBridgesCntY {
+	my $self = shift;
+
+	return $self->{"countourBridgesCntY"};
 }
 
 sub SetBridgesWidth {
-	my $self   = shift;
+	my $self    = shift;
 	my $bridges = shift;
 
 	$self->{"bridgesWidth"} = $bridges;
@@ -99,7 +113,7 @@ sub GetBridgesWidth {
 
 	return $self->{"bridgesWidth"};
 }
- 
+
 sub TO_JSON { return { %{ shift() } }; }
 
 #-------------------------------------------------------------------------------------------#

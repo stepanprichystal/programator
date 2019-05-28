@@ -103,16 +103,17 @@ sub OnPrepareGroupData {
 
 	# Set server and local copy of IPC
 	if ($groupData->GetKeepProfiles()) {
-		
-		$groupData->SetServerCopy(1);
+
 		$groupData->SetLocalCopy(0); # Set local copy IPC (only if keep profiles is set)
 	
 	}else{
 		
-		$groupData->SetServerCopy(0);
 		$groupData->SetLocalCopy(1);
-		
 	}
+ 
+ 	# Set server copy always (in order TPV office is closed and production need ipc)
+ 	$groupData->SetServerCopy(1);
+ 	
  
  
 	return $groupData;
