@@ -187,6 +187,9 @@ sub GetScanMarkPoint {
 		$point{"y"} = $scanMarks[$id]->{"y1"};
 
 		return %point;
+	}else{
+		
+		die "Scan mark point was not found for attribute \".pnl_place\" and attribute value: \"$attName\"";
 	}
 
 }
@@ -297,7 +300,7 @@ sub GetMaterialParams {
 	my %lInfo = CamDrilling->GetNCLayerInfo( $inCAM, $jobId, $layer, 1, 1 );
 
 	# 1/0
-	my $layerType = $lInfo{"gROWlayer_type"};                  # rout/drill
+	my $layerType = $lInfo{"gROWlayer_type"};                        # rout/drill
 
 	# Dir name of default machine parameters
 	my $macDefName = "machine_default";
@@ -457,11 +460,13 @@ sub __ParseMaterialParams {
 sub GetDrilledNumber {
 	my $self       = shift;
 	my $jobId      = shift;
-	my $layerName  = shift;
+	my $position   = shift;            # vvframe - number placed in vv frame / stdframe  - number in standard frame
 	my $machine    = shift;
 	my @scanMarks  = @{ shift(@_) };
 	my %nullPoint  = %{ shift(@_) };
 	my $cuThickReq = shift // 1;
+ 
+	die "No drilled number position defined" if(!defined $position);
 
 	my $numberStr = $jobId;
 
@@ -497,14 +502,16 @@ sub GetDrilledNumber {
 	my $scanMark = "";
 
 	# select
-	if ( $layerName eq "v1" ) {
+	if ( $position eq "vvframe" ) {
 
 		$scanMark = "drilled_pcbId_v2";
 	}
-	else {
+	elsif ( $position eq "stdframe" ) {
 
 		$scanMark = "drilled_pcbId_c";
-
+	}else{
+		
+		die "Wrong drilled number position: $position";
 	}
 
 	$numberStr = $self->GetScanMark( \@scanMarks, \%nullPoint, $scanMark ) . "M97," . $numberStr;

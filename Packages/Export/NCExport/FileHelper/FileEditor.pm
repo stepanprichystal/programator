@@ -34,10 +34,10 @@ sub new {
 	$self = {};
 	bless $self;
 
-	$self->{"inCAM"}    = shift;
-	$self->{"jobId"}    = shift;
-	$self->{"stepName"} = shift;
-	$self->{"layerCnt"} = shift;
+	$self->{"inCAM"}        = shift;
+	$self->{"jobId"}        = shift;
+	$self->{"stepName"}     = shift;
+	$self->{"layerCnt"}     = shift;
 	$self->{"exportSingle"} = shift;
 
 	return $self;
@@ -179,20 +179,23 @@ sub EditAfterOpen {
 
 				if ( defined $l->{"tool"} && $l->{"line"} =~ /$toolNum([^\d]|$)/i ) {
 
-					my $mirror = $layer->{"gROWdrl_dir"} eq "bot2top" ? 1 : 0;
+					my $numMirror = $layer->{"gROWdrl_dir"} eq "bot2top" ? 1 : 0;
+
 					my @scanMarks =
-					  CamNCHooks->GetLayerCamMarks( $self->{"inCAM"}, $self->{"jobId"}, $self->{"stepName"}, "c", $mirror );
+					  CamNCHooks->GetLayerCamMarks( $self->{"inCAM"}, $self->{"jobId"}, $self->{"stepName"},
+													( $self->{"layerCnt"} > 2 ? "v2" : "c" ), $numMirror );
 
 					my %lim = CamJob->GetProfileLimits( $self->{"inCAM"}, $self->{"jobId"}, $self->{"stepName"} );
 					my %nullPoint = ( "x" => abs( $lim{"xmax"} - $lim{"xmin"} ) / 2, "y" => $lim{"ymin"} + 4 );
 
-					my $dn = CamNCHooks->GetDrilledNumber( $self->{"jobId"}, $layer->{"gROWname"}, $machine->{"id"}, \@scanMarks, \%nullPoint, 0 );
+					my $numPosition = $self->{"layerCnt"} > 2 ? "vvframe" : "stdframe";
+					my $dn = CamNCHooks->GetDrilledNumber( $self->{"jobId"}, $numPosition, $machine->{"id"}, \@scanMarks, \%nullPoint, 0 );
 					my ($xVal) = $dn =~ /X(\d+\.\d+)Y/;
 
 					my @cmd = ();
 
 					# Mirror drilled pcbid (must be mirrored in subroutine in order to mirror involve only drill number)
-					if ($mirror) {
+					if ($numMirror) {
 						push( @cmd, { "line" => "M31" } );
 						push( @cmd, { "line" => "$dn" } );
 						push( @cmd, { "line" => "M02X" . sprintf( "%.3f", 2 * $xVal ) . "Y0.000M70\n" } );
@@ -214,7 +217,7 @@ sub EditAfterOpen {
 
 	# ================================================================
 	# 5) EDIT:Move F_<guid> definition from tool line to first line after tool
-	
+
 	my $isRout = scalar( grep { $_->{"gROWlayer_type"} eq "rout" } $opItem->GetSortedLayers() ) ? 1 : 0;
 	if ($isRout) {
 
@@ -229,23 +232,23 @@ sub EditAfterOpen {
 
 			$b[$idx]->{"line"} =~ s/\(F_[\w-]+\)//;    # cut F_<guid>
 			$b[ $idx + 1 ]->{"line"} =~ s/\n$//;
-			$b[ $idx + 1 ]->{"line"} .= $fDef."\n"               # copy F_<guid> to next line
+			$b[ $idx + 1 ]->{"line"} .= $fDef . "\n"    # copy F_<guid> to next line
 		}
 
 	}
-	
+
 	# ================================================================
 	# 6) EDIT: If export single set F_<guid> definition to F_not_defined
-	 
+
 	# Remove F_<guid>, if export single
-	if($self->{"exportSingle"} && $isRout){
-		
+	if ( $self->{"exportSingle"} && $isRout ) {
+
 		my @b = @{ $parseFile->{"body"} };
 
 		# index of rows where is F_<guid> definition
 		my @tIdx = grep { $b[$_]->{"line"} =~ /\(F_[\w-]+\)/ } 0 .. $#b;
 		foreach my $idx (@tIdx) {
-			$b[ $idx ]->{"line"} =~ s/\(F_[\w-]+\)/\(F_not_defined\)/;
+			$b[$idx]->{"line"} =~ s/\(F_[\w-]+\)/\(F_not_defined\)/;
 		}
 	}
 
