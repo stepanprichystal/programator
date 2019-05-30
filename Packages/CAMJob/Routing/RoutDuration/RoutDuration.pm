@@ -31,6 +31,7 @@ use aliased 'CamHelpers::CamStepRepeat';
 use aliased 'CamHelpers::CamHistogram';
 use aliased 'CamHelpers::CamLayer';
 use aliased 'CamHelpers::CamMatrix';
+use aliased 'CamHelpers::CamHelper';
 use aliased 'Packages::CAM::FeatureFilter::FeatureFilter';
 use aliased 'CamHelpers::CamDrilling';
 
@@ -39,7 +40,7 @@ use aliased 'CamHelpers::CamDrilling';
 #-------------------------------------------------------------------------------------------#
 
 my $FOOTDOWNLENGTH = 10;    # length of foot down (machine slow down rout speed)
-my $FOOTDOWNSPEED  = 2;     # tool speed during foot down 2m/min
+my $FOOTDOWNSPEED  = 2;     # tool speed during foot down 200mm/min (same units as in NC program)
 my $TOOLCHANGETIME = 45;    # time for tool change 45s
 
 # Return duration or fouting for layer in second
@@ -68,6 +69,9 @@ sub GetRoutDuration {
 		# If surface, layer has to be compenasete in order compute rout lengths
 		my %histSurf = CamHistogram->GetFeatuesHistogram( $inCAM, $jobId, $s->{"stepName"}, $workLayer, 0 );
 		if ( $histSurf{"surf"} ) {
+			
+			CamHelper->SetStep($inCAM, $s->{"stepName"});
+			
 			CamLayer->WorkLayer( $inCAM, $layer );
 			$workLayer = CamLayer->RoutCompensation( $inCAM, $layer, "rout" );
 
@@ -100,7 +104,7 @@ sub GetRoutDuration {
 			foreach my $routPath ( @{ $routToolUsage{$toolKey} } ) {
 
 				my $len   = $routPath->{"length"};
-				my $speed = $routPath->{"speed"};
+				my $speed = $routPath->{"speed"}/10; # speed is originaly in "hundreds" mm / min. Convert to m/min 
 
 				# a) add to total rout tool duration (multipled by number of occurence in main step)
 				$duration += ( ( $len / 1000 ) / ( $speed / 60 ) ) * $s->{"totalCnt"};
@@ -112,6 +116,7 @@ sub GetRoutDuration {
 
 			}
 		}
+
 	}
 
 	# Compute tool change by tool limits (tool limit is taken from default machine)
@@ -121,8 +126,7 @@ sub GetRoutDuration {
 	if ( $lInfo{"type"} eq EnumsGeneral->LAYERTYPE_nplt_prepregMill ) {
 		$materialName = "PREPREG";
 	}
-	elsif ( $lInfo{"type"} eq EnumsGeneral->LAYERTYPE_nplt_cvrlycMill || $lInfo{"type"} eq EnumsGeneral->LAYERTYPE_nplt_cvrlysMill )
-	{
+	elsif ( $lInfo{"type"} eq EnumsGeneral->LAYERTYPE_nplt_cvrlycMill || $lInfo{"type"} eq EnumsGeneral->LAYERTYPE_nplt_cvrlysMill ) {
 		$materialName = "COVERLAY";
 	}
 
@@ -147,9 +151,9 @@ sub GetRoutDuration {
 
 		my $errStr = "Tool rout limit is not defined for tool: $toolKey. Tool parameter file:\n";
 		$errStr .= "- Material name: $materialName\n";
-		$errStr .= "- Machine name: ".EnumsMachines->MACHINE_DEF."\n";
+		$errStr .= "- Machine name: " . EnumsMachines->MACHINE_DEF . "\n";
 		$errStr .= "Add tool parameters according: \"..\\site_data\\hooks\\ncr\\parametersFile\\navod_parametry\"";
-		
+
 		die $errStr unless ( defined $tLim );
 
 		# Add relative tool change time because of exceed tool limit
@@ -207,9 +211,9 @@ sub GetRoutToolUsage {
 													   $uniChainSeq->IsOutline(),
 													   $layer, $step );
 
-		if ($isDupl) {
-			$self->__SetSequenceToolUsage( $uniChainSeq, 1, $materialName, \%toolUsage );
-		}
+#		if ($isDupl) {
+#			$self->__SetSequenceToolUsage( $uniChainSeq, 1, $materialName, \%toolUsage );
+#		}
 	}
 
 	return %toolUsage;
@@ -283,10 +287,10 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	use aliased 'Packages::InCAM::InCAM';
 
 	my $inCAM = InCAM->new();
-	my $jobId = "d131433";
+	my $jobId = "d246583";
 	my $step  = "panel";
-	my $layer = "fprepreg";
-
+	my $layer = "f";
+	sleep();
 	my $result = RoutDuration->GetRoutDuration( $inCAM, $jobId, $step, $layer );
 
 	print STDERR "Result is: " . int( $result / 60 ) . ":" . sprintf( "%02s", $result % 60 ) . " error \n";
