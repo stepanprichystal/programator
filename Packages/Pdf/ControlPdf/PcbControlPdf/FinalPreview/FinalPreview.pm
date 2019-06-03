@@ -221,6 +221,11 @@ sub __PrepareColors {
 
 	my $silkClr = LayerColor->new(PrevEnums->Surface_COLOR, $self->__GetSilkColor() );
 	$clrs{ Enums->Type_SILK } = $silkClr;
+	
+	# Silk color 2 (second selkscreen)
+
+	my $silkClr2 = LayerColor->new(PrevEnums->Surface_COLOR, $self->__GetSilkColor(1) );
+	$clrs{ Enums->Type_SILK2 } = $silkClr2;
 
 	# Depth NC plated - same as surface but dareker
 
@@ -270,8 +275,19 @@ sub __GetMaskColor {
 	my $self = shift;
 
 	my %pcbMask = Helper->GetMaskColor( $self->{"inCAM"}, $self->{"jobId"} );
-	my $pcbMaskVal = $self->{"viewType"} eq Enums->View_FROMTOP ? $pcbMask{"top"} : $pcbMask{"bot"};
-
+	my %pcbMask2 = Helper->GetMaskColor( $self->{"inCAM"}, $self->{"jobId"}, 1 ); # return second color mask
+	
+	# Decide which mask color is on top	
+	my $pcbMaskVal;
+	if($self->{"viewType"} eq Enums->View_FROMTOP){
+		
+		$pcbMaskVal = defined $pcbMask2{"top"} && $pcbMask2{"top"} ne "" ? $pcbMask2{"top"} : $pcbMask{"top"};
+	
+	}elsif($self->{"viewType"} eq Enums->View_FROMBOT){
+		
+		$pcbMaskVal = defined $pcbMask2{"bot"} && $pcbMask2{"bot"} ne "" ? $pcbMask2{"bot"} : $pcbMask{"bot"};
+	}
+ 
 	unless ($pcbMaskVal) {
 		return "";
 	}
@@ -289,10 +305,20 @@ sub __GetMaskColor {
 
 sub __GetSilkColor {
 	my $self = shift;
+	my $secondSilk = shift; # return color for scend silkscreen
 
-	my %pcbSilk = Helper->GetSilkColor( $self->{"inCAM"}, $self->{"jobId"} );
-	my $pcbSilkVal = $self->{"viewType"} eq Enums->View_FROMTOP ? $pcbSilk{"top"} : $pcbSilk{"bot"};
-
+	my %pcbSilk = Helper->GetSilkColor( $self->{"inCAM"}, $self->{"jobId"}, $secondSilk );
+	my $pcbSilkVal;
+	
+	if($self->{"viewType"} eq Enums->View_FROMTOP){
+		
+		$pcbSilkVal = $pcbSilk{"top"} ;
+	
+	}elsif($self->{"viewType"} eq Enums->View_FROMBOT){
+		
+		$pcbSilkVal = $pcbSilk{"bot"};
+	}
+ 
 	unless ($pcbSilkVal) {
 		return "";
 	}

@@ -126,19 +126,39 @@ sub OnPrepareGroupData {
 	# Mask color
 
 	#mask
-	my %masks2 = HegMethods->GetSolderMaskColor($jobId);
-	unless ( defined $masks2{"top"} ) {
-		$masks2{"top"} = "";
+		
+	my %masks = HegMethods->GetSolderMaskColor($jobId);
+	unless ( defined $masks{"top"} ) {
+		$masks{"top"} = "";
 	}
-	unless ( defined $masks2{"bot"} ) {
-		$masks2{"bot"} = "";
+	unless ( defined $masks{"bot"} ) {
+		$masks{"bot"} = "";
 	}
-	$groupData->SetC_mask_colour( $masks2{"top"} );
-	$groupData->SetS_mask_colour( $masks2{"bot"} );
+	$groupData->SetC_mask_colour( $masks{"top"} );
+	$groupData->SetS_mask_colour( $masks{"bot"} );
+	
+	
+	#flex mask
+	my $flexType = HegMethods->GetFlexSolderMask($jobId);
+	$groupData->SetFlexi_maska($flexType);
+	
 
 	#silk
-	my %silk2 = HegMethods->GetSilkScreenColor($jobId);
+	my %silk = HegMethods->GetSilkScreenColor($jobId);
 
+	unless ( defined $silk{"top"} ) {
+		$silk{"top"} = "";
+	}
+	unless ( defined $silk{"bot"} ) {
+		$silk{"bot"} = "";
+	}
+
+	$groupData->SetC_silk_screen_colour( $silk{"top"} );
+	$groupData->SetS_silk_screen_colour( $silk{"bot"} );
+	
+	
+	#silk 2 
+	my %silk2 = HegMethods->GetSilkScreenColor2($jobId);
 	unless ( defined $silk2{"top"} ) {
 		$silk2{"top"} = "";
 	}
@@ -146,8 +166,9 @@ sub OnPrepareGroupData {
 		$silk2{"bot"} = "";
 	}
 
-	$groupData->SetC_silk_screen_colour( $silk2{"top"} );
-	$groupData->SetS_silk_screen_colour( $silk2{"bot"} );
+	$groupData->SetC_silk_screen_colour2( $silk2{"top"} );
+	$groupData->SetS_silk_screen_colour2( $silk2{"bot"} );
+	
 
 	my $tenting = $self->__IsTenting( $inCAM, $jobId, $defaultInfo );
 

@@ -30,10 +30,18 @@ sub GetNifCodeValue {
 
 		$info = "Silk screen top";
 	}
+	elsif ( $code =~ /^pc2$/i ) {
+
+		$info = "Silk screen top second";
+	}
 
 	elsif ( $code =~ /^ps$/i ) {
 
 		$info = "Silk screen bot";
+	}
+	elsif ( $code =~ /^ps2$/i ) {
+
+		$info = "Silk screen bot second";
 	}
 
 	elsif ( $code =~ /^mc$/i ) {
@@ -74,9 +82,18 @@ sub Cz {
 		
 		$str = "Potisk top";
 		
+	}
+	elsif($val eq "Silk screen top second"){
+	
+		$str = "Potisk top druhý";
+		
 	}elsif($val eq "Silk screen bot"){
 	
 		$str = "Potisk bot";
+		
+	}elsif($val eq "Silk screen bot second"){
+	
+		$str = "Potisk bot druhý";
 		
 	}elsif($val eq "Solder mask top"){
 	

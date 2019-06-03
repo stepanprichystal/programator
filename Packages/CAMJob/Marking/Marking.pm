@@ -46,7 +46,8 @@ sub GetDatacodeLayers {
 
 	my @layers = ();
 
-	my @markLayers = grep { $_->{"gROWname"} =~ /^[pm]?[cs]$/ } CamJob->GetBoardBaseLayers( $inCAM, $jobId );
+	# search in pc2/pc/mc/c/s/ms/ps/ps2
+	my @markLayers = grep { $_->{"gROWname"} =~ /^[pm]?[cs]2?$/ } CamJob->GetBoardBaseLayers( $inCAM, $jobId );
 
 	foreach my $l (@markLayers) {
 

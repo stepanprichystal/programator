@@ -21,9 +21,10 @@ use aliased 'CamHelpers::CamHelper';
 
 # Decide of get mask color ftom NIF/Helios
 sub GetMaskColor {
-	my $self  = shift;
-	my $inCAM = shift;
-	my $jobId = shift;
+	my $self       = shift;
+	my $inCAM      = shift;
+	my $jobId      = shift;
+	my $secondMask = shift;
 
 	my $panelExist = CamHelper->StepExists( $inCAM, $jobId, "panel" );
 	my $nifFile = NifFile->new($jobId);
@@ -33,12 +34,18 @@ sub GetMaskColor {
 	if ( !$panelExist ) {
 
 		# use nif norris
-		%mask = HegMethods->GetSolderMaskColor($jobId);
+		%mask = $secondMask ? HegMethods->GetSolderMaskColor2($jobId) : HegMethods->GetSolderMaskColor($jobId);
 	}
 	else {
 
 		# use nif file
 		%mask = $nifFile->GetSolderMaskColor();
+
+		# check if exist second mask in IS
+		if ($secondMask) {
+
+			%mask = HegMethods->GetSolderMaskColor2($jobId);
+		}
 	}
 
 	return %mask;
@@ -46,9 +53,10 @@ sub GetMaskColor {
 
 # Decide of get silk color ftom NIF/Helios
 sub GetSilkColor {
-	my $self  = shift;
-	my $inCAM = shift;
-	my $jobId = shift;
+	my $self       = shift;
+	my $inCAM      = shift;
+	my $jobId      = shift;
+	my $secondSilk = shift;
 
 	my $panelExist = CamHelper->StepExists( $inCAM, $jobId, "panel" );
 	my $nifFile = NifFile->new($jobId);
@@ -58,13 +66,13 @@ sub GetSilkColor {
 	if ( !$panelExist ) {
 
 		# use nif norris
-		%silk = HegMethods->GetSilkScreenColor($jobId);
+		%silk = $secondSilk ? HegMethods->GetSilkScreenColor2($jobId) : HegMethods->GetSilkScreenColor($jobId);
 
 	}
 	else {
 
 		# use nif file
-		%silk = $nifFile->GetSilkScreenColor();
+		%silk = $secondSilk ? $nifFile->GetSilkScreenColor2() : $nifFile->GetSilkScreenColor();
 	}
 
 	return %silk;
@@ -75,8 +83,6 @@ sub GetSilkColor {
 #-------------------------------------------------------------------------------------------#
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
-
-	 
 
 }
 

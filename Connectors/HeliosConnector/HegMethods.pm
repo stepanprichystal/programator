@@ -406,7 +406,26 @@ sub GetPcbSurface {
 
 }
 
-#Return color of mask in hash for top and bot side
+
+#Return type of flex soldermask c - only top / s - opnly bot / 2 - top + bot
+sub GetFlexSolderMask {
+	my $self  = shift;
+	my $pcbId = shift;
+
+	my @params = ( SqlParameter->new( "_PcbId", Enums->SqlDbType_VARCHAR, $pcbId ) );
+
+	my $cmd = "select top 1
+				 d.flexi_maska 
+				 from lcs.desky_22 d with (nolock)
+				  left outer join lcs.zakazky_dps_22_hlavicka z with (nolock) on z.deska=d.cislo_subjektu
+				 where d.reference_subjektu=_PcbId and  z.cislo_poradace = 22050";
+
+ 
+	return Helper->ExecuteScalar( $cmd, \@params );
+ 
+}
+
+# Return color of mask in hash for top and bot side
 sub GetSolderMaskColor {
 	my $self  = shift;
 	my $pcbId = shift;
@@ -428,9 +447,39 @@ sub GetSolderMaskColor {
 
 		$mask{"top"} = $rows[0]->{"c_mask_colour"};
 		$mask{"bot"} = $rows[0]->{"s_mask_colour"};
-
 		return %mask;
 
+	}
+	else {
+
+		return 0;
+	}
+}
+
+# Return second color of mask in hash for top and bot side
+sub GetSolderMaskColor2 {
+	my $self  = shift;
+	my $pcbId = shift;
+
+	my @params = ( SqlParameter->new( "_PcbId", Enums->SqlDbType_VARCHAR, $pcbId ) );
+
+	my $cmd = "select top 1
+				 d.maska_c_2 c_mask_colour2,
+				 d.maska_s_2 s_mask_colour2
+				 from lcs.desky_22 d with (nolock)
+				  left outer join lcs.zakazky_dps_22_hlavicka z with (nolock) on z.deska=d.cislo_subjektu
+				 where d.reference_subjektu=_PcbId and  z.cislo_poradace = 22050";
+
+	my %mask = ();
+
+	my @rows = Helper->ExecuteDataSet( $cmd, \@params );
+
+	if ( scalar(@rows) ) {
+
+		$mask{"top"} = $rows[0]->{"c_mask_colour2"};
+		$mask{"bot"} = $rows[0]->{"s_mask_colour2"};
+
+		return %mask;
 	}
 	else {
 
@@ -462,7 +511,37 @@ sub GetSilkScreenColor {
 		$silk{"bot"} = $rows[0]->{"s_silk_screen_colour"};
 
 		return %silk;
+	}
+	else {
 
+		return 0;
+	}
+}
+
+#Return color of silk screen in hash for top and bot side
+sub GetSilkScreenColor2 {
+	my $self  = shift;
+	my $pcbId = shift;
+
+	my @params = ( SqlParameter->new( "_PcbId", Enums->SqlDbType_VARCHAR, $pcbId ) );
+
+	my $cmd = "select top 1
+				 d.potisk_c_2 c_silk_screen_colour2,
+				 d.potisk_s_2 s_silk_screen_colour2
+				 from lcs.desky_22 d with (nolock)
+				  left outer join lcs.zakazky_dps_22_hlavicka z with (nolock) on z.deska=d.cislo_subjektu
+				 where d.reference_subjektu=_PcbId and  z.cislo_poradace = 22050";
+
+	my %silk = ();
+
+	my @rows = Helper->ExecuteDataSet( $cmd, \@params );
+
+	if ( scalar(@rows) ) {
+
+		$silk{"top"} = $rows[0]->{"c_silk_screen_colour2"};
+		$silk{"bot"} = $rows[0]->{"s_silk_screen_colour2"};
+
+		return %silk;	
 	}
 	else {
 

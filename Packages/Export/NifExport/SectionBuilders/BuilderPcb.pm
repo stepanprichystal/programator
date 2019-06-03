@@ -95,7 +95,7 @@ sub Build {
 			$nifData{"c_mask_colour"} = "";
 		}
 
-		$section->AddRow( "c_mask_colour", $nifData{"c_mask_colour"} );
+		$section->AddRow( "maska_c_1", $nifData{"c_mask_colour"} );
 	}
 
 	#s_mask_colour
@@ -105,7 +105,7 @@ sub Build {
 			$nifData{"s_mask_colour"} = "";
 		}
 
-		$section->AddRow( "s_mask_colour", $nifData{"s_mask_colour"} );
+		$section->AddRow( "maska_s_1", $nifData{"s_mask_colour"} );
 	}
 
 	#c_silk_screen_colour
@@ -115,7 +115,7 @@ sub Build {
 			$nifData{"c_silk_screen_colour"} = "";
 		}
 
-		$section->AddRow( "c_silk_screen_colour", $nifData{"c_silk_screen_colour"} );
+		$section->AddRow( "potisk_c_1", $nifData{"c_silk_screen_colour"} );
 	}
 
 	#s_silk_screen_colour
@@ -125,8 +125,30 @@ sub Build {
 			$nifData{"s_silk_screen_colour"} = "";
 		}
 
-		$section->AddRow( "s_silk_screen_colour", $nifData{"s_silk_screen_colour"} );
+		$section->AddRow( "potisk_s_1", $nifData{"s_silk_screen_colour"} );
 	}
+
+
+	#c_silk_screen_colour2
+	if ( $self->_IsRequire("c_silk_screen_colour2") ) {
+
+		unless ( $nifData{"c_silk_screen_colour2"} ) {
+			$nifData{"c_silk_screen_colour2"} = "";
+		}
+
+		$section->AddRow( "potisk_c_2", $nifData{"c_silk_screen_colour2"} );
+	}
+
+	#s_silk_screen_colour2
+	if ( $self->_IsRequire("s_silk_screen_colour2") ) {
+
+		unless ( $nifData{"s_silk_screen_colour2"} ) {
+			$nifData{"s_silk_screen_colour2"} = "";
+		}
+
+		$section->AddRow( "potisk_s_2", $nifData{"s_silk_screen_colour2"} );
+	}
+ 
 
 	#tenting
 	if ( $self->_IsRequire("tenting") ) {

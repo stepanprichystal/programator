@@ -7,6 +7,7 @@ use constant {
 	Type_OUTERSURFACE => "typeOuterSurface",
 	Type_MASK => "typeMask",
 	Type_SILK => "typeSilk",
+	Type_SILK2 => "typeSilk2",
 	Type_PLTDEPTHNC => "typePltDepthNc",
 	Type_NPLTDEPTHNC => "typeNPltDepthNc",
 	Type_PLTTHROUGHNC => "typePltThroughNc",

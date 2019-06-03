@@ -3,18 +3,17 @@
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 use Wx;
+
 package Programs::Exporter::ExportChecker::Groups::NifExport::View::NifUnitForm;
 use base qw(Wx::Panel);
 
 use Class::Interface;
 &implements('Programs::Exporter::ExportChecker::Groups::IUnitForm');
 
-
 #3th party library
 use strict;
 use warnings;
 use Wx;
- 
 
 #local library
 use Widgets::Style;
@@ -26,6 +25,7 @@ use aliased 'Programs::Exporter::ExportChecker::Groups::NifExport::View::QuickNo
 use aliased 'Programs::Exporter::ExportChecker::Groups::NifExport::View::MarkingFrm::MarkingList';
 use aliased 'Helpers::ValueConvertor';
 use aliased 'CamHelpers::CamAttributes';
+
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
@@ -45,26 +45,23 @@ sub new {
 	$self->{"inCAM"}       = $inCAM;
 	$self->{"jobId"}       = $jobId;
 	$self->{"defaultInfo"} = $defaultInfo;
- 
 
 	#$self->Disable();
 
 	#$self->SetBackgroundColour($Widgets::Style::clrLightBlue);
 
 	# PROPERTIES
-	
-	$self->{'quickNoteFrm'} = undef; # window where quick notes are showed
-	$self->{'jumpScoringProp'} = undef; # store information about cust jumpscoring
-	
+
+	$self->{'quickNoteFrm'}    = undef;    # window where quick notes are showed
+	$self->{'jumpScoringProp'} = undef;    # store information about cust jumpscoring
+
 	$self->__SetLayout();
-	
-	
+
 	# EVENTS
 	$self->{'onTentingChange'} = Event->new();
 
 	return $self;
 }
- 
 
 #sub Init{
 #	my $self = shift;
@@ -76,8 +73,6 @@ sub new {
 #
 #	$self->__SetName();
 #}
-
- 
 
 #sub __SetHeight {
 #	my $self = shift;
@@ -105,9 +100,8 @@ sub __SetLayout {
 
 	my $settingsStatBox  = $self->__SetLayoutSettings($self);
 	my $dimensionStatBox = $self->__SetLayoutDimension($self);
-	my $noteStatBox = $self->__SetLayoutNote($self);
-	
-	 
+	my $noteStatBox      = $self->__SetLayoutNote($self);
+
 	#$richTxt->Layout();
 
 	# SET EVENTS
@@ -118,13 +112,12 @@ sub __SetLayout {
 
 	# BUILD STRUCTURE OF LAYOUT
 
-	$szRow1->Add( $settingsStatBox,  1, &Wx::wxEXPAND | &Wx::wxALL, 0 );
-	
+	$szRow1->Add( $settingsStatBox, 1, &Wx::wxEXPAND | &Wx::wxALL, 0 );
 
 	#$szRow1->Add( $settingsStatBox,  70, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 	#$szRow1->Add( $settingsStatBox2,  30, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 
-	$szRow2->Add( $noteStatBox, 1, &Wx::wxEXPAND | &Wx::wxALL, 0 );
+	$szRow2->Add( $noteStatBox,      1, &Wx::wxEXPAND | &Wx::wxALL, 0 );
 	$szRow2->Add( $dimensionStatBox, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
 
 	#$szMain->Add( $szRow0, 1, &Wx::wxEXPAND );
@@ -133,9 +126,7 @@ sub __SetLayout {
 
 	$self->SetSizer($szMain);
 
-
 	# save control references
-
 
 }
 
@@ -149,6 +140,8 @@ sub __SetLayoutSettings {
 
 	my @maskColor = NifHelper->GetPcbMaskColors();
 	push( @maskColor, "" );
+	my @flexMaskColor = grep { $_ =~ /^green$/i } @maskColor;
+	push( @flexMaskColor, "" );
 
 	my @silkColor = NifHelper->GetPcbSilkColors();
 	push( @silkColor, "" );
@@ -166,66 +159,80 @@ sub __SetLayoutSettings {
 	my $textWidth = 110;
 	my $cbWidth   = 55;
 
-	my $tentingChb     = Wx::CheckBox->new( $statBox, -1, "Tenting (c,s)",      &Wx::wxDefaultPosition, [ $textWidth, 20 ] );
-	my $maskaChb       = Wx::CheckBox->new( $statBox, -1, "Mask 100µm",  &Wx::wxDefaultPosition, [ $textWidth, 20 ] );
-	my $pressfitChb    = Wx::CheckBox->new( $statBox, -1, "Pressfit (Plt)",     &Wx::wxDefaultPosition, [ $textWidth, 20 ] );
-	my $tolMeasureChb    = Wx::CheckBox->new( $statBox, -1, "Tolerance (NPlt)",     &Wx::wxDefaultPosition, [ $textWidth, 20 ] );
-	my $chamferEdgesChb = Wx::CheckBox->new( $statBox, -1, "Chamfer edge", &Wx::wxDefaultPosition, [ $textWidth, 20 ] );
- 
-	my $markingFrm = MarkingList->new($statBox);
+	my $tentingChb      = Wx::CheckBox->new( $statBox, -1, "Tenting (c,s)",    &Wx::wxDefaultPosition, [ $textWidth, 20 ] );
+	my $maskaChb        = Wx::CheckBox->new( $statBox, -1, "Mask 100µm",      &Wx::wxDefaultPosition, [ $textWidth, 20 ] );
+	my $pressfitChb     = Wx::CheckBox->new( $statBox, -1, "Pressfit (Plt)",   &Wx::wxDefaultPosition, [ $textWidth, 20 ] );
+	my $tolMeasureChb   = Wx::CheckBox->new( $statBox, -1, "Tolerance (NPlt)", &Wx::wxDefaultPosition, [ $textWidth, 20 ] );
+	my $chamferEdgesChb = Wx::CheckBox->new( $statBox, -1, "Chamfer edge",     &Wx::wxDefaultPosition, [ $textWidth, 20 ] );
 
-	my $silkTopCb = NifColorCb->new( $statBox, $self->{"inCAM"}, $self->{"jobId"}, "Silk top",        \@silkColor );
-	my $maskTopCb = NifColorCb->new( $statBox, $self->{"inCAM"}, $self->{"jobId"}, "Mask top", \@maskColor );
-	my $maskBotCb = NifColorCb->new( $statBox, $self->{"inCAM"}, $self->{"jobId"}, "Mask bot", \@maskColor );
-	my $silkBotCb = NifColorCb->new( $statBox, $self->{"inCAM"}, $self->{"jobId"}, "Silk bot",        \@silkColor );
+	# standard layers
+	my @markingL = ( "pc", "mc", "c", "s", "ms", "ps" );
+
+	# add special layers
+	unshift( @markingL, "pc2" )    if ( $self->{"defaultInfo"}->LayerExist("pc2") );
+	push( @markingL, "ps2" )    if ( $self->{"defaultInfo"}->LayerExist("ps2") );
+
+	my $markingFrm = MarkingList->new($statBox, \@markingL);
+
+	my $silkTop2Cb    = NifColorCb->new( $statBox, $self->{"inCAM"}, $self->{"jobId"}, "Silk top 2",    \@silkColor );
+	my $silkTopCb     = NifColorCb->new( $statBox, $self->{"inCAM"}, $self->{"jobId"}, "Silk top",      \@silkColor );
+	my $maskTopBendCb = NifColorCb->new( $statBox, $self->{"inCAM"}, $self->{"jobId"}, "Flex mask top", \@flexMaskColor );
+	my $maskTopCb     = NifColorCb->new( $statBox, $self->{"inCAM"}, $self->{"jobId"}, "Mask top",      \@maskColor );
+	my $maskBotCb     = NifColorCb->new( $statBox, $self->{"inCAM"}, $self->{"jobId"}, "Mask bot",      \@maskColor );
+	my $maskBotBendCb = NifColorCb->new( $statBox, $self->{"inCAM"}, $self->{"jobId"}, "Flex mask bot", \@flexMaskColor );
+	my $silkBotCb     = NifColorCb->new( $statBox, $self->{"inCAM"}, $self->{"jobId"}, "Silk bot",      \@silkColor );
+	my $silkBot2Cb    = NifColorCb->new( $statBox, $self->{"inCAM"}, $self->{"jobId"}, "Silk bot 2",    \@silkColor );
 
 	# SET EVENTS
 	Wx::Event::EVT_CHECKBOX( $tentingChb, -1, sub { $self->__OnTentingChangeHandler(@_) } );
 
 	# BUILD STRUCTURE OF LAYOUT
-	$szCol1->Add( $tentingChb,     0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
-	$szCol1->Add( $maskaChb,       0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
-	$szCol1->Add( $pressfitChb,    0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
-	$szCol1->Add( $tolMeasureChb,    0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szCol1->Add( $tentingChb,      0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szCol1->Add( $maskaChb,        0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szCol1->Add( $pressfitChb,     0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szCol1->Add( $tolMeasureChb,   0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 	$szCol1->Add( $chamferEdgesChb, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 
 	$szCol2->Add( $markingFrm, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 
-	$szCol4->Add( $silkTopCb, 0, &Wx::wxALL,                 1 );
-	$szCol4->Add( $maskTopCb, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
-	$szCol4->Add( $maskBotCb, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
-	$szCol4->Add( $silkBotCb, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szCol4->Add( $silkTop2Cb,    0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szCol4->Add( $silkTopCb,     0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szCol4->Add( $maskTopBendCb, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szCol4->Add( $maskTopCb,     0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szCol4->Add( $maskBotCb,     0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szCol4->Add( $maskBotBendCb, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szCol4->Add( $silkBotCb,     0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szCol4->Add( $silkBot2Cb,    0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 
 	#$szRow1->Add( 10,         10, 1,         &Wx::wxGROW );    #expander
 
-	$szStatBox->Add( $szCol1, 0, &Wx::wxEXPAND | &Wx::wxLEFT,   );
-	$szStatBox->Add( $szCol2, 0, &Wx::wxEXPAND | &Wx::wxLEFT, 10);
+	$szStatBox->Add( $szCol1, 0, &Wx::wxEXPAND | &Wx::wxLEFT, );
+	$szStatBox->Add( $szCol2, 0, &Wx::wxEXPAND | &Wx::wxLEFT, 10 );
+
 	#$szStatBox->Add( $szCol3, 0, &Wx::wxEXPAND | &Wx::wxLEFT, 2 );
 	$szStatBox->Add( $szCol4, 0, &Wx::wxEXPAND | &Wx::wxLEFT, 20 );
-	
-	
+
 	# Set References
-	$self->{"tentingChb"} = $tentingChb;
-	$self->{"maskaChb"} = $maskaChb;
-	$self->{"pressfitChb"} = $pressfitChb;
-	$self->{"tolMeasureChb"} = $tolMeasureChb;
+	$self->{"tentingChb"}      = $tentingChb;
+	$self->{"maskaChb"}        = $maskaChb;
+	$self->{"pressfitChb"}     = $pressfitChb;
+	$self->{"tolMeasureChb"}   = $tolMeasureChb;
 	$self->{"chamferEdgesChb"} = $chamferEdgesChb;
-	
-	
 
 	$self->{"markingFrm"} = $markingFrm;
-	
-	$self->{"silkTopCb"} = $silkTopCb;
-	$self->{"maskTopCb"} = $maskTopCb;
-	$self->{"maskBotCb"} = $maskBotCb;
-	$self->{"silkBotCb"} = $silkBotCb;
-	
+
+	$self->{"silkTop2Cb"}    = $silkTop2Cb;
+	$self->{"silkTopCb"}     = $silkTopCb;
+	$self->{"maskTopBendCb"} = $maskTopBendCb;
+	$self->{"maskTopCb"}     = $maskTopCb;
+	$self->{"maskBotCb"}     = $maskBotCb;
+	$self->{"maskBotBendCb"} = $maskBotBendCb;
+	$self->{"silkBotCb"}     = $silkBotCb;
+	$self->{"silkBot2Cb"}    = $silkBot2Cb;
 
 	return $szStatBox;
 
 }
-
-
 
 # Set layout for Quick set box
 sub __SetLayoutNote {
@@ -241,41 +248,35 @@ sub __SetLayoutNote {
 	# Load data, for filling form by values
 
 	my $szRow1 = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
-	 
 
 	#my $szRow5 = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
 
 	# DEFINE CONTROLS
- 
- 	my $noteTextTxt = Wx::StaticText->new( $statBox, -1, "Text", &Wx::wxDefaultPosition, [ -1, 20 ] );
+
+	my $noteTextTxt  = Wx::StaticText->new( $statBox, -1, "Text",        &Wx::wxDefaultPosition, [ -1, 20 ] );
 	my $quickNoteTxt = Wx::StaticText->new( $statBox, -1, "Quick notes", &Wx::wxDefaultPosition, [ -1, 20 ] );
- 	my $btnSet = Wx::Button->new( $statBox, -1, "Set", &Wx::wxDefaultPosition,  [ 40, 22 ] );
- 	
- 	$self->{'quickNoteFrm'} = QuickNoteFrm->new($self);
- 
- 
- 
+	my $btnSet = Wx::Button->new( $statBox, -1, "Set", &Wx::wxDefaultPosition, [ 40, 22 ] );
+
+	$self->{'quickNoteFrm'} = QuickNoteFrm->new($self);
+
 	my $richTxt = Wx::RichTextCtrl->new( $statBox, -1, 'Notes', &Wx::wxDefaultPosition, [ 100, 90 ], &Wx::wxRE_MULTILINE | &Wx::wxWANTS_CHARS );
 	$richTxt->SetEditable(1);
 	$richTxt->SetBackgroundColour($Widgets::Style::clrWhite);
-	
-	
+
 	# DEFINE EVENTS
-	Wx::Event::EVT_BUTTON( $btnSet, -1, sub { $self->__QuickNotesClick(@_)} );
-	
+	Wx::Event::EVT_BUTTON( $btnSet, -1, sub { $self->__QuickNotesClick(@_) } );
 
 	# BUILD STRUCTURE OF LAYOUT
-	$szRow1->Add( $noteTextTxt,    1, &Wx::wxEXPAND | &Wx::wxALL, 0 );
+	$szRow1->Add( $noteTextTxt,  1, &Wx::wxEXPAND | &Wx::wxALL, 0 );
 	$szRow1->Add( $quickNoteTxt, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
-	$szRow1->Add( 10,10, 0);
-	$szRow1->Add( $btnSet,    0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
-	 
+	$szRow1->Add( 10, 10, 0 );
+	$szRow1->Add( $btnSet, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
 
-	$szStatBox->Add( $szRow1, 0, &Wx::wxEXPAND  );
-	$szStatBox->Add( $richTxt, 0 , &Wx::wxEXPAND );
-	 
+	$szStatBox->Add( $szRow1,  0, &Wx::wxEXPAND );
+	$szStatBox->Add( $richTxt, 0, &Wx::wxEXPAND );
+
 	# save control references
-	 $self->{"richTxt"} = $richTxt;
+	$self->{"richTxt"} = $richTxt;
 
 	return $szStatBox;
 }
@@ -284,7 +285,7 @@ sub __SetLayoutNote {
 sub __SetLayoutDimension {
 	my $self   = shift;
 	my $parent = shift;
-	
+
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
 
@@ -306,43 +307,43 @@ sub __SetLayoutDimension {
 
 	# DEFINE CONTROLS
 	my $typeTxt = Wx::StaticText->new( $statBox, -1, "Type:", &Wx::wxDefaultPosition, [ 50, 20 ] );
-	
-	my $custPnlExist = $self->{"defaultInfo"}->GetJobAttrByName( "customer_panel" );    # zakaznicky panel
-	my $custSetExist = $self->{"defaultInfo"}->GetJobAttrByName( "customer_set" );      # zakaznicke sady
-	
+
+	my $custPnlExist = $self->{"defaultInfo"}->GetJobAttrByName("customer_panel");    # zakaznicky panel
+	my $custSetExist = $self->{"defaultInfo"}->GetJobAttrByName("customer_set");      # zakaznicke sady
+
 	my $type = "Standard";
-	if($custPnlExist eq "yes"){
+	if ( $custPnlExist eq "yes" ) {
 		$type = "Customer panel";
-	}elsif($custSetExist eq "yes"){
+	}
+	elsif ( $custSetExist eq "yes" ) {
 		$type = "Customer set";
 	}
-	
+
 	my $typeValTxt = Wx::StaticText->new( $statBox, -1, $type, &Wx::wxDefaultPosition, [ 100, 20 ] );
-	
-	
+
 	my $singlexTxt = Wx::StaticText->new( $statBox, -1, "Single X:", &Wx::wxDefaultPosition, [ 50, 20 ] );
 	my $singleyTxt = Wx::StaticText->new( $statBox, -1, "Y:",        &Wx::wxDefaultPosition, [ 20, 20 ] );
 
-	my $singlexValTxt = Wx::StaticText->new( $statBox, -1, "0.0" , &Wx::wxDefaultPosition, [ 40, 20 ]);
-	my $singleyValTxt = Wx::StaticText->new( $statBox, -1, "0.0" , &Wx::wxDefaultPosition, [ 40, 20 ]);
+	my $singlexValTxt = Wx::StaticText->new( $statBox, -1, "0.0", &Wx::wxDefaultPosition, [ 40, 20 ] );
+	my $singleyValTxt = Wx::StaticText->new( $statBox, -1, "0.0", &Wx::wxDefaultPosition, [ 40, 20 ] );
 
 	my $panelxTxt = Wx::StaticText->new( $statBox, -1, "Panel  X:", &Wx::wxDefaultPosition, [ 50, 20 ] );
-	my $panelyTxt = Wx::StaticText->new( $statBox, -1, "Y:",       &Wx::wxDefaultPosition, [ 20, 20 ] );
+	my $panelyTxt = Wx::StaticText->new( $statBox, -1, "Y:",        &Wx::wxDefaultPosition, [ 20, 20 ] );
 
-	my $panelxValTxt = Wx::StaticText->new( $statBox, -1, "0.0" , &Wx::wxDefaultPosition, [ 40, 20 ]);
-	my $panelyValTxt = Wx::StaticText->new( $statBox, -1, "0.0" , &Wx::wxDefaultPosition, [ 40, 20 ]);
+	my $panelxValTxt = Wx::StaticText->new( $statBox, -1, "0.0", &Wx::wxDefaultPosition, [ 40, 20 ] );
+	my $panelyValTxt = Wx::StaticText->new( $statBox, -1, "0.0", &Wx::wxDefaultPosition, [ 40, 20 ] );
 
-	my $nasobnostPanelTxt = Wx::StaticText->new( $statBox, -1, "Multiplicity panel:", &Wx::wxDefaultPosition, [100, 20 ] );
-	my $nasobnostPanelValTxt = Wx::StaticText->new( $statBox, -1, "0.0" , &Wx::wxDefaultPosition, [ 40, 20 ]);
+	my $nasobnostPanelTxt = Wx::StaticText->new( $statBox, -1, "Multiplicity panel:", &Wx::wxDefaultPosition, [ 100, 20 ] );
+	my $nasobnostPanelValTxt = Wx::StaticText->new( $statBox, -1, "0.0", &Wx::wxDefaultPosition, [ 40, 20 ] );
 
-	my $nasobnostTxt = Wx::StaticText->new( $statBox, -1, "Multiplicity:", &Wx::wxDefaultPosition, [ 100, 20 ] );
-	my $nasobnostValTxt = Wx::StaticText->new( $statBox, -1, "0.0", &Wx::wxDefaultPosition, [ 40, 20 ] );
+	my $nasobnostTxt    = Wx::StaticText->new( $statBox, -1, "Multiplicity:", &Wx::wxDefaultPosition, [ 100, 20 ] );
+	my $nasobnostValTxt = Wx::StaticText->new( $statBox, -1, "0.0",           &Wx::wxDefaultPosition, [ 40,  20 ] );
 
 	# BUILD STRUCTURE OF LAYOUT
-	
+
 	$szRow1->Add( $typeTxt,    0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 	$szRow1->Add( $typeValTxt, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
-	
+
 	$szRow2->Add( $singlexTxt,    0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 	$szRow2->Add( $singlexValTxt, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 	$szRow2->Add( $singleyTxt,    0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
@@ -359,11 +360,11 @@ sub __SetLayoutDimension {
 	$szRow5->Add( $nasobnostTxt,    0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 	$szRow5->Add( $nasobnostValTxt, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 
-	$szStatBox->Add( $szRow1, 0, &Wx::wxEXPAND  );
-	$szStatBox->Add( $szRow2, 0 , &Wx::wxEXPAND );
-	$szStatBox->Add( $szRow3, 0 , &Wx::wxEXPAND );
-	$szStatBox->Add( $szRow4, 0 , &Wx::wxEXPAND );
-	$szStatBox->Add( $szRow5, 0 , &Wx::wxEXPAND );
+	$szStatBox->Add( $szRow1, 0, &Wx::wxEXPAND );
+	$szStatBox->Add( $szRow2, 0, &Wx::wxEXPAND );
+	$szStatBox->Add( $szRow3, 0, &Wx::wxEXPAND );
+	$szStatBox->Add( $szRow4, 0, &Wx::wxEXPAND );
+	$szStatBox->Add( $szRow5, 0, &Wx::wxEXPAND );
 
 	# save control references
 	$self->{"singlexValTxt"}        = $singlexValTxt;
@@ -376,10 +377,9 @@ sub __SetLayoutDimension {
 	return $szStatBox;
 }
 
-sub __QuickNotesClick{
+sub __QuickNotesClick {
 	my $self = shift;
 
-	
 	$self->{'quickNoteFrm'}->{"mainFrm"}->CentreOnParent(&Wx::wxBOTH);
 	$self->{'quickNoteFrm'}->{"mainFrm"}->Show();
 }
@@ -388,45 +388,48 @@ sub __QuickNotesClick{
 sub __OnTentingChangeHandler {
 	my $self = shift;
 	my $chb  = shift;
-	
+
 	my $val = $chb->GetValue() ? 1 : 0;
 
-	$self->{"onTentingChange"}->Do( $val );
+	$self->{"onTentingChange"}->Do($val);
 }
 
 # =====================================================================
 # DISABLING CONTROLS
 # =====================================================================
 
-sub DisableControls{
+sub DisableControls {
 	my $self = shift;
- 
+
 	# Disable layer in marking form
 	my @allBaseL = $self->{"defaultInfo"}->GetBoardBaseLayers();
-	$self->{"markingFrm"}->DisableControls(\@allBaseL);
-	
-	
+	$self->{"markingFrm"}->DisableControls( \@allBaseL );
+
 	# disable tenting chb when layercnt <= 1
-	
-	if($self->{"defaultInfo"}->GetLayerCnt() <= 1){
-		
+
+	if ( $self->{"defaultInfo"}->GetLayerCnt() <= 1 ) {
+
 		$self->{"tentingChb"}->Disable();
 	}
-	
-}
 
+	# Show/hide special solder mask and silk screen
+	$self->{"silkTop2Cb"}->Hide()    unless ( $self->{"defaultInfo"}->LayerExist("pc2") );
+	$self->{"silkBot2Cb"}->Hide()    unless ( $self->{"defaultInfo"}->LayerExist("ps2") );
+	$self->{"maskTopBendCb"}->Hide() unless ( $self->{"defaultInfo"}->LayerExist("mcbend") );
+	$self->{"maskBotBendCb"}->Hide() unless ( $self->{"defaultInfo"}->LayerExist("msbend") );
+
+}
 
 # =====================================================================
 # HANDLERS - HANDLE EVENTS ANOTHER GROUPS
 # =====================================================================
 
-sub ChangeCustomerJump{
-	my $self  = shift;
+sub ChangeCustomerJump {
+	my $self          = shift;
 	my $isJumpscoring = shift;
-	
+
 	$self->{"jumpScoringProp"} = $isJumpscoring;
 }
-
 
 # =====================================================================
 # SET/GET CONTROLS VALUES
@@ -509,6 +512,53 @@ sub GetNasobnost {
 # MASK, SILK color ========================================================
 
 # c_mask_colour
+sub SetFlexi_maska {
+	my $self  = shift;
+	my $value = shift;
+
+	$self->{"maskTopBendCb"}->SetValue("");
+	$self->{"maskBotBendCb"}->SetValue("");
+
+	if ( $value =~ /^c$/i ) {
+		$self->{"maskTopBendCb"}->SetValue("Green");
+	}
+
+	if ( $value =~ /^s$/i ) {
+		$self->{"maskBotBendCb"}->SetValue("Green");
+	}
+
+	if ( $value =~ /^2$/i ) {
+		$self->{"maskTopBendCb"}->SetValue("Green");
+		$self->{"maskBotBendCb"}->SetValue("Green");
+	}
+}
+
+sub GetFlexi_maska {
+	my $self = shift;
+
+	my $top = $self->{"maskTopBendCb"}->GetValue();
+	my $bot = $self->{"maskBotBendCb"}->GetValue();
+
+	$top = defined $top && $top ne "" ? 1 : 0;
+	$bot = defined $bot && $bot ne "" ? 1 : 0;
+
+	my $value = "";    #
+
+	if ( $top && !$bot ) {
+		$value = "C";
+
+	}
+	elsif ( !$top && $bot ) {
+		$value = "S";
+	}
+	elsif ( $top && $bot ) {
+		$value = "2";
+	}
+
+	return $value;
+}
+
+# c_mask_colour
 sub SetC_mask_colour {
 	my $self  = shift;
 	my $value = shift;
@@ -536,6 +586,35 @@ sub GetS_mask_colour {
 	my $self  = shift;
 	my $color = $self->{"maskBotCb"}->GetValue();
 	return ValueConvertor->GetMaskColorToCode($color);
+}
+
+# Potisk_c_2
+sub SetC_silk_screen_colour2 {
+	my $self  = shift;
+	my $value = shift;
+
+	my $color = ValueConvertor->GetSilkCodeToColor($value);
+	$self->{"silkTop2Cb"}->SetValue($color);
+}
+
+sub GetC_silk_screen_colour2 {
+	my $self  = shift;
+	my $color = $self->{"silkTop2Cb"}->GetValue();
+	return ValueConvertor->GetSilkColorToCode($color);
+}
+
+sub SetS_silk_screen_colour2 {
+	my $self  = shift;
+	my $value = shift;
+
+	my $color = ValueConvertor->GetSilkCodeToColor($value);
+	$self->{"silkBot2Cb"}->SetValue($color);
+}
+
+sub GetS_silk_screen_colour2 {
+	my $self  = shift;
+	my $color = $self->{"silkBot2Cb"}->GetValue();
+	return ValueConvertor->GetSilkColorToCode($color);
 }
 
 # c_silk_screen_colour
@@ -592,7 +671,7 @@ sub GetMaska01 {
 sub SetPressfit {
 	my $self  = shift;
 	my $value = shift;
-	
+
 	$self->{"pressfitChb"}->SetValue($value);
 }
 
@@ -604,7 +683,7 @@ sub GetPressfit {
 sub SetToleranceHole {
 	my $self  = shift;
 	my $value = shift;
-	
+
 	$self->{"tolMeasureChb"}->SetValue($value);
 }
 
@@ -613,12 +692,11 @@ sub GetToleranceHole {
 	return $self->{"tolMeasureChb"}->GetValue();
 }
 
-
 # Chamfer edges
 sub SetChamferEdges {
 	my $self  = shift;
 	my $value = shift;
-	
+
 	$self->{"chamferEdgesChb"}->SetValue($value);
 }
 
@@ -631,20 +709,20 @@ sub SetNotes {
 	my $self  = shift;
 	my $value = shift;
 	$self->{"richTxt"}->Clear();
-	
+
 	# Temporary set ypracovano v Incamu
-	
-	unless($value =~ /Zpracovano v InCAMu/i){
-		$value = "Zpracovano v InCAMu. ".$value;
+
+	unless ( $value =~ /Zpracovano v InCAMu/i ) {
+		$value = "Zpracovano v InCAMu. " . $value;
 	}
-	 
-	if($value && $value ne ""){
- 	 
+
+	if ( $value && $value ne "" ) {
+
 		# Remove duplicate notes (quick note could be already in IS)
 		my $notes = $self->{"quickNoteFrm"}->GetNotesData();
-		
-		foreach my $text  (map {$_->{"text"} } @{$notes}){
-	 
+
+		foreach my $text ( map { $_->{"text"} } @{$notes} ) {
+
 			$value =~ s/$text//g;
 		}
 
@@ -657,30 +735,28 @@ sub SetNotes {
 
 sub GetNotes {
 	my $self = shift;
-	
+
 	my $notes = $self->{"richTxt"}->GetValue();
-	
+
 	$notes =~ s/\n/;/g;
-	
+
 	return $notes;
 }
-
 
 sub SetQuickNotes {
 	my $self  = shift;
 	my $value = shift;
- 
+
 	$self->{"quickNoteFrm"}->SetNotesData($value);
 
 }
 
 sub GetQuickNotes {
 	my $self = shift;
-	
+
 	return $self->{"quickNoteFrm"}->GetNotesData();
- 
+
 }
- 
 
 sub SetDatacode {
 	my $self  = shift;
@@ -691,37 +767,37 @@ sub SetDatacode {
 
 sub GetDatacode {
 	my $self = shift;
-	
+
 	return $self->{"markingFrm"}->GetDataCode();
 }
 
 sub SetUlLogo {
 	my $self  = shift;
 	my $value = shift;
- 
+
 	$self->{"markingFrm"}->SetUlLogo($value);
 }
 
 sub GetUlLogo {
 	my $self = shift;
-	
+
 	return $self->{"markingFrm"}->GetUlLogo();
 }
 
 sub SetJumpScoring {
 	my $self  = shift;
 	my $value = shift;
-	
+
 	$self->{"jumpScoringProp"} = $value;
-	
+
 	#$self->{"jumpscoringChb"}->SetValue($value);
 }
 
 sub GetJumpScoring {
 	my $self = shift;
-	
+
 	return $self->{"jumpScoringProp"};
-	
+
 	#$self->{"jumpscoringChb"}->GetValue();
 }
 

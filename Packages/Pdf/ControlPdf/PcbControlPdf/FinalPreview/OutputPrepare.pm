@@ -84,6 +84,7 @@ sub __PrepareLayers {
 	$self->__PreparePEELABLE( $layerList->GetLayerByType( Enums->Type_PEELABLE ) );
 	$self->__PrepareMASK( $layerList->GetLayerByType( Enums->Type_MASK ) );
 	$self->__PrepareSILK( $layerList->GetLayerByType( Enums->Type_SILK ) );
+	$self->__PrepareSILK( $layerList->GetLayerByType( Enums->Type_SILK2 ) );
 	$self->__PreparePLTDEPTHNC( $layerList->GetLayerByType( Enums->Type_PLTDEPTHNC ) );
 	$self->__PrepareNPLTDEPTHNC( $layerList->GetLayerByType( Enums->Type_NPLTDEPTHNC ) );
 	$self->__PreparePLTTHROUGHNC( $layerList->GetLayerByType( Enums->Type_PLTTHROUGHNC ) );
@@ -266,7 +267,7 @@ sub __PreparePEELABLE {
 			return 0 if ( $isInfo->{"lak_typ"} !~ /^[c2]$/i );
 		}
 		elsif ( $self->{"viewType"} eq Enums->View_FROMBOT ) {
-			
+
 			return 0 if ( $isInfo->{"lak_typ"} !~ /^[s2]$/i );
 		}
 
@@ -352,7 +353,6 @@ sub __PrepareSILK {
 	my @layers = $layer->GetSingleLayers();
 
 	if ( $layers[0] ) {
-
 		my $lName = GeneralHelper->GetGUID();
 
 		$inCAM->COM( "merge_layers", "source_layer" => $layers[0]->{"gROWname"}, "dest_layer" => $lName );

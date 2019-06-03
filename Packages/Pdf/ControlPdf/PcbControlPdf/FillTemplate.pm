@@ -24,6 +24,7 @@ use aliased 'Helpers::ValueConvertor';
 use aliased 'Helpers::Translator';
 use aliased 'Packages::Stackup::Stackup::Stackup';
 use aliased 'CamHelpers::CamAttributes';
+use aliased 'CamHelpers::CamHelper';
 
 #-------------------------------------------------------------------------------------------#
 #  Interface
@@ -37,7 +38,7 @@ sub new {
 	$self->{"inCAM"} = shift;
 	$self->{"jobId"} = shift;
 
-	$self->{"nifFile"} = NifFile->new( $self->{"jobId"} );
+	
 
 	return $self;
 }
@@ -66,7 +67,7 @@ sub Fill {
 	my $custSetExist = CamAttributes->GetJobAttrByName( $inCAM, $jobId, "customer_set" );    # zakaznicke sady
 
 	my %authorInf  = $self->__GetEmployyInfo();
-	my %nifFile    = $self->__GetNifFileInfo();
+	my %pcbInfo    = $self->__GetPcbInfo();
 	my %stackupInf = $self->__GetStackupInfo($layerCnt);
 
 	#my $rsPath = GeneralHelper->Root() . "\\Packages\\Pdf\\ControlPdf\\HtmlTemplate\\Img\\redSquare.jpg";
@@ -105,40 +106,81 @@ sub Fill {
 		$template->SetKey( "SingleSize", "Single size", "Rozměr kusu" );
 	}
 
-	$template->SetKey( "SingleSizeVal", $nifFile{"single"} );
+	$template->SetKey( "SingleSizeVal", $pcbInfo{"single"} );
 
 	$template->SetKey( "SilkTop", "Silkscreen top", "Potisk top" );
-	$template->SetKey( "SilkTopVal", $nifFile{"c_silk_screen_colour"}, Translator->Cz( $nifFile{"c_silk_screen_colour"} ) );
+	
+	my $silkTopValEn = $pcbInfo{"potisk_c_1"};
+	my $silkTopValCz = Translator->Cz($pcbInfo{"potisk_c_1"});
+		
+	if(CamHelper->LayerExists($inCAM, $jobId, "pc2")){
+		$silkTopValEn .= " + ".$pcbInfo{"potisk_c_2"}. " (top silkscreen)";
+		$silkTopValCz .= " + ".Translator->Cz($pcbInfo{"potisk_c_2"}). " (vrchní potisk)";
+	}
+	
+	$template->SetKey( "SilkTopVal", $silkTopValEn, $silkTopValCz );
+
 
 	$template->SetKey( "PanelSize", "Panel size", "Rozměr panelu" );
 
-	$template->SetKey( "PanelSizeVal", $nifFile{"panel"} );
+	$template->SetKey( "PanelSizeVal", $pcbInfo{"panel"} );
 
 	$template->SetKey( "SilkBot", "Silkscreen bot", "Potisk bot" );
-	$template->SetKey( "SilkBotVal", $nifFile{"s_silk_screen_colour"}, Translator->Cz( $nifFile{"s_silk_screen_colour"} ) );
+	
+	my $silkBotValEn = $pcbInfo{"potisk_s_1"};
+	my $silkBotValCz = Translator->Cz($pcbInfo{"potisk_s_1"});
+	
+	if(CamHelper->LayerExists($inCAM, $jobId, "ps2")){
+		$silkBotValEn .= " + ".$pcbInfo{"potisk_s_2"}. " (top silkscreen)";
+		$silkBotValCz .= " + ".Translator->Cz($pcbInfo{"potisk_s_2"}). " (vrchní potisk)";
+	}
+	
+	$template->SetKey( "SilkBotVal", $silkBotValEn, $silkBotValCz );
 
 	$template->SetKey( "PcbThickness", "Material thickness", "Tloušťka materiálu" );
 
 	$template->SetKey( "PcbThicknessVal", $stackupInf{"thick"} );
 
 	$template->SetKey( "MaskTop",    "Solder mask top",         "Maska top" );
-	$template->SetKey( "MaskTopVal", $nifFile{"c_mask_colour"}, Translator->Cz( $nifFile{"c_mask_colour"} ) );
+	
+	my $maskTopValEn = $pcbInfo{"maska_c_1"};
+	my $maskTopValCz = Translator->Cz($pcbInfo{"maska_c_1"});
+ 
+ 	# Second masks are not sotred in nif file only in IS so check IS
+ 	my %masks2 = HegMethods->GetSolderMaskColor2($jobId);
+ 	if(defined $masks2{"top"} && $masks2{"top"} ne ""){
+		$maskTopValEn .= " + ".ValueConvertor->GetMaskCodeToColor($masks2{"top"}). " (top solder mask)";
+		$maskTopValCz .= " + ".Translator->Cz(ValueConvertor->GetMaskCodeToColor($masks2{"top"})). " (vrchní maska)";
+	}
+ 
+	$template->SetKey( "MaskTopVal", $maskTopValEn, $maskTopValCz );
 
 	$template->SetKey( "LayerNumber", "Number of layers", "Počet vrstev" );
 	$template->SetKey( "LayerNumberVal", $layerCnt );
 
 	$template->SetKey( "MaskBot",    "Solder mask bot",         "Maska bot" );
-	$template->SetKey( "MaskBotVal", $nifFile{"s_mask_colour"}, Translator->Cz( $nifFile{"s_mask_colour"} ) );
+	
+	my $maskBotValEn = $pcbInfo{"maska_s_1"};
+	my $maskBotValCz = Translator->Cz($pcbInfo{"maska_s_1"});
+ 
+ 	# Second masks are not sotred in nif file only in IS so check IS
+ 	if(defined $masks2{"bot"} && $masks2{"bot"} ne ""){
+		$maskBotValEn .= " + ".ValueConvertor->GetMaskCodeToColor($masks2{"bot2"}). " (bot solder mask)";
+		$maskBotValCz .= " + ".Translator->Cz(ValueConvertor->GetMaskCodeToColor($masks2{"bot"})). " (spodní maska)";
+	}	
+	
+	
+	$template->SetKey( "MaskBotVal", $maskBotValEn, $maskBotValCz );
 
 	# =================== Table Markings ============================
 
 	$template->SetKey( "Markings", "Added markings", "Přidané značení" );
 
 	$template->SetKey( "UlLogo", "Ul logo" );
-	$template->SetKey( "UlLogoVal", $nifFile{"ul_logo"}, Translator->Cz( $nifFile{"ul_logo"} ) );
+	$template->SetKey( "UlLogoVal", $pcbInfo{"ul_logo"}, Translator->Cz( $pcbInfo{"ul_logo"} ) );
 
 	$template->SetKey( "DataCode",    "Data code",          "Datum" );
-	$template->SetKey( "DataCodeVal", $nifFile{"datacode"}, Translator->Cz( $nifFile{"datacode"} ) );
+	$template->SetKey( "DataCodeVal", $pcbInfo{"datacode"}, Translator->Cz( $pcbInfo{"datacode"} ) );
 
 	# =================== Table stackup ============================
 
@@ -163,35 +205,40 @@ sub Fill {
 	return 1;
 }
 
-sub __GetNifFileInfo {
+# Return hash with pcb info from nif file
+sub __GetPcbInfo {
 	my $self = shift;
 
 	my %inf = ();
 
-	unless ( $self->{"nifFile"}->Exist() ) {
+	my $nifFile = NifFile->new( $self->{"jobId"} );
+
+	unless ( $nifFile->Exist() ) {
 
 		return %inf;
 	}
 
-	$inf{"c_silk_screen_colour"} = ValueConvertor->GetSilkCodeToColor( $self->{"nifFile"}->GetValue("c_silk_screen_colour") );
-	$inf{"s_silk_screen_colour"} = ValueConvertor->GetSilkCodeToColor( $self->{"nifFile"}->GetValue("s_silk_screen_colour") );
-	$inf{"c_mask_colour"}        = ValueConvertor->GetMaskCodeToColor( $self->{"nifFile"}->GetValue("c_mask_colour") );
-	$inf{"s_mask_colour"}        = ValueConvertor->GetMaskCodeToColor( $self->{"nifFile"}->GetValue("s_mask_colour") );
+	$inf{"potisk_c_1"} = ValueConvertor->GetSilkCodeToColor( $nifFile->GetValue("potisk_c_1") );
+	$inf{"potisk_s_1"} = ValueConvertor->GetSilkCodeToColor( $nifFile->GetValue("potisk_s_1") );
+	$inf{"potisk_c_2"} = ValueConvertor->GetSilkCodeToColor( $nifFile->GetValue("potisk_c_2") );
+	$inf{"potisk_s_2"} = ValueConvertor->GetSilkCodeToColor( $nifFile->GetValue("potisk_s_2") );
+	$inf{"maska_c_1"}        = ValueConvertor->GetMaskCodeToColor( $nifFile->GetValue("maska_c_1") );
+	$inf{"maska_s_1"}        = ValueConvertor->GetMaskCodeToColor( $nifFile->GetValue("maska_s_1") );
 
-	$inf{"single"} = $self->{"nifFile"}->GetValue("single_x") . " mm x " . $self->{"nifFile"}->GetValue("single_y") . " mm";
+	$inf{"single"} = $nifFile->GetValue("single_x") . " mm x " . $nifFile->GetValue("single_y") . " mm";
 
 	my $panelSize = "";
-	if ( !defined $self->{"nifFile"}->GetValue("panel_x") || $self->{"nifFile"}->GetValue("panel_x") eq "" ) {
+	if ( !defined $nifFile->GetValue("panel_x") || $nifFile->GetValue("panel_x") eq "" ) {
 
 		$inf{"panel"} = " - ";
 	}
 	else {
 
-		$inf{"panel"} = $self->{"nifFile"}->GetValue("panel_x") . " mm x " . $self->{"nifFile"}->GetValue("panel_y") . " mm";
+		$inf{"panel"} = $nifFile->GetValue("panel_x") . " mm x " . $nifFile->GetValue("panel_y") . " mm";
 	}
 
-	$inf{"datacode"} = ValueConvertor->GetNifCodeValue( $self->{"nifFile"}->GetValue("datacode") );
-	$inf{"ul_logo"}  = ValueConvertor->GetNifCodeValue( $self->{"nifFile"}->GetValue("ul_logo") );
+	$inf{"datacode"} = ValueConvertor->GetNifCodeValue( $nifFile->GetValue("datacode") );
+	$inf{"ul_logo"}  = ValueConvertor->GetNifCodeValue( $nifFile->GetValue("ul_logo") );
 
 	return %inf;
 
