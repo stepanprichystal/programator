@@ -101,6 +101,19 @@ sub GetNasobnost {
 
 # MASK, SILK color ========================================================
 
+ 
+# flexi_maska
+sub SetFlexi_maska {
+	my $self  = shift;
+	$self->{"data"}->{"flexi_maska"} = shift;
+}
+
+sub GetFlexi_maska {
+	my $self  = shift;
+	return $self->{"data"}->{"flexi_maska"};
+}
+ 
+
 # c_mask_colour
 sub SetC_mask_colour {
 	my $self  = shift;
@@ -121,6 +134,29 @@ sub SetS_mask_colour {
 sub GetS_mask_colour {
 	my $self  = shift;
 	return $self->{"data"}->{"s_mask_colour"};
+}
+
+
+# c_silk_screen_colour2
+sub SetC_silk_screen_colour2 {
+	my $self  = shift;
+	$self->{"data"}->{"c_silk_screen_colour2"} = shift;
+}
+
+sub GetC_silk_screen_colour2 {
+	my $self  = shift;
+	return $self->{"data"}->{"c_silk_screen_colour2"};
+}
+
+# s_silk_screen_colour2
+sub SetS_silk_screen_colour2 {
+	my $self  = shift;
+	$self->{"data"}->{"s_silk_screen_colour2"} = shift;
+}
+
+sub GetS_silk_screen_colour2 {
+	my $self  = shift;
+	return $self->{"data"}->{"s_silk_screen_colour2"};
 }
 
 

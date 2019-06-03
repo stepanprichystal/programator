@@ -20,6 +20,7 @@ use aliased 'CamHelpers::CamHelper';
 use aliased 'CamHelpers::CamStepRepeat';
 use aliased 'CamHelpers::CamLayer';
 use aliased 'CamHelpers::CamStep';
+use aliased 'CamHelpers::CamMatrix';
 use aliased 'Helpers::JobHelper';
 use aliased 'CamHelpers::CamSymbol';
 use aliased 'CamHelpers::CamJob';
@@ -83,6 +84,9 @@ sub Run {
 	# delete old MDI files
 	$self->__DeleteOldFiles($layerTypes);
 
+	# Create fake layers for solder mask export (solder mask layer can be duplicated. Same data but different color)
+	my @fakeL = $self->__CreateFakeSMLayers();
+
 	# Get all layer for export
 	my @layers = $self->__GetLayers2Export($layerTypes);
 
@@ -90,10 +94,13 @@ sub Run {
 		return 0;
 	}
 
-	$self->__CreateMDIStep();
+	$self->__CreateMDIStep(\@layers);
 	$self->__ExportLayers( \@layers );
 	$self->__DeleteMdiStep();
-
+	
+	# delete fake layers
+	CamMatrix->DeleteLayer($self->{"inCAM"}, $self->{"jobId"}, $_) foreach(@fakeL);
+	
 	return 1;
 }
 
@@ -214,7 +221,7 @@ sub __GetLayers2Export {
 
 	if ( $layerTypes->{ Enums->Type_MASK } ) {
 
-		my @l = grep { $_->{"gROWname"} =~ /^m[cs]$/ } @all;
+		my @l = grep { $_->{"gROWname"} =~ /^m[cs]2?$/ } @all;
 		push( @exportLayers, @l );
 	}
 
@@ -248,10 +255,8 @@ sub __GetLayerLimit {
 	# - gold layer (goldc; golds)
 	# - signal layer (c;s) and not outer rigid flex
 	# - plg(c/s) layers
-	if (
-		$self->{"layerCnt"} > 2
-		&& $layerName =~ /^((gold)|m|plg)?[cs]$/
-	  )
+	if (    $self->{"layerCnt"} > 2
+		 && $layerName =~ /^((gold)|m|plg)?[cs]$/ )
 	{
 		%lim = %{ $self->{"frLim"} };
 	}
@@ -457,11 +462,13 @@ sub __PutFrameAorundPcb {
 # Create special step, which IPC will be exported from
 sub __CreateMDIStep {
 	my $self = shift;
+	my @layers = @{shift@_};
 
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
 
-	CamStep->CreateFlattenStep( $inCAM, $jobId, $self->{"step"}, $self->{"mdiStep"} );
+	my @lNames = map {$_->{"gROWname"} } @layers;
+	CamStep->CreateFlattenStep( $inCAM, $jobId, $self->{"step"}, $self->{"mdiStep"},0, \@lNames );
 
 	CamHelper->SetStep( $inCAM, $self->{"mdiStep"} );
 }
@@ -480,6 +487,49 @@ sub __DeleteMdiStep {
 	}
 }
 
+# Create special step, which IPC will be exported from
+sub __CreateFakeSMLayers {
+	my $self       = shift;
+	 
+
+	my $inCAM = $self->{"inCAM"};
+	my $jobId = $self->{"jobId"};
+	my $step  = $self->{"step"};
+
+	my %mask = HegMethods->GetSolderMaskColor2($jobId);
+
+	my @fake = ();
+
+	push( @fake, "mc2" ) if ( defined $mask{"top"} && $mask{"top"} ne "" );
+	push( @fake, "ms2" ) if ( defined $mask{"bot"} && $mask{"bot"} ne "" );
+
+	my @steps = ($step);
+
+	if ( CamStepRepeat->ExistStepAndRepeats( $inCAM, $jobId, $step ) ) {
+
+		push( @steps, map { $_->{"stepName"} } CamStepRepeat->GetUniqueNestedStepAndRepeat( $inCAM, $jobId, $step ) );
+	}
+
+	foreach my $fl (@fake) {
+
+		CamMatrix->DeleteLayer( $inCAM, $jobId, $fl );
+		CamMatrix->CreateLayer( $inCAM, $jobId, $fl, "solder_mask", "positive", 1 );
+	}
+
+	foreach my $s (@steps) {
+
+		CamHelper->SetStep( $inCAM, $s );
+
+		foreach my $fl (@fake) {
+
+			my ($source) = $fl =~ m/(m[cs])/;
+			$inCAM->COM( "merge_layers", "source_layer" => $source, "dest_layer" => $fl );
+		}
+	}
+ 
+ 	return @fake;
+}
+
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#
@@ -491,7 +541,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId    = "d244159";
+	my $jobId    = "d241421";
 	my $stepName = "panel";
 
 	my $export = ExportFiles->new( $inCAM, $jobId, $stepName );

@@ -48,6 +48,7 @@ sub __InitLayers {
 	push( @{ $self->{"layers"} }, LayerData->new( Enums->Type_NPLTDEPTHNC ) );
 	push( @{ $self->{"layers"} }, LayerData->new( Enums->Type_MASK ) );
 	push( @{ $self->{"layers"} }, LayerData->new( Enums->Type_SILK ) );
+	push( @{ $self->{"layers"} }, LayerData->new( Enums->Type_SILK2 ) );
 	push( @{ $self->{"layers"} }, LayerData->new( Enums->Type_PLTTHROUGHNC ) );
 	push( @{ $self->{"layers"} }, LayerData->new( Enums->Type_NPLTTHROUGHNC ) );
 	push( @{ $self->{"layers"} }, LayerData->new( Enums->Type_GOLDFINGER ) );
@@ -82,6 +83,11 @@ sub SetLayers {
 
 				$self->_AddToLayerData( $l, Enums->Type_SILK );
 
+			}
+
+			if ( $l->{"gROWname"} =~ /^pc2$/ ) {
+
+				$self->_AddToLayerData( $l, Enums->Type_SILK2 );
 			}
 
 			if ( $l->{"gROWname"} =~ /^goldc$/ ) {
@@ -178,10 +184,15 @@ sub SetLayers {
 
 			}
 
-			if ( $l->{"gROWname"} =~ /^ps$/ ) {
+			if ( $l->{"gROWname"} =~ /^ps\d?$/ ) {
 
 				$self->_AddToLayerData( $l, Enums->Type_SILK );
 
+			}
+			
+			if ( $l->{"gROWname"} =~ /^ps2$/ ) {
+
+				$self->_AddToLayerData( $l, Enums->Type_SILK2 );
 			}
 
 			if ( $l->{"gROWname"} =~ /^golds$/ ) {

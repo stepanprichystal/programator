@@ -11,6 +11,7 @@ use warnings;
 use utf8;
 use Wx;
 use Wx qw(:sizer wxDefaultPosition wxDefaultSize wxDEFAULT_DIALOG_STYLE wxRESIZE_BORDER);
+use List::Util qw[max];
 
 #local library
 
@@ -27,14 +28,13 @@ sub new {
 
 	my $class  = shift;
 	my $parent = shift;
-
-	#my $inCAM = shift;
-	#my $jobId = shift;
-
-	my @layers = ( "pc", "mc", "c", "s", "ms", "ps" );    # layers, where marking can be present
-
-	# Name, Color, Polarity, Mirror, Comp
-	my @widths = ( 65, 18, 18, 18, 18, 18, 18 );
+	my @layers = @{shift(@_)};
+	
+	
+	# Specify column widths
+	my @widths = ( 65);
+	push(@widths, max (18, length($_)*7)) for @layers; # one char is 7px long, size of checkbox is 18
+	
 	my @titles = ( "Marking", @layers );
 
 	my $columnCnt    = scalar(@widths);

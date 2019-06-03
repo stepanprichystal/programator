@@ -27,11 +27,12 @@ use aliased 'CamHelpers::CamStepRepeat';
 
 #Return hash, kyes are "top"/"bot", values are 0/1
 sub ExistSolderMasks {
-	my $self  = shift;
-	my $inCAM = shift;
-	my $jobId = shift;
+	my $self   = shift;
+	my $inCAM  = shift;
+	my $jobId  = shift;
+	my $second = shift // 0;    # second solder mask
 
-	my %masks = HegMethods->GetSolderMaskColor($jobId);
+	my %masks = $second ? HegMethods->GetSolderMaskColor2($jobId) : HegMethods->GetSolderMaskColor($jobId);
 
 	unless ( defined $masks{"top"} ) {
 		$masks{"top"} = 0;
@@ -50,11 +51,12 @@ sub ExistSolderMasks {
 
 #Return hash, kyes are "top"/"bot", values are 0/1
 sub ExistSilkScreens {
-	my $self  = shift;
-	my $inCAM = shift;
-	my $jobId = shift;
+	my $self   = shift;
+	my $inCAM  = shift;
+	my $jobId  = shift;
+	my $second = shift // 0;    # second silkscreen
 
-	my %silk = HegMethods->GetSilkScreenColor($jobId);
+	my %silk = $second ? HegMethods->GetSilkScreenColor2($jobId) : HegMethods->GetSilkScreenColor($jobId);
 
 	unless ( defined $silk{"top"} ) {
 		$silk{"top"} = 0;
@@ -568,7 +570,6 @@ sub MoveSelSameLayer {
 	my $x = -1 * $sourcePoint->{"x"} + $targetPoint->{"x"};
 	my $y = -1 * $sourcePoint->{"y"} + $targetPoint->{"y"};
 
-
 	$inCAM->COM( "sel_move", "dx" => $x, "dy" => $y );
 
 	$inCAM->COM( 'affected_layer', name => $layer, mode => "single", affected => "no" );
@@ -651,7 +652,7 @@ sub RoutCompensation {
 	my $self  = shift;
 	my $inCAM = shift;
 	my $layer = shift;
-	my $type  = shift; # rout/document
+	my $type  = shift;    # rout/document
 
 	unless ( defined $type ) {
 
@@ -666,8 +667,6 @@ sub RoutCompensation {
 
 	return $lName;
 }
-
-
 
 # Countourize given layer
 sub Contourize {
@@ -729,7 +728,7 @@ sub MoveSelOtherLayer {
 	my $layer  = shift;
 	my $invert = shift;
 	my $resize = shift;
-	
+
 	$inCAM->COM(
 				 "sel_move_other",
 				 "target_layer" => $layer,
@@ -791,10 +790,10 @@ sub ResizeFeatures {
 }
 
 # Return number
-sub GetSelFeaturesCnt{
+sub GetSelFeaturesCnt {
 	my $self  = shift;
 	my $inCAM = shift;
-	
+
 	$inCAM->COM('get_select_count');
 
 	return $inCAM->GetReply();
@@ -806,8 +805,6 @@ sub GetSelFeaturesCnt{
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	 
-
 	use aliased 'CamHelpers::CamLayer';
 
 	use aliased 'Packages::InCAM::InCAM';
@@ -818,8 +815,6 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	my %lim = CamJob->GetProfileLimits2( $inCAM, $jobId, "o+1" );
 
 	CamLayer->NegativeLayerData( $inCAM, "v3_", \%lim );
-
-	 
 
 }
 

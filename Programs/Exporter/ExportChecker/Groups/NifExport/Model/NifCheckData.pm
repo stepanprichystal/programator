@@ -135,19 +135,28 @@ sub OnCheckGroupData {
 		$dataMngr->_AddErrorResult( "Potisk BOT", "Nesedí potisk bot v metrixu jobu a ve formuláři Heliosu" );
 	}
 
+	my %silk2 = CamLayer->ExistSilkScreens( $inCAM, $jobId, 1 );
+	my $topSilk2Exist = CamHelper->LayerExists( $inCAM, $jobId, "pc2" );
+	my $botSilk2Exist = CamHelper->LayerExists( $inCAM, $jobId, "ps2" );
+
+	# Control silk existence
+	if ( $silk2{"top"} != $topSilk2Exist ) {
+
+		$dataMngr->_AddErrorResult( "Potisk TOP 2", "Nesedí druhý potisk top v metrixu jobu a ve formuláři Heliosu" );
+	}
+	if ( $silk2{"bot"} != $botSilk2Exist ) {
+
+		$dataMngr->_AddErrorResult( "Potisk BOT 2", "Nesedí druhý potisk bot v metrixu jobu a ve formuláři Heliosu" );
+	}
+
 	# 6) Control silk colour
 	my %silkColorIS        = HegMethods->GetSilkScreenColor($jobId);
 	my $silkColorTopExport = $groupData->GetC_silk_screen_colour();
 	my $silkColorBotExport = $groupData->GetS_silk_screen_colour();
 
-	if ( !defined $silkColorIS{"top"} ) {
-		$silkColorIS{"top"} = "";
-	}
-
-	if ( !defined $silkColorIS{"bot"} ) {
-		$silkColorIS{"bot"} = "";
-	}
-
+	$silkColorIS{"top"} = "" if ( !defined $silkColorIS{"top"} );
+	$silkColorIS{"bot"} = "" if ( !defined $silkColorIS{"bot"} );
+	
 	if ( $silkColorIS{"top"} ne $silkColorTopExport ) {
 
 		$dataMngr->_AddErrorResult(
@@ -166,6 +175,35 @@ sub OnCheckGroupData {
 									  . ValueConvertor->GetSilkCodeToColor($silkColorBotExport)
 									  . ", Helios => "
 									  . ValueConvertor->GetSilkCodeToColor( $silkColorIS{"bot"} ) . "."
+		);
+	}
+
+	# 6) Control silk colour 2
+	my %silkColor2IS        = HegMethods->GetSilkScreenColor2($jobId);
+	my $silkColorTop2Export = $groupData->GetC_silk_screen_colour2();
+	my $silkColorBot2Export = $groupData->GetS_silk_screen_colour2();
+
+	$silkColor2IS{"top"} = "" if ( !defined $silkColor2IS{"top"} );
+	$silkColor2IS{"bot"} = "" if ( !defined $silkColor2IS{"bot"} );
+
+	if ( $silkColor2IS{"top"} ne $silkColorTop2Export ) {
+
+		$dataMngr->_AddErrorResult(
+									"Potisk TOP",
+									"Nesedí barva druhého potisku top. Export =>"
+									  . ValueConvertor->GetSilkCodeToColor($silkColorTop2Export)
+									  . ", Helios => "
+									  . ValueConvertor->GetSilkCodeToColor( $silkColor2IS{"top"} ) . "."
+		);
+	}
+	if ( $silkColor2IS{"bot"} ne $silkColorBot2Export ) {
+
+		$dataMngr->_AddErrorResult(
+									"Potisk BOT",
+									"Nesedí barva druhého potisku bot. Export =>"
+									  . ValueConvertor->GetSilkCodeToColor($silkColorBot2Export)
+									  . ", Helios => "
+									  . ValueConvertor->GetSilkCodeToColor( $silkColor2IS{"bot"} ) . "."
 		);
 	}
 
@@ -382,7 +420,7 @@ sub OnCheckGroupData {
 		}
 
 		if ( $defaultInfo->GetLayerCnt() <= 2 ) {
-			
+
 			if ( $defaultInfo->GetBaseCuThick() > $maxCuThick ) {
 				$dataMngr->_AddErrorResult(
 											"Max Cu thickness outer layer",
@@ -458,7 +496,6 @@ sub OnCheckGroupData {
 		}
 	}
 
-
 }
 
 # check if datacode exist
@@ -494,10 +531,10 @@ sub __CheckDataCodeJob {
 	foreach my $step (@steps) {
 
 		foreach my $layer ( split( ",", $dataCodes ) ) {
-			
+
 			$layer = lc($layer);
-			
-			die "Layer: $layer, which the datacode should be located in does not exist." if(!$defaultInfo->LayerExist($layer));
+
+			die "Layer: $layer, which the datacode should be located in does not exist." if ( !$defaultInfo->LayerExist($layer) );
 
 			my @dtCodes = Marking->GetDatacodesInfo( $inCAM, $jobId, $step, $layer );
 

@@ -63,7 +63,7 @@ sub new {
 
 	# silkscreen layers for export
 
-	my @l = grep { $_->{"gROWname"} =~ /^p[cs]$/i } CamJob->GetBoardBaseLayers( $self->{"inCAM"}, $self->{"jobId"} );
+	my @l = grep { $_->{"gROWname"} =~ /^p[cs]2?$/i } CamJob->GetBoardBaseLayers( $self->{"inCAM"}, $self->{"jobId"} );
 	$self->{"layers"} = \@l;
 
 	# Other properties ========================
@@ -165,8 +165,8 @@ sub __DeleteOldFiles {
 
 	my $jobId = $self->{"jobId"};
 
-	my @ger = FileHelper->GetFilesNameByPattern( EnumsPaths->Jobs_JETPRINT, $jobId . 'p[cs]_jet\.ger' );
-	my @jdl = FileHelper->GetFilesNameByPattern( EnumsPaths->Jobs_JETPRINT, $jobId . 'p[cs]_jet\.ger.jdl' );
+	my @ger = FileHelper->GetFilesNameByPattern( EnumsPaths->Jobs_JETPRINT, $jobId . 'p[cs]2?_jet\.ger' );
+	my @jdl = FileHelper->GetFilesNameByPattern( EnumsPaths->Jobs_JETPRINT, $jobId . 'p[cs]2?_jet\.ger.jdl' );
 
 	foreach ( ( @ger, @jdl ) ) {
 		unless ( unlink($_) ) {
@@ -461,7 +461,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId    = "d080492";
+	my $jobId    = "d241421";
 	my $stepName = "panel";
 
 	my $export = ExportFiles->new( $inCAM, $jobId );

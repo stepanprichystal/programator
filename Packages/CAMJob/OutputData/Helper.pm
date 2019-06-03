@@ -87,11 +87,13 @@ sub GetJobLayerTitle {
 	}
 
 	# board base layer
-	elsif ( $l->{"gROWname"} =~ /^([pmlg]|gold)?[cs]$/i ) {
+	elsif ( $l->{"gROWname"} =~ /^([pmlg]|gold)?[cs]2?$/i ) {
 
 		my %en = ();
 		$en{"pc"}    = "Silk screen (top)";
 		$en{"ps"}    = "Silk screen (bot)";
+		$en{"pc2"}    = "Silk screen (top; second)";
+		$en{"ps2"}    = "Silk screen (bot; second)";
 		$en{"mc"}    = "Solder mask (top)";
 		$en{"ms"}    = "Solder mask (bot)";
 		$en{"c"}     = "Component layer (top)";
@@ -106,6 +108,8 @@ sub GetJobLayerTitle {
 		my %czl = ();
 		$czl{"pc"}    = "Potisk (top)";
 		$czl{"ps"}    = "Potisk (bot)";
+		$czl{"pc2"}   = "Potisk (top; druhý)";
+		$czl{"ps2"}   = "Potisk (bot; druhý)";
 		$czl{"mc"}    = "Nepájivá maska (top)";
 		$czl{"ms"}    = "Nepájivá maska (bot)";
 		$czl{"c"}     = "Strana součástek (top)";

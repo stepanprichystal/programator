@@ -157,30 +157,37 @@ sub __ExportXml {
 	}
 
 	# Solder mask layer mc, ms
-	elsif ( $layerName =~ /^m[cs]$/ ) {
+	elsif ( $layerName =~ /^m[cs]2?$/ ) {
 
 		# set power by mask color
-		my %mask = HegMethods->GetSolderMaskColor($jobId);
+		my %mask = ();
 
-		my $clr = $mask{ $layerName eq 'mc' ? "top" : "bot" };
-
-		if ( $clr =~ /Z/i ) {
-			$power = 250;    # green
-		}
-		elsif ( $clr =~ /B/i ) {
-			$power = 240;    # black
-		}
-		elsif ( $clr =~ /M/i ) {
-			$power = 240;    # blue
-		}
-		elsif ( $clr =~ /W/i ) {
-			$power = 220;    # white
-		}
-		elsif ( $clr =~ /R/i ) {
-			$power = 240;    # red
+		if ( $layerName =~ /^m[cs]2/ ) {
+			%mask = HegMethods->GetSolderMaskColor2($jobId);
 		}
 		else {
-			$power = 230;    # other
+			%mask = HegMethods->GetSolderMaskColor($jobId);
+		}
+
+		my $clr = $mask{ ( $layerName =~ /c/ ? "top" : "bot" ) };
+
+		if ( $clr =~ /Z/i ) {
+			$power = 250;                                       # green
+		}
+		elsif ( $clr =~ /B/i ) {
+			$power = 240;                                       # black
+		}
+		elsif ( $clr =~ /M/i ) {
+			$power = 240;                                       # blue
+		}
+		elsif ( $clr =~ /W/i ) {
+			$power = 220;                                       # white
+		}
+		elsif ( $clr =~ /R/i ) {
+			$power = 240;                                       # red
+		}
+		else {
+			$power = 230;                                       # other
 		}
 
 		$diameter   = 2.85;

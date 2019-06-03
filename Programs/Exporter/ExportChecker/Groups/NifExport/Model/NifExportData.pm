@@ -53,7 +53,7 @@ sub OnExportGroupData {
 	$exportData->SetMaska01( $groupData->GetMaska01() );
 	$exportData->SetPressfit( $groupData->GetPressfit() );
 	$exportData->SetToleranceHole( $groupData->GetToleranceHole() );
-	$exportData->SetChamferEdges( $groupData->GetChamferEdges());
+	$exportData->SetChamferEdges( $groupData->GetChamferEdges() );
 	$exportData->SetQuickNotes( $groupData->GetQuickNotes() );
 	$exportData->SetNotes( $groupData->GetNotes() );
 	$exportData->SetDatacode( $groupData->GetDatacode() );
@@ -61,6 +61,9 @@ sub OnExportGroupData {
 	$exportData->SetJumpScoring( $groupData->GetJumpScoring() );
 
 	# Mask, Silk color
+	$exportData->SetS_silk_screen_colour2( $groupData->GetS_silk_screen_colour2() );
+	$exportData->SetC_silk_screen_colour2( $groupData->GetC_silk_screen_colour2() );
+	$exportData->SetFlexi_maska( $groupData->GetFlexi_maska() );
 	$exportData->SetC_mask_colour( $groupData->GetC_mask_colour() );
 	$exportData->SetS_mask_colour( $groupData->GetS_mask_colour() );
 	$exportData->SetC_silk_screen_colour( $groupData->GetC_silk_screen_colour() );

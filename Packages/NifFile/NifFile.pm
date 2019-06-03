@@ -136,8 +136,8 @@ sub GetSolderMaskColor {
 
 	my %mask = ();
 
-	$mask{"top"} = $self->GetValue("c_mask_colour");
-	$mask{"bot"} = $self->GetValue("s_mask_colour");
+	$mask{"top"} = $self->GetValue("maska_c_1");
+	$mask{"bot"} = $self->GetValue("maska_s_1");
 
 	return %mask;
 }
@@ -148,11 +148,23 @@ sub GetSilkScreenColor {
 
 	my %silk = ();
 
-	$silk{"top"} = $self->GetValue("c_silk_screen_colour");
-	$silk{"bot"} = $self->GetValue("s_silk_screen_colour");
+	$silk{"top"} = $self->GetValue("potisk_c_1");
+	$silk{"bot"} = $self->GetValue("potisk_s_1");
+	
+	return %silk;
+}
+
+
+#Return second color of silk screen in hash for top and bot side
+sub GetSilkScreenColor2 {
+	my $self = shift;
+
+	my %silk = ();
+
+	$silk{"top"} = $self->GetValue("potisk_c_2");
+	$silk{"bot"} = $self->GetValue("potisk_s_2");
 
 	return %silk;
-
 }
 
 # Return:

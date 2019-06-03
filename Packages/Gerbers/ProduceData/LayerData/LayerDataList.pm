@@ -132,11 +132,13 @@ sub __GetFileNameByLayer {
 	}
 
 	# board base layer
-	elsif ( $l->{"gROWname"} =~ /^([pmlg]|gold)?[cs]$/i ) {
+	elsif ( $l->{"gROWname"} =~ /^([pmlg]|gold)?[cs]2?$/i ) {
 
 		my %en = ();
 		$en{"pc"}    = "plt";
+		$en{"pc2"}   = "plt2";
 		$en{"ps"}    = "plb";
+		$en{"ps2"}    = "plb2";
 		$en{"mc"}    = "smt";
 		$en{"ms"}    = "smb";
 		$en{"c"}     = "top";

@@ -600,6 +600,7 @@ sub BuildGroupTableForm {
 
 		#compute number of rows. One row has height 10 px
 		$scrollPnl->SetRowCount( $height / 10 );
+		 
 	}
 
 	$self->{"mainFrm"}->Thaw();
