@@ -18,6 +18,7 @@ use Math::Geometry::Planar;
 use aliased 'CamHelpers::CamJob';
 use aliased 'CamHelpers::CamStep';
 use aliased 'CamHelpers::CamStepRepeat';
+use aliased 'Enums::EnumsGeneral';
 use aliased 'Packages::Polygon::Features::ScoreFeatures::ScoreFeatures';
 use aliased 'Packages::Scoring::ScoreChecker::Enums';
 use aliased 'Packages::Scoring::ScoreChecker::InfoClasses::ScorePosInfo';
@@ -204,8 +205,8 @@ sub __LoadNestedSteps {
 	my @repeats = CamStepRepeat->GetRepeatStep( $inCAM, $jobId, $step );
 	my @uniqueSR = CamStepRepeat->GetUniqueStepAndRepeat( $inCAM, $jobId, $step );
 
-	CamStepRepeat->RemoveCouponSteps( \@repeats );
-	CamStepRepeat->RemoveCouponSteps( \@uniqueSR );
+	CamStepRepeat->RemoveCouponSteps( \@repeats,  1, [ EnumsGeneral->Coupon_IMPEDANCE ] );    # impedance coupon can has score
+	CamStepRepeat->RemoveCouponSteps( \@uniqueSR, 1, [ EnumsGeneral->Coupon_IMPEDANCE ] );    # impedance coupon can has score
 
 	# remove coupo steps
 
