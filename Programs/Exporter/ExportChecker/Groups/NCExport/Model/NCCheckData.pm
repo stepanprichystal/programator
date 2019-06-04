@@ -444,8 +444,8 @@ sub OnCheckGroupData {
 		$dataMngr->_AddErrorResult( "Merge chains", $messRD );
 	}
 
-	# 15) Check vysledne/vtane otvory
-	if ( $defaultInfo->GetLayerCnt() > 1 && $defaultInfo->LayerExist("m") ) {
+	# 15) Check vysledne/vtane otvory (only if it is not pool - more customers on one panel)
+	if ( !$defaultInfo->IsPool() && $defaultInfo->GetLayerCnt() > 1 && $defaultInfo->LayerExist("m") ) {
 
 		my $usrHolesType = $defaultInfo->GetCustomerNote()->PlatedHolesType();
 		if ( defined $usrHolesType ) {

@@ -139,12 +139,12 @@ sub OnCheckGroupData {
 			if ( $layerAttr{'layer_side'} !~ /^$side$/i ) {
 
 				$dataMngr->_AddErrorResult(
-					"Wrong inserted schema ",
-					"Signálová vrstva: \""
-					  . $l->{"gROWname"}
-					  . "\" má špatně nastavený atribut vrstvy: \"Layer side\" ("
-					  . $layerAttr{'layer_side'}
-					  . "). Ve stackupu je vstva vedená jako: \"$side\". Uprav atribut a znovu vlož schéma do panelu!"
+											"Wrong inserted schema ",
+											"Signálová vrstva: \""
+											  . $l->{"gROWname"}
+											  . "\" má špatně nastavený atribut vrstvy: \"Layer side\" ("
+											  . $layerAttr{'layer_side'}
+											  . "). Ve stackupu je vstva vedená jako: \"$side\". Uprav atribut a znovu vlož schéma do panelu!"
 				);
 			}
 
@@ -466,10 +466,19 @@ sub OnCheckGroupData {
 	}
 
 	# 18) Check if more same jobid is in production, if so add warning
+	# Exclude job orders which are in production as slave 
+	# (slave steps are copied to mother job, thus slave job data can't be infloenced)
 	my @orders = HegMethods->GetPcbOrderNumbers($jobId);
 	if ( scalar(@orders) > 1 ) {
 
 		@orders = grep { $_->{"stav"} == 4 } @orders;    #Ve výrobě (4)
+
+		for ( my $i = scalar(@orders) - 1 ; $i > 0 ; $i-- ) {
+
+			if ( HegMethods->GetInfMasterSlave( $orders[$i]->{"reference_subjektu"} ) eq "S" ) {
+				splice @orders, $i, 1;
+			}
+		}
 
 		if ( scalar(@orders) > 1 ) {
 
