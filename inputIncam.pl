@@ -28,6 +28,9 @@ use aliased 'Packages::ETesting::MoveElTests';
 use aliased 'Packages::GuideSubs::Impedance::DoSetImpLines';
 use aliased 'Packages::CAMJob::ViaFilling::PlugLayer';
 
+
+
+
 use aliased 'Helpers::GeneralHelper';
 
 use aliased 'Connectors::HeliosConnector::HegMethods';
@@ -409,7 +412,9 @@ sub _Process {
  			
  			
 			# Here run script for set value of drill diameter
-			$inCAM->COM('script_run',name=>GeneralHelper->Root()."\\_from_z\\vv",dirmode=>'global',params=>"$pcbId"); 
+			
+			SetHolesRun->CalculationDrills($inCAM, $pcbId);
+			#$inCAM->COM('script_run',name=>GeneralHelper->Root()."\\_from_z\\vv",dirmode=>'global',params=>"$pcbId"); 
 			
  			
 			# Change minimal line in rout layer

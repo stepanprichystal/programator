@@ -4,113 +4,84 @@ use Tk;
 use sqlNoris;
 
 
-#necessary for load pall packages
-use FindBin;
-use lib "$FindBin::Bin/../";
-use PackagesLib;
+use lib qw( C:\Perl\site\lib\TpvScripts\Scripts );
 
-use Genesis;
-use aliased 'Packages::InCAM::InCAM';
 use aliased 'Helpers::GeneralHelper';
+use aliased 'Enums::EnumsDrill';
+use aliased 'Packages::Other::CustomerNote';
+use aliased 'Connectors::HeliosConnector::HegMethods';
+use aliased 'Packages::InCAM::InCAM';
 
-unless ($ENV{JOB}) {
-	$jobName = shift;
-#	$stepName = shift;
-} else {
-	$jobName = "$ENV{JOB}";
-#	$stepName = "panel";
-}
-
-my $genesis = Genesis->new();
-
-my $logo_way = GeneralHelper->Root()."\\_from_z\\drill.gif";
-$customer = getValueNoris ($jobName, 'customer');
-
-########################## GUI  GUI GUI GUI GUI GUI GUI  ###################################
-############################################################################################
-$genesis->INFO(entity_type=>'layer',entity_path=>"$jobName/o+1/s",data_type=>'exists');
-    	if ($genesis->{doinfo}{gEXISTS} eq "no") {
-    			$typDesky = 1;
-    	}
-    			
-unless ($customer =~ /[Mm][Uu][Ll][Tt][Ii] [Hh]/ and $typDesky == 0) {
-		$main = MainWindow->new;
-		$main->title('Vys/Vrt');
-		$main->minsize(qw(220 120));
-
-			$topmain = $main->Frame(-width=>10, -height=>20)->pack(-side=>'top');
-			$botmain = $main->Frame(-width=>10, -height=>20)->pack(-side=>'bottom');
-			$main = $topmain->Frame(-width=>10, -height=>20)->pack(-side=>'right');
-			$logomain = $topmain->Frame(-width=>10, -height=>20)->pack(-side=>'left');
+use aliased 'CamHelpers::CamDTM';
 
 
+my $inCAM = InCAM->new();
 
-			$logo_frame = $logomain->Frame(-width=>50, -height=>50)->pack(-side=>'left');
-								$error_logo = $logo_frame->Photo(-file=>"$logo_way");
-								$logo_frame->Label(-image=>$error_logo)->pack(); 
+CalculationDrills("$ENV{JOB}");
 
-				$rrr1 = $main->Radiobutton(-value=>"vysledne", -variable=>\$adjustDrill, -text=>"vysledne",-font=>'arial 12 {bold}')->pack(-padx => 5, -pady => 5,-side=>'top');
-				$rrr2 = $main->Radiobutton(-value=>"vrtane", -variable=>\$adjustDrill, -text=>"vrtane",-font=>'arial 12 {bold}')->pack(-padx => 5, -pady => 5,-side=>'top');
 
-				$tlProved = $main->Button(-text => "Pokracovat",-command=> \&pokracovat,-bg=>'lightblue',-relief=>'raise',-bd=>'3')->pack(-padx => 10, -pady => 5,-side=>'bottom');
-		MainLoop ();
-
-}else {
-	$adjustDrill = "vysledne";
-	&pokracovat;
-}
-#$main->waitWindow;
-##########################  END GUI END GUI END GUI END GUI #################################
-#############################################################################################
+sub CalculationDrills {
+	my $jobName = shift;
 	
+	my $customer = HegMethods->GetCustomerInfo($jobName);
+	my $note = CustomerNote->new( $customer->{"reference_subjektu"} );
 	
-	
-sub pokracovat {
 
-
-$genesis->INFO(units=>'mm',entity_type => 'layer',entity_path => "$jobName/o+1/m",data_type => 'NUM_TOOL');
-	$pocetTool = $genesis->{doinfo}{gNUM_TOOL}; 
-
-
-	$genesis->INFO(units=>'mm',entity_type => 'layer',entity_path => "$jobName/o+1/m",data_type => 'TOOL');
-	@numVrtaku = @{$genesis->{doinfo}{gTOOLnum}};
-	@finishSize = @{$genesis->{doinfo}{gTOOLfinish_size}};
-	@type = @{$genesis->{doinfo}{gTOOLtype}};
-	@type2 = @{$genesis->{doinfo}{gTOOLtype2}};
-	@min_tools = @{$genesis->{doinfo}{gTOOLmin_tol}};
-	@max_tools = @{$genesis->{doinfo}{gTOOLmax_tol}};
-	
-    $genesis -> COM('tools_tab_reset');
-$pocetTool -= 1;
-for($countDrill = 0;$countDrill <= $pocetTool;$countDrill++) {
-#foreach $countDrill(@numVrtaku) {
-	
-		if ($type[$countDrill] eq "plated") {
-			$type[$countDrill] = "plate";
-		}elsif ($type[$countDrill] eq "non_plated") {
-			$type[$countDrill] = "nplate";
-		}
+		if (HegMethods->GetTypeOfPcb($jobName) eq 'Jednostranny') {
+					_SetDrill(EnumsDrill->DTM_VRTANE, $jobName);
 			
-	$drill_size = $genesis -> COM('drill_size_hook',layer=>'m',thickness=>'0',user_params=>"$adjustDrill",finish_size=>"$finishSize[$countDrill]",bit=>'Drill Des',type=>"$type[$countDrill]",min_tol=>"$min_tools[$countDrill]",max_tol=>"$max_tools[$countDrill]");
-
-print STDERR $drill_size;
-
-@drill_size_bit = split /\s+/,$drill_size;
-	$genesis -> COM('tools_tab_add',num=>"$numVrtaku[$countDrill]",type=>"$type[$countDrill]",type2=>"$type2[$countDrill]",min_tol=>"$min_tools[$countDrill]",max_tol=>"$max_tools[$countDrill]",bit=>"$drill_size_bit[1]",finish_size=>"$finishSize[$countDrill]",drill_size=>"$drill_size_bit[0]");
-#,shape=>'hole'
+		}elsif($note->PlatedHolesType() ne undef){
+				# Vraci tri hodnoty
+				#- undef
+				# EnumsDrill->DTM_VYSLEDNE
+				# EnumsDrill->DTM_VRTANE
+				my $usrHolesType = $note->PlatedHolesType();
+				_SetDrill($usrHolesType, $jobName);
+		}else{
+			_Gui($jobName);
+		}
 }
-$genesis -> COM('tools_set',layer=>'m',thickness=>'0',user_params=>"$adjustDrill");
-#,slots=>'yes
+# GUI ###################################
+sub _Gui {
+		my $jobId = shift;
+		
+		my $logo_way = GeneralHelper->Root()."\\_from_z\\drill.gif";
+		$main = MainWindow->new;
+		$main->title('Vys/Vrt Job =>' . $jobId);
+		$main->minsize(qw(260 50));
 
+			$subMain = $main->Frame(-width=>100, -height=>50)->pack(-side=>'top');
+				$left = $subMain->Frame(-width=>100, -height=>50)->pack(-side=>'left', -fill=>'both');
+						$logomain = $left->Frame(-width=>100, -height=>50)->pack(-side=>'left', -fill=>'both');
+								$logo_frame = $logomain->Frame(-width=>50, -height=>50)->pack(-side=>'left');
+									$error_logo = $logo_frame->Photo(-file=>"$logo_way");
+									$logo_frame->Label(-image=>$error_logo)->pack(); 
+						
+				$right = $subMain->Frame(-width=>100, -height=>50)->pack(-side=>'right');
+						$subRightTop = $right->Frame(-width=>100, -height=>25)->pack(-side=>'top',-fill=>'both');
+									$subRightTop->Radiobutton(-value=>"vysledne", -variable=>\$adjust, -text=>"vysledne",-font=>'arial 12 {bold}')->pack(-side=>'left',-padx => 5, -pady => 5);
+						$subRightBot = $right->Frame(-width=>100, -height=>25)->pack(-side=>'top',-fill=>'both');
+									$subRightBot->Radiobutton(-value=>"vrtane", -variable=>\$adjust, -text=>"vrtane",-font=>'arial 12 {bold}')->pack(-side=>'left',-padx => 5, -pady => 5);
+			
+			$bottom = $main->Frame(-width=>100, -height=>50)->pack(-side=>'bottom', -fill=>'both');
+						$bottom->Button(-height => "3", -text => "Pokracovat",-command=> sub {_SetDrill($adjust, $jobId)},-bg=>'grey',-relief=>'raise',-bd=>'3')->pack(-padx => 5, -pady => 5,-side=>'bottom', -fill=>'both');
+			
+			
+		MainLoop ();
+}
 
-		$genesis->INFO(entity_type=>'layer',entity_path=>"$jobName/o+1/d",data_type=>'exists');
-			    	if ($genesis->{doinfo}{gEXISTS} eq "yes") {
-						$genesis->COM('script_run',name=>GeneralHelper->Root()."\\_from_z\\sub_vv_d",dirmode=>'global',params=>"$jobName");
-				}
-		$genesis->INFO(entity_type=>'layer',entity_path=>"$jobName/o+1/f",data_type=>'exists');
-			    	if ($genesis->{doinfo}{gEXISTS} eq "yes") {
-						$genesis->COM('script_run',name=>GeneralHelper->Root()."\\_from_z\\sub_vv_f",dirmode=>'global',params=>"$jobName");
-				}
+sub _SetDrill {
+      my $adjustDrill = shift;
+      my $jobId       = shift;
+
+      # nacte nastroje
+      my @tools = CamDTM->GetDTMTools( $inCAM, $jobId, "o+1", "m" );
+
+      # 1) Reset DTM (vymazani),
+      # 2) Nastaveni vysledne/vrtane
+      # 3) Pridani nastroju do DTM + recalculate tools by drill_size_hook
+      my $recalc = 1; # recalculate tools = yes
+      CamDTM->SetDTMTools( $inCAM, $jobId, "o+1", "m", \@tools, $adjustDrill, $recalc );
 
 
 exit;
