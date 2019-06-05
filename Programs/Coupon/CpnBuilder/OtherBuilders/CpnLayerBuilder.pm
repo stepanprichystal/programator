@@ -72,7 +72,7 @@ sub Build {
 	}
 
 	my @layers = CamJob->GetBoardBaseLayers( $inCAM, $jobId );    # silks, mask, signal
-	my @cncLayers = grep { $_->{"gROWname"} eq "m" || $_->{"gROWname"} eq "f" } CamJob->GetNCLayers( $inCAM, $jobId );    # m
+	my @cncLayers = grep { $_->{"gROWname"} =~ /^([mf]|score)$/ } CamJob->GetNCLayers( $inCAM, $jobId );    # m
 
 	push( @layers, @cncLayers ) if (scalar(@cncLayers));
  
@@ -83,7 +83,7 @@ sub Build {
 		my $lLayout = LayerLayout->new($lName);
 
 		# Set mirror
-		if ( $lName =~ /^[mf]$/ ) {
+		if ( $lName =~ /^([mf]|score)$/ ) {
 			# drill + rout layer
 			$lLayout->SetMirror(0);
 		}
