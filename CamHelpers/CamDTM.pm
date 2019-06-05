@@ -473,7 +473,7 @@ sub RecalcDTMTools {
 
 	}
 
-	$inCAM->COM( 'tools_set', "layer" => $layer, "thickness" => '0', "user_params" => $DTMType, "user_des_names" => join( ";", @userClmns ) );
+	$inCAM->COM( 'tools_set', "layer" => $layer, "thickness" => '0', "user_params" => $DTMType, "user_des_names" => join( ";", @userClmns ), "slots" => "yes" );
 
 }
 
@@ -537,11 +537,11 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	use Data::Dump qw(dump);
 
 	my $inCAM = InCAM->new();
-	my $jobId = "d164090";
+	my $jobId = "d247767";
 
 	#my $step  = "mpanel_10up";
 
-	my $dtm = CamDTM->RecalcDTMTools( $inCAM, $jobId, "o+1", "m", "vysledne", 0, 1 );
+	my $dtm = CamDTM->RecalcDTMTools( $inCAM, $jobId, "o+2", "f", "vrtane", 1, 0 );
 
 	die;
 
