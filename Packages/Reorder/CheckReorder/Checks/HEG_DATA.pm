@@ -54,7 +54,7 @@ sub Run {
 
 			my $coreStackup = $stackup->GetCore( $coreIS->{"core_num"} );
 
-			if ( $coreIS->{"vrtani"} =~ /C/i && !$coreStackup->GetPlatingExists() ) {
+			if ( $coreIS->{"vrtani"} =~ /C/i && !$coreStackup->GetCoreExtraPlating() ) {
  
 				$self->_AddChange("Pozor jádro (číslo: "
 											  . $coreStackup->GetCoreNumber()

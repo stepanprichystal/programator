@@ -466,8 +466,8 @@ sub OnCheckGroupData {
 		# Check if exist plating on cores, if plating is on both sided
 		foreach my $core ( $stackup->GetAllCores() ) {
 
-			if (    ( $core->GetTopCopperLayer()->GetPlatingExists() && !$core->GetBotCopperLayer()->GetPlatingExists() )
-				 || ( !$core->GetTopCopperLayer()->GetPlatingExists() && $core->GetBotCopperLayer()->GetPlatingExists() ) )
+			if (    ( $core->GetTopCopperLayer()->GetCoreExtraPlating() && !$core->GetBotCopperLayer()->GetCoreExtraPlating() )
+				 || ( !$core->GetTopCopperLayer()->GetCoreExtraPlating() && $core->GetBotCopperLayer()->GetCoreExtraPlating() ) )
 			{
 				$dataMngr->_AddErrorResult(
 											"Nakovení jader",
@@ -483,7 +483,7 @@ sub OnCheckGroupData {
 
 			my $coreStackup = $stackup->GetCore( $coreIS->{"core_num"} );
 
-			if ( $coreIS->{"vrtani"} =~ /C/i && !$coreStackup->GetPlatingExists() ) {
+			if ( $coreIS->{"vrtani"} =~ /C/i && !$coreStackup->GetCoreExtraPlating() ) {
 
 				$dataMngr->_AddErrorResult(
 											"Nakovení jader",

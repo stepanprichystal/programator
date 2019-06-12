@@ -350,19 +350,19 @@ sub AddNCLayerType {
 		}
 
 		# new for flexi
-		elsif ( $l->{"gROWname"} =~ /^fcoverlayc.*/ ) {
+		elsif ( $l->{"gROWname"} =~ /^fcoverlayc\d?/ ) {
 
 			$l->{"type"}   = EnumsGeneral->LAYERTYPE_nplt_cvrlycMill;
 			$l->{"plated"} = 0;
 
 		}
-		elsif ( $l->{"gROWname"} =~ /^fcoverlays.*/ ) {
+		elsif ( $l->{"gROWname"} =~ /^fcoverlays\d?/ ) {
 
 			$l->{"type"}   = EnumsGeneral->LAYERTYPE_nplt_cvrlysMill;
 			$l->{"plated"} = 0;
 
 		}
-		elsif ( $l->{"gROWname"} =~ /^fprepreg.*/ ) {
+		elsif ( $l->{"gROWname"} =~ /^fprepreg[12]/ ) {
 
 			$l->{"type"}   = EnumsGeneral->LAYERTYPE_nplt_prepregMill;
 			$l->{"plated"} = 0;

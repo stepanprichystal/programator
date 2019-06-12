@@ -18,7 +18,10 @@ use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'Packages::NifFile::NifFile';
 use aliased 'Packages::TifFile::TifSigLayers';
 use aliased 'Packages::Stackup::Stackup::Stackup';
+use aliased 'Packages::Stackup::StackupNC::StackupNC';
 use aliased 'Enums::EnumsGeneral';
+use aliased 'CamHelpers::CamDrilling';
+use aliased 'CamHelpers::CamHelper';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -35,7 +38,9 @@ sub new {
 	$self->{"layerCnt"} = shift;
 
 	if ( $self->{"layerCnt"} > 2 ) {
+
 		$self->{"stackup"} = Stackup->new( $self->{"jobId"} );
+		$self->{"stackupNC"} = StackupNC->new( $self->{"jobId"}, $self->{"inCAM"} );
 	}
 
 	$self->{"tifFile"} = TifSigLayers->new( $self->{"jobId"} );
@@ -172,22 +177,22 @@ sub __ExportXml {
 		my $clr = $mask{ ( $layerName =~ /c/ ? "top" : "bot" ) };
 
 		if ( $clr =~ /Z/i ) {
-			$power = 250;                                       # green
+			$power = 250;    # green
 		}
 		elsif ( $clr =~ /B/i ) {
-			$power = 240;                                       # black
+			$power = 240;    # black
 		}
 		elsif ( $clr =~ /M/i ) {
-			$power = 240;                                       # blue
+			$power = 240;    # blue
 		}
 		elsif ( $clr =~ /W/i ) {
-			$power = 220;                                       # white
+			$power = 220;    # white
 		}
 		elsif ( $clr =~ /R/i ) {
-			$power = 240;                                       # red
+			$power = 240;    # red
 		}
 		else {
-			$power = 230;                                       # other
+			$power = 230;    # other
 		}
 
 		$diameter   = 2.85;
@@ -234,7 +239,7 @@ sub __ExportXml {
 	$templ->{"job_params"}->[0]->{"parts_total"}->[0]     = $parts;
 	$templ->{"job_params"}->[0]->{"parts_remaining"}->[0] = $parts;
 
-	$templ->{"job_params"}->[0]->{"part_size"}->[0]->{"z"} = $self->__GetThickByLayer($layerName);
+	$templ->{"job_params"}->[0]->{"part_size"}->[0]->{"z"} = $self->__GetThickByLayer( $layerName, $etching );
 	$templ->{"job_params"}->[0]->{"part_size"}->[0]->{"x"} = $xPnlSize;
 	$templ->{"job_params"}->[0]->{"part_size"}->[0]->{"y"} = $yPnlSize;
 
@@ -318,42 +323,139 @@ sub __LoadTemplate {
 }
 
 sub __GetThickByLayer {
-	my $self = shift;
+	my $self        = shift;
+	my $layer       = shift;    #
+	my $etchingType = shift;    # EnumsGeneral->Etching_xxxx
 
-	my $layer = shift;    #l
+	my $jobId = $self->{"jobId"};
+	my $inCAM = $self->{"inCAM"};
 
-	my $thick = 0;        #total thick
+	my $PLTTHICKNESS   = 0.035;    # plating is 35µm from one side
+	my $PREPLTTHICKNESS   = 0.015; # pre-plating is 15µm from one side (viafilling)
+	my $SMTHICNESS     = 0.025;    # solder mask thickness around 25µm
+	my $RESISTTHICNESS = 0.070;    # resist thickness around 70µm (resist plus protection foil)
 
-	# for multilayer copper layer read thick from stackup, else return total thick
-	if ( $self->{"layerCnt"} > 2 ) {
+	my $thick = 0;                 #total thick
 
-		my $stackup = $self->{"stackup"};
+	if ( $layer =~ /^[cs]$/ || $layer =~ /^v\d$/ ) {
 
-		# for signal layers
-		if ( $layer =~ /^[plg]*c$/ || $layer =~ /^[plg]*s$/ || $layer =~ /^v\d$/ ) {
+		# Signal layer, plug layers
 
-			# thick in mm
-			$thick = $stackup->GetThickByLayerName($layer);
+		if ( $self->{"layerCnt"} > 2 ) {
+
+			# Multilayer PCB
+
+			my $stackup   = $self->{"stackup"};
+			my $stackupNC = $self->{"stackupNC"};
+
+			if ( $layer =~ /^[cs]$/ ) {
+
+				# Outer signal layers
+
+				$thick = $self->{"stackup"}->GetFinalThick() / 1000;
+
+				# if via fill, there is extra pre plating
+				$thick += 2 * $PREPLTTHICKNESS if ( CamDrilling->GetViaFillExists( $inCAM, $jobId ) );
+				
+				$thick += 2 * $PLTTHICKNESS if ( $etchingType eq EnumsGeneral->Etching_TENTING );
+
+			}
+			elsif ( $layer =~ /^v\d$/ ) {
+
+				# Inner signal layers
+
+				# This method consider progressive lamiantion
+				$thick = $stackup->GetThickByLayerName($layer);
+
+				# Check if core OR laminated package contains plated NC operation, if so add extra plating
+				# For theses case add extra plating from both sides
+				my $stackupNCitem = undef;
+
+				for ( my $i = scalar( $stackupNC->GetPressCnt() ) - 1 ; $i > 0 ; $i-- ) {
+
+					my $press = $stackupNC->GetPress($i);
+
+					if ( $press->GetTopSigLayer()->GetName() eq $layer || $press->GetBotSigLayer()->GetName() eq $layer ) {
+
+						$stackupNCitem = $press;
+						last;
+
+					}
+				}
+
+				# it there is not progress lamination, find cu core
+				unless ( defined $stackupNCitem ) {
+					my $coreNum = $stackup->GetCoreByCopperLayer($layer)->GetCoreNumber();
+					$stackupNCitem = $stackupNC->GetCore($coreNum);
+
+				}
+
+				die "Nor press package or core was not found for copper layer: $layer" if ( !defined $stackupNCitem );
+
+				my @ncLayers = ( $stackupNCitem->GetNCLayers("top"), $stackupNCitem->GetNCLayers("bot") );
+				$thick += 2 * $PLTTHICKNESS if ( grep { $_->{"plated"} } @ncLayers );
+
+			}
 		}
 		else {
 
-			# For Mask, Plugs.. in mm
-			$thick = $stackup->GetFinalThick() / 1000;
+			# Single or double layer PCB
+
+			$thick = HegMethods->GetPcbMaterialThick( $self->{"jobId"} );
+
+			$thick += 2 * $PLTTHICKNESS if ( $etchingType eq EnumsGeneral->Etching_TENTING );
+
 		}
 
 	}
-	else {
-		$thick = HegMethods->GetPcbMaterialThick( $self->{"jobId"} );
+	elsif ( $layer =~ /^plg[cs]$/ ) {
+		
+		# Plug layers
+ 
+		if ( $self->{"layerCnt"} > 2 ) {
+
+			$thick = $self->{"stackup"}->GetFinalThick() / 1000;
+		}
+		else {
+
+			$thick = HegMethods->GetPcbMaterialThick( $self->{"jobId"} );
+		}
+
+		$thick += 2 * $PREPLTTHICKNESS;
+	}
+	elsif ( $layer =~ /^m[cs]2?$/ ||  $layer =~ /^gold[cs]$/ ) {
+
+		# Solder mask layers
+
+		if ( $self->{"layerCnt"} > 2 ) {
+
+			$thick = $self->{"stackup"}->GetFinalThick() / 1000;
+		}
+		else {
+
+			$thick = HegMethods->GetPcbMaterialThick( $self->{"jobId"} );
+		}
+
+		$thick += 2 * $PLTTHICKNESS if ( $self->{"layerCnt"} >= 2 );
+		
+		if($layer =~ /^m[cs]2?$/){
+			
+			$thick += 2 * $SMTHICNESS;
+		}
+		
+		if($layer =~ /^gold[cs]$/){
+			
+			my $smLayer = "m".($layer =~ /^gold([cs])$/)[0];
+			
+			$thick += 2 * $SMTHICNESS  if(CamHelper->LayerExists($inCAM, $jobId, $smLayer))
+			
+			
+		}
+		
 	}
 
-	# if not core, add plating 35µm
-	if ( $layer !~ /^v\d$/ ) {
-
-		$thick += 0.035;
-	}
-
-	# add value of resist 38 + 19 µm
-	$thick += 0.057;
+	# add value of resist from both sides
+	$thick += 2 * $RESISTTHICNESS;
 
 	$thick = sprintf( "%.3f", $thick );
 

@@ -63,7 +63,7 @@ sub Build {
  
 		my $drillVal = $coreNC->ExistNCLayers( Enums->SignalLayer_TOP, undef, EnumsGeneral->LAYERTYPE_plt_cDrill )? "A" : "N";
 		
-		if(  $core->GetPlatingExists){
+		if(  $core->GetCoreExtraPlating){
 			$drillVal = "C"; # C means plating
 		}
 		

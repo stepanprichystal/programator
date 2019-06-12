@@ -29,6 +29,8 @@ use aliased 'Packages::Stackup::Enums' => 'StackEnums';
 use aliased 'Packages::CAMJob::Scheme::SchemeFrame::SchemeFrame';
 use aliased 'Packages::CAMJob::Scheme::SchemeFrame::Enums' => 'SchemeFrEnums';
 use aliased 'Packages::Polygon::Features::Features::Features';
+use aliased 'Packages::CAM::FeatureFilter::FeatureFilter';
+use aliased 'Packages::CAM::FeatureFilter::Enums' => 'FilterEnums';
 
 #-------------------------------------------------------------------------------------------#
 #  Script methods
@@ -195,17 +197,17 @@ sub AddFlexiCoreHoles {
 	CamLayer->ClearLayers( $inCAM, $l );
 
 }
- 
+
 # Frame is prevention from bending panel corner in machines.
 # The copper frame on flexi core does flex more rigid and resistant to deformation
 sub AddFlexiCoreFrame {
 	my $self  = shift;
 	my $inCAM = shift;
 	my $jobId = shift;
-	
-	
-	my $frameWidthLR =  18; # 18mm of copper frame on left and right
-	my $frameWidthTB =  25; # 25 mm of copper frame on top and bot
+
+	my $frameAttr    = "flexicore_frame";
+	my $frameWidthLR = 18;                  # 18mm of copper frame on left and right
+	my $frameWidthTB = 25;                  # 25 mm of copper frame on top and bot
 
 	my $schemeFrame = SchemeFrame->new( $inCAM, $jobId );
 
@@ -240,12 +242,24 @@ sub AddFlexiCoreFrame {
 					 "consider_feat"   => "yes",
 					 "feat_margin"     => "0",
 					 "dest"            => "layer_name",
-					 "layer"           => $l
+					 "layer"           => $l,
+					 "attributes"      => "yes"
 		);
 
-		# look for place for drilled pcb without copper and add coper
-
 		CamLayer->WorkLayer( $inCAM, $l );
+
+		# Set core frame attribute
+		# surface area has about 20000mm2
+		if ( CamFilter->BySurfaceArea( $inCAM, 1000, 30000 ) ) {
+
+			CamAttributes->SetFeatuesAttribute( $inCAM, $frameAttr, "" );
+
+		}
+		else {
+			die "Copper frame for flex core was not detected for layer:$l";
+		}
+
+		# look for place for drilled pcb without copper and add coper
 
 		if ( CamFilter->SelectBySingleAtt( $inCAM, $jobId, ".pnl_place", "negativ_for_drilled_pcbId_v2" ) ) {
 
@@ -255,6 +269,61 @@ sub AddFlexiCoreFrame {
 	}
 
 	CamLayer->ClearLayers($inCAM);
+
+}
+
+# If any flex inner layer contain coverlay, remove pattern fill from copper layer
+sub RemovePatternFillFromFlexiCore {
+	my $self  = shift;
+	my $inCAM = shift;
+	my $jobId = shift;
+
+	my $result = 1;
+
+	my $flexType = JobHelper->GetPcbFlexType($jobId);
+
+	return 0 unless ($flexType);
+
+	return 0 if ( !( $flexType eq EnumsGeneral->PcbFlexType_RIGIDFLEXO || $flexType eq EnumsGeneral->PcbFlexType_RIGIDFLEXI ) );
+
+	CamHelper->SetStep( $inCAM, "panel" );
+
+	my $stackup = Stackup->new($jobId);
+	my @layers  = ();
+
+	foreach my $c ( grep { $_->GetCoreRigidType() eq StackEnums->CoreType_FLEX } $stackup->GetAllCores() ) {
+
+		push( @layers, $c->GetTopCopperLayer()->GetCopperName() );
+		push( @layers, $c->GetBotCopperLayer()->GetCopperName() );
+	}
+
+	foreach my $l (@layers) {
+
+		# Inner layer with coverlay
+		if ( $l =~ /^v\d$/ && CamHelper->LayerExists( $inCAM, $jobId, "coverlay" . $l ) ) {
+
+			CamLayer->WorkLayer( $inCAM, $l );
+
+			my $f = FeatureFilter->new( $inCAM, $jobId, $l );
+
+			$f->AddIncludeAtt(".pattern_fill");
+			$f->AddExcludeAtt("flexicore_frame");    # there is fcopper core at flexi cores - do not delete it
+
+			if(CamMatrix->GetLayerPolarity($inCAM, $jobId, $l) eq "positive"){
+				$f->SetPolarity(FilterEnums->Polarity_POSITIVE);
+			}else{
+				$f->SetPolarity(FilterEnums->Polarity_NEGATIVE);
+			}
+			
+			if ( $f->Select() ) {
+				$inCAM->COM("sel_delete");
+			}
+			else {
+				
+				die "No pattern fill was found in inner layer:$l, step panel: panel";
+			}
+		}
+	}
 
 }
 
@@ -269,11 +338,11 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	use aliased 'Packages::InCAM::InCAM';
 
 	my $inCAM = InCAM->new();
-	my $jobId = "d222775";
+	my $jobId = "d222776";
 
 	my $mess = "";
 
-	my $result = SchemeFlexiPcb->AddFlexiCoreFrame( $inCAM, $jobId, "panel" );
+	my $result = SchemeFlexiPcb->RemovePatternFillFromFlexiCore( $inCAM, $jobId );
 
 	print STDERR "Result is: $result, error message: $mess\n";
 

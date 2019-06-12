@@ -57,7 +57,7 @@ sub GetUssage{
 }
 
 # Return plating value (if no requested combination Cu + core material on stock, cores has to be plated by 25um)
-sub GetPlatingExists {
+sub GetCoreExtraPlating {
 	my $self = shift;
 
 	# check if plating exist on both side

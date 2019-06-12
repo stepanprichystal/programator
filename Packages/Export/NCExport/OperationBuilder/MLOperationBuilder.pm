@@ -571,7 +571,13 @@ sub __DefineNPlatedOperations {
 	$opManager->AddOperationDef( "coverlays", \@nplt_cvrlysMill, -1 );
 
 	# 11) Operation name = fls - can contain layer
-	$opManager->AddOperationDef( "prepreg", \@nplt_prepregMill, -1 );
+	foreach my $l  (@nplt_prepregMill){
+	
+		my ($prepregNum) = $l->{"gROWname"} =~ /^fprepreg(\d)$/;
+	
+		$opManager->AddOperationDef( "prepreg".$prepregNum, [$l], -1 );
+	}
+	
 
 }
 

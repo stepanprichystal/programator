@@ -26,6 +26,6 @@ my $stepName = "$ENV{STEP}";
 
 my $mess = "";
 
-my $result = FlexiBendArea->CreateRoutPrepregByBendArea( $inCAM, $jobId, $stepName );
+my $result = FlexiBendArea->CreateRoutPrepregsByBendArea( $inCAM, $jobId, $stepName, 1, 1 );
 
 print STDERR "Result is: $result, error message: $mess\n";
