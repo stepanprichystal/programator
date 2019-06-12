@@ -271,7 +271,7 @@ sub BySurfaceArea {
 		$maxArea = 0;
 	}
 
-	$inCAM->COM( "set_filter_type", "filter_name" => "", "lines" => "yes", "pads" => "yes", "surfaces" => "yes", "arcs" => "yes", "text" => "yes" );
+	$inCAM->COM( "set_filter_type", "filter_name" => "", "lines" => "no", "pads" => "no", "surfaces" => "yes", "arcs" => "no", "text" => "no" );
 	$inCAM->COM( "set_filter_polarity", "filter_name" => "", "positive" => "yes", "negative" => "yes" );
 
 	$inCAM->COM('adv_filter_reset');

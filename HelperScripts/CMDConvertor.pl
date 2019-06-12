@@ -7,7 +7,7 @@ use warnings;
 
 
 # ============ INPUT LINE =================
-my $inputLine ="copy_layer,source_job=d222775,source_step=et_panel_o+1,source_layer=bend,dest=layer_name,dest_step=et_panel_o+1,dest_layer=bend+2,mode=duplicate,invert=no,copy_notes=no,copy_attrs=yes,copy_lpd=yes,copy_sr_feat=no";
+my $inputLine ="sel_fill,type=solid,solid_type=fill,min_brush=100,use_arcs=yes,cut_prims=no,outline_draw=yes,outline_width=0,outline_invert=no";
 
 
 

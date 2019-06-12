@@ -167,47 +167,54 @@ sub EditAfterOpen {
 		# get tool number of r850 tool
 		my $t = ( grep { $_->{"line"} =~ /T\d*D85([^\d]|$)/i } @{ $parseFile->{"footer"} } )[0];
 
-		if ( defined $t ) {
+		die "Layer: " . $layer->{"gROWname"} . " doesn't contain tool 0.850mm in panel step. It is needed for drilled number" unless ( defined $t );
 
-			my ($toolNum) = $t->{"line"} =~ /(T\d+)/;
+		my ($toolNum) = $t->{"line"} =~ /(T\d+)/;
 
-			# Search postition in program with theses tool
+		# Search postition in program with theses tool
 
-			for ( my $i = 0 ; $i < scalar( @{ $parseFile->{"body"} } ) ; $i++ ) {
+		for ( my $i = 0 ; $i < scalar( @{ $parseFile->{"body"} } ) ; $i++ ) {
 
-				my $l = $parseFile->{"body"}->[$i];
+			my $l = $parseFile->{"body"}->[$i];
 
-				if ( defined $l->{"tool"} && $l->{"line"} =~ /$toolNum([^\d]|$)/i ) {
+			if ( defined $l->{"tool"} && $l->{"line"} =~ /$toolNum([^\d]|$)/i ) {
 
-					my $numMirror = $layer->{"gROWdrl_dir"} eq "bot2top" ? 1 : 0;
+				my $numMirror = $layer->{"gROWdrl_dir"} eq "bot2top" ? 1 : 0;
 
-					my @scanMarks =
-					  CamNCHooks->GetLayerCamMarks( $self->{"inCAM"}, $self->{"jobId"}, $self->{"stepName"},
-													( $self->{"layerCnt"} > 2 ? "v2" : "c" ), $numMirror );
+				my @scanMarks =
+				  CamNCHooks->GetLayerCamMarks( $self->{"inCAM"}, $self->{"jobId"}, $self->{"stepName"},
+												( $self->{"layerCnt"} > 2 ? "v2" : "c" ), $numMirror );
 
-					my %lim = CamJob->GetProfileLimits( $self->{"inCAM"}, $self->{"jobId"}, $self->{"stepName"} );
-					my %nullPoint = ( "x" => abs( $lim{"xmax"} - $lim{"xmin"} ) / 2, "y" => $lim{"ymin"} + 4 );
+				my %lim = CamJob->GetProfileLimits( $self->{"inCAM"}, $self->{"jobId"}, $self->{"stepName"} );
+				my %nullPoint = ( "x" => abs( $lim{"xmax"} - $lim{"xmin"} ) / 2, "y" => $lim{"ymin"} + 4 );
 
-					my $numPosition = $self->{"layerCnt"} > 2 ? "vvframe" : "stdframe";
-					my $dn = CamNCHooks->GetDrilledNumber( $self->{"jobId"}, $numPosition, $machine->{"id"}, \@scanMarks, \%nullPoint, 0 );
-					my ($xVal) = $dn =~ /X(\d+\.\d+)Y/;
+				my $numPosition = $self->{"layerCnt"} > 2 ? "vvframe" : "stdframe";
+				my $dn = CamNCHooks->GetDrilledNumber( $self->{"jobId"}, $numPosition, $machine->{"id"}, \@scanMarks, \%nullPoint, 0 );
 
-					my @cmd = ();
+				# Add prepreg number
+				if ( $layer->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_prepregMill ) {
 
-					# Mirror drilled pcbid (must be mirrored in subroutine in order to mirror involve only drill number)
-					if ($numMirror) {
-						push( @cmd, { "line" => "M31" } );
-						push( @cmd, { "line" => "$dn" } );
-						push( @cmd, { "line" => "M02X" . sprintf( "%.3f", 2 * $xVal ) . "Y0.000M70\n" } );
-						push( @cmd, { "line" => "M30\n" } );
-					}
-					else {
-						push( @cmd, { "line" => "$dn" } );
-					}
-
-					splice @{ $parseFile->{"body"} }, $i + 1, 0, @cmd;
-
+					my ( $pre, $suf ) = $dn =~ m/^(.*M97,\w\d{6})(.*)$/;
+					my $pNum = " P" . ( $layer->{"gROWname"} =~ m/^fprepreg(\d)$/ )[0];
+					$dn = $pre . $pNum . $suf . "\n";
 				}
+
+				my ($xVal) = $dn =~ /X(\d+\.\d+)Y/;
+
+				my @cmd = ();
+
+				# Mirror drilled pcbid (must be mirrored in subroutine in order to mirror involve only drill number)
+				if ($numMirror) {
+					push( @cmd, { "line" => "M31" } );
+					push( @cmd, { "line" => "$dn" } );
+					push( @cmd, { "line" => "M02X" . sprintf( "%.3f", 2 * $xVal ) . "Y0.000M70\n" } );
+					push( @cmd, { "line" => "M30\n" } );
+				}
+				else {
+					push( @cmd, { "line" => "$dn" } );
+				}
+
+				splice @{ $parseFile->{"body"} }, $i + 1, 0, @cmd;
 
 			}
 

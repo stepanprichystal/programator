@@ -15,7 +15,7 @@ use warnings;
 use aliased 'Programs::Exporter::ExportChecker::Groups::AOIExport::Model::AOIGroupData';
 use aliased 'Programs::Exporter::ExportChecker::Enums';
 use aliased 'CamHelpers::CamJob';
-
+use aliased 'Connectors::HeliosConnector::HegMethods';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -41,7 +41,6 @@ sub OnGetGroupState {
 
 	my $inCAM = $dataMngr->{"inCAM"};
 	my $jobId = $dataMngr->{"jobId"};
- 
 
 	return Enums->GroupState_ACTIVEON;
 
@@ -61,10 +60,22 @@ sub OnPrepareGroupData {
 
 	$groupData->SetStepToTest("panel");
 	$groupData->SetLayers( \@layers );
-	
-	$groupData->SetSendToServer( 0 );
-	
-	
+
+	# 18) If pcb is in production (as master if pool) send AOI to server
+	my @orders = HegMethods->GetPcbOrderNumbers($jobId);
+	if ( scalar(@orders) > 1 ) {
+
+		@orders = grep { $_->{"stav"} == 4 } @orders;    #Ve výrobì (4)
+
+		for ( my $i = scalar(@orders) - 1 ; $i > 0 ; $i-- ) {
+			if ( HegMethods->GetInfMasterSlave( $orders[$i]->{"reference_subjektu"} ) eq "S" ) {
+				splice @orders, $i, 1;
+			}
+		}
+	}
+
+	$groupData->SetSendToServer(1) if ( scalar(@orders) );
+
 	return $groupData;
 }
 

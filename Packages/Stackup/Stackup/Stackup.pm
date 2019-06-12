@@ -52,6 +52,7 @@ sub new {
 }
 
 # Return total thick of this stackup in µm
+# Do not consider extra plating (drilled core, progress lamination)
 sub GetFinalThick {
 	my $self = shift;
 

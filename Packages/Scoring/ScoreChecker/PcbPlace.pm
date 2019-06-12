@@ -120,7 +120,6 @@ sub GetScorePos {
 
 		unless ($exist) {
 			push( @merged, $posInf );
-
 		}
 	}
 

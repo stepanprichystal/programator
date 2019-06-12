@@ -102,7 +102,6 @@ sub PutCuToBendArea {
 	return $result;
 }
 
-
 # If pcb contain soldermask an coverlay, unmask bend area in c,s
 sub UnMaskBendArea {
 	my $self      = shift;
@@ -113,21 +112,18 @@ sub UnMaskBendArea {
 
 	my $result = 1;
 
-	
-	
-	my @layers = CamJob->GetBoardBaseLayers($inCAM, $jobId);
-	
-	my @mask = grep { $_->{"gROWlayer_type"} eq "solder_mask" } @layers;
+	my @layers = CamJob->GetBoardBaseLayers( $inCAM, $jobId );
+
+	my @mask     = grep { $_->{"gROWlayer_type"} eq "solder_mask" } @layers;
 	my @coverlay = grep { $_->{"gROWlayer_type"} eq "coverlay" } @layers;
-	
-	return 0 if(!(@mask && @coverlay));
-	
+
+	return 0 if ( !( @mask && @coverlay ) );
+
 	my $parser = BendAreaParser->new( $inCAM, $jobId, $step );
 	my $errMess = "";
 	die $errMess unless ( $parser->CheckBendArea( \$errMess ) );
 
 	my @bendAreas = $parser->GetBendAreas();
- 
 
 	CamHelper->SetStep( $inCAM, $step );
 
@@ -141,7 +137,7 @@ sub UnMaskBendArea {
 			my @pointsSurf = @points[ 0 .. scalar(@points) - 2 ];
 
 			CamSymbolSurf->AddSurfacePolyline( $inCAM, \@pointsSurf, 1 );
-			CamSymbol->AddPolyline( $inCAM, \@points, "r" . ( 2 * $clearance ), "positive");
+			CamSymbol->AddPolyline( $inCAM, \@points, "r" . ( 2 * $clearance ), "positive" );
 		}
 	}
 
@@ -213,8 +209,8 @@ sub PrepareRoutCoverlayByBendArea {
 	my $inCAM             = shift;
 	my $jobId             = shift;
 	my $step              = shift;
-	my $coverlayOverlap   = shift // 500;    # Ovelrap of coverlay to rigid area
-	my $coverlayClearance = shift // 7000;    # clearance from rigid area profile (except transition zone)
+	my $coverlayOverlap   = shift // 500;     # Ovelrap of coverlay to rigid area
+	my $coverlayClearance = shift // 10000;    # clearance from rigid area profile (except transition zone)
 
 	my $result = 1;
 
@@ -265,13 +261,13 @@ sub PrepareRoutCoverlayByBendArea {
 
 		if ( $side eq "top" ) {
 
-			$routLName .= "c" . ($coverTop == 1 ? "" : $coverTop);
+			$routLName .= "c" . ( $coverTop == 1 ? "" : $coverTop );
 			$coverTop++;
 
 		}
 		else {
 
-			$routLName .= "s" .  ($coverBot == 1 ? "" : $coverBot);
+			$routLName .= "s" . ( $coverBot == 1 ? "" : $coverBot );
 			$coverBot++;
 		}
 
@@ -315,21 +311,45 @@ sub PrepareRoutCoverlayByBendArea {
 }
 
 # Check if mpanel contain requsted schema by customer
-sub CreateRoutPrepregByBendArea {
+sub CreateRoutPrepregsByBendArea {
+	my $self     = shift;
+	my $inCAM    = shift;
+	my $jobId    = shift;
+	my $step     = shift;
+	my $prepreg1 = shift;
+	my $prepreg2 = shift;
+
+	if ($prepreg1) {
+		my $clearance1 = shift // 700;    # Default clearance of first (closer to flex core) prepreg from rigin/flex transition
+
+		$self->__CreateRoutPrepregByBendArea( $inCAM, $jobId, $step, "fprepreg1", $clearance1 );
+	}
+
+	if ($prepreg2) {
+
+		my $clearance2 = shift
+		  // 300;    # Default clearance of second (closer to rigid core) prepreg from rigin/flex transition. Overlap with coverlay 200µm
+		$self->__CreateRoutPrepregByBendArea( $inCAM, $jobId, $step, "fprepreg2", $clearance2 );
+	}
+}
+
+# Check if mpanel contain requsted schema by customer
+sub __CreateRoutPrepregByBendArea {
 	my $self      = shift;
 	my $inCAM     = shift;
 	my $jobId     = shift;
 	my $step      = shift;
-	my $clearance = shift // 500;    # Default clearance of prepreg from rigin/flex transition
+	my $prepregL  = shift;
+	my $clearance = shift;    # Default clearance of prepreg from rigin/flex transition
 
 	my $result = 1;
+
+	die "Clearance is not defined" unless ( defined $clearance );
 
 	my $bendAreaL = "bend";
 	unless ( CamHelper->LayerExists( $inCAM, $jobId, $bendAreaL ) ) {
 		die "Benda area layer: $bendAreaL doesn't exists";
 	}
-
-	my $prepregL = "fprepreg";
 
 	CamMatrix->DeleteLayer( $inCAM, $jobId, $prepregL );
 	CamMatrix->CreateLayer( $inCAM, $jobId, $prepregL, "rout", "positive", 1 );
@@ -337,7 +357,9 @@ sub CreateRoutPrepregByBendArea {
 
 	my $parser = BendAreaParser->new( $inCAM, $jobId, $step );
 	my $errMess = "";
-	die $errMess unless ( $parser->CheckBendArea( \$errMess ) );
+	unless ( $parser->CheckBendArea( \$errMess ) ){
+		die $errMess;
+	}
 
 	foreach my $bendArea ( $parser->GetBendAreas() ) {
 
@@ -574,12 +596,12 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	use aliased 'Packages::InCAM::InCAM';
 
 	my $inCAM = InCAM->new();
-	my $jobId = "d222776";
+	my $jobId = "d231201";
 
 	my $mess = "";
 
-	my $result = FlexiBendArea->PutCuToBendArea( $inCAM, $jobId, "o+1" );
-	 
+	my $result = FlexiBendArea->CreateRoutPrepregsByBendArea( $inCAM, $jobId, "o+1", 1, 1 );
+
 	print STDERR "Result is: $result, error message: $mess\n";
 
 }

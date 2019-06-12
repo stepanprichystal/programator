@@ -40,13 +40,11 @@ sub new {
 	# PROPERTIES
 
 	$self->{"bendAreas"} = [];
-	
+
 	$self->__LoadBendArea();
 
 	return $self;
 }
-
-
 
 sub CheckBendArea {
 	my $self    = shift;
@@ -62,8 +60,9 @@ sub CheckBendArea {
 
 		if ( scalar(@features) < 4 ) {
 
-			$errMess .= "BendArea with features: " . join( "; ", $bendArea->GetFeatures() ) . "\n" . $errMess .=
-			  "Number of bend area features has to be at least four (current number is: " . scalar(@features) . ")\n";
+			$$errMess .= "BendArea with features: " . join( "; ", map { $_->{"id"} } $bendArea->GetFeatures() ) . "\n";
+
+			$$errMess .= "Number of bend area features has to be at least four (current number is: " . scalar(@features) . ")\n";
 			$result = 0;
 		}
 
@@ -72,13 +71,14 @@ sub CheckBendArea {
 
 		if ( scalar(@tZones) != 2 ) {
 
-			$errMess .= "BendArea with features: " . join( "; ", $bendArea->GetFeatures() ) . "\n" . $errMess .=
-			  "Number of transition zone is not: 2 (current number is: " . scalar(@tZones) . ")\n";
+			$$errMess .= "BendArea with features: " . join( "; ", map { $_->{"id"} } $bendArea->GetFeatures() ) . "\n";
+			$$errMess .=
+			  "Number of transition zone is not: 2 (current number is: " . scalar(@tZones) . ". Feature attribute:transition_zone .)\n";
 			$result = 0;
 		}
 
 		# 3) Check if transition yones contain only lines
-		 
+
 		foreach my $tZone (@tZones) {
 
 			if ( $tZone->GetFeature()->{"type"} ne "L" ) {
@@ -89,16 +89,15 @@ sub CheckBendArea {
 		}
 
 	}
-	
+
 	return $result;
 }
 
-sub GetBendAreas{
-	my $self    = shift;
-	
-	return @{$self->{"bendAreas"}};
-}
+sub GetBendAreas {
+	my $self = shift;
 
+	return @{ $self->{"bendAreas"} };
+}
 
 sub __LoadBendArea {
 	my $self = shift;
@@ -185,7 +184,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $errMess = "";
 
-	unless ( $parser->CheckBendArea(\$errMess) ) {
+	unless ( $parser->CheckBendArea( \$errMess ) ) {
 
 		print $errMess;
 
