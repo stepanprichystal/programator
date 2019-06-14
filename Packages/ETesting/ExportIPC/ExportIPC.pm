@@ -17,7 +17,7 @@ use aliased 'Helpers::JobHelper';
 use aliased 'Helpers::GeneralHelper';
 use aliased 'CamHelpers::CamJob';
 use aliased 'CamHelpers::CamStep';
-
+use aliased 'CamHelpers::CamFilter';
 use aliased 'CamHelpers::CamHelper';
 use aliased 'CamHelpers::CamLayer';
 use aliased 'CamHelpers::CamMatrix';
@@ -52,7 +52,7 @@ sub new {
 
 	# name of et step, which ipc is exported from
 	if ( $self->{"createEtStep"} ) {
-		
+
 		$self->{"etStep"} = "et_" . $self->{"stepToTest"};
 	}
 	else {
@@ -341,6 +341,7 @@ sub __CreateEtStep {
 
 		CamStep->DeleteStep( $inCAM, $jobId, $endStepName );
 		CamStep->CopyStep( $inCAM, $jobId, $endSteps[0]->{"stepName"}, $jobId, $endStepName );
+		$self->__CleanLayers($endStepName);
 
 		# Check if end step contain special rotation (standard angles are 0; 90; 270; 360)
 		# InCAM cant work with non standard rotration
@@ -425,73 +426,40 @@ sub __CreateEtStep {
 		# Flatten step
 		CamStep->FlattenStep( $inCAM, $jobId, \@allLayers, $stepEt );
 
+		$self->__CleanLayers($stepEt);
+
 		push( @optSteps, $stepEt );
 	}
 
 	return @optSteps;
 }
 
-# Flattern all layers in et step. Thus, et step doesn't contain
-# any step and repeat. Reason is, InCAM can't export more then one of type SR pcb correctly
-sub __FlatternETStep {
+# Remove not allowed attributes and features from test layer
+sub __CleanLayers {
 	my $self   = shift;
 	my $etStep = shift;
 	my $inCAM  = $self->{"inCAM"};
 	my $jobId  = $self->{"jobId"};
 
-	$inCAM->COM( 'open_entity', job => $jobId, type => 'step', name => $etStep, iconic => 'no' );
-	$inCAM->AUX( 'set_group', group => $inCAM->{COMANS} );
-	$inCAM->COM( 'units', type => 'mm' );
-	$inCAM->COM( 'affected_layer', name => "", mode => "all", affected => "yes" );
+	CamHelper->SetStep( $inCAM, $etStep );
 
-	my $frExist = CamHelper->LayerExists( $inCAM, $jobId, "fr" );
+	# Clean signal layers
 
-	if ($frExist) {
-		$inCAM->COM( 'affected_layer', name => 'fr', mode => 'single', affected => 'no' );
-	}
-	$inCAM->COM('sel_delete');
-	$inCAM->COM( 'affected_layer', name => "", mode => "all", affected => "no" );
-
-	my @allLayers = CamJob->GetBoardLayers( $inCAM, $jobId );
-
-	@allLayers = grep {
-		     $_->{"gROWlayer_type"} eq "signal"
-		  || $_->{"gROWlayer_type"} eq "mixed"
-		  || $_->{"gROWlayer_type"} eq "power_ground"
-		  || $_->{"gROWlayer_type"} eq "solder_mask"
-		  || $_->{"gROWlayer_type"} eq "coverlay"
-		  || $_->{"gROWlayer_type"} eq "rout"
-		  || $_->{"gROWlayer_type"} eq "drill"
-	} @allLayers;
-
-	# Remove layers which are not needed flc, fls
-	my @filterLayer = map { $_->{"gROWname"} }
-	  CamDrilling->GetNCLayersByTypes( $inCAM, $jobId, [ EnumsGeneral->LAYERTYPE_nplt_lcMill, EnumsGeneral->LAYERTYPE_nplt_lsMill ] );
-
-	my %tmp;
-	@tmp{@filterLayer} = ();
-	@allLayers = grep { !exists $tmp{ $_->{"gROWname"} } } @allLayers;
-
-	foreach my $l (@allLayers) {
-
-		CamLayer->FlatternLayer( $inCAM, $jobId, $etStep, $l->{"gROWname"} );
+	my @lNames = CamJob->GetSignalLayerNames( $inCAM, $jobId );
+	CamLayer->AffectLayers( $inCAM, \@lNames );
+	$inCAM->COM( "sel_delete_atr", "mode" => "list", "attributes" => ".drill\;.rout_plated\;.smd", "attr_vals" => "plated\;\;\;" );
+	CamLayer->ClearLayers($inCAM);
+	
+	# Clean Rout before plating
+	my @pltMill = map {$_->{"gROWname"}} CamDrilling->GetNCLayersByType($inCAM, $jobId, EnumsGeneral->LAYERTYPE_plt_nMill);
+	
+	if(@pltMill){
+		
+		CamLayer->AffectLayers( $inCAM, \@pltMill );
+		CamLayer->DeleteFeatures($inCAM) if(CamFilter->SelectBySingleAtt($inCAM, $jobId, ".pilot_hole"));
 	}
 
-	#$inCAM->COM( 'sr_active', top => '0', bottom => '0', left => '0', right => '0' );
-
-	$inCAM->COM( "set_step", "name" => $etStep );
-
-	$inCAM->COM('sredit_sel_all');
-	$inCAM->COM('sredit_del_steps');
-
-	#delete SMD attributes
-
-	$inCAM->COM( 'affected_layer', name => "", mode => "all", affected => "yes" );
-	$inCAM->COM("sel_all_feat");
-	$inCAM->COM( "sel_delete_atr", "mode" => "list", "attributes" => ".smd" );
-	$inCAM->COM( 'affected_layer', name => "", mode => "all", affected => "no" );
-	$inCAM->COM("clear_highlight");
-
+	return 1;
 }
 
 # Do optimization fot IPC
@@ -597,10 +565,10 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	use aliased 'Packages::ETesting::ExportIPC::ExportIPC';
 	use aliased 'Packages::InCAM::InCAM';
 
-	my $jobId = "d060301";
+	my $jobId = "d248323";
 	my $inCAM = InCAM->new();
 
-	my $step = "o+1";
+	my $step = "panel";
 
 	my $max = ExportIPC->new( $inCAM, $jobId, $step, 1, );
 	$max->Export( undef, 0 );

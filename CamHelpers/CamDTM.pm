@@ -318,6 +318,54 @@ sub GetDTMDefaultType {
 	return $DTMType;
 }
 
+# Get drill size for tool by tool number and DTM type
+# Return drill size in µm
+# If no tool is available on CNC stock, return 0
+sub GetDrillSizeByTool {
+	my $self    = shift;
+	my $inCAM   = shift;
+	my $jobId   = shift;
+	my $step    = shift;
+	my $layer   = shift;
+	my $DTMType = shift;
+	my $toolNum = shift;
+
+
+	my $t = ( grep { $_->{"gTOOLnum"} == $toolNum } $self->GetDTMTools( $inCAM, $jobId, $step, $layer, 0 ) )[0];
+	
+	die "Tool with wool number: $toolNum was not found" unless(defined $t);
+	die "Tool with wool number: $toolNum has no finish size" if($t->{"gTOOLfinish_size"} == 0);
+
+	# change type values ( command tool return values non_plated and plated, but tools_tab_set consum plate, nplate)
+	my $toolType = $t->{"gTOOLtype"};
+	$toolType =~ s/^plated$/plate/;
+	$toolType =~ s/^non_plated$/nplate/;
+
+	my $res = $inCAM->COM(
+						   'drill_size_hook',
+						   "layer"       => $layer,
+						   "type"        => $toolType,
+						   "type2"       => $t->{"gTOOLtype2"},
+						   "min_tol"     => $t->{"gTOOLmin_tol"},
+						   "max_tol"     => $t->{"gTOOLmax_tol"},
+						   "bit"         => $t->{"gTOOLbit"},
+						   "finish_size" => $t->{"gTOOLfinish_size"},
+						   "shape"       => $t->{"gTOOLshape"},
+						   "user_params" => $DTMType
+	);
+
+	my $reply = $inCAM->GetReply();
+
+	if ( $reply =~ m/^(\d+\.?\d*)\s(\d+\.?\d*)$/ ) {
+
+		return $1;
+	}
+	else {
+
+		return 0;
+	}
+}
+
 # Set new tools to DTM
 # Do not recalculation by DTM type (only set DTM type without any action)
 sub SetDTMTools {
@@ -473,7 +521,14 @@ sub RecalcDTMTools {
 
 	}
 
-	$inCAM->COM( 'tools_set', "layer" => $layer, "thickness" => '0', "user_params" => $DTMType, "user_des_names" => join( ";", @userClmns ), "slots" => "yes" );
+	$inCAM->COM(
+				 'tools_set',
+				 "layer"          => $layer,
+				 "thickness"      => '0',
+				 "user_params"    => $DTMType,
+				 "user_des_names" => join( ";", @userClmns ),
+				 "slots"          => "yes"
+	);
 
 }
 
@@ -537,11 +592,11 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	use Data::Dump qw(dump);
 
 	my $inCAM = InCAM->new();
-	my $jobId = "d247767";
+	my $jobId = "d152456";
 
 	#my $step  = "mpanel_10up";
 
-	my $dtm = CamDTM->RecalcDTMTools( $inCAM, $jobId, "o+2", "f", "vrtane", 1, 0 );
+	my $dtm = CamDTM->GetDrillSizeByTool( $inCAM, $jobId, "o+1", "f", "vrtane", 3);
 
 	die;
 

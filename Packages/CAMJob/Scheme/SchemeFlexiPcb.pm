@@ -117,7 +117,7 @@ sub AddHolesCoverlay {
 
 	my $flexType = JobHelper->GetPcbFlexType($jobId);
 
-	return 0 if ( $flexType ne EnumsGeneral->PcbFlexType_RIGIDFLEXI );
+	return 0 if ( $flexType ne EnumsGeneral->PcbFlexType_RIGIDFLEXI &&  $flexType ne EnumsGeneral->PcbFlexType_RIGIDFLEXO);
 
 	my @coverlay =
 	  CamDrilling->GetNCLayersByTypes( $inCAM, $jobId, [ EnumsGeneral->LAYERTYPE_nplt_cvrlycMill, EnumsGeneral->LAYERTYPE_nplt_cvrlysMill ] );
@@ -338,11 +338,11 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	use aliased 'Packages::InCAM::InCAM';
 
 	my $inCAM = InCAM->new();
-	my $jobId = "d222776";
+	my $jobId = "d231201";
 
 	my $mess = "";
 
-	my $result = SchemeFlexiPcb->RemovePatternFillFromFlexiCore( $inCAM, $jobId );
+	my $result = SchemeFlexiPcb->AddHolesCoverlay( $inCAM, $jobId, "panel");
 
 	print STDERR "Result is: $result, error message: $mess\n";
 

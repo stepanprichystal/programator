@@ -7,7 +7,7 @@ use warnings;
 
 
 # ============ INPUT LINE =================
-my $inputLine ="sel_fill,type=solid,solid_type=fill,min_brush=100,use_arcs=yes,cut_prims=no,outline_draw=yes,outline_width=0,outline_invert=no";
+my $inputLine ="chain_pocket,layer=55476B01-6DAF-1014-A848-3E2F672B8E68,mode=concentric,size=2,feed=0,overlap=0.9,pocket_dir=standard";
 
 
 
