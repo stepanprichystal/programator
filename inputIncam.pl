@@ -410,11 +410,12 @@ sub _Process {
 			# Here is set npt holes without copper and then move to layer 'f'
  			_MoveNonPlateHoles($pcbId); 
  			
+ 			#Re-Set customer name and ID
+ 			_SetCustomerAgain($pcbId);
+ 			
  			
 			# Here run script for set value of drill diameter
-			
 			SetHolesRun->CalculationDrills($inCAM, $pcbId);
-			#$inCAM->COM('script_run',name=>GeneralHelper->Root()."\\_from_z\\vv",dirmode=>'global',params=>"$pcbId"); 
 			
  			
 			# Change minimal line in rout layer
@@ -1342,7 +1343,21 @@ sub __GetOrigStep {
 	return($editStep);
 }
 
-
+sub _SetCustomerAgain {
+		my $jobId = shift;
+		
+				my $numberCustomer = HegMethods->GetIdcustomer($jobId);
+				my @pole = HegMethods->GetAllByPcbId($jobId);
+				$customerName = $pole[0]->{'customer'};
+				$customerName =~ s/,/./g;
+		
+				my $custIncamName = _GetInCamCustomer($numberCustomer);
+				
+				if ($custIncamName) {
+						$inCAM->COM('set_job_customer', job=>$jobId, customer=>$numberCustomer, customer_name=>$custIncamName);
+				}
+	
+}
 
 
 

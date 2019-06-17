@@ -13,6 +13,8 @@ use aliased 'Helpers::GeneralHelper';
 use aliased 'Enums::EnumsDrill';
 use aliased 'Packages::Other::CustomerNote'; 
 use aliased 'Connectors::HeliosConnector::HegMethods';
+use aliased 'Packages::GuideSubs::Routing::DoSetDTM';
+use aliased 'Managers::MessageMngr::MessageMngr';
 
 use aliased 'CamHelpers::CamDTM';
 
@@ -85,6 +87,7 @@ sub _SetDrill {
       my $jobId       = shift;
       my $layerDrill = 'm';
       my $layerMill = 'f';
+      my $layerPltMill = 'r';
 
       # 1) Reset DTM (vymazani),
       # 2) Nastaveni vysledne/vrtane
@@ -92,10 +95,14 @@ sub _SetDrill {
       my $holes  = 1;    # recalculate holes type
       my $slots  = 0;    # recalculate slots type
 
+	  my $res2 = DoSetDTM->MoveHoles2RoutBeforeDTMRecalc( $inCAM, $jobId, "o+1", $layerDrill, $layerPltMill, $adjustDrill );
+	  
 	  CamDTM->RecalcDTMTools( $inCAM, $jobId, "o+1", $layerDrill, $adjustDrill, $holes, $slots );
       
       
       # ROUT layer
+      my $res = DoSetDTM->MoveHoles2RoutBeforeDTMRecalc( $inCAM, $jobId, "o+1", $layerMill, $layerMill, EnumsDrill->DTM_VRTANE );
+      
       CamDTM->RecalcDTMTools( $inCAM, $jobId, "o+1", $layerMill, EnumsDrill->DTM_VRTANE, $holes, $slots );
 
        
