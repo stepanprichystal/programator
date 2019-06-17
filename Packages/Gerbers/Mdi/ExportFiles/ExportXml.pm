@@ -330,13 +330,12 @@ sub __GetThickByLayer {
 	my $jobId = $self->{"jobId"};
 	my $inCAM = $self->{"inCAM"};
 
-	my $PLTTHICKNESS   = 0.035;    # plating is 35µm from one side
-	my $PREPLTTHICKNESS   = 0.015; # pre-plating is 15µm from one side (viafilling)
-	my $SMTHICNESS     = 0.025;    # solder mask thickness around 25µm
-	my $RESISTTHICNESS = 0.070;    # resist thickness around 70µm (resist plus protection foil)
+	my $PLTTHICKNESS    = 0.035;    # plating is 35µm from one side
+	my $PREPLTTHICKNESS = 0.015;    # pre-plating is 15µm from one side (viafilling)
+	my $SMTHICNESS      = 0.025;    # solder mask thickness around 25µm
+	my $RESISTTHICNESS  = 0.035;    # resist thickness around 70µm (resist plus protection foil)
 
-	my $thick = 0;                 #total thick
-
+	my $thick = 0;                  #total thick
 	if ( $layer =~ /^[cs]$/ || $layer =~ /^v\d$/ ) {
 
 		# Signal layer, plug layers
@@ -356,7 +355,7 @@ sub __GetThickByLayer {
 
 				# if via fill, there is extra pre plating
 				$thick += 2 * $PREPLTTHICKNESS if ( CamDrilling->GetViaFillExists( $inCAM, $jobId ) );
-				
+
 				$thick += 2 * $PLTTHICKNESS if ( $etchingType eq EnumsGeneral->Etching_TENTING );
 
 			}
@@ -409,9 +408,9 @@ sub __GetThickByLayer {
 
 	}
 	elsif ( $layer =~ /^plg[cs]$/ ) {
-		
+
 		# Plug layers
- 
+
 		if ( $self->{"layerCnt"} > 2 ) {
 
 			$thick = $self->{"stackup"}->GetFinalThick() / 1000;
@@ -423,7 +422,7 @@ sub __GetThickByLayer {
 
 		$thick += 2 * $PREPLTTHICKNESS;
 	}
-	elsif ( $layer =~ /^m[cs]2?$/ ||  $layer =~ /^gold[cs]$/ ) {
+	elsif ( $layer =~ /^m[cs]2?$/ || $layer =~ /^gold[cs]$/ ) {
 
 		# Solder mask layers
 
@@ -437,21 +436,20 @@ sub __GetThickByLayer {
 		}
 
 		$thick += 2 * $PLTTHICKNESS if ( $self->{"layerCnt"} >= 2 );
-		
-		if($layer =~ /^m[cs]2?$/){
-			
+
+		if ( $layer =~ /^m[cs]2?$/ ) {
+
 			$thick += 2 * $SMTHICNESS;
 		}
-		
-		if($layer =~ /^gold[cs]$/){
-			
-			my $smLayer = "m".($layer =~ /^gold([cs])$/)[0];
-			
-			$thick += 2 * $SMTHICNESS  if(CamHelper->LayerExists($inCAM, $jobId, $smLayer))
-			
-			
+
+		if ( $layer =~ /^gold[cs]$/ ) {
+
+			my $smLayer = "m" . ( $layer =~ /^gold([cs])$/ )[0];
+
+			$thick += 2 * $SMTHICNESS if ( CamHelper->LayerExists( $inCAM, $jobId, $smLayer ) )
+
 		}
-		
+
 	}
 
 	# add value of resist from both sides
