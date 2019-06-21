@@ -50,7 +50,8 @@ sub GetDrillDuration {
 	# Parse file where are stored measured duration (per 100 holes) for all tools
 	my %measuredDur = ();
 
-	my @lines = @{ FileHelper->ReadAsLines( GeneralHelper->Root() . "\\Packages\\CAMJob\\Drilling\\DrillDuration\\DrillToolDuration.csv" ) };
+	my $durFile =  GeneralHelper->Root() . "\\Packages\\CAMJob\\Drilling\\DrillDuration\\DrillToolDuration.csv";
+	my @lines = @{ FileHelper->ReadAsLines( $durFile ) };
 
 	foreach my $l (@lines) {
 
@@ -77,7 +78,7 @@ sub GetDrillDuration {
 
 			next unless ( $drillToolUsage{$toolKey} );
 
-			die "Duration is not defined for tool $toolKey" unless ( defined $measuredDur{$toolKey} );
+			die "Duration is not defined for tool: $toolKey (Duration file definition: $durFile)" unless ( defined $measuredDur{$toolKey} );
 
 			# a) add to total drill tool duration (multipled by number of occurence in main step)
 			$duration += ( $drillToolUsage{$toolKey} * $measuredDur{$toolKey}->[1] / 100 ) * $s->{"totalCnt"};    # drill holes duration

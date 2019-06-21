@@ -69,12 +69,9 @@ sub __SetLayout {
 	my $optionsStatBox  = $self->__SetLayoutOptions($self);
 	my $layersStatBox   = $self->__SetLayoutControlList($self);
 
- 
 	# SET EVENTS
 
 	# BUILD STRUCTURE OF LAYOUT
-
- 
 
 	# BUILD STRUCTURE OF LAYOUT
 
@@ -101,19 +98,15 @@ sub __SetLayoutQuickSettings {
 
 	# DEFINE CONTROLS
 	my $allChb = Wx::CheckBox->new( $statBox, -1, "All", &Wx::wxDefaultPosition, [ 70, 20 ] );
-	 
 
 	# SET EVENTS
 	Wx::Event::EVT_CHECKBOX( $allChb, -1, sub { $self->__OnSelectAllChangeHandler(@_) } );
-	 
 
 	# BUILD STRUCTURE OF LAYOUT
-	$szStatBox->Add( $allChb,     0, &Wx::wxEXPAND | &Wx::wxLEFT, 2 );
-	 
+	$szStatBox->Add( $allChb, 0, &Wx::wxEXPAND | &Wx::wxLEFT, 2 );
 
 	# Set References
-	$self->{"allChb"}     = $allChb;
-	 
+	$self->{"allChb"} = $allChb;
 
 	return $szStatBox;
 }
@@ -150,7 +143,17 @@ sub __SetLayoutControlList {
 	my $szStatBox = Wx::StaticBoxSizer->new( $statBox, &Wx::wxHORIZONTAL );
 
 	# DEFINE CONTROLS
+ 
 	my @layers = CamJob->GetBoardBaseLayers( $self->{"inCAM"}, $self->{"jobId"} );
+ 
+	# Remove layers not to be plotted
+	@layers = grep { $_->{"gROWname"} ne "bend" } @layers;
+	@layers = grep { $_->{"gROWname"} !~ /^coverlay/ } @layers;
+
+	foreach my $l (@layers) {
+		print STDERR $l->{"gROWname"} . "\n";
+	}
+
 	my $plotList = PlotList->new( $statBox, $self->{"inCAM"}, $self->{"jobId"}, \@layers );
 
 	# SET EVENTS
@@ -182,8 +185,6 @@ sub __OnSelectAllChangeHandler {
 	}
 
 }
-
- 
 
 # =====================================================================
 # DISABLING CONTROLS

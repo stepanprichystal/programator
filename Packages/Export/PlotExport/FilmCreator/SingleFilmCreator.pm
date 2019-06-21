@@ -24,20 +24,17 @@ use aliased 'Packages::Export::PlotExport::FilmCreator::Helper';
 sub new {
 	my $class = shift;
 
-	my $inCAM        = shift;    #board layers
-	my $jobId        = shift;    #board layers
-	my $layers       = shift;    #board layers
-	my $smallLim     = shift;
-	my $bigLim       = shift;
-	my $multiCreator = shift;    #board layers
+	my $inCAM    = shift;    #board layers
+	my $jobId    = shift;    #board layers
+	my $layers   = shift;    #board layers
+	my $smallLim = shift;
+	my $bigLim   = shift;
 
 	#my $pcbsizeProfile = shift; #board layers
 	#my $pcbsizeFrame = shift; #board layers
 
-	my $self = $class->SUPER::new( $inCAM, $jobId, $layers, @_ );
+	my $self = $class->SUPER::new( $inCAM, $jobId, $layers );
 	bless $self;
-
-	$self->{"multiCreator"} = $multiCreator;
 
 	Helper->AddLayerPlotSize( Enums->Size_FRAME, $layers, $smallLim, $bigLim );
 
@@ -45,35 +42,27 @@ sub new {
 }
 
 sub GetRuleSets {
-	my $self = shift;
+	my $self       = shift;
+	my $usedLayers = shift;    #layer name of layers used in other ruleset
 
 	$self->__BuildRules();
 
-	$self->_RunRules();
+	return $self->_RunRules($usedLayers);
 
-	return @{ $self->{"resultRules"} };
 }
 
 sub __BuildRules {
 	my $self = shift;
 	my $rule;
 
-	my @ruleSetMulti = $self->{"multiCreator"}->GetRuleSets();
-
-	my $silkTopUsed = $self->__PlotTypeUsed( \@ruleSetMulti, Enums->LType_SILKTOP );
-
+ 
 	# Add rule, only if layer type "SILKTOP" is not already used in result set created by "multiCreator"
-	unless ($silkTopUsed) {
-		$rule = $self->_AddRule( Enums->Ori_HORIZONTAL );
-		$rule->AddSingleTypes( Enums->LType_SILKTOP );
-	}
+	$rule = $self->_AddRule( Enums->Ori_HORIZONTAL, 1 );
+	$rule->AddSingleTypes( Enums->LType_SILKTOP );
 
 	# Add rule, only if layer type "SILKBOT" is not already used in result set created by "multiCreator"
-	my $silkBotUsed = $self->__PlotTypeUsed( \@ruleSetMulti, Enums->LType_SILKBOT );
-	unless ($silkBotUsed) {
-		$rule = $self->_AddRule( Enums->Ori_HORIZONTAL );
-		$rule->AddSingleTypes( Enums->LType_SILKBOT );
-	}
+	$rule = $self->_AddRule( Enums->Ori_HORIZONTAL, 1 );
+	$rule->AddSingleTypes( Enums->LType_SILKBOT );
 
 	$rule = $self->_AddRule( Enums->Ori_HORIZONTAL );
 	$rule->AddSingleTypes( Enums->LType_MASKTOP );
@@ -88,22 +77,18 @@ sub __BuildRules {
 	$rule->AddSingleTypes( Enums->LType_SIGINNER );
 
 	$rule = $self->_AddRule( Enums->Ori_HORIZONTAL );
-	$rule->AddSingleTypes( Enums->LType_GOLDFINGER );	
-	
+	$rule->AddSingleTypes( Enums->LType_GOLDFINGER );
+
 	# add PEELABLE layers only  if is not already used in result set created by "multiCreator"
-	unless ( $self->__PlotTypeUsed( \@ruleSetMulti, Enums->LType_PEELABLE )) {
-		
-		$rule = $self->_AddRule( Enums->Ori_HORIZONTAL );
-		$rule->AddSingleTypes( Enums->LType_PEELABLE );
-	}
-	
+
+	$rule = $self->_AddRule( Enums->Ori_HORIZONTAL, 1 );
+	$rule->AddSingleTypes( Enums->LType_PEELABLE );
+
 	# add other layers only  if is not already used in result set created by "multiCreator"
-	unless ( $self->__PlotTypeUsed( \@ruleSetMulti, Enums->LType_ALL )) {
-	
-		$rule = $self->_AddRule( Enums->Ori_HORIZONTAL );
-		$rule->AddSingleTypes( Enums->LType_ALL );		
-	}
-	
+
+	$rule = $self->_AddRule( Enums->Ori_HORIZONTAL, 1 );
+	$rule->AddSingleTypes( Enums->LType_ALL );
+
 }
 
 # Tell if plot type is already used in rulesets created by "multi creator"

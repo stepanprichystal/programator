@@ -164,6 +164,13 @@ sub GetCompensation {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
+	use aliased 'Packages::Technology::EtchOperation';
+	
+	my $cuThickness = 35;
+	my $class = 6;
+	my $plated = 0;
+	
+	print EtchOperation->GetCompensation($cuThickness, $class, $plated);
  
 
 }

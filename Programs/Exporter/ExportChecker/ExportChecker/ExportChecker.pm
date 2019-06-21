@@ -50,6 +50,8 @@ use aliased 'CamHelpers::CamHelper';
 use aliased 'CamHelpers::CamJob';
 use aliased 'Enums::EnumsPaths';
 use aliased 'Enums::EnumsGeneral';
+
+use aliased 'Packages::Export::PreExport::FakeLayers';
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
@@ -102,9 +104,13 @@ sub Init {
 	
 	$self->{"launcher"} = $launcher;
 	$self->{"inCAM"} = $launcher->GetInCAM();
-	
 
-	# 2) Initialization of whole export app
+
+	# 2) Create fake layers which will be exported, but are created automatically
+	#$self->{"inCAM"}->SetDisplay(0);
+	FakeLayers->CreateFakeLayers($self->{"inCAM"}, $self->{"jobId"});
+		
+	# 3) Initialization of whole export app
 
 	# Keep structure of groups
 	$self->__DefineTableGroups();
@@ -118,7 +124,7 @@ sub Init {
 	#$groupBuilder->Build( $self->{"groupTables"}, $self->{"inCAM"} );
 	$self->{"form"}->BuildGroupTableForm( $self->{"groupTables"}, $self->{"inCAM"} );
 
-	# 3) Initialization of each single group
+	# 4) Initialization of each single group
 
 	#posloupnost volani metod
 	#1) new()
@@ -129,7 +135,7 @@ sub Init {
 	#==> export
 	#6) CheckBeforeExport()
 	#7) GetGroupData()
-
+ 
 	$self->{"units"}->InitDataMngr( $self->{"inCAM"} );
 
 	$self->{"units"}->RefreshGUI();
@@ -257,6 +263,8 @@ sub __CleanUpAndExitForm {
 
 	#}
 
+	FakeLayers->RemoveFakeLayers($self->{"inCAM"}, $self->{"jobId"});
+		
 	$self->{"form"}->{"mainFrm"}->Destroy();
 
 }
@@ -341,6 +349,8 @@ sub __OnResultPopupHandler {
 	# to this income server
 
 	$self->{"inCAM"}->Reconnect();
+	
+	
 
 	my $active    = 1;
 	my $toProduce = $self->{"form"}->GetToProduce($active);
@@ -348,6 +358,9 @@ sub __OnResultPopupHandler {
 	if (    $resultType eq Enums->PopupResult_EXPORTFORCE
 		 || $resultType eq Enums->PopupResult_SUCCES )
 	{
+
+
+		FakeLayers->RemoveFakeLayers($self->{"inCAM"}, $self->{"jobId"});
 
 		my $pathExportFile = EnumsPaths->Client_EXPORTFILES . $self->{"jobId"};
 

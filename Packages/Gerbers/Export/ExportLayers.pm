@@ -31,11 +31,13 @@ sub ExportLayers {
 	my $step        = shift;
 	my @layers      = @{ shift(@_) };
 	my $archivePath = shift;
-	my $prefix      = shift;            # string, which is put before each files
-	my $suffixFunc  = shift;            # function, which return suffix, which is add behind file
+	my $prefix      = shift;                           # string, which is put before each files
+	my $suffixFunc  = shift;                           # function, which return suffix, which is add behind file
 	my $breakSR     = shift;
 	my $breakSymbol = shift;
-	my $breakArc = shift;
+	my $breakArc    = shift;
+	my $units       = shift // "inch";                 # units of exported data inch/mm
+	my $offset      = shift // { "x" => 0, "y" => 0 };    # offset of exported data
 
 	# Set default break step and repeat
 	my $brSR = "no";
@@ -50,14 +52,14 @@ sub ExportLayers {
 	if ($breakSymbol) {
 		$brSym = "yes";
 	}
-	
+
 	# Set default break arc
 	my $brArc = "no";
 
 	if ($breakArc) {
 		$brArc = "yes";
 	}
- 
+
 	my $device = "Gerber274x";
 
 	# if last char is slash, remove becaues
@@ -83,7 +85,7 @@ sub ExportLayers {
 		else {
 			$mirror = "no";
 		}
-		
+
 		my $angle;
 
 		if ( $l->{"angle"} ) {
@@ -92,7 +94,6 @@ sub ExportLayers {
 		else {
 			$angle = 0;
 		}
-		
 
 		# Reset settings of device
 		$inCAM->COM( "output_reload_device", "type" => "format", "name" => $device );
@@ -105,7 +106,9 @@ sub ExportLayers {
 			"dir_path"      => $archivePath,
 			"prefix"        => $prefix,
 			"suffix"        => $suffix,
-			"format_params" => "(break_sr=$brSR)(break_symbols=$brSym)(break_arc=$brArc)"
+			"x_offset"      => $offset->{"x"},
+			"y_offset"      => $offset->{"y"},
+			"format_params" => "(break_sr=$brSR)(break_symbols=$brSym)(break_arc=$brArc)(units=$units)"
 
 		);
 
@@ -172,7 +175,9 @@ sub ExportLayers2 {
 	my $nameFunc    = shift;            # func which define name of final file
 	my $breakSR     = shift;
 	my $breakSymbol = shift;
-	my $breakArc = shift;
+	my $breakArc    = shift;
+	my $units       = shift;
+	my $offset      = shift;
 
 	my $filesDir = EnumsPaths->Client_INCAMTMPOTHER . GeneralHelper->GetGUID() . "\\";
 
@@ -188,7 +193,8 @@ sub ExportLayers2 {
 	}
 
 	# 1) export to TMP directory
-	$self->ExportLayers( $resultItem, $inCAM, $step, \@layers, EnumsPaths->Client_INCAMTMPOTHER, "", $suffixFunc, $breakSR, $breakSymbol, $breakArc );
+	$self->ExportLayers( $resultItem, $inCAM, $step, \@layers, EnumsPaths->Client_INCAMTMPOTHER,
+						 "", $suffixFunc, $breakSR, $breakSymbol, $breakArc, $units, $offset );
 
 	# 2) move to finish dir and rename
 	foreach my $l (@layers) {

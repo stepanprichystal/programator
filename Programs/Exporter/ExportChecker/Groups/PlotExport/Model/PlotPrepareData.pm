@@ -104,6 +104,10 @@ sub __GetFinalLayers {
 			}
 		}
 	}
+	
+	# Remove layers not to by plotted
+	@prepared = grep { $_->{"name"} ne "bend" } @prepared;
+	@prepared = grep { $_->{"name"} !~ /^coverlay/ } @prepared;
  
 	return @prepared;
 

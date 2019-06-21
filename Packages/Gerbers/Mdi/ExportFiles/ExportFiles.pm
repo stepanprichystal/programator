@@ -10,6 +10,7 @@ use base('Packages::ItemResult::ItemEventMngr');
 use strict;
 use warnings;
 use File::Copy;
+use List::Util qw[max min];
 
 #local library
 use aliased 'Helpers::GeneralHelper';
@@ -34,6 +35,7 @@ use aliased 'Packages::Gerbers::Mdi::ExportFiles::ExportXml';
 use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'Packages::Technology::EtchOperation';
 use aliased 'Packages::TifFile::TifSigLayers';
+use aliased 'Packages::Gerbers::Mdi::ExportFiles::Helper';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -47,6 +49,7 @@ sub new {
 	$self->{"inCAM"} = shift;
 	$self->{"jobId"} = shift;
 	$self->{"step"}  = shift;
+	$self->{"units"} = shift // "inch";    # default units recommended by Schmoll machinen
 
 	# Info about  pcb ===========================
 
@@ -72,7 +75,9 @@ sub new {
 
 	$self->{"mdiStep"} = "mdi_panel";
 
-	$self->{"exportXml"} = ExportXml->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"profLim"}, $self->{"layerCnt"} );
+	$self->{"fiducMark"} = FiducMark->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"units"} );
+
+	$self->{"exportXml"} = ExportXml->new( $self->{"inCAM"}, $self->{"jobId"} );
 
 	return $self;
 }
@@ -85,7 +90,7 @@ sub Run {
 	$self->__DeleteOldFiles($layerTypes);
 
 	# Create fake layers for solder mask export (solder mask layer can be duplicated. Same data but different color)
-	my @fakeL = $self->__CreateFakeSMLayers();
+	#my @fakeL = Helper->CreateFakeLayers( $self->{"inCAM"}, $self->{"jobId"}, $self->{"step"} );
 
 	# Get all layer for export
 	my @layers = $self->__GetLayers2Export($layerTypes);
@@ -94,13 +99,13 @@ sub Run {
 		return 0;
 	}
 
-	$self->__CreateMDIStep(\@layers);
+	$self->__CreateMDIStep( \@layers );
 	$self->__ExportLayers( \@layers );
 	$self->__DeleteMdiStep();
-	
+
 	# delete fake layers
-	CamMatrix->DeleteLayer($self->{"inCAM"}, $self->{"jobId"}, $_) foreach(@fakeL);
-	
+	#CamMatrix->DeleteLayer( $self->{"inCAM"}, $self->{"jobId"}, $_ ) foreach (@fakeL);
+
 	return 1;
 }
 
@@ -119,29 +124,36 @@ sub __ExportLayers {
 		my $resultItem = $self->_GetNewItem( $l->{"gROWname"} );
 
 		# get limits (define physic dimension) for layer
-		my %lim = $self->__GetLayerLimit( $l->{"gROWname"} );
+		my %dataLim = $self->__GetLayerLimit( $l->{"gROWname"} );
+		my %pnlDim = ( "w" => $dataLim{"xMax"} - $dataLim{"xMin"}, "h" => $dataLim{"yMax"} - $dataLim{"yMin"} );
 
-		# 1) Optimize levels
-		$self->__OptimizeLayer($l);
+		# 1) Find position of fiducial marks
+		my @fiducials = $self->__GetFiducials( $l->{"gROWname"}, \%dataLim );
+
+		# 1) Optimize layer (move layer data to zero + optimize levels)
+		$self->__OptimizeLayer( $l, \%dataLim );
 
 		# 2) insert frame 100µm width around pcb (fr frame coordinate)
-		$self->__PutFrameAorundPcb( $l->{"gROWname"}, \%lim );
+		$self->__PutFrameAorundPcb( $l->{"gROWname"}, \%pnlDim );
 
 		# 3) clip data by limits
-		$self->__ClipAreaLayer( $l->{"gROWname"}, \%lim );
+		$self->__ClipAreaLayer( $l->{"gROWname"}, \%pnlDim );
 
 		# 4) compensate layer by computed compensation
 		$self->__CompensateLayer( $l->{"gROWname"} );
 
 		# 5) export gerbers
-		my $fiducDCode = undef;
-		my $tmpFile = $self->__ExportGerberLayer( $l->{"gROWname"}, \$fiducDCode, $resultItem );
+		my $tmpFile = $self->__ExportGerberLayer( $l->{"gROWname"}, $resultItem );
 
-		# 6) export xml
-		$self->{"exportXml"}->Export( $l, $fiducDCode );
+		# 6) Add fiducial marks to gerber file
+		my $fiducDCode = $self->{"fiducMark"}->AddFiducialMarks( $tmpFile, \@fiducials );
 
-		# 7) Copy file to mdi folder after exportig xml template
+		# 7) export xml
+		$self->{"exportXml"}->Export( $l, $fiducDCode, \%pnlDim );
+
+		# 8) Copy file to mdi folder after exportig xml template
 		my $finalName = EnumsPaths->Jobs_PCBMDI . $jobId . $l->{"gROWname"} . "_mdi.ger";
+		$finalName =~ s/outer//; # remove outer from fake outer core signal layers
 		copy( $tmpFile, $finalName ) or die "Unable to copy mdi gerber file from: $tmpFile.\n";
 		unlink($tmpFile);
 
@@ -215,13 +227,13 @@ sub __GetLayers2Export {
 
 	if ( $layerTypes->{ Enums->Type_SIGNAL } ) {
 
-		my @l = grep { $_->{"gROWname"} =~ /^[csv]\d*$/ } @all;
+		my @l = grep { $_->{"gROWname"} =~ /^[csv]\d*(outer)?$/ } @all;    # outer is for fake innera layers: v1outer, ..
 		push( @exportLayers, @l );
 	}
 
 	if ( $layerTypes->{ Enums->Type_MASK } ) {
 
-		my @l = grep { $_->{"gROWname"} =~ /^m[cs]2?$/ } @all;
+		my @l = grep { $_->{"gROWname"} =~ /^m[cs]2?$/ } @all;             # number 2 is second scilkscreeen and soldermask
 		push( @exportLayers, @l );
 	}
 
@@ -316,10 +328,80 @@ sub __GetFrLimits {
 
 }
 
+# Return fiducial position of OLEC holes in mm
+sub __GetFiducials {
+	my $self      = shift;
+	my $layerName = shift;
+	my $dataLim   = shift;
+
+	my $inCAM = $self->{"inCAM"};
+	my $jobId = $self->{"jobId"};
+	my $step  = $self->{"step"};
+
+	# Decide wich drill layer take fiducial position from
+	# v - panel profile frame drilling
+	# v1 - core frame drilling
+
+	my $drillLayer = undef;
+
+	if ( $layerName =~ /^v\d(outer)?$/ ) {
+
+		$drillLayer = "v1";
+
+	}
+	else {
+
+		$drillLayer = "v";
+	}
+
+	# Exceptions for Outer Rigid-Flex with top coverlay
+	if ( $layerName =~ /^[cs]$/ && JobHelper->GetIsFlex( $self->{"jobId"} ) ) {
+
+		if (    JobHelper->GetPcbFlexType($jobId) eq EnumsGeneral->PcbFlexType_RIGIDFLEXO
+			 && CamHelper->LayerExists( $inCAM, $jobId, "coverlayc" ) )
+		{
+			$drillLayer = "v1";
+		}
+	}
+
+	my $f = Features->new();
+	$f->Parse( $inCAM, $jobId, $step, $drillLayer );
+
+	my @features = grep { defined $_->{"att"}->{".geometry"} && $_->{"att"}->{".geometry"} =~ /^OLEC_otvor_((IN)|(2V))$/ } $f->GetFeatures();
+
+	die "All fiducial marks (four marks, attribut: OLEC_otvor_<IN/2V>) were not found in layer: $drillLayer" unless ( scalar(@features) == 4 );
+
+	# take position and sort them: lefttop; right-top; right-bot; left-bot
+	my @fiducials = ();
+
+	my $fLT = ( grep { $_->{"att"}->{".pnl_place"} =~ /left-top$/ } @features )[0];
+	my $fRT = ( grep { $_->{"att"}->{".pnl_place"} =~ /right-top$/ } @features )[0];
+	my $fRB = ( grep { $_->{"att"}->{".pnl_place"} =~ /right-bot$/ } @features )[0];
+	my $fLB = ( grep { $_->{"att"}->{".pnl_place"} =~ /left-bot$/ } @features )[0];
+
+	die "OLEC fiducial mark left-top was not found"  if ( !defined $fLT );
+	die "OLEC fiducial mark right-top was not found" if ( !defined $fRT );
+	die "OLEC fiducial mark right-top was not found" if ( !defined $fRB );
+	die "OLEC fiducial mark left-bot was not found"  if ( !defined $fLB );
+
+	push( @fiducials, { "x" => $fLT->{"x1"}, "y" => $fLT->{"y1"} } );    # left-top
+	push( @fiducials, { "x" => $fRT->{"x1"}, "y" => $fRT->{"y1"} } );    # right-top
+	push( @fiducials, { "x" => $fRB->{"x1"}, "y" => $fRB->{"y1"} } );    # right-bot
+	push( @fiducials, { "x" => $fLB->{"x1"}, "y" => $fLB->{"y1"} } );    # left-bot
+
+	# Adjust fiducial position by real PCB dimension (move to InCAM job zero)
+	foreach my $f (@fiducials) {
+
+		$f->{"x"} -= $dataLim->{"xMin"};
+		$f->{"y"} -= $dataLim->{"yMin"};
+	}
+
+	return @fiducials;
+}
+
 sub __ExportGerberLayer {
 	my $self          = shift;
 	my $layerName     = shift;
-	my $fiducDCode    = shift;
 	my $resultItemGer = shift;
 
 	my $inCAM = $self->{"inCAM"};
@@ -341,18 +423,15 @@ sub __ExportGerberLayer {
 			  "name"   => $layerName,
 			  "mirror" => 0
 	);
+
 	my @layers = ( \%l );
 
 	# 1 ) Export gerber to temp directory
 
-	ExportLayers->ExportLayers( $resultItemGer, $inCAM, $self->{"mdiStep"}, \@layers, EnumsPaths->Client_INCAMTMPOTHER, "", $suffixFunc, undef, 1 );
+	ExportLayers->ExportLayers( $resultItemGer, $inCAM, $self->{"mdiStep"}, \@layers, EnumsPaths->Client_INCAMTMPOTHER,
+								"", $suffixFunc, undef, 1, undef, $self->{"units"} );
 
 	my $tmpFullPath = EnumsPaths->Client_INCAMTMPOTHER . $layerName . $tmpFileId;
-
-	# 2) Add fiducial mark on the bbeginning of gerber data
-	CamHelper->SetStep( $inCAM, $self->{"step"} );
-	$$fiducDCode = FiducMark->AddalignmentMark( $inCAM, $jobId, $layerName, 'inch', $tmpFullPath, 'cross_*', $self->{"step"} );
-	CamHelper->SetStep( $inCAM, $self->{"mdiStep"} );
 
 	return $tmpFullPath;
 }
@@ -361,20 +440,38 @@ sub __ExportGerberLayer {
 sub __ClipAreaLayer {
 	my $self      = shift;
 	my $layerName = shift;
-	my %lim       = %{ shift(@_) };
+	my %pnlDim    = %{ shift(@_) };
 
-	CamLayer->ClipLayerData( $self->{"inCAM"}, $layerName, \%lim, undef, 1 );
+	my %pnlLim = ();
+	$pnlLim{"xMin"} = 0;
+	$pnlLim{"yMin"} = 0;
+	$pnlLim{"xMax"} = $pnlDim{"w"};
+	$pnlLim{"yMax"} = $pnlDim{"h"};
+
+	CamLayer->ClipLayerData( $self->{"inCAM"}, $layerName, \%pnlLim, undef, 1 );
 }
 
 # Optimize lazer in order contain only one level of features
 # Before optimiyation, countourize data in negative layers
 # (in other case "sliver fills" are broken during data compensation)
 sub __OptimizeLayer {
-	my $self = shift;
-	my $l    = shift;
+	my $self    = shift;
+	my $l       = shift;
+	my $dataLim = shift;
 
 	my $layerName = $l->{"gROWname"};
 
+	# 1) Move data layer to zero
+	if ( $dataLim->{"xMin"} != 0 || $dataLim->{"yMin"} != 0 ) {
+
+		CamLayer->WorkLayer( $self->{"inCAM"}, $layerName );
+		my %srcP = ( "x" => $dataLim->{"xMin"}, "y" => $dataLim->{"yMin"} );
+		my %trgtP = ( "x" => 0, "y" => 0 );
+		CamLayer->MoveSelSameLayer( $self->{"inCAM"}, $layerName, \%srcP, \%trgtP );
+		CamLayer->WorkLayer( $self->{"inCAM"}, $layerName );
+	}
+
+	# 2) Optimize data
 	if ( $layerName =~ /^(plg)?[cs]$/ || $layerName =~ /^v\d$/ ) {
 
 		if ( $l->{"gROWpolarity"} eq "negative" ) {
@@ -399,7 +496,7 @@ sub __CompensateLayer {
 
 	my $comp = 0;
 
-	if ( $layerName =~ /^c$/ || $layerName =~ /^s$/ || $layerName =~ /^v\d$/ ) {
+	if ( $layerName =~ /^c$/ || $layerName =~ /^s$/ || $layerName =~ /^v\d(outer)?$/ ) {
 
 		#		# read comp from tif file
 		#		if ( $self->{"tifFile"}->TifFileExist() ) {
@@ -430,25 +527,25 @@ sub __CompensateLayer {
 sub __PutFrameAorundPcb {
 	my $self      = shift;
 	my $layerName = shift;
-	my %lim       = %{ shift(@_) };
+	my %pnlDim    = %{ shift(@_) };
 
 	my @coord = ();
 
 	my %p1 = (
-			   "x" => $lim{"xMin"},
-			   "y" => $lim{"yMin"}
+			   "x" => 0,
+			   "y" => 0
 	);
 	my %p2 = (
-			   "x" => $lim{"xMin"},
-			   "y" => $lim{"yMax"}
+			   "x" => 0,
+			   "y" => $pnlDim{"h"}
 	);
 	my %p3 = (
-			   "x" => $lim{"xMax"},
-			   "y" => $lim{"yMax"}
+			   "x" => $pnlDim{"w"},
+			   "y" => $pnlDim{"h"}
 	);
 	my %p4 = (
-			   "x" => $lim{"xMax"},
-			   "y" => $lim{"yMin"}
+			   "x" => $pnlDim{"w"},
+			   "y" => 0
 	);
 	push( @coord, \%p1 );
 	push( @coord, \%p2 );
@@ -461,14 +558,16 @@ sub __PutFrameAorundPcb {
 
 # Create special step, which IPC will be exported from
 sub __CreateMDIStep {
-	my $self = shift;
-	my @layers = @{shift@_};
+	my $self   = shift;
+	my @layers = @{ shift @_ };
 
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
 
-	my @lNames = map {$_->{"gROWname"} } @layers;
-	CamStep->CreateFlattenStep( $inCAM, $jobId, $self->{"step"}, $self->{"mdiStep"},0, \@lNames );
+	my @lNames = map { $_->{"gROWname"} } @layers;
+	push( @lNames, "v" );
+	push( @lNames, "v1" ) if ( $self->{"layerCnt"} > 2 );
+	CamStep->CreateFlattenStep( $inCAM, $jobId, $self->{"step"}, $self->{"mdiStep"}, 0, \@lNames );
 
 	CamHelper->SetStep( $inCAM, $self->{"mdiStep"} );
 }
@@ -487,49 +586,6 @@ sub __DeleteMdiStep {
 	}
 }
 
-# Create special step, which IPC will be exported from
-sub __CreateFakeSMLayers {
-	my $self       = shift;
-	 
-
-	my $inCAM = $self->{"inCAM"};
-	my $jobId = $self->{"jobId"};
-	my $step  = $self->{"step"};
-
-	my %mask = HegMethods->GetSolderMaskColor2($jobId);
-
-	my @fake = ();
-
-	push( @fake, "mc2" ) if ( defined $mask{"top"} && $mask{"top"} ne "" );
-	push( @fake, "ms2" ) if ( defined $mask{"bot"} && $mask{"bot"} ne "" );
-
-	my @steps = ($step);
-
-	if ( CamStepRepeat->ExistStepAndRepeats( $inCAM, $jobId, $step ) ) {
-
-		push( @steps, map { $_->{"stepName"} } CamStepRepeat->GetUniqueNestedStepAndRepeat( $inCAM, $jobId, $step ) );
-	}
-
-	foreach my $fl (@fake) {
-
-		CamMatrix->DeleteLayer( $inCAM, $jobId, $fl );
-		CamMatrix->CreateLayer( $inCAM, $jobId, $fl, "solder_mask", "positive", 1 );
-	}
-
-	foreach my $s (@steps) {
-
-		CamHelper->SetStep( $inCAM, $s );
-
-		foreach my $fl (@fake) {
-
-			my ($source) = $fl =~ m/(m[cs])/;
-			$inCAM->COM( "merge_layers", "source_layer" => $source, "dest_layer" => $fl );
-		}
-	}
- 
- 	return @fake;
-}
-
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#
@@ -541,7 +597,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId    = "d248681";
+	my $jobId    = "d246713";
 	my $stepName = "panel";
 
 	my $export = ExportFiles->new( $inCAM, $jobId, $stepName );

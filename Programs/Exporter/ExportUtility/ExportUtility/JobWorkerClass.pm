@@ -25,6 +25,7 @@ use aliased 'Managers::AsyncJobMngr::Enums' => 'EnumsJobMngr';
 use aliased 'Packages::Exceptions::BaseException';
 use aliased 'Programs::Exporter::ExportUtility::UnitEnums';
 
+
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
@@ -75,6 +76,8 @@ sub __RunTask {
 	# Open job
 	if ( CamJob->IsJobOpen( $self->{"inCAM"}, ${ $self->{"pcbId"} } ) ) {
 
+		
+
 		# 1) Init groups
 
 		for ( my $i = 0 ; $i < scalar(@keys) ; $i++ ) {
@@ -119,7 +122,8 @@ sub __RunTask {
 
 		}
 
-		#close job
+
+		# 3) Close job
 
 		if ( $mode eq EnumsJobMngr->TaskMode_ASYNC ) {
 

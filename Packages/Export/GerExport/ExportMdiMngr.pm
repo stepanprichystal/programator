@@ -17,6 +17,7 @@ use aliased 'Packages::Gerbers::Mdi::ExportFiles::Enums';
 use aliased 'Packages::Gerbers::Mdi::ExportFiles::ExportFiles';
 use aliased 'CamHelpers::CamJob';
 
+
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
@@ -38,75 +39,74 @@ sub new {
 sub Run {
 	my $self = shift;
 
+	my $inCAM = $self->{"inCAM"};
+	my $jobId = $self->{"jobId"};
+
 	my $export = ExportFiles->new( $self->{"inCAM"}, $self->{"jobId"}, "panel" );
-	$export->{"onItemResult"}->Add( sub { $self->__OnExportLayer(@_)});
+	$export->{"onItemResult"}->Add( sub { $self->__OnExportLayer(@_) } );
 
 	my %types = (
-				 Enums->Type_SIGNAL => $self->{"mdiInfo"}->{"exportSignal"},
-				 Enums->Type_MASK   => $self->{"mdiInfo"}->{"exportMask"},
-				 Enums->Type_PLUG   => $self->{"mdiInfo"}->{"exportPlugs"},
-				 Enums->Type_GOLD   => $self->{"mdiInfo"}->{"exportGold"}
+				  Enums->Type_SIGNAL => $self->{"mdiInfo"}->{"exportSignal"},
+				  Enums->Type_MASK   => $self->{"mdiInfo"}->{"exportMask"},
+				  Enums->Type_PLUG   => $self->{"mdiInfo"}->{"exportPlugs"},
+				  Enums->Type_GOLD   => $self->{"mdiInfo"}->{"exportGold"}
 	);
-	
-	$export->Run(\%types);
+
+	$export->Run( \%types );
 
 	return 1;
 }
 
-
-sub __OnExportLayer{
+sub __OnExportLayer {
 	my $self = shift;
 	my $item = shift;
-	
+
 	$item->SetGroup("Mdi data");
-	
+
 	$self->{"onItemResult"}->Do($item);
 }
 
 # Return number of exported layers
-sub GetExportLayerCnt{
+sub GetExportLayerCnt {
 	my $self = shift;
-	
+
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
-	
-	
-	my @layers = CamJob->GetBoardBaseLayers( $inCAM, $jobId);
-	
-	
+
+	my @layers = CamJob->GetBoardBaseLayers( $inCAM, $jobId );
+
 	my $layerNumber = 0;
-	
-	if($self->{"mdiInfo"}->{"exportSignal"}){
-		
+
+	if ( $self->{"mdiInfo"}->{"exportSignal"} ) {
+
 		my @l = grep { $_->{"gROWname"} =~ /^[csv]\d*$/ } @layers;
 		$layerNumber += scalar(@l);
 	}
-	
-	if($self->{"mdiInfo"}->{"exportMask"}){
-		
+
+	if ( $self->{"mdiInfo"}->{"exportMask"} ) {
+
 		my @l = grep { $_->{"gROWname"} =~ /^m[cs]$/ } @layers;
 		$layerNumber += scalar(@l);
 
 	}
-	
-	if($self->{"mdiInfo"}->{"exportPlugs"}){
-		
+
+	if ( $self->{"mdiInfo"}->{"exportPlugs"} ) {
+
 		my @l = grep { $_->{"gROWname"} =~ /^plg[cs]$/ } @layers;
 		$layerNumber += scalar(@l);
 
 	}
-	
-	if($self->{"mdiInfo"}->{"exportGold"}){
-		
+
+	if ( $self->{"mdiInfo"}->{"exportGold"} ) {
+
 		my @l = grep { $_->{"gROWname"} =~ /^gold[cs]$/ } @layers;
 		$layerNumber += scalar(@l);
 
 	}
-	
+
 	return $layerNumber;
-	
+
 }
- 
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

@@ -48,17 +48,17 @@ sub __SetLayout {
 	#define color of panel
 	my $color;
 
-	if ( $layer =~ /^p[cs]$/ ) {
+	if ( $layer =~ /^p[cs]2?$/ ) {
 		
 		$color = Wx::Colour->new( 255, 255, 255 );
 
 	}
-	elsif ($layer =~ /^m[cs]$/) {
+	elsif ($layer =~ /^m[cs]2?$/) {
 		
 		$color = Wx::Colour->new( 0, 164, 123 );
 
 	}
-	elsif ($layer =~ /^[csv]\d*$/) {
+	elsif ($layer =~ /^[csv]\d*(outer)?$/) {
 
 		$color = Wx::Colour->new( 251, 197, 77 );
 
