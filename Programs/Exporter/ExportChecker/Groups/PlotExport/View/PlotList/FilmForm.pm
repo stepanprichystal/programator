@@ -169,13 +169,14 @@ sub __Active {
 
 	if ($selected) {
 
+		die "No color defined for ResultSet" unless(defined $self->{"ruleResult"}->{"color"});
+
 		$filmColor = $self->{"ruleResult"}->{"color"};
 		$self->{"colorPnl"}->SetBackgroundColour($filmColor);
 
 	}
 	else {
 
-		$filmColor = $self->{"ruleResult"}->{"color"};
 		$self->{"colorPnl"}->SetBackgroundColour( $self->{"notActiveClr"} );
 
 	}

@@ -24,6 +24,7 @@ use aliased 'Packages::Export::GerExport::ExportGerMngr';
 use aliased 'Packages::Export::GerExport::ExportPasteMngr';
 use aliased 'Packages::Export::GerExport::ExportMdiMngr';
 use aliased 'Packages::Export::GerExport::ExportJetprintMngr';
+use aliased 'Packages::Export::PreExport::FakeLayers';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -41,7 +42,7 @@ sub new {
 	$self->{"layers"}       = shift;
 	$self->{"paste"}        = shift;
 	$self->{"mdiInfo"}      = shift;
-	$self->{"jetprintInfo"}      = shift;
+	$self->{"jetprintInfo"} = shift;
 
 	$self->{"gerberMngr"} = ExportGerMngr->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"exportLayers"}, $self->{"layers"} );
 	$self->{"gerberMngr"}->{"onItemResult"}->Add( sub { $self->_OnItemResult(@_) } );
@@ -51,9 +52,9 @@ sub new {
 
 	$self->{"mdiMngr"} = ExportMdiMngr->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"mdiInfo"} );
 	$self->{"mdiMngr"}->{"onItemResult"}->Add( sub { $self->_OnItemResult(@_) } );
-	
+
 	$self->{"jetprintMngr"} = ExportJetprintMngr->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"jetprintInfo"} );
-	$self->{"jetprintMngr"}->{"onItemResult"}->Add( sub { $self->_OnItemResult(@_) } );	
+	$self->{"jetprintMngr"}->{"onItemResult"}->Add( sub { $self->_OnItemResult(@_) } );
 
 	return $self;
 }
@@ -61,19 +62,28 @@ sub new {
 sub Run {
 	my $self = shift;
 	
+	my $inCAM = $self->{"inCAM"};
+	my $jobId = $self->{"jobId"};
+
 	$self->__DeleteOldFiles();
+
+	# Create fake layers which will be exported, but are created automatically
+	FakeLayers->CreateFakeLayers( $inCAM, $jobId );
 
 	$self->{"gerberMngr"}->Run();
 	$self->{"pasteMngr"}->Run();
 	$self->{"mdiMngr"}->Run();
 	$self->{"jetprintMngr"}->Run();
 
+	#  Remove fake layers after export
+	FakeLayers->RemoveFakeLayers( $inCAM, $jobId );
+
 }
 
 # Before export , delete MDI gerber and JetPrint gerber
 sub __DeleteOldFiles {
-	my $self       = shift;
- 
+	my $self = shift;
+
 	my $jobId = $self->{"jobId"};
 
 	my @file2del = ();
@@ -87,7 +97,7 @@ sub __DeleteOldFiles {
 
 	my @f2 = FileHelper->GetFilesNameByPattern( EnumsPaths->Jobs_JETPRINT, $jobId );
 	push( @file2del, @f2 );
-	
+
 	foreach (@file2del) {
 		unless ( unlink($_) ) {
 			die "Can not delete mdi file $_.\n";
@@ -102,8 +112,8 @@ sub TaskItemsCount {
 
 	$totalCnt += $self->{"exportLayers"}      ? 1 : 0;    #gerbers
 	$totalCnt += $self->{"paste"}->{"export"} ? 1 : 0;    # paste
-	$totalCnt += $self->{"mdiMngr"}->GetExportLayerCnt(); # paste
-	$totalCnt += $self->{"jetprintMngr"}->GetExportLayerCnt(); # paste
+	$totalCnt += $self->{"mdiMngr"}->GetExportLayerCnt();         # paste
+	$totalCnt += $self->{"jetprintMngr"}->GetExportLayerCnt();    # paste
 
 	return $totalCnt;
 

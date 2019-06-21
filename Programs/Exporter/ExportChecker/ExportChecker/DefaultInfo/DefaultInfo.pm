@@ -191,7 +191,7 @@ sub GetEtchType {
 
 			# if core contain core drilling -> tenting
 
-			if ( $stackupNCitem->ExistNCLayers( StackupEnums->SignalLayer_TOP, undef,  EnumsGeneral->LAYERTYPE_plt_cDrill ) ) {
+			if ( $stackupNCitem->ExistNCLayers( StackupEnums->SignalLayer_TOP, undef, EnumsGeneral->LAYERTYPE_plt_cDrill ) ) {
 
 				$etchType = EnumsGeneral->Etching_TENTING;
 			}
@@ -263,18 +263,24 @@ sub GetSideByLayer {
 sub GetCompByLayer {
 	my $self      = shift;
 	my $layerName = shift;
- 
- 	
-	my $class = undef; # Signal layer construction class
 
-	if ($layerName =~ /^v\d+$/) {
+	my $class = undef;    # Signal layer construction class
+
+	if ( $layerName =~ /^v\d+(outer)?$/ ) {
 		$class = $self->GetPcbClassInner();
 	}
 	else {
 		$class = $self->GetPcbClass();
 	}
 
-	my $cuThick = $self->GetBaseCuThick($layerName);
+	my $layerNameCu = $layerName;
+
+	if ( $layerName =~ m/^v(\d+)outer$/ ) {
+
+		$layerNameCu = $1 == 1 ? "c" : "s";
+	}
+
+	my $cuThick = $self->GetBaseCuThick($layerNameCu);
 
 	my $comp = 0;
 
@@ -292,6 +298,7 @@ sub GetCompByLayer {
 		$plated = 1;
 
 	}
+
 	# vv - outer layer always plated, inner layer depand on NC layers
 	elsif ( $self->GetLayerCnt() > 2 ) {
 
@@ -301,13 +308,16 @@ sub GetCompByLayer {
 		else {
 
 			my $stackupNcItem;    # StackupNCCore/StackupNCPress
+			my @ncLayers = ();
 
 			# 1) Find copper layer between cores
 			my $core = $self->{"stackup"}->GetCoreByCopperLayer($layerName);
 
 			if ($core) {
 
-				$stackupNcItem = $self->{"stackupNC"}->GetCore($core->GetCoreNumber());
+				$stackupNcItem = $self->{"stackupNC"}->GetCore( $core->GetCoreNumber() );
+				@ncLayers      = ( $stackupNcItem->GetNCLayers( "top", "bot" ), $stackupNcItem->GetNCLayers( "bot", "top" ) );
+				@ncLayers      = grep { $_->{"type"} eq EnumsGeneral->LAYERTYPE_plt_cDrill } @ncLayers;
 
 			}
 			else {
@@ -323,15 +333,12 @@ sub GetCompByLayer {
 						last;
 					}
 				}
+
+				@ncLayers = ( $stackupNcItem->GetNCLayers("top"), $stackupNcItem->GetNCLayers("bot") );
 			}
 
 			# Find plated NC layers (drill and rout)
-
-			my @ncLayers = ($stackupNcItem->GetNCLayers("top"), $stackupNcItem->GetNCLayers("bot")) ;
-			if(grep { $_->{"plated"}} @ncLayers){
-				
-				$plated = 1;
-			}
+			$plated = 1 if ( grep { $_->{"plated"} } @ncLayers );
 		}
 	}
 
@@ -405,7 +412,11 @@ sub SetDefaultLayersSettings {
 			$l->{"polarity"} = "positive";
 
 		}
-		elsif ( $l->{"gROWlayer_type"} eq "signal" || $l->{"gROWlayer_type"} eq "power_ground" || $l->{"gROWlayer_type"} eq "mixed" ) {
+		elsif (    $l->{"gROWlayer_type"} eq "signal"
+				|| $l->{"gROWlayer_type"} eq "power_ground"
+				|| $l->{"gROWlayer_type"} eq "mixed"
+				|| $l->{"gROWname"} =~ /^v\d+(outer)?$/i )
+		{
 
 			# 1) set etching type
 			my $etching = $self->GetEtchType( $l->{"gROWname"} );
@@ -454,21 +465,21 @@ sub SetDefaultLayersSettings {
 	foreach my $l ( @{$layers} ) {
 
 		# whatever with "c" is mirrored
-		if ( $l->{"gROWname"} =~ /^[pm]*c$/i ) {
+		if ( $l->{"gROWname"} =~ /^[pm]*c2?$/i ) {
 
 			$l->{"mirror"} = 1;
 
 		}
 
 		# whatever with "s" is not mirrored
-		elsif ( $l->{"gROWname"} =~ /^[pm]*s$/i ) {
+		elsif ( $l->{"gROWname"} =~ /^[pm]*s2?$/i ) {
 
 			$l->{"mirror"} = 0;
 
 		}
 
 		# inner layers decide by stackup
-		elsif ( $l->{"gROWname"} =~ /^v\d+$/i ) {
+		elsif ( $l->{"gROWname"} =~ /^v\d+(outer)?$/i ) {
 
 			my $side = $self->GetSideByLayer( $l->{"gROWname"} );
 
@@ -499,7 +510,11 @@ sub SetDefaultLayersSettings {
 	# Set compensation of signal layer
 	foreach my $l ( @{$layers} ) {
 
-		if ( $l->{"gROWlayer_type"} eq "signal" || $l->{"gROWlayer_type"} eq "power_ground" || $l->{"gROWlayer_type"} eq "mixed" ) {
+		if (    $l->{"gROWlayer_type"} eq "signal"
+			 || $l->{"gROWlayer_type"} eq "power_ground"
+			 || $l->{"gROWlayer_type"} eq "mixed"
+			 || $l->{"gROWname"} =~ /^v\d+(outer)?$/i )
+		{
 
 			$l->{"comp"} = $self->GetCompByLayer( $l->{"gROWname"} );
 

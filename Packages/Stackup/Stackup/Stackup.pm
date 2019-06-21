@@ -184,15 +184,11 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	use aliased 'Packages::Stackup::Stackup::Stackup';
 
-	my $stackup = Stackup->new("d113608");
+	my $stackup = Stackup->new("d222775");
 
 	print $stackup;
 	
-	$stackup = Stackup->new("d113608");
-
-	 print $stackup;
-
-	#my $stackup = Stackup->new("d99991");
+ 
 
 	print 1;
 }

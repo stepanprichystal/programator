@@ -22,15 +22,16 @@ sub new {
 
 	bless $self;
 
-	$self->{"orientation"} = shift; # orientation of layers on film horoyontal/verticall
+	$self->{"orientation"} = shift;           # orientation of layers on film horoyontal/verticall
+	$self->{"layerPlotOnce"} = shift // 0;    # if 1 layer can by plotted more than once (in manz rule sets)
 
 	my @layerTypes = ();
-	$self->{"layerTypes"} = \@layerTypes; # one or more types of layer, which can be merged in one film
+	$self->{"layerTypes"} = \@layerTypes;     # one or more types of layer, which can be merged in one film
 
 	return $self;
 }
 
-# 
+#
 sub AddSingleTypes {
 
 	my $self = shift;
@@ -64,8 +65,6 @@ sub AddType2 {
 	push( $self->{"layerTypes"}, \@types );
 }
 
-
-
 sub AddTypes {
 
 	my $self  = shift;
@@ -91,6 +90,13 @@ sub GetOrientation {
 
 	return $self->{"orientation"};
 
+}
+
+sub GetLayerPlotOnce {
+
+	my $self = shift;
+
+	return $self->{"layerPlotOnce"};
 }
 
 #1;

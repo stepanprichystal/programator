@@ -1,9 +1,9 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Helper for exporting MDI files
+# Description: Cerate fake layers which are necessarz for export modules and export settings
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::Gerbers::Mdi::ExportFiles::Helper;
+package Packages::Export::PreExport::FakeLayers;
 
 #3th party library
 use strict;
@@ -23,50 +23,22 @@ use aliased 'Packages::Polygon::Features::Features::Features';
 use aliased 'CamHelpers::CamLayer';
 use aliased 'CamHelpers::CamSymbol';
 use aliased 'CamHelpers::CamSymbolSurf';
+use aliased 'CamHelpers::CamAttributes';
+use aliased 'Helpers::JobHelper';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
-# Return layer types which should be exported by default
-sub GetDefaultLayerTypes {
-	my $self  = shift;
-	my $inCAM = shift;
-	my $jobId = shift;
 
-	my %mdiInfo = ();
-
-	my @layers = CamJob->GetAllLayers( $inCAM, $jobId );
-
-	my $signal = scalar( grep { $_->{"gROWname"} eq "c" } @layers );
-
-	if ( HegMethods->GetTypeOfPcb($jobId) eq "Neplatovany" ) {
-		$signal = 0;
-	}
-
-	$mdiInfo{ Enums->Type_SIGNAL } = $signal;
-
-	if ( scalar( grep { $_->{"gROWname"} =~ /m[cs]/ } @layers ) )    # && CamJob->GetJobPcbClass( $inCAM, $jobId ) >= 8
-	{
-		$mdiInfo{ Enums->Type_MASK } = 1;
-	}
-	else {
-		$mdiInfo{ Enums->Type_MASK } = 0;
-	}
-
-	$mdiInfo{ Enums->Type_PLUG } =
-	  scalar( grep { $_->{"gROWname"} =~ /plg[cs]/ } @layers ) ? 1 : 0;
-	$mdiInfo{ Enums->Type_GOLD } =
-	  scalar( grep { $_->{"gROWname"} =~ /gold[cs]/ } @layers ) ? 1 : 0;
-
-	return %mdiInfo;
-}
-
-# Create special step, which IPC will be exported from
+# Create fake layers necesserz for export
+# All fake layers has attribut "export_fake_layer" set to: yes
 sub CreateFakeLayers {
 	my $self  = shift;
 	my $inCAM = shift;
 	my $jobId = shift;
-	my $step  = shift;
+	my $step  = shift // "panel";
+
+	$self->RemoveFakeLayers( $inCAM, $jobId, $step );
 
 	my @smFake = $self->__CreateFakeSMLayers( $inCAM, $jobId, $step );
 	my @outerFake = $self->__CreateFakeOuterCoreLayers( $inCAM, $jobId, $step );
@@ -75,7 +47,32 @@ sub CreateFakeLayers {
 	push( @fake, @smFake )    if (@smFake);
 	push( @fake, @outerFake ) if (@outerFake);
 
+	foreach my $l (@fake) {
+
+		CamAttributes->SetLayerAttribute( $inCAM, "export_fake_layer", "yes", $jobId, $step, $l );
+
+	}
+
 	return @fake;
+}
+
+sub RemoveFakeLayers {
+	my $self  = shift;
+	my $inCAM = shift;
+	my $jobId = shift;
+	my $step  = shift // "panel";
+
+	foreach my $l ( CamJob->GetBoardLayers( $inCAM, $jobId ) ) {
+
+		my %attr = CamAttributes->GetLayerAttr( $inCAM, $jobId, $step, $l->{"gROWname"} );
+
+		if ( $attr{"export_fake_layer"} =~ /^yes$/i ) {
+
+			CamMatrix->DeleteLayer( $inCAM, $jobId, $l->{"gROWname"} );
+		}
+	}
+
+	return 0;
 }
 
 # Create special step, which IPC will be exported from
@@ -116,6 +113,8 @@ sub __CreateFakeSMLayers {
 		}
 	}
 
+	CamLayer->ClearLayers($inCAM);
+
 	return @fake;
 }
 
@@ -126,12 +125,12 @@ sub __CreateFakeOuterCoreLayers {
 
 	my $step = "panel";
 
-	my $layerCnt = CamJob->GetSignalLayerCnt( $inCAM, $jobId );
-
-	return 0 if ( $layerCnt <= 2 );
-
 	my @fakeLayers = ();
 
+	my $layerCnt = CamJob->GetSignalLayerCnt( $inCAM, $jobId );
+
+	return @fakeLayers if ( $layerCnt <= 2 );
+ 
 	my $side;    # top/bot/both
 	if ( StackupOperation->OuterCore( $jobId, \$side ) ) {
 
@@ -148,7 +147,7 @@ sub __CreateFakeOuterCoreLayers {
 		# Create fake layers
 		foreach my $l (@fakeLayers) {
 			CamMatrix->DeleteLayer( $inCAM, $jobId, $l );
-			CamMatrix->CreateLayer( $inCAM, $jobId, $l, "signal", "positive", 1 );
+			CamMatrix->CreateLayer( $inCAM, $jobId, $l, "document", "positive", 1 );
 		}
 
 		# Put surface over whole panel (full sopper)
@@ -167,18 +166,20 @@ sub __CreateFakeOuterCoreLayers {
 		CamSymbol->AddPolyline( $inCAM, \@pointsLim, "r200", "negative", 1 );
 
 		# Put schmoll crosses
-		my $f = Features->new();
-		$f->Parse( $inCAM, $jobId, $step, "v2" );    # layer v2 should already exist in multilayer pcb
-
-		my @cross = grep { defined $_->{"symbol"} && $_->{"symbol"} =~ /^schmoll_cross_10$/i } $f->GetFeatures();
-
-		die "All schmol crosees (four, symbol name: schmoll_cross_10) were not found in layer: v2" unless ( scalar(@cross) == 4 );
-
-		foreach my $c (@cross) {
-
-			#CamSymbol->AddPad( $inCAM, "s12000", { "x" => $c->{"x1"}, "y" => $c->{"y1"} }, 0, "positive" );
-			CamSymbol->AddPad( $inCAM, "schmoll_cross_10", { "x" => $c->{"x1"}, "y" => $c->{"y1"} }, 0, "negative" );
+		if ( JobHelper->GetIsFlex($jobId) ) {
 			
+			my $f = Features->new();
+			$f->Parse( $inCAM, $jobId, $step, "v2" );    # layer v2 should already exist in multilayer pcb
+
+			my @cross = grep { defined $_->{"symbol"} && $_->{"symbol"} =~ /^schmoll_cross_10$/i } $f->GetFeatures();
+
+			die "All schmol crosees (four, symbol name: schmoll_cross_10) were not found in layer: v2" unless ( scalar(@cross) == 4 );
+
+			foreach my $c (@cross) {
+
+				#CamSymbol->AddPad( $inCAM, "s12000", { "x" => $c->{"x1"}, "y" => $c->{"y1"} }, 0, "positive" );
+				CamSymbol->AddPad( $inCAM, "schmoll_cross_10", { "x" => $c->{"x1"}, "y" => $c->{"y1"} }, 0, "negative" );
+			}
 		}
 
 		if ( $side eq "both" || $side eq "top" ) {
@@ -190,12 +191,12 @@ sub __CreateFakeOuterCoreLayers {
 			my $y = 6;
 
 			CamSymbol->AddPad( $inCAM, "inner-bg-nomenclat", { "x" => $x + 27, "y" => $y + 5 }, 0, "negative" );
-			CamSymbol->AddText( $inCAM, '$$JOB V1 TOP', { "x" => $x + 1.5, "y" => $y + 1.8 }, 2.5, 2.5, 1 );
+			CamSymbol->AddText( $inCAM, '$$JOB V1 (C) TOP', { "x" => $x + 1.5, "y" => $y + 1.8 }, 2.5, 2.5, 1 );
 
-			CamSymbol->AddText( $inCAM, '$$user_name',   { "x" => $x + 1.5, "y" => $y + 5.5 }, 2.5, 2.5, 1 );
-			CamSymbol->AddText( $inCAM, '$$TIME',        { "x" => $x + 10,  "y" => $y + 5.5 }, 2.5, 2.5, 1 );
-			CamSymbol->AddText( $inCAM, '$$DATE-DDMMYY', { "x" => $x + 24,  "y" => $y + 5.5 }, 2.5, 2.5, 1 );
-			CamSymbol->AddText( $inCAM, '$$DDD',         { "x" => $x + 46,  "y" => $y + 5.5 }, 2.5, 2.5, 1 );
+			CamSymbol->AddText( $inCAM, '$$user_name', { "x" => $x + 1.5, "y" => $y + 5.5 }, 2.5, 2.5, 1 );
+			CamSymbol->AddText( $inCAM, 'TIME',        { "x" => $x + 10,  "y" => $y + 5.5 }, 2.5, 2.5, 1 );
+			CamSymbol->AddText( $inCAM, 'DATE-DDMMYY', { "x" => $x + 24,  "y" => $y + 5.5 }, 2.5, 2.5, 1 );
+			#CamSymbol->AddText( $inCAM, 'DDD',         { "x" => $x + 46,  "y" => $y + 5.5 }, 2.5, 2.5, 1 );
 		}
 
 		if ( $side eq "both" || $side eq "bot" ) {
@@ -207,15 +208,17 @@ sub __CreateFakeOuterCoreLayers {
 			my $y = 6;
 
 			CamSymbol->AddPad( $inCAM, "inner-bg-nomenclat", { "x" => $x + 27, "y" => $y + 5 }, 0, "negative" );
-			CamSymbol->AddText( $inCAM, '$$JOB V' . $layerCnt . ' BOT', { "x" => $x + 52, "y" => $y + 1.8 }, 2.5, 2.5, 1, 1 );
+			CamSymbol->AddText( $inCAM, '$$JOB V' . $layerCnt . ' (S) BOT', { "x" => $x + 52, "y" => $y + 1.8 }, 2.5, 2.5, 1, 1 );
 
-			CamSymbol->AddText( $inCAM, '$$user_name',   { "x" => $x + 52, "y" => $y + 5.5 }, 2.5, 2.5, 1, 1 );
-			CamSymbol->AddText( $inCAM, '$$TIME',        { "x" => $x + 43, "y" => $y + 5.5 }, 2.5, 2.5, 1, 1 );
-			CamSymbol->AddText( $inCAM, '$$DATE-DDMMYY', { "x" => $x + 29, "y" => $y + 5.5 }, 2.5, 2.5, 1, 1 );
-			CamSymbol->AddText( $inCAM, '$$DDD',         { "x" => $x + 8,  "y" => $y + 5.5 }, 2.5, 2.5, 1, 1 );
+			CamSymbol->AddText( $inCAM, '$$user_name', { "x" => $x + 52, "y" => $y + 5.5 }, 2.5, 2.5, 1, 1 );
+			CamSymbol->AddText( $inCAM, 'TIME',        { "x" => $x + 43, "y" => $y + 5.5 }, 2.5, 2.5, 1, 1 );
+			CamSymbol->AddText( $inCAM, 'DATE-DDMMYY', { "x" => $x + 29, "y" => $y + 5.5 }, 2.5, 2.5, 1, 1 );
+			#CamSymbol->AddText( $inCAM, 'DDD',         { "x" => $x + 8,  "y" => $y + 5.5 }, 2.5, 2.5, 1, 1 );
 		}
 
 	}
+
+	CamLayer->ClearLayers($inCAM);
 
 	return @fakeLayers;
 
@@ -227,15 +230,15 @@ sub __CreateFakeOuterCoreLayers {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	use aliased 'Packages::Gerbers::Mdi::ExportFiles::Helper';
+	use aliased 'Packages::Export::PreExport::FakeLayers';
 	use aliased 'Packages::InCAM::InCAM';
 
 	my $inCAM = InCAM->new();
 
-	my $jobId    = "d246713";
+	my $jobId    = "d147721";
 	my $stepName = "panel";
 
-	my %types = Helper->CreateFakeLayers( $inCAM, $jobId, "panel" );
+	my %types = FakeLayers->CreateFakeLayers( $inCAM, $jobId, "panel" );
 
 	print %types;
 }

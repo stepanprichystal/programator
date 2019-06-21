@@ -33,9 +33,6 @@ sub new {
 	my @rules = ();
 	$self->{"rules"} = \@rules;
 
-	my @resultRules = ();
-	$self->{"resultRules"} = \@resultRules;
-
 	$self->{"layerCnt"} = CamJob->GetSignalLayerCnt( $self->{"inCAM"}, $self->{"jobId"} );
 
 	$self->__AddLayerTypes();
@@ -46,9 +43,11 @@ sub new {
 }
 
 sub _AddRule {
-	my $self        = shift;
-	my $orientation = shift;
-	my $rule        = Rule->new($orientation);
+	my $self          = shift;
+	my $orientation   = shift;
+	my $plotLayerOnce = shift;
+
+	my $rule = Rule->new( $orientation, $plotLayerOnce );
 
 	push( @{ $self->{"rules"} }, $rule );
 
@@ -58,9 +57,12 @@ sub _AddRule {
 # Method produce rule sets, based on rules and available job layers
 sub _RunRules {
 	my $self = shift;
+	my $usedLayers = shift // [];    #layer name of layers used in other ruleset
 
 	my @layers = @{ $self->{"layers"} };    # not processed layers
 	my @rules  = @{ $self->{"rules"} };
+
+	my @resultRules = ();
 
 	my $ruleIdx = 0;
 	my $rule;
@@ -70,7 +72,8 @@ sub _RunRules {
 		$rule = $rules[$ruleIdx];
 
 		# process all layers, which suit to this layer
-		$self->__RunRule( $rule, \@layers );
+		my @results = $self->__RunRule( $rule, \@layers, $usedLayers );
+		push(@resultRules, @results) if (@results);
 
 		$ruleIdx++;
 
@@ -81,12 +84,16 @@ sub _RunRules {
 
 	}
 
+	return @resultRules;
 }
 
 sub __RunRule {
-	my $self   = shift;
-	my $rule   = shift;
-	my $layers = shift;    # not processed layers
+	my $self       = shift;
+	my $rule       = shift;
+	my $layers     = shift;    # not processed layers
+	my $usedLayers = shift;
+
+	my @resultRules = ();
 
 	my $createRuleSet = 1;
 
@@ -105,6 +112,11 @@ sub __RunRule {
 			foreach my $layer ( @{$layers} ) {
 
 				if ( $layer->{"used"} ) {
+					next;
+				}
+
+				# skip layer if rule request plot layer only one
+				if ( $rule->GetLayerPlotOnce() && grep { $_ eq $layer->{"name"} } @{$usedLayers} ) {
 					next;
 				}
 
@@ -174,11 +186,13 @@ sub __RunRule {
 		else {
 
 			# add result set
-			push( @{ $self->{"resultRules"} }, $ruleSet );
+			push( @resultRules, $ruleSet );
+
 		}
 
 	}
 
+	return @resultRules;
 }
 
 sub __AddLayerTypes {
@@ -189,21 +203,21 @@ sub __AddLayerTypes {
 
 	foreach my $l ( @{ $self->{"layers"} } ) {
 
-		if ( $l->{"name"} eq "pc" ) {
+		if ( $l->{"name"} =~ /^pc2?/ ) {
 
 			$l->{"plotType"} = Enums->LType_SILKTOP;
 
 		}
-		elsif ( $l->{"name"} eq "ps" ) {
+		elsif ( $l->{"name"} =~ /^ps2?/ ) {
 			$l->{"plotType"} = Enums->LType_SILKBOT;
 
 		}
-		elsif ( $l->{"name"} eq "mc" ) {
+		elsif ( $l->{"name"} =~ /^mc2?/ ) {
 
 			$l->{"plotType"} = Enums->LType_MASKTOP;
 
 		}
-		elsif ( $l->{"name"} eq "ms" ) {
+		elsif ( $l->{"name"} =~ /^ms2?/ ) {
 			$l->{"plotType"} = Enums->LType_MASKBOT;
 
 		}
@@ -212,7 +226,7 @@ sub __AddLayerTypes {
 			$l->{"plotType"} = Enums->LType_SIGOUTER;
 
 		}
-		elsif ( $l->{"name"} =~ /^v\d$/ ) {
+		elsif ( $l->{"name"} =~ /^v\d(outer)?$/ ) {
 
 			$l->{"plotType"} = Enums->LType_SIGINNER;
 

@@ -37,14 +37,14 @@ sub new {
 	my $layers = shift;
 
 	# Name, Color, Polarity, Mirror, Comp
-	my @widths = ( 60,     20, 50,         40,       50,     80,      80,       80, );
+	my @widths = ( 60,     20, 50,         40,       50,     50,      80,       80, );
 	my @titles = ( "Name", "", "Polarity", "Mirror", "Comp", "Films", "Merged", "Single" );
 
 	my $columnCnt    = scalar(@widths);
 	my $columnWidths = \@widths;
 	my $verticalLine = 1;
 
-	my $self = $class->SUPER::new( $parent,  Enums->Mode_CHECKBOX, $columnCnt, $columnWidths, $verticalLine, undef, 1 );
+	my $self = $class->SUPER::new( $parent, Enums->Mode_CHECKBOX, $columnCnt, $columnWidths, $verticalLine, undef, 1 );
 
 	bless($self);
 
@@ -54,8 +54,6 @@ sub new {
 	$self->{"layers"} = $layers;
 
 	$self->{"filmCreators"} = FilmCreators->new( $self->{"inCAM"}, $self->{"jobId"} );
-
-	$self->__DefineFilmColors();
 
 	$self->__SetLayout();
 
@@ -112,13 +110,36 @@ sub SetLayers {
 	# Get limits of pcb
 	my $result = Helper->GetPcbLimits( $self->{"inCAM"}, $self->{"jobId"}, \%smallLim, \%bigLim );
 	$self->{"filmCreators"}->Init( $layers, \%smallLim, \%bigLim );
+	my @ruleSets = $self->{"filmCreators"}->GetRuleSets();
+	$self->__SetRuleSetColors( \@ruleSets );
+
+	my @ruleSetsMulti  = grep { scalar( $_->GetRule()->GetLayerTypes() == 2 ) } @ruleSets;
+	my @ruleSetsSingle = grep { scalar( $_->GetRule()->GetLayerTypes() == 1 ) } @ruleSets;
 
 	# Set rule sets for each rows
 	foreach my $l ( @{$layers} ) {
 
 		my $row = $self->GetRowByText( $l->{"name"} );
+		die "Row list was not found by name: " . $l->{"name"} unless ( defined $row );
 
-		$row->SetRuleSets( $self->__GetRuleSet( $l->{"name"}, 1 ), $self->__GetRuleSet( $l->{"name"}, 2 ) );
+		# Get RuleSet by MultiFilmCreator
+		my $multiSet = (
+			grep {
+				grep { $_->{"name"} eq $l->{"name"} }
+				  $_->GetLayers()
+			} @ruleSetsMulti
+		)[0];
+		my $singleSet = (
+			grep {
+				grep { $_->{"name"} eq $l->{"name"} }
+				  $_->GetLayers()
+			} @ruleSetsSingle
+		)[0];
+
+		# Get RuleSet by SingleFimlCreator
+		$row->SetRuleSets( $multiSet, $singleSet );
+
+		#$row->SetRuleSets( $self->__GetRuleSet( $l->{"name"}, 1 ), $self->__GetRuleSet( $l->{"name"}, 2 ) );
 		$row->SetLayerValues($l);
 
 	}
@@ -184,59 +205,14 @@ sub __OnSelectedChangeHandler {
 
 }
 
-sub __GetRuleSet {
-	my $self       = shift;
-	my $layerName  = shift;
-	my $creatorNum = shift;
+sub __SetRuleSetColors {
+	my $self     = shift;
+	my @rulesets = @{ shift(@_) };
 
-	my @ruleSets = $self->{"filmCreators"}->GetRuleSets($creatorNum);
-
-	my $set;
-
-	foreach my $rulSet (@ruleSets) {
-
-		my @ruleLayers = $rulSet->GetLayers();
-
-		my @exist = grep { $_->{"name"} eq $layerName } @ruleLayers;
-
-		if ( scalar(@exist) ) {
-
-			$set = $rulSet;
-			last;
-		}
-	}
-
-	if ( $set && !defined $set->{"color"} ) {
-
-		my @notUsedColor = grep { $_->{"used"} != 1 } @{ $self->{"filmColors"} };
-		unless ( scalar(@notUsedColor) ) {
-
-			die "There are no another colors for unit plot";
-		}
-
-		foreach my $c ( @{ $self->{"filmColors"} } ) {
-
-			unless ( $c->{"used"} ) {
-				$set->{"color"} = $c->{"color"};
-				$c->{"used"}    = 1;
-				last;
-			}
-		}
-	}
-
-	# If no set exist, create empty result set
-
-	return $set;
-
-}
-
-sub __DefineFilmColors {
-	my $self = shift;
-
+	# Load available colors
 	my @colors = ();
 
 	my $f;
-
 	if ( open( $f, "<" . GeneralHelper->Root() . "\\Resources\\FilmColorList" ) ) {
 
 		while ( my $l = <$f> ) {
@@ -247,23 +223,33 @@ sub __DefineFilmColors {
 				next;
 			}
 
-			my %m = ();
 			my @vals = split( /,/, $l );
 
 			chomp @vals;
 			map { $_ =~ s/[\t\s]//g } @vals;
 
-			$m{"used"} = 0;
-			$m{"color"} = Wx::Colour->new( $vals[0], $vals[1], $vals[2] );
-
-			push( @colors, \%m );
+			push( @colors, Wx::Colour->new( $vals[0], $vals[1], $vals[2] ) );
 		}
-
 		close($f);
 	}
 
-	$self->{"filmColors"} = \@colors;
+	# Assign color to rulesets (layers has specific color same for all rulesets)
+	my %layerClr = ();
 
+	foreach my $r (@rulesets) {
+
+		my $rClr = ( grep { defined $_ } map { $layerClr{ $_->{"name"} } } $r->GetLayers() )[0];
+
+		unless ( defined $rClr ) {
+
+			die "No colors available" if ( !@colors );
+			$rClr = shift @colors;
+		}
+
+		$layerClr{ $_->{"name"} } = $rClr foreach ( $r->GetLayers() );
+
+		$r->{"color"} = $rClr;    # Set color to ruleset
+	}
 }
 
 #-------------------------------------------------------------------------------------------#

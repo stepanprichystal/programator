@@ -24,11 +24,12 @@ use aliased 'Packages::Export::PlotExport::FilmCreator::Helper';
 sub new {
 	my $class = shift;
 
-	my $inCAM    = shift;
-	my $jobId    = shift;
-	my $layers   = shift;
-	my $smallLim = shift;
-	my $bigLim   = shift;
+	my $inCAM      = shift;
+	my $jobId      = shift;
+	my $layers     = shift;
+	my $smallLim   = shift;
+	my $bigLim     = shift;
+	
 
 	my $self = $class->SUPER::new( $inCAM, $jobId, $layers, @_ );
 	bless $self;
@@ -40,12 +41,12 @@ sub new {
 
 sub GetRuleSets {
 	my $self = shift;
+	my $usedLayers = shift;    #layer name of layers used in other ruleset
 
 	$self->__BuildRules();
 
-	$self->_RunRules();
+	return $self->_RunRules($usedLayers);
 
-	return @{ $self->{"resultRules"} };
 }
 
 sub __BuildRules {
@@ -90,14 +91,13 @@ sub __BuildRules {
 		$rule->AddSingleTypes( Enums->LType_SIGOUTER, Enums->LType_SIGOUTER );
 
 	}
- 
+
 	$rule = $self->_AddRule( Enums->Ori_VERTICAL );
 	$rule->AddSingleTypes( Enums->LType_GOLDFINGER, Enums->LType_GOLDFINGER );
-	
-	
+
 	$rule = $self->_AddRule( Enums->Ori_VERTICAL );
 	$rule->AddSingleTypes( Enums->LType_PEELABLE, Enums->LType_PEELABLE );
-	
+
 	$rule = $self->_AddRule( Enums->Ori_VERTICAL );
 	$rule->AddSingleTypes( Enums->LType_ALL, Enums->LType_ALL );
 

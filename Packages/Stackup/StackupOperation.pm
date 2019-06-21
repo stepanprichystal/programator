@@ -75,41 +75,53 @@ sub GetSideByLayer {
 
 	my $side = "";
 
-	my %pressInfo = $stackup->GetPressInfo();
-	my $core      = $stackup->GetCoreByCopperLayer($layerName);
-	my $press     = undef;
+	if ( $layerName =~ m/^v(\d)outer$/ ) {
 
-	if ($core) {
+		# Fake outer core layer
 
-		my $topCopperName = $core->GetTopCopperLayer()->GetCopperName();
-		my $botCopperName = $core->GetBotCopperLayer()->GetCopperName();
+		$side = $1 == 1 ? "top" : "bot";
 
-		if ( $layerName eq $topCopperName ) {
-
-			$side = "top";
-		}
-		elsif ( $layerName eq $botCopperName ) {
-
-			$side = "bot";
-		}
 	}
 	else {
 
-		# find, which press was layer pressed in
-		foreach my $pNum ( keys %pressInfo ) {
+		# Other standard signal layer
 
-			my $p = $pressInfo{$pNum};
+		my %pressInfo = $stackup->GetPressInfo();
+		my $core      = $stackup->GetCoreByCopperLayer($layerName);
+		my $press     = undef;
 
-			if ( $p->GetTopCopperLayer() eq $layerName ) {
+		if ($core) {
+
+			my $topCopperName = $core->GetTopCopperLayer()->GetCopperName();
+			my $botCopperName = $core->GetBotCopperLayer()->GetCopperName();
+
+			if ( $layerName eq $topCopperName ) {
 
 				$side = "top";
-				last;
-
 			}
-			elsif ( $p->GetBotCopperLayer() eq $layerName ) {
+			elsif ( $layerName eq $botCopperName ) {
 
 				$side = "bot";
-				last;
+			}
+		}
+		else {
+
+			# find, which press was layer pressed in
+			foreach my $pNum ( keys %pressInfo ) {
+
+				my $p = $pressInfo{$pNum};
+
+				if ( $p->GetTopCopperLayer() eq $layerName ) {
+
+					$side = "top";
+					last;
+
+				}
+				elsif ( $p->GetBotCopperLayer() eq $layerName ) {
+
+					$side = "bot";
+					last;
+				}
 			}
 		}
 	}
@@ -122,10 +134,13 @@ sub GetSideByLayer {
 sub OuterCore {
 	my $self  = shift;
 	my $pcbId = shift;    #pcb id
+	my $side  = shift;    # scalar referenc with positions of outer cores: top/bot/both
 
 	my $result = 0;
 
-	if ( HegMethods->GetTypeOfPcb($pcbId) eq 'Vicevrstvy' ) {
+	my $pcbType = HegMethods->GetTypeOfPcb($pcbId);
+
+	if ( $pcbType eq 'Vicevrstvy' || $pcbType =~ /^Rigid-flex/ ) {
 
 		my $stackup = Stackup->new($pcbId);
 		my @cores   = $stackup->GetAllCores();
@@ -140,6 +155,10 @@ sub OuterCore {
 		if ( $topCopper eq "c" || $botCopper eq "s" ) {
 
 			$result = 1;
+
+			$$side = "both" if ( $topCopper eq "c" && $botCopper eq "s" );
+			$$side = "top"  if ( $topCopper eq "c" && $botCopper ne "s" );
+			$$side = "bot"  if ( $topCopper ne "c" && $botCopper eq "s" );
 		}
 	}
 
@@ -256,7 +275,7 @@ sub GetJoinedFlexRigidPackages {
 	}
 
 	my @laminatePckgsInf = ();
-	
+
 	my @laminatePckgs = ();
 
 	my @layers = $stackup->GetAllLayers();
@@ -268,17 +287,17 @@ sub GetJoinedFlexRigidPackages {
 			my $j = $i + 1;
 
 			while (1) {
-				
+
 				if ( !defined $layers[$j] ) {
 					$j -= 1;
 					last;
-					
-				}elsif ( $layers[$j]->GetType() eq Enums->MaterialType_CORE ) {
+
+				}
+				elsif ( $layers[$j]->GetType() eq Enums->MaterialType_CORE ) {
 
 					$j -= 3;
 					last;
 				}
-				
 
 				$j++;
 
@@ -286,9 +305,10 @@ sub GetJoinedFlexRigidPackages {
 
 			# create package
 			my %packageInf = ();
+
 			#my @l = @layers[ $i - ( $j - $i ) .. $i + ( $j - $i ) ] ;
-			$packageInf{"layers"} =  [@layers[ $i - ( $j - $i ) .. $i + ( $j - $i ) ] ];
-			$packageInf{"coreType"} =  $layers[$i]->GetCoreRigidType();
+			$packageInf{"layers"} = [ @layers[ $i - ( $j - $i ) .. $i + ( $j - $i ) ] ];
+			$packageInf{"coreType"} = $layers[$i]->GetCoreRigidType();
 			push( @laminatePckgs, \%packageInf );
 		}
 	}
@@ -296,11 +316,9 @@ sub GetJoinedFlexRigidPackages {
 	#
 
 	my $lNum = 0;
-	for ( my $i = 0 ; $i < scalar(@laminatePckgs) -1 ; $i++ ) {
+	for ( my $i = 0 ; $i < scalar(@laminatePckgs) - 1 ; $i++ ) {
 
-		$lNum += scalar( @{$laminatePckgs[$i]->{"layers"}} );
-
-		 
+		$lNum += scalar( @{ $laminatePckgs[$i]->{"layers"} } );
 
 		my %contactPlcInf = ();
 		$contactPlcInf{"stackupPos"} = $lNum;
@@ -308,8 +326,8 @@ sub GetJoinedFlexRigidPackages {
 		$contactPlcInf{"packageBot"} = $laminatePckgs[ $i + 1 ];
 
 		push( @laminatePckgsInf, \%contactPlcInf );
-		
-		$lNum ++; # add pprereg
+
+		$lNum++;    # add pprereg
 
 	}
 
@@ -330,9 +348,10 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	my $inCAM = InCAM->new();
 	my $mes   = "";
 
-	my @packages = StackupOperation->GetJoinedFlexRigidPackages( $inCAM, "d222763" );
+	my $side;
+	my $res = StackupOperation->OuterCore( "d152456", \$side );
 
-	print @packages;
+	print $side;
 
 }
 

@@ -114,7 +114,10 @@ sub GetOutputFileName {
 			$fName .= "-";     # add dash, if more layers
 		}
 
-		$fName .= $plotL->GetName() . $indicator . "_" . abs($plotL->GetComp()); # if negative comp, remove minus
+		my $lName = $plotL->GetName();
+		$lName =~ s/^(v\d)outer$/$1/; # If layer is fake oouter core layer, remove "outer" from name
+
+		$fName .= $lName . $indicator . "_" . abs($plotL->GetComp()); # if negative comp, remove minus
 	}
 
 	return $fName;

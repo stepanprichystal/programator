@@ -22,6 +22,7 @@ use aliased 'Packages::Stackup::StackupNC::StackupNC';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'CamHelpers::CamDrilling';
 use aliased 'CamHelpers::CamHelper';
+use aliased 'CamHelpers::CamJob';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -32,10 +33,10 @@ sub new {
 	$self = {};
 	bless $self;
 
-	$self->{"inCAM"}    = shift;
-	$self->{"jobId"}    = shift;
-	$self->{"profLim"}  = shift;
-	$self->{"layerCnt"} = shift;
+	$self->{"inCAM"} = shift;
+	$self->{"jobId"} = shift;
+
+	$self->{"layerCnt"} = CamJob->GetSignalLayerCnt( $self->{"inCAM"}, $self->{"jobId"} );
 
 	if ( $self->{"layerCnt"} > 2 ) {
 
@@ -58,20 +59,28 @@ sub new {
 }
 
 sub Export {
-	my $self        = shift;
-	my $l           = shift;
-	my $fiduc_layer = shift;
+	my $self       = shift;
+	my $l          = shift;
+	my $fiducDCode = shift;
+	my $pnlDim     = shift;    # real limits of phzsical layer data / panel dimension
 
 	my $mirror   = undef;
 	my $polarity = undef;
 	my $etching  = undef;
 
-	if ( $l->{"gROWlayer_type"} eq "signal" || $l->{"gROWlayer_type"} eq "power_ground" || $l->{"gROWlayer_type"} eq "mixed" ) {
+	if ( $l->{"gROWname"} =~ /^[cs]$/ || $l->{"gROWname"} =~ /^v\d$/ ) {
 
 		my %sigLayers = $self->{"tifFile"}->GetSignalLayers();
 		$mirror   = $sigLayers{ $l->{"gROWname"} }->{'mirror'};
 		$polarity = $sigLayers{ $l->{"gROWname"} }->{'polarity'};
 		$etching  = $sigLayers{ $l->{"gROWname"} }->{'etchingType'};
+	}
+	elsif ( $l->{"gROWname"} =~ /^v\douter$/ ) {
+
+		# fake outer core signal layers
+		$mirror   = ( $l->{"gROWname"} =~ /^v1outer$/ ? 0 : 1 );
+		$polarity = "negative";
+		$etching  = undef;
 
 	}
 	else {
@@ -86,17 +95,18 @@ sub Export {
 
 	}
 
-	$self->__ExportXml( $l->{"gROWname"}, $mirror, $polarity, $etching, $fiduc_layer );
+	$self->__ExportXml( $l->{"gROWname"}, $mirror, $polarity, $etching, $fiducDCode, $pnlDim );
 
 }
 
 sub __ExportXml {
-	my $self        = shift;
-	my $layerName   = shift;
-	my $mirror      = shift;
-	my $polarity    = shift;
-	my $etching     = shift;
-	my $fiduc_layer = shift;
+	my $self       = shift;
+	my $layerName  = shift;
+	my $mirror     = shift;
+	my $polarity   = shift;
+	my $etching    = shift;
+	my $fiducDCode = shift;
+	my $pnlDim     = shift;
 
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
@@ -217,12 +227,10 @@ sub __ExportXml {
 		$y_position = -1.0;
 	}
 
-	my $xPnlSize = $self->{"profLim"}->{"xMax"} - $self->{"profLim"}->{"xMin"};
-	my $yPnlSize = $self->{"profLim"}->{"yMax"} - $self->{"profLim"}->{"yMin"};
-
 	# Fill xml
 
 	$templ->{"job_params"}->[0]->{"job_name"}->[0] = $jobId . $layerName . "_mdi";
+	$templ->{"job_params"}->[0]->{"job_name"}->[0] =~ s/outer//;    # remove "outer" from outer core fake layers
 
 	my $orderNum = HegMethods->GetPcbOrderNumber($jobId);
 	my $info     = HegMethods->GetInfoAfterStartProduce( $jobId . "-" . $orderNum );
@@ -240,14 +248,14 @@ sub __ExportXml {
 	$templ->{"job_params"}->[0]->{"parts_remaining"}->[0] = $parts;
 
 	$templ->{"job_params"}->[0]->{"part_size"}->[0]->{"z"} = $self->__GetThickByLayer( $layerName, $etching );
-	$templ->{"job_params"}->[0]->{"part_size"}->[0]->{"x"} = $xPnlSize;
-	$templ->{"job_params"}->[0]->{"part_size"}->[0]->{"y"} = $yPnlSize;
+	$templ->{"job_params"}->[0]->{"part_size"}->[0]->{"x"} = $pnlDim->{"w"};
+	$templ->{"job_params"}->[0]->{"part_size"}->[0]->{"y"} = $pnlDim->{"h"};
 
 	$templ->{"job_params"}->[0]->{"image_position"}->[0]->{"x"} = $x_position;
 	$templ->{"job_params"}->[0]->{"image_position"}->[0]->{"y"} = $y_position;
 
 	if ($mirror) {
-		if ( $yPnlSize > 540 ) {
+		if ( $pnlDim->{"h"} > 540 ) {
 			$templ->{"job_params"}->[0]->{"rotation"}->[0] = 3;
 		}
 		else {
@@ -255,7 +263,7 @@ sub __ExportXml {
 		}
 	}
 	else {
-		if ( $yPnlSize > 540 ) {
+		if ( $pnlDim->{"h"} > 540 ) {
 			$templ->{"job_params"}->[0]->{"rotation"}->[0] = 3;
 		}
 		else {
@@ -284,7 +292,7 @@ sub __ExportXml {
 	if ($power) {
 		$templ->{"job_params"}->[0]->{"exposure_energy"}->[0] = $power;
 	}
-	$templ->{"job_params"}->[0]->{"fiducial_ID_global"}->[0] = $fiduc_layer;
+	$templ->{"job_params"}->[0]->{"fiducial_ID_global"}->[0] = $fiducDCode;
 
 	#my $xmlString = XMLout( $templ, RootName => "job_params" );
 
@@ -297,6 +305,7 @@ sub __ExportXml {
 	);
 
 	my $finalFile = EnumsPaths->Jobs_MDI . $self->{"jobId"} . $layerName . "_mdi.xml";
+	$finalFile =~ s/outer//;    # remove "outer" from outer core fake layers
 
 	FileHelper->WriteString( $finalFile, $xmlString );
 
@@ -330,14 +339,14 @@ sub __GetThickByLayer {
 	my $jobId = $self->{"jobId"};
 	my $inCAM = $self->{"inCAM"};
 
-	my $PLTTHICKNESS   = 0.035;    # plating is 35µm from one side
-	my $PREPLTTHICKNESS   = 0.015; # pre-plating is 15µm from one side (viafilling)
-	my $SMTHICNESS     = 0.025;    # solder mask thickness around 25µm
-	my $RESISTTHICNESS = 0.070;    # resist thickness around 70µm (resist plus protection foil)
+	my $PLTTHICKNESS    = 0.035;    # plating is 35µm from one side
+	my $PREPLTTHICKNESS = 0.015;    # pre-plating is 15µm from one side (viafilling)
+	my $SMTHICNESS      = 0.025;    # solder mask thickness around 25µm
+	my $RESISTTHICNESS  = 0.070;    # resist thickness around 70µm (resist plus protection foil)
 
-	my $thick = 0;                 #total thick
+	my $thick = 0;                  #total thick
 
-	if ( $layer =~ /^[cs]$/ || $layer =~ /^v\d$/ ) {
+	if ( $layer =~ /^[cs]$/ || $layer =~ /^v\d(outer)?$/ ) {
 
 		# Signal layer, plug layers
 
@@ -356,16 +365,38 @@ sub __GetThickByLayer {
 
 				# if via fill, there is extra pre plating
 				$thick += 2 * $PREPLTTHICKNESS if ( CamDrilling->GetViaFillExists( $inCAM, $jobId ) );
-				
+
 				$thick += 2 * $PLTTHICKNESS if ( $etchingType eq EnumsGeneral->Etching_TENTING );
 
 			}
-			elsif ( $layer =~ /^v\d$/ ) {
+			elsif ( $layer =~ /^v\d(outer)?$/ ) {
 
 				# Inner signal layers
 
 				# This method consider progressive lamiantion
-				$thick = $stackup->GetThickByLayerName($layer);
+				if ( $layer =~ /^v\douter$/ ) {
+
+					# find existing layer which has same core as this fake layer and
+					# compute thickness by existing layer
+					if ( $layer =~ /^v1outer$/ ) {
+
+						# Top outer layer
+
+						$thick = $stackup->GetThickByLayerName("v2");
+
+					}
+					else {
+
+						# Bot outer layer
+
+						$thick = $stackup->GetThickByLayerName( "v" . ( ( $layer =~ /v(\d)outer/ )[0] - 1 ) );
+
+					}
+
+				}
+				else {
+					$thick = $stackup->GetThickByLayerName($layer);
+				}
 
 				# Check if core OR laminated package contains plated NC operation, if so add extra plating
 				# For theses case add extra plating from both sides
@@ -409,9 +440,9 @@ sub __GetThickByLayer {
 
 	}
 	elsif ( $layer =~ /^plg[cs]$/ ) {
-		
+
 		# Plug layers
- 
+
 		if ( $self->{"layerCnt"} > 2 ) {
 
 			$thick = $self->{"stackup"}->GetFinalThick() / 1000;
@@ -423,7 +454,7 @@ sub __GetThickByLayer {
 
 		$thick += 2 * $PREPLTTHICKNESS;
 	}
-	elsif ( $layer =~ /^m[cs]2?$/ ||  $layer =~ /^gold[cs]$/ ) {
+	elsif ( $layer =~ /^m[cs]2?$/ || $layer =~ /^gold[cs]$/ ) {
 
 		# Solder mask layers
 
@@ -437,21 +468,20 @@ sub __GetThickByLayer {
 		}
 
 		$thick += 2 * $PLTTHICKNESS if ( $self->{"layerCnt"} >= 2 );
-		
-		if($layer =~ /^m[cs]2?$/){
-			
+
+		if ( $layer =~ /^m[cs]2?$/ ) {
+
 			$thick += 2 * $SMTHICNESS;
 		}
-		
-		if($layer =~ /^gold[cs]$/){
-			
-			my $smLayer = "m".($layer =~ /^gold([cs])$/)[0];
-			
-			$thick += 2 * $SMTHICNESS  if(CamHelper->LayerExists($inCAM, $jobId, $smLayer))
-			
-			
+
+		if ( $layer =~ /^gold[cs]$/ ) {
+
+			my $smLayer = "m" . ( $layer =~ /^gold([cs])$/ )[0];
+
+			$thick += 2 * $SMTHICNESS if ( CamHelper->LayerExists( $inCAM, $jobId, $smLayer ) )
+
 		}
-		
+
 	}
 
 	# add value of resist from both sides

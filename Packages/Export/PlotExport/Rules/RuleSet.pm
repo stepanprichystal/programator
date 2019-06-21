@@ -85,6 +85,12 @@ sub GetLayers {
 	return @{ $self->{"layers"} };
 }
 
+sub GetRule {
+	my $self = shift;
+
+	return $self->{"rule"};
+}
+
 # Return ACTUAL films width, (film are placed tgether without gap)
 
 sub GetWidth {
