@@ -167,6 +167,10 @@ $main->title('Informace o DPS');
 												_CheckCorrectDataCode($jobName, $dataCodeHeg);
 											}
 											
+											if ($hashINFO{ipc_class} == 3) {
+													push (@errorMessageArr, '- NEVYRABIME CLASS 3, informuj obchod.')
+											}
+											
 											_CheckCutomerNetlist($jobName);
 											
 											my $tmpFrameInfo = $middleFrame2Top->Frame(-width=>100, -height=>10)->grid(-column=>0,-row=>0,-columnspan=>2,-sticky=>"news");
@@ -385,19 +389,32 @@ sub _PutXMLorder {
 														$framegrid->Label(-text=>"$hashINFO{panel_processing}",-font=>'arial 9',-fg=>'red')->grid(-column=>1,-row=>"$rowStart",-columnspan=>1,-sticky=>"w");
 													}
 													
+													if ($hashINFO{panel_processing_x} ne '-'){
+														$rowStart++;
+														$framegrid->Label(-text=>"Opracovani v ose X",-font=>'arial 9',-fg=>'DimGray')->grid(-column=>0,-row=>"$rowStart",-columnspan=>1,-sticky=>"w");
+														$framegrid->Label(-text=>"$hashINFO{panel_processing_x}",-font=>'arial 9',-fg=>'red')->grid(-column=>1,-row=>"$rowStart",-columnspan=>1,-sticky=>"w");
+													}
+													
+													if ($hashINFO{panel_processing_y} ne '-'){
+														$rowStart++;
+														$framegrid->Label(-text=>"Opracovani v ose Y",-font=>'arial 9',-fg=>'DimGray')->grid(-column=>0,-row=>"$rowStart",-columnspan=>1,-sticky=>"w");
+														$framegrid->Label(-text=>"$hashINFO{panel_processing_y}",-font=>'arial 9',-fg=>'red')->grid(-column=>1,-row=>"$rowStart",-columnspan=>1,-sticky=>"w");
+													}
+													
 													$rowStart++;
 													$framegrid->Label(-text=>"Min_track",-font=>'arial 9 {underline}',-fg=>'DimGray')->grid(-column=>0,-row=>"$rowStart",-columnspan=>1,-sticky=>"w");
 													$framegrid->Label(-text=>"$hashINFO{min_track}",-font=>'arial 9 {underline}',-fg=>'DimGray')->grid(-column=>1,-row=>"$rowStart",-columnspan=>1,-sticky=>"w");
 													
-													if ($hashINFO{tented_vias} eq 'yes'){
-														$rowStart++;
-														$framegrid->Label(-text=>"Tented_vias",-font=>'arial 9',-fg=>'DimGray')->grid(-column=>0,-row=>"$rowStart",-columnspan=>1,-sticky=>"w");
-														$framegrid->Label(-text=>"$hashINFO{tented_vias}",-font=>'arial 9',-fg=>'red')->grid(-column=>1,-row=>"$rowStart",-columnspan=>1,-sticky=>"w");
-													}
-													if ($hashINFO{filled_vias} eq 'yes'){
+													if ($hashINFO{via_filling} ne '-'){
 														$rowStart++;
 														$framegrid->Label(-text=>"Filled_vias",-font=>'arial 9',-fg=>'DimGray')->grid(-column=>0,-row=>"$rowStart",-columnspan=>1,-sticky=>"w");
-														$framegrid->Label(-text=>"$hashINFO{filled_vias}",-font=>'arial 9',-fg=>'red')->grid(-column=>1,-row=>"$rowStart",-columnspan=>1,-sticky=>"w");
+														$framegrid->Label(-text=>"Typ zaplneni => $hashINFO{via_filling}",-font=>'arial 9',-fg=>'red')->grid(-column=>1,-row=>"$rowStart",-columnspan=>1,-sticky=>"w");
+													}
+													
+													if ($hashINFO{ipc_class} ne '-'){
+														$rowStart++;
+														$framegrid->Label(-text=>"IPC class",-font=>'arial 9',-fg=>'DimGray')->grid(-column=>0,-row=>"$rowStart",-columnspan=>1,-sticky=>"w");
+														$framegrid->Label(-text=>"$hashINFO{ipc_class}",-font=>'arial 9',-fg=>'red')->grid(-column=>1,-row=>"$rowStart",-columnspan=>1,-sticky=>"w");
 													}
 													
 													if(HegMethods->GetPcbIsPool($jobName) == 0) {
@@ -485,9 +502,10 @@ sub __GetValueXML {
 												if ($katalog->{Order}->[$countPCB]->{PCB}->{min_track} =~ /^HASH/){$hashINFO{'min_track'}="$emptyText";}else{$hashINFO{'min_track'}= ($katalog->{Order}->[$countPCB]->{PCB}->{min_track});};
 												if ($katalog->{Order}->[$countPCB]->{PCB}->{chamfered_borders} =~ /^HASH/){$hashINFO{'chamfered_borders'}="$emptyText";}else{$hashINFO{'chamfered_borders'}= ($katalog->{Order}->[$countPCB]->{PCB}->{chamfered_borders});};
 												if ($katalog->{Order}->[$countPCB]->{PCB}->{pressfit} =~ /^HASH/){$hashINFO{'pressfit'}="$emptyText";}else{$hashINFO{'pressfit'}= ($katalog->{Order}->[$countPCB]->{PCB}->{pressfit});};
-												if ($katalog->{Order}->[$countPCB]->{PCB}->{tented_vias} =~ /^HASH/){$hashINFO{'tented_vias'}="$emptyText";}else{$hashINFO{'tented_vias'}= ($katalog->{Order}->[$countPCB]->{PCB}->{tented_vias});};
-												if ($katalog->{Order}->[$countPCB]->{PCB}->{filled_vias} =~ /^HASH/){$hashINFO{'filled_vias'}="$emptyText";}else{$hashINFO{'filled_vias'}= ($katalog->{Order}->[$countPCB]->{PCB}->{filled_vias});};
-										
+												if ($katalog->{Order}->[$countPCB]->{PCB}->{via_filling} =~ /^HASH/){$hashINFO{'via_filling'}="$emptyText";}else{$hashINFO{'via_filling'}= ($katalog->{Order}->[$countPCB]->{PCB}->{via_filling});};	
+												if ($katalog->{Order}->[$countPCB]->{PCB}->{ipc_class} =~ /^HASH/){$hashINFO{'ipc_class'}="$emptyText";}else{$hashINFO{'ipc_class'}= ($katalog->{Order}->[$countPCB]->{PCB}->{ipc_class});};
+												if ($katalog->{Order}->[$countPCB]->{PCB}->{panel_processing_x} =~ /^HASH/){$hashINFO{'panel_processing_x'}="$emptyText";}else{$hashINFO{'panel_processing_x'}= ($katalog->{Order}->[$countPCB]->{PCB}->{panel_processing_x});};
+												if ($katalog->{Order}->[$countPCB]->{PCB}->{panel_processing_y} =~ /^HASH/){$hashINFO{'panel_processing_y'}="$emptyText";}else{$hashINFO{'panel_processing_y'}= ($katalog->{Order}->[$countPCB]->{PCB}->{panel_processing_y});};
 										
 										}
 								}else{
@@ -523,9 +541,10 @@ sub __GetValueXML {
 												if ($katalog->{Order}->{PCB}->{min_track} =~ /^HASH/){$hashINFO{'min_track'}="$emptyText";}else{$hashINFO{'min_track'}= ($katalog->{Order}->{PCB}->{min_track});};
 												if ($katalog->{Order}->{PCB}->{chamfered_borders} =~ /^HASH/){$hashINFO{'chamfered_borders'}="$emptyText";}else{$hashINFO{'chamfered_borders'}= ($katalog->{Order}->{PCB}->{chamfered_borders});};
 												if ($katalog->{Order}->{PCB}->{pressfit} =~ /^HASH/){$hashINFO{'pressfit'}="$emptyText";}else{$hashINFO{'pressfit'}= ($katalog->{Order}->{PCB}->{pressfit});};
-												if ($katalog->{Order}->{PCB}->{tented_vias} =~ /^HASH/){$hashINFO{'tented_vias'}="$emptyText";}else{$hashINFO{'tented_vias'}= ($katalog->{Order}->{PCB}->{tented_vias});};
-												if ($katalog->{Order}->{PCB}->{filled_vias} =~ /^HASH/){$hashINFO{'filled_vias'}="$emptyText";}else{$hashINFO{'filled_vias'}= ($katalog->{Order}->{PCB}->{filled_vias});};
-												
+												if ($katalog->{Order}->{PCB}->{via_filling} =~ /^HASH/){$hashINFO{'via_filling'}="$emptyText";}else{$hashINFO{'via_filling'}= ($katalog->{Order}->{PCB}->{via_filling});};												
+												if ($katalog->{Order}->{PCB}->{ipc_class} =~ /^HASH/){$hashINFO{'ipc_class'}="$emptyText";}else{$hashINFO{'ipc_class'}= ($katalog->{Order}->{PCB}->{ipc_class});};
+												if ($katalog->{Order}->{PCB}->{panel_processing_x} =~ /^HASH/){$hashINFO{'panel_processing_x'}="$emptyText";}else{$hashINFO{'panel_processing_x'}= ($katalog->{Order}->{PCB}->{panel_processing_x});};
+												if ($katalog->{Order}->{PCB}->{panel_processing_y} =~ /^HASH/){$hashINFO{'panel_processing_y'}="$emptyText";}else{$hashINFO{'panel_processing_y'}= ($katalog->{Order}->{PCB}->{panel_processing_y});};
 										}
 			}
 	if ($hashINFO{'size_x'} > $hashINFO{'size_y'}) {
