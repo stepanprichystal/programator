@@ -968,6 +968,21 @@ sub _Panelize {
 					}
 			
 			
+			
+			my $impExist = HegMethods->GetImpedancExist($jobName);
+			my $impCouponText = '';
+			
+			if($impExist){
+					if (_GUIimpedance($jobName, EnumsGeneral->Coupon_IMPEDANCE)){
+								_RunCreatorImpCoupon($jobName);
+								
+								_RunCheckListCoupon($jobName, EnumsGeneral->Coupon_IMPEDANCE);
+					}
+					 $impCouponText = 'Pozor pridej impedancni kupon';
+			}
+			$inCAM->COM ('set_step',name=> 'panel');
+			
+			
 			#R$inCAM->PAUSE ("$runCSV a $file");
 			if ($runCSV eq 'csv') {
 						
@@ -1028,8 +1043,19 @@ sub _Panelize {
 				
 				
 				
-				$inCAM->PAUSE ('Vytvor panel + pouzij schema ' . ' Pozadovany pocet kusu = ' . $pozadavekKusy . _GetOptimalSpace("$jobName"));
+				$inCAM->PAUSE ('Vytvor panel + pouzij schema ' . ' Pozadovany pocet kusu = ' . $pozadavekKusy . _GetOptimalSpace("$jobName") . '     ' . $impCouponText );
 			}
+			
+			# Check if there were put impedance step in the panel
+			if($impExist){
+					
+					unless( _ExistStepInPanel($jobName, EnumsGeneral->Coupon_IMPEDANCE )) {
+						$inCAM->PAUSE ('Neexistuje v panelu step s nazvem coupon_impedance, musis zacit panelizaci znovu.');	
+						exit;
+					}
+
+			}
+			
 			
 			if (HegMethods->GetTypeOfPcb($jobName) eq 'Vicevrstvy') {
 					my ($xPanelSize,$yPanelSize) = _GetSizeOfPcb($jobName, 'panel');
@@ -2077,6 +2103,26 @@ sub _GUIcompLayDone {
 	return ( $messMngr->Result() );
 }
 
+sub _GUIimpedance {
+	my $pcbId = shift;
+	my $couponStep = shift;
+	my $textMessage = 'V HEGu jsou zadefinované impedance, spustit generování impedanèního kupónu?';
+	
+	
+	if (CamHelper->StepExists( $inCAM, $pcbId, $couponStep)){
+		   $textMessage = 'V HEGu jsou zadefinované impedance a step <b>' . $couponStep . '</b> je již vytvoøen, spustit generování impedanèního kupónu znovu?';
+	}
+	
+	my $messMngr = MessageMngr->new($pcbId);
+	my @mess     = ($textMessage);
+	my @btn      = ( "Ne", "ANO" );
+	
+	$messMngr->ShowModal( -1, EnumsGeneral->MessageType_WARNING, \@mess, \@btn );
+	
+	return ( $messMngr->Result() );
+}
+
+
 sub _CheckKTxCU {
 	my $cuValue = shift;
 	my $classKon = shift;
@@ -2252,5 +2298,55 @@ sub _GetOptimalSpace {
 	return($res);
 }
 
+sub _RunCreatorImpCoupon {
+		my $jobId = shift;
+	
+			$inCAM->COM('script_run',name=>"y:/server/site_data/scripts/Programs/Coupon/CpnWizard/RunCpnWizard/RunWizardApp.pl",dirmode=>'global',params=>$jobId);
+			
+	
+	
+}
 
+sub _ExistStepInPanel {
+	my $jobId = shift;
+	my $findingStep = shift;
+	my $stepExistInPanel = 0;
 
+					my @uniqueSR = CamStepRepeat->GetUniqueStepAndRepeat( $inCAM, $jobId, 'panel' );
+
+					foreach my $l (@uniqueSR){
+							if ($l->{'stepName'} =~ /$findingStep/) {
+								$stepExistInPanel = 1;
+								last;
+							}
+					}
+					
+	return($stepExistInPanel); 
+					
+}
+
+sub _RunCheckListCoupon{
+		my $jobId = shift;
+		my $couponStep = shift;
+	
+		$inCAM->COM ('set_step',name=> $couponStep);
+		
+		 # Here run Checks
+ 		 $inCAM -> COM('chklist_from_lib',chklist=>'checks',profile=>'none',customer=>'');
+ 		 $inCAM -> COM('chklist_open',chklist=>'checks');
+ 		 $inCAM -> COM('chklist_show',chklist=>'checks',nact=>'1',pinned=>'no',pinned_enabled=>'yes');
+ 		 
+ 		 my $erfModel_outer = 'Class_' . $constClass . '_Out';
+ 		 my $erfModel_inner = 'Class_' . $constClass_inner . '_IN';
+ 		 
+ 		 $inCAM -> COM('chklist_erf',chklist=>'checks', erf=> $erfModel_inner, nact=>'2');
+ 		 $inCAM -> COM('chklist_erf',chklist=>'checks', erf=> $erfModel_outer, nact=>'3');
+ 		 
+ 		 $inCAM -> COM('chklist_run',chklist=>'checks',nact=>'2',area=>'profile',async_run=>'no');
+ 		 $inCAM -> COM('chklist_run',chklist=>'checks',nact=>'3',area=>'profile',async_run=>'no');
+ 			
+ 		 $inCAM -> PAUSE('PROVED CHECK-list pro step impedancniho kuponu');
+ 		 $inCAM -> COM('chklist_close',chklist=>'checks',mode=>'hide');
+	
+	
+}
