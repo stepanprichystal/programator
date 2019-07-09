@@ -76,7 +76,7 @@ sub AddSurfacePolyline {
 	}
 
 	$inCAM->COM("add_surf_poly_end");
-	$inCAM->COM( "add_surf_end", "polarity" => $polarity, "attributes" => "no" );
+	$inCAM->COM( "add_surf_end", "polarity" => $polarity, "attributes" => "yes" );
 
 }
 

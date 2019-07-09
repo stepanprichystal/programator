@@ -143,12 +143,12 @@ sub GetAllCores {
 		}
 	}
 
-	# filter out rigid cores
-	if ($noRigid) {
+	# filter out flex cores
+	if ($noFlex) {
 		@cores = grep { $_->GetThick() > 100 } @cores;
 	}
 
-	# filter out flex cores
+	# filter rigid cores
 	if ($noRigid) {
 		@cores = grep { $_->GetThick() <= 100 } @cores;
 	}

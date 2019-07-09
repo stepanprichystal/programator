@@ -88,8 +88,6 @@ sub OnPrepareGroupData {
 	# Prepare chamfer edge
 	$groupData->SetChamferEdges( $defaultInfo->GetChamferEdgesIS() ? 1 : 0 );
 
-
-
 	# Prepare default selected quick notes
 	my @quickNotes = ();
 
@@ -113,8 +111,7 @@ sub OnPrepareGroupData {
 	}
 
 	$groupData->SetQuickNotes( \@quickNotes );
-	
-	
+
 	$groupData->SetNotes("");
 
 	# prepare datacode
@@ -126,7 +123,7 @@ sub OnPrepareGroupData {
 	# Mask color
 
 	#mask
-		
+
 	my %masks = HegMethods->GetSolderMaskColor($jobId);
 	unless ( defined $masks{"top"} ) {
 		$masks{"top"} = "";
@@ -136,12 +133,23 @@ sub OnPrepareGroupData {
 	}
 	$groupData->SetC_mask_colour( $masks{"top"} );
 	$groupData->SetS_mask_colour( $masks{"bot"} );
-	
-	
+
 	#flex mask
-	my $flexType = HegMethods->GetFlexSolderMask($jobId);
-	$groupData->SetFlexi_maska($flexType);
-	
+	my %flexType = HegMethods->GetFlexSolderMask($jobId);
+	my $flex     = "";
+
+	if ( $flexType{"top"} && $flexType{"bot"} ) {
+
+		$flex = "2";
+	}
+	elsif ( $flexType{"top"} && !$flexType{"bot"} ) {
+		$flex = "C";
+	}
+	elsif ( !$flexType{"top"} && $flexType{"bot"} ) {
+		$flex = "S";
+	}
+
+	$groupData->SetFlexi_maska($flex);
 
 	#silk
 	my %silk = HegMethods->GetSilkScreenColor($jobId);
@@ -155,9 +163,8 @@ sub OnPrepareGroupData {
 
 	$groupData->SetC_silk_screen_colour( $silk{"top"} );
 	$groupData->SetS_silk_screen_colour( $silk{"bot"} );
-	
-	
-	#silk 2 
+
+	#silk 2
 	my %silk2 = HegMethods->GetSilkScreenColor2($jobId);
 	unless ( defined $silk2{"top"} ) {
 		$silk2{"top"} = "";
@@ -168,7 +175,6 @@ sub OnPrepareGroupData {
 
 	$groupData->SetC_silk_screen_colour2( $silk2{"top"} );
 	$groupData->SetS_silk_screen_colour2( $silk2{"bot"} );
-	
 
 	my $tenting = $self->__IsTenting( $inCAM, $jobId, $defaultInfo );
 
@@ -216,13 +222,12 @@ sub OnPrepareReorderGroupData {
 	if ( defined $mask && $mask !~ /\-/ ) {
 		$groupData->SetMaska01(1);
 	}
- 
+
 	# Note
 	my $note = $nif->GetValue("poznamka");
 
 	if ( defined $note && $note ne "" ) {
 
- 
 		$note =~ s/;/\n/g;
 		$groupData->SetNotes($note);
 	}

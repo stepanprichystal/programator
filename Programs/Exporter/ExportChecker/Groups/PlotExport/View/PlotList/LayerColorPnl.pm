@@ -53,7 +53,7 @@ sub __SetLayout {
 		$color = Wx::Colour->new( 255, 255, 255 );
 
 	}
-	elsif ($layer =~ /^m[cs]2?$/) {
+	elsif ($layer =~ /^m[cs]2?(flex)?$/) {
 		
 		$color = Wx::Colour->new( 0, 164, 123 );
 

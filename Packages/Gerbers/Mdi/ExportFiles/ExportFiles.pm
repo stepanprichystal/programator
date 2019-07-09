@@ -233,7 +233,7 @@ sub __GetLayers2Export {
 
 	if ( $layerTypes->{ Enums->Type_MASK } ) {
 
-		my @l = grep { $_->{"gROWname"} =~ /^m[cs]2?$/ } @all;             # number 2 is second scilkscreeen and soldermask
+		my @l = grep { $_->{"gROWname"} =~ /^m[cs]2?(flex)?$/ } @all;             # number 2 is second scilkscreeen and soldermask
 		push( @exportLayers, @l );
 	}
 
@@ -597,13 +597,13 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId    = "d246713";
+	my $jobId    = "d241421";
 	my $stepName = "panel";
 
 	my $export = ExportFiles->new( $inCAM, $jobId, $stepName );
 
 	my %type = (
-				 Enums->Type_SIGNAL => "1",
+				 Enums->Type_SIGNAL => "0",
 				 Enums->Type_MASK   => "1",
 				 Enums->Type_PLUG   => "1",
 				 Enums->Type_GOLD   => "1"

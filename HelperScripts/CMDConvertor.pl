@@ -7,8 +7,7 @@ use warnings;
 
 
 # ============ INPUT LINE =================
-my $inputLine ="chain_pocket,layer=55476B01-6DAF-1014-A848-3E2F672B8E68,mode=concentric,size=2,feed=0,overlap=0.9,pocket_dir=standard";
-
+my $inputLine ="COM info, out_file=c:/tmp/my_report.txt, write_mode=append, angle_direction=ccw,args=  -t check -e 1_ipc_demo_master_pro/orig/dm_analysis -d REPORT -o action=1";
 
 
 

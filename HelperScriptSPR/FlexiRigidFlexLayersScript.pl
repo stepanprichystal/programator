@@ -17,15 +17,15 @@ use warnings;
 
 use aliased 'Enums::EnumsPaths';
 
-use aliased 'Packages::CAMJob::FlexiLayers::FlexiBendArea';
+use aliased 'Packages::GuideSubs::Flex::DoPrepareRigidFlexLayers';
 use aliased 'Packages::InCAM::InCAM';
+use aliased 'Managers::MessageMngr::MessageMngr';
 
 my $inCAM    = InCAM->new();
 my $jobId    = "$ENV{JOB}";
 my $stepName = "$ENV{STEP}";
 
-my $mess = "";
+my $res = DoPrepareRigidFlexLayers->PrepareLayers( $inCAM, $jobId );
 
-my $result = FlexiBendArea->UnMaskBendArea( $inCAM, $jobId, $stepName );
+print STDERR "Result is: $res, error message \n";
 
-print STDERR "Result is: $result, error message: $mess\n";

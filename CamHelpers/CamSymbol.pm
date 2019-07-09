@@ -149,7 +149,7 @@ sub AddPolyline {
 	$inCAM->COM(
 				 "add_polyline_end",
 				 "polarity"      => $polarity,
-				 "attributes"    => "no",
+				 "attributes"    => "yes",
 				 "symbol"        => $symbol,
 				 "bus_num_lines" => "0",
 				 "bus_dist_by"   => "pitch",

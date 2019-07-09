@@ -5,6 +5,7 @@
 package Packages::Stackup::StackupOperation;
 
 #3th party library
+use List::Util;
 
 #local library
 
@@ -29,7 +30,7 @@ sub GetThickByLayer {
 
 	my $thick = 0;           #total thick
 
-	if ( HegMethods->GetTypeOfPcb($pcbId) eq 'Vicevrstvy' ) {
+	if ( HegMethods->GetBasePcbInfo($pcbId)->{"pocet_vrstev"} > 2 ) {
 
 		my $stackup = Stackup->new($pcbId);
 
@@ -137,10 +138,8 @@ sub OuterCore {
 	my $side  = shift;    # scalar referenc with positions of outer cores: top/bot/both
 
 	my $result = 0;
-
-	my $pcbType = HegMethods->GetTypeOfPcb($pcbId);
-
-	if ( $pcbType eq 'Vicevrstvy' || $pcbType =~ /^Rigid-flex/ ) {
+  
+	if ( HegMethods->GetBasePcbInfo($pcbId)->{"pocet_vrstev"} > 2 ) {
 
 		my $stackup = Stackup->new($pcbId);
 		my @cores   = $stackup->GetAllCores();
@@ -259,10 +258,12 @@ sub StackupMatInStock {
 	return $result;
 }
 
-# For each places where are coupled flex and rigid core, return info:
-# -  position of prepreg in stackup
-# - top core
-# - bot core
+# Return array of couples
+# Couple contain top + bot "package" and its layers
+# Package is set of cores+prepregs+cu fil laminated in separately
+# Attention
+# - NoFlow prepregs are removed - bond bbetween package
+# - Not entirely finished couples flex + flex package
 sub GetJoinedFlexRigidPackages {
 	my $self    = shift;
 	my $pcbId   = shift;    #pcb id
@@ -276,59 +277,117 @@ sub GetJoinedFlexRigidPackages {
 
 	my @laminatePckgsInf = ();
 
-	my @laminatePckgs = ();
+	#	my @laminatePckgs = ();
 
 	my @layers = $stackup->GetAllLayers();
+
+	my $firstCore;
+	my $secondCore;
+
 	for ( my $i = 0 ; $i < scalar(@layers) ; $i++ ) {
 
-		# if core, look for most outer Cu layer (if progress lamination, there could be more Cu layers)
 		if ( $layers[$i]->GetType() eq Enums->MaterialType_CORE ) {
 
-			my $j = $i + 1;
+			if ( !defined $firstCore ) {
+				$firstCore = $layers[$i]->GetCoreRigidType();
+			}
+			elsif ( !defined $secondCore ) {
 
-			while (1) {
+				if ( !( $layers[$i]->GetCoreRigidType() eq Enums->CoreType_RIGID && $firstCore eq Enums->CoreType_RIGID ) ) {
 
-				if ( !defined $layers[$j] ) {
-					$j -= 1;
-					last;
-
+					$secondCore = $layers[$i]->GetCoreRigidType();
 				}
-				elsif ( $layers[$j]->GetType() eq Enums->MaterialType_CORE ) {
+			}
+		}
 
-					$j -= 3;
-					last;
+		if ( defined $firstCore && $secondCore ) {
+
+			# Flex core was found second (after rigid core)
+			# Create "laminate package" info
+			my @packgLayersTop;
+			my @packgLayersBot;
+
+			if ( $firstCore eq Enums->CoreType_FLEX && $secondCore eq Enums->CoreType_RIGID ) {
+
+				# look index of flex core
+				my $flexIdx = undef;
+				for ( my $k = $i ; $k >= 0 ; $k-- ) {
+
+					if ( $layers[$k]->GetType() eq Enums->MaterialType_CORE && $layers[$k]->GetCoreRigidType() eq Enums->CoreType_FLEX ) {
+						$flexIdx = $k;
+						last;
+					}
 				}
 
-				$j++;
+				# look layers up
+				@packgLayersTop = @layers[ $flexIdx - 1 .. $flexIdx + 1 ];
+				@packgLayersBot = @layers[ $flexIdx + 2 .. scalar(@layers) - 1 ];
+
+			}
+			elsif (    ( $secondCore eq Enums->CoreType_FLEX && $firstCore eq Enums->CoreType_RIGID )
+					|| ( $firstCore eq Enums->CoreType_FLEX && $secondCore eq Enums->CoreType_FLEX ) )
+			{
+
+				@packgLayersBot = @layers[ $i - 1 .. $i + 1 ];
+
+				# search up through stackup up next flex core or start of stackup
+				my $endIdx = 0;
+				for ( my $k = $i - 1 ; $k >= 0 ; $k-- ) {
+
+					if ( $layers[$k]->GetType() eq Enums->MaterialType_CORE && $layers[$k]->GetCoreRigidType() eq Enums->CoreType_FLEX ) {
+						$endIdx = $k;
+						$endIdx -= 1;    # include core copper
+						last;
+					}
+				}
+
+				# look layers down
+				@packgLayersTop = @layers[ $endIdx .. $i - 2 ];
 
 			}
 
-			# create package
-			my %packageInf = ();
+			# Remove noflow prepreg from layers
+			my @prepregs = grep { $_->GetType() eq Enums->MaterialType_PREPREG } ( @packgLayersTop, @packgLayersBot );
+			foreach my $p (@prepregs) {
 
-			#my @l = @layers[ $i - ( $j - $i ) .. $i + ( $j - $i ) ] ;
-			$packageInf{"layers"} = [ @layers[ $i - ( $j - $i ) .. $i + ( $j - $i ) ] ];
-			$packageInf{"coreType"} = $layers[$i]->GetCoreRigidType();
-			push( @laminatePckgs, \%packageInf );
+				my @all = @{ $p->{"prepregs"} };
+
+				for ( my $i = scalar( @{ $p->{"prepregs"} } ) - 1 ; $i >= 0 ; $i-- ) {
+
+					if ( $p->{"prepregs"}->[$i]->GetText() =~ /49np/i ) {
+
+						$p->{"thick"} -= $p->{"prepregs"}->[$i]->GetThick();
+
+						splice @{ $p->{"prepregs"} }, $i, 1;
+
+					}
+				}
+
+			}
+
+			my %infJoin = ();
+
+			my %infTop = ();
+			$infTop{"coreType"}      = $firstCore;
+			$infTop{"layers"}        = \@packgLayersTop;
+			$infTop{"topCopperName"} = ( grep { $_->GetType() eq Enums->MaterialType_COPPER } @packgLayersTop )[0]->GetCopperName();
+			$infTop{"botCopperName"} = ( grep { $_->GetType() eq Enums->MaterialType_COPPER } reverse @packgLayersTop )[0]->GetCopperName();
+
+			$infJoin{"packageTop"} = \%infTop;
+
+			my %infBot = ();
+			$infBot{"coreType"}      = $secondCore;
+			$infBot{"layers"}        = \@packgLayersBot;
+			$infBot{"topCopperName"} = ( grep { $_->GetType() eq Enums->MaterialType_COPPER } @packgLayersBot )[0]->GetCopperName();
+			$infBot{"botCopperName"} = ( grep { $_->GetType() eq Enums->MaterialType_COPPER } reverse @packgLayersBot )[0]->GetCopperName();
+			$infJoin{"packageBot"}   = \%infBot;
+
+			push( @laminatePckgsInf, \%infJoin );
+
+			$i--;
+			$firstCore  = undef;
+			$secondCore = undef;
 		}
-	}
-
-	#
-
-	my $lNum = 0;
-	for ( my $i = 0 ; $i < scalar(@laminatePckgs) - 1 ; $i++ ) {
-
-		$lNum += scalar( @{ $laminatePckgs[$i]->{"layers"} } );
-
-		my %contactPlcInf = ();
-		$contactPlcInf{"stackupPos"} = $lNum;
-		$contactPlcInf{"packageTop"} = $laminatePckgs[$i];
-		$contactPlcInf{"packageBot"} = $laminatePckgs[ $i + 1 ];
-
-		push( @laminatePckgsInf, \%contactPlcInf );
-
-		$lNum++;    # add pprereg
-
 	}
 
 	return @laminatePckgsInf;
@@ -349,9 +408,11 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	my $mes   = "";
 
 	my $side;
-	my $res = StackupOperation->OuterCore( "d152456", \$side );
+	my @package = StackupOperation->GetJoinedFlexRigidPackages("d222775");
 
-	print $side;
+	my @package2 = StackupOperation->GetJoinedFlexRigidPackages2("d222777");
+
+	print @package;
 
 }
 

@@ -377,9 +377,8 @@ sub GetBaseCuThick {
 	my $layerName = shift;
 
 	my $cuThick;
-
-	if ( HegMethods->GetTypeOfPcb( $self->{"jobId"} ) eq 'Vicevrstvy' ) {
-
+	if ( HegMethods->GetBasePcbInfo($self->{"jobId"})->{"pocet_vrstev"} > 2 ) {
+ 
 		$self->{"stackup"} = Stackup->new( $self->{"jobId"} );
 
 		my $cuLayer = $self->{"stackup"}->GetCuLayer($layerName);

@@ -168,9 +168,9 @@ sub Build {
 
 		# program na zakryti
 		if ( $info->{"poznamka"} =~ /type=rigid-flexi-i/i ) {
-			$section->AddRow( "expozice_zakryti_top", "307x407_plna_cu_top_mdi.xml" );
+			$section->AddRow( "expozice_zakryti_top", $jobId."_v1_mdi.xml" );
 		}
-		$section->AddRow( "expozice_zakryti_bot", "307x407_plna_cu_bot_mdi.xml" );
+		$section->AddRow( "expozice_zakryti_bot", $jobId."_v".$layerCnt."_mdi.xml" );
 
 		my @rigidCores = grep { $_->GetQId() != 10 && $_->GetQId() != 13 } $stackup->GetAllCores();
 
@@ -238,14 +238,25 @@ sub Build {
 
 		$section->AddRow( "material_prepreg", $noflowPrepregMat[0]{"nazev_mat"} );
 
-		$section->AddRow( "program_frezovani_prepreg", $ncArchiv . "\\nc\\" . $jobId . "_prepreg" );
+		$section->AddRow( "program_frezovani_prepreg1", $ncArchiv . "\\nc\\" . $jobId . "_prepreg1" );
+		$section->AddRow( "program_frezovani_prepreg2", $ncArchiv . "\\nc\\" . $jobId . "_prepreg2" );
 
-		my $prepregPerPanel = scalar(
+		my $prepregPerPanel2 = scalar(
 									grep { $_->GetQId() == 10 || $_->GetQId() == 13 }
 									map { $_->GetAllPrepregs() } grep { $_->GetType() eq StackEnums->MaterialType_PREPREG } $stackup->GetAllLayers()
 		);
+		
+ 
+		my $prepregPerPanel1 =  2;
+		
+		if ( $info->{"poznamka"} =~ /type=rigid-flexi-O/i ) {
+			$prepregPerPanel1 = 1;
+		}
+		
+		$prepregPerPanel2 -= $prepregPerPanel1;
 
-		$section->AddRow( "pocet_prepregu_na_prirez", $prepregPerPanel );
+		$section->AddRow( "pocet_prepregu_na_prirez1", $prepregPerPanel1 );
+		$section->AddRow( "pocet_prepregu_na_prirez2", $prepregPerPanel2 );
 
 		# postup ostatni operace
 
@@ -263,7 +274,7 @@ sub Build {
 		$section->AddRow( "expozice_flex_c", $jobId . $flexCore->GetTopCopperLayer()->GetCopperName() . "_mdi.xml" );
 		$section->AddRow( "expozice_flex_s", $jobId . $flexCore->GetBotCopperLayer()->GetCopperName() . "_mdi.xml" );
 
-		if ( $info->{"poznamka"} !~ /type=rigid-flexi-i/i ) {
+		if ( $info->{"poznamka"} =~ /type=rigid-flexi-i/i ) {
 			foreach my $core ( $stackup->GetAllCores() ) {
 
 				if ( $core->GetCoreNumber() == $flexCore->GetCoreNumber() - 1 ) {

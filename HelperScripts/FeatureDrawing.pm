@@ -95,6 +95,9 @@ sub Draw {
 												{ "x" => $feat->{"xmid"}, "y" => $feat->{"ymid"} },
 												{ "x" => $feat->{"x2"},   "y" => $feat->{"y2"} },
 												$feat->{"oriDir"}, $feat->{"symbol"} );
+		}else{
+			
+			die "Feature type: ".$feat->{"type"}." is not supported";
 		}
 	}
 }

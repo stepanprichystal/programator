@@ -165,8 +165,8 @@ sub Fill {
  
  	# Second masks are not sotred in nif file only in IS so check IS
  	if(defined $masks2{"bot"} && $masks2{"bot"} ne ""){
-		$maskBotValEn .= " + ".ValueConvertor->GetMaskCodeToColor($masks2{"bot2"}). " (bot solder mask)";
-		$maskBotValCz .= " + ".Translator->Cz(ValueConvertor->GetMaskCodeToColor($masks2{"bot"})). " (spodní maska)";
+		$maskBotValEn .= " + ".ValueConvertor->GetMaskCodeToColor($masks2{"bot2"}). " (top solder mask)";
+		$maskBotValCz .= " + ".Translator->Cz(ValueConvertor->GetMaskCodeToColor($masks2{"bot"})). " (vrchní maska)";
 	}	
 	
 	

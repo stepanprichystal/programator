@@ -61,9 +61,17 @@ sub GetFeatures {
 }
 
 sub GetPolygonsFeatures {
-	my $self = shift;
+	my $self        = shift;
+	my $preselected = shift;    # if is request parse only some features
 
-	my @lines = grep { $_->{"type"} eq "L" || $_->{"type"} eq "A" } @{ $self->{"features"} };
+	my @features = @{ $self->{"features"} };
+
+	if ($preselected) {
+
+		@features = @{$preselected};
+	}
+
+	my @lines = grep { $_->{"type"} eq "L" || $_->{"type"} eq "A" } @features;
 	my @sequences = RoutCyclic->GetRoutSequences( \@lines );
 
 	my @polygons = ();
@@ -79,11 +87,11 @@ sub GetPolygonsFeatures {
 
 			die "Polygon features are not cyclic. Feature Ids: " . join( "; ", map { $_->{"id"} } @{$seq} );
 		}
-	} 
-	
+	}
+
 	return @polygons;
 }
- 
+
 sub GetPolygonsPoints {
 	my $self = shift;
 
@@ -117,7 +125,6 @@ sub GetPolygonsPoints {
 	return @polygonsPoints;
 
 }
- 
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
@@ -139,8 +146,6 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	$route->Parse( $inCAM, $jobId, $step, $layer );
 
 	my @features = $route->GetPolygonsFeatures();
-	 
-
 
 }
 

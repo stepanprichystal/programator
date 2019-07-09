@@ -415,8 +415,8 @@ sub DisableControls {
 	# Show/hide special solder mask and silk screen
 	$self->{"silkTop2Cb"}->Hide()    unless ( $self->{"defaultInfo"}->LayerExist("pc2") );
 	$self->{"silkBot2Cb"}->Hide()    unless ( $self->{"defaultInfo"}->LayerExist("ps2") );
-	$self->{"maskTopBendCb"}->Hide() unless ( $self->{"defaultInfo"}->LayerExist("mcbend") );
-	$self->{"maskBotBendCb"}->Hide() unless ( $self->{"defaultInfo"}->LayerExist("msbend") );
+	$self->{"maskTopBendCb"}->Hide() unless ( $self->{"defaultInfo"}->LayerExist("mcflex") );
+	$self->{"maskBotBendCb"}->Hide() unless ( $self->{"defaultInfo"}->LayerExist("msflex") );
 
 }
 

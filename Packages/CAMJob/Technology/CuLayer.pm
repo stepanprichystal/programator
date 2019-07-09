@@ -14,6 +14,8 @@ use aliased 'Helpers::GeneralHelper';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'Helpers::FileHelper';
 use aliased 'Helpers::JobHelper';
+use aliased 'CamHelpers::CamStepRepeat';
+
 #-------------------------------------------------------------------------------------------#
 #  Script methods
 #-------------------------------------------------------------------------------------------#
@@ -23,38 +25,41 @@ sub GetMaxCuByClass {
 	my $self  = shift;
 	my $class = shift;
 	my $inner = shift;
- 	
+
 	my $isolation = JobHelper->GetIsolationByClass($class);
-	 
 
 	my $p = GeneralHelper->Root() . "\\Resources\\CuClassRel";
 
 	die "Table definiton: $p doesn't exist" unless ( -e $p );
 
 	my @lines = grep { $_ =~ /^\d+\s*=/ } @{ FileHelper->ReadAsLines($p) };
-	
-	
-	my %h = ();
+
+	my %h      = ();
 	my %hInner = ();
-	
-	foreach my $l  (@lines){
-		my ($isol, $cuThickness, $cuThicknessInner) = $l =~ /(\d+)\s*=\s*(\d+)\s*;\s*(\d+)/i;
-		$h{$isol} = $cuThickness;
+
+	foreach my $l (@lines) {
+		my ( $isol, $cuThickness, $cuThicknessInner ) = $l =~ /(\d+)\s*=\s*(\d+)\s*;\s*(\d+)/i;
+		$h{$isol}      = $cuThickness;
 		$hInner{$isol} = $cuThicknessInner;
 	}
-	
+
 	my $maxCu = undef;
-	
-	if($inner){
+
+	if ($inner) {
 		$maxCu = $hInner{$isolation};
-	}else{
+	}
+	else {
 		$maxCu = $h{$isolation};
 	}
- 
-	die "Max Cu thiockness is not defined" if(!defined $maxCu || $maxCu eq "" || $maxCu == 0);
-	
+
+	die "Max Cu thiockness is not defined" if ( !defined $maxCu || $maxCu eq "" || $maxCu == 0 );
+
 	return $maxCu;
 }
+
+# Return resutls from cheklist "control":
+
+
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

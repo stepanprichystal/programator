@@ -29,7 +29,7 @@ sub GetBaseCuThick {
 
 	my $cuThick;
 
-	if ( HegMethods->GetTypeOfPcb($jobId) eq 'Vicevrstvy' ) {
+	if ( HegMethods->GetBasePcbInfo($jobId)->{"pocet_vrstev"} > 2 ) {
 
 		my $stackup = Stackup->new($jobId);
 
@@ -51,7 +51,7 @@ sub GetFinalPcbThick {
 
 	my $thick;
 
-	if ( HegMethods->GetTypeOfPcb($jobId) eq 'Vicevrstvy' ) {
+	if ( HegMethods->GetBasePcbInfo($jobId)->{"pocet_vrstev"} > 2 ) {
 
 		my $stackup = Stackup->new($jobId);
 
@@ -74,7 +74,7 @@ sub StackupExist {
 	my $inStack = ( -e EnumsPaths->Jobs_COUPONS . "$jobId.xml" );
 
 	my $multicall = ( FileHelper->GetFileNameByPattern( EnumsPaths->Jobs_STACKUPS, $jobId . "_" ) );
-	
+
 	if ( $inStack || $multicall ) {
 
 		return 1;
@@ -306,23 +306,77 @@ sub GetPcbFlexType {
 
 	my $type;
 
-	my $info = ( HegMethods->GetAllByPcbId($jobId) )[0];
+	my $ISType = HegMethods->GetTypeOfPcb( $jobId, 1 );
 
-	if ( $info->{"poznamka"} =~ /type=flexi/i ) {
+	if ( $ISType eq "F" || $ISType eq "G" ) {
+
 		$type = EnumsGeneral->PcbFlexType_FLEX;
-
 	}
-	elsif ( $info->{"poznamka"} =~ /type=rigid-flexi-o/i ) {
+	elsif ( $ISType eq "Q" ) {
 
 		$type = EnumsGeneral->PcbFlexType_RIGIDFLEXO;
 
 	}
-	elsif ( $info->{"poznamka"} =~ /type=rigid-flexi-i/i ) {
+	elsif ( $ISType eq "R" ) {
 
 		$type = EnumsGeneral->PcbFlexType_RIGIDFLEXI;
 	}
 
 	return $type;
+}
+
+# Return signal layers which are covered by coverlay (source is IS)
+sub GetCoverlaySigLayers {
+	my $self  = shift;
+	my $jobId = shift;
+
+	my @sigLayers = ();
+
+	my $type = $self->GetPcbFlexType($jobId);
+
+	my %coverlayType = HegMethods->GetCoverlayType($jobId);
+
+	if ( $coverlayType{"top"} ) {
+
+		my $sigLayer;
+
+		if ( $type eq EnumsGeneral->PcbFlexType_FLEX || $type eq EnumsGeneral->PcbFlexType_RIGIDFLEXO ) {
+
+			$sigLayer = "c";
+		}
+		else {
+
+			my $stackup = Stackup->new($jobId);
+
+			# find flexible inner layers
+			my $core = ( $stackup->GetAllCores(1) )[0];
+			$sigLayer = $core->GetTopCopperLayer()->GetCopperName();
+		}
+
+		push( @sigLayers, $sigLayer );
+	}
+
+	if ( $coverlayType{"bot"} ) {
+
+		my $sigLayer;
+
+		if ( $type eq EnumsGeneral->PcbFlexType_FLEX ) {
+
+			$sigLayer = "s";
+		}
+		else {
+
+			my $stackup = Stackup->new($jobId);
+
+			# find flexible inner layers
+			my $core = ( $stackup->GetAllCores(1) )[0];
+			$sigLayer = $core->GetBotCopperLayer()->GetCopperName();
+		}
+
+		push( @sigLayers, $sigLayer );
+	}
+
+	return @sigLayers;
 }
 
 sub GetIsolationByClass {
@@ -362,9 +416,46 @@ sub GetIsolationByClass {
 	}
 
 	return $isolation;
-
 }
 
+#
+#sub GetClassByIsolation {
+#	my $self  = shift;
+#	my $isolation = shift;
+#
+#	my $class;
+#
+#	if ( $isolation <= 400 ) {
+#
+#		$class = 3;
+#	}
+#	elsif ( $class <= 4 ) {
+#
+#		$isolation = 300;
+#
+#	}
+#	elsif ( $class <= 5 ) {
+#
+#		$isolation = 200;
+#
+#	}
+#	elsif ( $class <= 6 ) {
+#
+#		$isolation = 150;
+#
+#	}
+#	elsif ( $class <= 7 ) {
+#
+#		$isolation = 125;
+#
+#	}
+#	elsif ( $class <= 8 ) {
+#
+#		$isolation = 100;
+#	}
+#
+#	return $isolation;
+#}
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#
@@ -372,8 +463,8 @@ my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	use aliased 'Helpers::JobHelper';
-	
-	print STDERR JobHelper->StackupExist("test");
+
+	print STDERR JobHelper->GetBaseCuThick("d222776");
 
 }
 

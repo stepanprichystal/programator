@@ -345,7 +345,7 @@ sub sendCommandToPipe {
 	my ($self)      = shift;
 	my $commandType = shift;
 	my $command     = shift;
- 
+
 	my $old_select   = select(STDOUT);
 	my $flush_status = $|;               # save the flushing status
 	$| = 1;                              # force flushing of the io buffer
@@ -418,9 +418,9 @@ sub GetExceptionsError {
 }
 
 # Return port which InCAM libary working with
-sub GetPort{
+sub GetPort {
 	my ($self) = shift;
-	
+
 	return $self->{"port"};
 }
 
@@ -574,8 +574,9 @@ sub SetDisplay {
 	if ($display) {
 
 		$self->COM("disp_on");
-	
-	}else {
+
+	}
+	else {
 
 		$self->COM("disp_off");
 	}
@@ -998,15 +999,15 @@ sub INFO {
 	unless ( $self->{"connected"} ) {
 		return;
 	}
- 
 
 	my %args = @_;
- 
+
 	my ( $entity_path, $data_type, $parameters, $serial_number, $options, $help, $entity_type, $angle_direction ) =
 	  ( "", "", "", "", "", "", "", "" );
 	my $i;
 	my $units = 'units = inch';
 	my $parse = 'yes';
+	my $csh_file;
 
 	foreach ( keys %args ) {
 		$i = $args{$_};
@@ -1040,6 +1041,9 @@ sub INFO {
 		elsif ( $_ eq "parse" ) {
 			$parse = $i;
 		}
+		elsif ( $_ eq "out_file" ) {
+			$csh_file = $i;
+		}
 	}
 
 	#my $info_pre = "info,out_file=\$csh_file,write_mode=replace, $units,args=";
@@ -1051,7 +1055,10 @@ sub INFO {
 	else {
 
 		# TODO smazat GUID
-		my $csh_file = "$ENV{INCAM_TMP}/info_csh." . $$ . $self->{"incamGUID"};
+		if ( !defined $csh_file ) {
+
+			$csh_file = "$ENV{INCAM_TMP}/info_csh." . $$ . $self->{"incamGUID"};
+		}
 
 		#my $csh_file = "$ENV{GENESIS_DIR}/tmp/info_csh.$$abc";
 		$info_com =~ s/\$csh_file/$csh_file/;

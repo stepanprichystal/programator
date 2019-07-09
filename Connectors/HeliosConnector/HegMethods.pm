@@ -263,8 +263,7 @@ sub GetEmployyInfo {
 
 		$cmd .= "WHERE cislo_subjektu = _UserId";
 	}
-	
-	
+
 	my @result = Helper->ExecuteDataSet( $cmd, \@params );
 
 	if ( scalar(@result) == 1 ) {
@@ -373,13 +372,19 @@ sub GetElTest {
 #Return scalar value of pcb type without diacritics
 # - Vicevrstvy, oboustranny, ...
 sub GetTypeOfPcb {
-	my $self  = shift;
-	my $pcbId = shift;
+	my $self        = shift;
+	my $pcbId       = shift;
+	my $noEditStyle = shift // 0;
 
 	my @params = ( SqlParameter->new( "_PcbId", Enums->SqlDbType_VARCHAR, $pcbId ) );
 
+	my $editStyle = "lcs.nf_edit_style('typ_desky_22', d.material_typ) typ_desky";
+	if($noEditStyle){
+		$editStyle = "d.material_typ typ_desky";
+	}
+
 	my $cmd = "select top 1
-				 lcs.nf_edit_style('typ_desky_22', d.material_typ) typ_desky
+				 $editStyle
 				 from lcs.desky_22 d with (nolock)
 				  left outer join lcs.zakazky_dps_22_hlavicka z with (nolock) on z.deska=d.cislo_subjektu
 				 where d.reference_subjektu=_PcbId and  z.cislo_poradace = 22050";
@@ -405,9 +410,9 @@ sub GetPcbSurface {
 	return Helper->ExecuteScalar( $cmd, \@params, 1 );
 
 }
+ 
 
-
-#Return type of flex soldermask c - only top / s - opnly bot / 2 - top + bot
+# Return type of coverlay
 sub GetFlexSolderMask {
 	my $self  = shift;
 	my $pcbId = shift;
@@ -420,10 +425,19 @@ sub GetFlexSolderMask {
 				  left outer join lcs.zakazky_dps_22_hlavicka z with (nolock) on z.deska=d.cislo_subjektu
 				 where d.reference_subjektu=_PcbId and  z.cislo_poradace = 22050";
 
- 
-	return Helper->ExecuteScalar( $cmd, \@params );
- 
+	my %flex = ( "top" => 0, "bot" => 0 );
+
+	my $val = Helper->ExecuteScalar( $cmd, \@params );
+
+	if ($val) {
+
+		$flex{"top"} = ( $val eq "C" || $val eq "2" ) ? 1 : 0;
+		$flex{"bot"} = ( $val eq "S" || $val eq "2" ) ? 1 : 0;
+	}
+
+	return %flex;
 }
+
 
 # Return color of mask in hash for top and bot side
 sub GetSolderMaskColor {
@@ -541,12 +555,38 @@ sub GetSilkScreenColor2 {
 		$silk{"top"} = $rows[0]->{"c_silk_screen_colour2"};
 		$silk{"bot"} = $rows[0]->{"s_silk_screen_colour2"};
 
-		return %silk;	
+		return %silk;
 	}
 	else {
 
 		return 0;
 	}
+}
+
+# Return type of coverlay
+sub GetCoverlayType {
+	my $self  = shift;
+	my $pcbId = shift;
+
+	my @params = ( SqlParameter->new( "_PcbId", Enums->SqlDbType_VARCHAR, $pcbId ) );
+
+	my $cmd = "select top 1
+				 d.coverlay
+				 from lcs.desky_22 d with (nolock)
+				  left outer join lcs.zakazky_dps_22_hlavicka z with (nolock) on z.deska=d.cislo_subjektu
+				 where d.reference_subjektu=_PcbId and  z.cislo_poradace = 22050";
+
+	my %coverlay = ( "top" => undef, "bot" => undef );
+
+	my $val = Helper->ExecuteScalar( $cmd, \@params );
+
+	if ($val) {
+
+		$coverlay{"top"} = ( $val eq "C" || $val eq "2" ) ? 1 : 0;
+		$coverlay{"bot"} = ( $val eq "S" || $val eq "2" ) ? 1 : 0;
+	}
+
+	return %coverlay;
 }
 
 #Return scalar value of pcb thick in helios

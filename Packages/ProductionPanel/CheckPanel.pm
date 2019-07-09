@@ -131,7 +131,7 @@ sub _CheckPolarityInnerLayer {
 	my $jobId = shift;
 	my $info;
 
-	if ( HegMethods->GetTypeOfPcb($jobId) eq 'Vicevrstvy' ) {
+	if ( HegMethods->GetBasePcbInfo($jobId)->{"pocet_vrstev"} > 2 ) {
 
 		my @layerList = CamJob->GetSignalLayerNames( $inCAM, $jobId );
 		my @innerLayerList = grep { $_ =~ /v\d{1,}/ } @layerList;

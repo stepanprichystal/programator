@@ -338,11 +338,11 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	use aliased 'Packages::InCAM::InCAM';
 
 	my $inCAM = InCAM->new();
-	my $jobId = "d231201";
+	my $jobId = "d222776";
 
 	my $mess = "";
 
-	my $result = SchemeFlexiPcb->AddHolesCoverlay( $inCAM, $jobId, "panel");
+	my $result = SchemeFlexiPcb->RemovePatternFillFromFlexiCore( $inCAM, $jobId, "panel");
 
 	print STDERR "Result is: $result, error message: $mess\n";
 

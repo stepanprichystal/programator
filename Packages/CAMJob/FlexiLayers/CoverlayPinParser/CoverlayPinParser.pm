@@ -8,7 +8,7 @@
 #   is always on right
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::CAMJob::FlexiLayers::BendAreaParser::BendAreaParser;
+package Packages::CAMJob::FlexiLayers::CoverlayPinParser::CoverlayPinParser;
 
 #3th party library
 use strict;
@@ -16,18 +16,26 @@ use warnings;
 
 #local library
 use aliased 'Packages::Polygon::Features::PolyLineFeatures::PolyLineFeatures';
-use aliased 'Packages::CAMJob::FlexiLayers::BendAreaParser::BendArea';
+use aliased 'Packages::CAMJob::FlexiLayers::CoverlayPinParser::PinBendArea';
 use aliased 'Packages::CAMJob::FlexiLayers::BendAreaParser::TransitionZone';
 use aliased 'Packages::Polygon::Polygon::PolygonPoints';
 use aliased 'Packages::Polygon::Enums' => 'PolyEnums';
 use aliased 'Helpers::GeneralHelper';
 use aliased 'CamHelpers::CamLayer';
 use aliased 'CamHelpers::CamMatrix';
+use aliased 'CamHelpers::CamFilter';
+use aliased 'Packages::CAM::FeatureFilter::FeatureFilter';
+use aliased 'Packages::CAM::FeatureFilter::Enums' => 'EnumsFiltr';
+use aliased 'Enums::EnumsRout';
+
 #-------------------------------------------------------------------------------------------#
 #  Public method
 #-------------------------------------------------------------------------------------------#
 
-my $TRANSITIONZONEATT = "transition_zone";
+my $REGISTERPINSTRING = "register_pin";
+my $CUTPINSTRING      = "cut_pin";
+my $ENDPINLINE        = "end_pin_line";
+my $PINLINE           = "pin_line";
 
 sub new {
 	my $self = shift;
@@ -39,11 +47,12 @@ sub new {
 	$self->{"step"}           = shift;
 	$self->{"bendAreaDir"}    = shift // PolyEnums->Dir_CCW;    # Packages::Polygon::Enums::Dir_<CW|CCW>
 	$self->{"resizeBendArea"} = shift // 0;                     # Resize polygon feature of bend area
-	$self->{"layer"}          = shift // "bend";
+	$self->{"layer"}          = shift // "coverlaypins";
 
 	# PROPERTIES
 
-	$self->{"bendAreas"} = [];
+	$self->{"pinBendAreas"}   = [];
+	$self->{"helperFeatures"} = [];
 
 	$self->__LoadBendArea();
 
@@ -56,50 +65,74 @@ sub CheckBendArea {
 
 	my $result = 1;
 
-	# 1) Check if polygons have two transition zone
-	foreach my $bendArea ( @{ $self->{"bendAreas"} } ) {
+	# Check if all efatures has filled .string attribute
 
-		# 1) Check minimal number of bend area features (4)
-		my @features = $bendArea->GetFeatures();
+	my @wrong = grep { !defined $_->{"att"}->{".string"} || $_->{"att"}->{".string"} eq "" } $self->GetFeatures();
 
-		if ( scalar(@features) < 4 ) {
+	if (@wrong) {
 
-			$$errMess .= "BendArea with features: " . join( "; ", map { $_->{"id"} } $bendArea->GetFeatures() ) . "\n";
-
-			$$errMess .= "Number of bend area features has to be at least four (current number is: " . scalar(@features) . ")\n";
-			$result = 0;
-		}
-
-		# 2) Check requested number of transition zone (2)
-		my @tZones = $bendArea->GetTransitionZones();
-
-		if ( scalar(@tZones) != 2 ) {
-
-			$$errMess .= "BendArea with features: " . join( "; ", map { $_->{"id"} } $bendArea->GetFeatures() ) . "\n";
-			$$errMess .= "Number of transition zone is not: 2 (current number is: " . scalar(@tZones) . ". Feature attribute:transition_zone .)\n";
-			$result = 0;
-		}
-
-		# 3) Check if transition yones contain only lines
-
-		foreach my $tZone (@tZones) {
-
-			if ( $tZone->GetFeature()->{"type"} ne "L" ) {
-
-				$errMess .= "Only line features are allowed for transition zone (err feat id: " . $tZone->GetFeature()->{"id"} . ")\n";
-				$result = 0;
-			}
-		}
-
+		$result = 0;
+		$errMess .=
+		  "Not all features in layer: " . $self->{"layer"} . " has attribute .string (features id: " . join( ";", map { $_->{"id"} } @wrong ) . ")";
 	}
 
 	return $result;
+
+}
+
+sub GetFeatures {
+	my $self = shift;
+
+	my @f = map { $_->GetFeatures() } @{ $self->{"pinBendAreas"} };
+	push( @f, @{ $self->{"helperFeatures"} } );
+
+	return @f;
 }
 
 sub GetBendAreas {
 	my $self = shift;
 
-	return @{ $self->{"bendAreas"} };
+	return @{ $self->{"pinBendAreas"} };
+}
+
+sub GetBendAreaByLineId {
+	my $self   = shift;
+	my $lineId = shift;
+
+	my $b;
+
+	foreach my $area ( @{ $self->{"pinBendAreas"} } ) {
+
+		if ( grep { $_->{"id"} eq $lineId } $area->GetFeatures() ) {
+			$b = $area;
+			last;
+		}
+	}
+
+	return $b;
+}
+
+sub GetBendAreaLineByLineId {
+	my $self   = shift;
+	my $lineId = shift;
+
+	foreach my $area ( @{ $self->{"pinBendAreas"} } ) {
+
+		my $line = ( grep { $_->{"id"} eq $lineId } $area->GetFeatures() )[0];
+		return $line if ($line);
+	}
+}
+
+sub GetRegisterPads {
+	my $self = shift;
+
+	return grep { $_->{"att"}->{".string"} eq $REGISTERPINSTRING } @{ $self->{"helperFeatures"} };
+}
+
+sub GetCutLines {
+	my $self = shift;
+
+	return grep { $_->{"att"}->{".string"} eq $CUTPINSTRING } @{ $self->{"helperFeatures"} };
 }
 
 sub __LoadBendArea {
@@ -119,8 +152,20 @@ sub __LoadBendArea {
 		my $tmp = GeneralHelper->GetGUID();
 		CamMatrix->CopyLayer( $inCAM, $jobId, $self->{"layer"}, $step, $tmp, $step );
 		CamLayer->WorkLayer( $inCAM, $tmp );
-		$inCAM->COM( 'sel_resize_poly', "size" => $self->{"resizeBendArea"} );
-		$polyLine->Parse( $inCAM, $jobId, $step, $tmp );
+		my $f = FeatureFilter->new( $inCAM, $jobId, $tmp );
+
+		$f->AddIncludeAtt( ".string", $ENDPINLINE );
+		$f->AddIncludeAtt( ".string", $PINLINE );
+		$f->SetIncludeAttrCond( EnumsFiltr->Logic_OR );
+
+		if ( $f->Select() ) {
+			$inCAM->COM( 'sel_resize_poly', "size" => $self->{"resizeBendArea"} );
+			$polyLine->Parse( $inCAM, $jobId, $step, $tmp );
+		}
+		else {
+
+			die "No line to polygon resize selected";
+		}
 
 		CamMatrix->DeleteLayer( $inCAM, $jobId, $tmp );
 	}
@@ -129,14 +174,21 @@ sub __LoadBendArea {
 		$polyLine->Parse( $inCAM, $jobId, $step, $layer );
 	}
 
+	# Separate helper symbol and bend areas
+	my @helper = grep { $_->{"att"}->{".string"} eq $CUTPINSTRING || $_->{"att"}->{".string"} eq $REGISTERPINSTRING } $polyLine->GetFeatures();
+	$self->{"helperFeatures"} = \@helper;
+
+	my @polyFeats = grep { $_->{"att"}->{".string"} ne $CUTPINSTRING && $_->{"att"}->{".string"} ne $REGISTERPINSTRING } $polyLine->GetFeatures();
+
 	# return parsed feature polygons, cyclic only CW or CCW)
-	my @polygons = $polyLine->GetPolygonsFeatures();
+	my @polygons = $polyLine->GetPolygonsFeatures( \@polyFeats );
 
 	# 1) Check if there is detected some polygon area
 	die "No bend area detected in step: $step; layer: $layer" if ( !scalar(@polygons) );
 
 	foreach my $polygon (@polygons) {
 
+		my @tranZones = ();
 
 		# switch direction to CWW
 		my @points = map { [ $_->{"x1"}, $_->{"y1"} ] } @{$polygon};    # rest of points "x2,y2"
@@ -164,24 +216,11 @@ sub __LoadBendArea {
 				}
 			}
 		}
-		
-		
-		my @tranZones = ();
 
-		foreach my $feat ( grep { defined $_->{"att"}->{$TRANSITIONZONEATT} } @feats ) {
+		my $pinBendArea = PinBendArea->new( \@feats, \@tranZones );
 
-			my $tZone = TransitionZone->new($feat);
-
-			push( @tranZones, $tZone );
-
-		}
-
-		my $bendArea = BendArea->new( \@feats, \@tranZones );
-
-		push( @{ $self->{"bendAreas"} }, $bendArea );
-
+		push( @{ $self->{"pinBendAreas"} }, $pinBendArea );
 	}
-
 }
 
 #-------------------------------------------------------------------------------------------#

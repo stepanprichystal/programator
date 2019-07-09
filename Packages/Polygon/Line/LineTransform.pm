@@ -13,6 +13,7 @@ use Math::Trig;
 #local library
 use aliased 'Packages::Polygon::PointsTransform';
 use aliased 'Packages::Polygon::Enums';
+use aliased 'Packages::Polygon::Line::SegmentLineIntersection';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -41,19 +42,14 @@ sub ParallelSegmentLine {
 	my %L2EndPoint = %{$endP};
 	$L2EndPoint{"x"} -= $moveX;
 	$L2EndPoint{"y"} -= $moveY;
-	 
+
 	# 2nd line end point
 	my %L1EndPoint = ();
 	$L1EndPoint{"x"} = $length;
 	$L1EndPoint{"y"} = 0;
-	 
-  
-	my $angle1 =
-	  rad2deg( atan2( $L1EndPoint{"y"} , $L1EndPoint{"x"}  ) )
-	  ;                               #angle of point given by start point and x coordinate above line x
-	my $angle2 =
-	  rad2deg( atan2( $L2EndPoint{"y"} , $L2EndPoint{"x"}  ) )
-	  ;  
+
+	my $angle1 = rad2deg( atan2( $L1EndPoint{"y"}, $L1EndPoint{"x"} ) );    #angle of point given by start point and x coordinate above line x
+	my $angle2 = rad2deg( atan2( $L2EndPoint{"y"}, $L2EndPoint{"x"} ) );
 	my $innerAngle;
 	my $sign = 1;
 
@@ -61,30 +57,98 @@ sub ParallelSegmentLine {
 	#test if both points are "above/under/ above and under" line x
 	$sign = $sign * -1 if ( $angle2 * $angle1 > 0 );
 
-
 	if ( $angle2 > $angle1 ) {
 		$innerAngle = abs( abs($angle1) + $sign * abs($angle2) );
 	}
 	else {
 		$innerAngle = 360 - abs( abs($angle1) + $sign * abs($angle2) );
 	}
- 
-	# 2) Rotate current line to origin position (origin is start point) to "x" axis 
-	my %rotLineP1 = ("x" => $startP->{"x"}, "y" => $startP->{"y"} );
-	my %rotLineP2 = ("x" => $startP->{"x"} + $length, "y" => $startP->{"y"} );
-	
+
+	# 2) Rotate current line to origin position (origin is start point) to "x" axis
+	my %rotLineP1 = ( "x" => $startP->{"x"}, "y" => $startP->{"y"} );
+	my %rotLineP2 = ( "x" => $startP->{"x"} + $length, "y" => $startP->{"y"} );
+
 	# Move by given distance in y axis
-	$dist *=-1 if($side eq "right");
-	
+	$dist *= -1 if ( $side eq "right" );
+
 	$rotLineP1{"y"} += $dist;
 	$rotLineP2{"y"} += $dist;
-	
+
 	# 3) Rotate back
-	
-	%rotLineP1 = PointsTransform->RotatePoint( \%rotLineP1, $innerAngle, Enums->Dir_CCW, {"x" => $startP->{"x"}, "y" => $startP->{"y"} } );
-	%rotLineP2 = PointsTransform->RotatePoint( \%rotLineP2, $innerAngle, Enums->Dir_CCW, {"x" => $startP->{"x"}, "y" => $startP->{"y"} } );
- 
-	return (\%rotLineP1, \%rotLineP2);
+
+	%rotLineP1 = PointsTransform->RotatePoint( \%rotLineP1, $innerAngle, Enums->Dir_CCW, { "x" => $startP->{"x"}, "y" => $startP->{"y"} } );
+	%rotLineP2 = PointsTransform->RotatePoint( \%rotLineP2, $innerAngle, Enums->Dir_CCW, { "x" => $startP->{"x"}, "y" => $startP->{"y"} } );
+
+	return ( \%rotLineP1, \%rotLineP2 );
+
+}
+
+# Get vetical segment line which go from starting point of segment
+# Length of parallel segment is given by $len
+# Vertical line is created on the left of original line (in ori line direction from pStart to pEnd)
+sub GetVerticalSegmentLine {
+	my $self   = shift;
+	my $pStart = shift;
+	my $pEnd   = shift;
+	my $len    = shift;
+	my $side   = shift // "left";    # left/right side of original line which vericall line will be created on
+
+	die "side parameter is not implemented" if ( $side ne "left" );
+
+	my $x1 = $pStart->{"x"};
+	my $y1 = $pStart->{"y"};
+	my $x2 = $pEnd->{"x"};
+	my $y2 = $pEnd->{"y"};
+
+	my $x2res;
+	my $y2res;
+
+	# Exceptions
+
+	if ( $x1 == $x2 ) {
+		my $dir = $y1 < $y2 ? 1 : -1;
+		$dir *= -1 if ( $side eq "right" );
+		$x2res = $x1 - $dir * $len;
+		$y2res = $y1;
+
+	}
+	elsif ( $y1 == $y2 ) {
+		my $dir = $x1 < $x2 ? 1 : -1;
+		$dir *= -1 if ( $side eq "right" );
+		$x2res = $x1;
+		$y2res = $y1 + $dir * $len;
+	}
+	else {
+
+		my $c;
+
+		my @nVec = ( ( $x2 - $x1 ), ( $y2 - $y1 ) );
+
+		my $c2 = -( $nVec[0] * $x1 ) - ( $nVec[1] * $y1 );
+
+		#second point We take second x similar to x1 (e.g x1 + 1)
+
+		$y2res = -( $nVec[0] * $x2res ) / $nVec[1] - $c2 / $nVec[1];
+
+		# Now we have perpendicular segment line, find entersection of this line and lien parallel to source line at distance $len
+		my $oriLineP1 = { "x" => $x1, "y" => $y1 };
+		my $oriLineP2 = { "x" => $x2, "y" => $y2 };
+
+		my @res = $self->ParallelSegmentLine( $oriLineP1, $oriLineP2, $len, "left" );
+
+		my $oriLineParalelP1 = $res[0];
+		my $oriLineParalelP2 = $res[1];
+
+		# perpendicular line
+		my $perpendLineP1 = { "x" => $x1,    "y" => $y1 };
+		my $perpendLineP2 = { "x" => $x2res, "y" => $y2res };
+
+		my %i = SegmentLineIntersection->GetLineIntersection( $oriLineParalelP1, $oriLineParalelP2, $perpendLineP1, $perpendLineP2 );
+		$x2res = $i{"x"};
+		$y2res = $i{"y"};
+	}
+
+	return ( "x" => $x2res, "y" => $y2res );
 
 }
 
@@ -101,7 +165,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	my %p2 = ( "x" => 8,  "y" => 1 );
 	my %q2 = ( "x" => 20, "y" => 1 );
 
-	print SegmentLineIntersection->doIntersect( \%p1, \%q1, \%p2, \%q2 );
+	print SegmentLineIntersection->GetVerticalSegmentLine( \%p1, \%q1, \%p2, \%q2 );
 
 	#	$p1 = {10, 0}, $q1 = {0, 10};
 	#	$p2 = {0, 0}, $q2 = {10, 10};
