@@ -502,43 +502,58 @@ sub OnCheckGroupData {
 	# 22) Check if set construction class match with real pcb data by layers
 	my $checklistName = "control";
 
-	my @inner = map { $_->{"gROWname"} } grep { $_->{"gROWname"} =~ /^v\d+$/i } $defaultInfo->GetBoardBaseLayers();
-	my @outer = map { $_->{"gROWname"} } grep { $_->{"gROWname"} =~ /^[cs]/i } $defaultInfo->GetBoardBaseLayers();
+	unless ( CamChecklist->ChecklistLibExists( $inCAM, $checklistName ) ) {
 
-	foreach my $s ( map { $_->{"stepName"} } CamStepRepeatPnl->GetUniqueNestedStepAndRepeat( $inCAM, $jobId ) ) {
+		$dataMngr->_AddErrorResult(
+						"Checklist - $checklistName",
+						"Checklist (název:$checklistName) pro kontrolu minimálních izolací v signálových vrstvách neexistuje v Global library."
+						  . " Kontrola na správné nastavení konstrukčních tříd nebude provedena."
+		);
+	}
+	else {
 
-		if ( scalar(@inner) ) {
+		my @inner = map { $_->{"gROWname"} } grep { $_->{"gROWname"} =~ /^v\d+$/i } $defaultInfo->GetBoardBaseLayers();
+		my @outer = map { $_->{"gROWname"} } grep { $_->{"gROWname"} =~ /^[cs]$/i } $defaultInfo->GetBoardBaseLayers();
 
-			my $class = $defaultInfo->GetPcbClassInner();
-			my $isol  = JobHelper->GetIsolationByClass($class);
+		foreach my $s ( map { $_->{"stepName"} } CamStepRepeatPnl->GetUniqueNestedStepAndRepeat( $inCAM, $jobId ) ) {
 
-			my $a = Action->new( $inCAM, $jobId, $s, $checklistName, 1 );    # action number = 1;
-			my $status = CamChecklist->ChecklistActionStatus( $inCAM, $jobId, $s, $checklistName, 1 );
-			my $time = CamChecklist->GetChecklistActionTime( $inCAM, $jobId, $s, $checklistName, 1 );
- 
- 			# Run action checklist only if results are older than 5 minutes
-#			if ( $status ne EnumsChecklist->Status_DONE
-#				 || ( $status eq EnumsChecklist->Status_DONE
-#					  && (  DateTime->now( "time_zone" => 'Europe/Prague' )->epoch() - $time->epoch() ) > 5*60 ))
-#			{
-#				$a->Run();
-#			}
-			
-			$a->Run();
-			my $r = $a->GetReport();
+			unless ( CamChecklist->ChecklistExists( $inCAM, $jobId, $s, $checklistName ) ) {
 
-			foreach my $l (@inner) {
+				CamChecklist->CopyChecklistToStep( $inCAM, $s, $checklistName );
+			}
 
-				foreach my $catName ( ( EnumsChecklist->Cat_PADTOPAD, EnumsChecklist->Cat_PADTOCIRCUIT, EnumsChecklist->Cat_CIRCUITTOCIRCUIT ) ) {
+			if ( scalar(@inner) ) {
 
-					my $cat = $r->GetCategory($catName);
+				my $class = $defaultInfo->GetPcbClassInner();
+				my $isol  = JobHelper->GetIsolationByClass($class);
 
-					next unless ( defined $cat );
-					my @catVal = $cat->GetCategoryHist($l)->GetHistValues();
+				my $a = Action->new( $inCAM, $jobId, $s, $checklistName, 1 );       # action number = 1;
+				#my $status = CamChecklist->ChecklistActionStatus( $inCAM, $jobId, $s, $checklistName, 1 );
+				#my $time = CamChecklist->GetChecklistActionTime( $inCAM, $jobId, $s, $checklistName, 1 );
 
-					if ( @catVal && $catVal[0]->{"from"} < $isol ) {
+				# Run action checklist only if results are older than 5 minutes
+				#			if ( $status ne EnumsChecklist->Status_DONE
+				#				 || ( $status eq EnumsChecklist->Status_DONE
+				#					  && (  DateTime->now( "time_zone" => 'Europe/Prague' )->epoch() - $time->epoch() ) > 5*60 ))
+				#			{
+				#				$a->Run();
+				#			}
 
-						$dataMngr->_AddWarningResult(
+				$a->Run();
+				my $r = $a->GetReport();
+
+				foreach my $l (@inner) {
+
+					foreach my $catName ( ( EnumsChecklist->Cat_PADTOPAD, EnumsChecklist->Cat_PADTOCIRCUIT, EnumsChecklist->Cat_CIRCUITTOCIRCUIT ) ) {
+
+						my $cat = $r->GetCategory($catName);
+
+						next unless ( defined $cat );
+						my @catVal = $cat->GetCategoryHist($l)->GetHistValues();
+
+						if ( @catVal && $catVal[0]->{"from"} < $isol ) {
+
+							$dataMngr->_AddWarningResult(
 												  "Konstrukční třída vrstvy \"$l\"",
 												  "V reportu cheklistu: \"$checklistName\" pro step: \"$s\", vrstvu: \"$l\" byly nalezeny izolace: \""
 													. $cat->GetName()
@@ -547,45 +562,45 @@ sub OnCheckGroupData {
 													. $catVal[0]->{"from"} . " - "
 													. $catVal[0]->{"to"} . " / "
 													. $catVal[0]->{"count"}
-						);
+							);
+						}
 					}
 				}
 			}
-		}
 
-		if ( scalar(@outer) ) {
-			my $class = $defaultInfo->GetPcbClass();
-			my $isol  = JobHelper->GetIsolationByClass($class);
+			if ( scalar(@outer) ) {
+				my $class = $defaultInfo->GetPcbClass();
+				my $isol  = JobHelper->GetIsolationByClass($class);
 
-			my $a = Action->new( $inCAM, $jobId, $s, $checklistName, 2 );    # action number = 2;
+				my $a = Action->new( $inCAM, $jobId, $s, $checklistName, 2 );    # action number = 2;
 
-			my $status = CamChecklist->ChecklistActionStatus( $inCAM, $jobId, $s, $checklistName, 1 );
-			my $time = CamChecklist->GetChecklistActionTime( $inCAM, $jobId, $s, $checklistName, 1 );
- 
- 			# Run action checklist only if results are older than 5 minutes
-#			if ( $status ne EnumsChecklist->Status_DONE
-#				 || ( $status eq EnumsChecklist->Status_DONE
-#					  && (  DateTime->now( "time_zone" => 'Europe/Prague' )->epoch() - $time->epoch() ) > 5*60 ))
-#			{
-#				$a->Run();
-#			}
+				#my $status = CamChecklist->ChecklistActionStatus( $inCAM, $jobId, $s, $checklistName, 1 );
+				#my $time = CamChecklist->GetChecklistActionTime( $inCAM, $jobId, $s, $checklistName, 1 );
 
-			$a->Run();
-			my $r = $a->GetReport();
+				# Run action checklist only if results are older than 5 minutes
+				#			if ( $status ne EnumsChecklist->Status_DONE
+				#				 || ( $status eq EnumsChecklist->Status_DONE
+				#					  && (  DateTime->now( "time_zone" => 'Europe/Prague' )->epoch() - $time->epoch() ) > 5*60 ))
+				#			{
+				#				$a->Run();
+				#			}
 
-			foreach my $l (@outer) {
+				$a->Run();
+				my $r = $a->GetReport();
 
-				foreach my $catName ( ( EnumsChecklist->Cat_PADTOPAD, EnumsChecklist->Cat_PADTOCIRCUIT, EnumsChecklist->Cat_CIRCUITTOCIRCUIT ) ) {
+				foreach my $l (@outer) {
 
-					my $cat = $r->GetCategory($catName);
+					foreach my $catName ( ( EnumsChecklist->Cat_PADTOPAD, EnumsChecklist->Cat_PADTOCIRCUIT, EnumsChecklist->Cat_CIRCUITTOCIRCUIT ) ) {
 
-					next unless ( defined $cat );
+						my $cat = $r->GetCategory($catName);
 
-					my @catVal = $cat->GetCategoryHist($l)->GetHistValues();
+						next unless ( defined $cat );
 
-					if ( @catVal && $catVal[0]->{"from"} < $isol ) {
+						my @catVal = $cat->GetCategoryHist($l)->GetHistValues();
 
-						$dataMngr->_AddWarningResult(
+						if ( @catVal && $catVal[0]->{"from"} < $isol ) {
+
+							$dataMngr->_AddWarningResult(
 												  "Konstrukční třída vrstvy \"$l\"",
 												  "V reportu cheklistu: \"$checklistName\" pro step: \"$s\", vrstvu: \"$l\" byly nalezeny izolace: \""
 													. $cat->GetName()
@@ -594,7 +609,8 @@ sub OnCheckGroupData {
 													. $catVal[0]->{"from"} . " - "
 													. $catVal[0]->{"to"} . " / "
 													. $catVal[0]->{"count"}
-						);
+							);
+						}
 					}
 				}
 			}

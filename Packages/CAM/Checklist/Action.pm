@@ -87,7 +87,7 @@ sub __ParseReport {
 
 	my @lines = @{ FileHelper->ReadAsLines($file) };
 
-	#unlink($file) or die $_;
+	unlink($file) or die $_;
 
 	my $jobRep  = shift @lines;
 	my $stepRep = shift @lines;
@@ -193,20 +193,15 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId = "d152456";
+	my $jobId = "d222775";
 
 	my $a = Action->new( $inCAM, $jobId, "o+1", "control", 2 );
 
 	$a->Run();
 	my $r = $a->GetReport();
-
-	foreach my $l ( $r->GetLayerNames() ) {
-		
-		my @hists1 = $r->GetCategoryHists( EnumsChecklist->Cat_PADTOPAD,         [$l] );
-		my @hists2 = $r->GetCategoryHists( EnumsChecklist->Cat_PADTOCIRCUIT,     [$l] );
-		my @hists3 = $r->GetCategoryHists( EnumsChecklist->Cat_CIRCUITTOCIRCUIT, [$l] );
-
-	}
+	
+	die;
+ 
 
 	 
 
