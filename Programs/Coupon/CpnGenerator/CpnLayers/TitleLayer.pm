@@ -72,6 +72,8 @@ sub Build {
 									0,
 									$angle
 	);
+	
+	$pText->AddAttribute(".n_electric");
 
 	$self->{"drawing"}->AddPrimitive($pText);
  

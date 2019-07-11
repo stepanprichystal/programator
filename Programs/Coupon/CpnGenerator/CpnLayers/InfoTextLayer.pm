@@ -75,6 +75,8 @@ sub Build {
 										$layout->GetInfoTextWidth()/1000,
 										$layout->GetInfoTextWeight()/1000 );
 
+		$pText->AddAttribute(".n_electric");
+
 		$self->{"drawing"}->AddPrimitive($pText);
 
 	}

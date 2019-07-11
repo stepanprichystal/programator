@@ -12,7 +12,7 @@ use Storable qw(dclone);
 
 #local library
 use aliased 'Packages::CAM::SymbolDrawing::Enums';
-use aliased 'Helpers::GeneralHelper'; 
+use aliased 'Helpers::GeneralHelper';
 
 #-------------------------------------------------------------------------------------------#
 #  Interface
@@ -30,9 +30,11 @@ sub new {
 	unless ( defined $self->{"polarity"} ) {
 		$self->{"polarity"} = Enums->Polar_POSITIVE;
 	}
-	
+
 	# Unique number which are signed drawed feature. Attribute "feat_group_id"
 	$self->{"groupGUID"} = GeneralHelper->GetGUID();
+
+	$self->{"attributes"} = [];    # array of pair: att name, att value
 
 	return $self;
 }
@@ -59,17 +61,31 @@ sub Copy {
 	return dclone($self);
 }
 
-sub GetGroupGUID{
+sub GetGroupGUID {
 	my $self = shift;
-	
+
 	return $self->{"groupGUID"};
 }
 
-sub SetGroupGUID{
+sub SetGroupGUID {
 	my $self = shift;
 	my $guid = shift;
-	
+
 	$self->{"groupGUID"} = $guid;
+}
+
+sub AddAttribute {
+	my $self    = shift;
+	my $attName = shift;
+	my $attVal  = shift;
+	
+	push(@{$self->{"attributes"}}, { "name" => $attName, "vall" => $attVal})
+}
+
+sub GetAttributes {
+	my $self    = shift;
+
+	return @{$self->{"attributes"}};
 }
 
 #-------------------------------------------------------------------------------------------#

@@ -424,7 +424,7 @@ sub SetDTMTools {
 
 	}
 
-	$inCAM->COM( 'tools_set', "layer" => $layer, "thickness" => '0', "user_params" => $DTMType, "user_des_names" => join( ";", @userClmns ) );
+	$inCAM->COM( 'tools_set', "layer" => $layer, "thickness" => '0', "user_params" => $DTMType, "user_des_names" => join( ";", @userClmns ), "slots" => "yes" );
 
 }
 
