@@ -121,8 +121,8 @@ sub ChecklistLibExists {
 	$inCAM->SupressToolkitException(1);
 	$inCAM->HandleException(1);
 
-	my $res = $inCAM->COM( "chklist_from_lib", "chklist" => $checklist );
-
+	my $res = $inCAM->COM( "import_lib_item_to_job", "src_category" => "checklist", "src_profile"=>"system",  "dst_names" => $checklist );
+ 
 	$inCAM->SupressToolkitException(0);
 	$inCAM->HandleException(0);
 
@@ -225,12 +225,12 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	use aliased 'Packages::InCAM::InCAM';
 
 	my $inCAM = InCAM->new();
-	my $jobId = "d250544";
+	my $jobId = "d152456";
 
 	#my $system1 = CamChecklist->ChecklistLibExists( $inCAM,"control1" );
-	my $system = CamChecklist->ChecklistExists2( $inCAM, $jobId, "o+1", "control" );
+	my $system = CamChecklist->ChecklistLibExists( $inCAM,  "control1" );
 
-	#my $job = CamChecklist->ActionRun( $inCAM, $jobId, "o+1", "control1", 1 );
+ 
 
 	die;
 
