@@ -263,12 +263,14 @@ sub __GetLayerLimit {
 
 	# clip around fr frame if:
 
-	# - mask layer (mc;ms) layer
+	# - mask layer (mc;ms; ) layer
 	# - gold layer (goldc; golds)
 	# - signal layer (c;s) and not outer rigid flex
 	# - plg(c/s) layers
+	# - mask layer second (mc2;ms2; ) layer
+	# - mask layer flex (mcflex;msflex; ) layer
 	if (    $self->{"layerCnt"} > 2
-		 && $layerName =~ /^((gold)|m|plg)?[cs]$/ )
+		 && ($layerName =~ /^((gold)|m|plg)?[cs]$/ || $layerName =~ /^m[cs]2?(flex)?$/) )
 	{
 		%lim = %{ $self->{"frLim"} };
 	}

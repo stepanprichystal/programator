@@ -62,7 +62,7 @@ sub Export {
 	my $self       = shift;
 	my $l          = shift;
 	my $fiducDCode = shift;
-	my $pnlDim     = shift;    # real limits of phzsical layer data / panel dimension
+	my $pnlDim     = shift;    # real limits of physical layer data / panel dimension
 
 	my $mirror   = undef;
 	my $polarity = undef;
@@ -461,7 +461,7 @@ sub __GetThickByLayer {
 
 		$thick += 2 * $PREPLTTHICKNESS;
 	}
-	elsif ( $layer =~ /^m[cs]2?$/ || $layer =~ /^gold[cs]$/ ) {
+	elsif ( $layer =~ /^m[cs]2?(flex)?$/ || $layer =~ /^gold[cs]$/ ) {
 
 		# Solder mask layers
 
@@ -476,7 +476,7 @@ sub __GetThickByLayer {
 
 		$thick += 2 * $PLTTHICKNESS if ( $self->{"layerCnt"} >= 2 );
 
-		if ( $layer =~ /^m[cs]2?$/ ) {
+		if ( $layer =~ /^m[cs]2?(flex)?$/ ) {
 
 			$thick += 2 * $SMTHICNESS;
 		}

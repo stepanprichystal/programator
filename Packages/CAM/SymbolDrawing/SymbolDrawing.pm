@@ -126,7 +126,12 @@ sub __DrawPrimitives {
 
 			# Every primitive feature have set attribute feat_group_id
 			CamSymbol->AddCurAttribute( $self->{"inCAM"}, $self->{"jobId"}, "feat_group_id", $p->GetGroupGUID() );
-
+			
+			# Add other primitive attributes
+			foreach my $att ( $p->GetAttributes() ) {
+				CamSymbol->AddCurAttribute( $self->{"inCAM"}, $self->{"jobId"}, $att->{"name"}, $att->{"val"} );
+			}
+			
 			if ( $p->GetType() eq Enums->Primitive_LINE ) {
 
 				$self->__DrawLine( $p, $pos );
@@ -275,9 +280,6 @@ sub __DrawPad {
 
 	CamSymbol->AddPad( $self->{"inCAM"}, $t->GetSymbol(), $p, $mirror, $t->GetPolarity(), $t->GetAngle(),
 					   $t->GetResize(),  $t->GetXscale(), $t->GetYscale() );
-					   
-					   
-					   
 
 }
 
@@ -383,8 +385,7 @@ sub __DrawSurfFill {
 											 $patt->GetSymbolDY(),      $surf->GetMarginX(),
 											 $surf->GetMarginY(),       $surf->GetSRMarginX(),
 											 $surf->GetSRMarginY(),     $surf->GetConsiderFeat(),
-											 $surf->GetFeatMargin(),
-											 $surf->GetPolarity()
+											 $surf->GetFeatMargin(),    $surf->GetPolarity()
 		);
 
 	}

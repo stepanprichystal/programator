@@ -85,6 +85,8 @@ sub Build {
 											$self->_InvertPolar(DrawEnums->Polar_POSITIVE, $layerLayout)
 											
 			);
+			
+			$pText->AddAttribute(".n_electric");
 
 			$self->{"drawing"}->AddPrimitive($pText);
 		}
