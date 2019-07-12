@@ -969,6 +969,15 @@ sub _Panelize {
 			
 			
 			
+			# Set construction class to the attribute of job
+			CamJob->SetJobAttribute($inCAM, 'pcb_class', $constClass, $jobName);
+			
+			if (HegMethods->GetTypeOfPcb($jobName) eq 'Vicevrstvy') {
+ 					CamJob->SetJobAttribute($inCAM, 'pcb_class_inner', $constClass_inner, $jobName);
+ 			}
+			
+
+			# Here is generate of imp.coupon
 			my $impExist = HegMethods->GetImpedancExist($jobName);
 			my $impCouponText = '';
 			
@@ -1071,13 +1080,6 @@ sub _Panelize {
 
 			set_plot_parameters($jobName);
 			
-			
-			# Set construction class to the attribute of job
-			CamJob->SetJobAttribute($inCAM, 'pcb_class', $constClass, $jobName);
-			
-			if (HegMethods->GetTypeOfPcb($jobName) eq 'Vicevrstvy') {
- 					CamJob->SetJobAttribute($inCAM, 'pcb_class_inner', $constClass_inner, $jobName);
- 			}
 			
 			# Here is set attribut in job Gold_fingers
 			_SetAttrGoldHolder("$jobName");
