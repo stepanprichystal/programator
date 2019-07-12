@@ -126,15 +126,16 @@ my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	use aliased 'Packages::Reorder::ChangeReorder::ChangeReorder';
-
 	use aliased 'Packages::InCAM::InCAM';
 
 	use Data::Dump qw(dump);
 
 	my $inCAM = InCAM->new();
 	my $jobId = "d152457";
+	my $orderId = "d152457-03";
+	
 
-	my $ch = ChangeReorder->new( $inCAM, $jobId );
+	my $ch = ChangeReorder->new( $inCAM, $jobId, $orderId);
 
 	my $errMess = "";
 	my @arr     = $ch->RunChanges( \$errMess );

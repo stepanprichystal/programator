@@ -29,6 +29,7 @@ use aliased 'Packages::ItemResult::Enums'            => "ResEnums";
 use aliased 'Packages::Polygon::Features::RouteFeatures::RouteFeatures';
 use aliased 'Packages::Polygon::PolygonFeatures';
 use aliased 'Packages::Export::ScoExport::ScoreMarker';
+use aliased 'Packages::TifFile::TifScore';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -190,7 +191,15 @@ sub Run {
 	}
 	
 	$self->_OnItemResult($fileSave);
-
+	
+	# 7) Save material thickness to tof
+	
+	my $tif = TifScore->new($jobId);
+	
+	die "Tif file doesn't exists" if(!$tif->TifFileExist());
+	
+	$tif->SetScoreThick($self->{"coreThick"});
+	 
 	print STDERR $errMess;
 
 }

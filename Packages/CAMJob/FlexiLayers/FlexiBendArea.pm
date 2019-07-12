@@ -115,8 +115,6 @@ sub PrepareFlexMask {
 	my $step    = shift;
 	my $layer   = shift;
 	my $overlap = shift // 400;    # Overlap of flexible mask torigid part
-	
-
 
 	my $result = 1;
 
@@ -159,8 +157,6 @@ sub PrepareFlexMask {
 		CamSymbolSurf->AddSurfacePolyline( $inCAM, \@pointsSurf, 1, "negative" );
 		CamSymbol->AddPolyline( $inCAM, \@points, "r" . ( 2 * $overlap ), "negative" );
 	}
-	
-	
 
 	CamLayer->ClearLayers($inCAM);
 
@@ -505,14 +501,15 @@ sub PrepareRoutTransitionZone {
 	my $inCAM             = shift;
 	my $jobId             = shift;
 	my $step              = shift;
-	my $routPart          = shift;           # 1 = core depth rout, 2 = final depth rout
+	my $routPart          = shift;            # 1 = core depth rout, 2 = final depth rout
 	my $toolSize          = shift;
 	my $toolMagazineInfo  = shift;
-	my $toolComp          = shift;           # right / left / none
-	my $recreate          = shift // 1;      # recreate rout layer with used name
-	my $roolOverlap       = shift // 0.2;    # 0,2mm # define depth  overlap of rout tool in transition zone
-	my $extendZone        = shift // 0.5;    # 0,5mm transition rout slots will be exteneded on both ends
-	my $defDepthRoutPart1 = shift // 0.3;    # Default depth for first routing (part 1). If package is to thin, rout to half of package
+	my $toolComp          = shift;            # right / left / none
+	my $recreate          = shift // 1;       # recreate rout layer with used name
+	my $roolOverlap       = shift // 0.25;    # 0,25mm # define depth  overlap of rout tool in transition zone
+	my $extendZone        = shift // 0.5;     # 0,5mm transition rout slots will be exteneded on both ends
+	my $defDepthRoutPart1 = shift // 0.3;     # Default depth for first routing (part 1). If package is to thin, rout to half of package
+	my $minMatRest        = shift // 0.15;    # 150µm is minimal material thickness after routing
 
 	die "Rout part is not defined" if ( $routPart != 1 && $routPart != 2 );
 
@@ -672,6 +669,15 @@ sub PrepareRoutTransitionZone {
 		}
 
 		$depth = sprintf( "%.2f", $depth );
+
+		if ( $depth > $packageThick - $minMatRest ) {
+
+			my $matRest = $packageThick - $depth;
+
+			die "Too large routh depth ($depth mm). "
+			  . "Rest of material thickness after routing would be: $matRest mm. Minimal allowed material rest is: $minMatRest mm.";
+
+		}
 
 		$DTMTools[0]->{"userColumns"}->{ EnumsDrill->DTMclmn_DEPTH } = $depth;
 		$DTMTools[0]->{"userColumns"}->{ EnumsDrill->DTMclmn_MAGINFO } = $toolMagazineInfo if ( defined $toolMagazineInfo );

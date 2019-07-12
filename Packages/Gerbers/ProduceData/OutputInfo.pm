@@ -22,6 +22,7 @@ use aliased 'Packages::CAMJob::OutputData::Enums' => "EnumsOutput";
 use aliased 'CamHelpers::CamJob';
 use aliased 'CamHelpers::CamGoldArea';
 use aliased 'CamHelpers::CamHelper';
+use aliased 'Packages::TifFile::TifScore';
 
 #-------------------------------------------------------------------------------------------#
 #  Interface
@@ -34,7 +35,7 @@ sub new {
 
 	$self->{"inCAM"}    = shift;
 	$self->{"jobId"}    = shift;
-	$self->{"step"}    = shift;
+	$self->{"step"}     = shift;
 	$self->{"filesDir"} = shift;
 
 	$self->{"layerCnt"} = CamJob->GetSignalLayerCnt( $self->{"inCAM"}, $self->{"jobId"} );
@@ -79,7 +80,6 @@ sub Output {
 
 	foreach my $l ( $layerList->GetLayersByType( EnumsOutput->Type_BOARDLAYERS ) ) {
 
-		
 		push( @lines, $self->__CompleteLine( " - " . $l->GetName() . ".ger", $l->GetTitle() . $self->__GetInfo($l) ) );
 
 	}
@@ -117,9 +117,14 @@ sub Output {
 	push( @lines, " Other files:" );
 	push( @lines, "" );
 
-	foreach my $l ( ( $layerList->GetLayersByType( EnumsOutput->Type_OUTLINE ), 
+	foreach my $l (
+					(
+					  $layerList->GetLayersByType( EnumsOutput->Type_OUTLINE ),
 					  $layerList->GetLayersByType( EnumsOutput->Type_DRILLMAP ),
-					  $layerList->GetLayersByType( EnumsOutput->Type_FILLEDHOLES ) ) ) {
+					  $layerList->GetLayersByType( EnumsOutput->Type_FILLEDHOLES )
+					)
+	  )
+	{
 
 		push( @lines, $self->__CompleteLine( " - " . $l->GetName() . ".ger", $l->GetTitle() . $self->__GetInfo($l) ) );
 
@@ -138,16 +143,32 @@ sub Output {
 
 	push( @lines, "" );
 
+	# 1) Finish diameters
 	push( @lines, " - All diameters in data are finish diameters!" );
 
+	# 2) Gold finger count
 	if ( CamHelper->LayerExists( $inCAM, $jobId, "c" ) && CamGoldArea->GoldFingersExist( $inCAM, $jobId, $step, "c" ) ) {
 		my $cnt = CamGoldArea->GetGoldFingerCount( $inCAM, $jobId, $step, "c" );
 		push( @lines, " - Gold finger from TOP (count: $cnt)" );
 	}
-	
+
 	if ( CamHelper->LayerExists( $inCAM, $jobId, "s" ) && CamGoldArea->GoldFingersExist( $inCAM, $jobId, $step, "s" ) ) {
 		my $cnt = CamGoldArea->GetGoldFingerCount( $inCAM, $jobId, $step, "s" );
 		push( @lines, " - Gold finger from BOT (count: $cnt)" );
+	}
+
+	# 3) Score thickness
+	if ( CamHelper->LayerExists( $inCAM, $jobId, "score" ) ) {
+
+		my $sco            = TifScore->new($jobId);
+		my $scoreThickness = $sco->GetScoreThick();
+
+		if ( !defined $scoreThickness || $scoreThickness eq "" || $scoreThickness == 0 ) {
+			die "Material thickness after scoring is not defined in \"TifFile\"."
+			  . " Export \"Score group\" first to store \"Material thickness after scoring\" to Tif file.";
+		}
+		
+		push( @lines, " - Material thickness after V-scoring is ".$scoreThickness."mm" );
 	}
 
 	my $path = $self->{"filesDir"} . "ReadMe.txt";
@@ -173,7 +194,7 @@ sub __GetInfo {
 	my $inf = "";
 
 	if ( defined $l->GetInfo() && $l->GetInfo() ne "" ) {
-		$inf = " (" . $l->GetInfo() . ")";
+		$inf = " (" . $l->GetInfo() . ") ";
 	}
 
 	return $inf;

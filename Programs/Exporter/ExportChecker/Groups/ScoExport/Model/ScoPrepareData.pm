@@ -19,6 +19,8 @@ use aliased 'CamHelpers::CamHelper';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'Helpers::JobHelper';
 use aliased 'Helpers::FileHelper';
+use aliased 'Packages::TifFile::TifScore';
+
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
@@ -65,14 +67,19 @@ sub OnPrepareGroupData {
 
 	my $defaultInfo  = $dataMngr->GetDefaultInfo();
 	my $customerNote = $defaultInfo->GetCustomerNote();
-
 	my $custScoreCoreThick = $customerNote->ScoreCoreThick();
-
+	my $tifSco            = TifScore->new($jobId);
+	
 	if ( defined $custScoreCoreThick ) {
+		
 		$groupData->SetCoreThick($custScoreCoreThick);
+	
+	}elsif(defined $tifSco->GetScoreThick()){
+		
+		$groupData->SetCoreThick($tifSco->GetScoreThick());
 	}
 	else {
-		$groupData->SetCoreThick(0.3);
+		$groupData->SetCoreThick(0.3); # default material rest is 0.3mm
 	}
 
 	$groupData->SetOptimize( ScoEnums->Optimize_YES );
@@ -80,7 +87,7 @@ sub OnPrepareGroupData {
 	my $scoringType = ScoEnums->Type_CLASSIC;
 
 	# If AL or pcbthick is smaller than 600
-	if ( $defaultInfo->GetMaterialKind() =~ /al/i || $defaultInfo->GetPcbThick() < 600) {
+	if ( $defaultInfo->GetMaterialKind() =~ /al/i || $defaultInfo->GetPcbThick() < 600 ) {
 
 		$scoringType = ScoEnums->Type_ONEDIR;
 	}
@@ -108,34 +115,6 @@ sub OnPrepareReorderGroupData {
 	my $jobId = $dataMngr->{"jobId"};
 
 	my $defaultInfo = $dataMngr->GetDefaultInfo();
-
-	# check if exist score file, and get core thick
-	my $path = JobHelper->GetJobArchive($jobId);
-
-	my @scoreFilesJum = FileHelper->GetFilesNameByPattern( $path, ".jum" );
-	my @scoreFilesCut = FileHelper->GetFilesNameByPattern( $path, ".cut" ); #old format of score file
-
-	my @scoreFiles = (@scoreFilesJum, @scoreFilesCut);
-
-	my $coreThick = undef;
-
-	if ( scalar(@scoreFiles) > 0 ) {
-
-		my @lines = @{ FileHelper->ReadAsLines( $scoreFiles[0] ) };
-
-		foreach (@lines) {
-
-			if ( $_ =~ /core\s*:\s*(\d+.\d+)/i ) {
-				$coreThick = $1;
-				last;
-			}
-		}
-	}
-	
-	if(defined $coreThick && $coreThick > 0){
-		
-		$groupData->SetCoreThick($coreThick);
-	}
 
 }
 

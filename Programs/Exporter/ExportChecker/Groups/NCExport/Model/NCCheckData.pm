@@ -610,13 +610,7 @@ sub OnCheckGroupData {
 			}
 		}
 	}
-
-	# TMP
-	# Kontrola zaplenzch otovru
-	if ( CamDrilling->GetViaFillExists( $inCAM, $jobId ) ) {
-
-		$dataMngr->_AddWarningResult( "Zaplnene via", "V jobu mas zaplnene via, nech vrtacky a postup zkontrolovat u SPR" );
-	}
+ 
 
 	# 22) Check if job viafill layer  are prepared if viafill in IS
 	my $viaFillType = $defaultInfo->GetPcbBaseInfo("zaplneni_otvoru");

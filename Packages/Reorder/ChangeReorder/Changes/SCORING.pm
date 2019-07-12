@@ -19,6 +19,10 @@ use aliased 'Packages::Scoring::ScoreFlatten';
 use aliased 'Managers::MessageMngr::MessageMngr';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'Connectors::HeliosConnector::HegMethods';
+use aliased 'Packages::TifFile::TifScore';
+use aliased 'CamHelpers::CamHelper';
+use aliased 'Helpers::FileHelper';
+use aliased 'Helpers::JobHelper';
 
 #-------------------------------------------------------------------------------------------#
 #  Public method
@@ -39,7 +43,7 @@ sub Run {
 
 	my $inCAM  = $self->{"inCAM"};
 	my $jobId  = $self->{"jobId"};
-	my $isPool    = HegMethods->GetPcbIsPool($jobId);
+	my $isPool = HegMethods->GetPcbIsPool($jobId);
 
 	# Check only standard orders
 	if ($isPool) {
@@ -67,12 +71,52 @@ sub Run {
 
 			$sf->FlattenNestedScore(1);
 		}
+	}
+
+	# 2) Check if material thickness after scoring is set in TIF file
+	if ( CamHelper->LayerExists( $inCAM, $jobId, "score" ) ) {
+
+		my $tifSco = TifScore->new($jobId);
+
+		if ( !$tifSco->TifFileExist() || !defined $tifSco->GetScoreThick() ) {
+
+			# check if exist score file, and get core thick
+			my $path = JobHelper->GetJobArchive($jobId);
+
+			my @scoreFilesJum = FileHelper->GetFilesNameByPattern( $path, ".jum" );
+			my @scoreFilesCut = FileHelper->GetFilesNameByPattern( $path, ".cut" );    #old format of score file
+
+			my @scoreFiles = ( @scoreFilesJum, @scoreFilesCut );
+
+			my $coreThick = undef;
+
+			if ( scalar(@scoreFiles) > 0 ) {
+
+				my @lines = @{ FileHelper->ReadAsLines( $scoreFiles[0] ) };
+
+				foreach (@lines) {
+
+					if ( $_ =~ /core\s*:\s*(\d+.\d+)/i ) {
+						$coreThick = $1;
+						last;
+					}
+				}
+			}
+
+			if ( defined $coreThick && $coreThick > 0 ) {
+
+				$tifSco->SetScoreThick($coreThick);
+			}
+			else {
+
+				$$mess .= "Material thickness after scoring was not found in score program files";
+				$result = 0;
+			}
+		}
 
 	}
 
 	return $result;
-
-
 }
 
 #-------------------------------------------------------------------------------------------#
