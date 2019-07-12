@@ -271,6 +271,8 @@ sub DisplayFromOtherStep {
 	my $jobId = shift;
 	my $step  = shift;
 	my $layer = shift;
+	my $offsetX = shift // 0;
+	my $offsetY = shift // 0;
 
 	$inCAM->COM(
 				 'display_layer_from_other_step',
@@ -279,8 +281,8 @@ sub DisplayFromOtherStep {
 				 oper     => '',
 				 x_anchor => 0,
 				 y_anchor => 0,
-				 x_offset => 0,
-				 y_offset => 0,
+				 x_offset => $offsetX,
+				 y_offset => $offsetY,
 				 job      => $jobId,
 				 step     => $step
 	);
