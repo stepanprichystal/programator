@@ -49,10 +49,14 @@ sub CompareOrigLayers {
 		
 		my @layers = CamJob->GetBoardLayers($inCAM, $jobId);
 		
+		$inCAM->INFO(units=>'mm',entity_type => 'step',entity_path => "$jobId/$origStep",data_type => 'PROF_LIMITS');
+				my $offsetX = sprintf "%3.2f",($inCAM->{doinfo}{gPROF_LIMITSxmin} * (-1));
+				my $offsetY = sprintf "%3.2f",($inCAM->{doinfo}{gPROF_LIMITSymin} * (-1));
+		
 		foreach my $l (@layers){
 					CamLayer->WorkLayer($inCAM, $l->{"gROWname"});
 						
-					CamLayer->DisplayFromOtherStep($inCAM, $jobId, $origStep, $l->{"gROWname"});
+					CamLayer->DisplayFromOtherStep($inCAM, $jobId, $origStep, $l->{"gROWname"}, $offsetX, $offsetY);
 			
 					$inCAM->COM ('zoom_home');
 					$inCAM->COM( "show_component",component=>"Result_Viewer",show=>"no",width=>"0",height=>"0");
