@@ -500,120 +500,124 @@ sub OnCheckGroupData {
 	}
 
 	# 22) Check if set construction class match with real pcb data by layers
-	my $checklistName = "control";
+	if ( !$defaultInfo->IsPool() ) {
+		my $checklistName = "control";
 
-	unless ( CamChecklist->ChecklistLibExists( $inCAM, $checklistName ) ) {
+		unless ( CamChecklist->ChecklistLibExists( $inCAM, $checklistName ) ) {
 
-		$dataMngr->_AddErrorResult(
+			$dataMngr->_AddErrorResult(
 						"Checklist - $checklistName",
 						"Checklist (název:$checklistName) pro kontrolu minimálních izolací v signálových vrstvách neexistuje v Global library."
 						  . " Kontrola na správné nastavení konstrukčních tříd nebude provedena."
-		);
-	}
-	else {
-
-		my @inner = map { $_->{"gROWname"} } grep { $_->{"gROWname"} =~ /^v\d+$/i } $defaultInfo->GetBoardBaseLayers();
-		my @outer = map { $_->{"gROWname"} } grep { $_->{"gROWname"} =~ /^[cs]$/i } $defaultInfo->GetBoardBaseLayers();
-
-		foreach my $s ( map { $_->{"stepName"} } CamStepRepeatPnl->GetUniqueNestedStepAndRepeat( $inCAM, $jobId ) ) {
-
-			unless ( CamChecklist->ChecklistExists( $inCAM, $jobId, $s, $checklistName ) ) {
-
-				CamChecklist->CopyChecklistToStep( $inCAM, $s, $checklistName );
-			}
-
-			if ( scalar(@inner) ) {
-
-				my $class = $defaultInfo->GetPcbClassInner();
-				my $isol  = JobHelper->GetIsolationByClass($class);
-
-				my $a = Action->new( $inCAM, $jobId, $s, $checklistName, 1 );    # action number = 1;
-
-				my $actionStatus = $a->Run();
-
-				unless ( $actionStatus eq EnumsChecklist->Status_DONE ) {
-
-					$dataMngr->_AddErrorResult(
-						"Checklist - $checklistName",
-"Spuštění checklistu (název:$checklistName) pro step: \"$s\" skončilo neúspěšně. Status checklistu: \"$actionStatus\""
-						  . " Kontrola na správné nastavení konstrukčních tříd nebude provedena."
-					);
-
-					next;
-				}
-				
-				my $r = $a->GetFullReport( undef, undef, [ EnumsChecklist->Sev_RED ] );
-
-				foreach my $l (@inner) {
-
-					foreach my $catName ( ( EnumsChecklist->Cat_PAD2PAD, EnumsChecklist->Cat_PAD2CIRCUIT, EnumsChecklist->Cat_CIRCUIT2CIRCUIT ) ) {
-
-						my $cat = $r->GetCategory($catName);
-						next unless ( defined $cat );
-
-						my @catVal = $cat->GetCatValues($l);
-
-						if ( @catVal && $catVal[0]->GetValue() < $isol ) {
-
-							$dataMngr->_AddWarningResult(
-														  "Konstrukční třída vrstvy \"$l\"",
-														  "V reportu cheklistu: \"$checklistName\", kategorii: \""
-															. $cat->GetCatTitle()
-															. "\" pro step: \"$s\", vrstvu: \"$l\" byly nalezeny izolace: \""
-															. $catVal[0]->GetValue()
-															. "\"µm, které jsou menši než povoluje nastavená kontsrukční třída: \"$class\"\n"
-							);
-						}
-					}
-				}
-			}
-
-			if ( scalar(@outer) ) {
-				my $class = $defaultInfo->GetPcbClass();
-				my $isol  = JobHelper->GetIsolationByClass($class);
-
-				my $a = Action->new( $inCAM, $jobId, $s, $checklistName, 2 );    # action number = 2;
-
-				my $actionStatus = $a->Run();
-
-				unless ( $actionStatus eq EnumsChecklist->Status_DONE ) {
-
-					$dataMngr->_AddErrorResult(
-						"Checklist - $checklistName",
-"Spuštění checklistu (název:$checklistName) pro step: \"$s\" skončilo neúspěšně. Status checklistu: \"$actionStatus\""
-						  . " Kontrola na správné nastavení konstrukčních tříd nebude provedena."
-					);
-
-					next;
-				}
-
-				my $r = $a->GetFullReport( undef, undef, [ EnumsChecklist->Sev_RED ] );
-
-				foreach my $l (@outer) {
-
-					foreach my $catName ( ( EnumsChecklist->Cat_PAD2PAD, EnumsChecklist->Cat_PAD2CIRCUIT, EnumsChecklist->Cat_CIRCUIT2CIRCUIT ) ) {
-
-						my $cat = $r->GetCategory($catName);
-						next unless ( defined $cat );
-
-						my @catVal = $cat->GetCatValues($l);
-
-						if ( @catVal && $catVal[0]->GetValue() < $isol ) {
-
-							$dataMngr->_AddWarningResult(
-														  "Konstrukční třída vrstvy \"$l\"",
-														  "V reportu cheklistu: \"$checklistName\", kategorii: \""
-															. $cat->GetCatTitle()
-															. "\" pro step: \"$s\", vrstvu: \"$l\" byly nalezeny izolace: \""
-															. $catVal[0]->GetValue()
-															. "\"µm, které jsou menši než povoluje nastavená kontsrukční třída: \"$class\"\n"
-							);
-						}
-					}
-				}
-			}
+			);
 		}
+		else {
 
+			my @inner = map { $_->{"gROWname"} } grep { $_->{"gROWname"} =~ /^v\d+$/i } $defaultInfo->GetBoardBaseLayers();
+			my @outer = map { $_->{"gROWname"} } grep { $_->{"gROWname"} =~ /^[cs]$/i } $defaultInfo->GetBoardBaseLayers();
+
+			foreach my $s ( map { $_->{"stepName"} } CamStepRepeatPnl->GetUniqueNestedStepAndRepeat( $inCAM, $jobId ) ) {
+
+				unless ( CamChecklist->ChecklistExists( $inCAM, $jobId, $s, $checklistName ) ) {
+
+					CamChecklist->CopyChecklistToStep( $inCAM, $s, $checklistName );
+				}
+
+				if ( scalar(@inner) ) {
+
+					my $class = $defaultInfo->GetPcbClassInner();
+					my $isol  = JobHelper->GetIsolationByClass($class);
+
+					my $a = Action->new( $inCAM, $jobId, $s, $checklistName, 1 );    # action number = 1;
+
+					my $actionStatus = $a->Run();
+
+					unless ( $actionStatus eq EnumsChecklist->Status_DONE ) {
+
+						$dataMngr->_AddErrorResult(
+							"Checklist - $checklistName",
+"Spuštění checklistu (název:$checklistName) pro step: \"$s\" skončilo neúspěšně. Status checklistu: \"$actionStatus\""
+							  . " Kontrola na správné nastavení konstrukčních tříd nebude provedena."
+						);
+
+						next;
+					}
+
+					my $r = $a->GetFullReport( undef, undef, [ EnumsChecklist->Sev_RED ] );
+
+					foreach my $l (@inner) {
+
+						foreach my $catName ( ( EnumsChecklist->Cat_PAD2PAD, EnumsChecklist->Cat_PAD2CIRCUIT, EnumsChecklist->Cat_CIRCUIT2CIRCUIT ) )
+						{
+
+							my $cat = $r->GetCategory($catName);
+							next unless ( defined $cat );
+
+							my @catVal = $cat->GetCatValues($l);
+
+							if ( @catVal && $catVal[0]->GetValue() < $isol ) {
+
+								$dataMngr->_AddWarningResult(
+															  "Konstrukční třída vrstvy \"$l\"",
+															  "V reportu cheklistu: \"$checklistName\", kategorii: \""
+																. $cat->GetCatTitle()
+																. "\" pro step: \"$s\", vrstvu: \"$l\" byly nalezeny izolace: \""
+																. $catVal[0]->GetValue()
+																. "\"µm, které jsou menši než povoluje nastavená kontsrukční třída: \"$class\"\n"
+								);
+							}
+						}
+					}
+				}
+
+				if ( scalar(@outer) ) {
+					my $class = $defaultInfo->GetPcbClass();
+					my $isol  = JobHelper->GetIsolationByClass($class);
+
+					my $a = Action->new( $inCAM, $jobId, $s, $checklistName, 2 );    # action number = 2;
+
+					my $actionStatus = $a->Run();
+
+					unless ( $actionStatus eq EnumsChecklist->Status_DONE ) {
+
+						$dataMngr->_AddErrorResult(
+							"Checklist - $checklistName",
+"Spuštění checklistu (název:$checklistName) pro step: \"$s\" skončilo neúspěšně. Status checklistu: \"$actionStatus\""
+							  . " Kontrola na správné nastavení konstrukčních tříd nebude provedena."
+						);
+
+						next;
+					}
+
+					my $r = $a->GetFullReport( undef, undef, [ EnumsChecklist->Sev_RED ] );
+
+					foreach my $l (@outer) {
+
+						foreach my $catName ( ( EnumsChecklist->Cat_PAD2PAD, EnumsChecklist->Cat_PAD2CIRCUIT, EnumsChecklist->Cat_CIRCUIT2CIRCUIT ) )
+						{
+
+							my $cat = $r->GetCategory($catName);
+							next unless ( defined $cat );
+
+							my @catVal = $cat->GetCatValues($l);
+
+							if ( @catVal && $catVal[0]->GetValue() < $isol ) {
+
+								$dataMngr->_AddWarningResult(
+															  "Konstrukční třída vrstvy \"$l\"",
+															  "V reportu cheklistu: \"$checklistName\", kategorii: \""
+																. $cat->GetCatTitle()
+																. "\" pro step: \"$s\", vrstvu: \"$l\" byly nalezeny izolace: \""
+																. $catVal[0]->GetValue()
+																. "\"µm, které jsou menši než povoluje nastavená kontsrukční třída: \"$class\"\n"
+								);
+							}
+						}
+					}
+				}
+			}
+
+		}
 	}
 }
 
