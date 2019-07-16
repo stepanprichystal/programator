@@ -529,8 +529,20 @@ sub OnCheckGroupData {
 
 				my $a = Action->new( $inCAM, $jobId, $s, $checklistName, 1 );    # action number = 1;
 
-				$a->Run();
-				my $r = $a->GetFullReport( undef, undef, EnumsChecklist->Sev_RED );
+				my $actionStatus = $a->Run();
+
+				unless ( $actionStatus eq EnumsChecklist->Status_DONE ) {
+
+					$dataMngr->_AddErrorResult(
+						"Checklist - $checklistName",
+"Spuštění checklistu (název:$checklistName) pro step: \"$s\" skončilo neúspěšně. Status checklistu: \"$actionStatus\""
+						  . " Kontrola na správné nastavení konstrukčních tříd nebude provedena."
+					);
+
+					next;
+				}
+				
+				my $r = $a->GetFullReport( undef, undef, [ EnumsChecklist->Sev_RED ] );
 
 				foreach my $l (@inner) {
 
@@ -562,7 +574,19 @@ sub OnCheckGroupData {
 
 				my $a = Action->new( $inCAM, $jobId, $s, $checklistName, 2 );    # action number = 2;
 
-				$a->Run();
+				my $actionStatus = $a->Run();
+
+				unless ( $actionStatus eq EnumsChecklist->Status_DONE ) {
+
+					$dataMngr->_AddErrorResult(
+						"Checklist - $checklistName",
+"Spuštění checklistu (název:$checklistName) pro step: \"$s\" skončilo neúspěšně. Status checklistu: \"$actionStatus\""
+						  . " Kontrola na správné nastavení konstrukčních tříd nebude provedena."
+					);
+
+					next;
+				}
+
 				my $r = $a->GetFullReport( undef, undef, [ EnumsChecklist->Sev_RED ] );
 
 				foreach my $l (@outer) {

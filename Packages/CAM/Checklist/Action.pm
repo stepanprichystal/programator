@@ -38,6 +38,7 @@ sub new {
 }
 
 # Run specific action synchronously
+# Return action status after run
 sub Run {
 	my $self = shift;
 
@@ -51,8 +52,10 @@ sub Run {
 	  unless ( CamChecklist->ChecklistExists( $inCAM, $jobId, $step, $checklist ) );
 
 	CamChecklist->ActionRun( $inCAM, $jobId, $step, $checklist, $action );
-
-	return 1;
+	
+	my $actionStatus = CamChecklist->ChecklistActionStatus( $inCAM, $jobId, $step, $checklist, $action, );
+ 
+	return $actionStatus;
 }
 
 # Return parsed text report (summary)
