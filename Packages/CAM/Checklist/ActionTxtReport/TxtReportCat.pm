@@ -1,9 +1,9 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Class which store histogram from action report
+# Description: Represent category of parser action InCAM report
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::CAM::Checklist::ActionCatHist;
+package Packages::CAM::Checklist::ActionTxtReport::TxtReportCat;
 
 #3th party library
 use strict;
@@ -11,7 +11,7 @@ use warnings;
 
 #local library
 
-use aliased 'Helpers::JobHelper';
+use aliased 'Packages::CAM::Checklist::ActionTxtReport::TxtReportCatHist';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -22,32 +22,48 @@ sub new {
 	my $self  = {};
 	bless $self;
 
-	$self->{"layer"}  = shift;
-	$self->{"values"} = [];
+	$self->{"name"}     = shift;    # action title
+	$self->{"histDesc"} = shift;    # string legend for action histogram values
+	$self->{"layers"}   = {};       # hash layer
 
 	return $self;
 }
 
-sub AddItem {
-	my $self       = shift;
-	my $from       = shift;
-	my $to         = shift;
-	my $count      = shift;
-	my $reportLine = shift;
-
-	push( @{ $self->{"values"} }, { "from" => $from, "to" => $to, "count" => $count, "reportLine" => $reportLine } );
-
-}
-
-# Each item contain kyes
-# from - start of range
-# to - end of range
-# count - number of occurances values from range for specific layer
-# report line - original line form InCAM report
-sub GetHistValues {
+sub GetName {
 	my $self = shift;
 
-	return @{ $self->{"values"} };
+	return $self->{"name"};
+}
+
+# Return all layer name occuring in this category
+sub GetLayerNames {
+	my $self = shift;
+
+	return keys %{ $self->{"layers"} };
+}
+
+sub GetHistDescription {
+	my $self = shift;
+
+	return $self->{"histDesc"};
+}
+
+sub AddCategoryHist {
+	my $self  = shift;
+	my $lName = shift;
+
+	$self->{"layers"}->{$lName} = TxtReportCatHist->new($lName);
+
+	return $self->{"layers"}->{$lName};
+}
+
+sub GetCategoryHist {
+	my $self  = shift;
+	my $layer = shift;
+
+	die "Category histogram doesn't exist for layer: $layer" unless ( defined $self->{"layers"}->{$layer} );
+
+	return $self->{"layers"}->{$layer};
 }
 
 #-------------------------------------------------------------------------------------------#

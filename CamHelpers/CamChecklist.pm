@@ -70,7 +70,7 @@ sub CopyChecklistToStep {
 }
 
 # Store action summarz report to file
-sub OutputActionReport {
+sub OutputActionTxtReport {
 	my $self      = shift;
 	my $inCAM     = shift;
 	my $jobId     = shift;
@@ -88,6 +88,43 @@ sub OutputActionReport {
 		"parse"       => "no",
 		"options"     => "action=$action"
 
+	);
+}
+# Store action summarz report to file
+sub OutputActionFullReport {
+	my $self      = shift;
+	my $inCAM     = shift;
+	my $jobId     = shift;
+	my $step      = shift;
+	my $checklist = shift;
+	my $action    = shift;
+	my $outfile   = shift;
+
+	my $category = shift // "";    # category keys (Enums::EnumsChecklist->Cat_xxx)
+	my $layer    = shift // "";    # layer name
+	my $severity = shift // "";    # array of severity indicators (Enums::EnumsChecklist->Sev_xxx)
+
+	if ( $layer ne "" ) {
+		$layer = "+layer=$layer";
+	}
+
+	if ( $category ne "" ) {
+		$category = "+category=$category";
+	}
+
+	if ( $severity ne "" ) {
+		$severity = "+severity=" . join( "", @{$severity} );
+	}
+
+	$inCAM->INFO(
+				  "units"           => 'mm',
+				  "angle_direction" => 'ccw',
+				  "entity_type"     => 'check',
+				  "entity_path"     => "$jobId/$step/$checklist",
+				  "data_type"       => 'MEAS',
+				  "options"         => "index+action=$action$category$severity$layer",
+				  "out_file"        => $outfile,
+				  "parse"           => "no",
 	);
 }
 
@@ -121,8 +158,8 @@ sub ChecklistLibExists {
 	$inCAM->SupressToolkitException(1);
 	$inCAM->HandleException(1);
 
-	my $res = $inCAM->COM( "import_lib_item_to_job", "src_category" => "checklist", "src_profile"=>"system",  "dst_names" => $checklist );
- 
+	my $res = $inCAM->COM( "import_lib_item_to_job", "src_category" => "checklist", "src_profile" => "system", "dst_names" => $checklist );
+
 	$inCAM->SupressToolkitException(0);
 	$inCAM->HandleException(0);
 
@@ -225,12 +262,13 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	use aliased 'Packages::InCAM::InCAM';
 
 	my $inCAM = InCAM->new();
-	my $jobId = "d152456";
+	my $jobId = "d152457";
 
 	#my $system1 = CamChecklist->ChecklistLibExists( $inCAM,"control1" );
-	my $system = CamChecklist->ChecklistLibExists( $inCAM,  "control1" );
 
- 
+	my $outfile = 'c:/Export/Test/reportFull.txt';
+	CamChecklist->OutputActionFullReport( $inCAM, $jobId, "o+1", "control", "2", $outfile, EnumsChecklist->Cat_PAD2CIRCUIT,
+										  "c", [ EnumsChecklist->Sev_GREEN, EnumsChecklist->Sev_RED ] );
 
 	die;
 

@@ -1,9 +1,9 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Keep parsed information from InCAM action Report
+# Description: Keep parsed information from InCAM action "text" summary report
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::CAM::Checklist::ActionReport;
+package Packages::CAM::Checklist::ActionTxtReport::ActionTxtReport;
 
 #3th party library
 use strict;
@@ -13,7 +13,7 @@ use List::MoreUtils qw(uniq);
 #local library
 
 use aliased 'Enums::EnumsChecklist';
-use aliased 'Packages::CAM::Checklist::ActionCat';
+use aliased 'Packages::CAM::Checklist::ActionTxtReport::TxtReportCat';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -80,7 +80,7 @@ sub AddCategory {
 	my $categoryName = shift;
 	my $categoryDesc = shift;
 
-	my $cat = ActionCat->new( $categoryName, $categoryDesc );
+	my $cat = TxtReportCat->new( $categoryName, $categoryDesc );
 
 	push( @{ $self->{"categories"} }, $cat );
 

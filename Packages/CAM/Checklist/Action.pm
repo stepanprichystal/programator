@@ -13,12 +13,9 @@ use DateTime;
 
 #local library
 
-use aliased 'Helpers::FileHelper';
-use aliased 'Helpers::GeneralHelper';
-use aliased 'Helpers::JobHelper';
-use aliased 'Enums::EnumsPaths';
 use aliased 'CamHelpers::CamHelper';
-use aliased 'Packages::CAM::Checklist::ActionReport';
+use aliased 'Packages::CAM::Checklist::ActionTxtReport::TxtReportParser';
+use aliased 'Packages::CAM::Checklist::ActionFullReport::FullReportParser';
 use aliased 'CamHelpers::CamChecklist';
 use aliased 'Enums::EnumsChecklist';
 
@@ -58,16 +55,9 @@ sub Run {
 	return 1;
 }
 
-# Return parsed action report
-sub GetReport {
-	my $self = shift;
-
-	my $report = $self->__ParseReport();
-
-	return $report;
-}
-
-sub __ParseReport {
+# Return parsed text report (summary)
+# Report contain histogram of measured values
+sub GetTxtReport {
 	my $self = shift;
 
 	my $inCAM     = $self->{"inCAM"};
@@ -76,108 +66,29 @@ sub __ParseReport {
 	my $checklist = $self->{"checklist"};
 	my $action    = $self->{"action"};
 
-	die "Checklist:" . $self->{"checklist"} . "doesn't esists"
-	  unless ( CamChecklist->ChecklistExists( $inCAM, $jobId, $step, $checklist ) );
+	my $parser = TxtReportParser->new( $inCAM, $jobId, $step, $checklist, $action );
 
-	my $actionStatus = CamChecklist->ChecklistActionStatus( $inCAM, $jobId, $step, $checklist, $action );
-	die "Checklist action is not in status: DONE. Current status: $actionStatus" unless ( $actionStatus eq EnumsChecklist->Status_DONE );
+	my $report = $parser->ParseReport();
 
-	my $file = EnumsPaths->Client_INCAMTMPOTHER . GeneralHelper->GetGUID();
-	CamChecklist->OutputActionReport( $inCAM, $jobId, $step, $checklist, $action, $file );
+	return $report;
+}
 
-	my @lines = @{ FileHelper->ReadAsLines($file) };
+# Return complete parsed report values by values from checklist results
+sub GetFullReport {
+	my $self     = shift;
+	my $category = shift;    # category key (Enums::EnumsChecklist->Cat_xxx)
+	my $layer    = shift;    # layer name
+	my $severity = shift;    # array of severity indicators (Enums::EnumsChecklist->Sev_xxx)
 
-	unlink($file) or die $_;
+	my $inCAM     = $self->{"inCAM"};
+	my $jobId     = $self->{"jobId"};
+	my $step      = $self->{"step"};
+	my $checklist = $self->{"checklist"};
+	my $action    = $self->{"action"};
 
-	my $jobRep  = shift @lines;
-	my $stepRep = shift @lines;
-	my $date    = shift @lines;
-	my $time    = shift @lines;
-	my $created = shift @lines;
-	my $units   = shift @lines;
+	my $parser = FullReportParser->new( $inCAM, $jobId, $step, $checklist, $action );
 
-	# Parse time
-	my ( $d, $monthTxt, $y ) = $date =~ m/DATE\s+:+\s+(\d+)\s+(\w+)\s+(\d+)/i;
-	my ( $h, $m,        $s ) = $time =~ m/TIME\s+:+\s+(\d+):(\d+):(\d+)/i;
-	my %month = (
-				  "Jan"  => 1,
-				  "Feb"  => 2,
-				  "Mar"  => 3,
-				  "Apr"  => 4,
-				  "May"  => 5,
-				  "Jun"  => 6,
-				  "Jul"  => 7,
-				  "Aug"  => 8,
-				  "Sept" => 9,
-				  "Oct"  => 10,
-				  "Nov"  => 11,
-				  "Dec"  => 12
-	);
-
-	my $dt = DateTime->new(
-							"year"      => $y,
-							"month"     => $month{$monthTxt},
-							"day"       => $d,
-							"hour"      => $h,
-							"minute"    => $m,
-							"second"    => $s,
-							"time_zone" => 'Europe/Prague'
-	);
-
-	my $report = ActionReport->new( $checklist, $action, $dt );
-
-	my $currentL        = undef;
-	my $curCategory     = undef;
-	my $curCategoryHist = undef;
-
-	my $lPrev;
-	for ( my $i = 0 ; $i < scalar(@lines) ; $i++ ) {
-
-		my $l = $lines[$i];
-		my $lPrev = $lines[ $i - 1 ] if ( $i > 0 );
-
-		next if ( $l =~ /^[\t\s]$/ );
-
-		# $l =~ /^[\t\s]$/;
-
-		# New lazer detected
-		if ( $l =~ m/Layer\s*:\s*(.*)/i ) {
-
-			$currentL = $1;
-		}
-
-		# New Category detected
-		if ( $l =~ /=+/i ) {
-
-			my $catName = $lPrev;
-			$catName =~ s/(^\s+)|\s+$//g;
-			my $catDesc = $lines[ $i + 1 ];
-			$catDesc =~ s/(^\s+)|\s+$//g;
-			$i++;
-
-			$curCategory = $report->GetCategory($catName);
-
-			unless ( defined $curCategory ) {
-
-				$curCategory = $report->AddCategory( $catName, $catDesc );
-			}
-
-			$curCategoryHist = $curCategory->AddCategoryHist($currentL);
-
-		}
-
-		# Parse category values
-		# Not "summary" parsing is not impolmented
-		if ( $l =~ m/(\d+.?\d*)-\s+(\d+.?\d*)\s+(\d+)/ ) {
-			my $from = $1;
-			my $to   = $2;
-			my $cnt  = $3;
-
-			$to =~ s/\s//g;    # there can be space if number is not float
-
-			$curCategoryHist->AddItem( $from, $to, $cnt, $l );
-		}
-	}
+	my $report = $parser->ParseReport( $category, $layer, $severity );
 
 	return $report;
 }
@@ -193,19 +104,15 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId = "d222775";
+	my $jobId = "d152457";
 
 	my $a = Action->new( $inCAM, $jobId, "o+1", "control", 2 );
 
-	$a->Run();
-	my $r = $a->GetReport();
-	
+	#$a->Run();
+	my $r = $a->GetFullReport();
+	#my $r = $a->GetTxtReport();
+
 	die;
- 
-
-	 
-
-	 
 
 }
 

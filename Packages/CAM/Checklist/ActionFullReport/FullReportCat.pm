@@ -3,7 +3,7 @@
 # Description: Represent category of parser action InCAM report
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::CAM::Checklist::ActionCat;
+package Packages::CAM::Checklist::ActionFullReport::FullReportCat;
 
 #3th party library
 use strict;
@@ -11,7 +11,7 @@ use warnings;
 
 #local library
 
-use aliased 'Packages::CAM::Checklist::ActionCatHist';
+use aliased 'Packages::CAM::Checklist::ActionFullReport::FullReportCatVal';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -22,48 +22,56 @@ sub new {
 	my $self  = {};
 	bless $self;
 
-	$self->{"name"}     = shift;    # action title
-	$self->{"histDesc"} = shift;    # string legend for action histogram values
-	$self->{"layers"}   = {};       # hash layer
+	$self->{"categoryKey"}   = shift;    # category key
+	$self->{"categoryTitle"} = shift;
+	$self->{"values"}        = [];       # hash layer
 
 	return $self;
 }
 
-sub GetName {
+sub GetCatKey {
 	my $self = shift;
 
 	return $self->{"name"};
 }
 
-# Return all layer name occuring in this category
-sub GetLayerNames {
+sub GetCatTitle {
 	my $self = shift;
 
-	return keys %{ $self->{"layers"} };
+	return $self->{"categoryTitle"};
 }
 
-sub GetHistDescription {
-	my $self = shift;
+sub GetCatValues {
+	my $self     = shift;
+	my $layer    = shift;
+	my $severity = shift; # EnumsChecklist->Sev_xxx
 
-	return $self->{"histDesc"};
+	my @vals = @{ $self->{"values"} };
+
+	@vals = grep { $_->GetLayer() eq $layer } @vals       if ( defined $layer );
+	@vals = grep { $_->GetSeverity() eq $severity } @vals if ( defined $severity );
+
+	return @vals;
 }
 
-sub AddCategoryHist {
-	my $self  = shift;
-	my $lName = shift;
+sub AddActionCatVal {
+	my $self      = shift;
+	my $layer     = shift;
+	my $value     = shift;
+	my $symbol1   = shift;
+	my $symbol2   = shift;
+	my $measType  = shift;
+	my $defPos1   = shift;
+	my $defPos2   = shift;
+	my $defExtra1 = shift;
+	my $defExtra2 = shift;
+	my $severity  = shift;
 
-	$self->{"layers"}->{$lName} = ActionCatHist->new($lName);
+	my $val = FullReportCatVal->new( $layer, $value, $symbol1, $symbol2, $measType, $defPos1, $defPos2, $defExtra1, $defExtra2, $severity );
 
-	return $self->{"layers"}->{$lName};
-}
+	push( @{ $self->{"values"} }, $val );
 
-sub GetCategoryHist {
-	my $self  = shift;
-	my $layer = shift;
-
-	die "Category histogram doesn't exist for layer: $layer" unless ( defined $self->{"layers"}->{$layer} );
-
-	return $self->{"layers"}->{$layer};
+	return $val;
 }
 
 #-------------------------------------------------------------------------------------------#
