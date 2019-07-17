@@ -65,21 +65,22 @@ sub OnPrepareGroupData {
 	my $inCAM = $dataMngr->{"inCAM"};
 	my $jobId = $dataMngr->{"jobId"};
 
-	my $defaultInfo  = $dataMngr->GetDefaultInfo();
-	my $customerNote = $defaultInfo->GetCustomerNote();
+	my $defaultInfo        = $dataMngr->GetDefaultInfo();
+	my $customerNote       = $defaultInfo->GetCustomerNote();
 	my $custScoreCoreThick = $customerNote->ScoreCoreThick();
-	my $tifSco            = TifScore->new($jobId);
-	
-	if ( defined $custScoreCoreThick ) {
-		
+	my $tifSco             = TifScore->new($jobId);
+
+	if ( defined $tifSco->GetScoreThick() ) {
+
+		$groupData->SetCoreThick( $tifSco->GetScoreThick() );
+	}
+	elsif ( defined $custScoreCoreThick ) {
+
 		$groupData->SetCoreThick($custScoreCoreThick);
-	
-	}elsif(defined $tifSco->GetScoreThick()){
-		
-		$groupData->SetCoreThick($tifSco->GetScoreThick());
+
 	}
 	else {
-		$groupData->SetCoreThick(0.3); # default material rest is 0.3mm
+		$groupData->SetCoreThick(0.3);           # default material rest is 0.3mm
 	}
 
 	$groupData->SetOptimize( ScoEnums->Optimize_YES );

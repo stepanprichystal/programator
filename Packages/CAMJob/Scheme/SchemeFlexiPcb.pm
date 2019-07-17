@@ -117,7 +117,7 @@ sub AddHolesCoverlay {
 
 	my $flexType = JobHelper->GetPcbFlexType($jobId);
 
-	return 0 if ( $flexType ne EnumsGeneral->PcbFlexType_RIGIDFLEXI &&  $flexType ne EnumsGeneral->PcbFlexType_RIGIDFLEXO);
+	return 0 if ( $flexType ne EnumsGeneral->PcbFlexType_RIGIDFLEXI && $flexType ne EnumsGeneral->PcbFlexType_RIGIDFLEXO );
 
 	my @coverlay =
 	  CamDrilling->GetNCLayersByTypes( $inCAM, $jobId, [ EnumsGeneral->LAYERTYPE_nplt_cvrlycMill, EnumsGeneral->LAYERTYPE_nplt_cvrlysMill ] );
@@ -309,22 +309,104 @@ sub RemovePatternFillFromFlexiCore {
 			$f->AddIncludeAtt(".pattern_fill");
 			$f->AddExcludeAtt("flexicore_frame");    # there is fcopper core at flexi cores - do not delete it
 
-			if(CamMatrix->GetLayerPolarity($inCAM, $jobId, $l) eq "positive"){
-				$f->SetPolarity(FilterEnums->Polarity_POSITIVE);
-			}else{
-				$f->SetPolarity(FilterEnums->Polarity_NEGATIVE);
+			if ( CamMatrix->GetLayerPolarity( $inCAM, $jobId, $l ) eq "positive" ) {
+				$f->SetPolarity( FilterEnums->Polarity_POSITIVE );
 			}
-			
+			else {
+				$f->SetPolarity( FilterEnums->Polarity_NEGATIVE );
+			}
+
 			if ( $f->Select() ) {
 				$inCAM->COM("sel_delete");
 			}
 			else {
-				
+
 				die "No pattern fill was found in inner layer:$l, step panel: panel";
 			}
 		}
 	}
 
+}
+
+sub AddCoverlayRegisterHoles {
+	my $self  = shift;
+	my $inCAM = shift;
+	my $jobId = shift;
+
+	my $result = 1;
+
+	my $flexType = JobHelper->GetPcbFlexType($jobId);
+
+	return unless ($flexType);
+
+	my %lim = CamJob->GetProfileLimits2( $inCAM, $jobId, "panel" );
+
+	my @layers = ("v");
+	push( @layers, "v1" ) if ( CamHelper->LayerExists( $inCAM, $jobId, "v1" ) );
+
+	my @lOther = CamDrilling->GetNCLayersByTypes(
+												  $inCAM, $jobId,
+												  [
+													 EnumsGeneral->LAYERTYPE_nplt_cvrlycMill, EnumsGeneral->LAYERTYPE_nplt_cvrlysMill,
+													 EnumsGeneral->LAYERTYPE_nplt_lcMill,     EnumsGeneral->LAYERTYPE_nplt_lsMill
+												  ]
+	);
+
+	push( @layers, map { $_->{"gROWname"} } @lOther ) if (@lOther);
+
+	foreach my $layer (@layers) {
+
+		my $sym = "r3200";
+
+		# Six holes
+
+		my $holePitchX = 265 + 10;
+		my $holePitchY = 324 + 8;
+
+		CamLayer->WorkLayer( $inCAM, $layer );
+		if ( CamFilter->SelectBySingleAtt( $inCAM, $jobId, ".pnl_place", "coverlay_register_holes" ) ) {
+			$inCAM->COM("sel_delete");
+		}
+
+		CamSymbol->AddCurAttribute( $inCAM, $jobId, ".pnl_place", "coverlay_register_holes" );
+
+		CamHelper->SetStep( $inCAM, "panel" );
+		CamLayer->WorkLayer( $inCAM, $layer );
+
+		my $h = $lim{"yMax"};
+		my $w = $lim{"xMax"} - $lim{"xMin"};
+
+		# LT
+		CamSymbol->AddPad( $inCAM, $sym, { "x" => $w / 2 - $holePitchX / 2, "y" => $h / 2 + $holePitchY / 2 } );
+
+		# RT
+		CamSymbol->AddPad( $inCAM, $sym, { "x" => $w - ( $w / 2 - $holePitchX / 2 ), "y" => $h / 2 + $holePitchY / 2 } );
+
+		# RB
+		CamSymbol->AddPad( $inCAM, $sym, { "x" => $w - ( $w / 2 - $holePitchX / 2 ), "y" => $h / 2 - $holePitchY / 2 } );
+
+		# LB
+		CamSymbol->AddPad( $inCAM, $sym, { "x" => $w / 2 - $holePitchX / 2, "y" => $h / 2 - $holePitchY / 2 } );
+		
+		
+		#LCenter
+		CamSymbol->AddPad( $inCAM, $sym, { "x" => $w / 2 - $holePitchX / 2, "y" => $h / 2} );
+		
+		#RCenter
+		CamSymbol->AddPad( $inCAM, $sym, { "x" => $w - ( $w / 2 - $holePitchX / 2 ), "y" => $h / 2} );
+		
+		#TCenter
+		CamSymbol->AddPad( $inCAM, $sym, { "x" => $w / 2 , "y" => $h / 2 + $holePitchY / 2 } );
+		
+		#BCenter
+		CamSymbol->AddPad( $inCAM, $sym, {  "x" => $w / 2, "y" => $h / 2 - $holePitchY / 2} );
+		
+		
+		CamSymbol->ResetCurAttributes($inCAM);
+
+	}
+
+	return $result;
 }
 
 #-------------------------------------------------------------------------------------------#
@@ -338,11 +420,11 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	use aliased 'Packages::InCAM::InCAM';
 
 	my $inCAM = InCAM->new();
-	my $jobId = "d222776";
+	my $jobId = "d222775";
 
 	my $mess = "";
 
-	my $result = SchemeFlexiPcb->RemovePatternFillFromFlexiCore( $inCAM, $jobId, "panel");
+	my $result = SchemeFlexiPcb->AddCoverlayRegisterHoles( $inCAM, $jobId, "panel" );
 
 	print STDERR "Result is: $result, error message: $mess\n";
 
