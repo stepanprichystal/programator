@@ -502,6 +502,7 @@ sub OnCheckGroupData {
 	# 22) Check if set construction class match with real pcb data by layers
 	if ( !$defaultInfo->IsPool() ) {
 		my $checklistName = "control";
+		my $isolTol       = 0.1;         # tolerance of isolation from set construction class is 10%
 
 		unless ( CamChecklist->ChecklistLibExists( $inCAM, $checklistName ) ) {
 
@@ -535,9 +536,10 @@ sub OnCheckGroupData {
 					unless ( $actionStatus eq EnumsChecklist->Status_DONE ) {
 
 						$dataMngr->_AddErrorResult(
-							"Checklist - $checklistName",
-"Spuštění checklistu (název:$checklistName) pro step: \"$s\" skončilo neúspěšně. Status checklistu: \"$actionStatus\""
-							  . " Kontrola na správné nastavení konstrukčních tříd nebude provedena."
+													"Checklist - $checklistName",
+													"Spuštění checklistu (název:$checklistName) pro step: \"$s\" skončilo neúspěšně. "
+													  . "Status checklistu: \"$actionStatus\""
+													  . " Kontrola na správné nastavení konstrukčních tříd nebude provedena."
 						);
 
 						next;
@@ -555,7 +557,7 @@ sub OnCheckGroupData {
 
 							my @catVal = $cat->GetCatValues($l);
 
-							if ( @catVal && $catVal[0]->GetValue() < $isol ) {
+							if ( @catVal && $catVal[0]->GetValue() < $isol * ( 1 - $isolTol ) ) {
 
 								$dataMngr->_AddWarningResult(
 															  "Konstrukční třída vrstvy \"$l\"",
@@ -581,9 +583,10 @@ sub OnCheckGroupData {
 					unless ( $actionStatus eq EnumsChecklist->Status_DONE ) {
 
 						$dataMngr->_AddErrorResult(
-							"Checklist - $checklistName",
-"Spuštění checklistu (název:$checklistName) pro step: \"$s\" skončilo neúspěšně. Status checklistu: \"$actionStatus\""
-							  . " Kontrola na správné nastavení konstrukčních tříd nebude provedena."
+													"Checklist - $checklistName",
+													"Spuštění checklistu (název:$checklistName) pro step: \"$s\" skončilo neúspěšně. "
+													  . "Status checklistu: \"$actionStatus\""
+													  . " Kontrola na správné nastavení konstrukčních tříd nebude provedena."
 						);
 
 						next;
@@ -601,7 +604,7 @@ sub OnCheckGroupData {
 
 							my @catVal = $cat->GetCatValues($l);
 
-							if ( @catVal && $catVal[0]->GetValue() < $isol ) {
+							if ( @catVal && $catVal[0]->GetValue() < $isol * ( 1 - $isolTol ) ) {
 
 								$dataMngr->_AddWarningResult(
 															  "Konstrukční třída vrstvy \"$l\"",
