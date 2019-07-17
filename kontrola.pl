@@ -385,20 +385,32 @@ sub _PutXMLorder {
 													
 													if ($hashINFO{panel_processing} ne '-'){
 														$rowStart++;
+														my $font = 'arial 9';
+														if ($hashINFO{panel_processing} =~ /perf/){
+															$font = 'arial 9 bold underline';
+														}
 														$framegrid->Label(-text=>"Opracovani",-font=>'arial 9',-fg=>'DimGray')->grid(-column=>0,-row=>"$rowStart",-columnspan=>1,-sticky=>"w");
-														$framegrid->Label(-text=>"$hashINFO{panel_processing}",-font=>'arial 9',-fg=>'red')->grid(-column=>1,-row=>"$rowStart",-columnspan=>1,-sticky=>"w");
+														$framegrid->Label(-text=>"$hashINFO{panel_processing}",-font=> $font,-fg=>'red')->grid(-column=>1,-row=>"$rowStart",-columnspan=>1,-sticky=>"w");
 													}
 													
 													if ($hashINFO{panel_processing_x} ne '-'){
 														$rowStart++;
+														my $font = 'arial 9';
+														if ($hashINFO{panel_processing_x} =~ /perf/){
+															$font = 'arial 9 bold underline';
+														}
 														$framegrid->Label(-text=>"Opracovani v ose X",-font=>'arial 9',-fg=>'DimGray')->grid(-column=>0,-row=>"$rowStart",-columnspan=>1,-sticky=>"w");
-														$framegrid->Label(-text=>"$hashINFO{panel_processing_x}",-font=>'arial 9',-fg=>'red')->grid(-column=>1,-row=>"$rowStart",-columnspan=>1,-sticky=>"w");
+														$framegrid->Label(-text=>"$hashINFO{panel_processing_x}",-font=> $font,-fg=>'red')->grid(-column=>1,-row=>"$rowStart",-columnspan=>1,-sticky=>"w");
 													}
 													
 													if ($hashINFO{panel_processing_y} ne '-'){
 														$rowStart++;
+														my $font = 'arial 9';
+														if ($hashINFO{panel_processing_y} =~ /perf/){
+															$font = 'arial 9 bold underline';
+														}
 														$framegrid->Label(-text=>"Opracovani v ose Y",-font=>'arial 9',-fg=>'DimGray')->grid(-column=>0,-row=>"$rowStart",-columnspan=>1,-sticky=>"w");
-														$framegrid->Label(-text=>"$hashINFO{panel_processing_y}",-font=>'arial 9',-fg=>'red')->grid(-column=>1,-row=>"$rowStart",-columnspan=>1,-sticky=>"w");
+														$framegrid->Label(-text=>"$hashINFO{panel_processing_y}",-font=> $font,-fg=>'red')->grid(-column=>1,-row=>"$rowStart",-columnspan=>1,-sticky=>"w");
 													}
 													
 													$rowStart++;
