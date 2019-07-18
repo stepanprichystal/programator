@@ -85,7 +85,12 @@ sub CompleteRoutSpeed {
 
 			my $ncFile = $ncPath . $jobId . "_" . $ncOper->{"opName"} . "." . $m;
 
-			die "NCFile doesn't exist $ncFile" unless ( -e $ncFile );
+			unless ( -e $ncFile ){
+				
+				$$errMess .= "NCFile doesn't exist $ncFile\n";
+				$result = 0;
+				next;
+			}
 
 			my $file = path($ncFile);
 			my $data = $file->slurp_utf8;    # load nc file
