@@ -30,7 +30,8 @@ use aliased 'Packages::Polygon::Line::SegmentLineIntersection';
 use aliased 'Packages::CAMJob::FlexiLayers::CoverlayPinParser::CoverlayPinParser';
 use aliased 'Packages::Stackup::Stackup::Stackup';
 use aliased 'Packages::CAM::FeatureFilter::FeatureFilter';
-use aliased 'Packages::CAM::FeatureFilter::Enums' => 'EnumsFiltr';
+use aliased 'Packages::CAM::FeatureFilter::Enums'                     => 'EnumsFiltr';
+use aliased 'Packages::CAMJob::FlexiLayers::CoverlayPinParser::Enums' => 'PinEnums';
 
 #-------------------------------------------------------------------------------------------#
 #  Public method
@@ -43,11 +44,12 @@ my $PINCUTDIST1      = 4;      # 4mm from flex part
 my $PINCUTDIST2      = 9;      # 8mm from flex part
 my $CUREGPADSIZE     = 1.2;    # 1.2mm pad in signal flex layers
 
-# Each feature in coverlaypins layer contain attribute .string which has on oh theses values:
-my $REGISTERPINSTRING = "register_pin";
-my $CUTPINSTRING      = "cut_pin";
-my $ENDPINLINE        = "end_pin_line";
-my $PINLINE           = "pin_line";
+#	PinString_REGISTER   => "pin_register",      # pad which is used for register coverlay with flex core
+#	PinString_SOLDERLINE => "pin_solderline",    # between PinString_SOLDERPIN and PinString_CUTPIN lines is place for soldering
+#	PinString_CUTLINE    => "pin_cutline",       # this line marks the area where coverlaz pin should be cutted
+#	PinString_ENDLINE    => "pin_endline",       # line marks end border of pin
+#	PinString_SIDELINE   => "pin_sideline",      # lines mark side border of pin
+#	PinString_BENDLINE   => "pin_bendline"       # lines marks border of bend area
 
 my @messHead = ();
 push( @messHead, "<b>=======================================================</b>" );
@@ -64,11 +66,10 @@ sub CreateCoverlayPins {
 	my $result = 1;
 
 	my $messMngr = MessageMngr->new($jobId);
-	
+
 	my $type = JobHelper->GetPcbFlexType($jobId);
 	return 0 if ( $type ne EnumsGeneral->PcbFlexType_RIGIDFLEXI && $type ne EnumsGeneral->PcbFlexType_RIGIDFLEXO );
-	
-	
+
 	CamHelper->SetStep( $inCAM, $step );
 
 	my $lName = "coverlaypins";
@@ -106,12 +107,7 @@ sub CreateCoverlayPins {
 			my @mess = (@messHead);
 			push( @mess, "Vrstva \"bend\" není správně připravená", "Detail chyby:", $errMess );
 
-			$messMngr->ShowModal(
-				-1,
-				EnumsGeneral->MessageType_ERROR,
-				\@mess,
-				[ "Konec", "Opravím" ]
-			);
+			$messMngr->ShowModal( -1, EnumsGeneral->MessageType_ERROR, \@mess, [ "Konec", "Opravím" ] );
 
 			return 0 if ( $messMngr->Result() == 0 );
 
@@ -122,12 +118,12 @@ sub CreateCoverlayPins {
 		}
 
 		CamMatrix->DeleteLayer( $inCAM, $jobId, $lName );
-		CamMatrix->CreateLayer( $inCAM, $jobId, $lName, "document", "positive", 1 );
+		CamMatrix->CreateLayer( $inCAM, $jobId, $lName, "bend_area", "positive", 1 );
 
 		CamLayer->WorkLayer( $inCAM, "bend" );
 		CamLayer->CopySelOtherLayer( $inCAM, [$lName] );
 		CamLayer->WorkLayer( $inCAM, $lName );
-		CamAttributes->SetFeaturesAttribute( $inCAM, $jobId, ".string", $PINLINE );
+		CamAttributes->SetFeaturesAttribute( $inCAM, $jobId, ".string", PinEnums->PinString_BENDLINE );
 
 		my $nextPin = 1;
 
@@ -174,8 +170,8 @@ sub CreateCoverlayPins {
 			# Delete old pin marks
 			my $f = FeatureFilter->new( $inCAM, $jobId, undef, \@layers );
 			$f->SetProfile( EnumsFiltr->ProfileMode_OUTSIDE );
-			$f->AddIncludeAtt( ".string", $REGISTERPINSTRING );
-			$f->AddIncludeAtt( ".string", $CUTPINSTRING );
+			$f->AddIncludeAtt( ".string", PinEnums->PinString_REGISTER );
+			$f->AddIncludeAtt( ".string", PinEnums->PinString_CUTLINE );
 			$f->SetIncludeAttrCond( EnumsFiltr->Logic_OR );
 
 			if ( $f->Select() ) {
@@ -184,14 +180,14 @@ sub CreateCoverlayPins {
 
 			CamSymbol->ResetCurAttributes($inCAM);
 
-			CamSymbol->AddCurAttribute( $inCAM, $jobId, ".string", $REGISTERPINSTRING );
+			CamSymbol->AddCurAttribute( $inCAM, $jobId, ".string", PinEnums->PinString_REGISTER );
 
 			foreach my $f ( $pinParser->GetRegisterPads() ) {
 
 				CamSymbol->AddPad( $inCAM, "r" . ( $CUREGPADSIZE * 1000 ), { "x" => $f->{"x1"}, "y" => $f->{"y1"} } );
 			}
 
-			CamSymbol->AddCurAttribute( $inCAM, $jobId, ".string", $CUTPINSTRING );
+			CamSymbol->AddCurAttribute( $inCAM, $jobId, ".string", PinEnums->PinString_CUTLINE );
 
 			foreach my $f ( $pinParser->GetCutLines() ) {
 
@@ -288,25 +284,33 @@ sub __CreateNextPin {
 
 		CamSymbol->ResetCurAttributes($inCAM);
 
+		CamSymbol->AddCurAttribute( $inCAM, $jobId, "feat_group_id", GeneralHelper->GetGUID() );
+
 		# Add pin side lines
-		for ( my $i = 0 ; $i < scalar( @{ $pinGeometry{"pinSideLines"} } ) ; $i++ ) {
-			CamSymbol->AddCurAttribute( $inCAM, $jobId, ".string", $PINLINE );
-			CamSymbol->AddLine( $inCAM, $pinGeometry{"pinSideLines"}->[$i][0], $pinGeometry{"pinSideLines"}->[$i][1], "r400", "positive" );
+		for ( my $i = 0 ; $i < scalar( @{ $pinGeometry{"pinSideLines1"} } ) ; $i++ ) {
+			CamSymbol->AddCurAttribute( $inCAM, $jobId, ".string", PinEnums->PinString_SIDELINE1 );
+			CamSymbol->AddLine( $inCAM, $pinGeometry{"pinSideLines1"}->[$i][0], $pinGeometry{"pinSideLines1"}->[$i][1], "s400", "positive" );
+		}
+		
+		# Add pin side lines
+		for ( my $i = 0 ; $i < scalar( @{ $pinGeometry{"pinSideLines2"} } ) ; $i++ ) {
+			CamSymbol->AddCurAttribute( $inCAM, $jobId, ".string", PinEnums->PinString_SIDELINE2 );
+			CamSymbol->AddLine( $inCAM, $pinGeometry{"pinSideLines2"}->[$i][0], $pinGeometry{"pinSideLines2"}->[$i][1], "s400", "positive" );
 		}
 
 		# Add pin end line
-		CamSymbol->AddCurAttribute( $inCAM, $jobId, ".string", $ENDPINLINE );
-		CamSymbol->AddLine( $inCAM, $pinGeometry{"pinEndLine"}->[0], $pinGeometry{"pinEndLine"}->[1], "r200", "positive" );
+		CamSymbol->AddCurAttribute( $inCAM, $jobId, ".string", PinEnums->PinString_ENDLINE );
+		CamSymbol->AddLine( $inCAM, $pinGeometry{"pinEndLine"}->[0], $pinGeometry{"pinEndLine"}->[1], "s400", "positive" );
 
 		# Add register pad
 		if ( defined $pinGeometry{"pinRegister"} ) {
-			CamSymbol->AddCurAttribute( $inCAM, $jobId, ".string", $REGISTERPINSTRING );
+			CamSymbol->AddCurAttribute( $inCAM, $jobId, ".string", PinEnums->PinString_REGISTER );
 			CamSymbol->AddPad( $inCAM, "r2000", $pinGeometry{"pinRegister"} );
 		}
 
 		# Add cut line
 		if ( defined $pinGeometry{"pinCutLines"} ) {
-			CamSymbol->AddCurAttribute( $inCAM, $jobId, ".string", $CUTPINSTRING );
+			CamSymbol->AddCurAttribute( $inCAM, $jobId, ".string", PinEnums->PinString_CUTLINE );
 			CamSymbol->AddLine( $inCAM, $pinGeometry{"pinCutLines"}->[0]->[0], $pinGeometry{"pinCutLines"}->[0]->[1], "r100", "positive" );
 			CamSymbol->AddLine( $inCAM, $pinGeometry{"pinCutLines"}->[1]->[0], $pinGeometry{"pinCutLines"}->[1]->[1], "r100", "positive" );
 		}
@@ -397,7 +401,8 @@ sub __GetPinLines {
 	my @line3 = ( { "x" => $line2[1]->{"x"}, "y" => $line2[1]->{"y"} }, { "x" => $line4[1]->{"x"}, "y" => $line4[1]->{"y"} } );
 
 	my %res = ();
-	$res{"pinSideLines"} = [ \@line1, \@line2, \@line4, \@line5 ];
+	$res{"pinSideLines1"} = [ \@line1, \@line5 ];
+	$res{"pinSideLines2"} = [  \@line2, \@line4,];
 	$res{"pinEndLine"} = \@line3;
 
 	if ( $pinLength > $PINREGISTERDIST ) {
@@ -473,9 +478,8 @@ sub __GetPinLength {
 			}
 
 		}
-
 	}
-
+	
 	$distMin -= 1;    # -1mm becouse coverlay rout 2mm should not rout beyound PCB profile
 
 	return $distMin;
@@ -494,7 +498,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId = "d241421";
+	my $jobId = "d222775";
 
 	my $notClose = 0;
 

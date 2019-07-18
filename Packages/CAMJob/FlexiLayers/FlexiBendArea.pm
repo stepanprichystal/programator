@@ -36,6 +36,8 @@ use aliased 'Packages::Routing::RoutLayer::RoutDrawing::RoutDrawing';
 use aliased 'Packages::Polygon::Polygon::PolygonPoints';
 use aliased 'Packages::Polygon::Enums' => 'PolyEnums';
 use aliased 'Packages::CAM::FeatureFilter::FeatureFilter';
+use aliased 'Packages::CAMJob::FlexiLayers::CoverlayPinParser::Enums' => 'EnumsPins';
+use aliased 'Packages::Polygon::PointsTransform';
 
 #-------------------------------------------------------------------------------------------#
 #  Script methods
@@ -687,6 +689,86 @@ sub PrepareRoutTransitionZone {
 
 }
 
+sub PrepareCoverlayTemplate {
+	my $self      = shift;
+	my $inCAM     = shift;
+	my $jobId     = shift;
+	my $step      = shift;
+	my $routName  = shift // "flc";
+	my $toolSize  = shift // 2;       # 2mm tool size
+	my $clearance = shift // 2;       # 5mm clarance around coverlaz pin area
+
+	my $pinParser = CoverlayPinParser->new( $inCAM, $jobId, $step, "CCW" );
+	my $errMess = "";
+	die $errMess unless ( $pinParser->CheckBendArea( \$errMess ) );
+
+	# Rout tool info
+
+	if ( CamHelper->LayerExists( $inCAM, $jobId, $routName ) ) {
+		CamMatrix->DeleteLayer( $inCAM, $jobId, $routName );
+		CamMatrix->CreateLayer( $inCAM, $jobId, $routName, "rout", "positive", 1 );
+	}
+
+	unless ( CamHelper->LayerExists( $inCAM, $jobId, $routName ) ) {
+		CamMatrix->CreateLayer( $inCAM, $jobId, $routName, "rout", "positive", 1 );
+	}
+
+	CamMatrix->SetNCLayerStartEnd( $inCAM, $jobId, $routName, "coverlaypins", "coverlaypins" );
+
+	# Draw transition features
+	CamLayer->WorkLayer( $inCAM, $routName );
+
+	my $lTmp = GeneralHelper->GetGUID();
+	CamMatrix->CreateLayer( $inCAM, $jobId, $lTmp, "rout", "positive", 0 );
+	CamLayer->WorkLayer( $inCAM, $lTmp );
+
+	foreach my $bendArea ( $pinParser->GetBendAreas() ) {
+
+		# Draw surface from pin areas
+		foreach my $pin ( $bendArea->GetPinsFeatures() ) {
+
+			my @lines = grep { $_->{"att"}->{".string"} eq EnumsPins->PinString_SIDELINE2 } @{$pin};
+
+			my @points = ();
+
+			push( @points, { "x" => $lines[0]->{"x1"}, "y" => $lines[0]->{"y1"} } );
+			push( @points, { "x" => $lines[0]->{"x2"}, "y" => $lines[0]->{"y2"} } );
+			push( @points, { "x" => $lines[1]->{"x1"}, "y" => $lines[1]->{"y1"} } );
+			push( @points, { "x" => $lines[1]->{"x2"}, "y" => $lines[1]->{"y2"} } );
+
+			CamSymbolSurf->AddSurfacePolyline( $inCAM, \@points );
+
+		}
+	}
+
+	$inCAM->COM( "sel_resize", "size" => $clearance * 2 * 1000, "corner_ctl" => "no" );
+
+	CamLayer->WorkLayer( $inCAM, $lTmp );
+	$inCAM->COM(
+				 'chain_add',
+				 "layer" => $lTmp,
+				 "size"  => $toolSize,
+				 "comp"  => "left"
+	);
+
+	$inCAM->COM("sel_all_feat");
+
+	$inCAM->COM(
+				 "chain_pocket",
+				 "layer"      => $lTmp,
+				 "mode"       => "concentric",
+				 "size"       => $toolSize,
+				 "feed"       => "0",
+				 "overlap"    => 0,
+				 "pocket_dir" => "standard"
+	);
+	CamLayer->CopySelOtherLayer( $inCAM, [$routName] );
+	CamLayer->WorkLayer( $inCAM, $routName );
+	CamMatrix->DeleteLayer( $inCAM, $jobId, $lTmp );
+
+	CamLayer->ClearLayers($inCAM);
+}
+
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#
@@ -698,11 +780,11 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	use aliased 'Packages::InCAM::InCAM';
 
 	my $inCAM = InCAM->new();
-	my $jobId = "d231201";
+	my $jobId = "d222775";
 
 	my $mess = "";
 
-	my $result = FlexiBendArea->CreateRoutPrepregsByBendArea( $inCAM, $jobId, "o+1", 1, 1 );
+	my $result = FlexiBendArea->PrepareCoverlayTemplate( $inCAM, $jobId, "o+1" );
 
 	print STDERR "Result is: $result, error message: $mess\n";
 

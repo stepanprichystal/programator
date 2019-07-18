@@ -354,10 +354,21 @@ sub AddCoverlayRegisterHoles {
 
 	push( @layers, map { $_->{"gROWname"} } @lOther ) if (@lOther);
 
-	foreach my $layer (@layers) {
+	my @sigLayers = CamJob->GetSignalLayerNames( $inCAM, $jobId );
 
-		my $sym = "r3200";
+	foreach my $layer ( ( @layers, @sigLayers ) ) {
 
+		my $polarity = "positive";
+		my $sym      = "r3200";
+
+		if ( $layer =~ /^[cs]$/ || $layer =~ /^v[2-]$/ ) {
+
+			$sym = "r4200";
+
+			if ( CamMatrix->GetLayerPolarity( $inCAM, $jobId, $layer ) eq "positive" ) {
+				$polarity = "negative";
+			}
+		}
 		# Six holes
 
 		my $holePitchX = 265 + 10;
@@ -377,31 +388,29 @@ sub AddCoverlayRegisterHoles {
 		my $w = $lim{"xMax"} - $lim{"xMin"};
 
 		# LT
-		CamSymbol->AddPad( $inCAM, $sym, { "x" => $w / 2 - $holePitchX / 2, "y" => $h / 2 + $holePitchY / 2 } );
+		CamSymbol->AddPad( $inCAM, $sym, { "x" => $w / 2 - $holePitchX / 2, "y" => $h / 2 + $holePitchY / 2 }, undef, $polarity );
 
 		# RT
-		CamSymbol->AddPad( $inCAM, $sym, { "x" => $w - ( $w / 2 - $holePitchX / 2 ), "y" => $h / 2 + $holePitchY / 2 } );
+		CamSymbol->AddPad( $inCAM, $sym, { "x" => $w - ( $w / 2 - $holePitchX / 2 ), "y" => $h / 2 + $holePitchY / 2 }, undef, $polarity );
 
 		# RB
-		CamSymbol->AddPad( $inCAM, $sym, { "x" => $w - ( $w / 2 - $holePitchX / 2 ), "y" => $h / 2 - $holePitchY / 2 } );
+		CamSymbol->AddPad( $inCAM, $sym, { "x" => $w - ( $w / 2 - $holePitchX / 2 ), "y" => $h / 2 - $holePitchY / 2 }, undef, $polarity );
 
 		# LB
-		CamSymbol->AddPad( $inCAM, $sym, { "x" => $w / 2 - $holePitchX / 2, "y" => $h / 2 - $holePitchY / 2 } );
-		
-		
+		CamSymbol->AddPad( $inCAM, $sym, { "x" => $w / 2 - $holePitchX / 2, "y" => $h / 2 - $holePitchY / 2 }, undef, $polarity );
+
 		#LCenter
-		CamSymbol->AddPad( $inCAM, $sym, { "x" => $w / 2 - $holePitchX / 2, "y" => $h / 2} );
-		
+		CamSymbol->AddPad( $inCAM, $sym, { "x" => $w / 2 - $holePitchX / 2, "y" => $h / 2 }, undef, $polarity );
+
 		#RCenter
-		CamSymbol->AddPad( $inCAM, $sym, { "x" => $w - ( $w / 2 - $holePitchX / 2 ), "y" => $h / 2} );
-		
+		CamSymbol->AddPad( $inCAM, $sym, { "x" => $w - ( $w / 2 - $holePitchX / 2 ), "y" => $h / 2 }, undef, $polarity );
+
 		#TCenter
-		CamSymbol->AddPad( $inCAM, $sym, { "x" => $w / 2 , "y" => $h / 2 + $holePitchY / 2 } );
-		
+		CamSymbol->AddPad( $inCAM, $sym, { "x" => $w / 2, "y" => $h / 2 + $holePitchY / 2 }, undef, $polarity );
+
 		#BCenter
-		CamSymbol->AddPad( $inCAM, $sym, {  "x" => $w / 2, "y" => $h / 2 - $holePitchY / 2} );
-		
-		
+		CamSymbol->AddPad( $inCAM, $sym, { "x" => $w / 2, "y" => $h / 2 - $holePitchY / 2 }, undef, $polarity );
+
 		CamSymbol->ResetCurAttributes($inCAM);
 
 	}
