@@ -236,7 +236,7 @@ sub GetChecklistActionTime {
 				  "Dec"  => 12
 	);
 
-	$h += 12 if ( $noon =~ /pm/i && $h > 1 );
+		$h += 12 if ( $noon =~ /pm/i && $h >= 1 && $h < 12 );
 
 	$dt = DateTime->new(
 						 "year"      => $y,
