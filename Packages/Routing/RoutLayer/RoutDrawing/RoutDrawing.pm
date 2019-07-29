@@ -43,12 +43,13 @@ sub new {
 }
 
 sub DrawRoute {
-	my $self       = shift;
-	my @sorteEdges = @{ shift(@_) };
-	my $toolSize   = shift;
-	my $comp       = shift;
-	my $routStart  = shift;
-	my $setFootAtt = shift;            # if set foot down attribute
+	my $self        = shift;
+	my @sorteEdges  = @{ shift(@_) };
+	my $toolSize    = shift;
+	my $comp        = shift;
+	my $routStart   = shift;
+	my $setFootAtt  = shift;            # if set foot down attribute
+	my $keepFeatAtt = shift;            # Array of feature attribut name, which will be keepd in new created rout
 
 	my $footDown = undef;
 
@@ -116,6 +117,14 @@ sub DrawRoute {
 											   "r400"
 			);
 
+		}
+
+		# Check if some attributes shlould be kept
+		if ($keepFeatAtt) {
+
+			foreach my $attName ( @{$keepFeatAtt} ) {
+				$primitive->AddAttribute( $attName, $sorteEdges[$i]->{"att"}->{$attName} );
+			}
 		}
 
 		# save GUID of start rout

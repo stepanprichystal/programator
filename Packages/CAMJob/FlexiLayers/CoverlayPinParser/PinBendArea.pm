@@ -15,6 +15,7 @@ use List::MoreUtils qw(uniq);
 #local library
 use aliased 'Connectors::TpvConnector::TpvMethods';
 use aliased 'Enums::EnumsDrill';
+use aliased 'Packages::CAMJob::FlexiLayers::CoverlayPinParser::Enums';
 
 #-------------------------------------------------------------------------------------------#
 #  Public method
@@ -35,20 +36,20 @@ sub GetFeatures {
 }
 
 # Return array of pin
-# Each pin contain features (side_pin_line, end_pin_line, register_pin, cut_pin, solder_pin)
+# Each pin contain features (side_pin_line1 side_pin_line2, end_pin_line, register_pin, cut_pin, solder_pin)
 # Features of specific pin has same value of grou_feat_id attribute
 sub GetPinsFeatures {
 	my $self = shift;
 
-	my @feature = grep {defined $_->{"att"}->{"feat_group_id"} }  @{ $self->{"features"} };
+	my @feature = grep { defined $_->{"att"}->{"feat_group_id"} } @{ $self->{"features"} };
 
-	my @featGroupId = uniq( map { $_->{"att"}->{"feat_group_id"} } @feature);
+	my @featGroupId = uniq( map { $_->{"att"}->{"feat_group_id"} } @feature );
 
 	my @pinsFeats = ();
 
 	foreach my $featGroupId (@featGroupId) {
 
-		my @feats = grep { $_->{"att"}->{"feat_group_id"} eq $featGroupId } @feature ;
+		my @feats = grep { $_->{"att"}->{"feat_group_id"} eq $featGroupId } @feature;
 
 		push( @pinsFeats, \@feats );
 	}
@@ -61,12 +62,44 @@ sub GetPinsFeatures {
 sub GetPinCnt {
 	my $self = shift;
 
-	my @feature = grep {defined $_->{"att"}->{"feat_group_id"} }  @{ $self->{"features"} };
+	my @feature = grep { defined $_->{"att"}->{"feat_group_id"} } @{ $self->{"features"} };
 
-	my @featGroupId = uniq( map { $_->{"att"}->{"feat_group_id"} } @feature);
+	my @featGroupId = uniq( map { $_->{"att"}->{"feat_group_id"} } @feature );
 
 	return scalar(@featGroupId);
+}
 
+# Each pin is marked by feat_group_id attribute. Return all values of this attribute
+sub GetPinsGUID {
+	my $self = shift;
+
+	my @feature = grep { defined $_->{"att"}->{"feat_group_id"} } @{ $self->{"features"} };
+
+	@feature = grep { $_->{"att"}->{".string"} eq Enums->PinString_ENDLINE } @feature;
+
+	my @featGroupId = uniq( map { $_->{"att"}->{"feat_group_id"} } @feature );
+
+	return @featGroupId;
+}
+
+# Return envelop points of pin (only features with .string att: PinString_SIDELINE2)
+sub GetPinEnvelop {
+	my $self    = shift;
+	my $pinGUID = shift;
+
+	my @feature = grep { defined $_->{"att"}->{"feat_group_id"} && $_->{"att"}->{"feat_group_id"} eq $pinGUID } @{ $self->{"features"} };
+
+	my @sideLines = grep { $_->{"att"}->{".string"} eq Enums->PinString_SIDELINE2 } @feature;
+
+	die " Pin \"Side lines\" count is not equal to two" if ( scalar(@sideLines) != 2 );
+
+	my @envelop = ();
+	push( @envelop, { "x" => $sideLines[0]->{"x1"}, "y" => $sideLines[0]->{"y1"} } );
+	push( @envelop, { "x" => $sideLines[0]->{"x2"}, "y" => $sideLines[0]->{"y2"} } );
+	push( @envelop, { "x" => $sideLines[1]->{"x1"}, "y" => $sideLines[1]->{"y1"} } );
+	push( @envelop, { "x" => $sideLines[1]->{"x2"}, "y" => $sideLines[1]->{"y2"} } );
+
+	return @envelop;
 }
 
 sub GetPoints {

@@ -160,21 +160,21 @@ sub __GetFrDimemsion {
 
 	}
 
-	# if 2vv save dimension of pcb to "fr" dimension
-	# if Outer rigid flex, set profile dim because IS compute tenting area from this fr dimensions
-	# but Outer Rigid Flex frame is not routed out during trenting
-	my $pcbFlexType = JobHelper->GetPcbFlexType($jobId);
-	if ( JobHelper->GetIsFlex( $self->{"jobId"} ) ) {
-
-		if (    JobHelper->GetPcbFlexType( $self->{"jobId"} ) eq EnumsGeneral->PcbFlexType_RIGIDFLEXO
-			 && CamHelper->LayerExists( $inCAM, $self->{"jobId"}, "coverlayc" ) )
-		{
-			my %lim = CamJob->GetProfileLimits( $inCAM, $jobId, $stepName );
-
-			$dim{"xSize"} = sprintf "%.1f", ( $lim{"xmax"} - $lim{"xmin"} );
-			$dim{"ySize"} = sprintf "%.1f", ( $lim{"ymax"} - $lim{"ymin"} );
-		}
-	}
+#	# if 2vv save dimension of pcb to "fr" dimension
+#	# if Outer rigid flex, set profile dim because IS compute tenting area from this fr dimensions
+#	# but Outer Rigid Flex frame is not routed out during trenting
+#	my $pcbFlexType = JobHelper->GetPcbFlexType($jobId);
+#	if ( JobHelper->GetIsFlex( $self->{"jobId"} ) ) {
+#
+#		if (    JobHelper->GetPcbFlexType( $self->{"jobId"} ) eq EnumsGeneral->PcbFlexType_RIGIDFLEXO
+#			 && CamHelper->LayerExists( $inCAM, $self->{"jobId"}, "coverlayc" ) )
+#		{
+#			my %lim = CamJob->GetProfileLimits( $inCAM, $jobId, $stepName );
+#
+#			$dim{"xSize"} = sprintf "%.1f", ( $lim{"xmax"} - $lim{"xmin"} );
+#			$dim{"ySize"} = sprintf "%.1f", ( $lim{"ymax"} - $lim{"ymin"} );
+#		}
+#	}
 
 	return %dim;
 }

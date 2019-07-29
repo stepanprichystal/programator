@@ -76,6 +76,12 @@ sub CheckBendArea {
 
 }
 
+sub GetLayerName {
+	my $self = shift;
+
+	return $self->{"layer"};
+}
+
 sub GetFeatures {
 	my $self = shift;
 
@@ -131,6 +137,18 @@ sub GetCutLines {
 	return grep { $_->{"att"}->{".string"} eq Enums->PinString_CUTLINE } @{ $self->{"helperFeatures"} };
 }
 
+sub GetSolderLines {
+	my $self = shift;
+
+	return grep { $_->{"att"}->{".string"} eq Enums->PinString_SOLDERLINE } @{ $self->{"helperFeatures"} };
+}
+
+sub GetEndLines {
+	my $self = shift;
+
+	return grep { $_->{"att"}->{".string"} eq Enums->PinString_ENDLINE } $self->GetFeatures();
+}
+
 sub __LoadBendArea {
 	my $self = shift;
 
@@ -148,6 +166,9 @@ sub __LoadBendArea {
 		my $tmp = GeneralHelper->GetGUID();
 		CamMatrix->CopyLayer( $inCAM, $jobId, $self->{"layer"}, $step, $tmp, $step );
 		CamLayer->WorkLayer( $inCAM, $tmp );
+
+
+
 		my $f = FeatureFilter->new( $inCAM, $jobId, $tmp );
 
 		$f->AddIncludeAtt( ".string", Enums->PinString_ENDLINE );

@@ -27,6 +27,7 @@ BEGIN {
 use aliased 'Helpers::GeneralHelper';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'Widgets::Forms::MyWxFrame';
+use aliased 'Managers::MessageMngr::Enums';
 use Widgets::Style;
 
 #-------------------------------------------------------------------------------------------#
@@ -60,10 +61,12 @@ sub new {
 	$self->{"messages"} = shift;
 	$self->{"buttons"}  = shift;
 	$self->{"images"}   = shift;
-	                                                                                                               #$self->{"resultMngr"} = shift;
-	$self->{"caller"}   = shift;
-	$self->{"onExit"}   = shift;
-	$self->{"result"}   = -1;
+
+	#$self->{"resultMngr"} = shift;
+	$self->{"caller"}     = shift;
+	$self->{"parameters"} = shift;
+	$self->{"onExit"}     = shift;
+	$self->{"result"}     = -1;
 
 	$self->__SetLayout();
 
@@ -105,7 +108,8 @@ sub __SetLayout {
 
 	$self->SetLabel( $self->{"type"} );
 
-	#define sizers
+	# DEFINE SIZERS
+
 	my $szTop     = Wx::BoxSizer->new(&Wx::wxVERTICAL);      #top level sizer
 	my $szFrstRow = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);    #first row child of top top level sizer
 	my $szSecRow  = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);    #second row child of top top level sizer
@@ -118,12 +122,12 @@ sub __SetLayout {
 	my $szBtns      = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);  #sizer for buttons child of $szRightClmn
 	my $szBtnsChild = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);  #sizer for buttons child of $szBtns
 
-	#define of panels
+	# DEFINE PANELS
 
 	my $pnlBtns = Wx::Panel->new( $self, -1, [ 1, 1 ] );
 	my $pnlIco  = Wx::Panel->new( $self, -2, [ 1, 1 ] );
 
-	#define controls
+	# DEFINE COTROLS
 
 	my $scriptTxt = Wx::StaticText->new( $self, -1, 'Script:', &Wx::wxDefaultPosition, &Wx::wxDefaultSize );
 	$scriptTxt->SetFont($Widgets::Style::fontLblBold);
@@ -140,7 +144,6 @@ sub __SetLayout {
 	my $richTxt = Wx::RichTextCtrl->new( $self, -1, '', [ -1, -1 ], [ 800, $self->__GetHeightOfText() ] );
 	$richTxt->SetEditable(0);
 
-	#$richTxt->SetSize( [ 800, 200 ] );
 	$richTxt->SetBackgroundColour($Widgets::Style::clrWhite);
 	$self->__WriteMessages($richTxt);
 	$richTxt->Layout();
@@ -155,27 +158,29 @@ sub __SetLayout {
 		$typeTxt->SetForegroundColour($Widgets::Style::clrWhite);
 	}
 
-	#regiter events
+	my $szPar = $self->__SetLayoutParameters($self);
+
+	# REGISTER EVENTS
+
 	Wx::Event::EVT_CLOSE( $self, sub { $self->__OnClose(@_) } );
 
-	#set colours and fonts
+	# SET FONTS AND COLORS
+
 	$self->SetBackgroundColour($Widgets::Style::clrDefaultFrm);
 	$pnlBtns->SetBackgroundColour($Widgets::Style::clrDefaultFrm);
 	$pnlIco->SetBackgroundColour( $self->__GetIcoColor() );
 
-	#create layoute structure
+	# BUILD LAYOUT STRUCTURE
+
 	$szTop->Add( $szFrstRow, 1, &Wx::wxGROW );
 	$szTop->Add( $szSecRow,  0, &Wx::wxEXPAND );
 
-	#$szFrstRow->Add( $szLeftClmn,  0, &Wx::wxALIGN_LEFT );
 	$szFrstRow->Add( $szRightClmn, 1, &Wx::wxALIGN_LEFT );
 	$szSecRow->Add( $pnlBtns, 1, &Wx::wxEXPAND );
 
-	#$szLeftClmn->Add( $scriptTxt, 0, &Wx::wxALL, 5, &Wx::wxALIGN_CENTER );
-	#$szLeftClmn->Add( $messageTxt, 0, &Wx::wxALL, 5 );
-
 	$szRightClmn->Add( $szRightTop, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
-	$szRightClmn->Add( $richTxt, 1, &Wx::wxEXPAND );
+	$szRightClmn->Add( $richTxt,    1, &Wx::wxEXPAND );
+	$szRightClmn->Add( $szPar,      0, &Wx::wxEXPAND );
 
 	$szRightTop->Add( $scriptTxt,     0, &Wx::wxLEFT | &Wx::wxTOP, 4 );
 	$szRightTop->Add( $scriptNameTxt, 0, &Wx::wxLEFT | &Wx::wxTOP, 4 );
@@ -215,6 +220,62 @@ sub __SetLayout {
 	return $self;
 }
 
+sub __SetLayoutParameters {
+	my $self   = shift;
+	my $parent = shift;
+
+	my $szPar     = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
+	my $szClTitle = Wx::BoxSizer->new(&Wx::wxVERTICAL);
+	my $szClVal   = Wx::BoxSizer->new(&Wx::wxVERTICAL);
+	my $szClDef   = Wx::BoxSizer->new(&Wx::wxVERTICAL);
+
+	# DEFINE CONTROLS
+
+	foreach my $messPar ( @{ $self->{"parameters"} } ) {
+
+		my $parTitleTxt = Wx::StaticText->new( $parent, -1, $messPar->GetTitle() . ":", &Wx::wxDefaultPosition );
+		my $btnReset = Wx::Button->new( $parent, -1, "Default", &Wx::wxDefaultPosition );
+		my $parVal;
+
+		if ( $messPar->GetParameterType() eq Enums->ParameterType_TEXT ) {
+
+			$parVal = Wx::TextCtrl->new( $parent, -1, "", &Wx::wxDefaultPosition );
+			$parVal->SetValue( $messPar->GetOrigValue() );
+
+			Wx::Event::EVT_TEXT( $parVal, -1, sub { $self->__OnParameterChanged( $parVal->GetValue(), $messPar ) } );
+			Wx::Event::EVT_BUTTON( $btnReset, -1, sub { $parVal->SetValue( $messPar->GetOrigValue() ) } );
+
+		}
+		elsif ( $messPar->GetParameterType() eq Enums->ParameterType_NUMBER ) {
+
+			$parVal = Wx::SpinCtrl->new( $parent, -1, $messPar->GetOrigValue(), &Wx::wxDefaultPosition, &Wx::wxDefaultSize, &Wx::wxSP_ARROW_KEYS, -99999, 99999 );
+			$parVal->SetValue( $messPar->GetOrigValue() );
+
+			Wx::Event::EVT_TEXT( $parVal, -1, sub { $self->__OnParameterChanged( $parVal->GetValue(), $messPar ) } );
+			Wx::Event::EVT_BUTTON( $btnReset, -1, sub { $parVal->SetValue( $messPar->GetOrigValue() ) } );
+
+		}
+		elsif ( $messPar->GetParameterType() eq Enums->ParameterType_OPTION ) {
+
+			die "Parameter of type: option is not implemented";
+		}
+
+		$szClTitle->Add( $parTitleTxt, 0, &Wx::wxALL, 3 );
+		$szClVal->Add( $parVal,   0, &Wx::wxALL, 0 );
+		$szClDef->Add( $btnReset, 0, &Wx::wxALL, 0 );
+
+		#$szRow->Add( 10, 10, 75, &Wx::wxEXPAND | &Wx::wxALL, 0 );
+
+	}
+
+	$szPar->Add( $szClTitle, 0, &Wx::wxALL, 1 );
+	$szPar->Add( $szClVal,   0, &Wx::wxALL, 1 );
+	$szPar->Add( $szClDef, &Wx::wxALL, 1 );
+
+	#$szPar->Add( 10, 10, 1, &Wx::wxALL, 1 );
+
+	return $szPar;
+}
 sub __OnClose {
 	my $self  = shift;
 	my $event = shift;
@@ -228,6 +289,16 @@ sub __OnClose {
 		$onExit->( $self, 0 );
 	}
 
+}
+
+sub __OnParameterChanged {
+	my $self      = shift;
+	my $curValue  = shift;
+	my $parameter = shift;
+
+	# Place for value check
+
+	$parameter->SetResultValue($curValue);
 }
 
 sub __WriteMessages() {
@@ -317,7 +388,7 @@ sub __WriteMessages() {
 
 				my $imgNumber = $1;
 
-				my $tagLen = length( ($imgTag =~ m/(<img\d+>)/)[0] );
+				my $tagLen = length( ( $imgTag =~ m/(<img\d+>)/ )[0] );
 
 				$richTxt->Remove( $richTxt->GetLastPosition() - 1, $richTxt->GetLastPosition() )
 				  ;    # tohle tady musi byt jinak nejde odmazat posleddni znak
@@ -325,11 +396,10 @@ sub __WriteMessages() {
 				$index -= $tagLen;
 				$messPom = substr $messPom, 0, length($messPom) - $tagLen;
 
-				 
-				my $img = (grep{$_->[0] eq $imgNumber} @{$self->{"images"}})[0];
-				die "Image number: $imgNumber was not found in imamge collection" unless(defined $img);
-				
-				$richTxt->WriteImage( $img->[1], $img->[2]);
+				my $img = ( grep { $_->[0] eq $imgNumber } @{ $self->{"images"} } )[0];
+				die "Image number: $imgNumber was not found in imamge collection" unless ( defined $img );
+
+				$richTxt->WriteImage( $img->[1], $img->[2] );
 			}
 
 		}
@@ -339,9 +409,11 @@ sub __WriteMessages() {
 		if ( $i + 1 != scalar(@messages) ) {
 			$richTxt->BeginFontSize(1);
 
-						$richTxt->WriteText("\n");
+			$richTxt->WriteText("\n");
+
 			#			$richTxt->WriteText('\n');
-						$index++;
+			$index++;
+
 			#			$index++;
 			$richTxt->BeginFontSize(10.5);
 		}
@@ -414,18 +486,15 @@ sub __AddButtons {
 		my $button = Wx::Button->new( $pnlBtns, -1, $btn );
 		$button->SetFont($Widgets::Style::fontBtn);
 		$button->{"order"} = $i;
-		
-		$button->SetFocus() if($i == scalar(@buttons)-1); # focus on right button
-		 
+
+		$button->SetFocus() if ( $i == scalar(@buttons) - 1 );    # focus on right button
 
 		$szBtnsChild->Add( $button, 0, &Wx::wxALL, 1 );
 
 		Wx::Event::EVT_BUTTON( $button, -1, sub { __OnClick( $self, $button ) } );
 
 	}
-	
-	
-	
+
 }
 
 sub __OnClick {

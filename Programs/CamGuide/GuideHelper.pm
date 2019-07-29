@@ -47,6 +47,9 @@ sub new {
 #sznchronize queue with log db
 sub Synchronize {
 	my $self         = shift;
+	
+ 	return;
+	
 	my @actionsQueue = @{ $self->{actionQueue} };
 	my @rows         = LogMethods->GetLatestActionsByPcbId( $self->{'pcbId'}, $self->{'childPcbId'} );
 	
@@ -145,6 +148,8 @@ sub ExistsVisited {
 sub DeleteOldAction{
 	my $self       = shift;
 	my $fromAction = shift;
+	
+	return;
 
 	my @actionsQueue = @{ $self->{actionQueue} };
 	

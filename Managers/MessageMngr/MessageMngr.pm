@@ -19,6 +19,11 @@ use aliased 'Helpers::GeneralHelper';
 use aliased 'Managers::MessageMngr::MessageForm';
 use aliased 'Managers::MessageMngr::Enums';
 use aliased 'Packages::Events::Event';
+use aliased 'Managers::MessageMngr::MessageParameter';
+
+#-------------------------------------------------------------------------------------------#
+#  Package methods
+#-------------------------------------------------------------------------------------------#
 
 sub new {
 	my $self   = shift;
@@ -109,6 +114,42 @@ sub AddOnMessage {
 	}
 }
 
+
+# Prepare text message parameter structure
+sub GetTextParameter {
+	my $self  = shift;
+	my $title = shift;
+	my $value = shift;
+
+	return $self->__GetParameter(Enums->ParameterType_TEXT, $title, $value);
+}
+
+# Prepare text message parameter structure
+sub GetNumberParameter {
+	my $self  = shift;
+	my $title = shift;
+	my $value = shift;
+
+	return $self->__GetParameter(Enums->ParameterType_NUMBER, $title, $value);
+}
+
+
+# Prepare message parameter structure
+sub __GetParameter {
+	my $self  = shift;
+	my $type  = shift;
+	my $title = shift;
+	my $value = shift;
+
+	die "Parameter type is not defined"  unless ( defined $type );
+	die "Parameter title is not defined" unless ( defined $title );
+	die "Parameter value is not defined" unless ( defined $value );
+
+	my $par = MessageParameter->new( $type, $title, $value );
+	
+	return $par;
+}
+ 
 sub __AddToQueue {
 	my $self = shift;
 
@@ -116,10 +157,11 @@ sub __AddToQueue {
 	$info{"modal"}  = shift;
 	$info{"parent"} = shift;
 
-	$info{"type"}     = shift;
-	$info{"messages"} = shift;
-	$info{"buttons"}  = shift;
-	$info{"images"}   = shift; # collection of images
+	$info{"type"}       = shift;
+	$info{"messages"}   = shift;
+	$info{"buttons"}    = shift;
+	$info{"images"}     = shift;    # collection of images
+	$info{"parameters"} = shift;    # collection of parameters
 
 	$info{"status"} = Enums->StatusType_NOTSHOWED;
 
@@ -166,8 +208,12 @@ sub __ShowMessages {
 			$parent = $self->{"parent"};
 		}
 
-		my $messFrm = MessageForm->new( $parent, $self->{"pcbId"}, $mess{"type"}, $mess{"messages"}, $mess{"buttons"}, $mess{"images"}, $mess{"caller"},
-										sub { __OnExitMessFrm( $self, @_ ) } );
+		my $messFrm =
+		  MessageForm->new(
+							$parent,           $self->{"pcbId"}, $mess{"type"},
+							$mess{"messages"}, $mess{"buttons"}, $mess{"images"},
+							$mess{"caller"}, $mess{"parameters"}, sub { __OnExitMessFrm( $self, @_ ) }
+		  );
 
 		$messFrm->Centre(&Wx::wxVERTICAL);
 
@@ -284,8 +330,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	my @imgs = ();
 	my $p    = GeneralHelper->Root() . "\\Programs\\Coupon\\CpnWizard\\Resources\\small_coplanar_diff_coated_embedded_without_gnd.bmp";
 	push( @imgs, [ 1, $p, &Wx::wxBITMAP_TYPE_BMP ] );
- 
- 
+
 	my $messMngr = MessageMngr->new("D3333");
 
 	$messMngr->ShowModal( -1, EnumsGeneral->MessageType_WARNING, \@mess1, \@btn, \@imgs );    #  Script se zastavi

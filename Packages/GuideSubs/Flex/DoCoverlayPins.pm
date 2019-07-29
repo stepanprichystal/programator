@@ -19,6 +19,7 @@ use aliased 'CamHelpers::CamMatrix';
 use aliased 'CamHelpers::CamHelper';
 use aliased 'CamHelpers::CamLayer';
 use aliased 'CamHelpers::CamSymbol';
+use aliased 'CamHelpers::CamSymbolSurf';
 use aliased 'Helpers::JobHelper';
 use aliased 'Helpers::GeneralHelper';
 use aliased 'Packages::Polygon::Features::Features::Features';
@@ -38,7 +39,7 @@ use aliased 'Packages::CAMJob::FlexiLayers::CoverlayPinParser::Enums' => 'PinEnu
 #-------------------------------------------------------------------------------------------#
 
 my $OPTIMALPINLENGTH = 15;     # 14mm
-my $OPTIMALPINWIDTH  = 2.5;    # 2mm
+my $OPTIMALPINWIDTH  = 2.5;    # 2.5mm
 my $PINREGISTERDIST  = 2;      # 2mm from flex part
 my $PINCUTDIST1      = 4;      # 4mm from flex part
 my $PINCUTDIST2      = 9;      # 8mm from flex part
@@ -67,12 +68,24 @@ sub CreateCoverlayPins {
 
 	my $messMngr = MessageMngr->new($jobId);
 
+	my $lName = "coverlaypins";
+
 	my $type = JobHelper->GetPcbFlexType($jobId);
 	return 0 if ( $type ne EnumsGeneral->PcbFlexType_RIGIDFLEXI && $type ne EnumsGeneral->PcbFlexType_RIGIDFLEXO );
 
-	CamHelper->SetStep( $inCAM, $step );
+	#	while(!scalar(grep { $_ =~ /^v\d$/ } JobHelper->GetCoverlaySigLayers($jobId))) {
+	#
+	#		my @mess = (@messHead);
+	#		push( @mess,
+	#			      "DPS nemá coverlay ve vnitřních vrstvách stackupu, vrstva \"$lName\" nebude vztvořena."
+	#				. " Pokud to není pravda, nastav pole: \"Coverlay\" v atributech desky v HEG" );
+	#
+	#		$messMngr->ShowModal( -1, EnumsGeneral->MessageType_INFORMATION, \@mess, [ "Je to správně", "Opravil jsem coverlay v IS" ] );
+	#
+	#		return $result if ( $messMngr->Result() == 0 );
+	#	}
 
-	my $lName = "coverlaypins";
+	CamHelper->SetStep( $inCAM, $step );
 
 	my $createLayer = 1;
 	my $putPinMarks = 1;
@@ -121,8 +134,54 @@ sub CreateCoverlayPins {
 		CamMatrix->CreateLayer( $inCAM, $jobId, $lName, "bend_area", "positive", 1 );
 
 		CamLayer->WorkLayer( $inCAM, "bend" );
-		CamLayer->CopySelOtherLayer( $inCAM, [$lName] );
+
+		use aliased 'Packages::Polygon::Features::Features::Features';
+		use aliased 'Packages::CAM::SymbolDrawing::SymbolDrawing';
+		use aliased 'Packages::CAM::SymbolDrawing::Primitive::PrimitiveLine';
+		use aliased 'Packages::CAM::SymbolDrawing::Primitive::PrimitiveArcSCE';
+		use aliased 'Packages::CAM::SymbolDrawing::Point';
+
+		my $f = Features->new();
+		$f->Parse( $inCAM, $jobId, $step, "bend" );
+		my @features = $f->GetFeatures();
+
+		my $draw = SymbolDrawing->new( $inCAM, $jobId );
+
+		foreach my $f (@features) {
+
+			my $p;
+
+			if ( $f->{"type"} eq "L" ) {
+
+				$p = PrimitiveLine->new( Point->new( $f->{"x1"}, $f->{"y1"} ), Point->new( $f->{"x2"}, $f->{"y2"} ), $f->{"symbol"} );
+			}
+			elsif ( $f->{"type"} eq "A" ) {
+				$p = PrimitiveArc->new( Point->new( $f->{"x1"}, $f->{"y1"} ),
+										Point->new( $f->{"xmid"}, $f->{"ymid"} ),
+										Point->new( $f->{"x2"},   $f->{"y2"} ),
+										$f->{"dir"}, $f->{"symbol"} );
+			}
+			else {
+
+				die "Not supported feature type: " . $f->{"type"};
+			}
+
+			$p->AddAttribute( ".string", $f->{"att"}->{".string"} );
+			$p->AddAttribute("transition_zone") if ( defined $f->{"att"}->{"transition_zone"} );
+
+			$draw->AddPrimitive($p);
+
+		}
 		CamLayer->WorkLayer( $inCAM, $lName );
+		$draw->Draw();
+
+		#
+		#		my $draw = FeatureDrawing->new( $inCAM, $jobId );
+		#		$draw->Draw( $step, $tmp, \@features );
+
+		#CamLayer->CopySelOtherLayer( $inCAM, [$lName] );
+
+		#CamLayer->WorkLayer( $inCAM, $lName );
 		CamAttributes->SetFeaturesAttribute( $inCAM, $jobId, ".string", PinEnums->PinString_BENDLINE );
 
 		my $nextPin = 1;
@@ -147,55 +206,8 @@ sub CreateCoverlayPins {
 
 	if ($putPinMarks) {
 
-		# Ask for put cu to flex layers
+		$self->__PutPinMarks( $inCAM, $jobId, $step, $messMngr );
 
-		my $stackup = Stackup->new($jobId);
-
-		my @cores = $stackup->GetAllCores(1);
-		my @layers = grep { $_ =~ /^v\d$/ } JobHelper->GetCoverlaySigLayers($jobId);
-
-		my @mess = (@messHead);
-		push( @mess, "Vložit nyní značky \"coverlay piny\" do signálových vrstev flexi jader?\n" );
-		push( @mess, " - Jádra: " . join( "; ", map { "jádro " . $_->GetCoreNumber() } @cores ) );
-		push( @mess, " - Cu vrstvy: " . join( "; ", @layers ) );
-
-		$messMngr->ShowModal( -1, EnumsGeneral->MessageType_INFORMATION, \@mess, [ "Nyní nevkládat", "Ano vložit" ] );
-
-		if ( $messMngr->Result() == 1 ) {
-
-			my $pinParser = CoverlayPinParser->new( $inCAM, $jobId, $step, "CW" );
-
-			CamLayer->AffectLayers( $inCAM, \@layers );
-
-			# Delete old pin marks
-			my $f = FeatureFilter->new( $inCAM, $jobId, undef, \@layers );
-			$f->SetProfile( EnumsFiltr->ProfileMode_OUTSIDE );
-			$f->AddIncludeAtt( ".string", PinEnums->PinString_REGISTER );
-			$f->AddIncludeAtt( ".string", PinEnums->PinString_CUTLINE );
-			$f->SetIncludeAttrCond( EnumsFiltr->Logic_OR );
-
-			if ( $f->Select() ) {
-				CamLayer->DeleteFeatures($inCAM);
-			}
-
-			CamSymbol->ResetCurAttributes($inCAM);
-
-			CamSymbol->AddCurAttribute( $inCAM, $jobId, ".string", PinEnums->PinString_REGISTER );
-
-			foreach my $f ( $pinParser->GetRegisterPads() ) {
-
-				CamSymbol->AddPad( $inCAM, "r" . ( $CUREGPADSIZE * 1000 ), { "x" => $f->{"x1"}, "y" => $f->{"y1"} } );
-			}
-
-			CamSymbol->AddCurAttribute( $inCAM, $jobId, ".string", PinEnums->PinString_CUTLINE );
-
-			foreach my $f ( $pinParser->GetCutLines() ) {
-
-				CamSymbol->AddLine( $inCAM, { "x" => $f->{"x1"}, "y" => $f->{"y1"} }, { "x" => $f->{"x2"}, "y" => $f->{"y2"} }, "r300", "positive" );
-			}
-
-			CamLayer->ClearLayers($inCAM);
-		}
 	}
 }
 
@@ -240,9 +252,12 @@ sub __CreateNextPin {
 	my @mess = (@messHead);
 	push( @mess, "Tvar coverlay pinu:" );
 	push( @mess, "=========================================\n" );
-	push( @mess, "Vyber požadovanou délku pinu:\n" );
+	push( @mess, " Délka:");
 	push( @mess, " - Maximální podle profilu: " . sprintf( "%.1f", $profileLen ) . "mm" );
 	push( @mess, " - Optimální: " . $OPTIMALPINLENGTH . "mm" );
+	push( @mess, "");
+	push( @mess, " Šířka (nezapomeň, že u coverlay se k šířce pinu připočte přesah coverlay do rigid části):");
+	push( @mess, " - $OPTIMALPINWIDTH mm");
 
 	if ( $profileLen < $OPTIMALPINLENGTH ) {
 
@@ -251,8 +266,18 @@ sub __CreateNextPin {
 				. sprintf( "%.1f", 4.5 + 2 * ( $OPTIMALPINLENGTH - $profileLen ) )
 				. "mm</r>" );
 	}
+	
+	
+	push( @mess, " Zvol jednu z možností popřípadě uprav šířku pinu.");
 
-	$messMngr->ShowModal( -1, EnumsGeneral->MessageType_QUESTION, \@mess, [ "Vyberu jinou lajnu", "Podle profilu", "Optimální délka" ] );
+	my @params = ();
+	my $parCustPinLen = $messMngr->GetTextParameter( "Vlastní délka pinu [mm]", $OPTIMALPINLENGTH  );
+	my $parCustPinWidth = $messMngr->GetTextParameter( "Šířka pinu [mm]", $OPTIMALPINWIDTH  );
+	
+	push( @params,  $parCustPinLen, $parCustPinWidth);
+
+
+	  $messMngr->ShowModal( -1, EnumsGeneral->MessageType_QUESTION, \@mess, [ "Vyberu jinou lajnu", "Vlastní délka", "Délka podle profilu", "Optimální délka" ], undef, \@params );
 
 	my $reply = $messMngr->Result();
 
@@ -278,9 +303,23 @@ sub __CreateNextPin {
 		CamLayer->CopySelOtherLayer( $inCAM, [$tmpLayer] );
 		CamLayer->WorkLayer( $inCAM, $tmpLayer );
 
-		my $len = $reply == 1 ? $profileLen : $OPTIMALPINLENGTH;
-
-		my %pinGeometry = $self->__GetPinLines( $selLine, $len );
+		my $len;
+		
+		if( $reply == 1){
+			
+			$len = $parCustPinLen->GetResultValue();
+		}elsif( $reply == 2){
+			
+			$len = $profileLen;
+		
+		}elsif( $reply == 3){
+			
+			$len = $OPTIMALPINLENGTH;
+		}
+	
+		my $width =  $parCustPinWidth->GetValueChanged() ?  $parCustPinWidth->GetResultValue() : $OPTIMALPINWIDTH;
+	
+		my %pinGeometry = $self->__GetPinLines( $selLine, $len, $width );
 
 		CamSymbol->ResetCurAttributes($inCAM);
 
@@ -291,7 +330,7 @@ sub __CreateNextPin {
 			CamSymbol->AddCurAttribute( $inCAM, $jobId, ".string", PinEnums->PinString_SIDELINE1 );
 			CamSymbol->AddLine( $inCAM, $pinGeometry{"pinSideLines1"}->[$i][0], $pinGeometry{"pinSideLines1"}->[$i][1], "s400", "positive" );
 		}
-		
+
 		# Add pin side lines
 		for ( my $i = 0 ; $i < scalar( @{ $pinGeometry{"pinSideLines2"} } ) ; $i++ ) {
 			CamSymbol->AddCurAttribute( $inCAM, $jobId, ".string", PinEnums->PinString_SIDELINE2 );
@@ -308,12 +347,20 @@ sub __CreateNextPin {
 			CamSymbol->AddPad( $inCAM, "r2000", $pinGeometry{"pinRegister"} );
 		}
 
+		# Add solder line
+		if ( defined $pinGeometry{"pinSolderLines"} ) {
+			CamSymbol->AddCurAttribute( $inCAM, $jobId, ".string", PinEnums->PinString_SOLDERLINE );
+			CamSymbol->AddLine( $inCAM, $pinGeometry{"pinSolderLines"}->[0], $pinGeometry{"pinSolderLines"}->[1], "r100", "positive" );
+		}
+
 		# Add cut line
 		if ( defined $pinGeometry{"pinCutLines"} ) {
 			CamSymbol->AddCurAttribute( $inCAM, $jobId, ".string", PinEnums->PinString_CUTLINE );
-			CamSymbol->AddLine( $inCAM, $pinGeometry{"pinCutLines"}->[0]->[0], $pinGeometry{"pinCutLines"}->[0]->[1], "r100", "positive" );
-			CamSymbol->AddLine( $inCAM, $pinGeometry{"pinCutLines"}->[1]->[0], $pinGeometry{"pinCutLines"}->[1]->[1], "r100", "positive" );
+			CamSymbol->AddLine( $inCAM, $pinGeometry{"pinCutLines"}->[0], $pinGeometry{"pinCutLines"}->[1], "r100", "positive" );
 		}
+		
+		CamSymbol->ResetCurAttributes($inCAM);
+		
 
 		@mess = (@messHead);
 		push( @mess, "Kontrola pinu" );
@@ -380,6 +427,7 @@ sub __GetPinLines {
 	my $self      = shift;
 	my $selLine   = shift;
 	my $pinLength = shift;
+	my $pinWidth = shift;
 
 	my $midX = ( $selLine->{"x1"} + $selLine->{"x2"} ) / 2;
 	my $midY = ( $selLine->{"y1"} + $selLine->{"y2"} ) / 2;
@@ -392,8 +440,8 @@ sub __GetPinLines {
 	my $pinLineP1 = { "x" => $midX, "y" => $midY };
 	my $pinLineP2 = { "x" => $endP{"x"}, "y" => $endP{"y"} };
 
-	my @line2 = LineTransform->ParallelSegmentLine( $pinLineP1, $pinLineP2, $OPTIMALPINWIDTH / 2, "left" );
-	my @line4 = LineTransform->ParallelSegmentLine( $pinLineP1, $pinLineP2, $OPTIMALPINWIDTH / 2, "right" );
+	my @line2 = LineTransform->ParallelSegmentLine( $pinLineP1, $pinLineP2, $pinWidth / 2, "left" );
+	my @line4 = LineTransform->ParallelSegmentLine( $pinLineP1, $pinLineP2, $pinWidth / 2, "right" );
 
 	my @line1 = ( { "x" => $selLine->{"x1"}, "y" => $selLine->{"y1"} }, { "x" => $line2[0]->{"x"}, "y" => $line2[0]->{"y"} } );
 	my @line5 = ( { "x" => $selLine->{"x2"}, "y" => $selLine->{"y2"} }, { "x" => $line4[0]->{"x"}, "y" => $line4[0]->{"y"} } );
@@ -402,8 +450,8 @@ sub __GetPinLines {
 
 	my %res = ();
 	$res{"pinSideLines1"} = [ \@line1, \@line5 ];
-	$res{"pinSideLines2"} = [  \@line2, \@line4,];
-	$res{"pinEndLine"} = \@line3;
+	$res{"pinSideLines2"} = [ \@line2, \@line4, ];
+	$res{"pinEndLine"}    = \@line3;
 
 	if ( $pinLength > $PINREGISTERDIST ) {
 		my %regP =
@@ -413,14 +461,18 @@ sub __GetPinLines {
 		$res{"pinRegister"} = \%regP;
 	}
 
-	if ( $pinLength > $PINCUTDIST2 ) {
+	if ( $pinLength > $PINCUTDIST1 ) {
 
 		my @cutLine1 = LineTransform->ParallelSegmentLine( { "x" => $line2[0]->{"x"}, "y" => $line2[0]->{"y"} },
 														   { "x" => $line4[0]->{"x"}, "y" => $line4[0]->{"y"} }, $PINCUTDIST1 );
+		$res{"pinSolderLines"} = \@cutLine1;
+	}
+
+	if ( $pinLength > $PINCUTDIST2 ) {
+
 		my @cutLine2 = LineTransform->ParallelSegmentLine( { "x" => $line2[0]->{"x"}, "y" => $line2[0]->{"y"} },
 														   { "x" => $line4[0]->{"x"}, "y" => $line4[0]->{"y"} }, $PINCUTDIST2 );
-		$res{"pinCutLines"} = [ \@cutLine1, \@cutLine2 ];
-
+		$res{"pinCutLines"} = \@cutLine2;
 	}
 
 	return %res;
@@ -479,11 +531,133 @@ sub __GetPinLength {
 
 		}
 	}
-	
+
 	$distMin -= 1;    # -1mm becouse coverlay rout 2mm should not rout beyound PCB profile
 
 	return $distMin;
 
+}
+
+sub __PutPinMarks {
+	my $self     = shift;
+	my $inCAM    = shift;
+	my $jobId    = shift;
+	my $step     = shift;
+	my $messMngr = shift;
+
+	# Ask for put cu to flex layers
+
+	my $stackup = Stackup->new($jobId);
+
+	my @cores  = $stackup->GetAllCores(1);
+	my @layers = JobHelper->GetCoverlaySigLayers($jobId);
+
+	my @mess = (@messHead);
+	push( @mess, "Vložit nyní značky \"coverlay piny\" do signálových vrstev flexi jader?\n" );
+	push( @mess, " - Jádra: " . join( "; ", map { "jádro " . $_->GetCoreNumber() } @cores ) );
+	push( @mess, " - Cu vrstvy: " . join( "; ", @layers ) );
+
+	$messMngr->ShowModal( -1, EnumsGeneral->MessageType_INFORMATION, \@mess, [ "Nyní nevkládat", "Ano vložit" ] );
+
+	if ( $messMngr->Result() == 1 ) {
+
+		my $pinParser = CoverlayPinParser->new( $inCAM, $jobId, $step, "CW" );
+
+		CamLayer->AffectLayers( $inCAM, \@layers );
+
+		# Delete old pin marks
+		my $f = FeatureFilter->new( $inCAM, $jobId, undef, \@layers );
+		$f->SetProfile( EnumsFiltr->ProfileMode_OUTSIDE );
+		$f->AddIncludeAtt( ".string", PinEnums->PinString_REGISTER );
+		$f->AddIncludeAtt( ".string", PinEnums->PinString_CUTLINE );
+		$f->AddIncludeAtt( ".string", PinEnums->PinString_SOLDERLINE );
+		$f->SetIncludeAttrCond( EnumsFiltr->Logic_OR );
+
+		if ( $f->Select() ) {
+			CamLayer->DeleteFeatures($inCAM);
+		}
+
+		# All symbols in signal layers have .string att: PinEnums->PinString_SIGLAYERMARKS
+		CamSymbol->ResetCurAttributes($inCAM);
+		CamSymbol->AddCurAttribute( $inCAM, $jobId, ".string", PinEnums->PinString_SIGLAYERMARKS );
+
+		# 1) Add negative background under all marks (protective border from profile fill )
+		foreach my $bendArea ( $pinParser->GetBendAreas() ) {
+
+			# Draw surface from pin areas
+			foreach my $pinGuid ( $bendArea->GetPinsGUID() ) {
+				
+				my @envelop = $bendArea->GetPinEnvelop($pinGuid);
+				
+				CamSymbolSurf->AddSurfacePolyline( $inCAM, \@envelop, undef, "negative" );
+			}
+		}
+			
+		# 2) Add register pad
+		foreach my $f ( $pinParser->GetRegisterPads() ) {
+
+			CamSymbol->AddPad( $inCAM, "r" . ( $CUREGPADSIZE * 1000 ), { "x" => $f->{"x1"}, "y" => $f->{"y1"} } );
+		}
+ 
+ 		# 3) Add solder lines
+		foreach my $f ( $pinParser->GetSolderLines() ) {
+
+			CamSymbol->AddLine( $inCAM, { "x" => $f->{"x1"}, "y" => $f->{"y1"} }, { "x" => $f->{"x2"}, "y" => $f->{"y2"} }, "r300", "positive" );
+		}
+
+		# 4) Add Cu square, where coverlay is cutted by scissors. Border of square are lines PinString_CUTLINE + PinString_ENDLINE
+		my $lTmp = GeneralHelper->GetGUID();
+		CamMatrix->CreateLayer( $inCAM, $jobId, $lTmp, "document", "positive", 0 );
+		CamLayer->WorkLayer( $inCAM, $lTmp );
+		my @features = ( $pinParser->GetCutLines(), $pinParser->GetEndLines() );
+
+		my $cuSquareOverlap = 2;
+
+
+		foreach my $bendArea ( $pinParser->GetBendAreas() ) {
+
+			# Draw surface from pin areas
+			foreach my $pinGuid ( $bendArea->GetPinsGUID() ) {
+
+				my @lines =
+				  grep { $_->{"att"}->{"feat_group_id"} eq $pinGuid } @features;
+
+				my @line1 = LineTransform->ParallelSegmentLine( { "x" => $lines[0]->{"x1"}, "y" => $lines[0]->{"y1"} },
+																{ "x" => $lines[0]->{"x2"}, "y" => $lines[0]->{"y2"} },
+																$cuSquareOverlap, "left" );
+				my @line2 = LineTransform->ParallelSegmentLine( { "x" => $lines[1]->{"x1"}, "y" => $lines[1]->{"y1"} },
+																{ "x" => $lines[1]->{"x2"}, "y" => $lines[1]->{"y2"} },
+																$cuSquareOverlap, "right" );
+
+				my @points = ();
+
+				push( @points, { "x" => $line1[0]->{"x"}, "y" => $line1[0]->{"y"} } );
+				push( @points, { "x" => $line1[1]->{"x"}, "y" => $line1[1]->{"y"} } );
+				push( @points, { "x" => $line2[1]->{"x"}, "y" => $line2[1]->{"y"} } );
+				push( @points, { "x" => $line2[0]->{"x"}, "y" => $line2[0]->{"y"} } );
+
+				CamSymbolSurf->AddSurfacePolyline( $inCAM, \@points );
+			}
+		}
+		
+
+
+		$inCAM->COM( "sel_resize", "size" => 2 * $cuSquareOverlap * 1000, "corner_ctl" => "no" );    # Resize Cu square 1000µm
+
+		CamLayer->ClipAreaByProf( $inCAM, $lTmp, 200, 1 );                                           # 200µm min distance cu from profile
+		CamLayer->WorkLayer( $inCAM, $lTmp );
+
+		CamLayer->CopySelOtherLayer( $inCAM, \@layers );
+		
+		CamSymbol->ResetCurAttributes($inCAM);
+		
+
+		CamLayer->DisplayLayers( $inCAM, \@layers );
+
+		CamMatrix->DeleteLayer( $inCAM, $jobId, $lTmp );
+
+		$inCAM->PAUSE("Zkontroluj vytvorene znacky ve vnitrnich signalovych vrstvach.");
+	}
 }
 
 #-------------------------------------------------------------------------------------------#
@@ -498,7 +672,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId = "d222775";
+	my $jobId = "d152457";
 
 	my $notClose = 0;
 

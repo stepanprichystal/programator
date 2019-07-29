@@ -31,9 +31,10 @@ push( @messHead, "<g>=====================================</g>" );
 push( @messHead, "<g>Průvodce vytvořením coverlay vrstev</g>" );
 push( @messHead, "<g>=====================================</g>\n" );
 
-my $COVERLAYOVERLAP = 500;     # Ovelrap of coverlay to rigid area
+my $COVERLAYOVERLAP = 700;     # Ovelrap of coverlay to rigid area
 my $ROUTOOL         = 2000;    # 2000µm rout tool
 my $REGPINSIZE      = 1500;    # 1500µm or register pin hole
+my $PINRADIUS       = 1000;    # 2000 µm radius of coveraly pins
 
 # Set impedance lines
 sub PrepareCoverlayLayers {
@@ -55,7 +56,17 @@ sub PrepareCoverlayLayers {
 
 	if ( $coverlayType{"top"} ) {
 
-		my $pins = $type eq EnumsGeneral->PcbFlexType_RIGIDFLEXI ? 1 : 0;
+		my $pins = 1;
+
+		my @mess = (@messHead);
+		push( @mess, "DPS má coverlay na straně: \"c\". Chceš vytvořit coverlay piny?" );
+
+		$messMngr->ShowModal( -1, EnumsGeneral->MessageType_QUESTION, \@mess, [ "Vytvořit frézu bez pinů", "Ano vytvořit" ] );
+
+		if ( $messMngr->Result() == 0 ) {
+
+			$pins = 0;
+		}
 
 		my $sigLayer;
 
@@ -125,33 +136,91 @@ sub __PrepareCoverlay {
 		$inCAM->PAUSE("Zkontroluj pripravenou coverlay masku popripade odmaskuj plosky.");
 	}
 
-	if ($pins) {
+	my $routLayerOk = 0;
+	while ( !$routLayerOk ) {
 
-		my @mess = (@messHead);
+		my $routLayer;
 
-		my $pinParser = CoverlayPinParser->new( $inCAM, $jobId, $step );
+		if ($pins) {
 
-		my $errMess = "";
+			my @mess = (@messHead);
 
-		while ( !$pinParser->CheckBendArea($errMess) ) {
+			my $pinParser = CoverlayPinParser->new( $inCAM, $jobId, $step );
 
-			$messMngr->ShowModal( -1,
-								  EnumsGeneral->MessageType_ERROR,
-								  [ "Vrstva \"ceovelraypins\" není správně připravené", "Detail chyby:", $errMess ],
-								  [ "Konec",                                                 "Opravím" ] );
+			my $errMess = "";
 
-			return 0 if ( $messMngr->Result() == 0 );
+			while ( !$pinParser->CheckBendArea($errMess) ) {
 
-			$inCAM->PAUSE("Oprav vrstvu: \"bend\"");
+				$messMngr->ShowModal( -1,
+									  EnumsGeneral->MessageType_ERROR,
+									  [ "Vrstva \"ceovelraypins\" není správně připravené", "Detail chyby:", $errMess ],
+									  [ "Konec",                                                 "Opravím" ] );
 
-			$errMess = "";
+				return 0 if ( $messMngr->Result() == 0 );
+
+				$inCAM->PAUSE("Oprav vrstvu: \"bend\"");
+
+				$errMess = "";
+			}
+
+			@mess = (@messHead);
+			push( @mess, "Vytvoření vrstvy frézy coverlay" );
+			push( @mess, "----------------------------------------------------\n" );
+			push( @mess, "\nZkotroluj, popřípadě uprav parametry \"coverlay:" );
+
+	 
+			my $parOverlap = $messMngr->GetNumberParameter( "Přesah coverlay do \"rigid části\" DPS [µm]", $COVERLAYOVERLAP );
+			my $parTool    = $messMngr->GetNumberParameter( "Velikost frézovacího nástroje [µm]", $ROUTOOL );
+			my $parRegSize = $messMngr->GetNumberParameter( "Velikost otvoru na sesazení coverlay [µm]", $REGPINSIZE );
+			my $parRadius  = $messMngr->GetNumberParameter( "Radius frézy, kterým je pin připojen k coverlay [µm]", $PINRADIUS );
+			my @params = ( $parOverlap, $parTool, $parRegSize, $parRadius );
+
+			$messMngr->ShowModal( -1, EnumsGeneral->MessageType_QUESTION, \@mess, undef, undef, \@params );
+
+			# Prepare coverlay rout
+			$routLayer =
+			  FlexiBendArea->PrepareRoutCoverlay( $inCAM, $jobId, $step, $sigLayer, $pins, $pins,
+												  $parOverlap->GetResultValue(1),
+												  $parTool->GetResultValue(1),
+												  $parRegSize->GetResultValue(1),
+												  $parRadius->GetResultValue(1) );
+
 		}
-	}
+		else {
+			my @mess = (@messHead);
+			push( @mess, "Vytvoření vrstvy frézy coverlay" );
+			push( @mess, "----------------------------------------------------\n" );
+			push( @mess, "\nZkotroluj, popřípadě uprav parametry:" );
 
-	# Prepare coverlay rout
-	my $routLayer = FlexiBendArea->PrepareRoutCoverlay( $inCAM, $jobId, $step, $sigLayer, $pins, $pins, $COVERLAYOVERLAP, $ROUTOOL, $REGPINSIZE );
-	CamLayer->WorkLayer( $inCAM, $routLayer );
-	$inCAM->PAUSE("Zkontroluj pripravenou coverlay frezovaci vrstvu a uprav co je treba.");
+			
+			 
+			my $parTool    = $messMngr->GetNumberParameter( "Velikost frézovacího nástroje [µm]", $ROUTOOL );
+			 
+			my @params     = ($parTool);
+
+			$messMngr->ShowModal( -1, EnumsGeneral->MessageType_QUESTION, \@mess, undef, undef, \@params );
+
+			# Prepare coverlay rout
+			$routLayer =
+			  FlexiBendArea->PrepareRoutCoverlay( $inCAM, $jobId, $step, $sigLayer, $pins, $pins,
+												  undef,
+												  $parTool->GetResultValue(1));
+			
+		}
+
+		CamLayer->WorkLayer( $inCAM, $routLayer );
+		$inCAM->PAUSE("Zkontroluj pripravenou coverlay frezovaci vrstvu a uprav co je treba.");
+		
+		
+			my @mess = (@messHead);
+			push( @mess, "Vytvoření vrstvy frézy coverlay" );
+			push( @mess, "----------------------------------------------------\n" );
+			push( @mess, "\nJe frézovací vrstva ok?" );
+
+			$messMngr->ShowModal( -1, EnumsGeneral->MessageType_QUESTION, \@mess, ["Vytvořit znovu", "Ok"] );
+			
+			$routLayerOk = 1 if ( $messMngr->Result() == 1 );
+	}
 
 }
 
@@ -167,7 +236,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId = "d222775";
+	my $jobId = "d152457";
 
 	my $notClose = 0;
 

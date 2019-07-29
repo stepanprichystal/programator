@@ -79,7 +79,7 @@ sub AddAttribute {
 	my $attName = shift;
 	my $attVal  = shift;
 	
-	push(@{$self->{"attributes"}}, { "name" => $attName, "vall" => $attVal})
+	push(@{$self->{"attributes"}}, { "name" => $attName, "val" => $attVal})
 }
 
 sub GetAttributes {

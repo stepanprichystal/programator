@@ -16,6 +16,7 @@ use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'Packages::Stackup::Stackup::Stackup';
 use aliased 'Enums::EnumsIS';
 use aliased 'Packages::ProductionPanel::StandardPanel::StandardBase';
+use aliased 'CamHelpers::CamJob';
 
 #-------------------------------------------------------------------------------------------#
 #  Script methods
@@ -134,12 +135,13 @@ sub GetSideByLayer {
 # Return 1, else 0
 sub OuterCore {
 	my $self  = shift;
+	my $inCAM = shift;
 	my $pcbId = shift;    #pcb id
 	my $side  = shift;    # scalar referenc with positions of outer cores: top/bot/both
 
 	my $result = 0;
   
-	if ( HegMethods->GetBasePcbInfo($pcbId)->{"pocet_vrstev"} > 2 ) {
+	if ( CamJob->GetSignalLayerCnt($inCAM, $pcbId) > 2 ) {
 
 		my $stackup = Stackup->new($pcbId);
 		my @cores   = $stackup->GetAllCores();

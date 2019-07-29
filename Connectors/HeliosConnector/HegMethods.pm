@@ -379,7 +379,7 @@ sub GetTypeOfPcb {
 	my @params = ( SqlParameter->new( "_PcbId", Enums->SqlDbType_VARCHAR, $pcbId ) );
 
 	my $editStyle = "lcs.nf_edit_style('typ_desky_22', d.material_typ) typ_desky";
-	if($noEditStyle){
+	if ($noEditStyle) {
 		$editStyle = "d.material_typ typ_desky";
 	}
 
@@ -410,7 +410,6 @@ sub GetPcbSurface {
 	return Helper->ExecuteScalar( $cmd, \@params, 1 );
 
 }
- 
 
 # Return type of coverlay
 sub GetFlexSolderMask {
@@ -437,7 +436,6 @@ sub GetFlexSolderMask {
 
 	return %flex;
 }
-
 
 # Return color of mask in hash for top and bot side
 sub GetSolderMaskColor {
@@ -1656,23 +1654,28 @@ sub GetCopperStoreInfo {
 # Return store information about prepreg defined by multical ids
 sub GetPrepregStoreInfo {
 	my $self     = shift;
-	my $qId      = shift;    # quality id (DR4, IS400, ..)
+	my $qId      = shift;                                                  # quality id (DR4, IS400, ..)
 	my $id       = shift;
-	my $matXsize = shift;    # in mm
-	my $matYsize = shift;    # in mm                                                            # prepreg thick id
+	my $matXsize = shift;                                                  # in mm
+	my $matYsize = shift;                                                  # in mm
+	my $flex     = shift;                                                  # prepreg thick id
 
-	return $self->GetMatStoreInfo( EnumsIS->MatType_PREPREG, $qId, $id, undef, undef, $matXsize, $matYsize );
+	my $type = EnumsIS->MatType_PREPREG;
+
+	$type = EnumsIS->MatType_PREPREGFLEX if($flex);
+
+	return $self->GetMatStoreInfo( $type, $qId, $id, undef, undef, $matXsize, $matYsize );
 
 }
 
 # Return store information about core defined by multical ids
 sub GetCoreStoreInfo {
 	my $self     = shift;
-	my $qId      = shift;    # quality id (DR4, IS400, ..)
-	my $id       = shift;    # core thick id
-	my $id2      = shift;    # copper thick id
-	my $matXsize = shift;    # in mm
-	my $matYsize = shift;    # in mm
+	my $qId      = shift;                                                  # quality id (DR4, IS400, ..)
+	my $id       = shift;                                                  # core thick id
+	my $id2      = shift;                                                  # copper thick id
+	my $matXsize = shift;                                                  # in mm
+	my $matYsize = shift;                                                  # in mm
 
 	return $self->GetMatStoreInfo( EnumsIS->MatType_CORE, $qId, $id, $id2, undef, $matXsize, $matYsize );
 }
@@ -1971,7 +1974,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	use aliased 'Connectors::HeliosConnector::HegMethods';
 	use Data::Dump qw(dump);
 
-	my @matTop = HegMethods->GetCoreStoreInfo( 13, 2, 4 );
+	my @matTop = HegMethods->GetPrepregStoreInfo( 10, 1 , undef, undef, 1);
 	dump(@matTop);
 }
 

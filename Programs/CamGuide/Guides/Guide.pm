@@ -121,7 +121,7 @@ sub RunFromAction {
 
 	my $helper = $self->{"helper"};
 
-	$helper->Synchronize();
+	#$helper->Synchronize();
 
 	my $unvisited = $helper->ExistsUnvisited($fromAction);
 
@@ -153,8 +153,8 @@ sub Show {
 	my $fromAction = -1;
 	my $helper     = $self->{"helper"};
 
-	$helper->Synchronize();
-	$fromAction = $helper->GetLastActionId() + 1;
+	#$helper->Synchronize();
+	#$fromAction = $helper->GetLastActionId() + 1;
 
 	$self->__InitQueue($fromAction);
 	$helper->ShowForm( $fromAction, sub { $self->__OnRunAllClick(@_) }, sub { $self->__OnRunSingleClick(@_) }, sub { $self->__OnGuidChanged(@_) } );
@@ -203,11 +203,12 @@ sub __OnRunSingleClick {
 	my $itemId   = shift;
 
 	$guideFrm->Hide();
-	$guideFrm->Close();
+	#$guideFrm->Destroy();
 
 	$self->__RunSingle($itemId);
 
 	print "__OnRunSingleClick ItemId: " . $itemId . "\n";
+	$guideFrm->Show();
 }
 
 sub __OnGuidChanged {
@@ -231,8 +232,9 @@ sub __OnGuidChanged {
 }
 
 #nastavi VISITED, UNVISITED podle poyadavku pripravare
-sub __InitQueue {
 	my $self       = shift;
+sub __InitQueue {
+	my $self = shift;
 	my $fromAction = shift;
 
 	my @actionsQueue = @{ $self->{actionQueue} };

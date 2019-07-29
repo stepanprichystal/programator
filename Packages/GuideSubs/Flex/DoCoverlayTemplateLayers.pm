@@ -31,9 +31,7 @@ push( @messHead, "<g>=====================================</g>" );
 push( @messHead, "<g>Průvodce vytvořením šablony pro registraci inner coverlay</g>" );
 push( @messHead, "<g>=====================================</g>\n" );
 
-my $OPENINGCLEARANCE = 500;     # Ovelrap of coverlay to rigid area
-my $ROUTOOL          = 2000;    # 2000µm rout tool
-my $REGPINSIZE       = 1500;    # 1500µm or register pin hole
+my $OPENINGCLEARANCE = 2500;    # Ovelrap of coverlay to rigid area
 
 # Set impedance lines
 sub PrepareTemplateLayers {
@@ -51,19 +49,18 @@ sub PrepareTemplateLayers {
 
 	CamHelper->SetStep( $inCAM, $step );
 
-	my $type    = JobHelper->GetPcbFlexType($jobId);
 	my $stackup = Stackup->new($jobId);
 
 	my %coverlayType = HegMethods->GetCoverlayType($jobId);
 
 	if ( ( $coverlayType{"top"} && $type eq EnumsGeneral->PcbFlexType_RIGIDFLEXO ) || $coverlayType{"bot"} ) {
 
-		$self->__PrepareTemplate( $inCAM, $jobId, $messMngr );
+		$self->__PrepareTemplate( $inCAM, $jobId, $step, $messMngr );
 	}
 
 }
 
-sub __PrepareCoverlay {
+sub __PrepareTemplate {
 	my $self  = shift;
 	my $inCAM = shift;
 	my $jobId = shift;
@@ -94,7 +91,7 @@ sub __PrepareCoverlay {
 	my $lName    = "flc";
 	my $recreate = 0;
 
-	if ( CamHelpers->CamHelper( $inCAM, $jobId, "flc" ) ) {
+	if ( CamHelper->LayerExists( $inCAM, $jobId, "flc" ) ) {
 
 		$messMngr->ShowModal( -1,
 							  EnumsGeneral->MessageType_ERROR,
@@ -103,25 +100,26 @@ sub __PrepareCoverlay {
 
 		return 0 if ( $messMngr->Result() == 0 );
 		$recreate = 0 if ( $messMngr->Result() == 1 );
-	}
+		$recreate = 1 if ( $messMngr->Result() == 2 );
 
-	# Find new template layer name
-	unless ($recreate) {
-		my $i = 1;
-		while (1) {
+		# Find new template layer name
+		unless ($recreate) {
+			my $i = 1;
+			while (1) {
 
-			unless (
-				CamHelpers->CamHelper( $inCAM, $jobId, $lName . $i ){
+				unless ( CamHelper->LayerExists( $inCAM, $jobId, $lName . $i ) ) {
 					$lName = $lName . $i;
 					last;
-				};
+				}
+
+				$i++;
 			}
 		}
 	}
 
 	# Prepare coverlay rout
-	FlexiBendArea->PrepareCoverlayTemplate( $inCAM, $jobId, $step );
-	CamLayer->WorkLayer( $inCAM, $routLayer );
+	FlexiBendArea->PrepareCoverlayTemplate( $inCAM, $jobId, $step, $lName, 2, $OPENINGCLEARANCE / 1000 );
+	CamLayer->WorkLayer( $inCAM, $lName );
 	$inCAM->PAUSE("Zkontroluj pripravenou vrstvu sablony a uprav co je treba.");
 
 }
@@ -132,17 +130,17 @@ sub __PrepareCoverlay {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	use aliased 'Packages::GuideSubs::Flex::DoCoverlayLayers';
+	use aliased 'Packages::GuideSubs::Flex::DoCoverlayTemplateLayers';
 	use aliased 'Packages::InCAM::InCAM';
 	use aliased 'Managers::MessageMngr::MessageMngr';
 
 	my $inCAM = InCAM->new();
 
-	my $jobId = "d222775";
+	my $jobId = "d251309";
 
 	my $notClose = 0;
 
-	my $res = DoCoverlayLayers->PrepareCoverlayLayers( $inCAM, $jobId, "o+1" );
+	my $res = DoCoverlayTemplateLayers->PrepareTemplateLayers( $inCAM, $jobId, "o+1" );
 
 }
 

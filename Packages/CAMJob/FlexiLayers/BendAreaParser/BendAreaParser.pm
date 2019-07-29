@@ -96,6 +96,12 @@ sub CheckBendArea {
 	return $result;
 }
 
+sub GetLayerName {
+	my $self = shift;
+
+	return $self->{"layer"};
+}
+
 sub GetBendAreas {
 	my $self = shift;
 

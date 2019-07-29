@@ -30,21 +30,25 @@ my $inCAM = InCAM->new();
 my $messMngr = MessageMngr->new();
 
 #pcb id
-my $pcbId      = Helper->GetJobId($inCAM);
+my $pcbId      = "d152456";
 
 #elper for selection acreate proper  guide
 my $guideSelector = GuideSelector->new($pcbId);
 
 my $childPcbId = Helper->GetChildId($inCAM);
-my $guideId = $guideSelector->GetGuideId();
+#my $guideId = $guideSelector->GetGuideId();
+
+my $guideId = 0;
 
 my $guide = undef;
 
 #get init guide
 InitGuide( $guideId );
 
-
+$guide->Show();
 $guide->Run();
+
+
 
 sub InitGuide {
 

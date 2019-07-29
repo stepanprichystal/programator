@@ -157,11 +157,13 @@ sub EditAfterOpen {
 	}
 
 	# ================================================================
-	# 4) EDIT:Add drilled pcb number (not possible add this in hooks when layer is type "rout")
+	# 4) EDIT:Add drilled pcb number to rout layers
+	# (not possible add this in hooks when layer is type "rout")
 
 	if (    $layer->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_cvrlycMill
 		 || $layer->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_cvrlysMill
-		 || $layer->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_prepregMill )
+		 || $layer->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_prepregMill
+		 || $layer->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_lcMill )
 	{
 
 		# get tool number of r850 tool
@@ -191,12 +193,18 @@ sub EditAfterOpen {
 				my $numPosition = $self->{"layerCnt"} > 2 ? "vvframe" : "stdframe";
 				my $dn = CamNCHooks->GetDrilledNumber( $self->{"jobId"}, $numPosition, $machine->{"id"}, \@scanMarks, \%nullPoint, 0 );
 
-				# Add prepreg number
+				# PRPEREG - Add prepreg number
 				if ( $layer->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_prepregMill ) {
 
 					my ( $pre, $suf ) = $dn =~ m/^(.*M97,\w\d{6})(.*)$/;
 					my $pNum = " P" . ( $layer->{"gROWname"} =~ m/^fprepreg(\d)$/ )[0];
 					$dn = $pre . $pNum . $suf . "\n";
+				}
+
+				# COVERLAY - Add coverlay signal layer name
+				if ( $layer->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_cvrlycMill || $layer->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_cvrlysMill ) {
+
+					$dn .= " " . $layer->{"gROWdrl_start_name"};
 				}
 
 				my ($xVal) = $dn =~ /X(\d+\.\d+)Y/;

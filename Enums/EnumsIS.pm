@@ -26,7 +26,8 @@ use constant {
 use constant {
 			   MatType_COPPER  => "Copper",
 			   MatType_CORE    => "Core",
-			   MatType_PREPREG => "Prepreg"
+			   MatType_PREPREG => "Prepreg",
+			   MatType_PREPREGFLEX => "Prepreg Flex"
 };
 
 1;
