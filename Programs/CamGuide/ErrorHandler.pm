@@ -53,9 +53,10 @@ sub ShowExceptionMess {
 	}else{
 		$type = "type = Scripting error.";
 		$errorText = $e;
-		$stackText = GeneralHelper->CreateStackTrace();
+		#$stackText = __CreateStackTrace();
+		$stackText = $errorText;
 		
-		print STDERR $errorText."\nStack trace:\n".$stackText;
+		print STDERR $errorText."\nStack trace:\n".$errorText;
 		
 	}
 
@@ -105,7 +106,7 @@ sub WriteExceptionToLog {
 	}else{
 		$type = "type = Scripting error.";
 		$errorText = $e;
-		$stackText = GeneralHelper->CreateStackTrace();
+		#$stackText = __CreateStackTrace();
 		
 	}
 
@@ -144,6 +145,40 @@ sub WriteExceptionToLog {
 #		exit();
 #	}
 #}
+
+sub __CreateStackTrace {
+	my $formated = shift;
+
+	my $str = "";
+
+	my $trace = Devel::StackTrace->new();
+
+	my $frOrder = 0;
+	while ( my $frame = $trace->next_frame() ) {
+
+		$frOrder++;
+
+		next if ( $frOrder == 1 );    # skip first frame (function __CreateStackTrace)
+
+		$str .= "Sub: " . ( $formated ? "<b>" : "" ) . $frame->subroutine() . "\n";
+
+		if ( $frame->hasargs() ) {
+
+			my @a = $frame->args();
+			for ( my $i = 0 ; $i < scalar(@a) ; $i++ ) {
+
+				$str .= "- arg $i: " . $a[$i] . "\n";
+			}
+
+		}
+
+		$str .= ( $formated ? "</b>" : "" ) . "- File: " . $frame->filename() . "; ";
+		$str .= "Line: " . $frame->line() . "\n\n";
+
+	}
+
+	return $str;
+}
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

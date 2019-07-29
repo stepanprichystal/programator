@@ -12,6 +12,7 @@ use warnings;
 #local library
 use aliased 'Programs::CamGuide::Guides::GuideTypeOne';
 use aliased 'Programs::CamGuide::Guides::GuideTypeTwo';
+use aliased 'Programs::CamGuide::Guides::GuideTypeFlex';
 use aliased 'Programs::CamGuide::Enums';
 
 #use aliased 'Programs::CamGuide::Actions::MillingActions';
@@ -64,6 +65,9 @@ sub Get {
 	elsif ( $guidId == 1 ) {
 
 		$guid = GuideTypeTwo->new( $pcbId, $inCAM, $messMngr, $childPcbId );
+	}	elsif ( $guidId == 3 ) {
+
+		$guid = GuideTypeFlex->new( $pcbId, $inCAM, $messMngr, $childPcbId );
 	}
 
 	if ( $guidId != $guid->{'guideId'} ) {
@@ -88,6 +92,11 @@ sub __SetTable {
 					 "id"    => 1,
 					 "name"  => "Guid 4vv",
 					 "class" => "GuideTypeTwo",
+				  },
+				  				  {
+					 "id"    => 3,
+					 "name"  => "Guid Flex",
+					 "class" => "GuideTypeFlex",
 				  }
 	);
 

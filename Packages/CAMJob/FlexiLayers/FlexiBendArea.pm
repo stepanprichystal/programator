@@ -36,6 +36,9 @@ use aliased 'Packages::Routing::RoutLayer::RoutDrawing::RoutDrawing';
 use aliased 'Packages::Polygon::Polygon::PolygonPoints';
 use aliased 'Packages::Polygon::Enums' => 'PolyEnums';
 use aliased 'Packages::CAM::FeatureFilter::FeatureFilter';
+use aliased 'Packages::CAM::FeatureFilter::Enums'                     => "FilterEnums";
+use aliased 'Packages::CAMJob::FlexiLayers::CoverlayPinParser::Enums' => 'EnumsPins';
+use aliased 'Packages::Polygon::PointsTransform';
 
 #-------------------------------------------------------------------------------------------#
 #  Script methods
@@ -47,6 +50,7 @@ sub PutCuToBendArea {
 	my $jobId     = shift;
 	my $step      = shift;
 	my $clearance = shift // 250;    # Default clearance of Cu from bend border is 250µm
+	my $lCu       = shift;           # ref where array of affected signal layer name will be stored
 
 	my $result = 1;
 
@@ -67,7 +71,15 @@ sub PutCuToBendArea {
 			 && $lamPckg->{"packageBot"}->{"coreType"} eq EnumsStack->CoreType_RIGID )
 		{
 
-			my $lName = $lamPckg->{"packageBot"}->{"layers"}->[0]->GetCopperName();
+			# find first Cu layer in BOT package
+			my $lName = undef;
+
+			for ( my $i = 0 ; $i < scalar( @{ $lamPckg->{"packageBot"}->{"layers"} } ) ; $i++ ) {
+				if ( $lamPckg->{"packageBot"}->{"layers"}->[$i]->GetType() eq EnumsStack->MaterialType_COPPER ) {
+					$lName = $lamPckg->{"packageBot"}->{"layers"}->[$i]->GetCopperName();
+					last;
+				}
+			}
 
 			die "Not a inner copper layer: $lName" if ( $lName !~ /^v\d+$/ );
 			push( @layers, [ $lName, CamMatrix->GetLayerPolarity( $inCAM, $jobId, $lName ) ] );
@@ -77,7 +89,15 @@ sub PutCuToBendArea {
 				&& $lamPckg->{"packageBot"}->{"coreType"} eq EnumsStack->CoreType_FLEX )
 		{
 
-			my $lName = $lamPckg->{"packageTop"}->{"layers"}->[-1]->GetCopperName();
+			# find first Cu layer in TOP package
+			my $lName = undef;
+
+			for ( my $i = scalar( @{ $lamPckg->{"packageTop"}->{"layers"} } ) - 1 ; $i >= 0 ; $i-- ) {
+				if ( $lamPckg->{"packageTop"}->{"layers"}->[$i]->GetType() eq EnumsStack->MaterialType_COPPER ) {
+					$lName = $lamPckg->{"packageTop"}->{"layers"}->[$i]->GetCopperName();
+					last;
+				}
+			}
 
 			die "Not a inner copper layer: $lName" if ( $lName !~ /^v\d+$/ );
 
@@ -85,22 +105,99 @@ sub PutCuToBendArea {
 		}
 	}
 
+	my @lNames = map { $_->[0] } @layers;
+	if ( scalar(@lNames) ) {
+
+		push( @{$lCu}, @lNames );
+
+		CamHelper->SetStep( $inCAM, $step );
+
+		my $CUSTRINGATT = "cu_flex_area";
+
+		# Delete old pin marks
+		my $f = FeatureFilter->new( $inCAM, $jobId, undef, \@lNames );
+
+		$f->AddIncludeAtt( ".string", $CUSTRINGATT );
+
+		if ( $f->Select() ) {
+			CamLayer->DeleteFeatures($inCAM);
+		}
+
+		CamSymbol->ResetCurAttributes($inCAM);
+		CamSymbol->AddCurAttribute( $inCAM, $jobId, ".string", $CUSTRINGATT );
+
+		foreach my $l (@layers) {
+
+			CamLayer->WorkLayer( $inCAM, $l->[0] );
+
+			foreach my $bendArea (@bendAreas) {
+
+				my @points = map { { "x" => $_->[0], "y" => $_->[1] } } $bendArea->GetPoints();
+				my @pointsSurf = @points[ 0 .. scalar(@points) - 2 ];
+
+				#CamSymbolSurf->AddSurfaceSolidPattern( $inCAM, 1, 2000, 1 );
+				CamSymbolSurf->AddSurfacePolyline( $inCAM, \@pointsSurf, 1, $l->[1] );
+				CamSymbol->AddPolyline( $inCAM, \@points, "r" . ( 2 * $clearance ), ( $l->[1] eq "positive" ? "negative" : "positive" ) );
+			}
+		}
+
+		CamSymbol->ResetCurAttributes($inCAM);
+		CamLayer->ClearLayers($inCAM);
+
+	}
+
+	return $result;
+}
+
+# If pcb contain soldermask an coverlay, unmask bend area in c,s
+sub UnMaskBendArea {
+	my $self      = shift;
+	my $inCAM     = shift;
+	my $jobId     = shift;
+	my $step      = shift;
+	my $layer     = shift;
+	my $clearance = shift // 100;    # Default clearance of solder mask from bend area
+
+	my $UMASKSTRINGATT = "unmask_bend_area";
+
+	my $result = 1;
+
+	my $parser = BendAreaParser->new( $inCAM, $jobId, $step );
+	my $errMess = "";
+	die $errMess unless ( $parser->CheckBendArea( \$errMess ) );
+
+	my @bendAreas = $parser->GetBendAreas();
+
 	CamHelper->SetStep( $inCAM, $step );
 
-	foreach my $l (@layers) {
+	CamLayer->WorkLayer( $inCAM, $layer );
 
-		CamLayer->WorkLayer( $inCAM, $l->[0] );
+	# Remove former unmasking if is present
 
-		foreach my $bendArea (@bendAreas) {
+	# Delete old pin marks
+	my $f = FeatureFilter->new( $inCAM, $jobId, $layer );
 
-			my @points = map { { "x" => $_->[0], "y" => $_->[1] } } $bendArea->GetPoints();
-			my @pointsSurf = @points[ 0 .. scalar(@points) - 2 ];
+	$f->AddIncludeAtt( ".string", $UMASKSTRINGATT );
 
-			#CamSymbolSurf->AddSurfaceSolidPattern( $inCAM, 1, 2000, 1 );
-			CamSymbolSurf->AddSurfacePolyline( $inCAM, \@pointsSurf, 1, $l->[1] );
-			CamSymbol->AddPolyline( $inCAM, \@points, "r" . ( 2 * $clearance ), ( $l->[1] eq "positive" ? "negative" : "positive" ) );
-		}
+	if ( $f->Select() ) {
+		CamLayer->DeleteFeatures($inCAM);
 	}
+
+	CamSymbol->ResetCurAttributes($inCAM);
+
+	CamSymbol->AddCurAttribute( $inCAM, $jobId, ".string", $UMASKSTRINGATT );
+
+	foreach my $bendArea (@bendAreas) {
+
+		my @points = map { { "x" => $_->[0], "y" => $_->[1] } } $bendArea->GetPoints();
+		my @pointsSurf = @points[ 0 .. scalar(@points) - 2 ];
+
+		CamSymbolSurf->AddSurfacePolyline( $inCAM, \@pointsSurf, 1 );
+		CamSymbol->AddPolyline( $inCAM, \@points, "r" . ( 2 * $clearance ), "positive" );
+
+	}
+
+	CamSymbol->ResetCurAttributes($inCAM);
 
 	CamLayer->ClearLayers($inCAM);
 
@@ -157,61 +254,6 @@ sub PrepareFlexMask {
 		CamSymbolSurf->AddSurfacePolyline( $inCAM, \@pointsSurf, 1, "negative" );
 		CamSymbol->AddPolyline( $inCAM, \@points, "r" . ( 2 * $overlap ), "negative" );
 	}
-
-	CamLayer->ClearLayers($inCAM);
-
-	return $result;
-}
-
-# If pcb contain soldermask an coverlay, unmask bend area in c,s
-sub UnMaskBendArea {
-	my $self      = shift;
-	my $inCAM     = shift;
-	my $jobId     = shift;
-	my $step      = shift;
-	my $layer     = shift;
-	my $clearance = shift // 100;    # Default clearance of solder mask from bend area
-
-	my $UMASKSTRINGATT = "flexible_mask";
-
-	my $result = 1;
-
-	my $parser = BendAreaParser->new( $inCAM, $jobId, $step );
-	my $errMess = "";
-	die $errMess unless ( $parser->CheckBendArea( \$errMess ) );
-
-	my @bendAreas = $parser->GetBendAreas();
-
-	CamHelper->SetStep( $inCAM, $step );
-
-	CamLayer->WorkLayer( $inCAM, $layer );
-
-	# Remove former unmasking if is present
-
-	# Delete old pin marks
-	my $f = FeatureFilter->new( $inCAM, $jobId, $layer );
-
-	$f->AddIncludeAtt( ".string", $UMASKSTRINGATT );
-
-	if ( $f->Select() ) {
-		CamLayer->DeleteFeatures($inCAM);
-	}
-
-	CamSymbol->ResetCurAttributes($inCAM);
-
-	CamSymbol->AddCurAttribute( $inCAM, $jobId, ".string", $UMASKSTRINGATT );
-
-	foreach my $bendArea (@bendAreas) {
-
-		my @points = map { { "x" => $_->[0], "y" => $_->[1] } } $bendArea->GetPoints();
-		my @pointsSurf = @points[ 0 .. scalar(@points) - 2 ];
-
-		CamSymbolSurf->AddSurfacePolyline( $inCAM, \@pointsSurf, 1 );
-		CamSymbol->AddPolyline( $inCAM, \@points, "r" . ( 2 * $clearance ), "positive" );
-
-	}
-
-	CamSymbol->ResetCurAttributes($inCAM);
 
 	CamLayer->ClearLayers($inCAM);
 
@@ -280,6 +322,7 @@ sub PrepareRoutCoverlay {
 	my $coverlayOverlap = shift // 500;     # Ovelrap of coverlay to rigid area
 	my $routTool        = shift // 2000;    # 2000µm rout tool
 	my $regPinSize      = shift // 1800;    # 1800µm or register pin hole
+	my $pinRadius       = shift // 2000;    # Radius between PinString_SIDELINE1 and PinString_SIDELINE2
 
 	my $result = 1;
 
@@ -327,7 +370,6 @@ sub PrepareRoutCoverlay {
 
 		my $draw = RoutDrawing->new( $inCAM, $jobId, $step, $routLName );
 
-		my $ENDPINLINE = "end_pin_line";
 		foreach my $bendArea ( $pinParser->GetBendAreas() ) {
 
 			my @feats = $bendArea->GetFeatures();
@@ -335,7 +377,7 @@ sub PrepareRoutCoverlay {
 			my $startFeat;
 			for ( my $i = scalar(@feats) - 1 ; $i >= 0 ; $i-- ) {
 
-				if ( $feats[$i]->{"att"}->{".string"} eq $ENDPINLINE ) {
+				if ( $feats[$i]->{"att"}->{".string"} eq EnumsPins->PinString_ENDLINE ) {
 
 					if ( !defined $startFeat ) {
 						$startFeat = ( $i + 1 > scalar(@feats) - 1 ) ? $feats[0] : $feats[ $i + 1 ];
@@ -345,9 +387,28 @@ sub PrepareRoutCoverlay {
 				}
 			}
 
-			@feats = grep { $_->{"att"}->{".string"} ne $ENDPINLINE } @feats;
+			@feats = grep { $_->{"att"}->{".string"} ne EnumsPins->PinString_ENDLINE } @feats;
 
-			$draw->DrawRoute( \@feats, $routTool, "right", $startFeat );
+			$draw->DrawRoute( \@feats, $routTool, "right", $startFeat, undef, [".string"] );
+
+		}
+
+		if ( $pinRadius > 0 ) {
+
+			my $f = FeatureFilter->new( $inCAM, $jobId, $routLName );
+
+			$f->AddIncludeAtt( ".string", EnumsPins->PinString_SIDELINE1 );
+			$f->AddIncludeAtt( ".string", EnumsPins->PinString_SIDELINE2 );
+			$f->SetIncludeAttrCond( FilterEnums->Logic_OR );
+
+			if ( $f->Select() ) {
+				$inCAM->COM(
+							 "change_bundle_corners",
+							 "corner_type" => "round",
+							 "max_ang"     => "180",
+							 "radius"      => $pinRadius
+				);
+			}
 
 		}
 
@@ -383,6 +444,7 @@ sub PrepareRoutPrepreg {
 	my $clearance = shift;            # Default clearance of prepreg from rigin/flex transition
 	my $refLayer  = shift;            # bend / coverlaypins
 	my $routTool  = shift // 2000;    # 2000µm rout tool
+	my $pinRadius = shift // 2000;    # Radius between PinString_SIDELINE1 and PinString_SIDELINE2
 
 	die "Clearance is not defined"       unless ( defined $clearance );
 	die "Reference layer is not defined" unless ( defined $refLayer );
@@ -451,7 +513,25 @@ sub PrepareRoutPrepreg {
 			}
 		}
 
-		$draw->DrawRoute( \@feats, $routTool, "right", $routStart );
+		$draw->DrawRoute( \@feats, $routTool, "right", $routStart, undef, [".string"] );
+
+		if ( $pinRadius > 0 ) {
+
+			my $f = FeatureFilter->new( $inCAM, $jobId, $lTmp );
+
+			$f->AddIncludeAtt( ".string", EnumsPins->PinString_SIDELINE1 );
+			$f->AddIncludeAtt( ".string", EnumsPins->PinString_SIDELINE2 );
+			$f->SetIncludeAttrCond( FilterEnums->Logic_OR );
+
+			if ( $f->Select() ) {
+				$inCAM->COM(
+							 "change_bundle_corners",
+							 "corner_type" => "round",
+							 "max_ang"     => "180",
+							 "radius"      => $pinRadius
+				);
+			}
+		}
 
 		# Decide if area is small and milling of whole area is needed
 		my @areaPoints = $bendArea->GetPoints();
@@ -462,6 +542,9 @@ sub PrepareRoutPrepreg {
 		if ( $area < 1000 || abs( $limits[0] - $limits[2] ) < 20 || abs( $limits[1] - $limits[3] ) < 20 ) {
 
 			$inCAM->COM("sel_all_feat");
+			$inCAM->COM("chain_list_reset");
+			 
+			$inCAM->COM("chain_list_add", "chain" => 1);
 			$inCAM->COM( "chain_cancel", "layer" => $lTmp, "keep_surface" => "no" );
 			$inCAM->COM( "sel_change_sym", "symbol" => "r0" );
 			CamLayer->Contourize( $inCAM, $lTmp, "x_or_y", "203200" );    # 203200 = max size of emptz space in InCAM which can be filled by surface
@@ -481,7 +564,7 @@ sub PrepareRoutPrepreg {
 						 "mode"       => "concentric",
 						 "size"       => $routTool / 1000,
 						 "feed"       => "0",
-						 "overlap"    => $routTool / 1000 / 2,
+						 "overlap"    => $routTool / 1000 / 3,
 						 "pocket_dir" => "standard"
 			);
 		}
@@ -508,7 +591,7 @@ sub PrepareRoutTransitionZone {
 	my $recreate          = shift // 1;       # recreate rout layer with used name
 	my $roolOverlap       = shift // 0.25;    # 0,25mm # define depth  overlap of rout tool in transition zone
 	my $extendZone        = shift // 0.5;     # 0,5mm transition rout slots will be exteneded on both ends
-	my $defDepthRoutPart1 = shift // 0.3;     # Default depth for first routing (part 1). If package is to thin, rout to half of package
+	my $defDepthRoutPart1 = shift // 0.27;    # Default depth for first routing (part 1). If package is to thin, rout to half of package
 	my $minMatRest        = shift // 0.15;    # 150µm is minimal material thickness after routing
 
 	die "Rout part is not defined" if ( $routPart != 1 && $routPart != 2 );
@@ -516,6 +599,8 @@ sub PrepareRoutTransitionZone {
 	my $parser = BendAreaParser->new( $inCAM, $jobId, $step, PolyEnums->Dir_CW );
 	my $errMess = "";
 	die $errMess unless ( $parser->CheckBendArea( \$errMess ) );
+
+	my @routLayers = ();
 
 	# Rout tool info
 
@@ -654,10 +739,10 @@ sub PrepareRoutTransitionZone {
 
 		my $depth = ( $packageThick / 2 ) / 1000 + $roolOverlap / 2;    # default depth is to half of package thickness + overlap
 
-		# if package is thickest than 140% of default rout from bot, use default depth for:
+		# if half of packkage thickness is thicker than default rout from bot + overlap/2, ude default rout depth
 		# - rout part 1: 0.35mm (including overlap)
 		# - rout part 2: package thickness - 0.35mm
-		if ( $defDepthRoutPart1 + $roolOverlap / 2 < $packageThick / 1000 / 2 ) {
+		if ( $defDepthRoutPart1 < $packageThick / 1000 / 2 ) {
 
 			if ( $routPart == 1 ) {
 
@@ -683,8 +768,93 @@ sub PrepareRoutTransitionZone {
 		$DTMTools[0]->{"userColumns"}->{ EnumsDrill->DTMclmn_MAGINFO } = $toolMagazineInfo if ( defined $toolMagazineInfo );
 
 		CamDTM->SetDTMTools( $inCAM, $jobId, $step, $routName, \@DTMTools );
+		
+		push(@routLayers, $routName);
 	}
 
+
+	return @routLayers;
+
+}
+
+sub PrepareCoverlayTemplate {
+	my $self      = shift;
+	my $inCAM     = shift;
+	my $jobId     = shift;
+	my $step      = shift;
+	my $routName  = shift // "flc";
+	my $toolSize  = shift // 2;       # 2mm tool size
+	my $clearance = shift // 5;       # 5mm clarance around coverlaz pin area
+
+	my $pinParser = CoverlayPinParser->new( $inCAM, $jobId, $step, "CCW" );
+	my $errMess = "";
+	die $errMess unless ( $pinParser->CheckBendArea( \$errMess ) );
+
+	# Rout tool info
+
+	if ( CamHelper->LayerExists( $inCAM, $jobId, $routName ) ) {
+		CamMatrix->DeleteLayer( $inCAM, $jobId, $routName );
+		CamMatrix->CreateLayer( $inCAM, $jobId, $routName, "rout", "positive", 1 );
+	}
+
+	unless ( CamHelper->LayerExists( $inCAM, $jobId, $routName ) ) {
+		CamMatrix->CreateLayer( $inCAM, $jobId, $routName, "rout", "positive", 1 );
+	}
+
+	CamMatrix->SetNCLayerStartEnd( $inCAM, $jobId, $routName, "coverlaypins", "coverlaypins" );
+
+	# Draw transition features
+	CamLayer->WorkLayer( $inCAM, $routName );
+
+	my $lTmp = GeneralHelper->GetGUID();
+	CamMatrix->CreateLayer( $inCAM, $jobId, $lTmp, "rout", "positive", 0 );
+	CamLayer->WorkLayer( $inCAM, $lTmp );
+
+	foreach my $bendArea ( $pinParser->GetBendAreas() ) {
+
+		# Draw surface from pin areas
+		foreach my $pin ( $bendArea->GetPinsFeatures() ) {
+
+			my @lines = grep { $_->{"att"}->{".string"} eq EnumsPins->PinString_SIDELINE2 } @{$pin};
+
+			my @points = ();
+
+			push( @points, { "x" => $lines[0]->{"x1"}, "y" => $lines[0]->{"y1"} } );
+			push( @points, { "x" => $lines[0]->{"x2"}, "y" => $lines[0]->{"y2"} } );
+			push( @points, { "x" => $lines[1]->{"x1"}, "y" => $lines[1]->{"y1"} } );
+			push( @points, { "x" => $lines[1]->{"x2"}, "y" => $lines[1]->{"y2"} } );
+
+			CamSymbolSurf->AddSurfacePolyline( $inCAM, \@points );
+
+		}
+	}
+
+	$inCAM->COM( "sel_resize", "size" => $clearance * 2 * 1000, "corner_ctl" => "no" );
+
+	CamLayer->WorkLayer( $inCAM, $lTmp );
+	$inCAM->COM(
+				 'chain_add',
+				 "layer" => $lTmp,
+				 "size"  => $toolSize,
+				 "comp"  => "left"
+	);
+
+	$inCAM->COM("sel_all_feat");
+
+	$inCAM->COM(
+				 "chain_pocket",
+				 "layer"      => $lTmp,
+				 "mode"       => "concentric",
+				 "size"       => $toolSize,
+				 "feed"       => "0",
+				 "overlap"    => 0,
+				 "pocket_dir" => "standard"
+	);
+	CamLayer->CopySelOtherLayer( $inCAM, [$routName] );
+	CamLayer->WorkLayer( $inCAM, $routName );
+	CamMatrix->DeleteLayer( $inCAM, $jobId, $lTmp );
+
+	CamLayer->ClearLayers($inCAM);
 }
 
 #-------------------------------------------------------------------------------------------#
@@ -698,11 +868,11 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	use aliased 'Packages::InCAM::InCAM';
 
 	my $inCAM = InCAM->new();
-	my $jobId = "d231201";
+	my $jobId = "d222775";
 
 	my $mess = "";
 
-	my $result = FlexiBendArea->CreateRoutPrepregsByBendArea( $inCAM, $jobId, "o+1", 1, 1 );
+	my $result = FlexiBendArea->PrepareCoverlayTemplate( $inCAM, $jobId, "o+1" );
 
 	print STDERR "Result is: $result, error message: $mess\n";
 

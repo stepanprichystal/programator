@@ -119,23 +119,52 @@ sub __CreateRoutTransitionPart1 {
 
 		$messMngr->ShowModal( -1,
 							  EnumsGeneral->MessageType_ERROR,
-							  [ @messHead, "Vrstvy: <b>" . join( "; ", @routLayers ) . "</b> již existují, chceš je přemazat?" ],
+							  [ @messHead,     "Vrstvy: <b>" . join( "; ",         @routLayers ) . "</b> již existují, chceš je přemazat?" ],
 							  [ "Přeskočit", "Ne, vytvořit nové s indexem +1", "Ano přemazat" ] );
 
 		return 0 if ( $messMngr->Result() == 0 );
 		$recreate = 0 if ( $messMngr->Result() == 1 );
 	}
 
-	# Rout tool info
-	my $toolSize         = 2;           # 2mm
-	my $toolMagazineInfo = "d2.0a30";
-	my $toolComp         = "none";
+	my $routLayerOk = 0;
+	while ( !$routLayerOk ) {
 
-	FlexiBendArea->PrepareRoutTransitionZone( $inCAM,            $jobId,    $step,     1,            $toolSize,
-											  $toolMagazineInfo, $toolComp, $recreate, $ROUTOVERLAP, $EXTENDTRANZONE );
+		# Rout tool info
+		my $routSize = 2;
+		my $toolMagazineInfo = "d2.0a30";
+		my $toolComp         = "none";
 
-	return $result;
+		my @mess = (@messHead);
+		push( @mess, "Vytvoření první hloubkové frézy tranzitní zóny" );
+		push( @mess, "----------------------------------------------------\n" );
+		push( @mess, "\nZkotroluj, popřípadě uprav parametry" );
 
+		my $parTool   = $messMngr->GetNumberParameter( "Velikost frézovacího nástroje [mm]",           2 );                 #2mm
+		my $parExtend = $messMngr->GetNumberParameter( "Délka přejezdu frézy traznitní zóny  [µm]", $EXTENDTRANZONE );
+
+		my @params = ( $parTool, $parExtend );
+
+		$messMngr->ShowModal( -1, EnumsGeneral->MessageType_QUESTION, \@mess, undef, undef, \@params );
+
+		my @routLayers = FlexiBendArea->PrepareRoutTransitionZone( $inCAM, $jobId, $step, 1, $parTool->GetResultValue(1),
+																   $toolMagazineInfo, $toolComp, $recreate, $ROUTOVERLAP,
+																   $parExtend->GetResultValue(1) );
+
+		CamLayer->DisplayLayers( $inCAM, \@routLayers );
+		$inCAM->PAUSE("Zkontroluj pripravene frezovaci vrstvy a uprav co je treba.");
+
+		@mess = (@messHead);
+		push( @mess, "Vytvoření první hloubkové frézy (" . join( "; ", @routLayers ) . ") tranzitní zóny" );
+		push( @mess, "----------------------------------------------------\n" );
+		push( @mess, "\nJsou frézovací vrstvy ok?" );
+
+		$messMngr->ShowModal( -1, EnumsGeneral->MessageType_QUESTION, \@mess, [ "Vytvořit znovu", "Ok" ] );
+
+		$routLayerOk = 1 if ( $messMngr->Result() == 1 );
+
+		return $result;
+
+	}
 }
 
 sub __CreateRoutTransitionPart2 {
@@ -176,21 +205,52 @@ sub __CreateRoutTransitionPart2 {
 
 		$messMngr->ShowModal( -1,
 							  EnumsGeneral->MessageType_ERROR,
-							  [ @messHead, "Vrstvy: <b>" . join( "; ", @routLayers ) . "</b> již existují, chceš je přemazat?" ],
+							  [ @messHead,     "Vrstvy: <b>" . join( "; ",         @routLayers ) . "</b> již existují, chceš je přemazat?" ],
 							  [ "Přeskočit", "Ne, vytvořit nové s indexem +1", "Ano přemazat" ] );
 
-		
 		return 0 if ( $messMngr->Result() == 0 );
 		$recreate = 0 if ( $messMngr->Result() == 1 );
 	}
 
-	# Rout tool info
-	my $toolSize         = 2;         # 2mm
-	my $toolMagazineInfo = undef;
-	my $toolComp         = "right";
+	my $routLayerOk = 0;
+	while ( !$routLayerOk ) {
 
-	FlexiBendArea->PrepareRoutTransitionZone( $inCAM,            $jobId,    $step,     2,            $toolSize,
-											  $toolMagazineInfo, $toolComp, $recreate, $ROUTOVERLAP, $EXTENDTRANZONE );
+		# Rout tool info
+		my $routSize = 2;
+		my $toolMagazineInfo = undef;
+		my $toolComp         = "right";
+
+		my @mess = (@messHead);
+		push( @mess, "Vytvoření druhé hloubkové frézy tranzitní zóny" );
+		push( @mess, "----------------------------------------------------\n" );
+		push( @mess, "\nZkotroluj, popřípadě uprav parametry" );
+
+		my $parTool   = $messMngr->GetNumberParameter( "Velikost frézovacího nástroje [mm]",           $routSize );                 #2mm
+		my $parExtend = $messMngr->GetNumberParameter( "Délka přejezdu frézy traznitní zóny  [µm]", $EXTENDTRANZONE );
+
+		my @params = ( $parTool, $parExtend );
+
+		$messMngr->ShowModal( -1, EnumsGeneral->MessageType_QUESTION, \@mess, undef, undef, \@params );
+
+		my @routLayers = FlexiBendArea->PrepareRoutTransitionZone( $inCAM, $jobId, $step, 2, $parTool->GetResultValue(1),
+																   $toolMagazineInfo, $toolComp, $recreate, $ROUTOVERLAP,
+																   $parExtend->GetResultValue(1) );
+
+		CamLayer->DisplayLayers( $inCAM, \@routLayers );
+		$inCAM->PAUSE("Zkontroluj pripravene frezovaci vrstvy a uprav co je treba.");
+
+		@mess = (@messHead);
+		push( @mess, "Vytvoření druhé hloubkové frézy (" . join( "; ", @routLayers ) . ") tranzitní zóny" );
+		push( @mess, "----------------------------------------------------\n" );
+		push( @mess, "\nJsou frézovací vrstvy ok?" );
+
+		$messMngr->ShowModal( -1, EnumsGeneral->MessageType_QUESTION, \@mess, [ "Vytvořit znovu", "Ok" ] );
+
+		$routLayerOk = 1 if ( $messMngr->Result() == 1 );
+
+		return $result;
+
+	}
 
 }
 
@@ -206,7 +266,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId = "d222775";
+	my $jobId = "d152456";
 
 	my $notClose = 0;
 

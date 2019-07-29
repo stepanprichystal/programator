@@ -133,7 +133,7 @@ sub __CreateFakeOuterCoreLayers {
 	my @fakeLayers = ();
 
 	my $side;    # top/bot/both
-	if ( StackupOperation->OuterCore( $jobId, \$side ) ) {
+	if ( StackupOperation->OuterCore($inCAM,  $jobId, \$side ) ) {
 
 		CamHelper->SetStep( $inCAM, $step );
 

@@ -16,6 +16,8 @@ use aliased 'Managers::MessageMngr::MessageMngr';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'Helpers::GeneralHelper';
 
+my $messMngr = MessageMngr->new("D3333");
+
 # Mesage window types:
 # -----------------------
 # MessageType_ERROR
@@ -46,19 +48,37 @@ my @imgs = ();
 my $p    = GeneralHelper->Root() . "\\Programs\\Coupon\\CpnWizard\\Resources\\small_coplanar_diff_coated_embedded_without_gnd.bmp";
 push( @imgs, [ 1, $p, &Wx::wxBITMAP_TYPE_BMP ] );
 
-my $messMngr = MessageMngr->new("D3333");
+# Parameter difinitions
+# -----------------------
+my @params = ();
+push( @params, $messMngr->GetTextParameter( "Parameter 1dsdsdsds", "AHoj" ) );
+push( @params, $messMngr->GetTextParameter( "Parameter 2", "Naydar" ) );
+push( @params, $messMngr->GetNumberParameter( "Parameter 3dd", 10 ) );
 
 # --------------------------------------------
 # Display message window: ShowModal()
 # --------------------------------------------
 
-$messMngr->ShowModal( -1, EnumsGeneral->MessageType_WARNING, \@mess1, \@btn, \@imgs );    #  Script is stopped
+$messMngr->ShowModal( -1, EnumsGeneral->MessageType_WARNING, \@mess1, \@btn, \@imgs, \@params );    #  Script is stopped
 
 my $btnNumber = $messMngr->Result();    # return button order of pressed button (start number is 0, counted from left)
+
+print "\nNumber of clicked button: " . $btnNumber."\n";
+
+
+for ( my $i = 0 ; $i < scalar(@params) ; $i++ ) {
+
+	if ( $params[$i]->GetValueChanged() ) {
+
+		print "Parameter: $i changed from: " . $params[$i]->GetOrigValue() . " to: " . $params[$i]->GetResultValue() . " \n";
+	}
+}
+
+
 
 # --------------------------------------------
 # Display message window: Show()
 # --------------------------------------------
-#$messMngr->Show( -1, EnumsGeneral->MessageType_WARNING, \@mess1 );    #  Script do not stop and continue
+#$messMngr->Show( -1, EnumsGeneral->MessageType_WARNING, \@mess1, \@btn, \@imgs, \@params );    #  Script do not stop and continue
 
 1;

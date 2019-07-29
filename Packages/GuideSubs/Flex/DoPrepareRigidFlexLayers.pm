@@ -22,6 +22,9 @@ use aliased 'Packages::GuideSubs::Flex::DoCoverlayPins';
 use aliased 'Packages::GuideSubs::Flex::DoCoverlayLayers';
 use aliased 'Packages::GuideSubs::Flex::DoPrepregLayers';
 use aliased 'Packages::GuideSubs::Flex::DoRoutTransitionLayers';
+use aliased 'Packages::GuideSubs::Flex::DoCoverlayTemplateLayers';
+use aliased 'Packages::GuideSubs::Flex::DoFlexiMaskLayer';
+use aliased 'Packages::GuideSubs::Flex::DoPrepareBendAreaOther';
 
 #-------------------------------------------------------------------------------------------#
 #  Public method
@@ -46,13 +49,18 @@ sub PrepareLayers {
 
 		CamHelper->SetStep( $inCAM, $step );
 
-		DoCoverlayPins->CreateCoverlayPins( $inCAM,$jobId, $step );
-		DoCoverlayLayers->PrepareCoverlayLayers( $inCAM,$jobId, $step );
-		DoPrepregLayers->PreparePrepregLayers( $inCAM,$jobId, $step );
+		DoCoverlayPins->CreateCoverlayPins( $inCAM, $jobId, $step );
+		DoCoverlayLayers->PrepareCoverlayLayers( $inCAM, $jobId, $step );
+		DoCoverlayTemplateLayers->PrepareTemplateLayers( $inCAM, $jobId, $step );
+		DoPrepregLayers->PreparePrepregLayers( $inCAM, $jobId, $step );
 		DoRoutTransitionLayers->PrepareRoutLayers( $inCAM, $jobId, $step );
+		DoFlexiMaskLayer->PrepareFlexiMaskLayers( $inCAM, $jobId, $step );
+		DoPrepareBendAreaOther->PrepareBendAreaOther( $inCAM, $jobId, $step );
+
 	}
 
 }
+
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#
@@ -69,7 +77,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $notClose = 0;
 
-	my $res = DoPrepareRigidFlexLayers->PrepareLayers( $inCAM, $jobId);
+	my $res = DoPrepareRigidFlexLayers->PrepareLayers( $inCAM, $jobId );
 
 }
 

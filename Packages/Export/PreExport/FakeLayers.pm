@@ -132,7 +132,7 @@ sub __CreateFakeOuterCoreLayers {
 	return @fakeLayers if ( $layerCnt <= 2 );
  
 	my $side;    # top/bot/both
-	if ( StackupOperation->OuterCore( $jobId, \$side ) ) {
+	if ( StackupOperation->OuterCore( $inCAM, $jobId, \$side ) ) {
 
 		CamHelper->SetStep( $inCAM, $step );
 
@@ -235,7 +235,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId    = "d147721";
+	my $jobId    = "d251561";
 	my $stepName = "panel";
 
 	my %types = FakeLayers->CreateFakeLayers( $inCAM, $jobId, "panel" );

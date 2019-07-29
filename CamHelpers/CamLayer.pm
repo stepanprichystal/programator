@@ -266,11 +266,11 @@ sub WorkLayer {
 
 # Display single layer from other step
 sub DisplayFromOtherStep {
-	my $self  = shift;
-	my $inCAM = shift;
-	my $jobId = shift;
-	my $step  = shift;
-	my $layer = shift;
+	my $self    = shift;
+	my $inCAM   = shift;
+	my $jobId   = shift;
+	my $step    = shift;
+	my $layer   = shift;
 	my $offsetX = shift // 0;
 	my $offsetY = shift // 0;
 
@@ -287,6 +287,19 @@ sub DisplayFromOtherStep {
 				 step     => $step
 	);
 
+}
+
+# Hide all layers and all layers are not affected
+sub DisplayLayers {
+	my $self   = shift;
+	my $inCAM  = shift;
+	my $layers = shift;
+
+	$inCAM->COM('clear_layers');
+
+	foreach my $l ( @{$layers} ) {
+		$inCAM->COM( 'display_layer', "name" => "$l", "display" => "yes" );
+	}
 }
 
 # Hide all layers and all layers are not affected

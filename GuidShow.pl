@@ -30,13 +30,14 @@ my $inCAM = InCAM->new();
 my $messMngr = MessageMngr->new();
 
 #pcb id
-my $pcbId      = Helper->GetJobId($inCAM);
+my $pcbId      = "$ENV{JOB}";
+#$pcbId      = "d152457";
 
 #elper for selection acreate proper  guide
 my $guideSelector = GuideSelector->new($pcbId);
 
 my $childPcbId = Helper->GetChildId($inCAM);
-my $guideId = $guideSelector->GetGuideId();
+my $guideId = 3;
 
 my $guide = undef;
 
@@ -54,7 +55,7 @@ sub InitGuide {
 
 	#Set handlers for writing to logs
 	#$messMngr->AddOnMessage( \&Packages::Handlers::LogHandler::WriteMessage );
-	$guide->AddOnAction( \&Packages::Handlers::LogHandler::WriteAction );
+	#$guide->AddOnAction( \&Packages::Handlers::LogHandler::WriteAction );
 	$guide->AddOnActionErr( \&Programs::CamGuide::ErrorHandler::ShowExceptionMess );
 	$guide->AddOnActionErr( \&Programs::CamGuide::ErrorHandler::WriteExceptionToLog );
 	$guide->AddOnGuideChanged( \&GuideChanged );
@@ -70,5 +71,5 @@ sub GuideChanged {
 }
 
 
-
+#WriteAction
 #require  GeneralHelper->Root()."/Programs/CamGuide/GuideInit.pl";

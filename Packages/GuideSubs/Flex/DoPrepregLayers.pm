@@ -34,8 +34,10 @@ push( @messHead, "<g>=====================================</g>" );
 push( @messHead, "<g>Průvodce vytvořením prepreg vrstev</g>" );
 push( @messHead, "<g>=====================================</g>\n" );
 
-my $CLEARANCEP1 = 700;    # Default clearance of first (closer to flex core) prepreg from rigin/flex transition
-my $CLEARANCEP2 = 300;    # Default clearance of second (closer to rigid core) prepreg from rigin/flex transition. Overlap with coverlay 200µm
+my $CLEARANCEP1 = 800;     # Default clearance of first (closer to flex core) prepreg from rigin/flex transition
+my $CLEARANCEP2 = 300;     # Default clearance of second (closer to rigid core) prepreg from rigin/flex transition. Overlap with coverlay 200µm
+my $PINRADIUS   = 1000;    # 2000 µm radius of coveraly pins
+my $ROUTTOOL    = 2000;    # default prepreg rout tool
 
 # Set impedance lines
 sub PreparePrepregLayers {
@@ -78,9 +80,6 @@ sub __PreparePreregNo1 {
 	my %coverlayType = HegMethods->GetCoverlayType($jobId);
 
 	my $prereglName = "fprepreg1";
-	my $refLayer    = "coverlaypins";
-	my $clearance   = $CLEARANCEP1;
-
 	if ( CamHelper->LayerExists( $inCAM, $jobId, $prereglName ) ) {
 
 		$messMngr->ShowModal( -1,
@@ -91,45 +90,105 @@ sub __PreparePreregNo1 {
 		return 0 if ( $messMngr->Result() == 0 );
 	}
 
+	my $pins = 1;
+
 	# When only top coverlay on outer RigidFlex (without pins)
 	if ( $coverlayType{"top"} && !$coverlayType{"bot"} && $type eq EnumsGeneral->PcbFlexType_RIGIDFLEXO ) {
-		$refLayer  = "bend";
-		$clearance = $CLEARANCEP2;
+		$pins = 0;
 	}
 
-	my @mess = (@messHead);
-
+	# Check bend area
 	my $bendParser;
 
-	if ( $refLayer eq "coverlaypins" ) {
+	if ($pins) {
 
-		$bendParser = CoverlayPinParser->new( $inCAM, $jobId, $step, PolyEnums->Dir_CW, 2 * $clearance );
-
+		$bendParser = CoverlayPinParser->new( $inCAM, $jobId, $step, PolyEnums->Dir_CW );
 	}
-	elsif ( $refLayer eq "bend" ) {
+	else {
 
-		$bendParser = BendAreaParser->new( $inCAM, $jobId, $step, PolyEnums->Dir_CW, 2 * $clearance );
+		$bendParser = BendAreaParser->new( $inCAM, $jobId, $step, PolyEnums->Dir_CW );
 	}
 
 	my $errMess = "";
-
 	while ( !$bendParser->CheckBendArea($errMess) ) {
 
 		$messMngr->ShowModal( -1,
 							  EnumsGeneral->MessageType_ERROR,
-							  [ @messHead, "Vrstva \"$refLayer\" není správně připravené", "Detail chyby:", $errMess ],
+							  [ @messHead, "Vrstva \"" . $bendParser->GetLayerName() . "\" není správně připravené", "Detail chyby:", $errMess ],
 							  [ "Konec",   "Opravím" ] );
 
 		return 0 if ( $messMngr->Result() == 0 );
 
-		$inCAM->PAUSE("Oprav vrstvu: \"$refLayer\"");
+		$inCAM->PAUSE( "Oprav vrstvu: \"" . $bendParser->GetLayerName() . "\"" );
 
 		$errMess = "";
 	}
 
-	FlexiBendArea->PrepareRoutPrepreg( $inCAM, $jobId, $step, $prereglName, 2 * $clearance, $refLayer );
-	CamLayer->WorkLayer( $inCAM, $prereglName );
-	$inCAM->PAUSE("Zkontroluj pripravenou frezovaci vrstvu pro PREPREG 1 a uprav co je treba.");
+	# Create rout layer
+	my $routLayerOk = 0;
+	while ( !$routLayerOk ) {
+
+		if ($pins) {
+
+			my $clearance = $CLEARANCEP2;
+			my $bendParser = CoverlayPinParser->new( $inCAM, $jobId, $step, PolyEnums->Dir_CW, 2 * $clearance );
+
+			my @mess = (@messHead);
+			push( @mess, "Vytvoření frézovací vrstvy: $prereglName" );
+			push( @mess, "----------------------------------------------------\n" );
+			push( @mess, "\nVrstva bude obsahovat vyfrézování pro coverlay piny" );
+			push( @mess, "Zkotroluj, popřípadě uprav parametry" );
+
+			my $parOverlap = $messMngr->GetNumberParameter( "Velikost odfrézování prepregu v \"rigid části\" DPS [µm]", $clearance );
+			my $parTool    = $messMngr->GetNumberParameter( "Velikost frézovacího nástroje [µm]",                         $ROUTTOOL );
+			my $parRadius  = $messMngr->GetNumberParameter( "Radius frézy, kterým je pin připojen k coverlay [µm]",       $PINRADIUS );
+			my @params = ( $parOverlap, $parTool, $parRadius );
+
+			$messMngr->ShowModal( -1, EnumsGeneral->MessageType_QUESTION, \@mess, undef, undef, \@params );
+
+			FlexiBendArea->PrepareRoutPrepreg( $inCAM, $jobId, $step, $prereglName,
+											   2 * $parOverlap->GetResultValue(1),
+											   $bendParser->GetLayerName(),
+											   $parTool->GetResultValue(1),
+											   $parRadius->GetResultValue(1) );
+
+		}
+		else {
+
+			my $clearance = $CLEARANCEP1;
+			my $bendParser = CoverlayPinParser->new( $inCAM, $jobId, $step, PolyEnums->Dir_CW, 2 * $clearance );
+
+			my @mess = (@messHead);
+			push( @mess, "Vytvoření frézovací vrstvy: $prereglName" );
+			push( @mess, "----------------------------------------------------\n" );
+			push( @mess, "\nVrstva <b>nebude</b> obsahovat vyfrézování pro coverlay piny" );
+			push( @mess, "Zkotroluj, popřípadě uprav parametry" );
+
+			my $parOverlap = $messMngr->GetNumberParameter( "Velikost odfrézování prepregu v \"rigid části\" DPS [µm]", $clearance );
+			my $parTool = $messMngr->GetNumberParameter( "Velikost frézovacího nástroje [µm]", $ROUTTOOL );
+			my @params = ( $parOverlap, $parTool );
+
+			$messMngr->ShowModal( -1, EnumsGeneral->MessageType_QUESTION, \@mess, undef, undef, \@params );
+
+			FlexiBendArea->PrepareRoutPrepreg( $inCAM, $jobId, $step, $prereglName,
+											   2 * $parOverlap->GetResultValue(1),
+											   $bendParser->GetLayerName(),
+											   $parTool->GetResultValue(1) );
+
+		}
+		CamLayer->WorkLayer( $inCAM, $prereglName );
+		$inCAM->PAUSE("Zkontroluj pripravenou frezovaci vrstvu pro PREPREG 1 a uprav co je treba.");
+
+		my @mess = (@messHead);
+		push( @mess, "Vytvoření frézovací vrstvy: $prereglName" );
+		push( @mess, "----------------------------------------------------\n" );
+		push( @mess, "\nJe frézovací vrstva ok?" );
+
+		$messMngr->ShowModal( -1, EnumsGeneral->MessageType_QUESTION, \@mess, [ "Vytvořit znovu", "Ok" ] );
+
+		$routLayerOk = 1 if ( $messMngr->Result() == 1 );
+
+	}
 }
 
 sub __PreparePreregNo2 {
@@ -173,9 +232,38 @@ sub __PreparePreregNo2 {
 		$errMess = "";
 	}
 
-	FlexiBendArea->PrepareRoutPrepreg( $inCAM, $jobId, $step, $prereglName, 2 * $CLEARANCEP2, $refLayer );
-	CamLayer->WorkLayer( $inCAM, $prereglName );
-	$inCAM->PAUSE("Zkontroluj pripravenou frezovaci vrstvu pro PREPREG 2 a uprav co je treba.");
+	# Create rout layer
+	my $routLayerOk = 0;
+	while ( !$routLayerOk ) {
+
+		my @mess = (@messHead);
+		push( @mess, "Vytvoření frézovací vrstvy: $prereglName" );
+		push( @mess, "----------------------------------------------------\n" );
+		push( @mess, "\nZkotroluj, popřípadě uprav parametry" );
+
+		my $parOverlap = $messMngr->GetNumberParameter( "Velikost odfrézování prepregu v \"rigid části\" DPS [µm]", $CLEARANCEP2 );
+		my $parTool = $messMngr->GetNumberParameter( "Velikost frézovacího nástroje [µm]", $ROUTTOOL );
+		my @params = ( $parOverlap, $parTool );
+
+		$messMngr->ShowModal( -1, EnumsGeneral->MessageType_QUESTION, \@mess, undef, undef, \@params );
+
+		FlexiBendArea->PrepareRoutPrepreg( $inCAM, $jobId, $step, $prereglName,
+										   2 * $parOverlap->GetResultValue(1),
+										   $bendParser->GetLayerName(),
+										   $parTool->GetResultValue(1) );
+		CamLayer->WorkLayer( $inCAM, $prereglName );
+		$inCAM->PAUSE("Zkontroluj pripravenou frezovaci vrstvu pro PREPREG 2 a uprav co je treba.");
+
+		@mess = (@messHead);
+		push( @mess, "Vytvoření frézovací vrstvy: $prereglName" );
+		push( @mess, "----------------------------------------------------\n" );
+		push( @mess, "\nJe frézovací vrstva ok?" );
+
+		$messMngr->ShowModal( -1, EnumsGeneral->MessageType_QUESTION, \@mess, [ "Vytvořit znovu", "Ok" ] );
+
+		$routLayerOk = 1 if ( $messMngr->Result() == 1 );
+	}
+
 }
 
 #-------------------------------------------------------------------------------------------#
@@ -190,7 +278,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId = "d241421";
+	my $jobId = "d152456";
 
 	my $notClose = 0;
 

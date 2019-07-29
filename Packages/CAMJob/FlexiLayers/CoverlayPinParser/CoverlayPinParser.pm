@@ -26,16 +26,12 @@ use aliased 'CamHelpers::CamMatrix';
 use aliased 'CamHelpers::CamFilter';
 use aliased 'Packages::CAM::FeatureFilter::FeatureFilter';
 use aliased 'Packages::CAM::FeatureFilter::Enums' => 'EnumsFiltr';
+use aliased 'Packages::CAMJob::FlexiLayers::CoverlayPinParser::Enums';
 use aliased 'Enums::EnumsRout';
 
 #-------------------------------------------------------------------------------------------#
 #  Public method
 #-------------------------------------------------------------------------------------------#
-
-my $REGISTERPINSTRING = "register_pin";
-my $CUTPINSTRING      = "cut_pin";
-my $ENDPINLINE        = "end_pin_line";
-my $PINLINE           = "pin_line";
 
 sub new {
 	my $self = shift;
@@ -78,6 +74,12 @@ sub CheckBendArea {
 
 	return $result;
 
+}
+
+sub GetLayerName {
+	my $self = shift;
+
+	return $self->{"layer"};
 }
 
 sub GetFeatures {
@@ -126,13 +128,25 @@ sub GetBendAreaLineByLineId {
 sub GetRegisterPads {
 	my $self = shift;
 
-	return grep { $_->{"att"}->{".string"} eq $REGISTERPINSTRING } @{ $self->{"helperFeatures"} };
+	return grep { $_->{"att"}->{".string"} eq Enums->PinString_REGISTER } @{ $self->{"helperFeatures"} };
 }
 
 sub GetCutLines {
 	my $self = shift;
 
-	return grep { $_->{"att"}->{".string"} eq $CUTPINSTRING } @{ $self->{"helperFeatures"} };
+	return grep { $_->{"att"}->{".string"} eq Enums->PinString_CUTLINE } @{ $self->{"helperFeatures"} };
+}
+
+sub GetSolderLines {
+	my $self = shift;
+
+	return grep { $_->{"att"}->{".string"} eq Enums->PinString_SOLDERLINE } @{ $self->{"helperFeatures"} };
+}
+
+sub GetEndLines {
+	my $self = shift;
+
+	return grep { $_->{"att"}->{".string"} eq Enums->PinString_ENDLINE } $self->GetFeatures();
 }
 
 sub __LoadBendArea {
@@ -152,10 +166,16 @@ sub __LoadBendArea {
 		my $tmp = GeneralHelper->GetGUID();
 		CamMatrix->CopyLayer( $inCAM, $jobId, $self->{"layer"}, $step, $tmp, $step );
 		CamLayer->WorkLayer( $inCAM, $tmp );
+
+
+
 		my $f = FeatureFilter->new( $inCAM, $jobId, $tmp );
 
-		$f->AddIncludeAtt( ".string", $ENDPINLINE );
-		$f->AddIncludeAtt( ".string", $PINLINE );
+		$f->AddIncludeAtt( ".string", Enums->PinString_ENDLINE );
+		$f->AddIncludeAtt( ".string", Enums->PinString_SIDELINE1 );
+		$f->AddIncludeAtt( ".string", Enums->PinString_SIDELINE2 );
+		$f->AddIncludeAtt( ".string", Enums->PinString_BENDLINE );
+
 		$f->SetIncludeAttrCond( EnumsFiltr->Logic_OR );
 
 		if ( $f->Select() ) {
@@ -175,10 +195,18 @@ sub __LoadBendArea {
 	}
 
 	# Separate helper symbol and bend areas
-	my @helper = grep { $_->{"att"}->{".string"} eq $CUTPINSTRING || $_->{"att"}->{".string"} eq $REGISTERPINSTRING } $polyLine->GetFeatures();
+	my @helper = grep {
+		     $_->{"att"}->{".string"} eq Enums->PinString_CUTLINE
+		  || $_->{"att"}->{".string"} eq Enums->PinString_SOLDERLINE
+		  || $_->{"att"}->{".string"} eq Enums->PinString_REGISTER
+	} $polyLine->GetFeatures();
 	$self->{"helperFeatures"} = \@helper;
 
-	my @polyFeats = grep { $_->{"att"}->{".string"} ne $CUTPINSTRING && $_->{"att"}->{".string"} ne $REGISTERPINSTRING } $polyLine->GetFeatures();
+	my @polyFeats = grep {
+		     $_->{"att"}->{".string"} ne Enums->PinString_CUTLINE
+		  && $_->{"att"}->{".string"} ne Enums->PinString_SOLDERLINE
+		  && $_->{"att"}->{".string"} ne Enums->PinString_REGISTER
+	} $polyLine->GetFeatures();
 
 	# return parsed feature polygons, cyclic only CW or CCW)
 	my @polygons = $polyLine->GetPolygonsFeatures( \@polyFeats );
@@ -229,18 +257,16 @@ sub __LoadBendArea {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	use aliased 'Packages::CAMJob::FlexiLayers::BendAreaParser::BendAreaParser';
+	use aliased 'Packages::CAMJob::FlexiLayers::CoverlayPinParser::CoverlayPinParser';
 	use aliased 'Packages::InCAM::InCAM';
 
-	my $jobId = "d113609";
+	my $jobId = "d222775";
 	my $inCAM = InCAM->new();
 
 	my $step  = "o+1";
 	my $layer = "s";
 
-	my $parser = BendAreaParser->new( $inCAM, $jobId, $step, );
-
-	$parser->LoadBendArea();
+	my $parser = CoverlayPinParser->new( $inCAM, $jobId, $step, );
 
 	my $errMess = "";
 
@@ -249,6 +275,17 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 		print $errMess;
 
 	}
+
+	my @areas = $parser->GetBendAreas();
+
+	foreach my $a (@areas) {
+
+		print $a->GetPinCnt() . "\n";
+
+		print $a->GetPinsFeatures();
+
+	}
+
 }
 
 1;
