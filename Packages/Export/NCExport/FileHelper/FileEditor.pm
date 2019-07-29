@@ -162,8 +162,7 @@ sub EditAfterOpen {
 
 	if (    $layer->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_cvrlycMill
 		 || $layer->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_cvrlysMill
-		 || $layer->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_prepregMill
-		 || $layer->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_lcMill )
+		 || $layer->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_prepregMill  )
 	{
 
 		# get tool number of r850 tool
