@@ -1861,22 +1861,27 @@ sub _MakeStackup {
 
 sub _CheckExistStackup {
 			my $idJob = shift;
-			my $pathStackup = 'r:/PCB/pcb/VV_slozeni';
+			my @pathStackup = ('r:/PCB/pcb/VV_slozeni','r:/PCB/pcb/VV_InStackCoupon');
 			my $tmpExist = 0;
 
-			opendir ( DIRSTACKUP, $pathStackup);
-					while( (my $jobItem = readdir(DIRSTACKUP))){
-							$idJob = lc $idJob;
-							if ($jobItem =~ /$idJob/) {
-										$tmpExist = 1;
-							}
-							$idJob = uc $idJob;
-							if ($jobItem =~ /$idJob/) {
-										$tmpExist = 1;
-							}
-					}
-			closedir DIRSTACKUP;
-				
+
+			foreach my $path (@pathStackup) {
+		 				opendir ( DIRSTACKUP, $path);
+		 						while( (my $jobItem = readdir(DIRSTACKUP))){
+		 								$idJob = lc $idJob;
+		 								if ($jobItem =~ /$idJob/) {
+		 											$tmpExist = 1;
+		 											last;
+		 								}
+		 								$idJob = uc $idJob;
+		 								if ($jobItem =~ /$idJob/) {
+		 											$tmpExist = 1;
+		 											last;
+		 								}
+		 						}
+		 				closedir DIRSTACKUP;
+		 	}
+		 					
 		return ($tmpExist);
 			
 }

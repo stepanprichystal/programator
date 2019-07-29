@@ -42,6 +42,7 @@ use aliased 'CamHelpers::CamJob';
 use aliased 'CamHelpers::CamHelper';
 use aliased 'CamHelpers::CamStep';
 use aliased 'CamHelpers::CamStepRepeat';
+use aliased 'CamHelpers::CamStepRepeatPnl';
 use aliased 'CamHelpers::CamAttributes';
 use aliased 'CamHelpers::CamDrilling';
 
@@ -178,8 +179,19 @@ my ($prefixDiskName, $bodyPath, $fileName, $suffixName, $jobName, $localFolder) 
 			foreach my $item (@stepsArr) {
 				if ($item =~ /[Pp]anel/) {
 						my $panelName = $item;
-						my $newName = 'mpanel';
+						
+						my @steps = CamStepRepeatPnl->GetUniqueNestedStepAndRepeat($inCAM, $jobName);
+						
+						if (scalar @steps){
+							my $newName = 'mpanel';
 								$inCAM ->	COM ('rename_entity',job=> "$jobName",name=> "$panelName",new_name=>"$newName",is_fw=>'no',type=>'step',fw_type=>'form');
+						}else{
+							# panel neobsahuje S&R
+							$inCAM ->	COM ('rename_entity',job=> "$jobName",name=> "input",new_name=>"input_ori",is_fw=>'no',type=>'step',fw_type=>'form');
+							$inCAM ->	COM ('rename_entity',job=> "$jobName",name=> "$panelName",new_name=>"input",is_fw=>'no',type=>'step',fw_type=>'form');
+							$inputStep = 'input';
+						}
+						
 				}
 			}
 	}else{
