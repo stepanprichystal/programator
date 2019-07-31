@@ -13,7 +13,6 @@ use aliased 'CamHelpers::CamJob';
 use aliased 'CamHelpers::CamDrilling';
 use aliased 'Enums::EnumsGeneral';
 
-
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
@@ -190,6 +189,10 @@ sub GetNPltNCLayerInfo {
 	my @nplt_cvrlycMill  = ();  #top coverlay mill
 	my @nplt_cvrlysMill  = ();  #bot coverlay mill
 	my @nplt_prepregMill = ();  #prepreg mill
+	my @nplt_stiffcMill  = ();  # milling for stiffener from side c
+	my @nplt_stiffsMill  = ();  # milling for stiffener from side s
+	my @nplt_soldcMill   = ();  # milling of template for soldering coverlay from side c
+	my @nplt_soldsMill   = ();  # milling of template for soldering coverlay from side s
 
 	my @ncPar = ();
 	foreach my $l (@layers) {
@@ -235,7 +238,6 @@ sub GetNPltNCLayerInfo {
 		}
 		elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_fMillSpec ) {
 			push( @nplt_fMillSpec, $l );
-
 		}
 
 		elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_cvrlycMill ) {
@@ -248,6 +250,22 @@ sub GetNPltNCLayerInfo {
 		}
 		elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_prepregMill ) {
 			push( @nplt_prepregMill, $l );
+
+		}
+		elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_stiffcMill ) {
+			push( @nplt_stiffcMill, $l );
+
+		}
+		elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_stiffsMill ) {
+			push( @nplt_stiffsMill, $l );
+
+		}
+		elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_soldcMill ) {
+			push( @nplt_soldcMill, $l );
+
+		}
+		elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_soldsMill ) {
+			push( @nplt_soldsMill, $l );
 
 		}
 
@@ -269,6 +287,11 @@ sub GetNPltNCLayerInfo {
 	$info{ EnumsGeneral->LAYERTYPE_nplt_cvrlycMill }  = \@nplt_cvrlycMill;
 	$info{ EnumsGeneral->LAYERTYPE_nplt_cvrlysMill }  = \@nplt_cvrlysMill;
 	$info{ EnumsGeneral->LAYERTYPE_nplt_prepregMill } = \@nplt_prepregMill;
+	
+	$info{ EnumsGeneral->LAYERTYPE_nplt_stiffcMill } = \@nplt_stiffcMill;
+	$info{ EnumsGeneral->LAYERTYPE_nplt_stiffsMill } = \@nplt_stiffsMill;
+	$info{ EnumsGeneral->LAYERTYPE_nplt_soldcMill } = \@nplt_soldcMill;
+	$info{ EnumsGeneral->LAYERTYPE_nplt_soldsMill } = \@nplt_soldsMill;
 
 	return %info;
 }

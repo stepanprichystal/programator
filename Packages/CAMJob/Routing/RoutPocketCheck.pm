@@ -77,7 +77,7 @@ sub RoutPocketCheckDir {
 				$result = 0;
 
 				my %inf = ( "layer" => $lName, "rightDir" => $rightDir, "wrongDir" => $wrongDir, "surfaces" => \@wrongDir );
-				push(@{$errInfo}, \%inf);
+				push( @{$errInfo}, \%inf );
 			}
 
 		}
@@ -99,9 +99,9 @@ sub RoutPocketCheckDirAllLayers {
 	my $result = 1;
 
 	my @types = (
-				  EnumsGeneral->LAYERTYPE_plt_bMillTop,  
+				  EnumsGeneral->LAYERTYPE_plt_bMillTop,
 				  EnumsGeneral->LAYERTYPE_plt_bMillBot,
-				  EnumsGeneral->LAYERTYPE_nplt_bMillTop, 
+				  EnumsGeneral->LAYERTYPE_nplt_bMillTop,
 				  EnumsGeneral->LAYERTYPE_nplt_bMillBot,
 				  EnumsGeneral->LAYERTYPE_nplt_lcMill,
 				  EnumsGeneral->LAYERTYPE_nplt_lsMill,
@@ -109,7 +109,11 @@ sub RoutPocketCheckDirAllLayers {
 				  EnumsGeneral->LAYERTYPE_nplt_cbMillBot,
 				  EnumsGeneral->LAYERTYPE_nplt_cvrlycMill,
 				  EnumsGeneral->LAYERTYPE_nplt_cvrlysMill,
-				  EnumsGeneral->LAYERTYPE_nplt_prepregMill
+				  EnumsGeneral->LAYERTYPE_nplt_prepregMill,
+				  EnumsGeneral->LAYERTYPE_nplt_stiffcMill,
+				  EnumsGeneral->LAYERTYPE_nplt_stiffsMill,
+				  EnumsGeneral->LAYERTYPE_nplt_soldcMill,
+				  EnumsGeneral->LAYERTYPE_nplt_soldsMill
 	);
 
 	foreach my $t (@types) {
@@ -138,9 +142,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	my $step  = "o+1";
 
 	my @pole = ();
-	my $res = RoutPocketCheck->RoutPocketCheckDirAllLayers( $inCAM, $jobId, $step, 1, \@pole);
-
-	 
+	my $res = RoutPocketCheck->RoutPocketCheckDirAllLayers( $inCAM, $jobId, $step, 1, \@pole );
 
 	print "ddd";
 

@@ -174,6 +174,9 @@ sub __DefineNPlatedOperations {
 	my @nplt_cvrlycMill = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_cvrlycMill } };    #top coverlay mill
 	my @nplt_cvrlysMill = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_cvrlysMill } };    #bot coverlay mill
 
+	my @nplt_stiffcMill = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_stiffcMill } };    # milling for stiffener from side c
+	my @nplt_stiffsMill = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_stiffsMill } };    # milling for stiffener from side s
+
 	#Define operation:
 
 	# 1) Operation name = fc - can contain layer
@@ -244,6 +247,15 @@ sub __DefineNPlatedOperations {
 
 	# 11) Operation name = fls - can contain layer
 	$opManager->AddOperationDef( "coverlays", \@nplt_cvrlysMill, -1 );
+
+	# 12) Operation name = fstiffc - can contain layer
+	# - @nplt_stiffcMill
+	$opManager->AddOperationDef( "fstiffc", \@nplt_stiffcMill, -1 );
+
+	# 13) Operation name = fstiffs - can contain layer
+	# - @nplt_stiffcMill
+	$opManager->AddOperationDef( "fstiffs", \@nplt_stiffsMill, -1 );
+
 }
 
 #-------------------------------------------------------------------------------------------#

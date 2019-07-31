@@ -49,8 +49,8 @@ sub DefineOperations {
 	my $opManager = shift;
 
 	my $stackup = Stackup->new( $self->{'jobId'} );
-	$self->{'stackup'} = $stackup;                                         #hash
-	$self->{'stackupNC'} = StackupNC->new( $self->{'jobId'}, $self->{"inCAM"});
+	$self->{'stackup'} = $stackup;                                                 #hash
+	$self->{'stackupNC'} = StackupNC->new( $self->{'jobId'}, $self->{"inCAM"} );
 
 	#plated nc layers
 	my %pltDrillInfo = DrillingHelper->GetPltNCLayerInfo( $self->{"jobId"}, $self->{"stepName"}, $self->{"inCAM"}, $self->{"pltLayers"} );
@@ -444,6 +444,11 @@ sub __DefineNPlatedOperations {
 	my @nplt_cvrlysMill  = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_cvrlysMill } };     #bot coverlay mill
 	my @nplt_prepregMill = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_prepregMill } };    #prepreg mill
 
+	my @nplt_stiffcMill = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_stiffcMill } };      # milling for stiffener from side c
+	my @nplt_stiffsMill = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_stiffsMill } };      # milling for stiffener from side s
+	my @nplt_soldcMill =  @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_soldcMill } };    # milling of template for soldering coverlay from side c
+	my @nplt_soldsMill = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_soldsMill } };    # milling of template for soldering coverlay from side s
+
 	#Define operation:
 
 	# 1) Operation name = fzc<press order>, can contain layer
@@ -499,7 +504,6 @@ sub __DefineNPlatedOperations {
 		$opManager->AddOperationDef( $outFile, \@layers, $pressOrder );
 	}
 
- 
 	# 4) Operation name = jfzc<core number> - can contain layer from @nplt_cbMillTop
 	for ( my $i = 0 ; $i < $coreCnt ; $i++ ) {
 
@@ -571,14 +575,28 @@ sub __DefineNPlatedOperations {
 	$opManager->AddOperationDef( "coverlays", \@nplt_cvrlysMill, -1 );
 
 	# 11) Operation name = fls - can contain layer
-	foreach my $l  (@nplt_prepregMill){
-	
+	foreach my $l (@nplt_prepregMill) {
+
 		my ($prepregNum) = $l->{"gROWname"} =~ /^fprepreg(\d)$/;
-	
-		$opManager->AddOperationDef( "prepreg".$prepregNum, [$l], -1 );
+
+		$opManager->AddOperationDef( "prepreg" . $prepregNum, [$l], -1 );
 	}
 	
-
+	# 12) Operation name = fstiffc - can contain layer
+	# - @nplt_stiffcMill
+	$opManager->AddOperationDef( "fstiffc", \@nplt_stiffcMill, -1 );
+	
+	# 13) Operation name = fstiffs - can contain layer
+	# - @nplt_stiffcMill
+	$opManager->AddOperationDef( "fstiffs", \@nplt_stiffsMill, -1 );
+	
+	# 14) Operation name = soldc - can contain layer
+	# - @nplt_soldcMill
+	$opManager->AddOperationDef( "soldc", \@nplt_soldcMill, -1 );
+	
+	# 15) Operation name = soldc - can contain layer
+	# - @nplt_soldsMill
+	$opManager->AddOperationDef( "solds", \@nplt_soldsMill, -1 );
 }
 
 #-------------------------------------------------------------------------------------------#
